@@ -1,0 +1,4 @@
+MM, 2026-11-20 ~05:45Z. Gate 0 of run_eval141.sh is released by this file (N1DW_P5C_MARK points here).
+Why: Windows Update restarted the dev box at 02:33Z (System event 1074, TrustedInstaller). REFe's p5c read chain stopped with it before writing chain.DONE (last markers identity_*.DONE ~02:28Z), and no p5c process runs after the boot. The dev box is idle.
+Every stage of eval-141 still waits for >= 5.5 GB free commit (wait_commit.py) and runs one 2-thread CPU process at a time. If REFe relaunches its chain, the MM stops eval-141 between steps; it resumes from steps/*.ok.
+REVOKED ~05:50Z: REFe relaunched its p5c chain at 05:46Z (earlier attempts reached 0.5-1.1 GB free commit). eval-141 stopped mid dump141_N1DW4_s0 and relaunched behind chain.DONE.

@@ -1,0 +1,52 @@
+test_a_changed_landed_file_is_refused (__main__.TestBuilder.test_a_changed_landed_file_is_refused) ... ok
+test_dump_refuses_until_the_sets_exist_and_are_verified (__main__.TestBuilder.test_dump_refuses_until_the_sets_exist_and_are_verified) ... ok
+test_launch_text_is_the_wmi_detached_pattern_and_never_bypasses_policy (__main__.TestBuilder.test_launch_text_is_the_wmi_detached_pattern_and_never_bypasses_policy) ... ok
+test_manifest_refuses_without_a_finished_dump (__main__.TestBuilder.test_manifest_refuses_without_a_finished_dump) ... ok
+test_pins_are_the_landed_files (__main__.TestBuilder.test_pins_are_the_landed_files) ... ok
+test_prepare_refuses_c_drive_s0_root_and_a_wrong_checkpoint_hash (__main__.TestBuilder.test_prepare_refuses_c_drive_s0_root_and_a_wrong_checkpoint_hash) ... ok
+test_the_driver_override_routes_everything_to_the_new_root (__main__.TestBuilder.test_the_driver_override_routes_everything_to_the_new_root)
+Fabricate empty per-log set stores + a provenance file + verify_sets PASS in the TEMP root (the driver only checks that they exist), import the LANDED driver with the four overrides and run ITS ... {
+ "candidate_id": "unit",
+ "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+ "root": "D:/Projects/TanitAD-artifacts/_p6prep_unit_root"
+}
+PREPARE_OK
+[2026-10-19T11:46:05+0200] STATUS {"stage": "preflight"}
+[2026-10-19T11:46:06+0200] STATUS {"preflight": {"selected_logs_sha256": "9d4d606ad26f871bda37eed5bb3b29b1f91f74526d27433da0105f842265db25", "n_logs": 117, "n_tokens": 8922, "n_sets": 15808, "ckpt_sha256": "ea31db2296210b6a"}, "ckpt_stat": [1288484600, 1791898168000000000]}
+[2026-10-19T11:46:06+0200] STATUS {"stage": "preflight"}
+[2026-10-19T11:46:07+0200] STATUS {"preflight": {"selected_logs_sha256": "9d4d606ad26f871bda37eed5bb3b29b1f91f74526d27433da0105f842265db25", "n_logs": 117, "n_tokens": 8922, "n_sets": 15808, "ckpt_sha256": "ea31db2296210b6a"}, "ckpt_stat": [1288484600, 1791898168000000000]}
+[2026-10-19T11:46:09+0200] dump: SRC=D:/Projects/TanitAD-artifacts/_p6prep_unit_root CKPT=D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt sha256=ea31db2296210b6a OWNER=p6bank_unit argv=['--tag', 'main', '--device', 'cpu', '--min-free-ram-mb', '4500', '--no-stage']
+ok
+test_the_plan_copied_is_the_registered_sample (__main__.TestBuilder.test_the_plan_copied_is_the_registered_sample) ... ok
+test_verify_sets_flags_a_label_that_changed_on_the_pod (__main__.TestBuilder.test_verify_sets_flags_a_label_that_changed_on_the_pod) ... ok
+test_zz_s0_directory_is_untouched (__main__.TestBuilder.test_zz_s0_directory_is_untouched) ... ok
+test_pick_margin_is_top1_minus_top2 (__main__.TestPure.test_pick_margin_is_top1_minus_top2) ... ok
+test_the_registered_constants (__main__.TestPure.test_the_registered_constants) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 11.850s
+
+OK
+DRY RUN: the landed driver was imported with the overrides above and would run now (no GPU lock taken, nothing dumped).
+{
+ "sets_equal_to_S0": 48,
+ "sets_differ_or_unknown": 0,
+ "logs_without_store": 116,
+ "examples": [],
+ "PASS": false
+}
+{
+ "sets_equal_to_S0": 47,
+ "sets_differ_or_unknown": 1,
+ "logs_without_store": 116,
+ "examples": [
+  [
+   "2021.10.11.08.31.07_veh-50_01001_01076",
+   "10cba32b70505c21",
+   0,
+   1
+  ]
+ ],
+ "PASS": false
+}

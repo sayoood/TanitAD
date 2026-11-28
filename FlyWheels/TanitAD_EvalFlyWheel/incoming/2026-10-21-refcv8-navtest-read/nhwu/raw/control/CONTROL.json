@@ -1,0 +1,29 @@
+{
+ "what": "Known-value controls for the nhwu job path (nhwu_jobs.py -> thor_pool.py -> score_arm_thor.py on the Thor CPU backend), VALIDATION ONLY, never a refcv8 number",
+ "date": "2026-10-21 (Europe/Berlin)",
+ "V-NH (the brief's control)": {
+  "arm": "refcv7 R7_A1 @ 50,400, seam sha256 996411cd7ec8c1c3d7a03236aeecdc82bcf2e681138a642735deb78b730222cc",
+  "tokens": "raw/navhard_subset_200.json of the 2026-10-04 backend package (204 tokens = 9 whole two-stage groups)",
+  "agent": "tanitad_seam_agent_ulp.TanitADSeamAgentULP, +agent.ulp_reference=ulp_reference_navhard_devbox.json, +agent.atol=1e-9",
+  "counts": "PASS, 204/204 valid, agent calls seam 204 / cv_standin 0 / UNKNOWN 0, wall 518.9 s",
+  "vs_devbox_banked_final_frame": "EXACT 204 x 20 (max|d| 0.0, 0 text-differing cells) -> compare/VNH_nhwu_devbox_frame.json",
+  "vs_devbox_banked_devkit_csv": "EXACT 204 x 20 -> compare/VNH_nhwu_devbox_csv.json",
+  "vs_banked_thor_run3": "final frame EXACT, PRE_AGGREGATION EXACT, devkit CSV EXACT and byte-identical (sha256 6a1379c869da636e...) -> compare/VNH_nhwu_thorrun3_*.json",
+  "verdict": "REPRODUCED EXACTLY (= the backend's V-NH 'EXACT on 204 x 20')"
+ },
+ "merge path (finalize_navhard_arm.py -> merge_shards.py navhard, PYTHONPATH=code/stubs)": {
+  "test": "merge_shards.py navhard over the V-NH control frame with order-ref = the control's own devkit CSV",
+  "result": "merged CSV and merged frame BYTE-IDENTICAL to the scorer's native outputs (sha256 6a1379c8.../965f35a0...)",
+  "measured_trap": "without PYTHONPATH=/home/nvidia/navsim-thor/code/stubs the merge dies 'No module named rasterio' (the waiter sets it)"
+ },
+ "V-WU (extra, not in the brief: warmup was never scored on Thor before)": {
+  "arm": "refcv7 R7_A1 @ 50,400 warmup, seam sha256 b56da5f6aae9717cc2c264c4375428fe0adcf9dab22fdf90222a75de2dd24447",
+  "run1_E2_byte_agent": "FAIL: 19/204 synthetic tokens FINGERPRINT_MISMATCH -> no CSV (control/scores_warmup/score_R7_A1.counts.json). The byte agent cannot score warmup on Thor.",
+  "fix": "the ACCEPTED fallback (RULING_BACKEND_POLICY.md item 3) with a warmup dev-box reference: ulp_reference_warmup_devbox.json (make_ulp_reference.py lite mode, navsim-crun venv py3.9.25/numpy 1.23.4, md5 db38f4c6e752dbceadf79e26855d1750); 204/204 reference tokens re-hash to the seam fingerprint; the 19 mismatching tokens are all in it",
+  "run2_ulp_agent": "PASS, 220/220 valid (seam 204 + cv_standin 16), 19 calls on the reference path, wall 184.3 s",
+  "vs_devbox_banked": "NOT bit-exact: 1/220 tokens differ (ego_progress 6.48e-13, pdm_score 2.31e-13, score 2.03e-13, weight 1.57e-50 in the final frame); 0 multiplier flips, 0 valid flips; split-mean d(score) 8.9e-16; summary rows max|d| 4.4e-15 (combined 0.21069335050879479 dev box vs 0.21069335050879612 Thor)",
+  "verdict": "ADMISSIBLE under RULING_BACKEND_POLICY.md (0 flips, per-token <= 1e-9, split-mean <= 1e-12) -- the libm class of the backend RESULT, NOT exact",
+  "evidence": "compare/VWU_nhwu_{frame,preagg,csv}.json, run2/"
+ },
+ "job-builder dry run on the smoke seams (VALIDATION ONLY)": "smoke20 bridge_warmup (4 arms) -> 4 jobs PASS; bridge_navhard (3 arms) -> 18 jobs PASS; the same navhard seams WITHOUT --smoke -> FAIL (11 rows != 5,912; token set differs) = the gate refuses partial seams; fingerprints 11/11 equal refcv7's on both splits"
+}

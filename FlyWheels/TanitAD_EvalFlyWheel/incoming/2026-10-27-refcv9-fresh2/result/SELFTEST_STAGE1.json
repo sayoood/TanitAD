@@ -1,0 +1,254 @@
+{
+ "tool": "fresh2_stage1.py --selftest",
+ "T7_maxabs_LHG_path_minus_LH": 2.220446049250313e-16,
+ "note_T7": "first run (11:3x) asserted BITWISE equality and failed on ~ulp BLAS differences; the check was relaxed to max|diff| < 1e-12 + identical AUC (disclosed in DEVIATIONS.md)",
+ "data": "FIRST pull fresh split (L1C), never CONFIRM, never eval139",
+ "pins": {
+  "PREREG_FRESH2.md": "956f87cdf88e6cbcd5c1ad824ad187e55f15796f23564b3b7d674cfd917dfebe",
+  "LH_FROZEN.pt": "6fd3ea1e3700a15b6506176bc855355d0cc1eefb3d87d390584e791d98e1d8f6",
+  "D2_FROZEN.json": "69135b9145e38e7b8b13fb1dac85ebda20b7db9b836c85032e7c4af2d25d2fc5",
+  "d2_common.py": "73b0a6107c32ca6f8b22a6b16919a2fe5829bb5977f2512fcf4b42cfa171aec7",
+  "d2_khead.py": "f5ca118e44dd1dcd4e6a16bda6430d187e5114ea841dac4bf28d77feed30cba7",
+  "lh_fit.py": "fb330f7f23b2fea249e1527e804c454062a06ffa0cbe4b612ff551f57f5b62d9"
+ },
+ "checks": {
+  "universe_sha256": true,
+  "no_fallback_rows_on_first_pull": true,
+  "T2_population_rows_equal_LHA0_P": true,
+  "T2_decel_labels_equal_LHA0_P": true,
+  "T2_counts_5038_1468_280": true,
+  "T2_z_join_bitwise_eq_universe": true,
+  "T2_v0_join_bitwise_eq_universe": true,
+  "T2_a0_bitwise_eq_universe": true,
+  "T8_permutation_eq_LHA0_C4": true,
+  "T7_LHG_path_eq_LH_score_maxabs_lt_1e-12": true,
+  "T7_LHG_path_LH_auc_identical": true,
+  "T3_neg_a0_auc_ci_eq_LHA0_POSTHOC": true,
+  "T9_constant_0.5000": true,
+  "T9_WAuc_unit": true,
+  "T9_G1_bar_on_identical_heads_FAILS": true,
+  "T4_LH_OOF_auc_0.6699": true,
+  "T4_D2_OOF_auc_0.7614": true,
+  "T4_FUSE_auc_0.7569": true,
+  "T4_FUSE_minus_LH_point_ci": true,
+  "T4_F1_bar_logic_on_known_+0.087": true
+ },
+ "ALL_PASS": true,
+ "first_pull_table_on_LHA0_P (in-sample for the frozen heads: descriptive only)": {
+  "arms": {
+   "LH": {
+    "auc": 0.7065,
+    "auc_unrounded": 0.7065097428617223,
+    "ci95": [
+     0.656,
+     0.7549
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 513
+   },
+   "D2": {
+    "auc": 0.7604,
+    "auc_unrounded": 0.7604047886184446,
+    "ci95": [
+     0.7333,
+     0.7876
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 3
+   },
+   "FUSE": {
+    "auc": 0.7741,
+    "auc_unrounded": 0.7741081446202459,
+    "ci95": [
+     0.7374,
+     0.8091
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 516
+   },
+   "constant": {
+    "auc": 0.5,
+    "auc_unrounded": 0.5,
+    "ci95": [
+     0.5,
+     0.5
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 0
+   },
+   "FUSE_perm": {
+    "auc": 0.7285,
+    "auc_unrounded": 0.7284777398697899,
+    "ci95": [
+     0.69,
+     0.7665
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 516
+   },
+   "neg_a0_raw": {
+    "auc": 0.7699,
+    "auc_unrounded": 0.7698915806104458,
+    "ci95": [
+     0.743,
+     0.7974
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 1
+   },
+   "D2_perm": {
+    "auc": 0.6624,
+    "auc_unrounded": 0.6623913325548203,
+    "ci95": [
+     0.6332,
+     0.6935
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 3
+   },
+   "LH_G": {
+    "auc": 0.7065,
+    "auc_unrounded": 0.7065097428617223,
+    "ci95": [
+     0.656,
+     0.7549
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 513
+   }
+  },
+  "deltas_vs_LH": {
+   "D2": {
+    "point": 0.0539,
+    "ci95": [
+     0.005,
+     0.1071
+    ],
+    "boot_se": 0.0256
+   },
+   "FUSE": {
+    "point": 0.0676,
+    "ci95": [
+     0.042,
+     0.0945
+    ],
+    "boot_se": 0.0131
+   },
+   "constant": {
+    "point": -0.2065,
+    "ci95": [
+     -0.2549,
+     -0.156
+    ],
+    "boot_se": 0.0254
+   },
+   "FUSE_perm": {
+    "point": 0.022,
+    "ci95": [
+     -0.0019,
+     0.0458
+    ],
+    "boot_se": 0.0122
+   },
+   "neg_a0_raw": {
+    "point": 0.0634,
+    "ci95": [
+     0.0082,
+     0.1227
+    ],
+    "boot_se": 0.0293
+   },
+   "D2_perm": {
+    "point": -0.0441,
+    "ci95": [
+     -0.0952,
+     0.0105
+    ],
+    "boot_se": 0.0274
+   },
+   "LH_G": {
+    "point": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "boot_se": 0.0
+   }
+  }
+ },
+ "oof_fusion_reproduction": {
+  "arms": {
+   "LH": {
+    "auc": 0.6699,
+    "auc_unrounded": 0.6699179126691549,
+    "ci95": [
+     0.6161,
+     0.7212
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 513
+   },
+   "D2": {
+    "auc": 0.7614,
+    "auc_unrounded": 0.761429258351842,
+    "ci95": [
+     0.7344,
+     0.7897
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 3
+   },
+   "FUSE": {
+    "auc": 0.7569,
+    "auc_unrounded": 0.7569341087933811,
+    "ci95": [
+     0.7224,
+     0.7915
+    ],
+    "n_windows": 5038,
+    "n_decel": 1468,
+    "n_episodes": 280,
+    "d": 516
+   }
+  },
+  "deltas_vs_LH": {
+   "D2": {
+    "point": 0.0915,
+    "ci95": [
+     0.0398,
+     0.1467
+    ],
+    "boot_se": 0.0269
+   },
+   "FUSE": {
+    "point": 0.087,
+    "ci95": [
+     0.0598,
+     0.1162
+    ],
+    "boot_se": 0.0143
+   }
+  }
+ },
+ "wall_s": 8.6
+}

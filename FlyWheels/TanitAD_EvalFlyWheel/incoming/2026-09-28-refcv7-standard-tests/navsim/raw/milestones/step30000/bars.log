@@ -1,0 +1,65 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\code\bars7.py --milestone D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step30000
+{
+ "step": 30000,
+ "label": "RESULT",
+ "spec": "SPEC.md sha256 5ffb584c6b6482e2b293663b59ce25992c52b245e0d05b79f6ae8cb6d57b8492 git-blob(--no-filters) e67b0b3d708a74c902686edf03242a542e98e937 written 2026-09-28T03:19:37Z (Berlin 05:19, UTC+2) -- BEFORE any refcv7 NavSim score; no refcv7 checkpoint has been run through any NavSim input\nSPEC.md + amendment A1 sha256 03cccc4a31751eae9279ad7f93610731a746d995bfdac1e23348ecd9ebe25081 git-blob(--no-filters) 7b871b4fb4aff1796905f31b6d8feb81c34f7554 written 2026-09-28T03:46:49Z (Berlin 05:46, UTC+2) -- BEFORE any refcv7 NavSim score (only validation TRAJECTORIES exist; no scorer has run on a refcv7 plan)",
+ "model_as_trained": "\"refcv7-r101-s0 as launched\" (FIX-1..5; NEW-1 ha0_ext_pose; NEW-2 10 cm map, A6/A7 pooled BEV; A9 box head 300 queries learned_ref; A2 selection mechanisms ON; strategic OFF; config.json md5 e6512a01...; no mid-run recipe change recorded -- INHERITED)",
+ "tier": "NavSim open-loop benchmark (T1-family); zero-shot; never closed loop; non-parity",
+ "estimator_question": "the log-cluster interval answers 'another draw of LOGS?' only; inference variance = the R7_A1_s1 seed floor; training variance UNTESTED (one training seed)",
+ "bars": {
+  "navtest": {
+   "bar": "BAR-R7-N1 (programme bar, SPEC_REFCV7 \u00a73)",
+   "rule": "navtest PDMS(R7_A1, filter ON) > STOP, paired log-cluster interval excluding 0, on the FULL 12,146-token split; a margin inside 2x the full-split inference-seed floor |PDMS(A1) - PDMS(A1_s1)| is NOT PROVEN",
+   "values_x100": {
+    "R7_A1": 71.8849,
+    "STOP": 61.8202,
+    "CV": 20.6517,
+    "HUMAN": 94.5514
+   },
+   "margin_x100": 10.064700000000002,
+   "paired_vs_STOP": {
+    "delta": 0.1006,
+    "lo": 0.0829,
+    "hi": 0.1178,
+    "ci95": 0.0175,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.082,
+     "hi": 0.1173,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7188488716864708,
+     "point": 0.7188488716864708,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6182022971791109,
+     "point": 0.6182022971791109,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of 

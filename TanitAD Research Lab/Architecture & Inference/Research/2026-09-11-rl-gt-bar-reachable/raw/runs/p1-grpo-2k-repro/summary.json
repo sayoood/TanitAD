@@ -1,0 +1,106 @@
+{
+ "done": true,
+ "run": "p-rc21-default-dsafe5",
+ "method": "grpo",
+ "steps": 2000,
+ "counters": {
+  "steps": 2000,
+  "windows_scored": 4000,
+  "samples_scored": 2048000,
+  "reward_evals": 2000,
+  "advantage_evals": 2000,
+  "optimizer_steps": 2000,
+  "components_fired": {
+   "collision": 1229,
+   "comfort": 2000,
+   "feasibility": 2000,
+   "headway": 666,
+   "progress": 2000
+  }
+ },
+ "freeze_report": {
+  "total_params": 104191577,
+  "trainable_params": 8634120,
+  "frozen_params": 95557457,
+  "trainable_fraction": 0.08286773507612809,
+  "n_trainable_tensors": 68,
+  "trainable_names_head": [
+   "decoder.feat_proj.weight",
+   "decoder.feat_proj.bias",
+   "decoder.traj_proj.weight",
+   "decoder.traj_proj.bias",
+   "decoder.cond_proj.weight",
+   "decoder.cond_proj.bias",
+   "decoder.time_embed.weight",
+   "decoder.layers.0.norm_q.weight",
+   "decoder.layers.0.norm_q.bias",
+   "decoder.layers.0.cross.in_proj_weight",
+   "decoder.layers.0.cross.in_proj_bias",
+   "decoder.layers.0.cross.out_proj.weight"
+  ],
+  "trainable_prefixes": [
+   "decoder"
+  ],
+  "forbidden_prefixes": [
+   "decoder.conf_head",
+   "scorer"
+  ],
+  "exclude_prefixes": [
+   "decoder.conf_head"
+  ],
+  "excluded_names": [
+   "decoder.conf_head.weight",
+   "decoder.conf_head.bias"
+  ],
+  "freeze_trunk": true
+ },
+ "train_mode_forward": false,
+ "reward_audit": {
+  "verdict": "INCONCLUSIVE",
+  "flagged": false,
+  "inconclusive": true,
+  "dead_components": [
+   "collision",
+   "headway"
+  ],
+  "tied_at_max": [
+   "bullet_straight"
+  ],
+  "reason": "audit is UNDERPOWERED: weighted component(s) ['collision', 'headway'] were CONSTANT across the whole panel, so they cannot influence the ranking. Supply a context that exercises them (obstacles / lead_path / gt_traj) before trusting any verdict. (raw winners under this context: none; panel entries tied at the maximum: ['bullet_straight'])",
+  "reference": 1.4500000476837158,
+  "scores": {
+   "bullet_straight": 1.4500000476837158,
+   "frozen": 0.30000001192092896,
+   "teleport": 0.9500617980957031,
+   "spinner": 0.5026953220367432,
+   "shaky": 1.2617427110671997
+  },
+  "_ctx": "EMPTY \u2014 collision/headway cannot fire here"
+ },
+ "reward_audit_exercising": {
+  "verdict": "clean",
+  "flagged": false,
+  "inconclusive": false,
+  "dead_components": [],
+  "tied_at_max": [
+   "shaky"
+  ],
+  "reason": "no degenerate policy in the panel beats the sane reference and no two tie at the panel maximum (this is necessary, NOT sufficient \u2014 the panel is fixed and finite, so it bounds the claim)",
+  "reference": 1.2999999523162842,
+  "scores": {
+   "bullet_straight": 0.0,
+   "frozen": 0.22500000894069672,
+   "teleport": -0.49990832805633545,
+   "spinner": 0.42769527435302734,
+   "shaky": 1.0902109146118164
+  },
+  "_ctx": "audit.exercising_ctx(dt=spec.dt) \u2014 obstacle at the midpoint between the reference's reach and bullet_straight's; lead at the headway standoff"
+ },
+ "final_loss": 0.4329703450202942,
+ "veto_rate_mean": 0.14399609375,
+ "frac_above_bar_mean": null,
+ "use_gt_bar": false,
+ "noise_mode": "multiplicative",
+ "_tier": "T0 training-side; capability claims are T1 only",
+ "_evidence_class": "MEASURED (ours)"
+}

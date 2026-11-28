@@ -1,0 +1,78 @@
+--- a/stack/tests/test_cost_ccos.py (f038bd5913)
++++ b/stack/tests/test_cost_ccos.py (607c625f1b)
+@@ -383,8 +383,8 @@
+     feats, v0, nav = _window(m.cfg, seed=3)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
+-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos")
++        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
++        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos", model_action_units="kappa")
+     assert torch.equal(a.controls, b.controls)
+     assert float(a.cost) == float(b.cost) and a.source == b.source
+     for k in a.baseline_costs:
+@@ -420,8 +420,8 @@
+     feats, v0, nav = _window(m.cfg, seed=5)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos")
+-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="ccos")
++        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos", model_action_units="kappa")
++        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="ccos", model_action_units="kappa")
+     assert b.cost_metric == "ccos"
+     assert a.goal_source == b.goal_source == "tactical_imagined", (
+         "no goal on this window — the test measures nothing")
+@@ -461,7 +461,7 @@
+     R._goal_term = _rec
+     try:
+         with torch.no_grad():
+-            m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="ccos")
++            m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="ccos", model_action_units="kappa")
+     finally:
+         R._goal_term = real
+     assert seen, "the goal term was never called — no goal on this window"
+@@ -493,8 +493,8 @@
+     feats, v0, nav = _window(m.cfg, seed=9)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos")
+-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="ccos")
++        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="cos", model_action_units="kappa")
++        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_metric="ccos", model_action_units="kappa")
+     assert (a.cost_metric, b.cost_metric) == ("cos", "ccos")
+     moved = [k for k in a.baseline_costs
+              if float(a.baseline_costs[k]) != float(b.baseline_costs[k])]
+@@ -514,10 +514,10 @@
+     feats, v0, nav = _window(m.cfg, seed=11)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
+-        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_weights=None)
++        a = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
++        b = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_weights=None, model_action_units="kappa")
+         c = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
+-                   cost_weights=(W_JERK, W_KAPPA, W_VEND))
++                   cost_weights=(W_JERK, W_KAPPA, W_VEND), model_action_units="kappa")
+     for other in (b, c):
+         assert torch.equal(a.controls, other.controls)
+         assert float(a.cost) == float(other.cost) and a.source == other.source
+@@ -539,9 +539,9 @@
+     feats, v0, nav = _window(m.cfg, seed=13)
+     pc = _pc(m.cfg)
+     with torch.no_grad():
+-        base = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc)
++        base = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, model_action_units="kappa")
+         ten = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc,
+-                     cost_weights=(W_JERK, 10.0 * W_KAPPA, W_VEND))
++                     cost_weights=(W_JERK, 10.0 * W_KAPPA, W_VEND), model_action_units="kappa")
+     assert ten.cost_weights == (W_JERK, 10.0 * W_KAPPA, W_VEND)
+     assert base.cost_weights == (W_JERK, W_KAPPA, W_VEND)
+     # module constants were NOT touched by the call-site override
+@@ -566,5 +566,5 @@
+     pc = _pc(m.cfg)
+     with pytest.raises(ValueError, match="cost_weights must be"):
+         with torch.no_grad():
+-            m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_weights=(1.0, 2.0))
+-
++            m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=pc, cost_weights=(1.0, 2.0), model_action_units="kappa")
++

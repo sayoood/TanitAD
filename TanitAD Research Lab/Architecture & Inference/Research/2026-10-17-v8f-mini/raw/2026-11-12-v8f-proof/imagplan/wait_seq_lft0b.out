@@ -1,0 +1,29 @@
+[21:58:53Z] sequence lft0b done
+[2026-11-15T21:32:34Z] seq lft0b start: leadcond_a/LFT_s0 tree /workspace/v8proof/tree_leadcond runs IPi IPid1 IPid3 IPn IPs suffix 'b' ref suffix '' imag_plan 9a5a765a3bcd8877 wrapper bdcc89beb8fc4d9e
+[2026-11-15T21:37:00Z] IPib_LFT_s0 done (cand-imag IP_P45=1)
+[2026-11-15T21:40:43Z] IPid1b_LFT_s0 done (cand-imag IP_CAND_SET=1.0 IP_FALLBACK=none)
+[2026-11-15T21:44:31Z] IPid3b_LFT_s0 done (cand-imag IP_CONST_GAP=1000000000)
+[2026-11-15T21:51:08Z] IPnb_LFT_s0 done (cand-imag IP_NOISE=0)
+[2026-11-15T21:55:12Z] IPsb_LFT_s0 done (cand-imag IP_SHIFT_M=-20)
+[2026-11-15T21:55:13Z] cmp IPid1b against IPo (p1 first part, must be equal): CMP files=141 differing=0 max_abs=0 keys_in_one_only=[] self_check=ok
+[2026-11-15T21:55:13Z] cmp IPid3b against IPo (p1b, must be equal): CMP files=141 differing=0 max_abs=0 keys_in_one_only=[] self_check=ok
+[2026-11-15T21:55:14Z] cmp IPnb against IPib (p3, must be equal): CMP files=141 differing=0 max_abs=0 keys_in_one_only=[] self_check=ok
+[2026-11-15T21:55:15Z] cmp IPib against IPo (firing check, expected to differ): CMP files=141 differing=37 max_abs=114.531 keys_in_one_only=[] self_check=ok
+[2026-11-15T21:55:15Z] cmp IPsb against IPib (firing check, expected to differ): CMP files=141 differing=85 max_abs=106.863 keys_in_one_only=[] self_check=ok
+[2026-11-15T21:55:15Z] ZZ SEQ lft0b DONE
+[21:59:00Z] pulled IPib_LFT_s0/imag_log_IPib_LFT_s0.npz sha256 7581ffe78488f453
+[21:59:03Z] pulled IPib_LFT_s0/imagplan_run_IPib_LFT_s0.txt sha256 30591f4040a94360
+[21:59:07Z] pulled IPib_LFT_s0/p45_IPib_LFT_s0.npz sha256 710aa63eb3e32572
+[21:59:12Z] pulled IPid1b_LFT_s0/imag_log_IPid1b_LFT_s0.npz sha256 a8cc992aaaee957d
+[21:59:15Z] pulled IPid1b_LFT_s0/imagplan_run_IPid1b_LFT_s0.txt sha256 37a7579f1646d2ae
+[21:59:21Z] pulled IPid3b_LFT_s0/imag_log_IPid3b_LFT_s0.npz sha256 5ca79fcf81a92e09
+[21:59:24Z] pulled IPid3b_LFT_s0/imagplan_run_IPid3b_LFT_s0.txt sha256 21ac9399c6cf28af
+[21:59:30Z] pulled IPnb_LFT_s0/imag_log_IPnb_LFT_s0.npz sha256 ad455f1b562f1d3a
+[21:59:33Z] pulled IPnb_LFT_s0/imagplan_run_IPnb_LFT_s0.txt sha256 64b5533b465f8cdb
+[21:59:39Z] pulled IPsb_LFT_s0/imag_log_IPsb_LFT_s0.npz sha256 e38595659c17c352
+[21:59:42Z] pulled IPsb_LFT_s0/imagplan_run_IPsb_LFT_s0.txt sha256 4f8475a5d9d75a5f
+p4b {"n_windows": 2399, "corr_yaw_all_steps": 0.9959, "corr_acc_steps_2_10": 0.9952, "corr_acc_step_1": 0.9461, "corr_acc_all_steps": 0.9789, "median_abs_diff_acc": 0.034, "median_abs_diff_yaw": 0.0016, "max_abs_yaw_candidate": 0.59, "max_abs_yaw_logged": 0.5479, "PASS": true}
+p5b {"n_active_ticks": 3012, "n_pairs": 7684, "n_ticks_with_a_pair": 2641, "slope_T2.0": 0.4618, "ci_episodes": [0.297, 0.659], "responds": "no", "mean_dg_m": 1.1752, "mean_da_m": 2.4597, "imag_gap_plan_T2.0_median_m": 22.9912, "n_nonfinite_ticks": 0, "PASS": false}
+p7 {"rows": 7197, "unique_window_ticks": 7197, "windows": 2399, "tick_steps": [0, 10, 20], "active_rows": 3012, "windows_p45": 2399, "PASS_counts": true, "active_equal_all_ticks": true}
+beside {"active_ticks_with_plan_speed_above_60": 2, "ticks_with_a_bounded_yaw_step": 1961, "bounded_yaw_steps": 58097, "chosen_c_histogram_NOT_READ": "left out on purpose: the choice is an outcome"}
+ZZ WAITSEQ lft0b DONE 21:59:43Z

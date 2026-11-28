@@ -1,0 +1,113 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--v2-cache",
+  "C:/Users/Admin/refav1_probe/eps",
+  "--image-hw",
+  "256",
+  "640",
+  "--out",
+  "C:/Users/Admin/tanitad-wt/v3b1smoke-01",
+  "--steps",
+  "2",
+  "--batch",
+  "2",
+  "--log-every",
+  "1",
+  "--save-every",
+  "2",
+  "--device",
+  "cpu"
+ ],
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 60882074,
+  "phi_tac": 1708288,
+  "str_goal_head": 195,
+  "gstr_cond": 66816,
+  "tac_heads": 9234,
+  "tac_latent_proj": 262656,
+  "scorer": 1156,
+  "total": 62930419
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx only)"
+  ],
+  "refused_edges": [
+   "v0 -> any goal node (E11)",
+   "lan -> inference (E12; label-only)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)"
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "image_hw": [
+  256,
+  640
+ ],
+ "tac_vocab_version": "kin3",
+ "v2_cache": [
+  "C:/Users/Admin/refav1_probe/eps"
+ ],
+ "require_parity": false,
+ "v2_parity": {
+  "parity": false,
+  "cache_dirs": [
+   "C:/Users/Admin/refav1_probe/eps"
+  ],
+  "corpus_key": null,
+  "label": "v3 v2-cache",
+  "uid_kind": "v2ep_clipid",
+  "checked": false,
+  "clips_present": 24
+ }
+}

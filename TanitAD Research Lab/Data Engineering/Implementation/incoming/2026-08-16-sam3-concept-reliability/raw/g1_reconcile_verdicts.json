@@ -1,0 +1,27 @@
+{
+ "adjudicator": "arch-inf agent (Claude), 2026-08-16",
+ "what_this_arm_is": "G1's SELECTION RULE applied to THIS corpus: the LARGEST-AREA `traffic sign` detection per clip, 32 clips drawn at random from the 62 that carry one. Rendered TWICE — once under G1's own protocol (tight box crop, 4x LANCZOS, from the 448-px bridge) and once under this study's (6x-box context window from native 640) — so the SELECTION effect and the RENDERING effect are separated rather than confounded.",
+ "adjudication_basis": "BOTH renderings of each detection were viewed before the verdict was fixed. That is deliberately the best available evidence rather than a single protocol; where the two disagreed it is recorded below, because the disagreement is itself the measurement.",
+ "verdicts": {
+  "1000": "correct", "1001": "wrong", "1002": "correct", "1003": "wrong",
+  "1004": "correct", "1005": "correct", "1006": "correct", "1007": "correct",
+  "1008": "correct", "1009": "correct", "1010": "correct", "1011": "correct",
+  "1012": "correct", "1013": "unclear", "1014": "correct", "1015": "correct",
+  "1016": "correct", "1017": "correct", "1018": "unclear", "1019": "correct",
+  "1020": "correct", "1021": "correct", "1022": "unclear", "1023": "correct",
+  "1024": "unclear", "1025": "correct", "1026": "unclear", "1027": "correct",
+  "1028": "correct", "1029": "correct", "1030": "correct", "1031": "correct"
+ },
+ "g1_subclass_1_empty_box": {
+  "definition": "G1_RESULT.md's own first subclass — `no sign visible in the crop at all: sky, foliage, building walls, clouds`. This is the quantity its ~two-thirds figure counts, so it is scored separately here rather than folded into `wrong`.",
+  "indices": [],
+  "n": 0,
+  "note": "ZERO of the 32 max-area crops are empty. Both `wrong` calls contain a real, salient object that is simply not a traffic sign."
+ },
+ "notes": {
+  "1000": "⭐ THE RENDERING DISAGREED WITH ITSELF, and G1's protocol WON. The context crop showed a tall narrow strip that read as a bollard (I had it `unclear`); the tight 4x crop shows a yellow diamond priority sign on its post unmistakably. The box is very tall and thin, so the 6x-context window shrank the sign to nothing. ⇒ a context crop is not uniformly better, and the G1 protocol is NOT the cause of G1's empties.",
+  "1001": "a GREEN TRAFFIC LIGHT detected as `traffic sign`. A genuine cross-class confusion inside the traffic-infrastructure family — and the failure mode that matters most for a KIND-blind consumer, because `ph1_fuse.py` counts generic `traffic sign` tracks without checking what kind of sign it is.",
+  "1003": "an illuminated commercial sign reading `GLOST` at night, on a dark rural road. Sign-shaped, sign-mounted, not a traffic sign. Same family as #207 (a pharmacy cross) and #210 (an advertising hoarding) in the uniform sample.",
+  "1013_1018_1022_1024_1026": "unresolvable at this pixel scale under BOTH renderings."
+ }
+}

@@ -1,0 +1,95 @@
+# PUBLISHED-CODE extract - swc-17/SparseDrive @ fbadea693cbef3f3daea7705e521c0dd3321605c
+# path: projects/mmdet3d_plugin/datasets/evaluation/planning/planning_eval.py
+# git blob sha1 of the fetched file: 88f0519bea7d209bf00d5bb62f160a38674f722b (6440 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 13-53: box-vs-box collision, estimated yaw
+   13  def check_collision(ego_box, boxes):
+   14      '''
+   15          ego_box: tensor with shape [7], [x, y, z, w, l, h, yaw]
+   16          boxes: tensor with shape [N, 7]
+   17      '''
+   18      if  boxes.shape[0] == 0:
+   19          return False
+   20  
+   21      # follow uniad, add a 0.5m offset
+   22      ego_box[0] += 0.5 * torch.cos(ego_box[6])
+   23      ego_box[1] += 0.5 * torch.sin(ego_box[6])
+   24      ego_corners_box = box3d_to_corners(ego_box.unsqueeze(0))[0, [0, 3, 7, 4], :2]
+   25      corners_box = box3d_to_corners(boxes)[:, [0, 3, 7, 4], :2]
+   26      ego_poly = Polygon([(point[0], point[1]) for point in ego_corners_box])
+   27      for i in range(len(corners_box)):
+   28          box_poly =  Polygon([(point[0], point[1]) for point in corners_box[i]])
+   29          collision = ego_poly.intersects(box_poly)
+   30          if collision:
+   31              return True
+   32  
+   33      return False
+   34  
+   35  def get_yaw(traj):
+   36      start = traj[0]
+   37      end = traj[-1]
+   38      dist = torch.linalg.norm(end - start, dim=-1)
+   39      if dist < 0.5:
+   40          return traj.new_ones(traj.shape[0]) * np.pi / 2
+   41  
+   42      zeros = traj.new_zeros((1, 2))
+   43      traj_cat = torch.cat([zeros, traj], dim=0)
+   44      yaw = traj.new_zeros(traj.shape[0]+1)
+   45      yaw[..., 1:-1] = torch.atan2(
+   46          traj_cat[..., 2:, 1] - traj_cat[..., :-2, 1],
+   47          traj_cat[..., 2:, 0] - traj_cat[..., :-2, 0],
+   48      )
+   49      yaw[..., -1] = torch.atan2(
+   50          traj_cat[..., -1, 1] - traj_cat[..., -2, 1],
+   51          traj_cat[..., -1, 0] - traj_cat[..., -2, 0],
+   52      )
+   53      return yaw[1:]
+
+## lines 134-178: TemAvg reduction; incomplete GT skipped
+  134  def planning_eval(results, eval_config, logger):
+  135      dataset = build_dataset(eval_config)
+  136      dataloader = build_dataloader(
+  137              dataset, samples_per_gpu=1, workers_per_gpu=1, shuffle=False, dist=False)
+  138      planning_metrics = PlanningMetric()
+  139      for i, data in enumerate(tqdm(dataloader)):
+  140          sdc_planning = data['gt_ego_fut_trajs'].cumsum(dim=-2).unsqueeze(1)
+  141          sdc_planning_mask = data['gt_ego_fut_masks'].unsqueeze(-1).repeat(1, 1, 2).unsqueeze(1)
+  142          command = data['gt_ego_fut_cmd'].argmax(dim=-1).item()
+  143          fut_boxes = data['fut_boxes']
+  144          if not sdc_planning_mask.all(): ## for incomplete gt, we do not count this sample
+  145              continue
+  146          res = results[i]
+  147          pred_sdc_traj = res['img_bbox']['final_planning'].unsqueeze(0)
+  148          planning_metrics.update(pred_sdc_traj[:, :6, :2], sdc_planning[0,:, :6, :2], sdc_planning_mask[0,:, :6, :2], fut_boxes)
+  149         
+  150      planning_results = planning_metrics.compute()
+  151      planning_metrics.reset()
+  152      from prettytable import PrettyTable
+  153      planning_tab = PrettyTable()
+  154      metric_dict = {}
+  155  
+  156      planning_tab.field_names = [
+  157      "metrics", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s", "avg"]
+  158      for key in planning_results.keys():
+  159          value = planning_results[key].tolist()
+  160          new_values = []
+  161          for i in range(len(value)):
+  162              new_values.append(np.array(value[:i+1]).mean())
+  163          value = new_values
+  164          avg = [value[1], value[3], value[5]]
+  165          avg = sum(avg) / len(avg)
+  166          value.append(avg)
+  167          metric_dict[key] = avg
+  168          row_value = []
+  169          row_value.append(key)
+  170          for i in range(len(value)):
+  171              if 'col' in key:
+  172                  row_value.append('%.3f' % float(value[i]*100) + '%')
+  173              else:
+  174                  row_value.append('%.4f' % float(value[i]))
+  175          planning_tab.add_row(row_value)
+  176  
+  177      print_log('\n'+str(planning_tab), logger=logger)
+  178      return metric_dict
+

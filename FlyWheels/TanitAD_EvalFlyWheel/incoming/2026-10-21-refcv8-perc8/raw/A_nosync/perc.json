@@ -1,0 +1,83 @@
+{
+ "tool": "perc_pass_r7.py",
+ "ckpt": "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt",
+ "ckpt_md5": "b4364029b68f29a33eeb4aebbbbd002b",
+ "step": 48852,
+ "config_md5": "4ce2c77230dc4e802e78b39ce05af916",
+ "n_windows": 4754,
+ "n_map_windows": 4686,
+ "n_box3d_windows": 4532,
+ "n_box3d_refcv6_windows": 0,
+ "arms": [
+  "refcv7"
+ ],
+ "decision_rule": "prior_corrected",
+ "class_weight": [
+  0.14101280272006989,
+  0.20596274733543396,
+  0.93941730260849,
+  1.0740513801574707,
+  2.957174062728882,
+  1.571183204650879,
+  2.152963638305664,
+  0.16493748128414154
+ ],
+ "extent_m": [
+  100.0,
+  30.0
+ ],
+ "prior": null,
+ "refcv6": null,
+ "law_control": {
+  "pass": true,
+  "windows": [
+   {
+    "sha12": "0dfe63214bc2",
+    "ws": 7,
+    "perception_equal": {
+     "map_hires_logits": true,
+     "box_slots.presence_logit": true,
+     "box_slots.box": true,
+     "box_slots.cls_logits": true,
+     "box_slots.cz": true
+    },
+    "law_zero_frame": 0.004621872678399086,
+    "law_real_frame": 0.0002596642298158258,
+    "law_differs": true
+   },
+   {
+    "sha12": "0dfe63214bc2",
+    "ws": 12,
+    "perception_equal": {
+     "map_hires_logits": true,
+     "box_slots.presence_logit": true,
+     "box_slots.box": true,
+     "box_slots.cls_logits": true,
+     "box_slots.cz": true
+    },
+    "law_zero_frame": 0.004800920374691486,
+    "law_real_frame": 0.0003570748376660049,
+    "law_differs": true
+   }
+  ],
+  "rule": "zero LAW frame: every perception tensor torch.equal to the real-LAW-frame forward, and the law term differs"
+ },
+ "requires_grad_state": "loader (all False); G0 MEASURED the trained-flag difference",
+ "timing_s": {
+  "wait_decode": 0.1,
+  "forward": 1945.4,
+  "stats_submit": 0.3,
+  "det": 0.4
+ },
+ "build_s": 127.2,
+ "loop_s": 1954.8,
+ "wall_s": 2084.7,
+ "seed": 0,
+ "cuda_max_memory_allocated_gib": 1.124,
+ "device": "cuda",
+ "SMOKE_RESTRICTED": false,
+ "map_table": "/home/nvidia/r8ns/perc8/out/A_nosync/perc_map_table.npz",
+ "det_pkl": "/home/nvidia/r8ns/perc8/out/A_nosync/perc_det.pkl",
+ "map_table_sha256": "1d8bb266e9102d5d98ba76c3ab224dabaa4b689bfb8fd453adbbf83e5324ec45",
+ "det_pkl_sha256": "9543489d4e89386c1ce8d56bc84435227b6a2a4f578bde43b595a6c82f846fce"
+}

@@ -1,0 +1,4321 @@
+{
+ "_schema": "v7-vocab-reach-census/2",
+ "_evidence": "MEASURED. Emission read from the blobs; reach decided by three independent legs -- executed projection, asserted trainer consumer (with same-breath read controls), and the measured per-module gradient census.",
+ "_rule": "A CROSS-CHECK MUST BE DERIVED INDEPENDENTLY OF THE VALUE IT CHECKS. No class below is decided by a vocabulary declaration; declarations are compared afterwards and every disagreement is reported as a finding.",
+ "classes": [
+  "TRAINING_SIGNAL",
+  "INFERENCE_INPUT",
+  "AUDIT_OR_METRIC_ONLY",
+  "UNREACHED",
+  "NOT_EMITTED"
+ ],
+ "emission": {
+  "train": {
+   "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/labels/s2_labels_v7.2_train.jsonl.gz",
+   "n_records": 4572,
+   "n_records_with_speed_max_input": 0,
+   "counts": {
+    "a_str.token": {
+     "PREPARE_TURN_R_FOLLOW_ROUTE": 596,
+     "HOLD_MAIN_ROAD": 2390,
+     "PREPARE_STOP_FOLLOW_ROUTE": 454,
+     "PREPARE_TURN_L_FOLLOW_ROUTE": 574,
+     "RESUME_CRUISE_FOLLOW_ROUTE": 558
+    },
+    "g_str.token": {
+     "TURN_RIGHT_FOLLOW_ROUTE": 596,
+     "FOLLOW_ROUTE": 2948,
+     "STOP_AT_FOLLOW_ROUTE": 454,
+     "TURN_LEFT_FOLLOW_ROUTE": 574
+    },
+    "a_tac.lat": {
+     "NUDGE_L": 488,
+     "LANE_KEEP": 2958,
+     "NUDGE_R": 592,
+     "TURN_R": 259,
+     "TURN_L": 275
+    },
+    "a_tac.lon": {
+     "ACCELERATE": 998,
+     "BRAKE_TO": 905,
+     "CRUISE": 1243,
+     "ADAPT_SPEED_FOR_CURVE": 995,
+     "HOLD": 131,
+     "FOLLOW": 165,
+     "CREEP": 135
+    },
+    "g_tac.goals.<KEY>": {
+     "CORRIDOR_OFFSET": 860,
+     "EVADE_IN_CORRIDOR": 240,
+     "FOLLOW_LANE": 3629,
+     "SPEED_BAND": 4572,
+     "REACT_ON_ONCOMING": 333,
+     "GAP_TARGET": 368,
+     "YIELD": 609,
+     "STOP_POINT": 327,
+     "TRAFFIC_LIGHT_REACT_RED": 376,
+     "TRAFFIC_LIGHT_REACT_GREEN": 363,
+     "TURN_R": 259,
+     "LANE_CHANGE_L": 23,
+     "OVERTAKE_VEHICLE": 20,
+     "TURN_L": 275,
+     "TAKE_EXIT_L": 21,
+     "MERGE": 79,
+     "TAKE_EXIT_R": 128,
+     "TRAFFIC_LIGHT_REACT_YELLOW": 22,
+     "TRAFFIC_LIGHT_REACT": 18,
+     "YIELD_FOR_TURN_L": 21,
+     "LANE_CHANGE_R": 15,
+     "YIELD_FOR_TURN_R": 20
+    },
+    "nav_command.token": {
+     "NAV_TURN_R": 864,
+     "NAV_FOLLOW_ROAD": 2897,
+     "NAV_TURN_L": 811
+    }
+   }
+  },
+  "eval": {
+   "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/labels/s2_labels_v7.2_eval.jsonl.gz",
+   "n_records": 147,
+   "n_records_with_speed_max_input": 0,
+   "counts": {
+    "a_str.token": {
+     "HOLD_MAIN_ROAD": 78,
+     "RESUME_CRUISE_FOLLOW_ROUTE": 15,
+     "PREPARE_STOP_FOLLOW_ROUTE": 15,
+     "PREPARE_TURN_R_FOLLOW_ROUTE": 28,
+     "PREPARE_TURN_L_FOLLOW_ROUTE": 11
+    },
+    "g_str.token": {
+     "FOLLOW_ROUTE": 93,
+     "STOP_AT_FOLLOW_ROUTE": 15,
+     "TURN_RIGHT_FOLLOW_ROUTE": 28,
+     "TURN_LEFT_FOLLOW_ROUTE": 11
+    },
+    "a_tac.lat": {
+     "NUDGE_R": 21,
+     "TURN_R": 8,
+     "LANE_KEEP": 99,
+     "NUDGE_L": 14,
+     "TURN_L": 5
+    },
+    "a_tac.lon": {
+     "CRUISE": 44,
+     "ADAPT_SPEED_FOR_CURVE": 23,
+     "ACCELERATE": 40,
+     "CREEP": 6,
+     "FOLLOW": 10,
+     "BRAKE_TO": 22,
+     "HOLD": 2
+    },
+    "g_tac.goals.<KEY>": {
+     "CORRIDOR_OFFSET": 25,
+     "FOLLOW_LANE": 119,
+     "SPEED_BAND": 147,
+     "TRAFFIC_LIGHT_REACT_GREEN": 15,
+     "TURN_R": 8,
+     "REACT_ON_ONCOMING": 11,
+     "YIELD": 17,
+     "GAP_TARGET": 14,
+     "TRAFFIC_LIGHT_REACT_YELLOW": 3,
+     "STOP_POINT": 9,
+     "TRAFFIC_LIGHT_REACT_RED": 8,
+     "LANE_CHANGE_R": 1,
+     "MERGE": 5,
+     "TAKE_EXIT_R": 5,
+     "TURN_L": 5,
+     "YIELD_FOR_TURN_L": 2,
+     "EVADE_IN_CORRIDOR": 6,
+     "OVERTAKE_VEHICLE": 1
+    },
+    "nav_command.token": {
+     "NAV_FOLLOW_ROAD": 96,
+     "NAV_TURN_R": 38,
+     "NAV_TURN_L": 13
+    }
+   }
+  }
+ },
+ "label_manifest": {
+  "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\7c618562-39eb-4a61-af81-755048086a13\\scratchpad\\labels\\s2_labels_v7.2_train.jsonl.gz",
+  "md5": "0ff902130ce76886b8a925eceed9e3a5",
+  "n_records": 4572,
+  "schema_version": "s2-geom-v7",
+  "vocab": "v7",
+  "allow_oracle_nav": true,
+  "divergences": [],
+  "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+ },
+ "surfaces": {
+  "tac_lat_ce": {
+   "kind": "loss_target",
+   "layer": "tactical lat action",
+   "projection": "v7_labels.tactical_class_ids(label, t)[0]",
+   "trainer": "stack/scripts/refc_v3_train.py",
+   "markers": [
+    "F.cross_entropy(out[\"lat_logits_tac\"], lat_t)",
+    "batch[\"lat_v7\"]",
+    "len(v7l.HEADS[\"tac_lat\"])"
+   ],
+   "control": "def compute_losses_v3(",
+   "grad_module": "lat_head_tac",
+   "enabled_by": [
+    "--v7-labels"
+   ],
+   "note": "refc line. Head width refc_v3.py:982 from v6.tactical_lat_actions(v7.0)."
+  },
+  "tac_lon_ce": {
+   "kind": "loss_target",
+   "layer": "tactical lon action",
+   "projection": "v7_labels.tactical_class_ids(label, t)[1]",
+   "trainer": "stack/scripts/refc_v3_train.py",
+   "markers": [
+    "F.cross_entropy(out[\"lon_logits_tac\"], lon_t)",
+    "batch[\"lon_v7\"]"
+   ],
+   "control": "def compute_losses_v3(",
+   "grad_module": "lon_head_tac",
+   "enabled_by": [
+    "--v7-labels"
+   ],
+   "note": "refc line. Head width refc_v3.py:983."
+  },
+  "tac_goal_bce": {
+   "kind": "loss_target",
+   "layer": "tactical goal",
+   "projection": "v7_labels.tactical_goal_targets(label, t)",
+   "trainer": "stack/scripts/refc_v3_train.py",
+   "markers": [
+    "tac_goal_loss",
+    "TacGoalEmitter"
+   ],
+   "control": "def compute_losses_v3(",
+   "grad_module": "tac_goal_tok_head",
+   "enabled_by": [
+    "--v7-labels",
+    "--tac-goal-tok-head"
+   ],
+   "note": "D-TACGOAL-1. refc_v3.py:1320 computes tac_goal_logits; nothing consumes them."
+  },
+  "tac_action_ce_v6": {
+   "kind": "loss_target",
+   "layer": "tactical lat/lon action",
+   "projection": "V72WindowSupervision -> batch['tac_lat_id'/'tac_lon_id']",
+   "trainer": "stack/scripts/train_v6_staged.py",
+   "markers": [
+    "cross_entropy(out[\"a_lat\"]"
+   ],
+   "control": "V72_TACTICAL_BATCH_KEYS",
+   "grad_module": null,
+   "enabled_by": [
+    "--s2-labels"
+   ],
+   "note": "v6 line. The tensors are landed; the CE is a pre-registered follow-up (train_v6_staged.py:2410-2415)."
+  },
+  "str_goal_ce_v6": {
+   "kind": "loss_target",
+   "layer": "strategic goal",
+   "projection": "v7_labels.HEADS['str_goal'].index(token)",
+   "trainer": "stack/scripts/train_v6_staged.py",
+   "markers": [
+    "s2_goal_loss(out[\"g_str\"], out[\"a_str\"], batch,",
+    "g_tokens=tuple(stack.vocab_str.tokens)",
+    "HEADS[\"str_goal\"]"
+   ],
+   "control": "def s2_goal_loss(",
+   "grad_module": null,
+   "enabled_by": [
+    "--s2-labels",
+    "w_s2_goal>0"
+   ],
+   "note": "v6 line ONLY. Gated on w_s2_goal, DEFAULT 0.0 -- and the term is behind `if w.w_s2_goal:`, so at the default the head's p.grad is None (the guarded-term trap)."
+  },
+  "str_action_ce_v6": {
+   "kind": "loss_target",
+   "layer": "strategic action",
+   "projection": "v7_labels.HEADS['str_action'].index(token)",
+   "trainer": "stack/scripts/train_v6_staged.py",
+   "markers": [
+    "s2_goal_loss(out[\"g_str\"], out[\"a_str\"], batch,",
+    "a_tokens=tuple(stack.vocab_a_str.tokens)",
+    "HEADS[\"str_action\"]"
+   ],
+   "control": "def s2_goal_loss(",
+   "grad_module": null,
+   "enabled_by": [
+    "--s2-labels",
+    "w_s2_goal>0"
+   ],
+   "note": "v6 line ONLY, same gate as str_goal_ce_v6."
+  },
+  "str_ce_refc": {
+   "kind": "loss_target",
+   "layer": "strategic goal/action",
+   "projection": "(none -- refc has no strategic TOKEN head)",
+   "trainer": "stack/scripts/refc_v3_train.py",
+   "markers": [
+    "HEADS[\"str_goal\"]"
+   ],
+   "control": "def compute_losses_v3(",
+   "grad_module": null,
+   "enabled_by": [
+    "--v7-labels"
+   ],
+   "note": "refc line. `--goal-str` supervises g_str against a LAN bearing/distance target (strategic_goal_loss), NOT against the v7 strategic token."
+  },
+  "nav_input": {
+   "kind": "model_input",
+   "layer": "nav command",
+   "projection": "v7_labels.NavEmitter(...)(ep_idx)",
+   "trainer": "stack/scripts/refc_v3_train.py",
+   "markers": [
+    "refb.NAV_COMMANDS.index(NAV_TOKEN_TO_LEGACY[tok])",
+    "assert_nav_token_alignment"
+   ],
+   "control": "def compute_losses_v3(",
+   "grad_module": "nav_to_tac",
+   "enabled_by": [
+    "--v7-labels",
+    "--nav-from-v7"
+   ],
+   "note": "\u2b50 THE NAV COMMAND IS AN INPUT, NOT A TRAINING SIGNAL (PI). Its provenance on this corpus is 'ego-future' on 100 % of records, so it is an ORACLE input, gated by load_v7_labels(allow_oracle_nav=True) and STAMPED."
+  },
+  "goal_audit": {
+   "kind": "audit",
+   "layer": "tactical goal",
+   "projection": "v7_labels._goal_audit(record['g_tac'])",
+   "trainer": "stack/scripts/tactical_label_census.py",
+   "markers": [
+    "goal_flags",
+    "_flat_tactical_fields"
+   ],
+   "control": "def _surface_map(",
+   "grad_module": null,
+   "enabled_by": [
+    "(audit tool, no training flag)"
+   ],
+   "note": "V7Label.audit['goal_flags'] -- the loader's own contract line says 'audit-only, NEVER a training input'."
+  }
+ },
+ "consumer_assertions": {
+  "tac_lat_ce": {
+   "status": "NO_CONSUMER",
+   "file": "stack/scripts/refc_v3_train.py",
+   "control_found": true,
+   "markers": {
+    "F.cross_entropy(out[\"lat_logits_tac\"], lat_t)": false,
+    "batch[\"lat_v7\"]": true,
+    "len(v7l.HEADS[\"tac_lat\"])": true
+   },
+   "missing": [
+    "F.cross_entropy(out[\"lat_logits_tac\"], lat_t)"
+   ]
+  },
+  "tac_lon_ce": {
+   "status": "CONSUMED",
+   "file": "stack/scripts/refc_v3_train.py",
+   "control_found": true,
+   "markers": {
+    "F.cross_entropy(out[\"lon_logits_tac\"], lon_t)": true,
+    "batch[\"lon_v7\"]": true
+   },
+   "missing": []
+  },
+  "tac_goal_bce": {
+   "status": "NO_CONSUMER",
+   "file": "stack/scripts/refc_v3_train.py",
+   "control_found": true,
+   "markers": {
+    "tac_goal_loss": false,
+    "TacGoalEmitter": false
+   },
+   "missing": [
+    "TacGoalEmitter",
+    "tac_goal_loss"
+   ]
+  },
+  "tac_action_ce_v6": {
+   "status": "NO_CONSUMER",
+   "file": "stack/scripts/train_v6_staged.py",
+   "control_found": true,
+   "markers": {
+    "cross_entropy(out[\"a_lat\"]": false
+   },
+   "missing": [
+    "cross_entropy(out[\"a_lat\"]"
+   ]
+  },
+  "str_goal_ce_v6": {
+   "status": "CONSUMED",
+   "file": "stack/scripts/train_v6_staged.py",
+   "control_found": true,
+   "markers": {
+    "s2_goal_loss(out[\"g_str\"], out[\"a_str\"], batch,": true,
+    "g_tokens=tuple(stack.vocab_str.tokens)": true,
+    "HEADS[\"str_goal\"]": true
+   },
+   "missing": []
+  },
+  "str_action_ce_v6": {
+   "status": "CONSUMED",
+   "file": "stack/scripts/train_v6_staged.py",
+   "control_found": true,
+   "markers": {
+    "s2_goal_loss(out[\"g_str\"], out[\"a_str\"], batch,": true,
+    "a_tokens=tuple(stack.vocab_a_str.tokens)": true,
+    "HEADS[\"str_action\"]": true
+   },
+   "missing": []
+  },
+  "str_ce_refc": {
+   "status": "NO_CONSUMER",
+   "file": "stack/scripts/refc_v3_train.py",
+   "control_found": true,
+   "markers": {
+    "HEADS[\"str_goal\"]": false
+   },
+   "missing": [
+    "HEADS[\"str_goal\"]"
+   ]
+  },
+  "nav_input": {
+   "status": "CONSUMED",
+   "file": "stack/scripts/refc_v3_train.py",
+   "control_found": true,
+   "markers": {
+    "refb.NAV_COMMANDS.index(NAV_TOKEN_TO_LEGACY[tok])": true,
+    "assert_nav_token_alignment": true
+   },
+   "missing": []
+  },
+  "goal_audit": {
+   "status": "CONSUMED",
+   "file": "stack/scripts/tactical_label_census.py",
+   "control_found": true,
+   "markers": {
+    "goal_flags": true,
+    "_flat_tactical_fields": true
+   },
+   "missing": []
+  }
+ },
+ "gradient_census": {
+  "argv": [
+   "--arm",
+   "hier",
+   "--size",
+   "base",
+   "--v2-cache",
+   "/root/data/train",
+   "--v7-labels",
+   "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+   "--eval-cache",
+   "/root/data/eval",
+   "--eval-labels",
+   "/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz",
+   "--eval-every",
+   "500",
+   "--eval-batches",
+   "8",
+   "--image-hw",
+   "256",
+   "640",
+   "--steps",
+   "40284",
+   "--batch",
+   "20",
+   "--workers",
+   "6",
+   "--prefetch-factor",
+   "1",
+   "--v2-lru",
+   "24",
+   "--lr",
+   "1e-4",
+   "--warmup",
+   "2000",
+   "--seed",
+   "0",
+   "--log-every",
+   "50",
+   "--save-every",
+   "500",
+   "--u8-batches",
+   "--out",
+   "/workspace/experiments/refcv5-v2-noagents-b1-v72-40k",
+   "--nav-from-v7",
+   "--ego-state-inject",
+   "--ego-dropout",
+   "0.5",
+   "--anchors",
+   "/workspace/experiments/refcv5-v2-noagents-b1-v72-40k/anchors.pt",
+   "--n-anchors",
+   "117",
+   "--anchor-v0-conditioned",
+   "--anchor-control-units",
+   "alat",
+   "--sel-accel-max",
+   "2.0",
+   "--sampler",
+   "ddim",
+   "--w-u0",
+   "0.5",
+   "--sel-refined",
+   "--sel-score-emitted",
+   "--goal-str",
+   "--tac-goal-tok-head",
+   "--agents",
+   "off"
+  ],
+  "modules": {
+   "core": {
+    "n_tensors": 111,
+    "n_params": 127704,
+    "n_grad_none": 4,
+    "grad_abs_sum": 3358.207335897816,
+    "verdict": "GRADIENT REACHES"
+   },
+   "phi_tac": {
+    "n_tensors": 24,
+    "n_params": 7440,
+    "n_grad_none": 0,
+    "grad_abs_sum": 146.5948529317975,
+    "verdict": "GRADIENT REACHES"
+   },
+   "str_goal_head": {
+    "n_tensors": 2,
+    "n_params": 27,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "gstr_embed": {
+    "n_tensors": 2,
+    "n_params": 32,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "gstr_film": {
+    "n_tensors": 2,
+    "n_params": 576,
+    "n_grad_none": 0,
+    "grad_abs_sum": 11.978296279907227,
+    "verdict": "GRADIENT REACHES"
+   },
+   "nav_inj": {
+    "n_tensors": 1,
+    "n_params": 256,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "nav_to_tac": {
+    "n_tensors": 2,
+    "n_params": 2080,
+    "n_grad_none": 0,
+    "grad_abs_sum": 115.17040061950684,
+    "verdict": "GRADIENT REACHES"
+   },
+   "nav_to_str": {
+    "n_tensors": 2,
+    "n_params": 520,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "ego_inj": {
+    "n_tensors": 2,
+    "n_params": 192,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "ego_to_tac": {
+    "n_tensors": 2,
+    "n_params": 1056,
+    "n_grad_none": 0,
+    "grad_abs_sum": 24.32196617126465,
+    "verdict": "GRADIENT REACHES"
+   },
+   "ego_to_str": {
+    "n_tensors": 2,
+    "n_params": 264,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "lat_head_tac": {
+    "n_tensors": 2,
+    "n_params": 264,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.3129355311393738,
+    "verdict": "GRADIENT REACHES"
+   },
+   "lon_head_tac": {
+    "n_tensors": 2,
+    "n_params": 264,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.3198801390826702,
+    "verdict": "GRADIENT REACHES"
+   },
+   "tac_goal_tok_head": {
+    "n_tensors": 2,
+    "n_params": 726,
+    "n_grad_none": 2,
+    "grad_abs_sum": 0,
+    "verdict": "NOT WIRED (all grads None)"
+   },
+   "tac_goal_head": {
+    "n_tensors": 2,
+    "n_params": 396,
+    "n_grad_none": 0,
+    "grad_abs_sum": 14.36840534210205,
+    "verdict": "GRADIENT REACHES"
+   },
+   "tac_latent_proj": {
+    "n_tensors": 2,
+    "n_params": 1056,
+    "n_grad_none": 0,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   },
+   "scorer": {
+    "n_tensors": 4,
+    "n_params": 184,
+    "n_grad_none": 2,
+    "grad_abs_sum": 0.0,
+    "verdict": "ZERO GRAD"
+   }
+  },
+  "losses": {
+   "loss": 19.020389556884766,
+   "traj": 0.46647071838378906,
+   "cls": 4.749710559844971,
+   "law": 2.8867263793945312,
+   "route": 0.0,
+   "lat": 1.170771598815918,
+   "lon": 1.189976453781128,
+   "lat_tac": 1.95566987991333,
+   "lon_tac": 2.1003196239471436,
+   "anchor_acc": 0.0,
+   "slot_valid_frac": 0.625,
+   "tac_label_v7": "float",
+   "tac_label_rows": "float",
+   "goal_tac": 14.72966194152832,
+   "goal2s_err_m": 10.179967880249023,
+   "sel_v3": 4.835596084594727,
+   "goal_gate": 0.0,
+   "goal_score_absmean": 10.195279121398926,
+   "nav_injected": "float",
+   "ego_injected": "float",
+   "ego_keep_frac": 0.0,
+   "withheld_rows": "float",
+   "withheld_speed_mae": 4.708550453186035,
+   "kept_rows": "float",
+   "bank_speed_pred_mean": 0.26898902654647827
+  },
+  "tac_goal_tok_head_built": true,
+  "max_speed_cond_built": false
+ },
+ "tokens": {
+  "ABORT_LC": {
+   "token": "ABORT_LC",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [],
+   "reached_surfaces": [],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "NONE",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "ACCELERATE": {
+   "token": "ACCELERATE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 998,
+    "eval": 40
+   },
+   "n_total": 1038,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 7,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 7,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "ADAPT_SPEED_FOR_CURVE": {
+   "token": "ADAPT_SPEED_FOR_CURVE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 995,
+    "eval": 23
+   },
+   "n_total": 1018,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "BRAKE_TO": {
+   "token": "BRAKE_TO",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 905,
+    "eval": 22
+   },
+   "n_total": 927,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "CORRIDOR_OFFSET": {
+   "token": "CORRIDOR_OFFSET",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 860,
+    "eval": 25
+   },
+   "n_total": 885,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 8,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "CREEP": {
+   "token": "CREEP",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 135,
+    "eval": 6
+   },
+   "n_total": 141,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "CRUISE": {
+   "token": "CRUISE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 1243,
+    "eval": 44
+   },
+   "n_total": 1287,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "EVADE_IN_CORRIDOR": {
+   "token": "EVADE_IN_CORRIDOR",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 240,
+    "eval": 6
+   },
+   "n_total": 246,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 9,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "EXIT_LEFT_FOLLOW_ROUTE": {
+   "token": "EXIT_LEFT_FOLLOW_ROUTE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [
+    "str_goal_ce_v6"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "EXIT_RIGHT_FOLLOW_ROUTE": {
+   "token": "EXIT_RIGHT_FOLLOW_ROUTE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [
+    "str_goal_ce_v6"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "FOLLOW": {
+   "token": "FOLLOW",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 165,
+    "eval": 10
+   },
+   "n_total": 175,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "FOLLOW_LANE": {
+   "token": "FOLLOW_LANE",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 3629,
+    "eval": 119
+   },
+   "n_total": 3748,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "FOLLOW_ROUTE": {
+   "token": "FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_str.token"
+   ],
+   "n_by_split": {
+    "train": 2948,
+    "eval": 93
+   },
+   "n_total": 3041,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "GAP_TARGET": {
+   "token": "GAP_TARGET",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 368,
+    "eval": 14
+   },
+   "n_total": 382,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 12,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "HOLD": {
+   "token": "HOLD",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lon"
+   ],
+   "n_by_split": {
+    "train": 131,
+    "eval": 2
+   },
+   "n_total": 133,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  },
+  "HOLD_MAIN_ROAD": {
+   "token": "HOLD_MAIN_ROAD",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_str.token"
+   ],
+   "n_by_split": {
+    "train": 2390,
+    "eval": 78
+   },
+   "n_total": 2468,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "LANE_CHANGE_L": {
+   "token": "LANE_CHANGE_L",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7",
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 23,
+    "eval": 0
+   },
+   "n_total": 23,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 20,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "LANE_CHANGE_L_FOLLOW_ROUTE": {
+   "token": "LANE_CHANGE_L_FOLLOW_ROUTE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [
+    "str_goal_ce_v6"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "LANE_CHANGE_R": {
+   "token": "LANE_CHANGE_R",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7",
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 15,
+    "eval": 1
+   },
+   "n_total": 16,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 21,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "LANE_CHANGE_R_FOLLOW_ROUTE": {
+   "token": "LANE_CHANGE_R_FOLLOW_ROUTE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [
+    "str_goal_ce_v6"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 7,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "LANE_KEEP": {
+   "token": "LANE_KEEP",
+   "class": "UNREACHED",
+   "in_vocab_tuples": [
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lat"
+   ],
+   "n_by_split": {
+    "train": 2958,
+    "eval": 99
+   },
+   "n_total": 3057,
+   "reached_kinds": [],
+   "reached_surfaces": [],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 0,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "MERGE": {
+   "token": "MERGE",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 79,
+    "eval": 5
+   },
+   "n_total": 84,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 11,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "NAV_FOLLOW_ROAD": {
+   "token": "NAV_FOLLOW_ROAD",
+   "class": "INFERENCE_INPUT",
+   "in_vocab_tuples": [
+    "NAV_COMMAND_TOKENS"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "nav_command.token"
+   ],
+   "n_by_split": {
+    "train": 2897,
+    "eval": 96
+   },
+   "n_total": 2993,
+   "reached_kinds": [
+    "model_input"
+   ],
+   "reached_surfaces": [
+    "nav_input"
+   ],
+   "blocked_surfaces": {},
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "NONE",
+   "surfaces": {
+    "nav_input": {
+     "reached": true,
+     "why_not": "",
+     "kind": "model_input",
+     "enabled_by": [
+      "--v7-labels",
+      "--nav-from-v7"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "token_id": 0,
+      "changes_vs_control": true,
+      "encode_differs": true,
+      "grad_reaches_embedding_row": true,
+      "control_token": "NAV_TURN_L",
+      "zero_init_note": "NavConditioner.layer_proj is zero-init by design; forward() is 0 for EVERY token at init, so the output-difference test is run with the projection opened."
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "nav_to_tac"
+    }
+   }
+  },
+  "NAV_TURN_L": {
+   "token": "NAV_TURN_L",
+   "class": "INFERENCE_INPUT",
+   "in_vocab_tuples": [
+    "NAV_COMMAND_TOKENS"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "nav_command.token"
+   ],
+   "n_by_split": {
+    "train": 811,
+    "eval": 13
+   },
+   "n_total": 824,
+   "reached_kinds": [
+    "model_input"
+   ],
+   "reached_surfaces": [
+    "nav_input"
+   ],
+   "blocked_surfaces": {},
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "NONE",
+   "surfaces": {
+    "nav_input": {
+     "reached": true,
+     "why_not": "",
+     "kind": "model_input",
+     "enabled_by": [
+      "--v7-labels",
+      "--nav-from-v7"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "token_id": 1,
+      "changes_vs_control": true,
+      "encode_differs": true,
+      "grad_reaches_embedding_row": true,
+      "control_token": "NAV_FOLLOW_ROAD",
+      "zero_init_note": "NavConditioner.layer_proj is zero-init by design; forward() is 0 for EVERY token at init, so the output-difference test is run with the projection opened."
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "nav_to_tac"
+    }
+   }
+  },
+  "NAV_TURN_R": {
+   "token": "NAV_TURN_R",
+   "class": "INFERENCE_INPUT",
+   "in_vocab_tuples": [
+    "NAV_COMMAND_TOKENS"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "nav_command.token"
+   ],
+   "n_by_split": {
+    "train": 864,
+    "eval": 38
+   },
+   "n_total": 902,
+   "reached_kinds": [
+    "model_input"
+   ],
+   "reached_surfaces": [
+    "nav_input"
+   ],
+   "blocked_surfaces": {},
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "NONE",
+   "surfaces": {
+    "nav_input": {
+     "reached": true,
+     "why_not": "",
+     "kind": "model_input",
+     "enabled_by": [
+      "--v7-labels",
+      "--nav-from-v7"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "token_id": 2,
+      "changes_vs_control": true,
+      "encode_differs": true,
+      "grad_reaches_embedding_row": true,
+      "control_token": "NAV_FOLLOW_ROAD",
+      "zero_init_note": "NavConditioner.layer_proj is zero-init by design; forward() is 0 for EVERY token at init, so the output-difference test is run with the projection opened."
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "nav_to_tac"
+    }
+   }
+  },
+  "NUDGE_L": {
+   "token": "NUDGE_L",
+   "class": "UNREACHED",
+   "in_vocab_tuples": [
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lat"
+   ],
+   "n_by_split": {
+    "train": 488,
+    "eval": 14
+   },
+   "n_total": 502,
+   "reached_kinds": [],
+   "reached_surfaces": [],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "NUDGE_R": {
+   "token": "NUDGE_R",
+   "class": "UNREACHED",
+   "in_vocab_tuples": [
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lat"
+   ],
+   "n_by_split": {
+    "train": 592,
+    "eval": 21
+   },
+   "n_total": 613,
+   "reached_kinds": [],
+   "reached_surfaces": [],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "OVERTAKE_VEHICLE": {
+   "token": "OVERTAKE_VEHICLE",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 20,
+    "eval": 1
+   },
+   "n_total": 21,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 10,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "PREPARE_EXIT_FOLLOW_ROUTE": {
+   "token": "PREPARE_EXIT_FOLLOW_ROUTE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [
+    "str_action_ce_v6"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "PREPARE_LANE_CHANGE_FOLLOW_ROUTE": {
+   "token": "PREPARE_LANE_CHANGE_FOLLOW_ROUTE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [
+    "str_action_ce_v6"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "PREPARE_STOP_FOLLOW_ROUTE": {
+   "token": "PREPARE_STOP_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_str.token"
+   ],
+   "n_by_split": {
+    "train": 454,
+    "eval": 15
+   },
+   "n_total": 469,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "PREPARE_TURN_L_FOLLOW_ROUTE": {
+   "token": "PREPARE_TURN_L_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_str.token"
+   ],
+   "n_by_split": {
+    "train": 574,
+    "eval": 11
+   },
+   "n_total": 585,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "PREPARE_TURN_R_FOLLOW_ROUTE": {
+   "token": "PREPARE_TURN_R_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_str.token"
+   ],
+   "n_by_split": {
+    "train": 596,
+    "eval": 28
+   },
+   "n_total": 624,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "REACT_ON_ONCOMING": {
+   "token": "REACT_ON_ONCOMING",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 333,
+    "eval": 11
+   },
+   "n_total": 344,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 13,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "RESUME_CRUISE_FOLLOW_ROUTE": {
+   "token": "RESUME_CRUISE_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_ACTION_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_str.token"
+   ],
+   "n_by_split": {
+    "train": 558,
+    "eval": 15
+   },
+   "n_total": 573,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_action_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_action_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 7
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "SPEED_BAND": {
+   "token": "SPEED_BAND",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 4572,
+    "eval": 147
+   },
+   "n_total": 4719,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 7,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 7
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "STOP_AT_FOLLOW_ROUTE": {
+   "token": "STOP_AT_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_str.token"
+   ],
+   "n_by_split": {
+    "train": 454,
+    "eval": 15
+   },
+   "n_total": 469,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "STOP_POINT": {
+   "token": "STOP_POINT",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 327,
+    "eval": 9
+   },
+   "n_total": 336,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 7
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TAKE_EXIT_L": {
+   "token": "TAKE_EXIT_L",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 21,
+    "eval": 0
+   },
+   "n_total": 21,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 14,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TAKE_EXIT_R": {
+   "token": "TAKE_EXIT_R",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 128,
+    "eval": 5
+   },
+   "n_total": 133,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 15,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TRAFFIC_LIGHT_REACT": {
+   "token": "TRAFFIC_LIGHT_REACT",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 18,
+    "eval": 0
+   },
+   "n_total": 18,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 16,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 11
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TRAFFIC_LIGHT_REACT_GREEN": {
+   "token": "TRAFFIC_LIGHT_REACT_GREEN",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 363,
+    "eval": 15
+   },
+   "n_total": 378,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 19,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 11
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TRAFFIC_LIGHT_REACT_RED": {
+   "token": "TRAFFIC_LIGHT_REACT_RED",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 376,
+    "eval": 8
+   },
+   "n_total": 384,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 17,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 11
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TRAFFIC_LIGHT_REACT_YELLOW": {
+   "token": "TRAFFIC_LIGHT_REACT_YELLOW",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 22,
+    "eval": 3
+   },
+   "n_total": 25,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 18,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 11
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "TURN_L": {
+   "token": "TURN_L",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7",
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lat",
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 550,
+    "eval": 10
+   },
+   "n_total": 560,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 6,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "TURN_LEFT_FOLLOW_ROUTE": {
+   "token": "TURN_LEFT_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_str.token"
+   ],
+   "n_by_split": {
+    "train": 574,
+    "eval": 11
+   },
+   "n_total": 585,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 1,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "TURN_R": {
+   "token": "TURN_R",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7",
+    "TACTICAL_LAT_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "a_tac.lat",
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 518,
+    "eval": 16
+   },
+   "n_total": 534,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+    "tac_lat_ce": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 7,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 9
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    },
+    "tac_lat_ce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['F.cross_entropy(out[\"lat_logits_tac\"], lat_t)'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 7,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "lat_head_tac"
+    }
+   }
+  },
+  "TURN_RIGHT_FOLLOW_ROUTE": {
+   "token": "TURN_RIGHT_FOLLOW_ROUTE",
+   "class": "TRAINING_SIGNAL",
+   "in_vocab_tuples": [
+    "STRATEGIC_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_str.token"
+   ],
+   "n_by_split": {
+    "train": 596,
+    "eval": 28
+   },
+   "n_total": 624,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "str_goal_ce_v6"
+   ],
+   "blocked_surfaces": {
+    "str_ce_refc": "leg1 PROJECTION: no projection exists"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "str_ce_refc": {
+     "reached": false,
+     "why_not": "leg1 PROJECTION: no projection exists",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": false,
+      "why": "no projection exists"
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "str_goal_ce_v6": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels",
+      "w_s2_goal>0"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    }
+   }
+  },
+  "YIELD": {
+   "token": "YIELD",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 609,
+    "eval": 17
+   },
+   "n_total": 626,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 5,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "YIELD_FOR_TURN_L": {
+   "token": "YIELD_FOR_TURN_L",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 21,
+    "eval": 2
+   },
+   "n_total": 23,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 3,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 7
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "YIELD_FOR_TURN_R": {
+   "token": "YIELD_FOR_TURN_R",
+   "class": "AUDIT_OR_METRIC_ONLY",
+   "in_vocab_tuples": [
+    "TACTICAL_GOAL_TOKENS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [
+    "g_tac.goals.<KEY>"
+   ],
+   "n_by_split": {
+    "train": 20,
+    "eval": 0
+   },
+   "n_total": 20,
+   "reached_kinds": [
+    "audit"
+   ],
+   "reached_surfaces": [
+    "goal_audit"
+   ],
+   "blocked_surfaces": {
+    "tac_goal_bce": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])"
+   },
+   "dead_logit_in": [],
+   "d_tlight_condition": true,
+   "training_reach": "NONE",
+   "surfaces": {
+    "goal_audit": {
+     "reached": true,
+     "why_not": "",
+     "kind": "audit",
+     "enabled_by": [
+      "(audit tool, no training flag)"
+     ],
+     "trainer": "stack/scripts/tactical_label_census.py",
+     "leg1_projection": {
+      "projects": true
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": null
+    },
+    "tac_goal_bce": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['TacGoalEmitter', 'tac_goal_loss'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels",
+      "--tac-goal-tok-head"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 4,
+      "head_width": 22,
+      "y_i": 1.0,
+      "w_i": 1.0,
+      "n_supervised_cells": 7
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": "tac_goal_tok_head"
+    }
+   }
+  },
+  "YIELD_MERGE": {
+   "token": "YIELD_MERGE",
+   "class": "NOT_EMITTED",
+   "in_vocab_tuples": [
+    "TACTICAL_LON_ACTIONS_V7"
+   ],
+   "off_vocabulary": false,
+   "emitted_in_fields": [],
+   "n_by_split": {
+    "train": 0,
+    "eval": 0
+   },
+   "n_total": 0,
+   "reached_kinds": [
+    "loss_target"
+   ],
+   "reached_surfaces": [
+    "tac_lon_ce"
+   ],
+   "blocked_surfaces": {
+    "tac_action_ce_v6": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])"
+   },
+   "dead_logit_in": [
+    "tac_lon_ce"
+   ],
+   "d_tlight_condition": false,
+   "training_reach": "loss",
+   "surfaces": {
+    "tac_action_ce_v6": {
+     "reached": false,
+     "why_not": "leg2 CONSUMER: no trainer calls it (missing ['cross_entropy(out[\"a_lat\"]'])",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--s2-labels"
+     ],
+     "trainer": "stack/scripts/train_v6_staged.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 8
+     },
+     "leg2_consumer": "NO_CONSUMER",
+     "leg3_grad_module": null
+    },
+    "tac_lon_ce": {
+     "reached": true,
+     "why_not": "",
+     "kind": "loss_target",
+     "enabled_by": [
+      "--v7-labels"
+     ],
+     "trainer": "stack/scripts/refc_v3_train.py",
+     "leg1_projection": {
+      "projects": true,
+      "class_id": 2,
+      "head_width": 8
+     },
+     "leg2_consumer": "CONSUMED",
+     "leg3_grad_module": "lon_head_tac"
+    }
+   }
+  }
+ },
+ "class_counts": {
+  "TRAINING_SIGNAL": 16,
+  "INFERENCE_INPUT": 3,
+  "AUDIT_OR_METRIC_ONLY": 22,
+  "UNREACHED": 3,
+  "NOT_EMITTED": 8
+ },
+ "class_members": {
+  "TRAINING_SIGNAL": [
+   "ACCELERATE",
+   "ADAPT_SPEED_FOR_CURVE",
+   "BRAKE_TO",
+   "CREEP",
+   "CRUISE",
+   "FOLLOW",
+   "FOLLOW_ROUTE",
+   "HOLD",
+   "HOLD_MAIN_ROAD",
+   "PREPARE_STOP_FOLLOW_ROUTE",
+   "PREPARE_TURN_L_FOLLOW_ROUTE",
+   "PREPARE_TURN_R_FOLLOW_ROUTE",
+   "RESUME_CRUISE_FOLLOW_ROUTE",
+   "STOP_AT_FOLLOW_ROUTE",
+   "TURN_LEFT_FOLLOW_ROUTE",
+   "TURN_RIGHT_FOLLOW_ROUTE"
+  ],
+  "INFERENCE_INPUT": [
+   "NAV_FOLLOW_ROAD",
+   "NAV_TURN_L",
+   "NAV_TURN_R"
+  ],
+  "AUDIT_OR_METRIC_ONLY": [
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "FOLLOW_LANE",
+   "GAP_TARGET",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "MERGE",
+   "OVERTAKE_VEHICLE",
+   "REACT_ON_ONCOMING",
+   "SPEED_BAND",
+   "STOP_POINT",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TURN_L",
+   "TURN_R",
+   "YIELD",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  "UNREACHED": [
+   "LANE_KEEP",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "NOT_EMITTED": [
+   "ABORT_LC",
+   "EXIT_LEFT_FOLLOW_ROUTE",
+   "EXIT_RIGHT_FOLLOW_ROUTE",
+   "LANE_CHANGE_L_FOLLOW_ROUTE",
+   "LANE_CHANGE_R_FOLLOW_ROUTE",
+   "PREPARE_EXIT_FOLLOW_ROUTE",
+   "PREPARE_LANE_CHANGE_FOLLOW_ROUTE",
+   "YIELD_MERGE"
+  ]
+ },
+ "d_tlight_condition_tokens": [
+  "CORRIDOR_OFFSET",
+  "EVADE_IN_CORRIDOR",
+  "FOLLOW_LANE",
+  "GAP_TARGET",
+  "LANE_CHANGE_L",
+  "LANE_CHANGE_R",
+  "LANE_KEEP",
+  "MERGE",
+  "NUDGE_L",
+  "NUDGE_R",
+  "OVERTAKE_VEHICLE",
+  "REACT_ON_ONCOMING",
+  "SPEED_BAND",
+  "STOP_POINT",
+  "TAKE_EXIT_L",
+  "TAKE_EXIT_R",
+  "TRAFFIC_LIGHT_REACT",
+  "TRAFFIC_LIGHT_REACT_GREEN",
+  "TRAFFIC_LIGHT_REACT_RED",
+  "TRAFFIC_LIGHT_REACT_YELLOW",
+  "TURN_L",
+  "TURN_R",
+  "YIELD",
+  "YIELD_FOR_TURN_L",
+  "YIELD_FOR_TURN_R"
+ ],
+ "disagreements": [
+  {
+   "token": "EXIT_LEFT_FOLLOW_ROUTE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "str_goal_ce_v6"
+   ]
+  },
+  {
+   "token": "EXIT_RIGHT_FOLLOW_ROUTE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "str_goal_ce_v6"
+   ]
+  },
+  {
+   "token": "LANE_CHANGE_L_FOLLOW_ROUTE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "str_goal_ce_v6"
+   ]
+  },
+  {
+   "token": "LANE_CHANGE_R_FOLLOW_ROUTE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "str_goal_ce_v6"
+   ]
+  },
+  {
+   "token": "PREPARE_EXIT_FOLLOW_ROUTE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "str_action_ce_v6"
+   ]
+  },
+  {
+   "token": "PREPARE_LANE_CHANGE_FOLLOW_ROUTE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "str_action_ce_v6"
+   ]
+  },
+  {
+   "token": "YIELD_MERGE",
+   "kind": "\u26d4 DEAD LOGIT -- a head carries the class and the corpus never emits it",
+   "declared": "-",
+   "measured": [
+    "tac_lon_ce"
+   ]
+  }
+ ],
+ "provenance_divergence": {
+  "declared_needs_perception": [
+   "CORRIDOR_OFFSET",
+   "GAP_TARGET",
+   "MERGE",
+   "OVERTAKE_VEHICLE",
+   "REACT_ON_ONCOMING",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW"
+  ],
+  "cot_backed_in_blob": [
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "GAP_TARGET",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "MERGE",
+   "OVERTAKE_VEHICLE",
+   "REACT_ON_ONCOMING",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD"
+  ],
+  "geometry_backed_in_blob": [
+   "FOLLOW_LANE"
+  ],
+  "cot_backed_but_NOT_declared": [
+   "EVADE_IN_CORRIDOR",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "YIELD"
+  ],
+  "declared_but_geometry_only_in_blob": []
+ },
+ "underpowered": {
+  "GOAL_MIN_N_FOR_TRAINING": 30,
+  "GOAL_MIN_N_FOR_METRIC": 200,
+  "tokens": {
+   "CORRIDOR_OFFSET": {
+    "n_train": 860,
+    "n_total": 885,
+    "verdict": "OK"
+   },
+   "EVADE_IN_CORRIDOR": {
+    "n_train": 240,
+    "n_total": 246,
+    "verdict": "OK"
+   },
+   "FOLLOW_LANE": {
+    "n_train": 3629,
+    "n_total": 3748,
+    "verdict": "OK"
+   },
+   "GAP_TARGET": {
+    "n_train": 368,
+    "n_total": 382,
+    "verdict": "OK"
+   },
+   "LANE_CHANGE_L": {
+    "n_train": 23,
+    "n_total": 23,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "LANE_CHANGE_R": {
+    "n_train": 15,
+    "n_total": 16,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "MERGE": {
+    "n_train": 79,
+    "n_total": 84,
+    "verdict": "UNSCOREABLE_AS_A_RATE"
+   },
+   "OVERTAKE_VEHICLE": {
+    "n_train": 20,
+    "n_total": 21,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "REACT_ON_ONCOMING": {
+    "n_train": 333,
+    "n_total": 344,
+    "verdict": "OK"
+   },
+   "SPEED_BAND": {
+    "n_train": 4572,
+    "n_total": 4719,
+    "verdict": "OK"
+   },
+   "STOP_POINT": {
+    "n_train": 327,
+    "n_total": 336,
+    "verdict": "OK"
+   },
+   "TAKE_EXIT_L": {
+    "n_train": 21,
+    "n_total": 21,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "TAKE_EXIT_R": {
+    "n_train": 128,
+    "n_total": 133,
+    "verdict": "UNSCOREABLE_AS_A_RATE"
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "n_train": 18,
+    "n_total": 18,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "n_train": 363,
+    "n_total": 378,
+    "verdict": "OK"
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "n_train": 376,
+    "n_total": 384,
+    "verdict": "OK"
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "n_train": 22,
+    "n_total": 25,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "TURN_L": {
+    "n_train": 550,
+    "n_total": 560,
+    "verdict": "OK"
+   },
+   "TURN_R": {
+    "n_train": 518,
+    "n_total": 534,
+    "verdict": "OK"
+   },
+   "YIELD": {
+    "n_train": 609,
+    "n_total": 626,
+    "verdict": "OK"
+   },
+   "YIELD_FOR_TURN_L": {
+    "n_train": 21,
+    "n_total": 23,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   },
+   "YIELD_FOR_TURN_R": {
+    "n_train": 20,
+    "n_total": 20,
+    "verdict": "UNDERPOWERED_FOR_TRAINING"
+   }
+  },
+  "derived_below_metric_floor": [
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "MERGE",
+   "OVERTAKE_VEHICLE",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  "declared_TACTICAL_GOAL_UNDERPOWERED": [
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "MERGE",
+   "OVERTAKE_VEHICLE",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  "declared_but_not_derived": [],
+  "derived_but_not_declared": []
+ }
+}

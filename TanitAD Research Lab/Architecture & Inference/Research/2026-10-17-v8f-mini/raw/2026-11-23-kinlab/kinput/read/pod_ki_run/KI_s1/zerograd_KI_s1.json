@@ -1,0 +1,54 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "PASS",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 2,
+    "n_registered": 252,
+    "n_with_state_entry": 252,
+    "n_trained": 252,
+    "n_case_a_no_state": 0,
+    "n_case_b_zero_state": 0,
+    "step_max": 3000,
+    "ckpt_step": 3000
+  },
+  "alignment": {
+    "mode": "per-group-shape-dp",
+    "unique": false,
+    "n_alignments": 45.0,
+    "param_names_source": null,
+    "param_names_rejected": null,
+    "n_model_float_entries": 276,
+    "n_entries_excluded": 0,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 2,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [],
+  "allowed": [],
+  "unused_allow": [],
+  "untrained_numel": {
+    "offending_lo": 0,
+    "offending_hi": 0,
+    "allowed_lo": 0,
+    "allowed_hi": 0
+  },
+  "controls": [],
+  "info": {
+    "partial_grad": []
+  },
+  "ckpt": "/root/rollhist/runs/KI_s1/train/ckpt_last.pt",
+  "ckpt_size_bytes": 86971669,
+  "load": {
+    "weights_only": false,
+    "mmap": true,
+    "earlier_load_failures": [
+      "weights_only=True mmap=True: UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, \u001b[1mdo those steps only if you trust the source of the checkpoint\u001b[0m. \n"
+    ]
+  }
+}

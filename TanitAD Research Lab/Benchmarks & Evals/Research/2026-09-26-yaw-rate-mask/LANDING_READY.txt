@@ -1,0 +1,67 @@
+## 2026-09-26 batch 1: D-YAW-UNMASKED closed (package alias D-YAWMASK-1) -- mask the shared paired yaw-rate cell (refav1_arm._components), its test, and the re-derivation of every landed claim that quoted it
+# (a) SHARED CODE -- land each at the repo path on the left, copied byte-for-byte from this package's code/fix/<same path>.
+#     taniteval/tools/refav1_arm.py: based on tip blob c7013107 (unchanged from 1218921 to 048ae3b); new blob 963d98e6.
+#     Before landing: re-check that HEAD:taniteval/tools/refav1_arm.py is STILL c7013107 (else superset-merge).
+#     taniteval/tests/test_refav1_components_yaw_mask.py: NEW file (absent at tip), blob 10d4d683.
+#     Landing turns the refcv6 battery's landed code/test_yaw_valid.py 2/3 RED by design -- see RESULT.md section 5.
+taniteval/tools/refav1_arm.py
+taniteval/tests/test_refav1_components_yaw_mask.py
+# (b) THE PACKAGE (sha12-sanitized; UUID scan reads 0)
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/RESULT.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/fix/taniteval/tests/test_refav1_components_yaw_mask.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/fix/taniteval/tools/refav1_arm.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/probes/battery_a3_crosscheck.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/probes/m26_envelope_standstill.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/probes/m26_yaw_decomposition.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/probes/replicate_fp_rate_fixed.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/propagation_sites.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/proposals/battery_test_yaw_valid.PROPOSED.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/rederive_claims.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/rederive_m26.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/run_regression_arms.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/sanitize.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/code/summarize_battery_interaction.py
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/battery_a3_crosscheck.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/battery_test_interaction.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/claims_summary.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/egodrop_5000_2s.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/egodrop_9500_2s.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/l1_rl_s0.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/l1_rl_s1.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_all.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_comb.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_devbox_lonshift.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_fact.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_kamm.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_lonshift.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_phase1.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/pd_seedfloor.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/refav1_21109.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/refav1_step1000.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/refcv3_40284_arm.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/replicate_fp_rate_fixed.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/rl_readiness.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/strat_40284.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/t1_base_rl17.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/veto_s0.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/veto_s1.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/claims/wbank_panel.result.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/m26_envelope_standstill.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/m26_rederivation.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/m26_yaw_decomposition.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07_vs_base.FIXED.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07_vs_base.FIXED.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07_vs_base.TIPCELL.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07_vs_base.TIPCELL.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07e_vs_base.FIXED.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07e_vs_base.FIXED.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07e_vs_base.TIPCELL.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_proj07e_vs_base.TIPCELL.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_projoff_vs_base.FIXED.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_projoff_vs_base.FIXED.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_projoff_vs_base.TIPCELL.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/m26/paired_projoff_vs_base.TIPCELL.md
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/propagation_sites.txt
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/regression_arms.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/raw/related_suites.json
+TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/LANDING_READY.txt

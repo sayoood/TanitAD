@@ -56,7 +56,7 @@ def run_script():
     if not os.path.exists(SCRIPT):
         return "", -1, -1, ""
     try:
-        r = subprocess.run(["bash", SCRIPT], capture_output=True, text=True,
+        r = subprocess.run(["bash", SCRIPT], capture_output=True, text=True, encoding="utf-8",
                            timeout=300)
         out = r.stdout + r.stderr
     except Exception as e:

@@ -1,0 +1,521 @@
+{
+ "_what": "per-stage x per-group TRAINABLE-parameter census of V6Stack, interpretation head ON (default V6Config + agent_slots=True), before and after the v6.py S-J/interp fix.",
+ "_evidence_class": "MEASURED (ours). n = 1 build per arm; the quantity is deterministic given the config, not sampled.",
+ "_produced_by": "code/g3_stage_freeze_census.py --label {before,after}",
+ "_env": "dev box, CPU only, no GPU. venv C:/Users/Admin/venvs/tanitad, PYTHONUTF8=1 OMP_NUM_THREADS=6. Construction + requires_grad flips only: no forward, no backward.",
+ "_repro_before": "the fix is STAGED, NOT COMMITTED, so HEAD carries the pre-fix module: `git show HEAD:stack/tanitad/models/v6.py` was written over the worktree file, the script run, and the worktree file restored and VERIFIED by blob hash (c36eff9a9ea692753df6a1f0436191ac0a3f8602 before and after).",
+ "delta": {
+  "default_build_INERT": true,
+  "default_build": {
+   "before": {
+    "params": 87893449,
+    "state_dict_keys": 405
+   },
+   "after": {
+    "params": 87893449,
+    "state_dict_keys": 405
+   }
+  },
+  "alias_broken": {
+   "before_S-J_is_MODULE_GROUPS": true,
+   "after_S-J_is_MODULE_GROUPS": false
+  },
+  "interp_trainable_per_stage": {
+   "S-W": {
+    "before": 0,
+    "after": 0
+   },
+   "S-T": {
+    "before": 0,
+    "after": 0
+   },
+   "S-S": {
+    "before": 0,
+    "after": 0
+   },
+   "S-J": {
+    "before": 3207445,
+    "after": 0
+   }
+  },
+  "n_trainable_per_stage": {
+   "S-W": {
+    "before": 77219971,
+    "after": 77219971
+   },
+   "S-T": {
+    "before": 6520485,
+    "after": 6520485
+   },
+   "S-S": {
+    "before": 4152993,
+    "after": 4152993
+   },
+   "S-J": {
+    "before": 91100894,
+    "after": 87893449
+   }
+  },
+  "n_trainable_TENSORS_per_stage_head_ON": {
+   "S-W": {
+    "before": 240,
+    "after": 240
+   },
+   "S-T": {
+    "before": 76,
+    "after": 76
+   },
+   "S-S": {
+    "before": 54,
+    "after": 54
+   },
+   "S-J": {
+    "before": 432,
+    "after": 370
+   }
+  },
+  "groups_OTHER_than_interp_moved": {
+   "S-W": {},
+   "S-T": {},
+   "S-S": {},
+   "S-J": {}
+  }
+ },
+ "before": {
+  "_label": "before",
+  "alias": {
+   "LADDER_UNTRAINED_GROUPS": null,
+   "MODULE_GROUPS": [
+    "encoder",
+    "readout",
+    "predictor_op",
+    "layer_tac",
+    "layer_str",
+    "planner",
+    "aux",
+    "interp"
+   ],
+   "MODULE_GROUPS_type": "tuple",
+   "S-J_is_MODULE_GROUPS": true,
+   "STAGE_GROUPS": {
+    "S-J": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "layer_tac",
+     "layer_str",
+     "planner",
+     "aux",
+     "interp"
+    ],
+    "S-S": [
+     "layer_str"
+    ],
+    "S-T": [
+     "layer_tac",
+     "planner"
+    ],
+    "S-W": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "aux"
+    ]
+   }
+  },
+  "default_build": {
+   "params": 87893449,
+   "state_dict_keys": 405
+  },
+  "slot_build": {
+   "params": 91100894,
+   "per_group_params": {
+    "aux": 1649792,
+    "encoder": 15327360,
+    "interp": 3207445,
+    "layer_str": 4152993,
+    "layer_tac": 5765165,
+    "planner": 755320,
+    "predictor_op": 60193539,
+    "readout": 49280
+   },
+   "per_group_tensors": {
+    "aux": 30,
+    "encoder": 101,
+    "interp": 62,
+    "layer_str": 54,
+    "layer_tac": 67,
+    "planner": 9,
+    "predictor_op": 107,
+    "readout": 2
+   },
+   "state_dict_keys": 467
+  },
+  "stages_with_head_ON": {
+   "S-J": {
+    "audit_trainable_groups": [
+     "aux",
+     "encoder",
+     "interp",
+     "layer_str",
+     "layer_tac",
+     "planner",
+     "predictor_op",
+     "readout"
+    ],
+    "declared_trainable_groups": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "layer_tac",
+     "layer_str",
+     "planner",
+     "aux",
+     "interp"
+    ],
+    "n_frozen": 0,
+    "n_trainable": 91100894,
+    "n_trainable_tensors": 432,
+    "per_group_frozen": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 0,
+     "layer_str": 0,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 0,
+     "readout": 0
+    },
+    "per_group_trainable": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 3207445,
+     "layer_str": 4152993,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 60193539,
+     "readout": 49280
+    }
+   },
+   "S-S": {
+    "audit_trainable_groups": [
+     "layer_str"
+    ],
+    "declared_trainable_groups": [
+     "layer_str"
+    ],
+    "n_frozen": 86947901,
+    "n_trainable": 4152993,
+    "n_trainable_tensors": 54,
+    "per_group_frozen": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 3207445,
+     "layer_str": 0,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 60193539,
+     "readout": 49280
+    },
+    "per_group_trainable": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 0,
+     "layer_str": 4152993,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 0,
+     "readout": 0
+    }
+   },
+   "S-T": {
+    "audit_trainable_groups": [
+     "layer_tac",
+     "planner"
+    ],
+    "declared_trainable_groups": [
+     "layer_tac",
+     "planner"
+    ],
+    "n_frozen": 84580409,
+    "n_trainable": 6520485,
+    "n_trainable_tensors": 76,
+    "per_group_frozen": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 3207445,
+     "layer_str": 4152993,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 60193539,
+     "readout": 49280
+    },
+    "per_group_trainable": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 0,
+     "layer_str": 0,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 0,
+     "readout": 0
+    }
+   },
+   "S-W": {
+    "audit_trainable_groups": [
+     "aux",
+     "encoder",
+     "predictor_op",
+     "readout"
+    ],
+    "declared_trainable_groups": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "aux"
+    ],
+    "n_frozen": 13880923,
+    "n_trainable": 77219971,
+    "n_trainable_tensors": 240,
+    "per_group_frozen": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 3207445,
+     "layer_str": 4152993,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 0,
+     "readout": 0
+    },
+    "per_group_trainable": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 0,
+     "layer_str": 0,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 60193539,
+     "readout": 49280
+    }
+   }
+  }
+ },
+ "after": {
+  "_label": "after",
+  "alias": {
+   "LADDER_UNTRAINED_GROUPS": [
+    "interp"
+   ],
+   "MODULE_GROUPS": [
+    "encoder",
+    "readout",
+    "predictor_op",
+    "layer_tac",
+    "layer_str",
+    "planner",
+    "aux",
+    "interp"
+   ],
+   "MODULE_GROUPS_type": "tuple",
+   "S-J_is_MODULE_GROUPS": false,
+   "STAGE_GROUPS": {
+    "S-J": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "layer_tac",
+     "layer_str",
+     "planner",
+     "aux"
+    ],
+    "S-S": [
+     "layer_str"
+    ],
+    "S-T": [
+     "layer_tac",
+     "planner"
+    ],
+    "S-W": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "aux"
+    ]
+   }
+  },
+  "default_build": {
+   "params": 87893449,
+   "state_dict_keys": 405
+  },
+  "slot_build": {
+   "params": 91100894,
+   "per_group_params": {
+    "aux": 1649792,
+    "encoder": 15327360,
+    "interp": 3207445,
+    "layer_str": 4152993,
+    "layer_tac": 5765165,
+    "planner": 755320,
+    "predictor_op": 60193539,
+    "readout": 49280
+   },
+   "per_group_tensors": {
+    "aux": 30,
+    "encoder": 101,
+    "interp": 62,
+    "layer_str": 54,
+    "layer_tac": 67,
+    "planner": 9,
+    "predictor_op": 107,
+    "readout": 2
+   },
+   "state_dict_keys": 467
+  },
+  "stages_with_head_ON": {
+   "S-J": {
+    "audit_trainable_groups": [
+     "aux",
+     "encoder",
+     "layer_str",
+     "layer_tac",
+     "planner",
+     "predictor_op",
+     "readout"
+    ],
+    "declared_trainable_groups": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "layer_tac",
+     "layer_str",
+     "planner",
+     "aux"
+    ],
+    "n_frozen": 3207445,
+    "n_trainable": 87893449,
+    "n_trainable_tensors": 370,
+    "per_group_frozen": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 3207445,
+     "layer_str": 0,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 0,
+     "readout": 0
+    },
+    "per_group_trainable": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 0,
+     "layer_str": 4152993,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 60193539,
+     "readout": 49280
+    }
+   },
+   "S-S": {
+    "audit_trainable_groups": [
+     "layer_str"
+    ],
+    "declared_trainable_groups": [
+     "layer_str"
+    ],
+    "n_frozen": 86947901,
+    "n_trainable": 4152993,
+    "n_trainable_tensors": 54,
+    "per_group_frozen": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 3207445,
+     "layer_str": 0,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 60193539,
+     "readout": 49280
+    },
+    "per_group_trainable": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 0,
+     "layer_str": 4152993,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 0,
+     "readout": 0
+    }
+   },
+   "S-T": {
+    "audit_trainable_groups": [
+     "layer_tac",
+     "planner"
+    ],
+    "declared_trainable_groups": [
+     "layer_tac",
+     "planner"
+    ],
+    "n_frozen": 84580409,
+    "n_trainable": 6520485,
+    "n_trainable_tensors": 76,
+    "per_group_frozen": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 3207445,
+     "layer_str": 4152993,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 60193539,
+     "readout": 49280
+    },
+    "per_group_trainable": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 0,
+     "layer_str": 0,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 0,
+     "readout": 0
+    }
+   },
+   "S-W": {
+    "audit_trainable_groups": [
+     "aux",
+     "encoder",
+     "predictor_op",
+     "readout"
+    ],
+    "declared_trainable_groups": [
+     "encoder",
+     "readout",
+     "predictor_op",
+     "aux"
+    ],
+    "n_frozen": 13880923,
+    "n_trainable": 77219971,
+    "n_trainable_tensors": 240,
+    "per_group_frozen": {
+     "aux": 0,
+     "encoder": 0,
+     "interp": 3207445,
+     "layer_str": 4152993,
+     "layer_tac": 5765165,
+     "planner": 755320,
+     "predictor_op": 0,
+     "readout": 0
+    },
+    "per_group_trainable": {
+     "aux": 1649792,
+     "encoder": 15327360,
+     "interp": 0,
+     "layer_str": 0,
+     "layer_tac": 0,
+     "planner": 0,
+     "predictor_op": 60193539,
+     "readout": 49280
+    }
+   }
+  }
+ }
+}

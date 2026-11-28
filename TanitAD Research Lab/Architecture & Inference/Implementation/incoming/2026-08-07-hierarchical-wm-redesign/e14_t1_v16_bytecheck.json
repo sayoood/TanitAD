@@ -1,0 +1,1587 @@
+{
+ "tool": "taniteval/tools/t1_eval.py",
+ "n_episodes": 40,
+ "n_windows": 6834,
+ "horizon_steps": 20,
+ "dt_s": 0.1,
+ "gt_key": "g",
+ "arm_keys": [
+  "o16",
+  "o6",
+  "c16",
+  "c6",
+  "h16"
+ ],
+ "tiers": {
+  "o16": "T0",
+  "o6": "T0",
+  "c16": "T1",
+  "c6": "T1",
+  "h16": "T1"
+ },
+ "_tier_doctrine": "EVAL_DOCTRINE.md 2026-08-09 \u2014 T1 (action-closed loop) is the PRIMARY tier; T0 (teacher-forced) supports only prediction/attribution claims and is NEVER quotable as driving performance.",
+ "_estimator": "point estimates are FULL-SET pooled means over windows; intervals are the episode-cluster bootstrap (taniteval.ci). \u26d4 overlapping_holdout_se is NOT used anywhere: it biases the POINT ESTIMATE, not only the interval. The legacy_* blocks reproduce analyze_cl.py's mean-of-episode-means arithmetic for the \u00a71.12 byte-close gate ONLY and are not quotable as new results.",
+ "_binding": "Sayed 2026-08-02 \u2014 LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+ "arms": {
+  "o16": {
+   "tier": "T0",
+   "tier_note": "teacher-forced \u2014 prediction quality only, NEVER driving performance",
+   "four_families": {
+    "longitudinal": {
+     "speed_mae_mps": 0.4411,
+     "speed_bias_mps": -0.0264,
+     "speed_rmse_mps": 0.6967,
+     "along_mae_m": 0.3328,
+     "along_bias_m": -0.0426,
+     "along_final_bias_m": -0.051,
+     "accel_mae_mps2": 0.55,
+     "ego_progress": {
+      "status": "OK",
+      "convention": "human_dir",
+      "progress_ratio_mean": 0.9681,
+      "progress_ratio_median": 0.9928,
+      "progress_error_mean": 0.1247,
+      "under_progress_rate": 0.5409,
+      "gt_progress_mean_m": 13.286,
+      "n": 6042,
+      "n_windows": 6834,
+      "n_excluded_low_gt_progress": 792,
+      "min_progress_m": 0.5,
+      "t0_axis_gt_self_ratio": 0.995,
+      "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+      "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+      "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+     },
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 6834,
+     "tier": "T0",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "lateral": {
+     "heading_mae_deg": 0.4081,
+     "yaw_rate_mae_degps": 0.8878,
+     "curvature_mae_1pm": 0.004176,
+     "curvature_bias_1pm": 0.001108,
+     "cross_mae_m": 0.0363,
+     "cross_bias_m": -0.0071,
+     "cross_final_mae_m": 0.0994,
+     "n_steps_heading": 113525,
+     "n_steps_curvature": 107519,
+     "excluded_below_min_ds": 23155,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 6834,
+     "tier": "T0",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "tier": "T0",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice.",
+     "tier": "T0",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "_grid": {
+     "used": "dense",
+     "dt_s": 0.1,
+     "horizon_steps": 20,
+     "provenance": "DENSE path ((6834, 20, 2)) at dt_s 0.1 \u2014 the grid the derivatives are defined on",
+     "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+    },
+    "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "_complete": false
+   },
+   "intervals": {
+    "tier": "T0",
+    "n": 6834,
+    "estimator": "episode_cluster_bootstrap",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.3399,
+      "lo": 0.2831,
+      "hi": 0.3997,
+      "ci95": 0.0583,
+      "se": 0.0296,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 0.8368,
+      "lo": 0.6904,
+      "hi": 0.9927,
+      "ci95": 0.1512,
+      "se": 0.0762,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.4411,
+      "lo": 0.3681,
+      "hi": 0.5182,
+      "ci95": 0.075,
+      "se": 0.0379,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.3328,
+      "lo": 0.2769,
+      "hi": 0.3913,
+      "ci95": 0.0572,
+      "se": 0.0291,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.0363,
+      "lo": 0.0277,
+      "hi": 0.0457,
+      "ci95": 0.009,
+      "se": 0.0047,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 0.4363,
+      "lo": 0.3449,
+      "hi": 0.542,
+      "ci95": 0.0986,
+      "se": 0.0495,
+      "reducer": "mean",
+      "n_windows": 5984,
+      "n_episodes": 39,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 850
+     }
+    }
+   },
+   "s_curve": {
+    "tier": "T0",
+    "definition": "S = GT half-window net headings opposite signs, both > |0.03| rad; hit = arm matches BOTH lobe signs (mag > thr/2). 'masked' zeroes stationary steps (ds <= 0.05 m) \u2014 the BANKED \u00a71.12 definition; 'unmasked' is analyze_cl.py's inline variant.",
+    "masked": {
+     "rate": 0.9785,
+     "n_s_windows": 93,
+     "n": 93,
+     "tier": "T0",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.9785,
+      "lo": 0.948,
+      "hi": 1.0,
+      "ci95": 0.026,
+      "se": 0.0139,
+      "reducer": "mean",
+      "n_windows": 93,
+      "n_episodes": 16,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "unmasked": {
+     "rate": 0.8125,
+     "n_s_windows": 112,
+     "n": 112,
+     "tier": "T0",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.8125,
+      "lo": 0.6483,
+      "hi": 0.9474,
+      "ci95": 0.1496,
+      "se": 0.0788,
+      "reducer": "mean",
+      "n_windows": 112,
+      "n_episodes": 20,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lag": {
+    "lag_accel_s_mean": 0.28,
+    "n": 35,
+    "n_episodes_with_signal": 35,
+    "n_episodes_total": 40,
+    "tier": "T0",
+    "estimator": "per-episode xcorr-peak lag (near-accel, |lag| <= 20 windows, min corr 0.2); mean + episode-cluster bootstrap over episodes",
+    "ci": {
+     "mean": 0.28,
+     "lo": -0.0515,
+     "hi": 0.6114,
+     "ci95": 0.3315,
+     "se": 0.1714,
+     "reducer": "mean",
+     "n_windows": 35,
+     "n_episodes": 35,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "response": {
+    "tier": "T0",
+    "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)",
+    "decel": {
+     "response_ratio": 0.1623,
+     "gt_mean_near_accel_mps2": -1.6923,
+     "n_events": 771,
+     "n": 771,
+     "tier": "T0",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    },
+    "accel": {
+     "response_ratio": 0.1506,
+     "gt_mean_near_accel_mps2": 1.5847,
+     "n_events": 751,
+     "n": 751,
+     "tier": "T0",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    }
+   },
+   "sel_gap": {
+    "status": "UNAVAILABLE",
+    "reason": "no fan+selector surface in the dump (keys o16_fan_err / o16_sel_idx absent) \u2014 this dump's arm commits to one action per step, so there is no fan to gap. Emitting a fan from the roll is a WORK ITEM (see taniteval/taniteval/selgap.py)",
+    "n": 0,
+    "tier": "T0",
+    "estimator": "n/a \u2014 inputs missing (WORK ITEM, not a pass)"
+   },
+   "legacy_epmean_row": {
+    "ade_m": 0.3398,
+    "speed_bias_mps": -0.0265,
+    "speed_mae_mps": 0.441,
+    "accel_rms_mps2": 0.7172,
+    "jerk_rms_mps3": 1.1334,
+    "net_yaw_err_rad": 0.0108,
+    "decel_response_ratio": 0.1623,
+    "accel_response_ratio": 0.1506,
+    "lag_accel_s_mean": 0.28,
+    "s_reproduction_rate": 0.8125,
+    "_reproduction_of": "analyze_cl.py per-arm row \u2014 mean-of-EPISODE-means, unmasked S-def. \u00a71.12 byte-close gate ONLY; the quotable row is 'four_families' + 'intervals' (full-set pooled)."
+   }
+  },
+  "o6": {
+   "tier": "T0",
+   "tier_note": "teacher-forced \u2014 prediction quality only, NEVER driving performance",
+   "four_families": {
+    "longitudinal": {
+     "speed_mae_mps": 0.3687,
+     "speed_bias_mps": -0.041,
+     "speed_rmse_mps": 0.5912,
+     "along_mae_m": 0.2768,
+     "along_bias_m": -0.0327,
+     "along_final_bias_m": -0.0804,
+     "accel_mae_mps2": 0.5355,
+     "ego_progress": {
+      "status": "OK",
+      "convention": "human_dir",
+      "progress_ratio_mean": 0.9823,
+      "progress_ratio_median": 0.9922,
+      "progress_error_mean": 0.0903,
+      "under_progress_rate": 0.5581,
+      "gt_progress_mean_m": 13.286,
+      "n": 6042,
+      "n_windows": 6834,
+      "n_excluded_low_gt_progress": 792,
+      "min_progress_m": 0.5,
+      "t0_axis_gt_self_ratio": 0.995,
+      "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+      "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+      "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+     },
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 6834,
+     "tier": "T0",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "lateral": {
+     "heading_mae_deg": 0.4277,
+     "yaw_rate_mae_degps": 0.9068,
+     "curvature_mae_1pm": 0.00408,
+     "curvature_bias_1pm": 0.000438,
+     "cross_mae_m": 0.0358,
+     "cross_bias_m": -0.0048,
+     "cross_final_mae_m": 0.0947,
+     "n_steps_heading": 114545,
+     "n_steps_curvature": 108481,
+     "excluded_below_min_ds": 22135,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 6834,
+     "tier": "T0",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "tier": "T0",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice.",
+     "tier": "T0",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "_grid": {
+     "used": "dense",
+     "dt_s": 0.1,
+     "horizon_steps": 20,
+     "provenance": "DENSE path ((6834, 20, 2)) at dt_s 0.1 \u2014 the grid the derivatives are defined on",
+     "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+    },
+    "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "_complete": false
+   },
+   "intervals": {
+    "tier": "T0",
+    "n": 6834,
+    "estimator": "episode_cluster_bootstrap",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.285,
+      "lo": 0.233,
+      "hi": 0.3393,
+      "ci95": 0.0532,
+      "se": 0.0272,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 0.6591,
+      "lo": 0.5279,
+      "hi": 0.8007,
+      "ci95": 0.1364,
+      "se": 0.0695,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.3687,
+      "lo": 0.3043,
+      "hi": 0.4382,
+      "ci95": 0.0669,
+      "se": 0.0342,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.2768,
+      "lo": 0.2263,
+      "hi": 0.3299,
+      "ci95": 0.0518,
+      "se": 0.0266,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.0358,
+      "lo": 0.0272,
+      "hi": 0.0445,
+      "ci95": 0.0086,
+      "se": 0.0044,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 0.433,
+      "lo": 0.3574,
+      "hi": 0.515,
+      "ci95": 0.0788,
+      "se": 0.0409,
+      "reducer": "mean",
+      "n_windows": 6050,
+      "n_episodes": 39,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 784
+     }
+    }
+   },
+   "s_curve": {
+    "tier": "T0",
+    "definition": "S = GT half-window net headings opposite signs, both > |0.03| rad; hit = arm matches BOTH lobe signs (mag > thr/2). 'masked' zeroes stationary steps (ds <= 0.05 m) \u2014 the BANKED \u00a71.12 definition; 'unmasked' is analyze_cl.py's inline variant.",
+    "masked": {
+     "rate": 0.9785,
+     "n_s_windows": 93,
+     "n": 93,
+     "tier": "T0",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.9785,
+      "lo": 0.948,
+      "hi": 1.0,
+      "ci95": 0.026,
+      "se": 0.0139,
+      "reducer": "mean",
+      "n_windows": 93,
+      "n_episodes": 16,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "unmasked": {
+     "rate": 0.8125,
+     "n_s_windows": 112,
+     "n": 112,
+     "tier": "T0",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.8125,
+      "lo": 0.6483,
+      "hi": 0.9474,
+      "ci95": 0.1496,
+      "se": 0.0788,
+      "reducer": "mean",
+      "n_windows": 112,
+      "n_episodes": 20,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lag": {
+    "lag_accel_s_mean": 0.173,
+    "n": 37,
+    "n_episodes_with_signal": 37,
+    "n_episodes_total": 40,
+    "tier": "T0",
+    "estimator": "per-episode xcorr-peak lag (near-accel, |lag| <= 20 windows, min corr 0.2); mean + episode-cluster bootstrap over episodes",
+    "ci": {
+     "mean": 0.173,
+     "lo": -0.0405,
+     "hi": 0.392,
+     "ci95": 0.2162,
+     "se": 0.1098,
+     "reducer": "mean",
+     "n_windows": 37,
+     "n_episodes": 37,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "response": {
+    "tier": "T0",
+    "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)",
+    "decel": {
+     "response_ratio": 0.1547,
+     "gt_mean_near_accel_mps2": -1.6923,
+     "n_events": 771,
+     "n": 771,
+     "tier": "T0",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    },
+    "accel": {
+     "response_ratio": 0.1982,
+     "gt_mean_near_accel_mps2": 1.5847,
+     "n_events": 751,
+     "n": 751,
+     "tier": "T0",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    }
+   },
+   "sel_gap": {
+    "status": "UNAVAILABLE",
+    "reason": "no fan+selector surface in the dump (keys o6_fan_err / o6_sel_idx absent) \u2014 this dump's arm commits to one action per step, so there is no fan to gap. Emitting a fan from the roll is a WORK ITEM (see taniteval/taniteval/selgap.py)",
+    "n": 0,
+    "tier": "T0",
+    "estimator": "n/a \u2014 inputs missing (WORK ITEM, not a pass)"
+   },
+   "legacy_epmean_row": {
+    "ade_m": 0.2849,
+    "speed_bias_mps": -0.0411,
+    "speed_mae_mps": 0.3686,
+    "accel_rms_mps2": 0.9146,
+    "jerk_rms_mps3": 1.567,
+    "net_yaw_err_rad": 0.0109,
+    "decel_response_ratio": 0.1547,
+    "accel_response_ratio": 0.1982,
+    "lag_accel_s_mean": 0.173,
+    "s_reproduction_rate": 0.8125,
+    "_reproduction_of": "analyze_cl.py per-arm row \u2014 mean-of-EPISODE-means, unmasked S-def. \u00a71.12 byte-close gate ONLY; the quotable row is 'four_families' + 'intervals' (full-set pooled)."
+   }
+  },
+  "c16": {
+   "tier": "T1",
+   "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier",
+   "four_families": {
+    "longitudinal": {
+     "speed_mae_mps": 0.6058,
+     "speed_bias_mps": -0.0079,
+     "speed_rmse_mps": 0.9761,
+     "along_mae_m": 0.4279,
+     "along_bias_m": -0.0363,
+     "along_final_bias_m": -0.0335,
+     "accel_mae_mps2": 0.7312,
+     "ego_progress": {
+      "status": "OK",
+      "convention": "human_dir",
+      "progress_ratio_mean": 0.9705,
+      "progress_ratio_median": 0.9946,
+      "progress_error_mean": 0.1886,
+      "under_progress_rate": 0.5247,
+      "gt_progress_mean_m": 13.286,
+      "n": 6042,
+      "n_windows": 6834,
+      "n_excluded_low_gt_progress": 792,
+      "min_progress_m": 0.5,
+      "t0_axis_gt_self_ratio": 0.995,
+      "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+      "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+      "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+     },
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 6834,
+     "tier": "T1",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "lateral": {
+     "heading_mae_deg": 1.862,
+     "yaw_rate_mae_degps": 3.0258,
+     "curvature_mae_1pm": 0.011208,
+     "curvature_bias_1pm": 0.002494,
+     "cross_mae_m": 0.11,
+     "cross_bias_m": -0.0135,
+     "cross_final_mae_m": 0.3704,
+     "n_steps_heading": 111809,
+     "n_steps_curvature": 105898,
+     "excluded_below_min_ds": 24871,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 6834,
+     "tier": "T1",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "tier": "T1",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice.",
+     "tier": "T1",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "_grid": {
+     "used": "dense",
+     "dt_s": 0.1,
+     "horizon_steps": 20,
+     "provenance": "DENSE path ((6834, 20, 2)) at dt_s 0.1 \u2014 the grid the derivatives are defined on",
+     "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+    },
+    "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "_complete": false
+   },
+   "intervals": {
+    "tier": "T1",
+    "n": 6834,
+    "estimator": "episode_cluster_bootstrap",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.4714,
+      "lo": 0.4001,
+      "hi": 0.5462,
+      "ci95": 0.073,
+      "se": 0.0376,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 1.3442,
+      "lo": 1.1374,
+      "hi": 1.555,
+      "ci95": 0.2088,
+      "se": 0.1066,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.6058,
+      "lo": 0.5149,
+      "hi": 0.6997,
+      "ci95": 0.0924,
+      "se": 0.0473,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.4279,
+      "lo": 0.3601,
+      "hi": 0.4964,
+      "ci95": 0.0681,
+      "se": 0.0351,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.11,
+      "lo": 0.0846,
+      "hi": 0.1347,
+      "ci95": 0.0251,
+      "se": 0.013,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 1.7907,
+      "lo": 1.4575,
+      "hi": 2.1192,
+      "ci95": 0.3308,
+      "se": 0.1652,
+      "reducer": "mean",
+      "n_windows": 5900,
+      "n_episodes": 39,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 934
+     }
+    }
+   },
+   "s_curve": {
+    "tier": "T1",
+    "definition": "S = GT half-window net headings opposite signs, both > |0.03| rad; hit = arm matches BOTH lobe signs (mag > thr/2). 'masked' zeroes stationary steps (ds <= 0.05 m) \u2014 the BANKED \u00a71.12 definition; 'unmasked' is analyze_cl.py's inline variant.",
+    "masked": {
+     "rate": 0.0538,
+     "n_s_windows": 93,
+     "n": 93,
+     "tier": "T1",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.0538,
+      "lo": 0.0,
+      "hi": 0.125,
+      "ci95": 0.0625,
+      "se": 0.0314,
+      "reducer": "mean",
+      "n_windows": 93,
+      "n_episodes": 16,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "unmasked": {
+     "rate": 0.0625,
+     "n_s_windows": 112,
+     "n": 112,
+     "tier": "T1",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.0625,
+      "lo": 0.0093,
+      "hi": 0.1429,
+      "ci95": 0.0668,
+      "se": 0.0338,
+      "reducer": "mean",
+      "n_windows": 112,
+      "n_episodes": 20,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lag": {
+    "lag_accel_s_mean": 0.3147,
+    "n": 34,
+    "n_episodes_with_signal": 34,
+    "n_episodes_total": 40,
+    "tier": "T1",
+    "estimator": "per-episode xcorr-peak lag (near-accel, |lag| <= 20 windows, min corr 0.2); mean + episode-cluster bootstrap over episodes",
+    "ci": {
+     "mean": 0.3147,
+     "lo": -0.0824,
+     "hi": 0.6912,
+     "ci95": 0.3868,
+     "se": 0.1983,
+     "reducer": "mean",
+     "n_windows": 34,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "response": {
+    "tier": "T1",
+    "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)",
+    "decel": {
+     "response_ratio": 0.1186,
+     "gt_mean_near_accel_mps2": -1.6923,
+     "n_events": 771,
+     "n": 771,
+     "tier": "T1",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    },
+    "accel": {
+     "response_ratio": 0.1222,
+     "gt_mean_near_accel_mps2": 1.5847,
+     "n_events": 751,
+     "n": 751,
+     "tier": "T1",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    }
+   },
+   "sel_gap": {
+    "status": "UNAVAILABLE",
+    "reason": "no fan+selector surface in the dump (keys c16_fan_err / c16_sel_idx absent) \u2014 this dump's arm commits to one action per step, so there is no fan to gap. Emitting a fan from the roll is a WORK ITEM (see taniteval/taniteval/selgap.py)",
+    "n": 0,
+    "tier": "T1",
+    "estimator": "n/a \u2014 inputs missing (WORK ITEM, not a pass)"
+   },
+   "legacy_epmean_row": {
+    "ade_m": 0.4714,
+    "speed_bias_mps": -0.008,
+    "speed_mae_mps": 0.6057,
+    "accel_rms_mps2": 0.675,
+    "jerk_rms_mps3": 1.1047,
+    "net_yaw_err_rad": 0.0725,
+    "decel_response_ratio": 0.1186,
+    "accel_response_ratio": 0.1222,
+    "lag_accel_s_mean": 0.3147,
+    "s_reproduction_rate": 0.0625,
+    "_reproduction_of": "analyze_cl.py per-arm row \u2014 mean-of-EPISODE-means, unmasked S-def. \u00a71.12 byte-close gate ONLY; the quotable row is 'four_families' + 'intervals' (full-set pooled)."
+   }
+  },
+  "c6": {
+   "tier": "T1",
+   "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier",
+   "four_families": {
+    "longitudinal": {
+     "speed_mae_mps": 0.5976,
+     "speed_bias_mps": -0.0051,
+     "speed_rmse_mps": 0.9756,
+     "along_mae_m": 0.4145,
+     "along_bias_m": -0.016,
+     "along_final_bias_m": -0.0353,
+     "accel_mae_mps2": 0.7645,
+     "ego_progress": {
+      "status": "OK",
+      "convention": "human_dir",
+      "progress_ratio_mean": 0.9874,
+      "progress_ratio_median": 0.9944,
+      "progress_error_mean": 0.1798,
+      "under_progress_rate": 0.5214,
+      "gt_progress_mean_m": 13.286,
+      "n": 6042,
+      "n_windows": 6834,
+      "n_excluded_low_gt_progress": 792,
+      "min_progress_m": 0.5,
+      "t0_axis_gt_self_ratio": 0.995,
+      "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+      "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+      "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+     },
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 6834,
+     "tier": "T1",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "lateral": {
+     "heading_mae_deg": 1.9468,
+     "yaw_rate_mae_degps": 3.1438,
+     "curvature_mae_1pm": 0.011429,
+     "curvature_bias_1pm": 0.000999,
+     "cross_mae_m": 0.115,
+     "cross_bias_m": -0.0111,
+     "cross_final_mae_m": 0.3886,
+     "n_steps_heading": 112615,
+     "n_steps_curvature": 106674,
+     "excluded_below_min_ds": 24065,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 6834,
+     "tier": "T1",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "tier": "T1",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice.",
+     "tier": "T1",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "_grid": {
+     "used": "dense",
+     "dt_s": 0.1,
+     "horizon_steps": 20,
+     "provenance": "DENSE path ((6834, 20, 2)) at dt_s 0.1 \u2014 the grid the derivatives are defined on",
+     "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+    },
+    "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "_complete": false
+   },
+   "intervals": {
+    "tier": "T1",
+    "n": 6834,
+    "estimator": "episode_cluster_bootstrap",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.4616,
+      "lo": 0.3887,
+      "hi": 0.5374,
+      "ci95": 0.0743,
+      "se": 0.0384,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 1.3309,
+      "lo": 1.1225,
+      "hi": 1.5473,
+      "ci95": 0.2124,
+      "se": 0.1099,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.5976,
+      "lo": 0.5048,
+      "hi": 0.6876,
+      "ci95": 0.0914,
+      "se": 0.0466,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.4145,
+      "lo": 0.3462,
+      "hi": 0.4824,
+      "ci95": 0.0681,
+      "se": 0.0348,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.115,
+      "lo": 0.0879,
+      "hi": 0.1421,
+      "ci95": 0.0271,
+      "se": 0.014,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 1.8846,
+      "lo": 1.5362,
+      "hi": 2.227,
+      "ci95": 0.3454,
+      "se": 0.1747,
+      "reducer": "mean",
+      "n_windows": 5932,
+      "n_episodes": 39,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 902
+     }
+    }
+   },
+   "s_curve": {
+    "tier": "T1",
+    "definition": "S = GT half-window net headings opposite signs, both > |0.03| rad; hit = arm matches BOTH lobe signs (mag > thr/2). 'masked' zeroes stationary steps (ds <= 0.05 m) \u2014 the BANKED \u00a71.12 definition; 'unmasked' is analyze_cl.py's inline variant.",
+    "masked": {
+     "rate": 0.043,
+     "n_s_windows": 93,
+     "n": 93,
+     "tier": "T1",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.043,
+      "lo": 0.0,
+      "hi": 0.1058,
+      "ci95": 0.0529,
+      "se": 0.0292,
+      "reducer": "mean",
+      "n_windows": 93,
+      "n_episodes": 16,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "unmasked": {
+     "rate": 0.0536,
+     "n_s_windows": 112,
+     "n": 112,
+     "tier": "T1",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.0536,
+      "lo": 0.008,
+      "hi": 0.1132,
+      "ci95": 0.0526,
+      "se": 0.028,
+      "reducer": "mean",
+      "n_windows": 112,
+      "n_episodes": 20,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lag": {
+    "lag_accel_s_mean": 0.0647,
+    "n": 34,
+    "n_episodes_with_signal": 34,
+    "n_episodes_total": 40,
+    "tier": "T1",
+    "estimator": "per-episode xcorr-peak lag (near-accel, |lag| <= 20 windows, min corr 0.2); mean + episode-cluster bootstrap over episodes",
+    "ci": {
+     "mean": 0.0647,
+     "lo": -0.2529,
+     "hi": 0.3383,
+     "ci95": 0.2956,
+     "se": 0.1556,
+     "reducer": "mean",
+     "n_windows": 34,
+     "n_episodes": 34,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "response": {
+    "tier": "T1",
+    "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)",
+    "decel": {
+     "response_ratio": 0.0855,
+     "gt_mean_near_accel_mps2": -1.6923,
+     "n_events": 771,
+     "n": 771,
+     "tier": "T1",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    },
+    "accel": {
+     "response_ratio": 0.152,
+     "gt_mean_near_accel_mps2": 1.5847,
+     "n_events": 751,
+     "n": 751,
+     "tier": "T1",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    }
+   },
+   "sel_gap": {
+    "status": "UNAVAILABLE",
+    "reason": "no fan+selector surface in the dump (keys c6_fan_err / c6_sel_idx absent) \u2014 this dump's arm commits to one action per step, so there is no fan to gap. Emitting a fan from the roll is a WORK ITEM (see taniteval/taniteval/selgap.py)",
+    "n": 0,
+    "tier": "T1",
+    "estimator": "n/a \u2014 inputs missing (WORK ITEM, not a pass)"
+   },
+   "legacy_epmean_row": {
+    "ade_m": 0.4616,
+    "speed_bias_mps": -0.0052,
+    "speed_mae_mps": 0.5976,
+    "accel_rms_mps2": 0.8692,
+    "jerk_rms_mps3": 1.5714,
+    "net_yaw_err_rad": 0.0761,
+    "decel_response_ratio": 0.0855,
+    "accel_response_ratio": 0.152,
+    "lag_accel_s_mean": 0.0647,
+    "s_reproduction_rate": 0.0536,
+    "_reproduction_of": "analyze_cl.py per-arm row \u2014 mean-of-EPISODE-means, unmasked S-def. \u00a71.12 byte-close gate ONLY; the quotable row is 'four_families' + 'intervals' (full-set pooled)."
+   }
+  },
+  "h16": {
+   "tier": "T1",
+   "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier \u2014 hold-action control baseline",
+   "four_families": {
+    "longitudinal": {
+     "speed_mae_mps": 0.4778,
+     "speed_bias_mps": -0.0338,
+     "speed_rmse_mps": 0.7665,
+     "along_mae_m": 0.3503,
+     "along_bias_m": -0.0493,
+     "along_final_bias_m": -0.0794,
+     "accel_mae_mps2": 0.625,
+     "ego_progress": {
+      "status": "OK",
+      "convention": "human_dir",
+      "progress_ratio_mean": 0.9582,
+      "progress_ratio_median": 0.9914,
+      "progress_error_mean": 0.1382,
+      "under_progress_rate": 0.5463,
+      "gt_progress_mean_m": 13.286,
+      "n": 6042,
+      "n_windows": 6834,
+      "n_excluded_low_gt_progress": 792,
+      "min_progress_m": 0.5,
+      "t0_axis_gt_self_ratio": 0.995,
+      "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+      "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+      "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+     },
+     "dt_s": 0.1,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "n_windows": 6834,
+     "tier": "T1",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "lateral": {
+     "heading_mae_deg": 1.3664,
+     "yaw_rate_mae_degps": 2.3009,
+     "curvature_mae_1pm": 0.008771,
+     "curvature_bias_1pm": 0.002058,
+     "cross_mae_m": 0.0715,
+     "cross_bias_m": -0.003,
+     "cross_final_mae_m": 0.2375,
+     "n_steps_heading": 112661,
+     "n_steps_curvature": 106726,
+     "excluded_below_min_ds": 24019,
+     "min_ds_m": 0.05,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.1,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 6834,
+     "tier": "T1",
+     "n": 6834,
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "tier": "T1",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "n": 0,
+     "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice.",
+     "tier": "T1",
+     "estimator": "full_set pooled mean over windows (point); intervals under 'intervals'"
+    },
+    "_grid": {
+     "used": "dense",
+     "dt_s": 0.1,
+     "horizon_steps": 20,
+     "provenance": "DENSE path ((6834, 20, 2)) at dt_s 0.1 \u2014 the grid the derivatives are defined on",
+     "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+    },
+    "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "_complete": false
+   },
+   "intervals": {
+    "tier": "T1",
+    "n": 6834,
+    "estimator": "episode_cluster_bootstrap",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.3751,
+      "lo": 0.3135,
+      "hi": 0.4401,
+      "ci95": 0.0633,
+      "se": 0.0319,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 0.9929,
+      "lo": 0.8298,
+      "hi": 1.171,
+      "ci95": 0.1706,
+      "se": 0.0871,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.4778,
+      "lo": 0.4009,
+      "hi": 0.5593,
+      "ci95": 0.0792,
+      "se": 0.0399,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.3503,
+      "lo": 0.2913,
+      "hi": 0.4124,
+      "ci95": 0.0605,
+      "se": 0.0304,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.0715,
+      "lo": 0.0534,
+      "hi": 0.0898,
+      "ci95": 0.0182,
+      "se": 0.0092,
+      "reducer": "mean",
+      "n_windows": 6834,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 1.3283,
+      "lo": 1.0026,
+      "hi": 1.6741,
+      "ci95": 0.3358,
+      "se": 0.1747,
+      "reducer": "mean",
+      "n_windows": 5932,
+      "n_episodes": 39,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 902
+     }
+    }
+   },
+   "s_curve": {
+    "tier": "T1",
+    "definition": "S = GT half-window net headings opposite signs, both > |0.03| rad; hit = arm matches BOTH lobe signs (mag > thr/2). 'masked' zeroes stationary steps (ds <= 0.05 m) \u2014 the BANKED \u00a71.12 definition; 'unmasked' is analyze_cl.py's inline variant.",
+    "masked": {
+     "rate": 0.0,
+     "n_s_windows": 93,
+     "n": 93,
+     "tier": "T1",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 93,
+      "n_episodes": 16,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "unmasked": {
+     "rate": 0.0,
+     "n_s_windows": 112,
+     "n": 112,
+     "tier": "T1",
+     "estimator": "episode_cluster_bootstrap over per-S-window hit indicators",
+     "ci": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 112,
+      "n_episodes": 20,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "lag": {
+    "lag_accel_s_mean": 0.2971,
+    "n": 35,
+    "n_episodes_with_signal": 35,
+    "n_episodes_total": 40,
+    "tier": "T1",
+    "estimator": "per-episode xcorr-peak lag (near-accel, |lag| <= 20 windows, min corr 0.2); mean + episode-cluster bootstrap over episodes",
+    "ci": {
+     "mean": 0.2971,
+     "lo": -0.0371,
+     "hi": 0.6229,
+     "ci95": 0.33,
+     "se": 0.1706,
+     "reducer": "mean",
+     "n_windows": 35,
+     "n_episodes": 35,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "response": {
+    "tier": "T1",
+    "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)",
+    "decel": {
+     "response_ratio": 0.1602,
+     "gt_mean_near_accel_mps2": -1.6923,
+     "n_events": 771,
+     "n": 771,
+     "tier": "T1",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    },
+    "accel": {
+     "response_ratio": 0.1466,
+     "gt_mean_near_accel_mps2": 1.5847,
+     "n_events": 751,
+     "n": 751,
+     "tier": "T1",
+     "estimator": "pooled event-conditioned near-accel mean, arm / GT (analyze_cl port; events = GT |near-accel| > 1.0 m/s^2)"
+    }
+   },
+   "sel_gap": {
+    "status": "UNAVAILABLE",
+    "reason": "no fan+selector surface in the dump (keys h16_fan_err / h16_sel_idx absent) \u2014 this dump's arm commits to one action per step, so there is no fan to gap. Emitting a fan from the roll is a WORK ITEM (see taniteval/taniteval/selgap.py)",
+    "n": 0,
+    "tier": "T1",
+    "estimator": "n/a \u2014 inputs missing (WORK ITEM, not a pass)"
+   },
+   "legacy_epmean_row": {
+    "ade_m": 0.3751,
+    "speed_bias_mps": -0.0339,
+    "speed_mae_mps": 0.4777,
+    "accel_rms_mps2": 0.7166,
+    "jerk_rms_mps3": 1.217,
+    "net_yaw_err_rad": 0.0532,
+    "decel_response_ratio": 0.1602,
+    "accel_response_ratio": 0.1466,
+    "lag_accel_s_mean": 0.2971,
+    "s_reproduction_rate": 0.0,
+    "_reproduction_of": "analyze_cl.py per-arm row \u2014 mean-of-EPISODE-means, unmasked S-def. \u00a71.12 byte-close gate ONLY; the quotable row is 'four_families' + 'intervals' (full-set pooled)."
+   }
+  }
+ },
+ "s_curve_masked_legacy": {
+  "n_s": 93,
+  "o16": 0.9785,
+  "o6": 0.9785,
+  "c16": 0.0538,
+  "c6": 0.043,
+  "h16": 0.0,
+  "_note": "stationary-masked dh, matching s_curve_dump.py's banked definition \u2014 \u00a71.12 reproduction block"
+ },
+ "paired_legacy": {
+  "paired_run6_minus_v16_open": {
+   "ade_m": {
+    "delta": -0.05491023696323975,
+    "lo": -0.07129168348350785,
+    "hi": -0.04120435771269732,
+    "separated": true
+   },
+   "speed_mae_mps": {
+    "delta": -0.07239998982145843,
+    "lo": -0.09449308909554881,
+    "hi": -0.050917486176554325,
+    "separated": true
+   },
+   "jerk_rms_mps3": {
+    "delta": 0.4335438997653046,
+    "lo": 0.33437234725236004,
+    "hi": 0.5378447192947441,
+    "separated": true
+   },
+   "net_yaw_err_rad": {
+    "delta": 8.833931690974536e-05,
+    "lo": -0.0006899860580033633,
+    "hi": 0.0007491116046133848,
+    "separated": false
+   },
+   "_reproduction_of": "analyze_cl.boot \u2014 episode-mean bootstrap, fresh rng(0) per call; \u00a71.12 byte-close gate only"
+  },
+  "paired_closed_minus_open_v16": {
+   "ade_m": {
+    "delta": 0.13151518575317783,
+    "lo": 0.11194932699941613,
+    "hi": 0.15242542037491658,
+    "separated": true
+   },
+   "speed_mae_mps": {
+    "delta": 0.16467072046568243,
+    "lo": 0.13173822789191636,
+    "hi": 0.1974147975454783,
+    "separated": true
+   },
+   "_reproduction_of": "analyze_cl.boot \u2014 episode-mean bootstrap, fresh rng(0) per call; \u00a71.12 byte-close gate only"
+  },
+  "paired_closed_minus_open_run6": {
+   "ade_m": {
+    "delta": 0.17665762476931626,
+    "lo": 0.1479522142816259,
+    "hi": 0.20814744766531917,
+    "separated": true
+   },
+   "speed_mae_mps": {
+    "delta": 0.22895289723717954,
+    "lo": 0.1860279192854464,
+    "hi": 0.27356094552050425,
+    "separated": true
+   },
+   "_reproduction_of": "analyze_cl.boot \u2014 episode-mean bootstrap, fresh rng(0) per call; \u00a71.12 byte-close gate only"
+  }
+ },
+ "paired_decision_grade": {
+  "paired_run6_minus_v16_open": {
+   "tier": "T0 minus T0",
+   "n": 6834,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "direction": "o6 - o16",
+   "ade_m": {
+    "delta": -0.0549,
+    "lo": -0.0713,
+    "hi": -0.0412,
+    "ci95": 0.015,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6834,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "speed_mae_mps": {
+    "delta": -0.0724,
+    "lo": -0.0966,
+    "hi": -0.0516,
+    "ci95": 0.0225,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6834,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "paired_closed_minus_open_v16": {
+   "tier": "T1 minus T0",
+   "n": 6834,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "direction": "c16 - o16",
+   "ade_m": {
+    "delta": 0.1315,
+    "lo": 0.112,
+    "hi": 0.1524,
+    "ci95": 0.0202,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6834,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "speed_mae_mps": {
+    "delta": 0.1647,
+    "lo": 0.1329,
+    "hi": 0.1992,
+    "ci95": 0.0331,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6834,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "paired_closed_minus_open_run6": {
+   "tier": "T1 minus T0",
+   "n": 6834,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "direction": "c6 - o6",
+   "ade_m": {
+    "delta": 0.1767,
+    "lo": 0.1479,
+    "hi": 0.2081,
+    "ci95": 0.0301,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6834,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "speed_mae_mps": {
+    "delta": 0.2289,
+    "lo": 0.1858,
+    "hi": 0.2725,
+    "ci95": 0.0433,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6834,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "arm": "v16",
+ "ckpt": null,
+ "run_config": null,
+ "corpus": null,
+ "corpus_key": null,
+ "episodes_flag": 40,
+ "dump_dir": "/workspace/v16_eval/dump_cl",
+ "lead_block": null,
+ "mode": "analyze-only"
+}

@@ -1,0 +1,34 @@
+..........F.                                                             [100%]
+================================== FAILURES ===================================
+__________ test_7b_RED_a_dropped_entry_that_CARRIES_state_is_refused __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000167CE4C29C0>
+
+    def test_7b_RED_a_dropped_entry_that_CARRIES_state_is_refused(monkeypatch):
+        C = _converter()
+        argv = R7_CORE + F1_F6 + ["--no-strategic"]
+        _a, _pre, sd = _pre_freeze_opt_state(monkeypatch, argv)
+        _a2, _c2, frozen = _smoke(argv, seed=0)
+        orders = C.old_and_new_orders(frozen)
+        old_names = orders["old"]["encoder"] + orders["old"]["head"]
+        idx = [i for g in sd["param_groups"] for i in g["params"]]
+        victim = next(i for i, n in zip(idx, old_names) if n == "core.route_head.weight")
+        shape = dict(frozen.named_parameters())["core.route_head.weight"].shape
+        sd["state"][victim] = {"step": torch.tensor(2.0), "exp_avg": torch.zeros(shape),
+                               "exp_avg_sq": torch.zeros(shape)}
+>       with pytest.raises(SystemExit, match="CARRY AdamW state"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SystemExit
+
+tests\test_refcv7_admitted_freeze.py:281: Failed
+---------------------------- Captured stdout call -----------------------------
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (36 tensors) head_lr=1.000e-04 (137 tensors)
+============================== warnings summary ===============================
+tests/test_refcv7_admitted_freeze.py: 14 warnings
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\jit\_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_refcv7_admitted_freeze.py::test_7b_RED_a_dropped_entry_that_CARRIES_state_is_refused
+1 failed, 11 passed, 14 warnings in 8.22s

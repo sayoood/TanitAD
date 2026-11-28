@@ -1,0 +1,459 @@
+"""REF-A v1 — the REPAIRED action search: iCEM over unicycle controls, with a
+PROVABLE floor against the trivial baselines.
+
+⛔ WHY THIS FILE EXISTS. C101 measured our CEM planner **35.8 % WORSE than
+constant velocity at T1** — "the loss is in the ACTION SEARCH, not the WM". The
+frozen-encoder literature (`…/Research/2026-08-18-frozen-encoder-literature/`)
+puts *test-time optimisation* at the centre of every successful frozen-encoder
+system (DINO-WM, V-JEPA 2-AC, GPC), which means adopting that recipe **moves our
+known-worst component onto the critical path**. This module is the precondition
+for doing that safely.
+
+⭐ FOUR MECHANISMS, each answering a named failure:
+
+1. **Kinematic action space** — search over ``(a, kappa)`` at 10 Hz through the
+   unicycle (Alpamayo-2 form, v6 §4b) instead of free waypoints. Every sample is
+   feasible and C2-smooth by construction, so the optimiser cannot spend its
+   budget discovering that cars have a turning circle. Jerk is a
+   *parameterisation*, not a penalty.
+
+2. **iCEM, not vanilla CEM** (Pinneri et al., `martius-lab/iCEM`). Vanilla CEM
+   samples i.i.d. Gaussian noise *per timestep*: the resulting control sequences
+   are white noise, which a vehicle cannot execute and whose rollouts cluster in
+   a useless region of trajectory space. iCEM samples **temporally correlated
+   (coloured) noise**, ``S(f) ∝ f^-beta``, and carries elites across MPC ticks.
+   ⇒ This is the single most likely mechanical cause of C101.
+
+3. ⭐ **BASELINE INJECTION — the floor.** Constant-velocity, hold-``v0`` and the
+   imitation proposal are injected into **every** iteration's candidate set and
+   into the final argmin. ⇒ the returned plan's cost is **≤ min(baseline cost)
+   BY CONSTRUCTION**, so "planner loses to CV" becomes structurally impossible
+   *in modelled cost*. Pinned by :mod:`tests.test_refa_v1` with an adversarial
+   cost function that makes CEM's own optimum arbitrarily bad.
+
+4. ⛔ **AND THE HONEST LIMIT OF (3), STATED HERE SO IT TRAVELS.** The floor is a
+   floor in **modelled** cost. If the cost model is miscalibrated, a planner that
+   provably wins on modelled cost can still lose on realised metrics — that is
+   exactly how C101 happened, and mechanism 3 alone would NOT have caught it.
+   ⇒ :func:`cost_fidelity` measures rank correlation between modelled cost and
+   realised outcome on banked windows, and the pre-registered admission gate
+   (design doc §7) refuses to quote any planner number until it passes. **A floor
+   without a fidelity check is a false comfort.**
+
+Defaults are DINO-WM's published planning configuration (N=300 samples, 30 CEM
+iterations, 30 elites, initial variance 1.0, receding horizon = planning
+horizon), so the arm reproduces the recipe it is testing before it varies it.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Callable, Sequence
+
+import torch
+from torch import Tensor
+
+# The programme's single unicycle integrator — never re-derive it here (a second
+# integrator is a second convention, and two conventions is a retraction).
+from tanitad.models.kinematic import (STEER_WHEELBASE_M, as_curvature,
+                                      rollout_unicycle)
+
+__all__ = ["PlanConfig", "PlanResult", "colored_noise", "icem_plan",
+           "cost_fidelity", "DINO_WM_DEFAULTS", "unicycle_paths"]
+
+#: DINO-WM's published planning configuration, kept as a named constant so an
+#: arm that claims "we used their setup" can be checked against one place.
+DINO_WM_DEFAULTS = {"n_samples": 300, "n_iters": 30, "n_elites": 30,
+                    "init_var": 1.0}
+
+
+@dataclass
+class PlanConfig:
+    """Planner configuration. Defaults = DINO-WM + iCEM extensions OFF-by-value.
+
+    ``beta = 0.0`` reduces the coloured noise to white noise, i.e. **vanilla
+    CEM** — kept reachable on purpose so the iCEM contribution is measurable as
+    a one-flag ablation rather than asserted.
+    """
+
+    # --- DINO-WM's published values -------------------------------------- #
+    n_samples: int = 300
+    n_iters: int = 30
+    n_elites: int = 30
+    init_var: float = 1.0
+
+    # --- horizon / control ------------------------------------------------ #
+    horizon: int = 10                 # optimised steps (2.0 s at dt=0.2)
+    dt: float = 0.2
+    a_max: float = 4.0                # m/s^2, matches v6 UnicycleEmission
+    kappa_max: float = 0.2            # 1/m,   matches v6 UnicycleEmission
+
+    # --- iCEM ------------------------------------------------------------- #
+    beta: float = 2.5                 # coloured-noise exponent (0 => vanilla)
+    decay: float = 1.25               # population decay per iteration
+    min_samples: int = 32
+    elite_memory: float = 0.3         # fraction of elites reused next MPC tick
+    shift_init: bool = True           # warm-start from the shifted last plan
+    alpha: float = 0.1                # mean/var smoothing across iterations
+
+    # --- the KAMM (friction-circle) CURVATURE CAP (2026-09-05,
+    # D-REFAV1-COST-GEOMETRY / L4). ``None`` = OFF and BIT-IDENTICAL to every
+    # arm banked before that date.
+    # ⛔ WHY IT EXISTS, MEASURED: ``kappa_max`` is a CONSTANT, so the search
+    # is allowed the same curvature at 30 m/s as at 2 m/s. The tyre is not:
+    # ``a_lat = v^2 * kappa`` must stay inside ``mu * g``. Audited with the
+    # sibling stream's own scorer-derived instrument
+    # (``tanitad.refs.feasible_decode.assert_feasible``) over the banked p4
+    # dumps at ``v0 >= 2 m/s`` (n = 27; the GROUND-TRUTH control reads
+    # ``envelope_rate 0.0000`` and ``kamm_over_rate 0.0000``, so the block is
+    # admissible): refav1's plans are ENVELOPE-feasible by construction
+    # (``envelope_rate`` **0.0000**, ``max|kappa|`` exactly the 0.2 clip) yet
+    # **29.6 %** of them leave the ``mu = 0.7`` friction circle, rising to
+    # **42.1 %** at ``v0 >= 5 m/s``, with ``peak_g`` up to **3.262 g** against a
+    # ground truth of 0.373. Sustaining ``GOAL_KAPPA_TURN = 0.08`` at 20 m/s is
+    # ``0.08 * 400 = 32 m/s^2 = 3.26 g`` -- the observed maximum, recovered by an
+    # independent route.
+    # ⭐ The cap is ``mu * g / v^2`` evaluated on the CANDIDATE'S OWN speed
+    # (``v0`` integrated through its accel channel), so a plan that brakes into a
+    # curve is allowed the curvature its own braking earns. At 20 m/s and
+    # ``mu = 0.7`` that is **0.0172 1/m** -- 11.6x tighter than the constant clip
+    # and, unlike a quadratic ``W_KAPPA`` penalty, it is a CONSTRAINT with units.
+    kamm_mu: float | None = None
+    #: below this speed ``mu*g/v^2`` exceeds ``kappa_max`` anyway and the
+    #: division is ill-conditioned; the constant clip governs there.
+    kamm_v_floor: float = 2.0
+
+    # --- the MAX-SPEED CAP (PI directive 2026-09-27, requirement R1: "both of
+    # them should get the max speed, which it must not be exceeded"). ``None`` =
+    # OFF and BIT-IDENTICAL to every arm banked before it. A per-step CONSTRAINT
+    # on the candidate's OWN speed profile (``v0`` integrated through its accel
+    # channel): each step's accel is limited so the speed that step CLOSES at
+    # never exceeds ``v_max``. It binds EVERY candidate -- the CEM population,
+    # the seed pool AND the injected baselines (`_baseline_controls`) -- so the
+    # emitted plan cannot exceed the limit whichever candidate wins.
+    # ⚠️ If ``v0`` already exceeds ``v_max`` the plan brakes at ``-a_max`` until
+    # it is under the limit; that residual is a property of the INPUT state and
+    # the evaluator reports it separately, never hides it.
+    v_max: float | None = None
+
+    # --- the floor -------------------------------------------------------- #
+    inject_baselines: bool = True
+
+    seed: int | None = 0
+
+    def sanity(self) -> None:
+        if self.n_elites > self.n_samples:
+            raise ValueError("n_elites must be <= n_samples")
+        if self.horizon < 1:
+            raise ValueError("horizon must be >= 1")
+        if not (0.0 <= self.elite_memory < 1.0):
+            raise ValueError("elite_memory must be in [0, 1)")
+        if self.kamm_mu is not None and not (self.kamm_mu > 0.0):
+            raise ValueError("kamm_mu must be > 0 (a friction coefficient) "
+                             "or None to disable the cap")
+        if self.kamm_v_floor <= 0.0:
+            raise ValueError("kamm_v_floor must be > 0 m/s")
+        if self.v_max is not None and not (self.v_max > 0.0):
+            raise ValueError("v_max must be > 0 m/s (a speed limit) or None "
+                             "to disable the cap")
+
+
+@dataclass
+class PlanResult:
+    controls: Tensor                  # [H, 2] chosen (a, kappa) sequence
+    cost: float                       # its modelled cost
+    source: str                       # "cem" | "baseline:<name>"
+    baseline_costs: dict = field(default_factory=dict)
+    n_evaluated: int = 0
+    elites: Tensor | None = None      # [n_elites, H, 2], for elite memory
+    # --- coarse-to-fine verification (filled by RefAV1.plan when the search
+    # ran on the tactical field). ``coarse_fine_agree`` False means the coarse
+    # level picked a plan the full field ranks below a baseline — a REPORTABLE
+    # event, not a silent correction.
+    fine_costs: dict = field(default_factory=dict)
+    fine_best: str | None = None
+    coarse_fine_agree: bool | None = None
+    # --- goal provenance (set by RefAV1.plan, 2026-09-02; D-REFAV1-PLAN-GOAL).
+    # Declared here so an arm can never be quoted at T1 without saying what
+    # its goal was: "supplied" | "tactical_imagined" | "none". ``goal_action``
+    # carries the decoded (lat, lon) tokens + canonical controls — the SELECTED
+    # manoeuvre the TACTICAL family reports.
+    goal_source: str | None = None
+    goal_space: str | None = None
+    goal_action: dict | None = None
+
+
+def colored_noise(shape: tuple[int, ...], beta: float, *,
+                  device=None, generator=None) -> Tensor:
+    """Temporally correlated noise with power spectrum ``S(f) ∝ f^-beta``.
+
+    ``shape = (n, H, A)``; correlation runs along **H** (time). ``beta = 0``
+    returns white noise, which is exactly what vanilla CEM samples — the reason
+    its control sequences are physically unrealisable at any horizon.
+
+    Implemented by shaping a real FFT and inverting, then standardising to unit
+    variance per sample so ``init_var`` keeps its meaning across ``beta``.
+    """
+    n, H, A = shape
+    if beta == 0.0:
+        return torch.randn(n, H, A, device=device, generator=generator)
+    freqs = torch.fft.rfftfreq(H, device=device)
+    freqs[0] = freqs[1] if freqs.numel() > 1 else 1.0     # avoid div-by-zero
+    scale = freqs.pow(-beta / 2.0)
+    white = torch.randn(n, A, H, device=device, generator=generator)
+    spec = torch.fft.rfft(white, dim=-1) * scale
+    out = torch.fft.irfft(spec, n=H, dim=-1)
+    out = out - out.mean(dim=-1, keepdim=True)
+    std = out.std(dim=-1, keepdim=True).clamp_min(1e-6)
+    return (out / std).permute(0, 2, 1).contiguous()      # [n, H, A]
+
+
+#: standard gravity, one spelling, matching `feasible_decode.G_MPS2`.
+G_MPS2 = 9.80665
+
+
+def _clip(controls: Tensor, cfg: PlanConfig, v0: float | None = None) -> Tensor:
+    """Clamp a candidate into the actuator box, and -- when ``cfg.kamm_mu`` is
+    set -- into the FRICTION CIRCLE as well.
+
+    The Kamm cap is ``mu * g / v^2`` on the candidate's OWN speed profile
+    (``v0`` integrated through its accel channel), so it is a per-step limit and
+    a plan that slows into a curve earns the curvature it paid for. ``v0=None``
+    or ``kamm_mu=None`` leaves this bit-identical to the pre-2026-09-05 clip.
+    """
+    a = controls[..., 0].clamp(-cfg.a_max, cfg.a_max)
+    k = controls[..., 1].clamp(-cfg.kappa_max, cfg.kappa_max)
+    if getattr(cfg, "v_max", None) is not None and v0 is not None:
+        # R1 (PI 2026-09-27): BEFORE the Kamm cap, so the friction circle is
+        # evaluated on the speed profile the plan will actually have.
+        a = _cap_speed(a, float(v0), float(cfg.v_max), cfg.dt, cfg.a_max)
+    if cfg.kamm_mu is not None and v0 is not None:
+        # the speed each step OPENS at: v0 for step 0, then v0 + cumsum(a)*dt
+        v = float(v0) + torch.cumsum(a, dim=-1) * cfg.dt - a * cfg.dt
+        v = v.clamp_min(float(cfg.kamm_v_floor))
+        cap = (float(cfg.kamm_mu) * G_MPS2) / v.pow(2)
+        cap = cap.clamp(max=float(cfg.kappa_max))
+        k = torch.maximum(torch.minimum(k, cap), -cap)
+    return torch.stack([a, k], dim=-1)
+
+
+def _cap_speed(a: Tensor, v0: float, v_max: float, dt: float,
+               a_max: float) -> Tensor:
+    """Limit each step's accel so the speed that step CLOSES at is <= ``v_max``.
+
+    ``a`` is ``[..., H]``. Sequential by construction (a cap at step t lowers
+    every later speed), so it is a loop over H (<= 30), vectorised over the
+    candidates. A step already under the cap is returned UNCHANGED
+    (``torch.minimum`` with a larger bound is the identity), which is what keeps
+    a non-binding cap bit-identical to no cap. If ``v0 > v_max`` the demanded
+    decel is floored at ``-a_max``: the plan brakes as hard as it may and the
+    residual excess is a property of the input state, reported by the caller.
+    """
+    out = a.clone()
+    v = torch.full(a.shape[:-1], float(v0), dtype=a.dtype, device=a.device)
+    for t in range(a.shape[-1]):
+        lim = ((float(v_max) - v) / float(dt)).clamp(min=-float(a_max))
+        out[..., t] = torch.minimum(out[..., t], lim)
+        v = v + out[..., t] * float(dt)
+    return out
+
+
+def _baseline_controls(cfg: PlanConfig, v0: float, device,
+                       proposal: Tensor | None) -> dict[str, Tensor]:
+    """The candidates the planner must never lose to.
+
+    ``cv`` / ``hold_v0`` are the same control sequence in this parameterisation
+    (zero accel, zero curvature) but are kept as SEPARATE named entries because
+    the eval reports them as separate floors and a silent merge would make one
+    of them look absent. ``proposal`` is the imitation head's plan (GPC's
+    "generative control proposes, MPC disposes").
+    """
+    z = torch.zeros(cfg.horizon, 2, device=device)
+    out = {"cv": z, "hold_v0": z.clone()}
+    if proposal is not None:
+        out["proposal"] = _clip(proposal.to(device), cfg, v0)
+    # A gentle-decel candidate: the single most common correct action in dense
+    # traffic, and the one a white-noise CEM population reliably misses.
+    dec = z.clone()
+    dec[:, 0] = -min(1.5, cfg.a_max)
+    out["decel_1.5"] = dec
+    if getattr(cfg, "v_max", None) is not None:
+        # R1: the injected baselines never went through `_clip`, so without this
+        # a constant-velocity candidate at v0 > v_max would be a legal winner.
+        # Below the limit this is the identity (zero/negative accel never binds).
+        out = {k: (v if k == "proposal" else _clip(v, cfg, v0))
+               for k, v in out.items()}
+    return out
+
+
+@torch.no_grad()
+def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
+              cfg: PlanConfig | None = None,
+              proposal: Tensor | None = None,
+              prev_elites: Tensor | None = None,
+              seed_pool: Tensor | None = None,
+              device=None) -> PlanResult:
+    """Plan one MPC tick. ``cost_fn`` maps ``[n, H, 2]`` controls -> ``[n]`` cost.
+
+    The returned plan is the **argmin over the union** of the CEM optimum and the
+    injected baselines, which is what makes the floor structural rather than
+    hoped-for.
+    """
+    cfg = cfg or PlanConfig()
+    cfg.sanity()
+    device = device or (proposal.device if proposal is not None else "cpu")
+    gen = None
+    if cfg.seed is not None:
+        gen = torch.Generator(device=device).manual_seed(int(cfg.seed))
+
+    H = cfg.horizon
+    mean = torch.zeros(H, 2, device=device)
+    if cfg.shift_init and prev_elites is not None and prev_elites.numel():
+        shifted = torch.roll(prev_elites.mean(0), shifts=-1, dims=0)
+        shifted[-1] = shifted[-2] if H > 1 else 0.0
+        mean = shifted
+    var = torch.full((H, 2), float(cfg.init_var), device=device)
+
+    baselines = ({} if not cfg.inject_baselines
+                 else _baseline_controls(cfg, v0, device, proposal))
+    base_stack = (torch.stack(list(baselines.values()))
+                  if baselines else torch.empty(0, H, 2, device=device))
+
+    n_eval = 0
+    elites = None
+    best_cem, best_cem_cost = None, float("inf")
+
+    for it in range(cfg.n_iters):
+        n = max(cfg.min_samples, int(cfg.n_samples / (cfg.decay ** it)))
+        noise = colored_noise((n, H, 2), cfg.beta, device=device, generator=gen)
+        samples = _clip(mean + noise * var.sqrt(), cfg, v0)
+
+        # Elite memory: carry a fraction of the previous tick's elites in, so a
+        # good plan found under one observation is not thrown away at the next.
+        if it == 0 and prev_elites is not None and prev_elites.numel():
+            keep = max(1, int(cfg.elite_memory * cfg.n_elites))
+            samples = torch.cat([samples, prev_elites[:keep].to(device)], 0)
+        # `seed_pool`: extra full candidates (e.g. the multimodal proposal
+        # modes) that must ALL compete in iteration 0 — deliberately separate
+        # from elite memory, whose [:keep] truncation would silently drop them.
+        if it == 0 and seed_pool is not None and seed_pool.numel():
+            samples = torch.cat(
+                [samples, _clip(seed_pool.to(device), cfg, v0)], 0)
+        # The baselines compete INSIDE the loop too, so they can seed the mean.
+        if base_stack.numel():
+            samples = torch.cat([samples, base_stack], 0)
+
+        costs = cost_fn(samples)
+        n_eval += samples.shape[0]
+        k = min(cfg.n_elites, samples.shape[0])
+        idx = torch.topk(-costs, k=k).indices
+        elites = samples[idx]
+
+        if costs[idx[0]].item() < best_cem_cost:
+            best_cem_cost = float(costs[idx[0]].item())
+            best_cem = samples[idx[0]].clone()
+
+        new_mean = elites.mean(0)
+        new_var = elites.var(0, unbiased=False).clamp_min(1e-6)
+        mean = (1 - cfg.alpha) * new_mean + cfg.alpha * mean
+        var = (1 - cfg.alpha) * new_var + cfg.alpha * var
+
+    # ---- the floor: argmin over CEM optimum UNION baselines ---------------- #
+    base_costs: dict[str, float] = {}
+    if base_stack.numel():
+        bc = cost_fn(base_stack)
+        n_eval += base_stack.shape[0]
+        base_costs = {k: float(v) for k, v in zip(baselines.keys(), bc)}
+
+    # ⛔ ``<=``, NOT ``<`` — AND THE REASON IS A REAL BUG THIS CAUGHT.
+    # Because the baselines also compete INSIDE the CEM loop (they can usefully
+    # seed the mean), the CEM's own best sample is frequently the baseline
+    # itself. With a strict ``<`` the tie left the result labelled ``source =
+    # "cem"`` while the returned controls were byte-identical to constant
+    # velocity: the floor HELD but the provenance LIED, and a planner report
+    # would have credited the search for a plan it did not find. MEASURED by
+    # ``test_THE_FLOOR_...`` on first run. Ties now attribute to the baseline
+    # and return the baseline's own (deterministic) controls.
+    best_name, best_ctrl, best_cost = "cem", best_cem, best_cem_cost
+    for name, c in base_costs.items():
+        if c <= best_cost:
+            best_name, best_cost = f"baseline:{name}", c
+            best_ctrl = baselines[name]
+
+    if best_ctrl is None:                       # pathological: n_iters == 0
+        best_ctrl = torch.zeros(H, 2, device=device)
+        best_name, best_cost = "baseline:cv", float(cost_fn(best_ctrl[None])[0])
+
+    return PlanResult(controls=best_ctrl, cost=best_cost, source=best_name,
+                      baseline_costs=base_costs, n_evaluated=n_eval,
+                      elites=elites)
+
+
+def unicycle_paths(controls: Tensor, v0: Tensor, dt: float, *,
+                   action_units: str = "kappa",
+                   wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
+    """``[n, H, 2]`` controls -> ``[n, H, 2]`` (x, y) paths in the ego frame.
+
+    Thin wrapper over the programme's integrator so every planner cost is
+    computed in the SAME metric convention as the eval (x forward, y left).
+
+    ⭐ ``action_units`` STATES WHICH UNIT CHANNEL 1 ARRIVES IN (PI ruling
+    2026-09-03; the contract is documented on `kinematic.STEER_WHEELBASE_M`):
+
+    * ``"kappa"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller) — the
+      controls are already GEOMETRY. This is the right unit for a PLANNER
+      candidate: ``PlanConfig.kappa_max``, ``_clip`` and ``GOAL_KAPPA_*`` are all
+      curvature, so a candidate integrated here needs no conversion.
+    * ``"steer"`` — the controls are COMMAND (a road-wheel angle), which is what
+      the v2ep ``actions[:, 0]`` channel and every RECORDED action is. They are
+      converted with ``kappa = tan(steer)/L_enc`` BEFORE integration.
+
+    ⛔ The integrator itself is untouched and still defines ``yaw_rate = v*kappa``.
+    Converting here rather than inside `rollout_unicycle` is deliberate: a
+    planner candidate and a recorded action arrive at the SAME integrator in
+    DIFFERENT units, so the unit has to travel with the call, not with the model.
+    """
+    controls = as_curvature(controls, action_units, wheelbase)
+    n, H, _ = controls.shape
+    v = v0.expand(n) if v0.ndim else v0.repeat(n)
+    state0 = torch.zeros(n, 4, device=controls.device)
+    state0[:, 3] = v
+    return rollout_unicycle(state0, controls, dt=dt)[..., :2]
+
+
+def cost_fidelity(modelled: Sequence[float],
+                  realised: Sequence[float]) -> dict:
+    """⛔ THE GATE MECHANISM 3 CANNOT PROVIDE — is the cost model even right?
+
+    Spearman rank correlation between the planner's modelled cost and the
+    realised outcome over banked windows. The floor guarantees we win on
+    ``modelled``; only this says whether ``modelled`` means anything.
+
+    Returns ``rho``, ``n``, and ``admissible`` against the pre-registered
+    threshold (design doc §7: rho >= 0.5 on >= 200 windows). Never silently
+    passes an under-powered sample: ``n < 200`` returns ``admissible=False``
+    with the reason, rather than a bare correlation.
+    """
+    m = torch.as_tensor(list(modelled), dtype=torch.float64)
+    r = torch.as_tensor(list(realised), dtype=torch.float64)
+    if m.numel() != r.numel():
+        raise ValueError("modelled and realised must be the same length")
+    n = int(m.numel())
+    if n < 2:
+        return {"rho": float("nan"), "n": n, "admissible": False,
+                "reason": "fewer than 2 paired windows"}
+
+    def _rank(x: Tensor) -> Tensor:
+        order = x.argsort()
+        ranks = torch.empty_like(x)
+        ranks[order] = torch.arange(x.numel(), dtype=x.dtype)
+        return ranks
+
+    rm, rr = _rank(m), _rank(r)
+    rm = rm - rm.mean()
+    rr = rr - rr.mean()
+    denom = (rm.norm() * rr.norm()).clamp_min(1e-12)
+    rho = float((rm @ rr) / denom)
+    ok = bool(rho >= 0.5 and n >= 200)
+    reason = ("" if ok else
+              ("n < 200 (under-powered)" if n < 200 else "rho < 0.5"))
+    return {"rho": rho, "n": n, "admissible": ok, "reason": reason}

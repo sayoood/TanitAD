@@ -1,0 +1,36 @@
+++ date -u +%FT%TZ
++ echo '--- BEFORE_COST 2026-08-03T16:52:53Z ---'
+--- BEFORE_COST 2026-08-03T16:52:53Z ---
++ ps -eo pid,etime,args --sort=-rss
++ grep -E python
++ grep -v grep
++ head -5
+   4695       00:03 python3 score_t1_strategic.py --labels results/strategic_gt_t1 --limit 0 --max-poses-per-event 60 --out /home/nvidia/nurec-gsplat/results/t1_route_ticks.json --ckpt-dir /home/nvidia/nurec-gsplat/results/t1_ticks_parts
+   3925       00:36 python closedloop_drive.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430 --arm flagship-v1 --ckpt /home/nvidia/models/flagship-v1-speedjerk/ckpt.pt --condition objects --starts 0,17,34,51,68,85,102,119,136 --steps 50 --out /home/nvidia/cl_out_ablate/objmorn_flagship-v1_objects
+   4327       00:23 python closedloop_drive.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/7c72937c-c620-4776-9555-d57222c0081f --arm flagship-v1 --ckpt /home/nvidia/models/flagship-v1-speedjerk/ckpt.pt --condition objects --starts 75,78,81,84,87,90,93,96,99,102,105,109 --steps 50 --out /home/nvidia/cutin_targeted_out/flagship-v1_objects_REPEAT
+   4689       00:03 bash -c mkdir -p /home/nvidia/nurec-gsplat/logs; cat > /home/nvidia/nurec-gsplat/run_t1.sh <<'EOF' #!/bin/bash export PATH=$HOME/venvs/tanitad-edge/bin:/usr/local/cuda/bin:$PATH export OMP_NUM_THREADS=6 export HF_TOKEN='hf_REDACTED_SEE_C111_ROTATE_THIS_TOKEN' cd /home/nvidia/nurec-gsplat python3 score_t1_strategic.py --labels results/strategic_gt_t1 --limit 0   --max-poses-per-event 60 --out /home/nvidia/nurec-gsplat/results/t1_route_ticks.json   --ckpt-dir /home/nvidia/nurec-gsplat/results/t1_ticks_parts echo T1_TICKS_DONE_RC=$? EOF chmod +x /home/nvidia/nurec-gsplat/run_t1.sh; setsid nohup /home/nvidia/nurec-gsplat/run_t1.sh > /home/nvidia/nurec-gsplat/logs/t1_ticks.log 2>&1 < /dev/null & disown; sleep 25; echo LAUNCHED; head -3 /home/nvidia/nurec-gsplat/logs/t1_ticks.log
+   3924       00:36 bash -c export PATH=$HOME/venvs/tanitad-edge/bin:/usr/local/cuda/bin:$PATH; export OMP_NUM_THREADS=6; export PYTHONPATH=$HOME/tanitad_cl/stack:$HOME/tanitad_cl/stack/scripts:$HOME/tanitad_cl/taniteval:$HOME/tanitad_cl/stack/experiments/nurec-gsplat:$HOME/tanitad_cl/stack/experiments/alpasim-gsplat; cd $HOME/tanitad_cl/stack/experiments/alpasim-gsplat; S=$HOME/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430; for A in flagship-v1 refc-base; do case $A in flagship-v1) C=$HOME/models/flagship-v1-speedjerk/ckpt.pt;; refc-base) C=$HOME/models/refc-base/ckpt.pt;; esac; python closedloop_drive.py --scene-dir $S --arm $A --ckpt $C --condition objects --starts 0,17,34,51,68,85,102,119,136 --steps 50 --out $HOME/cl_out_ablate/objmorn_${A}_objects || echo FAILED $A; done; echo OBJMORN_DONE
++ timeout 3 tegrastats --interval 1000
++ head -1
+08-03-2026 18:52:54 RAM 20238/125772MB (lfb 54x4MB) CPU [17%@972,24%@972,17%@972,4%@972,4%@972,40%@972,0%@1674,5%@1674,4%@972,16%@972,24%@2601,1%@2601,0%@972,11%@972] cpu@49.468C tj@50.312C soc012@48.125C gpu@50.031C soc345@50.281C VDD_GPU 27608mW/27608mW VDD_CPU_SOC_MSS 11043mW/11043mW VIN_SYS_5V0 9768mW/9768mW VIN 57166mW/57166mW
++ free -g
++ sed -n 2p
+Mem:             122          21          94           0           7         101
+++ date -u +%FT%TZ
++ echo '--- AFTER_COST 2026-08-03T17:01:10Z ---'
+--- AFTER_COST 2026-08-03T17:01:10Z ---
++ ps -eo pid,etime,args --sort=-rss
++ grep -E python
++ grep -v grep
++ head -5
+   4327       08:40 python closedloop_drive.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/7c72937c-c620-4776-9555-d57222c0081f --arm flagship-v1 --ckpt /home/nvidia/models/flagship-v1-speedjerk/ckpt.pt --condition objects --starts 75,78,81,84,87,90,93,96,99,102,105,109 --steps 50 --out /home/nvidia/cutin_targeted_out/flagship-v1_objects_REPEAT
+   7346       03:47 python closedloop_drive.py --scene-dir /home/nvidia/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430 --arm refc-base --ckpt /home/nvidia/models/refc-base/ckpt.pt --condition objects --starts 0,17,34,51,68,85,102,119,136 --steps 50 --out /home/nvidia/cl_out_ablate/objmorn_refc-base_objects
+   4695       08:20 python3 score_t1_strategic.py --labels results/strategic_gt_t1 --limit 0 --max-poses-per-event 60 --out /home/nvidia/nurec-gsplat/results/t1_route_ticks.json --ckpt-dir /home/nvidia/nurec-gsplat/results/t1_ticks_parts
+   3924       08:54 bash -c export PATH=$HOME/venvs/tanitad-edge/bin:/usr/local/cuda/bin:$PATH; export OMP_NUM_THREADS=6; export PYTHONPATH=$HOME/tanitad_cl/stack:$HOME/tanitad_cl/stack/scripts:$HOME/tanitad_cl/taniteval:$HOME/tanitad_cl/stack/experiments/nurec-gsplat:$HOME/tanitad_cl/stack/experiments/alpasim-gsplat; cd $HOME/tanitad_cl/stack/experiments/alpasim-gsplat; S=$HOME/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430; for A in flagship-v1 refc-base; do case $A in flagship-v1) C=$HOME/models/flagship-v1-speedjerk/ckpt.pt;; refc-base) C=$HOME/models/refc-base/ckpt.pt;; esac; python closedloop_drive.py --scene-dir $S --arm $A --ckpt $C --condition objects --starts 0,17,34,51,68,85,102,119,136 --steps 50 --out $HOME/cl_out_ablate/objmorn_${A}_objects || echo FAILED $A; done; echo OBJMORN_DONE
+   3921       08:54 bash -c cd ~/tanitad_cl/stack/experiments/alpasim-gsplat && rm -rf ~/cl_out_ablate/objmorn_flagship-v1_objects && setsid nohup bash -c 'export PATH=$HOME/venvs/tanitad-edge/bin:/usr/local/cuda/bin:$PATH; export OMP_NUM_THREADS=6; export PYTHONPATH=$HOME/tanitad_cl/stack:$HOME/tanitad_cl/stack/scripts:$HOME/tanitad_cl/taniteval:$HOME/tanitad_cl/stack/experiments/nurec-gsplat:$HOME/tanitad_cl/stack/experiments/alpasim-gsplat; cd $HOME/tanitad_cl/stack/experiments/alpasim-gsplat; S=$HOME/nurec_scenes/sample_set/26.04_release/00040136-e651-4abd-991d-0655ccda9430; for A in flagship-v1 refc-base; do case $A in flagship-v1) C=$HOME/models/flagship-v1-speedjerk/ckpt.pt;; refc-base) C=$HOME/models/refc-base/ckpt.pt;; esac; python closedloop_drive.py --scene-dir $S --arm $A --ckpt $C --condition objects --starts 0,17,34,51,68,85,102,119,136 --steps 50 --out $HOME/cl_out_ablate/objmorn_${A}_objects || echo FAILED $A; done; echo OBJMORN_DONE' > /tmp/objmorn.log 2>&1 < /dev/null & disown; sleep 6; tail -2 /tmp/objmorn.log
++ timeout 3 tegrastats --interval 1000
++ head -1
+08-03-2026 19:01:11 RAM 93952/125772MB (lfb 151x4MB) CPU [47%@1080,27%@1080,52%@2322,47%@2322,17%@972,36%@972,38%@2601,37%@2601,49%@1458,36%@1458,53%@1458,22%@1458,17%@972,25%@972] cpu@58.218C tj@58.406C soc012@55.593C gpu@58.406C soc345@57.781C VDD_GPU 27202mW/27202mW VDD_CPU_SOC_MSS 16959mW/16959mW VIN_SYS_5V0 11535mW/11535mW VIN 67240mW/67240mW
++ free -g
++ sed -n 2p
+Mem:             122          92          23           0           8          30

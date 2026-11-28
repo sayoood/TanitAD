@@ -1,0 +1,7325 @@
+{
+ "card": "PREREG_V8F_ROLLHIST.md sha256 781eea87 section 3.2/3.3 (STRATEGIC family via the frozen reader of card ADD66, Amendment 1)",
+ "tier": "first tick of each window = T0 (logged history only); later ticks = T1-kin (kinematic rollout on the model's own actions, logged camera frames, the lead does not react); never driving performance",
+ "seeds": [
+  2
+ ],
+ "one_seed": true,
+ "controls": {
+  "s4": {
+   "pass": true,
+   "checks": [
+    {
+     "name": "line: labels at the first logged steps reaching 30/50/80 m",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+     "ok": true
+    },
+    {
+     "name": "circle R=100: label positions equal the analytic ones to the step",
+     "ok": true
+    },
+    {
+     "name": "short track: 30 and 50 valid, 80 invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: known pose and label -> analytic world position and heading",
+     "ok": true
+    },
+    {
+     "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+     "ok": true
+    }
+   ],
+   "all_checks_hold": true,
+   "planted_fault_fails": true,
+   "planted_fault_checks_failed": [
+    "line: labels at the first logged steps reaching 30/50/80 m",
+    "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+    "circle R=100: label positions equal the analytic ones to the step",
+    "short track: 30 and 50 valid, 80 invalid"
+   ],
+   "planted_fault_2_checks_failed": [
+    "join label: known pose and label -> analytic world position and heading",
+    "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+   ]
+  },
+  "s8": {
+   "pass": true,
+   "self_pair": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "verdict": "NOT-SEPARATED"
+   },
+   "swapped_read_mean": -0.8681360562489717,
+   "forward_read_mean": 0.8681360562489717
+  },
+  "s1": {
+   "max_dxy_m": 7.466445796922017e-05,
+   "max_dpsi_rad": 6.218803960678088e-07,
+   "pass": true
+  },
+  "s2": {
+   "max_first_tick_anchor_dist_m": 0.0,
+   "n_rows_anchor_not_t0": 0,
+   "pass": true
+  },
+  "s6": {
+   "pass": true,
+   "per_file": {
+    "B0_R0C10Hb20_s2": true,
+    "B0_R0C10XHb20_s2": true,
+    "B0_R0G0Hb20_s2": true,
+    "B0_R0G50Hb20_s2": true,
+    "B0_R0Hb20_s2": true,
+    "B0_R0KHb20_s2": true,
+    "RH_R0C10Hb20_s2": true,
+    "RH_R0C10XHb20_s2": true,
+    "RH_R0G0Hb20_s2": true,
+    "RH_R0G50Hb20_s2": true,
+    "RH_R0Hb20_s2": true,
+    "RH_R0KHb20_s2": true
+   },
+   "episode_map": {
+    "dump_windows": 2399,
+    "all_mapped": true,
+    "n_episodes": 141
+   }
+  },
+  "s3": {
+   "pass": true,
+   "computable": true,
+   "windows": 2399,
+   "max_abs_diff_pos_m": 6.47953912746857e-14,
+   "max_abs_diff_head_deg": 5.1514348342607263e-14,
+   "same_rows_invalid": true,
+   "n_valid_per_arc": [
+    2322,
+    2319,
+    2294
+   ],
+   "known_value_from": "F:/TanitAD-scratch/rollhist/read/tree\\taniteval\\taniteval\\v8f_consistency.py",
+   "note": "Amendment 1 of the card; differences only"
+  },
+  "s9": {
+   "pass": true,
+   "tick_file_sha256": {
+    "B0_R0C10Hb20_s2": "5d2c2907102c6641d35c1a3472ddb37ece0dc0539ceb00626bc4bd8d2743f81c",
+    "B0_R0C10XHb20_s2": "87cac10e81a96478bd6115fffefda17f681551dfeaeb08264fdd9461765f387f",
+    "B0_R0G0Hb20_s2": "747cddb0ddac849b4e3dc7ac03c8c4ca2c841c0a7f9271f908ce722ed004a48c",
+    "B0_R0G50Hb20_s2": "d2a31edeb3b051a80eb236d40cab9aa2ac2b56b3798de51884bbae40c78189b7",
+    "B0_R0Hb20_s2": "327cfb85d577e0aa09d22fcb4aa92b6870db335c809e8e495d9fd3eb6ade91d1",
+    "B0_R0KHb20_s2": "76f38b9836e4d12c6080777d5a271b61b2ac36d518a9d0144625fa28bea7fe8f",
+    "RH_R0C10Hb20_s2": "5891fd44f06a65dcc985da622f86fe8598228de05e9806dd35d598be5fc8f701",
+    "RH_R0C10XHb20_s2": "e417437719ee4af93348ae8acf91103f3ea0b964e628d59b97ceae576500c95f",
+    "RH_R0G0Hb20_s2": "545fbd99b16fc3cd6546d5ecaa9dc6f40631303868aeaa22a7a909f811defe3b",
+    "RH_R0G50Hb20_s2": "aa37d843b3e47912fdcadeced2d8ff2f0d53947e16f0d834636f885277c3a645",
+    "RH_R0Hb20_s2": "fe6e11c8a001416229eaa4eac6fc51a200fee6b20dc5e0979e0353173f035334",
+    "RH_R0KHb20_s2": "21b589b72712290fb8066a98634f4031fb514516dcf71b32a74c93a27c31a5f3"
+   }
+  },
+  "s5": {
+   "pass": true,
+   "largest_difference": 0.0,
+   "meaning": "T0 cells of one checkpoint are equal across the six forms"
+  },
+  "s7": {
+   "per_arc": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.009823026508082448,
+     "lo": -0.02931315315318361,
+     "hi": 0.004202378401769722,
+     "first_tick_level": 0.8347818225322694,
+     "ok": true
+    },
+    {
+     "arc_m": 50.0,
+     "mean": -0.018475055413173756,
+     "lo": -0.05913610088661715,
+     "hi": 0.011127985865204663,
+     "first_tick_level": 2.1071679586086276,
+     "ok": true
+    },
+    {
+     "arc_m": 80.0,
+     "mean": -0.038662444247743,
+     "lo": -0.11865866602196042,
+     "hi": 0.021647730215452073,
+     "first_tick_level": 5.678544130718465,
+     "ok": true
+    }
+   ],
+   "pass": true
+  }
+ },
+ "controls_all_pass": true,
+ "missing_tick_files": [],
+ "controls_note": "s7 gates the ROLL names only (as ADD66)",
+ "roll": {
+  "B0_R0C10Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5449575417583317
+     ],
+     "mean": 0.5449575417583317,
+     "lo": 0.4392096475278945,
+     "hi": 0.6669993228874657,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8426140195128958,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7520293592753529
+     ],
+     "mean": 0.7520293592753529,
+     "lo": 0.5881040609019856,
+     "hi": 0.9630082246709795,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1270042092600536,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.0705598074090303
+     ],
+     "mean": 1.0705598074090303,
+     "lo": 0.7627750399392843,
+     "hi": 1.432030990452559,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.709966942114863,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.9624008546008262
+     ],
+     "mean": 3.9624008546008262,
+     "lo": 3.3873048738364164,
+     "hi": 4.604919036804912,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.764808239039324,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      6.287736949955649
+     ],
+     "mean": 6.287736949955649,
+     "lo": 5.20622495640939,
+     "hi": 7.526688945702003,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8697243708127265,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      9.96245857690977
+     ],
+     "mean": 9.96245857690977,
+     "lo": 7.886598282596913,
+     "hi": 12.147545334145404,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.086167382470684,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "B0_R0C10XHb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5449575417583317
+     ],
+     "mean": 0.5449575417583317,
+     "lo": 0.4392096475278945,
+     "hi": 0.6669993228874657,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8426140195128958,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7520293592753529
+     ],
+     "mean": 0.7520293592753529,
+     "lo": 0.5881040609019856,
+     "hi": 0.9630082246709795,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1270042092600536,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.0705598074090303
+     ],
+     "mean": 1.0705598074090303,
+     "lo": 0.7627750399392843,
+     "hi": 1.432030990452559,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.709966942114863,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.1635631931428523
+     ],
+     "mean": 3.1635631931428523,
+     "lo": 2.6139501805869485,
+     "hi": 3.798314635949814,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.764808239039324,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      4.921024031725377
+     ],
+     "mean": 4.921024031725377,
+     "lo": 3.8894956275790804,
+     "hi": 6.1569814550438835,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8697243708127265,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      7.761332332970107
+     ],
+     "mean": 7.761332332970107,
+     "lo": 5.804946221921621,
+     "hi": 9.998802925647176,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.086167382470684,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "B0_R0G0Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5737912762813068
+     ],
+     "mean": 0.5737912762813068,
+     "lo": 0.46672600166005757,
+     "hi": 0.6976569647408575,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8426140195128958,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.8644009894016923
+     ],
+     "mean": 0.8644009894016923,
+     "lo": 0.6924333444749958,
+     "hi": 1.0683614228914071,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1270042092600536,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.252092495771622
+     ],
+     "mean": 1.252092495771622,
+     "lo": 0.9452316676890863,
+     "hi": 1.6170861138332364,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.709966942114863,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.57936706617015
+     ],
+     "mean": 3.57936706617015,
+     "lo": 3.0891385839789596,
+     "hi": 4.1404235653213295,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.764808239039324,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      5.361915346666902
+     ],
+     "mean": 5.361915346666902,
+     "lo": 4.529976599513536,
+     "hi": 6.320709486856972,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8697243708127265,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      7.966565494755787
+     ],
+     "mean": 7.966565494755787,
+     "lo": 6.443051427737702,
+     "hi": 9.56605625414058,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.086167382470684,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "B0_R0G50Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5453578429511357
+     ],
+     "mean": 0.5453578429511357,
+     "lo": 0.44293149909918744,
+     "hi": 0.6649178419194272,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8426140195128958,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7715105547526321
+     ],
+     "mean": 0.7715105547526321,
+     "lo": 0.6137289307443992,
+     "hi": 0.9688288334114799,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1270042092600536,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.093281166809037
+     ],
+     "mean": 1.093281166809037,
+     "lo": 0.8026128742253074,
+     "hi": 1.4341090277514776,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.709966942114863,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.6963468022271035
+     ],
+     "mean": 3.6963468022271035,
+     "lo": 3.178616952422161,
+     "hi": 4.318368000755618,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.764808239039324,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      5.6726851822309525
+     ],
+     "mean": 5.6726851822309525,
+     "lo": 4.731370427688073,
+     "hi": 6.768289503105566,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8697243708127265,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      8.674235862824878
+     ],
+     "mean": 8.674235862824878,
+     "lo": 6.910621017818258,
+     "hi": 10.456774722408118,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.086167382470684,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "B0_R0Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5913970350393942
+     ],
+     "mean": 0.5913970350393942,
+     "lo": 0.4702744451687642,
+     "hi": 0.7296409795887849,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8426140195128958,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.853855919448485
+     ],
+     "mean": 0.853855919448485,
+     "lo": 0.6727072225089189,
+     "hi": 1.0826706863132607,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1270042092600536,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.2949442979009136
+     ],
+     "mean": 1.2949442979009136,
+     "lo": 0.9442645404804083,
+     "hi": 1.698965847760144,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.709966942114863,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.8988967395797904
+     ],
+     "mean": 3.8988967395797904,
+     "lo": 3.355115279963752,
+     "hi": 4.557184477082132,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.764808239039324,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      6.019275855121407
+     ],
+     "mean": 6.019275855121407,
+     "lo": 5.002356687042323,
+     "hi": 7.220830436144753,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8697243708127265,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      9.314197743590642
+     ],
+     "mean": 9.314197743590642,
+     "lo": 7.361816097672853,
+     "hi": 11.285008699626248,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.086167382470684,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "B0_R0KHb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5737912762813068
+     ],
+     "mean": 0.5737912762813068,
+     "lo": 0.46672600166005757,
+     "hi": 0.6976569647408575,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8426140195128958,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.8644009894016923
+     ],
+     "mean": 0.8644009894016923,
+     "lo": 0.6924333444749958,
+     "hi": 1.0683614228914071,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1270042092600536,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.252092495771622
+     ],
+     "mean": 1.252092495771622,
+     "lo": 0.9452316676890863,
+     "hi": 1.6170861138332364,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.709966942114863,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      2.7197755896411104
+     ],
+     "mean": 2.7197755896411104,
+     "lo": 2.3049028805163485,
+     "hi": 3.1697842165282797,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.764808239039324,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      3.933606902579948
+     ],
+     "mean": 3.933606902579948,
+     "lo": 3.233410373820512,
+     "hi": 4.696510490780104,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8697243708127265,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      5.644963626437565
+     ],
+     "mean": 5.644963626437565,
+     "lo": 4.344436253089792,
+     "hi": 7.013185651665225,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.086167382470684,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "RH_R0C10Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.524887373246993
+     ],
+     "mean": 0.524887373246993,
+     "lo": 0.41950183689743015,
+     "hi": 0.6491897182694385,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8347818225322694,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7699360574697582
+     ],
+     "mean": 0.7699360574697582,
+     "lo": 0.5951004949078051,
+     "hi": 0.9837908364061406,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1071679586086276,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.169028667277811
+     ],
+     "mean": 1.169028667277811,
+     "lo": 0.839409964232276,
+     "hi": 1.5533439690823043,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.678544130718465,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.0512021013072053
+     ],
+     "mean": 3.0512021013072053,
+     "lo": 2.6124628889145534,
+     "hi": 3.5588651634739272,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.7577046230018621,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      4.542262040986075
+     ],
+     "mean": 4.542262040986075,
+     "lo": 3.7635022055653953,
+     "hi": 5.386802723144984,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8355846013247132,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      6.8823076245013075
+     ],
+     "mean": 6.8823076245013075,
+     "lo": 5.513883892120181,
+     "hi": 8.270117855911957,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.013064826870548,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "RH_R0C10XHb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.524887373246993
+     ],
+     "mean": 0.524887373246993,
+     "lo": 0.41950183689743015,
+     "hi": 0.6491897182694385,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8347818225322694,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7699360574697582
+     ],
+     "mean": 0.7699360574697582,
+     "lo": 0.5951004949078051,
+     "hi": 0.9837908364061406,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1071679586086276,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.169028667277811
+     ],
+     "mean": 1.169028667277811,
+     "lo": 0.839409964232276,
+     "hi": 1.5533439690823043,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.678544130718465,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      2.5156824983804253
+     ],
+     "mean": 2.5156824983804253,
+     "lo": 2.094391006281073,
+     "hi": 2.9771030306626574,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.7577046230018621,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      3.6720122697528175
+     ],
+     "mean": 3.6720122697528175,
+     "lo": 2.9577598621508217,
+     "hi": 4.469598145040449,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8355846013247132,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      5.598322409359452
+     ],
+     "mean": 5.598322409359452,
+     "lo": 4.269801929800307,
+     "hi": 7.064753076919406,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.013064826870548,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "RH_R0G0Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5257375752164044
+     ],
+     "mean": 0.5257375752164044,
+     "lo": 0.42134935254173633,
+     "hi": 0.6479238650922513,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8347818225322694,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7874009842270888
+     ],
+     "mean": 0.7874009842270888,
+     "lo": 0.6060825101612571,
+     "hi": 1.0046678395912536,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1071679586086276,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.1888171981918654
+     ],
+     "mean": 1.1888171981918654,
+     "lo": 0.8612015726239564,
+     "hi": 1.5568327519461957,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.678544130718465,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      2.9780300857017274
+     ],
+     "mean": 2.9780300857017274,
+     "lo": 2.5264343725268104,
+     "hi": 3.4997507704398845,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.7577046230018621,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      4.252425236876603
+     ],
+     "mean": 4.252425236876603,
+     "lo": 3.4996186740854265,
+     "hi": 5.0611282416959185,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8355846013247132,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      6.073074869111807
+     ],
+     "mean": 6.073074869111807,
+     "lo": 4.811138075747403,
+     "hi": 7.445428195148588,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.013064826870548,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "RH_R0G50Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5113353085235232
+     ],
+     "mean": 0.5113353085235232,
+     "lo": 0.40854401259906825,
+     "hi": 0.6330224512012752,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8347818225322694,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7524347567023277
+     ],
+     "mean": 0.7524347567023277,
+     "lo": 0.5793307585664036,
+     "hi": 0.9668118175000278,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1071679586086276,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.1399232545396145
+     ],
+     "mean": 1.1399232545396145,
+     "lo": 0.821383750286317,
+     "hi": 1.4956151983375814,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.678544130718465,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      2.9941744130104566
+     ],
+     "mean": 2.9941744130104566,
+     "lo": 2.521999323155914,
+     "hi": 3.5449057238494457,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.7577046230018621,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      4.367884192951923
+     ],
+     "mean": 4.367884192951923,
+     "lo": 3.5968575639731846,
+     "hi": 5.259156367913185,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8355846013247132,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      6.443653391555533
+     ],
+     "mean": 6.443653391555533,
+     "lo": 5.124761144119502,
+     "hi": 7.903310341027745,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.013064826870548,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "RH_R0Hb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.557448051700394
+     ],
+     "mean": 0.557448051700394,
+     "lo": 0.43594375198554547,
+     "hi": 0.7004404085803736,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8347818225322694,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.83642503886636
+     ],
+     "mean": 0.83642503886636,
+     "lo": 0.635521809675456,
+     "hi": 1.0779459196968577,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1071679586086276,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.3015504065850547
+     ],
+     "mean": 1.3015504065850547,
+     "lo": 0.9306454619778974,
+     "hi": 1.7255600916730756,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.678544130718465,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      3.127037374703225
+     ],
+     "mean": 3.127037374703225,
+     "lo": 2.6715322481636417,
+     "hi": 3.648113395004922,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.7577046230018621,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      4.512412615923148
+     ],
+     "mean": 4.512412615923148,
+     "lo": 3.7587599394958557,
+     "hi": 5.350998432004405,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8355846013247132,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      6.5588406508509
+     ],
+     "mean": 6.5588406508509,
+     "lo": 5.272147984384246,
+     "hi": 7.944311739760239,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.013064826870548,
+     "arc_m": 80.0
+    }
+   ]
+  },
+  "RH_R0KHb20": {
+   "ROLL1": [
+    {
+     "n": 2048,
+     "n_per_seed": [
+      2048
+     ],
+     "per_seed": [
+      0.5257375752164044
+     ],
+     "mean": 0.5257375752164044,
+     "lo": 0.42134935254173633,
+     "hi": 0.6479238650922513,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.8347818225322694,
+     "arc_m": 30.0
+    },
+    {
+     "n": 2045,
+     "n_per_seed": [
+      2045
+     ],
+     "per_seed": [
+      0.7874009842270888
+     ],
+     "mean": 0.7874009842270888,
+     "lo": 0.6060825101612571,
+     "hi": 1.0046678395912536,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 2.1071679586086276,
+     "arc_m": 50.0
+    },
+    {
+     "n": 2022,
+     "n_per_seed": [
+      2022
+     ],
+     "per_seed": [
+      1.1888171981918654
+     ],
+     "mean": 1.1888171981918654,
+     "lo": 0.8612015726239564,
+     "hi": 1.5568327519461957,
+     "verdict": "WORSE",
+     "n_episodes": 136,
+     "first_tick_level_same_windows": 5.678544130718465,
+     "arc_m": 80.0
+    }
+   ],
+   "ROLL2": [
+    {
+     "n": 1637,
+     "n_per_seed": [
+      1637
+     ],
+     "per_seed": [
+      2.3902623361372384
+     ],
+     "mean": 2.3902623361372384,
+     "lo": 1.986045239050497,
+     "hi": 2.809198294298289,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 0.7577046230018621,
+     "arc_m": 30.0
+    },
+    {
+     "n": 1634,
+     "n_per_seed": [
+      1634
+     ],
+     "per_seed": [
+      3.308860722293058
+     ],
+     "mean": 3.308860722293058,
+     "lo": 2.6416996617544526,
+     "hi": 4.012428857711115,
+     "verdict": "WORSE",
+     "n_episodes": 137,
+     "first_tick_level_same_windows": 1.8355846013247132,
+     "arc_m": 50.0
+    },
+    {
+     "n": 1615,
+     "n_per_seed": [
+      1615
+     ],
+     "per_seed": [
+      4.656146258223878
+     ],
+     "mean": 4.656146258223878,
+     "lo": 3.5107363497961295,
+     "hi": 5.882422145043005,
+     "verdict": "WORSE",
+     "n_episodes": 135,
+     "first_tick_level_same_windows": 5.013064826870548,
+     "arc_m": 80.0
+    }
+   ]
+  }
+ },
+ "roll_name": {
+  "B0_R0C10Hb20": "DEGRADES",
+  "B0_R0C10XHb20": "DEGRADES",
+  "B0_R0G0Hb20": "DEGRADES",
+  "B0_R0G50Hb20": "DEGRADES",
+  "B0_R0Hb20": "DEGRADES",
+  "B0_R0KHb20": "DEGRADES",
+  "RH_R0C10Hb20": "DEGRADES",
+  "RH_R0C10XHb20": "DEGRADES",
+  "RH_R0G0Hb20": "DEGRADES",
+  "RH_R0G50Hb20": "DEGRADES",
+  "RH_R0Hb20": "DEGRADES",
+  "RH_R0KHb20": "DEGRADES"
+ },
+ "pairs": {
+  "P1": {
+   "A": "RH_R0C10XHb20",
+   "B": "B0_R0C10XHb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.022832119398194847
+      ],
+      "mean": -0.022832119398194847,
+      "lo": -0.06490611201937574,
+      "hi": 0.02280340160021201,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.022677835469594426
+      ],
+      "mean": 0.022677835469594426,
+      "lo": -0.05945137508756124,
+      "hi": 0.1118173745400815,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.1210833493266722
+      ],
+      "mean": 0.1210833493266722,
+      "lo": -0.044059851065504384,
+      "hi": 0.29796730402521465,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2282,
+      "n_per_seed": [
+       2282
+      ],
+      "per_seed": [
+       -0.013559149207902766
+      ],
+      "mean": -0.013559149207902766,
+      "lo": -0.0644644202378328,
+      "hi": 0.03755680612446583,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2139,
+      "n_per_seed": [
+       2139
+      ],
+      "per_seed": [
+       -0.0010261949770916329
+      ],
+      "mean": -0.0010261949770916329,
+      "lo": -0.09330626266457899,
+      "hi": 0.08748183909787322,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1768,
+      "n_per_seed": [
+       1768
+      ],
+      "per_seed": [
+       -0.09677324962047339
+      ],
+      "mean": -0.09677324962047339,
+      "lo": -0.30256007118765466,
+      "hi": 0.09657903080765408,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       -0.012844002914254459
+      ],
+      "mean": -0.012844002914254459,
+      "lo": -0.041745413805157366,
+      "hi": 0.011462183980073313,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.039038182840592364
+      ],
+      "mean": -0.039038182840592364,
+      "lo": -0.10136099384132857,
+      "hi": 0.009164222111420827,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.1473748753489331
+      ],
+      "mean": -0.1473748753489331,
+      "lo": -0.2735307408104082,
+      "hi": -0.04233475450204207,
+      "verdict": "BETTER",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.1000282766094471
+      ],
+      "mean": 0.1000282766094471,
+      "lo": -0.048234727575899014,
+      "hi": 0.2630796733558458,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.20670461515179372
+      ],
+      "mean": 0.20670461515179372,
+      "lo": -0.03650533261204137,
+      "hi": 0.46085118151732646,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.34460012178245314
+      ],
+      "mean": 0.34460012178245314,
+      "lo": -0.0007878188227869373,
+      "hi": 0.7547891604256567,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.014416842122955681
+      ],
+      "mean": 0.014416842122955681,
+      "lo": -0.0037063785335147603,
+      "hi": 0.03677481006099049,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.04978317644664271
+      ],
+      "mean": 0.04978317644664271,
+      "lo": 0.006193721608706903,
+      "hi": 0.10694444361953531,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.11137568963079031
+      ],
+      "mean": 0.11137568963079031,
+      "lo": 0.015387006458876758,
+      "hi": 0.23209380207212343,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.6649025985393509
+      ],
+      "mean": -0.6649025985393509,
+      "lo": -0.9731423523256535,
+      "hi": -0.39967596198500455,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -1.1648201115472827
+      ],
+      "mean": -1.1648201115472827,
+      "lo": -1.751521446931809,
+      "hi": -0.6755509085334616,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -1.8570371054349835
+      ],
+      "mean": -1.8570371054349835,
+      "lo": -2.8888322951510945,
+      "hi": -0.9593551694724025,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2184,
+      "n_per_seed": [
+       2184
+      ],
+      "per_seed": [
+       -0.24922416189854688
+      ],
+      "mean": -0.24922416189854688,
+      "lo": -0.4756477204282783,
+      "hi": -0.046163556410203,
+      "verdict": "BETTER",
+      "n_episodes": 140
+     },
+     {
+      "n": 1939,
+      "n_per_seed": [
+       1939
+      ],
+      "per_seed": [
+       -0.39096352470955603
+      ],
+      "mean": -0.39096352470955603,
+      "lo": -0.8181629895674084,
+      "hi": -0.047521219078197924,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 1523,
+      "n_per_seed": [
+       1523
+      ],
+      "per_seed": [
+       -0.6588813911841108
+      ],
+      "mean": -0.6588813911841108,
+      "lo": -1.4827677003291506,
+      "hi": -0.01933877952475552,
+      "verdict": "BETTER",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2107,
+      "n_per_seed": [
+       2107
+      ],
+      "per_seed": [
+       0.2829474052967428
+      ],
+      "mean": 0.2829474052967428,
+      "lo": 0.13597756900386412,
+      "hi": 0.4607075926273863,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1845,
+      "n_per_seed": [
+       1845
+      ],
+      "per_seed": [
+       0.54331902101375
+      ],
+      "mean": 0.54331902101375,
+      "lo": 0.23570192971213852,
+      "hi": 0.9111837720787715,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1395,
+      "n_per_seed": [
+       1395
+      ],
+      "per_seed": [
+       0.8116870826739105
+      ],
+      "mean": 0.8116870826739105,
+      "lo": 0.1996746315445488,
+      "hi": 1.6221907516312526,
+      "verdict": "WORSE",
+      "n_episodes": 123
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -2.1616029498442306
+      ],
+      "mean": -2.1616029498442306,
+      "lo": -3.2414041802157145,
+      "hi": -1.2908241786062837,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -2.1422720129463464
+      ],
+      "mean": -2.1422720129463464,
+      "lo": -3.4657057595735923,
+      "hi": -1.0283731371080158,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -1.6813374567548198
+      ],
+      "mean": -1.6813374567548198,
+      "lo": -3.1537981304346214,
+      "hi": -0.2899116310117303,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2107,
+      "n_per_seed": [
+       2107
+      ],
+      "per_seed": [
+       -0.23942110326732804
+      ],
+      "mean": -0.23942110326732804,
+      "lo": -0.4032963204366979,
+      "hi": -0.10807408846339474,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     },
+     {
+      "n": 1845,
+      "n_per_seed": [
+       1845
+      ],
+      "per_seed": [
+       -0.45911971340548724
+      ],
+      "mean": -0.45911971340548724,
+      "lo": -0.8003875587564145,
+      "hi": -0.1623267535831469,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1395,
+      "n_per_seed": [
+       1395
+      ],
+      "per_seed": [
+       -0.7233038474857582
+      ],
+      "mean": -0.7233038474857582,
+      "lo": -1.5348460915488034,
+      "hi": -0.09805867571280745,
+      "verdict": "BETTER",
+      "n_episodes": 123
+     }
+    ]
+   },
+   "family_tick2_pos": "BETTER"
+  },
+  "P2_ACC_RH": {
+   "A": "RH_R0C10XHb20",
+   "B": "RH_R0KHb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.004420029484262024
+      ],
+      "mean": -0.004420029484262024,
+      "lo": -0.028296453179692867,
+      "hi": 0.017982688498438898,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.023483713216201147
+      ],
+      "mean": -0.023483713216201147,
+      "lo": -0.09158872592859324,
+      "hi": 0.039914078232171815,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.031895787198164
+      ],
+      "mean": -0.031895787198164,
+      "lo": -0.17886852396017047,
+      "hi": 0.1158396324736252,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2285,
+      "n_per_seed": [
+       2285
+      ],
+      "per_seed": [
+       0.008711860847265905
+      ],
+      "mean": 0.008711860847265905,
+      "lo": -0.010195645283933599,
+      "hi": 0.026635199576462126,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2137,
+      "n_per_seed": [
+       2137
+      ],
+      "per_seed": [
+       -0.009225062096664046
+      ],
+      "mean": -0.009225062096664046,
+      "lo": -0.06771383399985167,
+      "hi": 0.04368886852075883,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1776,
+      "n_per_seed": [
+       1776
+      ],
+      "per_seed": [
+       0.022334211432895146
+      ],
+      "mean": 0.022334211432895146,
+      "lo": -0.10342669103219543,
+      "hi": 0.1334659862097811,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2220,
+      "n_per_seed": [
+       2220
+      ],
+      "per_seed": [
+       0.017921357188601505
+      ],
+      "mean": 0.017921357188601505,
+      "lo": 0.0028246504699574733,
+      "hi": 0.03479148432041258,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.06329908287592587
+      ],
+      "mean": 0.06329908287592587,
+      "lo": 0.020903212934925135,
+      "hi": 0.11062610370872958,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.0696650510084365
+      ],
+      "mean": 0.0696650510084365,
+      "lo": 0.0003466385865356033,
+      "hi": 0.1644636834495843,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.06009011191172247
+      ],
+      "mean": -0.06009011191172247,
+      "lo": -0.17826173787118732,
+      "hi": 0.045491257369408684,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.03246044939059325
+      ],
+      "mean": -0.03246044939059325,
+      "lo": -0.25191167410972853,
+      "hi": 0.16295686442893967,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.09608006624649565
+      ],
+      "mean": -0.09608006624649565,
+      "lo": -0.3787747246521583,
+      "hi": 0.1602054297211199,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2220,
+      "n_per_seed": [
+       2220
+      ],
+      "per_seed": [
+       -0.0011774908055871385
+      ],
+      "mean": -0.0011774908055871385,
+      "lo": -0.014154880327381188,
+      "hi": 0.010793584357054737,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.040161134817222006
+      ],
+      "mean": -0.040161134817222006,
+      "lo": -0.07779045616924382,
+      "hi": -0.006462382289340432,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.048350586611686
+      ],
+      "mean": -0.048350586611686,
+      "lo": -0.13942400656234896,
+      "hi": 0.015393814173291382,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.12709196849601156
+      ],
+      "mean": 0.12709196849601156,
+      "lo": 0.027236344769549736,
+      "hi": 0.2390073656853814,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.32001727619677217
+      ],
+      "mean": 0.32001727619677217,
+      "lo": 0.059666785271706706,
+      "hi": 0.6117675851439239,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.9228746232837329
+      ],
+      "mean": 0.9228746232837329,
+      "lo": 0.3588582927048068,
+      "hi": 1.5520029437620246,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2176,
+      "n_per_seed": [
+       2176
+      ],
+      "per_seed": [
+       0.036456319984027895
+      ],
+      "mean": 0.036456319984027895,
+      "lo": -0.041434435005549684,
+      "hi": 0.12168283185802342,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 139
+     },
+     {
+      "n": 1935,
+      "n_per_seed": [
+       1935
+      ],
+      "per_seed": [
+       0.13323831772320718
+      ],
+      "mean": 0.13323831772320718,
+      "lo": -0.03732074061350117,
+      "hi": 0.3296250429847084,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 1513,
+      "n_per_seed": [
+       1513
+      ],
+      "per_seed": [
+       0.292225336214983
+      ],
+      "mean": 0.292225336214983,
+      "lo": -0.05567028344106032,
+      "hi": 0.7074842038970351,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2103,
+      "n_per_seed": [
+       2103
+      ],
+      "per_seed": [
+       -0.055557429446727945
+      ],
+      "mean": -0.055557429446727945,
+      "lo": -0.13675470544974966,
+      "hi": 0.023360361729207368,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       -0.1976221206632378
+      ],
+      "mean": -0.1976221206632378,
+      "lo": -0.41261227834428366,
+      "hi": -0.019631736293640307,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1385,
+      "n_per_seed": [
+       1385
+      ],
+      "per_seed": [
+       -0.31578609193913854
+      ],
+      "mean": -0.31578609193913854,
+      "lo": -0.73741943511541,
+      "hi": 0.04443758627949651,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.5684904467033736
+      ],
+      "mean": 0.5684904467033736,
+      "lo": 0.0827662316628912,
+      "hi": 1.1126356431481004,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       1.2693391533453156
+      ],
+      "mean": 1.2693391533453156,
+      "lo": 0.5092412418899587,
+      "hi": 2.1831094629793717,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       1.9090368722957547
+      ],
+      "mean": 1.9090368722957547,
+      "lo": 0.8190473086461568,
+      "hi": 3.19737730684422,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2103,
+      "n_per_seed": [
+       2103
+      ],
+      "per_seed": [
+       0.06864521718088461
+      ],
+      "mean": 0.06864521718088461,
+      "lo": 0.015776916986488133,
+      "hi": 0.12448468685896523,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       0.17406111192879026
+      ],
+      "mean": 0.17406111192879026,
+      "lo": 0.03250735530503677,
+      "hi": 0.3275523085169631,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1385,
+      "n_per_seed": [
+       1385
+      ],
+      "per_seed": [
+       0.2554264927199254
+      ],
+      "mean": 0.2554264927199254,
+      "lo": -0.054817032501449474,
+      "hi": 0.6029175425422094,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "WORSE"
+  },
+  "P2_D1_RH": {
+   "A": "RH_R0G50Hb20",
+   "B": "RH_R0G0Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.015206600601095303
+      ],
+      "mean": -0.015206600601095303,
+      "lo": -0.03376267292110365,
+      "hi": 0.0016852032372315746,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.03726866265686918
+      ],
+      "mean": -0.03726866265686918,
+      "lo": -0.08382161247433331,
+      "hi": 0.0022322734418180738,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.052187860123090686
+      ],
+      "mean": -0.052187860123090686,
+      "lo": -0.15435554826272596,
+      "hi": 0.04231003669666707,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2285,
+      "n_per_seed": [
+       2285
+      ],
+      "per_seed": [
+       -0.004427902822027596
+      ],
+      "mean": -0.004427902822027596,
+      "lo": -0.018778019401035184,
+      "hi": 0.008194873487976201,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2137,
+      "n_per_seed": [
+       2137
+      ],
+      "per_seed": [
+       -0.015507769096813773
+      ],
+      "mean": -0.015507769096813773,
+      "lo": -0.05125335003364887,
+      "hi": 0.016226761003146725,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1779,
+      "n_per_seed": [
+       1779
+      ],
+      "per_seed": [
+       0.005221568140347289
+      ],
+      "mean": 0.005221568140347289,
+      "lo": -0.06919302434443396,
+      "hi": 0.06868973051327669,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2220,
+      "n_per_seed": [
+       2220
+      ],
+      "per_seed": [
+       0.01445242855030604
+      ],
+      "mean": 0.01445242855030604,
+      "lo": 0.0037476305421464033,
+      "hi": 0.02654848101969506,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.046124278992554245
+      ],
+      "mean": 0.046124278992554245,
+      "lo": 0.019082065506465424,
+      "hi": 0.07829108603458669,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.04736889442549202
+      ],
+      "mean": 0.04736889442549202,
+      "lo": 0.0064826267029907785,
+      "hi": 0.10571130449550026,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.07975879998393454
+      ],
+      "mean": -0.07975879998393454,
+      "lo": -0.1777364692839856,
+      "hi": -0.0032910406268705536,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.058180738458566625
+      ],
+      "mean": -0.058180738458566625,
+      "lo": -0.22520940504000575,
+      "hi": 0.07474522607278605,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.10888146194354008
+      ],
+      "mean": -0.10888146194354008,
+      "lo": -0.30055430911240366,
+      "hi": 0.0458288313424102,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2220,
+      "n_per_seed": [
+       2220
+      ],
+      "per_seed": [
+       -0.006031401156474182
+      ],
+      "mean": -0.006031401156474182,
+      "lo": -0.017644315613813785,
+      "hi": 0.0037507229867538177,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.03407392246329956
+      ],
+      "mean": -0.03407392246329956,
+      "lo": -0.06223462416842853,
+      "hi": -0.009837591112428707,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.030002770153995443
+      ],
+      "mean": -0.030002770153995443,
+      "lo": -0.08316593589699244,
+      "hi": 0.006644532147327925,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.01157267454420183
+      ],
+      "mean": 0.01157267454420183,
+      "lo": -0.05578109414819044,
+      "hi": 0.08149266049805172,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.12883054056240897
+      ],
+      "mean": 0.12883054056240897,
+      "lo": -0.020951106223791347,
+      "hi": 0.3067698344059922,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.46350417738306343
+      ],
+      "mean": 0.46350417738306343,
+      "lo": 0.1311205917125778,
+      "hi": 0.8408825859059622,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2183,
+      "n_per_seed": [
+       2183
+      ],
+      "per_seed": [
+       -0.05276603347699379
+      ],
+      "mean": -0.05276603347699379,
+      "lo": -0.1092007598042768,
+      "hi": 0.001800183963043726,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 139
+     },
+     {
+      "n": 1948,
+      "n_per_seed": [
+       1948
+      ],
+      "per_seed": [
+       -0.01069284280410668
+      ],
+      "mean": -0.01069284280410668,
+      "lo": -0.11285634357278163,
+      "hi": 0.11021713190442421,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 1521,
+      "n_per_seed": [
+       1521
+      ],
+      "per_seed": [
+       0.09022326967778048
+      ],
+      "mean": 0.09022326967778048,
+      "lo": -0.09395275367021817,
+      "hi": 0.2894909857110339,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       -0.04151598480365798
+      ],
+      "mean": -0.04151598480365798,
+      "lo": -0.09596750265300845,
+      "hi": 0.008005213427164077,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1838,
+      "n_per_seed": [
+       1838
+      ],
+      "per_seed": [
+       -0.13210214423190297
+      ],
+      "mean": -0.13210214423190297,
+      "lo": -0.2698668616270559,
+      "hi": -0.022997838301446905,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1384,
+      "n_per_seed": [
+       1384
+      ],
+      "per_seed": [
+       -0.16971935290534806
+      ],
+      "mean": -0.16971935290534806,
+      "lo": -0.40476531715759967,
+      "hi": 0.034524124987746055,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.2490720328312606
+      ],
+      "mean": 0.2490720328312606,
+      "lo": -0.07224860967773464,
+      "hi": 0.6063172851819311,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.7431896276939409
+      ],
+      "mean": 0.7431896276939409,
+      "lo": 0.28594979823916417,
+      "hi": 1.3252105612765068,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.932094710056514
+      ],
+      "mean": 0.932094710056514,
+      "lo": 0.285537924285717,
+      "hi": 1.7062077013328787,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       0.04787190759830405
+      ],
+      "mean": 0.04787190759830405,
+      "lo": 0.011092096465574746,
+      "hi": 0.09408781723288645,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1838,
+      "n_per_seed": [
+       1838
+      ],
+      "per_seed": [
+       0.13014748613822927
+      ],
+      "mean": 0.13014748613822927,
+      "lo": 0.02140553887814167,
+      "hi": 0.263957075267743,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1384,
+      "n_per_seed": [
+       1384
+      ],
+      "per_seed": [
+       0.14473583996711814
+      ],
+      "mean": 0.14473583996711814,
+      "lo": -0.052217128285174906,
+      "hi": 0.37383668193150965,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "MIXED"
+  },
+  "P2_D2_RH": {
+   "A": "RH_R0C10Hb20",
+   "B": "RH_R0G50Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.01078657111683328
+      ],
+      "mean": 0.01078657111683328,
+      "lo": 0.000991827644948399,
+      "hi": 0.02126970372540366,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.013784949440668022
+      ],
+      "mean": 0.013784949440668022,
+      "lo": -0.013787643225957377,
+      "hi": 0.04309904638495782,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.02029207292492666
+      ],
+      "mean": 0.02029207292492666,
+      "lo": -0.043956754570721145,
+      "hi": 0.08655938109107006,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2285,
+      "n_per_seed": [
+       2285
+      ],
+      "per_seed": [
+       0.0131397636692935
+      ],
+      "mean": 0.0131397636692935,
+      "lo": 0.003302247138058095,
+      "hi": 0.02333537135068094,
+      "verdict": "WORSE",
+      "n_episodes": 140
+     },
+     {
+      "n": 2139,
+      "n_per_seed": [
+       2139
+      ],
+      "per_seed": [
+       0.007543506984883256
+      ],
+      "mean": 0.007543506984883256,
+      "lo": -0.019508936358038804,
+      "hi": 0.0339528321621787,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1777,
+      "n_per_seed": [
+       1777
+      ],
+      "per_seed": [
+       0.013605949144086277
+      ],
+      "mean": 0.013605949144086277,
+      "lo": -0.045614376791596294,
+      "hi": 0.06521476447273315,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2220,
+      "n_per_seed": [
+       2220
+      ],
+      "per_seed": [
+       0.003468928638295462
+      ],
+      "mean": 0.003468928638295462,
+      "lo": -0.0023820599357673184,
+      "hi": 0.009585695600791129,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.01717480388337162
+      ],
+      "mean": 0.01717480388337162,
+      "lo": 0.00021402890821637527,
+      "hi": 0.03645540950243871,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1670,
+      "n_per_seed": [
+       1670
+      ],
+      "per_seed": [
+       0.02198658752834371
+      ],
+      "mean": 0.02198658752834371,
+      "lo": -0.009517028731903163,
+      "hi": 0.06337756138316583,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.01966868807221208
+      ],
+      "mean": 0.01966868807221208,
+      "lo": -0.02958118940444353,
+      "hi": 0.0698513291012042,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.025720289067973363
+      ],
+      "mean": 0.025720289067973363,
+      "lo": -0.05007959804419214,
+      "hi": 0.10606812599094308,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.012801395697044434
+      ],
+      "mean": 0.012801395697044434,
+      "lo": -0.11677770431725609,
+      "hi": 0.14625706475421674,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2220,
+      "n_per_seed": [
+       2220
+      ],
+      "per_seed": [
+       0.004853910350887044
+      ],
+      "mean": 0.004853910350887044,
+      "lo": -2.3291888221189004e-05,
+      "hi": 0.010427121360676644,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.006087212353922445
+      ],
+      "mean": -0.006087212353922445,
+      "lo": -0.020732009545975056,
+      "hi": 0.00716084880214842,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1670,
+      "n_per_seed": [
+       1670
+      ],
+      "per_seed": [
+       -0.01863304780388377
+      ],
+      "mean": -0.01863304780388377,
+      "lo": -0.058021635854801655,
+      "hi": 0.012128327009223549,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.06778351901614788
+      ],
+      "mean": 0.06778351901614788,
+      "lo": -0.07852091811675581,
+      "hi": 0.1923837293210477,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.14036895114234132
+      ],
+      "mean": 0.14036895114234132,
+      "lo": -0.12184799922514031,
+      "hi": 0.38195633758813635,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.38918327744061904
+      ],
+      "mean": 0.38918327744061904,
+      "lo": -0.08724046193173274,
+      "hi": 0.8689212838874717,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2180,
+      "n_per_seed": [
+       2180
+      ],
+      "per_seed": [
+       0.016685984707425525
+      ],
+      "mean": 0.016685984707425525,
+      "lo": -0.08556065821357778,
+      "hi": 0.11439214522362594,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 139
+     },
+     {
+      "n": 1944,
+      "n_per_seed": [
+       1944
+      ],
+      "per_seed": [
+       0.06933073191560003
+      ],
+      "mean": 0.06933073191560003,
+      "lo": -0.09196527782340093,
+      "hi": 0.23163405817374894,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 1521,
+      "n_per_seed": [
+       1521
+      ],
+      "per_seed": [
+       0.20322748983867858
+      ],
+      "mean": 0.20322748983867858,
+      "lo": -0.04174916746095195,
+      "hi": 0.4532223976849676,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "along": [
+     {
+      "n": 2103,
+      "n_per_seed": [
+       2103
+      ],
+      "per_seed": [
+       0.003506656426443776
+      ],
+      "mean": 0.003506656426443776,
+      "lo": -0.10195591691644634,
+      "hi": 0.11618251465099359,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1843,
+      "n_per_seed": [
+       1843
+      ],
+      "per_seed": [
+       -0.04495625437181297
+      ],
+      "mean": -0.04495625437181297,
+      "lo": -0.2862542575782473,
+      "hi": 0.20320618606632435,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 134
+     },
+     {
+      "n": 1389,
+      "n_per_seed": [
+       1389
+      ],
+      "per_seed": [
+       -0.1818091368725001
+      ],
+      "mean": -0.1818091368725001,
+      "lo": -0.6385705510004596,
+      "hi": 0.28529389677999495,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.23010755530721236
+      ],
+      "mean": 0.23010755530721236,
+      "lo": -0.2381532642794911,
+      "hi": 0.671630404177523,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.3199491374340892
+      ],
+      "mean": 0.3199491374340892,
+      "lo": -0.26182674220193436,
+      "hi": 0.946157943878461,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.7648563565638855
+      ],
+      "mean": 0.7648563565638855,
+      "lo": 0.03698913290016561,
+      "hi": 1.6099376467727373,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2103,
+      "n_per_seed": [
+       2103
+      ],
+      "per_seed": [
+       -0.023802107767071208
+      ],
+      "mean": -0.023802107767071208,
+      "lo": -0.1271561406888014,
+      "hi": 0.05604632309776575,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1843,
+      "n_per_seed": [
+       1843
+      ],
+      "per_seed": [
+       -0.00959891182843146
+      ],
+      "mean": -0.00959891182843146,
+      "lo": -0.2403398674076868,
+      "hi": 0.18874400498979582,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 134
+     },
+     {
+      "n": 1389,
+      "n_per_seed": [
+       1389
+      ],
+      "per_seed": [
+       0.12557694963892088
+      ],
+      "mean": 0.12557694963892088,
+      "lo": -0.3176602118938686,
+      "hi": 0.5157509006823682,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "NOT-SEPARATED"
+  },
+  "P2_ACC_B0": {
+   "A": "B0_R0C10XHb20",
+   "B": "B0_R0KHb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.030819267804891866
+      ],
+      "mean": -0.030819267804891866,
+      "lo": -0.07582441730163403,
+      "hi": 0.008331335789784268,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.11044877859003913
+      ],
+      "mean": -0.11044877859003913,
+      "lo": -0.20629667958935063,
+      "hi": -0.020309763910936578,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.17557090550771848
+      ],
+      "mean": -0.17557090550771848,
+      "lo": -0.3477289458824736,
+      "hi": -0.007700591093250868,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2283,
+      "n_per_seed": [
+       2283
+      ],
+      "per_seed": [
+       -0.019423821555978275
+      ],
+      "mean": -0.019423821555978275,
+      "lo": -0.05757061741281858,
+      "hi": 0.01325115850600131,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2139,
+      "n_per_seed": [
+       2139
+      ],
+      "per_seed": [
+       -0.10279149273153504
+      ],
+      "mean": -0.10279149273153504,
+      "lo": -0.18439379740868952,
+      "hi": -0.026499071949681374,
+      "verdict": "BETTER",
+      "n_episodes": 138
+     },
+     {
+      "n": 1769,
+      "n_per_seed": [
+       1769
+      ],
+      "per_seed": [
+       -0.04315470686239356
+      ],
+      "mean": -0.04315470686239356,
+      "lo": -0.16952316460930025,
+      "hi": 0.07225624284241777,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.044026516448019574
+      ],
+      "mean": 0.044026516448019574,
+      "lo": 0.014473684718608385,
+      "hi": 0.08092423403514348,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       0.10733861372353516
+      ],
+      "mean": 0.10733861372353516,
+      "lo": 0.04310098888759821,
+      "hi": 0.1781503410865328,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.09934812602966926
+      ],
+      "mean": 0.09934812602966926,
+      "lo": 0.009735508877572565,
+      "hi": 0.20590902206194844,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.2131797315821635
+      ],
+      "mean": -0.2131797315821635,
+      "lo": -0.3900768442301651,
+      "hi": -0.052134965053131914,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.20378450371059736
+      ],
+      "mean": -0.20378450371059736,
+      "lo": -0.4372039361713709,
+      "hi": 0.023843235972980208,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.19427809951865319
+      ],
+      "mean": -0.19427809951865319,
+      "lo": -0.4915175063411167,
+      "hi": 0.06807921625093535,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       -0.021815675813802116
+      ],
+      "mean": -0.021815675813802116,
+      "lo": -0.051730585926173744,
+      "hi": 0.0005001224218944885,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       -0.07778016573874046
+      ],
+      "mean": -0.07778016573874046,
+      "lo": -0.13341405683041455,
+      "hi": -0.02614615509958937,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.05985317192212903
+      ],
+      "mean": -0.05985317192212903,
+      "lo": -0.15041882296630227,
+      "hi": 0.012983404646266149,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.41191412759540896
+      ],
+      "mean": 0.41191412759540896,
+      "lo": 0.1727601320807287,
+      "hi": 0.6892646981275509,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.8686159449824479
+      ],
+      "mean": 0.8686159449824479,
+      "lo": 0.36655767842198433,
+      "hi": 1.4817946122279335,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       1.912384784649984
+      ],
+      "mean": 1.912384784649984,
+      "lo": 0.8468897464503536,
+      "hi": 3.1516648090716415,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2182,
+      "n_per_seed": [
+       2182
+      ],
+      "per_seed": [
+       0.10696924570594293
+      ],
+      "mean": 0.10696924570594293,
+      "lo": -0.041180043210187554,
+      "hi": 0.2897934063212858,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 139
+     },
+     {
+      "n": 1940,
+      "n_per_seed": [
+       1940
+      ],
+      "per_seed": [
+       0.2716074091372332
+      ],
+      "mean": 0.2716074091372332,
+      "lo": -0.04214005177828867,
+      "hi": 0.678409095091145,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 1521,
+      "n_per_seed": [
+       1521
+      ],
+      "per_seed": [
+       0.6703639285931161
+      ],
+      "mean": 0.6703639285931161,
+      "lo": 0.0018029347219661403,
+      "hi": 1.6126699882523765,
+      "verdict": "WORSE",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       -0.2116312692781273
+      ],
+      "mean": -0.2116312692781273,
+      "lo": -0.4010881406070854,
+      "hi": -0.0414551670276889,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       -0.5679924974143676
+      ],
+      "mean": -0.5679924974143676,
+      "lo": -1.023499709995559,
+      "hi": -0.21128571390940684,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1393,
+      "n_per_seed": [
+       1393
+      ],
+      "per_seed": [
+       -1.0779798352562582
+      ],
+      "mean": -1.0779798352562582,
+      "lo": -2.0675532533235113,
+      "hi": -0.2931820566648827,
+      "verdict": "BETTER",
+      "n_episodes": 122
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       1.917831259778591
+      ],
+      "mean": 1.917831259778591,
+      "lo": 0.956976002549889,
+      "hi": 3.0659830776556953,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       2.662564669263448
+      ],
+      "mean": 2.662564669263448,
+      "lo": 1.3730938186196169,
+      "hi": 4.265076607193828,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       2.764615164542241
+      ],
+      "mean": 2.764615164542241,
+      "lo": 0.9380583398276071,
+      "hi": 4.835101226573054,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       0.2566158909881992
+      ],
+      "mean": 0.2566158909881992,
+      "lo": 0.12468910285566244,
+      "hi": 0.41193272006080284,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       0.5312440260773311
+      ],
+      "mean": 0.5312440260773311,
+      "lo": 0.20790644910302894,
+      "hi": 0.9329065796340742,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1393,
+      "n_per_seed": [
+       1393
+      ],
+      "per_seed": [
+       1.0020554047704255
+      ],
+      "mean": 1.0020554047704255,
+      "lo": 0.25195144905595546,
+      "hi": 1.967412832009764,
+      "verdict": "WORSE",
+      "n_episodes": 122
+     }
+    ]
+   },
+   "family_tick2_pos": "WORSE"
+  },
+  "P2_D1_B0": {
+   "A": "B0_R0G50Hb20",
+   "B": "B0_R0G0Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.032649938707199004
+      ],
+      "mean": -0.032649938707199004,
+      "lo": -0.058913889338901806,
+      "hi": -0.00852740815124884,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.09940938255837886
+      ],
+      "mean": -0.09940938255837886,
+      "lo": -0.16786932559335224,
+      "hi": -0.04040913441339526,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.16365377398826092
+      ],
+      "mean": -0.16365377398826092,
+      "lo": -0.29248573838709213,
+      "hi": -0.050778531306527375,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2283,
+      "n_per_seed": [
+       2283
+      ],
+      "per_seed": [
+       -0.014591880311248504
+      ],
+      "mean": -0.014591880311248504,
+      "lo": -0.036347845234000725,
+      "hi": 0.005188691788091101,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2140,
+      "n_per_seed": [
+       2140
+      ],
+      "per_seed": [
+       -0.0654466269482437
+      ],
+      "mean": -0.0654466269482437,
+      "lo": -0.12459560151756244,
+      "hi": -0.015673765511465283,
+      "verdict": "BETTER",
+      "n_episodes": 138
+     },
+     {
+      "n": 1775,
+      "n_per_seed": [
+       1775
+      ],
+      "per_seed": [
+       -0.04697910497814041
+      ],
+      "mean": -0.04697910497814041,
+      "lo": -0.14003364950845096,
+      "hi": 0.02924247238786505,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.02364374482402387
+      ],
+      "mean": 0.02364374482402387,
+      "lo": 0.009814948576610505,
+      "hi": 0.03931753397089551,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2065,
+      "n_per_seed": [
+       2065
+      ],
+      "per_seed": [
+       0.07066371778729887
+      ],
+      "mean": 0.07066371778729887,
+      "lo": 0.03158575712625199,
+      "hi": 0.11393971127330112,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1670,
+      "n_per_seed": [
+       1670
+      ],
+      "per_seed": [
+       0.08448508073999335
+      ],
+      "mean": 0.08448508073999335,
+      "lo": 0.024548461589504,
+      "hi": 0.16435410490921182,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.19611347558856937
+      ],
+      "mean": -0.19611347558856937,
+      "lo": -0.327553350787697,
+      "hi": -0.08793319634435735,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.2058326286562867
+      ],
+      "mean": -0.2058326286562867,
+      "lo": -0.39383490185907866,
+      "hi": -0.04583211227525189,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.16956222963366627
+      ],
+      "mean": -0.16956222963366627,
+      "lo": -0.37943818095408477,
+      "hi": -0.004545730448359331,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       -0.015290696715317402
+      ],
+      "mean": -0.015290696715317402,
+      "lo": -0.027922091631205573,
+      "hi": -0.004339450212234448,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2065,
+      "n_per_seed": [
+       2065
+      ],
+      "per_seed": [
+       -0.059059423660897475
+      ],
+      "mean": -0.059059423660897475,
+      "lo": -0.09891825240541126,
+      "hi": -0.02369228503555997,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     },
+     {
+      "n": 1670,
+      "n_per_seed": [
+       1670
+      ],
+      "per_seed": [
+       -0.06560447893693717
+      ],
+      "mean": -0.06560447893693717,
+      "lo": -0.1387189121099815,
+      "hi": -0.014099668778673292,
+      "verdict": "BETTER",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.11384474308684729
+      ],
+      "mean": 0.11384474308684729,
+      "lo": -0.027255281074383537,
+      "hi": 0.260285513400061,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.3223205953550198
+      ],
+      "mean": 0.3223205953550198,
+      "lo": 0.06981275802962163,
+      "hi": 0.5962403920682626,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.7528012715207301
+      ],
+      "mean": 0.7528012715207301,
+      "lo": 0.2173686752993727,
+      "hi": 1.3064853994993642,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2189,
+      "n_per_seed": [
+       2189
+      ],
+      "per_seed": [
+       -0.04803488230653962
+      ],
+      "mean": -0.04803488230653962,
+      "lo": -0.13869375839373876,
+      "hi": 0.03760965349990625,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 139
+     },
+     {
+      "n": 1953,
+      "n_per_seed": [
+       1953
+      ],
+      "per_seed": [
+       -0.006296184658414727
+      ],
+      "mean": -0.006296184658414727,
+      "lo": -0.13981268920744327,
+      "hi": 0.13524477292673182,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 1529,
+      "n_per_seed": [
+       1529
+      ],
+      "per_seed": [
+       0.10538759673748817
+      ],
+      "mean": 0.10538759673748817,
+      "lo": -0.13394294033738224,
+      "hi": 0.37418025662923393,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 129
+     }
+    ],
+    "along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       -0.05062844229944247
+      ],
+      "mean": -0.05062844229944247,
+      "lo": -0.13806826963236254,
+      "hi": 0.03251198718999256,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       -0.17765292531159607
+      ],
+      "mean": -0.17765292531159607,
+      "lo": -0.33570323221535375,
+      "hi": -0.044509908888156195,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1393,
+      "n_per_seed": [
+       1393
+      ],
+      "per_seed": [
+       -0.349040003165895
+      ],
+      "mean": -0.349040003165895,
+      "lo": -0.6611014363049924,
+      "hi": -0.09733090493802356,
+      "verdict": "BETTER",
+      "n_episodes": 122
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.6657750737495629
+      ],
+      "mean": 0.6657750737495629,
+      "lo": 0.1659667802440126,
+      "hi": 1.270484067537554,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       1.105182552797565
+      ],
+      "mean": 1.105182552797565,
+      "lo": 0.3970359326407581,
+      "hi": 1.9124147338017492,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.7575640821145878
+      ],
+      "mean": 0.7575640821145878,
+      "lo": -0.30038764038812127,
+      "hi": 1.8998168158699185,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       0.07386094446480852
+      ],
+      "mean": 0.07386094446480852,
+      "lo": 0.0041087784806642155,
+      "hi": 0.15100788360584064,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       0.13643023149106057
+      ],
+      "mean": 0.13643023149106057,
+      "lo": 0.017287527558335933,
+      "hi": 0.27910645438948295,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1393,
+      "n_per_seed": [
+       1393
+      ],
+      "per_seed": [
+       0.3068047658289591
+      ],
+      "mean": 0.3068047658289591,
+      "lo": 0.07325082708947692,
+      "hi": 0.5987615031306857,
+      "verdict": "WORSE",
+      "n_episodes": 122
+     }
+    ]
+   },
+   "family_tick2_pos": "MIXED"
+  },
+  "P2_D2_B0": {
+   "A": "B0_R0C10Hb20",
+   "B": "B0_R0G50Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.0018306709023071395
+      ],
+      "mean": 0.0018306709023071395,
+      "lo": -0.020437210758024134,
+      "hi": 0.0213871472519174,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.011039396031660263
+      ],
+      "mean": -0.011039396031660263,
+      "lo": -0.05307247627989511,
+      "hi": 0.030368323050952897,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.01191713151945754
+      ],
+      "mean": -0.01191713151945754,
+      "lo": -0.09192847898389302,
+      "hi": 0.0652113574016727,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2282,
+      "n_per_seed": [
+       2282
+      ],
+      "per_seed": [
+       -0.006274361892583768
+      ],
+      "mean": -0.006274361892583768,
+      "lo": -0.025252561699200246,
+      "hi": 0.010123084980660984,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2140,
+      "n_per_seed": [
+       2140
+      ],
+      "per_seed": [
+       -0.03563513114184645
+      ],
+      "mean": -0.03563513114184645,
+      "lo": -0.06925593537906156,
+      "hi": -0.0019374589431948878,
+      "verdict": "BETTER",
+      "n_episodes": 138
+     },
+     {
+      "n": 1769,
+      "n_per_seed": [
+       1769
+      ],
+      "per_seed": [
+       -0.008085276206862153
+      ],
+      "mean": -0.008085276206862153,
+      "lo": -0.0605298303929713,
+      "hi": 0.04258529925169616,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.020382771623995703
+      ],
+      "mean": 0.020382771623995703,
+      "lo": 0.003020976264412113,
+      "hi": 0.04496503145077498,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       0.03685574947910305
+      ],
+      "mean": 0.03685574947910305,
+      "lo": 0.009021407678138008,
+      "hi": 0.06636123382042373,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.01573733524493588
+      ],
+      "mean": 0.01573733524493588,
+      "lo": -0.024771353473171637,
+      "hi": 0.05630055141165318,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.017066255993594126
+      ],
+      "mean": -0.017066255993594126,
+      "lo": -0.09356637914749423,
+      "hi": 0.05921586103566975,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.0020481249456893572
+      ],
+      "mean": 0.0020481249456893572,
+      "lo": -0.0896108028235506,
+      "hi": 0.09310993127126757,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.024715869884986877
+      ],
+      "mean": -0.024715869884986877,
+      "lo": -0.16150254942096692,
+      "hi": 0.11098557127081926,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       -0.006524979098484712
+      ],
+      "mean": -0.006524979098484712,
+      "lo": -0.026671229154693558,
+      "hi": 0.007209846624073744,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       -0.01890721785623609
+      ],
+      "mean": -0.01890721785623609,
+      "lo": -0.04178411099320857,
+      "hi": 0.0029015056891792826,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.004865704535999316
+      ],
+      "mean": 0.004865704535999316,
+      "lo": -0.027876200249211024,
+      "hi": 0.039013463274943955,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.20045787976297186
+      ],
+      "mean": 0.20045787976297186,
+      "lo": -0.015615416744592865,
+      "hi": 0.4503046034703084,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.4063408212167191
+      ],
+      "mean": 0.4063408212167191,
+      "lo": -0.03727911851069181,
+      "hi": 0.919383682877562,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.9282213734804687
+      ],
+      "mean": 0.9282213734804687,
+      "lo": 0.06683554573134556,
+      "hi": 1.9124766167071723,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2191,
+      "n_per_seed": [
+       2191
+      ],
+      "per_seed": [
+       0.14167189063216637
+      ],
+      "mean": 0.14167189063216637,
+      "lo": 0.003994138523570024,
+      "hi": 0.3467339700283248,
+      "verdict": "WORSE",
+      "n_episodes": 139
+     },
+     {
+      "n": 1959,
+      "n_per_seed": [
+       1959
+      ],
+      "per_seed": [
+       0.33522125189686747
+      ],
+      "mean": 0.33522125189686747,
+      "lo": 0.06144386847454517,
+      "hi": 0.7675833465077788,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 1534,
+      "n_per_seed": [
+       1534
+      ],
+      "per_seed": [
+       0.687200426321957
+      ],
+      "mean": 0.687200426321957,
+      "lo": 0.094137612381757,
+      "hi": 1.6072268873428284,
+      "verdict": "WORSE",
+      "n_episodes": 130
+     }
+    ],
+    "along": [
+     {
+      "n": 2105,
+      "n_per_seed": [
+       2105
+      ],
+      "per_seed": [
+       -0.11202272754311318
+      ],
+      "mean": -0.11202272754311318,
+      "lo": -0.26976741480698924,
+      "hi": 0.016150828311142663,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1843,
+      "n_per_seed": [
+       1843
+      ],
+      "per_seed": [
+       -0.3095993716687598
+      ],
+      "mean": -0.3095993716687598,
+      "lo": -0.6913610687566217,
+      "hi": -0.030678289016835034,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1397,
+      "n_per_seed": [
+       1397
+      ],
+      "per_seed": [
+       -0.7010249630100631
+      ],
+      "mean": -0.7010249630100631,
+      "lo": -1.7181314036398678,
+      "hi": -0.05683654766975886,
+      "verdict": "BETTER",
+      "n_episodes": 122
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.8467025297164988
+      ],
+      "mean": 0.8467025297164988,
+      "lo": 0.04311109678571942,
+      "hi": 1.781645095087189,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       1.1869778751491171
+      ],
+      "mean": 1.1869778751491171,
+      "lo": 0.23170577487727106,
+      "hi": 2.2753560938356285,
+      "verdict": "WORSE",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       1.6338713025252187
+      ],
+      "mean": 1.6338713025252187,
+      "lo": 0.4579101416979011,
+      "hi": 3.001757510798886,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2105,
+      "n_per_seed": [
+       2105
+      ],
+      "per_seed": [
+       0.13070020038740726
+      ],
+      "mean": 0.13070020038740726,
+      "lo": 0.01326610836202036,
+      "hi": 0.2784931541367913,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1843,
+      "n_per_seed": [
+       1843
+      ],
+      "per_seed": [
+       0.304831188818402
+      ],
+      "mean": 0.304831188818402,
+      "lo": 0.027954968251317783,
+      "hi": 0.6699625571521298,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1397,
+      "n_per_seed": [
+       1397
+      ],
+      "per_seed": [
+       0.6903760902884624
+      ],
+      "mean": 0.6903760902884624,
+      "lo": 0.046560787066277205,
+      "hi": 1.7123217634978731,
+      "verdict": "WORSE",
+      "n_episodes": 122
+     }
+    ]
+   },
+   "family_tick2_pos": "MIXED"
+  },
+  "P4": {
+   "A": "RH_R0C10XHb20",
+   "B": "B0_R0KHb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.0536513872030867
+      ],
+      "mean": -0.0536513872030867,
+      "lo": -0.10985964674524665,
+      "hi": 0.004610609122610655,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.0877709431204447
+      ],
+      "mean": -0.0877709431204447,
+      "lo": -0.1944389062863824,
+      "hi": 0.029381740810216234,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.05448755618104625
+      ],
+      "mean": -0.05448755618104625,
+      "lo": -0.27973719145687853,
+      "hi": 0.18065704510043398,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2283,
+      "n_per_seed": [
+       2283
+      ],
+      "per_seed": [
+       -0.03464017081696742
+      ],
+      "mean": -0.03464017081696742,
+      "lo": -0.0927961338879261,
+      "hi": 0.01823885024829223,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2138,
+      "n_per_seed": [
+       2138
+      ],
+      "per_seed": [
+       -0.10424605240930275
+      ],
+      "mean": -0.10424605240930275,
+      "lo": -0.20254241866061665,
+      "hi": -0.009875383149571686,
+      "verdict": "BETTER",
+      "n_episodes": 138
+     },
+     {
+      "n": 1769,
+      "n_per_seed": [
+       1769
+      ],
+      "per_seed": [
+       -0.1336663813002811
+      ],
+      "mean": -0.1336663813002811,
+      "lo": -0.34182904652395474,
+      "hi": 0.07214741296051504,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.031182513533765114
+      ],
+      "mean": 0.031182513533765114,
+      "lo": -0.009660650043535174,
+      "hi": 0.07223513815708418,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.06835210594174432
+      ],
+      "mean": 0.06835210594174432,
+      "lo": -0.027552866707476246,
+      "hi": 0.1659868096316492,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.04802674931926384
+      ],
+      "mean": -0.04802674931926384,
+      "lo": -0.21082049498500974,
+      "hi": 0.09958633698447422,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.1131514549727164
+      ],
+      "mean": -0.1131514549727164,
+      "lo": -0.29701944970332483,
+      "hi": 0.07798924616100969,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.002920111441196389
+      ],
+      "mean": 0.002920111441196389,
+      "lo": -0.3374117985695465,
+      "hi": 0.3573806310090761,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.1503220222638
+      ],
+      "mean": 0.1503220222638,
+      "lo": -0.3314778204535779,
+      "hi": 0.6515771198898916,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       -0.007398833690846434
+      ],
+      "mean": -0.007398833690846434,
+      "lo": -0.04630374236122877,
+      "hi": 0.02713819380910643,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.028034336455608523
+      ],
+      "mean": -0.028034336455608523,
+      "lo": -0.10137465625253574,
+      "hi": 0.05475614644403744,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.051522517708661265
+      ],
+      "mean": 0.051522517708661265,
+      "lo": -0.0691924676781935,
+      "hi": 0.19819850380353582,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.25298847094394195
+      ],
+      "mean": -0.25298847094394195,
+      "lo": -0.4601558353288355,
+      "hi": -0.0535486790168405,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -0.2962041665648347
+      ],
+      "mean": -0.2962041665648347,
+      "lo": -0.6756617687450105,
+      "hi": 0.08829398245074045,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       0.05534767921500036
+      ],
+      "mean": 0.05534767921500036,
+      "lo": -0.6790089897054131,
+      "hi": 0.8355233814453841,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2175,
+      "n_per_seed": [
+       2175
+      ],
+      "per_seed": [
+       -0.14044712435773668
+      ],
+      "mean": -0.14044712435773668,
+      "lo": -0.2698333349051501,
+      "hi": -0.009887737667085842,
+      "verdict": "BETTER",
+      "n_episodes": 139
+     },
+     {
+      "n": 1934,
+      "n_per_seed": [
+       1934
+      ],
+      "per_seed": [
+       -0.11932235729055835
+      ],
+      "mean": -0.11932235729055835,
+      "lo": -0.326826858886305,
+      "hi": 0.11002762750407423,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 1513,
+      "n_per_seed": [
+       1513
+      ],
+      "per_seed": [
+       0.05507532828578509
+      ],
+      "mean": 0.05507532828578509,
+      "lo": -0.3225256789481981,
+      "hi": 0.47509807958842426,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2102,
+      "n_per_seed": [
+       2102
+      ],
+      "per_seed": [
+       0.06808737525730243
+      ],
+      "mean": 0.06808737525730243,
+      "lo": -0.05074966975863917,
+      "hi": 0.18518151858468082,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1835,
+      "n_per_seed": [
+       1835
+      ],
+      "per_seed": [
+       -0.020533117856899704
+      ],
+      "mean": -0.020533117856899704,
+      "lo": -0.2588044307287599,
+      "hi": 0.18122224620912608,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 134
+     },
+     {
+      "n": 1387,
+      "n_per_seed": [
+       1387
+      ],
+      "per_seed": [
+       -0.26619767826956126
+      ],
+      "mean": -0.26619767826956126,
+      "lo": -0.7540395774004933,
+      "hi": 0.15086583874455964,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 122
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.24377169006564023
+      ],
+      "mean": -0.24377169006564023,
+      "lo": -0.9028806213939706,
+      "hi": 0.39196917842831774,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       0.5202926563171015
+      ],
+      "mean": 0.5202926563171015,
+      "lo": -0.4204958179399678,
+      "hi": 1.5441525331542305,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       1.0832777077874218
+      ],
+      "mean": 1.0832777077874218,
+      "lo": -0.12843676314917826,
+      "hi": 2.4632626105571176,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2102,
+      "n_per_seed": [
+       2102
+      ],
+      "per_seed": [
+       0.01868117674610328
+      ],
+      "mean": 0.01868117674610328,
+      "lo": -0.08753122542898852,
+      "hi": 0.14234867094693693,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1835,
+      "n_per_seed": [
+       1835
+      ],
+      "per_seed": [
+       0.06917423376085648
+      ],
+      "mean": 0.06917423376085648,
+      "lo": -0.11244266927323353,
+      "hi": 0.2927273412494471,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 134
+     },
+     {
+      "n": 1387,
+      "n_per_seed": [
+       1387
+      ],
+      "per_seed": [
+       0.28050830489865075
+      ],
+      "mean": 0.28050830489865075,
+      "lo": -0.10638135558943496,
+      "hi": 0.7461457198735851,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 122
+     }
+    ]
+   },
+   "family_tick2_pos": "MIXED"
+  },
+  "BESIDE_RH_minus_B0_R0Hb20": {
+   "A": "RH_R0Hb20",
+   "B": "B0_R0Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.03569235673050619
+      ],
+      "mean": -0.03569235673050619,
+      "lo": -0.08226598251188186,
+      "hi": 0.01645506526791223,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.00200618514903075
+      ],
+      "mean": -0.00200618514903075,
+      "lo": -0.09199069164388446,
+      "hi": 0.09232937749128753,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.0513057939767799
+      ],
+      "mean": 0.0513057939767799,
+      "lo": -0.11838978980868707,
+      "hi": 0.2259339633675493,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2281,
+      "n_per_seed": [
+       2281
+      ],
+      "per_seed": [
+       -0.02368985712894372
+      ],
+      "mean": -0.02368985712894372,
+      "lo": -0.0780582240134868,
+      "hi": 0.031476387727132474,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2137,
+      "n_per_seed": [
+       2137
+      ],
+      "per_seed": [
+       -0.042982838836792284
+      ],
+      "mean": -0.042982838836792284,
+      "lo": -0.1451659668897136,
+      "hi": 0.05242578791343596,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1768,
+      "n_per_seed": [
+       1768
+      ],
+      "per_seed": [
+       -0.19941322800028174
+      ],
+      "mean": -0.19941322800028174,
+      "lo": -0.45218767043329605,
+      "hi": 0.025900558774125677,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2218,
+      "n_per_seed": [
+       2218
+      ],
+      "per_seed": [
+       -0.0017377235607104078
+      ],
+      "mean": -0.0017377235607104078,
+      "lo": -0.030539071196101237,
+      "hi": 0.025371433497791755,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2062,
+      "n_per_seed": [
+       2062
+      ],
+      "per_seed": [
+       -0.028298941964315084
+      ],
+      "mean": -0.028298941964315084,
+      "lo": -0.08180775075564582,
+      "hi": 0.013887626856982303,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1668,
+      "n_per_seed": [
+       1668
+      ],
+      "per_seed": [
+       -0.11556801219658314
+      ],
+      "mean": -0.11556801219658314,
+      "lo": -0.24360505938755317,
+      "hi": 0.002218035434627451,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.06587763199688773
+      ],
+      "mean": 0.06587763199688773,
+      "lo": -0.08507082038309872,
+      "hi": 0.23031787846753668,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.14620190589009194
+      ],
+      "mean": 0.14620190589009194,
+      "lo": -0.06995886610006001,
+      "hi": 0.37540333181646185,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.2284642924528707
+      ],
+      "mean": 0.2284642924528707,
+      "lo": -0.07106000859443318,
+      "hi": 0.6083067207977111,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2218,
+      "n_per_seed": [
+       2218
+      ],
+      "per_seed": [
+       -0.0019532163215064376
+      ],
+      "mean": -0.0019532163215064376,
+      "lo": -0.03033062988675763,
+      "hi": 0.022599956305801843,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2062,
+      "n_per_seed": [
+       2062
+      ],
+      "per_seed": [
+       0.040944514852527585
+      ],
+      "mean": 0.040944514852527585,
+      "lo": -0.003234969422955608,
+      "hi": 0.09409092648635001,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1668,
+      "n_per_seed": [
+       1668
+      ],
+      "per_seed": [
+       0.08047585298687372
+      ],
+      "mean": 0.08047585298687372,
+      "lo": -0.03182967517936353,
+      "hi": 0.20993859620247557,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.8279597683174166
+      ],
+      "mean": -0.8279597683174166,
+      "lo": -1.1367550936696678,
+      "hi": -0.5745058603340361,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -1.5125533338374622
+      ],
+      "mean": -1.5125533338374622,
+      "lo": -2.1053326901511604,
+      "hi": -1.0225661022092758,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -2.5900758334084504
+      ],
+      "mean": -2.5900758334084504,
+      "lo": -3.622295269441776,
+      "hi": -1.6859484259870914,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2185,
+      "n_per_seed": [
+       2185
+      ],
+      "per_seed": [
+       -0.34074582295149497
+      ],
+      "mean": -0.34074582295149497,
+      "lo": -0.5196460781432891,
+      "hi": -0.17643045800577048,
+      "verdict": "BETTER",
+      "n_episodes": 140
+     },
+     {
+      "n": 1941,
+      "n_per_seed": [
+       1941
+      ],
+      "per_seed": [
+       -0.6872654943437102
+      ],
+      "mean": -0.6872654943437102,
+      "lo": -1.0010796631113406,
+      "hi": -0.39423150395509265,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 1517,
+      "n_per_seed": [
+       1517
+      ],
+      "per_seed": [
+       -1.2175621538406312
+      ],
+      "mean": -1.2175621538406312,
+      "lo": -1.7229429012241697,
+      "hi": -0.7233649947843429,
+      "verdict": "BETTER",
+      "n_episodes": 127
+     }
+    ],
+    "along": [
+     {
+      "n": 2103,
+      "n_per_seed": [
+       2103
+      ],
+      "per_seed": [
+       0.2944112599381374
+      ],
+      "mean": 0.2944112599381374,
+      "lo": 0.15530573666777944,
+      "hi": 0.46123074511278567,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       0.6519377712870426
+      ],
+      "mean": 0.6519377712870426,
+      "lo": 0.3245363290439319,
+      "hi": 1.0308509035719922,
+      "verdict": "WORSE",
+      "n_episodes": 133
+     },
+     {
+      "n": 1387,
+      "n_per_seed": [
+       1387
+      ],
+      "per_seed": [
+       1.1567324028251946
+      ],
+      "mean": 1.1567324028251946,
+      "lo": 0.5087621874238809,
+      "hi": 2.0219601210476785,
+      "verdict": "WORSE",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -2.6075976266334058
+      ],
+      "mean": -2.6075976266334058,
+      "lo": -3.8076686480621524,
+      "hi": -1.6321048363561985,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -2.842577705696535
+      ],
+      "mean": -2.842577705696535,
+      "lo": -4.190629394086315,
+      "hi": -1.7238132552582235,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -2.50342093195239
+      ],
+      "mean": -2.50342093195239,
+      "lo": -3.9356388432516494,
+      "hi": -1.0751217010437553,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2103,
+      "n_per_seed": [
+       2103
+      ],
+      "per_seed": [
+       -0.21464460314523653
+      ],
+      "mean": -0.21464460314523653,
+      "lo": -0.3545720500663611,
+      "hi": -0.0817902374892037,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       -0.5322640474114918
+      ],
+      "mean": -0.5322640474114918,
+      "lo": -0.8742747578434447,
+      "hi": -0.24652125375233067,
+      "verdict": "BETTER",
+      "n_episodes": 133
+     },
+     {
+      "n": 1387,
+      "n_per_seed": [
+       1387
+      ],
+      "per_seed": [
+       -1.0455344627702607
+      ],
+      "mean": -1.0455344627702607,
+      "lo": -1.90152393530937,
+      "hi": -0.43205690665659163,
+      "verdict": "BETTER",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "BETTER"
+  },
+  "BESIDE_RH_minus_B0_R0C10Hb20": {
+   "A": "RH_R0C10Hb20",
+   "B": "B0_R0C10Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.022832119398194847
+      ],
+      "mean": -0.022832119398194847,
+      "lo": -0.06490611201937574,
+      "hi": 0.02280340160021201,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.022677835469594426
+      ],
+      "mean": 0.022677835469594426,
+      "lo": -0.05945137508756124,
+      "hi": 0.1118173745400815,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.1210833493266722
+      ],
+      "mean": 0.1210833493266722,
+      "lo": -0.044059851065504384,
+      "hi": 0.29796730402521465,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2282,
+      "n_per_seed": [
+       2282
+      ],
+      "per_seed": [
+       -0.013559149207902766
+      ],
+      "mean": -0.013559149207902766,
+      "lo": -0.0644644202378328,
+      "hi": 0.03755680612446583,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2139,
+      "n_per_seed": [
+       2139
+      ],
+      "per_seed": [
+       -0.0010261949770916329
+      ],
+      "mean": -0.0010261949770916329,
+      "lo": -0.09330626266457899,
+      "hi": 0.08748183909787322,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1768,
+      "n_per_seed": [
+       1768
+      ],
+      "per_seed": [
+       -0.09677324962047339
+      ],
+      "mean": -0.09677324962047339,
+      "lo": -0.30256007118765466,
+      "hi": 0.09657903080765408,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       -0.012844002914254459
+      ],
+      "mean": -0.012844002914254459,
+      "lo": -0.041745413805157366,
+      "hi": 0.011462183980073313,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.039038182840592364
+      ],
+      "mean": -0.039038182840592364,
+      "lo": -0.10136099384132857,
+      "hi": 0.009164222111420827,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.1473748753489331
+      ],
+      "mean": -0.1473748753489331,
+      "lo": -0.2735307408104082,
+      "hi": -0.04233475450204207,
+      "verdict": "BETTER",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.1000282766094471
+      ],
+      "mean": 0.1000282766094471,
+      "lo": -0.048234727575899014,
+      "hi": 0.2630796733558458,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.20670461515179372
+      ],
+      "mean": 0.20670461515179372,
+      "lo": -0.03650533261204137,
+      "hi": 0.46085118151732646,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.34460012178245314
+      ],
+      "mean": 0.34460012178245314,
+      "lo": -0.0007878188227869373,
+      "hi": 0.7547891604256567,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.014416842122955681
+      ],
+      "mean": 0.014416842122955681,
+      "lo": -0.0037063785335147603,
+      "hi": 0.03677481006099049,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.04978317644664271
+      ],
+      "mean": 0.04978317644664271,
+      "lo": 0.006193721608706903,
+      "hi": 0.10694444361953531,
+      "verdict": "WORSE",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.11137568963079031
+      ],
+      "mean": 0.11137568963079031,
+      "lo": 0.015387006458876758,
+      "hi": 0.23209380207212343,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.8972482735823593
+      ],
+      "mean": -0.8972482735823593,
+      "lo": -1.2141021986284413,
+      "hi": -0.6147409973023699,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -1.5919950480039387
+      ],
+      "mean": -1.5919950480039387,
+      "lo": -2.1957099638161495,
+      "hi": -1.0550906084175105,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -2.643744417497304
+      ],
+      "mean": -2.643744417497304,
+      "lo": -3.713974455430212,
+      "hi": -1.7020654396344503,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2183,
+      "n_per_seed": [
+       2183
+      ],
+      "per_seed": [
+       -0.4750569715795881
+      ],
+      "mean": -0.4750569715795881,
+      "lo": -0.7290798569124641,
+      "hi": -0.26299913165279704,
+      "verdict": "BETTER",
+      "n_episodes": 139
+     },
+     {
+      "n": 1941,
+      "n_per_seed": [
+       1941
+      ],
+      "per_seed": [
+       -0.8298464590658962
+      ],
+      "mean": -0.8298464590658962,
+      "lo": -1.311694198524857,
+      "hi": -0.4452474104341177,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 1526,
+      "n_per_seed": [
+       1526
+      ],
+      "per_seed": [
+       -1.416169368261581
+      ],
+      "mean": -1.416169368261581,
+      "lo": -2.45148791307907,
+      "hi": -0.6415980971867862,
+      "verdict": "BETTER",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       0.31854580940812677
+      ],
+      "mean": 0.31854580940812677,
+      "lo": 0.15246135034537184,
+      "hi": 0.5237114491630408,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1842,
+      "n_per_seed": [
+       1842
+      ],
+      "per_seed": [
+       0.6519925647665944
+      ],
+      "mean": 0.6519925647665944,
+      "lo": 0.3081371344394041,
+      "hi": 1.0746306991866061,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1391,
+      "n_per_seed": [
+       1391
+      ],
+      "per_seed": [
+       1.0459716290420948
+      ],
+      "mean": 1.0459716290420948,
+      "lo": 0.31707791121364276,
+      "hi": 2.0889431988689613,
+      "verdict": "WORSE",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -2.723024721848096
+      ],
+      "mean": -2.723024721848096,
+      "lo": -3.9128509187977665,
+      "hi": -1.729944118797216,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -3.009962205288608
+      ],
+      "mean": -3.009962205288608,
+      "lo": -4.440718279820125,
+      "hi": -1.7951808259440856,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -2.653142558027239
+      ],
+      "mean": -2.653142558027239,
+      "lo": -4.1147544849087,
+      "hi": -1.1751129031134584,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       -0.28261312234160785
+      ],
+      "mean": -0.28261312234160785,
+      "lo": -0.4649658219732794,
+      "hi": -0.13654536770199874,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     },
+     {
+      "n": 1842,
+      "n_per_seed": [
+       1842
+      ],
+      "per_seed": [
+       -0.5924297305927032
+      ],
+      "mean": -0.5924297305927032,
+      "lo": -1.001161792019166,
+      "hi": -0.2667838183290698,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1391,
+      "n_per_seed": [
+       1391
+      ],
+      "per_seed": [
+       -1.0279099835077035
+      ],
+      "mean": -1.0279099835077035,
+      "lo": -2.077919660560498,
+      "hi": -0.303852298103056,
+      "verdict": "BETTER",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "BETTER"
+  },
+  "BESIDE_RH_minus_B0_R0G50Hb20": {
+   "A": "RH_R0G50Hb20",
+   "B": "B0_R0G50Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.03178801961272097
+      ],
+      "mean": -0.03178801961272097,
+      "lo": -0.07564203342655643,
+      "hi": 0.015811557146102186,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.0021465100027338556
+      ],
+      "mean": -0.0021465100027338556,
+      "lo": -0.08215280974851889,
+      "hi": 0.09002877545565008,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.08887414488228801
+      ],
+      "mean": 0.08887414488228801,
+      "lo": -0.09365287902207456,
+      "hi": 0.28306044277884324,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2283,
+      "n_per_seed": [
+       2283
+      ],
+      "per_seed": [
+       -0.03315212830312958
+      ],
+      "mean": -0.03315212830312958,
+      "lo": -0.08627140800366019,
+      "hi": 0.017472290716756277,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2139,
+      "n_per_seed": [
+       2139
+      ],
+      "per_seed": [
+       -0.04417970220854698
+      ],
+      "mean": -0.04417970220854698,
+      "lo": -0.13455725521028963,
+      "hi": 0.04570344855021677,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1771,
+      "n_per_seed": [
+       1771
+      ],
+      "per_seed": [
+       -0.11865325332260201
+      ],
+      "mean": -0.11865325332260201,
+      "lo": -0.3554255463501119,
+      "hi": 0.09906219555048877,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.004072251117268382
+      ],
+      "mean": 0.004072251117268382,
+      "lo": -0.028268676421609636,
+      "hi": 0.03335243400389916,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       -0.019342097708427666
+      ],
+      "mean": -0.019342097708427666,
+      "lo": -0.08999811324519764,
+      "hi": 0.039401452523892246,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       -0.15393369668694173
+      ],
+      "mean": -0.15393369668694173,
+      "lo": -0.292986838945578,
+      "hi": -0.0391220235572917,
+      "verdict": "BETTER",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       0.06329333254364086
+      ],
+      "mean": 0.06329333254364086,
+      "lo": -0.08104404068556352,
+      "hi": 0.23116735772433344,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.18303245102950977
+      ],
+      "mean": 0.18303245102950977,
+      "lo": -0.061685601036708615,
+      "hi": 0.4501773152425604,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.30708285620042186
+      ],
+      "mean": 0.30708285620042186,
+      "lo": -0.05249671437292993,
+      "hi": 0.722019557692448,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2219,
+      "n_per_seed": [
+       2219
+      ],
+      "per_seed": [
+       0.0030397395726230255
+      ],
+      "mean": 0.0030397395726230255,
+      "lo": -0.027275307483283485,
+      "hi": 0.0309740587185483,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2063,
+      "n_per_seed": [
+       2063
+      ],
+      "per_seed": [
+       0.036956731617116774
+      ],
+      "mean": 0.036956731617116774,
+      "lo": -0.014709113253292532,
+      "hi": 0.10276659144693999,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1669,
+      "n_per_seed": [
+       1669
+      ],
+      "per_seed": [
+       0.13458921062448018
+      ],
+      "mean": 0.13458921062448018,
+      "lo": 0.023884953039571,
+      "hi": 0.2721434796231654,
+      "verdict": "WORSE",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.7645739128355352
+      ],
+      "mean": -0.7645739128355352,
+      "lo": -1.0455752337140074,
+      "hi": -0.5437808301456051,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -1.326023177929561
+      ],
+      "mean": -1.326023177929561,
+      "lo": -1.865702347874947,
+      "hi": -0.889686439831411,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -2.104706321457454
+      ],
+      "mean": -2.104706321457454,
+      "lo": -2.909613438261839,
+      "hi": -1.3617426134292836,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2181,
+      "n_per_seed": [
+       2181
+      ],
+      "per_seed": [
+       -0.3451089865865864
+      ],
+      "mean": -0.3451089865865864,
+      "lo": -0.5153107781005668,
+      "hi": -0.1831269652395421,
+      "verdict": "BETTER",
+      "n_episodes": 139
+     },
+     {
+      "n": 1944,
+      "n_per_seed": [
+       1944
+      ],
+      "per_seed": [
+       -0.543844572571956
+      ],
+      "mean": -0.543844572571956,
+      "lo": -0.833208253593276,
+      "hi": -0.27505213942297074,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 1518,
+      "n_per_seed": [
+       1518
+      ],
+      "per_seed": [
+       -0.8224473176808119
+      ],
+      "mean": -0.8224473176808119,
+      "lo": -1.2736792780694626,
+      "hi": -0.37936665677170717,
+      "verdict": "BETTER",
+      "n_episodes": 127
+     }
+    ],
+    "along": [
+     {
+      "n": 2102,
+      "n_per_seed": [
+       2102
+      ],
+      "per_seed": [
+       0.19963006735829034
+      ],
+      "mean": 0.19963006735829034,
+      "lo": 0.08972237623701401,
+      "hi": 0.3233689588556262,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1841,
+      "n_per_seed": [
+       1841
+      ],
+      "per_seed": [
+       0.38714033974919215
+      ],
+      "mean": 0.38714033974919215,
+      "lo": 0.17469893912886011,
+      "hi": 0.6498878388585122,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1391,
+      "n_per_seed": [
+       1391
+      ],
+      "per_seed": [
+       0.5391444873861496
+      ],
+      "mean": 0.5391444873861496,
+      "lo": 0.1772181213317217,
+      "hi": 1.004348729285048,
+      "verdict": "WORSE",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -2.10642974743881
+      ],
+      "mean": -2.10642974743881,
+      "lo": -3.1944963619951774,
+      "hi": -1.255067279136626,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -2.14293346757358
+      ],
+      "mean": -2.14293346757358,
+      "lo": -3.3457726522729687,
+      "hi": -1.176238356421731,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -1.7841276120659058
+      ],
+      "mean": -1.7841276120659058,
+      "lo": -2.9666845567087385,
+      "hi": -0.6178664062495557,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2102,
+      "n_per_seed": [
+       2102
+      ],
+      "per_seed": [
+       -0.12486677488742705
+      ],
+      "mean": -0.12486677488742705,
+      "lo": -0.220292000775043,
+      "hi": -0.03492911558633606,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     },
+     {
+      "n": 1841,
+      "n_per_seed": [
+       1841
+      ],
+      "per_seed": [
+       -0.2777922098668644
+      ],
+      "mean": -0.2777922098668644,
+      "lo": -0.5026502686927482,
+      "hi": -0.08673468550496397,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1391,
+      "n_per_seed": [
+       1391
+      ],
+      "per_seed": [
+       -0.4777691574492833
+      ],
+      "mean": -0.4777691574492833,
+      "lo": -0.8597605176967243,
+      "hi": -0.16491798426239113,
+      "verdict": "BETTER",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "BETTER"
+  },
+  "BESIDE_RH_minus_B0_R0G0Hb20": {
+   "A": "RH_R0G0Hb20",
+   "B": "B0_R0G0Hb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.049231357718824684
+      ],
+      "mean": -0.049231357718824684,
+      "lo": -0.10035386320316891,
+      "hi": 0.0038080626651518464,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.06428722990424356
+      ],
+      "mean": -0.06428722990424356,
+      "lo": -0.15942391836013692,
+      "hi": 0.04130515474596274,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.022591768982882232
+      ],
+      "mean": -0.022591768982882232,
+      "lo": -0.2212157818831654,
+      "hi": 0.1781664071963585,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2285,
+      "n_per_seed": [
+       2285
+      ],
+      "per_seed": [
+       -0.04271868044359991
+      ],
+      "mean": -0.04271868044359991,
+      "lo": -0.09690824683067772,
+      "hi": 0.009697492658236332,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2138,
+      "n_per_seed": [
+       2138
+      ],
+      "per_seed": [
+       -0.09524121042893655
+      ],
+      "mean": -0.09524121042893655,
+      "lo": -0.19258368622062014,
+      "hi": 0.0019868109131672166,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1777,
+      "n_per_seed": [
+       1777
+      ],
+      "per_seed": [
+       -0.16737154102324056
+      ],
+      "mean": -0.16737154102324056,
+      "lo": -0.402583782659223,
+      "hi": 0.041010848568917915,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2221,
+      "n_per_seed": [
+       2221
+      ],
+      "per_seed": [
+       0.013239913085654458
+      ],
+      "mean": 0.013239913085654458,
+      "lo": -0.02168297779516791,
+      "hi": 0.04747321212113666,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       0.005177977812124314
+      ],
+      "mean": 0.005177977812124314,
+      "lo": -0.06990654694921905,
+      "hi": 0.07276210778614575,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1671,
+      "n_per_seed": [
+       1671
+      ],
+      "per_seed": [
+       -0.11781623768412239
+      ],
+      "mean": -0.11781623768412239,
+      "lo": -0.26100119910660835,
+      "hi": 0.0009665737177002962,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.053061343060993936
+      ],
+      "mean": -0.053061343060993936,
+      "lo": -0.21667098798158968,
+      "hi": 0.1309534665195993,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.03538056083178964
+      ],
+      "mean": 0.03538056083178964,
+      "lo": -0.20690363262753342,
+      "hi": 0.30010811094244677,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.2464020885102956
+      ],
+      "mean": 0.2464020885102956,
+      "lo": -0.13042934232083175,
+      "hi": 0.6978062822368528,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2221,
+      "n_per_seed": [
+       2221
+      ],
+      "per_seed": [
+       -0.006216443035153391
+      ],
+      "mean": -0.006216443035153391,
+      "lo": -0.03872132031628496,
+      "hi": 0.023408172082965854,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       0.012248325891206282
+      ],
+      "mean": 0.012248325891206282,
+      "lo": -0.04535488656861838,
+      "hi": 0.08208473533289769,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1671,
+      "n_per_seed": [
+       1671
+      ],
+      "per_seed": [
+       0.09948826612054036
+      ],
+      "mean": 0.09948826612054036,
+      "lo": -0.010454149306141539,
+      "hi": 0.2369251937307095,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.6623018442928897
+      ],
+      "mean": -0.6623018442928897,
+      "lo": -0.9280697440491205,
+      "hi": -0.46166614004490514,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -1.13253312313695
+      ],
+      "mean": -1.13253312313695,
+      "lo": -1.637320824867018,
+      "hi": -0.7379794901700342,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -1.8154092273197882
+      ],
+      "mean": -1.8154092273197882,
+      "lo": -2.593170101380769,
+      "hi": -1.128164414903089,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2183,
+      "n_per_seed": [
+       2183
+      ],
+      "per_seed": [
+       -0.34000832310875717
+      ],
+      "mean": -0.34000832310875717,
+      "lo": -0.4955033665885709,
+      "hi": -0.18834727083267597,
+      "verdict": "BETTER",
+      "n_episodes": 139
+     },
+     {
+      "n": 1945,
+      "n_per_seed": [
+       1945
+      ],
+      "per_seed": [
+       -0.5430936270422685
+      ],
+      "mean": -0.5430936270422685,
+      "lo": -0.8166246679651469,
+      "hi": -0.29100910312606754,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 1517,
+      "n_per_seed": [
+       1517
+      ],
+      "per_seed": [
+       -0.7979819528652757
+      ],
+      "mean": -0.7979819528652757,
+      "lo": -1.1679252311725679,
+      "hi": -0.44488171398325893,
+      "verdict": "BETTER",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       0.18993351282504264
+      ],
+      "mean": 0.18993351282504264,
+      "lo": 0.08905716580397388,
+      "hi": 0.30179013456415016,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1836,
+      "n_per_seed": [
+       1836
+      ],
+      "per_seed": [
+       0.34204785677078786
+      ],
+      "mean": 0.34204785677078786,
+      "lo": 0.15976806409555147,
+      "hi": 0.5614410693236576,
+      "verdict": "WORSE",
+      "n_episodes": 134
+     },
+     {
+      "n": 1385,
+      "n_per_seed": [
+       1385
+      ],
+      "per_seed": [
+       0.3506746177629381
+      ],
+      "mean": 0.3506746177629381,
+      "lo": 0.08918492978598384,
+      "hi": 0.6664810861191927,
+      "verdict": "WORSE",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -1.6897267065205073
+      ],
+      "mean": -1.6897267065205073,
+      "lo": -2.662524164070061,
+      "hi": -0.9206935107995114,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -1.7809405424699556
+      ],
+      "mean": -1.7809405424699556,
+      "lo": -2.913007349682878,
+      "hi": -0.8953251795281645,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -1.9586582400078318
+      ],
+      "mean": -1.9586582400078318,
+      "lo": -2.947572822120723,
+      "hi": -1.0959352266365914,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2104,
+      "n_per_seed": [
+       2104
+      ],
+      "per_seed": [
+       -0.09776228046651196
+      ],
+      "mean": -0.09776228046651196,
+      "lo": -0.1872653267156666,
+      "hi": -0.006713608784359992,
+      "verdict": "BETTER",
+      "n_episodes": 136
+     },
+     {
+      "n": 1836,
+      "n_per_seed": [
+       1836
+      ],
+      "per_seed": [
+       -0.27259798572558985
+      ],
+      "mean": -0.27259798572558985,
+      "lo": -0.4552361452991454,
+      "hi": -0.12144390153359994,
+      "verdict": "BETTER",
+      "n_episodes": 134
+     },
+     {
+      "n": 1385,
+      "n_per_seed": [
+       1385
+      ],
+      "per_seed": [
+       -0.3067495097969637
+      ],
+      "mean": -0.3067495097969637,
+      "lo": -0.5430271729325348,
+      "hi": -0.09584036184084022,
+      "verdict": "BETTER",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "BETTER"
+  },
+  "BESIDE_RH_minus_B0_R0KHb20": {
+   "A": "RH_R0KHb20",
+   "B": "B0_R0KHb20",
+   "tick1": {
+    "pos": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.049231357718824684
+      ],
+      "mean": -0.049231357718824684,
+      "lo": -0.10035386320316891,
+      "hi": 0.0038080626651518464,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.06428722990424356
+      ],
+      "mean": -0.06428722990424356,
+      "lo": -0.15942391836013692,
+      "hi": 0.04130515474596274,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       -0.022591768982882232
+      ],
+      "mean": -0.022591768982882232,
+      "lo": -0.2212157818831654,
+      "hi": 0.1781664071963585,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "lat": [
+     {
+      "n": 2285,
+      "n_per_seed": [
+       2285
+      ],
+      "per_seed": [
+       -0.04271868044359991
+      ],
+      "mean": -0.04271868044359991,
+      "lo": -0.09690824683067772,
+      "hi": 0.009697492658236332,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 140
+     },
+     {
+      "n": 2138,
+      "n_per_seed": [
+       2138
+      ],
+      "per_seed": [
+       -0.09524121042893655
+      ],
+      "mean": -0.09524121042893655,
+      "lo": -0.19258368622062014,
+      "hi": 0.0019868109131672166,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 138
+     },
+     {
+      "n": 1777,
+      "n_per_seed": [
+       1777
+      ],
+      "per_seed": [
+       -0.16737154102324056
+      ],
+      "mean": -0.16737154102324056,
+      "lo": -0.402583782659223,
+      "hi": 0.041010848568917915,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 132
+     }
+    ],
+    "along": [
+     {
+      "n": 2221,
+      "n_per_seed": [
+       2221
+      ],
+      "per_seed": [
+       0.013239913085654458
+      ],
+      "mean": 0.013239913085654458,
+      "lo": -0.02168297779516791,
+      "hi": 0.04747321212113666,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       0.005177977812124314
+      ],
+      "mean": 0.005177977812124314,
+      "lo": -0.06990654694921905,
+      "hi": 0.07276210778614575,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1671,
+      "n_per_seed": [
+       1671
+      ],
+      "per_seed": [
+       -0.11781623768412239
+      ],
+      "mean": -0.11781623768412239,
+      "lo": -0.26100119910660835,
+      "hi": 0.0009665737177002962,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ],
+    "head": [
+     {
+      "n": 2321,
+      "n_per_seed": [
+       2321
+      ],
+      "per_seed": [
+       -0.053061343060993936
+      ],
+      "mean": -0.053061343060993936,
+      "lo": -0.21667098798158968,
+      "hi": 0.1309534665195993,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       0.03538056083178964
+      ],
+      "mean": 0.03538056083178964,
+      "lo": -0.20690363262753342,
+      "hi": 0.30010811094244677,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2290,
+      "n_per_seed": [
+       2290
+      ],
+      "per_seed": [
+       0.2464020885102956
+      ],
+      "mean": 0.2464020885102956,
+      "lo": -0.13042934232083175,
+      "hi": 0.6978062822368528,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2221,
+      "n_per_seed": [
+       2221
+      ],
+      "per_seed": [
+       -0.006216443035153391
+      ],
+      "mean": -0.006216443035153391,
+      "lo": -0.03872132031628496,
+      "hi": 0.023408172082965854,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 137
+     },
+     {
+      "n": 2064,
+      "n_per_seed": [
+       2064
+      ],
+      "per_seed": [
+       0.012248325891206282
+      ],
+      "mean": 0.012248325891206282,
+      "lo": -0.04535488656861838,
+      "hi": 0.08208473533289769,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 135
+     },
+     {
+      "n": 1671,
+      "n_per_seed": [
+       1671
+      ],
+      "per_seed": [
+       0.09948826612054036
+      ],
+      "mean": 0.09948826612054036,
+      "lo": -0.010454149306141539,
+      "hi": 0.2369251937307095,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 127
+     }
+    ]
+   },
+   "tick2": {
+    "pos": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.3800804394399535
+      ],
+      "mean": -0.3800804394399535,
+      "lo": -0.6015685152579878,
+      "hi": -0.1947593909252325,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -0.616221442761607
+      ],
+      "mean": -0.616221442761607,
+      "lo": -1.0307231851655032,
+      "hi": -0.26812240678303995,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -0.8675269440687325
+      ],
+      "mean": -0.8675269440687325,
+      "lo": -1.5300670192585595,
+      "hi": -0.27324408668553574,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "lat": [
+     {
+      "n": 2180,
+      "n_per_seed": [
+       2180
+      ],
+      "per_seed": [
+       -0.16549456769241017
+      ],
+      "mean": -0.16549456769241017,
+      "lo": -0.32252118356098214,
+      "hi": -0.020888324521051316,
+      "verdict": "BETTER",
+      "n_episodes": 139
+     },
+     {
+      "n": 1939,
+      "n_per_seed": [
+       1939
+      ],
+      "per_seed": [
+       -0.24543124469546115
+      ],
+      "mean": -0.24543124469546115,
+      "lo": -0.4996244727564018,
+      "hi": -0.014185483847432045,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 1517,
+      "n_per_seed": [
+       1517
+      ],
+      "per_seed": [
+       -0.249158040136604
+      ],
+      "mean": -0.249158040136604,
+      "lo": -0.6157739315972423,
+      "hi": 0.10871816089295896,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 128
+     }
+    ],
+    "along": [
+     {
+      "n": 2106,
+      "n_per_seed": [
+       2106
+      ],
+      "per_seed": [
+       0.12081058741069958
+      ],
+      "mean": 0.12081058741069958,
+      "lo": 0.02944664692392497,
+      "hi": 0.22099228813386898,
+      "verdict": "WORSE",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       0.17689994467809755
+      ],
+      "mean": 0.17689994467809755,
+      "lo": -0.0022399716694314455,
+      "hi": 0.36883888722601565,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 134
+     },
+     {
+      "n": 1386,
+      "n_per_seed": [
+       1386
+      ],
+      "per_seed": [
+       0.07006375797273516
+      ],
+      "mean": 0.07006375797273516,
+      "lo": -0.19635628854514034,
+      "hi": 0.33786403925959874,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ],
+    "head": [
+     {
+      "n": 2313,
+      "n_per_seed": [
+       2313
+      ],
+      "per_seed": [
+       -0.8122621367690138
+      ],
+      "mean": -0.8122621367690138,
+      "lo": -1.528817557273095,
+      "hi": -0.18962974987055103,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2299,
+      "n_per_seed": [
+       2299
+      ],
+      "per_seed": [
+       -0.749046497028214
+      ],
+      "mean": -0.749046497028214,
+      "lo": -1.5746349563476365,
+      "hi": -0.021145386236743346,
+      "verdict": "BETTER",
+      "n_episodes": 137
+     },
+     {
+      "n": 2275,
+      "n_per_seed": [
+       2275
+      ],
+      "per_seed": [
+       -0.8257591645083329
+      ],
+      "mean": -0.8257591645083329,
+      "lo": -1.5884986116033322,
+      "hi": -0.12648729117780394,
+      "verdict": "BETTER",
+      "n_episodes": 135
+     }
+    ],
+    "abs_along": [
+     {
+      "n": 2106,
+      "n_per_seed": [
+       2106
+      ],
+      "per_seed": [
+       -0.046960556398987004
+      ],
+      "mean": -0.046960556398987004,
+      "lo": -0.1304339668601223,
+      "hi": 0.04461816455849911,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 136
+     },
+     {
+      "n": 1837,
+      "n_per_seed": [
+       1837
+      ],
+      "per_seed": [
+       -0.10564329646395004
+      ],
+      "mean": -0.10564329646395004,
+      "lo": -0.2858012983651288,
+      "hi": 0.06725216686348578,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 134
+     },
+     {
+      "n": 1386,
+      "n_per_seed": [
+       1386
+      ],
+      "per_seed": [
+       0.0017113914951109993
+      ],
+      "mean": 0.0017113914951109993,
+      "lo": -0.23155628076455526,
+      "hi": 0.25696289794438226,
+      "verdict": "NOT-SEPARATED",
+      "n_episodes": 121
+     }
+    ]
+   },
+   "family_tick2_pos": "BETTER"
+  }
+ },
+ "levels_tick2_pos": {
+  "B0_R0C10Hb20_s2": [
+   5.274934067767672,
+   9.36359071347836,
+   17.458008698814986
+  ],
+  "B0_R0C10XHb20_s2": [
+   4.5415895329353795,
+   8.127366386774,
+   15.495611169805604
+  ],
+  "B0_R0G0Hb20_s2": [
+   4.960631444917854,
+   8.634929296906622,
+   15.776986053813786
+  ],
+  "B0_R0G50Hb20_s2": [
+   5.074476188004701,
+   8.957249892261641,
+   16.529787325334517
+  ],
+  "B0_R0Hb20_s2": [
+   5.257068950643997,
+   9.240387262659688,
+   17.061937314451068
+  ],
+  "B0_R0KHb20_s2": [
+   4.129675405339971,
+   7.258750441791552,
+   13.583226385155621
+  ],
+  "RH_R0C10Hb20_s2": [
+   4.377685794185314,
+   7.771595665474421,
+   14.814264281317682
+  ],
+  "RH_R0C10XHb20_s2": [
+   3.8766869343960297,
+   6.962546275226716,
+   13.638574064370621
+  ],
+  "RH_R0G0Hb20_s2": [
+   4.298329600624964,
+   7.502396173769672,
+   13.961576826493998
+  ],
+  "RH_R0G50Hb20_s2": [
+   4.309902275169166,
+   7.6312267143320796,
+   14.425081003877061
+  ],
+  "RH_R0Hb20_s2": [
+   4.429109182326581,
+   7.727833928822225,
+   14.471861481042618
+  ],
+  "RH_R0KHb20_s2": [
+   3.7495949659000183,
+   6.642528999029944,
+   12.715699441086889
+  ]
+ },
+ "strategic_decision_between_routes": "NOT COMPUTED (n = 0, no instrument; as row 120)"
+}

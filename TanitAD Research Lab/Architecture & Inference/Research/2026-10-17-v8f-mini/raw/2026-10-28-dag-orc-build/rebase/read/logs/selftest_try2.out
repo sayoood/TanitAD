@@ -1,0 +1,332 @@
+ok   L1 the real PREREG passes prereg_problems
+ok   L2 the real PREREG hashes to PREREG_SHA256 (raw bytes)
+ok   L3 a PREREG with one changed number is refused by the raw-byte pin
+ok   L4 a missing PREREG is refused
+ok   L5 every one of the 104 registered table cells, edited one at a time, is caught by table_problems
+ok   L6 a registered heading that is not in the PREREG is caught
+ok   L7 a registered row the PREREG does not have is caught
+ok   L8 an edited section-7 line in the PREREG TEXT is caught under its heading
+ok   L9 a deleted section-4 row in the PREREG TEXT is caught
+ok   L10 a changed heading (the table no longer sits under its registered heading) is caught
+ok   L11 every coded phrase is verbatim in the real PREREG
+ok   L12 every one of the 36 coded phrases, edited in the text, is caught
+ok   L13 section 7 has the 8 rows in the PREREG's order
+ok   L14 the adopting rows are exactly the two '/ ADOPTED' rows
+ok   L15 LABELS are Read A's 19 rows, 3 STRATEGIC, TAC rows higher-is-better
+ok   L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15
+ok   L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only
+ok   L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, launch-gate token, summary.json, DAGOACC_READ.json)
+ok   L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256
+ok   L19 an AMEND1.md with one changed number is refused by the raw-byte pin
+ok   L20 a missing AMEND1.md is refused
+ok   L21 each of the 20 coded amendment phrases, edited one at a time (pin = the copy's own sha256), is caught by the phrase step alone
+ok   L22 AMENDED_NEXT covers every outcome row (REFUSED keeps the original) and the original text stays reachable
+ok   B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)
+ok   B2 RF binds: bar = 2 * RF when RF > RF0
+ok   B3 the larger of RF0 and RF wins
+ok   B4 F binds on ADE6 only: 2 * 0.1207 = 0.2414 with both floors below F
+ok   B5 on ADE6 a floor above F wins
+ok   B6 F is NOT applied to a non-ADE row (two zero floors give bar 0)
+ok   B7 the factor is 2 (not 1)
+ok   B8 floors enter as magnitudes (a negative value is |value|)
+ok   B9 clears is inclusive at the bar and not below it
+ok   B10 clears needs separation
+ok   B11 clears needs the BETTER direction (worse never clears)
+ok   B12 direction: an agreement row (TAC-LAT) clears upward and not downward
+ok   B13 a bar of exactly 0 (two bit-identical floors): clears iff separated-better
+ok   B14 sep_worse / sep_better are strict (a zero separated delta is neither)
+ok   B15 sep_worse / sep_better respect direction
+ok   B16 a NOT COMPUTED row cannot be judged (it raises)
+ok   B17 fires is inclusive at the bar
+ok   B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse
+ok   B19 fires on an agreement row uses the negative direction
+ok   B20 domain drops DAG-OACC-P10 separated-worse rows (error and agreement), keeps improved/neutral ones and, after A1, accel MAE / DK-VIOL when they are not worse
+ok   B21 A1: there are NO exempt rows: accel MAE and DK-VIOL are in the domain when DAG-OACC-P10 is not worse on them (all 19 rows of a neutral table)
+ok   O1 the baseline reads FIXED / ADOPTED and adopts
+ok   O2 a failed control reads REFUSED (decided first; nothing else matches)
+ok   O3 guard R-TLAT failing at seed 0 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-TLAT failing at seed 1 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-TLON failing at seed 0 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-TLON failing at seed 1 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-ADE failing at seed 0 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-ADE failing at seed 1 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-T0 failing at seed 0 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-T0 failing at seed 1 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-NEW failing at seed 0 alone reads HARMS (and that guard is the failed one)
+ok   O3 guard R-NEW failing at seed 1 alone reads HARMS (and that guard is the failed one)
+ok   O4 HARMS wins over a failed adoption test and over a failed R-MOVE (precedence: guards before the rest)
+ok   O5 R-MOVE at neither seed (guards held) reads NO EFFECT
+ok   O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never adopts
+ok   O6 R-MOVE at exactly one seed (fails at seed 1) reads PARTIAL / ONE SEED and never adopts
+ok   O7 R-MOVE at one seed with R-CRAWL failing at the OTHER seed is still PARTIAL / ONE SEED
+ok   O8 one-seed R-MOVE never adopts whatever the adoption tests read
+ok   O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED
+ok   O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED
+ok   O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED
+ok   O9 R-MOVE at both seeds, R-CRAWL failing at seed 1, adoption holding: PARTIAL / ADOPTED
+ok   O10 same with R-KEEP failing at seed 0: PARTIAL / NOT ADOPTED
+ok   O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED
+ok   O12 R-KEEP failing at seed 0 alone flips FIXED / ADOPTED to FIXED / NOT ADOPTED
+ok   O12 R-KEEP failing at seed 1 alone flips FIXED / ADOPTED to FIXED / NOT ADOPTED
+ok   O12 R-NOBASE failing at seed 0 alone flips FIXED / ADOPTED to FIXED / NOT ADOPTED
+ok   O12 R-NOBASE failing at seed 1 alone flips FIXED / ADOPTED to FIXED / NOT ADOPTED
+ok   O13 both adoption tests failing at both seeds: FIXED / NOT ADOPTED
+ok   O14 the committed next of REFUSED is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of HARMS is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of FIXED / ADOPTED is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of FIXED / NOT ADOPTED is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of PARTIAL / ADOPTED is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of PARTIAL / NOT ADOPTED is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of PARTIAL / ONE SEED is the AMENDED cell (A1) and the original cell stays reachable
+ok   O14 the committed next of NO EFFECT is the AMENDED cell (A1) and the original cell stays reachable
+ok   O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch
+ok   O15b A1: FIXED / NOT ADOPTED no longer routes to DAG-ORC-SWAP (it cannot apply: A keeps the swap on); the next is B under this table with its own PI go
+ok   O15b A1: PARTIAL / NOT ADOPTED no longer routes to DAG-ORC-SWAP (it cannot apply: A keeps the swap on); the next is B under this table with its own PI go
+FAIL O15c A1: every NEXT-CRAWL route names DAG-OACC's states and the LAUNCH-INTENT branch
+ok   O16 outcome_block carries the condition and the next of the row
+ok   O17 a reading matching no row (a gap) is UNPLACED, not a guessed row
+ok   O18 R-T0 is inclusive at +F/2 = 0.0604
+ok   O19 R-T0 above 0.0604 fails
+ok   O20 R-KEEP is inclusive at 0.0604 and fails above it
+ok   O21 R-T0 and R-KEEP read different points (T0 point vs the T1-kin ADE6 X - DAG point)
+ok   O22 and the other way round
+ok   O23 R-TLAT: a separated IMPROVEMENT is not a failure (macro-F1 is higher-is-better)
+ok   O24 R-TLAT: a non-separated drop is not a failure
+ok   O25 R-ADE: a separated improvement is not a failure; reads X - CTRL (not X - P10)
+ok   O26 R-ADE: any separated worsening fails (no bar on the guard)
+ok   O27 R-NEW fires at exactly the bar (inclusive) and not below it
+ok   O28 R-NEW's bar rises with RF0 (0.03 -> bar 0.06) and with RF
+ok   O29 R-NEW does not fire on a row that DAG - P10 already had worse (outside the domain)
+ok   O30 R-NEW does not fire when X - P10 is not separated-worse
+ok   O31 R-NEW on ADE6 uses F: worsening 0.2413 does not fire, 0.2414 does
+ok   O32 R-NEW on a non-ADE row has no F: worsening 0.0201 fires (bar 0.02)
+ok   O33 A1: accel MAE is GUARDED by R-NEW (it is in the domain; no exempt rows): X - P10 worse, X - CTRL worse 0.9, DAG-OACC - P10 not worse -> R-NEW fires
+ok   O34 A1: DK-VIOL is GUARDED by R-NOBASE: X - P10 worse and X - DAG-OACC worse by 0.9 -> R-NOBASE fails
+ok   O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies
+ok   O35 R-NOBASE: a violation at exactly the bar (inclusive), none below
+ok   O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse
+ok   O37 R-NOBASE's bar rises with RF0 and RF
+ok   O38 R-NOBASE reads X - DAG for the worsening and X - P10 only for the sign (X - CTRL is irrelevant to it)
+ok   O39 R-MOVE: improvement 0.06 clears a bar of 0.06 (RF0 0.03) and not 0.0601
+ok   O40 A1: R-MOVE needs EVERY row of C_s (one weak row fails it); the yaw-rate row is in C at BOTH seeds
+ok   O41 A1: R-CRAWL reads X - P10 on C_s only: a worse non-C row does not fail it; the yaw-rate row fails it at BOTH seeds
+ok   O42 R-CRAWL: improved-but-separated X - P10 on a C row is not 'worse'; non-separated worse is not 'worse'
+ok   O43 a NOT COMPUTED row in the judged set raises (the read is REFUSED, never a pass)
+ok   P1 all 524,288 cells match EXACTLY ONE row of section 7
+ok   P2 every cell equals the independent derivation from the words of section 7
+ok   P3 every cell equals the draft enumerate_cells.py logic (exactly that one row)
+ok   P4 the per-row cell counts are the PREREG's (262,144 / 261,888 / 1 / 15 / 3 / 45 / 128 / 64)
+ok   P5 adoption is reachable ONLY with R-MOVE, R-KEEP and R-NOBASE at both seeds, and always then (guards held, controls pass), checked on every cell
+ok   P6 with adoption projected away the 16 guarded cells are DAGGER2 Amendment 1's: FIXED 1 / PARTIAL 11 / NO EFFECT 4
+     (partition: 5.5 s)
+ok   K1 A_s0 = DAG-OACC + p 0.3 + the five law flags + --ego-perturb-with-dagger passes K-PAIR
+ok   K2 DAG-OACC's own argv does not pass as A (no lever)
+ok   K2b A WITHOUT --ego-perturb-with-dagger fails K-PAIR (the composition is the point)
+ok   K2c REP = DAG-OACC with --seed 10/11 passes K-PAIR; REP carrying the composition flag fails
+ok   K2d A with another bank sha256 fails K-PAIR (the bank is DAG-OACC's)
+ok   K2e A with another --w-acc fails K-PAIR
+ok   K3 A with p = 0.1 fails K-PAIR
+ok   K4 A without --ego-perturb-vscale fails K-PAIR
+ok   K5 A with --ego-perturb-vscale 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-vmax fails K-PAIR
+ok   K5 A with --ego-perturb-vmax 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-adrop fails K-PAIR
+ok   K5 A with --ego-perturb-adrop 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-yawrate-std fails K-PAIR
+ok   K5 A with --ego-perturb-yawrate-std 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-seed fails K-PAIR
+ok   K5 A with --ego-perturb-seed 9.9 fails K-PAIR
+ok   K6 A with the other seed's --ego-perturb-seed fails K-PAIR
+ok   K7 A differing in one non-lever flag (--steps) fails K-PAIR
+ok   K8 A with an extra flag fails K-PAIR
+ok   K9 --out is ignored by K-PAIR
+ok   K10 numeric normalisation: 0.30 == 0.3
+ok   K11 REP_s0 = DAG2-0 with --seed 10 passes
+ok   K12 REP with the control's own seed fails
+ok   K13 REP with the other seed's REP seed fails
+ok   K14 REP carrying the lever fails
+ok   K15 REP differing in another flag fails
+ok   K16 B_s = A_s with p 0.1 passes (against A's record too)
+ok   K17 B with p 0.3 fails
+ok   K18 B with another law value fails
+ok   K19 B must also equal A's record except p (A's record differs in a law flag -> fails)
+ok   K20 an unknown arm is refused
+ok   K21 the registered fine-tune check passes on DAG-OACC's banked argv
+ok   K22 a registered flag changed (--steps 2999) fails the argv check
+ok   K22 a registered flag changed (--lr 2e-4) fails the argv check
+ok   K22 a registered flag changed (--warmup 99) fails the argv check
+ok   K22 a registered flag changed (--p-gt-start 0.3) fails the argv check
+ok   K22 a registered flag changed (--p-gt-end 0.1) fails the argv check
+ok   K22 a registered flag changed (--dagger-p 0.2) fails the argv check
+ok   K22 a registered flag changed (--dagger-p 0) fails the argv check
+ok   K22 a registered flag changed (--seed 1) fails the argv check
+ok   K22 a registered flag changed (--w-acc 49.0) fails the argv check
+ok   K22 a registered flag changed (--dagger-seed 1) fails the argv check
+ok   K22 a registered flag changed (--dagger-bank-sha256 0000000000000000000000000000000000000000000000000000000000000000) fails the argv check
+ok   K23 an init that is DAG_s (not M2b_s) fails (A1: the init is M2b_s, DAG-OACC's)
+ok   K24 a DEFAULT-disabling flag left unnamed fails (it must be named on the argv)
+ok   K25 A's registered check wants --ego-perturb-p 0.3 and REP's wants 0
+ok   K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does
+ok   K27 K-INIT: one wrong record fails
+ok   K28 K-INIT: the other seed's M2b sha fails
+ok   K29 K-INIT: no record fails (the init is unproven)
+ok   K1 A_s1 = DAG-OACC + p 0.3 + the five law flags + --ego-perturb-with-dagger passes K-PAIR
+ok   K2 DAG-OACC's own argv does not pass as A (no lever)
+ok   K2b A WITHOUT --ego-perturb-with-dagger fails K-PAIR (the composition is the point)
+ok   K2c REP = DAG-OACC with --seed 10/11 passes K-PAIR; REP carrying the composition flag fails
+ok   K2d A with another bank sha256 fails K-PAIR (the bank is DAG-OACC's)
+ok   K2e A with another --w-acc fails K-PAIR
+ok   K3 A with p = 0.1 fails K-PAIR
+ok   K4 A without --ego-perturb-vscale fails K-PAIR
+ok   K5 A with --ego-perturb-vscale 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-vmax fails K-PAIR
+ok   K5 A with --ego-perturb-vmax 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-adrop fails K-PAIR
+ok   K5 A with --ego-perturb-adrop 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-yawrate-std fails K-PAIR
+ok   K5 A with --ego-perturb-yawrate-std 9.9 fails K-PAIR
+ok   K4 A without --ego-perturb-seed fails K-PAIR
+ok   K5 A with --ego-perturb-seed 9.9 fails K-PAIR
+ok   K6 A with the other seed's --ego-perturb-seed fails K-PAIR
+ok   K7 A differing in one non-lever flag (--steps) fails K-PAIR
+ok   K8 A with an extra flag fails K-PAIR
+ok   K9 --out is ignored by K-PAIR
+ok   K10 numeric normalisation: 0.30 == 0.3
+ok   K11 REP_s1 = DAG2-0 with --seed 11 passes
+ok   K12 REP with the control's own seed fails
+ok   K13 REP with the other seed's REP seed fails
+ok   K14 REP carrying the lever fails
+ok   K15 REP differing in another flag fails
+ok   K16 B_s = A_s with p 0.1 passes (against A's record too)
+ok   K17 B with p 0.3 fails
+ok   K18 B with another law value fails
+ok   K19 B must also equal A's record except p (A's record differs in a law flag -> fails)
+ok   K20 an unknown arm is refused
+ok   K21 the registered fine-tune check passes on DAG-OACC's banked argv
+ok   K22 a registered flag changed (--steps 2999) fails the argv check
+ok   K22 a registered flag changed (--lr 2e-4) fails the argv check
+ok   K22 a registered flag changed (--warmup 99) fails the argv check
+ok   K22 a registered flag changed (--p-gt-start 0.3) fails the argv check
+ok   K22 a registered flag changed (--p-gt-end 0.1) fails the argv check
+ok   K22 a registered flag changed (--dagger-p 0.2) fails the argv check
+ok   K22 a registered flag changed (--dagger-p 0) fails the argv check
+ok   K22 a registered flag changed (--seed 0) fails the argv check
+ok   K22 a registered flag changed (--w-acc 49.0) fails the argv check
+ok   K22 a registered flag changed (--dagger-seed 0) fails the argv check
+ok   K22 a registered flag changed (--dagger-bank-sha256 0000000000000000000000000000000000000000000000000000000000000000) fails the argv check
+ok   K23 an init that is DAG_s (not M2b_s) fails (A1: the init is M2b_s, DAG-OACC's)
+ok   K24 a DEFAULT-disabling flag left unnamed fails (it must be named on the argv)
+ok   K25 A's registered check wants --ego-perturb-p 0.3 and REP's wants 0
+ok   K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does
+ok   K27 K-INIT: one wrong record fails
+ok   K28 K-INIT: the other seed's M2b sha fails
+ok   K29 K-INIT: no record fails (the init is unproven)
+ok   K30 K-REACH A (A1): ego 24,720 / 82,457 (0.2998) AND swap 8,200 / 82,000 AND overlap 0 AND the flag built passes
+ok   K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201
+ok   K32 K-REACH B: ego 0.1 +- 0.02 (swap 0.1 too)
+ok   K33 K-REACH REP: ego exactly 0 + swap in band + flag absent passes; ego 1 fails
+ok   K34 K-REACH: built p must equal the argv p (A built at 0.0 fails: the lever never reached training)
+ok   K35 K-REACH: eligible 0 / n > eligible / non-numbers fail
+ok   K36 K-REACH: A perturbing NOTHING (n = 0) fails (the lever never fired)
+ok   K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) fails on A and on REP; swap 0 fails
+ok   K36b K-REACH (A1): the swap band is inclusive at 0.12 and fails at 0.1201
+ok   K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a bool fail on A
+ok   K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and absent on REP (True fails)
+ok   K36e K-REACH (A1): no run-record counts at all fails (a lever declared and unrecorded)
+ok   K37 K-BUILD: byte-identical files pass
+ok   K38 K-BUILD: a changed file with no listed hunk fails
+ok   K39 K-BUILD: a changed file whose hunks sit behind default-off flags with PASSing tests passes
+ok   K40 K-BUILD: a hunk with default_off = False fails
+ok   K40 K-BUILD: a hunk with bit_identity_test = 'FAIL' fails
+ok   K40 K-BUILD: a hunk with behind_flag = '' fails
+ok   K41 K-BUILD: a launch commit that is not 40-hex fails
+ok   K42 K-BUILD: a base commit other than aeb54468 (DAG-OACC's) fails, 1d4f4fbb (DAG2's) included
+ok   K43 K-BUILD: a missing file record fails; so does no record at all
+ok   K43b K-BUILD (A1): v8f_dagger.py is a build file too: a missing record for it fails, and a changed one needs its listed default-off hunk
+ok   K44 identity: all rows exactly +0 [0, 0] passes
+ok   K45 identity: one row at 1e-12 fails
+ok   K46 identity: a nonzero CI end fails
+ok   K47 RC: identical tables have 0 differences
+ok   K48 RC: a delta off by 2e-4 is a difference (tolerance 1e-4)
+ok   K49 RC: a delta off by 9e-5 is within tolerance
+ok   K50 RC: a separated flip is a difference
+ok   K51 RC: a missing row is a difference; NOT COMPUTED on one side only is a difference
+ok   K52 floors_from: max over seeds of |delta|, per row
+ok   K53 floors_from of a table with a NOT COMPUTED row raises
+ok   F1 the frozen P0_RF0.json loads (sha256 pinned, .sha256 beside it, 19 rows, RF0 = max over seeds)
+ok   F2 a byte-identical copy loads (the pin is on content, not on the path)
+ok   F3 a CHANGED RF0 file is refused by the pin even with a matching .sha256 beside it
+ok   F4 a .sha256 that does not match the file is refused
+ok   F5 a missing .sha256 is refused; so is a missing file
+ok   F6 a self-consistent file with schema is refused on content
+ok   F6 a self-consistent file with a missing row is refused on content
+ok   F6 a self-consistent file with RF0 not the max over seeds is refused on content
+ok   F6 a self-consistent file with a negative RF0 is refused on content
+ok   F6 a self-consistent file with a failed P-0 control is refused on content
+ok   F6 a self-consistent file with no controls is refused on content
+ok   F6 a self-consistent file with a non-finite RF0 is refused on content
+ok   F7 the same content re-serialised passes when its own sha is the pin (the content checks accept a valid file)
+ok   F8 the frozen RF0 values: ADE6 0.0138, curvature 0.0263, M1 0.0048, L2 0.0068, yaw-rate 0.5535
+ok   F9 K-P0: RF0 older than every rollout file passes
+ok   F10 K-P0: a rollout file older than RF0 fails (RF0 must predate every rollout)
+ok   F11 K-P0: a rollout file with the same mtime fails (strictly later is required)
+ok   F12 K-P0 on a changed RF0 fails
+ok   K54 K-RC evidence from this reader with 0 differences passes
+ok   K55 K-RC evidence produced by ANOTHER reader (any edit invalidates it) fails
+ok   K56 K-RC evidence with a difference fails; so does a missing file
+ok   K57 K-RC evidence with PASS false fails even at 0 listed differences
+ok   S1 discover: a complete entry is PRESENT
+ok   S2 discover: a dump dir with 140 of 141 episodes is PARTIAL
+ok   S3 discover: an arm absent from the manifest is MISSING (no entry), per seed
+ok   S4 discover: a missing T0 eval file makes the slot PARTIAL
+ok   S5 discover: a missing logged lane makes a new arm PARTIAL (K4 needs it)
+ok   S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh T0
+ok   S6b discover (A1): ... but it DOES need box 2's standard T0 eval (R-T0's comparator) and its train records: a missing t0.npz makes it PARTIAL
+ok   S6c discover (A1): the banked CTRL slot without its selfcheck.json is PARTIAL
+ok   S6d discover with light = () (the rc-DAG2 leg's reading) wants the logged lane of CTRL again
+ok   S7 discover: a missing launch-gate token makes a new arm PARTIAL
+ok   S8 discover: a missing summary.json makes it PARTIAL
+ok   S9 slot_summary shape
+ok   S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS with no B is PENDING
+ok   S11 a B read beside an A that is not HARMS never promotes B over A
+ok   S12 families_report: four families, tier and estimator stamps, STRATEGIC not paused
+ok   S13 compose_all: with both floors small the baseline FIXED / ADOPTED
+ok   S14 compose_all: RF0 alone raises the bar over the improvement (NO EFFECT)
+ok   S15 compose_all: RF alone raises the bar over the improvement (NO EFFECT)
+ok   S16 compose_all: RF0 is read as RF0 and RF as RF (a swapped pair with different values still binds either way)
+ok   S17 parse_flags keeps every value of every occurrence
+ok   S18 a_flags replaces --ego-perturb-p and adds the five law flags with the seed
+ok   M1 decide_orc: two matching rows -> UNPLACED (never the first of them)
+ok   M2 decide_orc: zero matching rows -> UNPLACED
+ok   M3 the table-edited copy is caught by table_problems and NOT by phrase_problems (so only the table step can catch it)
+ok   M4 the phrase-edited copy is caught by phrase_problems and NOT by table_problems (so only the phrase step can catch it)
+ok   M5 prereg_problems(pin = the copy's own sha256) still reports the tab-edit (the pin is not the only gate)
+ok   M6 prereg_problems(pin = the copy's own sha256) still reports the phr-edit (the pin is not the only gate)
+ok   M7 prereg_problems with the real file's own sha256 as the pin is clean
+ok   M8 table_problems: one extra row after the registered last row of section 7 is caught (row count)
+ok   M9 phrase_problems: a phrase under a missing section is reported
+ok   M10 k_registered REP_s0: --seed 10, p 0 passes
+ok   M11 k_registered REP_s0 with the BASE seed 0 fails (REP is a different seed)
+ok   M12 k_registered REP_s0 with p 0.3 fails (REP carries no perturbation)
+ok   M13 k_registered A_s0 keeps the base seed 0, not the REP seed
+ok   M10 k_registered REP_s1: --seed 11, p 0 passes
+ok   M11 k_registered REP_s1 with the BASE seed 1 fails (REP is a different seed)
+ok   M12 k_registered REP_s1 with p 0.3 fails (REP carries no perturbation)
+ok   M13 k_registered A_s1 keeps the base seed 1, not the REP seed
+ok   M14 floors_from: seed 1 binding (|d| larger than seed 0's) sets the floor
+ok   M15 K-RC evidence claiming PASS with 1 difference fails
+ok   M16 K-RC evidence with 0 differences and PASS passes again
+ok   M17 compose_all(res, False) -> REFUSED (the controls flag is the caller's, never hard-coded)
+ok   R1 the banked DAG-OACC - P10 table (DAGOACC_READ.json) gives |D_0| = 15 (Amendment 1, no exempt rows)
+ok   R2 the banked separated-worse rows are the amendment's crawl set C_0 (yaw-rate, curvature, L2, M1)
+ok   R3 every Read-A label of the banked table has the reader's direction
+ok   R4 the reader's sep_worse over the banked table agrees with the banked flag on all 19 rows
+ok   R1 the banked DAG-OACC - P10 table (DAGOACC_READ.json) gives |D_1| = 15 (Amendment 1, no exempt rows)
+ok   R2 the banked separated-worse rows are the amendment's crawl set C_1 (yaw-rate, curvature, L2, M1)
+ok   R3 every Read-A label of the banked table has the reader's direction
+ok   R4 the reader's sep_worse over the banked table agrees with the banked flag on all 19 rows
+SELFTEST 325/326 checks as expected; FAILED: ["O15c A1: every NEXT-CRAWL route names DAG-OACC's states and the LAUNCH-INTENT branch"]
+
+real	0m8.426s
+user	0m0.015s
+sys	0m0.000s

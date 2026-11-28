@@ -1,0 +1,1835 @@
+{
+ "summary": {
+  "control_rc": 0,
+  "control_last": "SELFTEST 331/331 checks as expected",
+  "mutants": 183,
+  "killed": 183,
+  "not_killed": [],
+  "wall_s": 877.8,
+  "reader_sha256": "2e5f9f1778e104615d4480f51c6246703c9e3bb8f6c0eeaa3fc0c5621bd8adcf"
+ },
+ "results": [
+  {
+   "id": "bar-drop-RF0",
+   "desc": "bar ignores RF0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)",
+    "FAIL B2 RF binds: bar = 2 * RF when RF > RF0"
+   ]
+  },
+  {
+   "id": "bar-drop-RF",
+   "desc": "bar ignores RF (the floor term deleted)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B2 RF binds: bar = 2 * RF when RF > RF0",
+    "FAIL B3 the larger of RF0 and RF wins"
+   ]
+  },
+  {
+   "id": "bar-drop-F",
+   "desc": "bar ignores F on ADE6",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B4 F binds on ADE6 only: 2 * 0.1207 = 0.2414 with both floors below F",
+    "FAIL O31 R-NEW on ADE6 uses F: worsening 0.2413 does not fire, 0.2414 does"
+   ]
+  },
+  {
+   "id": "bar-factor-1",
+   "desc": "bar factor 1 instead of 2",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)",
+    "FAIL B2 RF binds: bar = 2 * RF when RF > RF0"
+   ]
+  },
+  {
+   "id": "bar-F-everywhere",
+   "desc": "F applied to every row",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)",
+    "FAIL B2 RF binds: bar = 2 * RF when RF > RF0"
+   ]
+  },
+  {
+   "id": "bar-no-abs-rf0",
+   "desc": "RF0 enters signed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B8 floors enter as magnitudes (a negative value is |value|)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['B8 floors enter as magnitudes (a negative value is |value|)']"
+   ]
+  },
+  {
+   "id": "bar-no-abs-rf",
+   "desc": "RF enters signed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B8 floors enter as magnitudes (a negative value is |value|)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['B8 floors enter as magnitudes (a negative value is |value|)']"
+   ]
+  },
+  {
+   "id": "F-value",
+   "desc": "F_ADE6 0.1207 -> 0.12",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL B4 F binds on ADE6 only: 2 * 0.1207 = 0.2414 with both floors below F"
+   ]
+  },
+  {
+   "id": "halfF-value",
+   "desc": "HALF_F 0.0604 -> 0.0605",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL O3 guard R-T0 failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "clears-strict",
+   "desc": "clears is strict at the bar",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B9 clears is inclusive at the bar and not below it",
+    "FAIL O39 R-MOVE: improvement 0.06 clears a bar of 0.06 (RF0 0.03) and not 0.0601"
+   ]
+  },
+  {
+   "id": "clears-no-sep",
+   "desc": "clears drops separation",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B10 clears needs separation",
+    "FAIL B13 a bar of exactly 0 (two bit-identical floors): clears iff separated-better"
+   ]
+  },
+  {
+   "id": "fires-strict",
+   "desc": "fires is strict at the bar",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B17 fires is inclusive at the bar",
+    "FAIL O27 R-NEW fires at exactly the bar (inclusive) and not below it"
+   ]
+  },
+  {
+   "id": "fires-no-domain",
+   "desc": "fires drops the domain condition",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse",
+    "SELFTEST 330/331 checks as expected; FAILED: ['B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse']"
+   ]
+  },
+  {
+   "id": "fires-no-xp10",
+   "desc": "fires drops X - P10 worse",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse",
+    "FAIL O3 guard R-ADE failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('HARMS', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': False, 'R-T0': True, 'R-NEW': False})"
+   ]
+  },
+  {
+   "id": "fires-no-ctrl-sep",
+   "desc": "fires drops X - CTRL separated",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse",
+    "SELFTEST 330/331 checks as expected; FAILED: ['B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse']"
+   ]
+  },
+  {
+   "id": "domain-no-exempt",
+   "desc": "domain ignores its exempt argument",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B21 A1: there are NO exempt rows: accel MAE and DK-VIOL are in the domain when DAG-OACC-P10 is not worse on them (all 19 rows of a neutral table)",
+    "FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies"
+   ]
+  },
+  {
+   "id": "domain-inverted",
+   "desc": "domain keeps the DAG-OACC-worse rows",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B20 domain drops DAG-OACC-P10 separated-worse rows (error and agreement), keeps improved/neutral ones and, after A1, accel MAE / DK-VIOL when they are not worse",
+    "FAIL B21 A1: there are NO exempt rows: accel MAE and DK-VIOL are in the domain when DAG-OACC-P10 is not worse on them (all 19 rows of a neutral table)"
+   ]
+  },
+  {
+   "id": "worsening-dir",
+   "desc": "worsening ignores direction",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B12 direction: an agreement row (TAC-LAT) clears upward and not downward",
+    "FAIL B15 sep_worse / sep_better respect direction"
+   ]
+  },
+  {
+   "id": "worsening-dir-swap",
+   "desc": "worsening direction swapped",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B9 clears is inclusive at the bar and not below it",
+    "FAIL B11 clears needs the BETTER direction (worse never clears)"
+   ]
+  },
+  {
+   "id": "sepworse-ge",
+   "desc": "separated-worse includes zero",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B14 sep_worse / sep_better are strict (a zero separated delta is neither)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['B14 sep_worse / sep_better are strict (a zero separated delta is neither)']"
+   ]
+  },
+  {
+   "id": "sepbetter-le",
+   "desc": "separated-better includes zero",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B14 sep_worse / sep_better are strict (a zero separated delta is neither)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['B14 sep_worse / sep_better are strict (a zero separated delta is neither)']"
+   ]
+  },
+  {
+   "id": "notcomputed-pass",
+   "desc": "a NOT COMPUTED row is judged 0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL B16 a NOT COMPUTED row cannot be judged (it raises)",
+    "FAIL O43 a NOT COMPUTED row in the judged set raises (the read is REFUSED, never a pass)"
+   ]
+  },
+  {
+   "id": "crawl-uses-ctrl",
+   "desc": "R-CRAWL reads X - CTRL",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: FIXED / ADOPTED",
+    "FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: FIXED / NOT ADOPTED"
+   ]
+  },
+  {
+   "id": "crawl-inverted",
+   "desc": "R-CRAWL inverted",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: PARTIAL / ADOPTED",
+    "FAIL O12 R-KEEP failing at seed 0 alone flips FIXED / ADOPTED to FIXED / NOT ADOPTED :: PARTIAL / NOT ADOPTED"
+   ]
+  },
+  {
+   "id": "move-uses-p10",
+   "desc": "R-MOVE reads X - P10",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: NO EFFECT",
+    "FAIL O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never adopts :: NO EFFECT"
+   ]
+  },
+  {
+   "id": "move-no-bar",
+   "desc": "R-MOVE ignores the bar",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O39 R-MOVE: improvement 0.06 clears a bar of 0.06 (RF0 0.03) and not 0.0601",
+    "FAIL O40 A1: R-MOVE needs EVERY row of C_s (one weak row fails it); the yaw-rate row is in C at BOTH seeds"
+   ]
+  },
+  {
+   "id": "crawl-any",
+   "desc": "R-CRAWL any instead of all",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: FIXED / ADOPTED",
+    "FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: FIXED / NOT ADOPTED"
+   ]
+  },
+  {
+   "id": "move-any",
+   "desc": "R-MOVE any instead of all",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O5 R-MOVE at neither seed (guards held) reads NO EFFECT :: FIXED / ADOPTED",
+    "FAIL O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never adopts :: FIXED / ADOPTED"
+   ]
+  },
+  {
+   "id": "keep-strict",
+   "desc": "R-KEEP strict",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O20 R-KEEP is inclusive at 0.0604 and fails above it",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O20 R-KEEP is inclusive at 0.0604 and fails above it']"
+   ]
+  },
+  {
+   "id": "keep-reads-t0",
+   "desc": "R-KEEP reads the T0 point",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED",
+    "FAIL O10 same with R-KEEP failing at seed 0: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "t0-strict",
+   "desc": "R-T0 strict",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O18 R-T0 is inclusive at +F/2 = 0.0604",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O18 R-T0 is inclusive at +F/2 = 0.0604']"
+   ]
+  },
+  {
+   "id": "t0-reads-keep",
+   "desc": "R-T0 reads the KEEP point",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O3 guard R-T0 failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})",
+    "FAIL O3 guard R-T0 failing at seed 1 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "tlat-sign",
+   "desc": "R-TLAT/R-TLON sign flipped",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O3 guard R-TLAT failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})",
+    "FAIL O3 guard R-TLAT failing at seed 1 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "tlat-no-sep",
+   "desc": "R-TLAT/R-TLON ignores separation",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O24 R-TLAT: a non-separated drop is not a failure",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O24 R-TLAT: a non-separated drop is not a failure']"
+   ]
+  },
+  {
+   "id": "ade-reads-p10",
+   "desc": "R-ADE reads X - P10",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O3 guard R-ADE failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})",
+    "FAIL O3 guard R-ADE failing at seed 1 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "new-not-all",
+   "desc": "R-NEW: not all instead of not any",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O3 guard R-NEW failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})",
+    "FAIL O3 guard R-NEW failing at seed 1 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "nobase-not-all",
+   "desc": "R-NOBASE: not all instead of not any",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED",
+    "FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "nobase-no-dag",
+   "desc": "R-NOBASE drops X - DAG separated-worse",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse']"
+   ]
+  },
+  {
+   "id": "nobase-strict",
+   "desc": "R-NOBASE strict at the bar",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O35 R-NOBASE: a violation at exactly the bar (inclusive), none below",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O35 R-NOBASE: a violation at exactly the bar (inclusive), none below']"
+   ]
+  },
+  {
+   "id": "nobase-no-p10",
+   "desc": "R-NOBASE drops X - P10 separated-worse",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse']"
+   ]
+  },
+  {
+   "id": "nobase-reads-ctrl",
+   "desc": "R-NOBASE worsening from X - CTRL",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED",
+    "FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "fires-wrong-arg",
+   "desc": "R-NEW passes X - DAG as X - CTRL",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O3 guard R-NEW failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})",
+    "FAIL O3 guard R-NEW failing at seed 1 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': True, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "bars-rf-twice",
+   "desc": "bars use RF for RF0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O28 R-NEW's bar rises with RF0 (0.03 -> bar 0.06) and with RF",
+    "FAIL O37 R-NOBASE's bar rises with RF0 and RF"
+   ]
+  },
+  {
+   "id": "bars-rf0-twice",
+   "desc": "bars use RF0 for RF",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O28 R-NEW's bar rises with RF0 (0.03 -> bar 0.06) and with RF",
+    "FAIL O37 R-NOBASE's bar rises with RF0 and RF"
+   ]
+  },
+  {
+   "id": "crawlset-s1-yaw",
+   "desc": "C_1 drops yaw-rate (A1: both seeds carry it)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL O40 A1: R-MOVE needs EVERY row of C_s (one weak row fails it); the yaw-rate row is in C at BOTH seeds"
+   ]
+  },
+  {
+   "id": "crawlset-pre-a1",
+   "desc": "the original C_1 loses yaw-rate (rc-DAG2 leg)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only']"
+   ]
+  },
+  {
+   "id": "crawlset-s0-m1",
+   "desc": "C_0 drops M1",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL R2 the banked separated-worse rows are the amendment's crawl set C_0 (yaw-rate, curvature, L2, M1) :: ['L2 curvature MAE (GT>=5.2)', 'M1 crawl share', 'curvature MAE', 'yaw-rate MAE']"
+   ]
+  },
+  {
+   "id": "crawlset-s0-yaw",
+   "desc": "C_0 drops yaw-rate (A1: both seeds carry it)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL O40 A1: R-MOVE needs EVERY row of C_s (one weak row fails it); the yaw-rate row is in C at BOTH seeds"
+   ]
+  },
+  {
+   "id": "exempt-a1",
+   "desc": "A1: EXEMPT is no longer empty (accel MAE exempt again)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL B21 A1: there are NO exempt rows: accel MAE and DK-VIOL are in the domain when DAG-OACC-P10 is not worse on them (all 19 rows of a neutral table)"
+   ]
+  },
+  {
+   "id": "exempt-pre-a1",
+   "desc": "the original exemption loses accel MAE (rc-DAG2 leg)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only",
+    "FAIL B21 A1: there are NO exempt rows: accel MAE and DK-VIOL are in the domain when DAG-OACC-P10 is not worse on them (all 19 rows of a neutral table)"
+   ]
+  },
+  {
+   "id": "direction-tac",
+   "desc": "TAC-LON lower-is-better",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L15 LABELS are Read A's 19 rows, 3 STRATEGIC, TAC rows higher-is-better",
+    "FAIL B15 sep_worse / sep_better respect direction"
+   ]
+  },
+  {
+   "id": "labels-drop",
+   "desc": "LABELS drops DK-TG",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L15 LABELS are Read A's 19 rows, 3 STRATEGIC, TAC rows higher-is-better",
+    "FAIL B20 domain drops DAG-OACC-P10 separated-worse rows (error and agreement), keeps improved/neutral ones and, after A1, accel MAE / DK-VIOL when they are not worse"
+   ]
+  },
+  {
+   "id": "domain-n",
+   "desc": "|D_1| 15 -> 14",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL R1 the banked DAG-OACC - P10 table (DAGOACC_READ.json) gives |D_1| = 14 (Amendment 1, no exempt rows) :: (15, ['ADE6', 'speed MAE', 'along-track MAE', 'accel MAE', 'DK-VIOL', 'DK-HW', 'DK-TG', 'heading MAE', 'cross-track MAE', 'L1 lateral-accel MAE', 'TAC-LAT', 'TAC-LON', 'S-POS@30', 'S-POS@50', 'S-POS@8"
+   ]
+  },
+  {
+   "id": "domain-n-pre",
+   "desc": "the original |D_1| 13 -> 14",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only']"
+   ]
+  },
+  {
+   "id": "rep-seed",
+   "desc": "REP seed 11 -> 10",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL K13 REP with the other seed's REP seed fails"
+   ]
+  },
+  {
+   "id": "p-b",
+   "desc": "P_B 0.1 -> 0.2",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well"
+   ]
+  },
+  {
+   "id": "tol",
+   "desc": "REACH_TOL 0.02 -> 0.03",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201"
+   ]
+  },
+  {
+   "id": "guards-any",
+   "desc": "guards held: any instead of all",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O3 guard R-TLAT failing at seed 0 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': False, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})",
+    "FAIL O3 guard R-TLAT failing at seed 1 alone reads HARMS (and that guard is the failed one) :: ('FIXED / ADOPTED', {'R-TLAT': False, 'R-TLON': True, 'R-ADE': True, 'R-T0': True, 'R-NEW': True})"
+   ]
+  },
+  {
+   "id": "harms-no-ctrl",
+   "desc": "HARMS without the controls condition",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL P1 all 524,288 cells match EXACTLY ONE row of section 7 :: (261888, 524288)",
+    "FAIL P2 every cell equals the independent derivation from the words of section 7 :: 261888"
+   ]
+  },
+  {
+   "id": "rmboth-any",
+   "desc": "R-MOVE both: any",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never adopts :: UNPLACED",
+    "FAIL O6 R-MOVE at exactly one seed (fails at seed 1) reads PARTIAL / ONE SEED and never adopts :: UNPLACED"
+   ]
+  },
+  {
+   "id": "rcboth-any",
+   "desc": "R-CRAWL both: any",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: FIXED / ADOPTED",
+    "FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: FIXED / NOT ADOPTED"
+   ]
+  },
+  {
+   "id": "adopt-any",
+   "desc": "adoption: any instead of all",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED",
+    "FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "adopt-or",
+   "desc": "adoption: keep OR nobase",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED",
+    "FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "oneseed-ge",
+   "desc": "ONE SEED: >= 1",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: UNPLACED",
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: UNPLACED"
+   ]
+  },
+  {
+   "id": "noeffect-le",
+   "desc": "NO EFFECT: <= 1",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never adopts :: UNPLACED",
+    "FAIL O6 R-MOVE at exactly one seed (fails at seed 1) reads PARTIAL / ONE SEED and never adopts :: UNPLACED"
+   ]
+  },
+  {
+   "id": "refused-never",
+   "desc": "REFUSED never",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O2 a failed control reads REFUSED (decided first; nothing else matches)",
+    "FAIL P1 all 524,288 cells match EXACTLY ONE row of section 7 :: (262144, 524288)"
+   ]
+  },
+  {
+   "id": "fixedadopted-no-rc",
+   "desc": "FIXED / ADOPTED drops R-CRAWL",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: UNPLACED",
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 1, adoption holding: PARTIAL / ADOPTED :: UNPLACED"
+   ]
+  },
+  {
+   "id": "partialadopted-rc",
+   "desc": "PARTIAL / ADOPTED needs R-CRAWL",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: UNPLACED",
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: UNPLACED"
+   ]
+  },
+  {
+   "id": "partialnot-adopt",
+   "desc": "PARTIAL / NOT ADOPTED ignores adoption",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: UNPLACED",
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 1, adoption holding: PARTIAL / ADOPTED :: UNPLACED"
+   ]
+  },
+  {
+   "id": "decide-ge",
+   "desc": "decide accepts several matches",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M1 decide_orc: two matching rows -> UNPLACED (never the first of them) :: HARMS",
+    "SELFTEST 330/331 checks as expected; FAILED: ['M1 decide_orc: two matching rows -> UNPLACED (never the first of them)']"
+   ]
+  },
+  {
+   "id": "decide-adopts",
+   "desc": "adopts = FIXED",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: PARTIAL / ADOPTED",
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 1, adoption holding: PARTIAL / ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "adopting-set",
+   "desc": "ADOPTING drops PARTIAL",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L14 the adopting rows are exactly the two '/ ADOPTED' rows",
+    "FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPTED :: PARTIAL / ADOPTED"
+   ]
+  },
+  {
+   "id": "cascade-eq",
+   "desc": "cascade: B decides when A is not HARMS",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS with no B is PENDING",
+    "FAIL S11 a B read beside an A that is not HARMS never promotes B over A"
+   ]
+  },
+  {
+   "id": "cascade-final",
+   "desc": "cascade: final arm A after A's HARMS",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS with no B is PENDING",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS with no B is PENDING\"]"
+   ]
+  },
+  {
+   "id": "cascade-pending",
+   "desc": "cascade: HARMS without B is not pending",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS with no B is PENDING",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS with no B is PENDING\"]"
+   ]
+  },
+  {
+   "id": "next-swap",
+   "desc": "next_for_arm swaps A and B",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch :: (\"B: not adopted; the perturbation cannot be dosed under the guards; NEXT-CRAWL on DAG-OACC's states (section 8, branch LAUNCH-INTENT with DAG-OACC's recipe)\", 'A: not adopted; read B (p 0.1) under th",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch\"]"
+   ]
+  },
+  {
+   "id": "prereg-no-tables",
+   "desc": "prereg_problems skips the tables",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M5 prereg_problems(pin = the copy's own sha256) still reports the tab-edit (the pin is not the only gate)",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"M5 prereg_problems(pin = the copy's own sha256) still reports the tab-edit (the pin is not the only gate)\"]"
+   ]
+  },
+  {
+   "id": "prereg-no-phrases",
+   "desc": "prereg_problems skips the phrases",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M6 prereg_problems(pin = the copy's own sha256) still reports the phr-edit (the pin is not the only gate)",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"M6 prereg_problems(pin = the copy's own sha256) still reports the phr-edit (the pin is not the only gate)\"]"
+   ]
+  },
+  {
+   "id": "prereg-no-sha",
+   "desc": "prereg_problems skips the raw sha256",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L3 a PREREG with one changed number is refused by the raw-byte pin",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L3 a PREREG with one changed number is refused by the raw-byte pin']"
+   ]
+  },
+  {
+   "id": "prereg-pin-default",
+   "desc": "prereg_problems default pin is empty, not the pinned sha",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L1 the real PREREG passes prereg_problems :: ['E:/Projects/TanitAD-artifacts/dagorc_rebase/read/PREREG_V8F_DAG_ORC.md is not the pinned PREREG_V8F_DAG_ORC.md (sha256 38bc688b173c..., pinned ...)']",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L1 the real PREREG passes prereg_problems']"
+   ]
+  },
+  {
+   "id": "table-no-cell",
+   "desc": "table_problems skips the cell compare",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L5 every one of the 104 registered table cells, edited one at a time, is caught by table_problems :: 0/104",
+    "FAIL L8 an edited section-7 line in the PREREG TEXT is caught under its heading"
+   ]
+  },
+  {
+   "id": "table-no-len",
+   "desc": "table_problems skips the row count",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M8 table_problems: one extra row after the registered last row of section 7 is caught (row count)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['M8 table_problems: one extra row after the registered last row of section 7 is caught (row count)']"
+   ]
+  },
+  {
+   "id": "table-no-heading",
+   "desc": "table_problems ignores a missing heading",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "AttributeError: 'NoneType' object has no attribute 'splitlines'"
+   ]
+  },
+  {
+   "id": "phrase-inverted",
+   "desc": "phrase_problems inverted",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L1 the real PREREG passes prereg_problems :: [\"section 3.: the phrase 'F = 0.1207 m' is not verbatim under its heading\", \"section 3.: the phrase '2 \u00d7 max(F_r, RF0_r, RF_r)' is not verbatim under its heading\", \"section 3.: the phrase '0.38\u2074 \u2248 0.0",
+    "FAIL L11 every coded phrase is verbatim in the real PREREG :: [('3.', 'F = 0.1207 m'), ('3.', '2 \u00d7 max(F_r, RF0_r, RF_r)'), ('3.', '0.38\u2074 \u2248 0.02'), ('3.', 'inclusive'), ('3.', 'Its output is frozen by sha256'), ('4.', '14 rows at s0 and 13 at s1'), ('4.', 'accel"
+   ]
+  },
+  {
+   "id": "phrase-no-sec",
+   "desc": "phrase_problems ignores a missing section",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "AttributeError: 'NoneType' object has no attribute 'replace'"
+   ]
+  },
+  {
+   "id": "rf0-no-pin",
+   "desc": "rf0_problems skips the pin",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F3 a CHANGED RF0 file is refused by the pin even with a matching .sha256 beside it :: ['RF0[ADE6] = 0.0138 is not max over seeds of |d| = 9.0138']",
+    "SELFTEST 330/331 checks as expected; FAILED: ['F3 a CHANGED RF0 file is refused by the pin even with a matching .sha256 beside it']"
+   ]
+  },
+  {
+   "id": "rf0-no-shafile",
+   "desc": "rf0_problems skips the .sha256 compare",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F4 a .sha256 that does not match the file is refused",
+    "SELFTEST 330/331 checks as expected; FAILED: ['F4 a .sha256 that does not match the file is refused']"
+   ]
+  },
+  {
+   "id": "rf0-no-max",
+   "desc": "rf0_problems skips RF0 = max over seeds",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F6 a self-consistent file with RF0 not the max over seeds is refused on content",
+    "SELFTEST 330/331 checks as expected; FAILED: ['F6 a self-consistent file with RF0 not the max over seeds is refused on content']"
+   ]
+  },
+  {
+   "id": "rf0-no-labels",
+   "desc": "rf0_problems skips the label check",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "KeyError: 'DK-HW'"
+   ]
+  },
+  {
+   "id": "rf0-no-schema",
+   "desc": "rf0_problems skips the schema",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F6 a self-consistent file with schema is refused on content",
+    "SELFTEST 330/331 checks as expected; FAILED: ['F6 a self-consistent file with schema is refused on content']"
+   ]
+  },
+  {
+   "id": "rf0-no-controls",
+   "desc": "rf0_problems skips P-0's controls",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F6 a self-consistent file with a failed P-0 control is refused on content",
+    "FAIL F6 a self-consistent file with no controls is refused on content"
+   ]
+  },
+  {
+   "id": "rf0-pin-const",
+   "desc": "RF0_SHA256 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F1 the frozen P0_RF0.json loads (sha256 pinned, .sha256 beside it, 19 rows, RF0 = max over seeds) :: ['E:/Projects/TanitAD-artifacts/dagorc_rebase/read/P0_RF0.json: sha256 1608d70b21b6b6a4..., the reader pins 1608d70c21b6b6a4... (RF0 is frozen; a changed file is refused)']",
+    "FAIL F2 a byte-identical copy loads (the pin is on content, not on the path)"
+   ]
+  },
+  {
+   "id": "prereg-pin-const",
+   "desc": "PREREG_SHA256 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L1 the real PREREG passes prereg_problems :: ['E:/Projects/TanitAD-artifacts/dagorc_rebase/read/PREREG_V8F_DAG_ORC.md is not the pinned PREREG_V8F_DAG_ORC.md (sha256 38bc688b173c..., pinned 38bc688c173c...)']",
+    "FAIL L2 the real PREREG hashes to PREREG_SHA256 (raw bytes)"
+   ]
+  },
+  {
+   "id": "p0-strict",
+   "desc": "K-P0 mtime: < instead of <=",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F11 K-P0: a rollout file with the same mtime fails (strictly later is required)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['F11 K-P0: a rollout file with the same mtime fails (strictly later is required)']"
+   ]
+  },
+  {
+   "id": "p0-never",
+   "desc": "K-P0 mtime never late",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL F10 K-P0: a rollout file older than RF0 fails (RF0 must predate every rollout)",
+    "FAIL F11 K-P0: a rollout file with the same mtime fails (strictly later is required)"
+   ]
+  },
+  {
+   "id": "pair-A-vs-ctrl",
+   "desc": "K-PAIR(A) compares with DAG2-0's argv (no lever)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K1 A_s0 = DAG-OACC + p 0.3 + the five law flags + --ego-perturb-with-dagger passes K-PAIR",
+    "FAIL K2 DAG-OACC's own argv does not pass as A (no lever)"
+   ]
+  },
+  {
+   "id": "pair-REP-seed",
+   "desc": "K-PAIR(REP) leaves --seed unchecked",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K12 REP with the control's own seed fails",
+    "FAIL K13 REP with the other seed's REP seed fails"
+   ]
+  },
+  {
+   "id": "pair-B-vs-A",
+   "desc": "K-PAIR(B) skips the A-record comparison",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K19 B must also equal A's record except p (A's record differs in a law flag -> fails)",
+    "FAIL K19 B must also equal A's record except p (A's record differs in a law flag -> fails)"
+   ]
+  },
+  {
+   "id": "pair-ignore-out",
+   "desc": "flag_diff compares --out",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K1 A_s0 = DAG-OACC + p 0.3 + the five law flags + --ego-perturb-with-dagger passes K-PAIR",
+    "FAIL K9 --out is ignored by K-PAIR"
+   ]
+  },
+  {
+   "id": "pair-norm",
+   "desc": "flag_diff compares strings, not numbers",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K10 numeric normalisation: 0.30 == 0.3",
+    "FAIL K10 numeric normalisation: 0.30 == 0.3"
+   ]
+  },
+  {
+   "id": "pair-law",
+   "desc": "a_flags drops --ego-perturb-vmax",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "KeyError: '--ego-perturb-vmax'"
+   ]
+  },
+  {
+   "id": "pair-law-seed",
+   "desc": "a_flags: wrong --ego-perturb-seed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K6 A with the other seed's --ego-perturb-seed fails K-PAIR",
+    "FAIL S18 a_flags replaces --ego-perturb-p and adds the five law flags with the seed"
+   ]
+  },
+  {
+   "id": "reg-rep-p",
+   "desc": "registered p of REP is 0.3",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M10 k_registered REP_s0: --seed 10, p 0 passes :: [\"--ego-perturb-p '0', registered 0.3\"]",
+    "FAIL M12 k_registered REP_s0 with p 0.3 fails (REP carries no perturbation)"
+   ]
+  },
+  {
+   "id": "reg-no-dagger",
+   "desc": "registered argv skips --dagger-p",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K22 a registered flag changed (--dagger-p 0.2) fails the argv check",
+    "FAIL K22 a registered flag changed (--dagger-p 0) fails the argv check"
+   ]
+  },
+  {
+   "id": "reg-dagger-zero",
+   "desc": "registered --dagger-p is 0 (the DAG-ORC value), not DAG-OACC's 0.1",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well",
+    "FAIL K21 the registered fine-tune check passes on DAG-OACC's banked argv :: [\"--dagger-p '0.1', registered 0.0\"]"
+   ]
+  },
+  {
+   "id": "reg-seed",
+   "desc": "registered seed of REP is the base seed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M10 k_registered REP_s0: --seed 10, p 0 passes :: [\"--seed '10', registered 0\"]",
+    "FAIL M11 k_registered REP_s0 with the BASE seed 0 fails (REP is a different seed)"
+   ]
+  },
+  {
+   "id": "reg-init-tail",
+   "desc": "registered init tail unchecked",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K23 an init that is DAG_s (not M2b_s) fails (A1: the init is M2b_s, DAG-OACC's)",
+    "FAIL K23 an init that is DAG_s (not M2b_s) fails (A1: the init is M2b_s, DAG-OACC's)"
+   ]
+  },
+  {
+   "id": "reg-steps",
+   "desc": "registered steps 3000 -> 2999",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well",
+    "FAIL K21 the registered fine-tune check passes on DAG-OACC's banked argv :: [\"--steps '3000', registered 2999\"]"
+   ]
+  },
+  {
+   "id": "init-any",
+   "desc": "K-INIT accepts any sha",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does",
+    "FAIL K27 K-INIT: one wrong record fails"
+   ]
+  },
+  {
+   "id": "init-none",
+   "desc": "K-INIT accepts no record",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K29 K-INIT: no record fails (the init is unproven)",
+    "FAIL K29 K-INIT: no record fails (the init is unproven)"
+   ]
+  },
+  {
+   "id": "init-other-seed",
+   "desc": "K-INIT compares with the other seed's M2b",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does",
+    "FAIL K28 K-INIT: the other seed's M2b sha fails"
+   ]
+  },
+  {
+   "id": "init-default-dag",
+   "desc": "K-INIT's default map is DAG_s (the pre-A1 init), not M2b_s",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does",
+    "FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does"
+   ]
+  },
+  {
+   "id": "reach-rep",
+   "desc": "K-REACH(REP) accepts n > 0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K33 K-REACH REP: ego exactly 0 + swap in band + flag absent passes; ego 1 fails",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K33 K-REACH REP: ego exactly 0 + swap in band + flag absent passes; ego 1 fails']"
+   ]
+  },
+  {
+   "id": "reach-band",
+   "desc": "K-REACH band widened",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201']"
+   ]
+  },
+  {
+   "id": "reach-lower",
+   "desc": "K-REACH lower band dropped",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201",
+    "FAIL K32 K-REACH B: ego 0.1 +- 0.02 (swap 0.1 too)"
+   ]
+  },
+  {
+   "id": "reach-builtp",
+   "desc": "K-REACH ignores the built p",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K34 K-REACH: built p must equal the argv p (A built at 0.0 fails: the lever never reached training)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K34 K-REACH: built p must equal the argv p (A built at 0.0 fails: the lever never reached training)']"
+   ]
+  },
+  {
+   "id": "reach-elig",
+   "desc": "K-REACH accepts eligible 0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "ZeroDivisionError: division by zero"
+   ]
+  },
+  {
+   "id": "build-identical",
+   "desc": "K-BUILD ignores a changed file",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K38 K-BUILD: a changed file with no listed hunk fails",
+    "FAIL K40 K-BUILD: a hunk with default_off = False fails"
+   ]
+  },
+  {
+   "id": "build-nohunk",
+   "desc": "K-BUILD accepts a changed file with no hunk",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K38 K-BUILD: a changed file with no listed hunk fails",
+    "FAIL K43b K-BUILD (A1): v8f_dagger.py is a build file too: a missing record for it fails, and a changed one needs its listed default-off hunk"
+   ]
+  },
+  {
+   "id": "build-bit",
+   "desc": "K-BUILD skips the bit-identity test",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K40 K-BUILD: a hunk with bit_identity_test = 'FAIL' fails",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"K40 K-BUILD: a hunk with bit_identity_test = 'FAIL' fails\"]"
+   ]
+  },
+  {
+   "id": "build-default",
+   "desc": "K-BUILD skips default_off",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K40 K-BUILD: a hunk with default_off = False fails",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K40 K-BUILD: a hunk with default_off = False fails']"
+   ]
+  },
+  {
+   "id": "build-commit",
+   "desc": "K-BUILD accepts any launch commit",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K37 K-BUILD: byte-identical files pass",
+    "FAIL K39 K-BUILD: a changed file whose hunks sit behind default-off flags with PASSing tests passes"
+   ]
+  },
+  {
+   "id": "build-base",
+   "desc": "K-BUILD accepts any base commit",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K42 K-BUILD: a base commit other than aeb54468 (DAG-OACC's) fails, 1d4f4fbb (DAG2's) included",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"K42 K-BUILD: a base commit other than aeb54468 (DAG-OACC's) fails, 1d4f4fbb (DAG2's) included\"]"
+   ]
+  },
+  {
+   "id": "zero-hi",
+   "desc": "identity ignores the CI upper end",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K46 identity: a nonzero CI end fails",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K46 identity: a nonzero CI end fails']"
+   ]
+  },
+  {
+   "id": "zero-empty",
+   "desc": "identity accepts an empty table",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K46 identity: a nonzero CI end fails",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K46 identity: a nonzero CI end fails']"
+   ]
+  },
+  {
+   "id": "rc-tol",
+   "desc": "RC tolerance huge",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K48 RC: a delta off by 2e-4 is a difference (tolerance 1e-4)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K48 RC: a delta off by 2e-4 is a difference (tolerance 1e-4)']"
+   ]
+  },
+  {
+   "id": "rc-sep",
+   "desc": "RC ignores the separated flag",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K50 RC: a separated flip is a difference",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K50 RC: a separated flip is a difference']"
+   ]
+  },
+  {
+   "id": "rc-missing",
+   "desc": "RC ignores a missing row",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K51 RC: a missing row is a difference; NOT COMPUTED on one side only is a difference",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K51 RC: a missing row is a difference; NOT COMPUTED on one side only is a difference']"
+   ]
+  },
+  {
+   "id": "floors-min",
+   "desc": "floors_from takes min",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K52 floors_from: max over seeds of |delta|, per row",
+    "FAIL M14 floors_from: seed 1 binding (|d| larger than seed 0's) sets the floor"
+   ]
+  },
+  {
+   "id": "floors-signed",
+   "desc": "floors_from signed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K52 floors_from: max over seeds of |delta|, per row",
+    "FAIL M14 floors_from: seed 1 binding (|d| larger than seed 0's) sets the floor"
+   ]
+  },
+  {
+   "id": "floors-one-seed",
+   "desc": "floors_from reads seed 0 only",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M14 floors_from: seed 1 binding (|d| larger than seed 0's) sets the floor",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"M14 floors_from: seed 1 binding (|d| larger than seed 0's) sets the floor\"]"
+   ]
+  },
+  {
+   "id": "disc-partial",
+   "desc": "discover: a short dump dir is PRESENT",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S2 discover: a dump dir with 140 of 141 episodes is PARTIAL",
+    "FAIL S9 slot_summary shape"
+   ]
+  },
+  {
+   "id": "disc-light-off",
+   "desc": "discover: the banked CTRL slot is read like a new arm (logged lane, fresh T0 demanded)",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh T0",
+    "SELFTEST 330/331 checks as expected; FAILED: ['S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh T0']"
+   ]
+  },
+  {
+   "id": "disc-light-default",
+   "desc": "discover: the default light set is empty",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh T0",
+    "SELFTEST 330/331 checks as expected; FAILED: ['S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh T0']"
+   ]
+  },
+  {
+   "id": "disc-light-t0",
+   "desc": "discover: the light slot needs no T0 eval",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S6b discover (A1): ... but it DOES need box 2's standard T0 eval (R-T0's comparator) and its train records: a missing t0.npz makes it PARTIAL",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"S6b discover (A1): ... but it DOES need box 2's standard T0 eval (R-T0's comparator) and its train records: a missing t0.npz makes it PARTIAL\"]"
+   ]
+  },
+  {
+   "id": "disc-noentry",
+   "desc": "discover: absent arm is PRESENT",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S3 discover: an arm absent from the manifest is MISSING (no entry), per seed",
+    "SELFTEST 330/331 checks as expected; FAILED: ['S3 discover: an arm absent from the manifest is MISSING (no entry), per seed']"
+   ]
+  },
+  {
+   "id": "rcev-sha",
+   "desc": "RC evidence accepted from another reader",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K55 K-RC evidence produced by ANOTHER reader (any edit invalidates it) fails",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K55 K-RC evidence produced by ANOTHER reader (any edit invalidates it) fails']"
+   ]
+  },
+  {
+   "id": "rcev-pass",
+   "desc": "RC evidence PASS flag ignored",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K57 K-RC evidence with PASS false fails even at 0 listed differences",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K57 K-RC evidence with PASS false fails even at 0 listed differences']"
+   ]
+  },
+  {
+   "id": "rcev-diff",
+   "desc": "RC evidence differences ignored",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M15 K-RC evidence claiming PASS with 1 difference fails",
+    "SELFTEST 330/331 checks as expected; FAILED: ['M15 K-RC evidence claiming PASS with 1 difference fails']"
+   ]
+  },
+  {
+   "id": "compose-rf-twice",
+   "desc": "compose_all passes RF as RF0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S14 compose_all: RF0 alone raises the bar over the improvement (NO EFFECT)",
+    "FAIL S16 compose_all: RF0 is read as RF0 and RF as RF (a swapped pair with different values still binds either way)"
+   ]
+  },
+  {
+   "id": "compose-rf0-twice",
+   "desc": "compose_all passes RF0 as RF",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S15 compose_all: RF alone raises the bar over the improvement (NO EFFECT)",
+    "FAIL S16 compose_all: RF0 is read as RF0 and RF as RF (a swapped pair with different values still binds either way)"
+   ]
+  },
+  {
+   "id": "compose-ctrl-ok",
+   "desc": "compose_all hard-codes the controls flag",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL M17 compose_all(res, False) -> REFUSED (the controls flag is the caller's, never hard-coded)",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"M17 compose_all(res, False) -> REFUSED (the controls flag is the caller's, never hard-coded)\"]"
+   ]
+  },
+  {
+   "id": "parse-flags",
+   "desc": "parse_flags drops multi-value flags",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL S17 parse_flags keeps every value of every occurrence",
+    "SELFTEST 330/331 checks as expected; FAILED: ['S17 parse_flags keeps every value of every occurrence']"
+   ]
+  },
+  {
+   "id": "a1-amend-no-sha",
+   "desc": "amend_problems skips the raw sha256",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L19 an AMEND1.md with one changed number is refused by the raw-byte pin",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L19 an AMEND1.md with one changed number is refused by the raw-byte pin']"
+   ]
+  },
+  {
+   "id": "a1-amend-no-phrases",
+   "desc": "amend_problems skips the phrases",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L21 each of the 20 coded amendment phrases, edited one at a time (pin = the copy's own sha256), is caught by the phrase step alone",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"L21 each of the 20 coded amendment phrases, edited one at a time (pin = the copy's own sha256), is caught by the phrase step alone\"]"
+   ]
+  },
+  {
+   "id": "a1-amend-pin-default",
+   "desc": "amend_problems default pin is empty",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256']"
+   ]
+  },
+  {
+   "id": "a1-amend-const",
+   "desc": "AMEND1_SHA256 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256']"
+   ]
+  },
+  {
+   "id": "a1-oaccread-const",
+   "desc": "OACC_READ_SHA256 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, launch-gate token, summary.json, DAGOACC_READ.json) :: ['E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/read/DAGOACC_READ.json is missing or is not the pinned DAGOACC_READ.json (9e6bd4f7940f...)']",
+    "FAIL L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha, build commit, DAGOACC_READ sha), is caught by banked_pin_problems against the banked artifacts :: (['DAG-OACC_s0 token init_ckpt_sha256: banked 601cb43526731786, the reader pins 0000000000000000', 'E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/read/DAGOACC_READ.json is missing or is not the pinned "
+   ]
+  },
+  {
+   "id": "a1-m2b-const",
+   "desc": "M2B_CKPT_SHA s0 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, launch-gate token, summary.json, DAGOACC_READ.json) :: ['DAG-OACC_s0 token init_ckpt_sha256: banked 601cb43526731786, the reader pins 601cb43626731786']"
+   ]
+  },
+  {
+   "id": "a1-bank-const",
+   "desc": "OACC_BANK_SHA s1 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, launch-gate token, summary.json, DAGOACC_READ.json) :: ['DAG-OACC_s1 token bank_sha256: banked 36c7aea964dafe94, the reader pins 36c7aeaa64dafe94']"
+   ]
+  },
+  {
+   "id": "a1-ckpt-const",
+   "desc": "OACC_CKPT_SHA s0 changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, launch-gate token, summary.json, DAGOACC_READ.json) :: ['DAG-OACC_s0 ckpt_last.pt: banked 67265ec1666fae3a, the reader pins 67265ec2666fae3a']"
+   ]
+  },
+  {
+   "id": "a1-build-const",
+   "desc": "BUILD_BASE_COMMIT is DAG2's 1d4f4fbb",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, launch-gate token, summary.json, DAGOACC_READ.json) :: ['DAG-OACC_s0 token commit[:8]: banked aeb54468, the reader pins 1d4f4fbb', 'DAG-OACC_s1 token commit[:8]: banked aeb54468, the reader pins 1d4f4fbb']"
+   ]
+  },
+  {
+   "id": "a1-build-files",
+   "desc": "BUILD_FILES drops v8f_dagger.py",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "KeyError: 'stack/tanitad/data/v8f_dagger.py'"
+   ]
+  },
+  {
+   "id": "a1-wacc-const",
+   "desc": "W_ACC changed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well"
+   ]
+  },
+  {
+   "id": "a1-swap-const",
+   "desc": "SWAP_P 0.1 -> 0.2",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well"
+   ]
+  },
+  {
+   "id": "a1-flag-const",
+   "desc": "COMPOSE_FLAG renamed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 10 / 11, M2b_s / DAG-OACC shas, crawl sets (4 rows, both seeds), NO exempt rows, |D_s| = 15']"
+   ]
+  },
+  {
+   "id": "a1-bankpin-skip",
+   "desc": "banked_pin_problems never compares",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha, build commit, DAGOACC_READ sha), is caught by banked_pin_problems against the banked artifacts :: ([], [], [], [], [], ['E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/read/DAGOACC_READ.json is missing or is not the pinned DAGOACC_READ.json (000000000000...)'])",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha, build commit, DAGOACC_READ sha), is caught by banked_pin_problems against the banked artifacts']"
+   ]
+  },
+  {
+   "id": "a1-bankpin-read",
+   "desc": "banked_pin_problems ignores DAGOACC_READ.json",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha, build commit, DAGOACC_READ sha), is caught by banked_pin_problems against the banked artifacts :: (['DAG-OACC_s0 token init_ckpt_sha256: banked 601cb43526731786, the reader pins 0000000000000000'], ['DAG-OACC_s1 token bank_sha256: banked 36c7aea964dafe94, the reader pins 0000000000000000'], ['DAG-",
+    "SELFTEST 330/331 checks as expected; FAILED: ['L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha, build commit, DAGOACC_READ sha), is caught by banked_pin_problems against the banked artifacts']"
+   ]
+  },
+  {
+   "id": "a1-aflags-compose",
+   "desc": "a_flags drops the composition flag",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "KeyError: '--ego-perturb-with-dagger'"
+   ]
+  },
+  {
+   "id": "a1-reg-flag-A",
+   "desc": "registered argv does not require the flag on A / B",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well",
+    "FAIL K25 A's registered check wants --ego-perturb-p 0.3 and REP's wants 0"
+   ]
+  },
+  {
+   "id": "a1-reg-flag-REP",
+   "desc": "registered argv lets REP / CTRL carry the flag",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well",
+    "FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (p 0.1) needs it as well"
+   ]
+  },
+  {
+   "id": "a1-reg-wacc",
+   "desc": "registered argv skips --w-acc",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K22 a registered flag changed (--w-acc 49.0) fails the argv check",
+    "FAIL K22 a registered flag changed (--w-acc 49.0) fails the argv check"
+   ]
+  },
+  {
+   "id": "a1-reg-bank",
+   "desc": "registered argv skips the bank sha256",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K22 a registered flag changed (--dagger-bank-sha256 0000000000000000000000000000000000000000000000000000000000000000) fails the argv check",
+    "FAIL K22 a registered flag changed (--dagger-bank-sha256 0000000000000000000000000000000000000000000000000000000000000000) fails the argv check"
+   ]
+  },
+  {
+   "id": "a1-reg-dseed",
+   "desc": "registered argv skips --dagger-seed",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K22 a registered flag changed (--dagger-seed 1) fails the argv check",
+    "FAIL K22 a registered flag changed (--dagger-seed 0) fails the argv check"
+   ]
+  },
+  {
+   "id": "a1-reach-swap-off",
+   "desc": "K-REACH skips the swap band",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) fails on A and on REP; swap 0 fails",
+    "FAIL K36b K-REACH (A1): the swap band is inclusive at 0.12 and fails at 0.1201"
+   ]
+  },
+  {
+   "id": "a1-reach-swap-wide",
+   "desc": "K-REACH swap band widened",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) fails on A and on REP; swap 0 fails",
+    "FAIL K36b K-REACH (A1): the swap band is inclusive at 0.12 and fails at 0.1201"
+   ]
+  },
+  {
+   "id": "a1-reach-swap-low",
+   "desc": "K-REACH swap lower band dropped",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) fails on A and on REP; swap 0 fails",
+    "FAIL K36b K-REACH (A1): the swap band is inclusive at 0.12 and fails at 0.1201"
+   ]
+  },
+  {
+   "id": "a1-reach-swap-fake",
+   "desc": "K-REACH takes the swap ratio from the constant",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) fails on A and on REP; swap 0 fails",
+    "FAIL K36b K-REACH (A1): the swap band is inclusive at 0.12 and fails at 0.1201"
+   ]
+  },
+  {
+   "id": "a1-reach-nodag",
+   "desc": "K-REACH accepts a missing run record",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "TypeError: unsupported operand type(s) for /: 'NoneType' and 'NoneType'"
+   ]
+  },
+  {
+   "id": "a1-reach-overlap-off",
+   "desc": "K-REACH skips the overlap == 0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a bool fail on A",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a bool fail on A']"
+   ]
+  },
+  {
+   "id": "a1-reach-overlap-ge",
+   "desc": "K-REACH overlap: >= 0 instead of == 0",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a bool fail on A",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a bool fail on A']"
+   ]
+  },
+  {
+   "id": "a1-reach-flag-A",
+   "desc": "K-REACH does not require the built flag on A",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and absent on REP (True fails)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and absent on REP (True fails)']"
+   ]
+  },
+  {
+   "id": "a1-reach-flag-REP",
+   "desc": "K-REACH lets REP build the flag",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and absent on REP (True fails)",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and absent on REP (True fails)']"
+   ]
+  },
+  {
+   "id": "a1-reach-rep-overlap",
+   "desc": "K-REACH lets REP carry an overlap",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K36f K-REACH (A1): REP carrying an overlap fails (1 and 5); overlap 0 and an absent overlap pass",
+    "SELFTEST 330/331 checks as expected; FAILED: ['K36f K-REACH (A1): REP carrying an overlap fails (1 and 5); overlap 0 and an absent overlap pass']"
+   ]
+  },
+  {
+   "id": "a1-next-swap",
+   "desc": "FIXED / NOT ADOPTED routes to DAG-ORC-SWAP again",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O15b A1: FIXED / NOT ADOPTED no longer routes to DAG-ORC-SWAP (it cannot apply: A keeps the swap on); the next is B under this table with its own PI go",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O15b A1: FIXED / NOT ADOPTED no longer routes to DAG-ORC-SWAP (it cannot apply: A keeps the swap on); the next is B under this table with its own PI go']"
+   ]
+  },
+  {
+   "id": "a1-next-crawl",
+   "desc": "HARMS (B) routes to NEXT-CRAWL on DAG states",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch :: ('A: not adopted; read B (p 0.1) under this same table (B is NOT queued: it needs its own PI go, A1 section 4).', 'B: not adopted; the perturbation cannot be dosed under the guards; NEXT-CRAWL on DAG ",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch\"]"
+   ]
+  },
+  {
+   "id": "a1-next-pi-go",
+   "desc": "B needs no PI go in the amended HARMS text",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch :: ('A: not adopted; read B (p 0.1) under this same table (B is queued).', \"B: not adopted; the perturbation cannot be dosed under the guards; NEXT-CRAWL on DAG-OACC's states (section 8, branch LAUNCH-IN",
+    "SELFTEST 330/331 checks as expected; FAILED: [\"O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEXT-CRAWL on DAG-OACC's states, LAUNCH-INTENT branch\"]"
+   ]
+  },
+  {
+   "id": "a1-next-orig-lost",
+   "desc": "outcome_block drops the original PREREG cell",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O16b the outcome block carries the amended next AND the original PREREG cell verbatim, and names the amendment",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O16b the outcome block carries the amended next AND the original PREREG cell verbatim, and names the amendment']"
+   ]
+  },
+  {
+   "id": "a1-next-none",
+   "desc": "AMENDED_NEXT is ignored",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O14 the committed next of FIXED / ADOPTED is the AMENDED cell (A1) and the original cell stays reachable",
+    "FAIL O14 the committed next of FIXED / NOT ADOPTED is the AMENDED cell (A1) and the original cell stays reachable"
+   ]
+  },
+  {
+   "id": "a1-compose-pre",
+   "desc": "compose_seed ignores pre_a1 for the crawl set",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies']"
+   ]
+  },
+  {
+   "id": "a1-compose-exempt",
+   "desc": "compose_seed ignores pre_a1 for the exemption",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies']"
+   ]
+  },
+  {
+   "id": "a1-compose-domain",
+   "desc": "compose_seed does not pass the exemption to domain()",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies",
+    "SELFTEST 330/331 checks as expected; FAILED: ['O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows are exempt and the original crawl set applies']"
+   ]
+  },
+  {
+   "id": "a1-init-default-map",
+   "desc": "k_init default (None) ignored",
+   "result": "KILLED",
+   "selftest_rc": 1,
+   "first_red": [
+    "FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does",
+    "FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes; DAG_s's checkpoint no longer does"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1594 @@
+{
+ "card": "PREREG_T1_BLIND.md",
+ "tier": "T1-kin (logged cameras; reindexed = longitudinal-only approximate re-perception, not T2); arm BLIND1 = C0 with every frame's scene tokens := the pinned mean",
+ "estimator": "paired episode-cluster bootstrap B=2000 seed 0 (gapdecomp.decompose) over 141 episodes / 2,399 windows; answers another draw of EPISODES only; BLIND1 is a deterministic function of C0 (no training seed in B); the seed question is answered by reading both seeds",
+ "F_m": 0.12074,
+ "strategic_family": "PAUSED (PI ruling, PI_DECISION_QUEUE ITEM 25): rows listed beside, never decisive",
+ "gates": {
+  "card": "PREREG_T1_BLIND.md section 3",
+  "seeds": {
+   "s0": {
+    "G-ID": true,
+    "G-MEAN": {
+     "gate": "G-MEAN",
+     "PASS": true,
+     "frames_received": 115152,
+     "frames_equal_mean_bitwise": 115152,
+     "frames_not_equal_mean": 0,
+     "min_frames": 1000,
+     "items_built": 14394,
+     "items_replaced": 14394,
+     "mode": "blind",
+     "mean_tensor_sha256": "cd6a7ab5e3c5450ec3528889b04e06e5605fea30ea9ff02a0e36d9ba47a2fcb9"
+    },
+    "G-EGO": {
+     "gate": "G-EGO",
+     "PASS": true,
+     "tick0_windows_compared": 2399,
+     "tick0_windows_equal": 2399,
+     "same_window_index": true,
+     "items_other_keys_changed": 0,
+     "items_keyset_changed": 0,
+     "later_ticks": "not compared: the ego history at ticks 1 and 2 is the executed motion, which differs when the plan differs (the effect under test)"
+    }
+   },
+   "s1": {
+    "G-ID": true,
+    "G-MEAN": {
+     "gate": "G-MEAN",
+     "PASS": true,
+     "frames_received": 115152,
+     "frames_equal_mean_bitwise": 115152,
+     "frames_not_equal_mean": 0,
+     "min_frames": 1000,
+     "items_built": 14394,
+     "items_replaced": 14394,
+     "mode": "blind",
+     "mean_tensor_sha256": "cd6a7ab5e3c5450ec3528889b04e06e5605fea30ea9ff02a0e36d9ba47a2fcb9"
+    },
+    "G-EGO": {
+     "gate": "G-EGO",
+     "PASS": true,
+     "tick0_windows_compared": 2399,
+     "tick0_windows_equal": 2399,
+     "same_window_index": true,
+     "items_other_keys_changed": 0,
+     "items_keyset_changed": 0,
+     "later_ticks": "not compared: the ego history at ticks 1 and 2 is the executed motion, which differs when the plan differs (the effect under test)"
+    }
+   }
+  },
+  "PASS": true
+ },
+ "gates_file": "E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/t1_blind/raw/GATES.json",
+ "reader_sha256": "60c7fdaec9fe6c683c1393cdbc88dae41acd577b1b9db49e2a8efd10c063464e",
+ "lf_read_sha256": "862e4e6c357bc084c971eceebd3ead1576d2218b1296eb1b10799f76710050e8",
+ "controls": {
+  "reused_arrays": {
+   "PASS": true,
+   "files": {
+    "RIC0_s0": {
+     "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/ri_read/raw/arrays/RIC0_s0.npz",
+     "sha256": "31e2ad8ddb4f6e8e6bfe6ee780f47b7c0adcba1cc1f9047071eb64939042a244",
+     "pinned": "31e2ad8ddb4f6e8e6bfe6ee780f47b7c0adcba1cc1f9047071eb64939042a244",
+     "PASS": true
+    },
+    "RIC0_s1": {
+     "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/ri_read/raw/arrays/RIC0_s1.npz",
+     "sha256": "3b9b814d7b285cb05fcefbdfeb21c71eab01d728383ba1d737da84f1b322601d",
+     "pinned": "3b9b814d7b285cb05fcefbdfeb21c71eab01d728383ba1d737da84f1b322601d",
+     "PASS": true
+    }
+   }
+  },
+  "rollout_markers": {
+   "BLIND1_s0": {
+    "flags_ok": true,
+    "ckpt_same_as_RIC0": true,
+    "tool_same_as_RIC0": true,
+    "threads_same": true,
+    "done_marker": {
+     "tag": "BLIND1_s0",
+     "flags": "--smooth sg72 --scene reindexed",
+     "blind_mode": "blind",
+     "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt",
+     "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+     "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+     "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+     "wrapper_sha256": "a52d81404f395f687252dc4215f2ea4f92b980c8ce1d09e12531dd2bf14956d1",
+     "mean_tensor_sha256": "cd6a7ab5e3c5450ec3528889b04e06e5605fea30ea9ff02a0e36d9ba47a2fcb9",
+     "threads": 12,
+     "wall_s": 209
+    },
+    "ric0_marker": {
+     "tag": "RIC0_s0",
+     "flags": "--smooth sg72 --scene reindexed",
+     "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt",
+     "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+     "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+     "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+     "threads": 12,
+     "wall_s": 271
+    },
+    "PASS": true
+   },
+   "BLIND1_s1": {
+    "flags_ok": true,
+    "ckpt_same_as_RIC0": true,
+    "tool_same_as_RIC0": true,
+    "threads_same": true,
+    "done_marker": {
+     "tag": "BLIND1_s1",
+     "flags": "--smooth sg72 --scene reindexed",
+     "blind_mode": "blind",
+     "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_C0/ckpt_last.pt",
+     "ckpt_sha256": "43a303980f063a495f4d745e66efb870cf7f2f9c25acc0a7998562fb4978be93",
+     "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+     "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+     "wrapper_sha256": "a52d81404f395f687252dc4215f2ea4f92b980c8ce1d09e12531dd2bf14956d1",
+     "mean_tensor_sha256": "cd6a7ab5e3c5450ec3528889b04e06e5605fea30ea9ff02a0e36d9ba47a2fcb9",
+     "threads": 12,
+     "wall_s": 196
+    },
+    "ric0_marker": {
+     "tag": "RIC0_s1",
+     "flags": "--smooth sg72 --scene reindexed",
+     "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_C0/ckpt_last.pt",
+     "ckpt_sha256": "43a303980f063a495f4d745e66efb870cf7f2f9c25acc0a7998562fb4978be93",
+     "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+     "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+     "threads": 12,
+     "wall_s": 262
+    },
+    "PASS": true
+   }
+  }
+ },
+ "seeds": {
+  "s0": {
+   "tag": "BLIND1_s0",
+   "conditions": {
+    "ade6_delta": 0.8313357900898544,
+    "ade6_lo": 0.5576468718418832,
+    "ade6_hi": 1.1530176880824725,
+    "ade6_separated_worse": true,
+    "ade6_separated_any": true,
+    "ade6_point_above_F": true,
+    "ade6_abs_point_below_F": false,
+    "m1_delta": -0.02458309389252906,
+    "m1_lo": -0.042813653659817756,
+    "m1_hi": -0.008533315451410376,
+    "m1_separated_any": true,
+    "m1_separated_better": true,
+    "m1_separated_worse": false,
+    "ADE_cond": true,
+    "M1_cond": true,
+    "USED_cond": true,
+    "UNUSED_cond": false
+   },
+   "rows_BLIND1_minus_RIC0": {
+    "ADE6": {
+     "delta": 0.8313357900898544,
+     "lo": 0.5576468718418832,
+     "hi": 1.1530176880824725,
+     "separated": true
+    },
+    "speed MAE": {
+     "delta": 0.10752163404422031,
+     "lo": 0.018642752947220016,
+     "hi": 0.19070853643904592,
+     "separated": true
+    },
+    "along-track MAE": {
+     "delta": 0.2351803816232364,
+     "lo": 0.09320460160430673,
+     "hi": 0.3867871733919662,
+     "separated": true
+    },
+    "accel MAE": {
+     "delta": 0.06947742722691765,
+     "lo": -0.03730808516145641,
+     "hi": 0.1675070706696421,
+     "separated": false
+    },
+    "DK-VIOL": {
+     "delta": 0.023529411764705882,
+     "lo": -0.0016759008718807713,
+     "hi": 0.053907113433135714,
+     "separated": false
+    },
+    "DK-HW": {
+     "delta": 0.28989116530999764,
+     "lo": 0.024881845302167874,
+     "hi": 0.570726437952218,
+     "separated": true
+    },
+    "DK-TG": {
+     "delta": 0.09680343817272309,
+     "lo": 0.01945844061674049,
+     "hi": 0.20878346460641303,
+     "separated": true
+    },
+    "heading MAE": {
+     "delta": 1.8474924829797854,
+     "lo": 0.9932911246205229,
+     "hi": 2.7708849862606444,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "delta": -1.7633373976521032,
+     "lo": -3.744817624225736,
+     "hi": 0.1242512663392584,
+     "separated": false
+    },
+    "curvature MAE": {
+     "delta": -0.03283863221688386,
+     "lo": -0.05784795631781371,
+     "hi": -0.010461262402716215,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "delta": 0.7834924288959776,
+     "lo": 0.5265849884988338,
+     "hi": 1.0906764004228515,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "delta": 0.25989870490679373,
+     "lo": -0.15640689508848607,
+     "hi": 0.6641034603093344,
+     "separated": false
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": -0.020692157790748237,
+     "lo": -0.04874789361240504,
+     "hi": 0.000781214444584828,
+     "separated": false
+    },
+    "TAC-LAT": {
+     "delta": -0.07378074197582327,
+     "lo": -0.12047728220091705,
+     "hi": -0.029573220612755368,
+     "separated": true
+    },
+    "TAC-LON": {
+     "delta": -0.010837849103793247,
+     "lo": -0.04960451880666152,
+     "hi": 0.029536266041092676,
+     "separated": false
+    },
+    "S-POS@30": {
+     "delta": 0.7694517651415825,
+     "lo": 0.3979554429224216,
+     "hi": 1.1508134279973472,
+     "separated": true
+    },
+    "S-POS@50": {
+     "delta": 1.8563355527982797,
+     "lo": 1.1465644491543778,
+     "hi": 2.596443214362747,
+     "separated": true
+    },
+    "S-POS@80": {
+     "delta": 4.174640505267124,
+     "lo": 2.7570672499270708,
+     "hi": 5.612727272615507,
+     "separated": true
+    },
+    "M1 crawl share": {
+     "delta": -0.02458309389252906,
+     "lo": -0.042813653659817756,
+     "hi": -0.008533315451410376,
+     "separated": true
+    }
+   },
+   "rows_BLIND1_minus_P10": {
+    "ADE6": {
+     "delta": -0.28144489080411295,
+     "lo": -0.5157364568843122,
+     "hi": -0.013168194326948646,
+     "separated": true
+    },
+    "speed MAE": {
+     "delta": -0.6265924827885422,
+     "lo": -0.8054238681394602,
+     "hi": -0.467953268761057,
+     "separated": true
+    },
+    "along-track MAE": {
+     "delta": -0.41346655732452775,
+     "lo": -0.5658286602635879,
+     "hi": -0.2579579011521928,
+     "separated": true
+    },
+    "accel MAE": {
+     "delta": -0.7281034152518615,
+     "lo": -1.0640631349222214,
+     "hi": -0.4383178992095799,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "delta": 0.013445378151260505,
+     "lo": -0.008131077634305756,
+     "hi": 0.037607746863066005,
+     "separated": false
+    },
+    "DK-HW": {
+     "delta": -0.06916113060667065,
+     "lo": -0.4246514386673403,
+     "hi": 0.24468684731830337,
+     "separated": false
+    },
+    "DK-TG": {
+     "delta": -0.023425753455545564,
+     "lo": -0.10369100092563,
+     "hi": 0.07325200187999946,
+     "separated": false
+    },
+    "heading MAE": {
+     "delta": 0.005980739782154059,
+     "lo": -0.6768140903972784,
+     "hi": 0.6941993507396882,
+     "separated": false
+    },
+    "yaw-rate MAE": {
+     "delta": 0.7377643032152182,
+     "lo": -0.6630355287562664,
+     "hi": 2.057703443077984,
+     "separated": false
+    },
+    "curvature MAE": {
+     "delta": 0.05127460922943438,
+     "lo": 0.03229936869475136,
+     "hi": 0.07425997084566482,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "delta": -0.07685941967363075,
+     "lo": -0.3115808939149128,
+     "hi": 0.19498981400484766,
+     "separated": false
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -1.9707565887181282,
+     "lo": -2.956976050131992,
+     "hi": -1.1078279734379806,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.01968399950128195,
+     "lo": 0.01059135768619779,
+     "hi": 0.03075590093021032,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "delta": 0.10879533138807837,
+     "lo": 0.06332357232180076,
+     "hi": 0.1563183919457471,
+     "separated": true
+    },
+    "TAC-LON": {
+     "delta": 0.13714047519799916,
+     "lo": 0.07711466149089899,
+     "hi": 0.19816653105011,
+     "separated": true
+    },
+    "S-POS@30": {
+     "delta": -0.7984852574432273,
+     "lo": -1.2727451179973754,
+     "hi": -0.3762222259648752,
+     "separated": true
+    },
+    "S-POS@50": {
+     "delta": -2.2913263351743094,
+     "lo": -3.390073131040688,
+     "hi": -1.3049045100282848,
+     "separated": true
+    },
+    "S-POS@80": {
+     "delta": -4.221299323636538,
+     "lo": -6.124560152693744,
+     "hi": -2.4727825120011344,
+     "separated": true
+    },
+    "M1 crawl share": {
+     "delta": 0.02874661203882031,
+     "lo": 0.017149366249266332,
+     "hi": 0.04241200028643099,
+     "separated": true
+    }
+   },
+   "rows_RIC0_minus_P10": {
+    "ADE6": {
+     "delta": -1.1127806808939675,
+     "lo": -1.3042904954369006,
+     "hi": -0.9322365496714693,
+     "separated": true
+    },
+    "speed MAE": {
+     "delta": -0.7341141168327626,
+     "lo": -0.9232851576963903,
+     "hi": -0.5679834578644138,
+     "separated": true
+    },
+    "along-track MAE": {
+     "delta": -0.648646938947764,
+     "lo": -0.8151158815014341,
+     "hi": -0.49060079458225353,
+     "separated": true
+    },
+    "accel MAE": {
+     "delta": -0.7975808424787791,
+     "lo": -1.1392462615585544,
+     "hi": -0.5161764870670857,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "delta": -0.010084033613445379,
+     "lo": -0.03249391775231517,
+     "hi": 0.008040213771646845,
+     "separated": false
+    },
+    "DK-HW": {
+     "delta": -0.394537588438661,
+     "lo": -0.7935899646704115,
+     "hi": -0.07100241306666803,
+     "separated": true
+    },
+    "DK-TG": {
+     "delta": -0.11879933403027909,
+     "lo": -0.18451310521760866,
+     "hi": -0.06437897851811114,
+     "separated": true
+    },
+    "heading MAE": {
+     "delta": -1.8365509134366929,
+     "lo": -2.558192425706345,
+     "hi": -1.1629325631803131,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "delta": 2.5011017008673218,
+     "lo": 0.3392914242657831,
+     "hi": 4.71395859630304,
+     "separated": true
+    },
+    "curvature MAE": {
+     "delta": 0.08411324144631824,
+     "lo": 0.05641154686533647,
+     "hi": 0.1161541596368346,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "delta": -0.8603518485696082,
+     "lo": -0.9945000560933279,
+     "hi": -0.7381488702879364,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -2.2306552936249213,
+     "lo": -3.3526655786712105,
+     "hi": -1.2793280983440865,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0403810396470558,
+     "lo": 0.019428530092707553,
+     "hi": 0.06877363237389376,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "delta": 0.18257607336390164,
+     "lo": 0.1416076634735527,
+     "hi": 0.2239389494374223,
+     "separated": true
+    },
+    "TAC-LON": {
+     "delta": 0.14797832430179242,
+     "lo": 0.08589538702638794,
+     "hi": 0.20916666666666667,
+     "separated": true
+    },
+    "S-POS@30": {
+     "delta": -1.2058227621923396,
+     "lo": -1.6550066696934262,
+     "hi": -0.8321413402062711,
+     "separated": true
+    },
+    "S-POS@50": {
+     "delta": -3.9663313679728875,
+     "lo": -5.111215295139025,
+     "hi": -3.0091149780291264,
+     "separated": true
+    },
+    "S-POS@80": {
+     "delta": -8.961376586845804,
+     "lo": -11.062368530999327,
+     "hi": -6.957814348122127,
+     "separated": true
+    },
+    "M1 crawl share": {
+     "delta": 0.05334336227911129,
+     "lo": 0.03563721105881245,
+     "hi": 0.07441366852950922,
+     "separated": true
+    }
+   },
+   "status_BLIND1_minus_RIC0": {
+    "ADE6": "worse",
+    "speed MAE": "worse",
+    "along-track MAE": "worse",
+    "accel MAE": "n.s.",
+    "DK-VIOL": "n.s.",
+    "DK-HW": "worse",
+    "DK-TG": "worse",
+    "heading MAE": "worse",
+    "yaw-rate MAE": "n.s.",
+    "curvature MAE": "better",
+    "cross-track MAE": "worse",
+    "L1 lateral-accel MAE": "n.s.",
+    "L2 curvature MAE (GT>=5.2)": "n.s.",
+    "TAC-LAT": "worse",
+    "TAC-LON": "n.s.",
+    "S-POS@30": "worse",
+    "S-POS@50": "worse",
+    "S-POS@80": "worse",
+    "M1 crawl share": "better"
+   },
+   "status_BLIND1_minus_P10": {
+    "ADE6": "better",
+    "speed MAE": "better",
+    "along-track MAE": "better",
+    "accel MAE": "better",
+    "DK-VIOL": "n.s.",
+    "DK-HW": "n.s.",
+    "DK-TG": "n.s.",
+    "heading MAE": "n.s.",
+    "yaw-rate MAE": "n.s.",
+    "curvature MAE": "worse",
+    "cross-track MAE": "n.s.",
+    "L1 lateral-accel MAE": "better",
+    "L2 curvature MAE (GT>=5.2)": "worse",
+    "TAC-LAT": "better",
+    "TAC-LON": "better",
+    "S-POS@30": "better",
+    "S-POS@50": "better",
+    "S-POS@80": "better",
+    "M1 crawl share": "worse"
+   },
+   "status_RIC0_minus_P10": {
+    "ADE6": "better",
+    "speed MAE": "better",
+    "along-track MAE": "better",
+    "accel MAE": "better",
+    "DK-VIOL": "n.s.",
+    "DK-HW": "better",
+    "DK-TG": "better",
+    "heading MAE": "better",
+    "yaw-rate MAE": "worse",
+    "curvature MAE": "worse",
+    "cross-track MAE": "better",
+    "L1 lateral-accel MAE": "better",
+    "L2 curvature MAE (GT>=5.2)": "worse",
+    "TAC-LAT": "better",
+    "TAC-LON": "better",
+    "S-POS@30": "better",
+    "S-POS@50": "better",
+    "S-POS@80": "better",
+    "M1 crawl share": "worse"
+   },
+   "separated_better_rows": [
+    "M1 crawl share",
+    "curvature MAE"
+   ],
+   "separated_worse_rows": [
+    "ADE6",
+    "DK-HW",
+    "DK-TG",
+    "S-POS@30",
+    "S-POS@50",
+    "S-POS@80",
+    "TAC-LAT",
+    "along-track MAE",
+    "cross-track MAE",
+    "heading MAE",
+    "speed MAE"
+   ],
+   "strategic_rows_beside_PAUSED": {
+    "S-POS@30": {
+     "B": {
+      "delta": 0.7694517651415825,
+      "lo": 0.3979554429224216,
+      "hi": 1.1508134279973472,
+      "separated": true
+     },
+     "status": "worse"
+    },
+    "S-POS@50": {
+     "B": {
+      "delta": 1.8563355527982797,
+      "lo": 1.1465644491543778,
+      "hi": 2.596443214362747,
+      "separated": true
+     },
+     "status": "worse"
+    },
+    "S-POS@80": {
+     "B": {
+      "delta": 4.174640505267124,
+      "lo": 2.7570672499270708,
+      "hi": 5.612727272615507,
+      "separated": true
+     },
+     "status": "worse"
+    }
+   },
+   "family_tables": {
+    "BLIND1_minus_RIC0": {
+     "LONGITUDINAL": {
+      "n_rows": 6,
+      "separated_better": [],
+      "separated_worse": [
+       "speed MAE",
+       "along-track MAE",
+       "DK-HW",
+       "DK-TG"
+      ]
+     },
+     "LATERAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "curvature MAE"
+      ],
+      "separated_worse": [
+       "heading MAE",
+       "cross-track MAE"
+      ]
+     },
+     "TACTICAL": {
+      "n_rows": 2,
+      "separated_better": [],
+      "separated_worse": [
+       "TAC-LAT"
+      ]
+     },
+     "STRATEGIC": {
+      "n_rows": 3,
+      "separated_better": [],
+      "separated_worse": [
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80"
+      ]
+     }
+    },
+    "BLIND1_minus_P10": {
+     "LONGITUDINAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "speed MAE",
+       "along-track MAE",
+       "accel MAE"
+      ],
+      "separated_worse": []
+     },
+     "LATERAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "L1 lateral-accel MAE"
+      ],
+      "separated_worse": [
+       "curvature MAE",
+       "L2 curvature MAE (GT>=5.2)"
+      ]
+     },
+     "TACTICAL": {
+      "n_rows": 2,
+      "separated_better": [
+       "TAC-LAT",
+       "TAC-LON"
+      ],
+      "separated_worse": []
+     },
+     "STRATEGIC": {
+      "n_rows": 3,
+      "separated_better": [
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80"
+      ],
+      "separated_worse": []
+     }
+    },
+    "RIC0_minus_P10": {
+     "LONGITUDINAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "speed MAE",
+       "along-track MAE",
+       "accel MAE",
+       "DK-HW",
+       "DK-TG"
+      ],
+      "separated_worse": []
+     },
+     "LATERAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "heading MAE",
+       "cross-track MAE",
+       "L1 lateral-accel MAE"
+      ],
+      "separated_worse": [
+       "yaw-rate MAE",
+       "curvature MAE",
+       "L2 curvature MAE (GT>=5.2)"
+      ]
+     },
+     "TACTICAL": {
+      "n_rows": 2,
+      "separated_better": [
+       "TAC-LAT",
+       "TAC-LON"
+      ],
+      "separated_worse": []
+     },
+     "STRATEGIC": {
+      "n_rows": 3,
+      "separated_better": [
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80"
+      ],
+      "separated_worse": []
+     }
+    }
+   },
+   "M1_per_class_split": {
+    "n_windows": 2105,
+    "n_episodes_pool": 135,
+    "pool": "masked",
+    "delta": -0.02458309389252906,
+    "lo": -0.042813653659817756,
+    "hi": -0.008533315451410376,
+    "separated": true,
+    "classes": {
+     "L": {
+      "n": 254,
+      "n_episodes": 45,
+      "w": 0.12066508313539193,
+      "delta": -0.17075727659265874,
+      "delta_lo": -0.2692627329916122,
+      "delta_hi": -0.08280256739807146,
+      "delta_n_nan_draws": 0,
+      "contribution": -0.02060444097602628,
+      "contribution_lo": -0.035841192293182875,
+      "contribution_hi": -0.008862395273257984,
+      "share": 0.8381549151666415,
+      "share_lo": 0.5448483596829178,
+      "share_hi": 1.3985684396912723,
+      "share_n_nan_draws": 0
+     },
+     "S": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": -0.0,
+      "share_lo": -0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "O": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": -0.0,
+      "share_lo": -0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "M": {
+      "n": 1851,
+      "n_episodes": 132,
+      "w": 0.8793349168646081,
+      "delta": -0.004524616093591763,
+      "delta_lo": -0.01590972435544379,
+      "delta_hi": 0.005481017360533709,
+      "delta_n_nan_draws": 0,
+      "contribution": -0.003978652916502781,
+      "contribution_lo": -0.014045799915819236,
+      "contribution_hi": 0.00482168292019134,
+      "share": 0.1618450848333584,
+      "share_lo": -0.39856843969127287,
+      "share_hi": 0.455151640317082,
+      "share_n_nan_draws": 0
+     }
+    },
+    "n_boot": 2000,
+    "seed": 0,
+    "trigger": {
+     "share": 0.8381549151666415,
+     "lo": 0.5448483596829178,
+     "hi": 1.3985684396912723,
+     "n_nan_draws": 0,
+     "contribution": -0.02060444097602628,
+     "w": 0.12066508313539193
+    },
+    "trigger_zeroed": {
+     "delta": -0.003978652916502781,
+     "lo": -0.014045799915819236,
+     "hi": 0.00482168292019134,
+     "separated": false
+    },
+    "_share_sum_max_abs_dev_over_draws": 3.552713678800501e-15,
+    "_class_sum_identity_abs_dev": 3.469446951953614e-18
+   },
+   "ticks_n": 7197,
+   "family_of": {
+    "ADE6": "PRIMARY",
+    "speed MAE": "LONGITUDINAL",
+    "along-track MAE": "LONGITUDINAL",
+    "accel MAE": "LONGITUDINAL",
+    "DK-VIOL": "LONGITUDINAL",
+    "DK-HW": "LONGITUDINAL",
+    "DK-TG": "LONGITUDINAL",
+    "heading MAE": "LATERAL",
+    "yaw-rate MAE": "LATERAL",
+    "curvature MAE": "LATERAL",
+    "cross-track MAE": "LATERAL",
+    "L1 lateral-accel MAE": "LATERAL",
+    "L2 curvature MAE (GT>=5.2)": "LATERAL",
+    "TAC-LAT": "TACTICAL",
+    "TAC-LON": "TACTICAL",
+    "S-POS@30": "STRATEGIC",
+    "S-POS@50": "STRATEGIC",
+    "S-POS@80": "STRATEGIC",
+    "M1 crawl share": "crawl"
+   }
+  },
+  "s1": {
+   "tag": "BLIND1_s1",
+   "conditions": {
+    "ade6_delta": 0.8158124983315828,
+    "ade6_lo": 0.5309000629016021,
+    "ade6_hi": 1.1453504364063893,
+    "ade6_separated_worse": true,
+    "ade6_separated_any": true,
+    "ade6_point_above_F": true,
+    "ade6_abs_point_below_F": false,
+    "m1_delta": -0.04147870513896415,
+    "m1_lo": -0.06535610894158368,
+    "m1_hi": -0.020778069211451516,
+    "m1_separated_any": true,
+    "m1_separated_better": true,
+    "m1_separated_worse": false,
+    "ADE_cond": true,
+    "M1_cond": true,
+    "USED_cond": true,
+    "UNUSED_cond": false
+   },
+   "rows_BLIND1_minus_RIC0": {
+    "ADE6": {
+     "delta": 0.8158124983315828,
+     "lo": 0.5309000629016021,
+     "hi": 1.1453504364063893,
+     "separated": true
+    },
+    "speed MAE": {
+     "delta": 0.06068423982244018,
+     "lo": -0.0207023409154068,
+     "hi": 0.14090151242374904,
+     "separated": false
+    },
+    "along-track MAE": {
+     "delta": 0.21639804778439647,
+     "lo": 0.05767838495562041,
+     "hi": 0.3854324351642506,
+     "separated": true
+    },
+    "accel MAE": {
+     "delta": 0.001502029252603139,
+     "lo": -0.07726941521733259,
+     "hi": 0.086096474882811,
+     "separated": false
+    },
+    "DK-VIOL": {
+     "delta": 0.03865546218487395,
+     "lo": 0.0103971415332707,
+     "hi": 0.07604622995667447,
+     "separated": true
+    },
+    "DK-HW": {
+     "delta": 0.4312762749362935,
+     "lo": 0.14988641466567512,
+     "hi": 0.7301734403795679,
+     "separated": true
+    },
+    "DK-TG": {
+     "delta": 0.2261356547332773,
+     "lo": 0.08766271897061322,
+     "hi": 0.4112841745310935,
+     "separated": true
+    },
+    "heading MAE": {
+     "delta": 1.1704343287117644,
+     "lo": 0.19293056774940157,
+     "hi": 2.2389968883270774,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "delta": -6.3332797052350704,
+     "lo": -10.457552400472332,
+     "hi": -2.891391777880167,
+     "separated": true
+    },
+    "curvature MAE": {
+     "delta": -0.06854887075755928,
+     "lo": -0.10997646918000975,
+     "hi": -0.03259966215053952,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "delta": 0.8042961041378058,
+     "lo": 0.5527819396543537,
+     "hi": 1.1108262775035695,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -0.24015143365980288,
+     "lo": -0.4894604143272271,
+     "hi": -0.010443920148293465,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": -0.025199468436608995,
+     "lo": -0.05876099213109257,
+     "hi": 0.006230520573270824,
+     "separated": false
+    },
+    "TAC-LAT": {
+     "delta": -0.012505210504376824,
+     "lo": -0.06380383475591361,
+     "hi": 0.03833333333333333,
+     "separated": false
+    },
+    "TAC-LON": {
+     "delta": -0.004168403501458941,
+     "lo": -0.04831420977677253,
+     "hi": 0.041711404286119996,
+     "separated": false
+    },
+    "S-POS@30": {
+     "delta": 0.9054050575655285,
+     "lo": 0.4556473776260251,
+     "hi": 1.4017919455223389,
+     "separated": true
+    },
+    "S-POS@50": {
+     "delta": 1.9338432780551906,
+     "lo": 1.0611312176702343,
+     "hi": 2.8744054290298235,
+     "separated": true
+    },
+    "S-POS@80": {
+     "delta": 3.965458659365684,
+     "lo": 2.3943103065371445,
+     "hi": 5.588747907805131,
+     "separated": true
+    },
+    "M1 crawl share": {
+     "delta": -0.04147870513896415,
+     "lo": -0.06535610894158368,
+     "hi": -0.020778069211451516,
+     "separated": true
+    }
+   },
+   "rows_BLIND1_minus_P10": {
+    "ADE6": {
+     "delta": -0.24536898745857427,
+     "lo": -0.4762334723847165,
+     "hi": 0.004545458617102858,
+     "separated": false
+    },
+    "speed MAE": {
+     "delta": -0.6971469605729137,
+     "lo": -0.872541059011527,
+     "hi": -0.5417311872435612,
+     "separated": true
+    },
+    "along-track MAE": {
+     "delta": -0.3661817452056617,
+     "lo": -0.5086145973521986,
+     "hi": -0.2227946103219999,
+     "separated": true
+    },
+    "accel MAE": {
+     "delta": -0.9429249526525344,
+     "lo": -1.3046822041505888,
+     "hi": -0.6380413260326849,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "delta": 0.020168067226890758,
+     "lo": -0.0033336120401337797,
+     "hi": 0.04676743822333435,
+     "separated": false
+    },
+    "DK-HW": {
+     "delta": 0.05737232457771523,
+     "lo": -0.3116095224927519,
+     "hi": 0.4001608652082942,
+     "separated": false
+    },
+    "DK-TG": {
+     "delta": 0.1437948848850701,
+     "lo": 0.002792343595129298,
+     "hi": 0.3319931560354428,
+     "separated": true
+    },
+    "heading MAE": {
+     "delta": -0.6703610595616448,
+     "lo": -1.3252914461076495,
+     "hi": -0.038264192457550715,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "delta": -3.4563952005642165,
+     "lo": -6.11644097233035,
+     "hi": -1.1928570503246672,
+     "separated": true
+    },
+    "curvature MAE": {
+     "delta": 0.03019222341760798,
+     "lo": 0.016187585284251224,
+     "hi": 0.04715177141725536,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "delta": -0.060874820253529395,
+     "lo": -0.27452481796984723,
+     "hi": 0.18977177485391974,
+     "separated": false
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -2.7924906194859678,
+     "lo": -4.132560760737228,
+     "hi": -1.653465207692647,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.020632143560222388,
+     "lo": 0.006793675119547355,
+     "hi": 0.03909270450158625,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "delta": 0.12505210504376824,
+     "lo": 0.08040708368070029,
+     "hi": 0.16806889641381717,
+     "separated": true
+    },
+    "TAC-LON": {
+     "delta": 0.13588995414756147,
+     "lo": 0.079639282735613,
+     "hi": 0.19575584995761283,
+     "separated": true
+    },
+    "S-POS@30": {
+     "delta": -0.26946320939175,
+     "lo": -0.5330633401048199,
+     "hi": -0.008329239015657634,
+     "separated": true
+    },
+    "S-POS@50": {
+     "delta": -1.476514681076578,
+     "lo": -2.2003678021502293,
+     "hi": -0.7641704404568985,
+     "separated": true
+    },
+    "S-POS@80": {
+     "delta": -3.982865111083309,
+     "lo": -5.580298867046082,
+     "hi": -2.365670103173438,
+     "separated": true
+    },
+    "M1 crawl share": {
+     "delta": 0.018107360681889804,
+     "lo": 0.007191141623080375,
+     "hi": 0.030630204720269928,
+     "separated": true
+    }
+   },
+   "rows_RIC0_minus_P10": {
+    "ADE6": {
+     "delta": -1.0611814857901574,
+     "lo": -1.254102144325278,
+     "hi": -0.8709013227199258,
+     "separated": true
+    },
+    "speed MAE": {
+     "delta": -0.757831200395354,
+     "lo": -0.9567999164337412,
+     "hi": -0.5776816500949259,
+     "separated": true
+    },
+    "along-track MAE": {
+     "delta": -0.5825797929900582,
+     "lo": -0.7588828577766464,
+     "hi": -0.409770637178861,
+     "separated": true
+    },
+    "accel MAE": {
+     "delta": -0.9444269819051374,
+     "lo": -1.3195708185321209,
+     "hi": -0.6315047165116479,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "delta": -0.018487394957983194,
+     "lo": -0.03709855837853268,
+     "hi": -0.001747948232323234,
+     "separated": true
+    },
+    "DK-HW": {
+     "delta": -0.3767036123286044,
+     "lo": -0.7476620041845204,
+     "hi": -0.06558830439170137,
+     "separated": true
+    },
+    "DK-TG": {
+     "delta": -0.08093508073031942,
+     "lo": -0.1492059753127415,
+     "hi": -0.018790343768089964,
+     "separated": true
+    },
+    "heading MAE": {
+     "delta": -1.840795388273408,
+     "lo": -2.5950315537514093,
+     "hi": -1.098521798945446,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "delta": 2.8768845046708518,
+     "lo": 0.06684684187692774,
+     "hi": 6.01541365689308,
+     "separated": true
+    },
+    "curvature MAE": {
+     "delta": 0.09874109417516723,
+     "lo": 0.06118170199872903,
+     "hi": 0.14251527010594123,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "delta": -0.8651709243913354,
+     "lo": -0.9954030182879935,
+     "hi": -0.7469860085247024,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -2.552339185826165,
+     "lo": -3.765348042385054,
+     "hi": -1.5247465179329627,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.04583161199683138,
+     "lo": 0.018612698906248237,
+     "hi": 0.07712829606735916,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "delta": 0.13755731554814507,
+     "lo": 0.09549525170516907,
+     "hi": 0.18175753392945082,
+     "separated": true
+    },
+    "TAC-LON": {
+     "delta": 0.14005835764902042,
+     "lo": 0.08050521415629479,
+     "hi": 0.19708963884263112,
+     "separated": true
+    },
+    "S-POS@30": {
+     "delta": -1.0478442713304685,
+     "lo": -1.4219485305102195,
+     "hi": -0.7147064348188793,
+     "separated": true
+    },
+    "S-POS@50": {
+     "delta": -3.752107495033398,
+     "lo": -4.732259356440243,
+     "hi": -2.890224875955896,
+     "separated": true
+    },
+    "S-POS@80": {
+     "delta": -9.116877074654592,
+     "lo": -11.112075865264627,
+     "hi": -7.208531105504269,
+     "separated": true
+    },
+    "M1 crawl share": {
+     "delta": 0.05958606582085397,
+     "lo": 0.03679962438325291,
+     "hi": 0.08601298106669812,
+     "separated": true
+    }
+   },
+   "status_BLIND1_minus_RIC0": {
+    "ADE6": "worse",
+    "speed MAE": "n.s.",
+    "along-track MAE": "worse",
+    "accel MAE": "n.s.",
+    "DK-VIOL": "worse",
+    "DK-HW": "worse",
+    "DK-TG": "worse",
+    "heading MAE": "worse",
+    "yaw-rate MAE": "better",
+    "curvature MAE": "better",
+    "cross-track MAE": "worse",
+    "L1 lateral-accel MAE": "better",
+    "L2 curvature MAE (GT>=5.2)": "n.s.",
+    "TAC-LAT": "n.s.",
+    "TAC-LON": "n.s.",
+    "S-POS@30": "worse",
+    "S-POS@50": "worse",
+    "S-POS@80": "worse",
+    "M1 crawl share": "better"
+   },
+   "status_BLIND1_minus_P10": {
+    "ADE6": "n.s.",
+    "speed MAE": "better",
+    "along-track MAE": "better",
+    "accel MAE": "better",
+    "DK-VIOL": "n.s.",
+    "DK-HW": "n.s.",
+    "DK-TG": "worse",
+    "heading MAE": "better",
+    "yaw-rate MAE": "better",
+    "curvature MAE": "worse",
+    "cross-track MAE": "n.s.",
+    "L1 lateral-accel MAE": "better",
+    "L2 curvature MAE (GT>=5.2)": "worse",
+    "TAC-LAT": "better",
+    "TAC-LON": "better",
+    "S-POS@30": "better",
+    "S-POS@50": "better",
+    "S-POS@80": "better",
+    "M1 crawl share": "worse"
+   },
+   "status_RIC0_minus_P10": {
+    "ADE6": "better",
+    "speed MAE": "better",
+    "along-track MAE": "better",
+    "accel MAE": "better",
+    "DK-VIOL": "better",
+    "DK-HW": "better",
+    "DK-TG": "better",
+    "heading MAE": "better",
+    "yaw-rate MAE": "worse",
+    "curvature MAE": "worse",
+    "cross-track MAE": "better",
+    "L1 lateral-accel MAE": "better",
+    "L2 curvature MAE (GT>=5.2)": "worse",
+    "TAC-LAT": "better",
+    "TAC-LON": "better",
+    "S-POS@30": "better",
+    "S-POS@50": "better",
+    "S-POS@80": "better",
+    "M1 crawl share": "worse"
+   },
+   "separated_better_rows": [
+    "L1 lateral-accel MAE",
+    "M1 crawl share",
+    "curvature MAE",
+    "yaw-rate MAE"
+   ],
+   "separated_worse_rows": [
+    "ADE6",
+    "DK-HW",
+    "DK-TG",
+    "DK-VIOL",
+    "S-POS@30",
+    "S-POS@50",
+    "S-POS@80",
+    "along-track MAE",
+    "cross-track MAE",
+    "heading MAE"
+   ],
+   "strategic_rows_beside_PAUSED": {
+    "S-POS@30": {
+     "B": {
+      "delta": 0.9054050575655285,
+      "lo": 0.4556473776260251,
+      "hi": 1.4017919455223389,
+      "separated": true
+     },
+     "status": "worse"
+    },
+    "S-POS@50": {
+     "B": {
+      "delta": 1.9338432780551906,
+      "lo": 1.0611312176702343,
+      "hi": 2.8744054290298235,
+      "separated": true
+     },
+     "status": "worse"
+    },
+    "S-POS@80": {
+     "B": {
+      "delta": 3.965458659365684,
+      "lo": 2.3943103065371445,
+      "hi": 5.588747907805131,
+      "separated": true
+     },
+     "status": "worse"
+    }
+   },
+   "family_tables": {
+    "BLIND1_minus_RIC0": {
+     "LONGITUDINAL": {
+      "n_rows": 6,
+      "separated_better": [],
+      "separated_worse": [
+       "along-track MAE",
+       "DK-VIOL",
+       "DK-HW",
+       "DK-TG"
+      ]
+     },
+     "LATERAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "yaw-rate MAE",
+       "curvature MAE",
+       "L1 lateral-accel MAE"
+      ],
+      "separated_worse": [
+       "heading MAE",
+       "cross-track MAE"
+      ]
+     },
+     "TACTICAL": {
+      "n_rows": 2,
+      "separated_better": [],
+      "separated_worse": []
+     },
+     "STRATEGIC": {
+      "n_rows": 3,
+      "separated_better": [],
+      "separated_worse": [
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80"
+      ]
+     }
+    },
+    "BLIND1_minus_P10": {
+     "LONGITUDINAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "speed MAE",
+       "along-track MAE",
+       "accel MAE"
+      ],
+      "separated_worse": [
+       "DK-TG"
+      ]
+     },
+     "LATERAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "heading MAE",
+       "yaw-rate MAE",
+       "L1 lateral-accel MAE"
+      ],
+      "separated_worse": [
+       "curvature MAE",
+       "L2 curvature MAE (GT>=5.2)"
+      ]
+     },
+     "TACTICAL": {
+      "n_rows": 2,
+      "separated_better": [
+       "TAC-LAT",
+       "TAC-LON"
+      ],
+      "separated_worse": []
+     },
+     "STRATEGIC": {
+      "n_rows": 3,
+      "separated_better": [
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80"
+      ],
+      "separated_worse": []
+     }
+    },
+    "RIC0_minus_P10": {
+     "LONGITUDINAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "speed MAE",
+       "along-track MAE",
+       "accel MAE",
+       "DK-VIOL",
+       "DK-HW",
+       "DK-TG"
+      ],
+      "separated_worse": []
+     },
+     "LATERAL": {
+      "n_rows": 6,
+      "separated_better": [
+       "heading MAE",
+       "cross-track MAE",
+       "L1 lateral-accel MAE"
+      ],
+      "separated_worse": [
+       "yaw-rate MAE",
+       "curvature MAE",
+       "L2 curvature MAE (GT>=5.2)"
+      ]
+     },
+     "TACTICAL": {
+      "n_rows": 2,
+      "separated_better": [
+       "TAC-LAT",
+       "TAC-LON"
+      ],
+      "separated_worse": []
+     },
+     "STRATEGIC": {
+      "n_rows": 3,
+      "separated_better": [
+       "S-POS@30",
+       "S-POS@50",
+       "S-POS@80"
+      ],
+      "separated_worse": []
+     }
+    }
+   },
+   "M1_per_class_split": {
+    "n_windows": 2106,
+    "n_episodes_pool": 135,
+    "pool": "masked",
+    "delta": -0.04147870513896415,
+    "lo": -0.06535610894158368,
+    "hi": -0.020778069211451516,
+    "separated": true,
+    "classes": {
+     "L": {
+      "n": 255,
+      "n_episodes": 45,
+      "w": 0.12108262108262108,
+      "delta": -0.21624569114564407,
+      "delta_lo": -0.341839991312513,
+      "delta_hi": -0.1023275170816584,
+      "delta_n_nan_draws": 0,
+      "contribution": -0.02618359508173753,
+      "contribution_lo": -0.04516617042364903,
+      "contribution_hi": -0.011141174480367371,
+      "share": 0.6312539167752674,
+      "share_lo": 0.40792352507620333,
+      "share_hi": 0.8076701267306652,
+      "share_n_nan_draws": 0
+     },
+     "S": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": -0.0,
+      "share_lo": -0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "O": {
+      "n": 0,
+      "n_episodes": 0,
+      "w": 0.0,
+      "delta": null,
+      "delta_lo": null,
+      "delta_hi": null,
+      "delta_n_nan_draws": 2000,
+      "contribution": 0.0,
+      "contribution_lo": 0.0,
+      "contribution_hi": 0.0,
+      "share": -0.0,
+      "share_lo": -0.0,
+      "share_hi": 0.0,
+      "share_n_nan_draws": 0
+     },
+     "M": {
+      "n": 1851,
+      "n_episodes": 132,
+      "w": 0.8789173789173789,
+      "delta": -0.01740221598083158,
+      "delta_lo": -0.031414574238048186,
+      "delta_hi": -0.006647744921846482,
+      "delta_n_nan_draws": 0,
+      "contribution": -0.015295110057226618,
+      "contribution_lo": -0.027478747672223042,
+      "contribution_hi": -0.005851618876596362,
+      "share": 0.3687460832247326,
+      "share_lo": 0.19232987326933482,
+      "share_hi": 0.5920764749237966,
+      "share_n_nan_draws": 0
+     }
+    },
+    "n_boot": 2000,
+    "seed": 0,
+    "trigger": {
+     "share": 0.6312539167752674,
+     "lo": 0.40792352507620333,
+     "hi": 0.8076701267306652,
+     "n_nan_draws": 0,
+     "contribution": -0.02618359508173753,
+     "w": 0.12108262108262108
+    },
+    "trigger_zeroed": {
+     "delta": -0.015295110057226618,
+     "lo": -0.027478747672223042,
+     "hi": -0.005851618876596362,
+     "separated": true
+    },
+    "_share_sum_max_abs_dev_over_draws": 2.220446049250313e-16,
+    "_class_sum_identity_abs_dev": 0.0
+   },
+   "ticks_n": 7197,
+   "family_of": {
+    "ADE6": "PRIMARY",
+    "speed MAE": "LONGITUDINAL",
+    "along-track MAE": "LONGITUDINAL",
+    "accel MAE": "LONGITUDINAL",
+    "DK-VIOL": "LONGITUDINAL",
+    "DK-HW": "LONGITUDINAL",
+    "DK-TG": "LONGITUDINAL",
+    "heading MAE": "LATERAL",
+    "yaw-rate MAE": "LATERAL",
+    "curvature MAE": "LATERAL",
+    "cross-track MAE": "LATERAL",
+    "L1 lateral-accel MAE": "LATERAL",
+    "L2 curvature MAE (GT>=5.2)": "LATERAL",
+    "TAC-LAT": "TACTICAL",
+    "TAC-LON": "TACTICAL",
+    "S-POS@30": "STRATEGIC",
+    "S-POS@50": "STRATEGIC",
+    "S-POS@80": "STRATEGIC",
+    "M1 crawl share": "crawl"
+   }
+  }
+ },
+ "outcome": "VISION-USED",
+ "outcome_reading_beside": {
+  "primary_reading": "VISION-USED iff (ADE6 cond or M1 cond) at BOTH seeds",
+  "strict_reading_ADE_both_or_M1_both": "VISION-USED",
+  "at_least_one_seed_reading": "a USED condition holds at >= 1 seed"
+ },
+ "outcome_rule_reading": "'At both seeds' applies to the whole disjunction: (ADE6 B separated-worse with point > F) or (M1 B separated either direction) must hold at EACH seed; pinned in this reader before any BLIND1 window was scored",
+ "next_committed_by_card": "RENDER-GAP-BINDS (read with T2's BLIND ~ C0): the LoRA dominance card gains a gate before LC's T2 read counts (L-BLIND at T2 separated from L on ADE6 or M1); a render-robustness lever gets its own card (adapt the encoder to NuRec renders, or render-domain augmentation), aimed at T2.",
+ "wall_s": 14.526395797729492
+}

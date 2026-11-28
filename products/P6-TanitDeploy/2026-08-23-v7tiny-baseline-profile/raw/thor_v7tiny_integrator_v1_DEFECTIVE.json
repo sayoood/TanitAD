@@ -1,0 +1,57 @@
+{
+ "spec": "E-DEPLOY-1d",
+ "controls": {
+  "zero_control_is_straight_line": {
+   "expect": "x[T-1] ~= v0*T*dt and y == 0 everywhere",
+   "v0_m_s": 10.925131797790527,
+   "x_end_m": 65.55082702636719,
+   "x_expect_m": 65.55079078674316,
+   "y_absmax": 0.0,
+   "pass": true
+  }
+ },
+ "standalone_deviation": {
+  "fp16": {
+   "max_abs_m": 0.0,
+   "mean_abs_m": 0.0,
+   "out_dtype": "torch.float32",
+   "ulp_at_x_end_m": 0.0625,
+   "deviation_in_ulp": 0.0,
+   "per_step_t0": 0.0,
+   "per_step_t9": 0.0,
+   "per_step_t29": 0.0,
+   "per_step_t59": 0.0,
+   "monotone_nondecreasing": true,
+   "reproduces_end_to_end": {
+    "standalone_m": 0.0,
+    "end_to_end_m": 0.086628,
+    "ratio_standalone_over_e2e": 0.0,
+    "same_order_of_magnitude": false
+   }
+  },
+  "bf16": {
+   "max_abs_m": 0.0,
+   "mean_abs_m": 0.0,
+   "out_dtype": "torch.float32",
+   "ulp_at_x_end_m": 0.5,
+   "deviation_in_ulp": 0.0,
+   "per_step_t0": 0.0,
+   "per_step_t9": 0.0,
+   "per_step_t29": 0.0,
+   "per_step_t59": 0.0,
+   "monotone_nondecreasing": true,
+   "reproduces_end_to_end": {
+    "standalone_m": 0.0,
+    "end_to_end_m": 2.6179,
+    "ratio_standalone_over_e2e": 0.0,
+    "same_order_of_magnitude": false
+   }
+  }
+ },
+ "end_to_end_reference": {
+  "note": "from raw/thor_v7tiny_mechanism.json, b=1",
+  "fp16_max_abs_m": 0.086628,
+  "bf16_max_abs_m": 2.6179
+ },
+ "_evidence_class": "MEASURED (ours; Thor, in-process probes only)"
+}

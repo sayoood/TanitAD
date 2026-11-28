@@ -134,6 +134,21 @@ Concentrate. Everything else is paused with its state banked, not abandoned. Pro
 Until P1 re-validation lands, **all closed-loop numbers are labelled EXTRAPOLATION** and none enters
 a kill conjunction. This is already in flight.
 
+> ⏹ **CLOSED / SUPERSEDED 2026-08-16 — the closed-loop measurement was repaired, and the blanket
+> "EXTRAPOLATION" label is replaced by a finer, BINDING scheme.** `Project Steering/EVAL_DOCTRINE.md`
+> now defines three tiers and `CLAUDE.md` makes them binding: **T0** (teacher-forced) is a WM
+> diagnostic and **never** "driving performance"; **T1** (action-closed loop — the model conditioned
+> on its OWN actions) is the **PRIMARY tier for any capability claim**; **T2** (re-perception sim) is
+> not provisioned. The instrument exists and has been run: **`taniteval/tools/t1_eval.py`** (E1.2),
+> with the **T1 four-family rescore MEASURED 2026-08-12** over 6 arms / 15 paired contrasts on a
+> 6 844-window grid, `rule_satisfied: true` — `Project Steering/MODEL_REGISTRY.md` §1.13.
+> ⇒ **Replace "label it EXTRAPOLATION" with "stamp its TIER".** A number without a tier stamp is
+> incomplete, and cross-tier comparisons are invalid.
+> ⚠️ **Still true, and it is the finding that justified the whole M6 concern:** open-loop does **not**
+> predict closed-loop — lateral skill open-loop was an ACTION ECHO (S-curve reproduction 97.9 %
+> open-loop, **0.0 %** hold-action, ~5 % closed-loop). T2 remains unprovisioned.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ---
 
 ## 3. v4 — the honest answer to "why will the next run be the breakthrough"
@@ -266,9 +281,9 @@ to *not* restart v4 and instead carry the fan into the v2-corpus line, which fin
 
 | # | stream | why it earns a slot |
 |---|---|---|
-| **S-1** | **Closed-loop measurability** (P1 envelope → certified instrument → a horizon that is a genuine measurement) | Nothing in D-A can be honestly claimed until this lands. Blocks the most valuable claim we want to make. |
+| **S-1** | **Closed-loop measurability** (P1 envelope → certified instrument → a horizon that is a genuine measurement) | ~~Nothing in D-A can be honestly claimed until this lands. Blocks the most valuable claim we want to make.~~ ⏹ **CLOSED 2026-08-16 — the instrument LANDED.** `taniteval/tools/t1_eval.py` (E1.2) + the binding T0/T1/T2 tiers in `EVAL_DOCTRINE.md`; T1 four-family rescore MEASURED 2026-08-12, `rule_satisfied: true` (`MODEL_REGISTRY.md` §1.13). Numbers now carry a **tier stamp** instead of a blanket EXTRAPOLATION label. ⚠️ T2 (re-perception sim) remains **not provisioned**. Swept by the 2026-08-16 stale-blocker sweep |
 | **S-2** | **The selector** (Bar A test → then Bar B lever or an explicit decision not to restart) | We have a world model whose proposals beat our deployed model by 41 %. Converting that is the highest-value engineering task in the program. |
-| **S-3** | **v2-corpus arm to completion** (~54 h) + its gate, with M4's mid-run held-out probe attached | Already running, single-variable, and it is the clean test of the corpus hypothesis. |
+| **S-3** | **v2-corpus arm to completion** (~54 h) + its gate, with M4's mid-run held-out probe attached | ~~Already running~~, single-variable, and it is the clean test of the corpus hypothesis. ⚠️ **RE-PROBE 2026-08-16 — "already running" is UNVERIFIED.** `MODEL_REGISTRY.md` §1.7 still reads 🟢 RUNNING with an ETA of **2026-07-29T01:10Z** (18 days past) and carries no completion row; `BACKLOG.md` C1 records this run's host (pod1) as having `/dev/nvidia*` empty. **Not asserted dead, not asserted finished — probe before scheduling against it.** ⚠️ Do not substitute `flagship-v1arch-v2bal-30k`: same corpus, but the **v1-architecture / levers-false** arm, so it is not this single-variable test. Swept by the 2026-08-16 stale-blocker sweep |
 
 Paused with state banked: H2 (finishing its first training run), IDM/YouTube, 4-brain HP-2…HP-8,
 datasets/AV2, Orin/Thor, AlpaSim consolidation.

@@ -1,0 +1,162 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box, numpy)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "parity": false,
+ "purpose": "does the oracle probe detect predictable movement where it certainly exists? if not, the latent numbers are void",
+ "n_clips": 24,
+ "materiality_floor": 0.01,
+ "representations": {
+  "ego": {
+   "dim": 4,
+   "lag1_cos": 0.9154,
+   "lag5_cos": 0.9181,
+   "best_em": 0.987148,
+   "best_lambda": 100.0,
+   "ci95": [
+    0.941913,
+    0.996377
+   ],
+   "n_test_clips": 12,
+   "ridge": {
+    "ridge_0.0001": {
+     "em": 0.962174,
+     "ci95": [
+      0.820036,
+      0.993177
+     ]
+    },
+    "ridge_0.01": {
+     "em": 0.962187,
+     "ci95": [
+      0.818355,
+      0.992524
+     ]
+    },
+    "ridge_1": {
+     "em": 0.963424,
+     "ci95": [
+      0.833631,
+      0.992938
+     ]
+    },
+    "ridge_100": {
+     "em": 0.987148,
+     "ci95": [
+      0.941913,
+      0.996377
+     ]
+    },
+    "ridge_10000": {
+     "em": 0.978643,
+     "ci95": [
+      0.92834,
+      0.988177
+     ]
+    }
+   },
+   "verdict": "PREDICTABLE"
+  },
+  "ego_hi": {
+   "dim": 10,
+   "lag1_cos": 0.897,
+   "lag5_cos": 0.8601,
+   "best_em": 0.500193,
+   "best_lambda": 100.0,
+   "ci95": [
+    0.323186,
+    0.805986
+   ],
+   "n_test_clips": 12,
+   "ridge": {
+    "ridge_0.0001": {
+     "em": -5.72136,
+     "ci95": [
+      -30.230141,
+      0.502955
+     ]
+    },
+    "ridge_0.01": {
+     "em": -3.950268,
+     "ci95": [
+      -22.243085,
+      0.514391
+     ]
+    },
+    "ridge_1": {
+     "em": 0.492361,
+     "ci95": [
+      0.235578,
+      0.753698
+     ]
+    },
+    "ridge_100": {
+     "em": 0.500193,
+     "ci95": [
+      0.323186,
+      0.805986
+     ]
+    },
+    "ridge_10000": {
+     "em": 0.354902,
+     "ci95": [
+      0.138927,
+      0.752781
+     ]
+    }
+   },
+   "verdict": "PREDICTABLE"
+  },
+  "pixel": {
+   "dim": 640,
+   "lag1_cos": 0.164,
+   "lag5_cos": -0.031,
+   "best_em": 0.000958,
+   "best_lambda": 10000.0,
+   "ci95": [
+    0.000298,
+    0.00156
+   ],
+   "n_test_clips": 12,
+   "ridge": {
+    "ridge_0.0001": {
+     "em": -6.714806,
+     "ci95": [
+      -11.676921,
+      -3.983911
+     ]
+    },
+    "ridge_0.01": {
+     "em": -3.81349,
+     "ci95": [
+      -6.362964,
+      -2.360532
+     ]
+    },
+    "ridge_1": {
+     "em": -0.402698,
+     "ci95": [
+      -0.979374,
+      -0.104232
+     ]
+    },
+    "ridge_100": {
+     "em": 0.019016,
+     "ci95": [
+      -0.017537,
+      0.042585
+     ]
+    },
+    "ridge_10000": {
+     "em": 0.000958,
+     "ci95": [
+      0.000298,
+      0.00156
+     ]
+    }
+   },
+   "verdict": "NOT predictable (== hold)"
+  }
+ },
+ "probe_valid": true,
+ "verdict": "PROBE VALID: it detects predictable movement on ego kinematics, so its reading that the LEARNED LATENT's per-tick movement is ~98 % unpredictable is a statement about the representation, not an artifact of the estimator."
+}

@@ -1,0 +1,34 @@
+{
+  "superseded": true,
+  "schema_version": "s2-strategic-v1",
+  "superseded_on": "2026-08-16",
+  "commit": "06b8782",
+  "superseded_by": "../review/labels_v2",
+  "reason": "The PI adjudicated the geometric lane-change derivation ~78% WRONG on LANE_TARGET; the derivation was REMOVED and the corrected set rebuilt. This directory's 80 LANE_TARGET / 80 PREPARE_LANE_CHANGE rows are the wrong ones.",
+  "evidence": [
+    "review/PI_VERDICTS_2026-08-16.json",
+    "review/PI_REVIEW_FINDINGS.md",
+    "review/LANE_CHANGE_DEEP_REVIEW.md"
+  ],
+  "delta_measured_by_the_loader": {
+    "_read": "MEASURED 2026-08-16 by stack/scripts/s2_labels.load_s2_labels on BOTH directories, n=797 records each. Record counts, not windows.",
+    "g_str": {
+      "LANE_TARGET": "80 -> 0",
+      "FOLLOW_MAIN_ROAD": "395 -> 474",
+      "NONE_ABSTAIN": "13 -> 14",
+      "STOP_AT": "59 -> 59",
+      "TURN_LEFT": "137 -> 137",
+      "TURN_RIGHT": "113 -> 113"
+    },
+    "a_str": {
+      "PREPARE_LANE_CHANGE": "80 -> 0",
+      "HOLD_CORRIDOR": "526 -> 597",
+      "REDUCE_TO": "85 -> 94",
+      "PREPARE_STOP": "88 -> 88",
+      "RESUME_CRUISE": "18 -> 18"
+    }
+  },
+  "open_defect_in_the_successor": "a_str has NO abstain token (STRATEGIC_ACTION_TOKENS is six positive manoeuvres), so the 80 removed PREPARE_LANE_CHANGE rows were REASSIGNED to 71 HOLD_CORRIDOR + 9 REDUCE_TO rather than declined. s2_labels now supports a per-family abstain mask ('abstain': true, no token) that the NEXT label build should emit for those rows; until it does, those 80 a_str targets are UNVERIFIED, not corrected.",
+  "_read": "stack/scripts/s2_labels.load_s2_labels REFUSES any directory carrying this file and prints superseded_by. Do not delete it to 'make the old path work' — the old path is 80 wrong CE targets, and the loader is the only thing standing between them and the strategic head.",
+  "_evidence_class": "MEASURED (ours; the loader, both directories, 2026-08-16)"
+}

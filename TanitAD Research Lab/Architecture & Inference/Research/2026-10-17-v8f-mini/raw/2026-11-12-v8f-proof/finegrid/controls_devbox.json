@@ -1,0 +1,19 @@
+{
+ "g1": true,
+ "g3": true,
+ "g4": true,
+ "g6_forward": true,
+ "notes": {
+  "written": "2026-11-18, dev box, CPU, synthetic data only; handed to finegrid_read.py with --controls-json",
+  "code_sha256": {
+   "tok_probe_g.py": "7fe801655b91a1ae26f53c7d6c7c01454844cdd55ec9785bc0b3175a5fdf5820",
+   "pod_finegrid_run.sh": "86fca71df32bd6a251d43f476afa28ab258d615858810a26c84f953e2f7638e4",
+   "finegrid_read.py": "eae818c12216abd7dedebe2cb6c1a45093a0d3c243e06648bae0e8efef7908e9"
+  },
+  "g1": "test_g1_default_grid_gives_bit_identical_probe_weights_to_the_banked_tool: four TK arms, 30 steps, probe weights bit-identical to tokprobe/tok_probe.py with --grid pool4x10 and with the default; step losses and extract outputs equal",
+  "g3": "test_g3_planted_tokens_at_160_tokens_are_read_back_above_0_9_on_held_out_clips (F16_s0, 300 steps, held-out gap R2 above 0.9)",
+  "g4": "test_g4_* (non-zero gradient on the per-token network and head, exactly 0.0 on the control parameter, at 160 tokens, arms F16_s0 and F64_s1; loss-line mutation reads 0.0) and run_mutations_g.py: 9 of 9 mutations red, unmutated control green (MUTATIONS_G.json)",
+  "g6_forward": "test_g6_the_forward_takes_the_token_array_only_and_labels_cannot_change_outputs_at_160_tokens and the label-function-replaced-by-noise check inside test_extract_at_160_tokens_*",
+  "suite": "test_tok_probe_g.py 20 passed; test_finegrid_read.py 18 passed"
+ }
+}

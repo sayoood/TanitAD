@@ -1,0 +1,74 @@
+{
+ "why": "Defect (found when the LF5 chain's reader failed, 2026-11-06 06:21): with sigma = 0 the LF5 tool writes the header value\n``floor_vhat_noise_seed = None`` into the ticks npz, which numpy stores as a 0-d OBJECT array. The pinned loader\n(t1hd_read.load_ticks, called by extract_smooth.py) opens ticks with allow_pickle=False and refuses the whole file.\nThe noise arms carry an int64 seed there and extracted fine; the A4 tool wrote no such key and its ticks extracted fine.",
+ "results": [
+  {
+   "tag": "RILFO100_s0",
+   "orig_path": "F:/TanitAD-scratch/motion_c/lf5_read/out/RILFO100_s0/ticks/ticks_RILFO100_s0.npz.objseed_orig",
+   "orig_sha256": "a44ddcb401dc20f2ee2957decccfadd39a8afec6e1030c8e824ab99c057f72d3",
+   "dropped": {
+    "member": "floor_vhat_noise_seed.npy",
+    "dtype": "object",
+    "shape": [],
+    "value_is_None": true
+   },
+   "n_members_orig": 51,
+   "n_members_new": 50,
+   "kept_members_byte_identical": true,
+   "new_loads_without_pickle": true,
+   "new_sha256": "c55f9319fb311ce1cd53d153cd236fcafb0b540d2ac63c3898c55ee83844cf2d",
+   "PASS": true
+  },
+  {
+   "tag": "RILFO100_s1",
+   "orig_path": "F:/TanitAD-scratch/motion_c/lf5_read/out/RILFO100_s1/ticks/ticks_RILFO100_s1.npz.objseed_orig",
+   "orig_sha256": "a905d678a7c4f062fbfd584c53601fac02ec32c1f4fad5c6a0354c3d570b4aaa",
+   "dropped": {
+    "member": "floor_vhat_noise_seed.npy",
+    "dtype": "object",
+    "shape": [],
+    "value_is_None": true
+   },
+   "n_members_orig": 51,
+   "n_members_new": 50,
+   "kept_members_byte_identical": true,
+   "new_loads_without_pickle": true,
+   "new_sha256": "68d2b15f2ba1d2f9c5b4719cfa5a24bf626bc3a6b06c95b9cabcb903c36df895",
+   "PASS": true
+  },
+  {
+   "tag": "RILFO100C_s0",
+   "orig_path": "F:/TanitAD-scratch/motion_c/lf5_read/out/RILFO100C_s0/ticks/ticks_RILFO100C_s0.npz.objseed_orig",
+   "orig_sha256": "7248b3ecc14c0aa7da05ddbaa8c4811f45ff4503c9a5a8ebe6f92c01c5a538e1",
+   "dropped": {
+    "member": "floor_vhat_noise_seed.npy",
+    "dtype": "object",
+    "shape": [],
+    "value_is_None": true
+   },
+   "n_members_orig": 53,
+   "n_members_new": 52,
+   "kept_members_byte_identical": true,
+   "new_loads_without_pickle": true,
+   "new_sha256": "6936e798523f5c1cd3954c7a3b07f23c04a21bd449fcd062ccb5e5378725485e",
+   "PASS": true
+  },
+  {
+   "tag": "RILFO100C_s1",
+   "orig_path": "F:/TanitAD-scratch/motion_c/lf5_read/out/RILFO100C_s1/ticks/ticks_RILFO100C_s1.npz.objseed_orig",
+   "orig_sha256": "12d1a427139d5ef577152e019bc2dc853b57be6e328fb9f59fccfc030c86641f",
+   "dropped": {
+    "member": "floor_vhat_noise_seed.npy",
+    "dtype": "object",
+    "shape": [],
+    "value_is_None": true
+   },
+   "n_members_orig": 53,
+   "n_members_new": 52,
+   "kept_members_byte_identical": true,
+   "new_loads_without_pickle": true,
+   "new_sha256": "b9ccd0612f93d9fae149be0748410173176e3281337d2e41d4cb8870cf08a5a2",
+   "PASS": true
+  }
+ ],
+ "PASS": true
+}

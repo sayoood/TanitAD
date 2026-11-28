@@ -1,0 +1,42 @@
+unmutated suite: 14 checks, 0 failing []  (109 s)
+mutation                                                                 caught-by (failing checks)
+the token check is deleted (verify never refuses)                        E_no_trainer_without_a_token
+the token check before the trainer start is deleted                      E_no_trainer_without_a_token
+the GPU lock acquisition is deleted                                      F_lock_discipline, G_foreign_lock_waited_for_never_removed
+the chain REMOVES a foreign lock while it waits                          G_foreign_lock_waited_for_never_removed
+the chain ignores the chain_active marker                                G_foreign_lock_waited_for_never_removed
+a DONE check is skipped (every stage re-runs)                            C_resume_after_interruption, D_resume_by_content_not_presence
+resume trusts presence, not content                                      D_resume_by_content_not_presence
+the read is not given --families-per-set                                 H_families_read_integration_and_rule_e
+the chain holds the lock around the cache driver                         F_lock_discipline
+SY < 0.10 does not stop the chain                                        I_stop_points
+a failed I6 / G15 does not stop the chain                                I_stop_points
+DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (a real t A_stage_order_and_markers
+the mint-stage name guard is deleted (a wrong token_check_names override L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the mint-stage guard ignores the status (a check that is not PASS passes L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the mint-stage guard checks only the G14 / G15 names, not every value (a L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the mint-stage guard always reads the first seed's token (the second see L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+  [M] failing parts: ['a_json_null_value_refuses', 'a_non_object_refuses', 'a_non_string_profile_refuses', 'a_non_string_value_refuses', 'a_refusal_leaves_the_state_dir_reusable', 'a_stray_key_with_a_wrong_value_refuses', 'an_unimportable_launch_gate_fails_closed', 'an_unknown_profile_refuses', 'one_wrong_value_refuses_and_the_good_default_is_not_blamed', 'override_naming_G14_refuses_before_s0', 'the_default_names_are_refused_under_a_profile_that_does_not_mint_them', 'the_old_pair_refuses', 'the_same_name_is_refused_under_refe_hnscreen']
+the config-load check is not called (a wrong override runs on to the min M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['a_json_null_value_refuses', 'a_non_string_value_refuses', 'a_refusal_leaves_the_state_dir_reusable', 'a_stray_key_with_a_wrong_value_refuses', 'one_wrong_value_refuses_and_the_good_default_is_not_blamed', 'override_naming_G14_refuses_before_s0', 'the_default_names_are_refused_under_a_profile_that_does_not_mint_them', 'the_old_pair_refuses', 'the_same_name_is_refused_under_refe_hnscreen']
+the config-load check judges no membership (any value passes)            M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+the config-load check accepts an unknown profile                         M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+the config-load check accepts a non-object token_check_names             M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['a_stray_key_with_a_wrong_value_refuses']
+the config-load check judges only the G14 / G15 keys (a stray key slips  M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['a_name_of_the_configured_profile_passes', 'the_default_names_are_refused_under_a_profile_that_does_not_mint_them']
+the config-load check reads the refe_hnscreen checks whatever gate.profi M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['an_unimportable_launch_gate_fails_closed']
+the config-load check fails OPEN when launch_gate cannot be imported     M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['a_fresh_isolated_interpreter_finds_the_real_launch_gate_by_itself']
+the config-load check does not put the module's own directory on sys.pat M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['a_json_null_value_refuses', 'a_non_object_refuses', 'a_non_string_profile_refuses', 'a_non_string_value_refuses', 'a_refusal_leaves_the_state_dir_reusable', 'a_stray_key_with_a_wrong_value_refuses', 'an_unknown_profile_refuses', 'one_wrong_value_refuses_and_the_good_default_is_not_blamed', 'override_naming_G14_refuses_before_s0', 'the_default_names_are_refused_under_a_profile_that_does_not_mint_them', 'the_old_pair_refuses', 'the_same_name_is_refused_under_refe_hnscreen']
+the config-load check runs AFTER the config is frozen (a refusal leaves  M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+  [M] failing parts: ['a_json_null_value_refuses', 'a_non_object_refuses', 'a_non_string_profile_refuses', 'a_non_string_value_refuses', 'a_stray_key_with_a_wrong_value_refuses', 'an_unimportable_launch_gate_fails_closed', 'an_unknown_profile_refuses', 'one_wrong_value_refuses_and_the_good_default_is_not_blamed', 'override_naming_G14_refuses_before_s0', 'the_default_names_are_refused_under_a_profile_that_does_not_mint_them', 'the_old_pair_refuses', 'the_same_name_is_refused_under_refe_hnscreen']
+the config-load refusal exits rc 0                                       M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+the argv lever check is skipped                                          J_named_parameters_and_levers
+rule E may fire twice                                                    H_families_read_integration_and_rule_e
+a failed gate before the read does not stop it                           I_stop_points
+the trainer is not released-and-archived on a retry (stale scores stay)  C_resume_after_interruption
+PROBLEM N: the shared dev-box lock files changed during the suite: (None, None) -> ((66, 1792694376935929700), None)
+ZZTEST_FAIL 1 problem(s)

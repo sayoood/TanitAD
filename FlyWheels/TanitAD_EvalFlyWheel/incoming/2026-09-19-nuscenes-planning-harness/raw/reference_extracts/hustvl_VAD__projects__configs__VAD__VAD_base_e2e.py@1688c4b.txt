@@ -1,0 +1,36 @@
+# PUBLISHED-CODE extract - hustvl/VAD @ 1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8
+# path: projects/configs/VAD/VAD_base_e2e.py
+# git blob sha1 of the fetched file: 0412e3f66252c0bc9161293ffd48710ac03acbb0 (17089 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 11-11: point_cloud_range
+   11  point_cloud_range = [-15.0, -30.0, -2.0, 15.0, 30.0, 2.0]
+
+## lines 330-355: test pipeline: range + name filters
+  330  test_pipeline = [
+  331      dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+  332      dict(type='LoadPointsFromFile',
+  333           coord_type='LIDAR',
+  334           load_dim=5,
+  335           use_dim=5,
+  336           file_client_args=file_client_args),
+  337      dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True, with_attr_label=True),
+  338      dict(type='CustomObjectRangeFilter', point_cloud_range=point_cloud_range),
+  339      dict(type='CustomObjectNameFilter', classes=class_names),
+  340      dict(type='NormalizeMultiviewImage', **img_norm_cfg),
+  341      # dict(type='PadMultiViewImage', size_divisor=32),
+  342      dict(
+  343          type='MultiScaleFlipAug3D',
+  344          img_scale=(1600, 900),
+  345          pts_scale_ratio=1,
+  346          flip=False,
+  347          transforms=[
+  348              dict(type='RandomScaleImageMultiViewImage', scales=[0.8]),
+  349              dict(type='PadMultiViewImage', size_divisor=32),
+  350              dict(type='CustomDefaultFormatBundle3D', class_names=class_names, with_label=False, with_ego=True),
+  351              dict(type='CustomCollect3D',\
+  352                   keys=['points', 'gt_bboxes_3d', 'gt_labels_3d', 'img', 'fut_valid_flag',
+  353                         'ego_his_trajs', 'ego_fut_trajs', 'ego_fut_masks', 'ego_fut_cmd',
+  354                         'ego_lcf_feat', 'gt_attr_labels'])])
+  355  ]
+

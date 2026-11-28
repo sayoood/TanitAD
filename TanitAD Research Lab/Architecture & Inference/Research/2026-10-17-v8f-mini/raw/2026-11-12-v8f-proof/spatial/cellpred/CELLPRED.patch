@@ -1,0 +1,627 @@
+diff --git a/stack/tanitad/models/hjepa.py b/stack/tanitad/models/hjepa.py
+--- a/stack/tanitad/models/hjepa.py
++++ b/stack/tanitad/models/hjepa.py
+@@ -24,6 +24,8 @@
+                                transition into one macro-action (Eq. 1; App. C.2).
+ * :class:`CausalPredictor`  -- causal transformer with adaptive-LayerNorm action conditioning;
+                                teacher-forced one-step loss (Eq. 2).
++* :class:`CellCausalPredictor` -- PREREG_V8F_PROOF_ADD16: the same interface as CausalPredictor, but the state is a grid
++                               of cells; attention across the cells of one step, then causal attention across time per cell.
+ * :class:`HJEPAStack`       -- the levels, the end-to-end loss (Eq. 3 + Eq. 8), autoregressive
+                                rollout, goal cost, candidate scoring (Eq. 5), the top-down
+                                gradient planner (Eqs. 4-6, K_{l+1} = 1) and two diagnostics:
+@@ -56,7 +58,7 @@
+ from torch import Tensor, nn
+ 
+ __all__ = [
+-    "SIGReg", "IDMHead", "LevelEncoder", "MacroActionEncoder", "CausalPredictor",
++    "SIGReg", "IDMHead", "LevelEncoder", "MacroActionEncoder", "CausalPredictor", "CellCausalPredictor",
+     "LevelConfig", "HJEPAEncoding", "PlanResult", "HJEPAStack",
+     "rho_within_episode", "donor_indices", "monotonicity", "param_grad_report",
+     "dead_parameters",
+@@ -415,6 +417,92 @@
+         return y + z_ctx if self.residual else y
+ 
+ 
++class _SpatialBlock(nn.Module):
++    """Pre-LN transformer block, NOT causal: self-attention over the tokens of ONE time step (the cells plus one action token).
++
++    ``x <- x + Attn(LN(x))``, ``x <- x + MLP(LN(x))``. The action enters as a token of the sequence (the card's design),
++    so the block carries no modulation of its own. Hand-written on ``scaled_dot_product_attention`` like :class:`_AdaLNBlock`.
++    """
++
++    def __init__(self, width: int, heads: int, ff: int, dropout: float):
++        super().__init__()
++        if width % heads:
++            raise ValueError("width must be divisible by heads")
++        self.heads, self.dropout = heads, dropout
++        self.ln1 = nn.LayerNorm(width)
++        self.ln2 = nn.LayerNorm(width)
++        self.qkv = nn.Linear(width, 3 * width)
++        self.proj = nn.Linear(width, width)
++        self.mlp = nn.Sequential(nn.Linear(width, ff), nn.GELU(), nn.Dropout(dropout),
++                                 nn.Linear(ff, width), nn.Dropout(dropout))
++
++    def forward(self, x: Tensor) -> Tensor:
++        b, n, w = x.shape
++        q, k, v = self.qkv(self.ln1(x)).reshape(b, n, 3, self.heads, w // self.heads).permute(2, 0, 3, 1, 4)
++        a = F.scaled_dot_product_attention(q, k, v, is_causal=False,
++                                           dropout_p=self.dropout if self.training else 0.0)
++        x = x + self.proj(a.transpose(1, 2).reshape(b, n, w))
++        return x + self.mlp(self.ln2(x))
++
++
++class CellCausalPredictor(nn.Module):
++    """PREREG_V8F_PROOF_ADD16 (CELLPRED): a level-1 predictor that keeps the cell layout of the state.
++
++    Same interface as :class:`CausalPredictor`: ``forward(z_ctx [B, L, D], a_ctx [B, L, E]) -> [B, L, D]``, attribute
++    ``context``, ``latent_dim``, ``action_dim``; ``D = n_cells * cell_dim`` and the state is laid out cell-major (cell ``c``
++    owns the numbers ``c * cell_dim : (c + 1) * cell_dim``, the layout of ``WMAux.z1``). Position ``i`` of the output is
++    the prediction of ``z_{i+1}`` from ``z_{<= i}`` and ``a_{<= i}`` (teacher forcing) and no skip carries the input state
++    to the output (``residual`` is not offered).
++
++    * tokens: every cell of every step is one token; ONE shared ``Linear(cell_dim, width)`` embeds a cell; a learned cell
++      position (``n_cells``) and a learned time position (``context``) are added;
++    * ``depth`` layers, each = (a) :class:`_SpatialBlock` over the ``n_cells`` cells of ONE step plus one token that carries
++      the embedded action of that step (the action token is re-appended at every layer and its updated value is dropped),
++      then (b) :class:`_AdaLNBlock` (causal over time, conditioned on the action embedding exactly as the flat predictor)
++      applied to each cell's own sequence over time;
++    * output: ONE shared two-layer map per cell, ``width -> width -> cell_dim``.
++
++    ``in_proj`` is the per-cell embedding, so ``in_proj.weight.shape[0]`` is the predictor width, as for the flat predictor.
++    """
++
++    def __init__(self, latent_dim: int, action_dim: int, n_cells: int, width: int = 128, depth: int = 2,
++                 heads: int = 4, ff: Optional[int] = None, context: int = 3, dropout: float = 0.0,
++                 adaln_init: str = "identity_gate"):
++        super().__init__()
++        if n_cells < 2 or latent_dim % n_cells:
++            raise ValueError(f"latent_dim {latent_dim} must be a multiple of n_cells {n_cells} (n_cells >= 2)")
++        self.latent_dim, self.action_dim, self.context = latent_dim, action_dim, context
++        self.n_cells, self.cell_dim = n_cells, latent_dim // n_cells
++        self.in_proj = nn.Linear(self.cell_dim, width)
++        self.cell_pos = nn.Parameter(torch.randn(n_cells, width) * 0.02)
++        self.time_pos = nn.Parameter(torch.randn(context, width) * 0.02)
++        self.act_tok = nn.Linear(action_dim, width)
++        ff_ = ff or 4 * width
++        self.spatial = nn.ModuleList([_SpatialBlock(width, heads, ff_, dropout) for _ in range(depth)])
++        self.temporal = nn.ModuleList([_AdaLNBlock(width, heads, ff_, action_dim, dropout, adaln_init)
++                                       for _ in range(depth)])
++        self.final_ln = nn.LayerNorm(width)
++        self.out = nn.Sequential(nn.Linear(width, width), nn.GELU(), nn.Linear(width, self.cell_dim))
++
++    def forward(self, z_ctx: Tensor, a_ctx: Tensor) -> Tensor:
++        b, L, _ = z_ctx.shape
++        if L > self.context:
++            raise ValueError(f"context length {L} exceeds the predictor's {self.context}")
++        n = self.n_cells
++        x = self.in_proj(z_ctx.reshape(b, L, n, self.cell_dim))                       # [B, L, n, W]
++        x = x + self.cell_pos[None, None] + self.time_pos[:L][None, :, None]
++        w = x.shape[-1]
++        at = self.act_tok(a_ctx)                                                      # [B, L, W]: the embedded action of each step
++        cond = a_ctx[:, None].expand(b, n, L, a_ctx.shape[-1]).reshape(b * n, L, -1)  # the action of the step, for every cell's own sequence
++        for sp, tp in zip(self.spatial, self.temporal):
++            t = torch.cat([x, at[:, :, None]], dim=2).reshape(b * L, n + 1, w)        # cells of ONE step + the action token
++            x = sp(t).reshape(b, L, n + 1, w)[:, :, :n]
++            x = tp(x.permute(0, 2, 1, 3).reshape(b * n, L, w), cond)                  # causal over time, per cell
++            x = x.reshape(b, n, L, w).permute(0, 2, 1, 3)
++        y = self.out(self.final_ln(x))                                                # [B, L, n, cell_dim]
++        return y.reshape(b, L, n * self.cell_dim)
++
++
+ # =============================================================================================
+ # The stack
+ # =============================================================================================
+@@ -449,6 +537,9 @@
+     pred_heads: int = 6
+     pred_ff: Optional[int] = None
+     pred_dropout: float = 0.0
++    pred_kind: str = "flat"          # PREREG_V8F_PROOF_ADD16: flat (CausalPredictor, every earlier arm) | cell (CellCausalPredictor: latent_dim = pred_cells x pred_cell_dim)
++    pred_cells: int = 0              # cell kind only: number of cells of the state
++    pred_cell_dim: int = 0           # cell kind only: numbers per cell
+     context: int = 3
+     adaln_init: str = "identity_gate"
+     idm_hidden: int = 256
+@@ -525,10 +616,18 @@
+             lv = i + 1
+             if predictor_overrides and lv in predictor_overrides:
+                 preds.append(predictor_overrides[lv])
+-            else:
++            elif c.pred_kind == "cell":
++                if c.pred_cells * c.pred_cell_dim != c.latent_dim:
++                    raise ValueError(f"level {lv}: pred_cells {c.pred_cells} x pred_cell_dim {c.pred_cell_dim} != latent_dim {c.latent_dim}")
++                preds.append(CellCausalPredictor(c.latent_dim, self.embed_dims[i], c.pred_cells, c.pred_width,
++                                                 c.pred_depth, c.pred_heads, c.pred_ff, c.context,
++                                                 c.pred_dropout, c.adaln_init))
++            elif c.pred_kind == "flat":
+                 preds.append(CausalPredictor(c.latent_dim, self.embed_dims[i], c.pred_width,
+                                              c.pred_depth, c.pred_heads, c.pred_ff, c.context,
+                                              c.pred_dropout, c.adaln_init))
++            else:
++                raise ValueError(f"level {lv}: pred_kind must be flat|cell, got {c.pred_kind!r}")
+         self.predictors = nn.ModuleList(preds)
+         self.idm_heads = nn.ModuleList([
+             IDMHead(c.latent_dim, c.action_dim, c.idm_hidden) for c in self.cfg])
+diff --git a/stack/tanitad/models/v8f_mini.py b/stack/tanitad/models/v8f_mini.py
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -158,6 +158,9 @@
+ STOP_AUX_MODES = ("off", "on")
+ STOPAUX_KEY_PREFIXES = ("stop_head.", "stop_pres_head.")
+ WM_STATE_MODES = ("mean", "grid")                        # PREREG_V8F_PROOF_ADD12 (SPATIAL): the level-1 state of the world-model auxiliary: mean = the mean of the adapter tokens (today), grid = one projection per cell, concatenated
++WM_L1_PRED_MODES = ("flat", "cell")                      # PREREG_V8F_PROOF_ADD16 (CELLPRED): the level-1 predictor of the WM stack: flat (CausalPredictor, every earlier arm) | cell (CellCausalPredictor: attention across cells and time; needs wm_state grid)
++WM_CELL_PRED_WIDTH = 128                                  # the cell predictor's token width (depth 2, 4 heads; PREREG_V8F_PROOF_ADD16 section 3)
++L1PRED_CFG_FIELDS = ("wm_l1_pred",)                       # recorded in a checkpoint's cfg ONLY when wm_l1_pred is cell (every earlier checkpoint keeps its key set and loads bit for bit)
+ WM_UPPER_DIM = 128                                        # levels 2 and 3 of the WM stack keep this width whatever the level-1 state width is
+ SPATIAL_CFG_FIELDS = ("wm_state", "wm_cell_dim")          # recorded in a checkpoint's cfg ONLY when wm_state is grid (a mean checkpoint keeps the tip's key set)
+ STOPAUX_CFG_FIELDS = ("stop_aux", "w_stop_aux")             # recorded in a checkpoint's cfg ONLY when the lever is on (a flag-off checkpoint keeps the tip's key set, so NULL's sha256 can equal the tip's)
+@@ -208,6 +211,7 @@
+     wm_dim: int = 128                  # mean state: the level-1 state width (levels 2 and 3 stay WM_UPPER_DIM); grid state: unused
+     wm_state: str = "mean"             # PREREG_V8F_PROOF_ADD12: mean | grid
+     wm_cell_dim: int = 16              # grid state: numbers per cell (level-1 state width = n_tok x wm_cell_dim)
++    wm_l1_pred: str = "flat"           # PREREG_V8F_PROOF_ADD16: flat | cell (level-1 predictor attends across the cells of the grid state and across time; needs wm_state grid)
+     wm_strides: tuple = (2, 2)
+     w_ckpt: float = 1.0
+     w_tac: float = 1.0
+@@ -255,7 +259,9 @@
+ 
+     @property
+     def wm_l1_pred_width(self) -> int:
+-        """Level-1 predictor width: 128 while the state is 128 wide (today), 256 when it is wider."""
++        """Level-1 predictor width: 128 while the state is 128 wide (today), 256 when it is wider; the cell predictor is WM_CELL_PRED_WIDTH wide."""
++        if self.wm_l1_pred == "cell":
++            return WM_CELL_PRED_WIDTH
+         return 128 if self.wm_l1_dim == 128 else 256
+ 
+     @property
+@@ -276,6 +282,12 @@
+             raise ValueError(f"wm_cell_dim must be an integer >= 1, got {self.wm_cell_dim!r}")
+         if not (isinstance(self.wm_dim, int) and self.wm_dim >= 1):
+             raise ValueError(f"wm_dim must be an integer >= 1, got {self.wm_dim!r}")
++        if self.wm_l1_pred not in WM_L1_PRED_MODES:
++            raise ValueError(f"wm_l1_pred must be one of {WM_L1_PRED_MODES}, got {self.wm_l1_pred!r}")
++        if self.wm_l1_pred == "cell" and self.wm == "off":
++            raise ValueError("wm_l1_pred cell needs the world-model auxiliary (wm a or b): with wm off there is no level-1 predictor")
++        if self.wm_l1_pred == "cell" and self.wm_state != "grid":
++            raise ValueError("wm_l1_pred cell needs wm_state grid: a mean state has no cells for the predictor to attend across")
+         if self.cons_absent not in ("mask", "zero"):
+             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
+         if self.code_mix not in CODE_MIX_MODES:
+@@ -704,7 +716,8 @@
+         mk = lambda **kw: LevelConfig(beta=cfg.wm_beta, gamma=gamma, pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
+         # PREREG_V8F_PROOF_ADD12: level 1 has the state width cfg.wm_l1_dim (128 today) and its own predictor width; levels 2 and 3 keep WM_UPPER_DIM / 128. At the defaults every number is the tip's.
+         up = WM_UPPER_DIM
+-        lv = [mk(latent_dim=cfg.wm_l1_dim, pred_width=cfg.wm_l1_pred_width, action_dim=2, act_embed_dim=32),
++        kind = dict(pred_kind="cell", pred_cells=cfg.n_tok, pred_cell_dim=cfg.wm_cell_dim) if cfg.wm_l1_pred == "cell" else {}     # PREREG_V8F_PROOF_ADD16: flat = no extra argument = today's LevelConfig
++        lv = [mk(latent_dim=cfg.wm_l1_dim, pred_width=cfg.wm_l1_pred_width, action_dim=2, act_embed_dim=32, **kind),
+               mk(latent_dim=up, pred_width=128, action_dim=32, stride=cfg.wm_strides[0]),
+               mk(latent_dim=up, pred_width=128, action_dim=32, stride=cfg.wm_strides[1])]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
+@@ -740,6 +753,39 @@
+         finally:
+             self.train(was)
+         return {"z1_width": int(a.shape[-1]), "location_sensitive": bool((a - b).abs().max() > 1e-4)}
++
++    @torch.no_grad()
++    def probe_pred(self) -> dict:
++        """PREREG_V8F_PROOF_ADD16 (c4, c2): what the BUILT level-1 predictor is. ``kind`` is read from the module's class and its per-cell embedding
++        (cell: ``in_proj`` takes ``latent_dim / n_cells`` numbers), never from the config; ``cross_cell`` is behavioural (changing ONE cell of the input
++        moves the prediction of the other cells; a dense flat map moves them too, so it does not by itself tell the kinds apart). ``params_flat_ref`` = the
++        parameter count of the flat predictor that this state width would get today (the c2 bound). Fixed generator: the global RNG stream is not touched."""
++        from tanitad.models.hjepa import CausalPredictor, CellCausalPredictor
++        pred = self.stack.predictors[0]
++        n = lambda m: int(sum(p.numel() for p in m.parameters()))   # noqa: E731
++        dev = next(pred.parameters()).device
++        g = torch.Generator().manual_seed(4321)
++        z = torch.randn(1, 1, pred.latent_dim, generator=g).to(dev)
++        a = torch.randn(1, 1, pred.action_dim, generator=g).to(dev)
++        cw = pred.latent_dim // self.n_tok
++        z2 = z.clone()
++        z2[..., :cw] += 1.0                                        # cell 0 only (cell-major layout)
++        was = self.training
++        self.eval()
++        try:
++            d = (pred(z, a) - pred(z2, a))[..., cw:].abs().max()
++        finally:
++            self.train(was)
++        in_f = int(pred.in_proj.weight.shape[1])
++        if isinstance(pred, CellCausalPredictor) and pred.n_cells > 1 and in_f * pred.n_cells == pred.latent_dim:
++            kind = "cell"
++        elif type(pred) is CausalPredictor and in_f == pred.latent_dim:
++            kind = "flat"
++        else:
++            kind = f"other:{type(pred).__name__}"
++        w_flat = 128 if pred.latent_dim == 128 else 256
++        ref = CausalPredictor(pred.latent_dim, pred.action_dim, w_flat, 2, 4, None, pred.context)
++        return {"kind": kind, "cross_cell": bool(d > 1e-7), "params": n(pred), "params_flat_ref": n(ref)}
+ 
+     def scale_actions(self, act: Tensor) -> Tensor:
+         """Raw action channels ``act`` [..., 2] = (a [m/s^2], ch1) -> the WM's action units. ch1 = the recorded steer (kin_mode steer) or
+@@ -1219,6 +1265,12 @@
+             lv["wm_l1_dim"] = int(self.wm.stack.cfg[0].latent_dim)
+             lv["wm_l1_pred_width"] = int(self.wm.stack.predictors[0].in_proj.weight.shape[0])
+             lv["wm_upper_dims"] = [int(c.latent_dim) for c in self.wm.stack.cfg[1:]]
++            pp = self.wm.probe_pred()                                  # PREREG_V8F_PROOF_ADD16: read from the BUILT level-1 predictor (class, per-cell embedding, behaviour), not from the flag
++            lv["wm_l1_pred"] = pp["kind"]
++            lv["wm_l1_pred_params"] = pp["params"]
++            lv["wm_l1_pred_params_flat_ref"] = pp["params_flat_ref"]
++            lv["wm_l1_pred_params_le_flat"] = bool(pp["params"] <= pp["params_flat_ref"])
++            lv["wm_l1_pred_cross_cell"] = pp["cross_cell"]
+             lv["wm_cell_dim"] = int(self.wm.proj[1].out_features) if pr["location_sensitive"] else None
+             lv["wm_dim"] = int(self.wm.proj[1].out_features) if not pr["location_sensitive"] else None
+         if self.lvl_head is not None:                                      # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
+diff --git a/stack/scripts/v8f_mini_train.py b/stack/scripts/v8f_mini_train.py
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -69,6 +69,7 @@
+     "arm": "lever:arm", "navonly": "lever:navonly", "no_consistency": "lever:consistency", "wm": "lever:wm",
+     # PREREG_V8F_PROOF_ADD12 (SPATIAL): argv -> make_config -> the BUILT config AND the BUILT model (built_levers: z1's measured width and location sensitivity, the stack's level-1 width and predictor width) -> declared_vs_built (bad_wm_state)
+     "wm_state": "lever:wm_state", "wm_cell_dim": "cfg:wm_cell_dim", "wm_dim": "cfg:wm_dim",
++    "wm_l1_pred": "lever:wm_l1_pred",         # PREREG_V8F_PROOF_ADD16 (CELLPRED): read back from the BUILT level-1 predictor (class + per-cell embedding), see bad_wm_state
+     "cache_dir": "path", "out": "path", "v9_train": "path", "v9_train_md5": "data:v9_md5", "speed_train": "path",
+     "lead_train": "path", "join_train": "path", "p10": "path", "grid": "cfg:grid",
+     "data_frac": "data:n_clips", "steps_mult": "run", "steps": "run", "batch": "data:batch", "seed": "run",
+@@ -135,6 +136,8 @@
+     ap.add_argument("--wm-state", dest="wm_state", choices=M.WM_STATE_MODES, default="mean",
+                     help="PREREG_V8F_PROOF_ADD12: level-1 state of the WM auxiliary. mean (default, the tip bit for bit) = the mean of the adapter tokens; grid = one projection per cell, concatenated (width n_tok x --wm-cell-dim)")
+     ap.add_argument("--wm-cell-dim", dest="wm_cell_dim", type=int, default=16, help="grid state: numbers per cell (default 16: 40 cells -> 640)")
++    ap.add_argument("--wm-l1-pred", dest="wm_l1_pred", choices=M.WM_L1_PRED_MODES, default="flat",
++                    help="PREREG_V8F_PROOF_ADD16: level-1 predictor of the WM auxiliary. flat (default, every earlier arm bit for bit) = one linear map takes the whole state into one token; cell = attention across the cells of one step and across time (needs --wm-state grid)")
+     ap.add_argument("--wm-dim", dest="wm_dim", type=int, default=128, help="mean state: level-1 state width (default 128; 640 = the capacity control of PREREG_V8F_PROOF_ADD12)")
+     ap.add_argument("--cons-absent", choices=("mask", "zero"), default=None,
+                     help="override (PREREG_V8F_CZ): mask = an absent constraint is out of T's loss (every arm but M2b-cz); zero = T's "
+@@ -339,7 +342,7 @@
+     lv = declared_levers(a)
+     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+-                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
++                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_l1_pred=a.wm_l1_pred, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
+@@ -680,7 +683,7 @@
+ #: the architecture-defining fields of V8FMiniConfig: a checkpoint may start a fine-tune only for a model of THIS shape and wiring (the training levers -- w_*, p_gt_*, code_mix, o_interface, cons_absent,
+ #: consistency, detach_upper -- may differ: a fine-tune moves them on purpose)
+ INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q", "depth_s", "depth_t", "depth_o", "nb", "res_scale_m", "navonly", "wm", "wm_dim", "wm_strides", "wm_beta", "wm_gamma",
+-                   "wm_state", "wm_cell_dim",        # PREREG_V8F_PROOF_ADD12: a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
++                   "wm_state", "wm_cell_dim", "wm_l1_pred",        # PREREG_V8F_PROOF_ADD12 / ADD16 (an absent wm_l1_pred is flat): a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
+                    "kin_mode", "max_age_t", "max_age_s",
+                    "o_interface")                      # PREREG_V8F_FLATDAG: a checkpoint trained under the cut must be fine-tuned under the cut (and a full one under full). The key is read only when the checkpoint HAS it:
+                                                        # checkpoints written before --o-interface existed (every M2b) carry none and load exactly as before. Without it a FLAT-DAG argv that forgets `--o-interface cut`
+@@ -700,7 +703,7 @@
+         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+     ck_cfg = dict(ck["cfg"])
+-    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16)):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
++    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16), ("wm_l1_pred", "flat")):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
+         ck_cfg.setdefault(k_, d_)
+     if ck_cfg["wm_state"] == "mean":
+         ck_cfg["wm_cell_dim"] = getattr(cfg, "wm_cell_dim") if getattr(cfg, "wm_state") == "mean" else ck_cfg["wm_cell_dim"]     # the cell width of a mean state is unused: not a mismatch
+@@ -1021,18 +1024,22 @@
+     built = model.built_levers()
+     if model.wm is None:
+         d = build_parser()
+-        for f in ("wm_state", "wm_cell_dim", "wm_dim"):
++        for f in ("wm_state", "wm_cell_dim", "wm_dim", "wm_l1_pred"):
+             if getattr(a, f) != d.get_default(f):
+                 bad.append(f"--{f.replace('_', '-')} {getattr(a, f)!r} declared but no WM auxiliary was built (wm off): a lever that is declared and builds nothing")
+         return bad
+     l1 = a.wm_cell_dim * cfg.n_tok if a.wm_state == "grid" else a.wm_dim
+-    want_pred = 128 if l1 == 128 else 256
++    want_pred = M.WM_CELL_PRED_WIDTH if a.wm_l1_pred == "cell" else (128 if l1 == 128 else 256)
+     if built.get("wm_state") != a.wm_state:
+         bad.append(f"lever wm_state: declared {a.wm_state} but built {built.get('wm_state')} (z1 location-sensitive: {built.get('wm_state') == 'grid'})")
+     if built.get("wm_z1_width") != l1 or built.get("wm_l1_dim") != l1:
+         bad.append(f"wm level-1 state width: declared {l1} but z1 emits {built.get('wm_z1_width')} and the stack's level 1 is {built.get('wm_l1_dim')}")
+     if built.get("wm_l1_pred_width") != want_pred:
+         bad.append(f"wm level-1 predictor width: declared {want_pred} (state {l1}) but built {built.get('wm_l1_pred_width')}")
++    if built.get("wm_l1_pred") != a.wm_l1_pred:                                                    # PREREG_V8F_PROOF_ADD16 (c6): a declared cell that built flat, or a declared flat that built cell
++        bad.append(f"lever wm_l1_pred: declared {a.wm_l1_pred} but built {built.get('wm_l1_pred')} (read from the level-1 predictor module: its class and its per-cell embedding)")
++    if a.wm_l1_pred == "cell" and (built.get("wm_l1_pred_params_le_flat") is not True or not built.get("wm_l1_pred_cross_cell")):
++        bad.append(f"wm_l1_pred cell: built params {built.get('wm_l1_pred_params')} vs the flat predictor of the grid arm {built.get('wm_l1_pred_params_flat_ref')} (c2: at or below), cross-cell coupling live: {built.get('wm_l1_pred_cross_cell')} (c4)")
+     if built.get("wm_upper_dims") != [M.WM_UPPER_DIM] * 2:
+         bad.append(f"wm levels 2 and 3 width: expected {M.WM_UPPER_DIM} but built {built.get('wm_upper_dims')}")
+     if a.wm_state == "grid" and built.get("wm_cell_dim") != a.wm_cell_dim:
+@@ -2901,7 +2908,7 @@
+ 
+     def save(final=False):
+         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
+-                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS)}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
++                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS) and (cfg.wm_l1_pred == "cell" or k not in M.L1PRED_CFG_FIELDS)}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
+                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
+                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
+                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
+diff --git a/stack/tests/test_v8f_cell_predictor.py b/stack/tests/test_v8f_cell_predictor.py
+new file mode 100644
+--- /dev/null
++++ b/stack/tests/test_v8f_cell_predictor.py
+@@ -0,0 +1,289 @@
++"""PREREG_V8F_PROOF_ADD16 (CELLPRED): the level-1 predictor that attends across cells and time. CPU only.
++
++Run: CUDA_VISIBLE_DEVICES=-1 PYTHONPATH=<repo>/stack;<repo>/taniteval pytest -q stack/tests/test_v8f_cell_predictor.py
++
++Each control of section 7 of the card, and the deliberate regression that must make it go red:
++  * interface: same call signature and attributes as CausalPredictor; HJEPAStack loss and rollout run unchanged on it.
++  * c2: parameter count of the cell predictor at or below the flat predictor of the grid arm (both printed).
++  * c3: output at step i does not move (exactly 0) for a change at a later step; it moves for a change at step i.
++  * c4: one input cell moves OTHER predicted cells; with the spatial attention replaced by identity it moves exactly 0 of them;
++        a flat build is reported flat and a cell build cell, read from the built module (a flat module planted under a cell config reads flat).
++  * c5: one real-data step: every parameter group of the new predictor has a non-zero gradient; with a zero WM weight and for a parameter
++        outside the graph the reading is exactly 0.0.
++  * refusals: cell with a mean state, cell with wm off, declared-vs-built mismatch in both directions.
++  * checkpoint: a default checkpoint keeps the tip cfg key set; a cell checkpoint adds the key, loads strictly through the T1 builder, and is
++        refused as a fine-tune start by a flat argv.
++"""
++from __future__ import annotations
++
++import inspect
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import hjepa as H  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
++GRID = ["--wm-state", "grid", "--wm-cell-dim", "16"]
++CELL = GRID + ["--wm-l1-pred", "cell"]
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("cellpred")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16)
++    idx = np.random.default_rng(0).choice(len(wins), 8, replace=False)
++    batch = D.collate([ds.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    return {"batch": batch, "J": J}
++
++
++def _args(extra=()):
++    return TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *extra])
++
++
++def _built(world, extra=(), **over):
++    a = _args(extra)
++    c0 = TR.make_config(a)
++    keep = {k: v for k, v in TINY.items() if k not in ("nb", "n_q", "d", "ff")}
++    cfg = M.V8FMiniConfig(**{**c0.__dict__, **keep, "d": 32, "ff": 64, **over})
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(0)
++    model = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
++    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=a.wd)
++    info = {"n_clips": 6, "n_clips_expected": 6, "batch": a.batch, "md5_overridden": True, "kin_mode": a.kin_mode, "p10_units": None}
++    return a, cfg, model, opt, info
++
++
++def _cell(**kw):
++    torch.manual_seed(0)
++    return H.CellCausalPredictor(640, 32, 40, 128, 2, 4, None, 3, **kw).eval()
++
++
++# ------------------------------------------------------------------------------------------------ interface and widths
++def test_interface_equals_causal_predictor():
++    flat, cell = H.CausalPredictor(640, 32, 256, 2, 4, None, 3), _cell()
++    names = lambda m: list(inspect.signature(m.forward).parameters)   # noqa: E731
++    assert names(flat) == names(cell) == ["z_ctx", "a_ctx"]
++    for att in ("latent_dim", "action_dim", "context"):
++        assert getattr(flat, att) == getattr(cell, att)
++    for L in (1, 2, 3):
++        z, a = torch.randn(2, L, 640), torch.randn(2, L, 32)
++        assert flat(z, a).shape == cell(z, a).shape == (2, L, 640)
++    with pytest.raises(ValueError, match="exceeds"):
++        cell(torch.randn(1, 4, 640), torch.randn(1, 4, 32))
++    assert cell.in_proj.weight.shape[0] == 128                            # the stage-1 reader of the predictor width
++
++
++def test_stack_loss_and_rollout_run_unchanged_and_are_finite():
++    lv = [H.LevelConfig(latent_dim=640, action_dim=2, act_embed_dim=32, pred_width=128, pred_depth=2, pred_heads=4,
++                        pred_kind="cell", pred_cells=40, pred_cell_dim=16, enc_hidden=128, macro_hidden=32),
++          H.LevelConfig(latent_dim=128, action_dim=32, stride=2, pred_width=128, pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32),
++          H.LevelConfig(latent_dim=128, action_dim=32, stride=2, pred_width=128, pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32)]
++    torch.manual_seed(0)
++    st = H.HJEPAStack(lv, sigreg_projections=64)
++    assert isinstance(st.predictors[0], H.CellCausalPredictor) and type(st.predictors[1]) is H.CausalPredictor
++    z, a = torch.randn(2, 16, 640), torch.randn(2, 15, 2)
++    out = st.loss(z, a)
++    assert torch.isfinite(out["total"]) and torch.isfinite(out["pred/L1"])
++    roll = st.rollout(1, torch.randn(640), torch.randn(5, 7, 2), context=1)       # leading dim 5, horizon 7
++    assert roll.shape == (5, 7, 640) and torch.isfinite(roll).all()
++    roll3 = st.rollout(1, torch.randn(640), torch.randn(7, 2), context=3)
++    assert roll3.shape == (7, 640) and torch.isfinite(roll3).all()
++    st.param_groups(1e-3)                                                          # every parameter in exactly one group
++    n_groups = sum(len(g["params"]) for g in st.param_groups(1e-3))
++    assert n_groups == len(list(st.parameters()))
++    assert st.parameter_counts()[1]["predictor"] == sum(p.numel() for p in st.predictors[0].parameters())
++    assert st.built_levers()[1]["context"] == 3
++    with pytest.raises(ValueError, match="pred_kind"):
++        H.HJEPAStack([H.LevelConfig(latent_dim=640, action_dim=2, pred_kind="ring")])
++    with pytest.raises(ValueError, match="pred_cells"):
++        H.HJEPAStack([H.LevelConfig(latent_dim=640, action_dim=2, pred_kind="cell", pred_cells=40, pred_cell_dim=8)])
++
++
++# ------------------------------------------------------------------------------------------------ c2
++def test_c2_parameters_at_or_below_the_flat_predictor_of_the_grid_arm(world):
++    _, _, mg, _, _ = _built(world, GRID)
++    _, _, mc, _, _ = _built(world, CELL)
++    flat_n = sum(p.numel() for p in mg.wm.stack.predictors[0].parameters())
++    cell_n = sum(p.numel() for p in mc.wm.stack.predictors[0].parameters())
++    print(f"\nc2: level-1 predictor parameters: flat (grid arm G) {flat_n:,}  cell (arm P) {cell_n:,}")
++    assert cell_n <= flat_n
++    bc, bg = mc.built_levers(), mg.built_levers()
++    assert bc["wm_l1_pred_params"] == cell_n and bc["wm_l1_pred_params_flat_ref"] == flat_n and bc["wm_l1_pred_params_le_flat"] is True
++    assert bg["wm_l1_pred_params"] == flat_n == bg["wm_l1_pred_params_flat_ref"]
++    assert (bc["wm_l1_pred_width"], bg["wm_l1_pred_width"]) == (128, 256)
++    assert bc["wm_z1_width"] == bc["wm_l1_dim"] == 640 and bc["wm_state"] == "grid"
++
++
++# ------------------------------------------------------------------------------------------------ c3
++def test_c3_causality_exact_zero_for_later_steps_and_nonzero_for_the_same_step():
++    m = _cell()
++    g = torch.Generator().manual_seed(1)
++    z, a = torch.randn(2, 3, 640, generator=g), torch.randn(2, 3, 32, generator=g)
++    with torch.no_grad():
++        base = m(z, a)
++        for i in (0, 1):
++            for what in ("z", "a"):
++                z2, a2 = z.clone(), a.clone()
++                (z2 if what == "z" else a2)[:, i + 1:] += torch.randn_like((z2 if what == "z" else a2)[:, i + 1:])
++                later = (m(z2, a2) - base)[:, :i + 1].abs().max()
++                assert float(later) == 0.0, (i, what, float(later))
++        for i in (0, 1, 2):
++            for what in ("z", "a"):
++                z2, a2 = z.clone(), a.clone()
++                (z2 if what == "z" else a2)[:, i] += torch.randn_like((z2 if what == "z" else a2)[:, i])
++                same = (m(z2, a2) - base)[:, i].abs().max()
++                assert float(same) > 1e-6, (i, what)
++
++
++# ------------------------------------------------------------------------------------------------ c4
++def test_c4_one_cell_moves_the_other_cells_and_the_regression_that_removes_it_goes_red(world):
++    m = _cell()
++    g = torch.Generator().manual_seed(2)
++    z, a = torch.randn(1, 3, 640, generator=g), torch.randn(1, 3, 32, generator=g)
++    z2 = z.clone()
++    z2[:, 2, 16 * 7:16 * 8] += 1.0                                         # ONE cell (7) at the last step
++    with torch.no_grad():
++        d = (m(z2, a) - m(z, a))[:, 2]
++    other = torch.cat([d[:, :16 * 7], d[:, 16 * 8:]], dim=1).abs().max()
++    assert float(other) > 1e-6
++    # deliberate regression: every spatial block is the identity -> cells never talk, other cells read EXACTLY 0
++    for blk in m.spatial:
++        blk.forward = lambda x: x
++    with torch.no_grad():
++        d0 = (m(z2, a) - m(z, a))[:, 2]
++    assert float(torch.cat([d0[:, :16 * 7], d0[:, 16 * 8:]], dim=1).abs().max()) == 0.0
++    assert float(d0[:, 16 * 7:16 * 8].abs().max()) > 1e-6                  # the perturbed cell itself still moves
++    # the probe reads the BUILT module
++    _, _, mc, _, _ = _built(world, CELL)
++    _, _, mg, _, _ = _built(world, GRID)
++    assert mc.built_levers()["wm_l1_pred"] == "cell" and mc.built_levers()["wm_l1_pred_cross_cell"] is True
++    assert mg.built_levers()["wm_l1_pred"] == "flat"
++    mm = _built(world)[2]
++    assert mm.built_levers()["wm_l1_pred"] == "flat"                       # the mean default is flat too
++    mc.wm.stack.predictors[0] = H.CausalPredictor(640, 32, 128, 2, 4, None, 3)   # a flat module planted under a cell config
++    assert mc.cfg.wm_l1_pred == "cell" and mc.built_levers()["wm_l1_pred"] == "flat"
++    mg.wm.stack.predictors[0] = _cell()                                    # a cell module planted under a flat config
++    assert mg.cfg.wm_l1_pred == "flat" and mg.built_levers()["wm_l1_pred"] == "cell"
++
++
++# ------------------------------------------------------------------------------------------------ c5
++def _loss_grads(world, extra, w_wm):
++    a, cfg, model, opt, info = _built(world, extra, w_wm=w_wm)
++    model.train()
++    out = model.loss(dict(world["batch"]), p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    (cfg.w_wm * out["terms"]["wm"]).backward()                                      # the WM term as the trainer weights it
++    return model
++
++
++def _gsum(ps):
++    return float(sum(float(p.grad.abs().sum()) for p in ps if p.grad is not None))
++
++
++def _groups(pred):
++    gs = {"in_proj": [pred.in_proj], "cell_pos": [pred.cell_pos], "time_pos": [pred.time_pos], "act_tok": [pred.act_tok],
++          "final_ln": [pred.final_ln], "out": [pred.out]}
++    for i, (s, t) in enumerate(zip(pred.spatial, pred.temporal)):
++        gs[f"spatial{i}"], gs[f"temporal{i}"] = [s], [t]
++    return {k: [q for m in v for q in (m.parameters() if isinstance(m, torch.nn.Module) else [m])] for k, v in gs.items()}
++
++
++def test_c5_every_new_group_gets_a_gradient_through_the_real_loss_and_zero_weight_reads_exactly_zero(world):
++    model = _loss_grads(world, CELL, 0.1)
++    pred = model.wm.stack.predictors[0]
++    groups = _groups(pred)
++    assert sum(len(v) for v in groups.values()) == len(list(pred.parameters()))     # the list covers the whole module
++    dead = {k: _gsum(v) for k, v in groups.items() if not _gsum(v) > 0.0}
++    assert not dead, dead
++    assert _gsum(model.wm.proj.parameters()) > 0.0 and _gsum(model.adapter.parameters()) > 0.0
++    zero = _loss_grads(world, CELL, 0.0)
++    zp = zero.wm.stack.predictors[0]
++    assert all(_gsum(v) == 0.0 for v in _groups(zp).values())                       # control: a zero WM weight reads exactly 0.0
++    orphan = torch.nn.Parameter(torch.ones(3))                                       # a parameter outside the graph
++    assert orphan.grad is None and _gsum([orphan]) == 0.0
++
++
++# ------------------------------------------------------------------------------------------------ refusals and the gate
++def test_config_refuses_what_it_cannot_build():
++    with pytest.raises(ValueError, match="wm_state grid"):
++        M.V8FMiniConfig(wm="b", hmax=16, wm_state="mean", wm_l1_pred="cell")
++    with pytest.raises(ValueError, match="world-model"):
++        M.V8FMiniConfig(wm="off", wm_state="mean", wm_l1_pred="cell")
++    with pytest.raises(ValueError, match="wm_l1_pred"):
++        M.V8FMiniConfig(wm="b", hmax=16, wm_state="grid", wm_l1_pred="ring")
++    c = M.V8FMiniConfig(wm="b", hmax=16, wm_state="grid", wm_l1_pred="cell")
++    assert (c.wm_l1_dim, c.wm_l1_pred_width) == (640, 128)
++    assert M.V8FMiniConfig(wm="b", hmax=16, wm_state="grid").wm_l1_pred_width == 256        # the flat grid arm is unchanged
++    with pytest.raises(ValueError, match="wm_state grid"):
++        TR.make_config(_args(["--wm-l1-pred", "cell"]))                                       # the flag with a mean state is refused
++
++
++def test_the_flag_has_its_entries_and_a_default():
++    d = {act.dest for act in TR.build_parser()._actions}
++    assert "wm_l1_pred" in d and "wm_l1_pred" in TR.FLAG_CHECKS and TR.build_parser().get_default("wm_l1_pred") == "flat"
++    assert "wm_l1_pred" in TR.INIT_CKPT_MATCH
++
++
++def test_declared_vs_built_goes_red_on_every_lie_in_both_directions(world):
++    a, cfg, model, opt, info = _built(world, CELL)
++    assert TR.declared_vs_built(a, cfg, model, opt, info) == []
++    ag, cg, mg, og, ig = _built(world, GRID)
++    assert TR.declared_vs_built(ag, cg, mg, og, ig) == []
++    assert any("wm_l1_pred" in m for m in TR.declared_vs_built(_args(CELL), cg, mg, og, ig))      # declared cell, built flat
++    assert any("wm_l1_pred" in m for m in TR.declared_vs_built(_args(GRID), cfg, model, opt, info))  # declared flat, built cell
++    mg.wm.stack.predictors[0] = _cell()                                                           # the module itself is swapped under a flat config
++    assert any("wm_l1_pred" in m for m in TR.declared_vs_built(ag, cg, mg, og, ig))
++    a1, c1, m1, o1, i1 = _built(world, ["--arm", "M1"])                                           # wm off: a flat default is clean; the lever with nothing to build is refused at the config
++    assert TR.declared_vs_built(a1, c1, m1, o1, i1) == []
++    with pytest.raises(ValueError):
++        TR.make_config(_args(["--arm", "M1", "--wm-l1-pred", "cell"]))                             # cell with wm off is refused at the config
++
++
++def test_the_gate_refuses_a_cell_predictor_above_the_flat_budget(world, monkeypatch):
++    a, cfg, model, opt, info = _built(world, CELL)
++    monkeypatch.setattr(M.WMAux, "probe_pred", lambda self: {"kind": "cell", "cross_cell": True, "params": 10 ** 7, "params_flat_ref": 10 ** 6})
++    assert any("c2" in m for m in TR.declared_vs_built(a, cfg, model, opt, info))
++
++
++# ------------------------------------------------------------------------------------------------ checkpoints
++def test_checkpoint_cfg_keys_and_the_t1_builder_round_trip(world, tmp_path):
++    base = ["--synthetic", "--arm", "M2b", "--batch", "8", "--d", "32", "--n-q", "2", "--threads", "1", "--steps", "2"]
++    assert TR.main([*base, "--out", str(tmp_path / "grid")] + GRID) == 0
++    assert TR.main([*base, "--out", str(tmp_path / "cell")] + CELL) == 0
++    assert TR.main([*base, "--out", str(tmp_path / "mean")]) == 0
++    ld = lambda n: torch.load(tmp_path / n / "ckpt_last.pt", map_location="cpu", weights_only=False)   # noqa: E731
++    cm, cg, cc = ld("mean"), ld("grid"), ld("cell")
++    assert not (set(M.L1PRED_CFG_FIELDS) & set(cm["cfg"])) and not (set(M.L1PRED_CFG_FIELDS) & set(cg["cfg"]))
++    assert set(cc["cfg"]) == set(cg["cfg"]) | set(M.L1PRED_CFG_FIELDS) and cc["cfg"]["wm_l1_pred"] == "cell"
++    cfg = M.V8FMiniConfig(**cc["cfg"])                                                    # the T1 eval builder (v8f_t1_eval.cmd_run lines 506-509)
++    model = M.V8FMini(cfg, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    model.load_state_dict(cc["model"])                                                     # strict
++    assert model.built_levers()["wm_l1_pred"] == "cell"
++    cfg_g = M.V8FMiniConfig(**cg["cfg"])                                                   # an earlier (grid, flat) checkpoint still loads as flat
++    mg = M.V8FMini(cfg_g, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    mg.load_state_dict(cg["model"])
++    assert mg.built_levers()["wm_l1_pred"] == "flat" and cfg_g.wm_l1_pred == "flat"
++    ov = {k: cc["cfg"][k] for k in ("d", "ff", "heads", "n_q", "depth_s", "depth_t", "depth_o", "nb", "hmax", "hist")}
++    a, cfg2, m2, o2, i2 = _built(world, GRID, **ov)                                              # a flat argv must not start from a cell checkpoint, nor the reverse
++    with pytest.raises(ValueError, match="wm_l1_pred"):
++        TR.load_init_ckpt(str(tmp_path / "cell" / "ckpt_last.pt"), m2, cfg2)
++    a3, cfg3, m3, o3, i3 = _built(world, CELL, **ov)
++    with pytest.raises(ValueError, match="wm_l1_pred"):
++        TR.load_init_ckpt(str(tmp_path / "grid" / "ckpt_last.pt"), m3, cfg3)
++    rec = TR.load_init_ckpt(str(tmp_path / "cell" / "ckpt_last.pt"), m3, cfg3)             # the same lever is accepted
++    assert rec["n_mismatch_after_load"] == 0

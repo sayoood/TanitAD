@@ -1,0 +1,16 @@
+# FIX_R9_RNG -- PREREG_REFCV9_INMODEL_PA_AMENDMENT1 (1c25a064...) change 1: the banked R9 patch + ONE line.
+# enable_refcv9 called torch.manual_seed inside torch.random.fork_rng(devices=[]); torch.manual_seed also re-seeds every CUDA generator, which a
+# devices=[] fork does not save / restore -> building the head moved the diffusion noise (MEASURED: 70/70 calibration windows, max 8.10 m).
+# Fix: seed the CPU generator only (torch.default_generator.manual_seed); the head's init is unchanged (built on CPU from the same seed).
+# The file keeps its CRLF line endings; this diff is rendered with LF.  Same pattern exists in enable_refcv8 (not touched).
+--- a/stack/tanitad/refs/refc_v3.py (tip 425762053c75 + banked patch 4b5f7fb)
++++ b/stack/tanitad/refs/refc_v3.py (+ R9 RNG fix)
+@@ -2122,7 +2122,7 @@
+         self.cfg.refcv9 = r9cfg
+         r9cfg.enable = True
+         with torch.random.fork_rng(devices=[]):
+-            torch.manual_seed(int(r9cfg.seed) + r9p.R9_INIT_SEED_OFFSET)
++            torch.default_generator.manual_seed(int(r9cfg.seed) + r9p.R9_INIT_SEED_OFFSET)  # R9 RNG FIX (AMENDMENT1): CPU generator only; torch.manual_seed also re-seeds CUDA, which fork_rng(devices=[]) does not restore
+             self.r9_prog = r9p.R9ProgressHead(int(self.cfg.d_tac), len(hz), int(r9cfg.hidden))
+         return r9p.count_params(self.r9_prog)
+ 

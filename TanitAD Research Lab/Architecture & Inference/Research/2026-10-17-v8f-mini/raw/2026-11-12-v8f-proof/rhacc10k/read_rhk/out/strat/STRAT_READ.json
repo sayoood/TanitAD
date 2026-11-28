@@ -1,0 +1,366 @@
+{
+ "controls": {
+  "s4": {
+   "pass": true,
+   "checks": [
+    {
+     "name": "line: labels at the first logged steps reaching 30/50/80 m",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+     "ok": true
+    },
+    {
+     "name": "circle R=100: label positions equal the analytic ones to the step",
+     "ok": true
+    },
+    {
+     "name": "short track: 30 and 50 valid, 80 invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: known pose and label -> analytic world position and heading",
+     "ok": true
+    },
+    {
+     "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+     "ok": true
+    }
+   ],
+   "all_checks_hold": true,
+   "planted_fault_fails": true,
+   "planted_fault_checks_failed": [
+    "line: labels at the first logged steps reaching 30/50/80 m",
+    "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+    "circle R=100: label positions equal the analytic ones to the step",
+    "short track: 30 and 50 valid, 80 invalid"
+   ],
+   "planted_fault_2_checks_failed": [
+    "join label: known pose and label -> analytic world position and heading",
+    "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+   ]
+  },
+  "s1": {
+   "max_dxy_m": 6.996529623393144e-05,
+   "max_dpsi_rad": 5.138469774124133e-07,
+   "per_file": {
+    "H_RLcK_s0": [
+     6.719544171573943e-05,
+     4.544854164123535e-07
+    ],
+    "H_RLcK_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RLcK_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ],
+    "H_RQ50K_s0": [
+     6.719544171573943e-05,
+     4.544854164123535e-07
+    ],
+    "H_RQ50K_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RQ50K_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ],
+    "U_RLcK_s0": [
+     6.273030271586322e-05,
+     5.138469774124133e-07
+    ],
+    "U_RLcK_s1": [
+     5.443493911627684e-05,
+     3.869645297527313e-07
+    ],
+    "U_RLcK_s2": [
+     6.537440799547767e-05,
+     4.968503404256808e-07
+    ],
+    "U_RQ50K_s0": [
+     6.273030271586322e-05,
+     5.138469774124133e-07
+    ],
+    "U_RQ50K_s1": [
+     5.443493911627684e-05,
+     3.869645297527313e-07
+    ],
+    "U_RQ50K_s2": [
+     6.537440799547767e-05,
+     4.968503404256808e-07
+    ]
+   },
+   "pass": true
+  },
+  "s2": {
+   "max_first_tick_anchor_dist_m": 0.0,
+   "n_rows_anchor_not_t0": 0,
+   "files": [
+    "H_RLcK_s0",
+    "H_RLcK_s1",
+    "H_RLcK_s2",
+    "H_RQ50K_s0",
+    "H_RQ50K_s1",
+    "H_RQ50K_s2",
+    "U_RLcK_s0",
+    "U_RLcK_s1",
+    "U_RLcK_s2",
+    "U_RQ50K_s0",
+    "U_RQ50K_s1",
+    "U_RQ50K_s2"
+   ],
+   "pass": true
+  },
+  "s6": {
+   "per_file": {
+    "H_RLcK_s0": true,
+    "H_RLcK_s1": true,
+    "H_RLcK_s2": true,
+    "H_RQ50K_s0": true,
+    "H_RQ50K_s1": true,
+    "H_RQ50K_s2": true,
+    "U_RLcK_s0": true,
+    "U_RLcK_s1": true,
+    "U_RLcK_s2": true,
+    "U_RQ50K_s0": true,
+    "U_RQ50K_s1": true,
+    "U_RQ50K_s2": true
+   },
+   "pass": true
+  },
+  "s9": {
+   "pass": true,
+   "n_files": 12,
+   "missing": []
+  },
+  "s3": {
+   "pass": true,
+   "computable": true,
+   "windows": 2399,
+   "max_abs_diff_pos_m": 5.635335947884457e-14,
+   "max_abs_diff_head_deg": 2.842170943040401e-14,
+   "same_rows_invalid": true,
+   "n_valid_per_arc": [
+    2322,
+    2319,
+    2294
+   ],
+   "known_value_from": "F:/TanitAD-scratch/v8proof/rhacc10k/tree\\taniteval\\taniteval\\v8f_consistency.py",
+   "note": "Amendment 1 of the card; differences only"
+  },
+  "episode_map": {
+   "all_windows_mapped": true,
+   "n_episodes": 141,
+   "n_windows": 2399
+  },
+  "s5": {
+   "pass": true,
+   "largest_difference": 0.0,
+   "n_comparisons": 24,
+   "note": "first-tick cells equal across the runs of one model that start from the logged state (pre-rolled runs excluded); n_comparisons 0 means no group had two such runs (not judged)"
+  }
+ },
+ "inputs": {
+  "H_RLcK_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\H_RLcK_s0\\ticks\\ticks_H_RLcK_s0_m10_causal_heads.npz",
+   "sha256": "3066bbd0ed3148ac5fdf458d87d1ec65a03e584b69ddd05a1a57b98e736ad86a"
+  },
+  "H_RLcK_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\H_RLcK_s1\\ticks\\ticks_H_RLcK_s1_m10_causal_heads.npz",
+   "sha256": "ff74bbe063d3e42a81fbe115b6a87f3a68998338701cedb87ca153dd3239cfe6"
+  },
+  "H_RLcK_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\H_RLcK_s2\\ticks\\ticks_H_RLcK_s2_m10_causal_heads.npz",
+   "sha256": "3422828446e1ef819a6acf8cb5b1607c20970c695d4a43c3439866bf97d92b42"
+  },
+  "H_RQ50K_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\H_RQ50K_s0\\ticks\\ticks_H_RQ50K_s0_m10_causal_heads.npz",
+   "sha256": "9d4322e27c5fa8d7363c309656d97887d11270ba6e1f690f01d110cd661745a6"
+  },
+  "H_RQ50K_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\H_RQ50K_s1\\ticks\\ticks_H_RQ50K_s1_m10_causal_heads.npz",
+   "sha256": "10a7911c5a32e2ad350e8eea539d7dcbd14d89725cce91d88992aad827d15d90"
+  },
+  "H_RQ50K_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\H_RQ50K_s2\\ticks\\ticks_H_RQ50K_s2_m10_causal_heads.npz",
+   "sha256": "4510a3d7adcbb57bd346751afdb75891d7f8d4e7f7d9f7982ccb31218080cd96"
+  },
+  "U_RLcK_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\U_RLcK_s0\\ticks\\ticks_U_RLcK_s0_m10_causal_heads.npz",
+   "sha256": "f096082ba560dfd2d29e58844c9caaa6249105a74e0f6b85a1a949bb9e5ccf96"
+  },
+  "U_RLcK_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\U_RLcK_s1\\ticks\\ticks_U_RLcK_s1_m10_causal_heads.npz",
+   "sha256": "415428d5d075e78309c3610c0263086bb26a5d808e8dac703beaa6e20d3dc8ac"
+  },
+  "U_RLcK_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\U_RLcK_s2\\ticks\\ticks_U_RLcK_s2_m10_causal_heads.npz",
+   "sha256": "c7c23b296c63da1802325cd7c50985ff7f365b1bb65f27008a2b264adafb211c"
+  },
+  "U_RQ50K_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\U_RQ50K_s0\\ticks\\ticks_U_RQ50K_s0_m10_causal_heads.npz",
+   "sha256": "04bc09adf2d0ce89eea4f6b4385fe4254dec756fbce7535c3983d51993f7514b"
+  },
+  "U_RQ50K_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\U_RQ50K_s1\\ticks\\ticks_U_RQ50K_s1_m10_causal_heads.npz",
+   "sha256": "872d91e58de4904c06b204537ef8a0ea8fd31c8fe028447c4184aaa335db1945"
+  },
+  "U_RQ50K_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rhacc10k/pull\\U_RQ50K_s2\\ticks\\ticks_U_RQ50K_s2_m10_causal_heads.npz",
+   "sha256": "e46d405ee25cbf6f9d59786701c12a0cd1687d59a934266a1ea3e506cf34b9f4"
+  }
+ },
+ "stage_A_pass": true,
+ "runs": [
+  "H_RLcK",
+  "H_RQ50K",
+  "U_RLcK",
+  "U_RQ50K"
+ ],
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "windows": null,
+ "pairs": {
+  "R1": {
+   "pos_30_50_80m_third_tick": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.612261344354766,
+     "lo": -0.8484195870446214,
+     "hi": -0.3985422659260572,
+     "verdict": "BETTER",
+     "n_per_seed": [
+      2312,
+      2313,
+      2313
+     ],
+     "per_seed": [
+      -0.4400106356483803,
+      -0.47645736292170243,
+      -0.9202415638030318
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": -0.9384365398356403,
+     "lo": -1.371684992763634,
+     "hi": -0.5402305709836459,
+     "verdict": "BETTER",
+     "n_per_seed": [
+      2299,
+      2301,
+      2300
+     ],
+     "per_seed": [
+      -0.6647593872508307,
+      -0.7031929709287417,
+      -1.4473405510735757
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": -1.258484049905785,
+     "lo": -1.9693726638605036,
+     "hi": -0.570602709925359,
+     "verdict": "BETTER",
+     "n_per_seed": [
+      2275,
+      2275,
+      2275
+     ],
+     "per_seed": [
+      -0.5850630869387876,
+      -1.0725104786567665,
+      -2.117878584121801
+     ]
+    }
+   ],
+   "reading": "BETTER"
+  },
+  "R2": {
+   "pos_30_50_80m_third_tick": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.5917515992716409,
+     "lo": -0.825902746644221,
+     "hi": -0.3810212907200983,
+     "verdict": "BETTER",
+     "n_per_seed": [
+      2312,
+      2313,
+      2313
+     ],
+     "per_seed": [
+      -0.413039535448654,
+      -0.44714396655548444,
+      -0.9149940316240905
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": -0.9028910196281358,
+     "lo": -1.329013176063027,
+     "hi": -0.5143381544959421,
+     "verdict": "BETTER",
+     "n_per_seed": [
+      2299,
+      2299,
+      2299
+     ],
+     "per_seed": [
+      -0.618330819521555,
+      -0.6412089880717643,
+      -1.449133251291088
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": -1.2130303274576413,
+     "lo": -1.922854268053935,
+     "hi": -0.5469222488996689,
+     "verdict": "BETTER",
+     "n_per_seed": [
+      2275,
+      2275,
+      2275
+     ],
+     "per_seed": [
+      -0.5187361297606973,
+      -0.9760304275788212,
+      -2.1443244250334055
+     ]
+    }
+   ],
+   "reading": "BETTER"
+  }
+ },
+ "stage_B_pass": true,
+ "ALL_PASS": true
+}

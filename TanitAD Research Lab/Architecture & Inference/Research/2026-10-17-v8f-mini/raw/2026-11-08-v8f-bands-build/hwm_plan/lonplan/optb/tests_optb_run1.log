@@ -1,0 +1,27 @@
+.................F.....                                                  [100%]
+================================== FAILURES ===================================
+_________ test_gate_refuses_fixed_k_without_freeze_or_without_init_wm _________
+
+init = {'root': WindowsPath('F:/TanitAD-scratch/actrsp/optb/tmp/bt9/optb0'), 'ck': WindowsPath('F:/TanitAD-scratch/actrsp/optb/tmp/bt9/optb0/src/ckpt_last.pt')}
+probe = {'path': 'F:\\TanitAD-scratch\\actrsp\\optb\\tmp\\bt9\\optb_probe0\\readout.pt', 'sha': '893b89f7ddb64dab6c4108e3d626f71da071957319607cfab22ed9c93ea42ea5'}
+
+    def test_gate_refuses_fixed_k_without_freeze_or_without_init_wm(init, probe):
+        rc = lgate(init, "r_nofreeze", ["--wm-init-from-ckpt-wm", "on"], rsp_flags(probe))
+        assert isinstance(rc, str) and "wm_freeze_proj" in rc, rc
+        rc = lgate(init, "r_noinit", ["--wm-freeze-proj", "on"], rsp_flags(probe))
+>       assert isinstance(rc, str) and "wm_init_from_ckpt_wm" in rc, rc
+E       AssertionError: ZZDVB-REFUSEDZZ declared-vs-built: lever wm_rsp_readout: fixed_k needs --wm-init-from-ckpt-wm on (the readout is valid for the checkpoint world model, not a re-initialised one)
+E       assert (True and 'wm_init_from_ckpt_wm' in 'ZZDVB-REFUSEDZZ declared-vs-built: lever wm_rsp_readout: fixed_k needs --wm-init-from-ckpt-wm on (the readout is valid for the checkpoint world model, not a re-initialised one)')
+E        +  where True = isinstance('ZZDVB-REFUSEDZZ declared-vs-built: lever wm_rsp_readout: fixed_k needs --wm-init-from-ckpt-wm on (the readout is valid for the checkpoint world model, not a re-initialised one)', str)
+
+stack\tests\test_v8f_optb.py:296: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_optb.py::test_c9p_matched_response_gives_loss_and_gradient_zero
+  F:\TanitAD-scratch\actrsp\optb\tree\stack\tests\test_v8f_optb.py:146: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(r["loss"]) < 1e-24 and max(float(p.grad.abs().max()) for p in st.predictors[0].parameters()) < 1e-12
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_optb.py::test_gate_refuses_fixed_k_without_freeze_or_without_init_wm
+1 failed, 22 passed, 1 warning in 141.35s (0:02:21)

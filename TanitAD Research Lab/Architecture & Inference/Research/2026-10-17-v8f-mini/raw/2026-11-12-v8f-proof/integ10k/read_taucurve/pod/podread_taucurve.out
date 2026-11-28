@@ -1,0 +1,89 @@
+[17:23:33Z] container free 46 GB
+[17:23:49Z] e1 headway rc 0
+[17:23:57Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[17:24:19Z] headway rc 0
+[17:24:30Z] families rc 0
+[17:24:30Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (t1 to t8)
+   t1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   t2_time_gap_applied PASS {"per_run": {"L_s0": {"banked": 1.2, "runs": {"08": 0.8, "10": 1.0, "15": 1.5, "20": 2.0}, "PASS": true}, "L_s1": {"banked": 1.2, "runs": {"08": 0.8, "10": 1.0, "15": 1.5, "20": 2.0}, "PASS": true}, "R_s0": {"banked": 1.2, "runs": {"08": 0.8, "10": 1.0, "15": 1.5, "20": 2.0}, "PASS": true}, "R_s1": {"banked": 1.2, "runs": {"08": 0.8, "10": 1.0, "15": 1.5, "20": 2.0}, "PASS": true}}, "PASS": true}
+   t3_first_tick_inputs_equal PASS {"per_run": {"L_s0": {"max_abs_first_tick_inputs": 0.0, "same_ticks": true, "n_first_ticks": 2399, "changed_at_first_tick": {"08": 126, "10": 154, "15": 292, "20": 388, "12": 198}, "PASS": true}, "L_s1": {"max_abs_first_tick_inputs": 0.0, "same_ticks": true, "n_first_ticks": 2399, "changed_at_first_tick": {"08": 113, "10": 141, "15": 276, "20": 379, "12": 187}, "PASS": true}, "R_s0": {"max_ab
+   t4_same_read PASS {"per_run": {"0": {"same_reader_reads": true, "PASS": true}, "1": {"same_reader_reads": true, "PASS": true}}, "PASS": true}
+   t5_counts PASS {"n_runs": 17, "not_141": [], "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   t6_reused_dumps PASS {"n_files": 10, "differing": [], "PASS": true}
+   t7_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   t8_model PASS {"n_runs": 17, "not_equal": [], "PASS": true}
+== names
+   form L: TAUCURVE10K-LABEL-NO-CUT-BEYOND-1.2 ; TAUCURVE10K-LABEL-SHORTER-GAP-COSTS-SAFETY-LESS-FALLING-BEHIND
+   form R: TAUCURVE10K-READER-NO-CUT-BEYOND-1.2 ; TAUCURVE10K-READER-SHORTER-GAP-NO-SAFETY-COST-LESS-FALLING-BEHIND
+== levels per time gap (per model seed)
+   L tau 0.8  U [0.1014, 0.0783]  C [0.0, 0.0016]  F [0.134, 0.215]
+   L tau 1.0  U [0.0925, 0.0676]  C [0.0, 0.0016]  F [0.1636, 0.2383]
+   L tau 1.2  U [0.0463, 0.0302]  C [0.0, 0.0031]  F [0.1838, 0.2523]
+   L tau 1.5  U [0.0356, 0.0231]  C [0.0, 0.0031]  F [0.2523, 0.3178]
+   L tau 2.0  U [0.0302, 0.032]  C [0.0, 0.0]  F [0.3489, 0.3894]
+   R tau 0.8  U [0.105, 0.073]  C [0.0343, 0.0234]  F [0.1464, 0.2056]
+   R tau 1.0  U [0.0961, 0.0712]  C [0.0327, 0.0218]  F [0.1931, 0.2336]
+   R tau 1.2  U [0.0872, 0.073]  C [0.0312, 0.0218]  F [0.2274, 0.2913]
+   R tau 1.5  U [0.0836, 0.0569]  C [0.0265, 0.0249]  F [0.3053, 0.3427]
+   R tau 2.0  U [0.0783, 0.0445]  C [0.0156, 0.0171]  F [0.391, 0.4486]
+== differences against the time gap 1.2 s (pooled [interval], per seed)
+   L tau 0.8  U +0.0516 [+0.0224, +0.0894] [0.0552, 0.048]  C -0.0008 [-0.0032, +0.0000] [0.0, -0.0016]  F -0.0436 [-0.0710, -0.0206] [-0.0498, -0.0374]
+   L tau 1.0  U +0.0418 [+0.0145, +0.0767] [0.0463, 0.0374]  C -0.0008 [-0.0032, +0.0000] [0.0, -0.0016]  F -0.0171 [-0.0369, -0.0005] [-0.0202, -0.014]
+   L tau 1.5  U -0.0089 [-0.0184, +0.0009] [-0.0107, -0.0071]  C +0.0000 [-0.0023, +0.0026] [0.0, 0.0]  F +0.0670 [+0.0381, +0.1001] [0.0685, 0.0654]
+   L tau 2.0  U -0.0071 [-0.0323, +0.0136] [-0.016, 0.0018]  C -0.0016 [-0.0051, +0.0000] [0.0, -0.0031]  F +0.1511 [+0.0992, +0.2066] [0.1651, 0.1371]
+   R tau 0.8  U +0.0089 [-0.0050, +0.0300] [0.0178, 0.0]  C +0.0023 [+0.0000, +0.0055] [0.0031, 0.0016]  F -0.0833 [-0.1187, -0.0507] [-0.081, -0.0857]
+   R tau 1.0  U +0.0036 [-0.0071, +0.0154] [0.0089, -0.0018]  C +0.0008 [+0.0000, +0.0031] [0.0016, 0.0]  F -0.0460 [-0.0752, -0.0210] [-0.0343, -0.0576]
+   R tau 1.5  U -0.0098 [-0.0321, +0.0037] [-0.0036, -0.016]  C -0.0008 [-0.0070, +0.0052] [-0.0047, 0.0031]  F +0.0646 [+0.0332, +0.0993] [0.0779, 0.0514]
+   R tau 2.0  U -0.0187 [-0.0500, +0.0015] [-0.0089, -0.0285]  C -0.0101 [-0.0237, -0.0021] [-0.0156, -0.0047]  F +0.1604 [+0.1155, +0.2056] [0.1636, 0.1573]
+   beside: reader at 1.5 against the label rule with closing at 1.2: {"U": {"per_seed": [0.0374, 0.0267], "pooled": 0.032, "interval": [0.0131, 0.0521]}, "C": {"per_seed": [0.0265, 0.0218], "pooled": 0.0241, "interval": [0.0103, 0.0403]}, "F": {"per_seed": [0.1215, 0.0903], "pooled": 0.1059, "interval": [0.0638, 0.1538]}}
+   beside: reader at 2.0 against the label rule with closing at 1.2: {"U": {"per_seed": [0.032, 0.0142], "pooled": 0.0231, "interval": [0.0038, 0.0443]}, "C": {"per_seed": [0.0156, 0.014], "pooled": 0.0148, "interval": [0.0045, 0.0266]}, "F": {"per_seed": [0.2072, 0.1963], "pooled": 0.2017, "interval": [0.1474, 0.2552]}}
+   beside: I10RLcT20 against no rule: {"U": {"per_seed": [-0.1157, -0.0819], "pooled": -0.0988, "interval": [-0.1513, -0.0495]}, "C": {"per_seed": [-0.0763, -0.0421], "pooled": -0.0592, "interval": [-0.0966, -0.0288]}, "F": {"per_seed": [0.2539, 0.204], "pooled": 0.229, "interval": [0.1532, 0.3045]}}
+   beside: I10RQ50T20 against no rule: {"U": {"per_seed": [-0.0676, -0.0694], "pooled": -0.0685, "interval": [-0.1094, -0.0325]}, "C": {"per_seed": [-0.0607, -0.0249], "pooled": -0.0428, "interval": [-0.078, -0.0162]}, "F": {"per_seed": [0.296, 0.2632], "pooled": 0.2796, "interval": [0.2084, 0.35]}}
+== families (time gap against 1.2 s)
+   L_tau_0.8_minus_1.2    LONGITUDINAL:speed_mae_mps         D  -0.0722 [-0.1176, -0.0341] [-0.0675, -0.0769] BETTER
+   L_tau_0.8_minus_1.2    LONGITUDINAL:along_mae_m           D  -0.1765 [-0.2891, -0.0787] [-0.1918, -0.1613] BETTER
+   L_tau_0.8_minus_1.2    LATERAL:cross_mae_m                D  -0.0031 [-0.0152, +0.0080] [-0.007, 0.0008] OPEN
+   L_tau_0.8_minus_1.2    LATERAL:heading_mae_deg            D  -0.1479 [-0.2812, -0.0002] [-0.1959, -0.1] INSIDE-SPREAD
+   L_tau_0.8_minus_1.2    LATERAL:curvature_mae_1pm          D  -0.0063 [-0.0107, -0.0021] [-0.0083, -0.0042] INSIDE-SPREAD
+   L_tau_0.8_minus_1.2    LATERAL:yaw_rate_mae_degps         D  -0.7642 [-1.3368, -0.2800] [-0.9859, -0.5426] INSIDE-SPREAD
+   L_tau_0.8_minus_1.2    TACTICAL:lon_err_rate              D  -0.0088 [-0.0140, -0.0038] [-0.0079, -0.0096] INSIDE-SPREAD
+   L_tau_0.8_minus_1.2    TACTICAL:lat_err_rate              D  -0.0058 [-0.0152, +0.0021] [-0.0113, -0.0004] OPEN
+   L_tau_0.8_minus_1.2    TACTICAL:joint_err_rate            D  -0.0075 [-0.0127, -0.0019] [-0.0063, -0.0088] INSIDE-SPREAD
+   L_tau_0.8_minus_1.2    TACTICAL:ade_tac_m                 D  -0.2266 [-0.3754, -0.0987] [-0.248, -0.2052] BETTER
+   L_tau_2.0_minus_1.2    LONGITUDINAL:speed_mae_mps         D  +0.3018 [+0.1892, +0.4210] [0.3169, 0.2867] WORSE
+   L_tau_2.0_minus_1.2    LONGITUDINAL:along_mae_m           D  +0.7429 [+0.4649, +1.0461] [0.763, 0.7228] WORSE
+   L_tau_2.0_minus_1.2    LATERAL:cross_mae_m                D  +0.0625 [+0.0251, +0.1056] [0.0632, 0.0618] INSIDE-SPREAD
+   L_tau_2.0_minus_1.2    LATERAL:heading_mae_deg            D  +0.9921 [+0.6497, +1.3721] [1.119, 0.8651] WORSE
+   L_tau_2.0_minus_1.2    LATERAL:curvature_mae_1pm          D  +0.0202 [+0.0119, +0.0294] [0.021, 0.0193] INSIDE-SPREAD
+   L_tau_2.0_minus_1.2    LATERAL:yaw_rate_mae_degps         D  +4.3229 [+2.6802, +6.2090] [5.2213, 3.4245] WORSE
+   L_tau_2.0_minus_1.2    TACTICAL:lon_err_rate              D  +0.0140 [+0.0008, +0.0284] [0.0208, 0.0071] INSIDE-SPREAD
+   L_tau_2.0_minus_1.2    TACTICAL:lat_err_rate              D  +0.0281 [+0.0146, +0.0434] [0.0325, 0.0238] INSIDE-SPREAD
+   L_tau_2.0_minus_1.2    TACTICAL:joint_err_rate            D  +0.0221 [+0.0075, +0.0379] [0.0296, 0.0146] INSIDE-SPREAD
+   L_tau_2.0_minus_1.2    TACTICAL:ade_tac_m                 D  +1.0464 [+0.6641, +1.4626] [1.0744, 1.0184] WORSE
+   R_tau_0.8_minus_1.2    LONGITUDINAL:speed_mae_mps         D  -0.1255 [-0.1939, -0.0676] [-0.1108, -0.1402] BETTER
+   R_tau_0.8_minus_1.2    LONGITUDINAL:along_mae_m           D  -0.2819 [-0.4370, -0.1503] [-0.2592, -0.3045] BETTER
+   R_tau_0.8_minus_1.2    LATERAL:cross_mae_m                D  -0.0154 [-0.0303, -0.0028] [-0.0114, -0.0193] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    LATERAL:heading_mae_deg            D  -0.3706 [-0.5543, -0.2018] [-0.3051, -0.4361] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    LATERAL:curvature_mae_1pm          D  -0.0075 [-0.0129, -0.0024] [-0.006, -0.009] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    LATERAL:yaw_rate_mae_degps         D  -1.3966 [-2.1991, -0.6613] [-1.1785, -1.6146] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    TACTICAL:lon_err_rate              D  -0.0092 [-0.0156, -0.0029] [-0.0092, -0.0092] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    TACTICAL:lat_err_rate              D  -0.0138 [-0.0225, -0.0052] [-0.0117, -0.0158] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    TACTICAL:joint_err_rate            D  -0.0098 [-0.0173, -0.0033] [-0.0117, -0.0079] INSIDE-SPREAD
+   R_tau_0.8_minus_1.2    TACTICAL:ade_tac_m                 D  -0.3777 [-0.5828, -0.2025] [-0.3434, -0.4119] BETTER
+   R_tau_2.0_minus_1.2    LONGITUDINAL:speed_mae_mps         D  +0.3923 [+0.2773, +0.5193] [0.4051, 0.3795] WORSE
+   R_tau_2.0_minus_1.2    LONGITUDINAL:along_mae_m           D  +0.9892 [+0.6975, +1.3275] [1.0064, 0.972] WORSE
+   R_tau_2.0_minus_1.2    LATERAL:cross_mae_m                D  +0.0700 [+0.0403, +0.1042] [0.0602, 0.0799] INSIDE-SPREAD
+   R_tau_2.0_minus_1.2    LATERAL:heading_mae_deg            D  +1.2451 [+0.8510, +1.6606] [1.4258, 1.0644] WORSE
+   R_tau_2.0_minus_1.2    LATERAL:curvature_mae_1pm          D  +0.0309 [+0.0220, +0.0414] [0.0322, 0.0295] WORSE
+   R_tau_2.0_minus_1.2    LATERAL:yaw_rate_mae_degps         D  +5.7711 [+3.8269, +7.8379] [6.7319, 4.8103] WORSE
+   R_tau_2.0_minus_1.2    TACTICAL:lon_err_rate              D  +0.0127 [-0.0035, +0.0302] [0.0225, 0.0029] OPEN
+   R_tau_2.0_minus_1.2    TACTICAL:lat_err_rate              D  +0.0396 [+0.0231, +0.0585] [0.0475, 0.0317] INSIDE-SPREAD
+   R_tau_2.0_minus_1.2    TACTICAL:joint_err_rate            D  +0.0238 [+0.0098, +0.0404] [0.0321, 0.0154] INSIDE-SPREAD
+   R_tau_2.0_minus_1.2    TACTICAL:ade_tac_m                 D  +1.3771 [+0.9831, +1.8354] [1.3945, 1.3598] WORSE
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rule-driven rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-TAUCURVE DONE 17:24:30Z

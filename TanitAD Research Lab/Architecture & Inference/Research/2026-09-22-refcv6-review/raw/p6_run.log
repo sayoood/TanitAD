@@ -1,0 +1,54 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + the code beside it)",
+ "_line": "v7-B1 (b1_train_plus_eval_agents.jsonl.xz) -- NOT the parity line",
+ "join": "D:/Projects/TanitAD-artifacts/a40-rescue/b1_train_plus_eval_agents.jsonl.xz",
+ "queries": 100,
+ "policy": "agent_slots.match_slots:181-186 drops the FARTHEST by sqrt(cx^2+cy^2); refcv6's box path applies no field filter first (refc_v3_train.py:4372, p1_box_path_filter.json)",
+ "lines": {
+  "n_lines": 875657,
+  "n_lines_over_budget": 45592,
+  "frac_over_budget": 0.05206604869258168
+ },
+ "on_over_budget_lines": {
+  "n_infield_boxes_present": 2326106,
+  "n_infield_boxes_KEPT_by_nearest_N_of_the_raw_set": 1675369,
+  "n_infield_boxes_AVAILABLE_if_filtered_first": 2300748,
+  "n_infield_supervision_lost_to_ordering": 625379,
+  "frac_of_available_infield_lost": 0.271815513911128,
+  "n_query_slots_spent": 4559200,
+  "n_query_slots_spent_on_BEHIND_EGO_boxes": 2240627,
+  "frac_query_slots_behind_ego": 0.49145178978768206
+ },
+ "controls": {
+  "analytic_lines_with_at_least_N_infield": 1377,
+  "analytic_avail_equals_N_on_all_of_them": true,
+  "note": "by construction av_if == N whenever the line already carries N in-field boxes; a miss here would be a bug in this probe, not a finding"
+ },
+ "infield_loss_by_class": {
+  "automobile": 382853,
+  "person": 221731,
+  "rider": 20600,
+  "bus": 11181,
+  "heavy_truck": 9034,
+  "trailer": 3084,
+  "train_or_tram_car": 1680,
+  "protruding_object": 334,
+  "other_vehicle": 156,
+  "stroller": 84
+ },
+ "infield_kept_by_class": {
+  "automobile": 887949,
+  "person": 570565,
+  "rider": 47152,
+  "heavy_truck": 11567,
+  "bus": 8792,
+  "trailer": 5915,
+  "protruding_object": 4884,
+  "stroller": 3180,
+  "train_or_tram_car": 1663,
+  "other_vehicle": 1017,
+  "animal": 552
+ },
+ "wall_s": 102.6
+}
+wrote D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-22-refcv6-review/raw/p6_query_budget_bias.json

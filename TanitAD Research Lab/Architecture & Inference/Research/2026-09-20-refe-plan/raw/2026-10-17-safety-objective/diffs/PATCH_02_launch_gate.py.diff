@@ -1,0 +1,110 @@
+--- a/refe/launch_gate.py
++++ b/refe/launch_gate.py
+@@ -89,6 +89,20 @@
+ RLS1C_EPO_REGISTERED = {**RLS1_EPO_REGISTERED, "epo_ref": RLS1C_EPO_REF}
+ RLS1C_MUST_NAME = ("--epo-ref",)                                                        # flags whose parser default would reproduce the old arm: the argv must CARRY them
+ RLS1C_SUITE = RLS1B_SUITE + [{"script": "test_rl_r0c.py", "token": "ZZTEST_PASS"}]
++# RL-S1d / SAFEOBJ (raw/2026-10-17-safety-objective/PREREG_SAFEOBJ.md + SPEC_SAFEOBJ.md; needs the PI's budget decision before any launch).  ONE lever moves against R0: constrained EPO,
++# `--epo-con g5` (L_con = sum_k lambda_k (c^k_A - eps - c^k_B) on TTC and NC, lambda by dual ascent).  The argv is R0's banked argv (sha256 24451b62...) plus the five --epo-con* flags.
++# The switch's parser default is `off`, which would silently reproduce R0: so R0d / R1d NAME all five flags and R1o (the matched lever-off control on the SAME trainer bytes) NAMES `--epo-con off`;
++# every older profile registers `--epo-con off` and so refuses any other value.  Order R0d, R1d, R1o (a K3 kill stops the chain; R1o's K3 is OBSERVE-ONLY, rls1_checks.py).
++RLS1D_ARM_SEEDS = {"R0d": 0, "R1d": 1, "R1o": 1}
++RLS1D_ARM_CLASS = {"R0d": "R", "R1d": "R", "R1o": "R"}
++RLS1D_CON_ON = {"epo_con": "g5", "epo_con_eps": 0.0, "epo_con_lr": 4.0, "epo_con_max": 10.0, "epo_con_lam0": 0.0}          # PREREG_SAFEOBJ 2: eps 0, eta 4, lambda_max 10, lambda0 0
++RLS1D_CON_OFF = {"epo_con": "off"}
++RLS1D_ARM_EPO_REGISTERED = {"R0d": RLS1D_CON_ON, "R1d": RLS1D_CON_ON, "R1o": RLS1D_CON_OFF}
++RLS1D_CON_FLAGS = ("--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0")
++RLS1D_ARM_MUST_NAME = {"R0d": RLS1D_CON_FLAGS, "R1d": RLS1D_CON_FLAGS, "R1o": ("--epo-con",)}
++RLS1D_CON_TERMS = ("con", "con_lam_ttc", "con_lam_nc", "con_g_ttc", "con_g_nc")                # the trainer's metric rows must emit these on a constrained arm (R1o: none, and their presence there is a FAIL)
++RLS1D_ARM_CON_TERMS = {"R0d": RLS1D_CON_TERMS, "R1d": RLS1D_CON_TERMS, "R1o": ()}
++RLS1D_SUITE = RLS1C_SUITE + [{"script": "test_rl_safeobj.py", "token": "ZZTEST_PASS"}]
+ # Auxiliary drivable-area head, S1 (WIRING_PLAN.md; eval/PREREG_AUX_DRIVABLE_DRAFT.md "Hosts": S1 = the SFT-4 recipe on the dev box, trunk frozen).  ⛔ PROPOSED values: they are
+ # raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md's, and the Master Mind's approval of that file is what makes them registered -- an amendment is a one-line change HERE.
+ # Arms: N = the no-head replicate, H1 = head with the feed off (perception proof; the scorer is bit-identical to N, G12), H2 = head + feed.  One seed per arm name.
+@@ -98,7 +112,7 @@
+ AUXS1_HEAD_REGISTERED = {"w_aux_drv": 0.1, "aux_drv_lr": 2e-4, "aux_drv_tap": "visual", "aux_drv_depth": 2}      # effective value (named OR default), head arms
+ # the optimiser and loss of EVERY arm (N included), inherited from the SFT-4 run that produced u400 (refe/sft4_pod.sh COMMON); --max-updates 400 is the S1 budget
+ AUXS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 400, "eval_every": 400, "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
+-AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l",
++AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l", "--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0",
+                    "--epo-terms-train", "--epo-terms-heldout", "--epo-ref")
+ # --aux-drv-shuffle-seed is the label-shuffled CONTROL's lever: a non-control arm never carries it (a dated prereg amendment adds the control arm and relaxes this)
+ AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS
+@@ -236,6 +250,10 @@
+ # RL-S1c = refe_rls1 with ITS arm table (R0c only), `epo_ref armA` registered AND required to be named.  Everything else (checks, data flags, forbidden / required flags, recipe, G-DVB) is refe_rls1's.
+ PROFILES["refe_rls1c"] = {**PROFILES["refe_rls1"], "name": "refe_rls1c", "suite": RLS1C_SUITE, "arm_class": RLS1C_ARM_CLASS, "arm_seeds": RLS1C_ARM_SEEDS,
+                           "epo_registered": RLS1C_EPO_REGISTERED, "must_name": RLS1C_MUST_NAME}
++# RL-S1d = refe_rls1 with ITS arm table (R0d, R1d, R1o), the registered --epo-con values PER ARM (arm_epo_registered), the flags each arm must NAME (arm_must_name) and the extra metric columns a
++# constrained arm must emit (arm_con_terms).  `epo_con_block`: the data event MUST carry the `epo_con` block (G-DVB cannot read a legacy absence as "off" here: R1o's OFF is itself observed).
++PROFILES["refe_rls1d"] = {**PROFILES["refe_rls1"], "name": "refe_rls1d", "suite": RLS1D_SUITE, "arm_class": RLS1D_ARM_CLASS, "arm_seeds": RLS1D_ARM_SEEDS,
++                          "arm_epo_registered": RLS1D_ARM_EPO_REGISTERED, "arm_must_name": RLS1D_ARM_MUST_NAME, "arm_con_terms": RLS1D_ARM_CON_TERMS, "epo_con_block": True}
+ # S1c = refe_aux_s1 (same runner, checks, data flags, forbidden flags, head levers, recipe except the budget) with ITS arm table and per-class budget.  `--max-updates` is no longer a pinned value of
+ # the PROFILE (400) but of the ARM CLASS (auxs1_refusals reads `arm_recipe`); it must still be NAMED.  `schedule_reach` adds G-DVB rows that re-derive the schedule the trainer will build.
+ PROFILES["refe_aux_s1c"] = {**PROFILES["refe_aux_s1"], "name": "refe_aux_s1c", "suite": AUXS1C_SUITE, "arm_class": AUXS1C_ARM_CLASS, "arm_seeds": AUXS1C_ARM_SEED,
+@@ -385,7 +403,7 @@
+     for t in argv:
+         if t.startswith("--") and t not in known:
+             out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
+-    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser)]
++    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser) + mod.epo_con_refusals(ns, parser)]          # SAFEOBJ: epo_con_refusals beside epo_refusals
+ 
+     def how(flag):
+         return "named" if flag in argv else "the parser DEFAULT"
+@@ -401,6 +419,9 @@
+         for f in prof.get("must_name", ()):                                   # R0c: --epo-ref armA must be CARRIED -- the parser default `base` reproduces R0 and would pass unnoticed
+             if f not in argv:
+                 out.append(f"{name} requires {f} NAMED for {who} (a flag whose default reproduces the old arm must be named, or the arm did not test the lever); the argv does not carry it")
++        for f in prof.get("arm_must_name", {}).get(declared, ()):                  # SAFEOBJ: the flags THIS arm must CARRY (R0d / R1d: the five --epo-con*; R1o: --epo-con off, whose default would hide the control)
++            if f not in argv:
++                out.append(f"{name} requires {f} NAMED for {who} (a flag whose default reproduces the old arm must be named, or the arm did not test the lever); the argv does not carry it")
+         if cls == "R?":
+             out.append(f"{name}: exactly one of --epo-k / --epo-l: R0/R1 carry neither (the core reward), R2 carries both")
+         if cls == "R":
+@@ -417,6 +438,7 @@
+         reg = dict(prof.get("epo_registered", RLS1_EPO_REGISTERED))
+         if cls == "R2":
+             reg.update(RLS1_R2_REGISTERED)
++        reg = {"epo_con": "off", **reg, **prof.get("arm_epo_registered", {}).get(declared, {})}          # SAFEOBJ: every profile registers --epo-con off unless its arm table says otherwise
+         for dest, want in reg.items():
+             f = "--" + dest.replace("_", "-")
+             if not C._close(getattr(ns, dest), want):
+@@ -431,7 +453,8 @@
+         out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
+     if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
+         out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
+-    return out, (RLS1_EPO_TERMS if cls != "C" else ())
++    con_terms = tuple(prof.get("arm_con_terms", {}).get(declared, ())) if cls != "C" else ()          # SAFEOBJ: a constrained arm's rows must also emit the con* columns
++    return out, ((RLS1_EPO_TERMS + con_terms) if cls != "C" else ())
+ 
+ 
+ # ============================================================================================ aux S1 arm rules (refe_aux_s1)
+@@ -749,6 +772,9 @@
+             reasons.append(f"G11: KL(pi_SFT || pi) at step 0 is {g11.get('kl_step0')} (tol {g11.get('kl_tol')}): arm B did not start AT the base")
+         if g11.get("mutate_detach"):
+             reasons.append("G11 was produced under REFE_RL_MUTATE_EPO_DETACH=1 (a regression arm): it can never count")
++    g13 = next((v for k, v in gates.items() if prefix[k] == "G13"), None)
++    if g13 is not None:                                      # G13 (--epo-con): re-judged from its raw fields too (SAFEOBJ)
++        reasons += C.judge_g13(g13, ns)
+     g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
+     if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
+         reasons += C.judge_g12(g12, ns)
+@@ -873,7 +899,7 @@
+     arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}.get(prof.get("arm_rules"), {})
+     if arm_name:
+         if not prof.get("arm_rules"):
+-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_aux_s1, refe_aux_s1c), not {a.profile}")
++            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_aux_s1, refe_aux_s1c), not {a.profile}")
+         if arm_name in prof.get("arms_need_pi", {}):
+             raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
+         if arm_name not in arms:
+@@ -984,8 +1010,8 @@
+         p.add_argument("--key-file")
+         p.add_argument("--pkg", required=(name != "refusals"))
+         if name in ("run", "refusals"):
+-            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS),
+-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; "
++            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS),
++                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; "
+                                 "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
+         if name == "run":
+             p.add_argument("--out-dir", required=True)

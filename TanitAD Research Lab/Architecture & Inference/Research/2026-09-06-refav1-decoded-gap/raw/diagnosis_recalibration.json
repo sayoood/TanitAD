@@ -1,0 +1,137 @@
+{
+ "task": "D-REFAV1-DK-DECODED -- BAR-2 diagnosis + recalibration lever",
+ "evidence_class": "MEASURED (ours)",
+ "shrinkage": {
+  "regress_truth_on_pred": {
+   "intercept": 1.3619398708745467,
+   "slope": 0.8958353274168479
+  },
+  "reading": "slope > 1 means the head's spread is SHRUNK toward the fit mean, i.e. it over-predicts SMALL gaps -- the direction that makes a one-sided barrier under-fire",
+  "pred_std": 13.479956233771329,
+  "truth_std": 18.625400470713966,
+  "spread_ratio": 0.7237404776862015,
+  "bias_overall_m": 1.9243131131884261,
+  "bias_on_small_gaps_m": 8.358543525765887,
+  "bias_on_large_gaps_m": -7.610992280575313
+ },
+ "recalibration": {
+  "per_fold": {
+   "0": {
+    "alpha": 1.3676402430194248,
+    "beta": 0.8825416270257375,
+    "alpha_pix": 24.16537623402037,
+    "beta_pix": 0.16648855942368085,
+    "n_fit": 3465
+   },
+   "1": {
+    "alpha": 2.333371207905277,
+    "beta": 0.8588300661242054,
+    "alpha_pix": 18.99340858426614,
+    "beta_pix": 0.2933028810638497,
+    "n_fit": 2724
+   },
+   "2": {
+    "alpha": 1.2631841343721009,
+    "beta": 0.8868637311008866,
+    "alpha_pix": 24.69888577448228,
+    "beta_pix": 0.18382059046511293,
+    "n_fit": 3390
+   },
+   "3": {
+    "alpha": -2.468587687400309,
+    "beta": 1.0433251139114437,
+    "alpha_pix": 10.882712297596147,
+    "beta_pix": 0.6381692175807142,
+    "n_fit": 3018
+   },
+   "4": {
+    "alpha": 3.0662354340443883,
+    "beta": 0.8465372095690532,
+    "alpha_pix": 18.424527670338033,
+    "beta_pix": 0.3514668588725653,
+    "n_fit": 3367
+   }
+  },
+  "r2_field_before": 0.4040040564507277,
+  "r2_field_after": 0.3924921634620402,
+  "r2_pix_before": -0.03348195905631779,
+  "r2_pix_after": -0.032790387208417426,
+  "mae_before": 11.46318073623114,
+  "mae_after": 11.38007260021437,
+  "spread_ratio_after": 0.679803521884947,
+  "note": "R2 is expected to move only slightly -- recalibration trades squared error for SPREAD, which is what the one-sided barrier needs. The readable outcome is BAR-2, not R2."
+ },
+ "BAR2_table": {
+  "n_violating": 21,
+  "n_adequate": 69,
+  "n_lead": 90,
+  "rows": [
+   {
+    "arm": "oracle",
+    "n_fires": 21,
+    "n_flips": 21,
+    "sensitivity_n": 21,
+    "sensitivity": 1.0,
+    "specificity_n": 69,
+    "specificity": 1.0
+   },
+   {
+    "arm": "constant_CONTROL",
+    "n_fires": 16,
+    "n_flips": 16,
+    "sensitivity_n": 11,
+    "sensitivity": 0.5238095238095238,
+    "specificity_n": 64,
+    "specificity": 0.927536231884058
+   },
+   {
+    "arm": "pix_floor",
+    "n_fires": 14,
+    "n_flips": 14,
+    "sensitivity_n": 10,
+    "sensitivity": 0.47619047619047616,
+    "specificity_n": 65,
+    "specificity": 0.9420289855072463
+   },
+   {
+    "arm": "pix_floor_recal",
+    "n_fires": 18,
+    "n_flips": 18,
+    "sensitivity_n": 11,
+    "sensitivity": 0.5238095238095238,
+    "specificity_n": 62,
+    "specificity": 0.8985507246376812
+   },
+   {
+    "arm": "field",
+    "n_fires": 19,
+    "n_flips": 19,
+    "sensitivity_n": 12,
+    "sensitivity": 0.5714285714285714,
+    "specificity_n": 62,
+    "specificity": 0.8985507246376812
+   },
+   {
+    "arm": "field_recal",
+    "n_fires": 21,
+    "n_flips": 21,
+    "sensitivity_n": 14,
+    "sensitivity": 0.6666666666666666,
+    "specificity_n": 62,
+    "specificity": 0.8985507246376812
+   }
+  ]
+ },
+ "BAR2_after_lever": {
+  "sensitivity": 0.6666666666666666,
+  "bar": 0.8,
+  "specificity": 0.8985507246376812,
+  "bar_spec": 0.7,
+  "PASS": false
+ },
+ "recalibrated_bundle": {
+  "path": "C:/Users/Admin/dkhead_run/head/gap_head_bundle_recal.pt",
+  "sha256": "89fc642bf63532dbe64566f81123ad3ff385f3445a885b4ad1913dbbc00bd8f9",
+  "version": "dkgap-linear-v1+recal"
+ }
+}

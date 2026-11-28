@@ -1,0 +1,67 @@
+{
+ "canonical": "C:/Users/Admin/rc7restart/stack/ops/runs.d/refcv7-r101-s0.argv.json",
+ "canonical_gate_sha256": "6402d33de75b7f1c6dbdeb9aeedd46a00a82e7325eec420fa179f366213bd5cd",
+ "n_tokens": 154,
+ "variants": {
+  "conflict50": {
+   "file": "refcv7-r101-s0.conflict50.argv.json",
+   "gate_sha256": "e46ad3eb4099264754ba97846c0f3f5e8447ce61e21124dc980e2eb64464e9c8",
+   "changes": [
+    {
+     "flag": "--conflict-every",
+     "launch": "10",
+     "variant": "50",
+     "why": "instrument cadence: 1 grad-conflict reading per 50 steps instead of 10 (observational probe; training numerics bit-identical, tests/test_refcv6_grad_conflict.py)"
+    }
+   ]
+  },
+  "conflict100": {
+   "file": "refcv7-r101-s0.conflict100.argv.json",
+   "gate_sha256": "98e17170f4f1732365e9784fad15b57ae5763f102018a501e0e4d6cbfcc46160",
+   "changes": [
+    {
+     "flag": "--conflict-every",
+     "launch": "10",
+     "variant": "100",
+     "why": "as conflict50, 1 reading per 100 steps"
+    }
+   ]
+  },
+  "conflict50_ckptoff": {
+   "file": "refcv7-r101-s0.conflict50_ckptoff.argv.json",
+   "gate_sha256": "62bf43b72de6102852143ae13c0bfcf8a759c74e92aed9250267669ee4addff0",
+   "changes": [
+    {
+     "flag": "--conflict-every",
+     "launch": "10",
+     "variant": "50",
+     "why": "as conflict50"
+    },
+    {
+     "flag": "--map-hires-grad-ckpt",
+     "launch": "on",
+     "variant": "off",
+     "why": "no gradient checkpoint in the 10 cm branch: +1.31 GB/sample MEASURED (dev box), ~+21 GB at b16 against the live 24.8 GB peak; equivalent numerics by construction (the recompute is the same deterministic forward) -- NOT MEASURED bit-identical"
+    }
+   ]
+  },
+  "conflict50_eval1000": {
+   "file": "refcv7-r101-s0.conflict50_eval1000.argv.json",
+   "gate_sha256": "f2e03652d27a3a3bc05f05e7196bd929e189ba416ff4cde1f2d2dc2815a37032",
+   "changes": [
+    {
+     "flag": "--conflict-every",
+     "launch": "10",
+     "variant": "50",
+     "why": "as conflict50"
+    },
+    {
+     "flag": "--eval-every",
+     "launch": "500",
+     "variant": "1000",
+     "why": "in-training T0 monitor every 1,000 steps (the Training Watch cadence halves)"
+    }
+   ]
+  }
+ }
+}

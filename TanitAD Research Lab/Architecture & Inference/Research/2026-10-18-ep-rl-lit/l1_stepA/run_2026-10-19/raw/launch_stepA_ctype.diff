@@ -1,0 +1,81 @@
+9c9,12
+<   * after taking it, requires memory.used <= 1500 MiB (an unlocked GPU user means: give the lock back and wait);
+---
+>   * after taking it, requires NO compute-only (type C) process in the nvidia-smi process table and memory.used <= 6000 MiB (an unlocked GPU user means: give the lock back and wait).
+>     PATCHED COPY (PI decision 2026-10-19, "Allow compute-type check"; the landed launch_stepA.py stays frozen): the landed rule memory.used <= 1500 MiB can NEVER pass on this box, because the
+>     desktop's C+G graphics apps (Obsidian, VS Code, browsers, the screensaver) hold ~2.3 GB with no compute job. Reference: hn34/work/gpu_locked.py (compute_pids). An unreadable
+>     nvidia-smi fails CLOSED (compute_pids -> [-1]);
+10a14
+>   * (patched copy) also waits while psutil available RAM < 8 GB (handoff start condition 3), BEFORE taking the lock;
+29c33,34
+< MAX_USED_MIB = 1500
+---
+> MIN_AVAIL_GB = 8.0                                                       # handoff start condition 3 (psutil available RAM); checked BEFORE the lock is taken, so no lock is held while RAM-starved
+> MAX_USED_MIB = 6000                                                      # backstop only (landed: 1500); the decisive test is compute_pids()
+42a48,71
+> def avail_gb() -> float:
+>     try:
+>         import psutil
+>         return psutil.virtual_memory().available / 2 ** 30
+>     except Exception:
+>         return 0.0                                                       # fail CLOSED: an unreadable RAM probe is a starved box (the perf-counter path is LOCALISED here; psutil is the probe W3 uses)
+> 
+> 
+> def compute_pids(text=None):
+>     """pids of type-C (compute-only) processes in the nvidia-smi process table; C+G desktop apps are not counted.  Unreadable nvidia-smi -> [-1] (fail CLOSED)."""
+>     if text is None:
+>         try:
+>             r = subprocess.run(["nvidia-smi"], capture_output=True, timeout=30)
+>             text = r.stdout.decode("utf-8", "replace")
+>         except Exception:
+>             return [-1]
+>     out = []
+>     for line in text.splitlines():
+>         t = line.strip().strip("|").split()
+>         if len(t) >= 6 and t[0].isdigit() and t[3].isdigit() and t[4] == "C":
+>             out.append(int(t[3]))
+>     return out
+> 
+> 
+55c84
+< def try_lock(lock=LOCK, mark=MARK, used_fn=used_mib, alive_fn=pid_alive, sleep_fn=time.sleep, now_fn=time.time):
+---
+> def try_lock(lock=LOCK, mark=MARK, used_fn=used_mib, alive_fn=pid_alive, sleep_fn=time.sleep, now_fn=time.time, compute_fn=None):
+79a109,112
+>     cp = (compute_fn or compute_pids)()                                  # late-bound: a test or a mutation can replace the module's compute_pids
+>     if cp:
+>         release(body, lock)
+>         return None, f"compute process(es) on the GPU {cp} after taking the lock"
+105c138,139
+< def run_locked(cmd, max_wait, lock=LOCK, mark=MARK, used_fn=used_mib, alive_fn=pid_alive, sleep_fn=time.sleep, now_fn=time.time, run_fn=None, poll_s=60.0, log=print):
+---
+> def run_locked(cmd, max_wait, lock=LOCK, mark=MARK, used_fn=used_mib, alive_fn=pid_alive, sleep_fn=time.sleep, now_fn=time.time, run_fn=None, poll_s=60.0, log=print, compute_fn=None, avail_fn=None, min_avail_gb=None):
+>     need = MIN_AVAIL_GB if min_avail_gb is None else min_avail_gb
+109c143,147
+<         body, why = try_lock(lock, mark, used_fn, alive_fn, sleep_fn, now_fn)
+---
+>         ram = (avail_fn or avail_gb)()
+>         if ram < need:
+>             body, why = None, f"RAM available {int(ram)} GB < {need:g} GB (lock not taken)"
+>         else:
+>             body, why = try_lock(lock, mark, used_fn, alive_fn, sleep_fn, now_fn, compute_fn)
+128c166
+< def probe(lock=LOCK, mark=MARK, used_fn=used_mib) -> dict:
+---
+> def probe(lock=LOCK, mark=MARK, used_fn=used_mib, compute_fn=None) -> dict:
+129a168
+>     cp = (compute_fn or compute_pids)()
+131c170
+<             "would_launch": bool(not os.path.exists(mark) and not os.path.exists(lock) and used_fn() <= MAX_USED_MIB)}
+---
+>             "compute_pids": cp, "would_launch": bool(not os.path.exists(mark) and not os.path.exists(lock) and not cp and used_fn() <= MAX_USED_MIB)}
+146c185
+<         f"# 3  GPU  {py_cpu} \"{h}/launch_stepA.py\" run --max-wait 7200 -- {py_eval} \"{h}/make_stepA_bundle.py\" --ckpt {ck} --plan {t} --sample {w}/sample.json --table {tab} --out-dir {w}/bundle",
+---
+>         f"# 3  GPU  {py_cpu} \"{h}/launch_stepA_ctype.py\" run --max-wait 7200 -- {py_eval} \"{h}/make_stepA_bundle.py\" --ckpt {ck} --plan {t} --sample {w}/sample.json --table {tab} --out-dir {w}/bundle",
+159a199
+>     r.add_argument("--min-avail-gb", type=float, default=MIN_AVAIL_GB)
+177c217
+<     return run_locked(cmd, a.max_wait, a.lock, a.mark)
+---
+>     return run_locked(cmd, a.max_wait, a.lock, a.mark, min_avail_gb=a.min_avail_gb)

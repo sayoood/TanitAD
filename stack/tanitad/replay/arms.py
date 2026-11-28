@@ -69,11 +69,22 @@ def _script_module(name: str):
 
 
 def load_checkpoint_state(path: str | Path) -> tuple[dict, int]:
-    """Load a checkpoint -> (state_dict, step). Accepts both the trainer
-    format ``{"model": sd, "step": n, ...}`` and a bare state dict."""
+    """Load a checkpoint -> (state_dict, step). Accepts the v5 trainer format
+    ``{"model": sd, "step": n, ...}``, the **v6** staged-trainer format
+    ``{"stack": sd, "opt": …, "step": n, "config": …}``, and a bare state dict.
+
+    ⛔ The ``"stack"`` branch exists because the P-battery died on a real v6
+    checkpoint with ``KeyError: 'model'`` (MEASURED 2026-08-14, pod4). These
+    loaders predate v6 and silently assumed the v5 key. Without it the fallback
+    returns the WHOLE checkpoint dict as if it were a state_dict — which is
+    worse than the KeyError, because ``opt``/``step``/``config`` then look like
+    parameter entries instead of failing loudly.
+    """
     ck = torch.load(str(path), map_location="cpu", weights_only=True)
-    if isinstance(ck, dict) and "model" in ck:
-        return ck["model"], int(ck.get("step", -1))
+    if isinstance(ck, dict):
+        for key in ("model", "stack"):
+            if key in ck:
+                return ck[key], int(ck.get("step", -1))
     return ck, -1
 
 
@@ -467,6 +478,16 @@ class RefBArm:
     to the model, not a prediction, so it is computed outside the latency
     timer. Maneuver ground truth uses the pinned pseudo-label derivation
     (refb_labels.window_maneuver_labels).
+
+    ⛔ ``nav_cmd`` (input) and ``route_pred`` (the model's own route decision,
+    ``route_logits.argmax`` over ROUTE_CLASSES) are DIFFERENT FIELDS and must
+    stay different downstream. ``route_logits`` was computed by every forward
+    pass here and then DISCARDED, which left the visualization layer with only
+    the input to show — and it showed it in a prediction slot (the nav-echo
+    defect). It is now returned. ⚠️ ``StrategicHead`` is FiLM-conditioned on
+    ``nav_emb(nav_cmd)`` (refs/refb.py:295-305), so ``route_pred`` is a model
+    output computed UNDER the GT-derived input; consumers declare that with
+    ``tanitad.viz_standard``'s ``conditioned_on`` rather than hiding it.
     """
 
     name = "refb"
@@ -522,6 +543,9 @@ class RefBArm:
                 wp = torch.stack([out["waypoints"][k]
                                   for k in WAYPOINT_STEPS], dim=1)
                 probs = torch.softmax(out["maneuver_logits"].float(), dim=-1)
+                # The model's OWN strategic decision (aux-CE-supervised route
+                # head). Distinct from nav_cmd above, which is its input.
+                route_pred = out["route_logits"].float().argmax(dim=-1)
                 ood = self.model.ood.score(out["states"][:, -1].float())
         per_win_ms = lt.ms / B
 
@@ -537,6 +561,7 @@ class RefBArm:
         wp_np = wp.float().cpu().numpy()
         seq_np = out["action_seq"].float().cpu().numpy()
         probs_np = probs.cpu().numpy()
+        route_np = route_pred.cpu().numpy()
         conf = out["conf_pred"].float().cpu()
         outs = []
         for j in range(B):
@@ -548,7 +573,8 @@ class RefBArm:
                 action_seq=seq_np[j],
                 maneuver_probs=probs_np[j],
                 maneuver_gt=int(man_gt[j]),
-                nav_cmd=int(nav[j]),
+                nav_cmd=int(nav[j]),            # GIVEN INPUT (GT-derived)
+                route_pred=int(route_np[j]),    # model's own route decision
                 conf=float(conf[j]),
                 ood=float(ood[j]),
             ))

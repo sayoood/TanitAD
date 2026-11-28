@@ -1,0 +1,364 @@
+--- a/stack/tanitad/models/hjepa.py
++++ b/stack/tanitad/models/hjepa.py
+@@ -47,6 +47,7 @@
+ 
+ from __future__ import annotations
+ 
++import copy
+ import math
+ from dataclasses import dataclass, field
+ from typing import Callable, Mapping, Optional, Sequence
+@@ -255,6 +256,10 @@
+ # Upper-level encoders  (Eq. 1)
+ # =============================================================================================
+ 
++#: PREREG_V8F_ACTRSP section 2.1: the action-response term's fixed geometry (no flag: the card fixes it). K steps (2.0 s at the 0.2 s level-1 step), anchors every RSP_STRIDE states, the planner's context 1, the slope floor.
++RSP_K, RSP_STRIDE, RSP_CTX, RSP_S_MIN = 10, 10, 1, 0.1
++
++
+ def _windows(z: Tensor, w: int, s: int, d: int = 1) -> Tensor:
+     """``(N, T, D) -> (N, n, w*D)`` with ``n = (T - ((w-1)*d + 1))//s + 1``; window ``i`` = ``z[i*s + m*d]``, ``m = 0..w-1`` (oldest first).
+     ``d = 1`` is the consecutive window ``z[i*s : i*s+w]`` (every earlier call, bit for bit). PREREG_V8F_MRATE: ``d > 1`` = dilated at the level's own spacing."""
+@@ -462,6 +467,8 @@
+     rollout_k: int = 1         # PREREG_V8F_LADDER: free-run steps of the k-step loss (:meth:`HJEPAStack.rollout_loss`). 1 = the teacher-forced one-step loss only = every earlier build, bit for bit (no term, no key in the loss dict)
+     rollout_stride: int = 1    # PREREG_V8F_LADDER: the free run starts at every ``rollout_stride``-th state of the level (anchors 0, s, 2s, ..); used only when ``rollout_k`` > 1
+     rollout_w: float = 1.0     # PREREG_V8F_LADDER: weight of the k-step term in the level's loss (constant over training: no schedule); used only when ``rollout_k`` > 1
++    rsp_w: float = 0.0         # PREREG_V8F_ACTRSP: weight of the action-response term :meth:`HJEPAStack.response_loss` in the level's loss (level 1 only). 0.0 = the term is NOT built = every earlier build, bit for bit (no key, no op)
++    rsp_delta: tuple = (0.42, 0.24)   # PREREG_V8F_ACTRSP: the contrast size per action channel in WM units (1 sd of acceleration / 2.0 and yaw rate / 0.4 on R35's TRAIN windows); used only when ``rsp_w`` > 0
+ 
+ 
+ @dataclass
+@@ -590,6 +597,8 @@
+                     row.update(dilation=c.dilation, causal_pad=c.causal_pad, enc_in_dim=enc.net[0].in_features)
+             if c.rollout_k > 1:                                           # PREREG_V8F_LADDER: present only when moved; the G-DVB reader is :meth:`built_rollout` (the loss's own loop), not this config echo
+                 row.update(rollout_k=c.rollout_k, rollout_stride=c.rollout_stride, rollout_w=c.rollout_w)
++            if lv == 1 and c.rsp_w > 0.0:                                 # PREREG_V8F_ACTRSP: present only when moved (a flag-off stack keeps its key set); the G-DVB reader is :meth:`built_rsp` (the loss's own run), not this config echo
++                row.update(rsp_w=c.rsp_w, rsp_delta=tuple(c.rsp_delta), rsp_k=RSP_K, rsp_stride=RSP_STRIDE, rsp_ctx=RSP_CTX)
+             out[lv] = row
+         return out
+ 
+@@ -756,6 +765,11 @@
+                 ro = self.rollout_loss(lv, z, enc.idm_target[0] if lv == 1 else a, c.rollout_k, c.rollout_stride, detach_target)
+                 out[f"rollout/L{lv}"], out[f"rollout_valid/L{lv}"], out[f"rollout_masked/L{lv}"] = ro["loss"], ro["n_valid"], ro["n_masked"]
+                 level_loss = level_loss + c.rollout_w * ro["loss"]
++            if lv == 1 and c.rsp_w > 0.0:                                 # PREREG_V8F_ACTRSP: the action-response term (rsp_w = 0.0: this block does not exist, the dict and the total are the earlier build's)
++                rs = self.response_loss(z, enc.idm_target[0], c)
++                out["rsp/L1"] = rs["loss"]
++                out.update({f"{k}/L1": v for k, v in rs["diag"].items()})
++                level_loss = level_loss + c.rsp_w * rs["loss"]
+             out[f"level/L{lv}"] = level_loss
+             total = total + level_loss
+         out["total"] = total
+@@ -828,6 +842,46 @@
+         step_err = (contrib.sum(dim=(0, 1)) / (b_ * valid.sum(dim=0).clamp_min(1))).detach()
+         return {"loss": loss, "contrib": contrib, "step_err": step_err, "n_valid": (n_valid * b_).to(per.dtype), "n_masked": ((~valid).sum() * b_).to(per.dtype)}
+ 
++    def response_loss(self, z: Tensor, a: Tensor, c: "LevelConfig") -> dict:
++        """PREREG_V8F_ACTRSP section 2.1: the level-1 action-response term. For anchors ``0, RSP_STRIDE, .. `` (every K-step stretch inside the window) the predictor is rolled ``RSP_K`` steps from the DETACHED anchor state under the logged
++        actions plus / minus ``rsp_delta`` on each channel (four contrasts, one batched :meth:`rollout` call at context ``RSP_CTX``), the level-1 IDM head (parameters detached: it keeps training on real pairs only) reads each predicted
++        transition, and the read difference per unit command, divided by the head's own slope on the batch's REAL transitions (detached, floored at ``RSP_S_MIN``), is matched to the identity: ``G[c', c] = (I_c'(+) - I_c'(-)) / (2 delta_c s_c')``,
++        loss = mean (G - I)^2. No new parameter and no random draw. Gradient reaches ``predictors[0]`` and ``act_embed`` only.
++
++        ``z`` ``(B, T, D)`` level-1 states, ``a`` ``(B, T - 1, 2)`` the level-1 actions in WM units. Returns ``loss`` and ``diag`` (detached: ``rsp_g_aa``, ``rsp_g_ww``, ``rsp_g_aw``, ``rsp_g_wa``, ``rsp_s_a``, ``rsp_s_w``)."""
++        b_, t_, _ = z.shape
++        K = RSP_K
++        idx = torch.arange(0, t_ - K, RSP_STRIDE, device=z.device)                    # anchors 0, 10, .. 80 at T = 91: each K-step stretch lies inside the window
++        if idx.numel() == 0:
++            raise ValueError(f"window of {t_} states is too short for the action-response term (needs > {K})")
++        pos = idx[:, None] + torch.arange(K, device=z.device)[None, :]               # (A, K): the transition i + h
++        base = a[:, pos]                                                             # (B, A, K, 2)
++        z0 = z[:, idx].detach()                                                      # the anchor state: the term trains the forward response, never the latent geometry
++        dlt = torch.as_tensor(c.rsp_delta, dtype=base.dtype, device=base.device)     # (2,)
++        e = base.new_zeros(4, 2)
++        e[0, 0], e[1, 0], e[2, 1], e[3, 1] = 1.0, -1.0, 1.0, -1.0                    # lonp, lonm, latp, latm
++        a4 = base[None] + (e * dlt)[:, None, None, None, :]                          # (4, B, A, K, 2)
++        z0x4 = z0[None].expand(4, -1, -1, -1)
++        zh = self.rollout(1, z0x4, a4, context=RSP_CTX)                              # (4, B, A, K, D)
++        prev = torch.cat([z0x4[..., None, :], zh[..., :-1, :]], dim=-2)              # (4, B, A, K, D): the state before each predicted step
++        head = self.idm_heads[0]
++        frozen = {k: v.detach() for k, v in head.named_parameters()}
++        rd = torch.func.functional_call(head, frozen, (prev, zh))                    # (4, B, A, K, 2)
++        with torch.no_grad():
++            ir = head(z[:, :-1].detach(), z[:, 1:].detach()).float()                 # the readout on the REAL transitions
++            ar = a.detach().float()
++            ir_c, ar_c = ir - ir.mean(dim=(0, 1)), ar - ar.mean(dim=(0, 1))
++            slope = ((ir_c * ar_c).mean(dim=(0, 1)) / (ar_c.pow(2).mean(dim=(0, 1))).clamp_min(1e-12)).clamp_min(RSP_S_MIN)   # (2,)
++        slope = slope.to(base.dtype)                                                 # a no-op in float32; in float64 (the analytic-identity test) it keeps 2 * delta * slope out of float32 promotion rules
++        diff_lon = rd[0] - rd[1]                                                     # (B, A, K, 2): read difference under the +/- acceleration command
++        diff_lat = rd[2] - rd[3]                                                     # ... and under the +/- yaw-rate command
++        g = torch.stack([diff_lon / (2.0 * dlt[0] * slope), diff_lat / (2.0 * dlt[1] * slope)], dim=-1)   # (B, A, K, c', c)
++        eye = torch.eye(2, dtype=g.dtype, device=g.device)
++        loss = (g - eye).pow(2).mean()
++        gd = g.detach()
++        diag = {"rsp_g_aa": gd[..., 0, 0].mean(), "rsp_g_ww": gd[..., 1, 1].mean(), "rsp_g_aw": gd[..., 0, 1].mean(), "rsp_g_wa": gd[..., 1, 0].mean(), "rsp_s_a": slope[0].detach(), "rsp_s_w": slope[1].detach()}
++        return {"loss": loss, "diag": diag}
++
+     def states_per_level(self, n_frames: int) -> list:
+         """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
+         c1 = self.cfg[0]
+@@ -848,6 +902,8 @@
+         orig = self.rollout
+ 
+         def wrapped(level, z0, actions, *, context=1):
++            if actions.dim() == 5:                                                   # PREREG_V8F_ACTRSP: the action-response term's own call (actions (contrast, B, anchor, K, A)) is not the ladder's free run: not counted, not recorded (:meth:`built_rsp` reads it)
++                return orig(level, z0, actions, context=context)
+             flag["lv"] = level
+             seen[level]["anchors"], seen[level]["ctx"] = (int(actions.shape[1]) if actions.dim() == 4 else 1), int(context)
+             try:
+@@ -879,11 +935,43 @@
+             res["ctx_built"].append(int(pm.pos.shape[0]) if hasattr(pm, "pos") else None)
+             if f"rollout/L{lv}" in out and float(out[f"rollout/L{lv}"]) != 0.0:
+                 other = out[f"pred/L{lv}"] + c.beta * out[f"sigreg/L{lv}"] + c.gamma * out[f"idm/L{lv}"] + (c.act_sigreg * out[f"act_sigreg/L{lv}"] if lv >= 2 else 0.0)
++                if lv == 1 and "rsp/L1" in out:                          # PREREG_V8F_ACTRSP: the response term is not the ladder lever; level 1's other terms include it (else the ladder reader would read 1 + rsp_w x rsp / rollout)
++                    other = other + c.rsp_w * out["rsp/L1"]
+                 res["w_in_loss"].append(float((out[f"level/L{lv}"] - other) / out[f"rollout/L{lv}"]))
+             else:
+                 res["w_in_loss"].append(None)
+         return res
+ 
++    def built_rsp(self, n_frames: int, batch: int = 2) -> dict:
++        """PREREG_V8F_ACTRSP, the G-DVB reader for ``--wm-rsp-w``: what the BUILT loss does, measured by running it (on a float64 COPY of the stack, so the weight read back is not blurred by float32 sums of terms of size ~100) on noise for a window of
++        ``n_frames`` frames, with the global RNG forked. A wrapper on :meth:`rollout` records the term's own call (the only 5-D ``actions`` call: ``(contrast, B, anchor, K, A)``): ``calls``, ``contrasts``, ``anchors``, ``k``, ``ctx_passed``.
++        ``w_in_loss_rsp`` = (level/L1 - every other level-1 term) / rsp/L1 = the weight the total really gives the term (None when the term is absent)."""
++        m = copy.deepcopy(self).double()
++        seen = {"calls": 0, "contrasts": None, "anchors": None, "k": None, "ctx_passed": None}
++        orig = m.rollout
++
++        def wrapped(level, z0, actions, *, context=1):
++            if actions.dim() == 5:
++                seen.update(calls=seen["calls"] + 1, contrasts=int(actions.shape[0]), anchors=int(actions.shape[2]), k=int(actions.shape[3]), ctx_passed=int(context))
++            return orig(level, z0, actions, context=context)
++        m.rollout = wrapped
++        c1 = m.cfg[0]
++        with torch.no_grad(), torch.random.fork_rng(devices=[]):
++            torch.manual_seed(0)
++            z1 = torch.randn(batch, n_frames, c1.latent_dim).double()
++            a = torch.randn(batch, n_frames - 1, c1.action_dim).double()
++            m.eval()
++            out = m.loss(z1, a)
++        res = dict(seen)
++        res["w_in_loss_rsp"] = None
++        if "rsp/L1" in out and float(out["rsp/L1"]) != 0.0:
++            other = out["pred/L1"] + c1.beta * out["sigreg/L1"] + c1.gamma * out["idm/L1"]
++            if c1.rollout_k > 1:
++                other = other + c1.rollout_w * out["rollout/L1"]
++            res["w_in_loss_rsp"] = float((out["level/L1"] - other) / out["rsp/L1"])
++        res["rsp_term"] = None if "rsp/L1" not in out else float(out["rsp/L1"])
++        return res
++
+     def goal_cost(self, z_pred: Tensor, goal: Tensor, level: int, last_k: Optional[int] = None) -> Tensor:
+         """Squared Euclidean distance of the final predicted state(s) to ``goal`` (Eq. 4).
+ 
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -164,6 +164,7 @@
+ CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
+ #: the scale the WM auxiliary divides action channel 0 (longitudinal acceleration, m/s^2) by.
+ WM_ACC_SCALE = 2.0
++RSP_DELTA = (0.42, 0.24)   # PREREG_V8F_ACTRSP section 2.1: the contrast size per level-1 action channel in WM units = 1 sd on R35 TRAIN windows (PROBE_ACTSENS_RESULT.json action_sd_wm_units 0.4203 / 0.2369, MEASURED)
+ #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
+ #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
+ INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
+@@ -209,6 +210,7 @@
+     wm_beta: float = 0.08
+     wm_gamma: float = 100.0
+     wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
++    wm_rsp_w: float = 0.0              # PREREG_V8F_ACTRSP (`--wm-rsp-w`): the weight of the level-1 action-response term (HJEPAStack.response_loss). 0.0 = the term is NOT built = every earlier arm, bit for bit (no key, no op, no parameter); > 0 needs wm b and kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel)
+     p_gt_start: float = 1.0
+     p_gt_end: float = 0.2
+     max_age_t: int = 2
+@@ -283,6 +285,13 @@
+             raise ValueError(f"wm_gamma_levels must be () or three finite numbers > 0 (levels 1, 2, 3), got {wgl!r}")
+         if len(wgl) > 0 and self.wm != "b":
+             raise ValueError("wm_gamma_levels needs wm b (the IDM runs only at b): a lever that is declared and builds nothing")
++        wr = self.wm_rsp_w                                                         # PREREG_V8F_ACTRSP: a finite float >= 0; > 0 only with wm b (the IDM head is the readout) and kin_mode yaw (the contrast sizes are yaw-rate units)
++        if not (isinstance(wr, (int, float)) and not isinstance(wr, bool) and math.isfinite(wr) and wr >= 0.0):
++            raise ValueError(f"wm_rsp_w must be a finite number >= 0, got {wr!r}")
++        if wr > 0.0 and self.wm != "b":
++            raise ValueError("wm_rsp_w > 0 needs wm b (the level-1 IDM head is the readout): a lever that is declared and builds nothing")
++        if wr > 0.0 and self.kin_mode != "yaw":
++            raise ValueError(f"wm_rsp_w > 0 needs kin_mode yaw (the contrast sizes are WM units of the yaw-rate channel), got {self.kin_mode!r}")
+         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
+             v = getattr(self, nm)
+             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
+@@ -697,7 +706,8 @@
+         K = int(cfg.wm_k)
+         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
+         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
+-        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0)),
++        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0), **(dict(rsp_w=float(cfg.wm_rsp_w), rsp_delta=RSP_DELTA) if float(cfg.wm_rsp_w) > 0.0 else {})),   # PREREG_V8F_ACTRSP: level 1 only; absent = LevelConfig's rsp_w 0.0
++
+               mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
+         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
+@@ -772,6 +782,11 @@
+         """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
+         return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])
+ 
++    def built_rsp(self, n_frames: int) -> dict:
++        """PREREG_V8F_ACTRSP, the G-DVB reader for ``--wm-rsp-w``: the BUILT stack's own measurement of the action-response term (``HJEPAStack.built_rsp``: the term's rollout call, its contrast / anchor / step counts and context, and the weight the loss
++        really gives it) for a window of ``n_frames`` frames."""
++        return self.stack.built_rsp(int(n_frames))
++
+     def built_ladder(self, n_frames: int) -> dict:
+         """PREREG_V8F_LADDER, the G-DVB reader for the ladder levers: the BUILT stack's own measurements (``HJEPAStack.built_rollout``: predictor calls inside the free run, anchors, the context handed to ``rollout``, the
+         predictor's parameter-shape context, the weight the loss gives the term) for a window of ``n_frames`` frames, plus the cumulative stride of each level."""
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -124,6 +124,9 @@
+     # PREREG_V8F_ACTSENS: `lever:wm_idm_gamma` = equals the gamma of the BUILT LevelConfigs the loss multiplies by (HJEPAStack.built_levers()[lv]["gamma"], never WMAux.gamma) -> bad_wm_idm_gamma
+     # -> `selfcheck.json levers.wm_idm_gamma_readback` (written when the argv NAMES the flag).
+     "wm_idm_gamma": "lever:wm_idm_gamma",
++    # PREREG_V8F_ACTRSP: `lever:wm_rsp_w` = the weight the BUILT loss really gives the level-1 action-response term (WMAux.built_rsp: the loss run once on noise, (level/L1 - every other level-1 term) / rsp/L1, never the config that built it) AND the term's
++    # own geometry read off its rollout call (anchors, K, contrasts, context) AND HJEPAStack.built_levers()[1]["rsp_w"] -> bad_wm_rsp -> `selfcheck.json levers.wm_rsp_readback` (written when the argv NAMES the flag).
++    "wm_rsp_w": "lever:wm_rsp_w",
+     # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
+     # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
+     # AND the context the free run is handed; `data:wm_windows` = the kind, F, first t and pooled flag READ BACK from the BUILT dataset (data_info["wm_windows"]) -> bad_wm_ladder.
+@@ -332,6 +335,9 @@
+     ap.add_argument("--wm-idm-gamma", dest="wm_idm_gamma", type=float, nargs=3, default=None, metavar=("G1", "G2", "G3"),
+                     help="PREREG_V8F_ACTSENS: the world model's IDM loss weight per level (gamma, levels 1 / 2 / 3). Absent (default) = the arm config's wm_gamma (100) at every level = every earlier arm, bit for bit. "
+                          "Needs --wm b; every G must be > 0. Read back from the BUILT LevelConfigs (HJEPAStack.built_levers), not from WMAux.gamma")
++    ap.add_argument("--wm-rsp-w", dest="wm_rsp_w", type=float, default=0.0,
++                    help="PREREG_V8F_ACTRSP: the weight of the level-1 action-response term (the WM's answer to +/- one sd of each action channel, read through the level-1 IDM head and matched to the identity gain). Default 0.0 = the term is not built = every earlier "
++                         "arm, bit for bit (no key, no op, no parameter). The card fixes 1.0. Needs --wm b, --kin-mode yaw and --wm-only. Read back from the BUILT loss (HJEPAStack.built_rsp), not from the config")
+     ap.add_argument("--wm-rollout-k", dest="wm_rollout_k", type=int, nargs=3, default=None, metavar=("K1", "K2", "K3"),
+                     help="PREREG_V8F_LADDER: free-run steps of the k-step loss per WM level (through HJEPAStack.rollout, on top of the teacher-forced one-step loss). Absent = (1, 1, 1) = every earlier arm, bit for bit. "
+                          "A level with k > 1 needs hmax >= k x (its cumulative stride) + 1 frames. Needs --wm a|b")
+@@ -422,6 +428,7 @@
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+                            wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
+                            wm_gamma_levels=declared_wm_idm_gamma(a),                                      # PREREG_V8F_ACTSENS: the ONE line that applies --wm-idm-gamma (mutation M1 deletes it)
++                           wm_rsp_w=float(a.wm_rsp_w),                                                    # PREREG_V8F_ACTRSP: the ONE line that applies --wm-rsp-w (mutation MR1 deletes it)
+                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
+@@ -1107,6 +1114,14 @@
+     acc = {n: 0.0 for n, _ in m.named_parameters()}
+     terms_seen = None
+     terms_first = None                                                # AMEND_ACTSENS_1: the terms of step 0, taken BEFORE any opt.step() (terms_seen is the LAST step's)
++    c3 = None                                                         # PREREG_V8F_ACTRSP control C3: step 0 against the SAME init and batch with the response term switched off (lever-ON launches only)
++    if cfg.wm_rsp_w > 0.0:
++        with torch.no_grad():
++            m_ref = copy.deepcopy(m)
++            m_ref.wm.stack.cfg[0].rsp_w = 0.0                         # the reference is the flag-off build of this very copy: same weights, same batch, same seed below
++            torch.manual_seed(0)
++            ref_terms = {k: float(v.detach()) for k, v in m_ref.wm_only_loss(batch)["terms"].items()}
++        del m_ref
+     for s in range(steps):
+         opt.zero_grad(set_to_none=False)
+         for n, p in m.named_parameters():
+@@ -1120,12 +1135,23 @@
+         terms_seen = {k: float(v.detach()) for k, v in T.items()}
+         if s == 0:
+             terms_first = dict(terms_seen)                                # AMEND_ACTSENS_1: step 0 (mutation MA1 records the last step instead)
++            if cfg.wm_rsp_w > 0.0:                                        # PREREG_V8F_ACTRSP C3: every unweighted term equal, level/L1 differs by exactly rsp_w x rsp/L1 (1e-5 relative)
++                unw = sorted(k for k in terms_first if k.startswith("wm/") and not k.startswith("wm/level/") and "rsp" not in k)
++                diff = terms_first["wm/level/L1"] - ref_terms["wm/level/L1"]
++                want = cfg.wm_rsp_w * terms_first["wm/rsp/L1"]
++                c3 = {"n_unweighted": len(unw), "unweighted_equal": all(terms_first[k] == ref_terms.get(k) for k in unw), "level_L1_diff": diff, "rsp_w_x_rsp": want,
++                      "levels_23_equal": all(terms_first[f"wm/level/L{l}"] == ref_terms[f"wm/level/L{l}"] for l in (2, 3)), "ref_has_no_rsp_keys": not any("rsp" in k for k in ref_terms),
++                      "rel_err": abs(diff - want) / max(abs(want), 1e-30)}
++                c3["tol"] = max(1e-5 * abs(want), 8.0 * 1.1920929e-07 * abs(terms_first["wm/level/L1"]))   # 1e-5 relative to the term, or 8 float32 ulps of level/L1 (level/L1 ~ 100 at step 0 and is a float32 sum: its own rounding is ~1e-5 of a term of size 0.5)
++                c3["pass"] = bool(c3["unweighted_equal"] and c3["levels_23_equal"] and c3["ref_has_no_rsp_keys"] and c3["n_unweighted"] > 0 and abs(diff - want) <= c3["tol"] and want > 0.0)
+         T["total"].backward()
+         for n, p in m.named_parameters():
+             if p.grad is not None:
+                 acc[n] += float(p.grad.abs().sum())
+         opt.step()
+     expect = {"wm", "total"} | {f"wm/{t}/L{l}" for t in ("pred", "sigreg", "idm", "level") for l in (1, 2, 3)} | {f"wm/act_sigreg/L{l}" for l in (2, 3)}
++    if cfg.wm_rsp_w > 0.0:                                            # PREREG_V8F_ACTRSP: the action-response term must be among the live terms when the lever is on
++        expect |= {"wm/rsp/L1"}
+     missing = sorted(expect - set(terms_seen))
+     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
+     dead = sorted(n for n, g in acc.items() if is_wm_param(n) and g == 0.0)
+@@ -1141,7 +1167,9 @@
+     res = {"terms": terms_seen, "terms_first": terms_first, "missing_terms": missing, "wm_groups_grad": groups, "dead_wm_groups": dead_groups, "dead_params": dead, "declared_dead": declared_dead, "unexpected_dead": unexpected_dead,
+            "n_wm_params": len(wm_params), "control_nonwm_grad_sum": float(sum(nonwm.values())), "control_adapter_grad_sum": float(sum(g for n, g in nonwm.items() if n.startswith("adapter.") or n == "pos")),
+            "nonwm_with_grad": sorted(n for n, g in nonwm.items() if g != 0.0)[:8], "n_nonwm_params": len(nonwm)}
+-    ok = (not missing and not dead_groups and not unexpected_dead and res["control_nonwm_grad_sum"] == 0.0 and res["n_wm_params"] > 0 and res["n_nonwm_params"] > 0)
++    if c3 is not None:                                                # PREREG_V8F_ACTRSP: lever-ON launches only (a flag-off live record keeps its key set)
++        res["c3"] = c3
++    ok = (not missing and not dead_groups and not unexpected_dead and res["control_nonwm_grad_sum"] == 0.0 and res["n_wm_params"] > 0 and res["n_nonwm_params"] > 0 and (c3 is None or c3["pass"]))
+     res["pass"] = bool(ok)
+     if not ok:
+         raise AssertionError("G-LIVE (wm_only) failed: " + json.dumps({k: v for k, v in res.items() if k != "wm_groups_grad"}, default=str)[:1500])
+@@ -1521,6 +1549,52 @@
+     return bad
+ 
+ 
++def wm_rsp_readback(a, cfg, model) -> dict:
++    """PREREG_V8F_ACTRSP: the record ``selfcheck.json`` carries (``levers.wm_rsp_readback``) when the argv NAMES ``--wm-rsp-w``: the weight the argv DECLARED, the BUILT LevelConfig's, and what the BUILT loss measures (``WMAux.built_rsp``)."""
++    st = model.wm.stack if model.wm is not None else None
++    return {"declared": float(a.wm_rsp_w), "built_config": None if st is None else float(st.built_levers()[1].get("rsp_w", 0.0)),
++            "built": None if model.wm is None else model.wm.built_rsp(cfg.hmax), "hmax": cfg.hmax}
++
++
++def bad_wm_rsp(a, cfg, model) -> list:
++    """PREREG_V8F_ACTRSP, G-DVB for ``--wm-rsp-w``. Refuses: a non-finite or negative weight; a positive weight without ``--wm b``, ``--kin-mode yaw`` or ``--wm-only``; and any mismatch between the declared weight and what the BUILT objects say:
++    ``HJEPAStack.built_levers()[1]["rsp_w"]`` (the LevelConfig the loss multiplies by) AND ``WMAux.built_rsp(hmax)["w_in_loss_rsp"]`` (the loss run once: (level/L1 - every other level-1 term) / rsp/L1) to 1e-6, and the term's own geometry
++    (one rollout call, 4 contrasts, K = 10, context 1, ``len(range(0, hmax - 10, 10))`` anchors = 9 at hmax 91). Flag absent: the built stack must carry NO response term (no ``rsp_w`` key)."""
++    bad = []
++    lv = declared_levers(a)
++    w = a.wm_rsp_w
++    if not (isinstance(w, float) and w == w and abs(w) != float("inf") and w >= 0.0):
++        return [f"lever wm_rsp_w: --wm-rsp-w must be a finite number >= 0, got {w!r}"]
++    if w > 0.0:
++        if lv["wm"] != "b":
++            bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --wm b (got --wm {lv['wm']}): a lever that is declared and builds nothing")
++        if a.kin_mode != "yaw":
++            bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --kin-mode yaw (got {a.kin_mode}): the contrast sizes are WM units of the yaw-rate channel")
++        if not a.wm_only:
++            bad.append(f"lever wm_rsp_w: --wm-rsp-w {w} needs --wm-only (the term is a world-model objective on the frozen adapter)")
++    if lv["wm"] == "off" or model.wm is None:
++        return bad
++    levers = model.wm.stack.built_levers()
++    row = levers[1]
++    if abs(float(cfg.wm_rsp_w) - w) > 1e-12:
++        bad.append(f"lever wm_rsp_w: declared {w} but the built config holds {cfg.wm_rsp_w}")
++    if w == 0.0:
++        if any("rsp_w" in r for r in levers.values()):
++            bad.append(f"lever wm_rsp_w: flag absent (0.0) but the BUILT stack carries a response term: {row}")
++        return bad
++    if abs(float(row.get("rsp_w", 0.0)) - w) > 1e-9 * max(1.0, abs(w)):
++        bad.append(f"lever wm_rsp_w: declared {w} but the BUILT LevelConfig (the weight the loss multiplies by) holds {row.get('rsp_w', 0.0)}")
++    r = model.wm.built_rsp(cfg.hmax)
++    got = r.get("w_in_loss_rsp")
++    if not (isinstance(got, float) and got == got and abs(got - w) <= 1e-6 * max(1.0, abs(w))):
++        bad.append(f"lever wm_rsp_w: declared {w} but the BUILT loss gives the response term the weight {got!r} (measured: (level/L1 - every other level-1 term) / rsp/L1)")
++    anchors = len(range(0, cfg.hmax - 10, 10))
++    for k, want in (("calls", 1), ("contrasts", 4), ("k", 10), ("ctx_passed", 1), ("anchors", anchors)):
++        if r.get(k) != want:
++            bad.append(f"lever wm_rsp_w: the BUILT term's {k} = {r.get(k)!r}, the card fixes {want} (hmax {cfg.hmax})")
++    return bad
++
++
+ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
+@@ -1532,6 +1606,7 @@
+     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
+     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
+     bad += bad_wm_idm_gamma(a, cfg, model)                                                       # PREREG_V8F_ACTSENS: --wm-idm-gamma read back from the BUILT LevelConfigs (HJEPAStack.built_levers)
++    bad += bad_wm_rsp(a, cfg, model)                                                             # PREREG_V8F_ACTRSP: --wm-rsp-w read back from the BUILT loss (HJEPAStack.built_rsp) and the BUILT LevelConfig
+     bad += bad_wm_sampler(a, cfg, model, data_info)                                              # PREREG_V8F_DIVRS: --wm-sampler read back from the BUILT sampler (edges, cap, cell table)
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
+@@ -3318,6 +3393,8 @@
+         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+     if a.wm_idm_gamma is not None:                                       # PREREG_V8F_ACTSENS: lever-NAMED launches only: declared vs the BUILT per-level IDM weights
+         levers["wm_idm_gamma_readback"] = wm_idm_gamma_readback(a, cfg, model)
++    if a.wm_rsp_w != 0.0:                                                # PREREG_V8F_ACTRSP: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT weight and geometry
++        levers["wm_rsp_readback"] = wm_rsp_readback(a, cfg, model)
+     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
+         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
+     if a.wm_only:                                                      # WM-only arms only (a flag-off run record keeps its key set)
+@@ -3333,7 +3410,7 @@
+                                  "stripped_argv_sha": pl["stripped_argv_sha"]}
+     sc ={"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
+           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
+-    if a.wm_only and a.wm_idm_gamma is not None:                         # AMEND_ACTSENS_1: lever-NAMED launches only: G-LIVE step 0, the instrument of control C3
++    if a.wm_only and (a.wm_idm_gamma is not None or a.wm_rsp_w != 0.0):  # AMEND_ACTSENS_1: lever-NAMED launches only: G-LIVE step 0, the instrument of control C3 (ACTRSP: the same instrument for its C3)
+         sc["live_first"] = live_first
+     sc["ego_perturb_probe"] = egop
+     sc["dagger_probe"] = dagp

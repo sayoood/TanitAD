@@ -1,0 +1,306 @@
+{
+ "first_line": "Latency proxy on the pod GPU (not Thor, not a product latency; the image encoder is not included). Tier: none (a cost measurement, not a driving metric).",
+ "family_line": "LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not applicable (a cost measurement)",
+ "tier": "none (a cost measurement, not a driving metric)",
+ "generated_utc": "2026-11-19T06:33:57Z",
+ "tool": "F:/TanitAD-scratch/v8proof/latency/latency_proxy.py",
+ "tool_sha256": "0487a8b7801e653c823d5bbbea642881e8b76e6d09cdd702ffe52794ddcc18b5",
+ "argv": [
+  "--stub",
+  "--out-dir",
+  "F:/TanitAD-scratch/v8proof/latency/checks_work\\run_20261119_063346_41292\\stub_ok",
+  "--n",
+  "8",
+  "--warmup",
+  "2",
+  "--k-list",
+  "1,4",
+  "--extra-horizons",
+  "20"
+ ],
+ "args": {
+  "n": 8,
+  "warmup": 2,
+  "k_list": [
+   1,
+   4
+  ],
+  "horizon_steps": 10,
+  "horizons_timed": [
+   10,
+   20
+  ],
+  "device": "cuda",
+  "n_windows": 80,
+  "variants": [
+   "eager",
+   "fp16",
+   "compile"
+  ]
+ },
+ "planner_horizon_steps": 10,
+ "planner_horizon_source": "stub",
+ "ckpt_sha256": "stub",
+ "info": {
+  "subject": "stub",
+  "note": "no model: a pure-python recurrence; the numbers are NOT a measurement of the model"
+ },
+ "checks": [
+  {
+   "id": "s1",
+   "name": "timer measures a known 50 ms sleep",
+   "pass": true,
+   "value_p50_ms": 50.33665001974441,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s1a",
+   "name": "timer waits for an asynchronous device (50 ms of async work)",
+   "pass": true,
+   "value_p50_ms": 50.35919998772442,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s2",
+   "name": "batched and sequential rollouts give the same states",
+   "pass": true,
+   "value_max_abs_diff": 0.0,
+   "max_abs_state": 0.7781371319973295,
+   "K": 4,
+   "H": 10,
+   "bar": "max abs diff <= 0.0001 and states not all zero"
+  },
+  {
+   "id": "s3",
+   "name": "a doubled horizon takes between 1.6 and 2.4 times as long",
+   "pass": true,
+   "value_ratio": 2.019865142951107,
+   "p50_ms_H": 15.149650018429384,
+   "p50_ms_2H": 30.60025000013411,
+   "K": 1,
+   "H": 10,
+   "bar": "1.6 <= ratio <= 2.4"
+  },
+  {
+   "id": "s4",
+   "name": "counted predictor calls per tick",
+   "pass": true,
+   "value": [
+    10,
+    10
+   ],
+   "input_index": 0,
+   "bar": "calls > 0 and equal on two ticks of one input"
+  },
+  {
+   "id": "s5",
+   "name": "statistics of the known list 1..100 ms",
+   "pass": true,
+   "value": {
+    "p50": 50.5,
+    "p95": 95.05,
+    "mean": 50.5,
+    "n": 100
+   },
+   "bar": "p50 50.5, p95 95.05, mean 50.5, n 100"
+  }
+ ],
+ "variants": {
+  "eager": {
+   "a_predictor_step_batch1": {
+    "p50": 1.5462999872397631,
+    "p95": 1.739979995181784,
+    "mean": 1.5794999999343418,
+    "min": 1.4844000106677413,
+    "max": 1.7894000047817826,
+    "n": 8,
+    "first_call_ms": 1.5454000094905496
+   },
+   "b_rollout": {
+    "H10_K1": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 1,
+     "batch": {
+      "p50": 15.517349995207042,
+      "p95": 15.61313499987591,
+      "mean": 15.499487497436348,
+      "min": 15.339999983552843,
+      "max": 15.645999985281378,
+      "n": 8,
+      "first_call_ms": 15.128400002140552
+     },
+     "seq_total": {
+      "p50": 15.367150015663356,
+      "p95": 15.668949965038337,
+      "mean": 15.313700001570396,
+      "min": 14.834300032816827,
+      "max": 15.717599948402494,
+      "n": 8,
+      "first_call_ms": 15.537299972493201
+     },
+     "seq_mean_per_rollout_ms": 15.313700001570396,
+     "rtf_batch_p50": 128.88798671279275,
+     "rtf_seq_p50": 130.14775010079615,
+     "seq_over_batch_p50": 0.9903205135161558,
+     "is_planner_horizon": true
+    },
+    "H10_K4": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 4,
+     "batch": {
+      "p50": 15.626100008375943,
+      "p95": 15.831194989732467,
+      "mean": 15.576324993162416,
+      "min": 15.171199978794903,
+      "max": 15.914599993266165,
+      "n": 8,
+      "first_call_ms": 15.542300010565668
+     },
+     "seq_total": {
+      "p50": 60.718499997165054,
+      "p95": 61.758649977855384,
+      "mean": 60.931199994229246,
+      "min": 60.376000008545816,
+      "max": 61.90879998030141,
+      "n": 8,
+      "first_call_ms": 61.56180001562461
+     },
+     "seq_mean_per_rollout_ms": 15.232799998557311,
+     "rtf_batch_p50": 127.99098936573776,
+     "rtf_seq_p50": 32.93889012563518,
+     "seq_over_batch_p50": 3.8857104437203502,
+     "is_planner_horizon": true
+    },
+    "H20_K1": {
+     "H_steps": 20,
+     "horizon_s": 4.0,
+     "K": 1,
+     "batch": {
+      "p50": 31.062299996847287,
+      "p95": 31.98366000142414,
+      "mean": 31.046974996570498,
+      "min": 30.180600006133318,
+      "max": 32.31069998582825,
+      "n": 8,
+      "first_call_ms": 31.11350000835955
+     },
+     "seq_total": {
+      "p50": 31.087599985767156,
+      "p95": 31.302230004803278,
+      "mean": 31.036637497891206,
+      "min": 30.43059998890385,
+      "max": 31.34009998757392,
+      "n": 8,
+      "first_call_ms": 30.846500012557954
+     },
+     "seq_mean_per_rollout_ms": 31.036637497891206,
+     "rtf_batch_p50": 128.77346495288455,
+     "rtf_seq_p50": 128.66866537884306,
+     "seq_over_batch_p50": 1.0008144918091202,
+     "is_planner_horizon": false
+    },
+    "H20_K4": {
+     "H_steps": 20,
+     "horizon_s": 4.0,
+     "K": 4,
+     "batch": {
+      "p50": 31.132550007896498,
+      "p95": 31.41666500014253,
+      "mean": 31.09677500469843,
+      "min": 30.696599977090955,
+      "max": 31.44679998513311,
+      "n": 8,
+      "first_call_ms": 31.158600002527237
+     },
+     "seq_total": {
+      "p50": 123.23009996907786,
+      "p95": 126.27254004473798,
+      "mean": 123.34302500676131,
+      "min": 119.41089999163523,
+      "max": 126.90940004540607,
+      "n": 8,
+      "first_call_ms": 123.8720000255853
+     },
+     "seq_mean_per_rollout_ms": 30.835756251690327,
+     "rtf_batch_p50": 128.4828900615412,
+     "rtf_seq_p50": 32.45960200473521,
+     "seq_over_batch_p50": 3.958239846649941,
+     "is_planner_horizon": false
+    }
+   },
+   "c_heads": {
+    "c1_lead_head_one_state": {
+     "p50": 1.018950017169118,
+     "p95": 1.0368749994086102,
+     "mean": 0.9540624960209243,
+     "min": 0.6510000093840063,
+     "max": 1.039499999023974,
+     "n": 8,
+     "first_call_ms": 0.983599980827421
+    },
+    "c4_forward_infer_b1": {
+     "p50": 2.5382000021636486,
+     "p95": 2.6405399810755625,
+     "mean": 2.49816250288859,
+     "min": 2.058700018096715,
+     "max": 2.682399994228035,
+     "n": 8,
+     "first_call_ms": 2.537099993787706
+    }
+   },
+   "d_planning_tick": {
+    "stub-tick": {
+     "n_inputs": 4,
+     "n_candidates": 3,
+     "n_inputs_with_rollout": 2,
+     "fraction_with_rollout": 0.5,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 2,
+      "10": 2
+     },
+     "rollout_calls_per_tick_values": [
+      0
+     ],
+     "head_calls_per_tick_values": [
+      0
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 10.362599976360798,
+      "p95": 18.20899999293033,
+      "mean": 10.330312492442317,
+      "min": 2.3225999902933836,
+      "max": 18.23839999269694,
+      "n": 8,
+      "first_call_ms": 18.169700051657856
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 17.919099977007136,
+      "p95": 18.310704978648573,
+      "mean": 17.919237492606044,
+      "min": 17.456699977628887,
+      "max": 18.358899978920817,
+      "n": 8,
+      "first_call_ms": 18.35529995150864
+     }
+    }
+   }
+  },
+  "fp16": {
+   "status": "NOT RUN",
+   "error": "fp16: no such variant for the stub"
+  },
+  "compile": {
+   "status": "NOT RUN",
+   "error": "compile: no such variant for the stub"
+  }
+ },
+ "seconds_total": 7.7
+}

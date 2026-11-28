@@ -1,0 +1,30 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-HYG",
+ "status": "ERROR",
+ "reasons": [
+  "GateError: --cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; an EMPTY value deletes the variable)"
+ ],
+ "binding": {
+  "profile": "v8f",
+  "commit": "c2fad328f517899dc8808c054d096824d96f66b2",
+  "tree_sha256": "f8353d005aeddb96dc6ed0b5c3854ac945ad8590fba95c4f4f899c223c3a6ae2",
+  "argv_sha256": "1df0cf3877ee85349546272d2cc7b133d4b02ed0a14b6e7e5d5676b0a4cb7288"
+ },
+ "inputs_read": {},
+ "host": {
+  "node": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128",
+  "cuda": true
+ },
+ "arm": null,
+ "gate_sha256": "06ea6b27264170be6d72db1d0444a866370a0978844777ea02db8a6c6db4dee2",
+ "started_utc": "2026-10-25T23:18:40Z",
+ "details": {
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\Admin\\ar3_gt\\stack\\scripts\\launch_gate.py\", line 7171, in cmd_check\n    info = child_bootstrap(ctx)\n  File \"C:\\Users\\Admin\\ar3_gt\\stack\\scripts\\launch_gate.py\", line 1711, in child_bootstrap\n    raise GateError(\"--cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; \"\n                    \"an EMPTY value deletes the variable)\")\nGateError: --cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; an EMPTY value deletes the variable)\n"
+ },
+ "finished_utc": "2026-10-25T23:18:40Z"
+}

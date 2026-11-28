@@ -1,0 +1,112 @@
+{
+  "P1_tiny_model_costs": {
+    "OFF_kappa_consistent": {
+      "c_goal_turn": 1.1920928955078125e-07,
+      "c_goal_straight": 1.1920928955078125e-07,
+      "advantage_turn_over_straight": 0.0,
+      "c_goal_turn_ULPs": 1.9999999924633598
+    },
+    "ON_steer_SHIPPED_half": {
+      "c_goal_turn": 3.5762786865234375e-07,
+      "c_goal_straight": 1.1920928955078125e-07,
+      "advantage_turn_over_straight": -2.384185791015625e-07,
+      "c_goal_turn_ULPs": 5.99999997739008
+    },
+    "ON_steer_FIXED_both": {
+      "c_goal_turn": 5.960464477539063e-08,
+      "c_goal_straight": 5.960464477539062e-07,
+      "advantage_turn_over_straight": 5.364418029785156e-07,
+      "c_goal_turn_ULPs": 0.9999999962316799
+    },
+    "_note": "tiny RANDOM model, seed 0 \u2014 a MECHANISM demonstration, NOT a checkpoint measurement. `D-REFAV1-BOUNDARY-NULL` measured the real effect on both banked checkpoints at exactly 0.",
+    "_goal_max_abs_kappa": 0.07999999821186066
+  },
+  "P2_index_maps": {
+    "source": "C:\\Users\\Admin\\refav1_eval_slice\\ckpt_ep2\\config.json",
+    "banked_cfg": {
+      "op_dt": 0.2,
+      "op_steps": 30,
+      "tac_dt": 0.6,
+      "tac_steps": 10,
+      "a_dim": 2,
+      "speed_channel": false,
+      "plan_horizon_s": 2.0,
+      "plan_level": "tactical",
+      "verify_on_operative": true
+    },
+    "stride": 3,
+    "H": 10,
+    "candidate_dense_TODAY": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "candidate_tactical_FIXED": [
+      0,
+      3,
+      6,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9
+    ],
+    "goal_map": [
+      0,
+      3,
+      6,
+      9,
+      12,
+      15,
+      18,
+      21,
+      24,
+      27
+    ],
+    "imagined_horizon_s_dense": 6.0,
+    "imagined_horizon_s_fixed": 6.0,
+    "plan_horizon_s": 2.0
+  },
+  "P3_banked_dumps": {
+    "n_episodes": 20,
+    "arms": {
+      "cl": {
+        "n_windows": 140,
+        "winner_all_zero": 140,
+        "winner_constant_over_H": 140,
+        "frac_constant": 1.0,
+        "winning_cost_exactly_zero": 88,
+        "winning_cost_min": -2.384185791015625e-07,
+        "winning_cost_max": 1.7881393432617188e-07
+      },
+      "cl_navshuf": {
+        "n_windows": 140,
+        "winner_all_zero": 122,
+        "winner_constant_over_H": 140,
+        "frac_constant": 1.0,
+        "winning_cost_exactly_zero": 92,
+        "winning_cost_min": -2.384185791015625e-07,
+        "winning_cost_max": 2.384185791015625e-07
+      },
+      "cl_oraclegoal": {
+        "n_windows": 140,
+        "winner_all_zero": 96,
+        "winner_constant_over_H": 140,
+        "frac_constant": 1.0,
+        "winning_cost_exactly_zero": 0,
+        "winning_cost_min": 2.5033950805664062e-05,
+        "winning_cost_max": 0.021645784378051758
+      }
+    },
+    "_derivation": "speed_channel=false in the banked cfg => the regrid is the identity on a constant candidate; every constant winner's own cost is therefore bit-identical under cost_time_grid='tactical'. Whether it remains the ARGMIN needs the model and is UNVERIFIED here."
+  }
+}

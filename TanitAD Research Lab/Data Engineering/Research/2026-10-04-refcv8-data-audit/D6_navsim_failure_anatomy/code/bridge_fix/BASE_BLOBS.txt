@@ -1,0 +1,10 @@
+BASE BLOBS of the files copied into bridge_fix/ (D6, 2026-10-04)
+The base files under navsim/code/ are READ-ONLY for this stream (the live step-50,400 runner imports them).
+raw_blob = `git hash-object --no-filters <live file>` = the blob stored in tip 0796180 (byte-identical, verified with cmp against `git show 0796180:<path>` read via GIT_DIR=C:/Users/Admin/tanitad-push/.git).
+filtered_blob = plain `git hash-object` (core.autocrlf applies, so it differs for CRLF files; shown only so nobody is surprised).
+
+file | raw_blob (tip 0796180) | filtered_blob | sha256(base bytes) | sha256(copy bytes) | what the copy adds
+run_bridge7.py | e64ee4bfae03be2032aca14f691b9f5c043afb4b | 51d24f7a5c84f93976a48079b003b8f143a09c3e | 4488bd475a9ebb3a | 0762961621e1863c | INSERTIONS: import base64; args --export-fan/--gpu-lock-job/--gpu-lock-pid; battery-lock held_by shim; nav_override hook; fan sidecar writer; fh_fan opener (6 hunks, 34 inserted lines, 0 base lines changed)
+refcv7_bridge.py | 5aa8dbeb2c66cb8b835ecdb2c450618533d1746e | 4612842778df8a0c2ecbadbf6bbe9c928b8e2894 | f78fb7bbb819d7e7 | a6c46656cde50b33 | INSERTIONS: arms R7_NAVFOLLOW/R7_NAVFLIP, EXPORT_FAN, apply_nav_override, export_fan_from_out (universe = r7_candidates if present else anchor_traj, amendment A1), gated `res["fan"]` (2 hunks, 66 inserted lines, 0 base lines changed)
+boot7.py | b415d5e1ffb80346ffc65f91e9455bb39aa0f465 | b415d5e1ffb80346ffc65f91e9455bb39aa0f465 | 1500605724cb9c0b | 1500605724cb9c0b | nothing (byte-identical copy) (0 hunks, 0 inserted lines, 0 base lines changed)
+gpu_lock.py | a13fcb704d32fbd67e5acc4bdd06f885244e8ba3 | c89ec9824d5ced0aaa2c58de032411443b06f403 | f3618ae9f96932ad | f3618ae9f96932ad | nothing (byte-identical copy) (0 hunks, 0 inserted lines, 0 base lines changed)

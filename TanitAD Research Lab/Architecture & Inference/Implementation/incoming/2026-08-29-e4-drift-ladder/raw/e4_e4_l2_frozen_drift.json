@@ -1,0 +1,69 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT",
+ "k": 4,
+ "null_mode": false,
+ "pca_band": [
+  0,
+  8
+ ],
+ "arms": {
+  "e4_l2_frozen": {
+   "step": 2000,
+   "n_clips": 80,
+   "n_rows": 7680,
+   "columns": {
+    "z_t (DRIFT / POSITIVE CONTROL)": {
+     "r": 0.3238,
+     "t": 25.41
+    },
+    "ego_state [w, a, v]": {
+     "r": -0.0117,
+     "t": -0.98
+    },
+    "z_t + ego_state": {
+     "r": 0.3204,
+     "t": 24.95
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "t": 0.0
+    }
+   },
+   "drift_control_t": 25.41,
+   "ego_marginal_over_drift": {
+    "delta": -0.0034,
+    "t": -0.57
+   }
+  },
+  "o14fut10": {
+   "step": 2000,
+   "n_clips": 80,
+   "n_rows": 7680,
+   "columns": {
+    "z_t (DRIFT / POSITIVE CONTROL)": {
+     "r": 0.4733,
+     "t": 47.9
+    },
+    "ego_state [w, a, v]": {
+     "r": -0.014,
+     "t": -1.36
+    },
+    "z_t + ego_state": {
+     "r": 0.4686,
+     "t": 47.19
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "t": 0.0
+    }
+   },
+   "drift_control_t": 47.9,
+   "ego_marginal_over_drift": {
+    "delta": -0.0047,
+    "t": -1.14
+   }
+  }
+ }
+}

@@ -1,0 +1,67 @@
+31 mutants; every anchor occurs exactly once in the ORIGINAL bytes (v8f_paired_families.py sha256 5fe004cdc5b8db87...)
+BASELINE (unmutated): GREEN  24 passed in 31.92s
+[ 0] RED (assertion)        pairing broken: B's windows are reversed before the paired bootstrap (B's episodes shuffled)
+       first failing test: test_identity_every_cell_is_exactly_zero  | AssertionError: [{'cell': 'tactical.plan_derived.lateral_decision.accuracy', 'delta': 0.0, 'lo': -0.0661, 'hi': 0.0694}, {'cell': 'tac...0.0824}, {'ce
+[ 1] RED (assertion)        quadrature: the interval is built by combining the two per-arm intervals
+       first failing test: test_identity_every_cell_is_exactly_zero  | AssertionError: [{'cell': 'tactical.plan_derived.lateral_decision.accuracy', 'delta': 0.0, 'lo': -0.06420529573173851, 'hi': 0.0642052...l.plan_derive
+[ 2] RED (assertion)        separated is inverted
+       first failing test: test_identity_every_cell_is_exactly_zero  | AssertionError: [{'cell': 'tactical.plan_derived.lateral_decision.accuracy', 'delta': 0.0, 'lo': 0.0, 'hi': 0.0}, {'cell': 'tactical.p....0, 'hi': 0.0
+[ 3] RED (assertion)        the bootstrap seed is not the requested one
+       first failing test: test_the_head_macro_f1_interval_is_a_per_resample_bootstrap[lateral-lat_logits-lat_cls-5]  | AssertionError: (0.3008, 0.2445, 0.3719, 0.3007712798778588, 0.23399328941635208, 0.3669372025484077)
+[ 4] RED (assertion)        head macro-F1 computed ONCE (on the first call) instead of on every resample
+       first failing test: test_the_better_arm_reads_negative_on_an_error_cell_and_positive_on_a_skill_cell  | AssertionError: ('tactical.heads.lateral.macro_f1', {'status': 'OK', 'a': 0.9084, 'b': 0.9084, 'a_point': 0.9083609729132117, ...})
+[ 5] RED (assertion)        goal macro-F1 computed ONCE instead of on every resample
+       first failing test: test_the_better_arm_reads_negative_on_an_error_cell_and_positive_on_a_skill_cell  | AssertionError: ('tactical.heads.goal.macro_f1', {'status': 'OK', 'a': 0.8688, 'b': 0.8688, 'a_point': 0.8687521298831072, ...})
+[ 6] RED (assertion)        the goal decode reads the weight mask as the label
+       first failing test: test_the_better_arm_reads_negative_on_an_error_cell_and_positive_on_a_skill_cell  | AssertionError: ('tactical.heads.goal.macro_f1', {'status': 'OK', 'a': 0.3472, 'b': 0.4462, 'a_point': 0.3471848620662368, ...})
+[ 7] RED (assertion)        A and B swapped in the paired call
+       first failing test: test_a_minus_b_is_a_minus_b_and_swapping_negates_every_delta  | AssertionError: ('tactical.plan_derived.lateral_decision.accuracy', 0.5972222222222222, 0.3645833333333333, -0.2326)
+[ 8] RED (assertion)        A and B swapped when the dumps are loaded
+       first failing test: test_the_cli_end_to_end_on_aligned_dumps  | AssertionError: assert ('9b6912ae980c...1a00d952a2bf7' == 'c69e2ab6dd7a...63e5adeb62bda'
+[ 9] RED (assertion)        the alignment check is dropped
+       first failing test: test_the_cli_refuses_rc2_on_misaligned_dumps_and_writes_nothing  | AssertionError: ('eid', 0)
+[10] RED (assertion)        the A-vs-B episode-id comparison is dropped
+       first failing test: test_misaligned_windows_are_refused  | AssertionError: Regex pattern did not match.
+[11] RED (assertion)        the per-window ADE6 recompute (the within-episode order check) is dropped
+       first failing test: test_misaligned_windows_are_refused  | AssertionError: Regex pattern did not match.
+[12] RED (assertion)        the ck_pos_err NaN-mask comparison is dropped
+       first failing test: test_misaligned_windows_are_refused  | Failed: DID NOT RAISE Refusal
+[13] RED (assertion)        strategic position error: the label mask is not applied (NaN -> 0 over every window)
+       first failing test: test_the_head_and_strategic_cells_equal_the_evals_own_functions  | AssertionError: ('position_error_m', 30, {'status': 'OK', 'a': 0.8934, 'b': 3.6409, 'a_point': 0.8933624630509358, ...}, {'mean': 0.9896, 'lo': 0.9246
+[14] RED (assertion)        strategic position error reads the next arc's column
+       first failing test: test_the_head_and_strategic_cells_equal_the_evals_own_functions  | AssertionError: ('position_error_m', 30, {'status': 'OK', 'a': 1.0315, 'b': 4.1564, 'a_point': 1.031544906387766, ...}, {'mean': 0.9896, 'lo': 0.9246,
+[15] RED (assertion)        the heading cells carry the POSITION error
+       first failing test: test_the_head_and_strategic_cells_equal_the_evals_own_functions  | AssertionError: ('heading_error_deg', 30, {'status': 'OK', 'a': 0.9896, 'b': 4.0329, 'a_point': 0.9895707283025751, ...}, {'mean': 37.9962, 'lo': 34.6
+[16] RED (assertion)        the heading rebuild uses the wrong source frame
+       first failing test: test_the_better_arm_reads_negative_on_an_error_cell_and_positive_on_a_skill_cell  | AssertionError: {'status': 'UNAVAILABLE', 'n_windows': 260, 'reason': "the held-age rebuild of S's NOW-frame checkpoints does not repr...ng error cann
+[17] RED (assertion)        the heading gate is disabled
+       first failing test: test_the_heading_cells_are_unavailable_with_the_deviation_when_the_rebuild_does_not_reproduce  | AssertionError: assert ('OK' == 'UNAVAILABLE'
+[18] RED (assertion)        STRATEGIC is reported as paused
+       first failing test: test_strategic_is_active_and_the_output_never_says_paused  | AssertionError: assert False
+[19] RED (assertion)        the strategic reason's no-row count is not the mask's
+       first failing test: test_every_masked_cell_states_its_n_and_the_masks_own_counts  | AssertionError: 260 of 288 windows: `ck_pos_err` is NaN in both dumps at exactly the 28 windows without a valid 30 m checkpoint label (0 have no v9 la
+[20] RED (assertion)        the head reason's IGNORE count is not the mask's
+       first failing test: test_every_masked_cell_states_its_n_and_the_masks_own_counts  | AssertionError: 249 of 288 windows are labelled (mask: has & lat_cls >= 0): 25 have no v9 label row (has False) and 0 have a row with no lateral class
+[21] RED (assertion)        the bearing mask is dropped (a bearing is scored to a goal on the origin)
+       first failing test: test_every_per_arm_point_and_interval_is_the_programmes_own  | AssertionError: ('A', 'goal_bearing_mae_deg', {'status': 'OK', 'a': 6.2517, 'b': 6.8548, 'a_point': 6.25170544085092, ...}, {'mean': 0.6696, 'lo': 0.5
+[22] RED (assertion)        a goal token with no positive is no longer UNAVAILABLE
+       first failing test: test_identity_every_cell_is_exactly_zero  | AssertionError: [{'cell': 'tactical.heads.goal.per_token.SPEED_BAND', 'delta': nan, 'lo': None, 'hi': None}, {'cell': 'tactical.heads.goal.per_token.T
+[23] RED (assertion)        kappa is halved
+       first failing test: test_every_per_arm_point_and_interval_is_the_programmes_own  | AssertionError: ('A', 'lateral_decision', 'kappa', {'status': 'OK', 'a': 0.2086, 'b': 0.0805, 'a_point': 0.2086240580519118, ...}, {'mean': 0.4172, 'l
+[24] RED (assertion)        the lateral head decision is the argmin
+       first failing test: test_identity_every_cell_is_exactly_zero  | AssertionError: [{'cell': 'tactical.heads.lateral.macro_f1', 'delta': -0.9084, 'lo': -0.9491, 'hi': -0.871}, {'cell': 'tactical.heads.longitudinal.mac
+[25] RED (assertion)        the goal head threshold is 0.6
+       first failing test: test_the_goal_head_macro_f1_is_a_per_resample_bootstrap  | AssertionError: (0.2445, 0.3229, np.float64(0.2304639929367355), np.float64(0.3054443998568573))
+[26] RED (assertion)        the lateral decision is scored against the longitudinal GT class
+       first failing test: test_every_per_arm_point_and_interval_is_the_programmes_own  | AssertionError: ('A', 'lateral_decision', 'accuracy', {'status': 'OK', 'a': 0.2292, 'b': 0.2986, 'a_point': 0.22916666666666666, ...}, {'mean': 0.5972
+[27] RED (assertion)        the identity control can never fail
+       first failing test: test_the_identity_control_fails_on_a_deliberate_regression  | AssertionError: {'name': 'identity: the pipeline run on A against A', 'condition': 'exactly 0.0 [0.0, 0.0], not separated, on every cell', 'n_cells': 
+[28] RED (assertion)        the identity control is not run
+       first failing test: test_the_cli_end_to_end_on_aligned_dumps  | assert (None is True)
+[29] RED (assertion)        the JSON-reproduction tolerance is 1e9
+       first failing test: test_the_json_reproduction_control_passes_on_the_evals_own_blocks_and_fails_on_a_perturbed_one  | AssertionError: {'arm': 'A', 'n_checked': 119, 'n_failed': 0, 'max_abs_diff': 0.010000000000000009, ...}
+[30] RED (assertion)        the JSON-reproduction control is not run
+       first failing test: test_the_cli_runs_the_json_reproduction_beside_the_dumps_and_rc3_on_a_perturbed_json  | AssertionError: [None, None]
+AFTER (unmutated, bytes identical: True): GREEN  24 passed in 22.55s
+
+31 of 31 mutants RED (31 on an assertion); survived or errored: none

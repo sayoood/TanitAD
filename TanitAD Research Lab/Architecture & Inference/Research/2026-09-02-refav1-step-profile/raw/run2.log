@@ -1,0 +1,153 @@
+=== 2a components bs1 fp32 Wed Sep  2 20:44:30     2026 ===
+[bank] env -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[refav1-labels] v7.2 join: labels 1/6 eps (5 missing, e.g. ['001d413e-2803-4c6b-a11a-8f7793a3534e', '09376a99-6406-4595-bdf1-b52f13b9b289', '1e3fb085-c747-4c05-a88d-a514067835cf']), 10/222 windows in-band +-[2.0]s, md5=0ff902130ce76886b8a925eceed9e3a5 | nav 1/6 eps (5 missing -> nav_cmd=0+nav_valid=False), md5=0ff902130ce76886b8a925eceed9e3a5, allow_oracle_nav=True
+loader: 222 windows over 6 episodes
+[bank] loader_join_report -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+model 175,164,468 params; arms ['components']; bs 1; precision fp32
+[components] encode_window: {'fwd_ms': 1.903615951538086, 'bwd_ms': 4.097023963928223, 'fwd_all': [1.9804160594940186, 1.8872319459915161, 1.9589120149612427, 1.903615951538086, 1.8749439716339111], 'bwd_all': [4.097023963928223, 4.671487808227539, 4.090879917144775, 4.085760116577148, 4.097023963928223], 'max_mem_gb': 1.0374751091003418}
+[components] brains: {'fwd_ms': 7.693600177764893, 'bwd_ms': 11.776288032531738, 'fwd_all': [11.052895545959473, 7.693600177764893, 7.6769280433654785, 8.035903930664062, 7.106560230255127], 'bwd_all': [11.360511779785156, 11.92950439453125, 12.654720306396484, 11.776288032531738, 10.498047828674316], 'max_mem_gb': 1.0407156944274902}
+[components] target_adapter_future[grad-recorded,as-live]: {'fwd_ms': 17.804288864135742, 'fwd_all': [18.311872482299805, 17.680160522460938, 17.804288864135742, 18.104320526123047, 17.66912078857422], 'grad_recorded': True, 'max_mem_gb': 1.4493584632873535}
+[components] target_adapter_future[no_grad]: {'fwd_ms': 17.63430404663086, 'fwd_all': [17.63430404663086, 18.20639991760254, 18.22515106201172, 17.420352935791016, 17.36579132080078], 'grad_recorded': False, 'max_mem_gb': 1.2265591621398926}
+[components] target_tac_field_x30[grad-recorded,as-live]: {'fwd_ms': 15.107999801635742, 'fwd_all': [15.010592460632324, 14.728416442871094, 15.107999801635742, 15.464447975158691, 15.636608123779297], 'grad_recorded': True, 'max_mem_gb': 1.106844425201416}
+[components] target_str_subspace[grad-recorded,as-live]: {'fwd_ms': 0.36931198835372925, 'fwd_all': [0.39423999190330505, 0.3755199909210205, 0.36931198835372925, 0.36553600430488586, 0.3676159977912903], 'grad_recorded': True, 'max_mem_gb': 0.9297995567321777}
+[components] target_adapter_str_ext[grad-recorded,as-live]: {'fwd_ms': 0.9982399940490723, 'fwd_all': [0.9982399940490723, 0.9328640103340149, 1.0557440519332886, 1.039199948310852, 0.9385600090026855], 'grad_recorded': True, 'max_mem_gb': 0.9652047157287598}
+[components] op_rollout_K5[+to_enc+mse]: {'fwd_ms': 75.29369354248047, 'bwd_ms': 186.14886474609375, 'fwd_all': [72.953857421875, 76.44038391113281, 79.67414093017578, 75.13890838623047, 75.29369354248047], 'bwd_all': [185.4924774169922, 186.756103515625, 204.29209899902344, 184.7930908203125, 186.14886474609375], 'max_mem_gb': 2.2938919067382812}
+[components] op_rollout_K10[+to_enc+mse]: {'fwd_ms': 162.06700134277344, 'bwd_ms': 374.7737731933594, 'fwd_all': [151.89605712890625, 164.87423706054688, 157.4625244140625, 164.1328582763672, 162.06700134277344], 'bwd_all': [378.69580078125, 374.6387634277344, 375.4311828613281, 374.1532287597656, 374.7737731933594], 'max_mem_gb': 3.5536012649536133}
+[components] op_rollout_K15[+to_enc+mse]: {'fwd_ms': 244.57113647460938, 'bwd_ms': 563.0259399414062, 'fwd_all': [260.50048828125, 242.2169647216797, 239.06918334960938, 245.77023315429688, 244.57113647460938], 'bwd_all': [563.0259399414062, 565.3903198242188, 563.9485473632812, 562.4934692382812, 561.8462524414062], 'max_mem_gb': 4.808916091918945}
+[components] op_rollout_K20[+to_enc+mse]: {'fwd_ms': 333.57415771484375, 'bwd_ms': 749.1328125, 'fwd_all': [318.9780578613281, 322.6326904296875, 335.5105285644531, 333.57415771484375, 335.4671630859375], 'bwd_all': [749.1328125, 749.812744140625, 747.9244995117188, 750.2274780273438, 749.064208984375], 'max_mem_gb': 6.064719200134277}
+[components] op_rollout_K30[+to_enc+mse]: {'oom': 'CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 413.39 MiB is free. 6.4', 'max_mem_gb': 6.372084140777588}
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\profiler\profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+[components] profiled op_rollout K15: kernel 1031 ms/step, GPU busy 98.3 %
+[components] tac_rollout_K10[+tac_field_init+mse]: {'fwd_ms': 22.300607681274414, 'bwd_ms': 54.32643127441406, 'fwd_all': [22.300607681274414, 21.17305564880371, 22.148895263671875, 22.447839736938477, 22.41427230834961], 'bwd_all': [64.07087707519531, 52.4793586730957, 54.32643127441406, 52.927616119384766, 58.55535888671875], 'max_mem_gb': 1.3303823471069336}
+[components] str_subspace+rollout_K4[+mse]: {'fwd_ms': 5.494976043701172, 'bwd_ms': 9.306816101074219, 'fwd_all': [5.787775993347168, 5.325471878051758, 5.494976043701172, 5.877920150756836, 5.479263782501221], 'bwd_all': [11.162464141845703, 9.306816101074219, 9.076512336730957, 9.607872009277344, 8.607872009277344], 'max_mem_gb': 0.9415526390075684}
+[components] proposal+heads: {'fwd_ms': 0.6982719898223877, 'bwd_ms': 1.2445759773254395, 'fwd_all': [0.7506880164146423, 0.6982719898223877, 0.5052800178527832, 0.5035200119018555, 0.7116159796714783], 'bwd_all': [1.3102400302886963, 1.2445759773254395, 1.0990400314331055, 1.06496000289917, 1.5008959770202637], 'max_mem_gb': 0.9340119361877441}
+[components] clip 10.3 ms, adamw 58.0 ms
+[bank] components_fp32_bs1 -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+done
+EXIT2a=0
+=== 2b components bs2 fp32 Wed Sep  2 20:45:19     2026 ===
+[bank] env -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[refav1-labels] v7.2 join: labels 1/6 eps (5 missing, e.g. ['001d413e-2803-4c6b-a11a-8f7793a3534e', '09376a99-6406-4595-bdf1-b52f13b9b289', '1e3fb085-c747-4c05-a88d-a514067835cf']), 10/222 windows in-band +-[2.0]s, md5=0ff902130ce76886b8a925eceed9e3a5 | nav 1/6 eps (5 missing -> nav_cmd=0+nav_valid=False), md5=0ff902130ce76886b8a925eceed9e3a5, allow_oracle_nav=True
+loader: 222 windows over 6 episodes
+[bank] loader_join_report -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+model 175,164,468 params; arms ['components']; bs 2; precision fp32
+[components] encode_window: {'fwd_ms': 4.146175861358643, 'bwd_ms': 8.721407890319824, 'fwd_all': [4.128767967224121, 4.113408088684082, 4.146175861358643, 4.176703929901123, 4.156415939331055], 'bwd_all': [8.751104354858398, 9.155584335327148, 8.721407890319824, 8.718367576599121, 8.720383644104004], 'max_mem_gb': 1.3988938331604004}
+[components] brains: {'fwd_ms': 8.442879676818848, 'bwd_ms': 11.56710433959961, 'fwd_all': [9.351455688476562, 8.442879676818848, 8.107232093811035, 8.242176055908203, 8.757247924804688], 'bwd_all': [12.415040016174316, 15.199584007263184, 11.547648429870605, 11.56710433959961, 11.340800285339355], 'max_mem_gb': 1.294851303100586}
+[components] target_adapter_future[grad-recorded,as-live]: {'fwd_ms': 35.68844985961914, 'fwd_all': [35.51206588745117, 36.39603042602539, 35.741695404052734, 35.34745788574219, 35.68844985961914], 'grad_recorded': True, 'max_mem_gb': 2.3561644554138184}
+[components] target_adapter_future[no_grad]: {'fwd_ms': 34.89894485473633, 'fwd_all': [34.68473434448242, 34.89894485473633, 34.87311935424805, 35.12627029418945, 35.15999984741211], 'grad_recorded': False, 'max_mem_gb': 1.9164252281188965}
+[components] target_tac_field_x30[grad-recorded,as-live]: {'fwd_ms': 33.40671920776367, 'fwd_all': [29.768512725830078, 31.41529655456543, 33.40671920776367, 35.08204650878906, 34.83955383300781], 'grad_recorded': True, 'max_mem_gb': 1.7134146690368652}
+[components] target_str_subspace[grad-recorded,as-live]: {'fwd_ms': 0.694271981716156, 'fwd_all': [0.694271981716156, 0.7096319794654846, 0.7372159957885742, 0.6900479793548584, 0.6871039867401123], 'grad_recorded': True, 'max_mem_gb': 1.1845192909240723}
+[components] target_adapter_str_ext[grad-recorded,as-live]: {'fwd_ms': 1.7827839851379395, 'fwd_all': [1.9305280447006226, 1.7827839851379395, 1.797055959701538, 1.7786879539489746, 1.7704960107803345], 'grad_recorded': True, 'max_mem_gb': 1.2621474266052246}
+[components] op_rollout_K5[+to_enc+mse]: {'fwd_ms': 162.91226196289062, 'bwd_ms': 379.8394775390625, 'fwd_all': [160.41778564453125, 162.91226196289062, 160.98931884765625, 174.44146728515625, 167.2560577392578], 'bwd_all': [382.3247375488281, 379.8394775390625, 370.79437255859375, 377.47406005859375, 381.444091796875], 'max_mem_gb': 3.956364154815674}
+[components] op_rollout_K10[+to_enc+mse]: {'oom': 'CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 527.00 MiB is free. 6.4', 'max_mem_gb': 6.375117778778076}
+[components] tac_rollout_K10[+tac_field_init+mse]: {'fwd_ms': 47.903743743896484, 'bwd_ms': 77.22819519042969, 'fwd_all': [51.267520904541016, 43.78121566772461, 51.47343826293945, 45.90460968017578, 47.903743743896484], 'bwd_all': [77.22819519042969, 71.59490966796875, 71.61341094970703, 93.63148498535156, 98.7873306274414], 'max_mem_gb': 1.7834720611572266}
+[components] str_subspace+rollout_K4[+mse]: {'fwd_ms': 9.629695892333984, 'bwd_ms': 11.400192260742188, 'fwd_all': [5.174560070037842, 9.629695892333984, 9.629695892333984, 8.845312118530273, 9.984352111816406], 'bwd_all': [8.001248359680176, 19.609600067138672, 12.691455841064453, 11.400192260742188, 10.294943809509277], 'max_mem_gb': 1.2018828392028809}
+[components] proposal+heads: {'fwd_ms': 0.5158079862594604, 'bwd_ms': 1.8579519987106323, 'fwd_all': [0.9595199823379517, 0.5158079862594604, 0.4984320104122162, 0.45977601408958435, 0.7391359806060791], 'bwd_all': [1.2813440561294556, 1.0219520330429077, 1.9976320266723633, 1.8579519987106323, 2.016256093978882], 'max_mem_gb': 1.1919045448303223}
+[components] clip 10.1 ms, adamw 58.8 ms
+[bank] components_fp32_bs2 -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+done
+EXIT2b=0
+=== 2c step bs1 fp32 offload Wed Sep  2 20:45:31     2026 ===
+[bank] env -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[refav1-labels] v7.2 join: labels 1/6 eps (5 missing, e.g. ['001d413e-2803-4c6b-a11a-8f7793a3534e', '09376a99-6406-4595-bdf1-b52f13b9b289', '1e3fb085-c747-4c05-a88d-a514067835cf']), 10/222 windows in-band +-[2.0]s, md5=0ff902130ce76886b8a925eceed9e3a5 | nav 1/6 eps (5 missing -> nav_cmd=0+nav_valid=False), md5=0ff902130ce76886b8a925eceed9e3a5, allow_oracle_nav=True
+loader: 222 windows over 6 episodes
+[bank] loader_join_report -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+model 175,164,468 params; arms ['step']; bs 1; precision fp32
+Traceback (most recent call last):
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 1116, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 1107, in main
+    bank(args.out, key, arm_step(args, model, data, fwd_params, dev, timer, args.out, key))
+                        ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 591, in arm_step
+    res["wall"][mode] = run_steps(args, model, opt, data, fwd_params, dev, timer, mode,
+                        ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                  staged, args.warmup, args.measured)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 399, in run_steps
+    out, loss, gnorm = train_step(model, opt, b, dev, fwd_params, args.clip,
+                       ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                  args.precision, timer)
+                                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 324, in train_step
+    out = model(feats, actions, future_feats=future, **kw)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 242, in fwd
+    return orig_fwd(*a, **k)
+  File "C:\Users\Admin\refav1_probe\snap\stack\tanitad\refs\refa_v1.py", line 929, in forward
+    out["op_pred"] = self.operative.rollout(last, actions, intent=intent)
+                     ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\refav1_probe\snap\stack\scripts\refa_v1_profile.py", line 206, in w
+    return fn(*a, **k)
+  File "C:\Users\Admin\refav1_probe\snap\stack\tanitad\refs\refa_v1.py", line 608, in rollout
+    z = self.step(z, actions[:, k], intent=intent)
+  File "C:\Users\Admin\refav1_probe\snap\stack\tanitad\refs\refa_v1.py", line 548, in step
+    x = blk(x)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Admin\refav1_probe\snap\stack\tanitad\refs\refa_v1.py", line 425, in forward
+    h = self.n1(x)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\normalization.py", line 229, in forward
+    return F.layer_norm(
+           ~~~~~~~~~~~~^
+        input, self.normalized_shape, self.weight, self.bias, self.eps
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\functional.py", line 2935, in layer_norm
+    return torch.layer_norm(
+           ~~~~~~~~~~~~~~~~^
+        input, normalized_shape, weight, bias, eps, torch.backends.cudnn.enabled
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\autograd\graph.py", line 394, in pack_to_cpu
+    packed = torch.empty(
+        tensor.size(),
+    ...<2 lines>...
+        pin_memory=(device_module.is_available() and not tensor.is_sparse),
+    )
+torch.AcceleratorError: CUDA error: out of memory
+Search for `cudaErrorMemoryAllocation' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+EXIT2c=1
+=== 2d components bs1 bf16 Wed Sep  2 20:45:43     2026 ===
+[bank] env -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[refav1-labels] v7.2 join: labels 1/6 eps (5 missing, e.g. ['001d413e-2803-4c6b-a11a-8f7793a3534e', '09376a99-6406-4595-bdf1-b52f13b9b289', '1e3fb085-c747-4c05-a88d-a514067835cf']), 10/222 windows in-band +-[2.0]s, md5=0ff902130ce76886b8a925eceed9e3a5 | nav 1/6 eps (5 missing -> nav_cmd=0+nav_valid=False), md5=0ff902130ce76886b8a925eceed9e3a5, allow_oracle_nav=True
+loader: 222 windows over 6 episodes
+[bank] loader_join_report -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+model 175,164,468 params; arms ['components']; bs 1; precision bf16
+[components] encode_window: {'fwd_ms': 1.1550719738006592, 'bwd_ms': 2.704576015472412, 'fwd_all': [1.2421120405197144, 1.1550719738006592, 1.1416640281677246, 1.1609280109405518, 1.136639952659607], 'bwd_all': [2.7555840015411377, 2.704576015472412, 2.825216054916382, 2.621504068374634, 2.618367910385132], 'max_mem_gb': 1.0186634063720703}
+[components] brains: {'fwd_ms': 11.060576438903809, 'bwd_ms': 17.607648849487305, 'fwd_all': [10.734527587890625, 13.322272300720215, 9.866368293762207, 11.472895622253418, 11.060576438903809], 'bwd_all': [15.875904083251953, 17.607648849487305, 18.08153533935547, 18.23129653930664, 14.285696029663086], 'max_mem_gb': 1.0396413803100586}
+[components] target_adapter_future[grad-recorded,as-live]: {'fwd_ms': 12.152928352355957, 'fwd_all': [12.152928352355957, 11.896736145019531, 12.214271545410156, 12.136639595031738, 12.392191886901855], 'grad_recorded': True, 'max_mem_gb': 1.3753767013549805}
+[components] target_adapter_future[no_grad]: {'fwd_ms': 12.199487686157227, 'fwd_all': [12.186623573303223, 12.199487686157227, 11.976703643798828, 12.223487854003906, 12.751872062683105], 'grad_recorded': False, 'max_mem_gb': 1.2267961502075195}
+[components] target_tac_field_x30[grad-recorded,as-live]: {'fwd_ms': 24.800384521484375, 'fwd_all': [14.56332778930664, 22.709247589111328, 24.800384521484375, 28.100608825683594, 37.3831672668457], 'grad_recorded': True, 'max_mem_gb': 1.1216611862182617}
+[components] target_str_subspace[grad-recorded,as-live]: {'fwd_ms': 0.3755519986152649, 'fwd_all': [0.3827199935913086, 0.3696640133857727, 0.3983359932899475, 0.3755519986152649, 0.3681600093841553], 'grad_recorded': True, 'max_mem_gb': 0.9266505241394043}
+[components] target_adapter_str_ext[grad-recorded,as-live]: {'fwd_ms': 0.9427520036697388, 'fwd_all': [0.9911999702453613, 0.9502400159835815, 0.9427520036697388, 0.9175040125846863, 0.9339519739151001], 'grad_recorded': True, 'max_mem_gb': 0.9590940475463867}
+[components] op_rollout_K15[+to_enc+mse]: {'fwd_ms': 80.87753295898438, 'bwd_ms': 196.885498046875, 'fwd_all': [81.03321838378906, 79.102783203125, 88.5032958984375, 79.50745391845703, 80.87753295898438], 'bwd_all': [198.37542724609375, 195.2665557861328, 194.6736602783203, 196.885498046875, 198.6181182861328], 'max_mem_gb': 3.3289060592651367}
+[components] op_rollout_K30[+to_enc+mse]: {'fwd_ms': 156.7229766845703, 'bwd_ms': 385.4677734375, 'fwd_all': [158.1516876220703, 156.03887939453125, 156.7229766845703, 155.99411010742188, 157.09490966796875], 'bwd_all': [385.59027099609375, 385.9599304199219, 385.4677734375, 384.21502685546875, 382.8756408691406], 'max_mem_gb': 5.5481696128845215}
+[components] tac_rollout_K10[+tac_field_init+mse]: {'fwd_ms': 25.937856674194336, 'bwd_ms': 52.18732833862305, 'fwd_all': [35.788639068603516, 28.28179168701172, 25.937856674194336, 25.605119705200195, 23.428096771240234], 'bwd_all': [41.562110900878906, 52.47779083251953, 64.24816131591797, 52.18732833862305, 40.95801544189453], 'max_mem_gb': 1.2531633377075195}
+[components] str_subspace+rollout_K4[+mse]: {'fwd_ms': 5.798783779144287, 'bwd_ms': 8.525888442993164, 'fwd_all': [9.400320053100586, 4.898911952972412, 4.743072032928467, 5.798783779144287, 8.581119537353516], 'bwd_all': [12.013919830322266, 8.21116828918457, 8.525888442993164, 9.869248390197754, 8.075455665588379], 'max_mem_gb': 0.9378695487976074}
+[components] proposal+heads: {'fwd_ms': 0.6103039979934692, 'bwd_ms': 1.6537599563598633, 'fwd_all': [0.6535360217094421, 1.0690560340881348, 0.5997120141983032, 0.6103039979934692, 0.5714880228042603], 'bwd_all': [1.8433279991149902, 1.4213440418243408, 1.831936001777649, 1.6537599563598633, 1.2563519477844238], 'max_mem_gb': 0.9312987327575684}
+[components] clip 10.4 ms, adamw 57.6 ms
+[bank] components_bf16_bs1 -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+done
+EXIT2d=0
+ALLDONE Wed Sep  2 20:45:56     2026

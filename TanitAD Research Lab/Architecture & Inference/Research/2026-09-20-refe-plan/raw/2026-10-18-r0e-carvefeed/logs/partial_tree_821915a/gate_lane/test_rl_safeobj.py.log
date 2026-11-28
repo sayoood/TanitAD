@@ -1,0 +1,17 @@
+C:\Users\Admin\b8carve\gate_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1582: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())
+mutation                                                                                     part caught-by (failing checks)
+M1 REFE_RL_MUTATE_CON_DETACH=1 (c_B computed from sxB.detach())                              SF   U_I2_R_prime_gradient_equals_EPO_plus_L_con_at_lambda_TTC_0.25_6col, U_I2_R_prime_gradient_equals_EPO_plus_L_con_at_lambda_TTC_0.25_lane, U_I3_gradient_at_lambda_0.5_is_EXACTLY_half_of_lambda_1_and_each_component_is_live_6col, U_I3_gradient_at_lambda_0.5_is_EXACTLY_half_of_lambda_1_and_each_component_is_live_lane
+M2 REFE_RL_MUTATE_CON_ATTACH_A=1 (arm A is not detached)                                     SF   U_lambda_0_control_reads_EXACTLY_0.0_value_and_gradient, U_C1_through_train_losses_A_gets_EXACTLY_0_from_L_con_B_is_live_on_every_module_A_BCE_control_reads_nonzero_6col, U_C1_through_train_losses_A_gets_EXACTLY_0_from_L_con_B_is_live_on_every_module_A_BCE_control_reads_nonzero_lane, U_the_dual_state_round_trips_and_the_BUILT_facts_are_read_off_the_object
+M3 delete `lB = lB + ct` in train_losses                                                     SF   U_eps_shifts_the_violation_and_the_term_by_exactly_eps_through_epo_con_term_and_through_train_losses, U_C1_through_train_losses_A_gets_EXACTLY_0_from_L_con_B_is_live_on_every_module_A_BCE_control_reads_nonzero_6col, U_C1_through_train_losses_A_gets_EXACTLY_0_from_L_con_B_is_live_on_every_module_A_BCE_control_reads_nonzero_lane, U_the_constraint_adds_exactly_L_con_to_lB_and_changes_nothing_else
+Traceback (most recent call last):
+  File "C:\Users\Admin\b8carve\gate_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe/test_rl_safeobj.py", line 1317, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\b8carve\gate_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe/test_rl_safeobj.py", line 1287, in main
+    m = apply_edits({**srcs, **chain_srcs}, edits, name)
+  File "C:\Users\Admin\b8carve\gate_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe/test_rl_safeobj.py", line 1220, in apply_edits
+    assert cnt == 1, f"mutation {name}: the snippet occurs {cnt} times in {os.path.basename(path)} (must be exactly 1) -- a vacuous mutation proves nothing: {old[:60]!r}"
+           ^^^^^^^^
+AssertionError: mutation M4 delete the dual.step(...) call in the loop: the snippet occurs 0 times in scorer_finetune.py (must be exactly 1) -- a vacuous mutation proves nothing: '                dual.step(con_acc)\n'

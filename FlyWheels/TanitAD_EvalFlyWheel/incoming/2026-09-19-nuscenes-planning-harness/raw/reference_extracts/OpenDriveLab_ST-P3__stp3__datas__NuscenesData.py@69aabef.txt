@@ -1,0 +1,146 @@
+# PUBLISHED-CODE extract - OpenDriveLab/ST-P3 @ 69aabefd2610951d9e34238142776ed2228673be
+# path: stp3/datas/NuscenesData.py
+# git blob sha1 of the fetched file: a54417fda0bee9bd2785eea33cde0e95bb16f98f (27933 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 96-148: scene split + blacklist + sequence validity
+   96      def get_scenes(self):
+   97          # filter by scene split
+   98          split = {'v1.0-trainval': {0: 'train', 1: 'val', 2: 'test'},
+   99                   'v1.0-mini': {0: 'mini_train', 1: 'mini_val'},}[
+  100              self.nusc.version
+  101          ][self.is_train]
+  102  
+  103          blacklist = [419] + self.nusc_can.can_blacklist  # # scene-0419 does not have vehicle monitor data
+  104          blacklist = ['scene-' + str(scene_no).zfill(4) for scene_no in blacklist]
+  105  
+  106          scenes = create_splits_scenes()[split][:]
+  107          for scene_no in blacklist:
+  108              if scene_no in scenes:
+  109                  scenes.remove(scene_no)
+  110  
+  111          return scenes
+  112  
+  113      def prepro(self):
+  114          samples = [samp for samp in self.nusc.sample]
+  115  
+  116          # remove samples that aren't in this split
+  117          samples = [samp for samp in samples if self.nusc.get('scene', samp['scene_token'])['name'] in self.scenes]
+  118  
+  119          # sort by scene, timestamp (only to make chronological viz easier)
+  120          samples.sort(key=lambda x: (x['scene_token'], x['timestamp']))
+  121  
+  122          return samples
+  123  
+  124      def get_indices(self):
+  125          indices = []
+  126          for index in range(len(self.ixes)):
+  127              is_valid_data = True
+  128              previous_rec = None
+  129              current_indices = []
+  130              for t in range(self.sequence_length):
+  131                  index_t = index + t
+  132                  # Going over the dataset size limit.
+  133                  if index_t >= len(self.ixes):
+  134                      is_valid_data = False
+  135                      break
+  136                  rec = self.ixes[index_t]
+  137                  # Check if scene is the same
+  138                  if (previous_rec is not None) and (rec['scene_token'] != previous_rec['scene_token']):
+  139                      is_valid_data = False
+  140                      break
+  141  
+  142                  current_indices.append(index_t)
+  143                  previous_rec = rec
+  144  
+  145              if is_valid_data:
+  146                  indices.append(current_indices)
+  147  
+  148          return np.asarray(indices)
+
+## lines 282-287: yaw-only ego pose for BEV labels
+  282      def _get_top_lidar_pose(self, rec):
+  283          egopose = self.nusc.get('ego_pose', self.nusc.get('sample_data', rec['data']['LIDAR_TOP'])['ego_pose_token'])
+  284          trans = -np.array(egopose['translation'])
+  285          yaw = Quaternion(egopose['rotation']).yaw_pitch_roll[0]
+  286          rot = Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse
+  287          return trans, rot
+
+## lines 303-348: BEV label rasterisation
+  303      def get_birds_eye_view_label(self, rec, instance_map, in_pred):
+  304          translation, rotation = self._get_top_lidar_pose(rec)
+  305          segmentation = np.zeros((self.bev_dimension[0], self.bev_dimension[1]))
+  306          pedestrian = np.zeros((self.bev_dimension[0], self.bev_dimension[1]))
+  307          # Background is ID 0
+  308          instance = np.zeros((self.bev_dimension[0], self.bev_dimension[1]))
+  309  
+  310          for annotation_token in rec['anns']:
+  311              # Filter out all non vehicle instances
+  312              annotation = self.nusc.get('sample_annotation', annotation_token)
+  313  
+  314              if self.cfg.DATASET.FILTER_INVISIBLE_VEHICLES and int(annotation['visibility_token']) == 1 and in_pred is False:
+  315                  continue
+  316              if in_pred is True and annotation['instance_token'] not in instance_map:
+  317                  continue
+  318  
+  319              # NuScenes filter
+  320              if 'vehicle' in annotation['category_name']:
+  321                  if annotation['instance_token'] not in instance_map:
+  322                      instance_map[annotation['instance_token']] = len(instance_map) + 1
+  323                  instance_id = instance_map[annotation['instance_token']]
+  324                  poly_region, z = self._get_poly_region_in_image(annotation, translation, rotation)
+  325                  cv2.fillPoly(instance, [poly_region], instance_id)
+  326                  cv2.fillPoly(segmentation, [poly_region], 1.0)
+  327              elif 'human' in annotation['category_name']:
+  328                  if annotation['instance_token'] not in instance_map:
+  329                      instance_map[annotation['instance_token']] = len(instance_map) + 1
+  330                  poly_region, z = self._get_poly_region_in_image(annotation, translation, rotation)
+  331                  cv2.fillPoly(pedestrian, [poly_region], 1.0)
+  332  
+  333  
+  334          return segmentation, instance, pedestrian, instance_map
+  335  
+  336      def _get_poly_region_in_image(self, instance_annotation, ego_translation, ego_rotation):
+  337          box = Box(
+  338              instance_annotation['translation'], instance_annotation['size'], Quaternion(instance_annotation['rotation'])
+  339          )
+  340          box.translate(ego_translation)
+  341          box.rotate(ego_rotation)
+  342  
+  343          pts = box.bottom_corners()[:2].T
+  344          pts = np.round((pts - self.bev_start_position[:2] + self.bev_resolution[:2] / 2.0) / self.bev_resolution[:2]).astype(np.int32)
+  345          pts[:, [1, 0]] = pts[:, [0, 1]]
+  346  
+  347          z = box.bottom_corners()[2, 0]
+  348          return pts, z
+
+## lines 505-532: GT trajectory = LiDAR origin; command rule
+  505      def get_gt_trajectory(self, rec, ref_index):
+  506          n_output = self.cfg.N_FUTURE_FRAMES
+  507          gt_trajectory = np.zeros((n_output+1, 3), np.float64)
+  508  
+  509          egopose_cur = get_global_pose(rec, self.nusc, inverse=True)
+  510  
+  511          for i in range(n_output+1):
+  512              index = ref_index + i
+  513              if index < len(self.ixes):
+  514                  rec_future = self.ixes[index]
+  515  
+  516                  egopose_future = get_global_pose(rec_future, self.nusc, inverse=False)
+  517  
+  518                  egopose_future = egopose_cur.dot(egopose_future)
+  519                  theta = quaternion_yaw(Quaternion(matrix=egopose_future))
+  520  
+  521                  origin = np.array(egopose_future[:3, 3])
+  522  
+  523                  gt_trajectory[i, :] = [origin[0], origin[1], theta]
+  524  
+  525          if gt_trajectory[-1][0] >= 2:
+  526              command = 'RIGHT'
+  527          elif gt_trajectory[-1][0] <= -2:
+  528              command = 'LEFT'
+  529          else:
+  530              command = 'FORWARD'
+  531  
+  532          return gt_trajectory, command
+

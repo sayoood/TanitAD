@@ -1,0 +1,47 @@
+{
+ "_what": "the dev-box step rate, settled on 197 deltas, and the A3 prerequisite run",
+ "_evidence_class": "MEASURED (ours; real trainer, real clean-124 halfA, every head live)",
+ "rate": {
+  "median_s_per_step": 2.51,
+  "mean": 2.538,
+  "n_warm_deltas": 197,
+  "steps": 2000,
+  "log_every": 10,
+  "method": "elapsed_s MARGINAL deltas, never a cumulative field / n"
+ },
+ "supersedes": [
+  {
+   "value": 29.1967,
+   "why": "measured host paging, not compute (VOID)"
+  },
+  {
+   "value": 2.8,
+   "why": "sizing harness at 3 steps = TWO deltas"
+  },
+  {
+   "value": 4.55,
+   "why": "A2, 40 steps, --log-every 1 -- a diagnostic cadence no real arm uses. HYPOTHESIS (not isolated): per-step logging is the cost."
+  }
+ ],
+ "full_arm_days_40284_steps": 1.17,
+ "bucket_A_total_h": {
+  "at_2.8": 33.55,
+  "at_4.55": 40.09,
+  "at_measured": 32.44
+ },
+ "_resnet101_caveat": "the r101 rates came from the SAME 3-step harness; this entry shows what a 3-step harness is worth. They need their own 2,000-step run.",
+ "a3_prerequisite_run": {
+  "what": "a map head trained on halfA ONLY, so halfB is genuinely held out",
+  "steps": 2000,
+  "batch": 2,
+  "wall_s": 5088,
+  "windows_seen": 4000,
+  "epoch_fraction": 0.38,
+  "levers": [
+   "--trunk-chunk-ckpt 1",
+   "--trunk-frozen-bn"
+  ],
+  "train_side_map_iou_last20_mean": 0.5621,
+  "\u26d4": "that IoU is a TRAIN-side number on its own training half. It is NOT the held-out read PREREG_S1 \u00a78 gates on; that read is on halfB against halfB's floor 0.3388."
+ }
+}

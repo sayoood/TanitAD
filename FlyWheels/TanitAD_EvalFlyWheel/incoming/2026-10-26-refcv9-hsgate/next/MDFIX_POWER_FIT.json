@@ -1,0 +1,124 @@
+{
+ "tool": "mdfix_fit.py (Phase A, s1a)",
+ "prereg": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_hsgate\\PREREG_HSGATE_MDFIX.md",
+  "sha256": "545ff2175a9c948c92fcd29b265dac4fbdb7e0d737ba8d9d3ec9a6a44a614dd1"
+ },
+ "role": "FIT side only, no eval139 read",
+ "lambda": 0.1,
+ "estimator": "paired episode-cluster bootstrap over FIT episodes (taniteval.ci draws, B 2000, seed 0); SE = std(ddof=1) of the deltas",
+ "projection": {
+  "E_FIT": 297,
+  "E_FIT_decel": 163,
+  "E_FIT_cruise_beside": 279,
+  "E_eval_MD": 79,
+  "E_eval_FD": 135,
+  "z_G1": 2.241,
+  "power_min": 0.5,
+  "FD_upper_max": 0.01,
+  "E_FIT_reading": "literal: E_FIT = all FIT episodes (the prereg names E_FIT_decel for MD and E_FIT for FD); the cruise-episode reading is reported beside and does not decide"
+ },
+ "reference_H2cn_OOF": {
+  "MD": 0.4624085163007319,
+  "FD": 0.08153347732181425,
+  "n_GT_decel": 1503,
+  "n_GT_cruise": 3704
+ },
+ "K-LABEL": {
+  "label_equals_md_indicator_derivation_every_row": true,
+  "gt_class_equal_both_calls": true,
+  "base_rate": 0.03707849447320554,
+  "base_rate_4dp": 0.0371,
+  "expected_literal": 0.0371,
+  "n_pos": 265,
+  "PASS": true
+ },
+ "table": [
+  {
+   "c": 0.002,
+   "tau_heldout": {
+    "tau": -2.0796768066788296,
+    "md_count": 662,
+    "fd_count": 309,
+    "n_candidates": 7148,
+    "n_feasible": 111
+   },
+   "F_rate_heldout": 0.014691478942213516,
+   "dMD_FIT": {
+    "delta": -0.021956087824351322,
+    "se_boot": 0.006491320520498461,
+    "ci95_lo": -0.0354,
+    "ci95_hi": -0.0109,
+    "separated95": true,
+    "n_windows": 1503,
+    "n_episodes": 163,
+    "ci_delta_rendered": -0.022
+   },
+   "dFD_FIT": {
+    "delta": 0.0018898488120950435,
+    "se_boot": 0.0008054132608661314,
+    "ci95_lo": 0.0005,
+    "ci95_hi": 0.0036,
+    "separated95": true,
+    "n_windows": 3704,
+    "n_episodes": 279,
+    "ci_delta_rendered": 0.0019
+   },
+   "SE_eval_MD": 0.009324237140733875,
+   "SE_eval_FD": 0.0011946209213444376,
+   "SE_eval_FD_if_E_FIT_cruise_beside": 0.001157854514296434,
+   "power_G1": 0.545275228469161,
+   "FD_upper_projected": 0.0042313058179301415,
+   "FD_upper_projected_if_E_FIT_cruise_beside": 0.004159243660116054,
+   "dMD_sign_negative": true,
+   "qualifies": true
+  },
+  {
+   "c": 0.005,
+   "tau_heldout": {
+    "tau": -2.219280386284717,
+    "md_count": 654,
+    "fd_count": 319,
+    "n_candidates": 7148,
+    "n_feasible": 164
+   },
+   "F_rate_heldout": 0.022107177836854626,
+   "dMD_FIT": {
+    "delta": -0.027278775781769793,
+    "se_boot": 0.006639458476999834,
+    "ci95_lo": -0.0413,
+    "ci95_hi": -0.0156,
+    "separated95": true,
+    "n_windows": 1503,
+    "n_episodes": 163,
+    "ci_delta_rendered": -0.0273
+   },
+   "dFD_FIT": {
+    "delta": 0.004589632829373649,
+    "se_boot": 0.0016621780409753525,
+    "ci95_lo": 0.0019,
+    "ci95_hi": 0.0082,
+    "separated95": true,
+    "n_windows": 3704,
+    "n_episodes": 279,
+    "ci_delta_rendered": 0.0046
+   },
+   "SE_eval_MD": 0.009537024882704201,
+   "SE_eval_FD": 0.0024654084545530086,
+   "SE_eval_FD_if_E_FIT_cruise_beside": 0.0023895314887640005,
+   "power_G1": 0.7321414395916004,
+   "FD_upper_projected": 0.009421833400297546,
+   "FD_upper_projected_if_E_FIT_cruise_beside": 0.00927311454735109,
+   "dMD_sign_negative": true,
+   "qualifies": true
+  }
+ ],
+ "chosen_c": 0.002,
+ "outcome": "POWERED",
+ "disclosures": [
+  "Forking paths: the MDFIX label was chosen AFTER the HSGATE8 eval139 read, on FIT-row arithmetic only (next/FDCAP_FRONTIER_FIT.json; next/DRAFT_NEXT_ARM_HSGATE_MDFIX.md). This is the SECOND eval139 read of the gate family; the multiplicity is paid in the bars (G1 at 97.5 %).",
+  "No MDFIX output on eval139 existed at sealing; the draft's FIT-side numbers are 5-fold episode CV on 7,147 FIT rows, one training seed, one fit, no interval."
+ ],
+ "fit_rows_npz_sha256": "fdb9147d0212c2ea5e7e25b4bae7a68bb10d797ba329025e838b051778571686",
+ "recorded": "2026-10-26T08:22:07+0100"
+}

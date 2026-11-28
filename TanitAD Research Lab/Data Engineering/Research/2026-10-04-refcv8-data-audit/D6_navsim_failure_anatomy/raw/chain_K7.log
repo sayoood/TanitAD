@@ -1,0 +1,22 @@
+CMD (try 1): C:/Users/Admin/venvs/tanitad/Scripts/python.exe D:\Projects\TanitAD\TanitAD Research Lab\Data Engineering\Research\2026-10-04-refcv8-data-audit\D6_navsim_failure_anatomy\code\bridge_fix\run_bridge7.py --arms R7_A1 --tokens-file D:\Projects\TanitAD\TanitAD Research Lab\Data Engineering\Research\2026-10-04-refcv8-data-audit\D6_navsim_failure_anatomy\raw\_tokens_P2_K1.json --out D:\Projects\TanitAD\TanitAD Research Lab\Data Engineering\Research\2026-10-04-refcv8-data-audit\D6_navsim_failure_anatomy\raw\p2_bridge_k7 --gpu-lock-job refcv8-d6-p1p2 --gpu-lock-pid 30700 --split navhard_two_stage --inputs C:/Users/Admin/navsim-crun/exp/tanitad_bench/exports/navhard_two_stage/navsim_agent_inputs.json --speed C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/speed_limits_navhard_two_stage.json --road-plane C:/Users/Admin/ev7nav/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/inputs/road_plane_navhard_warmup_logs.json --ckpt D:/refcv7_eval_kit/ckpt/ckpt_30000.pt --config D:/refcv7_eval_kit/ckpt/config.json --ckpt-md5 ac4e4fab87e35b20de24d8d94910d910 --device cuda --precision auto --threads 6 --label D6P1P2 --bank2 C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/navhard_s2 --bank1 C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/navhard_s1
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[bridge7] step=30000 steps=2 precision=as_trained device=cuda load 7.8s md5=ac4e4fab87e35b20de24d8d94910d910 label=D6P1P2
+  [R7_A1] 25/300 (25 new) 0.57 s/scene
+  [R7_A1] 50/300 (50 new) 0.49 s/scene
+  [R7_A1] 75/300 (75 new) 0.46 s/scene
+  [R7_A1] 100/300 (100 new) 0.43 s/scene
+  [R7_A1] 125/300 (125 new) 0.41 s/scene
+  [R7_A1] 150/300 (150 new) 0.40 s/scene
+  [R7_A1] 175/300 (175 new) 0.39 s/scene
+  [R7_A1] 200/300 (200 new) 0.38 s/scene
+  [R7_A1] 225/300 (225 new) 0.38 s/scene
+  [R7_A1] 250/300 (250 new) 0.38 s/scene
+  [R7_A1] 275/300 (275 new) 0.38 s/scene
+  [R7_A1] 300/300 (300 new) 0.38 s/scene
+[bridge7] R7_A1: 300 refcv7 rows, 0 stand-ins, missing 0, KPR PASS max 3.814697265625e-06

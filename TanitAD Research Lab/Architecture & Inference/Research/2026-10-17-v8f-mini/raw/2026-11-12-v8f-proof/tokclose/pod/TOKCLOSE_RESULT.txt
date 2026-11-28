@@ -1,0 +1,16 @@
+# TOKCLOSE (card ADD81, tier T0: reads on logged frames, no rollout)
+
+All controls t0 to t4 pass. Episodes: map file.
+
+| arm | H | r pooled | r 95 % | r per seed | MAE | cell | cell r pooled | cell r per seed | cell MAE | paired diff X - cell 95 % | names |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| E10 | 10 | +0.186 | [+0.006, +0.342] | +0.122, +0.250 | 2.055 | N10 | +0.391 | +0.426, +0.356 | 1.874 | +0.181 [+0.058, +0.317] | TOKCLOSE-E10-READABLE, TOKCLOSE-E10-NOT-BETTER |
+| E25 | 25 | +0.347 | [+0.180, +0.502] | +0.295, +0.400 | 1.970 | L25 | +0.384 | +0.402, +0.367 | 1.876 | +0.094 [-0.083, +0.268] | TOKCLOSE-E25-READABLE, TOKCLOSE-E25-NOT-BETTER |
+| T10 | 10 | +0.257 | [+0.051, +0.445] | +0.209, +0.302 | 2.023 | N10 | +0.391 | +0.426, +0.356 | 1.874 | +0.150 [+0.023, +0.284] | TOKCLOSE-T10-READABLE, TOKCLOSE-T10-NOT-BETTER |
+| T25 | 25 | +0.468 | [+0.331, +0.611] | +0.487, +0.489 | 1.785 | L25 | +0.384 | +0.402, +0.367 | 1.876 | -0.091 [-0.225, +0.029] | TOKCLOSE-T25-READABLE, TOKCLOSE-T25-NOT-BETTER |
+
+Mean absolute error of a constant read (0 m/s / the label mean): E10 2.038 / 2.019; E25 2.080 / 2.040; T10 2.038 / 2.019; T25 2.080 / 2.040
+
+**TOKCLOSE-NO-GAIN-FROM-TOKENS** (0 of four arms BETTER-THAN-OUTPUTS; 4 of four READABLE).
+
+Families: this read measures none of them. LONGITUDINAL, LATERAL, TACTICAL: not measured by this read. STRATEGIC: NOT COMPUTED (n = 0).

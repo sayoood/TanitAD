@@ -1,0 +1,44 @@
+{
+ "_what": "E9 \u2014 the T1 route's s/window at 416x1024, as a RATE not a bound",
+ "_evidence_class": "MEASURED (ours), CPU, 3 points, same ckpt/episodes/device/n-boot",
+ "_design": "only --window-stride varied, so model load and episode build are identical",
+ "points_windows_seconds": [
+  [
+   9,
+   70
+  ],
+  [
+   18,
+   120
+  ],
+  [
+   35,
+   228
+  ]
+ ],
+ "two_point_model": {
+  "marginal_s_per_window": 5.556,
+  "fixed_s": 20,
+  "predicted_s_at_n35": 214.4,
+  "actual_s_at_n35": 228,
+  "prediction_error_pct": 6.3
+ },
+ "three_point_fit": {
+  "marginal_s_per_window": 6.113,
+  "fixed_s": 13.0
+ },
+ "all_in_s_per_window": {
+  "9": 7.56,
+  "18": 6.84,
+  "35": 6.48,
+  "100": 6.24,
+  "1000": 6.13
+ },
+ "banked_figure": {
+  "wall_s": 173,
+  "windows": 9,
+  "s_per_window_all_in": 19.2,
+  "reproduced_here_s": 70,
+  "ratio_banked_over_measured": 2.47
+ }
+}

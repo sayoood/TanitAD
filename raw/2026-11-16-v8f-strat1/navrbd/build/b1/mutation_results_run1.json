@@ -1,0 +1,231 @@
+{
+ "M1 delete the e_nav_rb term in _nav_tok": {
+  "file": "v8f_mini.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_z0_state_build_is_the_e71782a3_model_bit_for_bit",
+   "test_v8f_navrbd.py::test_z2_gradient_per_column_group_and_exact_zero_controls",
+   "test_v8f_navrbd.py::test_mutation_deleting_the_forward_term_turns_z2_red",
+   "test_v8f_navrbd.py::test_a_built_wide_channel_with_a_one_column_batch_is_refused_and_a_missing_key_is_a_keyerror",
+   "test_v8f_navrbd.py::test_mutation_dropping_the_item_rows_turns_the_batch_check_red",
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_n1dx_shuffle_arm_builds_and_records_its_donor_map",
+   "test_v8f_navrbd.py::test_end_to_end_state_arm_keeps_the_n1r_record_set"
+  ],
+  "summary": "8 failed, 46 passed, 1 warning in 90.52s (0:01:30)",
+  "verdict": "RED"
+ },
+ "M2 delete the join line that loads the array": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_n1dx_shuffle_arm_builds_and_records_its_donor_map",
+   "test_v8f_navrbd.py::test_end_to_end_state_arm_keeps_the_n1r_record_set",
+   "test_v8f_navrbd.py::test_mutation_deleting_the_join_line_turns_the_selfcheck_red",
+   "test_v8f_navrbd.py::test_mutation_join_line_without_the_feat_turns_the_selfcheck_red",
+   "test_v8f_navrbd.py::test_mutation_feat_dropped_from_the_checkpoint_cfg_turns_the_checkpoint_check_red"
+  ],
+  "summary": "6 failed, 48 passed, 1 warning in 83.59s (0:01:23)",
+  "verdict": "RED"
+ },
+ "M3 drop nav_rb from the window item": {
+  "file": "v8f_mini_data.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_z0_state_build_is_the_e71782a3_model_bit_for_bit",
+   "test_v8f_navrbd.py::test_z1_exitdist_at_zero_init_is_the_off_and_the_state_model_and_leaves_the_rng_alone",
+   "test_v8f_navrbd.py::test_z2_gradient_per_column_group_and_exact_zero_controls",
+   "test_v8f_navrbd.py::test_mutation_deleting_the_forward_term_turns_z2_red",
+   "test_v8f_navrbd.py::test_a_built_wide_channel_with_a_one_column_batch_is_refused_and_a_missing_key_is_a_keyerror",
+   "test_v8f_navrbd.py::test_the_window_item_carries_the_15_column_rows_of_its_frames",
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_n1dx_shuffle_arm_builds_and_records_its_donor_map",
+   "test_v8f_navrbd.py::test_end_to_end_state_arm_keeps_the_n1r_record_set",
+   "test_v8f_navrbd.py::test_mutation_feat_dropped_from_the_checkpoint_cfg_turns_the_checkpoint_check_red"
+  ],
+  "summary": "10 failed, 44 passed, 1 warning in 110.15s (0:01:50)",
+  "verdict": "RED"
+ },
+ "M4 flip the --nav-rb-feat default to exitdist": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_flag_default_is_state_has_a_flag_check_and_a_wm_only_default",
+   "test_v8f_navrbd.py::test_end_to_end_state_arm_keeps_the_n1r_record_set",
+   "test_v8f_navrbd.py::test_end_to_end_the_flag_off_arm_keeps_its_record_set",
+   "test_v8f_navrbd.py::test_g_dvb_refuses_a_width_that_disagrees_with_the_loaded_array",
+   "test_v8f_navrbd.py::test_bad_navrb_names_each_width_disagreement",
+   "test_v8f_navrbd.py::test_mutation_default_flipped_to_exitdist_turns_the_default_check_red"
+  ],
+  "summary": "6 failed, 48 passed, 1 warning in 165.71s (0:02:45)",
+  "verdict": "RED"
+ },
+ "M5 omit the feat from make_config": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_n1dx_shuffle_arm_builds_and_records_its_donor_map",
+   "test_v8f_navrbd.py::test_mutation_feat_omitted_from_make_config_turns_the_selfcheck_red",
+   "test_v8f_navrbd.py::test_mutation_feat_dropped_from_the_checkpoint_cfg_turns_the_checkpoint_check_red"
+  ],
+  "summary": "4 failed, 50 passed, 1 warning in 104.00s (0:01:43)",
+  "verdict": "RED"
+ },
+ "M6 drop the feat from the ckpt cfg": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_state_arm_keeps_the_n1r_record_set",
+   "test_v8f_navrbd.py::test_mutation_feat_dropped_from_the_checkpoint_cfg_turns_the_checkpoint_check_red"
+  ],
+  "summary": "3 failed, 51 passed, 1 warning in 93.95s (0:01:33)",
+  "verdict": "RED"
+ },
+ "M7 remove the checker group-gradient clause": {
+  "file": "strat1_check.py",
+  "test_file": "test_strat1_navrbd_check.py",
+  "failed": [
+   "test_strat1_navrbd_check.py::test_navrbd_checks_pass_on_the_real_checker[gate]",
+   "test_strat1_navrbd_check.py::test_mutation_turns_a_check_red[drop_group_gradient_clause]"
+  ],
+  "summary": "2 failed, 30 passed in 9.86s",
+  "verdict": "RED"
+ },
+ "M8 replace the shuffle variant by identity": {
+  "file": "v8f_mini_data.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_shuffle_variant_is_a_clip_level_derangement_resampled_to_the_receiving_clip",
+   "test_v8f_navrbd.py::test_mutation_shuffle_replaced_by_identity_turns_the_shuffle_check_red"
+  ],
+  "summary": "2 failed, 52 passed, 1 warning in 58.72s",
+  "verdict": "RED"
+ },
+ "M9 loader: drop the silent-where-c0-is-0 refusal": {
+  "file": "v8f_mini_data.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_loader_refuses_every_layout_violation[column_on_where_c0_is_0-<lambda>]"
+  ],
+  "summary": "1 failed, 53 passed, 1 warning in 61.49s (0:01:01)",
+  "verdict": "RED"
+ },
+ "M10 derangement replaced by the identity permutation": {
+  "file": "v8f_mini_data.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[0-2]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[0-3]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[0-6]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[0-17]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[0-101]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[1-2]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[1-3]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[1-6]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[1-17]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[1-101]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[20261118-2]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[20261118-3]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[20261118-6]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[20261118-17]",
+   "test_v8f_navrbd.py::test_shuffle_derangement_has_no_fixed_point_and_is_a_permutation[20261118-101]",
+   "test_v8f_navrbd.py::test_shuffle_variant_is_a_clip_level_derangement_resampled_to_the_receiving_clip"
+  ],
+  "summary": "16 failed, 38 passed, 1 warning in 65.48s (0:01:05)",
+  "verdict": "RED"
+ },
+ "M11 G-DVB: drop the built-width clause of bad_navrb": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [],
+  "summary": "54 passed, 1 warning in 56.98s",
+  "verdict": "GREEN"
+ },
+ "M12 model term ignores the c13 column": {
+  "file": "v8f_mini.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_z2_gradient_per_column_group_and_exact_zero_controls",
+   "test_v8f_navrbd.py::test_mutation_deleting_the_forward_term_turns_z2_red",
+   "test_v8f_navrbd.py::test_a_built_wide_channel_with_a_one_column_batch_is_refused_and_a_missing_key_is_a_keyerror",
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_n1dx_shuffle_arm_builds_and_records_its_donor_map",
+   "test_v8f_navrbd.py::test_mutation_feat_dropped_from_the_checkpoint_cfg_turns_the_checkpoint_check_red"
+  ],
+  "summary": "6 failed, 48 passed, 1 warning in 44.81s",
+  "verdict": "RED"
+ },
+ "M13 loader: drop the one-hot (at most one 1 per block) refusal": {
+  "file": "v8f_mini_data.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_loader_refuses_every_layout_violation[two_ones_in_exit_cur-<lambda>]"
+  ],
+  "summary": "1 failed, 53 passed, 1 warning in 50.95s",
+  "verdict": "RED"
+ },
+ "M14 trainer: drop the per-group planted-gradient assertion": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [],
+  "summary": "54 passed, 1 warning in 54.63s",
+  "verdict": "GREEN"
+ },
+ "M15 trainer: drop the per-group zero-control assertion": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [],
+  "summary": "54 passed, 1 warning in 55.41s",
+  "verdict": "GREEN"
+ },
+ "M16 bad_navrb: drop the off-with-feat refusal": {
+  "file": "v8f_mini_train.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [],
+  "summary": "54 passed, 1 warning in 61.63s (0:01:01)",
+  "verdict": "GREEN"
+ },
+ "M17 model: built_levers always carries nav_rb_feat": {
+  "file": "v8f_mini.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_z0_state_build_is_the_e71782a3_model_bit_for_bit",
+   "test_v8f_navrbd.py::test_z1_exitdist_at_zero_init_is_the_off_and_the_state_model_and_leaves_the_rng_alone",
+   "test_v8f_navrbd.py::test_end_to_end_state_arm_keeps_the_n1r_record_set"
+  ],
+  "summary": "3 failed, 51 passed, 1 warning in 82.92s (0:01:22)",
+  "verdict": "RED"
+ },
+ "M18 model: state width 15 (no width lever)": {
+  "file": "v8f_mini.py",
+  "test_file": "test_v8f_navrbd.py",
+  "failed": [
+   "test_v8f_navrbd.py::test_flag_default_is_state_has_a_flag_check_and_a_wm_only_default",
+   "test_v8f_navrbd.py::test_z0_mutation_a_state_build_that_takes_the_wide_path_turns_red",
+   "test_v8f_navrbd.py::test_z1_exitdist_at_zero_init_is_the_off_and_the_state_model_and_leaves_the_rng_alone",
+   "test_v8f_navrbd.py::test_z1_mutation_no_fork_rng_moves_the_global_stream",
+   "test_v8f_navrbd.py::test_z2_gradient_per_column_group_and_exact_zero_controls",
+   "test_v8f_navrbd.py::test_mutation_deleting_the_forward_term_turns_z2_red",
+   "test_v8f_navrbd.py::test_a_built_wide_channel_with_a_one_column_batch_is_refused_and_a_missing_key_is_a_keyerror",
+   "test_v8f_navrbd.py::test_loader_accepts_a_valid_table_and_records_width_groups_and_counts",
+   "test_v8f_navrbd.py::test_loader_refuses_wrong_width_sha_alignment_and_a_state_table_with_a_wide_feat",
+   "test_v8f_navrbd.py::test_shuffle_variant_is_a_clip_level_derangement_resampled_to_the_receiving_clip",
+   "test_v8f_navrbd.py::test_mutation_shuffle_replaced_by_identity_turns_the_shuffle_check_red",
+   "test_v8f_navrbd.py::test_the_window_item_carries_the_15_column_rows_of_its_frames",
+   "test_v8f_navrbd.py::test_mutation_dropping_the_item_rows_turns_the_batch_check_red",
+   "test_v8f_navrbd.py::test_checkpoint_round_trip_of_the_15_column_weight_and_a_cfg_that_drops_the_feat_is_refused",
+   "test_v8f_navrbd.py::test_end_to_end_n1d_selfcheck_probe_groups_levers_and_checkpoint",
+   "test_v8f_navrbd.py::test_end_to_end_n1dx_shuffle_arm_builds_and_records_its_donor_map",
+   "test_v8f_navrbd.py::test_g_dvb_refuses_a_width_that_disagrees_with_the_loaded_array",
+   "test_v8f_navrbd.py::test_bad_navrb_names_each_width_disagreement",
+   "test_v8f_navrbd.py::test_mutation_feat_omitted_from_make_config_turns_the_selfcheck_red",
+   "test_v8f_navrbd.py::test_mutation_default_flipped_to_exitdist_turns_the_default_check_red",
+   "test_v8f_navrbd.py::test_mutation_feat_dropped_from_the_checkpoint_cfg_turns_the_checkpoint_check_red"
+  ],
+  "summary": "21 failed, 33 passed, 1 warning in 50.12s",
+  "verdict": "RED"
+ }
+}

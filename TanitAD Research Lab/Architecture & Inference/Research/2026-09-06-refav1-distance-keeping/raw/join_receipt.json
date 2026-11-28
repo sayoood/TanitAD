@@ -1,0 +1,15 @@
+{
+ "task": "D-REFAV1-DK-COST -- provenance receipt for the train-corpus agent join (M84's recovery)",
+ "evidence_class": "MEASURED (ours)",
+ "file": "C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl.xz",
+ "bytes": 136689648,
+ "md5": "24cbdca8c3b23aafc2fb17e6bf99cf76",
+ "md5_matches_banked_expected": true,
+ "banked_expected_from": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refav1-perception-probe/raw/train2400_agents.jsonl.xz.meta.json :: summary.md5",
+ "n_records": 433040,
+ "n_clips": 2308,
+ "schema": "one JSON line per (clip_id, frame_idx): {clip_id, frame_idx, t_s, agents:[{cx,cy,yaw,l,w,occ,track_id,cls}]}",
+ "frame_convention": "per-frame EGO frame, +x fwd +y LEFT",
+ "VERDICT": "REAL and VERIFIED, but it is a TRAIN-corpus join (physicalai-train-e438721ae894). refav1 evaluates on the 141-clip v7.2 EVAL split, so this join cannot be attached to refav1's eval windows. The distance-keeping family is served instead by the B1 EVAL lead block (2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz, 29,556 rows / 147 clips), which was ALREADY wired and ALREADY reporting (n = 87 on the 21109 panel).",
+ "consequence": "the build_lead_tracks.py adapter named in the brief was NOT built: it would have produced a join for the wrong corpus. Recorded as a decision, not an omission."
+}

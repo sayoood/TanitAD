@@ -1,0 +1,196 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "question": "does out-of-fold AP RISE as head capacity falls? (if yes, the head was the binding constraint)",
+ "warning": "DIAGNOSTIC SWEEP, NOT AN ARM. Adopting the winning rung and quoting its AP would be selection on the eval fold.",
+ "prior_ap": 0.1242,
+ "base_rate": 0.056676,
+ "ladder": [
+  {
+   "name": "d192_l2_e30",
+   "d_model": 192,
+   "layers": 2,
+   "epochs": 30
+  },
+  {
+   "name": "d96_l2_e30",
+   "d_model": 96,
+   "layers": 2,
+   "epochs": 30
+  },
+  {
+   "name": "d48_l2_e30",
+   "d_model": 48,
+   "layers": 2,
+   "epochs": 30
+  },
+  {
+   "name": "d48_l1_e30",
+   "d_model": 48,
+   "layers": 1,
+   "epochs": 30
+  },
+  {
+   "name": "d24_l1_e30",
+   "d_model": 24,
+   "layers": 1,
+   "epochs": 30
+  },
+  {
+   "name": "d48_l1_e10",
+   "d_model": 48,
+   "layers": 1,
+   "epochs": 10
+  }
+ ],
+ "arms": {
+  "v6_cells": {
+   "d192_l2_e30": {
+    "d_model": 192,
+    "layers": 2,
+    "epochs": 30,
+    "params": 646529,
+    "ap": 0.0888,
+    "auc": 0.6246,
+    "ap_minus_prior": -0.0354,
+    "train_ap_mean": 0.5438,
+    "overfit_gap": 0.455,
+    "s": 161.9
+   },
+   "d96_l2_e30": {
+    "d_model": 96,
+    "layers": 2,
+    "epochs": 30,
+    "params": 175937,
+    "ap": 0.0904,
+    "auc": 0.6334,
+    "ap_minus_prior": -0.0338,
+    "train_ap_mean": 0.3948,
+    "overfit_gap": 0.3043,
+    "s": 94.2
+   },
+   "d48_l2_e30": {
+    "d_model": 48,
+    "layers": 2,
+    "epochs": 30,
+    "params": 51233,
+    "ap": 0.0945,
+    "auc": 0.6403,
+    "ap_minus_prior": -0.0298,
+    "train_ap_mean": 0.3059,
+    "overfit_gap": 0.2114,
+    "s": 72.3
+   },
+   "d48_l1_e30": {
+    "d_model": 48,
+    "layers": 1,
+    "epochs": 30,
+    "params": 32177,
+    "ap": 0.0954,
+    "auc": 0.6398,
+    "ap_minus_prior": -0.0288,
+    "train_ap_mean": 0.2542,
+    "overfit_gap": 0.1588,
+    "s": 62.9
+   },
+   "d24_l1_e30": {
+    "d_model": 24,
+    "layers": 1,
+    "epochs": 30,
+    "params": 11609,
+    "ap": 0.0971,
+    "auc": 0.6386,
+    "ap_minus_prior": -0.0271,
+    "train_ap_mean": 0.1973,
+    "overfit_gap": 0.1002,
+    "s": 60.6
+   },
+   "d48_l1_e10": {
+    "d_model": 48,
+    "layers": 1,
+    "epochs": 10,
+    "params": 32177,
+    "ap": 0.1033,
+    "auc": 0.6529,
+    "ap_minus_prior": -0.0209,
+    "train_ap_mean": 0.1829,
+    "overfit_gap": 0.0796,
+    "s": 23.1
+   }
+  },
+  "dino_pooled": {
+   "d192_l2_e30": {
+    "d_model": 192,
+    "layers": 2,
+    "epochs": 30,
+    "params": 820353,
+    "ap": 0.1416,
+    "auc": 0.6861,
+    "ap_minus_prior": 0.0174,
+    "train_ap_mean": 0.8924,
+    "overfit_gap": 0.7508,
+    "s": 113.1
+   },
+   "d96_l2_e30": {
+    "d_model": 96,
+    "layers": 2,
+    "epochs": 30,
+    "params": 263745,
+    "ap": 0.1241,
+    "auc": 0.6683,
+    "ap_minus_prior": -0.0001,
+    "train_ap_mean": 0.7714,
+    "overfit_gap": 0.6473,
+    "s": 96.9
+   },
+   "d48_l2_e30": {
+    "d_model": 48,
+    "layers": 2,
+    "epochs": 30,
+    "params": 96033,
+    "ap": 0.1246,
+    "auc": 0.6721,
+    "ap_minus_prior": 0.0004,
+    "train_ap_mean": 0.6187,
+    "overfit_gap": 0.4941,
+    "s": 97.1
+   },
+   "d48_l1_e30": {
+    "d_model": 48,
+    "layers": 1,
+    "epochs": 30,
+    "params": 76977,
+    "ap": 0.1294,
+    "auc": 0.6851,
+    "ap_minus_prior": 0.0052,
+    "train_ap_mean": 0.5873,
+    "overfit_gap": 0.4579,
+    "s": 56.8
+   },
+   "d24_l1_e30": {
+    "d_model": 24,
+    "layers": 1,
+    "epochs": 30,
+    "params": 34905,
+    "ap": 0.1359,
+    "auc": 0.6948,
+    "ap_minus_prior": 0.0117,
+    "train_ap_mean": 0.4639,
+    "overfit_gap": 0.328,
+    "s": 60.0
+   },
+   "d48_l1_e10": {
+    "d_model": 48,
+    "layers": 1,
+    "epochs": 10,
+    "params": 76977,
+    "ap": 0.1504,
+    "auc": 0.7134,
+    "ap_minus_prior": 0.0262,
+    "train_ap_mean": 0.4558,
+    "overfit_gap": 0.3053,
+    "s": 19.2
+   }
+  }
+ }
+}

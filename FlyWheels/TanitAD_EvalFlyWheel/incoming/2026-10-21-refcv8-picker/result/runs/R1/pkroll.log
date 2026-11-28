@@ -1,0 +1,175 @@
+ZZPKRSTARTZZ 2026-10-22T05:34:27+02:00 seed 1 form --os-only pid 1561084
+ZZPKRMD5OKZZ ckpt config windows remap wrapper
+precheck compute_apps=0 other_python=4
+ZZPKRBUSYZZ 2026-10-22T05:34:28+02:00
+ZZPKRSTARTZZ 2026-10-22T05:39:28+02:00 seed 1 form --os-only pid 1561289
+ZZPKRMD5OKZZ ckpt config windows remap wrapper
+precheck compute_apps=0 other_python=0
+[roll_pf] nav_feed=perframe_full overlay=98293dd741127016 patched_refcv3_arm=64e6ffbb1d0434d1 pose_sync=OFF (R8_NO_POSE_SYNC)
+[lead] no lead block (banked default absent: /home/nvidia/r8ns/fanceil/tree/TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz); distance-keeping will be REFUSED with its reason — a WORK ITEM, not a pass
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] /home/nvidia/data/refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[model] /home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt step=48852 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-feed] perframe_full: nav_true = the v9 PER-FRAME token on 4754 windows; it differs from the clip token on 1157; r8_nav args known on 2802 (FED)
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 4754 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 1426/4754
+[cost] first forward (1 fed row(s), 1 rows total) took 0.93 s -> ESTIMATED 1.23 h for 4754 windows (forward only; IO/analysis extra)
+  [1/139] <sha12-redacted> 35 windows 15s
+  [2/139] <sha12-redacted> 34 windows 25s
+  [3/139] <sha12-redacted> 34 windows 36s
+  [4/139] <sha12-redacted> 34 windows 46s
+  [5/139] <sha12-redacted> 34 windows 56s
+  [6/139] <sha12-redacted> 35 windows 66s
+  [7/139] <sha12-redacted> 34 windows 76s
+  [8/139] <sha12-redacted> 34 windows 86s
+  [9/139] <sha12-redacted> 34 windows 96s
+  [10/139] <sha12-redacted> 34 windows 106s
+  [11/139] <sha12-redacted> 35 windows 116s
+  [12/139] <sha12-redacted> 34 windows 126s
+  [13/139] <sha12-redacted> 34 windows 136s
+  [14/139] <sha12-redacted> 34 windows 145s
+  [15/139] <sha12-redacted> 34 windows 155s
+  [16/139] <sha12-redacted> 35 windows 165s
+  [17/139] <sha12-redacted> 34 windows 174s
+  [18/139] <sha12-redacted> 34 windows 184s
+  [19/139] <sha12-redacted> 34 windows 193s
+  [20/139] <sha12-redacted> 36 windows 203s
+  [21/139] <sha12-redacted> 34 windows 213s
+  [22/139] <sha12-redacted> 34 windows 222s
+  [23/139] <sha12-redacted> 34 windows 232s
+  [24/139] <sha12-redacted> 34 windows 241s
+  [25/139] <sha12-redacted> 35 windows 251s
+  [26/139] <sha12-redacted> 34 windows 260s
+  [27/139] <sha12-redacted> 34 windows 270s
+  [28/139] <sha12-redacted> 34 windows 279s
+  [29/139] <sha12-redacted> 34 windows 289s
+  [30/139] <sha12-redacted> 34 windows 298s
+  [31/139] <sha12-redacted> 34 windows 307s
+  [32/139] <sha12-redacted> 34 windows 317s
+  [33/139] <sha12-redacted> 34 windows 326s
+  [34/139] <sha12-redacted> 34 windows 336s
+  [35/139] <sha12-redacted> 35 windows 345s
+  [36/139] <sha12-redacted> 34 windows 355s
+  [37/139] <sha12-redacted> 34 windows 364s
+  [38/139] <sha12-redacted> 34 windows 374s
+  [39/139] <sha12-redacted> 34 windows 383s
+  [40/139] <sha12-redacted> 35 windows 393s
+  [41/139] <sha12-redacted> 34 windows 402s
+  [42/139] <sha12-redacted> 34 windows 412s
+  [43/139] <sha12-redacted> 34 windows 421s
+  [44/139] <sha12-redacted> 34 windows 431s
+  [45/139] <sha12-redacted> 35 windows 440s
+  [46/139] <sha12-redacted> 34 windows 450s
+  [47/139] <sha12-redacted> 34 windows 459s
+  [48/139] <sha12-redacted> 34 windows 469s
+  [49/139] <sha12-redacted> 34 windows 478s
+  [50/139] <sha12-redacted> 35 windows 488s
+  [51/139] <sha12-redacted> 34 windows 497s
+  [52/139] <sha12-redacted> 34 windows 507s
+  [53/139] <sha12-redacted> 34 windows 516s
+  [54/139] <sha12-redacted> 34 windows 526s
+  [55/139] <sha12-redacted> 35 windows 536s
+  [56/139] <sha12-redacted> 34 windows 545s
+  [57/139] <sha12-redacted> 34 windows 555s
+  [58/139] <sha12-redacted> 34 windows 564s
+  [59/139] <sha12-redacted> 34 windows 574s
+  [60/139] <sha12-redacted> 34 windows 583s
+  [61/139] <sha12-redacted> 35 windows 593s
+  [62/139] <sha12-redacted> 34 windows 602s
+  [63/139] <sha12-redacted> 34 windows 612s
+  [64/139] <sha12-redacted> 34 windows 621s
+  [65/139] <sha12-redacted> 34 windows 631s
+  [66/139] <sha12-redacted> 35 windows 641s
+  [67/139] <sha12-redacted> 34 windows 650s
+  [68/139] <sha12-redacted> 34 windows 660s
+  [69/139] <sha12-redacted> 34 windows 669s
+  [70/139] <sha12-redacted> 34 windows 678s
+  [71/139] <sha12-redacted> 35 windows 688s
+  [72/139] <sha12-redacted> 34 windows 698s
+  [73/139] <sha12-redacted> 34 windows 707s
+  [74/139] <sha12-redacted> 34 windows 716s
+  [75/139] <sha12-redacted> 34 windows 726s
+  [76/139] <sha12-redacted> 34 windows 735s
+  [77/139] <sha12-redacted> 34 windows 745s
+  [78/139] <sha12-redacted> 35 windows 754s
+  [79/139] <sha12-redacted> 34 windows 764s
+  [80/139] <sha12-redacted> 34 windows 773s
+  [81/139] <sha12-redacted> 34 windows 783s
+  [82/139] <sha12-redacted> 34 windows 792s
+  [83/139] <sha12-redacted> 34 windows 801s
+  [84/139] <sha12-redacted> 35 windows 811s
+  [85/139] <sha12-redacted> 34 windows 821s
+  [86/139] <sha12-redacted> 34 windows 830s
+  [87/139] <sha12-redacted> 34 windows 840s
+  [88/139] <sha12-redacted> 34 windows 849s
+  [89/139] <sha12-redacted> 35 windows 859s
+  [90/139] <sha12-redacted> 34 windows 868s
+  [91/139] <sha12-redacted> 34 windows 878s
+  [92/139] <sha12-redacted> 34 windows 887s
+  [93/139] <sha12-redacted> 34 windows 897s
+  [94/139] <sha12-redacted> 34 windows 906s
+  [95/139] <sha12-redacted> 34 windows 916s
+  [96/139] <sha12-redacted> 35 windows 925s
+  [97/139] <sha12-redacted> 34 windows 935s
+  [98/139] <sha12-redacted> 34 windows 944s
+  [99/139] <sha12-redacted> 34 windows 954s
+  [100/139] <sha12-redacted> 35 windows 963s
+  [101/139] <sha12-redacted> 34 windows 973s
+  [102/139] <sha12-redacted> 34 windows 982s
+  [103/139] <sha12-redacted> 34 windows 992s
+  [104/139] <sha12-redacted> 34 windows 1001s
+  [105/139] <sha12-redacted> 36 windows 1011s
+  [106/139] <sha12-redacted> 34 windows 1021s
+  [107/139] <sha12-redacted> 34 windows 1030s
+  [108/139] <sha12-redacted> 34 windows 1040s
+  [109/139] <sha12-redacted> 34 windows 1049s
+  [110/139] <sha12-redacted> 35 windows 1059s
+  [111/139] <sha12-redacted> 34 windows 1069s
+  [112/139] <sha12-redacted> 34 windows 1078s
+  [113/139] <sha12-redacted> 34 windows 1087s
+  [114/139] <sha12-redacted> 34 windows 1097s
+  [115/139] <sha12-redacted> 34 windows 1106s
+  [116/139] <sha12-redacted> 34 windows 1116s
+  [117/139] <sha12-redacted> 35 windows 1126s
+  [118/139] <sha12-redacted> 34 windows 1135s
+  [119/139] <sha12-redacted> 34 windows 1145s
+  [120/139] <sha12-redacted> 34 windows 1154s
+  [121/139] <sha12-redacted> 34 windows 1163s
+  [122/139] <sha12-redacted> 35 windows 1173s
+  [123/139] <sha12-redacted> 34 windows 1182s
+  [124/139] <sha12-redacted> 34 windows 1192s
+  [125/139] <sha12-redacted> 34 windows 1201s
+  [126/139] <sha12-redacted> 34 windows 1211s
+  [127/139] <sha12-redacted> 35 windows 1220s
+  [128/139] <sha12-redacted> 34 windows 1230s
+  [129/139] <sha12-redacted> 34 windows 1239s
+  [130/139] <sha12-redacted> 34 windows 1249s
+  [131/139] <sha12-redacted> 35 windows 1258s
+  [132/139] <sha12-redacted> 34 windows 1268s
+  [133/139] <sha12-redacted> 34 windows 1277s
+  [134/139] <sha12-redacted> 34 windows 1286s
+  [135/139] <sha12-redacted> 34 windows 1296s
+  [136/139] <sha12-redacted> 35 windows 1306s
+  [137/139] <sha12-redacted> 34 windows 1315s
+  [138/139] <sha12-redacted> 34 windows 1325s
+  [139/139] <sha12-redacted> 34 windows 1334s
+[dump] 4754 windows over 139 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=48852 eps=139 windows=4754 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] /home/nvidia/r8ns/picker/out/R1/dump; analyse later with --analyze-only
+[roll_seed] seed 1 -> /home/nvidia/r8ns/picker/out/R1/roll_s1.json
+[roll_pf] pf.ok=True windows=4754 args_known=2802 token_differs_from_clip=1157 ZZROLLPFOKZZ
+[fan_roll_r8_pk] 4754 windows fan (4754, 149, 8, 2) K3a 0 K3b True K4 1.0 rc=0 -> /home/nvidia/r8ns/picker/out/R1/fan_roll_s1.json ZZPKROLLOKZZ
+ZZPKRENDZZ rc=0 2026-10-22T06:01:49+02:00

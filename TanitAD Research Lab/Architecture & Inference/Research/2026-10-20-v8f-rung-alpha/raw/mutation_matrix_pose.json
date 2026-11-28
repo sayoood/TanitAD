@@ -1,0 +1,283 @@
+{
+ "rows": [
+  {
+   "arm": "CONTROL",
+   "check": "G-DVB",
+   "verdict": "GREEN",
+   "graded_check": false,
+   "n_reasons": 0,
+   "matches_arm_regex": null,
+   "first": null
+  },
+  {
+   "arm": "p10_zero_weights",
+   "check": "G-DVB",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "--p10-prior: declared '7ba848744f7d22c104ade9ab201e0f4fd465c8e3c78aee33da7c3ac6f697ff20' but BUILT '364a34dcae6c54f91cad58c8132b84375d0f9d4cf97cbf191e29137ca2b673c8' (read from core.decoder.p10 live buffers (content) vs an independent load of the file)"
+  },
+  {
+   "arm": "p10_unfrozen",
+   "check": "G-DVB",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 2,
+   "matches_arm_regex": true,
+   "first": "--p10-prior: declared 0 but BUILT 5 (read from core.decoder.p10 Parameter count (FROZEN: buffers only))"
+  },
+  {
+   "arm": "p10_variant_flipped",
+   "check": "G-DVB",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "--p10-prior: declared 'pose' but BUILT 'steer' (read from core.decoder.p10.variant (the mode <-> the input channel the P10 was fit on))"
+  },
+  {
+   "arm": "p10_wrong_sha",
+   "check": "G-DVB",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "P10Error: P10 file 'C:\\\\Users\\\\Admin\\\\v8fa1\\\\tree\\\\stack\\\\tanitad\\\\configs\\\\v8f_p10\\\\p10_pose_prior.pt' has sha256 e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d, the record names 00000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "arm": "p10_missing_file",
+   "check": "G-DVB",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "P10Error: P10 file 'C:\\\\Users\\\\Admin\\\\v8fa1\\\\tree\\\\stack\\\\tanitad\\\\configs\\\\v8f_p10\\\\__nope__.pt' does not exist"
+  },
+  {
+   "arm": "wrong_variant_file (not an ARMS entry)",
+   "check": "G-DVB",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 1,
+   "matches_arm_regex": null,
+   "first": "P10Error: P10 file 'C:\\\\Users\\\\Admin\\\\v8fa1\\\\tree\\\\stack\\\\tanitad\\\\configs\\\\v8f_p10\\\\p10_prior.pt' is the 'steer' variant (meta['units']='steer'); the caller asked for the 'pose' one -- a P10 fit on another input channel is ANOTHER prior"
+  },
+  {
+   "arm": "CONTROL",
+   "check": "argv",
+   "verdict": "GREEN",
+   "graded_check": false,
+   "n_reasons": 0,
+   "matches_arm_regex": null,
+   "first": null,
+   "note": "the alpha-1 launch argv under the v8f profile"
+  },
+  {
+   "arm": "p10_wrong_sha",
+   "check": "argv",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 1,
+   "matches_arm_regex": null,
+   "first": "--p10-prior-sha256 e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d is REQUIRED for a v8f launch (the banked pose-only P10 (refit on the 4,572-clip train view, 74,604 bytes): a literal) and the argv has ['000000000000000000000000000000000000000"
+  },
+  {
+   "arm": "argv:ha0_ext_pose (alpha-0 prior)",
+   "check": "argv",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 2,
+   "matches_arm_regex": null,
+   "first": "--residual-prior ['ha0_ext_pose'] is REFUSED for a v8f launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10']; PLAN_V8F section 6: this arm's prior is `p10_pose`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the stee"
+  },
+  {
+   "arm": "argv:ha0_ext (the steer echo)",
+   "check": "argv",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 2,
+   "matches_arm_regex": null,
+   "first": "--residual-prior ['ha0_ext'] is REFUSED for a v8f launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10']; PLAN_V8F section 6: this arm's prior is `p10_pose`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the steer as "
+  },
+  {
+   "arm": "argv:p10 (the other P10 variant)",
+   "check": "argv",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 2,
+   "matches_arm_regex": null,
+   "first": "--residual-prior ['p10'] is REFUSED for a v8f launch (refused values: ['off', 'ha0_ext', 'ha0_ext_pose', 'cv_yawrate', 'p10']; PLAN_V8F section 6: this arm's prior is `p10_pose`; `ha0_ext_pose` is alpha-0's (the baseline arm), `ha0_ext` reads the steer as an E"
+  },
+  {
+   "arm": "argv:no --p10-prior",
+   "check": "argv",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 1,
+   "matches_arm_regex": null,
+   "first": "profile v8f requires --p10-prior in the launch argv (PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior)"
+  },
+  {
+   "arm": "CONTROL",
+   "check": "G-LIVE",
+   "verdict": "GREEN",
+   "graded_check": false,
+   "n_reasons": 0,
+   "matches_arm_regex": null,
+   "first": null,
+   "rows_checked": 4,
+   "max_abs_diff_a": 0.0,
+   "p10_calls": 1
+  },
+  {
+   "arm": "p10_fallback_ha0_ext",
+   "check": "G-LIVE",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 4,
+   "matches_arm_regex": true,
+   "first": "G-LIVE P10: the FrozenP10 module was CALLED 0 times over 1 training forwards -- the prior the loss composed on did not come from P10 (a fallback to another prior)",
+   "rows_checked": 4,
+   "max_abs_diff_a": 7.925758,
+   "p10_calls": 0
+  },
+  {
+   "arm": "p10_clock_shift",
+   "check": "G-LIVE",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 2,
+   "matches_arm_regex": null,
+   "first": "G-LIVE P10: the emitted prior's accel channel differs from the INDEPENDENT P10 recompute by 4.02 (> 0.0001) -- the model's prior is not the declared P10 evaluated on this window",
+   "rows_checked": 4,
+   "max_abs_diff_a": 4.022877,
+   "p10_calls": 1
+  },
+  {
+   "arm": "p10_unfrozen",
+   "check": "G-LIVE",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 5,
+   "matches_arm_regex": true,
+   "first": "G-LIVE P10: the P10 module has 5 Parameters -- it must be buffers only (UNFROZEN: it would train)",
+   "rows_checked": 4,
+   "max_abs_diff_a": 0.0,
+   "p10_calls": 1
+  },
+  {
+   "arm": "p10_zero_weights",
+   "check": "G-LIVE",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 5,
+   "matches_arm_regex": null,
+   "first": "G-LIVE P10: the emitted prior's accel channel differs from the INDEPENDENT P10 recompute by 7.87 (> 0.0001) -- the model's prior is not the declared P10 evaluated on this window",
+   "rows_checked": 4,
+   "max_abs_diff_a": 7.874546,
+   "p10_calls": 1
+  },
+  {
+   "arm": "p10_pose_a0_stride2",
+   "check": "G-LIVE",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 2,
+   "matches_arm_regex": null,
+   "first": "G-LIVE P10: the emitted prior's accel channel differs from the INDEPENDENT P10 recompute by 2.66 (> 0.0001) -- the model's prior is not the declared P10 evaluated on this window",
+   "rows_checked": 4,
+   "max_abs_diff_a": 2.662385,
+   "p10_calls": 1
+  },
+  {
+   "arm": "CONTROL",
+   "check": "G-CKPT",
+   "verdict": "GREEN",
+   "graded_check": false,
+   "n_reasons": 0,
+   "matches_arm_regex": null,
+   "first": null
+  },
+  {
+   "arm": "p10_ckpt_stamp_dropped",
+   "check": "G-CKPT",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "G-CKPT P10: ckpt.pt carries NO `p10_prior` identity -- a resume could not tell which P10 trained"
+  },
+  {
+   "arm": "CONTROL",
+   "check": "G-EVAL",
+   "verdict": "GREEN",
+   "graded_check": false,
+   "n_reasons": 0,
+   "matches_arm_regex": null,
+   "first": null
+  },
+  {
+   "arm": "p10_loader_other_p10",
+   "check": "G-EVAL",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "G-EVAL P10: the loader's P10 weights (4c6e66a443db1c60) are not the trainer's (7ba848744f7d22c1)"
+  },
+  {
+   "arm": "p10_variant_flipped",
+   "check": "G-EVAL",
+   "verdict": "RED",
+   "graded_check": false,
+   "n_reasons": 1,
+   "matches_arm_regex": null,
+   "first": "G-EVAL P10: the loader built the 'steer' P10 variant, the trainer the 'pose' one"
+  },
+  {
+   "arm": "CONTROL",
+   "check": "G-CLOCK",
+   "verdict": "GREEN",
+   "graded_check": false,
+   "n_reasons": 0,
+   "matches_arm_regex": null,
+   "first": null,
+   "in_decoder_vs_banked_max_m": 1.52587890625e-05,
+   "one_frame_early_frac_beyond_tol": 0.9805309734513274,
+   "ade6_P10u_vs_P10_m": 0.01731427200138569
+  },
+  {
+   "arm": "p10_clock_shift",
+   "check": "G-CLOCK",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 2,
+   "matches_arm_regex": true,
+   "first": "G-CLOCK P10: the in-decoder P10 (pose_kin3 -> FrozenP10) differs from the banked floors_kin / v8F-mini predictions by up to 21.2 m (> 0.0001) on 554 of 565 windows -- a CLOCK or feature-order error",
+   "in_decoder_vs_banked_max_m": 21.189329147338867
+  },
+  {
+   "arm": "p10_pose_a0_stride2",
+   "check": "G-CLOCK",
+   "verdict": "RED",
+   "graded_check": true,
+   "n_reasons": 1,
+   "matches_arm_regex": true,
+   "first": "G-CLOCK P10: the in-decoder P10 (pose_kin3 -> FrozenP10) differs from the banked floors_kin / v8F-mini predictions by up to 10.9 m (> 0.0001) on 554 of 565 windows -- a CLOCK or feature-order error",
+   "in_decoder_vs_banked_max_m": 10.880996704101562
+  }
+ ],
+ "summary": {
+  "variant": "pose",
+  "profile": "v8f",
+  "mode": "p10_pose",
+  "artifact_sha256": "e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d",
+  "n_controls": 6,
+  "controls_all_green": true,
+  "n_arm_rows": 21,
+  "arm_rows_red": 21,
+  "arm_rows_escaped": [],
+  "arm_rows_regex_mismatch": []
+ }
+}

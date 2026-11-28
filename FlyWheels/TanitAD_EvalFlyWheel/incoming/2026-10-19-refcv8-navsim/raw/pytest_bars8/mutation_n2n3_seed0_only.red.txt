@@ -1,0 +1,44 @@
+.....................................................FF..F....           [100%]
+================================== FAILURES ===================================
+________________________ test_n2_both_seeds_must_agree ________________________
+
+    def test_n2_both_seeds_must_agree():
+        # seed 1 at 0.29 sits below max(STOP 0.2985, CV, ECHO) -> its own verdict FAILED; seed 0 PASSES -> NOT PROVEN, never PASS
+        r = B.navhard_bar(_nh(s1=0.29), ELIGIBLE, B.DEFAULT_CFG)
+        assert r["per_arm_verdict"]["R8_LEGAL"] == "PASS" and r["per_arm_verdict"]["R8_LEGAL_s1"] == "FAILED"
+>       assert r["verdict"] == "NOT PROVEN (inference seeds disagree: seed0=PASS, seed1=FAILED)"
+E       AssertionError: assert 'PASS' == 'NOT PROVEN (...seed1=FAILED)'
+E         
+E         - NOT PROVEN (inference seeds disagree: seed0=PASS, seed1=FAILED)
+E         + PASS
+
+tests\test_navsim_bars8.py:362: AssertionError
+__________________ test_n2_seed1_pair_missing_is_not_a_pass ___________________
+
+    def test_n2_seed1_pair_missing_is_not_a_pass():
+        r = B.navhard_bar(_nh(s1_pair=False), ELIGIBLE, B.DEFAULT_CFG)
+        assert r["per_arm_verdict"]["R8_LEGAL"] == "PASS" and r["per_arm_verdict"]["R8_LEGAL_s1"].startswith("UNAVAILABLE")
+>       assert r["verdict"].startswith("NOT PROVEN (seed-1 mirror not evaluable")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x0000020AE889F750>('NOT PROVEN (seed-1 mirror not evaluable')
+E        +    where <built-in method startswith of str object at 0x0000020AE889F750> = 'PASS'.startswith
+
+tests\test_navsim_bars8.py:368: AssertionError
+_____________________________ test_n3_both_seeds ______________________________
+
+    def test_n3_both_seeds():
+        # A-R8-NS1 AMENDMENT 3: seed 1 at 0.50 < max(CV .20, STOP .5212, ECHO .50) -> FAILED while seed 0 PASSES -> NOT PROVEN
+        r = B.warmup_bar(_wu(s1=0.50), ELIGIBLE, B.DEFAULT_CFG)
+        assert r["per_arm_verdict"] == {"R8_LEGAL": "PASS", "R8_LEGAL_s1": "FAILED"}
+>       assert r["verdict"] == "NOT PROVEN (inference seeds disagree: seed0=PASS, seed1=FAILED)"
+E       AssertionError: assert 'PASS' == 'NOT PROVEN (...seed1=FAILED)'
+E         
+E         - NOT PROVEN (inference seeds disagree: seed0=PASS, seed1=FAILED)
+E         + PASS
+
+tests\test_navsim_bars8.py:399: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_n2_both_seeds_must_agree - AssertionE...
+FAILED tests/test_navsim_bars8.py::test_n2_seed1_pair_missing_is_not_a_pass
+FAILED tests/test_navsim_bars8.py::test_n3_both_seeds - AssertionError: asser...
+3 failed, 59 passed, 2 deselected in 42.53s

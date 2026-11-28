@@ -1,0 +1,65 @@
+{
+ "_what": "the S4 re-tiering pass's premise, verified on LIVE data before the pass runs",
+ "_evidence_class": "MEASURED (ours), read-only, no npz loads, negligible Thor CPU",
+ "_source": "publish/SEMANTIC_MAPS_MANIFEST.json clips_flagged -- path_classes already banked",
+ "_codes_from_source": {
+  "ROAD": [
+   1,
+   2,
+   3,
+   4,
+   6
+  ],
+  "NON_DRIVABLE": [
+   5,
+   7
+  ],
+  "0": "seen, no class (sam3map_render_v5b.py:240)",
+  "255": "unseen, excluded by path_classes"
+ },
+ "_ruling": "(a) for the term, (c) for the reporting -- PI 2026-09-20; compliant = {0} u ROAD",
+ "n_flagged_total": 100,
+ "n_with_path_classes": 77,
+ "flag_histogram": {
+  "near path unlabelled (seen, no class), no path cell on a non-drivable class": 77,
+  "path untestable (parked / stopped ego)": 23
+ },
+ "controls": [
+  {
+   "control": "clips with any NON_DRIVABLE path cell",
+   "must_read": 0,
+   "measured": 0,
+   "pass": true,
+   "meaning": "compliant share under (a) is EXACTLY 1.0 -- the prereg's 'by construction' confirmed on live data"
+  },
+  {
+   "control": "clips with a code outside {0} u ROAD u NON_DRIVABLE",
+   "must_read": 0,
+   "measured": 0,
+   "pass": true,
+   "meaning": "the partition is complete; no silent third category"
+  },
+  {
+   "control": "minimum unlabelled share",
+   "must_read": "> 0.10 (failing the 0.9 threshold with nd=0 requires it)",
+   "measured": 0.1001,
+   "pass": true,
+   "meaning": "UNPLANNED: the lower bound is pinned by the threshold that created the flag"
+  }
+ ],
+ "c_withheld_unlabelled_share": {
+  "min": 0.1001,
+  "median": 0.1372,
+  "mean": 0.1706,
+  "max": 0.4603,
+  "n_over_50pct": 0,
+  "_ruling": "(c) requires this be published BESIDE every DAC/EP/PDMS number"
+ },
+ "projection_tracking": {
+  "prereg_projected_at_completion": 78,
+  "live_count": 77,
+  "corpus_pct": 95.19
+ },
+ "_not_applied": "production is live (4,492/4,719) and the supervisor holds its lock; the prereg applies the rule ONCE after DONE so every clip is judged by one rule",
+ "_out_of_scope": "40 GIVEN_UP clips and the 23 'path untestable' clips (no path_classes; real is null)"
+}

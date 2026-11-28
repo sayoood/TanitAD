@@ -1,0 +1,98 @@
+{
+ "target": "tests/test_v6_ladder_edges.py::test_after_init_from_exactly_the_intended_groups_train[S-J]",
+ "mechanism": "zero-parameter group `interp` absent from a `setdefault` census + PYTHONHASHSEED-randomised `set` iteration order + short-circuiting `any()`",
+ "refuted_hypothesis": "'seeds the model but draws its batch from global RNG' \u2014 REFUTED: mk() calls torch.manual_seed and nothing between it and the gt_wp draw touches the global stream, and the failure is a KeyError on a structural dict lookup that no data value can reach",
+ "module_groups": [
+  "encoder",
+  "readout",
+  "predictor_op",
+  "layer_tac",
+  "layer_str",
+  "planner",
+  "aux",
+  "interp"
+ ],
+ "A_predicted": {
+  "n_seeds": 400,
+  "first_element_counts": {
+   "layer_str": 59,
+   "readout": 57,
+   "layer_tac": 52,
+   "aux": 51,
+   "encoder": 49,
+   "predictor_op": 46,
+   "planner": 43,
+   "interp": 43
+  },
+  "predicted_fail_rate": 0.1075,
+  "predicted_fail_seeds": 43,
+  "vs_observed_pre_fix": {
+   "predicted": 0.1075,
+   "observed": 0.12,
+   "observed_n": 25
+  }
+ },
+ "B_current_per_seed": {
+  "3": {
+   "rc": 0,
+   "verdict": "PASS",
+   "last_line": "4 passed in 3.53s"
+  },
+  "12": {
+   "rc": 0,
+   "verdict": "PASS",
+   "last_line": "4 passed in 3.67s"
+  },
+  "0": {
+   "rc": 0,
+   "verdict": "PASS",
+   "last_line": "4 passed in 3.64s"
+  },
+  "5": {
+   "rc": 0,
+   "verdict": "PASS",
+   "last_line": "4 passed in 3.75s"
+  },
+  "7": {
+   "rc": 0,
+   "verdict": "PASS",
+   "last_line": "4 passed in 3.65s"
+  }
+ },
+ "C_pre_fix_measured": {
+  "evidence_class": "MEASURED (banked; pre-fix tree)",
+  "harness": "25 separate pytest processes, whole file, identical env",
+  "n_runs": 25,
+  "n_failed": 3,
+  "rate": 0.12,
+  "failed_runs": [
+   2,
+   8,
+   21
+  ],
+  "signature": "KeyError: 'interp' at test_after_init_from_exactly_the_intended_groups_train[S-J], tests/test_v6_ladder_edges.py:459",
+  "distinct_signatures": 1,
+  "note": "no other failure occurred in 25 x 26 = 650 test executions",
+  "deterministic_pre_fix": {
+   "3": "FAIL",
+   "12": "FAIL",
+   "0": "PASS",
+   "5": "PASS"
+  },
+  "pre_date_ab": {
+   "question": "does the failure pre-date today's changes?",
+   "answer": "NO",
+   "test_file_identical_ee02ff7_vs_HEAD": true,
+   "ee02ff7_result": {
+    "3": "PASS",
+    "12": "PASS",
+    "0": "PASS",
+    "5": "PASS"
+   },
+   "interp_entered_MODULE_GROUPS": "06b8782 2026-08-16 20:57:13 +0200",
+   "prev_v6_commit_without_interp": "ee02ff7 2026-08-16 16:55",
+   "test_file_created": "5725d95 2026-08-16 02:26:12 +0200",
+   "gap_hours": 18.5
+  }
+ }
+}

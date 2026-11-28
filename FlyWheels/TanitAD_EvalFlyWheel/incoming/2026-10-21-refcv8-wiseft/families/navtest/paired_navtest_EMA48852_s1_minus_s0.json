@@ -1,0 +1,260 @@
+{
+ "_label": "navtest paired families: inference-seed floor, EMA-48,852 R8_LEGAL s1 minus s0 (same checkpoint)",
+ "direction": "EMA48852_LEGAL_s1 - EMA48852_LEGAL_s0",
+ "n_tokens": 12146,
+ "n_log_clusters": 136,
+ "tier": "NavSim v1 open loop, single query per scene (the families' T1 stamp is the harness tier of a model-own plan)",
+ "dt_s": 0.5,
+ "seam_a": "C:\\Users\\Admin\\refcv8_pf\\navsim_ckpt\\families_navtest\\seams\\seam_R8_LEGAL.npz",
+ "seam_b": "C:\\Users\\Admin\\refcv8_pf\\navsim_ckpt\\families_navtest\\seams\\seam_R8_LEGAL_s1.npz",
+ "means": {
+  "EMA48852_LEGAL_s0": {
+   "ade_m": 2.358725,
+   "fde_m": 5.648416,
+   "LON_speed_mae_mps": 1.299397,
+   "LON_along_mae_m": 2.019892,
+   "LON_accel_mae_mps2": 0.768938,
+   "LAT_cross_mae_m": 0.839457,
+   "LAT_heading_mae_deg": 6.493807,
+   "LAT_yaw_rate_mae_radps": 0.481357,
+   "TAC_traj_lat_correct": 0.703853,
+   "TAC_traj_lon_correct": 0.568253,
+   "LAT_curvature_mae_1pm": 0.02699,
+   "LAT_yaw_rate_mae_masked_radps": 0.082944
+  },
+  "EMA48852_LEGAL_s1": {
+   "ade_m": 2.354058,
+   "fde_m": 5.631795,
+   "LON_speed_mae_mps": 1.295027,
+   "LON_along_mae_m": 2.013062,
+   "LON_accel_mae_mps2": 0.766955,
+   "LAT_cross_mae_m": 0.841408,
+   "LAT_heading_mae_deg": 6.50818,
+   "LAT_yaw_rate_mae_radps": 0.47448,
+   "TAC_traj_lat_correct": 0.703112,
+   "TAC_traj_lon_correct": 0.572123,
+   "LAT_curvature_mae_1pm": 0.027033,
+   "LAT_yaw_rate_mae_masked_radps": 0.082858
+  }
+ },
+ "paired": {
+  "direction": "EMA48852_LEGAL_s1 - EMA48852_LEGAL_s0",
+  "tier": "T1 minus T1",
+  "estimator": "paired_episode_cluster_bootstrap",
+  "families": {
+   "ADE": {
+    "ade_m": {
+     "delta": -0.0047,
+     "lo": -0.0182,
+     "hi": 0.0083,
+     "ci95": 0.0133,
+     "p_delta_gt0": 0.262,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "fde_m": {
+     "delta": -0.0166,
+     "lo": -0.0501,
+     "hi": 0.0159,
+     "ci95": 0.033,
+     "p_delta_gt0": 0.1665,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "longitudinal": {
+    "LON_speed_mae_mps": {
+     "delta": -0.0044,
+     "lo": -0.0124,
+     "hi": 0.0033,
+     "ci95": 0.0079,
+     "p_delta_gt0": 0.1385,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_along_mae_m": {
+     "delta": -0.0068,
+     "lo": -0.0202,
+     "hi": 0.0061,
+     "ci95": 0.0132,
+     "p_delta_gt0": 0.1555,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LON_accel_mae_mps2": {
+     "delta": -0.002,
+     "lo": -0.0061,
+     "hi": 0.0024,
+     "ci95": 0.0042,
+     "p_delta_gt0": 0.183,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "lateral": {
+    "LAT_cross_mae_m": {
+     "delta": 0.002,
+     "lo": -0.0056,
+     "hi": 0.0096,
+     "ci95": 0.0076,
+     "p_delta_gt0": 0.6975,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.0145,
+     "lo": -0.0436,
+     "hi": 0.0777,
+     "ci95": 0.0606,
+     "p_delta_gt0": 0.6865,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 11691,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 455
+    },
+    "LAT_yaw_rate_mae_radps": {
+     "delta": -0.0069,
+     "lo": -0.0129,
+     "hi": -0.0015,
+     "ci95": 0.0057,
+     "p_delta_gt0": 0.004,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "LAT_curvature_mae_1pm": {
+     "delta": 0.0,
+     "lo": -0.0002,
+     "hi": 0.0003,
+     "ci95": 0.0002,
+     "p_delta_gt0": 0.6235,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 11379,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 767
+    },
+    "LAT_yaw_rate_mae_masked_radps": {
+     "delta": -0.0,
+     "lo": -0.0007,
+     "hi": 0.0007,
+     "ci95": 0.0007,
+     "p_delta_gt0": 0.4565,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 11379,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 767
+    }
+   },
+   "tactical": {
+    "TAC_traj_lat_correct": {
+     "delta": -0.0007,
+     "lo": -0.0058,
+     "hi": 0.0041,
+     "ci95": 0.005,
+     "p_delta_gt0": 0.3815,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    },
+    "TAC_traj_lon_correct": {
+     "delta": 0.0039,
+     "lo": -0.001,
+     "hi": 0.009,
+     "ci95": 0.005,
+     "p_delta_gt0": 0.94,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 12146,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   }
+  }
+ },
+ "unavailable": {
+  "strategic": {
+   "status": "UNAVAILABLE",
+   "n": 12146,
+   "reason": "NavSim scores no strategic decision and the refcv8 NavSim bridge exports no strategic output; the PhysicalAI battery carries the strategic family"
+  },
+  "longitudinal.distance_keeping": {
+   "status": "UNAVAILABLE",
+   "n": 12146,
+   "reason": "no lead-agent track on the NavSim bridge (taniteval/adapters/navsim.py lead_block); a WORK ITEM, not a pass"
+  }
+ },
+ "controls": {
+  "P1_self_pair_zero": true,
+  "P2_human_analytic": {
+   "errors": {
+    "ade_m": 0.0,
+    "fde_m": 0.0,
+    "LON_speed_mae_mps": 0.0,
+    "LON_along_mae_m": 0.0,
+    "LON_accel_mae_mps2": 0.0,
+    "LAT_cross_mae_m": 0.0,
+    "LAT_heading_mae_deg": 0.0,
+    "LAT_yaw_rate_mae_radps": 0.0,
+    "LAT_curvature_mae_1pm": 0.0,
+    "LAT_yaw_rate_mae_masked_radps": 0.0
+   },
+   "agreements": {
+    "TAC_traj_lat_correct": 1.0,
+    "TAC_traj_lon_correct": 1.0
+   },
+   "pass": true
+  },
+  "P3_same_gt": true,
+  "all_pass": true
+ },
+ "status": "OK"
+}

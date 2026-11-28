@@ -1,0 +1,44 @@
+18c18
+< OUTJ = "DRY_CHECK_P03.json" if AK == "RHp3" else "DRY_CHECK_K.json" if AK == "RHK" else "DRY_CHECK_RL.json" if AK == "RL" else "DRY_CHECK_RA.json" if AK == "RA" else "DRY_CHECK.json"
+---
+> OUTJ = "DRY_CHECK_P03.json" if AK == "RHp3" else "DRY_CHECK_K.json" if AK == "RHK" else "DRY_CHECK_RL.json" if AK == "RL" else "DRY_CHECK_RA.json" if AK == "RA" else "DRY_CHECK_RK.json" if AK == "RK" else "DRY_CHECK.json"
+231a232,270
+> # 5g RK (KINLAB): the default, RHp3, RHK, RL and RA reads are unchanged by the RK edits (rh_common vs its pre-RK copy .bkRK, each under its own RH_AKIND), and the RK read is wired
+> _t12 = tempfile.mkdtemp(prefix="bkrk_", dir=HERE + "/tmp")
+> shutil.copy(HERE + "/rh_common.py.bkRK", _t12 + "/rh_common_bkrk.py")
+> for _ak in ("", "RHp3", "RHK", "RL", "RA"):
+>     _x, _y = _dump_for(HERE, "rh_common", _ak), _dump_for(_t12, "rh_common_bkrk", _ak)
+>     chk(f"RH_AKIND={_ak or 'unset'} read unchanged by the RK edits: rh_common KINDS / PAIRS / ARM_FORMS_ALL equal the pre-RK copy (rh_common.py.bkRK)", bool(_x) and _x == _y, f"{len(_x)} chars")
+> os.remove(_t12 + "/rh_common_bkrk.py")
+> os.rmdir(_t12)
+> if AK == "RK":
+>     chk("RK pairs: P1 is RK - B0 under C*, P2/P4 pairs on RK, B0 attribution pair on B0, beside RK - RH under R0Hb20 and R0C10XHb20, ATTR RK - RL under C*",
+>         C.PAIRS["P1"] == ("RK_R0C10XHb20", "B0_R0C10XHb20") and C.PAIRS["P2_ACC_RH"] == ("RK_R0C10XHb20", "RK_R0KHb20") and C.PAIRS["P4"] == ("RK_R0C10XHb20", "B0_R0KHb20")
+>         and C.PAIRS["P2_ACC_B0"] == ("B0_R0C10XHb20", "B0_R0KHb20") and C.PAIRS["BESIDE_RK_minus_RH_R0C10XHb20"] == ("RK_R0C10XHb20", "RH_R0C10XHb20") and "BESIDE_RK_minus_RH_R0Hb20" in C.PAIRS
+>         and C.PAIRS["ATTR_RK_minus_RL_R0C10XHb20"] == ("RK_R0C10XHb20", "RL_R0C10XHb20"), "")
+>     chk("RK read rolls RK only (ROLL_KINDS), runs of B0, RH and RL are reused", C.ROLL_KINDS == ("RK",) and set(C.RUN_KINDS) == {"RK", "B0", "RH", "RL"}, str(C.RUN_KINDS))
+>     miss = [f"{k}_{f}_s{s}" for s in C.SEEDS for k, fs in (("B0", C.FORM_ORDER), ("RH", ("R0Hb20", "R0C10XHb20")), ("RL", ("R0Hb20", "R0C10XHb20"))) for f in fs if not os.path.exists(f"{C.OUT}/t1/I10{k}_{f}_s{s}/T1_DONE")]
+>     chk("the reused dumps exist (B0: 6 forms x 2 seeds, RH: 2 forms x 2 seeds, RL: 2 forms x 2 seeds, T1_DONE)", not miss, miss[:4])
+>     reuse = [C.OUT + "/read/" + x for x in ("RESULT_ROLLHIST.json", "refs_q3/RESULT_Q3.json", "refs_hw/RESULT_HEADWAY.json", "STRAT_FLOOR_UEA.json")] + [f"{C.OUT}/t0/eval_{k}_s{s}.npz" for k in ("RH", "RL", "B0") for s in C.SEEDS]         + [f"{C.CK}/{k}_s{s}/ckpt_last.pt" for k in ("RH", "RL", "B0") for s in C.SEEDS]
+>     chk("the reused files exist (result, refs readers, strat floor, T0 evals of RH, RL and B0, RH, RL and B0 checkpoints for the provenance check)", all(os.path.isfile(x) for x in reuse), [x for x in reuse if not os.path.isfile(x)][:3])
+>     ch = open(HERE + "/rh_read_rk_chain.sh", encoding="utf-8").read()
+>     order = ["step blobcheck", "step readertests", 'step "pull_RK_s$s"', 'step "ro_RK_${f}_s$s"', "step t0evals", "step gt0", "step mech3", "step headway", "step q3", "step strat ", "step read "]
+>     pos = [ch.find(o) for o in order]
+>     chk("rh_read_rk_chain.sh has every step, in order (blobcheck, selftest, pull, rollouts, T0, guard, MECH3, headway, q3, strat, read)", all(q >= 0 for q in pos) and pos == sorted(pos), pos)
+>     chk("rh_read_rk_chain.sh exports RH_AKIND=RK, pulls and rolls RK only, writes under out/read_rk, repeats no K-REPLAY and no stage-A reference, reads RL's dumps / T0 evals / checkpoints",
+>         "export RH_AKIND=RK" in ch and "rh_roll.py RK" in ch and "rh_roll.py RH " not in ch and "rh_roll.py B0" not in ch and "rh_roll.py RL" not in ch and "pull_arm RK_s$s" in ch and "pull_arm RH_" not in ch and "pull_arm B0" not in ch
+>         and "pull_arm RL_" not in ch and "rh_replay" not in ch and "I10RL_" in ch and "eval_RL_" in ch and "mech_rk.py" in ch, "")
+>     chk("rh_read_rk_chain.sh writes nothing the PARTIAL, P03, K, RL or RA read wrote (no out/read/, read_p03/, read_k/, read_rl/ or read_ra/ output, own steps dir, own log)",
+>         "--out-dir $O/read " not in ch and "$STEPS/" in ch and "steps_rk" in ch and "steps_ra" not in ch and "steps_rl" not in ch and "steps_p03" not in ch and "steps_k/" not in ch and "read_ra" not in ch and "read_rl" not in ch and "read_p03" not in ch
+>         and "read_k/" not in ch and "rh_read_rk_chain.log" in ch and "> $O/read/" not in ch, "")
+>     b7 = subprocess.run(["C:/Program Files/Git/usr/bin/bash.exe", "-n", HERE + "/rh_read_rk_chain.sh"], capture_output=True, text=True)
+>     chk("bash -n rh_read_rk_chain.sh", b7.returncode == 0, b7.stderr[:200])
+>     b8 = subprocess.run(["C:/Program Files/Git/usr/bin/bash.exe", "-n", HERE + "/rh_read_rk_retry.sh"], capture_output=True, text=True)
+>     chk("bash -n rh_read_rk_retry.sh", b8.returncode == 0, b8.stderr[:200])
+>     rt = open(HERE + "/rh_read_rk_retry.sh", encoding="utf-8").read()
+>     chk("rh_read_rk_retry.sh re-runs rh_read_rk_chain.sh only on the headroom stop, own log, own done file", "rh_read_rk_chain.sh" in rt and "READ-RK DONE" in rt and "commit headroom stayed below" in rt and "ROLLHIST_READ_RK.done" in rt and "_ra" not in rt and "READ-RA" not in rt, "")
+>     _rh = open(HERE + "/rh_read.py", encoding="utf-8").read()
+>     chk("rh_read.py carries the RK answer and the NEXT_RK table", "rk_answer" in _rh and "NEXT_RK" in _rh, "")
+>     chk("rh_read_rk_chain.cmd and rh_read_rk_retry.cmd exist and name their scripts", os.path.isfile(HERE + "/rh_read_rk_chain.cmd") and os.path.isfile(HERE + "/rh_read_rk_retry.cmd")
+>         and "rh_read_rk_chain.sh" in open(HERE + "/rh_read_rk_chain.cmd", encoding="utf-8").read() and "rh_read_rk_retry.sh" in open(HERE + "/rh_read_rk_retry.cmd", encoding="utf-8").read(), "")
+>     chk("mech_rk.py exists beside (MECH3 = RK - RL at T0) and names RK / RL", os.path.isfile(HERE + "/mech_rk.py") and 'TREATED, CONTRAST = "RK", "RL"' in open(HERE + "/mech_rk.py", encoding="utf-8").read(), "")

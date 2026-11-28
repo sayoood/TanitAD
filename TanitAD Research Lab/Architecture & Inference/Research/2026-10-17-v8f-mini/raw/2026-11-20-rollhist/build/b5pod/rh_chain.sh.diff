@@ -1,0 +1,20 @@
+--- ../b2/rh_chain.sh	2026-11-20 18:46:03.425260400 +0100
++++ rh_chain.sh	2026-11-21 01:00:16.321038800 +0100
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-# ROLLHIST chain (PREREG_V8F_ROLLHIST, code of record 2bda9e1a, PI go 2026-11-20: both seeds, about 5.2 LoRA pod-h). STAGED, NOT LAUNCHED. One process, one log. Adapted from n1dc_chain.sh / block2.sh.
++# ROLLHIST chain (PREREG_V8F_ROLLHIST, code of record 43319227, PI go 2026-11-20: both seeds, about 5.2 LoRA pod-h). STAGED, NOT LAUNCHED. One process, one log. Adapted from n1dc_chain.sh / block2.sh.
+ # The readout of the training history is ONE parameter, RH_READOUT=causal_g1x (C*, recommended) | causal_g1 (ADD63 causal). It has NO default: an unset value is refused (the PI's decision is not defaulted).
+ # Order: (1) flock fd 9 on /root/gpu_queue.lock, HELD TO THE END  (2) tree + inputs + disk checks  (3) render argv + pair check (CPU)  (4) G-SUITE (CPU)  (5) pilot, refuses on any failed check (a)-(d)
+ #        (6) bank s0 (4 shards, merge) + full-bank re-check (b,c,d,e) + fill argv  (7) RH_s0, then B0_s0  (8) bank s1 + re-check + fill, then RH_s1, then B0_s1.
+@@ -26,8 +26,8 @@
+ [ -e $R/chains/STOP ] && fail "STOP file at $R/chains/STOP"
+ # 2. tree, inputs, disk
+ chk_tree() {
+-  $PY $R/blobcheck.py $TREE $R/all_blobs.txt > $R/logs/blobcheck.log 2>&1 || return 1
+-  [ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $R/all_blobs.txt)" ] || return 1
++  $PY $R/blobcheck.py $TREE $R/all_blobs_43319227.txt > $R/logs/blobcheck.log 2>&1 || return 1
++  [ "$(find $TREE -type f -not -path '*/__pycache__/*' | wc -l)" = "$(wc -l < $R/all_blobs_43319227.txt)" ] || return 1
+ }
+ step tree chk_tree
+ chk_inputs() {

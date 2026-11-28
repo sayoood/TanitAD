@@ -1,0 +1,756 @@
+{
+ "spec": "SPEC.md E-DE-SIGN-3",
+ "literal_tests": [
+  {
+   "text": "a 50 km/h sign is posted",
+   "want": 50,
+   "got": 50,
+   "ok": true
+  },
+  {
+   "text": "the overhead speed limit sign indicates 100",
+   "want": 100,
+   "got": 100,
+   "ok": true
+  },
+  {
+   "text": "because of the 30 speed limit sign",
+   "want": 30,
+   "got": 30,
+   "ok": true
+  },
+  {
+   "text": "1. Type: speed limit sign",
+   "want": null,
+   "got": null,
+   "ok": true
+  },
+  {
+   "text": "duration: 0-4 seconds",
+   "want": null,
+   "got": null,
+   "ok": true
+  }
+ ],
+ "naive_parser_failures": 2,
+ "sets": {
+  "v7.2_train": {
+   "records": 4572,
+   "records_ok": true,
+   "speed_limit_flags": 69,
+   "valued_clips": 43,
+   "valued_and_flagged": 41,
+   "valued_not_flagged": 2,
+   "by_system": {
+    "Vienna_circle_kmh": 42,
+    "US_MUTCD_mph": 1
+   },
+   "by_daynight": {
+    "day": 25,
+    "night": 18
+   },
+   "clips_all_legal": 43,
+   "clips_multi_value": 0,
+   "value_hist": {
+    "50": 8,
+    "30": 13,
+    "100": 3,
+    "70": 5,
+    "20": 2,
+    "60": 6,
+    "80": 1,
+    "40": 3,
+    "120": 1,
+    "35": 1
+   },
+   "clips": [
+    {
+     "clip_id": "2e19d2184e04",
+     "country": "Portugal",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      50
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "0fb91acb43e5",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "2c6b55b7d10e",
+     "country": "Greece",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      100
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "835f138aade6",
+     "country": "Finland",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      70
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "2eca6bc6e410",
+     "country": "Sweden",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      50
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "1571af55bdf9",
+     "country": "Portugal",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      20
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "25e757f9572d",
+     "country": "Belgium",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      60
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "5e78b6b9f86c",
+     "country": "Greece",
+     "system": "Vienna_circle_kmh",
+     "flagged": false,
+     "daynight": "day",
+     "values": [
+      30
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "cd5b27aeb42e",
+     "country": "Belgium",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      60
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "cc8ed4c8e413",
+     "country": "Austria",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      80
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "13da7cbf9967",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "2ba7a0f4875f",
+     "country": "Denmark",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "a20cad705f95",
+     "country": "Austria",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      70
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "a5e4357d897b",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      50
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "ac984473d1f2",
+     "country": "Portugal",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      50
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "e21cd22c73f7",
+     "country": "Austria",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "6229bb5b5f31",
+     "country": "Denmark",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      60
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "2d8b215e1a1d",
+     "country": "Italy",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "0b2db862464a",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      50
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "3796965819c9",
+     "country": "Portugal",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      70
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "1aa0712d89e5",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "dd6c33d5d52f",
+     "country": "Italy",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "0119f6cd59a5",
+     "country": "Estonia",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      40
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "44fba1a554ad",
+     "country": "Spain",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      120
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "0e16a76bfd8f",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      50
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "5fc5e1c72a76",
+     "country": "Finland",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      50
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "b097765971d9",
+     "country": "Denmark",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      40
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "fd00383c1a35",
+     "country": "Netherlands",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      100
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "034334ad956e",
+     "country": "Denmark",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      60
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "81b53d7bb52e",
+     "country": "Austria",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      50
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "efbe8651cf8d",
+     "country": "Spain",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      40
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "d8c3a12ea977",
+     "country": "Portugal",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "f58284d90627",
+     "country": "France",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      60
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "fe9b3678d2a7",
+     "country": "Portugal",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      20
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "58e162034c5e",
+     "country": "Estonia",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      60
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "9f1b16cb25e9",
+     "country": "Greece",
+     "system": "Vienna_circle_kmh",
+     "flagged": false,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "af375d5a6c6e",
+     "country": "Austria",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      30
+     ],
+     "units": [
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "b3eae01325be",
+     "country": "Latvia",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "6902f936018f",
+     "country": "United States",
+     "system": "US_MUTCD_mph",
+     "flagged": true,
+     "daynight": "night",
+     "values": [
+      35
+     ],
+     "units": [
+      "mph"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "9b12c1295999",
+     "country": "Belgium",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      70
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "7ee1572293d4",
+     "country": "Italy",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      100
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "1a2f19878e28",
+     "country": "Latvia",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      30
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    },
+    {
+     "clip_id": "4adc32eea311",
+     "country": "Slovenia",
+     "system": "Vienna_circle_kmh",
+     "flagged": true,
+     "daynight": "day",
+     "values": [
+      70
+     ],
+     "units": [
+      "bare",
+      "kmh"
+     ],
+     "all_legal": true,
+     "n_distinct_values": 1
+    }
+   ]
+  },
+  "v7.2_eval": {
+   "records": 147,
+   "records_ok": true,
+   "speed_limit_flags": 0,
+   "valued_clips": 0,
+   "valued_and_flagged": 0,
+   "valued_not_flagged": 0,
+   "by_system": {},
+   "by_daynight": {},
+   "clips_all_legal": 0,
+   "clips_multi_value": 0,
+   "value_hist": {},
+   "clips": []
+  }
+ },
+ "verdict": {
+  "vienna_valued_train": 42,
+  "legal_frac_train": 1.0,
+  "controls_ok": true,
+  "fires": "SPECIFIED",
+  "quoted_31_reproduces": false
+ }
+}

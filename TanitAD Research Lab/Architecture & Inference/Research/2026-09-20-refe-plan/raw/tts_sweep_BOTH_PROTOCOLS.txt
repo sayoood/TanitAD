@@ -1,0 +1,22 @@
+DZ-10 COMPLETE -- 10 arms, 2 protocols, paired on 8 identical tokens throughout
+
+NON-REACTIVE (log replay)
+  suite score      N=1:  97.19  N=8:  97.30  N=16:  97.28  N=32:  97.12  N=64:  97.03
+  mean paired d    N=8: +0.105  N=16: +0.091  N=32: -0.071  N=64: -0.163
+  scen worse       N=8:      0  N=16:      0  N=32:      2  N=64:      1
+
+REACTIVE (IDM)
+  suite score      N=1:  97.21  N=8:  97.18  N=16:  97.12  N=32:  97.10  N=64:  96.98
+  mean paired d    N=8: -0.026  N=16: -0.086  N=32: -0.106  N=64: -0.227
+  scen worse       N=8:      2  N=16:      2  N=32:      2  N=64:      4
+
+braking-bias probe, all TTS arms
+       run  switches  selected-mode  pool-mode  sel slower  pool slower
+    m-nr-8        24         -0.898     -0.486       66.7%        58.3%
+   m-nr-16        32         -0.658     -0.255       56.2%        56.2%
+   m-nr-32        57         -0.798     -0.008       59.6%        38.6%
+   m-nr-64        62         -1.269     -0.011       74.2%        41.9%
+     m-r-8        14         -1.532     -0.328       64.3%        71.4%
+    m-r-16        34         -1.710     -0.575       76.5%        64.7%
+    m-r-32        33         -1.968     -0.492       78.8%        66.7%
+    m-r-64        46         -2.368     -0.476       84.8%        69.6%

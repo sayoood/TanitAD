@@ -1,0 +1,60 @@
+[corpus] train-corpus identity: UNVERIFIED — neither run publishes a CHECKED corpus key on both sides, so the TRAIN corpora cannot be shown identical from the configs. A: no parity field / checke
+[intersect] 120 shared windows over 20 clips (A had 140/20, B had 3419/20)
+[control] window-key proof: GT max|A-B| = 0.000e+00 m (expected 0, tol 0.0001); v0 max|A-B| = 0.000e+00 m/s
+[control] floor C1 (A): max|dx| = 7.629e-06 m, max|y| = 0.000e+00 m (expected 0.0 exactly)
+[control] floor C1 (B): max|dx| = 1.526e-05 m, max|y| = 0.000e+00 m (expected 0.0 exactly)
+[control] floor C2 bit-comparability: max|A-B| = 1.526e-05 m (expected 0.0 exactly)
+[control] floor C3 derived-vs-dumped: max|d| = 1.526e-05 m (expected 0.0)
+[trivial-profile] 120 shared windows — arm SHAPE before any family row
+  refav1:cl                    straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: refav1:cl_navshuf=105/120, refav1:ha=1/120, refcv3:ha=1/120, shared:ha0=120/120
+  refav1:cl_navshuf            straight=1.0000 const_speed=0.8750 CONSTANT-VELOCITY=0.8750  identical_to: refav1:cl=105/120, refav1:ha=1/120, refcv3:ha=1/120, shared:ha0=105/120
+  refav1:ha                    straight=0.0250 const_speed=0.0083 CONSTANT-VELOCITY=0.0083  identical_to: refav1:cl=1/120, refav1:cl_navshuf=1/120, refcv3:ha=1/120, shared:ha0=1/120
+  refcv3:os                    straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: refcv3:os_navshuf=69/120
+  refcv3:os_navzero            straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  refcv3:os_navshuf            straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: refcv3:os=69/120
+  refcv3:ha                    straight=0.0250 const_speed=0.0083 CONSTANT-VELOCITY=0.0083  identical_to: refav1:cl=1/120, refav1:cl_navshuf=1/120, refav1:ha=1/120, shared:ha0=1/120
+  shared:ha0                   straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: refav1:cl=120/120, refav1:cl_navshuf=105/120, refav1:ha=1/120, refcv3:ha=1/120
+[selection-profile] refcv3: n_distinct=24 modal #44 at 0.2083 entropy=2.6666 agrees_with_oracle=0.6167
+
+  ⛔ VOID: refav1:cl is a CONSTANT-VELOCITY plan on 100.0% of the shared windows — the instrument saw the trivial baseline, not the model. The read is VOID, not negative (D-REFAV1-PAIRED-READ-VOID).
+  ⇒ every cross-model row below is computed and banked, but the COMPARISON IS VOID. Do not read it as 'model X beats model Y'.
+
+====================================================================================================
+PAIRED OPEN-LOOP COMPARISON — refav1:cl  vs  refcv3:os   (floor shared:ha0)
+  n = 120 shared windows over 20 episodes; common instants [1.0, 2.0] s
+  ⛔⛔ THE READ IS VOID — a degenerate arm entered it. See void_reasons.
+====================================================================================================
+
+--- ADE  [family verdict: VOID — a degenerate arm entered it] ---------------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  ade_m                           0.8635    0.6590    0.8635    0.0000   -0.2045      -0.2045     [-0.3997, -0.0178] YES
+  fde_m                           1.3633    1.0163    1.3633    0.0000   -0.3470      -0.3470     [-0.6606, -0.0447] YES
+
+--- LONGITUDINAL  [family verdict: VOID — a degenerate arm entered it] ------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  LON_speed_mae_mps               0.4688    0.4733    0.4688    0.0000    0.0044       0.0044      [-0.1281, 0.1265] no
+  LON_along_mae_m                 0.5741    0.5903    0.5741    0.0000    0.0162       0.0162      [-0.1342, 0.1651] no
+  LON_accel_mae_mps2              0.4350    0.4842    0.4350    0.0000    0.0492       0.0492      [-0.0928, 0.1718] no
+
+--- LATERAL  [family verdict: VOID — a degenerate arm entered it] -----------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  LAT_cross_mae_m                 0.4459    0.1650    0.4459    0.0000   -0.2808      -0.2808     [-0.4276, -0.1450] YES
+  LAT_heading_mae_deg             2.1379    0.7442    2.1379    0.0000   -1.3937      -1.3937     [-2.2889, -0.6004] YES
+  LAT_yaw_rate_mae_radps          0.0381    0.0727    0.0381    0.0000    0.0346       0.0346      [-0.0243, 0.1195] no
+
+--- TACTICAL  [family verdict: VOID — a degenerate arm entered it] ----------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+  TAC_traj_lat_correct            0.9417    0.9917    0.9417    0.0000    0.0500       0.0500       [0.0000, 0.1083] no
+  TAC_traj_lon_correct            0.8417    0.7500    0.8417    0.0000   -0.0917      -0.0917      [-0.2000, 0.0083] no
+  TAC_declared_lat_correct        0.6750    0.7750    0.6500    0.0250    0.1250       0.1000      [-0.1500, 0.3500] no
+  TAC_declared_lat_correct_navshuf    0.5750    0.7250    0.6500   -0.0750    0.0750       0.1500       [0.0000, 0.3250] no
+  TAC_declared_lat_correct_navzero    0.6500    0.7000    0.6500    0.0000    0.0500       0.0500      [-0.1000, 0.2250] no
+  TAC_declared_lon_correct        0.5500    0.5250    0.4500    0.1000    0.0750      -0.0250      [-0.3000, 0.2500] no
+  TAC_declared_lon_correct_navshuf    0.4250    0.5000    0.4500   -0.0250    0.0500       0.0750      [-0.2000, 0.3500] no
+  TAC_declared_lon_correct_navzero    0.4500    0.4750    0.4500    0.0000    0.0250       0.0250      [-0.2500, 0.2750] no
+
+--- STRATEGIC  [family verdict: REFUSED] ---------------------------------------------------
+  metric                           A abs     B abs     floor   A-floor   B-floor  (B-f)-(A-f)                 95% CI sep
+
+[out] C:/Users/Admin/run_paired/out/pkg/paired.json (164461 B)
+[out] C:/Users/Admin/run_paired/out/pkg/raw/paired_table.md (20758 B)

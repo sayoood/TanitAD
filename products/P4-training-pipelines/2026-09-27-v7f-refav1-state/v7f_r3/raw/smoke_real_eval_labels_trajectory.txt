@@ -1,0 +1,60 @@
+== train_on_measured (w_tac_label_all=1.0, in-band 6027/27930)
+  loss                   steps1-5 mean 7.8649 | steps26-30 mean 6.3922 | n=30
+  tac_lat_ce             steps1-5 mean 1.8384 | steps26-30 mean 1.0296 | n=30
+  tac_lon_ce             steps1-5 mean 2.0058 | steps26-30 mean 1.8255 | n=30
+  tac_goal_bce           steps1-5 mean 1.1242 | steps26-30 mean 1.0414 | n=30
+  tac_speedband_l1_ms    steps1-5 mean 11.2961 | steps26-30 mean 7.8236 | n=30
+  t1_latent              steps1-5 mean 0.8444 | steps26-30 mean 0.7907 | n=30
+  seam_op                steps1-5 mean 0.9224 | steps26-30 mean 0.9227 | n=30
+  terms: ['seam', 't1', 'tac_label_all']
+== train_off (w_tac_label_all=0.0, in-band 6027/27930)
+  loss                   steps1-5 mean 1.7650 | steps26-30 mean 1.7136 | n=30
+  t1_latent              steps1-5 mean 0.8425 | steps26-30 mean 0.7909 | n=30
+  seam_op                steps1-5 mean 0.9224 | steps26-30 mean 0.9227 | n=30
+  terms: ['seam', 't1']
+== reach_measured: tokens reached 13/22, tac_label_all 6.3617, speed-band arg rows [0, 1]
+   FOLLOW_LANE                  pos_sup=119 neg_sup= 28 mask=1 reached=True
+   TURN_L                       pos_sup=  5 neg_sup=142 mask=1 reached=True
+   TURN_R                       pos_sup=  8 neg_sup=139 mask=1 reached=True
+   YIELD_FOR_TURN_L             pos_sup=  2 neg_sup=145 mask=1 reached=True
+   YIELD_FOR_TURN_R             pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   YIELD                        pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   STOP_POINT                   pos_sup=  9 neg_sup=138 mask=1 reached=True
+   SPEED_BAND                   pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   CORRIDOR_OFFSET              pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   EVADE_IN_CORRIDOR            pos_sup=  6 neg_sup=  1 mask=1 reached=True
+   OVERTAKE_VEHICLE             pos_sup=  1 neg_sup=119 mask=1 reached=True
+   MERGE                        pos_sup=  5 neg_sup=119 mask=1 reached=True
+   GAP_TARGET                   pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   REACT_ON_ONCOMING            pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   TAKE_EXIT_L                  pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   TAKE_EXIT_R                  pos_sup=  5 neg_sup=  5 mask=1 reached=True
+   TRAFFIC_LIGHT_REACT          pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   TRAFFIC_LIGHT_REACT_RED      pos_sup=  8 neg_sup= 18 mask=1 reached=True
+   TRAFFIC_LIGHT_REACT_YELLOW   pos_sup=  3 neg_sup= 23 mask=1 reached=True
+   TRAFFIC_LIGHT_REACT_GREEN    pos_sup= 15 neg_sup= 11 mask=1 reached=True
+   LANE_CHANGE_L                pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   LANE_CHANGE_R                pos_sup=  1 neg_sup=  8 mask=1 reached=True
+== reach_all: tokens reached 17/22, tac_label_all 6.4691, speed-band arg rows [0, 1]
+   FOLLOW_LANE                  pos_sup=119 neg_sup= 28 mask=1 reached=True
+   TURN_L                       pos_sup=  5 neg_sup=142 mask=1 reached=True
+   TURN_R                       pos_sup=  8 neg_sup=139 mask=1 reached=True
+   YIELD_FOR_TURN_L             pos_sup=  2 neg_sup=145 mask=1 reached=True
+   YIELD_FOR_TURN_R             pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   YIELD                        pos_sup= 17 neg_sup=130 mask=1 reached=True
+   STOP_POINT                   pos_sup=  9 neg_sup=138 mask=1 reached=True
+   SPEED_BAND                   pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   CORRIDOR_OFFSET              pos_sup= 25 neg_sup=122 mask=1 reached=True
+   EVADE_IN_CORRIDOR            pos_sup=  6 neg_sup=141 mask=1 reached=True
+   OVERTAKE_VEHICLE             pos_sup=  1 neg_sup=146 mask=1 reached=True
+   MERGE                        pos_sup=  5 neg_sup=142 mask=1 reached=True
+   GAP_TARGET                   pos_sup= 14 neg_sup=133 mask=1 reached=True
+   REACT_ON_ONCOMING            pos_sup= 11 neg_sup=136 mask=1 reached=True
+   TAKE_EXIT_L                  pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   TAKE_EXIT_R                  pos_sup=  5 neg_sup=142 mask=1 reached=True
+   TRAFFIC_LIGHT_REACT          pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   TRAFFIC_LIGHT_REACT_RED      pos_sup=  8 neg_sup=139 mask=1 reached=True
+   TRAFFIC_LIGHT_REACT_YELLOW   pos_sup=  3 neg_sup=144 mask=1 reached=True
+   TRAFFIC_LIGHT_REACT_GREEN    pos_sup= 15 neg_sup=132 mask=1 reached=True
+   LANE_CHANGE_L                pos_sup=  0 neg_sup=  0 mask=0 reached=False
+   LANE_CHANGE_R                pos_sup=  1 neg_sup=146 mask=1 reached=True

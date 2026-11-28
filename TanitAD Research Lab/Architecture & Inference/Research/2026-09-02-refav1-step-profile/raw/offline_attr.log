@@ -1,0 +1,42 @@
+bank step_fp32_bs1.wall modes: {'live': (5, 10, 9.892)}
+trace_stats in 3.1 s
+{
+ "window_s": 35.770611899414064,
+ "gpu_busy_s": 25.92096514550781,
+ "gpu_busy_frac": 0.7246441637173227,
+ "n_profiler_steps": 3,
+ "kernel_hist": {
+  "n_kernels": 45340,
+  "median_us": 14.143,
+  "frac_kernels_lt_10us": 0.4408028231142479,
+  "frac_kernels_lt_50us": 0.7178209086898986,
+  "frac_time_in_kernels_lt_50us": 0.058992254100079786
+ }
+}
+attribution status: ok n_forward_seq 36805
+  P/op_rollout                 fwd    435.7  bwd    890.9  ms/step
+  P/tac_rollout                fwd     21.1  bwd     34.2  ms/step
+  P/participation_eig          fwd     46.5  bwd      0.0  ms/step
+  P/opt_step                   fwd     42.0  bwd      0.0  ms/step
+  P/adapter_future             fwd     23.2  bwd      0.0  ms/step
+  P/tac_field_targets          fwd     18.6  bwd      0.0  ms/step
+  P/to_enc                     fwd      5.6  bwd      4.5  ms/step
+  P/clip_grad                  fwd      8.5  bwd      0.0  ms/step
+  P/adapter_window             fwd      1.5  bwd      2.6  ms/step
+  P/std_future                 fwd      3.0  bwd      0.0  ms/step
+  P/brains                     fwd      0.9  bwd      1.1  ms/step
+  P/forward                    fwd      0.5  bwd      1.4  ms/step
+  P/tac_field_init             fwd      0.7  bwd      1.0  ms/step
+  P/loss_mse                   fwd      1.6  bwd      0.0  ms/step
+  P/str_rollout                fwd      0.6  bwd      0.7  ms/step
+  P/adapter_str_ext            fwd      0.8  bwd      0.0  ms/step
+  P/str_subspace               fwd      0.4  bwd      0.0  ms/step
+  P/std_window                 fwd      0.1  bwd      0.0  ms/step
+  P/std_str_ext                fwd      0.0  bwd      0.0  ms/step
+  P/proposal                   fwd      0.0  bwd      0.0  ms/step
+  P/loader_fetch               fwd      0.0  bwd      0.0  ms/step
+  P/participation_ratio        fwd      0.0  bwd      0.0  ms/step
+  P/heads                      fwd      0.0  bwd      0.0  ms/step
+  P/backward                   fwd      0.0  bwd      0.0  ms/step
+  unattributed 228.8
+banked step_fp32_bs1.profiler_trace_offline

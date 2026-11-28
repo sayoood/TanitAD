@@ -1,0 +1,149 @@
+{
+ "what": "PREREG_V8F_LORA Amendment 2: same-device identity control (B = 0 on-the-fly encoder vs the production cache)",
+ "tau_device": 0.001,
+ "mutant": null,
+ "manifest_only": false,
+ "cache_root": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\ar2_cache",
+ "argv": [
+  "--cache-root",
+  "C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/ar2_cache",
+  "--train-clips",
+  "8f387977-4086-466d-bba4-b04f8cdc0743",
+  "--train-frames",
+  "C:/Users/Admin/tanitad-data/refav1-train600-256",
+  "--device",
+  "cpu",
+  "--allow-non-cuda",
+  "--frames-per-clip",
+  "8",
+  "--out",
+  "C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/lora/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-lora-ar2/cpu_run_8f387977.json"
+ ],
+ "started": "2026-10-25 03:56:51",
+ "driver_sha256": "fec465465bd826cea511d1bf2a79d8b5198f267f3ae471c92e13a3917096841d",
+ "clips": {
+  "8f387977-4086-466d-bba4-b04f8cdc0743": {
+   "split": "train",
+   "n_frames": 101,
+   "n_compared": 8,
+   "frames_sha256": "4d229504a8abe80ca8559a17bb68006a717927b9775021f208ecb328ac168d3c",
+   "stored_md5": "de1ebbedb376cfe3b8b817ff53e48303",
+   "seconds": 45.4572536945343,
+   "n_values": 327680,
+   "rel_l2": 0.023746833417230415,
+   "max_abs": 0.125,
+   "frac_bitwise_equal": 0.76156005859375,
+   "manifest_row_matched": {
+    "sha12": "001e7d520dd0",
+    "file": "clips/8f387977-4086-466d-bba4-b04f8cdc0743.pt",
+    "md5": "de1ebbedb376cfe3b8b817ff53e48303",
+    "content_md5": "a0bcc28c388645fde3ec95569c6f67bd",
+    "source": "local256",
+    "enc_dtype": "bf16",
+    "device": "cuda",
+    "pipeline": "ra1a-pooled-v1",
+    "n_frames": 101,
+    "t_ep": 201
+   }
+  }
+ },
+ "torch": "2.11.0+cu128",
+ "manifest_rows": {
+  "8f387977-4086-466d-bba4-b04f8cdc0743": {
+   "clip": "8f387977-4086-466d-bba4-b04f8cdc0743",
+   "sha12": "001e7d520dd0",
+   "file": "clips/8f387977-4086-466d-bba4-b04f8cdc0743.pt",
+   "bytes": 20904597,
+   "md5": "de1ebbedb376cfe3b8b817ff53e48303",
+   "content_md5": "a0bcc28c388645fde3ec95569c6f67bd",
+   "n_frames": 101,
+   "t_ep": 201,
+   "dtype": "float8_e4m3fn",
+   "enc_dtype": "bf16",
+   "device": "cuda",
+   "source": "local256",
+   "mean_dtype": "float16",
+   "grids": [
+    "4x10",
+    "8x20"
+   ],
+   "shapes": {
+    "pool4x10": [
+     101,
+     40,
+     1024
+    ],
+    "pool8x20": [
+     101,
+     160,
+     1024
+    ],
+    "mean": [
+     101,
+     1024
+    ],
+    "v": [
+     101
+    ],
+    "a": [
+     101
+    ],
+    "steer": [
+     101
+    ],
+    "yaw_rate": [
+     101
+    ],
+    "pose_grid": [
+     101,
+     4
+    ],
+    "kin3": [
+     101,
+     3
+    ],
+    "p10": [
+     101,
+     8
+    ]
+   },
+   "enc_s": 6.12,
+   "pipeline": "ra1a-pooled-v1"
+  }
+ },
+ "device": "cpu",
+ "cuda": null,
+ "dtype": "torch.bfloat16",
+ "autocast": false,
+ "weights_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+ "builder_model_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+ "builder_encode_episode_sha256": "57f200072b2812ca524ee09461b308ddb45973aabc09e29fcad269ab5156308f",
+ "builder_pin": "57f200072b2812ca524ee09461b308ddb45973aabc09e29fcad269ab5156308f",
+ "builder_unchanged": true,
+ "batch": 8,
+ "attn_implementation": "sdpa",
+ "allow_tf32": false,
+ "cudnn_benchmark": false,
+ "numbers_pass_tau": false,
+ "worst_rel_l2": 0.023746833417230415,
+ "worst_clip": "8f387977-4086-466d-bba4-b04f8cdc0743",
+ "qualifying": false,
+ "qualifying_reasons": [
+  "device 'cpu' is not the cuda device that built cache_full (Amendment 2: the control is SAME-DEVICE)",
+  "not every cache frame of every clip was compared (a subset batches differently from the builder)",
+  "1 train / 0 eval clips, Amendment 2 needs >= 2 / >= 2"
+ ],
+ "verdict": "FAIL",
+ "fail_reasons": [
+  "rel-L2 > 0.001 on 1 of 1 clips: 8f387977 2.375e-02",
+  "device 'cpu' is not the cuda device that built cache_full (Amendment 2: the control is SAME-DEVICE)",
+  "not every cache frame of every clip was compared (a subset batches differently from the builder)",
+  "1 train / 0 eval clips, Amendment 2 needs >= 2 / >= 2"
+ ],
+ "scope": {
+  "all_frames": false,
+  "frames_per_clip": 8,
+  "device_type": "cpu"
+ },
+ "seconds": 54.2759051322937
+}

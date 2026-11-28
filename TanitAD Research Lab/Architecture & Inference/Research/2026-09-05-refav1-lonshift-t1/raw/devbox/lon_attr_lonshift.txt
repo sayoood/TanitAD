@@ -1,0 +1,23 @@
+# dump C:/Users/Admin/refav1_margin/p4out/dump_lonshift   n = 40 windows
+# per-window PAIRED difference `cl - ha0_ext`, split by the branch
+# `a_sustain` touches. The panel mean over ALL windows is the +0.4862
+# reported by the episode-cluster bootstrap; this is its ATTRIBUTION.
+
+stratum                                n    LON speed    LON accel          ADE
+-------------------------------------------------------------------------------
+ALL windows                           40       0.2599       0.2039      -0.0904
+MAINTAIN branch (a_sustain acts)      31       0.1706       0.1101      -0.1598
+NON-maintain (a_sustain inert)         9       0.5676       0.5271       0.1486
+
+  ADDRESSABLE FRACTION of the LON-speed gap (share of the total
+  window-summed deficit that sits on the maintain branch): 50.9 %
+
+== the GOAL_A_MAX clip on `a_sustain = a0` ==
+  |a0| > GOAL_A_MAX (1.5): 6 / 40 windows (15.0 %); on the maintain
+  branch specifically: 3 / 31 (9.7 %)
+  a0 range: [-2.310, +1.870]; median |a0| on the maintain branch 0.527
+
+== SANITY: the floor's own LON error, by branch (it should NOT differ
+   much -- ha0_ext knows nothing about the decoded token) ==
+  MAINTAIN      ha0_ext LON speed MAE mean 0.3007   cl 0.4713
+  NON-maintain  ha0_ext LON speed MAE mean 0.3231   cl 0.8907

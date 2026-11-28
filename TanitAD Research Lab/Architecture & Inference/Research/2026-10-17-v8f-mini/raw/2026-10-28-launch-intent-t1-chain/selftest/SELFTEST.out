@@ -1,0 +1,404 @@
+lit1_selftest 2026-10-28 14:35:26 python 3.14.5 CUDA_VISIBLE_DEVICES=-1 workers 4  (CPU only; no rollout, no ssh, no git write; every shell step sealed)
+== A. PYTHON LAYER
+PASS   A:clause_positive (0.2s)
+PASS   A:pull_misc (0.3s)
+PASS   A:log_misc (0.0s)
+PASS   A:guards (0.0s)
+PASS   A:world (0.0s)
+PASS   A:render (0.0s)
+PASS   A:small (0.0s)
+PASS   A:commits (0.8s)
+PASS   A:proof (0.0s)
+PASS   A:tree_real (2.2s)
+PASS   A:rolloutcode (10.3s)
+PASS   A:kbuild_misc (0.1s)
+PASS   A:kbuild_real (1.0s)
+PASS   A:static (0.8s)
+PASS   A:landed (0.6s)
+PASS   A:clause:argv-steps (0.2s)
+PASS   A:clause:argv-dagger-p (0.2s)
+PASS   A:clause:argv-w-acc (0.2s)
+PASS   A:clause:argv-seed (0.1s)
+PASS   A:clause:argv-dagger-seed (0.1s)
+PASS   A:clause:argv-bank (0.1s)
+PASS   A:clause:argv-init (0.2s)
+PASS   A:clause:argv-out (0.2s)
+PASS   A:clause:argv-lever (0.2s)
+PASS   A:clause:argv-lever-once (0.2s)
+PASS   A:clause:argv-no-ego (0.2s)
+PASS   A:clause:argv-sha (0.2s)
+PASS   A:clause:sum-done (0.1s)
+PASS   A:clause:sum-steps (0.1s)
+PASS   A:clause:sum-seed (0.2s)
+PASS   A:clause:sc-pass (0.1s)
+PASS   A:clause:sum-lever (0.1s)
+PASS   A:clause:sum-lever-mask (0.1s)
+PASS   A:clause:sum-keys (0.3s)
+PASS   A:clause:sum-top-w (0.3s)
+PASS   A:clause:sum-share (0.2s)
+PASS   A:clause:sum-share-rec (0.1s)
+PASS   A:clause:sum-rows (0.1s)
+PASS   A:clause:sum-mask (0.1s)
+PASS   A:clause:sum-window (0.1s)
+PASS   A:clause:sum-init (0.1s)
+PASS   A:clause:sum-init-applied (0.1s)
+PASS   A:clause:sum-bank (0.1s)
+PASS   A:clause:sum-dagger-p (0.2s)
+PASS   A:clause:sum-w-acc (0.1s)
+PASS   A:clause:sum-ego-zero (0.1s)
+PASS   A:clause:tok-kind (0.1s)
+PASS   A:clause:tok-run (0.2s)
+PASS   A:clause:tok-commit (0.2s)
+PASS   A:clause:tok-shas (0.2s)
+PASS   A:clause:tok-trainer (0.2s)
+PASS   A:clause:tok-model (0.1s)
+PASS   A:clause:tok-init (0.1s)
+PASS   A:clause:tok-bank (0.1s)
+PASS   A:clause:tok-wacc (0.1s)
+PASS   A:clause:tok-excluded (0.2s)
+PASS   A:clause:tok-arm (0.1s)
+PASS   A:clause:ck-not-ctrl (0.1s)
+PASS   A:pull:pull-age (0.1s)
+PASS   A:pull:pull-names (0.1s)
+PASS   A:pull:pull-rehash (0.1s)
+PASS   A:pull:pull-done (0.1s)
+PASS   A:pull:pull-3way (0.1s)
+PASS   A:log:log-cfail (0.0s)
+PASS   A:log:log-path (0.0s)
+PASS   A:log:log-label (0.0s)
+PASS   A:log:log-stop-after (0.0s)
+PASS   A:tree:tree-set (0.1s)
+PASS   A:tree:tree-onefile (0.1s)
+PASS   A:tree:tree-extras (0.1s)
+PASS   A:tree:tree-overlay (0.1s)
+PASS   A:tree:tree-base-digest (0.1s)
+PASS   A:tree:proof-removed (0.1s)
+PASS   A:tree:proof-added (0.1s)
+PASS   A:tree:proof-lines (0.1s)
+PASS   A:kb:kb-compose-bytes (0.0s)
+PASS   A:kb:kb-launch-bytes (0.0s)
+PASS   A:kb:kb-diffpatch (0.0s)
+PASS   A:kb:kb-green (0.0s)
+PASS   A:kb:kb-mutation (0.0s)
+PASS   A:kb:kb-flagoff-test (0.0s)
+PASS   A:kb:kb-golden (0.0s)
+PASS   A:kb:kb-default-off (0.0s)
+== B. SHELL LAYER (lit1_chain.sh / wake_lit1.sh run to their end markers in sealed worlds)
+PASS   B:s0_harness
+PASS   B:s2b_unfinished_pull
+PASS   B:s2_order
+PASS   B:s1_happy
+PASS   B:s3_resume
+PASS   B:s4_ckpt_mutated
+PASS   B:s4c_ckpt_mutated_t0
+PASS   B:s4b_tree_mutated
+PASS   B:s4d_tree_mutated_t0
+PASS   B:s3f_t0_fail
+PASS   B:s3g_few_dumps
+PASS   B:s3c_changed_checkpoint
+PASS   B:s3_tamper
+PASS   B:s5_wrong_lever_third
+PASS   B:s3d_changed_command
+PASS   B:s6_kshare_fail_line
+PASS   B:s6b_log_lies
+PASS   B:s8_log_sha
+PASS   B:s7_missing_share
+PASS   B:s9_control_fail
+PASS   B:s8b_file_changed_after_sums
+PASS   B:s3h_manifest_refused
+PASS   B:s10a_ram_low
+PASS   B:s10b_disk_low
+PASS   B:s10e_c_low
+PASS   B:s10c_ram_drops_before_logged
+PASS   B:s9b_control_fail_no_pull
+PASS   B:s10d_ram_drops_before_t0
+PASS   B:s11b_stale_lock
+PASS   B:s11_lock
+PASS   B:s12a_reader_rc2
+PASS   B:s12a_reader_rc4
+PASS   B:s12b_no_box2_done
+PASS   B:s13a_reader_sha
+PASS   B:s13b_prereg_sha
+PASS   B:s12d_box2_stop_midrun
+PASS   B:s13c_commit
+PASS   B:s13c_reader
+PASS   B:s13c_prereg
+PASS   B:s13f_prereg_pin
+PASS   B:s13d_expect_commit
+PASS   B:s13g_reader_pin
+PASS   B:s12f_verify_pulls
+PASS   B:s12c_done_before_last_pull
+PASS   B:s14a_sibling_logs
+PASS   B:s14b_world_bad
+PASS   B:s14f_landed_pins_real
+PASS   B:s14c_md5
+PASS   B:s13e_cross_resume
+PASS   B:s13h_pins_hold
+PASS   B:s14e_tmpl_causal
+PASS   B:s15_waker
+PASS   B:s14e_tmpl_logged
+PASS   B:s14e_tmpl_t0fresh
+PASS   B:s14d_pins
+PASS   B:s16_dry_run
+== C. MUTATION PASS (every mutant is applied ALONE; the scenario that owns it must then FAIL)
+-- C1. python layer: clause switches and textual mutants of lit1_lib.py / lit1_tree.py
+KILLED   on:argv-steps          by clause:argv-steps: argv-steps: the violating fixture was NOT refused by [argv-steps] (problems: [])
+KILLED   on:argv-dagger-p       by clause:argv-dagger-p: argv-dagger-p: the violating fixture was NOT refused by [argv-dagger-p] (problems: [])
+KILLED   on:argv-w-acc          by clause:argv-w-acc: argv-w-acc: the violating fixture was NOT refused by [argv-w-acc] (problems: [])
+KILLED   on:argv-seed           by clause:argv-seed: argv-seed: the violating fixture was NOT refused by [argv-seed] (problems: [])
+KILLED   on:argv-dagger-seed    by clause:argv-dagger-seed: argv-dagger-seed: the violating fixture was NOT refused by [argv-dagger-seed] (problems: [])
+KILLED   on:argv-bank           by clause:argv-bank: argv-bank: the violating fixture was NOT refused by [argv-bank] (problems: [])
+KILLED   on:argv-init           by clause:argv-init: argv-init: the violating fixture was NOT refused by [argv-init] (problems: [])
+KILLED   on:argv-out            by clause:argv-out: argv-out: the violating fixture was NOT refused by [argv-out] (problems: [])
+KILLED   on:argv-lever          by clause:argv-lever: argv-lever: the violating fixture was NOT refused by [argv-lever] (problems: [])
+KILLED   on:argv-lever-once     by clause:argv-lever-once: argv-lever-once: the violating fixture was NOT refused by [argv-lever-once] (problems: [])
+KILLED   on:argv-no-ego         by clause:argv-no-ego: argv-no-ego: the violating fixture was NOT refused by [argv-no-ego] (problems: [])
+KILLED   on:argv-sha            by clause:argv-sha: argv-sha: the violating fixture was NOT refused by [argv-sha] (problems: [])
+KILLED   on:sum-done            by clause:sum-done: sum-done: the violating fixture was NOT refused by [sum-done] (problems: [])
+KILLED   on:sum-steps           by clause:sum-steps: sum-steps: the violating fixture was NOT refused by [sum-steps] (problems: [])
+KILLED   on:sum-seed            by clause:sum-seed: sum-seed: the violating fixture was NOT refused by [sum-seed] (problems: [])
+KILLED   on:sc-pass             by clause:sc-pass: sc-pass: the violating fixture was NOT refused by [sc-pass] (problems: [])
+KILLED   on:sum-lever           by clause:sum-lever: sum-lever: the violating fixture was NOT refused by [sum-lever] (problems: [])
+KILLED   on:sum-lever-mask      by clause:sum-lever-mask: sum-lever-mask: the violating fixture was NOT refused by [sum-lever-mask] (problems: [])
+KILLED   on:sum-keys            by clause:sum-keys: sum-keys: the violating fixture was NOT refused by [sum-keys] (problems: [])
+KILLED   on:sum-top-w           by clause:sum-top-w: sum-top-w: the violating fixture was NOT refused by [sum-top-w] (problems: [])
+KILLED   on:sum-share           by clause:sum-share: sum-share: the violating fixture was NOT refused by [sum-share] (problems: ['[sum-mask] K-MASK: launch_n / launch_eligible = 0.297944 outside f = 0.161851 +- 0.02'])
+KILLED   on:sum-share-rec       by clause:sum-share-rec: sum-share-rec: the violating fixture was NOT refused by [sum-share-rec] (problems: [])
+KILLED   on:sum-rows            by clause:sum-rows: sum-rows: the violating fixture was NOT refused by [sum-rows] (problems: [])
+KILLED   on:sum-window          by clause:sum-window: sum-window: the violating fixture was NOT refused by [sum-window] (problems: [])
+KILLED   on:sum-init            by clause:sum-init: sum-init: the violating fixture was NOT refused by [sum-init] (problems: [])
+KILLED   on:sum-init-applied    by clause:sum-init-applied: sum-init-applied: the violating fixture was NOT refused by [sum-init-applied] (problems: [])
+KILLED   on:sum-bank            by clause:sum-bank: sum-bank: the violating fixture was NOT refused by [sum-bank] (problems: [])
+KILLED   on:sum-dagger-p        by clause:sum-dagger-p: sum-dagger-p: the violating fixture was NOT refused by [sum-dagger-p] (problems: [])
+KILLED   on:sum-w-acc           by clause:sum-w-acc: sum-w-acc: the violating fixture was NOT refused by [sum-w-acc] (problems: [])
+KILLED   on:sum-ego-zero        by clause:sum-ego-zero: sum-ego-zero: the violating fixture was NOT refused by [sum-ego-zero] (problems: [])
+KILLED   on:tok-kind            by clause:tok-kind: tok-kind: the violating fixture was NOT refused by [tok-kind] (problems: [])
+KILLED   on:tok-run             by clause:tok-run: tok-run: the violating fixture was NOT refused by [tok-run] (problems: [])
+KILLED   on:tok-commit          by clause:tok-commit: tok-commit: the violating fixture was NOT refused by [tok-commit] (problems: [])
+KILLED   on:tok-shas            by clause:tok-shas: tok-shas: the violating fixture was NOT refused by [tok-shas] (problems: [])
+KILLED   on:tok-trainer         by clause:tok-trainer: tok-trainer: the violating fixture was NOT refused by [tok-trainer] (problems: [])
+KILLED   on:tok-model           by clause:tok-model: tok-model: the violating fixture was NOT refused by [tok-model] (problems: [])
+KILLED   on:tok-init            by clause:tok-init: tok-init: the violating fixture was NOT refused by [tok-init] (problems: [])
+KILLED   on:tok-bank            by clause:tok-bank: tok-bank: the violating fixture was NOT refused by [tok-bank] (problems: [])
+KILLED   on:tok-wacc            by clause:tok-wacc: tok-wacc: the violating fixture was NOT refused by [tok-wacc] (problems: [])
+KILLED   on:tok-excluded        by clause:tok-excluded: tok-excluded: the violating fixture was NOT refused by [tok-excluded] (problems: [])
+KILLED   on:tok-arm             by clause:tok-arm: tok-arm: the violating fixture was NOT refused by [tok-arm] (problems: [])
+KILLED   on:ck-not-ctrl         by clause:ck-not-ctrl: ck-not-ctrl: the violating fixture was NOT refused by [ck-not-ctrl] (problems: [])
+KILLED   on:sum-mask            by clause:sum-mask: sum-mask: the violating fixture was NOT refused by [sum-mask] (problems: [])
+KILLED   on:pull-age            by pull:pull-age: a SHA256SUMS.txt younger than min-age: got (0, 'COMPLETE'), want (1, 'INCOMPLETE')
+KILLED   on:pull-names          by pull:pull-names: the reason: 'differently' not in 'launch_gate_token.json does not hash to its listed sha256 (a pull still filling, or corrupt)'
+KILLED   on:pull-rehash         by pull:pull-rehash: a file that no longer hashes to its listed sha256: got (0, 'COMPLETE'), want (1, 'INCOMPLETE')
+KILLED   on:pull-done           by pull:pull-done: summary.json done is false: INCOMPLETE (a pull still filling), not WRONG: got (3, 'WRONG'), want (1, 'INCOMPLETE')
+KILLED   on:pull-3way           by pull:pull-3way: the box-2 log's checkpoint sha256 is not the pulled file's: got (0, 'COMPLETE'), want (3, 'WRONG')
+KILLED   on:log-cfail           by log:log-cfail: a CONTROL-FAIL line after a PASSing run's lines: got 'PASS', want 'FAIL'
+KILLED   on:log-path            by log:log-path: the box-2 chain pulled to another directory than this chain reads: got 'PASS', want 'FAIL'
+KILLED   on:log-label           by log:log-label: A_1's label on A_0's pull line (arm / seed confusion): got 'AWAITING-CONTROLS', want 'FAIL'
+KILLED   on:log-stop-after      by log:log-stop-after: a STOP after the pull and before both controls printed PASS: got 'AWAITING-CONTROLS', want 'FAIL'
+KILLED   on:guard-ram           by guards: RAM 100 MB < 4096: got 0, want 1
+KILLED   on:guard-disk          by guards: disk 1 GB < 5: got 0, want 1
+KILLED   on:tree-set            by tree:tree-set: [tree-set] the violating synthetic tree was NOT refused
+KILLED   on:tree-onefile        by tree:tree-onefile: [tree-onefile] the violating synthetic tree was NOT refused
+KILLED   on:tree-extras         by tree:tree-extras: [tree-extras] the violating synthetic tree was NOT refused
+KILLED   on:tree-overlay        by tree:tree-overlay: [tree-overlay] the violating synthetic tree was NOT refused
+KILLED   on:tree-base-digest    by tree:tree-base-digest: [tree-base-digest] the violating synthetic tree was NOT refused
+KILLED   on:proof-removed       by tree:proof-removed: [proof-removed] the violating synthetic tree was NOT refused
+KILLED   on:proof-added         by tree:proof-added: [proof-added] the violating synthetic tree was NOT refused
+KILLED   on:proof-lines         by tree:proof-lines: [proof-lines] the violating synthetic tree was NOT refused
+KILLED   on:kb-compose-bytes    by kb:kb-compose-bytes: [kb-compose-bytes] the compose step must be UNVERIFIED
+KILLED   on:kb-launch-bytes     by kb:kb-launch-bytes: [kb-launch-bytes] step 2 must be UNVERIFIED, got ['PASS', 'PASS']
+KILLED   on:kb-diffpatch        by kb:kb-diffpatch: [kb-diffpatch] step 2 must be UNVERIFIED, got ['PASS', 'PASS']
+KILLED   on:kb-green            by kb:kb-green: [kb-green] step 2 must be UNVERIFIED, got ['PASS', 'PASS']
+KILLED   on:kb-mutation         by kb:kb-mutation: [kb-mutation] step 2 must be UNVERIFIED, got ['PASS', 'PASS']
+KILLED   on:kb-flagoff-test     by kb:kb-flagoff-test: [kb-flagoff-test] step 2 must be UNVERIFIED, got ['PASS', 'PASS']
+KILLED   on:kb-golden           by kb:kb-golden: EXCEPTION TypeError: object supporting the buffer API required | ['    return hashlib.sha256(b).hexdigest()', '           ~~~~~~~~~~~~~~^^^', 'TypeError: object supportin
+KILLED   on:kb-default-off      by kb:kb-default-off: [kb-default-off] step 2 must be UNVERIFIED, got ['PASS', 'PASS']
+KILLED   L-pull-order           by log_misc: pull order follows the log lines: got [('launchintent', 0), ('launchintent', 1), ('launchintentrep', 0), ('launchintentrep', 1)], want [('launchintentrep', 0), ('launchin
+KILLED   L-complete-skip        by log_misc: next with A_0 complete is A_1 (a complete run is never returned again): got ('RUN', 'launchintent', 0, '0101010101010101010101010101010101010101010101010101010101010101')
+KILLED   L-stop-before-pull     by log:log-stop-after: a STOP BEFORE the pull line is another attempt's: got 'FAIL', want 'AWAITING-CONTROLS'
+KILLED   L-done-after-last      by log_misc: a DONE line BEFORE the last pull is not the chain's DONE: got 1, want 0
+KILLED   L-done-all-pulled      by log_misc: a DONE line with only three pulls is not DONE: got (1, 1, 3), want (0, 1, 3)
+KILLED   L-stray-rec            by log_misc: a run record of another run can never make A_0 PASS
+KILLED   L-stray-ksh            by log_misc: a K-SHARE line of another run inside A_0's section: got 'PASS', want 'FAIL'
+KILLED   L-sums-newline         by pull_misc: SHA256SUMS.txt without a final newline: got (0, 'COMPLETE'), want (1, 'INCOMPLETE')
+KILLED   L-sums-dup             by pull_misc: a name listed twice: got (0, 'COMPLETE'), want (3, 'WRONG')
+KILLED   L-sums-empty           by pull_misc: an empty file is not a complete pull: got (0, 'COMPLETE'), want (1, 'INCOMPLETE')
+KILLED   L-sums-malformed       by pull_misc: EXCEPTION AttributeError: 'NoneType' object has no attribute 'group' | ['    if m.group(2) in listed:', '       ^^^^^^^', "AttributeError: 'NoneType' object has no attrib
+KILLED   L-share-formula        by small: share_of(30790, 191311, W) is the trainer's launch_weight_share
+KILLED   L-world-prefix         by world: a SIBLING whose name merely starts with the scratch root's is not a world
+KILLED   L-world-isdir          by world: a world that is not a directory
+KILLED   L-guard-ram-eq         by guards: RAM exactly at the minimum holds: got 1, want 0
+KILLED   L-guard-disk-eq        by guards: disk exactly at the minimum holds: got 1, want 0
+KILLED   L-hook-world           by guards: EXCEPTION KeyError: 'LIT1_WORLD' | ['                      ~~~~~~~~~~^^^^^^^^^^^^^^', '  File "<frozen os>", line 709, in __getitem__', "KeyError: 'LIT1_WORLD'"]
+KILLED   L-hook-file-first      by guards: the hook FILE wins over the env hook: got 0, want 1
+KILLED   L-fmt-comma            by render: fmt quoting: got "'a b' x 'A_rep,0' 'a&b' E:/p/q-r.pt", want "'a b' x A_rep,0 'a&b' E:/p/q-r.pt"
+KILLED   L-fmt-never            by render: fmt quoting: got 'a b x A_rep,0 a&b E:/p/q-r.pt', want "'a b' x A_rep,0 'a&b' E:/p/q-r.pt"
+KILLED   L-cmdsha-sep           by render: cmd_sha is sha256 of token + NUL: got '911169ddaaf146aff539f58c26c489af3b892dff0fe283c1c264c65ae5aa59a2', want '8fb20ef63ced4145fc2e983ffe597d1dcff39154c3bf21f0fa9dde6a0c
+KILLED   L-render-unresolved    by render: an unresolved placeholder was not refused
+KILLED   L-tmpl-comment         by render: SystemExit template causal: unresolved placeholder in '# against the commands DAG-ORC r2 RAN for REP s0 (dagorc_t1/logs/chain.out.prev_*).  Only the run-specific values a
+KILLED   L-commits-one          by commits: a token binding another commit
+KILLED   L-commits-reader       by commits: a token binding another reader sha256
+KILLED   L-commits-prereg       by commits: a token binding another PREREG sha256
+KILLED   L-commits-hex          by commits: a commit that is not 40 hex
+KILLED   L-fnum-nan             by small: fnum refuses NaN: got nan, want None
+KILLED   L-one-repeat           by small: one refuses a repeated flag: got '1', want None
+KILLED   L-npath                by small: npath backslashes: got 'E:\\a\\b', want 'E:/a/b'
+KILLED   L-t0-tag               by small: t0f_tag: got 'M2b-launchintent_s0', want 'M2b-launchintent_s0-fresh'
+KILLED   L-sums-names           by small: the accepted SHA256SUMS set is 8 names: got 7, want 8
+KILLED   L-label-check          by log_misc: a run record whose label is another run's: got 'PASS', want 'FAIL'
+KILLED   T-name-ok              by proof: a change INSIDE the EgoPerturb class is accepted by name: ['EgoPerturb.go: a changed line does not mention the lever: -        return x']
+KILLED   T-comment-line         by proof: a comment line beside a lever line in a changed function is skipped: ['forward_pass: a changed line does not mention the lever: +    # explain']
+KILLED   T-rc-model             by rolloutcode: [rolloutcode] a model change that does not mention the lever is a finding
+KILLED   T-rc-else              by rolloutcode: [rolloutcode] a runtime file that differs from the pinned tree is a finding
+KILLED   T-rc-absent            by rolloutcode: [rolloutcode] a runtime file absent at the launch commit is a finding
+KILLED   T-rc-data              by rolloutcode: [rolloutcode] a data-module change beyond the perturbation is a finding
+KILLED   T-kb-green-n           by kbuild_misc: 10 passed is not >= 36: got {'PASS'}, want {'UNVERI'}
+KILLED   T-kb-green-fail        by kbuild_misc: a failure in the green log: got {'PASS'}, want {'UNVERI'}
+KILLED   T-kb-mut-n             by kbuild_misc: fewer than 30 mutants: got {'PASS'}, want {'UNVERI'}
+KILLED   T-kb-mut-eq            by kbuild_misc: n killed != n total: got {'PASS'}, want {'UNVERI'}
+KILLED   T-kb-compose-pass      by kbuild_misc: a compose hunk whose bit-identity test is not PASS is UNVERIFIED in the record
+KILLED   T-treecheck-extras     by tree:tree-extras: EXCEPTION FileNotFoundError: [Errno 2] No such file or directory: 'F:/TanitAD-scratch/launch_intent_t1/w_py/tree_tree-extras/tree\\stack/tanitad/cfg.yaml' | ['    with op
+KILLED   T-digest-line          by tree_real: the real LAUNCH-INTENT tree verifies: ["the base tree's digest 32db53ea262e is not the one CTRL / REP were rolled out with (6a4b47c8acfa)"]
+KILLED   T-treebuild-sha        by tree_real: treebuild refuses the wrong blob BEFORE copying anything (the sha256 pin, not the later tree check): "launch commit's model blob" not in 'the freshly built tree does not 
+-- C2. shell layer: textual mutants of lit1_chain.sh / wake_lit1.sh (each runs its scenario in its own world)
+KILLED   C-guard-t1             by s10c_ram_drops_before_logged: the guard runs before EVERY rollout: the logged lane does not start once RAM dropped: got ['LI_s0_m10_causal_heads', 'LI_s0_m10_logged_heads'], want ['LI_s0_m10_causal_he
+KILLED   C-guard-t0             by s10d_ram_drops_before_t0: the guard runs before the fresh T0 eval too: got ['LI_s0_m10_causal_heads', 'LI_s0_m10_logged_heads', 'M2b-launchintent_s0-fresh'], want ['LI_s0_m10_causal_heads', 'LI_s0
+KILLED   C-pin-after-t1         by s4b_tree_mutated: the STOP names its cause: 'the tool tree changed (after LI_s0_m10_causal_heads' not in 'the tool tree changed (before LI_s0_m10_logged_heads)10-28 14:45:38 === lit1_chain
+KILLED   C-pin-after-t0         by s4d_tree_mutated_t0: the STOP names its cause: 'the tool tree changed (after M2b-launchintent_s0-fresh' not in 'the tool tree changed (before LI_s1_m10_causal_heads)10-28 14:45:46 === lit1_ch
+KILLED   C-guard-ram            by s10a_ram_low: chain rc: got 0, want 1
+KILLED   C-guard-disk           by s10b_disk_low: chain rc: got 0, want 1
+KILLED   C-ckpt-after-t1        by s4_ckpt_mutated: the STOP names its cause: 'changed during LI_s0_m10_causal_heads' not in 'F:/TanitAD-scratch/launch_intent_t1/w_m_C-ckpt-after-t1/art/M2b_s0_launchintent/ckpt_last.pt cha
+KILLED   C-pin-check            by s4b_tree_mutated: chain rc: got 0, want 1
+KILLED   C-ckpt-after-t0        by s4c_ckpt_mutated_t0: the STOP names its cause: 'changed during M2b-launchintent_s0-fresh' not in 'after the rollouts the pull of M2b_s0_launchintent is no longer COMPLETE: INCOMPLETE ckpt_las
+KILLED   C-dumps-post           by s3g_few_dumps: the STOP names its cause: 'dumps 5/141' not in 'manifest: MANIFEST-REFUSED   A_0 t1: 5 ep*.npz in F:/TanitAD-scratch/launch_intent_t1/w_m_C-dumps-post/out/dump_LI_s0_m10_
+KILLED   C-rc-t0                by s3f_t0_fail: chain rc: got 0, want 1
+KILLED   C-rc-t1                by s3_resume: run 1 stops: got 0, want 1
+KILLED   D-t1-json              by s3_tamper_r2: round 2: the chain finishes (t1/w_m_D-t1-json/out/t1v8f_LI_s0_m10_causal_heads.json missing or empty   A_0 t1_logged json: F:/TanitAD-scratch/launch_intent_t1/w_m_D-t1-js
+KILLED   D-t1-ticks             by s3_tamper_r2: round 2: the chain finishes (8:05 == manifest
+10-28 14:48:07 STOP: manifest: MANIFEST-REFUSED   A_rep,1 t1 ticks: F:/TanitAD-scratch/launch_intent_t1/w_m_D-t1-ticks/out/t
+KILLED   D-t1-argv              by s3_tamper_r2: round 2: the chain finishes (-28 14:48:07 == manifest
+10-28 14:48:09 STOP: manifest: MANIFEST-REFUSED   A_rep,0 t1 argv: F:/TanitAD-scratch/launch_intent_t1/w_m_D-t1-argv
+KILLED   D-t1-dumps             by s3_tamper_r1: round 1: the chain finishes (
+10-28 14:48:36 == manifest
+10-28 14:48:38 STOP: manifest: MANIFEST-REFUSED   A_1 t1_logged: 136 ep*.npz in F:/TanitAD-scratch/launch_intent_
+KILLED   D-t1-ck                by s3_tamper_r1: round 1: the chain finishes (aunchintent 1 launchintentrep 0 launchintentr
+10-28 14:49:28 STOP: done_LI_s0_m10_causal_heads.txt does not name the pulled checkpoint b62ee6
+KILLED   D-t1-before            by s3_tamper_r1: round 1: the chain finishes (-28 14:49:43 == manifest
+10-28 14:49:45 STOP: manifest: MANIFEST-REFUSED   A_1 t1: done record names 0784f2a92c02 (before 1784f2a9, after 078
+KILLED   D-t1-after             by s3_tamper_r1: round 1: the chain finishes (14:49:46 == manifest
+10-28 14:49:48 STOP: manifest: MANIFEST-REFUSED   A_rep,0 t1: done record names 0b9117284c64 (before 0b911728, after 1b9
+KILLED   D-t1-tool              by s3_tamper_r1: round 1: the chain finishes (chintentrep 0 launchintentr
+10-28 14:50:15 == manifest
+10-28 14:50:17 STOP: manifest: MANIFEST-REFUSED   A_rep,1 t1: done record tool digest 
+KILLED   D-t1-cmd               by s3_tamper_r1: round 1: exactly the tampered steps run again (every other step is skipped by its done record): got ['LIREP_s0_m10_causal_heads', 'LIREP_s0_m10_logged_heads', 'LIREP_s1_m
+KILLED   D-t0-json              by s3_tamper_r2: round 2: the chain finishes (17 == manifest
+10-28 14:51:20 STOP: manifest: MANIFEST-REFUSED   A_1 t0_fresh json: F:/TanitAD-scratch/launch_intent_t1/w_m_D-t0-json/out/t0f
+KILLED   D-t0-npz               by s3_tamper_r2: round 2: the chain finishes (= manifest
+10-28 14:51:24 STOP: manifest: MANIFEST-REFUSED   A_rep,0 t0_fresh npz: F:/TanitAD-scratch/launch_intent_t1/w_m_D-t0-npz/out/t0fre
+KILLED   D-t0-ck                by s3_tamper_r1: round 1: the chain finishes (tent 1 launchintentrep 0 launchintentr
+10-28 14:51:54 STOP: done_t0f_M2b-launchintent_s0-fresh.txt does not name the pulled checkpoint b62ee6
+KILLED   D-t0-before            by s3_tamper_r1: round 1: exactly the tampered steps run again (every other step is skipped by its done record): got ['LIREP_s0_m10_causal_heads', 'LIREP_s0_m10_logged_heads', 'LIREP_s1_m
+KILLED   D-t0-tool              by s3_tamper_r1: round 1: the chain finishes (t 1 launchintentrep 0 launchintentr
+10-28 14:52:56 == manifest
+10-28 14:52:58 STOP: manifest: MANIFEST-REFUSED   A_rep,1: the fresh-T0 done r
+KILLED   D-t0-after             by s3_tamper_r1: round 1: exactly the tampered steps run again (every other step is skipped by its done record): got ['LIREP_s0_m10_causal_heads', 'LIREP_s0_m10_logged_heads', 'LIREP_s1_m
+KILLED   D-t0-cmd               by s3_tamper_r2: round 2: exactly the tampered steps run again (every other step is skipped by its done record): got ['LIREP_s0_m10_causal_heads', 'LIREP_s1_m10_causal_heads', 'LI_s0_m10_
+KILLED   E-verify-pulls         by s12f_verify_pulls: the STOP names its cause: 'is no longer COMPLETE' not in 'manifest: MANIFEST-REFUSED   A_0 t1: done record names b62ee6ea696f (before b62ee6ea, after b62ee6ea) smoke=Fals
+KILLED   E-b2done               by s12b_no_box2_done: chain rc: got 0, want 1
+KILLED   D-aside-mv             by s3_resume: the failed attempt's output was MOVED ASIDE, not deleted: []
+KILLED   E-b2stop               by s12d_box2_stop_midrun: the STOP names its cause: 'wrote a ZZV8FMINI-STOP after this chain started' not in 'timeout: no run became ready in 0 h (WAIT no pull line yet)10-28 14:53:26 === lit1_cha
+KILLED   E-manifest-stop        by s3h_manifest_refused: chain rc: got 0, want 1
+KILLED   E-reader-rc            by s12a_reader_rc2: the reader's exit code and its meaning are in the DONE line: ['12/12 steps, reader rc 0 (outcome row written): F:/TanitAD-scratch/launch_intent_t1/w_m_E-reader-rc/out/rea
+KILLED   E-msg-rc2              by s12a_reader_rc2: the reader's exit code and its meaning are in the DONE line: ['12/12 steps, reader rc 2 (REFUSED): F:/TanitAD-scratch/launch_intent_t1/w_m_E-msg-rc2/out/read/LAUNCH_INTEN
+KILLED   E-msg-rc4              by s12a_reader_rc4: the reader's exit code and its meaning are in the DONE line: ['12/12 steps, reader rc 4 (BLOCKED): F:/TanitAD-scratch/launch_intent_t1/w_m_E-msg-rc4/out/read/LAUNCH_INTEN
+KILLED   G-next-fail            by s6_kshare_fail_line: the STOP names its cause: 'FAILED a control' not in 'timeout: no run became ready in 0 h (FAIL M2b_s0_launchintent: K-SHARE FAIL: LAUNCH-INTENT K-SHARE: FAIL | A_0 | laun
+KILLED   G-wrong                by s5_wrong_lever_third: the STOP names its cause: 'is WRONG' not in 'timeout: no run became ready in 0 h (the log shows PASS but the pull is not complete yet: WRONG [sum-lever] summary.json leve
+KILLED   G-expect-sha           by s8_log_sha: no rollout: got ['LI_s0_m10_causal_heads', 'LI_s0_m10_logged_heads', 'M2b-launchintent_s0-fresh', 'LI_s1_m10_causal_heads', 'LI_s1_m10_logged_heads', 'M2b-launchintent_s1
+KILLED   E-stage-marker         by s1_happy: STAGE-DONE numbering: got [], want ['1', '2', '3', '4']
+KILLED   G-commits              by s13c_commit: chain rc: got 0, want 1
+KILLED   G-reader-sha           by s13a_reader_sha: chain rc: got 0, want 1
+KILLED   G-prereg-sha           by s13b_prereg_sha: chain rc: got 0, want 1
+KILLED   H-sib-1                by s14a_sibling_logs: chain_v8f_dagoaccorc.out: a predecessor's log is refused in a real run: "SIBLING chain's log" not in '10-28 14:55:49 === lit1_chain start (mode real; test world 0; tool t
+KILLED   G-expect-commit        by s13d_expect_commit: chain rc: got 0, want 1
+KILLED   H-sib-2                by s14a_sibling_logs: chain_v8f_dagoaccorc_r2.out: a predecessor's log is refused in a real run: "SIBLING chain's log" not in '10-28 14:56:13 === lit1_chain start (mode real; test world 0; too
+KILLED   H-sib-3                by s14a_sibling_logs: chain_v8f_dagoacc.out: a predecessor's log is refused in a real run: "SIBLING chain's log" not in '10-28 14:56:14 === lit1_chain start (mode real; test world 0; tool tree
+KILLED   H-sib-4                by s14a_sibling_logs: chain_v8f_dag2.out: a predecessor's log is refused in a real run: "SIBLING chain's log" not in '10-28 14:56:19 === lit1_chain start (mode real; test world 0; tool tree F:
+KILLED   G-launch-seen          by s13e_cross_resume: chain rc: got 0, want 1
+KILLED   H-md5                  by s14c_md5: an input whose md5 is not the registered one stops the chain: 'md5 of' not in 'input missing: F:/TanitAD-scratch/launch_intent_t1/w_m_H-md5/inputs_fake/inputs/v9/lead_eva
+KILLED   H-world                by s14b_world_bad: a LIT1_WORLD that is not a directory inside the scratch root is refused: 'ZZLIT1-STOP LIT1_WORLD=' not in '10-28 14:56:30 === lit1_chain start (mode real; test world 1; t
+KILLED   H-pin-basefile         by s14d_pin_basefile: [basefile] the differing pin is named: 'PIN:' not in '10-28 14:56:47 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li;
+KILLED   H-pins-stop            by s14d_pin_lib: [lib] the chain stops on ONE differing pin: 'PINS.txt: 1 difference(s)' not in '10-28 14:56:47 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch
+KILLED   H-pin-ctrl             by s14d_pin_ctrl: [ctrl] the differing pin is named: 'PIN:' not in '10-28 14:56:51 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; bas
+KILLED   H-pin-rep              by s14d_pin_rep: [rep] the differing pin is named: 'PIN:' not in '10-28 14:56:55 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base
+KILLED   H-pin-compose          by s14d_pin_compose: [compose] the differing pin is named: 'PIN:' not in '10-28 14:57:21 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; 
+KILLED   H-pin-tmpl             by s14d_pin_tmpl: [tmpl] the differing pin is named: 'PIN:' not in '10-28 14:57:22 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; bas
+KILLED   H-pin-lib              by s14d_pin_lib: [lib] the differing pin is named: 'PIN:' not in '10-28 14:57:24 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base
+KILLED   H-pin-litree           by s14d_pin_litree: [litree] the differing pin is named: 'PIN:' not in '10-28 14:57:28 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; b
+KILLED   H-tmpl-want            by s14e_tmpl_causal: [causal] the proof that caught it: 'rollout_causal.tmpl rendered for DAG-OACC s0' not in '10-28 14:57:53 === lit1_chain start (mode real; test world 0; tool tree F:/Tanit
+KILLED   H-tmpl-logged          by s14e_tmpl_logged: [logged] a template that no longer reproduces the command that ran stops the chain: 'TEMPLATE PROOF FAILED' not in '10-28 14:57:54 === lit1_chain start (mode real; test w
+KILLED   H-tmpl-t0              by s14e_tmpl_t0fresh: [t0fresh] a template that no longer reproduces the command that ran stops the chain: 'TEMPLATE PROOF FAILED' not in '10-28 14:57:56 === lit1_chain start (mode real; test 
+KILLED   H-c-gate               by s10e_c_low: chain rc: got 0, want 1
+KILLED   H-lock                 by s11_lock: the second instance refuses: got 0, want 1
+KILLED   G-pin-prereg           by s13f_prereg_pin: chain rc: got 0, want 1
+KILLED   G-pin-reader           by s13g_reader_pin: chain rc: got 0, want 1
+KILLED   G-pin-prereg-real      by s14f_landed_pins_real: [PREREG] the stub file is not the landed one: 'the landed PREREG_V8F_LAUNCH_INTENT is 469bac1f' not in '10-28 14:58:46 === lit1_chain start (mode real; test world 0; tool
+KILLED   W-anchor-stop          by s15_waker: markers are ANCHORED at line start: prose containing them is not a marker (and the waker times out): got 4, want 5
+KILLED   G-pin-none             by s14d_pin_lib: [lib] the differing pin is named: 'PIN:' not in '10-28 14:59:02 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base
+KILLED   W-anchor-done          by s15_waker: markers are ANCHORED at line start: prose containing them is not a marker (and the waker times out): got 0, want 5
+KILLED   W-stop-first           by s15_waker: a STOP marker -> exit 4: got 3, want 4
+KILLED   W-timeout-rc           by s15_waker: markers are ANCHORED at line start: prose containing them is not a marker (and the waker times out): got 7, want 5
+KILLED   W-done-rc              by s15_waker: a DONE marker -> exit 0: got 9, want 0
+KILLED   W-dead-pid             by s15_waker: the chain's process is gone and no marker was written -> exit 6: got 5, want 6
+-- C3. manifest verifier: textual mutants of lit1_tree.py verify_manifest against the finished happy-path world
+KILLED   V-dumps                by verify:dump: verify tamper [dump] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-done-after           by verify:done-after: verify tamper [done-after] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-done-ck              by verify:done-ck: verify tamper [done-ck] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-done-before          by verify:done-before: verify tamper [done-before] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-done-smoke           by verify:done-smoke: verify tamper [done-smoke] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-done-tool            by verify:done-tool: verify tamper [done-tool] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-t0f-tool             by verify:t0f-tool: verify tamper [t0f-tool] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-t0f-ck               by verify:t0f-ck: verify tamper [t0f-ck] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-t0f-smoke            by verify:t0f-smoke: verify tamper [t0f-smoke] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-ages                 by verify:t0f-ages: verify tamper [t0f-ages] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-t0-ckpt              by verify:t0f-ckpt: verify tamper [t0f-ckpt] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-limit                by verify:limit: verify tamper [limit] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-max-windows          by verify:max-windows: verify tamper [max-windows] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-n-windows            by verify:n-windows: verify tamper [n-windows] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-t1-ckpt              by verify:t1-ckpt: verify tamper [t1-ckpt] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-ctrl                 by verify:ctrl-swap: verify with CTRL pointing at a trained arm must be REFUSED: got 0, want 3
+KILLED   V-dup                  by verify:dup-ckpt: verify tamper [dup-ckpt] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-empty                by verify:empty-argv: verify tamper [empty-argv] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-need-files           by verify:missing-selfcheck: verify tamper [missing-selfcheck] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-ticks                by verify:missing-ticks: verify tamper [missing-ticks] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-t0f-done-need        by verify:missing-t0f-done: verify tamper [missing-t0f-done] must be REFUSED: MANIFEST-OK
+: got 0, want 3
+KILLED   V-digest-param         by verify:digest-param: verify with another tool digest must be REFUSED: got 0, want 3
+== CLOSING CHECKS: remote-shell stub calls (bytes logged) 0; scratch HOME entries 0; sealed shell steps 250, refused by the guard 4 (the harness arms)
+== NOT MUTATED (documented):
+   - lit1_chain.sh: the 'before' pin_check / ckpt re-hash of t1run and t0run: defence in depth: in a closed world a file can only change DURING a step, which the 'after' checks (mutated and killed) see; the before-checks guard against an outside writer between steps
+   - lit1_chain.sh: the timeout stop of the wait loop (MAXWAIT_S): mutating it makes the scenario that times out loop forever; every scenario that ends in a timeout asserts its exact message instead
+   - lit1_chain.sh: the causal-REP template proof stop (proof 2): unreachable on its own: it can only fire when proof 1 (the same causal template, other parameters) has already passed
+   - lit1_lib.py: sum-mask as a GATE: subsumed by sum-share (every n/e inside the 1/3 +- 0.02 share is inside f +- 0.02): tested with sum-share switched off in both runs, so the clause is live but never decides alone
+   - lit1_lib.py: ck-not-ctrl against a real control checkpoint: tested by passing the control's sha256 to runrecord_problems; a pulled file cannot be made to hash to a control's
+   - lit1_tree.py: verify_manifest's 'checkpoint IS a control's' clause: needs a file hashing to a control's sha256
+   - lit1_chain.sh: the '-s done_<tag>.txt' presence terms of rollout_done and of t0run's skip test: equivalent mutants (measured: both SURVIVED): the five grep terms on the same file already fail when it is missing or empty
+== SUMMARY: 139 tests passed, 0 failed; mutants 213 killed, 0 survived, 0 invalid; 1463 s
+SELFTEST PASS

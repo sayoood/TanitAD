@@ -1,0 +1,33 @@
+LAUNCH.txt -- lit1_chain.sh, the dev-box CPU T1-kin chain of PREREG_V8F_LAUNCH_INTENT.  BUILT, DRY-RUN, SELF-TESTED.  NOT LAUNCHED: the Master Mind launches it.   (NOTES.md has the reasoning; this file is only the procedure.)
+
+0. WHEN
+   Any time after box 2's chain_v8f_launchintent.sh is running (the chain waits for the log and for each pull, by script polling: zero model turns while it waits).  It needs the machine's CPU, 4 GB RAM and 5 GB on F: only while a rollout runs; one torch process at a time.
+   Hold the launch if you want the open items in NOTES.md section 5 settled first -- they do not stop the rollouts, they decide what the final read says:
+     (1) the reader's K-BUILD control REFUSES on v8f_mini_data.py (differs from aeb54468) -> the chain ends  ZZLIT1-DONE ... reader rc 2 (REFUSED, nothing written)  unless the record or the rule is reconciled;
+     (2) REP's provenance after the 05:56 incident; (3) E: has ~1.8 GB free.
+
+1. CHECK (read-only, no state, ~1 min):
+     bash /e/Projects/TanitAD-artifacts/launch_intent_t1/lit1_chain.sh --dry-run
+   expect the last line  ZZLIT1-DRY-OK , twelve  parse: PARSE-OK , "PINS.txt verified (39 pins ...)", "template proof 1" and "template proofs 2-4", "reader --static-check: LAUNCH-INTENT-READ-STATIC-OK".  The saved copy of a good run is DRY_RUN.out.
+   Any ZZLIT1-STOP in it names its cause (a changed pinned file, a changed template or lib file, a missing input).
+
+2. LAUNCH (detached, survives the caller):
+     powershell -NoProfile -Command "([wmiclass]'Win32_Process').Create('cmd /c E:\Projects\TanitAD-artifacts\launch_intent_t1\lit1_chain.cmd') | Select-Object ReturnValue, ProcessId"
+   Optional environment (a WMI-created process does not inherit your shell): edit the  rem  lines in lit1_chain.cmd and delete the leading "rem   " of the ones you want:
+     LIT1_EXPECT_COMMIT=b09ac89fc9d6e81baf3977954ae638919b979e71   every launch-gate token must bind exactly this commit (recommended; unset = the tokens only have to agree with each other)
+     LIT1_B2_OUT / LIT1_ART / LIT1_OUT      defaults: C:/Users/Admin/box2_ship/logs/chain_v8f_launchintent.out , E:/Projects/TanitAD-artifacts/v8f-launch-intent , F:/TanitAD-scratch/launch_intent_t1_out
+     LIT1_READER / LIT1_PREREG              defaults: the LANDED reader (sha256 5e950dcf..., dagland/launch_intent_v2/read/) and the LANDED PREREG (landed/PREREG_V8F_LAUNCH_INTENT.md, sha256 469bac1f...); both shas are PINNED
+     LIT1_MAX_WAIT_H (12) LIT1_RAM_MIN_MB (4096) LIT1_F_MIN_GB (5) LIT1_POLL_S (60)
+
+3. WAIT (a script, not a model turn):
+     bash /e/Projects/TanitAD-artifacts/launch_intent_t1/wake_lit1.sh            exit 0 = ZZLIT1-DONE (the reader rc is in the line) | 4 = ZZLIT1-STOP | 6 = the chain died without a marker | 5 = waker timeout (1500 polls x 60 s)
+     bash /e/Projects/TanitAD-artifacts/launch_intent_t1/wake_lit1.sh --status   once: last log lines, the box-2 log's per-run state, the verdict (1 = still running)
+   The chain's own log: E:\Projects\TanitAD-artifacts\launch_intent_t1\logs\chain.out  (anchored markers  ZZLIT1-STAGE-DONE k/4 <run> ,  ZZLIT1-DONE ,  ZZLIT1-STOP ).  Per-step tool logs: logs\<tag>.out.  Outputs: F:\TanitAD-scratch\launch_intent_t1_out\ (t1v8f_*.json, ticks\, dump_*\, done_*.txt, runs.json, read\LAUNCH_INTENT_READ.json).
+
+4. RESUME / STOP
+   Resume = launch the same command again.  A finished step is skipped only if its done record names THIS checkpoint, THIS tool digest and THIS command; an incomplete earlier attempt is moved to <OUT>\_incomplete_*, never deleted.  chain.out of the previous start is rotated to chain.out.prev_* so the waker never sees an old marker.
+   Stop it: create logs\STOP (the chain exits at its next check) -- never kill a rollout midway unless you accept the move-aside on resume.  Two instances cannot run (logs\chain.lock + the owner's winpid).
+   After a ZZLIT1-STOP: the message names the cause.  Typical: a pull WRONG (the run record or K-SHARE re-verified from the pulled files disagrees with the log -- waiting cannot fix it; the run is not read), the box-2 chain STOPPED or failed a control, a guard LOW for 2 h, a pinned file or the tool tree changed, tokens that disagree on commit / reader / PREREG.  Fix the cause, relaunch.
+
+5. WHAT IT DOES NOT DO
+   No training, no GPU, no box-2 contact (it only READS the pulls box 2 puts on E: and the chain log), no git write, no deletion.  The reader decides every verdict; the chain only produces the rollouts, the manifest and the reader call.

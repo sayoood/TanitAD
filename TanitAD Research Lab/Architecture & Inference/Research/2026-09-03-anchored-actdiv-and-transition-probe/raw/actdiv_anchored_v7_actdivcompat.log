@@ -1,0 +1,94 @@
+  [stack] tanitad imported from: C:\Users\Admin\tanitad-wt\stack\tanitad\__init__.py
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[postrain30k] step 30000  144 windows  W=6  S=2048  horizons=[1, 2, 4] trained=(1,)  cond_param=steer_accel_v  lift: BANKED-ACTDIV-COMPAT: [a2, v_first/30.0] (NOT the trainer's contract)
+  [postrain30k] h=1
+     F_sep 14.013  null(median 0.928, p95 1.050)  F/p95 13.35  scene_spread 0.23387
+     kappa  rho +0.985  norms 0.25σ:4.20e-03 0.5σ:8.40e-03 1σ:1.68e-02 2σ:3.36e-02 3σ:5.04e-02  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.985  norms 0.25σ:1.40e-02 0.5σ:2.86e-02 1σ:6.11e-02 2σ:1.46e-01 3σ:2.53e-01  cos(+,-) -0.97 -0.87 -0.57 +0.04 +0.40
+     rel-mag@2σ 0.00847  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+  [postrain30k] h=2   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 17.992  null(median 0.919, p95 1.112)  F/p95 16.17  scene_spread 0.39765
+     kappa  rho +0.985  norms 0.25σ:6.27e-06 0.5σ:1.25e-05 1σ:2.51e-05 2σ:5.02e-05 3σ:7.54e-05  cos(+,-) -1.00 -1.00 -1.00 -1.00 -0.99
+     accel  rho +0.985  norms 0.25σ:2.29e-05 0.5σ:4.73e-05 1σ:1.05e-04 2σ:2.72e-04 3σ:4.91e-04  cos(+,-) -0.95 -0.83 -0.45 +0.20 +0.50
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+  [postrain30k] h=4   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 17.486  null(median 0.921, p95 1.099)  F/p95 15.91  scene_spread 0.39766
+     kappa  rho +0.985  norms 0.25σ:6.06e-06 0.5σ:1.21e-05 1σ:2.42e-05 2σ:4.85e-05 3σ:7.28e-05  cos(+,-) -1.00 -1.00 -1.00 -1.00 -0.99
+     accel  rho +0.985  norms 0.25σ:2.27e-05 0.5σ:4.69e-05 1σ:1.05e-04 2σ:2.69e-04 3σ:4.85e-04  cos(+,-) -0.95 -0.82 -0.44 +0.19 +0.49
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+     legacy ratio h1 0.022806 (action 0.00534 / scene 0.23431)  C0 PASS
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.31 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.89, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[k8clip05p30k] step 30000  144 windows  W=6  S=2048  horizons=[1, 2, 4] trained=(1,)  cond_param=steer_accel_v  lift: BANKED-ACTDIV-COMPAT: [a2, v_first/30.0] (NOT the trainer's contract)
+  [k8clip05p30k] h=1
+     F_sep 14.995  null(median 0.851, p95 1.004)  F/p95 14.94  scene_spread 0.21380
+     kappa  rho +0.985  norms 0.25σ:2.43e-03 0.5σ:4.86e-03 1σ:9.71e-03 2σ:1.94e-02 3σ:2.91e-02  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.960  norms 0.25σ:2.50e-02 0.5σ:5.09e-02 1σ:1.07e-01 2σ:2.50e-01 3σ:4.19e-01  cos(+,-) -0.98 -0.90 -0.64 -0.03 +0.33
+     rel-mag@2σ 0.01391  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+  [k8clip05p30k] h=2   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 15.064  null(median 0.861, p95 1.111)  F/p95 13.56  scene_spread 0.37445
+     kappa  rho +0.985  norms 0.25σ:5.02e-06 0.5σ:1.00e-05 1σ:2.01e-05 2σ:4.02e-05 3σ:6.03e-05  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.985  norms 0.25σ:3.75e-05 0.5σ:7.71e-05 1σ:1.69e-04 2σ:4.11e-04 3σ:6.91e-04  cos(+,-) -0.96 -0.85 -0.52 +0.04 +0.28
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+  [k8clip05p30k] h=4   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 15.838  null(median 0.861, p95 1.098)  F/p95 14.42  scene_spread 0.37445
+     kappa  rho +0.985  norms 0.25σ:5.14e-06 0.5σ:1.03e-05 1σ:2.06e-05 2σ:4.11e-05 3σ:6.17e-05  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.985  norms 0.25σ:3.85e-05 0.5σ:7.91e-05 1σ:1.73e-04 2σ:4.20e-04 3σ:7.07e-04  cos(+,-) -0.96 -0.86 -0.53 +0.02 +0.27
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+     legacy ratio h1 0.012690 (action 0.00272 / scene 0.21405)  C0 PASS
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.31 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.89, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[k60clip05p30k] step 30000  144 windows  W=6  S=2048  horizons=[1, 2, 4] trained=(1,)  cond_param=steer_accel_v  lift: BANKED-ACTDIV-COMPAT: [a2, v_first/30.0] (NOT the trainer's contract)
+  [k60clip05p30k] h=1
+     F_sep 17.165  null(median 0.906, p95 1.032)  F/p95 16.63  scene_spread 0.36514
+     kappa  rho +0.985  norms 0.25σ:8.71e-04 0.5σ:1.74e-03 1σ:3.48e-03 2σ:6.97e-03 3σ:1.04e-02  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.985  norms 0.25σ:7.97e-03 0.5σ:1.63e-02 1σ:3.51e-02 2σ:8.62e-02 3σ:1.52e-01  cos(+,-) -0.97 -0.87 -0.55 +0.13 +0.50
+     rel-mag@2σ 0.00282  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+  [k60clip05p30k] h=2   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 28.838  null(median 0.911, p95 1.208)  F/p95 23.87  scene_spread 0.40497
+     kappa  rho +0.985  norms 0.25σ:3.69e-06 0.5σ:7.37e-06 1σ:1.47e-05 2σ:2.95e-05 3σ:4.42e-05  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.935  norms 0.25σ:3.31e-05 0.5σ:6.66e-05 1σ:1.37e-04 2σ:3.06e-04 3σ:5.22e-04  cos(+,-) -0.99 -0.94 -0.76 -0.07 +0.44
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+  [k60clip05p30k] h=4   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 29.855  null(median 0.908, p95 1.221)  F/p95 24.45  scene_spread 0.40497
+     kappa  rho +0.985  norms 0.25σ:3.80e-06 0.5σ:7.61e-06 1σ:1.52e-05 2σ:3.04e-05 3σ:4.56e-05  cos(+,-) -1.00 -1.00 -1.00 -1.00 -1.00
+     accel  rho +0.935  norms 0.25σ:3.42e-05 0.5σ:6.88e-05 1σ:1.41e-04 2σ:3.16e-04 3σ:5.43e-04  cos(+,-) -0.99 -0.95 -0.76 -0.05 +0.46
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> SEPARATED-NONMONOTONE
+     legacy ratio h1 0.005200 (action 0.00190 / scene 0.36616)  C0 PASS
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+[rdw8p30k] step 30000  144 windows  W=6  S=2048  horizons=[1, 2, 4] trained=(1,)  cond_param=steer_accel_v  lift: BANKED-ACTDIV-COMPAT: [a2, v_first/30.0] (NOT the trainer's contract)
+  [rdw8p30k] h=1
+     F_sep 84.143  null(median 1.022, p95 1.276)  F/p95 65.94  scene_spread 0.19251
+     kappa  rho +0.985  norms 0.25σ:1.59e-03 0.5σ:3.17e-03 1σ:6.35e-03 2σ:1.27e-02 3σ:1.91e-02  cos(+,-) -1.00 -1.00 -1.00 -0.99 -0.98
+     accel  rho +0.985  norms 0.25σ:3.27e-02 0.5σ:6.55e-02 1σ:1.31e-01 2σ:2.64e-01 3σ:4.01e-01  cos(+,-) -0.99 -0.98 -0.92 -0.72 -0.50
+     rel-mag@2σ 0.01589  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> STRUCTURED-WEAK
+  [rdw8p30k] h=2   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 105.763  null(median 1.016, p95 1.284)  F/p95 82.35  scene_spread 0.40858
+     kappa  rho +0.985  norms 0.25σ:1.78e-06 0.5σ:3.55e-06 1σ:7.11e-06 2σ:1.43e-05 3σ:2.16e-05  cos(+,-) -0.99 -1.00 -0.99 -0.97 -0.93
+     accel  rho +0.985  norms 0.25σ:3.40e-05 0.5σ:6.79e-05 1σ:1.35e-04 2σ:2.67e-04 3σ:3.98e-04  cos(+,-) -1.00 -0.99 -0.95 -0.80 -0.60
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> STRUCTURED-WEAK
+  [rdw8p30k] h=4   [UNTRAINED HEAD — init noise, not quotable]
+     F_sep 111.305  null(median 1.020, p95 1.289)  F/p95 86.38  scene_spread 0.40858
+     kappa  rho +0.985  norms 0.25σ:1.75e-06 0.5σ:3.50e-06 1σ:7.00e-06 2σ:1.41e-05 3σ:2.13e-05  cos(+,-) -1.00 -1.00 -0.99 -0.97 -0.93
+     accel  rho +0.985  norms 0.25σ:3.46e-05 0.5σ:6.92e-05 1σ:1.38e-04 2σ:2.73e-04 3σ:4.08e-04  cos(+,-) -1.00 -0.99 -0.95 -0.80 -0.62
+     rel-mag@2σ 0.00001  (bar 0.0595)  C0 0.0e+00  zero-model 0.0e+00  -> STRUCTURED-WEAK
+     legacy ratio h1 0.015937 (action 0.00308 / scene 0.19329)  C0 PASS
+WROTE C:\Users\Admin\tanitad-wt\_gs89_pkg\raw\actdiv_anchored_v7_actdivcompat.json

@@ -1,0 +1,51 @@
+{
+ "_what": "camera projection for the kerb-adjacent windows, controls first",
+ "_evidence_class": "MEASURED (ours; CPU, read-only)",
+ "windows_requested": 33,
+ "cameras_checked": 7,
+ "cameras_passing_all_controls": 7,
+ "renders": 33,
+ "example_controls": {
+  "C1 t0 footprint at the image bottom": {
+   "front_corner_rows": [
+    471.3,
+    481.4
+   ],
+   "image_height": 416,
+   "bar": "every front corner row >= 0.75 x H = 312",
+   "pass": true
+  },
+  "C2 far ground point on the horizon row": {
+   "rows_at_x_m": {
+    "10": 281.7,
+    "20": 236.9,
+    "30": 224.2,
+    "45": 216.1,
+    "60": 212.3,
+    "infinity": 201.1
+   },
+   "delta_60m_vs_infinity_px": 11.1,
+   "bar": "monotone from below and |row(60) - horizon| <= 20.0 px",
+   "pass": true
+  },
+  "C3 the declared 120 deg field reaches both edges": {
+   "col_at_minus_60deg": -0.5,
+   "col_at_plus_60deg": 1023.5,
+   "width": 1024,
+   "bar": "the declared 120 deg field puts +-60 deg within 1 px of columns 0 and W-1",
+   "pass": true
+  },
+  "C4 +y is LEFT, asymmetry within the mount's own bound": {
+   "col_y_plus_5": 428.9,
+   "col_y_minus_5": 601.7,
+   "centre_col": 511.5,
+   "asymmetry_px": 7.64,
+   "mount_yaw_deg": 0.477,
+   "mount_lateral_offset_m": 0.0004,
+   "bar": "+y LEFT of centre, and asymmetry <= the bound this mount's own yaw and lateral offset imply (9.2 px)",
+   "pass": true
+  },
+  "all_pass": true
+ },
+ "failing_cameras": {}
+}

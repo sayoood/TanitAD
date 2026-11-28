@@ -1,0 +1,51 @@
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                                          ProfilerStep*         0.00%       0.000us         0.00%       0.000us       0.000us       17.449s       109.08%       17.449s        2.908s             6  
+                                             aten::add_         0.64%     175.587ms         5.25%        1.438s      37.518us        5.067s        31.67%        6.059s     158.144us         38316  
+void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us        2.802s        17.51%        2.802s     261.728us         10704  
+                                aten::cudnn_convolution         1.21%     330.548ms         2.67%     732.239ms      68.639us        2.617s        16.36%        3.225s     302.315us         10668  
+                             aten::convolution_backward         1.03%     282.418ms         4.40%        1.205s     238.913us        2.356s        14.73%        2.802s     555.661us          5042  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us        2.168s        13.55%        2.168s     442.195us          4902  
+                                    Command Buffer Full        33.97%        9.309s        33.97%        9.309s     284.606us        2.151s        13.45%        2.151s      65.759us         32707  
+                                        aten::clamp_min         0.29%      80.550ms         2.76%     756.975ms      71.051us        1.476s         9.22%        1.917s     179.963us         10654  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us        1.475s         9.22%        1.475s     144.593us         10200  
+                               aten::threshold_backward         0.14%      37.414ms         0.80%     217.968ms      45.334us        1.174s         7.34%        1.174s     244.084us          4808  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us        1.125s         7.03%        1.125s     239.097us          4704  
+                                            aten::copy_         0.47%     127.786ms         6.28%        1.722s      51.018us     963.857ms         6.03%        1.020s      30.225us         33758  
+         nvjet_sm110_tst_128x192_64x7_2x1_2cta_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     555.683ms         3.47%     555.683ms     201.773us          2754  
+                       Memcpy HtoD (Pageable -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us     494.936ms         3.09%     494.936ms       2.080ms           238  
+                                              aten::sum         0.51%     138.434ms         2.38%     652.739ms      54.035us     493.473ms         3.08%     493.705ms      40.870us         12080  
+void at::native::reduce_kernel<128, 4, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us     429.251ms         2.68%     429.251ms      85.988us          4992  
+                                              aten::mul         2.95%     807.097ms        12.09%        3.312s      80.030us     420.337ms         2.63%     449.331ms      10.856us         41390  
+cutlass3x_sm100_tensorop_s128x128x16implicit_gemm_fp...         0.00%       0.000us         0.00%       0.000us       0.000us     413.137ms         2.58%     413.137ms     144.656us          2856  
+void cutlass__5x_cudnn::Kernel<cutlass_tensorop_bf16...         0.00%       0.000us         0.00%       0.000us       0.000us     391.422ms         2.45%     391.422ms       3.837ms           102  
+                          aten::max_pool2d_with_indices         0.01%       3.818ms         0.02%       5.447ms      53.405us     351.045ms         2.19%     351.045ms       3.442ms           102  
+void at::native::(anonymous namespace)::max_pool_for...         0.00%       0.000us         0.00%       0.000us       0.000us     351.045ms         2.19%     351.045ms       3.442ms           102  
+         nvjet_sm110_tst_128x256_64x6_2x1_2cta_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     321.690ms         2.01%     321.690ms     131.409us          2448  
+void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us     303.783ms         1.90%     303.783ms      18.391us         16518  
+                 aten::max_pool2d_with_indices_backward         0.00%     963.368us         0.06%      16.875ms     351.560us     263.078ms         1.64%     284.872ms       5.935ms            48  
+void at::native::(anonymous namespace)::max_pool_bac...         0.00%       0.000us         0.00%       0.000us       0.000us     263.078ms         1.64%     263.078ms       5.481ms            48  
+nvjet_sm110_tst_256x256_64x4_2x1_2cta_v_bz_splitK_NT...         0.00%       0.000us         0.00%       0.000us       0.000us     213.098ms         1.33%     213.098ms     193.024us          1104  
+         nvjet_sm110_tst_128x192_64x7_2x1_2cta_v_bz_NNT         0.00%       0.000us         0.00%       0.000us       0.000us     183.196ms         1.15%     183.196ms     152.663us          1200  
+cutlass3x_sm100_tensorop_s128x128x16implicit_gemm_wg...         0.00%       0.000us         0.00%       0.000us       0.000us     181.974ms         1.14%     181.974ms     164.832us          1104  
+void at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us     174.508ms         1.09%     174.508ms      17.357us         10054  
+void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us     160.676ms         1.00%     160.676ms     108.859us          1476  
+               nvjet_sm110_tst_64x512_64x3_1x2_h_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     150.600ms         0.94%     150.600ms     738.233us           204  
+         nvjet_sm110_tst_128x256_64x6_2x1_2cta_v_bz_NNT         0.00%       0.000us         0.00%       0.000us       0.000us     146.901ms         0.92%     146.901ms     127.519us          1152  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     129.884ms         0.81%     129.884ms       6.092us         21322  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     129.695ms         0.81%     129.695ms       3.896us         33288  
+               nvjet_sm110_tst_64x512_64x3_1x2_h_bz_NNT         0.00%       0.000us         0.00%       0.000us       0.000us     126.618ms         0.79%     126.618ms     659.471us           192  
+cutlass3x_sm100_tensorop_s256x128x16implicit_gemm_dg...         0.00%       0.000us         0.00%       0.000us       0.000us     125.313ms         0.78%     125.313ms     104.428us          1200  
+       nvjet_sm110_tst_256x256_64x3_1x2_h_bz_splitK_NTT         0.00%       0.000us         0.00%       0.000us       0.000us     121.592ms         0.76%     121.592ms     110.138us          1104  
+        nvjet_sm110_tst_64x256_64x5_1x1_h_bz_splitK_NTT         0.00%       0.000us         0.00%       0.000us       0.000us     120.542ms         0.75%     120.542ms     627.825us           192  
+                         aten::grid_sampler_2d_backward         0.00%     117.708us         0.00%     467.645us      38.970us     118.501ms         0.74%     123.370ms      10.281ms            12  
+void at::native::(anonymous namespace)::grid_sampler...         0.00%       0.000us         0.00%       0.000us       0.000us     118.501ms         0.74%     118.501ms       9.875ms            12  
+         nvjet_sm110_tst_256x256_64x4_2x1_2cta_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     117.566ms         0.73%     117.566ms     288.152us           408  
+              nvjet_sm110_tst_128x192_64x5_1x2_h_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us     115.462ms         0.72%     115.462ms     377.326us           306  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     112.479ms         0.70%     112.479ms       5.027us         22374  
+                                               aten::mm         0.08%      20.569ms         0.10%      28.621ms      36.599us     109.300ms         0.68%     116.005ms     148.344us           782  
+void nhwcAddPaddingKernel<__nv_bfloat16, __nv_bfloat...         0.00%       0.000us         0.00%       0.000us       0.000us      98.255ms         0.61%      98.255ms     327.516us           300  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 27.405s
+Self CUDA time total: 15.997s

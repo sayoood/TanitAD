@@ -1,0 +1,133 @@
+{
+ "prereg": "PREREG_V8F_KSCORE",
+ "seed": 1,
+ "perm_labels": true,
+ "levers": {
+  "mode": "learned",
+  "hid": 128,
+  "d": 256,
+  "hist": 4,
+  "n_hyp": 7,
+  "n_params": 205825,
+  "scene_proj_bias": false,
+  "ego_proj_bias": false
+ },
+ "plan": {
+  "epochs": 3,
+  "batch": 256,
+  "steps_per_epoch": 1198,
+  "steps_total": 3594
+ },
+ "steps_total": 3594,
+ "info": {
+  "n_clips": 4512,
+  "n_excluded": 60,
+  "n_excluded_declared": 60,
+  "excluded_in_train": 0,
+  "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "n_windows": 306566,
+  "windows_sha256": "0a4dfae64383438b8a0a53e7c068c520af45ae4d49676d500b4b18370b820a05",
+  "kin_mode": "yaw",
+  "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+  "ckpt_file_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+  "meta_sha256": "87a25f7a8b2e2ac03b935dabdc705e6444fd6c2d6ba7c6a11bb453f8a907eb2a",
+  "n_probe": 256,
+  "feat_dtype": "float16"
+ },
+ "declared_vs_built": "PASS",
+ "inputs_identity": {
+  "tau_maxabs": 3.814697265625e-05,
+  "scene_maxabs": 0.007808685302734375,
+  "ego_maxabs": 0.0019402503967285156,
+  "p_lon_maxabs": 5.364418029785156e-07,
+  "feat_dtype": "float16",
+  "feat_rtol": 0.0009765625,
+  "scene_excess": 4.702014848589897e-07,
+  "ego_excess": 2.5494955480098724e-08,
+  "pass": true
+ },
+ "live": {
+  "steps": 3,
+  "ce": [
+   1.943161129951477,
+   1.931712031364441,
+   1.9216243028640747
+  ],
+  "dead_params": [],
+  "grad_abs_sum": {
+   "hyp_emb": 2.1134170293807983,
+   "ctx_bias": 0.016440573148429394,
+   "plan_proj.weight": 1.052201271057129,
+   "plan_proj.bias": 0.013379328418523073,
+   "lon_proj.weight": 0.06559541262686253,
+   "scene_proj.weight": 15.728559017181396,
+   "ego_proj.weight": 4.802711725234985,
+   "mix.weight": 15.650756359100342,
+   "mix.bias": 0.031876069493591785,
+   "out.weight": 0.7974133938550949,
+   "out.bias": 1.30385160446167e-08
+  },
+  "scene_zero_control_scene_proj_grad": 0.0,
+  "scene_zero_control_others_alive": true,
+  "scene_real_scene_proj_grad": 5.650261402130127,
+  "scorer_grad_on_B_inputs": {
+   "scene_proj": 5.650261402130127,
+   "ego_proj": 1.9249868392944336,
+   "plan_proj": 0.3985639214515686
+  },
+  "B_grad_abs_sum": 0,
+  "B_grad_positive_control_abs_sum": 21.810891672057323,
+  "B_state_unchanged": true,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "keys_read": [
+  "a_s",
+  "a_t",
+  "base",
+  "feats",
+  "frame_ok",
+  "limit",
+  "limit_ok",
+  "nav",
+  "p10f",
+  "pose_now",
+  "pose_s",
+  "pose_t"
+ ],
+ "own_diag_maxabs": 0.0,
+ "bad": [],
+ "gate": "PASS"
+}

@@ -1,0 +1,6 @@
+Data checks beside the H2 read of card PREREG_V8F_PROOF_ADD36 (MEASURED 2026-11-15 on the dev box; no model involved).
+Inputs: the window list C:/Users/Admin/v8proof_c/ctxroll/LATENTS_CTX_G_s0_R1.npz (act_scaled, transitions 4 to 13; acceleration = scaled x 2.0 m/s2) and the label pack spatial/leadsup/read/eval_pack.npz (V = ego speed per frame, G15 = label gap per frame).
+
+1. Sign of the acceleration channel: ego speed change over 2.0 s (V[:,14] - V[:,4]) against sum(acc) x 0.2 s, 1,948 windows: slope 1.000, correlation 1.000. A positive value speeds the ego up.
+2. Association in the labels: windows with a label gap at t and at t + 2.0 s, gap at t between 5 and 50 m, ego speed at t at least 5 m/s: 318. True change of the gap over 2.0 s against e = -0.5 x mean(acc) x T^2 (T = 2.0 s): slope through the origin -1.702; with an intercept: slope -1.704, intercept 0.010 m, correlation -0.403. Mean logged acceleration on these windows -0.189 m/s2, standard deviation of the window means 0.692 m/s2.
+   An intervention on the ego acceleration alone gives a slope of +1 (a lead that keeps its motion).

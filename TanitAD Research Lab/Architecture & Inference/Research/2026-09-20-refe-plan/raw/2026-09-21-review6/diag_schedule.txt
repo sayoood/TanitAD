@@ -1,0 +1,17 @@
+The paper: AdamW, initial LR 2e-4, DECAYED TO ZERO via cosine annealing.
+
+    step       cosine    --no-cosine
+       0    2.000e-04      2.000e-04
+      15    1.725e-04      2.000e-04
+      31    1.000e-04      2.000e-04
+      46    3.110e-05      2.000e-04
+      62    0.000e+00      2.000e-04
+
+  [PASS] starts at the paper's 2e-4
+  [PASS] ends at EXACTLY zero
+  [PASS] is monotonically non-increasing
+  [PASS] halfway value is near half (cosine, not linear)
+  [PASS] CONTROL: --no-cosine stays FLAT at 2e-4
+
+SCHEDULE_OK
+EXIT=0

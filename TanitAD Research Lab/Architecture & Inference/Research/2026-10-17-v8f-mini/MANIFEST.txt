@@ -1,0 +1,21 @@
+v8F-mini deliverable manifest (stream M1-build, 2026-10-17). Everything below is NEW and UNSTAGED/UNCOMMITTED (session amendment).
+repo = E:/Projects/TanitAD (working tree). Nothing exists only on a pod or a worktree. Items marked [ONE PLACE] exist ONLY in the working tree.
+
+CODE
+repo:stack/tanitad/models/v8f_mini.py                  model, losses, penalties, projection, admissibility check   [ONE PLACE]
+repo:stack/tanitad/data/v8f_mini_data.py               v9 join, window dataset, sampler, synthetic world, eval ctx [ONE PLACE]
+repo:stack/scripts/v8f_mini_train.py                   training + launch gate (declared-vs-built, live check)      [ONE PLACE]
+repo:stack/scripts/v8f_mini_eval.py                    join / floors / run / compare                               [ONE PLACE]
+repo:stack/scripts/v8f_mini_fit_p10.py                 refit P10 (correct unit) + legacy-unit pipeline control     [ONE PLACE]
+repo:taniteval/taniteval/v8f_consistency.py            CONSISTENCY, nav-only baseline, macro-F1                    [ONE PLACE]
+TESTS
+repo:stack/tests/test_v8f_mini.py                      27 tests                                                    [ONE PLACE]
+repo:taniteval/tests/test_v8f_consistency.py           25 tests                                                    [ONE PLACE]
+PACKAGE  (TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/)
+RESULT.md  LABEL_JOIN_REPORT.md  HANDOFF.md  MANIFEST.txt
+code/make_eval_inputs.py  code/join_check.py  code/join_report.py
+raw/eval141_kin.npz  raw/eval_grid_windows.json  raw/join_eval141.npz  raw/join_check.json  raw/label_join_report.json
+raw/p10/p10_prior.pt (the frozen prior the arms need)  raw/p10/p10_fit.json  raw/p10/p10_eval_pred6.npy  raw/p10/p10_legacy_eval_pred6.npy  raw/p10/eval_base6_steer.npy
+raw/eval/floors_report.json  raw/eval/floors_perwindow.npz
+SCRATCH (not deliverables): C:/Users/Admin/v8f_mini_scratch/ (synthetic worlds, bench, diag scripts)
+INPUT FILES NOT IN THE REPO (must be shipped to box 2): v9 releases + lead + speed sidecars (paths in LABEL_JOIN_REPORT.md)

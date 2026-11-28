@@ -1,0 +1,198 @@
+{
+ "checks": {
+  "T1 all pass -> ADOPT": {
+   "ok": true,
+   "detail": "got ADOPT []"
+  },
+  "T1 a failed gate -> NOT PROVEN even if all else passes": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['gate(s) failed: G3']"
+  },
+  "T1 PRIMARY fails for BOTH -> REFUTED": {
+   "ok": true,
+   "detail": "got REFUTED ['PRIMARY failed for BOTH plain arms']"
+  },
+  "T1 PDMS CI upper < -1 -> REFUTED": {
+   "ok": true,
+   "detail": "got REFUTED ['PDMS CI upper bound < -1.0']"
+  },
+  "T1 position guard fails for BOTH -> REFUTED": {
+   "ok": true,
+   "detail": "got REFUTED ['position guard failed for BOTH seeds']"
+  },
+  "T1 PRIMARY split -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['PRIMARY split between the plain seeds']"
+  },
+  "T1 control un-traps -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['a wrapped control un-trapped (manipulation check failed)']"
+  },
+  "T1 PDMS straddles -1 (not pass, not refute) -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['PDMS: CI lower bound < -1.0, or a seed floor > 1.0, or invalid rows']"
+  },
+  "T1 position split -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['position guard split between the seeds']"
+  },
+  "T1 PDMS seams missing -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['gating PDMS seams missing']"
+  },
+  "T1 a failed gate beats a REFUTED trigger -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['gate(s) failed: G1']"
+  },
+  "T1 MUTATION (REFUTED on either plain arm) goes RED on the split-seed case": {
+   "ok": true,
+   "detail": ""
+  },
+  "T2 a 2*pi-shifted winner heading reads error 0.0 (wrapped)": {
+   "ok": true,
+   "detail": "median 0.000000"
+  },
+  "T2 beyond-pi share of ALL raw step-19 headings is the constructed 67/256": {
+   "ok": true,
+   "detail": "26.1719 %"
+  },
+  "T2 winner position error (ADE) is the constructed 0.30 m, L1 0.42 m": {
+   "ok": true,
+   "detail": "ADE 0.300000 L1 0.420000"
+  },
+  "T2 MUTATION (no wrap) goes RED: error 2*pi": {
+   "ok": true,
+   "detail": "6.28319"
+  },
+  "T3 a constant statistic has the zero-width interval [c, c]": {
+   "ok": true,
+   "detail": "3.25 [3.25, 3.25]"
+  },
+  "T3 two calls on one token set give identical intervals (the same log resample)": {
+   "ok": true,
+   "detail": "(0.002801187074279335, -0.15758800756938385, 0.1806757151483172)"
+  },
+  "T3 cluster resampling of a 2-log set yields only {0, 0.5, 1} means": {
+   "ok": true,
+   "detail": "[0.0, 1.0]"
+  },
+  "T3 MUTATION (token-level resampling) goes RED: other means appear": {
+   "ok": true,
+   "detail": ""
+  },
+  "T4 adverse separations named exactly (error above, accuracy below, bias farther from 0)": {
+   "ok": true,
+   "detail": "['longitudinal.along_bias_m', 'longitudinal.speed_mae_mps', 'longitudinal.target_speed_acc.within_1.0_mps']"
+  },
+  "T4 overlap (heading) and an IMPROVEMENT (cross) are not named": {
+   "ok": true,
+   "detail": ""
+  },
+  "T4 MUTATION (direction flipped: higher-is-better for an error) goes RED: the case is missed": {
+   "ok": true,
+   "detail": ""
+  },
+  "T5 A1.4 ADOPT -> PASS": {
+   "ok": true,
+   "detail": "got 'PASS -- passes after 2 proxy epochs'"
+  },
+  "T5 A1.4 heading passes, PDMS fails -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got 'NOT PROVEN'"
+  },
+  "T5 A1.4 a gate fails -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got 'NOT PROVEN'"
+  },
+  "T5 A1.4 both metrics -50 % on both arms -> SHRINKING": {
+   "ok": true,
+   "detail": "got 'FAIL BUT STILL SHRINKING'"
+  },
+  "T5 A1.4 median -50 % but beyond-pi -15 % -> PLATEAU": {
+   "ok": true,
+   "detail": "got 'PLATEAU'"
+  },
+  "T5 A1.4 exactly -25 % on both -> SHRINKING (the bar is >= 25 %)": {
+   "ok": true,
+   "detail": "got 'FAIL BUT STILL SHRINKING'"
+  },
+  "T5 A1.4 slope + prediction to epoch 4 only (log-linear): e3 = e2 x r, e4 = e2 x r^2": {
+   "ok": true,
+   "detail": "{'epoch1': 0.20000000298023224, 'epoch2': 0.10000000149011612, 'ratio_e2_over_e1': 0.5, 'reduction_pct': 50.0, 'predicted_epoch3': 0.05000000074505806, 'predicted_epoch4': 0.02500000037252903}"
+  },
+  "T5 MUTATION (a 10 % shrink bar) goes RED: the PLATEAU case would read SHRINKING": {
+   "ok": true,
+   "detail": ""
+  },
+  "T6 M6b all pass -> ADOPT": {
+   "ok": true,
+   "detail": "got ADOPT []"
+  },
+  "T6 M6b only 1 of 3 per-seed lowers >= -1 -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['PDMS: seed-mean CI lower < -1.0, or fewer than 2 of 3 per-seed CI lowers >= -1.0']"
+  },
+  "T6 M6b seed-mean lower < -1 -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['PDMS: seed-mean CI lower < -1.0, or fewer than 2 of 3 per-seed CI lowers >= -1.0']"
+  },
+  "T6 M6b seed-mean upper < -1 -> REFUTED": {
+   "ok": true,
+   "detail": "got REFUTED ['seed-mean PDMS CI upper bound < -1.0']"
+  },
+  "T6 M6b PRIMARY fails for ALL T -> REFUTED": {
+   "ok": true,
+   "detail": "got REFUTED ['PRIMARY failed for ALL T arms']"
+  },
+  "T6 M6b PRIMARY split -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['PRIMARY split across the T seeds']"
+  },
+  "T6 M6b a gate fails -> NOT PROVEN": {
+   "ok": true,
+   "detail": "got NOT PROVEN ['gate(s) failed: G5']"
+  },
+  "T6 MUTATION (1-of-3 per-seed rule) goes RED: the 1-of-3 case would ADOPT": {
+   "ok": true,
+   "detail": ""
+  },
+  "T6 all-slot metric (c): a 0.07 rad offset on a straight path reads exactly 0.07, all masked in": {
+   "ok": true,
+   "detail": ""
+  },
+  "T6 (c) masks a step shorter than 0.2 m": {
+   "ok": true,
+   "detail": ""
+  },
+  "T7 an authorised copy is rendered from ITS record (coordinator 22:34, floor 30 / 15), never the 21:18 text": {
+   "ok": true,
+   "detail": "   - RE-COPY (verified 2026-09-27T22:41:00, for AMENDMENT 1; authorised: coordinator 2026-09-27 22:34 (floor >= 30 GiB after, emergency < 15 GiB)): 0 files, 0 c"
+  },
+  "T7 a copy WITHOUT its own record keeps the 21:18 text and its key time": {
+   "ok": true,
+   "detail": ""
+  },
+  "T7 the copy started in error is rendered": {
+   "ok": true,
+   "detail": ""
+  },
+  "T7 MUTATION: slicing the time out of the epoch-2 key (the old renderer) reads 'e2:_2:24' -- the defect": {
+   "ok": true,
+   "detail": ""
+  },
+  "T8 the code-on-disk line is labelled NOT what the arms ran": {
+   "ok": true,
+   "detail": ""
+  },
+  "T8 each epoch-1 arm's OWN proxy_train.py is named beside it (d4ecc28c)": {
+   "ok": true,
+   "detail": ""
+  }
+ },
+ "n_checks": 47,
+ "failed": [],
+ "tested_sha256": {
+  "proxy_eval.py": "910386b1c1b79ae62051cf25fb798d152fb713ed84a4d4327be093975d44ec94",
+  "selftest_proxy_eval.py": "73a5952cf6541843d34854e716e327161643843b9aff95b7964bf86565593810"
+ }
+}

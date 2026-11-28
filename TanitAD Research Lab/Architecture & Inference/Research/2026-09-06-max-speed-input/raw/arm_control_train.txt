@@ -1,0 +1,118 @@
+n_clips = 4572   TIER: NONE -- no model runs. A T0/T1 stamp would be a category error; these are linear readouts on scalars, an input-channel information probe.
+arm dims d: {"ARM_EGO_only_v0": 1, "ARM_EGO_plus_QUANTIZED": 3, "ARM_EGO_plus_RAW": 2, "CONTROL_shuffled_quant": 3, "CONTROL_constant_only": 0}
+estimator: paired_episode_cluster_bootstrap (taniteval.ci)  (cluster = clip (one window per clip))
+
+==============================================================================
+FAMILY LONGITUDINAL   n=4572   metric=absolute error (lower better)
+  future_speed_2s_ms         EGO d=1  1.0890 [1.0575, 1.1210]
+      +QUANTIZED               delta -0.2337 [-0.2595, -0.2088] SEPARATED
+      +RAW                     delta -0.4671 [-0.4954, -0.4403] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0002 [-0.0006, +0.0010] not separated
+  future_speed_4s_ms         EGO d=1  2.0272 [1.9718, 2.0815]
+      +QUANTIZED               delta -0.6295 [-0.6802, -0.5804] SEPARATED
+      +RAW                     delta -1.2005 [-1.2504, -1.1517] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0005 [-0.0009, +0.0017] not separated
+  future_speed_6s_ms         EGO d=1  2.6232 [2.5507, 2.6952]
+      +QUANTIZED               delta -0.8335 [-0.8981, -0.7698] SEPARATED
+      +RAW                     delta -1.5868 [-1.6494, -1.5242] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0002 [-0.0015, +0.0017] not separated
+  alongtrack_disp_2s_m       EGO d=1  1.0857 [1.0524, 1.1182]
+      +QUANTIZED               delta -0.1576 [-0.1801, -0.1353] SEPARATED
+      +RAW                     delta -0.3142 [-0.3423, -0.2885] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0002 [-0.0006, +0.0009] not separated
+  alongtrack_disp_4s_m       EGO d=1  4.2262 [4.1080, 4.3456]
+      +QUANTIZED               delta -0.8828 [-0.9749, -0.7889] SEPARATED
+      +RAW                     delta -1.6236 [-1.7266, -1.5157] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0007 [-0.0028, +0.0037] not separated
+  alongtrack_disp_6s_m       EGO d=1  8.9494 [8.7062, 9.1818]
+      +QUANTIZED               delta -2.1132 [-2.3187, -1.9118] SEPARATED
+      +RAW                     delta -3.7023 [-3.9286, -3.4732] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0000 [-0.0063, +0.0056] not separated
+  distance-keeping/TTC: NOT COMPUTABLE  n=0  reason: needs `obstacle.offline` agent boxes to form a gap; those boxes are not in the v8 label record and the join is a separat
+
+==============================================================================
+FAMILY LATERAL   n=4572   metric=absolute error (lower better)
+  dyaw_2s_rad                EGO d=1  0.1014 [0.0962, 0.1069]
+      +QUANTIZED               delta +0.0000 [-0.0000, +0.0001] not separated
+      +RAW                     delta +0.0001 [+0.0000, +0.0001] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0011 [+0.0009, +0.0013] SEPARATED
+  dyaw_4s_rad                EGO d=1  0.1976 [0.1884, 0.2074]
+      +QUANTIZED               delta +0.0002 [+0.0001, +0.0003] SEPARATED
+      +RAW                     delta +0.0001 [+0.0000, +0.0002] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0031 [+0.0026, +0.0036] SEPARATED
+  dyaw_6s_rad                EGO d=1  0.2726 [0.2603, 0.2850]
+      +QUANTIZED               delta +0.0001 [+0.0000, +0.0002] SEPARATED
+      +RAW                     delta +0.0001 [+0.0000, +0.0003] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0041 [+0.0033, +0.0047] SEPARATED
+  curvature_2s_invm          EGO d=1  0.0115 [0.0107, 0.0123]
+      +QUANTIZED               delta +0.0001 [+0.0001, +0.0002] SEPARATED
+      +RAW                     delta +0.0001 [+0.0001, +0.0001] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0002 [+0.0002, +0.0003] SEPARATED
+  curvature_4s_invm          EGO d=1  0.0108 [0.0100, 0.0115]
+      +QUANTIZED               delta +0.0000 [+0.0000, +0.0000] SEPARATED
+      +RAW                     delta +0.0000 [-0.0000, +0.0000] not separated
+      CONTROL_shuffled_quant   delta +0.0002 [+0.0001, +0.0002] SEPARATED
+  curvature_6s_invm          EGO d=1  0.0092 [0.0085, 0.0100]
+      +QUANTIZED               delta +0.0000 [+0.0000, +0.0000] SEPARATED
+      +RAW                     delta +0.0000 [+0.0000, +0.0000] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0001 [+0.0001, +0.0001] SEPARATED
+  yawrate_2s_rads            EGO d=1  0.0584 [0.0554, 0.0615]
+      +QUANTIZED               delta +0.0002 [+0.0001, +0.0002] SEPARATED
+      +RAW                     delta +0.0001 [+0.0000, +0.0001] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0007 [+0.0005, +0.0008] SEPARATED
+  yawrate_4s_rads            EGO d=1  0.0573 [0.0543, 0.0604]
+      +QUANTIZED               delta +0.0001 [+0.0000, +0.0001] SEPARATED
+      +RAW                     delta +0.0001 [+0.0000, +0.0001] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0006 [+0.0005, +0.0007] SEPARATED
+  yawrate_6s_rads            EGO d=1  0.0495 [0.0468, 0.0523]
+      +QUANTIZED               delta +0.0000 [-0.0000, +0.0000] not separated
+      +RAW                     delta -0.0000 [-0.0001, -0.0000] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0003 [+0.0002, +0.0003] SEPARATED
+  crosstrack_2s_m            EGO d=1  0.7424 [0.7076, 0.7788]
+      +QUANTIZED               delta +0.0007 [+0.0002, +0.0012] SEPARATED
+      +RAW                     delta +0.0026 [+0.0017, +0.0035] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0059 [+0.0045, +0.0073] SEPARATED
+  crosstrack_4s_m            EGO d=1  2.9124 [2.7837, 3.0501]
+      +QUANTIZED               delta +0.0023 [+0.0002, +0.0044] SEPARATED
+      +RAW                     delta +0.0093 [+0.0060, +0.0126] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0221 [+0.0168, +0.0273] SEPARATED
+  crosstrack_6s_m            EGO d=1  6.2442 [5.9814, 6.5193]
+      +QUANTIZED               delta +0.0081 [+0.0020, +0.0139] SEPARATED
+      +RAW                     delta +0.0236 [+0.0152, +0.0321] SEPARATED
+      CONTROL_shuffled_quant   delta +0.0507 [+0.0389, +0.0622] SEPARATED
+
+==============================================================================
+FAMILY TACTICAL_lon   n=4572   metric=accuracy (higher better)
+  classes=7  majority baseline 0.2719
+    ARM_EGO_only_v0            d=1 acc 0.3745 [0.3600, 0.3882]
+    ARM_EGO_plus_QUANTIZED     d=3 acc 0.4383 [0.4237, 0.4525]
+    ARM_EGO_plus_RAW           d=2 acc 0.4921 [0.4777, 0.5066]
+    CONTROL_shuffled_quant     d=3 acc 0.3718 [0.3569, 0.3860]
+    CONTROL_constant_only      d=0 acc 0.2719 [0.2585, 0.2846]
+      +QUANTIZED               delta +0.0639 [+0.0477, +0.0807] SEPARATED
+      +RAW                     delta +0.1177 [+0.0997, +0.1356] SEPARATED
+      CONTROL_shuffled_quant   delta -0.0026 [-0.0048, -0.0004] SEPARATED
+
+==============================================================================
+FAMILY TACTICAL_lat   n=4572   metric=accuracy (higher better)
+  classes=5  majority baseline 0.6470
+    ARM_EGO_only_v0            d=1 acc 0.6470 [0.6328, 0.6608]
+    ARM_EGO_plus_QUANTIZED     d=3 acc 0.6470 [0.6328, 0.6608]
+    ARM_EGO_plus_RAW           d=2 acc 0.6470 [0.6328, 0.6608]
+    CONTROL_shuffled_quant     d=3 acc 0.6470 [0.6328, 0.6608]
+    CONTROL_constant_only      d=0 acc 0.6470 [0.6328, 0.6608]
+      +QUANTIZED               delta +0.0000 [+0.0000, +0.0000] not separated
+      +RAW                     delta +0.0000 [+0.0000, +0.0000] not separated
+      CONTROL_shuffled_quant   delta +0.0000 [+0.0000, +0.0000] not separated
+
+==============================================================================
+FAMILY STRATEGIC   n=4572   metric=accuracy (higher better)
+  classes=5  majority baseline 0.5227
+    ARM_EGO_only_v0            d=1 acc 0.4983 [0.4838, 0.5136]
+    ARM_EGO_plus_QUANTIZED     d=3 acc 0.5101 [0.4950, 0.5252]
+    ARM_EGO_plus_RAW           d=2 acc 0.5324 [0.5179, 0.5483]
+    CONTROL_shuffled_quant     d=3 acc 0.4978 [0.4834, 0.5129]
+    CONTROL_constant_only      d=0 acc 0.5227 [0.5085, 0.5372]
+      +QUANTIZED               delta +0.0118 [+0.0085, +0.0151] SEPARATED
+      +RAW                     delta +0.0341 [+0.0287, +0.0398] SEPARATED
+      CONTROL_shuffled_quant   delta -0.0004 [-0.0020, +0.0011] not separated

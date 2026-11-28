@@ -1,0 +1,36 @@
+{
+ "tool": "stack/scripts/rl_fan_floor.py",
+ "tier": "T0-fan",
+ "evidence_class": "MEASURED (ours)",
+ "bank": "C:/Users/Admin/rlgate/raw/fan_bank_refcv4b_FINAL_240w.npz",
+ "quality": "reward_composed",
+ "quality_provenance": "c_progress*5.0+c_headway*5.0+c_comfort*2.0+c_collision*12.0+c_feasibility*12.0",
+ "collision_flag": null,
+ "n_windows": 240,
+ "n_candidates": 117,
+ "arm": {
+  "fan_floor@1": 0.5872143670564599,
+  "fan_floor@5": 0.5764359192173392,
+  "fan_floor@8": 0.5712512652335849,
+  "fan_floor@10": 0.5678086786466615,
+  "fan_floor@32": 0.5431043426475359,
+  "fan_floor@64": 0.4874024021459718,
+  "rand_best@1": 0.46246087263348623,
+  "rand_best@5": 0.5568076682293899,
+  "rand_best@8": 0.5663199543524221,
+  "rand_best@10": 0.5694662356479803,
+  "rand_best@32": 0.5807229169793616,
+  "rand_best@64": 0.5847759393653834,
+  "fan_q0.00": 0.5872143670564599,
+  "fan_q0.25": 0.5452059839052121,
+  "fan_q0.50": 0.4993930789370492,
+  "fan_q0.75": 0.4010091244998955,
+  "fan_diversity": 2.086324105307492,
+  "fan_endpoint_std": 3.0002002349074144
+ },
+ "notes": [
+  "fan_floor@k is an ORDER STATISTIC over K: not comparable across different K, and MAXIMISED BY MODE COLLAPSE. Read it beside fan_diversity, always.",
+  "rand_best@k is E[max over a random k-subset] - what a no-skill selector reaches. Any 'headroom' reading of @k must be quoted beside it (2026-09-05 retraction: a best-of-N statistic read as a skill gap).",
+  "fan_diversity is OUR definition; DDv2's 42.3->30.3 levels are NOT comparable, only the direction."
+ ]
+}

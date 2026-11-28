@@ -1,0 +1,14 @@
+PASS G6 green control: A0 re-run == banked plans and per-token scores, bit for bit (through the YT launcher path)  [plans True scores True n 110]
+PASS RED-AS-REQUIRED G6: a different checkpoint standing in for A0  [plans_bit_identical False]
+PASS G7 green control: B_s0 fed float32(10 x navtest table) on every token, >= 90 % non-zero, nothing incoming  [exact 110/110 nonzero 1.0]
+PASS G7 green control: A0 -> YT's shim not installed, 0 calls
+PASS RED-AS-REQUIRED G7: A0 expected to be fed a yaw (shim absent)
+PASS RED-AS-REQUIRED G7: a yaw-fed arm judged as a non-yaw arm (shim must stay out)
+PASS RED-AS-REQUIRED G7: one token fed a wrong value (x0.5)
+PASS RED-AS-REQUIRED G7: every ego[4] equal to 0.0 (yaw loaded but not applied)
+PASS RED-AS-REQUIRED identity: a yaw-trained B checkpoint presented as arm C (C == A0 must fail)  [rc 3]
+PASS RED-AS-REQUIRED identity: B0 with u400's random column left in place  [rc 3]
+PASS identity green control: B0 (zero column) decodes bit-identically to A0 with omega = 0 and omega != 0  [rc 0]
+
+11/11 checks as required
+ZZYF3_SMOKE_REDS_OK

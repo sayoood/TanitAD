@@ -1,0 +1,12266 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""THE LAUNCH GATE -- no training step runs until this writes a PASS token for the EXACT
+(commit, code tree, argv, data) being launched.  SPEC_REFCV7.md section 2 (BINDING).
+
+PI, 2026-09-26: *"Assure that this is not happening again because we lost a lot of time and
+energy. If we are starting a training session, we are sure about the correctness of the config."*
+
+WHY IT EXISTS -- three silent defects on ONE run (refcv6-r101-s0), each stamped into config.json:
+  * F3's per-stage cascade loss never reached the loss for 34,500 steps (D-REFCV6-F3-WHITELIST);
+  * the declared `--equalize-bottom-rows 43` never reached the trunk for 38,211 steps
+    (D-REFCV6-EQUALIZE-DROPPED);
+  * 2 of 3 declared selection mechanisms were never built (D-REFCV6-CONFIG-BUILD);
+  and tactical labels were read ~0.37 s early (D-REFCV6-LABEL-CLOCK).
+Every one was a DECLARED lever the built model or the live loss did not have. Every standing guard
+was green. The gate therefore checks the THING, never the declaration:
+
+  check    what must hold                                            regression arm (must FAIL)
+  G-HYG    config dataclasses refuse undeclared attributes, AND the  set an undeclared attribute
+           trainer's pinned config tree carries none                 (`undeclared_equalize`)
+  G-DVB    `tanitad.train.declared_vs_built.check(model, args)`      drop the FIX-3 field
+           returns [], every explicitly passed trainer flag is       (`drop_fix3_field`); the
+           covered, and the gate's own behavioural probe of the      module missing
+           trunk equalisation agrees with argv                       (`missing_dvb_module`)
+  G-LIVE   a smoke on the REAL argv (steps -> 30) with the REAL      remove `cascade` from the
+           trainer: every declared loss term present + finite, every pass-through
+           declared-trainable leaf module gets a non-zero gradient,  (`no_cascade_passthrough`,
+           `cascade` when F3, residual prior non-zero where v0 > 0   `no_cascade_silent`)
+  G-CLOCK  |t_trainer - t_true| <= 0.05 s on EVERY window of every   the historical
+           labelled clip of the train AND eval caches, t_true from   `(t + w - 1) * 0.1` clock
+           an independent measurement; the legacy clock must read    (`legacy_label_clock`)
+           RED in the same breath (positive control)
+  G-EVAL   the eval loader builds the IDENTICAL model: strict 0/0,   a loader that skips
+           bit-identical tensors, bit-identical forward outputs on   `_pin_trainer_cfg`
+           a fixed real batch; a perturbed copy must DIFFER          (`loader_skips_pin`)
+  G-CKPT   the trainer's own save -> load and resume are
+           bit-identical: model, optimizer, data position
+  G-SUITE  pytest on a CLEAN tree of the launch commit: 0 new
+           failures vs the baseline (by test id), no SKIP whose
+           reason says it could not run here (a skip is not a
+           pass), and every guard of `guard_mutation_audit.py` CAUGHT
+
+  refcv7 profile, SPEC section 6 (Amendment A1):
+  * 6.1  DrivoR-T's `--refcv7`, `--w-r7-wta`, `--w-r7-scorer` (and every `--r7-*`, plus the
+         post-rename `--drivort*` names) must be ABSENT, and the built model must carry no
+         `refcv7_wta` / `refcv7_scorer` (G-DVB; arm `drivort_flag`).
+  * 6.2  NEW-2, the 10 cm map head -- every check keyed on `--map-hires on` and INERT when off
+         (flag / key / module names PROVISIONAL until the NEW-2 agent lands): G-DVB the branch is
+         built, supervised and declares its class weights; G-EVAL/G-DVB (probe forward) 600x320
+         logits from a 240x128 (0.25 m) lift, `fmap_s8` at stride 8, the branch in BOTH builds;
+         G-LIVE `fmap_s8` reaches the output on every forward (arm `no_fmap_s8_passthrough`),
+         the 10 cm loss is finite, the hi-res leaf modules get gradient, config.json records the
+         class-weight sha256, and the Thor cost (s/step, `max_memory_allocated`): more than
+         +25 % over refcv6's 6.4 s/step is PI-DECISION, which is never a PASS.
+  * 7    (A2, PI ruling E1) `--graft-tac8-prior`, `--graft-nav-compliance`, `--speed-ceiling-filter`
+         REQUIRED ON and BUILT (`declared_vs_built.check_refcv7_required(model, args, tau_file=)`),
+         tau equal to the BANKED record whose sha256 the token binds (`gate:nav-tau-record`), the
+         ceiling mask inactive in training and active at eval (G-LIVE). Arms: `required_on_missing`,
+         `unwire_selection_term` (SPEC 2's "unwire one selection term"), `tau_differs`,
+         `tau_file_missing`, `ceiling_active_in_training`.
+  * 8    (A3) G-MAP: per-class 10 cm signal + per-class eval IoU (G-LIVE / G-DVB), and
+         G-MAP-OVERFIT, the overfit protocol's PASS record, as a launch prerequisite.
+  * 10   (A5) NEW-1: `--residual-prior ha0_ext_pose` (past poses only) with `--ego-history` is
+         REQUIRED; `off`, `ha0_ext` and `cv_yawrate` are REFUSED by name (arms
+         `residual_prior_ha0_ext`, `residual_prior_cv_yawrate`). A value decision that is still
+         OPEN goes in `pi_pending_values` and makes the token PI-DECISION (empty for refcv7 today).
+  Every argv-only profile rule is re-derived INSIDE `finalize`: a stand-alone `finalize` cannot
+  mint a token that `run` would refuse.
+
+THE TOKEN. `PASS_<commit12>.json` is written ONLY if every required check PASSed on evidence bound
+to the same (profile, commit, tree_sha256, argv_sha256), and every input each check READ has the
+same fingerprint as the launch host's data manifest. It is HMAC-SHA256-signed with a local key
+(default `~/.config/tanitad/launch_gate.key`, generated on first use, NEVER in the repo). Any failure
+writes `FAIL_<commit12>.json` with the reasons (and demotes a stale PASS for that commit); missing
+evidence writes `INCOMPLETE_<commit12>.json`. A token is never hand-edited: the HMAC refuses it.
+
+    # dev box (CPU; G-HYG, G-DVB, G-EVAL, G-SUITE):
+    python stack/scripts/launch_gate.py run --profile refcv7 --stage devbox \
+        --tree <clean tree of C> --commit <C> --argv-file <launch argv.json> --out-dir <gate dir> \
+        --git-dir C:/Users/Admin/tanitad-push/.git --baseline <tip> --cpu-only --min-free-gb 8 \
+        --path-map /home/nvidia/data=D:/refcv6_eval_kit/data --eval-kit D:/refcv6_eval_kit
+    # Thor (G-LIVE + G-CKPT on the real data, G-CLOCK on the real caches), then the token:
+    python stack/scripts/launch_gate.py run --profile refcv7 --stage thor --tree <shipped C> \
+        --commit <C> --argv-file <launch argv.json> --out-dir <gate dir> --import-evidence <devbox evidence>
+    # the supervisor, before every launch:
+    python stack/scripts/launch_gate.py verify --token <PASS_...json> --argv-file ... --tree <C> --json <v.json>
+    python stack/scripts/launch_gate.py exec   --token <PASS_...json> --argv-file ... --tree <C> --json <e.json>
+
+ON-DISK ARTIFACTS ARE THE VERDICT. A missing evidence file is an ERROR, never a PASS; an exit code
+is a claim by a process about itself (CLAUDE.md: "assert on the artifact, not the status").
+A check that could not RUN is ERROR. An evidence file produced under a regression arm can never
+contribute to a PASS.
+"""
+from __future__ import annotations
+
+import argparse
+import contextlib
+import copy
+import dataclasses
+import hashlib
+import hmac
+import importlib
+import importlib.util
+import io
+import json
+import math
+import os
+import platform
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+import tarfile
+import threading
+import time
+import traceback
+from pathlib import Path
+from typing import Any, Callable, Iterable
+
+GATE_SCHEMA = "tanitad.launch_gate/1"
+CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE",
+          "G-MAP-OVERFIT", "G-SUITE-PINNED", "G-BOX-OVERFIT")
+#: the checks every launch needs; a profile adds its own (refcv7: G-SUITE-PINNED and both overfit
+#: records), and G-MAP-OVERFIT joins any profile's list when the 10 cm map head is on
+BASE_CHECKS = CHECKS[:7]
+#: the checks that share one child process (one model build / one smoke / one clock pass).
+#: ⛔ ORDER MATTERS: the smoke runs BEFORE the model job, so G-EVAL can rebuild the eval model
+#: from the config.json the trainer wrote for THIS argv (never from another run's record --
+#: MEASURED 2026-09-26: refcv6's record rebuilds refcv6 AS TRAINED, an unequalised trunk, and
+#: every trunk-downstream output then differs from the fixed trainer's)
+JOBS = (("smoke", ("G-LIVE", "G-CKPT")), ("model", ("G-HYG", "G-DVB", "G-EVAL")),
+        ("clock", ("G-CLOCK",)), ("suite", ("G-SUITE",)), ("pinned", ("G-SUITE-PINNED",)),
+        ("record", ("G-MAP-OVERFIT", "G-BOX-OVERFIT")))
+#: the verdict a PI-reserved decision produces (the Thor cost rule, an open value decision):
+#: the gate STOPS and the token never verifies -- but it is not a FAIL
+PI_DECISION = "PI-DECISION"
+ARM_ENV = "TANITAD_GATE_ARM"
+KEY_ENV = "TANITAD_GATE_KEY_FILE"
+TREE_ROOTS = ("stack", "taniteval")
+_TREE_SKIP_DIRS = frozenset({"__pycache__", ".pytest_cache", ".guard_mutation_backup",
+                             ".mypy_cache", ".ruff_cache"})
+_TREE_SKIP_SUFFIX = (".pyc", ".pyo")
+#: files a cache directory may (re)write on first use -- listed, never content-bound
+_DIR_SKIP_NAMES = frozenset({"_v2manifest.pt", "_v2manifest.pt.tmp", "__pycache__"})
+_UUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+_HEX40 = re.compile(r"^[0-9a-f]{40}$")
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+
+# --------------------------------------------------------------------------------------------- #
+# profiles                                                                                        #
+# --------------------------------------------------------------------------------------------- #
+_EVAL_LOADER_REL = ("FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/"
+                    "battery/code/refcv6_loader.py")
+_AUDIT_RAW_REL = ("TanitAD Research Lab/Architecture & Inference/Research/"
+                  "2026-09-26-refcv6-frozen-trunk-audit/raw")
+
+_REFC = {
+    "trainer": "stack/scripts/refc_v3_train.py",
+    "required_checks": BASE_CHECKS,
+    #: dev box: CPU, no training data; Thor: the real caches. G-HYG / G-DVB are cheap and run
+    #: on both (the launch host's own evidence wins over imported evidence). G-MAP-OVERFIT is a
+    #: record check, dropped from a run whose argv has the 10 cm head off.
+    "stages": {"devbox": ("G-HYG", "G-DVB", "G-EVAL", "G-SUITE", "G-MAP-OVERFIT"),
+               "thor": ("G-HYG", "G-DVB", "G-LIVE", "G-CKPT", "G-CLOCK", "G-MAP-OVERFIT"),
+               "all": CHECKS[:8]},
+    "smoke_steps": 30,
+    "resume_extra_steps": 2,
+    "output_flags": ("--out", "--eval-window-dump"),
+    #: inputs the MODEL BUILD reads (anchors -> buffers + decoder constants, extrinsics -> lift
+    #: bank + rig camera, the banked tau file, the 10 cm class weights). Every other data flag is
+    #: replaced by a NON-EXISTENT sentinel in the model job, so a build that silently reads more
+    #: than this list FAILS instead of passing.
+    "model_input_flags": ("--anchors", "--agent-rig-extrinsics", "--nav-compliance-tau-file",
+                          "--map-hires-class-weights"),
+    "required_flags": (),
+    "suites": ("stack", "taniteval", "tools"),
+    #: G-SUITE: "run" = pytest over the suites on clean trees HERE (the generic family);
+    #: "consume" = the Master Mind's Thor full-suite verdict, BOUND to the launch commit and tree
+    #: (`suite-bind`), plus G-SUITE-PINNED on the dev box (refcv7)
+    "suite_mode": "run",
+    #: (repo path, sha256) of the PINNED Thor environment-failure list; None = no pin
+    "suite_env_failures": None,
+    #: G-SUITE-PINNED: SKIP reasons REGISTERED as admissible in the pinned files (regex); every
+    #: other skip there is NOT a pass
+    "suite_pinned_skip_ok": (),
+    "clock_tolerance_s": 0.05,
+    "clock_reference": (f"{_AUDIT_RAW_REL}/q4c_grid_vs_egolog_ALLTRAIN.json",),
+    "eval_loader": _EVAL_LOADER_REL,
+    "check_timeout_s": {"model": 3 * 3600, "smoke": 6 * 3600, "clock": 2 * 3600,
+                        "suite": 6 * 3600, "pinned": 3 * 3600, "record": 600},
+    #: residual-prior output keys the G-LIVE probe looks for when `--residual-prior` is passed
+    #: (NEW-1's forward emits `residual_prior_path` [B,S,2] and the prior's own speed
+    #: `residual_prior_v` -- withheld rows carry a different v than pose_last)
+    "residual_prior_keys": ("residual_prior_path", "residual_prior", "prior_traj", "kin_prior",
+                            "plan_prior", "prior"),
+    #: levers that must be OFF for this profile (none for the generic refc family)
+    "forbidden_levers": (),
+    "forbidden_prefixes": (),
+    "forbidden_built": (),
+    #: `declared_vs_built.check(model, args, parser, forbid_kinds=...)` (the fixes agent's frozen
+    #: API): train() calls it WITHOUT forbidding DrivoR-T, so a refcv7 GATE adds the forbid.
+    "dvb_forbid_kinds": (),
+    #: FIX-5: `read_speed_max_sidecar_v6` REFUSES without `<sidecar>.meta.json`. The gate checks
+    #: the file EXISTS on the launch host (and binds its content, like every other meta it finds).
+    "meta_required_flags": ("--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval"),
+    #: FIX-2 / G3: the share of a split's clips allowed without a measured clock. ⛔ The gate uses
+    #: the trainer's constant and NEVER a larger value (coordinator 2026-09-26: "do not raise
+    #: the cap"; the eval split's handling is the E2 decision).
+    "clock_max_unverified_frac": 0.01,
+    #: E2(b) (landed ab436ee): on the EVAL split a clip without a measured clock is not capped
+    #: but EXCLUDED from the TACTICAL family, exactly as train() runs G3 there
+    "clock_eval_mode": "exclude_tactical",
+    #: FIX-4: `--graft-nav-compliance` needs a RECORDED tau derived on the TRAIN split, whose `tau`
+    #: equals `--nav-compliance-tau-rad`. The banked record (ab436ee) was written by the fixes
+    #: agent's `code/derive_navc_tau.py` ON THOR; `stack/scripts/refcv7_derive_nav_tau.py --json`
+    #: is the in-repo writer. Both schemas are read (see `nav_tau_reasons`). Batch 2 (b4a59b9)
+    #: stamps the file as `config.json["seams"]["nav_compliance_tau_file"]` = {path, sha256, tau}.
+    "nav_compliance": {"switch": "--graft-nav-compliance", "tau_flag": "--nav-compliance-tau-rad",
+                       "tau_file_flag": "--nav-compliance-tau-file",
+                       "tau_stamp_path": ("seams", "nav_compliance_tau_file"),
+                       "cache_flag": "--v2-cache", "labels_flag": "--v7-labels"},
+    #: flags that must be ON (and BUILT) for this profile; empty for the generic family
+    "required_on": (),
+    #: flags that must carry one exact value
+    "required_values": {},
+    #: flags that must be passed with a value OTHER than these
+    "forbidden_values": {},
+    #: flags whose VALUE is a decision the PI has not taken yet: {flag: why}. While a flag sits
+    #: here and `required_values` does not fix it, the token is PI-DECISION (never PASS). The
+    #: ruling is recorded by moving the flag into `required_values` -- a reviewed code change.
+    "pi_pending_values": {},
+    #: G-SUITE: a SKIP whose reason matches one of these is NOT a pass (coordinator 2026-09-26:
+    #: the FIX-5 resnet34 tests skip where the checkpoint is not cached -- they must RUN where it
+    #: is). Every other skip reason is recorded in the evidence, counted by reason.
+    "suite_skip_not_pass": (r"not in the local HF cache",),
+    #: the banked tau derivation a `--graft-nav-compliance` launch is bound to, when the operator
+    #: names none (repo-relative; resolved against the tree's enclosing repo)
+    "nav_tau_record_default": None,
+    #: refcv9-e1rig G-CLOCK: the directory of the per-clip egomotion logs (`<clip_id>.parquet`) that holds each clip's `ts0`
+    #: (r9gclk). Host-absolute (path-mapped like an argv path); `--rig-ego-dir` overrides it. None = the profile reads no rig clock.
+    "rig_ego_dir_default": None,
+    #: SPEC_REFCV7 section 7: the max-speed ceiling filter acts at INFERENCE ONLY -- the smoke
+    #: must show it inactive in a training step and active in an eval step. Keyed on the flag.
+    "ceiling_filter_flag": "--speed-ceiling-filter",
+    #: G-HYG: every third-party module the trainer can reach (a STATIC import closure from the
+    #: trainer over the tree's own modules) must be importable in THIS venv -- MEASURED
+    #: 2026-09-27: scipy is ABSENT from Thor's training venv (Master Mind)
+    "import_closure": True,
+    #: SPEC_REFCV7 6.2 / A6 / A7 / A8 (NEW-2): the 10 cm map head. The flag names are the NEW-2
+    #: builder's final table (`…/2026-09-26-refcv7-map-hires/BUILD.md` sec. 10). Every check is
+    #: keyed on `switch` and INERT when it is off.
+    "map_hires": {
+        "switch": ("--map-hires", "on"),
+        "weight_flag": "--w-map-hires",
+        "class_weights_flag": "--map-hires-class-weights",
+        "fmap_key": "fmap_s8",
+        "loss_key": "map_hires",
+        "name_token": "hires",
+        #: A7 (SPEC_REFCV7 12): 100 m ahead x +-30 m -- the 10 cm grid 1000 x 600, the lift at
+        #: 0.25 m 400 x 240; the planner BEV cropped to 60 m x +-16 m
+        "logits_hw": (1000, 600),
+        "lift_hw": (400, 240),
+        "trunk_stride": 8,
+        "cost_ref_s_per_step": 6.4,          # refcv6-r101-s0, MEASURED on Thor at batch 16
+        "cost_max_ratio": 1.25,              # > 8.0 s/step goes to the PI (PI-DECISION)
+        "cost_warmup_steps": 10,             # compile + cuDNN autotune + loader warm-up
+        # ---- G-MAP. The SPELLING is the registered one (LOGGING_SPEC_MAP10 sec. 1-2, the
+        # NEW-2 builder's `map_head_hires.per_class_key`), written here as LITERALS; when the
+        # module is importable its CLASS_KEYS / BAND_KEYS must agree (a drift FAILS LOUD) ------
+        "classes": ("nocls", "drivable", "lane", "crosswalk", "arrow", "edge", "hatched",
+                    "sidewalk"),                             # CLASS_KEYS, code order 0..7
+        "thin_classes": ("lane", "crosswalk", "arrow", "edge", "hatched"),
+        "unseen_code": 255,
+        "min_cells": 50,                                     # M: labelled 10 cm cells per class
+        #: A7: every 20 m band of the 100 m grid (the bars apply in every band, SPEC 13 item 2)
+        "bands": ("0_20", "20_40", "40_60", "60_80", "80_100"),
+        "gated_band": "0_20",
+        #: eval rows (each carries the `eval_` prefix): POOLED IoU under the declared rule and
+        #: under the raw rule, the loss share, and the argmax COUNTS the IoU is pooled from.
+        #: A8 item 3 -- the Watch contract: the 40 `eval_map_hires_iou_{cls}_{band}` keys
+        "eval_key_fmt": "map_hires_iou_{cls}_{band}",
+        "eval_iouraw_fmt": "map_hires_iouraw_{cls}_{band}",
+        "eval_lshare_fmt": "map_hires_lshare_{cls}_{band}",
+        "eval_count_fmts": ("map_hires_inter_{cls}_{band}", "map_hires_union_{cls}_{band}"),
+        "raw_count_fmts": ("map_hires_interraw_{cls}_{band}", "map_hires_unionraw_{cls}_{band}"),
+        "n_fmt": "map_hires_n_{cls}_{band}",
+        #: train rows: the per-class x band loss CONTRIBUTIONS, which sum to `map_hires`
+        "lc_fmt": "map_hires_lc_{cls}_{band}",
+        "lc_sum_rel_tol": 1e-5,
+        "eval_key_list_attrs": ("MAP_HIRES_EVAL_KEYS", "MAP_EVAL_KEYS"),
+        #: the declared decision rule (`raw` | `prior_corrected`) in config.json
+        "decision_rule_path": ("map_hires", "decision_rule"),
+        "decision_rules": ("raw", "prior_corrected"),
+        #: A8 item 1: the class weights are sqrt(median-frequency); the loader stamps
+        #: `config.json["map_hires"]["class_weights"]` = {definition_id, pre_registered, sha256}
+        "class_weights_stamp_path": ("map_hires", "class_weights"),
+        "class_weights_definition": "sqrt_mf",
+        #: the NEW-2 per-part gradient reach (BUILD.md sec. 1): the four `ga_mh_*` parts, and
+        #: `ga_bev_pool` (the planner's pooled BEV) under `--bev-source map_hires_pool`
+        "ga_keys": ("ga_mh_lift", "ga_mh_encoder", "ga_mh_refine", "ga_mh_trunk_s8_stage"),
+        "ga_keys_pool": ("ga_bev_pool",),
+        "bev_source_flag": "--bev-source",
+        #: LOGGING_SPEC_MAP10 sec. 6 item 4: the refcv7 Training Watch, built BY THE GATE from the
+        #: smoke's own metrics.jsonl. A command template ({python}, {metrics}, {out}, {tree}).
+        #: DECLARED by the Master Mind 2026-09-27: the Watch agent ran exactly this template as the
+        #: gate formats it -- rc 0, `map_watch_reasons` [] (INHERITED; package
+        #: `…/2026-09-27-refcv7-training-watch/`). A non-zero exit is a named FAIL.
+        "watch_builder": ("{python}", "{tree}/taniteval/tools/training_watch/build_watch_refcv7.py",
+                          "--metrics", "{metrics}", "--out", "{out}"),
+    },
+    #: OPEN ITEMS: undecided parts of a profile's launch flag set (refcv7 declares its own; see
+    #: `_REFCV7_OPEN_ITEMS`). Empty = the flag set is decided.
+    "open_items": (),
+    #: ⛔ SPEC_REFCV7 24 (A19): MAIN-only BINDING overfit records. None = every must-fail arm must
+    #: RUN and fail as registered (the pre-A19 rule). A profile adopting A19 names the policy, its
+    #: SPEC source and the must-fail evidence it INHERITS (see PROFILES['refcv7']).
+    "overfit_main_only": None,
+    #: G-MAP-OVERFIT: the pre-registered protocol's LITERALS
+    #: (`…/2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md` + `gmo_spec.json`; SPEC 9
+    #: item 2). The gate checks the record against these, never against the bars it carries.
+    "map_overfit": {
+        "schema": "tanitad.g_map_overfit_record/1",
+        #: the harness the closure record must wrap (`closure_run.py -- <harness> ...`)
+        "harness": "stack/scripts/map_hires_overfit.py",
+        "band": "0_20",
+        "min_cells": 1000,
+        #: prereg sec. 6.4: each class's CE at the end <= this x its step-0 CE (re-judged from the
+        #: record's own numbers under A19)
+        "ce_ratio_max": 0.5,
+        "iou_bars": {"nocls": 0.85, "drivable": 0.85, "sidewalk": 0.85, "lane": 0.5,
+                     "crosswalk": 0.5, "arrow": 0.5, "edge": 0.5, "hatched": 0.5},
+        #: ``near_block_zeros`` (edge): SPEC_REFCV7 20 (A15), kept by 23 (A18) -- zeros into the
+        #: near refine block leave the A12 function, so an edge pass must come from the block
+        "must_fail_any": {"lane_w0": ("lane",), "near_block_zeros": ("edge",)},
+        "must_fail_all": {"s8_zeros": ("lane", "crosswalk", "arrow", "edge", "hatched")},
+        "controls": ("C1", "C2", "C3"),
+        "extent": {"x_max_m": 100.0, "y_half_m": 30.0},
+        #: ⛔ SPEC_REFCV7 23 (A18, the PI 2026-09-27 "Budget to 3,000 steps"): the PROTOCOL the
+        #: binding record must have RUN -- the registered A18 spec by sha256
+        #: (`…/2026-09-26-refcv7-map-hires/raw/gmo_spec_A18.json`), 3,000 steps, lr 1e-3 held to
+        #: step 2,700 then cosine to 0 (A17.1, moved by A18), batch 4, seed 0 -- on A15's map
+        #: path (the near lift 20 m + ONE near refine block; the argv's required values below).
+        #: The prereg's 1,000-step protocol is SUPERSEDED (its FAILs stay on the record): a
+        #: record of it is REFUSED here, never re-judged against these bars.
+        "spec_sha256": "5cb4f6fc4a8c15660237f541f077bfb334337dd287f674f8de02b7d414077c58",
+        "protocol": {"steps": 3000, "lr": 1e-3, "batch": 4, "seed": 0,
+                     "lr_decay": {"kind": "cosine_to_zero", "start_step": 2700}},
+        "near_lift_m": 20.0, "near_refine_blocks": 1,
+        "frameset_md5": "4eafa03c2b6a6e6d6336be1d78acb91d",
+        "frames": (("10497f0d664b", 10), ("10497f0d664b", 110), ("10497f0d664b", 130),
+                   ("10497f0d664b", 150), ("05c575ed45be", 50), ("05c575ed45be", 85),
+                   ("05c575ed45be", 105), ("05c575ed45be", 130), ("104d79ae052d", 10),
+                   ("104d79ae052d", 90), ("104d79ae052d", 115), ("104d79ae052d", 135),
+                   ("0dbd6c9cd776", 15), ("0dbd6c9cd776", 35), ("0dbd6c9cd776", 60),
+                   ("0dbd6c9cd776", 90)),
+    },
+    #: G-BOX-OVERFIT: the pre-registered protocol's LITERALS (SPEC_REFCV7 15.1, A10:
+    #: `…/2026-09-26-box-head-audit/raw/PREREG_G_BOX_OVERFIT.md` md5 594c7119..., reconciled to
+    #: A9's IGNORE rule). ⚠️ The record SCHEMA is PROVISIONAL until the box-head builder's harness
+    #: lands; every field the gate needs is named, and an absent one is a named FAIL.
+    "box_overfit": {
+        #: the record's identity: the harness writes `tool`, no schema field
+        "tool": "g_box_overfit.py",
+        #: the harness the closure record must wrap -- the box-head builder's
+        #: `…/2026-09-27-refcv7-box-head/code/new/stack/scripts/g_box_overfit.py` (PROVISIONAL
+        #: until that package lands)
+        "harness": "stack/scripts/g_box_overfit.py",
+        "prereg_md5": "594c71196cc5bbd527fee40b2cb0e3f1",
+        "frameset_md5": "b291404c36f83c3e397e3b90367e8e7b",
+        "n_frames": 16, "n_pos": 113, "n_ignore": 77,
+        "steps": 2000, "batch": 4, "seed": 0, "gate": 0.5,
+        #: SPEC_REFCV7 A13 (sec. 18): the LAUNCH optimiser AS BUILT (`build_optimizer`, `--opt dd --lr 1e-4`:
+        #: AdamW, the trunk group at --encoder-lr-mult 0.5) + clip 10 -- replacing the prereg's `lr 2e-4 on
+        #: every tensor`; the record's per-arm `optimizer` spec (built, i.e. PEAK lrs) is read
+        "optimizer": {"class": "AdamW", "group_lrs": (5e-05, 1e-04), "weight_decay": 1e-4, "clip": 10.0},
+        #: SPEC_REFCV7 A17 (sec. 22, the PI): the peaks held through step 1,799, then a cosine decay to 0 over
+        #: steps 1,800-2,000 (both groups, the ratio kept) -- the record's `literals.lr_schedule`, verbatim
+        "lr_schedule": {"rule": "A17", "hold_peak_through_step": 1799, "decay": "cosine",
+                        "decay_from_step": 1800, "decay_to_step": 2000, "final_factor": 0.0},
+        #: PREREG sec. 5, numbered as the prereg numbers them; each term is (row key, op, literal)
+        #: on the arm's FINAL row. `count_rel` = |n_conf - 113| / 113 and `presence_ratio` =
+        #: presence(2000) / presence(0) are DERIVED by the gate; 6 also needs the loss finite at
+        #: every step (the harness's criterion-6 flag, the only place it is recorded)
+        "criteria": {"1": (("ap2m", ">=", 0.90),),
+                     "2": (("prec", ">=", 0.90), ("rec", ">=", 0.90)),
+                     "3": (("count_rel", "<=", 0.10),),
+                     "4": (("centre_p50_m", "<=", 0.30), ("size_p50_m", "<=", 0.30),
+                           ("z_p50_m", "<=", 0.15)),
+                     "5": (("cls_acc", ">=", 0.90),),
+                     "6": (("presence_ratio", "<=", 0.25),)},
+        #: PREREG sec. 6: each must-fail arm FAILS every criterion named (one passing = VOID)
+        "must_fail": {"memory_zeros": ("1",), "presence_w0": ("2", "3")},
+        #: C1-C3 must read their known values; C4 (step 0) is reported, not judged
+        "controls": ("C1", "C2", "C3"),
+    },
+    #: A9 / A10 15.2 -- G-LIVE-PRES: at the END of the smoke, on BOTH slot heads, the fraction of
+    #: slots whose sigma(presence logit) >= `gate` is < `max_frac` (refcv6 red arm: 71-99 of 100).
+    #: The heads are found in the forward output by the key token; None = not checked (generic).
+    "live_pres": None,
+    #: G-LIVE's gradient-reach rows (coordinator 2026-09-26, the audit's MEASURED finding: refcv6
+    #: logged 0 `ga_*` keys in 4,621 rows -- an off-by-one against `step += 1`). The groups are
+    #: the trainer's `grad_reach_report` parts, written here as LITERAL attribute paths on the
+    #: built model; a group is REQUIRED in every logged row when its module exists and has a
+    #: parameter the optimizer trains. Batch 2's config.json declaration is held to the rows
+    #: too (`declared_vs_built.check_logged_rows`).
+    "ga_groups": {"trunk": "core.encoder", "planner": "core.decoder",
+                  "tac_decoder": "tac_decoder_v6", "lift": "_perception.lift",
+                  "bev_encoder": "_perception.map_branch.encoder",
+                  "map_head": "_perception.map_branch.head", "box_memory": "_perception.box_mem",
+                  "box_decoder": "_perception.box_dec"},
+}
+#: ⛔ OPEN ITEMS (Master Mind 2026-09-27): parts of the launch flag set that are NOT DECIDED
+#: yet. While ANY is open this profile cannot mint a PASS -- `finalize` names each one and the
+#: verdict is at best INCOMPLETE. An item is closed by landing its flags as `required_values`
+#: (and in the canonical argv `stack/ops/runs.d/refcv7-r101-s0.argv.json`) and deleting it here.
+#: BOX-HEAD was CLOSED 2026-09-27 (the box head landed as 28d8365): its flags are `required_values` /
+#: `required_flags` below, built-checked by `box_required` in G-DVB; +R6 was not adopted (A14.1: LRP).
+_REFCV7_OPEN_ITEMS = (
+    # MAP-LIFT: CLOSED (SPEC_REFCV7 17 A12 + 20 A15 + 23 A18) -- its two flags are required
+    # values below and in the canonical argv; the binding G-MAP-OVERFIT runs A18's protocol
+)
+#: ⛔ SPEC_REFCV7 section 6.1: DrivoR-T's code still answers to `refcv7_*` names. Until its rename
+#: a refcv7 launch passes NONE of these flags, and G-DVB lists them as DrivoR-T levers that must be
+#: OFF. Keyed on the flag NAMES, today's and the post-rename ones, so the rule survives the rename.
+_DRIVORT_OFF = (
+    (("--refcv7", "--drivort"), "DrivoR-T's switch (SPEC_DRIVORT.md; SPEC_REFCV7 6.1)"),
+    (("--w-r7-wta", "--w-drivort-wta"), "DrivoR-T's WTA proposal-decoder weight"),
+    (("--w-r7-scorer", "--w-drivort-scorer"), "DrivoR-T's disentangled-scorer weight"),
+)
+#: the pinned Thor failure list -- 165 ENV ids (fixes-batch-2 gate) + 3 ENV tree-scope ids (NT suite
+#: 947b05f2f4b3, amendment 2026-10-22, recorded in the file) + 1 FLAKY id with its cited record
+#: (fixes-batch-3 gate), in 35 files -- and its sha256: a changed list is a reviewed edit of BOTH lines
+_THOR_ENV_FAILURES = ("stack/ops/launch_gate_thor_env_failures.json",
+                      "22d8fe2c900c8654c0fce4af754ee01db52da97a93272b61acb38a1932acaf21")
+PROFILES: dict[str, dict] = {
+    "refc": dict(_REFC, name="refc"),
+    #: the arm the PI stopped on 2026-09-26: kept so the gate can be run on its argv as evidence
+    "refcv6": dict(_REFC, name="refcv6"),
+    #: SPEC_REFCV7 = refcv6 + FIX-1..5 + NEW-1 (the residual on a kinematic prior) + NEW-2 (the map
+    #: at 10 cm, one lift, 100 m x +-30 m) + A9/A10 (the refined box head)
+    "refcv7": dict(
+        _REFC, name="refcv7",
+        #: G-EVAL's loader: refcv7's OWN (`stack/tanitad/eval/refcv7_loader.py`). The refcv6 battery
+        #: loader cannot build NEW-2's 10 cm branch -- MEASURED 2026-09-27: its strict load fails on
+        #: `_map_hires.lift.unobserved`. On Thor pass `--eval-kit /home/nvidia` (the kit layout).
+        eval_loader="stack/tanitad/eval/refcv7_loader.py",
+        #: ⛔ SPEC_REFCV7 24 (A19, the PI 2026-09-27 17:46 / 17:51 Berlin: "Binding = MAIN only,
+        #: both" / "Keep MAIN-only for both"): a BINDING overfit record whose must-fail arms were NOT
+        #: RUN is accepted -- MAIN is re-judged from its OWN registered literals, never from the
+        #: harness's overall verdict (which reads FAIL without the arms). A must-fail arm that RAN
+        #: and PASSED is still a VOID (A19 excuses absence, never a VOID). The must-fail evidence is
+        #: INHERITED -- stated exactly below and carried in the gate's PASS text, so the token says
+        #: what it does not cover.
+        overfit_main_only={
+            "policy": "A19_MAIN_ONLY_BINDING",
+            "source": "SPEC_REFCV7 24 (A19, landed 36cc332)",
+            "map": {
+                #: the A18 spec with its must-fail rows REMOVED -- the registered harness refuses
+                #: `--arms healthy` on a spec that names must-fail arms (main(): "the gated arm ...
+                #: is not in --arms"); every other literal is A18's. `…/raw/gmo_spec_A19_MAP_MAIN.json`
+                "spec_sha256": "56dea067fdef45e9b905f5741b562e59ad037396067cdbe43278c37f62be4f2a",
+                "inherited": ("the map must-fail arms are INHERITED from A17.1 (the launch map config "
+                              "+ the decay, 1,000 steps): s8_zeros read 0 on every thin class, "
+                              "near_block_zeros read edge 0.199, lane_w0 read lane 0 (A12 and A15 "
+                              "held them too)"),
+                "evidence": ("TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/"
+                             "g_map_overfit_A171.EARLY_NONBINDING.json",),
+            },
+            "box": {
+                "inherited": ("presence_w0 is robust by construction (zero presence-loss weight gives "
+                              "the presence head no gradient); memory_zeros was NOT measured at full "
+                              "scale on the launch head -- it held in the TOY test on the A17 code "
+                              "(18/18 cells, ap2m 0.0022-0.0171) and on the pre-A14 head, and "
+                              "learned_ref also reads BEV tokens pooled from the map branch, so a leak "
+                              "around the blinded memory would not be seen before launch; the PI "
+                              "accepted this knowingly (A19 Q2)"),
+                "evidence": ("TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/toy/",
+                             "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-box-head/raw/thor_gbo/gbo_early_nonbinding.json",
+                             "stack/tests/test_g_box_overfit.py::"
+                             "test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot"),
+            },
+        },
+        required_checks=BASE_CHECKS + ("G-SUITE-PINNED", "G-MAP-OVERFIT", "G-BOX-OVERFIT"),
+        #: EVERYTHING that needs the data or the launch venv runs on Thor; the dev box runs only
+        #: G-SUITE-PINNED (a full-commit archive with the HF cache) -- its evidence is imported
+        stages={"thor": ("G-HYG", "G-DVB", "G-LIVE", "G-CKPT", "G-EVAL", "G-CLOCK", "G-SUITE",
+                         "G-MAP-OVERFIT", "G-BOX-OVERFIT"),
+                "devbox": ("G-SUITE-PINNED",),
+                "all": CHECKS},
+        suite_mode="consume",
+        suite_env_failures=_THOR_ENV_FAILURES,
+        open_items=_REFCV7_OPEN_ITEMS,
+        #: G-SUITE-PINNED (b): the REGISTERED skips of the dev-box half, as (test id, reason)
+        #: PAIRS -- a reason admits ITS test only. PROPOSED by the gate agent 2026-09-27 from the
+        #: MEASURED 3cca805 rehearsals (`…/2026-09-26-refcv7-launch-gate/RESULT.md` sec. 3); landing
+        #: this file is the Master Mind's approval. Any other skip is still a FAIL.
+        suite_pinned_skip_ok=(
+            # per-backend: Windows-CPU BLAS is not bit-exact across gemm tilings. ⚠️ On Thor the
+            # same test is a PINNED ENV failure (the pin file), so it passes on NEITHER host.
+            (r"tests\.test_anchor_prefilter::test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes",
+             r"^Windows-CPU BLAS picks shape-dependent gemm tilings"),
+            # KNOWN GAP: refc_anchors_small64.pt is NOT in the repo (absent at 3cca805; asserted
+            # with a same-breath control), so this test runs NOWHERE from a git archive
+            (r"tests\.test_anchor_prefilter::test_replicates_the_measured_survivor_counts_on_the_canonical_val",
+             r"^anchor fixture absent: refc_anchors_small64\.pt$"),
+            # KNOWN GAP: the T1 kinematic-gate hook is not written (Decisions/2026-09-05-mm-
+            # decisions.md M23/M24); these contract tests ACTIVATE the moment it lands. Owner:
+            # UNASSIGNED (the Master Mind assigns)
+            (r"tests\.test_kingate_contract::test_gate_k_1_must_be_reachable_so_the_identity_control_can_actually_run",
+             r"^the T1 gate hook is not written yet$"),
+            (r"tests\.test_kingate_contract::test_the_zero_flag_path_must_be_declared_bit_identical",
+             r"^the T1 gate hook is not written yet$"),
+            # the dev-box half runs CPU-only by the Master Mind's rule (CUDA_VISIBLE_DEVICES=-1)
+            (r"tests\.test_refa_v1_precision::test_cuda_bf16_autocast_tiny_step_has_finite_loss_and_grad_norm",
+             r"^no CUDA device$"),
+        ),
+        required_flags=("--residual-prior", "--ego-history", "--slot-deep-supervision", "--slot-vis1"),
+        required_flags_why={
+            "--slot-deep-supervision": "SPEC_REFCV7 14 (A9 R2): per-layer supervision of both slot heads",
+            "--slot-vis1": "SPEC_REFCV7 14 + 15.1 (A9 R3, A10): VIS-1 targets and IGNORE semantics",
+        },
+        #: the BOX-HEAD requirement BUILT (G-DVB): the box-head package's guard -- the A9 levers ON in argv
+        #: AND built on BOTH slot heads, 300 queries, the learned reference points (A14.1)
+        #: ⭐ G-LIVE's ADMITTED dead groups (PI 2026-09-27 ~20:55: "We dont need these modules for
+        #: refcv7"; MEASURED by the launch smoke on 6fa5e8b: exactly these 10 of 474 leaf groups took
+        #: ZERO gradient). Each is BYPASSED BY CONSTRUCTION under a flag of the launch argv and kept
+        #: BUILT for strict checkpoint loads; it is admitted ONLY while its flag is in the argv, with its
+        #: reason in the evidence -- any OTHER dead group still FAILS G-LIVE. The model-side freeze +
+        #: declaration (tanitad/models/_gradreach, batch 3's design) is owed at the next restart: it
+        #: touches code the binding runs recorded.
+        live_dead_admitted=(
+            ("core.strategic.gru", "--no-strategic",
+             "the strategic context encoder; --no-strategic (PI 2026-09-06) bypasses the layer, never deletes it"),
+            ("core.strategic.proj", "--no-strategic",
+             "the strategic context projection; bypassed with the layer"),
+            ("nav_to_str", "--no-strategic",
+             "nav -> strategic ctx; the nav command still reaches tactical (nav_to_tac) and operative (meas_in)"),
+            ("str_goal_head", "--no-strategic",
+             "the strategic goal head; its hindsight loss is off with the layer"),
+            ("gstr_embed", "--no-strategic",
+             "S-BYPASS-2: the strategic goal's FiLM on the tactical latent is skipped"),
+            ("gstr_film", "--no-strategic",
+             "S-BYPASS-2: the strategic goal's FiLM on the tactical latent is skipped"),
+            ("core.decoder.ctx_to_cond", "--no-strategic",
+             "S-BYPASS-1: the strategic ctx is not handed to the operative decoder"),
+            ("core.route_head", "--no-strategic",
+             "the strategic route read-out; route_loss_applied is False under --no-strategic"),
+            ("core.decoder.lat_to_anchor", "--graft-tac8-prior",
+             "refcv6 4: the tactical 8x8 posterior REPLACES the image-only lat3 prior (refc.py refuses both)"),
+            ("core.decoder.lon_to_anchor", "--graft-tac8-prior",
+             "refcv6 4: the tactical 8x8 posterior REPLACES the image-only lon3 prior (refc.py refuses both)"),
+        ),
+        box_required={"module": "tanitad.train.box_head_guard", "fn": "check_refcv7_box_required"},
+        dvb_forbid_kinds=("drivort",),
+        forbidden_levers=_DRIVORT_OFF,
+        forbidden_prefixes=("--r7-", "--w-r7-", "--drivort-", "--w-drivort-"),
+        forbidden_built=("refcv7_wta", "refcv7_scorer", "drivort_wta", "drivort_scorer"),
+        # SPEC_REFCV7 section 7 (A2, PI ruling E1): all three selection mechanisms ON
+        required_on=("--graft-tac8-prior", "--graft-nav-compliance", "--speed-ceiling-filter"),
+        # every lever with ONE admissible value, each stated with its source (a flag the argv
+        # leaves at the trainer's default is REFUSED: the value must be written in the argv)
+        required_values={
+            "--residual-prior": "ha0_ext_pose",
+            "--map-hires": "on",
+            "--bev-source": "map_hires_pool",
+            "--map-hires-decision-rule": "prior_corrected",
+            "--map-hires-x-max-m": "100",
+            "--map-hires-y-half-m": "30",
+            "--map-hires-grad-ckpt": "on",
+            "--bev-planner-crop-m": ["60", "16"],
+            "--w-map": "0",
+            "--slot-presence-loss": "focal",
+            "--slot-presence-prior": "0.01",
+            "--slot-query-select": "learned_ref",
+            "--vis1-sidecar": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+            "--map-hires-near-lift-m": "20",
+            "--map-hires-near-refine-blocks": "1",
+        },
+        required_values_why={
+            "--residual-prior": "SPEC_REFCV7 10 (A5): the prior is ha0_ext_pose, past poses only",
+            "--map-hires": "SPEC_REFCV7 8.1: the 10 cm map head",
+            "--bev-source": "SPEC_REFCV7 11.1 (A6 option c): EVERY BEV consumer reads the "
+                            "pooled high-resolution BEV",
+            "--map-hires-decision-rule": "SPEC_REFCV7 9 item 1 (A4): the prior-corrected argmax",
+            "--map-hires-x-max-m": "SPEC_REFCV7 12 (A7): 100 m ahead",
+            "--map-hires-y-half-m": "SPEC_REFCV7 12 (A7): +-30 m",
+            "--map-hires-grad-ckpt": "SPEC_REFCV7 12 item 4 (A7): checkpointing ON for the "
+                                     "10 cm decoder",
+            "--bev-planner-crop-m": "SPEC_REFCV7 12 item 2 (A7): the planner BEV cropped to "
+                                    "60 m x +-16 m",
+            "--w-map": "SPEC_REFCV7 11.1 (A6): the 0.5 m map head and loss are REMOVED",
+            "--slot-presence-loss": "SPEC_REFCV7 14 (A9 R1): sigmoid focal presence + the focal matching cost",
+            "--slot-presence-prior": "SPEC_REFCV7 14 (A9 R1): the presence prior 0.01",
+            "--slot-query-select": "SPEC_REFCV7 19.1 (A14.1): the box head's learned reference points (the "
+                                   "full-model one-frame test PASS; the launch ruling 2026-09-27)",
+            "--vis1-sidecar": "SPEC_REFCV7 14 (A9 R3): the VIS-1 sidecar placed by the Master Mind 2026-09-27 "
+                              "(sha256 278443b3..., the box-head package raw/thor/vis1_full_record.json)",
+            "--map-hires-near-lift-m": "SPEC_REFCV7 17 (A12): the 0.1 m near-range lift over "
+                                       "x 0-20 m; 23 (A18): the map path G-MAP-OVERFIT ran",
+            "--map-hires-near-refine-blocks": "SPEC_REFCV7 20 (A15): ONE near refine block; 23 "
+                                              "(A18): A15's configuration",
+        },
+        #: levers that must be passed with a value strictly above 0 (a built head with no live
+        #: weight is declared-but-inert)
+        required_positive=("--w-map-hires",),
+        # the other prior modes are REFUSED by name (each has its regression arm)
+        forbidden_values={"--residual-prior": ("off", "ha0_ext", "cv_yawrate")},
+        forbidden_values_why={"--residual-prior": (
+            "SPEC_REFCV7 10 (A5): refcv7's prior is ha0_ext_pose; `off` is the refcv6 decoder, "
+            "`ha0_ext` reads the steer channel, `cv_yawrate` drops the acceleration")},
+        # every ruling is recorded above, so nothing is pending for refcv7 (the mechanism
+        # stays: a future open value decision goes here, and is PI-DECISION)
+        pi_pending_values={},
+        nav_tau_record_default=(
+            "TanitAD Research Lab/Architecture & Inference/Research/"
+            "2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json"),
+        # A9 / A10 15.2: BOTH slot heads (the planner's agent head and box3d) carry a presence
+        # logit named `presence_logit` in the forward output
+        live_pres={"key_token": "presence_logit", "min_heads": 2, "gate": 0.5,
+                   "max_frac": 0.5},
+    ),
+}
+
+#: refcv8 (WP-B, PLAN_REFCV8; DESIGN sec. 3; SPEC_WPB + SPEC_WPB_LADDER): the parts of the flag set NOT yet decided.
+#: ⛔ While any is open the token is not a PASS -- each names what decides it.
+#: ALL THREE CLOSED 2026-10-15 (Master Mind) on the PI's ruling of 2026-10-14 ("follow your recommendations":
+#: accept the ladder's I-0 amendment A1; launch with --w-r8-listwise 0.0, --w-tac-v6 1.0, --w-map-hires 1.0). They
+#: are kept below VERBATIM, each with its `closed` record, and their flags are LITERALS in `required_values` /
+#: `required_flags` / `forbidden_values`, equal to the committed launch argv (refcv8-r101-s0.argv.json, b30f924).
+_REFCV8_CLOSED_ITEMS = (
+    {"id": "R8-RECIPE",
+     "what": "the conditioning recipe's values (--r8-n-alloc, --r8-alloc-emit, --w-r8-alloc-l1, --w-r8-listwise, "
+             "--w-r8-sat, --w-r8-subscore, --w-r8-v9-cons, --r8-lat-prior-dropout, --r8-prior-free-group) are decided "
+             "by SPEC_WPB's "
+             "frozen-trunk arms (registered c952d4b4) and SPEC_WPB_LADDER L1",
+     "owner": "WP-B (results) -> the Master Mind (ruling)",
+     "closed": "2026-10-15 on the PI's ruling of 2026-10-14: the ladder is scored under A1 (L1 NOT QUOTABLE; "
+               "…/2026-10-04-refcv8-tactical-conditioning/ladder_score_2026-10-14/), V-R8-noLW CONFIRMED "
+               "(5fef1b0), so the recipe is stack/ops/runs.d/refcv8-r101-s0.l1_recipe.json: listwise 0.0, the rest "
+               "as the smoke -- required_values / required_flags / forbidden_values below"},
+    {"id": "R8-BUDGET",
+     "what": "--w-tac-v6 and --w-map-hires for refcv8 (SPEC_WPB_LADDER L2 / L3, sized from P-GRAD); refcv7's 1.0 "
+             "stands until the ladder reads",
+     "owner": "WP-B -> the Master Mind",
+     "closed": "2026-10-15 on the PI's ruling of 2026-10-14: L2 PREMISE-UNMET, L3 FAILS under A1, so k 1 and "
+               "w 1 -- --w-tac-v6 1.0 and --w-map-hires 1.0 (required_values below)"},
+    # R8-WARMUP is CLOSED (Master Mind ruling 2026-10-11, SPEC_REFCV8 sec. 10.3, registered 2026-10-11): re-warm both
+    # LR groups over 1,000 steps to head 1e-4 / trunk 5e-5 under --opt dd, cosine over the run; --ema-decay 0.9998,
+    # the EMA evaluated at every in-run eval and saved; the B1 guard --b1-guard-ref-ap2m <refcv7-50,400 value>
+    # --b1-guard-step 1000. Its S_emit follows (--r8-alloc-emit-start 1000, pinned below). The remaining open items
+    # are the three that still wait on evidence.
+    {"id": "R8-INHERITED-RECORDS",
+     "what": "the Thor env-failure pin list and the G-MAP / G-BOX overfit records are refcv7's, INHERITED; they "
+             "are re-run on the refcv8 tree before a binding token",
+     "owner": "WP-B / the gate agent",
+     "closed": "2026-10-15: the gate's own checks enforce exactly this, and nothing inherited can pass them. "
+               "G-MAP-OVERFIT / G-BOX-OVERFIT accept only a --binding record whose launch-argv sha256 is THIS "
+               "argv's and whose code closure equals the launch tree's (refcv7's records carry refcv7's argv); "
+               "both are re-run on the refcv8 tree (Thor refcv8_run/bind_<c12>). G-SUITE accepts only a Thor "
+               "verdict bound to the launch tree with every failure inside the pin: MEASURED on the refcv8 tree "
+               "c95768b, 147 of the 165 pinned ids failing and 3 outside, all 3 FIXED in afaaf42 / 2f40f90 "
+               "(…/2026-10-04-refcv8-tactical-conditioning/launch_gate_2026-10-14/README.md)"},
+)
+#: ⛔ an item is OPEN only while it sits here; the closed ones above stay as the record of how each was decided
+_REFCV8_OPEN_ITEMS: tuple = ()
+_R7 = PROFILES["refcv7"]
+#: refcv8 = refcv7's profile (every refcv7 rule still binds: the perception stack, the selection mechanisms, the
+#: DrivoR-T levers off) + the refcv8 seams, the v9 release and the warm start.
+PROFILES["refcv8"] = dict(
+    _R7, name="refcv8",
+    open_items=_REFCV8_OPEN_ITEMS,
+    #: G-LIVE's admitted dead groups = refcv7's ten + ONE (MEASURED by the first refcv8 gate smoke, 2026-10-15,
+    #: bc2816862b8c: exactly this group of the refcv8 seams took ZERO gradient). `refc.py` applies it only when
+    #: `r8['rc'] is not None`, and `--r8-no-rc` (PI Q-A 2026-10-11, REQUIRED) feeds none: bypassed by construction,
+    #: kept BUILT (zero-init) for strict checkpoint loads. Admitted only while its flag is in the argv, like refcv7's;
+    #: the model-side declaration (BYPASS_DECLARATIONS) is owed at the next restart -- it touches code the binding
+    #: runs recorded.
+    live_dead_admitted=tuple(_R7["live_dead_admitted"]) + (
+        ("core.decoder.r8_rc_to_cond", "--r8-no-rc",
+         "the route-checkpoint -> cond projection; PI 2026-10-11 (Q-A): NO route checkpoint, so `r8['rc']` is None "
+         "and refc.py never applies it"),),
+    #: pregate 2026-10-12 B1: the refcv8 trainer OPENS --join-defect-masks while building (refc_v3_train.py
+    #: 1783-1792 -> join_label_hygiene.py:112). Under refcv7's tuple `_sentinel_argv` pointed it at the sentinel and
+    #: G-HYG, G-DVB and G-EVAL all FAILED before any check body ran. MEASURED (pregate_2026-10-12, d014ff2): with
+    #: the flag kept real, G-HYG PASS and G-DVB PASS (100,598,182 params) -- it was the only reason for both.
+    model_input_flags=tuple(_R7["model_input_flags"]) + ("--join-defect-masks",),
+    required_flags=tuple(_R7["required_flags"]) + (
+        "--refcv8", "--init-from", "--r8-v9-labels", "--r8-v9-labels-eval", "--r8-nav-from-v9",
+        "--r8-no-rc", "--join-defect-masks", "--grad-share-every", "--max-speed-input-v6", "--r8-speed-input",
+        "--speed-max-sidecar-v6", "--speed-max-sidecar-v6-eval", "--pose-sync-sidecar",
+        # R8-WARMUP (SPEC_REFCV8 10.3 / 10.1): the weight EMA and the B1 guard
+        "--ema-decay", "--b1-guard-ref-ap2m", "--b1-guard-step",
+        # R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the allocated extras ARE emitted
+        "--r8-alloc-emit"),
+    required_flags_why=dict(_R7.get("required_flags_why") or {}, **{
+        "--max-speed-input-v6": "SPEC_REFCV8 8.3 (X3): the set-speed channel, the ceiling's source",
+        "--r8-speed-input": "PI ruling 2026-10-11 (Q-B): the channel's source is the QUANTIZED max-speed LABEL "
+                            "(`--r8-speed-input label`; the trainer value lands in hold_r8label)",
+        "--speed-max-sidecar-v6": "PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (train), refcv7's",
+        "--speed-max-sidecar-v6-eval": "PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (eval), refcv7's",
+        "--r8-no-rc": "PI ruling 2026-10-11 (Q-A): NO route checkpoint -- the nav command and its distance only",
+        "--ema-decay": "R8-WARMUP (MM ruling 2026-10-11, SPEC_REFCV8 10.3): the weight EMA, 0.9998",
+        "--b1-guard-ref-ap2m": "SPEC_REFCV8 10.1 B1 guard: refcv7-50,400's in-run box3d AP@2 m (min of last 22 rows)",
+        "--b1-guard-step": "SPEC_REFCV8 10.1 B1 guard: first read at step 1,000",
+        "--pose-sync-sidecar": "X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction "
+                               "(Data FlyWheel; tanitad/data/pose_sync.py)",
+        "--refcv8": "PLAN_REFCV8 R8-1: the tactical layer conditions generation and selection",
+        "--init-from": "DESIGN 3.7: the warm start from refcv7 (every source key strict, new keys = refcv8 seams)",
+        "--r8-v9-labels": "WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC",
+        "--r8-v9-labels-eval": "train and eval are supervised by ONE label release",
+        "--r8-nav-from-v9": "R8-2: the per-frame announced nav token",
+        "--join-defect-masks": "MM binding 2026-10-04 item 6: the 693-box ego mask; SPEC_REFCV8 A2: re-mined over the "
+                               "4,572-clip view = 1,068 boxes (refcv8_join_label_defects_train4572.json, md5 "
+                               "b2591cb2ec4f4089831124e4738a961c; the 4,508 old clips' entries identical)",
+        "--grad-share-every": "SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run"}),
+    required_values=dict(_R7["required_values"], **{
+        "--r8-v9-md5": "83e30bd3791f0767707eade5f4671759",
+        "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+        "--r8-v9-lat-variant": "a",
+        "--r8-nav-args-dropout": "0.5",
+        "--r8-speed-unknown-p": "0.45",
+        "--r8-alloc-emit-start": "1000",
+        "--w-r8-cons": "0.05",
+        # PI Q-B 2026-10-11: the speed channel's source is the quantized label sidecar, and the sidecar paths are
+        # refcv7-r101-s0's OWN launch record (`stack/ops/runs.d/refcv7-r101-s0.argv.json`); the files' content is
+        # bound by the data manifest + the meta check (FIX-5), exactly like `--vis1-sidecar`
+        "--r8-speed-input": "label",
+        "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+        "--speed-max-sidecar-v6-eval": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+        # R8-WARMUP, written as the registered LITERALS (a flag left at the trainer's default is refused)
+        "--ema-decay": "0.9998",
+        "--b1-guard-ref-ap2m": "0.21211",
+        "--b1-guard-step": "1000",
+        "--warmup": "1000",
+        # SPEC_REFCV8 A2 (PI 2026-10-12, "do one full pass and add the missing clips except of course the val split"):
+        # ONE epoch over the 4,572-clip train view = floor(781,635 / 16) = 48,852 steps, and the data set built over it
+        # -- all LITERALS (data_coverage_2026-10-12/add203_build/RESULT.md sec. 6 + the v9 / VIS-1 build records). The
+        # refcv7 `--vis1-sidecar` value (4,369 + 139 clips) is OVERRIDDEN here: the trainer refuses any absent clip.
+        "--steps": "48852",
+        "--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+        "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+        "--pose-sync-sidecar": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+        "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+        "--r8-v9-labels": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
+        "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+        # SPEC_REFCV8 A3: FIX-4 binds the tau record's manifest to --v2-cache, so the 4,572 view needs its own tau
+        "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+        "--nav-compliance-tau-rad": "0.1806411302089691",
+        # B1 EVAL GEOMETRY (SPEC_REFCV8 10.1): the reference 0.21211 is defined on the 128-window in-run eval set =
+        # `--eval-batches 8` x the in-run batch (the trainer builds the eval loader with `batch_size=args.batch`:
+        # refc_v3_train.py `n_need = args.eval_batches * args.batch`), and the guard first reads at step 1,000, which
+        # `--eval-every 500` reaches. A launch batch other than 16 is a DIFFERENT window set (B-EVAL-GEOMETRY).
+        "--batch": "16",
+        "--eval-batches": "8",
+        "--eval-every": "500",
+        # R8-RECIPE + R8-BUDGET, CLOSED 2026-10-15 on the PI's ruling of 2026-10-14 -- the committed launch argv's
+        # values (refcv8-r101-s0.argv.json, b30f924), written out
+        "--r8-n-alloc": "32",
+        "--w-r8-alloc-l1": "1.0",
+        "--w-r8-listwise": "0.0",
+        "--w-r8-sat": "0.1",
+        "--w-r8-subscore": "0.5",
+        "--w-r8-v9-cons": "0.05",
+        "--r8-lat-prior-dropout": "0.3",
+        "--w-tac-v6": "1.0",
+        "--w-map-hires": "1.0"}),
+    required_values_why=dict(_R7.get("required_values_why") or {}, **{
+        "--r8-v9-md5": "SPEC_REFCV8 A2: the 4,572-clip train release (the 4,369 clips row-identical to WP-A WPA-S3's "
+                       "f63ece41..., the control in v9_train4572/RESULT.md)",
+        "--r8-v9-eval-md5": "WP-A LANDING_READY WPA-S3: the validated eval139 release",
+        "--r8-v9-lat-variant": "D-WPA-1: lateral variant a (junction) is the default",
+        "--r8-nav-args-dropout": "MM binding 2026-10-04: nav-argument dropout, token kept",
+        "--r8-speed-unknown-p": "SPEC_REFCV8 8.3 (X3): the TRAINED unknown row at D4 / NavSim's no-limit share 0.45",
+        "--r8-alloc-emit-start": "MM ruling Q1 (I-2) + R8-WARMUP (2026-10-11): extras emitted from the end of the LR warmup "
+                                 "(--warmup 1000, SPEC_REFCV8 sec. 10.3); the emission-OFF phase is identity-free "
+                                 "(iw_diag + the split decode, I-W PASS 218 windows)",
+        "--w-r8-cons": "SPEC_WPB: the constraint-head weight",
+        "--r8-speed-input": "PI ruling 2026-10-11 (Q-B): the max-speed LABEL quantized to the road-type set "
+                            "{30, 50, 100, 120} km/h, not a past-only proxy and not the exact future speed; "
+                            "`label` is the trainer value landing in hold_r8label",
+        "--speed-max-sidecar-v6": "PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's train label sidecar (its launch record)",
+        "--speed-max-sidecar-v6-eval": "PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's eval label sidecar (its launch record)",
+        "--ema-decay": "R8-WARMUP (SPEC_REFCV8 10.3): EMA 0.9998, evaluated at every in-run eval",
+        "--b1-guard-ref-ap2m": "SPEC_REFCV8 10.1 (MM ruling 2026-10-11): the MINIMUM of refcv7-r101-s0's in-run box3d_ap2m "
+                               "over its last 22 eval rows, inrun_curve.json md5 74436ec4f705c22cc7f6f4cc1ea6a024 -- a "
+                               "literal, never re-derived",
+        "--b1-guard-step": "SPEC_REFCV8 10.1: the guard reads at the first in-run eval at or after step 1,000",
+        "--warmup": "R8-WARMUP (SPEC_REFCV8 10.3): both LR groups re-warm over 1,000 steps (S_emit = the warmup length)",
+        "--steps": "SPEC_REFCV8 A2 (PI 2026-10-12): ONE full pass = 48,852 steps over 781,635 windows (also the cosine "
+                   "horizon); the 10.3 length 30000 (0.614 epoch) is superseded",
+        "--v2-cache": "SPEC_REFCV8 A2: the 4,572-clip train view (manifest md5 77dafb50af0aedd1b940cf12c12518ef; n eval139 = 0)",
+        "--agent-rig-extrinsics": "SPEC_REFCV8 A2: 4,711 keys = the 4,508 refcv6 entries untouched + the 203 ADD clips",
+        "--pose-sync-sidecar": "SPEC_REFCV8 A2: 4,711 rows; every refcv6 row reproduced exactly (4,508 / 4,508)",
+        "--clip-clock-sidecar": "SPEC_REFCV8 A2: 4,686 rows; 33 stationary ADD clips clocked by the camera-timestamp route "
+                                "(validated on all 4,653 moving clips); unverified 22 / 4,572 = 0.481 % < 1 %",
+        "--r8-v9-labels": "SPEC_REFCV8 A2: the v9 train release over the 4,572 view",
+        "--nav-compliance-tau-file": "SPEC_REFCV8 A3: the FIX-4 nav tau record re-derived on the 4,572-clip view "
+                                     "(sha256 9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3)",
+        "--nav-compliance-tau-rad": "SPEC_REFCV8 A3: = the 4,572-view record's tau, by the registered FIX-4 rule "
+                                    "(4,369-view value 0.18063741505146028)",
+        "--vis1-sidecar": "SPEC_REFCV8 A2: the VIS-1 sidecar over 4,572 + 139 clips, sha256 "
+                          "b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04 (the 4,508 refcv7 clips' entries identical; 145 unjoined ADD clips as "
+                          "zero-frame entries, mask True)",
+        "--batch": "SPEC_REFCV8 10.1: the B1 reference is defined on the 128-window in-run eval = "
+                   "--eval-batches 8 x --batch 16",
+        "--eval-batches": "SPEC_REFCV8 10.1: the in-run eval geometry the B1 reference is defined on (8 x 16 = 128 windows)",
+        "--eval-every": "SPEC_REFCV8 10.1: the in-run eval fires at step 1,000 (the guard's first read)",
+        "--r8-n-alloc": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json: allocation M 32",
+        "--w-r8-alloc-l1": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-r8-listwise": "PI 2026-10-14 (R8-RECIPE closed): the X1 listwise selector loss OFF -- V-R8-noLW "
+                             "CONFIRMED (5fef1b0): the listwise-trained selector is what lost the GT turns",
+        "--w-r8-sat": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-r8-subscore": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-r8-v9-cons": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--r8-lat-prior-dropout": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json",
+        "--w-tac-v6": "PI 2026-10-14 (R8-BUDGET closed): k 1 -- L2 PREMISE-UNMET under A1",
+        "--w-map-hires": "PI 2026-10-14 (R8-BUDGET closed): w 1 -- L3 FAILS under A1"}),
+    required_positive=tuple(_R7["required_positive"]) + ("--w-r8-cons", "--w-r8-v9-cons"),
+    forbidden_levers=tuple(_R7["forbidden_levers"]) + (
+        (("--r8-derange-feed",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
+        (("--r8-rc-roll",), "SPEC_WPB_LADDER's L1 deliberate-regression diagnostic"),
+        (("--r8-roll-targets",), "SPEC_WPB_LADDER's L2 / L3 information control"),
+        (("--r8-roll-speed-input",), "SPEC_WPB_LADDER's L4 deliberate-regression arm (V-VSHUF)"),
+        # ⛔ PI Q-A 2026-10-11 ("just give the nav command and the distance"): NO route checkpoint. Refused by NAME,
+        # whatever the value: a launch carrying the RC variant, its noise or its dropout feeds a route input the PI
+        # ruled out. (`--r8-rc-roll` is already refused above; `--r8-no-rc` is REQUIRED.)
+        (("--r8-rc-variant", "--r8-rc-noise-along-m", "--r8-rc-noise-lat-m", "--r8-rc-dropout"),
+         "PI 2026-10-11 (Q-A): NO route checkpoint -- the refcv8 launch carries `--r8-no-rc` and none of the RC flags"),
+        # (the v8 future-max sidecar entry that stood here is LIFTED by PI Q-B 2026-10-11: the sidecar is the speed
+        #  channel's source, as the QUANTIZED label -- see required_values / forbidden_values. The entry's evidence is
+        #  kept: the EXACT future-max sidecar measured D4 LEAK 0.238 against the 0.05 bar (SPEC_REFCV8 8.3); the PI's
+        #  ruling is that the 4-way road-type quantization, not the exact future speed, is what the channel carries.
+        #  The RC entry above replaces the certified noised RC-A50 inputs (along 2.0 m, lat 0.75 m, dropout 0.3).)
+        # PI D-R9-MAPHEAD-PRECISION (2026-10-26): the map-only fine-tune freezes the planner -- it launches ONLY under
+        # its own profile `refcv8-mapft`, whose G-DVB / G-LIVE read the freeze (this profile's G-LIVE would not)
+        (("--r8-train-only-map",), "the map-only fine-tune (PI D-R9-MAPHEAD-PRECISION) -- launched under profile "
+                                   "refcv8-mapft only"),
+        # MM 2026-10-27 (refcv9 round 3): the refcv9 warm-start freeze launches ONLY under its own profile `refcv9-warm`,
+        # whose G-DVB / G-LIVE read the freeze (this profile's G-LIVE would not); inherited by refcv8-nt, refcv8-mapft
+        # and v8f, which take this tuple
+        (("--r9-train-only",), "the refcv9 warm-start freeze (PI 2026-10-27) -- launched under profile refcv9-warm "
+                               "only"),
+        # MM 2026-11-02 (refcv9 C12-E1): the E1 perception-only rig builds NO planner / tactical module -- it launches ONLY
+        # under its own profile `refcv9-e1rig`, whose G-DVB / G-LIVE / G-EVAL read the rig (this profile's would not);
+        # inherited by refcv8-nt, refcv8-mapft, v8f and refcv9-warm, which take this tuple
+        (("--r9-perc-rig",), "the refcv9 E1 perception-only rig (C7: planner / tactical NOT built) -- launched under profile "
+                             "refcv9-e1rig only"),
+    ),
+    #: PI Q-B: the channel's source is the label; the past-only proxies are refused by value
+    #: R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the prior-free group is OFF -- `()` refuses the boolean's mere
+    #: presence (`forbidden_value_reasons`: a present flag with no value is refused)
+    forbidden_values=dict(_R7.get("forbidden_values") or {}, **{"--r8-speed-input": ("n2", "n3"),
+                                                                "--r8-prior-free-group": ()}),
+    forbidden_values_why=dict(_R7.get("forbidden_values_why") or {}, **{"--r8-speed-input": (
+        "PI 2026-10-11 (Q-B): the refcv8 speed input is the quantized max-speed LABEL (`label`); the past-only "
+        "proxies n2 / n3 are superseded"),
+        "--r8-prior-free-group": "PI 2026-10-14 (R8-RECIPE closed): the l1 recipe launches without the prior-free "
+                                  "group, as the smoke and the ladder arms did"}),
+    #: both PI items that stood here are CLOSED by the PI's rulings of 2026-10-11 (Q-A: no route checkpoint; Q-B: the
+    #: quantized label is the speed input), so no flag of this profile awaits a PI value -- the mechanism stays
+    pi_pending_values=dict(_R7.get("pi_pending_values") or {}),
+    #: SPEC_REFCV8 A3: the FIX-4 tau record derived on the 4,572-clip view (refcv7's record names the 4,369 manifest,
+    #: which `nav_tau_reasons` refuses for a --v2-cache it was not derived inside). A4: the gate reads the byte-identical
+    #: copy under stack/ -- a Thor tree ships stack/ + taniteval/ only, and `_resolve_repo_rel` finds nothing else there
+    #: (the research copy: data_coverage_2026-10-12/navtau_train4572/nav_compliance_tau_train4572.json)
+    nav_tau_record_default="stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json",
+    #: SPEC_REFCV8 A4: G-CLOCK's INDEPENDENT references for the 4,572-clip view = refcv7's ALLTRAIN (4,486 clips) + the
+    #: 170 moving ADD clips (q4c unchanged) + 13 slow ADD clips (q4c unchanged, V_MIN 0.5 m/s, pre-registered control
+    #: S2 n 680 max 32.5 us vs the 1 ms bar). MEASURED gate verdicts: ALLTRAIN only 225 / 4,572 unverified FAIL; + ADD203
+    #: 55 (1.203 %) FAIL; + slow regime 42 (0.919 %) PASS; the slow file shifted +0.2 s -> 2,219 violating windows FAIL.
+    #: Byte-identical copies of the research files (data_coverage_2026-10-12/clockref_add203/ and
+    #: 2026-09-26-refcv6-frozen-trunk-audit/raw/), under stack/ so the shipped tree carries them.
+    clock_reference=("stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ALLTRAIN.json",
+                     "stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ADD203.json",
+                     "stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ADD203_slowregime.json"),
+)
+
+
+# --------------------------------------------------------------------------------------------- #
+# v8F rung alpha, arm alpha-1 (PLAN_V8F section 6): the refcv8 recipe with ONE lever changed -- the residual prior   #
+# (alpha-1 = `p10_pose`, the POSE-ONLY P10; the steer-reading `p10` is the optional arm alpha-1s, profile `v8f_steer`)   #
+# --------------------------------------------------------------------------------------------- #
+#: the frozen P10 artifacts. ⛔ LITERALS, never read from the file under test: the file is checked AGAINST them.
+#: alpha-1 AS LAUNCHED reads the POSE-ONLY artifact (`--residual-prior p10_pose`; refit on the 4,572-clip train view,
+#: banked in the package and shipped in stack/tanitad/configs/v8f_p10/). The STEER artifact (v8F-mini's, 600 clips) belongs
+#: to the optional arm alpha-1s (profile `v8f_steer`), pending the PI.
+V8F_P10_SHA256 = "e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d"
+V8F_P10_STEER_SHA256 = "af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3"
+_V8F_P10_REL = "stack/tanitad/configs/v8f_p10"
+#: the refcv8 FULL-RUN geometry literals. PLAN_V8F section 6 sizes rung alpha as a TINY rung (batch 8, ~4.5 h/arm, two
+#: seeds), so these are not inherited: forcing them would force a full run. They are the open item V8F-RUNG-GEOMETRY.
+_V8F_GEOMETRY_FLAGS = ("--steps", "--batch", "--eval-batches", "--eval-every",
+                       "--b1-guard-step", "--b1-guard-ref-ap2m")
+_V8F_GEOMETRY_ITEM = {
+    "id": "V8F-RUNG-GEOMETRY",
+    "what": "the tiny rung's step / batch / eval cadence (PLAN_V8F section 6: batch 8, ~4.5 h/arm, seeds 0 and 1) is not "
+            "fixed: refcv8's full-run literals (--steps 48852, --batch 16, --eval-batches 8, --eval-every 500) and its "
+            "B1 guard (--b1-guard-ref-ap2m 0.21211 is defined on the 128-window eval = 8 x 16, so a batch-8 rung reads "
+            "a DIFFERENT window set; --b1-guard-step 1000) are therefore NOT in this profile's required_values",
+    "owner": "the Master Mind (rung sizing; set at launch from refcv8's measured step time) -> closes by writing the six "
+             "literals into required_values",
+    "closes_when": "the rung's argv fixes --steps/--batch/--eval-batches/--eval-every and either re-derives or drops "
+                   "the B1 guard; both arms (alpha0, alpha1) then carry the SAME values"}
+#: ⛔ While any is open the token is not a PASS -- each names what decides it. NONE of them is an engineering gap.
+_V8F_OPEN_ITEMS = (_V8F_GEOMETRY_ITEM,)
+_V8F_STEER_OPEN_ITEMS = (
+    _V8F_GEOMETRY_ITEM,
+    {"id": "V8F-P10-ACTION-INPUT",
+     "what": "`--residual-prior p10` reads the RECORDED STEER at t0 (kinematic feature k) -- an ACTION mode, like "
+             "`ha0_ext` which SPEC_REFCV7 section 10 (A5) EXCLUDED; NavSim has no steer channel. The eval harness must "
+             "supply `ego_actions` or REFUSES (kinematic_prior.FORWARD_EXCLUSIONS names both modes). alpha-1 as launched "
+             "is the POSE-ONLY `p10_pose`; this is the optional arm alpha-1s. PI RULING 2026-10-17: REJECTED -- \"the model should get measured ego motion and its history, instead of steering angle which represents a sort of action ... the measured yaw rate\". This item never closes; alpha-1s is not launched",
+     "owner": "PI (admissibility of the recorded steer at inference; the vision-only rule is about ego STATE, and "
+              "this is a vehicle-bus signal the past-pose prior does not read)",
+     "closes_when": "a PI ruling that steer[t0] is admissible at inference; then FORWARD_EXCLUSIONS' declaration is "
+                    "deleted for p10 and the RL/NavSim adapters plumb actions"},
+)
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv8-nt: H-NT-DECIDE-1 arms A1 / A1r (PREREG_NT_DECIDE; DESIGN_AND_COSTING sec. 3)             #
+# --------------------------------------------------------------------------------------------- #
+#: The NavSim navtrain fine-tune of theta_DEC. = refcv8's profile (every refcv8 rule still binds: the architecture, the
+#: recipe, the selection mechanisms, the warm-start strictness) with ONLY the NavSim data inputs replaced, the
+#: PhysicalAI pose-sync artifact removed, and the NT guards required. Every departure is a LITERAL below with its source.
+#: Built 2026-10-21 by the Architecture & Inference agent (E4); the argv is `nt_argv.py a1` (derived from
+#: stack/ops/runs.d/refcv8-r101-s0.argv.json by a closed edit list).
+_NT_ROOT = "/home/nvidia/r8ns/nt"
+_NT_LAB = "/home/nvidia/r8ns/nt/labels/a1"
+#: a value no argv can carry: a required value equal to it REFUSES every argv until the corpus build replaces it
+_NT_PENDING = "PENDING-NT-CORPUS"
+#: NT-B1-GUARD (see the open item): None = OPEN (refcv8's literals stay required, the item blocks a PASS);
+#: "keep" = refcv8's guard literals required (the item closes); "drop" = both guard flags REFUSED (the item closes)
+_NT_B1_GUARD: str | None = "drop"
+#: NT-CORPUS (see the open item): the v9 release md5 of the FINAL A1 label build (labels/a1/v9_labels_nt_train.npz,
+#: logs/V9_MD5_FINAL). _NT_PENDING = OPEN (every argv is refused on it); a 32-hex literal closes the item. CLOSING =
+#: these TWO constants (+ the argv md5 and the clock reference file) -- written by trainer/code/nt_close.py, reviewed.
+_NT_V9_MD5: str = "65bf1f62461913d05732944d51ba13c2"
+#: the 10 cm map's MAP-ONLY parts (map_head_hires.grad_reach_report_hires: `refine`, `near`, `near_refine` feed the map
+#: logits only; `lift` / `encoder` / the trunk's s8 stage are SHARED with the planner's pooled BEV). Under the NT data
+#: there is no SAM3 GT, so with `--map-min-coverage 0.0` every train window's map target is all-IGNORE and the loss
+#: builds `logits.sum() * 0`: these parts take EXACTLY zero gradient by construction (K4). Leaf groups read off the
+#: built model's state_dict (ckpt_0.pt of the 2026-10-21 smoke): 12 groups, 105,032 values.
+_NT_MAP_ONLY_GROUPS = (
+    "_map_hires.refine.cls", "_map_hires.refine.conv1", "_map_hires.refine.conv2", "_map_hires.refine.inp.0",
+    "_map_hires.refine.inp.1", "_map_hires.refine.norm1", "_map_hires.refine.norm2",
+    "_map_hires.near.lift", "_map_hires.near.lift.proj",
+    "_map_hires.near_refine.0.c1", "_map_hires.near_refine.0.c2", "_map_hires.near_refine.0.n1")
+#: PREREG_NT_DECIDE sec. 4.1: the PI's DATA-line ACK (L_D = 84.5; ABSENT the file the line is 85.0). The gate binds the
+#: file's git BLOB id -- the bytes as committed with the Research Lab package (cd8c465), shipped to Thor beside the NT
+#: inputs -- and REFUSES a missing or different file (amendment_ack_reasons, via profile_argv_rules, so no path to a
+#: token skips it). The ACK names the prereg blob it applies to; a byte-identical copy rides in the tree beside the
+#: held-out guard (configs/refcv8_nt/AMENDMENT_ACK_NT.txt, LF-pinned by that dir's .gitattributes) for the tests.
+_NT_AMENDMENT_ACK = {
+    "path": "/home/nvidia/r8ns/nt/inputs/AMENDMENT_ACK_NT.txt",
+    "git_blob": "38175992b524e29353a8e666c37a2813e0912080",
+    "data_line": 84.5, "fallback_line": 85.0,
+    "prereg_blob": "88abf03f5d40396fc074aca7a8c9e5aedc972425",
+    "repo_path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-21-nt-decide/AMENDMENT_ACK_NT.txt"}
+_NT_OPEN_ITEMS = (
+    {"id": "NT-CORPUS",
+     "what": "the full A1 corpus: E1's DONE_A1.json, then E2 (nt_labels.py) + E3 (nt_joins.py build/merge) + the clock "
+             "reference (nt_clock_reference.py) over it on Thor. Closing it = writing the v9 release md5 into "
+             "`--r8-v9-md5` below (now the unmatched literal PENDING-NT-CORPUS) and placing the clock reference at "
+             "stack/tanitad/configs/refcv8_nt/nt_clock_reference_a1.json",
+     "owner": "DataFlyWheel (E1) -> Architecture & Inference (E2/E3 builds) -> the Master Mind (literal review)"},
+    {"id": "NT-B1-GUARD",
+     "what": "the refcv8 B1 guard (--b1-guard-ref-ap2m 0.21211 --b1-guard-step 1000) cuts the head LR when the "
+             "PhysicalAI eval139 EMA box3d AP@2m reads below refcv7's minimum. PREREG sec. 2 keeps every refcv8 flag; "
+             "PREREG sec. 8 says A1's PhysicalAI forgetting is 'reported, not gated'; FEASIBILITY_AUDIT says 'drop "
+             "the guard or re-reference it'. Set _NT_B1_GUARD to 'keep' or 'drop' (nt_argv.py a1 --b1 keep|drop "
+             "writes the matching argv)",
+     "owner": "the Master Mind (a PREREG reading; the recommendation is 'drop')"},
+)
+_R8 = PROFILES["refcv8"]
+
+
+def _v8f_profile(variant: str) -> dict:
+    """The v8f profile for one P10 variant. ``pose`` = arm alpha-1 as launched (``p10_pose``); ``steer`` = the optional arm
+    alpha-1s (``p10``), whose open item is the PI's steer ruling. Everything else is refcv8's, literally."""
+    pose = variant == "pose"
+    mode = "p10_pose" if pose else "p10"
+    other = "p10" if pose else "p10_pose"
+    sha = V8F_P10_SHA256 if pose else V8F_P10_STEER_SHA256
+    file_bytes = 74604 if pose else 74475
+    steer_why = "steer at inference: REJECTED by the PI 2026-10-17 (the model gets measured ego motion and its history, incl. yaw rate)"
+    return dict(
+        _R8, name="v8f" if pose else "v8f_steer",
+        open_items=_V8F_OPEN_ITEMS if pose else _V8F_STEER_OPEN_ITEMS,
+        #: the model build reads the P10 file (FrozenP10 is built at decoder construction), so the model job keeps it real
+        model_input_flags=tuple(_R8["model_input_flags"]) + ("--p10-prior",),
+        required_flags=tuple(_R8["required_flags"]) + ("--p10-prior", "--p10-prior-sha256"),
+        required_flags_why=dict(_R8.get("required_flags_why") or {}, **{
+            "--p10-prior": "PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior",
+            "--p10-prior-sha256": "the P10 file's identity: checked at the build, stamped into config.json and ckpt.pt, "
+                                  "re-checked at eval and at resume"}),
+        required_values={**{k: v for k, v in _R8["required_values"].items() if k not in _V8F_GEOMETRY_FLAGS},
+                         "--residual-prior": mode,
+                         "--p10-prior-sha256": sha},
+        required_values_why={**{k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                                if k not in _V8F_GEOMETRY_FLAGS},
+                             "--residual-prior": ("PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- "
+                                                  "the residual prior is the frozen " +
+                                                  ("POSE-ONLY P10 (alpha-0's `ha0_ext_pose` reads past poses only, so the "
+                                                   "input set is unchanged)" if pose else
+                                                   "STEER-reading P10 (optional arm alpha-1s)")),
+                             "--p10-prior-sha256": ("the banked pose-only P10 (refit on the 4,572-clip train view, "
+                                                    f"{file_bytes:,} bytes): a literal" if pose else
+                                                    "the banked v8F-mini P10 (raw/p10/p10_prior.pt, 74,475 bytes): a literal")},
+        # every other prior is REFUSED by name (each has its regression arm); `ha0_ext_pose` is alpha-0's, `ha0_ext` and
+        # `cv_yawrate` are refcv7's refusals kept, and the sibling P10 is refused with its own reason
+        forbidden_values=dict(_R8.get("forbidden_values") or {}, **{
+            "--residual-prior": ("off", "ha0_ext", "ha0_ext_pose", "cv_yawrate", other)}),
+        forbidden_values_why=dict(_R8.get("forbidden_values_why") or {}, **{
+            "--residual-prior": f"PLAN_V8F section 6: this arm's prior is `{mode}`; `ha0_ext_pose` is alpha-0's (the baseline "
+                                "arm), `ha0_ext` reads the steer as an ECHO, `cv_yawrate` drops the acceleration, `off` is "
+                                "the refcv6 decoder"}),
+        #: the reason a SPECIFIC refused value gets (appended to the generic one in the refusal message)
+        forbidden_value_each_why={"--residual-prior": {
+            **({"p10": steer_why, "ha0_ext": steer_why} if pose else
+               {"p10_pose": "the pose-only sibling is arm alpha-1 (profile v8f), not alpha-1s"}),
+            "ha0_ext_pose": "alpha-0's prior (the baseline arm), not this arm's"}},
+        #: declared_vs_built.check_refcv7_required(..., residual_prior=) compares the argv AND the built decoder to THIS value
+        dvb_residual_prior=mode,
+        #: G-LIVE / G-CKPT / G-EVAL / G-CLOCK read these (literals, equal to the committed fixture)
+        p10_prior={"variant": variant, "sha256": sha, "file_bytes": file_bytes,
+                   "dir": _V8F_P10_REL,
+                   "fixture": f"{_V8F_P10_REL}/{'p10_pose_fixture.npz' if pose else 'p10_fixture.npz'}",
+                   #: in-decoder P10 vs the banked floors_kin / v8F-mini predictions, metres (the brief)
+                   "known_value_tol_m": 1e-4,
+                   #: the emitted per-tick prior vs the gate's independent recompute, control units
+                   "live_tol": 1e-4,
+                   #: ADE@6s (P10u, P10) on the fixture windows -- the brief's escalation bar
+                   "ade6_bar_m": 0.05,
+                   "fit_clips": 4572 if pose else 600, "knots": 30, "ticks": 60,
+                   #: the fraction of windows a ONE-FRAME-early window must move beyond the tolerance (the instrument
+                   #: has to be able to SEE a clock error, or the known-value check is decorative)
+                   "shift_control_min_frac": 0.95},
+    )
+
+
+PROFILES["v8f"] = _v8f_profile("pose")
+PROFILES["v8f_steer"] = _v8f_profile("steer")
+
+
+def _nt_b1(prof_flags: tuple, prof_values: dict) -> tuple[tuple, dict, tuple]:
+    """refcv8's B1 guard literals under the NT-B1-GUARD decision -> (required_flags, required_values, forbidden)."""
+    b1 = ("--b1-guard-ref-ap2m", "--b1-guard-step")
+    if _NT_B1_GUARD == "drop":
+        return (tuple(f for f in prof_flags if f not in b1),
+                {k: v for k, v in prof_values.items() if k not in b1},
+                ((b1, "NT-B1-GUARD closed 'drop': A1's PhysicalAI forgetting is reported, not gated (PREREG sec. 8)"),))
+    return prof_flags, prof_values, ()
+
+
+_nt_flags = tuple(f for f in _R8["required_flags"] if f != "--pose-sync-sidecar") + (
+    "--nt-heldout", "--nt-heldout-sha256", "--nt-token-table", "--window-starts", "--snapshot-steps",
+    "--r8-speed-unknown-always", "--map-min-coverage", "--grad-share-at", "--v7-labels", "--clip-clock-sidecar",
+    "--agent-join", "--join3d")
+_nt_values = {k: v for k, v in _R8["required_values"].items() if k != "--pose-sync-sidecar"}
+_nt_values.update({
+    # the data (E1 / E2 / E3), literals of the Thor layout (INTERFACE.md v1.1 + this agent's build scripts)
+    "--v2-cache": f"{_NT_ROOT}/v2ep_a1",
+    "--v7-labels": f"{_NT_LAB}/s2_labels_nt_train.jsonl.gz",
+    "--clip-clock-sidecar": f"{_NT_LAB}/clip_clock_nt.jsonl",
+    "--speed-max-sidecar-v6": f"{_NT_LAB}/speed_label_nt_train.jsonl",
+    "--agent-join": f"{_NT_LAB}/nt_train_plus_eval139_agents.jsonl.xz",
+    "--join3d": f"{_NT_LAB}/nt_train_plus_eval139_agents_3d.jsonl.xz",
+    "--vis1-sidecar": f"{_NT_LAB}/nt_train_plus_eval139_vis1_sidecar.npz",
+    "--agent-rig-extrinsics": f"{_NT_LAB}/nt_train_plus_eval139_extrinsics.json",
+    "--r8-v9-labels": f"{_NT_LAB}/v9_labels_nt_train.npz",
+    "--r8-v9-md5": _NT_V9_MD5,
+    # K3: the held-out guard + the token table (trainer-side refusal, tanitad/train/nt_guard.py)
+    "--nt-heldout": "/home/nvidia/r8ns/nt/launch_tree/stack/tanitad/configs/refcv8_nt/nt_heldout.json",
+    "--nt-heldout-sha256": "4b5b1aee2be780026c3df58ffc7924f8220459e4d9aa603ef801d76d8af95652",
+    "--nt-token-table": f"{_NT_LAB}/token_table_nt.json",
+    # the warm start: theta_DEC (md5 dad4cb5b5fb316922b4e9a7e85cee8f8; K0 checks the step-0 saves bit-equal to it)
+    "--init-from": "/home/nvidia/r8ns/navtrain_sel/wiseft/ckpt_mod2/ckpt_wiseft_mod2_DEC.pt",
+    # the schedule (PREREG sec. 2 / sec. 5): 2 epochs of 99,824 tokens at batch 16; one window per token-episode
+    "--steps": "12478",
+    "--window-starts": "first",
+    "--snapshot-steps": "0,1560,3120,6239,9359,12478",
+    # K7 P-GRAD: the readings at the logged steps nearest 1,000 / 6,239 / 12,478 (multiples of --grad-share-every)
+    "--grad-share-every": "50",
+    "--grad-share-at": "1000,6250,12450",
+    # map OFF without an architecture change (K4): no NavSim map GT, so no coverage floor
+    "--map-min-coverage": "0.0",
+})
+_nt_flags, _nt_values, _nt_b1_forbid = _nt_b1(_nt_flags, _nt_values)
+
+PROFILES["refcv8-nt"] = dict(
+    _R8, name="refcv8-nt",
+    open_items=tuple(it for it in _NT_OPEN_ITEMS
+                     if not (it["id"] == "NT-B1-GUARD" and _NT_B1_GUARD in ("keep", "drop"))
+                     and not (it["id"] == "NT-CORPUS" and re.fullmatch(r"[0-9a-f]{32}", _NT_V9_MD5))),
+    required_flags=_nt_flags,
+    required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items()
+                             if k != "--pose-sync-sidecar"}, **{
+        "--nt-heldout": "PREREG sec. 2 / K3: the 38 selection-scan logs + every navtest log are never trained on",
+        "--nt-heldout-sha256": "K3: the guard file's pinned digest (the trainer refuses any other content)",
+        "--nt-token-table": "K3: clip -> (token, log) for every train clip; the guard reads it",
+        "--window-starts": "DESIGN sec. 3: ONE window per token-episode (t = 0) -- the R8_LEGAL inference window",
+        "--snapshot-steps": "PREREG sec. 5: EMA + RAW at 1,560 / 3,120 / 6,239 / 9,359 / 12,478, and step 0 for K0",
+        "--r8-speed-unknown-always": "DESIGN sec. 3: the UNKNOWN speed row always (= the LEGAL inference feed)",
+        "--map-min-coverage": "DESIGN sec. 3 map head: no NavSim map GT; 0.0 admits zero labelled windows (K4)",
+        "--grad-share-at": "PREREG K7: the P-GRAD readings",
+        "--v7-labels": "E2: the NavSim token labels (v7 minimal records)",
+        "--clip-clock-sidecar": "E2: the NavSim clocks merged with eval139's (G3 refuses v7 labels without one)",
+        "--agent-join": "E3: OpenScene anns, class map vehicle/pedestrian/bicycle -> automobile/person/rider",
+        "--join3d": "E3: the same records + cz (road plane) / h"}),
+    required_values=_nt_values,
+    required_values_why=dict({k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                              if k != "--pose-sync-sidecar"}, **{
+        "--v2-cache": "E1 (INTERFACE.md v1.1): the token-episode cache, 99,824 tokens / 1,154 logs",
+        "--r8-v9-md5": "NT-CORPUS: the v9 release built over the full A1 token table (PENDING until built)",
+        "--steps": "PREREG sec. 2: 2 epochs = 12,478 steps at batch 16 (99,824 / 16 = 6,239 per epoch)",
+        "--init-from": "PREREG sec. 2: theta_DEC = ckpt_wiseft_mod2_DEC.pt, md5 dad4cb5b5fb316922b4e9a7e85cee8f8",
+        "--grad-share-every": "K7 P-GRAD cadence (a multiple of --log-every 50; the readings must be multiples of it)",
+        "--grad-share-at": "K7: the logged steps nearest 1,000 / 6,239 / 12,478 (declared +11 / -28 steps)",
+        "--speed-max-sidecar-v6": "DESIGN sec. 3: the all-UNKNOWN road-type rows (meta binds the v7 blob)",
+        "--map-min-coverage": "DESIGN sec. 3 / K4: map OFF by data, the head kept built and its weight kept 1.0"}),
+    #: the PENDING literal is REQUIRED (until NT-CORPUS writes the md5) AND FORBIDDEN, so no argv passes meanwhile
+    forbidden_values=dict(_R8.get("forbidden_values") or {}, **{"--r8-v9-md5": (_NT_PENDING,)}),
+    forbidden_values_why=dict(_R8.get("forbidden_values_why") or {}, **{
+        "--r8-v9-md5": "NT-CORPUS: the v9 release over the full A1 corpus is not built yet"}),
+    forbidden_levers=tuple(_R8["forbidden_levers"]) + (
+        (("--pose-sync-sidecar",), "DESIGN sec. 3 'dropped': a PhysicalAI pose-to-image timing artifact; the NavSim "
+                                   "token-episodes are on the nominal 0.1 s grid by construction"),) + _nt_b1_forbid,
+    #: NT: K4's identity, admitted by name -- the 12 map-only leaf groups take EXACTLY zero gradient on NavSim data
+    live_dead_admitted=tuple(_R8["live_dead_admitted"]) + tuple(
+        (g, "--map-min-coverage", "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE "
+                                  "and the loss is logits.sum() * 0 (exactly zero gradient by construction)")
+        for g in _NT_MAP_ONLY_GROUPS),
+    #: ga-reach: the SHARED parts must still be > 0 (the planner trains them); the map-only parts must read EXACTLY 0.0
+    #: K4 on the TRAINING ROWS (PI 2026-10-25, "Profile-scoped K4 check"): every train window is all-IGNORE, so the
+    #: trainer writes the 10 cm loss as a counted zero WITHOUT the per-class contributions; map_train_row_reasons
+    #: then asserts K4 itself (0 labelled windows, loss exactly 0) instead of the contribution sum
+    map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage"),
+                   ga_keys_zero=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine"),
+                   train_labels="absent_k4", n_labelled_key="map_hires_n_labelled"),
+    #: FIX-4 under the PREREG's "every refcv8 flag unchanged": the selection tolerance is refcv8's, INHERITED by
+    #: digest -- the record is bound by its sha256, its status and its tau, and NOT re-derived on navtrain (a navtrain
+    #: tau would move the selection mechanism and confound A1 - A0). nav_tau_reasons reads this field.
+    #: PREREG sec. 4.1: the PI's DATA-line ACK, bound by git blob (amendment_ack_reasons reads this field)
+    amendment_ack=_NT_AMENDMENT_ACK,
+    nav_tau_inherited={"record": "stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json",
+                       "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+                       "tau": 0.1806411302089691,
+                       "why": "PREREG_NT_DECIDE sec. 2: A1 keeps every refcv8 flag; theta_DEC was selected with this "
+                              "tau, and the R8_LEGAL bridge reads it from the checkpoint config"},
+    #: G-CLOCK: refcv8's three references (eval139 + the PhysicalAI clips) + the NT token clocks MEASURED from the
+    #: logs' 2 Hz microsecond timestamps (nt_clock_reference.py; NT-CORPUS places the file)
+    clock_reference=tuple(_R8["clock_reference"]) + ("stack/tanitad/configs/refcv8_nt/nt_clock_reference_a1.json",),
+    #: ⭐ OPTION B (2026-10-22): G-BOX-OVERFIT on NT's OWN frozen frame set. refcv8's 16 PhysicalAI frames are not in
+    #: the NT --v2-cache (bind 701922c: "16 frame-set clips are not in the TRAIN cache"), so the SAME selector
+    #: (`gbo_select.py` md5 f9f93f92...) was run labels-only on the NT TRAIN token-episodes; the prereg (594c7119...),
+    #: the sec. 5 bars, the arms, the optimiser and the schedule are refcv8's, unchanged. The addendum that registers
+    #: the frame set (`stack/ops/refcv8nt_box_audit/raw/PREREG_G_BOX_OVERFIT_ADDENDUM_NT.md`) is bound by md5, and
+    #: judge_box_overfit re-judges frameset_profile / frameset_md5 / addendum_md5 / n_pos / n_ign / the C3 totals.
+    box_overfit=dict(_R8["box_overfit"], frameset_profile="refcv8-nt",
+                     frameset_md5="bb60278ce8d763cc5151cbcc1cb32735",
+                     addendum_md5="a9515574d356a359e08fc39dbac46d71", n_frames=16, n_pos=122, n_ignore=108),
+)
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv8-mapft: the MAP-ONLY fine-tune (PI decision D-R9-MAPHEAD-PRECISION, 2026-10-26)          #
+# --------------------------------------------------------------------------------------------- #
+#: The PI, 2026-10-26 (option (a), cap 6 Thor-hours): "fine-tune ONLY the map-only modules (refine + near +
+#: near_refine, 105,032 params; planner bit-identical, assert it), incl. the launch-gate route for a freeze-all-but-map
+#: trainer flag". = refcv8's profile (every refcv8 rule still binds: the architecture, the data, the recipe values) with
+#: `--r8-train-only-map` REQUIRED, the warm start bound by CONTENT to the shipped EMA model, the instruments that read
+#: frozen gradients (B1 guard, gradient share, conflict detector) refused, and G-DVB / G-LIVE reading the freeze.
+#: The gate edits are authorised for THIS flag only; nothing else in the gate changes.
+_MAPFT_FLAG = "--r8-train-only-map"
+#: the three map-only modules -- LITERALS (the trainer's map_only_ft.MAP_ONLY_MODULES is checked against them, never read)
+_MAPFT_MODULES = ("_map_hires.refine", "_map_hires.near", "_map_hires.near_refine")
+#: the trainable leaf groups and their sizes on the refcv8 build, MEASURED 2026-10-26 off the shipped
+#: E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt state_dict (refine 20,936 + near 65,600 + near_refine 18,496); the same 12
+#: group NAMES as `_NT_MAP_ONLY_GROUPS` (read independently off the NT smoke's ckpt_0.pt, 2026-10-21)
+_MAPFT_GROUPS = {
+    "_map_hires.refine.inp.0": 2048, "_map_hires.refine.inp.1": 64, "_map_hires.refine.conv1": 9216,
+    "_map_hires.refine.norm1": 64, "_map_hires.refine.conv2": 9216, "_map_hires.refine.norm2": 64,
+    "_map_hires.refine.cls": 264, "_map_hires.near.lift": 32, "_map_hires.near.lift.proj": 65568,
+    "_map_hires.near_refine.0.c1": 9216, "_map_hires.near_refine.0.n1": 64, "_map_hires.near_refine.0.c2": 9216}
+_MAPFT_NUMEL = 105_032
+#: `--init-from` bound by CONTENT, not by path: the shipped refcv8 EMA model ckpt_ema_48852.pt (ckpt_48852.md5; the
+#: trainer also refuses any file whose kind is not ema_model_only). Shipping it to Thor is the Master Mind's.
+_MAPFT_INIT_MD5 = "b4364029b68f29a33eeb4aebbbbd002b"
+_MAPFT_B1 = ("--b1-guard-ref-ap2m", "--b1-guard-step")
+_MAPFT_GS = ("--grad-share-every", "--grad-share-terms", "--grad-share-at")
+#: refcv8's full-run literals that do NOT carry over: the step budget is decided from the measured smoke cost
+_MAPFT_BUDGET = ("--steps", "--warmup", "--ema-decay", "--eval-every")
+_MAPFT_OPEN_ITEMS = (
+    {"id": "MAPFT-BUDGET",
+     "what": "the map-only run's --steps / --warmup / --ema-decay / --eval-every are not fixed: refcv8's full-run literals "
+             "(48,852 / 1,000 / 0.9998 / 500) are NOT inherited. PI 2026-10-26: cap 6 Thor-hours, the 50-step timing "
+             "smoke FIRST (this gate's G-LIVE `cost` row is that measurement), stop if the measured cost would exceed the "
+             "cap. ⚠️ --ema-decay 0.9998 averages over ~5,000 steps: a run much shorter than that exports an EMA that "
+             "is mostly the INIT map head",
+     "owner": "the Master Mind (sizing from the measured s/step; the PI's 6 Thor-hour cap binds)",
+     "closes_when": "the four literals are written into PROFILES['refcv8-mapft']['required_values'] from the measured "
+                    "G-LIVE cost, steps x s/step <= 6 h"},)
+_mapft_drop = set(_MAPFT_B1) | {"--grad-share-every"}
+PROFILES["refcv8-mapft"] = dict(
+    _R8, name="refcv8-mapft",
+    # MAPFT-BUDGET CLOSED (open-only): PREREG_MAPFT s1 (sealed f8774a7b) fixes the budget BY RULE from the
+    # measured 50-step smoke (N = min(10000, floor(0.85*(21600 - smoke_wall_s - 1800)/s_step)), N < 1000 -> STOP);
+    # the token binds the FULL argv by content, so the N that launches is the N that was gated.
+    # (open-only: the budget flags stay unpinned by the profile; the argv sha256 in the token is the pin)
+    # MM 2026-10-26 ~20:10, PI D-R9-MAPHEAD-PRECISION gate route
+    open_items=(),
+    #: G-BOX-OVERFIT is NOT required (MM 2026-10-26 ~21:20, inside the same PI gate route). It proves the box head CAN
+    #: learn its targets; under --r8-train-only-map the box head is FROZEN, so the check has no subject, and its replay
+    #: refuses the declared freeze (g_box_overfit._build_model does not apply map_only_ft.apply_freeze). What this launch
+    #: must prove about the box head is that it does NOT move: G-LIVE's bit identity of every non-map tensor (map_only
+    #: below), the RED arms, the zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required.
+    required_checks=tuple(c for c in _R8["required_checks"] if c != "G-BOX-OVERFIT"),
+    #: the Thor env-failure pin is the MAP-FINE-TUNE'S OWN copy (PI 2026-10-26 ~22:30, 'Pin for map fine-tune only'): the shared
+    #: list + 160 v8f-mini ENV ids (tree scope; the file's last amendment). Every other profile keeps the shared list.
+    #: the pinned v8f files run on the dev box too (G-SUITE (b)); one of them reads a LIVE box-2 chain export that exists only
+    #: while that chain runs, so it skips on any other machine or day (MEASURED on C2's archive). Registered for THIS profile.
+    suite_pinned_skip_ok=tuple(_R8["suite_pinned_skip_ok"]) + (
+        (r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree",
+         r"^(the export the running chain was launched from is gone|box2_ship is not on this machine)$"),),
+    suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
+                        "ee360bfb92ed61e4d440413432d555a9b4e2b5aeefb69ee7ca8b85db468b0906"),
+    required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
+    required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _mapft_drop}, **{
+        _MAPFT_FLAG: "PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + near_refine, planner bit-identical",
+        "--init-from": "PI D-R9-MAPHEAD-PRECISION: the warm start IS the shipped refcv8 EMA model (md5 bound below)",
+        "--conflict-detector": "the detector reads trunk gradients; the trunk is FROZEN (`off`, required by value)"}),
+    required_values=dict({k: v for k, v in _R8["required_values"].items() if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)},
+                         **{"--conflict-detector": "off"}),
+    required_values_why=dict({k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                              if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)}, **{
+        "--conflict-detector": "PI D-R9-MAPHEAD-PRECISION: no trunk gradient exists to measure"}),
+    forbidden_levers=tuple(e for e in _R8["forbidden_levers"] if _MAPFT_FLAG not in e[0]) + (
+        (_MAPFT_B1, "the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box "
+                    "head is FROZEN (its AP cannot move) and there is no head / encoder group to cut"),
+        (_MAPFT_GS, "the gradient-share instrument measures the trunk / bev025 / bev_pool groups, all FROZEN"),
+        (("--conflict-every",), "the conflict detector is off under the map-only fine-tune (a dead cadence)"),
+        (("--trunk-bn-recalib",), "BN recalibration REWRITES the frozen trunk's statistics"),
+        (("--r8-critic-drivable", "--w-r8-drivable"), "the drivable critic makes the planner READ the map head: the "
+                                                      "three modules would stop being map-only")),
+    #: ga-reach: the map-only parts must be > 0 (they train); the SHARED parts must read EXACTLY 0.0 (frozen)
+    map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine"),
+                   ga_keys_zero=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")),
+    #: the map-only literals G-DVB (built set) / G-LIVE (gradients + bit identity) / the argv rules (init md5) read
+    map_only={"flag": _MAPFT_FLAG, "modules": _MAPFT_MODULES, "groups": dict(_MAPFT_GROUPS),
+              "numel": _MAPFT_NUMEL, "init_from_md5": _MAPFT_INIT_MD5},
+)
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9-warm: the refcv9 WARM START (PI decisions 2026-10-27)                                    #
+# --------------------------------------------------------------------------------------------- #
+#: The PI, 2026-10-27: "warm start from refcv8 EMA-48,852; perception FROZEN; planner + tactical heads TRAINED; the map
+#: head ALSO trained, with a precision-targeted loss; inputs unchanged from refcv8; a `refcv9-warm` profile may be added
+#: to launch_gate.py; Thor cap 48 h". = refcv8's profile (every refcv8 rule still binds: the architecture, the data, the
+#: recipe values) with `--r9-train-only planner,tactical,map` REQUIRED, the warm start bound by CONTENT to the shipped
+#: EMA model (the map-only route's machinery, `map_only` below), the instruments that read frozen gradients refused,
+#: the map precision term and the GT-in-pool schedule (H-R9-ALLOC-ORACLE-1) required, R9-PF (a separate stage)
+#: forbidden. MM 2026-10-27 (round 3): R9W-TACTICAL / -EMIT-START / -TF-RESTART / -SCHEDULE CLOSED as rules below.
+_R9W_FLAG = "--r9-train-only"
+#: the trainable sets, as the argv literal (map_only_ft.TRAIN_ONLY_SETS, canonical order)
+_R9W_SETS = "planner,tactical,map"
+#: the trainable modules -- LITERALS (the trainer's map_only_ft.modules_of_sets(...) is checked against them, never
+#: read): planner = core.decoder (what `_mapft_inject`'s `mapft_planner_trainable` arm un-freezes); tactical = the
+#: eleven tactical-branch modules (map_only_ft's docstring says why each is tactical and which neighbours are not);
+#: map = the three map-only modules
+_R9W_TACTICAL = ("phi_tac", "nav_to_tac", "lat_head_tac", "lon_head_tac", "tac_goal_head", "tac_latent_proj",
+                 "tac_decoder_v6", "tac_behaviour_gate_v6", "core.tactical_trunk", "core.lat_head", "core.lon_head")
+_R9W_MODULES = ("core.decoder",) + _R9W_TACTICAL + ("_map_hires.refine", "_map_hires.near", "_map_hires.near_refine")
+#: the DECLARED grad-unreachable subtrees INSIDE the sets on the refcv8 build (tanitad/models/_gradreach.py): FROZEN by
+#: the build, frozen by the freeze, out of the optimizer -- MEASURED 2026-10-27 on the REAL build (8 tensors, 111,710
+#: values): the sampler build's offset_head / control_head, --no-strategic's ctx_to_cond, --graft-tac8-prior's
+#: lat_to_anchor / lon_to_anchor. G-DVB holds the built model's declarations inside the sets EQUAL to this literal
+_R9W_DECLARED_FROZEN = ("core.decoder.control_head", "core.decoder.ctx_to_cond", "core.decoder.lat_to_anchor",
+                        "core.decoder.lon_to_anchor", "core.decoder.offset_head")
+#: the TRAINED leaf groups and their sizes on the REAL refcv8-r101-s0 build, MEASURED 2026-10-27 (CPU,
+#: `refcv7_loader.build_model` on ckpt_ema_48852.pt, strict load, G-DVB clean; F:/refcv9_code3 real_r8_probe_tip.json):
+#: 164 groups = 94 of core.decoder (178 tensors, 15,254,091 values; the 5 declared subtrees excluded) + 58 tactical
+#: (113 tensors, 5,476,306) + the 12 map-only groups of `_MAPFT_GROUPS` (18 tensors, 105,032)
+_R9W_GROUPS = {
+    "core.decoder": 2, "core.decoder.feat_proj": 786_816, "core.decoder.traj_proj": 6528,
+    "core.decoder.cond_proj": 49_536, "core.decoder.time_embed": 1152, "core.decoder.layers.0": 1,
+    "core.decoder.layers.0.norm_q": 768, "core.decoder.layers.0.cross": 443_520,
+    "core.decoder.layers.0.cross.out_proj": 147_840, "core.decoder.layers.0.norm_f": 768,
+    "core.decoder.layers.0.film.to_scale_shift": 295_680, "core.decoder.layers.0.mlp.0": 591_360,
+    "core.decoder.layers.0.mlp.2": 590_208, "core.decoder.layers.0.norm_a": 768,
+    "core.decoder.layers.0.cross_agent": 443_520, "core.decoder.layers.0.cross_agent.out_proj": 147_840,
+    "core.decoder.layers.0.bev_wp": 1, "core.decoder.layers.0.bev_wp.attention_weights": 3080,
+    "core.decoder.layers.0.bev_wp.value_proj": 37_248, "core.decoder.layers.0.bev_wp.output_proj": 147_840,
+    "core.decoder.layers.1": 1, "core.decoder.layers.1.norm_q": 768, "core.decoder.layers.1.cross": 443_520,
+    "core.decoder.layers.1.cross.out_proj": 147_840, "core.decoder.layers.1.norm_f": 768,
+    "core.decoder.layers.1.film.to_scale_shift": 295_680, "core.decoder.layers.1.mlp.0": 591_360,
+    "core.decoder.layers.1.mlp.2": 590_208, "core.decoder.layers.1.norm_a": 768,
+    "core.decoder.layers.1.cross_agent": 443_520, "core.decoder.layers.1.cross_agent.out_proj": 147_840,
+    "core.decoder.layers.1.bev_wp": 1, "core.decoder.layers.1.bev_wp.attention_weights": 3080,
+    "core.decoder.layers.1.bev_wp.value_proj": 37_248, "core.decoder.layers.1.bev_wp.output_proj": 147_840,
+    "core.decoder.layers.2": 1, "core.decoder.layers.2.norm_q": 768, "core.decoder.layers.2.cross": 443_520,
+    "core.decoder.layers.2.cross.out_proj": 147_840, "core.decoder.layers.2.norm_f": 768,
+    "core.decoder.layers.2.film.to_scale_shift": 295_680, "core.decoder.layers.2.mlp.0": 591_360,
+    "core.decoder.layers.2.mlp.2": 590_208, "core.decoder.layers.2.norm_a": 768,
+    "core.decoder.layers.2.cross_agent": 443_520, "core.decoder.layers.2.cross_agent.out_proj": 147_840,
+    "core.decoder.layers.2.bev_wp": 1, "core.decoder.layers.2.bev_wp.attention_weights": 3080,
+    "core.decoder.layers.2.bev_wp.value_proj": 37_248, "core.decoder.layers.2.bev_wp.output_proj": 147_840,
+    "core.decoder.layers.3": 1, "core.decoder.layers.3.norm_q": 768, "core.decoder.layers.3.cross": 443_520,
+    "core.decoder.layers.3.cross.out_proj": 147_840, "core.decoder.layers.3.norm_f": 768,
+    "core.decoder.layers.3.film.to_scale_shift": 295_680, "core.decoder.layers.3.mlp.0": 591_360,
+    "core.decoder.layers.3.mlp.2": 590_208, "core.decoder.layers.3.norm_a": 768,
+    "core.decoder.layers.3.cross_agent": 443_520, "core.decoder.layers.3.cross_agent.out_proj": 147_840,
+    "core.decoder.layers.3.bev_wp": 1, "core.decoder.layers.3.bev_wp.attention_weights": 3080,
+    "core.decoder.layers.3.bev_wp.value_proj": 37_248, "core.decoder.layers.3.bev_wp.output_proj": 147_840,
+    "core.decoder.conf_head": 385, "core.decoder.tac8_lat_to_anchor": 936, "core.decoder.tac8_lon_to_anchor": 936,
+    "core.decoder.tgt_proj": 196_992, "core.decoder.tgt_film.to_scale_shift": 295_680,
+    "core.decoder.time_mlp.1": 591_360, "core.decoder.time_mlp.3": 590_208, "core.decoder.ego_to_cond": 12_672,
+    "core.decoder.cascade.control_heads.0": 6160, "core.decoder.cascade.control_heads.1": 6160,
+    "core.decoder.cascade.control_heads.2": 6160, "core.decoder.cascade.control_heads.3": 6160,
+    "core.decoder.cascade.conf_heads.0": 385, "core.decoder.cascade.conf_heads.1": 385,
+    "core.decoder.cascade.conf_heads.2": 385, "core.decoder.cascade.conf_heads.3": 385,
+    "core.decoder.adaln.0.scale_shift_mlp.1": 295_680, "core.decoder.adaln.1.scale_shift_mlp.1": 295_680,
+    "core.decoder.adaln.2.scale_shift_mlp.1": 295_680, "core.decoder.adaln.3.scale_shift_mlp.1": 295_680,
+    "core.decoder.r8_mod.proj.0": 13_824, "core.decoder.r8_mod.proj.1": 13_824, "core.decoder.r8_mod.proj.2": 13_824,
+    "core.decoder.r8_mod.proj.3": 13_824, "core.decoder.r8_sel": 4, "core.decoder.r8_rc_to_cond": 1920,
+    "core.decoder.r8_sub": 4, "core.decoder.r8_sub.mlp.0": 52_480, "core.decoder.r8_sub.mlp.2": 516,
+    "core.tactical_trunk.0": 786_816, "core.lat_head": 1155, "core.lon_head": 1155, "phi_tac.in_proj": 524_544,
+    "phi_tac.blocks.0.conv1": 196_864, "phi_tac.blocks.0.conv2": 196_864, "phi_tac.blocks.1.conv1": 196_864,
+    "phi_tac.blocks.1.conv2": 196_864, "phi_tac.blocks.2.conv1": 196_864, "phi_tac.blocks.2.conv2": 196_864,
+    "phi_tac.norms.0": 512, "phi_tac.norms.1": 512, "phi_tac.norms.2": 512, "phi_tac.out.0": 131_584,
+    "phi_tac.out.2": 262_656, "nav_to_tac": 33_280, "lat_head_tac": 4104, "lon_head_tac": 4104,
+    "tac_decoder_v6.queries": 9728, "tac_decoder_v6.agent_in": 98_560, "tac_decoder_v6.bev_in": 24_832,
+    "tac_decoder_v6.source_code": 512, "tac_decoder_v6.kv_norm": 512, "tac_decoder_v6.layers.0.film.proj": 5632,
+    "tac_decoder_v6.layers.0.n1": 512, "tac_decoder_v6.layers.0.n2": 512, "tac_decoder_v6.layers.0.n3": 512,
+    "tac_decoder_v6.layers.0.self_attn": 197_376, "tac_decoder_v6.layers.0.self_attn.out_proj": 65_792,
+    "tac_decoder_v6.layers.0.cross_attn": 197_376, "tac_decoder_v6.layers.0.cross_attn.out_proj": 65_792,
+    "tac_decoder_v6.layers.0.ff.0": 263_168, "tac_decoder_v6.layers.0.ff.2": 262_400,
+    "tac_decoder_v6.layers.1.film.proj": 5632, "tac_decoder_v6.layers.1.n1": 512, "tac_decoder_v6.layers.1.n2": 512,
+    "tac_decoder_v6.layers.1.n3": 512, "tac_decoder_v6.layers.1.self_attn": 197_376,
+    "tac_decoder_v6.layers.1.self_attn.out_proj": 65_792, "tac_decoder_v6.layers.1.cross_attn": 197_376,
+    "tac_decoder_v6.layers.1.cross_attn.out_proj": 65_792, "tac_decoder_v6.layers.1.ff.0": 263_168,
+    "tac_decoder_v6.layers.1.ff.2": 262_400, "tac_decoder_v6.out_norm": 512, "tac_decoder_v6.validity_head": 257,
+    "tac_decoder_v6.conf_head": 257, "tac_decoder_v6.lat_head": 257, "tac_decoder_v6.lon_head": 257,
+    "tac_decoder_v6.r8_cons_lat": 514, "tac_decoder_v6.r8_cons_lon": 514, "tac_decoder_v6.r8_film.0.proj": 5632,
+    "tac_decoder_v6.r8_film.1.proj": 5632, "tac_decoder_v6.r8_v9_lat_c": 3084, "tac_decoder_v6.r8_v9_lon_c": 2570,
+    "tac_decoder_v6.r8_v9_speed": 1028, "tac_behaviour_gate_v6.proj": 2574, "tac_goal_head": 6156,
+    "tac_latent_proj": 262_656, "_map_hires.refine.inp.0": 2048, "_map_hires.refine.inp.1": 64,
+    "_map_hires.refine.conv1": 9216, "_map_hires.refine.norm1": 64, "_map_hires.refine.conv2": 9216,
+    "_map_hires.refine.norm2": 64, "_map_hires.refine.cls": 264, "_map_hires.near.lift": 32,
+    "_map_hires.near.lift.proj": 65_568, "_map_hires.near_refine.0.c1": 9216, "_map_hires.near_refine.0.n1": 64,
+    "_map_hires.near_refine.0.c2": 9216}
+_R9W_NUMEL = 20_835_429
+_R9W_SCHED_FLAG = "--r9-alloc-force-schedule"
+_R9W_MAPFP_FLAG = "--w-map-fp"
+#: R9W-SCHEDULE (MM 2026-10-27): forced with p 1.0 -> 0.0 linearly over the FIRST HALF of the run, 0.0 after; the end
+#: step is floor(--steps / 2) of THIS argv (`r9_schedule_reasons`)
+_R9W_SCHED_RULE = {"flag": _R9W_SCHED_FLAG, "kind": "linear", "p0": 1.0, "p1": 0.0, "start": 0,
+                   "end_of": "--steps", "end_div": 2}
+#: R9W-TF-RESTART (MM 2026-10-27): refcv8's GT-constraint teacher-forcing ratio is HELD at its end-of-run value.
+#: refcv8-r101-s0's config.json: --r8-tf-start 1.0 --r8-tf-end 0.25 --steps 48852, and refcv8_train.tf_ratio is linear
+#: over steps 0 .. steps-1, so the ratio of its LAST step (48,851) is exactly 0.25; start = end = 0.25 holds it there
+_R9W_TF_HOLD = "0.25"
+#: R9-PF is a SEPARATE stage-2 fit (REFCV9_INMODEL_DESIGN s1, S2): never in this run
+_R9W_PF_FLAGS = ("--r9-progress-head", "--r9-calib-stage", "--w-r9-prog", "--w-r9-regime", "--r9-decision",
+                 "--r9-hidden", "--r9-decel-tau", "--r9-seed")
+_R9W_OPEN_ITEMS = (
+    {"id": "R9W-BUDGET",
+     "what": "--steps / --warmup / --ema-decay / --eval-every are not fixed: refcv8's full-run literals (48,852 / 1,000 / "
+             "0.9998 / 500) are NOT inherited. PI 2026-10-27: Thor cap 48 h; N from the 50-step smoke (this gate's "
+             "G-LIVE `cost` row) by the MAPFT rule form, N = min(Nmax, floor(0.85 x (cap - smoke - 1800) / s_step)); "
+             "DRAFT prereg: --warmup 200, --lr 1e-4, EMA horizon N/10. The schedule rule then reads its end step "
+             "floor(N / 2) off the same --steps",
+     "owner": "the operator, from the smoke (the PI's 48 Thor-hour cap binds)",
+     "closes_when": "the literals are written here, or closed open-only as MAPFT-BUDGET was (the token's argv sha256 pins N)"},
+    {"id": "R9W-MAP-FP-WEIGHT",
+     "what": "the --w-map-fp literal, fixed from the smoke's loss scales (stated, not tuned on eval) by the MM's RULE "
+             "(2026-10-27): w = 0.1 x map_hires / map_fp at the smoke's FIRST LOGGED step, rounded to ONE significant "
+             "figure; this profile requires it present and positive until then",
+     "owner": "the operator, from this gate's smoke rows (`map_hires`, `map_fp`)",
+     "closes_when": "the literal is written into required_values"},
+)
+_r9w_drop = set(_MAPFT_B1) | {"--grad-share-every"}
+#: G-LIVE's admitted dead groups, RE-DERIVED for planner,tactical,map (MM 2026-10-27): refcv8's rows whose group is
+#: TRAINED here -- inside the sets and NOT a declared subtree (a declared group is frozen and out of the optimizer, so
+#: neither G-LIVE nor the supervisor's zero-gradient gate reads it: ctx_to_cond / lat_to_anchor / lon_to_anchor drop
+#: out) -- + ONE parameter the supervisor reads by name: core.decoder.r8_rc_gate (zero-init scalar applied only when
+#: r8['rc'] is not None; --r8-no-rc feeds none; MEASURED on NT A1 2026-10-26 as the one offender outside the admitted
+#: groups; its leaf group `core.decoder` is live through navc_gate). refcv8 admits NO tactical group: none is dead.
+_R9W_LIVE_DEAD = tuple(r for r in _R8["live_dead_admitted"]
+                       if any(r[0] == m or r[0].startswith(m + ".") for m in _R9W_MODULES)
+                       and not any(r[0] == d or r[0].startswith(d + ".") for d in _R9W_DECLARED_FROZEN)) + (
+    ("core.decoder.r8_rc_gate", "--r8-no-rc",
+     "the route-checkpoint bearing gate (zero-init); refc.py applies it only when r8['rc'] is not None, and --r8-no-rc "
+     "(PI Q-A 2026-10-11) feeds none -- exactly zero gradient by construction"),)
+PROFILES["refcv9-warm"] = dict(
+    _R8, name="refcv9-warm",
+    # R9W-BUDGET + R9W-MAP-FP-WEIGHT CLOSED (open-only, the MAPFT-BUDGET precedent): DRAFT_PREREG_REFCV9_WARM s1 fixes both
+    # BY RULE from the measured 50-step smoke -- N = min(25000, floor(0.85*(172800 - smoke_wall_s - RESERVE_S)/s_step)),
+    # N < 4000 -> STOP; w = 0.1 x map_hires / map_fp at the smoke's first logged step, one significant figure
+    # (make_r9w_argv.py derive-w). The token binds the FULL argv by content, so the N and w that launch are the ones
+    # gated; the argv rules below still require --w-map-fp present and positive and the schedule end at floor(steps/2).
+    # _R9W_OPEN_ITEMS stays as the record of what was open. MM 2026-10-27 ~21:40, inside the PI's refcv9-warm profile go.
+    open_items=(),
+    #: G-BOX-OVERFIT is NOT required, for refcv8-mapft's reason (MM 2026-10-26 ~21:20): the box head is PERCEPTION and
+    #: FROZEN here, so the check has no subject (and its replay does not apply the declared freeze). What this launch
+    #: must prove about the box head is that it does NOT move: G-LIVE's bit identity of every frozen tensor (map_only
+    #: below), the RED arms and the trainer's FrozenStateGuard. G-MAP-OVERFIT stays required: the map head trains.
+    required_checks=tuple(c for c in _R8["required_checks"] if c != "G-BOX-OVERFIT"),
+    #: B5 (launch-kit dry-run, MM 2026-10-27): the Thor env-failure pin is refcv8-mapft's OWN copy -- the SAME file and
+    #: sha256 literal, read by the SAME mechanism (`env_failure_pin`: the file ships in the tree, its sha256 must equal
+    #: this literal). refcv9-warm runs the map fine-tune's tree on the same Thor, so the shared list (168 ids, 35 files)
+    #: would read the 160 v8f-mini ENV ids it lacks as failures; the mapft copy carries them (328 ids, 40 files). Its
+    #: pinned v8f files run on the dev box too, so refcv8-mapft's one registered skip is registered here as well
+    suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
+                        "ee360bfb92ed61e4d440413432d555a9b4e2b5aeefb69ee7ca8b85db468b0906"),
+    suite_pinned_skip_ok=tuple(_R8["suite_pinned_skip_ok"]) + (
+        (r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree",
+         r"^(the export the running chain was launched from is gone|box2_ship is not on this machine)$"),),
+    required_flags=tuple(f for f in _R8["required_flags"] if f not in _r9w_drop) + (
+        _R9W_FLAG, "--conflict-detector", _R9W_MAPFP_FLAG, _R9W_SCHED_FLAG, "--r9-alloc-force-seed",
+        "--r8-alloc-emit-start", "--r8-tf-start", "--r8-tf-end", "--steps"),
+    required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _r9w_drop}, **{
+        _R9W_FLAG: "PI 2026-10-27: perception FROZEN; the planner (core.decoder), the tactical heads and the map head "
+                   "trained",
+        "--init-from": "PI 2026-10-27: the warm start IS refcv8 EMA-48,852 (md5 bound by map_only below)",
+        "--conflict-detector": "the detector reads trunk gradients; the trunk is FROZEN (`off`, required by value)",
+        _R9W_MAPFP_FLAG: "PI 2026-10-27: the map head is trained WITH a precision-targeted term (value: R9W-MAP-FP-WEIGHT)",
+        _R9W_SCHED_FLAG: "H-R9-ALLOC-ORACLE-1: the predicted-only pool inference sees, in training (form: "
+                         "r9_schedule_reasons)",
+        "--r9-alloc-force-seed": "the schedule's PRIVATE per-(seed, step) coin stream, written as a literal",
+        "--steps": "the schedule's end step is floor(--steps / 2) (value: R9W-BUDGET)"}),
+    required_values=dict({k: v for k, v in _R8["required_values"].items() if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)},
+                         **{"--conflict-detector": "off", _R9W_FLAG: _R9W_SETS, "--r9-alloc-force-seed": "20261027",
+                            "--r8-alloc-emit-start": "0", "--r8-tf-start": _R9W_TF_HOLD,
+                            "--r8-tf-end": _R9W_TF_HOLD}),
+    required_values_why=dict({k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                              if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)}, **{
+        "--conflict-detector": "PI 2026-10-27: perception frozen, no trunk gradient exists to measure",
+        _R9W_FLAG: "PI 2026-10-27 + R9W-TACTICAL closed (MM 2026-10-27): planner + tactical heads + map head trained; "
+                   "the sets' modules are map_only_ft.TRAIN_ONLY_SETS",
+        "--r9-alloc-force-seed": "refcv9_alloc_force.DEFAULT_SEED (a literal, not re-derived)",
+        "--r8-alloc-emit-start": "R9W-EMIT-START closed (MM 2026-10-27): refcv8 emitted its allocated candidates from "
+                                 "step 1,000 to its end, so the warm start emits them from step 0 -- a start >= 1 "
+                                 "would HIDE them; the trainer admits 0 under --r9-train-only only",
+        "--r8-tf-start": "R9W-TF-RESTART closed (MM 2026-10-27): refcv8's ratio at its last step, tf_ratio(48851, 48852, "
+                         "1.0, 0.25) = 0.25 exactly, HELD (start = end)",
+        "--r8-tf-end": "R9W-TF-RESTART closed: start = end = 0.25 is the constant ratio refcv8 ended at"}),
+    required_positive=tuple(_R8["required_positive"]) + (_R9W_MAPFP_FLAG,),
+    #: refcv8's own refusal of --r9-train-only is the one entry NOT inherited (this IS that profile)
+    forbidden_levers=tuple(e for e in _R8["forbidden_levers"] if _R9W_FLAG not in e[0]) + (
+        (_MAPFT_B1, "the B1 guard cuts the HEAD group's LR on the EMA box3d AP: the box head is FROZEN (perception) and "
+                    "there is no head / encoder group to cut"),
+        (_MAPFT_GS, "the gradient-share instrument measures the trunk / bev025 / bev_pool groups, all FROZEN"),
+        (("--conflict-every",), "the conflict detector is off under the train-only freeze (a dead cadence)"),
+        (("--trunk-bn-recalib",), "BN recalibration REWRITES the frozen trunk's statistics"),
+        (("--r8-critic-drivable", "--w-r8-drivable"), "not in the refcv8 build the warm start loads (inputs unchanged)"),
+        (_R9W_PF_FLAGS, "R9-PF is the SEPARATE stage-2 calibration fit on the fresh split (REFCV9_INMODEL_DESIGN s1, "
+                        "S2), with its own freeze")),
+    live_dead_admitted=_R9W_LIVE_DEAD,
+    #: ga-reach: the map-only parts must be > 0 (they train); the SHARED map parts must read EXACTLY 0.0 (frozen)
+    map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine"),
+                   ga_keys_zero=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")),
+    #: the train-only literals G-DVB (built set + declared subtrees) / G-LIVE (gradients + frozen bit identity) / the
+    #: argv rules (init md5) read -- the map-only route's machinery, keyed by THIS profile's literals
+    map_only={"flag": _R9W_FLAG, "modules": _R9W_MODULES, "groups": dict(_R9W_GROUPS),
+              "numel": _R9W_NUMEL, "init_from_md5": _MAPFT_INIT_MD5, "declared_frozen": _R9W_DECLARED_FROZEN},
+    #: R9W-SCHEDULE (MM 2026-10-27): the schedule's literal form, its end step read off THIS argv's --steps
+    alloc_force_rule=dict(_R9W_SCHED_RULE),
+)
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9-e1rig: the E1 PERCEPTION-ONLY RIG (REFCV9_DESIGN 4.3; refcv9 C7 `--r9-perc-rig`; C12-E1) #
+# --------------------------------------------------------------------------------------------- #
+#: `tanitad/refs/refcv9_perc_rig.py`, loaded BY PATH (it imports only hashlib / pathlib at module level, so no torch and no
+#: `tanitad.refs` package import) -- the ONE definition of the rig's planner flag dests and attribute paths; None when this
+#: tree does not carry it (then the refcv9-e1rig profile is not registered)
+def _e1_rig_module():
+    p = Path(__file__).resolve().parents[1] / "tanitad" / "refs" / "refcv9_perc_rig.py"
+    if not p.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("_gate_refcv9_perc_rig", str(p))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+#: The refcv9 `refcv9-full` family (PI D5, 2026-10-28). = refcv8's profile BY SUBTRACTION (the way refcv9-warm is built): every
+#: refcv8 rule that reads a PERCEPTION / data / recipe value still binds (the 10 cm map geometry, the slot head, VIS-1, the
+#: agent / box3d inputs, the caches and sidecars, batch 16, w_map 0, w_map_hires 1.0, ...); every PLANNER / TACTICAL value is
+#: REMOVED (each removal named in `required_values_why`), because the rig builds no planner (`refcv9_perc_rig.RIG_SKIPPED_MODULES`)
+#: and a flag the rig cannot honour would be SILENTLY DROPPED (`refcv9_perc_rig.pin_args` refuses the same ones -- the gate refuses
+#: FIRST, with its own reason). The planner flag dests are IMPORTED from that module (never copied), so a new planner dest is
+#: refused automatically.
+_E1_FLAG = "--r9-perc-rig"
+_E1_MODULE = _e1_rig_module()
+#: refcv8's required_values that carry over UNCHANGED (perception / data / eval geometry). Everything else in refcv8's table is
+#: either overridden below (the E1 recipe) or REMOVED. Exhaustive: tests/test_launch_gate_e1rig.py partitions refcv8's table.
+_E1_KEEP_VALUES = (
+    "--map-hires", "--bev-source", "--map-hires-decision-rule", "--map-hires-x-max-m", "--map-hires-y-half-m",
+    "--map-hires-grad-ckpt", "--bev-planner-crop-m", "--w-map", "--slot-presence-loss", "--slot-presence-prior",
+    "--slot-query-select", "--vis1-sidecar", "--map-hires-near-lift-m", "--map-hires-near-refine-blocks",
+    "--v2-cache", "--agent-rig-extrinsics", "--pose-sync-sidecar", "--clip-clock-sidecar", "--batch", "--eval-batches",
+    "--eval-every", "--w-map-hires")
+#: the E1 RECIPE (REFCV9_DESIGN 4.3: batch 16, warm-up 200, cosine to 0 over 4,000 steps, EMA 0.999; lr 1e-4 = refcv8 launch
+#: argv's value, A's HANDOFF ARGV ADD list). `--seed` is NOT pinned (C0 = 0, C1 = 1: the replicate floor).
+_E1_RECIPE = {"--steps": "4000", "--warmup": "200", "--ema-decay": "0.999", "--lr": "1e-4"}
+_E1_RECIPE_WHY = {
+    "--steps": "REFCV9_DESIGN 4.3: cosine to 0 over 4,000 steps (an E1 arm is a one-variable screen at this length)",
+    "--warmup": "REFCV9_DESIGN 4.3: warm-up 200 (refcv8's 1,000 is the 48,852-step recipe)",
+    "--ema-decay": "REFCV9_DESIGN 4.3: EMA 0.999 (refcv8's 0.9998 averages over ~5,000 steps, longer than the whole run)",
+    "--lr": "REFCV9_DESIGN 4.3 / A's HANDOFF ARGV ADD list: lr 1e-4 (refcv8's launch value), pinned so every arm shares it",
+    "--agents": "refcv8's value: the learned agent head is the rig's detection term (compute_losses_perc_rig)"}
+#: refcv8 required_values REMOVED for the rig, each with its reason (a missing name falls back to the generic reason below)
+_E1_REMOVED_WHY = {
+    "--residual-prior": "the planner's kinematic prior (the rig builds no planner; refused unless `off`)",
+    "--r8-v9-md5": "the v9 tactical label release (supervises the tactical layer; the rig builds none)",
+    "--r8-v9-eval-md5": "the v9 tactical label release, eval side",
+    "--r8-v9-labels": "the v9 label release feeds nav / the tactical layer",
+    "--r8-v9-lat-variant": "the v9 lateral variant (tactical layer)",
+    "--r8-nav-args-dropout": "nav-argument dropout (the nav input reaches the tactical / planner layers)",
+    "--r8-speed-unknown-p": "the planner's set-speed channel",
+    "--r8-speed-input": "the planner's set-speed channel source",
+    "--speed-max-sidecar-v6": "the planner's max-speed label sidecar (train)",
+    "--speed-max-sidecar-v6-eval": "the planner's max-speed label sidecar (eval)",
+    "--r8-alloc-emit-start": "the allocated-candidate emission (planner decoder)",
+    "--r8-n-alloc": "the allocated-candidate count (planner decoder)",
+    "--r8-lat-prior-dropout": "the lateral prior dropout (planner decoder)",
+    "--w-r8-cons": "the constraint-head weight (tactical / planner)",
+    "--w-r8-alloc-l1": "the allocated-candidate L1 weight (planner)",
+    "--w-r8-listwise": "the listwise selector weight (planner)",
+    "--w-r8-sat": "the constraint-satisfaction weight (planner)",
+    "--w-r8-subscore": "the sub-score critics weight (planner)",
+    "--w-r8-v9-cons": "the v9 constraint weight (tactical)",
+    "--w-tac-v6": "the refcv6 tactical behaviour decoder weight (not built)",
+    "--nav-compliance-tau-file": "the nav-compliance graft's tau record (planner selection; not built)",
+    "--nav-compliance-tau-rad": "the nav-compliance graft's tau (planner selection; not built)",
+    "--b1-guard-ref-ap2m": "UNPINNED, OPEN for A2's argv: the B1 guard cuts the head LR on the in-run EMA box3d AP against "
+                           "refcv7's minimum on the 48,852-step recipe (eval every 500); whether it rides a 4,000-step rig "
+                           "arm is the argv's call, so the gate neither requires nor forbids it",
+    "--b1-guard-step": "UNPINNED, OPEN for A2's argv: see --b1-guard-ref-ap2m"}
+_E1_REMOVED = tuple(f for f in _R8["required_values"]
+                    if f not in _E1_KEEP_VALUES and f not in _E1_RECIPE)
+_E1_REQUIRED_FLAGS = (
+    _E1_FLAG, "--init-from", "--seed", "--steps", "--warmup", "--ema-decay", "--lr", "--out",
+    # refcv8's PERCEPTION flags the rig keeps: the slot head, VIS-1, the agent / 3-D joins, the ego-mask of the join, the
+    # pose-to-image timing correction (the dataset's labels ride it), the loss weights of the terms the rig trains
+    "--slot-deep-supervision", "--slot-vis1", "--join-defect-masks", "--pose-sync-sidecar", "--agent-join", "--join3d",
+    "--w-agent", "--w-box3d")
+_E1_REQUIRED_FLAGS_WHY = {
+    _E1_FLAG: "REFCV9_DESIGN 4.3 / C7: the perception-only rig (newest window row, K = 3 frames, planner / tactical NOT built)",
+    "--init-from": "REFCV9_DESIGN 4.3: init refcv8 EMA-48,852 (md5 bound by init_pin below)",
+    "--seed": "the replicate floor: C0 = seed 0, C1 = seed 1 (the VALUE is not pinned)",
+    "--out": "the run directory",
+    "--join-defect-masks": "refcv8's perception flag: the ego mask of the agent join (the box3d labels ride it)",
+    "--pose-sync-sidecar": "refcv8's X10 timing correction: the dataset's labels ride it",
+    "--agent-join": "the detection / box3d labels' join",
+    "--join3d": "the box3d targets' 3-D join",
+    "--w-agent": "the learned agent head's weight (a rig term: G-LIVE keeps `agent_*` live)",
+    "--w-box3d": "the 3-D box head's weight (a rig term: G-LIVE keeps `box3d` live)"}
+#: the planner / tactical flag dests the rig refuses -- IMPORTED, never copied
+_E1_PLANNER_FLAGS = tuple("--" + d.replace("_", "-") for d in (_E1_MODULE.PLANNER_FLAG_DESTS if _E1_MODULE else ()))
+_E1_PLANNER_WEIGHT_FLAGS = tuple("--" + d.replace("_", "-") for d in (_E1_MODULE.PLANNER_WEIGHT_DESTS if _E1_MODULE else ()))
+#: the `--r9-*` flags that belong to the planner side (R9-PF, the warm-start freeze's GT-in-pool schedule): the rig builds none
+_E1_R9_PLANNER_FLAGS = _R9W_PF_FLAGS + ("--r9-alloc-force-schedule", "--r9-alloc-force-seed")
+#: ⭐ E1-REC3 (MM 207ebd, PINNED -- do not reopen): the `--r9-box-*` levers are of TWO classes, and a launch argv is read BY CLASS.
+#:   E1_BOX_OWN_FLAGS -- levers that CHANGE THE INFERENCE BOX HEAD or its supervision (B3's four). The inherited G-BOX-OVERFIT record
+#:                       (refcv8's head) does not cover them: the argv needs its OWN `/2-b3` record (row E1-BOX-OWN-RECORD).
+#:   E1_BOX_AUX_FLAGS -- TRAINING-ONLY auxiliary heads (B1 depth, B2 perspective, B2c BEV2). The box overfit record certifies the INFERENCE
+#:                       box head IN ISOLATION on frozen frames (`OVERFIT_SCOPE`). An aux head is never called at inference and its effect
+#:                       (shaping the trunk) cannot show in a frozen-frame overfit, so that record is NOT its certificate. Its liveness is
+#:                       G-LIVE's (its loss key finite in the smoke, every new parameter with a gradient: `LIVE_WEIGHT_RULES` w_box_depth /
+#:                       w_box_persp / w_box_bev2) and the post-run zero-gradient gate's. An aux-only arm therefore binds the INHERITED /1
+#:                       record to its OWN argv, and that record must STAMP `aux_heads_not_certified` == the argv's aux set
+#:                       (`box_aux_stamp_reasons`): it says which heads it does NOT certify.
+#: A `--r9-box-*` flag in NEITHER tuple is never silently inherited: open item E1-BOX-UNKNOWN-LEVER (classify it here, in a reviewed edit).
+#: ⭐ C5-S8 (MM 207ebd): `--r9-box-layers` (B4's decoder depth, a VALUED flag: `--r9-box-layers 6` / `--r9-box-layers=6`) is an OWN-head lever -- it changes
+#: the INFERENCE box head's structure (6 decoder layers, 7.0 M params), so the inherited /1 record certifies nothing about it. Every consumer reads the FLAG NAME
+#: (`flag_pairs` strips the value), never a bare token. Its attach hop is `_bc5.attach` (box_c5_flag), NOT B3's `_bbf.attach` (see `_R9F_ATTACH`).
+E1_BOX_OWN_FLAGS: tuple = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries")
+E1_BOX_AUX_FLAGS: tuple = ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box-bev2-aux")
+#: the record keys an aux-carrying argv's box record stamps (the harness writes them, `box_aux_stamp_reasons` reads them)
+E1_BOX_AUX_STAMP = "aux_heads_not_certified"
+E1_BOX_AUX_STAMP_WHY = "aux_heads_not_certified_why"
+#: ⭐ C5-INTEG (MM 207ebd, PINNED -- do not reopen): `--r9-box-perframe-queries` is an OWN-head lever (it needs its `/2-b3` record) but its 200 SEEDS come from the
+#: perspective head -- an AUX head the replay harness STRIPS and cannot train on frozen frames -- so the replay builds a RANDOM FROZEN stand-in seed head. The own record
+#: therefore certifies the DECODE path (300 anchored slots, global anchors, the LR x10 `box_anchor` group, the staged camera) under ARBITRARY seeds and NEVER the seeds'
+#: quality. The harness (`g_box_overfit.PFQ_STAMP`) STAMPS `perframe_seeds_not_certified` == [the flag]; `box_pfq_stamp_reasons` is its judge, built exactly like
+#: `box_aux_stamp_reasons`. Seed QUALITY is a READ of the first B4 dump (seed recall), not a gate: see the C5-INTEG HANDOFF.
+E1_PFQ_FLAG = "--r9-box-perframe-queries"
+E1_PFQ_STAMP = "perframe_seeds_not_certified"
+E1_PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
+#: ⭐ E1-REC4 (MM 207ebd, PINNED -- do not reopen): T1, the TEMPORAL BEV WARP (`--r9-bev-warp` + its lags + its shuffle control), changes both
+#: heads' INPUT (the fused BEV that the shared encoder, the M3 map encoder, the banded head, the planner pool and the box head all read), not their
+#: structure; at gate 0 the certified head IS the base's (tests/test_bev_warp.py: the gate-0 forward equals the OFF forward bit for bit). The overfit
+#: harnesses replay a head on FROZEN frames with no staged history, so a T1 flag in the launch argv is NOT built there (the build argv drops it) and
+#: the record STAMPS `bev_warp_not_certified` == the argv's T1 flag set (`bev_warp_stamp_reasons`): the inherited record (map `/1`, or `/2-banded`
+#: for a banded base; box `/1`) binds to the T1 argv's own sha256 and says what it does NOT certify. T1's liveness is G-LIVE's (`judge_bev_warp_live`:
+#: the gate and the fuse weight moved over the smoke, `bw_has` on a majority of windows) and the post-run zero-gradient gate's. Profile decision as first
+#: pinned: refcv9-e1rig ADMITS T1; refcv9-e2 / refcv9-full / refcv9-full-d1 REFUSED it (not crowned yet).
+#: ⭐ SUPERSEDED FOR THE FULL FAMILY BY THE FLIP (MM 2026-11-07, `H-R9-E1-T1H` KEPT; `_R9F_T1H_ADMITTED` below): the crowned lever is the T1h BUNDLE, never T1 alone
+#: (T1 FAILED its bar, `H-R9-E1-T1`). refcv9-e1rig and refcv9-warm are unchanged.
+#: ⭐ T1h (`--r9-bev-warp-supervise-hist`, refcv9 E1; MM brief 2026-11-05) is the FOURTH member: it changes NO head and NO input at inference -- it widens the 10 cm map loss's
+#: supervised cell set to `lift_valid_now | hist_valid` (TRAINING-ONLY, so the overfit harnesses -- which replay frozen frames with no staged history -- cannot build it either).
+#: It therefore rides EXACTLY T1's rule: admitted by refcv9-e1rig; refcv9-e2 / -full / -full-d1 REFUSED it until THE FLIP (2026-11-07: admitted there only inside the crowned T1h bundle), stamped `bev_warp_not_certified` by the inherited records
+#: (`--reuse-from T1` / `T1s` binds because the harnesses strip the flag; `g_box_overfit.T1_FLAGS` / `map_hires_overfit.T1_FLAGS` are pinned to this tuple by a test).
+#: ⭐ T1h-INIT (`--r9-bev-warp-fuse-init {rezero,identity}`) is the FIFTH member and the second one that takes a VALUE (like `--r9-bev-warp-lags`): it changes the fuse's INIT only (a fresh-build
+#: weight write; the step-0 forward is the baseline's), no head and no inference input beyond what T1 already adds. Same rule as the other four; `g_box_overfit.strip_t1` drops its value token too.
+#: ⭐ T1h-FILL (`--r9-bev-warp-fill-only`) is the SIXTH member (a plain switch): it only restricts WHERE the gated history term is added (`out = bev + gate * fuse(x) * (1 - valid_now)`) -- no new head,
+#: no new inference input beyond T1's. Same rule as the other five.
+#: ⭐ THE FLIP (MM 2026-11-07, `H-R9-E1-T1H` KEPT): in the full family the rule above is replaced for FOUR of the six -- `_R9F_T1H_ADMITTED` -- and kept for the other two
+#: (`_R9F_T1_REFUSED`: the shuffle control, the lags value). refcv9-e1rig's treatment of all six is untouched.
+#: ⭐ T1v (`--r9-hist-supervise-geom`, refcv9 E1 arm T1v; `REFCV9_E1_T1V_PREREG.md`) is the SEVENTH member (a plain switch): T1h's supervision set (`lift_valid_now | hist_valid`) from GEOMETRY ALONE --
+#: NO past-frame encode / lift / feature warp / fuse and NO `bev_warp` module or parameter (`bev_warp_flag.dvb_check_hist_geom`). It is the ALTERNATIVE to the bundle (REFUSED with `--r9-bev-warp`) and changes no head
+#: and no input at inference, so it rides T1's rule: admitted by refcv9-e1rig; stamped `bev_warp_not_certified` by the inherited records (the harnesses strip it -- `g_box_overfit.T1_FLAGS` /
+#: `map_hires_overfit.T1_FLAGS`, pinned equal to this tuple). It is deliberately in NEITHER `_R9F_T1H_ADMITTED` nor `_R9F_T1_REFUSED`: in the full family it hits R9F-UNCLASSIFIED-LEVER (fail closed) until the MM
+#: classifies it after T1v's read. It does NOT enter `BEV_WARP_LIVE` (no gate, no fuse): its G-LIVE is `judge_hist_geom_live`.
+#: ⭐ THE T1v FLIP (MM 2026-11-09, `H-R9-E1-T1V`): in the full family it is now ADMITTED (`_R9F_T1V_ADMITTED`); the 'NEITHER tuple' sentence above is superseded for the full family.
+E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only", "--r9-hist-supervise-geom")
+#: the six pre-T1v members: the FULL family's copy of the E1-BOX-OWN-RECORD item (`_R9F_OPEN_ITEMS`) keeps this literal, so the full-family profiles' content (and fingerprints) do not move when a
+#: seventh flag joins `E1_T1_FLAGS` (the item fires on `--r9-box-*` only, so the exemption list is inert for any `--r9-*` T1 flag -- pinned by a test).
+_E1_T1_FLAGS_PRE_T1V: tuple = E1_T1_FLAGS[:6]
+E1_T1_STAMP = "bev_warp_not_certified"
+E1_T1_STAMP_WHY = "bev_warp_not_certified_why"
+#: ⛔ the inherited overfit records (G-BOX-OVERFIT, G-MAP-OVERFIT: refcv8's literals, unchanged) cover the box head and the 10 cm
+#: map head AS refcv8 built them -- arms C0 / C1 (the replicate floor) and A1 / T1 / F1. An arm that CHANGES either head needs
+#: its OWN record. Conditional open items (`open_item_hits`): a refcv9 lever flag present in the argv keeps the token from PASS.
+_E1_OPEN_ITEMS = (
+    {"id": "E1-MAP-OWN-RECORD",
+     "what": "a map-lever arm (a `--r9-map-*` flag -- C1's banded head / channels / losses, BRIEF_C1_MAPHEAD `--r9-map-banded` -- or "
+             "`--w-map-fp`) changes the 10 cm map head or its supervision, so the INHERITED G-MAP-OVERFIT record (refcv8's head) "
+             "does not cover it",
+     "owner": "the lever's code agent (C1) -> the Master Mind (a reviewed profile edit that names the lever's record)",
+     "closes_when": "a map-overfit record for the lever's own head is bound to this profile by name; until then the token is "
+                    "INCOMPLETE, never PASS. MACHINE-CHECKED since M-GATE: `E1_OWN_RECORDS` row E1-MAP-OWN-RECORD closes it for "
+                    "`--r9-map-banded` and `--r9-map-own-enc` (M3) alone, when a `/2-banded` record bound to THIS argv's sha256 passes "
+                    "`judge_map_overfit_banded` (an M3 argv also needs the record to stamp `own_enc` and its built branch to hold the "
+                    "128-channel own encoder)",
+     "when_prefixes": ("--r9-map-",), "when_flags": ("--w-map-fp",)},
+    {"id": "E1-BOX-OWN-RECORD",
+     "what": "a box-lever arm (any other refcv9 lever flag in the `--r9-*` namespace -- C5's decoder depth / DN / quality-aware "
+             "presence / in-loss NMS / s8 tokens / ray PE, the B-arms) changes the box head or its supervision, so the "
+             "INHERITED G-BOX-OVERFIT record (refcv8's head) does not cover it",
+     "owner": "the lever's code agent (C5) -> the Master Mind (a reviewed profile edit that names the lever's record)",
+     "closes_when": "a box-overfit record for the lever's own head is bound to this profile by name; until then the token is "
+                    "INCOMPLETE, never PASS. MACHINE-CHECKED (E1-REC2): `E1_OWN_RECORDS` row E1-BOX-OWN-RECORD closes it for the "
+                    "`--r9-box-*` flags in `E1_BOX_OWN_FLAGS` when a `/2-b3` `g_box_overfit.py` record bound to THIS argv's sha256 "
+                    "passes `judge_box_own_record` (stamped flag set == the argv's `--r9-box-*` set, RESULT PASS, the must-fail "
+                    "arms ran and failed). E1-REC3: the TRAINING-ONLY aux heads (`E1_BOX_AUX_FLAGS`: B1 / B2 / B2c) do NOT trigger this "
+                    "item -- they change no inference head; their /1 record stamps `aux_heads_not_certified` instead "
+                    "(`box_aux_stamp_reasons`). E1-REC4: T1's six flags (`E1_T1_FLAGS`) do NOT trigger it either -- they change the heads' INPUT, "
+                    "not the heads; the inherited record stamps `bev_warp_not_certified` instead (`bev_warp_stamp_reasons`). "
+                    "C5-INTEG: a `--r9-box-perframe-queries` argv's `/2-b3` record must ALSO stamp `perframe_seeds_not_certified` == "
+                    "[the flag] (`box_pfq_stamp_reasons`): the replay's seed head is a random frozen stand-in, so the record certifies "
+                    "the decode path under ARBITRARY seeds and NOT the seeds' quality (that is a READ of the first B4 dump, not a gate)",
+     "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-"), "when_except_exact": E1_BOX_AUX_FLAGS + E1_T1_FLAGS},
+    {"id": "E1-BOX-UNKNOWN-LEVER",
+     "what": "unknown box lever: classify it -- the argv carries a `--r9-box-*` flag that is in NEITHER `E1_BOX_OWN_FLAGS` (a lever that "
+             "changes the inference box head: needs its OWN /2-b3 record) NOR `E1_BOX_AUX_FLAGS` (a training-only aux head: the "
+             "inherited /1 record plus the aux stamp). It is never silently inherited",
+     "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
+     "closes_when": "never by a record: only by a reviewed launch_gate.py edit that adds the flag to ONE of the two tuples (and, for an "
+                    "own-head lever, to the harness's `B3_FLAGS`)",
+     "when_prefixes": ("--r9-box-",), "when_except_exact": E1_BOX_OWN_FLAGS + E1_BOX_AUX_FLAGS},
+)
+#: ⭐ M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; `map_hires_overfit.py --banded`). Every number the
+#: record is judged against is the INHERITED G-MAP-OVERFIT literal (`PROFILES[...]["map_overfit"]`: spec sha, frames, protocol,
+#: bars, min_cells, ce_ratio_max, band); what lives here is only the channel <-> inherited-class map, the gated bands, the two
+#: regression arms and the band geometry the area-form presence floor needs. The gate holds its OWN copy (never the record's), and a
+#: test pins it to the harness's.
+_E1_MAP_BANDED = {
+    "schema": "tanitad.g_map_overfit_record/2-banded",
+    "tool": "map_hires_overfit.py --banded",
+    "channel_class": {"drv": "drivable", "sdw": "sidewalk", "lane": "lane", "edge_h": "edge", "xwalk": "crosswalk",
+                      "arrow": "arrow", "hatch": "hatched"},
+    "gated_bands": ("near", "mid"),
+    #: rows of each band inside the inherited gated x band 0-20 m (near 0-10 m @ 0.10 m, mid 10-40 m @ 0.25 m, far 40-100 m)
+    "gate_rows": {"near": 100, "mid": 40, "far": 0},
+    "cell_m": {"near": 0.10, "mid": 0.25, "far": 0.50},
+    "fine_cell_m": 0.10,
+    #: the banded head's own requirement (MapHiresConfig(banded) refuses any other near lift)
+    "near_lift_m": 10.0,
+    #: BANDED-NL: the map weights a banded argv may carry = the E1 map arms' own (`r9_e1_make_argv.MAP_ARMS`: M1 = C0's 1.0, M2a / M2b =
+    #: the E0j-measured w* 0.511 / 1.018; M3 = the M2 winner, one of those). A test pins the set to MAP_ARMS.
+    "w_map_hires_admitted": (1.0, 0.511, 1.018),
+    #: E1-REC2 (M3): an argv carrying `flag` builds the map's OWN `d_map_enc`-channel BEV encoder; the record must STAMP `own_enc`, its
+    #: built branch config must hold it, and no other argv may carry the stamp. Pinned to `tanitad.train.map_own_enc_flag` by a test.
+    "own_enc": {"flag": "--r9-map-own-enc", "d_map_enc": 128},
+    "must_fail_any": {"lane_w0": ("lane",)},
+    "must_fail_all": {"s8_zeros": ("lane", "xwalk", "arrow", "edge_h", "hatch")},
+    "controls": ("C1_constant_drv", "C2_gt_as_logits"),
+    "informative": ("far band", "drv_sdf", "lane_ox", "lane_oy"),
+}
+#: E1-M3N20L64 (PREREG_M3N20L64) -- refcv9-e1rig ONLY (the tip's `_E1_MAP_BANDED` literal stays byte-identical for the refcv9-full family, whose profile fingerprints are bound to records for other runs): an argv carrying `flag` builds the map's OWN 64-channel encoder on the UNWIDENED lift; the record must STAMP `own_enc_lift64`,
+#: its built branch config must hold it and show map_encoder parameters, and no other argv may carry the stamp. Pinned to `tanitad.train.map_own_enc_lift64_flag`.
+_E1_MAP_BANDED_L64 = {**_E1_MAP_BANDED, "own_enc_lift64": {"flag": "--r9-map-own-enc-lift64"}}
+#: K2M1N20 RE-DOSE (MM 4a3d05, 2026-11-10): the FULL family (refcv9-e2 / refcv9-full / refcv9-full-d1; E3 inherits the E2 GO arm's argv) admits a banded argv's map weight from E1's own set PLUS 25 --
+#: K2M1N20 failed G-LIVE's SHARE-ALARM at 1.0 (banded map 0.00125 of the trunk gradient < 0.05) and is re-dosed to 25 by E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md
+#: (sha256 2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df). `_E1_MAP_BANDED["w_map_hires_admitted"]` (the E1 arms') is UNCHANGED; the share floor and every E2 / E3 bar stay as written.
+#: K2DC02cl (the clamp arm; PI, 2026-11-22: "i approve it", then "Yes, use the clamp"): the same full family also admits 3.0 -- the INITIAL weight of a clamped dose arm (`--map-hires-w-bounds 2.5,3.5`;
+#: map_dose_ctl.pin_args requires the initial weight to lie inside the bounds, so 25 with the clamp is impossible). Pre-registered in
+#: TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2DC02CL_2026-11-22.md; the offline replay
+#: E:/Projects/TanitAD-artifacts/refcv9_e2/dcreplay/ puts the dead-beat controller's mean map share at 0.080 / 0.063 against the 0.02 target and the clamp [2.5, 3.5] at 0.026 / 0.025.
+#: `_E1_MAP_BANDED["w_map_hires_admitted"]` (E1's) is UNCHANGED, so refcv9-e1rig still refuses 3.0 (and 25). No other gate value moves.
+_R9F_MAP_W_ADMITTED = tuple(_E1_MAP_BANDED["w_map_hires_admitted"]) + (25.0, 3.0)
+#: ⭐ THE NEAR-LIFT RULES, ONE definition for refcv9-e1rig AND the full family (K2-ARGV, MM 2026-11-07; before it each profile typed its own, and the full family had none).
+#: BANDED-NL (MM 2026-11-04): the banded map head (C1 `--r9-map-banded`) REFUSES any near lift but 10 m (MapHiresConfig(banded); `_E1_MAP_BANDED["near_lift_m"]`, the value its
+#: own G-MAP-OVERFIT record is held to), so an argv carrying the flag is held to 10 and every other to refcv8's 20. Before this the unconditional 20 refused M1 / M2a / M2b at the
+#: gate (the f078b7e dev-box run, 2026-11-04): the banded lever was built, tested and record-bound, and unreachable from the launch.
+#: E1-NEAR20 (PREREG_M1_NEAR20): an M1N20 argv (`--r9-map-banded-near-m 20`) is held to near lift 20 (= its near band's end, C0's own lift); listed AFTER the banded trigger so
+#: it overrides it. An argv passing the flag with 10 stays on 10.
+#: K2-ARGV: the full family (refcv8's unconditional `--map-hires-near-lift-m 20`) admitted K2M1N20 / K2M3N20 (near lift 20) but REFUSED K2M3 (the banded head's own near lift 10): the
+#: banded-near-10 trigger is the rule the full family LACKED (the near-20 trigger alone is vacuous there: refcv8's 20 already binds). Both rules are merged with the FLIP's T1h bundle.
+_NEAR_LIFT_WHEN = {"--r9-map-banded": {"--map-hires-near-lift-m": f"{_E1_MAP_BANDED['near_lift_m']:g}"},
+                   "--r9-map-banded-near-m=20": {"--map-hires-near-lift-m": "20"}}
+_NEAR_LIFT_WHEN_WHY = {"--r9-map-banded": "the banded map head's own near lift (MapHiresConfig(banded) refuses any "
+                                          "other; _E1_MAP_BANDED['near_lift_m'], the value its /2-banded record ran) and "
+                                          "the E1 map arms' pre-registered map weights (_E1_MAP_BANDED['w_map_hires_admitted'])",
+                       "--r9-map-banded-near-m=20": "the near band 0-20 m @ 0.10 m reuses a near lift of exactly 20 m (MapHiresConfig(banded_near_m "
+                                                    "20) refuses any other; C0's own lift; PREREG_M1_NEAR20)"}
+if _E1_MODULE is not None:
+    PROFILES["refcv9-e1rig"] = dict(
+        _R8, name="refcv9-e1rig",
+        #: r9gclk (MEASURED by agent CLK, clk_probe_thor.py `EGO`): the Thor per-clip egomotion store whose first timestamp is each
+        #: clip's `ts0`, the bridge from the joins' RAW clock to the sidecar's label timeline (path-mapped; `--rig-ego-dir` overrides)
+        rig_ego_dir_default="/home/nvidia/data/obstacle/egomotion_alpamayo",
+        open_items=_E1_OPEN_ITEMS,
+        #: M-GATE: the banded map head's OWN record (G-MAP-OVERFIT /2-banded), see `E1_OWN_RECORDS`
+        map_overfit_banded=_E1_MAP_BANDED_L64,
+        required_flags=_E1_REQUIRED_FLAGS,
+        required_flags_why=dict(_E1_REQUIRED_FLAGS_WHY, **{
+            k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k in _E1_REQUIRED_FLAGS
+            and k not in _E1_REQUIRED_FLAGS_WHY}),
+        required_values=dict({k: v for k, v in _R8["required_values"].items() if k in _E1_KEEP_VALUES},
+                             **_E1_RECIPE, **{"--agents": "head"}),
+        required_values_why=dict(
+            {k: v for k, v in (_R8.get("required_values_why") or {}).items() if k in _E1_KEEP_VALUES},
+            **_E1_RECIPE_WHY,
+            **{f: f"REMOVED for the rig (refcv8 required {_R8['required_values'][f]!r}): "
+                  + _E1_REMOVED_WHY.get(f, "a refcv8 planner / tactical value; the rig builds no planner")
+               for f in _E1_REMOVED}),
+        #: BANDED-NL / E1-NEAR20: the near-lift rules live in `_NEAR_LIFT_WHEN` (shared with the full family, K2-ARGV); the value is unchanged
+        required_values_when={k: dict(v) for k, v in _NEAR_LIFT_WHEN.items()},
+        required_values_when_why=dict(_NEAR_LIFT_WHEN_WHY),
+        #: BANDED-NL: refcv8's `--w-map-hires 1.0` (PI 2026-10-14, R8-BUDGET) stays REQUIRED for every non-banded arm; a banded arm is a
+        #: map-weight screen (REFCV9_DESIGN 4.3 / E0j) and may carry ONE of the pre-registered weights, never a free value.
+        admitted_values_when={"--r9-map-banded": {"--w-map-hires": tuple(f"{w:g}" for w in _E1_MAP_BANDED["w_map_hires_admitted"])}},
+        #: the rig's terms must be POSITIVE (a built head with no live weight is declared-but-inert): the agent head, the 3-D
+        #: box head, the 10 cm map head. refcv8's planner / tactical weights are gone.
+        required_positive=("--w-map-hires", "--w-agent", "--w-box3d"),
+        #: no planner group is built -> nothing is admitted dead (refcv8's rows name core.decoder.* / core.strategic.* ...)
+        live_dead_admitted=(),
+        #: refcv8's planner selection mechanisms are not built (no `--graft-*`, no ceiling filter): nothing is REQUIRED ON
+        required_on=(),
+        #: forbidden: refcv8's list (minus the entry that names this profile's own flag) + ONE entry per planner / tactical flag
+        #: dest of `refcv9_perc_rig` BY FLAG NAME + the `--r9-*` planner-side flags
+        forbidden_levers=tuple(e for e in _R8["forbidden_levers"] if _E1_FLAG not in e[0]) + tuple(
+            ((f,), "a planner / tactical lever (refcv9_perc_rig.PLANNER_FLAG_DESTS): the rig builds no planner, so it would be "
+                   "SILENTLY DROPPED") for f in _E1_PLANNER_FLAGS) + tuple(
+            ((f,), "a planner / tactical LOSS WEIGHT (refcv9_perc_rig.PLANNER_WEIGHT_DESTS): the rig builds no planner, so it "
+                   "would be SILENTLY DROPPED") for f in _E1_PLANNER_WEIGHT_FLAGS) + tuple(
+            ((f,), "a planner-side refcv9 flag (R9-PF / the warm-start freeze's GT-in-pool schedule): the rig builds no "
+                   "planner") for f in _E1_R9_PLANNER_FLAGS),
+        #: every refcv8-layer flag (`--r8-*`, `--w-r8-*`) belongs to the tactical / planner seams the rig does not build
+        forbidden_prefixes=tuple(_R8["forbidden_prefixes"]) + ("--r8-", "--w-r8-"),
+        forbidden_prefixes_why=dict(_R8.get("forbidden_prefixes_why") or {}, **{
+            "--r8-": "a refcv8 tactical / planner seam flag (the rig builds neither)",
+            "--w-r8-": "a refcv8 tactical / planner seam loss weight (the rig builds neither)"}),
+        #: refcv8's deny-list on --residual-prior would refuse `off`; the rig admits `off` ONLY (an allow-list)
+        forbidden_values={},
+        forbidden_values_why={},
+        only_values={"--residual-prior": ("off",)},
+        only_values_why={"--residual-prior": "the planner's kinematic prior; the rig builds no planner"},
+        #: ga-reach: the map branch TRAINS (all four parts > 0); `ga_bev_pool` is the PLANNER's pooled BEV, not reached when no
+        #: planner is built
+        map_hires=dict(_R8["map_hires"], ga_keys_pool=()),
+        #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- `map_only_init_reasons`' own reader (no
+        #: second md5 reader); `init_pin` carries none of `map_only`'s freeze semantics (the rig freezes nothing)
+        init_pin={"flag": _E1_FLAG, "init_from_md5": _MAPFT_INIT_MD5,
+                  "init_note": "the rig would not warm-start from the shipped refcv8 EMA-48,852"},
+        #: B5 (refcv9-warm's precedent, same Thor, same tree lineage): the env-failure pin that carries the v8f-mini ENV ids
+        suite_env_failures=PROFILES["refcv9-warm"]["suite_env_failures"],
+        suite_pinned_skip_ok=PROFILES["refcv9-warm"]["suite_pinned_skip_ok"],
+    )
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9-e2 / refcv9-full / refcv9-full-d1: the FULL MODEL (planner + tactical + every perception  #
+# lever) launch-gate profiles (REFCV9_DESIGN 4.2 C12-full, 4.4 E2 / E3 / D1; MM 207ebd C12-FULL)    #
+# --------------------------------------------------------------------------------------------- #
+#: = refcv8's profile BY ADDITION (the way refcv9-e1rig is built by subtraction): every refcv8 planner / perception / data / recipe
+#: value still binds. The refcv9 perception + planner-wire levers are ADMITTED AS OPTIONAL: nothing here says which subset K2 carries
+#: (E1 picks it) -- each lever the argv carries is gated by ITS OWN rule: the E1 own-record items (`_E1_OPEN_ITEMS`, reused, never
+#: copied: C1 / C2 banded head -> E1-MAP-OWN-RECORD, B3's four -> E1-BOX-OWN-RECORD, unknown `--r9-box-*` -> E1-BOX-UNKNOWN-LEVER),
+#: the lever-attach reachability needles (`lever_attach_reasons`), G-DVB / G-LIVE (the levers' own registrations and the exhaustive
+#: LIVE_WEIGHT_RULES: `w_r8_drivable`, `w_map_hires`, `w_box3d`), and the share-alarm row (`map_share_alarm`).
+#: REFUSED (each with its reason): `--r9-perc-rig` / `--r9-train-only` (refcv8's own entries, inherited: the full model is not the rig, the
+#: freeze is refcv9-warm's); T1's SHUFFLE control and LAGS value (THE FLIP, 2026-11-07: the other four T1 flags are the CROWNED T1h bundle, ADMITTED as one unit -- `_R9F_T1H_ADMITTED`); the aux heads (B1 / B2 / B2c): REACHABLE from the
+#: full model since AUX-FULL (`compute_losses_v3` calls their loss, `box_depth_aux_flag.pin_args` admits `--w-box3d > 0`; T1 likewise since
+#: T1-FULL) and REFUSED BY DECISION until E1 crowns one (tests/test_launch_gate_refcv9_full.py pins both halves; the MM drops a crowned
+#: head's flags here -- the FLIP);
+#: R9-PF (refcv9-warm forbids it too: the SEPARATE stage-2 fit); the D1 branch flags (only profile `refcv9-full-d1` admits them).
+#: A `--r9-*` flag in NONE of the classified sets is never silently admitted: open item R9F-UNCLASSIFIED-LEVER (token INCOMPLETE).
+_R9F_AUX_ALL = E1_BOX_AUX_FLAGS + ("--w-box-depth", "--w-box-persp", "--w-box-bev2")
+_R9F_PLAN_FLAGS = ("--r9-plan-map-channels", "--r9-plan-box-tokens")
+_R9F_BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
+#: C10 (REFCV9_DESIGN 2.5; E0a => photometric only, no flip arm): the training-only, label-invariant per-sample photometric jitter. ADMITTED in
+#: the full family (it is E3's augmentation): no own record (it changes no head and no target), gated by its G-DVB registration
+#: (`r9_photometric.register_dvb_levers`) and its attach needle below. Not classified for refcv9-e1rig (A1 is not run): there an argv
+#: carrying it still hits E1-BOX-OWN-RECORD (fail closed).
+_R9F_AUG_FLAGS = ("--r9-photometric",)
+#: ⭐ THE FLIP (MM 2026-11-07; `GOALS_AND_CLAIMS.md` `H-R9-E1-T1H`, KEPT: `nf_prec_0_10` +0.2951 [+0.2337, +0.3514] = 3.2 x the E1 bar; landed 2f409200;
+#: `REFCV9_E1_T1H_PREREG.md`: "the FLIP drops its flags from refcv9-full's forbidden levers"). The crowned lever is the BUNDLE T1h = T1 + supervise-hist +
+#: fuse-init `identity` + fill-only, NOT T1: T1 (`--r9-bev-warp` alone) FAILED its bar (`H-R9-E1-T1`). So the four flags are ADMITTED AS ONE UNIT: the warp demands
+#: the other three (fuse-init only as `identity`) and each of the three demands the warp -- through `required_values_when`, the profile's existing co-required
+#: mechanism (`required_on_reasons`), not a new one. Attribution (PREREG clause 4, T1h vs T1hs) is PENDING: the bundle is admitted as a supervision / init /
+#: history lever whichever way clause 4 reads (both KEPT outcomes keep it). Two T1 flags STAY refused, each with its own reason (forbidden_levers below).
+#: EXPLICIT literals, not `E1_T1_FLAGS` minus something: a seventh member of `E1_T1_FLAGS` is then in NEITHER tuple and hits R9F-UNCLASSIFIED-LEVER (fail closed,
+#: pinned by a test) instead of riding the old "all of E1_T1_FLAGS is classified" exemption into the full model silently.
+_R9F_T1H_ADMITTED = ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
+_R9F_T1_REFUSED = ("--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+#: ⭐ THE T1v FLIP (MM 2026-11-09; `GOALS_AND_CLAIMS.md` `H-R9-E1-T1V`, KEPT AND REPLACES T1h: outcome 0 of `REFCV9_E1_T1V_PREREG.md`'s four). MEASURED, T0, DEV, 2,308 windows / 70 episodes,
+#: paired episode-cluster bootstrap B 2000, ONE training seed: vs C0 `nf_prec_0_10` 0.3917 -> 0.7123, +0.3206 [0.2597, 0.3769] (KEEP: above 2 x floor 0.0915; 0 vetoes); vs T1h (replacement
+#: read) 0.6869 -> 0.7123, +0.0255 [0.012, 0.0372] (R1 pass, R2 pass: not claimed BETTER than T1h, admitted as the simpler EQUAL); zero-gradient gate PASS, 507 of 507 parameters trained.
+#: T1v is `lift_valid_now | hist_valid` from GEOMETRY ALONE: NO parameter, NO past-frame encode / lift / warp / fuse, so it carries none of the bundle's co-required flags. It is the ALTERNATIVE to
+#: the T1h bundle: an argv with both is refused by the trainer's build (`bev_warp_flag.py` `attach` / `_pin_geom`; G-DVB and G-LIVE run that build) -- `required_values_when` cannot express
+#: "absent", so there is no static rule for it. EXPLICIT literal, exempt from R9F-UNCLASSIFIED-LEVER BY EXACT NAME (a sibling such as `--r9-hist-supervise-geom-v2` still hits the item).
+#: Its checks on the full model: G-DVB `_R9F_ATTACH` (3 hops), G-LIVE `judge_hist_geom_live` (`bw_has`), G-EVAL `full_eval_hist_geom_attach` (the loader attaches no pose history for it).
+_R9F_T1V_ADMITTED = ("--r9-hist-supervise-geom",)
+_R9F_T1H_REQUIRED = {"--r9-bev-warp": {"--r9-bev-warp-supervise-hist": (), "--r9-bev-warp-fuse-init": "identity", "--r9-bev-warp-fill-only": ()},
+                     "--r9-bev-warp-supervise-hist": {"--r9-bev-warp": ()}, "--r9-bev-warp-fuse-init": {"--r9-bev-warp": ()},
+                     "--r9-bev-warp-fill-only": {"--r9-bev-warp": ()}}
+#: K2-ARGV: W-MAP-2 (`--r9-plan-map-channels`) reads the BANDED head's drv / drv_sdf / sdw / lane / unobs channels (`plan_wires_flag.pin_args`: "needs --r9-map-banded"). Before this the
+#: ONLY refusal of W-MAP-2 without the banded head was the trainer's, so the gate ADMITTED such an argv (MEASURED 2026-11-07 on a K2 + `--r9-plan-map-channels` probe) and the build
+#: refused it later; the same co-required mechanism as the T1h bundle puts the refusal at the gate. (`--bev-source map_hires_pool` is already refcv8's required value.)
+_R9F_PLAN_MAP_REQUIRED = {"--r9-plan-map-channels": {"--r9-map-banded": ()}}
+_R9F_PLAN_MAP_REQUIRED_WHY = {"--r9-plan-map-channels": "W-MAP-2's channels ARE the banded head's drv / drv_sdf / sdw / lane / unobs (plan_wires_flag.pin_args: needs --r9-map-banded): "
+                                                        "without the banded head they would reach no producer"}
+_R9F_T1H_REQUIRED_WHY = {
+    "--r9-bev-warp": "the crowned lever is the T1h BUNDLE (H-R9-E1-T1H KEPT); T1 alone FAILED its bar (H-R9-E1-T1), so the warp carries supervise-hist, fuse-init `identity` "
+                     "and fill-only, all three",
+    "--r9-bev-warp-supervise-hist": "a T1h flag is part of the crowned BUNDLE and is a dead flag without the warp (nothing reads it)",
+    "--r9-bev-warp-fuse-init": "a T1h flag is part of the crowned BUNDLE and is a dead flag without the warp (nothing reads it)",
+    "--r9-bev-warp-fill-only": "a T1h flag is part of the crowned BUNDLE and is a dead flag without the warp (nothing reads it)"}
+#: lever flag -> the trainer source needle that ATTACHES its modules (G-DVB reachability: a lever the argv declares whose attach hop is
+#: gone from the trainer is declared-but-not-built). B3's four ride `_bbf.attach`, C8's two ride `_pwf.attach` (refc_v3_train build).
+#: ⭐ C5-S8: NOT every own-head flag rides `_bbf.attach`. B3's `is_any` does not cover `--r9-box-layers`, so on a layers-only argv `_bbf.attach` is a NO-OP and its
+#: needle would prove nothing about the depth; the layers flag is attached by `_bc5.attach` (box_c5_flag: `Box3DSlotDecoder.extend_depth`), called right after
+#: `_bbf.attach` in the trainer's build (and in the harness replay, same order). Deleting that line must turn `lever_attach_reasons` red FOR THIS FLAG.
+_R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS if f not in ("--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries")},
+                   **{"--r9-box-layers": "_bc5.attach(model, args)", "--r9-box-s8-horizon": "_bc5.attach(model, args)", "--r9-box-perframe-queries": "_bc5.attach(model, args)"},
+                   **{f: "_pwf.attach(model, args)" for f in _R9F_PLAN_FLAGS},
+                   **{"--r9-photometric": "_r9ph.attach(model, args)"},          # C10: model._r9_photometric (seed + step); no parameter
+                   #: THE FLIP (T1h bundle): the warp's fuse + lift hook are attached at the model build (`_bw.attach`, refc_v3_train.py); supervise-hist is a LOSS-side lever whose hop is
+                   #: `_bw.supervised_lift_valid` (delete it and the flag builds the state, then silently supervises only the cells the camera sees NOW). fuse-init / fill-only are applied
+                   #: INSIDE `attach` (bev_warp_flag.py), so the `_bw.attach` needle covers them; the history dataset hook and `_bw.stage` are G-LIVE's (`bw_has` / the gate and fuse gradients)
+                   **{"--r9-bev-warp": "_bw.attach(model, args)", "--r9-bev-warp-supervise-hist": "_bw.supervised_lift_valid(model, pout, lv, sel)"},
+                   #: THE T1v FLIP: T1v has NO fuse, so its three hops are the model build (`_bw.attach` -> `_attach_geom`: the HistGeom on the 10 cm branch + the model state), the TRAIN dataset's
+                   #: pose history (`_bw.attach_dataset(ds, ...)`; the eval dataset's is `train()`'s own line, and G-EVAL's `full_eval_hist_geom_attach`), and the LOSS hop shared with T1h
+                   #: (`_bw.supervised_lift_valid`: delete it and the flag builds the state, then silently supervises only the cells the camera sees NOW). A TUPLE: every needle must be present.
+                   **{"--r9-hist-supervise-geom": ("_bw.attach(model, args)", "_bw.attach_dataset(ds, model, args)", "_bw.supervised_lift_valid(model, pout, lv, sel)")})
+#: the share alarm (R3 / E0j): when the banded map head is ON, its gradient share of the trunk must stay >= the floor in the smoke's one
+#: `--grad-share-every` reading. E0j's target: the banded map takes >= 0.05 of layer2 (w* 0.511; at w 1.0 it took 0.146). The trainer's
+#: reading (`tanitad/train/grad_share.py` `measure`, groups `GROUP_PREFIXES`: trunk = `core.encoder.*`) has NO `layer2` group; the finest
+#: group that contains layer2 is `trunk`, so the alarm reads `gs_trunk_proj_map_hires` (the `map_hires` term must be in --grad-share-terms).
+_R9F_SHARE = {"flag": "--r9-map-banded", "row_key": "gs_trunk_proj_map_hires", "floor": 0.05, "term": "map_hires",
+              "terms_flag": "--grad-share-terms", "e0j": "w*=0.511 -> layer2 share 0.05; w=1.0 -> 0.146 (LOOP_STATE_REFCV9 02:25)"}
+_R9F_OPEN_ITEMS = (
+    next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-MAP-OWN-RECORD"),
+    dict(next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-OWN-RECORD"), when_prefixes=("--r9-box-",), when_except=(),
+         when_except_exact=E1_BOX_AUX_FLAGS + _E1_T1_FLAGS_PRE_T1V,
+         what="a B3 box-lever arm (E1_BOX_OWN_FLAGS) changes the inference box head or its supervision, so the INHERITED G-BOX-OVERFIT "
+              "record (refcv8's head) does not cover it; closed by the `/2-b3` record exactly as in refcv9-e1rig (the SAME E1_OWN_RECORDS row)"),
+    next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-UNKNOWN-LEVER"),
+    {"id": "R9F-UNCLASSIFIED-LEVER",
+     "what": "unclassified refcv9 lever: the argv carries a `--r9-*` flag that is neither a map / box lever (their own record items), a C8 planner "
+             "wire (`_R9F_PLAN_FLAGS`), a C10 augmentation (`_R9F_AUG_FLAGS`), nor forbidden here. It is never silently admitted",
+     "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
+     "closes_when": "never by a record: only by a reviewed launch_gate.py edit (classify it admitted, or add it to forbidden_levers)",
+     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + _R9F_T1H_ADMITTED + _R9F_T1V_ADMITTED + _R9F_T1_REFUSED + _R9F_AUG_FLAGS},
+)
+
+
+def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), rule: dict) -> dict:
+    """One member of the refcv9-full family. `sched` = the required schedule values (a flag -> value); `rule` = `lr_schedule_rule`."""
+    return dict(
+        _R8, name=name,
+        open_items=_R9F_OPEN_ITEMS,
+        map_overfit_banded=_E1_MAP_BANDED,
+        required_flags=tuple(_R8["required_flags"]) + ("--lr-schedule", "--wsd-decay-steps") + tuple(extra_flags),
+        required_flags_why=dict(_R8.get("required_flags_why") or {}, **{
+            "--lr-schedule": "REFCV9_DESIGN 4.4: WSD (the C6 schedule); the default `cosine` DISABLES the mechanism",
+            "--wsd-decay-steps": "REFCV9_DESIGN 4.4: the WSD decay length (required by value)"}),
+        required_values={k: v for k, v in dict(_R8["required_values"], **{"--lr-schedule": "wsd"}, **sched).items() if k != "--w-map-hires"},
+        required_values_why=dict(_R8.get("required_values_why") or {}, **{"--lr-schedule": "REFCV9_DESIGN 4.4 / C6: WSD"}, **why),
+        #: THE FLIP: the crowned T1h bundle is ADMITTED AS ONE UNIT (see `_R9F_T1H_REQUIRED`); an argv with none of the four flags is held to nothing new.
+        #: K2-ARGV: MERGED with the near-lift rules (`_NEAR_LIFT_WHEN`: a banded argv -> near lift 10, `--r9-map-banded-near-m 20` -> 20; every other argv keeps refcv8's 20) -- one dict, both rules
+        required_values_when=dict({k: dict(v) for k, v in _R9F_T1H_REQUIRED.items()}, **{k: dict(v) for k, v in _NEAR_LIFT_WHEN.items()},
+                                  **{k: dict(v) for k, v in _R9F_PLAN_MAP_REQUIRED.items()}),
+        required_values_when_why=dict(_R9F_T1H_REQUIRED_WHY, **_NEAR_LIFT_WHEN_WHY, **_R9F_PLAN_MAP_REQUIRED_WHY),
+        forbidden_levers=tuple(_R8["forbidden_levers"]) + (
+            (_R9F_AUX_ALL, "an aux head (B1 / B2 / B2c) or its weight: not crowned by E1 yet (REFCV9_DESIGN 4.3) -- the full model REACHES it "
+                           "since AUX-FULL (compute_losses_v3), so this is a decision, not a wiring gap; the MM drops it after E1 crowns a head"),
+            (_R9W_PF_FLAGS, "R9-PF is the SEPARATE stage-2 calibration fit (REFCV9_INMODEL_DESIGN s1, S2); refcv9-warm forbids it too"),
+            (("--r9-bev-warp-shuffle",), "T1hs's CONTENT control (the same supervision set and fuse as T1h, but DERANGED history frames: wrong content by design, "
+                                       "PREREG clause 4's attribution arm) -- an E1 diagnostic, never a production lever; refcv9-e1rig admits it, the full model never does"),
+            (("--r9-bev-warp-lags",), "the lags value: the crowned T1h bundle (H-R9-E1-T1H) ran at the DEFAULT lags 0.5,1.0 s, which needs NO flag; any other value is "
+                                      "an uncrowned lever (longer lags 1.5 / 2.0 s are E1's next lever if T1h had failed, never run), so none is admitted -- pass no lags flag"),
+        ) + (((_R9F_BRANCH_FLAGS, "the D1 decay branch launches ONLY under profile refcv9-full-d1 (its own token, the 4-flag delta)"),)
+             if name != "refcv9-full-d1" else ()),
+        #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- the e1rig machinery (`map_only_init_reasons`' reader)
+        init_pin={"flag": "--init-from", "init_from_md5": _MAPFT_INIT_MD5,
+                  "init_note": "E2 / E3 warm-start from the shipped refcv8 EMA-48,852 (REFCV9_DESIGN 4.4), not another file"},
+        suite_env_failures=PROFILES["refcv9-warm"]["suite_env_failures"],
+        suite_pinned_skip_ok=PROFILES["refcv9-warm"]["suite_pinned_skip_ok"],
+        lr_schedule_rule=rule,
+        #: `--w-map-hires`: refcv8's 1.0 without the banded head; with it the E0j-chosen w* (M2a 0.511 / M2b 1.018) -- free, positive
+        w_map_hires_rule={"flag": "--r9-map-banded", "plain": "1.0"},
+        #: K2M1N20 re-dose: a banded argv carries ONE pre-registered weight (E1's set + 25, PREREG_K2_REDOSE), never a free value
+        admitted_values_when={"--r9-map-banded": {"--w-map-hires": tuple(f"{w:g}" for w in _R9F_MAP_W_ADMITTED)}},
+        map_share_alarm=dict(_R9F_SHARE),
+        lever_attach_needles=dict(_R9F_ATTACH),
+        #: the admitted dead groups: refcv8's + the ONE parameter row refcv9-warm added after NT A1 (2026-10-26): core.decoder.r8_rc_gate, the
+        #: zero-init route-checkpoint gate refc.py applies only when r8['rc'] is not None -- --r8-no-rc (PI Q-A 2026-10-11) feeds none, so it takes
+        #: exactly zero gradient by construction. MEASURED on E2 K0's explore smoke (384e79f, zerograd_gate: 3 untrained = r8_rc_gate +
+        #: r8_rc_to_cond.{weight,bias}): without the row the e2 chain STOPs NO-ZEROGRAD-CONTROLS (MM 2026-11-05, PI "Train K0"). Reused, not
+        #: re-typed: the row and its reason are refcv9-warm's.
+        live_dead_admitted=tuple(_R8["live_dead_admitted"]) + tuple(r for r in _R9W_LIVE_DEAD if r[0] == "core.decoder.r8_rc_gate"),
+    )
+
+
+#: the WSD probe literals (G-DVB `lr_factor_probe`): {step: factor} = the closed form of `(warmup, steps, decay)`, written as numbers
+_R9F_PROBE_E2 = {0: 0.001, 999: 1.0, 3000: 1.0, 5000: 1.0, 5999: 0.001, 6000: 0.0}
+_R9F_PROBE_FULL = {0: 0.001, 999: 1.0, 30911: 1.0, 60822: 1.0, 73279: 1.0 / 12458, 73280: 0.0}
+_R9F_PROBE_D1 = {0: 0.001, 999: 1.0, 15500: 1.0, 30000: 1.0, 35999: 1.0 / 6000, 36000: 0.0}
+PROFILES["refcv9-e2"] = _r9f_profile(
+    "refcv9-e2", {"--steps": "6000", "--wsd-decay-steps": "1000"},
+    {"--steps": "REFCV9_DESIGN 4.4 E2: 6,000 steps (refcv8's 48,852 is the full recipe)",
+     "--wsd-decay-steps": "REFCV9_DESIGN 4.4 E2: WSD decay over the last 1,000 steps"},
+    rule={"decay_flag": "--wsd-decay-steps", "probe_literal": _R9F_PROBE_E2})
+PROFILES["refcv9-full"] = _r9f_profile(
+    "refcv9-full", {"--steps": "73280", "--warmup": "1000", "--wsd-decay-steps": "12458"},
+    {"--steps": "REFCV9_DESIGN 4.4 E3: 73,280 steps", "--warmup": "REFCV9_DESIGN 4.4 E3: warm-up 1,000",
+     "--wsd-decay-steps": "REFCV9_DESIGN 4.4 E3: WSD decay 12,458 (C6 HANDOFF C12-full rows)"},
+    extra_flags=("--save-at",),
+    rule={"decay_flag": "--wsd-decay-steps", "probe_literal": _R9F_PROBE_FULL, "save_at_includes": 30000})
+_R9F_FULL = PROFILES["refcv9-full"]
+#: the D1 branch (E3's stable-phase checkpoint 30,000 decayed over 6,000): a refcv9-full argv with the 4-flag delta ONLY
+#: (--out, --steps, --wsd-branch-from, --wsd-branch-decay; --save-at is the C6 module's own exempt cadence flag)
+_R9F_BRANCH = {"src_step": 30000, "decay": 6000, "steps": 36000, "delta": ("--out", "--steps", "--wsd-branch-from", "--wsd-branch-decay"),
+               "exempt": ("--save-at",), "src_ckpt": "ckpt_full_30000.pt"}
+PROFILES["refcv9-full-d1"] = dict(
+    _R9F_FULL, name="refcv9-full-d1",
+    required_flags=tuple(f for f in _R9F_FULL["required_flags"] if f != "--save-at") + _R9F_BRANCH_FLAGS,
+    required_values=dict(_R9F_FULL["required_values"], **{"--steps": "36000", "--wsd-branch-decay": "6000"}),
+    required_values_why=dict(_R9F_FULL["required_values_why"], **{
+        "--steps": "D1: the branch ends at source step 30,000 + decay 6,000", "--wsd-branch-decay": "D1: decay the 30,000 checkpoint over 6,000"}),
+    forbidden_levers=tuple(e for e in _R9F_FULL["forbidden_levers"] if e[0] != _R9F_BRANCH_FLAGS),
+    lr_schedule_rule={"decay_flag": "--wsd-branch-decay", "probe_literal": _R9F_PROBE_D1},
+    wsd_branch_rule=dict(_R9F_BRANCH),
+)
+
+
+class GateError(RuntimeError):
+    """A condition under which the gate cannot certify anything."""
+
+
+# --------------------------------------------------------------------------------------------- #
+# small utilities                                                                                 #
+# --------------------------------------------------------------------------------------------- #
+def utc_now() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def sha256_bytes(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+def sha256_file(p: str | os.PathLike, chunk: int = 1 << 22) -> str:
+    h = hashlib.sha256()
+    with open(p, "rb") as fh:
+        for c in iter(lambda: fh.read(chunk), b""):
+            h.update(c)
+    return h.hexdigest()
+
+
+def canonical_json(obj: Any) -> bytes:
+    """Key-sorted, compact, UTF-8. The ONE byte form every hash and HMAC here is taken over."""
+    return json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+                      default=str).encode("utf-8")
+
+
+def argv_sha256(argv: list[str]) -> str:
+    """sha256 of the argv as an ORDERED JSON array (order is meaning; never sort it)."""
+    if not isinstance(argv, list) or not all(isinstance(x, str) for x in argv):
+        raise GateError("argv must be a list of strings")
+    return sha256_bytes(json.dumps(argv, ensure_ascii=False, separators=(",", ":"))
+                        .encode("utf-8"))
+
+
+def sha12(s: str) -> str:
+    return hashlib.sha256(str(s).encode()).hexdigest()[:12]
+
+
+def scrub(obj: Any) -> Any:
+    """Every raw clip UUID -> `sha12:<...>` (the programme's clip-id rule for banked JSON)."""
+    if isinstance(obj, str):
+        return _UUID.sub(lambda m: "sha12:" + sha12(m.group(0)), obj)
+    if isinstance(obj, dict):
+        return {scrub(k): scrub(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [scrub(v) for v in obj]
+    return obj
+
+
+def write_json(path: str | os.PathLike, obj: Any) -> Path:
+    """Atomic, ASCII-safe (a cp1252 console can never kill the success path)."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name(p.name + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=1, ensure_ascii=True, default=str), encoding="utf-8")
+    os.replace(tmp, p)
+    return p
+
+
+def read_json(path: str | os.PathLike) -> Any:
+    with open(path, "r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _say(msg: str) -> None:
+    print(f"[gate] {msg}", flush=True)
+
+
+def _harden_streams() -> None:
+    for s in (sys.stdout, sys.stderr):
+        try:
+            s.reconfigure(encoding="utf-8", errors="backslashreplace")
+        except (AttributeError, ValueError):   # pragma: no cover
+            pass
+
+
+def ram_available_gb() -> float | None:
+    try:
+        import psutil
+        return psutil.virtual_memory().available / 2 ** 30
+    except Exception:                          # noqa: BLE001 -- psutil absent: unknown, not zero
+        return None
+
+
+# --------------------------------------------------------------------------------------------- #
+# argv                                                                                            #
+# --------------------------------------------------------------------------------------------- #
+def load_argv_file(path: str | os.PathLike) -> list[str]:
+    """A JSON array of strings, or a run's `config.json` (its `argv`). Nothing else."""
+    obj = read_json(path)
+    argv = obj.get("argv") if isinstance(obj, dict) else obj
+    if not isinstance(argv, list) or not argv or not all(isinstance(x, str) for x in argv):
+        raise GateError(f"{path}: not a non-empty JSON list of strings (nor a config.json argv)")
+    return list(argv)
+
+
+def flag_pairs(argv: list[str]) -> list[tuple[str, list[str]]]:
+    """`[--flag v v, --flag2, ...]` -> [(flag, [values])]. `--flag=value` is split."""
+    out: list[tuple[str, list[str]]] = []
+    for tok in argv:
+        if tok.startswith("--"):
+            if "=" in tok:
+                f, v = tok.split("=", 1)
+                out.append((f, [v]))
+            else:
+                out.append((tok, []))
+        elif out:
+            out[-1][1].append(tok)
+        else:
+            raise GateError(f"argv starts with a bare value {tok!r}; the trainer argv is flags only")
+    return out
+
+
+def has_flag(argv: list[str], flag: str) -> bool:
+    return any(f == flag for f, _ in flag_pairs(argv))
+
+
+def flag_values(argv: list[str], flag: str) -> list[str] | None:
+    vals = None
+    for f, v in flag_pairs(argv):
+        if f == flag:
+            vals = list(v)
+    return vals
+
+
+def set_flag(argv: list[str], flag: str, values: list[str] | None) -> list[str]:
+    """Replace every occurrence of `flag` by ONE `flag values...` (append when absent);
+    `values=None` removes the flag."""
+    out: list[str] = []
+    done = False
+    for f, v in flag_pairs(argv):
+        if f == flag:
+            if values is not None and not done:
+                out += [flag, *values]
+                done = True
+            continue
+        out += [f, *v]
+    if values is not None and not done:
+        out += [flag, *values]
+    return out
+
+
+def _looks_like_path(v: str) -> bool:
+    return ("/" in v or "\\" in v) and not v.startswith("--")
+
+
+def data_inputs(argv: list[str], profile: dict) -> list[tuple[str, str]]:
+    """Every (flag, path) the trainer READS: each flag value that is a path, minus the outputs.
+    Derived from the argv, not a hand list -- a new path flag is bound the day it is passed."""
+    out: list[tuple[str, str]] = []
+    outs = set(profile.get("output_flags", ()))
+    for f, vals in flag_pairs(argv):
+        if f in outs:
+            continue
+        paths = [v for v in vals if _looks_like_path(v)]
+        for i, v in enumerate(paths):
+            out.append((f if len(paths) == 1 else f"{f}[{i}]", v))
+    return out
+
+
+def parse_path_map(items: Iterable[str] | None) -> list[tuple[str, str]]:
+    pm = []
+    for it in items or ():
+        if "=" not in it:
+            raise GateError(f"--path-map {it!r}: expected FROM=TO")
+        a, b = it.split("=", 1)
+        pm.append((a.rstrip("/\\"), b.rstrip("/\\")))
+    return sorted(pm, key=lambda ab: -len(ab[0]))
+
+
+def map_path(p: str, pmap: list[tuple[str, str]]) -> str:
+    for a, b in pmap:
+        if p == a or p.startswith(a + "/") or p.startswith(a + "\\"):
+            return b + p[len(a):]
+    return p
+
+
+# --------------------------------------------------------------------------------------------- #
+# the code tree                                                                                   #
+# --------------------------------------------------------------------------------------------- #
+def _skip_tree_path(rel: str) -> bool:
+    parts = rel.split("/")
+    return (any(p in _TREE_SKIP_DIRS for p in parts[:-1])
+            or parts[-1].endswith(_TREE_SKIP_SUFFIX) or parts[-1] in _TREE_SKIP_DIRS)
+
+
+def tree_manifest(tree: str | os.PathLike) -> dict[str, str]:
+    """{posix relpath: sha256} over `stack/` + `taniteval/` -- exactly what ships to a launch host.
+    Caches (`__pycache__`, `.pytest_cache`, `*.pyc`) are excluded; everything else counts."""
+    tree = Path(tree)
+    out: dict[str, str] = {}
+    for root in TREE_ROOTS:
+        base = tree / root
+        if not base.is_dir():
+            raise GateError(f"tree {tree} has no {root}/ -- not a code tree")
+        for dirpath, dirnames, filenames in os.walk(base):
+            dirnames[:] = sorted(d for d in dirnames if d not in _TREE_SKIP_DIRS)
+            for fn in filenames:
+                full = Path(dirpath) / fn
+                rel = full.relative_to(tree).as_posix()
+                if _skip_tree_path(rel):
+                    continue
+                out[rel] = sha256_file(full)
+    if not out:
+        raise GateError(f"tree {tree}: zero files")
+    return out
+
+
+def tree_digest(manifest: dict[str, str]) -> str:
+    d = sha256_bytes("".join(f"{p}\t{h}\n" for p, h in sorted(manifest.items())).encode("utf-8"))
+    if not _HEX64.match(d):                    # shape before trust (CLAUDE.md, the blob hole)
+        raise GateError("tree digest has the wrong shape")
+    return d
+
+
+def git(git_dir: str, *args: str, binary: bool = False) -> Any:
+    env = dict(os.environ, GIT_DIR=str(git_dir))
+    p = subprocess.run(["git", *args], env=env, capture_output=True,
+                       **({} if binary else {"text": True, "encoding": "utf-8",
+                                            "errors": "replace"}))
+    if p.returncode != 0:
+        raise GateError(f"git {' '.join(args)} failed rc={p.returncode}: "
+                        f"{(p.stderr if not binary else p.stderr.decode(errors='replace'))[-400:]}")
+    return p.stdout
+
+
+def resolve_commit(git_dir: str, ref: str) -> str:
+    full = git(git_dir, "rev-parse", ref + "^{commit}").strip()
+    if not _HEX40.match(full):
+        raise GateError(f"{ref!r} does not resolve to a 40-char commit (got {full!r})")
+    return full
+
+
+def git_archive_bytes(git_dir: str, commit: str, roots: Iterable[str]) -> bytes:
+    """`git archive` with `core.autocrlf=false`: the REPO's bytes, never a CRLF rewrite."""
+    raw = git(git_dir, "-c", "core.autocrlf=false", "archive", commit, *roots, binary=True)
+    if not raw:
+        raise GateError(f"git archive {commit} produced nothing")
+    return raw
+
+
+def tree_manifest_from_archive(raw: bytes) -> dict[str, str]:
+    out: dict[str, str] = {}
+    with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
+        for m in tf.getmembers():
+            if not m.isfile():
+                continue
+            rel = m.name
+            if rel.split("/", 1)[0] not in TREE_ROOTS or _skip_tree_path(rel):
+                continue
+            out[rel] = sha256_bytes(tf.extractfile(m).read())
+    return out
+
+
+def extract_archive(raw: bytes, dest: Path) -> None:
+    dest.mkdir(parents=True, exist_ok=False)
+    with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
+        for m in tf.getmembers():
+            if m.name.startswith(("/", "..")) or ".." in Path(m.name).parts:
+                raise GateError(f"refusing archive member {m.name!r}")
+        tf.extractall(dest)
+
+
+def tree_diff(want: dict[str, str], got: dict[str, str], limit: int = 20) -> dict:
+    missing = sorted(set(want) - set(got))
+    extra = sorted(set(got) - set(want))
+    differ = sorted(p for p in set(want) & set(got) if want[p] != got[p])
+    return {"n_missing": len(missing), "n_extra": len(extra), "n_differ": len(differ),
+            "missing": missing[:limit], "extra": extra[:limit], "differ": differ[:limit]}
+
+
+# --------------------------------------------------------------------------------------------- #
+# data fingerprints                                                                               #
+# --------------------------------------------------------------------------------------------- #
+def fingerprint(path: str | os.PathLike) -> dict:
+    """A file: its sha256. A directory: its LISTING (relpath + size of every file; content NOT
+    hashed -- a 161 GB cache is not re-read per launch; stated in `method`). Missing: missing."""
+    p = Path(path)
+    if p.is_file():
+        return {"kind": "file", "bytes": p.stat().st_size, "sha256": sha256_file(p),
+                "method": "sha256-v1"}
+    if p.is_dir():
+        lines, n, total = [], 0, 0
+        for dirpath, dirnames, filenames in os.walk(p):
+            dirnames[:] = sorted(d for d in dirnames if d not in _DIR_SKIP_NAMES)
+            for fn in filenames:
+                if fn in _DIR_SKIP_NAMES:
+                    continue
+                f = Path(dirpath) / fn
+                st = f.stat()
+                lines.append(f"{f.relative_to(p).as_posix()}\t{st.st_size}\n")
+                n += 1
+                total += st.st_size
+        lines.sort()
+        return {"kind": "dir", "n_files": n, "bytes": total,
+                "listing_sha256": sha256_bytes("".join(lines).encode("utf-8")),
+                "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; "
+                          "_v2manifest.pt excluded -- a cache rewrites it on first use)"}
+    return {"kind": "missing"}
+
+
+def fp_key(fp: dict) -> str:
+    """The comparable identity of a fingerprint (method + content digest)."""
+    if fp.get("kind") == "file":
+        return f"file:{fp.get('sha256')}"
+    if fp.get("kind") == "dir":
+        return f"dir:{fp.get('n_files')}:{fp.get('bytes')}:{fp.get('listing_sha256')}"
+    return f"{fp.get('kind')}:{fp.get('sha256', fp.get('why', ''))}"
+
+
+def implicit_inputs(argv: list[str]) -> list[tuple[str, dict]]:
+    """Inputs the argv implies but does not name. Today: the ImageNet init a `--trunk timm` run
+    loads from the Hugging Face cache (refcv7 trains from it -- SPEC section 4)."""
+    out: list[tuple[str, dict]] = []
+    trunk = flag_values(argv, "--trunk")
+    name = flag_values(argv, "--trunk-name")
+    if trunk and trunk[0] == "timm" and name and not has_flag(argv, "--trunk-no-pretrained"):
+        key = f"implicit:timm-pretrained:{name[0]}"
+        try:
+            import timm                                   # noqa: F401
+            from huggingface_hub import try_to_load_from_cache
+            pc = timm.models.get_pretrained_cfg(name[0])
+            hub = getattr(pc, "hf_hub_id", None) if pc is not None else None
+            if not hub:
+                out.append((key, {"kind": "unresolved", "why": f"no hf_hub_id for {name[0]}"}))
+                return out
+            for fn in ("model.safetensors", "pytorch_model.bin"):
+                r = try_to_load_from_cache(hub, fn)
+                if isinstance(r, str) and os.path.isfile(r):
+                    fp = fingerprint(r)
+                    fp["hub"] = f"{hub}/{fn}"
+                    out.append((key, fp))
+                    return out
+            out.append((key, {"kind": "unresolved", "why": f"{hub} not in the local HF cache"}))
+        except Exception as e:                            # noqa: BLE001 -- stated, never guessed
+            out.append((key, {"kind": "unresolved", "why": f"{type(e).__name__}: {e}"}))
+    return out
+
+
+def data_manifest(argv: list[str], profile: dict, pmap: list[tuple[str, str]],
+                  gate_inputs: dict[str, str] | None = None) -> dict[str, dict]:
+    """Every input the launch reads, fingerprinted on THIS host: the argv's data paths, the
+    `.meta.json` beside any of them (a sidecar's provenance is content too; the profile's
+    `meta_required_flags` make an ABSENT one a finding), the implied inputs (ImageNet init), and
+    the gate's own inputs (a clock reference, a recorded tau) keyed `gate:*`."""
+    man: dict[str, dict] = {}
+    req = set(profile.get("meta_required_flags", ()))
+    for flag, p in data_inputs(argv, profile):
+        local = map_path(p, pmap)
+        man[flag] = {"path": p, **({"local": local} if local != p else {}), **fingerprint(local)}
+        meta = local + ".meta.json"
+        if flag in req or os.path.isfile(meta):
+            man[f"{flag}:meta"] = {"path": p + ".meta.json", **fingerprint(meta),
+                                   **({"required": True} if flag in req else {})}
+    for key, fp in implicit_inputs(argv):
+        man[key] = fp
+    for key, path in sorted((gate_inputs or {}).items()):
+        man[key] = {"path": str(path), **fingerprint(path)}
+    return man
+
+
+def data_manifest_problems(data: dict[str, dict]) -> list[str]:
+    out = []
+    for k, v in sorted(data.items()):
+        if v.get("kind") not in ("missing", "unresolved"):
+            continue
+        if k.endswith(":meta") and v.get("required"):
+            out.append(f"FIX-5: {v.get('path')} is ABSENT -- `read_speed_max_sidecar_v6` refuses "
+                       f"a sidecar without its meta (it is the only record of which label blob "
+                       f"the sidecar was built over)")
+        else:
+            out.append(f"data input {k} ({v.get('path', '')}) is {v.get('kind')} on this host"
+                       + (f": {v.get('why')}" if v.get("why") else ""))
+    return out
+
+
+# --------------------------------------------------------------------------------------------- #
+# the key and the signature                                                                       #
+# --------------------------------------------------------------------------------------------- #
+def default_key_file() -> Path:
+    env = os.environ.get(KEY_ENV)
+    return Path(env) if env else Path.home() / ".config" / "tanitad" / "launch_gate.key"
+
+
+def load_key(path: str | os.PathLike | None = None, *, create: bool = True,
+             forbid_under: Iterable[str | os.PathLike] = ()) -> bytes:
+    """32 random bytes, hex on disk, created on first use with mode 0600. ⛔ Refused inside a
+    code tree: a key that can be committed is not a key (it is also git-ignored by name)."""
+    p = Path(path) if path else default_key_file()
+    rp = os.path.normcase(str(p.resolve()))
+    for t in forbid_under:
+        rt = os.path.normcase(str(Path(t).resolve()))
+        if rp == rt or rp.startswith(rt + os.sep):
+            raise GateError(f"refusing a key file inside the code tree {t}: {p}")
+    if not p.exists():
+        if not create:
+            raise GateError(f"no gate key at {p} (create one by running the gate on this host)")
+        p.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(p), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w", encoding="ascii") as fh:
+            fh.write(secrets.token_hex(32) + "\n")
+        try:
+            os.chmod(p, 0o600)
+        except OSError:                                   # pragma: no cover (Windows ACLs)
+            pass
+    txt = p.read_text(encoding="ascii").strip()
+    if not re.fullmatch(r"[0-9a-f]{64}", txt):
+        raise GateError(f"gate key {p} is not 64 hex chars")
+    return bytes.fromhex(txt)
+
+
+def key_id(key: bytes) -> str:
+    return sha256_bytes(b"tanitad-launch-gate-key-id:" + key)[:16]
+
+
+def sign(token_wo_sig: dict, key: bytes) -> str:
+    return hmac.new(key, canonical_json(token_wo_sig), hashlib.sha256).hexdigest()
+
+
+def signature_ok(token: dict, key: bytes) -> bool:
+    body = {k: v for k, v in token.items() if k != "hmac_sha256"}
+    got = str(token.get("hmac_sha256", ""))
+    return len(got) == 64 and hmac.compare_digest(sign(body, key), got)
+
+
+# --------------------------------------------------------------------------------------------- #
+# context                                                                                         #
+# --------------------------------------------------------------------------------------------- #
+@dataclasses.dataclass
+class Ctx:
+    profile: str
+    tree: str
+    commit: str
+    argv: list
+    out_dir: str
+    path_map: list
+    tree_sha256: str
+    argv_sha256: str
+    options: dict
+    arm: str | None = None
+
+    @property
+    def prof(self) -> dict:
+        return PROFILES[self.profile]
+
+    def binding(self) -> dict:
+        return {"profile": self.profile, "commit": self.commit, "tree_sha256": self.tree_sha256,
+                "argv_sha256": self.argv_sha256}
+
+    def dump(self, p: Path) -> Path:
+        return write_json(p, dataclasses.asdict(self))
+
+    @classmethod
+    def load(cls, p: str | os.PathLike) -> "Ctx":
+        return cls(**read_json(p))
+
+    def local_argv(self) -> list[str]:
+        """The argv with every data path mapped to this host (the binding keeps the original)."""
+        out, pmap = [], [tuple(x) for x in self.path_map]
+        outs = set(self.prof.get("output_flags", ()))
+        for f, vals in flag_pairs(self.argv):
+            out.append(f)
+            out += [map_path(v, pmap) if (f not in outs and _looks_like_path(v)) else v
+                    for v in vals]
+        return out
+
+
+def _gate_self_sha() -> str:
+    return sha256_file(Path(__file__).resolve())
+
+
+def _host() -> dict:
+    h = {"node": platform.node(), "platform": platform.platform(), "python": sys.version.split()[0]}
+    try:
+        import torch
+        h["torch"] = torch.__version__
+        h["cuda"] = bool(torch.cuda.is_available())
+        if h["cuda"]:
+            h["device"] = torch.cuda.get_device_name(0)
+    except Exception:                                     # noqa: BLE001
+        pass
+    return h
+
+
+def new_evidence(ctx: Ctx, check: str) -> dict:
+    return {"schema": GATE_SCHEMA, "kind": "evidence", "check": check, "status": "ERROR",
+            "reasons": [], "binding": ctx.binding(), "inputs_read": {}, "host": _host(),
+            "arm": ctx.arm, "gate_sha256": _gate_self_sha(), "started_utc": utc_now(),
+            "details": {}}
+
+
+def finish_evidence(ev: dict, status: str, reasons: list[str] | None = None) -> dict:
+    ev["status"] = status
+    ev["reasons"] = list(reasons or [])
+    ev["finished_utc"] = utc_now()
+    return ev
+
+
+def write_evidence(out_dir: str | os.PathLike, ev: dict) -> Path:
+    d = Path(out_dir) / "evidence"
+    ev = scrub(ev)
+    p = write_json(d / f"{ev['check']}.json", ev)
+    hist = d / "history" / f"{ev['check']}__{ev.get('finished_utc', utc_now()).replace(':', '')}.json"
+    write_json(hist, ev)
+    return p
+
+
+# --------------------------------------------------------------------------------------------- #
+# child side: the tree under test, the trainer, the capture                                        #
+# --------------------------------------------------------------------------------------------- #
+class _Stop(Exception):
+    """Raised by a capture hook to end `train()` at a chosen point (never escapes the gate)."""
+
+
+class _ForwardCaptured(Exception):
+    def __init__(self, out):
+        super().__init__("forward captured")
+        self.out = out
+
+
+class _Patcher:
+    def __init__(self):
+        self._undo: list[tuple[Any, str, Any, bool]] = []
+
+    def set(self, obj: Any, name: str, value: Any) -> None:
+        had = name in getattr(obj, "__dict__", {})
+        self._undo.append((obj, name, getattr(obj, name, None), had))
+        setattr(obj, name, value)
+
+    def restore(self) -> None:
+        for obj, name, old, had in reversed(self._undo):
+            if had:
+                setattr(obj, name, old)
+            else:
+                try:
+                    delattr(obj, name)
+                except AttributeError:
+                    setattr(obj, name, old)
+        self._undo.clear()
+
+
+def child_bootstrap(ctx: Ctx) -> dict:
+    """sys.path on the tree under test, and ASSERT `tanitad` really came from it (the MSYS /
+    editable-install false pass: a green run on the wrong disk)."""
+    tree = Path(ctx.tree).resolve()
+    for p in (tree / "taniteval" / "tools", tree / "stack" / "scripts", tree / "taniteval",
+              tree / "stack"):
+        if str(p) not in sys.path:
+            sys.path.insert(0, str(p))
+    sys.dont_write_bytecode = True
+    import tanitad
+    here = os.path.normcase(os.path.realpath(tanitad.__file__))
+    want = os.path.normcase(os.path.realpath(tree / "stack"))
+    if not here.startswith(want + os.sep):
+        raise GateError(f"tanitad imported from {here}, not from the tree under test {want}")
+    import torch
+    torch.set_num_threads(int(ctx.options.get("omp", 4)))
+    if ctx.options.get("cpu_only") and torch.cuda.is_available():
+        raise GateError("--cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; "
+                        "an EMPTY value deletes the variable)")
+    return {"tanitad": here, "torch": torch.__version__, "cuda": bool(torch.cuda.is_available())}
+
+
+_TRAINER_MOD = "refc_v3_train_gate"
+
+
+def load_trainer(ctx: Ctx):
+    if _TRAINER_MOD in sys.modules:
+        return sys.modules[_TRAINER_MOD]
+    path = Path(ctx.tree) / ctx.prof["trainer"]
+    spec = importlib.util.spec_from_file_location(_TRAINER_MOD, str(path))
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[_TRAINER_MOD] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def arm_is(ctx: Ctx, name: str) -> bool:
+    return ctx.arm == name
+
+
+class _ImportBlocker:
+    """A meta-path finder that makes ONE module un-importable (the `missing_*_module` arms)."""
+
+    def __init__(self, fullname: str):
+        self.fullname = fullname
+
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == self.fullname:
+            raise ModuleNotFoundError(f"No module named {fullname!r} (gate arm)")
+        return None
+
+
+def import_optional(ctx: Ctx, fullname: str, arm: str):
+    """-> (module | None, why). The arm makes the import fail exactly as an unlanded module would."""
+    if arm_is(ctx, arm):
+        blocker = _ImportBlocker(fullname)
+        sys.meta_path.insert(0, blocker)
+        sys.modules.pop(fullname, None)
+        try:
+            importlib.import_module(fullname)
+        except ModuleNotFoundError as e:
+            return None, f"{type(e).__name__}: {e}"
+        finally:
+            sys.meta_path.remove(blocker)
+    try:
+        return importlib.import_module(fullname), ""
+    except ModuleNotFoundError as e:
+        return None, f"{type(e).__name__}: {e}"
+    except Exception as e:                                # noqa: BLE001 -- a broken module is absent
+        return None, f"{type(e).__name__} while importing: {e}"
+
+
+@contextlib.contextmanager
+def trainer_capture(T, stop_at: str, on_built: Callable[[Any], Any] | None = None):
+    """Run the REAL `train()` and capture what it built. `stop_at`:
+      * "config" -- raise at `RefCV3Model(cfg)` before the model is built (cfg captured);
+      * "model"  -- let the model build COMPLETE (anchors, rig camera, perception branch...) and
+                    raise at the first data-source call, before any training data is read.
+    `on_built(model)` runs the moment the model is constructed, before `train()` sees it -- the
+    hook a regression arm uses to be BORN with a defect (its return value lands in
+    `cap["on_built"]`); never set outside an arm."""
+    from tanitad.refs import refc_v3 as v3
+    cap: dict[str, Any] = {}
+    pat = _Patcher()
+    orig_init = v3.RefCV3Model.__init__
+    orig_train = T.train
+
+    def init_wrap(self, cfg, *a, **k):
+        cap["cfg"] = cfg
+        if stop_at == "config":
+            raise _Stop("config captured")
+        orig_init(self, cfg, *a, **k)
+        if on_built is not None:
+            cap["on_built"] = on_built(self)
+        cap["model"] = self
+
+    def train_wrap(args):
+        cap["args"] = args
+        return orig_train(args)
+
+    def stop(*_a, **_k):
+        raise _Stop("model captured at the data source")
+
+    pat.set(v3.RefCV3Model, "__init__", init_wrap)
+    pat.set(T, "train", train_wrap)
+    # FIX-5 OBSERVED, not assumed: the per-stage ImageNet fingerprint check the trunk build runs
+    # (`timm_trunk._assert_stages_pretrained`, fixes agent) is recorded with its fingerprints --
+    # read BEFORE any BN fold rewrites the conv weights -- on the host that builds.
+    try:
+        from tanitad.models import timm_trunk as _tt
+    except Exception:                                     # noqa: BLE001
+        _tt = None
+    if _tt is not None and callable(getattr(_tt, "_assert_stages_pretrained", None)):
+        orig_asp = _tt._assert_stages_pretrained
+
+        def asp_wrap(net, model_name, *a, **k):
+            r: dict[str, Any] = {"model_name": str(model_name)}
+            try:
+                if callable(getattr(_tt, "stage_fingerprints", None)):
+                    r["fingerprints"] = dict(_tt.stage_fingerprints(net))
+            except Exception as e:                        # noqa: BLE001
+                r["fingerprints_error"] = f"{type(e).__name__}: {e}"
+            try:
+                out = orig_asp(net, model_name, *a, **k)
+                r["outcome"] = "PASS"
+                return out
+            except BaseException as e:
+                r["outcome"] = f"{type(e).__name__}: {str(e)[:400]}"
+                raise
+            finally:
+                cap.setdefault("fix5", []).append(r)
+        pat.set(_tt, "_assert_stages_pretrained", asp_wrap)
+        cap["fix5_present"] = True
+    else:
+        cap["fix5_present"] = False
+    if stop_at == "model":
+        for name in ("refuse_eval_clips_in_train", "_synth_episodes", "load_cached_episodes"):
+            if hasattr(T, name):
+                pat.set(T, name, stop)
+    try:
+        yield cap
+    finally:
+        pat.restore()
+
+
+def run_trainer_until(T, argv: list[str], stop_at: str,
+                      on_built: Callable[[Any], Any] | None = None) -> dict:
+    with trainer_capture(T, stop_at, on_built) as cap:
+        try:
+            T.main(list(argv))
+        except _Stop:
+            pass
+    if stop_at == "model" and "model" not in cap:
+        raise GateError("the trainer returned without building a model (capture missed)")
+    if "cfg" not in cap:
+        raise GateError("the trainer never reached RefCV3Model(cfg)")
+    return cap
+
+
+def tensor_digest(t) -> str:
+    import torch
+    x = t.detach()
+    if x.device.type != "cpu":
+        x = x.cpu()
+    # ⛔ `.contiguous()` is NOT enough: a size-1 dim keeps any stride and still counts as
+    # contiguous, so a flatten can come back strided (MEASURED 2026-09-26: stride 12 on a forward
+    # output). A fresh dense buffer is the only safe source of bytes.
+    flat = x.reshape(-1)
+    dense = torch.empty(flat.shape, dtype=flat.dtype)
+    dense.copy_(flat)
+    b = dense.view(torch.uint8).numpy().tobytes() if dense.numel() else b""
+    return sha256_bytes(f"{x.dtype}|{tuple(t.shape)}|".encode() + b)
+
+
+def state_digests(sd: dict) -> dict[str, str]:
+    import torch
+    return {k: (tensor_digest(v) if torch.is_tensor(v) else f"py:{v!r}") for k, v in sd.items()}
+
+
+def optimizer_digests(osd: dict) -> dict:
+    import torch
+    st = {}
+    for idx, s in osd.get("state", {}).items():
+        for k, v in s.items():
+            st[f"{idx}.{k}"] = tensor_digest(v) if torch.is_tensor(v) else f"py:{v!r}"
+    groups = []
+    for g in osd.get("param_groups", []):
+        groups.append({k: (list(v) if isinstance(v, (list, tuple)) else v)
+                       for k, v in g.items()})
+    return {"state": st, "param_groups": groups}
+
+
+def output_digests(out: Any, prefix: str = "out") -> dict[str, str]:
+    """Flatten a forward's output (dicts / lists / tensors / scalars) to {path: digest}."""
+    import torch
+    res: dict[str, str] = {}
+    if torch.is_tensor(out):
+        res[prefix] = tensor_digest(out)
+    elif isinstance(out, dict):
+        for k in sorted(out, key=str):
+            res.update(output_digests(out[k], f"{prefix}.{k}"))
+    elif isinstance(out, (list, tuple)):
+        for i, v in enumerate(out):
+            res.update(output_digests(v, f"{prefix}[{i}]"))
+    elif isinstance(out, (int, float, bool, str)) or out is None:
+        res[prefix] = f"py:{out!r}"
+    else:
+        res[prefix] = f"type:{type(out).__name__}"
+    return res
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-HYG                                                                                           #
+# --------------------------------------------------------------------------------------------- #
+_HYG_PROBE_ATTR = "_g_hyg_probe_undeclared_attribute"
+
+
+def _dataclass_instances(root: Any, path: str = "cfg") -> list[tuple[str, Any]]:
+    out, seen, stack = [], set(), [(path, root)]
+    while stack:
+        p, obj = stack.pop()
+        if id(obj) in seen:
+            continue
+        seen.add(id(obj))
+        if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+            out.append((p, obj))
+            items = [(f".{k}", v) for k, v in vars(obj).items()]
+        elif isinstance(obj, (list, tuple)):
+            items = [(f"[{i}]", v) for i, v in enumerate(obj)]
+        elif isinstance(obj, dict):
+            items = [(f"[{k!r}]", v) for k, v in obj.items()]
+        else:
+            items = []
+        for s, v in items:
+            if dataclasses.is_dataclass(v) or isinstance(v, (list, tuple, dict)):
+                stack.append((p + s, v))
+    return sorted(out, key=lambda pv: pv[0])
+
+
+#: the tree's OWN import roots (never checked against the venv: they ARE the tree)
+_OWN_ROOTS = ("tanitad", "taniteval")
+_GUARD_EXC = ("ImportError", "ModuleNotFoundError", "Exception", "BaseException")
+
+
+def import_closure(tree: Path, entry_rel: str) -> dict:
+    """STATIC import closure of the launch: the trainer script and every module of THIS tree it
+    imports, transitively -- module-level AND function-level imports (a function-level `import
+    scipy` crashes the run the first time that path executes, possibly hours in). Returns every
+    third-party top-level name with its import sites, each marked `guarded` when it sits inside a
+    `try:` whose handler catches ImportError (an optional dependency). Nothing is imported."""
+    import ast
+    roots = [tree / "stack", tree / "taniteval", tree / "stack" / "scripts"]
+    std = set(getattr(sys, "stdlib_module_names", ())) | {"__future__"}
+
+    def resolve(mod: str) -> Path | None:
+        parts = mod.split(".")
+        for base in roots:
+            p = base.joinpath(*parts)
+            if p.with_suffix(".py").is_file():
+                return p.with_suffix(".py")
+            if (p / "__init__.py").is_file():
+                return p / "__init__.py"
+        return None
+
+    def pkg_of(f: Path) -> list[str]:
+        for base in roots:
+            try:
+                rel = f.relative_to(base)
+            except ValueError:
+                continue
+            parts = list(rel.with_suffix("").parts)
+            return parts[:-1] if parts and parts[-1] != "__init__" else parts[:-1]
+        return []
+
+    entry = tree / entry_rel
+    queue, seen = [entry], set()
+    third: dict[str, list[dict]] = {}
+    while queue:
+        f = queue.pop()
+        if f in seen or not f.is_file():
+            continue
+        seen.add(f)
+        # utf-8-sig, as Python decodes a source file: `tanitad/eval/__init__.py` starts with a
+        # UTF-8 BOM, and `ast.parse` of a plain utf-8 decode dies on U+FEFF (the launch config's
+        # G-HYG crashed on it, Master Mind 2026-09-27)
+        mod = ast.parse(f.read_text(encoding="utf-8-sig", errors="replace"), filename=str(f))
+        guarded: set[int] = set()
+        fn_level: set[int] = set()
+        for node in ast.walk(mod):
+            if isinstance(node, ast.Try) and any(
+                    h.type is None or any(isinstance(n, ast.Name) and n.id in _GUARD_EXC
+                                          for n in ast.walk(h.type)) for h in node.handlers):
+                for stmt in node.body:
+                    for sub in ast.walk(stmt):
+                        if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                            guarded.add(id(sub))
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                # a function-level import runs only when that function runs (a lazy import)
+                for sub in ast.walk(node):
+                    if isinstance(sub, (ast.Import, ast.ImportFrom)):
+                        fn_level.add(id(sub))
+        for node in ast.walk(mod):
+            full: list[str] = []
+            if isinstance(node, ast.Import):
+                full = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                if node.level:
+                    base = pkg_of(f)[: len(pkg_of(f)) - (node.level - 1) or None]
+                    stem = ".".join([*base, *([node.module] if node.module else [])])
+                else:
+                    stem = node.module or ""
+                full = [stem] + [f"{stem}.{a.name}" for a in node.names if stem]
+            for name in full:
+                if not name:
+                    continue
+                top = name.split(".")[0]
+                own = top in _OWN_ROOTS or resolve(name) is not None
+                if own:
+                    target = resolve(name)
+                    if target is not None:
+                        queue.append(target)
+                    continue
+                if top in std or isinstance(node, ast.ImportFrom) and name != full[0]:
+                    continue
+                third.setdefault(top, []).append({
+                    "file": f.relative_to(tree).as_posix(), "line": int(node.lineno),
+                    "guarded": id(node) in guarded, "function_level": id(node) in fn_level})
+    return {"entry": entry_rel, "n_files": len(seen), "third_party": third}
+
+
+def _arm_import_ban(ctx: "Ctx") -> tuple[str, ...]:
+    """Arm `venv_lacks_module`: the gate treats a module the launch path imports at MODULE level
+    (pandas: `tanitad/data/physicalai.py`) as absent from the venv -- the check must go RED."""
+    return ("pandas",) if arm_is(ctx, "venv_lacks_module") else ()
+
+
+#: modules MEASURED absent from a launch venv: ANY import site in the closure is a FAIL, even a
+#: lazy one inside a function (Master Mind 2026-09-27: "scipy is ABSENT from Thor's training venv.
+#: If ANY refcv7 production path imports scipy, G-LIVE will crash")
+IMPORT_STRICT = ("scipy",)
+
+
+def judge_import_closure(clo: dict, *, ban: Iterable[str] = (),
+                         strict: Iterable[str] = IMPORT_STRICT) -> tuple[list[str], dict]:
+    """Each third-party name the closure found must resolve in THIS interpreter's venv
+    (`importlib.util.find_spec`, which imports nothing).
+
+    * a missing module imported UNGUARDED at MODULE level (it runs when the launch imports that
+      module) is a FAIL;
+    * a missing module in the STRICT list is a FAIL at ANY unguarded site, lazy ones included;
+    * a missing module imported only inside a function (a deliberate lazy import, e.g.
+      `metadrive_env._make_env`) or only under `try/except ImportError` is REPORTED, not gated --
+      a static closure cannot show that function runs on the launch path; the smoke does."""
+    banned, strict = set(ban), set(strict)
+    hard: dict[str, list] = {}
+    lazy: dict[str, list] = {}
+    soft: dict[str, list] = {}
+    for top, sites in sorted((clo.get("third_party") or {}).items()):
+        try:
+            present = top not in banned and importlib.util.find_spec(top) is not None
+        except (ImportError, ValueError):
+            present = False
+        if present:
+            continue
+        unguarded = [s for s in sites if not s.get("guarded")]
+        eager = [s for s in unguarded if not s.get("function_level")]
+        if eager or (top in strict and unguarded):
+            hard[top] = (eager or unguarded)[:6]
+        elif unguarded:
+            lazy[top] = unguarded[:6]
+        else:
+            soft[top] = sites[:6]
+    det = {"venv": sys.executable, "n_files": clo.get("n_files"),
+           "third_party": sorted(clo.get("third_party") or {}), "strict": sorted(strict),
+           "missing_fail": hard, "missing_lazy_only": lazy, "missing_guarded_only": soft}
+    reasons = [f"G-HYG import closure: `{top}` is NOT importable in this venv ({sys.executable}) "
+               f"and the launch path imports it UNGUARDED at "
+               f"{', '.join(s['file'] + ':' + str(s['line']) for s in sites[:3])}"
+               f"{' (+more)' if len(sites) > 3 else ''} -- a crash when that code runs "
+               f"(MEASURED 2026-09-27: scipy is absent from Thor's training venv)"
+               for top, sites in hard.items()]
+    if not clo.get("n_files"):
+        reasons.append("G-HYG import closure: the closure read ZERO files -- the check read nothing")
+    return reasons, det
+
+
+def judge_hygiene(H, cfg) -> tuple[list[str], dict]:
+    """The pure G-HYG verdict over a pinned config tree, given the hygiene module `H`."""
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    for name in ("undeclared_attributes", "is_strict"):
+        if not callable(getattr(H, name, None)):
+            reasons.append(f"tanitad.train.config_hygiene has no callable `{name}` (API drift)")
+    if reasons:
+        return reasons, det
+    bad = [list(map(str, x)) for x in H.undeclared_attributes(cfg)]
+    det["undeclared_attributes"] = bad
+    if bad:
+        reasons.append(f"{len(bad)} UNDECLARED attribute(s) on the trainer's pinned config: "
+                       + "; ".join(".".join(x[::2]) + f" (on {x[1]})" for x in bad[:8]))
+    inst = _dataclass_instances(cfg)
+    classes = sorted({f"{type(o).__module__}.{type(o).__qualname__}" for _, o in inst})
+    det["n_config_dataclass_instances"] = len(inst)
+    det["config_classes"] = classes
+    not_strict = sorted({f"{type(o).__module__}.{type(o).__qualname__}" for _, o in inst
+                         if not H.is_strict(o)})
+    det["not_strict"] = not_strict
+    if not_strict:
+        reasons.append(f"{len(not_strict)} config dataclass(es) do NOT refuse undeclared "
+                       f"attributes at assignment: {', '.join(not_strict[:8])}")
+    # ⛔ the ACTIVE probe -- the regression arm executed as a positive control: setting an
+    # undeclared attribute on EVERY config object (on a deep copy) must RAISE.
+    accepted = []
+    try:
+        probe = copy.deepcopy(cfg)
+    except Exception as e:                                # noqa: BLE001
+        reasons.append(f"the pinned config cannot be deep-copied for the probe: {e}")
+        return reasons, det
+    for p, o in _dataclass_instances(probe):
+        try:
+            setattr(o, _HYG_PROBE_ATTR, 1)
+        except (AttributeError, TypeError, dataclasses.FrozenInstanceError):
+            continue
+        accepted.append(f"{p} ({type(o).__qualname__})")
+    det["probe_assignments_accepted"] = accepted
+    det["probe_assignments_tried"] = len(inst)
+    if accepted:
+        reasons.append(f"setting an undeclared attribute SUCCEEDED on {len(accepted)} config "
+                       f"object(s) (the D-REFCV6-EQUALIZE-DROPPED mechanism): {accepted[:6]}")
+    if not inst:
+        reasons.append("the probe walked ZERO config dataclasses -- an instrument that read "
+                       "nothing certifies nothing")
+    return reasons, det
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-DVB                                                                                           #
+# --------------------------------------------------------------------------------------------- #
+def _find_trunk(model):
+    for m in model.modules():
+        if type(m).__name__ == "TimmResNetTrunk":
+            return m
+    return None
+
+
+def equalize_probe(model) -> dict:
+    """MEASURE how many bottom rows the BUILT trunk equalises -- by behaviour, not by reading a
+    config field: a flat 0.5 frame goes through `normalise`; the equalised rows come out at the
+    value a 0.0 pixel normalises to, the others do not. Counters restored afterwards."""
+    import torch
+    trunk = _find_trunk(model)
+    if trunk is None:
+        return {"trunk": None}
+    enc_cfg = getattr(getattr(getattr(model, "cfg", None), "core", None), "encoder", None)
+    h, w = (enc_cfg.image_hw() if enc_cfg is not None else (416, 1024))
+    c = int(getattr(enc_cfg, "in_channels", 9))
+    saved = {k: getattr(trunk, k) for k in ("norm_calls", "equalize_calls") if hasattr(trunk, k)}
+    try:
+        with torch.no_grad():
+            dev = trunk._mean.device
+            x = torch.full((1, c, h, w), 0.5, device=dev)
+            y = trunk.normalise(x).float().cpu()
+            z = trunk.normalise(torch.zeros_like(x)).float().cpu()
+    finally:
+        for k, v in saved.items():
+            setattr(trunk, k, v)
+        if "equalize_calls" not in saved and hasattr(trunk, "equalize_calls"):
+            delattr(trunk, "equalize_calls")
+    rows = 0
+    for r in range(h - 1, -1, -1):
+        if torch.equal(y[..., r, :], z[..., r, :]):
+            rows += 1
+        else:
+            break
+    return {"trunk": type(trunk).__name__, "image_hw": [h, w], "rows_equalised_measured": rows,
+            "trunk_cfg_equalize_bottom_rows": int(getattr(trunk.cfg, "equalize_bottom_rows", 0)
+                                                  or 0)}
+
+
+def forbidden_lever_reasons(prof: dict, argv: list[str], model=None) -> tuple[list[str], dict]:
+    """Levers the PROFILE forbids (refcv7: DrivoR-T's). Read off the argv by flag NAME -- a
+    passed flag is refused whatever its value ("a refcv7 launch passes none of those flags") --
+    and off the BUILT object, so a default that turns one on is caught too."""
+    reasons: list[str] = []
+    det: dict[str, Any] = {"argv_hits": [], "built_hits": []}
+    flags = [f for f, _ in flag_pairs(argv)]
+    for names, why in prof.get("forbidden_levers", ()):
+        hit = [f for f in flags if f in names]
+        if hit:
+            det["argv_hits"] += hit
+            reasons.append(f"{hit[0]} is passed, but it is {why}: it must be OFF for a "
+                           f"{prof['name']} launch (pass none of {list(names)})")
+    pfx_why = prof.get("forbidden_prefixes_why") or {}
+    for f in flags:
+        if any(f.startswith(p) for p in prof.get("forbidden_prefixes", ())):
+            det["argv_hits"].append(f)
+            own = next(((p, pfx_why[p]) for p in prof.get("forbidden_prefixes", ())
+                        if f.startswith(p) and p in pfx_why), None)
+            reasons.append(f"{f} ({own[1]}): a {prof['name']} launch passes no `{own[0]}*` flag" if own else
+                           f"{f} is a DrivoR-T parameter flag; a {prof['name']} launch passes "
+                           f"none of them")
+    if model is not None:
+        for attr in prof.get("forbidden_built", ()):
+            if getattr(model, attr, None) is not None:
+                det["built_hits"].append(attr)
+                reasons.append(f"the BUILT model carries `{attr}` (a DrivoR-T module) -- it must "
+                               f"be None for a {prof['name']} launch")
+    return reasons, det
+
+
+def forbidden_value_reasons(prof: dict, argv: list[str]) -> list[str]:
+    out = []
+    for f, bad in (prof.get("forbidden_values") or {}).items():
+        v = flag_values(argv, f)
+        if v is not None and (not v or v[0] in bad):
+            why = (prof.get("forbidden_values_why") or {}).get(f)
+            each = ((prof.get("forbidden_value_each_why") or {}).get(f) or {}).get(v[0] if v else None)
+            out.append(f"{f} {v} is REFUSED for a {prof['name']} launch (refused values: "
+                       f"{list(bad)}" + (f"; {why}" if why else "") + (f"; THIS value: {each}" if each else "") + ")")
+    # refcv9-e1rig: an ALLOW-list -- a PRESENT flag whose value is not one of the admitted values is refused (so a mode
+    # added to the trainer tomorrow is refused today); inert for a profile without `only_values`
+    for f, ok in (prof.get("only_values") or {}).items():
+        v = flag_values(argv, f)
+        if v is not None and (not v or v[0] not in ok):
+            why = (prof.get("only_values_why") or {}).get(f)
+            out.append(f"{f} {v} is REFUSED for a {prof['name']} launch (the only admitted value(s): {list(ok)}"
+                       + (f"; {why}" if why else "") + ")")
+    return out
+
+
+def required_flag_reasons(prof: dict, argv: list[str]) -> list[str]:
+    why = dict(prof.get("required_flags_why") or {})
+    return [f"profile {prof['name']} requires {f} in the launch argv "
+            f"({why.get(f, 'SPEC: NEW-1 is part of this arm')})"
+            for f in prof.get("required_flags", ()) if not has_flag(argv, f)]
+
+
+def box_required_reasons(prof: dict, model=None, args=None) -> tuple[list[str], dict]:
+    """The BOX-HEAD requirement BUILT (the box-head package's guard, closed open item BOX-HEAD, 2026-09-27):
+    `prof["box_required"]` names a module + function `fn(model, args) -> list[Mismatch]` ([] = a refcv7 box
+    build: the A9 levers ON in argv AND built on both slot heads, 300 queries, the learned reference points).
+    Inert for a profile that names none; a missing module or function is a named FAIL, never a pass."""
+    spec = prof.get("box_required")
+    if not spec:
+        return [], {"box_required": None}
+    det: dict[str, Any] = {"box_required": f"{spec.get('module')}.{spec.get('fn')}"}
+    try:
+        mod = importlib.import_module(str(spec.get("module")))
+    except Exception as e:                                # noqa: BLE001 -- recorded, never a pass
+        return [f"BOX-HEAD: {spec.get('module')} is not importable ({type(e).__name__}: {e}) -- the box "
+                f"head's requirement cannot be read"], det
+    fn = getattr(mod, str(spec.get("fn")), None)
+    if not callable(fn):
+        return [f"BOX-HEAD: {spec.get('module')} has no `{spec.get('fn')}` -- the box head's requirement "
+                f"cannot be read"], det
+    if model is None or args is None:
+        return ["BOX-HEAD: no built model to check the box head against"], det
+    try:
+        res = fn(model, args)
+    except Exception as e:                                # noqa: BLE001
+        return [f"BOX-HEAD: {spec.get('fn')} crashed: {type(e).__name__}: {str(e)[:300]}"], det
+    det["result"] = [str(x)[:300] for x in (res or [])] if isinstance(res, (list, tuple)) else repr(res)[:300]
+    if not isinstance(res, (list, tuple)):
+        return [f"BOX-HEAD: {spec.get('fn')} returned {type(res).__name__}, not a list"], det
+    return ([f"BOX-HEAD: {len(res)} requirement(s) not met (SPEC_REFCV7 A9/A14.1): "
+             + " | ".join(str(x)[:240] for x in list(res)[:6])] if res else []), det
+
+
+def pi_pending_reasons(prof: dict, argv: list[str]) -> list[str]:
+    """A flag whose VALUE awaits a PI ruling makes the token PI-DECISION -- unless the ruling is
+    already recorded as a `required_values` entry (which is then checked for equality)."""
+    fixed = dict(prof.get("required_values") or {})
+    out = []
+    for f, why in (prof.get("pi_pending_values") or {}).items():
+        if f in fixed:
+            continue
+        v = flag_values(argv, f)
+        if v:
+            out.append(f"{f} {v[0]}: {why}")
+    return out
+
+
+def git_blob_id(data: bytes) -> str:
+    """git's blob id of ``data`` (``git hash-object --no-filters``): sha1 over ``blob <len>\\0<data>``."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + bytes([0]) + data).hexdigest()
+
+
+def amendment_ack_reasons(prof: dict, pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """A profile's ``amendment_ack`` (refcv8-nt: PREREG_NT_DECIDE sec. 4.1, the PI's DATA-line ACK): the file at
+    ``path`` must EXIST and its git blob id must equal the pinned ``git_blob``. Missing -> REFUSED (absent the ACK the
+    pre-registered line is ``fallback_line``, which the profile's argv was not built for); different bytes -> REFUSED.
+    The evidence is the blob of the bytes THIS host reads, never a name or a size."""
+    ack = prof.get("amendment_ack")
+    if not ack:
+        return [], {"on": False}
+    local = map_path(ack["path"], pmap or [])
+    det: dict[str, Any] = {"on": True, "path": ack["path"], "local": local, "git_blob_pinned": ack["git_blob"]}
+    if not Path(local).is_file():
+        return [f"the PI's amendment ACK {ack['path']} is MISSING (PREREG sec. 4.1: absent the ACK the DATA line is "
+                f"{ack['fallback_line']}, not {ack['data_line']}) -- ship it beside the NT inputs and md5-verify it"], det
+    data = Path(local).read_bytes()
+    det["git_blob"] = git_blob_id(data)
+    m = re.search(r"DATA_LINE L_D = ([0-9]+(?:\.[0-9]+)?)", data.decode("utf-8", "replace"))
+    det["data_line_read"] = float(m.group(1)) if m else None
+    det["names_prereg_blob"] = ack["prereg_blob"] in data.decode("utf-8", "replace")
+    if det["git_blob"] != ack["git_blob"]:
+        return [f"the amendment ACK {local} has git blob {det['git_blob']}, the profile pins {ack['git_blob']} "
+                f"(PREREG sec. 4.1: a changed ACK is a new PI decision, not an edit)"], det
+    return [], det
+
+
+_MD5_CACHE: dict = {}
+
+
+def _md5_cached(path: str) -> str:
+    st = os.stat(path)
+    key = (os.path.abspath(path), st.st_size, st.st_mtime_ns)
+    if key not in _MD5_CACHE:
+        h = hashlib.md5()
+        with open(path, "rb") as f:
+            for blk in iter(lambda: f.read(1 << 22), b""):
+                h.update(blk)
+        _MD5_CACHE[key] = h.hexdigest()
+    return _MD5_CACHE[key]
+
+
+def _under_any(name: str, mods: Iterable[str]) -> bool:
+    return any(name == m or name.startswith(m + ".") for m in mods)
+
+
+def map_only_init_reasons(prof: dict, argv: list[str],
+                          pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """PI D-R9-MAPHEAD-PRECISION: the `--init-from` file IS the shipped EMA model -- its md5 (of the bytes THIS host
+    reads) equals the profile's literal. Inert for a profile without `map_only`.
+    refcv9-e1rig: a profile that pins the warm start but freezes nothing carries `init_pin` ({flag, init_from_md5,
+    init_note}) instead -- the SAME reader, none of `map_only`'s freeze semantics (G-DVB's built set, G-LIVE's bit identity)."""
+    mo = prof.get("map_only") or prof.get("init_pin")
+    if not mo:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True, "md5_pinned": mo["init_from_md5"]}
+    v = flag_values(argv, "--init-from")
+    if not v:
+        return [f"{mo['flag']}: --init-from is not passed -- the warm start must be the shipped EMA model "
+                f"(md5 {mo['init_from_md5']})"], det
+    local = map_path(v[0], pmap or [])
+    det["path"], det["local"] = v[0], local
+    if not Path(local).is_file():
+        return [f"{mo['flag']}: --init-from {v[0]} is not readable on this host ({local}) -- its content cannot be "
+                f"bound to the shipped EMA model"], det
+    det["md5"] = _md5_cached(local)
+    if det["md5"] != mo["init_from_md5"]:
+        return [f"{mo['flag']}: --init-from {v[0]} has md5 {det['md5']}, the profile pins {mo['init_from_md5']} (the "
+                f"shipped refcv8 EMA model ckpt_ema_48852.pt) -- "
+                f"{mo.get('init_note', 'the frozen planner would not be the shipped one')}"], det
+    return [], det
+
+
+#: `tanitad.models._gradreach.GRAD_UNREACHABLE_FLAG`, read BY NAME (a test holds the two equal)
+_GRAD_UNREACHABLE_ATTR = "_tanitad_grad_unreachable"
+
+
+def map_only_built_reasons(prof: dict, argv: list[str], model) -> tuple[list[str], dict]:
+    """G-DVB, the gate's OWN read of the BUILT model under the map-only profile: the trainable set is EXACTLY the
+    profile's literal leaf groups at their literal sizes (refcv8: 12 groups, 105,032 values), every one of them
+    trainable, nothing outside the three modules trainable. Independent of the trainer's map_only_ft module."""
+    mo = prof.get("map_only")
+    if not mo:
+        return [], {"on": False}
+    if model is None or not callable(getattr(model, "named_parameters", None)):
+        return ["MAP-ONLY: no built model to read the freeze off"], {"on": True}
+    mods = tuple(mo["modules"])
+    decl = tuple(mo.get("declared_frozen") or ())
+    tr = [(n, int(p.numel())) for n, p in model.named_parameters() if p.requires_grad]
+    groups: dict[str, int] = {}
+    for n, k in tr:
+        g = n.rsplit(".", 1)[0] if "." in n else n
+        groups[g] = groups.get(g, 0) + k
+    outside = [n for n, _ in tr if not _under_any(n, mods)]
+    frozen_map = [n for n, p in model.named_parameters()
+                  if _under_any(n, mods) and not _under_any(n, decl) and not p.requires_grad]
+    # the build's OWN declarations inside the modules (the module attribute `_gradreach.GRAD_UNREACHABLE_FLAG`, read by
+    # name: this check is independent of the trainer's map_only_ft) must be EXACTLY the profile's literal, and frozen
+    built_decl = sorted(n for n, m in model.named_modules()
+                        if getattr(m, _GRAD_UNREACHABLE_ATTR, None) and _under_any(n, mods))
+    undead = [n for n, p in model.named_parameters() if _under_any(n, decl) and p.requires_grad]
+    det = {"on": True, "trainable_numel": int(sum(k for _, k in tr)), "trainable_groups": groups,
+           "outside_sample": outside[:5], "n_outside": len(outside), "frozen_map_only_sample": frozen_map[:5],
+           "declared_frozen_built": built_decl}
+    reasons = []
+    if not has_flag(argv, mo["flag"]):
+        reasons.append(f"MAP-ONLY: {mo['flag']} is not in the argv")
+    if built_decl != sorted(decl):
+        reasons.append(f"MAP-ONLY: the build's declared grad-unreachable subtrees inside the trained modules are "
+                       f"{built_decl}; the profile's literal is {sorted(decl)} -- a declaration would hide a trained "
+                       f"group, or a dead one would be trained")
+    if undead:
+        reasons.append(f"MAP-ONLY: {len(undead)} DECLARED grad-unreachable parameter(s) are trainable again, e.g. "
+                       f"{undead[:3]}")
+    if outside:
+        reasons.append(f"MAP-ONLY: {len(outside)} parameter(s) OUTSIDE {list(mods)} are trainable, e.g. {outside[:3]} "
+                       f"-- the planner would train")
+    if frozen_map:
+        reasons.append(f"MAP-ONLY: {len(frozen_map)} map-only parameter(s) are frozen, e.g. {frozen_map[:3]}")
+    if groups != dict(mo["groups"]):
+        reasons.append(f"MAP-ONLY: the trainable leaf groups are {sorted(groups)[:6]}... ({len(groups)}, "
+                       f"{det['trainable_numel']} values); the profile's literal is {len(mo['groups'])} groups, "
+                       f"{mo['numel']} values")
+    if det["trainable_numel"] != int(mo["numel"]):
+        reasons.append(f"MAP-ONLY: {det['trainable_numel']} trainable values, the PI's decision is {mo['numel']}")
+    return reasons, det
+
+
+def judge_map_only_live(prof: dict, rec: dict | None, grads: dict,
+                        admitted_dead: dict[str, str] | None = None) -> tuple[list[str], dict]:
+    """G-LIVE under the map-only profile, replacing "every group has a gradient" with: every MAP-ONLY leaf group (the
+    literal list) is the optimizer's set and received a FINITE NON-ZERO gradient; every FROZEN parameter received NO
+    gradient (`.grad` None or exactly zero at every optimizer step); and every frozen parameter AND buffer is
+    BIT-IDENTICAL after the live steps to its value at the first training forward (after the warm start)."""
+    mo = prof.get("map_only")
+    if not mo:
+        return [], {"on": False}
+    reasons: list[str] = []
+    rec = rec or {}
+    det: dict[str, Any] = {"on": True, "opt_steps": rec.get("opt_steps", 0),
+                           "n_frozen_params_tracked": rec.get("n_frozen_params_tracked", 0),
+                           "n_frozen_tensors_checked": rec.get("n_frozen_tensors_checked", 0),
+                           "arm": rec.get("arm")}
+    want = dict(mo["groups"])
+    have = {g["group"]: g for g in (grads.get("groups") or [])}
+    det["trained_groups"] = {g: {"numel": e["numel"], "nz_params": e["nz_params"], "params": e["params"]}
+                             for g, e in have.items()}
+    extra = sorted(set(have) - set(want))
+    missing = sorted(set(want) - set(have))
+    if extra:
+        reasons.append(f"MAP-ONLY G-LIVE: the optimizer trains {len(extra)} group(s) OUTSIDE the map-only modules: "
+                       f"{extra[:4]}")
+    if missing:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(missing)} map-only group(s) are not trained: {missing[:4]}")
+    numel = int(sum(int(have[g]["numel"]) for g in have if g in want))
+    det["trained_map_only_numel"] = numel
+    if numel != int(mo["numel"]):
+        reasons.append(f"MAP-ONLY G-LIVE: {numel} map-only values trained, the literal is {mo['numel']}")
+    if int(rec.get("opt_steps", 0) or 0) == 0:
+        reasons.append("MAP-ONLY G-LIVE: no optimizer step was observed")
+    # `admitted_dead` (refcv9-warm): the profile's live_dead_admitted rows whose flag is in the argv -- a TRAINABLE group
+    # dead BY CONSTRUCTION under that flag (e.g. core.decoder.ctx_to_cond under --no-strategic) is admitted, with its
+    # reason in the evidence, exactly as judge_live admits it; every other dead group still FAILS. refcv8-mapft: none of
+    # its admitted groups is inside its map-only modules, so its judgement is unchanged
+    adm = {g: w for g, w in (admitted_dead or {}).items() if g in want}
+    det["dead_admitted"] = {g: adm[g] for g in want if g in have and int(have[g]["nz_params"]) == 0 and g in adm}
+    dead = [g for g in want if g in have and int(have[g]["nz_params"]) == 0 and g not in adm]
+    if dead:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(dead)} map-only group(s) received NO non-zero gradient: {dead[:4]}")
+    nonfin = [n for n in (grads.get("nonfinite_params") or []) if _under_any(n, mo["modules"])]
+    if nonfin:
+        reasons.append(f"MAP-ONLY G-LIVE: non-finite gradients on map-only {nonfin[:4]}")
+    fg = dict(rec.get("frozen_grad_nz") or {})
+    det["frozen_with_gradient"] = sorted(fg)[:10]
+    if not int(rec.get("n_frozen_params_tracked", 0) or 0):
+        reasons.append("MAP-ONLY G-LIVE: no frozen parameter was tracked -- the frozen-gradient check read nothing")
+    if fg:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(fg)} FROZEN parameter(s) received a non-zero gradient, e.g. "
+                       f"{sorted(fg)[:4]}")
+    ch = list(rec.get("frozen_changed") or [])
+    det["frozen_changed"] = ch[:20]
+    if not int(rec.get("n_frozen_tensors_checked", 0) or 0):
+        reasons.append("MAP-ONLY G-LIVE: the frozen state was never snapshotted -- bit identity is unchecked")
+    if ch:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(ch)} FROZEN tensor(s) (parameters / buffers) CHANGED over the live "
+                       f"steps, e.g. {ch[:4]} -- the planner is not bit-identical")
+    return reasons, det
+
+
+def apply_mapft_build_arm(ctx: Any, pat: "_Patcher", T: Any) -> str | None:
+    """The map-only profile's regression arms at the BUILD (G-DVB): the trainer's freeze leaves ONE planner parameter
+    trainable (`mapft_planner_trainable`) or freezes the map-only modules too (`mapft_map_frozen`)."""
+    if not (arm_is(ctx, "mapft_planner_trainable") or arm_is(ctx, "mapft_map_frozen")):
+        return None
+    mof = getattr(T, "_mof", None)
+    if mof is None or not callable(getattr(mof, "apply_freeze", None)):
+        return "arm requested but the trainer has no map_only_ft.apply_freeze (the arm cannot install)"
+    orig = mof.apply_freeze
+    mods = tuple((ctx.prof.get("map_only") or {}).get("modules") or _MAPFT_MODULES)
+
+    def wrapped(model, _o=orig):
+        r = _o(model)
+        _mapft_inject(ctx, model, None, mods)
+        return r
+    pat.set(mof, "apply_freeze", wrapped)
+    return f"{ctx.arm}: injected after the trainer's map-only freeze"
+
+
+def _mapft_inject(ctx: Any, model, opt, mods) -> str | None:
+    """The defect itself: the PLANNER DECODER trainable again (and, with an optimizer, IN it), or every map-only
+    parameter frozen. The whole `core.decoder.` subtree is un-frozen, not one tensor: a single tensor could be one the
+    loss never reaches (a declared grad-unreachable head), and an arm that moves nothing would ESCAPE."""
+    if arm_is(ctx, "mapft_planner_trainable"):
+        cands = [(n, p) for n, p in model.named_parameters() if not _under_any(n, mods)]
+        pick = [(n, p) for n, p in cands if n.startswith("core.decoder.")] or cands
+        if not pick:
+            return None
+        for _n, p in pick:
+            p.requires_grad_(True)
+            if opt is not None:
+                opt.param_groups[0]["params"].append(p)
+        return (f"mapft_planner_trainable: {len(pick)} planner tensor(s) un-frozen (first {pick[0][0]})"
+                + (" and added to the optimizer" if opt is not None else ""))
+    if arm_is(ctx, "mapft_map_frozen"):
+        k = 0
+        for n, p in model.named_parameters():
+            if _under_any(n, mods):
+                p.requires_grad_(False)
+                k += 1
+        return f"mapft_map_frozen: {k} map-only tensors frozen"
+    return None
+
+
+#: the refcv9-warm RED arms (drafted 2026-10-27; run by the kit, graded on G-DVB / G-LIVE)
+REFCV9_ARMS = ("refcv9_perception_trainable", "refcv9_planner_frozen")
+#: `refcv9_perception_trainable` un-freezes a whole PERCEPTION subtree, the first that exists in this order: the trunk
+#: (every training loss -- the planner's and the map head's -- reaches it), then the planner's pooled BEV. A subtree, not
+#: one tensor, for `_mapft_inject`'s reason: one tensor could be one no loss reaches, and an arm that moves nothing at
+#: G-LIVE would ESCAPE (G-DVB's built-set read catches any trainable perception tensor either way)
+_REFCV9_PERCEPTION_PICK = ("core.encoder.", "_perception.bev_pool.")
+
+
+def apply_refcv9_build_arm(ctx: Any, pat: "_Patcher", T: Any) -> str | None:
+    """The refcv9-warm profile's regression arms at the BUILD (G-DVB): the trainer's `--r9-train-only` freeze leaves ONE
+    perception tensor trainable (`refcv9_perception_trainable`) or freezes the planner set too
+    (`refcv9_planner_frozen`). Each must be caught by G-DVB (the gate's built-set read + the trainer's `r9_train_only`
+    lever) with a reason naming the freeze."""
+    if not any(arm_is(ctx, a) for a in REFCV9_ARMS):
+        return None
+    mof = getattr(T, "_mof", None)
+    if mof is None or not callable(getattr(mof, "apply_train_only", None)):
+        return "arm requested but the trainer has no map_only_ft.apply_train_only (the arm cannot install)"
+    orig = mof.apply_train_only
+    mods = tuple((ctx.prof.get("map_only") or {}).get("modules") or ())
+
+    def wrapped(model, *a, _o=orig, **k):
+        r = _o(model, *a, **k)
+        _refcv9_inject(ctx, model, None, mods or tuple(r.get("modules") or ()))
+        return r
+    pat.set(mof, "apply_train_only", wrapped)
+    return f"{ctx.arm}: injected after the trainer's --r9-train-only freeze"
+
+
+def _refcv9_inject(ctx: Any, model, opt, mods) -> str | None:
+    """The defect itself: a PERCEPTION subtree trainable again (and, with an optimizer, IN it), or every parameter of
+    the planner set (`core.decoder`) frozen. Inert for any other arm."""
+    if arm_is(ctx, "refcv9_perception_trainable"):
+        cands = [(n, p) for n, p in model.named_parameters() if not _under_any(n, mods) and not p.requires_grad]
+        pick: list = []
+        for pre in _REFCV9_PERCEPTION_PICK:
+            pick = [(n, p) for n, p in cands if n.startswith(pre)]
+            if pick:
+                break
+        pick = pick or cands[:1]
+        if not pick:
+            return None
+        for _n, p in pick:
+            p.requires_grad_(True)
+            if opt is not None:
+                opt.param_groups[0]["params"].append(p)
+        return (f"refcv9_perception_trainable: {len(pick)} perception tensor(s) un-frozen (first {pick[0][0]})"
+                + (" and added to the optimizer" if opt is not None else "") + " -- the --r9-train-only freeze broken")
+    if arm_is(ctx, "refcv9_planner_frozen"):
+        k = 0
+        for n, p in model.named_parameters():
+            if _under_any(n, ("core.decoder",)):
+                p.requires_grad_(False)
+                k += 1
+        return f"refcv9_planner_frozen: {k} planner (core.decoder) tensors frozen (the --r9-train-only planner set)"
+    return None
+
+
+def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
+                       pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], list[str]]:
+    """The profile's rules that read the ARGV alone -> (refusals, pi_pending). ONE definition,
+    used by `run` (to say it early) AND by `finalize` itself, so no path to a token -- including
+    a stand-alone `finalize` -- can skip them."""
+    options = options or {}
+    refusals = required_flag_reasons(prof, argv)
+    refusals += forbidden_value_reasons(prof, argv)
+    refusals += forbidden_lever_reasons(prof, argv)[0]
+    refusals += nav_tau_reasons(prof, argv, options.get("nav_tau_record"), pmap)[0]
+    refusals += required_on_reasons(prof, argv)[0]
+    refusals += amendment_ack_reasons(prof, pmap)[0]
+    refusals += map_only_init_reasons(prof, argv, pmap)[0]
+    refusals += r9_schedule_reasons(prof, argv)[0]
+    refusals += lr_schedule_reasons(prof, argv)[0]                 # refcv9-full family (inert otherwise)
+    refusals += wsd_branch_reasons(prof, argv, pmap)[0]            # refcv9-full-d1 only (inert otherwise)
+    refusals += map_weight_reasons(prof, argv)[0]                  # refcv9-full family (inert otherwise)
+    refusals += dose_controller_static_reasons(argv)[0]            # K2DC: --map-hires-share-* declared without a target / incoherent (inert without any of the four flags)
+    return refusals, pi_pending_reasons(prof, argv)
+
+
+def r9_schedule_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """R9W-SCHEDULE (MM 2026-10-27): the profile's `alloc_force_rule` -- the GT-in-pool schedule is
+    `linear:<p0>:<p1>:<start>:<end>` with the profile's p0 / p1 / start and end = floor(<end_of> / end_div) of THIS argv
+    (refcv9-warm: linear:1.0:0.0:0:floor(--steps / 2)). Numbers compared as numbers, the form exactly. Inert without
+    the rule."""
+    ru = prof.get("alloc_force_rule")
+    if not ru:
+        return [], {"on": False}
+    f = ru["flag"]
+    det: dict[str, Any] = {"on": True, "rule": dict(ru)}
+    v, n = flag_values(argv, f), flag_values(argv, ru["end_of"])
+    if not v or not n:
+        return [f"R9W-SCHEDULE: {f} and {ru['end_of']} are both required (the end step is "
+                f"floor({ru['end_of']} / {ru['end_div']}))"], det
+    try:
+        end = int(n[0]) // int(ru["end_div"])
+    except ValueError:
+        return [f"R9W-SCHEDULE: {ru['end_of']} {n[0]!r} is not an integer"], det
+    want = f"{ru['kind']}:{ru['p0']}:{ru['p1']}:{ru['start']}:{end}"
+    det.update(value=v[0], want=want, end=end)
+    parts = str(v[0]).split(":")
+    ok = len(parts) == 5 and parts[0] == ru["kind"]
+    if ok:
+        try:
+            ok = (float(parts[1]) == float(ru["p0"]) and float(parts[2]) == float(ru["p1"])
+                  and parts[3].lstrip("-").isdigit() and int(parts[3]) == int(ru["start"])
+                  and parts[4].lstrip("-").isdigit() and int(parts[4]) == end)
+        except ValueError:
+            ok = False
+    det["ok"] = bool(ok)
+    if not ok:
+        return [f"R9W-SCHEDULE: {f} {v[0]!r} is not the rule's {want!r} (p {ru['p0']} -> {ru['p1']} from step "
+                f"{ru['start']} to floor({ru['end_of']} {n[0]} / {ru['end_div']}) = {end})"], det
+    return [], det
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9-e2 / refcv9-full / refcv9-full-d1 (C12-FULL): the WSD schedule rows, the D1 branch delta, #
+# the lever-attach reachability needles, the live rows and the share alarm                        #
+# --------------------------------------------------------------------------------------------- #
+def _wsd_probe_expected(warmup: int, steps: int, decay: int) -> dict[int, float]:
+    """The WSD factor's probe points, from CLOSED FORMS read off the argv (no shared code with `lr_schedule.wsd_factor`): the first
+    update, the last warm-up update, the middle of the stable phase, the decay start, the last update (1/decay) and `steps` (0)."""
+    start = steps - decay
+    want = {0: 1.0 / max(1, warmup)}
+    if warmup >= 1:
+        want[warmup - 1] = 1.0
+    if start > warmup:
+        want[(warmup + start) // 2] = 1.0
+    want[start] = 1.0
+    want[steps - 1] = 1.0 / decay
+    want[steps] = 0.0
+    return want
+
+
+def _wsd_factor_closed(step: int, warmup: int, steps: int, decay: int) -> float:
+    if step < warmup:
+        return (step + 1) / max(1, warmup)
+    return 1.0 if step < steps - decay else max(0.0, (steps - step) / decay)
+
+
+def _int_flag(argv: list[str], flag: str) -> int | None:
+    v = flag_values(argv, flag)
+    try:
+        return int(v[0]) if v else None
+    except ValueError:
+        return None
+
+
+def lr_schedule_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """The profile's `lr_schedule_rule` read off the ARGV: the profile's literal probe table must EQUAL the closed form of THIS argv's
+    `(--warmup, --steps, decay flag)` (so a table off by one value, or an argv whose schedule is not the one the table was written for,
+    is refused), and `--save-at` must name `save_at_includes` (the stable-phase checkpoint the D1 branch needs). Inert without the rule."""
+    ru = prof.get("lr_schedule_rule")
+    if not ru:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True}
+    W, S, D = _int_flag(argv, "--warmup"), _int_flag(argv, "--steps"), _int_flag(argv, ru["decay_flag"])
+    if None in (W, S, D) or D <= 0 or S <= 0:
+        return [f"WSD-ROW: --warmup, --steps and {ru['decay_flag']} must all be present positive integers (got {W}, {S}, {D})"], det
+    out: list[str] = []
+    want = _wsd_probe_expected(W, S, D)
+    lit = {int(k): float(v) for k, v in ru["probe_literal"].items()}
+    det.update(want=want, literal=lit)
+    if set(lit) != set(want) or any(abs(lit[k] - want[k]) > 1e-12 for k in lit if k in want):
+        bad = sorted(k for k in set(lit) | set(want) if k not in lit or k not in want or abs(lit[k] - want[k]) > 1e-12)
+        out.append(f"WSD-ROW: the profile's lr_factor_probe literal {lit} is not the closed form {want} of this argv's "
+                   f"(--warmup {W}, --steps {S}, {ru['decay_flag']} {D}); differs at {bad}")
+    sa = ru.get("save_at_includes")
+    if sa is not None:
+        v = flag_values(argv, "--save-at")
+        try:
+            steps_ = {int(x) for x in str(v[0]).split(",") if x.strip()} if v else set()
+        except ValueError:
+            steps_ = set()
+        if int(sa) not in steps_:
+            out.append(f"WSD-ROW: --save-at {v[0] if v else '<absent>'} does not name {sa}: the D1 branch has no stable-phase "
+                       f"checkpoint (ckpt_full_{sa}.pt) to decay")
+    return out, det
+
+
+def map_weight_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """`--w-map-hires` under the refcv9-full family: refcv8's literal (`plain`) without the banded head; with `--r9-map-banded` the value is
+    the E0j-chosen w* (REFCV9_DESIGN 2.1: M2a 0.511 / M2b 1.018), so it is free but must be finite and > 0 (the share alarm then reads it live)."""
+    ru = prof.get("w_map_hires_rule")
+    if not ru:
+        return [], {"on": False}
+    v = flag_values(argv, "--w-map-hires")
+    if not v:
+        return ["W-MAP-HIRES: --w-map-hires is not passed"], {"on": True}
+    try:
+        w = float(v[0])
+    except ValueError:
+        return [f"W-MAP-HIRES: --w-map-hires {v[0]!r} is not a number"], {"on": True}
+    banded = has_flag(argv, ru["flag"])
+    if banded and not (w == w and 0.0 < w < float("inf")):
+        return [f"W-MAP-HIRES: --w-map-hires {v[0]} must be finite and > 0 with {ru['flag']}"], {"on": True, "banded": True}
+    if not banded and w != float(ru["plain"]):
+        return [f"W-MAP-HIRES: --w-map-hires {v[0]} != {ru['plain']} (refcv8's value; only {ru['flag']} frees it to the E0j-chosen w*)"], {"on": True, "banded": False}
+    return [], {"on": True, "banded": banded, "w": w}
+
+
+def wsd_branch_reasons(prof: dict, argv: list[str], pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """The D1 branch row (`wsd_branch_rule`, profile refcv9-full-d1): the source checkpoint is `ckpt_full_<src_step>.pt`, `config.json` sits
+    beside it, and THIS argv equals the source's `argv_effective` except for the 4-flag delta (--out, --steps, --wsd-branch-from,
+    --wsd-branch-decay; --save-at is exempt, it is a cadence flag) with --steps == src_step + decay. The delta is read BY FLAG NAME off both
+    argvs, so a branch that also changes --lr (or any other flag) is refused. Inert without the rule."""
+    ru = prof.get("wsd_branch_rule")
+    if not ru:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True}
+    bf = flag_values(argv, "--wsd-branch-from")
+    if not bf:
+        return ["D1-BRANCH: --wsd-branch-from is not passed"], det
+    local = Path(map_path(bf[0], pmap or []))
+    out: list[str] = []
+    if local.name != ru["src_ckpt"]:
+        out.append(f"D1-BRANCH: --wsd-branch-from {bf[0]} is not the stable-phase checkpoint {ru['src_ckpt']}")
+    S, M = _int_flag(argv, "--steps"), _int_flag(argv, "--wsd-branch-decay")
+    if S != ru["steps"] or M != ru["decay"] or ru["src_step"] + ru["decay"] != ru["steps"]:
+        out.append(f"D1-BRANCH: --steps {S} / --wsd-branch-decay {M} are not the branch's {ru['steps']} = {ru['src_step']} + {ru['decay']}")
+    cfgp = local.parent / "config.json"
+    if not cfgp.is_file():
+        return out + [f"D1-BRANCH: no config.json beside the source checkpoint ({cfgp}): the source argv cannot be read, so the delta "
+                      f"cannot be bound"], det
+    try:
+        src = json.loads(cfgp.read_text(encoding="utf-8")).get("argv_effective")
+    except (OSError, ValueError) as e:
+        return out + [f"D1-BRANCH: {cfgp} unreadable ({type(e).__name__}: {e})"], det
+    if not (isinstance(src, list) and all(isinstance(x, str) for x in src)):
+        return out + [f"D1-BRANCH: {cfgp} carries no argv_effective list"], det
+    a, b = dict(flag_pairs(argv)), dict(flag_pairs(src))
+    diff = sorted(f for f in set(a) | set(b) if a.get(f) != b.get(f))
+    det["delta"] = diff
+    bad = [f for f in diff if f not in ru["delta"] and f not in ru["exempt"]]
+    miss = [f for f in ru["delta"] if f not in diff]
+    if bad:
+        out.append(f"D1-BRANCH: the branch argv differs from its source's in {bad} -- the 4-flag delta {list(ru['delta'])} is the ONLY "
+                   f"admitted difference (a branch that changes the recipe is not a decay of that run)")
+    if miss:
+        out.append(f"D1-BRANCH: the delta flag(s) {miss} are identical to the source's -- not a new run")
+    return out, det
+
+
+def lever_attach_reasons(prof: dict, argv: list[str], trainer_src: str) -> tuple[list[str], dict]:
+    """G-DVB reachability for the profile's `lever_attach_needles`: for every lever FLAG the argv carries, the trainer source must still
+    contain the hop that attaches its modules (`_pwf.attach(model, args)` ...). A lever declared in argv whose attach hop is gone from the
+    trainer is declared-but-not-built -- the mutation (delete the line in a COPY of the trainer) turns this red."""
+    needles = prof.get("lever_attach_needles") or {}
+    src = trainer_src.replace("\r\n", "\n")
+    det = {"checked": {}}
+    out = []
+    for flag, needle in needles.items():
+        if has_flag(argv, flag):
+            hops = (needle,) if isinstance(needle, str) else tuple(needle)          # a lever with several hops (T1v) names a tuple: ALL must be present
+            det["checked"][flag] = all(h in src for h in hops)
+            for hop in hops:
+                if hop not in src:
+                    out.append(f"G-DVB reachability: {flag} is in the argv but the trainer no longer contains its attach hop `{hop}` -- "
+                               f"the lever would be DECLARED and never BUILT")
+    return out, det
+
+
+def wsd_smoke_rewrite(base: list[str], steps: int, log_every: int) -> tuple[list[str], dict]:
+    """The smoke's WSD rewrite (the B-GS-SMOKE class: a conformant launch argv could never PASS G-LIVE otherwise -- the trainer's
+    `lr_schedule.check_args` refuses `--wsd-decay-steps 12458 > --steps 50`, `--warmup 1000 > --steps - decay`, and `--save-at 30000`
+    past `--steps`). Only for `--lr-schedule wsd`: the decay branch flags are DROPPED (the smoke is a plain run; the branch itself is
+    proved by the D1 row + C6's tests), decay D_s = max(1, steps // 5), warm-up W_s = max(2, min(log_every + steps // 10, steps - D_s - 1))
+    so a LOGGED row falls inside the warm-up AND the last row inside the decay, and `--save-at` keeps the launch's steps inside the smoke
+    plus steps // 2 (the full-state write runs inside G-LIVE). Returns (argv, departures)."""
+    v = flag_values(base, "--lr-schedule")
+    if not v or v[0] != "wsd":
+        return list(base), {}
+    out = list(base)
+    dep: dict[str, Any] = {}
+    D_s = max(1, steps // 5)
+    W_s = max(2, min(int(log_every) + max(1, steps // 10), steps - D_s - 1))
+    was = {"--warmup": (flag_values(base, "--warmup") or [None])[0], "--wsd-decay-steps": (flag_values(base, "--wsd-decay-steps") or [None])[0]}
+    out = set_flag(set_flag(out, "--warmup", [str(W_s)]), "--wsd-decay-steps", [str(D_s)])
+    dep["--warmup/--wsd-decay-steps"] = f"{was} -> warm-up {W_s}, decay {D_s} inside the {steps}-step smoke (rows must cover warm-up, stable and decay)"
+    for f in ("--wsd-branch-from", "--wsd-branch-decay"):
+        if has_flag(out, f):
+            out = set_flag(out, f, None)
+            dep[f] = "dropped: the smoke is a plain WSD run (the branch is the D1 row's)"
+    sa = flag_values(base, "--save-at")
+    if sa:
+        try:
+            keep = sorted({int(x) for x in str(sa[0]).split(",") if x.strip() and 0 < int(x) <= steps} | {max(1, steps // 2)})
+        except ValueError:
+            keep = [max(1, steps // 2)]
+        out = set_flag(out, "--save-at", [",".join(str(k) for k in keep)])
+        dep["--save-at"] = f"{sa[0]} -> {','.join(str(k) for k in keep)} (the full-state write runs inside G-LIVE)"
+    return out, dep
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9 W-COST (K2-WCOST): G-LIVE REFUSES a W-MAP-1 weight that is not 0.1 / R of ITS OWN smoke    #
+# --------------------------------------------------------------------------------------------- #
+#: REFCV9_DESIGN 2.7 W-COST fixes `--w-r8-drivable` BY RULE: w = 0.1 / R, R = the step-0 (first LABELLED step) ratio critic-BCE / trajectory-loss
+#: that the trainer prints once (refc_v3_train.py, `[v3] refcv9 W-COST at step N: critic-BCE / trajectory-loss = R (...)`, `plan_wires_flag.wcost_ratio`).
+#: Until this check NOTHING in the gate read that line, so a token could be minted on the PROVISIONAL placeholder. ENTERED only for the full family
+#: AND an argv carrying the critic (K0 and every other profile: not entered, no shim installed, no evidence key -- byte-identical behaviour).
+#: WHY THE LINE, AND WHERE IT IS READ: G-LIVE runs the trainer IN PROCESS (`run_smoke` -> `T.main`), so its prints go to the gate's own stdout and are
+#: kept nowhere. `run_smoke` therefore installs `wcost_print_shim` as `refc_v3_train.print` (a pass-through that records the W-COST line and prints it
+#: unchanged; `_Patcher` restores it) -- the line is the TRAINER's, not a recomputation. There is no second log path.
+#: TOL = 0.05 (RELATIVE, on the weighted ratio w * R / 0.1). R does NOT depend on `--w-r8-drivable`: `r8_drv` is the UNWEIGHTED BCE (refcv8_train.py
+#: `tele.update(r8_drv=ld.detach())`; the weight multiplies it separately in `total`), and before the first labelled step the BCE is an ATTACHED ZERO
+#: (`drivable_bce`: `logit.sum() * 0.0`), so w scales a zero gradient and no update before that step can depend on w. `smoke_argv` rewrites only `--steps` /
+#: log-cadence / step-valued flags (never `--seed` / `--batch`), and the sampler order is seed-set, so two smokes of the same argv read the same R up to
+#: kernel non-determinism and (across hosts, fp32 CPU vs bf16 CUDA) a few 1e-3 relative -- UNVERIFIED as a number: no pair of W-COST lines exists on disk.
+#: REPLICATE EXCEPTION (PI 2026-11-21 ~13:30Z, "Hold replicate to parent R"): see `WCOST_REPLICATES` below -- K2DC02s1 (seed 1) is held to K2DC02's (seed 0)
+#: R = 1.5450, not to its own smoke's 1.0904 (MEASURED, Thor r9e2/gate3/<arm>/evidence/G-LIVE.json); its own R is recorded (`R_own`), never a refusal.
+#: 0.05 covers the 4-significant-digit rounding of w (<= 5e-4), the printed R's 4 decimals, and that numeric spread, with margin; it cannot admit the
+#: placeholder when R is far from 1 (the placeholder 0.1 has w * R / 0.1 = R, so it passes only for R in [0.95, 1.05], where 0.1 IS the rule's value to
+#: within 5 %). The edge is INCLUSIVE (|w * R / 0.1 - 1| == TOL passes; 1e-12 float slack).
+_R9F_WCOST_PROFILES = ("refcv9-e2", "refcv9-full", "refcv9-full-d1")
+WCOST_TARGET, WCOST_TOL, WCOST_EDGE_SLACK = 0.1, 0.05, 1e-12
+WCOST_CRITIC_FLAG, WCOST_W_FLAG = "--r8-critic-drivable", "--w-r8-drivable"
+WCOST_LINE_KEY = "refcv9 W-COST at step"
+WCOST_LINE_RE = re.compile(r"refcv9 W-COST at step (\d+): critic-BCE / trajectory-loss = (\S+)")
+#: PI RULING 2026-11-21 ~13:30Z ("Hold replicate to parent R"): an arm DECLARED here as a replicate is held to its PARENT's measured R, not to its own
+#: smoke's. WHY (MEASURED on Thor, r9e2/gate3/<arm>/evidence/G-LIVE.json): K2DC02 (seed 0) smoke R = 1.5450 -> passed at w 0.06472; K2DC02s1 (seed 1, the SAME
+#: flags) smoke R = 1.0904 -> refused. R depends on the seed (the sampler order is seed-set, see above), so an identical-flags replicate could never pass the
+#: own-smoke rule. A declared replicate must (a) carry the parent's argv EXCEPT the values of `--seed` and `--out` (anything else moved = not a replicate = FAIL)
+#: and (b) hold w to `parent_R`; its OWN smoke R is kept in the evidence (`R_own`, `R_own_over_parent`) as a seed-noise reading, never a refusal. A missing or
+#: unreadable parent argv json is a FAIL, never a fallback. Keyed by the basename of the launch argv's `--out` value; arms not listed: unchanged behaviour.
+#: `parent_argv` is a file name under `WCOST_RUNS_DIR` (stack/ops/runs.d).
+WCOST_RUNS_DIR = Path(__file__).resolve().parents[1] / "ops" / "runs.d"
+WCOST_REPLICATE_FLAGS = ("--seed", "--out")
+WCOST_REPLICATES: dict[str, dict[str, Any]] = {
+    "r9e2-K2DC02s1": {
+        "parent_argv": "r9e2_K2DC02.argv.json",
+        "parent_R": 1.5450,
+        "evidence": "Thor /home/nvidia/r8ns/r9e2/gate3/K2DC02/evidence/G-LIVE.json (K2DC02 gate at e454e96c6a84: W-COST at step 0 = 1.5450)",
+        "ruling": "PI 2026-11-21 ~13:30Z: Hold replicate to parent R",
+    },
+}
+
+
+#: SHARE-ALARM DOSE ARMS (PI 2026-11-22: "i approve it", then "Yes, use the clamp"): an arm DECLARED here is a pre-registered LOW-DOSE arm and is exempt from the
+#: share-alarm FLOOR comparison ONLY (`_R9F_SHARE["floor"]`, 0.05). WHY (MEASURED 2026-11-23, Thor gate3/K2DC02cl/FAIL_a4631f4a2b90.json): K2DC02cl
+#: (`--w-map-hires 3.0 --map-hires-w-bounds 2.5,3.5 --map-hires-share-target 0.02`) passed every check except G-LIVE: "SHARE-ALARM: the banded map takes 0.0018 of the
+#: trunk gradient (mean of 4 reading(s) [0.0054, 0.0097, -0.0061, -0.002] of gs_trunk_proj_map_hires), below the floor 0.05". Its PI-approved design dose is ~0.02, so it
+#: fails the floor BY CONSTRUCTION (K2DC / K2DC02 passed only because their controller runs steps 0-249 at w 25; the clamp's initial weight must lie inside [2.5, 3.5]).
+#: The dose is judged instead by the pre-registered in-training validity at the read (PREREG_K2DC02CL s2: >= 2 probes in [0.01, 0.03] at step >= 3000 AND mean late share
+#: in [0.01, 0.035], else DOSE-VOID / DOSE-OFF-TARGET via r9_e2_dose_verdict.py). Keyed by the basename of the launch argv's `--out` value (as WCOST_REPLICATES). The
+#: exemption applies only when the argv's `--map-hires-share-target` and `--map-hires-w-bounds` EQUAL the table's; a listed arm whose argv differs is REFUSED. The
+#: stop-gradient, terms-separation and no-readings branches still apply to a listed arm. Module-level, outside every profile dict: no profile fingerprint moves.
+SHARE_ALARM_DOSE_ARMS: dict[str, dict[str, Any]] = {
+    "r9e2-K2DC02cl": {
+        "prereg": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e2/e2raw/PREREG_K2DC02CL_2026-11-22.md",
+        "share_target": 0.02,
+        "w_bounds": (2.5, 3.5),
+        "why": "PI 2026-11-22 'Yes, use the clamp'; design dose ~0.02 < floor 0.05 by construction; judged by the PREREG s2 in-training validity (DOSE-VOID / DOSE-OFF-TARGET)",
+    },
+}
+_SHARE_TARGET_FLAG, _W_BOUNDS_FLAG = "--map-hires-share-target", "--map-hires-w-bounds"
+
+
+def share_alarm_dose_arm_check(launch_argv: list[str]) -> tuple[dict | None, str | None]:
+    """(entry, None) when the launch argv's arm is in `SHARE_ALARM_DOSE_ARMS` and its target and bounds equal the entry's; (None, None) when the arm is not
+    listed; (None, reason) when it is listed but the argv does not match (never a silent pass)."""
+    name = wcost_out_name(launch_argv)
+    ent = SHARE_ALARM_DOSE_ARMS.get(name or "")
+    if ent is None:
+        return None, None
+    tv, bv = flag_values(launch_argv, _SHARE_TARGET_FLAG), flag_values(launch_argv, _W_BOUNDS_FLAG)
+    try:
+        tgt = float(tv[0]) if tv else None
+        bnd = tuple(float(x) for x in str(bv[0]).split(",")) if bv else None
+    except (TypeError, ValueError):
+        tgt = bnd = None
+    if tgt != float(ent["share_target"]) or bnd != tuple(float(x) for x in ent["w_bounds"]):
+        return None, (f"SHARE-ALARM: {name} is listed in SHARE_ALARM_DOSE_ARMS but its argv ({_SHARE_TARGET_FLAG} {tv}, {_W_BOUNDS_FLAG} {bv}) does not match "
+                      f"the pre-registered {_SHARE_TARGET_FLAG} {ent['share_target']} / {_W_BOUNDS_FLAG} {ent['w_bounds'][0]},{ent['w_bounds'][1]} -- the floor exemption is refused")
+    return ent, None
+
+
+def wcost_out_name(launch_argv: list[str]) -> str | None:
+    """Basename of the argv's `--out` value (the key into `WCOST_REPLICATES`), or None."""
+    ov = flag_values(launch_argv, "--out")
+    return os.path.basename(str(ov[0]).replace("\\", "/").rstrip("/")) if ov else None
+
+
+def wcost_replicate_diff(launch_argv: list[str], parent_argv: list[str]) -> list[str]:
+    """Why `launch_argv` is NOT its parent's argv with only `--seed` / `--out` values changed ([] = it is a replicate)."""
+    if len(launch_argv) != len(parent_argv):
+        return [f"argv length {len(launch_argv)} != parent's {len(parent_argv)}"]
+    skip: set[int] = set()
+    out: list[str] = []
+    for fl in WCOST_REPLICATE_FLAGS:
+        li = [i for i, t in enumerate(launch_argv) if t == fl]
+        pi = [i for i, t in enumerate(parent_argv) if t == fl]
+        if len(li) != 1 or li != pi or li[0] + 1 >= len(launch_argv):
+            out.append(f"{fl} must appear exactly once at the same position in both argvs (launch {li}, parent {pi})")
+        else:
+            skip.add(li[0] + 1)
+    for i, (a, b) in enumerate(zip(launch_argv, parent_argv)):
+        if i not in skip and a != b:
+            out.append(f"token {i}: launch {a!r} != parent {b!r}")
+    return out
+
+
+def wcost_in_scope(prof: dict, launch_argv: list[str]) -> bool:
+    """The W-COST check is entered ONLY for the full family (refcv9-e2 / refcv9-full / refcv9-full-d1) AND an argv carrying the drivable critic."""
+    return prof.get("name") in _R9F_WCOST_PROFILES and has_flag(launch_argv, WCOST_CRITIC_FLAG)
+
+
+def wcost_print_shim(sink: list[str]) -> Callable[..., Any]:
+    """A pass-through `print` for the trainer module: records every line holding the W-COST key into `sink`, then prints it UNCHANGED (builtins.print)."""
+    import builtins
+
+    def _print(*a: Any, **k: Any) -> Any:
+        try:
+            s = " ".join(str(x) for x in a)
+            if WCOST_LINE_KEY in s:
+                sink.append(s)
+        except Exception:                                 # noqa: BLE001 -- an observer never breaks the trainer's own print
+            pass
+        return builtins.print(*a, **k)
+    return _print
+
+
+def wcost_weight_text(ratio: float) -> str:
+    """The weight the rule writes for R, exactly as `r9_e2_make_argv.w_from_ratio` + the composer's `repr(float(w))` write it (4 significant digits)."""
+    return repr(float("%.4g" % (WCOST_TARGET / ratio)))
+
+
+def wcost_reasons(prof: dict, launch_argv: list[str], lines: list[str] | None) -> tuple[list[str], dict]:
+    """G-LIVE W-COST: `--w-r8-drivable` must equal 0.1 / R, R = the W-COST ratio the trainer printed at the first labelled step of THIS smoke
+    (`lines` = what `wcost_print_shim` recorded; None / [] = the critic never saw a labelled step). Not entered -> ([], {})."""
+    if not wcost_in_scope(prof, launch_argv):
+        return [], {}
+    det: dict[str, Any] = {"on": True, "target": WCOST_TARGET, "tol": WCOST_TOL, "n_lines": len(lines or []), "lines": list(lines or [])[:3]}
+    if not lines:
+        return [f"G-LIVE W-COST: the critic never saw a labelled step in the smoke (no '[v3] {WCOST_LINE_KEY} N: critic-BCE / trajectory-loss = R' line) -- "
+                f"R is unmeasurable, so {WCOST_W_FLAG} cannot be held to 0.1 / R; a missing reading is a FAIL, never a pass"], det
+    m = WCOST_LINE_RE.search(lines[0])
+    step, ratio = None, None
+    if m is not None:
+        try:
+            step, ratio = int(m.group(1)), float(m.group(2))
+        except ValueError:
+            step, ratio = None, None
+    if ratio is None or not (ratio == ratio and 0.0 < ratio < float("inf")):
+        return [f"G-LIVE W-COST: the smoke's W-COST line carries no finite positive ratio R (line: {lines[0][:200]!r}) -- {WCOST_W_FLAG} cannot be held to 0.1 / R"], det
+    det.update(step=step, R=ratio)
+    rep = WCOST_REPLICATES.get(wcost_out_name(launch_argv) or "")
+    if rep is not None:                                   # DECLARED replicate: held to the PARENT's R (PI 2026-11-21); the own smoke R stays visible
+        pr = rep["parent_R"]
+        det.update(replicate_of=rep["parent_argv"], R_parent=pr, R_own=ratio, R_own_over_parent=ratio / pr, replicate_ruling=rep["ruling"])
+        try:
+            pdoc = json.loads((WCOST_RUNS_DIR / rep["parent_argv"]).read_text(encoding="utf-8"))
+            pargv = [str(t) for t in pdoc["argv"]]
+        except Exception as e:                            # noqa: BLE001 -- a declared replicate with no readable parent is a FAIL, never a fallback
+            return [f"G-LIVE W-COST: {wcost_out_name(launch_argv)} is a declared replicate of {rep['parent_argv']} but that parent argv json is missing or unreadable "
+                    f"under {WCOST_RUNS_DIR} ({type(e).__name__}: {str(e)[:120]}) -- it cannot be held to the parent's R and there is no fallback to its own smoke R"], det
+        diff = wcost_replicate_diff(launch_argv, pargv)
+        if diff:
+            det["replicate_diff"] = diff[:8]
+            return [f"G-LIVE W-COST: {wcost_out_name(launch_argv)} is declared a replicate of {rep['parent_argv']} but its argv differs from the parent's beyond "
+                    f"{'/'.join(WCOST_REPLICATE_FLAGS)} values: {'; '.join(diff[:5])} -- a replicate that moves any other lever is not a replicate"], det
+        ratio = pr
+    want = wcost_weight_text(ratio)
+    det["w_want"] = want
+    wv = flag_values(launch_argv, WCOST_W_FLAG)
+    try:
+        w = float(wv[0]) if wv else None
+    except ValueError:
+        w = None
+    if w is None or not (w == w and 0.0 < w < float("inf")):
+        return [f"G-LIVE W-COST: {WCOST_W_FLAG} is absent or not a finite positive number in the argv ({wv!r}); the critic would be built and never supervised -- "
+                f"the smoke's own R = {ratio:.4g} (step {step}) gives {WCOST_W_FLAG} {want} (= 0.1 / R at 4 significant digits)"], det
+    dev = abs(w * ratio / WCOST_TARGET - 1.0)
+    det.update(w_argv=w, weighted_ratio=w * ratio, deviation=dev)
+    if dev > WCOST_TOL + WCOST_EDGE_SLACK:
+        own = "the PARENT's W-COST ratio (declared replicate, PI 2026-11-21)" if rep is not None else "the smoke's OWN W-COST ratio"
+        return [f"G-LIVE W-COST: {WCOST_W_FLAG} {wv[0]} is not 0.1 / R: {own} is R = {ratio:.4g} (critic-BCE / trajectory-loss at step {step}), "
+                f"so the weighted critic BCE is {w * ratio:.4g} x the trajectory loss, not {WCOST_TARGET:g} (|w*R/0.1 - 1| = {dev:.3g} > tol {WCOST_TOL:g}) -- "
+                f"write {WCOST_W_FLAG} {want} (= 0.1 / R at 4 significant digits; r9_e2_make_argv.py --w-cost-ratio {ratio:.4g})"], det
+    return [], det
+
+
+def _finite_reading(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def share_alarm_readings(sh: dict, launch_argv: list[str], rows: list[dict]) -> list[dict]:
+    """Every map-share reading of a smoke, as `{step, src, value}`: the `row_key` rows (the trainer's `--grad-share-at` readings) plus, when the
+    K2DC dose controller is ON, each firing's `dc_share_read` (the controller's own reading of the SAME term on the SAME group, taken at the
+    weight in force). Non-finite values are not readings."""
+    out = [{"step": r.get("step"), "src": sh["row_key"], "value": float(r[sh["row_key"]])}
+           for r in rows if _finite_reading(r.get(sh["row_key"]))]
+    if has_flag(launch_argv, _DC_TARGET):
+        out += [{"step": r.get("step"), "src": "dc_share_read", "value": float(r["dc_share_read"])}
+                for r in rows if "dc_w_eff" in r and _finite_reading(r.get("dc_share_read"))]
+    return out
+
+
+#: pinned EQUAL to `tanitad.train.map_trunk_gs.FLAG` by tests/test_launch_gate_sharealarm_sg.py (the gate does not import tanitad at module level)
+_MAP_TRUNK_GS_FLAG = "--map-hires-trunk-grad-scale"
+
+
+def _map_trunk_gs_scale(launch_argv: list[str]) -> tuple[float, str | None]:
+    """The map->trunk stop-gradient scale S of the launch argv (absent = 1.0). Returns (S, None), or (nan, reason) when it is out of [0, 1] or unparsable."""
+    v = flag_values(launch_argv, _MAP_TRUNK_GS_FLAG)
+    if v is None:
+        return 1.0, None
+    try:
+        s = float(v[0])
+    except (IndexError, TypeError, ValueError):
+        return float("nan"), f"{_MAP_TRUNK_GS_FLAG} {v!r} is not a number (the trainer refuses it too)"
+    if not (0.0 <= s <= 1.0):                              # also rejects nan
+        return float("nan"), f"{_MAP_TRUNK_GS_FLAG} {v[0]} is outside [0, 1] (the trainer refuses it too)"
+    return s, None
+
+
+def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list[str], rows: list[dict], cfg: dict | None,
+                              run_dir: Path | None = None) -> tuple[list[str], dict]:
+    """The refcv9-full family's rows on the SMOKE (inert for a profile with neither key):
+    (1) `lr_schedule_rule`: config.json stamps lr_schedule == wsd, wsd_decay_steps == the smoke's decay, wsd_branch None and an
+        `lr_factor_probe` EQUAL to the closed form of the SMOKE's (warmup, steps, decay); every logged row's `lr` is `initial_lr x
+        factor(step - 1)` with ONE initial_lr (the schedule REACHES the optimiser group), and the logged rows cover a warm-up row (factor < 1)
+        and a decay row (factor < 1 past the stable phase); every `--save-at` step wrote `ckpt_full_<s>.pt` with ckpt.pt's key set.
+    (2) `map_share_alarm` (R3 / E0j): with the banded map ON, the smoke's gradient-share reading of the map term on the trunk is >= floor."""
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    ru = prof.get("lr_schedule_rule")
+    if ru:
+        S, W = _int_flag(run_argv, "--steps"), _int_flag(run_argv, "--warmup")
+        D = _int_flag(run_argv, "--wsd-decay-steps")
+        d: dict[str, Any] = {"smoke": {"steps": S, "warmup": W, "decay": D}}
+        det["lr_schedule"] = d
+        c = cfg or {}
+        if None in (S, W, D):
+            reasons.append("G-DVB lr_schedule: the smoke argv carries no integer --steps / --warmup / --wsd-decay-steps")
+        else:
+            if c.get("lr_schedule") != "wsd":
+                reasons.append(f"G-DVB lr_schedule: config.json lr_schedule is {c.get('lr_schedule')!r}, the argv declares wsd")
+            if c.get("wsd_decay_steps") != D:
+                reasons.append(f"G-DVB lr_schedule: config.json wsd_decay_steps is {c.get('wsd_decay_steps')!r}, the smoke argv declares {D}")
+            if c.get("wsd_branch") is not None:
+                reasons.append(f"G-DVB lr_schedule: config.json wsd_branch is {c.get('wsd_branch')!r}; the smoke is a plain run (None)")
+            pr = c.get("lr_factor_probe")
+            want = _wsd_probe_expected(W, S, D)
+            try:
+                got = {int(k): float(v) for k, v in pr.items()}
+            except (AttributeError, TypeError, ValueError):
+                got = None
+            d["probe_want"], d["probe_got"] = want, got
+            if got is None:
+                reasons.append("G-DVB lr_factor_probe: config.json carries no lr_factor_probe table")
+            elif set(got) != set(want) or any(abs(got[k] - want[k]) > 1e-12 for k in want if k in got):
+                reasons.append(f"G-DVB lr_factor_probe: the BUILT schedule's table {got} != the closed form {want} of the smoke argv "
+                               f"(--warmup {W}, --steps {S}, decay {D})")
+            pts = [(int(r["step"]), float(r["lr"])) for r in rows if isinstance(r.get("lr"), (int, float)) and "step" in r]
+            d["n_lr_rows"] = len(pts)
+            ratios = []
+            for st, lr in pts:
+                f = _wsd_factor_closed(st - 1, W, S, D)
+                ratios.append(lr / f if f > 0 else float("nan"))
+            if len(pts) < 2:
+                reasons.append(f"G-LIVE lr: {len(pts)} logged row(s) carry an lr -- the schedule cannot be read")
+            elif any(not (x == x) or abs(x - ratios[0]) > 1e-6 * max(abs(ratios[0]), 1e-30) for x in ratios):
+                reasons.append(f"G-LIVE lr: the rows' lr / closed-form factor is not one constant initial_lr: {ratios[:6]} -- the WSD factor "
+                               f"does not REACH the optimiser group")
+            else:
+                d["initial_lr"] = ratios[0]
+                fs = [_wsd_factor_closed(st - 1, W, S, D) for st, _ in pts]
+                if not any(f < 1.0 and st - 1 < W for (st, _), f in zip(pts, fs)):
+                    reasons.append("G-LIVE lr: no logged row falls inside the warm-up -- the warm-up was never read")
+                if not any(f < 1.0 and st - 1 >= S - D for (st, _), f in zip(pts, fs)):
+                    reasons.append("G-LIVE lr: no logged row falls inside the decay -- the decay was never read")
+            sa = flag_values(run_argv, "--save-at")
+            if sa and run_dir is not None:
+                d["save_at"] = _save_at_check(Path(run_dir), [int(x) for x in str(sa[0]).split(",") if x.strip()], reasons)
+    sh = prof.get("map_share_alarm")
+    if sh and has_flag(launch_argv, sh["flag"]):
+        rd = share_alarm_readings(sh, launch_argv, rows)
+        vals = [x["value"] for x in rd]
+        stat = sum(vals) / len(vals) if vals else None
+        det["share_alarm"] = {"row_key": sh["row_key"], "floor": sh["floor"], "readings": vals, "reading_rows": rd,
+                              "statistic": "mean of every map-share reading in the smoke (row_key rows + dc_share_read when the controller is on)",
+                              "n": len(vals), "mean": stat}
+        terms = flag_values(launch_argv, sh["terms_flag"])
+        sg_s, sg_err = _map_trunk_gs_scale(launch_argv)                  # SG: the map->trunk stop-gradient scale (absent = 1.0)
+        if sg_err:
+            reasons.append(f"SHARE-ALARM: {sg_err}")
+        elif sg_s == 0.0:
+            nz = [v for v in vals if v != 0.0]
+            det["share_alarm"]["mode"] = "stop-gradient: every reading exactly 0.0 (PREREG_K2SG \u00a72)"
+            if not vals:
+                reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although {_MAP_TRUNK_GS_FLAG} 0.0 declares a "
+                               f"stop-gradient -- the exact-zero identity cannot be read (a missing alarm is a FAIL, never a pass)")
+            elif nz:
+                reasons.append(f"SHARE-ALARM: OP-VOID: the stop-gradient does not reach the trunk -- {_MAP_TRUNK_GS_FLAG} 0.0 requires every map "
+                               f"trunk-share reading of `{sh['row_key']}` to be exactly 0.0, but {len(nz)} of {len(vals)} read non-zero: {nz} (PREREG_K2SG \u00a72)")
+        elif sg_s != 1.0:
+            reasons.append(f"SHARE-ALARM: {_MAP_TRUNK_GS_FLAG} {sg_s:g} is a partial trunk-gradient scale and no pre-registered share-alarm rule "
+                           f"exists for it (only 1.0 = floor alarm and 0.0 = exact-zero identity are defined)")
+        elif terms and sh["term"] not in str(terms[0]).split(","):
+            reasons.append(f"SHARE-ALARM: {sh['terms_flag']} {terms[0]} does not separate `{sh['term']}`: the banded map's share cannot be read")
+        elif not vals:
+            reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although the banded map head is ON "
+                           f"({sh['flag']}) -- the alarm cannot be read (a missing alarm is a FAIL, never a pass)")
+        elif stat < float(sh["floor"]) and (_dose_ent := share_alarm_dose_arm_check(launch_argv))[0] is not None:
+            det["share_alarm"]["exempt"] = {"prereg": _dose_ent[0]["prereg"], "target": _dose_ent[0]["share_target"],
+                                            "bounds": list(_dose_ent[0]["w_bounds"]), "floor": sh["floor"], "mean": stat}
+        elif stat < float(sh["floor"]) and _dose_ent[1] is not None:
+            reasons.append(_dose_ent[1])
+        elif stat < float(sh["floor"]):
+            reasons.append(f"SHARE-ALARM: the banded map takes {stat:.4f} of the trunk gradient (mean of {len(vals)} reading(s) "
+                           f"{[round(v, 4) for v in vals]} of `{sh['row_key']}`), below the floor "
+                           f"{sh['floor']} (E0j: {sh['e0j']}) -- the map weight is too small to shape layer2")
+    dcr, dcd = dose_controller_live_reasons(launch_argv, rows)            # K2DC (inert without the four --map-hires-share-* flags)
+    if dcd.get("on"):
+        det["dose_controller"] = dcd
+    reasons += dcr
+    return reasons, det
+
+
+def _save_at_check(run_dir: Path, steps_: list[int], reasons: list[str]) -> dict:
+    """Every `--save-at` step wrote `ckpt_full_<s>.pt` whose top-level key set EQUALS ckpt.pt's (the D1 branch resumes from it)."""
+    out: dict[str, Any] = {}
+    try:
+        import torch
+        ref = set(torch.load(run_dir / "ckpt.pt", map_location="cpu", weights_only=False, mmap=True))
+    except Exception as e:                                # noqa: BLE001 -- recorded, never a pass
+        reasons.append(f"G-CKPT save-at: ckpt.pt unreadable ({type(e).__name__}: {str(e)[:160]})")
+        return out
+    for s in steps_:
+        p = run_dir / ("ckpt_full_%d.pt" % s)
+        if not p.is_file():
+            reasons.append(f"G-CKPT save-at: --save-at {s} wrote no {p.name}")
+            continue
+        try:
+            keys = set(torch.load(p, map_location="cpu", weights_only=False, mmap=True))
+        except Exception as e:                            # noqa: BLE001
+            reasons.append(f"G-CKPT save-at: {p.name} unreadable ({type(e).__name__}: {str(e)[:160]})")
+            continue
+        out[str(s)] = sorted(keys)
+        if keys != ref:
+            reasons.append(f"G-CKPT save-at: {p.name} keys {sorted(keys)} != ckpt.pt's {sorted(ref)}")
+    return out
+
+
+def open_item_hits(it: dict, argv: list[str] | None) -> list[str] | None:
+    """A CONDITIONAL open item (`when_flags` exact / `when_prefixes` prefix, minus `when_except` prefixes) applies only when
+    the ARGV carries such a flag -> the matching flags. None = unconditional (always applies). With no argv to read, a
+    conditional item applies (fail closed: [] is returned only when the argv was read and carries none)."""
+    if not (it.get("when_flags") or it.get("when_prefixes")):
+        return None
+    if argv is None:
+        return ["<argv not given>"]
+    exc = tuple(it.get("when_except") or ())
+    exact = tuple(it.get("when_except_exact") or ())          # E1-REC3: EXACT flag names (a prefix exception would also swallow `<flag>-v2`)
+    return [f for f, _ in flag_pairs(argv)
+            if (f in (it.get("when_flags") or ())
+                or any(f.startswith(p) for p in (it.get("when_prefixes") or ())))
+            and not any(f.startswith(e) for e in exc) and f not in exact]
+
+
+def open_item_reasons(prof: dict, argv: list[str] | None = None, closed: Iterable[str] = ()) -> list[str]:
+    """The profile's OPEN ITEMS, one named reason each (empty when the flag set is decided). refcv9-e1rig: an item may be
+    CONDITIONAL on the argv's flags (`open_item_hits`) -- the inherited records that cover the rig's heads do not cover an
+    arm that changes them; every other profile's items are unconditional and read exactly as before. `closed` (M-GATE): the ids
+    of the items whose OWN record the gate READ and passed (`own_records_closed`); they are skipped here and NEVER deleted."""
+    out = []
+    closed = set(closed or ())
+    for it in (prof.get("open_items") or ()):
+        if it.get("id") in closed:
+            continue
+        hits = open_item_hits(it, argv)
+        if hits is not None and not hits:
+            continue
+        out.append(f"OPEN ITEM {it.get('id')}: {it.get('what')}"
+                   + (f" [triggered by {hits}]" if hits is not None else "") + f" (owner: {it.get('owner')})")
+    return out
+
+
+def residual_prior_on(argv: list[str]) -> bool:
+    """NEW-1 is ON only when `--residual-prior` carries a mode other than `off`."""
+    v = flag_values(argv, "--residual-prior")
+    return bool(v) and v[0] != "off"
+
+
+# --------------------------------------------------------------------------------------------- #
+# v8F alpha-1: the frozen P10 prior -- G-LIVE / G-CKPT / G-EVAL / G-CLOCK clauses                 #
+# --------------------------------------------------------------------------------------------- #
+# Every clause reads a DIFFERENT fact and none of them trusts the module under test:
+#   * the P10 the gate compares against is its OWN read of the file the ARGV names (torch.load of the file + the
+#     module-independent content hash), never `load_frozen_p10` -- so an arm (or a defect) that patches the loader
+#     patches the build and not the reference;
+#   * the window features are the gate's OWN three lines of arithmetic, not `kin3_from_window` -- so a shifted clock
+#     inside the model's feature builder disagrees with the reference.
+# What is deliberately SHARED with the model is the knots -> per-tick conversion (`kinematic_prior.knots_to_ticks` +
+# `controls_from_path`): it is the mechanism whose fidelity is MEASURED separately (ADE6(P10u, P10), G-CLOCK below).
+def p10_on(argv: list[str]) -> bool:
+    """The P10 switch: `--residual-prior p10_pose` (arm alpha-1 as launched) or `p10` (the optional steer arm alpha-1s)."""
+    v = flag_values(argv, "--residual-prior")
+    return bool(v) and v[0] in ("p10", "p10_pose")
+
+
+def p10_variant(argv: list[str]) -> str:
+    """The P10 variant the argv's mode reads: `pose` for `p10_pose`, `steer` for `p10`."""
+    v = flag_values(argv, "--residual-prior")
+    return "pose" if (v and v[0] == "p10_pose") else "steer"
+
+
+def p10_declared(argv: list[str], pmap: list[tuple[str, str]] | None = None) -> tuple[str | None, str | None]:
+    """(the `--p10-prior` path mapped onto THIS host, the declared `--p10-prior-sha256` lower-cased)."""
+    pv, sv = flag_values(argv, "--p10-prior"), flag_values(argv, "--p10-prior-sha256")
+    return (map_path(pv[0], pmap or []) if pv else None), (str(sv[0]).lower() if sv else None)
+
+
+def p10_independent_load(path: str | None, sha: str | None, variant: str = "steer") -> tuple[Any, dict]:
+    """-> (a FrozenP10 | None, record). The gate's OWN read of the P10 file: bytes hashed here, tensors from `torch.load`
+    of the file, the module-independent `content_sha256`, and the artifact's OWN declared feature unit (`meta['units']`)
+    compared with the variant the argv's mode reads. A file that is absent, unreadable, of another sha256 than the
+    declared one, of the other variant, or not a v8F-mini P10 artifact is `ok False` with the reason -- never a silent skip."""
+    rec: dict[str, Any] = {"path": path, "declared_sha256": sha, "variant": variant, "ok": False, "error": None}
+    if not path or not Path(path).is_file():
+        rec["error"] = f"the P10 file {path!r} does not exist on this host"
+        return None, rec
+    try:
+        import torch
+        from tanitad.models import p10_prior as P
+        fsha = sha256_file(path)
+        rec["file_sha256"] = fsha
+        if sha and fsha != sha:
+            rec["error"] = f"the file hashes to {fsha}, the argv declares {sha}"
+            return None, rec
+        o = torch.load(path, map_location="cpu", weights_only=True)
+        st = o["state"]
+        units = (o.get("meta") or {}).get("units")
+        rec["declared_units"] = units
+        declared = P.P10_UNITS_TO_VARIANT.get(units)
+        if declared != variant:
+            rec["error"] = (f"the file declares the {declared!r} variant (meta['units']={units!r}); the argv's mode reads "
+                            f"the {variant!r} one -- a P10 fit on another input channel is ANOTHER prior")
+            return None, rec
+        tensors = {k: st[k] for k in P.P10_STATE_KEYS}
+        rec["content_sha256"] = P.content_sha256(tensors)
+        f = P.FrozenP10(tensors, source=str(path), file_sha=fsha, meta=o.get("meta") or {}, variant=variant)
+    except Exception as e:                                # noqa: BLE001 -- recorded, judged
+        rec["error"] = f"{type(e).__name__}: {str(e)[:240]}"
+        return None, rec
+    rec["ok"] = True
+    return f, rec
+
+
+def p10_new_record(argv: list[str], pmap: list[tuple[str, str]] | None = None) -> tuple[Any, dict]:
+    """The G-LIVE observer's record for a p10 launch + the independent P10 it compares against."""
+    path, sha = p10_declared(argv, pmap)
+    variant = p10_variant(argv)
+    ind, irec = p10_independent_load(path, sha, variant)
+    return ind, {"independent_load": irec, "declared_sha256": sha, "variant": variant, "forwards_seen": 0, "forwards_checked": 0,
+                 "p10_calls": 0, "rows": 0, "rows_kept": 0, "rows_withheld": 0, "rows_withheld_nonzero": 0,
+                 "rows_checked": 0, "rows_kept_zero_moving": 0, "rows_kappa_zeroed": 0,
+                 "max_abs_diff_a": 0.0, "max_abs_diff_k": 0.0, "fallback_control_max_abs_diff": 0.0,
+                 "n_nonfinite": 0, "problems": [], "emitted_shape": None,
+                 "content_sha_first": None, "frozen": None}
+
+
+def p10_live_observe(rec: dict, ind: Any, module: Any, out: Any, batch: Any) -> None:
+    """One TRAINING forward: the prior the model EMITTED (`residual_prior_ctrl` [B, 60, 2]) against the gate's
+    independent recompute from the batch's observed window + the independently loaded P10. Observes only (no grad)."""
+    import torch
+    from tanitad.models import kinematic_prior as KP
+    rec["forwards_seen"] += 1
+    dec = getattr(getattr(module, "core", None), "decoder", None)
+    p10 = getattr(dec, "p10", None)
+    if p10 is not None and rec["content_sha_first"] is None:
+        rec["content_sha_first"] = p10.content_sha()
+    ctrl = out.get("residual_prior_ctrl") if isinstance(out, dict) else None
+    if not torch.is_tensor(ctrl) or ctrl.dim() != 3 or int(ctrl.shape[-1]) != 2:
+        rec["problems"].append(f"the forward emitted no per-tick `residual_prior_ctrl` [B, T, 2] "
+                               f"(got {type(ctrl).__name__} {tuple(getattr(ctrl, 'shape', ()))})")
+        return
+    rec["emitted_shape"] = list(ctrl.shape)
+    variant = str(rec.get("variant") or "steer")
+    ph = batch.get("pose_hist") if isinstance(batch, dict) else None
+    ac = batch.get("actions") if isinstance(batch, dict) else None
+    if ph is None or (ac is None and variant == "steer"):
+        rec["problems"].append("the training batch carries no `pose_hist`" + (" / `actions`" if variant == "steer" else "") +
+                               " -- the recompute has no window")
+        return
+    if ind is None:
+        rec["problems"].append("no independent P10 (the file could not be read here) -- nothing to compare against")
+        return
+    with torch.no_grad():
+        dt = float(module.core.ego_hist.cfg.dt)
+        n = int(ph.shape[1])
+        po = ph.detach().to(torch.float64).cpu()
+        v0 = po[:, n - 1, 3]
+        if variant == "pose":
+            # the gate's OWN three lines (not `pose_kin3`): ha0_ext_pose's derivation -- a ONE-frame a0, the wrapped ONE-frame
+            # yaw difference over max(v0, floor), clamped; the POSE TRACK only, nothing else is read
+            a0 = (v0 - po[:, n - 2, 3]) / dt
+            om = ((po[:, n - 1, 2] - po[:, n - 2, 2] + math.pi) % (2.0 * math.pi) - math.pi) / dt
+            k0 = (om / v0.clamp_min(KP.POSE_KAPPA_V_FLOOR)).clamp(-KP.POSE_KAPPA_CAP, KP.POSE_KAPPA_CAP)
+            kin3 = torch.stack([v0, a0, k0], dim=-1)
+        else:
+            act = ac.detach().to(torch.float64).cpu()
+            a0 = (v0 - po[:, n - 3, 3]) / (2.0 * dt)         # the fit's convention: a 2-frame backward difference
+            kin3 = torch.stack([v0, a0, act[:, n - 1, 0]], dim=-1)
+        p30 = ind(kin3)
+        ticks = KP.knots_to_ticks(p30.to(torch.float64)).to(torch.float32)
+        ref = KP.controls_from_path(ticks, v0.to(torch.float32), dt=dt, v_floor=KP.POSE_KAPPA_V_FLOOR,
+                                    kappa_cap=KP.P10_KAPPA_CAP)
+        em = ctrl.detach().to(torch.float32).cpu()
+        if tuple(em.shape) != tuple(ref.shape):
+            rec["problems"].append(f"the emitted prior is {tuple(em.shape)}, the recompute {tuple(ref.shape)}")
+            return
+        fin = torch.isfinite(em).all(dim=(1, 2))
+        rec["n_nonfinite"] += int((~fin).sum())
+        # WHICH rows were withheld (training ego dropout, `cfg.ego_dropout`) is read off the model's OWN emitted speed:
+        # a kept row is rolled from the window's measured v0 (`residual_prior_v` == v0), a withheld row from the
+        # withheld speed -- and its prior is ZERO by design (`kinematic_prior.withhold`)
+        rv = out.get("residual_prior_v")
+        if not torch.is_tensor(rv) or rv.numel() != em.shape[0]:
+            rec["problems"].append("the forward emitted no `residual_prior_v` [B] -- kept and withheld rows cannot be told apart")
+            return
+        kept = (rv.detach().to(torch.float32).cpu().reshape(-1) - v0.to(torch.float32)).abs() < 1e-3
+        nz = em.abs().amax(dim=(1, 2)) > 0
+        rec["rows"] += int(em.shape[0])
+        rec["rows_kept"] += int(kept.sum())
+        rec["rows_withheld"] += int((~kept).sum())
+        rec["rows_withheld_nonzero"] += int((~kept & nz).sum())
+        rec["rows_kept_zero_moving"] += int((kept & ~nz & (v0.to(torch.float32) > 0.5)).sum())
+        rec["forwards_checked"] += 1
+        use = kept & nz & fin
+        if not bool(use.any()):
+            return
+        rec["rows_checked"] += int(use.sum())
+        da = (em[..., 0] - ref[..., 0]).abs().amax(dim=1)
+        dk = (em[..., 1] - ref[..., 1]).abs().amax(dim=1)
+        # refcv8's lateral prior dropout zeroes kappa on a row (training only): a row whose emitted kappa is
+        # exactly 0 is that, not a disagreement -- counted, and its `a` is still checked
+        kz = em[..., 1].abs().amax(dim=1) == 0
+        rec["rows_kappa_zeroed"] += int((kz & use).sum())
+        rec["max_abs_diff_a"] = max(rec["max_abs_diff_a"], float(da[use].max()))
+        kk = use & ~kz
+        if bool(kk.any()):
+            rec["max_abs_diff_k"] = max(rec["max_abs_diff_k"], float(dk[kk].max()))
+        # the POSITIVE CONTROL: the comparison can SEE a fallback to a constant (ha0_ext_pose) prior -- for the pose variant
+        # that IS alpha-0's prior, i.e. the arm silently degrading into its own baseline
+        a_f, _k_f = KP.prior_controls("ha0_ext_pose", po.to(torch.float32), n, None, dt=dt)
+        rec["fallback_control_max_abs_diff"] = max(rec["fallback_control_max_abs_diff"],
+                                                   float((em[..., 0] - a_f[:, None]).abs().amax(dim=1)[use].max()))
+
+
+def p10_frozen_report(model: Any) -> dict:
+    """What the BUILT model says about its P10: structure (no Parameter, no requires_grad buffer, no state_dict key),
+    gradients (none), and the live content hash against the one taken at load."""
+    dec = getattr(getattr(model, "core", model), "decoder", None)
+    p = getattr(dec, "p10", None)
+    if p is None:
+        return {"present": False}
+    return {"present": True, "source": str(p.source), "file_sha256": str(p.file_sha),
+            "variant": str(getattr(p, "variant", "<absent>")),
+            "n_parameters": len(list(p.parameters())),
+            "n_buffers": len(list(p.buffers())),
+            "n_buffers_requires_grad": sum(1 for t in p.buffers() if t.requires_grad),
+            "n_tensors_with_grad": sum(1 for t in [*p.buffers(), *p.parameters()] if t.grad is not None),
+            "n_in_state_dict": sum(1 for k in model.state_dict() if ".p10." in k or k.startswith("p10.")),
+            "content_sha256": p.content_sha(), "content_sha_at_load": str(p.content_sha_at_load)}
+
+
+def _find_nested(d: Any, key: str) -> Any:
+    """The first value stored under `key` anywhere in a nested dict (config.json's layout is the trainer's)."""
+    if isinstance(d, dict):
+        if key in d and isinstance(d[key], dict):
+            return d[key]
+        for v in d.values():
+            r = _find_nested(v, key)
+            if r is not None:
+                return r
+    return None
+
+
+def judge_p10_live(prof: dict, argv: list[str], rec: dict | None, grad_names: list[str],
+                   grads: dict, fwd_train_calls: int, config: dict | None = None) -> tuple[list[str], dict]:
+    """G-LIVE for `--residual-prior p10`: the model's emitted prior IS the P10 of the declared file, P10 is read on
+    every training forward, and it is FROZEN (no Parameter, exactly zero gradient, bytes unchanged)."""
+    tol = float((prof.get("p10_prior") or {}).get("live_tol", 1e-4))
+    reasons: list[str] = []
+    if rec is None:
+        return ["G-LIVE P10: the smoke recorded NOTHING for a `--residual-prior p10` launch (no observer ran)"], {}
+    det: dict[str, Any] = {k: v for k, v in rec.items() if k != "frozen"}
+    det["frozen"] = rec.get("frozen")
+    il = rec.get("independent_load") or {}
+    if not il.get("ok"):
+        reasons.append(f"G-LIVE P10: the independent read of the declared P10 file failed: {il.get('error')}")
+    reasons += [f"G-LIVE P10: {p}" for p in (rec.get("problems") or [])[:4]]
+    n_fwd = int(fwd_train_calls)
+    if n_fwd <= 0:
+        reasons.append("G-LIVE P10: no training forward was observed")
+    if int(rec.get("forwards_checked", 0)) != n_fwd:
+        reasons.append(f"G-LIVE P10: the prior was checked on {rec.get('forwards_checked')} of {n_fwd} training "
+                       f"forwards -- every one must be")
+    if int(rec.get("p10_calls", 0)) < max(n_fwd, 1):
+        reasons.append(f"G-LIVE P10: the FrozenP10 module was CALLED {rec.get('p10_calls')} times over {n_fwd} "
+                       f"training forwards -- the prior the loss composed on did not come from P10 "
+                       f"(a fallback to another prior)")
+    if int(rec.get("rows_checked", 0)) == 0:
+        reasons.append(f"G-LIVE P10: ZERO rows were comparable ({rec.get('rows_withheld')} of {rec.get('rows')} rows were "
+                       f"withheld by ego dropout, the rest emitted an all-zero prior) -- P10 was never read")
+    if int(rec.get("rows_kept_zero_moving", 0)):
+        reasons.append(f"G-LIVE P10: {rec.get('rows_kept_zero_moving')} KEPT rows moving at v0 > 0.5 m/s emitted an all-zero "
+                       f"prior -- P10 is a non-zero prior wherever the ego keeps its window")
+    if int(rec.get("rows_withheld_nonzero", 0)):
+        reasons.append(f"G-LIVE P10: {rec.get('rows_withheld_nonzero')} WITHHELD rows emitted a non-zero prior -- the "
+                       f"window leaked past the ego dropout")
+    if int(rec.get("n_nonfinite", 0)):
+        reasons.append(f"G-LIVE P10: {rec.get('n_nonfinite')} rows carry a non-finite prior")
+    for ch in ("a", "k"):
+        d = float(rec.get(f"max_abs_diff_{ch}", 0.0))
+        if d > tol:
+            reasons.append(f"G-LIVE P10: the emitted prior's {'accel' if ch == 'a' else 'curvature'} channel "
+                           f"differs from the INDEPENDENT P10 recompute by {d:.3g} (> {tol:g}) -- the model's prior "
+                           f"is not the declared P10 evaluated on this window")
+    if int(rec.get("rows_checked", 0)) and float(rec.get("fallback_control_max_abs_diff", 0.0)) <= 1e-3:
+        reasons.append("G-LIVE P10: control -- the emitted prior is indistinguishable from the CONSTANT ha0_ext_pose "
+                       "prior on every checked row, so the comparison cannot see a fallback")
+    fr = rec.get("frozen") or {}
+    if not fr.get("present"):
+        reasons.append("G-LIVE P10: the BUILT decoder carries no P10 module (mode p10 with nothing built)")
+    else:
+        if fr.get("variant") != rec.get("variant"):
+            reasons.append(f"G-LIVE P10: the BUILT P10 is the {fr.get('variant')!r} variant, the argv's mode reads the "
+                           f"{rec.get('variant')!r} one -- the prior is fed the wrong input channel")
+        if int(fr.get("n_parameters", -1)) != 0:
+            reasons.append(f"G-LIVE P10: the P10 module has {fr.get('n_parameters')} Parameters -- it must be buffers only "
+                           f"(UNFROZEN: it would train)")
+        if int(fr.get("n_buffers_requires_grad", -1)) != 0:
+            reasons.append(f"G-LIVE P10: {fr.get('n_buffers_requires_grad')} P10 tensors require grad")
+        if int(fr.get("n_tensors_with_grad", -1)) != 0:
+            reasons.append(f"G-LIVE P10: {fr.get('n_tensors_with_grad')} P10 tensors hold a .grad -- exactly 0 is required")
+        if int(fr.get("n_in_state_dict", -1)) != 0:
+            reasons.append(f"G-LIVE P10: {fr.get('n_in_state_dict')} P10 keys are in the state_dict (the warm start's "
+                           f"strict load would change)")
+        if fr.get("file_sha256") != rec.get("declared_sha256"):
+            reasons.append(f"G-LIVE P10: the built P10 loaded file sha256 {str(fr.get('file_sha256'))[:16]}, the argv "
+                           f"declares {str(rec.get('declared_sha256'))[:16]}")
+        ind_c = il.get("content_sha256")
+        for lab, v in (("at load", fr.get("content_sha_at_load")), ("first training forward", rec.get("content_sha_first")),
+                       ("after the smoke's optimizer steps", fr.get("content_sha256"))):
+            if ind_c and v != ind_c:
+                reasons.append(f"G-LIVE P10: the built P10's content hash {lab} ({str(v)[:16]}) != the independent "
+                               f"read of the file ({str(ind_c)[:16]}) -- the weights are not the declared ones")
+    p10_trained = sorted(n for n in (grad_names or []) if ".p10." in n or n.startswith("p10."))
+    p10_moved = sorted(n for n, g in (grads or {}).items() if (".p10." in n or n.startswith("p10.")) and g.get("nz_steps"))
+    det["p10_parameters_in_optimizer"] = p10_trained
+    det["p10_parameters_with_nonzero_grad"] = p10_moved
+    if p10_trained:
+        reasons.append(f"G-LIVE P10: P10 parameters are in the optimizer: {p10_trained[:5]}")
+    if p10_moved:
+        reasons.append(f"G-LIVE P10: P10 parameters took a NON-ZERO gradient: {p10_moved[:5]}")
+    st = _find_nested(config, "residual_prior") if config else None
+    p10c = (st or {}).get("p10") if isinstance(st, dict) else None
+    det["config_stamp_p10"] = p10c
+    if config is not None:
+        if not isinstance(p10c, dict):
+            reasons.append("G-LIVE P10: config.json's residual_prior stamp carries no `p10` identity")
+        else:
+            if p10c.get("file_sha256") != rec.get("declared_sha256"):
+                reasons.append(f"G-LIVE P10: config.json stamps P10 file sha256 {str(p10c.get('file_sha256'))[:16]}, the "
+                               f"argv declares {str(rec.get('declared_sha256'))[:16]}")
+            if il.get("content_sha256") and p10c.get("content_sha256") != il.get("content_sha256"):
+                reasons.append("G-LIVE P10: config.json's stamped P10 content hash != the independent read of the file")
+    return reasons, det
+
+
+def judge_p10_ckpt(prof: dict, argv: list[str], ckpt: dict | None, rec: dict | None) -> tuple[list[str], dict]:
+    """G-CKPT for p10: ckpt.pt carries the P10 IDENTITY (the weights are non-persistent buffers, so not in `model`),
+    equal to the declared file's and to the independent read; the resume (judge_ckpt) already refuses a mismatch."""
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    if ckpt is None:
+        return ["G-CKPT P10: no ckpt.pt to read the P10 identity from"], det
+    have = ckpt.get("p10_prior")
+    det["ckpt_p10_prior"] = have
+    il = (rec or {}).get("independent_load") or {}
+    if not isinstance(have, dict):
+        return ["G-CKPT P10: ckpt.pt carries NO `p10_prior` identity -- a resume could not tell which P10 trained"], det
+    if have.get("file_sha256") != (rec or {}).get("declared_sha256"):
+        reasons.append(f"G-CKPT P10: ckpt.pt names P10 file sha256 {str(have.get('file_sha256'))[:16]}, the argv declares "
+                       f"{str((rec or {}).get('declared_sha256'))[:16]}")
+    if not il.get("ok"):
+        reasons.append(f"G-CKPT P10: the independent read of the declared P10 failed: {il.get('error')}")
+    elif have.get("content_sha256") != il.get("content_sha256"):
+        reasons.append("G-CKPT P10: ckpt.pt's P10 content hash != the independent read of the declared file")
+    return reasons, det
+
+
+def judge_p10_eval(prof: dict, argv: list[str], model_t: Any, model_l: Any) -> tuple[list[str], dict]:
+    """G-EVAL for p10: the eval loader's model carries the SAME P10 as the trainer's, and that is the declared file. The
+    P10 tensors are non-persistent buffers, so the state_dict comparison cannot see them -- this is their comparison."""
+    reasons: list[str] = []
+    ft, fl = p10_frozen_report(model_t), p10_frozen_report(model_l)
+    _p, sha = p10_declared(argv)
+    det = {"trainer": ft, "loader": fl, "declared_sha256": sha}
+    for lab, f in (("trainer", ft), ("loader", fl)):
+        if not f.get("present"):
+            reasons.append(f"G-EVAL P10: the {lab}'s model has no P10 (mode p10)")
+    if ft.get("present") and fl.get("present"):
+        if ft.get("variant") != fl.get("variant"):
+            reasons.append(f"G-EVAL P10: the loader built the {fl.get('variant')!r} P10 variant, the trainer the "
+                           f"{ft.get('variant')!r} one")
+        if ft["file_sha256"] != fl["file_sha256"]:
+            reasons.append(f"G-EVAL P10: the loader built P10 from file sha256 {fl['file_sha256'][:16]}, the trainer "
+                           f"{ft['file_sha256'][:16]}")
+        if ft["content_sha256"] != fl["content_sha256"]:
+            reasons.append(f"G-EVAL P10: the loader's P10 weights ({fl['content_sha256'][:16]}) are not the trainer's "
+                           f"({ft['content_sha256'][:16]})")
+        if sha and fl["file_sha256"] != sha:
+            reasons.append(f"G-EVAL P10: the loader's P10 file sha256 {fl['file_sha256'][:16]} != the declared {sha[:16]}")
+        if fl["n_parameters"] or fl["n_in_state_dict"]:
+            reasons.append("G-EVAL P10: the loader's P10 is not frozen buffers (Parameters / state_dict keys present)")
+    return reasons, det
+
+
+def p10_clock_check(prof: dict, argv: list[str], pmap: list[tuple[str, str]] | None, tree: str | os.PathLike,
+                    *, ind: Any = None) -> tuple[list[str], dict]:
+    """G-CLOCK for p10 (PLAN_V8F section 6, brief item 3): the P10 the DECODER evaluates -- through the model's own feature
+    builder (`kin3_from_window`) -- equals the banked floors_kin / v8F-mini predictions on real eval141 windows to
+    <= 1e-4 m; a window ending ONE FRAME EARLY must FAIL that tolerance (the instrument can see a clock error); the
+    P10 fit clips are disjoint from eval139 / eval141; and the per-tick controls re-roll to P10 within the ADE bar."""
+    import numpy as np
+    import torch
+    from tanitad.models import kinematic_prior as KP
+    from tanitad.models import p10_prior as P
+    from tanitad.models.kinematic import rollout_unicycle
+    spec = prof.get("p10_prior") or {}
+    variant = p10_variant(argv)
+    tol = float(spec.get("known_value_tol_m", 1e-4))
+    reasons: list[str] = []
+    det: dict[str, Any] = {"tolerance_m": tol, "variant": variant}
+    path, sha = p10_declared(argv, pmap)
+    if ind is None:
+        ind, irec = p10_independent_load(path, sha, variant)
+        det["independent_load"] = irec
+        if ind is None:
+            return [f"G-CLOCK P10: cannot read the declared P10: {irec.get('error')}"], det
+    fx_path = _resolve_repo_rel(Path(tree), spec["fixture"])
+    det["fixture"] = {"path": str(fx_path), "sha256": sha256_file(fx_path) if Path(fx_path).is_file() else None}
+    if not Path(fx_path).is_file():
+        return [f"G-CLOCK P10: the known-value fixture {spec['fixture']} is absent from the tree"], det
+    z = np.load(fx_path, allow_pickle=False)
+    po = torch.from_numpy(z["poses"]).double()
+    if variant == "steer" and "actions" not in z.files:
+        return [f"G-CLOCK P10: the steer fixture {spec['fixture']} carries no `actions`"], det
+    ac = torch.from_numpy(z["actions"]).double() if variant == "steer" else None
+    banked = z["p10_banked"]
+
+    def feats(n: int):
+        """The MODEL's own feature builder for this variant -- the thing a clock error would live in."""
+        return KP.pose_kin3(po, n) if variant == "pose" else P.kin3_from_window(po, ac, n)
+    n_w = int(po.shape[1])
+    det["n_windows"], det["window_len"] = int(po.shape[0]), n_w
+    if po.shape[0] < 500:
+        reasons.append(f"G-CLOCK P10: the fixture has {po.shape[0]} windows (< 500) -- too few to be a known value")
+    with torch.no_grad():
+        got = ind(feats(n_w)).numpy()
+        err = np.abs(got - banked).max(axis=(1, 2))
+        det["in_decoder_vs_banked_max_m"] = float(err.max())
+        if float(err.max()) > tol:
+            reasons.append(f"G-CLOCK P10: the in-decoder P10 ({'pose_kin3' if variant == 'pose' else 'kin3_from_window'} -> FrozenP10) differs from the banked "
+                           f"floors_kin / fit-script predictions by up to {float(err.max()):.3g} m (> {tol:g}) on "
+                           f"{int((err > tol).sum())} of {len(err)} windows -- a CLOCK or feature-order error")
+        early = np.abs(ind(feats(n_w - 1)).numpy() - banked).max(axis=(1, 2))
+        frac = float((early > tol).mean())
+        det["one_frame_early_control"] = {"frac_beyond_tol": frac, "median_m": float(np.median(early))}
+        if frac < float(spec.get("shift_control_min_frac", 0.95)):
+            reasons.append(f"G-CLOCK P10: control -- a window ending ONE FRAME EARLY moves only {frac:.1%} of windows "
+                           f"beyond {tol:g} m, so the known-value check cannot see a clock error")
+        a, k, p30 = KP.p10_tick_prior(ind, po.float(), n_w, ac.float() if variant == "steer" else None)
+        st = torch.zeros(a.shape[0], 4)
+        st[:, 3] = po[:, -1, 3].float()
+        rolled = rollout_unicycle(st, torch.stack([a, k], -1), dt=0.1)[..., :2]
+        ade6 = (rolled[:, 1::2] - p30).norm(dim=-1).mean(1)
+        det["ade6_P10u_vs_P10_m"] = {"mean": float(ade6.mean()), "median": float(ade6.median()),
+                                     "p95": float(torch.quantile(ade6, 0.95)), "max": float(ade6.max())}
+        bar = float(spec.get("ade6_bar_m", 0.05))
+        if float(ade6.mean()) > bar:
+            reasons.append(f"G-CLOCK P10: ADE@6s(P10u, P10) = {float(ade6.mean()):.4f} m > the {bar} m bar -- the per-tick "
+                           f"conversion no longer reproduces P10")
+        # Delta == 0 rolls EXACTLY to P10u: the zero anchor minus the prior, through the model's own composition
+        hz = (5, 10, 15, 20, 30, 40, 50, 60)
+        rolled0 = KP.roll_plan(torch.zeros(a.shape[0], 1, len(hz), 2), a, k, po[:, -1, 3].float(), hz,
+                               control_units="alat", tick=0.1)[:, 0]
+        ref0 = rolled[:, [h - 1 for h in hz]]
+        d0 = float((rolled0 - ref0).abs().max())
+        det["delta_zero_vs_P10u_max_m"] = d0
+        if d0 > 1e-4:
+            reasons.append(f"G-CLOCK P10: Delta == 0 rolls to a path {d0:.3g} m from P10u -- the composition is not the "
+                           f"identity on the prior")
+    fit = [str(c) for c in z["fit_clip_ids"]]
+    det["disjoint"] = {}
+    for nm in ("eval141_clip_ids", "eval139_clip_ids"):
+        try:
+            det["disjoint"][nm] = P.assert_fit_disjoint(fit, [str(c) for c in z[nm]])
+        except P.P10Error as e:
+            reasons.append(f"G-CLOCK P10: {str(e)[:200]}")
+    return reasons, det
+
+
+def _p10_tick_prior_with_grad():
+    """The deliberate regression 'P10 is not a no_grad island': `p10_tick_prior`'s own source with its torch.no_grad()
+    removed, compiled in the module's namespace."""
+    import inspect
+    from tanitad.models import kinematic_prior as KP
+    src = inspect.getsource(KP.p10_tick_prior).replace("with torch.no_grad():", "if True:")
+    ns = dict(vars(KP))
+    exec(compile(src, "<p10_unfrozen_mutant>", "exec"), ns)
+    return ns["p10_tick_prior"]
+
+
+def apply_p10_arm(ctx: Any, pat: "_Patcher", T: Any = None) -> str | None:
+    """The v8F alpha-1 deliberate-regression arms (SPEC: each must make its check FAIL). -> a description, or None when
+    `ctx.arm` is not a p10 arm. Applied through `_Patcher` (restored by the caller). Variant-aware: the mode in `ctx.argv`
+    (`p10_pose` = alpha-1 as launched, `p10` = the optional steer arm alpha-1s) decides which feature builder / fallback the
+    arm regresses; an arm that has no meaning for the variant at hand is applied as a no-op and graded NOT-APPLICABLE by
+    the arms runner (`only_residual_prior`)."""
+    name = str(getattr(ctx, "arm", "") or "")
+    if not name.startswith("p10_"):
+        return None
+    import torch
+    from tanitad.models import kinematic_prior as KP
+    from tanitad.models import p10_prior as P
+    variant = p10_variant(getattr(ctx, "argv", None) or ["--residual-prior", "p10_pose"])
+    if name == "p10_zero_weights":
+        real = P.load_frozen_p10
+
+        def zeroed(path, *, expect_file_sha256=None, variant=None, _r=real):
+            f = _r(path, expect_file_sha256=expect_file_sha256, variant=variant)
+            return P.FrozenP10({k: (torch.zeros_like(v) if k.startswith("net.") else v)
+                                for k, v in f.tensors().items()}, source=f.source, file_sha=f.file_sha, meta=f.meta,
+                               variant=f.variant)
+        pat.set(P, "load_frozen_p10", zeroed)
+        return ("load_frozen_p10 returns a P10 whose MLP weights are ZERO while it still claims the file's sha256 "
+                "(the standardisation constants are kept: zeroing them would be NaN, not a silent defect)")
+    if name == "p10_unfrozen":
+        orig_init = P.FrozenP10.__init__
+
+        def init(self, *a, _o=orig_init, **k):
+            _o(self, *a, **k)
+            for nm in ("w1", "b1", "w2", "b2", "ym"):
+                t = getattr(self, nm)
+                delattr(self, nm)
+                self.register_parameter(nm, torch.nn.Parameter(t.clone()))
+        pat.set(P.FrozenP10, "__init__", init)
+        pat.set(P.FrozenP10, "forward", P.FrozenP10.forward.__wrapped__)
+        pat.set(KP, "p10_tick_prior", _p10_tick_prior_with_grad())
+        return "P10's tensors are Parameters and the prior is no longer a no_grad island"
+    if name == "p10_fallback_ha0_ext":
+        real = KP.prior_controls
+        const_mode = "ha0_ext_pose" if variant == "pose" else "ha0_ext"
+
+        def fallback(mode, poses, n_past=None, actions=None, _r=real, **kw):
+            if mode not in KP.P10_MODES:
+                return _r(mode, poses, n_past, actions, **kw)
+            kw.pop("p10", None)
+            a0, k0 = _r(const_mode, poses, n_past, actions if const_mode == "ha0_ext" else None, **kw)
+            return (a0[:, None].expand(-1, KP.P10_TICKS).contiguous(), k0[:, None].expand(-1, KP.P10_TICKS).contiguous())
+        pat.set(KP, "prior_controls", fallback)
+        return (f"mode {'p10_pose' if variant == 'pose' else 'p10'} silently builds the {const_mode} prior (constants "
+                f"broadcast to 60 ticks)" + (" -- alpha-1 degrading into alpha-0's own prior" if variant == "pose" else ""))
+    if name == "p10_clock_shift":
+        if variant == "pose":
+            real_p = KP.pose_kin3
+
+            def shifted_p(poses, n_past=None, _r=real_p, **kw):
+                n = int(poses.shape[1] if n_past is None else n_past)
+                return _r(poses, n - 1, **kw)
+            pat.set(KP, "pose_kin3", shifted_p)
+            return "the P10 features are read ONE FRAME EARLY (pose_kin3 ends the window at n_past - 1)"
+        real_k = P.kin3_from_window
+
+        def shifted(poses, actions, n_past=None, _r=real_k, **kw):
+            n = int(poses.shape[1] if n_past is None else n_past)
+            return _r(poses, actions, n - 1, **kw)
+        pat.set(P, "kin3_from_window", shifted)
+        return "the P10 features are read ONE FRAME EARLY (kin3_from_window ends the window at n_past - 1)"
+    if name == "p10_pose_a0_stride2":
+        real_p = KP.pose_kin3
+
+        def stride2(poses, n_past=None, _r=real_p, **kw):
+            n = int(poses.shape[1] if n_past is None else n_past)
+            kin = _r(poses, n, **kw).clone()
+            kin[:, 1] = (poses[:, n - 1, 3].to(torch.float64) - poses[:, n - 3, 3].to(torch.float64)) / (
+                2.0 * float(kw.get("dt", KP.DT_TICK)))
+            return kin
+        pat.set(KP, "pose_kin3", stride2)
+        return ("the pose P10's a0 is the STEER variant's 2-frame backward difference instead of ha0_ext_pose's ONE-frame one "
+                "(the features no longer match the fit)")
+    if name == "p10_variant_flipped":
+        real = P.load_frozen_p10
+        flipped = "steer" if variant == "pose" else "pose"
+
+        def wrong(path, *, expect_file_sha256=None, variant=None, _r=real):
+            f = _r(path, expect_file_sha256=expect_file_sha256, variant=None)
+            return P.FrozenP10(f.tensors(), source=f.source, file_sha=f.file_sha, meta=f.meta, variant=flipped)
+        pat.set(P, "load_frozen_p10", wrong)
+        return (f"the builder forgets which input channel the artifact was fit on: a {variant}-variant P10 is built as the "
+                f"{flipped} one")
+    if name == "p10_ckpt_stamp_dropped" and T is not None:
+        pat.set(T, "_p10_ckpt_extra", lambda model: {})
+        return "ckpt.pt is saved without the P10 identity"
+    if name == "p10_loader_other_p10":
+        real = P.load_frozen_p10
+
+        def other(path, *, expect_file_sha256=None, variant=None, _r=real):
+            f = _r(path, expect_file_sha256=expect_file_sha256, variant=variant)
+            t = {k: v.clone() for k, v in f.tensors().items()}
+            t["ym"] = t["ym"] + 0.5
+            return P.FrozenP10(t, source=f.source, file_sha=f.file_sha, meta=f.meta, variant=f.variant)
+        pat.set(P, "load_frozen_p10", other)
+        return "the EVAL LOADER builds a P10 whose weights are not the trainer's"
+    return None
+
+
+def hires_on(prof: dict, argv: list[str]) -> bool:
+    h = prof.get("map_hires") or {}
+    sw = h.get("switch")
+    if not sw:
+        return False
+    v = flag_values(argv, sw[0])
+    return v is not None and (v == [sw[1]] or (not v and sw[1] in ("", "on")))
+
+
+def required_checks_of(prof: dict, argv: list[str]) -> list[str]:
+    """The checks a token for THIS argv needs: the profile's list, plus G-MAP-OVERFIT whenever the
+    10 cm head is on (a launch prerequisite on any profile). Ordered, without repeats."""
+    req = list(prof["required_checks"])
+    if hires_on(prof, argv):
+        req.append("G-MAP-OVERFIT")
+    return list(dict.fromkeys(req))
+
+
+def hires_static_reasons(prof: dict, argv: list[str], model,
+                         pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """NEW-2 on the BUILT object (G-DVB): the branch exists, is supervised, and names its
+    weights -- a readable, non-dry-run, 8-entry class-weight file."""
+    h = prof["map_hires"]
+    reasons: list[str] = []
+    tok = h["name_token"]
+    mods = sorted({n.rsplit(".", 1)[0] for n, _ in model.named_parameters() if tok in n})
+    n_par = int(sum(p.numel() for n, p in model.named_parameters() if tok in n))
+    det = {"modules": mods[:30], "n_params": n_par}
+    if not mods:
+        reasons.append(f"{h['switch'][0]} {h['switch'][1]} but the built model has NO parameter "
+                       f"whose name carries '{tok}' -- the 10 cm branch was not built")
+    w = flag_values(argv, h["weight_flag"])
+    try:
+        wv = float(w[0]) if w else 0.0
+    except ValueError:
+        wv = float("nan")
+    det["weight"] = wv
+    if not (wv > 0.0):
+        reasons.append(f"{h['switch'][0]} {h['switch'][1]} with {h['weight_flag']} {w} -- a built "
+                       f"head with no live weight is declared-but-inert")
+    cw = flag_values(argv, h["class_weights_flag"])
+    det["class_weights"] = cw
+    if not cw:
+        reasons.append(f"{h['switch'][0]} {h['switch'][1]} without {h['class_weights_flag']}: the "
+                       f"SPEC's median-frequency weights must be DECLARED (and are content-bound)")
+    else:
+        local = map_path(cw[0], list(pmap or []))
+        try:
+            d = read_json(local)
+        except Exception as e:                            # noqa: BLE001
+            d = None
+            reasons.append(f"{h['class_weights_flag']} {cw[0]} is not a readable JSON here "
+                           f"({type(e).__name__})")
+        if isinstance(d, dict):
+            wl = d.get("weights")
+            det["class_weights_file"] = {"n": len(wl) if isinstance(wl, list) else None,
+                                         "dry_run": d.get("dry_run")}
+            if d.get("dry_run"):
+                reasons.append(f"{h['class_weights_flag']} is a DRY-RUN weights file -- the "
+                               f"launch weights come from the TRAIN split (PREREG "
+                               f"G-MAP-OVERFIT sec. 3: a dry-run file is REFUSED)")
+            if not (isinstance(wl, list) and len(wl) == len(h["classes"])
+                    and all(_finite_num(x) and float(x) >= 0 for x in wl)):
+                reasons.append(f"{h['class_weights_flag']}: `weights` must be {len(h['classes'])} "
+                               f"finite non-negative numbers, one per class in code order")
+    return reasons, det
+
+
+def _tensor_paths(out: Any, prefix: str = "out") -> list[tuple[str, tuple]]:
+    import torch
+    res = []
+    if torch.is_tensor(out):
+        res.append((prefix, tuple(out.shape)))
+    elif isinstance(out, dict):
+        for k in out:
+            res += _tensor_paths(out[k], f"{prefix}.{k}")
+    elif isinstance(out, (list, tuple)):
+        for i, v in enumerate(out):
+            res += _tensor_paths(v, f"{prefix}[{i}]")
+    return res
+
+
+# --------------------------------------------------------------------------------------------- #
+# the BANDED map head (refcv9 C1, `--r9-map-banded`) under the NEW-2 / G-MAP LIVENESS checks       #
+# --------------------------------------------------------------------------------------------- #
+#: MEASURED 2026-11-05 01:12Z on Thor (E1 arm M1, profile refcv9-e1rig): a banded argv failed G-DVB, G-EVAL and G-LIVE on checks that only know
+#: the inherited 8-code `map_hires` head -- "no forward output named with 'hires' and 'logit'", "the per-class probe never ran", "160 of the 160
+#: per-class argmax COUNT keys are absent", "no labelled 0_20 m cells for [8 classes]", "2 of 2 training rows lack `map_hires_lc_{cls}_{band}`".
+#: The banded head returns `map_hires_logits: None` BY DESIGN and its output is `perception.map_banded = {"logits": [near, mid, far], "unobs":
+#: [...]}`; it logs `map_banded_*` telemetry instead of the 8-code keys. So NO banded argv (M1, M2a; later E2 K2 / E3) could ever pass.
+#: Everything below is keyed on the argv carrying `--r9-map-banded` (`banded_on`): a NON-banded argv takes the code it always took, byte for byte.
+#: Names come from the gate's OWN import of `tanitad.models.map_banded` (BAND_NAMES, CHANNELS, PROB_CHANNELS, band_geometry, telemetry_keys,
+#: BAND_WEIGHTS, MAXENT_W) -- there is no second hand-written list of channels or bands in this file.
+BANDED_FLAG = "--r9-map-banded"
+#: an 8-code G-MAP item with no banded meaning says so in its details -- it is never a silent pass
+BANDED_NA = "not applicable to the banded head"
+#: the telemetry key spellings (pinned to `map_banded.telemetry_keys` by `banded_spelling_reasons`)
+BANDED_KEY_FMT = {"loss": "map_banded_loss_{ch}_{band}", "maxent": "map_banded_maxent_{band}", "n": "map_banded_n_{band}",
+                  "unobs": "map_banded_unobs_frac_{band}", "stat": "map_banded_{st}_{ch}_{band}"}
+BANDED_STATS = ("pos", "inter", "union")
+
+
+def banded_on(prof: dict, argv: list[str]) -> bool:
+    """The argv builds the BANDED map head: the 10 cm branch is on AND the argv carries `--r9-map-banded`."""
+    return hires_on(prof, argv) and has_flag(argv, BANDED_FLAG)
+
+
+def banded_module():
+    """The gate's own import of the banded head's constants. Raises ImportError when the tree under gate lacks it (a named FAIL upstream)."""
+    return importlib.import_module("tanitad.models.map_banded")
+
+
+BANDED_NEAR_M_FLAG = "--r9-map-banded-near-m"
+
+
+def banded_near_m_of(argv: list[str] | None) -> float:
+    """The near band's end an argv declares (E1-NEAR20): `--r9-map-banded-near-m`, else the default 10 m. An unparseable value is NaN (every
+    comparison against it fails -- a named refusal downstream, never a silent 10)."""
+    got = flag_values(argv, BANDED_NEAR_M_FLAG) if argv else []
+    if not got:
+        return 10.0
+    try:
+        return float(got[0])
+    except ValueError:
+        return float("nan")
+
+
+def banded_table_for(bd: dict, argv: list[str] | None, mo: dict | None = None) -> dict:
+    """`prof["map_overfit_banded"]` for THIS argv. The table's literals are the DEFAULT near band (0-10 m): near lift 10, the inherited gated 0-20 m band
+    = near 100 rows + mid 40 rows. An argv with `--r9-map-banded-near-m 20` has near 0-20 m @ 0.10 m (200 rows) and a mid band that starts AT 20 m
+    (0 gated rows, informative): its record is held to those. At the default the SAME dict is returned (identity, nothing recomputed)."""
+    nm = banded_near_m_of(argv)
+    if not bd or abs(nm - 10.0) < 1e-9:
+        return bd
+    hi = 20.0
+    try:
+        hi = float(str((mo or {}).get("band", "0_20")).split("_")[1])
+    except (IndexError, ValueError):
+        pass
+    out = dict(bd)
+    out["near_lift_m"] = nm
+    if math.isfinite(nm):
+        rows = {"near": int(round(min(nm, hi) / 0.1)), "mid": int(round(max(0.0, hi - nm) / 0.25)), "far": 0}
+        out["gate_rows"] = rows
+        out["gated_bands"] = tuple(b for b in bd.get("gated_bands", ()) if rows.get(b, 0) > 0)
+    return out
+
+
+def banded_extent(prof: dict, argv: list[str]) -> tuple[float, float]:
+    """`(x_max_m, y_half_m)` of the run: the argv's `--map-hires-x-max-m` / `--map-hires-y-half-m` when passed and numeric, else the extent
+    the profile's 10 cm grid (`map_hires.logits_hw`, rows x cols at 10 cm) declares."""
+    lh, lw = prof["map_hires"]["logits_hw"]
+    fine = 0.1                                              # FINE_CELL_M: the 10 cm raster
+    x, y = round(lh * fine, 6), round(lw * fine / 2.0, 6)
+    for flag, slot in (("--map-hires-x-max-m", 0), ("--map-hires-y-half-m", 1)):
+        v = flag_values(argv, flag)
+        try:
+            val = float(v[0]) if v else None
+        except ValueError:
+            val = None
+        if val is not None:
+            x, y = (val, y) if slot == 0 else (x, val)
+    return x, y
+
+
+def banded_arg(prof: dict, argv: list[str]) -> tuple | None:
+    """The `banded=` argument of `hires_output_reasons`: the run's extent for a banded argv, None for every other (the 8-code path).
+    E1-NEAR20: `(x_max_m, y_half_m, near_m)` when the argv's near band ends at a non-default `--r9-map-banded-near-m`; the 2-tuple (the tip's) otherwise."""
+    if not banded_on(prof, argv):
+        return None
+    ext = banded_extent(prof, argv)
+    nm = banded_near_m_of(argv)
+    return ext if abs(nm - 10.0) < 1e-9 else (ext[0], ext[1], nm)
+
+
+def banded_train_keys(M) -> list[str]:
+    """The keys a TRAINING row with a labelled window carries for the banded head (`telemetry_keys(with_metrics=False)`): the 30 per
+    channel x band loss terms, and per band the max-entropy term, the supervised-cell count and the unobserved fraction."""
+    ks = [BANDED_KEY_FMT["loss"].format(ch=c, band=b) for c in M.CHANNELS for b in M.BAND_NAMES]
+    for k in ("maxent", "n", "unobs"):
+        ks += [BANDED_KEY_FMT[k].format(band=b) for b in M.BAND_NAMES]
+    return ks
+
+
+def banded_metric_keys(M) -> list[str]:
+    """`pos` / `inter` / `union` per probability channel x band: the counts the per-band IoU pools from (`telemetry_keys(with_metrics=True)`)."""
+    return [BANDED_KEY_FMT["stat"].format(st=s, ch=c, band=b) for s in BANDED_STATS for c in M.PROB_CHANNELS for b in M.BAND_NAMES]
+
+
+def banded_output_reasons(out: Any, x_max_m: float, y_half_m: float, near_m: float = 10.0) -> tuple[list[str], dict]:
+    """NEW-2 on a FORWARD's output for the BANDED head: `perception.map_hires_logits` is None (BY DESIGN: there is no 8-way raster, and a
+    tensor there would be a different head), `perception.map_banded.logits` is one FINITE `[B, 10, rows, cols]` tensor per band matching
+    `band_geometry` of the run's extent, and `perception.map_banded.unobs` is one bool `[B, rows, cols]` mask per band."""
+    import torch
+    det: dict[str, Any] = {"extent_m": [x_max_m, y_half_m]}
+    try:
+        M = banded_module()
+        geom = M.band_geometry(x_max_m, y_half_m, near_m)
+    except Exception as e:                                # noqa: BLE001 -- a named FAIL, never a skip
+        return [f"the banded head's constants cannot be read ({type(e).__name__}: {e}) -- the gate cannot judge a `{BANDED_FLAG}` forward"], det
+    pout = out.get("perception") if isinstance(out, dict) else None
+    if not isinstance(pout, dict):
+        return ["`perception` is ABSENT from the forward output -- the banded head's output (`perception.map_banded`) cannot be read"], det
+    reasons: list[str] = []
+    lg8 = pout.get("map_hires_logits")
+    det["map_hires_logits"] = "None" if lg8 is None else "tensor"
+    if lg8 is not None:
+        reasons.append(f"`perception.map_hires_logits` is not None under `{BANDED_FLAG}`: the banded head returns None BY DESIGN (it has no 8-way "
+                       f"raster) -- a tensor there means the 8-way branch ran, not the banded head")
+    mb = pout.get("map_banded")
+    lgs = mb.get("logits") if isinstance(mb, dict) else None
+    uno = mb.get("unobs") if isinstance(mb, dict) else None
+    if not isinstance(lgs, (list, tuple)):
+        reasons.append("`perception.map_banded.logits` is ABSENT from the forward output -- the banded logits were not produced (the F3 "
+                       "pass-through class: the head ran, its channels did not reach the output)")
+        return reasons, det
+    det["logits"] = [list(map(int, t.shape)) if torch.is_tensor(t) else None for t in lgs]
+    if len(lgs) != len(geom):
+        reasons.append(f"`map_banded.logits` holds {len(lgs)} tensor(s), the banded head has {len(geom)} bands {[g.name for g in geom]}")
+    batch = set()
+    for g, t in zip(geom, lgs):
+        want = (int(M.N_CHANNELS), int(g.rows), int(g.cols))
+        if not torch.is_tensor(t) or t.ndim != 4:
+            reasons.append(f"band {g.name}: the logits are not a 4-D tensor ({type(t).__name__})")
+            continue
+        batch.add(int(t.shape[0]))
+        if tuple(int(x) for x in t.shape[1:]) != want:
+            reasons.append(f"band {g.name}: logits {tuple(int(x) for x in t.shape)} are not [B, {want[0]}, {want[1]}, {want[2]}] "
+                           f"(band_geometry of the {x_max_m:g} m x +-{y_half_m:g} m extent)")
+        elif not bool(torch.isfinite(t.detach()).all()):
+            reasons.append(f"band {g.name}: the logits carry NaN / Inf")
+    if len(batch) > 1:
+        reasons.append(f"the bands' logits disagree on the batch size {sorted(batch)}")
+    if not isinstance(uno, (list, tuple)) or len(uno) != len(geom):
+        reasons.append(f"`perception.map_banded.unobs` is absent or does not hold {len(geom)} masks (found {None if uno is None else len(uno)}) -- "
+                       f"the lift's own validity must be emitted WITH the map")
+    else:
+        for g, u in zip(geom, uno):
+            if not torch.is_tensor(u) or u.dtype != torch.bool or tuple(int(x) for x in u.shape[1:]) != (int(g.rows), int(g.cols)):
+                reasons.append(f"band {g.name}: `unobs` is not a bool [B, {g.rows}, {g.cols}] mask "
+                               f"({tuple(u.shape) if torch.is_tensor(u) else type(u).__name__} {getattr(u, 'dtype', '')})")
+    return reasons, det
+
+
+def hires_output_reasons(prof: dict, out: Any, image_hw: tuple[int, int],
+                         banded: tuple[float, float] | None = None) -> tuple[list[str], dict]:
+    """NEW-2 on a FORWARD's output: `fmap_s8` reaches the output (the F3 pass-through class), the
+    logits are 600 x 320, the map-only lift is 240 x 128 (0.25 m).
+
+    `banded=(x_max_m, y_half_m)` (`banded_arg`: the run's extent, for an argv carrying `--r9-map-banded`; None for every other) swaps
+    the 8-way LOGITS check for the banded head's (`banded_output_reasons`: `map_hires_logits` is None by design and
+    `perception.map_banded.logits` / `.unobs` hold the three bands at `band_geometry`); the `fmap_s8` and lift checks apply to both."""
+    h = prof["map_hires"]
+    tok = h["name_token"]
+    reasons: list[str] = []
+    paths = _tensor_paths(out)
+    det: dict[str, Any] = {"hires_paths": [(p, s) for p, s in paths if tok in p.lower()][:20]}
+    fk = h["fmap_key"]
+    fm = [s for p, s in paths if p == f"out.{fk}"]
+    det[fk] = fm[0] if fm else None
+    if not fm:
+        reasons.append(f"`{fk}` is ABSENT from the forward output -- the stride-8 map does not "
+                       f"reach the 10 cm branch's consumers (the F3 pass-through class)")
+    else:
+        want = (image_hw[0] // h["trunk_stride"], image_hw[1] // h["trunk_stride"])
+        if tuple(fm[0][-2:]) != want:
+            reasons.append(f"`{fk}` spatial {tuple(fm[0][-2:])} != stride-{h['trunk_stride']} "
+                           f"{want}")
+    if banded is not None:
+        br_, bd_ = banded_output_reasons(out, banded[0], banded[1], banded[2] if len(banded) > 2 else 10.0)
+        det["banded"] = bd_
+        reasons += br_
+    else:
+        lg = [(p, s) for p, s in paths if tok in p.lower() and "logit" in p.lower()]
+        det["logits"] = lg[:4]
+        if not lg:
+            reasons.append(f"no forward output named with '{tok}' and 'logit' -- the 10 cm logits "
+                           f"were not produced")
+        elif any(tuple(s[-2:]) != tuple(h["logits_hw"]) for _, s in lg):
+            reasons.append(f"10 cm logits {[s for _, s in lg]} are not {tuple(h['logits_hw'])}")
+    lf = [(p, s) for p, s in paths if tok in p.lower() and "logit" not in p.lower()
+          and ("lift" in p.lower() or "bev" in p.lower()) and len(s) >= 3]
+    det["lift"] = lf[:4]
+    if not lf:
+        reasons.append(f"no forward output named with '{tok}' and 'lift'/'bev' -- the 0.25 m "
+                       f"map-only lift cannot be verified")
+    elif not any(tuple(s[-2:]) == tuple(h["lift_hw"]) for _, s in lf):
+        reasons.append(f"the '{tok}' lift/bev outputs {[s for _, s in lf]} carry no "
+                       f"{tuple(h['lift_hw'])} (0.25 m) grid")
+    return reasons, det
+
+
+def _pnorm(p: Any) -> str:
+    return str(p).replace("\\", "/").rstrip("/")
+
+
+def nav_tau_reasons(prof: dict, argv: list[str], record: str | None,
+                    pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """FIX-4: `--graft-nav-compliance` is REFUSED without a RECORDED tau derived on THIS arm's
+    train split, status OK, and equal to `--nav-compliance-tau-rad`. Two record schemas:
+
+    * BANKED (ab436ee, `…/2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json`,
+      written on Thor by the fixes agent's `derive_navc_tau.py`): `inputs.manifest.path` is the
+      `_v2manifest.pt` INSIDE the arm's `--v2-cache`, `inputs.labels.path` IS its `--v7-labels`,
+      and `inputs.labels.sha256` must equal the labels file THIS host reads (content, not name);
+    * in-repo (`stack/scripts/refcv7_derive_nav_tau.py --json`): `split_v2_cache` / `labels`.
+    The record's own sha256 is bound in the token (`gate:nav-tau-record`)."""
+    nc = prof.get("nav_compliance") or {}
+    sw = nc.get("switch")
+    if not sw or not has_flag(argv, sw):
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True, "record": record}
+    if not record:
+        return [f"{sw} is passed without a RECORDED tau: give the gate --nav-tau-record <the "
+                f"banked nav_compliance_tau_train.json> (FIX-4: an invented tolerance decides "
+                f"what counts as compliant with no evidence class)"], det
+    if not Path(record).is_file():
+        return [f"--nav-tau-record {record} does not exist"], det
+    rec = read_json(record)
+    det["sha256"] = sha256_file(record)
+    reasons = []
+    if rec.get("status") != "OK":
+        reasons.append(f"the tau record's status is {rec.get('status')!r}, not OK")
+    tv = flag_values(argv, nc["tau_flag"])
+    try:
+        t_argv = float(tv[0]) if tv else None
+    except ValueError:
+        t_argv = None
+    t_rec = rec.get("tau")
+    det.update(tau_record=t_rec, tau_argv=t_argv)
+    if t_rec is None or t_argv is None or abs(float(t_rec) - t_argv) > 1e-9 * max(1.0, abs(t_argv)):
+        reasons.append(f"{nc['tau_flag']} {tv} is not the recorded tau {t_rec}")
+    cache_flag = nc.get("cache_flag", "--v2-cache")
+    labels_flag = nc.get("labels_flag", "--v7-labels")
+    want_cache, want_labels = flag_values(argv, cache_flag), flag_values(argv, labels_flag)
+    inputs = rec.get("inputs") if isinstance(rec.get("inputs"), dict) else None
+    inh = prof.get("nav_tau_inherited")
+    if inh:
+        # refcv8-nt (PREREG_NT_DECIDE sec. 2): the tau is INHERITED from the profile's named record, never re-derived
+        # on this arm's split. The record must be THAT file by content (sha256), status OK, its tau the pinned
+        # literal and the argv's; the split binding below is waived -- and the waiver is in the evidence.
+        det["inherited"] = dict(inh)
+        if det["sha256"] != inh.get("sha256"):
+            reasons.append(f"the tau record {record} (sha256 {det['sha256'][:16]}) is not the inherited record "
+                           f"{inh.get('record')} (sha256 {str(inh.get('sha256'))[:16]}) this profile names")
+        if t_rec is None or abs(float(t_rec) - float(inh.get("tau"))) > 1e-12:
+            reasons.append(f"the tau record's tau {t_rec} is not the inherited literal {inh.get('tau')}")
+        return reasons, det
+    if inputs is not None:
+        det["schema"] = "banked (inputs.manifest / inputs.labels)"
+        man = (inputs.get("manifest") or {}).get("path")
+        lab = inputs.get("labels") or {}
+        det.update(manifest=man, labels=lab.get("path"))
+        man_dir = _pnorm(man).rsplit("/", 1)[0] if man else None
+        if not want_cache or man_dir != _pnorm(want_cache[0]):
+            reasons.append(f"the tau record was derived on the manifest {man!r}, not inside this "
+                           f"arm's {cache_flag} {want_cache} -- a tau from another split is "
+                           f"tuning elsewhere")
+        if not want_labels or _pnorm(lab.get("path")) != _pnorm(want_labels[0]):
+            reasons.append(f"the tau record was derived on the labels {lab.get('path')!r}, not "
+                           f"on this arm's {labels_flag} {want_labels}")
+        elif lab.get("sha256"):
+            local = map_path(want_labels[0], pmap or [])
+            if not Path(local).is_file():
+                reasons.append(f"the tau record's labels sha256 cannot be checked: {local} is "
+                               f"not readable on this host")
+            else:
+                got = sha256_file(local)
+                det["labels_sha256_here"] = got
+                if got != lab["sha256"]:
+                    reasons.append(f"the labels this host reads ({got[:16]}) are not the labels "
+                                   f"the tau was derived on ({str(lab['sha256'])[:16]})")
+        else:
+            reasons.append("the tau record carries no inputs.labels.sha256 -- its split cannot be "
+                           "bound by content")
+    else:
+        det["schema"] = "in-repo (split_v2_cache / labels)"
+        for key, flag in (("split_v2_cache", cache_flag), ("labels", labels_flag)):
+            want = flag_values(argv, flag)
+            got = rec.get(key)
+            det[key] = got
+            if not want or _pnorm(got) != _pnorm(want[0]):
+                reasons.append(f"the tau record was derived on {key}={got!r}, not on this arm's "
+                               f"{flag} {want} -- a tau from another split is tuning elsewhere")
+    return reasons, det
+
+
+def trigger_on(argv: list[str], trig: str) -> bool:
+    """A `required_values_when` / `admitted_values_when` TRIGGER: a plain flag fires when the argv PASSES it; `FLAG=VALUE` (E1-NEAR20) fires only when
+    the argv passes FLAG with exactly that (float-equal) value -- so `--r9-map-banded-near-m=20` holds an M1N20 argv to near lift 20 while an argv that
+    passes the flag with 10 stays on the banded head's default 10."""
+    if "=" not in trig:
+        return has_flag(argv, trig)
+    flag, _, want = trig.partition("=")
+    got = flag_values(argv, flag) or []
+    try:
+        return len(got) == 1 and float(got[0]) == float(want)
+    except ValueError:
+        return got == [want]
+
+
+#: the fixes agent's frozen REQUIRED-ON helper (landed ab436ee, `declared_vs_built.py`):
+#: `check_refcv7_required(model, args, *, tau_file=None) -> list[Mismatch]`
+DVB_REQUIRED_HELPER = "check_refcv7_required"
+
+
+def required_on_reasons(prof: dict, argv: list[str], D=None, model=None,
+                        args=None, tau_file: str | None = None) -> tuple[list[str], dict]:
+    """SPEC_REFCV7 section 7 (A2, PI ruling E1, "assure that the three selection mechanism are
+    on"): every `required_on` flag is PASSED, and -- when the model exists -- the fixes agent's
+    frozen helper `declared_vs_built.check_refcv7_required(model, args, tau_file=)` confirms each
+    one BUILT and ON (and, with the banked tau file, argv's tau equal to it). Inert for a profile
+    that requires nothing."""
+    req = tuple(prof.get("required_on", ()))
+    vals = dict(prof.get("required_values") or {})
+    # `required_values_when` {trigger flag: {flag: value}}: an argv that PASSES the trigger is held to the override instead
+    # (BANDED-NL: the banded map head requires near lift 10, every other arm refcv8's 20). An override is checked exactly like
+    # a plain required value, and the trigger is named in the refusal.
+    over_why: dict[str, str] = {}
+    for trig, over in (prof.get("required_values_when") or {}).items():
+        if trigger_on(argv, trig):
+            for f, v in dict(over).items():
+                vals[f] = v
+                over_why[f] = f"{trig} is passed: " + (prof.get("required_values_when_why") or {}).get(trig, "a recorded ruling")
+    # `admitted_values_when` {trigger flag: {flag: (v1, v2, ...)}}: an argv that PASSES the trigger must carry exactly ONE value and it
+    # must equal (as a float) one of the admitted ones -- a pre-registered SET, never a free value (BANDED-NL: the E1 map arms' weights)
+    adm: dict[str, tuple[str, tuple]] = {}
+    for trig, over in (prof.get("admitted_values_when") or {}).items():
+        if trigger_on(argv, trig):
+            for f, allowed in dict(over).items():
+                adm[f] = (trig, tuple(allowed))
+                vals.pop(f, None)
+    if not req and not vals and not prof.get("required_positive"):
+        return [], {"required_on": []}
+    det: dict[str, Any] = {"required_on": list(req), "required_values": vals}
+    if adm:
+        det["admitted_values"] = {f: [str(x) for x in al] for f, (_, al) in adm.items()}
+    reasons = [f"{f} is REQUIRED ON for a {prof['name']} launch (SPEC_REFCV7 7, PI ruling E1) "
+               f"and the argv does not pass it" for f in req if not has_flag(argv, f)]
+    for f, v in vals.items():
+        got = flag_values(argv, f)
+        want = [str(x) for x in v] if isinstance(v, (list, tuple)) else [str(v)]
+        if got != want:
+            why = over_why.get(f) or (prof.get("required_values_why") or {}).get(f, "a recorded ruling")
+            reasons.append(f"{' '.join([f, *want]) if want else f + ' (a switch: no value)'} is REQUIRED for a {prof['name']} launch "
+                           f"({why}) and the argv has {got}")
+    for f, (trig, allowed) in adm.items():
+        got = flag_values(argv, f)
+        try:
+            ok = len(got) == 1 and any(float(got[0]) == float(x) for x in allowed)
+        except ValueError:
+            ok = False
+        if not ok:
+            why = (prof.get("required_values_when_why") or {}).get(trig, "a recorded ruling")
+            reasons.append(f"{f} must be ONE of {[str(x) for x in allowed]} for a {prof['name']} launch ({trig} is passed: "
+                           f"{why}) and the argv has {got}")
+    for f in prof.get("required_positive", ()):
+        got = flag_values(argv, f)
+        try:
+            ok = bool(got) and math.isfinite(float(got[0])) and float(got[0]) > 0.0
+        except ValueError:
+            ok = False
+        if not ok:
+            reasons.append(f"{f} must be passed with a value > 0 for a {prof['name']} launch (a "
+                           f"built head with no live weight is declared-but-inert); the argv "
+                           f"has {got}")
+    if not req:
+        return reasons, det
+    if D is None or model is None:
+        return reasons, det
+    lst = getattr(D, "REFCV7_REQUIRED_ON", None)
+    norm = {(s if str(s).startswith("--") else "--" + str(s).replace("_", "-"))
+            for s in (lst or ())}
+    det["dvb_required_on"] = sorted(norm) if lst is not None else None
+    if lst is None:
+        reasons.append("declared_vs_built publishes no REFCV7_REQUIRED_ON list (the fixes "
+                       "agent's frozen API is not landed) -- BUILT-and-ON cannot be read")
+    elif not set(req) <= norm:
+        reasons.append(f"declared_vs_built.REFCV7_REQUIRED_ON {sorted(norm)} omits "
+                       f"{sorted(set(req) - norm)}")
+    fn = getattr(D, DVB_REQUIRED_HELPER, None)
+    det["helper"] = DVB_REQUIRED_HELPER if callable(fn) else None
+    if not callable(fn):
+        reasons.append(f"declared_vs_built has no `{DVB_REQUIRED_HELPER}` (the fixes agent's "
+                       f"frozen REQUIRED-ON API) -- BUILT-and-ON cannot be read")
+        return reasons, det
+    tf = tau_file if (tau_file and Path(tau_file).is_file()) else None
+    rp_kw = ({"residual_prior": str(prof["dvb_residual_prior"])} if prof.get("dvb_residual_prior") else {})
+    det["helper_call"] = (f"{DVB_REQUIRED_HELPER}(model, args, tau_file="
+                          f"{'<the banked tau record>' if tf else None}"
+                          f"{', residual_prior=' + repr(rp_kw['residual_prior']) if rp_kw else ''})")
+    try:
+        res = fn(model, args, tau_file=tf, **rp_kw)
+    except SystemExit as e:
+        reasons.append(f"REQUIRED-ON ({DVB_REQUIRED_HELPER}) refused: {str(e)[:400]}")
+        return reasons, det
+    except TypeError as e:
+        reasons.append(f"REQUIRED-ON helper {det['helper_call']} -- API drift: {e}")
+        return reasons, det
+    det["helper_result"] = [str(x)[:300] for x in (res or [])] if isinstance(
+        res, (list, tuple)) else repr(res)[:300]
+    if not isinstance(res, (list, tuple)):
+        reasons.append(f"{DVB_REQUIRED_HELPER} returned {type(res).__name__}, not a list")
+    elif res:
+        reasons.append(f"REQUIRED-ON: {len(res)} mechanism(s) not BUILT and ON: "
+                       + " | ".join(str(x)[:240] for x in list(res)[:6]))
+    return reasons, det
+
+
+def judge_ceiling(prof: dict, argv: list[str], calls: list[dict], *,
+                  eval_in_argv: bool) -> tuple[list[str], dict]:
+    """SPEC_REFCV7 section 7: the max-speed ceiling filter is INFERENCE-ONLY. `calls` records every
+    `SpeedCeilingFilter` application in the smoke, with the mode of the model forward it ran in.
+    Keyed on the flag; inert without it."""
+    flag = prof.get("ceiling_filter_flag")
+    if not flag or not has_flag(argv, flag):
+        return [], {"on": False}
+    tr = [c for c in calls if c.get("training")]
+    ev = [c for c in calls if not c.get("training")]
+    det = {"on": True, "n_applied_in_training": len(tr), "n_applied_in_eval": len(ev),
+           "eval_clipped_frac_max": max((c.get("clipped", 0.0) for c in ev), default=None)}
+    reasons = []
+    if tr:
+        reasons.append(f"the max-speed ceiling mask was ACTIVE in {len(tr)} TRAINING forward(s): "
+                       f"the oracle ceiling (ego-future) would shape training (SPEC_REFCV7 7 -- "
+                       f"inference only)")
+    if not eval_in_argv:
+        reasons.append("the launch argv runs no in-training eval, so the smoke cannot show the "
+                       "ceiling mask ACTIVE in an eval step")
+    elif not ev:
+        reasons.append("the ceiling mask was never ACTIVE in an eval-mode forward -- the filter "
+                       "the argv declares did not act at inference")
+    return reasons, det
+
+
+def tau_config_reasons(record: str | None, config: dict | None) -> tuple[list[str], dict]:
+    """SPEC_REFCV7 section 7: the run record carries the tau FILE. The fixes agent's batch 2
+    (`--nav-compliance-tau-file <json>`) has the trainer read tau from the file and stamp
+    `{path, sha256, tau}` into config.json; the gate keys on that stamp -- a dict node anywhere
+    in config.json with `sha256` == the banked record's sha256 and `tau` == its tau."""
+    if not record or not Path(record).is_file():
+        return [], {}
+    want = sha256_file(record)
+    t_want = read_json(record).get("tau")
+    found: list[dict] = []
+
+    def walk(o):
+        if isinstance(o, dict):
+            if "sha256" in o and "tau" in o:
+                found.append({k: o.get(k) for k in ("path", "sha256", "tau")})
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    walk(config or {})
+    det = {"tau_file_sha256": want, "tau": t_want, "stamps_found": found[:4]}
+    ok = [s for s in found if s.get("sha256") == want and _finite_num(s.get("tau"))
+          and t_want is not None and float(s["tau"]) == float(t_want)]
+    if not ok:
+        return [f"FIX-4: config.json carries no {{path, sha256, tau}} stamp of the tau file "
+                f"(sha256 {want[:16]}, tau {t_want}) -- found {found[:2]}; the trainer stamps it "
+                f"from --nav-compliance-tau-file (fixes batch 2)"], det
+    return [], det
+
+
+def tau_file_flag_reasons(prof: dict, argv: list[str], parser, record: str | None,
+                          pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """SPEC_REFCV7 section 7 via the fixes agent's batch 2: a `--graft-nav-compliance` launch
+    passes `--nav-compliance-tau-file`, and it names the SAME banked file the gate binds (by
+    content). A trainer without the flag cannot put the tau file into config.json."""
+    nc = prof.get("nav_compliance") or {}
+    sw, ff = nc.get("switch"), nc.get("tau_file_flag")
+    if not sw or not ff or not has_flag(argv, sw):
+        return [], {"on": False}
+    known = any(ff in a.option_strings for a in getattr(parser, "_actions", []))
+    det: dict[str, Any] = {"on": True, "trainer_has_flag": known}
+    if not known:
+        return [f"FIX-4: the trainer has no {ff} (the fixes agent's batch 2 is not in this "
+                f"tree) -- the tau FILE cannot reach config.json (SPEC_REFCV7 7)"], det
+    v = flag_values(argv, ff)
+    if not v:
+        return [f"FIX-4: {sw} is passed without {ff} <the banked tau record>"], det
+    local = map_path(v[0], list(pmap or []))
+    det["argv_file"] = v[0]
+    if not Path(local).is_file():
+        return [f"FIX-4: {ff} {v[0]} is not readable on this host"], det
+    got = sha256_file(local)
+    det["argv_file_sha256"] = got
+    if not record or not Path(record).is_file():
+        return [f"FIX-4: the gate has no tau record to compare {ff} with"], det
+    if got != sha256_file(record):
+        return [f"FIX-4: {ff} names a file ({got[:16]}) that is not the banked tau record "
+                f"({sha256_file(record)[:16]})"], det
+    return [], det
+
+
+def passthrough_reasons(prof: dict, argv: list[str], args, T) -> tuple[list[str], dict]:
+    """The decoder pass-through, read off the ONE tuple the forward iterates
+    (`RefCModel.DECODER_PASSTHROUGH`, fixes agent 2026-09-26): F3's per-stage keys when F3 is
+    declared, NEW-2's `fmap_s8` when the 10 cm head is. The regression arms patch this tuple."""
+    from tanitad.refs import refc
+    pt = getattr(refc.RefCModel, "DECODER_PASSTHROUGH", None)
+    det: dict[str, Any] = {"decoder_passthrough": list(pt) if pt is not None else None}
+    reasons: list[str] = []
+    need = []
+    try:
+        fl = T.refcv6_flags_from_args(args)
+        if fl is not None and bool(getattr(fl, "f3_per_layer", False)):
+            need += ["layer_u0_hat", "layer_logits"]
+    except Exception as e:                                # noqa: BLE001
+        det["f3_flags_error"] = str(e)
+    if hires_on(prof, argv):
+        need.append(prof["map_hires"]["fmap_key"])
+    det["required"] = need
+    if pt is None:
+        if need:
+            det["note"] = ("this tree has no RefCModel.DECODER_PASSTHROUGH (pre-fix): the "
+                           "pass-through is an inline list the gate cannot read statically; "
+                           "G-LIVE asserts the keys at runtime")
+            if hires_on(prof, argv):
+                reasons.append("NEW-2 needs RefCModel.DECODER_PASSTHROUGH to carry "
+                               f"`{prof['map_hires']['fmap_key']}` and this tree has no such "
+                               "tuple")
+        return reasons, det
+    miss = [k for k in need if k not in pt]
+    if miss:
+        reasons.append(f"RefCModel.DECODER_PASSTHROUGH {list(pt)} omits {miss}: the forward "
+                       f"drops them (the D-REFCV6-F3-WHITELIST class)")
+    return reasons, det
+
+
+def judge_dvb(D, model, args, parser, argv, why_missing: str = "", *,
+              forbid_kinds: tuple = ()) -> tuple[list[str], dict]:
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    # --- the gate's own behavioural probe: independent of the module under test --------------
+    eq = equalize_probe(model)
+    det["gate_probe_equalize"] = eq
+    want_eq = int(getattr(args, "equalize_bottom_rows", 0) or 0)
+    if eq.get("trunk") is None:
+        if want_eq:
+            reasons.append(f"argv declares --equalize-bottom-rows {want_eq} but the model has no "
+                           f"TimmResNetTrunk to equalise")
+    elif eq["rows_equalised_measured"] != want_eq:
+        reasons.append(f"trunk equalisation: argv declares {want_eq} bottom rows, the BUILT trunk "
+                       f"equalises {eq['rows_equalised_measured']} (measured by behaviour; "
+                       f"D-REFCV6-EQUALIZE-DROPPED)")
+    # --- the module (the fixes agent's frozen API) ------------------------------------------
+    if D is None:
+        reasons.append(f"tanitad.train.declared_vs_built is not importable -- module not yet "
+                       f"landed => the gate FAILS ({why_missing})")
+        return reasons, det
+    fn = getattr(D, "check", None)
+    if not callable(fn):
+        reasons.append("tanitad.train.declared_vs_built has no callable `check`")
+        return reasons, det
+    call = f"check(model, args, build_parser(), forbid_kinds={tuple(forbid_kinds)!r})"
+    det["dvb_call"] = call
+    try:
+        mism = fn(model, args, parser, forbid_kinds=tuple(forbid_kinds))
+    except TypeError as e:
+        reasons.append(f"declared_vs_built.{call} is not accepted -- API drift: {e}")
+        return reasons, det
+    if not isinstance(mism, (list, tuple)):
+        reasons.append(f"declared_vs_built.check returned {type(mism).__name__}, not a list")
+        return reasons, det
+    det["mismatches"] = [(dataclasses.asdict(m) if dataclasses.is_dataclass(m) else
+                          (m if isinstance(m, (dict, str)) else repr(m))) for m in mism]
+    if mism:
+        reasons.append(f"declared_vs_built: {len(mism)} mismatch(es): "
+                       + " | ".join(str(m)[:240] for m in list(mism)[:12]))
+    cov = getattr(D, "coverage", None)
+    if callable(cov):
+        unc = list(cov(parser))
+        det["uncovered_dests"] = unc
+        det["registry_size"] = len(getattr(D, "REGISTRY", {}) or {})
+    else:
+        reasons.append("declared_vs_built has no coverage(parser): the gate cannot show that "
+                       "every trainer flag has an entry")
+    # --- the module's own positive control: flip one built lever, it must SEE it -------------
+    trunk = _find_trunk(model)
+    if trunk is not None and hasattr(trunk.cfg, "equalize_bottom_rows"):
+        old = trunk.cfg.equalize_bottom_rows
+        try:
+            object.__setattr__(trunk.cfg, "equalize_bottom_rows", 0 if int(old or 0) else 43)
+            ctl = fn(model, args, parser, forbid_kinds=tuple(forbid_kinds))
+        finally:
+            object.__setattr__(trunk.cfg, "equalize_bottom_rows", old)
+        n_ctl = len(ctl) if isinstance(ctl, (list, tuple)) else None
+        det["control_flip_equalize_n_mismatches"] = n_ctl
+        if not (n_ctl is not None and n_ctl > len(mism)):
+            reasons.append("declared_vs_built is BLIND to the FIX-3 lever: flipping the built "
+                           "trunk's equalize_bottom_rows did not add a mismatch (control)")
+    else:
+        det["control_flip_equalize_n_mismatches"] = "not applicable (no timm trunk)"
+    return reasons, det
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-LIVE: declared loss terms, derived from the argv and exhaustive over the trainer's registries  #
+# --------------------------------------------------------------------------------------------- #
+def _w(a, dest: str) -> float:
+    try:
+        return float(getattr(a, dest, 0.0) or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+#: every dest in the trainer's `REFC_WEIGHT_GATES` -> (predicate over args, loss keys, min
+#: fraction of training steps, why). ⛔ EXHAUSTIVE: a weight dest the trainer registers and this
+#: table does not name makes G-LIVE FAIL -- the next `--w-*` cannot ship unchecked.
+LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
+    "w_u0": (lambda a: _w(a, "w_u0") > 0 and str(getattr(a, "sampler", "none")) == "ddim"
+             and not bool(getattr(a, "f6_w_u0_zero", False)), ("u0",), 1.0,
+             "the control-space x0 loss (WP-4)"),
+    "w_agent": (lambda a: str(getattr(a, "agents", "off")) == "head" and _w(a, "w_agent") > 0,
+                ("agent_presence", "agent_centre"), 0.5,
+                "the detection set loss (label-dependent: a batch with no labelled window skips)"),
+    "w_bev_aux": (lambda a: _w(a, "w_bev_aux") > 0 and str(getattr(a, "bev_aux", "off")) != "off",
+                  ("bev",), 0.5, "WP-D BEV auxiliary"),
+    "w_tac_goal": (lambda a: _w(a, "w_tac_goal") > 0, ("tac_goal",), 1.0,
+                   "the 22-token tactical goal set"),
+    "agent_w_project": (lambda a: _w(a, "agent_w_project") > 0
+                        and str(getattr(a, "agents", "off")) != "off", ("agent_project",), 0.5,
+                        "monocular projection term"),
+    "agent_w_ground": (lambda a: _w(a, "agent_w_ground") > 0
+                       and str(getattr(a, "agents", "off")) != "off", ("agent_ground",), 0.5,
+                       "ground prior term"),
+    "goal_point_w": (lambda a: bool(getattr(a, "goal_point_inject", False))
+                     and _w(a, "goal_point_w") > 0, ("goal_point",), 1.0, "E15 goal point"),
+    "w_map": (lambda a: _w(a, "w_map") > 0, ("map",), 1.0, "refcv6 SAM3 BEV map"),
+    "w_box3d": (lambda a: _w(a, "w_box3d") > 0, ("box3d",), 1.0, "refcv6 3-D boxes"),
+    "w_tac_v6": (lambda a: _w(a, "w_tac_v6") > 0, ("tac_v6",), 1.0,
+                 "refcv6 tactical behaviour decoder"),
+    "w_r7_wta": (lambda a: _w(a, "w_r7_wta") > 0, ("r7_wta",), 1.0,
+                 "DrivoR-T WTA decoder (named refcv7_* until its rename)"),
+    "w_r7_scorer": (lambda a: _w(a, "w_r7_scorer") > 0, ("r7_scorer",), 1.0,
+                    "DrivoR-T scorer (named refcv7_* until its rename)"),
+    # ⚠️ PROVISIONAL (SPEC_REFCV7 6.2, NEW-2): dest and loss key follow the NEW-2 agent's names
+    # until its LANDING_READY. Registered BEFORE the trainer has the weight, so the day it lands
+    # the exhaustiveness check above already knows it.
+    "w_map_hires": (lambda a: _w(a, "w_map_hires") > 0
+                    and str(getattr(a, "map_hires", "off")) == "on", ("map_hires",), 1.0,
+                    "NEW-2: the 10 cm map head's hard-label CE"),
+    # refcv8 WP-B (2026-10-04): the keys are `refcv8_train.r8_losses`' telemetry; each is emitted on EVERY
+    # training step once its term is reached (an all-unlabelled batch still writes the attached zero).
+    "w_r8_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_cons") > 0, ("r8_cons",), 1.0,
+                  "refcv8 constraint heads"),
+    "w_r8_alloc_l1": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_alloc_l1") > 0
+                      and int(getattr(a, "r8_n_alloc", 0) or 0) > 0, ("r8_alloc_l1",), 1.0,
+                      "refcv8 matched L1 on the allocated candidates"),
+    "w_r8_sat": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_sat") > 0
+                 and int(getattr(a, "r8_n_alloc", 0) or 0) > 0, ("r8_sat",), 1.0,
+                 "refcv8 constraint-satisfaction loss"),
+    "w_r8_listwise": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_listwise") > 0,
+                      ("r8_listwise",), 1.0, "refcv8 listwise selection CE (X1)"),
+    "w_r8_subscore": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_subscore") > 0,
+                      ("r8_subscore",), 1.0, "refcv8 sub-score critics (X1h)"),
+    "w_r8_drivable": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_drivable") > 0
+                      and bool(getattr(a, "r8_critic_drivable", False))
+                      and str(getattr(a, "map_hires", "off")) == "on", ("r8_drv",), 1.0,
+                      "refcv8 drivable-area critic BCE"),
+    "w_r8_v9_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_v9_cons") > 0
+                     and bool(getattr(a, "r8_v9_labels", None)), ("r8_v9_cons",), 1.0,
+                     "refcv8 v9 constraint vectors (MM ruling Q2)"),
+    # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): live only in the calibration stage, where the R9 loss IS the loss
+    "w_r9_prog": (lambda a: bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False))
+                  and _w(a, "w_r9_prog") > 0, ("r9_l_prog",), 1.0, "refcv9 R9-PF progress L1"),
+    "w_r9_regime": (lambda a: bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False))
+                    and _w(a, "w_r9_regime") > 0, ("r9_l_regime",), 1.0, "refcv9 R9-PF decision CE"),
+    # refcv9 warm start (PI 2026-10-27): the map precision term rides the 10 cm map term and is emitted on EVERY training
+    # step once live (an all-unlabelled batch writes the attached zero, `map_precision` / `_map_hires_loss`)
+    "w_map_fp": (lambda a: _w(a, "w_map_fp") > 0 and str(getattr(a, "map_hires", "off")) == "on"
+                 and _w(a, "w_map_hires") > 0, ("map_fp",), 1.0,
+                 "refcv9 map precision: own sidewalk + edge mass on GT-drivable near-field corridor cells"),
+    # refcv9 E1-REC3 (arms B1 / B2 / B2c): the TRAINING-ONLY box aux heads. The box overfit record does NOT certify them (E1_BOX_AUX_FLAGS); THIS is
+    # their liveness gate: the loss key present on EVERY training step and finite whenever the weight is positive (INERT at 0), and -- through
+    # the leaf check of `judge_live` -- every new parameter receiving a gradient. The keys are the ones the heads' `loss_term` writes into the
+    # perception rig's loss dict (`box_depth_aux_flag.loss_term`, `persp3d_aux_flag.loss_term`: the unweighted loss + its parts, always emitted).
+    "w_box_depth": (lambda a: _w(a, "w_box_depth") > 0, ("box_depth",), 1.0,
+                    "refcv9 B1: the training-only box-derived depth head's soft LID cross-entropy (C3)"),
+    "w_box_persp": (lambda a: _w(a, "w_box_persp") > 0,
+                    ("box_persp", "box_persp_heat", "box_persp_depth", "box_persp_size", "box_persp_yaw", "box_persp_ctr"), 1.0,
+                    "refcv9 B2: the training-only perspective 3D aux head (C4): the summed loss and its five parts"),
+    "w_box_bev2": (lambda a: _w(a, "w_box_bev2") > 0,
+                   ("box_bev2", "box_bev2_heat", "box_bev2_pos", "box_bev2_size", "box_bev2_yaw", "box_bev2_ctr"), 1.0,
+                   "refcv9 B2c: the parameter-matched second BEV head (C4's capacity control): the summed loss and its five parts"),
+}
+#: every field of `refcv6_diffusion.DiffusionFlags` -> the loss keys it declares ( () = none,
+#: with the reason). ⛔ EXHAUSTIVE for the same reason.
+LIVE_FLAG_RULES: dict[str, tuple[tuple[str, ...], str]] = {
+    "f3_per_layer": (("cascade",), "F3 per-stage cascade loss (D-REFCV6-F3-WHITELIST)"),
+    "f1_random_t": ((), "a sampling change; its effect is G-DVB's"),
+    "f1_t_max": ((), "a constant of F1"),
+    "f2_dd_step": ((), "step semantics; no loss term"),
+    "f4_adaln": ((), "architecture; its modulations must get GRADIENT (leaf check)"),
+    "f4_zero_init": ((), "an init choice"),
+    "f5_emitting_conf": ((), "the emitting pass's confidence; trained through `cls`"),
+    "f5_refuse_blind_rank": ((), "a refusal"),
+    "f5_focal": ((), "changes HOW `cls` is computed, not whether"),
+    "f5_focal_gamma": ((), "a constant of F5"),
+    "f5_focal_alpha": ((), "a constant of F5"),
+    "f6_w_u0_zero": ((), "REMOVES the u0 term (handled in the w_u0 rule)"),
+    "f7_samples_per_anchor": ((), "samples per anchor; no new key"),
+    "f7_ack_eval_join": ((), "an acknowledgement"),
+    "f8_flat_waypoint_noise": ((), "noise shape; no loss key"),
+    "f9_assert_vocab": ((), "an assertion"),
+    "f9_n_anchors": ((), "a constant of F9"),
+}
+LIVE_ALWAYS = (("loss", "traj", "cls"), "the planner objective and the anchor classifier")
+#: refcv9 C7 (`--r9-perc-rig`, the E1 perception-only rig): the rig builds NO planner, so `compute_losses_perc_rig` returns only
+#: `loss` + the perception terms. G-LIVE keyed on `args.r9_perc_rig` (INERT when off, like every switch here) replaces the planner
+#: term by this one; every LIVE_WEIGHT_RULES term whose predicate holds (agent / box3d / map_hires) still applies.
+RIG_LIVE = (("loss",), "the perception rig's summed loss (agent / box3d / map_hires terms; the rig builds no planner)")
+#: ... and a rig smoke step that emits ANY of these means the planner / tactical modules were BUILT: the planner objective
+#: (`traj`, `cls`, `cascade`, the u0 term), the selection / lat / lon / law heads, the refcv6 tactical decoder (`tac_v6`,
+#: `goal_tac`, `lat_tac`, `lon_tac`, `tac_goal`), the refcv8 seams (`r8`, `r8_*`) and DrivoR-T (`r7_*`). Exact names + prefixes;
+#: the perception terms (`agent*`, `box3d*`, `map*`, `n_map_cells*`) match none.
+RIG_ABSENT = {"exact": ("traj", "cls", "cascade", "u0", "sel_v3", "lat", "lon", "law", "tac_v6", "goal_tac", "lat_tac",
+                        "lon_tac", "tac_goal", "r8"),
+              "prefixes": ("r8_", "r7_", "tac_"),
+              "why": "the rig emitted a planner term: the planner was built (the rig builds only the encoder, the agent head, "
+                     "the perception branch and the 10 cm map branch)"}
+
+
+def rig_absent_terms(args) -> list[dict]:
+    """The must-be-ABSENT rule of G-LIVE under `--r9-perc-rig`; [] (inert) when the switch is off."""
+    if not bool(getattr(args, "r9_perc_rig", False)):
+        return []
+    return [{"id": "perc_rig_no_planner", "exact": tuple(RIG_ABSENT["exact"]),
+             "prefixes": tuple(RIG_ABSENT["prefixes"]), "why": RIG_ABSENT["why"]}]
+
+
+def declared_terms(T, args) -> tuple[list[dict], list[str]]:
+    """-> (rules that apply to THIS argv, coverage problems). Nothing is hand-listed per ARM:
+    the table is keyed by the TRAINER's own registries and must cover all of them."""
+    problems: list[str] = []
+    terms = ([{"id": "perc_rig", "keys": list(RIG_LIVE[0]), "min_frac": 1.0, "why": RIG_LIVE[1]}]
+             if bool(getattr(args, "r9_perc_rig", False)) else
+             [{"id": "planner", "keys": list(LIVE_ALWAYS[0]), "min_frac": 1.0,
+               "why": LIVE_ALWAYS[1]}])
+    registry = getattr(T, "REFC_WEIGHT_GATES", None)
+    if not isinstance(registry, dict):
+        problems.append("the trainer has no REFC_WEIGHT_GATES registry to derive terms from")
+        registry = {}
+    for dest in sorted(registry):
+        if dest not in LIVE_WEIGHT_RULES:
+            problems.append(f"the trainer registers weight `{dest}` and G-LIVE has no rule for it")
+    for dest, (pred, keys, frac, why) in LIVE_WEIGHT_RULES.items():
+        if pred(args):
+            terms.append({"id": dest, "keys": list(keys), "min_frac": frac, "why": why})
+    flags = None
+    try:
+        flags = T.refcv6_flags_from_args(args)
+        fields = [f.name for f in dataclasses.fields(T._rv6.DiffusionFlags)]
+    except Exception as e:                                # noqa: BLE001
+        fields = []
+        problems.append(f"cannot enumerate the refcv6 diffusion flags: {e}")
+    for f in fields:
+        if f not in LIVE_FLAG_RULES:
+            problems.append(f"refcv6 DiffusionFlags.{f} has no G-LIVE rule")
+    if flags is not None:
+        for f, (keys, why) in LIVE_FLAG_RULES.items():
+            if keys and bool(getattr(flags, f, False)):
+                terms.append({"id": f, "keys": list(keys), "min_frac": 1.0, "why": why})
+    return terms, problems
+
+
+def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
+               expect_steps: int, summary: dict | None, train_rows: list[dict],
+               grads: dict, prior: dict | None, exit_msg: str | None,
+               admitted_dead: dict[str, str] | None = None,
+               absent_terms: list[dict] | None = None) -> tuple[list[str], dict]:
+    """The pure G-LIVE verdict. `admitted_dead`: {leaf group: reason} -- the profile's
+    `live_dead_admitted` rows whose FLAG is in the launch argv (the caller filters by argv). `steps`: one record per TRAINING `compute_losses_v3` call:
+    {"keys": [...], "nonfinite": [...], "vals": {k: float}}."""
+    reasons = list(problems)
+    det: dict[str, Any] = {"n_train_steps_seen": len(steps), "expect_steps": expect_steps}
+    if exit_msg:
+        reasons.append(f"the smoke did not complete: {exit_msg[:600]}")
+    if not (summary and summary.get("done") is True and int(summary.get("step", -1)) == expect_steps):
+        reasons.append(f"summary.json does not say done at step {expect_steps} "
+                       f"(got {summary!r}) -- the artifact, not an exit code, is the verdict")
+    # refcv8 X4: under a bf16 trunk the gradient-share reading is taken on an fp32 REPLAY of its step
+    # (`tanitad/train/grad_share.fp32_replay`, called before the training forward): ONE extra training-mode loss
+    # call per reading. MEASURED 2026-10-15 (refcv8 gate, bc2816862b8c): 101 calls for the 100-step smoke with one
+    # reading at step 50. Counted from the run's OWN record -- the replay stamps `gs_fp32_replay: 1.0` on its step's
+    # metrics row -- never assumed from the argv, so an unexplained extra call still FAILS.
+    replay_steps = sorted(int(r.get("step", -1)) for r in train_rows
+                          if r.get("gs_fp32_replay") == 1.0)
+    det["fp32_replay_steps"] = replay_steps
+    # K2DC (PREREG_K2DC_2026-11-12): the map-dose controller takes ITS reading on its own fp32 replay (`map_dose_ctl.probe_before_forward`,
+    # prefix `dcp_`), stamped `dcp_fp32_replay: 1.0` on its firing row -- one more training-mode loss call per firing, counted the same way,
+    # from the run's own record. MEASURED 2026-11-13 (K2DC final gate at df49fd59): 102 calls = 100 + gs@50 + dcp@100, refused as
+    # unexplained before this rule existed. An extra call that NO row stamps still FAILS.
+    dc_replay_steps = sorted(int(r.get("step", -1)) for r in train_rows
+                             if r.get("dcp_fp32_replay") == 1.0)
+    if dc_replay_steps:
+        det["dc_fp32_replay_steps"] = dc_replay_steps
+    if len(steps) != expect_steps + len(replay_steps) + len(dc_replay_steps):
+        reasons.append(f"{len(steps)} training loss calls observed, expected {expect_steps}"
+                       + (f" + {len(replay_steps)} fp32 gradient-share replay(s) at {replay_steps}"
+                          if replay_steps else "")
+                       + (f" + {len(dc_replay_steps)} dose-controller fp32 replay(s) at {dc_replay_steps}"
+                          if dc_replay_steps else ""))
+    n = max(len(steps), 1)
+    per_term = []
+    for t in terms:
+        for k in t["keys"]:
+            present = sum(1 for s in steps if k in s["keys"])
+            bad = sum(1 for s in steps if k in s.get("nonfinite", ()))
+            frac = present / n
+            per_term.append({"rule": t["id"], "key": k, "present_steps": present,
+                             "frac": round(frac, 4), "min_frac": t["min_frac"],
+                             "nonfinite_steps": bad, "why": t["why"]})
+            if present == 0:
+                reasons.append(f"declared term `{k}` ({t['why']}) is ABSENT from all {len(steps)} "
+                               f"training steps")
+            elif frac < t["min_frac"]:
+                reasons.append(f"declared term `{k}` present on only {present}/{len(steps)} steps "
+                               f"(< {t['min_frac']:.0%})")
+            if bad:
+                reasons.append(f"declared term `{k}` was non-finite on {bad} step(s)")
+    det["terms"] = per_term
+    # refcv9-e1rig: the must-be-ABSENT rules (`rig_absent_terms`) -- a smoke step that EMITS one of the named keys means the
+    # module that computes it was built; inert (no key in `det`) without them
+    if absent_terms:
+        per_absent = []
+        for t in absent_terms:
+            hit: dict[str, int] = {}
+            for s in steps:
+                for k in s["keys"]:
+                    if k in t["exact"] or any(k.startswith(p) for p in t["prefixes"]):
+                        hit[k] = hit.get(k, 0) + 1
+            per_absent.append({"rule": t["id"], "emitted": hit, "why": t["why"]})
+            if hit:
+                reasons.append(f"{t['why']}: {sorted(hit)[:10]} emitted on up to {max(hit.values())} of {len(steps)} "
+                               f"training steps (G-LIVE must-be-absent rule {t['id']})")
+        det["absent_terms"] = per_absent
+    nonfin_any = sorted({k for s in steps for k in s.get("nonfinite", ())})
+    det["nonfinite_keys_any"] = nonfin_any
+    if nonfin_any:
+        reasons.append(f"non-finite loss outputs: {nonfin_any[:10]}")
+    losses = [s["vals"].get("loss") for s in steps if "loss" in s.get("vals", {})]
+    det["loss_first_last"] = [losses[0], losses[-1]] if losses else None
+    if len(losses) >= 2 and len({round(float(x), 8) for x in losses}) < 2:
+        reasons.append("the total loss is CONSTANT across the smoke -- a disconnected graph")
+    # the run's own record: the final training row must carry the declared keys it computed
+    last = steps[-1] if steps else {}
+    rows = [r for r in train_rows if int(r.get("step", -1)) == expect_steps]
+    det["final_train_row_present"] = bool(rows)
+    if not rows:
+        reasons.append(f"metrics.jsonl has no training row at step {expect_steps}")
+    else:
+        row = rows[-1]
+        det["final_row_keys"] = sorted(row)
+        for t in terms:
+            for k in t["keys"]:
+                if k in last.get("keys", ()) and k not in row:
+                    reasons.append(f"`{k}` was computed at the last step but is ABSENT from the "
+                                   f"metrics.jsonl row -- the run record would not show it")
+                # ⭐ control: the wrapper and the log must agree (the gate read the same calls)
+                if k in row and k in last.get("vals", {}):
+                    a, b = float(row[k]), float(last["vals"][k])
+                    if not (math.isfinite(a) and abs(a - round(b, 5)) <= 1.5e-5):
+                        reasons.append(f"control: metrics.jsonl `{k}`={a} vs captured {b:.6g} -- "
+                                       f"the gate observed different calls than the log")
+    # gradients: every declared-trainable LEAF module
+    det["grads"] = {k: v for k, v in grads.items() if k != "per_param"}
+    if grads.get("n_trainable_params", 0) == 0:
+        reasons.append("no trainable parameter was observed at opt.step -- the capture missed")
+    if grads.get("dead_groups"):
+        adm = admitted_dead or {}
+        dg = [d for d in grads["dead_groups"] if d["group"] not in adm]
+        det["dead_groups_admitted"] = {d["group"]: adm[d["group"]]
+                                       for d in grads["dead_groups"] if d["group"] in adm}
+        if dg:
+            reasons.append(f"{len(dg)} declared-trainable leaf module(s) received ZERO gradient over "
+                           f"the whole smoke: {[d['group'] for d in dg[:10]]}")
+    if grads.get("nonfinite_params"):
+        reasons.append(f"non-finite gradients on {len(grads['nonfinite_params'])} parameter(s): "
+                       f"{grads['nonfinite_params'][:5]}")
+    if prior is not None:
+        det["residual_prior"] = prior
+        if not prior.get("found"):
+            reasons.append(f"--residual-prior is declared but no prior tensor was found in the "
+                           f"forward output (looked for {prior.get('looked_for')}; saw "
+                           f"{prior.get('out_keys_sample')})")
+        elif prior.get("n_rows_v0_pos", 0) == 0:
+            reasons.append("residual prior: no training row had v0 > 0 -- the check read nothing")
+        elif prior.get("n_rows_v0_pos_prior_zero", 0) > 0:
+            reasons.append(f"residual prior is ZERO on {prior['n_rows_v0_pos_prior_zero']} of "
+                           f"{prior['n_rows_v0_pos']} rows with v0 > 0")
+        if prior.get("n_nonfinite", 0):
+            reasons.append(f"residual prior non-finite on {prior['n_nonfinite']} row(s)")
+        # the OWNER's consumer check (the refcv7 model agent's `kinematic_prior.plan_check`):
+        # the plan is P + delta, P non-zero wherever v > 0, everything finite -- read on the same
+        # training forwards; the gate's own measurement above stays independent of it
+        pc = prior.get("owner_plan_check")
+        if pc is None:
+            pass
+        elif pc.get("unavailable"):
+            reasons.append(f"NEW-1: the owner's plan_check is unavailable ({pc['unavailable']}) -- "
+                           f"the plan-is-P+delta clause cannot be read")
+        elif pc.get("calls", 0) == 0:
+            reasons.append("NEW-1: the owner's plan_check never completed on a training forward"
+                           + (f": {pc['errors'][:2]}" if pc.get("errors") else ""))
+        else:
+            if pc.get("errors"):
+                reasons.append(f"NEW-1: plan_check raised on {len(pc['errors'])} forward(s): "
+                               f"{pc['errors'][:2]}")
+            if pc.get("not_ok", 0):
+                reasons.append(f"NEW-1: plan_check is NOT ok on {pc['not_ok']} of {pc['calls']} "
+                               f"training forwards (the plan is not P + delta, or non-finite)")
+            if pc.get("rows_v_gt_0_prior_nonzero") != pc.get("rows_v_gt_0"):
+                reasons.append(f"NEW-1: plan_check: the prior is non-zero on "
+                               f"{pc.get('rows_v_gt_0_prior_nonzero')} of {pc.get('rows_v_gt_0')} "
+                               f"rows with v > 0")
+    return reasons, det
+
+
+#: ⭐ E1-REC4 (T1 / `--r9-bev-warp`): the two parameters T1 adds and the batch key the smoke must see. T1 adds NO `--w-*` weight (its loss is the heads' own),
+#: so LIVE_WEIGHT_RULES has nothing to say; liveness is read from the gradient record. The fuse is ReZero: its weight's gradient is EXACTLY 0.0 at step 0
+#: BY CONSTRUCTION (gate = 0), so it is judged on the nonzero-gradient count ACCUMULATED over the smoke's optimiser steps (`nz_steps`), never at step 0.
+BEV_WARP_LIVE = {"flag": "--r9-bev-warp", "gate": "_map_hires.bev_warp.gate", "fuse": "_map_hires.bev_warp.fuse.weight", "batch_key": "bw_has",
+                 "min_frac": 0.5}
+
+
+def bev_warp_observe(rec: dict, batch: Any) -> None:
+    """The smoke's observer (called per TRAINING loss call): accumulate, over the batch's windows, how many carry each lag's history (`bw_has`, a [B, P] bool
+    the dataset hook adds: False before the clip start). Pure bookkeeping into `rec["bw_has"]`; a batch without the key is ignored (every non-T1 launch), a
+    malformed one is RECORDED (`error`) and judged, never raised into the training step."""
+    has = batch.get(BEV_WARP_LIVE["batch_key"]) if isinstance(batch, dict) else None
+    if has is None:
+        return
+    st = rec.setdefault("bw_has", {"calls": 0, "windows": 0, "per_lag_true": [], "all_lags_true": 0, "any_lag_true": 0})
+    try:
+        h = has.detach().cpu().bool()
+        if h.ndim != 2:
+            raise ValueError(f"bw_has has shape {tuple(h.shape)}, expected [B, P]")
+        n, p = int(h.shape[0]), int(h.shape[1])
+        if st["per_lag_true"] and len(st["per_lag_true"]) != p:
+            raise ValueError(f"bw_has has {p} lag columns, an earlier call had {len(st['per_lag_true'])}")
+        st["per_lag_true"] = st["per_lag_true"] or [0] * p
+        for i, c in enumerate(h.sum(0).tolist()):
+            st["per_lag_true"][i] += int(c)
+        st["windows"] += n
+        st["calls"] += 1
+        st["all_lags_true"] += int(h.all(dim=1).sum())
+        st["any_lag_true"] += int(h.any(dim=1).sum())
+    except Exception as e:                                # noqa: BLE001 -- recorded, judged
+        st["error"] = f"{type(e).__name__}: {e}"[:200]
+
+
+def judge_bev_warp_live(argv: list[str], grads: dict, bw: dict | None, *, expect_steps: int = 0) -> tuple[list[str], dict]:
+    """E1-REC4, G-LIVE for an argv that carries `--r9-bev-warp` (INERT otherwise: ([], {})). `grads` = the smoke's per-parameter record
+    ({name: {"steps", "nz_steps", ...}}, `run_smoke`'s `rec["grads"]`), `bw` = `rec["bw_has"]` (`bev_warp_observe`).
+
+    * the GATE (`_map_hires.bev_warp.gate`) and the FUSE weight (`_map_hires.bev_warp.fuse.weight`) are both TRACKED trainable parameters and each saw a
+      nonzero gradient on at least one optimiser step. The fuse reads exactly 0.0 at step 0 by construction (ReZero), so it is judged on the count
+      ACCUMULATED over the smoke -- and a smoke with fewer than 2 optimiser steps cannot judge it at all (a reason, never a pass);
+    * `bw_has` is True on a MAJORITY (> 50 %) of the smoke's windows in EVERY lag column: a smoke whose windows carry no history reads zero gradient
+      on both parameters for a harmless reason, and the leaf check would then blame the wiring."""
+    if not has_flag(argv, BEV_WARP_LIVE["flag"]):
+        return [], {}
+    reasons: list[str] = []
+    det: dict[str, Any] = {"on": True, "rule": "G-LIVE T1 dead-group (E1-REC4)"}
+    for role in ("gate", "fuse"):
+        name = BEV_WARP_LIVE[role]
+        r = grads.get(name) if isinstance(grads, dict) else None
+        if not isinstance(r, dict):
+            det[role] = {"param": name, "tracked": False}
+            reasons.append(f"G-LIVE T1: `{name}` is not among the trainable parameters the smoke tracked at opt.step ({len(grads or {})}) -- "
+                           f"{BEV_WARP_LIVE['flag']} is in the argv but its {role} was not built or is not in the optimiser")
+            continue
+        steps_, nz = int(r.get("steps", 0) or 0), int(r.get("nz_steps", 0) or 0)
+        det[role] = {"param": name, "tracked": True, "opt_steps": steps_, "nz_steps": nz}
+        if role == "fuse" and steps_ < 2:
+            reasons.append(f"G-LIVE T1: the smoke made {steps_} optimiser step(s); `{name}` is exactly 0.0 at step 0 BY CONSTRUCTION (ReZero gate), so "
+                           f"fewer than 2 steps cannot judge it")
+        elif nz == 0:
+            reasons.append(f"G-LIVE T1: `{name}` received ZERO gradient on all {steps_} optimiser steps of the smoke (nz_steps 0)"
+                           + (" -- the ReZero fuse stays at 0.0 until the gate moves; a fuse that never moves means the history never reached the "
+                              "loss (disconnected branch or no history in any window)" if role == "fuse"
+                              else " -- the gate multiplies the fused history; zero here means no history reached the fuse"))
+    d_bw: dict[str, Any] = dict(bw) if isinstance(bw, dict) else {}
+    det["bw_has"] = d_bw
+    if d_bw.get("error"):
+        reasons.append(f"G-LIVE T1: `bw_has` could not be read on every training call ({d_bw['error']})")
+    elif not d_bw or not int(d_bw.get("windows", 0) or 0):
+        reasons.append("G-LIVE T1: the smoke's training batches carried no `bw_has` (the dataset hook did not reach the batch, or no training call "
+                       "was observed): T1's history was never exercised")
+    else:
+        n = int(d_bw["windows"])
+        fr = [round(int(c) / n, 4) for c in d_bw.get("per_lag_true") or []]
+        det["bw_has_per_lag_frac"] = fr
+        det["bw_has_all_lags_frac"] = round(int(d_bw.get("all_lags_true", 0)) / n, 4)
+        thin = [(i, f) for i, f in enumerate(fr) if not f > float(BEV_WARP_LIVE["min_frac"])]
+        if not fr or thin:
+            reasons.append(f"G-LIVE T1: `bw_has` is True on only {[f for _, f in thin] or fr} of {n} smoke windows (lag column(s) {[i for i, _ in thin]}); "
+                           f"a MAJORITY (> {BEV_WARP_LIVE['min_frac']:.0%}) must carry history in every lag")
+    return reasons, det
+
+
+#: refcv9 T1v on the FULL model (THE T1v FLIP): T1v adds NO parameter and no gate, so `judge_bev_warp_live`'s gradient half does not apply (and stays inert for it: pinned). What can be
+#: silently dead is the HISTORY: if `bw_has` is False in the smoke's windows the OR adds no cell and the arm IS C0. So the smoke must have SEEN `bw_has` (the pose-only dataset hook reached the batch)
+#: on a MAJORITY of windows in every lag column -- the SAME bar as T1's, read from the same observer (`bev_warp_observe`).
+HIST_GEOM_LIVE = {"flag": "--r9-hist-supervise-geom", "min_frac": 0.5}
+
+
+def judge_hist_geom_live(argv: list[str], bw: Any) -> tuple[list[str], dict]:
+    """G-LIVE for T1v on the full model: `bw_has` observed on every training call and True on a majority of windows in every lag column. Inert (`[]`, `{}`) without the flag."""
+    if not has_flag(argv, HIST_GEOM_LIVE["flag"]):
+        return [], {}
+    d_bw: dict[str, Any] = dict(bw) if isinstance(bw, dict) else {}
+    det: dict[str, Any] = {"on": True, "rule": "G-LIVE T1v history reach (no parameter: the pose-only history must be present)", "bw_has": d_bw}
+    if d_bw.get("error"):
+        return [f"G-LIVE T1v: `bw_has` could not be read on every training call ({d_bw['error']})"], det
+    if not d_bw or not int(d_bw.get("windows", 0) or 0):
+        return ["G-LIVE T1v: the smoke's training batches carried no `bw_has` (the pose-history dataset hook did not reach the batch, or no training call was observed): "
+                "T1v's mask would add no cell"], det
+    n = int(d_bw["windows"])
+    fr = [round(int(c) / n, 4) for c in d_bw.get("per_lag_true") or []]
+    det["bw_has_per_lag_frac"] = fr
+    thin = [(i, f) for i, f in enumerate(fr) if not f > float(HIST_GEOM_LIVE["min_frac"])]
+    if not fr or thin:
+        return [f"G-LIVE T1v: `bw_has` is True on only {[f for _, f in thin] or fr} of {n} smoke windows (lag column(s) {[i for i, _ in thin]}); a MAJORITY "
+                f"(> {HIST_GEOM_LIVE['min_frac']:.0%}) must carry history in every lag, else the supervision set never widens"], det
+    return [], det
+
+
+def grad_table(records: dict, model_names: dict) -> dict:
+    """records: {param_name: {"numel", "steps", "nz_steps", "nonfinite", "requires_grad"}}."""
+    groups: dict[str, dict] = {}
+    for name, r in records.items():
+        g = name.rsplit(".", 1)[0] if "." in name else name
+        e = groups.setdefault(g, {"group": g, "numel": 0, "params": 0, "nz_params": 0})
+        e["numel"] += int(r["numel"])
+        e["params"] += 1
+        e["nz_params"] += int(r["nz_steps"] > 0)
+    dead = sorted((e for e in groups.values() if e["nz_params"] == 0), key=lambda e: e["group"])
+    dead_params = sorted(n for n, r in records.items() if r["nz_steps"] == 0)
+    return {"groups": sorted(groups.values(), key=lambda e: e["group"]),
+            "n_trainable_params": len(records),
+            "n_trainable_numel": int(sum(r["numel"] for r in records.values())),
+            "n_leaf_groups": len(groups), "dead_groups": dead,
+            "n_dead_params": len(dead_params), "dead_params_sample": dead_params[:40],
+            "nonfinite_params": sorted(n for n, r in records.items() if r["nonfinite"]),
+            "frozen_in_optimizer": sorted(model_names.get("frozen_in_opt", []))[:40],
+            "not_in_optimizer_but_requires_grad": sorted(
+                model_names.get("requires_grad_not_in_opt", []))[:40]}
+
+
+# --------------------------------------------------------------------------------------------- #
+# the smoke (G-LIVE run 1, G-CKPT run 2)                                                          #
+# --------------------------------------------------------------------------------------------- #
+def _named_tensors(out: Any, prefix: str = "out"):
+    import torch
+    if torch.is_tensor(out):
+        yield prefix, out
+    elif isinstance(out, dict):
+        for k, v in out.items():
+            yield from _named_tensors(v, f"{prefix}.{k}")
+    elif isinstance(out, (list, tuple)):
+        for i, v in enumerate(out):
+            yield from _named_tensors(v, f"{prefix}[{i}]")
+
+
+def _probe_grad_unreachable(ctx: "Ctx", T, model, batch) -> dict:
+    """The fixes agent's batch-3 probe (landed 4797ffb),
+    `declared_vs_built.probe_grad_unreachable(model, backward) -> list[Mismatch]`, on the REAL
+    smoke batch: every module DECLARED grad-unreachable (`_gradreach`) receives NO gradient when
+    re-opened for one backward, and something outside them does (its positive control). The
+    callable runs the trainer's own `compute_losses_v3` and `.backward()`. Absent (a pre-batch-3
+    tree) -> recorded as absent; a TypeError -> API drift, judged."""
+    try:
+        D = importlib.import_module("tanitad.train.declared_vs_built")
+    except Exception as e:                                # noqa: BLE001
+        return {"present": False, "why": f"{type(e).__name__}: {e}"[:200]}
+    fn = getattr(D, "probe_grad_unreachable", None)
+    if not callable(fn):
+        return {"present": False, "why": "declared_vs_built has no probe_grad_unreachable "
+                                         "(fixes batch 3 not in this tree)"}
+    if model is None or batch is None:
+        return {"present": True, "error": "no model / no training batch was captured"}
+    dev = next((p.device for p in model.parameters()), "cpu")
+
+    def backward():
+        # batch 3's contract (declared_vs_built.probe_grad_unreachable): "the caller's forward +
+        # loss + .backward()" -- the probe re-opens the declared tensors around this ONE call
+        model.train()
+        loss = T.compute_losses_v3(model, batch, dev)["loss"]
+        loss.backward()
+        return loss
+    try:
+        res = fn(model, backward)
+    except TypeError as e:
+        return {"present": True, "error": f"API drift: probe_grad_unreachable(model, closure): {e}"}
+    except SystemExit as e:
+        return {"present": True, "result": [str(e)[:600]], "refused": True}
+    except Exception as e:                                # noqa: BLE001
+        return {"present": True, "error": f"{type(e).__name__}: {e}"[:400]}
+    items = list(res) if isinstance(res, (list, tuple)) else ([] if not res else [res])
+    return {"present": True, "result": [str(x)[:300] for x in items]}
+
+
+def live_pres_fracs(named: Iterable, lp: dict) -> tuple[dict, dict]:
+    """(heads, aux): per presence tensor, the fraction of slots at sigma >= the gate. A9 R2's
+    per-layer decodes (a path segment `aux`) are INFORMATIVE: the declared gate is the LAST
+    layer's (the detection rule), and an aux layer never counts as a slot head."""
+    import torch
+    heads: dict[str, dict] = {}
+    aux: dict[str, dict] = {}
+    for pth, t in named:
+        if lp["key_token"] in pth and torch.is_tensor(t) and t.is_floating_point() and t.numel():
+            d = {"frac": float((torch.sigmoid(t.detach().float()) >= float(lp["gate"]))
+                               .float().mean()), "n": int(t.numel())}
+            (aux if re.search(r"\.aux(\[|\.|$)", pth) else heads)[pth] = d
+    return heads, aux
+
+
+def judge_live_pres(prof: dict, pres_last: dict | None,
+                    pres_aux: dict | None = None) -> tuple[list[str], dict]:
+    """G-LIVE-PRES (SPEC_REFCV7 A9, A10 15.2): at the END of the smoke, on BOTH slot heads, the
+    fraction of slots with sigma(presence) >= 0.5 is < 0.5 (refcv6's red arm: 71-99 of 100).
+    G-LIVE-COUNT is NOT APPLICABLE to a focal head without a calibration map (15.2) -- recorded
+    as such, never as passed."""
+    lp = prof.get("live_pres")
+    if not lp:
+        return [], {}
+    pres = pres_last or {}
+    det = {"heads": pres, "gate": lp["gate"], "max_frac": lp["max_frac"],
+           "aux_layers_informative": pres_aux or {},
+           "g_live_count": "NOT APPLICABLE (focal presence without calibration, A10 15.2)"}
+    if len(pres) < int(lp["min_heads"]):
+        return [f"G-LIVE-PRES: {len(pres)} presence head(s) found in the forward output (key token "
+                f"'{lp['key_token']}'), {lp['min_heads']} required -- BOTH slot heads must be "
+                f"checked: {sorted(pres)}"], det
+    bad = {k: v for k, v in pres.items() if not (v["frac"] < float(lp["max_frac"]))}
+    reasons = [f"G-LIVE-PRES: {k}: {v['frac']:.3f} of {v['n']} slots have sigma >= {lp['gate']} "
+               f"at the end of the smoke (must be < {lp['max_frac']}; refcv6: 71-99 of 100)"
+               for k, v in sorted(bad.items())]
+    return reasons, det
+
+
+def judge_grad_unreachable_probe(probe: dict | None) -> tuple[list[str], dict]:
+    if not probe or not probe.get("present"):
+        return [], {"probe": probe}                       # recorded; batch 3 makes it present
+    if probe.get("error"):
+        return [f"G-LIVE: probe_grad_unreachable: {probe['error']}"], {"probe": probe}
+    if probe.get("result"):
+        return [f"G-LIVE: probe_grad_unreachable reports {len(probe['result'])} problem(s): "
+                f"{probe['result'][:3]}"], {"probe": probe}
+    return [], {"probe": probe}
+
+
+def class_weights_stamp_reasons(prof: dict, config: dict | None,
+                                file_sha256: str | None) -> tuple[list[str], dict]:
+    """A8 item 1: the loader stamps `config.json["map_hires"]["class_weights"]` =
+    {definition_id: sqrt_mf, pre_registered: true, sha256: <the launch weights file>}."""
+    h = prof.get("map_hires") or {}
+    node: Any = config or {}
+    for k in h.get("class_weights_stamp_path", ()):
+        node = node.get(k) if isinstance(node, dict) else None
+    det = {"stamp": node, "file_sha256": file_sha256}
+    if not isinstance(node, dict):
+        return [f"NEW-2 (A8): config.json carries no "
+                f"`{'.'.join(h.get('class_weights_stamp_path', ()))}` stamp"], det
+    out = []
+    if node.get("definition_id") != h.get("class_weights_definition"):
+        out.append(f"NEW-2 (A8): the class weights are {node.get('definition_id')!r}, the SPEC "
+                   f"registers {h.get('class_weights_definition')!r}")
+    if node.get("pre_registered") is not True:
+        out.append("NEW-2 (A8): the class-weight definition is not stamped pre_registered")
+    if file_sha256 and node.get("sha256") != file_sha256:
+        out.append(f"NEW-2 (A8): config.json stamps weights {str(node.get('sha256'))[:16]}, the "
+                   f"argv's file is {file_sha256[:16]}")
+    return out, det
+
+
+def _find_prior(out: Any, keys: tuple[str, ...]):
+    import torch
+    if isinstance(out, dict):
+        for k in keys:
+            v = out.get(k)
+            if torch.is_tensor(v):
+                return k, v
+    return None, None
+
+
+def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
+    """Run the REAL trainer (`T.main(argv)`) with observing hooks only. `snapshot`:
+    "final" -- digest model+optimizer after the run; "post_load" -- digest at the first training
+    loss call (i.e. right after a resume has loaded ckpt.pt)."""
+    import torch
+    cur_mode: dict[str, Any] = {"training": None}
+    cur_batch: dict[str, Any] = {"b": None}
+    rec: dict[str, Any] = {"ceiling_calls": [], "map_class": {}, "map_banded": {},
+                           "steps": [], "eval_calls": 0, "grads": {}, "sampler_iters": [],
+                           "out_keys": set(), "prior": None, "exit": None, "step_times": [],
+                           "fwd_train_calls": 0, "fmap_hits": 0, "hires_first": None,
+                           "ga_groups": {}, "ga_on": None}
+    pat = _Patcher()
+    state: dict[str, Any] = {"model": None, "opt": None, "names": {}, "dpos": None}
+    # refcv8-mapft (PI D-R9-MAPHEAD-PRECISION): frozen-gradient + frozen-state record (None on any other profile)
+    mo_mods = tuple((ctx.prof.get("map_only") or {}).get("modules") or ())
+    # refcv9-warm: the declared grad-unreachable subtrees INSIDE the modules are frozen too (none on refcv8-mapft)
+    mo_decl = tuple((ctx.prof.get("map_only") or {}).get("declared_frozen") or ())
+
+    def mo_is_frozen(n_):
+        return not _under_any(n_, mo_mods) or _under_any(n_, mo_decl)
+    if mo_mods:
+        rec["map_only"] = {"opt_steps": 0, "frozen_grad_nz": {}, "n_frozen_params_tracked": 0,
+                           "n_frozen_tensors_checked": 0, "frozen_changed": [], "arm": None}
+    prior_keys = tuple(ctx.prof.get("residual_prior_keys", ()))
+    want_prior = residual_prior_on(ctx.argv)
+    hires = hires_on(ctx.prof, ctx.argv)
+    fmap_key = (ctx.prof.get("map_hires") or {}).get("fmap_key", "fmap_s8")
+    pstats = {"found": False, "key": None, "looked_for": list(prior_keys), "n_rows": 0,
+              "n_rows_v0_pos": 0, "n_rows_v0_pos_prior_zero": 0, "n_nonfinite": 0,
+              "out_keys_sample": []}
+    cur_v0: dict[str, Any] = {"v0": None}
+    # v8F alpha-1: the gate's OWN read of the declared P10 file + the observer's record (None on any other launch)
+    want_p10 = p10_on(ctx.argv)
+    p10_ind, p10rec = (p10_new_record(ctx.argv, [tuple(x) for x in ctx.path_map]) if want_p10 else (None, None))
+    try:
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+    except Exception:                                     # noqa: BLE001
+        pass
+
+    def _hook_map_classes(out):
+        """G-MAP: a tensor hook on the 10 cm logits accumulates, per class, the gradient at that
+        class's own labelled cells (all channels, and its own channel) -- on the real batch."""
+        h = ctx.prof["map_hires"]
+        lh, lw = h["logits_hw"]
+        lg = next((t for pth, t in _named_tensors(out)
+                   if h["name_token"] in pth.lower() and "logit" in pth.lower()
+                   and t.ndim == 4 and tuple(t.shape[-2:]) == (lh, lw) and t.requires_grad), None)
+        b = cur_batch.get("b")
+        tgt = None
+        if isinstance(b, dict):
+            tgt = next((v for v in b.values() if torch.is_tensor(v) and v.ndim == 3
+                        and tuple(v.shape[-2:]) == (lh, lw) and not v.is_floating_point()), None)
+        if lg is None or tgt is None:
+            return
+        tgt = tgt.to(lg.device)
+        st = rec["map_class"]
+        st["_hooked"] = st.get("_hooked", 0) + 1
+
+        def ghook(g):
+            with torch.no_grad():
+                ga = g.detach().float().abs()
+                for c in range(int(g.shape[1])):
+                    m = tgt == c
+                    n = int(m.sum())
+                    e = st.setdefault(str(c), {"cells": 0, "grad_all": 0.0, "grad_own": 0.0,
+                                               "nonfinite": False})
+                    e["cells"] += n
+                    if n:
+                        e["grad_all"] += float(ga.sum(1)[m].sum())
+                        e["grad_own"] += float(ga[:, c][m].sum())
+                    if not bool(torch.isfinite(g[:, c]).all()):
+                        e["nonfinite"] = True
+            return None
+        lg.register_hook(ghook)
+
+    def fwd_hook(module, inputs, out):
+        if not module.training:
+            return
+        rec["fwd_train_calls"] += 1
+        if isinstance(out, dict):
+            rec["out_keys"].update(map(str, out.keys()))
+            if hires:
+                rec["fmap_hits"] += int(torch.is_tensor(out.get(fmap_key)))
+                if rec["hires_first"] is None:
+                    try:
+                        hw = tuple(module.cfg.core.encoder.image_hw())
+                        rec["hires_first"] = hires_output_reasons(ctx.prof, out, hw, banded=banded_arg(ctx.prof, ctx.argv))
+                    except Exception as e:                # noqa: BLE001
+                        rec["hires_first"] = ([f"the NEW-2 output probe crashed: {e}"], {})
+            if hires:
+                if banded_on(ctx.prof, ctx.argv):
+                    try:                                  # the BANDED head's per-class probe (the 8-way one finds no 10 cm logits to hook)
+                        observe_banded_forward(rec["map_banded"], out, cur_batch.get("b"))
+                    except Exception as e:                # noqa: BLE001 -- recorded and judged
+                        rec["map_banded"]["probe_error"] = f"{type(e).__name__}: {str(e)[:200]}"
+                else:
+                    _hook_map_classes(out)
+            lp = ctx.prof.get("live_pres")
+            if lp:
+                # A9/A10 15.2: the fraction of slots at sigma >= gate, per presence tensor, at
+                # THIS forward -- overwritten each step, so the verdict reads the END of the smoke
+                with torch.no_grad():
+                    rec["pres_last"], rec["pres_aux_last"] = live_pres_fracs(
+                        _named_tensors(out), lp)
+            if want_prior:
+                k, p = _find_prior(out, prior_keys)
+                pstats["out_keys_sample"] = sorted(map(str, out.keys()))[:40]
+                # the prior's OWN speed when the forward emits it (a withheld row carries a
+                # different v than pose_last, and its prior is zero by design)
+                pv = out.get("residual_prior_v")
+                v0 = pv if torch.is_tensor(pv) else cur_v0["v0"]
+                pstats["v_source"] = "residual_prior_v" if torch.is_tensor(pv) else "pose_last"
+                if p is not None and v0 is not None:
+                    pstats["found"], pstats["key"] = True, k
+                    pp = p.detach().float().reshape(p.shape[0], -1)
+                    v = v0.detach().float().reshape(-1).to(pp.device)
+                    fin = torch.isfinite(pp).all(dim=1)
+                    mag = pp.abs().amax(dim=1)
+                    pos = v > 0                  # SPEC_REFCV7 2, literally: "where v0 > 0"
+                    pstats["n_rows"] += int(pp.shape[0])
+                    pstats["n_rows_v0_pos"] += int(pos.sum())
+                    pstats["n_rows_v0_pos_prior_zero"] += int((pos & (mag == 0)).sum())
+                    pstats["n_nonfinite"] += int((~fin).sum())
+                _owner_plan_check(module, out)
+            if want_p10:
+                try:
+                    p10_live_observe(p10rec, p10_ind, module, out, cur_batch.get("b"))
+                except Exception as e:                    # noqa: BLE001 -- recorded, judged
+                    p10rec["problems"].append(f"the P10 observer crashed: {type(e).__name__}: {str(e)[:200]}")
+
+    def _owner_plan_check(module, out):
+        """The refcv7 model agent's consumer check, read on the SAME training forward. Observes
+        only: no grad, and a forked RNG so the run's draws cannot move."""
+        pc = pstats.setdefault("owner_plan_check", {"calls": 0, "not_ok": 0, "rows_v_gt_0": 0,
+                                                    "rows_v_gt_0_prior_nonzero": 0, "errors": []})
+        if pc.get("unavailable"):
+            return
+        try:
+            kp = importlib.import_module("tanitad.models.kinematic_prior")
+            fn = getattr(kp, "plan_check")
+        except Exception as e:                            # noqa: BLE001
+            pc["unavailable"] = f"{type(e).__name__}: {e}"[:300]
+            return
+        dec = getattr(getattr(module, "core", None), "decoder", None)
+        try:
+            with torch.no_grad(), torch.random.fork_rng():
+                rep = fn(out, getattr(dec, "anchor_controls", None), decoder=dec)
+            pc["calls"] += 1
+            pc["not_ok"] += int(not bool(rep.get("ok")))
+            pc["rows_v_gt_0"] += int(rep.get("rows_v_gt_0", 0))
+            pc["rows_v_gt_0_prior_nonzero"] += int(rep.get("rows_v_gt_0_prior_nonzero", 0))
+        except Exception as e:                            # noqa: BLE001 -- recorded, judged
+            if len(pc["errors"]) < 5:
+                pc["errors"].append(f"{type(e).__name__}: {str(e)[:200]}")
+
+    def build_opt_wrap(model, args, _orig=T.build_optimizer):
+        opt = _orig(model, args)
+        state["model"], state["opt"] = model, opt
+        if want_p10:
+            _p10m = getattr(getattr(getattr(model, "core", None), "decoder", None), "p10", None)
+            if _p10m is not None:
+                _p10m.register_forward_hook(
+                    lambda m, i, o: p10rec.__setitem__("p10_calls", p10rec["p10_calls"] + 1))
+        names = {id(p): n for n, p in model.named_parameters()}
+        in_opt = [p for g in opt.param_groups for p in g["params"]]
+        ids_in = {id(p) for p in in_opt}
+        state["names"] = {
+            "frozen_in_opt": [names.get(id(p), "?") for p in in_opt if not p.requires_grad],
+            "requires_grad_not_in_opt": [n for n, p in model.named_parameters()
+                                         if p.requires_grad and id(p) not in ids_in]}
+        track = [(names.get(id(p), f"?{i}"), p) for i, p in enumerate(in_opt) if p.requires_grad]
+        for n_, p_ in track:
+            rec["grads"][n_] = {"numel": int(p_.numel()), "steps": 0, "nz_steps": 0,
+                                "nonfinite": False}
+        # G-LIVE ga-reach: which reach groups EXIST on the built model and are TRAINED (the
+        # literal attribute paths of the profile; trainability from the optimizer, never from
+        # whether a gradient arrived -- a dead group must not read as "not trainable")
+        ids_tr = {id(p_) for _, p_ in track}
+        grp: dict[str, dict] = {}
+        for g_, path in (ctx.prof.get("ga_groups") or {}).items():
+            m_ = _resolve_attr(model, path)
+            if m_ is None or not hasattr(m_, "parameters"):
+                grp[g_] = {"exists": False, "path": path}
+                continue
+            ps = list(m_.parameters())
+            grp[g_] = {"exists": True, "path": path, "params": int(sum(p.numel() for p in ps)),
+                       "trainable_params": int(sum(p.numel() for p in ps if id(p) in ids_tr))}
+        rec["ga_groups"] = grp
+        rec["ga_on"] = (getattr(model, "_perception", None) is not None
+                        or getattr(model, "tac_decoder_v6", None) is not None)
+        orig_step = opt.step
+        if mo_mods:
+            # EVERY parameter outside the map-only modules, by name, fixed here -- whatever is trainable later
+            state["mo_frozen"] = [(n_, p_) for n_, p_ in model.named_parameters() if mo_is_frozen(n_)]
+            rec["map_only"]["n_frozen_params_tracked"] = len(state["mo_frozen"])
+
+        def step_wrap(*a, **k):
+            rec["step_times"].append(time.perf_counter())
+            with torch.no_grad():
+                for n_, p_ in track:
+                    r = rec["grads"][n_]
+                    r["steps"] += 1
+                    g = p_.grad
+                    if g is not None:
+                        if bool(torch.count_nonzero(g) > 0):
+                            r["nz_steps"] += 1
+                        if not bool(torch.isfinite(g).all()):
+                            r["nonfinite"] = True
+                if mo_mods:
+                    mo_ = rec["map_only"]
+                    mo_["opt_steps"] += 1
+                    for n_, p_ in state.get("mo_frozen") or ():
+                        g = p_.grad
+                        if g is not None and bool(torch.count_nonzero(g) > 0):
+                            mo_["frozen_grad_nz"][n_] = mo_["frozen_grad_nz"].get(n_, 0) + 1
+            return orig_step(*a, **k)
+        opt.step = step_wrap
+        if arm_is(ctx, "presence_saturated"):
+            # the refcv6 red pattern re-installed: every presence logit +20 (all slots confident);
+            # registered BEFORE the observer, so the observer and the loss see what the arm made
+            def _saturate(o):
+                if isinstance(o, dict):
+                    return {k: (v + 20.0 if torch.is_tensor(v) and "presence_logit" in str(k)
+                                else _saturate(v)) for k, v in o.items()}
+                return o
+            model.register_forward_hook(lambda m, i, o: _saturate(o))
+        model.register_forward_hook(fwd_hook)
+        return opt
+
+    def losses_wrap(model, batch, device, *a, _orig=T.compute_losses_v3, **k):
+        cur_mode["training"] = bool(model.training)       # read by the ceiling-filter observer
+        cur_batch["b"] = batch if model.training else None   # read by the G-MAP class probe
+        if model.training:
+            cur_batch["last_train"] = batch
+        if model.training and mo_mods and "mo_snap" not in state:
+            # the frozen state AFTER the warm start / resume, BEFORE the first update (digests, CPU)
+            state["mo_snap"] = {k_: tensor_digest(v_) for k_, v_ in model.state_dict().items()
+                                if mo_is_frozen(k_)}
+        if model.training:
+            if snapshot == "post_load" and "post_load" not in rec:
+                rec["post_load"] = {"model": state_digests(model.state_dict()),
+                                    "opt": optimizer_digests(state["opt"].state_dict())
+                                    if state["opt"] is not None else None}
+            pl = batch.get("pose_last") if isinstance(batch, dict) else None
+            cur_v0["v0"] = pl[:, 3] if pl is not None else None
+            bev_warp_observe(rec, batch)                     # E1-REC4 (T1): which windows carry history; a batch without `bw_has` is ignored
+        out = _orig(model, batch, device, *a, **k)
+        h = ctx.prof.get("map_hires") or {}
+        if arm_is(ctx, "map_drivable_only_logging") and isinstance(out, dict):
+            # G-MAP's arm RL1: every per-class 10 cm key is logged for DRIVABLE only, in train
+            # and eval rows alike (refcv6's pattern for 38,000 steps)
+            others = [f"_{c}_" for c in h.get("classes", ()) if c != "drivable"]
+            out = {kk: vv for kk, vv in out.items()
+                   if not (str(kk).startswith("map_hires_") and any(o in str(kk) for o in others))}
+        if arm_is(ctx, "map_iou_not_counts") and isinstance(out, dict) and not model.training:
+            # G-MAP's arm RL2: the eval row carries per-batch IoUs, not the argmax COUNTS
+            cnt = tuple(f.split("{", 1)[0] for f in (*h.get("eval_count_fmts", ()),
+                                                     *h.get("raw_count_fmts", ())))
+            out = {kk: vv for kk, vv in out.items() if not str(kk).startswith(cnt)}
+        if model.training:
+            keys, nonfin, vals = [], [], {}
+            for kk, vv in out.items():
+                if torch.is_tensor(vv) and vv.ndim == 0:
+                    f = float(vv.detach())
+                elif isinstance(vv, (int, float, bool)):
+                    f = float(vv)
+                else:
+                    continue
+                keys.append(kk)
+                vals[kk] = f
+                if not math.isfinite(f):
+                    nonfin.append(kk)
+            rec["steps"].append({"keys": sorted(keys), "nonfinite": sorted(nonfin), "vals": vals})
+        else:
+            rec["eval_calls"] += 1
+        return out
+
+    def ntb_wrap(it, dl, sampler, dpos, _orig=T.next_train_batch):
+        state["dpos"] = dpos
+        if mo_mods and not state.get("mo_arm_done") and state["model"] is not None:
+            # refcv8-mapft's LIVE arms: the defect lands AFTER every startup guard of the trainer, so it is this
+            # gate's G-LIVE judgement (not the trainer's refusal) that must turn it RED
+            state["mo_arm_done"] = True
+            note = (_mapft_inject(ctx, state["model"], state["opt"], mo_mods)
+                    or _refcv9_inject(ctx, state["model"], state["opt"], mo_mods))     # refcv9-warm's LIVE arms
+            if note:
+                rec["map_only"]["arm"] = note
+                _say("arm: " + note)
+        return _orig(it, dl, sampler, dpos)
+
+    orig_iter = T.ResumableEpochSampler.__iter__
+
+    def iter_wrap(self):
+        rec["sampler_iters"].append({"epoch": int(self.epoch), "skip": int(self.skip_batches),
+                                     "n": int(self.n), "batch": int(self.batch)})
+        return orig_iter(self)
+
+    pat.set(T, "build_optimizer", build_opt_wrap)
+    pat.set(T, "compute_losses_v3", losses_wrap)
+    pat.set(T, "next_train_batch", ntb_wrap)
+    pat.set(T.ResumableEpochSampler, "__iter__", iter_wrap)
+    # SPEC_REFCV7 7: every application of the max-speed ceiling mask, with the mode of the
+    # model forward it ran in (the filter module is built per call, so ITS own .training is
+    # meaningless -- the model's mode is read at the loss call that owns the forward)
+    try:
+        from tanitad.refs import refcv6_selection as _v6sel
+    except Exception:                                     # noqa: BLE001
+        _v6sel = None
+    if _v6sel is not None and hasattr(_v6sel, "SpeedCeilingFilter"):
+        orig_scf = _v6sel.SpeedCeilingFilter.forward
+
+        def scf_wrap(self, *a, **k):
+            keep, tele = orig_scf(self, *a, **k)
+            rec["ceiling_calls"].append({
+                "training": cur_mode.get("training"),
+                "clipped": float((tele or {}).get("speed_frac_candidates_clipped", 0.0)),
+                "rows_empty": int((tele or {}).get("speed_rows_empty", 0))})
+            return keep, tele
+        pat.set(_v6sel.SpeedCeilingFilter, "forward", scf_wrap)
+    _apply_smoke_arm(ctx, T, pat, argv)
+    # ⛔ MEASURED 2026-09-27 on Thor (6fa5e8b): the trainer stamps `config.json["argv"] =
+    # sys.argv[1:]`, and in-process that was the GATE's own command line ("check --ctx ..."), so
+    # G-EVAL crashed rebuilding from the smoke's record. The smoke runs as a launch would: the
+    # process argv IS the trainer argv while T.main runs (restored by `pat.restore()`).
+    pat.set(sys, "argv", [str(getattr(T, "__file__", None) or "refc_v3_train.py")] + list(argv))
+    if wcost_in_scope(ctx.prof, ctx.argv):                 # refcv9 full family + the drivable critic ONLY: record the trainer's own W-COST line (nothing installed elsewhere)
+        rec["wcost_lines"] = []
+        pat.set(T, "print", wcost_print_shim(rec["wcost_lines"]))
+    t0 = time.time()
+    try:
+        T.main(list(argv))
+    except SystemExit as e:
+        rec["exit"] = f"SystemExit: {e}"
+    except BaseException as e:                            # noqa: BLE001 -- the verdict records it
+        rec["exit"] = f"{type(e).__name__}: {e}\n" + "".join(traceback.format_exc()[-2500:])
+    finally:
+        pat.restore()
+    rec["elapsed_s"] = round(time.time() - t0, 1)
+    try:
+        if torch.cuda.is_available():
+            rec["cuda_max_mem_gb"] = round(torch.cuda.max_memory_allocated() / 2 ** 30, 3)
+    except Exception:                                     # noqa: BLE001
+        pass
+    if mo_mods and state["model"] is not None and state.get("mo_snap") is not None:
+        # BEFORE the grad-unreachable probe below (it runs one more training forward + backward)
+        now = {k_: tensor_digest(v_) for k_, v_ in state["model"].state_dict().items()
+               if mo_is_frozen(k_)}
+        rec["map_only"]["n_frozen_tensors_checked"] = len(state["mo_snap"])
+        rec["map_only"]["frozen_changed"] = sorted(k_ for k_, d_ in state["mo_snap"].items() if now.get(k_) != d_)
+    if snapshot == "final" and state["model"] is not None:
+        rec["final"] = {"model": state_digests(state["model"].state_dict()),
+                        "opt": optimizer_digests(state["opt"].state_dict())}
+        rec["dpos_final"] = dict(state["dpos"]) if state["dpos"] is not None else None
+        # ⛔ AFTER the G-CKPT snapshot: the probe runs one more TRAINING forward + backward,
+        # which moves BN running stats and the EMA priors (MEASURED 2026-09-27 on the tiny rig:
+        # probing first made 38 tensors differ from the checkpoint the trainer had just saved)
+        rec["grad_unreachable_probe"] = _probe_grad_unreachable(
+            ctx, T, state.get("model"), cur_batch.get("last_train"))
+    rec["out_keys"] = sorted(rec["out_keys"])
+    rec["prior"] = pstats if want_prior else None
+    if want_p10:
+        if state["model"] is not None:
+            p10rec["frozen"] = p10_frozen_report(state["model"])
+        rec["p10"] = p10rec
+    rec["grad_names"] = state["names"]
+    return rec
+
+
+def _drop_from_passthrough(pat: _Patcher, keys: tuple[str, ...], *, fallback_pop: bool) -> str:
+    """The pass-through defect, applied where it LIVES: remove `keys` from
+    `RefCModel.DECODER_PASSTHROUGH` (the tuple the forward iterates, fixes agent 2026-09-26).
+    A pre-fix tree has an inline list instead; there, when `fallback_pop`, the keys are popped
+    from the forward's output -- the same observable defect. -> how it was applied."""
+    from tanitad.refs import refc
+    pt = getattr(refc.RefCModel, "DECODER_PASSTHROUGH", None)
+    if pt is not None:
+        pat.set(refc.RefCModel, "DECODER_PASSTHROUGH", tuple(k for k in pt if k not in keys))
+        return f"DECODER_PASSTHROUGH without {list(keys)}"
+    if not fallback_pop:
+        return "no DECODER_PASSTHROUGH on this tree: the arm cannot be applied"
+    orig = refc.RefCModel.forward
+
+    def as_shipped(self, *a, **k):
+        o = orig(self, *a, **k)
+        if isinstance(o, dict):
+            for key in keys:
+                o.pop(key, None)
+        return o
+    pat.set(refc.RefCModel, "forward", as_shipped)
+    return f"pre-fix tree: {list(keys)} popped from RefCModel.forward's output"
+
+
+def _resolve_attr(obj: Any, path: str) -> Any:
+    for part in path.split("."):
+        obj = getattr(obj, part, None)
+        if obj is None:
+            return None
+    return obj
+
+
+class _GaFinalRowOnlyJson:
+    """The `json` module as the trainer sees it, except that a TRAINING row's `ga_*` keys are
+    dropped unless it is the final step's row (arm `ga_off_by_one`)."""
+
+    def __init__(self, real, final_step: int):
+        self._real, self._final = real, int(final_step)
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    def dumps(self, obj, *a, **k):
+        if (isinstance(obj, dict) and "loss" in obj and isinstance(obj.get("step"), int)
+                and obj["step"] != self._final):
+            obj = {kk: vv for kk, vv in obj.items() if not str(kk).startswith("ga_")}
+        return self._real.dumps(obj, *a, **k)
+
+
+def _apply_smoke_arm(ctx: Ctx, T, pat: _Patcher, argv: list[str] | None = None) -> None:
+    argv = list(argv if argv is not None else ctx.argv)
+    _p10_arm = apply_p10_arm(ctx, pat, T)                  # v8F alpha-1's arms (`p10_*`)
+    if _p10_arm:
+        _say("arm: " + _p10_arm)
+    if arm_is(ctx, "no_cascade_passthrough") or arm_is(ctx, "no_cascade_silent"):
+        # D-REFCV6-F3-WHITELIST exactly: the production forward's output carries neither key
+        _say("arm: " + _drop_from_passthrough(pat, ("layer_u0_hat", "layer_logits"),
+                                              fallback_pop=True))
+    if arm_is(ctx, "no_cascade_silent"):
+        # ...and the loss SKIPS silently, as it did for 34,500 steps: the loss path reads the
+        # F3 flag off the model, so hand it a copy with F3 off (the model keeps F3 BUILT).
+        orig_flags = T._refcv6_flags_of
+
+        def f3_blind(model):
+            f = orig_flags(model)
+            return dataclasses.replace(f, f3_per_layer=False)
+        pat.set(T, "_refcv6_flags_of", f3_blind)
+    if arm_is(ctx, "ceiling_active_in_training"):
+        # SPEC_REFCV7 7's regression arm: the ceiling mask acts in a TRAINING step. On a tree
+        # with the fixes agent's class switch (`speed_ceiling_in_training`, ab436ee) the arm
+        # flips exactly that -- the pre-ruling behaviour; otherwise the decoder runs its eval
+        # branch during training (and the gate must still name the ceiling)
+        from tanitad.refs import refc
+        if hasattr(refc.AnchoredDiffusionDecoder, "speed_ceiling_in_training"):
+            pat.set(refc.AnchoredDiffusionDecoder, "speed_ceiling_in_training", True)
+        else:
+            orig_dec = refc.AnchoredDiffusionDecoder.forward
+
+            def dec_eval(self, *a, **k):
+                was = self.training
+                self.training = False
+                try:
+                    return orig_dec(self, *a, **k)
+                finally:
+                    self.training = was
+            pat.set(refc.AnchoredDiffusionDecoder, "forward", dec_eval)
+    if arm_is(ctx, "ga_off_by_one"):
+        # the refcv6 reach trigger re-installed where it is OBSERVABLE: `_pr_row` is filled
+        # before `step += 1` and written after it, so `ga_*` keys reach ONLY the final row
+        final = int((flag_values(argv, "--steps") or ["0"])[0])
+        pat.set(T, "json", _GaFinalRowOnlyJson(T.json, final))
+    if arm_is(ctx, "no_fmap_s8_passthrough"):
+        # NEW-2's F3-class defect: the stride-8 map is computed and dropped by the pass-through.
+        # ⛔ No fallback: the coordinator keys the check on DECODER_PASSTHROUGH, and an arm that
+        # did not touch the real mechanism must be able to ESCAPE (and be reported as such).
+        key = (ctx.prof.get("map_hires") or {}).get("fmap_key", "fmap_s8")
+        _say("arm: " + _drop_from_passthrough(pat, (key,), fallback_pop=False))
+
+
+def step_cost(step_times: list[float], warmup: int, exclude_rows: Iterable[int] = (),
+              nontrain_rows: Iterable[int] = ()) -> dict:
+    """s/step from the loop's own opt.step timestamps, after `warmup` intervals (compile, cuDNN
+    autotune and loader warm-up are not the run's cost).
+
+    `exclude_rows` (B-GS-SMOKE, SPEC_REFCV8 3.2 item 5): the metrics ROWS on which a gradient-share reading ran. A
+    reading is a ~16 min fp32 replay INSIDE one step; its wall-clock is the instrument's cost, recorded separately
+    (`gs_*_s`), and must not enter the projected s/step the <= 10.5 cost gate reads. Step `r` (the row's step count)
+    owns `step_times[r-1]`; the replay can sit on either side of that step's `opt.step` timestamp, so the intervals
+    r-2, r-1 and r (interval j = step_times[j+1] - step_times[j]) are dropped for each reading row.
+
+    `nontrain_rows` (C12-E1 phase B, MM decision (d) 2026-11-02): the steps after which the trainer does NON-TRAINING work
+    inside the loop -- a checkpoint write and/or an in-run eval (`nontrain_rows()`, below). They run after `opt.step` and
+    before the next step's, so their wall-clock lands in an interval the cost rule would otherwise average in. MEASURED by S1
+    (`landed_hold_r9_speed/SPEED_CARD.md`): the steady rig step is ~4.70 s; the earlier 9.753 s/step READ the eval + ckpt save
+    at step 25 -- the PI-DECISION cost rule (> 8.0 s/step) must read STEADY steps. Same three-interval drop as a reading row
+    (the work can sit on either side of the async opt.step timestamp); recorded separately, so the evidence shows which
+    exclusion removed what."""
+    iv = [b - a for a, b in zip(step_times, step_times[1:])]
+    drop = {j for r in exclude_rows for j in (int(r) - 2, int(r) - 1, int(r))}
+    drop_nt = {j for r in nontrain_rows for j in (int(r) - 2, int(r) - 1, int(r))}
+    use = [v for j, v in enumerate(iv) if j >= warmup and j not in drop and j not in drop_nt]
+    n_dropped = sum(1 for j in range(len(iv)) if j >= warmup and j in drop)
+    extra = {"reading_intervals_excluded": n_dropped, "reading_rows": sorted(int(r) for r in exclude_rows)} \
+        if exclude_rows else {}
+    if nontrain_rows:
+        extra["nontrain_intervals_excluded"] = sum(1 for j in range(len(iv)) if j >= warmup and j in drop_nt and j not in drop)
+        extra["nontrain_rows"] = sorted(int(r) for r in nontrain_rows)
+    if not use:
+        return {"n_intervals": len(iv), "n_used": 0, "s_per_step_mean": None, **extra}
+    s = sorted(use)
+    return {"n_intervals": len(iv), "n_used": len(use), "warmup_skipped": warmup,
+            "s_per_step_mean": round(sum(use) / len(use), 4),
+            "s_per_step_median": round(s[len(s) // 2], 4), "s_per_step_max": round(s[-1], 4), **extra}
+
+
+#: the trainer's fixed milestone checkpoints (`refc_v3_train.MILESTONES`, pinned by tests/test_launch_gate_e1rig.py against the source)
+TRAINER_MILESTONES = (5000, 15000, 20000, 30000)
+
+
+def nontrain_rows(argv: list[str], steps: int | None = None) -> list[int]:
+    """The steps r (1 <= r < steps) after which the trainer's loop does NON-TRAINING work, read off `argv` with the trainer's own
+    conditions (refc_v3_train.py, after `opt.step()` / `step += 1`):
+      * a checkpoint write   `step % --save-every == 0` (default 500), `step in MILESTONES`, `step in --snapshot-steps`
+      * the in-run eval      `step % --eval-every == 0`, only with `--eval-cache` and `--eval-every` > 0 (default 0 = off)
+    The FINAL step is not listed: its work comes after the last `opt.step` timestamp, so no interval contains it."""
+    def _int(flag: str) -> int:
+        v = flag_values(argv, flag)
+        try:
+            return int(v[0]) if v else 0
+        except ValueError:
+            return 0
+    try:
+        n = int(steps if steps is not None else ((flag_values(argv, "--steps") or ["0"])[0]))
+    except ValueError:
+        return []
+    if n <= 1:
+        return []
+    rows: set[int] = set(m for m in TRAINER_MILESTONES if m < n)
+    se = _int("--save-every") if has_flag(argv, "--save-every") else 500
+    if se > 0:
+        rows |= set(range(se, n, se))
+    ee = _int("--eval-every")
+    if ee > 0 and has_flag(argv, "--eval-cache"):
+        rows |= set(range(ee, n, ee))
+    ss = flag_values(argv, "--snapshot-steps")
+    if ss:
+        try:
+            rows |= {int(x) for x in str(ss[0]).split(",") if x.strip()}
+        except ValueError:
+            pass                      # malformed: the trainer's own refusal names it
+    return sorted(r for r in rows if 1 <= r < n)
+
+
+def gs_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
+    """The metrics rows on which `argv` takes a gradient-share reading: `--grad-share-at` when given, else every
+    `--grad-share-every`-th row up to `--steps` (the trainer's default schedule). [] when the instrument is off."""
+    ev = flag_values(argv, "--grad-share-every")
+    try:
+        every = int(ev[0]) if ev else 0
+    except ValueError:
+        return []
+    if every <= 0:
+        return []
+    at = flag_values(argv, "--grad-share-at")
+    try:
+        if at:
+            return sorted({int(x) for x in str(at[0]).split(",") if x.strip()})
+        n = int(steps if steps is not None else ((flag_values(argv, "--steps") or ["0"])[0]))
+    except ValueError:
+        return []
+    return list(range(every, n + 1, every))
+
+
+#: K2DC (PREREG_K2DC_2026-11-12): the map-dose share controller's four flags (`tanitad/train/map_dose_ctl.py`).
+_DC_TARGET = "--map-hires-share-target"
+_DC_FLAGS = (_DC_TARGET, "--map-hires-share-every", "--map-hires-share-group", "--map-hires-w-bounds")
+
+
+def _dc_bounds(argv: list[str]) -> tuple[float, float] | None:
+    v = flag_values(argv, "--map-hires-w-bounds")
+    try:
+        lo, hi = (float(x) for x in str((v or ["1,25"])[0]).split(","))
+    except ValueError:
+        return None
+    return (lo, hi) if 0.0 < lo <= hi < float("inf") else None
+
+
+def dose_controller_static_reasons(argv: list[str]) -> tuple[list[str], dict]:
+    """K2DC, STATIC: inert when argv carries none of the four flags. A controller flag WITHOUT `--map-hires-share-target` is a
+    controller declared and never built (the deliberate-regression arm: target unset) -> refused; with the target: 0 < target < 1,
+    LO,HI parse (0 < LO <= HI), the INITIAL `--w-map-hires` lies inside, and `map_hires` is among the terms the gradient-share reading
+    separates (`--grad-share-terms`, when given)."""
+    decl = [f for f in _DC_FLAGS if has_flag(argv, f)]
+    if not decl:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True, "declared": decl}
+    if not has_flag(argv, _DC_TARGET):
+        return [f"DOSE-CTL: {', '.join(decl)} declared but {_DC_TARGET} is not passed -- the controller would be declared in argv and never built"], det
+    out: list[str] = []
+    try:
+        t = float((flag_values(argv, _DC_TARGET) or ["nan"])[0])
+    except ValueError:
+        t = float("nan")
+    if not (t == t and 0.0 < t < 1.0):
+        out.append(f"DOSE-CTL: {_DC_TARGET} {(flag_values(argv, _DC_TARGET) or [None])[0]!r} must satisfy 0 < target < 1")
+    bd = _dc_bounds(argv)
+    if bd is None:
+        out.append(f"DOSE-CTL: --map-hires-w-bounds {(flag_values(argv, '--map-hires-w-bounds') or ['1,25'])[0]!r} is not LO,HI with 0 < LO <= HI")
+    else:
+        try:
+            w = float((flag_values(argv, "--w-map-hires") or ["nan"])[0])
+        except ValueError:
+            w = float("nan")
+        if not (bd[0] <= w <= bd[1]):
+            out.append(f"DOSE-CTL: the initial --w-map-hires {w} is outside --map-hires-w-bounds [{bd[0]:g}, {bd[1]:g}]")
+        det["bounds"] = list(bd)
+    terms = flag_values(argv, "--grad-share-terms")
+    if terms and "map_hires" not in str(terms[0]).split(",") and str(terms[0]) != "all":
+        out.append(f"DOSE-CTL: --grad-share-terms {terms[0]} does not separate `map_hires`, the term the controller holds")
+    return out, det
+
+
+def dc_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
+    """The metrics rows on which K2DC's controller fires (`--map-hires-share-every` multiples up to `--steps`); [] when off."""
+    if not has_flag(argv, _DC_TARGET):
+        return []
+    ev = flag_values(argv, "--map-hires-share-every")
+    try:
+        every = int(ev[0]) if ev else 250
+        n = int(steps if steps is not None else ((flag_values(argv, "--steps") or ["0"])[0]))
+    except ValueError:
+        return []
+    return list(range(every, n + 1, every)) if every > 0 else []
+
+
+
+def dose_ctl_amortized(launch_argv: list[str], smoke_rows: list[dict]) -> dict | None:
+    """K2DC, the G-LIVE cost (MM 4a3d05, 2026-11-14): the controller's reading is part of the arm's TRAINING METHOD -- the run cannot
+    train as declared without it -- so, unlike a gradient-share reading (an optional instrument whose wall-clock SPEC_REFCV8 3.2 item 5
+    keeps out of the judged s/step), its wall-clock belongs to the arm's cost. The smoke fires the controller at the smoke's cadence; the
+    RUN fires it on `dc_reading_rows(launch argv)`. -> the s/step those readings add, amortized over the run (mean measured reading seconds
+    x readings in the run / run steps), or None when the controller is off.
+    MEASURED 2026-11-14 (Thor, final gate K2DC at 68bda0d5, smoke 20261114T024837): one reading = 583.76 s (fp32 replay: 204.14 s
+    forward + 379.59 s measure) against a steady 8.62 s/step; 24 readings in 6,000 steps add 2.335 s/step. Without this term the cost
+    read 8.62 (reading dropped: under-states the run by ~3.9 h) or 15.41 (one reading averaged into an 86-interval smoke: describes neither
+    the smoke nor the run) -- the second refused the arm as PI-DECISION on a number that was not its cost."""
+    run = dc_reading_rows(launch_argv)
+    if not run:
+        return None
+    try:
+        steps = int((flag_values(launch_argv, "--steps") or ["0"])[0])
+    except ValueError:
+        steps = 0
+    secs: list[float] = []
+    at: list[int] = []
+    for r in smoke_rows:
+        if "dc_w_eff" not in r:
+            continue
+        v = r.get("dcp_fp32_replay_s", r.get("dcp_measure_s"))
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0:
+            secs.append(float(v))
+            at.append(int(r.get("step", -1)))
+    out: dict[str, Any] = {"n_readings": len(run), "run_steps": steps, "smoke_reading_rows": at,
+                           "smoke_reading_s": [round(s, 2) for s in secs]}
+    if not secs or steps <= 0:
+        return {**out, "reading_s_mean": None, "s_per_step": None,
+                "why": ("no controller firing in the smoke carries dcp_fp32_replay_s / dcp_measure_s" if not secs
+                        else "the launch argv carries no --steps")}
+    m = sum(secs) / len(secs)
+    return {**out, "reading_s_mean": round(m, 2), "s_per_step": round(len(run) * m / steps, 4)}
+
+
+def dose_controller_live_reasons(launch_argv: list[str], rows: list[dict]) -> tuple[list[str], dict]:
+    """K2DC, G-LIVE (the SMOKE's rows): inert when the launch argv carries none of the four flags. Controller ON with NO `dc_w_eff` row
+    is a FAIL (a controller that never fired is declared and untested -- never a pass); every `dc_w_eff` row must carry a finite weight
+    inside [LO, HI] and a `dc_share_pred` equal to the target within 1e-6, or `dc_clamped` true (no root inside the bounds)."""
+    decl = [f for f in _DC_FLAGS if has_flag(launch_argv, f)]
+    if not decl:
+        return [], {"on": False}
+    if not has_flag(launch_argv, _DC_TARGET):
+        return [f"DOSE-CTL: {', '.join(decl)} declared but {_DC_TARGET} is not passed"], {"on": True}
+    try:
+        target = float(flag_values(launch_argv, _DC_TARGET)[0])
+    except (ValueError, TypeError, IndexError):
+        return [f"DOSE-CTL: {_DC_TARGET} is not a number"], {"on": True}
+    bd = _dc_bounds(launch_argv) or (float("nan"), float("nan"))
+    firing = [r for r in rows if "dc_w_eff" in r]
+    det: dict[str, Any] = {"on": True, "target": target, "bounds": list(bd), "n_firings": len(firing),
+                           "firings": [{k: r.get(k) for k in ("step", "dc_w_before", "dc_w_eff", "dc_share_read", "dc_share_pred", "dc_clamped")}
+                                       for r in firing]}
+    if not firing:
+        return [f"DOSE-CTL: the controller is ON ({_DC_TARGET} {target:g}) but the smoke carries no `dc_w_eff` row -- it never fired inside G-LIVE "
+                f"(declared and untested is a FAIL)"], det
+    out: list[str] = []
+    for r in firing:
+        w, pred, cl = r.get("dc_w_eff"), r.get("dc_share_pred"), r.get("dc_clamped")
+        if not (isinstance(w, (int, float)) and w == w and bd[0] - 1e-9 <= w <= bd[1] + 1e-9):
+            out.append(f"DOSE-CTL: row {r.get('step')}: dc_w_eff {w!r} is not a finite weight inside [{bd[0]:g}, {bd[1]:g}]")
+        pred_ok = isinstance(pred, (int, float)) and pred == pred
+        if not (pred_ok and (abs(pred - target) <= 1e-6 or (isinstance(cl, (int, float)) and cl > 0.0))):
+            out.append(f"DOSE-CTL: row {r.get('step')}: dc_share_pred {pred!r} != target {target:g} (+-1e-6) and dc_clamped is {cl!r}")
+    return out, det
+
+
+@contextlib.contextmanager
+def dose_ctl_for_dvb(T, model, args):
+    """K2DC, G-DVB. `train()` attaches `model._map_dose_ctl` AFTER its data sources (refc_v3_train.py: `_dose = _mdc.controller_for(args)`,
+    just before the resume block), i.e. past `trainer_capture`'s stop at the first data-source call -- so the captured model never carried
+    it, and G-DVB read `--map-hires-share-target: declared 0.1 but BUILT None` for a K2DC argv whose real smoke built AND fired the
+    controller (MEASURED 2026-11-13, K2DC final gate at df49fd59: the smoke's row 100 carries dc_w_eff / dc_share_read / dcp_fp32_replay).
+    For the G-DVB judgement ONLY, the controller is attached with the TRAINER'S OWN builder (`T._mdc.controller_for(args)`, the call
+    `train()` makes), so G-DVB still judges the trainer's argv -> controller mapping (a builder that drops or alters a flag still FAILS),
+    and it is removed again on exit so no other check sees a gate-made attachment. That `train()` really makes the call and the controller
+    fires is G-LIVE's job (`dose_controller_live_reasons`: controller ON and no `dc_w_eff` row in the real smoke = FAIL).
+    Inert when the argv declares no controller, when the model already carries one, or without a model. Yields what it did (a dict)."""
+    det: dict[str, Any] = {"attached": False}
+    mdc = getattr(T, "_mdc", None)
+    if model is None or args is None or not callable(getattr(mdc, "controller_for", None)):
+        det["why"] = "no model / args, or the trainer has no _mdc.controller_for"
+    elif getattr(model, "_map_dose_ctl", None) is not None:
+        det["why"] = "already on the captured model"
+    else:
+        ctl = mdc.controller_for(args)
+        if ctl is None:
+            det["why"] = "OFF: the argv declares no controller (or the trainer's builder built none)"
+        else:
+            model._map_dose_ctl = ctl
+            det.update(attached=True, via="T._mdc.controller_for(args): the trainer's own build hop, run past the capture point",
+                       target=ctl.target, every=ctl.every, group=ctl.group, bounds=[ctl.lo, ctl.hi])
+    try:
+        yield det
+    finally:
+        if det.get("attached"):
+            try:
+                del model._map_dose_ctl
+            except AttributeError:
+                pass
+
+
+def smoke_argv(base: list[str], steps: int, log_every: int, alarm_flag: str | None = None) -> tuple[list[str], dict]:
+    """The G-LIVE smoke's argv from the LAUNCH argv: `--steps` -> the smoke length, and every flag whose value is a
+    STEP of the launch (a number the trainer's own pins compare with `--steps`) re-expressed inside the smoke.
+
+    B-GS-SMOKE (MEASURED by the SPEC_REFCV8 agent, 2026-10-11): the launch carries `--grad-share-at 1000,10000,20000,30000`
+    and `--b1-guard-step 1000`; the ~100-step smoke then died in the trainer's pins ("past --steps 100" / "the guard could
+    never fire") before step 1 -- a conformant launch argv could never PASS G-LIVE. CHOSEN: REWRITE, not drop.
+      * `--grad-share-every L --grad-share-at L` (L = the launch's `--log-every`): EXACTLY ONE reading, on the first logged
+        row -- SPEC_REFCV8 3.2 item 5 ("the smoke argv carries --grad-share-every 50 --grad-share-at 50"). Dropping the
+        flags would leave the instrument (`gs_*` rows, the fp32 replay) unreached, i.e. declared and untested; the rewrite
+        keeps it reached once, and its wall-clock is the number the schedule rule needs. Done only when the launch has the
+        instrument ON (`--grad-share-every` > 0).
+      * `--b1-guard-step` above the smoke -> the smoke's last step (the one step an in-run eval is guaranteed:
+        `step == args.steps`), so the guard is ARMED and DECIDES in the smoke and reads its EMA metric for real.
+    Everything rewritten is returned in the second value (it goes into the G-LIVE evidence as a departure).
+
+    SHARE-ALARM CADENCE (MM 2026-11-15, K2DC final gate 11-15 09:04Z: one reading at step 50 read 0.0170 on a config whose two earlier
+    smokes read 0.0854 / 0.0817 -- the single-reading estimator is noisy near its floor): when `alarm_flag` (the profile's
+    `map_share_alarm["flag"]`) is in the launch argv AND the instrument is on, the smoke takes THREE readings, at q, 2q, 3q with
+    q = steps // 4 (25 / 50 / 75 for the 100-step smoke), and logs every q steps so each reading lands on a logged row
+    (`--grad-share-every` and the controller's `--map-hires-share-every` stay multiples of `--log-every`). The alarm judges their MEAN."""
+    out = set_flag(list(base), "--steps", [str(steps)])
+    dep: dict[str, Any] = {"--steps": steps}
+    L = max(1, int(log_every))
+    ev = flag_values(base, "--grad-share-every")
+    try:
+        on = bool(ev) and int(ev[0]) > 0
+    except ValueError:
+        on = False
+    if on and alarm_flag and has_flag(base, alarm_flag) and int(steps) >= 4:
+        q = max(1, int(steps) // 4)
+        was = {"--grad-share-every": ev[0], "--grad-share-at": (flag_values(base, "--grad-share-at") or [None])[0], "--log-every": str(L)}
+        L = q
+        out = set_flag(out, "--log-every", [str(q)])
+        out = set_flag(set_flag(out, "--grad-share-every", [str(q)]), "--grad-share-at", [f"{q},{2 * q},{3 * q}"])
+        dep["--grad-share-every/--grad-share-at/--log-every"] = (
+            f"{was} -> every {q} at {q},{2 * q},{3 * q} log-every {q} (THREE readings inside the smoke, the share alarm judges their mean; "
+            f"their cost is excluded from s/step)")
+    elif on:
+        was = {"--grad-share-every": ev[0], "--grad-share-at": (flag_values(base, "--grad-share-at") or [None])[0]}
+        out = set_flag(set_flag(out, "--grad-share-every", [str(L)]), "--grad-share-at", [str(L)])
+        dep["--grad-share-every/--grad-share-at"] = (f"{was} -> every {L} at {L} (one reading inside the smoke, "
+                                                     f"SPEC_REFCV8 3.2 item 5; its cost is excluded from s/step)")
+    if has_flag(base, _DC_TARGET):
+        # K2DC: EXACTLY ONE controller firing inside the smoke. `--map-hires-share-every L` would fire at every multiple of L inside the smoke
+        # (the smoke is >= 2 L long: rows L and 2 L), so the cadence is the largest multiple of L that fits -- the smoke's last logged row --
+        # and the weight that firing leaves is what G-CKPT's resume leg must restore.
+        dce = flag_values(base, "--map-hires-share-every")
+        every_dc = max(L, (int(steps) // L) * L)
+        out = set_flag(out, "--map-hires-share-every", [str(every_dc)])
+        dep["--map-hires-share-every"] = (f"{(dce or ['250'])[0]} -> {every_dc} (the largest multiple of --log-every {L} inside the {steps}-step smoke: "
+                                          f"EXACTLY ONE controller firing, on the last logged row; its cost is excluded from s/step)")
+    gs = flag_values(base, "--b1-guard-step")
+    try:
+        late = bool(gs) and int(gs[0]) > steps
+    except ValueError:
+        late = False
+    if late:
+        out = set_flag(out, "--b1-guard-step", [str(steps)])
+        dep["--b1-guard-step"] = f"{gs[0]} -> {steps} (the smoke's last step: the guard decides on the final-step eval)"
+    # MM 2026-10-11 (smoke the launch as launched): the launch switches allocation EMISSION on at
+    # --r8-alloc-emit-start (1000). A smoke shorter than that never runs the switch, so a crash at the
+    # switch would first appear in the real run. Bring it inside: emission turns on mid-smoke.
+    es = flag_values(base, "--r8-alloc-emit-start")
+    if es and int(es[0]) >= steps:
+        mid = max(1, steps // 2)
+        out = set_flag(out, "--r8-alloc-emit-start", [str(mid)])
+        dep["--r8-alloc-emit-start"] = (f"{es[0]} -> {mid} (emission switches ON mid-smoke, so the launch's "
+                                        f"emission switch runs inside G-LIVE)")
+    # MM 2026-10-22 (MEASURED, NT A1 gate on f5262ea, 23:31 Berlin; PI authorized 2026-10-23): the NT launch carries
+    # `--snapshot-steps 0,1560,3120,6239,9359,12478` (H-NT-DECIDE-1). The trainer refuses any snapshot step outside
+    # [0, --steps] (`parse_snapshot_steps`: "never written"), so the 100-step smoke exited before step 1 -- G-LIVE and
+    # G-CKPT could never PASS on a conformant NT argv. REWRITE, not drop (B-GS-SMOKE): keep the launch's steps that fall
+    # inside the smoke and add the smoke's last step, so the snapshot write (EMA + RAW, model-only) runs inside G-LIVE.
+    ss = flag_values(base, "--snapshot-steps")
+    try:
+        snaps = sorted({int(x) for x in str(ss[0]).split(",") if x.strip()}) if ss else []
+    except ValueError:
+        snaps = []                     # malformed: left as launched, the trainer's own refusal names it
+    if snaps and max(snaps) > steps:
+        inside = sorted({s for s in snaps if 0 <= s <= steps} | {steps})
+        out = set_flag(out, "--snapshot-steps", [",".join(str(s) for s in inside)])
+        dep["--snapshot-steps"] = (f"{ss[0]} -> {','.join(str(s) for s in inside)} (steps past the smoke dropped, the "
+                                   f"smoke's last step added: the snapshot write runs inside G-LIVE)")
+    # MM 207ebd C12-FULL: the refcv9 WSD schedule rows (the same B-GS-SMOKE class: the launch's --wsd-decay-steps / --warmup / --save-at
+    # are numbers of the LAUNCH and the trainer's own pins refuse them inside a 50 / 100-step smoke)
+    out, wdep = wsd_smoke_rewrite(out, steps, L)
+    dep.update(wdep)
+    return out, dep
+
+
+def judge_b1_reach(argv: list[str], rows: list[dict]) -> tuple[list[str], dict]:
+    """The B1 guard, armed on the smoke argv, must have DECIDED in the smoke (a `b1_guard` keep/cut row in
+    metrics.jsonl): a guard that is stamped in config.json and never reads its metric is exactly the M18 failure."""
+    if not has_flag(argv, "--b1-guard-ref-ap2m"):
+        return [], {"b1_guard": "not armed in this argv"}
+    dec = [r for r in rows if r.get("b1_guard") in ("keep", "cut")]
+    det = {"b1_guard_rows": [{k: r.get(k) for k in ("step", "b1_guard", "b1_ema_box3d_ap2m", "b1_ref_box3d_ap2m")}
+                              for r in dec][:3]}
+    if not dec:
+        return ["G-LIVE B1 reach: --b1-guard-ref-ap2m is armed in the smoke but no row carries a `b1_guard` decision "
+                "-- the guard never read ema_eval_box3d_ap2m (the in-run eval or the EMA eval did not run); "
+                "a stamped-and-unreached guard is refused"], det
+    return [], det
+
+
+def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: list[str],
+                    grads: dict, *, cuda: bool, approval: dict | None,
+                    ctl_cost: dict | None = None) -> tuple[list[str], bool, dict]:
+    """-> (reasons, needs_pi, details) for NEW-2 in the smoke. Inert (no reasons) when off. `ctl_cost` = `dose_ctl_amortized(...)`
+    (K2DC): its s/step is ADDED to the steady s/step before the cost rule and the PI approval read it; None keeps the old judgement."""
+    h = prof["map_hires"]
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    n_f = int(run1.get("fwd_train_calls", 0))
+    det["fmap_hits"] = f"{run1.get('fmap_hits', 0)}/{n_f}"
+    if n_f == 0:
+        reasons.append("NEW-2: no training forward was observed")
+    elif int(run1.get("fmap_hits", 0)) != n_f:
+        reasons.append(f"NEW-2: `{h['fmap_key']}` reached the forward output on only "
+                       f"{run1.get('fmap_hits', 0)} of {n_f} training forwards (the F3 "
+                       f"pass-through class)")
+    hf = run1.get("hires_first") or (["NEW-2: the output probe never ran"], {})
+    det["outputs"] = hf[1]
+    reasons += [r if r.startswith("NEW-2") else f"NEW-2: {r}" for r in hf[0]]
+    tok = h["name_token"]
+    live = [g for g in grads.get("groups", []) if tok in g["group"]]
+    det["hires_leaf_groups"] = len(live)
+    if not live:
+        reasons.append(f"NEW-2: no declared-trainable leaf module carries '{tok}' -- the new "
+                       f"decoder's gradient cannot be verified")
+    cw = flag_values(argv_local, h["class_weights_flag"])
+    if cw and Path(cw[0]).is_file():
+        want = sha256_file(cw[0])
+        found = []
+
+        def walk(o, p=""):
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    kp = f"{p}.{k}"
+                    if isinstance(v, str) and "class_weight" in kp.lower() and _HEX64.match(v):
+                        found.append((kp, v))
+                    walk(v, kp)
+            elif isinstance(o, list):
+                for i, v in enumerate(o):
+                    walk(v, f"{p}[{i}]")
+        walk(config or {})
+        det["class_weights_sha256"] = {"file": want, "config_json": found[:4]}
+        if not any(v == want for _, v in found):
+            reasons.append(f"NEW-2: config.json does not record the class-weight JSON's sha256 "
+                           f"{want[:16]} (found {[v[:16] for _, v in found]})")
+    else:
+        reasons.append(f"NEW-2: {h['class_weights_flag']} {cw} is not a readable file")
+    cost = step_cost(run1.get("step_times") or [], int(h["cost_warmup_steps"]),
+                     exclude_rows=sorted(set(gs_reading_rows(argv_local)) | set(dc_reading_rows(argv_local))),
+                     nontrain_rows=nontrain_rows(argv_local))
+    cost["cuda_max_mem_gb"] = run1.get("cuda_max_mem_gb")
+    cost["ref_s_per_step"] = h["cost_ref_s_per_step"]
+    cost["max_ratio"] = h["cost_max_ratio"]
+    needs_pi = False
+    if not cuda:
+        cost["verdict"] = "not measured: a CPU host's s/step says nothing about Thor"
+        reasons.append("NEW-2: the cost gate needs the Thor smoke (CUDA); this host cannot answer it")
+    elif cost.get("s_per_step_mean") is None:
+        reasons.append("NEW-2: too few steps after warm-up to measure s/step")
+    elif ctl_cost is not None and ctl_cost.get("s_per_step") is None:
+        cost["dose_ctl"] = ctl_cost
+        reasons.append(f"NEW-2: the dose controller is on but its reading cost was not measured ({ctl_cost.get('why')}) -- the "
+                       f"arm's s/step cannot be judged")
+    else:
+        judged = cost["s_per_step_mean"]
+        what = f"{judged} s/step"
+        if ctl_cost is not None:
+            cost["dose_ctl"] = ctl_cost
+            judged = round(judged + ctl_cost["s_per_step"], 4)
+            cost["s_per_step_judged"] = judged
+            what = (f"{judged} s/step (steady {cost['s_per_step_mean']} + the dose controller's {ctl_cost['n_readings']} readings "
+                    f"x {ctl_cost['reading_s_mean']} s over {ctl_cost['run_steps']} steps = {ctl_cost['s_per_step']})")
+        ratio = judged / float(h["cost_ref_s_per_step"])
+        cost["ratio"] = round(ratio, 4)
+        if ratio > float(h["cost_max_ratio"]):
+            ok_pi = (approval is not None
+                     and judged <= float(approval.get("max_s_per_step", -1)))
+            cost["pi_approval"] = approval
+            if ok_pi:
+                cost["verdict"] = "above +25 % but within the PI's recorded approval"
+            else:
+                needs_pi = True
+                cost["verdict"] = (f"PI-DECISION: {what} is "
+                                   f"{ratio:.2f}x refcv6's {h['cost_ref_s_per_step']} "
+                                   f"(> {h['cost_max_ratio']}x) -- SPEC 6.2 item 5")
+        else:
+            cost["verdict"] = "within +25 %"
+    det["cost"] = cost
+    return reasons, needs_pi, det
+
+
+def _fmt_keys(fmt: str, h: dict, bands: Iterable[str] | None = None) -> list[str]:
+    return [fmt.format(cls=c, band=b) for c in h.get("classes", ())
+            for b in (tuple(bands) if bands is not None else h.get("bands", ()))]
+
+
+def map_expected_eval_keys(prof: dict) -> list[str]:
+    """The per-class x band keys an eval row must carry (without its `eval_` prefix): the POOLED
+    IoU and the loss share -- 24 + 24 (LOGGING_SPEC_MAP10 sec. 2)."""
+    h = prof.get("map_hires") or {}
+    return _fmt_keys(h["eval_key_fmt"], h) + _fmt_keys(h["eval_lshare_fmt"], h)
+
+
+def _finite_num(v: Any) -> bool:
+    return (isinstance(v, (int, float)) and not isinstance(v, bool)
+            and math.isfinite(float(v)))
+
+
+def map_spelling_reasons(prof: dict) -> tuple[list[str], dict]:
+    """The registered spelling (LITERALS in the profile) against the builder's module, when it
+    exists: a drift between the two FAILS, it is never resolved silently."""
+    h = prof["map_hires"]
+    try:
+        M = importlib.import_module("tanitad.models.map_head_hires")
+    except Exception as e:                                # noqa: BLE001
+        return [], {"module": f"not importable ({type(e).__name__}) -- literals only"}
+    det: dict[str, Any] = {"module": "tanitad.models.map_head_hires"}
+    reasons = []
+    got = getattr(M, "CLASS_KEYS", None)
+    det["CLASS_KEYS"] = list(got) if got is not None else None
+    if got is None or tuple(got) != tuple(h["classes"]):
+        reasons.append(f"G-MAP: map_head_hires.CLASS_KEYS {got!r} is not the registered spelling "
+                       f"{tuple(h['classes'])!r} (LOGGING_SPEC_MAP10 sec. 1) -- one spelling, not "
+                       f"two")
+    # the bands of the DECLARED extent (A7: 1000 rows at 10 cm). ⚠️ `map_head_hires.BAND_KEYS` is
+    # the /2 constant (3 bands); the extent-aware form is `band_keys_for_rows` (landed cef9709)
+    fn = getattr(M, "band_keys_for_rows", None)
+    bands = tuple(fn(int(h["logits_hw"][0]))) if fn is not None else getattr(M, "BAND_KEYS", None)
+    det["bands_at_extent"] = list(bands) if bands is not None else None
+    if bands is None or tuple(bands) != tuple(h["bands"]):
+        reasons.append(f"G-MAP: map_head_hires' bands at the {h['logits_hw'][0]}-row extent "
+                       f"{bands!r} are not the registered {tuple(h['bands'])!r}")
+    pk = getattr(M, "per_class_key", None)
+    if pk is not None and not reasons:
+        mine = sorted(f"eval_{k}" for k in _fmt_keys(h["eval_key_fmt"], h))
+        theirs = sorted(pk("iou", c, b, "eval_") for c in range(len(h["classes"]))
+                        for b in h["bands"])
+        det["per_class_key_agrees"] = mine == theirs
+        if mine != theirs:
+            reasons.append(f"G-MAP: map_head_hires.per_class_key spells the IoU keys "
+                           f"{theirs[:2]}..., the registered spelling is {mine[:2]}...")
+    return reasons, det
+
+
+def judge_map_classes(prof: dict, stats: dict | None) -> tuple[list[str], dict]:
+    """G-MAP (G-LIVE part): every one of the 8 map classes PRESENT in the smoke batches with at
+    least `min_cells` labelled 10 cm cells has a finite, NON-ZERO gradient at its own cells --
+    on all logit channels (its loss contribution: a weighted CE sends exactly zero gradient from
+    a class whose weight is 0) and on its OWN channel. `stats[c]` accumulates, over the smoke's
+    training steps, what a tensor hook on the 10 cm logits measured."""
+    h = prof["map_hires"]
+    if not stats or stats.get("_hooked", 0) == 0:
+        return ["G-MAP: the per-class probe never ran -- no 10 cm logits tensor with a gradient "
+                "and a 10 cm target were found in a training step"], {"stats": stats}
+    reasons, rows = [], {}
+    for i, c in enumerate(h["classes"]):
+        s = stats.get(str(i)) or {"cells": 0, "grad_all": 0.0, "grad_own": 0.0,
+                                  "nonfinite": False}
+        present = int(s["cells"]) >= int(h["min_cells"])
+        rows[c] = {**s, "present": present}
+        if s.get("nonfinite"):
+            reasons.append(f"G-MAP: class {c!r}: a non-finite gradient on the 10 cm logits")
+        if not present:
+            continue
+        if not (float(s["grad_all"]) > 0.0):
+            reasons.append(f"G-MAP: class {c!r} has {s['cells']} labelled cells in the smoke and "
+                           f"ZERO loss contribution (no gradient at its cells)")
+        elif not (float(s["grad_own"]) > 0.0):
+            reasons.append(f"G-MAP: class {c!r}: zero gradient on its OWN logit channel")
+    det = {"per_class": rows, "min_cells": h["min_cells"],
+           "n_present": sum(1 for r in rows.values() if r["present"]),
+           "n_hooked_steps": stats.get("_hooked", 0)}
+    return reasons, det
+
+
+def map_eval_key_reasons(prof: dict, eval_rows: list[dict], *,
+                         weighted: bool = True) -> tuple[list[str], dict]:
+    """G-MAP, read off the smoke's ARTIFACT (LOGGING_SPEC_MAP10 sec. 6, items 1, 3, 6). The FIRST
+    in-run eval row carries all 24 IoU + 24 loss-share keys (an undefined IoU is `null`, never 0);
+    all 48 argmax COUNTS the IoU is pooled from are finite -- plus the 48 RAW-rule counts when the
+    loss is class-weighted; and every class has labelled cells in the gated band (refcv6 logged
+    the drivable class only, for 38,000 steps)."""
+    h = prof["map_hires"]
+    if not eval_rows:
+        return ["G-MAP: the smoke wrote no in-run eval row, so the per-class map IoU logging "
+                "cannot be observed"], {}
+    row = eval_rows[0]
+    reasons: list[str] = []
+    want = [f"eval_{k}" for k in map_expected_eval_keys(prof)]
+    miss = [k for k in want if k not in row]
+    det: dict[str, Any] = {"eval_step": row.get("step"), "expected": len(want),
+                           "missing": miss[:30], "n_missing": len(miss), "weighted": weighted}
+    if miss:
+        reasons.append(f"G-MAP: the in-run eval logs {len(want) - len(miss)} of the {len(want)} "
+                       f"per-class 10 cm IoU + loss-share keys (first missing: {miss[:4]})")
+    fmts = list(h["eval_count_fmts"]) + (list(h["raw_count_fmts"]) if weighted else [])
+    counts = [f"eval_{k}" for f in fmts for k in _fmt_keys(f, h)]
+    bad = [k for k in counts if not _finite_num(row.get(k))]
+    det.update(counts_expected=len(counts), counts_bad=bad[:20], n_counts_bad=len(bad))
+    if bad:
+        reasons.append(f"G-MAP: {len(bad)} of the {len(counts)} per-class argmax COUNT keys are "
+                       f"absent or non-finite in the eval row (first: {bad[:4]}) -- the pooled "
+                       f"IoU needs the counts, not per-batch IoUs")
+    gb = h["gated_band"]
+    empty = []
+    for c in h["classes"]:
+        v = row.get(f"eval_{h['n_fmt'].format(cls=c, band=gb)}")
+        if not (_finite_num(v) and float(v) > 0):
+            empty.append(c)
+    det["classes_without_cells_in_gated_band"] = empty
+    if empty:
+        reasons.append(f"G-MAP: the smoke's eval windows carry no labelled {gb} m cells for "
+                       f"{empty} -- extend the eval set; the check is not waived")
+    return reasons, det
+
+
+def _map_train_rows_k4(h: dict, lk: str, train_rows: list[dict]) -> tuple[list[str], dict]:
+    """G-MAP under a profile whose map supervision is OFF BY DATA (``map_hires.train_labels = "absent_k4"``;
+    refcv8-nt, PREREG_NT_DECIDE K4: NavSim has no map GT). An all-IGNORE batch makes the trainer write the 10 cm
+    loss as ``logits.sum() * 0`` and NO per-class contributions, so the contribution-sum check cannot apply.
+    It is replaced by K4 on every row that carries the loss, which is STRICTER for this profile: ZERO labelled
+    windows and the loss exactly 0.0. A labelled window means map GT reached NavSim training -- FAIL."""
+    nk = h.get("n_labelled_key", "map_hires_n_labelled")
+    rows = [r for r in train_rows if lk in r]
+    if not rows:
+        return [f"G-MAP (K4): no training row carries `{lk}` -- the 10 cm branch never reached the log"], {}
+    lab = [(r.get("step"), r.get(nk)) for r in rows
+           if not (_finite_num(r.get(nk)) and float(r[nk]) == 0.0)]
+    nz = [(r.get("step"), r.get(lk)) for r in rows
+          if not (_finite_num(r.get(lk)) and float(r[lk]) == 0.0)]
+    det = {"mode": "absent_k4", "n_rows": len(rows), "rows_labelled": lab[:10], "rows_nonzero_loss": nz[:10]}
+    reasons = []
+    if lab:
+        reasons.append(f"G-MAP (K4): {len(lab)} of {len(rows)} training rows do not read ZERO labelled 10 cm "
+                       f"windows (first: step {lab[0][0]}, `{nk}` = {lab[0][1]}) -- this profile admits map "
+                       f"supervision OFF only")
+    if nz:
+        reasons.append(f"G-MAP (K4): on {len(nz)} of {len(rows)} training rows `{lk}` is not exactly 0.0 "
+                       f"(first: step {nz[0][0]}: {nz[0][1]}) -- K4 requires the counted zero")
+    return reasons, det
+
+
+def map_train_row_reasons(prof: dict, train_rows: list[dict]) -> tuple[list[str], dict]:
+    """G-MAP (LOGGING_SPEC_MAP10 sec. 6 item 2): on EVERY training row that carries the 10 cm
+    loss, the 24 per-class x band loss CONTRIBUTIONS are present and sum to it within
+    1e-5 x |loss| -- plus the rows' own 5-dp rounding (0.5e-5 per rounded term), stated."""
+    h = prof["map_hires"]
+    lk = h["loss_key"]
+    if h.get("train_labels") == "absent_k4":
+        return _map_train_rows_k4(h, lk, train_rows)
+    lcs = _fmt_keys(h["lc_fmt"], h)
+    rows = [r for r in train_rows if lk in r]
+    if not rows:
+        return [f"G-MAP: no training row carries `{lk}` -- the 10 cm loss never reached the "
+                f"log"], {}
+    slack = 0.5e-5 * (len(lcs) + 1)
+    missing, bad = [], []
+    for r in rows:
+        miss = [k for k in lcs if k not in r]
+        if miss:
+            missing.append((r.get("step"), len(miss)))
+            continue
+        tot = sum(float(r[k]) for k in lcs)
+        loss = float(r[lk])
+        tol = float(h["lc_sum_rel_tol"]) * abs(loss) + slack
+        if not (math.isfinite(tot) and abs(tot - loss) <= tol):
+            bad.append((r.get("step"), tot, loss))
+    det = {"n_rows": len(rows), "rounding_slack": slack, "rows_missing_lc": missing[:10],
+           "rows_sum_mismatch": bad[:10]}
+    reasons = []
+    if missing:
+        reasons.append(f"G-MAP: {len(missing)} of {len(rows)} training rows lack the per-class "
+                       f"loss contributions `{h['lc_fmt']}` (first: step {missing[0][0]}, "
+                       f"{missing[0][1]} keys missing)")
+    if bad:
+        reasons.append(f"G-MAP: on {len(bad)} training row(s) the per-class contributions do not "
+                       f"sum to `{lk}` (first: step {bad[0][0]}: {bad[0][1]:.7g} vs "
+                       f"{bad[0][2]:.7g})")
+    return reasons, det
+
+
+def map_watch_reasons(prof: dict, artifact: str | None) -> tuple[list[str], dict]:
+    """G-MAP (LOGGING_SPEC_MAP10 sec. 6 item 4): the refcv7 Training Watch, built from THIS
+    smoke's metrics.jsonl, carries all 24 per-class 10 cm IoU series and the thin-class alarm
+    tile. The gate reads the ARTIFACT; with none given the item is a named FAIL, not a skip."""
+    h = prof["map_hires"]
+    if not artifact:
+        return ["G-MAP: no refcv7 Training Watch artifact (--map-watch-artifact) built from the "
+                "smoke's metrics.jsonl -- LOGGING_SPEC_MAP10 sec. 6 item 4 (24 per-class IoU "
+                "series + the thin-class alarm tile) cannot be seen"], {"artifact": None}
+    p = Path(artifact)
+    if not p.is_file():
+        return [f"G-MAP: the Watch artifact {artifact} does not exist"], {"artifact": artifact}
+    txt = p.read_text(encoding="utf-8", errors="replace")
+    want = [f"eval_{k}" for k in _fmt_keys(h["eval_key_fmt"], h)]
+    miss = [k for k in want if k not in txt]
+    alarm = re.search(r"thin[-_ ]?class[-_ ]?alarm", txt, re.I) is not None
+    det = {"artifact": artifact, "sha256": sha256_file(p), "series_missing": miss[:10],
+           "alarm_tile": alarm}
+    reasons = []
+    if miss:
+        reasons.append(f"G-MAP: the Watch lacks {len(miss)} of the {len(want)} per-class IoU "
+                       f"series (first: {miss[:3]})")
+    if not alarm:
+        reasons.append("G-MAP: the Watch carries no thin-class alarm tile")
+    return reasons, det
+
+
+def map_decision_rule_reasons(prof: dict, config: dict | None) -> tuple[list[str], dict]:
+    """G-MAP (LOGGING_SPEC_MAP10 sec. 3 / sec. 6 item 6): config.json declares the argmax rule."""
+    h = prof["map_hires"]
+    node: Any = config or {}
+    for k in h["decision_rule_path"]:
+        node = node.get(k) if isinstance(node, dict) else None
+    det = {"decision_rule": node, "path": ".".join(h["decision_rule_path"])}
+    if node not in h["decision_rules"]:
+        return [f"G-MAP: config.json `{det['path']}` is {node!r}, not one of "
+                f"{list(h['decision_rules'])} -- the argmax rule must be DECLARED"], det
+    return [], det
+
+
+def map_eval_list_reasons(prof: dict, T, model=None) -> tuple[list[str], dict]:
+    """G-MAP (G-DVB part): the per-class x band IoU and loss-share keys the TRAINER emits, read
+    without a smoke. Two forms: a DECLARED module-level list (`eval_key_list_attrs`), or -- the
+    landed NEW-2 (cef9709) -- the trainer's OWN eval-row builder `_eval_row_from_acc(acc, nb_e,
+    model)` run on the BUILT model (it derives every class x band of the built branch's extent
+    through `map_head_hires.derived_per_class`); the gate reads the keys that row carries."""
+    h = prof["map_hires"]
+    want = set(map_expected_eval_keys(prof))
+    builder = getattr(T, "_eval_row_from_acc", None)
+    if builder is not None and model is not None:
+        try:
+            row = builder({}, 1, model)
+        except Exception as e:                            # noqa: BLE001 -- a named FAIL
+            return [f"G-MAP: the trainer's eval-row builder raised on the built model: "
+                    f"{type(e).__name__}: {e}"], {"source": "_eval_row_from_acc"}
+        have = {str(k)[len("eval_"):] for k in row if str(k).startswith("eval_")}
+        miss = sorted(want - have)
+        det = {"source": "_eval_row_from_acc on the BUILT model", "n_emitted": len(have),
+               "missing": miss[:30]}
+        if miss:
+            return [f"G-MAP: the trainer's eval-row builder omits {len(miss)} of the {len(want)} "
+                    f"per-class x band 10 cm keys (first: {miss[:4]})"], det
+        return [], det
+    for attr in h.get("eval_key_list_attrs", ()):
+        lst = getattr(T, attr, None)
+        if lst is not None:
+            have = {str(x).replace("eval_", "", 1) if str(x).startswith("eval_") else str(x)
+                    for x in lst}
+            miss = sorted(want - have)
+            det = {"attr": attr, "n_declared": len(have), "missing": miss[:30]}
+            if miss:
+                return [f"G-MAP: the trainer's {attr} omits {len(miss)} of the {len(want)} "
+                        f"per-class x band 10 cm IoU keys (first: {miss[:4]})"], det
+            return [], det
+    return [f"G-MAP: the trainer declares no per-class map eval key list "
+            f"({list(h.get('eval_key_list_attrs', ()))}) and has no eval-row builder "
+            f"(`_eval_row_from_acc`) the gate can run on the built model"], {"attr": None}
+
+
+# --------------------------------------------------------------------------------------------- #
+# the BANDED map head: G-LIVE / G-DVB G-MAP items (see the note at `BANDED_FLAG`)                #
+# --------------------------------------------------------------------------------------------- #
+def ema_on(argv: list[str]) -> bool:
+    """`--ema-decay` > 0: the in-run eval row also carries the EMA weights' `ema_eval_*` keys."""
+    v = flag_values(argv, "--ema-decay")
+    try:
+        return bool(v) and float(v[0]) > 0.0
+    except ValueError:
+        return False
+
+
+def observe_banded_forward(stats: dict, out: Any, batch: Any) -> None:
+    """G-MAP (banded) per-class probe, called by the smoke's forward hook on every TRAINING forward. It records, into `stats`:
+    (1) whether the batch carries what the banded targets are built from (`map_fine`, the 10 cm uint8 raster, and a labelled window in
+    `map_fine_label`); (2) per band, that the banded logits carry a gradient, and -- by a tensor hook -- the |gradient| per channel at the
+    OBSERVED cells (`~unobs`: only the supervised terms act there; the max-entropy term acts on `unobs` cells alone, so it cannot stand in
+    for a dead supervised term) and at the unobserved cells, and any non-finite gradient. Observes only: the hook returns None."""
+    import torch
+    M = banded_module()
+    stats["_fwd"] = stats.get("_fwd", 0) + 1
+    tg = stats.setdefault("targets", {"steps": 0, "labelled_windows": 0, "raster_shape": None})
+    if isinstance(batch, dict):
+        mf, ml = batch.get("map_fine"), batch.get("map_fine_label")
+        if (torch.is_tensor(mf) and mf.ndim == 3 and mf.dtype == torch.uint8 and torch.is_tensor(ml) and int(ml.sum()) > 0):
+            tg["steps"] += 1
+            tg["labelled_windows"] += int(ml.sum())
+            tg["raster_shape"] = [int(mf.shape[1]), int(mf.shape[2])]
+    mb = (out.get("perception") or {}).get("map_banded") if isinstance(out, dict) else None
+    if not isinstance(mb, dict) or not isinstance(mb.get("logits"), (list, tuple)):
+        return
+    unobs = mb.get("unobs") if isinstance(mb.get("unobs"), (list, tuple)) else [None] * len(mb["logits"])
+    bands = stats.setdefault("bands", {})
+    for bi, (z, un) in enumerate(zip(mb["logits"], unobs)):
+        if bi >= len(M.BAND_NAMES) or not (torch.is_tensor(z) and z.ndim == 4 and z.requires_grad):
+            continue
+        e = bands.setdefault(M.BAND_NAMES[bi], {"hooked": 0, "grad_obs": {c: 0.0 for c in M.CHANNELS},
+                                                "grad_unobs": {c: 0.0 for c in M.CHANNELS}, "nonfinite": {c: 0 for c in M.CHANNELS}})
+        e["hooked"] += 1
+
+        def ghook(g, e=e, un=un):
+            try:
+                with torch.no_grad():
+                    gd = g.detach().float()
+                    fin = torch.isfinite(gd)
+                    ga = torch.where(fin, gd.abs(), torch.zeros_like(gd))
+                    obs = (~un.to(gd.device))[:, None].to(ga.dtype) if torch.is_tensor(un) else torch.ones_like(ga[:, :1])
+                    sup = (ga * obs).sum(dim=(0, 2, 3)).tolist()
+                    unb = (ga * (1.0 - obs)).sum(dim=(0, 2, 3)).tolist()
+                    nfl = (~fin).sum(dim=(0, 2, 3)).tolist()
+                    for i, c in enumerate(M.CHANNELS):
+                        e["grad_obs"][c] += float(sup[i])
+                        e["grad_unobs"][c] += float(unb[i])
+                        e["nonfinite"][c] += int(nfl[i])
+            except Exception as ex:                       # noqa: BLE001 -- recorded and judged; a hook never takes the smoke down
+                e["hook_error"] = f"{type(ex).__name__}: {str(ex)[:200]}"
+            return None
+        z.register_hook(ghook)
+
+
+def judge_banded_classes(prof: dict, stats: dict | None, train_rows: list[dict], *,
+                         extent: tuple[float, float] | None = None) -> tuple[list[str], dict]:
+    """G-MAP (G-LIVE part) for the BANDED head -- the counterpart of `judge_map_classes`. In the smoke's training steps:
+    (1) the batch carried the 10 cm raster and a labelled window the banded targets are built from (at the run's extent when given);
+    (2) every band's logits carried a gradient; none is non-finite; every band's supervised gradient is non-zero;
+    (3) every channel x band that HAS a supervised loss in the smoke (a non-zero `map_banded_loss_<ch>_<band>` in a logged training row)
+        has a non-zero gradient at its observed cells -- a dead channel reads exactly 0.0, which a live one cannot."""
+    if stats and stats.get("probe_error"):
+        return [f"G-MAP: the banded per-class probe raised in a training forward ({stats['probe_error']})"], {"stats": stats}
+    if not stats or not stats.get("bands"):
+        return ["G-MAP: the banded per-class probe never ran -- no `perception.map_banded.logits` tensor with a gradient was found in a "
+                "training step"], {"stats": stats}
+    M = banded_module()
+    lk = prof["map_hires"]["loss_key"]
+    reasons: list[str] = []
+    tg = stats.get("targets") or {}
+    det: dict[str, Any] = {"targets": tg, "n_fwd": stats.get("_fwd", 0)}
+    if not int(tg.get("steps", 0)):
+        reasons.append("G-MAP: no training step of the smoke carried the 10 cm raster `map_fine` (uint8 [B, H, W]) together with a labelled window "
+                       "(`map_fine_label`) -- the banded targets are built from it, so the banded loss would train on nothing")
+    elif extent is not None:
+        want = [int(round(extent[0] / 0.1)), int(round(2.0 * extent[1] / 0.1))]
+        det["raster_expected"] = want
+        if tg.get("raster_shape") != want:
+            reasons.append(f"G-MAP: the batch's 10 cm raster is {tg.get('raster_shape')}, the banded targets at the {extent[0]:g} m x "
+                           f"+-{extent[1]:g} m extent need {want}")
+    present = {(c, b) for r in train_rows if lk in r for c in M.CHANNELS for b in M.BAND_NAMES
+               if _finite_num(r.get(BANDED_KEY_FMT["loss"].format(ch=c, band=b)))
+               and float(r[BANDED_KEY_FMT["loss"].format(ch=c, band=b)]) != 0.0}
+    det["n_channel_band_terms_with_supervision"] = len(present)
+    unhooked, nonfinite, dead_bands, dead_terms, per_band = [], [], [], [], {}
+    for b in M.BAND_NAMES:
+        e = (stats.get("bands") or {}).get(b)
+        if not e or not int(e.get("hooked", 0)):
+            unhooked.append(b)
+            continue
+        if e.get("hook_error"):
+            reasons.append(f"G-MAP: band {b}: the gradient probe raised ({e['hook_error']})")
+        nonfinite += [f"{c}_{b}" for c in M.CHANNELS if int(e["nonfinite"].get(c, 0)) > 0]
+        tot = sum(float(v) for v in e["grad_obs"].values())
+        per_band[b] = {"hooked_steps": int(e["hooked"]), "grad_obs_total": tot,
+                       "grad_obs": {c: float(v) for c, v in e["grad_obs"].items()},
+                       "grad_unobs": {c: float(v) for c, v in e["grad_unobs"].items()}}
+        if not tot > 0.0:
+            dead_bands.append(b)
+        dead_terms += [f"{c}_{b}" for c in M.CHANNELS if (c, b) in present and not float(e["grad_obs"][c]) > 0.0]
+    det["per_band"] = per_band
+    if unhooked:
+        reasons.append(f"G-MAP: band(s) {unhooked} never carried a gradient: no `perception.map_banded.logits` tensor with requires_grad in any "
+                       f"training forward of the smoke")
+    if nonfinite:
+        reasons.append(f"G-MAP: a non-finite gradient on the banded logits of {len(nonfinite)} channel x band term(s) (first: {nonfinite[:4]})")
+    if dead_bands:
+        reasons.append(f"G-MAP: band(s) {dead_bands}: ZERO gradient at the observed cells over the smoke (the band's supervised loss reaches "
+                       f"nothing)")
+    if dead_terms:
+        reasons.append(f"G-MAP: {len(dead_terms)} banded channel x band term(s) have a supervised loss in the smoke (a non-zero "
+                       f"`map_banded_loss_<ch>_<band>`) and ZERO gradient at their observed cells (first: {dead_terms[:4]})")
+    return reasons, det
+
+
+def banded_eval_key_reasons(prof: dict, eval_rows: list[dict], *, ema: bool = False) -> tuple[list[str], dict]:
+    """G-MAP, read off the smoke's ARTIFACT, for the BANDED head -- the counterpart of `map_eval_key_reasons`. The FIRST in-run eval row
+    carries, under `eval_` (and `ema_eval_` when the run keeps an EMA), EVERY banded telemetry key (`telemetry_keys(True)`: the per
+    channel x band loss terms, `pos` / `inter` / `union` per probability channel x band, and per band the max-entropy term, the
+    supervised-cell count and the unobserved fraction), all finite -- and every band has supervised (labelled) cells."""
+    if not eval_rows:
+        return ["G-MAP: the smoke wrote no in-run eval row, so the banded map telemetry cannot be observed"], {}
+    M = banded_module()
+    row = eval_rows[0]
+    keys = banded_train_keys(M) + banded_metric_keys(M)
+    prefixes = ("eval_",) + (("ema_eval_",) if ema else ())
+    reasons: list[str] = []
+    det: dict[str, Any] = {"eval_step": row.get("step"), "expected_per_prefix": len(keys), "prefixes": list(prefixes)}
+    if ema and row.get("ema_eval_error"):
+        reasons.append(f"G-MAP: the EMA in-run eval failed ({str(row['ema_eval_error'])[:160]})")
+    for pre in prefixes:
+        miss = [pre + k for k in keys if pre + k not in row]
+        bad = [pre + k for k in keys if pre + k in row and not _finite_num(row[pre + k])]
+        det[pre] = {"n_missing": len(miss), "missing": miss[:30], "n_nonfinite": len(bad), "nonfinite": bad[:20]}
+        if miss:
+            reasons.append(f"G-MAP: the in-run eval row lacks {len(miss)} of the {len(keys)} `{pre}map_banded_*` telemetry keys "
+                           f"(first missing: {miss[:4]}) -- the per-band IoU pools from the pos / inter / union counts")
+        if bad:
+            reasons.append(f"G-MAP: {len(bad)} of the {len(keys)} `{pre}map_banded_*` keys are non-finite or non-numeric in the eval row "
+                           f"(first: {bad[:4]})")
+    nk = {b: "eval_" + BANDED_KEY_FMT["n"].format(band=b) for b in M.BAND_NAMES}
+    empty = [b for b in M.BAND_NAMES if _finite_num(row.get(nk[b])) and not float(row[nk[b]]) > 0.0]
+    det["supervised_cells_per_band"] = {b: row.get(nk[b]) for b in M.BAND_NAMES}
+    det["pos_per_channel_band"] = {b: {c: row.get("eval_" + BANDED_KEY_FMT["stat"].format(st="pos", ch=c, band=b)) for c in M.PROB_CHANNELS}
+                                   for b in M.BAND_NAMES}
+    det["bands_without_cells"] = empty
+    if empty:
+        reasons.append(f"G-MAP: the smoke's eval windows carry no labelled cells in band(s) {empty} (`eval_map_banded_n_<band>` is not > 0) -- "
+                       f"extend the eval set; the check is not waived")
+    return reasons, det
+
+
+def banded_train_row_reasons(prof: dict, train_rows: list[dict]) -> tuple[list[str], dict]:
+    """G-MAP on the smoke's TRAINING rows for the BANDED head -- the counterpart of `map_train_row_reasons`. EVERY row that carries the map
+    loss and a labelled window carries the 30 `map_banded_loss_<ch>_<band>` terms plus the per-band max-entropy / count / unobserved-fraction
+    keys, all finite, and the terms SUM to the logged `map_hires` (`sum_b w_b (sum_c L_cb + MAXENT_W * maxent_b)`, within the 8-code check's
+    own tolerance). An all-ignore batch (zero labelled windows) is the trainer's counted zero with NO banded keys: it must read exactly 0.0."""
+    h = prof["map_hires"]
+    lk, nk = h["loss_key"], h.get("n_labelled_key", "map_hires_n_labelled")
+    M = banded_module()
+    rows = [r for r in train_rows if lk in r]
+    if not rows:
+        return [f"G-MAP: no training row carries `{lk}` -- the banded map loss never reached the log"], {}
+    keys = banded_train_keys(M)
+    n_loss = len(M.CHANNELS) * len(M.BAND_NAMES)
+    slack = 0.5e-5 * (n_loss + 1)
+    missing, nonfinite, bad_sum, bad_zero, n_exempt = [], [], [], [], 0
+    for r in rows:
+        lab = r.get(nk)
+        if _finite_num(lab) and float(lab) == 0.0:
+            n_exempt += 1
+            if not (_finite_num(r.get(lk)) and float(r[lk]) == 0.0):
+                bad_zero.append((r.get("step"), r.get(lk)))
+            continue
+        miss = [k for k in keys if k not in r]
+        if miss:
+            missing.append((r.get("step"), len(miss)))
+            continue
+        nf = [k for k in keys if not _finite_num(r[k])]
+        if nf or not _finite_num(r[lk]):
+            nonfinite.append((r.get("step"), (nf or [lk])[0], len(nf) or 1))
+            continue
+        tot = sum(float(w) * (sum(float(r[BANDED_KEY_FMT["loss"].format(ch=c, band=b)]) for c in M.CHANNELS)
+                              + float(M.MAXENT_W) * float(r[BANDED_KEY_FMT["maxent"].format(band=b)]))
+                  for b, w in zip(M.BAND_NAMES, M.BAND_WEIGHTS))
+        loss = float(r[lk])
+        if not (math.isfinite(tot) and abs(tot - loss) <= float(h["lc_sum_rel_tol"]) * abs(loss) + slack):
+            bad_sum.append((r.get("step"), tot, loss))
+    det = {"n_rows": len(rows), "n_all_ignore_rows": n_exempt, "rounding_slack": slack, "rows_missing_keys": missing[:10],
+           "rows_nonfinite": nonfinite[:10], "rows_sum_mismatch": bad_sum[:10], "keys_per_row": len(keys)}
+    reasons = []
+    if missing:
+        reasons.append(f"G-MAP: {len(missing)} of {len(rows)} training rows lack the banded per-channel x band telemetry "
+                       f"(`map_banded_loss_<ch>_<band>` + per-band max-entropy / count / unobserved-fraction; first: step {missing[0][0]}, "
+                       f"{missing[0][1]} of {len(keys)} keys missing)")
+    if nonfinite:
+        reasons.append(f"G-MAP: {len(nonfinite)} training row(s) carry a non-finite banded key or loss (first: step {nonfinite[0][0]}: "
+                       f"{nonfinite[0][1]})")
+    if bad_sum:
+        reasons.append(f"G-MAP: on {len(bad_sum)} training row(s) the banded per-channel x band losses do not sum to `{lk}` "
+                       f"(first: step {bad_sum[0][0]}: {bad_sum[0][1]:.7g} vs {bad_sum[0][2]:.7g})")
+    if bad_zero:
+        reasons.append(f"G-MAP: {len(bad_zero)} all-ignore training row(s) (zero labelled windows) do not read `{lk}` exactly 0.0 "
+                       f"(first: step {bad_zero[0][0]}: {bad_zero[0][1]})")
+    return reasons, det
+
+
+def banded_spelling_reasons(prof: dict) -> tuple[list[str], dict]:
+    """The banded telemetry's spelling: the gate's key formats against the module's own `telemetry_keys` -- a drift FAILS LOUD, never
+    resolved silently. The 8-code spelling (CLASS_KEYS, the 20 m bands) is the inherited head's and has no banded meaning."""
+    det: dict[str, Any] = {"module": "tanitad.models.map_banded",
+                           "map_hires_8code_spelling": f"{BANDED_NA}: CLASS_KEYS / the 20 m bands / per_class_key spell the inherited 8-way "
+                                                       f"head's keys; the banded head spells `map_banded_*` (checked below against "
+                                                       f"`telemetry_keys`)"}
+    try:
+        M = banded_module()
+    except Exception as e:                                # noqa: BLE001 -- a named FAIL
+        return [f"G-MAP: tanitad.models.map_banded is not importable ({type(e).__name__}: {e}) -- the banded spelling cannot be checked"], det
+    reasons = []
+    for with_metrics, mine in ((False, banded_train_keys(M)), (True, banded_train_keys(M) + banded_metric_keys(M))):
+        theirs = set(M.telemetry_keys(with_metrics=with_metrics))
+        det[f"with_metrics={with_metrics}"] = {"n_gate": len(set(mine)), "n_module": len(theirs)}
+        if set(mine) != theirs:
+            reasons.append(f"G-MAP: the gate's banded key spellings differ from map_banded.telemetry_keys(with_metrics={with_metrics}): "
+                           f"only in the gate {sorted(set(mine) - theirs)[:3]}, only in the module {sorted(theirs - set(mine))[:3]} -- one "
+                           f"spelling, not two")
+    return reasons, det
+
+
+def banded_decision_rule_reasons(prof: dict, config: dict | None) -> tuple[list[str], dict]:
+    """The declared 8-way argmax rule (`raw` | `prior_corrected`) has no banded meaning: the banded head is per-channel sigmoids, thresholded
+    at 0.5, with no argmax over classes. Recorded, never silently passed."""
+    h = prof["map_hires"]
+    node: Any = config or {}
+    for k in h["decision_rule_path"]:
+        node = node.get(k) if isinstance(node, dict) else None
+    return [], {"decision_rule": node, "path": ".".join(h["decision_rule_path"]),
+                "applicability": f"{BANDED_NA}: the 8-way argmax decision rule (raw | prior_corrected) is the inherited head's; the banded "
+                                 f"head's channels are independent sigmoids thresholded at 0.5"}
+
+
+def banded_watch_reasons(prof: dict, artifact: str | None) -> tuple[list[str], dict]:
+    """The refcv7 Training Watch is still a launch ARTIFACT of the smoke (built by the gate from its metrics.jsonl; a missing one is a named
+    FAIL, as before). Its 24 per-class IoU series and thin-class alarm tile are the 8-way head's and have no banded meaning: they are recorded
+    as not applicable, not passed. The Watch builder (`build_watch_refcv7.py`) renders the banded head's own series since 0eda7b1 (its
+    `map_banded` section, spelling pinned to map_banded.py by taniteval/tests/test_build_watch_banded.py); the gate requires the artifact,
+    not its banded section (recorded, not gated)."""
+    det: dict[str, Any] = {"artifact": artifact,
+                           "per_class_series_and_alarm": f"{BANDED_NA}: the Watch's 24 per-class IoU series (`eval_map_hires_iou_*`, null under "
+                                                          f"the banded head) and thin-class alarm tile are the 8-way head's",
+                           "banded_series": "the Watch builder renders the `map_banded_*` series (its map_banded section, 0eda7b1); recorded, not gated"}
+    if not artifact:
+        return ["G-MAP: no refcv7 Training Watch artifact (--map-watch-artifact) built from the smoke's metrics.jsonl -- the Watch is a launch "
+                "artifact (LOGGING_SPEC_MAP10 sec. 6 item 4) and cannot be seen"], det
+    p = Path(artifact)
+    if not p.is_file():
+        return [f"G-MAP: the Watch artifact {artifact} does not exist"], det
+    det["sha256"] = sha256_file(p)
+    return [], det
+
+
+def banded_eval_list_reasons(T, model=None) -> tuple[list[str], dict]:
+    """G-MAP (G-DVB part) for the BANDED head: the trainer's OWN eval-row builder `_eval_row_from_acc(acc, nb_e, model)`, run on the BUILT model
+    with every banded telemetry key in `acc`, returns every `eval_map_banded_*` key finite -- the eval row cannot drop a banded key. (The
+    8-code form passes vacuously on a banded model: its builder derives the null 8-way keys from an empty `acc`.)"""
+    builder = getattr(T, "_eval_row_from_acc", None)
+    if builder is None or model is None:
+        return ["G-MAP: the trainer has no eval-row builder (`_eval_row_from_acc`) the gate can run on the built model -- the banded eval keys "
+                "cannot be read without a smoke"], {"source": None}
+    try:
+        M = banded_module()
+        keys = banded_train_keys(M) + banded_metric_keys(M)
+        row = builder({k: 1.0 for k in keys}, 1, model)
+    except Exception as e:                                # noqa: BLE001 -- a named FAIL
+        return [f"G-MAP: the trainer's eval-row builder raised on the built model with the banded telemetry: {type(e).__name__}: {e}"], {
+            "source": "_eval_row_from_acc"}
+    miss = [f"eval_{k}" for k in keys if f"eval_{k}" not in row]
+    bad = [f"eval_{k}" for k in keys if f"eval_{k}" in row and not _finite_num(row[f"eval_{k}"])]
+    det = {"source": "_eval_row_from_acc on the BUILT model, acc = every banded telemetry key", "n_expected": len(keys),
+           "n_missing": len(miss), "missing": miss[:30], "n_nonfinite": len(bad)}
+    reasons = []
+    if miss:
+        reasons.append(f"G-MAP: the trainer's eval-row builder omits {len(miss)} of the {len(keys)} banded `eval_map_banded_*` keys "
+                       f"(first: {miss[:4]})")
+    if bad:
+        reasons.append(f"G-MAP: the trainer's eval-row builder turns {len(bad)} banded key(s) non-finite (first: {bad[:4]})")
+    return reasons, det
+
+
+def map_live_items(prof: dict, argv: list[str], run1: dict, rows1: list[dict], cfg1: dict | None, *,
+                   weighted: bool = True) -> tuple[list[str], dict]:
+    """The five G-MAP items G-LIVE judges from the smoke's artifacts -- per-class probe, eval-row keys, training-row contributions, the declared
+    decision rule, the spelling -> `(reasons, {"classes", "eval_keys", "train_rows", "decision_rule", "spelling"})`. A BANDED argv
+    (`banded_on`) is judged by the banded counterparts; every other argv by the 8-code functions it always used, unchanged."""
+    eval_rows = [r for r in rows1 if any(str(k).startswith("eval_") for k in r)]
+    trows = train_rows(rows1)
+    if banded_on(prof, argv):
+        mr, md = judge_banded_classes(prof, run1.get("map_banded"), trows, extent=banded_extent(prof, argv))
+        er, ed = banded_eval_key_reasons(prof, eval_rows, ema=ema_on(argv))
+        sr, sd = banded_train_row_reasons(prof, trows)
+        dr, dd = banded_decision_rule_reasons(prof, cfg1)
+        spr, spd = banded_spelling_reasons(prof)
+    else:
+        mr, md = judge_map_classes(prof, run1.get("map_class"))
+        er, ed = map_eval_key_reasons(prof, eval_rows, weighted=weighted)
+        sr, sd = map_train_row_reasons(prof, trows)
+        dr, dd = map_decision_rule_reasons(prof, cfg1)
+        spr, spd = map_spelling_reasons(prof)
+    return mr + er + sr + dr + spr, {"classes": md, "eval_keys": ed, "train_rows": sd, "decision_rule": dd, "spelling": spd}
+
+
+def judge_ga_reach(prof: dict, rows: list[dict], *, log_every: int, final_step: int,
+                   groups: dict | None, ga_on: bool, hires: bool) -> tuple[list[str], dict]:
+    """G-LIVE gradient reach (coordinator 2026-09-26, from the map-signal audit's MEASURED
+    finding: refcv6 logged 0 `ga_*` keys in 4,621 rows, an off-by-one against `step += 1`).
+
+    Every LOGGED training row -- each `log_every` multiple and the final step -- carries
+    `ga_<group>` for every group that EXISTS on the built model and has a parameter the
+    optimizer trains (`groups`, measured by the gate from the literal attribute paths), each
+    finite and > 0; with the 10 cm head, also the four `ga_mh_*` parts. The smoke must run at
+    least 2 x log_every steps, so a periodic row that is NOT the final row exists: the old
+    off-by-one only ever fills the final row."""
+    det: dict[str, Any] = {"ga_on": ga_on, "log_every": log_every, "final_step": final_step}
+    if not ga_on and not hires:
+        det["note"] = "inert: the arm builds neither the perception branch nor the tactical decoder"
+        return [], det
+    reasons: list[str] = []
+    if final_step < 2 * log_every:
+        reasons.append(f"G-LIVE ga-reach: the smoke ran {final_step} steps < 2 x log_every "
+                       f"({log_every}) -- it cannot show a periodic row, where the off-by-one "
+                       f"lives")
+    want = sorted(g for g, v in (groups or {}).items()
+                  if v.get("exists") and v.get("trainable_params", 0) > 0) if ga_on else []
+    det["required_groups"] = want
+    keys = [f"ga_{g}" for g in want]
+    if hires:
+        keys += list(prof["map_hires"]["ga_keys"])
+    zero_keys = list((prof.get("map_hires") or {}).get("ga_keys_zero", ())) if hires else []
+    det["required_zero_keys"] = zero_keys
+    logged = [r for r in rows if isinstance(r.get("step"), int)
+              and (r["step"] % max(1, log_every) == 0 or r["step"] == final_step)]
+    det["logged_rows"] = [r["step"] for r in logged][:20]
+    if not logged:
+        reasons.append("G-LIVE ga-reach: the smoke wrote no logged training row")
+        return reasons, det
+    if zero_keys:
+        # ⛔ an identity, not a tolerance: a map-only part of a run with NO map labels must read EXACTLY 0.0. A non-zero
+        # value means map supervision leaked in (a GT file found for a NavSim window, or a PhysicalAI window trained)
+        zmiss = [(r["step"], [k for k in zero_keys if k not in r]) for r in logged
+                 if any(k not in r for k in zero_keys)]
+        zbad = [(r["step"], k, r[k]) for r in logged for k in zero_keys
+                if k in r and not (_finite_num(r[k]) and float(r[k]) == 0.0)]
+        det.update(zero_rows_missing=zmiss[:10], zero_bad_values=zbad[:10])
+        if zmiss:
+            reasons.append(f"G-LIVE ga-reach: {len(zmiss)} logged rows lack the must-be-zero keys "
+                           f"(first: step {zmiss[0][0]} lacks {zmiss[0][1][:4]})")
+        if zbad:
+            reasons.append(f"G-LIVE ga-reach: {len(zbad)} must-be-ZERO reach value(s) are not exactly 0.0 (first: "
+                           f"step {zbad[0][0]} {zbad[0][1]} = {zbad[0][2]}) -- map supervision reached a run that has "
+                           f"no map labels")
+    missing_rows, bad_vals = [], []
+    for r in logged:
+        miss = [k for k in keys if k not in r]
+        if miss:
+            missing_rows.append((r["step"], miss))
+        for k in keys:
+            if k in r and not (_finite_num(r[k]) and float(r[k]) > 0):
+                bad_vals.append((r["step"], k, r[k]))
+    det.update(required_keys=keys, rows_missing=[(s, m[:6]) for s, m in missing_rows[:10]],
+               bad_values=bad_vals[:10])
+    if missing_rows:
+        s0, m0 = missing_rows[0]
+        reasons.append(f"G-LIVE ga-reach: {len(missing_rows)} of {len(logged)} logged rows lack "
+                       f"gradient-reach keys (first: step {s0} lacks {m0[:4]}) -- the reach log "
+                       f"is DEAD (refcv6: 0 `ga_*` keys in 4,621 rows, an off-by-one against "
+                       f"`step += 1`)")
+    if bad_vals:
+        s0, k0, v0 = bad_vals[0]
+        reasons.append(f"G-LIVE ga-reach: {len(bad_vals)} reach value(s) are not finite and > 0 "
+                       f"for a trainable group (first: step {s0} {k0} = {v0}) -- a group the "
+                       f"optimizer trains receives no gradient")
+    return reasons, det
+
+
+def _first(d: dict, *paths: tuple[str, ...]) -> Any:
+    for p in paths:
+        node: Any = d
+        for k in p:
+            node = node.get(k) if isinstance(node, dict) else None
+        if node is not None:
+            return node
+    return None
+
+
+def _overfit_binding_reasons(tag: str, rec: dict, commit: str, argv_sha: str,
+                             lit: dict) -> list[str]:
+    """What the overfit PASS record itself binds (Master Mind 2026-09-27): its schema and the
+    LAUNCH argv sha256. The CODE it ran on is bound by its closure record (`judge_closure`), not
+    by a commit -- the binding runs can then start as soon as the MODEL code has landed; the
+    record's own `launch_commit` is informative."""
+    out = []
+    if rec.get("schema") != lit.get("schema"):
+        out.append(f"{tag}: the record's schema is {rec.get('schema')!r}, not "
+                   f"{lit.get('schema')!r}")
+    r_argv = _first(rec, ("launch_argv_sha256",), ("launch", "argv_sha256"))
+    if argv_sha and str(r_argv) != argv_sha:
+        out.append(f"{tag}: the record is bound to argv {str(r_argv)[:12] or '<none>'}, not the "
+                   f"launch argv {argv_sha[:12]}")
+    return out
+
+
+#: what an overfit PASS certifies, stated in the gate's own PASS text (Master Mind 2026-09-27)
+OVERFIT_SCOPE = ("covers the head IN ISOLATION (trunk + branch on the frozen frames); the "
+                 "launch model's WIRING is G-LIVE's and G-DVB's job at the launch commit")
+CLOSURE_SCHEMA = "tanitad.launch_gate.closure/1"
+#: where the tree's own modules resolve from (mirrors `closure_run.IMPORT_ROOTS`)
+_CLOSURE_IMPORT_ROOTS = ("stack", "taniteval", "stack/scripts", "tools")
+#: the environment the binding runs must share with the launch host (Master Mind 2026-09-27:
+#: a mismatch FAILS, it does not warn)
+_CLOSURE_ENV_KEYS = ("torch", "timm", "cuda", "cudnn")
+
+
+def _git_blob(b: bytes) -> str:
+    return hashlib.sha1(b"blob %d\0" % len(b) + b).hexdigest()
+
+
+def _closure_digest(modules: list, probed: list, absent: list, data: list) -> str:
+    """ONE definition with `closure_run.closure_digest` (a test pins the two together)."""
+    return sha256_bytes(json.dumps({"modules": modules, "probed": probed, "absent": absent,
+                                    "data": data}, sort_keys=True, separators=(",", ":"),
+                                   ensure_ascii=True).encode())
+
+
+def _closure_resolve(tree: Path, name: str, extra_roots: Iterable[Path] = ()) -> Path | None:
+    parts = [x for x in name.split(".") if x]
+    if not parts:
+        return None
+    for base in [*(tree / r for r in _CLOSURE_IMPORT_ROOTS), *extra_roots]:
+        q = base.joinpath(*parts)
+        for cand in (q.parent / (q.name + ".py"), q / "__init__.py"):
+            if cand.is_file():
+                return cand
+    return None
+
+
+def static_eager_own_files(tree: Path, script_rel: str) -> list[str]:
+    """The tree files a script imports at MODULE level (top-level statements, and the bodies of
+    top-level `try` blocks), transitively over the tree's own modules -- what ANY run of it
+    imports whenever those files exist. A closure record must hold every one: a record assembled
+    from a hand list misses them, and so does a run made before one of them existed."""
+    import ast
+    extra = [(tree / script_rel).parent]
+    out: set[Path] = set()
+    queue = [tree / script_rel]
+
+    def top_imports(body: list) -> Iterable[str]:
+        for node in body:
+            if isinstance(node, ast.Import):
+                for a in node.names:
+                    yield a.name
+            elif isinstance(node, ast.ImportFrom) and not node.level and node.module:
+                yield node.module
+                for a in node.names:
+                    yield f"{node.module}.{a.name}"
+            elif isinstance(node, ast.Try):
+                yield from top_imports(node.body + node.orelse + node.finalbody)
+    while queue:
+        f = queue.pop()
+        if f in out or not f.is_file():
+            continue
+        out.add(f)
+        try:                                     # utf-8-sig: a BOM'd source is not skipped
+            mod = ast.parse(f.read_text(encoding="utf-8-sig", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in top_imports(mod.body):
+            parts = n.split(".")
+            for k in range(1, len(parts) + 1):            # the packages on the way are imported
+                t = _closure_resolve(tree, ".".join(parts[:k]), extra)
+                if t is not None:
+                    queue.append(t)
+    return sorted(q.relative_to(tree).as_posix() for q in out)
+
+
+def _launch_blob(tree: Path, rel: str, git_dir: str | None, commit: str | None) -> str | None:
+    """The launch commit's blob for `rel`: from the launch tree, else (a file outside the shipped
+    tree, e.g. a Research Lab helper the harness loaded by path) from git AT THE LAUNCH COMMIT."""
+    f = tree / rel
+    if f.is_file():
+        return _git_blob(f.read_bytes())
+    if git_dir and commit:
+        env = {k: v for k, v in os.environ.items() if k not in _GIT_ENV}
+        p = subprocess.run(["git", f"--git-dir={git_dir}", "rev-parse", f"{commit}:{rel}"],
+                           env=env, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace")
+        b = p.stdout.strip()
+        if p.returncode == 0 and _HEX40.match(b):
+            return b
+    return None
+
+
+def judge_closure(tag: str, closure: str | None, result: str | None, tree: str | os.PathLike,
+                  harness: str | None, *, host_env: dict | None = None,
+                  pmap: list[tuple[str, str]] | None = None,
+                  must_have_data_sha: Iterable[str] = (), git_dir: str | None = None,
+                  commit: str | None = None) -> tuple[list[str], dict]:
+    """The CODE-CLOSURE binding of an overfit PASS record (SPEC_REFCV7 A11, section 16):
+
+    * the closure is BINDING (`--binding`), the wrapped harness EXITED 0, and it wraps the
+      profile's harness;
+    * it names THIS PASS JSON by sha256;
+    * every recorded module's (and probed module's) git blob is recomputed AT THE LAUNCH COMMIT
+      and must be identical -- one changed blob refuses; the recorded lists re-hash to
+      `closure_sha256`, the argv to `argv_sha256`;
+    * no module name the run looked for and did NOT find now resolves in the launch tree, and the
+      record holds every file the harness imports at module level on the launch tree (an imported
+      but unrecorded module refuses);
+    * no module came from OUTSIDE the tree and the interpreter (shadowing), no child process
+      imported code the record cannot see;
+    * every recorded data file still hashes the same on this host;
+    * torch / timm / CUDA / cuDNN equal the launch host's (`host_env`; None skips ONLY in unit
+      tests of the other rules -- every job passes the host's)."""
+    if not closure or not Path(closure).is_file():
+        return [f"{tag}: no closure record ({closure!r}) -- the PASS record is unbound "
+                f"(SPEC_REFCV7 A11)"], {}
+    c = read_json(closure)
+    tree = Path(tree)
+    det: dict[str, Any] = {"closure": str(closure), "sha256": sha256_file(closure),
+                           "n_modules": len(c.get("modules") or []),
+                           "n_probed": len(c.get("probed") or []),
+                           "n_absent": len(c.get("absent") or []),
+                           "n_data": len(c.get("data") or []), "scope": OVERFIT_SCOPE}
+    reasons: list[str] = []
+    if c.get("schema") != CLOSURE_SCHEMA:
+        reasons.append(f"{tag}: the closure's schema is {c.get('schema')!r}")
+    if c.get("binding") is not True:
+        reasons.append(f"{tag}: the closure is NOT binding (an early run) -- only a run made with "
+                       f"closure_run.py --binding can be consumed")
+    if c.get("exit_status") != 0:
+        reasons.append(f"{tag}: the wrapped harness exited {c.get('exit_status')!r} "
+                       f"({c.get('error') or 'no error text'}) -- only a completed run binds")
+    if harness and c.get("script") != harness:
+        reasons.append(f"{tag}: the closure wraps {c.get('script')!r}, not the harness {harness!r}")
+    res = c.get("result") or {}
+    if not result or not Path(result).is_file():
+        reasons.append(f"{tag}: the PASS JSON {result!r} is not readable here")
+    elif res.get("sha256") != sha256_file(result):
+        reasons.append(f"{tag}: the closure names a PASS JSON {str(res.get('sha256'))[:16]}, the "
+                       f"record given is {sha256_file(result)[:16]} -- not the same run")
+    mods = [list(x) for x in (c.get("modules") or [])]
+    probed = [list(x) for x in (c.get("probed") or [])]
+    absent = list(c.get("absent") or [])
+    data = [list(x) for x in (c.get("data") or [])]
+    if _closure_digest(mods, probed, absent, data) != c.get("closure_sha256"):
+        reasons.append(f"{tag}: the recorded lists do not re-hash to closure_sha256 -- edited")
+    if hashlib.sha256(json.dumps(c.get("argv"), sort_keys=True, separators=(",", ":"),
+                                 ensure_ascii=True).encode()).hexdigest() != c.get("argv_sha256"):
+        reasons.append(f"{tag}: the closure's argv does not hash to its argv_sha256")
+    changed, missing = [], []
+    for rel, blob in [*mods, *probed]:
+        lb = _launch_blob(tree, rel, git_dir, commit)
+        if lb is None:
+            missing.append(rel)
+        elif lb != blob:
+            changed.append(rel)
+    det.update(changed=changed[:20], missing_at_launch=missing[:20])
+    if changed or missing:
+        reasons.append(f"{tag}: the launch commit differs from the harness run's code: "
+                       f"{len(changed)} changed blob(s) {changed[:4]}, {len(missing)} absent at "
+                       f"the launch {missing[:4]} -- the PASS does not describe this code")
+    extra = [(tree / str(c.get("script") or "")).parent] if c.get("script") else []
+    appeared = [n for n in absent if _closure_resolve(tree, n, extra) is not None]
+    det["absent_now_present"] = appeared[:20]
+    if appeared:
+        reasons.append(f"{tag}: the launch tree provides {len(appeared)} module(s) the run looked "
+                       f"for and did NOT find ({appeared[:4]}) -- the launch code takes an import "
+                       f"path the PASS never ran")
+    if not any(str(r).startswith("stack/tanitad/") for r, _ in mods):
+        reasons.append(f"{tag}: the closure holds NO stack/tanitad module -- the harness did not "
+                       f"import the tree it claims")
+    if c.get("outside_tree"):
+        reasons.append(f"{tag}: {len(c['outside_tree'])} module(s) were imported from OUTSIDE the "
+                       f"run's tree and interpreter (shadowing): {c['outside_tree'][:3]}")
+    kids = [k for k in (c.get("children") or []) if "python" in str(k).lower()]
+    if kids:
+        reasons.append(f"{tag}: the run spawned {len(kids)} Python child process(es) whose imports "
+                       f"the closure cannot see: {kids[:2]}")
+    if harness and (tree / harness).is_file():
+        need = static_eager_own_files(tree, harness)
+        have = {r for r, _ in mods}
+        miss = [x for x in need if x not in have]
+        det["static_eager_files"] = len(need)
+        if miss:
+            reasons.append(f"{tag}: the record lacks {len(miss)} file(s) the harness imports at "
+                           f"module level on the launch tree ({miss[:4]}) -- an imported but "
+                           f"unrecorded module")
+    bad_data = []
+    for path, sha in data:
+        local = map_path(path, list(pmap or []))
+        if not Path(local).is_file():
+            bad_data.append((path, "absent here"))
+        elif sha256_file(local) != sha:
+            bad_data.append((path, "changed"))
+    det["data_problems"] = bad_data[:10]
+    if bad_data:
+        reasons.append(f"{tag}: {len(bad_data)} data file(s) the run read are absent or changed on "
+                       f"this host: {bad_data[:3]}")
+    shas = {sha for _, sha in data}
+    for want in must_have_data_sha:
+        if want and want not in shas:
+            reasons.append(f"{tag}: the launch class-weight file ({want[:16]}) is not among the "
+                           f"data the run read")
+    if host_env is not None:
+        env = c.get("env") or {}
+        diff = {k: (env.get(k), host_env.get(k)) for k in _CLOSURE_ENV_KEYS
+                if env.get(k) != host_env.get(k)}
+        det["env"] = {"record": env, "host": host_env}
+        if diff:
+            reasons.append(f"{tag}: the run's environment differs from this host's {diff} -- a "
+                           f"changed venv means the binding runs are re-done")
+    return reasons, det
+
+
+def _host_env() -> dict:
+    """The launch host's environment, by the SAME definition as `closure_run.dist_versions`:
+    torch / timm by distribution metadata, CUDA / cuDNN from torch."""
+    from importlib import metadata
+    out: dict[str, Any] = {"python": platform.python_version()}
+    for d in ("torch", "timm"):
+        try:
+            out[d] = metadata.version(d)
+        except Exception:                                 # noqa: BLE001 -- absent => None
+            out[d] = None
+    try:
+        import torch
+        out["cuda"] = torch.version.cuda
+        try:
+            out["cudnn"] = torch.backends.cudnn.version()
+        except Exception:                                 # noqa: BLE001
+            out["cudnn"] = None
+    except Exception:                                     # noqa: BLE001
+        out.update(cuda=None, cudnn=None)
+    return out
+
+
+def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: str = "",
+                      class_weights_sha256: str | None = None, argv: list[str] | None = None) -> tuple[list[str], dict]:
+    """G-MAP-OVERFIT: the PASS record the NEW-2 builder's harness (`map_hires_overfit.py`, schema
+    `tanitad.g_map_overfit_record/1`) writes for the PRE-REGISTERED protocol
+    (`…/2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md` + `gmo_spec.json`; SPEC 9 item
+    2), re-judged against the prereg's LITERALS (`PROFILES[...]["map_overfit"]`) -- never against
+    the bars the record carries:
+
+    * the harness verdict `verdict.G_MAP_OVERFIT` is PASS;
+    * the record binds THIS launch: `launch_commit`, `launch_argv_sha256`, the launch class-weight
+      sha256 (not a dry run, not uniform), the FROZEN frame set, the A7 extent;
+    * MAIN (`results.healthy.final`, the declared rule): all 8 classes >= 1,000 scored cells in
+      the 0-20 m band (fewer is INCONCLUSIVE => FAIL, never "absent") and IoU >= the literal bar;
+      the per-class CE ratio and the finite loss the prereg names (`verdict.MAIN`);
+    * `lane_w0` FAILS lane; `s8_zeros` FAILS ALL FIVE thin classes; C1-C3 reproduced; the 1 ms
+      time guard held on every clip;
+    * ⛔ SPEC_REFCV7 23 (A18): the record RAN the registered protocol -- the A18 spec (sha256),
+      the optimiser's steps / lr / batch / seed / lr_decay, and the map path (near lift, near
+      refine blocks) -- each against `map_overfit`'s literals. A record of the superseded
+      1,000-step protocol is REFUSED (the trap the box judge fell into with the prereg's lr);
+    * ⛔ SPEC_REFCV7 24 (A19): under the profile's `overfit_main_only` policy a must-fail arm that
+      did NOT RUN is excused and MAIN is re-judged from the record's own numbers (the harness's
+      overall verdict reads FAIL without the arms and is NOT read); an arm that RAN is judged from
+      its results and a pass is still a VOID. Without the policy every arm must run (pre-A19)."""
+    mo = prof.get("map_overfit") or {}
+    tag = "G-MAP-OVERFIT"
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no overfit PASS record ({record!r}) -- a launch prerequisite"], {}
+    rec = read_json(record)
+    v = rec.get("verdict") if isinstance(rec.get("verdict"), dict) else {}
+    det: dict[str, Any] = {"record": record, "sha256": sha256_file(record),
+                           "verdict": v.get("G_MAP_OVERFIT"),
+                           "launch_commit": rec.get("launch_commit"),
+                           "launch_argv_sha256": rec.get("launch_argv_sha256")}
+    reasons: list[str] = []
+    # ⛔ SPEC_REFCV7 24 (A19): which of the GATE'S must-fail arms ran (a result, or a regression
+    # row that says so); an ABSENT arm is excused only under the profile's A19 policy
+    a19 = prof.get("overfit_main_only") or {}
+    a19m = a19.get("map") if isinstance(a19.get("map"), dict) else {}
+    results = rec.get("results") if isinstance(rec.get("results"), dict) else {}
+    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
+    gate_mf = [(a_, tuple(c_), False) for a_, c_ in (mo.get("must_fail_any") or {}).items()]
+    gate_mf += [(a_, tuple(c_), True) for a_, c_ in (mo.get("must_fail_all") or {}).items()]
+    ran = {a_: isinstance(results.get(a_), dict) or bool((reg.get(a_) or {}).get("ran"))
+           for a_, _c, _n in gate_mf}
+    absent = [a_ for a_, r_ in ran.items() if not r_]
+    main_only = bool(a19m) and bool(absent)
+    det["a19"] = {"policy": a19.get("policy"), "source": a19.get("source"), "applied": main_only,
+                  "absent_must_fail_arms": absent,
+                  "harness_verdict_not_read": v.get("G_MAP_OVERFIT") if main_only else None}
+    if main_only:
+        det["a19"]["statement"] = (
+            f"MAIN-ONLY binding under {a19.get('source')}: the must-fail arm(s) {absent} were NOT "
+            f"RUN -- {a19m.get('inherited')} (evidence: {'; '.join(a19m.get('evidence') or ())})")
+    elif v.get("G_MAP_OVERFIT") != "PASS":
+        reasons.append(f"{tag}: the record's verdict is {v.get('G_MAP_OVERFIT')!r}, not PASS")
+    reasons += _overfit_binding_reasons(tag, rec, commit, argv_sha, mo)
+    if argv is not None:                  # E1-REC4: a record bound to a T1 argv must say T1's history is NOT certified (no argv: skipped)
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
+    cw = rec.get("class_weights") if isinstance(rec.get("class_weights"), dict) else {}
+    det["class_weights"] = cw
+    if cw.get("uniform") or cw.get("dry_run") or not cw.get("sha256"):
+        reasons.append(f"{tag}: the record's class weights {cw} are not the launch weights "
+                       f"(uniform, dry-run or unstamped files are refused)")
+    elif class_weights_sha256 and cw["sha256"] != class_weights_sha256:
+        reasons.append(f"{tag}: the record trained class weights {cw['sha256'][:16]}, the launch "
+                       f"argv declares {class_weights_sha256[:16]}")
+    frames = [tuple(x) for x in zip(rec.get("frames_sha12") or [], rec.get("raw_frames") or [])]
+    det["frames_match"] = frames == [tuple(x) for x in mo.get("frames", ())]
+    if not det["frames_match"]:
+        reasons.append(f"{tag}: the record's frames ({len(frames)}) are not the FROZEN 16-frame set "
+                       f"(frameset md5 {mo.get('frameset_md5', '')[:8]}...)")
+    if rec.get("frameset_md5") != mo.get("frameset_md5"):
+        reasons.append(f"{tag}: frameset md5 {rec.get('frameset_md5')} != the registered "
+                       f"{mo.get('frameset_md5')}")
+    ext = rec.get("extent") if isinstance(rec.get("extent"), dict) else {}
+    for k, want in (mo.get("extent") or {}).items():
+        if not (_finite_num(ext.get(k)) and float(ext[k]) == float(want)):
+            reasons.append(f"{tag}: the record ran at extent {k}={ext.get(k)}, not the launch "
+                           f"{want} (SPEC_REFCV7 12)")
+    # ⛔ SPEC_REFCV7 23 (A18): the PROTOCOL the record ran
+    ok_specs = [x for x in (mo.get("spec_sha256"), a19m.get("spec_sha256")) if x]
+    if ok_specs and rec.get("spec_sha256") not in ok_specs:
+        reasons.append(f"{tag}: the record ran spec {str(rec.get('spec_sha256'))[:16]}..., not the "
+                       f"registered A18 spec {mo['spec_sha256'][:16]}... (SPEC_REFCV7 23)"
+                       + (f" or the A19 MAIN-only spec {a19m['spec_sha256'][:16]}... (SPEC_REFCV7 24)"
+                          if a19m.get("spec_sha256") else ""))
+    opt = rec.get("optimiser") if isinstance(rec.get("optimiser"), dict) else {}
+    det["optimiser"] = opt
+    for k, want in (mo.get("protocol") or {}).items():
+        got = opt.get(k)
+        ok = (got == want if isinstance(want, dict)
+              else (_finite_num(got) and not isinstance(got, bool) and float(got) == float(want)))
+        if not ok:
+            reasons.append(f"{tag}: the record's optimiser {k} is {got!r}, not the registered "
+                           f"{want!r} (SPEC_REFCV7 23, A18)")
+    for k in ("near_lift_m", "near_refine_blocks"):
+        if k in mo and not (_finite_num(rec.get(k)) and not isinstance(rec.get(k), bool)
+                            and float(rec[k]) == float(mo[k])):
+            reasons.append(f"{tag}: the record ran {k}={rec.get(k)!r}, not the launch map "
+                           f"path's {mo[k]} (SPEC_REFCV7 17 / 20)")
+    band, rule = v.get("band"), rec.get("decision_rule") or v.get("decision_rule")
+    det.update(band=band, decision_rule=rule)
+    if band != mo.get("band"):
+        reasons.append(f"{tag}: the verdict is gated on band {band!r}, not the registered "
+                       f"{mo.get('band')!r}")
+    if rule not in ("raw", "prior_corrected"):
+        reasons.append(f"{tag}: the record states no decision rule ({rule!r}); the prereg gates on "
+                       f"the launch config's DECLARED rule (sec. 5)")
+    main = v.get("MAIN") if isinstance(v.get("MAIN"), dict) else {}
+    final = _first(rec, ("results", "healthy", "final")) or {}
+    n, iou = final.get("n") or {}, final.get("iou") or {}
+    det["classes"] = {}
+    for c, bar in (mo.get("iou_bars") or {}).items():
+        nc, ic = n.get(c), iou.get(c)
+        det["classes"][c] = {"n": nc, "iou": ic, "bar": bar}
+        if not (_finite_num(nc) and nc >= mo["min_cells"]):
+            reasons.append(f"{tag}: class {c!r} has {nc} scored cells < {mo['min_cells']} -- "
+                           f"INCONCLUSIVE => FAIL (prereg sec. 6.1)")
+        if not (_finite_num(ic) and float(ic) >= float(bar)):
+            reasons.append(f"{tag}: class {c!r} IoU {ic} < the registered bar {bar}")
+    if main_only:
+        # A19: the CE ratio and the finite loss from the record's OWN numbers (MAIN's step-0 and
+        # final per-class CE, its finite flag) -- never from the harness's verdict object
+        h_ = results.get("healthy") if isinstance(results.get("healthy"), dict) else {}
+        ce0 = (h_.get("step0") or {}).get("ce_mean") or {}
+        ce1 = (h_.get("final") or {}).get("ce_mean") or {}
+        lim = float(mo.get("ce_ratio_max", 0.5))
+        bad_ce = sorted(c for c in (mo.get("iou_bars") or {})
+                        if not (_finite_num(ce0.get(c)) and _finite_num(ce1.get(c))
+                                and float(ce0[c]) > 0.0 and float(ce1[c]) <= lim * float(ce0[c])))
+        finite_ok = h_.get("loss_finite_every_step") is True
+    else:
+        ce_ok = main.get("ce_ratio_ok") if isinstance(main.get("ce_ratio_ok"), dict) else {}
+        bad_ce = sorted(c for c in (mo.get("iou_bars") or {}) if ce_ok.get(c) is not True)
+        finite_ok = main.get("loss_finite_every_step") is True
+    if bad_ce:
+        reasons.append(f"{tag}: the per-class CE did not fall to <= 0.5x its step-0 value for "
+                       f"{bad_ce} (prereg sec. 6.4)")
+    if not finite_ok:
+        reasons.append(f"{tag}: the MAIN loss is not recorded finite at every step (sec. 6.5)")
+    det["regression_arms"] = reg
+    det["must_fail"] = {}
+    for arm, classes, need_all in gate_mf:
+        a_ = reg.get(arm) or {}
+        if not ran[arm] and main_only:           # ⛔ A19 excuses ABSENCE -- never a VOID
+            det["must_fail"][arm] = f"NOT RUN -- excused under {a19.get('source')}; inherited"
+            continue
+        fin_ = (results.get(arm) or {}).get("final") if isinstance(results.get(arm), dict) else None
+        if isinstance(fin_, dict) and isinstance(fin_.get("iou"), dict):
+            # judged from the arm's OWN result against the gate's literal bars
+            failed = [c for c, bar in (mo.get("iou_bars") or {}).items()
+                      if not (_finite_num(fin_["iou"].get(c)) and float(fin_["iou"][c]) >= float(bar))]
+            shown = a_ or {"ran": True, "failed": failed, "from": "results"}
+        else:
+            failed = list(a_.get("failed") or []) if ran[arm] else []
+            shown = a_ or "not run"
+        det["must_fail"][arm] = {"ran": ran[arm], "failed": failed}
+        ok = ran[arm] and (set(classes) <= set(failed) if need_all else bool(set(classes) & set(failed)))
+        void = " -- VOID: A19 excuses absence, never a VOID" if (a19m and ran[arm]) else ""
+        if not ok and need_all:
+            reasons.append(f"{tag}: must-fail arm {arm!r} must FAIL ALL of {list(classes)} "
+                           f"({shown}) -- a thin class passing without image "
+                           f"information means the harness scores something else" + void)
+        elif not ok:
+            reasons.append(f"{tag}: must-fail arm {arm!r} did not FAIL {list(classes)} "
+                           f"({shown})" + void)
+    ctl = v.get("controls") if isinstance(v.get("controls"), dict) else {}
+    det["controls_reproduced"] = v.get("controls_reproduced")
+    for c in mo.get("controls", ()):
+        hit = [x for k, x in ctl.items() if str(k).split("_")[0] == c]
+        if not (hit and isinstance(hit[0], dict) and hit[0].get("reproduced") is True):
+            reasons.append(f"{tag}: control {c} is not recorded as reproduced "
+                           f"({hit[0] if hit else 'absent'})")
+    if v.get("controls_reproduced") is not True:
+        reasons.append(f"{tag}: the harness does not record controls_reproduced = true")
+    tg = v.get("time_guard") if isinstance(v.get("time_guard"), dict) else {}
+    if tg.get("time_1ms_on_every_clip") is not True:
+        reasons.append(f"{tag}: the 1 ms label-time guard did not hold on every clip "
+                       f"({tg or 'absent'}) -- the prereg's gate condition (sec. 9a.6)")
+    return reasons, det
+
+
+def judge_map_overfit_banded(prof: dict, record: str | None, commit: str, *, argv_sha: str = "",
+                             argv: list[str] | None = None) -> tuple[list[str], dict]:
+    """G-MAP-OVERFIT for an argv that builds the BANDED map head (refcv9-e1rig + `--r9-map-banded`): the record
+    `map_hires_overfit.py --banded` writes (schema `tanitad.g_map_overfit_record/2-banded`), RE-JUDGED against the INHERITED
+    literals (`prof["map_overfit"]`: spec sha, frames, extent, protocol, bars, min_cells, ce_ratio_max, band) and the banded
+    table (`prof["map_overfit_banded"]`) -- never against the bars the record carries:
+
+    * the record binds THIS launch argv (sha256) and the registered A18 spec / 16 frames / extent / optimiser; its near lift is
+      the banded head's 10 m and its near refine blocks equal the argv's; its branch config says `banded`;
+    * MAIN: every (channel, gated band) -- near, and mid's 10-20 m rows -- clears the INHERITED bar of the channel's class,
+      with the inherited presence floor in AREA (1,000 cells of 0.1 m = 10 m^2 of positive target; fewer is INCONCLUSIVE =>
+      FAIL), its training-loss term fell to <= the inherited ratio of step 0, and the loss was finite at every step;
+    * R1 `lane_w0` FAILS lane; R2 `s8_zeros` FAILS EVERY thin channel -- judged from the arm's own cells. An arm that did not
+      run is a FAIL (there is no A19 excusal for this record), and one that ran and passed is a VOID;
+    * C1 / C2 reproduce their known values on the record's own cells; the 1 ms label-time guard held on every clip."""
+    mo, bd = prof.get("map_overfit") or {}, banded_table_for(prof.get("map_overfit_banded") or {}, argv, prof.get("map_overfit") or {})
+    tag = "G-MAP-OVERFIT"
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no /2-banded overfit record ({record!r}) -- the banded head's OWN record is a launch prerequisite "
+                f"(E1-MAP-OWN-RECORD)"], {}
+    rec = read_json(record)
+    v = rec.get("verdict") if isinstance(rec.get("verdict"), dict) else {}
+    det: dict[str, Any] = {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema"),
+                           "verdict": v.get("G_MAP_OVERFIT_BANDED"), "launch_argv_sha256": rec.get("launch_argv_sha256")}
+    reasons = _overfit_binding_reasons(tag, rec, commit, argv_sha, {"schema": bd.get("schema")})
+    if not argv_sha:
+        reasons.append(f"{tag}: no launch argv sha256 to bind the /2-banded record to")
+    if argv is not None:                  # E1-REC4: a banded base + T1: the /2-banded record must say T1's history is NOT certified
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
+    if rec.get("tool") != bd.get("tool"):
+        reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not {bd.get('tool')!r}")
+    if v.get("G_MAP_OVERFIT_BANDED") != "PASS":
+        reasons.append(f"{tag}: the record's verdict is {v.get('G_MAP_OVERFIT_BANDED')!r}, not PASS")
+    if rec.get("spec_sha256") != mo.get("spec_sha256"):
+        reasons.append(f"{tag}: the record ran spec {str(rec.get('spec_sha256'))[:16]}..., not the registered A18 spec "
+                       f"{str(mo.get('spec_sha256'))[:16]}...")
+    frames = [tuple(x) for x in zip(rec.get("frames_sha12") or [], rec.get("raw_frames") or [])]
+    if frames != [tuple(x) for x in mo.get("frames", ())] or rec.get("frameset_md5") != mo.get("frameset_md5"):
+        reasons.append(f"{tag}: the record's frames are not the FROZEN 16-frame set (frameset md5 "
+                       f"{str(mo.get('frameset_md5'))[:8]}...)")
+    ext = rec.get("extent") if isinstance(rec.get("extent"), dict) else {}
+    for k, want in (mo.get("extent") or {}).items():
+        if not (_finite_num(ext.get(k)) and float(ext[k]) == float(want)):
+            reasons.append(f"{tag}: the record ran at extent {k}={ext.get(k)}, not the launch {want}")
+    opt = rec.get("optimiser") if isinstance(rec.get("optimiser"), dict) else {}
+    for k, want in (mo.get("protocol") or {}).items():
+        got = opt.get(k)
+        ok = (got == want if isinstance(want, dict)
+              else (_finite_num(got) and not isinstance(got, bool) and float(got) == float(want)))
+        if not ok:
+            reasons.append(f"{tag}: the record's optimiser {k} is {got!r}, not the registered {want!r}")
+    nl = rec.get("near_lift_m")
+    if not (_finite_num(nl) and float(nl) == float(bd.get("near_lift_m", -1))):
+        reasons.append(f"{tag}: the record ran near_lift_m={nl!r}, not the banded head's {bd.get('near_lift_m')}")
+    if not (isinstance(rec.get("branch_config"), dict) and rec["branch_config"].get("banded") is True):
+        reasons.append(f"{tag}: the record's branch config is not the BANDED head's ({rec.get('branch_config')!r})")
+    oe = bd.get("own_enc") or {}
+    if argv is not None and oe:
+        # E1-REC2 (M3): the record and the argv must AGREE on the map's own encoder, both ways. The stamp is what the harness was
+        # asked to build, the branch config is what it BUILT (`MapHiresConfig.as_dict` carries `own_enc` only when ON), and the
+        # branch's parameter breakdown must show the encoder's parameters.
+        want_own = has_flag(argv, oe["flag"])
+        bc = rec["branch_config"] if isinstance(rec.get("branch_config"), dict) else {}
+        got_stamp, got_cfg = rec.get("own_enc") is True, bc.get("own_enc") is True
+        det["own_enc"] = {"argv_carries": want_own, "record_stamp": rec.get("own_enc"), "built_branch_config": bc.get("own_enc")}
+        if want_own and not has_flag(argv, "--r9-map-banded"):
+            reasons.append(f"{tag}: the argv carries {oe['flag']} without --r9-map-banded (the own encoder feeds ONLY the banded head)")
+        if want_own != got_stamp or want_own != got_cfg:
+            reasons.append(f"{tag}: the launch argv {'carries' if want_own else 'does not carry'} {oe['flag']}, but the record's "
+                           f"own_enc stamp is {rec.get('own_enc')!r} and its built branch config's own_enc is {bc.get('own_enc')!r} "
+                           f"(a banded record made {'WITHOUT' if want_own else 'WITH'} the own encoder does not cover this argv)")
+        if want_own:
+            mp = (rec.get("branch_params") or {}).get("map_encoder") if isinstance(rec.get("branch_params"), dict) else None
+            if bc.get("d_map_enc") != oe["d_map_enc"]:
+                reasons.append(f"{tag}: the record's own encoder is {bc.get('d_map_enc')!r} channels wide, the registered {oe['d_map_enc']}")
+            if not (_finite_num(mp) and float(mp) > 0):
+                reasons.append(f"{tag}: the record's branch parameter breakdown shows no own-encoder parameters (map_encoder={mp!r})")
+    ol = bd.get("own_enc_lift64") or {}
+    if argv is not None and ol:
+        # E1-M3N20L64: the same both-ways agreement for the 64-channel own encoder on the unwidened lift. A record made WITHOUT it (an M1N20 record) or with the
+        # 128-channel M3 encoder does not cover this argv, and an argv without it is not covered by a record that stamps it.
+        want_l64 = has_flag(argv, ol["flag"])
+        bc = rec["branch_config"] if isinstance(rec.get("branch_config"), dict) else {}
+        got_stamp, got_cfg = rec.get("own_enc_lift64") is True, bc.get("own_enc_lift64") is True
+        det["own_enc_lift64"] = {"argv_carries": want_l64, "record_stamp": rec.get("own_enc_lift64"), "built_branch_config": bc.get("own_enc_lift64")}
+        if want_l64 and not has_flag(argv, "--r9-map-banded"):
+            reasons.append(f"{tag}: the argv carries {ol['flag']} without --r9-map-banded (the own encoder feeds ONLY the banded head)")
+        if want_l64 and has_flag(argv, (bd.get("own_enc") or {}).get("flag", "--r9-map-own-enc")):
+            reasons.append(f"{tag}: the argv carries {ol['flag']} together with the 128-channel own encoder flag (exclusive)")
+        if want_l64 != got_stamp or want_l64 != got_cfg:
+            reasons.append(f"{tag}: the launch argv {'carries' if want_l64 else 'does not carry'} {ol['flag']}, but the record's own_enc_lift64 stamp is "
+                           f"{rec.get('own_enc_lift64')!r} and its built branch config's own_enc_lift64 is {bc.get('own_enc_lift64')!r} "
+                           f"(a banded record made {'WITHOUT' if want_l64 else 'WITH'} the 64-channel own encoder does not cover this argv)")
+        if want_l64:
+            mp = (rec.get("branch_params") or {}).get("map_encoder") if isinstance(rec.get("branch_params"), dict) else None
+            if bc.get("own_enc") is True or bc.get("lift_width") not in (None,):
+                reasons.append(f"{tag}: the record's branch config carries the widened-lift own encoder keys ({bc.get('own_enc')!r}, lift_width {bc.get('lift_width')!r})")
+            if not (_finite_num(mp) and float(mp) > 0):
+                reasons.append(f"{tag}: the record's branch parameter breakdown shows no own-encoder parameters (map_encoder={mp!r})")
+    if argv is not None:
+        for flag, key in (("--map-hires-near-lift-m", "near_lift_m"), ("--map-hires-near-refine-blocks", "near_refine_blocks")):
+            fv = flag_values(argv, flag)
+            try:
+                want = float(fv[0]) if fv else None
+            except ValueError:
+                want = None
+            got = rec.get(key)
+            if want is None or not (_finite_num(got) and float(got) == want):
+                reasons.append(f"{tag}: the record ran {key}={got!r}, the launch argv {flag} is {fv}")
+    bands = {b.get("name"): b for b in (rec.get("bands") or []) if isinstance(b, dict)}
+    for bn, rows in (bd.get("gate_rows") or {}).items():
+        if (bands.get(bn) or {}).get("gate_rows") != rows:
+            reasons.append(f"{tag}: band {bn!r} is gated on {(bands.get(bn) or {}).get('gate_rows')!r} rows, not the "
+                           f"registered {rows} (the inherited 0-20 m band)")
+    band, bar_ok = v.get("band"), mo.get("band")
+    if band != bar_ok:
+        reasons.append(f"{tag}: the verdict is gated on band {band!r}, not the registered {bar_ok!r}")
+    results = rec.get("results") if isinstance(rec.get("results"), dict) else {}
+    cc, bars = bd.get("channel_class") or {}, mo.get("iou_bars") or {}
+    min_area = float(mo.get("min_cells", 0)) * float(bd.get("fine_cell_m", 0.1)) ** 2
+
+    def cell(arm, ch, band_):
+        return ((((results.get(arm) or {}).get("final") or {}).get("cells") or {}).get(ch) or {}).get(band_, {}).get("gate") or {}
+
+    def clears(arm, ch):
+        return all(_finite_num(cell(arm, ch, b_).get("iou")) and float(cell(arm, ch, b_)["iou"]) >= float(bars.get(cc.get(ch), 9.0))
+                   for b_ in bd.get("gated_bands", ()))
+    h_ = results.get("healthy") if isinstance(results.get("healthy"), dict) else {}
+    det["cells"] = {}
+    lim = float(mo.get("ce_ratio_max", 0.5))
+    for ch, cls in cc.items():
+        for b_ in bd.get("gated_bands", ()):
+            c = cell("healthy", ch, b_)
+            n, iou, bar = c.get("n_pos"), c.get("iou"), bars.get(cls)
+            det["cells"][f"{ch}_{b_}"] = {"n_pos": n, "iou": iou, "bar": bar}
+            if not (_finite_num(n) and float(n) * float(bd["cell_m"][b_]) ** 2 >= min_area - 1e-9):
+                reasons.append(f"{tag}: channel {ch!r} band {b_!r} has {n} positive cells ({min_area:g} m^2 floor) -- "
+                               f"INCONCLUSIVE => FAIL (prereg sec. 6.1, in area)")
+            if not (_finite_num(iou) and _finite_num(bar) and float(iou) >= float(bar)):
+                reasons.append(f"{tag}: channel {ch!r} band {b_!r} IoU {iou} < the registered bar {bar} (class {cls!r})")
+            l0 = ((h_.get("step0") or {}).get("loss") or {}).get(f"{ch}_{b_}")
+            l1 = ((h_.get("final") or {}).get("loss") or {}).get(f"{ch}_{b_}")
+            if not (_finite_num(l0) and _finite_num(l1) and float(l0) > 0.0 and float(l1) <= lim * float(l0)):
+                reasons.append(f"{tag}: the {ch}_{b_} loss term did not fall to <= {lim}x its step-0 value ({l0} -> {l1})")
+    if h_.get("loss_finite_every_step") is not True:
+        reasons.append(f"{tag}: the MAIN loss is not recorded finite at every step (sec. 6.5)")
+    det["must_fail"] = {}
+    for table, need_all in ((bd.get("must_fail_any") or {}, False), (bd.get("must_fail_all") or {}, True)):
+        for arm, chans in table.items():
+            ran = isinstance(results.get(arm), dict) and bool((results[arm].get("final") or {}).get("cells"))
+            failed = [c for c in chans if ran and not clears(arm, c)]
+            det["must_fail"][arm] = {"ran": ran, "failed": failed}
+            ok = ran and (set(chans) <= set(failed) if need_all else bool(set(chans) & set(failed)))
+            if not ok:
+                reasons.append(f"{tag}: must-fail arm {arm!r} must FAIL {'ALL OF ' if need_all else ''}{list(chans)} "
+                               f"({'not run' if not ran else 'failed ' + str(failed)}) -- a channel passing without its "
+                               f"training signal / image information means the harness scores something else "
+                               f"(no A19 excusal for the /2-banded record)")
+    # C1 / C2 recomputed from the record's own cells
+    ctl = v.get("controls") if isinstance(v.get("controls"), dict) else {}
+    c1 = (ctl.get("C1_constant_drv") or {}).get("cells") or {}
+    c2 = (ctl.get("C2_gt_as_logits") or {}).get("cells") or {}
+    c1_ok = bool(c1)
+    c2_ok, c2_one = bool(c2), False
+    c1_fails_bars = False
+    for ch in cc:
+        for b_ in bd.get("gated_bands", ()):
+            a = ((c1.get(ch) or {}).get(b_) or {}).get("gate") or {}
+            b2 = ((c2.get(ch) or {}).get(b_) or {}).get("gate") or {}
+            if ch == "drv":
+                c1_ok &= _finite_num(a.get("n_scored")) and float(a["n_scored"]) > 0 and _finite_num(a.get("iou")) \
+                    and abs(float(a["iou"]) - float(a["n_pos"]) / float(a["n_scored"])) <= 1e-9
+            else:
+                c1_ok &= a.get("iou") in (None, 0.0)
+            c1_fails_bars |= not (_finite_num(a.get("iou")) and float(a["iou"]) >= float(bars.get(cc[ch], 9.0)))
+            c2_ok &= b2.get("iou") in (None, 1.0)
+            c2_one |= b2.get("iou") == 1.0
+    for name, ok in (("C1", c1_ok and c1_fails_bars), ("C2", c2_ok and c2_one)):
+        if not ok:
+            reasons.append(f"{tag}: control {name} is not reproduced on the record's own cells")
+    for k in bd.get("controls", ()):
+        if (ctl.get(k) or {}).get("reproduced") is not True:
+            reasons.append(f"{tag}: control {k} is not recorded as reproduced")
+    if v.get("controls_reproduced") is not True:
+        reasons.append(f"{tag}: the harness does not record controls_reproduced = true")
+    tg = v.get("time_guard") if isinstance(v.get("time_guard"), dict) else {}
+    if tg.get("time_1ms_on_every_clip") is not True:
+        reasons.append(f"{tag}: the 1 ms label-time guard did not hold on every clip ({tg or 'absent'})")
+    det["informative_not_gated"] = list(bd.get("informative") or ())
+    return reasons, det
+
+
+def judge_own_record_generic(row: dict, record: str | None, argv_sha: str) -> tuple[list[str], dict]:
+    """The generic reader of a lever's OWN overfit record (`E1_OWN_RECORDS` rows without their own judge -- the box lever's
+    `/2-b3` record): the schema is the row's, the record binds THIS argv, its verdict key reads PASS and every registered
+    regression arm RAN and FAILED AS REQUIRED. B3 gives the row its own judge when the record needs a re-judge from numbers."""
+    tag = row.get("check", "G-OVERFIT")
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no {row.get('schema')} record ({record!r})"], {}
+    rec = read_json(record)
+    v = rec.get("verdict") if isinstance(rec.get("verdict"), dict) else {}
+    reasons: list[str] = []
+    if rec.get("schema") != row.get("schema"):
+        reasons.append(f"{tag}: the record's schema is {rec.get('schema')!r}, not {row.get('schema')!r}")
+    if not argv_sha or str(_first(rec, ("launch_argv_sha256",), ("launch", "argv_sha256"))) != argv_sha:
+        reasons.append(f"{tag}: the record is bound to argv "
+                       f"{str(_first(rec, ('launch_argv_sha256',), ('launch', 'argv_sha256')))[:12] or '<none>'}, not the "
+                       f"launch argv {argv_sha[:12] or '<none>'}")
+    if v.get(row.get("verdict_key", "RESULT")) != "PASS":
+        reasons.append(f"{tag}: the record's {row.get('verdict_key', 'RESULT')} is {v.get(row.get('verdict_key', 'RESULT'))!r}, "
+                       f"not PASS")
+    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
+    for arm in row.get("must_fail_arms", ()):
+        a = reg.get(arm) or {}
+        if not (a.get("ran") is True and a.get("failed_as_required") is True):
+            reasons.append(f"{tag}: regression arm {arm!r} did not RUN and FAIL AS REQUIRED ({a or 'absent'})")
+    return reasons, {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema")}
+
+
+def box_aux_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """E1-REC3 (MM 207ebd, pinned): what a box overfit record says it does NOT certify. The record certifies the INFERENCE box head in
+    isolation; a TRAINING-ONLY aux head (`E1_BOX_AUX_FLAGS`) is never called at inference and its effect cannot show on frozen frames, so a
+    record bound to an argv that carries one must STAMP `aux_heads_not_certified` -- a list that EQUALS the argv's aux set -- and a one-line
+    `aux_heads_not_certified_why`. A record with no stamp passes only an argv with no aux flag (C0 / C1 / B3 / the M arms: unchanged); a stamp
+    that is not the argv's aux set (missing, extra, duplicated) fails, so a record never silently covers another arm's aux heads."""
+    want = sorted({f for f, _ in flag_pairs(argv) if f in E1_BOX_AUX_FLAGS})
+    stamp = rec.get(E1_BOX_AUX_STAMP)
+    why = rec.get(E1_BOX_AUX_STAMP_WHY)
+    det = {"argv_aux_set": want, "record_stamp": stamp}
+    out: list[str] = []
+    if stamp is None:
+        if want:
+            out.append(f"{tag}: the launch argv carries the training-only aux head(s) {want} but the record stamps no "
+                       f"`{E1_BOX_AUX_STAMP}` (an inherited /1 box record certifies the INFERENCE head only and must say which aux heads it "
+                       f"does NOT certify)")
+        return out, det
+    if not (isinstance(stamp, list) and all(isinstance(x, str) for x in stamp)):
+        out.append(f"{tag}: the record's `{E1_BOX_AUX_STAMP}` is {stamp!r}, not a list of flags")
+    elif sorted(stamp) != want or len(set(stamp)) != len(stamp):
+        out.append(f"{tag}: the record's `{E1_BOX_AUX_STAMP}` is {sorted(stamp)}, the launch argv's aux set is {want} "
+                   f"(the stamp must EQUAL it: a record never covers another arm's aux heads)")
+    elif stamp and not (isinstance(why, str) and why.strip()):
+        out.append(f"{tag}: the record stamps `{E1_BOX_AUX_STAMP}` {sorted(stamp)} but no one-line `{E1_BOX_AUX_STAMP_WHY}`")
+    return out, det
+
+
+def box_pfq_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """C5-INTEG (MM 207ebd, pinned): what a box overfit record says it does NOT certify about lever 4's per-frame SEEDS. The replay harness cannot train the
+    perspective head the seeds come from, so it builds a random frozen stand-in: a record bound to an argv that carries `--r9-box-perframe-queries`
+    must STAMP `perframe_seeds_not_certified` -- a list that EQUALS the argv's pfq set (`[E1_PFQ_FLAG]`) -- and a one-line
+    `perframe_seeds_not_certified_why`. A record with no stamp passes only an argv without the flag (C0 / C1 / B3 / the aux arms: unchanged); a stamp
+    that is not the argv's pfq set (missing, extra, duplicated, offered to an argv WITHOUT the flag) fails, so a record never silently covers another
+    arm's seeds. Mirrors `box_aux_stamp_reasons` line for line."""
+    want = sorted({f for f, _ in flag_pairs(argv) if f == E1_PFQ_FLAG})
+    stamp = rec.get(E1_PFQ_STAMP)
+    why = rec.get(E1_PFQ_STAMP_WHY)
+    det = {"argv_pfq_set": want, "record_stamp": stamp}
+    out: list[str] = []
+    if stamp is None:
+        if want:
+            out.append(f"{tag}: the launch argv carries the per-frame query lever {want} but the record stamps no `{E1_PFQ_STAMP}` (the replay's "
+                       f"seed head is a random frozen stand-in: the record certifies the decode path under ARBITRARY seeds and must say it does "
+                       f"NOT certify the seeds)")
+        return out, det
+    if not (isinstance(stamp, list) and all(isinstance(x, str) for x in stamp)):
+        out.append(f"{tag}: the record's `{E1_PFQ_STAMP}` is {stamp!r}, not a list of flags")
+    elif sorted(stamp) != want or len(set(stamp)) != len(stamp):
+        out.append(f"{tag}: the record's `{E1_PFQ_STAMP}` is {sorted(stamp)}, the launch argv's pfq set is {want} "
+                   f"(the stamp must EQUAL it: a record never covers another arm's seeds)")
+    elif stamp and not (isinstance(why, str) and why.strip()):
+        out.append(f"{tag}: the record stamps `{E1_PFQ_STAMP}` {sorted(stamp)} but no one-line `{E1_PFQ_STAMP_WHY}`")
+    return out, det
+
+
+def bev_warp_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """E1-REC4 (MM 207ebd, pinned): what an overfit record says it does NOT certify about T1, the temporal BEV warp. A record certifies a head on
+    FROZEN frames with no staged history, so a T1 flag (`E1_T1_FLAGS`) in the launch argv is never built by the harness and its effect cannot show
+    there: a record bound to an argv that carries one must STAMP `bev_warp_not_certified` -- a list that EQUALS the argv's T1 flag set -- and a
+    one-line `bev_warp_not_certified_why`. A record with no stamp passes only an argv with no T1 flag (C0 / C1 / the M and B arms: unchanged); a
+    stamp that is not the argv's T1 set (missing, extra, duplicated, offered to another arm) fails, so a record never silently covers another
+    arm's temporal history. Used by all four overfit judges (map /1, map /2-banded, box /1, box /2-b3)."""
+    want = sorted({f for f, _ in flag_pairs(argv) if f in E1_T1_FLAGS})
+    stamp = rec.get(E1_T1_STAMP)
+    why = rec.get(E1_T1_STAMP_WHY)
+    det = {"argv_t1_set": want, "record_stamp": stamp}
+    out: list[str] = []
+    if stamp is None:
+        if want:
+            out.append(f"{tag}: the launch argv carries the temporal BEV warp flag(s) {want} but the record stamps no `{E1_T1_STAMP}` (an "
+                       f"overfit record certifies the head on frozen frames and must say that T1's history is NOT certified)")
+        return out, det
+    if not (isinstance(stamp, list) and all(isinstance(x, str) for x in stamp)):
+        out.append(f"{tag}: the record's `{E1_T1_STAMP}` is {stamp!r}, not a list of flags")
+    elif sorted(stamp) != want or len(set(stamp)) != len(stamp):
+        out.append(f"{tag}: the record's `{E1_T1_STAMP}` is {sorted(stamp)}, the launch argv's T1 set is {want} "
+                   f"(the stamp must EQUAL it: a record never covers another arm's temporal history)")
+    elif stamp and not (isinstance(why, str) and why.strip()):
+        out.append(f"{tag}: the record stamps `{E1_T1_STAMP}` {sorted(stamp)} but no one-line `{E1_T1_STAMP_WHY}`")
+    return out, det
+
+
+def judge_box_own_record(row: dict, record: str | None, argv_sha: str, argv: list[str] | None = None) -> tuple[list[str], dict]:
+    """E1-REC2: the box lever's OWN record (`g_box_overfit.py`, schema `tanitad.g_box_overfit_record/2-b3`) as the reader of row
+    E1-BOX-OWN-RECORD. It closes the OPEN ITEM and nothing else (G-BOX-OVERFIT's full re-judge from the rows is `judge_box_overfit`,
+    unchanged). A record closes the item iff
+
+    * its schema is the row's and it is bound to THIS argv's sha256 (`_overfit_binding_reasons`, the M-GATE mechanism);
+    * its STAMPED flag set (`rec["b3"]["flags"]`, written by the harness from the argv it built from) EQUALS the argv's OWN-head
+      `--r9-box-*` set (`E1_BOX_OWN_FLAGS`; E1-REC3: the training-only aux flags are not in it) -- so a record made for B3 never closes
+      B3'; a B3 + aux argv additionally needs the aux stamp (`box_aux_stamp_reasons`);
+    * the harness's top-level `RESULT` is PASS (the box record keeps it at the top level, not under `verdict`);
+    * every registered must-fail arm RAN and its verdict reads `failed as required` (a `VOID` or an absent arm is a reason)."""
+    tag = row.get("check", "G-BOX-OVERFIT")
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no {row.get('schema')} record ({record!r}) -- the box lever's OWN record is a launch prerequisite "
+                f"(E1-BOX-OWN-RECORD)"], {}
+    rec = read_json(record)
+    det: dict[str, Any] = {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema"),
+                           "launch_argv_sha256": rec.get("launch_argv_sha256"), "result": rec.get("RESULT")}
+    reasons = _overfit_binding_reasons(tag, rec, "", argv_sha, {"schema": row.get("schema")})
+    if not argv_sha:
+        reasons.append(f"{tag}: no launch argv sha256 to bind the {row.get('schema')} record to")
+    if rec.get("tool") != "g_box_overfit.py":
+        reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not 'g_box_overfit.py'")
+    own = tuple(row.get("flags") or E1_BOX_OWN_FLAGS)           # E1-REC3: the argv's OWN-head levers only (a B3 + B1 argv compares B3's flags)
+    want = sorted({f for f, _ in flag_pairs(argv or []) if f in own})
+    path = tuple(row.get("stamp") or ("b3", "flags"))
+    stamp = rec
+    for k in path:
+        stamp = stamp.get(k) if isinstance(stamp, dict) else None
+    det["flags"] = {"argv": want, "record_stamp": stamp}
+    if argv is None:
+        reasons.append(f"{tag}: no launch argv to compare the record's stamped flag set with")
+    elif not (isinstance(stamp, list) and stamp and all(isinstance(x, str) for x in stamp) and len(set(stamp)) == len(stamp)):
+        reasons.append(f"{tag}: the record stamps no flag set (rec{''.join('[%r]' % k for k in path)} is {stamp!r})")
+    elif sorted(stamp) != want:
+        reasons.append(f"{tag}: the record was made for {sorted(stamp)}, the launch argv carries {want} "
+                       f"(a record covers exactly the own-head --r9-box-* set it was built with)")
+    if argv is not None:                                         # E1-REC3: a B3 + aux argv's record must also say what it does NOT certify
+        r_aux, d_aux = box_aux_stamp_reasons(tag, rec, argv)
+        reasons += r_aux
+        det["aux_heads_not_certified"] = d_aux
+        r_pfq, d_pfq = box_pfq_stamp_reasons(tag, rec, argv)         # C5-INTEG: ... and a per-frame-query argv's record must say the SEEDS are NOT certified
+        reasons += r_pfq
+        if d_pfq["argv_pfq_set"] or d_pfq["record_stamp"] is not None:
+            det["perframe_seeds_not_certified"] = d_pfq
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)         # E1-REC4: ... and a T1 argv's record must say T1's history is NOT certified
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
+    vk = row.get("verdict_key", "RESULT")
+    if rec.get(vk) != "PASS":
+        reasons.append(f"{tag}: the record's {vk} is {rec.get(vk)!r}, not PASS")
+    arms = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+    for arm in row.get("must_fail_arms", ()):
+        got = arms[arm].get("verdict") if isinstance(arms.get(arm), dict) else None
+        if got != E1_BOX_ARM_FAILED:
+            reasons.append(f"{tag}: regression arm {arm!r} did not RUN and FAIL AS REQUIRED (its verdict is {got!r}, not "
+                           f"{E1_BOX_ARM_FAILED!r})")
+    return reasons, det
+
+
+#: ⭐ THE TABLE (M-GATE): an open item of the refcv9-e1rig profile -> (the flags its own record covers, the record schema it
+#: needs). A lever closes its `E1-*-OWN-RECORD` item MACHINE-CHECKED by adding ONE row: the argv's hits of the item must all lie
+#: in `flags`, and the record named by the profile option `record_option` must pass the row's `judge` (None = the generic
+#: reader) bound to THIS argv's sha256. The item is NEVER deleted -- `open_item_reasons(..., closed=)` skips only the items this
+#: reads as closed. `switch` = the flags that make the check's job demand the lever's own record in place of the inherited one
+#: (default: `flags`).
+#: ⭐ E1-REC3: `E1_BOX_OWN_FLAGS` (B3's four, defined with `E1_BOX_AUX_FLAGS` above the profile) is what the box row's judge can close; a flag the
+#: HARNESS cannot stamp keeps the item open. The training-only aux heads are not in it (see the comment at their definition).
+E1_MAP_OWN_SCHEMA = "tanitad.g_map_overfit_record/2-banded"
+E1_BOX_OWN_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
+#: the regression arms the box record must hold (`g_box_overfit.MUST_FAIL`) and the verdict text a failing one carries (`arm_verdict`)
+E1_BOX_MUST_FAIL: tuple = ("memory_zeros", "presence_w0")
+E1_BOX_ARM_FAILED = "failed as required"
+E1_OWN_RECORDS = {
+    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-own-enc-lift64", "--r9-map-banded-near-m"), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
+                          "record_option": "map_overfit_record", "judge": "judge_map_overfit_banded"},
+    "E1-BOX-OWN-RECORD": {"flags": E1_BOX_OWN_FLAGS, "schema": E1_BOX_OWN_SCHEMA, "check": "G-BOX-OVERFIT",
+                          "record_option": "box_overfit_record", "judge": "judge_box_own_record", "verdict_key": "RESULT",
+                          "must_fail_arms": E1_BOX_MUST_FAIL, "stamp": ("b3", "flags"), "stamp_prefix": "--r9-box-"},
+}
+
+
+def own_record_row(prof: dict, argv: list[str] | None, check: str) -> dict | None:
+    """The `E1_OWN_RECORDS` row that makes `check`'s job demand a lever's OWN record for THIS argv, else None. Only a profile that
+    declares the item (refcv9-e1rig) is concerned, and only an argv that carries one of the row's flags."""
+    if not argv:
+        return None
+    ids = {it.get("id") for it in (prof.get("open_items") or ())}
+    for item_id, row in E1_OWN_RECORDS.items():
+        if item_id in ids and row.get("check") == check and any(f in dict(flag_pairs(argv)) for f in row.get("switch", row["flags"])):
+            return dict(row, item=item_id)
+    return None
+
+
+def own_record_closes(prof: dict, item_id: str, argv: list[str] | None, options: dict, commit: str,
+                      argv_sha: str) -> tuple[bool, list[str]]:
+    """Does the item's OWN record close it for THIS argv? True only when (1) the item's hits in the argv are non-empty and ALL
+    lie in the row's flags (any other `--r9-map-*` / `--r9-*` flag keeps the item open), and (2) the record the profile option
+    names passes the row's judge, bound to this argv's sha256. READS the record -- a hand-set flag closes nothing."""
+    row = E1_OWN_RECORDS.get(item_id)
+    item = next((it for it in (prof.get("open_items") or ()) if it.get("id") == item_id), None)
+    if row is None or item is None or not argv:
+        return False, [f"{item_id}: no table row / no argv"]
+    hits = open_item_hits(item, argv) or []
+    if not hits:
+        return False, [f"{item_id}: the argv carries no flag of the item"]
+    other = [f for f in hits if f not in row["flags"]]
+    if other:
+        return False, [f"{item_id}: {other} are not covered by the {row['schema']} record (it covers {list(row['flags'])})"]
+    record = (options or {}).get(row["record_option"])
+    if row.get("judge") == "judge_map_overfit_banded":
+        reasons, _ = judge_map_overfit_banded(prof, record, commit, argv_sha=argv_sha, argv=argv)
+    elif row.get("judge") == "judge_box_own_record":
+        reasons, _ = judge_box_own_record(row, record, argv_sha, argv)
+    else:
+        reasons, _ = judge_own_record_generic(row, record, argv_sha)
+    return (not reasons), reasons
+
+
+def own_records_closed(prof: dict, argv: list[str] | None, options: dict, commit: str, argv_sha: str) -> dict[str, str]:
+    """{item id: record sha256} of every open item whose OWN record closes it (empty for an argv with no lever flag)."""
+    out: dict[str, str] = {}
+    for item_id, row in E1_OWN_RECORDS.items():
+        ok, _why = own_record_closes(prof, item_id, argv, options, commit, argv_sha)
+        if ok:
+            out[item_id] = sha256_file((options or {})[row["record_option"]])
+    return out
+
+
+def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: str = "",
+                      argv: list[str] | None = None) -> tuple[list[str], dict]:
+    """G-BOX-OVERFIT (SPEC_REFCV7 A9, A10 sec. 15.1): the record the box-head builder's harness
+    (`stack/scripts/g_box_overfit.py`, record `tool: g_box_overfit.py`) writes, RE-JUDGED against
+    the prereg's LITERALS (`PROFILES[...]["box_overfit"]`, PREREG_G_BOX_OVERFIT.md md5 594c7119...)
+    -- never against the pass flags or bars the record carries:
+
+    * `RESULT` is PASS; the prereg and the frame set are the registered bytes; the literals (steps
+      2,000, batch 4, seed 0, 113 POSITIVE / 77 IGNORE after A10) are the prereg's; every arm trained
+      with the LAUNCH optimiser (A13: AdamW, groups 5e-5 / 1e-4, weight decay 1e-4, clip 10) on A17's
+      schedule (peaks through 1,799, cosine to 0 over 1,800-2,000); the record binds THIS launch argv;
+      the harness's G-DVB self-check found no mismatch;
+    * `main`'s FINAL row (step 2,000) meets EVERY sec. 5 criterion, recomputed here from the row
+      values (the count and the presence ratio derived by the gate);
+    * each must-fail arm (sec. 6) FAILS every criterion it names, recomputed the same way -- one
+      passing makes the result VOID;
+    * controls C1, C2, C3 read their known values; C4 (step 0) is REPORTED.
+    ⚠️ PROVISIONAL until the box-head package lands: the schema is the harness as it stands in
+    `…/2026-09-27-refcv7-box-head/code/new/`; each field the gate reads is named when absent."""
+    bo = prof.get("box_overfit") or {}
+    tag = "G-BOX-OVERFIT"
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no box overfit PASS record ({record!r}) -- a launch prerequisite "
+                f"(SPEC_REFCV7 A9/A10)"], {}
+    rec = read_json(record)
+    det: dict[str, Any] = {"record": record, "sha256": sha256_file(record),
+                           "result": rec.get("RESULT"),
+                           "harness_binding_informative": [rec.get("binding"), rec.get("commit")]}
+    reasons: list[str] = []
+    # ⛔ SPEC_REFCV7 24 (A19): a must-fail arm the record does not hold is excused only under the
+    # profile's A19 policy; the harness then writes RESULT FAIL (its must-fail arms are absent), so
+    # RESULT is NOT read -- main is re-judged below from its rows, as always
+    a19 = prof.get("overfit_main_only") or {}
+    a19b = a19.get("box") if isinstance(a19.get("box"), dict) else {}
+    arms_a19 = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+    absent = [a_ for a_ in (bo.get("must_fail") or {}) if not isinstance(arms_a19.get(a_), dict)]
+    main_only = bool(a19b) and bool(absent)
+    det["a19"] = {"policy": a19.get("policy"), "source": a19.get("source"), "applied": main_only,
+                  "absent_must_fail_arms": absent,
+                  "harness_result_not_read": rec.get("RESULT") if main_only else None}
+    if main_only:
+        det["a19"]["statement"] = (
+            f"MAIN-ONLY binding under {a19.get('source')}: the must-fail arm(s) {absent} were NOT "
+            f"RUN -- {a19b.get('inherited')} (evidence: {'; '.join(a19b.get('evidence') or ())})")
+    if rec.get("tool") != bo.get("tool"):
+        reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not {bo.get('tool')!r}")
+    if main_only:
+        if rec.get("RESULT") == "VOID":
+            reasons.append(f"{tag}: the record's RESULT is 'VOID' -- a must-fail arm passed "
+                           f"(A19 excuses absence, never a VOID)")
+    elif rec.get("RESULT") != "PASS":
+        reasons.append(f"{tag}: the record's RESULT is {rec.get('RESULT')!r}, not PASS")
+    # the launch argv: the gate's definition (ordered compact JSON), or the harness's own
+    # `sha256(json.dumps(argv))` -- both are pure functions of the SAME list
+    r_argv = rec.get("launch_argv_sha256")
+    forms = {"gate": argv_sha}
+    if argv is not None:
+        forms["harness_json_dumps"] = hashlib.sha256(json.dumps(argv).encode()).hexdigest()
+    hit = [k for k, v in forms.items() if v and v == r_argv]
+    det["argv_form"] = hit[0] if hit else None
+    if argv_sha and not hit:
+        reasons.append(f"{tag}: the record is bound to argv {str(r_argv)[:12] or '<none>'}, not the "
+                       f"launch argv {argv_sha[:12]}")
+    if argv is not None:                  # E1-REC3: a record bound to an argv with training-only aux heads must say it does NOT certify them
+        r_aux, d_aux = box_aux_stamp_reasons(tag, rec, argv)
+        reasons += r_aux
+        if d_aux["argv_aux_set"]:
+            det["aux_heads_not_certified"] = d_aux
+        r_pfq, d_pfq = box_pfq_stamp_reasons(tag, rec, argv)         # C5-INTEG: a record bound to a per-frame-query argv must say the SEEDS are NOT certified
+        reasons += r_pfq
+        if d_pfq["argv_pfq_set"] or d_pfq["record_stamp"] is not None:
+            det["perframe_seeds_not_certified"] = d_pfq
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)         # E1-REC4: a record bound to a T1 argv must say T1's history is NOT certified
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
+    for k in ("prereg_md5", "frameset_md5"):
+        if rec.get(k) != bo.get(k):
+            reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
+    # OPTION B: a profile that registers its OWN frame set (`frameset_profile`) binds the record to that set's name,
+    # its addendum's bytes, and a C3 recount whose totals ARE the registered literals (re-judged, not the C3 flag)
+    if "frameset_profile" in bo:
+        for k in ("frameset_profile", "addendum_md5"):
+            if rec.get(k) != bo.get(k):
+                reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
+        c3 = rec.get("C3") if isinstance(rec.get("C3"), dict) else {}
+        want_c3 = [int(bo["n_pos"]), int(bo["n_ignore"])]
+        if c3.get("totals") != want_c3 or c3.get("frameset_md5") != bo.get("frameset_md5"):
+            reasons.append(f"{tag}: C3 recount totals {c3.get('totals')!r} on frame set "
+                           f"{str(c3.get('frameset_md5'))[:8]}... != the registered {want_c3} on "
+                           f"{str(bo.get('frameset_md5'))[:8]}...")
+    lit = rec.get("literals") if isinstance(rec.get("literals"), dict) else {}
+    for rk, pk in (("batch", "batch"), ("seed", "seed"), ("n_pos", "n_pos"), ("n_ign", "n_ignore")):
+        if not (_finite_num(lit.get(rk)) and float(lit[rk]) == float(bo[pk])):
+            reasons.append(f"{tag}: literal {rk} = {lit.get(rk)!r}, the prereg (with A10's "
+                           f"reconciliation) fixes {bo[pk]}")
+    # A17: the lr schedule, verbatim; A13: every arm's optimiser as built (the PEAK groups)
+    if bo.get("lr_schedule") is not None and lit.get("lr_schedule") != dict(bo["lr_schedule"]):
+        reasons.append(f"{tag}: literal lr_schedule = {lit.get('lr_schedule')!r}, SPEC_REFCV7 A17 fixes "
+                       f"{dict(bo['lr_schedule'])!r}")
+    want_opt = bo.get("optimizer")
+    if want_opt is not None:
+        arms0 = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+        for arm_name in ("main", *(bo.get("must_fail") or {})):
+            spec = (arms0.get(arm_name) or {}).get("optimizer") if isinstance(arms0.get(arm_name), dict) else None
+            if not isinstance(spec, dict):
+                if arm_name in arms0:
+                    reasons.append(f"{tag}: arm {arm_name!r} records no optimizer spec (SPEC_REFCV7 A13)")
+                continue
+            groups = spec.get("groups") if isinstance(spec.get("groups"), list) else []
+            lrs = sorted(float(g.get("lr")) for g in groups if _finite_num(g.get("lr")))
+            wds = {float(g.get("weight_decay")) for g in groups if _finite_num(g.get("weight_decay"))}
+            ok = (spec.get("class") == want_opt["class"] and len(lrs) == len(groups)
+                  and lrs == sorted(float(x) for x in want_opt["group_lrs"])
+                  and wds == {float(want_opt["weight_decay"])} and len(wds) == 1
+                  and _finite_num(spec.get("clip")) and float(spec["clip"]) == float(want_opt["clip"]))
+            if not ok:
+                reasons.append(f"{tag}: arm {arm_name!r} trained with {spec.get('class')!r} groups "
+                               f"{lrs} weight decay {sorted(wds)} clip {spec.get('clip')!r}, not the "
+                               f"LAUNCH optimiser (SPEC_REFCV7 A13: {want_opt['class']} "
+                               f"{list(want_opt['group_lrs'])}, weight decay {want_opt['weight_decay']}, "
+                               f"clip {want_opt['clip']})")
+    if rec.get("steps") != bo.get("steps"):
+        reasons.append(f"{tag}: steps = {rec.get('steps')!r}, the prereg fixes {bo.get('steps')}")
+    if rec.get("dvb_mismatches"):
+        reasons.append(f"{tag}: the harness's G-DVB self-check found {len(rec['dvb_mismatches'])} "
+                       f"mismatch(es): {rec['dvb_mismatches'][:3]}")
+    arms = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+    npos = float(bo["n_pos"])
+
+    def judged(arm: str) -> tuple[dict, str | None]:
+        a = arms.get(arm) if isinstance(arms.get(arm), dict) else None
+        rows = (a or {}).get("rows") or []
+        if not a or not rows:
+            return {}, f"arm {arm!r} did not run (no rows)"
+        final, r0 = rows[-1], rows[0]
+        if final.get("step") != bo["steps"]:
+            return {}, f"arm {arm!r} ends at step {final.get('step')!r}, not {bo['steps']}"
+        d = dict(final)
+        d["count_rel"] = (abs(float(final["n_conf"]) - npos) / npos
+                          if _finite_num(final.get("n_conf")) else None)
+        p0, pe = r0.get("presence"), final.get("presence")
+        d["presence_ratio"] = (float(pe) / float(p0) if _finite_num(pe) and _finite_num(p0)
+                               and float(p0) != 0.0 else None)
+        c6 = ((a.get("criteria") or {}).get("6") or {}).get("value")
+        finite = isinstance(c6, list) and bool(c6) and c6[0] is True
+
+        def meets(k: str, op: str, lv: float) -> bool:
+            x = d.get(k)
+            if not _finite_num(x):
+                return False                              # NaN / absent never passes
+            return float(x) >= float(lv) if op == ">=" else float(x) <= float(lv)
+        out = {c: all(meets(k, op, lv) for k, op, lv in terms)
+               for c, terms in bo["criteria"].items()}
+        out["6"] = out["6"] and finite
+        return {"criteria": out, "final": {k: d.get(k) for k in (
+            "ap2m", "prec", "rec", "n_conf", "count_rel", "centre_p50_m", "size_p50_m", "z_p50_m",
+            "cls_acc", "presence_ratio")}, "finite": finite}, None
+    main, why = judged("main")
+    det["main"] = main
+    if why:
+        reasons.append(f"{tag}: {why}")
+    else:
+        for c, ok in main["criteria"].items():
+            if not ok:
+                reasons.append(f"{tag}: main fails prereg criterion {c} "
+                               f"{[t[0] for t in bo['criteria'][c]]} at step {bo['steps']}: "
+                               f"{ {t[0]: main['final'].get(t[0]) for t in bo['criteria'][c]} }"
+                               + ("" if c != "6" or main["finite"] else " (loss not finite)"))
+        if (arms.get("main") or {}).get("verdict") != "PASS":
+            reasons.append(f"{tag}: the record's own main verdict is "
+                           f"{(arms.get('main') or {}).get('verdict')!r}")
+    det["must_fail"] = {}
+    for arm, crits in (bo.get("must_fail") or {}).items():
+        if main_only and arm in absent:          # ⛔ A19 excuses ABSENCE -- never a VOID
+            det["must_fail"][arm] = f"NOT RUN -- excused under {a19.get('source')}; inherited"
+            continue
+        res, why = judged(arm)
+        det["must_fail"][arm] = res.get("criteria") if res else why
+        if why:
+            reasons.append(f"{tag}: must-fail {why}")
+        elif any(res["criteria"][c] for c in crits):
+            reasons.append(f"{tag}: must-fail arm {arm!r} must FAIL prereg criteria {list(crits)} "
+                           f"and passes {[c for c in crits if res['criteria'][c]]} -- the result is "
+                           f"VOID (prereg sec. 7)")
+    c12 = rec.get("C1_C2") if isinstance(rec.get("C1_C2"), dict) else {}
+    ctl = {"C1": c12.get("C1"), "C2": c12.get("C2"), "C3": rec.get("C3")}
+    for c in bo.get("controls", ()):
+        v = ctl.get(c)
+        if not (isinstance(v, dict) and v.get("pass") is True):
+            reasons.append(f"{tag}: control {c} does not read its known value "
+                           f"({v if v is not None else 'absent'})")
+    if not isinstance(rec.get("C4_step0"), dict):
+        reasons.append(f"{tag}: C4 (step 0, the launch init) is not reported")
+    return reasons, det
+
+
+def read_metrics(path: Path) -> list[dict]:
+    rows = []
+    if not path.is_file():
+        return rows
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            r = json.loads(line)
+        except Exception:                                 # noqa: BLE001 -- a torn line is skipped
+            continue
+        if isinstance(r, dict):
+            rows.append(r)
+    return rows
+
+
+def train_rows(rows: list[dict]) -> list[dict]:
+    return [r for r in rows if "loss" in r and "step" in r
+            and not any(str(k).startswith("eval_") for k in r)]
+
+
+def judge_ckpt(ckpt: dict | None, run1: dict, run2: dict | None, *, smoke_steps: int,
+               extra: int, batch: int, seed: int, run2_rows: list[dict],
+               run2_config: dict | None, run2_summary: dict | None) -> tuple[list[str], dict]:
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    if ckpt is None:
+        return [f"the smoke wrote no ckpt.pt at step {smoke_steps}"], det
+    miss = sorted({"model", "opt", "step", "data_pos"} - set(ckpt))
+    det["ckpt_keys"] = sorted(ckpt)
+    if miss:
+        reasons.append(f"ckpt.pt lacks {miss} -- a resume could not restore them")
+    if int(ckpt.get("step", -1)) != smoke_steps:
+        reasons.append(f"ckpt.pt step {ckpt.get('step')} != {smoke_steps}")
+    fin = run1.get("final")
+    if not fin:
+        return reasons + ["run 1 produced no in-memory final state to compare"], det
+    ck_model = state_digests(ckpt.get("model", {}))
+    ck_opt = optimizer_digests(ckpt.get("opt", {}))
+
+    def cmp(name, a, b):
+        ka, kb = set(a), set(b)
+        diff = sorted(k for k in ka & kb if a[k] != b[k])
+        out = {"n": len(ka), "only_first": sorted(ka - kb)[:10], "only_second": sorted(kb - ka)[:10],
+               "n_differ": len(diff), "differ": diff[:10]}
+        det[name] = out
+        if ka != kb or diff:
+            reasons.append(f"{name}: key sets or tensors differ ({out['n_differ']} differ, "
+                           f"{len(ka - kb)}/{len(kb - ka)} one-sided)")
+    cmp("save_model_vs_memory", fin["model"], ck_model)
+    cmp("save_opt_state_vs_memory", fin["opt"]["state"], ck_opt["state"])
+    if fin["opt"]["param_groups"] != ck_opt["param_groups"]:
+        reasons.append("save: optimizer param_groups differ from the in-memory optimizer")
+    dp = ckpt.get("data_pos") or {}
+    det["data_pos"] = dp
+    mem = run1.get("dpos_final") or {}
+    if not dp or int(dp.get("epoch", -1)) != int(mem.get("epoch", -2)) or \
+            int(dp.get("batch", -1)) != int(mem.get("batch", -2)):
+        reasons.append(f"data_pos {dp} != the loop's final position {mem}")
+    if dp and (int(dp.get("batch_size", -1)) != batch or int(dp.get("seed", -1)) != seed):
+        reasons.append(f"data_pos batch_size/seed {dp.get('batch_size')}/{dp.get('seed')} != "
+                       f"argv {batch}/{seed}")
+    if run2 is None:
+        return reasons + ["the resume run did not happen"], det
+    det["resume_exit"] = run2.get("exit")
+    if run2.get("exit"):
+        reasons.append(f"the resume run failed: {str(run2['exit'])[:400]}")
+    pl = run2.get("post_load")
+    if not pl:
+        reasons.append("the resume run never reached a training step (no post-load state)")
+    else:
+        cmp("resume_model_vs_saved", fin["model"], pl["model"])
+        if pl.get("opt"):
+            cmp("resume_opt_state_vs_saved", fin["opt"]["state"], pl["opt"]["state"])
+            g1 = [{k: v for k, v in g.items() if k != "lr"} for g in fin["opt"]["param_groups"]]
+            g2 = [{k: v for k, v in g.items() if k != "lr"} for g in pl["opt"]["param_groups"]]
+            if g1 != g2:
+                reasons.append("resume: optimizer param_groups (lr excepted) differ from the saved")
+    its = run2.get("sampler_iters") or []
+    det["resume_first_sampler_iter"] = its[0] if its else None
+    if not its or its[0]["epoch"] != int(dp.get("epoch", -1)) or \
+            its[0]["skip"] != int(dp.get("batch", -1)):
+        reasons.append(f"resume: the sampler started at {its[0] if its else None}, the checkpoint "
+                       f"says {dp} -- the data order would replay or skip")
+    steps2 = sorted({int(r["step"]) for r in run2_rows})
+    det["resume_row_steps"] = steps2
+    if not steps2 or min(steps2) <= smoke_steps:
+        reasons.append(f"resume: training rows {steps2} do not continue after step {smoke_steps}")
+    do = (run2_config or {}).get("data_order") or {}
+    det["resume_config_data_order"] = do
+    if int(do.get("resumed_at_step", -1)) != smoke_steps:
+        reasons.append(f"config.json data_order.resumed_at_step {do.get('resumed_at_step')} != "
+                       f"{smoke_steps}")
+    if not (run2_summary and run2_summary.get("done") is True
+            and int(run2_summary.get("step", -1)) == smoke_steps + extra):
+        reasons.append(f"resume run summary {run2_summary} is not done at {smoke_steps + extra}")
+    return reasons, det
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-CLOCK                                                                                         #
+# --------------------------------------------------------------------------------------------- #
+def load_clock_reference(paths: Iterable[str | os.PathLike]) -> tuple[dict[str, tuple], dict]:
+    """q4c-style JSON(s) -> {sha12(clip_id): (grid_start_s, dt_s)} plus provenance. The per-clip
+    clock MEASURED from the 100 Hz egomotion log by the A16 audit (an instrument independent of
+    the trainer's sidecar reader). Clips whose fit residual is >= 5 ms are NOT references."""
+    table: dict[str, tuple] = {}
+    prov = []
+    for p in paths:
+        d = read_json(p)
+        n = 0
+        for split, v in (d.get("splits") or {}).items():
+            for r in v.get("per_clip") or []:
+                if float(r.get("fit_resid_max_ms", 1e9)) >= 5.0:
+                    continue
+                table[str(r["clip"])] = (float(r["grid_start_on_label_timeline_s"]),
+                                         float(r["dt_s"]))
+                n += 1
+        prov.append({"path": str(p), "sha256": sha256_file(p), "n_clips": n,
+                     "controls": d.get("controls")})
+    return table, {"files": prov, "n_reference_clips": len(table)}
+
+
+def judge_clock_windows(windows: Iterable[tuple], tol: float, *, n_clips: int,
+                        cap: float) -> dict:
+    """The pure G-CLOCK arithmetic. Each window: (clip_key, t_trainer, t_true | None, t_legacy,
+    source) where `source` is the trainer's own clock source for the clip ("sidecar" = MEASURED,
+    anything else = a fallback).
+
+    * a MEASURED clip with a reference: |t_trainer - t_true| <= tol, or a VIOLATION;
+    * a clip on a fallback clock, or MEASURED but without an independent reference, is
+      UNVERIFIED -- admitted only while unverified clips <= `cap` x `n_clips` (the trainer's
+      G3 rule, LABEL_CLOCK_MAX_UNVERIFIED_FRAC; the gate never raises it);
+    * the legacy `(t + w - 1) * 0.1` clock is scored on every referenced window as a POSITIVE
+      CONTROL: an instrument that reads 0 violations for it cannot see the defect it exists for.
+    """
+    n = n_viol = n_ctl = 0
+    worst = 0.0
+    fb_worst = 0.0
+    viol_clips, fallback, unref, fb_ref = set(), set(), set(), set()
+    for ck, t_tr, t_true, t_leg, source in windows:
+        n += 1
+        if t_true is not None and not (abs(float(t_leg) - float(t_true)) <= tol):
+            n_ctl += 1
+        if source != "sidecar":
+            fallback.add(ck)
+            if t_true is not None:
+                fb_ref.add(ck)
+                fb_worst = max(fb_worst, abs(float(t_tr) - float(t_true)))
+            continue
+        if t_true is None:
+            unref.add(ck)
+            continue
+        d = abs(float(t_tr) - float(t_true))
+        worst = max(worst, d)
+        if not (d <= tol):
+            n_viol += 1
+            viol_clips.add(ck)
+    unver = fallback | unref
+    frac = len(unver) / max(int(n_clips), 1)
+    return {"n_windows": n, "n_clips": int(n_clips), "n_violations": n_viol,
+            "worst_abs_s": round(worst, 6), "n_violating_clips": len(viol_clips),
+            "violating_clips": sorted(viol_clips)[:40],
+            "n_unverified_clips": len(unver), "unverified_frac": round(frac, 6), "cap": cap,
+            "cap_ok": frac <= cap,
+            "n_fallback_clock_clips": len(fallback), "n_measured_but_unreferenced": len(unref),
+            # None, not 0.0, when no fallback clip has a reference: "unmeasured" is not "exact"
+            "fallback_worst_abs_s_vs_reference": round(fb_worst, 6) if fb_ref else None,
+            "n_fallback_clips_with_reference": len(fb_ref),
+            "unverified_clips": sorted(unver)[:40],
+            "legacy_control_violations": n_ctl}
+
+# --------------------------------------------------------------------------------------------- #
+# G-CLOCK under the E1 rig (`--r9-perc-rig`): the clock of the labels the RIG reads                 #
+# --------------------------------------------------------------------------------------------- #
+#: MM decision (b), 2026-11-02 (C12-E1 phase B): the rig reads NO tactical label, so the v7-label G-CLOCK above has nothing to
+#: time (`_clock_split` returned `skipped`, and `job_clock` turns a skipped TRAIN split into a FAIL). G-CLOCK stays BINDING and
+#: is re-pointed at what the rig does read: the agent join and the 3-D join (both keyed by the provider row `frame_idx` = r, each
+#: record carrying `t_s`, the time the join builder REGISTERED that frame's pose onto the egomotion log -- an instrument that
+#: never read the clip-clock sidecar) and the map-GT frame key. The reference is the clip-clock sidecar (A16: the clock MEASURED
+#: from the 100 Hz log), by the trainer's own G3 rule `t_true = grid_start_s + (r + n_stack - 1) * dt_s`.
+#: Keyed on `args.r9_perc_rig`: INERT when the rig is off (every existing profile's job_clock path is unchanged).
+RIG_CLOCK_RULE = ("t_true(r) = grid_start_s + (r + n_stack - 1) * dt_s (clip-clock sidecar, the trainer's G3 rule) on the LABEL "
+                  "timeline (zero = the egomotion log's first sample); a join record is the label of provider row r = frame_idx, "
+                  "its time is its own `t_s` on the RAW clip clock, put on the label timeline by the per-clip bridge "
+                  "`t_s - ts0` (ts0 = the egomotion log's first timestamp / 1e6; r9clk CARD); |(t_s - ts0) - t_true| <= tol on "
+                  "EVERY labelled record of every train clip; the map-GT store's raw frame for window r is r + n_stack - 1")
+#: r9gclk (2026-11-03, MEASURED by agent CLK, `Research/2026-11-03-label-clock/CARD.md`): the join's `t_s` is on the RAW clip clock
+#: (`build_obstacle_join.py:347`, `t = timestamp / 1e6`, never zeroed) while the clip-clock sidecar is on the LABEL timeline
+#: (`egomotion_source.py:123-124` `ts - ts[0]`; `build_clip_clock_sidecar.py` `grid_start_s = a - t[0]`). They differ per clip by
+#: `ts0` = the egomotion log's first timestamp (-0.1953 s median, -0.2000 ... -0.1899 over 220 clips): compared without that
+#: bridge EVERY clip false-fails (gate-2 read 'median -0.1955 s' and took it for a 2-frame lag; `2*dt = 0.2013` was a coincidence).
+#: The two clocks are put on ONE clock here: `ts0` is read per clip from the egomotion log (the definition of
+#: `clk_probe_thor.py::Ego.ts0` / `build_clip_clock_sidecar.py`'s sorted-log `t[0]`), and the join time is moved onto the label
+#: timeline (`t_s - ts0`). The 0.05 s bar is unchanged.
+RIG_TS0_BAND_S = 1.0                   # |ts0| above this is a unit error (the sidecar reader's own |grid_start_s| <= 1 s rule)
+RIG_EGO_COLUMN = "timestamp"           # microseconds, as in every egomotion parquet the corpus ships
+_RIG_JOIN_HEAD = re.compile(r'^\{\s*"clip_id"\s*:\s*"([^"]+)"\s*,(?:\s*"frame"\s*:\s*-?\d+\s*,)?\s*"frame_idx"\s*:\s*(-?\d+)\s*,'
+                            r'\s*"t_s"\s*:\s*(-?[0-9.eE+-]+)')
+
+
+def iter_join_records(path: str | os.PathLike, limit: int | None = None) -> Iterable[tuple[str, int, float]]:
+    """(clip_id, frame_idx, t_s) per line of an agent / 3-D join (`.jsonl` or `.jsonl.xz`), streamed. The head of the line is
+    read by regex (the agents list is the bulk of a line and is not needed); a line the regex does not match is parsed whole,
+    and a line with no `t_s` is an error, never a skipped record."""
+    import lzma
+    op = lzma.open if str(path).endswith(".xz") else open
+    n = 0
+    with op(path, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            m = _RIG_JOIN_HEAD.match(line)
+            if m:
+                yield m.group(1), int(m.group(2)), float(m.group(3))
+            else:
+                d = json.loads(line)
+                if "t_s" not in d or "frame_idx" not in d:
+                    raise GateError(f"join line without clip_id/frame_idx/t_s in {path}: {line[:120]!r}")
+                yield str(d["clip_id"]), int(d["frame_idx"]), float(d["t_s"])
+            n += 1
+            if limit is not None and n >= limit:
+                return
+
+
+def read_ego_ts0_s(ego_dir: str | os.PathLike, clip_id: str) -> float | None:
+    """`ts0` of one clip: the egomotion log's FIRST timestamp in seconds (`min(timestamp) / 1e6` -- the log sorted, exactly
+    `clk_probe_thor.py::Ego.ts0` and the sidecar builder's `t[0]`), read from `<ego_dir>/<clip_id>.parquet`. None when the clip has
+    no egomotion file; GateError on a file that cannot be read, has no timestamp column, or holds a non-finite timestamp."""
+    if not clip_id or any(c in clip_id for c in "/\\") or clip_id.startswith("."):
+        raise GateError(f"G-CLOCK rig: refusing to build an egomotion path from the clip id {clip_id[:40]!r}")
+    p = Path(ego_dir) / f"{clip_id}.parquet"
+    if not p.is_file():
+        return None
+    import numpy as np
+    import pandas as pd
+    try:
+        ts = pd.read_parquet(p, columns=[RIG_EGO_COLUMN])[RIG_EGO_COLUMN].to_numpy(np.float64)
+    except Exception as e:                                # noqa: BLE001 -- an unreadable log is a finding, not a skip
+        raise GateError(f"G-CLOCK rig: cannot read {RIG_EGO_COLUMN!r} from {p}: {type(e).__name__}: {e}") from e
+    if ts.size == 0 or not bool(np.all(np.isfinite(ts))):
+        raise GateError(f"G-CLOCK rig: {p} has no timestamps or a non-finite one")
+    return float(ts.min()) / 1e6
+
+
+class RigEgoTs0:
+    """The per-clip `ts0` provider of the rig G-CLOCK: memoised (each log is read once), and it keeps the evidence of what it
+    could not give -- clips with NO egomotion file (counted against the cap by the caller as UNVERIFIED) and clips whose `ts0`
+    is outside `RIG_TS0_BAND_S` (a unit error: refused, never bridged)."""
+
+    def __init__(self, ego_dir: str | os.PathLike) -> None:
+        self.ego_dir = str(ego_dir)
+        self.value: dict[str, float | None] = {}
+        self.missing: set[str] = set()
+        self.out_of_band: dict[str, float] = {}
+
+    def __call__(self, clip_id: str) -> float | None:
+        if clip_id in self.value:
+            return self.value[clip_id]
+        v = read_ego_ts0_s(self.ego_dir, clip_id)
+        if v is None:
+            self.missing.add(sha12(clip_id))
+        elif not (abs(v) <= RIG_TS0_BAND_S):
+            self.out_of_band[sha12(clip_id)] = v
+            v = None
+        self.value[clip_id] = v
+        return v
+
+    def summary(self) -> dict:
+        have = sorted((sha12(c), round(v, 9)) for c, v in self.value.items() if v is not None)
+        vals = sorted(v for _, v in have)
+        q = {k: (round(vals[min(len(vals) - 1, int(k * len(vals)))], 6) if vals else None) for k in (0.0, 0.05, 0.5, 0.95, 1.0)}
+        return {"dir": self.ego_dir, "n_clips_read": len(have), "n_clips_without_egomotion_file": len(self.missing),
+                "n_clips_ts0_out_of_band": len(self.out_of_band), "ts0_s_quantiles": q,
+                "ts0_table_sha256": sha256_bytes(canonical_json(have))}
+
+
+def rig_join_clock_windows(records: Iterable[tuple[str, int, float]], sid_of_clip: Callable[[str], int], table: dict,
+                           n_stack_of_sid: dict, ts0_of_clip: Callable[[str], float | None]) -> Iterable[tuple]:
+    """join records -> `judge_clock_windows` tuples. Only TRAIN clips (those in `n_stack_of_sid`) and provider rows r >= 0.
+    ⛔ ONE CLOCK (r9gclk): the join's `t_s` is on the RAW clip clock and the sidecar on the label timeline, which differ per clip by
+    `ts0`; the join time is moved onto the label timeline first (`t_s - ts0`, `ts0_of_clip(clip_id)` in seconds).
+    t_trainer := the label's own time on the label timeline (`t_s - ts0`); t_true := the sidecar clock of the row; t_legacy :=
+    `r * 0.1` (the historical literal -- the positive control that the arithmetic can see a slipped clock). A clip the sidecar
+    does not hold is UNVERIFIED (source `fallback`, no t_true), counted against the cap exactly as the v7-label branch counts it;
+    a clip whose `ts0` cannot be given (`None`) is UNVERIFIED too (source `sidecar`, no t_true -- measured but unreferenced)."""
+    for cid, r, t_s in records:
+        if r < 0:
+            continue
+        sid = int(sid_of_clip(cid))
+        if sid not in n_stack_of_sid:
+            continue                                   # an eval-only clip in the shared train+eval join
+        rr = table.get(sid)
+        if rr is None:
+            yield (sha12(cid), t_s, None, r * 0.1, "fallback")
+            continue
+        g0, dt = rr
+        ts0 = ts0_of_clip(cid)
+        if ts0 is None:
+            yield (sha12(cid), t_s, None, r * 0.1, "sidecar")
+            continue
+        yield (sha12(cid), t_s - float(ts0), float(g0) + (r + int(n_stack_of_sid[sid]) - 1) * float(dt), r * 0.1, "sidecar")
+
+
+def rig_clock_reasons(tag: str, r: dict, tol: float, cap: float) -> list[str]:
+    """The reasons one rig label source (`judge_clock_windows` output) fails G-CLOCK. Same four clauses as the v7 branch:
+    something was read, no violation on a MEASURED clock, the unverified clips under the cap, and the positive control."""
+    out: list[str] = []
+    if r["n_windows"] == 0:
+        out.append(f"G-CLOCK rig {tag}: ZERO labelled windows checked -- the check read nothing")
+    if r["n_violations"]:
+        out.append(f"G-CLOCK rig {tag}: {r['n_violations']} of {r['n_windows']} labelled rows carry a time more than {tol} s from the "
+                   f"clip-clock sidecar's clock for the same provider row, both on the label timeline after the per-clip ts0 "
+                   f"bridge ({r['n_violating_clips']} clips, worst {r['worst_abs_s']} s)")
+    if not r["cap_ok"]:
+        out.append(f"G-CLOCK rig {tag}: {r['n_unverified_clips']} of {r['n_clips']} clips ({r['unverified_frac']:.2%}) have no "
+                   f"measured clock in the sidecar / egomotion log (no sidecar row or no ts0 to bridge the raw clock) -- above "
+                   f"the {cap:.0%} cap")
+    if r["n_windows"] and r["legacy_control_violations"] == 0:
+        out.append(f"G-CLOCK rig {tag}: control -- the historical clock also reads 0 violations, so the instrument cannot see "
+                   f"the defect it exists for")
+    return out
+
+
+def rig_map_key_reasons(store: Any, probes: Iterable[tuple[str, int, int]], *, min_probed: int = 20) -> tuple[list[str], dict]:
+    """The map-GT leg: for a window whose NOW provider row is r, the store must answer with RAW frame r + n_stack - 1 (the one
+    conversion `MapGTStore.raw_frames` owns). `probes` = (clip_id, r, n_stack). A clip without a GT file is the trainer's own
+    coverage census (not a clock defect) and is counted, not failed; fewer than `min_probed` answered probes is a FAIL (the leg
+    read nothing)."""
+    n_ok = n_bad = n_nofile = 0
+    bad: list = []
+    for cid, r, ns in probes:
+        try:
+            mf = store.frames_for_windows(cid, [int(r)], n_stack=int(ns))
+        except (FileNotFoundError, IndexError, OSError, KeyError):
+            n_nofile += 1
+            continue
+        got, want = int(mf.frame_idx[0]), int(r) + int(ns) - 1
+        if got == want:
+            n_ok += 1
+        else:
+            n_bad += 1
+            bad.append((sha12(cid), int(r), got, want))
+    det = {"n_probed": n_ok + n_bad, "n_ok": n_ok, "n_wrong_raw_frame": n_bad, "n_no_gt_file": n_nofile, "first_wrong": bad[:5]}
+    reasons: list[str] = []
+    if n_bad:
+        reasons.append(f"G-CLOCK rig map GT: {n_bad} of {n_ok + n_bad} probed windows were answered with a raw frame other than "
+                       f"r + n_stack - 1 (first (clip, r, got, want): {bad[:3]}) -- the label sits at the wrong instant")
+    if n_ok + n_bad < int(min_probed):
+        reasons.append(f"G-CLOCK rig map GT: only {n_ok + n_bad} probes were answered (< {min_probed}; {n_nofile} had no GT file) -- "
+                       f"the map leg read nothing")
+    return reasons, det
+
+
+def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tuple[list[str], dict]:
+    """G-CLOCK for `--r9-perc-rig` (see RIG_CLOCK_RULE). -> (reasons, details). Every source named in the argv must be read."""
+    from tanitad.data import clip_clock as _cc
+    from tanitad.data import v2_dataset as v2d
+    det: dict[str, Any] = {"rule": RIG_CLOCK_RULE, "tolerance_s": tol, "cap": cap}
+    side_p = getattr(args, "clip_clock_sidecar", None)
+    cache = getattr(args, "v2_cache", None)
+    cache = cache[0] if isinstance(cache, (list, tuple)) else cache
+    if not side_p or not cache:
+        return [f"G-CLOCK rig: --clip-clock-sidecar ({side_p!r}) and --v2-cache ({cache!r}) are both needed: the rig's labels "
+                f"cannot be timed without the clock"], det
+    ego_dir = ctx.options.get("rig_ego_dir")
+    if not ego_dir:
+        return [f"G-CLOCK rig: no egomotion directory (--rig-ego-dir / the profile's rig_ego_dir_default): the joins' `t_s` is on the "
+                f"RAW clip clock and the sidecar on the label timeline (zero = the egomotion log's first sample, ts0), so without "
+                f"each clip's ts0 the two cannot be put on one clock -- the check cannot run"], det
+    if not Path(str(ego_dir)).is_dir():
+        return [f"G-CLOCK rig: the egomotion directory {str(ego_dir)!r} is not a directory on this host -- no ts0, no bridge"], det
+    ts0_of = RigEgoTs0(ego_dir)
+    table = _cc.read_clip_clock_sidecar(str(side_p)).table
+    man = v2d.load_or_build_manifest(cache, rebuild=False, verbose=False)
+    uids = man.get("episode_uid") or [v2d.stable_episode_id(c) for c in man["clip_id"]]
+    ns_of = {int(u): int(n) for u, n in zip(uids, man["n_stack"])}
+    clip_of = {int(u): str(c) for u, c in zip(uids, man["clip_id"])}
+    det["n_train_clips"], det["n_sidecar_clips"] = len(ns_of), len(table)
+    limit = ctx.options.get("rig_clock_max_records")
+    reasons: list[str] = []
+    probes: list[tuple[str, int, int]] = []
+    for flag, tag in (("agent_join", "agent join"), ("join3d", "3-D join")):
+        path = getattr(args, flag, None)
+        if not path:
+            det[tag] = {"skipped": f"no --{flag.replace('_', '-')} in argv"}
+            continue
+        path = path[0] if isinstance(path, (list, tuple)) else path
+        recs = list(iter_join_records(path, limit))
+        wins = list(rig_join_clock_windows(recs, v2d.stable_episode_id, table, ns_of, ts0_of))
+        res = judge_clock_windows(wins, tol, n_clips=len(ns_of), cap=cap)
+        res["path"] = str(path)
+        if wins:
+            signed = sorted(float(w[1]) - float(w[2]) for w in wins if w[2] is not None)
+            if signed:
+                res["signed_err_s_quantiles"] = {q: round(signed[min(len(signed) - 1, int(q * len(signed)))], 5)
+                                                 for q in (0.01, 0.5, 0.99)}
+                ab = sorted(abs(x) for x in signed)
+                res["abs_err_s"] = {"median": round(ab[len(ab) // 2], 6), "max": round(ab[-1], 6), "n": len(ab)}
+        det[tag] = res
+        reasons += rig_clock_reasons(tag, res, tol, cap)
+        if tag == "agent join":
+            for i, (cid, r, _t) in enumerate(recs):
+                sid = v2d.stable_episode_id(cid)
+                if r >= 0 and sid in ns_of and i % 997 == 0 and len(probes) < 300:
+                    probes.append((cid, r, ns_of[sid]))
+        del recs, wins
+    det["ego_ts0"] = ts0_of.summary()
+    if ts0_of.out_of_band:
+        reasons.append(f"G-CLOCK rig: {len(ts0_of.out_of_band)} clips have an egomotion ts0 outside +-{RIG_TS0_BAND_S} s "
+                       f"(a unit error, not a clock offset; first {sorted(ts0_of.out_of_band.items())[:3]}) -- refused, never bridged")
+    mg = getattr(args, "map_gt_root", None)
+    if mg:
+        try:
+            store = T._sem_fine.FineMapGTStore(Path(mg), max_open=2, extent=T._mhr.declared_extent(args))
+            mr, md = rig_map_key_reasons(store, probes)
+        except Exception as e:                            # noqa: BLE001 -- a crash is not a pass
+            mr, md = [f"G-CLOCK rig map GT crashed: {type(e).__name__}: {e}"], {"traceback": traceback.format_exc()[-1500:]}
+        det["map_gt"] = md
+        reasons += mr
+    else:
+        det["map_gt"] = {"skipped": "no --map-gt-root in argv"}
+    return reasons, det
+
+
+
+# --------------------------------------------------------------------------------------------- #
+# the jobs (child side)                                                                           #
+# --------------------------------------------------------------------------------------------- #
+def _sentinel_argv(ctx: Ctx, keep_flags: Iterable[str], scratch: Path) -> tuple[list[str], dict]:
+    """The launch argv on THIS host: `keep_flags` mapped to their local copies, every OTHER data
+    path pointed at a NON-EXISTENT sentinel (a build that reads it must fail, not pass)."""
+    keep = set(keep_flags)
+    pmap = [tuple(x) for x in ctx.path_map]
+    outs = set(ctx.prof.get("output_flags", ()))
+    out, rec = [], {"kept": {}, "sentinel": {}}
+    for f, vals in flag_pairs(ctx.argv):
+        out.append(f)
+        for v in vals:
+            if f in outs or not _looks_like_path(v):
+                out.append(v)
+            elif f in keep:
+                out.append(map_path(v, pmap))
+                rec["kept"][f] = map_path(v, pmap)
+            else:
+                s = str(scratch / "__gate_unread__" / f.strip("-"))
+                out.append(s)
+                rec["sentinel"][f] = s
+    # ⛔ The model job is CPU-only on EVERY host (run_job). MEASURED 2026-09-27 on Thor (02ffceb):
+    # keeping --trunk-compile there made Inductor build a CPU kernel with g++ (CppCompileError) and
+    # G-EVAL crashed. The compile is host-only (`_NON_MODEL_FLAGS`): it wraps the backbone CALL and
+    # changes neither the module tree nor the state_dict, so the model job always drops it.
+    if has_flag(out, "--trunk-compile"):
+        out = set_flag(out, "--trunk-compile", None)
+        rec["dropped"] = {"--trunk-compile": "the model job is CPU-only on every host; torch.compile "
+                                              "wraps the backbone CALL only (module tree and "
+                                              "state_dict unchanged) -- the eval loader drops it too"}
+    return out, rec
+
+
+def _inputs_read(ctx: Ctx, flags: Iterable[str]) -> dict:
+    pmap = [tuple(x) for x in ctx.path_map]
+    out = {}
+    for f, p in data_inputs(ctx.argv, ctx.prof):
+        if f in flags:
+            out[f] = fingerprint(map_path(p, pmap))
+    return out
+
+
+#: SPEC_REFCV7 2, G-DVB's regression arm "unwire one selection term": the model is BORN without a
+#: built selection mechanism while the argv still declares it -- D-REFCV6-CONFIG-BUILD re-installed.
+#: The attribute names are the decoder's own (the ones `declared_vs_built._sel_built` reads, landed
+#: ab436ee); the arm tries the nav-compliance gate first, then the 8x8 tactical graft.
+_UNWIRE_CANDIDATES = (("navc_gate", "--graft-nav-compliance"),
+                      ("tac8_lat_to_anchor", "--graft-tac8-prior"))
+
+
+def _arm_unwire_selection(model) -> dict:
+    dec = getattr(getattr(model, "core", None), "decoder", None)
+    for attr, flag in _UNWIRE_CANDIDATES:
+        if dec is not None and getattr(dec, attr, None) is not None:
+            setattr(dec, attr, None)
+            return {"unwired": f"core.decoder.{attr}", "declared_by": flag}
+    return {"unwired": None, "why": "the built decoder carries no selection term to unwire (the "
+                                    "argv declares none, or the tree predates FIX-4)"}
+
+
+def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    import torch
+    T = load_trainer(ctx)
+    out_dir = Path(ctx.out_dir)
+    scratch = out_dir / "scratch"
+    scratch.mkdir(parents=True, exist_ok=True)
+    evs = {c: new_evidence(ctx, c) for c in checks}
+    argv, arec = _sentinel_argv(ctx, ctx.prof["model_input_flags"], scratch)
+    parser = T.build_parser()
+    pat = _Patcher()
+    _p10_arm = apply_p10_arm(ctx, pat, T)                  # v8F alpha-1's arms act at the BUILD (zeroed / unfrozen / ...)
+    if _p10_arm:
+        _say("arm: " + _p10_arm)
+    _mapft_arm = apply_mapft_build_arm(ctx, pat, T)        # refcv8-mapft's arms act at the trainer's freeze
+    if _mapft_arm:
+        _say("arm: " + _mapft_arm)
+    _r9w_arm = apply_refcv9_build_arm(ctx, pat, T)         # refcv9-warm's arms act at the trainer's --r9-train-only freeze
+    if _r9w_arm:
+        _say("arm: " + _r9w_arm)
+    if arm_is(ctx, "undeclared_equalize") or arm_is(ctx, "drop_fix3_field"):
+        orig_pin = T._pin_trainer_cfg
+
+        def pin_arm(cfg, args, _o=orig_pin):
+            c = _o(cfg, args)
+            enc = c.core.encoder
+            if arm_is(ctx, "undeclared_equalize"):
+                # the historical pattern: a lever set as an UNDECLARED attribute during the pin
+                setattr(enc, "trunk_equalize_bottom_rows_undeclared",
+                        int(getattr(args, "equalize_bottom_rows", 0) or 0))
+            else:
+                # the historical DROP: a rebuild through the dataclass's fields resets the lever
+                fl = [f.name for f in dataclasses.fields(enc) if "equaliz" in f.name]
+                if fl:
+                    c.core.encoder = dataclasses.replace(enc, **{fl[0]: 0})
+            return c
+        pat.set(T, "_pin_trainer_cfg", pin_arm)
+    # ⛔ profile-forbidden levers (refcv7: DrivoR-T's) are read off the ARGV first, so they are
+    # reported even when the trainer refuses the argv before a model exists
+    forb_reasons, forb_det = forbidden_lever_reasons(ctx.prof, ctx.argv)
+    t0 = time.time()
+    try:
+        stop = "model" if ({"G-DVB", "G-EVAL"} & set(checks)) else "config"
+        arm_rec: dict[str, Any] = {}
+        on_built = ((lambda m: arm_rec.update(_arm_unwire_selection(m)) or dict(arm_rec))
+                    if arm_is(ctx, "unwire_selection_term") else None)
+        try:
+            cap = run_trainer_until(T, argv, stop, on_built)
+        except Exception as e_:                           # noqa: BLE001
+            if type(e_).__name__ != "P10Error":
+                raise
+            # v8F alpha-1: the decoder REFUSES a missing / wrong-sha / malformed P10 at construction -- a refusal of this
+            # argv, stated as one (with the profile's argv rules), not a crashed job with no evidence
+            raise SystemExit(f"P10Error: {e_}") from e_
+    except SystemExit as e:
+        msg = f"the trainer REFUSED this argv while building: {e}"
+        # the profile's argv-only rules are stated even when no model exists to check
+        prof_rules = profile_argv_rules(ctx.prof, ctx.argv, ctx.options,
+                                        [tuple(x) for x in ctx.path_map])[0]
+        for c, ev in evs.items():
+            ev["details"]["argv_local"] = arec
+            if c == "G-DVB":
+                ev["details"]["forbidden_levers"] = forb_det
+                if arm_rec:
+                    ev["details"]["arm_unwire"] = dict(arm_rec)
+            finish_evidence(ev, "FAIL", (list(dict.fromkeys([*forb_reasons, *prof_rules]))
+                                         if c == "G-DVB" else []) + [msg])
+        return evs
+    finally:
+        pat.restore()
+    build_s = round(time.time() - t0, 1)
+    cfg, model, args = cap["cfg"], cap.get("model"), cap.get("args")
+    common = {"argv_local": arec, "build_s": build_s,
+              "model_params": (int(sum(p.numel() for p in model.parameters()))
+                               if model is not None else None)}
+    hires = hires_on(ctx.prof, ctx.argv)
+    probe_out = {}
+    # ---- G-HYG --------------------------------------------------------------------------- #
+    if "G-HYG" in evs:
+        ev = evs["G-HYG"]
+        ev["details"].update(common)
+        ev["inputs_read"] = _inputs_read(ctx, ("--anchors",))
+        H, why = import_optional(ctx, "tanitad.train.config_hygiene", "missing_hygiene_module")
+        if H is None:
+            reasons, det = [f"tanitad.train.config_hygiene is not importable -- module not yet "
+                            f"landed => the gate FAILS ({why})"], {}
+        else:
+            reasons, det = judge_hygiene(H, cfg)
+        if ctx.prof.get("import_closure"):
+            # every third-party module the trainer can reach must import in THIS (the launch) venv
+            try:
+                clo = import_closure(Path(ctx.tree), ctx.prof["trainer"])
+                ir, idet = judge_import_closure(clo, ban=_arm_import_ban(ctx))
+            except Exception as e:                        # noqa: BLE001 -- a crash is not a pass
+                ir, idet = [f"G-HYG import closure crashed: {type(e).__name__}: {e}"], {}
+            det["import_closure"] = idet
+            reasons += ir
+        ev["details"].update(det)
+        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    # ---- G-EVAL (first: its probe forward also feeds G-DVB's NEW-2 shape checks) ---------- #
+    if "G-EVAL" in evs:
+        ev = evs["G-EVAL"]
+        ev["details"].update(common)
+        ev["inputs_read"] = _inputs_read(ctx, ctx.prof["model_input_flags"])
+        # ⛔ IDENTICAL SETTINGS ON BOTH SIDES. The loader's model is in its eval-time state
+        # (requires_grad False on every parameter); the trainer's keeps its training flags.
+        # MEASURED 2026-09-27 on Thor (14907a0): with the flags left as trained, 74 of 188 outputs
+        # differed (the attention layers of both slot heads and everything downstream) while
+        # state_dicts, attributes and non-persistent buffers were all EQUAL; with the trainer's flags
+        # set as the loader's, 0 of 188 differ. On the dev box both kernel paths happened to agree.
+        # The flags are restored afterwards: G-DVB reads them (declared grad-unreachable freezes).
+        _rg = [(p_, p_.requires_grad) for p_ in model.parameters()]
+        try:
+            for p_, _f in _rg:
+                p_.requires_grad_(False)
+            reasons, det = eval_identity(ctx, T, model, args, scratch, probe_out)
+        except SystemExit as e:
+            reasons, det = [f"the eval loader REFUSED: {e}"], {}
+        except Exception as e:                            # noqa: BLE001
+            reasons, det = [f"G-EVAL crashed: {type(e).__name__}: {e}"], {
+                "traceback": traceback.format_exc()[-2500:]}
+        finally:
+            for p_, f_ in _rg:
+                p_.requires_grad_(f_)
+        det["trainer_requires_grad_matched_to_loader"] = True
+        if hires and "trainer" in probe_out:
+            r2, d2 = hires_output_reasons(ctx.prof, probe_out["trainer"],
+                                          tuple(cfg.core.encoder.image_hw()),
+                                          banded=banded_arg(ctx.prof, ctx.argv))
+            det["map_hires_outputs"] = d2
+            reasons += [f"NEW-2: {r}" for r in r2]
+        ev["details"].update(det)
+        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    # ---- G-DVB --------------------------------------------------------------------------- #
+    if "G-DVB" in evs:
+        ev = evs["G-DVB"]
+        ev["details"].update(common)
+        ev["inputs_read"] = _inputs_read(ctx, ctx.prof["model_input_flags"])
+        for k, fp in implicit_inputs(ctx.argv):          # the ImageNet init the build loaded
+            ev["inputs_read"][k] = fp
+        if ctx.options.get("nav_tau_record"):
+            ev["inputs_read"]["gate:nav-tau-record"] = fingerprint(ctx.options["nav_tau_record"])
+        D, why = import_optional(ctx, "tanitad.train.declared_vs_built", "missing_dvb_module")
+        try:
+            with dose_ctl_for_dvb(T, model, args) as _dc_att:     # K2DC: train() attaches its controller PAST the capture point
+                reasons, det = judge_dvb(D, model, args, parser, argv, why,
+                                         forbid_kinds=tuple(ctx.prof.get("dvb_forbid_kinds", ())))
+            det["dose_ctl_attach"] = _dc_att
+        except Exception as e:                            # noqa: BLE001 -- a crash is not a pass
+            reasons, det = [f"G-DVB crashed: {type(e).__name__}: {e}"], {
+                "traceback": traceback.format_exc()[-2000:]}
+        fr, fd = forbidden_lever_reasons(ctx.prof, ctx.argv, model)
+        det["forbidden_levers"] = fd
+        reasons = fr + reasons
+        pr, pd = passthrough_reasons(ctx.prof, ctx.argv, args, T)
+        det["passthrough"] = pd
+        reasons += pr
+        pmap = [tuple(x) for x in ctx.path_map]
+        nr, nd = nav_tau_reasons(ctx.prof, ctx.argv, ctx.options.get("nav_tau_record"), pmap)
+        det["nav_compliance"] = nd
+        reasons += [f"FIX-4: {r}" for r in nr]
+        rr, rd = required_on_reasons(ctx.prof, ctx.argv, D, model, args,
+                                     tau_file=ctx.options.get("nav_tau_record"))
+        det["required_on"] = rd
+        reasons += rr
+        br_, bd_ = box_required_reasons(ctx.prof, model, args)
+        det["box_required"] = bd_
+        reasons += br_
+        mor_, mod_ = map_only_built_reasons(ctx.prof, ctx.argv, model)     # refcv8-mapft only (inert otherwise)
+        det["map_only"] = mod_
+        reasons += mor_
+        try:                                              # refcv9-full family: the declared levers' attach hops still exist in the trainer
+            _tsrc = (Path(ctx.tree) / ctx.prof["trainer"]).read_bytes().decode("utf-8", "replace")
+        except OSError:
+            _tsrc = ""
+        lar_, lad_ = lever_attach_reasons(ctx.prof, ctx.argv, _tsrc)
+        det["lever_attach"] = lad_
+        reasons += lar_
+        tfr, tfd = tau_file_flag_reasons(ctx.prof, ctx.argv, parser,
+                                         ctx.options.get("nav_tau_record"), pmap)
+        det["nav_tau_file_flag"] = tfd
+        reasons += tfr
+        # the profile's argv-only rules, here too, so this evidence says what the token will say
+        reasons += required_flag_reasons(ctx.prof, ctx.argv)
+        reasons += forbidden_value_reasons(ctx.prof, ctx.argv)
+        det["pi_pending"] = pi_pending_reasons(ctx.prof, ctx.argv)
+        if "on_built" in cap:
+            det["arm_unwire"] = cap["on_built"]
+        # FIX-5 on THIS host's cached weights (the coordinator's launch-prep item 2)
+        det["fix5_stage_check"] = {"present_in_tree": cap.get("fix5_present"),
+                                   "calls": cap.get("fix5", [])}
+        if (cap.get("fix5_present") and _find_trunk(model) is not None
+                and not has_flag(ctx.argv, "--trunk-no-pretrained")):
+            calls = cap.get("fix5", [])
+            if not calls:
+                reasons.append("FIX-5: the per-stage pretrained check did NOT run during this "
+                               "build (the trunk was built without it)")
+            elif any(c.get("outcome") != "PASS" for c in calls):
+                reasons.append(f"FIX-5: per-stage pretrained check: "
+                               f"{[c.get('outcome') for c in calls]}")
+        det["map_hires"] = {"on": hires}
+        if hires:
+            r2, d2 = hires_static_reasons(ctx.prof, ctx.argv, model, pmap)
+            det["map_hires"].update(d2)
+            reasons += [f"NEW-2: {r}" for r in r2]
+            if arm_is(ctx, "map_drivable_only_logging") or arm_is(ctx, "map_drivable_only_static"):
+                # the static half of G-MAP's arm: the declared list / the eval-row builder is
+                # drivable-only (refcv6's pattern)
+                for attr in ctx.prof["map_hires"].get("eval_key_list_attrs", ()):
+                    if getattr(T, attr, None) is not None:
+                        setattr(T, attr, tuple(k for k in getattr(T, attr) if "drivable" in k
+                                               and "nondrivable" not in k))
+                b0 = getattr(T, "_eval_row_from_acc", None)
+                if b0 is not None:
+                    others = tuple(f"_{c}_" for c in ctx.prof["map_hires"]["classes"]
+                                   if c != "drivable")
+                    T._eval_row_from_acc = lambda acc, nb, m, _b=b0, _o=others: {
+                        k: v for k, v in _b(acc, nb, m).items()
+                        if not (str(k).startswith("eval_map_hires_") and any(o in str(k)
+                                                                              for o in _o))}
+            if banded_on(ctx.prof, ctx.argv):
+                lr, ld = banded_eval_list_reasons(T, model=model)
+            else:
+                lr, ld = map_eval_list_reasons(ctx.prof, T, model=model)
+            det["map_hires"]["eval_key_list"] = ld
+            reasons += lr
+            if "trainer" in probe_out:
+                r3, d3 = hires_output_reasons(ctx.prof, probe_out["trainer"],
+                                              tuple(cfg.core.encoder.image_hw()),
+                                              banded=banded_arg(ctx.prof, ctx.argv))
+                det["map_hires"]["outputs"] = d3
+                reasons += [f"NEW-2: {r}" for r in r3]
+            else:
+                det["map_hires"]["outputs"] = ("no probe forward in this job: the 600x320 / "
+                                               "240x128 / fmap_s8 shapes are asserted by G-EVAL "
+                                               "(dev box) and G-LIVE (Thor)")
+        ev["details"].update(det)
+        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    del model
+    return evs
+
+
+def _load_loader(ctx: Ctx):
+    path = Path(ctx.options.get("eval_loader") or "")
+    if not path.is_file():
+        raise GateError(f"eval loader {path} not found")
+    os.environ["REFCV6_REPO"] = str(Path(ctx.tree).resolve())
+    if ctx.options.get("eval_kit"):
+        os.environ["REFCV6_KIT"] = str(ctx.options["eval_kit"])
+    if ctx.options.get("eval_remap_overrides"):
+        # the loader's own RECORDED override ({flag: local path}); every remap lands in its record
+        os.environ["REFCV6_REMAP_OVERRIDES"] = str(ctx.options["eval_remap_overrides"])
+    name = "gate_eval_loader"
+    spec = importlib.util.spec_from_file_location(name, str(path))
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod, sha256_file(path)
+
+
+def _forward_out(T, model, batch, args, seed: int):
+    """The forward exactly as the trainer prepares it (`compute_losses_v3`), stopped at the
+    model's output by a hook -- so no loss target is needed and nothing after it runs."""
+    import torch
+    box = {}
+
+    def hook(_m, _i, out):
+        raise _ForwardCaptured(out)
+    h = model.register_forward_hook(hook)
+    try:
+        with torch.random.fork_rng(devices=[]), torch.no_grad():
+            torch.manual_seed(seed)
+            try:
+                T.compute_losses_v3(model, batch, "cpu", mode=getattr(args, "mode", "diffusion"))
+            except _ForwardCaptured as fc:
+                box["out"] = fc.out
+    finally:
+        h.remove()
+    if "out" not in box:
+        raise GateError("the forward hook never fired -- the probe measured nothing")
+    return box["out"]
+
+
+#: flags that do not enter the MODEL (the run length, the output dir, the host-only compile)
+_NON_MODEL_FLAGS = ("--steps", "--out", "--trunk-compile", "--eval-window-dump")
+
+
+def _argv_model_view(argv: list[str]) -> list[tuple[str, list[str]]]:
+    return sorted((f, v) for f, v in flag_pairs(list(argv)) if f not in _NON_MODEL_FLAGS)
+
+
+def stamps_written_for(stamps_argv: list[str], launch_argv: list[str], smoke_steps: int | None,
+                       log_every: int, alarm_flag: str | None = None) -> tuple[bool, dict]:
+    """Is a run record (`config.json`'s argv) written for THIS launch, model-wise? A record from THIS gate's G-LIVE
+    smoke (`smoke_steps` = the smoke length, from `smoke_step_count` exactly as `job_smoke` derives it) is compared with
+    the launch argv put through the smoke's ONE declared rule (`smoke_argv`: `--steps` and the step-valued schedule
+    flags re-expressed inside the smoke -- refcv8's gradient-share cadence, B1 guard step and emission start); any other
+    record (`--eval-stamps`, `smoke_steps=None`) with the launch argv itself. EXACT on every model flag either way.
+    MEASURED 2026-10-15 (refcv8 gate, bc2816862b8c): compared with the raw launch argv, the gate refused its own smoke's
+    record over exactly those four flags (`--grad-share-every`, `--grad-share-at`, `--b1-guard-step`,
+    `--r8-alloc-emit-start`), every model flag equal.
+    ⚠ The smoke length is NOT read from the record: the newest smoke config.json is G-CKPT's RESUME run, which re-writes
+    it with `--steps` = smoke + `resume_extra_steps` (MEASURED: `--steps 102` for the 100-step smoke). Re-applying the
+    rule at 102 moves the guard step and the emission start, and the gate's own record would still be refused."""
+    want, dep = list(launch_argv), {}
+    if smoke_steps is not None:
+        want, dep = smoke_argv(list(launch_argv), int(smoke_steps), log_every, alarm_flag=alarm_flag)
+    same = _argv_model_view(stamps_argv) == _argv_model_view(want)
+    return same, {"rule": "smoke_argv" if smoke_steps is not None else "identity", "smoke_steps": smoke_steps,
+                  "smoke_departures": dep}
+
+
+def latest_smoke_config(ctx: "Ctx") -> Path | None:
+    """The config.json the trainer wrote in THIS gate dir's newest smoke (same ctx, same argv)."""
+    d = Path(ctx.out_dir) / "smoke"
+    runs = sorted(d.glob("*/config.json"), key=lambda q: q.stat().st_mtime) if d.is_dir() else []
+    return runs[-1] if runs else None
+
+
+def rig_eval_probe_dataset(L, cfg, args, model=None) -> tuple:
+    """refcv9-e1rig G-EVAL: the held-out eval dataset the RIG reads -> (dataset, episodes, record).
+
+    `L.build_eval_dataset` (the eval loader's, vendored) raises "the run's argv has no --eval-labels" on a rig argv, which
+    carries no label flag by design. This is `train()`'s own construction of the rig's held-out eval dataset
+    (refc_v3_train.py `e_ds = dcls(e_eps, **kw)` .. `enable_pose_sync`), minus every label block that train() itself runs only
+    `if args.eval_labels`: the same provider call, the same window kwargs, `u8_frames`, `newest_row_only` (refcv9 S1: the rig
+    ships the ONE row it reads) and the pose-sync clock. The probe forward needs no agent / map / 3-D join (only the LOSS reads
+    them), exactly as the non-rig probe's `with_perception_targets=False`. Reached ONLY under `--r9-perc-rig`.
+
+    refcv9 T1 (`--r9-bev-warp`): `train()` attaches the past-frame / past-pose history to the EVAL dataset as well
+    (`_bw.attach_dataset(e_ds, model, args)`, refc_v3_train.py, after every `enable_*`), and `compute_losses_perc_rig` stages it from
+    the batch. A probe dataset WITHOUT it carries no `bw_*`, so `stage` REFUSES the T1 rig's G-EVAL forward (MEASURED 2026-11-03 on
+    the tiny CPU rig at 9be3211: "[bev-warp] ... the batch carries no ['bw_frames', 'bw_pose_now', 'bw_pose_past', 'bw_has']").
+    `model` = the LOADER-built model (the source `attach_dataset` builds the worker's lags / shuffle from, never from argv); a T1
+    argv with no model is REFUSED here, never attached from guesswork. OFF (argv declares no T1): `model` is not read, the trainer
+    module's `_bw` is not touched, and the record carries no new key."""
+    from tanitad.data.v2_dataset import build_v2_providers
+    tr = L.trainer()
+    if bool(getattr(args, "eval_labels", None)):
+        raise GateError("refcv9-e1rig: the rig argv carries --eval-labels -- the rig reads no label; refusing to guess")
+    kw = dict(window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
+    e_eps = build_v2_providers([args.eval_cache], lru_size=args.v2_lru)
+    e_ds = tr.V3Dataset(e_eps, **kw)
+    u8 = bool(getattr(args, "u8_batches", False))
+    e_ds.u8_frames = u8
+    e_ds.newest_row_only = u8                                  # train(): bool(_r9rig_on and u8)
+    rec: dict = {"rig": True, "labels": None, "n_episodes": len(e_eps), "n_windows": len(e_ds),
+                 "newest_row_only": u8, "label_clock": "NOT ATTACHED: the rig reads no v7 label"}
+    if getattr(args, "pose_sync_sidecar", None):               # train(): refcv8 X10, the eval GT rides the SAME clock
+        rec["pose_sync"] = e_ds.enable_pose_sync(args.pose_sync_sidecar)
+    if bool(getattr(args, "r9_bev_warp", False)):              # refcv9 T1: train() attaches the history to the eval dataset too
+        if model is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-bev-warp but the probe dataset was built without the loader's model "
+                            "-- the history source (lags, shuffle) is read off the BUILT model, never guessed from argv")
+        bw = getattr(tr, "_bw", None)
+        if bw is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-bev-warp but the trainer module has no `_bw` (bev_warp_flag) -- "
+                            "cannot attach the history the T1 forward needs")
+        rec["bev_warp"] = bw.attach_dataset(e_ds, model, args)
+    if bool(getattr(args, "r9_hist_supervise_geom", False)):   # refcv9 T1v: train() attaches the POSE-ONLY history (with_frames=False) to the eval dataset too; else `stage` REFUSES the forward
+        if model is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-hist-supervise-geom but the probe dataset was built without the loader's model "
+                            "-- the history lag rows are read off the BUILT model (`_r9_hist_geom`), never guessed from argv")
+        bw = getattr(tr, "_bw", None)
+        if bw is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-hist-supervise-geom but the trainer module has no `_bw` (bev_warp_flag) -- "
+                            "cannot attach the pose history the T1v forward needs")
+        rec["hist_geom"] = bw.attach_dataset(e_ds, model, args)
+    return e_ds, e_eps, rec
+
+
+def full_eval_hist_geom_attach(L, e_ds, model, args, drec) -> dict:
+    """G-EVAL on the FULL model (THE T1v FLIP): the vendored loader's `build_eval_dataset` attaches the history only for `--r9-bev-warp` (`refcv7_loader.attach_t1_history`; a known defect, not
+    changed here), so a T1v model's loader-built eval batch carries NO `bw_*` keys and `_bw.stage` REFUSES the forward ("[hist-geom] ... the dataset was not attached"). `train()` attaches the
+    POSE-ONLY history to the eval dataset (`_bw.attach_dataset(e_ds, model, args)`); this does the same from the LOADER's model, once, and returns the record (the `hist_geom` key). Inert for an argv
+    without the flag (returns `drec` untouched) and for a loader that already attached (a fixed `attach_t1_history`)."""
+    if not bool(getattr(args, "r9_hist_supervise_geom", False)):
+        return drec
+    if (drec or {}).get("hist_geom") is not None:
+        return drec
+    if model is None:
+        raise GateError("G-EVAL: the argv declares --r9-hist-supervise-geom but the eval dataset was built without the loader's model -- the lag rows are read off the BUILT model")
+    bw = getattr(L.trainer(), "_bw", None)
+    if bw is None:
+        raise GateError("G-EVAL: the argv declares --r9-hist-supervise-geom but the trainer module has no `_bw` (bev_warp_flag) -- cannot attach the pose history the T1v forward needs")
+    return dict(drec or {}, hist_geom=bw.attach_dataset(e_ds, model, args))
+
+
+def rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l) -> tuple[list[str], dict]:
+    """refcv9 T1 (`--r9-bev-warp`) G-EVAL: the TRAINER-built and the LOADER-built model must carry THE SAME temporal warp -- the same
+    declaration, a built fuse on both, the same lags (seconds AND rows) and the same shuffle control. The lag rows reach the forward ONLY
+    through the batch (`item_fields`), and the ONE probe batch (built from the LOADER's lags) is fed to BOTH models: a trainer fuse
+    built for other lags gives the same bytes at ANY gate (MEASURED, test_launch_gate_geval_t1.py G6), so the forward comparison cannot
+    see the disagreement -- and a freshly built fuse sits at gate 0, where `out = bev + 0 * fuse(...)` is the OFF forward for ANY history.
+    The disagreement is therefore read off the two builds themselves.
+    Inert (`[]`, `{"on": False}`) when neither argv declares T1 and neither model carries the fuse."""
+    def view(args, m):
+        mh = getattr(m, "_map_hires", None)
+        fuse = getattr(mh, "bev_warp", None) if mh is not None else None
+        st = getattr(m, "_r9_bev_warp", None)
+        return {"declared": bool(getattr(args, "r9_bev_warp", False)), "fuse_built": fuse is not None,
+                "lags_s": list(st.lags_s) if st is not None else None, "lag_rows": list(st.lag_rows) if st is not None else None,
+                "shuffle": bool(st.shuffle) if st is not None else None,
+                "supervise_hist": bool(st.supervise_hist) if st is not None else None,                       # T1h: the loss-mask OR, a model-state fact
+                "fuse_emit_hist": bool(getattr(fuse, "emit_hist", False)) if fuse is not None else None,     # T1h: the fuse emits hist_valid
+                "fuse_init": str(getattr(fuse, "init_mode", "rezero")) if fuse is not None else None,        # T1h-INIT: how the fuse weight was built (a build-time fact)
+                "fuse_fill_only": bool(getattr(fuse, "fill_only", False)) if fuse is not None else None,     # T1h-FILL: the history term only where the current lift is invalid
+                "fuse_lag_rows": list(fuse.lag_rows) if fuse is not None else None}
+    def gview(args, m):                                           # refcv9 T1v (`--r9-hist-supervise-geom`): NO fuse, a plain-Python HistGeom on the 10 cm branch + the model-state record
+        st = getattr(m, "_r9_hist_geom", None)
+        mh = getattr(m, "_map_hires", None)
+        hg = getattr(mh, "hist_geom", None) if mh is not None else None
+        return {"declared": bool(getattr(args, "r9_hist_supervise_geom", False)), "state_built": st is not None, "branch_built": hg is not None,
+                "lags_s": list(st.lags_s) if st is not None else None, "lag_rows": list(st.lag_rows) if st is not None else None,
+                "branch_lag_rows": list(hg.lag_rows) if hg is not None else None}
+    gt, gl = gview(args_t, model_t), gview(args_l, model_l)
+    g_on = bool(gt["declared"] or gl["declared"] or gt["state_built"] or gl["state_built"] or gt["branch_built"] or gl["branch_built"])
+    g_reasons: list[str] = []
+    if g_on:
+        g_reasons = [f"T1v (--r9-hist-supervise-geom): {k} differs between the builds: trainer {gt[k]!r} vs loader {gl[k]!r}"
+                     for k in gt if gt[k] != gl[k]]
+        for side, g in (("trainer", gt), ("loader", gl)):         # a side whose argv declares T1v but whose build holds no HistGeom would feed the stage a mask nobody emits
+            if g["declared"] != (g["state_built"] and g["branch_built"]):
+                g_reasons.append(f"T1v (--r9-hist-supervise-geom): the {side}'s argv declares {g['declared']} but its build carries the model state {g['state_built']} / the 10 cm HistGeom {g['branch_built']}")
+    vt, vl = view(args_t, model_t), view(args_l, model_l)
+    if not (vt["declared"] or vl["declared"] or vt["fuse_built"] or vl["fuse_built"]):
+        return list(g_reasons), ({"on": False, "hist_geom": {"trainer": gt, "loader": gl}} if g_on else {"on": False})
+    reasons = [f"T1 (--r9-bev-warp): {k} differs between the builds: trainer {vt[k]!r} vs loader {vl[k]!r}"
+               for k in vt if vt[k] != vl[k]]
+    det = {"on": True, "trainer": vt, "loader": vl}
+    if g_on:
+        det["hist_geom"] = {"trainer": gt, "loader": gl}
+    return reasons + g_reasons, det
+
+
+def rig_eval_build_reasons(args_t, model_t, model_l) -> tuple[list[str], dict]:
+    """G-EVAL under `--r9-perc-rig` (the gate's OWN read of both builds): the eval loader must build the RIG from the run
+    record -- `_perc_rig` set and NO planner / tactical attribute path -- exactly as the trainer's model is. A loader that
+    builds the full model (every launch before refcv9 C7) fails here with a NAMED reason even where its load is lenient.
+    Inert (empty) when the launch does not declare the rig."""
+    if not bool(getattr(args_t, "r9_perc_rig", False)):
+        return [], {"on": False}
+    rm = _e1_rig_module()
+    paths = tuple(getattr(rm, "PLANNER_ATTR_PATHS", ())) if rm is not None else ()
+    has = (lambda m, p: bool(rm._has_path(m, p))) if rm is not None else (lambda m, p: False)
+    det: dict[str, Any] = {"on": True, "trainer_rig": bool(getattr(model_t, "_perc_rig", False)),
+                           "loader_rig": bool(getattr(model_l, "_perc_rig", False)),
+                           "trainer_planner_paths": [p for p in paths if has(model_t, p)],
+                           "loader_planner_paths": [p for p in paths if has(model_l, p)]}
+    reasons: list[str] = []
+    if rm is None:
+        reasons.append("G-EVAL rig: tanitad/refs/refcv9_perc_rig.py is not in this tree -- the planner attribute paths "
+                       "cannot be read")
+    if not det["trainer_rig"]:
+        reasons.append("G-EVAL rig: the launch declares --r9-perc-rig but the TRAINER's model is not the rig")
+    if not det["loader_rig"] or det["loader_planner_paths"]:
+        reasons.append(f"G-EVAL rig: the eval loader built the FULL model for a --r9-perc-rig launch (rig flag "
+                       f"{det['loader_rig']}, planner / tactical modules present: {det['loader_planner_paths']}) -- it must "
+                       f"build the perception rig from config.json")
+    return reasons, det
+
+
+def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
+                  probe_out: dict | None = None) -> tuple[list[str], dict]:
+    import torch
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    probe_out = {} if probe_out is None else probe_out
+    model_t.eval()
+    ck = scratch / "g_eval_trainer_state.pt"
+    torch.save({"model": model_t.state_dict(), "step": 0}, ck)
+    L, lsha = _load_loader(ctx)
+    det["eval_loader"] = {"path": str(ctx.options.get("eval_loader")), "sha256": lsha}
+    # ⛔ the RUN RECORD the loader rebuilds from must be THIS launch's: the config.json the trainer
+    # wrote in this gate dir's smoke for this very argv. MEASURED 2026-09-26: rebuilt from
+    # refcv6-r101-s0's own record, the loader faithfully reproduced refcv6 AS TRAINED (an
+    # UNEQUALISED trunk, `trunk_equalize_rows_as_trained`) while the fixed trainer builds the 43
+    # declared rows -- 59 of 137 forward outputs differed, every one downstream of the trunk.
+    smoke_cfg = latest_smoke_config(ctx)
+    stamps_path = str(smoke_cfg) if smoke_cfg else ctx.options.get("eval_stamps")
+    stamps = read_json(stamps_path) if stamps_path else {}
+    config = {k: v for k, v in stamps.items() if k != "argv"}
+    config["argv"] = list(ctx.argv)
+    s_steps, s_le = smoke_step_count(T, ctx.local_argv(),
+                                     int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
+    same_argv, rule = stamps_written_for(
+        list(stamps.get("argv") or []), ctx.local_argv() if smoke_cfg else list(ctx.argv),
+        s_steps if smoke_cfg else None, s_le, alarm_flag=(ctx.prof.get("map_share_alarm") or {}).get("flag"))
+    det["eval_stamps"] = {"path": stamps_path, "sha256": sha256_file(stamps_path)
+                          if stamps_path else None,
+                          "source": ("this gate's smoke (the trainer's own config.json for THIS "
+                                     "argv)" if smoke_cfg else "--eval-stamps"),
+                          "written_for_this_argv": same_argv, "argv_rule": rule,
+                          "used_keys": sorted(k for k in config if k != "argv")}
+    if not stamps_path:
+        return ["G-EVAL needs the launch's own run record: run the smoke (G-LIVE) in this gate "
+                "dir first, or pass --eval-stamps <a config.json written for THIS argv>"], det
+    if not same_argv:
+        reasons.append("G-EVAL: the run record the loader rebuilds from was written for ANOTHER "
+                       "argv (model-affecting flags differ) -- a rebuild from another run's "
+                       "record answers a different question; use this launch's smoke config.json")
+    pat = _Patcher()
+    if arm_is(ctx, "loader_skips_pin"):
+        tr = L.trainer()
+        pat.set(tr, "_pin_trainer_cfg", lambda cfg, args: cfg)
+    if arm_is(ctx, "p10_loader_other_p10"):
+        apply_p10_arm(ctx, pat)                              # patched ONLY while the loader builds
+    try:
+        model_l, cfg_l, args_l, rec = L.build_model(config, str(ck), device="cpu", strict=True)
+    except RuntimeError as e:
+        pat.restore()
+        hint = (" -- the launch declares --r9-perc-rig: the loader must build the perception rig from config.json "
+                "(G-EVAL under the rig)" if bool(getattr(args_t, "r9_perc_rig", False)) else "")
+        return [f"the eval loader's STRICT load failed: {str(e)[:600]}{hint}"], det
+    finally:
+        pat.restore()
+    sd = rec.get("state_dict", {})
+    det["strict_load"] = {"missing": sd.get("missing"), "unexpected": sd.get("unexpected"),
+                          "n_keys": sd.get("n_keys")}
+    if sd.get("missing") or sd.get("unexpected"):
+        reasons.append(f"strict load: {len(sd.get('missing') or [])} missing / "
+                       f"{len(sd.get('unexpected') or [])} unexpected keys (must be 0/0)")
+    det["loader_departures"] = rec.get("departures")
+    det["loader_argv_remap"] = rec.get("argv_remap")
+    rbr, rbd = rig_eval_build_reasons(args_t, model_t, model_l)       # refcv9-e1rig only (inert otherwise)
+    if rbd.get("on"):
+        det["perc_rig"] = rbd
+    reasons += rbr
+    if p10_on(ctx.argv):
+        # the P10 tensors are non-persistent buffers: the state_dict comparison below cannot see them
+        p10r_, p10d_ = judge_p10_eval(ctx.prof, ctx.argv, model_t, model_l)
+        det["p10"] = p10d_
+        reasons += p10r_
+    # every tensor the model holds, bit for bit
+    dt, dl = state_digests(model_t.state_dict()), state_digests(model_l.state_dict())
+    diff = sorted(k for k in set(dt) & set(dl) if dt[k] != dl[k])
+    det["state_dict"] = {"n_trainer": len(dt), "n_loader": len(dl), "n_differ": len(diff),
+                         "differ": diff[:12], "only_trainer": sorted(set(dt) - set(dl))[:12],
+                         "only_loader": sorted(set(dl) - set(dt))[:12]}
+    if set(dt) != set(dl) or diff:
+        reasons.append(f"state_dict: {len(diff)} tensor(s) differ, key sets "
+                       f"{'equal' if set(dt) == set(dl) else 'DIFFER'}")
+    if hires_on(ctx.prof, ctx.argv):
+        tok = ctx.prof["map_hires"]["name_token"]
+        nt, nl = sum(tok in k for k in dt), sum(tok in k for k in dl)
+        det["map_hires_state_keys"] = {"trainer": nt, "loader": nl}
+        if nt == 0 or nl == 0:
+            reasons.append(f"NEW-2: the 10 cm branch is not in both builds ('{tok}' keys: trainer "
+                           f"{nt}, loader {nl}) -- the eval loader must build it identically")
+    # the attributes train() sets ON the model that the forward / loss read
+    attrs = {}
+    for a in sorted(set(vars(model_t)) | set(vars(model_l))):
+        if not (a.startswith("_w_") or a in ("_cls_class_weight", "_map_lift_valid_mask",
+                                             "_box3d_visible_filter", "_bev_shuffle")):
+            continue
+        va, vb = getattr(model_t, a, "<absent>"), getattr(model_l, a, "<absent>")
+        if torch.is_tensor(va) and torch.is_tensor(vb):
+            same = tensor_digest(va) == tensor_digest(vb)
+        else:
+            same = (va == vb) if not (torch.is_tensor(va) or torch.is_tensor(vb)) else False
+        attrs[a] = {"trainer": repr(va)[:80], "loader": repr(vb)[:80], "same": bool(same)}
+        if not same:
+            reasons.append(f"model attribute {a}: trainer {repr(va)[:60]} vs loader {repr(vb)[:60]}")
+    det["model_attributes"] = attrs
+    pb_t = {k: int(v) for k, v in T.v3.param_breakdown_v3(model_t).items()}
+    pb_l = {k: int(v) for k, v in T.v3.param_breakdown_v3(model_l).items()}
+    det["param_breakdown"] = {"trainer": pb_t, "loader": pb_l}
+    if pb_t != pb_l:
+        reasons.append(f"param_breakdown differs: trainer {pb_t} vs loader {pb_l}")
+    # the forward on a FIXED real batch
+    if bool(getattr(args_l, "r9_perc_rig", False)):
+        # refcv9-e1rig: the rig's argv carries no --eval-labels (it reads no tactical / nav / speed label), and the vendored
+        # loader's `build_eval_dataset` REFUSES such an argv -- so the probe batch comes from the dataset contract train()
+        # builds for the rig's held-out eval (MEASURED 2026-11-03: G-EVAL FAIL "the run's argv has no --eval-labels")
+        e_ds, e_eps, drec = rig_eval_probe_dataset(L, cfg_l, args_l, model=model_l)
+    else:
+        e_ds, e_eps, drec = L.build_eval_dataset(model_l, cfg_l, args_l, config,
+                                                 with_perception_targets=False)
+        drec = full_eval_hist_geom_attach(L, e_ds, model_l, args_l, drec)     # T1v on the full model: the loader attaches no pose history for it
+    t1r, t1d = rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l)       # refcv9 T1 only ([] / {"on": False} otherwise)
+    reasons += t1r
+    idx = int(L.inrun_eval_perm(e_ds, 1, 1)[0])
+    item = e_ds[idx]
+    batch = torch.utils.data.default_collate([item])
+    e_i, t = e_ds.index[idx]
+    ep_id = int(e_eps[e_i].episode_id)
+    if getattr(model_t, "_perception", None) is not None:
+        batch["map_ep"] = torch.tensor([ep_id], dtype=torch.long)
+    det["probe"] = {"window_index": idx, "episode_sid": ep_id, "t": int(t),
+                    "n_eval_windows": len(e_ds),
+                    "inputs": {k: v for k, v in (drec or {}).items()
+                               if k in ("labels", "label_clock", "n_episodes", "n_windows")},
+                    "seed": 1234}
+    if (drec or {}).get("bev_warp") is not None:                 # refcv9 T1 only: the history the probe dataset was attached with
+        det["probe"]["bev_warp"] = drec["bev_warp"]
+    if t1d.get("on"):
+        det["bev_warp"] = t1d
+    if t1d.get("hist_geom") is not None:                          # refcv9 T1v only: the pose-history attach + the trainer-vs-loader HistGeom read
+        det["hist_geom"] = t1d["hist_geom"]
+        if (drec or {}).get("hist_geom") is not None:
+            det["probe"]["hist_geom"] = drec["hist_geom"]
+    model_l.eval()
+    t0 = time.time()
+    raw_t = _forward_out(T, model_t, batch, args_t, 1234)
+    probe_out["trainer"] = raw_t
+    out_t = output_digests(raw_t)
+    # ⭐ control: the SAME model, the SAME batch, the SAME seed must give the same bytes -- or a
+    # trainer-vs-loader difference below says nothing about the loader
+    rep_t = output_digests(_forward_out(T, model_t, batch, args_t, 1234))
+    n_nondet = sum(1 for k in out_t if rep_t.get(k) != out_t[k])
+    det["determinism_control_outputs_differing"] = n_nondet
+    if n_nondet:
+        reasons.append(f"control: the trainer model's own forward is NOT reproducible on the fixed "
+                       f"batch under a forked RNG ({n_nondet} outputs differ between two identical "
+                       f"calls) -- the trainer-vs-loader comparison is blind")
+    out_l = output_digests(_forward_out(T, model_l, batch, args_l, 1234))
+    det["probe"]["forward_s_each"] = round((time.time() - t0) / 2, 1)
+    odiff = sorted(k for k in set(out_t) | set(out_l) if out_t.get(k) != out_l.get(k))
+    det["forward"] = {"n_outputs": len(out_t), "n_differ": len(odiff), "differ": odiff[:20]}
+    if odiff:
+        reasons.append(f"forward outputs differ on the fixed batch: {len(odiff)} of {len(out_t)} "
+                       f"(first: {odiff[:5]})")
+    n_tensor = sum(1 for v in out_t.values() if not v.startswith(("py:", "type:")))
+    if n_tensor == 0:
+        reasons.append("control: the forward produced no tensor outputs -- nothing was compared")
+    # ⭐ negative control: a perturbed copy MUST differ (proves the comparison can see a change)
+    p0 = next((p for n_, p in model_l.named_parameters() if n_.startswith("core.decoder")), None)
+    if p0 is None:
+        p0 = next(iter(model_l.parameters()))
+    with torch.no_grad():
+        saved = p0.detach().clone()
+        p0.add_(1e-2)
+    try:
+        out_p = output_digests(_forward_out(T, model_l, batch, args_l, 1234))
+    finally:
+        with torch.no_grad():
+            p0.copy_(saved)
+    n_moved = sum(1 for k in out_t if out_p.get(k) != out_t[k])
+    det["negative_control_outputs_moved"] = n_moved
+    if n_moved == 0:
+        reasons.append("negative control: perturbing a decoder parameter moved NO output -- the "
+                       "comparison is blind")
+    try:
+        ck.unlink()
+    except OSError:
+        pass
+    return reasons, det
+
+
+def smoke_step_count(T, base_argv: list[str], configured: int) -> tuple[int, int]:
+    """-> (steps, log_every). The smoke runs at least 2 x the LAUNCH's `--log-every` (the
+    coordinator 2026-09-26): a periodic row that is not the final row must exist, because the
+    refcv6 reach off-by-one fills ONLY the final row. Never fewer than `configured`."""
+    le = int(getattr(T.build_parser().parse_args(list(base_argv)), "log_every", 1) or 1)
+    return max(int(configured), 2 * le), le
+
+
+def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    T = load_trainer(ctx)
+    evs = {c: new_evidence(ctx, c) for c in checks}
+    extra = int(ctx.prof["resume_extra_steps"])
+    run_dir = Path(ctx.out_dir) / "smoke" / time.strftime("%Y%m%dT%H%M%S", time.gmtime())
+    run_dir.mkdir(parents=True, exist_ok=False)          # FRESH: an old ckpt.pt would resume
+    base = ctx.local_argv()
+    if ctx.options.get("cpu_only") and has_flag(base, "--trunk-compile"):
+        base = set_flag(base, "--trunk-compile", None)
+    steps, log_every = smoke_step_count(
+        T, base, int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
+    argv1, smoke_dep = smoke_argv(base, steps, log_every, alarm_flag=(ctx.prof.get("map_share_alarm") or {}).get("flag"))
+    _sle = flag_values(argv1, "--log-every")                 # the smoke's own logging cadence (q = steps // 4 when the share alarm reads three times)
+    if _sle:
+        try:
+            log_every = int(_sle[0])
+        except ValueError:
+            pass
+    argv1 = set_flag(argv1, "--out", [str(run_dir)])
+    all_inputs = _inputs_read(ctx, [f for f, _ in data_inputs(ctx.argv, ctx.prof)])
+    for k, fp in implicit_inputs(ctx.argv):
+        all_inputs[k] = fp
+    parser = T.build_parser()
+    args = parser.parse_args(argv1)
+    terms, problems = declared_terms(T, args)
+    absent = rig_absent_terms(args)                       # refcv9-e1rig only ([] on every other launch)
+    _say(f"G-LIVE smoke: {steps} steps, out {run_dir}")
+    run1 = run_smoke(ctx, T, argv1, snapshot="final")
+    rows1 = read_metrics(run_dir / "metrics.jsonl")
+    summ1 = read_json(run_dir / "summary.json") if (run_dir / "summary.json").is_file() else None
+    gt = grad_table(run1["grads"], run1.get("grad_names") or {})
+    if "G-LIVE" in evs:
+        import torch
+        ev = evs["G-LIVE"]
+        ev["inputs_read"] = all_inputs
+        admitted = {g: f"{why} [admitted while {flag} is in the argv]"
+                    for g, flag, why in ctx.prof.get("live_dead_admitted", ())
+                    if has_flag(ctx.argv, flag)}
+        reasons, det = judge_live(terms, problems, run1["steps"], expect_steps=steps,
+                                  summary=summ1, train_rows=train_rows(rows1), grads=gt,
+                                  prior=run1["prior"], exit_msg=run1.get("exit"),
+                                  admitted_dead=admitted, absent_terms=absent)
+        det.update({"smoke_argv": argv1, "run_dir": str(run_dir), "elapsed_s": run1["elapsed_s"],
+                    "declared_terms": terms, "eval_calls": run1["eval_calls"],
+                    "out_keys": run1["out_keys"][:120],
+                    "departures_from_launch_argv": {**smoke_dep, "--out": "smoke dir",
+                                                    **({"--trunk-compile": "dropped on a CPU host"}
+                                                       if ctx.options.get("cpu_only") else {})}})
+        # the measured cost, ALWAYS recorded (on Thor `max_memory_allocated` is the only
+        # admissible memory reading)
+        h = ctx.prof.get("map_hires") or {}
+        det["cost"] = {**step_cost(run1.get("step_times") or [], int(h.get("cost_warmup_steps", 10)),
+                                   exclude_rows=sorted(set(gs_reading_rows(argv1)) | set(dc_reading_rows(argv1))), nontrain_rows=nontrain_rows(argv1)),
+                       "cuda_max_mem_gb": run1.get("cuda_max_mem_gb"),
+                       "batch": int(args.batch)}
+        needs_pi = False
+        cfg1 = read_json(run_dir / "config.json") if (run_dir / "config.json").is_file() \
+            else None
+        fpr_, fpd_ = full_profile_live_reasons(ctx.prof, ctx.argv, argv1, train_rows(rows1), cfg1, run_dir)   # refcv9-full family
+        det["full_profile"] = fpd_
+        reasons += fpr_
+        wcr_, wcd_ = wcost_reasons(ctx.prof, ctx.argv, run1.get("wcost_lines"))      # refcv9 W-COST (K2-WCOST): --w-r8-drivable == 0.1 / R of THIS smoke; {} when not entered
+        if wcd_:
+            det["wcost"] = wcd_
+        reasons += wcr_
+        # SPEC_REFCV7 7: the ceiling mask at inference only, and the tau file in config.json
+        cr, cd = judge_ceiling(ctx.prof, ctx.argv, run1.get("ceiling_calls", []),
+                               eval_in_argv=has_flag(ctx.argv, "--eval-cache"))
+        det["ceiling_filter"] = cd
+        reasons += cr
+        nc = (ctx.prof.get("nav_compliance") or {}).get("switch")
+        if nc and has_flag(ctx.argv, nc):
+            tr_, td = tau_config_reasons(ctx.options.get("nav_tau_record"), cfg1)
+            det["nav_tau_in_config"] = td
+            reasons += tr_
+            if ctx.options.get("nav_tau_record"):
+                ev["inputs_read"]["gate:nav-tau-record"] = fingerprint(
+                    ctx.options["nav_tau_record"])
+        det["map_hires"] = {"on": hires_on(ctx.prof, ctx.argv)}
+        # the gradient-reach rows: every logged row, every trainable group (+ NEW-2's ga_mh_*)
+        gr, gd = judge_ga_reach(ctx.prof, train_rows(rows1), log_every=log_every,
+                                final_step=steps, groups=run1.get("ga_groups"),
+                                ga_on=bool(run1.get("ga_on")), hires=det["map_hires"]["on"])
+        det["ga_reach"] = {**gd, "groups": run1.get("ga_groups")}
+        reasons += gr
+        # D3 (fixes batch 2): the run's OWN declaration of what it logs, held to every row
+        try:
+            D = importlib.import_module("tanitad.train.declared_vs_built")
+            clr = getattr(D, "check_logged_rows", None)
+        except Exception:                                 # noqa: BLE001
+            clr = None
+        if clr is None:
+            reasons.append("G-LIVE D3: declared_vs_built.check_logged_rows is absent (fixes batch 2 "
+                           "not in this tree) -- the declared-vs-LOGGED rows cannot be checked")
+        else:
+            mm = clr(cfg1 or {}, rows1)
+            det["d3_logged_rows"] = [str(m)[:240] for m in mm][:12]
+            if mm:
+                reasons.append(f"G-LIVE D3: {len(mm)} declared-vs-LOGGED mismatch(es): "
+                               + " | ".join(str(m)[:200] for m in mm[:3]))
+            dec = (cfg1 or {}).get("grad_reach_logging") or {}
+            want_mh = (list(h.get("ga_keys", ())) if det["map_hires"]["on"] else [])
+            if det["map_hires"]["on"] and flag_values(ctx.argv, h.get("bev_source_flag", "")) == [
+                    "map_hires_pool"]:
+                want_mh += list(h.get("ga_keys_pool", ()))
+            miss_dec = [k for k in want_mh if k not in (dec.get("keys") or [])]
+            if miss_dec:
+                reasons.append(f"G-LIVE D3: config.json's grad_reach_logging does not DECLARE "
+                               f"{miss_dec} -- an undeclared part's dead reach row would pass "
+                               f"the owner's first-row check")
+        # A9/A10 G-LIVE-PRES, and batch 3's grad-unreachable probe on the real batch
+        pr_, pd_ = judge_live_pres(ctx.prof, run1.get("pres_last"), run1.get("pres_aux_last"))
+        det["live_pres"] = pd_
+        reasons += pr_
+        gr_, gd_ = judge_grad_unreachable_probe(run1.get("grad_unreachable_probe"))
+        det["grad_unreachable_probe"] = gd_
+        reasons += gr_
+        # refcv8-mapft (PI D-R9-MAPHEAD-PRECISION): map-only gradients, frozen gradients, frozen bit identity
+        mor_, mod_ = judge_map_only_live(ctx.prof, run1.get("map_only"), gt, admitted_dead=admitted)
+        det["map_only"] = mod_
+        reasons += mor_
+        b1r, b1d = judge_b1_reach(argv1, rows1)
+        det["b1_guard_reach"] = b1d
+        reasons += b1r
+        if p10_on(ctx.argv):
+            # v8F alpha-1: the emitted prior IS the declared P10 (independent recompute), P10 is read on every training
+            # forward, and it is FROZEN -- exactly zero gradient, bytes unchanged
+            p10r, p10d = judge_p10_live(ctx.prof, ctx.argv, run1.get("p10"), list(run1.get("grads") or {}),
+                                        run1.get("grads") or {}, int(run1.get("fwd_train_calls") or 0), cfg1)
+            det["p10_live"] = p10d
+            reasons += p10r
+        if has_flag(ctx.argv, BEV_WARP_LIVE["flag"]):
+            # E1-REC4 (T1): the gate and the fuse weight moved over the smoke (ACCUMULATED: the fuse is exactly 0.0 at step 0), history in a majority of windows
+            btr, btd = judge_bev_warp_live(ctx.argv, run1.get("grads") or {}, run1.get("bw_has"), expect_steps=steps)
+            det["bev_warp_live"] = btd
+            reasons += btr
+        if has_flag(ctx.argv, HIST_GEOM_LIVE["flag"]):
+            # T1v (full model): no parameter to track -- the pose history must have reached the smoke's windows
+            gvr, gvd = judge_hist_geom_live(ctx.argv, run1.get("bw_has"))
+            det["hist_geom_live"] = gvd
+            reasons += gvr
+        if det["map_hires"]["on"]:
+            # G-MAP (LOGGING_SPEC_MAP10 sec. 6): per-class signal at the logits (the gate's own
+            # hook), the eval row's 24 IoU + 24 loss shares + counts, the train rows' loss
+            # contributions, the declared decision rule, and the one spelling
+            cwv = flag_values(ctx.argv, h["class_weights_flag"])
+            weighted = True
+            try:
+                cw_local = map_path(cwv[0], [tuple(x) for x in ctx.path_map]) if cwv else None
+                wl = read_json(cw_local).get("weights") if cw_local else None
+                weighted = not (isinstance(wl, list) and len(set(map(float, wl))) <= 1)
+            except Exception:                             # noqa: BLE001 -- unknown => weighted
+                weighted = True
+            # (a BANDED argv -- `--r9-map-banded` -- is judged by the banded counterparts, see `map_live_items`)
+            items_r, items_d = map_live_items(ctx.prof, ctx.argv, run1, rows1, cfg1, weighted=weighted)
+            wa, wb = ctx.options.get("map_watch_artifact"), h.get("watch_builder")
+            wrun = None
+            if wa is None and wb:
+                # the Watch is built from THIS smoke's metrics.jsonl, by the gate
+                out_w = run_dir / "watch_refcv7.html"
+                cmd = [str(x).format(python=sys.executable, metrics=str(run_dir / "metrics.jsonl"),
+                                     out=str(out_w), tree=ctx.tree) for x in wb]
+                try:
+                    wp = subprocess.run(cmd, cwd=ctx.tree, timeout=1800, capture_output=True,
+                                        text=True, encoding="utf-8", errors="replace")
+                    wrun = {"cmd": cmd, "rc": wp.returncode,
+                            "stderr_tail": (wp.stderr or "")[-400:]}
+                except Exception as e:                    # noqa: BLE001 -- judged below
+                    wrun = {"cmd": cmd, "rc": None, "error": f"{type(e).__name__}: {e}"}
+                    _say(f"the Watch builder failed: {type(e).__name__}: {e}")
+                wa = str(out_w) if out_w.is_file() else None
+            wr, wd = (banded_watch_reasons if banded_on(ctx.prof, ctx.argv) else map_watch_reasons)(ctx.prof, wa)
+            if wrun is not None:
+                wd = {**wd, "builder_run": wrun}
+                if wrun["rc"] != 0:
+                    wr = [*wr, f"G-MAP: the Watch builder exited {wrun['rc']} "
+                               f"({wrun.get('error') or wrun.get('stderr_tail', '')[-160:]})"]
+            cw_sha = None
+            if cwv:
+                cwl = map_path(cwv[0], [tuple(x) for x in ctx.path_map])
+                cw_sha = sha256_file(cwl) if Path(cwl).is_file() else None
+            csr, csd = class_weights_stamp_reasons(ctx.prof, cfg1, cw_sha)
+            det["g_map"] = {**items_d, "watch": wd, "class_weights_stamp": csd}
+            reasons += items_r + wr + csr
+            appr = None
+            ap = ctx.options.get("pi_cost_approval")
+            if ap:
+                appr = read_json(ap)
+                appr = {**appr, "_file_sha256": sha256_file(ap)}
+            r2, needs_pi, d2 = judge_new2_live(ctx.prof, run1, cfg1, argv1, gt,
+                                               cuda=bool(torch.cuda.is_available()),
+                                               approval=appr,
+                                               ctl_cost=dose_ctl_amortized(ctx.argv, train_rows(rows1)))
+            det["map_hires"].update(d2)
+            reasons += r2
+        ev["details"].update(det)
+        finish_evidence(ev, "FAIL" if reasons else ("PI-DECISION" if needs_pi else "PASS"), reasons
+                        or ([det["map_hires"]["cost"]["verdict"]] if needs_pi else []))
+    if "G-CKPT" in evs:
+        import torch
+        ev = evs["G-CKPT"]
+        ev["inputs_read"] = all_inputs
+        ckp = run_dir / "ckpt.pt"
+        ckpt = torch.load(ckp, map_location="cpu", weights_only=False) if ckp.is_file() else None
+        run2 = rows2 = cfg2 = summ2 = None
+        if ckpt is not None and not run1.get("exit"):
+            argv2 = set_flag(argv1, "--steps", [str(steps + extra)])
+            (run_dir / "summary.json").unlink(missing_ok=True)   # run 1's marker, read above
+            n_before = len(rows1)
+            run2 = run_smoke(ctx, T, argv2, snapshot="post_load")
+            rows_all = read_metrics(run_dir / "metrics.jsonl")
+            rows2 = train_rows(rows_all[n_before:])
+            cfg2 = read_json(run_dir / "config.json") if (run_dir / "config.json").is_file() else None
+            summ2 = read_json(run_dir / "summary.json") if (run_dir / "summary.json").is_file() \
+                else None
+        reasons, det = judge_ckpt(ckpt, run1, run2, smoke_steps=steps, extra=extra,
+                                  batch=int(args.batch), seed=int(args.seed),
+                                  run2_rows=rows2 or [], run2_config=cfg2, run2_summary=summ2)
+        if p10_on(ctx.argv):
+            kr_, kd_ = judge_p10_ckpt(ctx.prof, ctx.argv, ckpt, run1.get("p10"))
+            det["p10"] = kd_
+            reasons = [*reasons, *kr_]
+        ev["details"].update(det)
+        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    return evs
+
+
+def clock_cap(prof: dict, T, argv: list[str]) -> tuple[float, list[str], dict]:
+    """The unverified-clip cap: the trainer's LABEL_CLOCK_MAX_UNVERIFIED_FRAC (fixes agent, G3)
+    and never more than the profile's. ⛔ An argv that RAISES it (`--label-clock-max-unverified`)
+    is refused: "do not raise the cap" (coordinator 2026-09-26; the eval split is decision E2)."""
+    pc = prof.get("clock_max_unverified_frac")
+    base = 0.01 if pc is None else float(pc)
+    t_cap = getattr(T, "LABEL_CLOCK_MAX_UNVERIFIED_FRAC", None)
+    cap = min(base, float(t_cap)) if t_cap is not None else base
+    det = {"cap": cap, "profile_cap": base, "trainer_constant": t_cap}
+    reasons = []
+    v = flag_values(argv, "--label-clock-max-unverified")
+    if v:
+        det["argv_cap"] = v[0]
+        try:
+            raised = float(v[0]) > cap
+        except ValueError:
+            raised = True
+        if raised:
+            reasons.append(f"the argv raises the G3 cap to {v[0]} (> {cap}): the gate does not "
+                           f"raise the cap -- that is a recorded PI decision (E2), not a flag")
+    return cap, reasons, det
+
+
+def _clock_split(ctx: Ctx, T, cfg, args, split: str, ref: dict, tol: float, cap: float) -> dict:
+    from tanitad.data import v2_dataset as v2d
+    cache = getattr(args, "v2_cache" if split == "train" else "eval_cache", None)
+    labels = getattr(args, "v7_labels" if split == "train" else "eval_labels", None)
+    if not cache or not labels:
+        return {"skipped": f"no {split} cache/labels in argv"}
+    cache = cache[0] if isinstance(cache, (list, tuple)) else cache
+    man_override = (ctx.options.get("clock_manifest") or {}).get(split)
+    if man_override:
+        import torch
+        man = torch.load(man_override, map_location="cpu", weights_only=False)
+        vcache = v2d.V2CompressedCache(str(cache), lru_size=1)
+        key = "episode_uid" if "episode_uid" in man else "episode_id"
+        eps = []
+        for i in range(len(man["files"])):
+            ns = int(man["n_stack"][i])
+            s = int(man["image_size"][i])
+            h = int(man.get("image_h", [s] * len(man["files"]))[i])
+            w = int(man.get("image_w", [s] * len(man["files"]))[i])
+            # the SAME construction as `build_v2_providers` (v2_dataset.py), frames absent
+            eps.append(v2d.LazyV2Episode(vcache, i, man["poses"][i], man["actions"][i],
+                                         int(man[key][i]), torch.Size((int(man["T_out"][i]),
+                                                                       3 * ns, h, w))))
+        source = {"mode": "manifest (a copied _v2manifest.pt; frames not present)",
+                  "manifest": str(man_override), "manifest_sha256": sha256_file(man_override)}
+    else:
+        man = v2d.load_or_build_manifest(cache, rebuild=False, verbose=False)
+        eps = v2d.build_v2_providers([cache], lru_size=1, verbose=False)
+        source = {"mode": "cache dir", "cache": str(cache)}
+    uids = man.get("episode_uid") or [v2d.stable_episode_id(c) for c in man["clip_id"]]
+    sid_to_clip = {int(u): str(c) for u, c in zip(uids, man["clip_id"])}
+    sid_ns = {int(u): int(ns) for u, ns in zip(uids, man["n_stack"])}
+    # train():7092-7101 + 7205-7215 -- the trainer's dataset class, kwargs and clock resolution
+    ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20,
+                     channels=cfg.core.encoder.in_channels)
+    lab, lman = T.v7l.load_v7_labels(labels, allow_oracle_nav=True)
+    ds.v7_by_sid = {v2d.stable_episode_id(l.clip_id): l for l in lab}
+    ds.v7_dt = 0.1
+    if arm_is(ctx, "legacy_label_clock"):
+        ds.legacy_label_clock = True                       # the historical (t + w - 1) * 0.1
+    rep = ds.enable_clip_clock(getattr(args, "clip_clock_sidecar", None))
+    res: dict[str, Any] = {}
+    # the TRAINER'S OWN G3 (fixes agent), when the tree has it: run EXACTLY as train() runs it
+    # (the eval split in E2(b) mode: unverified clips EXCLUDED from TACTICAL, the cap never
+    # raised -- refc_v3_train.py, the in-training eval block), and its verdict recorded
+    g3 = getattr(ds, "assert_label_clock_true", None)
+    e2b = split == "eval" and ctx.prof.get("clock_eval_mode") == "exclude_tactical"
+    res["mode"] = "E2(b): eval TACTICAL on verified clips only" if e2b else "cap"
+    if callable(g3):
+        try:
+            if e2b:
+                res["trainer_g3"] = g3(getattr(args, "clip_clock_sidecar", None), split=split,
+                                       max_unverified_frac=cap, exclude_unverified_tactical=True)
+            else:
+                res["trainer_g3"] = g3(getattr(args, "clip_clock_sidecar", None), split=split,
+                                       max_unverified_frac=cap)
+        except SystemExit as e:
+            res["trainer_g3"] = {"g3": "REFUSED", "message": str(e)[:800]}
+        except TypeError as e:
+            res["trainer_g3"] = {"g3": "REFUSED", "message": f"this tree's G3 has no E2(b) eval "
+                                                             f"mode (API: {e})"}
+    else:
+        res["trainer_g3"] = {"g3": "absent from this tree (pre-fix)"}
+    w = int(ds.window)
+    lc = getattr(ds, "_label_clock", None) or {}
+    labelled = {int(ds.episodes[e_i].episode_id) for e_i, _ in ds.index
+                if int(ds.episodes[e_i].episode_id) in ds.v7_by_sid}
+    # (an unlabelled clip has no tactical target to exclude: compared over LABELLED clips)
+    res["tactical_excluded_sids"] = sorted(int(x) for x in
+                                           (getattr(ds, "tactical_excluded_sids", ()) or ())
+                                           if int(x) in labelled)
+    # the gate's own reading of which labelled clips run on a FALLBACK clock (no measurement)
+    res["fallback_sids"] = sorted(s for s in labelled
+                                  if (lc.get(s) or (None, None, "unknown"))[2] != "sidecar")
+
+    def gen():
+        for e_i, t in ds.index:
+            ep = ds.episodes[e_i]
+            sid = int(ep.episode_id)
+            if sid not in ds.v7_by_sid:
+                continue                                   # no label record: no label time used
+            clip = sid_to_clip.get(sid)
+            key = sha12(clip) if clip else f"sid:{sid}"
+            rr = ref.get(key)
+            r = int(t) + w - 1
+            t_true = None if rr is None else rr[0] + (r + sid_ns.get(sid, 3) - 1) * rr[1]
+            src = (lc.get(sid) or (None, None, "unknown"))[2]
+            yield (key, ds._now_s(ep, t), t_true, r * 0.1, src)
+    n_clips = len({int(e_i) for e_i, _ in ds.index})
+    res.update(judge_clock_windows(gen(), tol, n_clips=n_clips, cap=cap))
+    res["source"] = source
+    res["label_clock_report"] = rep
+    res["labels_md5"] = getattr(lman, "md5", None)
+    res["n_episodes"] = len(eps)
+    res["n_labelled_clips"] = sum(1 for e in eps if int(e.episode_id) in ds.v7_by_sid)
+    return res
+
+
+def job_clock(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    T = load_trainer(ctx)
+    ev = new_evidence(ctx, "G-CLOCK")
+    argv = ctx.local_argv()
+    if ctx.options.get("cpu_only") and has_flag(argv, "--trunk-compile"):
+        argv = set_flag(argv, "--trunk-compile", None)
+    args = T.build_parser().parse_args(argv)
+    cap_ = run_trainer_until(T, argv, "config")           # the trainer's own pinned cfg
+    cfg = cap_["cfg"]
+    refs = ctx.options.get("clock_reference") or []
+    ref, rprov = load_clock_reference(refs)
+    tol = float(ctx.prof["clock_tolerance_s"])
+    cap, reasons, cdet = clock_cap(ctx.prof, T, ctx.argv)
+    det = {"reference": rprov, "tolerance_s": tol, "window": int(cfg.core.window),
+           "unverified_cap": cdet,
+           "rule_checked": "MEASURED-clock clips: |V3Dataset._now_s(ep, t) - (g0_ref + (t + w - 1 "
+                           "+ n_stack - 1) * dt_ref)| <= tol on EVERY window of every labelled clip "
+                           "(ref = an independent measurement, not the sidecar the trainer reads); "
+                           "fallback-clock or unreferenced clips are UNVERIFIED and admitted up to "
+                           "the cap"}
+    # refcv9-e1rig (MM decision (b), 2026-11-02): the rig reads no tactical label, so G-CLOCK times the labels it DOES read
+    # (agent / 3-D joins, map-GT frame key) against the clip-clock sidecar. Inert (rig_on False) on every other launch.
+    rig_on = bool(getattr(args, "r9_perc_rig", False))
+    if rig_on:
+        rr_, rd_ = rig_clock_check(ctx, T, args, tol, cap)
+        det["rig"] = rd_
+        reasons += rr_
+    elif not ref:
+        reasons.append("no clock reference was given (--clock-reference): nothing is verifiable")
+    for split in (() if rig_on else ("train", "eval")):
+        r = _clock_split(ctx, T, cfg, args, split, ref, tol, cap)
+        det[split] = r
+        if "skipped" in r:
+            if split == "train":
+                reasons.append(f"G-CLOCK {split}: {r['skipped']}")
+            continue
+        if r["n_windows"] == 0:
+            reasons.append(f"{split}: ZERO labelled windows checked -- the check read nothing")
+        if r["n_violations"]:
+            reasons.append(f"{split}: {r['n_violations']} of {r['n_windows']} windows on MEASURED "
+                           f"clocks read labels more than {tol} s from the independent reference "
+                           f"({r['n_violating_clips']} clips, worst {r['worst_abs_s']} s)")
+        if r.get("mode", "").startswith("E2(b)"):
+            # E2(b): a clip with no MEASURED clock is admitted on the eval split only when it is
+            # EXCLUDED from the TACTICAL family -- the gate's own fallback set must be exactly the
+            # trainer's excluded set; clips measured but without an independent reference are
+            # still capped (they ARE scored tactically)
+            fb, ex = set(r.get("fallback_sids") or []), set(r.get("tactical_excluded_sids") or [])
+            if fb != ex:
+                reasons.append(f"{split} (E2(b)): the {len(fb)} labelled clips on a fallback "
+                               f"clock are not exactly the {len(ex)} clips the trainer excludes "
+                               f"from TACTICAL (only in the gate's set: {sorted(fb - ex)[:5]}; "
+                               f"only in the trainer's: {sorted(ex - fb)[:5]})")
+            unref_frac = r["n_measured_but_unreferenced"] / max(r["n_clips"], 1)
+            if unref_frac > cap:
+                reasons.append(f"{split} (E2(b)): {r['n_measured_but_unreferenced']} of "
+                               f"{r['n_clips']} TACTICALLY scored clips have no independent "
+                               f"reference -- above the {cap:.0%} cap")
+            g3m = str((r.get("trainer_g3") or {}).get("mode", ""))
+            if (r.get("trainer_g3") or {}).get("g3") == "PASS" and "E2(b)" not in g3m:
+                reasons.append(f"{split}: the trainer's G3 did not run in its E2(b) mode ({g3m!r})")
+        elif not r["cap_ok"]:
+            reasons.append(f"{split}: {r['n_unverified_clips']} of {r['n_clips']} clips "
+                           f"({r['unverified_frac']:.2%}) are UNVERIFIED ({r['n_fallback_clock_clips']}"
+                           f" on a fallback clock, {r['n_measured_but_unreferenced']} without an "
+                           f"independent reference) -- above the {cap:.0%} cap")
+        if r["legacy_control_violations"] == 0:
+            reasons.append(f"{split}: control -- the historical clock also reads 0 violations, so "
+                           f"the instrument cannot see the defect it exists for")
+        g3 = r.get("trainer_g3") or {}
+        if g3.get("g3") == "REFUSED":
+            reasons.append(f"{split}: the trainer's own G3 REFUSES: {g3.get('message', '')[:300]}")
+    if p10_on(ctx.argv):
+        # v8F alpha-1: the P10 prior's own clock -- the in-decoder P10 equals the banked floors_kin / v8F-mini
+        # predictions, a window ending one frame early FAILS, the fit clips are disjoint from eval139 / eval141
+        pat_p = _Patcher()
+        try:
+            _pa = apply_p10_arm(ctx, pat_p, T)
+            if _pa:
+                _say("arm: " + _pa)
+            p10r_, p10d_ = p10_clock_check(ctx.prof, ctx.argv, [tuple(x) for x in ctx.path_map], ctx.tree)
+        except Exception as e:                            # noqa: BLE001 -- a crash is not a pass
+            p10r_, p10d_ = [f"G-CLOCK P10 crashed: {type(e).__name__}: {e}"], {
+                "traceback": traceback.format_exc()[-1500:]}
+        finally:
+            pat_p.restore()
+        det["p10_clock"] = p10d_
+        reasons += p10r_
+    ins = ("--v2-cache", "--eval-cache", "--v7-labels", "--eval-labels", "--clip-clock-sidecar")
+    if rig_on:
+        ins = ins + ("--agent-join", "--join3d")
+    ev["inputs_read"] = _inputs_read(ctx, ins)
+    if p10_on(ctx.argv):
+        ev["inputs_read"].update(_inputs_read(ctx, ("--p10-prior",)))
+    for i, r_ in enumerate(refs):
+        ev["inputs_read"][f"gate:clock-reference[{i}]"] = fingerprint(r_)
+    if rig_on and ctx.options.get("rig_ego_dir"):
+        ev["inputs_read"]["gate:rig-egomotion-dir"] = fingerprint(ctx.options["rig_ego_dir"])
+    cm = ctx.options.get("clock_manifest") or {}
+    if cm:
+        # the dir itself was NOT read in manifest mode: bind a key the launch host cannot match,
+        # so this evidence can never stand in for the real caches
+        for split, flag in (("train", "--v2-cache"), ("eval", "--eval-cache")):
+            if split in cm:
+                ev["inputs_read"][flag] = {"kind": "manifest-mode",
+                                           "sha256": sha256_file(cm[split])}
+        det["note_manifest_mode"] = ("cache dirs not read (manifest mode): this evidence cannot "
+                                     "stand in for the launch host's caches")
+    ev["details"].update(det)
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    return {"G-CLOCK": ev}
+
+
+def _parse_junit(xml_path: Path) -> dict:
+    import xml.etree.ElementTree as ET
+    root = ET.parse(xml_path).getroot()
+    failed, n = set(), 0
+    skips: dict[str, str] = {}
+    for tc in root.iter("testcase"):
+        n += 1
+        tid = f"{tc.get('classname', '')}::{tc.get('name', '')}"
+        if any(ch.tag in ("failure", "error") for ch in tc):
+            failed.add(tid)
+        for ch in tc:
+            if ch.tag == "skipped":
+                # the REASON is part of the verdict: a skip is not a pass (G-SUITE, FIX-5 tests)
+                skips[tid] = (ch.get("message") or ch.text or "").strip()[:400]
+    return {"n_tests": n, "failed": sorted(failed), "n_skipped": len(skips),
+            "skipped": dict(sorted(skips.items()))}
+
+
+def skip_not_pass(res: dict, patterns: Iterable[str]) -> dict[str, str]:
+    """{test id: reason} for every SKIP whose reason matches a not-a-pass pattern."""
+    pats = [re.compile(p, re.I) for p in patterns]
+    return {t: r for t, r in (res.get("skipped") or {}).items() if any(p.search(r) for p in pats)}
+
+
+def run_suites(tree: Path, suites: Iterable[str], logs: Path, tag: str, env: dict,
+               timeout_s: int) -> dict:
+    out = {}
+    for s in suites:
+        d = tree / s
+        if not d.is_dir():
+            out[s] = {"absent": True}
+            continue
+        xml = logs / f"junit_{tag}_{s}.xml"
+        log = logs / f"pytest_{tag}_{s}.log"
+        xml.unlink(missing_ok=True)
+        t0 = time.time()
+        with open(log, "w", encoding="utf-8", errors="replace") as fh:
+            p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                                f"--junitxml={xml}", "-o", "junit_family=xunit2"],
+                               cwd=str(d), env=env, stdout=fh, stderr=subprocess.STDOUT,
+                               timeout=timeout_s)
+        tail = [ln for ln in log.read_text(encoding="utf-8", errors="replace").splitlines()
+                if ln.strip()][-1:] or ["<none>"]
+        if not xml.is_file():
+            out[s] = {"rc": p.returncode, "error": "no junit xml was written (the artifact is the "
+                                                   "verdict)", "tail": tail[0][-300:]}
+            continue
+        r = _parse_junit(xml)
+        r.update(rc=p.returncode, tail=tail[0][-300:], elapsed_s=round(time.time() - t0, 1))
+        out[s] = r
+    return out
+
+
+def job_suite(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    if ctx.prof.get("suite_mode") == "consume":
+        return job_suite_consume(ctx, checks)
+    ev = new_evidence(ctx, "G-SUITE")
+    o = ctx.options
+    git_dir, baseline = o.get("git_dir"), o.get("baseline")
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    if not git_dir or not baseline:
+        finish_evidence(ev, "FAIL", ["G-SUITE needs --git-dir and --baseline (a clean tree of the "
+                                     "launch commit is built from git, never from a worktree)"])
+        return {"G-SUITE": ev}
+    work = Path(o.get("suite_work") or (Path(ctx.out_dir) / "suite"))
+    work.mkdir(parents=True, exist_ok=True)
+    logs = Path(ctx.out_dir) / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    cand_sha = resolve_commit(git_dir, ctx.commit)
+    base_sha = resolve_commit(git_dir, baseline)
+    suites = tuple(o.get("suites") or ctx.prof["suites"])
+    trees = {}
+    for tag, sha in (("cand", cand_sha), ("base", base_sha)):
+        if tag == "base" and sha == cand_sha:
+            trees["base"] = trees["cand"]                  # one clean tree serves both
+            continue
+        dest = work / f"{tag[0]}{sha[:10]}"
+        raw = git_archive_bytes(git_dir, sha, ("stack", "taniteval", "tools"))
+        want = tree_manifest_from_archive(raw)
+        if not dest.exists():
+            extract_archive(raw, dest)
+        got = tree_manifest(dest)
+        if tree_digest(got) != tree_digest(want):
+            finish_evidence(ev, "ERROR", [f"the {tag} clean tree at {dest} does not match git "
+                                          f"archive {sha[:12]}: {tree_diff(want, got)}"])
+            return {"G-SUITE": ev}
+        trees[tag] = (dest, tree_digest(want))
+    det["candidate"] = {"commit": cand_sha, "tree_sha256": trees["cand"][1]}
+    det["baseline"] = {"commit": base_sha, "tree_sha256": trees["base"][1]}
+    if trees["cand"][1] != ctx.tree_sha256:
+        reasons.append(f"the launch commit {cand_sha[:12]}'s tree ({trees['cand'][1][:16]}) is NOT "
+                       f"the tree being launched ({ctx.tree_sha256[:16]}) -- the commit label lies")
+    timeout = int(o.get("suite_timeout_s") or 3 * 3600)
+
+    def env_for(tree: Path) -> dict:
+        e = dict(os.environ)
+        e["PYTHONPATH"] = os.pathsep.join([str(tree / "stack"), str(tree / "taniteval")])
+        e.update(PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1",
+                 OMP_NUM_THREADS=str(o.get("omp", 4)), MKL_NUM_THREADS=str(o.get("omp", 4)))
+        if o.get("cpu_only"):
+            e["CUDA_VISIBLE_DEVICES"] = "-1"
+        e.pop(ARM_ENV, None)
+        return e
+    cache = work / f"b{base_sha[:10]}.suite.json"
+    if cand_sha == base_sha:
+        cres = run_suites(trees["cand"][0], suites, logs, "cand", env_for(trees["cand"][0]), timeout)
+        bres = cres
+        det["baseline_is_candidate"] = True
+    else:
+        cres = run_suites(trees["cand"][0], suites, logs, "cand", env_for(trees["cand"][0]), timeout)
+        if cache.is_file() and read_json(cache).get("tree_sha256") == trees["base"][1]:
+            bres = read_json(cache)["results"]
+            det["baseline_cached"] = str(cache)
+        else:
+            bres = run_suites(trees["base"][0], suites, logs, "base", env_for(trees["base"][0]),
+                              timeout)
+            write_json(cache, {"commit": base_sha, "tree_sha256": trees["base"][1],
+                               "results": bres, "written_utc": utc_now()})
+    det["suites"] = {}
+    for s in suites:
+        c, b = cres.get(s, {}), bres.get(s, {})
+        if c.get("absent"):
+            det["suites"][s] = {"absent": True}
+            continue
+        if "failed" not in c or "failed" not in b:
+            reasons.append(f"suite {s}: no parsable result (cand {c.get('error')}, "
+                           f"base {b.get('error')})")
+            det["suites"][s] = {"cand": c, "base": b}
+            continue
+        new = sorted(set(c["failed"]) - set(b["failed"]))
+        fixed = sorted(set(b["failed"]) - set(c["failed"]))
+        det["suites"][s] = {"cand_tests": c["n_tests"], "base_tests": b["n_tests"],
+                            "cand_failed": len(c["failed"]), "base_failed": len(b["failed"]),
+                            "new_failures": new[:50], "n_new_failures": len(new),
+                            "fixed": fixed[:20], "cand_tail": c.get("tail"),
+                            "base_tail": b.get("tail")}
+        if c["n_tests"] == 0:
+            reasons.append(f"suite {s}: ZERO tests collected on the candidate")
+        if new:
+            reasons.append(f"suite {s}: {len(new)} NEW failure(s) vs the baseline: {new[:6]}")
+        # ⛔ a SKIP is not a pass: every skip is recorded BY REASON, and a skip whose reason says
+        # the test could not run HERE (the FIX-5 resnet34 checkpoint absent from the local HF
+        # cache) makes G-SUITE not-passed -- run it where the test runs
+        by_reason: dict[str, int] = {}
+        for r in (c.get("skipped") or {}).values():
+            by_reason[r[:160]] = by_reason.get(r[:160], 0) + 1
+        det["suites"][s]["cand_skipped"] = c.get("n_skipped")
+        det["suites"][s]["cand_skip_reasons"] = dict(sorted(by_reason.items(),
+                                                            key=lambda kv: -kv[1])[:40])
+        snp = skip_not_pass(c, ctx.prof.get("suite_skip_not_pass", ()))
+        if snp:
+            det["suites"][s]["skip_not_pass"] = snp
+            reasons.append(f"suite {s}: {len(snp)} test(s) SKIPPED for a reason that is NOT a pass "
+                           f"({sorted(set(snp.values()))[0][:140]}): {sorted(snp)[:4]} -- run "
+                           f"G-SUITE on a host where they RUN")
+    # every guard's mutation arm must be RED
+    audit = trees["cand"][0] / "stack" / "scripts" / "guard_mutation_audit.py"
+    if o.get("skip_mutation_audit"):
+        reasons.append("the guard mutation audit was skipped (--skip-mutation-audit): not a PASS")
+    elif not audit.is_file():
+        reasons.append("stack/scripts/guard_mutation_audit.py is absent from the launch commit")
+    else:
+        log = logs / "guard_mutation_audit.log"
+        with open(log, "w", encoding="utf-8", errors="replace") as fh:
+            p = subprocess.run([sys.executable, str(audit)], cwd=str(trees["cand"][0] / "stack"),
+                               env=env_for(trees["cand"][0]), stdout=fh, stderr=subprocess.STDOUT,
+                               timeout=timeout)
+        txt = log.read_text(encoding="utf-8", errors="replace")
+        m = re.search(r"=== (\d+)/(\d+) defects CAUGHT", txt)
+        verdicts = re.findall(r"^(CAUGHT|ESCAPED|MISCREDITED)\s+(\S+)", txt, flags=re.M)
+        det["mutation_audit"] = {"rc": p.returncode, "summary": m.group(0) if m else None,
+                                 "verdicts": verdicts, "log": str(log)}
+        if not m or p.returncode != 0 or int(m.group(1)) != int(m.group(2)) or int(m.group(2)) < 1:
+            reasons.append(f"guard mutation audit: {m.group(0) if m else 'no summary line'} "
+                           f"(rc {p.returncode}); every guard's mutation arm must be CAUGHT")
+    ev["details"].update(det)
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    return {"G-SUITE": ev}
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-SUITE, consume mode (refcv7; the Master Mind 2026-09-27): (a) the Thor full-suite verdict of   #
+# the LAUNCH commit, bound to it and to the tree it ran on; (b) G-SUITE-PINNED on the dev box      #
+# --------------------------------------------------------------------------------------------- #
+SUITE_BIND_SCHEMA = "tanitad.launch_gate.suite_bound/1"
+_ARCHIVE_DONE = ".gate_archive_complete.json"
+#: G-SUITE-PINNED SPLIT MODE (PI ruling 2026-11-28, chat, verbatim choice "Split: Thor + dev box"): Thor runs every pinned test on the
+#: FULL tip archive; the dev box re-runs only the test files Thor cannot pass, on a REDUCED tree; every test must pass on ONE host at the
+#: tip; the bar is unchanged. ⛔ The allow-list lives HERE, at module level, and NEVER inside a `PROFILES[...]` dict: profile dicts are
+#: fingerprinted by value (`sha256(repr(sorted(PROFILES[n].items())))[:16]`) and those fingerprints are pinned in tests and bound to
+#: launch-gate records -- a moved fingerprint would void them.
+PINNED_SPLIT_PROFILES = frozenset({"refcv9-full-d1"})
+PINNED_HALVES = ("thor", "devbox-complement")
+#: the Thor half's evidence is written under THIS check key, so it can never be mistaken for G-SUITE-PINNED (it is not in CHECKS, so
+#: `_collect_evidence` never reads it either)
+PINNED_THOR_HALF_CHECK = "G-SUITE-PINNED-THOR-HALF"
+PINNED_THOR_HALF_OK = "HALF-COMPLETE"            # a status that is not PASS on purpose
+#: members of these top-level directories are dropped from the dev-box complement's archive when >= --pinned-reduce-bytes
+PINNED_REDUCE_ROOTS = ("TanitAD Research Lab/", "FlyWheels/")
+PINNED_REDUCE_BYTES_DEFAULT = 1_000_000
+
+
+def pinned_split_refusals(profile: str, half: str | None, thor_half: str | None, reduce_bytes: int | None,
+                          git_dir: str | None) -> None:
+    """Raise GateError for any split-mode option on a profile outside `PINNED_SPLIT_PROFILES`, or an inconsistent
+    option set. A no-op when no split option is given (the ordinary path is untouched)."""
+    default = reduce_bytes in (None, PINNED_REDUCE_BYTES_DEFAULT)
+    if not half and not thor_half and default:
+        return
+    if profile not in PINNED_SPLIT_PROFILES:
+        raise GateError(f"G-SUITE-PINNED split mode (--pinned-half / --pinned-thor-half / --pinned-reduce-bytes) is "
+                        f"REFUSED for profile {profile!r}: PI ruling 2026-11-28 admits {sorted(PINNED_SPLIT_PROFILES)} only")
+    if not half:
+        raise GateError("--pinned-thor-half / --pinned-reduce-bytes need --pinned-half")
+    if half == "devbox-complement" and not thor_half:
+        raise GateError("--pinned-half devbox-complement needs --pinned-thor-half <G-SUITE-PINNED-THOR-HALF.json>")
+    if half == "thor" and (thor_half or not default):
+        raise GateError("--pinned-half thor takes neither --pinned-thor-half nor --pinned-reduce-bytes (it runs the FULL archive)")
+    if not git_dir:
+        raise GateError("--pinned-half needs --git-dir (the commit is archived from git, never a worktree)")
+
+
+def env_failure_pin(prof: dict, tree: str | os.PathLike) -> tuple[dict | None, str | None]:
+    """-> (the pinned env-failure record, problem). The file ships IN the tree (so the tree
+    digest covers it) and its sha256 must equal the profile's literal: extending the list is a
+    reviewed edit of both, never a quiet one."""
+    pin = prof.get("suite_env_failures")
+    if not pin:
+        return None, f"profile {prof['name']} pins no environment-failure list"
+    rel, want = pin
+    p = Path(tree) / rel
+    if not p.is_file():
+        return None, f"the pinned env-failure list {rel} is absent from the tree"
+    got = sha256_file(p)
+    if got != want:
+        return None, (f"the pinned env-failure list {rel} has sha256 {got[:16]}, the profile pins "
+                      f"{want[:16]} -- a changed list is a reviewed edit of the profile")
+    rec = read_json(p)
+    if not isinstance(rec.get("ids"), list) or not isinstance(rec.get("files"), list):
+        return None, f"{rel} carries no ids/files lists"
+    return rec, None
+
+
+def bind_suite_verdict(verdict: str | os.PathLike, cand_tree: str | os.PathLike,
+                       commit: str) -> dict:
+    """The Thor verdict, stamped with WHAT it measured: the commit it is claimed for and the
+    digest of the CAND tree it actually ran on (the same `tree_digest` the token binds)."""
+    if not _HEX40.match(str(commit)):
+        raise GateError(f"suite-bind: {commit!r} is not a 40-char commit")
+    tman = tree_manifest(Path(cand_tree))
+    return {"schema": SUITE_BIND_SCHEMA, "commit": str(commit),
+            "cand_tree": str(cand_tree), "cand_tree_sha256": tree_digest(tman),
+            "cand_tree_files": len(tman), "verdict_file": str(verdict),
+            "verdict_sha256": sha256_file(verdict), "verdict": read_json(verdict),
+            "bound_utc": utc_now(), "host": _host()}
+
+
+def cmd_suite_bind(a) -> int:
+    _harden_streams()
+    rec = bind_suite_verdict(a.verdict, a.cand_tree, a.commit)
+    write_json(a.out, rec)
+    _say(f"bound {a.verdict} to {a.commit[:12]} (CAND tree {rec['cand_tree_sha256'][:16]}, "
+         f"{rec['cand_tree_files']} files) -> {a.out}")
+    print(f"ZZSUITE-BOUND-{a.commit[:12]}ZZ", flush=True)
+    return 0
+
+
+def flaky_admitted(pin: dict, tree: str | os.PathLike | None = None) -> tuple[set[str], dict]:
+    """The FLAKY ids a failure may carry WITHOUT failing G-SUITE: each must CITE its record (a
+    repo path and a 64-hex sha256). When the record resolves from `tree` (the dev box's
+    full-commit archive), its bytes must hash to the cited sha256; where it does not (Thor's
+    stack/taniteval/tools tree), the citation is recorded as not re-read here."""
+    ok, det = set(), {}
+    for f in pin.get("flaky") or []:
+        tid, rel, sha = f.get("id"), f.get("record"), str(f.get("record_sha256") or "")
+        if not tid:
+            continue
+        if not rel or not _HEX64.match(sha):
+            det[tid] = "NOT admitted: the pin cites no record (path + sha256)"
+            continue
+        got = None
+        if tree is not None:
+            rp = _resolve_repo_rel(Path(tree), rel)
+            got = sha256_file(rp) if rp.is_file() else None
+        if got is not None and got != sha:
+            det[tid] = f"NOT admitted: the cited record hashes {got[:16]}, the pin says {sha[:16]}"
+            continue
+        ok.add(tid)
+        det[tid] = ("admitted: record cited and re-read" if got else
+                    "admitted: record cited (sha256 pinned; not resolvable on this host)")
+    return ok, det
+
+
+def suite_fail_ids(v: dict) -> set[str]:
+    """Every test id the verdict saw FAIL on the candidate (gate_verdict.py's four lists)."""
+    ids = set(map(str, v.get("pre_existing_fail") or []))
+    for k in ("regressions", "new_fail"):
+        ids |= {str(r[0]) if isinstance(r, (list, tuple)) else str(r) for r in (v.get(k) or [])}
+    ids |= set(map(str, v.get("tip_skip_cand_fail") or []))
+    return ids
+
+
+def judge_suite_verdict(bound: dict | None, commit: str, tree_sha: str,
+                        pin: dict, tree: str | os.PathLike | None = None) -> tuple[list[str], dict]:
+    """G-SUITE (a): PASS = the bound verdict is for THIS commit and THIS tree, no test file crashed
+    without a junit, and every candidate failure is in the PINNED environment list (a pinned test
+    that now passes is fine; a NEW failure is a FAIL)."""
+    if bound is None:
+        return ["G-SUITE (a): no Thor full-suite verdict (--suite-verdict <the suite-bind output>)"], {}
+    reasons: list[str] = []
+    if bound.get("schema") != SUITE_BIND_SCHEMA:
+        reasons.append(f"G-SUITE (a): the verdict is not bound (schema {bound.get('schema')!r}; "
+                       f"run `launch_gate.py suite-bind` on the host that ran the suite)")
+    if bound.get("commit") != commit:
+        reasons.append(f"G-SUITE (a): the verdict is for commit {str(bound.get('commit'))[:12]}, "
+                       f"not the launch commit {commit[:12]} -- a stale or other-commit verdict")
+    if bound.get("cand_tree_sha256") != tree_sha:
+        reasons.append(f"G-SUITE (a): the suite ran on tree {str(bound.get('cand_tree_sha256'))[:16]}"
+                       f", not the launched tree {tree_sha[:16]}")
+    v = bound.get("verdict") if isinstance(bound.get("verdict"), dict) else {}
+    cand = v.get("cand") or {}
+    fails = suite_fail_ids(v)
+    pinned = set(pin.get("ids") or [])
+    flaky_ok, flaky_det = flaky_admitted(pin, tree)
+    outside = sorted(fails - pinned - flaky_ok)
+    det = {"commit": bound.get("commit"), "cand_tree_sha256": bound.get("cand_tree_sha256"),
+           "verdict_sha256": bound.get("verdict_sha256"), "cand": cand, "tip": v.get("tip"),
+           "n_fail": len(fails), "n_pinned": len(pinned),
+           "n_pinned_failing": len(fails & pinned), "n_pinned_now_passing": len(pinned - fails),
+           "outside_pinned": outside[:40], "n_outside_pinned": len(outside),
+           "flaky_failing": sorted(fails & flaky_ok), "flaky": flaky_det,
+           "missing_on_cand": list(v.get("missing_on_cand") or [])[:20],
+           "rc_without_junit": list(v.get("rc_without_junit") or [])[:10]}
+    if not int(cand.get("n") or 0):
+        reasons.append("G-SUITE (a): the verdict counts ZERO candidate tests")
+    if outside:
+        reasons.append(f"G-SUITE (a): {len(outside)} Thor failure(s) OUTSIDE the pinned "
+                       f"environment list: {outside[:6]}")
+    if v.get("rc_without_junit"):
+        reasons.append(f"G-SUITE (a): {len(v['rc_without_junit'])} test file(s) crashed without a "
+                       f"junit (collection error): {[r[1] if isinstance(r, list) else r for r in v['rc_without_junit'][:4]]}")
+    return reasons, det
+
+
+def job_suite_consume(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    ev = new_evidence(ctx, "G-SUITE")
+    pin, prob = env_failure_pin(ctx.prof, ctx.tree)
+    reasons = [f"G-SUITE: {prob}"] if prob else []
+    sv = ctx.options.get("suite_verdict")
+    bound = read_json(sv) if sv and Path(sv).is_file() else None
+    if sv:
+        ev["inputs_read"]["gate:suite-verdict"] = fingerprint(sv)
+    r, det = judge_suite_verdict(bound, ctx.commit, ctx.tree_sha256, pin or {}, ctx.tree)
+    reasons += r
+    det["pin"] = {"file": (ctx.prof.get("suite_env_failures") or [None])[0],
+                  "n_ids": len((pin or {}).get("ids") or []),
+                  "n_files": len((pin or {}).get("files") or [])}
+    ev["details"].update(det)
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    return {"G-SUITE": ev}
+
+
+#: git environment variables a test must NOT inherit (they would redirect a test's `git` into
+#: another repository -- tanitad-push's shared index among them)
+_GIT_ENV = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE")
+
+
+def safe_dir_env(env: dict, dest: Path) -> dict:
+    """`env` plus ONE `safe.directory` entry for the throwaway repo at `dest`, as COMMAND-scope config
+    (`GIT_CONFIG_COUNT`/`_KEY_n`/`_VALUE_n`, appended after any the caller already carries).
+    ⛔ MEASURED 2026-10-12 on the dev box: with `--suite-work` on E: (exFAT, which records no file
+    ownership) every git call in the throwaway repo died "detected dubious ownership", so its HEAD read
+    None and G-SUITE-PINNED ERRORed before a single test ran. The gate's earlier dev-box runs had used
+    C: (NTFS). Scoped to `dest` only and never written to a config file: no global setting changes."""
+    env = dict(env)
+    try:
+        n = int(env.get("GIT_CONFIG_COUNT") or 0)
+    except ValueError:
+        n = 0
+    env["GIT_CONFIG_COUNT"] = str(n + 1)
+    env[f"GIT_CONFIG_KEY_{n}"] = "safe.directory"
+    env[f"GIT_CONFIG_VALUE_{n}"] = Path(dest).resolve().as_posix()
+    return env
+
+
+def pinned_env(dest: Path, o: dict, base: dict) -> dict:
+    """The pinned files' test environment: the archive's tree first on PYTHONPATH, NO git
+    redirection (`_GIT_ENV`: a test's `git` must never reach tanitad-push's shared index), NO
+    `MKL_NUM_THREADS` -- test_amp_and_threads scrubs OMP_NUM_THREADS to measure the module's own
+    setdefault, and an MKL value overrides torch's count (MEASURED 2026-09-27: "the fixed order
+    must yield 6 threads, got 4") -- and no regression-arm switch."""
+    env = {k: v for k, v in base.items() if k not in _GIT_ENV and k != "MKL_NUM_THREADS"}
+    env["PYTHONPATH"] = os.pathsep.join([str(dest / "stack"), str(dest / "taniteval")])
+    env.update(PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1",
+               OMP_NUM_THREADS=str(o.get("omp", 4)),
+               # the full tracked-tree credential scan RUNS here (it skips on ci_gate's 15 s budget)
+               SECRET_SCAN_FULL="1")
+    if o.get("cpu_only"):
+        env["CUDA_VISIBLE_DEVICES"] = "-1"
+    env.pop(ARM_ENV, None)
+    # the pinned tests run git INSIDE the throwaway repo (secret_scan's hook test, git reads)
+    env = safe_dir_env(env, dest)
+    return env
+
+
+def throwaway_repo(dest: Path, git_dir: str, commit: str) -> dict:
+    """A repo INSIDE the archive whose objects come read-only from `git_dir` (alternates), HEAD at
+    `commit`, index = HEAD. Idempotent; its HEAD is asserted by the caller."""
+    env = {k: v for k, v in os.environ.items() if k not in _GIT_ENV}
+    env = safe_dir_env(env, dest)
+
+    def g(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(dest), *args], env=env, capture_output=True,
+                              text=True, encoding="utf-8", errors="replace")
+    made = False
+    if not (dest / ".git").is_dir():
+        g("init", "-q")
+        made = True
+    alt = dest / ".git" / "objects" / "info" / "alternates"
+    alt.parent.mkdir(parents=True, exist_ok=True)
+    want = Path(git_dir).resolve().joinpath("objects").as_posix()
+    line = (want + "\n").encode("utf-8")
+    if not alt.is_file() or alt.read_bytes() != line:
+        # BYTES, LF: a text-mode write on Windows ends the line in CRLF, and git then reads the
+        # path WITH the carriage return ("objects? does not exist" -- MEASURED 2026-09-27)
+        alt.write_bytes(line)
+    steps = [g("update-ref", "HEAD", commit), g("-c", "core.autocrlf=false", "read-tree", "HEAD")]
+    hp = g("rev-parse", "--verify", "-q", "HEAD")
+    head = hp.stdout.strip() if hp.returncode == 0 else None
+    # armed like any clone: the repo's own credential gate (the pinned
+    # test_secret_scan::test_hook_is_installed_and_current asserts it is installed and current)
+    hook = None
+    scan = dest / "tools" / "secret_scan.py"
+    if head == commit and scan.is_file():
+        hk = subprocess.run([sys.executable, str(scan), "--install-hook"], cwd=str(dest), env=env,
+                            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        hook = {"rc": hk.returncode, "tail": (hk.stdout + hk.stderr).strip()[-200:]}
+    return {"made": made, "head": head, "alternates": want, "hook": hook,
+            "errors": [p.stderr.strip()[-300:] for p in steps if p.returncode != 0]}
+
+
+def stream_archive(git_dir: str, commit: str, dest: Path,
+                   drop: Callable[[str, int], bool] | None = None) -> dict:
+    """`git -c core.autocrlf=false archive <commit>` of the WHOLE commit, STREAMED member by
+    member into `dest` (never held in memory: the full tree is ~6.6 GB). A `.gate_archive_complete`
+    marker is written LAST; a directory without it is a partial extraction and is refused.
+    `drop(name, size) -> True` (split mode's dev-box complement ONLY, `pinned_reduce_drop`) leaves that file
+    out of the extraction and lists it, with its size, under the record's `dropped`; None (every other
+    caller) keeps every member and adds no key."""
+    dest.mkdir(parents=True, exist_ok=False)
+    env = dict(os.environ, GIT_DIR=str(git_dir))
+    p = subprocess.Popen(["git", "-c", "core.autocrlf=false", "archive", "--format=tar", commit],
+                         env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # MEASURED 2026-10-22 (Windows pipe): git pads its tar to a 10,240-B record; tarfile stops at the
+    # end-of-archive block, git blocks writing the unread padding while we block in stderr.read()
+    # (0 CPU >30 min after a 100 % extraction). So: drain stderr from the start, stdout to EOF below.
+    err_parts: list[bytes] = []
+
+    def _drain_stderr() -> None:
+        err_parts.append(p.stderr.read())
+    err_thread = threading.Thread(target=_drain_stderr, daemon=True)
+    err_thread.start()
+    n = nbytes = 0
+    skipped = []
+    dropped: list[list] = []
+    with tarfile.open(fileobj=p.stdout, mode="r|") as tf:
+        for m in tf:
+            if m.name.startswith(("/", "..")) or ".." in Path(m.name).parts:
+                raise GateError(f"refusing archive member {m.name!r}")
+            target = dest / m.name
+            if m.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            if not m.isfile():
+                skipped.append(m.name)
+                continue
+            if drop is not None and drop(m.name, int(m.size)):
+                dropped.append([m.name, int(m.size)])
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            src = tf.extractfile(m)
+            with open(target, "wb") as fh:
+                shutil.copyfileobj(src, fh, 1 << 20)
+            n += 1
+            nbytes += int(m.size)
+    pad = 0
+    while True:                     # whatever follows the end-of-archive block must be tar padding
+        chunk = p.stdout.read(1 << 20)
+        if not chunk:
+            break
+        if chunk.count(0) != len(chunk):
+            p.kill()
+            raise GateError(f"git archive {commit[:12]}: non-zero bytes after the end-of-archive "
+                            f"block ({pad} B of padding first) -- the tar stream stopped early")
+        pad += len(chunk)
+    rc = p.wait()
+    err_thread.join()
+    err = b"".join(err_parts).decode(errors="replace")
+    if rc != 0:
+        raise GateError(f"git archive {commit[:12]} failed rc={rc}: {err[-400:]}")
+    rec = {"commit": commit, "files": n, "bytes": nbytes, "skipped_non_files": skipped[:20],
+           "trailing_pad_bytes": pad, "written_utc": utc_now()}
+    if drop is not None:
+        rec.update(reduced=True, dropped=dropped, dropped_files=len(dropped),
+                   dropped_bytes=sum(d[1] for d in dropped))
+    write_json(dest / _ARCHIVE_DONE, rec)
+    return rec
+
+
+def judge_pinned_run(files: list[dict], results: dict, skip_ok: Iterable[str],
+                     flaky_ok: Iterable[str] = ()) -> tuple[list[str], dict]:
+    """G-SUITE-PINNED: every test in the pinned files PASSES, or SKIPS for a REGISTERED reason;
+    a file that wrote no junit (collection error, crash, timeout) is a FAIL. A registry entry is a
+    (test-id regex, reason regex) PAIR -- the reason admits THAT test only -- or, legacy, a reason
+    regex alone."""
+    pats = [(re.compile(x[0]), re.compile(x[1], re.I)) if isinstance(x, (tuple, list))
+            else (re.compile(r".*"), re.compile(x, re.I)) for x in skip_ok]
+    reasons: list[str] = []
+    det: dict[str, Any] = {"files": {}, "unregistered_skips": {}, "failures": []}
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        r = results.get(key) or {}
+        det["files"][key] = {k: r.get(k) for k in ("rc", "n_tests", "n_skipped", "elapsed_s")}
+        if "failed" not in r:
+            reasons.append(f"G-SUITE-PINNED: {key} produced no junit (rc {r.get('rc')}): "
+                           f"{str(r.get('tail'))[-200:]}")
+            continue
+        if not r.get("n_tests"):
+            reasons.append(f"G-SUITE-PINNED: {key} collected ZERO tests")
+        det["failures"] += r["failed"]
+        for tid, why in (r.get("skipped") or {}).items():
+            if not any(ip.fullmatch(tid) and rp.search(why) for ip, rp in pats):
+                det["unregistered_skips"][tid] = why[:200]
+    fl = set(flaky_ok)
+    det["flaky_failing"] = sorted(t for t in det["failures"] if t in fl)
+    det["failures"] = [t for t in det["failures"] if t not in fl]
+    if det["failures"]:
+        reasons.append(f"G-SUITE-PINNED: {len(det['failures'])} test(s) FAIL in the pinned files "
+                       f"on a full-commit archive: {det['failures'][:6]}")
+    if det["unregistered_skips"]:
+        first = sorted(det["unregistered_skips"].items())[0]
+        reasons.append(f"G-SUITE-PINNED: {len(det['unregistered_skips'])} test(s) SKIPPED for a "
+                       f"reason that is not registered (a skip is not a pass), e.g. {first[0]}: "
+                       f"{first[1][:120]}")
+    det["n_failures"] = len(det["failures"])
+    det["n_unregistered_skips"] = len(det["unregistered_skips"])
+    return reasons, det
+
+
+def job_suite_pinned(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    """G-SUITE-PINNED (Master Mind 2026-09-27): on a `git -c core.autocrlf=false archive` of the
+    FULL launch commit (Research Lab files included, the HF cache present), run exactly the test
+    FILES of the pinned Thor environment list -- where test_refcv6_trunk actually RUNS -- and
+    every guard's mutation arm (SPEC 2)."""
+    if ctx.options.get("pinned_half"):        # split mode (PI 2026-11-28): refcv9-full-d1 only; the code is below
+        return job_suite_pinned_split(ctx)
+    ev = new_evidence(ctx, "G-SUITE-PINNED")
+    o = ctx.options
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    git_dir = o.get("git_dir")
+    pin, prob = env_failure_pin(ctx.prof, ctx.tree)
+    if prob or not git_dir:
+        finish_evidence(ev, "FAIL", [f"G-SUITE-PINNED: {prob or 'needs --git-dir (the FULL commit is archived from git, never a worktree)'}"])
+        return {"G-SUITE-PINNED": ev}
+    commit = resolve_commit(git_dir, ctx.commit)
+    work = Path(o.get("suite_work") or (Path(ctx.out_dir) / "suite"))
+    work.mkdir(parents=True, exist_ok=True)
+    dest = work / f"f{commit[:10]}"
+    if dest.exists() and not (dest / _ARCHIVE_DONE).is_file():
+        finish_evidence(ev, "ERROR", [f"G-SUITE-PINNED: {dest} exists WITHOUT its completion "
+                                      f"marker -- a partial extraction; remove it (by hand) and "
+                                      f"re-run"])
+        return {"G-SUITE-PINNED": ev}
+    if not dest.exists():
+        _say(f"G-SUITE-PINNED: archiving the FULL commit {commit[:12]} -> {dest}")
+        det["archive"] = stream_archive(git_dir, commit, dest)
+    else:
+        det["archive"] = read_json(dest / _ARCHIVE_DONE)
+    if det["archive"].get("commit") != commit:
+        finish_evidence(ev, "ERROR", [f"G-SUITE-PINNED: {dest} holds {det['archive'].get('commit')}"])
+        return {"G-SUITE-PINNED": ev}
+    # ⛔ git reads (test_refcv6_diffusion, secret_scan's hook test) need a repository. NEVER
+    # tanitad-push's: its SHARED INDEX carries 1,297 real staged deletions, and some tests run
+    # `git init` / `git add` / `git diff --cached` (Master Mind 2026-09-27). A THROWAWAY repo
+    # inside the archive borrows the objects read-only through `alternates`; nothing is copied
+    # and nothing can write into tanitad-push.
+    det["throwaway_repo"] = throwaway_repo(dest, git_dir, commit)
+    if det["throwaway_repo"].get("head") != commit:
+        # the reason git gave (2026-10-12: "dubious ownership" was discarded and only "HEAD is None" shown)
+        _say(f"G-SUITE-PINNED: throwaway repo git errors: {det['throwaway_repo'].get('errors')}")
+        finish_evidence(ev, "ERROR", [f"G-SUITE-PINNED: the throwaway repo's HEAD is "
+                                      f"{det['throwaway_repo'].get('head')!r}, not {commit}"])
+        return {"G-SUITE-PINNED": ev}
+    fsha = tree_digest(tree_manifest(dest))
+    det["full_tree_stack_taniteval_sha256"] = fsha
+    if fsha != ctx.tree_sha256:
+        reasons.append(f"G-SUITE-PINNED: the full archive's stack/+taniteval/ ({fsha[:16]}) is not "
+                       f"the launched tree ({ctx.tree_sha256[:16]})")
+    logs = Path(ctx.out_dir) / "logs" / "pinned"
+    logs.mkdir(parents=True, exist_ok=True)
+    env = pinned_env(dest, o, os.environ)
+    probe = subprocess.run([sys.executable, "-c", "import tanitad; print(tanitad.__file__)"],
+                           cwd=str(dest / "stack"), env=env, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace")
+    det["tanitad_file"] = probe.stdout.strip()
+    if not os.path.normcase(probe.stdout.strip()).startswith(os.path.normcase(str(dest))):
+        finish_evidence(ev, "ERROR", [f"G-SUITE-PINNED: tanitad imports from "
+                                      f"{probe.stdout.strip() or probe.stderr[-200:]}, not {dest}"])
+        return {"G-SUITE-PINNED": ev}
+    results: dict[str, dict] = {}
+    for f in pin["files"]:
+        key = f"{f['sub']}/{f['file']}"
+        xml = logs / (key.replace("/", "__") + ".xml")
+        log = logs / (key.replace("/", "__") + ".log")
+        xml.unlink(missing_ok=True)
+        t0 = time.time()
+        try:
+            with open(log, "w", encoding="utf-8", errors="replace") as fh:
+                p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                                    "-rfEs", f"--junitxml={xml}", "-o", "junit_family=xunit2",
+                                    f["file"]], cwd=str(dest / f["sub"]), env=env, stdout=fh,
+                                   stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                   timeout=1800)
+            rc = p.returncode
+        except subprocess.TimeoutExpired:
+            rc = "timeout"
+        tail = ([ln for ln in log.read_text(encoding="utf-8", errors="replace").splitlines()
+                 if ln.strip()] or ["<none>"])[-1]
+        r = {"rc": rc, "tail": tail[-300:], "elapsed_s": round(time.time() - t0, 1)}
+        if xml.is_file():
+            r.update(_parse_junit(xml))
+        results[key] = r
+        _say(f"G-SUITE-PINNED {key}: rc {rc}, {r.get('n_tests')} tests, "
+             f"{len(r.get('failed') or [])} failed, {r.get('n_skipped')} skipped")
+    fok, fdet = flaky_admitted(pin, dest)
+    det["flaky"] = fdet
+    r2, d2 = judge_pinned_run(pin["files"], results, ctx.prof.get("suite_pinned_skip_ok", ()),
+                              fok)
+    reasons += r2
+    det.update(d2)
+    # every guard's mutation arm must be RED (SPEC 2), on this clean full-commit tree
+    audit = dest / "stack" / "scripts" / "guard_mutation_audit.py"
+    if o.get("skip_mutation_audit"):
+        reasons.append("the guard mutation audit was skipped (--skip-mutation-audit): not a PASS")
+    elif not audit.is_file():
+        reasons.append("stack/scripts/guard_mutation_audit.py is absent from the launch commit")
+    else:
+        log = logs / "guard_mutation_audit.log"
+        try:
+            with open(log, "w", encoding="utf-8", errors="replace") as fh:
+                p = subprocess.run([sys.executable, str(audit)], cwd=str(dest / "stack"), env=env,
+                                   stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                   timeout=3600)
+            arc = p.returncode
+        except subprocess.TimeoutExpired:
+            arc = "timeout"
+        txt = log.read_text(encoding="utf-8", errors="replace")
+        m = re.search(r"=== (\d+)/(\d+) defects CAUGHT", txt)
+        det["mutation_audit"] = {"rc": arc, "summary": m.group(0) if m else None,
+                                 "verdicts": re.findall(r"^(CAUGHT|ESCAPED|MISCREDITED)\s+(\S+)",
+                                                        txt, flags=re.M), "log": str(log)}
+        if not m or arc != 0 or int(m.group(1)) != int(m.group(2)) or int(m.group(2)) < 1:
+            reasons.append(f"guard mutation audit: {m.group(0) if m else 'no summary line'} "
+                           f"(rc {arc}); every guard's mutation arm must be CAUGHT")
+    ev["details"].update(det)
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
+    return {"G-SUITE-PINNED": ev}
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-SUITE-PINNED SPLIT MODE (PI ruling 2026-11-28, chat, verbatim choice "Split: Thor + dev box") #
+# Two halves of ONE check at ONE commit, profile refcv9-full-d1 ONLY (`PINNED_SPLIT_PROFILES`):    #
+#   thor              every pinned file on the FULL archive; per-test outcomes; evidence written    #
+#                     under G-SUITE-PINNED-THOR-HALF (never G-SUITE-PINNED)                         #
+#   devbox-complement validates the Thor half (same commit / tree / argv / profile, full archive,    #
+#                     a junit for every pinned file), archives the SAME commit REDUCED, re-runs      #
+#                     ONLY the files holding a test Thor did not pass, then MERGES: PASS iff every   #
+#                     test id passes (or skips for a REGISTERED reason) on at least ONE host.        #
+# The bar is unchanged: a test that is not a pass on either host is a FAIL naming both reasons.      #
+# --------------------------------------------------------------------------------------------- #
+def _outcome_rank(o: str) -> int:
+    return 0 if o == "pass" else 1 if o.startswith("skip:") else 2 if o == "error" else 3
+
+
+def _parse_junit_outcomes(xml_path: Path) -> dict[str, str]:
+    """{test id: "pass" | "fail" | "error" | "skip:<reason>"} from a junit file (the worst outcome wins
+    when an id appears twice, e.g. a failing call and an erroring teardown)."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(xml_path).getroot()
+    out: dict[str, str] = {}
+    for tc in root.iter("testcase"):
+        tid = f"{tc.get('classname', '')}::{tc.get('name', '')}"
+        tags = [ch.tag for ch in tc]
+        if "failure" in tags:
+            o = "fail"
+        elif "error" in tags:
+            o = "error"
+        elif "skipped" in tags:
+            sk = next(ch for ch in tc if ch.tag == "skipped")
+            o = "skip:" + (sk.get("message") or sk.text or "").strip()[:400]
+        else:
+            o = "pass"
+        if tid not in out or _outcome_rank(o) > _outcome_rank(out[tid]):
+            out[tid] = o
+    return out
+
+
+def _pinned_skip_pats(skip_ok: Iterable[str]) -> list:
+    """The registry as (test-id regex, reason regex) pairs -- the same reading `judge_pinned_run` uses."""
+    return [(re.compile(x[0]), re.compile(x[1], re.I)) if isinstance(x, (tuple, list))
+            else (re.compile(r".*"), re.compile(x, re.I)) for x in skip_ok]
+
+
+def _pinned_ok(tid: str, outcome: str | None, pats: list) -> bool:
+    """One host's verdict on one test: a PASS, or a SKIP for a REGISTERED reason. Anything else -- fail, error,
+    an unregistered skip, or not run at all -- is not."""
+    if outcome == "pass":
+        return True
+    if isinstance(outcome, str) and outcome.startswith("skip:"):
+        why = outcome[5:]
+        return any(ip.fullmatch(tid) and rp.search(why) for ip, rp in pats)
+    return False
+
+
+def _pinned_kind(outcome: str | None) -> str:
+    if outcome is None:
+        return "not run"
+    if outcome.startswith("skip:"):
+        return f"unregistered skip ({outcome[5:][:80]})"
+    return outcome
+
+
+def pinned_reduce_drop(name: str, size: int, reduce_bytes: int) -> bool:
+    """The dev-box complement's reduced tree: everything under stack/ taniteval/ tools/ `Project Steering/` and every
+    top-level file is KEPT; a member under `TanitAD Research Lab/` or `FlyWheels/` is dropped when it is
+    >= `reduce_bytes`."""
+    return name.startswith(PINNED_REDUCE_ROOTS) and int(size) >= int(reduce_bytes)
+
+
+def pinned_complement_files(files: list[dict], thor_files: dict, skip_ok: Iterable[str]) -> list[dict]:
+    """The pinned files holding a Thor-half test that is not a pass (fail / error / unregistered skip). A file
+    with no junit or no tests on Thor is a STRUCTURAL failure of the Thor half and is never rescued here."""
+    pats = _pinned_skip_pats(skip_ok)
+    out = []
+    for f in files:
+        r = thor_files.get(f"{f['sub']}/{f['file']}") or {}
+        oc = r.get("outcomes")
+        if isinstance(oc, dict) and r.get("n_tests") and any(
+                not _pinned_ok(t, o, pats) for t, o in oc.items()):
+            out.append(f)
+    return out
+
+
+def merge_pinned_split(files: list[dict], thor_files: dict, dev_files: dict, complement_keys: Iterable[str],
+                       skip_ok: Iterable[str], flaky_ok: Iterable[str] = ()) -> tuple[list[str], dict]:
+    """The merge. PASS iff every test id is a pass (or a registered skip) on at least ONE host, every pinned file
+    produced a junit with tests on Thor, and every complement file produced one on the dev box. A test that is
+    not ok on EITHER host is a FAIL naming both reasons; one that passed on Thor and failed on the dev box is
+    counted and listed but does not fail the check. The FLAKY rule (`flaky_admitted`) applies unchanged."""
+    pats = _pinned_skip_pats(skip_ok)
+    fl = set(flaky_ok)
+    reasons: list[str] = []
+    both_bad: list[tuple[str, str, str]] = []
+    thor_pass_dev_fail: list[str] = []
+    flaky_failing: list[str] = []
+    n_ids = n_thor = n_dev_only = n_both = 0
+    comp = set(complement_keys)
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        t = thor_files.get(key) or {}
+        toc = t.get("outcomes")
+        if not isinstance(toc, dict):
+            reasons.append(f"G-SUITE-PINNED: {key} produced no junit on Thor (rc {t.get('rc')}): "
+                           f"{str(t.get('tail'))[-200:]}")
+            continue
+        if not t.get("n_tests"):
+            reasons.append(f"G-SUITE-PINNED: {key} collected ZERO tests on Thor")
+        d = dev_files.get(key) if key in comp else None
+        doc = d.get("outcomes") if isinstance(d, dict) else None
+        if key in comp and not isinstance(doc, dict):
+            reasons.append(f"G-SUITE-PINNED: {key} produced no junit on the dev box (rc "
+                           f"{(d or {}).get('rc')}): {str((d or {}).get('tail'))[-200:]}")
+            continue
+        doc = doc or {}
+        for tid in sorted(set(toc) | set(doc)):
+            n_ids += 1
+            ot, od = toc.get(tid), doc.get(tid)
+            okt, okd = _pinned_ok(tid, ot, pats), _pinned_ok(tid, od, pats)
+            if okt and okd:
+                n_both += 1
+            elif okt:
+                n_thor += 1
+                if od is not None:
+                    thor_pass_dev_fail.append(tid)
+            elif okd:
+                n_dev_only += 1
+            elif tid in fl and all(o in (None, "fail", "error") for o in (ot, od)):
+                flaky_failing.append(tid)
+            else:
+                both_bad.append((tid, _pinned_kind(ot), _pinned_kind(od)))
+    if both_bad:
+        first = both_bad[0]
+        reasons.append(f"G-SUITE-PINNED: {len(both_bad)} test(s) are not a PASS (nor a registered skip) on EITHER "
+                       f"host, e.g. {first[0]} [Thor: {first[1]} | dev box: {first[2]}]; first ids: "
+                       f"{[b[0] for b in both_bad[:6]]}")
+    det = {"n_ids": n_ids, "n_ok_both": n_both, "n_ok_thor_only": n_thor, "n_ok_devbox_only": n_dev_only,
+           "n_fail_both": len(both_bad), "fail_both": [list(b) for b in both_bad[:60]],
+           "n_passed_thor_failed_devbox": len(thor_pass_dev_fail),
+           "passed_thor_failed_devbox": sorted(thor_pass_dev_fail)[:200],
+           "flaky_failing": sorted(flaky_failing)}
+    return reasons, det
+
+
+def check_pinned_thor_half(ev: Any, ctx: Ctx, pin: dict, files: list[dict]) -> list[str]:
+    """Why the dev-box complement REFUSES this Thor-half evidence (empty = usable): another check / commit / tree /
+    argv / profile, not on the FULL archive, a pinned file with no junit, or per-test outcomes that do not hash to
+    what the Thor half recorded."""
+    if not isinstance(ev, dict):
+        return ["the Thor-half evidence is not a JSON object"]
+    why: list[str] = []
+    d = ev.get("details") if isinstance(ev.get("details"), dict) else {}
+    if ev.get("check") != PINNED_THOR_HALF_CHECK or d.get("half") != "thor":
+        why.append(f"not a Thor-half evidence (check {ev.get('check')!r}, half {d.get('half')!r})")
+    if ev.get("arm"):
+        why.append(f"a regression arm ({ev['arm']}) is active in the Thor half")
+    if ev.get("status") != PINNED_THOR_HALF_OK:
+        why.append(f"the Thor half is {ev.get('status')!r}, not {PINNED_THOR_HALF_OK!r}: "
+                   f"{'; '.join(map(str, (ev.get('reasons') or [])[:3]))[:300]}")
+    mine = ctx.binding()
+    theirs = ev.get("binding") if isinstance(ev.get("binding"), dict) else {}
+    for k in ("profile", "commit", "tree_sha256", "argv_sha256"):
+        if theirs.get(k) != mine[k]:
+            why.append(f"binding {k} differs: Thor half {str(theirs.get(k))[:16]}, this run {str(mine[k])[:16]}")
+    arc = d.get("archive") if isinstance(d.get("archive"), dict) else {}
+    if arc.get("reduced") or arc.get("dropped") or arc.get("commit") != mine["commit"]:
+        why.append("the Thor half did not run on the FULL archive of this commit")
+    if d.get("pin") != list(ctx.prof.get("suite_env_failures") or []):
+        why.append(f"the Thor half ran another env-failure pin ({d.get('pin')!r})")
+    tf = d.get("files") if isinstance(d.get("files"), dict) else {}
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        if not isinstance((tf.get(key) or {}).get("outcomes"), dict):
+            why.append(f"{key} has no junit in the Thor half")
+    outs = {k: (v or {}).get("outcomes") for k, v in sorted(tf.items())}
+    if sha256_bytes(canonical_json(scrub(outs))) != d.get("outcomes_sha256"):
+        why.append("the Thor half's per-test outcomes do not hash to its recorded outcomes_sha256 (edited?)")
+    return why
+
+
+def _mark_skip_worktree(dest: Path, paths: list[str]) -> dict:
+    """The dropped members stay in the throwaway repo's index (it is `read-tree HEAD`); mark them skip-worktree so a
+    test that asks git for the working-tree state does not read 2,400 deletions."""
+    if not paths:
+        return {"n": 0, "rc": 0}
+    env = {k: v for k, v in os.environ.items() if k not in _GIT_ENV}
+    env = safe_dir_env(env, dest)
+    p = subprocess.run(["git", "-C", str(dest), "update-index", "--skip-worktree", "-z", "--stdin"], env=env,
+                       input=("\0".join(paths) + "\0").encode("utf-8"), capture_output=True)
+    return {"n": len(paths), "rc": p.returncode, "err": p.stderr.decode("utf-8", "replace")[-200:]}
+
+
+def _pinned_run_audit(dest: Path, logs: Path, env: dict, o: dict) -> dict:
+    """Every guard's mutation arm must be CAUGHT (SPEC 2) -- the same run `job_suite_pinned` makes, as a record."""
+    audit = dest / "stack" / "scripts" / "guard_mutation_audit.py"
+    if o.get("skip_mutation_audit"):
+        return {"ok": False, "why": "the guard mutation audit was skipped (--skip-mutation-audit): not a PASS"}
+    if not audit.is_file():
+        return {"ok": False, "why": "stack/scripts/guard_mutation_audit.py is absent from the launch commit"}
+    log = logs / "guard_mutation_audit.log"
+    try:
+        with open(log, "w", encoding="utf-8", errors="replace") as fh:
+            p = subprocess.run([sys.executable, str(audit)], cwd=str(dest / "stack"), env=env, stdout=fh,
+                               stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, timeout=3600)
+        arc = p.returncode
+    except subprocess.TimeoutExpired:
+        arc = "timeout"
+    txt = log.read_text(encoding="utf-8", errors="replace")
+    m = re.search(r"=== (\d+)/(\d+) defects CAUGHT", txt)
+    ok = bool(m) and arc == 0 and int(m.group(1)) == int(m.group(2)) and int(m.group(2)) >= 1
+    return {"ok": ok, "rc": arc, "summary": m.group(0) if m else None, "log": str(log),
+            "verdicts": re.findall(r"^(CAUGHT|ESCAPED|MISCREDITED)\s+(\S+)", txt, flags=re.M),
+            "why": None if ok else f"guard mutation audit: {m.group(0) if m else 'no summary line'} (rc {arc})"}
+
+
+def _pinned_run_files(files: list[dict], dest: Path, env: dict, logs: Path, tag: str) -> dict[str, dict]:
+    """Run each pinned file in its own pytest and keep every test's outcome (not only the failures)."""
+    results: dict[str, dict] = {}
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        xml = logs / (key.replace("/", "__") + ".xml")
+        log = logs / (key.replace("/", "__") + ".log")
+        xml.unlink(missing_ok=True)
+        t0 = time.time()
+        try:
+            with open(log, "w", encoding="utf-8", errors="replace") as fh:
+                p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                                    "-rfEs", f"--junitxml={xml}", "-o", "junit_family=xunit2", f["file"]],
+                                   cwd=str(dest / f["sub"]), env=env, stdout=fh, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, timeout=1800)
+            rc = p.returncode
+        except subprocess.TimeoutExpired:
+            rc = "timeout"
+        tail = ([ln for ln in log.read_text(encoding="utf-8", errors="replace").splitlines()
+                 if ln.strip()] or ["<none>"])[-1]
+        r: dict[str, Any] = {"rc": rc, "tail": tail[-300:], "elapsed_s": round(time.time() - t0, 1)}
+        if xml.is_file():
+            try:
+                oc = _parse_junit_outcomes(xml)
+                r.update(outcomes=oc, n_tests=len(oc),
+                         failed=sorted(t for t, o in oc.items() if o in ("fail", "error")),
+                         n_skipped=sum(1 for o in oc.values() if o.startswith("skip:")))
+            except Exception as e:                                    # noqa: BLE001 -- a torn junit is no junit
+                r["tail"] = f"unreadable junit: {type(e).__name__}: {e}"[:300]
+        results[key] = r
+        _say(f"G-SUITE-PINNED[{tag}] {key}: rc {rc}, {r.get('n_tests')} tests, "
+             f"{len(r.get('failed') or [])} failed, {r.get('n_skipped')} skipped")
+    return results
+
+
+def _pinned_split_archive(ctx: Ctx, pin: dict, det: dict, commit: str, reduced: bool) -> tuple[Path | None, list[str]]:
+    """Archive (FULL for the Thor half, REDUCED for the complement), the throwaway repo, and the stack/+taniteval/ tree
+    digest. -> (dest, structural reasons); dest None = the run cannot continue."""
+    o = ctx.options
+    git_dir = o["git_dir"]
+    work = Path(o.get("suite_work") or (Path(ctx.out_dir) / "suite"))
+    work.mkdir(parents=True, exist_ok=True)
+    dest = work / (f"p{commit[:10]}" if reduced else f"f{commit[:10]}")
+    thr = int(o.get("pinned_reduce_bytes") or PINNED_REDUCE_BYTES_DEFAULT)
+    if dest.exists() and not (dest / _ARCHIVE_DONE).is_file():
+        return None, [f"G-SUITE-PINNED: {dest} exists WITHOUT its completion marker -- a partial extraction; "
+                      f"remove it (by hand) and re-run"]
+    if not dest.exists():
+        _say(f"G-SUITE-PINNED: archiving commit {commit[:12]} ({'REDUCED, >= ' + str(thr) + ' B dropped' if reduced else 'FULL'}) -> {dest}")
+        drop = (lambda n, s: pinned_reduce_drop(n, s, thr)) if reduced else None
+        arc = stream_archive(git_dir, commit, dest, drop=drop)
+        if reduced:
+            arc["reduce_bytes"] = thr
+            write_json(dest / _ARCHIVE_DONE, arc)
+    else:
+        arc = read_json(dest / _ARCHIVE_DONE)
+    if arc.get("commit") != commit or bool(arc.get("reduced")) != reduced or (
+            reduced and arc.get("reduce_bytes") != thr):
+        return None, [f"G-SUITE-PINNED: {dest} holds another archive (commit {str(arc.get('commit'))[:12]}, "
+                      f"reduced {arc.get('reduced')}, threshold {arc.get('reduce_bytes')})"]
+    det["archive"] = arc
+    det["throwaway_repo"] = throwaway_repo(dest, git_dir, commit)
+    if det["throwaway_repo"].get("head") != commit:
+        _say(f"G-SUITE-PINNED: throwaway repo git errors: {det['throwaway_repo'].get('errors')}")
+        return None, [f"G-SUITE-PINNED: the throwaway repo's HEAD is {det['throwaway_repo'].get('head')!r}, "
+                      f"not {commit}"]
+    if reduced:
+        det["skip_worktree"] = _mark_skip_worktree(dest, [d[0] for d in arc.get("dropped") or []])
+    reasons: list[str] = []
+    fsha = tree_digest(tree_manifest(dest))
+    det["full_tree_stack_taniteval_sha256"] = fsha
+    if fsha != ctx.tree_sha256:
+        reasons.append(f"G-SUITE-PINNED: the {'reduced' if reduced else 'full'} archive's stack/+taniteval/ "
+                       f"({fsha[:16]}) is not the launched tree ({ctx.tree_sha256[:16]})")
+    return dest, reasons
+
+
+def _pinned_split_env(ctx: Ctx, dest: Path, det: dict) -> tuple[dict | None, str | None]:
+    env = pinned_env(dest, ctx.options, os.environ)
+    probe = subprocess.run([sys.executable, "-c", "import tanitad; print(tanitad.__file__)"],
+                           cwd=str(dest / "stack"), env=env, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace")
+    det["tanitad_file"] = probe.stdout.strip()
+    if not os.path.normcase(probe.stdout.strip()).startswith(os.path.normcase(str(dest))):
+        return None, (f"G-SUITE-PINNED: tanitad imports from {probe.stdout.strip() or probe.stderr[-200:]}, "
+                      f"not {dest}")
+    return env, None
+
+
+def job_suite_pinned_split(ctx: Ctx) -> dict[str, dict]:
+    """G-SUITE-PINNED, split mode: `--pinned-half thor` | `devbox-complement` (refcv9-full-d1 ONLY)."""
+    o = ctx.options
+    half = o.get("pinned_half")
+    thor = half == "thor"
+    key = PINNED_THOR_HALF_CHECK if thor else "G-SUITE-PINNED"
+    ev = new_evidence(ctx, key)
+    ev["details"].update(half="thor" if thor else "devbox-complement", mode="thor-half" if thor else "split")
+    det = ev["details"]
+    refuse = "FAIL"
+
+    def out(status: str, reasons: list[str]) -> dict[str, dict]:
+        finish_evidence(ev, status, reasons)
+        return {"G-SUITE-PINNED": ev}
+
+    if ctx.profile not in PINNED_SPLIT_PROFILES:
+        return out(refuse, [f"G-SUITE-PINNED split mode is refused for profile {ctx.profile!r} (PI ruling "
+                            f"2026-11-28: {sorted(PINNED_SPLIT_PROFILES)} only)"])
+    if half not in PINNED_HALVES:
+        return out(refuse, [f"G-SUITE-PINNED: unknown --pinned-half {half!r} (one of {PINNED_HALVES})"])
+    git_dir = o.get("git_dir")
+    pin, prob = env_failure_pin(ctx.prof, ctx.tree)
+    if prob or not git_dir:
+        return out(refuse, [f"G-SUITE-PINNED: {prob or 'needs --git-dir (the commit is archived from git, never a worktree)'}"])
+    commit = resolve_commit(git_dir, ctx.commit)
+    files = pin["files"]
+    skip_ok = ctx.prof.get("suite_pinned_skip_ok", ())
+    det["pin"] = list(ctx.prof.get("suite_env_failures") or [])
+    logs = Path(ctx.out_dir) / "logs" / ("pinned_thor" if thor else "pinned_complement")
+    logs.mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------ the Thor half
+    if thor:
+        if o.get("pinned_thor_half"):
+            return out("FAIL", ["G-SUITE-PINNED: --pinned-thor-half belongs to the dev-box complement"])
+        dest, reasons = _pinned_split_archive(ctx, pin, det, commit, reduced=False)
+        if dest is None:
+            return out("ERROR", reasons)
+        env, bad = _pinned_split_env(ctx, dest, det)
+        if env is None:
+            return out("ERROR", [bad])
+        results = _pinned_run_files(files, dest, env, logs, "thor-half")
+        for f in files:
+            k = f"{f['sub']}/{f['file']}"
+            r = results.get(k) or {}
+            if not isinstance(r.get("outcomes"), dict):
+                reasons.append(f"G-SUITE-PINNED[thor-half]: {k} produced no junit (rc {r.get('rc')}): "
+                               f"{str(r.get('tail'))[-200:]}")
+            elif not r.get("n_tests"):
+                reasons.append(f"G-SUITE-PINNED[thor-half]: {k} collected ZERO tests")
+        fok, fdet = flaky_admitted(pin, dest)
+        det["flaky"], det["flaky_ok"] = fdet, sorted(fok)
+        det["files"] = results
+        det["outcomes_sha256"] = sha256_bytes(canonical_json(scrub(
+            {k: (v or {}).get("outcomes") for k, v in sorted(results.items())})))
+        det["mutation_audit"] = _pinned_run_audit(dest, logs, env, o)
+        pats = _pinned_skip_pats(skip_ok)
+        det["n_tests"] = sum(int((r or {}).get("n_tests") or 0) for r in results.values())
+        det["n_not_pass"] = sum(1 for r in results.values() for t, oc in ((r or {}).get("outcomes") or {}).items()
+                                if not _pinned_ok(t, oc, pats))
+        det["complement_files"] = [f"{f['sub']}/{f['file']}" for f in
+                                   pinned_complement_files(files, results, skip_ok)]
+        # the Thor half's own verdict is STRUCTURAL: individual failures are the complement's input, not reasons
+        return out(PINNED_THOR_HALF_OK if not reasons else "FAIL", reasons)
+
+    # ------------------------------------------------------------------ the dev-box complement
+    tp = o.get("pinned_thor_half")
+    if not tp or not Path(tp).is_file():
+        return out("FAIL", [f"G-SUITE-PINNED: no Thor-half evidence (--pinned-thor-half {tp!r})"])
+    try:
+        tev = read_json(tp)
+    except Exception as e:                                            # noqa: BLE001
+        return out("FAIL", [f"G-SUITE-PINNED: the Thor-half evidence is unreadable: {type(e).__name__}: {e}"])
+    th = {"path": str(tp), "sha256": sha256_file(tp)}
+    det["thor_half"] = th
+    why = check_pinned_thor_half(tev, ctx, pin, files)
+    if isinstance(tev, dict):
+        th.update(host=(tev.get("host") or {}).get("node"), status=tev.get("status"),
+                  started_utc=tev.get("started_utc"), finished_utc=tev.get("finished_utc"),
+                  commit=(tev.get("binding") or {}).get("commit"))
+    if why:
+        return out("FAIL", [f"G-SUITE-PINNED: the Thor-half evidence is REFUSED: {w}" for w in why])
+    td = tev["details"]
+    thor_files = td["files"]
+    comp = pinned_complement_files(files, thor_files, skip_ok)
+    comp_keys = [f"{f['sub']}/{f['file']}" for f in comp]
+    det["complement_files"] = comp_keys
+    taud = td.get("mutation_audit") or {}
+    det["mutation_audit_thor"] = {k: taud.get(k) for k in ("ok", "summary", "rc", "why")}
+    reasons = []
+    dev_files: dict[str, dict] = {}
+    dev_audit = None
+    if comp or not taud.get("ok"):
+        dest, reasons = _pinned_split_archive(ctx, pin, det, commit, reduced=True)
+        if dest is None:
+            return out("ERROR", reasons)
+        env, bad = _pinned_split_env(ctx, dest, det)
+        if env is None:
+            return out("ERROR", [bad])
+        dev_files = _pinned_run_files(comp, dest, env, logs, "complement")
+        if not taud.get("ok"):
+            dev_audit = _pinned_run_audit(dest, logs, env, o)
+    else:
+        det["archive"] = None
+        _say("G-SUITE-PINNED[complement]: every Thor-half test is a pass or a registered skip -- nothing to re-run")
+    det["files"] = dev_files
+    det["mutation_audit_devbox"] = ({k: dev_audit.get(k) for k in ("ok", "summary", "rc", "why")}
+                                    if dev_audit else None)
+    pin_flaky = {str(f.get("id")) for f in (pin.get("flaky") or []) if f.get("id")}
+    fl = set(map(str, td.get("flaky_ok") or [])) & pin_flaky
+    r2, d2 = merge_pinned_split(files, thor_files, dev_files, comp_keys, skip_ok, fl)
+    reasons += r2
+    det.update(d2)
+    if not (taud.get("ok") or (dev_audit or {}).get("ok")):
+        reasons.append("G-SUITE-PINNED: " + str((dev_audit or taud).get("why") or "the guard mutation audit was "
+                       "not CAUGHT on either host") + " -- every guard's mutation arm must be CAUGHT on one host")
+    det["dropped"] = (det.get("archive") or {}).get("dropped") or []
+    return out("FAIL" if reasons else "PASS", reasons)
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9 E1-REUSE (MM 207ebd, PINNED): an arm takes a REUSE binding in place of an overfit RUN     #
+# --------------------------------------------------------------------------------------------- #
+#: One /1 record run = 1,993 s (map) / 2,294 s (box) of the single Thor GPU (MEASURED, `ovf_C0_4e36c721d0e1`), and G-MAP-OVERFIT / G-BOX-OVERFIT bind the WHOLE
+#: launch-argv sha256, so every arm ran both harnesses. But a harness that does not BUILD the arm's lever (the training-only aux heads: E1-REC3; T1: E1-REC4 --
+#: it STRIPS those flags) computes exactly what the BASE arm's run computed. The pinned design: an arm may bind to an EXISTING, PASSING record of a BASE arm iff the
+#: harness invocation it would run is IDENTICAL to the base's, as computed by the HARNESS'S OWN `--identity-only` code (effective build argv after its own strip,
+#: data roots, every other harness argument; ONLY the launch-argv references and the per-arm stamps may differ), at the SAME commit. The binding
+#: (`tanitad.overfit_reuse/1`, written by `r9e1_bind.sh --reuse-from`) carries THIS arm's stamps, and this judge re-derives everything it can: it re-judges the base
+#: record for the BASE argv exactly as a run record is judged, recomputes BOTH identities by running the tree's harness (`main(... --identity-only)`) on the base's
+#: own recorded harness invocation (its closure's `argv`), and requires them equal. Scope: kinds `map` and `box` only (a banded / own-head argv needs its OWN record).
+REUSE_SCHEMA = "tanitad.overfit_reuse/1"
+REUSE_KINDS = {"G-MAP-OVERFIT": "map", "G-BOX-OVERFIT": "box"}
+REUSE_HARNESS = {"map": "stack/scripts/map_hires_overfit.py", "box": "stack/scripts/g_box_overfit.py"}
+REUSE_IDENTITY_KEYS = ("schema", "tool", "effective_build_argv", "build_facts", "data_roots", "other_args", "audit_inputs")
+
+
+def overfit_identity_sha256(core: dict) -> str:
+    """ONE formula with the harnesses' `identity_sha256` (a test pins the three together)."""
+    return sha256_bytes(json.dumps({k: core[k] for k in REUSE_IDENTITY_KEYS}, sort_keys=True, separators=(",", ":"),
+                                   ensure_ascii=True).encode("utf-8"))
+
+
+def reuse_binding_of(path: str | os.PathLike | None) -> dict | None:
+    """The parsed reuse binding at `path`, or None when the file is not one (absent, not JSON, another schema)."""
+    try:
+        if path and Path(path).is_file():
+            obj = read_json(path)
+            if isinstance(obj, dict) and obj.get("schema") == REUSE_SCHEMA:
+                return obj
+    except Exception:                                     # noqa: BLE001 -- a record of another shape is simply not a binding
+        pass
+    return None
+
+
+def reuse_base_paths(binding_path: str | os.PathLike, b: dict | None = None) -> dict[str, Path | None]:
+    """The BASE record / closure a reuse binding names, resolved as the gate judges it: `relpath` next to the binding first, then `abspath`;
+    None for one that does not exist here.  ONE resolution for `judge_overfit_reuse` and `overfit_record_gate_inputs` (what the job reads is
+    what the token binds)."""
+    b = reuse_binding_of(binding_path) if b is None else b
+    here = Path(binding_path).resolve().parent
+    out: dict[str, Path | None] = {}
+    for key in ("base_record", "base_closure"):
+        ent = (b or {}).get(key) if isinstance((b or {}).get(key), dict) else {}
+        cand = [here / ent["relpath"]] if ent.get("relpath") else []
+        cand += [Path(ent["abspath"])] if ent.get("abspath") else []
+        out[key] = next((c for c in cand if c.is_file()), None)
+    return out
+
+
+def overfit_record_gate_inputs(kind: str, rec_opt: str) -> dict[str, str]:
+    """The gate inputs a --<kind>-overfit-record option binds in the token: EXACTLY the files `_job_<kind>_overfit` fingerprints, because
+    `finalize` rejects evidence whose `inputs_read` key is absent from the manifest or carries another fingerprint (`evidence_rejections`).
+    A run record: the record.  A REUSE binding (E1-REUSE): the job reads the BASE record through it (`judge_overfit_reuse` returns it) and the
+    binding itself -- so the record key names the BASE record and the binding gets its own key.  (The closure option is already the base
+    closure: the judge refuses a closure whose sha256 is not the base closure's.)  MEASURED on Thor 2026-11-04T13:20:30Z (arm T1 at 5761cd2):
+    the record key bound the BINDING and the binding key was not bound at all, so a reuse-bound arm's G-MAP / G-BOX-OVERFIT evidence (PASS)
+    was rejected "read with a different fingerprint" and the token read INCOMPLETE -- every reuse-bound arm (B1 B2 B2c T1 T1s B3p, K0's map)."""
+    if reuse_binding_of(rec_opt) is None:
+        return {f"gate:{kind}-overfit-record": rec_opt}
+    out = {f"gate:{kind}-overfit-reuse-binding": rec_opt}
+    base = reuse_base_paths(rec_opt).get("base_record")
+    if base is not None:                                  # an unresolvable base: the judge refuses the check, nothing to bind
+        out[f"gate:{kind}-overfit-record"] = str(base)
+    return out
+
+
+def reuse_stamp_sets(argv: list[str]) -> dict[str, list[str]]:
+    """THIS argv's per-arm stamps by the gate's own tuples (the same sets `box_aux_stamp_reasons` / `bev_warp_stamp_reasons` demand)."""
+    have = {f for f, _ in flag_pairs(argv)}
+    return {E1_BOX_AUX_STAMP: sorted(f for f in have if f in E1_BOX_AUX_FLAGS), E1_T1_STAMP: sorted(f for f in have if f in E1_T1_FLAGS)}
+
+
+def _reuse_set_flag_value(tokens: list[str], flag: str, value: str, *, add: bool = False) -> list[str]:
+    out, i, seen = list(tokens), 0, False
+    while i < len(out):
+        if out[i] == flag and i + 1 < len(out):
+            out[i + 1], seen = value, True
+            i += 1
+        i += 1
+    if add and not seen:
+        out += [flag, value]
+    return out
+
+
+def _reuse_derive_identity(tree: Path, kind: str, tokens: list[str], argv: list[str], work: Path, tag: str) -> tuple[dict | None, str | None]:
+    """The tree's OWN harness `--identity-only` on `tokens` (the base's recorded harness invocation) with the launch-argv references pointed at `argv`."""
+    rel = REUSE_HARNESS[kind]
+    p = tree / rel
+    if not p.is_file():
+        return None, f"the tree has no {rel} (cannot derive the {tag} identity)"
+    work.mkdir(parents=True, exist_ok=True)
+    af, out = work / f"{tag}.argv.json", work / f"{tag}.identity.json"
+    af.write_text(json.dumps(list(argv), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    t = _reuse_set_flag_value(tokens, "--launch-argv", str(af), add=(kind == "map" and tag == "this"))
+    t = _reuse_set_flag_value(t, "--launch-argv-sha256", argv_sha256(list(argv)))
+    t = _reuse_set_flag_value(t, "--out", str(work / f"{tag}.out"))
+    try:
+        spec = importlib.util.spec_from_file_location(f"_gate_reuse_{kind}_{tag}", str(p))
+        mod = importlib.util.module_from_spec(spec)
+        with contextlib.redirect_stdout(io.StringIO()):
+            spec.loader.exec_module(mod)
+            rc = mod.main(t + ["--identity-only", str(out)])
+        if rc != 0 or not out.is_file():
+            return None, f"the harness's --identity-only returned {rc!r} for the {tag} argv"
+        return read_json(out), None
+    except SystemExit as exc:
+        return None, f"the harness REFUSED the {tag} argv in --identity-only: {str(exc)[:300]}"
+    except Exception as exc:                              # noqa: BLE001 -- fail closed, name why
+        return None, f"could not derive the {tag} identity ({type(exc).__name__}: {str(exc)[:300]})"
+
+
+def judge_overfit_reuse(prof: dict, check: str, binding_path: str | None, commit: str, *, argv_sha: str, argv: list[str] | None,
+                        tree: str | os.PathLike, closure_option: str | None = None, class_weights_sha256: str | None = None,
+                        workdir: str | os.PathLike | None = None) -> tuple[list[str], dict, str | None, str | None]:
+    """G-MAP-OVERFIT / G-BOX-OVERFIT read from a REUSE binding. -> (reasons, details, base record path, base closure path); the caller then runs `judge_closure`
+    on the BASE record + closure (exactly as for a run record). See the block comment above for the contract."""
+    import tempfile
+    tag = check
+    kind = REUSE_KINDS.get(check)
+    b = reuse_binding_of(binding_path)
+    det: dict[str, Any] = {"reuse_binding": binding_path, "kind": kind}
+    if b is None or kind is None:
+        return [f"{tag}: no {REUSE_SCHEMA} binding ({binding_path!r})"], det, None, None
+    det["sha256"] = sha256_file(binding_path)
+    det.update(base_arm=b.get("base_arm"), this_arm=b.get("this_arm"))
+    reasons: list[str] = []
+    argv = list(argv or [])
+    if own_record_row(prof, argv, check) is not None:
+        reasons.append(f"{tag}: a REUSE binding covers only the inherited `{kind}` record; THIS argv carries a lever whose OWN record is required (E1_OWN_RECORDS)")
+    if b.get("kind") != kind:
+        reasons.append(f"{tag}: the binding is of kind {b.get('kind')!r}, THIS argv's {check} needs kind {kind!r}")
+    if not argv_sha or b.get("this_argv_sha256") != argv_sha:
+        reasons.append(f"{tag}: the binding is for argv {str(b.get('this_argv_sha256'))[:12] or '<none>'}, not the launch argv {argv_sha[:12] or '<none>'}")
+    base_argv = b.get("base_argv")
+    if not (isinstance(base_argv, list) and base_argv and all(isinstance(x, str) for x in base_argv)):
+        return reasons + [f"{tag}: the binding carries no base argv"], det, None, None
+    base_sha = argv_sha256(base_argv)
+    if b.get("base_argv_sha256") != base_sha:
+        reasons.append(f"{tag}: the binding's base argv hashes to {base_sha[:12]}, it states {str(b.get('base_argv_sha256'))[:12]}")
+    found = reuse_base_paths(binding_path, b)
+    paths: dict[str, str | None] = {}
+    for key in ("base_record", "base_closure"):
+        ent = b.get(key) if isinstance(b.get(key), dict) else {}
+        hit = found[key]
+        paths[key] = str(hit) if hit else None
+        if hit is None:
+            reasons.append(f"{tag}: the binding's {key} {ent.get('relpath') or ent.get('abspath')!r} does not exist here")
+        elif sha256_file(hit) != ent.get("sha256"):
+            reasons.append(f"{tag}: the {key} {hit.name} hashes to {sha256_file(hit)[:16]}, the binding recorded {str(ent.get('sha256'))[:16]} -- edited after the binding")
+    rec_p, clo_p = paths["base_record"], paths["base_closure"]
+    det.update(base_record=rec_p, base_closure=clo_p)
+    if closure_option and clo_p and Path(closure_option).is_file() and sha256_file(closure_option) != sha256_file(clo_p):
+        reasons.append(f"{tag}: the closure given ({Path(closure_option).name}) is not the binding's base closure -- not the same run")
+    if not (rec_p and clo_p):
+        return reasons, det, rec_p, clo_p
+    # ---- the base record, judged EXACTLY as a run record is (for the BASE argv; THIS argv's class-weight file for map)
+    if kind == "map":
+        r_b, d_b = judge_map_overfit(prof, rec_p, commit, argv_sha=base_sha, class_weights_sha256=class_weights_sha256, argv=base_argv)
+    else:
+        r_b, d_b = judge_box_overfit(prof, rec_p, commit, argv_sha=base_sha, argv=base_argv)
+    reasons += [f"{x} [base record, re-judged for the base argv]" for x in r_b]
+    rec = read_json(rec_p)
+    r_commit = rec.get("launch_commit") if kind == "map" else rec.get("commit")
+    if not b.get("commit") or r_commit != b.get("commit"):
+        reasons.append(f"{tag}: the base record was made at commit {str(r_commit)[:12]}, the binding is at {str(b.get('commit'))[:12]} (a reuse binding is at the SAME commit)")
+    # ---- the identities, RE-DERIVED here by the tree's own harness on the base's recorded invocation (its closure's `argv`)
+    clo = read_json(clo_p)
+    cargv = clo.get("argv")
+    if not (isinstance(cargv, list) and cargv and all(isinstance(x, str) for x in cargv)):
+        return reasons + [f"{tag}: the base closure records no harness argv"], det, rec_p, clo_p
+    if hashlib.sha256(json.dumps(cargv, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest() != clo.get("argv_sha256"):
+        reasons.append(f"{tag}: the base closure's argv does not hash to its argv_sha256")
+    tokens = cargv[1:] if cargv[0].endswith(".py") else list(cargv)
+    wd = Path(workdir) if workdir else Path(tempfile.mkdtemp(prefix="gate_reuse_"))
+    id_b, e_b = _reuse_derive_identity(Path(tree), kind, tokens, base_argv, wd, "base")
+    id_t, e_t = _reuse_derive_identity(Path(tree), kind, tokens, argv, wd, "this")
+    for e in (e_b, e_t):
+        if e:
+            reasons.append(f"{tag}: {e}")
+    if id_b and id_t:
+        det["identity"] = {"base": id_b["identity_sha256"], "this": id_t["identity_sha256"]}
+        if id_b["identity_sha256"] != id_t["identity_sha256"]:
+            diff = [k for k in REUSE_IDENTITY_KEYS if id_b.get(k) != id_t.get(k)]
+            reasons.append(f"{tag}: THIS argv's harness invocation is NOT identical to the base's (differs in {diff}): the base record does not describe it -- "
+                           f"run its OWN record")
+        for nm, blk in (("base", id_b), ("this", id_t)):
+            if overfit_identity_sha256(blk) != blk["identity_sha256"]:
+                reasons.append(f"{tag}: the harness's {nm} identity does not re-hash to its identity_sha256 (formula drift)")
+            if b.get(f"{nm}_identity_sha256") != blk["identity_sha256"]:
+                reasons.append(f"{tag}: the binding states {nm} identity {str(b.get(f'{nm}_identity_sha256'))[:12]}, the harness derives {blk['identity_sha256'][:12]}")
+    # ---- THIS arm's stamps: the binding must carry exactly THIS argv's sets (a record never covers another arm's aux heads / temporal history)
+    want = reuse_stamp_sets(argv)
+    got = b.get("this_stamps") if isinstance(b.get("this_stamps"), dict) else {}
+    for key, w in want.items():
+        g = got.get(key)
+        if not (isinstance(g, list) and sorted(g) == w and len(set(g)) == len(g)):
+            reasons.append(f"{tag}: the binding's `{key}` is {g!r}, THIS argv's set is {w} (the stamp must EQUAL it)")
+    if want[E1_BOX_AUX_STAMP] and kind == "box":
+        det["aux_heads_not_certified"] = {"argv_aux_set": want[E1_BOX_AUX_STAMP], "record_stamp": got.get(E1_BOX_AUX_STAMP), "via": "reuse_binding"}
+    if want[E1_T1_STAMP]:
+        det["bev_warp_not_certified"] = {"argv_t1_set": want[E1_T1_STAMP], "record_stamp": got.get(E1_T1_STAMP), "via": "reuse_binding"}
+    det["base_judge"] = {k: d_b.get(k) for k in ("sha256", "result", "verdict", "launch_argv_sha256") if k in d_b}
+    return reasons, det, rec_p, clo_p
+
+
+def write_reuse_binding(profile: str, check: str, this_arm: str, base_arm: str, this_argv_file: str, base_argv_file: str, base_record: str,
+                        base_closure: str, this_identity: str, base_identity: str, commit: str, out_path: str, tree: str,
+                        closure_option: str | None = None) -> tuple[list[str], dict]:
+    """`r9e1_bind.sh --reuse-from`'s writer AND its verifier in one place: assembles the `tanitad.overfit_reuse/1` binding from the two identity files the
+    HARNESS wrote (`--identity-only`) and the base arm's record + closure, writes it, then runs THE GATE'S OWN `judge_overfit_reuse` on it (no second
+    implementation); a binding the gate would refuse is REMOVED and the reasons returned. -> (reasons, details)."""
+    prof = PROFILES[profile]
+    kind = REUSE_KINDS[check]
+    this_argv, base_argv = load_argv_file(this_argv_file), load_argv_file(base_argv_file)
+    out = Path(out_path)
+
+    def ent(p: str) -> dict:
+        try:
+            rel = os.path.relpath(str(Path(p).resolve()), str(out.resolve().parent)).replace("\\", "/")
+        except ValueError:                                # another drive: the absolute path alone
+            rel = None
+        return {"relpath": rel, "abspath": str(Path(p).resolve()), "sha256": sha256_file(p)}
+    ti, bi = read_json(this_identity), read_json(base_identity)
+    b = {"schema": REUSE_SCHEMA, "kind": kind, "check": check, "profile": profile, "commit": commit, "this_arm": this_arm, "base_arm": base_arm,
+         "this_argv_sha256": argv_sha256(this_argv), "base_argv_sha256": argv_sha256(base_argv), "base_argv": base_argv,
+         "base_record": ent(base_record), "base_closure": ent(base_closure),
+         "this_identity_sha256": ti.get("identity_sha256"), "base_identity_sha256": bi.get("identity_sha256"),
+         "this_identity": ti, "base_identity": bi, "this_stamps": reuse_stamp_sets(this_argv),
+         "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+         "note": "an arm whose harness invocation is IDENTICAL to a PASSING base record's binds that record (launch_gate.judge_overfit_reuse re-derives it)"}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(b, indent=1, sort_keys=True), encoding="utf-8")
+    cw_sha = None
+    if kind == "map":
+        flag = (prof.get("map_hires") or {}).get("class_weights_flag")
+        v = flag_values(this_argv, flag) if flag else None
+        if v and Path(v[0]).is_file():
+            cw_sha = sha256_file(v[0])
+    reasons, det, _r, _c = judge_overfit_reuse(prof, check, str(out), commit, argv_sha=b["this_argv_sha256"], argv=this_argv, tree=tree,
+                                               closure_option=closure_option, class_weights_sha256=cw_sha)
+    if reasons:
+        out.unlink()
+    return reasons, det
+
+
+def job_record(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
+    """The launch prerequisites read from their PASS records (no model, no data)."""
+    out: dict[str, dict] = {}
+    if "G-MAP-OVERFIT" in checks:
+        out.update(_job_map_overfit(ctx))
+    if "G-BOX-OVERFIT" in checks:
+        out.update(_job_box_overfit(ctx))
+    return out
+
+
+def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
+    ev = new_evidence(ctx, "G-BOX-OVERFIT")
+    rec = ctx.options.get("box_overfit_record")
+    if arm_is(ctx, "box_overfit_missing"):
+        rec = str(Path(ctx.out_dir) / "__gate_arm_missing_box_overfit_record__.json")
+    clo = ctx.options.get("box_overfit_closure")
+    binding = rec if reuse_binding_of(rec) is not None else None
+    if binding is not None:             # E1-REUSE: THIS arm binds to a BASE arm's PASSING record (the judge re-judges it for the base argv, re-derives both identities)
+        reasons, det, rec, clo = judge_overfit_reuse(ctx.prof, "G-BOX-OVERFIT", binding, ctx.commit, argv_sha=ctx.argv_sha256, argv=list(ctx.argv),
+                                                     tree=ctx.tree, closure_option=clo, workdir=Path(ctx.out_dir) / "reuse_box")
+    else:
+        reasons, det = judge_box_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
+                                         argv=list(ctx.argv))
+    cr, cd = judge_closure("G-BOX-OVERFIT", clo, rec, ctx.tree,
+                           (ctx.prof.get("box_overfit") or {}).get("harness"),
+                           host_env=_host_env(), pmap=[tuple(x) for x in ctx.path_map],
+                           git_dir=ctx.options.get("git_dir"), commit=ctx.commit)
+    reasons += cr
+    det["closure"] = cd
+    for k, f in (("gate:box-overfit-record", rec), ("gate:box-overfit-closure", clo), ("gate:box-overfit-reuse-binding", binding)):
+        if f and Path(f).is_file():
+            ev["inputs_read"][k] = fingerprint(f)
+    ev["details"].update(det)
+    ok_text = f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"
+    if binding is not None:
+        ok_text += (f"; REUSE of {det.get('base_arm')}'s record (identical harness invocation: identity {str((det.get('identity') or {}).get('this'))[:12]}, "
+                    f"re-derived by the harness's own --identity-only)")
+    if (det.get("a19") or {}).get("applied"):
+        ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
+    if det.get("aux_heads_not_certified"):                # E1-REC3: the training-only aux heads this record does NOT certify
+        ok_text += (f"; does NOT certify the training-only aux head(s) {det['aux_heads_not_certified']['argv_aux_set']} (never called at "
+                    f"inference; their liveness is G-LIVE's and the post-run zero-gradient gate's)")
+    if (det.get("perframe_seeds_not_certified") or {}).get("argv_pfq_set"):       # C5-INTEG: the per-frame seeds this record does NOT certify
+        ok_text += (f"; does NOT certify the per-frame query SEEDS {det['perframe_seeds_not_certified']['argv_pfq_set']} (the replay's seed head is a random frozen "
+                    f"stand-in: the decode path is certified under ARBITRARY seeds; seed quality is a READ of the first dump)")
+    if det.get("bev_warp_not_certified") and det["bev_warp_not_certified"]["argv_t1_set"]:    # E1-REC4: the temporal BEV warp this record does NOT certify
+        ok_text += (f"; does NOT certify the temporal BEV warp {det['bev_warp_not_certified']['argv_t1_set']} (the head is certified on frozen "
+                    f"frames with no staged history; T1's liveness is G-LIVE's and the post-run zero-gradient gate's)")
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
+    return {"G-BOX-OVERFIT": ev}
+
+
+def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
+    """G-MAP-OVERFIT: a launch prerequisite read from its PASS record (no model, no data)."""
+    ev = new_evidence(ctx, "G-MAP-OVERFIT")
+    rec = ctx.options.get("map_overfit_record")
+    if arm_is(ctx, "map_overfit_missing"):
+        rec = str(Path(ctx.out_dir) / "__gate_arm_missing_overfit_record__.json")
+    cw_flag = (ctx.prof.get("map_hires") or {}).get("class_weights_flag")
+    cwv = flag_values(ctx.argv, cw_flag) if cw_flag else None
+    cw_local = map_path(cwv[0], [tuple(x) for x in ctx.path_map]) if cwv else None
+    cw_sha = sha256_file(cw_local) if cw_local and Path(cw_local).is_file() else None
+    own = own_record_row(ctx.prof, ctx.argv, "G-MAP-OVERFIT")
+    clo = ctx.options.get("map_overfit_closure")
+    binding = rec if reuse_binding_of(rec) is not None else None
+    if binding is not None:             # E1-REUSE: THIS arm binds to a BASE arm's PASSING record (class weights: THIS argv's file)
+        reasons, det, rec, clo = judge_overfit_reuse(ctx.prof, "G-MAP-OVERFIT", binding, ctx.commit, argv_sha=ctx.argv_sha256, argv=list(ctx.argv),
+                                                     tree=ctx.tree, closure_option=clo, class_weights_sha256=cw_sha, workdir=Path(ctx.out_dir) / "reuse_map")
+        own = None
+    elif own is not None:
+        # M-GATE (E1-MAP-OWN-RECORD): an argv that builds the BANDED head needs the banded head's OWN /2-banded record bound to
+        # THIS argv's sha256 -- the inherited /1 record (refcv8's 8-code head) does not cover it. The banded loss has no class weights.
+        cwv, cw_sha = None, None
+        reasons, det = judge_map_overfit_banded(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256, argv=ctx.argv)
+        det["own_record"] = {"item": own["item"], "schema": own["schema"], "argv_sha256": ctx.argv_sha256}
+    else:
+        reasons, det = judge_map_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
+                                         class_weights_sha256=cw_sha, argv=list(ctx.argv))
+    if cwv and cw_sha is None:
+        reasons.append(f"G-MAP-OVERFIT: the launch class-weight file {cwv[0]} is not readable "
+                       f"here, so the record's weights cannot be matched to it")
+    cr, cd = judge_closure("G-MAP-OVERFIT", clo, rec, ctx.tree,
+                           (ctx.prof.get("map_overfit") or {}).get("harness"),
+                           host_env=_host_env(), pmap=[tuple(x) for x in ctx.path_map],
+                           must_have_data_sha=[cw_sha] if cw_sha else [],
+                           git_dir=ctx.options.get("git_dir"), commit=ctx.commit)
+    reasons += cr
+    det["closure"] = cd
+    for k, f in (("gate:map-overfit-record", rec), ("gate:map-overfit-closure", clo), ("gate:map-overfit-reuse-binding", binding)):
+        if f and Path(f).is_file():
+            ev["inputs_read"][k] = fingerprint(f)
+    ev["details"].update(det)
+    ok_text = f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"
+    if binding is not None:
+        ok_text += (f"; REUSE of {det.get('base_arm')}'s record (identical harness invocation: identity {str((det.get('identity') or {}).get('this'))[:12]}, "
+                    f"re-derived by the harness's own --identity-only)")
+    if own is not None:
+        ok_text += f"; the banded head's OWN {own['schema']} record ({own['item']})"
+    if (det.get("a19") or {}).get("applied"):
+        ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
+    if det.get("bev_warp_not_certified") and det["bev_warp_not_certified"]["argv_t1_set"]:    # E1-REC4: the temporal BEV warp this record does NOT certify
+        ok_text += (f"; does NOT certify the temporal BEV warp {det['bev_warp_not_certified']['argv_t1_set']} (the head is certified on frozen "
+                    f"frames with no staged history; T1's liveness is G-LIVE's and the post-run zero-gradient gate's)")
+    finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
+    return {"G-MAP-OVERFIT": ev}
+
+
+JOB_FUNCS = {"model": job_model, "smoke": job_smoke, "clock": job_clock, "suite": job_suite,
+             "pinned": job_suite_pinned, "record": job_record}
+
+
+def cmd_check(a) -> int:
+    """(child) run ONE job's checks in THIS process and write their evidence."""
+    _harden_streams()
+    ctx = Ctx.load(a.ctx)
+    checks = [c for c in a.checks.split(",") if c]
+    job = next(j for j, cs in JOBS if set(checks) <= set(cs))
+    evs: dict[str, dict] = {}
+    try:
+        info = child_bootstrap(ctx)
+        _say(f"{job}: tanitad from {info['tanitad']} (torch {info['torch']}, cuda {info['cuda']})")
+        evs = JOB_FUNCS[job](ctx, checks)
+        for ev in evs.values():
+            ev.setdefault("details", {})["child"] = info
+    except BaseException as e:                            # noqa: BLE001 -- never a silent pass
+        tb = traceback.format_exc()[-3000:]
+        for c in checks:
+            if c not in evs or evs[c].get("status") not in ("PASS", "FAIL"):
+                ev = evs.get(c) or new_evidence(ctx, c)
+                ev["details"]["traceback"] = tb
+                finish_evidence(ev, "ERROR", [f"{type(e).__name__}: {e}"])
+                evs[c] = ev
+    for c in checks:
+        ev = evs.get(c)
+        if ev is None:
+            ev = finish_evidence(new_evidence(ctx, c), "ERROR", ["the job returned no evidence"])
+        if "finished_utc" not in ev:
+            finish_evidence(ev, ev.get("status", "ERROR"), ev.get("reasons"))
+        write_evidence(ctx.out_dir, ev)
+        _say(f"{c}: {ev['status']} ({len(ev.get('reasons') or [])} reason(s))")
+    return 0
+
+
+# --------------------------------------------------------------------------------------------- #
+# orchestration (parent side)                                                                     #
+# --------------------------------------------------------------------------------------------- #
+def _child_env(ctx: Ctx) -> dict:
+    e = dict(os.environ)
+    tree = Path(ctx.tree).resolve()
+    # ⛔ WINDOWS-style paths from Python itself (an MSYS `/c/...` entry is silently dropped and
+    # the editable install then serves tanitad from another disk -- a green run on the wrong tree)
+    e["PYTHONPATH"] = os.pathsep.join([str(tree / "stack"), str(tree / "taniteval")])
+    omp = str(ctx.options.get("omp", 4))
+    e.update(PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1", OMP_NUM_THREADS=omp,
+             MKL_NUM_THREADS=omp, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
+    if ctx.options.get("cpu_only"):
+        e["CUDA_VISIBLE_DEVICES"] = "-1"      # "-1", never "": an empty value DELETES it on Windows
+    if ctx.arm:
+        e[ARM_ENV] = ctx.arm
+    else:
+        e.pop(ARM_ENV, None)
+    return e
+
+
+def _wait_ram(min_gb: float, max_wait_s: int, samples: int = 3,
+              gap_s: float = 20.0) -> tuple[bool, float | None]:
+    """Start only after `samples` CONSECUTIVE readings at or above `min_gb` (the Master Mind's
+    dev-box rule, 2026-09-27: "start at >= 7.5 GB free on 3 samples") -- one lucky reading
+    between two busy ones is not headroom."""
+    t0, run, av = time.time(), 0, None
+    while True:
+        av = ram_available_gb()
+        if av is None:
+            return True, av
+        run = run + 1 if av >= min_gb else 0
+        if run >= max(1, int(samples)):
+            return True, av
+        if time.time() - t0 > max_wait_s:
+            return False, av
+        time.sleep(gap_s if run else 60)
+
+
+def _kill_tree(pid: int) -> None:
+    """By EXPLICIT pid, with its children (never a name match). Best effort: the caller VERIFIES
+    (`_stop_child`)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
+                           stdin=subprocess.DEVNULL)
+        else:
+            os.killpg(os.getpgid(pid), 9)
+    except Exception:                                     # noqa: BLE001 -- verified by the caller
+        pass
+
+
+def _stop_child(p: "subprocess.Popen", wait_s: float = 30.0) -> dict:
+    """Stop a child started by `run_job` and PROVE it: the tree kill, then TerminateProcess /
+    SIGKILL on the direct child if it is still there. MEASURED 2026-09-27: a taskkill under memory
+    pressure did nothing, the child ran on for 8 minutes and overwrote the abort's ERROR."""
+    out = {"pid": p.pid, "steps": []}
+    for step in ("tree", "direct"):
+        if step == "tree":
+            _kill_tree(p.pid)
+        else:
+            try:
+                p.kill()
+            except Exception as e:                        # noqa: BLE001
+                out["kill_error"] = f"{type(e).__name__}: {e}"
+        try:
+            p.wait(timeout=wait_s)
+            out["steps"].append(f"{step}: exited rc {p.returncode}")
+            out["stopped"] = True
+            return out
+        except subprocess.TimeoutExpired:
+            out["steps"].append(f"{step}: STILL RUNNING after {wait_s:.0f} s")
+    out["stopped"] = False
+    return out
+
+
+def run_job(ctx: Ctx, ctx_path: Path, job: str, checks: list[str], python: str) -> None:
+    out = Path(ctx.out_dir)
+    log = out / "logs" / f"job_{job}.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    min_gb = float(ctx.options.get("min_free_gb") or 0)
+    started = utc_now()
+    if min_gb > 0:
+        ok, av = _wait_ram(min_gb, int(ctx.options.get("ram_wait_s") or 3600))
+        if not ok:
+            for c in checks:
+                write_evidence(out, finish_evidence(new_evidence(ctx, c), "ERROR", [
+                    f"RAM floor: available {av:.2f} GB < {min_gb} GB for the whole wait -- the "
+                    f"check did NOT run (the dev box is the PI's desktop)"]))
+            return
+    timeout = int(ctx.prof["check_timeout_s"].get(job, 3600))
+    cmd = [python, str(Path(__file__).resolve()), "check", "--ctx", str(ctx_path),
+           "--checks", ",".join(checks)]
+    _say(f"job {job} ({', '.join(checks)}) -> {log}")
+    kw = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
+          else {"start_new_session": True})
+    abort_gb = float(ctx.options.get("abort_free_gb") or 0)
+    aborted = None
+    with open(log, "a", encoding="utf-8", errors="replace") as fh:
+        fh.write(f"\n==== {started} {' '.join(cmd)}\n")
+        fh.flush()
+        env = _child_env(ctx)
+        if job == "model":
+            # ⛔ MEASURED 2026-09-27 on Thor (53ecf9b): the model job's trainer build lands on CUDA
+            # there, while G-EVAL's identity probe runs its fixed batch on CPU (`_forward_out` ->
+            # compute_losses_v3(..., "cpu")) and builds the loader on "cpu" -> "tensors on two
+            # devices". G-HYG / G-DVB / G-EVAL are CPU checks by design (the dev-box stage runs
+            # them CPU-only, where G-EVAL PASSED); the model job is CPU-only on EVERY host.
+            env["CUDA_VISIBLE_DEVICES"] = ""
+        p = subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT,
+                             stdin=subprocess.DEVNULL, **kw)
+        t_end = time.time() + timeout
+        rc = None
+        while rc is None:
+            try:
+                rc = p.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                if time.time() > t_end:
+                    stop = _stop_child(p)
+                    rc = "timeout" if stop["stopped"] else "timeout-and-still-running"
+                    break
+                av = ram_available_gb() if abort_gb > 0 else None
+                if av is not None and av < abort_gb:
+                    # the Master Mind's rule: abort below the floor (the dev box is the PI's
+                    # desktop) -- by the child's EXPLICIT pid, never a name, and VERIFIED
+                    aborted, rc = (av, _stop_child(p)), "aborted-ram"
+                    break
+    if aborted is not None:
+        av, stop = aborted
+        what = ("ABORTED, the check did NOT complete" if stop["stopped"] else
+                f"ABORT FAILED: the child (pid {stop['pid']}) is STILL RUNNING after "
+                f"{'; '.join(stop['steps'])} -- any evidence it writes later is NOT this job's "
+                f"verdict; stop it by that pid")
+        for c in checks:
+            ev = new_evidence(ctx, c)
+            ev["details"]["abort"] = stop
+            write_evidence(out, finish_evidence(ev, "ERROR", [
+                f"RAM floor: available {av:.2f} GB < {abort_gb} GB while the {job} job ran -- "
+                f"{what}"]))
+        return
+    # ⛔ the verdict is the evidence FILE: a missing or stale one is an ERROR, never a pass
+    for c in checks:
+        ep = out / "evidence" / f"{c}.json"
+        ok = False
+        if ep.is_file():
+            try:
+                ev = read_json(ep)
+                ok = str(ev.get("finished_utc", "")) >= started and ev.get("binding") == ctx.binding()
+            except Exception:                             # noqa: BLE001
+                ok = False
+        if not ok:
+            tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-15:]
+            write_evidence(out, finish_evidence(new_evidence(ctx, c), "ERROR", [
+                f"the {job} child (rc {rc}) left no fresh evidence for {c}"],))
+            _say(f"{c}: ERROR -- no fresh evidence (rc {rc}); log tail: {tail[-3:]}")
+
+
+def _collect_evidence(out_dir: Path, import_dirs: Iterable[str]) -> dict[str, list[tuple[Path, dict]]]:
+    found: dict[str, list[tuple[Path, dict]]] = {}
+    dirs = [out_dir / "evidence"] + [Path(d) for d in import_dirs]
+    for d in dirs:
+        if not d.is_dir():
+            continue
+        for p in sorted(d.glob("G-*.json")):
+            try:
+                ev = read_json(p)
+            except Exception:                             # noqa: BLE001
+                continue
+            if ev.get("kind") == "evidence" and ev.get("check") in CHECKS:
+                found.setdefault(ev["check"], []).append((p, ev))
+    return found
+
+
+def evidence_rejections(ev: dict, binding: dict, data: dict) -> list[str]:
+    """Why `finalize` will not use this evidence for the token (empty = usable): another binding, a regression arm, or an input it read whose
+    fingerprint is absent from / differs in the token's data manifest."""
+    why = []
+    if ev.get("binding") != binding:
+        why.append("binding differs")
+    if ev.get("arm"):
+        why.append(f"arm {ev['arm']}")
+    for f, fp in (ev.get("inputs_read") or {}).items():
+        mine = data.get(f)
+        if mine is None or fp_key(mine) != fp_key(fp):
+            why.append(f"input {f} read with a different fingerprint")
+    if ev.get("check") == "G-SUITE-PINNED":          # split mode (PI 2026-11-28): the two halves are never confusable
+        d = ev.get("details") if isinstance(ev.get("details"), dict) else {}
+        if d.get("half") == "thor" or d.get("mode") == "thor-half":
+            why.append("a Thor-half evidence is never G-SUITE-PINNED (only the dev-box complement's merge is)")
+        if d.get("mode") == "split":
+            if binding.get("profile") not in PINNED_SPLIT_PROFILES:
+                why.append(f"split-mode G-SUITE-PINNED is not admitted for profile {binding.get('profile')!r}")
+            if d.get("half") != "devbox-complement" or not _HEX64.match(
+                    str((d.get("thor_half") or {}).get("sha256") or "")):
+                why.append("split-mode G-SUITE-PINNED without the dev-box complement's merge of a sha256-named Thor half")
+    return why
+
+
+def finalize(ctx: Ctx, key: bytes, import_dirs: Iterable[str] = (),
+             profile_refusals: Iterable[str] = ()) -> tuple[str, Path, dict]:
+    out = Path(ctx.out_dir)
+    pmap = [tuple(x) for x in ctx.path_map]
+    gin = dict(ctx.options.get("gate_inputs") or {})
+    data = data_manifest(ctx.argv, ctx.prof, pmap, gin)
+    binding = {**ctx.binding(), "argv": list(ctx.argv), "trainer": ctx.prof["trainer"],
+               "gate_inputs": gin, "data": data,
+               "data_sha256": sha256_bytes(canonical_json(data))}
+    # ⛔ the profile's argv rules are RE-DERIVED here from the context -- never trusted from the
+    # caller -- so a stand-alone `finalize` cannot mint a token `run` would have refused
+    own_refusals, pi_pending = profile_argv_rules(ctx.prof, ctx.argv, ctx.options, pmap)
+    reasons = list(dict.fromkeys([*profile_refusals, *own_refusals]))
+    reasons += data_manifest_problems(data)
+    if ctx.arm or os.environ.get(ARM_ENV):
+        reasons.append(f"a regression arm is active ({ctx.arm or os.environ.get(ARM_ENV)}) -- "
+                       f"an arm run can never PASS")
+    found = _collect_evidence(out, import_dirs)
+    checks: dict[str, dict] = {}
+    verdict_missing = []
+    required = required_checks_of(ctx.prof, ctx.argv)
+    for c in required:
+        cands = []
+        for p, ev in found.get(c, []):
+            why = evidence_rejections(ev, ctx.binding(), data)
+            cands.append((str(ev.get("finished_utc", "")), p, ev, why))
+        usable = sorted([x for x in cands if not x[3]], key=lambda x: x[0])
+        if not usable:
+            verdict_missing.append(c)
+            checks[c] = {"status": "MISSING",
+                         "rejected": [{"path": str(p), "why": w} for _, p, _, w in cands][:6]}
+            continue
+        _, p, ev, _ = usable[-1]
+        checks[c] = {"status": ev["status"], "evidence_path": str(p),
+                     "evidence_sha256": sha256_file(p), "host": ev.get("host", {}).get("node"),
+                     "finished_utc": ev.get("finished_utc"),
+                     "reasons": list(ev.get("reasons") or [])[:8]}
+        if ev["status"] not in ("PASS", "PI-DECISION"):
+            reasons.append(f"{c} {ev['status']}: " + " | ".join((ev.get("reasons") or [])[:3]))
+    needs_pi = [c for c, v in checks.items() if v["status"] == "PI-DECISION"]
+    if any(v["status"] in ("FAIL", "ERROR") for v in checks.values()) or reasons:
+        verdict = "FAIL"
+    elif verdict_missing:
+        verdict = "INCOMPLETE"
+        reasons.append(f"no usable evidence yet for: {verdict_missing}")
+    elif needs_pi or pi_pending:
+        # ⛔ a PI decision is not a pass: the SPEC routes it to the PI BEFORE launch
+        verdict = "PI-DECISION"
+        reasons += [f"{c}: " + " | ".join(checks[c]["reasons"][:2]) for c in needs_pi]
+        reasons += [f"PI decision pending: {r}" for r in pi_pending]
+    else:
+        verdict = "PASS"
+    # ⛔ a profile with OPEN ITEMS is not a finished launch definition: never a PASS
+    open_items = open_item_reasons(ctx.prof, ctx.argv)
+    closed_own = own_records_closed(ctx.prof, ctx.argv, ctx.options, ctx.commit, ctx.argv_sha256)
+    if closed_own:                       # M-GATE: an item whose OWN record the gate read and passed is closed -- never deleted
+        open_items = open_item_reasons(ctx.prof, ctx.argv, closed=closed_own)
+    if open_items:
+        reasons += open_items
+        if verdict in ("PASS", "PI-DECISION"):
+            verdict = "INCOMPLETE"
+    # the binding is NEVER scrubbed (it must be the exact launch); the prose is (clip-id rule)
+    token = {"schema": GATE_SCHEMA, "kind": "launch-gate-token", "verdict": verdict,
+             "binding": binding, "checks": scrub(checks), "reasons": scrub(reasons),
+             "gate_sha256": _gate_self_sha(), "host": _host(), "created_utc": utc_now(),
+             "key_id": key_id(key)}
+    if closed_own:                       # M-GATE: only when an item was closed by its own record -- C0 / C1 tokens gain no key
+        token["own_records_closed"] = dict(closed_own)
+    token["hmac_sha256"] = sign(token, key)
+    c12 = ctx.commit[:12]
+    path = out / f"{verdict}_{c12}.json"
+    stamp = utc_now().replace(":", "")
+    sup = out / "superseded"
+    for other in ("PASS", "FAIL", "INCOMPLETE", "PI-DECISION"):
+        op = out / f"{other}_{c12}.json"
+        if op.exists():
+            # ⛔ exactly ONE current token per commit; a stale PASS is DEMOTED, never left behind
+            sup.mkdir(parents=True, exist_ok=True)
+            os.replace(op, sup / f"{other}_{c12}.{stamp}.json")
+    write_json(path, token)
+    return verdict, path, token
+
+
+def cmd_run(a) -> int:
+    _harden_streams()
+    profile = PROFILES[a.profile]
+    tree = Path(a.tree).resolve()
+    argv = load_argv_file(a.argv_file)
+    commit = a.commit
+    if a.git_dir and not _HEX40.match(commit or ""):
+        commit = resolve_commit(a.git_dir, commit)
+    if not _HEX40.match(commit or ""):
+        raise GateError(f"--commit must be a 40-char sha (or resolvable with --git-dir): {commit!r}")
+    pinned_split_refusals(a.profile, a.pinned_half, a.pinned_thor_half, a.pinned_reduce_bytes, a.git_dir)
+    out = Path(a.out_dir).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    arm = a.arm or os.environ.get(ARM_ENV) or None
+    key = load_key(a.key_file, create=True, forbid_under=[tree])
+    _say(f"profile {a.profile} | commit {commit[:12]} | tree {tree}")
+    tman = tree_manifest(tree)
+    tsha = tree_digest(tman)
+    write_json(out / "tree_manifest.json", {"tree": str(tree), "tree_sha256": tsha, "files": tman})
+    if a.git_dir:
+        want = tree_manifest_from_archive(git_archive_bytes(a.git_dir, commit, TREE_ROOTS))
+        if tree_digest(want) != tsha:
+            raise GateError(f"the tree {tree} is NOT commit {commit[:12]}: "
+                            f"{json.dumps(tree_diff(want, tman))[:800]}")
+        _say(f"tree == git archive {commit[:12]} ({len(tman)} files, {tsha[:16]})")
+    options = {
+        "cpu_only": bool(a.cpu_only), "omp": int(a.omp), "min_free_gb": float(a.min_free_gb),
+        "ram_wait_s": int(a.ram_wait_s), "git_dir": a.git_dir, "baseline": a.baseline,
+        "suites": a.suites.split(",") if a.suites else None,
+        "suite_work": a.suite_work, "skip_mutation_audit": bool(a.skip_mutation_audit),
+        "pinned_half": a.pinned_half, "pinned_reduce_bytes": int(a.pinned_reduce_bytes),
+        "pinned_thor_half": (str(Path(a.pinned_thor_half).resolve()) if a.pinned_thor_half else None),
+        "eval_loader": a.eval_loader or str(_resolve_repo_rel(tree, profile["eval_loader"])),
+        "eval_kit": a.eval_kit, "eval_stamps": a.eval_stamps,
+        "eval_remap_overrides": a.eval_remap_overrides,
+        "clock_reference": a.clock_reference or [str(_resolve_repo_rel(tree, r))
+                                                 for r in profile["clock_reference"]],
+        "clock_manifest": dict(x.split("=", 1) for x in (a.clock_manifest or [])),
+        "smoke_steps": a.smoke_steps,
+        "pi_cost_approval": a.pi_cost_approval,
+        "nav_tau_record": str(Path(a.nav_tau_record).resolve()) if a.nav_tau_record else None,
+        "map_overfit_record": (str(Path(a.map_overfit_record).resolve())
+                               if a.map_overfit_record else None),
+        "map_watch_artifact": (str(Path(a.map_watch_artifact).resolve())
+                               if a.map_watch_artifact else None),
+        "box_overfit_record": (str(Path(a.box_overfit_record).resolve())
+                               if a.box_overfit_record else None),
+        "map_overfit_closure": (str(Path(a.map_overfit_closure).resolve())
+                                if a.map_overfit_closure else None),
+        "box_overfit_closure": (str(Path(a.box_overfit_closure).resolve())
+                                if a.box_overfit_closure else None),
+        "suite_verdict": (str(Path(a.suite_verdict).resolve()) if a.suite_verdict else None),
+        "abort_free_gb": float(a.abort_free_gb),
+    }
+    if options["nav_tau_record"] is None and profile.get("nav_tau_record_default"):
+        dflt = _resolve_repo_rel(tree, profile["nav_tau_record_default"])
+        if dflt.is_file():
+            options["nav_tau_record"] = str(dflt)
+    # the gate's own inputs are content-bound in the token like the trainer's (the tau record's
+    # sha256 is therefore IN the PASS token: binding.data["gate:nav-tau-record"].sha256)
+    gin = {f"gate:clock-reference[{i}]": str(r)
+           for i, r in enumerate(options["clock_reference"])}
+    if options["nav_tau_record"]:
+        gin["gate:nav-tau-record"] = options["nav_tau_record"]
+    req = required_checks_of(profile, argv)
+    if options["map_overfit_record"] and "G-MAP-OVERFIT" in req:
+        gin.update(overfit_record_gate_inputs("map", options["map_overfit_record"]))
+    if options["box_overfit_record"] and "G-BOX-OVERFIT" in req:
+        gin.update(overfit_record_gate_inputs("box", options["box_overfit_record"]))
+    if options["map_overfit_closure"] and "G-MAP-OVERFIT" in req:
+        gin["gate:map-overfit-closure"] = options["map_overfit_closure"]
+    if options["box_overfit_closure"] and "G-BOX-OVERFIT" in req:
+        gin["gate:box-overfit-closure"] = options["box_overfit_closure"]
+    if options["map_watch_artifact"] and hires_on(profile, argv):
+        gin["gate:map-watch-artifact"] = options["map_watch_artifact"]
+    if options["suite_verdict"] and profile.get("suite_mode") == "consume":
+        gin["gate:suite-verdict"] = options["suite_verdict"]
+    options["gate_inputs"] = gin
+    pmap = parse_path_map(a.path_map)
+    # refcv9-e1rig G-CLOCK (r9gclk): the per-clip ts0 bridge reads the egomotion logs. Content-bound in the token like every gate
+    # input (`gate:rig-egomotion-dir`, a directory LISTING); absent => rig_clock_check FAILS loud (it never guesses a ts0)
+    if has_flag(argv, _E1_FLAG) and "G-CLOCK" in req:
+        rd_ = (str(Path(a.rig_ego_dir).resolve()) if a.rig_ego_dir
+               else (map_path(profile["rig_ego_dir_default"], pmap) if profile.get("rig_ego_dir_default") else None))
+        if rd_:
+            options["rig_ego_dir"] = rd_
+            gin["gate:rig-egomotion-dir"] = rd_
+    # ⛔ a map entry that matches NO argv path is a mangled map, not a no-op (MEASURED 2026-09-26:
+    # MSYS rewrote `/home/nvidia/data=D:/kit` into `C:\Program Files\Git\home\...` and every
+    # data path silently stayed unmapped)
+    dpaths = [p for _, p in data_inputs(argv, profile)]
+    for frm, _to in pmap:
+        if not any(p == frm or p.startswith(frm + "/") or p.startswith(frm + "\\")
+                   for p in dpaths):
+            raise GateError(f"--path-map FROM {frm!r} matches no data path of the argv -- a "
+                            f"mangled map (MSYS path conversion? set MSYS_NO_PATHCONV=1)")
+    ctx = Ctx(profile=a.profile, tree=str(tree), commit=commit, argv=argv, out_dir=str(out),
+              path_map=[list(x) for x in pmap], tree_sha256=tsha,
+              argv_sha256=argv_sha256(argv), options=options, arm=arm)
+    ctx_path = ctx.dump(out / "ctx.json")
+    refusals, pi_pending = profile_argv_rules(profile, argv, options, pmap)
+    for r in refusals:
+        _say(f"REFUSAL: {r}")
+    for r in pi_pending:
+        _say(f"PI DECISION PENDING: {r}")
+    wanted = (a.checks.split(",") if a.checks else list(profile["stages"][a.stage]))
+    req = required_checks_of(profile, argv)
+    # a record check the launch does not require is not run (e.g. G-MAP-OVERFIT with the 10 cm
+    # head off on a generic refc argv); a REQUIRED one always runs, and FAILS without its record
+    wanted = [c for c in wanted if c in req or c in BASE_CHECKS]
+    bad = sorted(set(wanted) - set(CHECKS))
+    if bad:
+        raise GateError(f"unknown checks {bad}")
+    if a.pinned_half and "G-SUITE-PINNED" not in wanted:
+        raise GateError(f"--pinned-half {a.pinned_half} runs G-SUITE-PINNED, which this run does not select")
+    for job, cs in JOBS:
+        sel = [c for c in cs if c in wanted]
+        if sel:
+            run_job(ctx, ctx_path, job, sel, a.python or sys.executable)
+    verdict, path, tok = finalize(ctx, key, a.import_evidence or [], refusals)
+    for c, v in tok["checks"].items():
+        _say(f"  {c:8s} {v['status']}")
+    for r in tok["reasons"][:12]:
+        _say(f"  - {r[:300]}")
+    _say(f"verdict {verdict} -> {path}")
+    print(f"ZZGATE-{verdict}-{commit[:12]}ZZ", flush=True)
+    return {"PASS": 0, "INCOMPLETE": 2, "PI-DECISION": 4}.get(verdict, 1)
+
+
+def _resolve_repo_rel(tree: Path, rel: str) -> Path:
+    """A repo-relative path: in the tree if it ships there, else in the enclosing repo."""
+    for base in (tree, tree.parent, *tree.parents):
+        p = base / rel
+        if p.exists():
+            return p
+    return tree / rel
+
+
+def cmd_finalize(a) -> int:
+    _harden_streams()
+    ctx = Ctx.load(Path(a.out_dir) / "ctx.json")
+    key = load_key(a.key_file, create=True, forbid_under=[ctx.tree])
+    verdict, path, _ = finalize(ctx, key, a.import_evidence or [])
+    _say(f"verdict {verdict} -> {path}")
+    print(f"ZZGATE-{verdict}-{ctx.commit[:12]}ZZ", flush=True)
+    return 0 if verdict == "PASS" else 1
+
+
+# --------------------------------------------------------------------------------------------- #
+# verify / exec (the supervisor's side)                                                           #
+# --------------------------------------------------------------------------------------------- #
+def verify_token(token_path: str | os.PathLike, argv: list[str], tree: str | os.PathLike, *,
+                 key: bytes, commit: str | None = None,
+                 path_map: list[tuple[str, str]] | None = None) -> tuple[bool, list[str], dict]:
+    """Every field the token binds is RE-MEASURED here; any difference refuses."""
+    reasons: list[str] = []
+    info: dict[str, Any] = {"token": str(token_path)}
+    try:
+        tok = read_json(token_path)
+    except Exception as e:                                # noqa: BLE001
+        return False, [f"token unreadable: {type(e).__name__}: {e}"], info
+    if tok.get("kind") != "launch-gate-token" or tok.get("schema") != GATE_SCHEMA:
+        reasons.append("not a launch-gate token")
+    if not signature_ok(tok, key):
+        reasons.append("HMAC does not verify -- the token was edited, or signed with another key "
+                       f"(token key_id {tok.get('key_id')}, this host's {key_id(key)})")
+    if tok.get("verdict") != "PASS":
+        reasons.append(f"token verdict is {tok.get('verdict')!r}, not PASS")
+    b = tok.get("binding") or {}
+    info["binding"] = {k: b.get(k) for k in ("profile", "commit", "tree_sha256", "argv_sha256")}
+    if commit and b.get("commit") != commit:
+        reasons.append(f"token commit {str(b.get('commit'))[:12]} != launch commit {commit[:12]}")
+    a_sha = argv_sha256(argv)
+    info["argv_sha256"] = a_sha
+    if b.get("argv_sha256") != a_sha or b.get("argv") != argv:
+        changed = [f"{x} -> {y}" for x, y in zip(b.get("argv") or [], argv) if x != y][:5]
+        reasons.append(f"argv differs from the gated argv (sha {a_sha[:12]} vs "
+                       f"{str(b.get('argv_sha256'))[:12]}; {changed or 'length differs'})")
+    try:
+        tman = tree_manifest(tree)
+        tsha = tree_digest(tman)
+        info["tree_sha256"] = tsha
+        if tsha != b.get("tree_sha256"):
+            reasons.append(f"code tree differs from the gated tree ({tsha[:16]} vs "
+                           f"{str(b.get('tree_sha256'))[:16]})")
+    except Exception as e:                                # noqa: BLE001
+        reasons.append(f"cannot measure the code tree: {e}")
+    prof = PROFILES.get(str(b.get("profile")), _REFC)
+    data = data_manifest(argv, prof, path_map or [], b.get("gate_inputs") or {})
+    want = b.get("data") or {}
+    d_bad = []
+    for k in sorted(set(want) | set(data)):
+        if k not in want or k not in data or fp_key(want[k]) != fp_key(data[k]):
+            d_bad.append(k)
+    info["data_differs"] = d_bad
+    if d_bad:
+        reasons.append(f"data differs from the gated data on {d_bad[:8]}")
+    return not reasons, reasons, info
+
+
+def _emit_verify(a, ok: bool, reasons: list[str], info: dict, action: str) -> None:
+    rec = {"schema": GATE_SCHEMA, "kind": f"launch-gate-{action}", "verdict": "MATCH" if ok
+           else "REFUSED", "reasons": reasons, "info": info, "utc": utc_now(),
+           "host": platform.node()}
+    if a.json:
+        write_json(a.json, rec)
+    for r in reasons:
+        _say(f"REFUSED: {r}")
+    print(f"ZZGATE-{'MATCH' if ok else 'REFUSED'}ZZ", flush=True)
+
+
+def cmd_verify(a) -> int:
+    _harden_streams()
+    try:
+        key = load_key(a.key_file, create=False, forbid_under=[a.tree])
+        argv = load_argv_file(a.argv_file)
+        ok, reasons, info = verify_token(a.token, argv, a.tree, key=key, commit=a.commit,
+                                         path_map=parse_path_map(a.path_map))
+    except Exception as e:                                # noqa: BLE001 -- refuse, never pass
+        ok, reasons, info = False, [f"{type(e).__name__}: {e}"], {}
+    _emit_verify(a, ok, reasons, info, "verify")
+    return 0 if ok else 5
+
+
+def cmd_exec(a) -> int:
+    """Verify, then REPLACE this process with the trainer on exactly the bound argv. The PID the
+    supervisor recorded becomes the trainer's (the `exec` idiom of run_refcv6.sh)."""
+    _harden_streams()
+    try:
+        key = load_key(a.key_file, create=False, forbid_under=[a.tree])
+        argv = load_argv_file(a.argv_file)
+        ok, reasons, info = verify_token(a.token, argv, a.tree, key=key, commit=a.commit)
+    except Exception as e:                                # noqa: BLE001
+        ok, reasons, info, argv = False, [f"{type(e).__name__}: {e}"], {}, []
+    _emit_verify(a, ok, reasons, info, "exec")
+    if not ok:
+        return 5
+    tree = Path(a.tree).resolve()
+    tok = read_json(a.token)
+    trainer = tree / tok["binding"].get("trainer", _REFC["trainer"])
+    os.environ["PYTHONPATH"] = os.pathsep.join([str(tree / "stack"), str(tree / "taniteval")])
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    os.environ.pop(ARM_ENV, None)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    cmd = [sys.executable, str(trainer), *argv]
+    if a.dry_run:
+        print("ZZGATE-EXEC-DRYRUNZZ " + json.dumps(cmd), flush=True)
+        return 0
+    if os.name == "nt":                                   # no true exec on Windows: run and relay
+        return subprocess.call(cmd)
+    os.execv(sys.executable, cmd)
+    return 99                                             # pragma: no cover (unreachable)
+
+
+def cmd_bind(a) -> int:
+    _harden_streams()
+    argv = load_argv_file(a.argv_file)
+    prof = PROFILES[a.profile]
+    tman = tree_manifest(a.tree)
+    out = {"profile": a.profile, "argv_sha256": argv_sha256(argv), "tree_sha256": tree_digest(tman),
+           "n_tree_files": len(tman),
+           "data": data_manifest(argv, prof, parse_path_map(a.path_map))}
+    print(json.dumps(out, indent=1))
+    return 0
+
+
+# --------------------------------------------------------------------------------------------- #
+# CLI                                                                                             #
+# --------------------------------------------------------------------------------------------- #
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    r = sub.add_parser("run", help="run the checks of a stage and write the token")
+    r.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    r.add_argument("--tree", required=True, help="the code tree being launched (stack/ taniteval/)")
+    r.add_argument("--commit", required=True, help="40-char sha (or a ref with --git-dir)")
+    r.add_argument("--argv-file", required=True, help="JSON list: the trainer argv to launch")
+    r.add_argument("--out-dir", required=True)
+    g = r.add_mutually_exclusive_group()
+    g.add_argument("--stage", choices=("devbox", "thor", "all"), default="all")
+    g.add_argument("--checks", default=None, help="comma list, overrides --stage")
+    r.add_argument("--path-map", action="append", default=[], help="FROM=TO for data paths")
+    r.add_argument("--import-evidence", action="append", default=[],
+                   help="an evidence dir from another host (bound checks only)")
+    r.add_argument("--git-dir", default=None)
+    r.add_argument("--baseline", default=None, help="G-SUITE baseline ref (the tip)")
+    r.add_argument("--suites", default=None, help="comma list of suite dirs (default profile)")
+    r.add_argument("--suite-work", default=None, help="short path for the clean trees (MAX_PATH)")
+    r.add_argument("--skip-mutation-audit", action="store_true", help="(never a PASS)")
+    r.add_argument("--pinned-half", choices=PINNED_HALVES, default=None,
+                   help="G-SUITE-PINNED SPLIT MODE (PI 2026-11-28; profile refcv9-full-d1 ONLY): `thor` = every pinned file on "
+                        "the FULL archive (evidence G-SUITE-PINNED-THOR-HALF); `devbox-complement` = re-run the files Thor cannot "
+                        "pass on a REDUCED tree and merge into the real G-SUITE-PINNED (needs --pinned-thor-half)")
+    r.add_argument("--pinned-thor-half", default=None,
+                   help="devbox-complement: the Thor half's G-SUITE-PINNED-THOR-HALF.json (refused unless bound to this commit / "
+                        "tree / argv / profile, run on the FULL archive, with a junit for every pinned file)")
+    r.add_argument("--pinned-reduce-bytes", type=int, default=PINNED_REDUCE_BYTES_DEFAULT,
+                   help="devbox-complement: drop members of `TanitAD Research Lab/` and `FlyWheels/` of >= this many bytes")
+    r.add_argument("--eval-loader", default=None)
+    r.add_argument("--eval-kit", default=None)
+    r.add_argument("--eval-stamps", default=None, help="a config.json with the train-split stamps")
+    r.add_argument("--eval-remap-overrides", default=None,
+                   help="JSON {flag: local path} handed to the eval loader (REFCV6_REMAP_OVERRIDES)")
+    r.add_argument("--clock-reference", action="append", default=None)
+    r.add_argument("--rig-ego-dir", default=None,
+                   help="refcv9-e1rig G-CLOCK: the directory of per-clip egomotion logs (<clip_id>.parquet) whose first timestamp is "
+                        "each clip's ts0 (default: the profile's rig_ego_dir_default, path-mapped)")
+    r.add_argument("--clock-manifest", action="append", default=None,
+                   help="train=<_v2manifest.pt> (dev box: manifest mode, not launch evidence)")
+    r.add_argument("--smoke-steps", type=int, default=None)
+    r.add_argument("--map-overfit-record", default=None,
+                   help="G-MAP-OVERFIT: the overfit protocol's PASS record for THIS commit")
+    r.add_argument("--nav-tau-record", default=None,
+                   help="FIX-4: the banked tau record (default: the profile's repo path, "
+                        "`…/2026-09-26-declared-vs-built/raw/nav_compliance_tau_train.json`) "
+                        "that justifies --nav-compliance-tau-rad; its sha256 is bound in the "
+                        "token (REQUIRED when --graft-nav-compliance)")
+    r.add_argument("--map-watch-artifact", default=None,
+                   help="G-MAP item 4: the refcv7 Training Watch built from the smoke's "
+                        "metrics.jsonl (24 per-class IoU series + the thin-class alarm tile)")
+    r.add_argument("--box-overfit-record", default=None,
+                   help="G-BOX-OVERFIT: the box overfit harness's PASS JSON")
+    r.add_argument("--map-overfit-closure", default=None,
+                   help="G-MAP-OVERFIT: the closure_run.py record of the SAME harness run")
+    r.add_argument("--box-overfit-closure", default=None,
+                   help="G-BOX-OVERFIT: the closure_run.py record of the SAME harness run")
+    r.add_argument("--suite-verdict", default=None,
+                   help="G-SUITE (consume mode): the Thor full-suite verdict BOUND to the launch "
+                        "commit and tree by `launch_gate.py suite-bind`")
+    r.add_argument("--pi-cost-approval", default=None,
+                   help="JSON {max_s_per_step, pi_verbatim, date}: the PI's recorded decision "
+                        "that lifts PI-DECISION for a measured cost at or under max_s_per_step")
+    r.add_argument("--cpu-only", action="store_true")
+    r.add_argument("--omp", type=int, default=4)
+    r.add_argument("--min-free-gb", type=float, default=0.0,
+                   help="start a job only after 3 consecutive readings at or above this")
+    r.add_argument("--abort-free-gb", type=float, default=0.0,
+                   help="kill a running job (explicit pid) when free RAM falls below this")
+    r.add_argument("--ram-wait-s", type=int, default=3600)
+    r.add_argument("--key-file", default=None)
+    r.add_argument("--python", default=None)
+    r.add_argument("--arm", default=None, help="a regression arm (never PASSes)")
+    r.set_defaults(fn=cmd_run)
+    c = sub.add_parser("check", help="(internal) run one job's checks in this process")
+    c.add_argument("--ctx", required=True)
+    c.add_argument("--checks", required=True)
+    c.set_defaults(fn=cmd_check)
+    f = sub.add_parser("finalize", help="re-derive the token from the evidence on disk")
+    f.add_argument("--out-dir", required=True)
+    f.add_argument("--import-evidence", action="append", default=[])
+    f.add_argument("--key-file", default=None)
+    f.set_defaults(fn=cmd_finalize)
+    for name, fn in (("verify", cmd_verify), ("exec", cmd_exec)):
+        v = sub.add_parser(name)
+        v.add_argument("--token", required=True)
+        v.add_argument("--argv-file", required=True)
+        v.add_argument("--tree", required=True)
+        v.add_argument("--commit", default=None)
+        v.add_argument("--key-file", default=None)
+        v.add_argument("--json", default=None, help="write the verdict here (the artifact)")
+        v.add_argument("--path-map", action="append", default=[])
+        if name == "exec":
+            v.add_argument("--dry-run", action="store_true")
+        v.set_defaults(fn=fn)
+    b = sub.add_parser("bind", help="print the binding (tree, argv, data) for inspection")
+    b.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    b.add_argument("--tree", required=True)
+    b.add_argument("--argv-file", required=True)
+    b.add_argument("--path-map", action="append", default=[])
+    b.set_defaults(fn=cmd_bind)
+    sb = sub.add_parser("suite-bind", help="bind a Thor full-suite verdict.json to the commit "
+                                           "and the CAND tree it was measured on")
+    sb.add_argument("--verdict", required=True, help="gate_verdict.py's verdict.json")
+    sb.add_argument("--cand-tree", required=True, help="the CAND tree the suite ran in")
+    sb.add_argument("--commit", required=True, help="the 40-char launch commit")
+    sb.add_argument("--out", required=True)
+    sb.set_defaults(fn=cmd_suite_bind)
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    a = build_parser().parse_args(argv)
+    try:
+        return int(a.fn(a) or 0)
+    except GateError as e:
+        _say(f"GATE ERROR: {e}")
+        print("ZZGATE-ERRORZZ", flush=True)
+        return 3
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

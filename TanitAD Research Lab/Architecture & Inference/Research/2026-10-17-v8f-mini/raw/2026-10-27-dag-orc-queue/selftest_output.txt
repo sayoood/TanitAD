@@ -1,0 +1,404 @@
+== S: queue byte-identity and insertions-only
+PASS S0 tip queue is the pinned 3b7b404e file (sha256 6d26a613...)
+PASS S1 the staged queue is CRLF throughout and ends with CRLF
+PASS S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)
+PASS S3 the staged queue adds exactly 20 lines (1 doc, 3 :dagname, 3 :dagarm, 13 :dagorcarm)
+PASS S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants
+PASS S5 the staged queue equals a fresh run of build_queue.build() (byte for byte)
+PASS S6 245 stage invocations (50 dispatched stage names x 4 shapes + the DAG-family arms) print byte-identical output on the tip queue and the staged queue
+PASS S7 the real (non-dry) run of `gatedag dag 0` behaves identically (rc, output)
+PASS S7 the real (non-dry) run of `traindag dag2 0 0.1` behaves identically (rc, output)
+PASS S7 the real (non-dry) run of `evaldag dagoacc 1` behaves identically (rc, output)
+== A: the three arms render exactly DAG2-0's argv + the registered change
+PASS A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)
+PASS A2 dagorc s0: the GATE line == the train line with --out and --selfcheck-only changed
+PASS A3 dagorc s0: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)
+PASS A4 dagorc s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0
+PASS A5 dagorc s0: run / gate / tag / pin names are indexed by the init seed
+PASS A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)
+PASS A2 dagorcrep s0: the GATE line == the train line with --out and --selfcheck-only changed
+PASS A3 dagorcrep s0: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)
+PASS A4 dagorcrep s0: no law flag, no DAgger bank flag; --seed 10
+PASS A5 dagorcrep s0: run / gate / tag / pin names are indexed by the init seed
+PASS A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)
+PASS A2 dagorc01 s0: the GATE line == the train line with --out and --selfcheck-only changed
+PASS A3 dagorc01 s0: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)
+PASS A4 dagorc01 s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0
+PASS A5 dagorc01 s0: run / gate / tag / pin names are indexed by the init seed
+PASS A1 dagorc s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)
+PASS A2 dagorc s1: the GATE line == the train line with --out and --selfcheck-only changed
+PASS A3 dagorc s1: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)
+PASS A4 dagorc s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1
+PASS A5 dagorc s1: run / gate / tag / pin names are indexed by the init seed
+PASS A1 dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)
+PASS A2 dagorcrep s1: the GATE line == the train line with --out and --selfcheck-only changed
+PASS A3 dagorcrep s1: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)
+PASS A4 dagorcrep s1: no law flag, no DAgger bank flag; --seed 11
+PASS A5 dagorcrep s1: run / gate / tag / pin names are indexed by the init seed
+PASS A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)
+PASS A2 dagorc01 s1: the GATE line == the train line with --out and --selfcheck-only changed
+PASS A3 dagorc01 s1: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)
+PASS A4 dagorc01 s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1
+PASS A5 dagorc01 s1: run / gate / tag / pin names are indexed by the init seed
+PASS A6 dagorc01 s0 differs from dagorc s0 in --ego-perturb-p only (0.3 -> 0.1) and --out
+PASS A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out
+PASS A6 dagorc01 s1 differs from dagorc s1 in --ego-perturb-p only (0.3 -> 0.1) and --out
+PASS A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out
+CAUGHT A8 gatedag dagorc 0 0.1: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc 0 0.3: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc 0 x: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc 0 0: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorcrep 0 0.1: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorcrep 0 0.3: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorcrep 0 x: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorcrep 0 0: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc01 0 0.1: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc01 0 0.3: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc01 0 x: any extra argument (a P) is REFUSED
+CAUGHT A8 gatedag dagorc01 0 0: any extra argument (a P) is REFUSED
+CAUGHT A9 gatedag dagorc 2: a seed other than 0 / 1 is REFUSED
+CAUGHT A9 gatedag dagorc -1: a seed other than 0 / 1 is REFUSED
+CAUGHT A9 gatedag dagorc 10: a seed other than 0 / 1 is REFUSED
+CAUGHT A9 gatedag dagorc a: a seed other than 0 / 1 is REFUSED
+CAUGHT A10 gatedag dagorc (no seed) is REFUSED
+CAUGHT A11 gatedag dagorcx 0: an unknown arm is REFUSED
+CAUGHT A11 gatedag dagorc2 0: an unknown arm is REFUSED
+CAUGHT A11 gatedag dagorcrep0 0: an unknown arm is REFUSED
+CAUGHT A11 gatedag orc 0: an unknown arm is REFUSED
+CAUGHT A8 traindag dagorc 0 0.1: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc 0 0.3: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc 0 x: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc 0 0: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorcrep 0 0.1: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorcrep 0 0.3: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorcrep 0 x: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorcrep 0 0: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc01 0 0.1: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc01 0 0.3: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc01 0 x: any extra argument (a P) is REFUSED
+CAUGHT A8 traindag dagorc01 0 0: any extra argument (a P) is REFUSED
+CAUGHT A9 traindag dagorc 2: a seed other than 0 / 1 is REFUSED
+CAUGHT A9 traindag dagorc -1: a seed other than 0 / 1 is REFUSED
+CAUGHT A9 traindag dagorc 10: a seed other than 0 / 1 is REFUSED
+CAUGHT A9 traindag dagorc a: a seed other than 0 / 1 is REFUSED
+CAUGHT A10 traindag dagorc (no seed) is REFUSED
+CAUGHT A11 traindag dagorcx 0: an unknown arm is REFUSED
+CAUGHT A11 traindag dagorc2 0: an unknown arm is REFUSED
+CAUGHT A11 traindag dagorcrep0 0: an unknown arm is REFUSED
+CAUGHT A11 traindag orc 0: an unknown arm is REFUSED
+PASS A12 dagorc: an inherited DAGSHA_DRY / WACCDAG_DRY / DAGF / DAGF0 / DAGSHA / DAGP / DAGORCP / DAGORCL in the environment changes nothing
+PASS A12 dagorcrep: an inherited DAGSHA_DRY / WACCDAG_DRY / DAGF / DAGF0 / DAGSHA / DAGP / DAGORCP / DAGORCL in the environment changes nothing
+PASS A12 dagorc01: an inherited DAGSHA_DRY / WACCDAG_DRY / DAGF / DAGF0 / DAGSHA / DAGP / DAGORCP / DAGORCL in the environment changes nothing
+PASS A13 the existing arm dag2 still prints its DAGGER-family lines (no dagorc flag leaks in)
+PASS A13 the existing arm dag20 still prints its DAGGER-family lines (no dagorc flag leaks in)
+PASS A13 the existing arm dagoacc still prints its DAGGER-family lines (no dagorc flag leaks in)
+PASS A14 exactly one usage line documents the three arms, inside the header block (before the first label)
+PASS A15 :dagorcarm is the last label of the file and is reached only from :dagarm (no dispatch line names it)
+== B: the queue run NOT dry on a fake box
+PASS B1 gatedag dagorc 0 (real run): rc 0, '[ok] gate M2b-dagorc_s0'
+PASS B2 the training argv is PINNED to dagpin\M2b_s0_dagorc.train.argv.txt, with the lever and without --selfcheck-only
+PASS B3 the gate ran the trainer with --selfcheck-only and the train argv (stub saw it)
+PASS B4 a second gate with an unchanged argv is accepted (idempotent pin)
+CAUGHT B5 a re-gate against a pin that names another argv is REFUSED
+CAUGHT B6 traindag against a tampered pin is REFUSED (the line derived now differs from the one the gate tokenised)
+CAUGHT B7 traindag before its gate is REFUSED (no pinned training argv)
+CAUGHT B8 evaldag before the training finished is REFUSED
+PASS B9 traindag dagorc 0 runs the PINNED line: rc 0 and the stub's argv is the pin's
+PASS B10 a finished run is skipped, not re-trained
+PASS B11 evaldag after training: rc 0, '[ok] eval M2b-dagorc_s0', the npz exists
+PASS B12 gatedag dagorcrep 1 (real run): rc 0, the trainer gets --seed 11 and --ego-perturb-p 0 and no law flag
+PASS B13 traindag dagorcrep 1 (real run): lands in M2b_s1_dagorcrep (not M2b_s11_...), pin M2b_s1_dagorcrep.train.argv.txt
+PASS B14 isolation: no dagger_bank* directory, no bank_sha / w_acc file, no iteration-1 run directory was created
+PASS B15 the DAgger queue tool was never called by a DAG-ORC stage
+CAUGHT B16 control: the existing `gatedag dag 0 0.1` on the same box still REFUSES without its bank
+== C: the gate asserter, the run record, K-REACH and the one-lever check
+PASS C1 dagorc s0: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced) with the queue's lines
+PASS C1 dagorc s1: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced) with the queue's lines
+PASS C1 dagorcrep s0: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines
+PASS C1 dagorcrep s1: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines
+PASS C1 dagorc01 s0: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced, p 0.1 doctored) with the queue's lines
+PASS C1 dagorc01 s1: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced, p 0.1 doctored) with the queue's lines
+PASS C2 the fixtures the REAL tip trainer wrote exist (reach_synthetic.py): 5 gates
+PASS C2 dagorc01 s0: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)
+PASS C2 dagorc s0: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)
+CAUGHT C2n real-trainer record doctored: built p 0.1 instead of 0.3
+CAUGHT C2n real-trainer record doctored: probe grad_diff_all 0
+CAUGHT C2n real-trainer record doctored: probe control_prior_grad_diff 1e-9
+CAUGHT C2n real-trainer record doctored: init sha another checkpoint
+PASS C2 dagorc s1: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)
+PASS C2 dagorcrep s0: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)
+PASS C2 dagorcrep s1: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)
+CAUGHT C3 dagorc s0: init sha256 is another checkpoint (M2b's, not DAG_s0's)
+CAUGHT C3 dagorc s0: init_ckpt not applied
+CAUGHT C3 dagorc s0: init_ckpt read-back mismatches > 0
+CAUGHT C3 dagorc s0: init_ckpt path is M2b's directory
+CAUGHT C3 dagorc s0: info.init_ckpt disagrees with levers.init_ckpt
+CAUGHT C3 dagorc s0: steps_total 2999
+CAUGHT C3 dagorc s0: built lr 2e-4
+CAUGHT C3 dagorc s0: built p_gt 0.2 -> 0.0
+CAUGHT C3 dagorc s0: declared_vs_built FAIL
+CAUGHT C3 dagorc s0: G-LIVE prior control 1e-9
+CAUGHT C3 dagorc s0: G-LIVE dead param
+CAUGHT C3 dagorc s0: lru absent
+CAUGHT C3 dagorc s0: excluded set is not the RA-1 holdout
+CAUGHT C3 dagorc s0: train list is not DAG2-0's
+CAUGHT C3 dagorc s0: a parameter group count differs from DAG2-0's
+CAUGHT C3 dagorc s0: w_acc built 49.7 (a second lever)
+CAUGHT C3 dagorc s0: o_interface built cut (a second lever)
+CAUGHT C3 dagorc s0: ego probe reads 'off' on A
+CAUGHT C3 dagorc s0: ego probe p_declared 0.1 on A
+CAUGHT C3 dagorc s0: ego probe saw no eligible window
+CAUGHT C3 dagorc s0: ego probe: the perturbed batch does not move the gradient
+CAUGHT C3 dagorc s0: ego probe: the perturbed batch does not move the loss
+CAUGHT C3 dagorc s0: ego probe control control_repeat_loss_diff = 1e-9
+CAUGHT C3 dagorc s0: ego probe control control_repeat_grad_diff = 1e-9
+CAUGHT C3 dagorc s0: ego probe control control_p0_loss_diff = 1e-9
+CAUGHT C3 dagorc s0: ego probe control control_p0_grad_diff = 1e-9
+CAUGHT C3 dagorc s0: ego probe control control_prior_grad_diff = 1e-9
+CAUGHT C3 dagorc s0: ego probe: p = 0 is not the identity
+CAUGHT C3 dagorc s0: ego probe: the world-model gradient moved
+CAUGHT C3 dagorc s0: ego probe: G-LIVE on the perturbed batch failed
+CAUGHT C3 dagorc s0: ego probe: pass False
+CAUGHT C3 dagorc s0: built p 0.1 on A (declared 0.3)
+CAUGHT C3 dagorc s0: built p 0.0 on A
+CAUGHT C3 dagorc s0: built ego_perturb_vscale [0.4, 1.0] (the law differs)
+CAUGHT C3 dagorc s0: built ego_perturb_vmax 6.0 (the law differs)
+CAUGHT C3 dagorc s0: built ego_perturb_adrop 1.0 (the law differs)
+CAUGHT C3 dagorc s0: built ego_perturb_yawrate_std 1.0 (the law differs)
+CAUGHT C3 dagorc s0: built ego_perturb_seed 1 (the law differs)
+CAUGHT C3 dagorc s0: built kin_mode 'steer' (the law differs)
+CAUGHT C3 dagorc s1: A s1 built seed 0 (the law seed must be S)
+CAUGHT C3 dagorc01 s0: B built p 0.3
+CAUGHT C3 dagorc01 s0: B probe p_declared 0.3
+CAUGHT C3 dagorcrep s0: REP: the ego probe is not 'off'
+CAUGHT C3 dagorcrep s0: REP: built p 0.3
+CAUGHT C3 dagorcrep s0: REP: built yawrate_std 2.0 (a law value built at p 0)
+CAUGHT C3 dagorc s0: the DAgger probe is not 'off'
+CAUGHT C3 dagorc s0: dagger_probe pass False
+CAUGHT C3 dagorc s0: dagger_probe absent
+CAUGHT C3 dagorc s0: built dagger_p 0.1
+CAUGHT C3 dagorc s0: a bank hash was built
+CAUGHT C3 dagorcrep s0: a bank hash was declared
+CAUGHT C3 dagorc s0: info carries a DAgger control record
+CAUGHT C3 dagorc s0: A's lines carry p 0.1
+CAUGHT C3 dagorc s0: A's lines drop one law flag (--ego-perturb-adrop)
+CAUGHT C3 dagorc s0: A's lines change the law seed
+CAUGHT C3 dagorc s0: A's lines name a law flag twice
+CAUGHT C3 dagorc s0: A's lines drop --dagger-p 0 (the lever must be NAMED)
+CAUGHT C3 dagorc s0: A's lines name --dagger-p 0.1
+CAUGHT C3 dagorc s0: A's lines name a bank
+CAUGHT C3 dagorc s0: A's lines name --dagger-seed
+CAUGHT C3 dagorc s0: A's lines carry a second lever (--w-acc 49.7)
+CAUGHT C3 dagorc s0: A's lines carry --o-interface cut
+CAUGHT C3 dagorc s0: A's lines carry --no-resume
+CAUGHT C3 dagorc s0: A's lines start from M2b_s0 (the old init)
+CAUGHT C3 dagorc s0: A's lines: --seed 10 (REP's seed)
+CAUGHT C3 dagorc s0: A's lines: --steps 3001
+CAUGHT C3 dagorc s0: A's lines: --lr 2e-4
+CAUGHT C3 dagorc s0: A's lines: --warmup 50
+CAUGHT C3 dagorc s0: ONE-LEVER only: --threads 3 appended identically to train, gate and pin (no other rule fires)
+CAUGHT C3 dagorc s0: ONE-LEVER only: --batch 32 on train, gate and pin
+CAUGHT C3 dagorc s0: ONE-LEVER only: --exclude 1:2 on train, gate and pin
+CAUGHT C3 dagorc s0: ONE-LEVER only: the same law flags and values in another order
+CAUGHT C3 dagorc s0: the gate line differs from the train line (another batch size, train unchanged)
+CAUGHT C3 dagorc s0: the pin differs from the planned train line (another lr)
+CAUGHT C3 dagorc s0: the gate line carries no --selfcheck-only
+CAUGHT C3 dagorc s0: the selfcheck's argv_sha is another argv's
+CAUGHT C3 dagorcrep s0: REP's lines name a law flag (--ego-perturb-seed 0: equal to the trainer's default, so only this rule can see it)
+CAUGHT C3 dagorcrep s0: REP's lines name --ego-perturb-p 0.3
+CAUGHT C3 dagorcrep s0: REP's lines carry --seed 0 (DAG2-0's seed: not a replicate)
+CAUGHT C3 dagorcrep s1: REP s1's lines carry --seed 10 (s0's)
+CAUGHT C3 dagorcrep s0: REP's lines carry --seed 12
+CAUGHT C3 dagorc01 s0: B's lines carry p 0.3 (A's dose)
+CAUGHT C3 dagorc01 s0: B's lines carry p 0.2
+CAUGHT C3 dagorc s0: the one-lever reference argv is seed 1's (a mispaired reference)
+CAUGHT C3 dagorc s0: the comparator B is the other seed's summary (its TRAIN list / window set are the same, its parameter groups too: only an UNRELATED summary may differ -> a doctored copy)
+CAUGHT C3 --seed 2 is REFUSED (rc 2: DAG_s exists for seeds 0 and 1 only)
+PASS C3c control: a no-op edit of the same record is still accepted (the doctoring harness does not break positives)
+PASS C4 the token is written after a passing check and binds the commit, the PINNED training argv's sha256 and the data sha256; names the arm and the dose
+CAUGHT C4n a commit that is not 40 hex: no token
+CAUGHT C4n a failing check writes NO token
+PASS C4 REP s1's token records trainer_seed 11 and ego_perturb_p 0.0
+-- C5: the run record, K-REACH and the one-lever subcommand
+PASS C5 dagorc s0: the run record of a correct run PASSES
+PASS C5 dagorc s1: the run record of a correct run PASSES
+PASS C5 dagorcrep s0: the run record of a correct run PASSES
+PASS C5 dagorcrep s1: the run record of a correct run PASSES
+PASS C5 dagorc01 s0: the run record of a correct run PASSES
+PASS C5 dagorc01 s1: the run record of a correct run PASSES
+CAUGHT C5 dagorc s0: run record: argv.json is not the planned argv (a lr changed)
+CAUGHT C5 dagorc s0: run record: the pin is not the planned argv
+CAUGHT C5 dagorc s0: run record: argv.json sha is another
+CAUGHT C5 dagorc s0: run record: summary.json argv_sha is another
+CAUGHT C5 dagorc s0: run record: selfcheck.json argv_sha is another
+CAUGHT C5 dagorc s0: run record: summary.json done false
+CAUGHT C5 dagorc s0: run record: summary.json steps 2999
+CAUGHT C5 dagorc s0: run record: summary.json seed 7
+CAUGHT C5 dagorc s0: run record: summary.json arm M1
+CAUGHT C5 dagorc s0: run record: the run's own selfcheck is not a PASS
+CAUGHT C5 dagorc s0: run record: init sha256 is M2b's (K-INIT)
+CAUGHT C5 dagorc s0: run record: init not applied
+CAUGHT C5 dagorc s0: run record: init path is M2b's
+CAUGHT C5 dagorc s0: run record: built p 0.1 on A
+CAUGHT C5 dagorc s0: run record: built law seed 1 on A s0
+CAUGHT C5 dagorc s0: run record: built vmax 6.0
+CAUGHT C5 dagorc s0: run record: built dagger_p 0.1
+CAUGHT C5 dagorc s0: run record: dagger_n 5 (a row was swapped)
+CAUGHT C5 dagorcrep s0: run record: REP: built p 0.3
+CAUGHT C5 dagorcrep s1: run record: REP s1: summary seed 1 (the DAG seed, not the replicate's 11)
+CAUGHT C5 dagorc01 s0: run record: B: built p 0.3
+PASS C6 A: n/eligible = 0.3 exactly passes
+PASS C6 A: n/eligible = 0.32 (the upper edge, inclusive) passes
+PASS C6 A: n/eligible = 0.28 (the lower edge, inclusive) passes
+PASS C6 B: n/eligible = 0.1 passes
+PASS C6 REP: n exactly 0 with eligible > 0 passes
+CAUGHT C6 A: 0.321 is outside the band
+CAUGHT C6 A: 0.279 is outside the band
+CAUGHT C6 A: n = 0 (the loop line deleted) fails
+CAUGHT C6 A: eligible = 0 fails
+CAUGHT C6 A: n > eligible fails
+CAUGHT C6 B at A's rate 0.3 fails
+CAUGHT C6 A at B's rate 0.1 fails
+CAUGHT C6 REP: n = 1 fails (a perturbed row on the control)
+CAUGHT C6 REP: eligible = 0 fails (a zero that proves nothing)
+DAG-ORC perturbation-reached: FAIL | dagorc | ego_perturb_n None / eligible None = n/a (must lie in 0.3 +- 0.02)
+CAUGHT C6 A: the keys are absent
+CAUGHT C6 A: n is a bool / a float (not a count)
+PASS C6 the REAL trainer's synthetic REP run summary (ego_perturb_n exactly 0, eligible > 0) satisfies the control
+CAUGHT C6 the REAL trainer run with the loop's `ego.apply` line DELETED (ego_perturb_n 0) is refused by K-REACH
+PASS C7 one-lever dagorc s0: the queue's line prints ONE-LEVER
+PASS C7 one-lever dagorc s1: the queue's line prints ONE-LEVER
+PASS C7 one-lever dagorcrep s0: the queue's line prints ONE-LEVER
+PASS C7 one-lever dagorcrep s1: the queue's line prints ONE-LEVER
+PASS C7 one-lever dagorc01 s0: the queue's line prints ONE-LEVER
+PASS C7 one-lever dagorc01 s1: the queue's line prints ONE-LEVER
+CAUGHT C7 one-lever dagorc s0: an extra flag prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorc s0: lr changed prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorc s0: a law flag dropped prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorc s0: p 0.1 on A prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER
+CAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER
+== D: the chain offline (syntax, regeneration, pins, dry-run, tip-carries-the-lever, predecessor rule, early stops with zero box-2 calls, wiring)
+PASS D1 bash -n chain_v8f_dagorc.sh
+PASS D1 bash -n v8f_guard_dagorc.sh
+PASS D1 bash -n wake_v8fdagorc.sh
+CAUGHT D1 a truncated chain fails bash -n (the check is real)
+PASS D2 chain_v8f_dagorc.sh: LF only (a CR in a bash script is a syntax error on box-side bash)
+PASS D2 v8f_guard_dagorc.sh: LF only (a CR in a bash script is a syntax error on box-side bash)
+PASS D2 wake_v8fdagorc.sh: LF only (a CR in a bash script is a syntax error on box-side bash)
+PASS D2 chain_v8f_dagorc.sh.in: LF only (a CR in a bash script is a syntax error on box-side bash)
+PASS D2 run_chain_v8f_dagorc.cmd: CRLF throughout
+PASS D3 the chain is byte-for-byte a fresh regeneration from the template + the banked artifacts (make_chain --check)
+CAUGHT D3 a chain with one byte changed is not the regeneration
+PASS D4 every pinned sha256 / BUILD_REF is the banked artifact's (DAG_s ckpt / argv / summary; DAG2-0 argv / summary; the installed libs; 1d4f4fbb; DAG-OACC r2's own copy of the DAG pins)
+CAUGHT D4 a doctored CKPT_SHA is caught
+CAUGHT D4 a doctored D20_ARGV_SHA is caught
+CAUGHT D4 a doctored OAF_LIB_SHA is caught
+CAUGHT D4 a doctored OAF_CHECKS_SHA is caught
+CAUGHT D4 a doctored BUILD_REF is caught
+PASS D5 the guard is DAG-OACC's guard line for line except the one comment line
+PASS D5 the guard's anchored end test knows the markers the chain prints (so it exits when the chain ends)
+PASS D5 the launcher is the DAG-OACC r2 launcher with the names changed: AFTER_OUT = the DAG-OACC r2 chain's log, own .sh, own .out, stdin from NUL
+PASS D5 the waker reads the chain's own .out and the guard's .out the chain writes
+PASS D5 the waker's markers are the ones the chain / asserter print (ZZDAGORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP, `gate token written for` x4, ` pulled to `)
+PASS D6 order: the four A / REP gates, then their four runs, then (unless DAGORC_SKIP_B=1) B's gates and runs
+PASS D6 the run order is PREREG section 10's: A s0, REP s0, A s1, REP s1, then B s0, B s1
+PASS D6 runone: train -> ckpt hash -> eval -> hash again -> pull -> run record -> K-REACH, each with a hard stop
+PASS D6 gate_one: the queue's gate -> pull -> the asserter's `check` (hard stop) -> only then the token
+PASS D6 disk floors: the START floor precedes the wait, the re-check follows it, and pulls go through the floor
+PASS D6 BOX2_BUSY is taken atomically (noclobber) AFTER the wait, and nothing is created on box 2's behalf before it (mkdir of $E only after the busy marker)
+PASS D6 the refresh refuses a tip without the stages / levers BEFORE anything is shipped to box 2
+PASS D6 the lever list names the loop's ego.apply, the probe call, the summary counter and the queue lines
+PASS D6 nothing in the chain hard-codes C:/Users/Admin/box2_ship (every path comes from OAF_SHIP_DIR / the chain's own dir) except the default
+PASS D7 --dry-run on the staged queue: rc 0, every run's planned line is ONE-LEVER and gate==train: 6 runs in PREREG order
+PASS D7 --dry-run touched nothing: no box-2 call, no BOX2_BUSY.txt
+PASS D7 --dry-run prints the queue's own training line for dagorc s0
+PASS D7 --dry-run prints the queue's own training line for dagorc s1
+PASS D7 --dry-run prints the queue's own training line for dagorcrep s0
+PASS D7 --dry-run prints the queue's own training line for dagorcrep s1
+PASS D7 --dry-run prints the queue's own training line for dagorc01 s0
+PASS D7 --dry-run prints the queue's own training line for dagorc01 s1
+PASS D7 DAGORC_SKIP_B=1 drops B: 4 runs, no dagorc01
+CAUGHT D7 --dry-run refuses a queue where law_vmax is changed
+CAUGHT D7 --dry-run refuses a queue where p_wrong is changed
+CAUGHT D7 --dry-run refuses a queue where rep_seed is changed
+CAUGHT D7 --dry-run refuses a queue where dagger_p is changed
+CAUGHT D7 --dry-run refuses a queue where steps is changed
+CAUGHT D7 --dry-run refuses the tip queue (no DAG-ORC stages)
+PASS D8 --check-tree on the composed tip + staged queue: every lever pattern is present (rc 0)
+CAUGHT D8 --check-tree refuses a tree where noapply
+CAUGHT D8 --check-tree refuses a tree where noprobe
+CAUGHT D8 --check-tree refuses a tree where noseedflag
+CAUGHT D8 --check-tree refuses a tree where nocount
+CAUGHT D8 --check-tree refuses a tree where noinit
+CAUGHT D8 --check-tree refuses a tree where noclass
+CAUGHT D8 --check-tree refuses a tree where noorcarm
+CAUGHT D8 --check-tree on a directory that does not exist is a usage error
+CAUGHT D8 --check-tree refuses the repo tip as it is TODAY (queue without the stages): the chain would not start until they land
+PASS D9 predecessor ZZV8FMINI-DONE, BOX2_BUSY released -> GO
+PASS D9 predecessor STOP of its own, BOX2_BUSY released -> GO (a stopped predecessor must not idle box 2)
+CAUGHT D9 predecessor STOP with a ZZGUARD-STOP line (the box may be hot) -> HALT, no GO
+CAUGHT D9 predecessor DONE but BOX2_BUSY still held -> HALT
+CAUGHT D9 predecessor STOP with BOX2_BUSY held -> BUSY three times, then HALT (never GO)
+CAUGHT D9 no end marker yet -> WAIT (never GO)
+CAUGHT D9 an echoed `waiting for ^ZZV8FMINI-DONE` line (the marker is ANCHORED) -> WAIT (never GO)
+CAUGHT D9 the predecessor's log does not exist -> WAIT (never GO)
+CAUGHT D9 AFTER_OUT unset -> STOP (no default predecessor log: a default can already be satisfied by an OLD log)
+CAUGHT D10 AFTER_OUT unset: STOP before anything is touched
+CAUGHT D10 the asserter is not installed beside the chain: STOP before anything is touched
+CAUGHT D10 the run-record / K-REACH helper is not installed: STOP before anything is touched
+CAUGHT D10 oaf_lib.sh differs from the proven file: STOP (a changed lib is a changed chain)
+CAUGHT D10 v8f_oaf_chain_checks.py differs from the proven file: STOP
+CAUGHT D10 the disk floor: E: could not take the six runs above 1 GiB -> ZZDISK-FLOOR-STOP before the wait
+CAUGHT D10 the artifact directory's parent does not exist -> STOP
+CAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken
+PASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it
+PASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)
+== E: the chain's REAL run against a fake box 2 (ssh/scp shims over a local tree, a fake git mirror = the real tip + the staged queue); the REAL queue's lines, the REAL gate asserter / run record / K-REACH
+-- E_happy: rc 0, 143 s, 397 fake-box calls
+PASS E1 the chain ends rc 0 with ZZV8FMINI-DONE and releases BOX2_BUSY
+PASS E1 the four A / REP gates run FIRST, in order, before any training
+PASS E1 then train -> eval per run in PREREG order A s0, REP s0, A s1, REP s1
+PASS E1 B's two gates and two runs come AFTER the four A / REP runs
+PASS E1 the stages each ran exactly once (nothing retrained, nothing re-gated)
+PASS E1 every run is pulled to the artifact dir with a SHA256SUMS.txt whose every line verifies
+PASS E1 the chain prints one `pulled to` line, one PASS run record and one PASS K-REACH per run
+PASS E1 every run has a launch-gate token bound to the remote tip, the gate verdict PASS, and the training argv's sha256
+PASS E1 a token exists only AFTER its gate passed: the gates' stage calls all precede every training stage and each token file is newer than its gate selfcheck
+PASS E1 K-BUILD is recorded against 1d4f4fbb: data and model blobs IDENTICAL, the trainer CHANGED (the F1 hunk) with its diff
+PASS E1 K-REACH numbers printed: A / B at their p, REP exactly 0
+PASS E1 the tip the chain exported is the remote's dagorc-new (the staged stages), not the local mirror's old ref
+PASS E1 the guard ran against the fake box and exited when the chain ended (its log says so)
+PASS E1 the checkpoints were hashed on box 2 after training and after the evals (equal), and the pulled ones equal them
+-- E_skipb: rc 0, 100 s, 275 fake-box calls
+PASS E1b DAGORC_SKIP_B=1: a complete chain of exactly the four A / REP runs (4 gates + 4 x train/eval = 12 stages), no dagorc01 anywhere, ZZV8FMINI-DONE
+-- E_gate_init: rc 1, 25 s, 45 fake-box calls
+CAUGHT E2 a gate whose init checkpoint is NOT DAG_s0's: STOP at that gate; no training started, no token for it
+-- E_gate_probe: rc 1, 39 s, 79 fake-box calls
+CAUGHT E2 a gate whose ego probe moves no gradient (A s1): the first two gates pass, the third STOPs; no training started
+-- E_rep_applied: rc 1, 78 s, 182 fake-box calls
+CAUGHT E2 REP s0's run APPLIED the perturbation (ego_perturb_n 123): ZZDAGORC-CONTROL-FAIL after REP s0, the s1 pair never trains
+-- E_reach0: rc 1, 59 s, 138 fake-box calls
+CAUGHT E2 A s0's loop never applied the perturbation (ego_perturb_n 0 although the gate passed): ZZDAGORC-CONTROL-FAIL, nothing after it trains
+-- E_argv: rc 1, 56 s, 137 fake-box calls
+CAUGHT E2 A s0's argv.json is not the planned training argv: the run record STOPs
+-- E_jobrc: rc 1, 45 s, 104 fake-box calls
+CAUGHT E2 A s0's training job exits rc 1: STOP, no eval, nothing after it
+-- E_ckpt1: rc 1, 18 s, 20 fake-box calls
+CAUGHT E2 box 2's DAG_s1 checkpoint is not the banked one: STOP before any gate
+-- E_md5: rc 1, 18 s, 15 fake-box calls
+CAUGHT E2 a v9 release whose md5 is not the pinned one: STOP before any gate
+-- E_keysha: rc 1, 14 s, 8 fake-box calls
+CAUGHT E2 box 2's trainer is not the tip's: STOP before any gate
+-- E_pullcorrupt: rc 1, 50 s, 136 fake-box calls
+CAUGHT E2 a pull that lands A s0's checkpoint with the right size and one byte wrong: STOP at the pulled-checkpoint hash, nothing after it trains
+-- E_evaltouch: rc 1, 43 s, 113 fake-box calls
+CAUGHT E2 an eval that rewrites the checkpoint it evaluated (hashed after training and again after the evals): STOP
+-- E_oldtip: rc 1, 2 s, 1 fake-box calls
+CAUGHT E3 the remote tip WITHOUT the queue stages (dagorc-old = 3b7b404e): the chain refuses at the refresh, ships nothing, launches no job, releases BOX2_BUSY
+-- E_noapply: rc 1, 4 s, 1 fake-box calls
+CAUGHT E3 a remote tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)
+PASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)
+RESULT: 150/150 checks pass, 230/230 deliberate regressions caught, 0 missed  (344 s)  sections S,A,B,C,D,E

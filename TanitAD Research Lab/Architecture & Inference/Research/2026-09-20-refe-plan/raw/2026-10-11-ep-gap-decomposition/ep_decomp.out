@@ -1,0 +1,25 @@
+n tokens common: 12146 {'u400': 12146, 'human': 12146, 'teacher': 12146, 'final_rf': 12146}
+example 0000548db87959c2 [30.78753198269244, 18.27950366838218] 30.78753198269244 0.593730724458791
+u400      PDMS  88.25  EP  81.20  EP|gate  84.89  PDMS lost to EP  6.01  tokens zeroed by NC*DAC  4.43%
+human     PDMS  94.55  EP  86.96  EP|gate  86.96  PDMS lost to EP  5.43  tokens zeroed by NC*DAC  0.00%
+teacher   PDMS  89.79  EP  85.16  EP|gate  89.99  PDMS lost to EP  3.94  tokens zeroed by NC*DAC  5.38%
+final_rf  PDMS  84.46  EP  76.70  EP|gate  82.38  PDMS lost to EP  6.82  tokens zeroed by NC*DAC  6.99%
+u400 ref==u400 ref frac 1.0
+human ref==u400 ref frac 0.6626049728305615
+teacher ref==u400 ref frac 0.6413634118228223
+final_rf ref==u400 ref frac 0.7296229211262967
+
+EP by v0 bin (all tokens): n | u400 human teacher final_rf | u400 PDMS lost to EP (share of total)
+v0 [ 0, 1) n= 1439 |  88.76  87.96  80.59  83.52 |  0.49 PDMS ( 8.1%)
+v0 [ 1, 3) n= 2014 |  84.27  86.01  86.63  80.12 |  0.90 PDMS (15.0%)
+v0 [ 3, 6) n= 3840 |  79.00  86.69  80.93  74.26 |  2.06 PDMS (34.3%)
+v0 [ 6,10) n= 3885 |  78.37  85.88  88.22  74.55 |  2.18 PDMS (36.2%)
+v0 [10,15) n=  961 |  83.53  92.84  93.40  77.69 |  0.38 PDMS ( 6.4%)
+v0 [15,40) n=    7 |  97.11 100.00  98.65  94.00 |  0.00 PDMS ( 0.0%)
+
+u400 EP histogram: {'<0.2': 590, '<0.5': 778, '<0.8': 4448, '<0.9': 7142, '<0.95': 8053, '<0.999': 8636}
+human EP histogram: {'<0.2': 0, '<0.5': 2, '<0.8': 3613, '<0.9': 6153, '<0.95': 7232, '<0.999': 8044}
+
+ref>5m tokens 11463: median u400/human progress ratio 0.954; u400 < 0.8*human on 16.3%, > 1.2*human on 10.6%
+start-from-stop tokens (v0<1, ref>5 m): 1313; u400 EP 88.0 human 86.8; u400 progress<1 m on 2.3%  human<1m on 0.0%
+paired human-u400 EP: mean 5.77 ; share of the paired EP gap from tokens where u400 EP<0.5: 78.7 % ; from v0<1: -1.7 %

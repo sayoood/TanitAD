@@ -1,0 +1,149 @@
+07:27:59 [HACC_s0_causal] ticks loaded: N=2399 windows, 7197 rows, tag=HACC_s0_m10_causal_heads
+07:28:08 [HACC_s0_causal] matched + rebuilt + scored in 9s
+07:28:14 [HACC_s0_causal] done in 15s
+s0 causal controls {'K1': True, 'K2': True, 'K3': True, 'K5': True, 'K6': True, 'K7': True, 'GRID': True} 18s
+07:28:14 [HACC_s1_causal] ticks loaded: N=2399 windows, 7197 rows, tag=HACC_s1_m10_causal_heads
+07:28:17 [HACC_s1_causal] matched + rebuilt + scored in 4s
+07:28:23 [HACC_s1_causal] done in 9s
+s1 causal controls {'K1': True, 'K2': True, 'K3': True, 'K5': True, 'K6': True, 'K7': True, 'GRID': True} 27s
+07:28:23 [HACC_s0_causal_x1] ticks loaded: N=2399 windows, 7197 rows, tag=HACC_s0_m10_causal_heads
+07:28:27 [HACC_s0_causal_x1] matched + rebuilt + scored in 4s
+07:28:32 [HACC_s0_causal_x1] done in 9s
+07:28:32 [HACC_s0_logged] ticks loaded: N=2399 windows, 7197 rows, tag=HACC_s0_m10_logged_heads
+07:28:36 [HACC_s0_logged] matched + rebuilt + scored in 3s
+07:28:36 [HACC_s0_logged] done in 3s
+{
+ "LABEL": "WIRING SMOKE on pre-existing T1-HEADS data (M2b + HACC); NOT O-RECOVER data; B = 300; decides nothing",
+ "controls_causal_s0": {
+  "K1": true,
+  "K2": true,
+  "K3": true,
+  "K5": true,
+  "K6": true,
+  "K7": true,
+  "GRID": true
+ },
+ "meta_causal_s0": {
+  "split": "eval",
+  "tag": "HACC_s0_m10_causal_heads",
+  "ckpt": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc/M2b_s0_hacc.pt",
+  "replan_steps": 10
+ },
+ "tick0_f1_causal_s0": {
+  "lat": 0.8276961212283062,
+  "lat_n": 2107,
+  "lon": 0.46079029060932625,
+  "lon_n": 2240
+ },
+ "controls_causal_s1": {
+  "K1": true,
+  "K2": true,
+  "K3": true,
+  "K5": true,
+  "K6": true,
+  "K7": true,
+  "GRID": true
+ },
+ "meta_causal_s1": {
+  "split": "eval",
+  "tag": "HACC_s1_m10_causal_heads",
+  "ckpt": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc/M2b_s1_hacc.pt",
+  "replan_steps": 10
+ },
+ "tick0_f1_causal_s1": {
+  "lat": 0.857314791675344,
+  "lat_n": 2107,
+  "lon": 0.46702487676057053,
+  "lon_n": 2240
+ },
+ "K7_mode_x1_on_causal_s0": {
+  "PASS": true,
+  "detail": {
+   "mode": "x1 (no banked / flags-off reference for a plain fine-tuned arm): rebuilt executed track == dumped cl",
+   "x1": {
+    "max_cl_m": 0.0,
+    "max_pose_tick_f64": 0.0,
+    "max_s_pose_vs_rebuilt_m_f32_tol": 1.8629186683938315e-05,
+    "max_t_pose_vs_rebuilt_m_f32_tol": 2.1873439891351154e-05
+   }
+  }
+ },
+ "controls_logged_s0": {
+  "K2": true,
+  "K3": true,
+  "GRID": true
+ },
+ "K4_logged_source_s0": {
+  "PASS": true,
+  "abs_diff": {
+   "pos": [
+    4.3868582211614715e-05,
+    4.311408845358855e-05,
+    2.3021647692189617e-05
+   ],
+   "lat": 0.0,
+   "lon": 0.0
+  },
+  "source": "a --limit logged run's tick 0 (the T1-HEADS K4 configuration)"
+ },
+ "K4_causal_tick0_s0_(PREREG_wording_literally)": {
+  "PASS": false,
+  "abs_diff": {
+   "pos": [
+    0.00047730608891349835,
+    0.006840088019126167,
+    0.027405108666124
+   ],
+   "lat": 0.007472575070388454,
+   "lon": 0.045411015929458454
+  },
+  "source": "the decisive --limit causal run's own tick 0 (NO logged-bucket run supplied)"
+ },
+ "f1_lat_run_vs_itself": {
+  "delta": 0.0,
+  "lo": 0.0,
+  "hi": 0.0,
+  "separated": false,
+  "n_cells_a": 3888,
+  "n_cells_b": 3888
+ },
+ "f1_lat_seed0_minus_seed1_(two different networks)": {
+  "delta": -0.026,
+  "lo": -0.0785,
+  "hi": 0.0318,
+  "separated": false,
+  "n_cells_a": 3793,
+  "n_cells_b": 3793,
+  "n_cells_matched_pairs": 3793,
+  "f1_a": 0.5939469510559425,
+  "f1_b": 0.6199188579592038
+ },
+ "f1_lon_run_vs_itself": {
+  "delta": 0.0,
+  "lo": 0.0,
+  "hi": 0.0,
+  "separated": false,
+  "n_cells_a": 3772,
+  "n_cells_b": 3772
+ },
+ "f1_lon_seed0_minus_seed1_(two different networks)": {
+  "delta": -0.0253,
+  "lo": -0.0566,
+  "hi": 0.0137,
+  "separated": false,
+  "n_cells_a": 3695,
+  "n_cells_b": 3695,
+  "n_cells_matched_pairs": 3695,
+  "f1_a": 0.3370475874490665,
+  "f1_b": 0.3623896750576358
+ },
+ "cli_with_real_backend_on_a_manifest_without_ticks_files": {
+  "rc": 2,
+  "wrote_output": false,
+  "stderr_tail": [
+   "ORC READ REFUSED (nothing written):",
+   "  - ORC_s0_causal ticks file: 'E:\\\\Projects\\\\TanitAD-artifacts\\\\orcread_build\\\\smoke_work\\\\cli\\\\t1\\\\ticks_ORC_s0_causal.npz' is missing (the run did not finish, or was not pulled)"
+  ]
+ },
+ "wall_s": 44.698004484176636
+}

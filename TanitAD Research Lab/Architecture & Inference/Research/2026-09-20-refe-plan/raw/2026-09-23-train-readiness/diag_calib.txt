@@ -1,0 +1,11 @@
+  other rig: 2021.08.17.17.17.01_veh-45_02314_02798  (front-camera rotation 2.665 deg from the baked rig)
+  [A.none==baked] PASS -- calib=None and the explicit baked rig
+  [A.pos3d] PASS -- the embedding too, through the per-sample path
+  [B.reference_baked] PASS -- max |model - OpenCV/numpy| per camera ['1.26e-05', '1.46e-05', '1.42e-05', '1.69e-05'] m
+  [B.reference_other] PASS -- max |model - OpenCV/numpy| per camera ['1.28e-05', '1.28e-05', '1.67e-05', '1.72e-05'] m
+  [C.other_rig_MOVES] PASS -- max point displacement 2.879 m at <= 60 m (front optical axis alone: 2.396 m predicted)
+  [C2.analytic_yaw] PASS -- yawed rig == Rz(2 deg) @ baked, max |err| 1.68e-05 m over 7,680 patches x 2
+  [D.mixed_batch] PASS -- rows 0/2 == baked, row 1 == other, exactly
+  [E.cache_names_rig] PASS -- 2 cache entries for 2 rigs on one live instance
+  [F.forward_grad] PASS -- traj (2, 64, 20, 3), pos3d_mlp grad |sum| 2.223e+02
+CALIB_OK

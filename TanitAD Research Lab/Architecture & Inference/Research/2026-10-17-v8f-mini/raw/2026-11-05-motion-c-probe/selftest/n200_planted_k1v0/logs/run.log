@@ -1,0 +1,162 @@
+[11:47:05] start; args {"run_dir": "E:\\Projects\\TanitAD-artifacts\\dagland\\motion_c\\probe\\selftest\\n200_planted", "scratch": "F:\\TanitAD-scratch\\motion_c\\probe\\selftest200_planted", "cache": "F:/TanitAD-scratch/speedread/cache/train", "eval_manifest": "E:/Projects/TanitAD-artifacts/sfresh_inputs/cache/eval/manifest.jsonl", "n_clips": 200, "n_clips8": 100, "seed": 20261105, "pca_dim": 32, "pca_dim8": 8, "synth": "planted", "synth_n": 200, "skip_mlp": false, "skip_grid2": false}
+[11:48:20] synthetic cache 'planted' at F:\TanitAD-scratch\motion_c\probe\selftest200_planted\synth_cache
+[11:48:20] sample: 200 clips, folds [40, 40, 40, 40, 40], in8 100, eval-141 disjoint (checked vs 141 ids)
+[11:48:20] stage sample ok 0s
+[11:48:20] rss 0.50 GB @ sample
+[11:48:34] saved cov fold 0 (nf 4040 nd 4000 n8 81600)
+[11:48:40] ingest 50/200  20s
+[11:48:40] rss 1.05 GB @ ingest
+[11:48:53] saved cov fold 1 (nf 4040 nd 4000 n8 81600)
+[11:49:04] ingest 100/200  44s
+[11:49:04] rss 1.22 GB @ ingest
+[11:49:21] saved cov fold 2 (nf 4040 nd 4000 n8 81600)
+[11:49:39] ingest 150/200  79s
+[11:49:39] rss 1.24 GB @ ingest
+[11:49:49] saved cov fold 3 (nf 4040 nd 4000 n8 81600)
+[11:50:12] ingest 200/200  111s
+[11:50:12] rss 1.29 GB @ ingest
+[11:50:17] saved cov fold 4 (nf 4040 nd 4000 n8 81600)
+[11:50:19] ingest done: 200 clips kept, 0 dropped, rows 20200, rows8 10100, 119s
+[11:50:19] stage ingest ok 119s
+[11:50:19] rss 1.22 GB @ ingest
+[11:50:30] bases fold 0: frame-PCA keeps 0.698, diff-PCA keeps 0.078, pooled 8x20 PCA keeps 0.127  11s
+[11:50:32] bases fold 1: frame-PCA keeps 0.703, diff-PCA keeps 0.077, pooled 8x20 PCA keeps 0.127  13s
+[11:50:34] bases fold 2: frame-PCA keeps 0.700, diff-PCA keeps 0.077, pooled 8x20 PCA keeps 0.127  15s
+[11:50:35] bases fold 3: frame-PCA keeps 0.701, diff-PCA keeps 0.077, pooled 8x20 PCA keeps 0.129  16s
+[11:50:37] bases fold 4: frame-PCA keeps 0.697, diff-PCA keeps 0.076, pooled 8x20 PCA keeps 0.128  18s
+[11:50:38] stage bases ok 19s
+[11:50:38] rss 1.88 GB @ bases
+[11:51:18] project 100/200  40s
+[11:52:00] project 200/200  83s
+[11:52:00] project done 83s
+[11:52:00] stage project ok 83s
+[11:52:00] rss 1.88 GB @ project
+[11:52:02] ridge fold 0 F1mean  dim  1024  v band -0.709 all 0.342 | dv band 0.004 all -0.004 | 0s
+[11:52:02] ridge fold 0 F1      dim  1280  v band -1.089 all 0.139 | dv band 0.003 all -0.003 | 0s
+[11:52:06] ridge fold 0 F4      dim  5120  v band -1.054 all 0.152 | dv band 0.004 all -0.003 | 3s
+[11:52:08] ridge fold 0 D3      dim  3840  v band 0.981 all 0.996 | dv band 0.239 all 0.207 | 2s
+[11:52:09] ridge fold 0 D3f     dim  3840  v band 0.981 all 0.996 | dv band 0.128 all 0.124 | 2s
+[11:52:10] ridge fold 0 F1d     dim  1280  v band -0.804 all 0.300 | dv band 0.007 all -0.008 | 0s
+[11:52:13] ridge fold 0 F4_K2   dim  5120  v band -1.092 all 0.145 | dv band 0.003 all -0.002 | 3s
+[11:52:14] ridge fold 0 D3_K2   dim  3840  v band -0.700 all 0.445 | dv band 0.001 all -0.001 | 2s
+[11:52:18] ridge fold 0 F4_K3   dim  5120  v band -1.055 all 0.152 | dv band 0.004 all -0.003 | 3s
+[11:52:19] ridge fold 0 D3_K3   dim  3840  v band -1.457 all -0.008 | dv band -0.001 all -0.000 | 2s
+[11:52:19] rss 2.24 GB @ ridge fold 0
+[11:52:21] ridge fold 1 F1mean  dim  1024  v band -0.869 all 0.249 | dv band 0.003 all 0.001 | 0s
+[11:52:21] ridge fold 1 F1      dim  1280  v band -1.134 all 0.124 | dv band 0.002 all 0.000 | 0s
+[11:52:24] ridge fold 1 F4      dim  5120  v band -1.103 all 0.135 | dv band 0.001 all 0.001 | 3s
+[11:52:25] ridge fold 1 D3      dim  3840  v band 0.979 all 0.995 | dv band 0.178 all 0.163 | 1s
+[11:52:27] ridge fold 1 D3f     dim  3840  v band 0.978 all 0.995 | dv band 0.092 all 0.111 | 1s
+[11:52:27] ridge fold 1 F1d     dim  1280  v band -0.850 all 0.243 | dv band 0.002 all 0.001 | 0s
+[11:52:30] ridge fold 1 F4_K2   dim  5120  v band -1.070 all 0.197 | dv band -0.001 all -0.001 | 3s
+[11:52:32] ridge fold 1 D3_K2   dim  3840  v band -0.947 all 0.318 | dv band -0.001 all -0.000 | 1s
+[11:52:35] ridge fold 1 F4_K3   dim  5120  v band -1.104 all 0.135 | dv band 0.001 all 0.001 | 3s
+[11:52:36] ridge fold 1 D3_K3   dim  3840  v band -1.484 all -0.011 | dv band -0.001 all -0.001 | 1s
+[11:52:37] rss 2.24 GB @ ridge fold 1
+[11:52:38] ridge fold 2 F1mean  dim  1024  v band -0.844 all 0.126 | dv band -0.013 all -0.008 | 0s
+[11:52:38] ridge fold 2 F1      dim  1280  v band -0.597 all 0.124 | dv band -0.009 all -0.000 | 0s
+[11:52:41] ridge fold 2 F4      dim  5120  v band -0.626 all 0.078 | dv band -0.008 all 0.000 | 3s
+[11:52:43] ridge fold 2 D3      dim  3840  v band 0.980 all 0.995 | dv band 0.104 all 0.111 | 2s
+[11:52:45] ridge fold 2 D3f     dim  3840  v band 0.979 all 0.995 | dv band 0.154 all 0.126 | 1s
+[11:52:45] ridge fold 2 F1d     dim  1280  v band -0.679 all 0.148 | dv band -0.008 all 0.000 | 0s
+[11:52:48] ridge fold 2 F4_K2   dim  5120  v band -0.433 all 0.142 | dv band -0.007 all 0.001 | 3s
+[11:52:50] ridge fold 2 D3_K2   dim  3840  v band -0.519 all 0.229 | dv band -0.011 all -0.001 | 1s
+[11:52:53] ridge fold 2 F4_K3   dim  5120  v band -0.626 all 0.078 | dv band -0.008 all 0.000 | 3s
+[11:52:54] ridge fold 2 D3_K3   dim  3840  v band -0.782 all -0.050 | dv band -0.011 all -0.002 | 1s
+[11:52:54] rss 2.24 GB @ ridge fold 2
+[11:52:56] ridge fold 3 F1mean  dim  1024  v band -1.126 all 0.236 | dv band 0.008 all 0.002 | 0s
+[11:52:56] ridge fold 3 F1      dim  1280  v band -1.348 all 0.093 | dv band 0.002 all 0.001 | 0s
+[11:52:59] ridge fold 3 F4      dim  5120  v band -1.332 all 0.104 | dv band 0.003 all 0.002 | 3s
+[11:53:01] ridge fold 3 D3      dim  3840  v band 0.980 all 0.997 | dv band 0.221 all 0.178 | 2s
+[11:53:02] ridge fold 3 D3f     dim  3840  v band 0.978 all 0.996 | dv band 0.153 all 0.156 | 2s
+[11:53:02] ridge fold 3 F1d     dim  1280  v band -1.160 all 0.241 | dv band 0.005 all 0.003 | 0s
+[11:53:06] ridge fold 3 F4_K2   dim  5120  v band -1.458 all 0.179 | dv band 0.002 all 0.001 | 4s
+[11:53:08] ridge fold 3 D3_K2   dim  3840  v band -1.390 all 0.387 | dv band 0.000 all 0.000 | 2s
+[11:53:12] ridge fold 3 F4_K3   dim  5120  v band -1.332 all 0.104 | dv band 0.003 all 0.002 | 4s
+[11:53:14] ridge fold 3 D3_K3   dim  3840  v band -1.555 all -0.035 | dv band -0.000 all 0.000 | 2s
+[11:53:14] rss 2.24 GB @ ridge fold 3
+[11:53:16] ridge fold 4 F1mean  dim  1024  v band -0.671 all 0.236 | dv band 0.004 all 0.001 | 1s
+[11:53:16] ridge fold 4 F1      dim  1280  v band -0.517 all 0.173 | dv band 0.002 all 0.000 | 0s
+[11:53:20] ridge fold 4 F4      dim  5120  v band -0.587 all 0.099 | dv band 0.003 all 0.000 | 4s
+[11:53:22] ridge fold 4 D3      dim  3840  v band 0.980 all 0.996 | dv band 0.134 all 0.136 | 2s
+[11:53:24] ridge fold 4 D3f     dim  3840  v band 0.978 all 0.996 | dv band 0.090 all 0.111 | 2s
+[11:53:24] ridge fold 4 F1d     dim  1280  v band -0.559 all 0.217 | dv band 0.005 all 0.001 | 0s
+[11:53:28] ridge fold 4 F4_K2   dim  5120  v band -0.468 all 0.126 | dv band 0.002 all 0.000 | 4s
+[11:53:30] ridge fold 4 D3_K2   dim  3840  v band -0.770 all 0.285 | dv band 0.001 all -0.002 | 2s
+[11:53:33] ridge fold 4 F4_K3   dim  5120  v band -0.588 all 0.099 | dv band 0.003 all 0.000 | 4s
+[11:53:35] ridge fold 4 D3_K3   dim  3840  v band -0.807 all -0.044 | dv band -0.001 all -0.001 | 2s
+[11:53:35] rss 2.24 GB @ ridge fold 4
+[11:53:35] ridge stage done 93s
+[11:53:37] mlp fold 0 F1mean  dim  1024  v band -1.110 all 0.166 | dv band -0.023 all -0.033 | 2s
+[11:53:38] mlp fold 0 F1      dim  1280  v band -1.364 all 0.067 | dv band 0.005 all -0.015 | 1s
+[11:53:39] mlp fold 0 F1d     dim  1280  v band -1.393 all 0.133 | dv band -0.001 all -0.028 | 1s
+[11:53:46] mlp fold 0 F4      dim  5120  v band -0.894 all 0.218 | dv band 0.005 all -0.007 | 7s
+[11:53:48] mlp fold 0 D3      dim  3840  v band 0.841 all 0.968 | dv band 0.002 all 0.025 | 1s
+[11:53:50] mlp fold 0 F4_K2   dim  5120  v band -0.942 all 0.169 | dv band 0.004 all -0.004 | 2s
+[11:53:51] mlp fold 0 D3_K2   dim  3840  v band -0.696 all 0.334 | dv band -0.016 all -0.031 | 1s
+[11:53:54] mlp fold 0 F4_K3   dim  5120  v band -0.663 all 0.239 | dv band 0.005 all -0.011 | 3s
+[11:53:55] mlp fold 0 D3_K3   dim  3840  v band -2.057 all 0.283 | dv band -0.021 all -0.019 | 1s
+[11:53:55] rss 2.33 GB @ mlp fold 0
+[11:53:56] mlp fold 1 F1mean  dim  1024  v band -2.293 all 0.080 | dv band -0.028 all -0.027 | 1s
+[11:53:56] mlp fold 1 F1      dim  1280  v band -1.047 all 0.089 | dv band 0.005 all -0.003 | 1s
+[11:53:57] mlp fold 1 F1d     dim  1280  v band -1.228 all -0.029 | dv band -0.007 all -0.009 | 1s
+[11:54:02] mlp fold 1 F4      dim  5120  v band -1.106 all 0.161 | dv band 0.005 all -0.011 | 5s
+[11:54:04] mlp fold 1 D3      dim  3840  v band 0.764 all 0.945 | dv band -0.003 all -0.009 | 1s
+[11:54:05] mlp fold 1 F4_K2   dim  5120  v band -1.063 all 0.096 | dv band -0.008 all -0.008 | 2s
+[11:54:07] mlp fold 1 D3_K2   dim  3840  v band -1.803 all 0.194 | dv band -0.025 all -0.021 | 1s
+[11:54:09] mlp fold 1 F4_K3   dim  5120  v band -1.022 all 0.184 | dv band 0.000 all -0.011 | 2s
+[11:54:10] mlp fold 1 D3_K3   dim  3840  v band -2.036 all 0.237 | dv band -0.010 all -0.017 | 1s
+[11:54:11] rss 2.33 GB @ mlp fold 1
+[11:54:11] mlp fold 2 F1mean  dim  1024  v band -2.310 all -0.020 | dv band -0.022 all -0.007 | 1s
+[11:54:12] mlp fold 2 F1      dim  1280  v band -0.525 all 0.028 | dv band 0.014 all 0.004 | 1s
+[11:54:13] mlp fold 2 F1d     dim  1280  v band -0.549 all 0.064 | dv band 0.005 all 0.005 | 1s
+[11:54:17] mlp fold 2 F4      dim  5120  v band -0.369 all 0.053 | dv band 0.014 all 0.002 | 4s
+[11:54:18] mlp fold 2 D3      dim  3840  v band 0.790 all 0.945 | dv band -0.009 all 0.001 | 1s
+[11:54:20] mlp fold 2 F4_K2   dim  5120  v band -0.404 all 0.091 | dv band 0.002 all -0.000 | 1s
+[11:54:21] mlp fold 2 D3_K2   dim  3840  v band -0.815 all 0.156 | dv band -0.008 all -0.001 | 1s
+[11:54:23] mlp fold 2 F4_K3   dim  5120  v band -0.380 all 0.072 | dv band 0.019 all -0.000 | 1s
+[11:54:24] mlp fold 2 D3_K3   dim  3840  v band -1.223 all 0.355 | dv band -0.022 all -0.002 | 1s
+[11:54:24] rss 2.33 GB @ mlp fold 2
+[11:54:25] mlp fold 3 F1mean  dim  1024  v band -1.650 all 0.108 | dv band 0.011 all -0.000 | 1s
+[11:54:26] mlp fold 3 F1      dim  1280  v band -1.090 all 0.093 | dv band 0.016 all 0.001 | 1s
+[11:54:27] mlp fold 3 F1d     dim  1280  v band -2.047 all 0.072 | dv band 0.004 all 0.001 | 1s
+[11:54:31] mlp fold 3 F4      dim  5120  v band -1.282 all 0.143 | dv band 0.017 all 0.003 | 5s
+[11:54:33] mlp fold 3 D3      dim  3840  v band 0.851 all 0.969 | dv band 0.012 all 0.011 | 1s
+[11:54:35] mlp fold 3 F4_K2   dim  5120  v band -1.786 all 0.083 | dv band 0.004 all -0.000 | 3s
+[11:54:37] mlp fold 3 D3_K2   dim  3840  v band -1.745 all 0.111 | dv band -0.005 all -0.010 | 1s
+[11:54:40] mlp fold 3 F4_K3   dim  5120  v band -1.571 all 0.097 | dv band 0.011 all 0.004 | 3s
+[11:54:41] mlp fold 3 D3_K3   dim  3840  v band -2.062 all 0.256 | dv band -0.004 all 0.000 | 1s
+[11:54:41] rss 2.33 GB @ mlp fold 3
+[11:54:42] mlp fold 4 F1mean  dim  1024  v band -1.321 all 0.032 | dv band 0.001 all -0.009 | 1s
+[11:54:42] mlp fold 4 F1      dim  1280  v band -0.529 all -0.062 | dv band 0.003 all 0.001 | 1s
+[11:54:43] mlp fold 4 F1d     dim  1280  v band -0.663 all 0.045 | dv band -0.014 all -0.020 | 1s
+[11:54:46] mlp fold 4 F4      dim  5120  v band -0.487 all 0.003 | dv band 0.013 all -0.002 | 3s
+[11:54:47] mlp fold 4 D3      dim  3840  v band 0.828 all 0.962 | dv band -0.004 all 0.024 | 2s
+[11:54:50] mlp fold 4 F4_K2   dim  5120  v band -0.303 all 0.024 | dv band 0.006 all 0.003 | 3s
+[11:54:51] mlp fold 4 D3_K2   dim  3840  v band -0.786 all 0.164 | dv band -0.004 all 0.002 | 1s
+[11:54:53] mlp fold 4 F4_K3   dim  5120  v band -0.446 all -0.015 | dv band 0.013 all -0.003 | 1s
+[11:54:54] mlp fold 4 D3_K3   dim  3840  v band -0.831 all 0.354 | dv band -0.010 all -0.005 | 1s
+[11:54:54] rss 2.33 GB @ mlp fold 4
+[11:54:54] mlp stage done 79s
+[11:54:55] grid2 fold 0 F1_8    v band -0.463 all 0.220 | dv band -0.012 all -0.013
+[11:54:57] grid2 fold 0 D3_8    v band 0.968 all 0.994 | dv band 0.049 all 0.070
+[11:54:57] grid2 fold 0 F1_4s   v band -0.272 all 0.129 | dv band -0.006 all -0.014
+[11:54:58] grid2 fold 0 D3f_4s  v band 0.973 all 0.994 | dv band 0.040 all 0.050
+[11:55:00] grid2 fold 1 F1_8    v band -0.691 all 0.230 | dv band -0.004 all -0.002
+[11:55:01] grid2 fold 1 D3_8    v band 0.972 all 0.991 | dv band 0.056 all 0.053
+[11:55:01] grid2 fold 1 F1_4s   v band -0.682 all 0.179 | dv band 0.001 all 0.001
+[11:55:02] grid2 fold 1 D3f_4s  v band 0.977 all 0.993 | dv band 0.005 all 0.019
+[11:55:04] grid2 fold 2 F1_8    v band -0.811 all -0.372 | dv band 0.005 all -0.000
+[11:55:05] grid2 fold 2 D3_8    v band 0.968 all 0.991 | dv band 0.056 all 0.063
+[11:55:05] grid2 fold 2 F1_4s   v band -0.467 all -0.045 | dv band 0.013 all 0.003
+[11:55:07] grid2 fold 2 D3f_4s  v band 0.975 all 0.992 | dv band 0.052 all 0.059
+[11:55:08] grid2 fold 3 F1_8    v band -0.990 all 0.081 | dv band 0.004 all 0.002
+[11:55:09] grid2 fold 3 D3_8    v band 0.970 all 0.993 | dv band 0.069 all 0.084
+[11:55:09] grid2 fold 3 F1_4s   v band -1.187 all -0.083 | dv band 0.004 all 0.002
+[11:55:10] grid2 fold 3 D3f_4s  v band 0.972 all 0.994 | dv band 0.011 all 0.039
+[11:55:12] grid2 fold 4 F1_8    v band -0.968 all 0.208 | dv band 0.003 all -0.002
+[11:55:13] grid2 fold 4 D3_8    v band 0.968 all 0.994 | dv band 0.077 all 0.082
+[11:55:14] grid2 fold 4 F1_4s   v band -1.067 all 0.138 | dv band 0.004 all -0.004
+[11:55:15] grid2 fold 4 D3f_4s  v band 0.971 all 0.995 | dv band 0.021 all 0.042
+[11:55:16] report written; verdicts v=INVALID dv=INVALID
+[11:55:16] manifest

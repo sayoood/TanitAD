@@ -1,0 +1,54 @@
+LANDING_READY -- refcv7-r101-s0 map + box diagnostics (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent. The Master Mind lands these paths (stage BY PATH).
+Prefix every path below with:  TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/
+
+SPEC.md                              pre-registration (sha256 in raw/SPEC_SHA256.txt, written before any number)
+RESULT.md                            the result (verdict per alarm, tables, fixes F1-F6, post-hoc log, register rows)
+LANDING_READY.txt                    this file
+raw/SPEC_SHA256.txt
+raw/MD5SUMS.txt                      md5 of every banked raw file, Thor copy vs D: copy (verified)
+raw/M_c.json                         M-c decision rules, counts, thresholds, oracle (EVAL + TRAIN)
+raw/M_a.json                         M-a train vs eval
+raw/M_b.json                         M-b boundary-tolerant P/R/F/IoU_k (k 0,1,2 + post-hoc 5,10)
+raw/M_d.json                         M-d AUROC per class x band
+raw/M_e.json                         M-e EVAL-DIAG at 5k/15k/20k/30k/50.4k
+raw/M_f.json                         M-f GT fractions, line widths, registration
+raw/DECISIONS_map.json               SPEC sec. 5 rules D1-D4 applied
+raw/fit_map.json                     the TRAIN fit (tau*, delta)
+raw/posthoc_band_thresholds.json     POST-HOC per-band thresholds
+raw/B_box.json                       B-a..B-d, both heads (float64 transforms; final)
+raw/B_box_v1_float32.json            first box analysis (float32 transforms; kept for the C5 record)
+raw/C7_determinism.json              C7 inference determinism
+raw/inrun_curve.json                 the run's own in-run eval curve (metrics.jsonl, 101 rows)
+raw/inrun_train_rows_curve.json      the run's training-row thin-class curve (1,008 rows)
+raw/run_inrun_final.json             per-pass run records (window digests, controls C1/C2, loader record)
+raw/run_inrun_final_rep.json
+raw/run_train_fitpass.json
+raw/run_eval_final.json
+raw/run_train_final.json
+raw/run_eval_s5000.json
+raw/run_eval_s15000.json
+raw/run_eval_s20000.json
+raw/run_eval_s30000.json
+raw/run_cal256_final.json
+code/diag_metrics.py                 NEW metrics (pure functions)
+code/test_diag_metrics.py            controls C3/C4/C6 (11 tests)
+code/run_diag.py                     one pass: loader build + compute_losses_v3 + capture + accumulate
+code/prep_train_subset.py            TRAIN-DIAG / TRAIN-CALIB256 symlink subsets
+code/run_chain.sh                    the Thor chain (per-pass GPU flock)
+code/fit_map.py                      TRAIN fit of tau* / delta
+code/analyze_map.py                  M-a..M-f + decisions
+code/analyze_box.py                  B-a..B-d
+code/inrun_curve.py                  in-run eval curve extractor
+code/train_row_curve.py              training-row curve extractor
+code/posthoc_band_thresholds.py      post-hoc per-band thresholds
+code/c7_determinism.py               C7
+code/bank_strip.py                   strips the per-clip integer id from banked packs (sha12 only)
+code/fill_result.py                  generates the data-dependent RESULT blocks from raw/*.json
+code/make_tables.py                  table printer (inspection)
+
+NOT for landing (binary evidence, 20 files, 245 MB; TWO copies, neither in the repo; md5-verified D: vs Thor 20/20):
+  Thor  /home/nvidia/refcv7_post/diag/out/*.acc.pt, *.packs.pkl   (originals)
+  D:    D:/refcv7_diag_bin/2026-10-04/   (bank_strip copies: packs without the per-clip integer id) + MD5SUMS.txt
+  Thor  /home/nvidia/refcv7_post/diag/bank/bin/  (the same bank_strip copies) + bank/bin_md5.txt
+  Re-run inputs on Thor only: /home/nvidia/refcv7_post/diag/cache/{train_diag139,train_cal64} (symlink subsets + their v2 manifests; rebuildable by code/prep_train_subset.py)

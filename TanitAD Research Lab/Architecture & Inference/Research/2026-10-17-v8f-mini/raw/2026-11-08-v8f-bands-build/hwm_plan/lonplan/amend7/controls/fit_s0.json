@@ -1,0 +1,277 @@
+{
+ "chassis": "s0",
+ "controls": {
+  "C-PAIRS7": {
+   "green": {
+    "ok": true,
+    "n_chunks": 18,
+    "bad": [],
+    "build_record_ok": true,
+    "counts_ok": true
+   },
+   "regression": {
+    "ok": false,
+    "n_chunks": 1,
+    "bad": [
+     "chunk_000.pt"
+    ]
+   },
+   "passed": true
+  },
+  "C-ISO7": {
+   "green": {
+    "ok": true,
+    "n": 1000,
+    "n_score_overlap": 0,
+    "order_sha_equal_record": true
+   },
+   "regression": {
+    "ok": false,
+    "n": 1000,
+    "n_score_overlap": 1
+   },
+   "passed": true
+  },
+  "C-CURVE7": {
+   "green": {
+    "ok": true,
+    "max_abs_diff": 6.661338147750939e-16,
+    "parts": {
+     "r2": 3.3306690738754696e-16,
+     "r": 6.661338147750939e-16,
+     "r2_ci": 3.3306690738754696e-16,
+     "r_ci": 4.440892098500626e-16
+    },
+    "tol": 1e-09,
+    "row": {
+     "r2": 0.2808195004292501,
+     "r2_ci": [
+      0.2549561045169125,
+      0.30459047101708603
+     ],
+     "r": 0.529976154489036,
+     "r_ci": [
+      0.5061883501557154,
+      0.5521451579258734
+     ]
+    }
+   },
+   "regression": {
+    "ok": false,
+    "max_abs_diff": 0.001024475590493401,
+    "parts": {
+     "r2": 0.0002441728352886585,
+     "r": 0.0002700937472411846,
+     "r2_ci": 0.001024475590493401,
+     "r_ci": 0.0006061947057812711
+    },
+    "tol": 1e-09
+   },
+   "passed": true
+  },
+  "K-CONTROL": {
+   "green": {
+    "ok": true,
+    "dr2": 2.4515689478477043e-10,
+    "max_abs_dp": 4.4920412917148766e-08,
+    "tol": 0.0001
+   },
+   "regression": {
+    "ok": false,
+    "dr2": 0.17058670767313422,
+    "max_abs_dp": 1.064296621249539,
+    "tol": 0.0001
+   },
+   "passed": true
+  },
+  "C-FOLD7": {
+   "green": {
+    "ok": true,
+    "per_arm": {
+     "RA": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "MLPA": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "MLPB": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "KCTL": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "SHUFT": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "ZERO": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "CONST": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "PLANT_MLP": {
+      "ok": true,
+      "bad_folds": []
+     },
+     "PLANT_RA": {
+      "ok": true,
+      "bad_folds": []
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "bad_folds": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "passed": true
+  },
+  "C-SEL7": {
+   "green": {
+    "ok": true,
+    "per_arm": {
+     "MLPA": {
+      "ok": true,
+      "bad": []
+     },
+     "MLPB": {
+      "ok": true,
+      "bad": []
+     },
+     "SHUFT": {
+      "ok": true,
+      "bad": []
+     },
+     "ZERO": {
+      "ok": true,
+      "bad": []
+     },
+     "PLANT_MLP": {
+      "ok": true,
+      "bad": []
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "scored_on_test": {
+     "ok": false,
+     "bad": [
+      [
+       0,
+       1,
+       "val outside training clips"
+      ]
+     ]
+    },
+    "not_argmin": {
+     "ok": false,
+     "bad": [
+      [
+       1,
+       "chosen is not the argmin"
+      ]
+     ]
+    }
+   },
+   "passed": true,
+   "regression_each_red": true
+  },
+  "C-CONST7": {
+   "green": {
+    "ok": true,
+    "r2": -0.0010798997191430182,
+    "closed_form": -0.0010798997191430182
+   },
+   "regression": {
+    "ok": false,
+    "r2": 0.0,
+    "closed_form": -0.0010798997191430182
+   },
+   "passed": true
+  },
+  "C-ZERO7": {
+   "green": {
+    "ok": true,
+    "max_abs": 0.0
+   },
+   "regression": {
+    "ok": false,
+    "max_abs": 0.4696907699108124
+   },
+   "passed": true
+  },
+  "C-WM7": {
+   "green": {
+    "ok": true,
+    "ci": [
+     0.832163913201022,
+     0.872824978883884
+    ],
+    "roll": {
+     "ok": true,
+     "max_abs": 0.0,
+     "tol": 1e-06,
+     "float32_max_abs": 1.430511474609375e-06,
+     "float32_within_1e-4": true
+    },
+    "r_wm_RA": 0.8549205311366896
+   },
+   "regression": {
+    "ok": false,
+    "ci": [
+     -0.872824978883884,
+     -0.832163913201022
+    ]
+   },
+   "passed": true
+  },
+  "PLANT": {
+   "green": {
+    "ok": true,
+    "P1": true,
+    "P2": true,
+    "r2_mlp": 0.4477090780680457,
+    "r2_oracle": 0.498900003660927,
+    "dr2": {
+     "point": 0.1794022049460875,
+     "lo": 0.16949633547146487,
+     "hi": 0.19055228301432534
+    }
+   },
+   "regression": {
+    "ok": false,
+    "r2": 0.2683068733786844
+   },
+   "passed": true
+  },
+  "SHUF-T": {
+   "green": {
+    "ok": true,
+    "r2": -0.002432185203041559
+   },
+   "regression": {
+    "ok": false,
+    "r2": 0.28128581952957854
+   },
+   "passed": true
+  }
+ },
+ "wall_s": 58.1,
+ "tier": "T0",
+ "evidence": "MEASURED",
+ "red": [],
+ "ok": true
+}

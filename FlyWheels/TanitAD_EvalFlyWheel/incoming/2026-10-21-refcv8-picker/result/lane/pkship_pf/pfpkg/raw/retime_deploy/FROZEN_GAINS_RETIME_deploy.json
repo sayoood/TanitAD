@@ -1,0 +1,113 @@
+{
+ "tool": "build_deploy_gains_r8.py",
+ "generated": "2026-10-22T06:07:09",
+ "purpose": "SHIP-R8 AMENDMENT 1: the deployed re-timing stage is ONE gain function of time, derived from the frozen train gains (no new fit)",
+ "source_file": "raw/retime_trainfit/FROZEN_GAINS_RETIME_train.json",
+ "source_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+ "knots": {
+  "t_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0,
+   3.0,
+   4.0,
+   5.0,
+   6.0
+  ],
+  "gain": [
+   0.9628222590851879,
+   0.6193467956103992,
+   0.5787360597114173,
+   0.5834186957053836,
+   0.7767388681479852,
+   0.8508854771041645,
+   0.8925057795822788,
+   0.9135194123053865
+  ],
+  "source_surface": [
+   "S2",
+   "S2",
+   "S2",
+   "S2",
+   "S6",
+   "S6",
+   "S6",
+   "S6"
+  ],
+  "register_3dp": [
+   0.963,
+   0.619,
+   0.579,
+   0.583,
+   0.777,
+   0.851,
+   0.893,
+   0.914
+  ]
+ },
+ "interpolation": "piecewise-linear in time between knots; held constant before the first knot (0.5 s) and after the last (6.0 s)",
+ "surfaces": {
+  "S2": {
+   "instants_s": [
+    0.5,
+    1.0,
+    1.5,
+    2.0
+   ],
+   "RETIME_DEPLOY": [
+    0.9628222590851879,
+    0.6193467956103992,
+    0.5787360597114173,
+    0.5834186957053836
+   ],
+   "RETIME_TRAIN": [
+    0.9628222590851879,
+    0.6193467956103992,
+    0.5787360597114173,
+    0.5834186957053836
+   ],
+   "identical_to_train": true,
+   "changed_vs_train": []
+  },
+  "S6": {
+   "instants_s": [
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0
+   ],
+   "RETIME_DEPLOY": [
+    0.6193467956103992,
+    0.5834186957053836,
+    0.7767388681479852,
+    0.8508854771041645,
+    0.8925057795822788,
+    0.9135194123053865
+   ],
+   "RETIME_TRAIN": [
+    0.6451944414163532,
+    0.6613605791321159,
+    0.7767388681479852,
+    0.8508854771041645,
+    0.8925057795822788,
+    0.9135194123053865
+   ],
+   "identical_to_train": false,
+   "changed_vs_train": [
+    {
+     "t_s": 1.0,
+     "train": 0.6451944414163532,
+     "deploy": 0.6193467956103992
+    },
+    {
+     "t_s": 2.0,
+     "train": 0.6613605791321159,
+     "deploy": 0.5834186957053836
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "_grid": "stride-8, 40 OOD-val q90 episodes",
+ "_arms": {
+  "real": "vision + true future actions (banked eval condition)",
+  "hold_act": "vision kept, future actions held at last context action",
+  "mean_lat": "chunk-mean latents (WEAK ablation: same-episode adjacent windows)",
+  "swap_ep": "latents swapped from a different episode (STRONG vision ablation; ep0 falls back to real)",
+  "cv": "hold v0 straight"
+ },
+ "real": {
+  "ade_m": 0.3395617604255676,
+  "speed_mae_mps": 0.4399355882087911,
+  "n_windows": 880
+ },
+ "hold_act": {
+  "ade_m": 0.3756425976753235,
+  "speed_mae_mps": 0.47941968940230706,
+  "n_windows": 880
+ },
+ "mean_lat": {
+  "ade_m": 0.37097349762916565,
+  "speed_mae_mps": 0.4730131250204279,
+  "n_windows": 880
+ },
+ "swap_ep": {
+  "ade_m": 0.4087705910205841,
+  "speed_mae_mps": 0.507465454030877,
+  "n_windows": 880
+ },
+ "cv": {
+  "ade_m": 0.5352182388305664,
+  "speed_mae_mps": 0.6238632606997576,
+  "n_windows": 880
+ },
+ "attribution": {
+  "vision_share_of_cv_gap_swap": 0.35372624080332155,
+  "vision_share_of_cv_gap_meanchunk": 0.16054534692471237,
+  "future_action_share_of_cv_gap": 0.1844091110291293,
+  "_note": "shares can sum !=1 (interaction); each is degradation/(cv-real). swap_ep is the decision-grade vision ablation; mean_lat is weak (same-episode chunk mean) and kept only for comparison."
+ },
+ "latent_probes_r2": {
+  "z_ctx->v@t+0.0s": 0.7341,
+  "z_ctx->accel@t+0.0s": -0.1554,
+  "z_ctx->yawrate@t+0.0s": 0.6641,
+  "z_hat_5->v@t+0.5s": 0.8704,
+  "z_hat_5->accel@t+0.5s": 0.5987,
+  "z_hat_5->yawrate@t+0.5s": 0.7977,
+  "z_hatHOLD_5->v@t+0.5s": 0.8699,
+  "z_hatHOLD_5->accel@t+0.5s": 0.4915,
+  "z_hatHOLD_5->yawrate@t+0.5s": 0.6798,
+  "z_hat_10->v@t+1.0s": 0.9227,
+  "z_hat_10->accel@t+1.0s": 0.5578,
+  "z_hat_10->yawrate@t+1.0s": 0.801,
+  "z_hatHOLD_10->v@t+1.0s": 0.9155,
+  "z_hatHOLD_10->accel@t+1.0s": 0.2598,
+  "z_hatHOLD_10->yawrate@t+1.0s": 0.4647,
+  "z_hat_20->v@t+2.0s": 0.9463,
+  "z_hat_20->accel@t+2.0s": 0.443,
+  "z_hat_20->yawrate@t+2.0s": 0.7624,
+  "z_hatHOLD_20->v@t+2.0s": 0.874,
+  "z_hatHOLD_20->accel@t+2.0s": -0.1629,
+  "z_hatHOLD_20->yawrate@t+2.0s": -0.1165,
+  "z_ctx->v@t+1.0s": 0.6642,
+  "z_ctx->v@t+2.0s": 0.5356
+ }
+}

@@ -1,0 +1,44 @@
+# E-only lines of TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/code/pgrad.py  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 49a0655; E mtime 2026-10-04 16:22; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+37: import os
+56:     ap.add_argument("--batch-start", type=int, default=0, help="first of the 8 batches this job runs")
+57:     ap.add_argument("--batch-count", type=int, default=0, help="0 = all; >0 = a PART (merged by pgrad_merge.py)")
+66:     # ⛔ TF32 OFF: the second run (TF32 on by default for cuDNN convolutions) read a linearity error of 6.2e-4,
+67:     # FAILING the registered 1e-4 control -- a 10-bit-mantissa precision floor, not a property of the gradients.
+68:     torch.backends.cuda.matmul.allow_tf32 = False
+69:     torch.backends.cudnn.allow_tf32 = False
+95:     # ⭐ PARTS (MEASURED: with TF32 off one batch costs ~13 min, so 8 batches cannot fit one 40-min lock hold):
+96:     # the SAME seeded 64-window draw, batches [start, start + count) of it; pgrad_merge.py sums the parts.
+97:     b_lo = a.batch_start
+98:     b_hi = a.n_batches if a.batch_count <= 0 else min(a.n_batches, a.batch_start + a.batch_count)
+99:     dl = torch.utils.data.DataLoader(torch.utils.data.Subset(e_ds, pick[b_lo * a.batch:b_hi * a.batch]),
+100:                                      batch_size=a.batch, shuffle=False, num_workers=a.workers, drop_last=False)
+103:     # ⛔ the eval loader returns a model with requires_grad False everywhere (MEASURED: the first run found ZERO
+104:     # trainable parameters and crashed before any number). Only the measured groups need it: a gradient reaches a
+105:     # parameter through the activations whether or not the HEAD parameters require grad.
+106:     _pref = ("core.encoder.", "_map_hires.lift.", "_map_hires.encoder.", "_perception.bev_pool.")
+107:     for n, p in model.named_parameters():
+108:         if n.startswith(_pref):
+109:             p.requires_grad_(True)
+111:     if not named:
+112:         raise SystemExit("[pgrad] no parameter requires grad -- refusing to measure the empty set")
+146:     for bi, b in enumerate(dl, start=b_lo):
+199:     if a.batch_count > 0:
+200:         out = Path(a.out)
+201:         out.mkdir(parents=True, exist_ok=True)
+202:         part = {"batches": [b_lo, b_hi], "per_batch": per_batch, "ctl": ctl, "weights": w, "group_sizes": gsizes,
+203:                 "sums": {k: {g: v.cpu() for g, v in d.items()} for k, d in sums.items()},
+204:                 "window_draw_sha256": hashlib.sha256(json.dumps(win).encode()).hexdigest(),
+205:                 "ckpt": a.ckpt, "step": mrec["state_dict"]["step"], "strict": mrec["state_dict"]["strict"],
+206:                 "loader_departures": mrec.get("departures"),
+207:                 "measurement_choices": {"fp32_trunk": bool(a.fp32_trunk), "trunk_levers_as_trained": levers_before,
+208:                                         "cudnn_deterministic": True, "tf32": False, "train_mode": True,
+209:                                         "seed_draw": a.seed, "forward_seed": "torch.manual_seed(1000 + batch)"},
+210:                 "cuda_max_mem_gb": torch.cuda.max_memory_allocated() / 1e9, "wall_s": time.time() - t0}
+211:         torch.save(part, str(out / f"part_{b_lo}.pt") + ".tmp")
+212:         os.replace(str(out / f"part_{b_lo}.pt") + ".tmp", out / f"part_{b_lo}.pt")
+213:         print(f"[pgrad] PART [{b_lo}, {b_hi}) DONE L {ctl['L_max_rel_err']:.2e} Z {ctl['Z_max_abs']} "
+214:               f"wall {time.time() - t0:.0f}s", flush=True)
+215:         return 0 if (ctl["L_max_rel_err"] <= 1e-4 and ctl["Z_max_abs"] == 0.0) else 3
+262:                                    "cudnn_deterministic": True, "tf32": False, "train_mode": True,
+263:                                    "seed_draw": a.seed,

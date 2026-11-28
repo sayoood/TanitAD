@@ -1,0 +1,77 @@
+== constants (value | class | source) ==
+  mp4_b1_mb              13.057 | MEASURED  | mean of the 4,719 local B1 front-wide mp4s, 61.617 GB (dev box, tanitad-data/physicalai/camera/camera_front_wide_120fov)
+  mp4_corpus_mb            21.4 | ESTIMATED | 2.05 GB per camera chunk zip (pull_camera.py docstring, INHERITED) / 95.8 clips per chunk outside B1 (MEASURED, clip_index.parquet; 306,152 clips / 3,146 chunks overall) = 21.4; B1's own mean is 13.06, so B1 is NOT size-representative
+  ts_mb                  0.0094 | MEASURED  | 4,719 timestamps parquets, mean 9.4 KB
+  ego_mb                  0.415 | MEASURED  | 4,800 egomotion_alpamayo parquets, mean 415 KB
+  obs_mb                  0.517 | MEASURED  | obstacle.offline member, corpus mean 517,098 B (2026-09-06-b1-train-join/README.md)
+  chunk_fixed_mb          0.262 | MEASURED  | per chunk zip: 256 KiB tail + 2 x 1-byte probes = 262,146 B (same README); paid once per zip per chunk (camera, egomotion, obstacle)
+  calib_chunk_mb           0.04 | MEASURED  | camera_intrinsics.chunk_NNNN.parquet ~37-44 KB (dev box calibration/camera_intrinsics)
+  v2ep_mb                 36.99 | MEASURED  | 22,192,351,528 B / 600 clips (raw/s4c/check_report_train600.json); 256x640 png v2ep
+  cache_4x10_mb           4.356 | MEASURED  | pool4x10 fp8 + mean fp16 + kinematics, T=101, re-saved from a real cache clip (torch.save) -> 4,355,909 B
+  cache_both_mb          20.905 | MEASURED  | real cache clip with pool4x10+pool8x20, 20,904,597 B; 141 eval clips mean 20.899 MB (manifest_eval.jsonl)
+  v9_mb                   0.058 | MEASURED  | v9_labels_train.npz 253,667,918 B / 4,369 clips
+  dev_build_s              8.23 | MEASURED  | v2ep build on the dev box CPU, 6 workers: 600 clips in 82.3 min (raw/s4c/build_train600.log); eval-141 5.62 s/clip
+  box2_allin_s            16.66 | MEASURED  | box 2, SAFE MODE, build+encode+verify+delete, 3,972 clips: 10-18 12:14 -> 10-19 06:37 = 66,180 s (box2_ship/logs/chain_ra1_full.out)
+  box2_encode_s            5.01 | MEASURED  | box 2 SAFE MODE encode, 423 clips, 4x10+8x20 (box2_ship/logs/encode_A2s.log); 4.98 on 64 clips; 141-eval manifest enc_s mean 4.20 / median 3.62
+  dev_encode_s             4.86 | ESTIMATED | dev-box RTX 4060, 38 clips, MEDIAN under a contended GPU (INCIDENT_gpu_touch.md: 'do not quote as a rate'); banked 4.72
+  v9_s                    0.228 | MEASURED  | v9 build wall_s 997.4 / 4,369 clips (v9_labels_train.manifest.json); eval139: 31.8 s / 139 = 0.229
+  s2_emit_s              0.0045 | MEASURED  | s2_geom_emit_v7 emit_one 4.5 ms median, 60 clips, 1 process (GOALS_AND_CLAIMS D-TACGT-COVERAGE-IS-A-WRITER-LIMIT)
+  obs_pull_s               0.25 | MEASURED  | obstacle.offline range pull: 4,440 members, 2.673 GB wire, 17,391 requests, 18.5 min -> 0.25 s/clip, 2.41 MB/s
+  obs_join_s              0.408 | MEASURED  | b1 train agent join: 30.1 min dev-box CPU / 4,427 clips
+  lead_pass_s               0.5 | ESTIMATED | NOT MEASURED anywhere in the export; stated as a guess, order of the join
+  lan_mb_s                14.64 | MEASURED  | dev box -> box 2: 51,480,904,147 B in 3,517 s (ZZSHIP-DONE, box2_ship/logs/ship_trainall.log; transfer_check.json)
+  wan_slow_mb_s            1.83 | ESTIMATED | INFERRED from file mtimes of the B1 camera bank: 61.29 GB / 9.31 h (2026-08-29 16:06 -> 08-30 01:24); not a transfer log
+  wan_mid_mb_s             2.41 | MEASURED  | obstacle.offline range pull, 2.673 GB / 18.5 min (request-bound, small members)
+  wan_fast_mb_s             5.0 | ESTIMATED | floor: ~2 GB egomotion tar + timestamps tar + parquet staged in <= 420 s on 2026-10-18 (stage.log: 11:00:52 -> 11:09:54 minus 122 s of local sha256)
+  chunks_4512              2408 | MEASURED  | uniform draw of 4,512 from the 301,433-clip pool
+  chunks_40000             3146 | MEASURED  | uniform draw of 40,000 (every chunk)
+  train_steps_s           1.217 | MEASURED  | M2b base B on box 2: 1.217 steps/s (RESULT_V8F_GRID.md); 19,164 steps = 4.37 h per seed
+
+== free disk, GB ==
+  dev C: (NTFS, internal)                                                           64.6
+  dev E: (exFAT, artifacts)                                                          2.1
+  dev F: (NTFS, external Transcend)                                                787.0
+  dev G: (Drive mount, abandoned by PI)                                             61.4
+  box 2 D: (last read 2026-10-19 06:37, INHERITED, not re-probed: ssh forbidden)    85.9
+
+==================== +4,512 new clips (ESTIMATED = arithmetic on the constants above) ====================
+-- download, B1-like clip sizes (13.06 MB mp4): 14.00 MB/clip + 1.99 GB range overhead over 2408 chunks = 65.1 GB
+     at slow 1.83 MB/s :     9.9 h
+     at mid 2.41 MB/s :     7.5 h
+     at fast 5.0 MB/s :     3.6 h
+     (mp4 + timestamps only, for the LAN ship to box 2: 59.0 GB -> 1.12 h at 14.64 MB/s)
+-- download, corpus-mean clip sizes (21.4 MB mp4): 22.34 MB/clip + 1.99 GB range overhead over 2408 chunks = 102.8 GB
+     at slow 1.83 MB/s :    15.6 h
+     at mid 2.41 MB/s :    11.8 h
+     at fast 5.0 MB/s :     5.7 h
+     (mp4 + timestamps only, for the LAN ship to box 2: 96.6 GB -> 1.83 h at 14.64 MB/s)
+-- disk produced / transient
+   cache 4x10 only : +    19.7 GB      cache 4x10+8x20: +    94.3 GB      v9 npz: +0.26 GB
+   per 400-clip chunk transient (mp4 + v2ep): 20.0-23.4 GB   (v2ep is 167 GB if never deleted)
+-- compute wall, hours
+   V1 box 2 does build+encode (the RA-1 FULL recipe)      : box-2 hours    20.9   (dev box: download + stage + ship only)
+   V2 dev box does build (6 workers) + encode (4060)      : dev hours     16.4 serial,    10.3 if CPU and GPU overlap; box-2 hours 0 (ships the 4.36 MB/clip cache: 0.37 h)
+   V3 dev builds v2ep, box 2 ENCODES only                 : box-2 hours     6.3   dev CPU hours    10.3  (ships v2ep 167 GB at 14.64 MB/s = 3.2 h, overlapped)
+   labels (v9 + S2 emit, all CPU)                         :    0.29 h        lead block (obstacle pull + join + lead-pass, ESTIMATED):    1.45 h
+   one M2b training run at B's 19,164 steps               : 4.37 h per seed (fixed steps); 8.75 h if S doubles with the clips (steps-mult 4 on a 2x manifest)
+
+==================== +40,000 new clips (ESTIMATED = arithmetic on the constants above) ====================
+-- download, B1-like clip sizes (13.06 MB mp4): 14.00 MB/clip + 2.60 GB range overhead over 3146 chunks = 562.5 GB
+     at slow 1.83 MB/s :    85.4 h
+     at mid 2.41 MB/s :    64.8 h
+     at fast 5.0 MB/s :    31.3 h
+     (mp4 + timestamps only, for the LAN ship to box 2: 522.7 GB -> 9.92 h at 14.64 MB/s)
+-- download, corpus-mean clip sizes (21.4 MB mp4): 22.34 MB/clip + 2.60 GB range overhead over 3146 chunks = 896.3 GB
+     at slow 1.83 MB/s :   136.0 h
+     at mid 2.41 MB/s :   103.3 h
+     at fast 5.0 MB/s :    49.8 h
+     (mp4 + timestamps only, for the LAN ship to box 2: 856.4 GB -> 16.25 h at 14.64 MB/s)
+-- disk produced / transient
+   cache 4x10 only : +   174.2 GB      cache 4x10+8x20: +   836.2 GB      v9 npz: +2.32 GB
+   per 400-clip chunk transient (mp4 + v2ep): 20.0-23.4 GB   (v2ep is 1,480 GB if never deleted)
+-- compute wall, hours
+   V1 box 2 does build+encode (the RA-1 FULL recipe)      : box-2 hours   185.1   (dev box: download + stage + ship only)
+   V2 dev box does build (6 workers) + encode (4060)      : dev hours    145.4 serial,    91.4 if CPU and GPU overlap; box-2 hours 0 (ships the 4.36 MB/clip cache: 3.31 h)
+   V3 dev builds v2ep, box 2 ENCODES only                 : box-2 hours    55.7   dev CPU hours    91.4  (ships v2ep 1,480 GB at 14.64 MB/s = 28.1 h, overlapped)
+   labels (v9 + S2 emit, all CPU)                         :    2.58 h        lead block (obstacle pull + join + lead-pass, ESTIMATED):   12.87 h
+   one M2b training run at B's 19,164 steps               : 4.37 h per seed (fixed steps); 8.75 h if S doubles with the clips (steps-mult 4 on a 2x manifest)

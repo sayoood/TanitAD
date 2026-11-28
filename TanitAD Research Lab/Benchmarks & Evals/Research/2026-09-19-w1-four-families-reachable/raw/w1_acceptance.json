@@ -1,0 +1,38 @@
+{
+ "_what": "W1: a refcv6 checkpoint now produces the FOUR METRIC FAMILIES with paired CIs",
+ "_evidence_class": "MEASURED (ours; taniteval/tools/refcv3_arm.py on a real refcv6 ckpt)",
+ "_NOT_A_CAPABILITY_CLAIM": "2 episodes, 9 windows, --window-stride 40, on a model trained for ONE STEP. What is proven is the CHAIN, not the model. No number here may be quoted as refcv6 performance.",
+ "chain": "refcv3_arm.py --ckpt <refcv6> --dump-dir -> four_families.all_families",
+ "families_emitted": [
+  "longitudinal",
+  "lateral",
+  "tactical",
+  "strategic"
+ ],
+ "instrument_self_report": {
+  "_complete": false,
+  "_families_unavailable": [
+   "strategic"
+  ],
+  "_intervals_complete": true
+ },
+ "paired_comparisons": [
+  "paired_ha_minus_ha0",
+  "paired_os_minus_ha",
+  "paired_os_minus_ha0",
+  "paired_os_minus_ha0ext"
+ ],
+ "example_row": {
+  "paired_ha_minus_ha0.ADE": "delta=-0.3245 [-0.5745, -0.0119] separated=True n_win=9 n_ep=2"
+ },
+ "what_W1_closed": "longitudinal / lateral / tactical are PRESENT with intervals (_intervals_complete: true)",
+ "what_remains": {
+  "strategic": "UNAVAILABLE -- the layer is OFF by PI directive. That is ITEM 25, PI-blocked.",
+  "distance_keeping": "3 of longitudinal's 19 declared metrics have no interval: mean_headway_min_m / mean_min_ttc_s / mean_time_gap_min_s. That is W3 -- the lead block exists and joins by (clip_id, frame); it needs --lead passed."
+ },
+ "blockers_cleared_to_get_here": [
+  "W0: the checkpoint would not LOAD (perception branch absent from the rebuild)",
+  "the LIFT BANK was not rebuilt, so the forward refused",
+  "for_episodes keys on stable_episode_id(clip_id), not the clip string"
+ ]
+}

@@ -1,0 +1,66 @@
+{
+ "what": "float64 transcendental bits, dev box (Windows x86-64, numpy 1.23.4, AVX2/FMA3, no AVX512) vs Thor (Linux aarch64 glibc 2.39, numpy 1.23.4), identical inputs (PCG64 seed 0, uniform)",
+ "inputs_identical": true,
+ "per_function": {
+  "np.exp": {
+   "full_array_identical": false,
+   "n_compared": 20000,
+   "n_differ": 102,
+   "pct": 0.51
+  },
+  "np.cos": {
+   "full_array_identical": false,
+   "n_compared": 20000,
+   "n_differ": 658,
+   "pct": 3.29
+  },
+  "np.sin": {
+   "full_array_identical": false,
+   "n_compared": 20000,
+   "n_differ": 635,
+   "pct": 3.175
+  },
+  "np.arctan2": {
+   "full_array_identical": false,
+   "n_compared": 20000,
+   "n_differ": 25,
+   "pct": 0.125
+  },
+  "math.exp": {
+   "full_array_identical": false,
+   "n_compared": 20000,
+   "n_differ": 102,
+   "pct": 0.51
+  },
+  "math.cos": {
+   "full_array_identical": false,
+   "n_compared": 20000,
+   "n_differ": 658,
+   "pct": 3.29
+  }
+ },
+ "devbox_numpy_cpu_features": [
+  "AVX",
+  "AVX2",
+  "F16C",
+  "FMA3",
+  "MMX",
+  "POPCNT",
+  "SSE",
+  "SSE2",
+  "SSE3",
+  "SSE41",
+  "SSE42",
+  "SSSE3"
+ ],
+ "thor_numpy_cpu_features": [
+  "ASIMD",
+  "ASIMDDP",
+  "ASIMDFHM",
+  "ASIMDHP",
+  "FPHP",
+  "NEON",
+  "NEON_FP16",
+  "NEON_VFPV4"
+ ]
+}

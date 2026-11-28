@@ -1,0 +1,34 @@
+WAIT /home/nvidia/refcv6_run/runs/refcv6-r101-s0/ckpt_30000.pt 2026-09-26T09:53:05Z
+PRESENT size=404412343 2026-09-26T09:55:06Z
+2026-09-26T09:55:19Z FETCH OK D:/refcv6_eval_kit/ckpt\ckpt_30000.pt md5 0c5c67b3ecf28495d54348e3436371bf
+2026-09-26T09:55:26Z START ckpt=D:/refcv6_eval_kit/ckpt\ckpt_30000.pt step=30000 md5=0c5c67b3ecf28495d54348e3436371bf label=RESULT
+2026-09-26T10:11:31Z RAM gate passed (7.0 GB free)
+2026-09-26T10:11:31Z BRIDGE warmup arms=R6_A1,R6_A1_s1,R6_BLIND,R6_NAVOFF,R6_VMAXOFF,R6_A1NT device=cpu
+2026-09-26T11:23:07Z SCORE warmup R6_A1 PASS
+2026-09-26T11:27:24Z SCORE warmup R6_A1_s1 PASS
+2026-09-26T11:31:50Z SCORE warmup R6_BLIND PASS
+2026-09-26T11:36:02Z SCORE warmup R6_NAVOFF PASS
+2026-09-26T11:40:15Z SCORE warmup R6_VMAXOFF PASS
+2026-09-26T11:44:12Z SCORE warmup R6_A1NT PASS
+2026-09-26T11:44:14Z SPLIT warmup done: summary=present
+2026-09-26T11:44:14Z DONE bars=present
+RUNNER_warmup_EXIT 0 2026-09-26T11:44:15Z
+{"when_utc": "2026-09-26T11:44:27Z", "mode": "copy-only (no git)", "n": 608, "n_verified": 608}
+2026-09-26T11:44:41Z FETCH OK D:/refcv6_eval_kit/ckpt\ckpt_30000.pt md5 0c5c67b3ecf28495d54348e3436371bf
+2026-09-26T11:44:43Z START ckpt=D:/refcv6_eval_kit/ckpt\ckpt_30000.pt step=30000 md5=0c5c67b3ecf28495d54348e3436371bf label=RESULT
+2026-09-26T11:44:43Z GPU gate closed at the start of navtest: waiting up to 10800 s
+2026-09-26T11:54:44Z device for navtest: cuda (gate open after 601 s)
+2026-09-26T11:54:55Z CUDA controls rc=1 K0_pass=True KD_pass=False
+2026-09-26T11:54:55Z BRIDGE navtest arms=R6_A1 device=cuda
+2026-09-26T14:12:37Z SCORE navtest R6_A1 RAM-guard abort, retry 1
+2026-09-26T14:15:40Z SCORE navtest R6_A1 RAM-guard abort, retry 2
+2026-09-26T14:21:42Z SCORE navtest R6_A1 RAM-guard abort, retry 3
+2026-09-26T14:24:22Z SCORE navtest R6_A1 RAM-guard abort, retry 4
+2026-09-26T14:31:24Z SCORE navtest R6_A1 RAM-guard abort, retry 5
+2026-09-26T14:46:30Z SCORE navtest R6_A1 RAM-guard abort, retry 6
+2026-09-26T14:46:30Z SCORE navtest R6_A1 FAIL
+2026-09-26T14:48:16Z SPLIT navtest done: summary=present
+2026-09-26T14:48:22Z DONE bars=present
+RUNNER_navtest_EXIT 0 2026-09-26T14:48:23Z
+{"when_utc": "2026-09-26T14:49:51Z", "mode": "copy-only (no git)", "n": 633, "n_verified": 633}
+NAVTEST_DIAG_DONE 2026-09-26T15:32:03Z

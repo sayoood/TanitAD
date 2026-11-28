@@ -1,0 +1,36 @@
+baseline check_manifest: {'faults': 9}
+baseline check_order: 248
+baseline check_pairing: 121
+baseline check_artifact: {'tar_bytes': 204800}
+baseline check_real_path: {'stage2': [1.0, 1.0, 1.0], 'stage3': [1.0, 1.0, 1.0]}
+baseline check_positive: {'seconds': 63.7, 'cells': 24, 'records': 44, 'record_keys': ['agents', 'arm', 'calls', 'cl', 'encoder', 'extra', 'f0', 'frame_md5', 'g', 'n_renders', 'n_steps'
+baseline check_changed_byte: {'rc': 1}
+baseline check_scenes_absent: {'rc': 1}
+baseline check_busy_files: {'rc': 1}
+baseline check_ri_copy: {'rc': 1}
+baseline check_requires: {'rc': 1}
+baseline check_wrong_manifest: {'rc': 1}
+baseline check_missing_ckpt: {'rc': 1}
+baseline check_composite: {'records': 2}
+baseline check_contract: {'g3': {'s0': 'PAIRED', 's1': 'PAIRED'}, 'g2d_windows': {2: 5, 3: 6}, 'rows_per_seed': 19, 'dk_rows_empty': ['DK-HW', 'DK-TG', 'DK-VIOL']}
+baseline check_footprint: {'pass_mib': {'deciding': 1016, 'beside': 746}, 'cell_mib': [6]}
+check_manifest[not_applied]: RED (AssertionError: NOT_A_STAGE4_MANIFEST was not named: [])
+check_order[beside_first]: RED (AssertionError: the deciding cells must all run before any beside cell)
+check_pairing[shifted]: RED (AssertionError: pair_check refused: PAIRING GUARD: the two arms' (scene, f0) lists differ; a contrast on misaligned starts is not a contrast)
+check_artifact[extra]: RED (AssertionError: ['pkg/MANIFEST4.json', 'pkg/code/t2v8f_c0c.py', 'pkg/code/t2v8f_stage4.py', 'pkg/code/t2v8f_stage4_cell.py', 'pkg/jobs/stage4.cmd', 'pkg/refs/tool/v8f)
+check_real_path[no_npz]: RED (AssertionError: falsify_actors(frame 0) failed: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\t2a_scratch\\stage2_rehearsal\\refs_s4real2)
+check_positive[cell_dropped]: RED (AssertionError: 24)
+check_changed_byte[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_scenes_absent[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_busy_files[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_ri_copy[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_requires[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_wrong_manifest[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_missing_ckpt[not_applied]: RED (AssertionError: (0, ['GATE_SCENES.json', 'GATE_SCENES_a.json', 'GATE_SCENES_b.json', 'STAGE4.done', 'STAGE4_RESULT.json', 'gate.done', 'gate.log', 'preflight.done', ')
+check_composite[composite_off]: RED (AssertionError: the C0C plan is not the composite of C0's raw plan and the P10 prior)
+check_composite[wrong_prior]: RED (AssertionError: the C0C plan is not the composite of C0's raw plan and the P10 prior)
+check_contract[not_applied]: RED (AssertionError: [])
+check_footprint[off_by_one]: RED (AssertionError: {'deciding': 1016, 'beside': 746})
+mutations RED: 17 of 17
+rc=0
+ZZ O-MUT-DONE ZZ

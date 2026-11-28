@@ -1,0 +1,67 @@
+{
+ "_what": "A8 -- A3's configuration run to 5,000 steps on clean-124 halfA, held-out halfB read every 1,000 steps",
+ "_evidence_class": "MEASURED (ours)",
+ "_not_a_capability_claim": "5,000 steps x batch 2 = 10,000 windows of a 5,302-step epoch over 62 clips = 0.94 of ONE epoch; a map head, not driving",
+ "curve": [
+  {
+   "step": 1000,
+   "heldout_iou_drivable": 0.45049,
+   "ratio_vs_halfB_floor_0.3388": 1.3297,
+   "eval_map_gt_drivable_frac": 0.33845,
+   "pred_drivable_prob_mean": 0.35381
+  },
+  {
+   "step": 2000,
+   "heldout_iou_drivable": 0.56906,
+   "ratio_vs_halfB_floor_0.3388": 1.6796,
+   "eval_map_gt_drivable_frac": 0.33845,
+   "pred_drivable_prob_mean": 0.38344
+  },
+  {
+   "step": 3000,
+   "heldout_iou_drivable": 0.5401,
+   "ratio_vs_halfB_floor_0.3388": 1.5942,
+   "eval_map_gt_drivable_frac": 0.33845,
+   "pred_drivable_prob_mean": 0.29844
+  },
+  {
+   "step": 4000,
+   "heldout_iou_drivable": 0.57437,
+   "ratio_vs_halfB_floor_0.3388": 1.6953,
+   "eval_map_gt_drivable_frac": 0.33845,
+   "pred_drivable_prob_mean": 0.32009
+  },
+  {
+   "step": 5000,
+   "heldout_iou_drivable": 0.58379,
+   "ratio_vs_halfB_floor_0.3388": 1.7231,
+   "eval_map_gt_drivable_frac": 0.33845,
+   "pred_drivable_prob_mean": 0.33535
+  }
+ ],
+ "halfB_floor": 0.3388,
+ "floor_source": "A1, computed per half, controls computed not printed",
+ "run_to_run": {
+  "note": "A3 and A8 are the SAME configuration and the SAME seed; the trainer is not reproducible across launches, so these are two draws, n=2 -- an INDICATION of the rig's floor, not a replicate panel",
+  "step_1000": {
+   "A3": 0.49016,
+   "A8": 0.45049,
+   "abs_diff": 0.03967
+  },
+  "step_2000": {
+   "A3": 0.57607,
+   "A8": 0.56906,
+   "abs_diff": 0.00701
+  }
+ },
+ "monotonic": false,
+ "delta_2k_to_5k": 0.01473,
+ "rate": {
+  "train_only_median_s_per_step": 4.74,
+  "n_deltas": 492,
+  "wall_s_total": 40131,
+  "note": "wall includes 5 held-out reads of 1,000 windows each; the box was shared with a NAVSIM caching job and D: I/O, so this rate is CONTENDED and is not the 2.51 s/step planning figure"
+ },
+ "final_train_step": 5000,
+ "checkpoint": "run/ckpt_5000.pt"
+}

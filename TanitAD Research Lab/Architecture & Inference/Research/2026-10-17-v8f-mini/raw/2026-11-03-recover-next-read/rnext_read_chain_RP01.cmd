@@ -1,0 +1,3 @@
+@echo off
+rem RECOVER-NEXT dev-box read chain, arm RP01: start through WMI Win32_Process.Create so it survives the caller.  RESUME = launch again (finished rollouts are skipped).  The chain waits (6 h max) for the pulled box-2 runs M2b_s0_recft_RP01 and M2b_s1_recft_RP01; start it after pull_rnext.sh.  Writes only here and on C:/Users/Admin/rr_scratch/rnext.
+"C:\Program Files\Git\bin\bash.exe" -lc "RNEXT_ARM=RP01 bash /e/Projects/TanitAD-artifacts/dagland/recover_next/read/rnext_read_chain.sh RP01 < /dev/null > /e/Projects/TanitAD-artifacts/dagland/recover_next/read/logs/chain_RP01.launch.out 2>&1" < NUL

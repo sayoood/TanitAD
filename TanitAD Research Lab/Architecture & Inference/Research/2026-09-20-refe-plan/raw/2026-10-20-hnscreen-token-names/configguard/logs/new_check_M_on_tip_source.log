@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "C:\Users/Admin/par18/hntok3/fix/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe\test_hnscreen_chain.py", line 231, in check
+    ok = bool(fn())
+              ~~^^
+  File "C:\Users/Admin/par18/hntok3/fix/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe\test_hnscreen_chain.py", line 809, in <lambda>
+    check(bad, name, lambda fn=fn: fn(M, w))
+                                   ~~^^^^^^
+  File "C:\Users/Admin/par18/hntok3/fix/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe\test_hnscreen_chain.py", line 737, in M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0
+    res["default_passes"] = passes("default")
+                            ~~~~~~^^^^^^^^^^^
+  File "C:\Users/Admin/par18/hntok3/fix/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe\test_hnscreen_chain.py", line 735, in passes
+    return rc == 0 and ch.stage_order_run == ["S0"] and sc.labels() == ["s0_stage"] and os.path.exists(f"{sc.root}/config.sha256") and ch.token_names_config_problems() == []
+                                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Chain' object has no attribute 'token_names_config_problems'. Did you mean: 'token_name_problems'?
+  [check raised] M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0 AttributeError 'Chain' object has no attribute 'token_names_config_problems'
+FAILING_ON_TIP_SOURCE ['M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0']
+RED_OK

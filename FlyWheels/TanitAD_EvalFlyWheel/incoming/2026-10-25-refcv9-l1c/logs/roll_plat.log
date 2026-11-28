@@ -1,0 +1,60 @@
+[l1] mode=eval prereg sealed 74b8ba88ed042042 child=--ckpt E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt --config E:/refcv8_eval_kit/ckpt/config.json --seed 0 --dump-dir F:/l1c/tree/step48852ema_plat/dump_s0 --windows-json F:/l1c/kit_plat/windows_banked24.json --device cuda --out-json F:/l1c/bank/roll_plat.json --os-only ZZL1ROLLSTARTZZ
+[roll_pf] nav_feed=perframe_full overlay=98293dd741127016 patched_refcv3_arm=64e6ffbb1d0434d1 pose_sync=OFF (R8_NO_POSE_SYNC)
+[lead] no lead block (banked default absent: C:\Users\Admin\refcv8_pf\gtmap_oracle\tree_fb47a58\TanitAD Research Lab\Benchmarks & Evals\Research\2026-09-02-b1-eval-lead-block\raw\b1_eval_lead_block.npz); distance-keeping will be REFUSED with its reason — a WORK ITEM, not a pass
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from F:/l1c/kit_plat/data/extrinsics_union.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] F:\l1c\kit_plat\data\refcv6-b1-416x1024-eval139: 24 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 24 distinct for 24 clips]
+[v2] 24 providers, 24 distinct episode ids
+[v3] nav_from_v7: follow 14 / left 1 / right 9, missing 0 (of 24 clips; md5=8f8b04f823039840b20ca1162e86481c)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 4104/4104 windows fed, per-step windows {'30': 1539, '50': 1368, '100': 1026, '120': 171}, per-clip rows {'30': 9, '50': 8, '100': 6, '120': 1}
+[model] E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt step=48852 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-feed] perframe_full: nav_true = the v9 PER-FRAME token on 824 windows; it differs from the clip token on 201; r8_nav args known on 436 (FED)
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 824 windows / 24 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 241/824
+ZZL1PROGZZ 1 el=28s d=512
+[cost] first forward (1 fed row(s), 1 rows total) took 1.61 s -> ESTIMATED 0.37 h for 824 windows (forward only; IO/analysis extra)
+ZZL1PROGZZ 2 el=28s d=512
+  [1/24] <clip-redacted> 35 windows 43s
+  [2/24] <clip-redacted> 34 windows 61s
+  [3/24] <clip-redacted> 34 windows 78s
+  [4/24] <clip-redacted> 34 windows 96s
+  [5/24] <clip-redacted> 35 windows 115s
+  [6/24] <clip-redacted> 34 windows 132s
+  [7/24] <clip-redacted> 35 windows 151s
+ZZL1PROGZZ 250 el=157s d=512
+  [8/24] <clip-redacted> 35 windows 169s
+  [9/24] <clip-redacted> 34 windows 185s
+  [10/24] <clip-redacted> 34 windows 199s
+  [11/24] <clip-redacted> 35 windows 213s
+  [12/24] <clip-redacted> 34 windows 229s
+  [13/24] <clip-redacted> 34 windows 246s
+  [14/24] <clip-redacted> 35 windows 264s
+ZZL1PROGZZ 500 el=274s d=512
+  [15/24] <clip-redacted> 34 windows 280s
+  [16/24] <clip-redacted> 34 windows 297s
+  [17/24] <clip-redacted> 34 windows 315s
+  [18/24] <clip-redacted> 34 windows 332s
+  [19/24] <clip-redacted> 35 windows 351s
+  [20/24] <clip-redacted> 34 windows 367s
+  [21/24] <clip-redacted> 34 windows 383s
+ZZL1PROGZZ 750 el=398s d=512
+  [22/24] <clip-redacted> 35 windows 400s
+  [23/24] <clip-redacted> 34 windows 417s
+  [24/24] <clip-redacted> 34 windows 454s
+[dump] 824 windows over 24 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=48852 eps=24 windows=824 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] F:/l1c/tree/step48852ema_plat/dump_s0; analyse later with --analyze-only
+[roll_seed] seed 0 -> F:/l1c/bank/roll_plat.json
+[roll_pf] pf.ok=True windows=824 args_known=436 token_differs_from_clip=201 ZZROLLPFOKZZ
+[l1] banked 824 windows d_tac=512 counters={"own_calls": 824, "navnull_calls": 0, "caps_per_call_hist": {"1": 824}, "filteroff_cap_maxdiff": 0.0, "batch_gt1": 0, "hook_calls_unarmed": 0} ZZL1BANKEDZZ
+
+# LANDED_NOTE: clip-id prefixes redacted in the landed copy; the original stays at C:/Users/Admin/refcv8_pf/refcv9_l1c/logs/roll_plat.log on the dev box.

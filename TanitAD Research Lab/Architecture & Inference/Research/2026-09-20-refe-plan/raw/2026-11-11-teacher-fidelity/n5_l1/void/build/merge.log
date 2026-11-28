@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "F:\tanitad_scratch\n5nt\run\n5\n5_nt_build.py", line 526, in <module>
+    sys.exit(main())
+  File "F:\tanitad_scratch\n5nt\run\n5\n5_nt_build.py", line 522, in main
+    return {"reach": cmd_reach, "derive": cmd_derive, "merge": cmd_merge, "unch": cmd_unch}[a.mode](a)
+  File "F:\tanitad_scratch\n5nt\run\n5\n5_nt_build.py", line 438, in cmd_merge
+    p8a = np.stack([ND.to_navsim(Pl[arm][ix[t]]).astype(np.float32) if t in set(applied[arm]) else sb["poses"][i] for i, t in enumerate(order)])
+  File "F:\tanitad_scratch\n5nt\run\n5\n5_nt_build.py", line 438, in <listcomp>
+    p8a = np.stack([ND.to_navsim(Pl[arm][ix[t]]).astype(np.float32) if t in set(applied[arm]) else sb["poses"][i] for i, t in enumerate(order)])
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\numpy\lib\npyio.py", line 245, in __getitem__
+    return format.read_array(bytes,
+  File "C:\Users\Admin\navsim-crun\venv\lib\site-packages\numpy\lib\format.py", line 768, in read_array
+    array = numpy.ndarray(count, dtype=dtype)
+numpy.core._exceptions._ArrayMemoryError: Unable to allocate 1.11 MiB for an array with shape (291504,) and data type float32

@@ -1,0 +1,96 @@
+commit free 9.10 GB >= 5.5 after 0 min
+PASS py_compile n1dm_ho_read.py
+commit free 9.10 GB >= 5.5 after 0 min
+PASS py_compile n1dm_klim_run.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile n1dm_kownsplit.py
+commit free 9.10 GB >= 5.5 after 0 min
+PASS py_compile test_n1dm_kownsplit.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS py_compile n1dm_t0route_lib.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS py_compile n1dm_zpost.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS py_compile read_lib.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile replay_n1dh.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile blobcheck.py
+commit free 9.07 GB >= 5.5 after 0 min
+PASS py_compile test_n1dm_outcome.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile test_n1dm_paths.py
+commit free 9.11 GB >= 5.5 after 0 min
+PASS py_compile eval141/n1dm_dumps.py
+commit free 9.10 GB >= 5.5 after 0 min
+PASS py_compile eval141/n1dm_read141.py
+commit free 9.10 GB >= 5.5 after 0 min
+PASS py_compile eval141/n1dm_strategic.py
+commit free 9.10 GB >= 5.5 after 0 min
+PASS py_compile eval141/n1dm_t0.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile eval141/n1dm_view.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile eval141/n1dw_view_s1slot.py
+commit free 9.09 GB >= 5.5 after 0 min
+PASS py_compile eval141/k_hb0_141.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS py_compile eval141/check_banked_n1d.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS py_compile eval141/dry_check.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS py_compile test/make_synth_ckpt.py
+commit free 9.08 GB >= 5.5 after 0 min
+PASS bash -n dry_check_n1dm.sh
+commit free 9.08 GB >= 5.5 after 0 min
+PASS bash -n pull_n1dm.sh
+commit free 9.07 GB >= 5.5 after 0 min
+PASS bash -n run_kownsplit_real.sh
+commit free 9.07 GB >= 5.5 after 0 min
+PASS bash -n run_n1dm_reads.sh
+commit free 9.07 GB >= 5.5 after 0 min
+PASS bash -n zpost_launch.sh
+commit free 9.07 GB >= 5.5 after 0 min
+PASS bash -n zpost_pod.sh
+commit free 9.07 GB >= 5.5 after 0 min
+PASS bash -n eval141/run_n1dm141.sh
+commit free 9.06 GB >= 5.5 after 0 min
+ok   gain at both -> GAIN pending guard
+ok   gain at one -> ONE-SEED pending guard
+ok   cost at both on D1-HO -> COST fired
+ok   no gain, head < 0.685 at s0 -> POST-WEAK fired
+ok   no gain, head >= 0.685 both -> NO-GAIN pending guard
+ok   no gain, Z-POST not joined -> PENDING-ZPOST
+ok   zpost join: s0 0.70 not weak, s1 0.66 weak
+ok   guard per seed
+PASS test_n1dm_outcome
+commit free 9.03 GB >= 5.5 after 0 min
+ok   n1dm_dumps.sh lists 10 dumps (s0/s1 x follow/zero/zuse/unif at hb0.2 + follow at old): 5 echo lines inside one two-seed loop
+ok   every pod dump (name + folder) is the path the read looks for
+ok   replay: the N1DM slot reads the banked N1DH dump
+ok   a D-channel zero twin of the comparator N1DH is not read
+ok   the arms list reads Z-USE (U) and Z-UNIF (V)
+ok   no N1DC tag and no N1DH card name left in the read tools (the N1DH read dir is only named for banked inputs)
+PASS test_n1dm_paths
+commit free 9.03 GB >= 5.5 after 0 min
+........                                                                 [100%]
+8 passed in 9.29s
+PASS test_n1dm_kownsplit (pytest; rc 4 = no tests ran = FAIL)
+commit free 9.06 GB >= 5.5 after 0 min
+PASS kownsplit wired for N1DM_s0 and s1 in run_n1dm_reads.sh
+commit free 9.04 GB >= 5.5 after 0 min
+ok    T1 dump argv routing, kappa 0.2 (8 tags, hb wrapper, inner v8f_t1_eval_rbd, inputs exist, ckpt sha refusals none) ['{"tags": 8, "out": "F:\\\\TanitAD-scratch\\\\n1dc\\\\read_n1dm\\\\eval141/dry_scratch/dumps_unused", "kappa": "0.2"}']
+ok    T1 dump argv routing, kappa none (8 tags, hb wrapper, inner v8f_t1_eval_rbd, inputs exist, ckpt sha refusals none) ['{"tags": 8, "out": "F:\\\\TanitAD-scratch\\\\n1dc\\\\read_n1dm\\\\eval141/dry_scratch/dumps_unused", "kappa": "none"}']
+ok    T0 argv render + inputs exist (2 arms x 3 variants) ['6 T0 argvs']
+ok    STRATEGIC view plans (banked sources present, chain-made ones named) ['8 N1-slot sources made by the chain; 20 N1D-reference S1 sources present; 8 N1DM S1 sources made by the chain']
+ok    strategic / read scripts parse and import their frozen readers ['[taniteval] tanitad OVERRIDE -> F:/TanitAD-scratch/strat1/read/tree/stack (F:\\TanitAD-scratch/strat1/read/tree/stack\\tanitad\\__init__.py)']
+ok    chain-script external files exist []
+ok    run_n1dm141.sh bash -n 
+ok    banked N1D inputs present banked N1D inputs: OK
+ok    N1D checkpoint sha256 equals the pod's (N1D_s0/s1 + the N1DH lines in the same file) N1DC_s0/ckpt_last.pt: OK N1DC_s1/ckpt_last.pt: OK N1D_s0/ckpt_last.pt: OK N1D_s1/ckpt_last.pt: OK 
+ok    N1DM checkpoints pulled (MM 2026-11-21, post-training form of this item): ckpts/N1DM_s{0,1}/ckpt_last.pt exist and their sha256 equals the pod's list (SHA256_PODS.txt) N1DM_s0/ckpt_last.pt: OK N1DM_s1/ckpt_last.pt: OK  | the argv render still uses the stand-in empty files
+ok    every script the chain names exists in eval141/ (8: check_banked_n1d.py, k_hb0_141.py, n1dm_dumps.py, n1dm_read141.py, n1dm_strategic.py, n1dm_t0.py, n1dm_view.py, n1dw_view_s1slot.py) []
+ok    chain steps listed (14), gate() before every step() ['ckpt_sha', 'ckpt_sha_n1d', 'banked_n1d', 'khb0', 'hb_dump_$A', 'hb_dump_${A}Z']
+DRY CHECK PASS
+PASS eval141/dry_check
+ZZ N1DM-READ-DRYCHECK PASS ZZ

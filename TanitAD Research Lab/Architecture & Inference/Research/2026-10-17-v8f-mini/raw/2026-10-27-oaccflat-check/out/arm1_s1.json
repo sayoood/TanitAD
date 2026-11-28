@@ -1,0 +1,131 @@
+{
+ "cases": [
+  {
+   "name": "init checkpoint on the dev box is the banked M2b_s1 (sha256 6104fb15...)",
+   "ok": true,
+   "detail": "6104fb15dc21"
+  },
+  {
+   "name": "bank (cached from an earlier run in work/): bank.json present",
+   "ok": true,
+   "detail": "sha256 7ac00ee18d62f67f"
+  },
+  {
+   "name": "bank header names the REAL M2b_s0 checkpoint (K-B2 side), coverage clears 0.5",
+   "ok": true,
+   "detail": "{'bank.json common.ckpt_sha256': '6104fb15dc21', 'controls_PASS': {'K-B4': True, 'K-B5': True}, 'coverage': {'blocked': False, 'fraction': 0.6637426900584795, 'min': 0.5, 'n_eligible': 227, 'n_windows': 342}}"
+  },
+  {
+   "name": "DAG-OACC gate argv = DAG's real argv token-for-token except the declared data/path re-pointing, plus ONLY --w-acc",
+   "ok": true,
+   "detail": "{'bad': [], 'added': []}"
+  },
+  {
+   "name": "control gate argv = DAG's real argv token-for-token except the declared data/path re-pointing (NO --w-acc)",
+   "ok": true,
+   "detail": "{'bad': [], 'added': []}"
+  },
+  {
+   "name": "one-lever rule on the two gate argvs: they differ in --w-acc and --out ONLY",
+   "ok": true,
+   "detail": "['--out', '--w-acc']"
+  },
+  {
+   "name": "every DAG lever + --w-acc is NAMED on the treatment argv (a flag whose default disables it must be named)",
+   "ok": true,
+   "detail": "{'--init-ckpt': 'C:/Users/Admin/box2_ship/logs/v8f_mini/runs/M2b_s1/ckpt_last.pt', '--steps': '3000', '--lr': '1e-4', '--warmup': '100', '--p-gt-start': '0.2', '--p-gt-end': '0.2', '--ego-perturb-p': '0', '--dagger-p': '0.1', '--dagger-bank': 'E:\\\\Projects\\\\TanitAD-artifacts\\\\oaccflat_check\\\\work\\\\bank_m2b_s1', '--dagger-bank-sha256': '7ac00ee18d62f67fb7eeb80f942cff9b4d195f1564cf1b0e1c0aad2ed203dc70', '--dagger-seed': '1', '--w-acc': '49.6969'}"
+  },
+  {
+   "name": "REAL gate accepts DAG-OACC (rc 0, declared_vs_built PASS)",
+   "ok": true,
+   "detail": "rc 0"
+  },
+  {
+   "name": "REAL gate accepts the control (DAG, no --w-acc) (rc 0, declared_vs_built PASS)",
+   "ok": true,
+   "detail": "rc 0"
+  },
+  {
+   "name": "G-DVB (selfcheck levers) lists w_acc = 49.6969 and the dagger_* levers with the argv's values",
+   "ok": true,
+   "detail": "{'w_acc': 49.6969, 'dagger_p': 0.1, 'dagger': {'dagger_p': 0.1, 'dagger_seed': 1, 'dagger_bank': 'E:\\\\Projects\\\\TanitAD-arti', 'dagger_bank_sha256': '7ac00ee18d62f67fb7eeb80f', 'kin_mode': 'yaw', 'bank_hmax': 16, 'rebuilt': ['p10f', 'base', 'kin3', 'p10_t', 'pose', 'pose_t', 'pose_s', 'nav'], 'kept': ['feats', 'frame_ok', 'limit', 'limit_ok', 'a_t', 'a_s', 'pose_now'], 'record': ['act'], 'labels_re_expressed': ['lab_s.rc'], 'nav_rebuild_invalid': False, 'constants_sha256': '8f94b3b5e35f4457be51d695'}, 'ego_perturb': {'ego_perturb_p': 0.0, 'ego_perturb_vscale': [0.5, 1.0], 'ego_perturb_vmax': 8.0, 'ego_perturb_adrop': 1.5, 'ego_perturb_yawrate_std': 0.0, 'ego_perturb_seed': 0, 'kin_mode': 'yaw', 'rebuilt': ['p10f', 'base', 'kin3', 'p10_t', 'pose', 'pose_t', 'pose_s', 'nav'], 'kept': ['feats', 'frame_ok', 'limit', 'limit_ok', 'a_t', 'a_s', 'pose_now'], 'record': ['act']}}"
+  },
+  {
+   "name": "init is the REAL M2b_s0 checkpoint: sha256 601cb435..., applied, 0 tensors differ after the strict load",
+   "ok": true,
+   "detail": "{'sha256': '6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6', 'applied': True, 'n_mismatch_after_load': 0, 'source_step': 19164, 'n_tensors': 276}"
+  },
+  {
+   "name": "control: levers.w_acc == 0.0 and dagger levers identical to the treatment's (only w_acc moved)",
+   "ok": true,
+   "detail": "{'dagger_p': True, 'dagger_bank_sha256': True, 'dagger': True, 'ego_perturb': True, 'init_ckpt': True, 'lr_schedule': True, 'o_interface': True, 'code_mix': True, 'w': True, 'params': True}"
+  },
+  {
+   "name": "acc_probe PASS at the declared weight; acc finite and > 0",
+   "ok": true,
+   "detail": "{'w_acc_declared': 49.6969, 'acc': 0.005333925597369671, 'total_w': 49.274803161621094, 'total_0': 49.009727478027344}"
+  },
+  {
+   "name": "acc_probe: total(w) - total(0) == w x acc (the weight reaches the loss the trainer backprops)",
+   "ok": true,
+   "detail": "{'contribution': 0.26507568359375, 'w_x_acc': 0.2650795670199208}"
+  },
+  {
+   "name": "acc_probe: O's head (head_o) gets a NON-ZERO gradient from the term; controls (repeat, frozen prior, WM) read EXACTLY 0.0",
+   "ok": true,
+   "detail": "{'head_o_grad_diff': 229.91079711914062, 'read_o_grad_diff': 342.7362365722656, 'control_repeat_total_diff': 0.0, 'control_repeat_grad_diff': 0.0, 'control_prior_grad_diff': 0.0, 'control_wm_grad_diff': 0.0}"
+  },
+  {
+   "name": "dagger_probe PASS in the same gate run: swapped batch moves loss and gradient; p = 0 control EXACTLY 0.0",
+   "ok": true,
+   "detail": "{'p_declared': 0.1, 'n_selected_at_p1': 9, 'loss_diff': 1.6470870971679688, 'grad_diff_all': 16592.755859375, 'control_p0_loss_diff': 0.0, 'control_p0_grad_diff': 0.0}"
+  },
+  {
+   "name": "K-B2 (bank <-> init checkpoint), K-B3 (train-only) and COVERAGE >= 0.5 were read and passed",
+   "ok": true,
+   "detail": "{'coverage': {'n_windows': 342, 'n_eligible': 227, 'fraction': 0.6637426900584795, 'min': 0.5, 'blocked': False}, 'kb2': {'ckpt_sha256': '6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6', 'init_ckpt_sha256': '6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6'}}"
+  },
+  {
+   "name": "swap share at the DECLARED p: 0.1 +- 0.02 (mean n_selected / n_eligible over 400 steps of the loop's own dag.apply schedule)",
+   "ok": true,
+   "detail": "{'share': 0.09194444444444444, 'eligible_draws': 3600}"
+  },
+  {
+   "name": "COMPOSED: on the SWAPPED batch the acc term is finite, > 0, differs from the logged batch's, and total(w) - total(0) == w x acc",
+   "ok": true,
+   "detail": "{'acc_on_swapped': 0.008668949827551842, 'acc_on_logged': 0.005333925597369671, 'contribution_swapped': 0.4308204650878906, 'w_x_acc_swapped': 0.43081993268486113}"
+  },
+  {
+   "name": "COMPOSED: on the SWAPPED batch O's head gets a non-zero gradient from the term; controls EXACTLY 0.0",
+   "ok": true,
+   "detail": "{'head_o_grad_from_term_on_swapped': 305.35601806640625, 'head_o_grad_from_term_on_logged': 229.91079711914062, 'control_repeat_total_diff': 0.0, 'control_repeat_grad_diff': 0.0, 'control_prior_grad_diff': 0.0, 'swap_moves_total': 1.1380538940429688}"
+  },
+  {
+   "name": "COMPOSED: at the BUILT weight the term contributes w x acc (> 0) in the treatment",
+   "ok": true,
+   "detail": "{'contribution_at_BUILT_weight': 0.4308204650878906, 'head_o_grad_diff_at_BUILT_weight': 305.35601806640625}"
+  },
+  {
+   "name": "CONTROL (no --w-acc): built w_acc 0.0; the term's contribution at the BUILT weight and its gradient on head_o are EXACTLY 0.0",
+   "ok": true,
+   "detail": "{'built_w_acc': 0.0, 'contribution_at_BUILT_weight': 0.0, 'head_o_grad_diff_at_BUILT_weight': 0.0, 'declared_zero_total_reproduces_exactly': True}"
+  },
+  {
+   "name": "CONTROL: the swap is just as live without --w-acc (share and dagger_probe unchanged in kind)",
+   "ok": true,
+   "detail": "{'share_ctrl': 0.09194444444444444, 'share_treat': 0.09194444444444444}"
+  },
+  {
+   "name": "REFUSED by the real gate: --w-acc -1.0 on the DAG argv",
+   "ok": true,
+   "detail": "EXC ValueError: w_acc must be a finite number >= 0, got -1.0"
+  }
+ ],
+ "t0": 1793091487.0684528,
+ "mutant": null,
+ "tree": "E:\\Projects\\TanitAD-artifacts\\dagt1_tree_b43c7a9a",
+ "seconds": 56.6236469745636,
+ "n_pass": 24,
+ "n_cases": 24,
+ "all_pass": true
+}

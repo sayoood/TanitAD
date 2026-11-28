@@ -1,0 +1,52 @@
+...FF....                                                                [100%]
+================================== FAILURES ===================================
+_______ test_lon_stop_rows_scale_by_exactly_W_and_the_rest_is_unchanged _______
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000153D9EFFB60>
+
+    def test_lon_stop_rows_scale_by_exactly_W_and_the_rest_is_unchanged(pack):
+        model, batch, cfg = real_batch(pack)
+        b = with_stop(batch, 6)
+        T1, o1 = run_loss(model, b, 1.0, 1.0)
+        T3, o3 = run_loss(model, b, 1.0, 4.0)
+        lt = b["lab_t"]
+>       assert abs(float(T1["lon"]) - hand_lon(o1, lt, 1.0)) < 1e-5 and abs(float(T3["lon"]) - hand_lon(o3, lt, 4.0)) < 1e-5, (float(T3["lon"]), hand_lon(o3, lt, 4.0))
+E       AssertionError: (1.9905511140823364, np.float64(3.2856188209445434))
+E       assert (np.float64(3.2102104308151524e-08) < 1e-05 and np.float64(1.295067706862207) < 1e-05)
+E        +  where np.float64(3.2102104308151524e-08) = abs((1.9905511140823364 - np.float64(1.9905510819802321)))
+E        +    where 1.9905511140823364 = float(tensor(1.9906, grad_fn=<DivBackward0>))
+E        +    and   np.float64(1.9905510819802321) = hand_lon({'ckpt': tensor([[[ 2.8529e+01, -3.5636e+00, -3.5258e-02],\n         [ 5.1127e+01,  2.2071e+00,  2.7598e-02],\n         ...2227],\n        [-0.1433,  0.0352,  0.1880, -0.1352,  0.0559, -0.1274, -0.1385]],\n       grad_fn=<AddmmBackward0>), ...}, {'has': tensor([True, True, True, True, True, True, True, True, True, True, True, True,\n        True, True, True, True... 0.],\n        [1., 1., 1., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., 0., 0., 0.]]), ...}, 1.0)
+E        +  and   np.float64(1.295067706862207) = abs((1.9905511140823364 - np.float64(3.2856188209445434)))
+E        +    where 1.9905511140823364 = float(tensor(1.9906, grad_fn=<DivBackward0>))
+E        +    and   np.float64(3.2856188209445434) = hand_lon({'ckpt': tensor([[[ 2.8529e+01, -3.5636e+00, -3.5258e-02],\n         [ 5.1127e+01,  2.2071e+00,  2.7598e-02],\n         ...2227],\n        [-0.1433,  0.0352,  0.1880, -0.1352,  0.0559, -0.1274, -0.1385]],\n       grad_fn=<AddmmBackward0>), ...}, {'has': tensor([True, True, True, True, True, True, True, True, True, True, True, True,\n        True, True, True, True... 0.],\n        [1., 1., 1., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., 0., 0., 0.]]), ...}, 4.0)
+
+tests\test_v8f_stopbal.py:162: AssertionError
+_ test_gradients_reach_the_goal_and_lon_heads_and_the_other_head_reads_exactly_zero _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000153D9EFFB60>
+
+    def test_gradients_reach_the_goal_and_lon_heads_and_the_other_head_reads_exactly_zero(pack):
+        model, batch, _ = real_batch(pack)
+        b = with_stop(batch, 6)
+        g0, g0b = grads(model, b, 1.0, 1.0), grads(model, b, 1.0, 1.0)
+        assert diff(g0, g0b, "") == 0.0, "control: the probe is deterministic"
+        gg, gl = grads(model, b, 3.5, 1.0), grads(model, b, 1.0, 4.0)
+        assert diff(gg, g0, "h_goal.") > 0.0, "the goal lever moves h_goal's gradient"
+        assert diff(gg, g0, "h_lon.") == 0.0, "the goal lever leaves h_lon's gradient EXACTLY 0.0 different"
+>       assert diff(gl, g0, "h_lon.") > 0.0, "the lon lever moves h_lon's gradient"
+E       AssertionError: the lon lever moves h_lon's gradient
+E       assert 0.0 > 0.0
+E        +  where 0.0 = diff({'pos': tensor([[-3.1201e-04,  9.8822e-05,  1.3666e-05,  ..., -4.0836e-05,\n         -6.3354e-05, -1.1945e-04],\n       ...1.4812e-06, -7.2520e-05]), 'adapter.0.bias': tensor([-0.0003, -0.0006,  0.0002,  ...,  0.0001, -0.0003,  0.0005]), ...}, {'pos': tensor([[-3.1201e-04,  9.8822e-05,  1.3666e-05,  ..., -4.0836e-05,\n         -6.3354e-05, -1.1945e-04],\n       ...1.4812e-06, -7.2520e-05]), 'adapter.0.bias': tensor([-0.0003, -0.0006,  0.0002,  ...,  0.0001, -0.0003,  0.0005]), ...}, 'h_lon.')
+
+tests\test_v8f_stopbal.py:194: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_stopbal.py::test_default_loss_and_grads_equal_the_pristine_tip_bit_for_bit
+  F:\TanitAD-scratch\stopbal\tree\stack\scripts\v8f_mini_train.py:2771: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_stopbal.py::test_lon_stop_rows_scale_by_exactly_W_and_the_rest_is_unchanged
+FAILED tests/test_v8f_stopbal.py::test_gradients_reach_the_goal_and_lon_heads_and_the_other_head_reads_exactly_zero
+2 failed, 7 passed, 1 warning in 42.03s

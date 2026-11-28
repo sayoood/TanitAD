@@ -1,0 +1,195 @@
+{
+ "binding": {
+  "argv": [
+   "C:\\Users\\Admin\\venvs\\driverl-eval\\Scripts\\python.exe",
+   "-I",
+   "C:\\Users\\Admin\\epr1\\code\\epr1.py",
+   "run",
+   "--fraction",
+   "10",
+   "--out-dir",
+   "C:\\Users\\Admin\\epr1\\run\\f10",
+   "--threads",
+   "8",
+   "--epochs",
+   "10",
+   "--batch-sets",
+   "256",
+   "--seeds",
+   "0,1",
+   "--criterion",
+   "pooled_oof",
+   "--both-rule",
+   "flat"
+  ],
+  "argv_sha256": "dab4baac86d01488d03388916a86d285947747160bf3fb0cff5c96b500ba0d19",
+  "bank_manifest_sha256": "6296dfc0b03905038fbf132f82009f6b6d7e8d61fa9abfb65c9164f487a5f2a1",
+  "code_files": {
+   "epr1.py": "a751c63eb8e38343a7ec1286114a158046ce4ec13390b2eea0a4b1d2237c38d8",
+   "epr1_gate.py": "5bfe2cf95a7edbfd6ca94ae9f871c0f2bee6afd5e702642e7758246e25a17d6c"
+  },
+  "commit": "d58990cfc2fd3ddebeaf2a96197ca56ea5b73bf0",
+  "data": {
+   "bank_manifest": {
+    "bytes": 90770,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "C:/Users/Admin/srttc_s0/work/bank/MANIFEST.sha256.json",
+    "sha256": "6296dfc0b03905038fbf132f82009f6b6d7e8d61fa9abfb65c9164f487a5f2a1"
+   },
+   "p2_ckpt": {
+    "bytes": 1288484600,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+    "sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51"
+   },
+   "ranked_fit_logs": {
+    "bytes": 142059,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "C:/Users/Admin/srttc_s0/run/plan/ranked_fit_logs.tsv",
+    "sha256": "a61275037a3d2b06903dc7e1ad0f6f99fb740f668a6ec7488fdef6fe901ce9b1"
+   },
+   "s0_marker": {
+    "bytes": 351,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "C:/Users/Admin/srttc_s0/run/S0_DONE",
+    "sha256": "217a7edc883f91369ea30c0bfb068366aa74eac142069ff3a42c60cb57f1a246"
+   }
+  },
+  "data_sha256": "904baff5303da3b236b14f9b0052d23feffa79fe3e45778ccf038e9d842a9ffc",
+  "epr1_sha256": "a751c63eb8e38343a7ec1286114a158046ce4ec13390b2eea0a4b1d2237c38d8",
+  "fraction": 10,
+  "profile": "ep-r1",
+  "repo_code_path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-18-ep-r1/code",
+  "stage": "run",
+  "suite_test_blobs": {
+   "test_epr1.py": "8cea12d9f065c5272ba7a071c8517080d485543029aa4d1bd36b4e2b5bad4c7f"
+  },
+  "trainer": "epr1.py",
+  "tree_sha256": "cab38ce64405736bd3ced6539d376a3a56a03b380c1b3a3c6aaa82be5b899c2b"
+ },
+ "checks": {
+  "G-BANK": {
+   "details": {
+    "bytes_hashed": 570974140,
+    "logs_per_fold": [
+     24,
+     24,
+     23,
+     23,
+     23
+    ],
+    "manifest_sha256": "6296dfc0b03905038fbf132f82009f6b6d7e8d61fa9abfb65c9164f487a5f2a1",
+    "n_manifest_units": 23,
+    "n_selected_logs": 117,
+    "n_selected_logs_missing_from_bank": 0,
+    "n_units_on_disk": 23,
+    "n_units_sha_mismatch": 0,
+    "n_units_verified": 23,
+    "r1_reads_manifest": true,
+    "ranked_fit_logs_sha256": "a61275037a3d2b06903dc7e1ad0f6f99fb740f668a6ec7488fdef6fe901ce9b1",
+    "replacements": {
+     "added": 0,
+     "dropped": 0
+    },
+    "s0_PARTIAL": false,
+    "s0_logs_without_any_token": 0,
+    "s0_logs_without_any_token_fraction": 0.0,
+    "s0_n_logs": 117
+   },
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-COMMIT": {
+   "details": {
+    "commit": "d58990cfc2fd3ddebeaf2a96197ca56ea5b73bf0",
+    "files": {
+     "epr1.py": "a751c63eb8e38343a7ec1286114a158046ce4ec13390b2eea0a4b1d2237c38d8",
+     "epr1_gate.py": "5bfe2cf95a7edbfd6ca94ae9f871c0f2bee6afd5e702642e7758246e25a17d6c"
+    },
+    "test_blobs": {
+     "test_epr1.py": "8cea12d9f065c5272ba7a071c8517080d485543029aa4d1bd36b4e2b5bad4c7f"
+    }
+   },
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "details": {
+    "levers": {
+     "batch_sets": 256,
+     "both_rule": "flat",
+     "criterion": "pooled_oof",
+     "epochs": 10,
+     "fraction": 10,
+     "seeds": [
+      0,
+      1
+     ]
+    },
+    "n_configs_built": 9,
+    "strict": true
+   },
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "details": {
+    "batch_sets": 45,
+    "c6_all_unsafe_gradient_exactly_zero": true,
+    "c6_safe_label_change_changes_gradient": true,
+    "c6_unsafe_label_invariance_bit_identical": true,
+    "concordance_computed": false,
+    "ep_row_gradient_nonzero": {
+     "anchor_only": true,
+     "full": true,
+     "pair_only": true
+    },
+    "first_key_rank": 0,
+    "leak_control_reads_nonzero": true,
+    "loss_finite": true,
+    "n_selected_logs_in_unit": 1,
+    "n_sets_in_unit": 48,
+    "one_step_moved_the_ep_row": true,
+    "other_rows_and_features_exactly_zero": true,
+    "p2_row_reproduces_stored_logits": true,
+    "unit": "S5a37f70fed.sets.npz",
+    "zero_control_exactly_zero": true
+   },
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-PATH": {
+   "details": {
+    "n_paths_scanned": 9,
+    "n_tokens": 14,
+    "n_tokens_refused_for_the_token": 14
+   },
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "details": {
+    "interpreter": "C:\\Users\\Admin\\venvs\\driverl-eval\\Scripts\\python.exe",
+    "n_tests": 46,
+    "returncode": 0,
+    "seconds": 108.5,
+    "status_line": "OK",
+    "test_file_sha256": "8cea12d9f065c5272ba7a071c8517080d485543029aa4d1bd36b4e2b5bad4c7f"
+   },
+   "reasons": [],
+   "status": "PASS"
+  }
+ },
+ "created_utc": "2026-10-18T22:53:07Z",
+ "gate_sha256": "5bfe2cf95a7edbfd6ca94ae9f871c0f2bee6afd5e702642e7758246e25a17d6c",
+ "hmac_sha256": "af37f58209dc9e9d5e37989d592c6bc7473c2eebde1c419460cde78411729e95",
+ "key_id": "6b36c01410e73017",
+ "kind": "launch-gate-token",
+ "reasons": [],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "PASS"
+}

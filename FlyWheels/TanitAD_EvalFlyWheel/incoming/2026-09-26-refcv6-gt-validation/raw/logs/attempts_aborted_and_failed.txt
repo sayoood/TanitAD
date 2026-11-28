@@ -1,0 +1,45 @@
+# GT-validation attempts before the banked run (2026-09-26/27, Berlin). Every line is from the attempt's own log.
+
+## attempt 0: single-sample 8 GB gate, full xz joins -- ABORTED by the 4.0 GB watchdog (RAM taken by A6)
+23:58:25 watching pids [25016, 47448]; floor 4.0 GB; avail now 6.24 GB
+00:05:02 ABORT: available 3.98 GB < 4.0 GB -- killed render pid 25016
+00:05:02 ABORT: available 3.98 GB < 4.0 GB -- killed render pid 47448
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+EXIT=15
+
+## attempt 1: gated chain at 7.5 GB -- STOPPED by me when the coordinator set the 5.5 GB floor (never passed its gate)
+00:09:18 chain start; watchdog pid 145666
+00:09:18 armed; floor 4.0 GB; avail 5.88 GB
+00:11:37 stopped; min available seen 5.78 GB
+
+## attempt 2: extraction OK (controls PASS); the tool FAILED: lookup_track_ids returns an array ('tl_ or []' is ambiguous) -- fixed
+00:13:21 chain start; watchdog pid 145966
+00:14:22 floor held: 3 consecutive samples >= 5.5 GB
+00:14:22 attempt 1: extract 2d + 3d
+00:23:11 extract exit 2d=0 3d=0
+00:23:11 attempt 1: GT tool
+00:24:52 GT tool exit 1
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\taniteval\tools\render_refcv6_gt_validation.py", line 1181, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "D:\Projects\TanitAD\taniteval\tools\render_refcv6_gt_validation.py", line 558, in main
+    for tid in (tl_ or []):
+                ^^^^^^^^^
+ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+EXIT=1
+00:13:22 armed; floor 4.0 GB; avail 6.24 GB
+00:14:23 watching new pids [35216, 35828, 45520, 51512]
+00:23:12 watching new pids [37884, 52048]
+00:25:29 stopped; min available seen 5.47 GB
+
+## run 2 (2026-09-27 01:21, WITH the box-head audit's drawing patch) -- STOPPED by me after its 4 stills, to label camera A as PRE-PATCH (it is a crop of the boxes video); no banked output came from it
+01:19:38 chain start; watchdog pid 154713
+01:20:42 floor held: 3 consecutive samples >= 5.5 GB
+01:20:43 attempt 1: GT tool
+[gtval] RAM gate passed: 3 consecutive samples >= 5.5 GB (last [7.81, 7.67, 7.74]; waited 60 s)
+[gtval] STILLS_READY ["D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation
+01:19:39 armed; floor 4.0 GB; avail 7.93 GB
+01:20:46 watching new pids [54632, 54808]
+01:27:09 stopped; min available seen 6.28 GB

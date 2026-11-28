@@ -1,0 +1,589 @@
+{
+ "prereg": "PREREG_V8F_KSCORE",
+ "decision": {
+  "outcome": "NOT PREDICTABLE",
+  "PRIMARY_B_per_seed": {
+   "0": false,
+   "1": false
+  },
+  "PRIMARY_SEL_per_seed": {
+   "0": false,
+   "1": false
+  },
+  "SECONDARY_lon_per_seed": {
+   "0": true,
+   "1": true
+  },
+  "SECONDARY_consistency_leadviol_per_seed": {
+   "0": false,
+   "1": true
+  },
+  "F": 0.1207,
+  "bar_primary_b": -0.1207,
+  "table": "PREREG_V8F_KSCORE.md + Amendment 1 (precedence COSTS SAFETY > COSTS DYNAMICS)",
+  "committed_next_step_quoted": "the best hypothesis is not predictable from these inputs at this scale. The longitudinal lever moves to O's speed profile (OACC's line)"
+ },
+ "controls_all_pass": true,
+ "F_exact": 0.12074010630896126,
+ "evidence_class": "MEASURED (ours), artifacts under D:\\tanitad\\runs\\v8f_kscore",
+ "tier": {
+  "ORACLE": "T0 diagnostic (reads the GT; headroom, never a result)",
+  "selectors": "T1-class open loop (own held outputs, no GT read at inference)"
+ },
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, 141 episodes (taniteval/ci.py)",
+ "strategic_family": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25)",
+ "per_seed": {
+  "s0": {
+   "PRIMARY_B": {
+    "read": "ADE6 KSCORE - B",
+    "bar": "<= -0.1207 and separated",
+    "point_unrounded": -0.10007627153151732,
+    "mean": -0.1001,
+    "lo": -0.1463,
+    "hi": -0.0583,
+    "separated": true
+   },
+   "PRIMARY_SEL": {
+    "read": "ADE6 KSCORE - SEL-CONST",
+    "bar": "< 0 and separated",
+    "point_unrounded": -0.0004892866633259274,
+    "mean": -0.0005,
+    "lo": -0.0188,
+    "hi": 0.017,
+    "separated": false
+   },
+   "SECONDARY": {
+    "speed_mae": {
+     "point_unrounded": -0.08196370781598461,
+     "mean": -0.082,
+     "lo": -0.1103,
+     "hi": -0.0552,
+     "separated": true,
+     "worse": false
+    },
+    "accel_mae": {
+     "point_unrounded": -0.11934681300721395,
+     "mean": -0.1193,
+     "lo": -0.1418,
+     "hi": -0.0976,
+     "separated": true,
+     "worse": false
+    },
+    "consistency_a_any": {
+     "point_unrounded": 0.024593580658607755,
+     "mean": 0.0246,
+     "lo": 0.0083,
+     "hi": 0.04,
+     "separated": true,
+     "worse": true
+    },
+    "lead_viol_at_risk": {
+     "status": "OK",
+     "delta": 0.0084,
+     "lo": 0.0016,
+     "hi": 0.0176,
+     "separated": true,
+     "n_at_risk": 595,
+     "n_viol_a": 26,
+     "n_viol_b": 21,
+     "worse": true
+    }
+   },
+   "seed_row": {
+    "pb": false,
+    "ps": false,
+    "sec_lon_ok": true,
+    "sec_cl_ok": false
+   },
+   "selector_accuracy": {
+    "KSCORE_vs_kstar": 0.5206335973322218,
+    "PERM_vs_kstar": 0.5035431429762401,
+    "ARGMAX_vs_kstar": 0.1433930804501876,
+    "CONST_vs_kstar": 0.5035431429762401,
+    "majority_train_class": 5,
+    "majority_train_class_acc_on_eval": 0.5035431429762401,
+    "kstar_eval_counts": [
+     290,
+     208,
+     314,
+     82,
+     130,
+     1208,
+     167
+    ],
+    "kstar_train_counts": [
+     34235,
+     28966,
+     40254,
+     11732,
+     16529,
+     154443,
+     20407
+    ],
+    "pick_counts_KSCORE": [
+     84,
+     5,
+     232,
+     0,
+     0,
+     2078,
+     0
+    ],
+    "pick_counts_ARGMAX": [
+     89,
+     25,
+     120,
+     545,
+     434,
+     534,
+     652
+    ],
+    "const_class": 5,
+    "n_eval": 2399,
+    "train_acc_vs_kstar": 0.5287507420914257,
+    "train_majority_acc": 0.5037838507858015
+   },
+   "B_ade6_mean": 2.175306120638704,
+   "stack_H": {
+    "status": "NOT-RUN",
+    "reason": "no --h-weights given (descriptive row)"
+   },
+   "stack_HS": {
+    "status": "NOT-INSTRUMENTED",
+    "reason": "HS is PREREG_V8F_HSPEC's coefficient-shrunk operator; this harness imports no HSPEC code. Descriptive row only: a work item, not a pass."
+   },
+   "lead_viol_kscore_minus_B": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 26,
+     "n_viol_b": 21,
+     "delta": 0.0067,
+     "lo": 0.0013,
+     "hi": 0.0141,
+     "separated": true
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 26,
+     "n_viol_b": 21,
+     "delta": 0.0084,
+     "lo": 0.0016,
+     "hi": 0.0176,
+     "ci95": 0.008,
+     "p_delta_gt0": 0.9855,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 0.9690139794114466,
+     "lead_progress_ratio_b": 0.9243286511595903,
+     "delta": 0.0447,
+     "lo": 0.0323,
+     "hi": 0.0593,
+     "ci95": 0.0135,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "distance_keeping_kscore_minus_B": {
+    "headway_min_m": {
+     "n_used": 720,
+     "n_windows": 720,
+     "n_a_only": 5,
+     "n_b_only": 2,
+     "delta": -0.1544,
+     "lo": -0.2994,
+     "hi": -0.003,
+     "ci95": 0.1482,
+     "p_delta_gt0": 0.022,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 663,
+     "n_windows": 663,
+     "n_a_only": 0,
+     "n_b_only": 2,
+     "delta": -0.0662,
+     "lo": -0.1559,
+     "hi": -0.0114,
+     "ci95": 0.0722,
+     "p_delta_gt0": 0.001,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 720,
+     "n_windows": 720,
+     "n_a_only": 5,
+     "n_b_only": 2,
+     "delta": 0.3528,
+     "lo": 0.0305,
+     "hi": 0.6865,
+     "ci95": 0.328,
+     "p_delta_gt0": 0.985,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "controls": {
+    "alignment": {
+     "gt_maxabs": 7.628115213265119e-06,
+     "n": 2399,
+     "n_expected": 2399
+    },
+    "harness_identity_maxabs_m": 0.0,
+    "harness_identity_tol_m": 0.0001,
+    "control3_B_reproduces_banked": {
+     "ade6_mean_mine": 2.175306120638704,
+     "ade6_banked_4dp": 2.1753,
+     "pass": true
+    },
+    "control4_oracle_le_vertex_selectors": {
+     "n_violations": {
+      "ARGMAX": 0,
+      "CONST": 0,
+      "KSCORE": 0,
+      "PERM": 0,
+      "FORCED": 0
+     },
+     "pass": true
+    },
+    "hypotheses_distinct": true,
+    "control1_forced_is_sel_argmax": {
+     "picks_equal": true,
+     "plans_bit_equal": true,
+     "paired_ade6_forced_minus_argmax": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "lower_is_better": true,
+      "better": false,
+      "worse": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "point_unrounded": 0.0
+     },
+     "pass": true
+    },
+    "control2_perm_scorer_vs_sel_const": {
+     "perm_minus_const_ade6": {
+      "point_unrounded": 0.0,
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false
+     },
+     "pass": true,
+     "bar": "a scorer trained on permuted k* must NOT separate from SEL-CONST"
+    }
+   }
+  },
+  "s1": {
+   "PRIMARY_B": {
+    "read": "ADE6 KSCORE - B",
+    "bar": "<= -0.1207 and separated",
+    "point_unrounded": 0.003570996815924321,
+    "mean": 0.0036,
+    "lo": -0.0273,
+    "hi": 0.0318,
+    "separated": false
+   },
+   "PRIMARY_SEL": {
+    "read": "ADE6 KSCORE - SEL-CONST",
+    "bar": "< 0 and separated",
+    "point_unrounded": -0.00721247608053055,
+    "mean": -0.0072,
+    "lo": -0.0419,
+    "hi": 0.0238,
+    "separated": false
+   },
+   "SECONDARY": {
+    "speed_mae": {
+     "point_unrounded": -0.004580561195862476,
+     "mean": -0.0046,
+     "lo": -0.0202,
+     "hi": 0.0115,
+     "separated": false,
+     "worse": false
+    },
+    "accel_mae": {
+     "point_unrounded": -0.023520808584643338,
+     "mean": -0.0235,
+     "lo": -0.0415,
+     "hi": -0.0073,
+     "separated": true,
+     "worse": false
+    },
+    "consistency_a_any": {
+     "point_unrounded": -0.0029178824510212586,
+     "mean": -0.0029,
+     "lo": -0.0146,
+     "hi": 0.0079,
+     "separated": false,
+     "worse": false
+    },
+    "lead_viol_at_risk": {
+     "status": "OK",
+     "delta": 0.005,
+     "lo": -0.0018,
+     "hi": 0.0129,
+     "separated": false,
+     "n_at_risk": 595,
+     "n_viol_a": 39,
+     "n_viol_b": 36,
+     "worse": false
+    }
+   },
+   "seed_row": {
+    "pb": false,
+    "ps": false,
+    "sec_lon_ok": true,
+    "sec_cl_ok": true
+   },
+   "selector_accuracy": {
+    "KSCORE_vs_kstar": 0.39308045018757815,
+    "PERM_vs_kstar": 0.35556481867444767,
+    "ARGMAX_vs_kstar": 0.14089203834931222,
+    "CONST_vs_kstar": 0.35556481867444767,
+    "majority_train_class": 5,
+    "majority_train_class_acc_on_eval": 0.35556481867444767,
+    "kstar_eval_counts": [
+     442,
+     272,
+     382,
+     56,
+     173,
+     853,
+     221
+    ],
+    "kstar_train_counts": [
+     58956,
+     32167,
+     43846,
+     11931,
+     21582,
+     112893,
+     25191
+    ],
+    "pick_counts_KSCORE": [
+     529,
+     52,
+     293,
+     0,
+     60,
+     1369,
+     96
+    ],
+    "pick_counts_ARGMAX": [
+     22,
+     12,
+     52,
+     593,
+     351,
+     562,
+     807
+    ],
+    "const_class": 5,
+    "n_eval": 2399,
+    "train_acc_vs_kstar": 0.43669226202514305,
+    "train_majority_acc": 0.36825022996679346
+   },
+   "B_ade6_mean": 2.0545660143297426,
+   "stack_H": {
+    "status": "NOT-RUN",
+    "reason": "no --h-weights given (descriptive row)"
+   },
+   "stack_HS": {
+    "status": "NOT-INSTRUMENTED",
+    "reason": "HS is PREREG_V8F_HSPEC's coefficient-shrunk operator; this harness imports no HSPEC code. Descriptive row only: a work item, not a pass."
+   },
+   "lead_viol_kscore_minus_B": {
+    "all_lead_windows": {
+     "n_lead_windows": 743,
+     "n_viol_a": 39,
+     "n_viol_b": 36,
+     "delta": 0.004,
+     "lo": -0.0014,
+     "hi": 0.0104,
+     "separated": false
+    },
+    "at_risk": {
+     "n_at_risk": 595,
+     "denominator": "lead windows where the human keeps a time gap >= the threshold (PI ruling 2026-10-11)",
+     "n_viol_a": 39,
+     "n_viol_b": 36,
+     "delta": 0.005,
+     "lo": -0.0018,
+     "hi": 0.0129,
+     "ci95": 0.0073,
+     "p_delta_gt0": 0.8845,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK",
+     "x7_direction_met_at_risk": false
+    },
+    "progress": {
+     "n_used": 595,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "lead_progress_ratio_a": 1.0092122661044134,
+     "lead_progress_ratio_b": 1.0062920818263352,
+     "delta": 0.0029,
+     "lo": -0.0188,
+     "hi": 0.0182,
+     "ci95": 0.0185,
+     "p_delta_gt0": 0.66,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 595,
+     "n_episodes": 70,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "distance_keeping_kscore_minus_B": {
+    "headway_min_m": {
+     "n_used": 728,
+     "n_windows": 728,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "delta": -0.0646,
+     "lo": -0.2077,
+     "hi": 0.0799,
+     "ci95": 0.1438,
+     "p_delta_gt0": 0.171,
+     "separated": false,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "time_gap_min_s": {
+     "n_used": 663,
+     "n_windows": 663,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "delta": -0.0282,
+     "lo": -0.0551,
+     "hi": -0.0067,
+     "ci95": 0.0242,
+     "p_delta_gt0": 0.0025,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 73,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    },
+    "min_ttc_s": {
+     "n_used": 728,
+     "n_windows": 728,
+     "n_a_only": 0,
+     "n_b_only": 0,
+     "delta": 0.2693,
+     "lo": 0.0385,
+     "hi": 0.5209,
+     "ci95": 0.2412,
+     "p_delta_gt0": 0.989,
+     "separated": true,
+     "reducer": "mean",
+     "n_episodes": 74,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "status": "OK"
+    }
+   },
+   "controls": {
+    "alignment": {
+     "gt_maxabs": 7.628115213265119e-06,
+     "n": 2399,
+     "n_expected": 2399
+    },
+    "harness_identity_maxabs_m": 0.0,
+    "harness_identity_tol_m": 0.0001,
+    "control3_B_reproduces_banked": {
+     "ade6_mean_mine": 2.0545660143297426,
+     "ade6_banked_4dp": 2.0546,
+     "pass": true
+    },
+    "control4_oracle_le_vertex_selectors": {
+     "n_violations": {
+      "ARGMAX": 0,
+      "CONST": 0,
+      "KSCORE": 0,
+      "PERM": 0,
+      "FORCED": 0
+     },
+     "pass": true
+    },
+    "hypotheses_distinct": true,
+    "control1_forced_is_sel_argmax": {
+     "picks_equal": true,
+     "plans_bit_equal": true,
+     "paired_ade6_forced_minus_argmax": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "lower_is_better": true,
+      "better": false,
+      "worse": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "point_unrounded": 0.0
+     },
+     "pass": true
+    },
+    "control2_perm_scorer_vs_sel_const": {
+     "perm_minus_const_ade6": {
+      "point_unrounded": 0.0,
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false
+     },
+     "pass": true,
+     "bar": "a scorer trained on permuted k* must NOT separate from SEL-CONST"
+    }
+   }
+  }
+ }
+}

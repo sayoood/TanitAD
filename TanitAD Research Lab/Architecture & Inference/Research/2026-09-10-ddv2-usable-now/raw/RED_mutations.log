@@ -1,0 +1,69 @@
+### DELIBERATE-REGRESSION (mutation) RUN 2026-09-10T08:54:11Z UTC
+### suite: tests/test_refc_selector_aug.py tests/test_refc_selector_e2b.py
+### a mutation that does NOT go RED is a FINDING, not a pass
+
+[M1-per-coordinate-noise] RED  (exit 1)
+    reintroduces: the V1-shaped PER-COORDINATE multiplicative noise instead of V2's TWO SCALARS (DDv2 analysis section 3.2 names exactly this as the gap)
+    file: tanitad/refs/refc_selector_aug.py
+    summary: 2 failed, 50 passed in 3.87s
+    RED: tests/test_refc_selector_aug.py::test_a_straight_line_stays_EXACTLY_straight_under_any_draw
+    RED: tests/test_refc_selector_aug.py::test_the_multiplier_is_SHAPE_PRESERVING_an_identity_needing_no_draw_value
+
+[M2-off-path-draws-randomness] RED  (exit 1)
+    reintroduces: an OFF path that still advances the global RNG, so every downstream arm silently re-rolls
+    file: tanitad/refs/refc_selector_aug.py
+    summary: 1 failed, 51 passed in 3.95s
+    RED: tests/test_refc_selector_aug.py::test_OFF_DRAWS_NO_RANDOM_NUMBERS_so_a_downstream_stream_is_unchanged
+
+[M3-foreign-marked-emittable] RED  (exit 1)
+    reintroduces: a FOREIGN candidate marked emittable, so the selector may emit a trajectory the generator cannot produce
+    file: tanitad/refs/refc_selector_aug.py
+    summary: 3 failed, 49 passed in 3.97s
+    RED: tests/test_refc_selector_aug.py::test_emittable_covers_augmented_but_not_foreign
+    RED: tests/test_refc_selector_aug.py::test_foreign_is_TRAIN_ONLY_at_the_defaults_and_says_so
+    RED: tests/test_refc_selector_aug.py::test_keep_count_reproduces_the_PUBLISHED_32_per_scene
+
+[M4-dropped-knob-from-the-stamp] RED  (exit 1)
+    reintroduces: a knob parsed and NOT stamped -- the --wp-index failure (3 of 6 knobs parsed, stamped and inert)
+    file: scripts/refc_selector_e2b.py
+    summary: 2 failed, 50 passed in 4.16s
+    RED: tests/test_refc_selector_e2b.py::test_EVERY_argparse_knob_appears_in_the_stamp_and_nothing_else_does
+    RED: tests/test_refc_selector_e2b.py::test_a_top_k_at_or_above_the_fan_is_flagged_as_an_inert_prune
+
+[M5-naive-AP-ties-by-index] RED  (exit 1)
+    reintroduces: AP with ties broken by ARRAY ORDER -- the form that scores a CONSTANT arm off its own base rate and already forced a retraction here
+    file: scripts/refc_selector_e2b.py
+    summary: 2 failed, 50 passed in 4.19s
+    RED: tests/test_refc_selector_e2b.py::test_MUTATION_the_naive_AP_misreads_a_constant_arm_IN_BOTH_DIRECTIONS
+    RED: tests/test_refc_selector_e2b.py::test_ap_of_a_constant_scorer_is_EXACTLY_the_base_rate
+
+[M6-bank-horizon-silently-accepted] RED  (exit 1)
+    reintroduces: a foreign bank at a DIFFERENT horizon accepted instead of refused -- the derived-constant trap (HORIZON 7 -> 8 made a reproduction a different experiment)
+    file: tanitad/refs/refc_selector_aug.py
+    summary: 1 failed, 51 passed in 4.11s
+    RED: tests/test_refc_selector_aug.py::test_a_bank_at_a_different_HORIZON_is_REFUSED_not_resampled
+
+[M7-emittable-guard-never-called] RED  (exit 1)
+    reintroduces: a guard that EXISTS and is never CALLED -- the eval pick could then be a foreign trajectory the generator cannot emit
+    file: scripts/refc_selector_e2b.py
+    summary: 1 failed, 51 passed in 3.88s
+    RED: tests/test_refc_selector_e2b.py::test_the_emittable_guard_is_LIVE_on_the_eval_path
+
+[M8-eval-aug-inert-knob-accepted] RED  (exit 1)
+    reintroduces: the --foreign-at-eval INERT-knob refusal removed -- the --wp-index failure (parsed, stamped, does nothing)
+    file: scripts/refc_selector_e2b.py
+    summary: 1 failed, 51 passed in 4.21s
+    RED: tests/test_refc_selector_e2b.py::test_an_INERT_foreign_at_eval_is_REFUSED_before_the_run
+
+### RESTORE CHECK -- the suite must be GREEN again
+    exit 0: 52 passed in 4.18s
+
+### VERDICTS
+    M1-per-coordinate-noise                RED            2 test(s) RED
+    M2-off-path-draws-randomness           RED            1 test(s) RED
+    M3-foreign-marked-emittable            RED            3 test(s) RED
+    M4-dropped-knob-from-the-stamp         RED            2 test(s) RED
+    M5-naive-AP-ties-by-index              RED            2 test(s) RED
+    M6-bank-horizon-silently-accepted      RED            1 test(s) RED
+    M7-emittable-guard-never-called        RED            1 test(s) RED
+    M8-eval-aug-inert-knob-accepted        RED            1 test(s) RED

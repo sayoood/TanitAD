@@ -1,0 +1,77 @@
+.............................................sssss..s..sFssssF.....sss.F [ 98%]
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_queue_full_stages_read_their_own_cache_root_and_prior_and_nothing_else_does _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_otband_test_ra1_hjepa/test_queue_full_stages_read_th0')
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+    def test_queue_full_stages_read_their_own_cache_root_and_prior_and_nothing_else_does(tmp_path):
+        """The trainer takes every clip in its cache's manifest minus the holdout, so the cache ROOT sets the corpus. Only `full` / `full2`
+        may point at the full-corpus root and P10-yaw-4512; the 540-clip stages must still read the 600-clip root and P10-yaw-540."""
+        import re
+        cf = str(tmp_path / "cache_full")
+        env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+        rc, out = _dry_queue(env, 'full "500 1000" 0.08 50')
+>       assert rc == 0, out
+E       AssertionError: []
+E       assert 1 == 0
+
+tests\test_ra1_hjepa.py:963: AssertionError
+____ test_queue_full3_stage_carries_wd_and_pairs_with_the_unregularised_r0 ____
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_otband_test_ra1_hjepa/test_queue_full3_stage_carries0')
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+    def test_queue_full3_stage_carries_wd_and_pairs_with_the_unregularised_r0(tmp_path):
+        import re
+        cf = str(tmp_path / "cache_full")
+        env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+        rc, out = _dry_queue(env, "full3 3000 1000 0.08 50 3.0")
+>       assert rc == 0, out
+E       AssertionError: []
+E       assert 1 == 0
+
+tests\test_ra1_hjepa.py:1135: AssertionError
+_ test_queue_full4_stage_runs_a0_a2_and_the_a1x_seed1_replicate_beside_phase_1 _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_otband_test_ra1_hjepa/test_queue_full4_stage_runs_a00')
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+    def test_queue_full4_stage_runs_a0_a2_and_the_a1x_seed1_replicate_beside_phase_1(tmp_path):
+        """A0 x2 (BETA, NO gamma), A2 x2 and A1x SEED 1 at S, written into st<S> beside phase 1/2's runs, on the full cache with
+        P10-yaw-4512; then ONE queue verdict over the 9 runs at S (A1x seed 1 is NOT a verdict input: the verdict's gate reads seed 0,
+        code/ra1_full_amend1.py reads the replicate). A missing GAMMA is refused, never defaulted."""
+        import re
+        cf = str(tmp_path / "cache_full")
+        env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+        rc, out = _dry_queue(env, "full4 3000 0.08 50")
+>       assert rc == 0, out
+E       AssertionError: []
+E       assert 1 == 0
+
+tests\test_ra1_hjepa.py:1351: AssertionError
+_ test_queue_full5_stage_runs_a1_x2_at_the_new_gamma_beside_amendment_1_and_no_verdict _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_otband_test_ra1_hjepa/test_queue_full5_stage_runs_a10')
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+    def test_queue_full5_stage_runs_a1_x2_at_the_new_gamma_beside_amendment_1_and_no_verdict(tmp_path):
+        """A1 x2 at S with the LEVEL-1 IDM weight GAMMA (Amendment 2 commits 200), BETA as before, into st<S> beside Amendment 1's A0 / A1 /
+        A1x / A2 runs, on the full cache with P10-yaw-4512 and the 60-clip holdout. No queue verdict: code/ra1_full_amend2.py reads IDM-200.
+        A missing GAMMA is refused, never defaulted (a default would rerun gamma 50 into a gamma-200 cell)."""
+        import re
+        cf = str(tmp_path / "cache_full")
+        env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+        rc, out = _dry_queue(env, "full5 3000 0.08 200")
+>       assert rc == 0, out
+E       AssertionError: []
+E       assert 1 == 0
+
+tests\test_ra1_hjepa.py:1374: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_ra1_hjepa.py::test_queue_full_stages_read_their_own_cache_root_and_prior_and_nothing_else_does
+FAILED tests/test_ra1_hjepa.py::test_queue_full3_stage_carries_wd_and_pairs_with_the_unregularised_r0
+FAILED tests/test_ra1_hjepa.py::test_queue_full4_stage_runs_a0_a2_and_the_a1x_seed1_replicate_beside_phase_1
+FAILED tests/test_ra1_hjepa.py::test_queue_full5_stage_runs_a1_x2_at_the_new_gamma_beside_amendment_1_and_no_verdict
+4 failed, 55 passed, 14 skipped in 21.45s

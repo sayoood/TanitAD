@@ -1,0 +1,80 @@
+{
+ "prereg": "a5dd339eb4bf27ec545122d3288166ae49f52ada57ec029cf67629204bcc3fe2",
+ "rows": [
+  "C:\\Users\\Admin\\n1_run\\score\\rows_cert.jsonl"
+ ],
+ "n_rows": 12146,
+ "n_error_lines": 0,
+ "n_primary": 12110,
+ "controls": {
+  "C-COV": {
+   "pass": true,
+   "tokens": 12146,
+   "expect": 12146,
+   "primary": 12110,
+   "expect_primary": 12110,
+   "error_lines": 0,
+   "every_arm_on_every_token": true
+  },
+  "C-BUILD": {
+   "pass": true,
+   "controls": {
+    "C-BUILD-COV": true,
+    "C-BUILD-T-IS-BANKED": true,
+    "C-SEAM": true
+   }
+  },
+  "C-PIN": {
+   "pass": true,
+   "mismatch": []
+  },
+  "C-EST": {
+   "pass": true,
+   "proxy_eval_boot": [
+    0.8979981444311848,
+    0.885485090077363,
+    0.9100240252371048
+   ],
+   "ours": [
+    0.8979981444311848,
+    0.885485090077363,
+    0.9100240252371048
+   ],
+   "max_abs_dev": 0.0
+  },
+  "C-ID-H": {
+   "pass": false,
+   "tol": 1e-06,
+   "tokens_compared": 12146,
+   "missing_in_reference": 0,
+   "tokens_over_tol": 3346,
+   "max_abs_diff": 1.0,
+   "max_abs_diff_by_metric": {
+    "nc": 1.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 1.0,
+    "ttc": 1.0,
+    "c": 0.0,
+    "pdms": 1.0
+   },
+   "pdms_all_tokens_x100": 89.7799,
+   "reference_pdms_all_tokens_x100": 89.7861,
+   "reference": "C:\\Users\\Admin\\n1_run\\inputs\\refe_p4_teacher_navtest.csv"
+  },
+  "C-REG": {
+   "pass": true,
+   "N1W_pdms": 52.3769,
+   "N1T_pdms": 89.7998,
+   "bar": "PDMS(N1W) <= PDMS(N1T) - 10.0"
+  }
+ },
+ "diag_human_vs_banked_harness": {
+  "n": 12146,
+  "tokens_over_tol": 3805,
+  "max_abs_diff": 1.0,
+  "note": "diagnostic, decides nothing: the banked human seam is NAVSIM's human, the W-TRANSP human arm is the DB's logged future (they differ on the 36 C1 tokens by construction)"
+ },
+ "verdict": "NO VERDICT: a control failed; no N1C / N1M / CERT aggregate was computed",
+ "next": "C-ID-H alone failed: run the PRE-REGISTERED fallback route (PREREG_TF_N1 section 6, C-ID-H): score refe_tfn1_tc20s.npz, refe_tfn1_tw.npz and the registered T seam through the pinned W3 harness (eval/score_p4.py), then p4-style read from the harness CSVs. W-TRANSP rows stay for transparent scores and families, flagged 'not harness-identical'."
+}

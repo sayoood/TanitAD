@@ -1,0 +1,42 @@
+== refcv5 preflight ==  repo /workspace/TanitAD
+-- A. the code ------------------------------------------------
+  [FAIL        ] refcv5 modules import
+                 11/12 import; FAILED: taniteval.ci (ModuleNotFoundError: No module named 'taniteval')
+  [PASS        ] trainer imports
+                 refc_v3_train loaded from /workspace/TanitAD/stack/scripts/refc_v3_train.py
+  [PASS        ] class enum is the corpus enum
+                 n=10 identical=True fabricated=none; control: 'automobile' in enum=True
+  [PASS        ] query budget covers the train corpus
+                 --agent-queries default 100 (train max 94, val40 max 24). Upstream N_QUERIES_DEFAULT is 100 (ruled M17; 16 was REFUTED at 11.17 pct of boxes dropped, nearest sacrificed target 7.3 m) and covers the train max: True. refcv5 is NOT exposed either way (build_agent_head always passes n_queries explicitly). Second spellings found: none
+  [FAIL        ] every weighted term has a gradient
+                 agent_w_ground grad=1.164e-10 n=64; agent_w_project grad=1.462e-03 n=64 | DEAD: ['agent_w_ground'] -- the weight would be stamped into config.json and add exactly 0 to the total | control: 1 of 2 terms are live
+  [PASS        ] the seam guards refuse their defects
+                 4/4 guards fired; control (legal config) passed
+  [PASS        ] every knob reaches config.json
+                 18 knobs derived from argparse, 0 missing from the stamp; control: n_knobs > 12 = True
+  [INCONCLUSIVE] the camera scope is stated
+                 no --rig-extrinsics given, so the PER-CLIP path is UNCHECKED. The default stamp carries mount_pose_scope=NONE (key present: True). A parity arm training the projection term needs a per-clip table -- one camera for the corpus is C28.
+-- B. the data ------------------------------------------------
+  [FAIL        ] v2 cache present with stable ids
+                 4572 *.v2ep.pt (control: 4573 entries in the dir), manifest present, path names the parity key: False
+  [PASS        ] episode ids are collision-free
+                 4572 distinct stable ids for 4572 files (control: a 16-bit legacy key collides on 34/2308 train clips)
+  [INCONCLUSIVE] the corpus clip list is the PARITY set
+                 no --clip-ids given, so coverage below is measured against whatever the local cache holds (4572 episodes) -- which is a denominator, not the corpus
+  [INCONCLUSIVE] agent join joins to the cache
+                 no --agent-join given; --agents head REFUSES without it, so E-AGT-HEAD cannot train
+  [INCONCLUSIVE] join digest declares its scope
+                 no --agent-join
+  [PASS        ] v7.2 tactical labels cover the corpus
+                 4572/4572 episodes labelled (1.0000); the trainer's floor is 0.50 (control: 4572 labelled clips read from the file)
+  [INCONCLUSIVE] per-clip cameras cover the corpus
+                 no per-clip camera bank was built, so coverage is UNCHECKED
+  [FAIL        ] anchor vocabulary declares its units
+                 controls present: True; declared control_units: None (source None); declared meta None; REFUSED: AnchorUnitsMissing: /workspace/experiments/refcv4b-b1-v72-40k/anchors.pt carries `controls` (117, 2) but declares NO `control_units`, so column 1 cannot be told apart from a curvature; deliberate-regression control (units stripped) not run. A controls-carrying file that declares nothing must be REFUSED unless --anchor-control-units is passed by name.
+-- C. end to end ----------------------------------------------
+  [FAIL        ] a 2-step run states every weight
+                 exit 1; config.json written; tail: s, **kwargs) |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ |   File "/workspace/TanitAD/stack/tanitad/refs/refc_v3.py", line 1013, in forward |     raise ValueError( | ValueError: this build is `--agents oracle` but no agent_gt reached the forward. The oracle's tokens ARE the ground-truth boxes; with none the seam emits nothing and the arm would read as 'agent tokens do not help' while never having had any. | 
+
+== 7 PASS  5 FAIL  5 INCONCLUSIVE (inconclusive counts as a failure) ==
+== VERDICT: NO-GO ==
+wrote /workspace/refcv5_preflight_b1.json

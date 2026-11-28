@@ -1,0 +1,244 @@
+FFF..FFsFFFFFF                                                           [100%]
+================================== FAILURES ===================================
+_ test_GREEN_the_r8_eval_forward_repeats_bit_for_bit_under_a_forked_seed[False] _
+
+emit_live = False
+
+    @pytest.mark.parametrize("emit_live", [False, True])
+    def test_GREEN_the_r8_eval_forward_repeats_bit_for_bit_under_a_forked_seed(emit_live):
+        _T, cfg, m = _build(True, emit_live)
+        bt = R.batch(cfg, b=3)
+        a, b = _flat(_fwd(cfg, m, bt)), _flat(_fwd(cfg, m, bt))
+        assert "out.r8_cand_src" in a and int(a["out.r8_cand_src"].shape[1]) == 20 + 32    # the extras ARE built
+>       assert _differ(a, b) == []
+E       AssertionError: assert ['out.anchor_..._hat[2]', ...] == []
+E         
+E         Left contains 14 more items, first extra item: 'out.anchor_traj'
+E         Use -v to get more diff
+
+tests\test_refcv8_eval_determinism.py:109: AssertionError
+_ test_GREEN_the_r8_eval_forward_repeats_bit_for_bit_under_a_forked_seed[True] _
+
+emit_live = True
+
+    @pytest.mark.parametrize("emit_live", [False, True])
+    def test_GREEN_the_r8_eval_forward_repeats_bit_for_bit_under_a_forked_seed(emit_live):
+        _T, cfg, m = _build(True, emit_live)
+        bt = R.batch(cfg, b=3)
+        a, b = _flat(_fwd(cfg, m, bt)), _flat(_fwd(cfg, m, bt))
+        assert "out.r8_cand_src" in a and int(a["out.r8_cand_src"].shape[1]) == 20 + 32    # the extras ARE built
+>       assert _differ(a, b) == []
+E       AssertionError: assert ['out.anchor_..._hat[1]', ...] == []
+E         
+E         Left contains 28 more items, first extra item: 'out.anchor_traj'
+E         Use -v to get more diff
+
+tests\test_refcv8_eval_determinism.py:109: AssertionError
+_________ test_GREEN_the_gates_own_control_reads_zero_on_the_r8_build _________
+
+    def test_GREEN_the_gates_own_control_reads_zero_on_the_r8_build():
+        """`launch_gate._forward_out` itself: compute_losses_v3 under fork_rng + manual_seed(1234), stopped at the model
+        output -- the exact call the G-EVAL determinism control makes twice."""
+        G = importlib.import_module("launch_gate")
+        T, cfg, m = _build(True, emit_live=False)
+        m.eval()
+        eps = T._synth_episodes(2, cfg.core, seed=0)
+        ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
+        batch = torch.utils.data.default_collate([ds[0], ds[1]])
+        ph = R.batch(cfg, b=2)["pose_hist"].clone()
+        v0 = batch["pose_last"][:, 3].reshape(-1).to(torch.float32)
+        ph[:, :, 3] = v0[:, None]
+        ph[:, :, 0] = v0[:, None] * 0.1 * torch.arange(ph.shape[1], dtype=torch.float32)[None]
+        batch.update(pose_hist=ph, nav_cmd=torch.tensor([1, 2]), nav_valid=torch.tensor([True, True]),
+                     v_max_ms=torch.tensor(VMAX[:2]), v_max_valid=torch.ones(2))
+        m._w_goal_point = m._w_tac_goal = 0.0
+        m._tac_goal_pos_weight = m._tac_goal_class_mask = None
+    
+        class _A:
+            mode = "diffusion"
+        d1 = G.output_digests(G._forward_out(T, m, batch, _A, 1234))
+        d2 = G.output_digests(G._forward_out(T, m, batch, _A, 1234))
+        assert "out.r8_cand_src" in d1
+>       assert sorted(k for k in d1 if d2.get(k) != d1[k]) == []
+E       AssertionError: assert ['out.anchor_..._hat[2]', ...] == []
+E         
+E         Left contains 14 more items, first extra item: 'out.anchor_traj'
+E         Use -v to get more diff
+
+tests\test_refcv8_eval_determinism.py:135: AssertionError
+___ test_the_base_candidates_and_the_global_stream_are_untouched_vs_d014ff2 ___
+
+    def test_the_base_candidates_and_the_global_stream_are_untouched_vs_d014ff2():
+        """New eval vs the d014ff2 semantics on identical models: the BASE columns of every per-candidate output are equal
+        (refcv7's noise stream is not touched), and the global RNG leaves the forward in the same state."""
+        _T, cfg, m_new = _build(True, emit_live=False)
+        _T, _cfg, m_old = _build(True, emit_live=False)
+        bt = R.batch(cfg, b=3)
+        torch.manual_seed(5)
+        new = _flat(_fwd(cfg, m_new, bt))
+>       with _d014ff2_semantics():
+             ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv8_eval_determinism.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    @contextlib.contextmanager
+    def _d014ff2_semantics():
+        """The pre-fix behaviour: an eval draw takes its VALUES from the persistent stream (what d014ff2's
+        `select_source_anchors` and `refc._sample` did in both modes)."""
+        mp = pytest.MonkeyPatch()
+>       mp.setattr(C.R8Generator, "rand_eval", lambda self, shape, device, site: self.rand(shape, device))
+E       AttributeError: <class 'tanitad.refs.refcv8_conditioning.R8Generator'> has no attribute 'rand_eval'
+
+tests\test_refcv8_eval_determinism.py:91: AttributeError
+______ test_eval_generator_reads_the_global_state_and_never_consumes_it _______
+
+    def test_eval_generator_reads_the_global_state_and_never_consumes_it():
+        g = C.R8Generator(20261004)
+        torch.manual_seed(1234)
+        s0 = torch.get_rng_state().clone()
+>       x = torch.rand(8, generator=g.eval_generator("cpu", C.EVAL_SITE_SELECT_SOURCE))
+                                    ^^^^^^^^^^^^^^^^
+E       AttributeError: 'R8Generator' object has no attribute 'eval_generator'
+
+tests\test_refcv8_eval_determinism.py:194: AttributeError
+_ test_training_is_bit_identical_to_d014ff2_including_a_step_after_eval_forwards[False] _
+
+emit_live = False
+
+    @pytest.mark.parametrize("emit_live", [False, True])
+    def test_training_is_bit_identical_to_d014ff2_including_a_step_after_eval_forwards(emit_live):
+        new = _train_eval_train(emit_live)
+>       with _d014ff2_semantics():
+             ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv8_eval_determinism.py:259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    @contextlib.contextmanager
+    def _d014ff2_semantics():
+        """The pre-fix behaviour: an eval draw takes its VALUES from the persistent stream (what d014ff2's
+        `select_source_anchors` and `refc._sample` did in both modes)."""
+        mp = pytest.MonkeyPatch()
+>       mp.setattr(C.R8Generator, "rand_eval", lambda self, shape, device, site: self.rand(shape, device))
+E       AttributeError: <class 'tanitad.refs.refcv8_conditioning.R8Generator'> has no attribute 'rand_eval'
+
+tests\test_refcv8_eval_determinism.py:91: AttributeError
+_ test_training_is_bit_identical_to_d014ff2_including_a_step_after_eval_forwards[True] _
+
+emit_live = True
+
+    @pytest.mark.parametrize("emit_live", [False, True])
+    def test_training_is_bit_identical_to_d014ff2_including_a_step_after_eval_forwards(emit_live):
+        new = _train_eval_train(emit_live)
+>       with _d014ff2_semantics():
+             ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv8_eval_determinism.py:259: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    @contextlib.contextmanager
+    def _d014ff2_semantics():
+        """The pre-fix behaviour: an eval draw takes its VALUES from the persistent stream (what d014ff2's
+        `select_source_anchors` and `refc._sample` did in both modes)."""
+        mp = pytest.MonkeyPatch()
+>       mp.setattr(C.R8Generator, "rand_eval", lambda self, shape, device, site: self.rand(shape, device))
+E       AttributeError: <class 'tanitad.refs.refcv8_conditioning.R8Generator'> has no attribute 'rand_eval'
+
+tests\test_refcv8_eval_determinism.py:91: AttributeError
+__ test_training_never_takes_the_eval_route_and_eval_takes_it_at_both_sites ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002B0CC1B67A0>
+
+    def test_training_never_takes_the_eval_route_and_eval_takes_it_at_both_sites(monkeypatch):
+        calls = []
+>       orig = C.R8Generator.eval_generator
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'R8Generator' has no attribute 'eval_generator'
+
+tests\test_refcv8_eval_determinism.py:271: AttributeError
+____ test_RED_ARM_the_d014ff2_semantics_do_not_repeat_under_a_forked_seed _____
+
+    def test_RED_ARM_the_d014ff2_semantics_do_not_repeat_under_a_forked_seed():
+        _T, cfg, m = _build(True, emit_live=False)
+        bt = R.batch(cfg, b=3)
+>       with _d014ff2_semantics():
+             ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv8_eval_determinism.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\AppData\Local\Programs\Python\Python313\Lib\contextlib.py:141: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    @contextlib.contextmanager
+    def _d014ff2_semantics():
+        """The pre-fix behaviour: an eval draw takes its VALUES from the persistent stream (what d014ff2's
+        `select_source_anchors` and `refc._sample` did in both modes)."""
+        mp = pytest.MonkeyPatch()
+>       mp.setattr(C.R8Generator, "rand_eval", lambda self, shape, device, site: self.rand(shape, device))
+E       AttributeError: <class 'tanitad.refs.refcv8_conditioning.R8Generator'> has no attribute 'rand_eval'
+
+tests\test_refcv8_eval_determinism.py:91: AttributeError
+________ test_a_fresh_build_is_born_at_step0_of_its_emission_schedule _________
+
+    def test_a_fresh_build_is_born_at_step0_of_its_emission_schedule():
+        """MEASURED (pre-gate d6/d7, Thor): G-EVAL's trainer model -- built, never stepped -- differed from the loader's on
+        `out.r8_emit_keep`: the switch defaulted to True while the loader schedules the checkpoint's step 0 (False under
+        emit_start 1000). Literals: emit_start 1000 -> not live at step 0; emit_start 0 -> live (the tiny arms)."""
+        T = R.trainer()
+        _c, m_late = R.build(T, True, seed=0, vmax=True, **A2)                             # emit_start 1000
+        _c, m_zero = R.build(T, True, seed=0, vmax=True, **{**A2, "emit_start": 0})
+>       assert m_late.core.decoder.r8_emit_live is False
+E       AssertionError: assert True is False
+E        +  where True = AnchoredDiffusionDecoder(\n  (feat_proj): Linear(in_features=512, out_features=32, bias=True)\n  (traj_proj): Linear(in_...ias=True)\n      (1): GELU(approximate='none')\n      (2): Linear(in_features=128, out_features=4, bias=True)\n    )\n  )\n).r8_emit_live
+E        +    where AnchoredDiffusionDecoder(\n  (feat_proj): Linear(in_features=512, out_features=32, bias=True)\n  (traj_proj): Linear(in_...ias=True)\n      (1): GELU(approximate='none')\n      (2): Linear(in_features=128, out_features=4, bias=True)\n    )\n  )\n) = RefCModel(\n  (encoder): TimmResNetTrunk(\n    (net): FeatureListNet(\n      (conv1): Conv2d(3, 64, kernel_size=(7, 7), s..._features=32, bias=True)\n    (1): ReLU(inplace=True)\n    (2): Linear(in_features=32, out_features=512, bias=True)\n  )\n).decoder
+E        +      where RefCModel(\n  (encoder): TimmResNetTrunk(\n    (net): FeatureListNet(\n      (conv1): Conv2d(3, 64, kernel_size=(7, 7), s..._features=32, bias=True)\n    (1): ReLU(inplace=True)\n    (2): Linear(in_features=32, out_features=512, bias=True)\n  )\n) = RefCV3Model(\n  (core): RefCModel(\n    (encoder): TimmResNetTrunk(\n      (net): FeatureListNet(\n        (conv1): Conv2d...tures=2, bias=True)\n  )\n  (_perception): FakeBranch(\n    (proj): Linear(in_features=1, out_features=8, bias=True)\n  )\n).core
+
+tests\test_refcv8_eval_determinism.py:307: AssertionError
+_ test_GREEN_a_never_scheduled_build_and_the_loaders_step0_schedule_give_the_same_forward _
+
+    def test_GREEN_a_never_scheduled_build_and_the_loaders_step0_schedule_give_the_same_forward():
+        """The G-EVAL comparison in miniature: the trainer side never calls the schedule; the loader side applies it at
+        `checkpoint_r8_step(keys, 0)` exactly as `refcv7_loader.py:517-519` does for the gate's {"step": 0} checkpoint."""
+        from tanitad.train import refcv8_train as RT
+        T = R.trainer()
+        cfg, m_t = R.build(T, True, seed=0, vmax=True, **A2)
+        _c, m_l = R.build(T, True, seed=0, vmax=True, **A2)
+        m_l.load_state_dict(m_t.state_dict())
+        assert RT.apply_emit_schedule(m_l, RT.checkpoint_r8_step(m_t.state_dict().keys(), 0)) is False
+        bt = R.batch(cfg, b=3)
+        a, b = _flat(_fwd(cfg, m_t, bt)), _flat(_fwd(cfg, m_l, bt))
+>       assert "out.r8_emit_keep" in a and _differ(a, b) == []
+E       AssertionError: assert ('out.r8_emit_keep' in {'out.pooled': tensor([[0.0035, 0.2266, 0.0580,  ..., 0.0415, 0.0741, 0.0060],\n        [0.0030, 0.2563, 0.1026,  ..., ...0000, 0.0000, 0.0000],\n          [0.0000, 0.0000, 0.0000, 0.0000],\n          [0.0000, 0.0000, 0.0000, 0.0000]]]]), ...} and ['out.law_pre...aj_base', ...] == []
+E         
+E         Left contains 15 more items, first extra item: 'out.law_pred'
+E         Use -v to get more diff)
+
+tests\test_refcv8_eval_determinism.py:322: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refcv8_eval_determinism.py::test_GREEN_the_r8_eval_forward_repeats_bit_for_bit_under_a_forked_seed[False]
+FAILED tests/test_refcv8_eval_determinism.py::test_GREEN_the_r8_eval_forward_repeats_bit_for_bit_under_a_forked_seed[True]
+FAILED tests/test_refcv8_eval_determinism.py::test_GREEN_the_gates_own_control_reads_zero_on_the_r8_build
+FAILED tests/test_refcv8_eval_determinism.py::test_the_base_candidates_and_the_global_stream_are_untouched_vs_d014ff2
+FAILED tests/test_refcv8_eval_determinism.py::test_eval_generator_reads_the_global_state_and_never_consumes_it
+FAILED tests/test_refcv8_eval_determinism.py::test_training_is_bit_identical_to_d014ff2_including_a_step_after_eval_forwards[False]
+FAILED tests/test_refcv8_eval_determinism.py::test_training_is_bit_identical_to_d014ff2_including_a_step_after_eval_forwards[True]
+FAILED tests/test_refcv8_eval_determinism.py::test_training_never_takes_the_eval_route_and_eval_takes_it_at_both_sites
+FAILED tests/test_refcv8_eval_determinism.py::test_RED_ARM_the_d014ff2_semantics_do_not_repeat_under_a_forked_seed
+FAILED tests/test_refcv8_eval_determinism.py::test_a_fresh_build_is_born_at_step0_of_its_emission_schedule
+FAILED tests/test_refcv8_eval_determinism.py::test_GREEN_a_never_scheduled_build_and_the_loaders_step0_schedule_give_the_same_forward
+11 failed, 2 passed, 1 skipped in 7.08s

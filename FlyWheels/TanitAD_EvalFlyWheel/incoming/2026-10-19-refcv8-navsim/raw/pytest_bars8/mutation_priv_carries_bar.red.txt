@@ -1,0 +1,15 @@
+.............................................F...........                [100%]
+================================== FAILURES ===================================
+________________________ test_priv_never_carries_a_bar ________________________
+
+    def test_priv_never_carries_a_bar():
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": 0.6, "STOP": 0.5, "R8_PRIV": 0.8}, cfg={"ship_r8_passed": True})
+        pv = r["bars"]["R8_PRIV"]
+>       assert pv["verdict"].startswith("NO_BAR") and not [k for k in pv if k.startswith("BAR-")]
+               ^^^^^^^^^^^^^
+E       KeyError: 'verdict'
+
+tests\test_navsim_bars8.py:287: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_priv_never_carries_a_bar - KeyError: ...
+1 failed, 56 passed, 2 deselected in 26.45s

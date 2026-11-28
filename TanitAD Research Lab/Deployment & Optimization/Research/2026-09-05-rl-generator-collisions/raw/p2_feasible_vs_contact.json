@@ -1,0 +1,204 @@
+{
+ "_tool": "p2_feasible_vs_contact.py",
+ "_tier": "T0 readout on the EMITTED fan (never a driving claim)",
+ "_evidence_class": "MEASURED (ours)",
+ "bank": "raw/fan_bank_base_240w.npz",
+ "W": 240,
+ "K": 128,
+ "n_lead_windows": 65,
+ "estimator": "paired episode-cluster bootstrap (cluster = eid)",
+ "n_boot": 4000,
+ "seed": 11,
+ "controls": {
+  "C1_identity_of_scorer": {
+   "contact": {
+    "disagreements": 289,
+    "banked_rate": 0.024869791666666665,
+    "rescored_rate": 0.03427734375
+   },
+   "kamm_over": {
+    "disagreements": 0,
+    "banked_rate": 0.840625,
+    "rescored_rate": 0.840625
+   },
+   "envelope": {
+    "disagreements": 0,
+    "banked_rate": 0.8877278645833333,
+    "rescored_rate": 0.8877278645833333
+   },
+   "off_reach": {
+    "disagreements": 0,
+    "banked_rate": 0.10774739583333333,
+    "rescored_rate": 0.10774739583333333
+   },
+   "infeasible": {
+    "disagreements": 0,
+    "banked_rate": 0.8919596354166667,
+    "rescored_rate": 0.8919596354166667
+   },
+   "_bank_definition": {
+    "identified_as": "per-step POINT test, radius 2.0 m",
+    "point_test_disagreements_vs_bank": 0,
+    "current_scorer_is": "SWEPT relative-frame (rewards._collision)",
+    "banked_rate_point": 0.024869791666666665,
+    "current_rate_swept": 0.03427734375
+   }
+  },
+  "C1_PASS": true,
+  "C2_disabled_lever_max_abs_diff": 0.0,
+  "C2_returned_same_object": true,
+  "C3_round_trip_max_abs_diff": 2.1316282072803006e-14,
+  "C4_candidates_moved": 27431,
+  "C4_moved_frac": 0.8929361979166667,
+  "C4b_infeasible_off": 0.8919596354166667,
+  "C4b_infeasible_on": 0.33330078125
+ },
+ "projection_geometric_cost_m": {
+  "mean": 1.7334275648821535,
+  "median": 1.5469703300185969,
+  "p95": 4.118640562642949,
+  "max": 24.69537722775357
+ },
+ "results": {
+  "all_windows": {
+   "fan_contact": {
+    "off": 0.03427734375,
+    "on": 0.03623046875,
+    "delta": 0.001953125,
+    "lo": -3.387489526602428e-05,
+    "hi": 0.00399159667079523,
+    "sep": false,
+    "n_windows": 240
+   },
+   "fan_infeasible": {
+    "off": 0.8919596354166667,
+    "on": 0.33330078125,
+    "delta": -0.5586588541666667,
+    "lo": -0.5940543821128155,
+    "hi": -0.5220480358935743,
+    "sep": true,
+    "n_windows": 240
+   },
+   "fan_kamm_over": {
+    "off": 0.840625,
+    "on": 0.0,
+    "delta": -0.840625,
+    "lo": -0.8549981018700451,
+    "hi": -0.8259717395366218,
+    "sep": true,
+    "n_windows": 240
+   },
+   "fan_envelope": {
+    "off": 0.8877278645833333,
+    "on": 0.0,
+    "delta": -0.8877278645833333,
+    "lo": -0.8980734345512569,
+    "hi": -0.8769759098971339,
+    "sep": true,
+    "n_windows": 240
+   },
+   "fan_unsafe": {
+    "off": 0.11031901041666667,
+    "on": 0.09820963541666666,
+    "delta": -0.012109375,
+    "lo": -0.018135183405748663,
+    "hi": -0.006746824778908329,
+    "sep": true,
+    "n_windows": 240
+   },
+   "top8_contact": {
+    "off": 0.0,
+    "on": 0.0020833333333333333,
+    "delta": 0.0020833333333333333,
+    "lo": 0.0,
+    "hi": 0.005482456140350877,
+    "sep": false,
+    "n_windows": 240
+   },
+   "top32_contact": {
+    "off": 0.008984375,
+    "on": 0.013671875,
+    "delta": 0.0046875,
+    "lo": 0.0012599541310402901,
+    "hi": 0.009332625095492743,
+    "sep": true,
+    "n_windows": 240
+   },
+   "sel_contact": {
+    "off": 0.0,
+    "on": 0.0,
+    "n_windows": 240
+   }
+  },
+  "lead_windows": {
+   "fan_contact": {
+    "off": 0.1265625,
+    "on": 0.13377403846153846,
+    "delta": 0.007211538461538462,
+    "lo": -0.00010854515111502346,
+    "hi": 0.014617723034274195,
+    "sep": false,
+    "n_windows": 65
+   },
+   "fan_infeasible": {
+    "off": 0.9060096153846153,
+    "on": 0.3897836538461538,
+    "delta": -0.5162259615384616,
+    "lo": -0.5816595262096774,
+    "hi": -0.44806815784715526,
+    "sep": true,
+    "n_windows": 65
+   },
+   "fan_kamm_over": {
+    "off": 0.8582932692307692,
+    "on": 0.0,
+    "delta": -0.8582932692307692,
+    "lo": -0.8842578125,
+    "hi": -0.8311796205945323,
+    "sep": true,
+    "n_windows": 65
+   },
+   "fan_envelope": {
+    "off": 0.9022836538461538,
+    "on": 0.0,
+    "delta": -0.9022836538461538,
+    "lo": -0.9212244833669355,
+    "hi": -0.8831902288621472,
+    "sep": true,
+    "n_windows": 65
+   },
+   "fan_unsafe": {
+    "off": 0.4073317307692308,
+    "on": 0.3626201923076923,
+    "delta": -0.04471153846153846,
+    "lo": -0.0626202392578125,
+    "hi": -0.027973298103578625,
+    "sep": true,
+    "n_windows": 65
+   },
+   "top8_contact": {
+    "off": 0.0,
+    "on": 0.007692307692307693,
+    "delta": 0.007692307692307693,
+    "lo": 0.0,
+    "hi": 0.01984927035330264,
+    "sep": false,
+    "n_windows": 65
+   },
+   "top32_contact": {
+    "off": 0.03317307692307692,
+    "on": 0.05048076923076923,
+    "delta": 0.01730769230769231,
+    "lo": 0.0048828125,
+    "hi": 0.03264925373134328,
+    "sep": true,
+    "n_windows": 65
+   },
+   "sel_contact": {
+    "off": 0.0,
+    "on": 0.0,
+    "n_windows": 65
+   }
+  }
+ }
+}

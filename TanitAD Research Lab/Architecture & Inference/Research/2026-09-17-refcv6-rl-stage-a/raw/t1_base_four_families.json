@@ -1,0 +1,272 @@
+{
+ "_what": "refcv5-v2 COLD START at T1, all four metric families, from the BASE T1 roll.",
+ "_tier": "T1 (self-action OPEN loop -- never 'closed loop')",
+ "_evidence_class": "MEASURED (ours)",
+ "_n": {
+  "windows": 1402,
+  "episodes": 41
+ },
+ "_estimator": "paired_episode_cluster_bootstrap, n_boot 2000, seed 0",
+ "blocks": {
+  "paired_os_minus_ha0": {
+   "_title": "vs the hold-action floor (ha0)",
+   "metrics": {
+    "ADE.ade_m": {
+     "delta": -0.3677,
+     "lo": -0.4757,
+     "hi": -0.2674,
+     "separated": true
+    },
+    "ADE.fde_m": {
+     "delta": -0.7479,
+     "lo": -0.9843,
+     "hi": -0.529,
+     "separated": true
+    },
+    "lateral.LAT_cross_mae_m": {
+     "delta": -0.2004,
+     "lo": -0.3299,
+     "hi": -0.0981,
+     "separated": true
+    },
+    "lateral.LAT_heading_mae_deg": {
+     "delta": -1.3571,
+     "lo": -2.1413,
+     "hi": -0.7054,
+     "separated": true
+    },
+    "lateral.LAT_yaw_rate_mae_radps": {
+     "delta": -0.018,
+     "lo": -0.0306,
+     "hi": -0.0075,
+     "separated": true
+    },
+    "longitudinal.LON_accel_mae_mps2": {
+     "delta": -0.1151,
+     "lo": -0.1729,
+     "hi": -0.0543,
+     "separated": true
+    },
+    "longitudinal.LON_along_mae_m": {
+     "delta": -0.2175,
+     "lo": -0.2738,
+     "hi": -0.1614,
+     "separated": true
+    },
+    "longitudinal.LON_speed_mae_mps": {
+     "delta": -0.1982,
+     "lo": -0.2598,
+     "hi": -0.1347,
+     "separated": true
+    },
+    "tactical.TAC_traj_lat_correct": {
+     "delta": 0.0749,
+     "lo": 0.0242,
+     "hi": 0.136,
+     "separated": true
+    },
+    "tactical.TAC_traj_lon_correct": {
+     "delta": 0.0606,
+     "lo": 0.0185,
+     "hi": 0.1009,
+     "separated": true
+    }
+   }
+  },
+  "paired_os_minus_ha0ext": {
+   "_title": "vs the EXTENDED do-nothing baseline (ha0_ext) -- THE BAR",
+   "metrics": {
+    "ADE.ade_m": {
+     "delta": 0.0024,
+     "lo": -0.0162,
+     "hi": 0.0223,
+     "separated": false
+    },
+    "ADE.fde_m": {
+     "delta": -0.0031,
+     "lo": -0.0499,
+     "hi": 0.0417,
+     "separated": false
+    },
+    "lateral.LAT_cross_mae_m": {
+     "delta": -0.0059,
+     "lo": -0.0227,
+     "hi": 0.0092,
+     "separated": false
+    },
+    "lateral.LAT_heading_mae_deg": {
+     "delta": -0.0779,
+     "lo": -0.2222,
+     "hi": 0.0647,
+     "separated": false
+    },
+    "lateral.LAT_yaw_rate_mae_radps": {
+     "delta": -0.0018,
+     "lo": -0.0054,
+     "hi": 0.0019,
+     "separated": false
+    },
+    "longitudinal.LON_accel_mae_mps2": {
+     "delta": 0.0328,
+     "lo": 0.0046,
+     "hi": 0.0612,
+     "separated": true
+    },
+    "longitudinal.LON_along_mae_m": {
+     "delta": 0.0107,
+     "lo": -0.0119,
+     "hi": 0.0335,
+     "separated": false
+    },
+    "longitudinal.LON_speed_mae_mps": {
+     "delta": 0.0211,
+     "lo": -0.0024,
+     "hi": 0.0469,
+     "separated": false
+    },
+    "tactical.TAC_traj_lat_correct": {
+     "delta": 0.0114,
+     "lo": -0.0086,
+     "hi": 0.0299,
+     "separated": false
+    },
+    "tactical.TAC_traj_lon_correct": {
+     "delta": -0.005,
+     "lo": -0.0292,
+     "hi": 0.0192,
+     "separated": false
+    }
+   }
+  },
+  "paired_os_minus_navzero": {
+   "_title": "vs itself with the nav SIGNAL REMOVED -- what nav is worth",
+   "metrics": {
+    "ADE.ade_m": {
+     "delta": -0.0014,
+     "lo": -0.0149,
+     "hi": 0.0131,
+     "separated": false
+    },
+    "ADE.fde_m": {
+     "delta": 0.0021,
+     "lo": -0.0281,
+     "hi": 0.0343,
+     "separated": false
+    },
+    "lateral.LAT_cross_mae_m": {
+     "delta": -0.0032,
+     "lo": -0.0094,
+     "hi": 0.0028,
+     "separated": false
+    },
+    "lateral.LAT_heading_mae_deg": {
+     "delta": -0.0314,
+     "lo": -0.125,
+     "hi": 0.0425,
+     "separated": false
+    },
+    "lateral.LAT_yaw_rate_mae_radps": {
+     "delta": 0.0,
+     "lo": -0.0014,
+     "hi": 0.0015,
+     "separated": false
+    },
+    "longitudinal.LON_accel_mae_mps2": {
+     "delta": 0.0069,
+     "lo": -0.0069,
+     "hi": 0.0201,
+     "separated": false
+    },
+    "longitudinal.LON_along_mae_m": {
+     "delta": -0.0001,
+     "lo": -0.0141,
+     "hi": 0.0152,
+     "separated": false
+    },
+    "longitudinal.LON_speed_mae_mps": {
+     "delta": -0.0007,
+     "lo": -0.0144,
+     "hi": 0.0134,
+     "separated": false
+    },
+    "tactical.TAC_traj_lat_correct": {
+     "delta": 0.0029,
+     "lo": -0.0064,
+     "hi": 0.0121,
+     "separated": false
+    },
+    "tactical.TAC_traj_lon_correct": {
+     "delta": -0.0007,
+     "lo": -0.0136,
+     "hi": 0.0121,
+     "separated": false
+    }
+   }
+  },
+  "paired_os_minus_navshuf": {
+   "_title": "vs itself with nav SHUFFLED -- pairing broken, marginal kept",
+   "metrics": {
+    "ADE.ade_m": {
+     "delta": -0.0022,
+     "lo": -0.0113,
+     "hi": 0.0063,
+     "separated": false
+    },
+    "ADE.fde_m": {
+     "delta": -0.01,
+     "lo": -0.0313,
+     "hi": 0.0091,
+     "separated": false
+    },
+    "lateral.LAT_cross_mae_m": {
+     "delta": 0.0016,
+     "lo": -0.0007,
+     "hi": 0.004,
+     "separated": false
+    },
+    "lateral.LAT_heading_mae_deg": {
+     "delta": 0.0244,
+     "lo": -0.0312,
+     "hi": 0.0797,
+     "separated": false
+    },
+    "lateral.LAT_yaw_rate_mae_radps": {
+     "delta": 0.0006,
+     "lo": -0.0003,
+     "hi": 0.0016,
+     "separated": false
+    },
+    "longitudinal.LON_accel_mae_mps2": {
+     "delta": -0.0119,
+     "lo": -0.0242,
+     "hi": -0.0004,
+     "separated": true
+    },
+    "longitudinal.LON_along_mae_m": {
+     "delta": -0.004,
+     "lo": -0.0139,
+     "hi": 0.0047,
+     "separated": false
+    },
+    "longitudinal.LON_speed_mae_mps": {
+     "delta": -0.0062,
+     "lo": -0.017,
+     "hi": 0.0035,
+     "separated": false
+    },
+    "tactical.TAC_traj_lat_correct": {
+     "delta": 0.0007,
+     "lo": -0.0071,
+     "hi": 0.0078,
+     "separated": false
+    },
+    "tactical.TAC_traj_lon_correct": {
+     "delta": 0.0086,
+     "lo": -0.0043,
+     "hi": 0.0228,
+     "separated": false
+    }
+   }
+  }
+ }
+}

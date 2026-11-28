@@ -1,0 +1,2101 @@
+{
+ "card": "F:/TanitAD-scratch/v8proof/PREREG_V8F_PROOF_ADD15.md",
+ "card_sha256": "168ad1a7ddc98fabdfb080fbfdc5ea171a114f93f674a92d1bfeac1add777f8b",
+ "holdread_sha256": "87e65b6376f3d6e10397b863ec8ef54d8e098195694fb7d1612dc5387b891623",
+ "evidence": "MEASURED; tier T1-kin (kinematic rollout on the model's own actions, logged frames); zero training; the hold rule is an EMULATION on banked rollouts; never driving performance",
+ "STRATEGIC": "PAUSED (PI item 25)",
+ "nboot": 2000,
+ "bootstrap_seed": 0,
+ "rest_v0_m_s": 2.0,
+ "tol_m": 2.0,
+ "theta_grid_m": [
+  0.5,
+  1.0,
+  2.0,
+  3.0,
+  4.0,
+  6.0,
+  8.0,
+  12.0
+ ],
+ "n_folds": 5,
+ "dump_folders": {
+  "pair1": {
+   "0": {
+    "H": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG_s0_m10_causal_heads",
+    "F": "E:/Projects/TanitAD-artifacts/v8f-flatdag-t1/dump_FLATDAG_s0_m10_causal_heads"
+   },
+   "1": {
+    "H": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG_s1_m10_causal_heads",
+    "F": "E:/Projects/TanitAD-artifacts/v8f-flatdag-t1/dump_FLATDAG_s1_m10_causal_heads"
+   }
+  },
+  "pair2": {
+   "0": {
+    "H": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG0_s0_m10_causal_heads",
+    "F": "E:/Projects/TanitAD-artifacts/v8f-flatdag-t1/dump_FLATDAG0_s0_m10_causal_heads"
+   },
+   "1": {
+    "H": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG0_s1_m10_causal_heads",
+    "F": "E:/Projects/TanitAD-artifacts/v8f-flatdag-t1/dump_FLATDAG0_s1_m10_causal_heads"
+   }
+  }
+ },
+ "n_windows_episodes": {
+  "pair1|s0": [
+   2399,
+   141
+  ],
+  "pair1|s1": [
+   2399,
+   141
+  ],
+  "pair2|s0": [
+   2399,
+   141
+  ],
+  "pair2|s1": [
+   2399,
+   141
+  ]
+ },
+ "controls": [
+  {
+   "id": "c5_pair1_s0",
+   "what": "REST windows, REST episodes",
+   "observed": [
+    211,
+    29
+   ],
+   "known": [
+    211,
+    29
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair1_s0_H",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair1_s0_H",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair1_s0_H",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair1_s0_H",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair1_s0_F",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair1_s0_F",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair1_s0_F",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair1_s0_F",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c5_pair1_s1",
+   "what": "REST windows, REST episodes",
+   "observed": [
+    211,
+    29
+   ],
+   "known": [
+    211,
+    29
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair1_s1_H",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair1_s1_H",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair1_s1_H",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair1_s1_H",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair1_s1_F",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair1_s1_F",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair1_s1_F",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair1_s1_F",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c5_pair2_s0",
+   "what": "REST windows, REST episodes",
+   "observed": [
+    211,
+    29
+   ],
+   "known": [
+    211,
+    29
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair2_s0_H",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair2_s0_H",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair2_s0_H",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair2_s0_H",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair2_s0_F",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair2_s0_F",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair2_s0_F",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair2_s0_F",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c5_pair2_s1",
+   "what": "REST windows, REST episodes",
+   "observed": [
+    211,
+    29
+   ],
+   "known": [
+    211,
+    29
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair2_s1_H",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair2_s1_H",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair2_s1_H",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair2_s1_H",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c1_pair2_s1_F",
+   "what": "H(0): max abs difference to the banked track; windows held",
+   "observed": [
+    0.0,
+    0
+   ],
+   "known": [
+    0.0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c2_pair2_s1_F",
+   "what": "H(inf) on REST: hit rate; share of STAY among REST; max change outside REST",
+   "observed": [
+    0.25118483412322273,
+    0.0
+   ],
+   "known": [
+    0.25118483412322273,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c3_pair2_s1_F",
+   "what": "privileged rule: hit rate on STAY; max change on non-STAY windows",
+   "observed": [
+    1.0,
+    0.0
+   ],
+   "known": [
+    1.0,
+    0.0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c4_pair2_s1_F",
+   "what": "episodes in both fit and held-out fold, per split; held-out folds partition the REST episodes",
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "known": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "PASS": true
+  },
+  {
+   "id": "c6_pair1_s0_H",
+   "what": "inverted rule mean ADE6 on REST above the rule as defined (hierarchy)",
+   "observed": [
+    4.1197,
+    2.3729
+   ],
+   "known": "inverted > rule",
+   "PASS": true,
+   "observed_inverted_gt_rule": true
+  },
+  {
+   "id": "c6_pair1_s1_H",
+   "what": "inverted rule mean ADE6 on REST above the rule as defined (hierarchy)",
+   "observed": [
+    4.2872,
+    2.4337
+   ],
+   "known": "inverted > rule",
+   "PASS": true,
+   "observed_inverted_gt_rule": true
+  },
+  {
+   "id": "c6info_pair1_s0_F",
+   "what": "inverted rule mean ADE6 on REST above the rule as defined (flat)",
+   "observed": [
+    4.4158,
+    3.0216
+   ],
+   "known": "inverted > rule",
+   "PASS": true,
+   "observed_inverted_gt_rule": true
+  },
+  {
+   "id": "c6info_pair1_s1_F",
+   "what": "inverted rule mean ADE6 on REST above the rule as defined (flat)",
+   "observed": [
+    4.3938,
+    2.8892
+   ],
+   "known": "inverted > rule",
+   "PASS": true,
+   "observed_inverted_gt_rule": true
+  }
+ ],
+ "controls_all_pass": true,
+ "results": {
+  "pair1": {
+   "s0": {
+    "n_rest": 211,
+    "ep_rest": 29,
+    "n_stay": 53,
+    "ep_stay": 14,
+    "n_go": 158,
+    "ep_go": 24,
+    "n_all": 2399,
+    "ep_all": 141,
+    "v0_alone_auroc": {
+     "point": 0.7014568903749702,
+     "lo": 0.5887681829046812,
+     "hi": 0.7957589403640176,
+     "separated": true
+    },
+    "H": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 8.67966612497213,
+       "lo": 6.869088301347109,
+       "hi": 10.484039774788481,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 16.42651771882974,
+       "lo": 10.853139331235479,
+       "hi": 21.04897280422974,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.05660377358490566,
+       "lo": 0.0,
+       "hi": 0.15257496740547571,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.8034392166228803,
+       "lo": 0.7106585504657085,
+       "hi": 0.8936503473044438,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.1726962028255716,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.1884207076906304,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 2.0,
+        "fit_mean_ade6_m": 2.061276849104163,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.237285504085243,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.292050489312913,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 114,
+      "n_held_stay": 45,
+      "n_held_go": 69,
+      "banked_mean_ade6_rest_m": 2.611906745682078,
+      "ruled_mean_ade6_rest_m": 2.372915298633105,
+      "privileged_mean_ade6_rest_m": 2.069794921616491,
+      "banked_hit_rest": 0.07109004739336493,
+      "ruled_hit_rest": 0.24644549763033174,
+      "privileged_hit_rest": 0.3080568720379147,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.2389914470489733,
+        "lo": -0.5948603764964188,
+        "hi": 0.07300879630329915,
+        "separated": false
+       },
+       "ade6_all": {
+        "point": -0.021020089757121035,
+        "lo": -0.05661724443484478,
+        "hi": 0.005886598667776228,
+        "separated": false
+       },
+       "hit_rest": {
+        "point": 0.17535545023696683,
+        "lo": 0.06578408110440034,
+        "hi": 0.2929430171277997,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.015423092955398083,
+        "lo": 0.005002084201750729,
+        "hi": 0.027522935779816515,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -0.4279373693557472,
+        "lo": -0.891920623699183,
+        "hi": -0.08188248396443709,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -1.9442033478595437,
+        "lo": -2.7979833796295823,
+        "hi": -1.155477469233584,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.12322274881516587,
+        "lo": 0.026311489508083933,
+        "hi": 0.24859104046242753,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.5421118240655872,
+        "lo": -0.8550490844071394,
+        "hi": -0.2702903984378744,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.047680531420524766,
+        "lo": -0.08557503059847121,
+        "hi": -0.019435679709388268,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.23696682464454977,
+        "lo": 0.13298650639523205,
+        "hi": 0.3551930543572045,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.020842017507294707,
+        "lo": 0.009999791840133223,
+        "hi": 0.0346125378087636,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -0.5750870236598282,
+        "lo": -0.9654223537469316,
+        "hi": -0.2549171926812084,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -1.0958709880182655,
+        "lo": -1.8245063353394972,
+        "hi": -0.48626580606386627,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17061611374407584,
+        "lo": 0.0656544957774466,
+        "hi": 0.3054422361692236,
+        "separated": true
+       }
+      }
+     }
+    },
+    "F": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 12.836716022922014,
+       "lo": 11.902910354381143,
+       "hi": 14.512390747535347,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 22.033271452959074,
+       "lo": 14.13100569504833,
+       "hi": 22.979235827201254,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.7571053260090758,
+       "lo": 0.6674853962857948,
+       "hi": 0.8453354161991725,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.624339857775044,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.6437156145825553,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 4.0,
+        "fit_mean_ade6_m": 2.4745868998958818,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.679503713855845,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 12.0,
+        "fit_mean_ade6_m": 2.633461189497192,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 135,
+      "n_held_stay": 49,
+      "n_held_go": 86,
+      "banked_mean_ade6_rest_m": 3.5567494705812344,
+      "ruled_mean_ade6_rest_m": 3.0215920785321013,
+      "privileged_mean_ade6_rest_m": 2.8797979581240782,
+      "banked_hit_rest": 0.018957345971563982,
+      "ruled_hit_rest": 0.24644549763033174,
+      "privileged_hit_rest": 0.27014218009478674,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.5351573920491327,
+        "lo": -1.1288891722355654,
+        "hi": 0.11801160714395727,
+        "separated": false
+       },
+       "ade6_all": {
+        "point": -0.04706886607851896,
+        "lo": -0.10491086191274841,
+        "hi": 0.009383025056741674,
+        "separated": false
+       },
+       "hit_rest": {
+        "point": 0.22748815165876776,
+        "lo": 0.10461335905725311,
+        "hi": 0.3660211609396233,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.020008336807002917,
+        "lo": 0.007923186822699617,
+        "hi": 0.03459810975590677,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.9389351379572914,
+        "lo": -2.7222564304399928,
+        "hi": -1.1951794676863061,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -6.440558593025827,
+        "lo": -8.523887925716672,
+        "hi": -4.296430884342819,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.06493112151006887,
+        "hi": 0.3127968161380484,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.6769515124571557,
+        "lo": -1.0526555622194012,
+        "hi": -0.3488958538215335,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.05954012885721544,
+        "lo": -0.1029960676516052,
+        "hi": -0.025754847128313902,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.25118483412322273,
+        "lo": 0.13612163589602277,
+        "hi": 0.38463114754098354,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.02209253855773239,
+        "lo": 0.010008340283569641,
+        "hi": 0.037123514875474065,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.3052491240885964,
+        "lo": -2.032728877496151,
+        "hi": -0.6872852693135593,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -3.332935077718339,
+        "lo": -5.203817268561046,
+        "hi": -1.696773328459277,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.07176819125036442,
+        "hi": 0.3076923076923077,
+        "separated": true
+       }
+      }
+     }
+    }
+   },
+   "s1": {
+    "n_rest": 211,
+    "ep_rest": 29,
+    "n_stay": 53,
+    "ep_stay": 14,
+    "n_go": 158,
+    "ep_go": 24,
+    "n_all": 2399,
+    "ep_all": 141,
+    "v0_alone_auroc": {
+     "point": 0.7014568903749702,
+     "lo": 0.5887681829046812,
+     "hi": 0.7957589403640176,
+     "separated": true
+    },
+    "H": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 11.832440458869028,
+       "lo": 8.531458918009923,
+       "hi": 14.449929765669792,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 18.989663864214087,
+       "lo": 16.273550449215943,
+       "hi": 27.728737668060056,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.05660377358490566,
+       "lo": 0.0,
+       "hi": 0.12903225806451613,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.8070217339383807,
+       "lo": 0.7055999610426971,
+       "hi": 0.9071622099830987,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 4.0,
+        "fit_mean_ade6_m": 2.1973274808842107,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 4.0,
+        "fit_mean_ade6_m": 2.235272875267506,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 3.0,
+        "fit_mean_ade6_m": 2.170743755140538,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 4.0,
+        "fit_mean_ade6_m": 2.180935711994954,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.308918790870149,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 117,
+      "n_held_stay": 45,
+      "n_held_go": 72,
+      "banked_mean_ade6_rest_m": 2.8401575427062884,
+      "ruled_mean_ade6_rest_m": 2.4336558371861168,
+      "privileged_mean_ade6_rest_m": 2.3254373898215492,
+      "banked_hit_rest": 0.052132701421800945,
+      "ruled_hit_rest": 0.25118483412322273,
+      "privileged_hit_rest": 0.2890995260663507,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.40650170552017145,
+        "lo": -0.7716139704024859,
+        "hi": 0.015683055742328863,
+        "separated": false
+       },
+       "ade6_all": {
+        "point": -0.03575317209868953,
+        "lo": -0.07160966715994066,
+        "hi": 0.00121556948530679,
+        "separated": false
+       },
+       "hit_rest": {
+        "point": 0.1990521327014218,
+        "lo": 0.09960073127403804,
+        "hi": 0.32942889777270123,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.017507294706127552,
+        "lo": 0.007913287067108105,
+        "hi": 0.030429662797363786,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.2678374318013732,
+        "lo": -1.833543747671516,
+        "hi": -0.8136728383111513,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -4.454114473676858,
+        "lo": -5.800935475516264,
+        "hi": -3.2184835870721433,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.15639810426540285,
+        "lo": 0.0564030612244898,
+        "hi": 0.2934877955758962,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.514720152884739,
+        "lo": -0.8260949756661431,
+        "hi": -0.2544197748067902,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.04527134316743641,
+        "lo": -0.07815171984341833,
+        "hi": -0.019663447606983814,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.23696682464454977,
+        "lo": 0.1257835859366945,
+        "hi": 0.36711537250456566,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.020842017507294707,
+        "lo": 0.009579242239130864,
+        "hi": 0.03541703574406002,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -0.8962685837344976,
+        "lo": -1.4609898744289715,
+        "hi": -0.4444629031985855,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -2.258688678999356,
+        "lo": -3.6512243689391495,
+        "hi": -1.135452166851421,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.07176819125036442,
+        "hi": 0.3076923076923077,
+        "separated": true
+       }
+      }
+     }
+    },
+    "F": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 11.33075704564749,
+       "lo": 9.805423290502825,
+       "hi": 13.903699494310052,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 15.15681099005232,
+       "lo": 13.972033215714218,
+       "hi": 17.95662766607917,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.03773584905660377,
+       "lo": 0.0,
+       "hi": 0.14041353383458613,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.7486267016957249,
+       "lo": 0.6560445665464203,
+       "hi": 0.8513702434098639,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.6480397684188905,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.568622224036228,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.4323061372922656,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.636017746031046,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 12.0,
+        "fit_mean_ade6_m": 2.7335398057353055,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 141,
+      "n_held_stay": 51,
+      "n_held_go": 90,
+      "banked_mean_ade6_rest_m": 3.402342233864094,
+      "ruled_mean_ade6_rest_m": 2.889190537309068,
+      "privileged_mean_ade6_rest_m": 2.816588564451853,
+      "banked_hit_rest": 0.02843601895734597,
+      "ruled_hit_rest": 0.25118483412322273,
+      "privileged_hit_rest": 0.27014218009478674,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.5131516965550259,
+        "lo": -1.0007571531927264,
+        "hi": 0.11446750937337656,
+        "separated": false
+       },
+       "ade6_all": {
+        "point": -0.04513339223556084,
+        "lo": -0.09441982791557277,
+        "hi": 0.008621116448745303,
+        "separated": false
+       },
+       "hit_rest": {
+        "point": 0.22274881516587677,
+        "lo": 0.10313629569234951,
+        "hi": 0.3609626249456757,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.019591496456857024,
+        "lo": 0.007919966652771988,
+        "hi": 0.03377814845704754,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.2150456768924305,
+        "lo": -1.7484091443548138,
+        "hi": -0.7413370800873026,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -5.2568373385815,
+        "lo": -6.590006384458901,
+        "hi": -3.9804592489515223,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.15165876777251186,
+        "lo": 0.032406938821412504,
+        "hi": 0.29092803030303016,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.5857536694122409,
+        "lo": -0.9197467223797127,
+        "hi": -0.29822787288960845,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.051518976342635615,
+        "lo": -0.09043539909509037,
+        "hi": -0.022192554084775187,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.24170616113744076,
+        "lo": 0.12702951647623778,
+        "hi": 0.37597987980141095,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.0212588578574406,
+        "lo": 0.009591226153794272,
+        "hi": 0.036250377761567316,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -0.8964149843688953,
+        "lo": -1.4058889667670162,
+        "hi": -0.46446507460637537,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -2.169902992031638,
+        "lo": -3.271487871870852,
+        "hi": -1.159657868323609,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.07176819125036442,
+        "hi": 0.3076923076923077,
+        "separated": true
+       }
+      }
+     }
+    }
+   }
+  },
+  "pair2": {
+   "s0": {
+    "n_rest": 211,
+    "ep_rest": 29,
+    "n_stay": 53,
+    "ep_stay": 14,
+    "n_go": 158,
+    "ep_go": 24,
+    "n_all": 2399,
+    "ep_all": 141,
+    "v0_alone_auroc": {
+     "point": 0.7014568903749702,
+     "lo": 0.5887681829046812,
+     "hi": 0.7957589403640176,
+     "separated": true
+    },
+    "H": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 10.959057527360745,
+       "lo": 9.044919005304404,
+       "hi": 12.270617062621673,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 16.57208143121507,
+       "lo": 13.031333949008083,
+       "hi": 17.66335616622455,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.018867924528301886,
+       "lo": 0.0,
+       "hi": 0.06666666666666667,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.7885120611416289,
+       "lo": 0.7115049099648139,
+       "hi": 0.871771773827332,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.6339967764067302,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.6742175248200186,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.3860546983119226,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.69143114716046,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 12.0,
+        "fit_mean_ade6_m": 2.6869527508392927,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 142,
+      "n_held_stay": 53,
+      "n_held_go": 89,
+      "banked_mean_ade6_rest_m": 3.734126981933987,
+      "ruled_mean_ade6_rest_m": 2.829646040657632,
+      "privileged_mean_ade6_rest_m": 3.0985855929218755,
+      "banked_hit_rest": 0.004739336492890996,
+      "ruled_hit_rest": 0.25118483412322273,
+      "privileged_hit_rest": 0.25118483412322273,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.9044809412763541,
+        "lo": -1.388682130381676,
+        "hi": -0.34924720426700523,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.07955209612726583,
+        "lo": -0.1388661172660615,
+        "hi": -0.026078283735244814,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.24644549763033174,
+        "lo": 0.13186688311688313,
+        "hi": 0.38095238095238093,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.021675698207586493,
+        "lo": 0.010004064193413922,
+        "hi": 0.03665215914099985,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.7293633112013105,
+        "lo": -2.2746812897439534,
+        "hi": -1.1333490390247178,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -5.871811646046798,
+        "lo": -7.115740392503829,
+        "hi": -4.432813341542025,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.1848341232227488,
+        "lo": 0.07557155971323658,
+        "hi": 0.3170890497967479,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.6355413890121111,
+        "lo": -0.965558786123494,
+        "hi": -0.3298935730847226,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.05589797127201144,
+        "lo": -0.09764963767206153,
+        "hi": -0.02423134326296776,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.24644549763033174,
+        "lo": 0.13186688311688313,
+        "hi": 0.38095238095238093,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.021675698207586493,
+        "lo": 0.010004064193413922,
+        "hi": 0.03665215914099985,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.0390049284297342,
+        "lo": -1.5526838647790073,
+        "hi": -0.5738932495594843,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -2.0763175231386986,
+        "lo": -3.040402118004011,
+        "hi": -1.16716467208326,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.07176819125036442,
+        "hi": 0.3076923076923077,
+        "separated": true
+       }
+      }
+     }
+    },
+    "F": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 7.157169512395718,
+       "lo": 5.866552313903779,
+       "hi": 11.419477550254776,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 16.290873749726344,
+       "lo": 8.380348674356997,
+       "hi": 24.805244582907385,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.03773584905660377,
+       "lo": 0.0,
+       "hi": 0.1111111111111111,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.7679722951994268,
+       "lo": 0.6802973342447026,
+       "hi": 0.8582777587779298,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.577278534766235,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.570242894401011,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.4699281395987733,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.634258924951302,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.6713015987184554,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 134,
+      "n_held_stay": 53,
+      "n_held_go": 81,
+      "banked_mean_ade6_rest_m": 3.4279536819326655,
+      "ruled_mean_ade6_rest_m": 2.6776588509114485,
+      "privileged_mean_ade6_rest_m": 2.861834024256606,
+      "banked_hit_rest": 0.02843601895734597,
+      "ruled_hit_rest": 0.27014218009478674,
+      "privileged_hit_rest": 0.27014218009478674,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.7502948310212175,
+        "lo": -1.1488844973004502,
+        "hi": -0.3666971579235265,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.06599091677593868,
+        "lo": -0.11349512872907971,
+        "hi": -0.02662950483289631,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.24170616113744076,
+        "lo": 0.12560278156885682,
+        "hi": 0.3770491803278688,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.0212588578574406,
+        "lo": 0.00917804365548679,
+        "hi": 0.036250377761567316,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.8990788406115202,
+        "lo": -2.5662385484695607,
+        "hi": -1.2700456564246871,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -4.467699300084437,
+        "lo": -5.918236343173486,
+        "hi": -2.971157764873338,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.16113744075829384,
+        "lo": 0.05,
+        "hi": 0.297501157764742,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.5661196576760595,
+        "lo": -0.9109341571732154,
+        "hi": -0.25812539343172036,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.04979209994566427,
+        "lo": -0.09073069811220415,
+        "hi": -0.019373658346145975,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.24170616113744076,
+        "lo": 0.12560278156885682,
+        "hi": 0.3770491803278688,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.0212588578574406,
+        "lo": 0.00917804365548679,
+        "hi": 0.036250377761567316,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.1993707922154437,
+        "lo": -1.8627280208282235,
+        "hi": -0.6154571435807129,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -2.109190068533369,
+        "lo": -3.3598862079889082,
+        "hi": -0.9650318346648117,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17061611374407584,
+        "lo": 0.0646430711783146,
+        "hi": 0.30588556734169076,
+        "separated": true
+       }
+      }
+     }
+    }
+   },
+   "s1": {
+    "n_rest": 211,
+    "ep_rest": 29,
+    "n_stay": 53,
+    "ep_stay": 14,
+    "n_go": 158,
+    "ep_go": 24,
+    "n_all": 2399,
+    "ep_all": 141,
+    "v0_alone_auroc": {
+     "point": 0.7014568903749702,
+     "lo": 0.5887681829046812,
+     "hi": 0.7957589403640176,
+     "separated": true
+    },
+    "H": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 10.12985475641719,
+       "lo": 7.22570441087951,
+       "hi": 12.242278104293193,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 18.736816851333547,
+       "lo": 12.242278104293193,
+       "hi": 26.46322467758627,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.018867924528301886,
+       "lo": 0.0,
+       "hi": 0.06666666666666667,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.8147838547886315,
+       "lo": 0.7092962167172229,
+       "hi": 0.9147603884372177,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.614026942222662,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.686753867984417,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.6310694390517306,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.5264761986445174,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.5883795989268417,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 134,
+      "n_held_stay": 50,
+      "n_held_go": 84,
+      "banked_mean_ade6_rest_m": 3.3313854257205073,
+      "ruled_mean_ade6_rest_m": 2.750212793828599,
+      "privileged_mean_ade6_rest_m": 2.7522592548274076,
+      "banked_hit_rest": 0.023696682464454975,
+      "ruled_hit_rest": 0.24170616113744076,
+      "privileged_hit_rest": 0.27014218009478674,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.5811726318919078,
+        "lo": -0.9751214212383006,
+        "hi": -0.12066876800725145,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.051116058911710116,
+        "lo": -0.09536648840149142,
+        "hi": -0.008954694238802342,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.21800947867298578,
+        "lo": 0.10503376743367504,
+        "hi": 0.35089836660617046,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.01917465610671113,
+        "lo": 0.007919966652771988,
+        "hi": 0.0329441201000834,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.6813940311481113,
+        "lo": -2.3047849734967083,
+        "hi": -1.0847538310298204,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -4.707890386548774,
+        "lo": -5.721135622646477,
+        "hi": -3.464434130208143,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.18009478672985782,
+        "lo": 0.0762665806927045,
+        "hi": 0.31140827612509536,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.5791261708930994,
+        "lo": -0.9717364948551931,
+        "hi": -0.2561626881789497,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.05093606588513713,
+        "lo": -0.09601262219773371,
+        "hi": -0.018587733334400534,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.24644549763033174,
+        "lo": 0.13186688311688313,
+        "hi": 0.38095238095238093,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.021675698207586493,
+        "lo": 0.010004064193413922,
+        "hi": 0.03665215914099985,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.0920767973579963,
+        "lo": -1.8054388945086501,
+        "hi": -0.49768850424549044,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -2.0180251991699785,
+        "lo": -3.4880296159795874,
+        "hi": -0.8301485874759906,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.07176819125036442,
+        "hi": 0.3076923076923077,
+        "separated": true
+       }
+      }
+     }
+    },
+    "F": {
+     "Q1": {
+      "median_T_cl_m": {
+       "point": 6.808600087940253,
+       "lo": 4.981136924535458,
+       "hi": 12.4667826413233,
+       "separated": true
+      },
+      "p90_T_cl_m": {
+       "point": 16.117337182431044,
+       "lo": 8.453855386772238,
+       "hi": 20.434443566022665,
+       "separated": true
+      },
+      "hit_rate": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false
+      },
+      "n_stay": 53,
+      "ep_stay": 14
+     },
+     "Q2": {
+      "auroc_T_ol": {
+       "point": 0.7322665392882732,
+       "lo": 0.6332805944111853,
+       "hi": 0.842330479255258,
+       "separated": true
+      }
+     },
+     "Q3": {
+      "theta_per_fold": [
+       {
+        "fold": 0,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.675595199153697,
+        "n_fit_windows": 180,
+        "n_heldout_windows": 31,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 1,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.6021518996799555,
+        "n_fit_windows": 172,
+        "n_heldout_windows": 39,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 2,
+        "theta": 6.0,
+        "fit_mean_ade6_m": 2.536401642992763,
+        "n_fit_windows": 168,
+        "n_heldout_windows": 43,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 3,
+        "theta": 8.0,
+        "fit_mean_ade6_m": 2.609138309832028,
+        "n_fit_windows": 160,
+        "n_heldout_windows": 51,
+        "n_heldout_episodes": 6
+       },
+       {
+        "fold": 4,
+        "theta": 12.0,
+        "fit_mean_ade6_m": 2.6566903970047004,
+        "n_fit_windows": 164,
+        "n_heldout_windows": 47,
+        "n_heldout_episodes": 5
+       }
+      ],
+      "n_held": 141,
+      "n_held_stay": 51,
+      "n_held_go": 90,
+      "banked_mean_ade6_rest_m": 3.503944218091106,
+      "ruled_mean_ade6_rest_m": 2.9106352712811967,
+      "privileged_mean_ade6_rest_m": 2.945671206687078,
+      "banked_hit_rest": 0.009478672985781991,
+      "ruled_hit_rest": 0.24644549763033174,
+      "privileged_hit_rest": 0.26066350710900477,
+      "cross_track_fallback_windows_rest": 31,
+      "ruled": {
+       "ade6_rest": {
+        "point": -0.5933089468099096,
+        "lo": -0.9776159219854998,
+        "hi": -0.11205027648052043,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.052183488027049155,
+        "lo": -0.09762911165880744,
+        "hi": -0.008816082945034593,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.23696682464454977,
+        "lo": 0.12554652466367713,
+        "hi": 0.3688544485118574,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.020842017507294707,
+        "lo": 0.009174311926605505,
+        "hi": 0.03503924696174137,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -1.0590460499399457,
+        "lo": -1.5600027952284836,
+        "hi": -0.5923718051170329,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -4.045368075171067,
+        "lo": -4.981596654105735,
+        "hi": -3.034416793226759,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.16113744075829384,
+        "lo": 0.047091833664319675,
+        "hi": 0.30001231527093586,
+        "separated": true
+       }
+      },
+      "priv": {
+       "ade6_rest": {
+        "point": -0.5582730114040277,
+        "lo": -0.9006247054420946,
+        "hi": -0.2628595298955639,
+        "separated": true
+       },
+       "ade6_all": {
+        "point": -0.04910196140318877,
+        "lo": -0.09102963553622352,
+        "hi": -0.01879972761290488,
+        "separated": true
+       },
+       "hit_rest": {
+        "point": 0.25118483412322273,
+        "lo": 0.13612163589602277,
+        "hi": 0.38463114754098354,
+        "separated": true
+       },
+       "hit_all": {
+        "point": 0.02209253855773239,
+        "lo": 0.010008340283569641,
+        "hi": 0.037123514875474065,
+        "separated": true
+       },
+       "LON_speed_mae_mps": {
+        "point": -0.7762163026930092,
+        "lo": -1.245530375197637,
+        "hi": -0.37310930758248567,
+        "separated": true
+       },
+       "LAT_cross_track_6s_m": {
+        "point": -1.8049786313875906,
+        "lo": -2.906560156745627,
+        "hi": -0.8305885436820483,
+        "separated": true
+       },
+       "TAC_cell_right": {
+        "point": 0.17535545023696683,
+        "lo": 0.07176819125036442,
+        "hi": 0.3076923076923077,
+        "separated": true
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "outcomes": {
+  "pair1": {
+   "Q1": "CREEP",
+   "Q2": "CUE-WEAK",
+   "Q3": "HOLD-UNDECIDED"
+  },
+  "pair2": {
+   "Q1": "CREEP",
+   "Q2": "CUE-WEAK",
+   "Q3": "HOLD-HELPS"
+  }
+ },
+ "follows": "HOLD-UNDECIDED with CUE-WEAK: the rule lacks a cue; the ceiling row says what a cue would be worth, and the lever is a go / stay cue at rest from perception, not the rule.",
+ "exit_code": 0
+}

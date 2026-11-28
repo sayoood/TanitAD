@@ -1,0 +1,11 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_aux_s1_wiring.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_aux_s1_wiring.py
+@@ -702,7 +702,7 @@
+      "optH = torch.optim.AdamW(list(aux.head.parameters()), lr=a.lr, weight_decay=0.01)", ("pre/data_event_carries_BUILT", "gate/G_DVB_passes_on_the_real_H1")),
+     ("head_built_with_the_default_depth", "depth=a.aux_drv_depth,", "depth=2,", ("pre/depth_flag_reaches", "gate/G_DVB_passes_on_the_real_shuffle")),
+     ("w_aux_not_passed_to_the_head", "w_aux=a.w_aux_drv,", "w_aux=0.0,", ("pre/data_event_carries_BUILT", "pre/G12_present_and_ok", "gate/G_DVB_passes_on_the_real_H1")),
+-    ("g12_tap_check_bypassed", 'g["tap_is_visual_ctx"] = bool(len(outs) >= 2 and AUX.tap_is(cap["aux_ctx"], outs[1]))', 'g["tap_is_visual_ctx"] = True', ("pre/regression_switch_REFE_AUX_MUTATE_TAP", "gate/consumer_refuses_the_real_preflight_of_REFE_AUX_MUTATE_TAP")),
++    ("g12_tap_check_bypassed", '        g.update(HB.tap_fields(outs, cap["aux_ctx"], hb is not None, AUX.tap_is))', '        g.update(HB.tap_fields(outs, cap["aux_ctx"], hb is not None, AUX.tap_is)); g["tap_is_visual_ctx"] = True', ("pre/regression_switch_REFE_AUX_MUTATE_TAP", "gate/consumer_refuses_the_real_preflight_of_REFE_AUX_MUTATE_TAP")),
+     ("g12_zero_control_never_zeroes_the_weight", '            if mode == "w0":\n                aux.w_aux = 0.0\n', '            if mode == "w0":\n                pass\n',
+      ("pre/G12_weight0_control", "pre/G12_present_and_ok", "gate/consumer_accepts_the_real_H1")),
+     ("g12_not_in_gates", '            gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)\n', "            pass\n", ("pre/G12_present_and_ok", "gate/consumer_accepts_the_real_H1")),

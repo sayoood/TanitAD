@@ -1,0 +1,1121 @@
+{
+ "tool": "clamp_posthoc_r8.py exactness",
+ "generated": "2026-10-18T19:29:37",
+ "vendored": {
+  "vendored_file": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\_vendored_de4e15b_refcv6_selection.py",
+  "source_commit": "de4e15b",
+  "source_path": "stack/tanitad/refs/refcv6_selection.py",
+  "git_rev_parse_source_blob": "b4e0e80439eda771b972d9556180feff55f4d66c",
+  "expected_blob": "b4e0e80439eda771b972d9556180feff55f4d66c",
+  "body_blob_sha_recomputed": "b4e0e80439eda771b972d9556180feff55f4d66c",
+  "body_equals_git_show_bytes": true,
+  "header_lines": 5,
+  "vendored_file_git_blob_sha": "8446be5c1a14b5c3380647cb417f952add1948fc",
+  "vendored_file_sha256": "38689597f33da44cf09fc0a4abc3c306e8cd2e175ee537551d560bfce2e39fcd",
+  "vendored_file_bytes": 23973
+ },
+ "dependency_blobs": {
+  "stack/tanitad/models/vocab_v7.py": {
+   "de4e15b": "4022cf0099164fb2cede8fdb120e75aae2fd6d0d",
+   "fb47a58": "4022cf0099164fb2cede8fdb120e75aae2fd6d0d",
+   "fb47a58_worktree_C:/lgs": "4022cf0099164fb2cede8fdb120e75aae2fd6d0d",
+   "identical_de4e15b_vs_fb47a58": true,
+   "worktree_is_fb47a58": true
+  },
+  "stack/tanitad/refs/refc_selector_targets.py": {
+   "de4e15b": "f89830d7bb79ea4a2594c44ab9568b4fa3566f8e",
+   "fb47a58": "f89830d7bb79ea4a2594c44ab9568b4fa3566f8e",
+   "fb47a58_worktree_C:/lgs": "f89830d7bb79ea4a2594c44ab9568b4fa3566f8e",
+   "identical_de4e15b_vs_fb47a58": true,
+   "worktree_is_fb47a58": true
+  },
+  "stack/tanitad/refs/refcv6_tactical.py": {
+   "de4e15b": "11de086266dc67627761c16ed4896106c45398d8",
+   "fb47a58": "11de086266dc67627761c16ed4896106c45398d8",
+   "fb47a58_worktree_C:/lgs": "11de086266dc67627761c16ed4896106c45398d8",
+   "identical_de4e15b_vs_fb47a58": true,
+   "worktree_is_fb47a58": true
+  },
+  "stack/tanitad/refs/refcv6_max_speed.py": {
+   "de4e15b": "4c3d45b37d01a4408ba4b357a0630091febc0dd1",
+   "fb47a58": "4c3d45b37d01a4408ba4b357a0630091febc0dd1",
+   "fb47a58_worktree_C:/lgs": "4c3d45b37d01a4408ba4b357a0630091febc0dd1",
+   "identical_de4e15b_vs_fb47a58": true,
+   "worktree_is_fb47a58": true
+  },
+  "stack/tanitad/refs/refcv6_selection.py": {
+   "de4e15b": "b4e0e80439eda771b972d9556180feff55f4d66c",
+   "fb47a58": "7b2dd69c2befd7a3469fb4d5551fb789ce3eea8d",
+   "fb47a58_worktree_C:/lgs": "7b2dd69c2befd7a3469fb4d5551fb789ce3eea8d",
+   "identical_de4e15b_vs_fb47a58": false,
+   "worktree_is_fb47a58": true,
+   "note": "differs ONLY by ADDED lines (the clamp): removed 0 lines, added 74 lines (fb47a58 -> de4e15b)"
+  },
+  "stack/tanitad/refs/refc_v3.py": {
+   "de4e15b": "335103cbc3f1d98e4213bac18136ce0acb254e75",
+   "fb47a58": "68ff839c6aa47ec18a65d5da97c03a1659663511",
+   "fb47a58_worktree_C:/lgs": "68ff839c6aa47ec18a65d5da97c03a1659663511",
+   "identical_de4e15b_vs_fb47a58": false,
+   "worktree_is_fb47a58": true,
+   "note": "differs ONLY by ADDED lines (the clamp): removed 0 lines, added 35 lines (fb47a58 -> de4e15b)"
+  }
+ },
+ "run_cfg": {
+  "config_json": "E:/refcv8_eval_kit/ckpt/config.json",
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "tick_s": 0.1,
+  "brake_ms2": 2.5,
+  "refcv8_speed_input": "label",
+  "refcv8_speed_enc8": false,
+  "argv_has_refcv7": false,
+  "argv_has_sel_accel_max_flag": false,
+  "sources": {
+   "horizons": "config.json['horizons'] == cfg.core.trajectory.horizons == decoder.anchor_horizons (refc.py:1769)",
+   "tick_s": "decoder.anchor_dt = 0.1 (refc.py:1748, a constant attribute)",
+   "brake_ms2": "config.json['selection']['sel_accel_max'] == decoder.sel.accel_max (refc.py:1067); the run argv carries no --sel-accel-max"
+  }
+ },
+ "source_quotes": {
+  "de4e15b refc_v3.py (clamp call site)": {
+   "E9 pick: traj = fan[arange, idx]": {
+    "line": 2655,
+    "text": "traj = fan[torch.arange(b, device=fan.device), idx]",
+    "needle": "traj = fan[torch.arange(b, device=fan.device), idx]"
+   },
+   "clamp gate (eval forward only)": {
+    "line": 2656,
+    "text": "if bool(getattr(self.cfg, \"plan_vmax_clamp\", False)) and not self.training:",
+    "needle": "if bool(getattr(self.cfg, \"plan_vmax_clamp\", False)) and not self.training:"
+   },
+   "clamp call": {
+    "line": 2666,
+    "text": "traj, _cd = v6sel.cap_plan_to_limit(",
+    "needle": "traj, _cd = v6sel.cap_plan_to_limit("
+   },
+   "emitted plan assigned": {
+    "line": 2673,
+    "text": "out[\"traj\"], out[\"sel_idx\"] = traj, idx",
+    "needle": "out[\"traj\"], out[\"sel_idx\"] = traj, idx"
+   },
+   "limit exported by the scene hook": {
+    "line": 1968,
+    "text": "cache[\"plan_v_lim_ms\"] = v_lim.detach()          # the E9 block clamps the EMITTED plan to it",
+    "needle": "cache[\"plan_v_lim_ms\"] = v_lim.detach()"
+   },
+   "limit = bin limit": {
+    "line": 1944,
+    "text": "v_lim = v6ms.limit_ms_of_bin(vmax_1h.argmax(dim=-1)).to(dev)",
+    "needle": "v_lim = v6ms.limit_ms_of_bin(vmax_1h.argmax(dim=-1)).to(dev)"
+   },
+   "unknown row -> +inf": {
+    "line": 1948,
+    "text": "torch.full_like(v_lim, float(\"inf\")))",
+    "needle": "torch.full_like(v_lim, float(\"inf\")))"
+   },
+   "refcv8 label rule": {
+    "line": 1949,
+    "text": "if str(getattr(self.cfg.refcv8, \"speed_input\", \"\") or \"\"):      # also a speed-only arm (V0)",
+    "needle": "if str(getattr(self.cfg.refcv8, \"speed_input\", \"\") or \"\"):"
+   },
+   "refcv7 scorer pick would replace out[traj] AFTER the clamp (call)": {
+    "line": 2681,
+    "text": "self._refcv7_forward(out, v0, nav_cmd)",
+    "needle": "self._refcv7_forward(out, v0, nav_cmd)"
+   },
+   "refcv7 heads only built under cfg.refcv7": {
+    "line": 1475,
+    "text": "if bool(getattr(cfg, \"refcv7\", False)):",
+    "needle": "if bool(getattr(cfg, \"refcv7\", False)):"
+   },
+   "refcv7_select replaces out[traj]": {
+    "line": 2828,
+    "text": "out[\"traj\"] = pick",
+    "needle": "out[\"traj\"] = pick"
+   }
+  },
+  "fb47a58 refc_v3.py (the tree the batteries were rolled with; clamp absent)": {
+   "E9 pick: traj = fan[arange, idx]": {
+    "line": 2634,
+    "text": "traj = fan[torch.arange(b, device=fan.device), idx]",
+    "needle": "traj = fan[torch.arange(b, device=fan.device), idx]"
+   },
+   "emitted plan assigned": {
+    "line": 2638,
+    "text": "out[\"traj\"], out[\"sel_idx\"] = traj, idx",
+    "needle": "out[\"traj\"], out[\"sel_idx\"] = traj, idx"
+   },
+   "refcv7 scorer pick call (only if refcv7_wta is built)": {
+    "line": 2646,
+    "text": "self._refcv7_forward(out, v0, nav_cmd)",
+    "needle": "self._refcv7_forward(out, v0, nav_cmd)"
+   },
+   "refcv7 heads only built under cfg.refcv7": {
+    "line": 1456,
+    "text": "if bool(getattr(cfg, \"refcv7\", False)):",
+    "needle": "if bool(getattr(cfg, \"refcv7\", False)):"
+   },
+   "refcv7_select replaces out[traj]": {
+    "line": 2793,
+    "text": "out[\"traj\"] = pick",
+    "needle": "out[\"traj\"] = pick"
+   }
+  },
+  "taniteval/tools/refcv3_arm.py (fb47a58)": {
+   "window loop (one forward per logged window)": {
+    "line": 2067,
+    "text": "for i, (wi, e_i, t) in enumerate(sel):",
+    "needle": "for i, (wi, e_i, t) in enumerate(sel):"
+   },
+   "v0 = measured scalar at t0": {
+    "line": 2225,
+    "text": "v0 = float(pose_last[3])",
+    "needle": "v0 = float(pose_last[3])"
+   },
+   "v0 broadcast to the batch": {
+    "line": 2272,
+    "text": "v0_t = torch.full((b,), v0, dtype=torch.float32, device=dev)",
+    "needle": "v0_t = torch.full((b,), v0, dtype=torch.float32, device=dev)"
+   },
+   "the model call (frames, nav_cmd, v0, steps, ego_state)": {
+    "line": 2358,
+    "text": "out = model(fr_b, nav_cmd=nav_t if nav_on else None,",
+    "needle": "out = model(fr_b, nav_cmd=nav_t if nav_on else None,"
+   },
+   "os = out[traj] row 0 (nav_true)": {
+    "line": 2405,
+    "text": "traj = out[\"traj\"].float()                            # [b, S, 2]",
+    "needle": "traj = out[\"traj\"].float()"
+   },
+   "os slot selection": {
+    "line": 2406,
+    "text": "acc[\"os\"].append(traj[0:1, slots].cpu().numpy())",
+    "needle": "acc[\"os\"].append(traj[0:1, slots].cpu().numpy())"
+   },
+   "plan_full_nav_true = same tensor, every slot": {
+    "line": 2522,
+    "text": "dec.setdefault(f\"plan_full_{cname}\", []).append(",
+    "needle": "dec.setdefault(f\"plan_full_{cname}\", []).append("
+   }
+  },
+  "r7_roll.py Refcv6Proxy (extras sidecar)": {
+   "per-row extras recorded from out[...]": {
+    "line": 202,
+    "text": "rec[c] = {k: out[k][r].detach().float().cpu().numpy() for k in EXTRA_ROW_KEYS",
+    "needle": "rec[c] = {k: out[k][r].detach().float().cpu().numpy() for k in EXTRA_ROW_KEYS"
+   },
+   "extras keys incl. traj": {
+    "line": 66,
+    "text": "EXTRA_ROW_KEYS = (\"tacv6_goal_logits\", \"tacv6_goal_conf\", \"tacv6_lat_logits\",",
+    "needle": "EXTRA_ROW_KEYS = (\"tacv6_goal_logits\""
+   },
+   "v_max_ms / v_max_valid / v0 per window": {
+    "line": 213,
+    "text": "\"v_max_ms\": float(it[\"v_max_ms\"]), \"v_max_valid\": float(it[\"v_max_valid\"]),",
+    "needle": "\"v_max_ms\": float(it[\"v_max_ms\"]), \"v_max_valid\": float(it[\"v_max_valid\"]),"
+   },
+   "v0 per window": {
+    "line": 215,
+    "text": "\"v0\": float(v0.reshape(-1)[0]) if v0 is not None else None}",
+    "needle": "\"v0\": float(v0.reshape(-1)[0]) if v0 is not None else None}"
+   }
+  },
+  "refc.py (decoder attributes the clamp reads)": {
+   "anchor_dt": {
+    "line": 1748,
+    "text": "self.anchor_dt = 0.1",
+    "needle": "self.anchor_dt = 0.1"
+   },
+   "anchor_horizons": {
+    "line": 1769,
+    "text": "self.anchor_horizons: tuple[int, ...] = tuple(int(k) for k in _h)",
+    "needle": "self.anchor_horizons: tuple[int, ...] = tuple(int(k) for k in _h)"
+   },
+   "sel.accel_max from sel_accel_max": {
+    "line": 1067,
+    "text": "accel_max=self.sel_accel_max,",
+    "needle": "accel_max=self.sel_accel_max,"
+   }
+  },
+  "refcv6_max_speed.py": {
+   "limit_ms_of_bin": {
+    "line": 214,
+    "text": "def limit_ms_of_bin(bin_idx: Tensor) -> Tensor:",
+    "needle": "def limit_ms_of_bin(bin_idx: Tensor) -> Tensor:"
+   },
+   "MaxSpeedOneHotEncoder": {
+    "line": 480,
+    "text": "class MaxSpeedOneHotEncoder(nn.Module):",
+    "needle": "class MaxSpeedOneHotEncoder(nn.Module):"
+   }
+  }
+ },
+ "verdicts": {
+  "C1_os_is_the_tensor_the_clamp_acts_on": {
+   "verdict": "EXACT (conditional on the 3 empirical identities below holding for every tree / seed)",
+   "reasoning": "the clamp (de4e15b) sits between `traj = fan[arange, idx]` and `out[\"traj\"], out[\"sel_idx\"] = traj, idx`; fb47a58 has the same two lines with nothing between them, so the banked `out[\"traj\"]` IS the clamp's input.  The only later writer of out[\"traj\"] is the refcv7 scorer pick (`_refcv7_forward`, gated on `self.refcv7_wta is not None`), which exists only under `cfg.refcv7`; the run argv carries no --refcv7 flag (argv_has_refcv7 = False), and de4e15b refuses plan_vmax_clamp together with refcv7_select.",
+   "fp32": "the extras' traj is not bf16- or fp16-representable (checked per tree), i.e. fp32 resident, as the clamp's input would be"
+  },
+  "C2_S2_and_S6_are_slots_of_one_plan": {
+   "verdict": "EXACT (S2 slots [0,1,2,3] of the full plan; S6 slots [1,3,4,5,6,7]; S6 windows are a subset of S2's)",
+   "evidence": {
+    "S2_grid": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "instants_s": [
+      0.5,
+      1.0,
+      1.5,
+      2.0
+     ]
+    },
+    "S6_grid": [
+     1,
+     3,
+     4,
+     5,
+     6,
+     7
+    ]
+   },
+   "caveat": "the clamp acts on the FULL 8-slot plan; binding is decided over all 8 intervals and a binding row is re-integrated with cumsum, so even a row binding only in 3-6 s changes slots 0-3 by fp32 rounding.  This read therefore clamps the full plan and slices, never the slice."
+  },
+  "C3_no_emitted_plan_feeds_a_later_model_input": {
+   "verdict": "EXACT for all 18 banked dump / panel sets (9 trees x 2 inference seeds): each is a single forward per logged window",
+   "reasoning": "refcv3_arm.py runs ONE forward per logged window from logged frames, the clip's nav token and the measured scalar v0 = pose_last[3] (manifest t1_definition: 'consuming the observed frames, the clip's v7.2 nav token and the MEASURED v0 at t0 and nothing else'; `no_closed_loop_because`: forward has NO action argument, no per-step decode, no state that advances).  `ego_state_fed` is false in the manifest; `ego_actions` is a forward kwarg that refcv3_arm never passes; the proxy passes `ego_poses` = the OBSERVED pose history of the window.  The sidecar only RECORDS out[...] rows.  The next window's inputs come from the dataset index over logged episodes.",
+   "caveat": "SeamState (`self._seam`) accumulates across forwards but is fed by the pre-pick blended-score norms, not by the emitted plan; it does not read `out[\"traj\"]`.",
+   "t1_definition": "os: ONE forward pass of RefCV3Model at the window origin, consuming the observed frames, the clip's v7.2 nav token and the MEASURED v0 at t0 and nothing else, emitting the whole 6 s path as the model's OWN sel_score_v3-ranked choice among its 117 anchors (the run'"
+  },
+  "C4_numerics": {
+   "verdict": "post-hoc is exact in DEFINITION; BIT-exactness against the eval-forward clamp is UNVERIFIED (K4 owed: CPU fp32 vs GPU kernels may differ in the last ulp)"
+  }
+ },
+ "empirical": {
+  "step30000ema_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step20000_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step20000ema_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step15000_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step15000ema_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step10500_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step10500ema_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step5000_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  },
+  "step5000ema_unc": {
+   "0": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   },
+   "1": {
+    "n_windows": 4754,
+    "traj_bf16_exact": false,
+    "traj_fp16_exact": false,
+    "ceiling_values_ms": [
+     8.333333,
+     13.888889,
+     27.777779,
+     33.333332
+    ],
+    "n_unknown_ceiling": 0,
+    "n_over_ceiling_flag": 0,
+    "bins_equal_fp32_vs_bf16": true,
+    "S2": {
+     "slots": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "n_windows": 4754,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S6": {
+     "slots": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "n_windows": 3668,
+     "panel_os_vs_extras_nav_true_slots_max_abs": 0.0,
+     "decisions_plan_full_nav_true_vs_extras_max_abs": 0.0,
+     "panel_v0_vs_extras_v0_max_abs": 0.0
+    },
+    "S2_panel_windows_equal_extras_rows": true,
+    "S6_windows_subset_of_S2": true,
+    "n_S2_rows": 4754,
+    "n_S6_rows": 3668
+   }
+  }
+ },
+ "empirical_summary": {
+  "panel_os_equals_extras_slots_and_v0_equal_and_fp32_in_all_18_sets": true,
+  "decisions_plan_full_nav_true_equals_extras_in_all_18_sets_x_2_surfaces": true
+ }
+}

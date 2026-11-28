@@ -1,0 +1,95 @@
+{
+ "what": "P2 held-out table, gate 1: preflight + disjointness proof",
+ "written": "2026-10-18T08:33:14+0200",
+ "heldout": {
+  "n_label_keys": 3137,
+  "n_unique_keys": 3137,
+  "n_unique_tokens": 1705,
+  "n_logs": 24,
+  "labels_per_file": {
+   "pdm_onpolicy_r0_hw0.jsonl": 425,
+   "pdm_onpolicy_r0_hw1.jsonl": 416,
+   "pdm_onpolicy_r0_hw2.jsonl": 416,
+   "pdm_onpolicy_r0_hw3.jsonl": 448,
+   "pdm_onpolicy_r1_hw4.jsonl": 480,
+   "pdm_onpolicy_r1_hw5.jsonl": 472,
+   "pdm_onpolicy_r1_hw6.jsonl": 480
+  },
+  "logs_equal_splits_sft_heldout_logs_txt": true,
+  "logs_equal_tlane_heldout_logs_txt": true,
+  "sft_heldout_logs_sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902",
+  "expected_sets": 3137,
+  "expected_logs": 24
+ },
+ "navtest": {
+  "path": "D:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json",
+  "sha256": "927bbe3838dd70af5fa27eadceb09f55acc9c1cfd04cf0a6b520f1519175a955",
+  "sha256_expected": "927bbe3838dd70af5fa27eadceb09f55acc9c1cfd04cf0a6b520f1519175a955",
+  "n_tokens": 12146,
+  "n_logs": 136,
+  "tokens_shared_with_heldout": 0,
+  "logs_shared_with_heldout": 0,
+  "shared_log_names": [],
+  "shared_token_examples": [],
+  "PASS": true
+ },
+ "p2_training_set": {
+  "what": "the carved on-policy bank = the 174,912 sets P2 trained on (PREREG_P2_AMENDMENT_1 sec 'labels'; refe/p2r_carve.py)",
+  "served_keys_path": "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/rl_pool/served_keys.tsv.gz",
+  "served_keys_sha256": "a9cbdf29a7cd12dab2afae2ab0c65ce09524d98e16e2c689aa5ea9372c962afc",
+  "token_table_path": "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/rl_pool/navtrain_token_table.tsv.gz",
+  "token_table_sha256": "c7456c882b3d297c5ba202947d82b850e640a5b08648a3f4dea3c7c3dd176cd1",
+  "bank_origin": "D:/Projects/TanitAD-artifacts/refe-pod-final-2026-10-04/onpolicy_sets_logs_full.tar.zst (md5 4fc979939c5f9b5140ba59a952da77fb, per rl_pool_by_base.json)",
+  "n_served_keys": 177836,
+  "n_served_train": 174912,
+  "n_served_in_heldout_logs": 2924,
+  "reproduces_carve_177836_174912_2924": true,
+  "n_train_tokens": 99495,
+  "n_train_logs": 1167,
+  "n_train_tokens_without_log_in_table": 0,
+  "heldout_tokens_in_train_tokens": 0,
+  "heldout_logs_in_train_logs": 0,
+  "heldout_log_names_in_train_logs": [],
+  "token_table_cross_check": {
+   "heldout_tokens_with_served_train_sets_gt_0": 0,
+   "heldout_logs_with_any_token_served_train_gt_0": 0,
+   "heldout_tokens_found_in_table": 1705
+  },
+  "served_heldout_flagged_tokens_subset_of_banked_heldout_tokens": true,
+  "n_heldout_flagged_tokens": 1667,
+  "n_banked_heldout_tokens_not_flagged_in_bank": 38,
+  "note_flagged_vs_banked": "the bank's 2,924 held-out-log sets (1,667 tokens) are a subset of the 3,137 banked held-out label sets (1,705 tokens); the difference (213 sets / 38 tokens) is sets the relabeller's served_keys does not serve; none of them is in the training bank (checked above)",
+  "p2_training_logs_vs_navtest_logs_shared": 0,
+  "p2_training_tokens_vs_navtest_tokens_shared": 0,
+  "PASS_bank_level": true,
+  "evidence_that_P2_RUN_used_the_carved_bank": {
+   "class": "INHERITED (documents, not re-verified; the pod's carve.log was not read)",
+   "sources": [
+    "eval/PREREG_P2.md Design: '--pdm-only: the bank serves ONLY PDM-labelled sets'; scorer loss over '174,912 served sets'",
+    "eval/P2R_POD_RUNBOOK.md lines 99-103: relabel guard refused 177,836 and the carve removed the 24 held-out logs (2,924 sets) IN PLACE",
+    "eval/RESULT_P2.md sec 4.1: 'P2 trained on all 174,912 PDM labels'",
+    "eval/PREREG_RL_S1.md line 31 [M]: 'P2 trains 3 epochs on all 174,912 served sets = 99,495 tokens / 1,167 logs'",
+    "raw/rl_pool/rl_pool_by_base.json: served_train_sets 174912, served_in_heldout_logs 2924, reproduces_p2r_carve true"
+   ],
+   "n_train_tokens_this_script": 99495,
+   "n_train_logs_this_script": 1167,
+   "register_says": "99,495 tokens / 1,167 logs",
+   "counts_match_register": true
+  }
+ },
+ "checkpoint": {
+  "path": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+  "sha256_expected": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+  "sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+  "PASS": true
+ },
+ "PASS": true,
+ "PASS_parts": {
+  "heldout_set": true,
+  "navtest_disjoint": true,
+  "p2_training_bank_disjoint": true,
+  "checkpoint": true
+ },
+ "seconds": 33.3,
+ "reading": "the 24 held-out logs / 3,137 held-out tokens share NO log and NO token with navtest, and none with the 174,912-set bank P2 trained on"
+}

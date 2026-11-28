@@ -1,0 +1,113 @@
+{
+ "outcome": "CONSISTENCY NOT RESTORED",
+ "committed_next_step_verbatim": "H's violations are not of the posted limit: they are stops, leads or turns, which the cap does not see. Next: a constraint-aware fit under its own PREREG. It is the same closed form, fitted only on training windows with no active GT constraint, plus O's predicted stop / lead constraints in the projection.",
+ "PRIMARY_C_both_seeds": false,
+ "PRIMARY_K_both_seeds": false,
+ "note_both_fail": "PRIMARY-C and PRIMARY-K both fail: the table row 'CONSISTENCY NOT RESTORED' (PRIMARY-C fails) matches first; the 'GAIN LOST' row requires PRIMARY-C to PASS, so it does not apply. The K result is reported as measured.",
+ "per_seed": {
+  "M2b_s0": {
+   "PRIMARY_C": {
+    "delta": 0.0538,
+    "lo": 0.0367,
+    "hi": 0.0717,
+    "bar_hi_le": 0.02,
+    "pass": false
+   },
+   "PRIMARY_K": {
+    "ade6": {
+     "delta": 0.0071,
+     "lo": -0.1231,
+     "hi": 0.1553,
+     "separated": false,
+     "pass": false
+    },
+    "ade2": {
+     "delta": 0.0227,
+     "lo": -0.0213,
+     "hi": 0.0744,
+     "separated": false,
+     "pass": false
+    },
+    "pass": false
+   },
+   "DOMINANCE_vs_P10": {
+    "point_estimates_le_P10": {
+     "ade2": false,
+     "ade6": true,
+     "accel": false
+    },
+    "ade2": {
+     "mean": 0.1162,
+     "lo": 0.0477,
+     "hi": 0.2002,
+     "separated": true
+    },
+    "ade6": {
+     "mean": -0.3046,
+     "lo": -0.4846,
+     "hi": -0.1009,
+     "separated": true
+    },
+    "accel": {
+     "mean": 0.115,
+     "lo": 0.0919,
+     "hi": 0.1412,
+     "separated": true
+    }
+   }
+  },
+  "M2b_s1": {
+   "PRIMARY_C": {
+    "delta": 0.0313,
+    "lo": 0.0146,
+    "hi": 0.0488,
+    "bar_hi_le": 0.02,
+    "pass": false
+   },
+   "PRIMARY_K": {
+    "ade6": {
+     "delta": 0.1273,
+     "lo": 0.0107,
+     "hi": 0.2714,
+     "separated": true,
+     "pass": false
+    },
+    "ade2": {
+     "delta": 0.0479,
+     "lo": 0.0027,
+     "hi": 0.1015,
+     "separated": true,
+     "pass": false
+    },
+    "pass": false
+   },
+   "DOMINANCE_vs_P10": {
+    "point_estimates_le_P10": {
+     "ade2": false,
+     "ade6": true,
+     "accel": false
+    },
+    "ade2": {
+     "mean": 0.1173,
+     "lo": 0.0487,
+     "hi": 0.2008,
+     "separated": true
+    },
+    "ade6": {
+     "mean": -0.3051,
+     "lo": -0.4851,
+     "hi": -0.0997,
+     "separated": true
+    },
+    "accel": {
+     "mean": 0.08,
+     "lo": 0.059,
+     "hi": 0.0999,
+     "separated": true
+    }
+   }
+  }
+ },
+ "estimator": "episode-cluster bootstrap, B=2000, 141 episodes, seed 0; deltas PAIRED (same resampled episodes). Answers 'another draw of EPISODES' ONLY; training-seed variance only via the two seeds side by side and F = |ADE6(s0)-ADE6(s1)|; inference is deterministic (no inference-seed floor).",
+ "tier": "T1-class open loop (own held outputs; not closed loop)"
+}

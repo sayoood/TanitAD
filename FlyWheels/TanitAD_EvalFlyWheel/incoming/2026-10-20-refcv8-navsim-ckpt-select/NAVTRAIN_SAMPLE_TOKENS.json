@@ -1,0 +1,271 @@
+{
+ "rule": "GOALS_AND_CLAIMS D-R8-CKPT-RULE (1), read from git FETCH_HEAD beba0241 of C:/Users/Admin/tanitad-push",
+ "status": "NOT_FIXED__NO_READABLE_NAVTRAIN_TOKEN__ACQUISITION_NEEDS_PI_APPROVAL",
+ "status_note": "No navtrain token is readable by the refcv8 bridge on any reachable machine. This is NOT a fixed data-availability statement: no navtrain score exists, so availability is still open; if the PI declines every acquisition and the A40 pod is gone, the rule's own clause applies (< 1,000 tokens -> UNDERPOWERED -> EMA-48,852 default).",
+ "filter": {
+  "file": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/config/common/train_test_split/scene_filter/navtrain.yaml",
+  "file_sha256": "c37fea567a0cfdbc29076cca893d4f5dd32db59baec18ae214527206d6b64e6f",
+  "n_logs": 1192,
+  "n_tokens": 103288,
+  "sha256_sorted_logs": "f50f6ab67983deb28e900206b687e8117155f8245ff36e3ddfef0b44f71afaf4",
+  "sha256_sorted_tokens": "68f30132e2029e12b5533cfa61d83c67488931d30c0df4a1b259138db981c261",
+  "thor_copy": "/home/nvidia/navsim-thor/src/navsim-v11/.../scene_filter/navtrain.yaml (sha256 identical, MEASURED)"
+ },
+ "readability_requirement_as_the_bridge_reads": "each token: its OpenScene trainval metadata row (inputs export, rig) AND the CAM_L0 + CAM_F0 + CAM_R0 jpgs of its 4 history frames (W3 bank builder KB3; the ST arms then read only t0). The registered text says 'CAM_F0 history': AMENDMENT NEEDED before any score (GROUNDWORK.md B2).",
+ "tokens": [],
+ "log_names": [],
+ "count": 0,
+ "sha256_sorted_tokens": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "sources_probed": {
+  "devbox_navsim_logs": "D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/ holds only test/ (147 logs); no trainval",
+  "devbox_shard25": "E:/Projects/TanitAD/data/openscene_probe/navtrain_current_25.tgz -- COMPLETE (4,496,159,137 B, sha256 == HF LFS oid 41d6f5fb...); 38 navtrain logs (sorted ranks 387-514), all 8 cameras, 1,517 current frames; NO metadata, NO history",
+  "devbox_refe_m5": "E:/Projects/TanitAD/data/refe_m5/pixels -- 1,900 RANDOM navtrain tokens over 206 logs (min rank 28), 4 cams, current frame only, no metadata: never a whole log",
+  "thor_tanitastra_pilot": {
+   "path": "/home/nvidia/tanit-astra-research/data/navsim_pilot_20261003",
+   "metadata_logs": 19,
+   "sensor": "CAM_F0 ONLY (L0/R0 0 of 1,309)",
+   "per_log": {
+    "2021.05.12.19.36.12_veh-35_00005_00204": {
+     "rank": 0,
+     "navtrain_tokens": 6,
+     "t0_present": {
+      "CAM_F0": 6,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_00215_00405": {
+     "rank": 1,
+     "navtrain_tokens": 32,
+     "t0_present": {
+      "CAM_F0": 32,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_00416_00557": {
+     "rank": 2,
+     "navtrain_tokens": 48,
+     "t0_present": {
+      "CAM_F0": 48,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_00568_01168": {
+     "rank": 3,
+     "navtrain_tokens": 212,
+     "t0_present": {
+      "CAM_F0": 212,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_01400_01643": {
+     "rank": 5,
+     "navtrain_tokens": 80,
+     "t0_present": {
+      "CAM_F0": 80,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_01744_01934": {
+     "rank": 6,
+     "navtrain_tokens": 19,
+     "t0_present": {
+      "CAM_F0": 19,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_01945_02065": {
+     "rank": 7,
+     "navtrain_tokens": 24,
+     "t0_present": {
+      "CAM_F0": 24,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.19.36.12_veh-35_02079_02176": {
+     "rank": 8,
+     "navtrain_tokens": 80,
+     "t0_present": {
+      "CAM_F0": 80,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.22.00.38_veh-35_00129_00204": {
+     "rank": 10,
+     "navtrain_tokens": 19,
+     "t0_present": {
+      "CAM_F0": 19,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.22.00.38_veh-35_00215_00995": {
+     "rank": 11,
+     "navtrain_tokens": 192,
+     "t0_present": {
+      "CAM_F0": 192,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.22.00.38_veh-35_01008_01518": {
+     "rank": 12,
+     "navtrain_tokens": 127,
+     "t0_present": {
+      "CAM_F0": 127,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.22.28.35_veh-35_00025_00115": {
+     "rank": 13,
+     "navtrain_tokens": 21,
+     "t0_present": {
+      "CAM_F0": 21,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.22.28.35_veh-35_00620_01164": {
+     "rank": 16,
+     "navtrain_tokens": 207,
+     "t0_present": {
+      "CAM_F0": 207,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.22.28.35_veh-35_02138_02481": {
+     "rank": 18,
+     "navtrain_tokens": 145,
+     "t0_present": {
+      "CAM_F0": 145,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.23.36.44_veh-35_00063_00141": {
+     "rank": 19,
+     "navtrain_tokens": 23,
+     "t0_present": {
+      "CAM_F0": 23,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.05.12.23.36.44_veh-35_00152_00504": {
+     "rank": 20,
+     "navtrain_tokens": 74,
+     "t0_present": {
+      "CAM_F0": 74,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.06.09.17.37.09_veh-12_04489_04816": {
+     "rank": 258,
+     "navtrain_tokens": 94,
+     "t0_present": {
+      "CAM_F0": 0,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.06.14.16.48.02_veh-12_04783_04967": {
+     "rank": 437,
+     "navtrain_tokens": 72,
+     "t0_present": {
+      "CAM_F0": 0,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    },
+    "2021.10.06.17.08.46_veh-28_00498_00621": {
+     "rank": 1124,
+     "navtrain_tokens": 52,
+     "t0_present": {
+      "CAM_F0": 0,
+      "CAM_L0": 0,
+      "CAM_R0": 0
+     }
+    }
+   }
+  },
+  "a40_pod": "growing_orange_anaconda 69.30.85.13:22175 -- ssh 'Connection refused' 2026-10-20 22:22; Stopped vs Terminated UNKNOWN (STOP_CONSEQUENCES_2026-10-11.md); no RunPod API key on the dev box",
+  "intersection_metadata_x_L0F0R0": 0
+ },
+ "acquisition_options_for_PI": {
+  "S1_recommended": {
+   "files": [
+    {
+     "file": "openscene-v1.1/openscene_metadata_trainval.tgz",
+     "url": "https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/a76f840b65e972bc45e56c2adced897498e9a026/openscene-v1.1/openscene_metadata_trainval.tgz",
+     "bytes": 7052210642,
+     "sha256_lfs_oid": "193138ac68b29d977d4438a95dfda35a07ff4ad3efb1800b3ee47d6e1dcb3764"
+    },
+    {
+     "file": "navsim/navtrain_current_1.tgz",
+     "url": "https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/a76f840b65e972bc45e56c2adced897498e9a026/navsim/navtrain_current_1.tgz",
+     "bytes": 9469285958,
+     "sha256_lfs_oid": "b5513fdc8138ed97e7346a2c137a66c09042ac78fde4865c67104c0bb99e0576"
+    },
+    {
+     "file": "navsim/navtrain_history_1.tgz",
+     "url": "https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/a76f840b65e972bc45e56c2adced897498e9a026/navsim/navtrain_history_1.tgz",
+     "bytes": 3831962664,
+     "sha256_lfs_oid": "49b4fe766224dd8079511ebbc362e9b74ece8cbbfd57980f38a0316447ecc06b"
+    }
+   ],
+   "total_bytes": 20353459264,
+   "eta": {
+    "thor_min_at_31.2MBps_INHERITED": 10.9,
+    "devbox_h_at_1.6_to_3.8MBps_INHERITED": [
+     1.49,
+     3.53
+    ]
+   },
+   "destination": "Thor /home/nvidia/r8ns/navtrain/ (251 GB free)",
+   "yield": "ESTIMATED: shard 1 opens with navtrain sorted ranks 0..20 (16 logs, 1,309 tokens -- MEASURED from the Thor pilot's metadata for its first ~3.7-4.3 GB); 103,288 tokens / 32 shards = 3,228 per shard on average, so the full 9.47 GB shard very likely reaches >= 2,000 and the sample stops just above 2,000 (overshoot < one log; pilot logs hold 6-212 tokens). Exact only after the files are read; if shard 1 holds < 2,000 the sample is all of it (>= 1,000 still admissible)."
+  },
+  "S25_cheaper_underpowered_size": {
+   "files": [
+    {
+     "file": "openscene-v1.1/openscene_metadata_trainval.tgz",
+     "url": "https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/a76f840b65e972bc45e56c2adced897498e9a026/openscene-v1.1/openscene_metadata_trainval.tgz",
+     "bytes": 7052210642,
+     "sha256_lfs_oid": "193138ac68b29d977d4438a95dfda35a07ff4ad3efb1800b3ee47d6e1dcb3764"
+    },
+    {
+     "file": "navsim/navtrain_history_25.tgz",
+     "url": "https://huggingface.co/datasets/OpenDriveLab/OpenScene/resolve/a76f840b65e972bc45e56c2adced897498e9a026/navsim/navtrain_history_25.tgz",
+     "bytes": 2938296090,
+     "sha256_lfs_oid": "c8121ba2ee96b5e1f5e836f4119249661f553ee6904d29bb6fea1b96088f8421"
+    }
+   ],
+   "plus_lan_ship": "E:/.../navtrain_current_25.tgz 4.50 GB dev box -> Thor (~2.2 min at 34 MB/s MEASURED)",
+   "total_bytes": 9990506732,
+   "eta": {
+    "thor_min_at_31.2MBps_INHERITED": 5.3,
+    "devbox_h_at_1.6_to_3.8MBps_INHERITED": [
+     0.73,
+     1.73
+    ]
+   },
+   "yield": "<= 1,517 tokens / 38 logs (>= 1,000: admissible, below the 2,000 target)"
+  },
+  "A40_restart": "PI: RunPod console; only if the pod is Stopped (not Terminated); restart cost not priced here",
+  "link_speeds": {
+   "thor_hf_download": "31.2 MB/s = 6,730,137,600 B in 216.0 s, INHERITED from the TanitAstra pilot record /home/nvidia/tanit-astra-research/data/navsim_pilot_20261003/acquisition.json (2026-10-03), not re-measured",
+   "devbox_download": "1.6-3.8 MB/s INHERITED (refe-plan raw/navtrain_size_measured.txt)",
+   "devbox_to_thor_lan": "34 MB/s MEASURED 2026-10-20 (2.93 GB in 86 s, md5-verified)"
+  },
+  "license": "OpenDriveLab/OpenScene cc-by-nc-sa-4.0, public, not gated (HF API); research use"
+ }
+}

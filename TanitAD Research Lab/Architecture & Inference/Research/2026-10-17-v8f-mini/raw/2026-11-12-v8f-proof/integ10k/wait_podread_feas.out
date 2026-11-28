@@ -1,0 +1,36 @@
+[18:24:23Z] queue DONE on the pod; the pod read starts
+[18:24:24Z] container free 46 GB
+[18:24:38Z] e1 headway rc 0
+[18:24:45Z] e1 families rc 0
+e1 hw/RESULT_HEADWAY.json     PASS leaves 1836 / 1836 differing 0 only-bank 0 only-got 0 max abs diff 0
+e1 q3/RESULT_Q3.json          PASS leaves 1897 / 1897 differing 0 only-bank 0 only-got 0 max abs diff 1.44e-15
+ZZ ENV-E1 PASS
+[18:25:05Z] headway rc 0
+[18:25:17Z] families rc 0
+[18:25:19Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (f1 to f10)
+   f1_rerun_equals_banked PASS {"line": "CMP files=141 differing=0", "PASS": true}
+   f2_parameters_applied PASS {"per_run": {"I10R0AID_s0": {"a_max": 1000000000.0, "b_lim": 1000000000.0, "log_steps": 10, "result_file_steps": 10, "PASS": true}, "I10R0A5_s0": {"a_max": 3.0, "b_lim": 8.0, "log_steps": 5, "result_file_steps": 5, "PASS": true}, "I10R0A5_s1": {"a_max": 3.0, "b_lim": 8.0, "log_steps": 5, "result_file_steps": 5, "PASS": true}, "I10RLcA5_s0": {"a_max": 3.0, "b_lim": 8.0, "log_steps": 5, "result_file
+   f3_limit_holds_in_the_log PASS {"per_run": {"I10R0AID_s0": {"largest_excess_mps": 0.0, "PASS": true}, "I10R0A5_s0": {"largest_excess_mps": 2.1316282072803006e-14, "PASS": true}, "I10R0A5_s1": {"largest_excess_mps": 2.1316282072803006e-14, "PASS": true}, "I10RLcA5_s0": {"largest_excess_mps": 2.1316282072803006e-14, "PASS": true}, "I10RLcA5_s1": {"largest_excess_mps": 2.1316282072803006e-14, "PASS": true}, "I10RQ50A5_s0": {"l
+   f4_rows_are_windows PASS {"per_run": {"I10R0AID_s0": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10R0A5_s0": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10R0A5_s1": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10RLcA5_s0": {"rows_per_tick_2399": true, "first_tick_v0_max_abs_diff": 0.0, "PASS": true}, "I10RLcA5_s1": 
+   f5_executed_track_obeys_limit FAIL {"per_run": {"I10R0A5_s0": {"share": 0.00993, "PASS": true}, "I10R0A5_s1": {"share": 0.00952, "PASS": true}, "I10R0A10_s0": {"share": 0.017, "PASS": false}, "I10R0A10_s1": {"share": 0.01399, "PASS": false}, "I10R0A5L_s0": {"share": 0.00752, "PASS": true}, "I10R0A5L_s1": {"share": 0.00703, "PASS": true}}, "PASS": false, "n_runs": 6}
+   f6_counts PASS {"dump_files": {"I10R0AID_s0": 141, "I10R0A5_s0": 141, "I10R0A5_s1": 141, "I10RLcA5_s0": 141, "I10RLcA5_s1": 141, "I10RQ50A5_s0": 141, "I10RQ50A5_s1": 141, "I10R0A10_s0": 141, "I10R0A10_s1": 141, "I10R0A5L_s0": 141, "I10R0A5L_s1": 141}, "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   f7_reused_dumps PASS {"n_files": 12, "differing": [], "rs_known_values": {"I10R0": {"got": [0.0884, 0.0863], "card": [0.0884, 0.0863], "PASS": true}, "I10RLc": {"got": [0.0767, 0.0721], "card": [0.0767, 0.0721], "PASS": true}, "I10RQ50": {"got": [0.0642, 0.0621], "card": [0.0642, 0.0621], "PASS": true}, "I10R0M5": {"got": [0.9075, 0.9825], "card": [0.9075, 0.9825], "PASS": true}, "I10RLcM5": {"got": [0.7078, 0.7874], "card"
+   f8_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   f9_model PASS {"per_run": {"I10R0AID_s0": true, "I10R0A5_s0": true, "I10R0A5_s1": true, "I10RLcA5_s0": true, "I10RLcA5_s1": true, "I10RQ50A5_s0": true, "I10RQ50A5_s1": true, "I10R0A10_s0": true, "I10R0A10_s1": true, "I10R0A5L_s0": true, "I10R0A5L_s1": true}, "PASS": true}
+   f10_unit_test PASS {"wrapper_sha256": "bf19862738459c84", "test_wrapper_sha256": "bf19862738459c84", "test_line": "ZZ TEST-ACCEL-LIMIT PASS 18/18", "PASS": true}
+== reported, no bar
+   r1_tick_speed_against_last_executed {"I10R0A5_s0": {"median": 0.2994, "p99": 1.0332, "n": 11995}, "I10R0A5_s1": {"median": 0.2998, "p99": 1.2266, "n": 11995}, "I10RLcA5_s0": {"median": 0.2994, "p99": 4.4422, "n": 11995}, "I10RLcA5_s1": {"median": 0.2998, "p99": 4.2264, "n": 11995}, "I10RQ50A5_s0": {"median": 0.2994, "p99": 5.5322, "n": 11995}, "I10RQ50A5_s1": {"median": 0.2998, "p99": 4.4598, "n": 11995}, "I10R0A10_s0": {"m
+   r2_rule_forms_block_share {"I10RLcA5_s0": {"share": 0.03034}, "I10RLcA5_s1": {"share": 0.02703}, "I10RQ50A5_s0": {"share": 0.0366}, "I10RQ50A5_s1": {"share": 0.03425}}
+== a control did not pass: no name, the differences stay withheld
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rollout NOT COMPUTED, n = 0, no instrument)
+ZZ PODREAD-FEAS DONE 18:25:19Z
+[18:25:23Z] pulled READ_FEAS10K.json sha256 5d2026577501bc5d
+[18:25:26Z] pulled ENV_E1.json sha256 9d46f9baade8d3c8
+[18:25:34Z] pulled RESULT_HEADWAY.json sha256 0533dac4fa20c399
+[18:25:38Z] pulled RESULT_Q3.json sha256 60529a1aa231082c
+[18:25:42Z] pulled VERDICT_HEADWAY.md sha256 b3feb89026cee83d
+[18:25:46Z] pulled VERDICT_Q3.md sha256 477bfaca2c115cae
+[18:25:50Z] pulled podread_feas.out sha256 34a9a5832edbe739
+ZZ WAIT-PODREAD-FEAS DONE 18:25:50Z

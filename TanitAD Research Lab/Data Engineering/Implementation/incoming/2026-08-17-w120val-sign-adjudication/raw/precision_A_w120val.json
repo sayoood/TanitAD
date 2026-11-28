@@ -1,0 +1,186 @@
+{
+ "n_adjudicated": 64,
+ "measures": "PRECISION ONLY \u2014 recall is not measurable from this data",
+ "estimator": "episode-cluster bootstrap over CLIPS (taniteval.ci)",
+ "concepts": {
+  "traffic sign": {
+   "population_in_corpus": 4048,
+   "population_clips": 440,
+   "sampling": "SAMPLE",
+   "n_adjudicated": 64,
+   "n_correct": 46,
+   "n_wrong": 8,
+   "n_unclear": 10,
+   "unclear_rate": 0.1562,
+   "median_box_area_px": 68.89,
+   "precision_resolvable_only": {
+    "point": 0.8519,
+    "lo": 0.7593,
+    "hi": 0.9273,
+    "n_detections": 54,
+    "n_clips": 51,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "precision_unclear_as_wrong": {
+    "point": 0.7188,
+    "lo": 0.6119,
+    "hi": 0.8254,
+    "n_detections": 64,
+    "n_clips": 56,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "score_correct_median": 0.7122,
+   "score_wrong": [
+    0.5318,
+    0.5385,
+    0.6254,
+    0.6285,
+    0.6296,
+    0.668,
+    0.7778,
+    0.9273
+   ],
+   "score_unclear_median": 0.5519,
+   "bands": {
+    "0.50-0.60": {
+     "n_resolvable": 10,
+     "precision": 0.8,
+     "n_all": 17,
+     "n_unclear": 7
+    },
+    "0.60-0.70": {
+     "n_resolvable": 19,
+     "precision": 0.7895,
+     "n_all": 22,
+     "n_unclear": 3
+    },
+    "0.70-0.80": {
+     "n_resolvable": 13,
+     "precision": 0.9231,
+     "n_all": 13,
+     "n_unclear": 0
+    },
+    "0.80-0.90": {
+     "n_resolvable": 7,
+     "precision": 1.0,
+     "n_all": 7,
+     "n_unclear": 0
+    },
+    "0.90-1.01": {
+     "n_resolvable": 5,
+     "precision": 0.8,
+     "n_all": 5,
+     "n_unclear": 0
+    }
+   },
+   "threshold_sweep": {
+    "0.50": {
+     "n_sample_resolvable": 54,
+     "precision_resolvable": 0.8519,
+     "n_sample_all": 64,
+     "precision_unclear_as_wrong": 0.7188,
+     "corpus_retained": 4048,
+     "corpus_retained_frac": 1.0
+    },
+    "0.55": {
+     "n_sample_resolvable": 46,
+     "precision_resolvable": 0.8696,
+     "n_sample_all": 53,
+     "precision_unclear_as_wrong": 0.7547,
+     "corpus_retained": 3378,
+     "corpus_retained_frac": 0.8345
+    },
+    "0.60": {
+     "n_sample_resolvable": 44,
+     "precision_resolvable": 0.8636,
+     "n_sample_all": 47,
+     "precision_unclear_as_wrong": 0.8085,
+     "corpus_retained": 2806,
+     "corpus_retained_frac": 0.6932
+    },
+    "0.65": {
+     "n_sample_resolvable": 32,
+     "precision_resolvable": 0.9062,
+     "n_sample_all": 34,
+     "precision_unclear_as_wrong": 0.8529,
+     "corpus_retained": 2325,
+     "corpus_retained_frac": 0.5744
+    },
+    "0.70": {
+     "n_sample_resolvable": 25,
+     "precision_resolvable": 0.92,
+     "n_sample_all": 25,
+     "precision_unclear_as_wrong": 0.92,
+     "corpus_retained": 1878,
+     "corpus_retained_frac": 0.4639
+    },
+    "0.75": {
+     "n_sample_resolvable": 19,
+     "precision_resolvable": 0.8947,
+     "n_sample_all": 19,
+     "precision_unclear_as_wrong": 0.8947,
+     "corpus_retained": 1442,
+     "corpus_retained_frac": 0.3562
+    },
+    "0.80": {
+     "n_sample_resolvable": 12,
+     "precision_resolvable": 0.9167,
+     "n_sample_all": 12,
+     "precision_unclear_as_wrong": 0.9167,
+     "corpus_retained": 1038,
+     "corpus_retained_frac": 0.2564
+    },
+    "0.85": {
+     "n_sample_resolvable": 9,
+     "precision_resolvable": 0.8889,
+     "n_sample_all": 9,
+     "precision_unclear_as_wrong": 0.8889,
+     "corpus_retained": 601,
+     "corpus_retained_frac": 0.1485
+    },
+    "0.90": {
+     "n_sample_resolvable": 5,
+     "precision_resolvable": 0.8,
+     "n_sample_all": 5,
+     "precision_unclear_as_wrong": 0.8,
+     "corpus_retained": 188,
+     "corpus_retained_frac": 0.0464
+    }
+   }
+  }
+ },
+ "overall": {
+  "n": 64,
+  "n_correct": 46,
+  "n_wrong": 8,
+  "n_unclear": 10,
+  "precision_resolvable_only": {
+   "point": 0.8519,
+   "lo": 0.7593,
+   "hi": 0.9273,
+   "n_detections": 54,
+   "n_clips": 51,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "_note": "the overall figure MIXES concepts with different sampling fractions and is NOT a corpus precision. Per-concept only."
+ },
+ "car_cyclist_confusion": {
+  "hypothesis": "cyclists are being detected as `car`, which would make `cyclist 10` an artefact of label competition rather than a rare class",
+  "test_1_shared_box": {
+   "n_cyclist_detections": 0,
+   "n_clips": 0,
+   "n_with_a_car_box_at_IoU>=0.3": 0,
+   "n_with_a_car_box_at_IoU>0": 0,
+   "max_iou_observed": null,
+   "rows": []
+  },
+  "test_2_visual": {
+   "n_car_crops_adjudicated": 0,
+   "n_car_crops_containing_a_cyclist": 0,
+   "note": "MEASURED by looking at all 48 rendered `car` crops. Zero contained a bicycle or a rider. This BOUNDS the car-on-cyclist substitution rate; it does not measure the cyclists SAM3 misses entirely, which is a RECALL question this data cannot answer."
+  }
+ }
+}

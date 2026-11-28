@@ -1,0 +1,3229 @@
+{
+ "schema": "otband-read-v1",
+ "card": "PREREG_V8F_OTBAND.md (frozen, prefix sha256 fd81c66e1459da16bddd44c1501394d30cc81d036f54ef9c4ad28e4594eb6c37)",
+ "tier": "T1-kin (self-action open loop; m = 10, causal bucket, dead-reckoned nav, logged scene; the lead follows its logged future)",
+ "evidence_class": "MEASURED (ours; dumps of the banked checkpoints, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap (arm minus arm, same windows) and episode_cluster_bootstrap (one arm), B=2000, seed 0, 141 episodes / 2,399 windows. It answers 'would another draw of EPISODES say this?'. 'Would another TRAINING run say this?' is the replicate row and the two seeds side by side; the planner is deterministic, so there is no inference-variance question.",
+ "reading_choices": "(r1) \"up\" is the upper bound of the paired 95 % interval of arm minus OB-CTL; for an accuracy row (B5, higher is better) the bound on\n       the worse side is the LOWER bound, so B5 reads lo(BAND - CTL) >= -0.02.\n  (r2) B3's distance-keeping rows are the absolute errors against the human's own minimum headway and time gap over the same knots\n       (dk_hw_abs_err_m, dk_tg_abs_err_s), in both bands, lower is better.\n  (r3) \"any tactical row worse than its bar\" (BAND-COST) covers B3 and B5, and B2 when its interval is separated on the worse side\n       (lo > 0 on ADE_tac or FDE_tac); a B2 that only fails to improve is BAND-NEUTRAL.  B4 is read on its own (card) and never sets\n       the outcome.\n  (r4) the replicate floor of a row is |delta(OB-BAND_rep - OB-BAND_s0)| on that row; the replicate exists at seed 0 only, so its\n       floor is applied to the rows of both seeds, and that is stated in the output.\n  (r5) without the replicate, an outcome that needs the floor is printed with the prefix PROVISIONAL and decides nothing.\n  (r6) BAND-GAIN's \"B1 and B2 hold and exceed the replicate floor\" is read as: B1 holds, B2 holds, and B2's two rows (ADE_tac,\n       FDE_tac) exceed their floors; B1 is a non-regression bar and has no effect to exceed.",
+ "bands": {
+  "operative_0_2s": {
+   "knots_0idx": [
+    0,
+    10
+   ],
+   "t_s": [
+    0.2,
+    2.0
+   ]
+  },
+  "tactical_2_6s": {
+   "knots_0idx": [
+    10,
+    30
+   ],
+   "t_s": [
+    2.2,
+    6.0
+   ]
+  },
+  "full_0_6s": {
+   "knots_0idx": [
+    0,
+    30
+   ],
+   "t_s": [
+    0.2,
+    6.0
+   ]
+  }
+ },
+ "seeds": {
+  "s0": {
+   "inputs": {
+    "dag_oacc_dump": "F:/TanitAD-scratch/otband_read/t1/dump_PARITY_DAGOACC_s0_m10_causal_heads",
+    "window_reference": "E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/dump_DAGOACC_s0_m10_causal_heads",
+    "ctl_dump": "F:/TanitAD-scratch/otband_read/t1/dump_OB-CTL_s0_m10_causal_heads",
+    "band_dump": "F:/TanitAD-scratch/otband_read/t1/dump_OB-BAND_s0_m10_causal_heads",
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "lead_window_states": {
+     "LEAD": 743,
+     "NO_LEAD": 552,
+     "NOT_STRAIGHT": 931,
+     "NO_LABEL": 173
+    }
+   },
+   "bands": {
+    "operative_0_2s": {
+     "rows": {
+      "ade_m": {
+       "family": "PRIMARY",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.2570867373993572,
+        "lo": 0.2269,
+        "hi": 0.2972,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.24030871317212255,
+        "lo": 0.2151,
+        "hi": 0.2729,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.21869528781627184,
+        "lo": 0.1981,
+        "hi": 0.245,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0168,
+        "lo": -0.0275,
+        "hi": -0.0098,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0384,
+        "lo": 0.0198,
+        "hi": 0.0711,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0216,
+        "lo": 0.0085,
+        "hi": 0.0441,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.29514650709548773,
+         "lo": 0.2623,
+         "hi": 0.3405,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0381,
+         "lo": -0.0477,
+         "hi": -0.0299,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0765,
+         "lo": -0.1144,
+         "hi": -0.0539,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "fde_m": {
+       "family": "PRIMARY",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.6177478269150684,
+        "lo": 0.5476,
+        "hi": 0.7083,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.5784764240829404,
+        "lo": 0.5213,
+        "hi": 0.6493,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.5632363783896018,
+        "lo": 0.513,
+        "hi": 0.6195,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0393,
+        "lo": -0.0678,
+        "hi": -0.0214,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0545,
+        "lo": 0.0089,
+        "hi": 0.139,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0152,
+        "lo": -0.0171,
+        "hi": 0.0713,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.6720562930645678,
+         "lo": 0.5963,
+         "hi": 0.7753,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0543,
+         "lo": -0.0751,
+         "hi": -0.036,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1088,
+         "lo": -0.2015,
+         "hi": -0.0577,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "speed_mae_mps": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.3985707675286965,
+        "lo": 0.3574,
+        "hi": 0.4535,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.3801890460159408,
+        "lo": 0.3463,
+        "hi": 0.4209,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.26153327600151566,
+        "lo": 0.243,
+        "hi": 0.2803,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0184,
+        "lo": -0.0362,
+        "hi": -0.0056,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.137,
+        "lo": 0.1058,
+        "hi": 0.1877,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.1187,
+        "lo": 0.0954,
+        "hi": 0.1542,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.5047535393866373,
+         "lo": 0.4528,
+         "hi": 0.5732,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1062,
+         "lo": -0.1289,
+         "hi": -0.0851,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.2432,
+         "lo": -0.3043,
+         "hi": -0.1995,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "along_mae_m": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.2259544651031149,
+        "lo": 0.197,
+        "hi": 0.2659,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.20868789273882288,
+        "lo": 0.1842,
+        "hi": 0.2418,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.18228329047060118,
+        "lo": 0.1626,
+        "hi": 0.2076,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0173,
+        "lo": -0.0283,
+        "hi": -0.0102,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0437,
+        "lo": 0.0249,
+        "hi": 0.0763,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0264,
+        "lo": 0.013,
+        "hi": 0.0484,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.2634754734352634,
+         "lo": 0.2311,
+         "hi": 0.3079,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0375,
+         "lo": -0.0472,
+         "hi": -0.029,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0812,
+         "lo": -0.1193,
+         "hi": -0.0585,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "accel_mae_mps2": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 1.3531139118612558,
+        "lo": 1.1929,
+        "hi": 1.5704,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 1.308077508473052,
+        "lo": 1.1782,
+        "hi": 1.4788,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.5218904414389016,
+        "lo": 0.4845,
+        "hi": 0.5598,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.045,
+        "lo": -0.1123,
+        "hi": 0.0074,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.8312,
+        "lo": 0.6935,
+        "hi": 1.0309,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.7862,
+        "lo": 0.6786,
+        "hi": 0.9344,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 1.846568836606329,
+         "lo": 1.6235,
+         "hi": 2.1285,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.4935,
+         "lo": -0.5982,
+         "hi": -0.3947,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -1.3247,
+         "lo": -1.5814,
+         "hi": -1.1249,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "cross_mae_m": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.07337194197552503,
+        "lo": 0.0652,
+        "hi": 0.0829,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.07276217532353217,
+        "lo": 0.0648,
+        "hi": 0.0819,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.077146402333523,
+        "lo": 0.0681,
+        "hi": 0.0878,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0006,
+        "lo": -0.0023,
+        "hi": 0.0009,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0038,
+        "lo": -0.0067,
+        "hi": -0.0013,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0044,
+        "lo": -0.0072,
+        "hi": -0.002,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.07753907640161321,
+         "lo": 0.0686,
+         "hi": 0.0881,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0042,
+         "lo": -0.0064,
+         "hi": -0.0022,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0004,
+         "lo": -0.0029,
+         "hi": 0.0023,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "heading_mae_deg": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 2.234163911705187,
+        "lo": 1.1731,
+        "hi": 4.0349,
+        "n_windows": 2313,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 2.2652626570868075,
+        "lo": 1.1882,
+        "hi": 4.0821,
+        "n_windows": 2313,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 2.2497194815301587,
+        "lo": 1.1924,
+        "hi": 4.0519,
+        "n_windows": 2314,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.0311,
+        "lo": 0.0059,
+        "hi": 0.062,
+        "separated": true,
+        "n_windows": 2313,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0114,
+        "lo": -0.0421,
+        "hi": 0.0196,
+        "separated": false,
+        "n_windows": 2313,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0197,
+        "lo": -0.015,
+        "hi": 0.0578,
+        "separated": false,
+        "n_windows": 2313,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 2.342536923624482,
+         "lo": 1.2612,
+         "hi": 4.1396,
+         "n_windows": 2312,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1107,
+         "lo": -0.164,
+         "hi": -0.0665,
+         "separated": true,
+         "n_windows": 2312,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1013,
+         "lo": -0.1492,
+         "hi": -0.0561,
+         "separated": true,
+         "n_windows": 2312,
+         "n_episodes": 141
+        }
+       }
+      },
+      "yaw_rate_mae_degps": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 8.188491297921257,
+        "lo": 6.5873,
+        "hi": 9.9483,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 8.322359289538708,
+        "lo": 6.683,
+        "hi": 10.1451,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 8.05950147399335,
+        "lo": 6.4706,
+        "hi": 9.8736,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.1339,
+        "lo": 0.0172,
+        "hi": 0.2912,
+        "separated": true,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.1952,
+        "lo": 0.0593,
+        "hi": 0.3413,
+        "separated": true,
+        "n_windows": 2303,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.3132,
+        "lo": 0.1677,
+        "hi": 0.4749,
+        "separated": true,
+        "n_windows": 2303,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 8.299655038243065,
+         "lo": 6.6719,
+         "hi": 10.0781,
+         "n_windows": 2303,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1843,
+         "lo": -0.3127,
+         "hi": -0.0506,
+         "separated": true,
+         "n_windows": 2303,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.3872,
+         "lo": -0.5737,
+         "hi": -0.1895,
+         "separated": true,
+         "n_windows": 2302,
+         "n_episodes": 141
+        }
+       }
+      },
+      "curvature_mae_1pm": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.073332284660095,
+        "lo": 0.0495,
+        "hi": 0.1021,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.07683324242097683,
+        "lo": 0.0514,
+        "hi": 0.1075,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.0722976847648173,
+        "lo": 0.0481,
+        "hi": 0.1019,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.0035,
+        "lo": 0.0001,
+        "hi": 0.0078,
+        "separated": true,
+        "n_windows": 2305,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0032,
+        "lo": -0.0008,
+        "hi": 0.0075,
+        "separated": false,
+        "n_windows": 2303,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0062,
+        "lo": 0.0019,
+        "hi": 0.0112,
+        "separated": true,
+        "n_windows": 2303,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.07195565210558136,
+         "lo": 0.0483,
+         "hi": 0.1002,
+         "n_windows": 2303,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0009,
+         "lo": -0.0042,
+         "hi": 0.0027,
+         "separated": false,
+         "n_windows": 2303,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0046,
+         "lo": -0.0098,
+         "hi": 0.0006,
+         "separated": false,
+         "n_windows": 2302,
+         "n_episodes": 141
+        }
+       }
+      },
+      "dk_hw_abs_err_m": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.5111776221855612,
+        "lo": 0.3935,
+        "hi": 0.6591,
+        "n_windows": 698,
+        "n_episodes": 72
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.49849814532426007,
+        "lo": 0.364,
+        "hi": 0.6649,
+        "n_windows": 707,
+        "n_episodes": 72
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.5540371644200768,
+        "lo": 0.3789,
+        "hi": 0.7727,
+        "n_windows": 706,
+        "n_episodes": 72
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0427,
+        "lo": -0.0783,
+        "hi": -0.0053,
+        "separated": true,
+        "n_windows": 697,
+        "n_episodes": 72
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0342,
+        "lo": -0.1572,
+        "hi": 0.0452,
+        "separated": false,
+        "n_windows": 696,
+        "n_episodes": 72
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0696,
+        "lo": -0.179,
+        "hi": 0.0099,
+        "separated": false,
+        "n_windows": 703,
+        "n_episodes": 72
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.596631349879333,
+         "lo": 0.4398,
+         "hi": 0.7813,
+         "n_windows": 689,
+         "n_episodes": 72
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0811,
+         "lo": -0.1413,
+         "hi": -0.0319,
+         "separated": true,
+         "n_windows": 684,
+         "n_episodes": 72
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0471,
+         "lo": -0.1352,
+         "hi": 0.0705,
+         "separated": false,
+         "n_windows": 687,
+         "n_episodes": 72
+        }
+       }
+      },
+      "dk_tg_abs_err_s": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.10718979205316136,
+        "lo": 0.0669,
+        "hi": 0.1627,
+        "n_windows": 646,
+        "n_episodes": 72
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.08256203740812806,
+        "lo": 0.0565,
+        "hi": 0.1163,
+        "n_windows": 647,
+        "n_episodes": 72
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.11915741300101125,
+        "lo": 0.0618,
+        "hi": 0.2029,
+        "n_windows": 648,
+        "n_episodes": 72
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0245,
+        "lo": -0.0602,
+        "hi": -0.003,
+        "separated": true,
+        "n_windows": 646,
+        "n_episodes": 72
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0065,
+        "lo": -0.0101,
+        "hi": 0.021,
+        "separated": false,
+        "n_windows": 645,
+        "n_episodes": 72
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.018,
+        "lo": -0.0497,
+        "hi": 0.0033,
+        "separated": false,
+        "n_windows": 646,
+        "n_episodes": 72
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.12943250926284325,
+         "lo": 0.0709,
+         "hi": 0.2156,
+         "n_windows": 650,
+         "n_episodes": 72
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0032,
+         "lo": -0.0173,
+         "hi": 0.0091,
+         "separated": false,
+         "n_windows": 646,
+         "n_episodes": 72
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0098,
+         "lo": -0.0238,
+         "hi": 0.0048,
+         "separated": false,
+         "n_windows": 648,
+         "n_episodes": 72
+        }
+       }
+      }
+     },
+     "DK-VIOL": {
+      "OB-CTL": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 5,
+       "share": 0.006729,
+       "n_at_risk": 605,
+       "share_of_at_risk": 0.008264,
+       "share_of_at_risk_ci": {
+        "mean": 0.0083,
+        "lo": 0.0016,
+        "hi": 0.0176,
+        "ci95": 0.008,
+        "se": 0.0042,
+        "reducer": "mean",
+        "n_windows": 605,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "OB-BAND": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 5,
+       "share": 0.006729,
+       "n_at_risk": 605,
+       "share_of_at_risk": 0.008264,
+       "share_of_at_risk_ci": {
+        "mean": 0.0083,
+        "lo": 0.0016,
+        "hi": 0.0176,
+        "ci95": 0.008,
+        "se": 0.0042,
+        "reducer": "mean",
+        "n_windows": 605,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "DAG-OACC": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 7,
+       "share": 0.009421,
+       "n_at_risk": 605,
+       "share_of_at_risk": 0.01157,
+       "share_of_at_risk_ci": {
+        "mean": 0.0116,
+        "lo": 0.0031,
+        "hi": 0.0226,
+        "ci95": 0.0098,
+        "se": 0.0052,
+        "reducer": "mean",
+        "n_windows": 605,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "INIT-M2b": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 5,
+       "share": 0.006729,
+       "n_at_risk": 605,
+       "share_of_at_risk": 0.008264,
+       "share_of_at_risk_ci": {
+        "mean": 0.0083,
+        "lo": 0.0016,
+        "hi": 0.0176,
+        "ci95": 0.008,
+        "se": 0.0042,
+        "reducer": "mean",
+        "n_windows": 605,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      }
+     }
+    },
+    "tactical_2_6s": {
+     "rows": {
+      "ade_m": {
+       "family": "PRIMARY",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 3.9878967356863395,
+        "lo": 3.6505,
+        "hi": 4.3732,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 3.9644269054084478,
+        "lo": 3.6291,
+        "hi": 4.3488,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 3.253841482484041,
+        "lo": 2.9797,
+        "hi": 3.5507,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0235,
+        "lo": -0.1147,
+        "hi": 0.0672,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.7341,
+        "lo": 0.5047,
+        "hi": 1.0293,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.7106,
+        "lo": 0.4818,
+        "hi": 1.0169,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 4.281911058661023,
+         "lo": 3.9035,
+         "hi": 4.7375,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.294,
+         "lo": -0.4966,
+         "hi": -0.1132,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -1.0281,
+         "lo": -1.4282,
+         "hi": -0.7209,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "fde_m": {
+       "family": "PRIMARY",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 9.163564849822587,
+        "lo": 8.3376,
+        "hi": 10.0819,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 9.160599214358292,
+        "lo": 8.3147,
+        "hi": 10.1102,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 6.957391729435114,
+        "lo": 6.3376,
+        "hi": 7.623,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.003,
+        "lo": -0.308,
+        "hi": 0.319,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 2.2062,
+        "lo": 1.5965,
+        "hi": 2.9477,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 2.2032,
+        "lo": 1.5625,
+        "hi": 2.9907,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 10.068222940889257,
+         "lo": 9.0092,
+         "hi": 11.4529,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.9047,
+         "lo": -1.6487,
+         "hi": -0.2893,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -3.1108,
+         "lo": -4.4395,
+         "hi": -2.1348,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "speed_mae_mps": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 2.450654382640491,
+        "lo": 2.2062,
+        "hi": 2.7148,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 2.4367998692717996,
+        "lo": 2.1833,
+        "hi": 2.7087,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 1.537148540560226,
+        "lo": 1.382,
+        "hi": 1.7057,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0139,
+        "lo": -0.1126,
+        "hi": 0.0842,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.9135,
+        "lo": 0.7089,
+        "hi": 1.1421,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.8997,
+        "lo": 0.6897,
+        "hi": 1.1481,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 2.5350304420496657,
+         "lo": 2.2913,
+         "hi": 2.7889,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0844,
+         "lo": -0.2418,
+         "hi": 0.0673,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.9979,
+         "lo": -1.2353,
+         "hi": -0.7951,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "along_mae_m": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 3.204890009188088,
+        "lo": 2.9305,
+        "hi": 3.5184,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 3.21298096670875,
+        "lo": 2.9309,
+        "hi": 3.534,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 2.5746625259569997,
+        "lo": 2.3581,
+        "hi": 2.8054,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.0081,
+        "lo": -0.0813,
+        "hi": 0.0985,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.6302,
+        "lo": 0.42,
+        "hi": 0.9217,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.6383,
+        "lo": 0.4149,
+        "hi": 0.9498,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 3.404719854202357,
+         "lo": 3.0634,
+         "hi": 3.7974,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1998,
+         "lo": -0.4089,
+         "hi": -0.0134,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.8301,
+         "lo": -1.2096,
+         "hi": -0.5414,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "accel_mae_mps2": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 3.588412479275046,
+        "lo": 3.0948,
+        "hi": 4.1185,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 3.6748336610785763,
+        "lo": 3.1317,
+        "hi": 4.2876,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 1.6044537040351365,
+        "lo": 1.3228,
+        "hi": 1.9271,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.0864,
+        "lo": -0.111,
+        "hi": 0.3,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 1.984,
+        "lo": 1.615,
+        "hi": 2.3841,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 2.0704,
+        "lo": 1.6477,
+        "hi": 2.5259,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 3.825623612183477,
+         "lo": 3.3854,
+         "hi": 4.3035,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.2372,
+         "lo": -0.4965,
+         "hi": 0.0171,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -2.2212,
+         "lo": -2.5921,
+         "hi": -1.8922,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "cross_mae_m": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 1.6955100722709766,
+        "lo": 1.5002,
+        "hi": 1.9111,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 1.6602530182748414,
+        "lo": 1.4628,
+        "hi": 1.8751,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 1.3977854606841817,
+        "lo": 1.2144,
+        "hi": 1.5968,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0353,
+        "lo": -0.0877,
+        "hi": 0.0152,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.2977,
+        "lo": 0.1862,
+        "hi": 0.4228,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.2625,
+        "lo": 0.1525,
+        "hi": 0.3801,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 1.8359372085425871,
+         "lo": 1.615,
+         "hi": 2.0923,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1404,
+         "lo": -0.2373,
+         "hi": -0.0449,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.4382,
+         "lo": -0.6187,
+         "hi": -0.289,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "heading_mae_deg": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 12.149239774433834,
+        "lo": 9.7594,
+        "hi": 14.754,
+        "n_windows": 2348,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 12.543030758575414,
+        "lo": 10.0203,
+        "hi": 15.3727,
+        "n_windows": 2348,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 8.896809591447138,
+        "lo": 7.1264,
+        "hi": 10.9349,
+        "n_windows": 2348,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.3938,
+        "lo": -0.1904,
+        "hi": 0.9773,
+        "separated": false,
+        "n_windows": 2348,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 3.2524,
+        "lo": 2.2481,
+        "hi": 4.3288,
+        "separated": true,
+        "n_windows": 2348,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 3.6462,
+        "lo": 2.4078,
+        "hi": 4.9097,
+        "separated": true,
+        "n_windows": 2348,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 13.041651173897156,
+         "lo": 10.5534,
+         "hi": 15.8864,
+         "n_windows": 2348,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.8924,
+         "lo": -1.7046,
+         "hi": -0.1552,
+         "separated": true,
+         "n_windows": 2348,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -4.1448,
+         "lo": -5.4002,
+         "hi": -3.0175,
+         "separated": true,
+         "n_windows": 2348,
+         "n_episodes": 141
+        }
+       }
+      },
+      "yaw_rate_mae_degps": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 33.79685754406551,
+        "lo": 25.9591,
+        "hi": 42.8518,
+        "n_windows": 2338,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 31.707401413681495,
+        "lo": 24.1447,
+        "hi": 40.4134,
+        "n_windows": 2337,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 30.35518575799376,
+        "lo": 22.7914,
+        "hi": 38.9087,
+        "n_windows": 2340,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -1.962,
+        "lo": -4.545,
+        "hi": 0.2681,
+        "separated": false,
+        "n_windows": 2337,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 3.7989,
+        "lo": 0.5048,
+        "hi": 6.9962,
+        "separated": true,
+        "n_windows": 2338,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 1.8549,
+        "lo": -1.433,
+        "hi": 4.8029,
+        "separated": false,
+        "n_windows": 2337,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 35.17381490568672,
+         "lo": 26.9701,
+         "hi": 44.501,
+         "n_windows": 2339,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -1.4171,
+         "lo": -4.0856,
+         "hi": 1.2572,
+         "separated": false,
+         "n_windows": 2337,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -4.9639,
+         "lo": -8.496,
+         "hi": -1.4808,
+         "separated": true,
+         "n_windows": 2339,
+         "n_episodes": 141
+        }
+       }
+      },
+      "curvature_mae_1pm": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.17809158305952102,
+        "lo": 0.1306,
+        "hi": 0.2344,
+        "n_windows": 2338,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.16741006098728356,
+        "lo": 0.1212,
+        "hi": 0.2219,
+        "n_windows": 2337,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.18492554380767762,
+        "lo": 0.1316,
+        "hi": 0.2452,
+        "n_windows": 2340,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0088,
+        "lo": -0.0305,
+        "hi": 0.0112,
+        "separated": false,
+        "n_windows": 2337,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0039,
+        "lo": -0.0305,
+        "hi": 0.0227,
+        "separated": false,
+        "n_windows": 2338,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0142,
+        "lo": -0.0436,
+        "hi": 0.0118,
+        "separated": false,
+        "n_windows": 2337,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.20692825732952141,
+         "lo": 0.1455,
+         "hi": 0.2803,
+         "n_windows": 2339,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0293,
+         "lo": -0.0591,
+         "hi": -0.0006,
+         "separated": true,
+         "n_windows": 2337,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0224,
+         "lo": -0.052,
+         "hi": 0.0062,
+         "separated": false,
+         "n_windows": 2339,
+         "n_episodes": 141
+        }
+       }
+      },
+      "dk_hw_abs_err_m": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 2.3021004379826837,
+        "lo": 1.8471,
+        "hi": 2.7919,
+        "n_windows": 566,
+        "n_episodes": 60
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 2.1916314610076055,
+        "lo": 1.6883,
+        "hi": 2.746,
+        "n_windows": 559,
+        "n_episodes": 63
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 2.3629194672882097,
+        "lo": 1.8697,
+        "hi": 2.9186,
+        "n_windows": 584,
+        "n_episodes": 61
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.1449,
+        "lo": -0.2941,
+        "hi": 0.0125,
+        "separated": false,
+        "n_windows": 543,
+        "n_episodes": 60
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0061,
+        "lo": -0.1829,
+        "hi": 0.143,
+        "separated": false,
+        "n_windows": 549,
+        "n_episodes": 58
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0995,
+        "lo": -0.3557,
+        "hi": 0.1897,
+        "separated": false,
+        "n_windows": 543,
+        "n_episodes": 59
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 2.438733363273318,
+         "lo": 1.9659,
+         "hi": 2.9743,
+         "n_windows": 568,
+         "n_episodes": 59
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1196,
+         "lo": -0.3926,
+         "hi": 0.0975,
+         "separated": false,
+         "n_windows": 542,
+         "n_episodes": 58
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0798,
+         "lo": -0.3742,
+         "hi": 0.1667,
+         "separated": false,
+         "n_windows": 550,
+         "n_episodes": 58
+        }
+       }
+      },
+      "dk_tg_abs_err_s": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.3838607901195424,
+        "lo": 0.2603,
+        "hi": 0.5369,
+        "n_windows": 528,
+        "n_episodes": 60
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.32589640342030984,
+        "lo": 0.2218,
+        "hi": 0.4519,
+        "n_windows": 527,
+        "n_episodes": 61
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.395913081112801,
+        "lo": 0.2706,
+        "hi": 0.5415,
+        "n_windows": 533,
+        "n_episodes": 60
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.042,
+        "lo": -0.1016,
+        "hi": 0.0048,
+        "separated": false,
+        "n_windows": 522,
+        "n_episodes": 60
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.0149,
+        "lo": -0.0343,
+        "hi": 0.0686,
+        "separated": false,
+        "n_windows": 515,
+        "n_episodes": 58
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0391,
+        "lo": -0.0969,
+        "hi": 0.0193,
+        "separated": false,
+        "n_windows": 512,
+        "n_episodes": 58
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.4296474337511824,
+         "lo": 0.2954,
+         "hi": 0.5933,
+         "n_windows": 535,
+         "n_episodes": 59
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0212,
+         "lo": -0.0759,
+         "hi": 0.0415,
+         "separated": false,
+         "n_windows": 518,
+         "n_episodes": 58
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0445,
+         "lo": -0.1164,
+         "hi": 0.0178,
+         "separated": false,
+         "n_windows": 521,
+         "n_episodes": 58
+        }
+       }
+      }
+     },
+     "DK-VIOL": {
+      "OB-CTL": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 19,
+       "share": 0.025572,
+       "n_at_risk": 520,
+       "share_of_at_risk": 0.036538,
+       "share_of_at_risk_ci": {
+        "mean": 0.0365,
+        "lo": 0.0139,
+        "hi": 0.0631,
+        "ci95": 0.0246,
+        "se": 0.013,
+        "reducer": "mean",
+        "n_windows": 520,
+        "n_episodes": 59,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "OB-BAND": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 12,
+       "share": 0.016151,
+       "n_at_risk": 520,
+       "share_of_at_risk": 0.023077,
+       "share_of_at_risk_ci": {
+        "mean": 0.0231,
+        "lo": 0.0091,
+        "hi": 0.0397,
+        "ci95": 0.0153,
+        "se": 0.0079,
+        "reducer": "mean",
+        "n_windows": 520,
+        "n_episodes": 59,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "DAG-OACC": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 23,
+       "share": 0.030956,
+       "n_at_risk": 520,
+       "share_of_at_risk": 0.044231,
+       "share_of_at_risk_ci": {
+        "mean": 0.0442,
+        "lo": 0.0171,
+        "hi": 0.0758,
+        "ci95": 0.0293,
+        "se": 0.0154,
+        "reducer": "mean",
+        "n_windows": 520,
+        "n_episodes": 59,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "INIT-M2b": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 13,
+       "share": 0.017497,
+       "n_at_risk": 520,
+       "share_of_at_risk": 0.025,
+       "share_of_at_risk_ci": {
+        "mean": 0.025,
+        "lo": 0.0104,
+        "hi": 0.0418,
+        "ci95": 0.0157,
+        "se": 0.0082,
+        "reducer": "mean",
+        "n_windows": 520,
+        "n_episodes": 59,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      }
+     }
+    },
+    "full_0_6s": {
+     "rows": {
+      "ade_m": {
+       "family": "PRIMARY",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 2.7442934029240122,
+        "lo": 2.515,
+        "hi": 3.0105,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 2.723054174663006,
+        "lo": 2.4929,
+        "hi": 2.9895,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 2.2421260842614514,
+        "lo": 2.0565,
+        "hi": 2.4473,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0212,
+        "lo": -0.0831,
+        "hi": 0.0404,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.5022,
+        "lo": 0.3463,
+        "hi": 0.7087,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.4809,
+        "lo": 0.325,
+        "hi": 0.691,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 2.9529895414725114,
+         "lo": 2.6914,
+         "hi": 3.2661,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.2087,
+         "lo": -0.3466,
+         "hi": -0.0866,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.7109,
+         "lo": -0.9908,
+         "hi": -0.5006,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "fde_m": {
+       "family": "PRIMARY",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 9.163564849822587,
+        "lo": 8.3376,
+        "hi": 10.0819,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 9.160599214358292,
+        "lo": 8.3147,
+        "hi": 10.1102,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 6.957391729435114,
+        "lo": 6.3376,
+        "hi": 7.623,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.003,
+        "lo": -0.308,
+        "hi": 0.319,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 2.2062,
+        "lo": 1.5965,
+        "hi": 2.9477,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 2.2032,
+        "lo": 1.5625,
+        "hi": 2.9907,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 10.068222940889257,
+         "lo": 9.0092,
+         "hi": 11.4529,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.9047,
+         "lo": -1.6487,
+         "hi": -0.2893,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -3.1108,
+         "lo": -4.4395,
+         "hi": -2.1348,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "speed_mae_mps": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 1.7666265109365593,
+        "lo": 1.5939,
+        "hi": 1.9543,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 1.751262928186513,
+        "lo": 1.5774,
+        "hi": 1.9371,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 1.1119434523739895,
+        "lo": 1.004,
+        "hi": 1.2301,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0154,
+        "lo": -0.0814,
+        "hi": 0.0506,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.6547,
+        "lo": 0.515,
+        "hi": 0.812,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.6393,
+        "lo": 0.4953,
+        "hi": 0.8112,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 1.8582714744953228,
+         "lo": 1.684,
+         "hi": 2.0419,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0916,
+         "lo": -0.1992,
+         "hi": 0.0139,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.7463,
+         "lo": -0.918,
+         "hi": -0.6008,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "along_mae_m": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 2.211911494493097,
+        "lo": 2.0207,
+        "hi": 2.4328,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 2.2115499420521076,
+        "lo": 2.0164,
+        "hi": 2.4335,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 1.7772027807948665,
+        "lo": 1.6276,
+        "hi": 1.9354,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0004,
+        "lo": -0.0609,
+        "hi": 0.0608,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.4347,
+        "lo": 0.2907,
+        "hi": 0.6405,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.4343,
+        "lo": 0.2829,
+        "hi": 0.6486,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 2.3576383939466594,
+         "lo": 2.1225,
+         "hi": 2.629,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.1457,
+         "lo": -0.2863,
+         "hi": -0.0193,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.5804,
+         "lo": -0.8464,
+         "hi": -0.3819,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "accel_mae_mps2": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 2.833342314320536,
+        "lo": 2.479,
+        "hi": 3.2129,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 2.878639217581481,
+        "lo": 2.4974,
+        "hi": 3.3075,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 1.272663150026248,
+        "lo": 1.0762,
+        "hi": 1.494,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.0453,
+        "lo": -0.0851,
+        "hi": 0.1899,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 1.5607,
+        "lo": 1.299,
+        "hi": 1.8567,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 1.606,
+        "lo": 1.3143,
+        "hi": 1.9237,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 3.140130223788472,
+         "lo": 2.8138,
+         "hi": 3.506,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.3068,
+         "lo": -0.4911,
+         "hi": -0.1334,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -1.8675,
+         "lo": -2.1496,
+         "hi": -1.6211,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "cross_mae_m": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 1.154797362172493,
+        "lo": 1.0233,
+        "hi": 1.2995,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 1.1310894039577384,
+        "lo": 0.9971,
+        "hi": 1.2764,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.9575724412339622,
+        "lo": 0.8328,
+        "hi": 1.0931,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0237,
+        "lo": -0.0587,
+        "hi": 0.0101,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 0.1972,
+        "lo": 0.1224,
+        "hi": 0.2806,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 0.1735,
+        "lo": 0.0999,
+        "hi": 0.2521,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 1.249804497828929,
+         "lo": 1.0982,
+         "hi": 1.4219,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.095,
+         "lo": -0.1601,
+         "hi": -0.0309,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.2922,
+         "lo": -0.4128,
+         "hi": -0.1925,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        }
+       }
+      },
+      "heading_mae_deg": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 9.287461656216932,
+        "lo": 7.2078,
+        "hi": 11.5625,
+        "n_windows": 2373,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 9.58773051615669,
+        "lo": 7.3475,
+        "hi": 12.1103,
+        "n_windows": 2373,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 6.960556992996856,
+        "lo": 5.3336,
+        "hi": 8.9013,
+        "n_windows": 2373,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": 0.3003,
+        "lo": -0.1115,
+        "hi": 0.731,
+        "separated": false,
+        "n_windows": 2373,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 2.3269,
+        "lo": 1.5676,
+        "hi": 3.1367,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 2.6272,
+        "lo": 1.724,
+        "hi": 3.574,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 9.752985044445857,
+         "lo": 7.5745,
+         "hi": 12.1376,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.4655,
+         "lo": -0.9843,
+         "hi": 0.0555,
+         "separated": false,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -2.7924,
+         "lo": -3.7365,
+         "hi": -1.9766,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        }
+       }
+      },
+      "yaw_rate_mae_degps": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 26.704213812701084,
+        "lo": 20.4133,
+        "hi": 33.8867,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 25.21209017797296,
+        "lo": 19.1172,
+        "hi": 32.0913,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 23.409190081894916,
+        "lo": 17.7566,
+        "hi": 29.7983,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -1.4921,
+        "lo": -3.2118,
+        "hi": 0.0287,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": 3.3247,
+        "lo": 1.1517,
+        "hi": 5.6001,
+        "separated": true,
+        "n_windows": 2365,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": 1.8324,
+        "lo": -0.3364,
+        "hi": 3.8835,
+        "separated": false,
+        "n_windows": 2365,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 28.06214473792486,
+         "lo": 21.2517,
+         "hi": 35.7158,
+         "n_windows": 2365,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -1.3922,
+         "lo": -3.334,
+         "hi": 0.5482,
+         "separated": false,
+         "n_windows": 2365,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -4.7169,
+         "lo": -7.5107,
+         "hi": -2.2456,
+         "separated": true,
+         "n_windows": 2365,
+         "n_episodes": 141
+        }
+       }
+      },
+      "curvature_mae_1pm": {
+       "family": "LATERAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.15088754922906122,
+        "lo": 0.1121,
+        "hi": 0.1948,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.1474493289474831,
+        "lo": 0.1076,
+        "hi": 0.1947,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.16005066060025985,
+        "lo": 0.1148,
+        "hi": 0.2142,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0034,
+        "lo": -0.0172,
+        "hi": 0.0093,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0081,
+        "lo": -0.0281,
+        "hi": 0.0101,
+        "separated": false,
+        "n_windows": 2365,
+        "n_episodes": 141
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0115,
+        "lo": -0.0307,
+        "hi": 0.0059,
+        "separated": false,
+        "n_windows": 2365,
+        "n_episodes": 141
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.17927476627142314,
+         "lo": 0.1281,
+         "hi": 0.2383,
+         "n_windows": 2365,
+         "n_episodes": 141
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0297,
+         "lo": -0.0557,
+         "hi": -0.0067,
+         "separated": true,
+         "n_windows": 2365,
+         "n_episodes": 141
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0215,
+         "lo": -0.0396,
+         "hi": -0.0031,
+         "separated": true,
+         "n_windows": 2365,
+         "n_episodes": 141
+        }
+       }
+      },
+      "dk_hw_abs_err_m": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 1.9140405876666173,
+        "lo": 1.437,
+        "hi": 2.499,
+        "n_windows": 708,
+        "n_episodes": 72
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 1.7963128446945267,
+        "lo": 1.309,
+        "hi": 2.3545,
+        "n_windows": 714,
+        "n_episodes": 72
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 2.0688586423268633,
+        "lo": 1.5351,
+        "hi": 2.6892,
+        "n_windows": 714,
+        "n_episodes": 72
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.1758,
+        "lo": -0.2999,
+        "hi": -0.0504,
+        "separated": true,
+        "n_windows": 706,
+        "n_episodes": 72
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.1297,
+        "lo": -0.3549,
+        "hi": 0.1142,
+        "separated": false,
+        "n_windows": 705,
+        "n_episodes": 72
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.2756,
+        "lo": -0.5047,
+        "hi": -0.0007,
+        "separated": true,
+        "n_windows": 709,
+        "n_episodes": 72
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 2.097999248887859,
+         "lo": 1.5785,
+         "hi": 2.6867,
+         "n_windows": 705,
+         "n_episodes": 72
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.147,
+         "lo": -0.4823,
+         "hi": 0.1543,
+         "separated": false,
+         "n_windows": 697,
+         "n_episodes": 72
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0288,
+         "lo": -0.2957,
+         "hi": 0.216,
+         "separated": false,
+         "n_windows": 701,
+         "n_episodes": 72
+        }
+       }
+      },
+      "dk_tg_abs_err_s": {
+       "family": "LONGITUDINAL",
+       "OB-CTL": {
+        "status": "OK",
+        "mean": 0.313655733108438,
+        "lo": 0.2147,
+        "hi": 0.4285,
+        "n_windows": 651,
+        "n_episodes": 72
+       },
+       "OB-BAND": {
+        "status": "OK",
+        "mean": 0.2543332724800708,
+        "lo": 0.1787,
+        "hi": 0.3502,
+        "n_windows": 653,
+        "n_episodes": 72
+       },
+       "DAG-OACC": {
+        "status": "OK",
+        "mean": 0.36478380453563786,
+        "lo": 0.2303,
+        "hi": 0.5377,
+        "n_windows": 654,
+        "n_episodes": 72
+       },
+       "BAND_minus_CTL": {
+        "status": "OK",
+        "delta": -0.0587,
+        "lo": -0.109,
+        "hi": -0.0166,
+        "separated": true,
+        "n_windows": 651,
+        "n_episodes": 72
+       },
+       "CTL_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0101,
+        "lo": -0.0528,
+        "hi": 0.0317,
+        "separated": false,
+        "n_windows": 650,
+        "n_episodes": 72
+       },
+       "BAND_minus_DAG": {
+        "status": "OK",
+        "delta": -0.0687,
+        "lo": -0.1221,
+        "hi": -0.0136,
+        "separated": true,
+        "n_windows": 651,
+        "n_episodes": 72
+       },
+       "beside_post_hoc": {
+        "INIT-M2b": {
+         "status": "OK",
+         "mean": 0.3787237387510053,
+         "lo": 0.237,
+         "hi": 0.5602,
+         "n_windows": 656,
+         "n_episodes": 72
+        },
+        "CTL_minus_INIT": {
+         "status": "OK",
+         "delta": -0.0082,
+         "lo": -0.0602,
+         "hi": 0.0456,
+         "separated": false,
+         "n_windows": 651,
+         "n_episodes": 72
+        },
+        "DAG_minus_INIT": {
+         "status": "OK",
+         "delta": -0.01,
+         "lo": -0.0637,
+         "hi": 0.0404,
+         "separated": false,
+         "n_windows": 654,
+         "n_episodes": 72
+        }
+       }
+      }
+     },
+     "DK-VIOL": {
+      "OB-CTL": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 22,
+       "share": 0.02961,
+       "n_at_risk": 595,
+       "share_of_at_risk": 0.036975,
+       "share_of_at_risk_ci": {
+        "mean": 0.037,
+        "lo": 0.0149,
+        "hi": 0.061,
+        "ci95": 0.0231,
+        "se": 0.0117,
+        "reducer": "mean",
+        "n_windows": 595,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "OB-BAND": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 17,
+       "share": 0.02288,
+       "n_at_risk": 595,
+       "share_of_at_risk": 0.028571,
+       "share_of_at_risk_ci": {
+        "mean": 0.0286,
+        "lo": 0.0141,
+        "hi": 0.0451,
+        "ci95": 0.0155,
+        "se": 0.0079,
+        "reducer": "mean",
+        "n_windows": 595,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "DAG-OACC": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 29,
+       "share": 0.039031,
+       "n_at_risk": 595,
+       "share_of_at_risk": 0.048739,
+       "share_of_at_risk_ci": {
+        "mean": 0.0487,
+        "lo": 0.0225,
+        "hi": 0.0765,
+        "ci95": 0.027,
+        "se": 0.014,
+        "reducer": "mean",
+        "n_windows": 595,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      },
+      "INIT-M2b": {
+       "status": "OK",
+       "reason": null,
+       "n_lead_windows": 743,
+       "n_viol": 16,
+       "share": 0.021534,
+       "n_at_risk": 595,
+       "share_of_at_risk": 0.026891,
+       "share_of_at_risk_ci": {
+        "mean": 0.0269,
+        "lo": 0.0121,
+        "hi": 0.0442,
+        "ci95": 0.016,
+        "se": 0.0083,
+        "reducer": "mean",
+        "n_windows": 595,
+        "n_episodes": 70,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+       }
+      }
+     }
+    }
+   },
+   "TACTICAL_plan_reads": {
+    "TAC-LAT": {
+     "OB-CTL": {
+      "status": "OK",
+      "mean": 0.7107127969987495,
+      "lo": 0.6615,
+      "hi": 0.7557,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "OB-BAND": {
+      "status": "OK",
+      "mean": 0.7336390162567736,
+      "lo": 0.6902,
+      "hi": 0.7747,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "DAG-OACC": {
+      "status": "OK",
+      "mean": 0.783659858274281,
+      "lo": 0.7397,
+      "hi": 0.8233,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "BAND_minus_CTL": {
+      "status": "OK",
+      "delta": 0.0229,
+      "lo": 0.0017,
+      "hi": 0.0455,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "BAND_minus_DAG": {
+      "status": "OK",
+      "delta": -0.05,
+      "lo": -0.0759,
+      "hi": -0.0238,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "statistic": "per-window indicator: the plan's own 0-6 s manoeuvre label equals the GT's (accuracy)"
+    },
+    "TAC-LON": {
+     "OB-CTL": {
+      "status": "OK",
+      "mean": 0.4118382659441434,
+      "lo": 0.3681,
+      "hi": 0.4544,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "OB-BAND": {
+      "status": "OK",
+      "mean": 0.40683618174239267,
+      "lo": 0.36,
+      "hi": 0.4516,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "DAG-OACC": {
+      "status": "OK",
+      "mean": 0.5110462692788662,
+      "lo": 0.4704,
+      "hi": 0.5499,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "BAND_minus_CTL": {
+      "status": "OK",
+      "delta": -0.005,
+      "lo": -0.025,
+      "hi": 0.0142,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "BAND_minus_DAG": {
+      "status": "OK",
+      "delta": -0.1042,
+      "lo": -0.145,
+      "hi": -0.0658,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "statistic": "per-window indicator: the plan's own 0-6 s manoeuvre label equals the GT's (accuracy)"
+    }
+   },
+   "bars": {
+    "label": "BAND-COST",
+    "hold": {
+     "B1": true,
+     "B2": false,
+     "B3": false,
+     "B4": false,
+     "B5": false
+    },
+    "B1": {
+     "ade_m<= +0.03": true,
+     "cross_mae_m<= +0.02": true,
+     "fde_m<= +0.05": true,
+     "speed_mae_mps<= +0.03": true,
+     "yaw_rate_mae_degps<= +0.5": true
+    },
+    "B2": {
+     "ade_m<0": false,
+     "fde_m<0": false
+    },
+    "B2_separated_worse": false,
+    "B3": {
+     "speed_mae_mps<=0": false,
+     "along_mae_m<=0": false,
+     "operative_0_2s:dk_hw_abs_err_m<=+0.2": true,
+     "operative_0_2s:dk_tg_abs_err_s<=+0.03": true,
+     "tactical_2_6s:dk_hw_abs_err_m<=+0.2": true,
+     "tactical_2_6s:dk_tg_abs_err_s<=+0.03": true
+    },
+    "B4": {
+     "yaw_rate_mae_degps<0": false,
+     "curvature_mae_1pm<0": false
+    },
+    "B5": {
+     "TAC-LAT lo>=-0.02": true,
+     "TAC-LON lo>=-0.02": false
+    },
+    "B6_exceeds_floor": null,
+    "B4_named": "B4 fails"
+   }
+  },
+  "s1": {
+   "status": "NOT-YET",
+   "reason": "dumps present: OB-CTL_s1 False, OB-BAND_s1 False"
+  }
+ },
+ "replicate": null,
+ "train_terms": {
+  "OB-CTL_s0": {
+   "tier": "T0 (teacher-forced train terms; a curve, not a result)",
+   "last_row": {
+    "step": 9582,
+    "ade": 2.3165948390960693,
+    "fde": 7.257278919219971
+   },
+   "path": "C:/Users/Admin/t2v8f_pulls/otband_OB-CTL_s0/train_log.jsonl"
+  },
+  "OB-BAND_s0": {
+   "tier": "T0 (teacher-forced train terms; a curve, not a result)",
+   "last_row": {
+    "step": 9582,
+    "ade": 2.298300266265869,
+    "fde": 7.237860202789307,
+    "ade_op": 0.2489595264196396,
+    "fde_op": 0.5976442098617554,
+    "ade_tac": 3.3229708671569824,
+    "fde_tac": 7.237860202789307,
+    "op": 0.1327901929616928,
+    "tac": 1.710811972618103
+   },
+   "path": "C:/Users/Admin/t2v8f_pulls/otband_OB-BAND_s0/train_log.jsonl"
+  }
+ },
+ "parity": {
+  "P0": "FAIL",
+  "P0b": "PASS-EXACT"
+ },
+ "outcome": "NOT-YET: both seeds are required by the card; per-seed labels so far {'s0': 'BAND-COST'} decide nothing",
+ "TOKEN": {
+  "status": "BLOCKED",
+  "reason": "OB-BAND-TOK needs stream C's stok dump (card: named blocker at freeze); not trained"
+ },
+ "TOP-K": {
+  "status": "PENDING",
+  "reason": "forward_topk is not called by v8f_t1_eval.py; the beside read needs its own script (topk_read.py)"
+ },
+ "STRATEGIC": {
+  "status": "PAUSED",
+  "ruling": "PI item 25 (PI_DECISION_QUEUE.md ITEM 25, 2026-09-19): reported as PAUSED, not as a pass and not omitted."
+ },
+ "wall_s": 84.6
+}

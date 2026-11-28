@@ -1,0 +1,195 @@
+{
+ "_what": "the class census on the join refcv6 ACTUALLY trains against (B1), and how far the BANKED parity vector is from it",
+ "_evidence_class": "MEASURED (ours), CPU, read-only",
+ "_source": "C:\\Users\\Admin\\a40-rescue\\b1_train_plus_eval_agents.jsonl.xz",
+ "_corpus": "B1 train+eval, the v7/SAM3 line refcv6 trains on",
+ "_controls": {
+  "frames": {
+   "got": 875657,
+   "expect": 875657,
+   "ok": true
+  },
+  "boxes": {
+   "got": 28958699,
+   "expect": 28958699,
+   "ok": true
+  },
+  "clips": {
+   "got": 4566,
+   "expect": 4566,
+   "ok": true
+  },
+  "frames_outside_v7": {
+   "got": 0,
+   "expect": 0,
+   "ok": true
+  }
+ },
+ "n_clips": 4566,
+ "n_frames": 875657,
+ "n_boxes": 28929493,
+ "boxes_without_cls": 0,
+ "unknown_classes": {
+  "train_or_tram_car": 29206
+ },
+ "counts": {
+  "automobile": 21515941,
+  "heavy_truck": 553977,
+  "bus": 205566,
+  "other_vehicle": 78231,
+  "trailer": 282911,
+  "person": 5487965,
+  "rider": 641740,
+  "stroller": 36522,
+  "animal": 11785,
+  "protruding_object": 114855
+ },
+ "share": {
+  "automobile": 0.743737,
+  "heavy_truck": 0.019149,
+  "bus": 0.007106,
+  "other_vehicle": 0.002704,
+  "trailer": 0.009779,
+  "person": 0.189701,
+  "rider": 0.022183,
+  "stroller": 0.001262,
+  "animal": 0.000407,
+  "protruding_object": 0.00397
+ },
+ "imbalance_majority_to_rarest": 1825.7,
+ "majority": "automobile",
+ "rarest": "animal",
+ "WEIGHT_VECTOR_inv_freq_mean1": {
+  "animal": 5.823257,
+  "automobile": 0.00319,
+  "bus": 0.333845,
+  "heavy_truck": 0.123881,
+  "other_vehicle": 0.877236,
+  "person": 0.012505,
+  "protruding_object": 0.597511,
+  "rider": 0.106939,
+  "stroller": 1.879062,
+  "trailer": 0.242575
+ },
+ "classes_absent": [],
+ "vs_banked_parity_vector": {
+  "_question": "is the banked train2400 vector usable for refcv6, or is it the sampling-sensitivity refusal applied to my own artifact?",
+  "per_class": [
+   {
+    "class": "automobile",
+    "b1_count": 21515941,
+    "parity_count": 9274706,
+    "b1_share": 0.743737,
+    "parity_share": 0.765742,
+    "share_ratio_b1_over_parity": 0.971,
+    "b1_weight": 0.00319,
+    "parity_weight": 0.004084,
+    "weight_ratio_parity_over_b1": 1.28
+   },
+   {
+    "class": "person",
+    "b1_count": 5487965,
+    "parity_count": 1926364,
+    "b1_share": 0.189701,
+    "parity_share": 0.159045,
+    "share_ratio_b1_over_parity": 1.193,
+    "b1_weight": 0.012505,
+    "parity_weight": 0.019664,
+    "weight_ratio_parity_over_b1": 1.572
+   },
+   {
+    "class": "rider",
+    "b1_count": 641740,
+    "parity_count": 190793,
+    "b1_share": 0.022183,
+    "parity_share": 0.015752,
+    "share_ratio_b1_over_parity": 1.408,
+    "b1_weight": 0.106939,
+    "parity_weight": 0.198541,
+    "weight_ratio_parity_over_b1": 1.857
+   },
+   {
+    "class": "heavy_truck",
+    "b1_count": 553977,
+    "parity_count": 357048,
+    "b1_share": 0.019149,
+    "parity_share": 0.029479,
+    "share_ratio_b1_over_parity": 0.65,
+    "b1_weight": 0.123881,
+    "parity_weight": 0.106093,
+    "weight_ratio_parity_over_b1": 0.856
+   },
+   {
+    "class": "trailer",
+    "b1_count": 282911,
+    "parity_count": 164688,
+    "b1_share": 0.009779,
+    "parity_share": 0.013597,
+    "share_ratio_b1_over_parity": 0.719,
+    "b1_weight": 0.242575,
+    "parity_weight": 0.230012,
+    "weight_ratio_parity_over_b1": 0.948
+   },
+   {
+    "class": "bus",
+    "b1_count": 205566,
+    "parity_count": 89781,
+    "b1_share": 0.007106,
+    "parity_share": 0.007413,
+    "share_ratio_b1_over_parity": 0.959,
+    "b1_weight": 0.333845,
+    "parity_weight": 0.421918,
+    "weight_ratio_parity_over_b1": 1.264
+   },
+   {
+    "class": "protruding_object",
+    "b1_count": 114855,
+    "parity_count": 51124,
+    "b1_share": 0.00397,
+    "parity_share": 0.004221,
+    "share_ratio_b1_over_parity": 0.941,
+    "b1_weight": 0.597511,
+    "parity_weight": 0.740948,
+    "weight_ratio_parity_over_b1": 1.24
+   },
+   {
+    "class": "other_vehicle",
+    "b1_count": 78231,
+    "parity_count": 35543,
+    "b1_share": 0.002704,
+    "parity_share": 0.002935,
+    "share_ratio_b1_over_parity": 0.922,
+    "b1_weight": 0.877236,
+    "parity_weight": 1.065757,
+    "weight_ratio_parity_over_b1": 1.215
+   },
+   {
+    "class": "stroller",
+    "b1_count": 36522,
+    "parity_count": 13346,
+    "b1_share": 0.001262,
+    "parity_share": 0.001102,
+    "share_ratio_b1_over_parity": 1.146,
+    "b1_weight": 1.879062,
+    "parity_weight": 2.838319,
+    "weight_ratio_parity_over_b1": 1.51
+   },
+   {
+    "class": "animal",
+    "b1_count": 11785,
+    "parity_count": 8659,
+    "b1_share": 0.000407,
+    "parity_share": 0.000715,
+    "share_ratio_b1_over_parity": 0.57,
+    "b1_weight": 5.823257,
+    "parity_weight": 4.374664,
+    "weight_ratio_parity_over_b1": 0.751
+   }
+  ],
+  "worst_class": "rider",
+  "max_weight_ratio": 1.857,
+  "parity_imbalance": 1071.1,
+  "b1_imbalance": 1825.7
+ },
+ "_VERDICT": "B1 census MEASURED on 28,929,493 boxes over 4,566 clips (875,657 frames). Imbalance 1825.7:1 (automobile : animal) vs parity's 1071.1:1. The banked parity vector differs from the corpus refcv6 trains on by up to 1.857x (rider)."
+}

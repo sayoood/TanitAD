@@ -1,0 +1,41 @@
+DRY RUN — NOT A SCORER-FT VERDICT
+(Stage-2 PIPELINE EXERCISE: T=C1, C=C0, Ts=C1, Cs=base (P2/P3 plumbing only))
+
+VERDICT: DRY RUN:O1 | O1: ADOPT as a scorer-training lever on the C1 recipe; it does NOT clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias)
+NEXT ARM (committed in the card, Rule Zero): SCORER-FT-2: add `ttc` to the heads (the 1.38 term), from T's final, same design, own card (~14.2 L40-h + control); `L_rank` carries into the next generator arm (TEACHER-N7 / comfort)
+tier: T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)
+estimator: paired log-cluster bootstrap, 10000 draws, seed 20260927; answers: another draw of LOGS only; another TRAINING run = the seed pair (Ts - Cs, F = |Cs - C|; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic argmax, CTRL-DET)
+look 2 of H-SCORERFT-1 (Stage 2: Ts, Cs); multiplicity across cards is not corrected; card sha256 adc1b2ae8d3cc9b3dfed00a20a3c39197428cda8492be34af3bb9ed24010ec91
+n tokens 12146, logs 136; arms {'T': 'C1', 'C': 'C0', 'Ts': 'C1', 'Cs': 'base'}; stage 2
+controls: CTRL-SET=PASS, CTRL-T=PASS, CTRL-T=PASS, CTRL-T=PASS, CTRL-T=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-CSV=PASS, CTRL-SEAM=PASS, CTRL-ID=PASS, CTRL-ID=PASS  (all pass: True)
+  NOT AVAILABLE: CTRL-ARGV: no pod argv files exist for these arms (stand-ins): a real read REFUSES without --argv-t/-c(/-ts/-cs)
+  NOT AVAILABLE: CTRL-W0: no step-0 digest of C and no C1 reference digest for these arms (stand-ins): a real read REFUSES without --w0-digest-c and --w0-ref
+  NOT AVAILABLE: CTRL-DET: no re-run seam of T on 200 tokens (--det-seam-t): a real read REFUSES without it
+P1 d0 = T - C PDMS (tracked): 1.1702 [0.6730, 1.6450] -> PASS
+G1 (T - C, tracked, none separated adverse): PASS []
+  sub nc: tracked -0.0494 [-0.2046, 0.0929] | transparent (no tracker in this number) -0.1029 [-0.2841, 0.0754]
+  sub dac: tracked 0.1976 [-0.0999, 0.4638] | transparent (no tracker in this number) -0.5352 [-0.8937, -0.1773]
+  sub ttc: tracked 0.0988 [-0.2279, 0.4176] | transparent (no tracker in this number) -0.6834 [-1.0240, -0.3633]
+  sub ep: tracked 2.4934 [1.6898, 3.3196] | transparent (no tracker in this number) 1.5616 [0.8456, 2.2877]
+  sub c: tracked -0.0165 [-0.0445, 0.0000] | transparent (no tracker in this number) -15.2314 [-16.7594, -13.6423]
+  sub ddc: tracked -0.3129 [-0.6209, -0.0049] | transparent (no tracker in this number) -1.1650 [-1.6096, -0.7400]  [DDC: reported, not a guard]
+P2: PASS Ts - Cs 1.4824 [0.9393, 2.0008] G1-adverse []
+P3: PASS d = 1.3263, F = 0.3121, 2F = 0.6242; s_p beside it: 0.2207
+GOAL 94.55: T 92.55 [91.80, 93.26] -> BELOW GOAL
+GOAL 94.55: C 91.38 [90.52, 92.23] -> BELOW GOAL
+GOAL 94.55: Ts 92.55 [91.80, 93.26] -> BELOW GOAL
+GOAL 94.55: Cs 91.07 [90.20, 91.93] -> BELOW GOAL
+M1 EP Spearman T - C: -0.0156 [-0.0263, -0.0046] moved=False
+M2 zeroed-pick rate T - C (pp): -0.1235 [-0.4508, 0.2421]
+M3 regret (oracle - pick) T - C: 0.4047 [0.0965, 0.7348] moved=False
+M4 oracle-of-64 T - C: 1.5750 [1.2101, 1.9624] damaged=False
+transparent comfort T - C, transparent_20_pose_plan: -15.2314 [-16.7594, -13.6423] (descriptive, no clause)
+transparent comfort T - C, transparent_8_submitted_poses: -5.3433 [-6.5930, -4.0809] (descriptive, no clause)
+families (each stands alone, never pooled):
+  LONGITUDINAL: 22 components
+  LATERAL: 8 components
+  lead-agent (headway / time-gap / TTC): headway_min_m=OK n=6193, time_gap_min_s=OK n=5661, min_ttc_s=OK n=6193, lead_viol=OK n=6435, lead_at_risk=OK n=6435, lead_progress_ratio=OK n=5331
+  TACTICAL (b) selection quality: computed; (c) goal-setting: NOT COMPUTABLE (n = 12146)
+  STRATEGIC: REPORTED IN FULL (no bar; PI ruling 2026-11-16)
+  separated adverse qualifiers: LONGITUDINAL.speed_mae_mps, LONGITUDINAL.speed_bias_mps, LONGITUDINAL.speed_rmse_mps, LONGITUDINAL.target_speed_acc.within_0.5_mps, LONGITUDINAL.target_speed_acc.within_1.0_mps, LONGITUDINAL.target_speed_acc.within_2.0_mps, LONGITUDINAL.along_mae_m, LONGITUDINAL.along_bias_m, LONGITUDINAL.along_final_bias_m, LONGITUDINAL.accel_mae_mps2, LONGITUDINAL.ego_progress.progress_ratio_mean, LONGITUDINAL.ego_progress.progress_error_mean, LATERAL.cross_mae_m, LATERAL.cross_final_mae_m, TACTICAL.selection.regret, TACTICAL.selection.ep_spearman
+ADOPT would not clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias); those stay open on the lineage

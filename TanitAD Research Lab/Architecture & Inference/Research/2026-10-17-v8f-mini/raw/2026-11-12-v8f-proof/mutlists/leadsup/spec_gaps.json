@@ -1,0 +1,33 @@
+{
+ "pristine": "/workspace/v8proof/mutlists/leadsup/tree_pristine",
+ "work": "/workspace/v8proof/mutlists/leadsup/tree_work",
+ "test_files": [
+  "stack/tests/test_lead_sup_gaps.py"
+ ],
+ "mutations": [
+  {
+   "id": "m2_window_mask_any_instead_of_all",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "okw = batch[\"frame_ok\"].unfold(1, hist, 1).all(-1)",
+   "new": "okw = batch[\"frame_ok\"].unfold(1, hist, 1).any(-1)",
+   "expect": [
+    "test_m2"
+   ],
+   "test_files": [
+    "stack/tests/test_lead_sup_gaps.py"
+   ]
+  },
+  {
+   "id": "m5_gap_part_divided_by_presence_count",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "t_g = (hg * m_g).sum() / m_g.sum().clamp_min(1.0)",
+   "new": "t_g = (hg * m_g).sum() / m_p.sum().clamp_min(1.0)",
+   "expect": [
+    "test_m5"
+   ],
+   "test_files": [
+    "stack/tests/test_lead_sup_gaps.py"
+   ]
+  }
+ ]
+}

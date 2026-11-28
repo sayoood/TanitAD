@@ -1,0 +1,314 @@
+{
+ "tool": "mapedge.py",
+ "prereg_sha256": "31a53010eed168954e90b0352c11821cc7b0c3ce6dc7f8cfd6af7d236ef46445",
+ "amendment1_sha256": "59cb8e9ed2863d22aa3dbc749b6639159dc4cba7819986565fc3e834bb806bce",
+ "seal_ok": true,
+ "script_sha256": "e1f1b7a976f80df58245bb9e62b08d6482b4a4c2f605047332f94f7ffb636419",
+ "controls": {
+  "K1_analytic_world": {
+   "pass": true,
+   "rec": 1.0,
+   "prec": 1.0
+  },
+  "K2_shifted_world": {
+   "pass": true,
+   "rec": 0.0
+  },
+  "K3_identity_paired_zero": {
+   "pass": true
+  },
+  "K4_donor_other_episode": {
+   "pass": true,
+   "n_episodes": 139
+  },
+  "K5_decode": {
+   "pass": true,
+   "n_windows": 4686,
+   "n_bad_shape": 0,
+   "n_constant_pdrv": 0,
+   "n_windows_without_gt": 68,
+   "n_episodes_touched_without_gt": 2
+  },
+  "K3_identity_paired_zero_real": {
+   "pass": true
+  }
+ },
+ "estimator": "pooled window mean; episode-cluster bootstrap over episodes, B 2000, seed 0 -- 'another draw of EPISODES' only; one training seed; the map head is deterministic given the frames",
+ "tier": "perception instrument (map head vs SAM3 GT raster), eval139 per-frame windows; not a planning or driving metric",
+ "summary": {
+  "OWN-CODE5": {
+   "rec": {
+    "point": 0.0019094581286073285,
+    "lo": 0.000972442592828487,
+    "hi": 0.002981670311544973,
+    "n_windows": 4538,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "prec": {
+    "point": 0.7861621259164421,
+    "lo": 0.6320502756750207,
+    "hi": 0.8806334713575388,
+    "n_windows": 142,
+    "n_episodes": 24,
+    "separated": true
+   },
+   "rec_0-20m": {
+    "point": 0.005650309737907422,
+    "lo": 0.002894370909652769,
+    "hi": 0.008819373839748392,
+    "n_windows": 4388,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_20-40m": {
+    "point": 2.780337250146237e-05,
+    "lo": 4.546567371694665e-06,
+    "hi": 5.963033365653417e-05,
+    "n_windows": 4339,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_40-60m": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_windows": 3896,
+    "n_episodes": 136,
+    "separated": false
+   },
+   "share_on_nocls": {
+    "point": 0.09716468169001792,
+    "lo": 0.05174853499529591,
+    "hi": 0.1527827734450942,
+    "n_windows": 353,
+    "n_episodes": 50,
+    "separated": true
+   },
+   "share_on_unseen": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_windows": 353,
+    "n_episodes": 50,
+    "separated": false
+   },
+   "F_tol_of_means": 0.003809663213661963
+  },
+  "OWN-BND": {
+   "rec": {
+    "point": 0.29069044955330764,
+    "lo": 0.26709121322009816,
+    "hi": 0.3146892655781878,
+    "n_windows": 4538,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "prec": {
+    "point": 0.20950711747637685,
+    "lo": 0.187658617031799,
+    "hi": 0.23116184441906856,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "rec_0-20m": {
+    "point": 0.4116237323302811,
+    "lo": 0.3839490705365051,
+    "hi": 0.4402278672046773,
+    "n_windows": 4388,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_20-40m": {
+    "point": 0.2771225166593651,
+    "lo": 0.2500173382646873,
+    "hi": 0.30522860312998906,
+    "n_windows": 4339,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_40-60m": {
+    "point": 0.19502422237936293,
+    "lo": 0.17338923175941343,
+    "hi": 0.2167833510023426,
+    "n_windows": 3896,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "share_on_nocls": {
+    "point": 0.13813883240554917,
+    "lo": 0.1192541092913505,
+    "hi": 0.1580682375094908,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "share_on_unseen": {
+    "point": 0.02813654117782737,
+    "lo": 0.019892526395544258,
+    "hi": 0.03764285680530046,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "F_tol_of_means": 0.2435106533023635
+  },
+  "DER-BND": {
+   "rec": {
+    "point": 0.09543731403496071,
+    "lo": 0.08801493130244,
+    "hi": 0.10342728998392807,
+    "n_windows": 4538,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "prec": {
+    "point": 0.07826505548423249,
+    "lo": 0.07034180354454671,
+    "hi": 0.08685874797961046,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "rec_0-20m": {
+    "point": 0.14016154830049735,
+    "lo": 0.12797771376397798,
+    "hi": 0.1530408286568568,
+    "n_windows": 4388,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_20-40m": {
+    "point": 0.0789293125661891,
+    "lo": 0.07119107503671387,
+    "hi": 0.08718166385351875,
+    "n_windows": 4339,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_40-60m": {
+    "point": 0.06848785835419076,
+    "lo": 0.06124337344087564,
+    "hi": 0.07597894222882554,
+    "n_windows": 3896,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "share_on_nocls": {
+    "point": 0.20538285806635628,
+    "lo": 0.17746525814861333,
+    "hi": 0.23548655061650373,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "share_on_unseen": {
+    "point": 0.03347028611667848,
+    "lo": 0.025811117111212215,
+    "hi": 0.042159875699029806,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "F_tol_of_means": 0.08600235792853694
+  },
+  "GT-BND": {
+   "rec": {
+    "point": 0.9640529329399692,
+    "lo": 0.9564349144025033,
+    "hi": 0.9716519373084336,
+    "n_windows": 4538,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "prec": {
+    "point": 0.8548169058949047,
+    "lo": 0.8406254989833672,
+    "hi": 0.8675424417639976,
+    "n_windows": 4567,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_0-20m": {
+    "point": 0.9648596713732733,
+    "lo": 0.9572800524395733,
+    "hi": 0.9722148432766123,
+    "n_windows": 4388,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_20-40m": {
+    "point": 0.9659162496363362,
+    "lo": 0.9580792393111837,
+    "hi": 0.9734741865810282,
+    "n_windows": 4339,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "rec_40-60m": {
+    "point": 0.969673483106857,
+    "lo": 0.9626307115275363,
+    "hi": 0.9767538015583583,
+    "n_windows": 3896,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "share_on_nocls": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_windows": 4587,
+    "n_episodes": 136,
+    "separated": false
+   },
+   "share_on_unseen": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_windows": 4587,
+    "n_episodes": 136,
+    "separated": false
+   },
+   "F_tol_of_means": 0.90615472054069
+  }
+ },
+ "bars": {
+  "B1_rec_OWNBND_minus_OWNCODE5": {
+   "cell": {
+    "point": 0.2887809914247004,
+    "lo": 0.2659207187541622,
+    "hi": 0.3121041427015818,
+    "n_windows": 4538,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "pass": true
+  },
+  "B2_rec_OWNBND_minus_DERBND": {
+   "cell": {
+    "point": 0.19525313551834692,
+    "lo": 0.1727816440588782,
+    "hi": 0.21854313037950807,
+    "n_windows": 4538,
+    "n_episodes": 136,
+    "separated": true
+   },
+   "pass": true
+  },
+  "B3_prec_OWNBND_minus_DERBND": {
+   "cell": {
+    "point": 0.13124206199214436,
+    "lo": 0.11223102706688541,
+    "hi": 0.15101632156065634,
+    "n_windows": 4686,
+    "n_episodes": 137,
+    "separated": true
+   },
+   "pass": true
+  }
+ },
+ "verdict": "INSTRUMENT-PASS",
+ "next": "Q2: the OWN-BND-T12 selection arm through MAPSEL's scorer (sealed separately before it runs).",
+ "wall_s": 595.3
+}

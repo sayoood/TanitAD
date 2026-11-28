@@ -51,7 +51,7 @@ from tanitad.eval.route_cf import (CONTROL_TOL_M, commanded_lateral,
 from tanitad.refs.refc import (LAN_FEATS_PER_ANCHOR as REFC_FEATS,
                                RefCModel, param_breakdown, refc_smoke_config)
 
-HUB = Path(__file__).resolve().parents[2] / "TanitAD Research Hub"
+HUB = Path(__file__).resolve().parents[2] / "TanitAD Research Lab"
 NUREC = (HUB / "Architecture & Inference" / "Research"
          / "2026-08-02-nurec-xodr-map")
 

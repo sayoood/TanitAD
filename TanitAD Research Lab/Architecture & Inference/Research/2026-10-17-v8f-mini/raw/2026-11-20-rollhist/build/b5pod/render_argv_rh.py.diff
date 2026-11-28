@@ -1,0 +1,11 @@
+--- ../b2/render_argv_rh.py	2026-11-20 18:46:03.894786800 +0100
++++ render_argv_rh.py	2026-11-21 01:00:22.699647200 +0100
+@@ -14,7 +14,7 @@
+ import argparse, json, os, sys
+ 
+ R = os.environ.get("RH_ROOT", "/root/rollhist")
+-TREE = os.environ.get("RH_TREE", R + "/tree")
++TREE = os.environ.get("RH_TREE", R + "/tree_cdb")
+ ARGV = os.environ.get("RH_ARGV", R + "/argv")
+ TMPL_DIR = os.environ.get("RH_TMPL_DIR", "/root/dscale10k/argv")
+ CKPT = {0: os.environ.get("RH_INIT_S0", "/root/dscale10k/runs/UE_s0/A/ckpt_last.pt"), 1: os.environ.get("RH_INIT_S1", "/root/dscale10k/runs/UE_s1/A/ckpt_last.pt")}

@@ -1,0 +1,180 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 6.0 s; strict missing=0 unexpected=0 step=1500; param_breakdown equal=True
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[g0] eval dataset: 139 episodes -> 23772 windows (154s); subset 128; batches 8
+[g0] collated 8 batches in 298.9 s
+[g0] requires_grad control: 23 of 444 terms differ between trained and loader flags (dev box)
+[g0] seed 0: eval_loss 79.44542 eval_traj 0.77387 (82s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 1: eval_loss 79.31317 eval_traj 0.76665 (76s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 2: eval_loss 79.2918 eval_traj 0.75841 (83s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 3: eval_loss 79.28866 eval_traj 0.76547 (88s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 4: eval_loss 78.91799 eval_traj 0.72377 (87s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 5: eval_loss 79.34672 eval_traj 0.76605 (88s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 6: eval_loss 79.27744 eval_traj 0.75494 (86s, peak 5.85 GiB, buffers unchanged True)
+[g0] seed 7: eval_loss 79.22529 eval_traj 0.75664 (80s, peak 5.85 GiB, buffers unchanged True)
+[g0] mutation m1: ran (74.0 s)
+[g0] mutation m2: ran (66.4 s)
+[g0] mutation m4: ran (78.8 s)
+[wrapper] P1_as_run: max wrapper rel 2.809e-03, max floor rel 3.988e-05, over bar 138
+[wrapper] P2_cudnn_det: max wrapper rel 1.506e-03, max floor rel 3.988e-05, over bar 50, W1 detected True, W2 detected True
+[wrapper] P3_fp32_det: max wrapper rel 6.421e-06, max floor rel 1.372e-07, over bar 0, W1 detected True, W2 detected True
+[g0] wrapper clause: PASS (P3_fp32_det)
+{
+ "G0": "FAIL",
+ "reasons": [
+  "eval_box3d_det_ap4_stroller_0_20 [DETECTION] in-run 0.11111 vs seeds mean 0.14286 (sd 0)"
+ ],
+ "n_terms": 1109,
+ "by_class_counts": {
+  "DETECTION": 334,
+  "EXCLUDED": 11,
+  "MATCHED": 29,
+  "UNDEFINED": 98,
+  "DERIVED": 2,
+  "COUNT": 210,
+  "SMOOTH": 179,
+  "STOCHASTIC": 6,
+  "MAP10_COUNTS": 160,
+  "MAP10_IOU": 80
+ },
+ "medians": {
+  "SMOOTH": 3.637388718642527e-05,
+  "MATCHED": 0.0004644756079787789,
+  "MAP10_COUNTS": 4.3839082113563804e-05,
+  "DETECTION_abs01": 0.0
+ },
+ "mutation_detection": {
+  "m1": {
+   "detected": true,
+   "n_terms_out": 2,
+   "first10": [
+    {
+     "term": "eval_box3d_det_ap4_stroller_0_20",
+     "class": "DETECTION",
+     "inrun": 0.11111,
+     "mutated": 0.16667
+    },
+    {
+     "term": "eval_lon_tac",
+     "class": "SMOOTH",
+     "inrun": 1.68761,
+     "mutated": 1.64529
+    }
+   ]
+  },
+  "m2": {
+   "detected": true,
+   "n_terms_out": 41,
+   "first10": [
+    {
+     "term": "eval_box3d_det_ap4_stroller_0_20",
+     "class": "DETECTION",
+     "inrun": 0.11111,
+     "mutated": 0.14286
+    },
+    {
+     "term": "eval_map_hires_inter_crosswalk_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 4.0,
+     "mutated": 854.5
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 253683.625,
+     "mutated": 231765.625
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_20_40",
+     "class": "MAP10_COUNTS",
+     "inrun": 256124.125,
+     "mutated": 273390.25
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_40_60",
+     "class": "MAP10_COUNTS",
+     "inrun": 222874.25,
+     "mutated": 237522.0
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_60_80",
+     "class": "MAP10_COUNTS",
+     "inrun": 186128.625,
+     "mutated": 198062.125
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_80_100",
+     "class": "MAP10_COUNTS",
+     "inrun": 148880.25,
+     "mutated": 162873.25
+    },
+    {
+     "term": "eval_map_hires_inter_edge_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 152.25
+    },
+    {
+     "term": "eval_map_hires_inter_lane_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 5942.125,
+     "mutated": 9202.5
+    },
+    {
+     "term": "eval_map_hires_inter_lane_20_40",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 70.75
+    }
+   ]
+  },
+  "m4": {
+   "detected": true,
+   "n_terms_out": 5,
+   "first10": [
+    {
+     "term": "eval_anchor_acc",
+     "class": "SMOOTH",
+     "inrun": 0.5,
+     "mutated": 0.46094
+    },
+    {
+     "term": "eval_box3d_det_ap4_stroller_0_20",
+     "class": "DETECTION",
+     "inrun": 0.11111,
+     "mutated": 0.14286
+    },
+    {
+     "term": "eval_goal_score_absmean",
+     "class": "STOCHASTIC",
+     "inrun": 8.01765,
+     "mutated": 7.88741
+    },
+    {
+     "term": "eval_law",
+     "class": "STOCHASTIC",
+     "inrun": 0.0006,
+     "mutated": 0.00052
+    },
+    {
+     "term": "eval_sel_v3",
+     "class": "STOCHASTIC",
+     "inrun": 1.78082,
+     "mutated": 2.06371
+    }
+   ]
+  }
+ }
+}
+[g0] wrote raw/g0_step1500/g0.json (1396.1 s)

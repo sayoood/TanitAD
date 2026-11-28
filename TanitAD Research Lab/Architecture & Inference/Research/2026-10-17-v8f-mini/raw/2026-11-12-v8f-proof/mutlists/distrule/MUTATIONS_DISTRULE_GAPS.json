@@ -1,0 +1,86 @@
+{
+ "counts_line": "gaps 6, now red 6, still green 0, control green yes",
+ "lever": "DISTRULE",
+ "control": {
+  "rc": 0,
+  "n_tests": 6,
+  "failed": [],
+  "ignored_environment_failures": [],
+  "green": true,
+  "seconds": 2,
+  "err": ""
+ },
+ "written_utc": "2026-11-19T07:40:14Z",
+ "gaps": [
+  {
+   "mutation_id": "w1_progress_offset_dropped_from_the_source_gap",
+   "new_test": "test_dist_rule_gaps.py::test_w1_source_gap_carries_the_progress_offset_a_l_minus_a_m",
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule_gaps.py::test_w1_source_gap_carries_the_progress_offset_a_l_minus_a_m"
+   ],
+   "n_tests": 6,
+   "expected_all_red": true
+  },
+  {
+   "mutation_id": "w5_head_presence_threshold_0_5_to_0_0",
+   "new_test": "test_dist_rule_gaps.py::test_w5_head_presence_threshold_is_half",
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule_gaps.py::test_w5_head_presence_threshold_is_half"
+   ],
+   "n_tests": 6,
+   "expected_all_red": true
+  },
+  {
+   "mutation_id": "w8_source_bad_ticks_stay_present",
+   "new_test": "test_dist_rule_gaps.py::test_w8_present_tick_with_a_non_finite_source_value_is_marked_bad_and_not_present",
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule_gaps.py::test_w8_present_tick_with_a_non_finite_source_value_is_marked_bad_and_not_present"
+   ],
+   "n_tests": 6,
+   "expected_all_red": true
+  },
+  {
+   "mutation_id": "w9_rule_flag_accepted_for_a_non_run_mode",
+   "new_test": "test_dist_rule_gaps.py::test_w9_dist_rule_with_a_non_run_mode_is_refused",
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule_gaps.py::test_w9_dist_rule_with_a_non_run_mode_is_refused"
+   ],
+   "n_tests": 6,
+   "expected_all_red": true
+  },
+  {
+   "mutation_id": "q5_fit_pav_removed",
+   "new_test": "test_dist_rule_gaps.py::test_q5_fit_pools_a_non_monotone_quantile_sequence",
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule_gaps.py::test_q5_fit_pools_a_non_monotone_quantile_sequence"
+   ],
+   "n_tests": 6,
+   "expected_all_red": true
+  },
+  {
+   "mutation_id": "q8_calib_percentile_95_to_90",
+   "new_test": "test_dist_rule_gaps.py::test_q8_margin_calib_p95_is_the_95th_percentile_not_the_90th",
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_dist_rule_gaps.py::test_q8_margin_calib_p95_is_the_95th_percentile_not_the_90th"
+   ],
+   "n_tests": 6,
+   "expected_all_red": true
+  }
+ ],
+ "no_test_wanted": {
+  "q2_map_not_capped_at_the_head_gap": "equivalent on every valid map: check_map forces ys <= xs (+1e-12), so Q(g) <= g in all three branches; only a map failing check_map, or a 1e-12 excess of ys over xs, differs",
+  "d8_unchanged_steps_not_kept_bit_for_bit": "near-equivalent: measure_d8.py, 2400 random windows per plan dtype (float32 and float64, about 1400 changed by the rule each): largest abs difference 0.0"
+ }
+}

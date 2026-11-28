@@ -1,0 +1,35 @@
+\subsection{Status of the study}\label{sec:status}
+\paragraph{Established (MEASURED, each with its tier).} At \tier{T1-kin}: the vision-fed distance rule is limited first by the gap read; a margin on that read calibrated on training clips, and a trained low-quantile head, each bring it to the label-fed rule on unsafe steps, the trained head equal to the map on the unsafe rate and equal or cheaper on 6\,s error (rows 57 to 59, 90); the planner on imagined rollouts cuts the unsafe rate on four bases (rows 81, 91). At \tier{T0}: the imagined state of RR carries scene layout at the token grid on four seeds; the logged data associates the ego's acceleration with the gap in the reversed direction and the imagined gap inherits it; a consistency term at weight 0.0001 turns the response and keeps the level, confirmed on two new seeds (rows 80, 88).
+
+\paragraph{Not met, as written.} No gain over extrapolation of the lead for the planner on imagined rollouts (IMAG-LEVEL-WORSE-THAN-EXTRAPOLATION at the new bases, row 91). A cost against no rule for the trained gap head (QHEAD-COSTS, row 90), and a contact rate above the label-fed rule in all three reads. The level term loses at both frozen weights, the level at 0.001 and the response at 0.01, and the third dose point of the consistency weight breaks the level (\cref{sec:level}). The response on the model's own plans is met only at the consistency weight 0.001, whose level is not kept, so DOSE-RESPONDS-ON-OWN-PLANS is not given (row 91). The pilot of the finer token grid is not named (row 87): every control passed except the training-log check p5 on the shuffled-label arm, which reads 0.3963 then 0.4031; the per-arm gap reads of the finer grid lie above those of the coarser grid ($R^2$ 0.71 to 0.77 against 0.49 to 0.70) and carry no name. That check does not separate a live training from noise on a 2,000-step arm in either run (standard error 0.030). The first run of the gap head was not named either (row 89). Carried as written from version 8: the bars OWN-RULE-L1-BEATS-MARGIN and LEAD-INPUT-BEATS-MARGIN, MOTION-ADDS-NOTHING-4, TARGET-FLAT, ACT-CONS-FLAT-RL, and the failed controls p2b, f2, k5, q3 and d4.
+
+\paragraph{Running or queued.} (i) Card ADD43 with note N1 (pre-registered, no result): a probe-only replicate of the finer token grid with eight new seeds and a two-level read, with the shuffled-label check defined on the intact-label part, under coordination decision D1 on a slot the PI already approved. Its build found that the trainer takes its sampler chunk from the token count (48 on the 4 by 10 grid, 41 on the 8 by 20 grid), so the pilot's arms and the banked arms were trained on different window orders, a limit of the pilot that names nothing. Model arms on the finer grid need their own card and a PI go. (ii) The two interior weights of the level term (\cref{sec:level}), in training. A pass at bases 0 and 1 counts as a candidate until two new bases confirm it.
+
+\paragraph{What is handed to the integrated tree.} The coordination of 2026-11-19 (lever sheet and cover note) gives statuses only; no number is added here. Row ids refer to the register.
+
+\begin{table}[!t]
+\centering
+\caption{\textbf{Levers handed to the integrated tree} (status of the lever sheet of 2026-11-19; the coordinator's proposal for the integrated candidate in the last column).}
+\label{tab:handoff}
+\scriptsize
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{25mm}>{\raggedright\arraybackslash}p{22mm}>{\raggedright\arraybackslash}p{13mm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Lever & Status & Rows & In the candidate \\
+\midrule
+Supervised lead head & ready with caveat & 52, 68, 77 & yes, behind its flags, on \\
+Consistency term, low weight & ready with caveat & 76, 80, 86, 88 & yes, behind its flag, on at 0.0001 \\
+Distance rule with gap safety & ready with caveat & 57 to 59, 62 & inference module, read both ways (off and on) \\
+Trained gap head (QHEAD) & ready with caveat & 89, 90 & with the rule, both columns shown \\
+Level term & not ready (no confirmed result) & 86 & no, off \\
+Rule in the target, on own plan & not for integration & 61 to 66 & none handed \\
+Lead read as plan-head input & not for integration & 71, 74, 75 & none handed \\
+Planner on imagined rollouts & not for integration & 81, 91 & no, off (no gain over extrapolation) \\
+MOTION, TARGET, finer grid & not ready & 60, 67, 72, 82, 87 & none handed (finer grid: not separated; card ADD43 running) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent Owed before the port, by this study: counted mutation lists for the lead head, the consistency term and the rule, and pins files for the rule and the gap-head tools; the launch gate needs declared-against-built entries for the lead-head and consistency flags and one equality check in the eval path for the rule constants and the gap-head file.
+
+\paragraph{Open decisions and gaps.} The finer lead read from the camera frames (an unpooled grid or a second encoder pass over the lead region) stays a decision of the PI. Training from the start with the relabelled target, the own-plan term on own-state samples and a re-perception tier, where the model sees the frames its own actions produce, were not run and are not provisioned. The STRATEGIC family is not computed in the reads banked after the PI ruling of 2026-11-16 (\cref{sec:fam7}), and the lever on a base with the strategic layer stays open (row 84).
+

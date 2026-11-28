@@ -1,0 +1,176 @@
+{
+ "tool": "vis1_train4572_controls.py",
+ "tool_md5": "b5b4dfaa7a1509f433f73c8c81dcc668",
+ "argv": [
+  "--old",
+  "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+  "--new",
+  "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+  "--sub",
+  "out/vis1_sub_add203_ctl.npz",
+  "--select-detail",
+  "in/select_detail.json",
+  "--train-cache",
+  "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--shard-dir",
+  "/home/nvidia/vis1_train4572_build/sub/shards",
+  "--out",
+  "/home/nvidia/vis1_train4572_build/merge/controls.json"
+ ],
+ "new_sha256": "b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04",
+ "old_sha256": "278443b3356bca054c15753e7c08d465d71b0327a2ce564e143d091261349dd4",
+ "sub_sha256": "4e31bb9c82a1ce8a87792c9c10a2b6ba99c6f032dc08f3620ef5c7133d8d5761",
+ "a_old_entries_unchanged": {
+  "n_compared": 4508,
+  "n_differing": 0,
+  "differing_sample": [],
+  "PASS": true
+ },
+ "b_builder_reproduces_old": {
+  "n_old_clips_rebuilt": 239,
+  "expected": 239,
+  "set_ok": true,
+  "n_train": 100,
+  "n_eval": 139,
+  "n_frames_compared": 45138,
+  "n_rows_compared": 250802,
+  "n_differing": 0,
+  "differing_sample": [],
+  "named3": {
+   "00a9f72ef853": {
+    "frames": 198,
+    "rows": 1054,
+    "equal": true
+   },
+   "02f7878099fa": {
+    "frames": 197,
+    "rows": 295,
+    "equal": true
+   },
+   "03a02abb8f1d": {
+    "frames": 198,
+    "rows": 107,
+    "equal": true
+   }
+  },
+  "PASS": true
+ },
+ "c_clip_set": {
+  "n_clips": 4711,
+  "n_train": 4572,
+  "n_eval": 139,
+  "train_manifest": 4572,
+  "eval_manifest": 139,
+  "train_equal": true,
+  "eval_equal": true,
+  "train_eval_disjoint": true,
+  "sorted_unique": true,
+  "n_add": 203,
+  "add_in_train_manifest": true,
+  "add_all_present_split_train": true,
+  "PASS": true
+ },
+ "d_add_clips": {
+  "n_add": 203,
+  "joined_from_2d_shards": 58,
+  "with_frames": 58,
+  "joined_set_equals_frames_set": true,
+  "zero_frame": 145,
+  "frames_total": 11063,
+  "rows_total": 85056,
+  "frames_per_clip_min_med_max": [
+   32,
+   198.0,
+   199
+  ],
+  "rows_with_n_full_gt0_frac_ADD": 0.9956028969149736,
+  "rows_with_n_full_gt0_frac_OLD": 0.999859751237356,
+  "mean_vis_frac_ADD": 0.4246549543872274,
+  "mean_vis_frac_OLD": 0.5452162690353747,
+  "n_clips_bad_values": 0,
+  "bad_sample": [],
+  "n_joined_clips_with_zero_stored_rows": 5,
+  "sample_clip_stats(sha12,frames,rows,mean_vis_frac,frac_nfull_gt0)": [
+   [
+    "0abfbd5d51d4",
+    199,
+    4352,
+    0.19779930175141758,
+    1.0
+   ],
+   [
+    "0da181a52a57",
+    198,
+    1232,
+    0.6211013766833766,
+    1.0
+   ],
+   [
+    "0e84d6171932",
+    198,
+    717,
+    0.6740885238183985,
+    1.0
+   ],
+   [
+    "0ef4cf58f105",
+    199,
+    1380,
+    0.7148315517718542,
+    1.0
+   ],
+   [
+    "0f465a7da933",
+    198,
+    939,
+    0.5112994918520567,
+    1.0
+   ]
+  ],
+  "zero_frame_entries_ok(0 frames, 0 rows, mask True, split train)": true,
+  "PASS": true
+ },
+ "e_require_clips": {
+  "n_ids": 4711,
+  "require_clips_full_list": "no raise",
+  "negative_absent_id": "raised (as required)",
+  "negative_flipped_mask": "raised (as required)",
+  "meta_n_stack": 3,
+  "PASS": true
+ },
+ "f_trainer_lookup": {
+  "n_joined_frames_checked": 11063,
+  "n_rows_known": 85056,
+  "n_rows_expected_known": 85056,
+  "refusals": [],
+  "n_unjoined_probes": 435,
+  "unjoined_with_label": [],
+  "pad_seen": [
+   41,
+   50,
+   91,
+   98,
+   99,
+   102,
+   116,
+   122,
+   125,
+   136,
+   138,
+   140,
+   141,
+   153,
+   176,
+   178,
+   215,
+   222,
+   308,
+   330,
+   395
+  ],
+  "PASS": true
+ },
+ "ALL_PASS": true
+}

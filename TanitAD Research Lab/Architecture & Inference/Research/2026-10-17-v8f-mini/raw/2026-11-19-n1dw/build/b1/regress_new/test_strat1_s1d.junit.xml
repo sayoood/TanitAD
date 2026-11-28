@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="19" time="4.307" timestamp="2026-11-19T15:33:19.444236+01:00" hostname="FREEDOM2035"><testcase classname="tests.test_strat1_s1d" name="test_s1d_checks_pass_on_the_real_checker[gate]" time="0.131" /><testcase classname="tests.test_strat1_s1d" name="test_s1d_checks_pass_on_the_real_checker[nav]" time="0.035" /><testcase classname="tests.test_strat1_s1d" name="test_s1d_checks_pass_on_the_real_checker[post]" time="1.648" /><testcase classname="tests.test_strat1_s1d" name="test_s1d_checks_pass_on_the_real_checker[render]" time="0.267" /><testcase classname="tests.test_strat1_s1d" name="test_existing_arm_argv_sha_is_unchanged[key0]" time="0.047" /><testcase classname="tests.test_strat1_s1d" name="test_existing_arm_argv_sha_is_unchanged[key1]" time="0.055" /><testcase classname="tests.test_strat1_s1d" name="test_existing_arm_argv_sha_is_unchanged[key2]" time="0.033" /><testcase classname="tests.test_strat1_s1d" name="test_existing_arm_argv_sha_is_unchanged[key3]" time="0.012" /><testcase classname="tests.test_strat1_s1d" name="test_existing_arm_argv_sha_is_unchanged[key4]" time="0.043" /><testcase classname="tests.test_strat1_s1d" name="test_existing_arm_argv_sha_is_unchanged[key5]" time="0.060" /><testcase classname="tests.test_strat1_s1d" name="test_kinds_and_seeds_include_s1d" time="0.000" /><testcase classname="tests.test_strat1_s1d" name="test_s1d_binding_and_token_run" time="1.064" /><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[ctx_kinds_drop_s1d]" time="0.121" /><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[gate_drop_adapter_grad_check]" time="0.196" /><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[gate_drop_detach_check]" time="0.132" /><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[kinds_drop_s1d]" time="0.017"><failure message="AssertionError: ('kinds_drop_s1d', 0)&#10;assert 0 == 1&#10; +  where 0 = &lt;built-in method count of str object at 0x0000019A7F6D4880&gt;('KINDS = (&quot;C0&quot;, &quot;N1&quot;, &quot;S1&quot;, &quot;S1d&quot;, &quot;N1R&quot;, &quot;S1R&quot;, &quot;S1dR&quot;, &quot;N1Z&quot;, &quot;N1D&quot;, &quot;N1Dx&quot;)')&#10; +    where &lt;built-in method count of str object at 0x0000019A7F6D4880&gt; = '&quot;&quot;&quot;PREREG_V8F_STRAT1 study checker (BUILD_SPEC section 8; the pattern of ``obd_check.py``). It maps the seven launch-... &quot;REFUSED: &quot; + &quot;; &quot;.join(bad))\n    return 0 if not bad else 1\n\n\nif __name__ == &quot;__main__&quot;:\n    sys.exit(main())\n'.count">mname = 'kinds_drop_s1d'
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_s1d/bt/test_mutation_turns_a_check_re3')
+
+    @pytest.mark.parametrize("mname", sorted(MUTATIONS))
+    def test_mutation_turns_a_check_red(mname, tmp_path):
+&gt;       m = _mutant(tmp_path, mname, *MUTATIONS[mname])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_strat1_s1d.py:172: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dw/build/tmp/reg_new/test_strat1_s1d/bt/test_mutation_turns_a_check_re3')
+name = 'kinds_drop_s1d'
+old = 'KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")'
+new = 'KINDS = ("C0", "N1", "S1", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")'
+
+    def _mutant(tmp_path, name, old, new):
+        src = open(os.path.join(SCRIPTS, "strat1_check.py"), "rb").read().decode("utf-8")
+&gt;       assert src.count(old) == 1, (name, src.count(old))
+E       AssertionError: ('kinds_drop_s1d', 0)
+E       assert 0 == 1
+E        +  where 0 = &lt;built-in method count of str object at 0x0000019A7F6D4880&gt;('KINDS = ("C0", "N1", "S1", "S1d", "N1R", "S1R", "S1dR", "N1Z", "N1D", "N1Dx")')
+E        +    where &lt;built-in method count of str object at 0x0000019A7F6D4880&gt; = '"""PREREG_V8F_STRAT1 study checker (BUILD_SPEC section 8; the pattern of ``obd_check.py``). It maps the seven launch-... "REFUSED: " + "; ".join(bad))\n    return 0 if not bad else 1\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+tests\test_strat1_s1d.py:147: AssertionError</failure></testcase><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[nav_kinds_drop_s1d]" time="0.102" /><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[post_drop_s1d]" time="0.073" /><testcase classname="tests.test_strat1_s1d" name="test_mutation_turns_a_check_red[render_detach_off]" time="0.056" /></testsuite></testsuites>

@@ -39,8 +39,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from tanitad.data.toy_driving import ToyEpisode  # noqa: E402
 from tanitad.data.v2_dataset import (  # noqa: E402
-    build_v2_providers, decode_full_episode, load_or_build_manifest,
-    stable_episode_id)
+    MANIFEST_VERSION, build_v2_providers, decode_full_episode,
+    load_or_build_manifest, stable_episode_id)
 
 WINDOW, MAXH, MANH, NSTACK, S = 4, 6, 3, 3, 32
 
@@ -176,7 +176,14 @@ def test_manifest_is_cached_and_reused(tmp_path):
     assert (tmp_path / "_v2manifest.pt").exists()
     m2 = load_or_build_manifest(tmp_path, verbose=False)   # from sidecar
     assert m1["files"] == m2["files"] and m1["T_out"] == m2["T_out"]
-    assert m2["version"] == 2 and m2["n_stack"][0] == NSTACK
+    # ⛔ ASSERTED AGAINST THE CONSTANT, NOT A LITERAL. This line read `== 2`
+    # while `v2_dataset.MANIFEST_VERSION` had moved to 3 (v3 added per-clip
+    # image_h/image_w), and nobody saw it because the whole module is
+    # `importorskip("torchvision.io")` — skipped on the dev box for months.
+    # MEASURED 2026-08-16: installing torchvision un-skipped 9 tests here and
+    # this was the one that failed. A version literal in a test is a stale
+    # claim waiting to happen; the constant cannot drift from itself.
+    assert m2["version"] == MANIFEST_VERSION and m2["n_stack"][0] == NSTACK
     assert m2["clip_id"] == m1["clip_id"] and m2["episode_uid"] == m1["episode_uid"]
 
 

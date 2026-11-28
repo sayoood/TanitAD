@@ -1,0 +1,15 @@
+mutation check of test_force_s2_launcher_r8.py (2026-10-18 21:26:12+0200); source sha-free copy per mutation, original untouched
+unmutated: 23 passed in 82.47s (0:01:22)
+[ 0] RED   (test_a_stale_fp64_terminal_marker_BEFORE_the_last_wait_line_does_not_open_the_gate): fp64 gate: terminal markers counted ANYWHERE (the stale-marker trap)
+[ 1] RED   (test_every_terminal_marker_AFTER_the_last_wait_line_opens_the_gate[TIMEOUT]): fp64 gate: TIMEOUT is no longer terminal
+[ 2] RED   (test_exactly_the_threshold_counts_and_a_single_good_check_is_not_enough): free commit: a single good check is enough
+[ 3] RED   (test_exactly_the_threshold_counts_and_a_single_good_check_is_not_enough): free commit: exactly the threshold no longer counts
+[ 4] RED   (test_insufficient_or_unreadable_free_commit_never_opens[echo]): free commit: an unreadable probe counts as plenty
+[ 5] RED   (test_force_lon_roll_alive_blocks_and_done_or_stale_does_not): force_lon staleness window removed
+[ 6] RED   (test_queue_end_marker_missing_keeps_the_gate_shut): queue-end gate skipped
+[ 7] RED   (test_a_live_lock_holder_refuses_and_a_dead_one_is_reclaimed): single-launcher guard never sees a live holder
+[ 8] RED   (test_a_roll_that_never_completes_never_reaches_analyze): roll gets three passes
+[ 9] RED   (test_analyze_without_its_end_marker_is_a_failure_even_though_the_json_exists): analyze judged by the json alone
+[10] RED   (test_select_without_its_end_marker_stops_the_launcher_before_the_roll): select judged without its own end marker
+summary: 11 RED, 0 SURVIVED, 0 NOT APPLIED of 11; wall 657s
+done

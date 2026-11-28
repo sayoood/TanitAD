@@ -1,0 +1,1488 @@
+{
+ "schema": "r9e2-dose-verdict-v1",
+ "class": "DIAGNOSTIC (one training run per arm, H-ESTIM-SEED-1)",
+ "prereg": "TanitAD-artifacts/dagland/e2/PREREG_K2DC_2026-11-12.md",
+ "outcome": "DOSE-VOID",
+ "outcome_if_valid": "INCONCLUSIVE",
+ "reason": "between the bars: next step = a replicate arm (same flags, seed + 1), NOT a reinterpretation",
+ "per_seed": {
+  "0": {
+   "i_dc_k0_cross_not_separated_worse": false,
+   "ii_dc_k2_cross_le_minus_2p5mm": false,
+   "iii_jitter_delta_negative": false,
+   "supported": false,
+   "refuted_band": {
+    "LAT_cross_mae_m": false,
+    "LAT_cross_abs_final_m": false
+   },
+   "refuted": false
+  },
+  "1": {
+   "i_dc_k0_cross_not_separated_worse": true,
+   "ii_dc_k2_cross_le_minus_2p5mm": false,
+   "iii_jitter_delta_negative": true,
+   "supported": false,
+   "refuted_band": {
+    "LAT_cross_mae_m": true,
+    "LAT_cross_abs_final_m": true
+   },
+   "refuted": true
+  }
+ },
+ "dose_validity": {
+  "metrics": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\metrics_k2dc02s1.jsonl",
+  "n_probes_total": 24,
+  "n_probes_step_ge_3000": 13,
+  "n_inside_band": 1,
+  "band": [
+   0.01,
+   0.03
+  ],
+  "rule": ">= 2 probes at step >= 3000 inside [0.01, 0.03]",
+  "probes_step_ge_3000": [
+   {
+    "step": 3000,
+    "share": 0.00999
+   },
+   {
+    "step": 3250,
+    "share": 0.04176
+   },
+   {
+    "step": 3500,
+    "share": 0.03463
+   },
+   {
+    "step": 3750,
+    "share": -0.00205
+   },
+   {
+    "step": 4000,
+    "share": 0.01497
+   },
+   {
+    "step": 4250,
+    "share": -0.0051
+   },
+   {
+    "step": 4500,
+    "share": 0.17002
+   },
+   {
+    "step": 4750,
+    "share": 0.00494
+   },
+   {
+    "step": 5000,
+    "share": 0.03021
+   },
+   {
+    "step": 5250,
+    "share": -0.01273
+   },
+   {
+    "step": 5500,
+    "share": 0.40116
+   },
+   {
+    "step": 5750,
+    "share": 0.07996
+   },
+   {
+    "step": 6000,
+    "share": 0.00567
+   }
+  ],
+  "w_bounds": [
+   0.1,
+   25.0
+  ],
+  "n_late_w_eff_probes": 13,
+  "n_late_at_lower_bound": 0,
+  "n_late_at_upper_bound": 0,
+  "status": "VOID",
+  "valid": false,
+  "reason": "the controller did not hold the share inside the band: DOSE-VOID"
+ },
+ "thresholds": {
+  "bar_m": -0.0025,
+  "band_m": 0.001,
+  "share_band": [
+   0.01,
+   0.03
+  ],
+  "share_min_step": 3000,
+  "share_min_probes": 2
+ },
+ "resolutions": [
+  "'at both seeds' governs the whole SUPPORTED sentence",
+  "REFUTED 'lateral rows' = LAT_cross_mae_m and LAT_cross_abs_final_m (the lateral rows that are lengths)",
+  "'separated worse' = the paired CI excludes zero AND delta > 0 (lower is better)",
+  "jitter clause = the POINT delta of the frame-to-frame |d e| (K2DC - K2) < 0; its interval is reported, no CI is required by the PREREG"
+ ],
+ "tier": "T1 (self-action open loop on logged eval139 frames; the `os` arm)",
+ "windows": "DEV (DEV_HOLD_SPLIT.json); HOLD is never read",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, over EPISODES (clips); delta = A - B; it answers 'another draw of EPISODES', not 'another training run' (H-ESTIM-SEED-1) and not 'another inference draw' (each seed is one call)",
+ "families_note": "four families per seed, per family, never pooled: LONGITUDINAL / LATERAL / TACTICAL rows in `seeds.<s>.dc_vs_k2_by_family` and `dc_vs_k0_by_family`; ade_m beside; STRATEGIC = PAUSED (PI 2026-09-19, ITEM 25), never a pass, never omitted",
+ "STRATEGIC": {
+  "status": "PAUSED",
+  "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality"
+ },
+ "seeds": {
+  "0": {
+   "dumps": {
+    "k2dc": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\s1\\E2_K2_pf\\dump_s0",
+    "k2": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\k2dc02\\E2_K2_pf\\dump_s0",
+    "k0": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\s1\\E2_K0_pf\\dump_s0"
+   },
+   "dc_vs_k0": {
+    "LON_speed_mae_mps": {
+     "delta": -0.0018,
+     "lo": -0.0067,
+     "hi": 0.0033,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.2567247712614776,
+     "b_mean": 0.25853155611629014
+    },
+    "LON_along_mae_m": {
+     "delta": -0.0019,
+     "lo": -0.0069,
+     "hi": 0.0033,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.23666058954062946,
+     "b_mean": 0.2385761333341984
+    },
+    "LON_along_abs_final_m": {
+     "delta": -0.0027,
+     "lo": -0.0134,
+     "hi": 0.0085,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.5111582257123262,
+     "b_mean": 0.5138513384763037
+    },
+    "LON_speed_within_0p5": {
+     "delta": 0.0045,
+     "lo": -0.0016,
+     "hi": 0.0104,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8523153942428036,
+     "b_mean": 0.8478306216103463
+    },
+    "LON_accel_mae_mps2": {
+     "delta": 0.0019,
+     "lo": -0.0036,
+     "hi": 0.0076,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.35483687255895296,
+     "b_mean": 0.35294671870870725
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.0315,
+     "lo": 0.0008,
+     "hi": 0.0632,
+     "separated": true,
+     "better": "lower",
+     "n": 2297,
+     "n_episodes": 70,
+     "a_mean": 2.114679557268869,
+     "b_mean": 2.083133618988366
+    },
+    "LAT_curvature_mae_1pm_valid": {
+     "delta": 0.0002,
+     "lo": -0.0,
+     "hi": 0.0005,
+     "separated": false,
+     "better": "lower",
+     "n": 2277,
+     "n_episodes": 70,
+     "a_mean": 0.004230447828506795,
+     "b_mean": 0.004003695965804775
+    },
+    "LAT_yaw_rate_mae_radps_valid": {
+     "delta": 0.0006,
+     "lo": -0.0,
+     "hi": 0.0012,
+     "separated": false,
+     "better": "lower",
+     "n": 2277,
+     "n_episodes": 70,
+     "a_mean": 0.019475274051743954,
+     "b_mean": 0.018889796389062085
+    },
+    "LAT_cross_mae_m": {
+     "delta": 0.0039,
+     "lo": 0.001,
+     "hi": 0.0068,
+     "separated": true,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.10469414109299542,
+     "b_mean": 0.10074690000852106
+    },
+    "LAT_cross_abs_final_m": {
+     "delta": 0.009,
+     "lo": 0.0027,
+     "hi": 0.0159,
+     "separated": true,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.2145820155791006,
+     "b_mean": 0.20556145023936326
+    },
+    "TAC_traj_lat_correct": {
+     "delta": -0.0025,
+     "lo": -0.0067,
+     "hi": 0.0013,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.9566124322069254,
+     "b_mean": 0.9591155611180643
+    },
+    "TAC_traj_lon_correct": {
+     "delta": 0.0008,
+     "lo": -0.0075,
+     "hi": 0.0088,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8360450563204005,
+     "b_mean": 0.8352106800166875
+    },
+    "TAC_traj_man5_correct": {
+     "delta": -0.0008,
+     "lo": -0.0083,
+     "hi": 0.0071,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8310387984981227,
+     "b_mean": 0.8318731748018356
+    }
+   },
+   "dc_vs_k0_ade_m": {
+    "delta": 0.0001,
+    "lo": -0.0049,
+    "hi": 0.0054,
+    "separated": false,
+    "better": "lower",
+    "n": 2397,
+    "n_episodes": 70,
+    "a_mean": 0.28583218798224963,
+    "b_mean": 0.28570019771046407
+   },
+   "dc_vs_k0_by_family": {
+    "LONGITUDINAL": {
+     "LON_speed_mae_mps": {
+      "delta": -0.0018,
+      "lo": -0.0067,
+      "hi": 0.0033,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.2567247712614776,
+      "b_mean": 0.25853155611629014
+     },
+     "LON_along_mae_m": {
+      "delta": -0.0019,
+      "lo": -0.0069,
+      "hi": 0.0033,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.23666058954062946,
+      "b_mean": 0.2385761333341984
+     },
+     "LON_along_abs_final_m": {
+      "delta": -0.0027,
+      "lo": -0.0134,
+      "hi": 0.0085,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.5111582257123262,
+      "b_mean": 0.5138513384763037
+     },
+     "LON_speed_within_0p5": {
+      "delta": 0.0045,
+      "lo": -0.0016,
+      "hi": 0.0104,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8523153942428036,
+      "b_mean": 0.8478306216103463
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0019,
+      "lo": -0.0036,
+      "hi": 0.0076,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.35483687255895296,
+      "b_mean": 0.35294671870870725
+     }
+    },
+    "LATERAL": {
+     "LAT_heading_mae_deg": {
+      "delta": 0.0315,
+      "lo": 0.0008,
+      "hi": 0.0632,
+      "separated": true,
+      "better": "lower",
+      "n": 2297,
+      "n_episodes": 70,
+      "a_mean": 2.114679557268869,
+      "b_mean": 2.083133618988366
+     },
+     "LAT_curvature_mae_1pm_valid": {
+      "delta": 0.0002,
+      "lo": -0.0,
+      "hi": 0.0005,
+      "separated": false,
+      "better": "lower",
+      "n": 2277,
+      "n_episodes": 70,
+      "a_mean": 0.004230447828506795,
+      "b_mean": 0.004003695965804775
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0006,
+      "lo": -0.0,
+      "hi": 0.0012,
+      "separated": false,
+      "better": "lower",
+      "n": 2277,
+      "n_episodes": 70,
+      "a_mean": 0.019475274051743954,
+      "b_mean": 0.018889796389062085
+     },
+     "LAT_cross_mae_m": {
+      "delta": 0.0039,
+      "lo": 0.001,
+      "hi": 0.0068,
+      "separated": true,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.10469414109299542,
+      "b_mean": 0.10074690000852106
+     },
+     "LAT_cross_abs_final_m": {
+      "delta": 0.009,
+      "lo": 0.0027,
+      "hi": 0.0159,
+      "separated": true,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.2145820155791006,
+      "b_mean": 0.20556145023936326
+     }
+    },
+    "TACTICAL": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0025,
+      "lo": -0.0067,
+      "hi": 0.0013,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.9566124322069254,
+      "b_mean": 0.9591155611180643
+     },
+     "TAC_traj_lon_correct": {
+      "delta": 0.0008,
+      "lo": -0.0075,
+      "hi": 0.0088,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8360450563204005,
+      "b_mean": 0.8352106800166875
+     },
+     "TAC_traj_man5_correct": {
+      "delta": -0.0008,
+      "lo": -0.0083,
+      "hi": 0.0071,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8310387984981227,
+      "b_mean": 0.8318731748018356
+     }
+    },
+    "STRATEGIC": {
+     "status": "PAUSED",
+     "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; never a pass, never omitted, never extended to the other families."
+    }
+   },
+   "dc_vs_k0_window_set_sha256": "c7ecd4d6aa8bd4b35d14303891498f9cf7235ce4d343e31e5edfb7be4979ba0a",
+   "dc_vs_k0_n_windows_paired": 2397,
+   "dc_vs_k2": {
+    "LON_speed_mae_mps": {
+     "delta": -0.0058,
+     "lo": -0.0107,
+     "hi": -0.0011,
+     "separated": true,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.2567247712614776,
+     "b_mean": 0.2624765984080698
+    },
+    "LON_along_mae_m": {
+     "delta": -0.0049,
+     "lo": -0.0093,
+     "hi": -0.0008,
+     "separated": true,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.23666058954062946,
+     "b_mean": 0.2415916134188765
+    },
+    "LON_along_abs_final_m": {
+     "delta": -0.0075,
+     "lo": -0.0177,
+     "hi": 0.0025,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.5111582257123262,
+     "b_mean": 0.5186979598696405
+    },
+    "LON_speed_within_0p5": {
+     "delta": 0.0048,
+     "lo": -0.0006,
+     "hi": 0.0101,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8523153942428036,
+     "b_mean": 0.8475177304964538
+    },
+    "LON_accel_mae_mps2": {
+     "delta": -0.0054,
+     "lo": -0.0113,
+     "hi": 0.0007,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.35483687255895296,
+     "b_mean": 0.36024185204916603
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.0208,
+     "lo": -0.0039,
+     "hi": 0.0459,
+     "separated": false,
+     "better": "lower",
+     "n": 2295,
+     "n_episodes": 70,
+     "a_mean": 2.1162415828965684,
+     "b_mean": 2.095480841899814
+    },
+    "LAT_curvature_mae_1pm_valid": {
+     "delta": 0.0,
+     "lo": -0.0001,
+     "hi": 0.0002,
+     "separated": false,
+     "better": "lower",
+     "n": 2277,
+     "n_episodes": 70,
+     "a_mean": 0.00424094563542042,
+     "b_mean": 0.004206301985928771
+    },
+    "LAT_yaw_rate_mae_radps_valid": {
+     "delta": 0.0003,
+     "lo": -0.0002,
+     "hi": 0.0008,
+     "separated": false,
+     "better": "lower",
+     "n": 2277,
+     "n_episodes": 70,
+     "a_mean": 0.019509782235440636,
+     "b_mean": 0.01925230013863527
+    },
+    "LAT_cross_mae_m": {
+     "delta": 0.0021,
+     "lo": -0.0002,
+     "hi": 0.0048,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.10469414109299542,
+     "b_mean": 0.10256246480114453
+    },
+    "LAT_cross_abs_final_m": {
+     "delta": 0.0047,
+     "lo": -0.0004,
+     "hi": 0.0111,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.2145820155791006,
+     "b_mean": 0.20986195027866184
+    },
+    "TAC_traj_lat_correct": {
+     "delta": -0.0029,
+     "lo": -0.0067,
+     "hi": 0.0004,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.9566124322069254,
+     "b_mean": 0.9595327492699207
+    },
+    "TAC_traj_lon_correct": {
+     "delta": 0.0029,
+     "lo": -0.0067,
+     "hi": 0.0121,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8360450563204005,
+     "b_mean": 0.833124739257405
+    },
+    "TAC_traj_man5_correct": {
+     "delta": -0.0025,
+     "lo": -0.0105,
+     "hi": 0.0058,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8310387984981227,
+     "b_mean": 0.8335419274092616
+    }
+   },
+   "dc_vs_k2_ade_m": {
+    "delta": -0.0036,
+    "lo": -0.0082,
+    "hi": 0.001,
+    "separated": false,
+    "better": "lower",
+    "n": 2397,
+    "n_episodes": 70,
+    "a_mean": 0.28583218798224963,
+    "b_mean": 0.28941619222692544
+   },
+   "dc_vs_k2_by_family": {
+    "LONGITUDINAL": {
+     "LON_speed_mae_mps": {
+      "delta": -0.0058,
+      "lo": -0.0107,
+      "hi": -0.0011,
+      "separated": true,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.2567247712614776,
+      "b_mean": 0.2624765984080698
+     },
+     "LON_along_mae_m": {
+      "delta": -0.0049,
+      "lo": -0.0093,
+      "hi": -0.0008,
+      "separated": true,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.23666058954062946,
+      "b_mean": 0.2415916134188765
+     },
+     "LON_along_abs_final_m": {
+      "delta": -0.0075,
+      "lo": -0.0177,
+      "hi": 0.0025,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.5111582257123262,
+      "b_mean": 0.5186979598696405
+     },
+     "LON_speed_within_0p5": {
+      "delta": 0.0048,
+      "lo": -0.0006,
+      "hi": 0.0101,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8523153942428036,
+      "b_mean": 0.8475177304964538
+     },
+     "LON_accel_mae_mps2": {
+      "delta": -0.0054,
+      "lo": -0.0113,
+      "hi": 0.0007,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.35483687255895296,
+      "b_mean": 0.36024185204916603
+     }
+    },
+    "LATERAL": {
+     "LAT_heading_mae_deg": {
+      "delta": 0.0208,
+      "lo": -0.0039,
+      "hi": 0.0459,
+      "separated": false,
+      "better": "lower",
+      "n": 2295,
+      "n_episodes": 70,
+      "a_mean": 2.1162415828965684,
+      "b_mean": 2.095480841899814
+     },
+     "LAT_curvature_mae_1pm_valid": {
+      "delta": 0.0,
+      "lo": -0.0001,
+      "hi": 0.0002,
+      "separated": false,
+      "better": "lower",
+      "n": 2277,
+      "n_episodes": 70,
+      "a_mean": 0.00424094563542042,
+      "b_mean": 0.004206301985928771
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0003,
+      "lo": -0.0002,
+      "hi": 0.0008,
+      "separated": false,
+      "better": "lower",
+      "n": 2277,
+      "n_episodes": 70,
+      "a_mean": 0.019509782235440636,
+      "b_mean": 0.01925230013863527
+     },
+     "LAT_cross_mae_m": {
+      "delta": 0.0021,
+      "lo": -0.0002,
+      "hi": 0.0048,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.10469414109299542,
+      "b_mean": 0.10256246480114453
+     },
+     "LAT_cross_abs_final_m": {
+      "delta": 0.0047,
+      "lo": -0.0004,
+      "hi": 0.0111,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.2145820155791006,
+      "b_mean": 0.20986195027866184
+     }
+    },
+    "TACTICAL": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0029,
+      "lo": -0.0067,
+      "hi": 0.0004,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.9566124322069254,
+      "b_mean": 0.9595327492699207
+     },
+     "TAC_traj_lon_correct": {
+      "delta": 0.0029,
+      "lo": -0.0067,
+      "hi": 0.0121,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8360450563204005,
+      "b_mean": 0.833124739257405
+     },
+     "TAC_traj_man5_correct": {
+      "delta": -0.0025,
+      "lo": -0.0105,
+      "hi": 0.0058,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8310387984981227,
+      "b_mean": 0.8335419274092616
+     }
+    },
+    "STRATEGIC": {
+     "status": "PAUSED",
+     "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; never a pass, never omitted, never extended to the other families."
+    }
+   },
+   "dc_vs_k2_window_set_sha256": "c7ecd4d6aa8bd4b35d14303891498f9cf7235ce4d343e31e5edfb7be4979ba0a",
+   "dc_vs_k2_n_windows_paired": 2397,
+   "jitter_dlag_dc_vs_k2": {
+    "row": "frame-to-frame |d e| of the final-waypoint lateral error (lat_jitter.py dlag), m",
+    "n": 2327,
+    "n_episodes": 70,
+    "a_mean": 0.16813697805874547,
+    "b_mean": 0.1668636132739166,
+    "delta": 0.0013,
+    "lo": -0.005,
+    "hi": 0.0078,
+    "separated": false,
+    "better": "lower"
+   },
+   "jitter_dlag_dc_vs_k0": {
+    "row": "frame-to-frame |d e| of the final-waypoint lateral error (lat_jitter.py dlag), m",
+    "n": 2327,
+    "n_episodes": 70,
+    "a_mean": 0.16813697805874547,
+    "b_mean": 0.16251213596394662,
+    "delta": 0.0056,
+    "lo": -0.0008,
+    "hi": 0.0122,
+    "separated": false,
+    "better": "lower"
+   }
+  },
+  "1": {
+   "dumps": {
+    "k2dc": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\s1\\E2_K2_pf\\dump_s1",
+    "k2": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\k2dc02\\E2_K2_pf\\dump_s1",
+    "k0": "F:\\refcv9_e3\\k2dc02s1ema\\pull\\s1\\E2_K0_pf\\dump_s1"
+   },
+   "dc_vs_k0": {
+    "LON_speed_mae_mps": {
+     "delta": 0.0005,
+     "lo": -0.0054,
+     "hi": 0.007,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.2588720548297286,
+     "b_mean": 0.2583253078977802
+    },
+    "LON_along_mae_m": {
+     "delta": 0.0003,
+     "lo": -0.0056,
+     "hi": 0.0068,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.23814010317221834,
+     "b_mean": 0.23782954014873608
+    },
+    "LON_along_abs_final_m": {
+     "delta": 0.0022,
+     "lo": -0.0109,
+     "hi": 0.0164,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.5153947768530903,
+     "b_mean": 0.5131939110559481
+    },
+    "LON_speed_within_0p5": {
+     "delta": -0.0026,
+     "lo": -0.0088,
+     "hi": 0.0035,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8472048393825615,
+     "b_mean": 0.8498122653316645
+    },
+    "LON_accel_mae_mps2": {
+     "delta": 0.0049,
+     "lo": -0.0014,
+     "hi": 0.0114,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.3580169580600508,
+     "b_mean": 0.3531346227441723
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.016,
+     "lo": -0.0138,
+     "hi": 0.0467,
+     "separated": false,
+     "better": "lower",
+     "n": 2293,
+     "n_episodes": 70,
+     "a_mean": 2.1109704600449697,
+     "b_mean": 2.09494586952674
+    },
+    "LAT_curvature_mae_1pm_valid": {
+     "delta": 0.0001,
+     "lo": -0.0001,
+     "hi": 0.0003,
+     "separated": false,
+     "better": "lower",
+     "n": 2276,
+     "n_episodes": 70,
+     "a_mean": 0.004183336571436956,
+     "b_mean": 0.004102805407155788
+    },
+    "LAT_yaw_rate_mae_radps_valid": {
+     "delta": 0.0003,
+     "lo": -0.0003,
+     "hi": 0.001,
+     "separated": false,
+     "better": "lower",
+     "n": 2276,
+     "n_episodes": 70,
+     "a_mean": 0.019401185485021448,
+     "b_mean": 0.01907533953830087
+    },
+    "LAT_cross_mae_m": {
+     "delta": 0.0017,
+     "lo": -0.0016,
+     "hi": 0.0048,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.10292229305861363,
+     "b_mean": 0.1012721797270309
+    },
+    "LAT_cross_abs_final_m": {
+     "delta": 0.0037,
+     "lo": -0.0036,
+     "hi": 0.0106,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.21101419954920425,
+     "b_mean": 0.20733169275582916
+    },
+    "TAC_traj_lat_correct": {
+     "delta": -0.0017,
+     "lo": -0.0059,
+     "hi": 0.0025,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.9595327492699207,
+     "b_mean": 0.9612015018773467
+    },
+    "TAC_traj_lon_correct": {
+     "delta": -0.0046,
+     "lo": -0.0117,
+     "hi": 0.0033,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8393825615352524,
+     "b_mean": 0.8439716312056738
+    },
+    "TAC_traj_man5_correct": {
+     "delta": -0.0054,
+     "lo": -0.0134,
+     "hi": 0.0029,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.838130997079683,
+     "b_mean": 0.8435544430538173
+    }
+   },
+   "dc_vs_k0_ade_m": {
+    "delta": 0.0005,
+    "lo": -0.0053,
+    "hi": 0.0067,
+    "separated": false,
+    "better": "lower",
+    "n": 2397,
+    "n_episodes": 70,
+    "a_mean": 0.28648359033301496,
+    "b_mean": 0.2859639627898184
+   },
+   "dc_vs_k0_by_family": {
+    "LONGITUDINAL": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0005,
+      "lo": -0.0054,
+      "hi": 0.007,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.2588720548297286,
+      "b_mean": 0.2583253078977802
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0003,
+      "lo": -0.0056,
+      "hi": 0.0068,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.23814010317221834,
+      "b_mean": 0.23782954014873608
+     },
+     "LON_along_abs_final_m": {
+      "delta": 0.0022,
+      "lo": -0.0109,
+      "hi": 0.0164,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.5153947768530903,
+      "b_mean": 0.5131939110559481
+     },
+     "LON_speed_within_0p5": {
+      "delta": -0.0026,
+      "lo": -0.0088,
+      "hi": 0.0035,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8472048393825615,
+      "b_mean": 0.8498122653316645
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0049,
+      "lo": -0.0014,
+      "hi": 0.0114,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.3580169580600508,
+      "b_mean": 0.3531346227441723
+     }
+    },
+    "LATERAL": {
+     "LAT_heading_mae_deg": {
+      "delta": 0.016,
+      "lo": -0.0138,
+      "hi": 0.0467,
+      "separated": false,
+      "better": "lower",
+      "n": 2293,
+      "n_episodes": 70,
+      "a_mean": 2.1109704600449697,
+      "b_mean": 2.09494586952674
+     },
+     "LAT_curvature_mae_1pm_valid": {
+      "delta": 0.0001,
+      "lo": -0.0001,
+      "hi": 0.0003,
+      "separated": false,
+      "better": "lower",
+      "n": 2276,
+      "n_episodes": 70,
+      "a_mean": 0.004183336571436956,
+      "b_mean": 0.004102805407155788
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0003,
+      "lo": -0.0003,
+      "hi": 0.001,
+      "separated": false,
+      "better": "lower",
+      "n": 2276,
+      "n_episodes": 70,
+      "a_mean": 0.019401185485021448,
+      "b_mean": 0.01907533953830087
+     },
+     "LAT_cross_mae_m": {
+      "delta": 0.0017,
+      "lo": -0.0016,
+      "hi": 0.0048,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.10292229305861363,
+      "b_mean": 0.1012721797270309
+     },
+     "LAT_cross_abs_final_m": {
+      "delta": 0.0037,
+      "lo": -0.0036,
+      "hi": 0.0106,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.21101419954920425,
+      "b_mean": 0.20733169275582916
+     }
+    },
+    "TACTICAL": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0017,
+      "lo": -0.0059,
+      "hi": 0.0025,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.9595327492699207,
+      "b_mean": 0.9612015018773467
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0046,
+      "lo": -0.0117,
+      "hi": 0.0033,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8393825615352524,
+      "b_mean": 0.8439716312056738
+     },
+     "TAC_traj_man5_correct": {
+      "delta": -0.0054,
+      "lo": -0.0134,
+      "hi": 0.0029,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.838130997079683,
+      "b_mean": 0.8435544430538173
+     }
+    },
+    "STRATEGIC": {
+     "status": "PAUSED",
+     "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; never a pass, never omitted, never extended to the other families."
+    }
+   },
+   "dc_vs_k0_window_set_sha256": "c7ecd4d6aa8bd4b35d14303891498f9cf7235ce4d343e31e5edfb7be4979ba0a",
+   "dc_vs_k0_n_windows_paired": 2397,
+   "dc_vs_k2": {
+    "LON_speed_mae_mps": {
+     "delta": -0.0029,
+     "lo": -0.009,
+     "hi": 0.0032,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.2588720548297286,
+     "b_mean": 0.26180693218830137
+    },
+    "LON_along_mae_m": {
+     "delta": -0.0023,
+     "lo": -0.008,
+     "hi": 0.0033,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.23814010317221834,
+     "b_mean": 0.24043862889066359
+    },
+    "LON_along_abs_final_m": {
+     "delta": -0.0016,
+     "lo": -0.014,
+     "hi": 0.0112,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.5153947768530903,
+     "b_mean": 0.5170073652246823
+    },
+    "LON_speed_within_0p5": {
+     "delta": 0.0017,
+     "lo": -0.0047,
+     "hi": 0.0083,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8472048393825615,
+     "b_mean": 0.8455360867751356
+    },
+    "LON_accel_mae_mps2": {
+     "delta": -0.0018,
+     "lo": -0.0086,
+     "hi": 0.005,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.3580169580600508,
+     "b_mean": 0.3598332430850637
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.0124,
+     "lo": -0.0203,
+     "hi": 0.0453,
+     "separated": false,
+     "better": "lower",
+     "n": 2294,
+     "n_episodes": 70,
+     "a_mean": 2.1114454536585896,
+     "b_mean": 2.099091854451692
+    },
+    "LAT_curvature_mae_1pm_valid": {
+     "delta": -0.0,
+     "lo": -0.0002,
+     "hi": 0.0002,
+     "separated": false,
+     "better": "lower",
+     "n": 2276,
+     "n_episodes": 70,
+     "a_mean": 0.004198233371097013,
+     "b_mean": 0.004199496522742441
+    },
+    "LAT_yaw_rate_mae_radps_valid": {
+     "delta": 0.0001,
+     "lo": -0.0006,
+     "hi": 0.0008,
+     "separated": false,
+     "better": "lower",
+     "n": 2276,
+     "n_episodes": 70,
+     "a_mean": 0.019440827287696933,
+     "b_mean": 0.01934868375709778
+    },
+    "LAT_cross_mae_m": {
+     "delta": 0.0009,
+     "lo": -0.002,
+     "hi": 0.0038,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.10292229305861363,
+     "b_mean": 0.10206346145326717
+    },
+    "LAT_cross_abs_final_m": {
+     "delta": 0.001,
+     "lo": -0.0055,
+     "hi": 0.0077,
+     "separated": false,
+     "better": "lower",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.21101419954920425,
+     "b_mean": 0.21002729839427678
+    },
+    "TAC_traj_lat_correct": {
+     "delta": -0.0013,
+     "lo": -0.0067,
+     "hi": 0.0042,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.9595327492699207,
+     "b_mean": 0.9607843137254902
+    },
+    "TAC_traj_lon_correct": {
+     "delta": -0.0033,
+     "lo": -0.0121,
+     "hi": 0.005,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.8393825615352524,
+     "b_mean": 0.8427200667501042
+    },
+    "TAC_traj_man5_correct": {
+     "delta": -0.0046,
+     "lo": -0.0138,
+     "hi": 0.005,
+     "separated": false,
+     "better": "higher",
+     "n": 2397,
+     "n_episodes": 70,
+     "a_mean": 0.838130997079683,
+     "b_mean": 0.8427200667501042
+    }
+   },
+   "dc_vs_k2_ade_m": {
+    "delta": -0.0016,
+    "lo": -0.0076,
+    "hi": 0.0044,
+    "separated": false,
+    "better": "lower",
+    "n": 2397,
+    "n_episodes": 70,
+    "a_mean": 0.28648359033301496,
+    "b_mean": 0.28813342157625277
+   },
+   "dc_vs_k2_by_family": {
+    "LONGITUDINAL": {
+     "LON_speed_mae_mps": {
+      "delta": -0.0029,
+      "lo": -0.009,
+      "hi": 0.0032,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.2588720548297286,
+      "b_mean": 0.26180693218830137
+     },
+     "LON_along_mae_m": {
+      "delta": -0.0023,
+      "lo": -0.008,
+      "hi": 0.0033,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.23814010317221834,
+      "b_mean": 0.24043862889066359
+     },
+     "LON_along_abs_final_m": {
+      "delta": -0.0016,
+      "lo": -0.014,
+      "hi": 0.0112,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.5153947768530903,
+      "b_mean": 0.5170073652246823
+     },
+     "LON_speed_within_0p5": {
+      "delta": 0.0017,
+      "lo": -0.0047,
+      "hi": 0.0083,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8472048393825615,
+      "b_mean": 0.8455360867751356
+     },
+     "LON_accel_mae_mps2": {
+      "delta": -0.0018,
+      "lo": -0.0086,
+      "hi": 0.005,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.3580169580600508,
+      "b_mean": 0.3598332430850637
+     }
+    },
+    "LATERAL": {
+     "LAT_heading_mae_deg": {
+      "delta": 0.0124,
+      "lo": -0.0203,
+      "hi": 0.0453,
+      "separated": false,
+      "better": "lower",
+      "n": 2294,
+      "n_episodes": 70,
+      "a_mean": 2.1114454536585896,
+      "b_mean": 2.099091854451692
+     },
+     "LAT_curvature_mae_1pm_valid": {
+      "delta": -0.0,
+      "lo": -0.0002,
+      "hi": 0.0002,
+      "separated": false,
+      "better": "lower",
+      "n": 2276,
+      "n_episodes": 70,
+      "a_mean": 0.004198233371097013,
+      "b_mean": 0.004199496522742441
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0001,
+      "lo": -0.0006,
+      "hi": 0.0008,
+      "separated": false,
+      "better": "lower",
+      "n": 2276,
+      "n_episodes": 70,
+      "a_mean": 0.019440827287696933,
+      "b_mean": 0.01934868375709778
+     },
+     "LAT_cross_mae_m": {
+      "delta": 0.0009,
+      "lo": -0.002,
+      "hi": 0.0038,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.10292229305861363,
+      "b_mean": 0.10206346145326717
+     },
+     "LAT_cross_abs_final_m": {
+      "delta": 0.001,
+      "lo": -0.0055,
+      "hi": 0.0077,
+      "separated": false,
+      "better": "lower",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.21101419954920425,
+      "b_mean": 0.21002729839427678
+     }
+    },
+    "TACTICAL": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0013,
+      "lo": -0.0067,
+      "hi": 0.0042,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.9595327492699207,
+      "b_mean": 0.9607843137254902
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0033,
+      "lo": -0.0121,
+      "hi": 0.005,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.8393825615352524,
+      "b_mean": 0.8427200667501042
+     },
+     "TAC_traj_man5_correct": {
+      "delta": -0.0046,
+      "lo": -0.0138,
+      "hi": 0.005,
+      "separated": false,
+      "better": "higher",
+      "n": 2397,
+      "n_episodes": 70,
+      "a_mean": 0.838130997079683,
+      "b_mean": 0.8427200667501042
+     }
+    },
+    "STRATEGIC": {
+     "status": "PAUSED",
+     "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; never a pass, never omitted, never extended to the other families."
+    }
+   },
+   "dc_vs_k2_window_set_sha256": "c7ecd4d6aa8bd4b35d14303891498f9cf7235ce4d343e31e5edfb7be4979ba0a",
+   "dc_vs_k2_n_windows_paired": 2397,
+   "jitter_dlag_dc_vs_k2": {
+    "row": "frame-to-frame |d e| of the final-waypoint lateral error (lat_jitter.py dlag), m",
+    "n": 2327,
+    "n_episodes": 70,
+    "a_mean": 0.16386915961969287,
+    "b_mean": 0.16691811289794314,
+    "delta": -0.003,
+    "lo": -0.0141,
+    "hi": 0.0078,
+    "separated": false,
+    "better": "lower"
+   },
+   "jitter_dlag_dc_vs_k0": {
+    "row": "frame-to-frame |d e| of the final-waypoint lateral error (lat_jitter.py dlag), m",
+    "n": 2327,
+    "n_episodes": 70,
+    "a_mean": 0.16386915961969287,
+    "b_mean": 0.16217832217491152,
+    "delta": 0.0017,
+    "lo": -0.0071,
+    "hi": 0.0098,
+    "separated": false,
+    "better": "lower"
+   }
+  }
+ },
+ "beside_no_direction": {
+  "status": "REPORTED",
+  "direction": "none committed (PREREG: 'map primary K2DC - K2 reported with no committed direction')",
+  "tier": "T0 label level (map, box); T1 (S6c)",
+  "map_primary_nf_swedge_prec_lv_5_20": {
+   "k2dc": 0.4602483873827187,
+   "k2": 0.4066324179996275,
+   "delta": 0.05361596938309121
+  },
+  "box_ap2m_all": {
+   "k2dc": 0.3244873582858472,
+   "k2": 0.326486117546989,
+   "delta": -0.0019987592611417915
+  },
+  "s6c_sidewalk_rate_s0": {
+   "k2dc": 0.19382716049382717,
+   "k2": 0.18888888888888888,
+   "delta": 0.004938271604938288,
+   "better": "lower"
+  },
+  "s6c_sidewalk_rate_s1": {
+   "k2dc": 0.19320987654320987,
+   "k2": 0.19074074074074074,
+   "delta": 0.00246913580246913,
+   "better": "lower"
+  }
+ },
+ "arm": {
+  "arm": "K2DC02s1",
+  "argv_json": "F:\\refcv9_e3\\k2dc02s1ema\\code_20179573828b\\stack\\ops\\runs.d\\r9e2_K2DC02s1.argv.json",
+  "target": 0.02,
+  "bounds": [
+   0.1,
+   25.0
+  ],
+  "share_band": [
+   0.01,
+   0.03
+  ],
+  "note": "the pre-registered decision constants (bar, band, jitter clause, two seeds) are PREREG_K2DC_2026-11-12's, applied UNCHANGED to this arm; the in-training share band is BAND_REL x this arm's own target (read from its argv json). Pre-registered for K2DC02s1 in e2/e2raw/PREREG_K2DC02S1_2026-11-20.md (landed 48c797f3, before any K2DC02s1 training step): K2DC (EMA) or K2DC-tail is the comparator in K2's slot; with K2DC02 (EMA) or K2DC02-tail in K2's slot the document is that PREREG's section 4 training-run FLOOR, a noise reading and never a lever verdict; `reason` text naming next arms is K2DC's, and that PREREG's section 6 replaces it."
+ }
+}

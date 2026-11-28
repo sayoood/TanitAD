@@ -1,0 +1,2585 @@
+{
+ "control": {
+  "queue copy through S,A,B,C,D": {
+   "green": true,
+   "sections": "S,A,B,C,D",
+   "rc": 0,
+   "red": [],
+   "n_red": 0,
+   "result_line": "RESULT: 134/134 checks pass, 217/217 deliberate regressions caught, 0 missed  (99 s)  sections S,A,B,C,D",
+   "has_result": true,
+   "stderr_tail": "",
+   "stdout_tail": "nt does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 134/134 checks pass, 217/217 deliberate regressions caught, 0 missed  (99 s)  sections S,A,B,C,D\n",
+   "sec": 99
+  },
+  "ship copy through C,D,E[subset]": {
+   "green": true,
+   "sections": "C,D,E",
+   "rc": 0,
+   "red": [],
+   "n_red": 0,
+   "result_line": "RESULT: 87/87 checks pass, 174/174 deliberate regressions caught, 0 missed  (249 s)  sections C,D,E",
+   "has_result": true,
+   "stderr_tail": "",
+   "stdout_tail": " tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 87/87 checks pass, 174/174 deliberate regressions caught, 0 missed  (249 s)  sections C,D,E\n",
+   "sec": 249
+  }
+ },
+ "mutants": [
+  {
+   "id": "q01",
+   "name": "q01 A's vmax 8.0 -> 7.0 (both law lines)",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)  [matched 1026 of 1413]",
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(407, ['', '  copy /y \"%DAGPIN%.new\" \"%DAGPIN%\" >nul || (echo REFUSED: could not pin the training argv & exit /b 2)', '  exit /b 0', '  fc /b \"%DAGPIN%\" \"%DAGPIN%.new\" >nul'])]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A4 dagorc s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0"
+     ],
+     "n_red": 10,
+     "result_line": "RESULT: 42/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (32 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "n + the registered change, only --out differs (K-PAIR)\n  A4 dagorc s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A4 dagorc01 s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n",
+     "sec": 33,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q02",
+   "name": "q02 A's dose 0.3 -> 0.31",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%DAGS%\"==\"dagorc\" (set \"DAGORCP=0.3\" & set \"DAGORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2\")', 'if /i \"%DAGS%\"==\"dagorc\" (set \"DAGORCP=0.31\" & set \"DAGORCL]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A3 dagorc s0: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+      "FAIL A1 dagorc s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 7,
+     "result_line": "RESULT: 45/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (32 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "agorc s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A3 dagorc s1: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n  A6 dagorc01 s0 differs from dagorc s0 in --ego-perturb-p only (0.3 -> 0.1) and --out\n  A6 dagorc01 s1 differs from dagorc s1 in --ego-perturb-p only (0.3 -> 0.1) and --out\n",
+     "sec": 32,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q03",
+   "name": "q03 B's dose 0.1 -> 0.2",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%DAGS%\"==\"dagorc01\" (set \"DAGORCP=0.1\" & set \"DAGORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2\")', 'if /i \"%DAGS%\"==\"dagorc01\" (set \"DAGORCP=0.2\" & set \"DAGO]",
+      "FAIL A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A3 dagorc01 s0: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+      "FAIL A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 7,
+     "result_line": "RESULT: 45/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (32 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "c01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A3 dagorc01 s1: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n  A6 dagorc01 s0 differs from dagorc s0 in --ego-perturb-p only (0.3 -> 0.1) and --out\n  A6 dagorc01 s1 differs from dagorc s1 in --ego-perturb-p only (0.3 -> 0.1) and --out\n",
+     "sec": 32,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q04",
+   "name": "q04 REP's trainer seed 1S -> S (no replicate)",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%DAGS%\"==\"dagorcrep\" set \"DAGSEED=%~2\"', 'if /i \"%DAGS%\"==\"dagorcrep\" set \"DAGSEED=1%~2\"'])]",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A4 dagorcrep s0: no law flag, no DAgger bank flag; --seed 10",
+      "FAIL A1 dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 7,
+     "result_line": "RESULT: 45/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (32 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "0: no law flag, no DAgger bank flag; --seed 10\n  A1 dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A4 dagorcrep s1: no law flag, no DAgger bank flag; --seed 11\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 32,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q05",
+   "name": "q05 REP also gets the perturbation (p 0.3)",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%DAGS%\"==\"dagorcrep\" (set \"DAGSEED=1%~2\" & set \"DAGORCP=0.3\")', 'if /i \"%DAGS%\"==\"dagorcrep\" set \"DAGSEED=1%~2\"'])]",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A3 dagorcrep s0: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+      "FAIL A1 dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 7,
+     "result_line": "RESULT: 45/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (32 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "crep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A3 dagorcrep s1: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 32,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q06",
+   "name": "q06 --dagger-p 0 dropped (the flag's default disables nothing here, but the registered argv names it)",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 ]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A3 dagorc s0: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 13,
+     "result_line": "RESULT: 39/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (32 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "istered change, only --out differs (K-PAIR)\n  A3 dagorcrep s1: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A3 dagorc01 s1: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n",
+     "sec": 33,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q07",
+   "name": "q07 --dagger-p 0 -> 0.1",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 ]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A3 dagorc s0: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 15,
+     "result_line": "RESULT: 37/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (28 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "c01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A3 dagorc01 s1: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 28,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q08",
+   "name": "q08 steps 3000 -> 3001",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3001 ]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 9,
+     "result_line": "RESULT: 43/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (28 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 28,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q09",
+   "name": "q09 lr 1e-4 -> 2e-4",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 ]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 9,
+     "result_line": "RESULT: 43/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (28 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 28,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q10",
+   "name": "q10 init is M2b's checkpoint, not DAG_s's",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A3 dagorc s0: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 15,
+     "result_line": "RESULT: 37/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (28 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "c01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A3 dagorc01 s1: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 28,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q11",
+   "name": "q11 the law seed is 0 on every seed",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)  [matched 1026 of 1413]",
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(407, ['', '  copy /y \"%DAGPIN%.new\" \"%DAGPIN%\" >nul || (echo REFUSED: could not pin the training argv & exit /b 2)', '  exit /b 0', '  fc /b \"%DAGPIN%\" \"%DAGPIN%.new\" >nul'])]",
+      "FAIL A1 dagorc s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A4 dagorc s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1"
+     ],
+     "n_red": 6,
+     "result_line": "RESULT: 46/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (27 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "n + the registered change, only --out differs (K-PAIR)\n  A4 dagorc s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A4 dagorc01 s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n",
+     "sec": 28,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q12",
+   "name": "q12 yaw-rate std dropped from the law",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)  [matched 1026 of 1413]",
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(407, ['', '  copy /y \"%DAGPIN%.new\" \"%DAGPIN%\" >nul || (echo REFUSED: could not pin the training argv & exit /b 2)', '  exit /b 0', '  fc /b \"%DAGPIN%\" \"%DAGPIN%.new\" >nul'])]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A4 dagorc s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0"
+     ],
+     "n_red": 10,
+     "result_line": "RESULT: 42/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (28 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "n + the registered change, only --out differs (K-PAIR)\n  A4 dagorc s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A4 dagorc01 s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n",
+     "sec": 28,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q13",
+   "name": "q13 the no-extra-argument refusal is disabled",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if \"%~3\"==\"NEVER\" (echo REFUSED: %DAGS% takes no P, the dose is fixed by PREREG_V8F_DAG_ORC, got \"%~3\" & exit /b 2)', 'if not \"%~3\"==\"\" (echo REFUSED: %DAGS% takes no P, the dose is fixed by PREREG_V8F_DAG_ORC, got \"%~3\" & exit /b 2)'])]",
+      "MISSED A8 gatedag dagorc 0 0.1: any extra argument (a P) is REFUSED  [(0, ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v8f_mini_train.py\" --arm M2b --seed 0 --grid pool4x10 --out \"D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\gate_M2b-dagorc_s0\" --cache-dir D:\\\\tanitad\\\\cache_full --v9-train D:\\\\tanitad\\\\da]",
+      "MISSED A8 gatedag dagorc 0 0.3: any extra argument (a P) is REFUSED  [(0, ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v8f_mini_train.py\" --arm M2b --seed 0 --grid pool4x10 --out \"D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\gate_M2b-dagorc_s0\" --cache-dir D:\\\\tanitad\\\\cache_full --v9-train D:\\\\tanitad\\\\da]",
+      "MISSED A8 gatedag dagorc 0 x: any extra argument (a P) is REFUSED  [(0, ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v8f_mini_train.py\" --arm M2b --seed 0 --grid pool4x10 --out \"D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\gate_M2b-dagorc_s0\" --cache-dir D:\\\\tanitad\\\\cache_full --v9-train D:\\\\tanitad\\\\da]"
+     ],
+     "n_red": 25,
+     "result_line": "RESULT: 51/52 checks pass, 18/42 deliberate regressions caught, 24 missed  (35 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s REFUSED\n  A8 traindag dagorcrep 0 x: any extra argument (a P) is REFUSED\n  A8 traindag dagorcrep 0 0: any extra argument (a P) is REFUSED\n  A8 traindag dagorc01 0 0.1: any extra argument (a P) is REFUSED\n  A8 traindag dagorc01 0 0.3: any extra argument (a P) is REFUSED\n  A8 traindag dagorc01 0 x: any extra argument (a P) is REFUSED\n  A8 traindag dagorc01 0 0: any extra argument (a P) is REFUSED\n",
+     "sec": 35,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q14",
+   "name": "q14 a PRE-EXISTING stage changes (flatdag0 -> flatdag1 in :dagname)",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)  [matched 1086 of 1413]",
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(347, ['', '  copy /y \"%DAGPIN%.new\" \"%DAGPIN%\" >nul || (echo REFUSED: could not pin the training argv & exit /b 2)', '  exit /b 0', '  fc /b \"%DAGPIN%\" \"%DAGPIN%.new\" >nul'])]",
+      "FAIL S6 245 stage invocations (50 dispatched stage names x 4 shapes + the DAG-family arms) print byte-identical output on the tip queue and the staged queue  [['evaldag flatdag0 0', 'evaldag flatdag0 1', 'gatedag flatdag0 0', 'gatedag flatdag0 1', 'traindag flatdag0 0', 'traindag flatdag0 1']]"
+     ],
+     "n_red": 3,
+     "result_line": "RESULT: 49/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (35 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ssed  (35 s)  sections S,A\nRED:\n  S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)\n  S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants\n  S6 245 stage invocations (50 dispatched stage names x 4 shapes + the DAG-family arms) print byte-identical output on the tip queue and the staged queue\n",
+     "sec": 35,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q15",
+   "name": "q15 the new stage exits 1",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['exit /b 0', 'exit /b 1'])]",
+      "FAIL A the queue under test prints every stage line the section needs  [gatedag dagorc 0: rc=2 []]"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 9/11 checks pass, 0/0 deliberate regressions caught, 0 missed  (23 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "egistered change\nFAIL A the queue under test prints every stage line the section needs  [gatedag dagorc 0: rc=2 []]\nRESULT: 9/11 checks pass, 0/0 deliberate regressions caught, 0 missed  (23 s)  sections S,A\nRED:\n  S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants\n  A the queue under test prints every stage line the section needs\n",
+     "sec": 23,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q16",
+   "name": "q16 dagorc01 is not a registered arm name",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%~1\"==\"dagorc01\" set \"DAGS=dagorc01\"', 'rem'])]",
+      "FAIL A the queue under test prints every stage line the section needs  [gatedag dagorc01 0: rc=2 ['REFUSED: ARM must be dag or dag0, got \"dagorc01\" ']]"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 19/21 checks pass, 0/0 deliberate regressions caught, 0 missed  (24 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ery stage line the section needs  [gatedag dagorc01 0: rc=2 ['REFUSED: ARM must be dag or dag0, got \"dagorc01\" ']]\nRESULT: 19/21 checks pass, 0/0 deliberate regressions caught, 0 missed  (24 s)  sections S,A\nRED:\n  S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants\n  A the queue under test prints every stage line the section needs\n",
+     "sec": 24,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q17",
+   "name": "q17 warmup 100 -> 50",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 ]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 9,
+     "result_line": "RESULT: 43/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (35 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 35,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q18",
+   "name": "q18 p-gt-start 0.2 -> 0.3",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0\"', 'set \"DAGF=--init-ckpt \"%RUNSM%\\\\M2b_s%~2_dag\\\\ckpt_last.pt\" --steps 3000 ]",
+      "FAIL A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 9,
+     "result_line": "RESULT: 43/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (34 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out\n  A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out\n",
+     "sec": 35,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q19",
+   "name": "q19 dagorc01 is never handed off to :dagorcarm",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%DAGS%\"==\"dagorc01\" goto :dagorcarm', 'rem'])]",
+      "FAIL A the queue under test prints every stage line the section needs  [gatedag dagorc01 0: rc=2 ['REFUSED: dag needs P, 0.1 after ORC read HARMS or 0.3 after NO EFFECT ']]"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 19/21 checks pass, 0/0 deliberate regressions caught, 0 missed  (15 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ction needs  [gatedag dagorc01 0: rc=2 ['REFUSED: dag needs P, 0.1 after ORC read HARMS or 0.3 after NO EFFECT ']]\nRESULT: 19/21 checks pass, 0/0 deliberate regressions caught, 0 missed  (15 s)  sections S,A\nRED:\n  S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants\n  A the queue under test prints every stage line the section needs\n",
+     "sec": 15,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "q20",
+   "name": "q20 the perturbation law flags go only on A (B has no law)",
+   "kind": "queue",
+   "status": "killed",
+   "killed_by": [
+    "S,A"
+   ],
+   "runs": [
+    {
+     "sections": "S,A",
+     "rc": 1,
+     "red": [
+      "FAIL S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants  [(20, ['if /i \"%DAGS%\"==\"dagorc01\" (set \"DAGORCP=0.1\" & set \"DAGORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2\")', 'if /i \"%DAGS%\"==\"dagorc01\" (set \"DAGORCP=0.1\" & set \"DAGO]",
+      "FAIL A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+      "FAIL A4 dagorc01 s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0",
+      "FAIL A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)"
+     ],
+     "n_red": 7,
+     "result_line": "RESULT: 45/52 checks pass, 42/42 deliberate regressions caught, 0 missed  (23 s)  sections S,A",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)\n  A4 dagorc01 s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1\n  A6 dagorc01 s0 differs from dagorc s0 in --ego-perturb-p only (0.3 -> 0.1) and --out\n  A6 dagorc01 s1 differs from dagorc s1 in --ego-perturb-p only (0.3 -> 0.1) and --out\n",
+     "sec": 23,
+     "stage": "S,A",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a01",
+   "name": "a01 LAW_VALUES yaw-rate std 2.0 -> 1.9",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "FAIL C1 dagorc s0: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced) with the queue's lines  [DAG-ORC gate: ['built ego_perturb ego_perturb_yawrate_std 2.0 != 1.9'] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "FAIL C1 dagorc s1: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced) with the queue's lines  [DAG-ORC gate: ['built ego_perturb ego_perturb_yawrate_std 2.0 != 1.9'] | dagorc s1 | p 0.3 | trainer seed 1 | clips 4512 steps 3000 windows 306566 | init 1d12ec2eb825 | probe grad diff 2660.359619140625 | params 7214495 | lru 174 | one-lever: ok",
+      "FAIL C1 dagorc01 s0: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced, p 0.1 doctored) with the queue's lines  [DAG-ORC gate: ['built ego_perturb ego_perturb_yawrate_std 2.0 != 1.9'] | dagorc01 s0 | p 0.1 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "FAIL C1 dagorc01 s1: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced, p 0.1 doctored) with the queue's lines  [DAG-ORC gate: ['built ego_perturb ego_perturb_yawrate_std 2.0 != 1.9'] | dagorc01 s1 | p 0.1 | trainer seed 1 | clips 4512 steps 3000 windows 306566 | init 1d12ec2eb825 | probe grad diff 2660.359619140625 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 9,
+     "result_line": "RESULT: 24/33 checks pass, 133/133 deliberate regressions caught, 0 missed  (24 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "c s1: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)\n  C3c control: a no-op edit of the same record is still accepted (the doctoring harness does not break positives)\n  C4 the token is written after a passing check and binds the commit, the PINNED training argv's sha256 and the data sha256; names the arm and the dose\n",
+     "sec": 24,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ],
+   "rerun": true
+  },
+  {
+   "id": "a02",
+   "name": "a02 A's registered dose 0.3 -> 0.31",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [],
+     "n_red": 0,
+     "result_line": "",
+     "has_result": false,
+     "stderr_tail": "s\\dag_orc_chain\\selftest_dagorc.py\", line 403, in section_C\n    rc, out = c.check(\"pos\")\n              ~~~~~~~^^^^^^^\n  File \"E:\\Projects\\TanitAD-artifacts\\dag_orc_chain\\selftest_dagorc.py\", line 359, in check\n    rc = G.main(self.args(d))\n  File \"F:\\TanitAD-scratch\\dagorc_mut\\a02\\ship\\gate_dagorc_assert.py\", line 318, in main\n    bad = check(a)\n  File \"F:\\TanitAD-scratch\\dagorc_mut\\a02\\ship\\gate_dagorc_assert.py\", line 209, in check\n    \"--ego-perturb-p\": [{0.3: \"0.3\", 0.1: \"0.1\", 0.0: \"0\"}[p]], \"--dagger-p\": [\"0\"]}\n                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^\nKeyError: 0.31\n",
+     "stdout_tail": "== C: the gate asserter, the run record, K-REACH and the one-lever check\n",
+     "sec": 1,
+     "stage": "C",
+     "verdict": "crash"
+    }
+   ]
+  },
+  {
+   "id": "a03",
+   "name": "a03 the pin == planned check removed",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: the pin differs from the planned train line (another lr)  [at token 37: ['2e-4', '--warmup'] vs ['1e-4', '--warmup']; only --out may differ)\"] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: NOT"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (37 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (37 s)  sections C\nRED:\n  C3 dagorc s0: the pin differs from the planned train line (another lr)\n",
+     "sec": 37,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a04",
+   "name": "a04 the probe's exactly-0.0 controls not enforced",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C2n real-trainer record doctored: probe control_prior_grad_diff 1e-9  [0 | clips 6 steps 6 windows 342 | init 2aa6e26a26b4 | probe grad diff 847.7326049804688 | params 2088543 | lru 203 | one-lever: skipped (no --ref-argv-json: a synthetic world has no banked reference)",
+      "MISSED C3 dagorc s0: ego probe control control_repeat_loss_diff = 1e-9  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: ego probe control control_repeat_grad_diff = 1e-9  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: ego probe control control_p0_loss_diff = 1e-9  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 6,
+     "result_line": "RESULT: 33/33 checks pass, 127/133 deliberate regressions caught, 6 missed  (36 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " C\nRED:\n  C2n real-trainer record doctored: probe control_prior_grad_diff 1e-9\n  C3 dagorc s0: ego probe control control_repeat_loss_diff = 1e-9\n  C3 dagorc s0: ego probe control control_repeat_grad_diff = 1e-9\n  C3 dagorc s0: ego probe control control_p0_loss_diff = 1e-9\n  C3 dagorc s0: ego probe control control_p0_grad_diff = 1e-9\n  C3 dagorc s0: ego probe control control_prior_grad_diff = 1e-9\n",
+     "sec": 37,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a05",
+   "name": "a05 the DAgger probe may be anything",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: the DAgger probe is not 'off'  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (36 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (36 s)  sections C\nRED:\n  C3 dagorc s0: the DAgger probe is not 'off'\n",
+     "sec": 36,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a06",
+   "name": "a06 the init checkpoint sha256 is not compared (K-INIT)",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C2n real-trainer record doctored: init sha another checkpoint  [0 | clips 6 steps 6 windows 342 | init 000000000000 | probe grad diff 847.7326049804688 | params 2088543 | lru 203 | one-lever: skipped (no --ref-argv-json: a synthetic world has no banked reference)",
+      "MISSED C3 dagorc s0: init sha256 is another checkpoint (M2b's, not DAG_s0's)  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 33/33 checks pass, 131/133 deliberate regressions caught, 2 missed  (35 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "t is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 131/133 deliberate regressions caught, 2 missed  (35 s)  sections C\nRED:\n  C2n real-trainer record doctored: init sha another checkpoint\n  C3 dagorc s0: init sha256 is another checkpoint (M2b's, not DAG_s0's)\n",
+     "sec": 35,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a07",
+   "name": "a07 the ONE-LEVER comparison removed",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: ONE-LEVER only: --threads 3 appended identically to train, gate and pin (no other rule fires)  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: ONE-LEVER only: --batch 32 on train, gate and pin  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: ONE-LEVER only: --exclude 1:2 on train, gate and pin  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: ONE-LEVER only: the same law flags and values in another order  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 4,
+     "result_line": "RESULT: 33/33 checks pass, 129/133 deliberate regressions caught, 4 missed  (35 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s, 129/133 deliberate regressions caught, 4 missed  (35 s)  sections C\nRED:\n  C3 dagorc s0: ONE-LEVER only: --threads 3 appended identically to train, gate and pin (no other rule fires)\n  C3 dagorc s0: ONE-LEVER only: --batch 32 on train, gate and pin\n  C3 dagorc s0: ONE-LEVER only: --exclude 1:2 on train, gate and pin\n  C3 dagorc s0: ONE-LEVER only: the same law flags and values in another order\n",
+     "sec": 35,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a08",
+   "name": "a08 gate argv == train argv not enforced",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: the gate line differs from the train line (another batch size, train unchanged)  [oken 27: ['32', '--steps-mult'] vs ['64', '--steps-mult']; only --out may differ)\"] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: NOT"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (34 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "R\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (34 s)  sections C\nRED:\n  C3 dagorc s0: the gate line differs from the train line (another batch size, train unchanged)\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a09",
+   "name": "a09 --selfcheck-only count not enforced",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: the gate line carries no --selfcheck-only  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (34 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (34 s)  sections C\nRED:\n  C3 dagorc s0: the gate line carries no --selfcheck-only\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a10",
+   "name": "a10 second-lever flags allowed on the lines",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: A's lines carry a second lever (--w-acc 49.7)  [ (first difference at token 59: ['--w-acc', '49.7'] vs []; only --out may differ)\"] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: NOT",
+      "MISSED C3 dagorc s0: A's lines carry --o-interface cut  [st difference at token 59: ['--o-interface', 'cut'] vs []; only --out may differ)\"] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: NOT",
+      "MISSED C3 dagorc s0: A's lines carry --no-resume  [gorc (first difference at token 59: ['--no-resume'] vs []; only --out may differ)\"] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: NOT"
+     ],
+     "n_red": 3,
+     "result_line": "RESULT: 33/33 checks pass, 130/133 deliberate regressions caught, 3 missed  (33 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "T-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 130/133 deliberate regressions caught, 3 missed  (33 s)  sections C\nRED:\n  C3 dagorc s0: A's lines carry a second lever (--w-acc 49.7)\n  C3 dagorc s0: A's lines carry --o-interface cut\n  C3 dagorc s0: A's lines carry --no-resume\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a11",
+   "name": "a11 a DAgger bank flag allowed on the lines",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "E[E_gate_init,E_gate_probe,E_happy]"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 33/33 checks pass, 133/133 deliberate regressions caught, 0 missed  (34 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s0: p 0.1 on A prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 133/133 deliberate regressions caught, 0 missed  (34 s)  sections C\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "survived"
+    },
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (65 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (65 s)  sections D\n",
+     "sec": 65,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1 the guard ran against the fake box and exited when the chain ended (its log says so)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 14/15 checks pass, 2/2 deliberate regressions caught, 0 missed  (147 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " gradient (A s1): the first two gates pass, the third STOPs; no training started\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 14/15 checks pass, 2/2 deliberate regressions caught, 0 missed  (147 s)  sections E\nRED:\n  E1 the guard ran against the fake box and exited when the chain ended (its log says so)\n",
+     "sec": 147,
+     "stage": "E[E_gate_init,E_gate_probe,E_happy]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a12",
+   "name": "a12 a law flag allowed on REP's lines",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorcrep s0: REP's lines name a law flag (--ego-perturb-seed 0: equal to the trainer's default, so only this rule can see it)  [p (first difference at token 48: ['--ego-perturb-seed', '0'] vs []; only --out may differ)\"] | dagorcrep s0 | p 0.0 | trainer seed 10 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff None | params 7214495 | lru 174 | one-lever: NOT"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (33 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (33 s)  sections C\nRED:\n  C3 dagorcrep s0: REP's lines name a law flag (--ego-perturb-seed 0: equal to the trainer's default, so only this rule can see it)\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a13",
+   "name": "a13 the token binds the GATE argv, not the training argv",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "FAIL C4 the token is written after a passing check and binds the commit, the PINNED training argv's sha256 and the data sha256; names the arm and the dose  [0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 32/33 checks pass, 133/133 deliberate regressions caught, 0 missed  (35 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 32/33 checks pass, 133/133 deliberate regressions caught, 0 missed  (35 s)  sections C\nRED:\n  C4 the token is written after a passing check and binds the commit, the PINNED training argv's sha256 and the data sha256; names the arm and the dose\n",
+     "sec": 35,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a14",
+   "name": "a14 declared_vs_built not required",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: declared_vs_built FAIL  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (35 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (35 s)  sections C\nRED:\n  C3 dagorc s0: declared_vs_built FAIL\n",
+     "sec": 35,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a15",
+   "name": "a15 dead parameters allowed (G-LIVE)",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: G-LIVE dead param  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (35 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "GHT C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (35 s)  sections C\nRED:\n  C3 dagorc s0: G-LIVE dead param\n",
+     "sec": 36,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a16",
+   "name": "a16 init not-applied / mismatches allowed",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: init_ckpt read-back mismatches > 0  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (36 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (36 s)  sections C\nRED:\n  C3 dagorc s0: init_ckpt read-back mismatches > 0\n",
+     "sec": 37,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a17",
+   "name": "a17 the TRAIN list need not equal DAG2-0's",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: train list is not DAG2-0's  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: the comparator B is the other seed's summary (its TRAIN list / window set are the same, its parameter groups too: only an UNRELATED summary may differ -> a doctored copy)  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 33/33 checks pass, 131/133 deliberate regressions caught, 2 missed  (34 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "R\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 131/133 deliberate regressions caught, 2 missed  (34 s)  sections C\nRED:\n  C3 dagorc s0: train list is not DAG2-0's\n  C3 dagorc s0: the comparator B is the other seed's summary (its TRAIN list / window set are the same, its parameter groups too: only an UNRELATED summary may differ -> a doctored copy)\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a18",
+   "name": "a18 REP's probe may be 'on'",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorcrep s0: REP: the ego probe is not 'off'  [DAG-ORC gate: PASS | dagorcrep s0 | p 0.0 | trainer seed 10 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff None | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (34 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (34 s)  sections C\nRED:\n  C3 dagorcrep s0: REP: the ego probe is not 'off'\n",
+     "sec": 35,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a19",
+   "name": "a19 REP's ONE-LEVER seed is 11+S",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "FAIL C1 dagorcrep s0: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines  [tly the registered change for dagorcrep (first difference at token 3: ['10', '--grid'] vs ['11', '--grid']; only --out may differ)\"] | dagorcrep s0 | p 0.0 | trainer seed 10 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff None | pa]",
+      "FAIL C1 dagorcrep s1: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines  [tly the registered change for dagorcrep (first difference at token 3: ['11', '--grid'] vs ['12', '--grid']; only --out may differ)\"] | dagorcrep s1 | p 0.0 | trainer seed 11 | clips 4512 steps 3000 windows 306566 | init 1d12ec2eb825 | probe grad diff None | pa]",
+      "FAIL C4 REP s1's token records trainer_seed 11 and ego_perturb_p 0.0",
+      "FAIL C7 one-lever dagorcrep s0: the queue's line prints ONE-LEVER  [NOT-ONE-LEVER]"
+     ],
+     "n_red": 5,
+     "result_line": "RESULT: 28/33 checks pass, 133/133 deliberate regressions caught, 0 missed  (34 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "agorcrep s0: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines\n  C1 dagorcrep s1: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines\n  C4 REP s1's token records trainer_seed 11 and ego_perturb_p 0.0\n  C7 one-lever dagorcrep s0: the queue's line prints ONE-LEVER\n  C7 one-lever dagorcrep s1: the queue's line prints ONE-LEVER\n",
+     "sec": 34,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a20",
+   "name": "a20 p = 0 need not be the identity object",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: ego probe: p = 0 is not the identity  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (33 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "gorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (33 s)  sections C\nRED:\n  C3 dagorc s0: ego probe: p = 0 is not the identity\n",
+     "sec": 33,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a21",
+   "name": "a21 the probe may see no eligible window",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: ego probe saw no eligible window  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "r dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C\nRED:\n  C3 dagorc s0: ego probe saw no eligible window\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a22",
+   "name": "a22 the probe's dose / mode not compared",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: ego probe reads 'off' on A  [ity (the batch object changed)', 'G-LIVE on the PERTURBED batch: pass None / prior control None'] | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff None | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc s0: ego probe p_declared 0.1 on A  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok",
+      "MISSED C3 dagorc01 s0: B probe p_declared 0.3  [DAG-ORC gate: PASS | dagorc01 s0 | p 0.1 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 3,
+     "result_line": "RESULT: 33/33 checks pass, 130/133 deliberate regressions caught, 3 missed  (37 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "he init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 130/133 deliberate regressions caught, 3 missed  (37 s)  sections C\nRED:\n  C3 dagorc s0: ego probe reads 'off' on A\n  C3 dagorc s0: ego probe p_declared 0.1 on A\n  C3 dagorc01 s0: B probe p_declared 0.3\n",
+     "sec": 37,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a23",
+   "name": "a23 built dagger_p not compared",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: built dagger_p 0.1  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (37 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "HT C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (37 s)  sections C\nRED:\n  C3 dagorc s0: built dagger_p 0.1\n",
+     "sec": 37,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a24",
+   "name": "a24 the step count not compared",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: steps_total 2999  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 2999 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (37 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "UGHT C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (37 s)  sections C\nRED:\n  C3 dagorc s0: steps_total 2999\n",
+     "sec": 37,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "a25",
+   "name": "a25 p_gt not compared",
+   "kind": "asserter",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C3 dagorc s0: built p_gt 0.2 -> 0.0  [DAG-ORC gate: PASS | dagorc s0 | p 0.3 | trainer seed 0 | clips 4512 steps 3000 windows 306566 | init d186fd0bcfa7 | probe grad diff 3157.565185546875 | params 7214495 | lru 174 | one-lever: ok"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (40 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (40 s)  sections C\nRED:\n  C3 dagorc s0: built p_gt 0.2 -> 0.0\n",
+     "sec": 40,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k01",
+   "name": "k01 K-REACH tolerance 0.02 -> 0.5",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C6 A: 0.321 is outside the band",
+      "MISSED C6 A: 0.279 is outside the band",
+      "MISSED C6 A: n = 0 (the loop line deleted) fails",
+      "MISSED C6 B at A's rate 0.3 fails"
+     ],
+     "n_red": 6,
+     "result_line": "RESULT: 33/33 checks pass, 127/133 deliberate regressions caught, 6 missed  (42 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "e prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 127/133 deliberate regressions caught, 6 missed  (42 s)  sections C\nRED:\n  C6 A: 0.321 is outside the band\n  C6 A: 0.279 is outside the band\n  C6 A: n = 0 (the loop line deleted) fails\n  C6 B at A's rate 0.3 fails\n  C6 A at B's rate 0.1 fails\n  C6 the REAL trainer run with the loop's `ego.apply` line DELETED (ego_perturb_n 0) is refused by K-REACH\n",
+     "sec": 42,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k02",
+   "name": "k02 K-REACH: REP's n may be any non-negative count",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C6 REP: n = 1 fails (a perturbed row on the control)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (43 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "rc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (43 s)  sections C\nRED:\n  C6 REP: n = 1 fails (a perturbed row on the control)\n",
+     "sec": 43,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k03",
+   "name": "k03 K-REACH: REP's zero may rest on eligible = 0",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C6 REP: eligible = 0 fails (a zero that proves nothing)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (42 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (42 s)  sections C\nRED:\n  C6 REP: eligible = 0 fails (a zero that proves nothing)\n",
+     "sec": 42,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k04",
+   "name": "k04 run record: REP's trainer seed is the init seed",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "FAIL C5 dagorcrep s0: the run record of a correct run PASSES  [DAG-ORC run record: [\"summary.json arm / seed ('M2b', 10) != ('M2b', 0)\"] | dagorcrep s0 | trainer seed 0 | argv sha16 825dabd762ddc008 | steps 3000 | ego_perturb_p 0.0",
+      "FAIL C5 dagorcrep s1: the run record of a correct run PASSES  [DAG-ORC run record: [\"summary.json arm / seed ('M2b', 11) != ('M2b', 1)\"] | dagorcrep s1 | trainer seed 1 | argv sha16 3798f3e1568ae705 | steps 3000 | ego_perturb_p 0.0",
+      "MISSED C5 dagorcrep s1: run record: REP s1: summary seed 1 (the DAG seed, not the replicate's 11)  [DAG-ORC run record: PASS | dagorcrep s1 | trainer seed 1 | argv sha16 3798f3e1568ae705 | steps 3000 | ego_perturb_p 0.0"
+     ],
+     "n_red": 3,
+     "result_line": "RESULT: 31/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (41 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 31/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (41 s)  sections C\nRED:\n  C5 dagorcrep s0: the run record of a correct run PASSES\n  C5 dagorcrep s1: the run record of a correct run PASSES\n  C5 dagorcrep s1: run record: REP s1: summary seed 1 (the DAG seed, not the replicate's 11)\n",
+     "sec": 42,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k05",
+   "name": "k05 run record: argv.json need not be the planned argv",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C5 dagorc s0: run record: argv.json is not the planned argv (a lr changed)  [DAG-ORC run record: PASS | dagorc s0 | trainer seed 0 | argv sha16 378bf74cb6768230 | steps 3000 | ego_perturb_p 0.3"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (41 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (41 s)  sections C\nRED:\n  C5 dagorc s0: run record: argv.json is not the planned argv (a lr changed)\n",
+     "sec": 41,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k06",
+   "name": "k06 run record: the init sha256 not compared (K-INIT)",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C5 dagorc s0: run record: init sha256 is M2b's (K-INIT)  [DAG-ORC run record: PASS | dagorc s0 | trainer seed 0 | argv sha16 378bf74cb6768230 | steps 3000 | ego_perturb_p 0.3"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C\nRED:\n  C5 dagorc s0: run record: init sha256 is M2b's (K-INIT)\n",
+     "sec": 39,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k07",
+   "name": "k07 run record: a swapped row (dagger_n) allowed",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C5 dagorc s0: run record: dagger_n 5 (a row was swapped)  [DAG-ORC run record: PASS | dagorc s0 | trainer seed 0 | argv sha16 378bf74cb6768230 | steps 3000 | ego_perturb_p 0.3"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C\nRED:\n  C5 dagorc s0: run record: dagger_n 5 (a row was swapped)\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k08",
+   "name": "k08 run record: an unfinished run allowed",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C5 dagorc s0: run record: summary.json done false  [DAG-ORC run record: PASS | dagorc s0 | trainer seed 0 | argv sha16 378bf74cb6768230 | steps 3000 | ego_perturb_p 0.3"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "agorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C\nRED:\n  C5 dagorc s0: run record: summary.json done false\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k09",
+   "name": "k09 run record: pin == planned not checked",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C5 dagorc s0: run record: the pin is not the planned argv  [DAG-ORC run record: PASS | dagorc s0 | trainer seed 0 | argv sha16 378bf74cb6768230 | steps 3000 | ego_perturb_p 0.3"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": ": --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C\nRED:\n  C5 dagorc s0: run record: the pin is not the planned argv\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k10",
+   "name": "k10 one-lever always true",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C7 one-lever dagorc s0: an extra flag prints NOT-ONE-LEVER  [ONE-LEVER]",
+      "MISSED C7 one-lever dagorc s0: lr changed prints NOT-ONE-LEVER  [ONE-LEVER]",
+      "MISSED C7 one-lever dagorc s0: a law flag dropped prints NOT-ONE-LEVER  [ONE-LEVER]",
+      "MISSED C7 one-lever dagorc s0: p 0.1 on A prints NOT-ONE-LEVER  [ONE-LEVER]"
+     ],
+     "n_red": 8,
+     "result_line": "RESULT: 33/33 checks pass, 125/133 deliberate regressions caught, 8 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "anged prints NOT-ONE-LEVER\n  C7 one-lever dagorc s0: a law flag dropped prints NOT-ONE-LEVER\n  C7 one-lever dagorc s0: p 0.1 on A prints NOT-ONE-LEVER\n  C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\n  C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\n  C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\n  C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k11",
+   "name": "k11 K-REACH: A / B need not be near their dose",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C6 A: 0.321 is outside the band",
+      "MISSED C6 A: 0.279 is outside the band",
+      "MISSED C6 A: n = 0 (the loop line deleted) fails",
+      "MISSED C6 B at A's rate 0.3 fails"
+     ],
+     "n_red": 6,
+     "result_line": "RESULT: 33/33 checks pass, 127/133 deliberate regressions caught, 6 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "e prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 127/133 deliberate regressions caught, 6 missed  (38 s)  sections C\nRED:\n  C6 A: 0.321 is outside the band\n  C6 A: 0.279 is outside the band\n  C6 A: n = 0 (the loop line deleted) fails\n  C6 B at A's rate 0.3 fails\n  C6 A at B's rate 0.1 fails\n  C6 the REAL trainer run with the loop's `ego.apply` line DELETED (ego_perturb_n 0) is refused by K-REACH\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "k12",
+   "name": "k12 run record: the step count not compared",
+   "kind": "checks",
+   "status": "killed",
+   "killed_by": [
+    "C"
+   ],
+   "runs": [
+    {
+     "sections": "C",
+     "rc": 1,
+     "red": [
+      "MISSED C5 dagorc s0: run record: summary.json steps 2999  [DAG-ORC run record: PASS | dagorc s0 | trainer seed 0 | argv sha16 378bf74cb6768230 | steps 2999 | ego_perturb_p 0.3"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "agorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER\nCAUGHT C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER\nRESULT: 33/33 checks pass, 132/133 deliberate regressions caught, 1 missed  (38 s)  sections C\nRED:\n  C5 dagorc s0: run record: summary.json steps 2999\n",
+     "sec": 38,
+     "stage": "C",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c01",
+   "name": "c01 the gate's assertions are not a stop",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_gate_init,E_gate_probe]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 gate_one: the queue's gate -> pull -> the asserter's `check` (hard stop) -> only then the token"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (78 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "he busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (78 s)  sections D\nRED:\n  D6 gate_one: the queue's gate -> pull -> the asserter's `check` (hard stop) -> only then the token\n",
+     "sec": 78,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 a gate whose init checkpoint is NOT DAG_s0's: STOP at that gate; no training started, no token for it  [rc 1 stops ['ZZV8FMINI-STOP write the gate token M2b_s0_dagorc'] counts {'gatedag': 1, 'traindag': 0} want {'gatedag': 1, 'traindag': 0}]",
+      "MISSED E2 a gate whose ego probe moves no gradient (A s1): the first two gates pass, the third STOPs; no training started  [rc 1 stops ['ZZV8FMINI-STOP write the gate token M2b_s1_dagorc'] counts {'gatedag': 3, 'traindag': 0} want {'gatedag': 3, 'traindag': 0}]"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 1/1 checks pass, 0/2 deliberate regressions caught, 2 missed  (56 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/2 deliberate regressions caught, 2 missed  (56 s)  sections E\nRED:\n  E2 a gate whose init checkpoint is NOT DAG_s0's: STOP at that gate; no training started, no token for it\n  E2 a gate whose ego probe moves no gradient (A s1): the first two gates pass, the third STOPs; no training started\n",
+     "sec": 57,
+     "stage": "E[E_gate_init,E_gate_probe]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c02",
+   "name": "c02 K-REACH is printed but not enforced",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_reach0,E_rep_applied]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (78 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (78 s)  sections D\n",
+     "sec": 78,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 REP s0's run APPLIED the perturbation (ego_perturb_n 123): ZZDAGORC-CONTROL-FAIL after REP s0, the s1 pair never trains  [rc 0 stops [] counts {'traindag': 4} want {'traindag': 2}]",
+      "MISSED E2 A s0's loop never applied the perturbation (ego_perturb_n 0 although the gate passed): ZZDAGORC-CONTROL-FAIL, nothing after it trains  [rc 0 stops [] counts {'traindag': 4} want {'traindag': 1}]"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 1/1 checks pass, 0/2 deliberate regressions caught, 2 missed  (164 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "arness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/2 deliberate regressions caught, 2 missed  (164 s)  sections E\nRED:\n  E2 REP s0's run APPLIED the perturbation (ego_perturb_n 123): ZZDAGORC-CONTROL-FAIL after REP s0, the s1 pair never trains\n  E2 A s0's loop never applied the perturbation (ego_perturb_n 0 although the gate passed): ZZDAGORC-CONTROL-FAIL, nothing after it trains\n",
+     "sec": 164,
+     "stage": "E[E_reach0,E_rep_applied]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c03",
+   "name": "c03 the run record is not a stop",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_argv]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 runone: train -> ckpt hash -> eval -> hash again -> pull -> run record -> K-REACH, each with a hard stop"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (78 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "arker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (78 s)  sections D\nRED:\n  D6 runone: train -> ckpt hash -> eval -> hash again -> pull -> run record -> K-REACH, each with a hard stop\n",
+     "sec": 78,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 A s0's argv.json is not the planned training argv: the run record STOPs  [rc 0 stops [] counts {'traindag': 4} want {'traindag': 1}]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (163 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "raining argv: the run record STOPs  [rc 0 stops [] counts {'traindag': 4} want {'traindag': 1}]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (163 s)  sections E\nRED:\n  E2 A s0's argv.json is not the planned training argv: the run record STOPs\n",
+     "sec": 164,
+     "stage": "E[E_argv]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c04",
+   "name": "c04 the tip need not carry the levers",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_noapply,E_oldtip]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (72 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (72 s)  sections D\n",
+     "sec": 72,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E3 a remote tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)  [rc 0 stops [] calls 'ssh powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString(\\'yyyy-MM-dd HH:mm:ss\\')\"\\nscp /f/TanitAD-scratch/dagorc_mut/c04/scratch/E/E_noapply/ship/repo_v8fdagorc_tip.tar tanitad-box2:D:/tanitad/re]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 1/2 deliberate regressions caught, 1 missed  (168 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 1/2 deliberate regressions caught, 1 missed  (168 s)  sections E\nRED:\n  E3 a remote tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)\n",
+     "sec": 168,
+     "stage": "E[E_noapply,E_oldtip]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c05",
+   "name": "c05 the stage grep is not a stop",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_oldtip]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (73 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (73 s)  sections D\n",
+     "sec": 73,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E3 the remote tip WITHOUT the queue stages (dagorc-old = 3b7b404e): the chain refuses at the refresh, ships nothing, launches no job, releases BOX2_BUSY  [rc 1 stops ['ZZV8FMINI-STOP the tip does not carry the DAG-ORC queue stages / the perturbation levers (the greps above): land them first'] calls 'ssh powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString(\\'yyyy-MM-dd H]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (13 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ng(\\'yyyy-MM-dd H]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (13 s)  sections E\nRED:\n  E3 the remote tip WITHOUT the queue stages (dagorc-old = 3b7b404e): the chain refuses at the refresh, ships nothing, launches no job, releases BOX2_BUSY\n",
+     "sec": 13,
+     "stage": "E[E_oldtip]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c06",
+   "name": "c06 box 2's DAG_s checkpoint is not asserted before the gates",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_ckpt1]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (73 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (73 s)  sections D\n",
+     "sec": 73,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 box 2's DAG_s1 checkpoint is not the banked one: STOP before any gate  [rc 1 stops [\"ZZV8FMINI-STOP after the last run: box 2's M2b_s1_dag/ckpt_last.pt sha256 0d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef != the banked DAG run's 1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef\"] counts {'gatedag']"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (163 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "d DAG run's 1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef\"] counts {'gatedag']\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (163 s)  sections E\nRED:\n  E2 box 2's DAG_s1 checkpoint is not the banked one: STOP before any gate\n",
+     "sec": 164,
+     "stage": "E[E_ckpt1]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c07",
+   "name": "c07 the v9 md5 is not a stop",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_md5]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (118 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "tory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (118 s)  sections D\n",
+     "sec": 119,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 a v9 release whose md5 is not the pinned one: STOP before any gate  [rc 0 stops [] counts {'gatedag': 4} want {'gatedag': 0}]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (130 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " not the pinned one: STOP before any gate  [rc 0 stops [] counts {'gatedag': 4} want {'gatedag': 0}]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (130 s)  sections E\nRED:\n  E2 a v9 release whose md5 is not the pinned one: STOP before any gate\n",
+     "sec": 130,
+     "stage": "E[E_md5]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c08",
+   "name": "c08 box 2's key files need not equal the tip's",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_keysha]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (117 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "tory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (117 s)  sections D\n",
+     "sec": 117,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 box 2's trainer is not the tip's: STOP before any gate  [rc 0 stops [] counts {'gatedag': 4} want {'gatedag': 0}]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (129 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ox 2's trainer is not the tip's: STOP before any gate  [rc 0 stops [] counts {'gatedag': 4} want {'gatedag': 0}]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (129 s)  sections E\nRED:\n  E2 box 2's trainer is not the tip's: STOP before any gate\n",
+     "sec": 130,
+     "stage": "E[E_keysha]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c09",
+   "name": "c09 run order A s0, A s1, REP s0, REP s1",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_happy]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 the run order is PREREG section 10's: A s0, REP s0, A s1, REP s1, then B s0, B s1",
+      "FAIL D7 --dry-run on the staged queue: rc 0, every run's planned line is ONE-LEVER and gate==train: 6 runs in PREREG order  [8_eval.jsonl --kin-mode yaw --p10 D:\\tanitad\\runs\\v8f_mini_full\\p10\\p10_prior.pt --out-dir D:\\tanitad\\runs\\v8f_mini_full\\eval --eval-cache D:\\tanitad\\cache_full --tracks D:\\tanitad\\cache_full\\native_tracks.pt --project --families "
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 36/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (90 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 36/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (90 s)  sections D\nRED:\n  D6 the run order is PREREG section 10's: A s0, REP s0, A s1, REP s1, then B s0, B s1\n  D7 --dry-run on the staged queue: rc 0, every run's planned line is ONE-LEVER and gate==train: 6 runs in PREREG order\n",
+     "sec": 90,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1 the four A / REP gates run FIRST, in order, before any training  [['gatedag dagorc 0', 'gatedag dagorc 1', 'gatedag dagorcrep 0', 'gatedag dagorcrep 1', 'traindag dagorc 0', 'evaldag dagorc 0']]",
+      "FAIL E1 then train -> eval per run in PREREG order A s0, REP s0, A s1, REP s1  [['traindag dagorc 0', 'evaldag dagorc 0', 'traindag dagorc 1', 'evaldag dagorc 1', 'traindag dagorcrep 0', 'evaldag dagorcrep 0', 'traindag dagorcrep 1', 'evaldag dagorcrep 1']]",
+      "FAIL E1 the guard ran against the fake box and exited when the chain ended (its log says so)"
+     ],
+     "n_red": 3,
+     "result_line": "RESULT: 12/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (191 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ing the whole section (the harness wrote only under its own scratch)\nRESULT: 12/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (191 s)  sections E\nRED:\n  E1 the four A / REP gates run FIRST, in order, before any training\n  E1 then train -> eval per run in PREREG order A s0, REP s0, A s1, REP s1\n  E1 the guard ran against the fake box and exited when the chain ended (its log says so)\n",
+     "sec": 191,
+     "stage": "E[E_happy]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c10",
+   "name": "c10 the START disk floor removed",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_happy]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 wiring: every anchor the order / presence pins rely on is present in the chain text  [ValueError('substring not found')]",
+      "MISSED D10 the disk floor: E: could not take the six runs above 1 GiB -> ZZDISK-FLOOR-STOP before the wait  [rc 1 stops ['ZZV8FMINI-STOP disk floor: free=1000 size=805306368 after=-805305368 floor=1073741824'] calls 'ssh powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString(\\'yyyy-MM-dd HH:mm:ss\\')\"\\n']"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 33/34 checks pass, 36/37 deliberate regressions caught, 1 missed  (86 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 33/34 checks pass, 36/37 deliberate regressions caught, 1 missed  (86 s)  sections D\nRED:\n  D6 wiring: every anchor the order / presence pins rely on is present in the chain text\n  D10 the disk floor: E: could not take the six runs above 1 GiB -> ZZDISK-FLOOR-STOP before the wait\n",
+     "sec": 86,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1 the guard ran against the fake box and exited when the chain ended (its log says so)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (191 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "box 2 after training and after the evals (equal), and the pulled ones equal them\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (191 s)  sections E\nRED:\n  E1 the guard ran against the fake box and exited when the chain ended (its log says so)\n",
+     "sec": 191,
+     "stage": "E[E_happy]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c11",
+   "name": "c11 a default predecessor (AFTER_OUT may be unset)",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_happy]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "MISSED D10 AFTER_OUT unset: STOP before anything is touched  [rc 124 stops [] calls '']"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 38/38 checks pass, 36/37 deliberate regressions caught, 1 missed  (177 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "sor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 36/37 deliberate regressions caught, 1 missed  (177 s)  sections D\nRED:\n  D10 AFTER_OUT unset: STOP before anything is touched\n",
+     "sec": 177,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1 the guard ran against the fake box and exited when the chain ended (its log says so)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (223 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "box 2 after training and after the evals (equal), and the pulled ones equal them\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (223 s)  sections E\nRED:\n  E1 the guard ran against the fake box and exited when the chain ended (its log says so)\n",
+     "sec": 223,
+     "stage": "E[E_happy]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c12",
+   "name": "c12 the stage list does not require dagorcarm",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_oldtip]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (86 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (86 s)  sections D\n",
+     "sec": 86,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E3 the remote tip WITHOUT the queue stages (dagorc-old = 3b7b404e): the chain refuses at the refresh, ships nothing, launches no job, releases BOX2_BUSY  [rc 1 stops ['ZZV8FMINI-STOP the tip does not carry the DAG-ORC queue stages / the perturbation levers (the greps above): land them first'] calls 'ssh powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString(\\'yyyy-MM-dd H]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (11 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ng(\\'yyyy-MM-dd H]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (11 s)  sections E\nRED:\n  E3 the remote tip WITHOUT the queue stages (dagorc-old = 3b7b404e): the chain refuses at the refresh, ships nothing, launches no job, releases BOX2_BUSY\n",
+     "sec": 11,
+     "stage": "E[E_oldtip]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c13",
+   "name": "c13 the loop's ego.apply is not among the tip's required lines",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_noapply]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 the lever list names the loop's ego.apply, the probe call, the summary counter and the queue lines",
+      "MISSED D8 --check-tree refuses a tree where noapply  [lever check: every one of 25 patterns is in /f/TanitAD-scratch/dagorc_mut/c13/scratch/D/noapply"
+     ],
+     "n_red": 2,
+     "result_line": "RESULT: 37/38 checks pass, 36/37 deliberate regressions caught, 1 missed  (89 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "hat is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 36/37 deliberate regressions caught, 1 missed  (89 s)  sections D\nRED:\n  D6 the lever list names the loop's ego.apply, the probe call, the summary counter and the queue lines\n  D8 --check-tree refuses a tree where noapply\n",
+     "sec": 89,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E3 a remote tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)  [rc 0 stops [] calls 'ssh powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString(\\'yyyy-MM-dd HH:mm:ss\\')\"\\nscp /f/TanitAD-scratch/dagorc_mut/c13/scratch/E/E_noapply/ship/repo_v8fdagorc_tip.tar tanitad-box2:D:/tanitad/re]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (168 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (168 s)  sections E\nRED:\n  E3 a remote tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)\n",
+     "sec": 169,
+     "stage": "E[E_noapply]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c14",
+   "name": "c14 B runs even with DAGORC_SKIP_B=1",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_skipb]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 wiring: every anchor the order / presence pins rely on is present in the chain text  [ValueError('substring not found')]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 29/30 checks pass, 37/37 deliberate regressions caught, 0 missed  (89 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 29/30 checks pass, 37/37 deliberate regressions caught, 0 missed  (89 s)  sections D\nRED:\n  D6 wiring: every anchor the order / presence pins rely on is present in the chain text\n",
+     "sec": 89,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1b DAGORC_SKIP_B=1: a complete chain of exactly the four A / REP runs (4 gates + 4 x train/eval = 12 stages), no dagorc01 anywhere, ZZV8FMINI-DONE  [(0, ['gatedag dagorc 0', 'gatedag dagorcrep 0', 'gatedag dagorc 1', 'gatedag dagorcrep 1', 'traindag dagorc 0', 'evaldag dagorc 0', 'traindag dagorcrep 0', 'evaldag dagorcrep 0', 'traindag dagorc 1', 'evaldag dagorc 1', 'traindag dagorcrep 1', 'evaldag dagorcr]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/2 checks pass, 0/0 deliberate regressions caught, 0 missed  (229 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " 1', 'evaldag dagorcr]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/2 checks pass, 0/0 deliberate regressions caught, 0 missed  (229 s)  sections E\nRED:\n  E1b DAGORC_SKIP_B=1: a complete chain of exactly the four A / REP runs (4 gates + 4 x train/eval = 12 stages), no dagorc01 anywhere, ZZV8FMINI-DONE\n",
+     "sec": 229,
+     "stage": "E[E_skipb]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c15",
+   "name": "c15 the busy marker is taken without noclobber",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_happy]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 BOX2_BUSY is taken atomically (noclobber) AFTER the wait, and nothing is created on box 2's behalf before it (mkdir of $E only after the busy marker)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (88 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (88 s)  sections D\nRED:\n  D6 BOX2_BUSY is taken atomically (noclobber) AFTER the wait, and nothing is created on box 2's behalf before it (mkdir of $E only after the busy marker)\n",
+     "sec": 88,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1 the guard ran against the fake box and exited when the chain ended (its log says so)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (229 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "box 2 after training and after the evals (equal), and the pulled ones equal them\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (229 s)  sections E\nRED:\n  E1 the guard ran against the fake box and exited when the chain ended (its log says so)\n",
+     "sec": 229,
+     "stage": "E[E_happy]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c16",
+   "name": "c16 the end-of-chain box-2 pin check removed",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D",
+    "E[E_happy]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 wiring: every anchor the order / presence pins rely on is present in the chain text  [ValueError('substring not found')]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 29/30 checks pass, 37/37 deliberate regressions caught, 0 missed  (114 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "LT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 29/30 checks pass, 37/37 deliberate regressions caught, 0 missed  (114 s)  sections D\nRED:\n  D6 wiring: every anchor the order / presence pins rely on is present in the chain text\n",
+     "sec": 114,
+     "stage": "D",
+     "verdict": "killed"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "FAIL E1 the guard ran against the fake box and exited when the chain ended (its log says so)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (208 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "box 2 after training and after the evals (equal), and the pulled ones equal them\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 14/15 checks pass, 0/0 deliberate regressions caught, 0 missed  (208 s)  sections E\nRED:\n  E1 the guard ran against the fake box and exited when the chain ended (its log says so)\n",
+     "sec": 208,
+     "stage": "E[E_happy]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c17",
+   "name": "c17 the pulled checkpoint's hash is not a stop",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_pullcorrupt]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (113 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "tory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (113 s)  sections D\n",
+     "sec": 113,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 a pull that lands A s0's checkpoint with the right size and one byte wrong: STOP at the pulled-checkpoint hash, nothing after it trains  [rc 0 stops [] counts {'traindag': 4, 'evaldag': 4} want {'traindag': 1, 'evaldag': 1}]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (155 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " {'traindag': 1, 'evaldag': 1}]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (155 s)  sections E\nRED:\n  E2 a pull that lands A s0's checkpoint with the right size and one byte wrong: STOP at the pulled-checkpoint hash, nothing after it trains\n",
+     "sec": 155,
+     "stage": "E[E_pullcorrupt]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c18",
+   "name": "c18 a checkpoint that changed during the evals is not a stop",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_evaltouch]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (108 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "tory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (108 s)  sections D\n",
+     "sec": 109,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 an eval that rewrites the checkpoint it evaluated (hashed after training and again after the evals): STOP  [rc 0 stops [] counts {'traindag': 4, 'evaldag': 4} want {'traindag': 1, 'evaldag': 1}]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (142 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "aindag': 4, 'evaldag': 4} want {'traindag': 1, 'evaldag': 1}]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (142 s)  sections E\nRED:\n  E2 an eval that rewrites the checkpoint it evaluated (hashed after training and again after the evals): STOP\n",
+     "sec": 142,
+     "stage": "E[E_evaltouch]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c19",
+   "name": "c19 the one-lever reference (DAG2-0's argv.json) is not handed to the gate asserter",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D6 gate_one: the queue's gate -> pull -> the asserter's `check` (hard stop) -> only then the token"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (103 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "e busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (103 s)  sections D\nRED:\n  D6 gate_one: the queue's gate -> pull -> the asserter's `check` (hard stop) -> only then the token\n",
+     "sec": 103,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c20",
+   "name": "c20 the dry-run's ONE-LEVER verdict is ignored",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "MISSED D7 --dry-run refuses a queue where law_vmax is changed  [01ef01943b5060d486fbeaa9dbc9395877b4",
+      "MISSED D7 --dry-run refuses a queue where p_wrong is changed  [01ef01943b5060d486fbeaa9dbc9395877b4",
+      "MISSED D7 --dry-run refuses a queue where rep_seed is changed  [b713147c7b9d5e2aed66365f2c145b21",
+      "MISSED D7 --dry-run refuses a queue where dagger_p is changed  [b87917c9ee1bc1510d35eeb1b4c8adcb"
+     ],
+     "n_red": 5,
+     "result_line": "RESULT: 38/38 checks pass, 32/37 deliberate regressions caught, 5 missed  (135 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " installs anything)\nRESULT: 38/38 checks pass, 32/37 deliberate regressions caught, 5 missed  (135 s)  sections D\nRED:\n  D7 --dry-run refuses a queue where law_vmax is changed\n  D7 --dry-run refuses a queue where p_wrong is changed\n  D7 --dry-run refuses a queue where rep_seed is changed\n  D7 --dry-run refuses a queue where dagger_p is changed\n  D7 --dry-run refuses a queue where steps is changed\n",
+     "sec": 135,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "c21",
+   "name": "c21 a stop does not release the busy marker (the chain never records that it took it)",
+   "kind": "chain",
+   "status": "killed",
+   "killed_by": [
+    "E[E_gate_init]"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 0,
+     "red": [],
+     "n_red": 0,
+     "result_line": "RESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (97 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "ctory's parent does not exist -> STOP\nCAUGHT D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 38/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (97 s)  sections D\n",
+     "sec": 97,
+     "stage": "D",
+     "verdict": "survived"
+    },
+    {
+     "sections": "E",
+     "rc": 1,
+     "red": [
+      "MISSED E2 a gate whose init checkpoint is NOT DAG_s0's: STOP at that gate; no training started, no token for it  [rc 1 stops ['ZZV8FMINI-STOP gate DAG-ORC assertions M2b_s0_dagorc'] counts {'gatedag': 1, 'traindag': 0} want {'gatedag': 1, 'traindag': 0}]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (42 s)  sections E",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": " {'gatedag': 1, 'traindag': 0} want {'gatedag': 1, 'traindag': 0}]\nPASS E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)\nRESULT: 1/1 checks pass, 0/1 deliberate regressions caught, 1 missed  (42 s)  sections E\nRED:\n  E2 a gate whose init checkpoint is NOT DAG_s0's: STOP at that gate; no training started, no token for it\n",
+     "sec": 42,
+     "stage": "E[E_gate_init]",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "g01",
+   "name": "g01 guard: the temperature trip count 4 -> 9",
+   "kind": "other",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D5 the guard is DAG-OACC's guard line for line except the one comment line  [[1, 27]]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (99 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "e guard -> HALT before the busy marker is taken\nPASS D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (99 s)  sections D\nRED:\n  D5 the guard is DAG-OACC's guard line for line except the one comment line\n",
+     "sec": 99,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "w01",
+   "name": "w01 waker: the K-REACH stop marker dropped",
+   "kind": "other",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D5 the waker's markers are the ones the chain / asserter print (ZZDAGORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP, `gate token written for` x4, ` pulled to `)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (92 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "at is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (92 s)  sections D\nRED:\n  D5 the waker's markers are the ones the chain / asserter print (ZZDAGORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP, `gate token written for` x4, ` pulled to `)\n",
+     "sec": 93,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "w02",
+   "name": "w02 waker: gates-passed threshold 4 -> 2",
+   "kind": "other",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D5 the waker's markers are the ones the chain / asserter print (ZZDAGORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP, `gate token written for` x4, ` pulled to `)"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (84 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": "at is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (84 s)  sections D\nRED:\n  D5 the waker's markers are the ones the chain / asserter print (ZZDAGORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP, `gate token written for` x4, ` pulled to `)\n",
+     "sec": 84,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "l01",
+   "name": "l01 launcher: AFTER_OUT is the FLAT-DAG log",
+   "kind": "other",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D5 the launcher is the DAG-OACC r2 launcher with the names changed: AFTER_OUT = the DAG-OACC r2 chain's log, own .sh, own .out, stdin from NUL  [\"C:\\Program Files\\Git\\bin\\bash.exe\" -lc \"AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_flatdag.out bash /c/Users/Admin/box2_ship/chain_v8f_dagorc.sh < /dev/null > /c/Users/Admin/box2_ship/logs/chain_v8f_dagorc.out 2>&1\" < NUL]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (77 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": ".txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (77 s)  sections D\nRED:\n  D5 the launcher is the DAG-OACC r2 launcher with the names changed: AFTER_OUT = the DAG-OACC r2 chain's log, own .sh, own .out, stdin from NUL\n",
+     "sec": 77,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  },
+  {
+   "id": "l02",
+   "name": "l02 launcher: stdin not closed (< NUL removed)",
+   "kind": "other",
+   "status": "killed",
+   "killed_by": [
+    "D"
+   ],
+   "runs": [
+    {
+     "sections": "D",
+     "rc": 1,
+     "red": [
+      "FAIL D5 the launcher is the DAG-OACC r2 launcher with the names changed: AFTER_OUT = the DAG-OACC r2 chain's log, own .sh, own .out, stdin from NUL  [\"C:\\Program Files\\Git\\bin\\bash.exe\" -lc \"AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_dagoacc_r2.out bash /c/Users/Admin/box2_ship/chain_v8f_dagorc.sh < /dev/null > /c/Users/Admin/box2_ship/logs/chain_v8f_dagorc.out 2>&1\"]"
+     ],
+     "n_red": 1,
+     "result_line": "RESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (73 s)  sections D",
+     "has_result": true,
+     "stderr_tail": "",
+     "stdout_tail": ".txt that is not ours is never removed by a chain that did not take it\nPASS D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)\nRESULT: 37/38 checks pass, 37/37 deliberate regressions caught, 0 missed  (73 s)  sections D\nRED:\n  D5 the launcher is the DAG-OACC r2 launcher with the names changed: AFTER_OUT = the DAG-OACC r2 chain's log, own .sh, own .out, stdin from NUL\n",
+     "sec": 73,
+     "stage": "D",
+     "verdict": "killed"
+    }
+   ]
+  }
+ ],
+ "counts": {
+  "killed": 83,
+  "SURVIVED": 0,
+  "anchor-error": 0,
+  "harness-error": 0
+ }
+}

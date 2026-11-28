@@ -1,0 +1,34 @@
+COUNTS BEFORE THE READ {"cards": "5 cards verified by sha256", "inputs": "15 input files verified by sha256", "city_per_log": "A3 table == store manifest map, 48 logs", "labelled_frames_in_the_48_shards": 3860, "frames_forwarded": 3207, "logs_with_frames": 45, "h48_logs_without_frames": ["2021.08.09.17.55.59_veh-28_00960_01031", "2021.08.17.17.17.01_veh-45_02098_02251", "2021.08.31.14.40.58_veh-40_01268_01618"], "frames_with_label": 3207, "frames_without_label": 0, "export_banks": {"heldout": 1705, "train": 1502}, "sets_with_p6_pdm_label": 3207, "arms_present": ["HA-SHUF", "HA-s0", "HA-s0-initial", "HC-SHUF", "HC-s0"], "city_logs_with_frames": {"LV": 15, "BOS": 10, "PIT": 11, "SG": 9}, "arm_table": [{"name": "HA-s0", "role": "trained", "cell": 2.0, "files": ["head_s0_a", "head_s0_b"], "shuf": "HA-SHUF", "init": "HA-s0-initial"}, {"name": "HA-SHUF", "role": "shuf", "cell": 2.0, "files": ["head_shuf_a", "head_shuf_b"]}, {"name": "HA-s0-initial", "role": "init", "cell": 2.0, "files": ["head_init0_a", "head_init0_b"]}, {"name": "HC-s0", "role": "trained", "cell": 1.0, "files": ["hc_s0_a", "hc_s0_b"], "shuf": "HC-SHUF"}, {"name": "HC-SHUF", "role": "shuf", "cell": 1.0, "files": ["hc_shuf_a", "hc_shuf_b"]}], "pairs": [{"x": "HC-s0", "ref": "HA-s0"}]}
+verdict (mechanical): **S1-WEAK** - both fail, in-sample IoU 0.7864 < 0.85
+
+| bar | value | 95 % CI | bar | holds |
+|---|---|---|---|---|
+| S1-P1 | 0.7802 | [0.7587, 0.7974] | >= 0.8 | False |
+| S1-Q | 0.8332 | [0.7951, 0.8691] | >= 0.9 | False |
+| S1-F | P1 lower 0.5120, Q lower 0.0891 | - | both > 0 | True |
+| C-SHUF | 0.4468 | - | < 0.5 | True |
+| C-FLIP | 0.7056 | - | < 0.8 | True |
+
+per city (S1-P1 [0,40) IoU, HA-s0): LV 0.8914, BOS 0.7394, PIT 0.7234, SG 0.6960
+
+| band IoU, HA-s0 (city-reweighted) | value | 95 % CI |
+|---|---|---|
+| 0-20 m | 0.8090 | [0.7886, 0.8300] |
+| 20-40 m | 0.7498 | [0.7216, 0.7686] |
+| 40-72 m | 0.6608 | [0.6288, 0.6822] |
+| 0-40 m | 0.7802 | [0.7587, 0.7974] |
+
+HA-SHUF IoU [0,40): 0.4468 CI [0.4223, 0.4703]; HA-SHUF S1-Q 0.6677
+HA-s0 near-boundary SDF channel MAE 1.6297 m, RMS 2.3626 m (cells 1236457)
+sigma_b 6.5905 m; true-field 2 m AUC 0.9408; y-flipped S1-Q 0.7056
+
+### HC-s0: verdict (mechanical, frozen v1 table): **INCOMPLETE** - S1-P1 and S1-Q both fail; S1-FIT vs S1-WEAK needs the in-sample IoU (not in the exports); A5 row **X-NULL**
+
+| paired X minus REF | S1-P1 delta | 95 % CI | S1-Q delta | 95 % CI | X-LIFT |
+|---|---|---|---|---|---|
+| HC-s0 - HA-s0 | -0.0045 | [-0.0121, -0.0008] | 0.0013 | [-0.0086, 0.0114] | False |
+
+MISSING:
+  MISSING-INPUT p6_dac_logit (P6's own DAC logit is not in the export; descriptive AUC not computed)
+  MISSING-INPUT navtrain_metric_cache_t0_ego_states (S1-QT, tracked d_k, unavailable; reported, not deciding)
+VERDICT S1-WEAK | both fail, in-sample IoU 0.7864 < 0.85 | next: HB and HC as one registered pair under their own card

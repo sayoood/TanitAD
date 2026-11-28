@@ -1,0 +1,65 @@
+-- artifact vs RESULT.md literals
+  OK   C2 recovered paths                     got=8 want=8
+  OK   C2 recovered speeds                    got=16 want=16
+  OK   C2 PASS                                got=True want=True
+  OK   C3 recovered                           got=(1, 1) want=(1, 1)
+  OK   C4 recovered at op point               got=(91, 23) want=(91, 23)
+  OK   bank paths lower bound                 got=45 want=45
+  OK   bank speeds lower bound                got=84 want=84
+  OK   product candidates                     got=3780 want=3780
+  OK   logits joint/factorised                got=(128, 129) want=(128, 129)
+  OK   floats joint/factorised                got=(2048, 20562) want=(2048, 20562)
+  OK   density multiplier                     got=29.531250 want=29.531250
+  OK   floats ratio                           got=10.040039 want=10.040039
+  OK   C2b max within-group rms               got=0.995894 want=0.995900
+  OK   C2b mean within-group rms              got=0.181527 want=0.181500
+  OK   C2b n_pairs                            got=448 want=448
+  OK   C1b ds=1.0 max                         got=0.065661 want=0.065700
+  OK   C1b ds=1.0 mean                        got=0.004299 want=0.004300
+  OK   C1b ds=0.25 max                        got=0.018726 want=0.018700
+  OK   C1b ds=0.25 mean                       got=0.001081 want=0.001100
+  OK   C1 G=16 max                            got=0.298308 want=0.298000
+  OK   C1 G=4096 max                          got=0.000922 want=0.000920
+  OK   arc length min                         got=1.204233 want=1.204200
+  OK   arc length max                         got=216.954322 want=216.954300
+  OK   arc length mean                        got=74.882466 want=74.882500
+  OK   final speed p5                         got=1.662878 want=1.662900
+  OK   final speed p50                        got=10.625958 want=10.626000
+  OK   final speed p95                        got=28.951753 want=28.951800
+  OK   substrate sha256                       got='68f81acf83b6b21ce533df282f78fe269e9b3b462eb82c726004821c7c1a806b' want='68f81acf83b6b21ce533df282f78fe269e9b3b462eb82c726004821c7c1a806b'
+-- survey probe
+  OK   report1 n_wp/n_preview                 got=(111, 106) want=(111, 106)
+  OK   report2 n_wp/n_preview                 got=(114, 109) want=(114, 109)
+  OK   report1 preview lengths                got=[401] want=[401]
+  OK   report2 preview lengths                got=[401] want=[401]
+  OK   refuted[12] keys                       got=['claim', 'vote', 'source'] want=['claim', 'vote', 'source']
+  OK   refuted[12] vote                       got='0-3' want='0-3'
+  OK   library 29163 count                    got=0 want=0
+  OK   verifier 83 quote present              got=True want=True
+  OK   verifier 83 refuted:true               got=True want=True
+  OK   verifier 84 quote present              got=True want=True
+  OK   verifier 84 refuted:true               got=True want=True
+  OK   verifier 85 quote present              got=True want=True
+  OK   verifier 85 refuted:true               got=True want=True
+-- RESULT.md contains the quoted values
+  OK   RESULT.md contains '68f81acf83b6b21ce533df282f78fe269e9b3b462eb82c726004821c7c1a806b'
+  OK   RESULT.md contains '3,780'
+  OK   RESULT.md contains '29.5'
+  OK   RESULT.md contains '0.0657'
+  OK   RESULT.md contains '0.0043'
+  OK   RESULT.md contains '0.9959'
+  OK   RESULT.md contains '0.1815'
+  OK   RESULT.md contains '106 + 109'
+  OK   RESULT.md contains '401 characters'
+  OK   RESULT.md contains '216.95'
+  OK   RESULT.md contains '0.3796'
+  OK   RESULT.md contains '0.6843'
+  OK   RESULT.md contains '14.3264'
+  OK   RESULT.md contains '1.0882'
+  OK   RESULT.md contains '20,562'
+  OK   RESULT.md contains '2,048'
+-- negative control (the C2-refuted reading must not be quoted as a result)
+  OK   present, and inside the C2-failure narrative
+  OK   deliberate-regression arm goes RED (PRESENT OUTSIDE the C2-failure narrative -- reads as a result)
+
+FAILURES: none

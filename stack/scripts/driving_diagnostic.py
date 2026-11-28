@@ -164,20 +164,70 @@ def scalar_metrics(de: Tensor) -> dict[str, float]:
     return out
 
 
-def mean_ci(vals: list[float]) -> dict:
-    """mean, 95% CI (route-resampled protocol, matching gates.run_d1)."""
+#: The estimator this module's split aggregator actually implements. Kept
+#: identical to ``taniteval.driving.DEPRECATED_ESTIMATOR`` so one string finds
+#: every quarantined number in the programme, and so
+#: ``driving.assert_no_deprecated_estimator`` REFUSES any block that carries it.
+DEPRECATED_ESTIMATOR = "overlapping_holdout_se"
+
+
+def overlapping_holdout_mean_ci(vals: list[float]) -> dict:
+    """mean ± 1.96·sd/sqrt(n) over per-split means — **the DEPRECATED estimator**.
+
+    ⛔ **THIS WAS THE UNNAMED CLONE** (found 2026-08-23, closed 2026-08-28;
+    ``products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md``). It was called ``mean_ci``
+    and returned ``{"mean", "ci95", "std", "n_splits", "per_split"}`` with **no
+    ``estimator`` field at all** — the exact arithmetic of
+    ``ci.overlapping_holdout_se`` under a name no grep for ``jack`` or
+    ``overlapping_holdout`` would ever return, reachable from six live callers.
+    Two independent audits missed it because both searched for NAMES.
+
+    Its inputs are the per-split means of ``split_by_episode(eid, val_frac, s)``
+    for ``s in seed..seed+n_splits-1`` — **8 OVERLAPPING random 20 % holdouts of
+    one episode pool**, not independent samples. So dividing their dispersion by
+    ``sqrt(n)`` understates the true uncertainty, the quantity shrinks toward
+    zero as ``n_splits`` grows, and the ``mean`` is a mean-of-split-means rather
+    than the full-set metric.
+
+    ⚠️ **The arithmetic is preserved VERBATIM, ddof=1 included.** It is NOT
+    routed through ``ci.overlapping_holdout_se``, which uses ``np.nanstd``
+    (ddof=0) — delegating would silently rescale every published D-number by
+    ``sqrt((n-1)/n)`` (0.935 at n=8). A reproduction that changes the number is
+    not a reproduction. Two things changed, and only two:
+
+    1. the NAME now declares the estimator, so
+       ``gate_guard.is_declared_estimator_name`` recognises it as a quarantined
+       reproduction and the name guard governs where its output may go
+       (``mean_ci`` and ``overlapping_holdout_mean_ci`` are both already in
+       ``gate_guard.BANNED_CALLS`` — the guard authors wrote this rename down
+       as the intended end state and it was never done);
+    2. the output SELF-LABELS, so ``driving.assert_no_deprecated_estimator``
+       refuses any block that carries it instead of publishing it unlabelled.
+
+    ⇒ For any new claim use ``taniteval.ci.episode_cluster_bootstrap`` (or the
+    paired form for a delta). ``mean_ci`` remains as a back-compat alias.
+    """
     n = len(vals)
     m = sum(vals) / n
     std = (sum((v - m) ** 2 for v in vals) / max(1, n - 1)) ** 0.5
     return {"mean": round(m, 4), "ci95": round(1.96 * std / n ** 0.5, 4),
             "std": round(std, 4), "n_splits": n,
-            "per_split": [round(v, 4) for v in vals]}
+            "per_split": [round(v, 4) for v in vals],
+            "estimator": DEPRECATED_ESTIMATOR, "deprecated": True}
+
+
+#: Back-compat alias. Every existing caller keeps working and keeps getting the
+#: same numbers; what changed is that those numbers now arrive labelled.
+mean_ci = overlapping_holdout_mean_ci
 
 
 def agg_metric_dicts(dicts: list[dict]) -> dict:
-    """List of per-split scalar dicts -> {metric: mean_ci over splits}."""
+    """List of per-split scalar dicts -> {metric: mean_ci over splits}.
+
+    ⚠️ Every value is the DEPRECATED :func:`overlapping_holdout_mean_ci` and now
+    says so in its own ``estimator`` field. Diagnostic use only."""
     keys = dicts[0].keys()
-    return {k: mean_ci([d[k] for d in dicts]) for k in keys}
+    return {k: overlapping_holdout_mean_ci([d[k] for d in dicts]) for k in keys}
 
 
 def _r2(pred: Tensor, tgt: Tensor) -> float:

@@ -1,0 +1,83 @@
+{
+ "pairs": {
+  "UE_s1_vs_UE_s0": {
+   "problems": [],
+   "pass": true
+  },
+  "UM_s1_vs_UM_s0": {
+   "problems": [],
+   "pass": true
+  },
+  "UM_s1_vs_UE_s1": {
+   "problems": [],
+   "pass": true
+  },
+  "UM_s0_vs_UE_s0 (the s0 pair, reference)": {
+   "problems": [],
+   "pass": true
+  }
+ },
+ "regression": [
+  {
+   "arm": "UE_s1_plus_batch_32",
+   "refused": true,
+   "problems": [
+    "flag --batch: ['32'] differs from the reference ['64']"
+   ]
+  },
+  {
+   "arm": "UE_s1_steps_61569",
+   "refused": true,
+   "problems": [
+    "flag --steps: ['61569'] differs from the reference ['61568']"
+   ]
+  },
+  {
+   "arm": "UE_s1_seed_2",
+   "refused": true,
+   "problems": [
+    "flag --seed reads ['2'], pinned ['1']"
+   ]
+  },
+  {
+   "arm": "UE_s1_kin_mode_changed",
+   "refused": true,
+   "problems": [
+    "flag --kin-mode: ['raw'] differs from the reference ['yaw']"
+   ]
+  },
+  {
+   "arm": "UE_s1_flag_removed",
+   "refused": true,
+   "problems": [
+    "flag --fit-join of the reference is missing"
+   ]
+  },
+  {
+   "arm": "UM_s1_plus_batch_32",
+   "refused": true,
+   "problems": [
+    "flag --batch: ['32'] differs from the reference ['64']",
+    "flag --batch: ['32'] differs from the reference ['64']"
+   ]
+  },
+  {
+   "arm": "UM_s1_tac_w_0.5",
+   "refused": true,
+   "problems": [
+    "flag --tac-src-w: ['0.5'] differs from the reference ['0.0']"
+   ]
+  },
+  {
+   "arm": "UM_s1_out_is_UM_s0",
+   "refused": true,
+   "problems": [
+    "flag --out reads ['/root/dscale10k/runs/UM_s0/A'], pinned ['/root/dscale10k/runs/UM_s1/A']",
+    "flag --out reads ['/root/dscale10k/runs/UM_s0/A'], pinned ['/root/dscale10k/runs/UM_s1/A']"
+   ]
+  }
+ ],
+ "all_pairs_pass": true,
+ "all_regressions_refused": true,
+ "reading": "s1 argv = s0 argv with --seed 1 and --out only (UE_s1, UM_s1); UM_s1 = UE_s1 + the three --tac-src-* flags"
+}

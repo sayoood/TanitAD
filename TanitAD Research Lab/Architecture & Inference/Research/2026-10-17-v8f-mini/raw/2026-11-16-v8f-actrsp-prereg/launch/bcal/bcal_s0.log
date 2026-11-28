@@ -1,0 +1,60 @@
+keys ['Z1', 'A_raw', 'ok', 't', 'eid', 'N', 'tanitad_file', 'clips', 'clips_sha256', 'ctrl4', 'starts', 'pull_s', 'wall_s']
+Z1 (2397, 16, 128) A_raw (2397, 16, 2) ok (2397, 16)
+transitions 31575 windows 2397
+{
+ "file": "latents_train_R35_s0.pt",
+ "tag": "R35_s0",
+ "n_transitions": 31575,
+ "n_windows": 2397,
+ "rule": "z_t-only R2 > 0.25 * pair R2 on a channel => trigger",
+ "channels": {
+  "acc": {
+   "r2_z_only": 0.1585245132446289,
+   "ci_z_only": [
+    0.1340037539601326,
+    0.18247877955436706
+   ],
+   "r2_pair": 0.18105977773666382,
+   "ci_pair": [
+    0.15600767880678176,
+    0.20585459619760513
+   ],
+   "threshold_0.25xpair": 0.045264944434165955,
+   "ratio": 0.8755368590354919,
+   "trigger": true
+  },
+  "yaw_rate": {
+   "r2_z_only": 0.19437772035598755,
+   "ci_z_only": [
+    0.15732164233922957,
+    0.21784815192222598
+   ],
+   "r2_pair": 0.20909351110458374,
+   "ci_pair": [
+    0.17361434102058412,
+    0.2354474022984505
+   ],
+   "threshold_0.25xpair": 0.052273377776145935,
+   "ratio": 0.9296209812164307,
+   "trigger": true
+  }
+ },
+ "TRIGGER_ANY_CHANNEL": true,
+ "lambda_chosen": {
+  "z_only": [
+   0.001,
+   0.001,
+   0.01,
+   0.001,
+   0.001
+  ],
+  "pair": [
+   0.001,
+   0.001,
+   0.01,
+   0.001,
+   0.001
+  ]
+ }
+}
+ZZ BCAL DONE ZZ

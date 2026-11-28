@@ -1,0 +1,56 @@
+ok    tree blobcheck 3407 of 3407, 0 bad, 0 extra checked 3407 of 3407 bad 0 extra []
+ok    hb executor sha256 74fd8445 
+ok    pinned tool v8f_t1_eval.py sha256 61e140ed (cdbff971 lineage) 
+ok    study wrapper rzgfh sha256 373ffe72f2655c35 (ADD68) 
+ok    readout wrapper rzg sha256 93879db8c0233867 (ADD63) 
+ok    input --tracks exists E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt
+ok    input --eval-cache exists E:/Projects/TanitAD-artifacts/sfresh_inputs/cache
+ok    input --eval-grid exists F:/TanitAD-scratch/strat1/read/inputs/eval_grid_windows.json
+ok    input --eval-join exists F:/TanitAD-scratch/strat1/read/inputs/join_eval141.npz
+ok    distrule file dist_rule.py 
+ok    distrule file v8f_t1_eval_rule.py 
+ok    distrule file v8f_t1_eval_rule_mix.py 
+ok    distrule file qcal_map.py 
+ok    readout wrapper adapter rzgi present v8f_t1_eval_reader_rule_rzgi
+ok    UE_s0.A checkpoint sha256 2fd4b747 
+ok    12 rollout argvs render (kind x seed x form), 12 distinct output folders, tier-of-record executor, six forms 12 folders
+ok    rh_roll.py --dry renders one argv C:/Users/Admin/venvs/tanitad/Scripts/python.exe F:/TanitAD-scratch/rollhist/read/tree/stack/scripts/v8f_t1_eval_hb.py --
+ok    T0 (G-T0) argv inputs exist []
+ok    parses code/q3/q3_read_r3.py 
+ok    parses code/q3/q3_read.py 
+ok    parses code/headway/headway_read_r2.py 
+ok    parses code/integ10k/strat_roll_read.py 
+ok    parses rh_read.py 
+ok    parses rh_strat.py 
+ok    parses rh_t0.py 
+ok    parses rh_roll.py 
+ok    parses rh_replay.py 
+ok    parses c_exec.py 
+ok    parses rh_dryrun.py 
+ok    parses rh_t0_dry.py 
+ok    reader dependency F:/TanitAD-scratch/v8proof/pod/stageB/hierrep_read.py 
+ok    reader dependency F:/TanitAD-scratch/v8proof/res/cache/frames.npz 
+ok    reader dependency F:/TanitAD-scratch/strat1/read/seeds/wait_commit.py 
+ok    q3_read_r3.py imports and takes --t1-root --pairs --seeds --spread-arm --same-sign 
+ok    headway_read_r2.py imports and takes --t1-root --pairs --seeds 
+ok    rh_strat imports the frozen ADD66 reader and its s4 synthetic control passes True
+
+ok    rh_read.py selftest (K-SELF, K-PLANT, K-FLOOR, K-SEEDS, K-HARMS, mutation other-seed arm) ZZ RH-READ-SELFTEST all hold: True
+ok    rh_strat_floor.py imports the frozen ADD66 reader and takes --s0 --s1 --out 
+ok    rh_read_chain.sh has the strat_floor step before read, and rh_read.py takes --strat-floor 
+ok    pair list renders 15
+
+ok    bash -n rh_read_chain.sh 
+ok    default read unchanged: rh_common KINDS / PAIRS / ARM_FORMS_ALL equal the pre-P03 copy (rh_common.py.bp03) with RH_AKIND unset 963 chars
+ok    RHp3 pairs: P1 is RHp3 - B0 under C*, P2/P4 pairs on RHp3, B0 attribution pair on B0, beside RHp3 - RH under R0Hb20 and R0C10XHb20 
+ok    RHp3 read rolls RHp3 only (ROLL_KINDS), runs of B0 and RH are reused ('RHp3', 'B0', 'RH')
+ok    the reused dumps exist (B0: 6 forms x 2 seeds, RH: 2 forms x 2 seeds, T1_DONE) []
+ok    the PARTIAL read's reused files exist (result, refs readers, strat floor, T0 evals of RH and B0, RH and B0 checkpoints for the provenance check) []
+ok    rh_read_p03_chain.sh has every step, in order (blobcheck, selftest, pull, rollouts, T0, guard, headway, q3, strat, read) [4653, 4774, 5967, 6162, 6325, 6401, 7122, 7294, 7498, 7690]
+ok    rh_read_p03_chain.sh exports RH_AKIND=RHp3, pulls and rolls RHp3 only, writes under out/read_p03, takes --rh-result, repeats no K-REPLAY and no stage-A reference 
+ok    rh_read_p03_chain.sh writes nothing the PARTIAL read wrote (no out/read/ output, no out/steps/ marker, own log) 
+ok    bash -n rh_read_p03_chain.sh 
+ok    rh_read.py carries the P03 answer and the NEXT_P03 table 
+ok    rh_read_p03_chain.cmd exists 
+ok    sha256 of every script recorded 59 files
+ZZ DRY-CHECK PASS ZZ

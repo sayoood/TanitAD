@@ -1,0 +1,752 @@
+{
+ "label": "S6",
+ "seed": 0,
+ "panel_dir": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\f0c4bd12-5464-4952-995c-062072b3b8d0\\scratchpad\\r7base\\out\\s6_s0",
+ "tier": "T1 (one-shot plan from t0, tier ruling open per panel manifest)",
+ "estimator": "episode-cluster bootstrap (taniteval/ci.py), n_boot=2000, seed=0; answers 'another draw of EPISODES' only",
+ "n_windows": 3668,
+ "n_episodes": 139,
+ "n_lead_windows": 1151,
+ "grid": {
+  "instants_s": [
+   1.0,
+   2.0,
+   3.0,
+   4.0,
+   5.0,
+   6.0
+  ],
+  "dt_s": 1.0,
+  "k": 6,
+  "dump_cols": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ]
+ },
+ "lead_block": "C:/Users/Admin/qland/landed_hold_x7/artifacts/b1_eval_lead_block_k12_dt0p5.npz",
+ "lead_coverage": {
+  "LEAD": 1151,
+  "NO_LEAD": 864,
+  "NOT_STRAIGHT": 1444,
+  "NO_LABEL": 209
+ },
+ "arc_definition": "path_arc_length: sum of chord lengths over (origin, wp1..wp6) on the 1 s S6 grid, ego origin implicit; a sparse grid under-reads a curved path by the same small factor for plan and human (ratio used)",
+ "arms": {
+  "os": {
+   "status": "OK",
+   "n_windows": 3668,
+   "n_lead_windows": 1151,
+   "n_viol": 49,
+   "share": 0.042572,
+   "n_at_risk": 830,
+   "share_of_at_risk": 0.059036,
+   "n_plan_lost_lead": 28,
+   "share_incl_lost_lead": 0.065161,
+   "n_human_tg_undefined": 229,
+   "n_human_tg_below_thr": 92,
+   "share_ci": {
+    "mean": 0.0426,
+    "lo": 0.0197,
+    "hi": 0.0734,
+    "ci95": 0.0268,
+    "se": 0.0138,
+    "reducer": "mean",
+    "n_windows": 1151,
+    "n_episodes": 75,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "share_of_at_risk_ci": {
+    "mean": 0.059,
+    "lo": 0.0272,
+    "hi": 0.1002,
+    "ci95": 0.0365,
+    "se": 0.0189,
+    "reducer": "mean",
+    "n_windows": 830,
+    "n_episodes": 63,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "progress": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n": 830,
+    "n_arc_nonfinite": 0,
+    "n_human_arc_degenerate": 0,
+    "min_progress": 0.9,
+    "min_human_arc_m": 0.5,
+    "decision_reading": "lead_progress_ratio_clipped",
+    "lead_progress_ratio": 1.1505542639154003,
+    "lead_progress_ratio_clipped": 0.9539208524559559,
+    "progress_ratio_of_means": 1.015403921579131,
+    "meets_min_progress": true,
+    "meets_min_progress_mean": true,
+    "overshoot_masks_crawl": false,
+    "n_below_min": 121,
+    "reason": null,
+    "ci_unclipped_mean": {
+     "mean": 1.1506,
+     "lo": 1.0468,
+     "hi": 1.2857,
+     "ci95": 0.1195,
+     "se": 0.0614,
+     "reducer": "mean",
+     "n_windows": 830,
+     "n_episodes": 63,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1)."
+    }
+   },
+   "script_side": {
+    "_note": "computed in this script from the instrument's _per_window.progress_ratio, NOT emitted by lead_metrics",
+    "clipped_ci": {
+     "mean": 0.9539,
+     "lo": 0.9351,
+     "hi": 0.9698,
+     "n_windows": 830,
+     "n_episodes": 63,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "median_ratio": 1.0053915367876307,
+    "n_ratio_gt_1": 450,
+    "share_ratio_gt_1": 0.5421686746987951,
+    "mean_ratio_where_gt_1": 1.3626794033585303,
+    "mean_clipped_deficit_where_lt_1": 0.10064655910935931
+   },
+   "old_stageB_x6s_ratio": {
+    "what": "plan x(6 s) / human x(6 s), UNCLIPPED mean over ALL lead windows (stage B L98-L108) - NOT the registered control",
+    "mean_all_lead_windows": 1.107764756348523,
+    "n": 1151,
+    "mean_at_risk_windows": 1.000938150475334,
+    "n_at_risk": 830
+   },
+   "arm": "os (refcv7-50,400 deployed plan, nav_true)"
+  },
+  "ha0": {
+   "status": "OK",
+   "n_windows": 3668,
+   "n_lead_windows": 1151,
+   "n_viol": 88,
+   "share": 0.076455,
+   "n_at_risk": 830,
+   "share_of_at_risk": 0.106024,
+   "n_plan_lost_lead": 43,
+   "share_incl_lost_lead": 0.111208,
+   "n_human_tg_undefined": 229,
+   "n_human_tg_below_thr": 92,
+   "share_ci": {
+    "mean": 0.0765,
+    "lo": 0.0415,
+    "hi": 0.1214,
+    "ci95": 0.04,
+    "se": 0.0206,
+    "reducer": "mean",
+    "n_windows": 1151,
+    "n_episodes": 75,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "share_of_at_risk_ci": {
+    "mean": 0.106,
+    "lo": 0.059,
+    "hi": 0.1672,
+    "ci95": 0.0541,
+    "se": 0.0276,
+    "reducer": "mean",
+    "n_windows": 830,
+    "n_episodes": 63,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "progress": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n": 830,
+    "n_arc_nonfinite": 0,
+    "n_human_arc_degenerate": 0,
+    "min_progress": 0.9,
+    "min_human_arc_m": 0.5,
+    "decision_reading": "lead_progress_ratio_clipped",
+    "lead_progress_ratio": 1.1282531293598543,
+    "lead_progress_ratio_clipped": 0.8996094824626311,
+    "progress_ratio_of_means": 0.9851349815075997,
+    "meets_min_progress": false,
+    "meets_min_progress_mean": true,
+    "overshoot_masks_crawl": true,
+    "n_below_min": 233,
+    "reason": null,
+    "ci_unclipped_mean": {
+     "mean": 1.1283,
+     "lo": 1.0027,
+     "hi": 1.2982,
+     "ci95": 0.1478,
+     "se": 0.0773,
+     "reducer": "mean",
+     "n_windows": 830,
+     "n_episodes": 63,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1)."
+    }
+   },
+   "script_side": {
+    "_note": "computed in this script from the instrument's _per_window.progress_ratio, NOT emitted by lead_metrics",
+    "clipped_ci": {
+     "mean": 0.8996,
+     "lo": 0.8628,
+     "hi": 0.9317,
+     "n_windows": 830,
+     "n_episodes": 63,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "median_ratio": 0.9896394072223529,
+    "n_ratio_gt_1": 341,
+    "share_ratio_gt_1": 0.4108433734939759,
+    "mean_ratio_where_gt_1": 1.5565226596032127,
+    "mean_clipped_deficit_where_lt_1": 0.17039699295708852
+   },
+   "old_stageB_x6s_ratio": {
+    "what": "plan x(6 s) / human x(6 s), UNCLIPPED mean over ALL lead windows (stage B L98-L108) - NOT the registered control",
+    "mean_all_lead_windows": 1.0585958235478459,
+    "n": 1151,
+    "mean_at_risk_windows": 1.09854858677663,
+    "n_at_risk": 830
+   },
+   "arm": "hold-v0 (constant velocity, a=0 kappa=0)"
+  },
+  "ha0_ext": {
+   "status": "OK",
+   "n_windows": 3668,
+   "n_lead_windows": 1151,
+   "n_viol": 36,
+   "share": 0.031277,
+   "n_at_risk": 830,
+   "share_of_at_risk": 0.043373,
+   "n_plan_lost_lead": 33,
+   "share_incl_lost_lead": 0.057341,
+   "n_human_tg_undefined": 229,
+   "n_human_tg_below_thr": 92,
+   "share_ci": {
+    "mean": 0.0313,
+    "lo": 0.0183,
+    "hi": 0.0462,
+    "ci95": 0.0139,
+    "se": 0.0071,
+    "reducer": "mean",
+    "n_windows": 1151,
+    "n_episodes": 75,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "share_of_at_risk_ci": {
+    "mean": 0.0434,
+    "lo": 0.0253,
+    "hi": 0.0629,
+    "ci95": 0.0188,
+    "se": 0.0096,
+    "reducer": "mean",
+    "n_windows": 830,
+    "n_episodes": 63,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "progress": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n": 830,
+    "n_arc_nonfinite": 0,
+    "n_human_arc_degenerate": 0,
+    "min_progress": 0.9,
+    "min_human_arc_m": 0.5,
+    "decision_reading": "lead_progress_ratio_clipped",
+    "lead_progress_ratio": 1.0421909924140946,
+    "lead_progress_ratio_clipped": 0.9264845359232126,
+    "progress_ratio_of_means": 1.0183849316298705,
+    "meets_min_progress": true,
+    "meets_min_progress_mean": true,
+    "overshoot_masks_crawl": false,
+    "n_below_min": 147,
+    "reason": null,
+    "ci_unclipped_mean": {
+     "mean": 1.0422,
+     "lo": 1.0088,
+     "hi": 1.085,
+     "ci95": 0.0381,
+     "se": 0.0197,
+     "reducer": "mean",
+     "n_windows": 830,
+     "n_episodes": 63,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1)."
+    }
+   },
+   "script_side": {
+    "_note": "computed in this script from the instrument's _per_window.progress_ratio, NOT emitted by lead_metrics",
+    "clipped_ci": {
+     "mean": 0.9265,
+     "lo": 0.9009,
+     "hi": 0.9479,
+     "n_windows": 830,
+     "n_episodes": 63,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "median_ratio": 1.00073305858388,
+    "n_ratio_gt_1": 417,
+    "share_ratio_gt_1": 0.5024096385542168,
+    "mean_ratio_where_gt_1": 1.2303030189147057,
+    "mean_clipped_deficit_where_lt_1": 0.14774294233349533
+   },
+   "old_stageB_x6s_ratio": {
+    "what": "plan x(6 s) / human x(6 s), UNCLIPPED mean over ALL lead windows (stage B L98-L108) - NOT the registered control",
+    "mean_all_lead_windows": 0.9428609480576456,
+    "n": 1151,
+    "mean_at_risk_windows": 1.00102476025823,
+    "n_at_risk": 830
+   },
+   "arm": "echo (constant a0 and k0 at t0)"
+  },
+  "ha": {
+   "status": "OK",
+   "n_windows": 3668,
+   "n_lead_windows": 1151,
+   "n_viol": 36,
+   "share": 0.031277,
+   "n_at_risk": 830,
+   "share_of_at_risk": 0.043373,
+   "n_plan_lost_lead": 33,
+   "share_incl_lost_lead": 0.056473,
+   "n_human_tg_undefined": 229,
+   "n_human_tg_below_thr": 92,
+   "share_ci": {
+    "mean": 0.0313,
+    "lo": 0.0189,
+    "hi": 0.0455,
+    "ci95": 0.0133,
+    "se": 0.0067,
+    "reducer": "mean",
+    "n_windows": 1151,
+    "n_episodes": 75,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "share_of_at_risk_ci": {
+    "mean": 0.0434,
+    "lo": 0.0268,
+    "hi": 0.0619,
+    "ci95": 0.0175,
+    "se": 0.0089,
+    "reducer": "mean",
+    "n_windows": 830,
+    "n_episodes": 63,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "progress": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n": 830,
+    "n_arc_nonfinite": 0,
+    "n_human_arc_degenerate": 0,
+    "min_progress": 0.9,
+    "min_human_arc_m": 0.5,
+    "decision_reading": "lead_progress_ratio_clipped",
+    "lead_progress_ratio": 1.0421775391426542,
+    "lead_progress_ratio_clipped": 0.9264842568661429,
+    "progress_ratio_of_means": 1.0183727996574157,
+    "meets_min_progress": true,
+    "meets_min_progress_mean": true,
+    "overshoot_masks_crawl": false,
+    "n_below_min": 147,
+    "reason": null,
+    "ci_unclipped_mean": {
+     "mean": 1.0422,
+     "lo": 1.0088,
+     "hi": 1.085,
+     "ci95": 0.0381,
+     "se": 0.0197,
+     "reducer": "mean",
+     "n_windows": 830,
+     "n_episodes": 63,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1)."
+    }
+   },
+   "script_side": {
+    "_note": "computed in this script from the instrument's _per_window.progress_ratio, NOT emitted by lead_metrics",
+    "clipped_ci": {
+     "mean": 0.9265,
+     "lo": 0.9009,
+     "hi": 0.9479,
+     "n_windows": 830,
+     "n_episodes": 63,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "median_ratio": 1.0007239734098365,
+    "n_ratio_gt_1": 417,
+    "share_ratio_gt_1": 0.5024096385542168,
+    "mean_ratio_where_gt_1": 1.2302767968573243,
+    "mean_clipped_deficit_where_lt_1": 0.14774350315036652
+   },
+   "old_stageB_x6s_ratio": {
+    "what": "plan x(6 s) / human x(6 s), UNCLIPPED mean over ALL lead windows (stage B L98-L108) - NOT the registered control",
+    "mean_all_lead_windows": 0.9418911302848482,
+    "n": 1151,
+    "mean_at_risk_windows": 1.0001484771220368,
+    "n_at_risk": 830
+   },
+   "arm": "hold-action (a, steer at t0-1 held)"
+  },
+  "stop": {
+   "status": "OK",
+   "n_windows": 3668,
+   "n_lead_windows": 1151,
+   "n_viol": 0,
+   "share": 0.0,
+   "n_at_risk": 830,
+   "share_of_at_risk": 0.0,
+   "n_plan_lost_lead": 43,
+   "share_incl_lost_lead": 0.034752,
+   "n_human_tg_undefined": 229,
+   "n_human_tg_below_thr": 92,
+   "share_ci": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 1151,
+    "n_episodes": 75,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "share_of_at_risk_ci": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 830,
+    "n_episodes": 63,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+   },
+   "progress": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n": 830,
+    "n_arc_nonfinite": 0,
+    "n_human_arc_degenerate": 0,
+    "min_progress": 0.9,
+    "min_human_arc_m": 0.5,
+    "decision_reading": "lead_progress_ratio_clipped",
+    "lead_progress_ratio": 0.0,
+    "lead_progress_ratio_clipped": 0.0,
+    "progress_ratio_of_means": 0.0,
+    "meets_min_progress": false,
+    "meets_min_progress_mean": false,
+    "overshoot_masks_crawl": false,
+    "n_below_min": 830,
+    "reason": null,
+    "ci_unclipped_mean": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "se": 0.0,
+     "reducer": "mean",
+     "n_windows": 830,
+     "n_episodes": 63,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1)."
+    }
+   },
+   "script_side": {
+    "_note": "computed in this script from the instrument's _per_window.progress_ratio, NOT emitted by lead_metrics",
+    "clipped_ci": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_windows": 830,
+     "n_episodes": 63,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "median_ratio": 0.0,
+    "n_ratio_gt_1": 0,
+    "share_ratio_gt_1": 0.0,
+    "mean_ratio_where_gt_1": null,
+    "mean_clipped_deficit_where_lt_1": 1.0
+   },
+   "old_stageB_x6s_ratio": {
+    "what": "plan x(6 s) / human x(6 s), UNCLIPPED mean over ALL lead windows (stage B L98-L108) - NOT the registered control",
+    "mean_all_lead_windows": 0.0,
+    "n": 1151,
+    "mean_at_risk_windows": 0.0,
+    "n_at_risk": 830
+   },
+   "arm": "STOP"
+  }
+ },
+ "verdict": {
+  "os": {
+   "verdict": "ADMISSIBLE-BAR-PENDING-BASELINE",
+   "bar_decision": null,
+   "lead_progress_ratio_clipped": 0.9539208524559559,
+   "lead_progress_ratio": 1.1505542639154003,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": "progress control clears the bar; pass paired=paired_lead_viol(arm, base)",
+   "baseline_lead_progress_ratio": null
+  },
+  "ha0": {
+   "verdict": "INADMISSIBLE-CRAWL",
+   "bar_decision": null,
+   "lead_progress_ratio_clipped": 0.8996094824626311,
+   "lead_progress_ratio": 1.1282531293598543,
+   "n_progress": 830,
+   "overshoot_masks_crawl": true,
+   "min_progress": 0.9,
+   "reason": "lead_progress_ratio_clipped 0.8996 < 0.9: on the at-risk windows the plan covers too little of the human's distance, so a low LEAD-VIOL here is not evidence of distance keeping. Bar decision withheld.",
+   "baseline_lead_progress_ratio": null
+  },
+  "ha0_ext": {
+   "verdict": "ADMISSIBLE-BAR-PENDING-BASELINE",
+   "bar_decision": null,
+   "lead_progress_ratio_clipped": 0.9264845359232126,
+   "lead_progress_ratio": 1.0421909924140946,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": "progress control clears the bar; pass paired=paired_lead_viol(arm, base)",
+   "baseline_lead_progress_ratio": null
+  },
+  "ha": {
+   "verdict": "ADMISSIBLE-BAR-PENDING-BASELINE",
+   "bar_decision": null,
+   "lead_progress_ratio_clipped": 0.9264842568661429,
+   "lead_progress_ratio": 1.0421775391426542,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": "progress control clears the bar; pass paired=paired_lead_viol(arm, base)",
+   "baseline_lead_progress_ratio": null
+  },
+  "stop": {
+   "verdict": "INADMISSIBLE-CRAWL",
+   "bar_decision": null,
+   "lead_progress_ratio_clipped": 0.0,
+   "lead_progress_ratio": 0.0,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": "lead_progress_ratio_clipped 0.0000 < 0.9: on the at-risk windows the plan covers too little of the human's distance, so a low LEAD-VIOL here is not evidence of distance keeping. Bar decision withheld.",
+   "baseline_lead_progress_ratio": null
+  }
+ },
+ "paired_os_vs": {
+  "stop": {
+   "x7_direction_met_at_risk": false,
+   "at_risk": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n_viol_a": 49,
+    "n_viol_b": 0,
+    "delta": 0.059,
+    "lo": 0.0272,
+    "hi": 0.1002,
+    "separated": true,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_episodes": 63
+   },
+   "progress_paired": {
+    "status": "OK",
+    "n_used": 830,
+    "n_a_only": 0,
+    "n_b_only": 0,
+    "lead_progress_ratio_a": 1.1505542639154003,
+    "lead_progress_ratio_b": 0.0,
+    "delta": 1.1506,
+    "lo": 1.0468,
+    "hi": 1.2857,
+    "separated": true
+   }
+  },
+  "ha0": {
+   "x7_direction_met_at_risk": true,
+   "at_risk": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n_viol_a": 49,
+    "n_viol_b": 88,
+    "delta": -0.047,
+    "lo": -0.0895,
+    "hi": -0.0073,
+    "separated": true,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_episodes": 63
+   },
+   "progress_paired": {
+    "status": "OK",
+    "n_used": 830,
+    "n_a_only": 0,
+    "n_b_only": 0,
+    "lead_progress_ratio_a": 1.1505542639154003,
+    "lead_progress_ratio_b": 1.1282531293598543,
+    "delta": 0.0223,
+    "lo": -0.135,
+    "hi": 0.162,
+    "separated": false
+   }
+  },
+  "ha0_ext": {
+   "x7_direction_met_at_risk": false,
+   "at_risk": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n_viol_a": 49,
+    "n_viol_b": 36,
+    "delta": 0.0157,
+    "lo": -0.0121,
+    "hi": 0.0485,
+    "separated": false,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_episodes": 63
+   },
+   "progress_paired": {
+    "status": "OK",
+    "n_used": 830,
+    "n_a_only": 0,
+    "n_b_only": 0,
+    "lead_progress_ratio_a": 1.1505542639154003,
+    "lead_progress_ratio_b": 1.0421909924140946,
+    "delta": 0.1084,
+    "lo": 0.0265,
+    "hi": 0.2095,
+    "separated": true
+   }
+  },
+  "ha": {
+   "x7_direction_met_at_risk": false,
+   "at_risk": {
+    "status": "OK",
+    "n_at_risk": 830,
+    "n_viol_a": 49,
+    "n_viol_b": 36,
+    "delta": 0.0157,
+    "lo": -0.0096,
+    "hi": 0.0473,
+    "separated": false,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_episodes": 63
+   },
+   "progress_paired": {
+    "status": "OK",
+    "n_used": 830,
+    "n_a_only": 0,
+    "n_b_only": 0,
+    "lead_progress_ratio_a": 1.1505542639154003,
+    "lead_progress_ratio_b": 1.0421775391426542,
+    "delta": 0.1084,
+    "lo": 0.0265,
+    "hi": 0.2095,
+    "separated": true
+   }
+  }
+ },
+ "verdict_os_vs": {
+  "stop": {
+   "verdict": "FAIL",
+   "bar_decision": false,
+   "lead_progress_ratio_clipped": 0.9539208524559559,
+   "lead_progress_ratio": 1.1505542639154003,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": null,
+   "baseline_lead_progress_ratio": 0.0
+  },
+  "ha0": {
+   "verdict": "PASS",
+   "bar_decision": true,
+   "lead_progress_ratio_clipped": 0.9539208524559559,
+   "lead_progress_ratio": 1.1505542639154003,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": null,
+   "baseline_lead_progress_ratio": 1.1282531293598543
+  },
+  "ha0_ext": {
+   "verdict": "FAIL",
+   "bar_decision": false,
+   "lead_progress_ratio_clipped": 0.9539208524559559,
+   "lead_progress_ratio": 1.1505542639154003,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": null,
+   "baseline_lead_progress_ratio": 1.0421909924140946
+  },
+  "ha": {
+   "verdict": "FAIL",
+   "bar_decision": false,
+   "lead_progress_ratio_clipped": 0.9539208524559559,
+   "lead_progress_ratio": 1.1505542639154003,
+   "n_progress": 830,
+   "overshoot_masks_crawl": false,
+   "min_progress": 0.9,
+   "reason": null,
+   "baseline_lead_progress_ratio": 1.0421775391426542
+  }
+ },
+ "controls_internal": {
+  "human_as_plan": {
+   "lead_progress_ratio": 1.0,
+   "lead_progress_ratio_clipped": 1.0,
+   "n_viol": 0,
+   "expected": "ratio 1.0 exactly, n_viol 0",
+   "verdict": "ADMISSIBLE-BAR-PENDING-BASELINE"
+  },
+  "half_speed_plan": {
+   "lead_progress_ratio": 0.5,
+   "lead_progress_ratio_clipped": 0.5,
+   "expected": "ratio 0.5 exactly (a scaled polyline scales its arc), INADMISSIBLE-CRAWL",
+   "verdict": "INADMISSIBLE-CRAWL"
+  },
+  "crawl_in_half_overshoot_in_half": {
+   "lead_progress_ratio": 0.9566265060240964,
+   "lead_progress_ratio_clipped": 0.4783132530120482,
+   "overshoot_masks_crawl": true,
+   "expected": "unclipped mean ~1.0 (passes), clipped ~0.5, overshoot_masks_crawl True, INADMISSIBLE-CRAWL",
+   "verdict": "INADMISSIBLE-CRAWL"
+  },
+  "content_asserts": {
+   "stop_all_zero": true,
+   "os_nonzero": true,
+   "g_finite": true,
+   "os_finite": true
+  }
+ },
+ "wall_s": 5.7
+}

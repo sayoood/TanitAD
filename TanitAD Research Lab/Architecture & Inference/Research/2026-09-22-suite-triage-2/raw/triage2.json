@@ -1,0 +1,41 @@
+{
+ "_what": "two more of the five tip reds closed; BOTH were defects in the TESTS, not the trainer",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "speed_max_ordering": {
+  "old_check": "src.index() byte offsets",
+  "why_wrong": "FOUR config.json writes exist; the guard at line 7249 precedes the PRIMARY write at 7257, but index() picked a re-write at line 3302 inside a helper DEFINED earlier and CALLED later",
+  "write_lines": [
+   3302,
+   7257,
+   7315,
+   7325
+  ],
+  "guard_line": 7249,
+  "fix": "AST-scoped to the function CONTAINING the guard; guard must precede every config.json write in that same function",
+  "mutation": "guard moved AFTER the primary write -> RED (min([7256,7315,7325]))",
+  "trainer_restored_byte_identical": true
+ },
+ "weight_gate_exhaustiveness": {
+  "flags": [
+   "r7_w_ttc",
+   "r7_w_ep",
+   "r7_w_comf"
+  ],
+  "defaults": [
+   5.0,
+   5.0,
+   2.0
+  ],
+  "why_naive_fix_is_wrong": "classify() sets NO_GRAPH on effective>0 and missing WITHOUT consulting explicit, and refusals() refuses NO_GRAPH -- so a scorer-gated registry entry would fire on the DEFAULTS of every non-refcv7 run and refuse every existing arm",
+  "registry_invariant_violated": "refc_weight_specs states every refc weight defaults to 0.0 ON PURPOSE; these three do not",
+  "fix": "excluded by name WITH the reason (the PATH_ARGS union NOT_A_PATH shape); the owning term --w-r7-scorer IS registered and a new test asserts that transitive gating plus the three defaults as literals",
+  "mutation": "w_r7_scorer removed from REFC_WEIGHT_GATES -> BOTH tests RED",
+  "trainer_restored_byte_identical": true
+ },
+ "suite_after": {
+  "test_speed_max_derivation_stamp.py": "43 passed",
+  "test_v6_effective_weights.py": "40 passed"
+ },
+ "remaining_tip_reds": 2,
+ "_VERDICT": "2 of 2 examined were TEST defects, not trainer defects -- worth knowing before fixing the remaining three"
+}

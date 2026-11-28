@@ -1,0 +1,151 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD149",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    20,
+    20
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 30000,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "4ae87b88ab53ec3907a801e8971e84ba690944241595a1babef99593cff6e5bf",
+   "sha256_at_read": "4ae87b88ab53ec3907a801e8971e84ba690944241595a1babef99593cff6e5bf",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 0.9999999999999999,
+   "A": 1.0,
+   "PASS": true
+  }
+ },
+ "leadspeed_py_sha256": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+ "seeds": {
+  "split": 148,
+  "train": 149
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 3984,
+  "held_out": 443,
+  "eval": 141
+ },
+ "guard": {
+  "amendment": "AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 16.14,
+  "own_commit_at_start_GB": 1.058,
+  "need_GB": 7.34,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (amendment 3)",
+  "touch_check": 512,
+  "fit_clips": 3984,
+  "seconds": 111.2,
+  "commit_avail_after_GB": 16.07,
+  "own_commit_after_GB": 1.136
+ },
+ "train": {
+  "steps": 30000,
+  "windows_fit": 366304,
+  "seconds": 1563.3,
+  "loss_first1000": 0.6401,
+  "loss_last1000": 0.1839,
+  "finite": true,
+  "ckpt_sha256": {
+   "10000": "b735d5c0c64996387030f14879fb0ca75439fae0da1fb766cd9a4cb639cbcaad",
+   "20000": "784e316d9cde92cccdbd43d9fe568aca203443502463996a919dbf58adea524b",
+   "30000": "4ae87b88ab53ec3907a801e8971e84ba690944241595a1babef99593cff6e5bf"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/full/head_30000.pt",
+  "sha256": "7048714afbb5301664dbe1544c19945cded571f07e4930380f94361babdf37c4"
+ },
+ "held_out": {
+  "S": 0.42157570171516534,
+  "n_S": 11623,
+  "A": 0.21226540937957047,
+  "n_A": 10325,
+  "gap_mae_m": 5.688576312726414,
+  "presence_auc": 0.9127035422400152
+ },
+ "paired_vs_ref_held_out": {
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; episodes (clips) only, one training seed per arm",
+  "S_head": 0.42157570171516534,
+  "S_ref": 0.2877359893295343,
+  "dS": 0.13383971238563103,
+  "dS_ci95": [
+   0.04289351509731767,
+   0.2263019228514032
+  ],
+  "A_head": 0.21226540937957047,
+  "A_ref": 0.19120802261869796,
+  "dA": 0.021057386760872515,
+  "dA_ci95": [
+   -0.014425910222227452,
+   0.05634553507137792
+  ],
+  "n_clips": 443
+ },
+ "held_out_halves": [
+  {
+   "S": 0.4538391884672591,
+   "n_S": 6122,
+   "A": 0.2055291944123236,
+   "n_A": 5468,
+   "gap_mae_m": 5.494211896126684,
+   "presence_auc": 0.9097495550958514
+  },
+  {
+   "S": 0.3797432769180771,
+   "n_S": 5501,
+   "A": 0.2215403272715341,
+   "n_A": 4857,
+   "gap_mae_m": 5.900570685874863,
+   "presence_auc": 0.9151309672527026
+  }
+ ],
+ "eval141": {
+  "S": 0.4445759283818997,
+  "n_S": 3430,
+  "A": 0.17221326383097812,
+  "n_A": 3035,
+  "gap_mae_m": 5.159205997839802,
+  "presence_auc": 0.8731993902832993
+ },
+ "token_reader_ADD146_beside": {
+  "A": [
+   0.0872,
+   0.0714
+  ],
+  "S": [
+   0.3337,
+   0.2731
+  ]
+ },
+ "controls_all_pass": true,
+ "name": "LEADSPEEDFULL10K-SPEED-ONLY",
+ "consequence": "CLOSING-ONLY: the head is the closing input without the acceleration (successor card)"
+}

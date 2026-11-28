@@ -1,0 +1,7 @@
+# MM rulings on the X_s0 staging (2026-11-18 ~00:20Z, before any X_s0 step)
+
+1. **C-JOIN-EQ is accepted** (the X join must equal the union join on the 10k clips, per clip). It guarantees that X_s0 trains on exactly the labels U_s0 / U_s1 trained on for those clips. Without it, X against U would compare two label builds, not two data sets.
+2. **G-LIVE reach evidence must be FRESH for X_s0, not inherited from UE_s0.** Every X_s0 window comes from the 10k clips, so reach is the first question for this arm. A probe borrowed from another arm is INHERITED evidence and may not open a GPU run. The chain's mint step runs the probe on X_s0's own built model and data. Its cost is minutes.
+3. **The untested real prep (dry build, `init_x`, the `cache_x_dscale` view) is accepted as fail-closed.** These steps run before any training step, and each one refuses on a mismatch. The view is built by the chain, not by hand, so what the chain uses is what it built.
+4. **Cost.** About 2.6 pod-h (ESTIMATED from MEASURED block-1/2 rates: stage A 1.0 h, stage B 0.16 h, bank, selfcheck and mint about 1.46 h). The PI is asked with this number, not the earlier 1.5 h.
+5. **The diagnostic read** (`../diag/RESULT_DIAG.md`) is **NOT-DILUTION as committed, and power-limited.** The VLM classes have 2-24 positive episodes, and 4 of 13 read F1 0 in all four arms. So the F1 test cannot see a dilution of the size the TACTICAL cost implies. It neither confirms nor excludes dilution. X_s0 and the block-3 read remain the discriminating experiments.

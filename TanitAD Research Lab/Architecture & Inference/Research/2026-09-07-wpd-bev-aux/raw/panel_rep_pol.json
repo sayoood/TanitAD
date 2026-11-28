@@ -1,0 +1,282 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file + C:/Users/Admin/wpd-probe/bank + this json)",
+ "tier": "NOT APPLICABLE - frozen-feature representation probe, no trajectory is produced (PREREG_WPD_BEV_AUX.md section 5A)",
+ "geometry": "pol",
+ "geometry_note": "cart = WP-A's Cartesian GRID_DEFAULT, the PRIMARY read and NOT the parameterisation D1 trained on; pol = the polar 24x20 target the aux head optimised, with its occlusion IGNORE mask (secondary)",
+ "function_class": "NONLINEAR (1x1 conv + 3x3 residual + 3-layer MLP), identical arch/params/steps/seed across arms",
+ "projection_scope": "column LINEAR in azimuth holds for OUR 256x640 cylindrical corpus at f_ref 305.577 (HFOV 120 deg); a pinhole formula gives 92.6 deg and does not travel",
+ "az_sign_chosen": "prog",
+ "az_sign_probe": {},
+ "az_sign_note": "`prog` = bev_aux.azimuth_column AND psg_targets.azimuth_column (two independent implementations that AGREE): image column 0 is azimuth +hfov/2 = LEFT, and it is the convention D1's aux head TRAINED under. `wpa` = WP-A's s5_indexed.py address, which is its MIRROR. The choice is settled by the RAW-PIXEL arm's VAL AP -- an unlearned representation, fit+val only, test untouched. This is the M1 'mirrored world' mutant as a live question, not a style preference.",
+ "bank": "C:\\Users\\Admin\\wpd-probe\\bank_rep",
+ "trunks": {
+  "D0": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [],
+   "md5": "ca24c1b923d0d94cb1c4d46868011237"
+  },
+  "D0b": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [],
+   "md5": "c88eb8776f83c62bd307c830dde0e627"
+  },
+  "D0c": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [],
+   "md5": "21b73bb0a46bb21654adf6b5e23318c4"
+  },
+  "D1": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [
+    "core.bev_aux_head.ray.0.bias",
+    "core.bev_aux_head.ray.0.weight",
+    "core.bev_aux_head.ray.2.bias",
+    "core.bev_aux_head.ray.2.weight",
+    "core.bev_aux_head.tok.bias",
+    "core.bev_aux_head.tok.weight"
+   ],
+   "md5": "7d0cb3e203c2e3870bbd47e54a2d9f77"
+  },
+  "D2": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [
+    "core.bev_aux_head.ray.0.bias",
+    "core.bev_aux_head.ray.0.weight",
+    "core.bev_aux_head.ray.2.bias",
+    "core.bev_aux_head.ray.2.weight",
+    "core.bev_aux_head.tok.bias",
+    "core.bev_aux_head.tok.weight"
+   ],
+   "md5": "c937109410f11269a6b6f4ee6a7d112e"
+  }
+ },
+ "align_with_wpa": {
+  "wpa_clips": 139,
+  "wpa_N": 13223,
+  "clips_equal": true,
+  "plan_equal": true,
+  "y_cart_equals_wpa": true,
+  "y_cart_disagree_cells": 0
+ },
+ "seed": 0,
+ "steps": 1500,
+ "batch": 24,
+ "cells": 480,
+ "lr": 0.002,
+ "n_cells_per_row": 480,
+ "n_scored_cells_test": 1171327,
+ "base_rate_test": 0.029992478616133668,
+ "n_pos_test": 35131,
+ "all_zero_accuracy_pct": 97.0008,
+ "controls": {
+  "constant_score_ap": 0.029992478616133668,
+  "base_rate": 0.029992478616133668,
+  "constant_equals_base_rate_exactly": true,
+  "allzero_ap": 0.029992478616133668,
+  "allone_ap": 0.029992478616133668,
+  "perfect_ranker_ap": 1.0,
+  "note": "the constant control is the only thing standing between this panel and the R-2026-09-07-ap-ties defect, in which a no-information arm scored ABOVE its own base rate"
+ },
+ "split_clips": {
+  "fit": 84,
+  "val": 25,
+  "test": 30
+ },
+ "arms": {
+  "tok_D0": {
+   "ap_test": 0.14391821196965418,
+   "ap_val": 0.0899081756096506,
+   "f1_test": 0.22969864308834076,
+   "iou_test": 0.1297511499598629,
+   "thr_from_val": 0.7864718437194824,
+   "f1_val": 0.15060342848300934,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 1171327,
+   "n_cells_per_row": 480,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 43.2
+  },
+  "tok_D1": {
+   "ap_test": 0.15405244187327152,
+   "ap_val": 0.11438956682968164,
+   "f1_test": 0.23016119003295898,
+   "iou_test": 0.1300464110877996,
+   "thr_from_val": 0.8449850082397461,
+   "f1_val": 0.19262675940990448,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 1171327,
+   "n_cells_per_row": 480,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 53.8
+  },
+  "tok_D2": {
+   "ap_test": 0.15160471838836195,
+   "ap_val": 0.10114217654418685,
+   "f1_test": 0.23102085292339325,
+   "iou_test": 0.130595574593134,
+   "thr_from_val": 0.7965653538703918,
+   "f1_val": 0.17425718903541565,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 1171327,
+   "n_cells_per_row": 480,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 59.3
+  },
+  "tok_D0b": {
+   "ap_test": 0.1433428251297786,
+   "ap_val": 0.11166093989498013,
+   "f1_test": 0.2126934975385666,
+   "iou_test": 0.11900225186211676,
+   "thr_from_val": 0.8609939813613892,
+   "f1_val": 0.18384554982185364,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 1171327,
+   "n_cells_per_row": 480,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 57.5
+  },
+  "tok_D0c": {
+   "ap_test": 0.13820666446941351,
+   "ap_val": 0.10604000947051702,
+   "f1_test": 0.21667912602424622,
+   "iou_test": 0.12150316118491156,
+   "thr_from_val": 0.820462703704834,
+   "f1_val": 0.17278020083904266,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 1171327,
+   "n_cells_per_row": 480,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 59.0
+  }
+ },
+ "pairs": {
+  "tok_D1_minus_tok_D0": {
+   "delta": 0.010134,
+   "lo": -0.01156,
+   "hi": 0.03,
+   "separated": false,
+   "p_delta_gt0": 0.74,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A3 the lever vs aux-off"
+  },
+  "tok_D1_minus_tok_D2": {
+   "delta": 0.002448,
+   "lo": -0.013971,
+   "hi": 0.016159,
+   "separated": false,
+   "p_delta_gt0": 0.51,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A4 information vs shuffled target"
+  },
+  "tok_D2_minus_tok_D0": {
+   "delta": 0.007687,
+   "lo": -0.007257,
+   "hi": 0.019832,
+   "separated": false,
+   "p_delta_gt0": 0.835,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "D2 vs D0 (context)"
+  },
+  "tok_D0b_minus_tok_D0": {
+   "delta": -0.000575,
+   "lo": -0.023456,
+   "hi": 0.012122,
+   "separated": false,
+   "p_delta_gt0": 0.435,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A3 FLOOR f_same: D0's flags, D0's SEED, zero levers"
+  },
+  "tok_D0c_minus_tok_D0": {
+   "delta": -0.005712,
+   "lo": -0.029695,
+   "hi": 0.019363,
+   "separated": false,
+   "p_delta_gt0": 0.34,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A3 FLOOR f_seed: D0's flags, seed 1 (prereg s4)"
+  },
+  "tok_D0c_minus_tok_D0b": {
+   "delta": -0.005136,
+   "lo": -0.024479,
+   "hi": 0.028838,
+   "separated": false,
+   "p_delta_gt0": 0.445,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A3 context: replicate vs replicate"
+  },
+  "tok_D1_minus_tok_D0b": {
+   "delta": 0.01071,
+   "lo": -0.011946,
+   "hi": 0.028224,
+   "separated": false,
+   "p_delta_gt0": 0.85,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A3 context: the lever vs the same-seed replicate"
+  },
+  "tok_D2_minus_tok_D0b": {
+   "delta": 0.008262,
+   "lo": -0.004802,
+   "hi": 0.026735,
+   "separated": false,
+   "p_delta_gt0": 0.875,
+   "n_boot": 200,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "A3 context: shuffled target vs the replicate"
+  }
+ },
+ "boot_cell_stride": 1,
+ "n_boot": 200
+}

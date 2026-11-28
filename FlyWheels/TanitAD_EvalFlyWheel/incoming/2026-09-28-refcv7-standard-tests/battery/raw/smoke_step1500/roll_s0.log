@@ -1,0 +1,26 @@
+[lead] no lead block (banked default absent: C:\Users\Admin\ev7\TanitAD Research Lab\Benchmarks & Evals\Research\2026-09-02-b1-eval-lead-block\raw\b1_eval_lead_block.npz); distance-keeping will be REFUSED with its reason — a WORK ITEM, not a pass
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[model] D:/refcv7_eval_kit/ckpt/ckpt_1500.pt step=1500 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-flip] os_navflip: left<->right on 4/8 windows — the sharpest intervention (optional arm)
+[roll] 8 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'os_navshuf', 'os_navzero', 'oracle_sel', 'os_navflip'] · fed conditionings=['nav_true', 'nav_shuffled', 'nav_flipped'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 4/8
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (3 fed row(s) + 1 nav-null call, 4 rows total) took 3.44 s -> ESTIMATED 0.01 h for 8 windows (forward only; IO/analysis extra)
+  [1/2] <clip> 4 windows 56s
+  [2/2] <clip> 4 windows 62s
+[dump] 8 windows over 2 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_SMOKE_CORPUS - ckpt=TRAINED corpus=SMOKE step=1500 eps=2 windows=8 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] D:\refcv7_eval_kit\battery\smoke_step1500\dump_s0; analyse later with --analyze-only
+[roll_seed] seed 0 -> D:\refcv7_eval_kit\battery\smoke_step1500\roll_s0.json

@@ -1,0 +1,60 @@
+{
+ "clause_i": {
+  "what": "recomputed gap within 0.5 m of the join's lead gap, frames with a valid lead",
+  "n_frames": 36412,
+  "n_ok": 36350,
+  "frac": 0.9982972646380314,
+  "bar": 0.98,
+  "abs_diff_m_median_max": [
+   0.00012373761407413753,
+   15.282607707093423
+  ],
+  "pass": true
+ },
+ "clause_ii": {
+  "what": "sign(azimuth of box centre) == sign(ego path curvature); gap>=15, |az|>=3 deg, |curvature|>=1/300",
+  "n_frames": 4735,
+  "n_agree": 4652,
+  "frac": 0.9824709609292502,
+  "bar": 0.75,
+  "n_min": 200,
+  "by_gap_bin_n_agree": {
+   "15-25": [
+    1572,
+    1504
+   ],
+   "25-40": [
+    1676,
+    1667
+   ],
+   "40-60": [
+    1487,
+    1481
+   ]
+  },
+  "pass": true
+ },
+ "clause_iii": {
+  "what": "elevation of the bottom of the box < 0, valid lead and gap < 20 m",
+  "n_frames": 16786,
+  "n_ok": 16784,
+  "frac": 0.9998808530918623,
+  "bar": 0.98,
+  "pass": true
+ },
+ "clips_without_box_file_or_length_mismatch": [],
+ "n_clips_without_box": 0,
+ "pass_all": true,
+ "n_clips": 641,
+ "clip_list_sources": {
+  "eval": "/workspace/v8proof/cropread/enc_out/lists/eval141.txt",
+  "train_final": "/workspace/v8proof/cropread/enc_out/lists/train_final_ids.txt"
+ },
+ "pass": true,
+ "adapter": {
+  "tool": "assemble_run_root.py",
+  "source": "/workspace/v8proof/cropread/enc_out/ctl/P1.json",
+  "source_sha256": "0d43dccfd6e54b07644b2cd0e74c1f95256e1b5280032b7be68c527101c7aa51",
+  "what": "the key `pass` is added: the AND of the three clause flags of the source, equal to its `pass_all`; nothing else is changed"
+ }
+}

@@ -1,0 +1,13 @@
+[loader] 1739 windows over 20 episodes
+[dump] 20 episodes in 3s
+[lead] b1_eval_lead_block.npz: 1739 windows / 20 eps · OK eps 20 · LEAD 562 NO_LEAD 367 NOT_STRAIGHT 694 NO_LABEL 116 (no-row 0) · speed-check max 2.1e-05 m/s · PRESENT
+STATUS PRESENT | windows 1739 eps OK 20 / 20
+COUNTS {'LEAD': 562, 'NO_LEAD': 367, 'NOT_STRAIGHT': 694, 'NO_LABEL': 116} no-row 0 speed-check max 2.1e-05
+ARM ol: status OK n 558 headway 34.5338 [22.3721, 49.3645] time_gap 3.3328 (n 558) min_ttc 23.1687 n_closing 293
+   by_speed {'0-1': ('NOT-APPLICABLE', 0), '1-3': ('OK', 48), '3-6': ('OK', 42), '6-10': ('OK', 138), '10-15': ('OK', 148), '15+': ('OK', 182)}
+ARM ha: status OK n 556 headway 34.4404 [22.2157, 49.2263] time_gap 3.3228 (n 556) min_ttc 23.123 n_closing 287
+   by_speed {'0-1': ('NOT-APPLICABLE', 0), '1-3': ('OK', 48), '3-6': ('OK', 42), '6-10': ('OK', 138), '10-15': ('OK', 146), '15+': ('OK', 182)}
+GT REF {'headway_min_m': (34.4194, 22.2931, 49.6724, 556), 'time_gap_min_s': (3.3241, 2.2217, 4.5468, 556), 'min_ttc_s': (22.9422, 17.5579, 27.8382, 556)}
+KIN CHECK {'n_both': 555, 'n_ol_only': 3, 'n_gt_only': 1, 'mean_abs_headway_diff_m': 0.1446, 'median_abs_headway_diff_m': 0.0088, 'p95_abs_headway_diff_m': 0.3996, 'max_abs_headway_diff_m': 6.3824, '_reading': "ol integrates the RECORDED (a, kappa) from v0 through the programme's unicycle, so its headway must sit within its own ADE of the GT reference (MEASURED on the real 20-clip slice: ol ADE 0.47 m over 2 s, mean |dHeadway| 0.14 m). The tail (max) is where ol's path drifts across the corridor edge and the min-over-steps jumps; a LARGE mean or median is a join or frame error, not a model result"}
+ol ADE {'mean': 0.4653, 'lo': 0.3107, 'hi': 0.6353, 'ci95': 0.1623, 'se': 0.0863, 'reducer': 'mean', 'n_windows': 1739, 'n_episodes': 20, 'n_boot': 500, 'estimator': 'episode_cluster_bootstrap'}
+KINEMATIC_DUMP_DONE

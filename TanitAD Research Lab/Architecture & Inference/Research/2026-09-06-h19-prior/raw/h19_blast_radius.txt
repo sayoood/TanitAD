@@ -1,0 +1,37 @@
+==========================================================================
+H19 BLAST RADIUS -- MEASURED, CPU smoke rung, zero GPU
+==========================================================================
+
+---- vocab = kin3   -------------------------------------------
+  graft_maneuver (cfg)          : True
+  maneuver_to_anchor built      : False
+  lat_head_tac.out_features     : 3
+  Q2 decoder RECEIVED man_logits: Tensor(2, 5)
+  Q2 decoder RECEIVED lat_prior : Tensor(2, 3)
+  anchor_logits present         : True
+  Q3 mutation lat/lon_head_tac (+N(0,5) on W and b):
+     -> decoder maneuver_logits : MOVED max|d|=24.4632
+     -> decoder lat_prior       : MOVED max|d|=21.8972
+     -> anchor_logits           : MOVED max|d|=18.0365
+
+---- vocab = v7.0   -------------------------------------------
+  graft_maneuver (cfg)          : True
+  maneuver_to_anchor built      : False
+  lat_head_tac.out_features     : 8
+  Q2 decoder RECEIVED man_logits: Tensor(2, 5)
+  Q2 decoder RECEIVED lat_prior : Tensor(2, 3)
+  anchor_logits present         : True
+  Q3 mutation lat/lon_head_tac (+N(0,5) on W and b):
+     -> decoder maneuver_logits : UNCHANGED (0.0)
+     -> decoder lat_prior       : UNCHANGED (0.0)
+     -> anchor_logits           : UNCHANGED (0.0)
+
+==========================================================================
+VERDICT
+==========================================================================
+  H19 prior LIVE (decoder got a maneuver_logits tensor):
+     kin3 : True      v7.0 : True
+  TACTICAL BRAIN reaches the H19 prior (mutation moves it):
+     kin3 : 24.463171005249023      v7.0 : 0.0
+  TACTICAL BRAIN reaches the D-TAC1 lat_prior:
+     kin3 : 21.89720344543457      v7.0 : 0.0

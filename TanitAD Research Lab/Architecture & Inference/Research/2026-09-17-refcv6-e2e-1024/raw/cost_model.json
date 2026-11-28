@@ -1,0 +1,65 @@
+{
+ "evidence_class": "MEASURED (MAC count) + ESTIMATED (projection)",
+ "frame": {
+  "height": 256,
+  "width": 1024
+ },
+ "window_positions": 8,
+ "arms": {
+  "resnet101.a1_in1k": {
+   "macs_one_window_position": 128685441024,
+   "macs_by_kind": {
+    "conv": 128685441024,
+    "linear": 0
+   },
+   "gflops_one_window_position_fwd": 257.370882048,
+   "window_positions": 8,
+   "gflops_one_sample_fwd": 2058.967056384,
+   "gflops_one_sample_fwd_plus_bwd": 6176.901169152,
+   "cpu_s_one_window_position_fwd_measured": 2.1564624309539795,
+   "n_trunk_passes_per_sample": 24
+  },
+  "resnet34.a1_in1k": {
+   "macs_one_window_position": 57818480640,
+   "macs_by_kind": {
+    "conv": 57818480640,
+    "linear": 0
+   },
+   "gflops_one_window_position_fwd": 115.63696128,
+   "window_positions": 8,
+   "gflops_one_sample_fwd": 925.09569024,
+   "gflops_one_sample_fwd_plus_bwd": 2775.28707072,
+   "cpu_s_one_window_position_fwd_measured": 0.4960145950317383,
+   "n_trunk_passes_per_sample": 24
+  }
+ },
+ "measured_cpu": {
+  "n_clips": 139,
+  "mean_s_per_clip": 39.35838763147807,
+  "trunk_gflops_per_clip": 6176.901169152,
+  "effective_cpu_gflops": 156.9398936508221,
+  "note": "trunk only; the true achieved rate is higher because the clip also decodes PNGs and runs the whole planner"
+ },
+ "projection": {
+  "evidence_class": "ESTIMATED",
+  "assumption": "an A40 sustains 40-60 TFLOP/s bf16 on convs of this shape (30-40 pct of the 150 TFLOP/s peak); the dev-box RTX 4060 sustains ~5-8 TFLOP/s",
+  "a40_s_per_clip_trunk_only": [
+   0.1029483528192,
+   0.1544225292288
+  ],
+  "rtx4060_s_per_clip_trunk_only": [
+   0.772112646144,
+   1.2353802338304
+  ],
+  "a40_s_for_139_clips": [
+   14.3098210418688,
+   21.4647315628032
+  ],
+  "rtx4060_s_for_139_clips": [
+   107.323657814016,
+   171.7178525024256
+  ],
+  "cpu_s_for_139_clips_measured_rate": 5470.815880775452,
+  "caveat": "COMPUTE ONLY. A real pod step is bounded by the PNG decode and the v2 LRU as often as by the GPU -- the epcache rule (CLAUDE.md: price what the CONSUMER reads)."
+ }
+}

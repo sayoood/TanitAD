@@ -1,0 +1,10 @@
+T1 ok (kept 502+502 of cand F 502 S 514)
+T2 ok vs the base trainer: NC/DAC/TTC select() bit-identical (3 x 20 sets)
+T2 defaults ok (no new CLI flag; lane is a value of --pair-heads, default ''): {'pair_w': 0.0, 'pair_dv': 0.15, 'pair_heads': '', 'pair_calibrate': False}
+T3 ok: lane row |grad| S1L 6.752e+00 | S1 0.0 | w=0 control 0.0 | unlabelled set 0.0
+T4 hops: argparse --pair-heads :1333; namespace -> PairLoss :1422; pair_term -> term :1652; term -> select(head=h) :210; lane pair definition :179; train_losses lB :1664; PAIR_HEADS col 6 :149
+T5 ok: pod script ARM=S1L MODE=argv == scorer1_argv('S1L', 0.37)
+T5 ok: cross-profile refusals; S1L without the lane head refused
+T6 control PASS; LANE-DROP RED; LANE-NOBALANCE RED; lane share 0 RED
+T6 S1 consumer unchanged; G-DVB lane rows ok (match ok, wrong column/margin RED)
+ZZTEST_PASS

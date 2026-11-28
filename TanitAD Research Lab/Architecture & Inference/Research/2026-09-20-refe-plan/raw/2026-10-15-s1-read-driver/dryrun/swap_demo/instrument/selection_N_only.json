@@ -1,0 +1,45 @@
+{
+ "estimator": "paired log-cluster bootstrap, 10000 resamples, 95 %, seed 20260927; rl_val_eval.read_pair -> proxy_eval.boot. Answers 'another draw of LOGS' only",
+ "inputs": {
+  "pdm_dir": "heldout_pdm",
+  "pdm_stats": {
+   "bad_pdms": 0,
+   "duplicates": 0,
+   "lines": 3137
+  },
+  "scores_sha256": {
+   "N-s0": "aad43343c2496486ba61ca3d25b1405040a57949d197846330032f7c93242f6c",
+   "N-s1": "389231f1fcb81425fc727645f145cf1a7455ecfdc3fd7ae5c7a93cd0f701c8ae"
+  }
+ },
+ "not_computed": [
+  "E1 / E2 / E3 on the full navtest (PDMS, DAC-zero share, zeroed share): the planner / seam does not apply H2's feed (PREREG_BLANKS_PROPOSED section 5)",
+  "the four metric families on navtest (same reason); STRATEGIC is PAUSED (PI 2026-09-19, PI_DECISION_QUEUE item 25)",
+  "inference variance: REFe scoring is deterministic, ASSERTED by a second pass of the same checkpoint, not measured here"
+ ],
+ "pairs": {},
+ "rule": "navsim_v1",
+ "seed_floor": {
+  "floor": {
+   "DAC": 0.25502072043353524,
+   "EP": 0.41329741791520563,
+   "NC": 0.031877590054191905,
+   "PDMS": 0.2226801083838063,
+   "TTC": 0.22314313037934333
+  },
+  "measured": false,
+  "n_n_seeds": 2,
+  "n_vs_n_deltas": {
+   "N-s1-minus-N-s0": {
+    "DAC": -0.25502072043353524,
+    "EP": -0.41329741791520563,
+    "NC": 0.031877590054191905,
+    "PDMS": -0.2226801083838063,
+    "TTC": 0.22314313037934333
+   }
+  }
+ },
+ "tier": "T0-like: banked held-out sets, the scorer's pick looked up in frozen PDM labels; a selection read, never driving performance",
+ "tool": "aux_s1_readout/1",
+ "unpaired_head_arms": []
+}

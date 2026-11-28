@@ -1,0 +1,33 @@
+E:\Projects\TanitAD-artifacts\dagq\rg\tree\stack\scripts\v8f_mini_train.py:1637: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+[1/2] ade 7.270 total 91.391 p_gt 1.00
+[2/2] ade 6.828 total 92.117 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 0, "seconds": 1.4010190963745117}
+PASS bank tool: 2 shards through the real v8f_dagger_bank.py + merge, rc 0  [rc 0 19s bank: 2 shards, 2 to run ([] already complete)
+shard 0 started pid 59064
+shard 1 started pid 60080
+shard 0 rc=0
+shard 1 rc=0
+merge rc=0
+bank sha256 75375f2a8498d3d13d6eb9509a8c0afa6bddda9417a75c9741dbd3b901917671
+]
+PASS bank: 2 shards in the manifest, not partial, coverage clears 0.5  [{'blocked': False, 'fraction': 0.5730994152046783, 'min': 0.5, 'n_eligible': 196, 'n_windows': 342}]
+PASS bank tool printed the sha256 of bank.json  [75375f2a8498d3d1]
+SELFCHECK PASS {"steps_total": 3000, "info": {"batch": 16, "md5_overridden": false, "n_clips": 6, "n_clips_expected": 6, "n_clips_all": 6, "n_excluded": 0, "n_excluded_declared": 0, "excluded_in_train": 0, "excluded_sha256": null, "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62", "lru": 203, "kin_mode": "yaw", "n_windows_all_clips": 342, "n_windows": 342, "window_start": 3, "window_t_min": 3, "p10_units": null, "ds_window_start": 3, "init_ckpt": {"path": "E:\\Projects\\TanitAD-artifacts\\dagq\\rg\\work\\init_tame.pt", "sha256": "636e744c036930ed37e4bd10640cdf0b541a99d8cb4acaf11403412b59b6eafa", "applied": true, "skipped": null, "n_tensors": 276, "n_mismatch_after_load": 0, "source_step": 2, "source_arm": "M2b", "source_seed": 0, "source_argv_sha": "bf875d50dbef2663"}, "dagger": {"bank_path": "E:\\Projects\\TanitAD-artifacts\\dagq\\rg\\work\\bank\\bank.json", "bank_sha256": "75375f2a8498d3d13d6eb9509a8c0afa6bddda9417a75c9741dbd3b901917671", "n_records": 684, "reason_counts": {"ok": 318, "off_lat": 207, "off_head": 40, "end_edge": 119, "nonfinite": 0}, "coverage": {"n_windows": 342, "n_eligible": 196, "fraction": 0.5730994152046783, "min": 0.5, "blocked": false}, "kb2": {"ckpt_sha256": "636e744c036930ed37e4bd10640cdf0b541a99d8cb4acaf11403412b59b6eafa", "init_ckpt_sha256": "636e744c036930ed37e4bd10640cdf0b541a99d8cb4acaf11403412b59b6eafa"}, "kb3": {"n_bank_clips": 6, "n_train_clips": 6, "n_eval_clips": 2, "overlap_with_eval": 0, "window_list_sha256": "d4e5c5e9f47e417f668d6a39d33807fcfbafc34dfeee809141467ab2d2de0a5e", "eval_sources": {"grid": 2, "bank_header": 2, "cache_eval_manifest": 2}, "n_eval_clips_checked": 2}}}}
+PASS REAL gate accepts the DAG argv the queue prints (rc 0, declared_vs_built PASS)  [rc 0]
+PASS DAG: dagger_probe passed on a swapped batch and the p = 0 control read exactly 0.0  [{'pass': True, 'p_declared': 0.1, 'n_selected_at_p1': 8, 'loss_diff': 65.76571273803711, 'control_p0_loss_diff': 0.0}]
+PASS DAG: levers carry p 0.1, the declared and built bank sha256 and seed 0  [{'dagger_p': 0.1, 'dagger_bank_sha256': '75375f2a8498d3d13d6eb9509a8c0afa6bddda9417a75c9741dbd3b901917671'}]
+PASS DAG: info.dagger records K-B2, K-B3 and COVERAGE  [['bank_path', 'bank_sha256', 'n_records', 'reason_counts', 'coverage', 'kb2', 'kb3']]
+SELFCHECK PASS {"steps_total": 3000, "info": {"batch": 16, "md5_overridden": false, "n_clips": 6, "n_clips_expected": 6, "n_clips_all": 6, "n_excluded": 0, "n_excluded_declared": 0, "excluded_in_train": 0, "excluded_sha256": null, "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62", "lru": 203, "kin_mode": "yaw", "n_windows_all_clips": 342, "n_windows": 342, "window_start": 3, "window_t_min": 3, "p10_units": null, "ds_window_start": 3, "init_ckpt": {"path": "E:\\Projects\\TanitAD-artifacts\\dagq\\rg\\work\\init_tame.pt", "sha256": "636e744c036930ed37e4bd10640cdf0b541a99d8cb4acaf11403412b59b6eafa", "applied": true, "skipped": null, "n_tensors": 276, "n_mismatch_after_load": 0, "source_step": 2, "source_arm": "M2b", "source_seed": 0, "source_argv_sha": "bf875d50dbef2663"}}}
+PASS REAL gate accepts the DAG-0 argv the queue prints (--dagger-p 0 only)  [rc 0]
+PASS DAG-0: dagger_probe reads `off`; levers.dagger_p is 0.0 and no bank sha256 is built  [{'dagger_p': 0.0, 'dagger_bank_sha256': None}]
+PASS REFUSED by the real gate: DAG-0 that also names the bank (a lever declared and inert)  [ZZDVB-REFUSEDZZ declared-vs-built: lever dagger_bank: declared 'E:\\Projects\\TanitAD-artifacts\\dagq\\rg\\work\\bank' but no bank was built (--dagger-p 0.0: a declared bank at p = 0 builds nothing)]
+PASS REFUSED by the real gate: DAG-0 that also names the bank hash  [ZZDVB-REFUSEDZZ declared-vs-built: --dagger-bank-sha256 is declared while --dagger-p is 0.0: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)]
+PASS REFUSED by the real gate: DAG-0 that also names a non-default seed  [ZZDVB-REFUSEDZZ declared-vs-built: DAgger swap: ['dagger_seed'] are set while dagger_p is 0: a lever that is declared and does nothing]
+PASS REFUSED by the real gate: DAG without --dagger-bank-sha256  [ZZDVB-REFUSEDZZ declared-vs-built: --dagger-bank-sha256 is required when --dagger-p is 0.1 (DAG names all four flags, PREREG_V8F_DAGGER section 4): the arm must declare which bank it trains on]
+PASS REFUSED by the real gate: DAG with a wrong bank sha256 (one hex digit changed)  [ZZDVB-REFUSEDZZ dagger-bank E:\Projects\TanitAD-artifacts\dagq\rg\work\bank: the bank's sha256 75375f2a8498 != the declared 05375f2a8498]
+PASS REFUSED by the real gate: DAG together with --ego-perturb-p 0.3  [ZZDVB-REFUSEDZZ declared-vs-built: --dagger-p 0.1 together with --ego-perturb-p 0.3: the two levers are never combined in one arm (PREREG_V8F_DAGGER section 4)]
+PASS REFUSED by the real gate: DAG whose --init-ckpt is not the bank's generating checkpoint (K-B2)  [ZZDVB-REFUSEDZZ dagger-bank E:\Projects\TanitAD-artifacts\dagq\rg\work\bank: K-B2: the bank was generated by checkpoint 636e744c0369, the arm fine-tunes bfa07a156604: the states are not on-policy for this init]
+PASS REFUSED by the real gate: DAG at p = 0 that still names the bank  [ZZDVB-REFUSEDZZ declared-vs-built: --dagger-bank-sha256 is declared while --dagger-p is 0.0: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0); lever dagger_bank: declared 'E:\\Projects\\TanitAD-artifacts\\dagq\\rg\\work\\bank' but no b]
+real_gate_proof: 17/17 pass in 70s

@@ -1,0 +1,31 @@
+# E-only lines of TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-r1-head-only/DESIGN.md  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 2081f5d; E mtime 2026-10-04 14:36; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+85: | `bev_q` | [96, 120, 64] | uint8 | 737,280 | `bev_feats` (planner grid 60 m × ±16 m at 0.5 m), int8-affine per window × channel × X-row (**codec v2**, §5) |
+86: | `bev_lo`, `bev_scale` | [96, 120] each | fp32 | 92,160 | dequant: `bev = lo[..., None] + q * scale[..., None]` (`r1_lib.dequant_u8`) |
+89: | `box3d_*` (TRAIN shards; eval via `box3d_XXXX.pt`) | raw [300,23], presence_logit [300], cls_logits [300,10], box [300,4], yaw_vec [300,2], yaw, rates [300,3], occ_logit, cz, h, box3d [300,7], anchors [300,2] | fp16 (presence fp32) | ≈ 34,000 | the perception box3d decoder's 300 slots (`out["perception"]["box_slots"]`) — for WP-D's option B3 (box3d slots → the planner's `AgentTokenEmbed`), MM 2026-10-04; a diagnostic arm only after its own addendum |
+94: **Price** (computed from the tensor the head path actually reads, before writing; codec v2): ≈ **1.197 MB per train
+95: window**, ≈ 1.21 MB per scored eval window (with `full_*` / `store_*`). Trunk tensors are stored ONLY for the windows an
+96: arm reads (7,000 train + 4,634 scored eval); the 894 eval-grid-only windows sit in `gridonly_*` shards (identity rows +
+97: full-model outputs, no trunk tensors). **Total ≈ 14.0 GB** (< 15 GB; Thor had 57 GB free at start). The first codec (v1,
+98: BEV int8 per channel, 1.106 MB per window) FAILED I-S and was replaced — §5. A pass refuses to start with < 20 GB free. Time: ESTIMATED ≈ 0.5 s per eval
+119: **⇒ WP-D (MM ruling 2026-10-04): R1 caches NO `box_mem` / map tensor.** These two numbers go into WP-D's own probe
+120: budget: `box_mem` ≈ **3.4 GB for ≈ 3,100 windows** (1.10 MB fp16 each); `map_hires_bev` **12.3 MB per window** (fp16).
+121: WP-B / WP-D may READ the R1 cache (format above; `r1_heads.py` replays it into the tree's own forward).
+154: **I-S FAILED on codec v1, and the codec was changed by the rule above (GPU, MEASURED).** First 9 eval shards (2,304
+155: windows): I-0 **0.0** on 468 bank windows (0 differing picks); I-X **0.0** everywhere (0 differing picks); I-S (kv fp16 +
+156: BEV int8 per CHANNEL): 5 / 2,304 E9 picks differ (within ≤ 1 %), but fan |Δ| **p99 0.074 m > 0.05 m → FAIL**. Codec
+157: study (`code/r1_codec.py`, GPU, 192 scored windows, each tensor varied alone; decision rule written in the script before
+158: it ran): BEV int8/channel alone 0.059 m — THE error source; kv fp16 0.003 m; slots fp16 0.002 m; BEV fp16 / int16 ≈
+159: 0.002 m but 21.4 GB; **BEV int8 per (channel, X-row) 0.028 m, 0 / 192 picks, 13.9 GB → codec v2**. Old-codec evidence:
+160: Thor `cache/eval_codec_q8c_superseded/`; study `raw/codec_study_gpu.json`. The eval capture was re-run from scratch on v2.
+161: **I-D defect found and fixed BEFORE the GPU capture (CPU smoke, MEASURED):** the disk replay differed from the capture's
+162: in-process STORE phase by s_e9 5.7e-6 although two disk replays were bit-identical to each other — the STORE feed held
+163: strided slot views while the replay reads contiguous tensors (a different CPU kernel). The STORE feed is now built
+164: contiguous; replay vs STORE then reads **0.0** (s_e9, fan, picks). I-D's bar (bit-identical) is unchanged.
+168: `code/r1_arms.py` (written after SPEC_R1 was REGISTERED, sha256 `e9873e12…`; refuses to run if its shipped copy of the
+169: SPEC differs): phases `timing` (30 H1 steps, nothing saved or scored; step budget by the registration rule: 1,320 steps
+170: if a step ≤ 1.35 s, else floor(1,800 s / step)), `train`, `eval` (+ `--ctrl`). Chains: `code/r1_chain2.sh` (capture;
+171: each pass ≤ ~38 min and re-run until its artifact exists — the shared-lock courtesy towards WP-RL), `r1_arms_wait.sh`
+172: → `r1_arms_chain.sh` (gated on I-0 / I-X and, after the H0 eval, on I-D). Scoring: `code/r1_score.py`. The full
+173: pipeline (capture → timing → train H5 / H2s → eval H5 with forcing → eval H0 / H0n → score) ran end-to-end as a CPU
+174: smoke on 2 windows before any GPU arm. It loads the train shards into RAM, builds batches

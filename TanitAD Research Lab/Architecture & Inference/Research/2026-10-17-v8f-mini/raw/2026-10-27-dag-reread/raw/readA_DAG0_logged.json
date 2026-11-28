@@ -1,0 +1,629 @@
+{
+ "arm": "DAG0",
+ "cfg": "logged",
+ "tier": "T1-kin (self-action OPEN loop; m=10, nav deadreckon, periodic, causal bucket unless cfg says otherwise)",
+ "seeds": {
+  "s0": {
+   "rows_arm_minus_P10": {
+    "ADE6": {
+     "delta": -0.6069,
+     "lo": -0.8408,
+     "hi": -0.3611,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.8363353756530807,
+     "mean_b": 3.443279013457244,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "PRIMARY",
+     "key": "ade6_m"
+    },
+    "speed MAE": {
+     "delta": -0.0827,
+     "lo": -0.2919,
+     "hi": 0.1208,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.8053644484773252,
+     "mean_b": 1.8880307728496237,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "speed_mae_mps"
+    },
+    "along-track MAE": {
+     "delta": -0.2146,
+     "lo": -0.4418,
+     "hi": 0.0384,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.2435105402472177,
+     "mean_b": 2.4581475137665323,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "along_mae_m"
+    },
+    "accel MAE": {
+     "delta": 0.953,
+     "lo": 0.5778,
+     "hi": 1.312,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 3.0428990241203504,
+     "mean_b": 2.0898610243415527,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LONGITUDINAL",
+     "key": "accel_mae_mps2"
+    },
+    "heading MAE": {
+     "delta": 0.3273,
+     "lo": -0.5109,
+     "hi": 1.2048,
+     "separated": false,
+     "n_windows": 2373,
+     "n_episodes": 141,
+     "mean_a": 9.879768796867507,
+     "mean_b": 9.552514477304545,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "heading_mae_deg"
+    },
+    "yaw-rate MAE": {
+     "delta": 7.531,
+     "lo": 4.9085,
+     "hi": 10.293,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 27.403710004519077,
+     "mean_b": 19.872715124493325,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "yaw_rate_mae_degps"
+    },
+    "curvature MAE": {
+     "delta": 0.0751,
+     "lo": 0.0527,
+     "hi": 0.0996,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 0.14745983599176452,
+     "mean_b": 0.072372415358591,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "curvature_mae_1pm"
+    },
+    "cross-track MAE": {
+     "delta": -0.6866,
+     "lo": -0.8151,
+     "hi": -0.5643,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.2328756547414292,
+     "mean_b": 1.9195239231042973,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "cross_mae_m"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -0.5561,
+     "lo": -1.2982,
+     "hi": 0.1426,
+     "separated": false,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 3.851007226340456,
+     "mean_b": 4.407071306037995,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "L1_lat_accel_mae_mps2"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0365,
+     "lo": 0.0228,
+     "hi": 0.052,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.05301867141390997,
+     "mean_b": 0.016540340744098478,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "L2_curvature_mae_fast_1pm"
+    },
+    "ADE2 (beside)": {
+     "delta": 0.071,
+     "lo": 0.0408,
+     "hi": 0.1098,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 0.2931049679585918,
+     "mean_b": 0.22205752566375564,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "ade2_m"
+    },
+    "L3 yaw-rate fast (beside)": {
+     "delta": 5.2326,
+     "lo": 2.7458,
+     "hi": 7.8109,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 15.052149130835765,
+     "mean_b": 9.819576333765788,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "L3_yaw_rate_mae_fast_degps"
+    },
+    "M1 crawl share": {
+     "delta": 0.0578,
+     "lo": 0.0399,
+     "hi": 0.0779,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.08071398660431815,
+     "mean_b": 0.02295177580131704,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "crawl",
+     "key": "M1 per-window share",
+     "pooled_M1_a": 0.060050974567724666,
+     "pooled_M1_b": 0.013674524324522491,
+     "n_arm_crawl_pairs_a": 3275,
+     "n_fast_pairs_a": 54537,
+     "n_crawl_pairs_b": 746,
+     "n_fast_pairs_b": 54554
+    },
+    "_M2": {
+     "M1_pooled": 0.060050974567724666,
+     "M1_P10_pooled": 0.013674524324522491,
+     "M2": 0.030763075713319342,
+     "n_arm_crawl_pairs": 3275,
+     "n_fast_pairs": 54537
+    }
+   },
+   "C2_identity_comps_rows": {
+    "all_exactly_zero": true,
+    "rows": {
+     "ADE6": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "speed MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "along-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "heading MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2373
+     ],
+     "yaw-rate MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "curvature MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "cross-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L1 lateral-accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "L2 curvature MAE (GT>=5.2)": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ],
+     "ADE2 (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L3 yaw-rate fast (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ],
+     "M1 crawl share": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ]
+    }
+   },
+   "n_windows_total": 2399,
+   "n_episodes_total": 141,
+   "beside_arm_minus_HACC": {
+    "same_windows_and_gt": true,
+    "ADE6": {
+     "delta": 0.161,
+     "lo": -0.0422,
+     "hi": 0.3968,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.8363353756530807,
+     "mean_b": 2.675308305904701,
+     "separated_better": false,
+     "separated_worse": false
+    },
+    "L2": {
+     "delta": 0.0155,
+     "lo": -0.0007,
+     "hi": 0.0321,
+     "separated": false,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.05301867141390997,
+     "mean_b": 0.037556319745897355,
+     "separated_better": false,
+     "separated_worse": false
+    }
+   }
+  },
+  "s1": {
+   "rows_arm_minus_P10": {
+    "ADE6": {
+     "delta": -0.5768,
+     "lo": -0.7991,
+     "hi": -0.3455,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.866490112094482,
+     "mean_b": 3.443279013457244,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "PRIMARY",
+     "key": "ade6_m"
+    },
+    "speed MAE": {
+     "delta": -0.0048,
+     "lo": -0.2107,
+     "hi": 0.1977,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.883270333516502,
+     "mean_b": 1.8880307728496237,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "speed_mae_mps"
+    },
+    "along-track MAE": {
+     "delta": -0.2071,
+     "lo": -0.414,
+     "hi": 0.0163,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.251029311651782,
+     "mean_b": 2.4581475137665323,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LONGITUDINAL",
+     "key": "along_mae_m"
+    },
+    "accel MAE": {
+     "delta": 1.0637,
+     "lo": 0.7048,
+     "hi": 1.4059,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 3.153582614621137,
+     "mean_b": 2.0898610243415527,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LONGITUDINAL",
+     "key": "accel_mae_mps2"
+    },
+    "heading MAE": {
+     "delta": 0.3289,
+     "lo": -0.5275,
+     "hi": 1.195,
+     "separated": false,
+     "n_windows": 2373,
+     "n_episodes": 141,
+     "mean_a": 9.881451522700774,
+     "mean_b": 9.552514477304545,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "heading_mae_deg"
+    },
+    "yaw-rate MAE": {
+     "delta": 11.4808,
+     "lo": 8.0991,
+     "hi": 15.1219,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 31.353541089528587,
+     "mean_b": 19.872715124493325,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "yaw_rate_mae_degps"
+    },
+    "curvature MAE": {
+     "delta": 0.1106,
+     "lo": 0.0787,
+     "hi": 0.146,
+     "separated": true,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 0.1829918078146435,
+     "mean_b": 0.072372415358591,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "curvature_mae_1pm"
+    },
+    "cross-track MAE": {
+     "delta": -0.6162,
+     "lo": -0.7518,
+     "hi": -0.4946,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.30335876949407,
+     "mean_b": 1.9195239231042973,
+     "separated_better": true,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "cross_mae_m"
+    },
+    "L1 lateral-accel MAE": {
+     "delta": -0.3249,
+     "lo": -1.1227,
+     "hi": 0.3678,
+     "separated": false,
+     "n_windows": 2365,
+     "n_episodes": 141,
+     "mean_a": 4.082205001075718,
+     "mean_b": 4.407071306037995,
+     "separated_better": false,
+     "separated_worse": false,
+     "family": "LATERAL",
+     "key": "L1_lat_accel_mae_mps2"
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "delta": 0.0494,
+     "lo": 0.0314,
+     "hi": 0.0718,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.06590115189642276,
+     "mean_b": 0.016540340744098478,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "LATERAL",
+     "key": "L2_curvature_mae_fast_1pm"
+    },
+    "ADE2 (beside)": {
+     "delta": 0.0778,
+     "lo": 0.0504,
+     "hi": 0.1174,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 0.2998739283757857,
+     "mean_b": 0.22205752566375564,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "ade2_m"
+    },
+    "L3 yaw-rate fast (beside)": {
+     "delta": 6.8027,
+     "lo": 4.2384,
+     "hi": 9.518,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 16.62225245821742,
+     "mean_b": 9.819576333765788,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "beside",
+     "key": "L3_yaw_rate_mae_fast_degps"
+    },
+    "M1 crawl share": {
+     "delta": 0.0745,
+     "lo": 0.052,
+     "hi": 0.0994,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.09741964646157511,
+     "mean_b": 0.02295177580131704,
+     "separated_better": false,
+     "separated_worse": true,
+     "family": "crawl",
+     "key": "M1 per-window share",
+     "pooled_M1_a": 0.07271459247159873,
+     "pooled_M1_b": 0.013674524324522491,
+     "n_arm_crawl_pairs_a": 3962,
+     "n_fast_pairs_a": 54487,
+     "n_crawl_pairs_b": 746,
+     "n_fast_pairs_b": 54554
+    },
+    "_M2": {
+     "M1_pooled": 0.07271459247159873,
+     "M1_P10_pooled": 0.013674524324522491,
+     "M2": 0.0442724378914012,
+     "n_arm_crawl_pairs": 3962,
+     "n_fast_pairs": 54487
+    }
+   },
+   "C2_identity_comps_rows": {
+    "all_exactly_zero": true,
+    "rows": {
+     "ADE6": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "speed MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "along-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "heading MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2373
+     ],
+     "yaw-rate MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "curvature MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "cross-track MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L1 lateral-accel MAE": [
+      0.0,
+      0.0,
+      0.0,
+      2365
+     ],
+     "L2 curvature MAE (GT>=5.2)": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ],
+     "ADE2 (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2399
+     ],
+     "L3 yaw-rate fast (beside)": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ],
+     "M1 crawl share": [
+      0.0,
+      0.0,
+      0.0,
+      2106
+     ]
+    }
+   },
+   "n_windows_total": 2399,
+   "n_episodes_total": 141,
+   "beside_arm_minus_HACC": {
+    "same_windows_and_gt": true,
+    "ADE6": {
+     "delta": 0.1569,
+     "lo": -0.0144,
+     "hi": 0.3433,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.866490112094482,
+     "mean_b": 2.709635998904177,
+     "separated_better": false,
+     "separated_worse": false
+    },
+    "L2": {
+     "delta": 0.0412,
+     "lo": 0.0263,
+     "hi": 0.06,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135,
+     "mean_a": 0.06590115189642276,
+     "mean_b": 0.024702738836156136,
+     "separated_better": false,
+     "separated_worse": true
+    }
+   }
+  }
+ }
+}

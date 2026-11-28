@@ -1,0 +1,16 @@
+tier: T0 (recorded frames, no rollout; a diagnostic of a perception head, not driving performance)
+families: LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not read (n = 0 for each; reason: T0 read of a perception head, no trajectory is produced; a rollout card that reads all four follows only if the bar is met)
+rows: 3841 evaluation frames of control t3 (a label lead and a finite gap in D_0 to D_2), 141 evaluation clips
+E (mean absolute gap error in m, each fit singly): D_0 3.960; D_1 3.913; D_2 4.112; S_0 4.831; S_1 4.723; S_2 5.247
+ratio S / D = mean E(S) / mean E(D) = 1.2348 (4.9337 / 3.9954); interval [1.1330, 1.3637] (2000 draws, RandomState(124), two-sided 95 % percentile, cluster bootstrap over the evaluation clips, fits held fixed (it answers what another draw of clips would say, not what another fit would say))
+name: BOXSIZE-T0-WORSE
+far leads (label gap 40-60 m), n 785 in 39 clips; mean signed error (read minus label) of the mean of three fits: D -6.251, S -3.894; singly: D_0 -5.903; D_1 -6.503; D_2 -6.347; S_0 -5.254; S_1 -2.554; S_2 -3.874; paired difference S minus D interval [0.3922, 5.0331]
+name: BOXSIZE-T0-FAR-LEADS-STAY-SHORT
+bar met: no (ratio 1.2348 at most 0.85 and its interval [1.1330, 1.3637] below 1)
+by label gap, arm D (mean of three fits): 0-10 m n 596 E 1.148 signed 0.443 short>5m 0.002; 10-20 m n 1111 E 3.442 signed 2.139 short>5m 0.006; 20-40 m n 1349 E 3.778 signed -1.174 short>5m 0.118; 40-60 m n 785 E 7.314 signed -6.251 short>5m 0.474
+by label gap, arm S (mean of three fits): 0-10 m n 596 E 1.511 signed 0.918 short>5m 0.002; 10-20 m n 1111 E 4.530 signed 3.115 short>5m 0.017; 20-40 m n 1349 E 4.727 signed -0.198 short>5m 0.154; 40-60 m n 785 E 8.458 signed -3.894 short>5m 0.440
+printed beside, judged by nothing: size read error in per cent (mean absolute error of ln width and ln height against the label, mean of the three fits), by label gap: 0-10 m n 596 width 14.1 height 13.8; 10-20 m n 1111 width 20.1 height 20.5; 20-40 m n 1349 width 17.0 height 16.4; 40-60 m n 785 width 20.1 height 18.3
+printed beside: gap error of G on the label sizes (the bound of a perfect size read), by label gap: 0-10 m n 596 E 0.573; 10-20 m n 1111 E 0.942; 20-40 m n 1349 E 1.896; 40-60 m n 785 E 3.212; all n 3841 E 1.684 (rows without a label size: 0)
+printed beside: share of frames whose label size lies outside the limits 0.67 to 36.6 degrees of the encoding: width 0.0029, height 0.0047, either 0.0047 (n 3841)
+interval note: it answers what another draw of evaluation clips would say for these fits; three fit seeds on one set of train clips is a small number, and a separated interval is necessary, not sufficient
+ZZ READ-BOXSIZE names rc 0

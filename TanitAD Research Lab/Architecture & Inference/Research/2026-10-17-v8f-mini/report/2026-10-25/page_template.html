@@ -1,0 +1,138 @@
+<title>v8F-mini Hierarchy Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column of journal width, with a contents rail on wide screens; the three hierarchy levels keep the video's colours throughout */
+:root {
+  --paper: #f6f7f9;
+  --ink: #16202b;
+  --muted: #56636f;
+  --rule: #d7dce2;
+  --panel: #ffffff;
+  --accent: #1f5f8b;
+  --lvl-s: #b04a86;
+  --lvl-t: #1f6fb2;
+  --lvl-o: #c98500;
+  --code-bg: #eceff3;
+  --serif: "Source Serif 4", "Iowan Old Style", "Georgia", serif;
+  --label: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --mono: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12171d; --ink: #e3e8ee; --muted: #9aa6b2; --rule: #2c3540; --panel: #19212a;
+    --accent: #7ab3dc; --lvl-s: #e08bbd; --lvl-t: #72aee6; --lvl-o: #f0b84a; --code-bg: #1f2832; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12171d; --ink: #e3e8ee; --muted: #9aa6b2; --rule: #2c3540; --panel: #19212a;
+  --accent: #7ab3dc; --lvl-s: #e08bbd; --lvl-t: #72aee6; --lvl-o: #f0b84a; --code-bg: #1f2832; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 17px/1.62 var(--serif); }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 80px; }
+@media (min-width: 1080px) { .wrap { grid-template-columns: 230px minmax(0, 1fr); } }
+nav.toc { display: none; }
+@media (min-width: 1080px) {
+  nav.toc { display: block; position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto;
+    font: 500 13px/1.45 var(--label); letter-spacing: 0.01em; }
+}
+nav.toc .h { text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-size: 11.5px; margin-bottom: 10px; }
+nav.toc a { display: block; color: var(--muted); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid var(--rule); }
+nav.toc a.sub { padding-left: 20px; font-size: 12px; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-left-color: var(--accent); outline: none; }
+main { min-width: 0; max-width: 760px; }
+.masthead { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font: 600 12px/1 var(--label); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin-bottom: 18px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.chip.s i { background: var(--lvl-s); } .chip.t i { background: var(--lvl-t); } .chip.o i { background: var(--lvl-o); }
+#doc h1 { font: 700 clamp(28px, 4.2vw, 40px)/1.15 var(--serif); letter-spacing: -0.01em; text-wrap: balance; margin: 0 0 18px; }
+#doc h2 { font: 700 26px/1.25 var(--serif); text-wrap: balance; margin: 52px 0 14px; padding-top: 14px; border-top: 1px solid var(--rule); }
+#doc h3 { font: 600 20px/1.3 var(--serif); text-wrap: balance; margin: 34px 0 10px; }
+#doc p, #doc li { max-width: 68ch; }
+#doc a { color: var(--accent); }
+#doc strong { font-weight: 600; }
+#doc hr { border: 0; border-top: 1px solid var(--rule); margin: 32px 0; }
+#doc code { font: 0.84em var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+#doc pre { background: var(--code-bg); padding: 14px 16px; border-radius: 4px; overflow-x: auto; font-size: 14px; }
+#doc pre code { background: none; padding: 0; overflow-wrap: normal; }
+#doc blockquote { margin: 18px 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--accent); color: var(--muted); }
+.tablewrap { overflow-x: auto; margin: 18px 0 22px; border: 1px solid var(--rule); border-radius: 4px; background: var(--panel); }
+#doc table { border-collapse: collapse; width: 100%; font: 14px/1.4 var(--serif); font-variant-numeric: tabular-nums; }
+#doc th { font: 600 12.5px/1.3 var(--label); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); text-align: left; background: var(--code-bg); }
+#doc th, #doc td { padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+#doc tr:last-child td { border-bottom: 0; }
+#doc img { display: block; max-width: 100%; height: auto; background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 6px; margin: 22px auto 6px; }
+#doc img + em, .figcap { display: block; font: 14px/1.5 var(--serif); color: var(--muted); }
+figure.video { margin: 28px 0 36px; }
+figure.video video { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 4px; display: block; }
+figure.video figcaption { font: 14px/1.55 var(--serif); color: var(--muted); margin-top: 10px; max-width: 68ch; }
+figure.video figcaption b { font: 600 12px/1 var(--label); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink); margin-right: 6px; }
+mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.err { color: var(--lvl-s); font: 14px var(--label); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents"><div class="h">Contents</div><div id="toc"></div></nav>
+  <main>
+    <div class="masthead">
+      <span>TanitAD · Architecture &amp; Inference · research report</span>
+      <span class="chip s"><i></i>S strategic</span>
+      <span class="chip t"><i></i>T tactical</span>
+      <span class="chip o"><i></i>O operative</span>
+    </div>
+    <article id="doc"><p class="figcap">Rendering the report…</p></article>
+  </main>
+</div>
+
+<script type="text/plain" id="md-src">%%MD%%</script>
+<script>
+window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["$$", "$$"]] }, svg: { fontCache: "global" }, startup: { typeset: false } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" async id="mj"></script>
+<script>
+(function () {
+  const doc = document.getElementById("doc");
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  let src = document.getElementById("md-src").textContent;
+  // 1. code first, so math inside code is never touched
+  const code = [];
+  src = src.replace(/```[\s\S]*?```/g, m => { code.push(m); return "@@CODE" + (code.length - 1) + "@@"; });
+  src = src.replace(/`[^`\n]+`/g, m => { code.push(m); return "@@CODE" + (code.length - 1) + "@@"; });
+  // 2. math, display then inline
+  const math = [];
+  src = src.replace(/\$\$([\s\S]+?)\$\$/g, (m, b) => { math.push("$$" + b + "$$"); return "@@MATH" + (math.length - 1) + "@@"; });
+  src = src.replace(/(^|[^\\$])\$([^\s$](?:[^$\n]*?[^\s$\\])?)\$/g, (m, pre, b) => { math.push("\\(" + b + "\\)"); return pre + "@@MATH" + (math.length - 1) + "@@"; });
+  // 3. code back for the parser, then parse
+  src = src.replace(/@@CODE(\d+)@@/g, (m, i) => code[+i]);
+  let html;
+  try { html = marked.parse(src, { gfm: true }); }
+  catch (e) { doc.innerHTML = '<p class="err">The report could not be rendered: ' + esc(String(e)) + "</p>"; return; }
+  html = html.replace(/@@MATH(\d+)@@/g, (m, i) => esc(math[+i]));
+  doc.innerHTML = html;
+  // tables scroll inside their own box
+  doc.querySelectorAll("table").forEach(t => { const w = document.createElement("div"); w.className = "tablewrap"; t.parentNode.insertBefore(w, t); w.appendChild(t); });
+  // the video sits right after the abstract
+  const abs = [...doc.querySelectorAll("h2")].find(h => /Abstract/i.test(h.textContent));
+  const fig = document.createElement("figure");
+  fig.className = "video";
+  fig.innerHTML = '<video controls muted playsinline preload="metadata" src="v8f_hierarchy_attention.mp4"></video>' +
+    '<figcaption><b>Video</b>The cross-attention of each level, drawn on the frame that level last ticked at, for four whole eval clips chosen by a rule fixed before rendering: the median window of each stratum (JUNCTION, CURVE, NO-TURN) and the single worst window. ' +
+    'Arm M2b seed 0, T0 open loop, qualitative. S in magenta, T in blue, O in amber. The bird’s-eye panel shows the logged path, O’s plan from its own code and S’s checkpoints. Section 7.11 gives the controls and the aggregate statistics.</figcaption>';
+  if (abs) { let n = abs.nextElementSibling; while (n && n.tagName !== "H2" && n.tagName !== "HR") n = n.nextElementSibling; (n || doc).parentNode === doc ? doc.insertBefore(fig, n) : doc.appendChild(fig); }
+  // contents rail
+  const toc = document.getElementById("toc");
+  doc.querySelectorAll("h2, h3").forEach((h, k) => {
+    h.id = "s" + k;
+    const a = document.createElement("a");
+    a.href = "#" + h.id; a.textContent = h.textContent; if (h.tagName === "H3") a.className = "sub";
+    toc.appendChild(a);
+  });
+  const typeset = () => window.MathJax.startup.promise.then(() => window.MathJax.typesetPromise([doc])).catch(() => {});
+  if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) typeset();
+  else document.getElementById("mj").addEventListener("load", typeset);
+})();
+</script>

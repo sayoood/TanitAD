@@ -1,0 +1,98 @@
+[
+ {
+  "mutation": "BASELINE",
+  "removes": "-",
+  "failed": 0,
+  "passed": 19,
+  "red_tests": [],
+  "verdict": "GREEN"
+ },
+ {
+  "mutation": "M1_once_only_latch",
+  "removes": "the PER-BATCH property: assert on batch 1 only, exactly the optimisation refc_adapter carried before 4fc462c",
+  "failed": 1,
+  "passed": 18,
+  "red_tests": [
+   "test_the_contract_refuses_on_the_SECOND_batch_not_only_the_first"
+  ],
+  "why": [
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:298: Failed: DID NOT RAISE ConditioningError"
+  ],
+  "verdict": "✅ RED"
+ },
+ {
+  "mutation": "M2_check_after_sampling",
+  "removes": "the ORDERING property: it still refuses on batch 2, but only AFTER the model has already been run on the mis-conditioned batch",
+  "failed": 1,
+  "passed": 18,
+  "red_tests": [
+   "test_the_contract_refuses_on_the_SECOND_batch_not_only_the_first"
+  ],
+  "why": [
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:304: AssertionError: the model was called 2 times â€” the guard refused AFTER sampling, which is not a guard"
+  ],
+  "verdict": "✅ RED"
+ },
+ {
+  "mutation": "M3_over_assert_v0",
+  "removes": "the OVER-ASSERTION guard: require v0 unconditionally, refusing builds that were never trained with it",
+  "failed": 1,
+  "passed": 18,
+  "red_tests": [
+   "test_a_build_NOT_trained_with_v0_does_NOT_require_it"
+  ],
+  "why": [
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:246: assert True is False"
+  ],
+  "verdict": "✅ RED"
+ },
+ {
+  "mutation": "M4_inherit_refc_adapters_predicates",
+  "removes": "the VERDICT itself: root v0's predicates at `core.` the way refc_adapter does — i.e. copy a sibling's contract onto a different model family",
+  "failed": 6,
+  "passed": 13,
+  "red_tests": [
+   "test_a_build_NOT_trained_with_v0_does_NOT_require_it",
+   "test_a_measured_zero_speed_is_NOT_a_missing_channel",
+   "test_every_declaration_is_reviewable_and_covers_both_families",
+   "test_predicates_resolve_on_BOTH_real_config_shapes",
+   "test_the_contract_refuses_on_the_SECOND_batch_not_only_the_first",
+   "test_the_map_is_resolved_ONCE_while_batches_grows"
+  ],
+  "why": [
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:202: assert 'anchors.v0_conditioned' in ('core.anchors.v0_conditioned', 'core.sel_reach_clamp')",
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\rl\\refcv3_adapter.py:516: tanitad.rl.refc_adapter.ConditioningError: NONE of the conditioning predicates ['core.anchors.v0_conditioned', 'core.sel_reach_clamp'] resolve on this build's confi",
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\rl\\refcv3_adapter.py:516: tanitad.rl.refc_adapter.ConditioningError: NONE of the conditioning predicates ['core.anchors.v0_conditioned', 'core.sel_reach_clamp'] resolve on this build's confi",
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\rl\\refcv3_adapter.py:516: tanitad.rl.refc_adapter.ConditioningError: NONE of the conditioning predicates ['core.anchors.v0_conditioned', 'core.sel_reach_clamp'] resolve on this build's confi",
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\rl\\refcv3_adapter.py:516: tanitad.rl.refc_adapter.ConditioningError: NONE of the conditioning predicates ['core.anchors.v0_conditioned', 'core.sel_reach_clamp'] resolve on this build's confi",
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:429: AssertionError: v0: `core.anchors.v0_conditioned` is v3-rooted with no flat alternative, so it could never resolve on the pilot's RefCConfig"
+  ],
+  "verdict": "✅ RED"
+ },
+ {
+  "mutation": "M5_drop_the_plumbing_check",
+  "removes": "the WIRING half: a REQUIRED channel this adapter never forwards passes silently, so the guard is green while the channel arrives as None",
+  "failed": 1,
+  "passed": 18,
+  "red_tests": [
+   "test_a_required_channel_this_adapter_never_PLUMBS_is_REFUSED"
+  ],
+  "why": [
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:344: Failed: DID NOT RAISE ConditioningError"
+  ],
+  "verdict": "✅ RED"
+ },
+ {
+  "mutation": "M6_ignore_undeclared_channels",
+  "removes": "the DRIFT guard: a forward that grows a channel is silently narrowed out of scope instead of refusing",
+  "failed": 1,
+  "passed": 18,
+  "red_tests": [
+   "test_an_UNDECLARED_forward_channel_is_REFUSED"
+  ],
+  "why": [
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tests\\test_rl_refcv3_used_path_guard.py:170: Failed: DID NOT RAISE RequirementDeclarationError"
+  ],
+  "verdict": "✅ RED"
+ }
+]

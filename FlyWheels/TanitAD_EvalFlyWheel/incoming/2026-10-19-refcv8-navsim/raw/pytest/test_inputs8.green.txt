@@ -1,0 +1,85 @@
+...............................................................          [100%]
+============================== warnings summary ===============================
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:62: DeprecationWarning: numpy.core.numeric is deprecated and has been renamed to numpy._core.numeric. The numpy._core namespace contains private NumPy internals and its use is discouraged, as NumPy internals can change without warning in any release. In practice, most real-world usage of numpy.core is to access functionality in the public NumPy API. If that is the case, use the public NumPy API. If not, you are using NumPy internals. If you would still like to access an internal attribute, use numpy._core.numeric._frombuffer.
+    return super().find_class(mod, name)
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:137: RuntimeWarning: overflow encountered in cast
+    return np.stack(grids).astype(np.float32), src, M
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:146: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+    im = torch.from_numpy(np.asarray(Image.open(p).convert("RGB"))).permute(
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:151: RuntimeWarning: invalid value encountered in cast
+    s = s[0].permute(1, 2, 0).clamp(0, 255).numpy().astype(np.uint8)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_inputs8.py::test_the_tree_is_the_launch_archive
+PASSED tests/test_inputs8.py::test_arm_specs_are_the_literal[R8_BLIND]
+PASSED tests/test_inputs8.py::test_arm_specs_are_the_literal[R8_LEGAL]
+PASSED tests/test_inputs8.py::test_arm_specs_are_the_literal[R8_LEGAL_s1]
+PASSED tests/test_inputs8.py::test_arm_specs_are_the_literal[R8_NAVOFF]
+PASSED tests/test_inputs8.py::test_arm_specs_are_the_literal[R8_NT]
+PASSED tests/test_inputs8.py::test_arm_specs_are_the_literal[R8_PRIV]
+PASSED tests/test_inputs8.py::test_no_arm_declares_acceleration_or_curvature
+PASSED tests/test_inputs8.py::test_REGRESSION_a_mismatched_template_is_refused
+PASSED tests/test_inputs8.py::test_K5_undeclared_fields_are_invisible[R8_LEGAL]
+PASSED tests/test_inputs8.py::test_K5_undeclared_fields_are_invisible[R8_NAVOFF]
+PASSED tests/test_inputs8.py::test_K5_undeclared_fields_are_invisible[R8_PRIV]
+PASSED tests/test_inputs8.py::test_K5_undeclared_fields_are_invisible[R8_BLIND]
+PASSED tests/test_inputs8.py::test_K6_declared_fields_are_visible[ego_pose[2]]
+PASSED tests/test_inputs8.py::test_K6_declared_fields_are_visible[ego_velocity[3]]
+PASSED tests/test_inputs8.py::test_K6_declared_fields_are_visible[driving_command[3]]
+PASSED tests/test_inputs8.py::test_nav_command_to_token_literal[cmd0-1-TURN_L]
+PASSED tests/test_inputs8.py::test_nav_command_to_token_literal[cmd1-0-FOLLOW]
+PASSED tests/test_inputs8.py::test_nav_command_to_token_literal[cmd2-2-TURN_R]
+PASSED tests/test_inputs8.py::test_nav_command_to_token_literal[cmd3-0-FOLLOW]
+PASSED tests/test_inputs8.py::test_non_one_hot_command_is_refused[bad0]
+PASSED tests/test_inputs8.py::test_non_one_hot_command_is_refused[bad1]
+PASSED tests/test_inputs8.py::test_non_one_hot_command_is_refused[bad2]
+PASSED tests/test_inputs8.py::test_non_one_hot_command_is_refused[bad3]
+PASSED tests/test_inputs8.py::test_navoff_withholds_the_token
+PASSED tests/test_inputs8.py::test_the_token_is_the_t0_command_not_an_earlier_one
+PASSED tests/test_inputs8.py::test_vocabulary_source_lines_are_pinned
+PASSED tests/test_inputs8.py::test_token_agrees_with_E2s_independent_route[cmd0]
+PASSED tests/test_inputs8.py::test_token_agrees_with_E2s_independent_route[cmd1]
+PASSED tests/test_inputs8.py::test_token_agrees_with_E2s_independent_route[cmd2]
+PASSED tests/test_inputs8.py::test_token_agrees_with_E2s_independent_route[cmd3]
+PASSED tests/test_inputs8.py::test_r8_nav_row_is_exactly_zero
+PASSED tests/test_inputs8.py::test_unknown_row_equals_the_dropout_path_even_with_nonzero_args
+PASSED tests/test_inputs8.py::test_scale_nav_known_row_value
+PASSED tests/test_inputs8.py::test_r8_rc_is_not_fed
+PASSED tests/test_inputs8.py::test_legal_speed_is_the_unknown_row
+PASSED tests/test_inputs8.py::test_priv_speed_snaps_to_the_containing_bin[11.17568-50.0]
+PASSED tests/test_inputs8.py::test_priv_speed_snaps_to_the_containing_bin[15.6464-100.0]
+PASSED tests/test_inputs8.py::test_priv_speed_snaps_to_the_containing_bin[6.7056-30.0]
+PASSED tests/test_inputs8.py::test_scalar_float64_ceiling_rule_misreads_the_snapped_value
+PASSED tests/test_inputs8.py::test_priv_without_a_limit_is_the_unknown_row
+PASSED tests/test_inputs8.py::test_hist_constant_acceleration_reads_2_mps2
+PASSED tests/test_inputs8.py::test_hist_refuses_extrapolation
+PASSED tests/test_inputs8.py::test_prior_constant_acceleration_a0_is_2
+PASSED tests/test_inputs8.py::test_prior_path_constant_acceleration_is_the_euler_sum
+PASSED tests/test_inputs8.py::test_straight_constant_speed_history_gives_the_cv_line
+PASSED tests/test_inputs8.py::test_prior_constant_yaw_rate_kappa_is_omega_over_v
+PASSED tests/test_inputs8.py::test_REGRESSION_prior_on_the_wrong_grid_goes_red
+PASSED tests/test_inputs8.py::test_forward_kwargs_are_the_trainers
+PASSED tests/test_inputs8.py::test_forward_kwargs8_emits_exactly_the_contract
+PASSED tests/test_inputs8.py::test_REGRESSION_a_trainer_that_adds_a_keyword_goes_red
+PASSED tests/test_inputs8.py::test_REGRESSION_a_trainer_that_adds_an_r8_key_goes_red
+PASSED tests/test_inputs8.py::test_bank_params_are_the_runs
+PASSED tests/test_inputs8.py::test_KL_lift_navsim_camera_through_the_banks_own_call
+PASSED tests/test_inputs8.py::test_REGRESSION_the_stride16_lift_goes_red
+PASSED tests/test_inputs8.py::test_frame_contract_is_cylindrical_488_924
+PASSED tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+PASSED tests/test_inputs8.py::test_knots_to_navsim_resampling_literal
+PASSED tests/test_inputs8.py::test_retime_has_no_default_table
+PASSED tests/test_inputs8.py::test_retime_refuses_a_table_whose_sha_sidecar_disagrees
+PASSED tests/test_inputs8.py::test_retime_gain_one_is_the_identity_and_gain_half_is_the_midpoint
+PASSED tests/test_inputs8.py::test_seam_writer_marks_a_missing_token_partial
+PASSED tests/test_inputs8.py::test_the_runners_refuse_a_mutated_environment
+63 passed, 4 warnings in 16.66s

@@ -1,0 +1,221 @@
+{
+  "tool": "lever_census.py",
+  "files": {
+    "trainer": {
+      "path": "C:/Users/Admin/tanitad-agentgt-verify/stack/scripts/refc_v3_train.py",
+      "readable": true,
+      "md5": "4e9c9834f20d6c50b35c163aae4ab4a8",
+      "n_lines": 5640,
+      "controls": {
+        "def main": {
+          "count": 1,
+          "min_required": 1,
+          "ok": true
+        },
+        "add_argument": {
+          "count": 110,
+          "min_required": 50,
+          "ok": true
+        }
+      },
+      "controls_ok": true,
+      "verdict": "READ",
+      "why": ""
+    },
+    "agent_slots": {
+      "path": "C:/Users/Admin/tanitad-agentgt-verify/stack/tanitad/models/agent_slots.py",
+      "readable": true,
+      "md5": "5c6c163b608288679e082b5f54a0dfb1",
+      "n_lines": 753,
+      "controls": {
+        "def ": {
+          "count": 14,
+          "min_required": 5,
+          "ok": true
+        }
+      },
+      "controls_ok": true,
+      "verdict": "READ",
+      "why": ""
+    },
+    "wp_index": {
+      "path": "C:/Users/Admin/tanitad-agentgt-verify/stack/tanitad/refs/refc_wp_index.py",
+      "readable": true,
+      "md5": "bfa75ec5da033db76869992035494309",
+      "n_lines": 449,
+      "controls": {
+        "def ": {
+          "count": 11,
+          "min_required": 3,
+          "ok": true
+        }
+      },
+      "controls_ok": true,
+      "verdict": "READ",
+      "why": ""
+    }
+  },
+  "levers": {
+    "D": {
+      "flag": "--w-u0",
+      "attr": "w_u0",
+      "claim": "the x0 loss in CONTROL space; DD-v1 has no such term",
+      "declared": true,
+      "declaration": {
+        "line": 5095,
+        "text": "g5.add_argument(\"--w-u0\", type=float, default=U0_WEIGHT_DEFAULT,"
+      },
+      "n_mention_lines_grep_c": 7,
+      "n_mention_occurrences": 7,
+      "n_raw_mentions": 7,
+      "n_consumption_sites": 4,
+      "consumption_sites": [
+        {
+          "line": 468,
+          "text": "if sampler == \"ddim\" and float(getattr(args, \"w_u0\", 0.0)) <= 0.0:"
+        },
+        {
+          "line": 2545,
+          "text": "w_u0 = float(getattr(model, \"_w_u0\", 0.0))"
+        },
+        {
+          "line": 3051,
+          "text": "\"w_u0\": float(getattr(args, \"w_u0\", U0_WEIGHT_DEFAULT)),"
+        },
+        {
+          "line": 4046,
+          "text": "model._w_u0 = float(getattr(args, \"w_u0\", U0_WEIGHT_DEFAULT))"
+        }
+      ],
+      "verdict": "PRESENT_AND_CONSUMED",
+      "why": "declared and its parsed value reaches the model/loss"
+    },
+    "A": {
+      "flag": "--agents",
+      "attr": "agents",
+      "claim": "the learned Hungarian-matched agent detector",
+      "declared": true,
+      "declaration": {
+        "line": 5151,
+        "text": "g5.add_argument(\"--agents\", default=\"off\","
+      },
+      "n_mention_lines_grep_c": 31,
+      "n_mention_occurrences": 32,
+      "n_raw_mentions": 31,
+      "n_consumption_sites": 5,
+      "consumption_sites": [
+        {
+          "line": 565,
+          "text": "if getattr(args, \"agents\", \"off\") != \"off\":"
+        },
+        {
+          "line": 568,
+          "text": "oracle=(args.agents == \"oracle\"),"
+        },
+        {
+          "line": 583,
+          "text": "if args.agents == \"head\" and float(getattr(args, \"w_agent\", 0.0)) <= 0.0:"
+        },
+        {
+          "line": 591,
+          "text": "if args.agents == \"head\" and not getattr(args, \"agent_join\", None):"
+        },
+        {
+          "line": 641,
+          "text": "if str(getattr(args, \"agents\", \"off\")) == \"off\":"
+        }
+      ],
+      "verdict": "PRESENT_AND_CONSUMED",
+      "why": "declared and its parsed value reaches the model/loss"
+    },
+    "B": {
+      "flag": "--wp-index",
+      "attr": "wp_index",
+      "claim": "waypoint-indexed cross-attention, DD coupling (1)",
+      "declared": true,
+      "declaration": {
+        "line": 5340,
+        "text": "g5.add_argument(\"--wp-index\", default=\"off\", choices=[\"off\", \"on\"],"
+      },
+      "n_mention_lines_grep_c": 25,
+      "n_mention_occurrences": 26,
+      "n_raw_mentions": 25,
+      "n_consumption_sites": 1,
+      "consumption_sites": [
+        {
+          "line": 639,
+          "text": "_wpx = str(getattr(args, \"wp_index\", \"off\"))"
+        }
+      ],
+      "verdict": "PRESENT_AND_CONSUMED",
+      "why": "declared and its parsed value reaches the model/loss"
+    },
+    "C": {
+      "flag": "--w-tac-goal",
+      "attr": "w_tac_goal",
+      "claim": "the 22-token tactical-goal SET loss",
+      "declared": true,
+      "declaration": {
+        "line": 4922,
+        "text": "ap.add_argument(\"--w-tac-goal\", type=float, default=0.0,"
+      },
+      "n_mention_lines_grep_c": 11,
+      "n_mention_occurrences": 11,
+      "n_raw_mentions": 11,
+      "n_consumption_sites": 5,
+      "consumption_sites": [
+        {
+          "line": 2751,
+          "text": "_w_tg = float(getattr(model, \"_w_tac_goal\", 0.0) or 0.0)"
+        },
+        {
+          "line": 4043,
+          "text": "model._w_tac_goal = float(getattr(args, \"w_tac_goal\", 0.0) or 0.0)"
+        },
+        {
+          "line": 4240,
+          "text": "if float(getattr(args, \"w_tac_goal\", 0.0) or 0.0) > 0.0:"
+        },
+        {
+          "line": 4263,
+          "text": "f\"w={float(args.w_tac_goal)}\", flush=True)"
+        },
+        {
+          "line": 4625,
+          "text": "\"w_tac_goal\": float(getattr(args, \"w_tac_goal\", 0.0) or 0.0),"
+        }
+      ],
+      "verdict": "PRESENT_AND_CONSUMED",
+      "why": "declared and its parsed value reaches the model/loss"
+    }
+  },
+  "symbols": {
+    "agent_slots": {
+      "path": "C:/Users/Admin/tanitad-agentgt-verify/stack/tanitad/models/agent_slots.py",
+      "md5": "5c6c163b608288679e082b5f54a0dfb1",
+      "symbols": {
+        "AgentSlotDecoder": 256,
+        "hungarian": 384,
+        "match_slots": 481,
+        "slot_set_loss": 523,
+        "targets_from_join": 690
+      },
+      "verdict": "ALL_PRESENT",
+      "why": "every required symbol is defined here"
+    },
+    "wp_index": {
+      "path": "C:/Users/Admin/tanitad-agentgt-verify/stack/tanitad/refs/refc_wp_index.py",
+      "md5": "bfa75ec5da033db76869992035494309",
+      "symbols": {
+        "WaypointIndexConfig": 128,
+        "WaypointIndexBias": 340,
+        "build_relation": 423,
+        "waypoint_agent_geometry": 192
+      },
+      "verdict": "ALL_PRESENT",
+      "why": "every required symbol is defined here"
+    }
+  },
+  "verdict": "PASS",
+  "summary": "all four levers are DECLARED and CONSUMED, and DiffusionDrive's Hungarian matching + coupling (1) already exist ⇒ refcv6 is a CONFIGURATION, not new code"
+}

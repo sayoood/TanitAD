@@ -1,0 +1,51 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\run_bridge6.py --split navtest --arms R6_A1,R6_VMAXOFF,R6_VMAXORACLE --inputs D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --speed C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\speed_limits_navtest.json --road-plane C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\road_plane_navhard_warmup_logs.json --ckpt D:/refcv6_eval_kit/ckpt/ckpt_5000.pt --config D:/refcv6_eval_kit/ckpt/config.json --ckpt-md5 8a1e4da0dc6561353b28e3947146751e --device cpu --precision auto --threads 8 --out C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000_navtest_diag\bridge_navtest --exact-dedup --bank1 D:/Archive/devbox-C/navsim/exp/refcv6_navtest416/frame_bank --speed-oracle C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\vmax_oracle_navtest.json --bank1-kind navtest --logs-root D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test --tokens-file D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/refcv6_eval_kit/navsim_aux/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[bridge6] step=5000 steps=2 precision=fp32 device=cpu load 5.0s md5=8a1e4da0dc6561353b28e3947146751e
+  [R6_A1] 25/200 (25 new) 1.49 s/scene
+  [R6_A1] 50/200 (50 new) 1.70 s/scene
+  [R6_A1] 75/200 (75 new) 1.82 s/scene
+  [R6_A1] 100/200 (100 new) 1.94 s/scene
+  [R6_A1] 125/200 (125 new) 2.01 s/scene
+  [R6_A1] 150/200 (150 new) 2.05 s/scene
+  [R6_A1] 175/200 (175 new) 2.07 s/scene
+  [R6_A1] 200/200 (200 new) 2.11 s/scene
+[bridge6] R6_A1: 200 refcv6 rows, 0 stand-ins, missing 0, 421.2 s
+  [R6_VMAXOFF] 25/200 (25 new) 2.27 s/scene
+  [R6_VMAXOFF] 50/200 (50 new) 2.28 s/scene
+  [R6_VMAXOFF] 75/200 (75 new) 2.26 s/scene
+  [R6_VMAXOFF] 100/200 (100 new) 2.28 s/scene
+  [R6_VMAXOFF] 125/200 (125 new) 2.29 s/scene
+  [R6_VMAXOFF] 150/200 (150 new) 2.28 s/scene
+  [R6_VMAXOFF] 175/200 (175 new) 2.28 s/scene
+  [R6_VMAXOFF] 200/200 (200 new) 2.29 s/scene
+[bridge6] R6_VMAXOFF: 200 refcv6 rows, 0 stand-ins, missing 0, 457.6 s
+  [R6_VMAXORACLE] 25/200 (25 new) 2.75 s/scene
+  [R6_VMAXORACLE] 50/200 (50 new) 2.47 s/scene
+  [R6_VMAXORACLE] 75/200 (75 new) 2.44 s/scene
+  [R6_VMAXORACLE] 100/200 (100 new) 2.43 s/scene
+  [R6_VMAXORACLE] 125/200 (125 new) 2.45 s/scene
+  [R6_VMAXORACLE] 150/200 (150 new) 2.45 s/scene
+  [R6_VMAXORACLE] 175/200 (175 new) 2.43 s/scene
+  [R6_VMAXORACLE] 200/200 (200 new) 2.42 s/scene
+[bridge6] R6_VMAXORACLE: 200 refcv6 rows, 0 stand-ins, missing 0, 484.1 s
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\run_bridge6.py --split navtest --arms R6_A1,R6_A1_s1,R6_VMAXOFF,R6_VMAXORACLE --inputs D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --speed C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\speed_limits_navtest.json --road-plane C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\road_plane_navhard_warmup_logs.json --ckpt D:/refcv6_eval_kit/ckpt/ckpt_5000.pt --config D:/refcv6_eval_kit/ckpt/config.json --ckpt-md5 8a1e4da0dc6561353b28e3947146751e --device cpu --precision auto --threads 8 --out C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000_navtest_diag\bridge_navtest --exact-dedup --bank1 D:/Archive/devbox-C/navsim/exp/refcv6_navtest416/frame_bank --speed-oracle C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\vmax_oracle_navtest.json --bank1-kind navtest --logs-root D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test --tokens-file D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/refcv6_eval_kit/navsim_aux/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[bridge6] step=5000 steps=2 precision=fp32 device=cpu load 4.7s md5=8a1e4da0dc6561353b28e3947146751e
+[bridge6] R6_A1: 200 refcv6 rows, 0 stand-ins, missing 0, 0.0 s
+  [R6_A1_s1] 25/200 (25 new) 1.72 s/scene
+  [R6_A1_s1] 50/200 (50 new) 1.69 s/scene
+  [R6_A1_s1] 75/200 (75 new) 1.84 s/scene
+  [R6_A1_s1] 100/200 (100 new) 1.89 s/scene
+  [R6_A1_s1] 125/200 (125 new) 1.98 s/scene
+  [R6_A1_s1] 150/200 (150 new) 2.03 s/scene
+  [R6_A1_s1] 175/200 (175 new) 2.07 s/scene
+  [R6_A1_s1] 200/200 (200 new) 2.14 s/scene
+[bridge6] R6_A1_s1: 200 refcv6 rows, 0 stand-ins, missing 0, 427.7 s
+[bridge6] R6_VMAXOFF: 200 refcv6 rows, 0 stand-ins, missing 0, 0.0 s
+[bridge6] R6_VMAXORACLE: 200 refcv6 rows, 0 stand-ins, missing 0, 0.0 s

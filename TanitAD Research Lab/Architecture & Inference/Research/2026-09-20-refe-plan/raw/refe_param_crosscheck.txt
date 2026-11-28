@@ -1,0 +1,18 @@
+CROSS-CHECK: is REFe's head sizing dimensionally consistent with DriveZero's?
+Their published student is ViT-L with FOUR cameras: 338.46 M total / 18.58 M trainable = 5.49 %.
+REFe is ViT-S with ONE camera, so the ABSOLUTE counts cannot match. But if my heads are sized
+like theirs, then rebuilding REFe in THEIR configuration should land near THEIR fraction.
+
+  REFe  ViT-S / 1 cam    total    30.25 M   trainable    7.92 M   = 26.19 %
+        ViT-B / 1 cam    total    96.47 M   trainable    9.35 M   =  9.69 %
+        ViT-L / 1 cam    total   316.94 M   trainable   11.88 M   =  3.75 %
+  THEIR ViT-L / 4 cam    total   322.89 M   trainable   17.83 M   =  5.52 %
+
+  published            total   338.46 M   trainable   18.58 M   =  5.49 %
+
+  in THEIR configuration my reconstruction is off by 4.6 % on total and 4.1 % on trainable.
+  => the architecture is the right SHAPE; the remaining gap is unmodelled detail
+     (their exact decoder depth/width, any extra heads, the DriveVFM trunk vs a plain ViT-L).
+
+  REFe's 26.19 % trainable is therefore NOT a defect: with a ViT-S trunk the fixed-size heads
+  simply dominate. The fraction is a function of backbone scale, not of how much is unfrozen.

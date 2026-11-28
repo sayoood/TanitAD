@@ -1,0 +1,60 @@
+LANDING_READY -- D1 label / input coverage census of refcv7-r101-s0 (Data Engineering, refcv8 data audit, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths BY PATH.
+Prefix every path below with:  TanitAD Research Lab/Data Engineering/Research/2026-10-04-refcv8-data-audit/
+
+## D1
+
+D1_label_census/COVERAGE.md                                    md5 ec06e77933daf287c4f5ed856d4e2d2f  THE deliverable: headline numbers, controls A-K, findings F1-F8, tables T1-T8, truth-table schema
+D1_label_census/code/d1_census.py                              md5 312343c95788dd6f2e274addec530bfe  the census driver (builds the trainer datasets, per-window truth table, controls C2 + pose controls); md5 == Thor working copy
+D1_label_census/code/d1_analyze.py                             md5 dc527d2ca688c76e616db2a9be4c1981  tables + literal-threshold analysis + route-package reproduction (control A)
+D1_label_census/code/d1_report.py                              md5 e1b8b97338eb469396702976b84c30fe  renders numbers_*.json into the COVERAGE tables
+D1_label_census/code/d1_controls_vs_log.py                     md5 eb9b7ec3600e1a8a0ee792e1fe65e94b  controls K1/K2 against the run's own metrics.jsonl
+D1_label_census/code/d1_controls_summary.py                    md5 fb9217cd3c425eea76e1a52d7febdaeb  controls B, C, D, X summary
+D1_label_census/code/d1_finalize_tables.py                     md5 ad3f0f3bad144548aa9b19d2d6eab625  adds clip_sha12 / window_index and writes tables/
+D1_label_census/code/check_md_tables.py                        md5 024ec1d82fddad2e6c5c428ad4b0216f  markdown table pipe-count check
+D1_label_census/raw/analysis/numbers_train.json                md5 9cdc3cd21a278dc2ce34d7130b558a92  all TRAIN numbers behind COVERAGE.md
+D1_label_census/raw/analysis/numbers_eval139.json              md5 a2e45f41749e64892884735190249743  all EVAL139 numbers incl. control A (route grid) and bootstrap CIs
+D1_label_census/raw/analysis/controls_summary.json             md5 4beae6f8b19852c50f0067436d9c66cb  controls A,B,C,D,E,X,C2,K in one file
+D1_label_census/raw/analysis/controls_vs_training_log.json     md5 b675438f2a0bb28ea57e3ace52d9247c  K1/K2: census vs the run's own log (cells/row 9.643 vs state B 9.605 vs state A 8.675)
+D1_label_census/raw/analysis/COVERAGE_tables_generated.md      md5 e66a2aea9d34e9a4eb0393f68d23b1ea  the generated T1-T8 tables
+D1_label_census/raw/thor_train/record_train.json               md5 e270e3610e543db76a16fd5ba53306dd  Thor TRAIN run record: blobs, trainer census stamps, clock, G3, C2, pose controls, vocab
+D1_label_census/raw/thor_train/run.log                         md5 08827bba811ac0392ca68636c4002d36  Thor TRAIN run log
+D1_label_census/raw/thor_train/pose_controls_train.npz         md5 80f49c94c2e7543ace8b86160153d2c3  label dyaw_deg vs cached-pose heading change, 980 entries
+D1_label_census/raw/thor_eval139/record_eval139.json           md5 6a9f2065acc9587c13043fc5ab9c0186  Thor EVAL139 run record
+D1_label_census/raw/thor_eval139/run.log                       md5 fca834f8b827bf2e70bfb7f3169d4a88  Thor EVAL139 run log
+D1_label_census/raw/thor_eval139/pose_controls_eval139.npz     md5 1ef420589e513a2930dbf561be2a674f  as above, eval
+D1_label_census/raw/devbox_eval/record_eval139.json            md5 41dcbffc9a373b74febd8a19fb538c96  dev-box mirror of the eval run (control X: bit-identical to Thor)
+D1_label_census/raw/devbox_eval/run.log                        md5 b16fb96ffac95923b2d09faf1fd56fb3  dev-box eval log
+D1_label_census/raw/devbox_train_smoke/record_train_smoke140.json md5 f14a8a9ab7d69af0fc02b4395cb4537e  SMOKE of the train path on the 139-clip dev-box train subset (map flag forced; NOT a result)
+D1_label_census/raw/devbox_train_smoke/run.log                 md5 e076ce0074920bcf58eb9f77b84fea12  smoke log
+D1_label_census/raw/MD5SUMS.txt                                md5 65f96b60e8bacee7982d817d7f2d67e6  md5 of every file of this package (D1_label_census/)
+D1_label_census/tables/label_truth_columns.json                md5 84bd5bbb8322e658b51eff1887515c36  column dictionary of the truth tables
+D1_label_census/tables/label_truth_eval139.npz                 md5 1a99928cbe487a48da331050d08cb67b  PER-WINDOW TRUTH TABLE, EVAL139 (23,772 rows x 46 columns, 1.0 MB)
+D1_label_census/tables/label_truth_eval139_clips.json          md5 222520d8ced2a350660a3a27a9eb7b52  per-clip table (sha12, T, dt, grid_start, clock source, nav, ceiling, strata, map n_frames), eval
+D1_label_census/tables/label_truth_train_clips.json            md5 e593c1ec1b7403600400bf2a1a711120  per-clip table, TRAIN (4,369 clips, 2.9 MB)
+
+NOT for git (large binary; reproducible from the Thor originals + code in seconds):
+  D1_label_census/tables/label_truth_train.npz  32,392,053 B  md5 5ed0703beb013c51bffbdd76093e1f65
+      PER-WINDOW TRUTH TABLE, TRAIN (746,946 rows x 46 columns, 32.4 MB) -- THE priority-1 deliverable. Two copies: this folder; Thor /home/nvidia/refcv8_audit/D1/out/windows_train.npz is the same table minus clip_sha12/window_index (original driver output)
+  D1_label_census/raw/thor_train/windows_train.npz  31,302,081 B  md5 e882a64a8eeae0281f485eaa11b63abf
+      original Thor driver output, TRAIN (31.3 MB); input to d1_analyze.py; Thor holds the original
+  D1_label_census/raw/thor_eval139/windows_eval139.npz   1,006,940 B  md5 570b330c69ddc8795bc6c32d99e39826
+      original Thor driver output, EVAL139 (1.0 MB)
+  D1_label_census/raw/devbox_eval/windows_eval139.npz   1,006,940 B  md5 12f81fb609dd0b432214725d66226e85
+      dev-box mirror of the eval table (1.0 MB); bit-identical to the Thor one
+  D1_label_census/raw/devbox_eval/clips_eval139.json      91,294 B  md5 222520d8ced2a350660a3a27a9eb7b52
+      dev-box mirror clip table (CRLF-formatted copy of the Thor one)
+  D1_label_census/raw/thor_train/clips_train.json   2,735,350 B  md5 e96ffc47470f84f6561dfd25e19523f4
+      original Thor per-clip table, TRAIN (2.7 MB)
+  D1_label_census/raw/thor_eval139/clips_eval139.json      86,692 B  md5 458501f54d310a3c1169ed199942a05b
+      original Thor per-clip table, EVAL139
+  D1_label_census/raw/refcv7_run_records/metrics.jsonl  38,608,246 B  md5 cfcbba413ba8a03d3a2dc3ded513fea2
+      LOCAL COPY of Thor /home/nvidia/refcv7_run/runs/refcv7-r101-s0/metrics.jsonl (38.6 MB; the run's own log; input to controls K1/K2). SINGLE-COPY? No: the original is on Thor.
+
+Thor-only state (nothing is in the repo for these; none is needed to reproduce):
+  /home/nvidia/refcv8_audit/D1/d1_census.py   (md5 312343c95788dd6f2e274addec530bfe == code/d1_census.py)
+  /home/nvidia/refcv8_audit/D1/out/{windows,clips,record,pose_controls}_{train,eval139}.*, /home/nvidia/refcv8_audit/D1/{train,eval139}.log   (<= 34 MB; Thor disk is 94 % full -- safe to delete once landed)
+  No python process of this stream is alive on Thor. Last Thor job ended 2026-10-04 10:44:41Z (12:44 Berlin); the cpu.lock was released.
+
+SINGLE-COPY items: tables/label_truth_train.npz (final, with clip_sha12) exists only in this folder; it is regenerated in ~10 s by code/d1_finalize_tables.py from raw/thor_train/windows_train.npz + clips_train.json (Thor holds the originals).
+UUID scan: regex for 8-4-4-4-12 hex over every file of this package, npz members included: 0 hits (sha12 only).

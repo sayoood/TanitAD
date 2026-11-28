@@ -1,0 +1,80 @@
+### units (-k test_j or test_k or test_l or test_m)
+Error
+---------------------------- Captured stdout call -----------------------------
+[suite] taniteval/tools/openloop_suite.py
+[suite] regime: OPEN LOOP (PI ruling 2026-09-02) — every arm
+_ test_k7_openloop_declaration_has_no_default_by_ast_and_the_default_is_the_mutation_target _
+
+    def test_k7_openloop_declaration_has_no_default_by_ast_and_the_default_is_the_mutation_target():
+        decl = _declarations(_OPENLOOP_PATH.read_text(encoding="utf-8"))
+>       assert len(decl) == 1 and decl[0]["default"] == "<None>", decl
+E       AssertionError: [{'line': 2274, 'default': "'steer'", 'choices': "('kappa', 'steer')"}]
+E       assert (1 == 1 and "'steer'" == '<None>'
+E        +  where 1 = len([{'line': 2274, 'default': "'steer'", 'choices': "('kappa', 'steer')"}])
+E         
+E         - <None>
+E         + 'steer')
+
+tests\test_refav1_units_required.py:1275: AssertionError
+___________ test_k8_openloop_mutation_in_process_and_in_a_temp_copy ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000018EBAE7F850>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5359/test_k8_openloop_mutation_in_p0')
+
+    def test_k8_openloop_mutation_in_process_and_in_a_temp_copy(monkeypatch, tmp_path):
+>       mutant = _load_module(_OPENLOOP_PATH, "_instfix_openloop_mutant", _mutated_tool_source("openloop"))
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refav1_units_required.py:1281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+key = 'openloop'
+
+    def _mutated_tool_source(key: str) -> str:
+        """The tool's source with its pre-INSTFIX ``--action-units`` default restored (the deliberate regression)."""
+        fname, needle, old_default = _CLI_MUTANTS[key]
+        src = (_TANI / "tools" / fname).read_text(encoding="utf-8")
+>       assert src.count(needle) == 1, f"{fname}: --action-units declaration moved: update this mutation"
+E       AssertionError: openloop_suite.py: --action-units declaration moved: update this mutation
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x0000018EBACD4F90>('roll.add_argument("--action-units", choices=("kappa", "steer"), default=None,')
+E        +    where <built-in method count of str object at 0x0000018EBACD4F90> = '#!/usr/bin/env python3\n"""THE OPEN-LOOP BINDING-KPI SUITE — one command from a checkpoint to the report.\n\nWHAT THI...n_violations") or not ctl_ok):\n        return 1\n    return 0\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+tests\test_refav1_units_required.py:1089: AssertionError
+______ test_l_census_every_live_action_units_declaration_has_no_default _______
+
+    def test_l_census_every_live_action_units_declaration_has_no_default():
+        found, bad = _declaration_census()
+>       assert not bad, "live --action-units declaration(s) with a silent default:\n  " + "\n  ".join(bad)
+E       AssertionError: live --action-units declaration(s) with a silent default:
+E           taniteval/tools/openloop_suite.py:2274 --action-units default='steer'
+E       assert not ["taniteval/tools/openloop_suite.py:2274 --action-units default='steer'"]
+
+tests\test_refav1_units_required.py:1358: AssertionError
+___ test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught ___
+
+    def test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught():
+        for key in _CLI_MUTANTS:
+            rel = "taniteval/tools/" + _CLI_MUTANTS[key][0]
+            found0, bad0 = _declaration_census({rel: (_REPO / rel).read_text(encoding="utf-8")})
+>           assert rel in found0 and not bad0, (rel, found0, bad0)
+E           AssertionError: ('taniteval/tools/openloop_suite.py', {'taniteval/tools/openloop_suite.py': [{'line': 2274, 'default': "'steer'", 'choices': "('kappa', 'steer')"}]}, ["taniteval/tools/openloop_suite.py:2274 --action-units default='steer'"])
+E           assert ('taniteval/tools/openloop_suite.py' in {'taniteval/tools/openloop_suite.py': [{'line': 2274, 'default': "'steer'", 'choices': "('kappa', 'steer')"}]} and not ["taniteval/tools/openloop_suite.py:2274 --action-units default='steer'"])
+
+tests\test_refav1_units_required.py:1383: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked
+FAILED tests/test_refav1_units_required.py::test_k7_openloop_declaration_has_no_default_by_ast_and_the_default_is_the_mutation_target
+FAILED tests/test_refav1_units_required.py::test_k8_openloop_mutation_in_process_and_in_a_temp_copy
+FAILED tests/test_refav1_units_required.py::test_l_census_every_live_action_units_declaration_has_no_default
+FAILED tests/test_refav1_units_required.py::test_l3_census_mutation_restoring_a_default_in_each_REAL_file_is_caught
+5 failed, 19 passed, 2 skipped, 121 deselected in 10.43s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.78s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.14s
+

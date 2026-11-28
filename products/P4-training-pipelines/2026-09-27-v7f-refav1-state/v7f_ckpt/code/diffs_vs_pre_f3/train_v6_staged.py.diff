@@ -1,0 +1,477 @@
+diff --git "a/C:\\Users\\Admin\\v7f_ckpt\\pristine\\train_v6_staged.py" "b/C:\\Users\\Admin\\v7f_ckpt\\stack\\scripts\\train_v6_staged.py"
+index 121cd97..ec024a5 100644
+--- "a/C:\\Users\\Admin\\v7f_ckpt\\pristine\\train_v6_staged.py"
++++ "b/C:\\Users\\Admin\\v7f_ckpt\\stack\\scripts\\train_v6_staged.py"
+@@ -218,6 +218,9 @@ __all__ = [
+     "ResumeLineageError", "read_ckpt_provenance", "assert_resume_lineage",
+     "resume_guard", "load_resume", "load_stage_init",
+     "supersede_init_on_resume",
++    "RESUME_STATE_SCHEMA", "RESUME_STATE_KEYS", "resume_stream_fingerprint",
++    "capture_resume_state", "read_resume_state", "resume_state_record",
++    "apply_resume_state", "replay_lr_schedule",
+     "build_stack_from_args", "synthetic_train_batch", "dry_run",
+     "build_parser", "main",
+ ]
+@@ -7972,10 +7975,35 @@ def train(a) -> dict:
+     opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
+     sched = build_lr_scheduler(a, opt)
+     start_step = 0
++    # ⭐ F3: the exact-resume payload of the checkpoint being resumed (None on a
++    # fresh launch, and on a checkpoint written before F3). READ here, next to
++    # the weights; APPLIED immediately before the step loop, after every
++    # construction-time consumer of the seeded streams has run.
++    resume_state: dict | None = None
+     if rg["mode"] == "resume":
+         start_step = load_resume(stack, opt, rg["from"], stage=a.stage)
+-        for _ in range(start_step):
+-            sched.step()                       # replay the LR schedule
++        # ⛔ F3b: NOT `for _ in range(start_step): sched.step()` on top of the
++        # LOADED lr -- that applied the first start_step steps of cosine decay
++        # twice (see replay_lr_schedule).
++        replay_lr_schedule(opt, sched, start_step)
++        resume_state = read_resume_state(rg["from"])
++        if resume_state is None:
++            # ⛔ RESUME, LOUDLY -- do not refuse. Refusing would strand every
++            # checkpoint written before F3 (the live and banked v6 runs among
++            # them); a replayed stream re-draws in-distribution batches, it does
++            # not corrupt the model. The deviation is RECORDED in config.json
++            # (`resume_rng.mode = "absent-replayed"`) and in every checkpoint
++            # this run writes, so no number from the run can lose it; the NEXT
++            # checkpoint carries the payload, so the replay happens at most once.
++            print("=" * 72, flush=True)
++            print(f"[v6] ⚠️  THIS RESUME REPLAYS THE DATA/RNG STREAM: "
++                  f"{rg['from']} predates the exact-resume payload (F3, "
++                  f"2026-09-27) -- it carries no rng_state/data_pos. torch, "
++                  f"random, the sampler and the shared generator restart from "
++                  f"--seed {a.seed}, so steps {start_step + 1}.. re-draw the "
++                  f"batches steps 1.. drew. Recorded: config.json resume_rng."
++                  f"mode = 'absent-replayed'.", flush=True)
++            print("=" * 72, flush=True)
+         # ⛔ A RESUME OVERWRITES EVERY WEIGHT --init-from JUST LOADED, and both
+         # flags are legal together — `supervise_run.sh` replays the command it
+         # captured at startup, so the relaunch that RESUMES still carries the
+@@ -8011,6 +8039,15 @@ def train(a) -> dict:
+                                                     trunk_opt_report,
+                                                 "max_horizon": max_h,
+                                                 "launch_mode": rg}
++    # ⭐ F3: the data stream's fingerprint rides every checkpoint; a resume
++    # compares it with its own and RECORDS any difference (a resume whose
++    # stream geometry changed cannot be exact, and must say so). Resume only:
++    # a fresh launch's config.json is unchanged.
++    stream_fp = resume_stream_fingerprint(a, ds_train, sample, t5_partner,
++                                          t3_curr, dmix, device)
++    if rg["mode"] == "resume":
++        cfg_json["resume_rng"] = resume_state_record(resume_state,
++                                                     stream_now=stream_fp)
+     # ⭐ F-9's provenance stamp travels INTO THE RUN ROW, not just the log.
+     # A label-derived sampler input is admissible only as a DECLARED data mix;
+     # a declaration that lives in a console line nobody re-reads is the
+@@ -8116,7 +8153,34 @@ def train(a) -> dict:
+     steps_g = tuple(range(1, a.o1_k + 1))
+     dev_type = "cuda" if device == "cuda" else "cpu"
+     t3_alpha_applied = None
++    t3_prog_applied = None                # F3: the `prog` behind sample.weights
+     grad_reach: dict | None = None
++    # ⭐ F3 -- THE RESTORE, and it must be HERE. Everything above consumed the
++    # SEEDED streams at construction (the stack's init, --init-from, the O4/T3
++    # samplers, the monitors' generators) exactly as the uninterrupted run did;
++    # nothing between this line and the first draw consumes one. So step
++    # start_step + 1 starts from precisely the state saved at the end of step
++    # start_step -- the RNG streams, the T3 weights, the SIGReg row bank and
++    # the spectrum/o6/observer monitors.
++    if resume_state is not None:
++        _rl = apply_resume_state(resume_state, device=device, rng=rng, gen=gen,
++                                 spec_gen=spec_gen, x4_mon=x4_mon,
++                                 sigreg_bank=sigreg_bank, spec_acc=spec_acc,
++                                 obs_mon=obs_mon)
++        t3_alpha_applied = _rl["t3_alpha_applied"]
++        t3_prog_applied = _rl["t3_prog_applied"]
++        if t3_curr is not None and t3_prog_applied is not None:
++            sample.weights = t3_curr.weights_at(t3_scores, t3_prog_applied)
++        _mon = _rl["monitors"]
++        spectrum_last = _mon.get("spectrum_last", spectrum_last)
++        spectrum_pooled_last = _mon.get("spectrum_pooled_last",
++                                        spectrum_pooled_last)
++        spectrum_ref = _mon.get("spectrum_ref", spectrum_ref)
++        x4_last = _mon.get("x4_last", x4_last)
++        o6_trend_base = list(_mon.get("o6_trend_base", o6_trend_base))
++        o6_trend_cur.extend(_mon.get("o6_trend_cur", ()))
++        print(f"[v6] F3 exact resume: restored {json.dumps(_rl['applied'])} "
++              f"at the end of step {start_step}", flush=True)
+     for step in range(start_step + 1, a.steps + 1):
+         # ⛔ F-9's curriculum refresh comes BEFORE the draw, not after. With it
+         # after, every step samples under the PREVIOUS step's exponent and the
+@@ -8134,6 +8198,7 @@ def train(a) -> dict:
+             if al != t3_alpha_applied:
+                 sample.weights = t3_curr.weights_at(t3_scores, prog)
+                 t3_alpha_applied = al
++                t3_prog_applied = prog         # F3: what a resume rebuilds
+         if t5_partner:
+             # HALF the batch is anchors, half their +lag partners, so total
+             # compute and --batch are unchanged; what halves is the number of
+@@ -8624,11 +8689,12 @@ def train(a) -> dict:
+                         "rank_admissible"]:
+                     # the phase-start reference for clause 2, taken at the
+                     # first ADMISSIBLE pooled reading of the phase.
+-                    # ⚠️ NOT carried across a resume: a restarted process takes
+-                    # a fresh reference, so its retention is measured from the
+-                    # restart, not from the phase start. The verdict says which
+-                    # step the reference came from via the record it embeds —
+-                    # read it, do not assume the phase start.
++                    # ⭐ F3: CARRIED across a resume (`loop_state.monitors`).
++                    # ⚠️ Only a checkpoint written before F3 restarts it: that
++                    # process takes a fresh reference, so its retention is
++                    # measured from the restart. The verdict says which step the
++                    # reference came from via the record it embeds — read it,
++                    # do not assume the phase start.
+                     spectrum_ref = dict(rec_s["spectrum_pooled"],
+                                         ref_step=step)
+             # ---- X4: per-layer records + the o6 trend guard -----------------
+@@ -8715,6 +8781,21 @@ def train(a) -> dict:
+             # silently losing the time it covered.
+             last_log_t, last_log_step = now, step
+         if step % a.save_every == 0 or step == a.steps:
++            # ⭐ F3: captured FIRST in the block -- the state at the END of step
++            # `step`'s training work, i.e. exactly what step + 1 of an
++            # uninterrupted run starts from (an uninterrupted run need not save
++            # at this step, so nothing the save block does may be inside it).
++            resume_payload = capture_resume_state(
++                step=step, device=device, rng=rng, gen=gen, spec_gen=spec_gen,
++                x4_mon=x4_mon, stream=stream_fp,
++                t3_alpha_applied=t3_alpha_applied,
++                t3_prog_applied=t3_prog_applied, sigreg_bank=sigreg_bank,
++                spec_acc=spec_acc, obs_mon=obs_mon,
++                monitors={"spectrum_last": spectrum_last,
++                          "spectrum_pooled_last": spectrum_pooled_last,
++                          "spectrum_ref": spectrum_ref, "x4_last": x4_last,
++                          "o6_trend_base": list(o6_trend_base),
++                          "o6_trend_cur": list(o6_trend_cur)})
+             # ⛔ X2 SEAM DUMP — DEFAULT-OFF, and the ONLY thing that banks the
+             # 60-step plan. F-16's probe (taniteval/tools/seam_probe.py) is
+             # built, self-tested and has produced ZERO real-arm numbers
+@@ -8781,7 +8862,8 @@ def train(a) -> dict:
+                           flush=True)
+             _save_ckpt(out_dir / "ckpt.pt", stack=stack, opt=opt, step=step,
+                        cfg_json=cfg_json,
+-                       keep_step=not bool(getattr(a, "no_step_ckpts", False)))
++                       keep_step=not bool(getattr(a, "no_step_ckpts", False)),
++                       extra=resume_payload)
+             (out_dir / "metrics.json").write_text(json.dumps(
+                 {"history": history, "stage": a.stage,
+                  "_read": "TRAINING numbers. Only eval output is quotable "
+@@ -8832,7 +8914,7 @@ def _load_gate_probes(path) -> dict:
+ 
+ 
+ def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict,
+-               keep_step: bool = True) -> None:
++               keep_step: bool = True, extra: dict | None = None) -> None:
+     """Write the checkpoint ATOMICALLY, and keep a STEP-STAMPED copy.
+ 
+     ⛔ THE DEFECT THIS FIXES. `--save-every` wrote only ``ckpt.pt`` and
+@@ -8859,6 +8941,15 @@ def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict,
+     """
+     payload = {"stack": stack.state_dict(), "opt": opt.state_dict(),
+                "step": step, "config": cfg_json}
++    if extra:
++        # ⭐ F3: the exact-resume keys (`rng_state` / `data_pos` / `loop_state`,
++        # :func:`capture_resume_state`). ADDITIVE: every reader of the four
++        # incumbent keys is untouched, and a clash is refused, never merged.
++        clash = sorted(set(extra) & set(payload))
++        if clash:
++            raise ValueError(f"_save_ckpt: extra keys {clash} would overwrite "
++                             f"the checkpoint's own")
++        payload.update(extra)
+     tmp = Path(str(path) + ".tmp")
+     torch.save(payload, tmp)
+     os.replace(tmp, path)                       # atomic; no torn file is visible
+@@ -8869,6 +8960,290 @@ def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict,
+         os.replace(tmp2, stamped)
+ 
+ 
++# ============================================================================
++# ⭐ F3 (v7f launch gate G-CKPT, 2026-09-27) -- an EXACT resume
++# ============================================================================
++#: ⛔ WHAT A RESUME USED TO DO. MEASURED by the v7f launch gate's G-CKPT
++#: rehearsal (`…/2026-09-27-v7f-refav1-state/v7f_gate/RESULT.md`, F3):
++#: ``train()`` re-seeds torch, ``random``, the sampler's ``rng`` and the shared
++#: generator ``gen`` from ``--seed`` at EVERY launch, and ``_save_ckpt`` wrote
++#: only ``{stack, opt, step, config}`` -- so a resumed S-T run drew
++#: ``[[1,5],[1,23]],[[2,10],[2,7]]``, the uninterrupted run's FIRST batches,
++#: instead of its steps 101-102. A resume trained the first N batches twice and
++#: never saw the ones an uninterrupted run would, and no log line showed it.
++#:
++#: ⇒ Three keys ride every checkpoint, captured at the END of the saved step:
++#:   * ``rng_state`` -- EVERY stream the step loop consumes: torch CPU (global
++#:     draws: SIGReg slices, dropout), torch CUDA (per device, when training on
++#:     CUDA), python ``random``, the uniform sampler's ``rng``
++#:     (``make_sampler``), the shared ``gen`` (O4/T3/F-10 samplers,
++#:     ``sample_random_deltas``, ``v6_loss_step``, the O5 target crop, O9),
++#:     ``spec_gen`` (seed+7) and X4's generator (seed+11). numpy's global
++#:     stream is carried too: nothing on the path draws from it today
++#:     (grep), and carrying it means a future consumer cannot silently break
++#:     exactness;
++#:   * ``data_pos`` -- the step, the stream FINGERPRINT (a resume compares its
++#:     own and records any difference) and the T3 curriculum's applied
++#:     alpha/prog (the live weights are a function of the UNROUNDED prog of
++#:     the step they were recomputed at, so a resume rebuilds them from it);
++#:   * ``loop_state`` -- the rolling buffers that carry state across steps: the
++#:     SIGReg row bank (it enters the O6 LOSS), the O6/X4 spectrum pools and
++#:     references, the o6 trend series, the observer monitor.
++#: NOT carried, by construction: the LR schedule (replayed by stepping, a pure
++#: function of the step), the EMA ramp (reads the ABSOLUTE step), the O13
++#: projection (re-seeded per call from --o13-seed), the X2 seam dump (no RNG).
++#: ⚠️ And NOT in scope here, found while auditing: the O7/O8/O9/O10 auxiliary
++#: heads are trained (their params are in the optimiser) but are not in
++#: ``stack.state_dict()`` -- a resume of such an arm re-initialises them.
++RESUME_STATE_SCHEMA = "v6-exact-resume/1"
++RESUME_STATE_KEYS = ("rng_state", "data_pos", "loop_state")
++
++
++def replay_lr_schedule(opt, sched, n_steps: int) -> None:
++    """Bring a FRESH scheduler to step ``n_steps`` after ``load_resume``.
++
++    ⛔ F3b -- MEASURED 2026-09-27 on the exact-resume rig, and it hit EVERY v6
++    resume on the default schedule. ``opt.load_state_dict`` restores each
++    group's ``lr`` AS SAVED (already decayed to step ``n``), and
++    ``CosineAnnealingLR`` is RECURSIVE: ``get_lr`` scales the group's CURRENT
++    ``lr`` by ``(1+cos(pi*e/T)) / (1+cos(pi*(e-1)/T))``. Replaying ``n`` steps
++    on top of the loaded ``lr`` therefore applied the first ``n`` steps of decay
++    TWICE, and because every later step is again a ratio of the current value,
++    the WHOLE REMAINDER of the run ran at ``(1 + cos(pi*n/T)) / 2`` of its
++    schedule -- a resume at 50 % of --steps halved every later LR, a resume at
++    90 % left 2.4 %. MEASURED on a 5-step tiny S-W run resumed at step 3: the lr
++    logged after step 4 was 3.2991502812526298e-06 resumed vs
++    9.549150281252631e-06 uninterrupted, ratio 0.34549 = (1+cos(0.6*pi))/2.
++    ⚠️ The launch gate's G-CKPT hid it: its optimiser param-group comparison
++    excluded ``lr``.
++    ⇒ every group's ``lr`` is reset to its ``initial_lr`` and the schedule is
++    replayed from there: the identical sequence of float operations the
++    uninterrupted run performed, so the lr of step ``n + 1`` is BIT-equal to
++    it. ``LambdaLR`` (the --trunk-lr-factor path) is closed-form and was never
++    affected; the reset is a no-op for it.
++    """
++    for g in opt.param_groups:
++        if "initial_lr" in g:
++            g["lr"] = g["initial_lr"]
++    for _ in range(int(n_steps)):
++        sched.step()                       # replay the LR schedule
++
++
++def resume_stream_fingerprint(a, ds_train, sample, t5_partner, t3_curr, dmix,
++                              device) -> dict:
++    """What the saved streams are streams OF. Two runs with the same
++    fingerprint draw from the same index space with the same consumers; a
++    resume whose fingerprint differs cannot be exact and records why."""
++    return {"n_windows": len(ds_train.index), "batch": int(a.batch),
++            "eps_per_batch": int(a.eps_per_batch), "seed": int(a.seed),
++            "sampler": getattr(sample, "__qualname__", type(sample).__name__),
++            "t5_pairs": bool(t5_partner),
++            "t5_lag": int(getattr(a, "t5_lag", 0) or 0),
++            "t3": t3_curr is not None, "domain_mix": dmix is not None,
++            "sigreg_accum": int(getattr(a, "sigreg_accum", 1) or 1),
++            "spectrum_accum": int(getattr(a, "spectrum_accum", 1) or 1),
++            "spectrum_ci_reps": int(getattr(a, "spectrum_ci_reps", 0) or 0),
++            "x4_spectrum_layers": str(getattr(a, "x4_spectrum_layers", "")),
++            "obs_monitor_every": int(getattr(a, "obs_monitor_every", 0) or 0),
++            "device_type": "cuda" if str(device).startswith("cuda") else "cpu"}
++
++
++def _np_rng_get():
++    try:
++        import numpy as _np  # noqa: PLC0415
++    except Exception:                                    # noqa: BLE001
++        return None
++    name, keys, pos, has_gauss, cached = _np.random.get_state(legacy=True)
++    return {"name": str(name), "keys": [int(k) for k in keys.tolist()],
++            "pos": int(pos), "has_gauss": int(has_gauss),
++            "cached_gaussian": float(cached)}
++
++
++def _np_rng_set(st: dict) -> None:
++    import numpy as _np  # noqa: PLC0415
++    _np.random.set_state((st["name"], _np.asarray(st["keys"], dtype=_np.uint32),
++                          int(st["pos"]), int(st["has_gauss"]),
++                          float(st["cached_gaussian"])))
++
++
++def _rows_cpu(buf) -> list:
++    return [t.detach().cpu().clone() for t in buf]
++
++
++def capture_resume_state(*, step: int, device, rng, gen, spec_gen=None,
++                         x4_mon=None, stream: dict | None = None,
++                         t3_alpha_applied=None, t3_prog_applied=None,
++                         sigreg_bank=None, spec_acc=None, obs_mon=None,
++                         monitors: dict | None = None) -> dict:
++    """-> ``{"rng_state", "data_pos", "loop_state"}`` at the END of step
++    ``step``: exactly what step ``step + 1`` of an uninterrupted run starts
++    from. Pure reads -- captures consume no stream."""
++    import copy  # noqa: PLC0415
++    cuda = None
++    if str(device).startswith("cuda") and torch.cuda.is_available():
++        cuda = [s.clone() for s in torch.cuda.get_rng_state_all()]
++    x4g = getattr(x4_mon, "generator", None) if x4_mon is not None else None
++    rng_state = {
++        "schema": RESUME_STATE_SCHEMA,
++        "torch_cpu": torch.get_rng_state().clone(),
++        "torch_cuda": cuda,
++        "python_random": random.getstate(),
++        "sampler_rng": rng.getstate() if rng is not None else None,
++        "gen": gen.get_state().clone() if gen is not None else None,
++        "spec_gen": spec_gen.get_state().clone() if spec_gen is not None else None,
++        "x4_gen": x4g.get_state().clone() if x4g is not None else None,
++        "numpy": _np_rng_get(),
++    }
++    data_pos = {"schema": RESUME_STATE_SCHEMA, "step": int(step),
++                "next_step": int(step) + 1, "stream": dict(stream or {}),
++                "t3_alpha_applied": t3_alpha_applied,
++                "t3_prog_applied": t3_prog_applied}
++    obs = None
++    if obs_mon is not None:
++        obs = {"f": _rows_cpu(obs_mon._f), "p": _rows_cpu(obs_mon._p),
++               "t": _rows_cpu(obs_mon._t), "rho0": obs_mon.rho0,
++               "rho0_step": obs_mon.rho0_step,
++               "consecutive_fails": int(obs_mon.consecutive_fails)}
++    loop_state = {
++        "schema": RESUME_STATE_SCHEMA,
++        "sigreg_bank": (_rows_cpu(sigreg_bank._buf)
++                        if sigreg_bank is not None else None),
++        "spec_acc": _rows_cpu(spec_acc._buf) if spec_acc is not None else None,
++        "x4_acc": ({k: _rows_cpu(acc._buf) for k, acc in x4_mon._acc.items()}
++                   if x4_mon is not None else None),
++        "x4_ref": copy.deepcopy(x4_mon._ref) if x4_mon is not None else None,
++        "obs_mon": obs,
++        "monitors": copy.deepcopy(monitors or {}),
++    }
++    return {"rng_state": rng_state, "data_pos": data_pos,
++            "loop_state": loop_state}
++
++
++def read_resume_state(ckpt_path) -> dict | None:
++    """The exact-resume payload of ``ckpt_path``, or ``None`` when it carries
++    none (a checkpoint written before F3). ``mmap``: the model tensors are
++    never materialised -- this is a second read of a file ``load_resume`` has
++    just loaded, and it must not double the resume's peak memory. The payload
++    is DEEP-COPIED out and the mapping dropped before returning, so the next
++    atomic ``os.replace`` onto this path is not blocked by a live mapping
++    (Windows)."""
++    import copy  # noqa: PLC0415
++    import gc  # noqa: PLC0415
++    p = Path(ckpt_path)
++    try:
++        ck = torch.load(p, map_location="cpu", weights_only=False, mmap=True)
++    except (RuntimeError, ValueError, TypeError):
++        ck = torch.load(p, map_location="cpu", weights_only=False)
++    if not isinstance(ck, dict) or not isinstance(ck.get("rng_state"), dict):
++        del ck
++        gc.collect()
++        return None
++    out = {k: copy.deepcopy(ck.get(k)) for k in RESUME_STATE_KEYS}
++    del ck
++    gc.collect()
++    return out
++
++
++def resume_state_record(state: dict | None, *, stream_now: dict) -> dict:
++    """What config.json says about the resume's streams (``resume_rng``)."""
++    if state is None:
++        return {"mode": "absent-replayed",
++                "_read": "the checkpoint predates the exact-resume payload "
++                         "(F3, 2026-09-27): every stream restarted from --seed, "
++                         "so the steps after the resume RE-DREW the batches of "
++                         "the run's first steps. Numbers from this segment are "
++                         "not those of an uninterrupted run."}
++    rs = state.get("rng_state") or {}
++    dp = state.get("data_pos") or {}
++    saved = dp.get("stream") or {}
++    mism = {k: [saved.get(k), stream_now.get(k)]
++            for k in sorted(set(saved) | set(stream_now))
++            if saved.get(k) != stream_now.get(k)}
++    return {"mode": "restored" if not mism else "restored-stream-mismatch",
++            "schema": rs.get("schema"), "saved_step": dp.get("step"),
++            "streams_saved": sorted(k for k, v in rs.items()
++                                    if k != "schema" and v is not None),
++            "stream_mismatch": mism,
++            "_read": ("every stream, the T3 weights and the rolling buffers "
++                      "continue from the end of the saved step: the run is the "
++                      "uninterrupted run" if not mism else
++                      "RESTORED, but the stream fingerprint differs from the "
++                      "saved one (listed): the continuation is deterministic "
++                      "and NOT the uninterrupted run's")}
++
++
++def apply_resume_state(state: dict, *, device, rng, gen, spec_gen=None,
++                       x4_mon=None, sigreg_bank=None, spec_acc=None,
++                       obs_mon=None) -> dict:
++    """Restore every stream and buffer :func:`capture_resume_state` saved into
++    the LIVE objects; returns the loop-locals ``train()`` re-binds
++    (``t3_alpha_applied`` / ``t3_prog_applied`` / ``monitors``) plus
++    ``applied`` (what was restored). A stream saved but not live now (or live
++    but not saved) is left as seeded -- the fingerprint mismatch in
++    config.json already names why."""
++    import copy  # noqa: PLC0415
++    rs = state.get("rng_state") or {}
++    dp = state.get("data_pos") or {}
++    ls = state.get("loop_state") or {}
++    applied: list[str] = []
++    torch.set_rng_state(rs["torch_cpu"])
++    applied.append("torch_cpu")
++    random.setstate(tuple(rs["python_random"]))
++    applied.append("python_random")
++    if rng is not None and rs.get("sampler_rng") is not None:
++        rng.setstate(tuple(rs["sampler_rng"]))
++        applied.append("sampler_rng")
++    if gen is not None and rs.get("gen") is not None:
++        gen.set_state(rs["gen"])
++        applied.append("gen")
++    if spec_gen is not None and rs.get("spec_gen") is not None:
++        spec_gen.set_state(rs["spec_gen"])
++        applied.append("spec_gen")
++    x4g = getattr(x4_mon, "generator", None) if x4_mon is not None else None
++    if x4g is not None and rs.get("x4_gen") is not None:
++        x4g.set_state(rs["x4_gen"])
++        applied.append("x4_gen")
++    cuda = rs.get("torch_cuda")
++    if (cuda is not None and str(device).startswith("cuda")
++            and torch.cuda.is_available()
++            and len(cuda) == torch.cuda.device_count()):
++        torch.cuda.set_rng_state_all(cuda)
++        applied.append("torch_cuda")
++    if rs.get("numpy") is not None:
++        try:
++            _np_rng_set(rs["numpy"])
++            applied.append("numpy")
++        except Exception as e:                           # noqa: BLE001
++            # nothing on the path draws from numpy (grep); say so, never hide it
++            applied.append(f"numpy-NOT-restored:{type(e).__name__}")
++    if sigreg_bank is not None and ls.get("sigreg_bank") is not None:
++        keep = sigreg_bank.capacity - 1
++        rows = ls["sigreg_bank"][-keep:] if keep > 0 else []
++        sigreg_bank._buf = [t.to(device) for t in rows]
++        applied.append("sigreg_bank")
++    if spec_acc is not None and ls.get("spec_acc") is not None:
++        spec_acc._buf = list(ls["spec_acc"])[-spec_acc.capacity:]
++        applied.append("spec_acc")
++    if x4_mon is not None and ls.get("x4_acc") is not None:
++        for k, acc in x4_mon._acc.items():
++            if k in ls["x4_acc"]:
++                acc._buf = list(ls["x4_acc"][k])[-acc.capacity:]
++        x4_mon._ref = copy.deepcopy(ls.get("x4_ref") or {})
++        applied.append("x4_monitor")
++    ob = ls.get("obs_mon")
++    if obs_mon is not None and ob is not None:
++        for key, dq in (("f", obs_mon._f), ("p", obs_mon._p), ("t", obs_mon._t)):
++            dq.clear()
++            dq.extend(ob[key])
++        obs_mon.rho0, obs_mon.rho0_step = ob["rho0"], ob["rho0_step"]
++        obs_mon.consecutive_fails = int(ob["consecutive_fails"])
++        applied.append("obs_monitor")
++    return {"t3_alpha_applied": dp.get("t3_alpha_applied"),
++            "t3_prog_applied": dp.get("t3_prog_applied"),
++            "monitors": copy.deepcopy(ls.get("monitors") or {}),
++            "applied": applied}
++
++
+ def resume_guard(out_dir, *, resume: str, force_rerun: bool) -> dict:
+     """Decide whether this launch RESUMES, STARTS FRESH, or is REFUSED.
+ 

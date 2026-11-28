@@ -1,0 +1,938 @@
+{
+ "cfg": {
+  "root": "/home/nvidia/experiments",
+  "workdir": "/home/nvidia/TanitAD/stack",
+  "train_cache": "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl",
+  "val_cache": "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+  "nav_labels": "/home/nvidia/data/v72/nav.jsonl.gz",
+  "s2_labels": "/home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz",
+  "speed_max_sidecar": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+  "tac_op_cond": "detached",
+  "n_candidates": 1,
+  "tac_goal_cond": false,
+  "sw_dir": "v7f-SW-30k"
+ },
+ "geometry_from": "<SCRATCH>\\emit1\\sw_record\\config.json",
+ "argv": {
+  "S-W": [
+   "--stage",
+   "S-W",
+   "--out",
+   "/home/nvidia/experiments/v7f-SW-30k",
+   "--steps",
+   "30000",
+   "--batch",
+   "8",
+   "--lr",
+   "0.0001",
+   "--n-candidates",
+   "1",
+   "--nav-cond",
+   "--nav-labels",
+   "/home/nvidia/data/v72/nav.jsonl.gz",
+   "--strategic-off",
+   "--goal-multilabel",
+   "--newest-frame-only",
+   "--in-channels",
+   "3",
+   "--enc-dim",
+   "768",
+   "--enc-depth",
+   "12",
+   "--enc-heads",
+   "12",
+   "--frame-h",
+   "256",
+   "--frame-w",
+   "640",
+   "--horizons",
+   "1",
+   "--v2-cache",
+   "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl",
+   "--v2-val-cache",
+   "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+   "--v2-lru",
+   "6",
+   "--save-every",
+   "250",
+   "--frame-hfov",
+   "120",
+   "--projection",
+   "cylindrical",
+   "--require-parity"
+  ],
+  "S-T": [
+   "--stage",
+   "S-T",
+   "--out",
+   "/home/nvidia/experiments/v7f-ST-10k",
+   "--steps",
+   "10000",
+   "--batch",
+   "8",
+   "--lr",
+   "0.0001",
+   "--n-candidates",
+   "1",
+   "--a-max",
+   "4.0",
+   "--adapter-hidden",
+   "512",
+   "--anchor-goal",
+   "none",
+   "--d-goal-embed",
+   "128",
+   "--d-str",
+   "256",
+   "--d-t2-hidden",
+   "256",
+   "--d-t2-proj",
+   "128",
+   "--d-tac",
+   "512",
+   "--diffusion-hidden",
+   "256",
+   "--diffusion-noise-rho",
+   "0.9",
+   "--diffusion-sigma-a",
+   "2.0",
+   "--diffusion-sigma-k",
+   "0.1",
+   "--diffusion-steps",
+   "4",
+   "--dt",
+   "0.1",
+   "--ema-decay",
+   "0.996",
+   "--ema-decay-ramp",
+   "off",
+   "--ema-decay-start",
+   "0.99",
+   "--enc-depth",
+   "12",
+   "--enc-dim",
+   "768",
+   "--enc-grad-checkpoint",
+   "auto",
+   "--enc-heads",
+   "12",
+   "--f-blocks",
+   "3",
+   "--f-hidden-str",
+   "512",
+   "--f-hidden-tac",
+   "512",
+   "--fallback-roll-k",
+   "10",
+   "--frame-h",
+   "256",
+   "--frame-w",
+   "640",
+   "--horizons",
+   "1",
+   "--in-channels",
+   "3",
+   "--kappa-max",
+   "0.2",
+   "--mpc-lr",
+   "0.05",
+   "--mpc-roll-k",
+   "0",
+   "--mpc-steps",
+   "3",
+   "--mpc-topk",
+   "2",
+   "--mpc-w-consist",
+   "0.0",
+   "--mpc-w-goal",
+   "1.0",
+   "--mpc-w-kin",
+   "0.1",
+   "--n-agent-slots",
+   "8",
+   "--n-anchors",
+   "256",
+   "--n-lat-bins",
+   "16",
+   "--n-registers",
+   "4",
+   "--n-slot-queries",
+   "100",
+   "--newest-frame-only",
+   "--o5-target",
+   "live",
+   "--o5-target-crop",
+   "0.0",
+   "--param-budget",
+   "300000000",
+   "--patch",
+   "16",
+   "--plan-steps",
+   "60",
+   "--plan-wta-eps",
+   "0.0",
+   "--pred-depth",
+   "6",
+   "--pred-dim",
+   "768",
+   "--pred-heads",
+   "12",
+   "--readout-dim",
+   "128",
+   "--readout-grid",
+   "4",
+   "--selector-mlp-hidden",
+   "256",
+   "--selector-tau-m",
+   "1.0",
+   "--sigreg-free-dims",
+   "0",
+   "--sigreg-slices",
+   "512",
+   "--sigreg-subspaces",
+   "1",
+   "--slot-depth",
+   "3",
+   "--slot-heads",
+   "8",
+   "--slot-hidden",
+   "256",
+   "--slot-src",
+   "cells",
+   "--t2-tau",
+   "0.1",
+   "--tac-vocab-version",
+   "v7.0",
+   "--uplink",
+   "stopgrad",
+   "--w-o14",
+   "0.0",
+   "--window",
+   "6",
+   "--init-from",
+   "/home/nvidia/experiments/v7f-SW-30k/ckpt.pt",
+   "--prev-gate",
+   "/home/nvidia/experiments/v7f-SW-30k/stage_gate.json",
+   "--max-horizon",
+   "60",
+   "--proposals",
+   "query",
+   "--selector",
+   "none",
+   "--w-t1",
+   "1.0",
+   "--nav-cond",
+   "--nav-labels",
+   "/home/nvidia/data/v72/nav.jsonl.gz",
+   "--strategic-off",
+   "--max-speed-input-v6",
+   "--plan-vmax-cap",
+   "--speed-max-sidecar-v6",
+   "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+   "--w-tac-label-all",
+   "1.0",
+   "--goal-multilabel",
+   "--s2-labels",
+   "/home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz",
+   "--tac-op-cond",
+   "detached",
+   "--v2-cache",
+   "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl",
+   "--v2-val-cache",
+   "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+   "--v2-lru",
+   "6",
+   "--save-every",
+   "250",
+   "--frame-hfov",
+   "120",
+   "--projection",
+   "cylindrical",
+   "--require-parity",
+   "--dump-seam-plan",
+   "/home/nvidia/experiments/v7f-ST-10k/seam"
+  ]
+ },
+ "launch_line": {
+  "S-W": "mkdir -p /home/nvidia/experiments/v7f-SW-30k && cd /home/nvidia/TanitAD/stack && PYTHONPATH=/home/nvidia/TanitAD/stack:/home/nvidia/TanitAD/taniteval OMP_NUM_THREADS=6 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True setsid nohup python3 -u scripts/train_v6_staged.py --stage S-W --out /home/nvidia/experiments/v7f-SW-30k --steps 30000 --batch 8 --lr 0.0001 --n-candidates 1 --nav-cond --nav-labels /home/nvidia/data/v72/nav.jsonl.gz --strategic-off --goal-multilabel --newest-frame-only --in-channels 3 --enc-dim 768 --enc-depth 12 --enc-heads 12 --frame-h 256 --frame-w 640 --horizons 1 --v2-cache /home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 6 --save-every 250 --frame-hfov 120 --projection cylindrical --require-parity > /home/nvidia/experiments/v7f-SW-30k/train.out 2>&1 < /dev/null &",
+  "S-T": "mkdir -p /home/nvidia/experiments/v7f-ST-10k/seam && cd /home/nvidia/TanitAD/stack && PYTHONPATH=/home/nvidia/TanitAD/stack:/home/nvidia/TanitAD/taniteval OMP_NUM_THREADS=6 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True setsid nohup python3 -u scripts/train_v6_staged.py --stage S-T --out /home/nvidia/experiments/v7f-ST-10k --steps 10000 --batch 8 --lr 0.0001 --n-candidates 1 --a-max 4.0 --adapter-hidden 512 --anchor-goal none --d-goal-embed 128 --d-str 256 --d-t2-hidden 256 --d-t2-proj 128 --d-tac 512 --diffusion-hidden 256 --diffusion-noise-rho 0.9 --diffusion-sigma-a 2.0 --diffusion-sigma-k 0.1 --diffusion-steps 4 --dt 0.1 --ema-decay 0.996 --ema-decay-ramp off --ema-decay-start 0.99 --enc-depth 12 --enc-dim 768 --enc-grad-checkpoint auto --enc-heads 12 --f-blocks 3 --f-hidden-str 512 --f-hidden-tac 512 --fallback-roll-k 10 --frame-h 256 --frame-w 640 --horizons 1 --in-channels 3 --kappa-max 0.2 --mpc-lr 0.05 --mpc-roll-k 0 --mpc-steps 3 --mpc-topk 2 --mpc-w-consist 0.0 --mpc-w-goal 1.0 --mpc-w-kin 0.1 --n-agent-slots 8 --n-anchors 256 --n-lat-bins 16 --n-registers 4 --n-slot-queries 100 --newest-frame-only --o5-target live --o5-target-crop 0.0 --param-budget 300000000 --patch 16 --plan-steps 60 --plan-wta-eps 0.0 --pred-depth 6 --pred-dim 768 --pred-heads 12 --readout-dim 128 --readout-grid 4 --selector-mlp-hidden 256 --selector-tau-m 1.0 --sigreg-free-dims 0 --sigreg-slices 512 --sigreg-subspaces 1 --slot-depth 3 --slot-heads 8 --slot-hidden 256 --slot-src cells --t2-tau 0.1 --tac-vocab-version v7.0 --uplink stopgrad --w-o14 0.0 --window 6 --init-from /home/nvidia/experiments/v7f-SW-30k/ckpt.pt --prev-gate /home/nvidia/experiments/v7f-SW-30k/stage_gate.json --max-horizon 60 --proposals query --selector none --w-t1 1.0 --nav-cond --nav-labels /home/nvidia/data/v72/nav.jsonl.gz --strategic-off --max-speed-input-v6 --plan-vmax-cap --speed-max-sidecar-v6 /home/nvidia/data/refcv6_speed_max_v8_train.jsonl --w-tac-label-all 1.0 --goal-multilabel --s2-labels /home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz --tac-op-cond detached --v2-cache /home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 6 --save-every 250 --frame-hfov 120 --projection cylindrical --require-parity --dump-seam-plan /home/nvidia/experiments/v7f-ST-10k/seam > /home/nvidia/experiments/v7f-ST-10k/train.out 2>&1 < /dev/null &"
+ },
+ "gate": {
+  "S-W": {
+   "profile_argv_rules": {
+    "refusals": [],
+    "pi_pending": []
+   },
+   "per_rule": [
+    {
+     "rule": "stage_allowed",
+     "req": "R6",
+     "flag": "--stage",
+     "want": [
+      "S-W",
+      "S-T"
+     ],
+     "have": "S-W",
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (every stage)",
+     "req": "R2",
+     "flag": "--nav-cond",
+     "have": true,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (every stage)",
+     "req": "R6",
+     "flag": "--strategic-off",
+     "have": true,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "R2",
+     "flag": "--i-know-this-arm-predates-nav",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the isolation CONTROL arm is not v7F",
+     "flag": "--i-know-this-is-the-control-arm",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the X3 mis-wired control is not v7F",
+     "flag": "--no-isolate-planner",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the X3 mis-wired control is not v7F",
+     "flag": "--no-isolate-uplink",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the X3 mis-wired control is not v7F",
+     "flag": "--no-isolate-interp",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "R6",
+     "flag": "--tac-goal-cond",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "R3",
+     "flag": "--goal-factored",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_values",
+     "req": "SEL-1",
+     "flag": "--selector",
+     "bad": [
+      "goal",
+      "mlp"
+     ],
+     "have": null,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_values",
+     "req": "R4:",
+     "flag": "--tac-op-cond",
+     "bad": [
+      "off"
+     ],
+     "have": null,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_positive",
+     "req": "R6",
+     "flag": "--w-s1-multi",
+     "have": null,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_positive",
+     "req": "R6",
+     "flag": "--w-s2-goal",
+     "have": null,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "pi_pending_values",
+     "req": "R4 / D1",
+     "flag": "--tac-op-cond",
+     "have": null,
+     "verdict": "n/a (flag absent)"
+    }
+   ],
+   "chain_rules": {
+    "stage": "S-W",
+    "gate": "launch_gate.PROFILES['v7f'] via profile_argv_rules (imported)",
+    "gate_refusals": [],
+    "pi_pending": [],
+    "chain_refusals": [],
+    "ok": true
+   }
+  },
+  "S-T": {
+   "profile_argv_rules": {
+    "refusals": [],
+    "pi_pending": [
+     "--tac-op-cond detached: PI decision D1 (R4): detached (the plan loss trains the port only) vs e2e (it also shapes the behaviours)"
+    ]
+   },
+   "per_rule": [
+    {
+     "rule": "stage_allowed",
+     "req": "R6",
+     "flag": "--stage",
+     "want": [
+      "S-W",
+      "S-T"
+     ],
+     "have": "S-T",
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (every stage)",
+     "req": "R2",
+     "flag": "--nav-cond",
+     "have": true,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (every stage)",
+     "req": "R6",
+     "flag": "--strategic-off",
+     "have": true,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (S-T)",
+     "req": "R1a",
+     "flag": "--max-speed-input-v6",
+     "have": [],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (S-T)",
+     "req": "R1b",
+     "flag": "--plan-vmax-cap",
+     "have": [],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (S-T)",
+     "req": "R1:",
+     "flag": "--speed-max-sidecar-v6",
+     "have": [
+      "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl"
+     ],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (S-T)",
+     "req": "R3:",
+     "flag": "--goal-multilabel",
+     "have": [],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_on (S-T)",
+     "req": "R4",
+     "flag": "--tac-op-cond",
+     "have": [
+      "detached"
+     ],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "required_positive (S-T)",
+     "req": "R3",
+     "flag": "--w-tac-label-all",
+     "have": [
+      "1.0"
+     ],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "R2",
+     "flag": "--i-know-this-arm-predates-nav",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the isolation CONTROL arm is not v7F",
+     "flag": "--i-know-this-is-the-control-arm",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the X3 mis-wired control is not v7F",
+     "flag": "--no-isolate-planner",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the X3 mis-wired control is not v7F",
+     "flag": "--no-isolate-uplink",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "the X3 mis-wired control is not v7F",
+     "flag": "--no-isolate-interp",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "R6",
+     "flag": "--tac-goal-cond",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_flag",
+     "req": "R3",
+     "flag": "--goal-factored",
+     "have": false,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_values",
+     "req": "SEL-1",
+     "flag": "--selector",
+     "bad": [
+      "goal",
+      "mlp"
+     ],
+     "have": [
+      "none"
+     ],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_values",
+     "req": "R4:",
+     "flag": "--tac-op-cond",
+     "bad": [
+      "off"
+     ],
+     "have": [
+      "detached"
+     ],
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_positive",
+     "req": "R6",
+     "flag": "--w-s1-multi",
+     "have": null,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "forbidden_positive",
+     "req": "R6",
+     "flag": "--w-s2-goal",
+     "have": null,
+     "verdict": "PASS"
+    },
+    {
+     "rule": "pi_pending_values",
+     "req": "R4 / D1",
+     "flag": "--tac-op-cond",
+     "have": [
+      "detached"
+     ],
+     "verdict": "PI-DECISION"
+    }
+   ],
+   "chain_rules": {
+    "stage": "S-T",
+    "gate": "launch_gate.PROFILES['v7f'] via profile_argv_rules (imported)",
+    "gate_refusals": [],
+    "pi_pending": [
+     "--tac-op-cond detached: PI decision D1 (R4): detached (the plan loss trains the port only) vs e2e (it also shapes the behaviours)"
+    ],
+    "chain_refusals": [],
+    "ok": true
+   }
+  }
+ },
+ "diff_vs_gate_argv": {
+  "S-W": {
+   "only_in_chain": {
+    "--n-candidates": [
+     "1"
+    ],
+    "--v2-val-cache": [
+     "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+    ],
+    "--v2-lru": [
+     "6"
+    ],
+    "--frame-hfov": [
+     "120"
+    ],
+    "--projection": [
+     "cylindrical"
+    ]
+   },
+   "only_in_gate_argv": {
+    "--log-every": [
+     "2"
+    ]
+   },
+   "value_differs": {
+    "--out": {
+     "chain": [
+      "/home/nvidia/experiments/v7f-SW-30k"
+     ],
+     "gate": [
+      "/home/nvidia/experiments/v7f-st"
+     ]
+    },
+    "--steps": {
+     "chain": [
+      "30000"
+     ],
+     "gate": [
+      "10000"
+     ]
+    }
+   },
+   "same": [
+    "--batch",
+    "--enc-depth",
+    "--enc-dim",
+    "--enc-heads",
+    "--frame-h",
+    "--frame-w",
+    "--goal-multilabel",
+    "--horizons",
+    "--in-channels",
+    "--lr",
+    "--nav-cond",
+    "--nav-labels",
+    "--newest-frame-only",
+    "--require-parity",
+    "--save-every",
+    "--stage",
+    "--strategic-off",
+    "--v2-cache"
+   ]
+  },
+  "S-T": {
+   "only_in_chain": {
+    "--a-max": [
+     "4.0"
+    ],
+    "--adapter-hidden": [
+     "512"
+    ],
+    "--anchor-goal": [
+     "none"
+    ],
+    "--d-goal-embed": [
+     "128"
+    ],
+    "--d-str": [
+     "256"
+    ],
+    "--d-t2-hidden": [
+     "256"
+    ],
+    "--d-t2-proj": [
+     "128"
+    ],
+    "--d-tac": [
+     "512"
+    ],
+    "--diffusion-hidden": [
+     "256"
+    ],
+    "--diffusion-noise-rho": [
+     "0.9"
+    ],
+    "--diffusion-sigma-a": [
+     "2.0"
+    ],
+    "--diffusion-sigma-k": [
+     "0.1"
+    ],
+    "--diffusion-steps": [
+     "4"
+    ],
+    "--dt": [
+     "0.1"
+    ],
+    "--ema-decay": [
+     "0.996"
+    ],
+    "--ema-decay-ramp": [
+     "off"
+    ],
+    "--ema-decay-start": [
+     "0.99"
+    ],
+    "--enc-grad-checkpoint": [
+     "auto"
+    ],
+    "--f-blocks": [
+     "3"
+    ],
+    "--f-hidden-str": [
+     "512"
+    ],
+    "--f-hidden-tac": [
+     "512"
+    ],
+    "--fallback-roll-k": [
+     "10"
+    ],
+    "--kappa-max": [
+     "0.2"
+    ],
+    "--mpc-lr": [
+     "0.05"
+    ],
+    "--mpc-roll-k": [
+     "0"
+    ],
+    "--mpc-steps": [
+     "3"
+    ],
+    "--mpc-topk": [
+     "2"
+    ],
+    "--mpc-w-consist": [
+     "0.0"
+    ],
+    "--mpc-w-goal": [
+     "1.0"
+    ],
+    "--mpc-w-kin": [
+     "0.1"
+    ],
+    "--n-agent-slots": [
+     "8"
+    ],
+    "--n-anchors": [
+     "256"
+    ],
+    "--n-lat-bins": [
+     "16"
+    ],
+    "--n-registers": [
+     "4"
+    ],
+    "--n-slot-queries": [
+     "100"
+    ],
+    "--o5-target": [
+     "live"
+    ],
+    "--o5-target-crop": [
+     "0.0"
+    ],
+    "--param-budget": [
+     "300000000"
+    ],
+    "--patch": [
+     "16"
+    ],
+    "--plan-steps": [
+     "60"
+    ],
+    "--plan-wta-eps": [
+     "0.0"
+    ],
+    "--pred-depth": [
+     "6"
+    ],
+    "--pred-dim": [
+     "768"
+    ],
+    "--pred-heads": [
+     "12"
+    ],
+    "--readout-dim": [
+     "128"
+    ],
+    "--readout-grid": [
+     "4"
+    ],
+    "--selector-mlp-hidden": [
+     "256"
+    ],
+    "--selector-tau-m": [
+     "1.0"
+    ],
+    "--sigreg-free-dims": [
+     "0"
+    ],
+    "--sigreg-slices": [
+     "512"
+    ],
+    "--sigreg-subspaces": [
+     "1"
+    ],
+    "--slot-depth": [
+     "3"
+    ],
+    "--slot-heads": [
+     "8"
+    ],
+    "--slot-hidden": [
+     "256"
+    ],
+    "--slot-src": [
+     "cells"
+    ],
+    "--t2-tau": [
+     "0.1"
+    ],
+    "--tac-vocab-version": [
+     "v7.0"
+    ],
+    "--uplink": [
+     "stopgrad"
+    ],
+    "--w-o14": [
+     "0.0"
+    ],
+    "--window": [
+     "6"
+    ],
+    "--max-horizon": [
+     "60"
+    ],
+    "--w-t1": [
+     "1.0"
+    ],
+    "--v2-val-cache": [
+     "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+    ],
+    "--v2-lru": [
+     "6"
+    ],
+    "--frame-hfov": [
+     "120"
+    ],
+    "--projection": [
+     "cylindrical"
+    ],
+    "--dump-seam-plan": [
+     "/home/nvidia/experiments/v7f-ST-10k/seam"
+    ]
+   },
+   "only_in_gate_argv": {
+    "--log-every": [
+     "2"
+    ]
+   },
+   "value_differs": {
+    "--out": {
+     "chain": [
+      "/home/nvidia/experiments/v7f-ST-10k"
+     ],
+     "gate": [
+      "/home/nvidia/experiments/v7f-st"
+     ]
+    },
+    "--init-from": {
+     "chain": [
+      "/home/nvidia/experiments/v7f-SW-30k/ckpt.pt"
+     ],
+     "gate": [
+      "/home/nvidia/experiments/v7f-sw/ckpt.pt"
+     ]
+    },
+    "--prev-gate": {
+     "chain": [
+      "/home/nvidia/experiments/v7f-SW-30k/stage_gate.json"
+     ],
+     "gate": [
+      "/home/nvidia/experiments/v7f-sw/stage_gate.json"
+     ]
+    }
+   },
+   "same": [
+    "--batch",
+    "--enc-depth",
+    "--enc-dim",
+    "--enc-heads",
+    "--frame-h",
+    "--frame-w",
+    "--goal-multilabel",
+    "--horizons",
+    "--in-channels",
+    "--lr",
+    "--max-speed-input-v6",
+    "--n-candidates",
+    "--nav-cond",
+    "--nav-labels",
+    "--newest-frame-only",
+    "--plan-vmax-cap",
+    "--proposals",
+    "--require-parity",
+    "--s2-labels",
+    "--save-every",
+    "--selector",
+    "--speed-max-sidecar-v6",
+    "--stage",
+    "--steps",
+    "--strategic-off",
+    "--tac-op-cond",
+    "--v2-cache",
+    "--w-tac-label-all"
+   ]
+  }
+ },
+ "trainer_preflight": {
+  "S-W": {
+   "n_refusals": 0,
+   "refusals": [],
+   "substituted": {
+    "/home/nvidia/data/v72/nav.jsonl.gz": "<SCRATCH>/v7fdata/labels/s2_labels_v7.2_train.jsonl.gz",
+    "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl": "<SCRATCH>\\emit1\\EMPTY_v2cache",
+    "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl": "<SCRATCH>\\emit1\\EMPTY_v2cache"
+   },
+   "_read": "trainer.preflight on the NON-dry emitted line, Thor data paths -> local copies of the same files, corpus -> an EMPTY dir; --init-from/--prev-gate/--dump-seam-plan kept as emitted (preflight checks their presence / importability, not the files)"
+  },
+  "S-T": {
+   "n_refusals": 0,
+   "refusals": [],
+   "substituted": {
+    "/home/nvidia/data/v72/nav.jsonl.gz": "<SCRATCH>/v7fdata/labels/s2_labels_v7.2_train.jsonl.gz",
+    "/home/nvidia/data/v72/labels/s2_labels_v7.2_train.jsonl.gz": "<SCRATCH>/v7fdata/labels/s2_labels_v7.2_train.jsonl.gz",
+    "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl": "<SCRATCH>/v7fdata/speed_max_v72_train.jsonl",
+    "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl": "<SCRATCH>\\emit1\\EMPTY_v2cache",
+    "/home/nvidia/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl": "<SCRATCH>\\emit1\\EMPTY_v2cache"
+   },
+   "_read": "trainer.preflight on the NON-dry emitted line, Thor data paths -> local copies of the same files, corpus -> an EMPTY dir; --init-from/--prev-gate/--dump-seam-plan kept as emitted (preflight checks their presence / importability, not the files)"
+  }
+ }
+}

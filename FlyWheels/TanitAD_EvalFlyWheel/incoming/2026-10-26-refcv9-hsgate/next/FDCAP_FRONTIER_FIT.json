@@ -1,0 +1,200 @@
+{
+ "tool": "hsgate_fdcap_frontier.py",
+ "role": "FIT-SIDE DESCRIPTIVE ONLY (no bar, no eval139 read, nothing frozen, no threshold chosen for any scored arm)",
+ "prereg": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_hsgate\\PREREG_HSGATE.md",
+  "sha256": "2331e1f3887079500736ca4a243ebfabaae544fc9d768b981d043cdd99c26cf1",
+  "seal_matches": true
+ },
+ "gate_sha256": "198ef6588c27601b05e5a265d3fb378f281e7fe9d0de695fcf1ed35c5fbaae4c",
+ "lambda": 0.1,
+ "lambda_note": "registered lambda reused for the alt labels, NOT re-selected",
+ "cv": "5-fold episode CV, fold seed 1 (the registered lambda-CV folds, FIT_ROWS.cv_fold)",
+ "oracle": {
+  "n_rows": 7147,
+  "n_GT_cruise": 3704,
+  "n_GT_decel": 1503,
+  "rows_gating_fixes_MD": 265,
+  "rows_gating_adds_MD": 87,
+  "rows_gating_adds_FD": 403,
+  "rows_gating_removes_FD": 108,
+  "MD_if_gate_exactly_the_MD_fix_rows": 0.2860944777112442,
+  "FD_H2cn_OOF": 0.08153347732181425,
+  "MD_H2cn_OOF": 0.4624085163007319,
+  "ADE_H2cn_OOF": 2.3860266844206297
+ },
+ "controls": {
+  "K-REPRO_tau0_heldout_equals_feasibility_run": true,
+  "K-FROZEN_insample_decisions_equal_g_final": true,
+  "K-PREFIX_EMPTY_equals_H2cn": true,
+  "K-PREFIX_FULL_equals_FACTORED": true,
+  "ALL_PASS": true
+ },
+ "results": {
+  "registered_gate_heldout": {
+   "n_thresholds": 7147,
+   "n_feasible_under_cap": 1,
+   "best_MD_under_cap": {
+    "F_rate": 0.00013991884706870015,
+    "k": 1,
+    "FD": 0.08153347732181425,
+    "MD": 0.4624085163007319,
+    "ADE_S6": 2.3863366929568195,
+    "tau_logit": 1.0088353779190695
+   },
+   "largest_F_rate_under_cap": {
+    "F_rate": 0.00013991884706870015,
+    "k": 1,
+    "FD": 0.08153347732181425,
+    "MD": 0.4624085163007319,
+    "ADE_S6": 2.3863366929568195,
+    "tau_logit": 1.0088353779190695
+   },
+   "best_MD_at_FD_cost_le_0.002": {
+    "F_rate": 0.04883167762697636,
+    "FD": 0.08342332613390928,
+    "MD": 0.45442448436460414,
+    "ADE_S6": 2.382427318644946,
+    "tau_logit": 0.058686716965700936
+   },
+   "best_MD_at_FD_cost_le_0.005": {
+    "F_rate": 0.07583601511123549,
+    "FD": 0.0861231101511879,
+    "MD": 0.4491017964071856,
+    "ADE_S6": 2.3786105662637933,
+    "tau_logit": 0.023587154440343427
+   },
+   "tau0": {
+    "F_rate": 0.10032181334825802,
+    "FD": 0.08936285097192224,
+    "MD": 0.4357950765136394,
+    "ADE_S6": 2.378496818553181
+   }
+  },
+  "registered_gate_insample": {
+   "n_thresholds": 7147,
+   "n_feasible_under_cap": 17,
+   "best_MD_under_cap": {
+    "F_rate": 0.00013991884706870015,
+    "k": 1,
+    "FD": 0.08153347732181425,
+    "MD": 0.4624085163007319,
+    "ADE_S6": 2.385896331864683,
+    "tau_logit": 0.774154396347259
+   },
+   "largest_F_rate_under_cap": {
+    "F_rate": 0.0023786204001679024,
+    "k": 17,
+    "FD": 0.08153347732181425,
+    "MD": 0.4624085163007319,
+    "ADE_S6": 2.38491663114418,
+    "tau_logit": 0.6876166630970604
+   },
+   "best_MD_at_FD_cost_le_0.002": {
+    "F_rate": 0.05400867496851826,
+    "FD": 0.08315334773218142,
+    "MD": 0.44976713240186295,
+    "ADE_S6": 2.3713983403609173,
+    "tau_logit": 0.0549535427520228
+   },
+   "best_MD_at_FD_cost_le_0.005": {
+    "F_rate": 0.086329928641388,
+    "FD": 0.08585313174946003,
+    "MD": 0.4337990685296075,
+    "ADE_S6": 2.3707657780046816,
+    "tau_logit": -0.008495015683619933
+   },
+   "tau0": {
+    "F_rate": 0.08213236322932699,
+    "FD": 0.08558315334773217,
+    "MD": 0.437125748502994,
+    "ADE_S6": 2.3714721066600153
+   }
+  },
+  "LAB_NOFD_heldout": {
+   "n_thresholds": 7147,
+   "n_feasible_under_cap": 109,
+   "best_MD_under_cap": {
+    "F_rate": 0.00013991884706870015,
+    "k": 1,
+    "FD": 0.08153347732181425,
+    "MD": 0.4624085163007319,
+    "ADE_S6": 2.3863366929568195,
+    "tau_logit": 0.9805756741664227
+   },
+   "largest_F_rate_under_cap": {
+    "F_rate": 0.03973695256751084,
+    "k": 284,
+    "FD": 0.08153347732181425,
+    "MD": 0.4630738522954092,
+    "ADE_S6": 2.3854473506196974,
+    "tau_logit": 0.030959124723125925
+   },
+   "best_MD_at_FD_cost_le_0.002": {
+    "F_rate": 0.08255211977053309,
+    "FD": 0.08315334773218142,
+    "MD": 0.4564204923486361,
+    "ADE_S6": 2.394494368745303,
+    "tau_logit": -0.021925203409459665
+   },
+   "best_MD_at_FD_cost_le_0.005": {
+    "F_rate": 0.10745767454876172,
+    "FD": 0.08639308855291576,
+    "MD": 0.447771124417831,
+    "ADE_S6": 2.3920820891552164,
+    "tau_logit": -0.048913503408275605
+   },
+   "tau0": {
+    "F_rate": 0.059745347698334964,
+    "FD": 0.08234341252699784,
+    "MD": 0.46041250831669994,
+    "ADE_S6": 2.390981593031425
+   },
+   "label_base_rate": 0.4492794179375962
+  },
+  "LAB_MDFIX_heldout": {
+   "n_thresholds": 7147,
+   "n_feasible_under_cap": 25,
+   "best_MD_under_cap": {
+    "F_rate": 0.0033580523296488037,
+    "k": 24,
+    "FD": 0.08153347732181425,
+    "MD": 0.458416500332668,
+    "ADE_S6": 2.3794781986390228,
+    "tau_logit": -1.8471482805513997
+   },
+   "largest_F_rate_under_cap": {
+    "F_rate": 0.003497971176717504,
+    "k": 25,
+    "FD": 0.08153347732181425,
+    "MD": 0.458416500332668,
+    "ADE_S6": 2.3789231018749004,
+    "tau_logit": -1.8534894772951511
+   },
+   "best_MD_at_FD_cost_le_0.002": {
+    "F_rate": 0.014691478942213516,
+    "FD": 0.08342332613390928,
+    "MD": 0.44045242847638055,
+    "ADE_S6": 2.3727278619947576,
+    "tau_logit": -2.0796768066788296
+   },
+   "best_MD_at_FD_cost_le_0.005": {
+    "F_rate": 0.022107177836854626,
+    "FD": 0.0861231101511879,
+    "MD": 0.4351297405189621,
+    "ADE_S6": 2.3680966895091116,
+    "tau_logit": -2.219280386284717
+   },
+   "tau0": {
+    "F_rate": 0.0,
+    "FD": 0.08153347732181425,
+    "MD": 0.4624085163007319,
+    "ADE_S6": 2.3860266844206297
+   },
+   "label_base_rate": 0.03707849447320554
+  }
+ },
+ "fit_rows_npz_sha256": "fdb9147d0212c2ea5e7e25b4bae7a68bb10d797ba329025e838b051778571686",
+ "generated": "2026-10-26T08:14:01+0100",
+ "wall_s": 5.3
+}

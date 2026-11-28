@@ -1,0 +1,22 @@
+torch 2.7.1+cu128; model.py sha256[:16] e6011cd83c846dfb (pinned e6011cd83c846dfb): OK
+{'C1_peak_is_three_tensors': True, 'C1_peak_bytes': 12582912, 'C1_expected': 12582912, 'C2_freed_tensor_leaves': True, 'C2_live_after_del': 8388608, 'C2_expected': 8388608, 'ok': True}
+     sdpa rigs   B images  weights  act.peak model.peak  analytic ~nvidia-smi   (GB, 1e9 B)   peak op
+efficient    1   1      4     1.29      0.43       1.71      1.63        2.37   aten.gelu.default
+efficient    1   8     32     1.29      3.41       4.69      4.00        5.80   aten.gelu.default
+efficient    1  32    128     1.29     13.62      14.91     12.14       17.54   aten.gelu.default
+efficient    B   1      4     1.29      0.43       1.71      1.63        2.37   aten.gelu.default
+efficient    B   8     32     1.29      3.41       4.69      4.00        5.80   aten.gelu.default
+efficient    B  32    128     1.29     13.62      14.91     12.14       17.54   aten.gelu.default
+     math    1   1      4     1.29      2.17       3.45      1.63        4.37   aten._safe_softmax.default
+     math    1   8     32     1.29     17.32      18.61      4.00       21.80   aten._safe_softmax.default
+     math    1  32    128     1.29     69.29      70.57     12.14       81.56   aten._safe_softmax.default
+     math    B   1      4     1.29      2.17       3.45      1.63        4.37   aten._safe_softmax.default
+     math    B   8     32     1.29     17.32      18.61      4.00       21.80   aten._safe_softmax.default
+     math    B  32    128     1.29     69.29      70.57     12.14       81.56   aten._safe_softmax.default
+B=1: the 12 biggest live tensors at the peak (GB): [0.126, 0.126, 0.032, 0.032, 0.032, 0.031, 0.024, 0.024, 0.0, 0.0, 0.0, 0.0]  (sum of all live at the peak 0.43, + weights 1.29)
+B=1: params 322.07 M, 1925 tokens/image, residual stream 0.03 GB, MLP hidden 0.13 GB, outputs [(1, 64, 20, 3), (1, 64, 7)]
+B=8: the 12 biggest live tensors at the peak (GB): [1.009, 1.009, 0.252, 0.252, 0.252, 0.252, 0.189, 0.189, 0.0, 0.0, 0.0, 0.0]  (sum of all live at the peak 3.41, + weights 1.29)
+B=8: params 322.07 M, 1925 tokens/image, residual stream 0.25 GB, MLP hidden 1.01 GB, outputs [(8, 64, 20, 3), (8, 64, 7)]
+B=32: the 12 biggest live tensors at the peak (GB): [4.037, 4.037, 1.009, 1.009, 1.009, 1.007, 0.755, 0.755, 0.0, 0.0, 0.0, 0.0]  (sum of all live at the peak 13.62, + weights 1.29)
+B=32: params 322.07 M, 1925 tokens/image, residual stream 1.01 GB, MLP hidden 4.04 GB, outputs [(32, 64, 20, 3), (32, 64, 7)]
+ZZVRAM_OK

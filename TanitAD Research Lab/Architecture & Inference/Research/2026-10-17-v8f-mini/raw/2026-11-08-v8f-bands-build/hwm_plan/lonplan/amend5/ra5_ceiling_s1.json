@@ -1,0 +1,215 @@
+{
+ "tag": "R35_s1",
+ "tier": "T0 world-model diagnostic; TRAIN, in-sample for R35 and for RA; feasibility record, never a result",
+ "inputs": {
+  "ckpt": {
+   "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+   "sha256": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881"
+  },
+  "latents_train": {
+   "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+   "sha256": "692eb0021a4b39295a52589ab2b7f2de0a45615345bca7a7acea62101d32708a"
+  },
+  "selection_windows": {
+   "path": "F:/TanitAD-scratch/actrsp/lonplan/sel_s1/selection_windows.npz",
+   "sha256": "a8c6835b9672ff53e4e66b8ebdde376c05d84a9663dae701d9a11fbebadc3b3b"
+  },
+  "readout": {
+   "path": "C:/Users/Admin/AppData/Local/Temp/claude/4ac3a056b343bb35/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/ra/readout_K10_R35_s1.pt",
+   "sha256": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495"
+  },
+  "score_windows_s1_eid_only": {
+   "path": "F:/TanitAD-scratch/actrsp/lonplan/score_windows_s1/windows.npz",
+   "sha256": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0"
+  },
+  "script": {
+   "path": "F:\\TanitAD-scratch\\actrsp\\lonplan\\amend5\\ra5_ceiling.py",
+   "sha256": "38902a20bf043adb55f2c2c0eb35b8e3d7b496ff67f58bb177fa17b1d8c790cc"
+  }
+ },
+ "C_RA_FIT": {
+  "n_pairs": 8306,
+  "n_clips": 141,
+  "n_pairs_record": 8306,
+  "lambda": 0.1,
+  "max_abs_dW": 1.7542442035676023e-09,
+  "max_abs_W": 0.028172191111768104,
+  "max_abs_dmu": 3.837528905759058e-10,
+  "max_abs_dsd": 1.036163821410696e-09,
+  "abs_dym": 0.0,
+  "train_clips_in_score_episodes": 0,
+  "n_score_episodes": 71,
+  "n_score_windows": 994,
+  "s_cal_swap_heldout_frozen": [
+   0.2032336668600536,
+   0.012692756354036425
+  ]
+ },
+ "rows": {
+  "HOLD": {
+   "acc_mae_0_2s": 0.2965,
+   "minus_HOLD": [
+    0.0,
+    [
+     0.0,
+     0.0
+    ]
+   ],
+   "r_departure_vs_logged": null,
+   "mean_abs_departure_2s_mean": 0.0
+  },
+  "HOLD_c": {
+   "acc_mae_0_2s": 0.2967,
+   "minus_HOLD": [
+    0.0001,
+    [
+     -0.0054,
+     0.0061
+    ]
+   ],
+   "r_departure_vs_logged": 0.2678,
+   "mean_abs_departure_2s_mean": 0.0309
+  },
+  "ORAC_MEAN": {
+   "acc_mae_0_2s": 0.1919,
+   "minus_HOLD": [
+    -0.1046,
+    [
+     -0.1259,
+     -0.0864
+    ]
+   ],
+   "r_departure_vs_logged": 1.0,
+   "mean_abs_departure_2s_mean": 0.2657
+  },
+  "RA_READ": {
+   "acc_mae_0_2s": 0.4937,
+   "minus_HOLD": [
+    0.1972,
+    [
+     0.1643,
+     0.233
+    ]
+   ],
+   "r_departure_vs_logged": 0.394,
+   "mean_abs_departure_2s_mean": 0.48
+  },
+  "RA_ORACLE": {
+   "acc_mae_0_2s": 0.8822,
+   "minus_HOLD": [
+    0.5856,
+    [
+     0.525,
+     0.6512
+    ]
+   ],
+   "r_departure_vs_logged": 0.2843,
+   "mean_abs_departure_2s_mean": 0.816
+  },
+  "RA_PLANT": {
+   "acc_mae_0_2s": 0.3014,
+   "minus_HOLD": [
+    0.0049,
+    [
+     -0.0158,
+     0.0263
+    ]
+   ],
+   "r_departure_vs_logged": 0.6949,
+   "mean_abs_departure_2s_mean": 0.3042
+  },
+  "RA_NEG": {
+   "acc_mae_0_2s": 0.9142,
+   "minus_HOLD": [
+    0.6177,
+    [
+     0.5619,
+     0.6762
+    ]
+   ],
+   "r_departure_vs_logged": -0.0926,
+   "mean_abs_departure_2s_mean": 0.7437,
+   "minus_RA_ORACLE": [
+    0.0321,
+    [
+     -0.0362,
+     0.0983
+    ]
+   ]
+  },
+  "RA_SHUF": {
+   "acc_mae_0_2s": 1.2264,
+   "minus_HOLD": [
+    0.9298,
+    [
+     0.8664,
+     0.9929
+    ]
+   ],
+   "r_departure_vs_logged": 0.1675,
+   "mean_abs_departure_2s_mean": 1.0284,
+   "minus_RA_ORACLE": [
+    0.3442,
+    [
+     0.2656,
+     0.4209
+    ]
+   ]
+  },
+  "RA_ORACLE_S16": {
+   "acc_mae_0_2s": 1.1853,
+   "minus_HOLD": [
+    0.8887,
+    [
+     0.8342,
+     0.9489
+    ]
+   ],
+   "r_departure_vs_logged": 0.2758,
+   "mean_abs_departure_2s_mean": 0.8442,
+   "minus_RA_ORACLE": [
+    0.3031,
+    [
+     0.2672,
+     0.3399
+    ]
+   ]
+  }
+ },
+ "RA_PLANT_recovery": {
+  "mean_abs_planmean_minus_loggedmean": 0.154,
+  "mean_abs_a0_minus_loggedmean": 0.2657
+ },
+ "beside": {
+  "gain_scaled_per_scaled_q10_q50_q90": [
+   0.0095,
+   0.2267,
+   0.5156
+  ],
+  "best_cost_median": {
+   "ORACLE": 0.0,
+   "PLANT": 0.0,
+   "NEG": 8e-06,
+   "SHUF": 0.001055
+  },
+  "iters_per_batch": [
+   38,
+   59,
+   47,
+   67,
+   52,
+   45,
+   41,
+   57,
+   65
+  ],
+  "yaw_max_abs_move": 0.0,
+  "sec_per_window_S1": 0.0424,
+  "n_windows": 564,
+  "n_clips": 141,
+  "r_a0_vs_logged_2s_mean": 0.7757,
+  "r_RA_READ_vs_logged_2s_mean": 0.4803
+ },
+ "estimator": "clip-cluster percentile bootstrap, B 2000, seed 0, over the TRAIN clips; another draw of TRAIN clips, R35 and RA fixed; in-sample for RA",
+ "wall_s": 299.1
+}

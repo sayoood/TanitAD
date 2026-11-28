@@ -1,0 +1,38 @@
+PASS std_gate_green_sigma1 
+PASS RED_std_gate_half_sigma 
+PASS RED_std_gate_no_noise 
+PASS RED_std_gate_biased_mean 
+PASS std_gate_green_sigma0_exact_zero 
+PASS RED_std_gate_sigma0_offset 
+PASS RED_std_gate_no_draws 
+PASS honest_gate_green 
+PASS RED_honest_gate_1e-7 
+PASS RED_honest_gate_no_calls 
+PASS std_gate_mini_widened_green 
+PASS noise_does_not_touch_global_rng 
+PASS noise_is_exactly_the_dedicated_generator_stream(seed+7919) 
+PASS only_ax_column_changes 
+PASS train_stats_recorded std=1.041
+PASS honest_mode_feeds_exact_real_ax_and_zero_policy_zero 
+PASS RED_val_noised_turns_honest_gate_red 
+PASS RED_noise_not_applied_turns_std_gate_red 
+PASS sigma0_feeds_bit_identical_ego 
+PASS noise_refuses_policy_zero 
+PASS overall_verdict_truth_table(both seeds must pass) 
+PASS relative_clause_reads_the_reference_it_is_given(AXON in-run stricter than u400 here) axon=NOT PROVEN u400=CANDIDATE
+PASS decisive_decide_uses_g_ref_and_u400_variant_is_descriptive_only 
+PASS seam_gates_green_on_reference_records(prefix REF:) 
+PASS RED_seam_gates_catch_identity_perturbation_unreached_gain_arms_and_bad_rc 
+PASS ckpt_deletion_only_through_literal_paths(12 entries; absent file -> False) 
+PASS RED_remove_ckpt_refuses_unlisted_path 
+PASS axon_final_pt_are_the_K1_arms_X1_used(select.json chosen_X1=K1) 
+PASS seam_retries_on_MemoryError_then_succeeds attempts=3
+PASS seam_retry_is_bounded_and_fails_loud runs=3
+PASS non_memory_failure_is_not_retried runs=1
+PASS is_mem_failure_signatures 
+PASS RED_pins_refuse_tampered_pin REFUSING raised
+PASS gates_axn_stage(sigma0==AXON bit-for-bit, sigma1 differs, 4 RED arms read RED) {"G_NOISE_REACH_sigma1_differs": true, "G_SIGMA0_bit_identical_to_AXON": true, "comparator_sees_1ulp(positive control)": true, "determinism_AXON_ref_a_eq_b": true, "pass": true, "sigma0_n_tensors_differing": 0, "sigma1_n_tensors_differing": 81, "sigma1_post_gates": {"G_HONEST_VAL": {"calls": 13, "max_abs_diff": 0.0, "n": 742, "pass": true}, "G_NOISE_N": {"expected": 160, "n": 160, "pass": true}, "G_NOISE_STD_TRAIN": {"mean": -0.02793775768368505, "mean_tol": 0.23717082451262844, "n": 160, "pass": true, "ratio": 1.1025178820264998, "std": 1.1025178820264998, "tol": 0.16770509831248423}}} RED={'noise_not_applied': True, 'noise_scaled': True, 'sigma0_offset': True, 'val_noised': True} 79s
+PASS compose_and_identity_of_AXNOISE_checkpoint(K1-K5, G-CKPT) arm=AXNOISE
+PASS compose_axon_from_banked_K1_final(K1-K5 + identity green) G_CKPT=True gain_visible=True
+PASS axon_ckpt_deleted_via_literal_path 
+ZZAXNTEST_DONE n_fail=0 []

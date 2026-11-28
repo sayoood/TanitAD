@@ -1,0 +1,214 @@
+{
+ "note": "PREREG_V8F_PROOF_ADD42_N2 section 3 (dose step tools)",
+ "mutations": [
+  {
+   "name": "m1_d1_tolerates_a_1e-6_gap_difference",
+   "file": "dose_d1_pack_check.py",
+   "old": "ok = ok and nan_eq and d == 0.0",
+   "new": "ok = ok and nan_eq and d < 1e-6",
+   "applied": true,
+   "tests": [
+    "test_dose_d1.py::test_tiny_value_difference_in_gap_fails"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_d1.py::test_tiny_value_difference_in_gap_fails"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m2_d1_ignores_missing_rows",
+   "file": "dose_d1_pack_check.py",
+   "old": "ok = names_ok and len(miss) == 0 and len(extra) == 0 and not dup",
+   "new": "ok = names_ok and len(extra) == 0 and not dup",
+   "applied": true,
+   "tests": [
+    "test_dose_d1.py::test_missing_row_fails"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_d1.py::test_missing_row_fails"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m3_d2_planted_shift_not_required",
+   "file": "dose_d2_state_check.py",
+   "old": "ok = ok and R[\"planted_shift\"][\"fails\"]",
+   "new": "ok = ok and True",
+   "applied": true,
+   "tests": [
+    "test_dose_d2.py::test_blind_comparison_is_detected_when_every_row_is_identical"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_d2.py::test_blind_comparison_is_detected_when_every_row_is_identical"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m4_d2_bar_not_relative_to_rms",
+   "file": "dose_d2_state_check.py",
+   "old": "bar = rel_bar * rms",
+   "new": "bar = rel_bar",
+   "applied": true,
+   "tests": [
+    "test_dose_d2.py::test_bar_is_relative_to_the_rms_of_the_state"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_d2.py::test_bar_is_relative_to_the_rms_of_the_state"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m5_d2_checkpoint_record_not_compared",
+   "file": "dose_d2_state_check.py",
+   "old": "rec[\"ok\"] = bool(rec[\"ckpt_sha256_equal\"] and",
+   "new": "rec[\"ok\"] = bool(True and",
+   "applied": true,
+   "tests": [
+    "test_dose_d2.py::test_checkpoint_sha_difference_fails_without_comparing_values"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_d2.py::test_checkpoint_sha_difference_fails_without_comparing_values"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m6_pack_gap_upper_bound_loosened",
+   "file": "build_dose_pack.py",
+   "old": "(g <= GAP_HI)",
+   "new": "(g <= GAP_HI + 10.0)",
+   "applied": true,
+   "tests": [
+    "test_build_dose_pack.py::test_gap_rule_boundaries"
+   ],
+   "red": true,
+   "failed": [
+    "test_build_dose_pack.py::test_gap_rule_boundaries"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m7_pack_join_row_ignores_the_frame",
+   "file": "build_dose_pack.py",
+   "old": "jidx = off[ji[ci]] + t",
+   "new": "jidx = off[ji[ci]]",
+   "applied": true,
+   "tests": [
+    "test_build_dose_pack.py::test_pack_equals_the_row_by_row_rule"
+   ],
+   "red": true,
+   "failed": [
+    "test_build_dose_pack.py::test_pack_equals_the_row_by_row_rule"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m8_inputs_slot_allows_a_fourth_gpu_job",
+   "file": "pod_qhead_dose_inputs.sh",
+   "old": "[ \"$n\" -lt \"$MAX_GPU_JOBS\" ]",
+   "new": "[ \"$n\" -le \"$MAX_GPU_JOBS\" ]",
+   "applied": true,
+   "tests": [
+    "test_dose_inputs_sh.py::test_slot_wait_refuses_a_fourth_gpu_job"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_inputs_sh.py::test_slot_wait_refuses_a_fourth_gpu_job"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m9_inputs_record_clip_count_not_checked",
+   "file": "pod_qhead_dose_inputs.sh",
+   "old": "grep -q \"\\\"n_clips\\\": $HI\" \"$S.json\" &&",
+   "new": "true &&",
+   "applied": true,
+   "tests": [
+    "test_dose_inputs_sh.py::test_new_record_with_the_wrong_clip_count_stops"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_inputs_sh.py::test_new_record_with_the_wrong_clip_count_stops"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m10_fits_check_clips_changed",
+   "file": "pod_qhead_dose_fits.sh",
+   "old": "--check-clips 762 ${EXTRA[@]+\"${EXTRA[@]}\"}",
+   "new": "--check-clips 200 ${EXTRA[@]+\"${EXTRA[@]}\"}",
+   "applied": true,
+   "tests": [
+    "test_dose_fits_sh.py::test_full_run_two_fits_last_line_and_second_start_refused"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_fits_sh.py::test_full_run_two_fits_last_line_and_second_start_refused"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m11_fits_control_d2_not_required",
+   "file": "pod_qhead_dose_fits.sh",
+   "old": "grep -q '\"pass\": true' \"$CTL/d2_${ARM}.json\" 2>/dev/null ||",
+   "new": "true ||",
+   "applied": true,
+   "tests": [
+    "test_dose_fits_sh.py::test_control_d2_missing_for_one_arm_stops"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_fits_sh.py::test_control_d2_missing_for_one_arm_stops"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m13_inputs_extract_args_dropped",
+   "file": "pod_qhead_dose_inputs.sh",
+   "old": "--out \"$S\" $EXARGS",
+   "new": "--out \"$S\"",
+   "applied": true,
+   "tests": [
+    "test_dose_inputs_sh.py::test_extract_args_are_appended_to_the_extraction_command_only"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_inputs_sh.py::test_extract_args_are_appended_to_the_extraction_command_only"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m12_inputs_banked_checkpoint_sha_not_compared",
+   "file": "pod_qhead_dose_inputs.sh",
+   "old": "[ \"$(sha_of \"$S.json\")\" = \"$(sha_of \"$PROBE/states/${ARM}_train.npz.json\")\" ] ||",
+   "new": "true ||",
+   "applied": true,
+   "tests": [
+    "test_dose_inputs_sh.py::test_checkpoint_sha_difference_between_new_and_banked_record_stops"
+   ],
+   "red": true,
+   "failed": [
+    "test_dose_inputs_sh.py::test_checkpoint_sha_difference_between_new_and_banked_record_stops"
+   ],
+   "rc": 1
+  }
+ ],
+ "written_utc": "2026-11-19T04:24:59Z",
+ "control_before": {
+  "rc": 0,
+  "green": true,
+  "summary": "73 passed in 34.69s"
+ },
+ "control_after": {
+  "rc": 0,
+  "green": true,
+  "summary": "73 passed in 57.22s"
+ },
+ "n_mutations": 13,
+ "n_red": 13,
+ "all_ok": true
+}

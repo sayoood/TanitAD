@@ -1,0 +1,228 @@
+{
+ "schema": "v8f-dagger-bank-v1",
+ "kind": "shard",
+ "created_unix": 1795295011.0751154,
+ "argv": [
+  "/root/rollhist/tree_cdb/stack/scripts/v8f_dagger_bank.py",
+  "gen",
+  "--ckpt",
+  "/root/dscale10k/runs/UE_s1/A/ckpt_last.pt",
+  "--m2b-argv",
+  "/root/rollhist/bank_k/m2b_argv_s1.json",
+  "--cache-dir",
+  "/root/data/cache_union_dscale",
+  "--tracks",
+  "/root/dscale10k/merged/native_tracks_union.pt",
+  "--join-train",
+  "/root/dscale10k/merged/join_union.npz",
+  "--eval-grid",
+  "/root/strat1/eval_grid_windows.json",
+  "--out-dir",
+  "/root/rollhist/bank_k/s1",
+  "--n-shards",
+  "4",
+  "--device",
+  "cuda",
+  "--expect-clips",
+  "14512",
+  "--expect-windows",
+  "985048",
+  "--readout",
+  "causal_g",
+  "--acc-gain",
+  "0",
+  "--path-exec",
+  "--kappa-max",
+  "0.2",
+  "--shard",
+  "0"
+ ],
+ "plan": {
+  "mode": "gen",
+  "shard": [
+   0,
+   4
+  ],
+  "n_train_clips": 14512,
+  "n_train_windows": 985048,
+  "window_list_sha256": "c13477163d6515f75bbe8c18f64ff45b0dc33ae356706efa33df0b2f74448e60",
+  "train_sha256": "9844151fcb15504fe9e729fdc6235aebd3e31bfd363cb362994852931ada60f4",
+  "limit_clips": 0,
+  "partial": false,
+  "shard_clips": 3628,
+  "shard_windows": 246239,
+  "chunks": 7695,
+  "batch": 32,
+  "est_records": 492478,
+  "est_shard_bytes": 539755888,
+  "replay_chunks": 39,
+  "eval_clips": 141,
+  "eval_overlap": 0,
+  "ckpt_sha256": null,
+  "hmax": 16,
+  "readable_rows": {
+   "j_min": 13,
+   "first_row_read": 4
+  },
+  "device": "cuda",
+  "generator": {
+   "readout": "causal_g",
+   "acc_gain": 0.0,
+   "path_exec": true,
+   "kappa_max": "0.2"
+  }
+ },
+ "generator": {
+  "readout": "causal_g",
+  "acc_gain": 0.0,
+  "path_exec": true,
+  "kappa_max": "0.2"
+ },
+ "inputs": {
+  "ckpt": {
+   "path": "/root/dscale10k/runs/UE_s1/A/ckpt_last.pt",
+   "sha256": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc",
+   "bytes": 86970901
+  },
+  "m2b_argv": {
+   "path": "/root/rollhist/bank_k/m2b_argv_s1.json",
+   "sha256": "f05a87f4332ce98a4674cea71cbff816fbee5e684c498b8c169c8985b27d9d3e",
+   "bytes": 724
+  },
+  "tracks": {
+   "path": "/root/dscale10k/merged/native_tracks_union.pt",
+   "sha256": "9022952497659c897ccdbf5565e50046597550ed17a996da2cf8a271330c0926",
+   "bytes": 51494151
+  },
+  "join_train": {
+   "path": "/root/dscale10k/merged/join_union.npz",
+   "sha256": "7d2be0e6379de435fe93d23ca74a2b33fd038b86b4ed467834c4926d90e913c0",
+   "bytes": 107394606
+  },
+  "eval_grid": {
+   "path": "/root/strat1/eval_grid_windows.json",
+   "sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "bytes": 21050
+  }
+ },
+ "tool_sha256": {
+  "stack/tanitad/data/v8f_dagger.py": "796e3e7dd78b4e3bd6e0c3d0f47ff629faad360a4949755ae829221b72a73fd1",
+  "stack/scripts/v8f_dagger_bank.py": "2b35d32a5fff1ec69d9227299505c222902b3ee78c9a0021bb61b967652e97ff",
+  "stack/scripts/v8f_t1_eval.py": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "stack/tanitad/data/v8f_mini_data.py": "2cf0b10e46bd382c0b9dd02c87765302211fa3d1013c529f04f757cb020bfc72",
+  "stack/tanitad/models/v8f_mini.py": "388f453a752d9c0cf20f04838d6c63d03ee7a9c0a7511401433d205bd91c9dd3",
+  "stack/scripts/v8f_t1_readout.py": "36025248e6afca56be5f20bf1f5a12e7c39ec1c711a77c2f09a3b299ac640c9e",
+  "stack/scripts/v8f_t1_eval_hb.py": "74fd8445e377e763d17b1fa4c60753f23b8240eb94d0bdf7f4633a9e3ef80608"
+ },
+ "versions": {
+  "torch": "2.11.0+cu128",
+  "numpy": "2.5.4",
+  "python": "3.12.3"
+ },
+ "device": "cuda",
+ "threads": 4,
+ "n_records": 492478,
+ "reasons_by_tick": {
+  "1": {
+   "ok": 208207,
+   "off_lat": 445,
+   "off_head": 329,
+   "end_edge": 37258,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 154381,
+   "off_lat": 24069,
+   "off_head": 2602,
+   "end_edge": 65187,
+   "nonfinite": 0
+  }
+ },
+ "coverage": {
+  "n_windows": 246239,
+  "n_eligible": 196324,
+  "fraction": 0.7972904373393329,
+  "min": 0.5,
+  "blocked": false
+ },
+ "kb0_tick0_identity": {
+  "checked": 246239,
+  "mismatch": 0
+ },
+ "kb1_replay": {
+  "chunks": 39,
+  "windows": 1248,
+  "mismatch_chunks": 0,
+  "frac": 0.005,
+  "seed": 0
+ },
+ "kb3_eval_disjoint": {
+  "n_eval_clips": 141,
+  "overlap": 0
+ },
+ "controls": {
+  "K-B4": {
+   "PASS": true,
+   "cases": {
+    "straight": true,
+    "stationary_tie": true,
+    "lateral_cut": true,
+    "heading_cut": true,
+    "end_edge": true,
+    "loop": true
+   }
+  },
+  "K-B5": {
+   "PASS": true,
+   "max_pose_now_err_m": 0.0,
+   "max_pose_now_yaw_err_rad": 0.0,
+   "max_reanchor_vs_pose_now_m": 0.0,
+   "max_rel_transform_err_m": 6.0698248723138e-05,
+   "max_rel_transform_yaw_err_rad": 9.508934399882207e-07,
+   "max_rel_transform_err_float64_m": 2.2311494473267974e-13,
+   "tol_m": 0.0001,
+   "n_records": 492478,
+   "n_skipped_nonfinite": 0,
+   "n_pairs": 125744220,
+   "sample": "all records with a finite own pose and a logged row at r' (reason != nonfinite); no sampling, no seed",
+   "measured_on": "the float32 tensors the swap emits (reanchor_rows, cast to float32), against the logged float64 poses",
+   "log_pose_sha256": "7956de295272d0b673b0740efbe2f8043d664fa1341fe355ecd8d5a80951a9c9"
+  }
+ },
+ "causal_bucket_stats": {
+  "ticks": 742461,
+  "confusion_logged_x_causal": [
+   [
+    216844,
+    46905,
+    4766,
+    42
+   ],
+   [
+    54131,
+    158361,
+    25275,
+    16
+   ],
+   [
+    4970,
+    17550,
+    157719,
+    6736
+   ],
+   [
+    35,
+    43,
+    3449,
+    45619
+   ]
+  ]
+ },
+ "file_sha256": "d38b81d76311443da64585eb11ce673c30ea6c29fbf2a31dc34b726e82b32c55",
+ "content_sha256": "774f9cb866e9bd57181c5bb42f88e4a913b21b4d08ba781b3dc93cb1cae003f9",
+ "seconds": {
+  "rollout": 7096.687812566757,
+  "total": 7105.719992637634
+ },
+ "warnings": []
+}

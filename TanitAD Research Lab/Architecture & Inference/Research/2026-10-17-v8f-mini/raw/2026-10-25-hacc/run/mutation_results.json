@@ -1,0 +1,329 @@
+{
+ "BASELINE_unmutated": {
+  "rc": 0,
+  "n_failed": 0,
+  "n_passed": 40,
+  "failed": [],
+  "errors": [],
+  "failure_lines": [],
+  "all_failures_are_assertions": false,
+  "seconds": 14.0,
+  "tail": "........................................                                 [100%]\n40 passed in 12.84s\n",
+  "GREEN": true
+ },
+ "M1_drop_the_origin_in_D2": {
+  "rc": 1,
+  "n_failed": 3,
+  "n_passed": 37,
+  "failed": [
+   "test_v8f_hacc.py::test_d2_is_the_origin_prepended_second_difference",
+   "test_v8f_hacc.py::test_terms_and_lambda0_match_the_literal_formula",
+   "test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:70: AssertionError: D2 must be the second difference with the ORIGIN prepended: 29 cells, row 0 = e_0 - 2 e_1 + e_2 with e_0 = 0",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:87: assert (np.float64(0.0) <= (1e-09 * np.float64(2849.372042301725)) and np.float64(368.5087549261443) <= (1e-09 * np.float64(15222.580267511647)))",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:133: AssertionError: (12.0, 0, 7220.432706292553, 7181.708905683158)"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 14.5,
+  "tail": ".115e+01],\\n                      shape=(30,))).x\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:133: AssertionError: (12.0, 0, 7220.432706292553, 7181.708905683158)\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_d2_is_the_origin_prepended_second_difference - ...\nFAILED test_v8f_hacc.py::test_terms_and_lambda0_match_the_literal_formula - a...\nFAILED test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective\n3 failed, 37 passed in 13.34s\n",
+  "RED": true
+ },
+ "M2_keep_the_isotonic_step": {
+  "rc": 1,
+  "n_failed": 9,
+  "n_passed": 31,
+  "failed": [
+   "test_v8f_hacc.py::test_a_planted_w_is_recovered_on_both_axes_including_both_bounds[0.0]",
+   "test_v8f_hacc.py::test_a_planted_w_is_recovered_on_both_axes_including_both_bounds[3.7]",
+   "test_v8f_hacc.py::test_a_planted_w_is_recovered_on_both_axes_including_both_bounds[400.0]",
+   "test_v8f_hacc.py::test_the_axes_are_not_swapped",
+   "test_v8f_hacc.py::test_lambda0_without_isotonic_is_the_clipped_closed_form_and_with_it_is_hblends",
+   "test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective",
+   "test_v8f_hacc.py::test_kkt_is_zero_at_the_optimum_and_the_check_raises_on_a_non_optimum",
+   "test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s0]",
+   "test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s1]"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:96: AssertionError: np.float64(0.7482252648000804)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:96: AssertionError: np.float64(0.7482252648000804)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:96: AssertionError: np.float64(0.7482252648000809)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:104: AssertionError: assert (np.float64(0.5012825700685959) <= 1e-09)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:115: AssertionError: assert np.float64(0.7309578781078432) <= 1e-12",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:133: AssertionError: (0.0, 0, 128.88533069384823, 101.90668494189026)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:142: assert 0.5621666205573943 <= 1e-09",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:294: AssertionError: control 2",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:294: AssertionError: control 2"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 14.7,
+  "tail": "uding_both_bounds[400.0]\nFAILED test_v8f_hacc.py::test_the_axes_are_not_swapped - AssertionError: asse...\nFAILED test_v8f_hacc.py::test_lambda0_without_isotonic_is_the_clipped_closed_form_and_with_it_is_hblends\nFAILED test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective\nFAILED test_v8f_hacc.py::test_kkt_is_zero_at_the_optimum_and_the_check_raises_on_a_non_optimum\nFAILED test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s0]\nFAILED test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s1]\n9 failed, 31 passed in 12.75s\n",
+  "RED": true
+ },
+ "M3_select_lambda_on_eval_guards_removed": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_the_lambda_selection_refuses_anything_that_is_not_train"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:255: AssertionError: an eval input must be refused with TypeError, got AttributeError: 'dict' object has no attribute 'tau'"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 13.5,
+  "tail": "' object has no attribute 'tau'\n    assert False\n     +  where False = isinstance(AttributeError(\"'dict' object has no attribute 'tau'\"), TypeError)\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:255: AssertionError: an eval input must be refused with TypeError, got AttributeError: 'dict' object has no attribute 'tau'\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_the_lambda_selection_refuses_anything_that_is_not_train\n1 failed, 39 passed in 12.33s\n",
+  "RED": true
+ },
+ "M4_swap_axes": {
+  "rc": 1,
+  "n_failed": 9,
+  "n_passed": 31,
+  "failed": [
+   "test_v8f_hacc.py::test_a_planted_w_is_recovered_on_both_axes_including_both_bounds[0.0]",
+   "test_v8f_hacc.py::test_a_planted_w_is_recovered_on_both_axes_including_both_bounds[3.7]",
+   "test_v8f_hacc.py::test_a_planted_w_is_recovered_on_both_axes_including_both_bounds[400.0]",
+   "test_v8f_hacc.py::test_the_axes_are_not_swapped",
+   "test_v8f_hacc.py::test_lambda0_without_isotonic_is_the_clipped_closed_form_and_with_it_is_hblends",
+   "test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective",
+   "test_v8f_hacc.py::test_kkt_is_zero_at_the_optimum_and_the_check_raises_on_a_non_optimum",
+   "test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s0]",
+   "test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s1]"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:96: AssertionError: np.float64(0.687962681571246)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:96: AssertionError: np.float64(0.6879626815712464)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:96: AssertionError: np.float64(0.6879626815712495)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:104: AssertionError: assert (np.float64(0.6879626815712455) <= 1e-09)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:115: AssertionError: assert np.float64(0.6887466296548788) <= 1e-12",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:133: AssertionError: (0.0, 0, 155.77931528202686, 101.90668494189026)",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:142: assert 0.6904753017091968 <= 1e-09",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:294: AssertionError: control 2",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:294: AssertionError: control 2"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 13.6,
+  "tail": "uding_both_bounds[400.0]\nFAILED test_v8f_hacc.py::test_the_axes_are_not_swapped - AssertionError: asse...\nFAILED test_v8f_hacc.py::test_lambda0_without_isotonic_is_the_clipped_closed_form_and_with_it_is_hblends\nFAILED test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective\nFAILED test_v8f_hacc.py::test_kkt_is_zero_at_the_optimum_and_the_check_raises_on_a_non_optimum\nFAILED test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s0]\nFAILED test_v8f_hacc.py::test_real_train_windows_control1_and_control2_tie_to_hblend[M2b_s1]\n9 failed, 31 passed in 12.51s\n",
+  "RED": true
+ },
+ "M5_skip_the_KKT_check": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_kkt_is_zero_at_the_optimum_and_the_check_raises_on_a_non_optimum"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:151: Failed: DID NOT RAISE KKTError"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 13.6,
+  "tail": "........F...............................                                 [100%]\n================================== FAILURES ===================================\nE   Failed: DID NOT RAISE KKTError\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:151: Failed: DID NOT RAISE KKTError\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_kkt_is_zero_at_the_optimum_and_the_check_raises_on_a_non_optimum\n1 failed, 39 passed in 12.46s\n",
+  "RED": true
+ },
+ "M6a_invert_the_SMOOTHER_row": {
+  "rc": 1,
+  "n_failed": 10,
+  "n_passed": 30,
+  "failed": [
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s02-s12-SMOOTHER,",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s03-s13-SMOOTHER,",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s04-s14-SMOOTHER,",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s05-s15-NO",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s06-s16-NO",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s07-s17-NO",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s08-s18-MIXED]",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s09-s19-MIXED]",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s010-s110-MIXED]",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s011-s111-MIXED]"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'MIXED' == 'SMOOTHER, NOT DOMINANT'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'MIXED' == 'SMOOTHER, NOT DOMINANT'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'MIXED' == 'SMOOTHER, NOT DOMINANT'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'NO SMOOTHING'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'NO SMOOTHING'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'NO SMOOTHING'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'MIXED'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'MIXED'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'MIXED'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'SMOOTHER, NOT DOMINANT' == 'MIXED'"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 16.6,
+  "tail": "st_v8f_hacc.py::test_outcome_partition_in_prereg_order[s05-s15-NO SMOOTHING]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s06-s16-NO SMOOTHING]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s07-s17-NO SMOOTHING]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s08-s18-MIXED]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s09-s19-MIXED]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s010-s110-MIXED]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s011-s111-MIXED]\n10 failed, 30 passed in 15.49s\n",
+  "RED": true
+ },
+ "M6b_DOMINATES_needs_only_one_of_DOM_KEEP": {
+  "rc": 1,
+  "n_failed": 9,
+  "n_passed": 31,
+  "failed": [
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s02-s12-SMOOTHER,",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s03-s13-SMOOTHER,",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s04-s14-SMOOTHER,",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s05-s15-NO",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s06-s16-NO",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s07-s17-NO",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s08-s18-MIXED]",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s09-s19-MIXED]",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s010-s110-MIXED]"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'SMOOTHER, NOT DOMINANT'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'SMOOTHER, NOT DOMINANT'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'SMOOTHER, NOT DOMINANT'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'NO SMOOTHING'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'NO SMOOTHING'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'NO SMOOTHING'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'MIXED'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'MIXED'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'DOMINATES P10' == 'MIXED'"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 15.6,
+  "tail": "::test_outcome_partition_in_prereg_order[s04-s14-SMOOTHER, NOT DOMINANT]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s05-s15-NO SMOOTHING]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s06-s16-NO SMOOTHING]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s07-s17-NO SMOOTHING]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s08-s18-MIXED]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s09-s19-MIXED]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s010-s110-MIXED]\n9 failed, 31 passed in 14.50s\n",
+  "RED": true
+ },
+ "M6c_NO_SMOOTHING_reads_all_not_any": {
+  "rc": 1,
+  "n_failed": 2,
+  "n_passed": 38,
+  "failed": [
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s08-s18-MIXED]",
+   "test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s011-s111-MIXED]"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'NO SMOOTHING' == 'MIXED'",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'NO SMOOTHING' == 'MIXED'"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 12.3,
+  "tail": " AssertionError: assert 'NO SMOOTHING' == 'MIXED'\nE   AssertionError: assert 'NO SMOOTHING' == 'MIXED'\n      \n      - MIXED\n      + NO SMOOTHING\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:342: AssertionError: assert 'NO SMOOTHING' == 'MIXED'\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s08-s18-MIXED]\nFAILED test_v8f_hacc.py::test_outcome_partition_in_prereg_order[s011-s111-MIXED]\n2 failed, 38 passed in 11.25s\n",
+  "RED": true
+ },
+ "M7_rule_bar_098_becomes_1": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_choose_lambda_branches_and_the_098_and_strict_bars"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:195: AssertionError: 0.981 x P10 fails the 0.98 bar; exactly 0.98 passes (<=); the SMALLEST qualifying lambda is chosen"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 13.7,
+  "tail": "==================\nE   AssertionError: 0.981 x P10 fails the 0.98 bar; exactly 0.98 passes (<=); the SMALLEST qualifying lambda is chosen\n    assert (0 == 4)\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:195: AssertionError: 0.981 x P10 fails the 0.98 bar; exactly 0.98 passes (<=); the SMALLEST qualifying lambda is chosen\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_choose_lambda_branches_and_the_098_and_strict_bars\n1 failed, 39 passed in 12.66s\n",
+  "RED": true
+ },
+ "M8_ADE_bar_not_strict": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_choose_lambda_branches_and_the_098_and_strict_bars"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:198: AssertionError: ADE2 == P10's does not qualify; ADE6 == P10's does not qualify -> fallback 1 (the only ADE2 < P10 row)"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 14.7,
+  "tail": "==========\nE   AssertionError: ADE2 == P10's does not qualify; ADE6 == P10's does not qualify -> fallback 1 (the only ADE2 < P10 row)\n    assert (0 == 1)\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:198: AssertionError: ADE2 == P10's does not qualify; ADE6 == P10's does not qualify -> fallback 1 (the only ADE2 < P10 row)\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_choose_lambda_branches_and_the_098_and_strict_bars\n1 failed, 39 passed in 13.57s\n",
+  "RED": true
+ },
+ "M9_lambda_enters_unsquared": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:133: AssertionError: (12.0, 0, 7181.7762900092475, 7181.708905683158)"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 12.8,
+  "tail": "of the cost function is less than `tol`.\\n       success: True\\n        status: 2\\n  ...3e+03]), np.int32(30), array([ 4.348e+01,  4.162e+01, ...,  1.950e+01,  1.115e+01],\\n                      shape=(30,))).x\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:133: AssertionError: (12.0, 0, 7181.7762900092475, 7181.708905683158)\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_the_fit_is_the_optimum_of_the_literal_objective\n1 failed, 39 passed in 11.68s\n",
+  "RED": true
+ },
+ "M10_grid_changed": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_select_lambda_is_the_rule_applied_to_an_independent_recomputation"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:228: assert [0, 1, 4, 16, 64, 128] == [0, 1, 4, 16, 64, 256]"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 13.1,
+  "tail": "========================= FAILURES ===================================\nE   assert [0, 1, 4, 16, 64, 128] == [0, 1, 4, 16, 64, 256]\n      \n      At index 5 diff: 128 != 256\n      Use -v to get more diff\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:228: assert [0, 1, 4, 16, 64, 128] == [0, 1, 4, 16, 64, 256]\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_select_lambda_is_the_rule_applied_to_an_independent_recomputation\n1 failed, 39 passed in 12.09s\n",
+  "RED": true
+ },
+ "M11_fallback2_is_not_lambda_zero": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_choose_lambda_branches_and_the_098_and_strict_bars"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:205: assert (4 == 0)"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 12.7,
+  "tail": "...............F........................                                 [100%]\n================================== FAILURES ===================================\nE   assert (4 == 0)\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:205: assert (4 == 0)\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_choose_lambda_branches_and_the_098_and_strict_bars\n1 failed, 39 passed in 11.66s\n",
+  "RED": true
+ },
+ "M12_lambda0_not_at_banked_w": {
+  "rc": 1,
+  "n_failed": 2,
+  "n_passed": 38,
+  "failed": [
+   "test_v8f_hacc.py::test_terms_and_lambda0_match_the_literal_formula",
+   "test_v8f_hacc.py::test_select_lambda_is_the_rule_applied_to_an_independent_recomputation"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:89: AssertionError: assert np.float64(0.024520308975238547) <= ((1e-09 * np.float64(2849.372042301725)) / np.float64(15222.580267511647))",
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:227: assert 0.026257909074837854 <= ((1e-09 * 2752.6015430684956) / 14843.381624505517)"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 11.2,
+  "tail": "0.026257909074837854 = abs((0.21170093093477027 - (2752.6015430684956 / 14843.381624505517)))\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:227: assert 0.026257909074837854 <= ((1e-09 * 2752.6015430684956) / 14843.381624505517)\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_terms_and_lambda0_match_the_literal_formula - A...\nFAILED test_v8f_hacc.py::test_select_lambda_is_the_rule_applied_to_an_independent_recomputation\n2 failed, 38 passed in 10.19s\n",
+  "RED": true
+ },
+ "M13_SMOOTHER_reads_accel_only": {
+  "rc": 1,
+  "n_failed": 1,
+  "n_passed": 39,
+  "failed": [
+   "test_v8f_hacc.py::test_smooth_flags_read_the_separated_negative_of_accel_and_curvature"
+  ],
+  "errors": [],
+  "failure_lines": [
+   "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:409: AssertionError: each flag reads ITS OWN row"
+  ],
+  "all_failures_are_assertions": true,
+  "seconds": 12.5,
+  "tail": "..............F                                 [100%]\n================================== FAILURES ===================================\nE   AssertionError: each flag reads ITS OWN row\n    assert (not False and False)\nC:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc\\test_v8f_hacc.py:409: AssertionError: each flag reads ITS OWN row\n=========================== short test summary info ===========================\nFAILED test_v8f_hacc.py::test_smooth_flags_read_the_separated_negative_of_accel_and_curvature\n1 failed, 39 passed in 11.47s\n",
+  "RED": true
+ },
+ "ALL_MUTANTS_RED": true
+}

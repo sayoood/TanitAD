@@ -1,0 +1,141 @@
+--- a/taniteval/tools/refav1_arm.py (tip 546f34c9)
++++ b/taniteval/tools/refav1_arm.py (R1 fix)
+@@ -620,6 +620,37 @@
+     return pc
+ 
+ 
++def vmax_by_clip_from_labels(path: str) -> tuple[dict, dict]:
++    """R1 (PI directive 2026-09-27): each clip's MAX SPEED, which the plan must never exceed.
++
++    Read from the clip's OWN label record -- ``g_tac.goals.SPEED_BAND.v_hi_ms`` -- through the corpus's ONE
++    quantizer (`tanitad.refs.refcv6_max_speed.speed_max_bin`: containing window over {30, 50, 100, 120}
++    km/h, > 120 clamps) and its ONE unit conversion (`limit_ms_of_bin`), so this can never disagree with
++    `refcv6_speed_max_v8_*.jsonl`, which is built from the same field by the same function.
++    Returns ``({clip_id: v_max_mps}, census)``.
++    """
++    import gzip
++    import json as _json
++    import torch as _t
++    from tanitad.refs.refcv6_max_speed import limit_ms_of_bin, speed_max_bin
++    out, n, missing, over = {}, 0, 0, 0
++    with gzip.open(path, "rt", encoding="utf-8") as f:
++        for line in f:
++            r = _json.loads(line)
++            n += 1
++            cid = r.get("clip_id")
++            sb = (((r.get("g_tac") or {}).get("goals") or {}).get("SPEED_BAND")) or {}
++            v = sb.get("v_hi_ms")
++            if cid is None or v is None:
++                missing += 1
++                continue
++            i, o = speed_max_bin(float(v))
++            over += int(bool(o))
++            out[str(cid)] = float(limit_ms_of_bin(_t.tensor([int(i)]))[0])
++    return out, {"n_records": n, "n_with_limit": len(out), "n_missing": missing,
++                 "n_over_ceiling_clamped": over}
++
++
+ def _source_code(src: str) -> int:
+     if src not in PLAN_SOURCE_NAMES:
+         PLAN_SOURCE_NAMES.append(src)
+@@ -736,6 +767,24 @@
+         arms.append("cl_oracleseed")
+     plan_arms = [x for x in arms if x.startswith("cl")]
+     pc = _plan_cfg(cfg, a)
++    # ⭐ R1 (PI 2026-09-27): max speed is an INPUT and a HARD CAP. The limit is per clip; `plan()` receives it
++    # through `PlanConfig.v_max`, which binds every candidate including the injected baselines.
++    vmax_map, vmax_rec = None, None
++    if getattr(a, "vmax_from_labels", False):
++        if not a.labels:
++            raise SystemExit("[refav1_arm] --vmax-from-labels needs --labels: the max speed is a label field")
++        vmax_map, vmax_meta = vmax_by_clip_from_labels(a.labels)
++        need = {ld.clip_id[ld.names[ei]] for (_wi, ei, _t) in sel}
++        miss = [c for c in need if c not in vmax_map]
++        if miss:
++            raise SystemExit(f"[refav1_arm] --vmax-from-labels: {len(miss)} of {len(need)} selected clips "
++                             f"carry no SPEED_BAND -- refusing to run a partially capped arm")
++        vmax_rec = {"source": ("labels g_tac.goals.SPEED_BAND.v_hi_ms -> refcv6_max_speed.speed_max_bin "
++                               "(containing window {30,50,100,120} km/h) -> limit_ms_of_bin"),
++                    **vmax_meta, "n_plan_calls": 0, "n_plan_over_limit": 0, "n_v0_over_limit": 0,
++                    "max_plan_excess_mps": None}
++        print(f"[vmax] R1 cap ON: {vmax_meta['n_with_limit']} clips carry a limit; "
++              f"{len(need)} selected clips all covered")
+     # ⭐ THE COST FLAGS (D-REFAV1-CCOS-EVAL). `cost_metric` selects the goal
+     # term's form (`refa_v1.COST_METRICS`); `cost_weights` is the declared
+     # (W_JERK, W_KAPPA, W_VEND) triple, None = the shipped module constants.
+@@ -1104,7 +1153,9 @@
+                     # ⭐ the planner->model crossing travels with the call:
+                     # the candidate stays curvature, the MODEL is fed
+                     # arctan(L_enc*kappa) when `rec_units == "steer"`.
+-                    res = model.plan(feats, v0=v0, nav_cmd=nv, plan_cfg=pc,
++                    _pc_w = (pc if vmax_map is None
++                             else dataclasses.replace(pc, v_max=vmax_map[ld.clip_id[nm]]))
++                    res = model.plan(feats, v0=v0, nav_cmd=nv, plan_cfg=_pc_w,
+                                      goal_field=gf,
+                                      model_action_units=rec_units,
+                                      cost_metric=cost_metric,
+@@ -1119,6 +1170,21 @@
+                                      jerk_seam_a0=jerk_seam,
+                                      w_kappa_by_goal=w_kappa_by_goal,
+                                      goal_keeps_seed=gks)
++                    if vmax_map is not None:
++                        # ⛔ R1 is a HARD constraint: count, per plan call, whether the EMITTED plan's speed
++                        # ever exceeds the limit (must be 0) -- separately from windows whose t0 speed
++                        # already exceeds it, which are a property of the input, not of the plan.
++                        _vm = float(_pc_w.v_max)
++                        _acc = res.controls[:, 0].detach().float().cpu()
++                        _vplan = float(v0) + torch.cumsum(_acc, 0) * float(_pc_w.dt)
++                        _ex = float(_vplan.max()) - _vm
++                        vmax_rec["n_plan_calls"] += 1
++                        if float(v0) > _vm + 1e-6:
++                            vmax_rec["n_v0_over_limit"] += 1
++                        elif _ex > 1e-4:
++                            vmax_rec["n_plan_over_limit"] += 1
++                        _pm = vmax_rec["max_plan_excess_mps"]
++                        vmax_rec["max_plan_excess_mps"] = _ex if _pm is None else max(_pm, _ex)
+                     if t_plan_first is None:
+                         t_plan_first = time.time() - tp
+                         # ⛔ the flag must have REACHED plan(): a result that
+@@ -1371,6 +1437,9 @@
+         "arms": arms, "tiers": {x: ARM_TIERS[x] for x in arms},
+         "arm_meaning": {x: ARM_MEANING[x] for x in arms},
+         "plan_cfg": dataclasses.asdict(pc),
++        # ⭐ R1 (PI 2026-09-27): None = the cap was OFF. When ON, `n_plan_over_limit` MUST be 0; windows whose
++        # t0 speed already exceeded the limit are counted apart (`n_v0_over_limit`) -- an input property.
++        "vmax_cap": vmax_rec,
+         # ⭐ THE COST PROVENANCE (D-REFAV1-CCOS-EVAL): a dump produced under
+         # `ccos` and one produced under `cos` are otherwise indistinguishable
+         # after the fact. `weights` is the triple plan() ACTUALLY used.
+@@ -2310,6 +2379,10 @@
+            # the cost provenance the dump was produced under (None for a dump
+            # written before D-REFAV1-CCOS-EVAL = the shipped `cos` at shipped weights)
+            "cost": (manifest or {}).get("cost"),
++           # R1 (PI 2026-09-27): the max-speed cap record the dump was produced under (None = cap OFF, or a
++           # dump from before the cap existed). Copied here so the RESULT never needs the manifest to say
++           # whether its plans respected the limit.
++           "vmax_cap": (manifest or {}).get("vmax_cap"),
+            "families_paired": {nm: _paired_families(comps, x, y, eid_w, tiers, n_boot, seed)
+                                for x, y, nm in pairs},
+            "families_note": (
+@@ -2660,6 +2733,11 @@
+     ap.add_argument("--horizon-k", type=int, default=K_TRAJ_DEFAULT,
+                     help=f"trajectory horizon in 0.2 s steps (default "
+                          f"{K_TRAJ_DEFAULT} = 2.0 s = the plan horizon)")
++    ap.add_argument("--vmax-from-labels", action="store_true",
++                    help="R1 (PI 2026-09-27): give the planner each clip's MAX SPEED as a HARD CAP -- the "
++                         "label's g_tac SPEED_BAND through refcv6_max_speed.speed_max_bin; every candidate, "
++                         "baselines included, is capped, and the output's `vmax_cap` block counts any "
++                         "exceedance (must be 0). Needs --labels. Default OFF = bit-identical.")
+     ap.add_argument("--wm-k", type=int, default=0,
+                     help="teacher-forced WM diagnostic horizon (0 = cfg.op_steps)")
+     ap.add_argument("--lru", type=int, default=8)
+@@ -2886,6 +2964,9 @@
+                 # the cost provenance, promoted to the top level so a reader
+                 # (and the suite) never has to guess which metric produced `cl`
+                 "cost": (rec.get("refav1") or {}).get("cost"),
++                # R1 (PI 2026-09-27): the max-speed cap record, promoted the same way, so whether the plans
++                # respected the limit is read at the top level, never guessed
++                "vmax_cap": (rec.get("refav1") or {}).get("vmax_cap"),
+                 "_unverified": _UNVERIFIED_ON_REAL_CKPT})
+     with open(a.out, "w", encoding="utf-8") as fh:
+         json.dump(rec, fh, indent=1, default=str)

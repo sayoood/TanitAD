@@ -1,0 +1,39 @@
+[refav1-labels] v7.2 join: labels 20/20 eps (0 missing), 420/1339 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 20/20 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[model] C:\Users\Admin\refav1_eval_slice\ckpt\ckpt.pt step=1000 params=0 a_dim=2 target_space=frozen vocab=v7.0 config<-C:\Users\Admin\refav1_eval_slice\ckpt\ckpt.pt['cfg']
+[loader] 1339 windows over 20 episodes (W=4, K_loader=30, grid 0.2 s); labels=ON nav=ON
+[grid] K=10 (2.0 s) K_wm=30 stride=10 windows=140 arms=['cl', 'ha', 'ol', 'cl_navshuf', 'cl_oraclegoal'] plan={samples 300, iters 30, elites 30, seed 0} nav_shuffle=58/140 changed
+[cost] first plan() took 21.54 s -> ESTIMATED 2.51 h for 140 windows x 3 planning arms (plan only; forward()/IO extra)
+  [1/20] 01be5919-6e6 7 windows 459s
+  [2/20] 060531e1-993 7 windows 916s
+  [3/20] 0fa2b231-435 7 windows 1372s
+  [4/20] 10804db8-d07 7 windows 1829s
+  [5/20] 11e40da1-3d9 7 windows 2285s
+  [6/20] 126b3a97-087 7 windows 2742s
+  [7/20] 13c95b6a-5d1 7 windows 3198s
+  [8/20] 14157960-84d 7 windows 3655s
+  [9/20] 142a3a72-6cd 7 windows 4111s
+  [10/20] 14bc9fcf-c04 7 windows 4567s
+  [11/20] 16d89725-2f3 7 windows 5024s
+  [12/20] 17775e74-2d8 7 windows 5481s
+  [13/20] 18b72291-84f 7 windows 5941s
+  [14/20] 1bd040a8-182 7 windows 6397s
+  [15/20] 1c3a2c7c-7e8 7 windows 6852s
+  [16/20] 204b15b4-bd0 7 windows 7307s
+  [17/20] 2172a5a3-8a1 7 windows 7763s
+  [18/20] 24fee8a5-9cc 7 windows 8218s
+  [19/20] 2602baaa-436 7 windows 8673s
+  [20/20] 262b900f-2cf 7 windows 9129s
+REFAV1_DUMP_DONE
+[lead] b1_eval_lead_block.npz: 140 windows / 20 eps · OK eps 20 · LEAD 43 NO_LEAD 27 NOT_STRAIGHT 60 NO_LABEL 10 (no-row 0) · speed-check max 1e-05 m/s · PRESENT
+[out] C:\Users\Admin\refav1_eval_slice\refav1_t1_step1000.json
+  cl             tier=T1  ADE=0.5466 [0.4052, 0.7139]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.4037 time_gap=3.5488 min_ttc=24.457
+  ha             tier=T1  ADE=0.6101 [0.4101, 0.8307]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.2308 time_gap=3.5219 min_ttc=24.024
+  ol             tier=T0  ADE=0.4994 [0.3256, 0.688]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.2768 time_gap=3.5252 min_ttc=23.9291
+  cl_navshuf     tier=T1  ADE=0.642 [0.4917, 0.815]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.4665 time_gap=3.5518 min_ttc=24.5023
+  cl_oraclegoal  tier=T0  ADE=0.7184 [0.6078, 0.8385]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.6071 time_gap=3.5751 min_ttc=25.0121
+  distance_keeping coverage: {'LEAD': 43, 'NO_LEAD': 27, 'NOT_STRAIGHT': 60, 'NO_LABEL': 10} of 140 windows (no-row 0; eps OK 20/20) status=PRESENT
+  planner[cl] baseline_won_frac=0.7571 sources={'cem': 0.2429, 'baseline:hold_v0': 0.7571} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.7, 'ADAPT_SPEED_FOR_CURVE': 0.3}
+  planner[cl_navshuf] baseline_won_frac=0.7286 sources={'cem': 0.2714, 'baseline:hold_v0': 0.6429, 'baseline:decel_1.5': 0.0857} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.7, 'ADAPT_SPEED_FOR_CURVE': 0.3}
+  planner[cl_oraclegoal] baseline_won_frac=0.5786 sources={'cem': 0.4214, 'baseline:hold_v0': 0.3929, 'baseline:decel_1.5': 0.1857} goal={'supplied': 1.0} goal_action_lon=None
+  strategic nav_valid_frac=1.0 n_labeled=40
+EXIT 0 

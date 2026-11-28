@@ -1,0 +1,165 @@
+{
+ "what": "F3 per-layer loss reach on the PRODUCTION forward (real train(), synthetic rig)",
+ "evidence_class": "MEASURED (ours, CPU)",
+ "arms": [
+  {
+   "arm": "A_as_shipped",
+   "error": null,
+   "n_rows": 3,
+   "n_loss_rows": 3,
+   "cascade_in_rows": 0,
+   "cascade_values": [
+    null,
+    null,
+    null
+   ],
+   "grad_probe_all_steps": {
+    "grad_abs_sum": {
+     "control_head0": 0.0,
+     "conf_head0": 0.0,
+     "control_headL": 14721.17626953125,
+     "adaln0": 0.0,
+     "adalnL": 291.4463882446289
+    },
+    "n_grad_events": {
+     "control_head0": 0,
+     "conf_head0": 0,
+     "control_headL": 3,
+     "adaln0": 0,
+     "adalnL": 3
+    }
+   },
+   "loss_keys_first_row": [
+    "anchor_acc",
+    "cls",
+    "data_batch",
+    "data_epoch",
+    "ego_injected",
+    "elapsed_s",
+    "goal2s_err_m",
+    "goal_gate",
+    "goal_score_absmean",
+    "goal_tac",
+    "lat",
+    "lat_tac",
+    "law",
+    "lon",
+    "lon_tac",
+    "loss",
+    "lr",
+    "nav_injected",
+    "route",
+    "sel_v3",
+    "slot_valid_frac",
+    "step",
+    "tac_label_rows",
+    "tac_label_v7",
+    "traj",
+    "withheld_bank_active"
+   ]
+  },
+  {
+   "arm": "B_passthrough_fix",
+   "error": null,
+   "n_rows": 3,
+   "n_loss_rows": 3,
+   "cascade_in_rows": 3,
+   "cascade_values": [
+    4.36515,
+    3.8563,
+    2.1561
+   ],
+   "grad_probe_all_steps": {
+    "grad_abs_sum": {
+     "control_head0": 275.78700256347656,
+     "conf_head0": 152.84733963012695,
+     "control_headL": 14721.17431640625,
+     "adaln0": 57.08689498901367,
+     "adalnL": 291.44632720947266
+    },
+    "n_grad_events": {
+     "control_head0": 3,
+     "conf_head0": 3,
+     "control_headL": 3,
+     "adaln0": 3,
+     "adalnL": 3
+    }
+   },
+   "loss_keys_first_row": [
+    "anchor_acc",
+    "cascade",
+    "cls",
+    "data_batch",
+    "data_epoch",
+    "ego_injected",
+    "elapsed_s",
+    "goal2s_err_m",
+    "goal_gate",
+    "goal_score_absmean",
+    "goal_tac",
+    "lat",
+    "lat_tac",
+    "law",
+    "lon",
+    "lon_tac",
+    "loss",
+    "lr",
+    "nav_injected",
+    "route",
+    "sel_v3",
+    "slot_valid_frac",
+    "step",
+    "tac_label_rows",
+    "tac_label_v7",
+    "traj",
+    "withheld_bank_active"
+   ]
+  },
+  {
+   "arm": "C_f3_off",
+   "error": null,
+   "n_rows": 3,
+   "n_loss_rows": 3,
+   "cascade_in_rows": 0,
+   "cascade_values": [
+    null,
+    null,
+    null
+   ],
+   "grad_probe_all_steps": {},
+   "loss_keys_first_row": [
+    "anchor_acc",
+    "cls",
+    "data_batch",
+    "data_epoch",
+    "ego_injected",
+    "elapsed_s",
+    "goal2s_err_m",
+    "goal_gate",
+    "goal_score_absmean",
+    "goal_tac",
+    "lat",
+    "lat_tac",
+    "law",
+    "lon",
+    "lon_tac",
+    "loss",
+    "lr",
+    "nav_injected",
+    "route",
+    "sel_v3",
+    "slot_valid_frac",
+    "step",
+    "tac_label_rows",
+    "tac_label_v7",
+    "traj",
+    "withheld_bank_active"
+   ]
+  }
+ ],
+ "verdict": {
+  "A_no_cascade_as_shipped": true,
+  "B_cascade_present_with_fix": true,
+  "C_no_cascade_with_f3_off": true
+ }
+}

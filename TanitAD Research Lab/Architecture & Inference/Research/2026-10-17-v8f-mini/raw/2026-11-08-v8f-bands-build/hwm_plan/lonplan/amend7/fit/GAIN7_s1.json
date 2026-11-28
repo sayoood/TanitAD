@@ -1,0 +1,78 @@
+{
+ "chassis": "s1",
+ "delta": 0.42,
+ "s_used": {
+  "RA5": 0.20323,
+  "RA6": 0.2741478493213054,
+  "RA7A": 0.20552088986572833
+ },
+ "anchors_per_clip_rule": "every 10 frames from the clip's first table frame (amend1_kstep.py:195)",
+ "tier": "T0",
+ "evidence": "MEASURED",
+ "estimator": "paired clip-cluster percentile bootstrap, B 2000, seed 0, over the 1,000 clips (answers another draw of CLIPS only)",
+ "gain": {
+  "RA5": {
+   "n_anchors": 5922,
+   "mean": {
+    "point": 1.2914432454232423,
+    "lo": 1.2389028362934127,
+    "hi": 1.3386927275510938
+   },
+   "q10": 0.0853700025743821,
+   "q50": 1.188772634953564,
+   "q90": 2.627051415554274,
+   "share_below_0p25": 0.1425194191151638,
+   "estimator": "clip-cluster percentile bootstrap, B 1000, seed 0, on the mean"
+  },
+  "RA6": {
+   "n_anchors": 5922,
+   "mean": {
+    "point": 1.0536770121394994,
+    "lo": 1.0127217982021512,
+    "hi": 1.0915740595616017
+   },
+   "q10": 0.11710730749947411,
+   "q50": 0.9743374097388087,
+   "q90": 2.0646900814518694,
+   "share_below_0p25": 0.13947990543735225,
+   "estimator": "clip-cluster percentile bootstrap, B 1000, seed 0, on the mean"
+  },
+  "RA7A": {
+   "n_anchors": 5922,
+   "mean": {
+    "point": 1.2832946113996548,
+    "lo": 1.2289650211644443,
+    "hi": 1.3335048299994032
+   },
+   "q10": 0.1685512928481223,
+   "q50": 1.0341095150122577,
+   "q90": 2.7924429179193497,
+   "share_below_0p25": 0.14437689969604864,
+   "estimator": "clip-cluster percentile bootstrap, B 1000, seed 0, on the mean"
+  }
+ },
+ "gain_RA5_new_clips_only": {
+  "n_anchors": 5085,
+  "mean": {
+   "point": 1.3061161909251222,
+   "lo": 1.255754707840449,
+   "hi": 1.358533438854327
+  },
+  "q10": 0.09618518785006717,
+  "q50": 1.2020629697574372,
+  "q90": 2.6321069387529272,
+  "share_below_0p25": 0.13785644051130777,
+  "estimator": "clip-cluster percentile bootstrap, B 1000, seed 0, on the mean",
+  "note": "RA5 held out here (859 new clips); in-sample on the 141"
+ },
+ "gain_note": "RA6 and RA7-A are final readouts, in-sample on these clips; s of RA6 / RA7-A = that readout's own cross-fit s_swap at N = 1,000 (fit/RA and fit/MLPA)",
+ "r_wm_RA5_new_clips": {
+  "point": 0.8713255754915175,
+  "lo": 0.857859656687692,
+  "hi": 0.8831502805962588,
+  "n_pairs": 50628,
+  "n_clips": 859,
+  "note": "RA5 frozen readout, held out on the 859 new clips"
+ },
+ "wall_s": 1.4
+}

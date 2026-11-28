@@ -39,7 +39,7 @@ retries.
 Usage::
 
     # the normal call: declare what you staged, pass a message
-    python tools/safe_commit.py -p tools/ -p "TanitAD Research Hub/Data Engineering" \\
+    python tools/safe_commit.py -p tools/ -p "TanitAD Research Lab/Data Engineering" \\
         -m "tools: wave-1 ops tooling"
 
     # a long message lives in a file (never shell-quote a multi-line message)
@@ -117,7 +117,7 @@ class GitError(RuntimeError):
 
 def git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
     proc = subprocess.run(["git", *args], cwd=str(repo),
-                          capture_output=True, text=True, errors="replace")
+                          capture_output=True, text=True, errors="replace", encoding="utf-8")
     if check and proc.returncode != 0:
         raise GitError(f"git {' '.join(args)} -> {proc.returncode}: "
                        f"{proc.stderr.strip()}")
@@ -147,13 +147,13 @@ def git_processes_alive() -> tuple[bool, str]:
         if os.name == "nt":
             proc = subprocess.run(
                 ["tasklist", "/FI", "IMAGENAME eq git.exe", "/NH"],
-                capture_output=True, text=True, errors="replace", timeout=20)
+                capture_output=True, text=True, errors="replace", timeout=20, encoding="utf-8")
             if proc.returncode != 0:
                 return False, "unknown"
             return ("git.exe" in proc.stdout), "tasklist"
         proc = subprocess.run(["ps", "-e", "-o", "comm="],
                               capture_output=True, text=True,
-                              errors="replace", timeout=20)
+                              errors="replace", timeout=20, encoding="utf-8")
         if proc.returncode != 0:
             return False, "unknown"
         names = {ln.strip().rsplit("/", 1)[-1] for ln in proc.stdout.splitlines()}
@@ -205,7 +205,7 @@ def staged_paths(repo: Path) -> list[str]:
     """The index, as repo-relative POSIX paths.
 
     ``-z`` because git otherwise C-quotes any path with a space -- and the hub
-    tree is full of them (``TanitAD Research Hub/...``)."""
+    tree is full of them (``TanitAD Research Lab/...``)."""
     out = git(repo, "diff", "--cached", "--name-only", "-z").stdout
     return [p for p in out.split("\0") if p]
 
@@ -284,7 +284,7 @@ def scan_secrets(repo: Path, paths: list[str]) -> tuple[list[SecretFinding],
     #     space (the whole hub tree) survives.
     proc = subprocess.run(["git", "check-ignore", "--no-index", "-z", "--stdin"],
                           cwd=str(repo), input="\0".join(paths) + "\0",
-                          capture_output=True, text=True, errors="replace")
+                          capture_output=True, text=True, errors="replace", encoding="utf-8")
     for p in (x for x in proc.stdout.split("\0") if x):
         blocking.append(SecretFinding(
             "ignored-path", p,
@@ -428,7 +428,7 @@ def do_commit(repo: Path, msg_file: Path, retries: int, lock_max_age_s: float,
         clear_stale_lock(repo, lock_max_age_s, force_lock, log=log)
         proc = subprocess.run(["git", "commit", "-F", str(msg_file)],
                               cwd=str(repo), capture_output=True, text=True,
-                              errors="replace")
+                              errors="replace", encoding="utf-8")
         after = git_out(repo, "rev-parse", "HEAD")
         if after != before:
             # A crash can still have written the commit. HEAD movement is the

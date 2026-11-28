@@ -1,0 +1,162 @@
+{
+ "runs": [
+  {
+   "grid": "devbox_tip_s0.json",
+   "machine": "AMD64",
+   "torch": "2.11.0+cu128",
+   "threads": 16,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "main",
+   "step": 1200,
+   "ap2m": 1.0,
+   "prec": 1.0,
+   "rec": 1.0,
+   "centre_p50_m": 0.692851722240448,
+   "lr_factor": null,
+   "verdict": "FAIL",
+   "check": "FAIL",
+   "reasons": [
+    "A17: the final snapshot was read at lr factor None, not after the decay (0.0)"
+   ]
+  },
+  {
+   "grid": "devbox_tip_s0.json",
+   "machine": "AMD64",
+   "torch": "2.11.0+cu128",
+   "threads": 16,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "memory_zeros",
+   "step": 1200,
+   "ap2m": 0.012609649122807017,
+   "prec": 0.08333333333333333,
+   "rec": 0.08333333333333333,
+   "centre_p50_m": 7.237213134765625,
+   "lr_factor": null,
+   "verdict": "failed as required",
+   "check": "PASS",
+   "reasons": []
+  },
+  {
+   "grid": "devbox_tip_s0_t4.json",
+   "machine": "AMD64",
+   "torch": "2.11.0+cu128",
+   "threads": 4,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "main",
+   "step": 1200,
+   "ap2m": 0.651569903443288,
+   "prec": 0.8125,
+   "rec": 0.8125,
+   "centre_p50_m": 1.0971487164497375,
+   "lr_factor": null,
+   "verdict": "FAIL",
+   "check": "FAIL",
+   "reasons": [
+    "A17: the final snapshot was read at lr factor None, not after the decay (0.0)",
+    "ap2m 0.6516 / rec 0.8125: not both > 0.8"
+   ]
+  },
+  {
+   "grid": "devbox_tip_s0_t1.json",
+   "machine": "AMD64",
+   "torch": "2.11.0+cu128",
+   "threads": 1,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "main",
+   "step": 1200,
+   "ap2m": 0.17174584259203163,
+   "prec": 0.4375,
+   "rec": 0.4375,
+   "centre_p50_m": 2.0414817333221436,
+   "lr_factor": null,
+   "verdict": "FAIL",
+   "check": "FAIL",
+   "reasons": [
+    "A17: the final snapshot was read at lr factor None, not after the decay (0.0)",
+    "ap2m 0.1717 / rec 0.4375: not both > 0.8"
+   ]
+  },
+  {
+   "grid": "thor_tip_t4_s0.json",
+   "machine": "aarch64",
+   "torch": "2.13.0+cu130",
+   "threads": 4,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "main",
+   "step": 1200,
+   "ap2m": 1.0,
+   "prec": 1.0,
+   "rec": 1.0,
+   "centre_p50_m": 0.7095261812210083,
+   "lr_factor": null,
+   "verdict": "FAIL",
+   "check": "FAIL",
+   "reasons": [
+    "A17: the final snapshot was read at lr factor None, not after the decay (0.0)"
+   ]
+  },
+  {
+   "grid": "thor_tip_t4_s0.json",
+   "machine": "aarch64",
+   "torch": "2.13.0+cu130",
+   "threads": 4,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "memory_zeros",
+   "step": 1200,
+   "ap2m": 0.012532678679457263,
+   "prec": 0.08333333333333333,
+   "rec": 0.08333333333333333,
+   "centre_p50_m": 7.490664958953857,
+   "lr_factor": null,
+   "verdict": "failed as required",
+   "check": "PASS",
+   "reasons": []
+  },
+  {
+   "grid": "thor_tip_t1_s0.json",
+   "machine": "aarch64",
+   "torch": "2.13.0+cu130",
+   "threads": 1,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "main",
+   "step": 1200,
+   "ap2m": 0.14504446323251147,
+   "prec": 0.2708333333333333,
+   "rec": 0.2708333333333333,
+   "centre_p50_m": 2.6337541341781616,
+   "lr_factor": null,
+   "verdict": "FAIL",
+   "check": "FAIL",
+   "reasons": [
+    "A17: the final snapshot was read at lr factor None, not after the decay (0.0)",
+    "ap2m 0.1450 / rec 0.2708: not both > 0.8"
+   ]
+  },
+  {
+   "grid": "thor_tip_t1_s0.json",
+   "machine": "aarch64",
+   "torch": "2.13.0+cu130",
+   "threads": 1,
+   "has_A17": false,
+   "seed": 0,
+   "arm": "memory_zeros",
+   "step": 1200,
+   "ap2m": 0.012532678679457263,
+   "prec": 0.08333333333333333,
+   "rec": 0.08333333333333333,
+   "centre_p50_m": 7.490671634674072,
+   "lr_factor": null,
+   "verdict": "failed as required",
+   "check": "PASS",
+   "reasons": []
+  }
+ ],
+ "n_fail": 5
+}

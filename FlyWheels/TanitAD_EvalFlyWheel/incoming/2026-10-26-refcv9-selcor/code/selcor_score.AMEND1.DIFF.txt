@@ -1,0 +1,52 @@
+--- selcor_score.pre_amend1.py.bak	2026-10-26 04:53:56.384033100 +0100
++++ selcor_score.py	2026-10-26 06:34:49.705091100 +0100
+@@ -155,6 +155,23 @@
+     return y[perm], int((eid[perm] == eid).sum())
+ 
+ 
++
++def kprior_ulp(pr, hp, slots) -> bool:
++    """PREREG_SELCOR AMENDMENT 1: |a - b| <= 8 * ulp32(max(|a|, |b|)) elementwise, and the same rule on the S6 arc lengths."""
++    hp = np.asarray(hp)
++    if hp.shape[1:] != (6, 2):
++        return False
++    a = pr[:, list(slots)].astype(np.float32)
++    b = hp.astype(np.float32)
++    tol = 8.0 * np.spacing(np.maximum(np.abs(a), np.abs(b)).astype(np.float32)).astype(np.float64)
++    ok_pts = bool((np.abs(a.astype(np.float64) - b.astype(np.float64)) <= tol).all())
++    def arc(P):
++        P0 = np.concatenate([np.zeros_like(P[:, :1]), P], 1).astype(np.float32)
++        return np.linalg.norm(np.diff(P0, axis=1), axis=-1).astype(np.float32).cumsum(1, dtype=np.float32)
++    aa, ab = arc(a), arc(b)
++    tola = 8.0 * np.spacing(np.maximum(np.abs(aa), np.abs(ab))).astype(np.float64)
++    return bool(ok_pts and (np.abs(aa.astype(np.float64) - ab.astype(np.float64)) <= tola).all())
++
+ # ------------------------------------------------------------------------------------------------------------- loading
+ def load_fit_rows(ctl, fresh_trace):
+     import compliant_reread_r8 as CR  # noqa: F401  (the battery's own loaders, as l1c_fit_score.main)
+@@ -183,7 +200,14 @@
+     j = np.where(j < 0, 0, j)
+     pr = trf["prior_path"][j]
+     dp = np.abs(pr[:, C.S6_SLOTS].astype(np.float64) - np.asarray(fr["HP"], np.float64)).max() if np.asarray(fr["HP"]).shape[1:] == (6, 2) else float("inf")
+-    ctl["K-PRIOR"] = {"max_abs_m": float(dp), "HP_shape": list(np.asarray(fr["HP"]).shape), "pass": bool(dp <= 1e-5)}
++    ctl["K-PRIOR"] = {"max_abs_m": float(dp), "HP_shape": list(np.asarray(fr["HP"]).shape), "pass": kprior_ulp(pr, fr["HP"], C.S6_SLOTS)}
++    # PREREG_SELCOR AMENDMENT 1: 8 float32 ULP elementwise (+ the same on S6 arc lengths); the one-slot-shifted mutation must FAIL
++    ctl["K-PRIOR"]["mutation_shift_minus1_pass"] = kprior_ulp(pr, fr["HP"], [s - 1 for s in C.S6_SLOTS])
++    ctl["K-PRIOR"]["mutation_red"] = not ctl["K-PRIOR"]["mutation_shift_minus1_pass"]
++    _d = np.abs(pr[:, C.S6_SLOTS].astype(np.float64) - np.asarray(fr["HP"], np.float64))
++    ctl["K-PRIOR"].update({"per_slot_max_abs_m": [float(x) for x in _d.max(axis=(0, 2))], "share_rows_bit_equal": float((_d.max(axis=(1, 2)) == 0).mean()),
++                           "share_rows_le_1e-5": float((_d.max(axis=(1, 2)) <= 1e-5).mean()), "rule": "|a-b| <= 8*ulp32(max(|a|,|b|)) elementwise and on S6 arcs (AMENDMENT 1)"})
++    ctl["K-PRIOR"]["pass"] = bool(ctl["K-PRIOR"]["pass"] and ctl["K-PRIOR"]["mutation_red"])
+     return fr, trf, j, (zb["z"][jz] if (jz >= 0).all() else None)
+ 
+ 
+@@ -210,6 +234,9 @@
+     pre = G.sha(ROOT / "PREREG_SELCOR.md")
+     if pre != (ROOT / "PREREG_SELCOR.sha256").read_text().split()[0] and not a.controls_only:
+         raise SystemExit("[selcor] PREREG_SELCOR.md does not match its seal: refusing")
++    am1 = G.sha(ROOT / "PREREG_SELCOR_AMENDMENT1.md")
++    if am1 != (ROOT / "PREREG_SELCOR_AMENDMENT1.sha256").read_text().split()[0] and not a.controls_only:
++        raise SystemExit("[selcor] PREREG_SELCOR_AMENDMENT1.md does not match its seal: refusing")
+     st = C.stack()
+     PR = st["PR"]
+     rows = S.metric_rows(PR)

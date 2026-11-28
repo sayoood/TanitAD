@@ -1,0 +1,52 @@
+[taniteval] tanitad OVERRIDE -> E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack (E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack\tanitad\__init__.py)
+23:20:29 [DAG2_s0_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s0_m10_causal_heads
+23:22:14 [DAG2_s0_m10_causal_heads] matched + rebuilt + scored in 105s
+23:23:01 [DAG2_s0_m10_causal_heads] done in 152s
+23:23:01 [DAG2_s0_m10_logged_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s0_m10_logged_heads
+23:23:06 [DAG2_s0_m10_logged_heads] matched + rebuilt + scored in 5s
+23:23:06 [DAG2_s0_m10_logged_heads] done in 5s
+23:23:09 [DAG2_s1_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s1_m10_causal_heads
+23:23:14 [DAG2_s1_m10_causal_heads] matched + rebuilt + scored in 5s
+23:24:01 [DAG2_s1_m10_causal_heads] done in 52s
+23:24:01 [DAG2_s1_m10_logged_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s1_m10_logged_heads
+23:24:06 [DAG2_s1_m10_logged_heads] matched + rebuilt + scored in 5s
+23:24:06 [DAG2_s1_m10_logged_heads] done in 5s
+23:24:08 [DAG2_s0_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s0_m10_causal_heads
+23:24:13 [DAG2_s0_m10_causal_heads] matched + rebuilt + scored in 5s
+23:24:57 [DAG2_s0_m10_causal_heads] done in 49s
+23:24:58 [DAG2_s0_m10_logged_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s0_m10_logged_heads
+23:25:02 [DAG2_s0_m10_logged_heads] matched + rebuilt + scored in 5s
+23:25:02 [DAG2_s0_m10_logged_heads] done in 5s
+23:25:06 [DAG2_s1_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s1_m10_causal_heads
+23:25:10 [DAG2_s1_m10_causal_heads] matched + rebuilt + scored in 5s
+23:25:57 [DAG2_s1_m10_causal_heads] done in 51s
+23:25:57 [DAG2_s1_m10_logged_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAG2_s1_m10_logged_heads
+23:26:01 [DAG2_s1_m10_logged_heads] matched + rebuilt + scored in 5s
+23:26:02 [DAG2_s1_m10_logged_heads] done in 5s
+23:26:06 [DAGOACC_s0_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAGOACC_s0_m10_causal_heads
+23:26:11 [DAGOACC_s0_m10_causal_heads] matched + rebuilt + scored in 7s
+23:26:57 [DAGOACC_s0_m10_causal_heads] done in 54s
+23:27:02 [DAGOACC_s1_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAGOACC_s1_m10_causal_heads
+23:27:08 [DAGOACC_s1_m10_causal_heads] matched + rebuilt + scored in 8s
+23:27:52 [DAGOACC_s1_m10_causal_heads] done in 53s
+23:28:02 [DAGOACC_s0_m10_causal_heads] ticks loaded: N=2399 windows, 7197 rows, tag=DAGOACC_s0_m10_causal_heads
+23:28:07 [DAGOACC_s0_m10_causal_heads] matched + rebuilt + scored in 5s
+23:28:50 [DAGOACC_s0_m10_causal_heads] done in 48s
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagorc_rebase\read\dag_orc_read.py", line 1675, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "E:\Projects\TanitAD-artifacts\dagorc_rebase\read\dag_orc_read.py", line 1663, in main
+    return main_smoke(a, ns.out or f"{HERE}/SMOKE.json")
+  File "E:\Projects\TanitAD-artifacts\dagorc_rebase\read\dag_orc_read.py", line 1623, in main_smoke
+    res = read_core(rig, ctl, man, "read", rf0, floors_dir=fdir)
+  File "E:\Projects\TanitAD-artifacts\dagorc_rebase\read\dag_orc_read.py", line 1252, in read_core
+    recs[arm][s] = analyze_slot(rig, ctl, arm, s, e, "none" if arm == "DAG" else ("basic" if (rc or ro or arm == "CTRL") else "full"), light=(not rc and arm == "CTRL"))
+                   ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagorc_rebase\read\dag_orc_read.py", line 1196, in analyze_slot
+    raise DR.Refusal(f"{tag}: manifest has no 't1_logged' (K4 needs the --limit logged run's tick 0)")
+dag_read.Refusal: REP_s0: manifest has no 't1_logged' (K4 needs the --limit logged run's tick 0)
+
+real	8m27.484s
+user	0m0.015s
+sys	0m0.000s

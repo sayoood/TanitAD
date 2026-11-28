@@ -1,0 +1,72 @@
+{
+ "snapshot": "snap_epoch016.pt (sub200, W3 A1_sub200_tokens.json, 200 tokens / 93 logs)",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "pick_recomputed_agrees_with_stored": "200/200",
+ "pdms_mean_at_pick_x100": 76.5243,
+ "aggregate_margin_top1_minus_top2": {
+  "min": 5.781650543212891e-06,
+  "quantiles": {
+   "0.0": 5.781650543212891e-06,
+   "0.01": 1.6970038414001464e-05,
+   "0.05": 0.00012912005186080933,
+   "0.1": 0.00026397109031677245,
+   "0.5": 0.004106462001800537
+  },
+  "n_below_1e-6": 0,
+  "n_below_1e-5": 1,
+  "n_below_1e-4": 9,
+  "n_below_1e-3": 40,
+  "n_exact_ties": 0
+ },
+ "relative_margin_min": 1.974107644833613e-05,
+ "flip_to_runner_up_pdms_delta_on_mean": {
+  "max_abs_single_token": 0.5,
+  "n_tokens_where_flip_changes_score": 133,
+  "worst5": [
+   [
+    0.003476262092590332,
+    0.5
+   ],
+   [
+    0.0019820332527160645,
+    -0.5
+   ],
+   [
+    0.015987247228622437,
+    0.5
+   ],
+   [
+    0.0009226202964782715,
+    -0.45439646237650083
+   ],
+   [
+    0.008120238780975342,
+    0.423393150557039
+   ]
+  ]
+ },
+ "closest5_margin_and_flip_delta": [
+  [
+   5.781650543212891e-06,
+   0.0
+  ],
+  [
+   1.52587890625e-05,
+   -0.0020880203137754183
+  ],
+  [
+   1.6987323760986328e-05,
+   0.0073538924956028096
+  ],
+  [
+   3.4868717193603516e-05,
+   -0.0061413580530891845
+  ],
+  [
+   6.663799285888672e-05,
+   -0.014353031636398728
+  ]
+ ],
+ "what": "aggregate = sig(NC)*sig(DAC)*(5 sig(EP)+5 sig(TTC)+2 sig(C))/12 over the stored float32 logits (planner.py rule navsim_v1); margin = best - runner-up per token; flip delta = the change in the 200-token PDMS mean (points) if that token's pick moved to its runner-up, read from the E-6 table"
+}

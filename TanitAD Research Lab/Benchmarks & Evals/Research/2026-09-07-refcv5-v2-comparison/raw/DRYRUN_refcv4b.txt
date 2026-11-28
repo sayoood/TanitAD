@@ -1,0 +1,230 @@
+============================================================================================================
+REFCV5-V2 vs REFCV4B — FOUR-FAMILY PANEL   [refcv4b-DRYRUN  vs  refcv4b]
+  n_windows=4823  n_episodes=141   grid: dt=0.5 s, K=4   T-TIER: T1 on every number
+  T1 = SELF-ACTION OPEN LOOP. One forward pass at t0; the path is the model's own selection. A planner feeding its own predictor is STILL open loop (PI ruling 2026-09-02). ⛔ NOT driving performance — no simulator, no vehicle, nothing closed.
+  ⚠️ ORACLE-NAV: both arms consume the v7.2 nav command and all 4,719 v7.2 nav records are `ego-future` (derived from the ego's own future path). FAIR — refcv4b shares the identical input — and a first-class ROUTE INPUT under the PI ruling of 2026-09-04, but noiseless and perfectly timed where a real router is coarse. ⛔ NEITHER ARM's nav may be read as a production command.
+============================================================================================================
+
+[0] INSTRUMENT — the constant-only arm must read the NO-INFORMATION value EXACTLY
+    PASS ha0 paired against ITSELF is exactly zero-width
+         expected delta=0 lo=0 hi=0 separated=False   got {"delta": 0.0, "lo": 0.0, "hi": 0.0, "separated": false}
+    PASS ha0 tactical lateral_decision kappa is the NO-INFORMATION value
+         expected 0.0   got 0.0
+    PASS ha0 tactical longitudinal_decision kappa is the NO-INFORMATION value
+         expected 0.0   got 0.0
+    PASS ha0's OWN curvature is EXACTLY 0 under the real masked estimator (so its MAE IS the straight-line floor)
+         expected max |kappa(ha0)| == 0.0 exactly   got {"max_abs_kappa": 0.0, "n_valid_pairs": 13713, "reported_mae_is_the_floor": 0.006802}
+    PASS ha0 |curvature_bias| <= curvature_MAE (an identity, since bias = -mean(kappa_gt) and MAE = mean|kappa_gt|)
+         expected |bias| <= MAE   got {"mae": 0.006802, "bias": 0.001672}
+    => ALL PASS (5/5)
+
+[0b] ANTI-ECHO GATE 1 — stack/tanitad/eval/echo_gate.py, PER HORIZON SLOT
+     ⛔ `passes` = CI excludes zero AND the relative point margin committed in advance (10 %).
+    refcv4b-DRYRUN vs ha       slots passing 0/4   relative margin by slot [0.01283, -0.02928, -0.02352, 0.03684]
+    refcv4b-DRYRUN vs ha0      slots passing 4/4   relative margin by slot [0.50808, 0.59126, 0.57029, 0.54771]
+    refcv4b-DRYRUN vs ha0_ext  slots passing 0/4   relative margin by slot [-0.00474, -0.07474, -0.0716, -0.00349]
+    refcv4b      vs ha       slots passing 0/4   relative margin by slot [0.01283, -0.02928, -0.02352, 0.03684]
+    refcv4b      vs ha0      slots passing 4/4   relative margin by slot [0.50808, 0.59126, 0.57029, 0.54771]
+    refcv4b      vs ha0_ext  slots passing 0/4   relative margin by slot [-0.00474, -0.07474, -0.0716, -0.00349]
+     ⚠️ GATE 1 ONLY. GATE 2 (ego intervention) and ⛔ GATE 2b (source ablation) need a live model — WORK ITEMS.
+        With gate2b absent, assert_not_echoing returns STRUCTURAL_ONLY, which is NOT an anti-echo pass.
+
+[0c] VACUITY GATE — the manoeuvre RATE beside every decision number
+    refcv4b-DRYRUN any_vacuous=False
+        lateral_decision       every labelled class fires at least once
+        longitudinal_decision  every labelled class fires at least once
+    refcv4b      any_vacuous=False
+        lateral_decision       every labelled class fires at least once
+        longitudinal_decision  every labelled class fires at least once
+
+------------------------------------------------------------------------------------------------------------
+FOUR FAMILIES — refcv4b-DRYRUN   (n and d printed per row; ⛔ ADE alone is an INCOMPLETE result)
+------------------------------------------------------------------------------------------------------------
+  ARM os       TIER T1    ADE 0.2965 m  [0.2697, 0.3280]
+    LONGITUDINAL  speed_MAE 0.2900 m/s  bias 0.0331  target_speed_acc@0.5 0.8329  along_MAE 0.2544 m
+                  distance-keeping/TTC: status=OK  n=1224 of 4823 windows  mean_headway_min 28.4517 m  mean_time_gap_min 4.1118 s (n 1154)  mean_min_TTC 24.8434 s (n_closing 470)
+                  ⚠️ 754 of 1224 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 1.2964 deg  yaw_rate 1.7368 deg/s  cross_track 0.0978 m
+       ⭐ CURVATURE_MAE 0.008150 1/m   straight-line floor (ha0) 0.006802   ratio 1.198  -> ⛔ ABOVE the straight-line floor — a SHAPE defect: a plan that never steers tracks the road better
+          MASKED estimator: n_steps=13558  excluded_below_min_ds=1146 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.9579  kappa 0.8277  n 4823
+           per-class recall: lane_keep r=0.973(n4176)  turn_left r=0.813(n251)  turn_right r=0.889(n396)
+       longitudinal_decision  acc 0.8260  kappa 0.5186  n 4823
+           per-class recall: brake_stop r=0.539(n631)  steady r=0.923(n3654)  accelerate r=0.506(n538)
+       goal_setting           FDE 0.6345 m  bearing_MAE 1.5484 deg  n 4823
+    STRATEGIC     route_acc 0.7791 [0.7248, 0.8318]  kappa 0.4864  n 3622 / 128 eps  (chance 1/3 = 0.3333)
+                  nav_echo_index 0.6422   route_pred identical under nav-shuffle 1.0
+
+  ARM ha       TIER T1    ADE 0.2996 m  [0.2755, 0.3278]
+    LONGITUDINAL  speed_MAE 0.2540 m/s  bias -0.0632  target_speed_acc@0.5 0.8662  along_MAE 0.2348 m
+                  distance-keeping/TTC: status=OK  n=1291 of 4823 windows  mean_headway_min 28.0480 m  mean_time_gap_min 4.2073 s (n 1150)  mean_min_TTC 25.5883 s (n_closing 447)
+                  ⚠️ 844 of 1291 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 1.5489 deg  yaw_rate 1.4542 deg/s  cross_track 0.1226 m
+       ⭐ CURVATURE_MAE 0.004030 1/m   straight-line floor (ha0) 0.006802   ratio 0.593  -> BELOW the straight-line floor (tracks the road better than a plan that never steers)
+          MASKED estimator: n_steps=13500  excluded_below_min_ds=1210 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.9382  kappa 0.7374  n 4823
+           per-class recall: lane_keep r=0.969(n4176)  turn_left r=0.729(n251)  turn_right r=0.750(n396)
+       longitudinal_decision  acc 0.8443  kappa 0.6071  n 4823
+           per-class recall: brake_stop r=0.697(n631)  steady r=0.898(n3654)  accelerate r=0.649(n538)
+       goal_setting           FDE 0.6588 m  bearing_MAE 1.6673 deg  n 4823
+    STRATEGIC     UNAVAILABLE  n=0  reason: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-mod
+
+  ARM ha0      TIER T1    ADE 0.6723 m  [0.6007, 0.7469]
+    LONGITUDINAL  speed_MAE 0.4880 m/s  bias -0.0410  target_speed_acc@0.5 0.7047  along_MAE 0.4705 m
+                  distance-keeping/TTC: status=OK  n=1315 of 4823 windows  mean_headway_min 27.4550 m  mean_time_gap_min 4.1178 s (n 1174)  mean_min_TTC 24.1077 s (n_closing 499)
+                  ⚠️ 816 of 1315 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 2.7799 deg  yaw_rate 2.3714 deg/s  cross_track 0.3132 m
+       ⭐ CURVATURE_MAE 0.006802 1/m   straight-line floor (ha0) 0.006802   ratio 1.000  -> IS the straight-line floor (kappa == 0 by construction — the reference, not a result)
+          MASKED estimator: n_steps=13518  excluded_below_min_ds=1215 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.8659  kappa 0.0000  n 4823
+           per-class recall: lane_keep r=1.000(n4176)  turn_left r=0.000(n251)  turn_right r=0.000(n396)
+       longitudinal_decision  acc 0.7576  kappa 0.0000  n 4823
+           per-class recall: brake_stop r=0.000(n631)  steady r=1.000(n3654)  accelerate r=0.000(n538)
+       goal_setting           FDE 1.4029 m  bearing_MAE 2.8832 deg  n 4823
+    STRATEGIC     UNAVAILABLE  n=0  reason: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-mod
+
+  ARM ha0_ext  TIER T1    ADE 0.2874 m  [0.2649, 0.3137]
+    LONGITUDINAL  speed_MAE 0.2540 m/s  bias -0.0632  target_speed_acc@0.5 0.8662  along_MAE 0.2341 m
+                  distance-keeping/TTC: status=OK  n=1285 of 4823 windows  mean_headway_min 28.0211 m  mean_time_gap_min 4.1966 s (n 1144)  mean_min_TTC 25.5453 s (n_closing 446)
+                  ⚠️ 839 of 1285 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 1.4322 deg  yaw_rate 1.3395 deg/s  cross_track 0.1070 m
+       ⭐ CURVATURE_MAE 0.003712 1/m   straight-line floor (ha0) 0.006802   ratio 0.546  -> BELOW the straight-line floor (tracks the road better than a plan that never steers)
+          MASKED estimator: n_steps=13500  excluded_below_min_ds=1210 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.9419  kappa 0.7548  n 4823
+           per-class recall: lane_keep r=0.970(n4176)  turn_left r=0.753(n251)  turn_right r=0.770(n396)
+       longitudinal_decision  acc 0.8443  kappa 0.6071  n 4823
+           per-class recall: brake_stop r=0.697(n631)  steady r=0.898(n3654)  accelerate r=0.649(n538)
+       goal_setting           FDE 0.6323 m  bearing_MAE 1.5529 deg  n 4823
+    STRATEGIC     UNAVAILABLE  n=0  reason: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-mod
+
+------------------------------------------------------------------------------------------------------------
+FOUR FAMILIES — refcv4b   (n and d printed per row; ⛔ ADE alone is an INCOMPLETE result)
+------------------------------------------------------------------------------------------------------------
+  ARM os       TIER T1    ADE 0.2965 m  [0.2697, 0.3280]
+    LONGITUDINAL  speed_MAE 0.2900 m/s  bias 0.0331  target_speed_acc@0.5 0.8329  along_MAE 0.2544 m
+                  distance-keeping/TTC: status=OK  n=1224 of 4823 windows  mean_headway_min 28.4517 m  mean_time_gap_min 4.1118 s (n 1154)  mean_min_TTC 24.8434 s (n_closing 470)
+                  ⚠️ 754 of 1224 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 1.2964 deg  yaw_rate 1.7368 deg/s  cross_track 0.0978 m
+       ⭐ CURVATURE_MAE 0.008150 1/m   straight-line floor (ha0) 0.006802   ratio 1.198  -> ⛔ ABOVE the straight-line floor — a SHAPE defect: a plan that never steers tracks the road better
+          MASKED estimator: n_steps=13558  excluded_below_min_ds=1146 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.9579  kappa 0.8277  n 4823
+           per-class recall: lane_keep r=0.973(n4176)  turn_left r=0.813(n251)  turn_right r=0.889(n396)
+       longitudinal_decision  acc 0.8260  kappa 0.5186  n 4823
+           per-class recall: brake_stop r=0.539(n631)  steady r=0.923(n3654)  accelerate r=0.506(n538)
+       goal_setting           FDE 0.6345 m  bearing_MAE 1.5484 deg  n 4823
+    STRATEGIC     route_acc 0.7791 [0.7248, 0.8318]  kappa 0.4864  n 3622 / 128 eps  (chance 1/3 = 0.3333)
+                  nav_echo_index 0.6422   route_pred identical under nav-shuffle 1.0
+
+  ARM ha       TIER T1    ADE 0.2996 m  [0.2755, 0.3278]
+    LONGITUDINAL  speed_MAE 0.2540 m/s  bias -0.0632  target_speed_acc@0.5 0.8662  along_MAE 0.2348 m
+                  distance-keeping/TTC: status=OK  n=1291 of 4823 windows  mean_headway_min 28.0480 m  mean_time_gap_min 4.2073 s (n 1150)  mean_min_TTC 25.5883 s (n_closing 447)
+                  ⚠️ 844 of 1291 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 1.5489 deg  yaw_rate 1.4542 deg/s  cross_track 0.1226 m
+       ⭐ CURVATURE_MAE 0.004030 1/m   straight-line floor (ha0) 0.006802   ratio 0.593  -> BELOW the straight-line floor (tracks the road better than a plan that never steers)
+          MASKED estimator: n_steps=13500  excluded_below_min_ds=1210 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.9382  kappa 0.7374  n 4823
+           per-class recall: lane_keep r=0.969(n4176)  turn_left r=0.729(n251)  turn_right r=0.750(n396)
+       longitudinal_decision  acc 0.8443  kappa 0.6071  n 4823
+           per-class recall: brake_stop r=0.697(n631)  steady r=0.898(n3654)  accelerate r=0.649(n538)
+       goal_setting           FDE 0.6588 m  bearing_MAE 1.6673 deg  n 4823
+    STRATEGIC     UNAVAILABLE  n=0  reason: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-mod
+
+  ARM ha0      TIER T1    ADE 0.6723 m  [0.6007, 0.7469]
+    LONGITUDINAL  speed_MAE 0.4880 m/s  bias -0.0410  target_speed_acc@0.5 0.7047  along_MAE 0.4705 m
+                  distance-keeping/TTC: status=OK  n=1315 of 4823 windows  mean_headway_min 27.4550 m  mean_time_gap_min 4.1178 s (n 1174)  mean_min_TTC 24.1077 s (n_closing 499)
+                  ⚠️ 816 of 1315 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 2.7799 deg  yaw_rate 2.3714 deg/s  cross_track 0.3132 m
+       ⭐ CURVATURE_MAE 0.006802 1/m   straight-line floor (ha0) 0.006802   ratio 1.000  -> IS the straight-line floor (kappa == 0 by construction — the reference, not a result)
+          MASKED estimator: n_steps=13518  excluded_below_min_ds=1215 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.8659  kappa 0.0000  n 4823
+           per-class recall: lane_keep r=1.000(n4176)  turn_left r=0.000(n251)  turn_right r=0.000(n396)
+       longitudinal_decision  acc 0.7576  kappa 0.0000  n 4823
+           per-class recall: brake_stop r=0.000(n631)  steady r=1.000(n3654)  accelerate r=0.000(n538)
+       goal_setting           FDE 1.4029 m  bearing_MAE 2.8832 deg  n 4823
+    STRATEGIC     UNAVAILABLE  n=0  reason: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-mod
+
+  ARM ha0_ext  TIER T1    ADE 0.2874 m  [0.2649, 0.3137]
+    LONGITUDINAL  speed_MAE 0.2540 m/s  bias -0.0632  target_speed_acc@0.5 0.8662  along_MAE 0.2341 m
+                  distance-keeping/TTC: status=OK  n=1285 of 4823 windows  mean_headway_min 28.0211 m  mean_time_gap_min 4.1966 s (n 1144)  mean_min_TTC 25.5453 s (n_closing 446)
+                  ⚠️ 839 of 1285 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote 
+    LATERAL       heading 1.4322 deg  yaw_rate 1.3395 deg/s  cross_track 0.1070 m
+       ⭐ CURVATURE_MAE 0.003712 1/m   straight-line floor (ha0) 0.006802   ratio 0.546  -> BELOW the straight-line floor (tracks the road better than a plan that never steers)
+          MASKED estimator: n_steps=13500  excluded_below_min_ds=1210 (min_ds=0.25 m)
+    TACTICAL      status=OK n=4823
+       lateral_decision       acc 0.9419  kappa 0.7548  n 4823
+           per-class recall: lane_keep r=0.970(n4176)  turn_left r=0.753(n251)  turn_right r=0.770(n396)
+       longitudinal_decision  acc 0.8443  kappa 0.6071  n 4823
+           per-class recall: brake_stop r=0.697(n631)  steady r=0.898(n3654)  accelerate r=0.649(n538)
+       goal_setting           FDE 0.6323 m  bearing_MAE 1.5529 deg  n 4823
+    STRATEGIC     UNAVAILABLE  n=0  reason: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-mod
+
+============================================================================================================
+PAIRED MARGINS — paired episode-cluster bootstrap (taniteval/ci.py), n_boot=2000, seed=0, cluster=EPISODE
+⛔ overlapping_holdout_se is NOT used anywhere: it biases the POINT ESTIMATE, not merely the interval.
+============================================================================================================
+  refcv4b-DRYRUN: os - ha            delta -0.0032  [-0.0179, 0.0133]  separated=False
+       NOT SEPARATED
+  refcv4b-DRYRUN: os - ha0           delta -0.3758  [-0.4336, -0.3233]  separated=True
+       SEPARATED on the EPISODE DRAW ONLY — necessary, NOT sufficient at one seed
+       variance answered  | episode draw : ANSWERED — paired episode-cluster bootstrap (taniteval/ci.py), cluster = episode, n_boot
+       variance NOT       | training run : ⛔ NOT MEASURED — one seed per arm. A pure replicate produced 'separated' on 6/42 cells (
+       variance           | inference run: CLOSED BY CONSTRUCTION — no --sampler flag: the decoder's noise is zeroed when not train
+  refcv4b-DRYRUN: os - ha0_ext       delta 0.0091  [-0.0055, 0.0254]  separated=False
+       NOT SEPARATED
+  refcv4b: os - ha                   delta -0.0032  [-0.0179, 0.0133]  separated=False
+       NOT SEPARATED
+  refcv4b: os - ha0                  delta -0.3758  [-0.4336, -0.3233]  separated=True
+       SEPARATED on the EPISODE DRAW ONLY — necessary, NOT sufficient at one seed
+       variance answered  | episode draw : ANSWERED — paired episode-cluster bootstrap (taniteval/ci.py), cluster = episode, n_boot
+       variance NOT       | training run : ⛔ NOT MEASURED — one seed per arm. A pure replicate produced 'separated' on 6/42 cells (
+       variance           | inference run: CLOSED BY CONSTRUCTION — no --sampler flag: the decoder's noise is zeroed when not train
+  refcv4b: os - ha0_ext              delta 0.0091  [-0.0055, 0.0254]  separated=False
+       NOT SEPARATED
+  refcv4b-DRYRUN - refcv4b  (os)     delta 0.0000  [0.0000, 0.0000]  separated=False
+       NOT SEPARATED
+  CONTROL refcv4b-DRYRUN - refcv4b  (ha, must be 0) delta 0.0000  [0.0000, 0.0000]  separated=False
+       NOT SEPARATED
+  CONTROL refcv4b-DRYRUN - refcv4b  (ha0, must be 0) delta 0.0000  [0.0000, 0.0000]  separated=False
+       NOT SEPARATED
+  CONTROL refcv4b-DRYRUN - refcv4b  (ha0_ext, must be 0) delta 0.0000  [0.0000, 0.0000]  separated=False
+       NOT SEPARATED
+  refcv4b - refcv3  (os)             delta -0.1455  [-0.1655, -0.1240]  separated=True
+       SEPARATED on the EPISODE DRAW ONLY — necessary, NOT sufficient at one seed
+       variance answered  | episode draw : ANSWERED — paired episode-cluster bootstrap (taniteval/ci.py), cluster = episode, n_boot
+       variance NOT       | training run : ⛔ NOT MEASURED — one seed per arm. A pure replicate produced 'separated' on 6/42 cells (
+       variance           | inference run: CLOSED BY CONSTRUCTION — no --sampler flag: the decoder's noise is zeroed when not train
+  refcv4b-DRYRUN - refcv3  (os)      delta -0.1455  [-0.1655, -0.1240]  separated=True
+       SEPARATED on the EPISODE DRAW ONLY — necessary, NOT sufficient at one seed
+       variance answered  | episode draw : ANSWERED — paired episode-cluster bootstrap (taniteval/ci.py), cluster = episode, n_boot
+       variance NOT       | training run : ⛔ NOT MEASURED — one seed per arm. A pure replicate produced 'separated' on 6/42 cells (
+       variance           | inference run: CLOSED BY CONSTRUCTION — no --sampler flag: the decoder's noise is zeroed when not train
+  CONTROL refcv4b - refcv3  (ha, must be 0) delta -0.0000  [-0.0000, 0.0000]  separated=False
+       NOT SEPARATED
+  CONTROL refcv4b - refcv3  (ha0, must be 0) delta 0.0000  [0.0000, 0.0000]  separated=False
+       NOT SEPARATED
+
+  MULTIPLICITY: 4 of 9 cells read SEPARATED = 44.4 %; a PURE REPLICATE produced 14.3 % (6/42).
+  => the panel's separated fraction (44.4 %) EXCEEDS the pure-replicate rate (14.3 %); individual cells still answer only the EPISODE-DRAW question.
+
+============================================================================================================
+VERDICT against the bar registered 2026-09-07, BEFORE the checkpoint existed
+============================================================================================================
+  [BAR-REFCV5V2-1] refcv5-v2 must BEAT the echo control `ha0_ext` on ADE, SEPARATED: paired `os - ha0_ext` delta < 0 AND the whole episode-cluster interval below zero.
+      measured: delta 0.0091 [-0.0055, 0.0254] separated=False
+      ==> ⛔ FAIL — does NOT beat ha0_ext separated. NOT SEPARATED
+  [BAR-REFCV5V2-2] refcv5-v2 must BEAT the hold-action control `ha` on ADE, SEPARATED. `ha` and `ha0_ext` are the bar TOGETHER (stack/tanitad/eval/echo_gate.py).
+      measured: delta -0.0032 [-0.0179, 0.0133] separated=False
+      ==> ⛔ FAIL — does NOT beat ha separated. NOT SEPARATED
+  [BAR-REFCV5V2-3] ARM DELTA (informational, NOT the bar): refcv5-v2 `os` vs refcv4b `os` on the same 4,823 windows. refcv4b beat refcv3 by -0.1444 m and still failed BAR-1, so a win here is not a pass.
+      measured: delta 0.0000 [0.0000, 0.0000] separated=False
+      ==> INFORMATIONAL — NOT SEPARATED. ⛔ Beating refcv4b is NOT the bar: refcv4b itself failed BAR-REFCV5V2-1.
+
+  HEADLINE: ⛔ FAIL — refcv4b-DRYRUN has NOT cleared the pre-registered bar: it does not separate from the do-nothing baselines on this surface, which is exactly where refcv4b also stands.
+============================================================================================================

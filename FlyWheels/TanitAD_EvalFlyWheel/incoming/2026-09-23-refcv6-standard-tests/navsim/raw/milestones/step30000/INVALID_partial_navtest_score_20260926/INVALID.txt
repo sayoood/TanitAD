@@ -1,0 +1,15 @@
+INVALID — DO NOT QUOTE ANY NUMBER IN THIS DIRECTORY.
+
+navtest @ step 30,000, R6_A1: the official scorer FAILED its count guard (E1 RAM guard aborted it 6 times,
+2026-09-26T14:12-14:46Z, while other sessions held the box's RAM): 1,464 of 12,146 rows, 763 of 12,146
+seam calls, wrapper rc 3 (r6s30000_R6_A1_scorer_FAILED/r6s30000_R6_A1.counts.json).
+
+The runner then parsed the PARTIAL CSV anyway (it gated on the CSV's existence, not on the count guard):
+summary_navtest.json read "PDMS 64.14" on 1,464 tokens and BARS.json evaluated BAR-R6-T1 on them.
+That is a subset of whatever tokens the scorer reached first — NOT a navtest result.
+
+Fixed 2026-09-26 ~18:55Z: parse_navtest6.py and parse6.py REFUSE any arm whose count guard is not PASS
+(mutation-tested on this very CSV: refused, no summary written; a PASS arm still parses), and the runner
+gates the navtest parse on counts PASS. The bridge seam (12,146/12,146 rows, CUDA as-trained) is valid
+and is re-scored in bridge_navtest/ -> scores_navtest/ ; families_navtest.json (seam + human futures,
+no scorer) is valid and stays.

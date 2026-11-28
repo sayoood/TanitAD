@@ -1,0 +1,1397 @@
+{
+ "tool": "taniteval/tools/refcv3_arm.py",
+ "doc": "taniteval/tools/REFCV3_ARM.md",
+ "model": {
+  "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_40000.pt",
+  "step": 40000,
+  "config_json": "E:/refcv8_eval_kit/ckpt/config.json",
+  "rebuilt_from": "refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)",
+  "config_cross_checks": {
+   "param_breakdown_equal": true
+  },
+  "state_dict_load": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1165,
+   "n_map_hires_keys": 54,
+   "ckpt_keys": [
+    "ema_decay",
+    "kind",
+    "num_updates",
+    "step"
+   ],
+   "step": 40000
+  },
+  "eval_time_cfg_overrides": {},
+  "param_breakdown": {
+   "core": 90897767,
+   "phi_tac": 2101504,
+   "str_goal_head": 771,
+   "gstr_cond": 66816,
+   "tac_heads": 14364,
+   "tac_latent_proj": 262656,
+   "scorer": 1145,
+   "nav_inject": 50176,
+   "tac_decoder_v6": 2272802,
+   "tac_behaviour_gate_v6": 2574,
+   "total": 100598182
+  },
+  "arm": "hier",
+  "hier": true,
+  "tac_vocab_version": "v7.0",
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_anchors": 117,
+  "n_anchors_provenance": "checkpoint anchor buffer",
+  "window": 8,
+  "decoder_steps": 2,
+  "decoder_mode": "diffusion",
+  "nav_from_v7_trained": true,
+  "nav_cmd_derivation_trained": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+  "train_labels_manifest": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_records": 4572,
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "cot_absence_negative": null,
+   "goal_geometry_tokens": [
+    "FOLLOW_LANE",
+    "SPEED_BAND",
+    "STOP_POINT",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "goal_cot_tokens": [
+    "CORRIDOR_OFFSET",
+    "EVADE_IN_CORRIDOR",
+    "GAP_TARGET",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "REACT_ON_ONCOMING",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD"
+   ],
+   "divergences": [],
+   "_read": "md5 is the identity — six copies of this blob exist under three roots and their md5s differ."
+  },
+  "eval_labels_md5_at_train": "eefc38d1453bd1c73802d44d45affced",
+  "u8_batches_trained": true,
+  "refcv6_loader": {
+   "argv_remap": {
+    "remapped": {
+     "--anchors": {
+      "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+      "local": "E:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt",
+      "source": "kit default",
+      "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+     },
+     "--eval-cache": {
+      "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+      "local": "E:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139",
+      "source": "kit default",
+      "basename_expected": "refcv6-b1-416x1024-eval139"
+     },
+     "--eval-labels": {
+      "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+      "local": "E:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+      "source": "kit default",
+      "basename_expected": "s2_labels_v8_eval.jsonl.gz"
+     },
+     "--speed-max-sidecar-v6-eval": {
+      "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+      "local": "E:\\refcv6_eval_kit\\data\\refcv6_speed_max_v8_eval.jsonl",
+      "source": "kit default",
+      "basename_expected": "refcv6_speed_max_v8_eval.jsonl"
+     },
+     "--agent-join": {
+      "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+      "local": "E:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+      "source": "kit default",
+      "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+     },
+     "--agent-rig-extrinsics": {
+      "thor": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+      "local": "E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json",
+      "source": "recorded override"
+     },
+     "--map-gt-root": {
+      "thor": "/home/nvidia/data/sam3_gt_v3",
+      "local": "E:\\refcv6_eval_kit\\data\\sam3_gt_v3_eval",
+      "source": "kit default",
+      "basename_expected": "sam3_gt_v3"
+     },
+     "--join3d": {
+      "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+      "local": "E:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+      "source": "kit default",
+      "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+     },
+     "--vis1-sidecar": {
+      "thor": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+      "local": "E:/refcv8_eval_kit/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+      "source": "recorded override"
+     },
+     "--nav-compliance-tau-file": {
+      "thor": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+      "local": "E:/refcv8_eval_kit/data/refcv8/nav_compliance_tau_train4572.json",
+      "source": "recorded override"
+     },
+     "--map-hires-class-weights": {
+      "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+      "local": "E:\\refcv6_eval_kit\\data\\refcv7\\map_hires_class_weights_train_100x30.json",
+      "source": "kit default",
+      "basename_expected": "map_hires_class_weights_train_100x30.json"
+     },
+     "--clip-clock-sidecar": {
+      "thor": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+      "local": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+      "source": "recorded override"
+     },
+     "--r8-v9-labels-eval": {
+      "thor": "/home/nvidia/refcv8_v9labels/release/v9_labels_eval139.npz",
+      "local": "E:/refcv8_eval_kit/data/refcv8_v9labels/release/v9_labels_eval139.npz",
+      "source": "recorded override"
+     },
+     "--join-defect-masks": {
+      "thor": "/home/nvidia/refcv8_run/launch_tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json",
+      "local": "C:/lgs/Lfb47a58376/stack/tanitad/configs/refcv8_join_label_defects_train4572.json",
+      "source": "recorded override"
+     },
+     "--pose-sync-sidecar": {
+      "thor": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+      "local": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+      "source": "recorded override"
+     }
+    },
+    "dropped": {
+     "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+    },
+    "train_only_kept_unread": {
+     "--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+     "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+     "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+     "--out": "/home/nvidia/refcv8_run/runs/refcv8-r101-s0"
+    },
+    "kit": "E:\\refcv6_eval_kit",
+    "overrides_file": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\refcv8_eval_remap_devbox.json"
+   },
+   "departures": [
+    "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+    "Thor data paths REMAPPED to the eval kit E:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join-defect-masks', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--pose-sync-sidecar', '--r8-v9-labels-eval', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+    "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+   ],
+   "trunk_memory_levers_built": {
+    "chunk_ckpt": 8,
+    "frozen_bn": true,
+    "bn_pinned": 104,
+    "relu_out_of_place": 100,
+    "bf16": true,
+    "channels_last": true,
+    "bn_folded": 104,
+    "dedup_frames": true
+   },
+   "trunk_memory_levers_run": {
+    "chunk_ckpt": 8,
+    "frozen_bn": true,
+    "bn_pinned": 104,
+    "relu_out_of_place": 100,
+    "bf16": true,
+    "channels_last": true,
+    "bn_folded": 104,
+    "dedup_frames": true,
+    "compile_donated_buffer": false,
+    "compile": "inductor"
+   },
+   "sampler": "ddim",
+   "anchor_file_vs_ckpt_buffers": {
+    "core.decoder.anchors": {
+     "shape": [
+      117,
+      8,
+      2
+     ],
+     "max_abs_diff": 0.0
+    },
+    "core.decoder.anchor_controls": {
+     "shape": [
+      117,
+      2
+     ],
+     "max_abs_diff": 0.0
+    }
+   }
+  },
+  "frame_memo": "ON: exact per-window backbone memo (torch.equal frames, BN frozen)"
+ },
+ "inference_seed": {
+  "seed": 0,
+  "flag": "--infer-seed (defaults to --seed)",
+  "stochastic_at_inference": true,
+  "sampler": "ddim",
+  "_reading": "a DETERMINISTIC arm ignores this seed entirely (every other eval draw in the stack is behind `self.training` and the model is in .eval()); a SAMPLER arm does not, and its inference-run variance is NOT answered by the episode-cluster bootstrap"
+ },
+ "t1_definition": {
+  "arm": "os",
+  "_is": "ONE forward pass of RefCV3Model at the window origin, consuming the observed frames, the clip's v7.2 nav token and the MEASURED v0 at t0 and nothing else, emitting the whole 6 s path as the model's OWN sel_score_v3-ranked choice among its 117 anchors (the run's OWN bank size, `model.n_anchors` — ⛔ this line was a hardcoded '128' until D-EVALTOOL-ANCHOR-CHANCE, which is the v3 DEFAULT and NOT refcv4b's 117).",
+  "no_closed_loop_because": "refc_v3.py:480 — forward(frames, nav_cmd, v0, steps, lan, nav_known) has NO action argument; there is no per-step decode and no state that advances, so t1_eval.roll_closed (t1_eval.py:760) has no action to feed back and CANNOT be ported. The flagship is supervised AND autoregressive; that is the difference.",
+  "selection": "out['traj'] — refc_v3.py:520-525: rank = sel_score_v3 (= apply_seam_clamp(sel_score, goal_gate*score), banked at :527) masked by reach_keep, then argmax — on the hier arm; the core's own sel_score at refc.py:1531-1534 on the flat arm. ⛔ NEVER a_star (refc_v3_train.py:460), which is the GT-nearest anchor and makes eval_traj an ORACLE-SELECTED lower bound.",
+  "inputs_admitted": [
+   "frames <= t0",
+   "nav_cmd (v7.2 token)",
+   "v0 = pose_last[:, 3] measured at t0"
+  ],
+  "ade_note": "ADE here is recomputed as an L2 norm from the dumped path. refcv3's training-time `traj` is a mean L1 PER COORDINATE (refc_v3_train.py:464-465) — ⛔ a different statistic; never convert one into the other."
+ },
+ "tier_ruling": {
+  "arm": "os",
+  "stamped": "T1",
+  "status": "UNRULED",
+  "decided_by": "PI / Master Mind — NOT a FlyWheel",
+  "question": "does EVAL_DOCTRINE admit as T1 a model that consumes NO actions at all? Its T1 row reads 'the predictor consumes the decoder/planner's own actions', which does not literally cover refcv3.",
+  "benchmarks_recommendation": "ADMIT IT, flagged as a recommendation: the doctrine's PURPOSE is to keep future information out of inference, and a correctly-gated refcv3 forward pass (frames <= t0, nav token, measured v0, selection by sel_score_v3 and never by a_star) admits none — but keep the DISTINCT arm name `os` so no reader believes two `cl` columns describe the same procedure.",
+  "why_the_numbers_are_valid_either_way": "every headline statistic here is a MARGIN over `ha0` measured on the same windows with the same instrument (`os - ha0`), so the ruling changes the LABEL on the row, never the arithmetic in it."
+ },
+ "grid": {
+  "name": "2s",
+  "dt_s": 0.5,
+  "k": 4,
+  "horizons_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "slots": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "instants_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "dropped_model_slots": [
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_frames": 20,
+  "n_windows": 1457,
+  "n_windows_skipped": 0,
+  "skip_reasons": {},
+  "n_episodes": 117,
+  "n_episodes_available": 139,
+  "window_stride": 1,
+  "obs_window": 8,
+  "ws_is": "the PROVIDER frame index of the window origin t0 (= t + window - 1); RAW frame = ws + 2 (see corpus.frames)"
+ },
+ "arms": [
+  "os",
+  "ha",
+  "ha0",
+  "ha0_ext",
+  "oracle_sel"
+ ],
+ "tiers": {
+  "os": "T1",
+  "ha": "T1",
+  "ha0": "T1",
+  "ha0_ext": "T1",
+  "oracle_sel": "T0"
+ },
+ "arm_meaning": {
+  "os": "T1 (RULING OPEN) — ONE forward pass at t0: observed frames + the clip's v7.2 nav token + the MEASURED v0, path = the model's OWN sel_score_v3 selection out['traj']. NEVER a_star. No action input, no rollout, no loop to close — hence 'os', never 'cl'.",
+  "ha": "T1 — HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for the horizon. Consumes no recorded future. NOT the floor — a held noisy steer drifts, so this arm can be WORSE than trivial.",
+  "ha0": "T1 — ⭐ CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE and the ONLY arm bit-comparable with refav1's (zero is zero in either action unit). ⛔ NOT 'the echo test's real bar' — that line stood here and stack/tanitad/eval/echo_gate.py RETRACTS it by name: `ha` is 2.2x harder, and the bar is `ha` AND `ha0_ext` TOGETHER.",
+  "ha0_ext": "T1 — ⭐⭐ THE ECHO CONTROL: constant a0 AND constant curvature k0, both read at the MEASURED t0 (a0 the backward difference of v, k0 the recorded channel AT t0 — where `ha` holds the one at t0-1). The SHARPENED form of `ha`, and the OTHER HALF of the acceptance bar: beating `ha` while TYING `ha0_ext` means the gain is echo, and the gate reads it that way (stack/tanitad/eval/echo_gate.py::ha0_ext). Derived by the ONE shared implementation refav1_arm.hold_ext_controls, called here with stride=1 — never re-derived (Rung A1, 2026-09-05).",
+  "oracle_sel": "T0 — the a_star-selected anchor's refinement: a_star is the GT-NEAREST anchor (refc_v3_train.py:460), so this is the CEILING, not a driveable arm. Never compared to a T1 number."
+ },
+ "absent_arms": {
+  "ol": {
+   "status": "ABSENT",
+   "arm": "ol",
+   "tier_if_it_existed": "T0",
+   "reason": "`ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (refc_v3.py:480 — the forward signature has no action argument), so integrating the recorded actions is not a rollout OF THIS MODEL: it is a property of the corpus and of the unicycle, identical for every refcv3 checkpoint ever trained. Emitting it under this model's name would put the same name on two different objects across the H-vs-F table — the exact failure D-HF-COMPARABILITY forbids.",
+   "for_comparison": "use `ha0` — the ONLY bit-comparable arm across refav1 and refcv3 — as the shared floor; the kinematic-contract control that `ol` provides lives in refav1_arm.py, where the model actually consumes actions."
+  }
+ },
+ "action_units": {
+  "recorded": "steer",
+  "L_enc_m": 2.9,
+  "applies_to": [
+   "ha",
+   "ha0_ext"
+  ],
+  "does_not_apply_to": [
+   "os",
+   "os_navshuf",
+   "oracle_sel (the model emits a PATH, not a control — there is no channel to convert)",
+   "ha0 (exactly zero in either unit)"
+  ],
+  "rule": "v2ep actions[:,0] is a road-wheel angle (physicalai.py:621 steer = arctan(L_enc*curvature), :632 the column stack). 'steer' = the repaired contract (kappa = tan(steer)/L_enc before any integration); 'kappa' = the LEGACY unconverted reading, which carries the C-REFCV3-ARM-SAME-DEFECT over-rotation. NOT comparable."
+ },
+ "hold_action_rule": "⭐ THE ACTION THAT **CLOSES** AT t0 — ``(a, channel-1)`` from ``v[t0]``,\n``v[t0-1]`` and ``kap[t0-1]``.\n\nEvery frame index is ``<= t0``, so NOTHING recorded after the window origin\nenters the hold-action arm. (The action *opening* at t0 would need\n``v[t0+1]`` — a future value — which is exactly why it is not the one held.)\n``kap`` is ``episode.actions[:, 0]``, which ``physicalai.py:621`` wrote as a\nroad-wheel STEER ANGLE; the unit travels with the integration call, not with\nthis function.",
+ "hold_v0_rule": "⭐ THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for ``n`` ticks.\n\nIntegrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE.\nIt consumes strictly LESS than ``hold_controls`` — not even the last observed\naction, only the ``v0`` the PI ruling of 2026-09-02 admits — and it is EXACTLY\nZERO in either action unit, which is what makes it the one arm that is\nbit-comparable between refav1 and refcv3.",
+ "ha0_ext_rule": "``ha0_ext`` (refav1 form): the (a0, kappa0) of the MEASURED t0 state.\n\n``a0 = (v[i0] - v[i0-stride]) / dt`` — the SAME backward difference\n`hold_action_controls` holds (the forward one, ``v[i0+stride]``, is future);\n``kappa0 = kap[i0]`` — the recorded curvature AT t0, where ``ha`` holds\n``kap[i0-stride]`` (`echo_gate.ha_finite_diff_accel`'s \"reads the steer at\nt0-1\" weakness, closed). Every index is <= i0: nothing recorded after t0\nenters. ⚠️ `echo_gate.ha0_ext`'s STRONGER form is built on the corpus's own\nmeasured ``ax``; the v2ep carries none, so this is the sharpest ADMISSIBLE\nform on these inputs, and `ARM_MEANING` names it as such.\n\n⭐ ``stride`` EXISTS SO THERE IS ONE IMPLEMENTATION, NOT TWO (Rung A1,\n2026-09-05). refav1 windows a 0.1 s pose array on its own 0.2 s operative\ntick, so its origin is ``i0 = 2t`` — the DEFAULT, and with it this function\nis bit-identical to the pre-Rung-A1 file. ``refcv3_arm.py`` indexes the same\narray at the native 0.1 s tick and calls this with ``stride=1, dt=0.1``,\npassing ``loader=None`` (the loader is read ONLY for its ``dt``). A control\nre-implemented beside the harness that uses it is a control that can drift\naway from it, and then the gate measures the drift instead of the model —\n`echo_gate.ha0_ext`'s own docstring says exactly this about its shared base.\nPinned by ``stack/tests/test_refcv3_ha0_ext_shared.py``.\n",
+ "ha0_ext_call": "refav1_arm.hold_ext_controls(None, v_ep, kap_ep, t0, dt=0.1, stride=1) -> integrate_select — the SAME function refav1_arm.py calls at stride=2; pinned bit-equal by stack/tests/test_refcv3_ha0_ext_shared.py",
+ "nav_predicted": null,
+ "nav_shuffle": {
+  "seed": 0,
+  "n_windows": 1457,
+  "n_valid": 1457,
+  "n_changed": 577,
+  "changed_frac": 0.396,
+  "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+ },
+ "nav_feed": {
+  "mode": "perframe_token",
+  "spec": "PREREG_NAV_FEED.md",
+  "n_windows": 1457,
+  "n_token_differs_from_clip": 1157,
+  "n_args_known": 1360,
+  "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+  "args_fed": false,
+  "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+  "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+ },
+ "nav_null": {
+  "arm": "os_navzero",
+  "how": "model(frames, nav_cmd=None, v0=v0, steps=steps) — a SEPARATE forward",
+  "why_not_nav_known": "RefCConfig.nav_known_channel is False for every v3 build (refc.py:594 default; 0 references in refc_v3.py and in _pin_trainer_cfg), and refc.py:2042-2045 RAISES if nav_known is supplied while the gate is off. There is no companion bit to set, so nav_known is not available as a null here.",
+  "why_not_a_zero_embedding": "zeroing nav_inj's output would be an INVENTED null the model was never trained to see. nav_cmd=None is the model's own documented path and the published REF-C eval convention.",
+  "what_each_condition_removes": {
+   "nav_true": "nothing — the clip's real v7.2 token, the input the run trained on",
+   "nav_shuffled": "the PAIRING between the window and its token. The nav MARGINAL is preserved exactly (it is a permutation), so the model still sees a plausible token on every window. Answers: is the model using THIS window's nav?",
+   "nav_zero": "the SIGNAL. Answers: what happens when the oracle nav is absent, i.e. at deployment. ⛔ Not a stronger shuffle — a different intervention."
+  },
+  "what_nav_zero_removes_per_layer": {
+   "tactical (E13 PhiTac)": "REMOVED ENTIRELY — refc_v3.py:437-441 guards the injection on `nav_cmd is not None`, so nav_to_tac is never added to z_tac_raw",
+   "strategic (E13 ctx)": "REMOVED ENTIRELY — the same guard; nav_to_str is never added to ctx, and out['nav_injected'] reads False (refc_v3.py:471)",
+   "core (measurement encoder)": "⚠️ NOT REMOVED — COLLAPSED ONTO THE MAJORITY TOKEN. refc.py:2021-2024 substitutes one_hot(0) = 'follow'. NAV_COMMANDS (refc.py:136) has no 'unknown' entry and nav_known_channel is off, so at the core's input 'no nav' and 'a genuine follow' are BYTE-IDENTICAL — the exact defect nav_known_channel was written to fix (refc.py:594-604: 62.4 % of `follow` windows are a collapsed UNKNOWN)."
+  },
+  "⛔ read_it_as": "`os_navzero` removes nav COMPLETELY at 2 of the 3 layers it is injected at and PINS it to the majority class at the third. It is therefore a LOWER BOUND on how much this model leans on nav: a model that read nav only through the core would look LESS nav-dependent here than it is. State that beside any nav-dependence number taken from it.",
+  "consequence_for_the_flat_arm": "on a hier=False build there is no E13 path at all, so nav_cmd=None differs from the true nav ONLY through the core one-hot — and therefore `os_navzero` is BIT-IDENTICAL to `os` on exactly the windows whose token is already `follow` (index 0). That is the control that isolates the mechanism, and stack/tests/test_refcv3_arm.py runs it.",
+  "⚠️ cross_call_float32_floor": "`os_navzero` is produced by a SEPARATE forward call (nav_cmd=None is a whole-call property), while `os` and `os_navshuf` are two ROWS of one batched call. Different batch sizes take different GEMM kernel paths, so two arms that are the SAME computation still differ by a float32 floor. MEASURED on the flat smoke build, CPU: batch-2-row-0 vs batch-1 with the SAME nav = max 5.96e-07 m; the same call at MATCHED batch size with nav_cmd=None vs nav_cmd=0 = EXACTLY 0.0; a real nav difference (follow vs left) = 2.78e-02..3.41e-02 m, i.e. ~4.7e4x the floor. ⛔ CONSEQUENCE: `trivial_profile.identical_to` uses a 1e-9 m threshold and therefore CANNOT resolve a cross-call arm as identical even when it is. Read `identical_to` for os-vs-os_navshuf (same call, exact) and IGNORE it for os-vs-os_navzero; the separation above is what makes a nav-zero difference readable, and it is 4-5 orders of magnitude clear.",
+  "why_it_is_not_the_shuffle": "MEASURED elsewhere (D-REFAV1-TAC-DECODER-PANEL): refav1's tactical head ranked turns at AUC 0.873 under true nav but collapsed to 0.520 (chance) under nav_zero, and a NAV-ONLY predictor beat the model outright (0.684 > 0.650). BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm beside the nav-shuffle one.",
+  "emitted": false,
+  "reason_absent": "--no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm)"
+ },
+ "head_conditionings": [
+  "nav_true"
+ ],
+ "fed_conditionings": [
+  "nav_true"
+ ],
+ "sidecar_schema": {
+  "sel_idx": "the anchor the MODEL selected (out['sel_idx'])",
+  "sel_idx_base": "hier only: the pre-graft core selection (out['sel_idx_base'])",
+  "sel_score_max": "max of the ranking score the selection argmaxed over",
+  "a_star": "the GT-NEAREST anchor (refc_v3_train.py:460) — the ORACLE, banked as a diagnostic; the deployed arm NEVER selects with it",
+  "anchor_acc": "1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); chance = 1/117 = 0.008547 — DERIVED from THIS run's bank (`model.n_anchors`), which is why it may differ from another arm's. ⛔ Never compare an `anchor_acc` against a bank size it was not measured on.",
+  "sel_agrees_oracle": "1.0 where sel_idx == a_star — how much of `traj` was selection rather than refinement",
+  "goal_gate": "hier only: out['goal_gate_value'] — the zero-init E9 gate",
+  "goal_score_absmean": "hier only: the SCALE the gate multiplies. The gate alone cannot distinguish 'has not opened yet' from 'will never open'; both are required.",
+  "goal_dist_sel": "hier only: the selected anchor's goal distance",
+  "lat_label/lon_label": "the v7.2 tactical class ids (IGNORE_ID -> -100)",
+  "route_label": "the v2.1 route target (ROUTE_UNKNOWN/invalid -> -100)",
+  "nav_cmd/nav_cmd_shuf/nav_valid": "the fed token, its permutation, validity",
+  "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head argmaxes under each nav conditioning (-1 = the head does not exist or the conditioning was not rolled). ⭐ nav_zero comes from the SEPARATE nav_cmd=None forward, not from a row of the fed batch — see NAV_NULL",
+  "nav_injected_true/nav_injected_zero": "out['nav_injected'] (refc_v3.py:471) under each forward: the E13 edge is LIVE under the fed nav and DEAD under nav_cmd=None. A conditioning edge that silently no-ops is the advertised-but-inert defect; this makes it visible per window.",
+  "ha_controls": "the held (a, channel-1) actually integrated, in the run's declared action units",
+  "plan_full_{cond}": "[S, 2] the emitted plan out['traj'] at EVERY model slot (not the dump grid) under each conditioning",
+  "gstr_{cond}": "[3] the strategic goal g_str = (cos, sin, dist_pref) (hier only)",
+  "sel_idx_{cond}": "the SELECTED anchor under each conditioning",
+  "sel_bank_{cond}": "[S, 2] the selected anchor's UNREFINED bank path (out['anchor_bank'][sel_idx]) — the selection surface",
+  "fan_term_heading_{cond}": "[N_anchors] terminal heading of every REFINED candidate (out['anchor_traj']) — fan coverage",
+  "reach_keep_{cond}": "[N_anchors] the S2 reach mask (1.0 = survivor)",
+  "gt_future_ext": "[60, 4] the recorded future poses (WORLD frame), clamped at the episode end; gt_future_valid_ext [60] says where",
+  "pose_last": "[4] (x, y, yaw, v) at t0 (world frame)",
+  "ego_t0": "[4] (v0, a_long, yaw_rate, curvature) at t0 — refc_v3.ego_state_at_t0 without the keep bit",
+  "ep_poses": "[T, 4] the episode's PROVIDER poses, once per file (for the label time-base control)"
+ },
+ "ego_state_fed": false,
+ "ablation": {
+  "applied": [],
+  "requested": [],
+  "prereg": "PREREG_REFCV4B_HIERARCHY_EVAL.md §3",
+  "is": "FULL — the final checkpoint as trained",
+  "verified": {},
+  "n_gstr_windows": 0
+ },
+ "navcomp_sidecar": true,
+ "corpus": {
+  "episodes": "E:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139",
+  "labels_path": "E:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+  "n_episodes_available": 139,
+  "labels": {
+   "path": "E:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_records": 147,
+   "n_episodes": 139,
+   "n_joined": 139,
+   "join_key": "stable_episode_id(clip_id) (the trainer's key)"
+  },
+  "frames": {
+   "n_stack": 3,
+   "provider_to_raw_frame_offset": 2,
+   "rule": "v2_dataset.py:36-38"
+  },
+  "refcv6_channels": {
+   "nav": {
+    "n_clips": 139,
+    "follow": 88,
+    "left": 13,
+    "right": 38,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "eefc38d1453bd1c73802d44d45affced",
+    "allow_oracle_nav": true
+   },
+   "max_speed_v6": {
+    "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+    "n_rows": 147,
+    "n_valid": 147,
+    "n_over_ceiling": 1,
+    "over_ceiling_frac": 0.006803,
+    "source_md5": "eefc38d1453bd1c73802d44d45affced",
+    "source_labels": "s2_labels_v8_eval.jsonl.gz",
+    "join_key": "sid = stable_episode_id(clip_id)",
+    "ladder_kmh": [
+     30,
+     50,
+     100,
+     120
+    ],
+    "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+    "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+    "channel": "refcv8 label source -> the refcv6 4-way one-hot (road-type step fed, never v_hi_ms)",
+    "source": "label",
+    "road_type_kmh": [
+     30,
+     50,
+     100,
+     120
+    ],
+    "histogram_kmh": {
+     "30": 49,
+     "50": 52,
+     "100": 39,
+     "120": 7
+    },
+    "n_unknown": 0,
+    "exact_future_speed_fed": false,
+    "label_md5": "eefc38d1453bd1c73802d44d45affced",
+    "n_windows": 23772,
+    "n_windows_fed": 23772,
+    "window_ceiling_frac": 1.0,
+    "window_histogram_kmh": {
+     "30": 8042,
+     "50": 8382,
+     "100": 6153,
+     "120": 1195
+    },
+    "window_n_unknown": 0
+   },
+   "labels": {
+    "path": "E:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+    "md5": "eefc38d1453bd1c73802d44d45affced",
+    "n_records": 147
+   }
+  },
+  "window_restriction": {
+   "n_requested": 1457,
+   "n_index_before": 23772,
+   "n_index_after": 1457,
+   "source": "banked baseline grid (clip, ws), kit clips"
+  },
+  "nav": {
+   "source": "v72",
+   "stats": {
+    "n_clips": 139,
+    "follow": 88,
+    "left": 13,
+    "right": 38,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "eefc38d1453bd1c73802d44d45affced",
+    "allow_oracle_nav": true
+   },
+   "trained_on": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)"
+  }
+ },
+ "episodes": [
+  {
+   "file_index": 0,
+   "episode_index": 0,
+   "episode_id": 8659539322628976639,
+   "n_windows": 19,
+   "clip_sha12": "0dfe63214bc2"
+  },
+  {
+   "file_index": 1,
+   "episode_index": 2,
+   "episode_id": 8856432279623052471,
+   "n_windows": 1,
+   "clip_sha12": "54e3dc4b3ae4"
+  },
+  {
+   "file_index": 2,
+   "episode_index": 3,
+   "episode_id": 6364938407247536202,
+   "n_windows": 1,
+   "clip_sha12": "d0c6db065fa0"
+  },
+  {
+   "file_index": 3,
+   "episode_index": 4,
+   "episode_id": 1445869799409465680,
+   "n_windows": 3,
+   "clip_sha12": "c8831556989f"
+  },
+  {
+   "file_index": 4,
+   "episode_index": 5,
+   "episode_id": 3481082292674736890,
+   "n_windows": 35,
+   "clip_sha12": "bfc3a203bd06"
+  },
+  {
+   "file_index": 5,
+   "episode_index": 6,
+   "episode_id": 2631527165423235638,
+   "n_windows": 9,
+   "clip_sha12": "b435685d40c8"
+  },
+  {
+   "file_index": 6,
+   "episode_index": 7,
+   "episode_id": 5931368308581280564,
+   "n_windows": 1,
+   "clip_sha12": "47f22ccd6fbb"
+  },
+  {
+   "file_index": 7,
+   "episode_index": 8,
+   "episode_id": 8521689459048363261,
+   "n_windows": 2,
+   "clip_sha12": "ea6d261f6c62"
+  },
+  {
+   "file_index": 8,
+   "episode_index": 10,
+   "episode_id": 4887716128241600005,
+   "n_windows": 1,
+   "clip_sha12": "d4c144f52747"
+  },
+  {
+   "file_index": 9,
+   "episode_index": 12,
+   "episode_id": 5996229755916728552,
+   "n_windows": 17,
+   "clip_sha12": "7e5dc4ad4e52"
+  },
+  {
+   "file_index": 10,
+   "episode_index": 13,
+   "episode_id": 5940166191116434775,
+   "n_windows": 30,
+   "clip_sha12": "d75f38babcda"
+  },
+  {
+   "file_index": 11,
+   "episode_index": 14,
+   "episode_id": 3780736022118627546,
+   "n_windows": 2,
+   "clip_sha12": "bb62d9b15ef0"
+  },
+  {
+   "file_index": 12,
+   "episode_index": 16,
+   "episode_id": 7889889810377234261,
+   "n_windows": 25,
+   "clip_sha12": "c45d6a86ff06"
+  },
+  {
+   "file_index": 13,
+   "episode_index": 17,
+   "episode_id": 8158875834339337835,
+   "n_windows": 1,
+   "clip_sha12": "5a393f328725"
+  },
+  {
+   "file_index": 14,
+   "episode_index": 18,
+   "episode_id": 1021513293499080694,
+   "n_windows": 9,
+   "clip_sha12": "c167e6ce11a3"
+  },
+  {
+   "file_index": 15,
+   "episode_index": 19,
+   "episode_id": 8017074428804167949,
+   "n_windows": 1,
+   "clip_sha12": "af59c57f6c77"
+  },
+  {
+   "file_index": 16,
+   "episode_index": 21,
+   "episode_id": 2286297764427265840,
+   "n_windows": 16,
+   "clip_sha12": "209199ce8280"
+  },
+  {
+   "file_index": 17,
+   "episode_index": 22,
+   "episode_id": 2970904550955637515,
+   "n_windows": 18,
+   "clip_sha12": "f81131bdf928"
+  },
+  {
+   "file_index": 18,
+   "episode_index": 23,
+   "episode_id": 5141423024137074127,
+   "n_windows": 2,
+   "clip_sha12": "ac6745ace7ec"
+  },
+  {
+   "file_index": 19,
+   "episode_index": 24,
+   "episode_id": 3030744820343445576,
+   "n_windows": 2,
+   "clip_sha12": "6ad168dc58db"
+  },
+  {
+   "file_index": 20,
+   "episode_index": 25,
+   "episode_id": 2617555561780420775,
+   "n_windows": 1,
+   "clip_sha12": "418a12591a39"
+  },
+  {
+   "file_index": 21,
+   "episode_index": 26,
+   "episode_id": 3805832636909416499,
+   "n_windows": 1,
+   "clip_sha12": "2ccc9a947611"
+  },
+  {
+   "file_index": 22,
+   "episode_index": 27,
+   "episode_id": 6936675322640746092,
+   "n_windows": 32,
+   "clip_sha12": "09f53befdab2"
+  },
+  {
+   "file_index": 23,
+   "episode_index": 28,
+   "episode_id": 6974475918360064182,
+   "n_windows": 18,
+   "clip_sha12": "34765c024267"
+  },
+  {
+   "file_index": 24,
+   "episode_index": 29,
+   "episode_id": 1090067183473506969,
+   "n_windows": 19,
+   "clip_sha12": "50da1e13e4db"
+  },
+  {
+   "file_index": 25,
+   "episode_index": 31,
+   "episode_id": 6490043046866519733,
+   "n_windows": 7,
+   "clip_sha12": "f2c6a9c84795"
+  },
+  {
+   "file_index": 26,
+   "episode_index": 32,
+   "episode_id": 1841490482485328900,
+   "n_windows": 1,
+   "clip_sha12": "9d92cb2360a4"
+  },
+  {
+   "file_index": 27,
+   "episode_index": 33,
+   "episode_id": 1825349519609453262,
+   "n_windows": 1,
+   "clip_sha12": "67e3568c2eda"
+  },
+  {
+   "file_index": 28,
+   "episode_index": 35,
+   "episode_id": 8549471864306221121,
+   "n_windows": 1,
+   "clip_sha12": "4888dcd27dc8"
+  },
+  {
+   "file_index": 29,
+   "episode_index": 37,
+   "episode_id": 8884658653802878962,
+   "n_windows": 34,
+   "clip_sha12": "59d98b34ae8b"
+  },
+  {
+   "file_index": 30,
+   "episode_index": 39,
+   "episode_id": 6738429145476776717,
+   "n_windows": 27,
+   "clip_sha12": "6adc10f58460"
+  },
+  {
+   "file_index": 31,
+   "episode_index": 41,
+   "episode_id": 4625754905267914014,
+   "n_windows": 8,
+   "clip_sha12": "6b0744922620"
+  },
+  {
+   "file_index": 32,
+   "episode_index": 42,
+   "episode_id": 3649879828249570056,
+   "n_windows": 3,
+   "clip_sha12": "c8cb0ad57519"
+  },
+  {
+   "file_index": 33,
+   "episode_index": 43,
+   "episode_id": 6444911681449589215,
+   "n_windows": 2,
+   "clip_sha12": "c5bb9c2618da"
+  },
+  {
+   "file_index": 34,
+   "episode_index": 44,
+   "episode_id": 5026852328165551436,
+   "n_windows": 1,
+   "clip_sha12": "98f1cf98cc38"
+  },
+  {
+   "file_index": 35,
+   "episode_index": 45,
+   "episode_id": 8066687926120920584,
+   "n_windows": 3,
+   "clip_sha12": "dd55afb71c3d"
+  },
+  {
+   "file_index": 36,
+   "episode_index": 46,
+   "episode_id": 2033609177101732670,
+   "n_windows": 34,
+   "clip_sha12": "f732a885f432"
+  },
+  {
+   "file_index": 37,
+   "episode_index": 47,
+   "episode_id": 5135522014018546707,
+   "n_windows": 1,
+   "clip_sha12": "76fc5c466b2d"
+  },
+  {
+   "file_index": 38,
+   "episode_index": 48,
+   "episode_id": 2772907115362269697,
+   "n_windows": 32,
+   "clip_sha12": "feccf3ba3479"
+  },
+  {
+   "file_index": 39,
+   "episode_index": 49,
+   "episode_id": 1253267261038422520,
+   "n_windows": 21,
+   "clip_sha12": "2efcfdb9c913"
+  },
+  {
+   "file_index": 40,
+   "episode_index": 50,
+   "episode_id": 7077038175376882531,
+   "n_windows": 19,
+   "clip_sha12": "a4741056ff38"
+  },
+  {
+   "file_index": 41,
+   "episode_index": 51,
+   "episode_id": 8153856093095347385,
+   "n_windows": 34,
+   "clip_sha12": "356568701781"
+  },
+  {
+   "file_index": 42,
+   "episode_index": 52,
+   "episode_id": 2207627396838316214,
+   "n_windows": 34,
+   "clip_sha12": "a699b49d4563"
+  },
+  {
+   "file_index": 43,
+   "episode_index": 54,
+   "episode_id": 4781874996789565458,
+   "n_windows": 1,
+   "clip_sha12": "198bb4517e28"
+  },
+  {
+   "file_index": 44,
+   "episode_index": 55,
+   "episode_id": 1147093929533943775,
+   "n_windows": 1,
+   "clip_sha12": "d36583cfa3d6"
+  },
+  {
+   "file_index": 45,
+   "episode_index": 56,
+   "episode_id": 4856496206293652198,
+   "n_windows": 26,
+   "clip_sha12": "c7e31db0a5c5"
+  },
+  {
+   "file_index": 46,
+   "episode_index": 57,
+   "episode_id": 6612039838703251343,
+   "n_windows": 34,
+   "clip_sha12": "49f68312b36e"
+  },
+  {
+   "file_index": 47,
+   "episode_index": 58,
+   "episode_id": 3982889017717917144,
+   "n_windows": 3,
+   "clip_sha12": "22ecc807b84c"
+  },
+  {
+   "file_index": 48,
+   "episode_index": 59,
+   "episode_id": 6033215366162380979,
+   "n_windows": 25,
+   "clip_sha12": "2dc00f2fb95d"
+  },
+  {
+   "file_index": 49,
+   "episode_index": 61,
+   "episode_id": 8348901771088347109,
+   "n_windows": 1,
+   "clip_sha12": "439646d62f3a"
+  },
+  {
+   "file_index": 50,
+   "episode_index": 62,
+   "episode_id": 830030824022209707,
+   "n_windows": 3,
+   "clip_sha12": "a21feba2f8b1"
+  },
+  {
+   "file_index": 51,
+   "episode_index": 63,
+   "episode_id": 4755961725313043249,
+   "n_windows": 12,
+   "clip_sha12": "c448fac4e230"
+  },
+  {
+   "file_index": 52,
+   "episode_index": 64,
+   "episode_id": 6484165013774404905,
+   "n_windows": 17,
+   "clip_sha12": "68b999cbd670"
+  },
+  {
+   "file_index": 53,
+   "episode_index": 66,
+   "episode_id": 7619001800864643648,
+   "n_windows": 34,
+   "clip_sha12": "9f8bedcfb9de"
+  },
+  {
+   "file_index": 54,
+   "episode_index": 67,
+   "episode_id": 1285873692655759190,
+   "n_windows": 14,
+   "clip_sha12": "43ac3253c6a3"
+  },
+  {
+   "file_index": 55,
+   "episode_index": 68,
+   "episode_id": 3119486229009641073,
+   "n_windows": 3,
+   "clip_sha12": "b6ba8d3b06f3"
+  },
+  {
+   "file_index": 56,
+   "episode_index": 69,
+   "episode_id": 5444309113988531226,
+   "n_windows": 19,
+   "clip_sha12": "5c1eb051b96f"
+  },
+  {
+   "file_index": 57,
+   "episode_index": 70,
+   "episode_id": 5455254795794215821,
+   "n_windows": 27,
+   "clip_sha12": "2b568af29b7d"
+  },
+  {
+   "file_index": 58,
+   "episode_index": 72,
+   "episode_id": 9062135385030390400,
+   "n_windows": 3,
+   "clip_sha12": "58f07fdb342a"
+  },
+  {
+   "file_index": 59,
+   "episode_index": 73,
+   "episode_id": 6168823534433910413,
+   "n_windows": 1,
+   "clip_sha12": "b9622e49a9ec"
+  },
+  {
+   "file_index": 60,
+   "episode_index": 74,
+   "episode_id": 1385563552574556121,
+   "n_windows": 1,
+   "clip_sha12": "b88f64c81aec"
+  },
+  {
+   "file_index": 61,
+   "episode_index": 75,
+   "episode_id": 4499079848997153668,
+   "n_windows": 1,
+   "clip_sha12": "e1777e69be55"
+  },
+  {
+   "file_index": 62,
+   "episode_index": 76,
+   "episode_id": 8874314560695158599,
+   "n_windows": 12,
+   "clip_sha12": "60f8d13ff2e2"
+  },
+  {
+   "file_index": 63,
+   "episode_index": 77,
+   "episode_id": 327068641428577617,
+   "n_windows": 35,
+   "clip_sha12": "5b74d23ac873"
+  },
+  {
+   "file_index": 64,
+   "episode_index": 78,
+   "episode_id": 4024518110882967263,
+   "n_windows": 25,
+   "clip_sha12": "e902aba7fb9a"
+  },
+  {
+   "file_index": 65,
+   "episode_index": 79,
+   "episode_id": 5685839324975230701,
+   "n_windows": 29,
+   "clip_sha12": "029d8d52075c"
+  },
+  {
+   "file_index": 66,
+   "episode_index": 80,
+   "episode_id": 1908740305293478079,
+   "n_windows": 16,
+   "clip_sha12": "b5f66e3e7af0"
+  },
+  {
+   "file_index": 67,
+   "episode_index": 81,
+   "episode_id": 6467117152891379441,
+   "n_windows": 2,
+   "clip_sha12": "43e797856f84"
+  },
+  {
+   "file_index": 68,
+   "episode_index": 82,
+   "episode_id": 8671166832698325708,
+   "n_windows": 14,
+   "clip_sha12": "22d47ae7e052"
+  },
+  {
+   "file_index": 69,
+   "episode_index": 84,
+   "episode_id": 254350182404654030,
+   "n_windows": 26,
+   "clip_sha12": "9855363e1ac1"
+  },
+  {
+   "file_index": 70,
+   "episode_index": 85,
+   "episode_id": 4051929393764391985,
+   "n_windows": 1,
+   "clip_sha12": "c16543c621dc"
+  },
+  {
+   "file_index": 71,
+   "episode_index": 86,
+   "episode_id": 2631052477045966872,
+   "n_windows": 2,
+   "clip_sha12": "071957186302"
+  },
+  {
+   "file_index": 72,
+   "episode_index": 87,
+   "episode_id": 1824502254617144919,
+   "n_windows": 1,
+   "clip_sha12": "6d3b8ff6b7b2"
+  },
+  {
+   "file_index": 73,
+   "episode_index": 88,
+   "episode_id": 8811338848695437121,
+   "n_windows": 1,
+   "clip_sha12": "c23873899e31"
+  },
+  {
+   "file_index": 74,
+   "episode_index": 89,
+   "episode_id": 658505054094811091,
+   "n_windows": 18,
+   "clip_sha12": "3fc7f2025d61"
+  },
+  {
+   "file_index": 75,
+   "episode_index": 90,
+   "episode_id": 633041096268336337,
+   "n_windows": 1,
+   "clip_sha12": "4de594141ae4"
+  },
+  {
+   "file_index": 76,
+   "episode_index": 92,
+   "episode_id": 1131054092343061790,
+   "n_windows": 13,
+   "clip_sha12": "081b986f8888"
+  },
+  {
+   "file_index": 77,
+   "episode_index": 93,
+   "episode_id": 5769297210096357786,
+   "n_windows": 1,
+   "clip_sha12": "729b5d29fa89"
+  },
+  {
+   "file_index": 78,
+   "episode_index": 94,
+   "episode_id": 8542660967613513830,
+   "n_windows": 4,
+   "clip_sha12": "39cd356553d5"
+  },
+  {
+   "file_index": 79,
+   "episode_index": 95,
+   "episode_id": 2662085345173601638,
+   "n_windows": 35,
+   "clip_sha12": "6c5a21de8993"
+  },
+  {
+   "file_index": 80,
+   "episode_index": 96,
+   "episode_id": 8861780706754199881,
+   "n_windows": 26,
+   "clip_sha12": "c0d4ac1d8f62"
+  },
+  {
+   "file_index": 81,
+   "episode_index": 97,
+   "episode_id": 6954114104208000291,
+   "n_windows": 34,
+   "clip_sha12": "ff9d2a66d2a2"
+  },
+  {
+   "file_index": 82,
+   "episode_index": 98,
+   "episode_id": 8242789147292199230,
+   "n_windows": 3,
+   "clip_sha12": "83df0bab7763"
+  },
+  {
+   "file_index": 83,
+   "episode_index": 99,
+   "episode_id": 4346558458338416388,
+   "n_windows": 1,
+   "clip_sha12": "252bc8e77e06"
+  },
+  {
+   "file_index": 84,
+   "episode_index": 100,
+   "episode_id": 6574988825580588900,
+   "n_windows": 27,
+   "clip_sha12": "a78bf2711918"
+  },
+  {
+   "file_index": 85,
+   "episode_index": 101,
+   "episode_id": 3639974664364986853,
+   "n_windows": 1,
+   "clip_sha12": "732422c717f1"
+  },
+  {
+   "file_index": 86,
+   "episode_index": 102,
+   "episode_id": 4267934554494781558,
+   "n_windows": 34,
+   "clip_sha12": "77d93cd24266"
+  },
+  {
+   "file_index": 87,
+   "episode_index": 103,
+   "episode_id": 3945577903879517603,
+   "n_windows": 2,
+   "clip_sha12": "28f6781136b1"
+  },
+  {
+   "file_index": 88,
+   "episode_index": 104,
+   "episode_id": 3008401244071437273,
+   "n_windows": 25,
+   "clip_sha12": "f6cfd0a20340"
+  },
+  {
+   "file_index": 89,
+   "episode_index": 105,
+   "episode_id": 5332230871558131766,
+   "n_windows": 34,
+   "clip_sha12": "356cc45b0224"
+  },
+  {
+   "file_index": 90,
+   "episode_index": 106,
+   "episode_id": 2327884757538577311,
+   "n_windows": 3,
+   "clip_sha12": "c4f46701b8ae"
+  },
+  {
+   "file_index": 91,
+   "episode_index": 107,
+   "episode_id": 761066260686310844,
+   "n_windows": 1,
+   "clip_sha12": "101ef2cf05dc"
+  },
+  {
+   "file_index": 92,
+   "episode_index": 109,
+   "episode_id": 3224806804665105264,
+   "n_windows": 1,
+   "clip_sha12": "c8c6aa11d792"
+  },
+  {
+   "file_index": 93,
+   "episode_index": 110,
+   "episode_id": 8795023975710178146,
+   "n_windows": 14,
+   "clip_sha12": "751cdd67811f"
+  },
+  {
+   "file_index": 94,
+   "episode_index": 111,
+   "episode_id": 1290243999637028924,
+   "n_windows": 1,
+   "clip_sha12": "4b5c891e90e6"
+  },
+  {
+   "file_index": 95,
+   "episode_index": 112,
+   "episode_id": 2074547948974319081,
+   "n_windows": 2,
+   "clip_sha12": "00213e99adca"
+  },
+  {
+   "file_index": 96,
+   "episode_index": 114,
+   "episode_id": 1483973133454395838,
+   "n_windows": 34,
+   "clip_sha12": "85ee873a6f81"
+  },
+  {
+   "file_index": 97,
+   "episode_index": 115,
+   "episode_id": 8403258083896915315,
+   "n_windows": 1,
+   "clip_sha12": "7695875eaea9"
+  },
+  {
+   "file_index": 98,
+   "episode_index": 116,
+   "episode_id": 4221619963591443669,
+   "n_windows": 34,
+   "clip_sha12": "0191487845ef"
+  },
+  {
+   "file_index": 99,
+   "episode_index": 117,
+   "episode_id": 4821448681613935627,
+   "n_windows": 31,
+   "clip_sha12": "264a78e8fad1"
+  },
+  {
+   "file_index": 100,
+   "episode_index": 118,
+   "episode_id": 1025597027217851998,
+   "n_windows": 1,
+   "clip_sha12": "d5a67435ec19"
+  },
+  {
+   "file_index": 101,
+   "episode_index": 119,
+   "episode_id": 3587813618301180002,
+   "n_windows": 2,
+   "clip_sha12": "eaf5c5ae236c"
+  },
+  {
+   "file_index": 102,
+   "episode_index": 120,
+   "episode_id": 4105169087547256295,
+   "n_windows": 1,
+   "clip_sha12": "1655838298f8"
+  },
+  {
+   "file_index": 103,
+   "episode_index": 121,
+   "episode_id": 5163748204317926351,
+   "n_windows": 3,
+   "clip_sha12": "bbd162dfe0eb"
+  },
+  {
+   "file_index": 104,
+   "episode_index": 122,
+   "episode_id": 4159723400672986470,
+   "n_windows": 15,
+   "clip_sha12": "d32340bd0ad0"
+  },
+  {
+   "file_index": 105,
+   "episode_index": 123,
+   "episode_id": 6074254364859305900,
+   "n_windows": 1,
+   "clip_sha12": "cd79a917d8c4"
+  },
+  {
+   "file_index": 106,
+   "episode_index": 124,
+   "episode_id": 5117335902587495697,
+   "n_windows": 17,
+   "clip_sha12": "547d1d68c1bd"
+  },
+  {
+   "file_index": 107,
+   "episode_index": 125,
+   "episode_id": 6462060203729074862,
+   "n_windows": 2,
+   "clip_sha12": "e81566637c0e"
+  },
+  {
+   "file_index": 108,
+   "episode_index": 126,
+   "episode_id": 1771676830055911485,
+   "n_windows": 2,
+   "clip_sha12": "1721df8c70b6"
+  },
+  {
+   "file_index": 109,
+   "episode_index": 127,
+   "episode_id": 4073021720302196795,
+   "n_windows": 30,
+   "clip_sha12": "693335b810c3"
+  },
+  {
+   "file_index": 110,
+   "episode_index": 128,
+   "episode_id": 1081419996878382869,
+   "n_windows": 4,
+   "clip_sha12": "cf8839a4e491"
+  },
+  {
+   "file_index": 111,
+   "episode_index": 129,
+   "episode_id": 2574094301292400761,
+   "n_windows": 17,
+   "clip_sha12": "b0d17a91f120"
+  },
+  {
+   "file_index": 112,
+   "episode_index": 133,
+   "episode_id": 8010116796626921566,
+   "n_windows": 16,
+   "clip_sha12": "8323b0dfdd3b"
+  },
+  {
+   "file_index": 113,
+   "episode_index": 134,
+   "episode_id": 4463070212496215301,
+   "n_windows": 1,
+   "clip_sha12": "8d2cdffe0da7"
+  },
+  {
+   "file_index": 114,
+   "episode_index": 135,
+   "episode_id": 2162810260090415288,
+   "n_windows": 3,
+   "clip_sha12": "8bc0a83f65f9"
+  },
+  {
+   "file_index": 115,
+   "episode_index": 136,
+   "episode_id": 6479814750558219472,
+   "n_windows": 25,
+   "clip_sha12": "2aa810802777"
+  },
+  {
+   "file_index": 116,
+   "episode_index": 137,
+   "episode_id": 1284790499828588811,
+   "n_windows": 17,
+   "clip_sha12": "570b47ad7408"
+  }
+ ],
+ "wallclock_s": 885.3,
+ "first_forward_s": 1.445770502090454,
+ "_provenance": {
+  "verdict": "REAL_CHECKPOINT_ON_REAL_CORPUS",
+  "checkpoint_scale": "TRAINED",
+  "corpus_scale": "FULL",
+  "bank_scale": "REAL",
+  "unverified_on_a_real_checkpoint": false,
+  "discriminators": {
+   "model.step": 40000,
+   "model.n_anchors": 117,
+   "grid.n_episodes": 117,
+   "grid.n_windows": 1457
+  },
+  "thresholds": {
+   "trained_step_at_or_above": 1000,
+   "full_corpus_episodes_at_or_above": 10,
+   "full_corpus_windows_at_or_above": 500,
+   "real_bank_anchors_above": 64
+  },
+  "not_a_discriminator": {
+   "model.state_dict_load": "CARRIED for the record, NEVER read here: a random-init model saved and reloaded also reports empty missing/unexpected keys, so a clean strict load says nothing about trainedness",
+   "the tool's own validation history": "`_unverified` used to be emitted unconditionally and therefore described the TOOL, not the RUN — that is the defect this block replaces (D-EVALTOOL-STAMP-BLIND)"
+  },
+  "_reading": "SYNTHETIC_FIXTURE = a smoke/random-init checkpoint; nothing here is a result. REAL_CHECKPOINT_ON_SMOKE_CORPUS = a real arm exercised on a slice — the TOOL is verified, the NUMBERS are not an eval. REAL_CHECKPOINT_ON_REAL_CORPUS = a quotable arm, subject to its tier stamp and estimator as usual. `bank_scale` is reported BESIDE the verdict rather than folded into it: a real step count on a smoke-sized bank is a coherent thing to want (a long smoke run) and must stay visible instead of being averaged into one label.",
+  "_not_what_this_proves": "the stamp reads the run's SELF-REPORTED fields. It ends the unconditional boilerplate — it is NOT a forgery detector, and a manifest whose `model.step` is wrong is outside what any stamp can see."
+ },
+ "_clip_id_redaction": "clip_id -> clip_sha12 = sha256(clip_id)[:12] in the banked copy (clip-id rule, PI 09-17); the dev-box original is C:/Users/Admin/refcv8_navfeed_out/<dump>/manifest.json"
+}

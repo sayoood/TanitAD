@@ -1,0 +1,70 @@
+[suite] taniteval/tools/openloop_suite.py
+[suite] regime: OPEN LOOP (PI ruling 2026-09-02) — every arm
+[trivial-profile] 4823 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=4823 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: oracle_sel=821/4823, os_navshuf=2417/4823
+  ha             n=4823 straight=0.0402 const_speed=0.0319 CONSTANT-VELOCITY=0.0311  identical_to: ha0=149/4823
+  ha0            n=4823 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=149/4823
+  os_navshuf     n=4823 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: oracle_sel=388/4823, os=2417/4823
+  os_navzero     n=4823 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  oracle_sel     n=4823 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os=821/4823, os_navshuf=388/4823
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+  ⛔ VOID-RISK: `os` is bit-identical to `os_navshuf` on 2417/4823 windows (50.11%) — on those windows the instrument saw ONE arm, not two.
+[selection-profile] 4823 windows over 128 anchors — the model's OWN choice, before any family row
+  n_distinct=  37  modal=#26 (0.3054)  entropy=2.3241/4.8520 nats (ratio 0.4790)  agrees_with_oracle=0.1702
+[lead] b1_eval_lead_block.npz: 4823 windows / 141 eps · OK eps 141 · LEAD 1489 NO_LEAD 1145 NOT_STRAIGHT 1889 NO_LABEL 300 · speed-check max 2.6e-05 m/s · PRESENT
+[suite] record acquired: RE-ANALYSED a banked dump (zero GPU)
+[suite] artifact assembled: 4823 windows / 141 episodes, headline arm `os`
+
+=== openloop_suite artifact ===
+tier: T1  (driving-performance tier)
+
+LONGITUDINAL  [4/4 present]
+   [  ok  ] target-speed accuracy
+   [  ok  ] along-track displacement error
+   [  ok  ] ego progress
+   [  ok  ] distance-keeping (headway / time-gap / TTC to the lead agent)
+
+LATERAL  [4/4 present]
+   [  ok  ] cross-track error
+   [  ok  ] heading error
+   [  ok  ] curvature error
+   [  ok  ] yaw-rate error
+
+TACTICAL  [3/3 present]
+   [  ok  ] manoeuvre-decision quality (selected vs executed)
+   [  ok  ] confusion over the manoeuvre classes
+   [  ok  ] tactical goal / anchor selection quality
+
+STRATEGIC  [2/5 present]
+   [  ok  ] strategic decision quality
+   [  ok  ] strategic route / goal-setting quality
+   [ WORK ] nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)
+            -> four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command: nav_compliance did not run: TypeError: _path_exists: path should be string, bytes, os.PathLike or integer, not dict (n=4823)
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)
+            -> four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled: nav_compliance did not run: TypeError: _path_exists: path should be string, bytes, os.PathLike or integer, not dict (n=4823)
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)
+            -> four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero: nav_compliance did not run: TypeError: _path_exists: path should be string, bytes, os.PathLike or integer, not dict (n=4823)
+
+ARTIFACT HYGIENE
+   [  ok  ] tier stamp present
+   [  ok  ] estimator named
+   [  ok  ] n printed (windows and episodes)
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [  ok  ] corpus identity recorded (parity key + skip-hash)
+   [  ok  ] headline metrics reported against their trivial control(s)
+
+LEAK GUARDS
+   [  ok  ] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+   [  ok  ] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+   [  ok  ] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+
+VIOLATIONS (silently absent, required): 0
+WORK ITEMS (refused with a reason, or partial): 3
+
+[suite] wrote C:/Users/Admin/rl_rescope/run/eval\refcv3-40284-rlmin-rl.json
+[suite] wrote C:/Users/Admin/rl_rescope/run/eval\refcv3-40284-rlmin-rl.md
+[suite] wrote C:/Users/Admin/rl_rescope/run/eval\refcv3-40284-rlmin-rl.html
+[suite] loop-vocabulary guard: CLEAN (0 occurrences of the forbidden phrase in either rendering)
+[suite] constant-only control: OK
+[suite] criteria: 0 violations, 3 work items (registry v2.6.0)

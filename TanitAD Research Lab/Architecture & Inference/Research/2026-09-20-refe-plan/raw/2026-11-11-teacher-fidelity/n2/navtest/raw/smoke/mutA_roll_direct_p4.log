@@ -1,0 +1,17 @@
+# REFE_SIM_HZ=10 OMP_NUM_THREADS=1
+# C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe F:\tanitad_scratch\tfn2_nt\run_s2\w\pk\eval\tfn2_nt_roll.py --arm RJ5 --shard 0/1 --out-dir F:/tanitad_scratch/tfn2_nt/mut/rows --tokens F:/tanitad_scratch/tfn2_nt/smoke/tokens.json --export F:/tanitad_scratch/tfn2_nt/smoke/export.json.gz --db-dir E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/trainval --threads 1
+  MUTATION (test only): override dropped before the build, request kept
+  TF-N2 navtest roll: arm RJ5, request {'overrides': {'positive_jerk_limit_when_nonnegative_acc': 5.0}, 'expected': {'route_goal_min_speed_mps': 5.0, 'route_goal_horizon_s': 12.0, 'policy_interval_s': 0.0, 'positive_jerk_limit_when_nonnegative_acc': 5.0}}, export F:/tanitad_scratch/tfn2_nt/smoke/export.json.gz
+  shard 0/1: 1 logs, 5 tokens, 5 to do (0 already written) -> F:/tanitad_scratch/tfn2_nt/mut/rows\rows_s0of1.jsonl
+  map-feature cache: ON (exact; REFE_MAP_CACHE=0 disables)
+  query cache: ON (exact; REFE_QUERY_CACHE=0 disables)
+  teacher visualisation debug: SKIPPED (REFE_SKIP_DEBUG=0 restores)
+  map-step fast path: ON (exact; REFE_MAP_STEP_FAST=0 disables)
+  route rank 0: THEIR unpatched route (byte-identical to Stage 0 by construction); device cpu; torch threads 1; REFE_SIM_HZ 10; TTS OFF
+[2026-11-12 15:14:36,666] [WARNING] [config.py: 33]: CUDA is unavailable; using CPU for DriveRL inference
+[2026-11-12 15:14:36,666] [WARNING] [config.py: 76]: CUDA device specified but not available. Automatically switching to CPU device.
+    2021.10.05.04.03.05_veh-50_01466_01790 tokens    5  total     5/5        8s   1.70 s/token
+  map cache hits: downsample 97.3 % (22,154/22,773), line coords 98.5 %, polygon coords 96.8 %
+  query cache: many 0.0 % hits (0/525), one 51.4 % (234/455), evicted 0, bypass 0, partial 0, verified 0
+  map-step fast path: proximal 810 calls | drivable-area union 173 hit / 27 miss | edge distance 7736 hit / 7736 miss | route 200 | writes 400
+ZZSHARD_DONE 0 1 5

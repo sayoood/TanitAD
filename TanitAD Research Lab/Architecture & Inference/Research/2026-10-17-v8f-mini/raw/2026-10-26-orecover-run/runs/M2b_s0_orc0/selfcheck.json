@@ -1,0 +1,273 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 0.7015657424926758,
+   "goal": 0.05805604159832001,
+   "lat": 0.04600862041115761,
+   "lon": 0.6556705236434937,
+   "cons": 0.16983798146247864,
+   "ade": 2.722465753555298,
+   "fde": 7.067482948303223,
+   "acc": 0.0412398986518383,
+   "pen_SPEED": 0.05992322042584419,
+   "pens_SPEED": 0.05579903721809387,
+   "pen_STOP": 0.21978449821472168,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.02321872115135193,
+   "pens_TURN": 0.007664014585316181,
+   "pen_LEAD": 0.34894901514053345,
+   "pens_LEAD": 0.03024633228778839,
+   "wm": 164.568115234375,
+   "total": 19.498003005981445
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 338.0844107568264,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 21113.66865158081,
+   "S": 2579.1931556761265,
+   "T": 1692.9078968167305,
+   "O": 8091.548918854445,
+   "head_s": 1212.096962183714,
+   "head_o": 2816.522351652384,
+   "wm": 14335.08786486549
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 256,
+  "n_partial": 0,
+  "n_all_gt": 118,
+  "n_all_own": 138,
+  "unit_gt_rate": {
+   "decisions": 0.4609375,
+   "speed": 0.4609375,
+   "angle": 0.4609375,
+   "tte": 0.4609375,
+   "timegap": 0.4609375,
+   "geom": 0.4609375,
+   "leadgap": 0.4609375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 17.031005859375,
+    "o_read_code_abs_max": 7.253265380859375,
+    "o_read_ck_minus_nominal_abs_max": 64.51432037353516,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 9.220514297485352,
+    "o_read_code_abs_max": 5.147832870483398,
+    "o_read_ck_minus_nominal_abs_max": 64.51432037353516,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 15.884969711303711,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 64.51432037353516,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 27.009523391723633,
+    "o_read_code_abs_max": 6.003403186798096,
+    "o_read_ck_minus_nominal_abs_max": 63.814666748046875,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 10.501729965209961
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 0.0,
+  "w_probe": 1.0,
+  "acc": 0.010739156976342201,
+  "acc_at_zero_weight": 0.010739156976342201,
+  "total_w": 19.919496536254883,
+  "total_0": 19.908756256103516,
+  "contribution": 0.010740280151367188,
+  "w_x_acc": 0.010739156976342201,
+  "head_o_grad_diff": 8.869754791259766,
+  "read_o_grad_diff": 17.401390075683594,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "declared_zero_total_reproduces_exactly": true,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "steps_total": 3000,
+ "S_steps_per_epoch_100pct": 4791,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 4512,
+  "n_clips_expected": 4512,
+  "n_clips_all": 4512,
+  "n_excluded": 60,
+  "n_excluded_declared": 60,
+  "excluded_in_train": 0,
+  "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 306566,
+  "n_windows": 306566,
+  "window_start": 3,
+  "window_t_min": 3,
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s0\\ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "1225d98ff87cbe17"
+  }
+ },
+ "argv_sha": "25940ffbe3ec9372",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ }
+}

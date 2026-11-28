@@ -1,0 +1,156 @@
+{
+ "intro": {
+  "title": "refav1 re-read: the arm that TURNS tracks the road WORSE than a straight line",
+  "lines": [
+   [
+    "The same moment of the same drive, planned THREE ways. One checkpoint (step 21,109), one world model, one set of decision heads - the arms differ ONLY in what the planner's cost charges for. MEASURED over n = 40 windows / 8 episodes, tier T1 (self-action open loop).",
+    "body"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THIS CUT CORRECTS ITS OWN PREDECESSOR, AND THE CORRECTION IS THE FLOOR",
+    "h2"
+   ],
+   [
+    "The first cut called ccos_argmax 'the arm that TURNS' and wk15 'accurate because it does not turn'. Both readings came through a turn-recall gate |dyaw| > 0.15 rad - and THE HUMAN'S OWN RECORDED DRIVING FAILS THAT GATE, passing 3 of 9 turn windows (median dyaw 0.0431) while ccos_argmax passes 6 of 9, TWICE AS OFTEN AS THE HUMAN. A gate the ground truth fails is not measuring skill; it is measuring the gate.",
+    "bad"
+   ],
+   [
+    "Re-read on curvature MAE - a metric the human passes BY CONSTRUCTION - against a floor that makes the sentence checkable: a PERFECTLY STRAIGHT plan. The answer INVERTS.",
+    "ok"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "WHAT THE COLOURS MEAN",
+    "h2"
+   ],
+   [
+    "GREEN    the GROUND TRUTH - what the human actually drove.",
+    "ok"
+   ],
+   [
+    "WHITE    ha0, THE STRAIGHT FLOOR - a plan that never steers (a = 0, kappa = 0 at the measured v0; MEASURED max |y| 0.000000 m over all 40 windows). Drawn WIDE and UNDERNEATH, because it is the bar this reel's central claim is measured against.",
+    "body"
+   ],
+   [
+    "grey     ha0_ext, the ECHO control - holds the MEASURED (a0, kappa0). It is an ADE floor and NOT a road-tracking floor: curvature MAE 0.077298, and it leaves the mu = 0.7 friction circle on 18.5 % of the 27 windows at v0 >= 2 m/s.",
+    "dim"
+   ],
+   [
+    "MAGENTA  ccos_argmax - no curvature charge at all (W_KAPPA 0).",
+    "body"
+   ],
+   [
+    "ORANGE   wk15 - a curvature CHARGE in the cost (W_KAPPA 15.11).",
+    "body"
+   ],
+   [
+    "VIOLET   best - that charge AND the mu = 0.7 friction-circle cap.",
+    "body"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THE RANKING ON THE REACHABLE METRIC - curvature MAE 1/m, pooled over valid steps by taniteval.four_families, n = 40 windows / 8 episodes",
+    "h2"
+   ],
+   [
+    "wk15         0.030982   the best lateral tracking in the programme - 23 % BETTER than a perfectly straight plan   (n_steps 271)",
+    "ok"
+   ],
+   [
+    "best         0.031281   22 % better than straight   (n_steps 271)",
+    "ok"
+   ],
+   [
+    "ha0          0.040083   <-- THE STRAIGHT FLOOR, the bar   (n_steps 289)",
+    "body"
+   ],
+   [
+    "ccos_argmax  0.055369   WORSE THAN DRIVING IN A STRAIGHT LINE   (n_steps 289)",
+    "bad"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "WHAT TO WATCH FOR: where the road does not bend, the magenta line swings out of the lane while the orange and violet ones lie on the white straight floor - and so does the green ground truth. The failure is MAGNITUDE, never direction: 153 of 153 retained plans across the 2x2 curve the way their goal asked.",
+    "warn"
+   ],
+   [
+    "OPEN LOOP throughout (PI ruling 2026-09-02): the model controls nothing and the ego data keeps arriving from the recording. Every line is READ from a banked dump - no model runs in this renderer.",
+    "dim"
+   ]
+  ]
+ },
+ "outro": {
+  "title": "What the reel showed",
+  "lines": [
+   [
+    "THE LATERAL FINDING",
+    "h2"
+   ],
+   [
+    "1. THE UNPENALISED ARM DOES NOT TRACK THE ROAD - IT OVER-TURNS. ccos_argmax reads curvature MAE 0.055369 against the straight floor's 0.040083, i.e. worse than a plan that never steers, and it leaves the mu = 0.7 friction circle on 29.6 % of the 27 feasibility windows, peaking at 3.262 g. The old turn-recall gate rewarded it for exactly that.",
+    "bad"
+   ],
+   [
+    "2. THERE IS AN ARM THAT BOTH DRIVES ACCURATELY AND TRACKS THE ROAD: wk15, at ADE 0.8934 m and curvature MAE 0.030982 - 23 % better than the straight floor. The W_KAPPA sweep has a CLEAN INTERIOR OPTIMUM near 15: 0.05537 (0) -> 0.03941 (1) -> 0.03874 (3) -> 0.03352 (7) -> 0.03098 (15.11) -> 0.03802 (151). Not a saturating knob and not a cliff.",
+    "ok"
+   ],
+   [
+    "3. AND ITS CAPPED SIBLING IS SAFE, REPLICATED. best (wk15 + the mu = 0.7 cap) carries the programme's only REPLICATED, NON-VACUOUS zero friction-circle violation rate: kamm_over 0.0000 at BOTH inference seeds, max|kappa| 0.0800 at both, peak 0.332 g - 89 % of the human's own peak lateral load of 0.373. It is not a stopped arm buying safety by declining to act.",
+    "ok"
+   ],
+   [
+    "4. THE SIGN IS NEVER WRONG; THE FAILURE IS MAGNITUDE. 153 of 153 retained plans across the 2x2 (W_KAPPA in {0, 15.11} x seed in {0, 1}) curve the way their goal asked. W_KAPPA reduces turn MAGNITUDE, never direction - and the |dyaw| > 0.15 gate reads reduced magnitude as 'zero turns'.",
+    "warn"
+   ],
+   [
+    "5. WHAT IS NOT FIXED: THE LONGITUDINAL FAMILY. The echo floor ha0_ext still beats every arm on ADE (0.8772 m against best's 0.8838 m) - while itself sitting outside the friction circle on 18.5 % of windows, so that comparison only means anything with its feasibility rate beside it. Lateral and safety are established; longitudinal is the open blocker.",
+    "bad"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THE WORLD MODEL - AND THIS PART IS WORKING",
+    "h2"
+   ],
+   [
+    "Over all 40 windows the predictor beats the persistence control on 28 of its 30 steps: it LOSES by 0.0809 at 0.2 s and WINS by 0.3168 at 6.0 s. The defect this reel shows is in the PLANNER's cost geometry, not in the model's ability to predict the world.",
+    "ok"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THE TWO CONTROLS THAT LICENSE EVERY FRAME",
+    "h2"
+   ],
+   [
+    "(a) THE INTEGRATOR. The recorded actions, integrated through the SAME unicycle every arm was rolled through, land on the dumped ground truth to 0.1552 m mean (median 0.1512, max 0.2981) over the 27 admissible windows at v0 >= 2 m/s - while the same actions read under the legacy KAPPA unit miss by 0.8727 m, a 5.62x separation. BOTH halves are required: a passing arm alone cannot tell a right integrator from a loose tolerance. See _GT_CONTROL.png beside this file.",
+    "dim"
+   ],
+   [
+    "(b) THE CURVATURE. Every curvature number on every frame is computed by taniteval.four_families - the eval's own function - and the render REFUSES unless the panel aggregate reproduces the banked table exactly: ha0 0.040083, wk15 0.030982, best 0.031281, ccos_argmax 0.055369, ha0_ext 0.077298. All five reproduce.",
+    "dim"
+   ],
+   [
+    "MEASURED 2026-09-05/06 from .../2026-09-05-refav1-cost-geometry/raw/arms/. Tier T1. n = 40 windows / 8 episode clusters - a PICTURE OF A BANKED PANEL, not a new result: no interval is computed here and none is claimed. The 3-of-9 human turn-gate figure and the 153/153 sign control come from the stratified turn panel (M74 / M75), NOT from these 40 windows.",
+    "dim"
+   ]
+  ]
+ }
+}

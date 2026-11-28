@@ -1,0 +1,243 @@
+{
+ "module": "D:\\Projects\\TanitAD\\taniteval\\taniteval\\refcv6_acceptance.py",
+ "bars": {
+  "TFLIP_BAR_FOLLOWS_FED": 0.5,
+  "TFLIP_BAR_TRUE_MINUS_SHUFFLED": 0.38,
+  "TFLIP_TODAY_FOLLOWS_FED": 0.205
+ },
+ "TFLIP_cases": [
+  {
+   "case": "GREEN clears both bars",
+   "expected": "PASS",
+   "got": "PASS",
+   "agrees": true
+  },
+  {
+   "case": "REGRESSION today's refcv5-v2 numbers (0.205 / 0.099)",
+   "expected": "FAIL",
+   "got": "FAIL",
+   "agrees": true
+  },
+  {
+   "case": "REGRESSION fed just under the bar (lo 0.49)",
+   "expected": "FAIL",
+   "got": "FAIL",
+   "agrees": true
+  },
+  {
+   "case": "REGRESSION delta just under the bar (lo 0.37)",
+   "expected": "FAIL",
+   "got": "FAIL",
+   "agrees": true
+  },
+  {
+   "case": "REGRESSION winner's curse: mean 0.72 but CI lo 0.20",
+   "expected": "FAIL",
+   "got": "FAIL",
+   "agrees": true
+  },
+  {
+   "case": "REGRESSION delta clears its bar but is NOT separated",
+   "expected": "FAIL",
+   "got": "FAIL",
+   "agrees": true
+  },
+  {
+   "case": "ABSENCE no flipped block",
+   "expected": "NOT_RUN",
+   "got": "NOT_RUN",
+   "agrees": true
+  },
+  {
+   "case": "UNDERPOWERED 20 windows",
+   "expected": "UNPOWERED",
+   "got": "UNPOWERED",
+   "agrees": true
+  },
+  {
+   "case": "UNPOWERED flag off",
+   "expected": "UNPOWERED",
+   "got": "UNPOWERED",
+   "agrees": true
+  }
+ ],
+ "TFLIP_can_fail": true,
+ "TFLIP_can_pass": true,
+ "TFLIP_all_as_expected": true,
+ "TZERO": {
+  "echo_summary": {
+   "n_classes_summarised": 2,
+   "median_retained_fraction": 0.4875,
+   "min_retained_fraction": 0.0,
+   "_reads": "retained ~ 0 on the NON-TURN classes means the tactical layer learned nothing from the scene on the behaviours nav cannot explain (longitudinal 5.2 %, speed bucket 5.5 %, lane keeping / nudges / yielding / gap targets). retained ~ 1 means the behaviour is read from the scene. \u26d4 TURN classes are excluded: deriving them from nav is BY DESIGN (PI 2026-09-16), so their collapse is permitted. \u26d4 This is a DIAGNOSTIC: there is no pass/fail bar, because a high retained fraction on a class the model never fires is not a success."
+  },
+  "scene_summary": {
+   "n_classes_summarised": 2,
+   "median_retained_fraction": 1.0,
+   "min_retained_fraction": 1.0,
+   "_reads": "retained ~ 0 on the NON-TURN classes means the tactical layer learned nothing from the scene on the behaviours nav cannot explain (longitudinal 5.2 %, speed bucket 5.5 %, lane keeping / nudges / yielding / gap targets). retained ~ 1 means the behaviour is read from the scene. \u26d4 TURN classes are excluded: deriving them from nav is BY DESIGN (PI 2026-09-16), so their collapse is permitted. \u26d4 This is a DIAGNOSTIC: there is no pass/fail bar, because a high retained fraction on a class the model never fires is not a success."
+  },
+  "discriminates": true,
+  "turn_excluded_from_summary": true,
+  "under_min_n_excluded": true,
+  "has_pass_fail_bar": false,
+  "classes": {
+   "FOLLOW_LANE": {
+    "n": 3629,
+    "recall_nav_true": 0.8,
+    "recall_nav_zero": 0.78,
+    "retained_fraction": 0.975,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "STOP_POINT": {
+    "n": 327,
+    "recall_nav_true": 0.4,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": 0.0,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "TURN_L": {
+    "n": 275,
+    "recall_nav_true": 0.6,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": 0.0,
+    "is_turn_class": true,
+    "powered": true,
+    "_note": "EXCLUDED from the summary. Deriving the turn command from nav is BY DESIGN (PI 2026-09-16); 42.7 % of the TURN label's entropy is already in the nav token, so a collapse here is PERMITTED and uninformative about learning. \u26d4 Do not read a low retained fraction on a turn class as a defect."
+   },
+   "LANE_CHANGE_R": {
+    "n": 15,
+    "recall_nav_true": 0.5,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": 0.0,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 15 < 30: reported with its n, excluded from the summary"
+   }
+  }
+ },
+ "PANEL": {
+  "keys": [
+   "OBEDIENCE",
+   "T-FLIP",
+   "T-ZERO",
+   "_reads",
+   "diagnostic_tests",
+   "gating_tests",
+   "missing",
+   "overall"
+  ],
+  "verdict": null,
+  "raw": {
+   "overall": "INCOMPLETE",
+   "missing": [
+    "OBEDIENCE"
+   ],
+   "gating_tests": {
+    "T-FLIP": "FAIL",
+    "OBEDIENCE": "NOT_RUN"
+   },
+   "diagnostic_tests": [
+    "T-ZERO"
+   ],
+   "T-FLIP": {
+    "test": "T-FLIP",
+    "bars": {
+     "follows_FED_command": 0.5,
+     "paired_true_minus_shuffled": 0.38
+    },
+    "today_refcv5_v2": {
+     "follows_FED_command": 0.205,
+     "paired_true_minus_shuffled": 0.099
+    },
+    "measured": {
+     "follows_FED_command": {
+      "mean": 0.205,
+      "ci": [
+       0.15,
+       0.35
+      ],
+      "n_windows": 200,
+      "n_episodes": 40
+     },
+     "follows_TRUE_command": {
+      "mean": 0.795,
+      "ci": [
+       0.0,
+       0.3
+      ]
+     },
+     "paired_true_minus_shuffled": {
+      "delta": 0.099,
+      "ci": [
+       0.05,
+       0.25
+      ],
+      "separated": true,
+      "n_windows": 200
+     }
+    },
+    "gates": {
+     "follows_FED_lower_bound_clears_bar": false,
+     "true_minus_shuffled_lower_bound_clears_bar_and_separated": false
+    },
+    "verdict": "FAIL",
+    "reason": "the plan does not follow a flipped command: ['follows_FED_lower_bound_clears_bar', 'true_minus_shuffled_lower_bound_clears_bar_and_separated'] did not clear. The operative plan is still vision/ego-driven and only weakly steerable by nav \u2014 the refcv5-v2 reading (0.205)."
+   },
+   "T-ZERO": {
+    "test": "T-ZERO (non-turn diagnostic)",
+    "classes": {
+     "FOLLOW_LANE": {
+      "n": 3629,
+      "recall_nav_true": 0.8,
+      "recall_nav_zero": 0.78,
+      "retained_fraction": 0.975,
+      "is_turn_class": false,
+      "powered": true
+     },
+     "STOP_POINT": {
+      "n": 327,
+      "recall_nav_true": 0.4,
+      "recall_nav_zero": 0.0,
+      "retained_fraction": 0.0,
+      "is_turn_class": false,
+      "powered": true
+     },
+     "TURN_L": {
+      "n": 275,
+      "recall_nav_true": 0.6,
+      "recall_nav_zero": 0.0,
+      "retained_fraction": 0.0,
+      "is_turn_class": true,
+      "powered": true,
+      "_note": "EXCLUDED from the summary. Deriving the turn command from nav is BY DESIGN (PI 2026-09-16); 42.7 % of the TURN label's entropy is already in the nav token, so a collapse here is PERMITTED and uninformative about learning. \u26d4 Do not read a low retained fraction on a turn class as a defect."
+     },
+     "LANE_CHANGE_R": {
+      "n": 15,
+      "recall_nav_true": 0.5,
+      "recall_nav_zero": 0.0,
+      "retained_fraction": 0.0,
+      "is_turn_class": false,
+      "powered": false,
+      "_note": "n = 15 < 30: reported with its n, excluded from the summary"
+     }
+    },
+    "summary": {
+     "n_classes_summarised": 2,
+     "median_retained_fraction": 0.4875,
+     "min_retained_fraction": 0.0,
+     "_reads": "retained ~ 0 on the NON-TURN classes means the tactical layer learned nothing from the scene on the behaviours nav cannot explain (longitudinal 5.2 %, speed bucket 5.5 %, lane keeping / nudges / yielding / gap targets). retained ~ 1 means the behaviour is read from the scene. \u26d4 TURN classes are excluded: deriving them from nav is BY DESIGN (PI 2026-09-16), so their collapse is permitted. \u26d4 This is a DIAGNOSTIC: there is no pass/fail bar, because a high retained fraction on a class the model never fires is not a success."
+    },
+    "turn_classes_excluded": [
+     "TURN_L",
+     "TURN_R"
+    ],
+    "min_n": 30
+   },
+   "OBEDIENCE": null,
+   "_reads": "T-FLIP and OBEDIENCE gate; T-ZERO is a reported diagnostic on the non-turn classes and has no bar (42.7 % of the TURN label's entropy is already in nav, so a turn-class number cannot separate learning from echoing)."
+  }
+ }
+}

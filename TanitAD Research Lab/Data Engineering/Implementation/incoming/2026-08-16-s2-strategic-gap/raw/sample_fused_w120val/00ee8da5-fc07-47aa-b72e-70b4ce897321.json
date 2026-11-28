@@ -1,0 +1,330 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "00ee8da5-fc07-47aa-b72e-70b4ce897321",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 6.61,
+   "v_now_kmh": 23.8,
+   "v_mean_ms": 5.54,
+   "v_min_ms": 2.68,
+   "v_max_ms": 10.57,
+   "accel_1s_ms2": 1.11,
+   "accel_3s_ms2": 1.24,
+   "yaw_rate_rad_s": -0.007,
+   "net_dyaw_rad": 0.223,
+   "dist_travelled_m": 44.3,
+   "motion": "accelerating",
+   "turning": "straight"
+  },
+  "speed_profile": {
+   "v_t0": 10.5654935836792,
+   "v_min_future": 2.6753852367401123,
+   "v_max_future": 10.5654935836792,
+   "net_dv": -0.16037845611572266,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [
+   {
+    "track_id": 0,
+    "concept": "car",
+    "n_frames": 2,
+    "frame_span": [
+     0,
+     8
+    ],
+    "mean_score": 0.705,
+    "boxes": [
+     [
+      0,
+      [
+       189.0,
+       89.8,
+       200.7,
+       96.7
+      ]
+     ],
+     [
+      8,
+      [
+       188.5,
+       88.2,
+       200.8,
+       96.2
+      ]
+     ]
+    ],
+    "dynamics": "steady",
+    "src": "sam3"
+   },
+   {
+    "track_id": 1,
+    "concept": "car",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.74,
+    "boxes": [
+     [
+      24,
+      [
+       163.9,
+       88.2,
+       191.5,
+       106.2
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 2,
+    "concept": "car",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.533,
+    "boxes": [
+     [
+      24,
+      [
+       192.8,
+       88.8,
+       201.4,
+       98.0
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 3,
+    "concept": "car",
+    "n_frames": 1,
+    "frame_span": [
+     32,
+     32
+    ],
+    "mean_score": 0.675,
+    "boxes": [
+     [
+      32,
+      [
+       144.7,
+       88.8,
+       152.2,
+       93.9
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 4,
+    "concept": "car",
+    "n_frames": 1,
+    "frame_span": [
+     32,
+     32
+    ],
+    "mean_score": 0.771,
+    "boxes": [
+     [
+      32,
+      [
+       154.7,
+       89.0,
+       163.1,
+       95.7
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 5,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     32,
+     32
+    ],
+    "mean_score": 0.734,
+    "boxes": [
+     [
+      32,
+      [
+       34.9,
+       62.8,
+       45.5,
+       75.4
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   }
+  ],
+  "per_concept_hits": {
+   "car": 6,
+   "truck": 0,
+   "bus": 0,
+   "pedestrian": 0,
+   "cyclist": 0,
+   "traffic light": 0,
+   "traffic sign": 1
+  },
+  "src": "sam3"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 1,
+   "lane_ego": 0,
+   "conf": "high",
+   "road_type": "urban",
+   "weather": "clear",
+   "illumination": "night",
+   "domain": "urban"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "30",
+     "state": "none",
+     "applies_to_ego": true,
+     "kind": "speed"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "route_to",
+   "goal_evidence_sign": 0,
+   "actions": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left"
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "left"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "left"
+    }
+   ],
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": null,
+ "corroboration": {
+  "speed_sign_vs_ego": {
+   "sign_text": "30",
+   "v_now_ms": 6.61,
+   "v_min_future": 2.6753852367401123,
+   "src": [
+    "vlm",
+    "ego"
+   ],
+   "verdict": "corroborated"
+  },
+  "goal_evidence": {
+   "evidence_sign_idx": 0,
+   "sam3_sign_tracks": 1,
+   "verdict": "grounded",
+   "src": [
+    "vlm",
+    "sam3"
+   ]
+  }
+ },
+ "vocab": {
+  "g_str": {
+   "token": "ROUTE_TO",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_KEEP",
+   "voters": [
+    "ego",
+    "vlm"
+   ],
+   "votes": [
+    [
+     "ego",
+     "LANE_KEEP"
+    ],
+    [
+     "vlm",
+     "LANE_CHANGE_L"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     "LANE_KEEP"
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": "HOLD",
+   "voters": [
+    "vlm"
+   ],
+   "votes": [
+    [
+     "ego",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     "HOLD"
+    ]
+   ]
+  }
+ },
+ "scenario_description": "night, clear, urban 1-lane; ego 6.6 m/s accelerating/straight; 5 car, 1 traffic sign",
+ "_conflicts": [],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}

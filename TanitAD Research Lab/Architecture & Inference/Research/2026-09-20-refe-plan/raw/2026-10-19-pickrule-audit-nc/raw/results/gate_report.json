@@ -1,0 +1,165 @@
+{
+ "c_join": {
+  "ep_column_equals_fitdata_y": true,
+  "labels_value_counts_dac": {
+   "0.0": 117136,
+   "1.0": 894576
+  },
+  "labels_value_counts_nc": {
+   "0.0": 70603,
+   "0.5": 8343,
+   "1.0": 932766
+  },
+  "log_idx_equal": true,
+  "logits_equal_fitdata_z6": true,
+  "pdms_np_equals_fitdata_pdms": true,
+  "safe_np_equals_fitdata_safe": true,
+  "top8_equal_fitdata_top8": true
+ },
+ "checks": {
+  "C-COL[BANKED_s0]": {
+   "detail": {
+    "ep_proposals_differing": 1011712,
+    "other_columns_bit_equal": true
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-COL[BANKED_s1]": {
+   "detail": {
+    "ep_proposals_differing": 1011712,
+    "other_columns_bit_equal": true
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-COL[OOF_s0]": {
+   "detail": {
+    "ep_proposals_differing": 1011712,
+    "other_columns_bit_equal": true
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-COL[OOF_s1]": {
+   "detail": {
+    "ep_proposals_differing": 1011712,
+    "other_columns_bit_equal": true
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-ID1": {
+   "detail": {
+    "equals_epr1_picks_np": "15808/15808",
+    "float32_torch_diagnostic_equals_banked": "15806/15808",
+    "float64_rule_equals_banked_pick": "15808/15808",
+    "planner_pin": {
+     "file_sha256_equals_pin": true,
+     "lines_sha256": "bcfaf349a155d881a3b35589bde3b1106f87d5e405d715be8e165625953c3574",
+     "lines_sha256_expected": "bcfaf349a155d881a3b35589bde3b1106f87d5e405d715be8e165625953c3574",
+     "status": "PASS",
+     "v1w_line": "V1_W = (5.0, 5.0, 2.0)           # progress, time-to-collision, comfort, sum 12 (rule \"navsim_v1\")"
+    },
+    "planner_pin_note": "checked"
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-ID2[seed0]": {
+   "detail": {
+    "abs_diff_vs_banked": {
+     "new_pdms_x100": 0.0,
+     "p2_pdms_x100": 0.0,
+     "unsafe_rate_new": 0.0,
+     "unsafe_rate_p2": 0.0
+    },
+    "got": {
+     "new_pdms_x100": 89.21936256518806,
+     "p2_pdms_x100": 90.36484132879056,
+     "unsafe_rate_new": 0.04061234817813765,
+     "unsafe_rate_p2": 0.030364372469635626
+    },
+    "picks_changed": 12314,
+    "picks_changed_banked": 12314,
+    "tolerance": 1e-09
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-ID2[seed1]": {
+   "detail": {
+    "abs_diff_vs_banked": {
+     "new_pdms_x100": 0.0,
+     "p2_pdms_x100": 0.0,
+     "unsafe_rate_new": 0.0,
+     "unsafe_rate_p2": 0.0
+    },
+    "got": {
+     "new_pdms_x100": 89.19121054696816,
+     "p2_pdms_x100": 90.36484132879056,
+     "unsafe_rate_new": 0.04048582995951417,
+     "unsafe_rate_p2": 0.030364372469635626
+    },
+    "picks_changed": 12292,
+    "picks_changed_banked": 12292,
+    "tolerance": 1e-09
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-ID3": {
+   "detail": {
+    "tau0.5_changed_sets": 0,
+    "tau0.5_fallback_sets": 0,
+    "tau0.5_vetoed_pick_nc_sigmoid_ge_tau": true,
+    "tau0_equals_unvetoed": true,
+    "tau1.01_equals_unvetoed_all_fallback": true
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-ID3-registered-reach-clause": {
+   "detail": {
+    "min_nc_sigmoid_at_p2_picks": 0.6286006861124068,
+    "note": "INFORMATIONAL since Amendment 2 (amended after it failed; not a pre-registered pass)",
+    "p2_picks_below_tau": {
+     "0.3": 0,
+     "0.5": 0,
+     "0.7": 1,
+     "0.9": 62
+    },
+    "registered_text": "veto at tau = 0.5 changes the pick on at least one set and on fewer than all",
+    "tau0.5_changed_sets": 0
+   },
+   "gating": false,
+   "pass": false
+  },
+  "C-ID3b": {
+   "detail": {
+    "non_fallback_vetoed_pick_nc_sigmoid_ge_tau": true,
+    "of": 15808,
+    "shift_logits": -3.0,
+    "tau0.5_changed_sets_under_shift": 18,
+    "tau0.5_fallback_sets_under_shift": 241
+   },
+   "gating": true,
+   "pass": true
+  },
+  "C-PDMS": {
+   "detail": {
+    "bit_equal_to_epr1_pdms_np": true,
+    "source": "refe/planner.py:520 V1_W",
+    "weights": [
+     5.0,
+     5.0,
+     2.0
+    ]
+   },
+   "gating": true,
+   "pass": true
+  }
+ },
+ "ok": true,
+ "prereg_sha256": "28947063086150582a7f0d94df26b815e790200832e25ad39ff24f255a953ea7"
+}

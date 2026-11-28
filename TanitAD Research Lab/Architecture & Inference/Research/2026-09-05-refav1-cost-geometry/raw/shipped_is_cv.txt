@@ -1,0 +1,9 @@
+# MEASURED 2026-09-05: is the SHIPPED refav1 configuration a planner at all?
+# cos_wk = --cost-metric cos (the default) + --cost-weights 0.02,0.05,0.1 (the module constants).
+# CONTROL that must DIFFER: ccos_argmax, same panel, same seed, zeroed weights.
+
+cos_wk       n=40  accel all-zero frac 1.0000 (max|a| 0.000000)  kappa all-zero frac 1.0000 (max|k| 0.000000)  ENTIRE tensor zero on 1.0000
+ccos_argmax  n=40  accel all-zero frac 0.7750 (max|a| 1.091408)  kappa all-zero frac 0.2500 (max|k| 0.200000)  ENTIRE tensor zero on 0.2500
+
+cos_wk       cl vs ha0 (constant-velocity floor) trajectories: max abs diff 0.000e+00  bit-identical=True
+ccos_argmax  cl vs ha0 (constant-velocity floor) trajectories: max abs diff 1.508e+01  bit-identical=False

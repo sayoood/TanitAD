@@ -1,0 +1,183 @@
+{
+ "mode": "eval139",
+ "n_windows": 4754,
+ "fan_shape": [
+  4754,
+  149,
+  8,
+  2
+ ],
+ "fan_extras_keys": [
+  "anchor_logits",
+  "anchor_traj",
+  "ceil_keep",
+  "clip_index",
+  "e9_argmax",
+  "e9_keep",
+  "goal_dist",
+  "inference_seed",
+  "is_alloc",
+  "r8_cand_src",
+  "r8_emit_keep",
+  "r8_sub_logits",
+  "reach_keep",
+  "refined_logits",
+  "sel_idx",
+  "sel_idx_base",
+  "sel_score",
+  "sel_score_v3",
+  "t",
+  "traj",
+  "traj_base",
+  "v0",
+  "ws"
+ ],
+ "scene_keys": [
+  "r7_agent_pad",
+  "r7_agent_tokens",
+  "r7_bev_tokens"
+ ],
+ "scene_shapes": {
+  "r7_agent_pad": [
+   4754,
+   300
+  ],
+  "r7_agent_tokens": [
+   4754,
+   300,
+   384
+  ],
+  "r7_bev_tokens": [
+   4754,
+   480,
+   96
+  ]
+ },
+ "scene_storage": {
+  "r7_agent_tokens": {
+   "stored": "float16",
+   "max_abs": 1.5703125,
+   "n_rows_fp32_fallback": 0
+  },
+  "r7_bev_tokens": {
+   "stored": "float16",
+   "max_abs": 13.15625,
+   "n_rows_fp32_fallback": 0
+  }
+ },
+ "n_label_windows": 4754,
+ "label_keys": [
+  "map_drivable_u8",
+  "map_label",
+  "map_seen",
+  "r7_agent_fut",
+  "r7_agent_fut_label",
+  "r7_agent_fut_valid"
+ ],
+ "label_shapes": {
+  "map_drivable_u8": [
+   4754,
+   120,
+   64
+  ],
+  "map_label": [
+   4754
+  ],
+  "map_seen": [
+   4754,
+   120,
+   64
+  ],
+  "r7_agent_fut": [
+   4754,
+   8,
+   397,
+   5
+  ],
+  "r7_agent_fut_label": [
+   4754,
+   8
+  ],
+  "r7_agent_fut_valid": [
+   4754,
+   8,
+   397
+  ]
+ },
+ "keys_missing_counts": {
+  "r7_bev_pad": 4754
+ },
+ "conds_seen": [
+  [
+   "nav_true"
+  ]
+ ],
+ "n_calls_navzero": 0,
+ "n_calls_without_nav_true": 0,
+ "n_label_agent_windows": 4754,
+ "n_label_map_windows": 4754,
+ "scene_missing_windows": 0,
+ "K3a_max_abs_fan_at_sel_minus_traj_m": 0.0,
+ "K3b_traj_equals_sidecar_nav_true": true,
+ "K4_e9_argmax_equals_sel_idx_frac": 1.0,
+ "e9_keep_min_per_row": 1,
+ "registered_windows_check": null,
+ "inference_seed": 1,
+ "mutation": null,
+ "device": "cuda",
+ "child_rc": 0,
+ "child_argv": [
+  "/home/nvidia/r8ns/fanceil/code/pf/code/roll_seed_r8_pf.py",
+  "--ckpt",
+  "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt",
+  "--config",
+  "/home/nvidia/r8ns/ckpt/config.json",
+  "--seed",
+  "1",
+  "--dump-dir",
+  "/home/nvidia/r8ns/l7cap/out/eval139_s1/dump",
+  "--windows-json",
+  "/home/nvidia/r8ns/fanceil/inputs/windows_s1.json",
+  "--device",
+  "cuda",
+  "--out-json",
+  "/home/nvidia/r8ns/l7cap/out/eval139_s1/roll_s1.json",
+  "--os-only"
+ ],
+ "model_call_s": {
+  "n": 4754,
+  "first": 0.92,
+  "median": 0.27,
+  "mean": 0.27,
+  "max": 0.92
+ },
+ "wall_s": 1410.8,
+ "wall_s_per_window_incl_build": 0.3,
+ "peak_working_set_gb": null,
+ "peak_commit_gb": null,
+ "cuda_max_memory_allocated_gib": 1.257,
+ "remap": {
+  "dev_default": "/home/nvidia/r8ns/fanceil/code/batt/code/refcv8_eval_remap_devbox.json",
+  "re_pointed_eval": true,
+  "re_pointed_train": false
+ },
+ "env": {
+  "R8_LAUNCH_TREE": "/home/nvidia/r8ns/fanceil/tree",
+  "R8_EVAL_KIT": "/home/nvidia",
+  "PF_R8_CODE": "/home/nvidia/r8ns/fanceil/code/batt/code",
+  "PF_NF_HOLD": "/home/nvidia/r8ns/fanceil/code/navfix",
+  "R8_NO_POSE_SYNC": "1",
+  "OMP_NUM_THREADS": "6",
+  "PYTHONPATH": "/home/nvidia/r8ns/fanceil/tree/stack:/home/nvidia/r8ns/fanceil/tree/taniteval",
+  "CUDA_VISIBLE_DEVICES": null
+ },
+ "torch": "2.13.0+cu130",
+ "ckpt": "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt",
+ "config": "/home/nvidia/r8ns/ckpt/config.json",
+ "this_script_sha256": "7b30e22fb341e4b31f314fa545253f51927825b2d20aaff15db4ebe819d0d199",
+ "hooks_sha256": "207995d26e6462c6b604026223942c7a1518e9b20a84d7a09451b34a158e0abd",
+ "refc_v3_file": "/home/nvidia/r8ns/fanceil/tree/stack/tanitad/refs/refc_v3.py",
+ "refc_v3_sha256": "e4e7ac621f91ea09f9d2dba588e5f317fdc7eca6f3d0b57cd145311d98834459",
+ "prereg": "PREREG_L7_SCORER.md sha256 f9c1431c... (sealed 2026-10-21 23:33 +0200)",
+ "producer": "fan_roll_r8_l7cap.py (wrapper over roll_seed_r8_train_pf.main / roll_seed_r8_pf.main; capture on r7_roll.Refcv6Proxy.__call__)"
+}

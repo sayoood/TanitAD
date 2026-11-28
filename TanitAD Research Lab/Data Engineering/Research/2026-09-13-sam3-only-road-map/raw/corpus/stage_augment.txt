@@ -1,0 +1,21 @@
+shard obstacle_offline_000.parquet {'clips': 100, 'rows': 658352}
+shard obstacle_offline_001.parquet {'clips': 100, 'rows': 739363}
+shard obstacle_offline_002.parquet {'clips': 100, 'rows': 601671}
+shard obstacle_offline_003.parquet {'clips': 100, 'rows': 673850}
+shard obstacle_offline_004.parquet {'clips': 100, 'rows': 684157}
+Traceback (most recent call last):
+  File "<scratchpad>\corpus\stage_augment.py", line 123, in <module>
+    res = {k: globals()[k]() for k in todo}
+              ~~~~~~~~~~~~^^
+  File "<scratchpad>\corpus\stage_augment.py", line 94, in agents
+    w.write_table(t if t.schema.equals(w.schema) else t.cast(w.schema))
+                                                      ~~~~~~^^^^^^^^^^
+  File "pyarrow/table.pxi", line 4700, in pyarrow.lib.Table.cast
+  File "pyarrow/table.pxi", line 597, in pyarrow.lib.ChunkedArray.cast
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pyarrow\compute.py", line 414, in cast
+    return call_function("cast", [arr], options, memory_pool)
+  File "pyarrow/_compute.pyx", line 604, in pyarrow._compute.call_function
+  File "pyarrow/_compute.pyx", line 399, in pyarrow._compute.Function.call
+  File "pyarrow/error.pxi", line 155, in pyarrow.lib.pyarrow_internal_check_status
+  File "pyarrow/error.pxi", line 92, in pyarrow.lib.check_status
+pyarrow.lib.ArrowNotImplementedError: Unsupported cast from large_string to null using function cast_null

@@ -1,0 +1,238 @@
+[rollhist read RA chain] start Sun Nov 22 20:17:49     2026 seeds 0,1 tree F:/TanitAD-scratch/rollhist/read/tree (43319227) treated arm RA
+[step] blobcheck: tree blobs equal the commit Sun Nov 22 20:18:03     2026
+commit free 5.62 GB >= 5.5 after 16 min
+[step] readertests: rh_read.py selftest under RH_AKIND=RA (K-SELF, K-PLANT, floor, seeds, harms, mutation) Sun Nov 22 20:36:18     2026
+commit free 5.80 GB >= 5.5 after 0 min
+{
+ "K-SELF": {
+  "pass": true,
+  "must_read": "a self-pair reads exactly 0 on every cell, NOT-SEPARATED, outcome NO-EFFECT",
+  "outcome": "ROLLHIST-NO-EFFECT"
+ },
+ "K-PLANT": {
+  "pass": true,
+  "must_read": "a plant on LONGITUDINAL (3 cells) and TACTICAL moves exactly those two families to BETTER",
+  "moved": [
+   "LONGITUDINAL",
+   "TACTICAL"
+  ],
+  "outcome": "ROLLHIST-REPAIRS-K-UNNEEDED"
+ },
+ "K-FLOOR": {
+  "pass": true,
+  "must_read": "an effect below F_c (0.3) is NOT-SEPARATED and flagged straddles_floor"
+ },
+ "K-SEEDS": {
+  "pass": true,
+  "outcome": "ROLLHIST-SEED-DISAGREE"
+ },
+ "K-HARMS": {
+  "pass": true,
+  "outcome": "ROLLHIST-HARMS"
+ },
+ "R2-G1": {
+  "pass": true,
+  "must_read": "exactly one family BETTER, none WORSE, P2 and P3 hold -> ROLLHIST-PARTIAL; with G1 off it must NOT",
+  "read": "ROLLHIST-PARTIAL",
+  "regression_arm_read": "OUTSIDE-TABLE"
+ },
+ "R2-G2": {
+  "pass": true,
+  "must_read": "REPAIRS conditions hold but G-T0 fails at exactly one seed -> SEED-DISAGREE; the same plant with G-T0 holding reads REPAIRS-K-UNNEEDED; G2 off must NOT read SEED-DISAGREE",
+  "read": "ROLLHIST-SEED-DISAGREE",
+  "regression_arm_read": "OUTSIDE-TABLE",
+  "control_G_T0_holds": "ROLLHIST-REPAIRS-K-UNNEEDED"
+ },
+ "R2-STRADDLE-FLIPS": {
+  "pass": true,
+  "must_read": "straddling cells that move the name -> SEED-DISAGREE and BOTH names printed; with the rule off it reads NO-EFFECT; a floor below the effect (no straddle) reads REPAIRS-K-UNNEEDED",
+  "read": "ROLLHIST-SEED-DISAGREE",
+  "both_names": [
+   "ROLLHIST-NO-EFFECT",
+   "ROLLHIST-REPAIRS-K-UNNEEDED"
+  ],
+  "regression_arm_read": "ROLLHIST-NO-EFFECT",
+  "control_no_straddle": "ROLLHIST-REPAIRS-K-UNNEEDED"
+ },
+ "R2-STRADDLE-KEEPS": {
+  "pass": true,
+  "must_read": "a straddling cell that does not change the name keeps the first name (NO-EFFECT); the regression arm (any straddling cell fires) reads SEED-DISAGREE",
+  "read": "ROLLHIST-NO-EFFECT",
+  "name_with_straddles_by_sign": "ROLLHIST-NO-EFFECT",
+  "regression_arm_read": "ROLLHIST-SEED-DISAGREE"
+ },
+ "R2-P2-ATTRIBUTION": {
+  "pass": true,
+  "must_read": "the B0 ACC pair NOT worse on two of three families -> P2 fails (two families BETTER, P2 fails -> PARTIAL); control (B0 ACC WORSE on three) -> P2 holds; the check off -> P2 would hold",
+  "read": "ROLLHIST-PARTIAL",
+  "P2_pass": false,
+  "regression_arm_P2_pass": true,
+  "control_P2_pass": true
+ },
+ "R2-PROVISIONAL": {
+  "pass": true,
+  "must_read": "a one-seed read prefixes PROVISIONAL to every committed name; without a STRATEGIC one-seed floor it reads NOT-DECIDABLE, never a name",
+  "read": "PROVISIONAL ROLLHIST-REPAIRS-K-UNNEEDED",
+  "no_strategic_floor_read": "NOT-DECIDABLE"
+ },
+ "R2-PROVISIONAL-NAMES": {
+  "pass": true,
+  "names": [
+   "PROVISIONAL ROLLHIST-NO-EFFECT",
+   "PROVISIONAL ROLLHIST-PARTIAL"
+  ]
+ },
+ "R3-STRAT-FLOOR-WIRED": {
+  "pass": true,
+  "must_read": "one-seed read with the floor file prints a STRATEGIC verdict; without it (regression arm), or with a floor file whose controls failed, it prints NOT-DECIDABLE",
+  "strategic_family_with_floor": "NOT-SEPARATED",
+  "outcome_with_floor": "PROVISIONAL ROLLHIST-PARTIAL",
+  "regression_arm_outcome": "NOT-DECIDABLE",
+  "failed_controls_floor_outcome": "NOT-DECIDABLE"
+ },
+ "MUTATION_other_seed_arm": {
+  "pass": true,
+  "unmutated_green": true,
+  "mutated_red": true,
+  "reason_seen": [
+   "RH_R0C10XHb20_s1: rollout used checkpoint 202020202020, arm RH_s1 is 212121212121"
+  ]
+ },
+ "ALL_PASS": true
+}
+ZZ RH-READ-SELFTEST all hold: True
+[step] pull_RA_s0: pull and check RA_s0 Sun Nov 22 20:36:19     2026
+commit free 5.77 GB >= 5.5 after 0 min
+pulled RA_s0 sha256 8bc1a93688f9202b
+[step] pull_RA_s1: pull and check RA_s1 Sun Nov 22 20:36:29     2026
+commit free 5.92 GB >= 5.5 after 1 min
+pulled RA_s1 sha256 a445b32ac600bbfd
+[step] ro_RA_R0Hb20_s0: rollout RA R0Hb20 seed 0 Sun Nov 22 20:37:39     2026
+commit free 5.71 GB >= 5.5 after 0 min
+RA R0Hb20 s0 rc 0 dump_files 141 tick_files 1 wall_s 271.2
+[step] ro_RA_R0C10Hb20_s0: rollout RA R0C10Hb20 seed 0 Sun Nov 22 20:42:11     2026
+commit free 5.76 GB >= 5.5 after 0 min
+RA R0C10Hb20 s0 rc 0 dump_files 141 tick_files 1 wall_s 194.0
+[step] ro_RA_R0G50Hb20_s0: rollout RA R0G50Hb20 seed 0 Sun Nov 22 20:45:25     2026
+commit free 5.55 GB >= 5.5 after 1 min
+RA R0G50Hb20 s0 rc 0 dump_files 141 tick_files 1 wall_s 260.6
+[step] ro_RA_R0G0Hb20_s0: rollout RA R0G0Hb20 seed 0 Sun Nov 22 20:50:46     2026
+commit free 5.59 GB >= 5.5 after 0 min
+RA R0G0Hb20 s0 rc 0 dump_files 141 tick_files 1 wall_s 195.0
+[step] ro_RA_R0KHb20_s0: rollout RA R0KHb20 seed 0 Sun Nov 22 20:54:02     2026
+commit stayed under 5.5 GB for 60 min (last 1.58)
+ZZ ROLLHIST-READ-RA FAIL ZZ commit headroom stayed below 5.5 GB for 60 min before: ro_RA_R0KHb20_s0
+[rollhist read RA chain] start Sun Nov 22 22:04:03     2026 seeds 0,1 tree F:/TanitAD-scratch/rollhist/read/tree (43319227) treated arm RA
+[skip] blobcheck
+[skip] readertests
+[skip] pull_RA_s0
+[skip] pull_RA_s1
+[skip] ro_RA_R0Hb20_s0
+[skip] ro_RA_R0C10Hb20_s0
+[skip] ro_RA_R0G50Hb20_s0
+[skip] ro_RA_R0G0Hb20_s0
+[step] ro_RA_R0KHb20_s0: rollout RA R0KHb20 seed 0 Sun Nov 22 22:04:04     2026
+commit stayed under 5.5 GB for 60 min (last 3.70)
+ZZ ROLLHIST-READ-RA FAIL ZZ commit headroom stayed below 5.5 GB for 60 min before: ro_RA_R0KHb20_s0
+[rollhist read RA chain] start Sun Nov 22 23:14:05     2026 seeds 0,1 tree F:/TanitAD-scratch/rollhist/read/tree (43319227) treated arm RA
+[skip] blobcheck
+[skip] readertests
+[skip] pull_RA_s0
+[skip] pull_RA_s1
+[skip] ro_RA_R0Hb20_s0
+[skip] ro_RA_R0C10Hb20_s0
+[skip] ro_RA_R0G50Hb20_s0
+[skip] ro_RA_R0G0Hb20_s0
+[step] ro_RA_R0KHb20_s0: rollout RA R0KHb20 seed 0 Sun Nov 22 23:14:08     2026
+commit free 6.91 GB >= 5.5 after 0 min
+RA R0KHb20 s0 rc 0 dump_files 141 tick_files 1 wall_s 286.7
+[step] ro_RA_R0C10XHb20_s0: rollout RA R0C10XHb20 seed 0 Sun Nov 22 23:18:59     2026
+commit free 7.08 GB >= 5.5 after 0 min
+RA R0C10XHb20 s0 rc 0 dump_files 141 tick_files 1 wall_s 304.1
+[step] ro_RA_R0Hb20_s1: rollout RA R0Hb20 seed 1 Sun Nov 22 23:24:06     2026
+commit free 5.80 GB >= 5.5 after 0 min
+RA R0Hb20 s1 rc 0 dump_files 141 tick_files 1 wall_s 303.4
+[step] ro_RA_R0C10Hb20_s1: rollout RA R0C10Hb20 seed 1 Sun Nov 22 23:29:12     2026
+commit free 5.56 GB >= 5.5 after 1 min
+RA R0C10Hb20 s1 rc 0 dump_files 141 tick_files 1 wall_s 202.5
+[step] ro_RA_R0G50Hb20_s1: rollout RA R0G50Hb20 seed 1 Sun Nov 22 23:33:37     2026
+commit free 5.81 GB >= 5.5 after 0 min
+RA R0G50Hb20 s1 rc 0 dump_files 141 tick_files 1 wall_s 194.3
+[step] ro_RA_R0G0Hb20_s1: rollout RA R0G0Hb20 seed 1 Sun Nov 22 23:36:51     2026
+commit free 5.93 GB >= 5.5 after 0 min
+RA R0G0Hb20 s1 rc 0 dump_files 141 tick_files 1 wall_s 200.5
+[step] ro_RA_R0KHb20_s1: rollout RA R0KHb20 seed 1 Sun Nov 22 23:40:12     2026
+commit free 6.51 GB >= 5.5 after 0 min
+RA R0KHb20 s1 rc 0 dump_files 141 tick_files 1 wall_s 194.1
+[step] ro_RA_R0C10XHb20_s1: rollout RA R0C10XHb20 seed 1 Sun Nov 22 23:43:28     2026
+commit free 6.44 GB >= 5.5 after 0 min
+RA R0C10XHb20 s1 rc 0 dump_files 141 tick_files 1 wall_s 195.5
+[step] t0evals: G-T0 T0 evals RA_s0 RA_s1 Sun Nov 22 23:46:44     2026
+commit free 6.27 GB >= 5.5 after 0 min
+RA_s0 rc 0 ok
+RA_s1 rc 0 ok
+[step] gt0: G-T0 guard (RA - B0) Sun Nov 22 23:48:33     2026
+commit free 6.46 GB >= 5.5 after 0 min
+{"holds": false, "fails_at_all_seeds": false}
+[step] headway: headway reader U C F Sun Nov 22 23:48:35     2026
+commit free 5.71 GB >= 5.5 after 0 min
+I10RA_R0C10XHb20_minus_I10B0_R0C10XHb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0C10XHb20_minus_I10RA_R0KHb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0G50Hb20_minus_I10RA_R0G0Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0C10Hb20_minus_I10RA_R0G50Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10B0_R0C10XHb20_minus_I10B0_R0KHb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10B0_R0G50Hb20_minus_I10B0_R0G0Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10B0_R0C10Hb20_minus_I10B0_R0G50Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0C10XHb20_minus_I10B0_R0KHb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0Hb20_minus_I10B0_R0Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0C10Hb20_minus_I10B0_R0C10Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0G50Hb20_minus_I10B0_R0G50Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0G0Hb20_minus_I10B0_R0G0Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0KHb20_minus_I10B0_R0KHb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0Hb20_minus_I10RH_R0Hb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+I10RA_R0C10XHb20_minus_I10RH_R0C10XHb20: None NOT NAMED (no question of the card for this pair) (seeds [0, 1])
+controls PASS | counts {'PASS': True, 'n_lead_windows': 642, 'n_episodes_with_lead': 56, 'enough': True, 'min_windows': 200, 'min_episodes': 20, 'n_windows_total': 2399, 'n_episodes_total': 141} | spread seeds [0, 1] | missing []
+[step] q3: family reader (LONGITUDINAL / LATERAL / TACTICAL cells) Sun Nov 22 23:52:36     2026
+commit free 5.67 GB >= 5.5 after 0 min
+I10RA_R0C10XHb20_minus_I10B0_R0C10XHb20: PRELIMINARY (NO-COST GAIN-LATERAL GAIN-LONGITUDINAL GAIN-TACTICAL) (seeds [0, 1])
+I10RA_R0C10XHb20_minus_I10RA_R0KHb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL) (seeds [0, 1])
+I10RA_R0G50Hb20_minus_I10RA_R0G0Hb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL GAIN-TACTICAL) (seeds [0, 1])
+I10RA_R0C10Hb20_minus_I10RA_R0G50Hb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL) (seeds [0, 1])
+I10B0_R0C10XHb20_minus_I10B0_R0KHb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL) (seeds [0, 1])
+I10B0_R0G50Hb20_minus_I10B0_R0G0Hb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL GAIN-LATERAL) (seeds [0, 1])
+I10B0_R0C10Hb20_minus_I10B0_R0G50Hb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL) (seeds [0, 1])
+I10RA_R0C10XHb20_minus_I10B0_R0KHb20: PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL) (seeds [0, 1])
+I10RA_R0Hb20_minus_I10B0_R0Hb20: PRELIMINARY (NO-COST GAIN-LATERAL GAIN-LONGITUDINAL GAIN-TACTICAL) (seeds [0, 1])
+I10RA_R0C10Hb20_minus_I10B0_R0C10Hb20: PRELIMINARY (NO-COST GAIN-LATERAL GAIN-LONGITUDINAL GAIN-TACTICAL) (seeds [0, 1])
+I10RA_R0G50Hb20_minus_I10B0_R0G50Hb20: PRELIMINARY (NO-COST GAIN-LATERAL GAIN-TACTICAL) (seeds [0, 1])
+I10RA_R0G0Hb20_minus_I10B0_R0G0Hb20: PRELIMINARY (COST-LONGITUDINAL COST-TACTICAL GAIN-TACTICAL) (seeds [0, 1])
+I10RA_R0KHb20_minus_I10B0_R0KHb20: PRELIMINARY (COST-LONGITUDINAL COST-TACTICAL) (seeds [0, 1])
+I10RA_R0Hb20_minus_I10RH_R0Hb20: PRELIMINARY (NO-COST) (seeds [0, 1])
+I10RA_R0C10XHb20_minus_I10RH_R0C10XHb20: PRELIMINARY (NO-COST) (seeds [0, 1])
+controls PASS | spread seeds [0, 1] | missing []
+[step] strat: STRATEGIC family (frozen ADD66 reader, per-seed mode) Sun Nov 22 23:52:48     2026
+commit free 5.58 GB >= 5.5 after 0 min
+cells B0_R0C10Hb20 done 4 s
+cells B0_R0C10XHb20 done 9 s
+cells B0_R0G0Hb20 done 14 s
+cells B0_R0G50Hb20 done 19 s
+cells B0_R0Hb20 done 23 s
+cells B0_R0KHb20 done 27 s
+cells RA_R0C10Hb20 done 32 s
+cells RA_R0C10XHb20 done 38 s
+cells RA_R0G0Hb20 done 43 s
+cells RA_R0G50Hb20 done 49 s
+cells RA_R0Hb20 done 54 s
+cells RA_R0KHb20 done 60 s
+cells RH_R0C10XHb20 done 65 s
+cells RH_R0Hb20 done 70 s
+wrote F:/TanitAD-scratch/rollhist/read/out/read_ra\READ_STRAT_ROLLHIST.json controls_all_pass True 
+ZZ RH-STRAT DONE ZZ
+[step] read: rh_read.py (the outcome and the one-line RA answer) Sun Nov 22 23:54:24     2026
+commit free 5.61 GB >= 5.5 after 3 min
+RA: add mode keeps NEITHER P2 nor P3 and G-T0 FAILS at one seed: RA P2 False, P3 False (outcome ROLLHIST-PARTIAL); RH on the same bank in swap mode (the PARTIAL read): P2 False, P3 False, G-T0 per seed {'0': 'FAILS', '1': 'HOLDS'}
+OUTCOME: ROLLHIST-PARTIAL | 
+P1 families: {'LONGITUDINAL': 'MIXED', 'LATERAL': 'BETTER', 'TACTICAL': 'BETTER', 'STRATEGIC': 'BETTER'} | P2 False | P3 False | P4 False | G-T0 {'holds': False, 'fails_at_all_seeds': False, 'per_seed': {'0': 'FAILS', '1': 'HOLDS'}, 'fails_at_exactly_one_seed': True}
+wrote F:/TanitAD-scratch/rollhist/read/out/read_ra/RESULT_ROLLHIST_RA.json
+ZZ RH-READ DONE ZZ
+ZZ ROLLHIST-READ-RA DONE ZZ

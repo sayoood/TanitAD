@@ -1,0 +1,310 @@
+{
+ "E": {
+  "verdict": "PENDING",
+  "why": "no navtest read exists yet (IMPL step 9, the navtest families adapter, is not built; the T1 reads of the final u1000 B and A of R0d / R1d have not run)"
+ },
+ "L": {
+  "verdict": "PENDING",
+  "why": "R1o has not run (not given): the unconstrained seed-1 control of the lever claim does not exist yet"
+ },
+ "addendum": "PREREG_SAFEOBJ.addendum1.md",
+ "addendum_file": {
+  "name": "PREREG_SAFEOBJ.addendum1.md",
+  "path": "/workspace/ops/r0d_read/PREREG_SAFEOBJ.addendum1.md",
+  "sha256_checked": "3c6a25c14d4266230281b03d92d8201d21dbaa0ab27d9699f934af69a96761c4",
+  "sha256_registered": "3c6a25c14d4266230281b03d92d8201d21dbaa0ab27d9699f934af69a96761c4"
+ },
+ "addendum_sha256": "3c6a25c14d4266230281b03d92d8201d21dbaa0ab27d9699f934af69a96761c4",
+ "arms": {
+  "R0d": {
+   "G": {
+    "problems": [
+     "the arm was killed before u1000: the B - own-A read at u1000 cannot exist"
+    ],
+    "verdict": "NOT_READ"
+   },
+   "S": {
+    "file": "/workspace/data/rls1/arms/R0d/safeobj_S.json",
+    "file_sha256": "af56bfe3a08609da3397b45410b90434ca6e6c202c54da62777ff1d9b7097d0d",
+    "reader_breaches": [
+     "the arm was K3-killed (two consecutive g3/g5 breaches)"
+    ],
+    "reader_problems": [
+     "kill_replay.json is missing (the chain writes it after the run; a K3-killed arm never gets one)"
+    ],
+    "reader_record_sha256": "8baa4d70da224ef81ee4ee6b045d87c779943627b71be004929cd49e5b50dd06",
+    "reader_verdict": "FAIL",
+    "verdict": "FAIL"
+   },
+   "addendum": "PREREG_SAFEOBJ.addendum1.md",
+   "addendum_sha256": "3c6a25c14d4266230281b03d92d8201d21dbaa0ab27d9699f934af69a96761c4",
+   "arm": "R0d",
+   "breach_kinds": [
+    "g5"
+   ],
+   "dir": "/workspace/data/rls1/arms/R0d",
+   "facts": {
+    "breached": true,
+    "cap_hit": false,
+    "g3_alone": false,
+    "g_lb_pos": null,
+    "g_point_ok": null,
+    "lam_pos_share_ok": true,
+    "lam_zero": false,
+    "other_kill": false,
+    "s_pass": false,
+    "violation_ok": true
+   },
+   "first_breached_check": "update750",
+   "first_check_with_any_breach": "update250",
+   "kill_codes": [
+    "K3"
+   ],
+   "kill_rules": [
+    "K3"
+   ],
+   "kills": [
+    {
+     "code": "K3",
+     "rule": "K3",
+     "source": "KILLED.json",
+     "why": "g3/g5 bound breached at update750 and update1000"
+    }
+   ],
+   "log": {
+    "cap_hit": false,
+    "columns_read": {
+     "nc": "con_g_nc",
+     "ttc": "con_g_ttc"
+    },
+    "lam_pos_share_ok": true,
+    "lam_zero": false,
+    "notes": [],
+    "numbers": {
+     "cap_hits_at_first_breach": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0
+     },
+     "cap_hits_last": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0
+     },
+     "first_breached_update": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 750
+     },
+     "lam_pos_updates_last": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 941
+     },
+     "lam_seen_max_nc_at_first_breach": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0.24480870366096497
+     },
+     "lam_seen_max_nc_last": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0.24480870366096497
+     },
+     "lam_seen_max_ttc_at_first_breach": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0.5927077829837799
+     },
+     "lam_seen_max_ttc_last": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0.5927077829837799
+     },
+     "last_logged_update": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 1000
+     },
+     "post_ramp_share": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 0.96
+     },
+     "post_ramp_updates": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 550
+     },
+     "post_ramp_updates_with_lambda_gt_0": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 528
+     },
+     "ramp": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 200
+     },
+     "window_end_update": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": 750
+     },
+     "window_g_nc_mean": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": -0.0002867290377616882
+     },
+     "window_g_ttc_mean": {
+      "sha256": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+      "source": "/workspace/data/rls1/arms/R0d/sft.jsonl",
+      "value": -0.0003430105745792388
+     }
+    },
+    "problems": [],
+    "readable": true,
+    "violation_ok": true,
+    "window_overlaps_ramp": false
+   },
+   "notes": [],
+   "outcome": "O4",
+   "outcome_flags": [],
+   "problems": [],
+   "state": "killed",
+   "table": {
+    "decided_at": "O45",
+    "flags": [],
+    "matched_raw": [
+     "O4"
+    ],
+    "outcome": "O4",
+    "precedence": [
+     "O6",
+     "O7",
+     "O45",
+     "O123"
+    ],
+    "rows": {
+     "O1": false,
+     "O2": false,
+     "O3": false,
+     "O4": true,
+     "O5": false,
+     "O6": false,
+     "O7": false
+    },
+    "shadowed": [],
+    "unknown": [],
+    "why": "precedence O6 > O7 > O4/O5 > O1/O2/O3: stage O45 matches"
+   }
+  }
+ },
+ "inputs_sha256": {
+  "/workspace/data/rls1/arms/R0d/KILLED.json": "6183c3e76f4277a440dfafcde46e3437f0164ebfdb7f05befe14740ec3f368be",
+  "/workspace/data/rls1/arms/R0d/kill_checks.jsonl": "31865f51e5f8ad5030599c562b4b396c9c9b71ac3ee57907170f5d20d8abeb9c",
+  "/workspace/data/rls1/arms/R0d/safeobj_S.json": "af56bfe3a08609da3397b45410b90434ca6e6c202c54da62777ff1d9b7097d0d",
+  "/workspace/data/rls1/arms/R0d/sft.jsonl": "5380d8d1f61126b11ea9d497c6c9f5c0f353d397975dc1c45dd3d88ca2aaff8d",
+  "/workspace/ops/r0d_read/PREREG_SAFEOBJ.addendum1.md": "3c6a25c14d4266230281b03d92d8201d21dbaa0ab27d9699f934af69a96761c4",
+  "/workspace/ops/r0d_read/dose.json": "735a6d909bc0ef41b87421bed225d3b206b0b3bd886a5e0a9776088c2e8d9d5c"
+ },
+ "joint": {
+  "replication": "PENDING",
+  "why": "both constrained arms are needed (R1d runs only after R0d passes S)"
+ },
+ "prereg_ambiguities": [
+  {
+   "id": "A-E3b",
+   "text": "the addendum takes 'the larger of section 7's RL-val training-seed floor and the navtest seed floor', but section 7's training-seed row names TWO quantities (|R0d - R1d| constrained, |R0 - R1o| unconstrained) and does not say PDMS or TTC.  Read here: PDMS (E's unit), the larger of the two terms = bar L's PDMS F_seed; both terms are in the record.  Without R0 and R1o (RL-val reads) the floor cannot be built and clause 3 is unread: E reads NOT_READ unless REFUTED (which needs no floor).",
+   "where": "addendum R4 / section 5 E clause 3 / section 7"
+  },
+  {
+   "id": "A-G2b",
+   "text": "'the own-A vs C0-A difference is reported beside G as a disclosure': this tool is not given C0-A's u1000 dumps and does NOT compute it.  The G record carries disclosures.A-G2 = NOT_COMPUTED_BY_THIS_TOOL; the owner reports it beside G (section 7's 'same run again' floor, precedent R0-A vs C0-A PDMS +0.01 [-0.13, +0.14]).",
+   "where": "addendum R1 A-G2"
+  },
+  {
+   "id": "A-O9b",
+   "text": "'a K-MON kill applying the K3 rule counts as K3, judged by its recorded reason': the addendum gives no text for that reason.  Read here: the real monitor's K3 text 'g3/g5 bound breached at <tag> and <tag>' (rls1_checks.judge).  Any other recorded reason (the chain writes 'kill rules unenforceable: monitor died rc N' / 'not READY within Ns') is not the K3 rule, so the kill is O7.",
+   "where": "addendum R2.2"
+  },
+  {
+   "id": "A-G3b",
+   "text": "'(3,000 sets / 75 logs)' is parenthetical: the addendum does not say a different pool is a refusal.  The G record carries the pool counts and `pool_matches_registered`; a mismatch is a note on the arm, not a NOT_READ.",
+   "where": "addendum R1 A-G3"
+  },
+  {
+   "id": "A-E1b",
+   "text": "the JOINT-resample pooled interval is the producer's (IMPL step 9); this tool cannot re-derive it from per-token data.  It checks the declaration (`pooled.resample == 'joint'`), `n_tokens == 12146`, `n_logs == 136` and that pooled.PDMS.mean is the mean of the two pairs' PDMS means; the interval itself is taken from the file.",
+   "where": "addendum R4 A-E1"
+  },
+  {
+   "id": "A-L1b",
+   "text": "'the same 2 x F_seed yardstick printed beside' the PDMS cost: F_seed is recomputed on the PDMS contrasts (its own unit); the TTC F_seed that decides L is printed beside it.  Neither moves the verdict.",
+   "where": "addendum R4 A-L1"
+  }
+ ],
+ "prereg_sha256_checked": "b404c2fb7b2f724775a1dda5a9de06c9778505a3374e6467060ae7c7a9e04bcb",
+ "prereg_sha256_registered": "b404c2fb7b2f724775a1dda5a9de06c9778505a3374e6467060ae7c7a9e04bcb",
+ "problems": [],
+ "record_sha256": "9c15ac45856f53dd024b93ad1a26bf27cfb6caf6b8fbf29c45702bcfff9f95b3",
+ "registered": {
+  "E_each_min": 0.25,
+  "E_floor_mult": 2.0,
+  "E_mean_min": 0.5,
+  "E_refuted_upper": 0.25,
+  "G_floor": 0.6,
+  "G_lower_bound_min": 0.0,
+  "G_points_printed_not_used": [
+   [
+    -0.03,
+    0.6
+   ],
+   [
+    -0.27,
+    0.71
+   ],
+   [
+    -0.47,
+    0.84
+   ]
+  ],
+  "G_vertices_source": "dose.json (sha256 735a6d909bc0ef41b87421bed225d3b206b0b3bd886a5e0a9776088c2e8d9d5c)",
+  "L_floor_mult": 2.0,
+  "O4_lam_pos_share_min": 0.5,
+  "O4_violation_max": 0.001,
+  "O4_window_updates": 100,
+  "lambda_max": 10.0,
+  "n_boot": 10000,
+  "precedence": [
+   "O6",
+   "O7",
+   "O45",
+   "O123"
+  ],
+  "ramp": 200,
+  "seed": 20260927
+ },
+ "settled_by_addendum": {
+  "A-E1": "R4: pooled contrast = the mean of the pairs' contrasts, joint resample of the 136 logs (see A-E1b)",
+  "A-E2": "R4: clause 4 per pair, TTC and NC upper bounds (four bounds)",
+  "A-E3": "R4: seed floor = the larger of the RL-val training-seed floor and the navtest seed floor (see A-E3b)",
+  "A-E4": "R4: 'the mean contrast' = the mean of the two pairs' navtest PDMS contrasts",
+  "A-G1": "R1: dose.json's exact vertices (sha256-pinned), the +0.60 floor exact, >=",
+  "A-G2": "R1: kept as written (the own-A vs C0-A disclosure is NOT computed here: see A-G2b)",
+  "A-G3": "R1: the u1000 B - own-A PDMS contrast, two-sided 95 % percentile interval of the section 4 estimator; t = that read's TTC point delta",
+  "A-L1": "R4: L is decided on TTC only; PDMS reported beside its yardstick",
+  "A-L2": "R4: as written",
+  "A-O1": "R2.1: O6 wins over every other row",
+  "A-O10": "R4: R1d O1 while R0d is not reads NOT_APPLICABLE",
+  "A-O2": "R2.2: 'g3 alone' = S fails and no g5 breach at any check; it is O7, not O4/O5",
+  "A-O3": "R2.3: both -> O4+O5; neither -> O4 flagged SLACK",
+  "A-O4": "R3: the SIGNED window mean of the logged per-update g, both terms <= 0.001",
+  "A-O5": "R3: the 100 logged updates before the first breached check (a K3 kill: the first of the two consecutive breaches); ramp overlap flagged",
+  "A-O6": "R3: post-ramp share counted through the first breached check",
+  "A-O7": "R3: lambda_max reached at any update through the first breached check",
+  "A-O8": "R3: O6 through the last logged update, the unlogged tail disclosed",
+  "A-O9": "R2.2: any kill whose recorded rule is not K3 is O7; a K-MON kill applying the K3 rule counts as K3 (see A-O9b)"
+ },
+ "tool": "safeobj_outcome/2"
+}

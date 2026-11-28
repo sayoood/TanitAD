@@ -1,0 +1,36 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[diag] built; step 5000; perm 99adbc7ed285; arms s0,eps0,seed8,seed9,seed10,seed11,seed12,seed13,seed14,seed15,seed16,seed17,seed18,seed19,seed20,seed21,seed22,seed23,fp32_s0,loaderflags_s0,micro_alt_s0
+[diag] s0: eval_traj 0.67337 (in-run 0.64714) cascade 4.71026 sel_v3 1.9045 lat 0.31934 (305 s)
+[diag] eps0: eval_traj 0.65478 (in-run 0.64714) cascade 4.47285 sel_v3 1.82476 lat 0.31934 (247 s)
+[diag] seed8: eval_traj 0.68411 (in-run 0.64714) cascade 4.69612 sel_v3 1.93297 lat 0.31934 (255 s)
+[diag] seed9: eval_traj 0.6686 (in-run 0.64714) cascade 4.55716 sel_v3 1.85628 lat 0.31934 (247 s)
+[diag] seed10: eval_traj 0.68012 (in-run 0.64714) cascade 4.66199 sel_v3 1.79414 lat 0.31934 (227 s)
+[diag] seed11: eval_traj 0.674 (in-run 0.64714) cascade 4.61859 sel_v3 1.80278 lat 0.31934 (105 s)
+[diag] seed12: eval_traj 0.68406 (in-run 0.64714) cascade 4.68925 sel_v3 1.91164 lat 0.31934 (83 s)
+[diag] seed13: eval_traj 0.66285 (in-run 0.64714) cascade 4.52668 sel_v3 1.86048 lat 0.31934 (83 s)
+[diag] seed14: eval_traj 0.67179 (in-run 0.64714) cascade 4.57691 sel_v3 1.91755 lat 0.31934 (198 s)
+[diag] seed15: eval_traj 0.63596 (in-run 0.64714) cascade 4.33956 sel_v3 1.81743 lat 0.31934 (80 s)
+[diag] seed16: eval_traj 0.66099 (in-run 0.64714) cascade 4.54759 sel_v3 1.88247 lat 0.31934 (99 s)
+[diag] seed17: eval_traj 0.68866 (in-run 0.64714) cascade 4.69005 sel_v3 1.96973 lat 0.31934 (104 s)
+[diag] seed18: eval_traj 0.67157 (in-run 0.64714) cascade 4.62282 sel_v3 1.85911 lat 0.31934 (234 s)
+[diag] seed19: eval_traj 0.68675 (in-run 0.64714) cascade 4.71783 sel_v3 1.97796 lat 0.31934 (238 s)
+[diag] seed20: eval_traj 0.66396 (in-run 0.64714) cascade 4.55723 sel_v3 1.90902 lat 0.31934 (236 s)
+[diag] seed21: eval_traj 0.66435 (in-run 0.64714) cascade 4.58826 sel_v3 1.8624 lat 0.31934 (252 s)
+[diag] seed22: eval_traj 0.67058 (in-run 0.64714) cascade 4.61028 sel_v3 1.87393 lat 0.31934 (239 s)
+[diag] seed23: eval_traj 0.66208 (in-run 0.64714) cascade 4.54881 sel_v3 1.90726 lat 0.31934 (239 s)
+[diag] fp32_s0: eval_traj 0.67313 (in-run 0.64714) cascade 4.71075 sel_v3 1.90347 lat 0.31918 (293 s)
+[diag] loaderflags_s0: eval_traj 0.67337 (in-run 0.64714) cascade 4.71026 sel_v3 1.9045 lat 0.31934 (243 s)
+[diag] micro_alt_s0: eval_traj 0.66036 (in-run 0.64714) cascade 4.54096 sel_v3 1.87656 lat 0.31934 (261 s)
+[diag] wrote D:\refcv7_eval_kit\battery\g0diag_step5000\diag.json (5092.3 s)

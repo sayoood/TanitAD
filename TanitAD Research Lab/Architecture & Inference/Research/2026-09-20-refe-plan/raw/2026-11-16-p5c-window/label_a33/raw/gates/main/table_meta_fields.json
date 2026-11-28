@@ -1,0 +1,69 @@
+{
+ "label_name": "P5R",
+ "schema": "traj-label-table-v1",
+ "interp": "cubic",
+ "iters": 3,
+ "n_rows": 150603,
+ "n_raw_fallback": 0,
+ "n_raw_fallback_per_rank": {
+  "0": 0,
+  "1": 0
+ },
+ "n_differs_per_rank": {
+  "0": 92896,
+  "1": 57707
+ },
+ "rank_policy": "all",
+ "code_blob_sha1": {
+  "p5_target_labels.py": "294644df61ca479097971ebc92b033e24f3b7019",
+  "p5c_dual_labels.py": "50b9f0dbaa22563239d6c711e9f7dab846e1cc69",
+  "p5r_labels.py": "16d2aaf05eea5c00bd081628e07b02b7dc7f480f",
+  "p5r_run.py": "d0a4084b7187005df3e966a1ba0132a42a61e7d2",
+  "p5c_table_gates.py": "bc79b1fcfb52d30130671440d01baac74fb2defe",
+  "traj_label_table.py": "d65e01c43ab3145a093a85ac101f740c7d4ed839",
+  "p5c_rj5_path.py": "45a1664df8767220a10a09866ae5c77fed540580"
+ },
+ "bank_files_sha256": {
+  "targets_rank0.jsonl": "a5690f8186f940eccacf68f45c7b49bb788ad3190966c8fc99c40912b8384a24",
+  "targets_rank1.jsonl": "8b6ccd1b0b85e9f7af12e7d0897efbf8dd9b750f9b50b653d9ac070658f927aa"
+ },
+ "build_host": "a5ca46727f02",
+ "table_sha256": "UNKNOWN until traj_label_table.py build; the pod runner appends it (P5C_LABEL_TABLE_SHA256)",
+ "note": "traj_label_table.py build records only label_name/require_coverage/bank_rows/covered/partial; these extra fields live in this file until that module takes a --meta-json",
+ "p5r": {
+  "lambda_star": 3.0,
+  "k_max": 10,
+  "warm_start": "Tc20s (iterate20, cubic, ITERS 3)",
+  "R_B": {
+   "R-TOL-1_min_frac_sim8_identical": 0.995,
+   "R-TOL-2_median_max": 0.001,
+   "R-TOL-2_p99_max": 0.005,
+   "R-TOL-3_ratio_abs": 0.01,
+   "R-TOL-3_sim8_pp": 0.25
+  },
+  "tc20s_tol_R_A": 1e-09,
+  "prereg": "PREREG_P5R.md sha256 cfd23e0651d66e497238a0708c717ba00acbcb2189295efcfb15dad657922a42"
+ },
+ "p5r_label_fallback": {
+  "n": 1,
+  "cap": 1,
+  "reasons": [
+   "tb5_s2_tc20s"
+  ],
+  "rows": [
+   {
+    "token": "d06ff3cbd9025da7",
+    "rank": 0,
+    "label_max_abs_dyaw_vs_traj": 0.5498322625075645
+   }
+  ],
+  "allow": [
+   [
+    "d06ff3cbd9025da7",
+    "926ffc6698300e477c7d38e78dd13c0277ffdfb4d59bb91c233f475cd3ff5f91"
+   ]
+  ],
+  "note": "A3.3: these rows carry their own Tc20s label; disclosed per row in the provenance sidecar (fallback_reason)"
+ },
+ "tc20s_ranks_judged_R_A": "all"
+}

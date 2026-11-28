@@ -1,0 +1,310 @@
+{
+ "first_line": "Latency proxy (changed text)",
+ "family_line": "LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not applicable (a cost measurement)",
+ "tier": "none (a cost measurement, not a driving metric)",
+ "generated_utc": "2026-11-19T06:35:11Z",
+ "tool": "F:/TanitAD-scratch/v8proof/latency/latency_proxy.py",
+ "tool_sha256": "d1a5a743de1c3071661cfceff95e77f9d5b30ce96d875ef829526ed447150239",
+ "argv": [
+  "--stub",
+  "--out-dir",
+  "F:/TanitAD-scratch/v8proof/latency/checks_work\\run_20261119_063438_34924\\stub_mut_first_line",
+  "--n",
+  "8",
+  "--warmup",
+  "2",
+  "--k-list",
+  "1,4"
+ ],
+ "args": {
+  "n": 8,
+  "warmup": 2,
+  "k_list": [
+   1,
+   4
+  ],
+  "horizon_steps": 10,
+  "horizons_timed": [
+   10,
+   30
+  ],
+  "device": "cuda",
+  "n_windows": 80,
+  "variants": [
+   "eager",
+   "fp16",
+   "compile"
+  ]
+ },
+ "planner_horizon_steps": 10,
+ "planner_horizon_source": "stub",
+ "ckpt_sha256": "stub",
+ "info": {
+  "subject": "stub",
+  "note": "no model: a pure-python recurrence; the numbers are NOT a measurement of the model"
+ },
+ "checks": [
+  {
+   "id": "s1",
+   "name": "timer measures a known 50 ms sleep",
+   "pass": true,
+   "value_p50_ms": 50.32130001927726,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s1a",
+   "name": "timer waits for an asynchronous device (50 ms of async work)",
+   "pass": true,
+   "value_p50_ms": 50.256699993042275,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s2",
+   "name": "batched and sequential rollouts give the same states",
+   "pass": true,
+   "value_max_abs_diff": 0.0,
+   "max_abs_state": 0.7781371319973295,
+   "K": 4,
+   "H": 10,
+   "bar": "max abs diff <= 0.0001 and states not all zero"
+  },
+  {
+   "id": "s3",
+   "name": "a doubled horizon takes between 1.6 and 2.4 times as long",
+   "pass": true,
+   "value_ratio": 2.0186432593872827,
+   "p50_ms_H": 15.343349979957566,
+   "p50_ms_2H": 30.972750013461336,
+   "K": 1,
+   "H": 10,
+   "bar": "1.6 <= ratio <= 2.4"
+  },
+  {
+   "id": "s4",
+   "name": "counted predictor calls per tick",
+   "pass": true,
+   "value": [
+    10,
+    10
+   ],
+   "input_index": 0,
+   "bar": "calls > 0 and equal on two ticks of one input"
+  },
+  {
+   "id": "s5",
+   "name": "statistics of two known lists (1..100 ms; 1,1,1,1,100 ms)",
+   "pass": true,
+   "value": {
+    "p50": 50.5,
+    "p95": 95.05,
+    "mean": 50.5,
+    "n": 100
+   },
+   "value_skewed": {
+    "p50": 1.0,
+    "p95": 80.19999999999999,
+    "mean": 20.8,
+    "max": 100.0
+   },
+   "bar": "p50 50.5, p95 95.05, mean 50.5, n 100; skewed list p50 1, p95 80.2, mean 20.8, max 100"
+  }
+ ],
+ "variants": {
+  "eager": {
+   "a_predictor_step_batch1": {
+    "p50": 1.5549999952781945,
+    "p95": 1.612064999062568,
+    "mean": 1.5280499937944114,
+    "min": 1.264600025024265,
+    "max": 1.628900005016476,
+    "n": 8,
+    "first_call_ms": 1.5521000022999942
+   },
+   "b_rollout": {
+    "H10_K1": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 1,
+     "batch": {
+      "p50": 15.277149999747053,
+      "p95": 15.672249990166165,
+      "mean": 15.301112493034452,
+      "min": 14.988899987656623,
+      "max": 15.723699994850904,
+      "n": 8,
+      "first_call_ms": 15.353999973740429
+     },
+     "seq_total": {
+      "p50": 15.325849963119254,
+      "p95": 15.607290004845709,
+      "mean": 15.352362504927441,
+      "min": 14.973800047300756,
+      "max": 15.618000004906207,
+      "n": 8,
+      "first_call_ms": 16.207700013183057
+     },
+     "seq_mean_per_rollout_ms": 15.352362504927441,
+     "rtf_batch_p50": 130.9144703058564,
+     "rtf_seq_p50": 130.49847185068893,
+     "seq_over_batch_p50": 1.0031877649543932,
+     "is_planner_horizon": true
+    },
+    "H10_K4": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 4,
+     "batch": {
+      "p50": 15.407799975946546,
+      "p95": 15.698680037166923,
+      "mean": 15.404762511025183,
+      "min": 15.033199975732714,
+      "max": 15.754400053992867,
+      "n": 8,
+      "first_call_ms": 15.16860001720488
+     },
+     "seq_total": {
+      "p50": 61.6625499969814,
+      "p95": 62.21147500327788,
+      "mean": 61.699137499090284,
+      "min": 61.20820000069216,
+      "max": 62.34010000480339,
+      "n": 8,
+      "first_call_ms": 61.878399981651455
+     },
+     "seq_mean_per_rollout_ms": 15.424784374772571,
+     "rtf_batch_p50": 129.80438499475875,
+     "rtf_seq_p50": 32.43459766256678,
+     "seq_over_batch_p50": 4.0020346897833665,
+     "is_planner_horizon": true
+    },
+    "H30_K1": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 1,
+     "batch": {
+      "p50": 46.36430004029535,
+      "p95": 46.84929000795819,
+      "mean": 46.333812511875294,
+      "min": 45.80949997762218,
+      "max": 47.03499999595806,
+      "n": 8,
+      "first_call_ms": 46.796000038739294
+     },
+     "seq_total": {
+      "p50": 46.1457000055816,
+      "p95": 46.818700002040714,
+      "mean": 46.1289249942638,
+      "min": 45.55039998376742,
+      "max": 46.93559999577701,
+      "n": 8,
+      "first_call_ms": 46.79160000523552
+     },
+     "seq_mean_per_rollout_ms": 46.1289249942638,
+     "rtf_batch_p50": 129.40991225545048,
+     "rtf_seq_p50": 130.02294903478034,
+     "seq_over_batch_p50": 0.9952851647814427,
+     "is_planner_horizon": false
+    },
+    "H30_K4": {
+     "H_steps": 30,
+     "horizon_s": 6.0,
+     "K": 4,
+     "batch": {
+      "p50": 46.34579998673871,
+      "p95": 46.89697998110205,
+      "mean": 46.33447499509202,
+      "min": 45.82649999065325,
+      "max": 47.02129994984716,
+      "n": 8,
+      "first_call_ms": 46.18940001819283
+     },
+     "seq_total": {
+      "p50": 185.7398499851115,
+      "p95": 188.5024550021626,
+      "mean": 186.29886250710115,
+      "min": 184.01600001379848,
+      "max": 188.64760000724345,
+      "n": 8,
+      "first_call_ms": 183.27889998909086
+     },
+     "seq_mean_per_rollout_ms": 46.57471562677529,
+     "rtf_batch_p50": 129.4615693701873,
+     "rtf_seq_p50": 32.30324564427583,
+     "seq_over_batch_p50": 4.007695412275949,
+     "is_planner_horizon": false
+    }
+   },
+   "c_heads": {
+    "c1_lead_head_one_state": {
+     "p50": 1.0352499957662076,
+     "p95": 1.040310025564395,
+     "mean": 1.034775013977196,
+     "min": 1.02530000731349,
+     "max": 1.0415000142529607,
+     "n": 8,
+     "first_call_ms": 1.2083000037819147
+    },
+    "c4_forward_infer_b1": {
+     "p50": 2.5399499863851815,
+     "p95": 2.572244993643835,
+     "mean": 2.481574992998503,
+     "min": 2.0389999845065176,
+     "max": 2.5803999742493033,
+     "n": 8,
+     "first_call_ms": 2.5446999934501946
+    }
+   },
+   "d_planning_tick": {
+    "stub-tick": {
+     "n_inputs": 4,
+     "n_candidates": 3,
+     "n_inputs_with_rollout": 2,
+     "fraction_with_rollout": 0.5,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 2,
+      "10": 2
+     },
+     "rollout_calls_per_tick_values": [
+      0
+     ],
+     "head_calls_per_tick_values": [
+      0
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 10.188299987930804,
+      "p95": 18.134480019216426,
+      "mean": 10.227562503132503,
+      "min": 2.1345000131987035,
+      "max": 18.143300025258213,
+      "n": 8,
+      "first_call_ms": 18.244899983983487
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 18.118799984222278,
+      "p95": 18.43683000188321,
+      "mean": 18.046612494799774,
+      "min": 17.462600022554398,
+      "max": 18.46839999780059,
+      "n": 8,
+      "first_call_ms": 18.363599956501275
+     }
+    }
+   }
+  },
+  "fp16": {
+   "status": "NOT RUN",
+   "error": "fp16: no such variant for the stub"
+  },
+  "compile": {
+   "status": "NOT RUN",
+   "error": "compile: no such variant for the stub"
+  }
+ },
+ "seconds_total": 8.8
+}

@@ -1,0 +1,98 @@
+{
+ "K-SELF": {
+  "pass": true,
+  "must_read": "a self-pair reads exactly 0 on every cell, NOT-SEPARATED, outcome NO-EFFECT",
+  "outcome": "ROLLHIST-NO-EFFECT"
+ },
+ "K-PLANT": {
+  "pass": true,
+  "must_read": "a plant on LONGITUDINAL (3 cells) and TACTICAL moves exactly those two families to BETTER",
+  "moved": [
+   "LONGITUDINAL",
+   "TACTICAL"
+  ],
+  "outcome": "ROLLHIST-REPAIRS-K-UNNEEDED"
+ },
+ "K-FLOOR": {
+  "pass": true,
+  "must_read": "an effect below F_c (0.3) is NOT-SEPARATED and flagged straddles_floor"
+ },
+ "K-SEEDS": {
+  "pass": true,
+  "outcome": "ROLLHIST-SEED-DISAGREE"
+ },
+ "K-HARMS": {
+  "pass": true,
+  "outcome": "ROLLHIST-HARMS"
+ },
+ "R2-G1": {
+  "pass": true,
+  "must_read": "exactly one family BETTER, none WORSE, P2 and P3 hold -> ROLLHIST-PARTIAL; with G1 off it must NOT",
+  "read": "ROLLHIST-PARTIAL",
+  "regression_arm_read": "OUTSIDE-TABLE"
+ },
+ "R2-G2": {
+  "pass": true,
+  "must_read": "REPAIRS conditions hold but G-T0 fails at exactly one seed -> SEED-DISAGREE; the same plant with G-T0 holding reads REPAIRS-K-UNNEEDED; G2 off must NOT read SEED-DISAGREE",
+  "read": "ROLLHIST-SEED-DISAGREE",
+  "regression_arm_read": "OUTSIDE-TABLE",
+  "control_G_T0_holds": "ROLLHIST-REPAIRS-K-UNNEEDED"
+ },
+ "R2-STRADDLE-FLIPS": {
+  "pass": true,
+  "must_read": "straddling cells that move the name -> SEED-DISAGREE and BOTH names printed; with the rule off it reads NO-EFFECT; a floor below the effect (no straddle) reads REPAIRS-K-UNNEEDED",
+  "read": "ROLLHIST-SEED-DISAGREE",
+  "both_names": [
+   "ROLLHIST-NO-EFFECT",
+   "ROLLHIST-REPAIRS-K-UNNEEDED"
+  ],
+  "regression_arm_read": "ROLLHIST-NO-EFFECT",
+  "control_no_straddle": "ROLLHIST-REPAIRS-K-UNNEEDED"
+ },
+ "R2-STRADDLE-KEEPS": {
+  "pass": true,
+  "must_read": "a straddling cell that does not change the name keeps the first name (NO-EFFECT); the regression arm (any straddling cell fires) reads SEED-DISAGREE",
+  "read": "ROLLHIST-NO-EFFECT",
+  "name_with_straddles_by_sign": "ROLLHIST-NO-EFFECT",
+  "regression_arm_read": "ROLLHIST-SEED-DISAGREE"
+ },
+ "R2-P2-ATTRIBUTION": {
+  "pass": true,
+  "must_read": "the B0 ACC pair NOT worse on two of three families -> P2 fails (two families BETTER, P2 fails -> PARTIAL); control (B0 ACC WORSE on three) -> P2 holds; the check off -> P2 would hold",
+  "read": "ROLLHIST-PARTIAL",
+  "P2_pass": false,
+  "regression_arm_P2_pass": true,
+  "control_P2_pass": true
+ },
+ "R2-PROVISIONAL": {
+  "pass": true,
+  "must_read": "a one-seed read prefixes PROVISIONAL to every committed name; without a STRATEGIC one-seed floor it reads NOT-DECIDABLE, never a name",
+  "read": "PROVISIONAL ROLLHIST-REPAIRS-K-UNNEEDED",
+  "no_strategic_floor_read": "NOT-DECIDABLE"
+ },
+ "R2-PROVISIONAL-NAMES": {
+  "pass": true,
+  "names": [
+   "PROVISIONAL ROLLHIST-NO-EFFECT",
+   "PROVISIONAL ROLLHIST-PARTIAL"
+  ]
+ },
+ "R3-STRAT-FLOOR-WIRED": {
+  "pass": true,
+  "must_read": "one-seed read with the floor file prints a STRATEGIC verdict; without it (regression arm), or with a floor file whose controls failed, it prints NOT-DECIDABLE",
+  "strategic_family_with_floor": "NOT-SEPARATED",
+  "outcome_with_floor": "PROVISIONAL ROLLHIST-PARTIAL",
+  "regression_arm_outcome": "NOT-DECIDABLE",
+  "failed_controls_floor_outcome": "NOT-DECIDABLE"
+ },
+ "MUTATION_other_seed_arm": {
+  "pass": true,
+  "unmutated_green": true,
+  "mutated_red": true,
+  "reason_seen": [
+   "RH_R0C10XHb20_s1: rollout used checkpoint 000000000000, arm RH_s1 is 010101010101"
+  ]
+ },
+ "ALL_PASS": true
+}
+ZZ RH-READ-SELFTEST all hold: True

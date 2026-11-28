@@ -1,0 +1,421 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-CLOCK",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "d014ff2fd695c306abf769af0572a17e8d713991",
+  "tree_sha256": "a88a01986eac321c1ac7a7132e4fd0314dc1b0495f3955e092b6e3761e2b419b",
+  "argv_sha256": "d1fa48b2654d33cd7af7f5077076b0f7b807efc359fe6549919ddb16e721d600"
+ },
+ "inputs_read": {
+  "--v2-cache": {
+   "kind": "dir",
+   "n_files": 4573,
+   "bytes": 380891504194,
+   "listing_sha256": "d41cc2fe9204f27bb5aa9314e5a22ce1857dc1da0208c3c349e5ce28683fdc04",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+  },
+  "--v7-labels": {
+   "kind": "file",
+   "bytes": 2686219,
+   "sha256": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371",
+   "method": "sha256-v1"
+  },
+  "--eval-cache": {
+   "kind": "dir",
+   "n_files": 140,
+   "bytes": 11942313647,
+   "listing_sha256": "632599626aa8889a631c1373d9a71d9c0b443758da0301a15bf2cb9cf565a378",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+  },
+  "--eval-labels": {
+   "kind": "file",
+   "bytes": 89276,
+   "sha256": "2c6abfe3370fcad5217f6f3c0e5b869cf9db20bf23d169b4dae471c1e0810e38",
+   "method": "sha256-v1"
+  },
+  "--clip-clock-sidecar": {
+   "kind": "file",
+   "bytes": 896291,
+   "sha256": "0ea982db7d1c3289e4cafb08f0adc06196b9a02d7176a5f93b9fc4ec1f838e10",
+   "method": "sha256-v1"
+  },
+  "gate:clock-reference[0]": {
+   "kind": "file",
+   "bytes": 2105483,
+   "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+   "method": "sha256-v1"
+  },
+  "gate:clock-reference[1]": {
+   "kind": "file",
+   "bytes": 80288,
+   "sha256": "6d09ae10b84c44408fe2019bb0b7b030d184e30bfafdf4b2bbac30f1fa2a1c69",
+   "method": "sha256-v1"
+  },
+  "gate:clock-reference[2]": {
+   "kind": "file",
+   "bytes": 10283,
+   "sha256": "dd153fcf39a92e022ed6f5df99d1e0e03a36a59667b398a53eb483d502b326fd",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "e7b47e3dde5059cd00023f9563ce838754a1dbb9cd62d9de4f0db0b3a189ea50",
+ "started_utc": "2026-10-12T00:03:56Z",
+ "details": {
+  "reference": {
+   "files": [
+    {
+     "path": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ALLTRAIN.json",
+     "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+     "n_clips": 4486,
+     "controls": {
+      "K2_known_linspace": {
+       "dt_known_s": 0.1,
+       "dt_recovered_s": 0.1000000000666481,
+       "rel_err": 6.664808704925917e-10,
+       "start_known_s": 0.037,
+       "start_recovered_s": 0.03699998800447528,
+       "start_err_ms": -1.1995524719365935e-05,
+       "resid_rms_ms": 0.0002086648262701215
+      }
+     }
+    },
+    {
+     "path": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ADD203.json",
+     "sha256": "6d09ae10b84c44408fe2019bb0b7b030d184e30bfafdf4b2bbac30f1fa2a1c69",
+     "n_clips": 170,
+     "controls": {
+      "K2_known_linspace": {
+       "dt_known_s": 0.1,
+       "dt_recovered_s": 0.10000000018601676,
+       "rel_err": 1.8601675755292035e-09,
+       "start_known_s": 0.037,
+       "start_recovered_s": 0.03699998100879407,
+       "start_err_ms": -1.899120592729897e-05,
+       "resid_rms_ms": 0.00019251733448905948
+      }
+     }
+    },
+    {
+     "path": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_clock_reference/q4c_grid_vs_egolog_ADD203_slowregime.json",
+     "sha256": "dd153fcf39a92e022ed6f5df99d1e0e03a36a59667b398a53eb483d502b326fd",
+     "n_clips": 13,
+     "controls": {
+      "S_regime_by_threshold": {
+       "0.1": {
+        "S1_full_poses_relaxed_vmin": {
+         "n": 4350,
+         "max_d_g0_s": 0.003367507639578604,
+         "p99_d_g0_s": 6.958136781201621e-07,
+         "max_d_dt_s": 0.00017113754309469598,
+         "max_dt_x200_s": 0.034227508618939195,
+         "max_resid_ms": 1890.9453418998494
+        },
+        "S2_slow_only": {
+         "n": 892,
+         "max_d_g0_s": 0.01324007722645354,
+         "p99_d_g0_s": 9.020237683528448e-05,
+         "max_d_dt_s": 0.00023134166566463055,
+         "max_dt_x200_s": 0.04626833313292611,
+         "max_resid_ms": 1885.9982990886363
+        },
+        "S2_worst_clip_sha12": "e614745f9c1d",
+        "S2_admissible": false
+       },
+       "0.2": {
+        "S1_full_poses_relaxed_vmin": {
+         "n": 4350,
+         "max_d_g0_s": 0.0022289028747001227,
+         "p99_d_g0_s": 3.684336483227028e-07,
+         "max_d_dt_s": 8.963448011642394e-05,
+         "max_dt_x200_s": 0.01792689602328479,
+         "max_resid_ms": 1902.516338725947
+        },
+        "S2_slow_only": {
+         "n": 837,
+         "max_d_g0_s": 0.009225245322104197,
+         "p99_d_g0_s": 3.631148276409998e-05,
+         "max_d_dt_s": 0.00023089511821244857,
+         "max_dt_x200_s": 0.046179023642489714,
+         "max_resid_ms": 1899.6164893245307
+        },
+        "S2_worst_clip_sha12": "b8202a6059d6",
+        "S2_admissible": false
+       },
+       "0.3": {
+        "S1_full_poses_relaxed_vmin": {
+         "n": 4350,
+         "max_d_g0_s": 0.002164151993300334,
+         "p99_d_g0_s": 2.980699212232211e-07,
+         "max_d_dt_s": 3.157540094791966e-05,
+         "max_dt_x200_s": 0.006315080189583933,
+         "max_resid_ms": 194.8294392616451
+        },
+        "S2_slow_only": {
+         "n": 771,
+         "max_d_g0_s": 0.011151405992175928,
+         "p99_d_g0_s": 2.925059881946769e-05,
+         "max_d_dt_s": 0.00028762788050701316,
+         "max_dt_x200_s": 0.05752557610140263,
+         "max_resid_ms": 153.3743547873795
+        },
+        "S2_worst_clip_sha12": "b8202a6059d6",
+        "S2_admissible": false
+       },
+       "0.5": {
+        "S1_full_poses_relaxed_vmin": {
+         "n": 4350,
+         "max_d_g0_s": 5.056788016377656e-07,
+         "p99_d_g0_s": 2.2333958436177048e-07,
+         "max_d_dt_s": 1.2448380895535571e-08,
+         "max_dt_x200_s": 2.4896761791071143e-06,
+         "max_resid_ms": 0.01450781536847353
+        },
+        "S2_slow_only": {
+         "n": 680,
+         "max_d_g0_s": 3.248516848891603e-05,
+         "p99_d_g0_s": 1.548341348046973e-05,
+         "max_d_dt_s": 2.1554557945446806e-07,
+         "max_dt_x200_s": 4.310911589089361e-05,
+         "max_resid_ms": 0.013938702881336213
+        },
+        "S2_worst_clip_sha12": "862c1eebbcf6",
+        "S2_admissible": true
+       }
+      },
+      "admissible_thresholds": [
+       0.5
+      ],
+      "threshold_used": 0.5,
+      "rule": "admissible iff on S2 (old moving clips, fast rows masked out) every clip |d grid_start|<=1 ms and |d dt|*200<=1 ms vs the standard q4c entry",
+      "preregistration": "written in run_q4c_slow.py's docstring BEFORE the run: threshold admissible iff on S2 (old moving clips, speed>=2.0 masked) EVERY clip |d grid_start|<=1 ms and |d dt|*200<=1 ms vs the standard ALLTRAIN entry; the smallest admissible of {0.1,0.2,0.3,0.5} is used. Result: 0.1/0.2/0.3 NOT admissible, 0.5 admissible (S2 n=680, max 0.0325 ms)."
+     }
+    }
+   ],
+   "n_reference_clips": 4669
+  },
+  "tolerance_s": 0.05,
+  "window": 8,
+  "unverified_cap": {
+   "cap": 0.01,
+   "profile_cap": 0.01,
+   "trainer_constant": 0.01
+  },
+  "rule_checked": "MEASURED-clock clips: |V3Dataset._now_s(ep, t) - (g0_ref + (t + w - 1 + n_stack - 1) * dt_ref)| <= tol on EVERY window of every labelled clip (ref = an independent measurement, not the sidecar the trainer reads); fallback-clock or unreferenced clips are UNVERIFIED and admitted up to the cap",
+  "train": {
+   "mode": "cap",
+   "trainer_g3": {
+    "g3": "PASS",
+    "split": "train",
+    "tol_s": 0.05,
+    "n_clips": 4572,
+    "n_reads_checked": 13650,
+    "worst_abs_err_s": 0.0,
+    "n_unverified_clips": 22,
+    "max_unverified_frac": 0.01,
+    "max_unverified_frac_source": "operator (--label-clock-max-unverified)",
+    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"
+   },
+   "tactical_excluded_sids": [],
+   "fallback_sids": [
+    451308054824969195,
+    461407642213031246,
+    687978890230980925,
+    806847835490490557,
+    1247202229679660409,
+    1396702037056171749,
+    1773703750403770016,
+    1963494155820985436,
+    3010019875343814210,
+    3442630771704160938,
+    3921359068519313955,
+    3929287440554526531,
+    4157048028546507238,
+    4469796366480744130,
+    4623268854093048372,
+    4753803989624282096,
+    4808376517407485922,
+    5184498819309779067,
+    6221921430953156891,
+    8060015054358900153,
+    8724194973103877472,
+    8797097051283943076
+   ],
+   "n_windows": 781635,
+   "n_clips": 4572,
+   "n_violations": 0,
+   "worst_abs_s": 1e-06,
+   "n_violating_clips": 0,
+   "violating_clips": [],
+   "n_unverified_clips": 42,
+   "unverified_frac": 0.009186,
+   "cap": 0.01,
+   "cap_ok": true,
+   "n_fallback_clock_clips": 22,
+   "n_measured_but_unreferenced": 20,
+   "fallback_worst_abs_s_vs_reference": 0.136206,
+   "n_fallback_clips_with_reference": 3,
+   "unverified_clips": [
+    "09652ec7433a",
+    "0abfbd5d51d4",
+    "0ef4cf58f105",
+    "10d91d2b5300",
+    "13da7cbf9967",
+    "163d534424f4",
+    "1ac0369693e8",
+    "1b121ae9e3bd",
+    "1ffcfbc5548a",
+    "213a5dc91b79",
+    "2219eb78cc64",
+    "2367f3b5bbe7",
+    "24cab18ce767",
+    "2e00bbb5f3a3",
+    "36ccac731ad0",
+    "3dceea1861d0",
+    "3e2958b3138f",
+    "4019d33106a2",
+    "50d5161b141b",
+    "551bac5d9c34",
+    "5a5911e34e1c",
+    "612c9dd979e8",
+    "644360bbcab6",
+    "6e175d54b62d",
+    "6e2106035a8a",
+    "7201bcbf5652",
+    "789543fcdb31",
+    "8cadbcef15e6",
+    "8def76f55401",
+    "8f9a89b157ed",
+    "9175dfdd9a9a",
+    "9dee20474b44",
+    "a5cca888d491",
+    "b2f655eeea5a",
+    "b94d06b2c531",
+    "bb1ce63d59d0",
+    "bf30ec658d3a",
+    "bf4f1912a4f6",
+    "db67e9a8238b",
+    "fb31b4f57dae"
+   ],
+   "legacy_control_violations": 774871,
+   "source": {
+    "mode": "cache dir",
+    "cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572"
+   },
+   "label_clock_report": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+    "sidecar_rows": 4686,
+    "n_clips": 4572,
+    "n_from_sidecar": 4550,
+    "n_pose_dt_grid_start_0": 13,
+    "n_nominal_dt_grid_start_0": 9,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066664650679512,
+    "dt_s_min": 0.0990669219820389,
+    "dt_s_max": 0.10100502072653018
+   },
+   "labels_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_episodes": 4572,
+   "n_labelled_clips": 4572
+  },
+  "eval": {
+   "mode": "E2(b): eval TACTICAL on verified clips only",
+   "trainer_g3": {
+    "g3": "PASS",
+    "split": "eval",
+    "tol_s": 0.05,
+    "n_clips": 139,
+    "n_reads_checked": 408,
+    "worst_abs_err_s": 0.0,
+    "n_unverified_clips": 3,
+    "tactical_scored_on_clips": 136,
+    "tactical_excluded_clips": 3,
+    "tactical_excluded_sids": [
+     1131054092343061790,
+     6479814750558219472,
+     8549884407071846968
+    ],
+    "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+    "families_on_all_clips": [
+     "longitudinal",
+     "lateral",
+     "strategic"
+    ],
+    "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"
+   },
+   "tactical_excluded_sids": [
+    1131054092343061790,
+    6479814750558219472,
+    8549884407071846968
+   ],
+   "fallback_sids": [
+    1131054092343061790,
+    6479814750558219472,
+    8549884407071846968
+   ],
+   "n_windows": 23772,
+   "n_clips": 139,
+   "n_violations": 0,
+   "worst_abs_s": 0.0,
+   "n_violating_clips": 0,
+   "violating_clips": [],
+   "n_unverified_clips": 3,
+   "unverified_frac": 0.021583,
+   "cap": 0.01,
+   "cap_ok": false,
+   "n_fallback_clock_clips": 3,
+   "n_measured_but_unreferenced": 0,
+   "fallback_worst_abs_s_vs_reference": null,
+   "n_fallback_clips_with_reference": 0,
+   "unverified_clips": [
+    "081b986f8888",
+    "2aa810802777",
+    "3db625a5f941"
+   ],
+   "legacy_control_violations": 23260,
+   "source": {
+    "mode": "cache dir",
+    "cache": "/home/nvidia/data/refcv6-b1-416x1024-eval139"
+   },
+   "label_clock_report": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+    "sidecar_rows": 4686,
+    "n_clips": 139,
+    "n_from_sidecar": 136,
+    "n_pose_dt_grid_start_0": 0,
+    "n_nominal_dt_grid_start_0": 3,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066662995966351,
+    "dt_s_min": 0.1,
+    "dt_s_max": 0.10100496421012953
+   },
+   "labels_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_episodes": 139,
+   "n_labelled_clips": 139
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-10-12T00:04:02Z"
+}

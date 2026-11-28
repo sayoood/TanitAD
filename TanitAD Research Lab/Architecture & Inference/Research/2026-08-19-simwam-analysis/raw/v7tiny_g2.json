@@ -1,0 +1,117 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "gate": "G2 -- explained movement vs HOLD, on HELD-OUT clips",
+ "estimator": "episode-cluster bootstrap of the POOLED statistic; PAIRED for the arm difference",
+ "parity": false,
+ "n_clips": 24,
+ "arms": {
+  "fixed": {
+   "step": 2000,
+   "window": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "residual_head_init_scale": 0.001,
+   "em": {
+    "1": {
+     "explained_movement": -907.9551,
+     "ci95": [
+      -1548.803,
+      -516.9294
+     ],
+     "mse_pred_over_hold": 908.9551,
+     "beats_hold": false
+    },
+    "2": {
+     "explained_movement": -0.0402,
+     "ci95": [
+      -0.0594,
+      -0.0294
+     ],
+     "mse_pred_over_hold": 1.0402,
+     "beats_hold": false
+    },
+    "4": {
+     "explained_movement": -0.0188,
+     "ci95": [
+      -0.0299,
+      -0.0127
+     ],
+     "mse_pred_over_hold": 1.0188,
+     "beats_hold": false
+    }
+   }
+  },
+  "regress": {
+   "step": 2000,
+   "window": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "residual_head_init_scale": 1.0,
+   "em": {
+    "1": {
+     "explained_movement": -5759.0304,
+     "ci95": [
+      -8466.2188,
+      -4179.9148
+     ],
+     "mse_pred_over_hold": 5760.0304,
+     "beats_hold": false
+    },
+    "2": {
+     "explained_movement": -45711.0394,
+     "ci95": [
+      -67538.9711,
+      -33280.5966
+     ],
+     "mse_pred_over_hold": 45712.0394,
+     "beats_hold": false
+    },
+    "4": {
+     "explained_movement": -24027.5264,
+     "ci95": [
+      -39322.297,
+      -15865.4267
+     ],
+     "mse_pred_over_hold": 24028.5264,
+     "beats_hold": false
+    }
+   }
+  }
+ },
+ "paired": {
+  "1": {
+   "delta_em": 4851.0753,
+   "ci95": [
+    3543.2847,
+    7125.3357
+   ],
+   "p_fixed_not_better": 0.0,
+   "significant": true
+  },
+  "2": {
+   "delta_em": 45710.9992,
+   "ci95": [
+    33280.5672,
+    67538.9119
+   ],
+   "p_fixed_not_better": 0.0,
+   "significant": true
+  },
+  "4": {
+   "delta_em": 24027.5077,
+   "ci95": [
+    15865.4142,
+    39322.2661
+   ],
+   "p_fixed_not_better": 0.0,
+   "significant": true
+  }
+ }
+}

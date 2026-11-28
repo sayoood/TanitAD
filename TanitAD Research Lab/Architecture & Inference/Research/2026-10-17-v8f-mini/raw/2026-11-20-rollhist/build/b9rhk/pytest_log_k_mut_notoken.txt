@@ -1,0 +1,20 @@
+..............F......................                                    [100%]
+================================== FAILURES ===================================
+______________ test_k_a_cstar_bank_under_the_rhk_name_is_refused ______________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b9rhk/tmp/bt_mut_notoken/test_k_a_cstar_bank_under_the_0')
+
+    def test_k_a_cstar_bank_under_the_rhk_name_is_refused(tmp_path):           # mutation arm: a C* bank placed AT bank_k/ and named RHK
+        r = krig(tmp_path / "kc", gen="causal_g1x")                            # generator causal_g1x under bank_k/s0
+        pr, _ = mint_k(r, k_toks(r), token=K)                                  # the argv declares K: the bank header says C*
+        assert pr and refused_by(pr, "C-RH-BANKGEN"), pr
+        pr, _ = mint_k(r, k_toks(r, tok="causal_g1x"), token="causal_g1x", tag="b")     # ... and declaring C* is refused by the kind's token set
+>       assert pr and refused_by(pr, "C-ARGV"), pr
+E       AssertionError: ['check C-RH-PAIR did not pass: {"pass": false, "problems": ["RHK readout token \'causal_g1x\' is not one of (\'causal...ed585bc3f6952c99f271b92bfa", "pair_check_sha256": "0dc30d9ef773be761a9b36a07d0fd73ef770e87d3384826230ba798db560869f"}']
+E       assert (['check C-RH-PAIR did not pass: {"pass": false, "problems": ["RHK readout token \'causal_g1x\' is not one of (\'causal...ed585bc3f6952c99f271b92bfa", "pair_check_sha256": "0dc30d9ef773be761a9b36a07d0fd73ef770e87d3384826230ba798db560869f"}'] and False)
+E        +  where False = refused_by(['check C-RH-PAIR did not pass: {"pass": false, "problems": ["RHK readout token \'causal_g1x\' is not one of (\'causal...ed585bc3f6952c99f271b92bfa", "pair_check_sha256": "0dc30d9ef773be761a9b36a07d0fd73ef770e87d3384826230ba798db560869f"}'], 'C-ARGV')
+
+test_dscale10k_check_rhk.py:755: AssertionError
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rhk.py::test_k_a_cstar_bank_under_the_rhk_name_is_refused
+1 failed, 36 passed, 73 deselected in 127.98s (0:02:07)

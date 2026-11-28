@@ -1,0 +1,158 @@
+{
+ "started": "2026-11-16T21:42:35Z",
+ "evidence_class": "MEASURED on the pod (RTX 4000 Ada), this file",
+ "steps": {
+  "probe_B_s0.A": {
+   "rc": 0,
+   "out": "/root/dscale10k/probe/B_s0.A.json"
+  },
+  "probe_U_s0.A": {
+   "rc": 0,
+   "out": "/root/dscale10k/probe/U_s0.A.json"
+  },
+  "selfcheck_B_s0.A": {
+   "rc": 0,
+   "selfcheck_json": "/root/dscale10k/pilot/selfcheck_B_s0.A/selfcheck.json",
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "groups_grad": {
+    "adapter": 3846.185467481613,
+    "S": 3530.429872209206,
+    "T": 706.9943728407379,
+    "O": 4774.540734299459,
+    "head_s": 6525.894313693047,
+    "head_o": 10215.275176048279,
+    "wm": 5201.775608652388
+   },
+   "n_trainable_tensors": 252
+  },
+  "selfcheck_U_s0.A": {
+   "rc": 0,
+   "selfcheck_json": "/root/dscale10k/pilot/selfcheck_U_s0.A/selfcheck.json",
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "groups_grad": {
+    "adapter": 4020.7765092253685,
+    "S": 3363.642920775339,
+    "T": 745.9212081457954,
+    "O": 4737.719026477076,
+    "head_s": 5565.883031010628,
+    "head_o": 10833.425788164139,
+    "wm": 4774.307298967033
+   },
+   "n_trainable_tensors": 252
+  },
+  "pilot_pB": {
+   "rc": 0,
+   "wall_s": 130.7,
+   "gpu_mib_peak_2s_sampled": 1576,
+   "rss_mib_peak": 5015,
+   "steps": [
+    50,
+    100,
+    150,
+    200,
+    250,
+    300,
+    350,
+    400,
+    450,
+    500,
+    550,
+    600
+   ],
+   "sec_cum": [
+    9.38,
+    18.7,
+    28.04,
+    37.44,
+    46.61,
+    55.75,
+    65.15,
+    74.54,
+    83.92,
+    93.15,
+    102.49,
+    111.35
+   ],
+   "s_per_step_steady": 0.18538736776872114,
+   "s_per_step_overall": 0.18557958881060282,
+   "disk_read_MB_per_s_mean_over_wall": 28.3,
+   "disk_read_GB_total": 3.69,
+   "ckpt": "/root/dscale10k/pilot/pB/ckpt_last.pt"
+  },
+  "pilot_pU": {
+   "rc": 0,
+   "wall_s": 134.8,
+   "gpu_mib_peak_2s_sampled": 1574,
+   "rss_mib_peak": 5288,
+   "steps": [
+    50,
+    100,
+    150,
+    200,
+    250,
+    300,
+    350,
+    400,
+    450,
+    500,
+    550,
+    600
+   ],
+   "sec_cum": [
+    9.94,
+    19.36,
+    28.96,
+    37.96,
+    47.48,
+    56.86,
+    66.18,
+    75.54,
+    84.78,
+    94.2,
+    103.33,
+    112.79
+   ],
+   "s_per_step_steady": 0.1870007003437389,
+   "s_per_step_overall": 0.18798720916112263,
+   "disk_read_MB_per_s_mean_over_wall": 70.2,
+   "disk_read_GB_total": 9.47,
+   "ckpt": "/root/dscale10k/pilot/pU/ckpt_last.pt"
+  },
+  "bank200": {
+   "rc": 0,
+   "wall_s": 363.6,
+   "out": "/root/dscale10k/pilot/bank200",
+   "note": "200 clips of B's train list, --limit-clips (PARTIAL bank); the generator's own controls ran"
+  }
+ },
+ "free_gb_start": 150.1,
+ "memory_limit": "70999998464",
+ "projection_block1": {
+  "evidence_class": "ESTIMATED from the 600-step pilots (stage-B s/step taken equal to the stage-A pilot rate: conservative; bank wall scaled linearly in clips; the union bank at the B clip rate)",
+  "arms": "B_s0 (A+B+bank), B_rep (A+B+bank), U_s0 (A+B+bank), R_s0 (A)",
+  "s_per_step": {
+   "B": 0.18538736776872114,
+   "U": 0.1870007003437389,
+   "U_over_B": 1.0087024946437044
+  },
+  "stage_A_h": {
+   "B": 0.9868787544221589,
+   "U": 0.9954670614965034
+  },
+  "stage_B_h": {
+   "B": 0.15448947314060096,
+   "U": 0.15583391695311574
+  },
+  "bank_h": {
+   "B_4512_clips": 2.2786689215342206,
+   "U_14512_clips": 7.3289103256437516
+  },
+  "block1_wall_h": 16.315752663783833,
+  "stop_rule_10h": "STOP, back to the MM / PI",
+  "mitigation_trigger_U_over_1p5B": false
+ },
+ "status": "DONE",
+ "finished": "2026-11-16T21:53:59Z"
+}

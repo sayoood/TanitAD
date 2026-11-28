@@ -1,0 +1,34 @@
+ZZPM START 2026-10-17T15:59:01Z from=a to=f dry=1 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/H2_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM a OK merge rc 0 (judged from artifacts, input+output re-hashed): kept=23 (K1=17 K2=4 K3=2) dropped=51 K1_share_eval=0.3696 all=0.3333 shares[K1=0.3696,K2=0.2857,K3=0.2222] out_sha=fd4ff8ea389f2135
+ZZPM_INFO a expected keep shares K1/K2/K3 = 0.37/0.29/0.22 (mini bank, PREREG_3C); yield guard: K1 < 0.20 STOPs
+ZZPM_INFO b gpu: state=idle n=0 procs=-
+ZZPM_DRY ship /c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/pod/c2_run.sh -> /tmp/p6mock/workspace/ops/p6next/c2_run.sh
+ZZPM_DRY pod: ENV3C=/tmp/p6mock/workspace/ops/bank3c/code/env_3c.sh F=/tmp/p6mock/workspace/ops/bank3c/full OUT=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c IN=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd EXPECT_SHA=fd4ff8ea389f2135358c024cd2281ba467ac789e0ce9f28839983ffbf463c164 setsid -f nohup bash /tmp/p6mock/workspace/ops/p6next/c2_run.sh > /tmp/p6mock/workspace/ops/p6next/c2_run.out 2>&1 < /dev/null
+ZZPM_INFO b launched (c'2) detached on the pod: 12 shards, CPU, <=300 twins/rank; polling every 2s
+ZZPM b OK OK_DRY (the launch above was printed, not executed; nothing to wait for or judge)
+ZZPM_INFO c gpu: state=idle n=0 procs=-
+ZZPM_DRY ship /c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/pod/c3_run.sh -> /tmp/p6mock/workspace/ops/p6next/c3_run.sh
+ZZPM_DRY pod: ENV3C=/tmp/p6mock/workspace/ops/bank3c/code/env_3c.sh F=/tmp/p6mock/workspace/ops/bank3c/full OUT=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c MC=/tmp/p6mock/workspace/data/refe_navtrain/metric_cache MC_TWIN=/tmp/p6mock/workspace/data/refe_navtrain/metric_cache_twins_3c KS='1 2 3' EXPECT_SHA=fd4ff8ea389f2135358c024cd2281ba467ac789e0ce9f28839983ffbf463c164 setsid -f nohup bash /tmp/p6mock/workspace/ops/p6next/c3_run.sh > /tmp/p6mock/workspace/ops/p6next/c3_run.out 2>&1 < /dev/null
+ZZPM_INFO c launched (c'3) detached on the pod: verify for ranks [1 2 3] in parallel (--limit 1000), then the hold check; polling every 2s
+ZZPM c OK OK_DRY (the launch above was printed, not executed; nothing to wait for or judge)
+ZZPM_INFO d plan: state=plan_ok rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=-
+ZZPM_DRY ship /c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/pod/parts_run.sh -> /tmp/p6mock/workspace/ops/p6next/parts_run.sh
+ZZPM_DRY ship /c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/pod/pod_helpers.py -> /tmp/p6mock/workspace/ops/p6next/pod_helpers.py
+ZZPM_DRY pod: ENV3C=/tmp/p6mock/workspace/ops/bank3c/code/env_3c.sh OUT=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c MC=/tmp/p6mock/workspace/data/refe_navtrain/metric_cache MC_TWIN=/tmp/p6mock/workspace/data/refe_navtrain/metric_cache_twins_3c P6PKG=/tmp/p6mock/workspace/refe-plan-p6 P6N=/tmp/p6mock/workspace/ops/p6next HOW=auto HELPERS=/tmp/p6mock/workspace/ops/p6next/pod_helpers.py setsid -f nohup bash /tmp/p6mock/workspace/ops/p6next/parts_run.sh > /tmp/p6mock/workspace/ops/p6next/parts_run.out 2>&1 < /dev/null
+ZZPM_INFO d launched the parts placement (mode=auto, 23 files, 3956 bytes if copied; ~0 bytes if hard-linked)
+ZZPM d OK OK_DRY (read-only plan above; the placement was printed, not executed)
+ZZPM_INFO e p6tree: state=ok commit=1111111111111111111111111111111111111111 tree_sha256=2222222222222222 p6_pod_md5=38bdf475a631 cbank_knob=1 cbank_commands_guard=1 r43_expandable_segments=1 stop_after_launch_gate=1 build_has_pdm_route_rank=0
+ZZPM_INFO e pod is FREE (no GPU compute process, no other chain lock, no rls1_pod.sh)
+ZZPM_DRY step (d) was only PRINTED in this --dry run, so 23 kept twin parts are still to be placed; a real run places them in (d) and (e) re-checks it: state=plan_ok rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=-
+ZZPM_INFO e launching the gate dry run: P6_STOP_AFTER=launch_gate P6_D7_FALLBACK=0 P6_CBANK=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c P6_OVERLAP=0 P6_DD_GB=16 (chain.log offset 0); polling every 2s
+ZZPM_DRY pod: mkdir -p /tmp/p6mock/workspace/ops/p6next && : > /tmp/p6mock/workspace/ops/p6next/gate_start.ref && echo 0 > /tmp/p6mock/workspace/ops/p6next/gate_offset.txt && rm -f /tmp/p6mock/workspace/data/refe_p6/stage/lanes.ok
+ZZPM_DRY ship /c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/pod/gate_dryrun.sh -> /tmp/p6mock/workspace/ops/p6next/gate_dryrun.sh
+ZZPM_DRY pod: P6PKG=/tmp/p6mock/workspace/refe-plan-p6 P6=/tmp/p6mock/workspace/data/refe_p6 OUT=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c DD_GB=16 HF_TOKEN_FILE='<token-file>' P6N=/tmp/p6mock/workspace/ops/p6next setsid -f nohup bash /tmp/p6mock/workspace/ops/p6next/gate_dryrun.sh > /tmp/p6mock/workspace/ops/p6next/gate_dryrun.out 2>&1 < /dev/null
+ZZPM e OK OK_DRY (the launch above was printed, not executed; nothing to wait for or judge)
+ZZPM_INFO f pod is FREE (no GPU compute process, no other chain lock, no rls1_pod.sh)
+ZZPM_DRY re-judge the dry-run evidence from the pod (/tmp/p6mock/workspace/ops/p6next/gate_offset.txt, gate_start.ref); require /tmp/p6mock/workspace/data/refe_p6/stage/launch_gate.ok and a free P6 chain lock
+ZZPM_DRY ship pod/p6_launch.sh; launch detached (P6_POD_RUNBOOK section 3, without P6_STOP_AFTER): P6PKG=.. P6=.. OUT=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c DD_GB=<as the dry run> HF_TOKEN_FILE=<token-file> P6N=/tmp/p6mock/workspace/ops/p6next setsid -f nohup bash /tmp/p6mock/workspace/ops/p6next/p6_launch.sh > /tmp/p6mock/workspace/ops/p6next/p6_launch.out 2>&1 < /dev/null
+ZZPM_DRY watch chain.log (from the pre-launch offset) + /tmp/p6mock/workspace/data/refe_runs/p6_paper_faithful/metrics.jsonl (new lines): 'train.py preflight OK' then the first step line with a finite loss within 12s -> ZZPM P6_TRAINING; REFUSED / exit / ambiguity -> ZZPM P6_NOT_LAUNCHED
+ZZPM f OK OK_DRY (planned; nothing launched)
+ZZPM DONE result=OK through=f exit=0 dry=1 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/H2_run

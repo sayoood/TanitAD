@@ -1,0 +1,219 @@
+{
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "base",
+  "--v2-cache",
+  "/root/data/train",
+  "--v7-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "--eval-cache",
+  "/root/data/eval",
+  "--eval-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--image-hw",
+  "256",
+  "640",
+  "--steps",
+  "40284",
+  "--batch",
+  "20",
+  "--workers",
+  "6",
+  "--prefetch-factor",
+  "1",
+  "--v2-lru",
+  "24",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--log-every",
+  "50",
+  "--save-every",
+  "500",
+  "--u8-batches",
+  "--out",
+  "/workspace/experiments/refcv5-v2-noagents-b1-v72-40k",
+  "--nav-from-v7",
+  "--ego-state-inject",
+  "--ego-dropout",
+  "0.5",
+  "--anchors",
+  "/workspace/experiments/refcv5-v2-noagents-b1-v72-40k/anchors.pt",
+  "--n-anchors",
+  "117",
+  "--anchor-v0-conditioned",
+  "--anchor-control-units",
+  "alat",
+  "--sel-accel-max",
+  "2.0",
+  "--sampler",
+  "ddim",
+  "--w-u0",
+  "0.5",
+  "--sel-refined",
+  "--sel-score-emitted",
+  "--goal-str",
+  "--tac-goal-tok-head",
+  "--agents",
+  "off"
+ ],
+ "modules": {
+  "core": {
+   "n_tensors": 111,
+   "n_params": 127704,
+   "n_grad_none": 4,
+   "grad_abs_sum": 3358.207335897816,
+   "verdict": "GRADIENT REACHES"
+  },
+  "phi_tac": {
+   "n_tensors": 24,
+   "n_params": 7440,
+   "n_grad_none": 0,
+   "grad_abs_sum": 146.5948529317975,
+   "verdict": "GRADIENT REACHES"
+  },
+  "str_goal_head": {
+   "n_tensors": 2,
+   "n_params": 27,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "gstr_embed": {
+   "n_tensors": 2,
+   "n_params": 32,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "gstr_film": {
+   "n_tensors": 2,
+   "n_params": 576,
+   "n_grad_none": 0,
+   "grad_abs_sum": 11.978296279907227,
+   "verdict": "GRADIENT REACHES"
+  },
+  "nav_inj": {
+   "n_tensors": 1,
+   "n_params": 256,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "nav_to_tac": {
+   "n_tensors": 2,
+   "n_params": 2080,
+   "n_grad_none": 0,
+   "grad_abs_sum": 115.17040061950684,
+   "verdict": "GRADIENT REACHES"
+  },
+  "nav_to_str": {
+   "n_tensors": 2,
+   "n_params": 520,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "ego_inj": {
+   "n_tensors": 2,
+   "n_params": 192,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "ego_to_tac": {
+   "n_tensors": 2,
+   "n_params": 1056,
+   "n_grad_none": 0,
+   "grad_abs_sum": 24.32196617126465,
+   "verdict": "GRADIENT REACHES"
+  },
+  "ego_to_str": {
+   "n_tensors": 2,
+   "n_params": 264,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "lat_head_tac": {
+   "n_tensors": 2,
+   "n_params": 264,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.3129355311393738,
+   "verdict": "GRADIENT REACHES"
+  },
+  "lon_head_tac": {
+   "n_tensors": 2,
+   "n_params": 264,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.3198801390826702,
+   "verdict": "GRADIENT REACHES"
+  },
+  "tac_goal_tok_head": {
+   "n_tensors": 2,
+   "n_params": 726,
+   "n_grad_none": 0,
+   "grad_abs_sum": 1452.0,
+   "verdict": "GRADIENT REACHES"
+  },
+  "tac_goal_head": {
+   "n_tensors": 2,
+   "n_params": 396,
+   "n_grad_none": 0,
+   "grad_abs_sum": 14.36840534210205,
+   "verdict": "GRADIENT REACHES"
+  },
+  "tac_latent_proj": {
+   "n_tensors": 2,
+   "n_params": 1056,
+   "n_grad_none": 0,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  },
+  "scorer": {
+   "n_tensors": 4,
+   "n_params": 184,
+   "n_grad_none": 2,
+   "grad_abs_sum": 0.0,
+   "verdict": "ZERO GRAD"
+  }
+ },
+ "losses": {
+  "loss": 19.020389556884766,
+  "traj": 0.46647071838378906,
+  "cls": 4.749710559844971,
+  "law": 2.8867263793945312,
+  "route": 0.0,
+  "lat": 1.170771598815918,
+  "lon": 1.189976453781128,
+  "lat_tac": 1.95566987991333,
+  "lon_tac": 2.1003196239471436,
+  "anchor_acc": 0.0,
+  "slot_valid_frac": 0.625,
+  "tac_label_v7": "float",
+  "tac_label_rows": "float",
+  "goal_tac": 14.72966194152832,
+  "goal2s_err_m": 10.179967880249023,
+  "sel_v3": 4.835596084594727,
+  "goal_gate": 0.0,
+  "goal_score_absmean": 10.195279121398926,
+  "nav_injected": "float",
+  "ego_injected": "float",
+  "ego_keep_frac": 0.0,
+  "withheld_rows": "float",
+  "withheld_speed_mae": 4.708550453186035,
+  "kept_rows": "float",
+  "bank_speed_pred_mean": 0.26898902654647827
+ },
+ "tac_goal_tok_head_built": true,
+ "max_speed_cond_built": false
+}

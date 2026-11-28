@@ -1,0 +1,9 @@
+1 jitter around a standing car, K 0.2: readout's largest heading step 2.306 rad (above 0.5: True) | bounded steps within K x distance: True (largest excess 2.394e-16 rad) | frames acted 20 of 20 | towards the readout: True
+2 arc of radius 10 m at K 0.2: output heading equals the readout's at every frame (bit for bit): True | frames acted 0 of 20 | largest readout step per metre 0.1000 (at most 0.1 x 1.1)
+3 the same arc at K 0.05: frames acted 20 of 20 | largest |step - K x distance| 1.804e-16 rad (at most 1e-12) | towards the readout: True
+4 a huge K (1e9): the frames of 203 plans (jitter, arc, standing car, 200 random) equal the readout's bit for bit: True (plans differing 0; frames acted in total 0)
+5 counters over 2400 frames: frames_total 2400 | speed bins add up to the total True and to the acted frames True | frames acted 2217 | max_excess_rad 1.082e-15 (at most 1e-9) | max_abs_diff_where_not_acted 0.0 | max_abs_diff_xy 0.0 | max_abs_diff_v 0.0 | True
+6 refused K 0, K -0.1, nan, inf and K without --readout: [True, True, True, True, True] | absent: kappa None, kb None
+7 planted faults caught: the bound is not applied: True; the bound is applied with the turn of the wrong sign: True | caught: True
+pinned tool v8f_t1_eval.py | wrapper rzgfh sha256 373ffe72f2655c35d8c5033867cc5b37268ece2eb21a41d5d865fb8dcbb517b9
+ZZ CHECK-HEAD-BOUND all hold: True

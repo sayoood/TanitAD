@@ -1,0 +1,31 @@
+......F
+================================== FAILURES ===================================
+____ test_rk_mutant_c_another_label_under_the_rk_name_is_refused[speed_v1] ____
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/kinlab/tmp/ptpod/bt_mut_nolabelpin/test_rk_mutant_c_another_label0')
+lab = 'speed_v1'
+
+    @pytest.mark.parametrize("lab", ["speed_v1", "human", "kin_v2", "KIN_V1"])
+    def test_rk_mutant_c_another_label_under_the_rk_name_is_refused(tmp_path, lab):
+        r = Rig(tmp_path / "mc")
+>       pr = _refused(r, rk_toks(r, label=lab))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_rk_checker.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+r = <test_dscale10k_check_rhk.Rig object at 0x00000124791E4AF0>
+toks = ['--arm', 'M2b', '--seed', '0', '--grid', 'pool4x10', ...], token = None
+tag = 'm'
+
+    def _refused(r, toks, token=None, tag="m"):
+        pr, _ = mint_rk(r, toks, token=token, tag=tag)
+>       assert pr, "the mutant was MINTED (the checker accepted it)"
+E       AssertionError: the mutant was MINTED (the checker accepted it)
+E       assert []
+
+test_rk_checker.py:74: AssertionError
+=========================== short test summary info ===========================
+FAILED test_rk_checker.py::test_rk_mutant_c_another_label_under_the_rk_name_is_refused[speed_v1]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 6 passed in 1.80s

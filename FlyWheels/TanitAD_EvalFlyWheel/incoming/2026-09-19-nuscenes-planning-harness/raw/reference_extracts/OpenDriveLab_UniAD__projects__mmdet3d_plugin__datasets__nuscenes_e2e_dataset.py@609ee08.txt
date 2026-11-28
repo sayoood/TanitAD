@@ -1,0 +1,148 @@
+# PUBLISHED-CODE extract - OpenDriveLab/UniAD @ 609ee083ea51c3521c323f1279dfc4cee0e60467
+# path: projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py
+# git blob sha1 of the fetched file: d4d024ac5f76a186ab745a19077202e9a07d454e (54343 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 981-990: evaluate signature: strategy default uniad
+  981      def evaluate(self,
+  982                   results,
+  983                   metric='bbox',
+  984                   logger=None,
+  985                   jsonfile_prefix=None,
+  986                   result_names=['pts_bbox'],
+  987                   show=False,
+  988                   out_dir=None,
+  989                   pipeline=None,
+  990                   planning_evaluation_strategy="uniad"):
+
+## lines 1030-1050: the uniad / stp3 reduction switch
+ 1030              if 'planning_results_computed' in results.keys():
+ 1031                  planning_results_computed = results['planning_results_computed']
+ 1032                  planning_tab = PrettyTable()
+ 1033                  planning_tab.title = f"{planning_evaluation_strategy}'s definition planning metrics"
+ 1034                  planning_tab.field_names = [
+ 1035                      "metrics", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s"]
+ 1036                  for key in planning_results_computed.keys():
+ 1037                      value = planning_results_computed[key]
+ 1038                      row_value = []
+ 1039                      row_value.append(key)
+ 1040                      for i in range(len(value)):
+ 1041                          if planning_evaluation_strategy == "stp3":
+ 1042                              row_value.append("%.4f" % float(value[: i + 1].mean()))
+ 1043                          elif planning_evaluation_strategy == "uniad":
+ 1044                              row_value.append("%.4f" % float(value[i]))
+ 1045                          else:
+ 1046                              raise ValueError(
+ 1047                                  "planning_evaluation_strategy should be uniad or spt3"
+ 1048                              )
+ 1049                      planning_tab.add_row(row_value)
+ 1050                  print(planning_tab)
+
+## lines 580-632: occupancy temporal indices
+  580      def get_occ_data_infos(self, index):
+  581          prev_indices, future_indices = self.occ_get_temporal_indices(
+  582              index, self.occ_receptive_field, self.occ_n_future)
+  583          # ego motions of all frames are needed
+  584          all_frames = prev_indices + [index] + future_indices
+  585          # whether invalid frames is present
+  586          # 
+  587          has_invalid_frame = -1 in all_frames[:self.occ_only_total_frames]
+  588                  # might have None if not in the same sequence
+  589          future_frames = [index] + future_indices
+  590          # get lidar to ego to global transforms for each curr and fut index
+  591          occ_transforms = self.occ_get_transforms(
+  592              future_frames)  # might have None
+  593          
+  594          occ_future_ann_infos = self.get_future_detection_infos(future_frames)
+  595          return all_frames, has_invalid_frame, occ_transforms, occ_future_ann_infos
+  596  
+  597      def get_future_detection_infos(self, future_frames):
+  598          detection_ann_infos = []
+  599          for future_frame in future_frames:
+  600              if future_frame >= 0:
+  601                  detection_ann_infos.append(
+  602                      self.occ_get_detection_ann_info(future_frame),
+  603                  )
+  604              else:
+  605                  detection_ann_infos.append(None)
+  606          return detection_ann_infos
+  607  
+  608      def occ_get_temporal_indices(self, index, receptive_field, n_future):
+  609          current_scene_token = self.data_infos[index]['scene_token']
+  610  
+  611          # generate the past
+  612          previous_indices = []
+  613  
+  614          for t in range(- receptive_field + 1, 0):
+  615              index_t = index + t
+  616              if index_t >= 0 and self.data_infos[index_t]['scene_token'] == current_scene_token:
+  617                  previous_indices.append(index_t)
+  618              else:
+  619                  previous_indices.append(-1)  # for invalid indices
+  620  
+  621          # generate the future
+  622          future_indices = []
+  623  
+  624          for t in range(1, n_future + 1):
+  625              index_t = index + t
+  626              if index_t < len(self.data_infos) and self.data_infos[index_t]['scene_token'] == current_scene_token:
+  627                  future_indices.append(index_t)
+  628              else:
+  629                  # NOTE: How to deal the invalid indices???
+  630                  future_indices.append(-1)
+  631  
+  632          return previous_indices, future_indices
+
+## lines 673-723: future-frame boxes: occ_filter_by_valid_flag asserted False
+  673      def occ_get_detection_ann_info(self, index):
+  674          info = self.data_infos[index].copy()
+  675          gt_bboxes_3d = info['gt_boxes'].copy()
+  676          gt_names_3d = info['gt_names'].copy()
+  677          gt_ins_inds = info['gt_inds'].copy()
+  678  
+  679          gt_vis_tokens = info.get('visibility_tokens', None)
+  680  
+  681          if self.use_valid_flag:
+  682              gt_valid_flag = info['valid_flag']
+  683          else:
+  684              gt_valid_flag = info['num_lidar_pts'] > 0
+  685  
+  686          assert self.occ_filter_by_valid_flag is False
+  687          if self.occ_filter_by_valid_flag:
+  688              gt_bboxes_3d = gt_bboxes_3d[gt_valid_flag]
+  689              gt_names_3d = gt_names_3d[gt_valid_flag]
+  690              gt_ins_inds = gt_ins_inds[gt_valid_flag]
+  691              gt_vis_tokens = gt_vis_tokens[gt_valid_flag]
+  692  
+  693          # cls_name to cls_id
+  694          gt_labels_3d = []
+  695          for cat in gt_names_3d:
+  696              if cat in self.CLASSES:
+  697                  gt_labels_3d.append(self.CLASSES.index(cat))
+  698              else:
+  699                  gt_labels_3d.append(-1)
+  700          gt_labels_3d = np.array(gt_labels_3d)
+  701  
+  702          if self.with_velocity:
+  703              gt_velocity = info['gt_velocity']
+  704              nan_mask = np.isnan(gt_velocity[:, 0])
+  705              gt_velocity[nan_mask] = [0.0, 0.0]
+  706              gt_bboxes_3d = np.concatenate([gt_bboxes_3d, gt_velocity], axis=-1)
+  707  
+  708          # the nuscenes box center is [0.5, 0.5, 0.5], we change it to be
+  709          # the same as KITTI (0.5, 0.5, 0)
+  710          gt_bboxes_3d = LiDARInstance3DBoxes(
+  711              gt_bboxes_3d,
+  712              box_dim=gt_bboxes_3d.shape[-1],
+  713              origin=(0.5, 0.5, 0.5)).convert_to(self.box_mode_3d)
+  714  
+  715          anns_results = dict(
+  716              gt_bboxes_3d=gt_bboxes_3d,
+  717              gt_labels_3d=gt_labels_3d,
+  718              # gt_names=gt_names_3d,
+  719              gt_inds=gt_ins_inds,
+  720              gt_vis_tokens=gt_vis_tokens,
+  721          )
+  722  
+  723          return anns_results
+

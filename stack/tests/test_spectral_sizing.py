@@ -5,7 +5,7 @@ KNOWN low rank r embedded in a larger state dim S, the estimator must recover th
 knee at ~r (not S) and report the spectral tail beyond r as ~0. Plus an end-to-end
 run through the real WorldModel latent path.
 
-    pytest "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-14-spectral-sizing-p0/tests" -q
+    pytest "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-14-spectral-sizing-p0/tests" -q
 """
 
 import pytest

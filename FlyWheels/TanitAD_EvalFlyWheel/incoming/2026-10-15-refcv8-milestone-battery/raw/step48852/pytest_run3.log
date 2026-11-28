@@ -1,0 +1,34 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\Admin\qland\hold_r8batt\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-15-refcv8-milestone-battery\code
+plugins: anyio-4.14.1
+collected 61 items
+
+test_chain_final_r8.py ................................................F [ 80%]
+............                                                             [100%]
+
+================================== FAILURES ===================================
+________ test_k_kdraw_waits_for_a_live_kdraw_queue_and_never_runs_two _________
+
+S = {'sb': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5808/test_k_kdraw_waits_for_a_live_0/sb')...ndowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5808/test_k_kdraw_waits_for_a_live_0/sb/kit'), ...}
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5808/test_k_kdraw_waits_for_a_live_0')
+
+    def test_k_kdraw_waits_for_a_live_kdraw_queue_and_never_runs_two(S, tmp_path):
+        write_pull(S)
+        p = subprocess.Popen([SH, "-c", "echo $$; exec sleep 100"], stdout=subprocess.PIPE, text=True)
+        pid = p.stdout.readline().strip()
+        try:
+            (S["kit"] / "chain/kdraw_queue.pid").write_text(pid, encoding="utf-8")
+            q = subprocess.Popen([SH, msys(CHAIN)], env=dict(S["env"]), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(25)
+            assert not has(calls(S), "kdq"), "the K-draw queue started while another one was alive"
+>           assert "ZZCFNKDBUSYZZ" in S["log"].read_text(encoding="utf-8")
+E           AssertionError: assert 'ZZCFNKDBUSYZZ' in 'ZZCFNSTARTZZ 2026-10-19T09:05:52+0200 pid 1267444 step 48852 tags step48852ema_unc step48852_unc\nZZCFNPULLSTARTZZ 20...ytest-of-Admin/pytest-5808/test_k_kdraw_waits_for_a_live_0/sb/pkg/raw/step48852ema/BATTERY_SUMMARY_step48852ema.json\n'
+E            +  where 'ZZCFNSTARTZZ 2026-10-19T09:05:52+0200 pid 1267444 step 48852 tags step48852ema_unc step48852_unc\nZZCFNPULLSTARTZZ 20...ytest-of-Admin/pytest-5808/test_k_kdraw_waits_for_a_live_0/sb/pkg/raw/step48852ema/BATTERY_SUMMARY_step48852ema.json\n' = read_text(encoding='utf-8')
+E            +    where read_text = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5808/test_k_kdraw_waits_for_a_live_0/sb/kit/chain/chain_final.log').read_text
+
+test_chain_final_r8.py:803: AssertionError
+=========================== short test summary info ===========================
+FAILED test_chain_final_r8.py::test_k_kdraw_waits_for_a_live_kdraw_queue_and_never_runs_two
+================== 1 failed, 60 passed in 1756.37s (0:29:16) ==================
+ZZPYTESTDONE3ZZ

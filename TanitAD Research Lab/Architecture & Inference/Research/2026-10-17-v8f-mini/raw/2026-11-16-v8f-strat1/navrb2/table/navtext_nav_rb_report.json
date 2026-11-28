@@ -1,0 +1,64 @@
+{
+ "train": {
+  "G-CLOCK-RB": {
+   "n_steps": 461518,
+   "n_on": 29836,
+   "n_clips_on": 433,
+   "n_differ_from_rule": 0,
+   "min_age_used_s": 1.4999999621068127e-05,
+   "n_age_negative": 0,
+   "pass": true
+  },
+  "G-CLOCK-RB_regression_arm_shift_5": {
+   "n_steps": 461518,
+   "n_on": 29964,
+   "n_clips_on": 431,
+   "n_differ_from_rule": 1892,
+   "min_age_used_s": -0.9999850000003789,
+   "n_age_negative": 27591,
+   "pass": false
+  },
+  "G-CLOCK-RB_pass": true
+ },
+ "eval": {
+  "G-CLOCK-RB": {
+   "n_steps": 14237,
+   "n_on": 1334,
+   "n_clips_on": 17,
+   "n_differ_from_rule": 0,
+   "min_age_used_s": 0.00016799999866634607,
+   "n_age_negative": 0,
+   "grid_windows_on_at_now": 235,
+   "grid_episodes_on_at_now": 16,
+   "pass": true
+  },
+  "G-CLOCK-RB_regression_arm_shift_5": {
+   "n_steps": 14237,
+   "n_on": 1350,
+   "n_clips_on": 17,
+   "n_differ_from_rule": 76,
+   "min_age_used_s": -0.9998320000013337,
+   "n_age_negative": 1254,
+   "grid_windows_on_at_now": 236,
+   "grid_episodes_on_at_now": 16,
+   "pass": false
+  },
+  "G-CLOCK-RB_pass": true
+ },
+ "inputs": {
+  "navtok_sha256": "2836369e3e14a8c3c49a6b1a42116c36cda522ca42f98a6bcbc8c4e4d45c8992",
+  "align_sha256": "03bd75bc3a3de17928681bedb8e46a48a891304de45d395c49cc876acf6e6160",
+  "grid_sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+  "join_train_sha256": null,
+  "join_eval_sha256": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"
+ },
+ "rule": "PREREG_V8F_NAVRB2 section 2: nav_rb = 1 iff navtok flag == 0 and class RB_* / ROTARY* at the step; no track, no ego, no label",
+ "rb_classes": [
+  "RB_ENTER",
+  "RB_EXIT",
+  "ROTARY_EXIT",
+  "RB_TAKE_EXIT",
+  "RB_NEXT_EXIT"
+ ],
+ "navtext_nav_rb_sha256": "f4c4ab7a8abf2498e532d648874df2549b7b83292b31766ad80e581d009bcebc"
+}

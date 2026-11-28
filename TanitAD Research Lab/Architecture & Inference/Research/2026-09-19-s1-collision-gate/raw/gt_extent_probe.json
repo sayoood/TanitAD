@@ -1,0 +1,34 @@
+{
+ "_what": "share of the box read's GT inside the head's decode extent",
+ "_evidence_class": "MEASURED (ours)",
+ "_tier": "T0 (labels only, no model)",
+ "_source_finding": "training and the read use the SAME target set: the dataset emits targets RAW (refc_v3_train.py ~2676) and agent_slots.match_slots matches EVERY valid target, dropping only the farthest when targets exceed queries (32 vs 100 here, so never). No range mask or clip on either side.",
+ "labelled_windows": 736,
+ "n_gt": 15206,
+ "decode_extent": {
+  "x_fwd_m": 60.0,
+  "y_half_m": 16.0
+ },
+ "inside_share": 0.2232,
+ "inside_n": 3394,
+ "x_m": {
+  "p05": -76.2845230102539,
+  "median": 1.301900029182434,
+  "p95": 83.3382797241211,
+  "min": -191.73080444335938,
+  "max": 195.11419677734375
+ },
+ "y_m": {
+  "p05": -34.88472366333008,
+  "median": 3.1934499740600586,
+  "p95": 55.66227722167969,
+  "min": -192.11880493164062,
+  "max": 137.34750366210938
+ },
+ "range_m": {
+  "median": 38.89678955078125,
+  "p90": 89.02418518066406,
+  "share_within_60m": 0.7167,
+  "share_behind_ego": 0.4882
+ }
+}

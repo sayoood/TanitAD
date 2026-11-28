@@ -1,0 +1,98 @@
+cells R0_s0 done
+cells R0_s1 done
+cells R0KP30Hb20_s0 done
+cells R0KP30Hb20_s1 done
+cells R0KP30LgHb20_s0 done
+cells R0KP30LgHb20_s1 done
+cells R0KP30PlHb20_s0 done
+cells R0KP30PlHb20_s1 done
+cells R0KP30SlHb20_s0 done
+cells R0KP30SlHb20_s1 done
+TIER: T1-kin (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance; heading bound 0.2 1/m
+== controls of part 1
+   b1_zero_offset_identity PASS {"cells_compared": ["ade6_m", "ade_tac_m", "along_mae_m", "cross_mae_m", "curvature_mae_1pm", "heading_mae_deg", "speed_mae_mps", "yaw_rate_mae_degps"], "track_identical": true}
+   b2_one_metre_ahead PASS {"along_change_m": 1.0, "lateral_cells_max_abs_change": {"cross_mae_m": 0.0, "heading_mae_deg": 0.0, "curvature_mae_1pm": 0.0, "yaw_rate_mae_degps": 0.0}}
+   b3_ninety_degrees PASS {"max_abs_x": 2.204364238465236e-15, "max_abs_y_minus_old_x": 0.0, "max_length_difference_m": 0.0, "heading_error_deg": 89.99999999999999}
+   n3_planted_start_offset PASS {"engines_as_they_were": {"speed_mae_mps": 0.43333333333333324, "share_unsafe": 1.0}, "this_reader": {"speed_mae_mps": 0.0, "heading_mae_deg": 0.0, "yaw_rate_mae_degps": 0.0, "along_mae_m": 5.0, "share_unsafe": 0.0, "share_contact": 0.0, "largest_gap_difference_m": 0.0, "ade_equal": true}, "zero_offset_equals_the_engines_exactly": true}
+   b5_OWN PASS {"required_share": 0.99, "slack_m": 0.5, "per_seed": {"seed0": {"share_within": 1.0, "max_dist_m": 7.220247943662114, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 3.552713678800501e-15, "max_abs_dpsi_diff_deg": 0.0}}, "seed1": {"share_within": 1.0, "max_dist_m": 7.0647991694549965, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 7.105427357601002e-15, "max_abs_dpsi_diff_deg": 0.0}}}}
+   b6_OWN PASS {"n_dumps": 6, "n_windows": 1271, "order_of_the_grid": true, "g_ws_eid_clip_v0_identical": true, "aged_tick0_rows_exactly_the_grid": true}
+   b4_OWN PASS {"largest_abs_dev_pose_plus_state_minus_total": 1.7763568394002505e-15, "n_cells": 10, "tolerance": 1e-09}
+   b5_LOGGED FAIL {"required_share": 0.99, "slack_m": 0.5, "per_seed": {"seed0": {"share_within": 0.8174665617623919, "max_dist_m": 7.5552294709194845, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 3.552713678800501e-15, "max_abs_dpsi_diff_deg": 0.0}}, "seed1": {"share_within": 0.8111723052714398, "max_dist_m": 7.584221051585719, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 7.105427357601002e-15, "max_abs_dpsi_diff_deg": 0.0}}}}
+   b6_LOGGED PASS {"n_dumps": 6, "n_windows": 1271, "order_of_the_grid": true, "g_ws_eid_clip_v0_identical": true, "aged_tick0_rows_exactly_the_grid": true}
+   b4_LOGGED PASS {"largest_abs_dev_pose_plus_state_minus_total": 3.469446951953614e-18, "n_cells": 10, "tolerance": 1e-09}
+   b5_SPEED-LOGGED FAIL {"required_share": 0.99, "slack_m": 0.5, "per_seed": {"seed0": {"share_within": 0.8182533438237608, "max_dist_m": 7.489919594193624, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 3.552713678800501e-15, "max_abs_dpsi_diff_deg": 0.0}}, "seed1": {"share_within": 0.8119590873328089, "max_dist_m": 7.573776830933211, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 7.105427357601002e-15, "max_abs_dpsi_diff_deg": 0.0}}}}
+   b6_SPEED-LOGGED PASS {"n_dumps": 6, "n_windows": 1271, "order_of_the_grid": true, "g_ws_eid_clip_v0_identical": true, "aged_tick0_rows_exactly_the_grid": true}
+   b4_SPEED-LOGGED PASS {"largest_abs_dev_pose_plus_state_minus_total": 8.881784197001252e-16, "n_cells": 10, "tolerance": 1e-09}
+   b5_PATH-LOGGED PASS {"required_share": 0.99, "slack_m": 0.5, "per_seed": {"seed0": {"share_within": 1.0, "max_dist_m": 7.216551268959118, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 3.552713678800501e-15, "max_abs_dpsi_diff_deg": 0.0}}, "seed1": {"share_within": 1.0, "max_dist_m": 7.069348825427733, "n": 1271, "offsets_file": {"max_abs_dpos_diff_m": 7.105427357601002e-15, "max_abs_dpsi_diff_deg": 0.0}}}}
+   b6_PATH-LOGGED PASS {"n_dumps": 6, "n_windows": 1271, "order_of_the_grid": true, "g_ws_eid_clip_v0_identical": true, "aged_tick0_rows_exactly_the_grid": true}
+   b4_PATH-LOGGED PASS {"largest_abs_dev_pose_plus_state_minus_total": 1.7763568394002505e-15, "n_cells": 10, "tolerance": 1e-09}
+   b4_bank_own_split PASS {"largest_abs_dev_sum_of_parts": 1.7763568394002505e-15, "largest_abs_dev_total": 0.0, "cells_missing_in_bank": [], "tolerance": 1e-09, "n_cells": 10, "against": "pair AGE-K of the re-read of card ADD70"}
+   h1_name_rule_planted PASS {"removes_0.8": {"want": "CARRIES", "got": "CARRIES", "removed": 0.7824174850234409, "Q": 0.2926956816225237}, "removes_0.2": {"want": "PART", "got": "PART", "removed": 0.20946385156937625, "Q": -0.2900825823347454}, "removes_0": {"want": "NOT-SEPARATED", "got": "NOT-SEPARATED", "removed": 0.002383573830765519, "Q": -0.49515618525879995}, "adds_one_half": {"want": "WORSE", "got": "WORSE", "removed": -0.5311403048696938, "Q": -1.0308857364852493}, "no_state_part": {"want": "NO-STATE-COST", "got":
+   c1_offsets_of_every_mode_equal_own PASS {"largest_difference_per_mode": {"LOGGED": 0.0, "SPEED-LOGGED": 0.0, "PATH-LOGGED": 0.0}}
+   c2_preroll_logs_name_the_mode_and_the_groups PASS {"runs": {"LOGGED:seed0": {"ok": true, "t0_state": "logged", "kinds": {"model": {"positions_m": 40.10600280761719, "headings_rad": 1.2995815947651863, "speed_ms": 14.659049272537231, "groups_as_defined": true}, "floor": {"positions_m": 40.92682647705078, "headings_rad": 3.1209504047976893, "speed_ms": 14.26244568824768, "groups_as_defined": true}}}, "LOGGED:seed1": {"ok": true, "t0_state": "logged", "kinds": {"model": {"positions_m": 37.87294006347656, "headings_rad": 1.4438315629959106, "speed_
+   c0_logged_first_segment_equals_the_moved_fresh_track PASS {"largest_distance_m_per_seed": {"seed0": 1.907363193764562e-06, "seed1": 1.9082797342678136e-06}, "tolerance_m": 0.001, "steps": 10}
+   q1_identities_of_the_cell_blocks PASS {"largest_abs_dev_state_own_minus_state_mode_minus_removed": 8.881784197001252e-16, "largest_abs_dev_Q": 4.440892098500626e-16, "n_blocks": 30, "tolerance": 1e-09}
+== controls of part 2 (family read)
+   g_engine_controls_of_the_grid_read PASS {"missing_or_incomplete": []}
+   a1_own_minus_fresh_equals_card_add70 PASS {"largest_difference_of_values": 0.0, "cells_compared": 10, "same_cell_names": true, "tolerance": 1e-09}
+   s_strategic_rows_three_ticks_per_window PASS {}
+== a control of part 1 did not pass: no name, no part, no value of part 1 is written
+== names of part 2
+   LOGGED-VS-OWN_U                    HANDSRC10K-LOGGED-VS-OWN-U-LOWER
+   LOGGED-VS-OWN_LONGITUDINAL         HANDSRC10K-LOGGED-VS-OWN-LONGITUDINAL-BETTER
+   LOGGED-VS-OWN_LATERAL              HANDSRC10K-LOGGED-VS-OWN-LATERAL-MIXED
+   LOGGED-VS-OWN_TACTICAL             HANDSRC10K-LOGGED-VS-OWN-TACTICAL-BETTER
+   LOGGED-VS-OWN_STRATEGIC            HANDSRC10K-LOGGED-VS-OWN-STRATEGIC-BETTER
+   SPEED-LOGGED-VS-OWN_U              HANDSRC10K-SPEED-LOGGED-VS-OWN-U-LOWER
+   SPEED-LOGGED-VS-OWN_LONGITUDINAL   HANDSRC10K-SPEED-LOGGED-VS-OWN-LONGITUDINAL-BETTER
+   SPEED-LOGGED-VS-OWN_LATERAL        HANDSRC10K-SPEED-LOGGED-VS-OWN-LATERAL-NOT-SEPARATED
+   SPEED-LOGGED-VS-OWN_TACTICAL       HANDSRC10K-SPEED-LOGGED-VS-OWN-TACTICAL-BETTER
+   SPEED-LOGGED-VS-OWN_STRATEGIC      HANDSRC10K-SPEED-LOGGED-VS-OWN-STRATEGIC-NOT-SEPARATED
+   PATH-LOGGED-VS-OWN_U               HANDSRC10K-PATH-LOGGED-VS-OWN-U-NOT-SEPARATED
+   PATH-LOGGED-VS-OWN_LONGITUDINAL    HANDSRC10K-PATH-LOGGED-VS-OWN-LONGITUDINAL-MIXED
+   PATH-LOGGED-VS-OWN_LATERAL         HANDSRC10K-PATH-LOGGED-VS-OWN-LATERAL-MIXED
+   PATH-LOGGED-VS-OWN_TACTICAL        HANDSRC10K-PATH-LOGGED-VS-OWN-TACTICAL-BETTER
+   PATH-LOGGED-VS-OWN_STRATEGIC       HANDSRC10K-PATH-LOGGED-VS-OWN-STRATEGIC-BETTER
+   LOGGED-VS-OWN          U -0.0429 [-0.0819,-0.0071]  C -0.0523 [-0.0936,-0.0148]  F -0.1138 [-0.1567,-0.0707]
+   LOGGED-VS-OWN          LONGITUDINAL:speed_mae_mps     -1.5765 [-1.7783,-1.3947] BETTER
+   LOGGED-VS-OWN          LONGITUDINAL:along_mae_m       -5.9231 [-6.5518,-5.3462] BETTER
+   LOGGED-VS-OWN          LATERAL:cross_mae_m            -0.4041 [-0.6425,-0.1609] BETTER
+   LOGGED-VS-OWN          LATERAL:heading_mae_deg        -2.8568 [-3.4813,-2.2981] BETTER
+   LOGGED-VS-OWN          LATERAL:curvature_mae_1pm      -0.0663 [-0.1219,-0.0153] BETTER
+   LOGGED-VS-OWN          LATERAL:yaw_rate_mae_degps     -1.5931 [-3.9071,+0.8709] OPEN
+   LOGGED-VS-OWN          TACTICAL:lon_err_rate          -0.0417 [-0.0642,-0.0196] INSIDE-SPREAD
+   LOGGED-VS-OWN          TACTICAL:lat_err_rate          -0.0437 [-0.0806,-0.0075] INSIDE-SPREAD
+   LOGGED-VS-OWN          TACTICAL:joint_err_rate        -0.0519 [-0.0735,-0.0319] BETTER
+   LOGGED-VS-OWN          TACTICAL:ade_tac_m             -7.4098 [-8.2382,-6.6355] BETTER
+   LOGGED-VS-OWN          STRATEGIC pos 30.0m -2.6775 [-3.5617,-1.8729] BETTER n [1220, 1222]
+   LOGGED-VS-OWN          STRATEGIC pos 50.0m -3.2090 [-4.1561,-2.2954] BETTER n [1208, 1208]
+   LOGGED-VS-OWN          STRATEGIC pos 80.0m -4.1609 [-5.4404,-3.0077] BETTER n [1195, 1195]
+   SPEED-LOGGED-VS-OWN    U -0.0446 [-0.0837,-0.0096]  C -0.0538 [-0.0968,-0.0160]  F -0.0985 [-0.1398,-0.0583]
+   SPEED-LOGGED-VS-OWN    LONGITUDINAL:speed_mae_mps     -1.5242 [-1.7227,-1.3425] BETTER
+   SPEED-LOGGED-VS-OWN    LONGITUDINAL:along_mae_m       -5.7179 [-6.3287,-5.1514] BETTER
+   SPEED-LOGGED-VS-OWN    LATERAL:cross_mae_m            +0.3978 [+0.2333,+0.5686] WORSE
+   SPEED-LOGGED-VS-OWN    LATERAL:heading_mae_deg        -0.2127 [-0.7750,+0.3338] OPEN
+   SPEED-LOGGED-VS-OWN    LATERAL:curvature_mae_1pm      -0.0546 [-0.1082,-0.0047] BETTER
+   SPEED-LOGGED-VS-OWN    LATERAL:yaw_rate_mae_degps     -0.7052 [-2.7732,+1.5086] OPEN
+   SPEED-LOGGED-VS-OWN    TACTICAL:lon_err_rate          -0.0283 [-0.0495,-0.0059] INSIDE-SPREAD
+   SPEED-LOGGED-VS-OWN    TACTICAL:lat_err_rate          +0.0000 [-0.0209,+0.0205] OPEN
+   SPEED-LOGGED-VS-OWN    TACTICAL:joint_err_rate        -0.0268 [-0.0452,-0.0079] INSIDE-SPREAD
+   SPEED-LOGGED-VS-OWN    TACTICAL:ade_tac_m             -6.2836 [-7.0637,-5.5688] BETTER
+   SPEED-LOGGED-VS-OWN    STRATEGIC pos 30.0m -0.5298 [-1.3410,+0.2743] NOT-SEPARATED n [1220, 1222]
+   SPEED-LOGGED-VS-OWN    STRATEGIC pos 50.0m -0.2614 [-1.1027,+0.5960] NOT-SEPARATED n [1208, 1208]
+   SPEED-LOGGED-VS-OWN    STRATEGIC pos 80.0m -0.2115 [-1.2252,+0.7551] NOT-SEPARATED n [1195, 1195]
+   PATH-LOGGED-VS-OWN     U +0.0018 [+0.0000,+0.0070]  C +0.0000 [+0.0000,+0.0000]  F -0.0077 [-0.0154,-0.0015]
+   PATH-LOGGED-VS-OWN     LONGITUDINAL:speed_mae_mps     -0.0147 [-0.0273,-0.0026] INSIDE-SPREAD
+   PATH-LOGGED-VS-OWN     LONGITUDINAL:along_mae_m       -0.0935 [-0.1468,-0.0414] BETTER
+   PATH-LOGGED-VS-OWN     LATERAL:cross_mae_m            -0.7125 [-0.9228,-0.5177] BETTER
+   PATH-LOGGED-VS-OWN     LATERAL:heading_mae_deg        -2.3600 [-2.8501,-1.8757] BETTER
+   PATH-LOGGED-VS-OWN     LATERAL:curvature_mae_1pm      -0.0108 [-0.0293,+0.0052] OPEN
+   PATH-LOGGED-VS-OWN     LATERAL:yaw_rate_mae_degps     -0.6657 [-1.5976,+0.0754] OPEN
+   PATH-LOGGED-VS-OWN     TACTICAL:lon_err_rate          -0.0016 [-0.0146,+0.0098] OPEN
+   PATH-LOGGED-VS-OWN     TACTICAL:lat_err_rate          -0.0153 [-0.0323,+0.0028] OPEN
+   PATH-LOGGED-VS-OWN     TACTICAL:joint_err_rate        -0.0134 [-0.0256,-0.0012] INSIDE-SPREAD
+   PATH-LOGGED-VS-OWN     TACTICAL:ade_tac_m             -0.8481 [-1.1020,-0.6123] BETTER
+   PATH-LOGGED-VS-OWN     STRATEGIC pos 30.0m -1.8834 [-2.3547,-1.4355] BETTER n [1220, 1222]
+   PATH-LOGGED-VS-OWN     STRATEGIC pos 50.0m -2.5327 [-3.1819,-1.9222] BETTER n [1214, 1214]
+   PATH-LOGGED-VS-OWN     STRATEGIC pos 80.0m -3.2354 [-4.2177,-2.3710] BETTER n [1196, 1196]
+ZZ READ-HANDSRC-DECOMP rc 0 controls_all_pass False family_controls_all_pass True

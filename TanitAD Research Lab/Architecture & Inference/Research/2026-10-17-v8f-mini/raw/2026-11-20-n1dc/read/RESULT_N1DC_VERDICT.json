@@ -1,0 +1,18 @@
+{
+ "card": "PREREG_V8F_N1DC.md sha256 2eae796494101a0c (FROZEN)",
+ "evidence_class": "MEASURED (ours; dev-box CPU dumps of the two trained arms, zero training in the read)",
+ "executor_of_record": "T1-kin/hb0.2 (v8f_t1_eval_hb.py --kappa-max 0.2, blob sha256 74fd8445); T1-kin/old beside",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B 2000 seed 0; 'another draw of EPISODES' only; training variance = the two seeds",
+ "d1ho": {"source": "d1ho/RESULT_N1DC_D1HO.json sha256 6f458165de350ba0", "windows": 5736, "episodes": 497, "bar": 0.042364,
+          "deciding_N1DC_minus_N1D": {"s0": [0.0045, -0.0041, 0.0132], "s1": [0.0068, -0.0030, 0.0156]}, "gain": {"s0": false, "s1": false}, "cost": {"s0": false, "s1": false},
+          "z_use_real_minus_skip_zeroed": {"s0": [-0.0005, -0.0051, 0.0042], "s1": [0.0049, 0.0003, 0.0099]}},
+ "eval141_guard": {"source": "eval141/RESULT_N1DC_EVAL141.json sha256 cc822257bf7bfab8", "windows": 2399, "episodes": 141, "floor": "F2 (banked old-executor C0 floor)",
+          "cost_cells": {"s0": ["TAC-LON"], "s1": ["operative_0_2s:ade_m", "operative_0_2s:along_mae_m", "operative_0_2s:dk_hw_abs_err_m"]}, "cost_cells_both_seeds": [],
+          "route_cost": false, "guard": "GUARD-COST (does not hold at s0 or s1)"},
+ "strategic": {"rc_a_separated_cells": 0, "route_cost": false, "s1slot_route_following": "S-PARTIAL (as N1D)", "fog": "unscored (PI 2026-11-17)"},
+ "outcome_of_record": "N1DC-COST (card section 4 as written: 'guard cost at both seeds'; the guard is per seed)",
+ "outcome_under_per_cell_reading": "N1DC-NO-GAIN (no cell a cost at both seeds; the N1DW RBW-COSTS wording)",
+ "decision": "not adopted under either reading; nothing enters the recipe; N1D stays the reference arm",
+ "first_run_fix": "eval141/fix: hb0.2 floor path 'fl' checked against the hb0.2 floor (K-FL-HB 8/8); sentinel lines appended directly",
+ "controls": "all PASS (D1-HO K-RE, K1, K-CONST 0.338215, K-T0, REPLAY green / mutant red; eval-141 K-RE, K1, K-HB0-141, Z-EVAL 0.0 x4, K-FL-HB 8/8)"
+}

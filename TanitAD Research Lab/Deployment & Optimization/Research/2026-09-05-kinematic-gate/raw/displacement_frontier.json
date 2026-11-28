@@ -1,0 +1,184 @@
+{
+  "tool": "2026-09-05-kinematic-gate/raw/displacement_frontier.py",
+  "tier": "T0",
+  "purpose": "P5 SCOPING ONLY -- the successor is not built here",
+  "n_windows": 400,
+  "n_candidates": 128,
+  "anchors_key": "core.decoder.anchors",
+  "ckpt": "C:/Users/Admin/rl_refcv3_min/base/ckpt_step40284_frozen.pt",
+  "npz": "C:/Users/Admin/kingate/raw/kingate_bank_drawA.npz",
+  "controls": {
+    "C1": {
+      "name": "C1 arithmetic: lambda=1 reproduces the banked fan",
+      "max_abs_diff_peak_g": 0.0,
+      "PASS": true,
+      "blind_by_construction": "lambda=1 is the emitted fan whatever the LEFT operand is -- this control cannot see a wrong bank (RET #30)"
+    },
+    "C2": {
+      "name": "C2 object: lambda=0 reproduces the BANK measured by a different route",
+      "object_under_test": "core.decoder.anchors",
+      "reference_artifact": "C:/Users/Admin/veto_run/raw/bank_vs_fan_feasibility.json",
+      "reference_n_windows": 240,
+      "this_n_windows": 400,
+      "peak_g": {
+        "ours": 0.48078182339668274,
+        "ref": 0.4807818531990051
+      },
+      "envelope": {
+        "ours": 0.015625,
+        "ref": 0.015625
+      },
+      "kamm_over": {
+        "ours": 0.1953125,
+        "ref": 0.1953125
+      },
+      "PASS": true,
+      "why_window_independent": "the vocabulary is a FIXED [N,S,2] path set (anchor_v0_cond False), so envelope, kamm_over and peak_g do not depend on the window draw; off_reach and the lead-dependent flags DO, and are not asserted here"
+    }
+  },
+  "sweep": [
+    {
+      "lambda": 0.0,
+      "mean_abs_disp_m": 0.0,
+      "fan_envelope": 0.015625,
+      "fan_kamm_over": 0.1953125,
+      "fan_off_reach": 0.7821875214576721,
+      "fan_infeasible": 0.8070117235183716,
+      "fan_peak_g": 0.48078182339668274,
+      "oracle_ade_m": 1.0984961986541748,
+      "sel_ade_m": 3.9824187755584717,
+      "sel_peak_g": 0.23724643886089325,
+      "sel_envelope": 0.007499999832361937
+    },
+    {
+      "lambda": 0.1,
+      "mean_abs_disp_m": 0.6882987022399902,
+      "fan_envelope": 0.2284570336341858,
+      "fan_kamm_over": 0.2706249952316284,
+      "fan_off_reach": 0.76123046875,
+      "fan_infeasible": 0.7878515720367432,
+      "fan_peak_g": 0.550640344619751,
+      "oracle_ade_m": 1.0000011920928955,
+      "sel_ade_m": 3.590463638305664,
+      "sel_peak_g": 0.22131802141666412,
+      "sel_envelope": 0.007499999832361937
+    },
+    {
+      "lambda": 0.2,
+      "mean_abs_disp_m": 1.3765974044799805,
+      "fan_envelope": 0.5425390601158142,
+      "fan_kamm_over": 0.47306641936302185,
+      "fan_off_reach": 0.7346289157867432,
+      "fan_infeasible": 0.7706054449081421,
+      "fan_peak_g": 0.7274207472801208,
+      "oracle_ade_m": 0.901017427444458,
+      "sel_ade_m": 3.1999006271362305,
+      "sel_peak_g": 0.20853368937969208,
+      "sel_envelope": 0.004999999888241291
+    },
+    {
+      "lambda": 0.3,
+      "mean_abs_disp_m": 2.06489634513855,
+      "fan_envelope": 0.6781836152076721,
+      "fan_kamm_over": 0.6019921898841858,
+      "fan_off_reach": 0.6983984112739563,
+      "fan_infeasible": 0.7652148604393005,
+      "fan_peak_g": 0.9564013481140137,
+      "oracle_ade_m": 0.8015748858451843,
+      "sel_ade_m": 2.811033248901367,
+      "sel_peak_g": 0.19666053354740143,
+      "sel_envelope": 0.0024999999441206455
+    },
+    {
+      "lambda": 0.4,
+      "mean_abs_disp_m": 2.753194808959961,
+      "fan_envelope": 0.7433007955551147,
+      "fan_kamm_over": 0.672167956829071,
+      "fan_off_reach": 0.6510546803474426,
+      "fan_infeasible": 0.7847851514816284,
+      "fan_peak_g": 1.2165406942367554,
+      "oracle_ade_m": 0.7021318674087524,
+      "sel_ade_m": 2.42463755607605,
+      "sel_peak_g": 0.1853886842727661,
+      "sel_envelope": 0.0024999999441206455
+    },
+    {
+      "lambda": 0.5,
+      "mean_abs_disp_m": 3.441493511199951,
+      "fan_envelope": 0.787109375,
+      "fan_kamm_over": 0.7168750166893005,
+      "fan_off_reach": 0.5862500071525574,
+      "fan_infeasible": 0.8101757764816284,
+      "fan_peak_g": 1.5234490633010864,
+      "oracle_ade_m": 0.6027944684028625,
+      "sel_ade_m": 2.041971445083618,
+      "sel_peak_g": 0.17475420236587524,
+      "sel_envelope": 0.029999999329447746
+    },
+    {
+      "lambda": 0.6,
+      "mean_abs_disp_m": 4.1297926902771,
+      "fan_envelope": 0.8179687261581421,
+      "fan_kamm_over": 0.7512304782867432,
+      "fan_off_reach": 0.5053906440734863,
+      "fan_infeasible": 0.8318945169448853,
+      "fan_peak_g": 1.9625805616378784,
+      "oracle_ade_m": 0.5048737525939941,
+      "sel_ade_m": 1.6657620668411255,
+      "sel_peak_g": 0.16474764049053192,
+      "sel_envelope": 0.07000000029802322
+    },
+    {
+      "lambda": 0.7,
+      "mean_abs_disp_m": 4.818090915679932,
+      "fan_envelope": 0.8417382836341858,
+      "fan_kamm_over": 0.7790625095367432,
+      "fan_off_reach": 0.40345704555511475,
+      "fan_infeasible": 0.8504101634025574,
+      "fan_peak_g": 2.5965569019317627,
+      "oracle_ade_m": 0.41190850734710693,
+      "sel_ade_m": 1.298493504524231,
+      "sel_peak_g": 0.15615618228912354,
+      "sel_envelope": 0.07999999821186066
+    },
+    {
+      "lambda": 0.8,
+      "mean_abs_disp_m": 5.506389617919922,
+      "fan_envelope": 0.8610742092132568,
+      "fan_kamm_over": 0.8031445145606995,
+      "fan_off_reach": 0.2878125011920929,
+      "fan_infeasible": 0.8674023151397705,
+      "fan_peak_g": 3.301729679107666,
+      "oracle_ade_m": 0.32260552048683167,
+      "sel_ade_m": 0.948579728603363,
+      "sel_peak_g": 0.15138660371303558,
+      "sel_envelope": 0.09000000357627869
+    },
+    {
+      "lambda": 0.9,
+      "mean_abs_disp_m": 6.19468879699707,
+      "fan_envelope": 0.8755664229393005,
+      "fan_kamm_over": 0.8232031464576721,
+      "fan_off_reach": 0.1838085949420929,
+      "fan_infeasible": 0.8803320527076721,
+      "fan_peak_g": 3.900716781616211,
+      "oracle_ade_m": 0.24931852519512177,
+      "sel_ade_m": 0.6347216963768005,
+      "sel_peak_g": 0.15236873924732208,
+      "sel_envelope": 0.09749999642372131
+    },
+    {
+      "lambda": 1.0,
+      "mean_abs_disp_m": 6.882987022399902,
+      "fan_envelope": 0.8878710865974426,
+      "fan_kamm_over": 0.8407617211341858,
+      "fan_off_reach": 0.10941406339406967,
+      "fan_infeasible": 0.8916015625,
+      "fan_peak_g": 4.178901195526123,
+      "oracle_ade_m": 0.20633918046951294,
+      "sel_ade_m": 0.4486265480518341,
+      "sel_peak_g": 0.17180073261260986,
+      "sel_envelope": 0.10750000178813934
+    }
+  ]
+}

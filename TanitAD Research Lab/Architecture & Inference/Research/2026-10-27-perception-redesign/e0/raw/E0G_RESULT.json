@@ -1,0 +1,162 @@
+{
+ "what": "E0g content assertion: box-derived foreground depth targets on real TRAIN-split frames",
+ "evidence_class": "MEASURED (ours; this file)",
+ "selection_rule": "obstacle_offline_b1train clips with clip_index.split == 'train', sha256(clip_id) ascending, first n_clips; frames at the listed clip-relative times; cuboids nearest-in-time per track within DEFAULT_TOL_S",
+ "n_clips": 60,
+ "n_frames": 300,
+ "times_s": [
+  3.0,
+  6.0,
+  9.0,
+  12.0,
+  15.0
+ ],
+ "frame": {
+  "H": 416,
+  "W": 1024,
+  "f_ref": 488.92398517830253,
+  "projection": "cylindrical"
+ },
+ "params": {
+  "depth_kind": "range",
+  "n_bins": 80,
+  "d_min": 0.0,
+  "d_max": 100.0,
+  "alpha_fg": 3.25,
+  "alpha_bg": 0.25,
+  "fg_min_frac": 0.5,
+  "strides": [
+   8,
+   16
+  ]
+ },
+ "fg_pixel_share": {
+  "mean": 0.05825753236428285,
+  "p5": 0.0,
+  "p50": 0.023266132061298076,
+  "p95": 0.2349307720477765,
+  "min": 0.0,
+  "max": 0.37126981295072115
+ },
+ "fg_cell_share_s8": {
+  "mean": 0.05866786858974359,
+  "p5": 0.0,
+  "p50": 0.023737980769230768,
+  "p95": 0.23611778846153847,
+  "min": 0.0,
+  "max": 0.37109375
+ },
+ "fg_cell_share_s16": {
+  "mean": 0.05790464743589743,
+  "p5": 0.0,
+  "p50": 0.02283653846153846,
+  "p95": 0.2368389423076923,
+  "min": 0.0,
+  "max": 0.3713942307692308
+ },
+ "fg_pixel_share_frames_with_cuboids": {
+  "mean": 0.05904479631515154,
+  "p5": 0.0,
+  "p50": 0.023833054762620192,
+  "p95": 0.23561389629657453,
+  "min": 0.0,
+  "max": 0.37126981295072115
+ },
+ "frames_with_zero_fg": 41,
+ "frames_with_zero_cuboids": 4,
+ "assertion_A_violations": 0,
+ "assertion_B_violations": 0,
+ "assertion_B_note": "B: every zero-foreground frame that has cuboids has none of their 8 corners + centre inside the field within 100 m",
+ "assertion_A_frames_with_expected_visible_box": 256,
+ "cuboids_per_frame": {
+  "mean": 40.70333333333333,
+  "p5": 1.0,
+  "p50": 22.0,
+  "p95": 152.0,
+  "min": 0.0,
+  "max": 228.0
+ },
+ "cuboids_with_fg_pixels_per_frame": {
+  "mean": 9.53,
+  "p5": 0.0,
+  "p50": 6.0,
+  "p95": 30.0,
+  "min": 0.0,
+  "max": 51.0
+ },
+ "depth_hist_fg_pixels": {
+  "edges_m": [
+   0,
+   5,
+   10,
+   20,
+   30,
+   40,
+   60,
+   80,
+   100
+  ],
+  "counts": [
+   2738336,
+   2722906,
+   1097896,
+   405860,
+   212806,
+   176996,
+   64015,
+   26218
+  ],
+  "share": [
+   0.36781,
+   0.36573,
+   0.14747,
+   0.05451,
+   0.02858,
+   0.02377,
+   0.0086,
+   0.00352
+  ]
+ },
+ "lid_octile_hist_fg_pixels": {
+  "bins_per_octile": 10,
+  "counts": [
+   0,
+   4094722,
+   1983308,
+   735644,
+   354501,
+   167118,
+   77412,
+   32328
+  ]
+ },
+ "skipped": {
+  "invalid": 0,
+  "camera_inside": 0
+ },
+ "out_of_range_pixels_total": 21598,
+ "unobserved_pixels_total": 7046130,
+ "cuboid_pixels_on_unobserved_total": 170952,
+ "cuboid_pixels_on_unobserved_share_of_all_cuboid_pixels": 0.02244647278060553,
+ "observed_mask": {
+  "f_theta": 60,
+  "image_bounds_only": 0
+ },
+ "vis1_zbuffer_id_agreement": {
+  "n_frames": 30,
+  "n_frames_with_object_pixels": 29,
+  "min_agree_all": 1.0,
+  "min_agree_over_object_pixels": 1.0,
+  "mean_agree_over_object_pixels": 1.0,
+  "total_object_pixels_compared": 638106
+ },
+ "seconds_per_frame": {
+  "mean": 0.053807532787323,
+  "p5": 0.016064870357513427,
+  "p50": 0.03701961040496826,
+  "p95": 0.14237911701202394,
+  "min": 0.009514570236206055,
+  "max": 0.2415907382965088
+ },
+ "no_ids_written": true
+}

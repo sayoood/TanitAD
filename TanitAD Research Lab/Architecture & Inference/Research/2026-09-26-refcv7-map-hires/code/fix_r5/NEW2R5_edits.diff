@@ -1,0 +1,346 @@
+diff --git a/stack/scripts/map_hires_overfit.py b/stack/scripts/map_hires_overfit.py
+index 60bfa81..9bec9e8 100644
+--- a/stack/scripts/map_hires_overfit.py
++++ b/stack/scripts/map_hires_overfit.py
+@@ -45,6 +45,10 @@ THE NEAR REFINE BLOCK (``--near-refine-blocks``, NEW-2 R3 / A15): stacked on the
+ its regression arm ``near_block_zeros`` feeds the block's residual branch zeros (the A12
+ function). The record's ``branch_init_sha256_without_near_refine`` must equal R2's branch
+ fingerprint for the same seed.
++* ``edge_w0``      -- NEW-2 R4 (§9 lever 4, the weights): the non-drivable-edge weight 0 in
++                      the LOSS (the decision keeps the launch weights, as ``lane_w0``); gated by
++                      a lever-4 spec's ``must_fail`` row (edge): an edge pass must come from
++                      edge's own weighted loss term.
+ * ``near_block_zeros`` -- NEW-2 R3 (SPEC_REFCV7 §20, A15): the near refine block reads zeros;
+                       gated by an A15 spec's ``must_fail`` row (edge). Needs
+                       ``--near-refine-blocks > 0``.
+@@ -82,6 +86,7 @@ import argparse
+ import copy
+ import hashlib
+ import json
++import math
+ import sys
+ import time
+ from pathlib import Path
+@@ -96,10 +101,11 @@ from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7, MapExtent  # noqa:
+ from tanitad.models import map_head_hires as H                  # noqa: E402
+ 
+ ARMS = ("healthy", "lane_w0", "s8_zeros", "s8_detached", "frozen_trunk", "near_zeros",
+-        "near_block_zeros")
++        "near_block_zeros", "edge_w0")
+ INFORMATIVE_KNOWN = ("s8_detached", "frozen_trunk", "refcv6_head_05m", "near_zeros")
+ LANE = 2
+ DRIVABLE = 1
++EDGE = 5                                   # H.CLASS_KEYS[5] == "edge" (asserted in the tests)
+ THIN = ("lane", "crosswalk", "arrow", "edge", "hatched")
+ #: R3 of the prereg: informative, and NOT buildable in refcv7 (A6 removed the head)
+ NOT_RUN_WHY = {"refcv6_head_05m": "refcv7 A6 (SPEC_REFCV7 §11.1) removed the 0.5 m "
+@@ -180,6 +186,32 @@ def load_spec(path, *, class_weights: str | None = None,
+     return s
+ 
+ 
++LR_DECAY_KINDS = ("cosine_to_zero",)
++
++
++def lr_multiplier(spec: dict):
++    """NEW-2 R5 (the map twin of SPEC_REFCV7 A17): the spec's ``lr_decay`` as a function of the
++    1-indexed optimiser step -> lr multiplier, or ``None`` (no key: the constant-lr path, which
++    then never touches the optimiser's lr). ``cosine_to_zero``: 1.0 for steps <= start_step,
++    then 0.5 * (1 + cos(pi * (step - start) / (steps - start))) -- 0.5 half-way, 0.0 at the
++    final step. REFUSES an unknown kind and a start outside (0, steps)."""
++    d = spec.get("lr_decay")
++    if d is None:
++        return None
++    kind, steps = d.get("kind"), int(spec["steps"])
++    if kind not in LR_DECAY_KINDS:
++        raise SystemExit(f"⛔ lr_decay kind {kind!r} not in {LR_DECAY_KINDS}")
++    start = d.get("start_step")
++    if isinstance(start, bool) or not isinstance(start, int) or not 0 < start < steps:
++        raise SystemExit(f"⛔ lr_decay start_step {start!r} must be an integer in (0, {steps})")
++
++    def m(step: int) -> float:
++        if step <= start:
++            return 1.0
++        return 0.5 * (1.0 + math.cos(math.pi * (step - start) / (steps - start)))
++    return m
++
++
+ def class_weights_of(spec: dict, extent: MapExtent | None = None
+                      ) -> tuple[torch.Tensor, dict]:
+     if spec["class_weights"] == "uniform":
+@@ -372,13 +404,17 @@ def run_arm(arm: str, trunk0, branch0, data: dict, spec: dict, class_weight,
+     w_loss = class_weight.clone().to(device)
+     if arm == "lane_w0":
+         w_loss[LANE] = 0.0
++    elif arm == "edge_w0":                    # NEW-2 R4 (lever 4): edge's LOSS weight only
++        w_loss[EDGE] = 0.0
+     trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_zeros",
+-                           "near_block_zeros")
++                           "near_block_zeros", "edge_w0")
+     params = list(branch.parameters()) + (_s8_params(trunk) if trunk_trains else [])
+     trunk_before = [p.detach().clone() for p in _s8_params(trunk)]
+     opt = torch.optim.AdamW(params, lr=float(spec.get("lr", 1e-3)), betas=(0.9, 0.999),
+                             eps=1e-8, weight_decay=float(spec.get("weight_decay", 0.0)))
+     steps, bs = int(spec["steps"]), int(spec.get("batch", 4))
++    lr_at = lr_multiplier(spec)                  # NEW-2 R5: None = constant lr (untouched)
++    base_lrs = [float(g_["lr"]) for g_ in opt.param_groups]
+     every = int(spec.get("eval_every", max(1, steps // 10)))
+     n = data["x"].shape[0]
+     g = torch.Generator().manual_seed(int(spec.get("seed", 0)))
+@@ -392,6 +428,9 @@ def run_arm(arm: str, trunk0, branch0, data: dict, spec: dict, class_weight,
+         trunk.train()
+         branch.train()
+         idx = torch.randperm(n, generator=g)[:bs]
++        if lr_at is not None:                    # the lr THIS step's opt.step() applies
++            for g_, b_ in zip(opt.param_groups, base_lrs):
++                g_["lr"] = b_ * lr_at(step)
+         lg, lv = _forward(trunk, branch, data, idx, device, arm)
+         r = H.hires_map_ce(lg, data["codes"][idx].to(device), class_weight=w_loss,
+                            lift_valid=lv)
+@@ -407,6 +446,8 @@ def run_arm(arm: str, trunk0, branch0, data: dict, spec: dict, class_weight,
+                           "iou": sm["iou"], "iou_raw": sm["iou_raw"],
+                           "ce_mean": sm["ce_mean"],
+                           "s_per_step": round((time.time() - t0) / step, 4)})
++            if lr_at is not None:
++                curve[-1]["lr"] = float(opt.param_groups[0]["lr"])
+             print(json.dumps({"arm": arm, "step": step,
+                               "train_loss": curve[-1]["train_loss"],
+                               "iou": sm["iou"]}), flush=True)
+@@ -624,6 +665,15 @@ def main(argv=None) -> int:
+             and float(spec["near_lift_m"]) != float(a.near_lift_m):
+         raise SystemExit(f"⛔ the spec registers near_lift_m {spec['near_lift_m']}, "
+                          f"--near-lift-m is {a.near_lift_m}")
++    lr_multiplier(spec)                          # NEW-2 R5: a malformed lr_decay refuses here
++    # NEW-2 R4 (lever 4): a spec that REGISTERS a weights definition refuses another file --
++    # checked BEFORE any trunk is built (the file is a small JSON)
++    want_def = spec.get("class_weights_definition")
++    if want_def is not None:
++        _cw, _st = class_weights_of(spec, extent)
++        if _st.get("definition_id") != want_def:
++            raise SystemExit(f"⛔ the spec registers class weights {want_def!r}; the file given "
++                             f"is {_st.get('definition_id')!r}")
+     from tanitad.models import timm_trunk as TT
+     from tanitad.models.trunk_shapes import frame_for_width
+     tsp = spec.get("trunk") or {}
+@@ -684,7 +734,8 @@ def main(argv=None) -> int:
+                          "betas": [0.9, 0.999], "eps": 1e-8,
+                          "weight_decay": float(spec.get("weight_decay", 0.0)),
+                          "batch": int(spec.get("batch", 4)), "steps": int(spec["steps"]),
+-                         "seed": int(spec.get("seed", 0))},
++                         "seed": int(spec.get("seed", 0)),
++                         "lr_decay": spec.get("lr_decay")},
+            "device": a.device, "verdict": v, "results": results}
+     (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float),
+                                               encoding="utf-8")
+diff --git a/stack/tests/test_map_hires_overfit.py b/stack/tests/test_map_hires_overfit.py
+index 94ffc6c..1fd8458 100644
+--- a/stack/tests/test_map_hires_overfit.py
++++ b/stack/tests/test_map_hires_overfit.py
+@@ -156,6 +156,9 @@ def test_the_arms_are_what_they_say(tmp_path):
+     # test_R3_* below
+     res = {a: O.run_arm(a, trunk, branch, data, spec, torch.ones(8), "cpu")
+            for a in O.ARMS if a not in ("near_zeros", "near_block_zeros")}
++    # NEW-2 R4: edge_w0 zeroes edge's LOSS weight only (the decision keeps the launch weights)
++    assert res["edge_w0"]["w_loss"][O.EDGE] == 0.0 and res["edge_w0"]["w_decision"][O.EDGE] == 1.0
++    assert res["edge_w0"]["w_loss"][O.LANE] == 1.0 and res["edge_w0"]["trunk_s8_abs_change"] > 0.0
+     assert res["healthy"]["trunk_s8_abs_change"] > 0.0
+     for a in ("s8_zeros", "s8_detached", "frozen_trunk"):
+         assert res[a]["trunk_s8_abs_change"] == 0.0, a
+@@ -443,3 +446,198 @@ def test_R3_the_record_proves_the_shared_init_with_R2_and_NEW2():
+     assert O._fingerprint_without(r3, "near.", "near_refine.") == \
+         O._fingerprint_without(r2, "near.")
+     assert O._fingerprint(r3) != O._fingerprint(r2)
++
++
++
++# =========================================================================== #
++# NEW-2 R4 (§9 lever 4, the weights): edge_w0 and the registered definition    #
++# =========================================================================== #
++def test_R4_the_class_indices_the_harness_zeroes_are_the_named_classes():
++    assert H.CLASS_KEYS[O.LANE] == "lane" and H.CLASS_KEYS[O.EDGE] == "edge"   # literals
++
++
++def test_R4_a_spec_registering_a_weights_definition_refuses_another_file(tmp_path):
++    """The lever-4 arm registers WHICH weights (e.g. ``mf``); a file of another definition
++    (the A8 ``sqrt_mf`` launch file) is refused before any trunk is built."""
++    from tanitad.data.semantic_map_gt_fine import FINE_CLASSES
++    w = tmp_path / "w.json"
++    w.write_text(json.dumps({"schema": H.CLASS_WEIGHT_SCHEMA, "classes": list(FINE_CLASSES),
++                             "weights": [1.0] * 8, "dry_run": False,
++                             "definition_id": "sqrt_mf", "pre_registered": True,
++                             "extent": {"x_max_m": 100.0, "y_half_m": 30.0}}),
++                 encoding="utf-8")
++    sp = _spec(tmp_path, class_weights_definition="mf")
++    with pytest.raises(SystemExit, match="registers class weights 'mf'"):
++        O.main(["--spec", str(sp), "--class-weights", str(w), "--v2-cache", "V",
++                "--gt-root", "G", "--extrinsics", "E", "--out", str(tmp_path / "o"),
++                "--device", "cpu"])
++
++
++def test_R4_a_spec_registering_a_weights_definition_accepts_a_file_of_that_definition(
++        tmp_path, monkeypatch):
++    """The refusal test's red arm: a file OF the registered definition passes the check and
++    main() proceeds to build the trunk (stubbed to raise a sentinel there). A check that
++    refused every file -- or read the wrong key -- passes the refusal test and FAILS this."""
++    from tanitad.data.semantic_map_gt_fine import FINE_CLASSES
++    from tanitad.models import timm_trunk as TT
++
++    class ReachedTheTrunkBuild(Exception):
++        pass
++
++    def _stop(*_a, **_k):
++        raise ReachedTheTrunkBuild()
++
++    monkeypatch.setattr(TT, "TimmResNetTrunk", _stop)
++    for definition in ("mf", "sqrt_mf"):                        # the spec names it; literals
++        w = tmp_path / f"w_{definition}.json"
++        w.write_text(json.dumps({"schema": H.CLASS_WEIGHT_SCHEMA,
++                                 "classes": list(FINE_CLASSES), "weights": [1.0] * 8,
++                                 "dry_run": False, "definition_id": definition,
++                                 "pre_registered": definition == "sqrt_mf",
++                                 "extent": {"x_max_m": 100.0, "y_half_m": 30.0}}),
++                     encoding="utf-8")
++        sp = _spec(tmp_path, class_weights_definition=definition)
++        with pytest.raises(ReachedTheTrunkBuild):
++            O.main(["--spec", str(sp), "--class-weights", str(w), "--v2-cache", "V",
++                    "--gt-root", "G", "--extrinsics", "E", "--out", str(tmp_path / "o"),
++                    "--device", "cpu"])
++
++
++
++# =========================================================================== #
++# NEW-2 R4 (SPEC_REFCV7 §21, A16): the weights arm's registered spec          #
++# =========================================================================== #
++A16_SPEC = (ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" /
++            "Research" / "2026-09-26-refcv7-map-hires" / "raw" / "gmo_spec_A16.json")
++#: md5 of the A16 spec AS WRITTEN (registered by SPEC_REFCV7 §21, 879673c)
++A16_SPEC_MD5 = "a4ef45d0d6da9383ee356a52eaf6dde7"
++
++
++@pytest.mark.skipif(not A16_SPEC.is_file(), reason="the A16 spec is not in this checkout")
++def test_R4_the_A16_spec_loads_as_written_and_amends_only_what_A16_says():
++    import hashlib
++    assert hashlib.md5(A16_SPEC.read_bytes()).hexdigest() == A16_SPEC_MD5
++    from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7
++    s = O.load_spec(A16_SPEC, decision_rule="prior_corrected", class_weights="w.json",
++                    band_keys=EXTENT_REFCV7.band_keys)
++    assert s["near_lift_m"] == 20.0 and s["near_refine_blocks"] == 1         # A15's, stacked
++    assert s["class_weights_definition"] == "mf"                               # the lever
++    assert s["must_fail"] == {"lane_w0": ["lane"],
++                              "s8_zeros": ["lane", "crosswalk", "arrow", "edge", "hatched"],
++                              "edge_w0": ["edge"]}
++    assert s["must_fail_all"] == {"s8_zeros": True}
++    assert len(s["frames"]) == 16 and s["steps"] == 1000 and s["batch"] == 4
++    assert s["lr"] == 0.001 and s["seed"] == 0 and s["eval_every"] == 100
++    assert s["amends"]["spec_md5"] == "20929e21a577a6374f31b3f754ddd4d4"      # A15, as landed
++    if A15_SPEC.is_file():
++        base = O.load_spec(A15_SPEC, decision_rule="prior_corrected",
++                           class_weights="w.json", band_keys=EXTENT_REFCV7.band_keys)
++        diff = sorted(k for k in set(base) | set(s) if base.get(k) != s.get(k))
++        assert diff == ["amends", "class_weights_definition", "must_fail", "registered"], diff
++
++
++
++# =========================================================================== #
++# NEW-2 R5 (candidate; the map twin of A17): the lr decays over the final 10 % #
++# =========================================================================== #
++def test_R5_the_lr_multiplier_is_the_registered_cosine_literals():
++    m = O.lr_multiplier({"steps": 1000,
++                         "lr_decay": {"kind": "cosine_to_zero", "start_step": 900}})
++    assert m(1) == 1.0 and m(899) == 1.0 and m(900) == 1.0            # held at peak
++    assert m(950) == pytest.approx(0.5, abs=1e-12)                      # half-way
++    assert m(1000) == pytest.approx(0.0, abs=1e-12)                     # zero at the end
++    assert m(925) == pytest.approx(0.8535533905932737, abs=1e-12)       # (1 + cos(pi/4)) / 2
++    assert O.lr_multiplier({"steps": 1000}) is None                     # no key: constant
++
++
++@pytest.mark.parametrize("d", [{"kind": "linear", "start_step": 900},
++                               {"kind": "cosine_to_zero", "start_step": 0},
++                               {"kind": "cosine_to_zero", "start_step": 1000},
++                               {"kind": "cosine_to_zero", "start_step": 900.0},
++                               {"kind": "cosine_to_zero", "start_step": True},
++                               {"kind": "cosine_to_zero"}])
++def test_R5_a_malformed_lr_decay_is_refused(d):
++    with pytest.raises(SystemExit, match="lr_decay"):
++        O.lr_multiplier({"steps": 1000, "lr_decay": d})
++
++
++def _lrs_applied(tmp_path, monkeypatch, **spec_over):
++    """The lr each opt.step() actually applied, on the tiny rig (4 steps, base lr 1e-2)."""
++    trunk, branch, data = _tiny()
++    seen = []
++    orig = torch.optim.AdamW.step
++
++    def spy(self, *a, **k):
++        seen.append(float(self.param_groups[0]["lr"]))
++        return orig(self, *a, **k)
++    monkeypatch.setattr(torch.optim.AdamW, "step", spy)
++    spec = O.load_spec(_spec(tmp_path, **spec_over))
++    res = O.run_arm("healthy", trunk, branch, data, spec, torch.ones(8), "cpu")
++    return seen, res
++
++
++def test_R5_the_decay_is_applied_step_by_step_and_off_is_constant(tmp_path, monkeypatch):
++    on, res_on = _lrs_applied(tmp_path, monkeypatch,
++                              lr_decay={"kind": "cosine_to_zero", "start_step": 2})
++    assert on == pytest.approx([0.01, 0.01, 0.005, 0.0], abs=1e-12)    # literals
++    assert res_on["curve"][-1]["lr"] == pytest.approx(0.0, abs=1e-12)
++    off, res_off = _lrs_applied(tmp_path, monkeypatch)
++    assert off == [0.01, 0.01, 0.01, 0.01]                               # untouched
++    assert "lr" not in res_off["curve"][-1]                              # the record is as before
++
++
++def test_R5_a_decay_that_bites_changes_the_result_and_the_constant_path_is_deterministic(
++        tmp_path):
++    """The decay is not inert (its final differs from the constant path's), and the constant
++    path reproduces itself exactly, so the difference is the decay's and not noise. (That the
++    constant path never touches the lr is pinned step by step in the test above.)"""
++    trunk, branch, data = _tiny()
++    a = O.run_arm("healthy", trunk, branch, data, O.load_spec(_spec(tmp_path)), torch.ones(8),
++                  "cpu")
++    trunk, branch, data = _tiny()
++    b = O.run_arm("healthy", trunk, branch, data,
++                  O.load_spec(_spec(tmp_path, steps=4, lr_decay={"kind": "cosine_to_zero",
++                                                                 "start_step": 2})),
++                  torch.ones(8), "cpu")
++    assert a["final"]["ce_mean"] != b["final"]["ce_mean"]               # the decay bites
++    trunk, branch, data = _tiny()
++    c = O.run_arm("healthy", trunk, branch, data, O.load_spec(_spec(tmp_path)), torch.ones(8),
++                  "cpu")
++    assert a["final"]["ce_mean"] == c["final"]["ce_mean"]               # determinism control
++
++
++
++# =========================================================================== #
++# NEW-2 R5 (SPEC_REFCV7 §22.1, A17.1): the lr-decay arm's registered spec     #
++# =========================================================================== #
++A171_SPEC = (ROOT.parent / "TanitAD Research Lab" / "Architecture & Inference" /
++             "Research" / "2026-09-26-refcv7-map-hires" / "raw" / "gmo_spec_A171.json")
++#: md5 of the A17.1 arm spec AS WRITTEN (registered by SPEC_REFCV7 §22.1, 2ac0bfb)
++A171_SPEC_MD5 = "5abd5b907738fc735a0def0c1e7fbb64"
++
++
++@pytest.mark.skipif(not A171_SPEC.is_file(), reason="the A17.1 arm spec is not in this checkout")
++def test_R5_the_A171_spec_loads_as_written_and_amends_only_what_A17_1_says():
++    import hashlib
++    assert hashlib.md5(A171_SPEC.read_bytes()).hexdigest() == A171_SPEC_MD5
++    from tanitad.data.semantic_map_gt_fine import EXTENT_REFCV7
++    s = O.load_spec(A171_SPEC, decision_rule="prior_corrected", class_weights="w.json",
++                    band_keys=EXTENT_REFCV7.band_keys)
++    assert s["lr_decay"] == {"kind": "cosine_to_zero", "start_step": 900}      # A17.1
++    m = O.lr_multiplier(s)
++    assert m(900) == 1.0 and m(950) == pytest.approx(0.5, abs=1e-12)
++    assert m(1000) == pytest.approx(0.0, abs=1e-12)
++    assert s["near_lift_m"] == 20.0 and s["near_refine_blocks"] == 1          # A15's config
++    assert "class_weights_definition" not in s                                 # sqrt_mf (A8)
++    assert s["must_fail"] == {"lane_w0": ["lane"],
++                              "s8_zeros": ["lane", "crosswalk", "arrow", "edge", "hatched"],
++                              "near_block_zeros": ["edge"]}
++    assert s["must_fail_all"] == {"s8_zeros": True}
++    assert len(s["frames"]) == 16 and s["steps"] == 1000 and s["batch"] == 4
++    assert s["lr"] == 0.001 and s["seed"] == 0 and s["eval_every"] == 100
++    assert s["amends"]["spec_md5"] == "20929e21a577a6374f31b3f754ddd4d4"      # A15, as landed
++    if A15_SPEC.is_file():
++        base = O.load_spec(A15_SPEC, decision_rule="prior_corrected",
++                           class_weights="w.json", band_keys=EXTENT_REFCV7.band_keys)
++        diff = sorted(k for k in set(base) | set(s) if base.get(k) != s.get(k))
++        assert diff == ["amends", "lr_decay", "registered"], diff

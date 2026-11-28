@@ -1,0 +1,23 @@
+  [PASS] T1 covered-only loss == live masked formula (value)  live 0.38566574 proxy 0.38566574
+  [PASS] T1 ... every scorer gradient  max rel diff 1.01e-06 over 78 tensors
+  [PASS] T1 MUTATION (denominator from the covered count) goes RED  mutated 0.77133149
+  [PASS] T2 uncovered micro-batch: zero-VALUED gradient on every scorer tensor  78/78 tensors carry a gradient, all exactly 0
+  [PASS] T2 MUTATION (no zero term) goes RED: scorer gradients are None  78/78 None
+  [PASS] T3 covered samples' visual rows read at vindex, exact bits; scene bits exact  visual rows 2
+  [PASS] T3 an all-uncovered batch reads no visual_ctx  
+  [PASS] T3 a LABELLED sample without a cached visual_ctx is REFUSED  
+  [PASS] T3 MUTATION (reader uses index, not vindex) goes RED  
+  on-policy lines: 2 extracted from 1 parts, 1 with ckpt_step <= 4933
+  [PASS] T4 prep_sets reads pod_extract_partN_part_XXXX names and keeps ckpt_step <= 4933  kept 1
+  [PASS] T4 a sets dir with no parts is REFUSED  
+  [PASS] T4 MUTATION (the old part_*.jsonl.gz glob) goes RED on the real sets dir  old glob 0 files, fixed glob 8
+  [PASS] T5 G3: lr 0 -> 0 decoder/scorer tensors change (real snapshot 015, CPU)  rc 0 changed 0/159 covered 2
+  [PASS] T5 MUTATION (lr 1e-3) goes RED: tensors change  rc 0 changed 159/159
+  [PASS] T6 --init-from: lr 0 ends bit-identical to the INIT tensors (not the snapshot)  rc 0
+  [PASS] T6 MUTATION (the flag ignored) goes RED: the run ends on the snapshot, not the init  
+  [PASS] T8 plain_tangent with --tan-w 0 is BIT-IDENTICAL to plain (the term is the only difference)  
+  [PASS] T8 MUTATION arm: --tan-w 0.5 changes the weights (the flag is not ignored)  rc 0
+  [PASS] T7 --skip-samples N yields exactly samples N+1..N+K of the unskipped stream  [5, 106, 9, 100, 4, 2] vs [5, 106, 9, 100, 4, 2]
+  [PASS] T7 MUTATION (restarting the stream instead of continuing it) goes RED  
+  20/20 checks pass -> D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-09-28-m6b-tangent\selftest_proxy_train.json
+ZZSELFTEST_PROXYTRAIN_OK

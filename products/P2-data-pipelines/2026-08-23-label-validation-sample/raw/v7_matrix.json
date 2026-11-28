@@ -1,0 +1,451 @@
+{
+ "goal_counts": {
+  "SPEED_BAND": 256,
+  "FOLLOW_LANE": 295,
+  "YIELD": 15,
+  "TURN_R": 64,
+  "TRAFFIC_LIGHT_REACT_GREEN": 21,
+  "TURN_L": 90,
+  "TRAFFIC_LIGHT_REACT_YELLOW": 1,
+  "STOP_POINT": 62,
+  "EVADE_IN_CORRIDOR": 39,
+  "GAP_TARGET": 5,
+  "YIELD_FOR_TURN_L": 9,
+  "REACT_ON_ONCOMING": 6,
+  "OVERTAKE_VEHICLE": 2,
+  "TRAFFIC_LIGHT_REACT_RED": 6,
+  "YIELD_FOR_TURN_R": 2,
+  "MERGE": 1,
+  "TAKE_EXIT_R": 1
+ },
+ "set_sizes": {
+  "1": 733,
+  "2": 62,
+  "3": 6
+ },
+ "pairs": [
+  {
+   "a": "EVADE_IN_CORRIDOR",
+   "b": "SPEED_BAND",
+   "n": 15
+  },
+  {
+   "a": "TURN_L",
+   "b": "YIELD_FOR_TURN_L",
+   "n": 9
+  },
+  {
+   "a": "EVADE_IN_CORRIDOR",
+   "b": "TURN_R",
+   "n": 6
+  },
+  {
+   "a": "TRAFFIC_LIGHT_REACT_GREEN",
+   "b": "TURN_R",
+   "n": 5
+  },
+  {
+   "a": "TRAFFIC_LIGHT_REACT_GREEN",
+   "b": "TURN_L",
+   "n": 5
+  },
+  {
+   "a": "EVADE_IN_CORRIDOR",
+   "b": "REACT_ON_ONCOMING",
+   "n": 5
+  },
+  {
+   "a": "SPEED_BAND",
+   "b": "TRAFFIC_LIGHT_REACT_GREEN",
+   "n": 5
+  },
+  {
+   "a": "TURN_R",
+   "b": "YIELD",
+   "n": 3
+  },
+  {
+   "a": "REACT_ON_ONCOMING",
+   "b": "SPEED_BAND",
+   "n": 3
+  },
+  {
+   "a": "STOP_POINT",
+   "b": "TRAFFIC_LIGHT_REACT_RED",
+   "n": 3
+  },
+  {
+   "a": "SPEED_BAND",
+   "b": "YIELD",
+   "n": 2
+  },
+  {
+   "a": "TURN_L",
+   "b": "YIELD",
+   "n": 2
+  },
+  {
+   "a": "TRAFFIC_LIGHT_REACT_GREEN",
+   "b": "YIELD_FOR_TURN_L",
+   "n": 2
+  },
+  {
+   "a": "STOP_POINT",
+   "b": "YIELD",
+   "n": 2
+  }
+ ],
+ "lat_map": {
+  "FOLLOW_LANE": [
+   "LANE_KEEP",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "TURN_L": [
+   "TURN_L",
+   "LANE_KEEP"
+  ],
+  "TURN_R": [
+   "TURN_R",
+   "LANE_KEEP"
+  ],
+  "YIELD_FOR_TURN_L": [
+   "TURN_L",
+   "LANE_KEEP"
+  ],
+  "YIELD_FOR_TURN_R": [
+   "TURN_R",
+   "LANE_KEEP"
+  ],
+  "YIELD": [
+   "LANE_KEEP",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "STOP_POINT": [
+   "LANE_KEEP",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "SPEED_BAND": [
+   "LANE_KEEP",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "CORRIDOR_OFFSET": [
+   "NUDGE_L",
+   "NUDGE_R",
+   "LANE_KEEP"
+  ],
+  "EVADE_IN_CORRIDOR": [
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "OVERTAKE_VEHICLE": [
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "MERGE": [
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "LANE_KEEP"
+  ],
+  "GAP_TARGET": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ],
+  "REACT_ON_ONCOMING": [
+   "NUDGE_L",
+   "NUDGE_R",
+   "LANE_KEEP"
+  ],
+  "TAKE_EXIT_L": [
+   "LANE_CHANGE_L",
+   "TURN_L",
+   "LANE_KEEP"
+  ],
+  "TAKE_EXIT_R": [
+   "LANE_CHANGE_R",
+   "TURN_R",
+   "LANE_KEEP"
+  ],
+  "TRAFFIC_LIGHT_REACT": [
+   "LANE_KEEP"
+  ],
+  "TRAFFIC_LIGHT_REACT_RED": [
+   "LANE_KEEP"
+  ],
+  "TRAFFIC_LIGHT_REACT_YELLOW": [
+   "LANE_KEEP"
+  ],
+  "TRAFFIC_LIGHT_REACT_GREEN": [
+   "LANE_KEEP",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "LANE_CHANGE_L": [
+   "LANE_CHANGE_L",
+   "ABORT_LC"
+  ],
+  "LANE_CHANGE_R": [
+   "LANE_CHANGE_R",
+   "ABORT_LC"
+  ]
+ },
+ "lon_map": {
+  "FOLLOW_LANE": [
+   "CRUISE",
+   "FOLLOW",
+   "ACCELERATE",
+   "BRAKE_TO",
+   "ADAPT_SPEED_FOR_CURVE"
+  ],
+  "TURN_L": [
+   "ADAPT_SPEED_FOR_CURVE",
+   "BRAKE_TO",
+   "CREEP"
+  ],
+  "TURN_R": [
+   "ADAPT_SPEED_FOR_CURVE",
+   "BRAKE_TO",
+   "CREEP"
+  ],
+  "YIELD_FOR_TURN_L": [
+   "BRAKE_TO",
+   "HOLD",
+   "CREEP",
+   "ADAPT_SPEED_FOR_CURVE"
+  ],
+  "YIELD_FOR_TURN_R": [
+   "BRAKE_TO",
+   "HOLD",
+   "CREEP",
+   "ADAPT_SPEED_FOR_CURVE"
+  ],
+  "YIELD": [
+   "BRAKE_TO",
+   "HOLD",
+   "CREEP",
+   "YIELD_MERGE"
+  ],
+  "STOP_POINT": [
+   "BRAKE_TO",
+   "HOLD",
+   "CREEP"
+  ],
+  "SPEED_BAND": [
+   "CRUISE",
+   "FOLLOW"
+  ],
+  "CORRIDOR_OFFSET": [
+   "CRUISE",
+   "FOLLOW",
+   "ACCELERATE"
+  ],
+  "EVADE_IN_CORRIDOR": [
+   "CRUISE",
+   "FOLLOW",
+   "BRAKE_TO"
+  ],
+  "OVERTAKE_VEHICLE": [
+   "ACCELERATE",
+   "CRUISE"
+  ],
+  "MERGE": [
+   "YIELD_MERGE",
+   "FOLLOW",
+   "ACCELERATE",
+   "BRAKE_TO"
+  ],
+  "GAP_TARGET": [
+   "FOLLOW",
+   "BRAKE_TO",
+   "ACCELERATE",
+   "YIELD_MERGE"
+  ],
+  "REACT_ON_ONCOMING": [
+   "BRAKE_TO",
+   "FOLLOW",
+   "CRUISE",
+   "HOLD"
+  ],
+  "TAKE_EXIT_L": [
+   "ADAPT_SPEED_FOR_CURVE",
+   "BRAKE_TO",
+   "FOLLOW"
+  ],
+  "TAKE_EXIT_R": [
+   "ADAPT_SPEED_FOR_CURVE",
+   "BRAKE_TO",
+   "FOLLOW"
+  ],
+  "TRAFFIC_LIGHT_REACT": [
+   "BRAKE_TO",
+   "CRUISE",
+   "CREEP"
+  ],
+  "TRAFFIC_LIGHT_REACT_RED": [
+   "BRAKE_TO",
+   "HOLD",
+   "CREEP"
+  ],
+  "TRAFFIC_LIGHT_REACT_YELLOW": [
+   "BRAKE_TO",
+   "CRUISE",
+   "ACCELERATE"
+  ],
+  "TRAFFIC_LIGHT_REACT_GREEN": [
+   "CRUISE",
+   "ACCELERATE",
+   "ADAPT_SPEED_FOR_CURVE"
+  ],
+  "LANE_CHANGE_L": [
+   "CRUISE",
+   "ACCELERATE",
+   "FOLLOW"
+  ],
+  "LANE_CHANGE_R": [
+   "CRUISE",
+   "ACCELERATE",
+   "FOLLOW"
+  ]
+ },
+ "exclusive": [
+  [
+   "TURN_L",
+   "TURN_R"
+  ],
+  [
+   "TURN_L",
+   "FOLLOW_LANE"
+  ],
+  [
+   "TURN_R",
+   "FOLLOW_LANE"
+  ],
+  [
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ],
+  [
+   "LANE_CHANGE_L",
+   "TURN_L"
+  ],
+  [
+   "LANE_CHANGE_R",
+   "TURN_R"
+  ],
+  [
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R"
+  ],
+  [
+   "YIELD_FOR_TURN_L",
+   "TURN_R"
+  ],
+  [
+   "YIELD_FOR_TURN_R",
+   "TURN_L"
+  ],
+  [
+   "STOP_POINT",
+   "FOLLOW_LANE"
+  ],
+  [
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_GREEN"
+  ],
+  [
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW"
+  ],
+  [
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_YELLOW"
+  ],
+  [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_RED"
+  ],
+  [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN"
+  ],
+  [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_YELLOW"
+  ],
+  [
+   "OVERTAKE_VEHICLE",
+   "FOLLOW_LANE"
+  ],
+  [
+   "OVERTAKE_VEHICLE",
+   "EVADE_IN_CORRIDOR"
+  ],
+  [
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R"
+  ],
+  [
+   "TAKE_EXIT_L",
+   "TURN_R"
+  ],
+  [
+   "TAKE_EXIT_R",
+   "TURN_L"
+  ],
+  [
+   "SPEED_BAND",
+   "STOP_POINT"
+  ],
+  [
+   "MERGE",
+   "FOLLOW_LANE"
+  ]
+ ],
+ "lat_actions": [
+  "LANE_KEEP",
+  "LANE_CHANGE_L",
+  "LANE_CHANGE_R",
+  "ABORT_LC",
+  "NUDGE_L",
+  "NUDGE_R",
+  "TURN_L",
+  "TURN_R"
+ ],
+ "lon_actions": [
+  "FOLLOW",
+  "CRUISE",
+  "YIELD_MERGE",
+  "BRAKE_TO",
+  "CREEP",
+  "HOLD",
+  "ADAPT_SPEED_FOR_CURVE",
+  "ACCELERATE"
+ ],
+ "consistency": {
+  "n": 801,
+  "lat": 775,
+  "lon": 756
+ },
+ "a_str": {
+  "PREPARE_TURN_R_FOLLOW_ROUTE": 132,
+  "PREPARE_TURN_L_FOLLOW_ROUTE": 120,
+  "HOLD_MAIN_ROAD": 459,
+  "REDUCE_TO_FOLLOW_ROUTE": 90
+ },
+ "g_str": {
+  "TURN_RIGHT_FOLLOW_ROUTE": 132,
+  "TURN_LEFT_FOLLOW_ROUTE": 120,
+  "FOLLOW_ROUTE": 549
+ },
+ "nav": {
+  "NAV_TURN_R": 164,
+  "NAV_TURN_L": 175,
+  "NAV_FOLLOW_ROAD": 462
+ }
+}

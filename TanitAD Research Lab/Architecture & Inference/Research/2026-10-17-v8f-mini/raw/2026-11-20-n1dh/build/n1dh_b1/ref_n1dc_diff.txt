@@ -1,0 +1,302 @@
+commit bcf3ba3f45eefab3fdd2a04d2ccb26905641ef5f
+Author: t <t@t>
+Date:   Fri Nov 20 11:38:07 2026 +0100
+
+    N1DC lever: --o-code-skip (zero-init linear skip from T's code into O's plan head) on N1DW's code 134f5da1
+    
+    PREREG_V8F_N1DC (frozen, sha256 2eae7964, landed bbf96d3c; PI go 2026-11-20 "Yes, N1DC next").
+    Default off builds nothing and is 134f5da1 bit for bit. With on, o_code = Linear(CODE_DIM, n_q*d, bias=False)
+    is zero-initialised and built last under a forked RNG; run_o adds o_code(code) to the flattened reader output
+    before head_o. G-DVB entry, bad_o_code clause, WM-only default, resume refusal, o_code_probe in the selfcheck,
+    o_code. declared as a fresh key for --init-ckpt fine-tunes, strat1_check kind N1DC with pairing and G-EVAL arm.
+    Tests: test_v8f_n1dc.py (50) and test_strat1_n1dc_check.py (69) pass on CPU, one thread (Z0, Z1, REACH with an
+    exact-0.0 control, one-step liveness, admissibility, refusals, 11 loader round-trips); mutants a-k all RED.
+    Regression: only test_text_encoding_is_explicit fails, identically on the unpatched 134f5da1 tree.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+diff --git a/stack/scripts/v8f_mini_train.py b/stack/scripts/v8f_mini_train.py
+index b10ae5af..3f84092e 100644
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -128,6 +128,9 @@ FLAG_CHECKS = {
+     # PREREG_V8F_N1DW: `cfg:rb_window_w` = equals the BUILT config AND built_levers().get("rb_window_w", 1.0): argv -> make_config -> cfg.rb_window_w -> the BUILT loss (rb_traj term) / built_levers / the checkpoint cfg -> rb_window_probe (G-LIVE:
+     # the term reaches the total with its weight on the rows rb_mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0) -> the run record (rb_n / rb_eligible / rb_weight_share)
+     "rb_window_w": "cfg:rb_window_w",
++    # PREREG_V8F_N1DC: `lever:o_code_skip` = equals built_levers().get("o_code_skip", "off") AND the BUILT module (o_code iff on) AND the config AND the cfg that goes into the checkpoint (bad_o_code): argv -> make_config ->
++    # cfg.o_code_skip -> V8FMini (o_code, zero-init, built last) -> run_o (`h = h + o_code(code)`) -> head_o -> the loss / backward -> o_code_probe (G-LIVE: o_code.weight gets a gradient, exact-0.0 controls) -> the checkpoint cfg.
++    "o_code_skip": "lever:o_code_skip",
+     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
+     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
+     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
+@@ -188,6 +191,9 @@ def build_parser():
+                          "w_traj x (w - 1) x the RB-sample part of those terms, over the batch's GT-valid denominator, so on an RB sample the trajectory terms carry weight exactly w and every other sample's loss is unchanged. "
+                          "1.0 (default) = the term is not computed and not in the loss = every earlier arm, bit for bit. > 1 needs --nav-rb on and --w-traj > 0; the value comes from the PREREG's dose list and is written into the argv")
+     # ---- PREREG_V8F_LEVEL (lever (a) of DECISION_K2). Both flags default to OFF and have their G-DVB entry in FLAG_CHECKS and their clause in bad_level.
++    ap.add_argument("--o-code-skip", dest="o_code_skip", choices=("on", "off"), default="off",
++                    help="PREREG_V8F_N1DC: off (default) = nothing built = every earlier arm, bit for bit; on = o_code, Linear(CODE_DIM, n_q * d, bias=False), zero-init, built last under a forked RNG, ADDED to the flattened reader output "
++                         "right before O's plan head (the same code tensor e_code reads: after teacher forcing, --detach-upper and --o-interface). Refused with --o-interface cut (O then reads a constant: a lever that does nothing)")
+     ap.add_argument("--level-head", dest="level_head", choices=M.LEVEL_HEAD_MODES, default="off",
+                     help="PREREG_V8F_LEVEL: off (default) = nothing is built = every earlier arm, bit for bit (state dict AND outputs). on = a head on the mean of the CURRENT tick frame's adapted VISION tokens -> MLP(d, d, 1) -> v_hat (m/s), "
+                          "trained with --w-level x Huber(v_hat, the LOGGED speed at NOW) on every window; O reads e_level(v_hat.detach() / 10) (zero-initialised, added to O's ego conditioning token) at every tick, train and inference alike. "
+@@ -482,6 +488,7 @@ def make_config(a) -> M.V8FMiniConfig:
+                            nav_rb=a.nav_rb,                                                                             # PREREG_V8F_NAVRB2: the line that applies --nav-rb (a mutation deletes it)
+                            nav_rb_feat=a.nav_rb_feat,                                                                   # PREREG_V8F_NAVRBD: the line that applies --nav-rb-feat (a mutation deletes it)
+                            rb_window_w=a.rb_window_w,                                                                   # PREREG_V8F_N1DW: the line that applies --rb-window-w (a mutation deletes it)
++                           o_code_skip=(a.o_code_skip == "on"),                                                         # PREREG_V8F_N1DC: the line that applies --o-code-skip (a mutation deletes it)
+                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
+                            w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
+                            stok_dim=(D.stok_dim_of(a.t_stok_dir) if a.t_stok_dir else 0))
+@@ -809,7 +816,7 @@ def bad_init_ckpt(a, data_info) -> list:
+     elif got.get("skipped") != "resume":
+         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
+     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
+-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on" or a.nav_rb == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token; PREREG_V8F_NAVRB2: so does e_nav_rb (pod mint 2026-11-18 refused N1R_s0 without this)
++        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir) or a.ctx_heads == "on" or a.nav_rb == "on" or a.o_code_skip == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token; PREREG_V8F_NAVRB2: so does e_nav_rb (pod mint 2026-11-18 refused N1R_s0 without this)
+             bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / t_stok_dir {a.t_stok_dir!r} declared but the load declared new keys {got.get('declared_new_keys')}")
+         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
+             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")
+@@ -876,7 +883,7 @@ WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix",
+                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
+                          "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5",
+                          "ctx_heads", "w_ctx", "ctx_detach", "ctx_lr_mult", "ctx_labels", "ctx_labels_sha256", "nav_source", "nav_text_npz", "nav_text_sha256",
+-                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult", "nav_rb_feat", "rb_window_w")
++                         "nav_rb", "nav_rb_npz", "nav_rb_sha256", "nav_rb_variant", "nav_rb_lr_mult", "nav_rb_feat", "rb_window_w", "o_code_skip")
+ 
+ 
+ def is_wm_param(name: str) -> bool:
+@@ -1924,6 +1931,116 @@ def navrb_probe(model, batch, cfg) -> dict:
+     return res
+ 
+ 
++def bad_o_code(a, cfg, model, opt) -> list:
++    """PREREG_V8F_N1DC: ``--o-code-skip`` as declared on the argv is what the BUILT model is: the module ``o_code`` exists iff on, the levers and the config say the same, the weight is [n_q * d, CODE_DIM] and ZERO (so the step-0
++    forward is the parent's), and it is in the optimiser exactly once. On with ``--o-interface cut`` is refused: O reads a constant zero code there, so the skip is a lever that is declared and does nothing."""
++    bad = []
++    on = a.o_code_skip == "on"
++    lv = model.built_levers().get("o_code_skip", "off")
++    present = getattr(model, "o_code", None) is not None
++    if lv != a.o_code_skip or present != on or bool(model.cfg.o_code_skip) != on:
++        bad.append(f"lever o_code_skip: declared {a.o_code_skip} but built {lv} (cfg {model.cfg.o_code_skip}, module {'present' if present else 'absent'})")
++        return bad
++    if not on:
++        return bad
++    w = model.o_code.weight
++    want = (int(model.cfg.n_q) * int(model.cfg.d), M.CODE_DIM)
++    if tuple(w.shape) != (want[0], want[1]) or model.o_code.bias is not None:
++        bad.append(f"o_code_skip: the built o_code is {tuple(w.shape)} (bias {model.o_code.bias is not None}), declared shape {want} without a bias (n_q x d by CODE_DIM)")
++    if int(model.head_o[0].in_features) != want[0]:
++        bad.append(f"o_code_skip: head_o reads {int(model.head_o[0].in_features)} features but o_code writes {want[0]}")
++    if float(w.detach().abs().sum()) != 0.0:
++        bad.append("o_code_skip: o_code.weight is not zero at the start (the step-0 forward would differ from the parent's)")
++    if a.o_interface == "cut" or cfg.o_interface == "cut":
++        bad.append("o_code_skip on with --o-interface cut: O reads a constant zero code, so the skip is a lever that is declared and does nothing")
++    if opt is not None:
++        n = sum(1 for g in opt.param_groups for p in g["params"] if p is w)
++        if n != 1:
++            bad.append(f"o_code_skip: o_code.weight is in {n} optimiser groups (exactly one required)")
++    return bad
++
++
++def o_code_probe(model, batch, cfg) -> dict:
++    """G-LIVE for PREREG_V8F_N1DC (reachability from the caller): on a COPY of the BUILT model and the real probe batch,
++
++      reach       with head_o's last layer given a small seeded weight (it is zero at init, which makes EVERY gradient upstream of it exactly 0.0 at step 0), the total loss gives o_code.weight a gradient > 0
++                  (and so does O's own ade term). DELETE the ``h = h + o_code(code)`` line and this reads 0.0 -> RED
++      live        o_code.weight set to a seeded random matrix moves O's plan (traj30) on the same batch: the path reaches the output
++      identity    at the zero init the plan, and every loss term, equal those of the same model with o_code REMOVED, bit for bit (x + 0.0 = x)
++      controls    (a) the T-side and S-side terms (ckpt, goal, lat, lon, cons) put EXACTLY 0.0 on o_code.weight (they do not depend on O; autograd returns no gradient at all); (b) the same loss twice gives
++                  gradients that differ by EXACTLY 0.0; (c) the frozen P10 prior's gradient is EXACTLY 0.0; (d) at the REAL zero init head_o's last layer is zero, so o_code.weight reads EXACTLY 0.0 (it shows
++                  that the seeded head weight, not the probe, is what makes (reach) non-zero)
++
++    Off: nothing runs. Any violation is an AssertionError, which the caller turns into a refusal."""
++    if getattr(model, "o_code", None) is None:
++        return {"o_code": "off", "pass": True, "skipped": "--o-code-skip off (or not named): o_code is not built (the default run is the pre-change run)"}
++    m = copy.deepcopy(model).cpu()
++    m.train()
++
++    def wgrad(t_, w):
++        if w is None:
++            return 0.0
++        g = torch.autograd.grad(t_, [w], retain_graph=True, allow_unused=True)[0]
++        return 0.0 if g is None else float(g.abs().sum())
++
++    def loss_grads(mm, gen_seed=11):
++        for p in mm.parameters():
++            p.grad = None
++        torch.manual_seed(20261120)
++        out = mm.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(gen_seed))
++        T = out["terms"]
++        for k, v in T.items():
++            if not torch.isfinite(v):
++                raise AssertionError(f"o_code probe: loss term {k} is not finite: {float(v)}")
++        w = mm.o_code.weight if mm.o_code is not None else None
++        res = {"total": wgrad(T["total"], w), "ade": wgrad(T["ade"], w), "tside": sum(wgrad(T[k], w) for k in ("ckpt", "goal", "lat", "lon", "cons") if k in T)}
++        up = [p for n, p in mm.named_parameters() if p.requires_grad and n.startswith(("read_s.", "head_s.", "read_t.", "trunk_t.", "h_goal.", "h_lat.", "h_lon.", "h_cons."))]
++        res["ade_on_upper"] = None if not mm.cfg.detach_upper else float(sum(float(g.abs().sum()) for g in torch.autograd.grad(T["ade"], up, retain_graph=True, allow_unused=True) if g is not None))
++        T["total"].backward()
++        res["prior"] = float(sum(float(p.grad.abs().sum()) if p.grad is not None else 0.0 for p in mm.prior.parameters()))
++        res["grads"] = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in mm.named_parameters() if p.requires_grad}
++        return res, out
++
++    r0, _ = loss_grads(m)                                                                   # the REAL zero init: head_o's last layer is zero
++    head_zero_at_init = float(m.head_o[2].weight.detach().abs().sum()) == 0.0              # from scratch: zero. After --init-ckpt (a fine-tune): the checkpoint's own trained head, left as it is
++    if head_zero_at_init:
++        with torch.no_grad():
++            w_head = m.head_o[2].weight
++            w_head.copy_(torch.randn(w_head.shape, generator=torch.Generator().manual_seed(7)) * 0.05)
++    r1, o1 = loss_grads(m)
++    r1b, _ = loss_grads(m)
++    m_off = copy.deepcopy(m)
++    m_off.o_code = None
++    _, o_off = loss_grads(m_off)
++    ident_terms = [k for k in o1["terms"] if k not in o_off["terms"] or not torch.equal(o1["terms"][k], o_off["terms"][k])]
++    ident_out = [k for k, v in o1.items() if torch.is_tensor(v) and not torch.equal(v, o_off[k])]
++    with torch.no_grad():
++        m.o_code.weight.copy_(torch.randn(m.o_code.weight.shape, generator=torch.Generator().manual_seed(8)) * 0.05)
++    r2, o2 = loss_grads(m)                                                                  # o_code.weight now non-zero: the only state in which a wrong tap of the code (before --detach-upper) can show
++    res = {"control_ade_grad_on_upper": r2["ade_on_upper"], "o_code_weight_shape": list(m.o_code.weight.shape), "grad_total_real_init": r0["total"], "grad_total": r1["total"], "grad_ade": r1["ade"], "control_tside_grad": r1["tside"],
++           "control_repeat_grad_diff": float(sum((r1["grads"][n] - r1b["grads"][n]).abs().sum() for n in r1["grads"])), "control_prior_grad": r1["prior"],
++           "identity_terms_differing": ident_terms, "identity_outputs_differing": ident_out, "plan_move_when_weight_set": float((o2["traj30"] - o1["traj30"]).detach().abs().max()),
++           "control_real_init_grad": r0["total"], "head_o_last_layer_zero_at_init": head_zero_at_init}
++    if not (res["grad_total"] > 0.0 and res["grad_ade"] > 0.0):
++        raise AssertionError(f"o_code probe: o_code.weight gets gradient {res['grad_total']!r} (total) / {res['grad_ade']!r} (ade) with head_o live (both must be > 0): the skip does not reach the loss")
++    if res["control_tside_grad"] != 0.0:
++        raise AssertionError(f"o_code probe: the T/S-side terms put {res['control_tside_grad']!r} on o_code.weight (must be exactly 0.0)")
++    if res["control_ade_grad_on_upper"] not in (None, 0.0):
++        raise AssertionError(f"o_code probe: with --detach-upper O's ade term puts {res['control_ade_grad_on_upper']!r} on S / T (must be exactly 0.0): the skip reads the code from before the detach")
++    if res["control_repeat_grad_diff"] != 0.0:
++        raise AssertionError(f"o_code probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_grad_diff']})")
++    if res["control_prior_grad"] != 0.0:
++        raise AssertionError(f"o_code probe: the frozen P10 prior has gradient {res['control_prior_grad']!r} (must be exactly 0.0)")
++    if res["identity_terms_differing"] or res["identity_outputs_differing"]:
++        raise AssertionError(f"o_code probe: at the zero init the model differs from the same model without o_code: terms {res['identity_terms_differing']}, outputs {res['identity_outputs_differing']}")
++    if not res["plan_move_when_weight_set"] > 0.0:
++        raise AssertionError("o_code probe: a non-zero o_code.weight does not move O's plan: the skip does not reach the output")
++    if head_zero_at_init and r0["total"] != 0.0:
++        raise AssertionError(f"o_code probe: at the real zero init o_code.weight reads {r0['total']!r} (head_o's last layer is zero, so it must be exactly 0.0): the probe's premise does not hold")
++    res["pass"] = True
++    return res
++
++
+ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
+@@ -1983,6 +2100,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
+         bad.append(f"rb_window_w {a.rb_window_w} declared but --nav-rb is {a.nav_rb}: the mask is c0 of the nav_rb channel -- a lever that is declared and does nothing")
+     if a.rb_window_w > 1.0 and not model.cfg.w_traj > 0.0:
+         bad.append(f"rb_window_w {a.rb_window_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
++    bad += bad_o_code(a, cfg, model, opt)                                                        # PREREG_V8F_N1DC: --o-code-skip read back from the BUILT model (module, levers, config, optimiser)
+     if not built["prior_frozen"]:
+         bad.append("the P10 prior is not frozen")
+     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
+@@ -2110,7 +2228,7 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
+                                                    for g, pre in (("adapter", "adapter"), ("S", "read_s"), ("T", "read_t"),
+                                                                   ("O", "read_o"), ("head_s", "head_s"), ("head_o", "head_o"),
+                                                                   ("wm", "wm.")) + ((("CTX", "ctx_head"),) if cfg.ctx_heads == "on" else ())
+-                                                   + ((("NAVRB", "e_nav_rb"),) if cfg.nav_rb == "on" else ())}}
++                                                   + ((("NAVRB", "e_nav_rb"),) if cfg.nav_rb == "on" else ()) + ((("OCODE", "o_code"),) if cfg.o_code_skip else ())}}
+     ok = (not missing and not extra_pen and not unexpected_dead and not declared_dead_alive
+           and res["control_prior_grad_sum"] == 0.0 and head_first > 0.0)
+     res["pass"] = bool(ok)
+@@ -4006,6 +4124,10 @@ def main(argv=None):
+             rwp = rb_window_probe(model, probe, cfg)           # PREREG_V8F_N1DW: G-LIVE on the loop's own mask (rb_mask); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
+         except (AssertionError, ValueError) as e:
+             raise SystemExit(f"ZZDVB-REFUSEDZZ rb-window: {e}")
++        try:
++            ocp = o_code_probe(model, probe, cfg)              # PREREG_V8F_N1DC: G-LIVE on the BUILT loss; o_code.weight gets its gradient, the identity at the zero init, exact-0.0 controls (off: nothing runs)
++        except (AssertionError, ValueError) as e:
++            raise SystemExit(f"ZZDVB-REFUSEDZZ o-code: {e}")
+         try:
+             lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
+         except (AssertionError, ValueError) as e:
+@@ -4074,6 +4196,8 @@ def main(argv=None):
+     sc["launch_intent_probe"] = lip
+     if cfg.rb_window_w > 1.0:                                           # PREREG_V8F_N1DW: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+         sc["rb_window_probe"] = rwp
++    if cfg.o_code_skip:                                                 # PREREG_V8F_N1DC: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
++        sc["o_code_probe"] = ocp
+     if a.wm_only:                                                       # WM-only arms only: a flag-off selfcheck.json keeps its key set
+         sc["planner_identity_probe"] = pid
+     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
+@@ -4127,6 +4251,8 @@ def main(argv=None):
+                 raise SystemExit("ZZRESUME-REFUSEDZZ the checkpoint was written by a different argv")
+         if float(ck["cfg"].get("rb_window_w", 1.0)) != float(cfg.rb_window_w):        # PREREG_V8F_N1DW: a checkpoint whose cfg.rb_window_w differs from the declared one is never continued (a key absent = 1.0 = every earlier checkpoint)
+             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint's cfg.rb_window_w is {ck['cfg'].get('rb_window_w', 1.0)} but the argv declares {cfg.rb_window_w}")
++        if bool(ck["cfg"].get("o_code_skip", False)) != bool(cfg.o_code_skip):        # PREREG_V8F_N1DC: a checkpoint whose cfg.o_code_skip differs from the declared one is never continued (a key absent = False = every earlier checkpoint)
++            raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint's cfg.o_code_skip is {ck['cfg'].get('o_code_skip', False)} but the argv declares {cfg.o_code_skip}")
+         if comp.on and int(ck.get("ego_perturb_stream", 0)) != ego.stream:        # a composed checkpoint from before the stream separation (no key = stream 0) must not be continued on another generator
+             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint drew the perturbation from stream {int(ck.get('ego_perturb_stream', 0))} but this build draws stream {ego.stream}: a resume would switch generators mid-run")
+         model.load_state_dict(ck["model"])
+diff --git a/stack/tanitad/models/v8f_mini.py b/stack/tanitad/models/v8f_mini.py
+index a24a22b3..0d21ac9f 100644
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -171,7 +171,9 @@ NAV_RB_DIM = {"state": 1, "exitdist": 15}
+ #: PREREG_V8F_NAVRB2: the ROUNDABOUT state channel of the route-text nav (``--nav-rb``): its state-dict prefix and its batch key (read with the nav, for a model built with it; NOT in INFERENCE_INPUT_KEYS, which tests pin)
+ NAV_RB_KEY_PREFIXES = ("e_nav_rb.",)
+ NAV_RB_KEYS = frozenset({"nav_rb"})
+-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
++#: PREREG_V8F_N1DC: the skip from T's code into O's plan head (``--o-code-skip``): its state-dict prefix (a fine-tune from a checkpoint without it leaves the key fresh = zero, and the gate must accept exactly that)
++O_CODE_KEY_PREFIXES = ("o_code.",)
++NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",) + CTX_KEY_PREFIXES + NAV_RB_KEY_PREFIXES + O_CODE_KEY_PREFIXES      # PREREG_V8F_OTBAND adds the strategic-token embedding
+ #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
+ LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
+ LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
+@@ -257,6 +259,8 @@ class V8FMiniConfig:
+ 
+     rb_window_w: float = 1.0           # PREREG_V8F_N1DW (`--rb-window-w`): w, the weight of O's trajectory terms (ADE / 3 + 0.5 FDE / 6) on ROUNDABOUT samples (`rb` mask = c0 of the sample's nav_rb row at NOW; training only). 1.0 = the term is NOT
+                                        # computed and NOT in the total = every earlier arm, bit for bit (no new tensor op, no new T key). > 1 = the batch must carry `rb`; the total gains w_traj x (w - 1) x rb_traj
++    o_code_skip: bool = False          # PREREG_V8F_N1DC (`--o-code-skip on|off`): False = nothing built and no RNG draw = every earlier arm, bit for bit; True = o_code, Linear(CODE_DIM, n_q * d, bias=False), zero-init, built LAST under a forked RNG, and
++                                       # ``run_o`` adds ``o_code(code)`` to the flattened reader output right before ``head_o`` (the SAME code tensor ``e_code`` reads: after teacher forcing, detach_upper and o_interface)
+     w_op: float = 0.0                  # PREREG_V8F_OTBAND (`--w-op`): weight of the operative-band term (ADE over knots 1-10 / 3 + 0.5 x FDE at knot 10 / 6). 0.0 = NOT in the total and NOT computed = every earlier arm, bit for bit
+     w_tac_traj: float = 0.0            # PREREG_V8F_OTBAND (`--w-tac-traj`): weight of the tactical-band term (ADE over knots 11-30 / 3 + 0.5 x FDE at knot 30 / 6). 0.0 = NOT in the total
+     stok_dim: int = 0                  # PREREG_V8F_OTBAND (`--t-stok-dir`): the strategic token's dimension, read from the stok file's metadata. 0 = no token = every earlier arm, bit for bit (no module, no key added)
+@@ -294,6 +298,8 @@ class V8FMiniConfig:
+             raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
+         if not (math.isfinite(self.rb_window_w) and self.rb_window_w >= 1.0):
+             raise ValueError(f"rb_window_w must be a finite number >= 1, got {self.rb_window_w!r}")
++        if not isinstance(self.o_code_skip, bool):
++            raise ValueError(f"o_code_skip must be a bool, got {self.o_code_skip!r}")
+         for nm in ("w_op", "w_tac_traj"):
+             if not (math.isfinite(getattr(self, nm)) and getattr(self, nm) >= 0.0):
+                 raise ValueError(f"{nm} must be a finite number >= 0, got {getattr(self, nm)!r}")
+@@ -930,6 +936,11 @@ class V8FMini(nn.Module):
+             with torch.random.fork_rng(devices=[]):
+                 self.e_nav_rb = nn.Linear(NAV_RB_DIM[cfg.nav_rb_feat], d, bias=False)       # PREREG_V8F_NAVRBD: the width from the feat (state = 1 = NAVRB2)
+             nn.init.zeros_(self.e_nav_rb.weight)
++        self.o_code = None
++        if cfg.o_code_skip:                                                # PREREG_V8F_N1DC: built LAST (after e_nav_rb) under a forked RNG (no draw reaches the global stream) and zeroed: h + 0.0 == h, so the step-0 forward is the off model's, bit for bit
++            with torch.random.fork_rng(devices=[]):
++                self.o_code = nn.Linear(CODE_DIM, fl, bias=False)          # fl = n_q * d = the flattened width head_o reads
++            nn.init.zeros_(self.o_code.weight)
+         self.p_gt = 1.0
+ 
+     # ---- helpers -------------------------------------------------------------------------------------------
+@@ -1064,6 +1075,8 @@ class V8FMini(nn.Module):
+         cond = torch.stack(toks, 1)
+         sc, pad = self._scene(adapt, b["frame_ok"], i)
+         h = self.read_o(cond, sc, pad).flatten(1)
++        if self.o_code is not None:                                     # PREREG_V8F_N1DC: ONE line (a mutation deletes it): head_o reads T's code linearly as well, the SAME tensor e_code read above (zero-init: h + 0.0 == h)
++            h = h + self.o_code(code)
+         with torch.autocast(device_type=h.device.type, enabled=False):          # geometry + the prior stay fp32
+             coef = self.head_o(h.float()).reshape(-1, 2, cfg.nb) * cfg.res_scale_m      # [B, 2, nb]
+             res = torch.einsum("tk,bck->btc", self.basis, coef)                # [B, 60, 2]
+@@ -1392,6 +1405,8 @@ class V8FMini(nn.Module):
+             g["CTX"] = [self.ctx_head]                                              # PREREG_V8F_STRAT1
+         if self.e_nav_rb is not None:
+             g["NAVRB"] = [self.e_nav_rb]                                            # PREREG_V8F_NAVRB2: G-LIVE then requires its gradient
++        if self.o_code is not None:
++            g["OCODE"] = [self.o_code]                                              # PREREG_V8F_N1DC: G-LIVE then requires its gradient
+         return g
+ 
+     def built_levers(self) -> dict:
+@@ -1419,6 +1434,8 @@ class V8FMini(nn.Module):
+                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
+         if self.cfg.rb_window_w != 1.0:
+             lv["rb_window_w"] = self.cfg.rb_window_w          # PREREG_V8F_N1DW: ABSENT at 1.0, so every earlier arm's levers equal the tip's (the gate reads .get("rb_window_w", 1.0))
++        if self.o_code is not None:
++            lv["o_code_skip"] = "on"          # PREREG_V8F_N1DC: ABSENT when off, so every earlier arm's levers equal the tip's (the gate reads .get("o_code_skip", "off")); the BUILT module is o_code
+         if self.e_nav_rb is not None:
+             if self.cfg.nav_rb_feat != "state":
+                 lv["nav_rb_feat"] = self.cfg.nav_rb_feat      # PREREG_V8F_NAVRBD: ABSENT for state, so every earlier arm's levers equal the tip's (the gate reads .get("nav_rb_feat", "state"); the BUILT width is e_nav_rb.weight.shape[1])

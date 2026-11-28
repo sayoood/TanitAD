@@ -1,0 +1,94 @@
+{
+ "file": "E:/Projects/TanitAD-artifacts/scratch_lc_t2v8f/blobs_test/LC_s0.pt",
+ "checks": [
+  {
+   "check": "file_sha256",
+   "status": "PASS",
+   "detail": "9e2610cc4d0f44429ec682319834293ac0b3e53989eb7d595c93754a67ce2965"
+  },
+  {
+   "check": "blob_keys",
+   "status": "PASS",
+   "detail": "['argv_sha', 'arm', 'batch_in_epoch', 'cfg', 'cfg_tuple_fields', 'cons_mu', 'cons_sd', 'dagger', 'dagger_totals', 'ego_perturb', 'ego_totals', 'encoder_levers', 'epoch', 'grid', 'init_ckpt', 'lora', 'model', 'p10_path', 'seed', 'step', 'wsp_edit']"
+  },
+  {
+   "check": "heads_layout",
+   "status": "PASS",
+   "detail": "276 head tensors, none LoRA/backbone"
+  },
+  {
+   "check": "cfg_kin_mode",
+   "status": "PASS",
+   "detail": "kin_mode='yaw' (V8FMiniT2Policy refuses anything but 'yaw')"
+  },
+  {
+   "check": "encoder_levers",
+   "status": "PASS",
+   "detail": "lora r32 alpha32 q,v 24 blocks 3,145,728 trainable, builder weights sha"
+  },
+  {
+   "check": "lora_entry",
+   "status": "PASS",
+   "detail": "96 tensors, meta {'r': 32, 'alpha': 32.0, 'targets': ['q', 'v'], 'blocks': 24, 'dropout': 0.0, 'seed': 0, 'weights_sha256': 'dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179'}"
+  },
+  {
+   "check": "meta_vs_levers",
+   "status": "PASS",
+   "detail": "equal"
+  },
+  {
+   "check": "b_moved",
+   "status": "PASS",
+   "detail": "step 1000, max|B| 5.092e-02, zero modules 0"
+  },
+  {
+   "check": "base_weights",
+   "status": "PASS",
+   "detail": "C:/Users/Admin/.cache/huggingface/hub\\models--facebook--dinov3-vitl16-pretrain-lvd1689m\\snapshots\\ea8dc2863c51be0a264bab82070e3e8836b02d51 sha256 dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179"
+  },
+  {
+   "check": "merged_digest",
+   "status": "PASS",
+   "detail": "36782a90171330500103dc242f0d7763767d6603f8fa05795e91fdca6ec555e1"
+  }
+ ],
+ "verdict": "PASS",
+ "bytes": 41613283,
+ "sha256": "9e2610cc4d0f44429ec682319834293ac0b3e53989eb7d595c93754a67ce2965",
+ "keys": [
+  "argv_sha",
+  "arm",
+  "batch_in_epoch",
+  "cfg",
+  "cfg_tuple_fields",
+  "cons_mu",
+  "cons_sd",
+  "dagger",
+  "dagger_totals",
+  "ego_perturb",
+  "ego_totals",
+  "encoder_levers",
+  "epoch",
+  "grid",
+  "init_ckpt",
+  "lora",
+  "model",
+  "p10_path",
+  "seed",
+  "step",
+  "wsp_edit"
+ ],
+ "step": 1000,
+ "seed": 0,
+ "arm": "L",
+ "b_abs_max": 0.05092468485236168,
+ "n_b_zero_modules": 0,
+ "lora_tensors_sha256": "a34730059f6f6d19c22a31e71d75c5572573e3e95a69bb926e6d3ffc0d99fa55",
+ "merged_qv_sha256": "36782a90171330500103dc242f0d7763767d6603f8fa05795e91fdca6ec555e1",
+ "merged_qv_tensor_sha256_first": {
+  "layer.0.attention.q_proj.weight": "a3ff35917723f3770cc999372dbf562ed387a11a9dc75864ced23dce704f157b",
+  "layer.0.attention.v_proj.weight": "346c36d6a4cf13699a669e146a58c95d0161769df66e6ddf3e6964061ff8bc66",
+  "layer.1.attention.q_proj.weight": "988c5fae5ff065c941cc362cca0c3138231a95247190287f863045962d311b12",
+  "layer.1.attention.v_proj.weight": "296405ac35120a10495726119649f49468207bc5a5954d792c5da89d13eb0483"
+ }
+}

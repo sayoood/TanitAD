@@ -1,0 +1,162 @@
+{
+ "inputs": {
+  "F:/TanitAD-scratch/strat1/read/ckpt120/inputs/eval141_grid_truth.npz": "da9529a1f9bd4599ec44bbaff2827e12c033f314a8ff9167e94a66dbfcdccc73",
+  "F:/TanitAD-scratch/strat1/read/inputs/join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"
+ },
+ "n_grid": 2399,
+ "n_episodes": 141,
+ "scorable_120": {
+  "n": 341,
+  "episodes": 27
+ },
+ "CONTROL_K_LABEL": {
+  "n": 341,
+  "token_on": 219,
+  "token_off": 122,
+  "expect": [
+   341,
+   219,
+   122
+  ]
+ },
+ "token_on": {
+  "n": 219,
+  "episodes": 24,
+  "lat": {
+   "LANE_KEEP": 83,
+   "TURN_L": 24,
+   "TURN_R": 88,
+   "LANE_CHANGE_L": 0,
+   "LANE_CHANGE_R": 0,
+   "IGNORE_or_other": 24
+  },
+  "lon": {
+   "HOLD": 0,
+   "CREEP": 1,
+   "STOP": 40,
+   "FOLLOW": 19,
+   "DECELERATE": 66,
+   "ACCELERATE": 74,
+   "KEEP": 16,
+   "IGNORE_or_other": 3
+  },
+  "lat_label_names_a_side": 112,
+  "lat_label_side_equals_far_side": 112,
+  "lat_label_side_opposite_far_side": 0,
+  "turn_label_on_far_side": 112,
+  "lanechange_label_on_far_side": 0,
+  "decelerate_or_stop_label": 106,
+  "left_right": [
+   52,
+   167
+  ]
+ },
+ "token_off": {
+  "n": 122,
+  "episodes": 22,
+  "lat": {
+   "LANE_KEEP": 88,
+   "TURN_L": 3,
+   "TURN_R": 17,
+   "LANE_CHANGE_L": 0,
+   "LANE_CHANGE_R": 0,
+   "IGNORE_or_other": 14
+  },
+  "lon": {
+   "HOLD": 0,
+   "CREEP": 1,
+   "STOP": 5,
+   "FOLLOW": 12,
+   "DECELERATE": 62,
+   "ACCELERATE": 10,
+   "KEEP": 31,
+   "IGNORE_or_other": 1
+  },
+  "lat_label_names_a_side": 20,
+  "lat_label_side_equals_far_side": 12,
+  "lat_label_side_opposite_far_side": 8,
+  "turn_label_on_far_side": 12,
+  "lanechange_label_on_far_side": 0,
+  "decelerate_or_stop_label": 67,
+  "left_right": [
+   27,
+   95
+  ]
+ },
+ "rc120_valid_all": {
+  "n": 2261,
+  "episodes": 135,
+  "lat": {
+   "LANE_KEEP": 1839,
+   "TURN_L": 44,
+   "TURN_R": 147,
+   "LANE_CHANGE_L": 0,
+   "LANE_CHANGE_R": 0,
+   "IGNORE_or_other": 231
+  },
+  "lon": {
+   "HOLD": 20,
+   "CREEP": 17,
+   "STOP": 113,
+   "FOLLOW": 434,
+   "DECELERATE": 384,
+   "ACCELERATE": 454,
+   "KEEP": 733,
+   "IGNORE_or_other": 106
+  }
+ },
+ "ceiling_T_side_gain_windows": {
+  "windows_where_far_side_could_change_T_lat_label": 12,
+  "of_scorable_token_off": 122,
+  "of_grid": 2399,
+  "share_of_grid": 0.005
+ },
+ "CONTROL_RC120_ok_identity": 0,
+ "geometry_strata_rc_valid": {
+  "far_bend_only (|psi120|>=25, |psi80|<25)": {
+   "n": 202,
+   "episodes": 48,
+   "decelerate_or_stop": 67,
+   "share": 0.3317,
+   "token_on": 13,
+   "lat": {
+    "LANE_KEEP": 168,
+    "TURN_L": 0,
+    "TURN_R": 4,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0,
+    "IGNORE_or_other": 30
+   }
+  },
+  "bend_by_80 (|psi80|>=25)": {
+   "n": 592,
+   "episodes": 53,
+   "decelerate_or_stop": 230,
+   "share": 0.3885,
+   "token_on": 196,
+   "lat": {
+    "LANE_KEEP": 355,
+    "TURN_L": 44,
+    "TURN_R": 140,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0,
+    "IGNORE_or_other": 53
+   }
+  },
+  "no_bend (|psi120|<25)": {
+   "n": 1498,
+   "episodes": 115,
+   "decelerate_or_stop": 208,
+   "share": 0.1389,
+   "token_on": 15,
+   "lat": {
+    "LANE_KEEP": 1334,
+    "TURN_L": 0,
+    "TURN_R": 10,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0,
+    "IGNORE_or_other": 154
+   }
+  }
+ }
+}

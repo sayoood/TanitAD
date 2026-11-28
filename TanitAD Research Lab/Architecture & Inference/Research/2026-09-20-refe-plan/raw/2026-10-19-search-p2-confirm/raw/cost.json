@@ -1,0 +1,107 @@
+{
+ "evidence": "rates MEASURED (artifacts in `sources`); every projection ESTIMATED (no run on B-REST or navtest exists)",
+ "sources": {
+  "search_rates": "C:/Users/Admin/par18/l2stepb/run/logs/search_{P2HEAD,L2s0,L2s1}.log (ZZSHARD lines, CPU 4 threads, shared box, 20 tokens x 3 seeds per shard)",
+  "bundle_forward": "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/B_token_disjoint/step3.log (ZZBUNDLE_OK 400 636 s) and C:/Users/Admin/par18/l1run/step3.log (ZZBUNDLE_OK 400 664 s); the dev-box GPU under the lock",
+  "labels": "C:/Users/Admin/par18/l2stepb/run/logs/label_P2HEAD.log (ZZTIMING, navsim venv, 1 thread, 5 plans / token) ; upper bound = L2-FRESH chain_B.log ZZLABEL_OK 400/400 719 s at 96 plans / token",
+  "navtest_counts": "D:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json (12146 tokens, 136 logs); harness wall 1106.6 s for 12146 tokens (D:/Projects/TanitAD/data/refe_navtest/score/refe_stage2_p2_full/refe_stage2_p2_full.counts.json)"
+ },
+ "sizes": {
+  "B_REST_tokens": 905,
+  "B_REST_logs": 24,
+  "navtest_tokens": 12146,
+  "navtest_logs": 136,
+  "ctx_bytes_per_token": 3932160,
+  "ctx_GiB_B_REST": 3.314208984375,
+  "ctx_GiB_navtest": 44.47998046875,
+  "disk_note": "free at measurement: D: 24 GB (exFAT, 1 MiB clusters), C: 7.3 GB; the B-REST ctx.npy (3.3 GiB, ONE file) fits on D:; the navtest ctx (44.5 GiB) does NOT, so a navtest look needs a chunked bundle->search->delete pipeline (not built)"
+ },
+ "measured_rates": {
+  "search_s_per_token_3_seeds_P2HEAD": {
+   "mean": 3.9515000000000002,
+   "median": 3.8049999999999997,
+   "min_shard": 3.43,
+   "max_shard": 5.61,
+   "n_shards": 20
+  },
+  "search_s_per_token_all_three_arms": {
+   "min": 3.24,
+   "max": 16.07,
+   "n_shards": 60
+  },
+  "bundle_s_per_token_total_run": {
+   "carve_B": 1.59,
+   "stepA": 1.66,
+   "slope_from_per_log_timeline": 1.473551637279597,
+   "fixed_s": 46.579345088161176
+  },
+  "label_s_per_token_5_plans": 1.1104888546466827,
+  "label_s_per_token_96_plans_upper_bound": 1.7975,
+  "label_breakdown_s_400_tokens": {
+   "seconds_scenario_build_total": 3.5331854820251465,
+   "seconds_metric_cache_parts_total": 413.7914128303528,
+   "seconds_label_plans_total": 26.53249764442444
+  },
+  "navtest_harness_s_per_token_one_plan": 0.0911081837642022
+ },
+ "a_bundle_forward_B_REST": {
+  "unit": "GPU minutes, ONE locked forward (ESTIMATED)",
+  "low_min": 23.9825,
+  "high_min": 25.038333333333334,
+  "slope_model_min": 23.00239294710327,
+  "plus": "ram_gate needs >= 8 GiB free RAM; the lock wait is NOT counted (B chain waited 2 h 20 min for the lock on 2026-10-19)",
+  "tokens": 905
+ },
+ "b_search_B_REST": {
+  "unit": "CPU wall minutes at 4 threads, 1 process (ESTIMATED); x4 = thread-minutes",
+  "tokens": 905,
+  "seeds": 3,
+  "central_min": 57.392083333333325,
+  "mean_rate_min": 59.60179166666667,
+  "low_min": 48.870000000000005,
+  "high_min": 242.38916666666668,
+  "thread_minutes_central": 229.5683333333333
+ },
+ "c_labels_B_REST": {
+  "unit": "CPU wall minutes, 1 thread (ESTIMATED)",
+  "tokens": 905,
+  "low_min": 16.749873557587463,
+  "high_min": 27.11229166666667,
+  "note": "5 plans / token (identity, 3 seeds, control); the planted identity at the labeller is part of this"
+ },
+ "d_navtest": {
+  "tokens": 12146,
+  "logs": 136,
+  "bundle_forward_gpu_hours": {
+   "low": 5.364483333333333,
+   "high": 5.600655555555556,
+   "caveat": "UNVERIFIED: the held-out bundle builder reproduces a BANKED fan (G2b); no banked fan table exists for the 12,146 navtest tokens, so the navtest path needs the bridge (L2-FRESH `bridge_g2b.py`) or a new builder; the rate is the plan-token rate"
+  },
+  "search_cpu_hours_1_process_4_threads": {
+   "central": 12.837647222222222,
+   "low": 10.9314,
+   "high": 54.21839444444444,
+   "two_processes_wall_central": 6.418823611111111
+  },
+  "labels_cpu_hours_via_label_stepB_1_process": {
+   "low": 3.746666007927391,
+   "high": 6.0645652777777785
+  },
+  "labels_hours_via_harness_seam_route": {
+   "per_seed_set_s": 1106.6,
+   "three_seed_sets_hours": 0.9221666666666666,
+   "note": "ESTIMATED: the NAVSIM harness scored P2's full navtest seam in 1,106.6 s with the prebuilt navtest metric cache; a seam file built from the search outputs would reuse that route. UNVERIFIED: no builder exists, and the label-path identity (the pick reproduces its banked CSV row) must be shown first"
+  },
+  "ctx_disk_GiB": 44.47998046875,
+  "sequential_total_hours_central": 19.12429722222222,
+  "note": "ESTIMATED; the navtest look comes ONLY after EP-ADMISSION admits, and needs a chunked pipeline (disk) that is not built"
+ },
+ "total_B_REST_chain": {
+  "gpu_minutes": 23.9825,
+  "gpu_minutes_high": 25.038333333333334,
+  "cpu_wall_minutes_search_plus_labels_central": 74.1419568909208,
+  "cpu_wall_minutes_high": 269.50145833333335,
+  "plus_C_ID_gate_16_tokens_cpu_minutes": 2.014666666666667,
+  "plus_G_REACH_per_arm_minutes": 1.0
+ }
+}

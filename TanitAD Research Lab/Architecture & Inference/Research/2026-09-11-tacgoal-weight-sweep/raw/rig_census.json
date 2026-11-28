@@ -1,0 +1,27 @@
+{
+  "_what": "which trainer declares --w-tac-goal; every count paired with a same-breath positive control (add_argument, def main) and a negative control (a nonsense flag). A zero from an unread file is INCONCLUSIVE, never absence.",
+  "_why": "the brief specified the v7-tiny rig (~19 M params). The flag under test is not in that trainer at all, so the sweep had to run on refc_v3_train.py -- the refcv6 arm-C trainer itself.",
+  "files": {
+    "stack/scripts/train_v6_staged.py": {
+      "read_ok": true,
+      "chars": 637901,
+      "CONTROL_add_argument": 232,
+      "CONTROL_def_main": 1,
+      "NEGATIVE_nonsense_flag": 0,
+      "w_tac_goal_flag": 0,
+      "tac_goal_tok_head": 0,
+      "tac_goal_loss": 0
+    },
+    "stack/scripts/refc_v3_train.py": {
+      "read_ok": true,
+      "chars": 354788,
+      "CONTROL_add_argument": 111,
+      "CONTROL_def_main": 1,
+      "NEGATIVE_nonsense_flag": 0,
+      "w_tac_goal_flag": 12,
+      "tac_goal_tok_head": 25,
+      "tac_goal_loss": 5
+    }
+  },
+  "verdict": "train_v6_staged.py (the v7-tiny trainer) does NOT declare --w-tac-goal: 0 occurrences against a positive control of 232 add_argument calls in the same read. refc_v3_train.py declares it 12 times. The head under test therefore cannot be exercised on the v7-tiny rig."
+}

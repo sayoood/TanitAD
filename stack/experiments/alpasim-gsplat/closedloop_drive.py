@@ -185,6 +185,19 @@ class _BasePolicy:
     # consumed is recorded as DROPPED in the payload instead of vanishing. An
     # arm that says False is not broken — it is un-wired, and the rollout says so.
     consumes_nav_known = False
+    #: ⭐ G1 (2026-09-04). WHICH CANONICALISATION THIS ARM WAS TRAINED AT.
+    #: `"ftheta256"` is the historical path — `ftheta_crop_resize(..., 256,
+    #: center="principal")` onto a 256x256 f-theta raster at `F_REF = 266`, the
+    #: geometry flagship-v1 / refc-base / refc-xl were built on. It is UNCHANGED.
+    #: `"cyl256x640"` is the 256x640 EQUIDISTANT-AZIMUTH CYLINDRICAL frame the v7
+    #: corpus (and therefore refcv3) was built at.
+    #: ⛔ An arm must be fed the raster it was trained at; this attribute is the
+    #: only place that choice is made, and it is per-ARM, never a CLI flag — a
+    #: flag would let the wrong geometry be selected for an arm by accident.
+    canon_mode = "ftheta256"
+    #: observation-window length in 10 Hz ticks. Read from the loaded config for
+    #: refcv3 rather than assumed; `WINDOW` is the historical arms' value.
+    window = WINDOW
 
     def __init__(self, device="cuda"):
         import torch
@@ -194,8 +207,77 @@ class _BasePolicy:
         self._crop, self._stack = ftheta_crop_resize, stack_frames
         self.device = device if torch.cuda.is_available() else "cpu"
         self.f_eff = None
+        self.canon_provenance = None
+
+    # ------------------------------------------------------------------ #
+    def _canon_cyl(self, frames, intr):
+        """G1: the 256x640 cylindrical canonicalisation (refcv3's own).
+
+        ⚠️ **STATE THE PROJECTION BEFORE USING ANY CAMERA FORMULA.** This frame
+        is CYLINDRICAL: the column is LINEAR IN AZIMUTH, so the field is
+        ``2 * (W/2) / f_ref`` = 2 * 320 / 305.5774907364391 = **2.0944 rad =
+        120.0 deg**, which is exactly the rig's own name
+        (`camera_front_wide_120fov`). The pinhole formula ``2*atan((W/2)/f)``
+        returns a plausible-looking **92.6 deg** and is WRONG here.
+        """
+        torch = self.torch
+        from tanitad.data.calib import (PHYSICALAI_WIDE120_256x640,
+                                        cylindrical_rectify)
+        frame = PHYSICALAI_WIDE120_256x640
+        vid = torch.from_numpy(np.stack(frames)).permute(0, 3, 1, 2)
+        # `require_per_clip=True` (the default) REFUSES a corpus-median
+        # intrinsic. The renderer serves a real per-clip principal point over
+        # the wire, so `build_intr` sets `per_clip=True` and this is wired, not
+        # defaulted — see calib.py:981 for why that matters (~215 px rig error).
+        canon = cylindrical_rectify(vid, intr, frame)          # [T,3,256,640] u8
+        if self.f_eff is None:
+            self.f_eff = float(cylindrical_rectify.last_f_eff)
+            obs = float(cylindrical_rectify.last_observed_frac)
+            # `last_f_eff` IS `frame.f_ref` by construction, so this asserts the
+            # frame we ran with, not a resampling accident.
+            ok_f = abs(self.f_eff - frame.f_ref) < 1e-9
+            # ⚠️ The threshold is NOT 1.0. `PHYSICALAI_WIDE120_256x640`'s observed
+            # mask is 8.897 % on rig B and 0.0017 % on rig A (calib.py, MEASURED
+            # over 3,000 clips), so a rig-B clip legitimately reads ~0.911 — that
+            # is what refcv3's own training frames look like. A WRONG crop box
+            # reads far lower, which is what this refusal is for.
+            ok_o = obs > 0.85
+            rig = "B (cy~755)" if intr.cy > 650 else "A (cy~543)"
+            logger.info("CANON[cyl] f_eff=%.7f (f_ref=%.7f) observed_frac=%.6f "
+                        "hfov=%.3f deg rig=%s %s", self.f_eff, frame.f_ref, obs,
+                        math.degrees(2.0 * (frame.width / 2.0) / frame.f_ref), rig,
+                        "OK" if (ok_f and ok_o) else "FAIL")
+            self.canon_provenance = {
+                "mode": "cyl256x640", "f_eff": self.f_eff, "f_ref": frame.f_ref,
+                "observed_frac": obs, "projection": frame.projection,
+                "height": frame.height, "width": frame.width,
+                "hfov_deg_cylindrical": math.degrees(
+                    2.0 * (frame.width / 2.0) / frame.f_ref),
+                "hfov_deg_pinhole_formula_WRONG_HERE": math.degrees(
+                    2.0 * math.atan((frame.width / 2.0) / frame.f_ref)),
+                "intr_cx": float(intr.cx), "intr_cy": float(intr.cy),
+                "intr_per_clip": bool(intr.per_clip), "rig": rig}
+            if not (ok_f and ok_o):
+                raise RuntimeError(
+                    f"cylindrical canon self-check FAILED (f_eff={self.f_eff}, "
+                    f"observed_frac={obs}) — the model would see a raster it was "
+                    f"never trained at. Refusing.")
+        st = self._stack(canon, STACK)                       # [T-2, 9, 256, 640]
+        fw = st[-self.window:][None].to(self.device)
+        # ⛔ A 0-dim DEVICE-TENSOR divisor, not the Python scalar 255.0. The run
+        # trained with `--u8-batches`, whose ingest is
+        # `refc_v3_train.frames_to_device` — and MEASURED 2026-09-02, a Python
+        # scalar makes CUDA take the multiply-by-reciprocal path and land 1 ulp
+        # off the CPU contract on 126/256 uint8 values. Same map, same bits.
+        fw = fw.float().div_(self.torch.tensor(255.0, device=fw.device))
+        if tuple(fw.shape[-3:]) != (9, 256, 640) or fw.shape[1] != self.window:
+            raise RuntimeError(f"raster assertion failed: {tuple(fw.shape)} != "
+                               f"(1,{self.window},9,256,640)")
+        return fw
 
     def canon(self, frames, intr):
+        if self.canon_mode == "cyl256x640":
+            return self._canon_cyl(frames, intr)
         torch = self.torch
         vid = torch.from_numpy(np.stack(frames)).permute(0, 3, 1, 2)
         canon = self._crop(vid, intr, 256, center="principal")
@@ -204,6 +286,10 @@ class _BasePolicy:
             ok = abs(self.f_eff - self.F_REF) < 8.0
             logger.info("CANON f_eff=%.2f (F_REF=%.1f) %s", self.f_eff, self.F_REF,
                         "OK" if ok else "FAIL")
+            self.canon_provenance = {"mode": "ftheta256", "f_eff": self.f_eff,
+                                     "f_ref": float(self.F_REF),
+                                     "projection": "ftheta_crop_resize",
+                                     "height": 256, "width": 256}
             if not ok:
                 raise RuntimeError(f"f_eff self-check FAILED ({self.f_eff}) — the model "
                                    "would see a raster it was never trained at. Refusing.")
@@ -284,6 +370,86 @@ class RefCPolicy(_BasePolicy):
         for k, v in out.items():
             if hasattr(v, "shape") and v.ndim == 2 and v.shape[0] == 1 and v.shape[1] <= 16:
                 extra[k] = v[0].float().cpu().numpy().tolist()
+        return traj.astype(np.float64), extra
+
+
+class RefCV3Policy(_BasePolicy):
+    """G2 (2026-09-04). refcv3 in the closed loop.
+
+    ⭐ **The loader is IMPORTED, never forked.** `taniteval/tools/refcv3_arm.py`
+    already owns a strict, cross-checked `load_model` that rebuilds the config
+    through the trainer's OWN `build_parser` + `_pin_trainer_cfg` on the recorded
+    argv, cross-checks arm / image_hw / tac_vocab_version / horizons /
+    param_breakdown against `config.json`, and REFUSES a non-strict state-dict
+    load ("fix the config, never the weights"). Re-implementing any of that here
+    would be a second, drifting copy of the one contract that matters.
+    """
+    name = "refcv3"
+    canon_mode = "cyl256x640"
+    consumes_nav_known = False       # refc.py:2042-2045 RAISES if fed with the
+                                     # gate off, and nothing in v3 turns it on.
+
+    def __init__(self, ckpt, device="cuda", config=None):
+        super().__init__(device)
+        import refcv3_arm
+        self.model, self.cfg, self.targs, self.prov = refcv3_arm.load_model(
+            ckpt, config, self.device, allow_nonstrict=False)
+        self.step = self.prov.get("step")
+        self.horizons = [int(h) for h in self.prov["horizons"]]
+        self.window = int(self.prov["window"])
+        self.decoder_steps = int(self.prov["decoder_steps"])
+        # ---- G3: ASSERT the grid, never assume it -------------------------- #
+        # The harness steers to `traj[LOOKAHEAD_IDX]` and scores at
+        # HORIZON_S = (0.5, 1.0, 1.5, 2.0) s. A checkpoint built on a different
+        # horizon grid would silently steer to the wrong lookahead.
+        if tuple(self.horizons[:len(WP_STEPS)]) != tuple(WP_STEPS):
+            raise RuntimeError(
+                f"⛔ HORIZON GRID MISMATCH: the checkpoint's first "
+                f"{len(WP_STEPS)} horizons are {self.horizons[:len(WP_STEPS)]} "
+                f"but the harness scores/steers on WP_STEPS={list(WP_STEPS)} "
+                f"(= {list(HORIZON_S)} s at {DT} s/tick). Refusing — "
+                f"LOOKAHEAD_IDX={LOOKAHEAD_IDX} would be the wrong waypoint.")
+        # image geometry must be the one `_canon_cyl` produces
+        ihw = list(self.cfg.core.encoder.image_hw())
+        if ihw != [256, 640]:
+            raise RuntimeError(f"⛔ checkpoint image_hw={ihw}, but this policy "
+                               f"canonicalises to [256, 640]. Refusing.")
+        if int(self.cfg.core.encoder.in_channels) != 3 * STACK:
+            raise RuntimeError(f"⛔ encoder in_channels="
+                               f"{self.cfg.core.encoder.in_channels} != 3*STACK="
+                               f"{3 * STACK}; the D-015 frame stack disagrees.")
+        logger.info("refcv3 loaded step=%s window=%d horizons=%s decoder=%s/%d "
+                    "image_hw=%s hier=%s anchors=%d params=%s",
+                    self.step, self.window, self.horizons,
+                    self.prov["decoder_mode"], self.decoder_steps, ihw,
+                    self.prov["hier"], self.prov["n_anchors"],
+                    self.prov["param_breakdown"].get("total"))
+        logger.info("refcv3 strict load: missing=%s unexpected=%s",
+                    self.prov["state_dict_load"]["missing_keys"],
+                    self.prov["state_dict_load"]["unexpected_keys"])
+
+    def plan(self, frames, intr, v0, nav_cmd, nav_known=None):
+        torch = self.torch
+        with torch.no_grad():
+            fw = self.canon(frames, intr)                    # [1,W,9,256,640]
+            v0t = torch.tensor([float(v0)], dtype=torch.float32, device=self.device)
+            navt = torch.tensor([nav_cmd], dtype=torch.long, device=self.device)
+            # `lan` and `ego_state` are deliberately NOT passed: the run's config
+            # carries neither (`graft_lan`/`goal_str` absent from argv,
+            # `ego_state_inject` off), and `forward` RAISES on an ego block it
+            # would have to drop. `steps` is the run's own decoder step count.
+            out = self.model(fw, nav_cmd=navt, v0=v0t, steps=self.decoder_steps)
+            # ⭐ THE DEPLOYED SELECTION IS out["traj"] AND NOTHING ELSE
+            # (refc_v3.py:520-525 on hier; refc.py:1531-1534 on flat).
+            full = out["traj"][0].float().cpu().numpy()      # [S, 2]
+            traj = full[:len(WP_STEPS)]                      # index-select, never interp
+        extra = {}
+        for k, v in out.items():
+            if hasattr(v, "shape") and v.ndim == 2 and v.shape[0] == 1 and v.shape[1] <= 16:
+                extra[k] = v[0].float().cpu().numpy().tolist()
+        # the 3-6 s tail this arm can serve but the harness does not score, banked
+        # verbatim so a longer-horizon rescore never needs the GPU again
+        extra["traj_full_6s"] = full.tolist()
         return traj.astype(np.float64), extra
 
 
@@ -430,14 +596,253 @@ def plan_to_poses(traj, v0):
     return np.stack([x, y, yaw, v], 1)
 
 
+# ------------------------------------------------------------------------------- #
+# TRIVIAL FLOOR POLICIES — the `ha0`-equivalent bar the closed loop never had       #
+# ------------------------------------------------------------------------------- #
+#: the three trivial arms. Names are prefixed `cl_` so a closed-loop floor can never
+#: be confused with the open-loop suite's `ha`/`ha0`, which are computed by a
+#: DIFFERENT instrument on a DIFFERENT tier and are not comparable as levels.
+FLOOR_ARMS = ("cl_ha0", "cl_ha", "cl_ha0_ext")
+
+#: ⭐ T2-A (2026-10-17): arms registered by an EXTERNAL module (`t2a_policies.register()`), so a new
+#: arm does not need an edit to `main()`. name -> {"build": callable(args) -> policy, "needs_ckpt": bool}.
+#: EMPTY unless something registers: with it empty `main()` behaves exactly as before.
+EXTRA_ARMS: dict = {}
+
+#: below this speed the unicycle cannot turn at all (`yaw_rate = v * kappa`, so a
+#: stopped vehicle has no yaw rate — `kinematic.py:228-231`). A constant-yaw-rate
+#: extrapolation therefore has to DROP the yaw rate rather than divide by ~0, and
+#: this is where that happens. Stated, not silently clamped inside a formula.
+FLOOR_V_EPS = 1e-3
+
+
+def _wrap(a):
+    return (a + math.pi) % (2 * math.pi) - math.pi
+
+
+class KinematicFloorPolicy:
+    """⭐ THE TRIVIAL CONTROL EVERY CLOSED-LOOP NUMBER IN THIS PROGRAMME LACKED.
+
+    **Why this class exists.** In OPEN loop, MEASURED 2026-09-04 on 4,823 windows /
+    141 episodes, the trivial hold-action control (`ha`, 0.2996 m) **beats** the
+    deployed model (`os`, 0.4419 m) by +0.1423 m [+0.1187, +0.1658] — and oracle
+    selection (0.0751) plus oracle nav (0.0239) together, 0.099 m, do not close that
+    gap. If a trivial control beats the model where prediction is *easiest*, then
+    **no closed-loop level is interpretable without the same control**, and until
+    2026-09-04 the closed-loop harness had none: `refcv3 2.8755` vs `refc-base
+    2.6554` is a difference between two arms with no bar under either.
+
+    **It is a POLICY, not a second harness.** It plugs into `run_rollout` through
+    the same `plan()` contract as `RefCV3Policy`, so the floor is produced by the
+    *identical* render → canonicalise-slot → plan → `wp_to_control` → kinematic
+    bicycle → `GroundFollower` → `cl_metrics.py` path as every model arm. The
+    frames are still rendered (`window = 8`, so `f0 = start + 9`, bit-identically to
+    every arm this harness has run) — they are simply not read. Anything else would
+    make the floor an incomparable number, which is exactly the disease.
+
+    ⛔ **INPUTS: MEASURED STATE AT t0 ONLY.** `a0` and `omega0` come from the logged
+    rig poses at indices `f0-2, f0-1, f0` through BACKWARD differences, so every
+    index used is `<= t0`. Nothing after the window origin enters any floor arm.
+    This is the PI's 2026-09-02 ruling (velocity at cycle time is a legal initial
+    state) applied exactly as `refcv3_arm.hold_controls` applies it open-loop.
+    ⚠️ One inherited asymmetry, named rather than hidden: the harness's own initial
+    speed `v` is `gt_poses_xyv`'s FORWARD difference (it uses pose `f0+1`). That is
+    the harness's convention, fed identically to every model arm, and the floor
+    consumes it through `plan(v0=...)` unchanged — changing it for the floor alone
+    would have broken the pairing it exists to support.
+
+    **The three arms.**
+
+    * ``cl_ha0``     — a = 0, kappa = 0. Constant velocity, straight, forever. The
+      direct analogue of the open-loop `ha0` and the arm every margin is taken over.
+    * ``cl_ha``      — hold the action that CLOSES at t0: constant `a0` and constant
+      CURVATURE `kappa0` (a fixed steering angle). The closed-loop analogue of the
+      open-loop `ha`.
+    * ``cl_ha0_ext`` — constant `a0` and constant YAW RATE `omega0` (CTRA). The
+      strongest trivial baseline, and the one a model with ego inputs could echo.
+      It differs from `cl_ha` exactly when the speed changes: `cl_ha` holds
+      `kappa`, so its yaw rate `v*kappa` tracks the speed; `cl_ha0_ext` holds the
+      yaw rate, so its curvature does.
+
+    ⚠️ **THE CONTROLLER IS NOT A PASS-THROUGH, AND THAT IS DELIBERATE.**
+    `wp_to_control` reads ONLY `traj[LOOKAHEAD_IDX]` (the 0.5 s waypoint) and sets
+    `v_target = x / (L*dt)`, which is the AVERAGE speed over the lookahead, not the
+    terminal one — and `rollout_unicycle` advances position on the speed at the
+    START of each step. So under a constant intended acceleration `a`,
+    `x_L = L*v*dt + a*dt^2*L(L-1)/2`, hence `v_target = v + a*dt*(L-1)/2` and
+
+        accel_executed = a * dt*(L-1)/2 / speed_tc = a * 0.1*2/0.5 = **0.4 * a**
+
+    — the harness executes **40 %** of any constant intended acceleration.
+    (MEASURED, `test_closedloop_floor.py`; the continuous-time answer is `0.5a` and
+    writing that from the integral was this docstring's first draft.) Every model
+    arm is distorted by the same controller in the same way, which is why the floor
+    must suffer it too rather than inject controls behind it. Reported, never
+    corrected — correcting it would make this harness incomparable with every
+    published TanitAD closed-loop number.
+    """
+
+    #: 8 ticks — the observation window of EVERY arm this harness has run. It is
+    #: what fixes `f0 = start + WINDOW + STACK - 2 = start + 9`, i.e. WHERE the
+    #: rollout begins. A floor arm declaring a different window would start from a
+    #: different pose and could not be paired with anything. Stated, not defaulted.
+    window = WINDOW
+    consumes_nav_known = False
+    #: no canonicalisation happens at all — see `canon_provenance` below.
+    canon_mode = None
+
+    def __init__(self, mode: str):
+        if mode not in FLOOR_ARMS:
+            raise ValueError(f"unknown floor arm {mode!r}; expected one of {FLOOR_ARMS}")
+        self.name = mode
+        self.mode = mode
+        # `f_eff` is the raster self-check every MODEL arm must pass. A floor arm
+        # never looks at a pixel, so there is nothing to check and `None` is the
+        # honest value — not a copied constant that would imply a check happened.
+        self.f_eff = None
+        self.canon_provenance = {
+            "mode": "none",
+            "why": ("a trivial kinematic floor consumes no image. The frames are "
+                    "still RENDERED (identical rollout/render path, identical "
+                    "`f0`), they are simply never canonicalised or read."),
+            "reads_pixels": False}
+        self.n_plan = int(WP_STEPS[-1])
+        self.t0 = None
+
+    # ------------------------------------------------------------------ #
+    def set_t0(self, gt_T, f0):
+        """Measure the t0 state from LOGGED poses at indices ``<= f0`` ONLY.
+
+        Called once per rollout by `run_rollout`, immediately after `f0` is fixed.
+        `a0` is a second difference of position and therefore needs `f0-2`; that is
+        asserted rather than silently clamped, because a floor arm that quietly
+        started from a different state than it claims is worse than no floor.
+        """
+        f0 = int(f0)
+        if f0 < 2:
+            raise RuntimeError(
+                f"floor arm {self.name!r} needs f0 >= 2 (a0 is a second difference "
+                f"of position: it reads poses f0-2, f0-1, f0) but f0={f0}. Refusing "
+                f"— the alternative is a fabricated t0 state.")
+        p = [np.asarray(gt_T[i][:2, 3], np.float64) for i in (f0 - 2, f0 - 1, f0)]
+        yaw = [_yaw(gt_T[i]) for i in (f0 - 1, f0)]
+        # BACKWARD differences: v_b[i] uses poses i-1 and i, so `a0` reads f0-2..f0
+        # and `omega0` reads f0-1..f0. Every index is <= t0.
+        vb_prev = float(np.linalg.norm(p[1] - p[0]) / DT)
+        vb_now = float(np.linalg.norm(p[2] - p[1]) / DT)
+        a0 = (vb_now - vb_prev) / DT
+        omega0 = float(_wrap(yaw[1] - yaw[0]) / DT)
+        kappa0 = omega0 / max(vb_now, FLOOR_V_EPS)
+        self.t0 = {
+            "f0": f0, "a0_mps2": a0, "omega0_rads": omega0, "kappa0_1pm": kappa0,
+            "v_backward_at_t0_ms": vb_now, "v_backward_at_t0m1_ms": vb_prev,
+            "pose_indices_read": [f0 - 2, f0 - 1, f0],
+            "differencing": "backward — every index used is <= t0, no future pose",
+        }
+        logger.info("%s t0: f0=%d a0=%+.4f m/s^2 omega0=%+.5f rad/s kappa0=%+.6f 1/m "
+                    "(v_bwd=%.4f m/s)", self.name, f0, a0, omega0, kappa0, vb_now)
+
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _path(accel, kappa, v, n):
+        """``[n, 2]`` ego-frame path under ``(accel, kappa[k])`` from speed ``v``.
+
+        ⭐ The integrator is the PROGRAMME'S OWN — `kinematic.rollout_unicycle`,
+        the same one `refav1_arm.paths_from_controls` uses to build the open-loop
+        `ha`/`ha0` floors — called at **float64** through `state0`'s dtype.
+        (`refa_v1_plan.unicycle_paths` builds a float32 `state0` internally, so it
+        is bypassed here and only here; `test_closedloop_floor.py` pins the two
+        against each other.)
+
+        ⭐ **THE ZERO-CONTROL BRANCH IS EXACT ON PURPOSE.** For `a = 0, kappa = 0`
+        the recurrence reduces to `x_k = (k+1) v dt, y_k = 0`, and evaluating that
+        closed form is what makes `cl_ha0`'s control read **exactly** 0.0. Summing
+        `fl(v*0.1)` five times instead misses `v/2` by ~6e-16, `wp_to_control`
+        turns that into `accel = 2*(2*x5 - v)` ~ 2e-15 m/s^2, and a floor whose
+        defining property ("it does nothing") holds only to 1e-15 cannot serve as a
+        control that must read a known value. The branch is on the CONTROLS, never
+        on the arm name, so `cl_ha` and `cl_ha0_ext` collapse onto it
+        BIT-IDENTICALLY whenever their measured `a0` and `omega0` are both zero —
+        which is the degeneracy control.
+        """
+        kap = np.asarray(kappa, np.float64)
+        if float(accel) == 0.0 and not np.any(kap):
+            xs = float(v) * (np.arange(1, n + 1, dtype=np.float64) * DT)
+            return np.stack([xs, np.zeros(n, np.float64)], 1)
+        import torch
+        from tanitad.models.kinematic import rollout_unicycle
+        ctrl = torch.from_numpy(np.stack(
+            [np.full(n, float(accel), np.float64), kap], 1))[None]
+        st0 = torch.zeros(1, 4, dtype=torch.float64)
+        st0[0, 3] = float(v)
+        return rollout_unicycle(st0, ctrl, dt=DT)[0, :, :2].numpy()
+
+    # ------------------------------------------------------------------ #
+    def plan(self, frames, intr, v0, nav_cmd, nav_known=None):
+        """`frames`, `intr`, `nav_cmd` and `nav_known` are ACCEPTED AND NOT READ.
+
+        Named rather than dropped from the signature: the floor must satisfy the
+        same contract as a model policy, and the fact that it ignores the route
+        command is a PROPERTY OF THE ARM worth being able to point at — a trivial
+        control that consulted the nav would not be trivial.
+        """
+        if self.t0 is None:
+            raise RuntimeError(
+                f"{self.name}.set_t0() was never called. The floor's t0 state would "
+                f"be invented. Refusing — see run_rollout's set_t0 hook.")
+        v = float(v0)
+        n = self.n_plan
+        if self.mode == "cl_ha0":
+            a, kap = 0.0, np.zeros(n, np.float64)
+        elif self.mode == "cl_ha":
+            a = float(self.t0["a0_mps2"])
+            kap = np.full(n, float(self.t0["kappa0_1pm"]), np.float64)
+        else:                                            # cl_ha0_ext — CTRA
+            a = float(self.t0["a0_mps2"])
+            w = float(self.t0["omega0_rads"])
+            # The speed the integrator will USE at the start of each step, in closed
+            # form under a constant `a` with the integrator's own clamp-at-zero.
+            # `kappa_k = omega0 / v_k` is then exactly what holds the yaw rate
+            # constant, because the model DEFINES `yaw_rate = v * kappa`.
+            vk = np.empty(n, np.float64)
+            s = v
+            for k in range(n):
+                vk[k] = s
+                s = max(0.0, s + a * DT)
+            kap = np.where(vk > FLOOR_V_EPS, w / np.maximum(vk, FLOOR_V_EPS), 0.0)
+        path = self._path(a, kap, v, n)
+        traj = np.ascontiguousarray(path[[h - 1 for h in WP_STEPS]], np.float64)
+        # ⛔ Every value here is a SCALAR. `cl_metrics.resolve_stamp` RAISES on an
+        # unrecognised list of width 4 or 5 in `extra` (it is how a renamed head was
+        # caught), so a floor arm must never bank a bare 4- or 5-vector.
+        extra = {
+            "floor_mode": self.mode,
+            "floor_a0_mps2": float(self.t0["a0_mps2"]),
+            "floor_omega0_rads": float(self.t0["omega0_rads"]),
+            "floor_kappa0_1pm": float(self.t0["kappa0_1pm"]),
+            "floor_v_plan_ms": v,
+            "floor_accel_cmd_mps2": float(a),
+            "floor_kappa_cmd_head_1pm": float(kap[0]),
+            "floor_reads_pixels": 0.0,
+            "floor_reads_nav": 0.0,
+        }
+        return traj, extra
+
+
 def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
-                gt_ts_us, warm=NEED_FRAMES, save_frames=None, log=None, leadgeom=None,
+                gt_ts_us, warm=None, save_frames=None, log=None, leadgeom=None,
                 shutter_s=0.0, gt_stride=0):
     """One closed-loop rollout. Returns a record dict."""
     from collections import deque
     gf = GroundFollower(gt_T)
     gtp = gt_poses_xyv(gt_T)
-    frames = deque(maxlen=NEED_FRAMES)
+    # The native-frame need is a property of THE ARM's observation window, read
+    # from its loaded config — not a module constant. For every historical arm
+    # `policy.window` IS `WINDOW`, so this is `NEED_FRAMES` unchanged.
+    need = int(getattr(policy, "window", WINDOW)) + STACK - 1
+    if warm is None:
+        warm = need
+    frames = deque(maxlen=need)
     rec = {"start_frame": start_frame, "n_steps": n_steps, "arm": policy.name,
            "steps": []}
 
@@ -472,6 +877,14 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
     v = float(gtp[f0, 3])
     t_us = gt_ts_us[f0]
 
+    # ⭐ FLOOR ARMS ONLY: measure the trivial control's t0 state from the LOGGED
+    # poses at indices <= f0, now that f0 is fixed. Model policies carry no
+    # `set_t0`, so this hook is INERT for them and every historical rollout is
+    # byte-identical with or without it (asserted by the patch-neutrality control).
+    if hasattr(policy, "set_t0"):
+        policy.set_t0(gt_T, f0)
+        rec["floor_t0"] = dict(policy.t0)
+
     # ⚠️ Anchor any lateral (cut-in) profile to THIS ROLLOUT's first decision, not to
     # the clip start. Anchored to the clip, the 2.0-3.5 s ramp would have finished long
     # before a rollout that starts at tick 120 ever looked — 8 of the 9 clusters would
@@ -482,10 +895,24 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
     if leadgeom is not None:
         leadgeom.set_t0(float(t_us))
 
+    # ⭐ T2-A (2026-10-17): the EXECUTED ego track, for policies that read ego HISTORY
+    # (refcv7: `--ego-history`, residual prior `ha0_ext_pose`) or that re-estimate the
+    # kinematic state every tick (`cl_p10`, `cl_ha0_ext_live`). Rows are (x, y, yaw, v) --
+    # `gt_poses_xyv`'s own format -- seeded from the LOGGED path up to f0 (the observed window
+    # is logged by construction) and then the EXECUTED pose after every step. ⛔ INERT for
+    # every policy without `set_history`: the hook is a `hasattr` and the history is never
+    # read otherwise, so every historical rollout is byte-identical (pinned by
+    # `test_t2a_dry.py::test_history_hook_is_inert_for_historical_arms`).
+    pose_hist = deque(maxlen=16)
+    for _f in range(max(0, f0 - 15), f0 + 1):
+        pose_hist.append(gtp[_f].copy())
+
     for k in range(n_steps):
         i_gt = gf.nearest(T_ego[:3, 3])
         nav, navd = nav_from_route(gtp, i_gt)
         nk = navd.get("nav_known")
+        if hasattr(policy, "set_history"):
+            policy.set_history(np.stack(pose_hist))
         t_plan = time.time()
         traj, extra = policy.plan(
             list(frames), intr, v, nav,
@@ -524,6 +951,7 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
         T_ego, _ = gf.correct(T_new)
         v = max(0.0, v + accel * DT)
         t_us = t_us + DT * 1e6
+        pose_hist.append(np.array([T_ego[0, 3], T_ego[1, 3], _yaw(T_ego), v]))
 
         T_start = _rollback(T_ego, v, steer, shutter_s)
         img = transport.render(T_ego @ Ts_cam, t_us,
@@ -549,8 +977,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene-dir", required=True)
     ap.add_argument("--arm", required=True,
-                    choices=["flagship-v1", "refc-base", "refc-xl"])
-    ap.add_argument("--ckpt", required=True)
+                    choices=["flagship-v1", "refc-base", "refc-xl", "refcv3"]
+                            + list(FLOOR_ARMS) + sorted(EXTRA_ARMS),
+                    help="a model arm, or one of the TRIVIAL FLOOR arms "
+                         f"{FLOOR_ARMS} — the `ha0`-equivalent bar every "
+                         "closed-loop number needs and none had before "
+                         "2026-09-04. A floor arm takes no --ckpt.")
+    ap.add_argument("--ckpt", default=None,
+                    help="required for a model arm; REFUSED for a floor arm, which "
+                         "has no weights and must not appear to have any.")
+    ap.add_argument("--ckpt-config", default=None,
+                    help="refcv3 only: the run's config.json. Defaults to the "
+                         "one beside --ckpt, which is where the trainer writes it.")
     ap.add_argument("--condition", default="empty",
                     choices=["empty", "objects", "lead25", "lead15", "lead8",
                              "cutin", "behind"],
@@ -580,7 +1018,31 @@ def main():
     ap.add_argument("--all-dynamic-layers", action="store_true",
                     help="with --condition objects, also render dynamic_deformables "
                          "(the scene ships 2 tracks / 1039 gaussians there)")
+    # T2-A: an externally registered arm may add its own flags (once per distinct callable)
+    for _fn in {id(s["add_args"]): s["add_args"]
+                for s in EXTRA_ARMS.values() if s.get("add_args")}.values():
+        _fn(ap)
     args = ap.parse_args()
+    # ⛔ An arm/ckpt mismatch must STOP, never degrade. A floor arm silently
+    # carrying a --ckpt would bank a payload whose `ckpt` field names weights that
+    # were never loaded — the exact shape of provenance error this programme's
+    # registry rule exists to prevent.
+    if args.arm in FLOOR_ARMS:
+        if args.ckpt:
+            raise SystemExit(
+                f"--ckpt={args.ckpt!r} was given for the TRIVIAL FLOOR arm "
+                f"{args.arm!r}, which loads no weights. Refusing: the payload would "
+                f"claim a checkpoint it never read.")
+    elif args.arm in EXTRA_ARMS:
+        _need = bool(EXTRA_ARMS[args.arm].get("needs_ckpt"))
+        if _need and not args.ckpt:
+            raise SystemExit(f"--ckpt is required for the model arm {args.arm!r}.")
+        if (not _need) and args.ckpt:
+            raise SystemExit(f"--ckpt={args.ckpt!r} was given for the weight-free arm "
+                             f"{args.arm!r}. Refusing: the payload would claim a "
+                             f"checkpoint it never read.")
+    elif not args.ckpt:
+        raise SystemExit(f"--ckpt is required for the model arm {args.arm!r}.")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
                         datefmt="%H:%M:%S")
@@ -657,8 +1119,14 @@ def main():
     logger.info("lead geometry probe active (half_len=%.3f m, %d conditions)",
                 leadgeom.half_len, len(leadgeom.tracks))
 
-    if args.arm == "flagship-v1":
+    if args.arm in FLOOR_ARMS:
+        pol = KinematicFloorPolicy(args.arm)
+    elif args.arm == "flagship-v1":
         pol = FlagshipV1Policy(args.ckpt)
+    elif args.arm == "refcv3":
+        pol = RefCV3Policy(args.ckpt, config=args.ckpt_config)
+    elif args.arm in EXTRA_ARMS:
+        pol = EXTRA_ARMS[args.arm]["build"](args)
     else:
         pol = RefCPolicy(args.ckpt, preset=args.arm.split("-", 1)[1])
 
@@ -702,9 +1170,16 @@ def main():
                "scene": sd.name, "layers": layers, "steps": args.steps,
                "f_eff": pol.f_eff, "gt": gt_dump, "rollouts": recs,
                "synth_attach": attach_info,
+               # G1 provenance: WHICH raster the model actually saw, banked in
+               # the artifact so a geometry question never needs the GPU again.
+               "canon": pol.canon_provenance,
+               "window": int(getattr(pol, "window", WINDOW)),
+               "model_provenance": getattr(pol, "prov", None),
                "lead_path_extrapolated_calls": int(leadgeom.path.n_extrap)}
     p = out / f"rollouts_{args.arm}_{args.condition}.json"
-    p.write_text(json.dumps(payload))
+    # `default=str` only ever fires on the provenance block (a rebuilt dataclass
+    # can carry a non-JSON leaf); every metric-bearing field is already plain.
+    p.write_text(json.dumps(payload, default=str))
     logger.info("wrote %s (%d rollouts)", p, len(recs))
 
 

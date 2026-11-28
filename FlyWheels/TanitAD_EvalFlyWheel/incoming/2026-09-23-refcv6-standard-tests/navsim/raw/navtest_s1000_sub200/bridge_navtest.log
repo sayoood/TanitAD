@@ -1,0 +1,33 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\run_bridge6.py --split navtest --arms R6_A1,R6_VMAXOFF,R6_VMAXORACLE --inputs D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --speed C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\speed_limits_navtest.json --road-plane C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\road_plane_navhard_warmup_logs.json --ckpt D:/refcv6_eval_kit/ckpt/ckpt_step1000.pt --config D:/refcv6_eval_kit/ckpt/config.json --ckpt-md5 7c3ad3c1fbf3d30be5c7733e7b436c65 --device cuda --precision auto --threads 8 --out C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/navtest_s1000_sub200\bridge_navtest --bank1 D:/Archive/devbox-C/navsim/exp/refcv6_navtest416/frame_bank --speed-oracle C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\vmax_oracle_navtest.json --bank1-kind navtest --logs-root D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test --tokens-file D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json --gpu-wait-s 0
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/refcv6_eval_kit/navsim_aux/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[bridge6] step=1000 steps=2 precision=as_trained device=cuda load 5.2s md5=7c3ad3c1fbf3d30be5c7733e7b436c65
+  [R6_A1] 25/200 (25 new) 0.55 s/scene
+  [R6_A1] 50/200 (50 new) 0.50 s/scene
+  [R6_A1] 75/200 (75 new) 0.49 s/scene
+  [R6_A1] 100/200 (100 new) 0.48 s/scene
+  [R6_A1] 125/200 (125 new) 0.47 s/scene
+  [R6_A1] 150/200 (150 new) 0.47 s/scene
+  [R6_A1] 175/200 (175 new) 0.47 s/scene
+  [R6_A1] 200/200 (200 new) 0.46 s/scene
+[bridge6] R6_A1: 200 refcv6 rows, 0 stand-ins, missing 0, 92.7 s
+  [R6_VMAXOFF] 25/200 (25 new) 0.30 s/scene
+  [R6_VMAXOFF] 50/200 (50 new) 0.30 s/scene
+  [R6_VMAXOFF] 75/200 (75 new) 0.30 s/scene
+  [R6_VMAXOFF] 100/200 (100 new) 0.30 s/scene
+  [R6_VMAXOFF] 125/200 (125 new) 0.30 s/scene
+  [R6_VMAXOFF] 150/200 (150 new) 0.30 s/scene
+  [R6_VMAXOFF] 175/200 (175 new) 0.30 s/scene
+  [R6_VMAXOFF] 200/200 (200 new) 0.30 s/scene
+[bridge6] R6_VMAXOFF: 200 refcv6 rows, 0 stand-ins, missing 0, 60.1 s
+  [R6_VMAXORACLE] 25/200 (25 new) 0.30 s/scene
+  [R6_VMAXORACLE] 50/200 (50 new) 0.30 s/scene
+  [R6_VMAXORACLE] 75/200 (75 new) 0.30 s/scene
+  [R6_VMAXORACLE] 100/200 (100 new) 0.30 s/scene
+  [R6_VMAXORACLE] 125/200 (125 new) 0.30 s/scene
+  [R6_VMAXORACLE] 150/200 (150 new) 0.30 s/scene
+  [R6_VMAXORACLE] 175/200 (175 new) 0.30 s/scene
+  [R6_VMAXORACLE] 200/200 (200 new) 0.30 s/scene
+[bridge6] R6_VMAXORACLE: 200 refcv6 rows, 0 stand-ins, missing 0, 59.7 s

@@ -1,0 +1,1264 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU, GPU hidden)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-p2-probe-leak-audit/SPEC.md",
+ "_generated_local": "2026-09-03 01:12:51",
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "cuda_visible_devices": "-1",
+ "subcommand": "actdiv (R1)",
+ "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val-w120-256x640cyl",
+ "banked_reference": {
+  "postrain30k_h1_ratio_thor": 0.005947,
+  "postrain30k_h1_ratio_devbox_cuda_reread": 0.00595,
+  "instrument": "actdiv_thor.py / actdiv_local.py, v/30 held, roll [steer,accel]"
+ },
+ "variants": {
+  "banked_roll_sa_hold_v": "roll [steer,accel] across windows; each window keeps its OWN v (the banked instrument)",
+  "roll_full_tuple": "roll [steer,accel,v] together (a kinematically consistent other window)",
+  "roll_v_only": "roll v across windows; [steer,accel] kept"
+ },
+ "speed_scales": {
+  "10": "TRAINED contract (flagship_v15.SPEED_SCALE, _lift3)",
+  "30": "what actdiv_thor.py:47 / condpath_thor.py:55 fed"
+ },
+ "arms": {
+  "postrain30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_postrain30k\\ckpt.pt",
+   "md5": "a58585883c279633c799a6f6968cc4b2",
+   "step": 30000,
+   "n_windows": 144,
+   "n_clips": 24,
+   "W": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "by_scale": {
+    "10": {
+     "h1": {
+      "scene_spread": 0.231015,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.001297,
+        "ratio_action_over_scene": 0.005612,
+        "ratio_clip_bootstrap_ci95": [
+         0.003711,
+         0.008322
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.006446,
+        "ratio_action_over_scene": 0.027902,
+        "ratio_clip_bootstrap_ci95": [
+         0.021676,
+         0.036337
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.006248,
+        "ratio_action_over_scene": 0.027047,
+        "ratio_clip_bootstrap_ci95": [
+         0.020912,
+         0.035907
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.399042,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1e-05,
+         2.1e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 2.4e-05,
+        "ratio_action_over_scene": 6.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         4.9e-05,
+         7.7e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 2.3e-05,
+        "ratio_action_over_scene": 5.9e-05,
+        "ratio_clip_bootstrap_ci95": [
+         4.7e-05,
+         7.5e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.399045,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1e-05,
+         2.1e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 2.4e-05,
+        "ratio_action_over_scene": 6.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         4.9e-05,
+         7.6e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 2.3e-05,
+        "ratio_action_over_scene": 5.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         4.7e-05,
+         7.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.8152,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.851126,
+      "-1.0": 0.324569,
+      "-0.5": 0.146614,
+      "0.0": 0.0,
+      "0.5": 0.153956,
+      "1.0": 0.3374,
+      "1.5": 0.549989,
+      "2.0": 0.791491
+     }
+    },
+    "30": {
+     "h1": {
+      "scene_spread": 0.234314,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.001394,
+        "ratio_action_over_scene": 0.00595,
+        "ratio_clip_bootstrap_ci95": [
+         0.003994,
+         0.008639
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.005344,
+        "ratio_action_over_scene": 0.022806,
+        "ratio_clip_bootstrap_ci95": [
+         0.017989,
+         0.029832
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.005007,
+        "ratio_action_over_scene": 0.02137,
+        "ratio_clip_bootstrap_ci95": [
+         0.016772,
+         0.028142
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.399042,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.1e-05,
+         2.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 2e-05,
+        "ratio_action_over_scene": 5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         4.1e-05,
+         6.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.8e-05,
+        "ratio_action_over_scene": 4.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3.6e-05,
+         5.7e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.399045,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.1e-05,
+         2.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 2e-05,
+        "ratio_action_over_scene": 4.9e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3.9e-05,
+         6.1e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.8e-05,
+        "ratio_action_over_scene": 4.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3.5e-05,
+         5.7e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.8174,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.924884,
+      "-1.0": 0.382142,
+      "-0.5": 0.1842,
+      "0.0": 0.0,
+      "0.5": 0.207467,
+      "1.0": 0.44999,
+      "1.5": 0.712053,
+      "2.0": 0.987486
+     }
+    }
+   }
+  },
+  "k8clip05p30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_k8clip05p30k\\ckpt.pt",
+   "md5": "2d744d6d2faa6e62d3b5eb2e9c2eecd6",
+   "step": 30000,
+   "n_windows": 144,
+   "n_clips": 24,
+   "W": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "by_scale": {
+    "10": {
+     "h1": {
+      "scene_spread": 0.212367,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.001189,
+        "ratio_action_over_scene": 0.005599,
+        "ratio_clip_bootstrap_ci95": [
+         0.004221,
+         0.007617
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.003083,
+        "ratio_action_over_scene": 0.014516,
+        "ratio_clip_bootstrap_ci95": [
+         0.010291,
+         0.021442
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.002789,
+        "ratio_action_over_scene": 0.013135,
+        "ratio_clip_bootstrap_ci95": [
+         0.009135,
+         0.019752
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.375756,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.2e-05,
+         2.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.6e-05,
+        "ratio_action_over_scene": 4.2e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3e-05,
+         5.8e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.4e-05,
+        "ratio_action_over_scene": 3.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.7e-05,
+         5.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.375759,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.2e-05,
+         2.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.6e-05,
+        "ratio_action_over_scene": 4.2e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3.1e-05,
+         5.7e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.4e-05,
+        "ratio_action_over_scene": 3.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.8e-05,
+         5.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.8722,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 1.02405,
+      "-1.0": 0.457425,
+      "-0.5": 0.183901,
+      "0.0": 0.0,
+      "0.5": 0.156703,
+      "1.0": 0.417823,
+      "1.5": 0.711173,
+      "2.0": 0.985735
+     }
+    },
+    "30": {
+     "h1": {
+      "scene_spread": 0.214053,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.001316,
+        "ratio_action_over_scene": 0.006147,
+        "ratio_clip_bootstrap_ci95": [
+         0.004613,
+         0.008363
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.002716,
+        "ratio_action_over_scene": 0.01269,
+        "ratio_clip_bootstrap_ci95": [
+         0.009555,
+         0.017836
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.002305,
+        "ratio_action_over_scene": 0.010768,
+        "ratio_clip_bootstrap_ci95": [
+         0.007643,
+         0.016784
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.375756,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.3e-05,
+         2.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.4e-05,
+        "ratio_action_over_scene": 3.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.9e-05,
+         4.7e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 3.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.3e-05,
+         4.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.375759,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 6e-06,
+        "ratio_action_over_scene": 1.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.3e-05,
+         2.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.4e-05,
+        "ratio_action_over_scene": 3.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.9e-05,
+         4.8e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 3.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.3e-05,
+         4.4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.8703,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 1.212661,
+      "-1.0": 0.55023,
+      "-0.5": 0.219904,
+      "0.0": 0.0,
+      "0.5": 0.187404,
+      "1.0": 0.506548,
+      "1.5": 0.85942,
+      "2.0": 1.182847
+     }
+    }
+   }
+  },
+  "k60clip05p30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_k60clip05p30k\\ckpt.pt",
+   "md5": "7e3c776d19a6ccbac6b46c15d39f61f1",
+   "step": 30000,
+   "n_windows": 144,
+   "n_clips": 24,
+   "W": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "by_scale": {
+    "10": {
+     "h1": {
+      "scene_spread": 0.364999,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.001678,
+        "ratio_action_over_scene": 0.004596,
+        "ratio_clip_bootstrap_ci95": [
+         0.002899,
+         0.006911
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.002869,
+        "ratio_action_over_scene": 0.00786,
+        "ratio_clip_bootstrap_ci95": [
+         0.005648,
+         0.011099
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.001993,
+        "ratio_action_over_scene": 0.005459,
+        "ratio_clip_bootstrap_ci95": [
+         0.003951,
+         0.007749
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.406388,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 1.1e-05,
+        "ratio_action_over_scene": 2.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.6e-05,
+         3.9e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.8e-05,
+        "ratio_action_over_scene": 4.4e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3.1e-05,
+         6.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 2.9e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.1e-05,
+         4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.406386,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 1.1e-05,
+        "ratio_action_over_scene": 2.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.6e-05,
+         4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.8e-05,
+        "ratio_action_over_scene": 4.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         3.2e-05,
+         6.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 3e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.1e-05,
+         4.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.9683,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.604257,
+      "-1.0": 0.254329,
+      "-0.5": 0.122142,
+      "0.0": 0.0,
+      "0.5": 0.185673,
+      "1.0": 0.391285,
+      "1.5": 0.574884,
+      "2.0": 0.7199
+     }
+    },
+    "30": {
+     "h1": {
+      "scene_spread": 0.366165,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.001092,
+        "ratio_action_over_scene": 0.002983,
+        "ratio_clip_bootstrap_ci95": [
+         0.001984,
+         0.004205
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.001904,
+        "ratio_action_over_scene": 0.0052,
+        "ratio_clip_bootstrap_ci95": [
+         0.003883,
+         0.00722
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.001528,
+        "ratio_action_over_scene": 0.004173,
+        "ratio_clip_bootstrap_ci95": [
+         0.003076,
+         0.005865
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.406388,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 7e-06,
+        "ratio_action_over_scene": 1.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.1e-05,
+         2.5e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 2.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.1e-05,
+         4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 9e-06,
+        "ratio_action_over_scene": 2.2e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.6e-05,
+         3.1e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.406386,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 7e-06,
+        "ratio_action_over_scene": 1.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.2e-05,
+         2.6e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 2.9e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.1e-05,
+         3.9e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 9e-06,
+        "ratio_action_over_scene": 2.3e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.6e-05,
+         3.1e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.969,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.481738,
+      "-1.0": 0.180029,
+      "-0.5": 0.080777,
+      "0.0": 0.0,
+      "0.5": 0.129129,
+      "1.0": 0.282578,
+      "1.5": 0.432041,
+      "2.0": 0.555698
+     }
+    }
+   }
+  },
+  "rdw8p30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_rdw8p30k\\ckpt.pt",
+   "md5": "6e382ebe721ba4b7df97e8305f695767",
+   "step": 30000,
+   "n_windows": 144,
+   "n_clips": 24,
+   "W": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "by_scale": {
+    "10": {
+     "h1": {
+      "scene_spread": 0.190959,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.000973,
+        "ratio_action_over_scene": 0.005097,
+        "ratio_clip_bootstrap_ci95": [
+         0.004035,
+         0.00637
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.005109,
+        "ratio_action_over_scene": 0.026752,
+        "ratio_clip_bootstrap_ci95": [
+         0.019776,
+         0.035312
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.00508,
+        "ratio_action_over_scene": 0.0266,
+        "ratio_clip_bootstrap_ci95": [
+         0.019784,
+         0.035571
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.410005,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 3e-06,
+        "ratio_action_over_scene": 6e-06,
+        "ratio_clip_bootstrap_ci95": [
+         5e-06,
+         8e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 3.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.5e-05,
+         4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 3.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.4e-05,
+         4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.410007,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 3e-06,
+        "ratio_action_over_scene": 6e-06,
+        "ratio_clip_bootstrap_ci95": [
+         5e-06,
+         8e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 3.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.4e-05,
+         3.9e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 3.1e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2.4e-05,
+         3.9e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.8048,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.594242,
+      "-1.0": 0.281783,
+      "-0.5": 0.139949,
+      "0.0": 0.0,
+      "0.5": 0.137139,
+      "1.0": 0.27216,
+      "1.5": 0.412073,
+      "2.0": 0.56163
+     }
+    },
+    "30": {
+     "h1": {
+      "scene_spread": 0.193288,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.00093,
+        "ratio_action_over_scene": 0.004809,
+        "ratio_clip_bootstrap_ci95": [
+         0.003901,
+         0.005961
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.00308,
+        "ratio_action_over_scene": 0.015937,
+        "ratio_clip_bootstrap_ci95": [
+         0.01197,
+         0.021285
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.002893,
+        "ratio_action_over_scene": 0.014969,
+        "ratio_clip_bootstrap_ci95": [
+         0.011195,
+         0.020883
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.410005,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 2e-06,
+        "ratio_action_over_scene": 6e-06,
+        "ratio_clip_bootstrap_ci95": [
+         5e-06,
+         7e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 8e-06,
+        "ratio_action_over_scene": 2e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.5e-05,
+         2.6e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 8e-06,
+        "ratio_action_over_scene": 1.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.3e-05,
+         2.5e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.410007,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 2e-06,
+        "ratio_action_over_scene": 6e-06,
+        "ratio_clip_bootstrap_ci95": [
+         5e-06,
+         7e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 8e-06,
+        "ratio_action_over_scene": 2e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.5e-05,
+         2.6e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 8e-06,
+        "ratio_action_over_scene": 1.8e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.4e-05,
+         2.4e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.8062,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.599006,
+      "-1.0": 0.284695,
+      "-0.5": 0.142041,
+      "0.0": 0.0,
+      "0.5": 0.145319,
+      "1.0": 0.293067,
+      "1.5": 0.445494,
+      "2.0": 0.60444
+     }
+    }
+   }
+  },
+  "postrain30k_freeze": {
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\v7tiny_postrain30k_freeze\\ckpt.pt",
+   "md5": "5f5e5c92cd8fb3dc92f7b38580149689",
+   "step": 30000,
+   "n_windows": 144,
+   "n_clips": 24,
+   "W": 6,
+   "horizons": [
+    1,
+    2,
+    4
+   ],
+   "by_scale": {
+    "10": {
+     "h1": {
+      "scene_spread": 0.750252,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.000586,
+        "ratio_action_over_scene": 0.000781,
+        "ratio_clip_bootstrap_ci95": [
+         0.000464,
+         0.001257
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.003665,
+        "ratio_action_over_scene": 0.004885,
+        "ratio_clip_bootstrap_ci95": [
+         0.003512,
+         0.00676
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.00373,
+        "ratio_action_over_scene": 0.004972,
+        "ratio_clip_bootstrap_ci95": [
+         0.00343,
+         0.006999
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.755659,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 3e-06,
+        "ratio_action_over_scene": 4e-06,
+        "ratio_clip_bootstrap_ci95": [
+         3e-06,
+         7e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.9e-05,
+        "ratio_action_over_scene": 2.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.9e-05,
+         3.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.9e-05,
+        "ratio_action_over_scene": 2.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.9e-05,
+         3.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.755659,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 3e-06,
+        "ratio_action_over_scene": 4e-06,
+        "ratio_clip_bootstrap_ci95": [
+         3e-06,
+         6e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.9e-05,
+        "ratio_action_over_scene": 2.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         2e-05,
+         3.2e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.9e-05,
+        "ratio_action_over_scene": 2.5e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.9e-05,
+         3.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.9739,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.127138,
+      "-1.0": 0.051221,
+      "-0.5": 0.024201,
+      "0.0": 0.0,
+      "0.5": 0.023458,
+      "1.0": 0.048332,
+      "1.5": 0.074835,
+      "2.0": 0.099289
+     }
+    },
+    "30": {
+     "h1": {
+      "scene_spread": 0.752946,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 0.000361,
+        "ratio_action_over_scene": 0.00048,
+        "ratio_clip_bootstrap_ci95": [
+         0.00035,
+         0.000681
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_full_tuple": {
+        "action_spread": 0.002492,
+        "ratio_action_over_scene": 0.00331,
+        "ratio_clip_bootstrap_ci95": [
+         0.002356,
+         0.004762
+        ],
+        "evidence_note": "h1: trained head"
+       },
+       "roll_v_only": {
+        "action_spread": 0.002589,
+        "ratio_action_over_scene": 0.003439,
+        "ratio_clip_bootstrap_ci95": [
+         0.002414,
+         0.004956
+        ],
+        "evidence_note": "h1: trained head"
+       }
+      }
+     },
+     "h2": {
+      "scene_spread": 0.755659,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 2e-06,
+        "ratio_action_over_scene": 3e-06,
+        "ratio_clip_bootstrap_ci95": [
+         2e-06,
+         4e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 1.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.3e-05,
+         2.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 1.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.2e-05,
+         2.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "h4": {
+      "scene_spread": 0.755659,
+      "C0_identity_max_abs_diff": 0.0,
+      "C0_passes": true,
+      "variants": {
+       "banked_roll_sa_hold_v": {
+        "action_spread": 2e-06,
+        "ratio_action_over_scene": 3e-06,
+        "ratio_clip_bootstrap_ci95": [
+         2e-06,
+         4e-06
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_full_tuple": {
+        "action_spread": 1.2e-05,
+        "ratio_action_over_scene": 1.6e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.2e-05,
+         2.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       },
+       "roll_v_only": {
+        "action_spread": 1.3e-05,
+        "ratio_action_over_scene": 1.7e-05,
+        "ratio_clip_bootstrap_ci95": [
+         1.2e-05,
+         2.3e-05
+        ],
+        "evidence_note": "h>=2 heads are UNTRAINED in this recipe (MM-E14); withdrawn as evidence"
+       }
+      }
+     },
+     "nrmse_1_vs_no_change": 0.9763,
+     "nrmse_1_note": ">1.10 = DEGENERATE per actchan.py:199 (worse than the no-change predictor)",
+     "anchored_displacement_over_scene_spread_h1": {
+      "-2.0": 0.071248,
+      "-1.0": 0.030638,
+      "-0.5": 0.013915,
+      "0.0": 0.0,
+      "0.5": 0.013594,
+      "1.0": 0.028226,
+      "1.5": 0.044072,
+      "2.0": 0.060232
+     }
+    }
+   }
+  }
+ },
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "_seconds": 162.7
+}

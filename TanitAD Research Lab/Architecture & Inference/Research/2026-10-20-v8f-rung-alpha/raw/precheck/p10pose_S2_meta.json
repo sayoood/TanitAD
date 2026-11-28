@@ -1,0 +1,24 @@
+{
+ "horizon": "S2",
+ "instants_frames": [
+  5,
+  10,
+  15,
+  20
+ ],
+ "train_manifest_md5": "77dafb50af0aedd1b940cf12c12518ef",
+ "n_train_episodes": 4572,
+ "n_train_windows": 157239,
+ "train_eval_clip_overlap": 0,
+ "window_rule": "t0 = 7 + (e mod 5) + 5j for every t0 with t0 + 20 <= T-1",
+ "features": "kin_features((v0, a0_1frame, kappa0_pose)) -- POSE ONLY",
+ "base": "kd_x_pose = retime(damp50(ha0, ha0_ext_pose), ha0_ext_pose) on the native 0.1 s polyline",
+ "ade_base_train_m": 0.35123161519227813,
+ "training_seed": 0,
+ "selection": {
+  "wd": 0.0001,
+  "epochs": 52
+ },
+ "fit_seconds": 440.0,
+ "ade_p10pose_train_m": 0.2699619515200103
+}

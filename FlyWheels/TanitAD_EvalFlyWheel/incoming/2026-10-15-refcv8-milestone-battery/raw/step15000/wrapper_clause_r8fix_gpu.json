@@ -1,0 +1,442 @@
+{
+ "tool": "wrapper_clause_r8fix_gpu.py",
+ "started": "2026-10-17T05:07:24",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_15000.pt",
+ "device": "cuda",
+ "amendment": "W-R8-1",
+ "ok": true,
+ "CLAUSE": "PASS",
+ "probe_conditions": [
+  "P3_fp32_det"
+ ],
+ "torch": "2.11.0+cu128",
+ "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+ "gpu": "NVIDIA GeForce RTX 4060",
+ "ckpt_md5": "e447dbb5dd213d9c1d93bc85e2ff9898",
+ "model": {
+  "step": 15000,
+  "missing": 0,
+  "unexpected": 0
+ },
+ "step": 15000,
+ "batch": {
+  "source": "collate(first in-run batch)",
+  "perm_sha256": "99adbc7ed285236adc1098cf5eb9dbccfb04a2ce3307fb977a292dc4dfbf6975",
+  "rows_window_index_first4": [
+   20658,
+   368,
+   10637,
+   7314
+  ],
+  "B": 16
+ },
+ "wall_s": 167.4,
+ "control_unfixed_wall_s": 20.5,
+ "control_unfixed_cuda_max_mem_gib": 2.884,
+ "fixed_wall_s": 20.0,
+ "fixed_cuda_max_mem_gib": 2.884,
+ "control_unfixed": {
+  "clause": "FAIL",
+  "n_terms": 369,
+  "max_wrapper_rel": 0.6652951311859516,
+  "max_floor_rel": 0.4087761059451684,
+  "terms_over_bar": [
+   "cascade",
+   "law",
+   "traj"
+  ],
+  "W1_detected": true,
+  "W2_detected": true,
+  "n_W2_detected_terms": 40,
+  "W1_detected_terms": [
+   "cascade",
+   "goal_score_absmean",
+   "law",
+   "traj"
+  ],
+  "key_terms": {
+   "cascade": {
+    "plain": 3.375175952911377,
+    "floor": 0.005073847982631882,
+    "wrapper": 0.1853897082290174,
+    "bar": 0.015221543947895648,
+    "ok": false
+   },
+   "r8_subscore": {
+    "plain": 0.18108877539634705,
+    "floor": 0.041432979868937354,
+    "wrapper": 0.022369419967411257,
+    "bar": 0.12429893960681207,
+    "ok": true
+   },
+   "traj": {
+    "plain": 0.4855245053768158,
+    "floor": 0.04381125395520694,
+    "wrapper": 0.17323151172277026,
+    "bar": 0.13143376186562084,
+    "ok": false
+   },
+   "r8_alloc_l1": {
+    "plain": 0.5587148070335388,
+    "floor": 0.4087761059451684,
+    "wrapper": 0.6652951311859516,
+    "bar": 1.226328317835505,
+    "ok": true
+   },
+   "sel_v3": {
+    "plain": 3.326082706451416,
+    "floor": 0.047916856921299884,
+    "wrapper": 0.06281693076757548,
+    "bar": 0.14375057076389966,
+    "ok": true
+   },
+   "loss": {
+    "plain": 49.20906066894531,
+    "floor": 0.008711179811253765,
+    "wrapper": 0.01767492050301321,
+    "bar": 0.026133539433761295,
+    "ok": true
+   }
+  },
+  "top8_by_wrapper": [
+   {
+    "term": "r8_alloc_l1",
+    "wrapper": 0.6652951311859516,
+    "floor": 0.4087761059451684,
+    "bar": 1.226328317835505,
+    "ok": true
+   },
+   {
+    "term": "r8",
+    "wrapper": 0.5369067610574454,
+    "floor": 0.3346666503097759,
+    "bar": 1.0039999509293276,
+    "ok": true
+   },
+   {
+    "term": "r8_total",
+    "wrapper": 0.5369067610574454,
+    "floor": 0.3346666503097759,
+    "bar": 1.0039999509293276,
+    "ok": true
+   },
+   {
+    "term": "cascade",
+    "wrapper": 0.1853897082290174,
+    "floor": 0.005073847982631882,
+    "bar": 0.015221543947895648,
+    "ok": false
+   },
+   {
+    "term": "traj",
+    "wrapper": 0.17323151172277026,
+    "floor": 0.04381125395520694,
+    "bar": 0.13143376186562084,
+    "ok": false
+   },
+   {
+    "term": "sel_v3",
+    "wrapper": 0.06281693076757548,
+    "floor": 0.047916856921299884,
+    "bar": 0.14375057076389966,
+    "ok": true
+   },
+   {
+    "term": "r8_sat",
+    "wrapper": 0.025650370397189228,
+    "floor": 0.03562907236668066,
+    "bar": 0.10688721710004198,
+    "ok": true
+   },
+   {
+    "term": "r8_subscore",
+    "wrapper": 0.022369419967411257,
+    "floor": 0.041432979868937354,
+    "bar": 0.12429893960681207,
+    "ok": true
+   }
+  ]
+ },
+ "control_reproduces_g0": {
+  "checked": true,
+  "terms": {
+   "cascade": {
+    "g0_wrapper": 0.1853897082290174,
+    "now_wrapper": 0.1853897082290174,
+    "g0_floor": 0.005073847982631882,
+    "now_floor": 0.005073847982631882,
+    "rel_diff": 0.0
+   },
+   "r8_subscore": {
+    "g0_wrapper": 0.022369419967411257,
+    "now_wrapper": 0.022369419967411257,
+    "g0_floor": 0.041432979868937354,
+    "now_floor": 0.041432979868937354,
+    "rel_diff": 0.0
+   },
+   "traj": {
+    "g0_wrapper": 0.17323151172277026,
+    "now_wrapper": 0.17323151172277026,
+    "g0_floor": 0.04381125395520694,
+    "now_floor": 0.04381125395520694,
+    "rel_diff": 0.0
+   },
+   "loss": {
+    "g0_wrapper": 0.01767492050301321,
+    "now_wrapper": 0.01767492050301321,
+    "g0_floor": 0.008711179811253765,
+    "now_floor": 0.008711179811253765,
+    "rel_diff": 0.0
+   }
+  },
+  "max_rel_diff": 0.0,
+  "reproduces_g0": true,
+  "rule": "unfixed probe on this harness vs the banked G0 P3 terms, rel diff < 1e-3 on cascade/r8_subscore/traj/loss"
+ },
+ "fixed_as_returned": {
+  "clause": "PASS",
+  "n_terms": 369,
+  "max_wrapper_rel": 2.2110427122060196e-06,
+  "max_floor_rel": 0.06372102793249089,
+  "terms_over_bar": [],
+  "W1_detected": true,
+  "W2_detected": true,
+  "n_W2_detected_terms": 40,
+  "W1_detected_terms": [
+   "goal_score_absmean"
+  ],
+  "key_terms": {
+   "cascade": {
+    "plain": 3.5226023197174072,
+    "floor": 0.0,
+    "wrapper": 1.353650270239356e-06,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "r8_subscore": {
+    "plain": 0.1571851223707199,
+    "floor": 9.480007375445738e-08,
+    "wrapper": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "traj": {
+    "plain": 0.5092326998710632,
+    "floor": 0.0,
+    "wrapper": 2.340959046443106e-07,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "r8_alloc_l1": {
+    "plain": 5.561408042907715,
+    "floor": 0.0,
+    "wrapper": 1.7148073096748228e-07,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "sel_v3": {
+    "plain": 3.182271957397461,
+    "floor": 0.0,
+    "wrapper": 1.4984173715721455e-07,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "loss": {
+    "plain": 54.223052978515625,
+    "floor": 0.0,
+    "wrapper": 7.03519454564181e-08,
+    "bar": 1e-05,
+    "ok": true
+   }
+  },
+  "top8_by_wrapper": [
+   {
+    "term": "box3d_h",
+    "wrapper": 2.2110427122060196e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "agent_centre",
+    "wrapper": 1.457043380817494e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "cascade",
+    "wrapper": 1.353650270239356e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "r8_sat",
+    "wrapper": 1.2566417139510333e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "r8_cons",
+    "wrapper": 1.0740752078201267e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "agent_size",
+    "wrapper": 8.589743540799182e-07,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "box3d_z",
+    "wrapper": 7.957468920115765e-07,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "r8_v9_cons",
+    "wrapper": 5.316860585231402e-07,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   }
+  ]
+ },
+ "amended": {
+  "clause": "PASS",
+  "n_terms": 368,
+  "max_wrapper_rel": 2.2110427122060196e-06,
+  "max_floor_rel": 1.5396465926004276e-07,
+  "terms_over_bar": [],
+  "W1_detected": true,
+  "W2_detected": true,
+  "n_W2_detected_terms": 40,
+  "W1_detected_terms": [
+   "goal_score_absmean"
+  ],
+  "key_terms": {
+   "cascade": {
+    "plain": 3.5226023197174072,
+    "floor": 0.0,
+    "wrapper": 1.353650270239356e-06,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "r8_subscore": {
+    "plain": 0.1571851223707199,
+    "floor": 9.480007375445738e-08,
+    "wrapper": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "traj": {
+    "plain": 0.5092326998710632,
+    "floor": 0.0,
+    "wrapper": 2.340959046443106e-07,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "r8_alloc_l1": {
+    "plain": 5.561408042907715,
+    "floor": 0.0,
+    "wrapper": 1.7148073096748228e-07,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "sel_v3": {
+    "plain": 3.182271957397461,
+    "floor": 0.0,
+    "wrapper": 1.4984173715721455e-07,
+    "bar": 1e-05,
+    "ok": true
+   },
+   "loss": {
+    "plain": 54.223052978515625,
+    "floor": 0.0,
+    "wrapper": 7.03519454564181e-08,
+    "bar": 1e-05,
+    "ok": true
+   }
+  },
+  "top8_by_wrapper": [
+   {
+    "term": "box3d_h",
+    "wrapper": 2.2110427122060196e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "agent_centre",
+    "wrapper": 1.457043380817494e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "cascade",
+    "wrapper": 1.353650270239356e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "r8_sat",
+    "wrapper": 1.2566417139510333e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "r8_cons",
+    "wrapper": 1.0740752078201267e-06,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "agent_size",
+    "wrapper": 8.589743540799182e-07,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "box3d_z",
+    "wrapper": 7.957468920115765e-07,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   },
+   {
+    "term": "r8_v9_cons",
+    "wrapper": 5.316860585231402e-07,
+    "floor": 0.0,
+    "bar": 1e-05,
+    "ok": true
+   }
+  ]
+ },
+ "max_wrapper_rel": 2.2110427122060196e-06,
+ "bars": {
+  "cascade": 1e-05,
+  "loss": 1e-05,
+  "r8_alloc_l1": 1e-05,
+  "r8_subscore": 1e-05,
+  "sel_v3": 1e-05,
+  "traj": 1e-05
+ },
+ "eval_draws_neutralised": [
+  "torch.randn_like",
+  "torch.randn (generator-less)",
+  "R8Generator.randn_eval",
+  "R8Generator.rand_eval"
+ ],
+ "reading": "CLAUSE is the amended (W-R8-1) reading on the GPU: PASS means every shared loss term's micro-batched forward equals the plain one within max(3*floor, 1e-5) AND the deliberate regressions W1/W2 are detected. It does NOT turn the step-5,000 G0 verdict (FAIL as coded) into PASS by itself: the Master Mind registers that."
+}

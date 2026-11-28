@@ -1,0 +1,125 @@
+[
+ {
+  "id": "MR11",
+  "what": "batch slope instead of the constant s",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_c9p_B_zero_gives_loss_exactly_one_and_a_wrong_constant_slope_is_used_as_given"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_defaults_are_the_earlier_build",
+   "test_control_flag_off_has_no_term_and_reads_exactly_zero",
+   "test_c9p_matched_response_gives_loss_and_gradient_zero"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_c9p_B_zero_gives_loss_exactly_one_and_a_wrong_constant_slope_is_used_as_given",
+   "test_c9p_a_flipped_contrast_or_a_scaled_delta_is_detected",
+   "test_c9p_geometry_one_call_two_contrasts_nine_anchors_ten_steps_context_one_endpoint_read"
+  ],
+  "summary": [
+   "3 failed, 20 passed, 1 warning in 67.39s (0:01:07)"
+  ]
+ },
+ {
+  "id": "MR12",
+  "what": "freeze_proj parsed, proj keeps requires_grad",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back",
+   "test_wm_proj_is_bit_equal_to_the_checkpoint_after_steps_and_the_rest_moved"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_defaults_are_the_earlier_build",
+   "test_control_flag_off_has_no_term_and_reads_exactly_zero"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_passes_for_the_null_arm_without_the_term",
+   "test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back",
+   "test_wm_proj_is_bit_equal_to_the_checkpoint_after_steps_and_the_rest_moved"
+  ],
+  "summary": [
+   "3 failed, 20 passed, 1 warning in 31.20s"
+  ]
+ },
+ {
+  "id": "MR13",
+  "what": "probe sha256 check skipped",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_probe_sha_mismatch_one_changed_byte_wrong_K_are_refused",
+   "test_gate_refuses_a_wrong_probe_sha_MR13"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_defaults_are_the_earlier_build",
+   "test_probe_vector_is_W_over_sd"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_gate_refuses_a_wrong_probe_sha_MR13",
+   "test_probe_sha_mismatch_one_changed_byte_wrong_K_are_refused"
+  ],
+  "summary": [
+   "2 failed, 21 passed, 1 warning in 45.62s"
+  ]
+ },
+ {
+  "id": "MR14",
+  "what": "per-step read (mean over K steps) instead of the endpoint",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_c9p_geometry_one_call_two_contrasts_nine_anchors_ten_steps_context_one_endpoint_read"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_defaults_are_the_earlier_build",
+   "test_control_flag_off_has_no_term_and_reads_exactly_zero"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_c9p_B_zero_gives_loss_exactly_one_and_a_wrong_constant_slope_is_used_as_given",
+   "test_c9p_a_flipped_contrast_or_a_scaled_delta_is_detected",
+   "test_c9p_geometry_one_call_two_contrasts_nine_anchors_ten_steps_context_one_endpoint_read",
+   "test_c9p_matched_response_gives_loss_and_gradient_zero",
+   "test_c9p_state_and_action_history_do_not_move_the_matched_identity"
+  ],
+  "summary": [
+   "5 failed, 18 passed, 1 warning in 51.37s"
+  ]
+ },
+ {
+  "id": "MR15",
+  "what": "the (g - 1)^2 loss line replaced by a zero-gradient term",
+  "result": "RED",
+  "rc": 1,
+  "must_fail": [
+   "test_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere"
+  ],
+  "expected_not_failed": [],
+  "controls_checked": [
+   "test_off_defaults_are_the_earlier_build",
+   "test_control_flag_off_has_no_term_and_reads_exactly_zero"
+  ],
+  "controls_that_went_red": [],
+  "failed_all": [
+   "test_c9p_B_zero_gives_loss_exactly_one_and_a_wrong_constant_slope_is_used_as_given",
+   "test_c9p_a_flipped_contrast_or_a_scaled_delta_is_detected",
+   "test_c9p_geometry_one_call_two_contrasts_nine_anchors_ten_steps_context_one_endpoint_read",
+   "test_c9p_matched_response_gives_loss_and_gradient_zero",
+   "test_gate_passes_for_the_rsp_arm_and_reads_the_built_readout_back",
+   "test_gradient_reaches_predictor_and_act_embed_and_exact_zero_elsewhere",
+   "test_wm_proj_is_bit_equal_to_the_checkpoint_after_steps_and_the_rest_moved"
+  ],
+  "summary": [
+   "7 failed, 16 passed, 1 warning in 79.51s (0:01:19)"
+  ]
+ }
+]

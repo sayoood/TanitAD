@@ -1,0 +1,170 @@
+lit1_selftest 2026-10-28 13:49:23 python 3.14.5 CUDA_VISIBLE_DEVICES=-1 workers 4  (CPU only; no rollout, no ssh, no git write; every shell step sealed)
+== A. PYTHON LAYER
+PASS   A:clause_positive (1.1s)
+PASS   A:pull_misc (0.1s)
+PASS   A:log_misc (0.0s)
+PASS   A:guards (0.0s)
+PASS   A:world (0.0s)
+PASS   A:render (0.0s)
+PASS   A:small (0.0s)
+PASS   A:commits (0.2s)
+PASS   A:proof (0.0s)
+PASS   A:tree_real (2.2s)
+PASS   A:rolloutcode (8.5s)
+PASS   A:kbuild_misc (0.0s)
+PASS   A:kbuild_real (0.8s)
+PASS   A:static (0.7s)
+PASS   A:clause:argv-steps (0.1s)
+PASS   A:clause:argv-dagger-p (0.1s)
+PASS   A:clause:argv-w-acc (0.0s)
+PASS   A:clause:argv-seed (0.1s)
+PASS   A:clause:argv-dagger-seed (0.1s)
+PASS   A:clause:argv-bank (0.1s)
+PASS   A:clause:argv-init (0.1s)
+PASS   A:clause:argv-out (0.1s)
+PASS   A:clause:argv-lever (0.1s)
+PASS   A:clause:argv-lever-once (0.1s)
+PASS   A:clause:argv-no-ego (0.1s)
+PASS   A:clause:argv-sha (0.0s)
+PASS   A:clause:sum-done (0.1s)
+PASS   A:clause:sum-steps (0.0s)
+PASS   A:clause:sum-seed (0.0s)
+PASS   A:clause:sc-pass (0.0s)
+PASS   A:clause:sum-lever (0.0s)
+PASS   A:clause:sum-lever-mask (0.1s)
+PASS   A:clause:sum-keys (0.0s)
+PASS   A:clause:sum-top-w (0.0s)
+PASS   A:clause:sum-share (0.0s)
+PASS   A:clause:sum-share-rec (0.0s)
+PASS   A:clause:sum-rows (0.0s)
+PASS   A:clause:sum-mask (0.0s)
+PASS   A:clause:sum-window (0.0s)
+PASS   A:clause:sum-init (0.0s)
+PASS   A:clause:sum-init-applied (0.0s)
+PASS   A:clause:sum-bank (0.0s)
+PASS   A:clause:sum-dagger-p (0.0s)
+PASS   A:clause:sum-w-acc (0.0s)
+PASS   A:clause:sum-ego-zero (0.0s)
+PASS   A:clause:tok-kind (0.0s)
+PASS   A:clause:tok-run (0.0s)
+PASS   A:clause:tok-commit (0.0s)
+PASS   A:clause:tok-shas (0.0s)
+PASS   A:clause:tok-trainer (0.0s)
+PASS   A:clause:tok-model (0.0s)
+PASS   A:clause:tok-init (0.0s)
+PASS   A:clause:tok-bank (0.1s)
+PASS   A:clause:tok-wacc (0.0s)
+PASS   A:clause:tok-excluded (0.0s)
+PASS   A:clause:tok-arm (0.0s)
+PASS   A:clause:ck-not-ctrl (0.0s)
+PASS   A:pull:pull-age (0.1s)
+PASS   A:pull:pull-names (0.0s)
+PASS   A:pull:pull-rehash (0.0s)
+PASS   A:pull:pull-done (0.0s)
+PASS   A:pull:pull-3way (0.0s)
+PASS   A:log:log-cfail (0.0s)
+PASS   A:log:log-path (0.0s)
+PASS   A:log:log-label (0.0s)
+PASS   A:log:log-stop-after (0.0s)
+PASS   A:tree:tree-set (0.1s)
+PASS   A:tree:tree-onefile (0.1s)
+PASS   A:tree:tree-extras (0.1s)
+PASS   A:tree:tree-overlay (0.1s)
+PASS   A:tree:tree-base-digest (0.1s)
+PASS   A:tree:proof-removed (0.1s)
+PASS   A:tree:proof-added (0.1s)
+PASS   A:tree:proof-lines (0.1s)
+PASS   A:kb:kb-compose-bytes (0.0s)
+PASS   A:kb:kb-launch-bytes (0.0s)
+PASS   A:kb:kb-diffpatch (0.0s)
+PASS   A:kb:kb-green (0.0s)
+PASS   A:kb:kb-mutation (0.0s)
+PASS   A:kb:kb-flagoff-test (0.0s)
+PASS   A:kb:kb-golden (0.0s)
+PASS   A:kb:kb-default-off (0.0s)
+== B. SHELL LAYER (lit1_chain.sh / wake_lit1.sh run to their end markers in sealed worlds)
+PASS   B:s0_harness
+PASS   B:s2b_unfinished_pull
+PASS   B:s2_order
+PASS   B:s3_resume
+PASS   B:s1_happy
+PASS   B:s4_ckpt_mutated
+PASS   B:s4c_ckpt_mutated_t0
+PASS   B:s4b_tree_mutated
+PASS   B:s4d_tree_mutated_t0
+PASS   B:s3f_t0_fail
+PASS   B:s3c_changed_checkpoint
+PASS   B:s3g_few_dumps
+PASS   B:s5_wrong_lever_third
+PASS   B:s6_kshare_fail_line
+PASS   B:s3_tamper
+PASS   B:s6b_log_lies
+PASS   B:s7_missing_share
+PASS   B:s3d_changed_command
+PASS   B:s8_log_sha
+PASS   B:s9_control_fail
+PASS   B:s3h_manifest_refused
+PASS   B:s8b_file_changed_after_sums
+PASS   B:s10a_ram_low
+PASS   B:s10b_disk_low
+PASS   B:s10e_c_low
+PASS   B:s10c_ram_drops_before_logged
+PASS   B:s9b_control_fail_no_pull
+PASS   B:s10d_ram_drops_before_t0
+PASS   B:s11b_stale_lock
+PASS   B:s11_lock
+PASS   B:s12a_reader_rc2
+PASS   B:s12a_reader_rc4
+PASS   B:s12b_no_box2_done
+PASS   B:s13a_reader_sha
+PASS   B:s13b_prereg_sha
+PASS   B:s12d_box2_stop_midrun
+PASS   B:s13c_commit
+PASS   B:s13c_reader
+PASS   B:s13c_prereg
+PASS   B:s13d_expect_commit
+PASS   B:s14a_sibling_logs
+PASS   B:s12c_done_before_last_pull
+PASS   B:s14b_world_bad
+PASS   B:s12f_verify_pulls
+PASS   B:s14c_md5
+PASS   B:s13e_cross_resume
+FAIL   B:s14e_tmpl_causal: 2 failure(s)
+         - [causal] a template that no longer reproduces the command that ran stops the chain: 'TEMPLATE PROOF FAILED' not in '10-28 13:54:37 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14e_tmpl_causal/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s1'
+         - [causal] the proof that caught it: 'rollout_causal.tmpl rendered for DAG-OACC s0' not in '10-28 13:54:37 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14e_tmpl_causal/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s1'
+FAIL   B:s14e_tmpl_logged: 2 failure(s)
+         - [logged] a template that no longer reproduces the command that ran stops the chain: 'TEMPLATE PROOF FAILED' not in '10-28 13:54:39 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14e_tmpl_logged/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s1'
+         - [logged] the proof that caught it: 'logged template differs' not in '10-28 13:54:39 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14e_tmpl_logged/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s1'
+PASS   B:s15_waker
+FAIL   B:s14e_tmpl_t0fresh: 2 failure(s)
+         - [t0fresh] a template that no longer reproduces the command that ran stops the chain: 'TEMPLATE PROOF FAILED' not in '10-28 13:54:56 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14e_tmpl_t0fresh/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s'
+         - [t0fresh] the proof that caught it: 't0fresh template differs' not in '10-28 13:54:56 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14e_tmpl_t0fresh/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s'
+FAIL   B:s14d_pins: 20 failure(s)
+         - the shipped PINS.txt is CURRENT (equal to a fresh --write-pins on the shipped code and the real pinned inputs)
+         - [control] every pin recomputes: 'PINS.txt verified' not in '10-28 13:54:31 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins'
+         - [control] the template proofs ran in a real start: 'template proof 1:' not in '10-28 13:54:31 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins'
+         - [control] proofs 2-4 ran: 'template proofs 2-4:' not in '10-28 13:54:31 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins'
+         - [basefile] the differing pin is named: 'PIN:' not in '10-28 13:54:42 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins'
+         - [basefile] the chain stops on ONE differing pin: 'PINS.txt: 1 difference(s)' not in '10-28 13:54:42 === lit1_chain start (mode real; test world 0; tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li; base tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins/reader_stub.py; ART F:/TanitAD-scratch/launch_intent_t1/w_s14d_pins'
+FAIL   B:s16_dry_run: 8 failure(s)
+         - dry-run rc ( 13:55:54 DRY: PIN: lit1_lib.py is 97579741c41e, pinned 45c943e1a938
+10-28 13:55:54 DRY: PIN: lit1_tree.py is 56443e968a9d, pinned 6e69a03debb2
+10-28 13:55:54 DRY: PINS.txt: 2 difference(s) (listed above): nothing was started
+ZZLIT1-STOP PINS.txt: 2 difference(s) (listed above): nothing was started
+): got 1, want 0
+         - the dry run's end marker: 'ZZLIT1-DRY-OK' not in "10-28 13:55:45 DRY: C: gate: 8933 MB free >= 2048 MB\n10-28 13:55:45 DRY: E: gate: 1800 MB free >= 200 MB (rollout outputs go to F:/TanitAD-scratch/launch_intent_t1_out, not E:)\n10-28 13:55:47 DRY: LAUNCH-INTENT tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li: reused (= the pinned tree's code, "
+         - no STOP: 'ZZLIT1-STOP' unexpectedly in "10-28 13:55:45 DRY: C: gate: 8933 MB free >= 2048 MB\n10-28 13:55:45 DRY: E: gate: 1800 MB free >= 200 MB (rollout outputs go to F:/TanitAD-scratch/launch_intent_t1_out, not E:)\n10-28 13:55:47 DRY: LAUNCH-INTENT tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li: reused (= the pinned tree's code, "
+         - every one of the 12 rollout argv parses with the pinned tool's own argparse: got 0, want 12
+         - pins: 'PINS.txt verified' not in "10-28 13:55:45 DRY: C: gate: 8933 MB free >= 2048 MB\n10-28 13:55:45 DRY: E: gate: 1800 MB free >= 200 MB (rollout outputs go to F:/TanitAD-scratch/launch_intent_t1_out, not E:)\n10-28 13:55:47 DRY: LAUNCH-INTENT tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li: reused (= the pinned tree's code, "
+         - template proofs: 'template proofs 2-4' not in "10-28 13:55:45 DRY: C: gate: 8933 MB free >= 2048 MB\n10-28 13:55:45 DRY: E: gate: 1800 MB free >= 200 MB (rollout outputs go to F:/TanitAD-scratch/launch_intent_t1_out, not E:)\n10-28 13:55:47 DRY: LAUNCH-INTENT tool tree F:/TanitAD-scratch/launch_intent_t1/tree_li: reused (= the pinned tree's code, "
+== CLOSING CHECKS: remote-shell stub calls (bytes logged) 0; scratch HOME entries 0; sealed shell steps 90, refused by the guard 4 (the harness arms)
+== NOT MUTATED (documented):
+   - lit1_chain.sh: the 'before' pin_check / ckpt re-hash of t1run and t0run: defence in depth: in a closed world a file can only change DURING a step, which the 'after' checks (mutated and killed) see; the before-checks guard against an outside writer between steps
+   - lit1_chain.sh: the timeout stop of the wait loop (MAXWAIT_S): mutating it makes the scenario that times out loop forever; every scenario that ends in a timeout asserts its exact message instead
+   - lit1_chain.sh: the causal-REP template proof stop (proof 2): unreachable on its own: it can only fire when proof 1 (the same causal template, other parameters) has already passed
+   - lit1_lib.py: sum-mask as a GATE: subsumed by sum-share (every n/e inside the 1/3 +- 0.02 share is inside f +- 0.02): tested with sum-share switched off in both runs, so the clause is live but never decides alone
+   - lit1_lib.py: ck-not-ctrl against a real control checkpoint: tested by passing the control's sha256 to runrecord_problems; a pulled file cannot be made to hash to a control's
+   - lit1_tree.py: verify_manifest's 'checkpoint IS a control's' clause: needs a file hashing to a control's sha256
+== SUMMARY: 129 tests passed, 5 failed; mutants 0 killed, 0 survived, 0 invalid; 391 s
+   FAILED: B:s14e_tmpl_causal, B:s14e_tmpl_logged, B:s14e_tmpl_t0fresh, B:s14d_pins, B:s16_dry_run
+SELFTEST FAIL

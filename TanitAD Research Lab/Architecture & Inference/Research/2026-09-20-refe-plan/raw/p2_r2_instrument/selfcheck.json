@@ -1,0 +1,346 @@
+{
+ "what": "instrument precondition for R2 (PREREG_P2_AMENDMENT_1.md section 3), run on the real 12,146-token tables",
+ "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot, the estimator of RESULT_SFT4.md). It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "when_utc": "2026-10-12T11:20:43Z",
+ "stage2_sft_md5": "831a8d76bb5b8be2016288b02cd29ee5",
+ "stage2_sft_unmodified": true,
+ "checks": {
+  "token_file_md5": {
+   "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+   "n": 12146,
+   "n_logs": 136,
+   "md5_ok": true,
+   "n_ok": true,
+   "logs_ok": true,
+   "ok": true,
+   "expected_prefix_in_RESULT_SFT4": "3a8b3653",
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+   "gate_all_in_export_and_unique": true
+  },
+  "r2_takes_whole_filter_path": {
+   "ok": true,
+   "n_tokens": 12146,
+   "n_export": 12146
+  },
+  "u400_table_recorded": {
+   "csv_md5": "b17c4fbac26d064f17ce790dca4d9d08",
+   "csv_sha256": "df005c4750a186de606d79a6f7cbda0fe725047a7b98bbf036b148fce62a1051",
+   "csv_rows": 12146,
+   "csv_path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_sft4_B_u400_navtest_full\\refe_stage2_sft4_B_u400_navtest_full.csv",
+   "seam_md5": "b009e941620b6cbbbe63e1dd8a94a506",
+   "seam_sha256": "efbaa1941407336bad16dc772eb02baed285b144723169068e1f0173e2caeffb",
+   "tokens_equal_token_file": true,
+   "pin_ok": true,
+   "ok": true
+  },
+  "u400_csv_reproduces_harness_summary": {
+   "harness": {
+    "NC": 98.942,
+    "DAC": 96.575,
+    "EP": 81.196,
+    "TTC": 95.6282,
+    "C": 99.9671,
+    "DDC": 97.6618,
+    "PDMS": 88.2469
+   },
+   "csv_means": {
+    "PDMS": 88.2469,
+    "NC": 98.942,
+    "DAC": 96.575,
+    "EP": 81.196,
+    "TTC": 95.6282,
+    "C": 99.9671,
+    "DDC": 97.6618
+   },
+   "ok": true
+  },
+  "families6_reproduces_banked_u400": {
+   "ok": true,
+   "families6": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\code\\families6.py",
+   "families6_md5": "964c4ae029c0da31b835c5d40b1eeb31",
+   "differences_in_families_block": 0,
+   "first_differences": [],
+   "seconds": 23
+  },
+  "self_pair_u400": {
+   "ok": true,
+   "mean": 0.0,
+   "ci95": [
+    0.0,
+    0.0
+   ],
+   "better_worse_tied": [
+    0,
+    0,
+    12146
+   ],
+   "n": 12146,
+   "n_logs": 136,
+   "subscores_all_exactly_zero": true
+  },
+  "known_value_u400_vs_deployed": {
+   "banked": {
+    "mean": 3.7908187056340563,
+    "ci95": [
+     3.0470289517787528,
+     4.542726430876108
+    ],
+    "better": 5167,
+    "worse": 3188,
+    "tied": 3791,
+    "zero_deployed": 837,
+    "zero_arm": 529,
+    "pdms_deployed": 84.45612239059116,
+    "pdms_arm": 88.24694109622521,
+    "source": "raw/2026-10-05-sft-stage2/sft4_B_u400_navtest_full/result.json (primary)"
+   },
+   "recomputed": {
+    "mean": 3.7908187056340563,
+    "ci95": [
+     3.0470289517787528,
+     4.542726430876108
+    ],
+    "better": 5167,
+    "worse": 3188,
+    "tied": 3791,
+    "zero_deployed": 837,
+    "zero_arm": 529,
+    "pdms_deployed": 84.45612239059116,
+    "pdms_arm": 88.24694109622521
+   },
+   "ok": true
+  },
+  "swap_flips_sign": {
+   "ok": true,
+   "tolerance": 1e-12,
+   "per_quantity": {
+    "PDMS": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 4.440892098500626e-16,
+     "counts_swapped": true,
+     "ok": true
+    },
+    "NC": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 2.220446049250313e-16,
+     "counts_swapped": true,
+     "ok": true
+    },
+    "DAC": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 4.440892098500626e-16,
+     "counts_swapped": true,
+     "ok": true
+    },
+    "EP": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 1.7763568394002505e-15,
+     "counts_swapped": true,
+     "ok": true
+    },
+    "TTC": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 4.440892098500626e-16,
+     "counts_swapped": true,
+     "ok": true
+    },
+    "C": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 1.734723475976807e-17,
+     "counts_swapped": true,
+     "ok": true
+    },
+    "DDC": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 1.6653345369377348e-16,
+     "counts_swapped": true,
+     "ok": true
+    }
+   },
+   "forward_primary": [
+    3.7908187056340563,
+    3.0470289517787528,
+    4.542726430876108
+   ],
+   "reverse_primary": [
+    -3.7908187056340563,
+    -4.542726430876108,
+    -3.047028951778753
+   ]
+  },
+  "decision_table_rows": {
+   "rows": {
+    "u400_vs_deployed": {
+     "outcome": "GO",
+     "expect": "GO",
+     "adverse": []
+    },
+    "deployed_vs_u400": {
+     "outcome": "NO-GO (P2 below u400)",
+     "expect": "NO-GO (P2 below u400)",
+     "adverse": [
+      "NC",
+      "DAC",
+      "EP",
+      "TTC"
+     ]
+    },
+    "u400_vs_u400": {
+     "outcome": "NO-GO (NOT PROVEN)",
+     "expect": "NO-GO (NOT PROVEN)",
+     "adverse": []
+    },
+    "u400_with_worse_EP_vs_deployed": {
+     "outcome": "NO-GO (adverse sub-score)",
+     "expect": "NO-GO (adverse sub-score)",
+     "adverse": [
+      "EP"
+     ],
+     "primary": [
+      3.7908187056340563,
+      3.0470289517787528,
+      4.542726430876108
+     ]
+    },
+    "gate_failed": {
+     "outcome": "INVALID",
+     "expect": "INVALID"
+    }
+   },
+   "ok": true
+  },
+  "pipeline_self_pair": {
+   "gates_ok": true,
+   "R2": {
+    "ok": true,
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "better_worse_tied": [
+     0,
+     0,
+     12146
+    ],
+    "n": 12146,
+    "n_logs": 136,
+    "subscores_all_exactly_zero": true
+   },
+   "outcome": "NO-GO (NOT PROVEN)",
+   "families_adverse": [],
+   "R2b_is_the_known_value": [
+    3.7908187056340563,
+    3.0470289517787528,
+    4.542726430876108
+   ],
+   "R2b_equals_banked": true,
+   "ok": true
+  },
+  "pipeline_swap": {
+   "gates_ok": true,
+   "swap": {
+    "ok": true,
+    "tolerance": 1e-12,
+    "forward_primary": [
+     3.7908187056340563,
+     3.0470289517787528,
+     4.542726430876108
+    ],
+    "reverse_primary": [
+     -3.7908187056340563,
+     -4.542726430876108,
+     -3.047028951778753
+    ]
+   },
+   "ok": true
+  }
+ },
+ "regressions": {
+  "shuffled_arm_self_pair": {
+   "what": "shuffle the arm's token->score mapping, then run the self-pair check",
+   "check_result": {
+    "ok": false,
+    "mean": 0.0,
+    "ci95": [
+     -1.161527331820008,
+     1.2465449416870993
+    ],
+    "better_worse_tied": [
+     5613,
+     5554,
+     979
+    ],
+    "n": 12146,
+    "n_logs": 136,
+    "subscores_all_exactly_zero": false
+   },
+   "required_to_fail": true,
+   "failed_as_required": true
+  },
+  "swap_with_wrong_seed": {
+   "what": "reverse read with seed 1 instead of 20260927",
+   "check_result": {
+    "ok": false,
+    "per_PDMS": {
+     "point_bitwise": true,
+     "ci_bitwise": false,
+     "ci_max_abs_dev": 0.01628629642445656,
+     "counts_swapped": true,
+     "ok": false
+    }
+   },
+   "required_to_fail": true,
+   "failed_as_required": true
+  },
+  "token_file_one_token_short": {
+   "what": "token file with the last token dropped",
+   "check_result": {
+    "md5": "264bbee8ddb0e02a73cc5542df3f10ed",
+    "n": 12145,
+    "n_logs": 136,
+    "md5_ok": false,
+    "n_ok": false,
+    "logs_ok": true,
+    "ok": false
+   },
+   "required_to_fail": true,
+   "failed_as_required": true
+  },
+  "deployed_table_passed_as_u400": {
+   "what": "the deployed CSV where the u400 pin is checked",
+   "check_result": {
+    "csv_md5": "2101bc7f2084195b2536e5ee09c6be32",
+    "pinned": "b17c4fbac26d064f17ce790dca4d9d08"
+   },
+   "required_to_fail": true,
+   "failed_as_required": true
+  },
+  "_note": "a failed check here is a PASS of the instrument: the check can fail",
+  "arm_table_one_row_short_through_the_pipeline": {
+   "what": "the pipeline with the arm's CSV minus its last row (control: the same plumbing with the whole CSV)",
+   "check_result": {
+    "control_outcome": "NO-GO (P2 below u400)",
+    "control_gates_ok": true,
+    "defective_outcome": "INVALID",
+    "defective_gates_ok": false,
+    "defective_failed_gates": [
+     "rows"
+    ]
+   },
+   "required_to_fail": true,
+   "failed_as_required": true
+  }
+ },
+ "all_checks_ok": true,
+ "all_regressions_failed_as_required": true,
+ "R2_PRECONDITION_MET": true
+}

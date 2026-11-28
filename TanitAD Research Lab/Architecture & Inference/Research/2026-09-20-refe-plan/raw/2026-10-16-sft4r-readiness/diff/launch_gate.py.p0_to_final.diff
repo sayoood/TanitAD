@@ -1,0 +1,12 @@
+diff --git a/launch_gate.py b/launch_gate.py
+index 6472928..601e3de 100644
+--- a/launch_gate.py
++++ b/launch_gate.py
+@@ -163,6 +163,7 @@ SFT4R_DATA_EXPECT = {"train_sets": 174912, "train_sets_in_bank": 174912, "heldou
+ SFT4R_DATA_MIN = {"lane_labels.teacher_lane_train": 2109}                              # PREREG_SFT4R "Changed 2": the lost run's count is the FLOOR (the seeded 15,000-set subset, the rows written by launch)
+ SFT4R_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed", "--max-updates") + AUX_HEAD_FLAGS + AUXS1_EPO_FLAGS
+ SFT4R_SUITE = [{"script": "test_sft4r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_sft4r_gate.py", "token": "ZZTEST_PASS"},
++               {"script": "test_suite_nesting.py", "token": "ZZTEST_PASS"},                                   # G-SUITE refuses to nest (gate_checks.check_suite); mutation-proven, process-bounded
+                {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+ # SFT4R_ARGV is the pod script's argv as it EXPANDS on the pod (WS=/workspace): `MODE=argv bash refe/sft4r_pod.sh`; test_sft4r_gate.py diffs the two copies.
+ SFT4R_ARGV = ("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels "

@@ -1,0 +1,84 @@
+### units (-k test_a_ or test_a2_ or test_g_omitted or test_g2_unit or test_h_cli)
+.........F....F..                                                        [100%]
+================================== FAILURES ===================================
+____ test_g_omitted_units_raises_TypeError[RefAV1._imagine_tactical_goal] _____
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x0000023002678C20>, <function unicycle_...urfaces.<locals>.<lambda> at 0x0000023002678E00>, <function RefAV1._imagine_tactical_goal at 0x00000230026D2700>), ...}
+name = 'RefAV1._imagine_tactical_goal'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g_omitted_units_raises_TypeError(new_live, name):
+        call, _ = new_live[name]
+>       assert _omission_rejected_for(call, _NEW_PARAM[name]), (
+            name + ": a call without " + _NEW_PARAM[name] + " must raise TypeError")
+E       AssertionError: RefAV1._imagine_tactical_goal: a call without units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected_for(<function _new_surfaces.<locals>.<lambda> at 0x0000023002678E00>, 'units')
+
+tests\test_refav1_units_required.py:686: AssertionError
+_ test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1._imagine_tactical_goal] _
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x0000023002678C20>, <function unicycle_...urfaces.<locals>.<lambda> at 0x0000023002678E00>, <function RefAV1._imagine_tactical_goal at 0x00000230026D2700>), ...}
+name = 'RefAV1._imagine_tactical_goal'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g2_unit_parameter_is_keyword_only_with_no_default(new_live, name):
+        _, fn = new_live[name]
+        prm = inspect.signature(fn).parameters[_NEW_PARAM[name]]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('RefAV1._imagine_tactical_goal', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:694: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[RefAV1._imagine_tactical_goal]
+FAILED tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[RefAV1._imagine_tactical_goal]
+2 failed, 15 passed, 104 deselected in 5.45s
+
+### pinned files (full)
+...............F.........F............                                   [100%]
+================================== FAILURES ===================================
+_ test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call _
+
+    def test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call():
+        """HJ-UNITS-2 (2026-10-18): ``plan``'s ``"kappa"`` default is gone -- it conditioned a
+        steer-trained predictor on a curvature whenever a caller forgot the flag. Omitting the unit
+        raises TypeError; the STATED legacy value is deterministic and is what it always was."""
+        import inspect
+        m, cfg, feats = _tiny_model()
+        with pytest.raises(TypeError, match="model_action_units"):
+            m.plan(feats, v0=8.0, plan_cfg=_pc(cfg))
+        for fn in (RefAV1.plan, RefAV1.imagined_goal):
+            prm = inspect.signature(fn).parameters["model_action_units"]
+            assert prm.default is inspect.Parameter.empty, (fn.__name__, prm.default)
+            assert prm.kind is inspect.Parameter.KEYWORD_ONLY, (fn.__name__, prm.kind)
+        prm = inspect.signature(RefAV1._imagine_tactical_goal).parameters["units"]
+>       assert prm.default is inspect.Parameter.empty and prm.kind is inspect.Parameter.KEYWORD_ONLY
+E       assert ('kappa' is <class 'inspect._empty'>)
+E        +  where 'kappa' = <Parameter "units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = <module 'inspect' from 'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\inspect.py'>.Parameter
+
+tests\test_steer_curvature_interface.py:380: AssertionError
+_______ test_A2_the_default_goal_equals_the_LEGACY_expression_verbatim ________
+
+    def test_A2_the_default_goal_equals_the_LEGACY_expression_verbatim():
+        """OFF-identity proved against the pre-2026-09-03 source line, not against
+        another spelling of the new code: ``augment_actions(ctrl, v0)[:, ::stride]
+        [:, :tac_steps]`` (refa_v1.py:1683 before the repair)."""
+        m, cfg, feats = _tiny_model()
+        _force_turn(m, cfg)
+        last, brains, v0_t = _brains_at(m, feats, 8.0)
+>       with pytest.raises(TypeError, match="units"):          # HJ-UNITS-2: no default
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE TypeError
+
+tests\test_steer_conversion_complete.py:187: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_steer_curvature_interface.py::test_D1_plan_REQUIRES_model_action_units_and_stated_kappa_is_the_legacy_call
+FAILED tests/test_steer_conversion_complete.py::test_A2_the_default_goal_equals_the_LEGACY_expression_verbatim
+2 failed, 36 passed in 8.40s
+

@@ -1,0 +1,52 @@
+{
+ "_evidence_class": "MEASURED (ours; banked frozen DINOv3 fields, dev-box CPU)",
+ "hypothesis": "H-RANK-16 / H-RANK-21",
+ "encoder": "facebook/dinov3-vitl16-pretrain-lvd1689m (frozen), patch tokens mean-pooled",
+ "instrument": "tanitad.models.v6.spectrum_report -> participation_ratio (p prop sigma^2)",
+ "n_clips": 130,
+ "n_frames_total": 5617,
+ "d": 1024,
+ "participation_full_sample": 20.516,
+ "reference_E_TRUNK_3": 40.77,
+ "code_floor_O6_PARTICIPATION_FLOOR": 8.56,
+ "by_n": {
+  "360": {
+   "participation_mean": 19.288,
+   "sd": 0.791,
+   "draws": 12
+  },
+  "720": {
+   "participation_mean": 20.117,
+   "sd": 0.442,
+   "draws": 12
+  },
+  "1440": {
+   "participation_mean": 20.228,
+   "sd": 0.327,
+   "draws": 12
+  },
+  "2160": {
+   "participation_mean": 20.364,
+   "sd": 0.203,
+   "draws": 12
+  },
+  "2880": {
+   "participation_mean": 20.517,
+   "sd": 0.142,
+   "draws": 12
+  },
+  "4320": {
+   "participation_mean": 20.525,
+   "sd": 0.085,
+   "draws": 12
+  },
+  "5617": {
+   "participation_mean": 20.516,
+   "sd": 0.0,
+   "draws": 1
+  }
+ },
+ "ratio_full_over_1440": 1.014,
+ "programme_ratio_40p77_over_8p56": 4.763,
+ "verdict": "NOT explained by n alone \u2014 at n=1440 this bank reads 20.23, not ~8.56. The floor's 8.56 came from a different corpus or a different pooling; it must be re-derived on the 12 val clips before any arm is judged against it."
+}

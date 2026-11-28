@@ -1,0 +1,1 @@
+The four banked inputs listed in SHA256.txt are not copied here: they are on the tip at raw/full/eval/ (eval_M2b_s{0,1}.json/.npz). The dry run also built a fake box-2 tree with a full code export (about 0.9 GB, under the dev-box folder dagland/motion_c/lora_pod/bpeval/dry/run1/); it stays on the dev box and is not banked.

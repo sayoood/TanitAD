@@ -1,0 +1,47 @@
+{'max_grid_dev_m': 1.4210854715202004e-14, 'max_odd_row_dev_m': 0.0013026949018239975, 'n_scenes': 3}
+.{'dev_at_logged_speed_m': 0.0, 'half_speed_lag_m': 16.873199462890625, 'tau_last_vs_i': [76, 85]}
+..native-log nav: equal 600 of 600 rows; non-follow rows 52
+.M1 nav_h_s=1: (588, 600, 52)  M2 L/R swap: (548, 600, 52)
+.scene construction: token equal 599 of 600 valid equal 600 max |d_next/100| diff 0.0
+.BLIND mean (eval-141 cache, NOT train): frames 14237 clips 141 sha256 cd6a7ab5e3c5450ec3528889b04e06e5605fea30ea9ff02a0e36d9ba47a2fcb9
+.starts: launch 81 guard 40
+.4
+.{'rows': 16, 'max_abs': 0.0}
+.{'rows_bit_identical': 16, 'n_windows': 2399, 'M1_pooled_share_a': 0.076306041536866, 'not_computed': ['S-POS@30', 'S-POS@50', 'S-POS@80']}
+.{'named_cases': 19, 'exhaustive_combinations': 1944}
+..{'clips': 4, 'states': {'LEAD': 225, 'NO_LEAD': 170, 'NOT_STRAIGHT': 185, 'NO_LABEL': 224}, 'layer3_windows': 68, 'adapter_max_dev_m': 2.930988785010413e-14, 'layer3_layer1_bit_identical': {'DK-VIOL': True, 'DK-HW': True, 'DK-TG': True}, 'layer3_layer2_max_dev': {'DK-VIOL': 0.0, 'DK-HW': 1.0658141036401503e-14, 'DK-TG': 7.105427357601002e-15}}
+.{'clips': 6, 'steps': 600, 'not_ok_cells': 849}
+.{'windows': 2399, 'pooled': {'S-POS@30': (-1.7428, -2.2737, -1.2861, 2321), 'S-POS@50': (-4.5331, -5.6695, -3.5422, 2313), 'S-POS@80': (-9.5624, -11.6843, -7.6124, 2290)}, 'n_scored': {'tick0': [2322, 2319, 2294], 'tick1': [2321, 2313, 2290], 'tick2': [2170, 2159, 2137]}, 'off_route_cells': 148}
+.{'X1': (0.0488, 0.0465, 0.0511), 'X2': (0.0304, 0.0282, 0.0326), 'n_scenes': 42}
+.RED   DK         mutation no_rotation     : DK layer 2: 126b3a97 adapter changes a window state
+assert False
+RED   DK         mutation ego_time_shift  : DK layer 2: 126b3a97 adapter changes a window state
+assert False
+RED   DK         mutation width_as_length : DK layer 2: 126b3a97 lead track dev 2.84e-14 m, length dev 2.06
+assert (2.842170943040401e-14 <= 1e-09 and 2.0
+RED   DK         mutation stale           : DK layer 1: b05195bf differs from the banked block in ['leads'] (counts_equal True)
+assert (not ['leads'])
+RED   DK         mutation ts_spacing      : DK layer 1: 126b3a97 differs from the banked block in ['state', 'leads', 'lead_lens', 'is_lead'] (counts_equal
+RED   rc         mutation psi_deg         : rc pin: {'126b3a97': {'n_steps': 100, 'ok_equal': True, 'rc_bit_identical': False, 'n_not_ok_cells': 0}, 'c8a3
+RED   rc         mutation x_shift         : rc pin: {'126b3a97': {'n_steps': 100, 'ok_equal': True, 'rc_bit_identical': False, 'n_not_ok_cells': 0}, 'c8a3
+RED   S-POS      mutation kap_sign        : S-POS: per-window arrays differ from the reader: {'CTRV_pos_err_m_bit_identical': 115.76662381949279, 'CTRV_he
+RED   S-POS      mutation gt_frame        : S-POS: per-window arrays differ from the reader: {'S_pos_err_m_bit_identical': 129.26450759621673, 'S_head_err
+RED   S-POS      mutation no_onroute      : S-POS: per-window arrays differ from the reader: {'S_pos_err_m_bit_identical': inf, 'S_head_err_deg_bit_identi
+RED   S-POS      mutation tick0_in        : S-POS pooled S-POS@30 [-1.6822, -2.1102, -1.2992] != banked [-1.7428, -2.2737, -1.2861]
+assert [-1.6822, -2.11
+RED   S-POS      mutation s_frame         : S-POS: per-window arrays differ from the reader: {'S_pos_err_m_bit_identical': 147.66548163844683, 'S_head_err
+RED   bootstrap  mutation eid_window      : X1: the bootstrap clusters 84 units; the launch scenes are 42 (eid = scene)
+assert 84 == 42
+RED   bootstrap  mutation mask_ignored    : X1: the bootstrap clusters 62 units; the launch scenes are 42 (eid = scene)
+assert 62 == 42
+RED   bootstrap  mutation no_guard        : arms with different (scene, f0) lists were contrasted
+assert False
+.{'records': 12, 'n_valid': {'ADE6': 12, 'speed MAE': 12, 'along-track MAE': 12, 'accel MAE': 12, 'heading MAE': 12, 'yaw-rate MAE': 12, 'curvature MAE': 12, 'cross-track MAE': 12, 'L1 lateral-accel MAE': 12, 'L2 curvature MAE (GT>=5.2)': 11, 'M1 crawl share': 11, 'TAC-LAT': 12, 'TAC-LON': 12, 'DK-HW': 6, 'DK-TG': 4, 'DK-VIOL': 4, 'S-POS@30': 11, 'S-POS@50': 8, 'S-POS@80': 4}, 'states': {'LEAD': 6, 'NO_LEAD': 0, 'NOT_STRAIGHT': 6, 'NO_LABEL': 0}, 'spos_max': {'S-POS@30': -0.20371539909585926, 'S-POS@50': -0.46223757902398493, 'S-POS@80': -2.9539154541503367}, 'dev': {'ADE6': 0.0, 'speed MAE': 0.0, 'along-track MAE': 0.0, 'accel MAE': 0.0, 'heading MAE': 0.0, 'yaw-rate MAE': 0.0, 'curvature MAE': 0.0, 'cross-track MAE': 0.0, 'TAC-LAT': 0.0, 'TAC-LON': 0.0, 'DK-HW': 0.0, 'DK-TG': 0.0}}
+.RED   records    mutation ckpt_swapped_xy : S-POS@30: an oracle S reads worse than CTRV by 42.7 m
+assert 42.717472967762404 <= 0.001
+RED   records    mutation exec_offset     : ADE6: the oracle reads 0.707 from its perfect value
+assert 0.7071067811865477 <= 1e-06
+......Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  24%|##4       | 101/415 [00:00<00:00, 982.38it/s]Loading weights:  49%|####8     | 203/415 [00:00<00:00, 922.89it/s]Loading weights:  73%|#######3  | 305/415 [00:00<00:00, 948.14it/s]Loading weights:  98%|#########8| 407/415 [00:00<00:00, 959.01it/s]Loading weights: 100%|##########| 415/415 [00:00<00:00, 971.35it/s]
+.
+26 passed in 653.04s (0:10:53)
+EXIT 0

@@ -1,0 +1,13 @@
+PREREG_V8F_KSCORE instruments - deliverable manifest (nothing staged, committed or pushed anywhere; built against tip 4a59a711; updated 2026-10-25 for PREREG Amendment 1 at tip ff58be9d: COSTS DYNAMICS row, FLAT as default predecessor)
+OUT = C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/kscore
+Every NEW file, with its repo-relative path (copy OUT/tree/<path> to <repo>/<path>); sha256 prefix, lines:
+
+  810a1eec50e58302  1479  stack/scripts/v8f_kscore.py          stages hyps | fit (+ scorer launch gate) | eval | read ; helpers mkjob | cmdline | assert-gate
+  360b671250105ae2   183  stack/scripts/chain_v8f_kscore.sh    box-2 chain (--dry-run prints every stage's exact command)
+  a746951cc4caa7f3   777  stack/tests/test_v8f_kscore.py       28 tests, all green on CPU (OUT/pytest_log.txt ; full log OUT/pytest_log_full.txt)
+
+The ONE edit to an existing file is a patch, not applied:
+  C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/kscore/WIRING.patch     adds v8f_kscore to kill_ours() in TanitAD Research Lab/.../2026-10-17-v8f-mini/code/box2_ops/v8f_guard.sh (git apply --check OK on the tip's file)
+
+Other files in OUT (not deliverables): HANDOFF.md, FILES.txt, pytest_log*.txt, khyp_ref/ (reference copies read for parity), work/ (my splice scripts), pt_tmp/ (pytest basetemp, deletable),
+tree/ (an export of the repo subset the tests need; every file in it other than the three above is a read-only reference copy of the tip).

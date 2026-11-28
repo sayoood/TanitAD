@@ -1,0 +1,43 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "note": "scale-free: the action response is normalised by the predictor's OWN delta, not by latent movement",
+ "arms": {
+  "champ30k": {
+   "delta_norm": 10.91741,
+   "true_move_norm": 41.32415,
+   "delta_over_move": 0.26419,
+   "relative_action_response": 0.7194,
+   "old_divergence_over_movement": 0.0709
+  },
+  "lewm": {
+   "delta_norm": 0.05398,
+   "true_move_norm": 2.68148,
+   "delta_over_move": 0.02013,
+   "relative_action_response": 0.5426,
+   "old_divergence_over_movement": 0.004
+  },
+  "lewm_o1": {
+   "delta_norm": 1.58302,
+   "true_move_norm": 0.09014,
+   "delta_over_move": 17.56262,
+   "relative_action_response": 1.164,
+   "old_divergence_over_movement": 1031.76
+  },
+  "lewm_o1_detach": {
+   "delta_norm": 7.44393,
+   "true_move_norm": 2.08267,
+   "delta_over_move": 3.57422,
+   "relative_action_response": 0.7806,
+   "old_divergence_over_movement": 254.5149
+  },
+  "fixed": {
+   "delta_norm": 2.27538,
+   "true_move_norm": 0.08833,
+   "delta_over_move": 25.75995,
+   "relative_action_response": 0.8358,
+   "old_divergence_over_movement": 925.288
+  }
+ },
+ "verdict": "champ30k relative action response 0.7194 => the predictor IS action-conditioned; the earlier 0.0000 came from its DELTA being 0.26419x the true movement, i.e. an OUTPUT-MAGNITUDE collapse, not invariance."
+}

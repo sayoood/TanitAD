@@ -1,0 +1,115 @@
+[kingate] ckpt md5 b1ed7075ff730d0993d2eaa3c86f6b56 (32 hex)
+[v3] nav_from_v7: follow 90 / left 13 / right 38, missing 0 (of 141 clips; md5=aa12c948f062181c3297265b51526ec5)
+[kingate] pool=24114 windows device=cpu step=40284
+[kingate] draw A 400 w / 70 ep   draw B 400 w / 70 ep   episode-overlap 0
+[kingate] === draw A : 400 windows ===
+  [4/400] 19s
+  [44/400] 125s
+  [84/400] 225s
+  [124/400] 315s
+  [164/400] 424s
+  [204/400] 534s
+  [244/400] 635s
+  [284/400] 737s
+  [324/400] 838s
+  [364/400] 945s
+[kingate] banked draw A -> C:/Users/Admin/kingate/raw/kingate_bank_drawA.npz (3.5 MB)
+[kingate] === draw B : 400 windows ===
+  [4/400] 10s
+  [44/400] 71s
+  [84/400] 179s
+  [124/400] 271s
+  [164/400] 371s
+  [204/400] 483s
+  [244/400] 583s
+  [284/400] 711s
+  [324/400] 800s
+  [364/400] 912s
+
+=== G U A R D S ===
+  G-CKPT PASS  md5=b1ed7075ff73 step=40284
+  G-DET  PASS  anchor_traj_identical=True max|d|=0.000e+00 sel_idx_identical=True
+         V3 -> STRUCTURAL IDENTITY (decode deterministic at eval on this config) -- an inference-seed replicate carries no information and is NOT an estimate of zero
+  G-OFF(A) PASS  index_identical=True disagree=0/400  metrics_all_zero=True
+    as-published control (ranking = sel_score): FAIL  disagree=35/400 (8.75 pct)
+  G-CTRL(A) PASS oracle d_ade=-0.2423 sep=True
+  G-OFF(B) PASS  index_identical=True disagree=0/400  metrics_all_zero=True
+    as-published control (ranking = sel_score): FAIL  disagree=29/400 (7.25 pct)
+  G-CTRL(B) PASS oracle d_ade=-0.2851 sep=True
+  G-REP  PASS  A=400w/70ep B=400w/70ep episode-overlap=0
+
+=== DRAW A : SELECTED-PATH SAFETY vs ADE  (n=400w / 70ep) T0 ===
+  rule          ade_m     d_ade   sep |  envelope     d_env   sep |   peak_g    d_pkg  agree
+  model        0.4486      +nan     - |    0.1075      +nan     - |   0.1718     +nan  1.000
+  gate1        0.4486   +0.0000 False |    0.1075   +0.0000 False |   0.1718  +0.0000  1.000
+  gate2        0.4550   +0.0064 False |    0.0775   -0.0300  True |   0.1340  -0.0378  0.510
+  gate4        0.4485   -0.0001 False |    0.0650   -0.0425  True |   0.1150  -0.0568  0.300
+  gate8        0.4875   +0.0388 False |    0.0675   -0.0400  True |   0.1084  -0.0634  0.210
+  gate16       0.4953   +0.0467  True |    0.0675   -0.0400  True |   0.1066  -0.0652  0.190
+  gate32       0.5020   +0.0534  True |    0.0675   -0.0400  True |   0.1061  -0.0657  0.185
+  gate128      0.5020   +0.0534  True |    0.0675   -0.0400  True |   0.1061  -0.0657  0.185
+  gateAP1      0.4351   -0.0135  True |    0.1075   +0.0000 False |   0.1691  -0.0027  0.912
+  gateAP2      0.4600   +0.0113 False |    0.0750   -0.0325  True |   0.1306  -0.0412  0.468
+  kin_only     0.5020   +0.0534  True |    0.0675   -0.0400  True |   0.1061  -0.0657  0.185
+  oracle       0.2063   -0.2423  True |    0.1300   +0.0225 False |   0.1851  +0.0133  0.215
+
+=== DRAW B : SELECTED-PATH SAFETY vs ADE  (n=400w / 70ep) T0 ===
+  rule          ade_m     d_ade   sep |  envelope     d_env   sep |   peak_g    d_pkg  agree
+  model        0.5211      +nan     - |    0.1100      +nan     - |   0.1809     +nan  1.000
+  gate1        0.5211   +0.0000 False |    0.1100   +0.0000 False |   0.1809  +0.0000  1.000
+  gate2        0.5112   -0.0099 False |    0.0900   -0.0200  True |   0.1480  -0.0330  0.520
+  gate4        0.5543   +0.0332 False |    0.0675   -0.0425  True |   0.1234  -0.0576  0.273
+  gate8        0.5839   +0.0628  True |    0.0625   -0.0475  True |   0.1167  -0.0643  0.172
+  gate16       0.5912   +0.0701  True |    0.0625   -0.0475  True |   0.1131  -0.0678  0.150
+  gate32       0.5950   +0.0740  True |    0.0625   -0.0475  True |   0.1126  -0.0683  0.145
+  gate128      0.5969   +0.0759  True |    0.0625   -0.0475  True |   0.1125  -0.0684  0.145
+  gateAP1      0.5148   -0.0063 False |    0.1075   -0.0025 False |   0.1713  -0.0097  0.927
+  gateAP2      0.5102   -0.0109 False |    0.0900   -0.0200  True |   0.1460  -0.0350  0.490
+  kin_only     0.5969   +0.0759  True |    0.0625   -0.0475  True |   0.1125  -0.0684  0.145
+  oracle       0.2360   -0.2851  True |    0.1625   +0.0525  True |   0.2125  +0.0316  0.210
+
+=== THE THREE-PART QUOTABILITY TEST (SPEC section 5) : gate2 ===
+  metric            delta_A    delta_B  rep_floor   sign  sep_floor verdict
+  ade_m             +0.0064    -0.0099     0.0163   FLIP      1e-03 WITHIN-NOISE
+  ade8_m            +0.0064    -0.0099     0.0163   FLIP      1e-03 WITHIN-NOISE
+  fde_m             +0.0054    -0.0083     0.0137   FLIP      1e-03 WITHIN-NOISE
+  envelope          -0.0300    -0.0200     0.0100   same      1e-04 QUOTABLE
+  peak_g            -0.0378    -0.0330     0.0048   same      1e-03 QUOTABLE
+  infeasible        -0.0300    -0.0200     0.0100   same      1e-04 QUOTABLE
+  kamm_over         -0.0100    -0.0050     0.0050   same      1e-04 WITHIN-NOISE
+  off_reach         +0.0000    +0.0000     0.0000   same      1e-04 UNDETECTABLE-DOWNWARD
+  flagged           -0.0300    -0.0200     0.0100   same      1e-04 QUOTABLE
+  contact           +0.0025    +0.0000     0.0025   FLIP      1e-04 UNDETECTABLE-DOWNWARD
+  ttc_below         +0.0000    +0.0000     0.0000   same      1e-04 WITHIN-NOISE
+
+=== FOUR FAMILIES on the SELECTED path, per family, NEVER pooled (T0) ===
+  -- draw A, gate2 - model (paired episode-cluster bootstrap) --
+     LAT_cross_mae_m          -0.00000  [-0.00580, +0.00560]  sep=False n=400/70ep
+     LAT_heading_mae_rad      +0.02280  [-0.00340, +0.05620]  sep=False n=400/70ep
+     LAT_kappa_mae_1pm        -0.09370  [-0.22130, +0.01910]  sep=False n=400/70ep
+     LAT_latacc_max_mps2      -0.06470  [-0.13830, +0.02050]  sep=False n=400/70ep
+     LAT_yawrate_mae_radps    -0.04570  [-0.11400, +0.01610]  sep=False n=400/70ep
+     LONG_accel_mae_mps2      -0.18460  [-0.28400, -0.10140]  sep=True  n=400/70ep
+     LONG_along_mae_m         +0.00630  [-0.01130, +0.02350]  sep=False n=400/70ep
+     LONG_speed_mae_mps       -0.01860  [-0.05270, +0.01390]  sep=False n=400/70ep
+     STRATEGIC: status=UNAVAILABLE defect=False n=400
+       reason  : PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'w
+       identity: route_head re-run by the gate = False ; route_logits identical across rules = True ; route~nav echo = 0.2100
+     TACTICAL(model): lat=None lon=None 5way=None goal=None n=400
+     TACTICAL(gate2): lat=None lon=None 5way=None goal=None n=400
+  -- draw B, gate2 - model (paired episode-cluster bootstrap) --
+     LAT_cross_mae_m          -0.00380  [-0.01030, +0.00170]  sep=False n=400/70ep
+     LAT_heading_mae_rad      +0.00920  [-0.00530, +0.02630]  sep=False n=400/70ep
+     LAT_kappa_mae_1pm        +0.15190  [-0.01130, +0.37690]  sep=False n=400/70ep
+     LAT_latacc_max_mps2      -0.05000  [-0.11940, +0.01120]  sep=False n=400/70ep
+     LAT_yawrate_mae_radps    +0.07610  [-0.00720, +0.18940]  sep=False n=400/70ep
+     LONG_accel_mae_mps2      -0.14020  [-0.23270, -0.06290]  sep=True  n=400/70ep
+     LONG_along_mae_m         -0.00720  [-0.02800, +0.01400]  sep=False n=400/70ep
+     LONG_speed_mae_mps       -0.02160  [-0.05820, +0.01160]  sep=False n=400/70ep
+     STRATEGIC: status=UNAVAILABLE defect=False n=400
+       reason  : PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'w
+       identity: route_head re-run by the gate = False ; route_logits identical across rules = True ; route~nav echo = 0.1850
+     TACTICAL(model): lat=None lon=None 5way=None goal=None n=400
+     TACTICAL(gate2): lat=None lon=None 5way=None goal=None n=400
+
+[kingate] wrote C:/Users/Admin/kingate/raw/kingate_base.json

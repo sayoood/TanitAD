@@ -1,0 +1,59 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "TRAINING SET",
+ "parity": "NON-PARITY (24 eps) - feasibility pilot, NOT the pre-registered read",
+ "design": "matched pair: same corpus, seed, steps; differ ONLY in --w-o13-ego (0.1 vs 0)",
+ "steps": 3000,
+ "block": 500,
+ "o13_excess_median": {
+  "0-500": 0.188731,
+  "500-1000": 0.162468,
+  "1000-1500": 0.00301,
+  "1500-2000": 0.114164,
+  "2000-2500": 0.459633,
+  "2500-3000": 0.245745
+ },
+ "o13_beats_passthrough_median": {
+  "0-500": 0.231298,
+  "500-1000": 0.233215,
+  "1000-1500": 0.053466,
+  "1500-2000": 0.108499,
+  "2000-2500": 0.453732,
+  "2500-3000": 0.263467
+ },
+ "o13_shuffled_median": {
+  "0-500": 1.128831,
+  "500-1000": 1.264091,
+  "1000-1500": 1.068447,
+  "1500-2000": 1.267316,
+  "2000-2500": 1.440483,
+  "2500-3000": 0.986416
+ },
+ "o5_o13_arm_median": {
+  "0-500": 0.057514,
+  "500-1000": 0.049559,
+  "1000-1500": 0.03389,
+  "1500-2000": 0.025968,
+  "2000-2500": 0.022829,
+  "2500-3000": 0.019501
+ },
+ "o5_control_median": {
+  "0-500": 0.051917,
+  "500-1000": 0.025141,
+  "1000-1500": 0.014785,
+  "1500-2000": 0.01104,
+  "2000-2500": 0.007881,
+  "2500-3000": 0.006669
+ },
+ "o5_relative_pct": {
+  "0-500": 10.8,
+  "500-1000": 97.1,
+  "1000-1500": 129.2,
+  "1500-2000": 135.2,
+  "2000-2500": 189.7,
+  "2500-3000": 192.4
+ },
+ "verdict": "DEGENERATE - o13_excess positive in ALL blocks while o5 degrades monotonically to +192.4%. O11's failure repeating, ten times worse. Per PREREG_O13_EGO_DYNAMICS.md the DEGENERATE branch prescribes ABANDONMENT, NOT RETUNING. o13p30k NOT launched.",
+ "why_the_control_was_essential": "the o13 arm's OWN o5 falls monotonically 0.0575 -> 0.0195 and looks like healthy training; the matched control reaches 0.0067. A falling loss curve is evidence only RELATIVE TO A MATCHED ARM."
+}

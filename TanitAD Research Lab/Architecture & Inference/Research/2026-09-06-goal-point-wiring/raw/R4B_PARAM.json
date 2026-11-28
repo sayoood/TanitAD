@@ -1,0 +1,4355 @@
+{
+  "_is": "R4b: is the `os - ha0_ext` SHAPE gap a DECODER OUTPUT PARAMETERISATION defect? Re-parameterises the emitted refinement `off = emitted - anchor` on the banked refcv4b T1 dump. ZERO GPU.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 (self-action open loop; refcv4b's decoder is deterministic at inference, D-REFCV4B-SEED-SCOPE)",
+  "dump": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\f407bc82-7969-457c-a947-6be2014fee89\\scratchpad\\gp\\navflip_dump",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "dt_s": 0.5,
+  "grid": "the 2 s SCORED grid, 4 waypoints at 0.5 s",
+  "estimator": "paired episode-cluster bootstrap over the 141 episodes, steps RE-POOLED inside each draw (n_boot=2000, seed=0)",
+  "variance_answered": "would another draw of EPISODES say this? \u2014 NOT another training run (H-ESTIM-SEED-1) and NOT another inference sample. Every arm here is ONE checkpoint's OWN output re-parameterised, so the two operands of every margin come from the SAME forward pass: there is no training or sampling variance to answer for.",
+  "geometry_source": "taniteval.four_families._seq_geometry \u2014 imported, not re-derived",
+  "controls": {
+    "slice_identity_plan_full_4slots_vs_os_maxabs": 0.0,
+    "K0_slice_identity": "PASS",
+    "K1_shrink0_IS_anchor": "PASS",
+    "K1_shrink1_IS_emitted": "PASS",
+    "K2_zero_offset_IS_anchor": "PASS",
+    "K3_known_values": {
+      "ade_ha0": {
+        "known": 0.6723,
+        "got": 0.672286,
+        "d": -1.4e-05,
+        "verdict": "PASS"
+      },
+      "ade_ha0_ext": {
+        "known": 0.2874,
+        "got": 0.287395,
+        "d": -5e-06,
+        "verdict": "PASS"
+      },
+      "ade_ha": {
+        "known": 0.2996,
+        "got": 0.299618,
+        "d": 1.8e-05,
+        "verdict": "PASS"
+      },
+      "ade_emitted": {
+        "known": 0.2965,
+        "got": 0.296469,
+        "d": -3.1e-05,
+        "verdict": "PASS"
+      },
+      "ade_anchor": {
+        "known": 0.4281,
+        "got": 0.428137,
+        "d": 3.7e-05,
+        "verdict": "PASS"
+      },
+      "curv_emitted": {
+        "known": 0.00815,
+        "got": 0.00815,
+        "d": 0.0,
+        "verdict": "PASS"
+      },
+      "curv_anchor": {
+        "known": 0.004019,
+        "got": 0.004019,
+        "d": -0.0,
+        "verdict": "PASS"
+      },
+      "curv_ha0": {
+        "known": 0.006802,
+        "got": 0.006802,
+        "d": -0.0,
+        "verdict": "PASS"
+      },
+      "head_deg_emitted": {
+        "known": 1.2964,
+        "got": 1.2964,
+        "d": -0.0,
+        "verdict": "PASS"
+      },
+      "head_deg_anchor": {
+        "known": 1.7665,
+        "got": 1.7665,
+        "d": -0.0,
+        "verdict": "PASS"
+      },
+      "cross_emitted": {
+        "known": 0.0978,
+        "got": 0.097827,
+        "d": 2.7e-05,
+        "verdict": "PASS"
+      },
+      "cross_anchor": {
+        "known": 0.1754,
+        "got": 0.175355,
+        "d": -4.5e-05,
+        "verdict": "PASS"
+      }
+    },
+    "K3_verdict": "PASS"
+  },
+  "per_arm": {
+    "anchor": {
+      "ADE_2s_m": 0.428137,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.004019,
+        "heading_mae_deg": 1.7665,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1754,
+        "n_steps_curvature": 13591
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.3373,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.347775
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "emitted": {
+      "ADE_2s_m": 0.296469,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.00815,
+        "heading_mae_deg": 1.2964,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0978,
+        "n_steps_curvature": 13558
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2544,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.289983
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "shrink_0.25": {
+      "ADE_2s_m": 0.38046,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.004456,
+        "heading_mae_deg": 1.5651,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1479,
+        "n_steps_curvature": 13586
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.3064,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.32218
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "shrink_0.50": {
+      "ADE_2s_m": 0.339926,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005326,
+        "heading_mae_deg": 1.4221,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.124,
+        "n_steps_curvature": 13576
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2807,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.302697
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "shrink_0.75": {
+      "ADE_2s_m": 0.310089,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.006544,
+        "heading_mae_deg": 1.3276,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1058,
+        "n_steps_curvature": 13568
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2623,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.291491
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "poly_0": {
+      "ADE_2s_m": 0.364851,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.012097,
+        "heading_mae_deg": 2.179,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1429,
+        "n_steps_curvature": 13571
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2932,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.386063
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "poly_1": {
+      "ADE_2s_m": 0.296703,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005449,
+        "heading_mae_deg": 1.2793,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0987,
+        "n_steps_curvature": 13560
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.254,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.283537
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "poly_2": {
+      "ADE_2s_m": 0.29569,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005473,
+        "heading_mae_deg": 1.2401,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0973,
+        "n_steps_curvature": 13561
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2539,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.284903
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ridge_0.3": {
+      "ADE_2s_m": 0.295114,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.00525,
+        "heading_mae_deg": 1.2296,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.097,
+        "n_steps_curvature": 13564
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2533,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.282173
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ridge_1": {
+      "ADE_2s_m": 0.29548,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.004994,
+        "heading_mae_deg": 1.2404,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0976,
+        "n_steps_curvature": 13563
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2534,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.281768
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ridge_3": {
+      "ADE_2s_m": 0.296083,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005152,
+        "heading_mae_deg": 1.2598,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0981,
+        "n_steps_curvature": 13561
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2537,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.282513
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ridge_10": {
+      "ADE_2s_m": 0.296481,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005329,
+        "heading_mae_deg": 1.2723,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0985,
+        "n_steps_curvature": 13560
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2539,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.283157
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ridge_30": {
+      "ADE_2s_m": 0.296625,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005405,
+        "heading_mae_deg": 1.2769,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0986,
+        "n_steps_curvature": 13560
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2539,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.283402
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ridge_100": {
+      "ADE_2s_m": 0.296679,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.005435,
+        "heading_mae_deg": 1.2786,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0987,
+        "n_steps_curvature": 13560
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.254,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.283496
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ORACLE_poly_0": {
+      "ADE_2s_m": 0.27428,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.01587,
+        "heading_mae_deg": 2.3052,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1151,
+        "n_steps_curvature": 13551
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2132,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.451128
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ORACLE_poly_1": {
+      "ADE_2s_m": 0.058026,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.006284,
+        "heading_mae_deg": 0.4563,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0234,
+        "n_steps_curvature": 13583
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.046,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.120272
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ORACLE_poly_2": {
+      "ADE_2s_m": 0.00593,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.001423,
+        "heading_mae_deg": 0.0819,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0028,
+        "n_steps_curvature": 13598
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.0043,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.015902
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ORACLE_poly_3": {
+      "ADE_2s_m": 0.0,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.0,
+        "heading_mae_deg": 0.0,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0,
+        "n_steps_curvature": 13609
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.0,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.0
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ROUGHEN_hf_x2": {
+      "ADE_2s_m": 0.302553,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.013562,
+        "heading_mae_deg": 1.5144,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1019,
+        "n_steps_curvature": 13549
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2585,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.312411
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ha0": {
+      "ADE_2s_m": 0.672286,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.006802,
+        "heading_mae_deg": 2.7799,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.3132,
+        "n_steps_curvature": 13518
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.4705,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.487991
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ha0_ext": {
+      "ADE_2s_m": 0.287395,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.003712,
+        "heading_mae_deg": 1.4322,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.107,
+        "n_steps_curvature": 13500
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2341,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.254043
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "ha": {
+      "ADE_2s_m": 0.299618,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.00403,
+        "heading_mae_deg": 1.5489,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.1226,
+        "n_steps_curvature": 13500
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2348,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.254046
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "FEASIBLE_emitted": {
+      "ADE_2s_m": 0.298355,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.007178,
+        "heading_mae_deg": 1.3357,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0991,
+        "n_steps_curvature": 13558
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2556,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.289978
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "FEASIBLE_ridge_1": {
+      "ADE_2s_m": 0.296747,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.004694,
+        "heading_mae_deg": 1.2949,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0985,
+        "n_steps_curvature": 13563
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2542,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.281768
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    },
+    "FEASIBLE_ridge_3": {
+      "ADE_2s_m": 0.297527,
+      "LATERAL": {
+        "curvature_mae_1pm": 0.004789,
+        "heading_mae_deg": 1.3228,
+        "yaw_rate_mae_dps": null,
+        "cross_mae_m": 0.0992,
+        "n_steps_curvature": 13561
+      },
+      "LONGITUDINAL": {
+        "speed_mae_ms": null,
+        "speed_mae_ms_UNAVAILABLE_REASON": "ff.longitudinal returns None without a lead-agent block; see paired__vs_* -> speed_mae_ms for the step-wise form",
+        "along_mae_m": 0.2546,
+        "accel_mae_ms2": null,
+        "speed_mae_ms_stepwise": 0.282513
+      },
+      "TACTICAL": {
+        "lat_accuracy": null,
+        "lon_accuracy": null
+      },
+      "STRATEGIC": "NOT COMPUTABLE on this dump: no route/goal label travels with it (ff.strategic needs the option set); reported per family with its reason, never dropped."
+    }
+  },
+  "paired__vs_EMITTED": {
+    "anchor": {
+      "ADE_2s_m": {
+        "delta": 0.131669,
+        "ci95": [
+          0.118232,
+          0.145772
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.004132,
+        "ci95": [
+          -0.006122,
+          -0.002482
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": 0.007601,
+        "ci95": [
+          0.005535,
+          0.009732
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": 0.077528,
+        "ci95": [
+          0.0622,
+          0.092737
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.057793,
+        "ci95": [
+          0.048148,
+          0.067472
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.4355,
+        "ci95": [
+          0.3171,
+          0.5576
+        ],
+        "separated": true
+      }
+    },
+    "shrink_0.25": {
+      "ADE_2s_m": {
+        "delta": 0.083992,
+        "ci95": [
+          0.074311,
+          0.093972
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003834,
+        "ci95": [
+          -0.005494,
+          -0.002445
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": 0.004362,
+        "ci95": [
+          0.002899,
+          0.005858
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": 0.05007,
+        "ci95": [
+          0.038957,
+          0.060705
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.032197,
+        "ci95": [
+          0.0249,
+          0.039598
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.2499,
+        "ci95": [
+          0.1661,
+          0.3356
+        ],
+        "separated": true
+      }
+    },
+    "shrink_0.50": {
+      "ADE_2s_m": {
+        "delta": 0.043457,
+        "ci95": [
+          0.037411,
+          0.049758
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003064,
+        "ci95": [
+          -0.004274,
+          -0.002045
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": 0.001798,
+        "ci95": [
+          0.000894,
+          0.002693
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": 0.026149,
+        "ci95": [
+          0.019392,
+          0.03262
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.012714,
+        "ci95": [
+          0.00797,
+          0.017701
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.103,
+        "ci95": [
+          0.0512,
+          0.1543
+        ],
+        "separated": true
+      }
+    },
+    "shrink_0.75": {
+      "ADE_2s_m": {
+        "delta": 0.01362,
+        "ci95": [
+          0.010641,
+          0.016636
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.001832,
+        "ci95": [
+          -0.002526,
+          -0.001245
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": 0.000143,
+        "ci95": [
+          -0.000241,
+          0.000515
+        ],
+        "separated": false,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": 0.00801,
+        "ci95": [
+          0.005188,
+          0.010676
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.001508,
+        "ci95": [
+          -0.000846,
+          0.003917
+        ],
+        "separated": false
+      },
+      "heading_mae_deg": {
+        "delta": 0.0082,
+        "ci95": [
+          -0.0138,
+          0.0295
+        ],
+        "separated": false
+      }
+    },
+    "poly_0": {
+      "ADE_2s_m": {
+        "delta": 0.068382,
+        "ci95": [
+          0.061705,
+          0.075321
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.002635,
+        "ci95": [
+          0.000431,
+          0.00484
+        ],
+        "separated": true,
+        "n_steps": 13540
+      },
+      "heading_mae_rad": {
+        "delta": 0.015505,
+        "ci95": [
+          0.012399,
+          0.018885
+        ],
+        "separated": true,
+        "n_steps": 18118
+      },
+      "cross_mae_m": {
+        "delta": 0.045118,
+        "ci95": [
+          0.037781,
+          0.052665
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.09608,
+        "ci95": [
+          0.085114,
+          0.107303
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.8884,
+        "ci95": [
+          0.7104,
+          1.082
+        ],
+        "separated": true
+      }
+    },
+    "poly_1": {
+      "ADE_2s_m": {
+        "delta": 0.000234,
+        "ci95": [
+          -0.000185,
+          0.0007
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002664,
+        "ci95": [
+          -0.00429,
+          -0.001376
+        ],
+        "separated": true,
+        "n_steps": 13553
+      },
+      "heading_mae_rad": {
+        "delta": -0.000314,
+        "ci95": [
+          -0.000788,
+          0.000165
+        ],
+        "separated": false,
+        "n_steps": 18141
+      },
+      "cross_mae_m": {
+        "delta": 0.000872,
+        "ci95": [
+          0.000418,
+          0.001405
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.006446,
+        "ci95": [
+          -0.008244,
+          -0.004736
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.018,
+        "ci95": [
+          -0.0451,
+          0.0095
+        ],
+        "separated": false
+      }
+    },
+    "poly_2": {
+      "ADE_2s_m": {
+        "delta": -0.000778,
+        "ci95": [
+          -0.000912,
+          -0.000653
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002685,
+        "ci95": [
+          -0.003735,
+          -0.001803
+        ],
+        "separated": true,
+        "n_steps": 13556
+      },
+      "heading_mae_rad": {
+        "delta": -0.000997,
+        "ci95": [
+          -0.00127,
+          -0.000752
+        ],
+        "separated": true,
+        "n_steps": 18143
+      },
+      "cross_mae_m": {
+        "delta": -0.000564,
+        "ci95": [
+          -0.000698,
+          -0.000442
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.00508,
+        "ci95": [
+          -0.0062,
+          -0.004081
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0571,
+        "ci95": [
+          -0.0728,
+          -0.0431
+        ],
+        "separated": true
+      }
+    },
+    "ridge_0.3": {
+      "ADE_2s_m": {
+        "delta": -0.001355,
+        "ci95": [
+          -0.001534,
+          -0.001182
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003003,
+        "ci95": [
+          -0.004203,
+          -0.002041
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": -0.001191,
+        "ci95": [
+          -0.001524,
+          -0.000895
+        ],
+        "separated": true,
+        "n_steps": 18144
+      },
+      "cross_mae_m": {
+        "delta": -0.000778,
+        "ci95": [
+          -0.00094,
+          -0.000617
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.00781,
+        "ci95": [
+          -0.009133,
+          -0.006623
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0682,
+        "ci95": [
+          -0.0873,
+          -0.0513
+        ],
+        "separated": true
+      }
+    },
+    "ridge_1": {
+      "ADE_2s_m": {
+        "delta": -0.000989,
+        "ci95": [
+          -0.001255,
+          -0.000722
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003188,
+        "ci95": [
+          -0.004674,
+          -0.002011
+        ],
+        "separated": true,
+        "n_steps": 13556
+      },
+      "heading_mae_rad": {
+        "delta": -0.000987,
+        "ci95": [
+          -0.001393,
+          -0.000612
+        ],
+        "separated": true,
+        "n_steps": 18143
+      },
+      "cross_mae_m": {
+        "delta": -0.000274,
+        "ci95": [
+          -0.000542,
+          2.1e-05
+        ],
+        "separated": false
+      },
+      "speed_mae_ms": {
+        "delta": -0.008215,
+        "ci95": [
+          -0.009804,
+          -0.006744
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0566,
+        "ci95": [
+          -0.0798,
+          -0.0351
+        ],
+        "separated": true
+      }
+    },
+    "ridge_3": {
+      "ADE_2s_m": {
+        "delta": -0.000386,
+        "ci95": [
+          -0.000728,
+          -1.1e-05
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002977,
+        "ci95": [
+          -0.004562,
+          -0.001718
+        ],
+        "separated": true,
+        "n_steps": 13554
+      },
+      "heading_mae_rad": {
+        "delta": -0.000653,
+        "ci95": [
+          -0.001106,
+          -0.000212
+        ],
+        "separated": true,
+        "n_steps": 18142
+      },
+      "cross_mae_m": {
+        "delta": 0.000316,
+        "ci95": [
+          -4.9e-05,
+          0.000739
+        ],
+        "separated": false
+      },
+      "speed_mae_ms": {
+        "delta": -0.00747,
+        "ci95": [
+          -0.009196,
+          -0.005831
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0374,
+        "ci95": [
+          -0.0634,
+          -0.0121
+        ],
+        "separated": true
+      }
+    },
+    "ridge_10": {
+      "ADE_2s_m": {
+        "delta": 1.2e-05,
+        "ci95": [
+          -0.00038,
+          0.000447
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002784,
+        "ci95": [
+          -0.004396,
+          -0.001503
+        ],
+        "separated": true,
+        "n_steps": 13553
+      },
+      "heading_mae_rad": {
+        "delta": -0.000434,
+        "ci95": [
+          -0.000901,
+          2.7e-05
+        ],
+        "separated": false,
+        "n_steps": 18141
+      },
+      "cross_mae_m": {
+        "delta": 0.000675,
+        "ci95": [
+          0.00025,
+          0.001172
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.006826,
+        "ci95": [
+          -0.008609,
+          -0.005152
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0249,
+        "ci95": [
+          -0.0516,
+          0.0015
+        ],
+        "separated": false
+      }
+    },
+    "ridge_30": {
+      "ADE_2s_m": {
+        "delta": 0.000156,
+        "ci95": [
+          -0.000255,
+          0.000609
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002708,
+        "ci95": [
+          -0.004334,
+          -0.00142
+        ],
+        "separated": true,
+        "n_steps": 13553
+      },
+      "heading_mae_rad": {
+        "delta": -0.000356,
+        "ci95": [
+          -0.000825,
+          0.000116
+        ],
+        "separated": false,
+        "n_steps": 18141
+      },
+      "cross_mae_m": {
+        "delta": 0.000803,
+        "ci95": [
+          0.000359,
+          0.001327
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.006581,
+        "ci95": [
+          -0.008373,
+          -0.004877
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0204,
+        "ci95": [
+          -0.0473,
+          0.0066
+        ],
+        "separated": false
+      }
+    },
+    "ridge_100": {
+      "ADE_2s_m": {
+        "delta": 0.00021,
+        "ci95": [
+          -0.000207,
+          0.000673
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002678,
+        "ci95": [
+          -0.004305,
+          -0.00139
+        ],
+        "separated": true,
+        "n_steps": 13553
+      },
+      "heading_mae_rad": {
+        "delta": -0.000327,
+        "ci95": [
+          -0.000799,
+          0.00015
+        ],
+        "separated": false,
+        "n_steps": 18141
+      },
+      "cross_mae_m": {
+        "delta": 0.000851,
+        "ci95": [
+          0.0004,
+          0.001381
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.006487,
+        "ci95": [
+          -0.008283,
+          -0.00478
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0187,
+        "ci95": [
+          -0.0458,
+          0.0086
+        ],
+        "separated": false
+      }
+    },
+    "ORACLE_poly_0": {
+      "ADE_2s_m": {
+        "delta": -0.022189,
+        "ci95": [
+          -0.035779,
+          -0.01077
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.007611,
+        "ci95": [
+          0.004021,
+          0.011956
+        ],
+        "separated": true,
+        "n_steps": 13522
+      },
+      "heading_mae_rad": {
+        "delta": 0.017387,
+        "ci95": [
+          0.010297,
+          0.022871
+        ],
+        "separated": true,
+        "n_steps": 18097
+      },
+      "cross_mae_m": {
+        "delta": 0.017291,
+        "ci95": [
+          0.008722,
+          0.025416
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.161145,
+        "ci95": [
+          0.145245,
+          0.178849
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.9962,
+        "ci95": [
+          0.59,
+          1.3104
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_1": {
+      "ADE_2s_m": {
+        "delta": -0.238443,
+        "ci95": [
+          -0.266549,
+          -0.215146
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.001794,
+        "ci95": [
+          -0.003595,
+          -0.000174
+        ],
+        "separated": true,
+        "n_steps": 13538
+      },
+      "heading_mae_rad": {
+        "delta": -0.014488,
+        "ci95": [
+          -0.03204,
+          -0.005628
+        ],
+        "separated": true,
+        "n_steps": 18127
+      },
+      "cross_mae_m": {
+        "delta": -0.074473,
+        "ci95": [
+          -0.083358,
+          -0.066543
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.169711,
+        "ci95": [
+          -0.186139,
+          -0.154208
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.8301,
+        "ci95": [
+          -1.8358,
+          -0.3225
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_2": {
+      "ADE_2s_m": {
+        "delta": -0.290538,
+        "ci95": [
+          -0.321751,
+          -0.264281
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.006603,
+        "ci95": [
+          -0.008633,
+          -0.004915
+        ],
+        "separated": true,
+        "n_steps": 13549
+      },
+      "heading_mae_rad": {
+        "delta": -0.021194,
+        "ci95": [
+          -0.039527,
+          -0.011704
+        ],
+        "separated": true,
+        "n_steps": 18138
+      },
+      "cross_mae_m": {
+        "delta": -0.09502,
+        "ci95": [
+          -0.105823,
+          -0.085105
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.274081,
+        "ci95": [
+          -0.298464,
+          -0.250951
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.2143,
+        "ci95": [
+          -2.2647,
+          -0.6706
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_3": {
+      "ADE_2s_m": {
+        "delta": -0.296469,
+        "ci95": [
+          -0.328038,
+          -0.269666
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.00815,
+        "ci95": [
+          -0.010487,
+          -0.006174
+        ],
+        "separated": true,
+        "n_steps": 13558
+      },
+      "heading_mae_rad": {
+        "delta": -0.022626,
+        "ci95": [
+          -0.041102,
+          -0.012988
+        ],
+        "separated": true,
+        "n_steps": 18146
+      },
+      "cross_mae_m": {
+        "delta": -0.097827,
+        "ci95": [
+          -0.108962,
+          -0.087757
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.289983,
+        "ci95": [
+          -0.315578,
+          -0.265557
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.2964,
+        "ci95": [
+          -2.355,
+          -0.7442
+        ],
+        "separated": true
+      }
+    },
+    "ROUGHEN_hf_x2": {
+      "ADE_2s_m": {
+        "delta": 0.006085,
+        "ci95": [
+          0.005559,
+          0.006653
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.005626,
+        "ci95": [
+          0.004205,
+          0.00724
+        ],
+        "separated": true,
+        "n_steps": 13546
+      },
+      "heading_mae_rad": {
+        "delta": 0.003649,
+        "ci95": [
+          0.00309,
+          0.004236
+        ],
+        "separated": true,
+        "n_steps": 18134
+      },
+      "cross_mae_m": {
+        "delta": 0.004085,
+        "ci95": [
+          0.003649,
+          0.004541
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.022428,
+        "ci95": [
+          0.020123,
+          0.02484
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.2091,
+        "ci95": [
+          0.177,
+          0.2427
+        ],
+        "separated": true
+      }
+    },
+    "ha0": {
+      "ADE_2s_m": {
+        "delta": 0.375817,
+        "ci95": [
+          0.321203,
+          0.433137
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.000897,
+        "ci95": [
+          -0.00278,
+          0.000737
+        ],
+        "separated": false,
+        "n_steps": 13500
+      },
+      "heading_mae_rad": {
+        "delta": 0.025397,
+        "ci95": [
+          0.019311,
+          0.032317
+        ],
+        "separated": true,
+        "n_steps": 18054
+      },
+      "cross_mae_m": {
+        "delta": 0.215389,
+        "ci95": [
+          0.158895,
+          0.281068
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.198008,
+        "ci95": [
+          0.164727,
+          0.229712
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 1.4551,
+        "ci95": [
+          1.1064,
+          1.8516
+        ],
+        "separated": true
+      }
+    },
+    "ha0_ext": {
+      "ADE_2s_m": {
+        "delta": -0.009074,
+        "ci95": [
+          -0.026045,
+          0.005901
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003563,
+        "ci95": [
+          -0.005422,
+          -0.002053
+        ],
+        "separated": true,
+        "n_steps": 13492
+      },
+      "heading_mae_rad": {
+        "delta": 0.001931,
+        "ci95": [
+          7.7e-05,
+          0.003895
+        ],
+        "separated": true,
+        "n_steps": 18068
+      },
+      "cross_mae_m": {
+        "delta": 0.009151,
+        "ci95": [
+          -0.002922,
+          0.02123
+        ],
+        "separated": false
+      },
+      "speed_mae_ms": {
+        "delta": -0.035939,
+        "ci95": [
+          -0.054708,
+          -0.019113
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.1106,
+        "ci95": [
+          0.0044,
+          0.2232
+        ],
+        "separated": true
+      }
+    },
+    "ha": {
+      "ADE_2s_m": {
+        "delta": 0.003149,
+        "ci95": [
+          -0.014218,
+          0.018504
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003245,
+        "ci95": [
+          -0.005092,
+          -0.001721
+        ],
+        "separated": true,
+        "n_steps": 13492
+      },
+      "heading_mae_rad": {
+        "delta": 0.003969,
+        "ci95": [
+          0.00181,
+          0.006356
+        ],
+        "separated": true,
+        "n_steps": 18068
+      },
+      "cross_mae_m": {
+        "delta": 0.024765,
+        "ci95": [
+          0.010666,
+          0.039679
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.035937,
+        "ci95": [
+          -0.054708,
+          -0.019109
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.2274,
+        "ci95": [
+          0.1037,
+          0.3642
+        ],
+        "separated": true
+      }
+    },
+    "FEASIBLE_emitted": {
+      "ADE_2s_m": {
+        "delta": 0.001886,
+        "ci95": [
+          0.00101,
+          0.002984
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.000972,
+        "ci95": [
+          -0.001747,
+          -0.000386
+        ],
+        "separated": true,
+        "n_steps": 13558
+      },
+      "heading_mae_rad": {
+        "delta": 0.000687,
+        "ci95": [
+          -2.5e-05,
+          0.001671
+        ],
+        "separated": false,
+        "n_steps": 18146
+      },
+      "cross_mae_m": {
+        "delta": 0.001322,
+        "ci95": [
+          0.000556,
+          0.002319
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -5e-06,
+        "ci95": [
+          -6.3e-05,
+          4.9e-05
+        ],
+        "separated": false
+      },
+      "heading_mae_deg": {
+        "delta": 0.0394,
+        "ci95": [
+          -0.0014,
+          0.0957
+        ],
+        "separated": false
+      }
+    },
+    "FEASIBLE_ridge_1": {
+      "ADE_2s_m": {
+        "delta": 0.000279,
+        "ci95": [
+          -0.000361,
+          0.001062
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.00343,
+        "ci95": [
+          -0.004943,
+          -0.002218
+        ],
+        "separated": true,
+        "n_steps": 13556
+      },
+      "heading_mae_rad": {
+        "delta": -9.8e-05,
+        "ci95": [
+          -0.000834,
+          0.000837
+        ],
+        "separated": false,
+        "n_steps": 18143
+      },
+      "cross_mae_m": {
+        "delta": 0.000716,
+        "ci95": [
+          -9.7e-05,
+          0.001681
+        ],
+        "separated": false
+      },
+      "speed_mae_ms": {
+        "delta": -0.008215,
+        "ci95": [
+          -0.009804,
+          -0.006744
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.0056,
+        "ci95": [
+          -0.0478,
+          0.048
+        ],
+        "separated": false
+      }
+    },
+    "FEASIBLE_ridge_3": {
+      "ADE_2s_m": {
+        "delta": 0.001058,
+        "ci95": [
+          0.000314,
+          0.001939
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.003287,
+        "ci95": [
+          -0.004905,
+          -0.002023
+        ],
+        "separated": true,
+        "n_steps": 13554
+      },
+      "heading_mae_rad": {
+        "delta": 0.000314,
+        "ci95": [
+          -0.00049,
+          0.001314
+        ],
+        "separated": false,
+        "n_steps": 18142
+      },
+      "cross_mae_m": {
+        "delta": 0.001414,
+        "ci95": [
+          0.000419,
+          0.00252
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.00747,
+        "ci95": [
+          -0.009196,
+          -0.005831
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.018,
+        "ci95": [
+          -0.0281,
+          0.0753
+        ],
+        "separated": false
+      }
+    }
+  },
+  "paired__vs_ANCHOR": {
+    "emitted": {
+      "ADE_2s_m": {
+        "delta": -0.131669,
+        "ci95": [
+          -0.145772,
+          -0.118232
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.004132,
+        "ci95": [
+          0.002482,
+          0.006122
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": -0.007601,
+        "ci95": [
+          -0.009732,
+          -0.005535
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": -0.077528,
+        "ci95": [
+          -0.092737,
+          -0.0622
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.057793,
+        "ci95": [
+          -0.067472,
+          -0.048148
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4355,
+        "ci95": [
+          -0.5576,
+          -0.3171
+        ],
+        "separated": true
+      }
+    },
+    "shrink_0.25": {
+      "ADE_2s_m": {
+        "delta": -0.047677,
+        "ci95": [
+          -0.051827,
+          -0.043591
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.000458,
+        "ci95": [
+          6.6e-05,
+          0.000966
+        ],
+        "separated": true,
+        "n_steps": 13586
+      },
+      "heading_mae_rad": {
+        "delta": -0.003187,
+        "ci95": [
+          -0.003852,
+          -0.002547
+        ],
+        "separated": true,
+        "n_steps": 18192
+      },
+      "cross_mae_m": {
+        "delta": -0.027458,
+        "ci95": [
+          -0.031858,
+          -0.023023
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.025596,
+        "ci95": [
+          -0.02827,
+          -0.023119
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.1826,
+        "ci95": [
+          -0.2207,
+          -0.1459
+        ],
+        "separated": true
+      }
+    },
+    "shrink_0.50": {
+      "ADE_2s_m": {
+        "delta": -0.088212,
+        "ci95": [
+          -0.096285,
+          -0.080371
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001336,
+        "ci95": [
+          0.000527,
+          0.002393
+        ],
+        "separated": true,
+        "n_steps": 13576
+      },
+      "heading_mae_rad": {
+        "delta": -0.005697,
+        "ci95": [
+          -0.006979,
+          -0.004426
+        ],
+        "separated": true,
+        "n_steps": 18181
+      },
+      "cross_mae_m": {
+        "delta": -0.051379,
+        "ci95": [
+          -0.060103,
+          -0.042485
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.045078,
+        "ci95": [
+          -0.050271,
+          -0.040142
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.3264,
+        "ci95": [
+          -0.3999,
+          -0.2536
+        ],
+        "separated": true
+      }
+    },
+    "shrink_0.75": {
+      "ADE_2s_m": {
+        "delta": -0.118048,
+        "ci95": [
+          -0.129729,
+          -0.106903
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.00256,
+        "ci95": [
+          0.001335,
+          0.004083
+        ],
+        "separated": true,
+        "n_steps": 13568
+      },
+      "heading_mae_rad": {
+        "delta": -0.007365,
+        "ci95": [
+          -0.0092,
+          -0.005558
+        ],
+        "separated": true,
+        "n_steps": 18167
+      },
+      "cross_mae_m": {
+        "delta": -0.069518,
+        "ci95": [
+          -0.082335,
+          -0.056636
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.056285,
+        "ci95": [
+          -0.063786,
+          -0.048843
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.422,
+        "ci95": [
+          -0.5271,
+          -0.3184
+        ],
+        "separated": true
+      }
+    },
+    "poly_0": {
+      "ADE_2s_m": {
+        "delta": -0.063286,
+        "ci95": [
+          -0.071735,
+          -0.0554
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.008106,
+        "ci95": [
+          0.005361,
+          0.011746
+        ],
+        "separated": true,
+        "n_steps": 13570
+      },
+      "heading_mae_rad": {
+        "delta": 0.008185,
+        "ci95": [
+          0.006572,
+          0.010207
+        ],
+        "separated": true,
+        "n_steps": 18166
+      },
+      "cross_mae_m": {
+        "delta": -0.03241,
+        "ci95": [
+          -0.040003,
+          -0.024388
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.038288,
+        "ci95": [
+          0.034763,
+          0.042053
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.469,
+        "ci95": [
+          0.3765,
+          0.5848
+        ],
+        "separated": true
+      }
+    },
+    "poly_1": {
+      "ADE_2s_m": {
+        "delta": -0.131435,
+        "ci95": [
+          -0.1453,
+          -0.118017
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.00146,
+        "ci95": [
+          0.000811,
+          0.00224
+        ],
+        "separated": true,
+        "n_steps": 13560
+      },
+      "heading_mae_rad": {
+        "delta": -0.007884,
+        "ci95": [
+          -0.009681,
+          -0.006105
+        ],
+        "separated": true,
+        "n_steps": 18155
+      },
+      "cross_mae_m": {
+        "delta": -0.076656,
+        "ci95": [
+          -0.09153,
+          -0.061619
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.064238,
+        "ci95": [
+          -0.073588,
+          -0.055255
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4517,
+        "ci95": [
+          -0.5547,
+          -0.3498
+        ],
+        "separated": true
+      }
+    },
+    "poly_2": {
+      "ADE_2s_m": {
+        "delta": -0.132447,
+        "ci95": [
+          -0.14654,
+          -0.119089
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001486,
+        "ci95": [
+          0.00059,
+          0.002595
+        ],
+        "separated": true,
+        "n_steps": 13561
+      },
+      "heading_mae_rad": {
+        "delta": -0.008573,
+        "ci95": [
+          -0.010611,
+          -0.006537
+        ],
+        "separated": true,
+        "n_steps": 18151
+      },
+      "cross_mae_m": {
+        "delta": -0.078092,
+        "ci95": [
+          -0.093247,
+          -0.062801
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.062873,
+        "ci95": [
+          -0.072549,
+          -0.053593
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4912,
+        "ci95": [
+          -0.608,
+          -0.3745
+        ],
+        "separated": true
+      }
+    },
+    "ridge_0.3": {
+      "ADE_2s_m": {
+        "delta": -0.133024,
+        "ci95": [
+          -0.147086,
+          -0.119672
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001261,
+        "ci95": [
+          0.000443,
+          0.002297
+        ],
+        "separated": true,
+        "n_steps": 13564
+      },
+      "heading_mae_rad": {
+        "delta": -0.008754,
+        "ci95": [
+          -0.010795,
+          -0.006742
+        ],
+        "separated": true,
+        "n_steps": 18153
+      },
+      "cross_mae_m": {
+        "delta": -0.078305,
+        "ci95": [
+          -0.093466,
+          -0.063075
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.065603,
+        "ci95": [
+          -0.07523,
+          -0.05624
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.5016,
+        "ci95": [
+          -0.6185,
+          -0.3863
+        ],
+        "separated": true
+      }
+    },
+    "ridge_1": {
+      "ADE_2s_m": {
+        "delta": -0.132657,
+        "ci95": [
+          -0.146652,
+          -0.119349
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001006,
+        "ci95": [
+          0.000403,
+          0.001738
+        ],
+        "separated": true,
+        "n_steps": 13563
+      },
+      "heading_mae_rad": {
+        "delta": -0.008566,
+        "ci95": [
+          -0.010493,
+          -0.006665
+        ],
+        "separated": true,
+        "n_steps": 18153
+      },
+      "cross_mae_m": {
+        "delta": -0.077802,
+        "ci95": [
+          -0.092858,
+          -0.062624
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.066007,
+        "ci95": [
+          -0.075588,
+          -0.056812
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4908,
+        "ci95": [
+          -0.6012,
+          -0.3819
+        ],
+        "separated": true
+      }
+    },
+    "ridge_3": {
+      "ADE_2s_m": {
+        "delta": -0.132054,
+        "ci95": [
+          -0.145958,
+          -0.118716
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001163,
+        "ci95": [
+          0.000557,
+          0.001879
+        ],
+        "separated": true,
+        "n_steps": 13561
+      },
+      "heading_mae_rad": {
+        "delta": -0.008226,
+        "ci95": [
+          -0.010083,
+          -0.006391
+        ],
+        "separated": true,
+        "n_steps": 18154
+      },
+      "cross_mae_m": {
+        "delta": -0.077212,
+        "ci95": [
+          -0.09217,
+          -0.062102
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.065263,
+        "ci95": [
+          -0.074682,
+          -0.056266
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4713,
+        "ci95": [
+          -0.5777,
+          -0.3662
+        ],
+        "separated": true
+      }
+    },
+    "ridge_10": {
+      "ADE_2s_m": {
+        "delta": -0.131656,
+        "ci95": [
+          -0.145514,
+          -0.118271
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.00134,
+        "ci95": [
+          0.000708,
+          0.002089
+        ],
+        "separated": true,
+        "n_steps": 13560
+      },
+      "heading_mae_rad": {
+        "delta": -0.008007,
+        "ci95": [
+          -0.009821,
+          -0.00621
+        ],
+        "separated": true,
+        "n_steps": 18154
+      },
+      "cross_mae_m": {
+        "delta": -0.076853,
+        "ci95": [
+          -0.091756,
+          -0.061789
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.064619,
+        "ci95": [
+          -0.073951,
+          -0.055616
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4588,
+        "ci95": [
+          -0.5627,
+          -0.3558
+        ],
+        "separated": true
+      }
+    },
+    "ridge_30": {
+      "ADE_2s_m": {
+        "delta": -0.131513,
+        "ci95": [
+          -0.145376,
+          -0.118105
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001416,
+        "ci95": [
+          0.000773,
+          0.002185
+        ],
+        "separated": true,
+        "n_steps": 13560
+      },
+      "heading_mae_rad": {
+        "delta": -0.007926,
+        "ci95": [
+          -0.00973,
+          -0.00614
+        ],
+        "separated": true,
+        "n_steps": 18155
+      },
+      "cross_mae_m": {
+        "delta": -0.076725,
+        "ci95": [
+          -0.091609,
+          -0.061679
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.064373,
+        "ci95": [
+          -0.073717,
+          -0.055375
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4541,
+        "ci95": [
+          -0.5575,
+          -0.3518
+        ],
+        "separated": true
+      }
+    },
+    "ridge_100": {
+      "ADE_2s_m": {
+        "delta": -0.131459,
+        "ci95": [
+          -0.145323,
+          -0.118043
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.001446,
+        "ci95": [
+          0.0008,
+          0.002223
+        ],
+        "separated": true,
+        "n_steps": 13560
+      },
+      "heading_mae_rad": {
+        "delta": -0.007897,
+        "ci95": [
+          -0.009696,
+          -0.006116
+        ],
+        "separated": true,
+        "n_steps": 18155
+      },
+      "cross_mae_m": {
+        "delta": -0.076677,
+        "ci95": [
+          -0.091554,
+          -0.061638
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.06428,
+        "ci95": [
+          -0.073628,
+          -0.055292
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4525,
+        "ci95": [
+          -0.5555,
+          -0.3504
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_0": {
+      "ADE_2s_m": {
+        "delta": -0.153857,
+        "ci95": [
+          -0.170708,
+          -0.140031
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.011943,
+        "ci95": [
+          0.007995,
+          0.016962
+        ],
+        "separated": true,
+        "n_steps": 13550
+      },
+      "heading_mae_rad": {
+        "delta": 0.009342,
+        "ci95": [
+          0.002671,
+          0.014008
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": -0.060237,
+        "ci95": [
+          -0.068155,
+          -0.052221
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.103352,
+        "ci95": [
+          0.093362,
+          0.115354
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 0.5353,
+        "ci95": [
+          0.153,
+          0.8026
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_1": {
+      "ADE_2s_m": {
+        "delta": -0.370111,
+        "ci95": [
+          -0.405406,
+          -0.339245
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.002272,
+        "ci95": [
+          0.001217,
+          0.003607
+        ],
+        "separated": true,
+        "n_steps": 13565
+      },
+      "heading_mae_rad": {
+        "delta": -0.022556,
+        "ci95": [
+          -0.041456,
+          -0.012692
+        ],
+        "separated": true,
+        "n_steps": 18173
+      },
+      "cross_mae_m": {
+        "delta": -0.152001,
+        "ci95": [
+          -0.17208,
+          -0.132209
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.227503,
+        "ci95": [
+          -0.247866,
+          -0.209435
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.2924,
+        "ci95": [
+          -2.3753,
+          -0.7272
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_2": {
+      "ADE_2s_m": {
+        "delta": -0.422207,
+        "ci95": [
+          -0.460627,
+          -0.388493
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002631,
+        "ci95": [
+          -0.00319,
+          -0.002114
+        ],
+        "separated": true,
+        "n_steps": 13580
+      },
+      "heading_mae_rad": {
+        "delta": -0.029428,
+        "ci95": [
+          -0.04935,
+          -0.018601
+        ],
+        "separated": true,
+        "n_steps": 18188
+      },
+      "cross_mae_m": {
+        "delta": -0.172548,
+        "ci95": [
+          -0.194744,
+          -0.150818
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.331874,
+        "ci95": [
+          -0.359531,
+          -0.306063
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.6861,
+        "ci95": [
+          -2.8275,
+          -1.0658
+        ],
+        "separated": true
+      }
+    },
+    "ORACLE_poly_3": {
+      "ADE_2s_m": {
+        "delta": -0.428137,
+        "ci95": [
+          -0.467137,
+          -0.394123
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.004019,
+        "ci95": [
+          -0.004894,
+          -0.003218
+        ],
+        "separated": true,
+        "n_steps": 13591
+      },
+      "heading_mae_rad": {
+        "delta": -0.03083,
+        "ci95": [
+          -0.050936,
+          -0.019811
+        ],
+        "separated": true,
+        "n_steps": 18198
+      },
+      "cross_mae_m": {
+        "delta": -0.175355,
+        "ci95": [
+          -0.198004,
+          -0.153082
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.347775,
+        "ci95": [
+          -0.376553,
+          -0.320714
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.7664,
+        "ci95": [
+          -2.9184,
+          -1.1351
+        ],
+        "separated": true
+      }
+    },
+    "ROUGHEN_hf_x2": {
+      "ADE_2s_m": {
+        "delta": -0.125584,
+        "ci95": [
+          -0.139486,
+          -0.112418
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.009454,
+        "ci95": [
+          0.006633,
+          0.012854
+        ],
+        "separated": true,
+        "n_steps": 13546
+      },
+      "heading_mae_rad": {
+        "delta": -0.003987,
+        "ci95": [
+          -0.006126,
+          -0.001896
+        ],
+        "separated": true,
+        "n_steps": 18138
+      },
+      "cross_mae_m": {
+        "delta": -0.073443,
+        "ci95": [
+          -0.088357,
+          -0.058174
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.035364,
+        "ci95": [
+          -0.045302,
+          -0.025312
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.2284,
+        "ci95": [
+          -0.351,
+          -0.1086
+        ],
+        "separated": true
+      }
+    },
+    "ha0": {
+      "ADE_2s_m": {
+        "delta": 0.244149,
+        "ci95": [
+          0.196597,
+          0.29517
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.002898,
+        "ci95": [
+          0.002116,
+          0.003798
+        ],
+        "separated": true,
+        "n_steps": 13512
+      },
+      "heading_mae_rad": {
+        "delta": 0.017635,
+        "ci95": [
+          0.012839,
+          0.023368
+        ],
+        "separated": true,
+        "n_steps": 18071
+      },
+      "cross_mae_m": {
+        "delta": 0.137861,
+        "ci95": [
+          0.089949,
+          0.194061
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.140216,
+        "ci95": [
+          0.111155,
+          0.168078
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": 1.0104,
+        "ci95": [
+          0.7356,
+          1.3389
+        ],
+        "separated": true
+      }
+    },
+    "ha0_ext": {
+      "ADE_2s_m": {
+        "delta": -0.140742,
+        "ci95": [
+          -0.161805,
+          -0.121831
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.000196,
+        "ci95": [
+          -0.000545,
+          0.000123
+        ],
+        "separated": false,
+        "n_steps": 13499
+      },
+      "heading_mae_rad": {
+        "delta": -0.005874,
+        "ci95": [
+          -0.007163,
+          -0.004681
+        ],
+        "separated": true,
+        "n_steps": 18080
+      },
+      "cross_mae_m": {
+        "delta": -0.068377,
+        "ci95": [
+          -0.079458,
+          -0.057901
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.093732,
+        "ci95": [
+          -0.115265,
+          -0.07434
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.3366,
+        "ci95": [
+          -0.4104,
+          -0.2682
+        ],
+        "separated": true
+      }
+    },
+    "ha": {
+      "ADE_2s_m": {
+        "delta": -0.128519,
+        "ci95": [
+          -0.148909,
+          -0.110126
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.000121,
+        "ci95": [
+          -0.000242,
+          0.000464
+        ],
+        "separated": false,
+        "n_steps": 13499
+      },
+      "heading_mae_rad": {
+        "delta": -0.003837,
+        "ci95": [
+          -0.005161,
+          -0.002589
+        ],
+        "separated": true,
+        "n_steps": 18080
+      },
+      "cross_mae_m": {
+        "delta": -0.052763,
+        "ci95": [
+          -0.063678,
+          -0.043017
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.093729,
+        "ci95": [
+          -0.115262,
+          -0.074339
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.2198,
+        "ci95": [
+          -0.2957,
+          -0.1483
+        ],
+        "separated": true
+      }
+    },
+    "FEASIBLE_emitted": {
+      "ADE_2s_m": {
+        "delta": -0.129782,
+        "ci95": [
+          -0.143959,
+          -0.116334
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.003188,
+        "ci95": [
+          0.002008,
+          0.004585
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": -0.006905,
+        "ci95": [
+          -0.009063,
+          -0.004704
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": -0.076206,
+        "ci95": [
+          -0.091094,
+          -0.060965
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.057797,
+        "ci95": [
+          -0.067477,
+          -0.04817
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.3956,
+        "ci95": [
+          -0.5193,
+          -0.2695
+        ],
+        "separated": true
+      }
+    },
+    "FEASIBLE_ridge_1": {
+      "ADE_2s_m": {
+        "delta": -0.13139,
+        "ci95": [
+          -0.145408,
+          -0.118049
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.000705,
+        "ci95": [
+          0.000188,
+          0.001326
+        ],
+        "separated": true,
+        "n_steps": 13563
+      },
+      "heading_mae_rad": {
+        "delta": -0.007614,
+        "ci95": [
+          -0.009597,
+          -0.005474
+        ],
+        "separated": true,
+        "n_steps": 18153
+      },
+      "cross_mae_m": {
+        "delta": -0.076812,
+        "ci95": [
+          -0.091576,
+          -0.061902
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.066007,
+        "ci95": [
+          -0.075588,
+          -0.056812
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4363,
+        "ci95": [
+          -0.5499,
+          -0.3136
+        ],
+        "separated": true
+      }
+    },
+    "FEASIBLE_ridge_3": {
+      "ADE_2s_m": {
+        "delta": -0.13061,
+        "ci95": [
+          -0.144603,
+          -0.117205
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.0008,
+        "ci95": [
+          0.000329,
+          0.001364
+        ],
+        "separated": true,
+        "n_steps": 13561
+      },
+      "heading_mae_rad": {
+        "delta": -0.007126,
+        "ci95": [
+          -0.009088,
+          -0.005012
+        ],
+        "separated": true,
+        "n_steps": 18154
+      },
+      "cross_mae_m": {
+        "delta": -0.076114,
+        "ci95": [
+          -0.090803,
+          -0.061198
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.065263,
+        "ci95": [
+          -0.074682,
+          -0.056266
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4083,
+        "ci95": [
+          -0.5207,
+          -0.2872
+        ],
+        "separated": true
+      }
+    }
+  },
+  "paired__the_MECHANISM": {
+    "emitted__minus__anchor": {
+      "ADE_2s_m": {
+        "delta": -0.131669,
+        "ci95": [
+          -0.145772,
+          -0.118232
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.004132,
+        "ci95": [
+          0.002482,
+          0.006122
+        ],
+        "separated": true,
+        "n_steps": 13557
+      },
+      "heading_mae_rad": {
+        "delta": -0.007601,
+        "ci95": [
+          -0.009732,
+          -0.005535
+        ],
+        "separated": true,
+        "n_steps": 18145
+      },
+      "cross_mae_m": {
+        "delta": -0.077528,
+        "ci95": [
+          -0.092737,
+          -0.0622
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.057793,
+        "ci95": [
+          -0.067472,
+          -0.048148
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.4355,
+        "ci95": [
+          -0.5576,
+          -0.3171
+        ],
+        "separated": true
+      }
+    },
+    "emitted__minus__ha0": {
+      "ADE_2s_m": {
+        "delta": -0.375817,
+        "ci95": [
+          -0.433137,
+          -0.321203
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.000897,
+        "ci95": [
+          -0.000737,
+          0.00278
+        ],
+        "separated": false,
+        "n_steps": 13500
+      },
+      "heading_mae_rad": {
+        "delta": -0.025397,
+        "ci95": [
+          -0.032317,
+          -0.019311
+        ],
+        "separated": true,
+        "n_steps": 18054
+      },
+      "cross_mae_m": {
+        "delta": -0.215389,
+        "ci95": [
+          -0.281068,
+          -0.158895
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.198008,
+        "ci95": [
+          -0.229712,
+          -0.164727
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.4551,
+        "ci95": [
+          -1.8516,
+          -1.1064
+        ],
+        "separated": true
+      }
+    },
+    "anchor__minus__ha0": {
+      "ADE_2s_m": {
+        "delta": -0.244149,
+        "ci95": [
+          -0.29517,
+          -0.196597
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.002898,
+        "ci95": [
+          -0.003798,
+          -0.002116
+        ],
+        "separated": true,
+        "n_steps": 13512
+      },
+      "heading_mae_rad": {
+        "delta": -0.017635,
+        "ci95": [
+          -0.023368,
+          -0.012839
+        ],
+        "separated": true,
+        "n_steps": 18071
+      },
+      "cross_mae_m": {
+        "delta": -0.137861,
+        "ci95": [
+          -0.194061,
+          -0.089949
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.140216,
+        "ci95": [
+          -0.168078,
+          -0.111155
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -1.0104,
+        "ci95": [
+          -1.3389,
+          -0.7356
+        ],
+        "separated": true
+      }
+    },
+    "emitted__minus__ha0_ext": {
+      "ADE_2s_m": {
+        "delta": 0.009074,
+        "ci95": [
+          -0.005901,
+          0.026045
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": 0.003563,
+        "ci95": [
+          0.002053,
+          0.005422
+        ],
+        "separated": true,
+        "n_steps": 13492
+      },
+      "heading_mae_rad": {
+        "delta": -0.001931,
+        "ci95": [
+          -0.003895,
+          -7.7e-05
+        ],
+        "separated": true,
+        "n_steps": 18068
+      },
+      "cross_mae_m": {
+        "delta": -0.009151,
+        "ci95": [
+          -0.02123,
+          0.002922
+        ],
+        "separated": false
+      },
+      "speed_mae_ms": {
+        "delta": 0.035939,
+        "ci95": [
+          0.019113,
+          0.054708
+        ],
+        "separated": true
+      },
+      "heading_mae_deg": {
+        "delta": -0.1106,
+        "ci95": [
+          -0.2232,
+          -0.0044
+        ],
+        "separated": true
+      }
+    }
+  },
+  "tactical_label_source": "trajectory-derived via refc_tactical.factor_from_kinematics \u2014 the same gate ff.tactical_from_trajectory uses. \u26d4 NOT the |dyaw| > 0.15 gate: the HUMAN fails that one on 3 of 9.",
+  "paired_TACTICAL": {
+    "n_turn_windows": 647,
+    "per_class": {
+      "lane_keep": {
+        "n": 4176,
+        "per_arm": {
+          "anchor": 0.9624,
+          "emitted": 0.9732,
+          "shrink_0.25": 0.965,
+          "shrink_0.50": 0.9696,
+          "shrink_0.75": 0.9729,
+          "poly_0": 0.9624,
+          "poly_1": 0.9758,
+          "poly_2": 0.9741,
+          "ridge_0.3": 0.9749,
+          "ridge_1": 0.9768,
+          "ridge_3": 0.9758,
+          "ridge_10": 0.9758,
+          "ridge_30": 0.9758,
+          "ridge_100": 0.9758,
+          "ORACLE_poly_0": 0.9619,
+          "ORACLE_poly_1": 0.9892,
+          "ORACLE_poly_2": 0.9983,
+          "ORACLE_poly_3": 1.0,
+          "ROUGHEN_hf_x2": 0.965,
+          "ha0": 1.0,
+          "ha0_ext": 0.9696,
+          "ha": 0.9686,
+          "FEASIBLE_emitted": 0.9715,
+          "FEASIBLE_ridge_1": 0.9715,
+          "FEASIBLE_ridge_3": 0.9708
+        },
+        "vs_emitted": {
+          "anchor": {
+            "delta": -0.0108,
+            "ci95": [
+              -0.0214,
+              -0.0016
+            ],
+            "separated": true
+          },
+          "shrink_0.25": {
+            "delta": -0.0081,
+            "ci95": [
+              -0.0166,
+              -0.0014
+            ],
+            "separated": true
+          },
+          "shrink_0.50": {
+            "delta": -0.0036,
+            "ci95": [
+              -0.0095,
+              0.0019
+            ],
+            "separated": false
+          },
+          "shrink_0.75": {
+            "delta": -0.0002,
+            "ci95": [
+              -0.0039,
+              0.0032
+            ],
+            "separated": false
+          },
+          "poly_0": {
+            "delta": -0.0108,
+            "ci95": [
+              -0.0214,
+              -0.0016
+            ],
+            "separated": true
+          },
+          "poly_1": {
+            "delta": 0.0026,
+            "ci95": [
+              -0.0019,
+              0.0073
+            ],
+            "separated": false
+          },
+          "poly_2": {
+            "delta": 0.001,
+            "ci95": [
+              -0.0015,
+              0.0032
+            ],
+            "separated": false
+          },
+          "ridge_0.3": {
+            "delta": 0.0017,
+            "ci95": [
+              -0.0005,
+              0.004
+            ],
+            "separated": false
+          },
+          "ridge_1": {
+            "delta": 0.0036,
+            "ci95": [
+              0.0005,
+              0.007
+            ],
+            "separated": true
+          },
+          "ridge_3": {
+            "delta": 0.0026,
+            "ci95": [
+              -0.0012,
+              0.0066
+            ],
+            "separated": false
+          },
+          "ridge_10": {
+            "delta": 0.0026,
+            "ci95": [
+              -0.0019,
+              0.0073
+            ],
+            "separated": false
+          },
+          "ridge_30": {
+            "delta": 0.0026,
+            "ci95": [
+              -0.0019,
+              0.0073
+            ],
+            "separated": false
+          },
+          "ridge_100": {
+            "delta": 0.0026,
+            "ci95": [
+              -0.0019,
+              0.0073
+            ],
+            "separated": false
+          },
+          "ORACLE_poly_0": {
+            "delta": -0.0113,
+            "ci95": [
+              -0.0218,
+              -0.0022
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_1": {
+            "delta": 0.016,
+            "ci95": [
+              0.01,
+              0.0229
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_2": {
+            "delta": 0.0251,
+            "ci95": [
+              0.0174,
+              0.0344
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_3": {
+            "delta": 0.0268,
+            "ci95": [
+              0.0187,
+              0.0362
+            ],
+            "separated": true
+          },
+          "ROUGHEN_hf_x2": {
+            "delta": -0.0081,
+            "ci95": [
+              -0.0133,
+              -0.0036
+            ],
+            "separated": true
+          },
+          "ha0": {
+            "delta": 0.0268,
+            "ci95": [
+              0.0187,
+              0.0362
+            ],
+            "separated": true
+          },
+          "ha0_ext": {
+            "delta": -0.0036,
+            "ci95": [
+              -0.0118,
+              0.0051
+            ],
+            "separated": false
+          },
+          "ha": {
+            "delta": -0.0045,
+            "ci95": [
+              -0.0125,
+              0.0043
+            ],
+            "separated": false
+          },
+          "FEASIBLE_emitted": {
+            "delta": -0.0017,
+            "ci95": [
+              -0.005,
+              0.0012
+            ],
+            "separated": false
+          },
+          "FEASIBLE_ridge_1": {
+            "delta": -0.0017,
+            "ci95": [
+              -0.0063,
+              0.0026
+            ],
+            "separated": false
+          },
+          "FEASIBLE_ridge_3": {
+            "delta": -0.0024,
+            "ci95": [
+              -0.0073,
+              0.0023
+            ],
+            "separated": false
+          }
+        }
+      },
+      "turn_left": {
+        "n": 251,
+        "per_arm": {
+          "anchor": 0.7251,
+          "emitted": 0.8127,
+          "shrink_0.25": 0.7371,
+          "shrink_0.50": 0.761,
+          "shrink_0.75": 0.8088,
+          "poly_0": 0.7251,
+          "poly_1": 0.8088,
+          "poly_2": 0.8207,
+          "ridge_0.3": 0.8167,
+          "ridge_1": 0.8167,
+          "ridge_3": 0.8088,
+          "ridge_10": 0.8088,
+          "ridge_30": 0.8088,
+          "ridge_100": 0.8088,
+          "ORACLE_poly_0": 0.7251,
+          "ORACLE_poly_1": 0.9084,
+          "ORACLE_poly_2": 0.996,
+          "ORACLE_poly_3": 1.0,
+          "ROUGHEN_hf_x2": 0.8207,
+          "ha0": 0.0,
+          "ha0_ext": 0.753,
+          "ha": 0.7291,
+          "FEASIBLE_emitted": 0.8048,
+          "FEASIBLE_ridge_1": 0.8088,
+          "FEASIBLE_ridge_3": 0.8048
+        },
+        "vs_emitted": {
+          "anchor": {
+            "delta": -0.0876,
+            "ci95": [
+              -0.1544,
+              -0.033
+            ],
+            "separated": true
+          },
+          "shrink_0.25": {
+            "delta": -0.0757,
+            "ci95": [
+              -0.1376,
+              -0.0257
+            ],
+            "separated": true
+          },
+          "shrink_0.50": {
+            "delta": -0.0518,
+            "ci95": [
+              -0.1004,
+              -0.0113
+            ],
+            "separated": true
+          },
+          "shrink_0.75": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0242,
+              0.0177
+            ],
+            "separated": false
+          },
+          "poly_0": {
+            "delta": -0.0876,
+            "ci95": [
+              -0.1544,
+              -0.033
+            ],
+            "separated": true
+          },
+          "poly_1": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0332,
+              0.0176
+            ],
+            "separated": false
+          },
+          "poly_2": {
+            "delta": 0.008,
+            "ci95": [
+              -0.0079,
+              0.0241
+            ],
+            "separated": false
+          },
+          "ridge_0.3": {
+            "delta": 0.004,
+            "ci95": [
+              -0.0144,
+              0.022
+            ],
+            "separated": false
+          },
+          "ridge_1": {
+            "delta": 0.004,
+            "ci95": [
+              -0.0144,
+              0.022
+            ],
+            "separated": false
+          },
+          "ridge_3": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0332,
+              0.0176
+            ],
+            "separated": false
+          },
+          "ridge_10": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0332,
+              0.0176
+            ],
+            "separated": false
+          },
+          "ridge_30": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0332,
+              0.0176
+            ],
+            "separated": false
+          },
+          "ridge_100": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0332,
+              0.0176
+            ],
+            "separated": false
+          },
+          "ORACLE_poly_0": {
+            "delta": -0.0876,
+            "ci95": [
+              -0.1544,
+              -0.033
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_1": {
+            "delta": 0.0956,
+            "ci95": [
+              0.0189,
+              0.2047
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_2": {
+            "delta": 0.1833,
+            "ci95": [
+              0.0926,
+              0.3056
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_3": {
+            "delta": 0.1873,
+            "ci95": [
+              0.0973,
+              0.3082
+            ],
+            "separated": true
+          },
+          "ROUGHEN_hf_x2": {
+            "delta": 0.008,
+            "ci95": [
+              -0.0099,
+              0.0279
+            ],
+            "separated": false
+          },
+          "ha0": {
+            "delta": -0.8127,
+            "ci95": [
+              -0.9027,
+              -0.6918
+            ],
+            "separated": true
+          },
+          "ha0_ext": {
+            "delta": -0.0598,
+            "ci95": [
+              -0.1102,
+              -0.0092
+            ],
+            "separated": true
+          },
+          "ha": {
+            "delta": -0.0837,
+            "ci95": [
+              -0.136,
+              -0.0332
+            ],
+            "separated": true
+          },
+          "FEASIBLE_emitted": {
+            "delta": -0.008,
+            "ci95": [
+              -0.0323,
+              0.0087
+            ],
+            "separated": false
+          },
+          "FEASIBLE_ridge_1": {
+            "delta": -0.004,
+            "ci95": [
+              -0.0323,
+              0.0188
+            ],
+            "separated": false
+          },
+          "FEASIBLE_ridge_3": {
+            "delta": -0.008,
+            "ci95": [
+              -0.0372,
+              0.0161
+            ],
+            "separated": false
+          }
+        }
+      },
+      "turn_right": {
+        "n": 396,
+        "per_arm": {
+          "anchor": 0.7955,
+          "emitted": 0.8889,
+          "shrink_0.25": 0.8131,
+          "shrink_0.50": 0.8283,
+          "shrink_0.75": 0.8712,
+          "poly_0": 0.7955,
+          "poly_1": 0.8636,
+          "poly_2": 0.8864,
+          "ridge_0.3": 0.8813,
+          "ridge_1": 0.8687,
+          "ridge_3": 0.8687,
+          "ridge_10": 0.8662,
+          "ridge_30": 0.8662,
+          "ridge_100": 0.8636,
+          "ORACLE_poly_0": 0.7955,
+          "ORACLE_poly_1": 0.9293,
+          "ORACLE_poly_2": 0.9949,
+          "ORACLE_poly_3": 1.0,
+          "ROUGHEN_hf_x2": 0.8813,
+          "ha0": 0.0,
+          "ha0_ext": 0.7702,
+          "ha": 0.75,
+          "FEASIBLE_emitted": 0.8813,
+          "FEASIBLE_ridge_1": 0.8636,
+          "FEASIBLE_ridge_3": 0.8636
+        },
+        "vs_emitted": {
+          "anchor": {
+            "delta": -0.0934,
+            "ci95": [
+              -0.1617,
+              -0.036
+            ],
+            "separated": true
+          },
+          "shrink_0.25": {
+            "delta": -0.0758,
+            "ci95": [
+              -0.1235,
+              -0.0362
+            ],
+            "separated": true
+          },
+          "shrink_0.50": {
+            "delta": -0.0606,
+            "ci95": [
+              -0.099,
+              -0.0281
+            ],
+            "separated": true
+          },
+          "shrink_0.75": {
+            "delta": -0.0177,
+            "ci95": [
+              -0.0386,
+              0.0
+            ],
+            "separated": false
+          },
+          "poly_0": {
+            "delta": -0.0934,
+            "ci95": [
+              -0.1617,
+              -0.036
+            ],
+            "separated": true
+          },
+          "poly_1": {
+            "delta": -0.0253,
+            "ci95": [
+              -0.0566,
+              0.0
+            ],
+            "separated": false
+          },
+          "poly_2": {
+            "delta": -0.0025,
+            "ci95": [
+              -0.0158,
+              0.0108
+            ],
+            "separated": false
+          },
+          "ridge_0.3": {
+            "delta": -0.0076,
+            "ci95": [
+              -0.0239,
+              0.0071
+            ],
+            "separated": false
+          },
+          "ridge_1": {
+            "delta": -0.0202,
+            "ci95": [
+              -0.0443,
+              0.0029
+            ],
+            "separated": false
+          },
+          "ridge_3": {
+            "delta": -0.0202,
+            "ci95": [
+              -0.048,
+              0.0051
+            ],
+            "separated": false
+          },
+          "ridge_10": {
+            "delta": -0.0227,
+            "ci95": [
+              -0.053,
+              0.0043
+            ],
+            "separated": false
+          },
+          "ridge_30": {
+            "delta": -0.0227,
+            "ci95": [
+              -0.0531,
+              0.0041
+            ],
+            "separated": false
+          },
+          "ridge_100": {
+            "delta": -0.0253,
+            "ci95": [
+              -0.0566,
+              0.0
+            ],
+            "separated": false
+          },
+          "ORACLE_poly_0": {
+            "delta": -0.0934,
+            "ci95": [
+              -0.1617,
+              -0.036
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_1": {
+            "delta": 0.0404,
+            "ci95": [
+              0.0071,
+              0.0735
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_2": {
+            "delta": 0.1061,
+            "ci95": [
+              0.0689,
+              0.1493
+            ],
+            "separated": true
+          },
+          "ORACLE_poly_3": {
+            "delta": 0.1111,
+            "ci95": [
+              0.0755,
+              0.1551
+            ],
+            "separated": true
+          },
+          "ROUGHEN_hf_x2": {
+            "delta": -0.0076,
+            "ci95": [
+              -0.0313,
+              0.0094
+            ],
+            "separated": false
+          },
+          "ha0": {
+            "delta": -0.8889,
+            "ci95": [
+              -0.9245,
+              -0.8449
+            ],
+            "separated": true
+          },
+          "ha0_ext": {
+            "delta": -0.1187,
+            "ci95": [
+              -0.168,
+              -0.0696
+            ],
+            "separated": true
+          },
+          "ha": {
+            "delta": -0.1389,
+            "ci95": [
+              -0.1933,
+              -0.0851
+            ],
+            "separated": true
+          },
+          "FEASIBLE_emitted": {
+            "delta": -0.0076,
+            "ci95": [
+              -0.0226,
+              0.0
+            ],
+            "separated": false
+          },
+          "FEASIBLE_ridge_1": {
+            "delta": -0.0253,
+            "ci95": [
+              -0.0491,
+              -0.003
+            ],
+            "separated": true
+          },
+          "FEASIBLE_ridge_3": {
+            "delta": -0.0253,
+            "ci95": [
+              -0.0541,
+              0.0
+            ],
+            "separated": false
+          }
+        }
+      }
+    },
+    "turn_accuracy_per_arm": {
+      "anchor": 0.7682,
+      "emitted": 0.8594,
+      "shrink_0.25": 0.7836,
+      "shrink_0.50": 0.8022,
+      "shrink_0.75": 0.847,
+      "poly_0": 0.7682,
+      "poly_1": 0.8423,
+      "poly_2": 0.8609,
+      "ridge_0.3": 0.8563,
+      "ridge_1": 0.8485,
+      "ridge_3": 0.8454,
+      "ridge_10": 0.8439,
+      "ridge_30": 0.8439,
+      "ridge_100": 0.8423,
+      "ORACLE_poly_0": 0.7682,
+      "ORACLE_poly_1": 0.9212,
+      "ORACLE_poly_2": 0.9954,
+      "ORACLE_poly_3": 1.0,
+      "ROUGHEN_hf_x2": 0.8578,
+      "ha0": 0.0,
+      "ha0_ext": 0.7635,
+      "ha": 0.7419,
+      "FEASIBLE_emitted": 0.8516,
+      "FEASIBLE_ridge_1": 0.8423,
+      "FEASIBLE_ridge_3": 0.8408
+    },
+    "turn_accuracy_vs_emitted": {
+      "anchor": {
+        "delta": -0.0912,
+        "ci95": [
+          -0.1382,
+          -0.0484
+        ],
+        "separated": true
+      },
+      "shrink_0.25": {
+        "delta": -0.0757,
+        "ci95": [
+          -0.1147,
+          -0.0419
+        ],
+        "separated": true
+      },
+      "shrink_0.50": {
+        "delta": -0.0572,
+        "ci95": [
+          -0.0887,
+          -0.0306
+        ],
+        "separated": true
+      },
+      "shrink_0.75": {
+        "delta": -0.0124,
+        "ci95": [
+          -0.0283,
+          0.0028
+        ],
+        "separated": false
+      },
+      "poly_0": {
+        "delta": -0.0912,
+        "ci95": [
+          -0.1382,
+          -0.0484
+        ],
+        "separated": true
+      },
+      "poly_1": {
+        "delta": -0.017,
+        "ci95": [
+          -0.0385,
+          0.0013
+        ],
+        "separated": false
+      },
+      "poly_2": {
+        "delta": 0.0015,
+        "ci95": [
+          -0.0091,
+          0.0116
+        ],
+        "separated": false
+      },
+      "ridge_0.3": {
+        "delta": -0.0031,
+        "ci95": [
+          -0.0143,
+          0.007
+        ],
+        "separated": false
+      },
+      "ridge_1": {
+        "delta": -0.0108,
+        "ci95": [
+          -0.0275,
+          0.0047
+        ],
+        "separated": false
+      },
+      "ridge_3": {
+        "delta": -0.0139,
+        "ci95": [
+          -0.0343,
+          0.0027
+        ],
+        "separated": false
+      },
+      "ridge_10": {
+        "delta": -0.0155,
+        "ci95": [
+          -0.0364,
+          0.0018
+        ],
+        "separated": false
+      },
+      "ridge_30": {
+        "delta": -0.0155,
+        "ci95": [
+          -0.0364,
+          0.0018
+        ],
+        "separated": false
+      },
+      "ridge_100": {
+        "delta": -0.017,
+        "ci95": [
+          -0.0385,
+          0.0013
+        ],
+        "separated": false
+      },
+      "ORACLE_poly_0": {
+        "delta": -0.0912,
+        "ci95": [
+          -0.1382,
+          -0.0484
+        ],
+        "separated": true
+      },
+      "ORACLE_poly_1": {
+        "delta": 0.0618,
+        "ci95": [
+          0.0245,
+          0.1143
+        ],
+        "separated": true
+      },
+      "ORACLE_poly_2": {
+        "delta": 0.136,
+        "ci95": [
+          0.0918,
+          0.196
+        ],
+        "separated": true
+      },
+      "ORACLE_poly_3": {
+        "delta": 0.1406,
+        "ci95": [
+          0.0968,
+          0.1995
+        ],
+        "separated": true
+      },
+      "ROUGHEN_hf_x2": {
+        "delta": -0.0015,
+        "ci95": [
+          -0.0166,
+          0.0113
+        ],
+        "separated": false
+      },
+      "ha0": {
+        "delta": -0.8594,
+        "ci95": [
+          -0.9032,
+          -0.8005
+        ],
+        "separated": true
+      },
+      "ha0_ext": {
+        "delta": -0.0958,
+        "ci95": [
+          -0.1323,
+          -0.0573
+        ],
+        "separated": true
+      },
+      "ha": {
+        "delta": -0.1175,
+        "ci95": [
+          -0.1581,
+          -0.0771
+        ],
+        "separated": true
+      },
+      "FEASIBLE_emitted": {
+        "delta": -0.0077,
+        "ci95": [
+          -0.0245,
+          0.0018
+        ],
+        "separated": false
+      },
+      "FEASIBLE_ridge_1": {
+        "delta": -0.017,
+        "ci95": [
+          -0.035,
+          -0.0015
+        ],
+        "separated": true
+      },
+      "FEASIBLE_ridge_3": {
+        "delta": -0.0185,
+        "ci95": [
+          -0.0397,
+          -0.0015
+        ],
+        "separated": true
+      }
+    }
+  },
+  "HELD_OUT_LAMBDA": {
+    "selection_rule": "argmin curvature_mae over the FIT episodes, subject to ADE(FIT) <= ADE_emitted(FIT) + 0.005 m; stated BEFORE the split was scored",
+    "fit_episodes": 71,
+    "score_episodes": 70,
+    "fit_windows": 2431,
+    "score_windows": 2392,
+    "candidates_fit": {
+      "ridge_0.3": {
+        "curv_fit": 0.005627,
+        "ade_fit": 0.299213
+      },
+      "ridge_1": {
+        "curv_fit": 0.005016,
+        "ade_fit": 0.29949
+      },
+      "ridge_3": {
+        "curv_fit": 0.004975,
+        "ade_fit": 0.300041
+      },
+      "ridge_10": {
+        "curv_fit": 0.005083,
+        "ade_fit": 0.300417
+      },
+      "ridge_30": {
+        "curv_fit": 0.005143,
+        "ade_fit": 0.300554
+      },
+      "ridge_100": {
+        "curv_fit": 0.005169,
+        "ade_fit": 0.300605
+      }
+    },
+    "ade_emitted_fit": 0.300599,
+    "selected": "ridge_3",
+    "SCORE_HALF__selected_minus_emitted": {
+      "ADE_2s_m": {
+        "delta": -0.000211,
+        "ci95": [
+          -0.00069,
+          0.000266
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm": {
+        "delta": -0.001903,
+        "ci95": [
+          -0.003359,
+          -0.000587
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": -0.000408,
+        "ci95": [
+          -0.000994,
+          0.000191
+        ],
+        "separated": false
+      },
+      "cross_mae_m": {
+        "delta": 0.000763,
+        "ci95": [
+          0.000235,
+          0.00134
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.008266,
+        "ci95": [
+          -0.011285,
+          -0.005525
+        ],
+        "separated": true
+      }
+    },
+    "SCORE_HALF__points": {
+      "emitted": {
+        "ADE_2s_m": 0.292271,
+        "curvature_mae_1pm": 0.0072
+      },
+      "anchor": {
+        "ADE_2s_m": 0.416303,
+        "curvature_mae_1pm": 0.004282
+      },
+      "ha0": {
+        "ADE_2s_m": 0.68487,
+        "curvature_mae_1pm": 0.007615
+      },
+      "ha0_ext": {
+        "ADE_2s_m": 0.272581,
+        "curvature_mae_1pm": 0.004038
+      },
+      "ridge_3": {
+        "ADE_2s_m": 0.29206,
+        "curvature_mae_1pm": 0.00533
+      }
+    }
+  }
+}

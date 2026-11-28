@@ -1,0 +1,27 @@
+==============================================================================
+BASELINE -- the landed patch, flag at its default (OFF)
+==============================================================================
+   state_dict: 193 tensors bit-identical
+   forward outputs: 37 tensors bit-identical
+   RESULT: BIT-IDENTICAL
+
+==============================================================================
+MUTATION CONTROL -- the conditioner built UNCONDITIONALLY
+(exactly the D-ROLL-1 construction that made every banked v7.0
+ checkpoint unrollable). The comparison MUST go red.
+==============================================================================
+   state_dict: KEY SET DIFFERS (+['max_speed_cond.proj.bias', 'max_speed_cond.proj.weight', 'max_speed_cond.to_str.bias', 'max_speed_cond.to_str.weight', 'max_speed_cond.to_tac.bias', 'max_speed_cond.to_tac.weight'] -[])
+   forward outputs: bank_speed_pred NOT bit-identical
+   RESULT: DIFFERS (GOOD -- the check can fail)
+
+==============================================================================
+OFF-PARITY PROOF: PASS
+  baseline bit-identical : True
+  mutation goes red      : True
+
+  WHAT THE MUTATION PROVES: the comparator has teeth -- this equality
+  CAN fail, so the baseline PASS is a measurement.
+  WHAT IT DOES NOT PROVE: that a zero-init survived a mutation. With the
+  flag OFF nothing is constructed and nothing is fed, so the identity is
+  STRUCTURAL, not a cancellation. Claiming otherwise would be a false
+  strength claim.

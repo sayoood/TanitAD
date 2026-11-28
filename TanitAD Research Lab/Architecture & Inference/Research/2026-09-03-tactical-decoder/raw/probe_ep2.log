@@ -1,0 +1,326 @@
+[refav1-labels] v7.2 join: labels 20/20 eps (0 missing), 420/1339 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 20/20 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[probe] ep2: 140 windows / 20 episodes; vocab=v7.0; d_intent=256
+  ep000 01be5919-6e61-45ba-a193-5f447efb4b51 done (9.7s)
+  ep001 060531e1-9935-482e-8c25-2abf37bdc41b done (19.1s)
+  ep002 0fa2b231-435e-4700-9138-30f333dc5d6e done (28.4s)
+  ep003 10804db8-d070-444e-a1f1-89c1871588d5 done (37.8s)
+  ep004 11e40da1-3d9e-4ee6-8406-8db2eed4a594 done (47.1s)
+  ep005 126b3a97-0879-4ff3-9f4a-ea846f8a70ef done (56.5s)
+  ep006 13c95b6a-5d18-4267-8943-1ddb8fe85008 done (65.9s)
+  ep007 14157960-84db-4f4e-84f1-a4664086c6f8 done (75.3s)
+  ep008 142a3a72-6cd4-4056-bb66-c9098f54b7fa done (84.6s)
+  ep009 14bc9fcf-c048-42c3-b35d-0fc13b8ddc04 done (94.0s)
+  ep010 16d89725-2f31-4a12-9244-658d2b83994c done (103.5s)
+  ep011 17775e74-2d89-4c4f-9347-c58cea5585cb done (112.9s)
+  ep012 18b72291-84f4-45e0-a736-908fc303020e done (122.3s)
+  ep013 1bd040a8-1828-4f1f-933e-20fd53c45641 done (131.7s)
+  ep014 1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f done (141.1s)
+  ep015 204b15b4-bd0a-4155-b01e-572c55197d0e done (150.5s)
+  ep016 2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8 done (159.8s)
+  ep017 24fee8a5-9ccc-4610-b27b-560f08fd46c8 done (169.2s)
+  ep018 2602baaa-4364-4c50-8fb5-a27254c77cb3 done (178.6s)
+  ep019 262b900f-2cff-4ddf-a95e-2aaa5eaff9bc done (188.0s)
+{
+ "loss_share": {
+  "nav_true": {
+   "ce_lat_nats": 0.942011,
+   "ce_lon_nats": 1.396973,
+   "w_tac_label": 0.1,
+   "weighted_tactical_label_term": 0.11694921,
+   "weighted_feature_terms_sum": 0.4532388,
+   "components": {
+    "w_feat_op*loss_feat_op": 0.44862966,
+    "w_feat_tac*loss_feat_tac": 0.0013159,
+    "w_feat_str*loss_feat_str": 0.00329324
+   },
+   "tactical_label_share_of_those_terms_pct": 20.5106,
+   "n_in_band_rows_scored": 40,
+   "caveat": "the trainer logs NO loss_lat_label/loss_lon_label key (refa_v1_train.py:699-733), so no run's telemetry carries this; feature terms are the mean over THESE windows, not the training stream"
+  },
+  "nav_zero": {
+   "ce_lat_nats": 1.368362,
+   "ce_lon_nats": 1.575018,
+   "w_tac_label": 0.1,
+   "weighted_tactical_label_term": 0.147169,
+   "weighted_feature_terms_sum": 0.4532388,
+   "components": {
+    "w_feat_op*loss_feat_op": 0.44862966,
+    "w_feat_tac*loss_feat_tac": 0.0013159,
+    "w_feat_str*loss_feat_str": 0.00329324
+   },
+   "tactical_label_share_of_those_terms_pct": 24.5115,
+   "n_in_band_rows_scored": 40,
+   "caveat": "the trainer logs NO loss_lat_label/loss_lon_label key (refa_v1_train.py:699-733), so no run's telemetry carries this; feature terms are the mean over THESE windows, not the training stream"
+  }
+ },
+ "label_entropy_nats_in_band": {
+  "lat": 1.094409,
+  "lon": 1.304662,
+  "note": "the CE a head that outputs the MARGINAL and nothing else would attain; CE at or above this = no information used"
+ },
+ "rank_vs_argmax": {
+  "nav_true": {
+   "argmax_histogram": {
+    "LANE_KEEP": 115,
+    "TURN_R": 25
+   },
+   "max_softmax_median": 0.735176,
+   "P_LANE_KEEP_median": 0.735176,
+   "P_TURN_sum_median": 0.01625489,
+   "auc_P_TURN_vs_geometric_turn": {
+    "auc": 0.615864,
+    "lo": 0.437869,
+    "hi": 0.808755,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_geometric_turn": {
+    "auc": 0.700426,
+    "lo": 0.547168,
+    "hi": 0.84153,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_P_TURN_vs_label_TURN_in_band": {
+    "auc": 0.921569,
+    "lo": 0.736842,
+    "hi": 1.0,
+    "n": 40,
+    "n_pos": 6,
+    "n_episodes": 20,
+    "n_boot_kept": 9594,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_label_nonLANE_KEEP_in_band": {
+    "auc": 0.645604,
+    "lo": 0.36,
+    "hi": 0.895616,
+    "n": 40,
+    "n_pos": 14,
+    "n_episodes": 20,
+    "n_boot_kept": 9999,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   }
+  },
+  "nav_zero": {
+   "argmax_histogram": {
+    "LANE_KEEP": 140
+   },
+   "max_softmax_median": 0.735629,
+   "P_LANE_KEEP_median": 0.735629,
+   "P_TURN_sum_median": 0.01624683,
+   "auc_P_TURN_vs_geometric_turn": {
+    "auc": 0.536545,
+    "lo": 0.337733,
+    "hi": 0.732883,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_geometric_turn": {
+    "auc": 0.541462,
+    "lo": 0.340122,
+    "hi": 0.711738,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_P_TURN_vs_label_TURN_in_band": {
+    "auc": 0.857843,
+    "lo": 0.666667,
+    "hi": 1.0,
+    "n": 40,
+    "n_pos": 6,
+    "n_episodes": 20,
+    "n_boot_kept": 9594,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_label_nonLANE_KEEP_in_band": {
+    "auc": 0.552198,
+    "lo": 0.26998,
+    "hi": 0.824176,
+    "n": 40,
+    "n_pos": 14,
+    "n_episodes": 20,
+    "n_boot_kept": 9999,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   }
+  }
+ },
+ "nav_only_ceiling": {
+  "per_nav_label_table_in_band": {
+   "0": {
+    "n": 28,
+    "lat_label_hist": {
+     "LANE_KEEP": 20,
+     "NUDGE_L": 6,
+     "NUDGE_R": 2
+    },
+    "majority": "LANE_KEEP"
+   },
+   "1": {
+    "n": 2,
+    "lat_label_hist": {
+     "TURN_L": 2
+    },
+    "majority": "TURN_L"
+   },
+   "2": {
+    "n": 10,
+    "lat_label_hist": {
+     "LANE_KEEP": 6,
+     "TURN_R": 4
+    },
+    "majority": "LANE_KEEP"
+   }
+  },
+  "leave_one_episode_out_accuracy": 0.684211,
+  "n_scored": 38,
+  "note": "nav is an ORACLE (ego-future) input. This is the accuracy a predictor that reads NOTHING BUT nav attains on the same rows \u2014 the ceiling any nav-echo can reach."
+ }
+}
+{
+ "nav_true": {
+  "geometric_turn_binary": {
+   "n": 140,
+   "d_in": 256,
+   "n_pca": 8,
+   "l2": 1.0,
+   "n_scored": 140,
+   "n_episodes_folds": 20,
+   "accuracy": 0.785714,
+   "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+   "auc": 0.49492,
+   "recall_by_class": {
+    "0": 0.955752,
+    "1": 0.074074
+   },
+   "support_by_class": {
+    "0": 113,
+    "1": 27
+   },
+   "constant_only_base_rate": 0.192857,
+   "constant_only_accuracy": 0.807143,
+   "shuffled_label_accuracy_5draws": [
+    0.757143,
+    0.771429,
+    0.807143,
+    0.807143,
+    0.771429
+   ]
+  },
+  "v72_lat_label_multiclass": {
+   "n": 40,
+   "d_in": 256,
+   "n_pca": 8,
+   "l2": 1.0,
+   "n_scored": 40,
+   "n_episodes_folds": 20,
+   "accuracy": 0.55,
+   "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+   "recall_by_class": {
+    "0": 0.846154,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0,
+    "7": 0.0
+   },
+   "support_by_class": {
+    "0": 26,
+    "4": 6,
+    "5": 2,
+    "6": 2,
+    "7": 4
+   },
+   "constant_only_base_rate": 0.65,
+   "classes": {
+    "0": "LANE_KEEP",
+    "4": "NUDGE_L",
+    "5": "NUDGE_R",
+    "6": "TURN_L",
+    "7": "TURN_R"
+   }
+  }
+ },
+ "nav_zero": {
+  "geometric_turn_binary": {
+   "n": 140,
+   "d_in": 256,
+   "n_pca": 8,
+   "l2": 1.0,
+   "n_scored": 140,
+   "n_episodes_folds": 20,
+   "accuracy": 0.721429,
+   "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+   "auc": 0.377909,
+   "recall_by_class": {
+    "0": 0.876106,
+    "1": 0.074074
+   },
+   "support_by_class": {
+    "0": 113,
+    "1": 27
+   },
+   "constant_only_base_rate": 0.192857,
+   "constant_only_accuracy": 0.807143,
+   "shuffled_label_accuracy_5draws": [
+    0.807143,
+    0.807143,
+    0.807143,
+    0.807143,
+    0.807143
+   ]
+  },
+  "v72_lat_label_multiclass": {
+   "n": 40,
+   "d_in": 256,
+   "n_pca": 8,
+   "l2": 1.0,
+   "n_scored": 40,
+   "n_episodes_folds": 20,
+   "accuracy": 0.35,
+   "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+   "recall_by_class": {
+    "0": 0.538462,
+    "4": 0.0,
+    "5": 0.0,
+    "6": 0.0,
+    "7": 0.0
+   },
+   "support_by_class": {
+    "0": 26,
+    "4": 6,
+    "5": 2,
+    "6": 2,
+    "7": 4
+   },
+   "constant_only_base_rate": 0.65,
+   "classes": {
+    "0": "LANE_KEEP",
+    "4": "NUDGE_L",
+    "5": "NUDGE_R",
+    "6": "TURN_L",
+    "7": "TURN_R"
+   }
+  }
+ }
+}
+wrote C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/tacdec/intent_probe_ep2.json

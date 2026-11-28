@@ -1,0 +1,422 @@
+{
+ "tool": "d2_khead.py",
+ "prereg": "PREREG_LHA0_D2.md s3",
+ "registration": {
+  "prereg_sha256": "3f37a441d0df0cd2b2e287f56fb3db7250d63d7f285d3003f6c767a788d2abc8",
+  "seal_line_2": "# sealed 2026-10-26 21:35:44 Berlin (CET, UTC+1) / 2026-10-26 20:35:44 UTC by the LHA0-D2 agent; before this line existed no eval139 file had been read by this arm",
+  "pins": {
+   "D2_FROZEN.json": "69135b9145e38e7b8b13fb1dac85ebda20b7db9b836c85032e7c4af2d25d2fc5",
+   "D2NOACC_FROZEN.json": "f9119ff8f5f199cec10daae6751a25d37e95cabdca66816186f1f89f8b5f858f",
+   "code/d2_common.py": "73b0a6107c32ca6f8b22a6b16919a2fe5829bb5977f2512fcf4b42cfa171aec7",
+   "code/d2_fit.py": "0af2816bf5fb7cfaa57017799f9080886d9467cc14c3491ef1e6f77c7f60f32f",
+   "code/d2_khead.py": "f5ca118e44dd1dcd4e6a16bda6430d187e5114ea841dac4bf28d77feed30cba7",
+   "code/d2_selftest.py": "39ffaf6a43237a9bda865f3c5303e4f2eee2aadb01798c6b31a607f3ba9f9e85"
+  }
+ },
+ "verdict": "NO-GO",
+ "bar": "GO iff AUC(D2) - AUC(LH) >= +0.030 and the paired episode-cluster bootstrap 95% CI excludes 0",
+ "tier": "T0 label-level diagnostic on logged eval139 frames (heads read the frozen trunk's t0 z_tac / measured t0 ego state; no planner, no roll)",
+ "estimator": "Mann-Whitney AUC (average-rank ties); CI = EPISODE-RESAMPLING bootstrap (B 2000, seed 0), scores held fixed, every arm on the SAME draws (paired). Answers 'another draw of eval EPISODES' ONLY; blind to training (one refcv8 seed, one head fit) and inference variance (heads deterministic; z_tac bit-equal across inference seeds).",
+ "n": {
+  "windows": 2495,
+  "decel": 639,
+  "episodes": 136,
+  "d_D2": 3,
+  "d_LH": 513
+ },
+ "population": {
+  "s6_valid": 3668,
+  "compliant": 3251,
+  "gt_decel": 639,
+  "gt_cruise": 1856,
+  "union_n": 2495,
+  "n_episodes": 136
+ },
+ "primary": {
+  "D2": {
+   "delta_vs_LH": {
+    "point": 0.0052,
+    "ci95": [
+     -0.0522,
+     0.0631
+    ],
+    "boot_se": 0.0288
+   },
+   "delta_unrounded": 0.005213392423506491,
+   "ci_lo_unrounded": -0.05220507590626247,
+   "clears_bar": false,
+   "gap_to_bar": 0.0248
+  },
+  "D2_permuted_control": {
+   "delta_vs_LH": {
+    "point": -0.0933,
+    "ci95": [
+     -0.1544,
+     -0.0289
+    ],
+    "boot_se": 0.032
+   },
+   "delta_unrounded": -0.09328119097728127,
+   "ci_lo_unrounded": -0.15438469028934632,
+   "clears_bar": false,
+   "gap_to_bar": 0.1233
+  }
+ },
+ "arms_full_population": {
+  "LH": {
+   "auc": 0.7305,
+   "ci95": [
+    0.6749,
+    0.7855
+   ]
+  },
+  "D2": {
+   "auc": 0.7357,
+   "ci95": [
+    0.693,
+    0.7808
+   ]
+  },
+  "constant": {
+   "auc": 0.5,
+   "ci95": [
+    0.5,
+    0.5
+   ]
+  },
+  "neg_a0_raw": {
+   "auc": 0.7254,
+   "ci95": [
+    0.6829,
+    0.7671
+   ]
+  },
+  "D2_permuted": {
+   "auc": 0.6372,
+   "ci95": [
+    0.596,
+    0.6803
+   ]
+  },
+  "fuse_D2_LH": {
+   "auc": 0.7755,
+   "ci95": [
+    0.728,
+    0.8217
+   ]
+  },
+  "D2NOACC": {
+   "auc": 0.7225,
+   "ci95": [
+    0.6723,
+    0.7753
+   ]
+  },
+  "D2NOACC_permuted": {
+   "auc": 0.6485,
+   "ci95": [
+    0.6004,
+    0.6984
+   ]
+  },
+  "LH_logit_scale": {
+   "auc": 0.7305,
+   "ci95": [
+    0.6749,
+    0.7855
+   ]
+  }
+ },
+ "paired_vs_LH_full": {
+  "D2": {
+   "point": 0.0052,
+   "ci95": [
+    -0.0522,
+    0.0631
+   ],
+   "boot_se": 0.0288
+  },
+  "D2_permuted": {
+   "point": -0.0933,
+   "ci95": [
+    -0.1544,
+    -0.0289
+   ],
+   "boot_se": 0.032
+  },
+  "neg_a0_raw": {
+   "point": -0.0051,
+   "ci95": [
+    -0.0644,
+    0.0526
+   ],
+   "boot_se": 0.0301
+  },
+  "fuse_D2_LH": {
+   "point": 0.045,
+   "ci95": [
+    0.0185,
+    0.0716
+   ],
+   "boot_se": 0.0137
+  },
+  "D2NOACC": {
+   "point": -0.008,
+   "ci95": [
+    -0.0653,
+    0.0524
+   ],
+   "boot_se": 0.03
+  },
+  "D2NOACC_permuted": {
+   "point": -0.0819,
+   "ci95": [
+    -0.1435,
+    -0.0146
+   ],
+   "boot_se": 0.0326
+  },
+  "constant": {
+   "point": -0.2305,
+   "ci95": [
+    -0.2855,
+    -0.1749
+   ],
+   "boot_se": 0.0288
+  }
+ },
+ "contrasts_full": {
+  "D2_minus_neg_a0_raw": {
+   "point": 0.0103,
+   "ci95": [
+    -0.0097,
+    0.0335
+   ],
+   "boot_se": 0.011
+  },
+  "D2_minus_D2_permuted": {
+   "point": 0.0985,
+   "ci95": [
+    0.0625,
+    0.1364
+   ],
+   "boot_se": 0.0193
+  },
+  "fuse_minus_D2": {
+   "point": 0.0398,
+   "ci95": [
+    0.0059,
+    0.0739
+   ],
+   "boot_se": 0.0173
+  },
+  "fuse_minus_LH": {
+   "point": 0.045,
+   "ci95": [
+    0.0185,
+    0.0716
+   ],
+   "boot_se": 0.0137
+  },
+  "D2NOACC_minus_D2": {
+   "point": -0.0132,
+   "ci95": [
+    -0.0322,
+    0.0058
+   ],
+   "boot_se": 0.0098
+  },
+  "neg_a0_raw_minus_LH": {
+   "point": -0.0051,
+   "ci95": [
+    -0.0644,
+    0.0526
+   ],
+   "boot_se": 0.0301
+  }
+ },
+ "without_no_sidecar_clips": {
+  "n": {
+   "windows": 2424,
+   "decel": 632,
+   "episodes": 133
+  },
+  "arms": {
+   "LH": {
+    "auc": 0.7376,
+    "ci95": [
+     0.6798,
+     0.7969
+    ]
+   },
+   "D2": {
+    "auc": 0.7417,
+    "ci95": [
+     0.6994,
+     0.785
+    ]
+   },
+   "constant": {
+    "auc": 0.5,
+    "ci95": [
+     0.5,
+     0.5
+    ]
+   },
+   "neg_a0_raw": {
+    "auc": 0.7284,
+    "ci95": [
+     0.6858,
+     0.7729
+    ]
+   },
+   "D2_permuted": {
+    "auc": 0.6417,
+    "ci95": [
+     0.6004,
+     0.6834
+    ]
+   },
+   "fuse_D2_LH": {
+    "auc": 0.7824,
+    "ci95": [
+     0.7373,
+     0.8266
+    ]
+   },
+   "D2NOACC": {
+    "auc": 0.7323,
+    "ci95": [
+     0.6824,
+     0.7798
+    ]
+   },
+   "D2NOACC_permuted": {
+    "auc": 0.6566,
+    "ci95": [
+     0.6059,
+     0.7029
+    ]
+   },
+   "LH_logit_scale": {
+    "auc": 0.7376,
+    "ci95": [
+     0.6798,
+     0.7969
+    ]
+   }
+  },
+  "D2_vs_LH": {
+   "delta_vs_LH": {
+    "point": 0.0042,
+    "ci95": [
+     -0.0547,
+     0.0591
+    ],
+    "boot_se": 0.0295
+   },
+   "delta_unrounded": 0.00416672553119346,
+   "ci_lo_unrounded": -0.05465343025200465,
+   "clears_bar": false,
+   "gap_to_bar": 0.0258
+  },
+  "D2_permuted_vs_LH": {
+   "delta_vs_LH": {
+    "point": -0.0959,
+    "ci95": [
+     -0.1611,
+     -0.0312
+    ],
+    "boot_se": 0.0325
+   },
+   "delta_unrounded": -0.09590002684222432,
+   "ci_lo_unrounded": -0.16107966398697526,
+   "clears_bar": false,
+   "gap_to_bar": 0.1259
+  },
+  "note": "the bar reads the FULL population; this row is descriptive"
+ },
+ "nominal_dt_fallback": {
+  "windows": 102,
+  "clips": 3,
+  "union_windows": 71,
+  "rule": "dt = 0.1 s; a0 = (v[k]-v[k-1])/0.1, psi_dot0 = wrap(yaw[k]-yaw[k-1])/0.1 from the eval dump's ep_poses at k = ws (anchor exact); the fresh-split sensitivity (Bnom == B, LHA0_DIAG) is the only evidence it is immaterial"
+ },
+ "controls": {
+  "K-LH-REPRO_pop": true,
+  "K-LH-REPRO_auc": {
+   "auc": 0.730459,
+   "want": 0.7305,
+   "pass": true
+  },
+  "K-CONST_0.5": {
+   "auc": 0.5,
+   "pass": true
+  },
+  "K-WAUC_unit_weights": {
+   "LH": true,
+   "D2": true,
+   "constant": true,
+   "neg_a0_raw": true,
+   "D2_permuted": true,
+   "fuse_D2_LH": true,
+   "D2NOACC": true,
+   "D2NOACC_permuted": true,
+   "LH_logit_scale": true
+  },
+  "K-FALLBACK": {
+   "got": {
+    "windows": 102,
+    "clips": 3,
+    "union_windows": 71
+   },
+   "want": {
+    "windows": 102,
+    "clips": 3,
+    "union_windows": 71
+   },
+   "pass": true
+  },
+  "LH_CI_vs_K_HEAD_json (beside, not gating)": {
+   "got": [
+    0.6749,
+    0.7855
+   ],
+   "want": [
+    0.6749,
+    0.7855
+   ],
+   "matches_to_1e-4": true
+  }
+ },
+ "controls_all_pass": true,
+ "heads": {
+  "D2": {
+   "sha256": "69135b9145e38e7b8b13fb1dac85ebda20b7db9b836c85032e7c4af2d25d2fc5",
+   "lambda": 10.0,
+   "w_std_units": [
+    -0.6700539946851863,
+    -0.1838352745925028,
+    -0.031043905799848736
+   ],
+   "b": -1.1518877479859284,
+   "n_fit_rows": 8178
+  },
+  "D2NOACC": {
+   "sha256": "f9119ff8f5f199cec10daae6751a25d37e95cabdca66816186f1f89f8b5f858f",
+   "lambda": 1.0,
+   "w_std_units": [
+    -0.7527083005816495,
+    -0.5533266651560548,
+    -0.10094644136444408
+   ],
+   "b": -0.7872290947865557,
+   "n_fit_rows": 6300
+  }
+ },
+ "permutation": {
+  "scope": "within each eval EPISODE over ALL its bank windows (4,754 total), ONE shared permutation of (a0, psi_dot0), episodes in sorted order, np.random.default_rng(0); v0 stays with its window",
+  "frac_a0_values_moved": 0.9607
+ },
+ "wall_s": 3.9
+}

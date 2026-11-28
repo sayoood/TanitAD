@@ -1,0 +1,131 @@
+--- a/stack/tanitad/refs/refc.py	2026-10-12 01:57:13.000000000 +0200
++++ b/stack/tanitad/refs/refc.py	2026-10-12 02:46:19.900806000 +0200
+@@ -2473,7 +2473,13 @@
+         self.r8_gen = r8c.R8Generator(int(r8cfg.seed))
+         #: MM ruling Q1: the per-step emission switch for the EXTRA candidates (set by
+         #: `refcv8_train.apply_emit_schedule` from `emit_start`; True = the config's emit flags apply as written)
+-        self.r8_emit_live = True
++        #: ⛔ BORN AT REFCV8 STEP 0 (2026-10-12): the switch starts at the schedule's value for step 0, i.e.
++        #: `refcv8_train.emit_live(0, emit_start)`. It was `True` whatever `emit_start` said, so a build that was never
++        #: scheduled -- the launch gate's G-EVAL trainer model, captured before step 0 -- EMITTED the extras at step 0
++        #: while the eval loader (scheduled at the checkpoint's step 0, `refcv7_loader.py:517-519`) did not:
++        #: trainer-vs-loader differed on `out.r8_emit_keep` (pre-gate d6/d7). `train()` re-applies the schedule at
++        #: EVERY step before the forward (`refc_v3_train.py:10572`), so training is unchanged.
++        self.r8_emit_live = int(getattr(r8cfg, 'emit_start', 0) or 0) <= 0
+         mods = [self.r8_mod, self.r8_sel, self.r8_rc_to_cond] + ([self.r8_sub] if self.r8_sub is not None else [])
+         return int(sum(p.numel() for m in mods for p in m.parameters())) + 1
+ 
+@@ -2506,7 +2512,8 @@
+             force = r8.get('force_hyp')
+             hyp = r8c.allocate(joint, m, int(cfg.alloc_top_k), int(cfg.alloc_min_each), force=force,
+                                force_min=int(r8.get('force_min', 4)))
+-            src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen)
++            # ⛔ eval: the source-anchor choice is a function of the inference seed (R8Generator.rand_eval, 2026-10-12)
++            src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen, training=self.training)
+             hl, ho = r8c.split_joint(hyp)
+             cons_a = r8c.candidate_constraints(c8l, c8o, hl, ho)
+             cons_ag = cons_a
+@@ -3021,7 +3028,12 @@
+             # shifts a base candidate's noise.
+             _nb = int(self.anchors.shape[0])
+             eps_b = torch.randn((b, _nb) + tuple(x0_n.shape[2:]), device=dev, dtype=x0_n.dtype)
+-            eps_x = self.r8_gen.randn((b, x0_n.shape[1] - _nb) + tuple(x0_n.shape[2:]), dev, x0_n.dtype)
++            # ⛔ at EVAL the extras' values come from a generator seeded off the GLOBAL state (read, not consumed):
++            # the persistent r8_gen is not restored by a seed / fork_rng, so drawing its values at eval made the same
++            # checkpoint + batch + inference seed answer differently on every call (G-EVAL control, 2026-10-12).
++            _shape_x = (b, x0_n.shape[1] - _nb) + tuple(x0_n.shape[2:])
++            eps_x = (self.r8_gen.randn(_shape_x, dev, x0_n.dtype) if self.training
++                     else self.r8_gen.randn_eval(_shape_x, dev, r8c.EVAL_SITE_EXTRA_EPS, x0_n.dtype))
+             eps = torch.cat([eps_b, eps_x], 1)
+         t_noise = (train_t if train_t is not None
+                    else torch.tensor(t0, device=dev))
+--- a/stack/tanitad/refs/refcv8_conditioning.py	2026-10-12 01:57:13.000000000 +0200
++++ b/stack/tanitad/refs/refcv8_conditioning.py	2026-10-12 02:46:02.425766000 +0200
+@@ -28,6 +28,7 @@
+ """
+ from __future__ import annotations
+ 
++import hashlib
+ import math
+ from dataclasses import dataclass, field
+ from typing import Any, Mapping, Sequence
+@@ -41,7 +42,8 @@
+ 
+ __all__ = [
+     "LAT_V7", "LON_V7", "LAT3", "LAT3_V7_IDS", "LON6", "LON6_V7_IDS", "N_LAT3", "N_LON6", "N_HYP",
+-    "LAT_MASKED_V7_IDS", "LON_MASKED_V7_IDS", "PHI_DIMS", "R8Config", "R8Generator",
++    "LAT_MASKED_V7_IDS", "LON_MASKED_V7_IDS", "PHI_DIMS", "R8Config", "R8Generator", "EVAL_SITE_SELECT_SOURCE",
++    "EVAL_SITE_EXTRA_EPS",
+     "tag_paths", "constraint_targets", "hypothesis_posteriors", "build_phi", "PerCandidateModulation",
+     "allocate", "select_source_anchors", "FactorizedSelection", "SubScoreHeads", "subscore_targets",
+     "listwise_selection_loss", "constraint_satisfaction_loss", "constraint_head_loss", "candidate_constraints",
+@@ -168,6 +170,48 @@
+     def randn(self, shape, device, dtype=torch.float32) -> Tensor:
+         return torch.randn(shape, generator=self.get(device), device=device, dtype=dtype)
+ 
++    # ---- EVAL-time draws (2026-10-12, the launch gate's G-EVAL determinism control) -------------------------------- #
++    # ⛔ MEASURED on d014ff2 (pre-gate, Thor CPU; reproduced on the dev-box rig): two EVAL draws took their VALUES from
++    # the persistent generator above -- the allocated candidates' source-anchor choice (`select_source_anchors`) and
++    # their sampler noise (`refc._sample`'s `eps_x`). That generator ADVANCES on every call and no global-RNG seed or
++    # `torch.random.fork_rng` restores it, so the same checkpoint on the same batch under the same inference seed gave
++    # a DIFFERENT answer on every call (18 outputs, `launch_gate.py` G-EVAL control) and an inference seed did not fix
++    # the extras' noise at all. The sampler is stochastic at eval BY DESIGN (`refc._sample`); what was wrong is that
++    # the eval draws were not a function of the inference seed.
++    # The FIX: an eval draw's VALUES come from a FRESH generator seeded from the device's GLOBAL RNG STATE -- READ,
++    # never consumed, so every base candidate's noise is exactly refcv7's -- plus this generator's seed and a per-site
++    # salt. A forked / re-seeded global RNG therefore reproduces the forward bit for bit, and a different inference
++    # seed draws different extras. ⛔ The persistent TRAINING stream is still ADVANCED by the identical draw (value
++    # discarded), so the training trajectory of a run is bit-identical to d014ff2 whatever its in-run eval cadence
++    # (ladder / warm-start comparability; `test_refcv8_eval_determinism.py` pins both halves).
++    def eval_generator(self, device, site: int) -> torch.Generator:
++        """A FRESH generator for ONE eval-time draw: blake2b(the device's global RNG state | seed | site). Reads the
++        global state, never draws from it."""
++        dev = torch.device(device)
++        if dev.type == "cuda":
++            st = torch.cuda.get_rng_state(dev)
++        else:
++            st = torch.get_rng_state()
++        h = hashlib.blake2b(st.numpy().tobytes(), digest_size=8)
++        h.update(int(self.seed).to_bytes(8, "little", signed=True))
++        h.update(int(site).to_bytes(8, "little", signed=True))
++        g = torch.Generator(device=dev)
++        g.manual_seed(int.from_bytes(h.digest(), "little") & ((1 << 63) - 1))
++        return g
++
++    def rand_eval(self, shape, device, site: int) -> Tensor:
++        torch.rand(shape, generator=self.get(device), device=device)       # ⛔ the training stream advances as before
++        return torch.rand(shape, generator=self.eval_generator(device, site), device=device)
++
++    def randn_eval(self, shape, device, site: int, dtype=torch.float32) -> Tensor:
++        torch.randn(shape, generator=self.get(device), device=device, dtype=dtype)   # ⛔ as before, value discarded
++        return torch.randn(shape, generator=self.eval_generator(device, site), device=device, dtype=dtype)
++
++
++#: the per-site salts of the two EVAL-live draws on the dedicated generator (R8Generator.eval_generator)
++EVAL_SITE_SELECT_SOURCE = 1
++EVAL_SITE_EXTRA_EPS = 2
++
+ 
+ # ================================================================================================================= #
+ # the tagger (what hypothesis a path IS) -- param-free, no grad                                                    #
+@@ -389,14 +433,17 @@
+ 
+ 
+ @torch.no_grad()
+-def select_source_anchors(tag_lat: Tensor, tag_lon: Tensor, hyp: Tensor, gen: R8Generator) -> tuple[Tensor, Tensor]:
++def select_source_anchors(tag_lat: Tensor, tag_lon: Tensor, hyp: Tensor, gen: R8Generator,
++                          training: bool = True) -> tuple[Tensor, Tensor]:
+     """For each allocated hypothesis [B, M] choose a source anchor whose own tag matches it: (lat, lon) exact, else
+     lat only, else any. -> (src [B, M] anchor ids, match_level [B, M] 2 exact / 1 lat-only / 0 none). Uniform among the
+-    matches, drawn from the DEDICATED generator."""
++    matches, drawn from the DEDICATED generator. ``training`` False (the decoder in eval): the values come from
++    :meth:`R8Generator.rand_eval`, a function of the inference seed (2026-10-12)."""
+     b, n = tag_lat.shape
+     m = hyp.shape[1]
+     hl, ho = split_joint(hyp)
+-    u = gen.rand((b, m, n), tag_lat.device)
++    u = (gen.rand((b, m, n), tag_lat.device) if training
++         else gen.rand_eval((b, m, n), tag_lat.device, EVAL_SITE_SELECT_SOURCE))
+     exact = (tag_lat[:, None, :] == hl[..., None]) & (tag_lon[:, None, :] == ho[..., None])
+     latm = tag_lat[:, None, :] == hl[..., None]
+     lvl = torch.where(exact.any(-1), 2, torch.where(latm.any(-1), 1, 0))

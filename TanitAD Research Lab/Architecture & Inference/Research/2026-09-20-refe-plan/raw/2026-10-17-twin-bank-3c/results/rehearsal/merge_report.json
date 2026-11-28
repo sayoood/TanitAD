@@ -1,0 +1,80 @@
+{
+ "prereg_sha256": "e8365f34fd5f11a23a1b5e0fceda14dc14426277ae09db3e5335526c1bd6cde3",
+ "input": {
+  "path": "/workspace/ops/bank3c/controls/bank_i3/targets_rank1.jsonl",
+  "sha256": "94e0280d74ba40c4618e9d8694cf651cc289bf7c821a77fc6876ee45c09c113d",
+  "lines": 224,
+  "lane_rank_rows": 74,
+  "other_rows": 150
+ },
+ "output": {
+  "lines": 173,
+  "dropped_twins": 51,
+  "kept_twins": 23,
+  "sha256": "fd4ff8ea389f2135358c024cd2281ba467ac789e0ce9f28839983ffbf463c164"
+ },
+ "by_rank": {
+  "1": {
+   "in": 51,
+   "evaluated": 46,
+   "committed": 17,
+   "kept": 17,
+   "dropped_by_reason": {
+    "not_committed": 29,
+    "scenario_too_short_10s": 5
+   },
+   "committed_but_dropped": 0,
+   "f10_round_vs_raw_disagree": 0,
+   "keep_share_all": 0.3333,
+   "keep_share_evaluated": 0.3696
+  },
+  "2": {
+   "in": 14,
+   "evaluated": 14,
+   "committed": 4,
+   "kept": 4,
+   "dropped_by_reason": {
+    "not_committed": 10
+   },
+   "committed_but_dropped": 0,
+   "f10_round_vs_raw_disagree": 0,
+   "keep_share_all": 0.2857,
+   "keep_share_evaluated": 0.2857
+  },
+  "3": {
+   "in": 9,
+   "evaluated": 9,
+   "committed": 2,
+   "kept": 2,
+   "dropped_by_reason": {
+    "not_committed": 7
+   },
+   "committed_but_dropped": 0,
+   "f10_round_vs_raw_disagree": 0,
+   "keep_share_all": 0.2222,
+   "keep_share_evaluated": 0.2222
+  }
+ },
+ "yield_guard": {
+  "rule": "K=1 keep share (evaluated basis) < 0.2 => STOP (PREREG_3C); needs K=1 evaluated n >= 30",
+  "k1_evaluated": 46,
+  "k1_share_evaluated": 0.3696,
+  "k1_share_all": 0.3333,
+  "status": "HOLDS"
+ },
+ "shards": 16,
+ "code": {
+  "route_lane_rank_patch": "a87dc994811d527a",
+  "build_teacher_rollouts": "cf1ea8e1cf1af3b7",
+  "reroll_bank_3c": "6109ff3d4fcad405"
+ },
+ "rollout_s": {
+  "n": 74,
+  "sum": 1294.1,
+  "mean": 17.49,
+  "median": 13.4,
+  "p90": 40.2,
+  "max": 49.22
+ },
+ "copied_unchanged": {}
+}

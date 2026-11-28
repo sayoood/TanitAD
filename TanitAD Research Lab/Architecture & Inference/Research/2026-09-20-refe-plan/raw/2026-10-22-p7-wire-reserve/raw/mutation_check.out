@@ -1,0 +1,41 @@
+CONTROL (unmutated)
+  ChainStaticTests: rc=0  ZZSESSRES_PASS 3  (optional checks run: ['test_p6_chain static checks']; ABSENT: [])
+  FAST/UnitTests: rc=0  ZZSESSRES_PASS 3  (optional checks run: []; ABSENT: [])
+  FAST/ReserveFileTests: rc=0  ZZSESSRES_PASS 4  (optional checks run: []; ABSENT: [])
+  FAST/FilterTests: rc=0  ZZSESSRES_PASS 7  (optional checks run: []; ABSENT: [])
+  FAST/AuditTests: rc=0  ZZSESSRES_PASS 11  (optional checks run: []; ABSENT: [])
+  FAST/MoveTests: rc=0  ZZSESSRES_PASS 4  (optional checks run: ['aux_label_store.finalize']; ABSENT: [])
+  FAST/RealDataTests: rc=0  ZZSESSRES_PASS 3  (optional checks run: ['filter over the real rank-0 shape', 'token-table rank-0 count']; ABSENT: [])
+  FAST/PrepCliTests: rc=0  ZZSESSRES_PASS 2  (optional checks run: []; ABSENT: [])
+  FAST/ChainStaticTests: rc=0  ZZSESSRES_PASS 3  (optional checks run: ['test_p6_chain static checks']; ABSENT: [])
+  FULL: rc=0  ZZSESSRES_PASS 43  (optional checks run: ['aux_label_store.finalize', 'filter over the real rank-0 shape', 'sandbox chain (P6 default path)', 'sandbox chain (P7 planted leaks)', 'sandbox chain (P7 refusals)', 'sandbox chain (P7 reserve stage)', 'source keying claims', 'source keying claims (red arm)', 'test_p6_chain static checks', 'tip p6_pod.sh comparison', 'token-table rank-0 count']; ABSENT: [])
+  test_a_leak_planted: rc=0  ZZSESSRES_PASS 1  (optional checks run: ['sandbox chain (P7 planted leaks)']; ABSENT: [])
+  test_refusals_leave_every_input_untouched: rc=0  ZZSESSRES_PASS 1  (optional checks run: ['sandbox chain (P7 refusals)']; ABSENT: [])
+MUTATIONS (each must be RED)
+M1  RED  [FULL]  filter_bank: the single exclusion line deleted (a reserved row is written to the output)
+      8 failing test(s): test_a_leak_planted_after_the_fact_is_refused_before_ARGS, test_every_subcommand_prints_one_marker_and_the_right_rc, test_filter_bank_dir_report_and_the_trainers_identity_digest, test_p7_reserve_leaves_every_input_and_the_arguments_name_the_copies, test_rank0_and_twins_are_excluded_by_their_own_log, test_refusals_leave_every_input_untouched, test_survivors_are_byte_for_byte, test_the_filter_on_a_real_shaped_rank0_bank_excludes_exactly_10141
+M2  RED  [FAST]  filter_bank: twins (rank >= 1) are not excluded
+      5 failing test(s): test_every_subcommand_prints_one_marker_and_the_right_rc, test_filter_bank_dir_report_and_the_trainers_identity_digest, test_rank0_and_twins_are_excluded_by_their_own_log, test_the_filter_on_a_real_shaped_rank0_bank_excludes_exactly_10141, test_token_table_cross_check_catches_a_twin_with_the_wrong_parent_log
+M3  RED  [FAST]  session_of: accepts any string (the bare rsplit; 'L0' becomes a clean session)
+      7 failing test(s): test_a_row_with_no_resolvable_log_is_refused_and_nothing_is_written, test_assert_rows_clear_is_the_consumer_side_refusal, test_every_subcommand_prints_one_marker_and_the_right_rc, test_filter_calib, test_is_reserved_needs_a_resolvable_log, test_logless_keys_are_unresolved_never_clean, test_session_of_and_its_refusals
+M4  RED  [FAST]  load_reserve: the sha256 pin is not checked
+      2 failing test(s): test_every_subcommand_prints_one_marker_and_the_right_rc, test_one_byte_changed_refuses
+M5  RED  [FAST]  audit_inputs: a bank leak is never recorded
+      12 failing test(s): test_every_subcommand_prints_one_marker_and_the_right_rc, test_leak_lists_are_capped_but_counted, test_move_cache_and_images_then_restore_exactly, test_planted_calibration_row, test_planted_d9_cache_key, test_planted_image_zip_frame_dir_and_references, test_planted_label_store_shard_and_stale_manifest, test_planted_leaked_bank_row_rank0, test_planted_leaked_twin_rank1, test_split_label_store_then_refinalise, test_the_filter_on_a_real_shaped_rank0_bank_excludes_exactly_10141, test_the_unfiltered_input_set_is_flagged_everywhere
+M6  RED  [FAST]  audit_inputs: an unresolved key is not counted
+      1 failing test(s): test_logless_keys_are_unresolved_never_clean
+M7  RED  [FAST]  audit_inputs: an input that examined zero keys counts as clean
+      1 failing test(s): test_an_empty_or_missing_input_is_not_a_clean_input
+M8  RED  [FAST]  move_reserved: the reserve is not moved (left in the shared root)
+      2 failing test(s): test_every_subcommand_prints_one_marker_and_the_right_rc, test_move_cache_and_images_then_restore_exactly
+M9  RED  [FAST]  p6_prep reserve-audit: always prints OK
+      1 failing test(s): test_every_subcommand_prints_one_marker_and_the_right_rc
+M10  RED  [test_refusals_leave_every_input_untouched]  p6_pod.sh: the resume-bank guard before any move is deleted (a P6 run directory is no longer protected)
+      1 failing test(s): test_refusals_leave_every_input_untouched
+M11  RED  [test_a_leak_planted]  p6_pod.sh: the final audit before ARGS is deleted
+      1 failing test(s): test_a_leak_planted_after_the_fact_is_refused_before_ARGS
+M12  RED  [ChainStaticTests]  p6_pod.sh: the reserve block is not guarded by P7_RESERVE (P6's default path would run it)
+      1 failing test(s): test_static_properties_and_their_mutations
+M13  RED  [test_refusals_leave_every_input_untouched]  p6_pod.sh: the bank filter result is not checked (the chain would go on after a refusal)
+      1 failing test(s): test_refusals_leave_every_input_untouched
+MUTATION_CHECK_OK

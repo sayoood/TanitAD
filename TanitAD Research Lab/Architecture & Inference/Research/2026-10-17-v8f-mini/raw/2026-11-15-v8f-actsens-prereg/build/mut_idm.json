@@ -1,0 +1,81 @@
+{
+ "tree": "F:/TanitAD-scratch/actsens/tree",
+ "py": "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+ "basetemp": "F:/TanitAD-scratch/actsens/bt",
+ "muts": {
+  "M1": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "                           wm_gamma_levels=declared_wm_idm_gamma(a),",
+   "new": "                           ",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_gate_passes_the_dose_and_reads_the_built_levels_back"
+   ]
+  },
+  "M2": {
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "        gl = tuple(float(g) for g in cfg.wm_gamma_levels) if (cfg.wm == \"b\" and len(tuple(cfg.wm_gamma_levels)) > 0) else (gamma,) * 3",
+   "new": "        gl = (gamma,) * 3",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_dose_level1_idm_gradient_is_ten_times_and_other_levels_are_bit_equal",
+    "test_gate_passes_the_dose_and_reads_the_built_levels_back"
+   ]
+  },
+  "M3": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "    \"wm_idm_gamma\": \"lever:wm_idm_gamma\",\n",
+   "new": "",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_default_absent_field_equals_the_explicit_record_and_the_flag_absent_argv_declares_nothing"
+   ]
+  },
+  "M4": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "    decl = declared_wm_idm_gamma(a) or ((float(cfg.wm_gamma) if lv[\"wm\"] == \"b\" else 0.0),) * 3\n    got = [float(r[\"gamma\"]) for r in model.wm.stack.built_levers().values()]\n",
+   "new": "    decl = ((float(cfg.wm_gamma) if lv[\"wm\"] == \"b\" else 0.0),) * 3\n    got = [float(model.wm.gamma)] * 3\n",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_gate_refuses_a_builder_that_ignores_the_config_field_while_the_old_check_stays_green"
+   ]
+  },
+  "M5": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "    return () if a.wm_idm_gamma is None else tuple(float(g) for g in a.wm_idm_gamma)",
+   "new": "    return (1000.0, 100.0, 100.0) if a.wm_idm_gamma is None else tuple(float(g) for g in a.wm_idm_gamma)",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_default_absent_field_equals_the_explicit_record_and_the_flag_absent_argv_declares_nothing"
+   ]
+  },
+  "M7": {
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "mk(gl[1], action_dim=32, stride=cfg.wm_strides[0]",
+   "new": "mk(gl[0], action_dim=32, stride=cfg.wm_strides[0]",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_dose_level1_idm_gradient_is_ten_times_and_other_levels_are_bit_equal"
+   ]
+  },
+  "M6": {
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "old": "        if len(wgl) > 0 and self.wm != \"b\":\n            raise ValueError(\"wm_gamma_levels needs wm b",
+   "new": "        if False:\n            raise ValueError(\"wm_gamma_levels needs wm b",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_config_refuses_a_malformed_or_declared_and_unbuilt_dose"
+   ]
+  },
+  "M8": {
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "    bad += bad_wm_idm_gamma(a, cfg, model)    ",
+   "new": "    pass; _x = (a, cfg, model)    ",
+   "tests": "stack/tests/test_v8f_actsens.py",
+   "must_fail": [
+    "test_gate_refuses_a_builder_that_ignores_the_config_field_while_the_old_check_stays_green",
+    "test_gate_refuses_when_the_declared_dose_is_not_in_the_built_config"
+   ]
+  }
+ }
+}

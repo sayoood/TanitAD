@@ -1,0 +1,101 @@
+# dagq MANIFEST (sha256  role  ->  where it lands). `rg/tree`, `rg/work`, `rg/out` (bulk), `bt` are DISPOSABLE (a python-only copy of di/tree, scratch, test worlds).
+
+1519260af238ea0da601fcd5bca10d30fc974786d748f03d3bc3eeb73fd1d67e  stage/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd
+    the box-2 queue: tip 2a78f059 + stages bankdag gatedag traindag evaldag (+ helpers dagname prepdag dagarm); additive (queue.diff)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd (replaces the tip's)
+a2b70d425c7b2a8b3cbcd5474b5d1eb63c05d330cb130caa0a4eb9d783874ddd  stage/stack/scripts/v8f_dagger_queue_tool.py
+    the shard fan-out (`bank`) and `sha` helper the queue stages call
+    -> REPO stack/scripts/v8f_dagger_queue_tool.py (NEW)
+8fd033f113ed84d87363677a5def5d86195b3cab669464a55e547e0fa76e7587  queue.diff
+    unified diff of the queue against the tip (insertions only)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/queue.diff
+a3cd3b57fea6629421c52bb652c380cc04848279dc1a4e57c198c5d2a0fba345  queue_additions/doc.txt
+    source of the queue's documentation lines
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/queue_additions/
+04bec9fec202bc694ab853c07e9bb490633417dfe4570f5da53b8d67f7fe1d27  queue_additions/dispatch.txt
+    source of the queue's dispatch lines
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/queue_additions/
+2108115b8f89339efeb54a1e7a3da08a78f9d5759772fc7cdad6331479da0592  queue_additions/stages.txt
+    source of the queue's new stage bodies
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/queue_additions/
+2049f63b8b5271335e9a7be419901fd3178d6cbefd488be89ef861422da53847  build_queue.py
+    rebuilds the staged queue from the tip + additions (additive check)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+c92ca88d3962cc20e4915fda3e1265bd957ad6a55f8ee1995a24ad2bdd3edbbc  tip_v8f_mini_box2_queue.cmd
+    the tip's queue (git show 2a78f059), the base of the diff
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/ (reference copy)
+3e8f9534d8d75ae0fc26aea963132ca2158097c222f09477f5973b616bdad1a8  box2_ship/chain_v8f_dag.sh
+    the dev-box chain (generated): ORC predicate, banks, K-B0..K-B5 controls + COVERAGE gate, BANK PUBLICATION (shard npz + 11-name SHA256SUMS.txt per seed, after the judge), 4 gates, 4 runs, standard T0 eval
+    -> DEV BOX C:/Users/Admin/box2_ship/chain_v8f_dag.sh (NEW; not repo)
+a4d713e69530a2f569327cce8dd170c167f7cc8aebfb77d8cb7594efe62d0af7  box2_ship/chain_v8f_dag.sh.in
+    the chain's template (the banked checkpoint hashes are copied in by make_chain.py)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/ (with make_chain.py)
+b4ec98e8c32dcff13ee5844663431da49ffe622dda4520ed70bfc5b8c09a495b  make_chain.py
+    generates chain_v8f_dag.sh / v8f_guard_dag.sh / run_chain_v8f_dag.cmd / wake_v8fdag.sh from the originals
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+da1069c070193f898a1cd3bd22d10e24299fc26d096a592b86ba0abb8cc47e5b  box2_ship/gate_dag_assert.py
+    the gate assertions + token writer, run on a pulled selfcheck.json
+    -> DEV BOX C:/Users/Admin/box2_ship/gate_dag_assert.py (NEW)
+6c386aa8c4c94b3186e581deeeef033376e6d80c06abdba7aca3ea696e39c16b  box2_ship/v8f_dag_chain_checks.py
+    the ORC predicate + bank judge (controls incl. K-B4 / K-B5, COVERAGE) + argv helpers + the bank-publication checks (bank-files / bank-verify / bank-plan)
+    -> DEV BOX C:/Users/Admin/box2_ship/v8f_dag_chain_checks.py (NEW)
+669a2b0d65517ee079d198083ea50b46be920e382328a73b7704c06c9e0f901c  box2_ship/v8f_guard_dag.sh
+    COPY of v8f_guard.sh that also stops the bank generators
+    -> DEV BOX C:/Users/Admin/box2_ship/v8f_guard_dag.sh (NEW)
+246c887082409b46fd0d90be5583245bec5584b754a40a7df2043a160106f3ec  box2_ship/run_chain_v8f_dag.cmd
+    detached launcher (NOT RUN)
+    -> DEV BOX C:/Users/Admin/box2_ship/run_chain_v8f_dag.cmd (NEW)
+c7a4d46ca8717507553b83c3fb9963b73a60c455b1af0c2205d5a93b18cbfda3  box2_ship/wake_v8fdag.sh
+    the waker
+    -> DEV BOX C:/Users/Admin/box2_ship/wake_v8fdag.sh (NEW)
+055b9f35af7926ca3c91319f2ae4d5e633ada32cc1ce814db53b7e3d07cd8d59  dagq_lib.py
+    shared helpers: runs the real queue through cmd.exe and parses what it prints
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+7ecf6768bb4fef7bffa3e93b40c7ff49c6bec54198cceeafbb09593fc2781942  selftest_dag_queue.py
+    THE PROOF (sections A-H): dry-run render, fake-box run, chain decisions, chain script, real selfcheck assertions, shard tool, bank publication checks, the chain's offline publish flow
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+35792dd80b924b4ec5529a0d83f4d77b453fcf193d572acb18054127123fb3d1  selftest_output.txt
+    output of the selftest on the final bytes
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+e49b34a759a75c47c641707df5d9a1b3f1fa141295b923895b5b6daf2a0d4e68  real_gate_proof.py
+    the REAL trainer's --selfcheck-only on the queue's argv tail (CPU, synthetic world)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+56502e64a188d6025eb9cf4dde1158cc8914cc1673881afb5307b89946952cf1  real_gate_proof.log
+    its output
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+0485e38e7fd2c29ba9887fa0ce9450930bbda038d33e2febf46c95a1d60de0fc  rg/out/RESULT.json
+    its result record
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/real_gate/
+ef9167812b6a585fa84df3bfa32c30c9d1c8d9a042e218deba9cd445dc1af816  rg/out/dag_s0/selfcheck.json
+    REAL gate selfcheck.json, DAG argv
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/real_gate/
+c0793842041cb2494bc775974a89cb75b756488b6de678dbce3664546bf4b1b5  rg/out/dag0_s0/selfcheck.json
+    REAL gate selfcheck.json, DAG-0 argv
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/real_gate/
+43eb2a6e867641b34925efc371d930373c910a4c6f7a20c49b36eb4f33f1b213  kb_shape_probe.py
+    the generator's own K-B4 / K-B5 records (di/tree, read-only import) run through the judge's rules
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+0f33be1c3f973329c40c93eb6b133400620a9afbcbf43eff74fe24f6ab3bc8e6  kb_shape_probe.txt
+    its output
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+5ba4ecd8e557330185e80230f40231d722eda4453e7b8a800b0bc28888798765  rg/COPY_PROVENANCE.txt
+    when/what rg/tree was copied from di/tree
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+d3435f15e8b1937d901963cfbded866113dc73d2c90907a6406d75526f23a5e6  mutate_dag_queue.py
+    mutation proof: 51 mutants (20 queue stages, 9 bank judge, 12 bank-publication checks, 10 chain)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+b6fb2eec6f720a16c3c7881c19f0150bf75fd3213c1419646df3d98ccc30d860  mutation_output.txt
+    its output (51/51 killed)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+ea6db4f3f0118cb6479a851265626dfb9084d05a9b029f31085ee0afd597e35d  bankpub.diff
+    unified diff of the bank-publication revision (checks, chain, chain template, selftest, mutator, NOTES) against the bytes before it
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/bankpub.diff
+8b213740b33a95bff26215321e34c9deb968313714b2139090ceeccfb31dbfc0  chain_dry_run.txt
+    chain --dry-run against the staged queue (ORC read HARMS -> p 0.1)
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+59605d02791365c1c432384a90f20b6bace3d44106ff67dbed59cdd65b80b6dc  make_manifest.py
+    this script
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/
+74333f738a7e86975384008d20fa060cd7504937eb308f3cb37e83f0aa955618  NOTES.md
+    what was built, the guarantees, UNVERIFIED, open decisions
+    -> REPO TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-queue/NOTES.md

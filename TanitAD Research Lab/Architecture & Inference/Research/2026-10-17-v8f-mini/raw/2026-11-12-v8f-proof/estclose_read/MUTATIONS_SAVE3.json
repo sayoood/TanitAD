@@ -1,0 +1,194 @@
+{
+ "suite": "save",
+ "tool": "closeread_save.py",
+ "control_before": {
+  "rc": 0,
+  "failed": [],
+  "seconds": 11.0,
+  "tail": [
+   "............                                                             [100%]",
+   "12 passed in 10.05s"
+  ]
+ },
+ "mutations": {
+  "s1_r_tolerance_wide": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_planted_r_difference_fails_e0_and_writes_nothing"
+   ],
+   "seconds": 10.8,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_planted_r_difference_fails_e0_and_writes_nothing",
+    "1 failed, 11 passed in 9.85s"
+   ],
+   "what": "the r check of e0 accepts a difference of 0.5",
+   "red": true
+  },
+  "s2_forward_check_dropped": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_planted_normalisation_fault_fails_e0b"
+   ],
+   "seconds": 11.1,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_planted_normalisation_fault_fails_e0b",
+    "1 failed, 11 passed in 10.11s"
+   ],
+   "what": "e0b passes whatever the forward gives",
+   "red": true
+  },
+  "s3_e0_not_enforced": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_planted_r_difference_fails_e0_and_writes_nothing",
+    "..\\..\\..\\test_closeread_save.py::test_planted_normalisation_fault_fails_e0b"
+   ],
+   "seconds": 11.0,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_planted_normalisation_fault_fails_e0b",
+    "2 failed, 10 passed in 10.06s"
+   ],
+   "what": "a failed e0 still writes the files",
+   "red": true
+  },
+  "s4_split_fraction": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_good_run_passes_and_writes",
+    "..\\..\\..\\test_closeread_save.py::test_saved_forward_equals_fit_tool_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_net_file_matches_h_and_arm",
+    "..\\..\\..\\test_closeread_save.py::test_table_nan_where_history_is_not_valid",
+    "..\\..\\..\\test_closeread_save.py::test_table_is_the_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_planted_files",
+    "..\\..\\..\\test_closeread_save.py::test_existing_out_dir_refused",
+    "..\\..\\..\\test_closeread_save.py::test_r_inside_tolerance_passes",
+    "..\\..\\..\\test_closeread_save.py::test_record_has_hashes"
+   ],
+   "seconds": 12.8,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_record_has_hashes - KeyError: 'i...",
+    "9 failed, 3 passed in 11.88s"
+   ],
+   "what": "the validation split differs from the fit tool's",
+   "red": true
+  },
+  "s5_normalisation_of_validation_part": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_good_run_passes_and_writes",
+    "..\\..\\..\\test_closeread_save.py::test_saved_forward_equals_fit_tool_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_net_file_matches_h_and_arm",
+    "..\\..\\..\\test_closeread_save.py::test_table_nan_where_history_is_not_valid",
+    "..\\..\\..\\test_closeread_save.py::test_table_is_the_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_planted_files",
+    "..\\..\\..\\test_closeread_save.py::test_existing_out_dir_refused",
+    "..\\..\\..\\test_closeread_save.py::test_r_inside_tolerance_passes",
+    "..\\..\\..\\test_closeread_save.py::test_record_has_hashes"
+   ],
+   "seconds": 12.4,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_record_has_hashes - KeyError: 'i...",
+    "9 failed, 3 passed in 11.39s"
+   ],
+   "what": "the nets are normalised by the validation part",
+   "red": true
+  },
+  "s6_table_ignores_valid_flag": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_good_run_passes_and_writes",
+    "..\\..\\..\\test_closeread_save.py::test_saved_forward_equals_fit_tool_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_net_file_matches_h_and_arm",
+    "..\\..\\..\\test_closeread_save.py::test_table_nan_where_history_is_not_valid",
+    "..\\..\\..\\test_closeread_save.py::test_table_is_the_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_planted_files",
+    "..\\..\\..\\test_closeread_save.py::test_existing_out_dir_refused",
+    "..\\..\\..\\test_closeread_save.py::test_r_inside_tolerance_passes",
+    "..\\..\\..\\test_closeread_save.py::test_record_has_hashes"
+   ],
+   "seconds": 12.4,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_record_has_hashes - KeyError: 'i...",
+    "9 failed, 3 passed in 11.46s"
+   ],
+   "what": "the est table uses frames without a valid read",
+   "red": true
+  },
+  "s7_existing_out_dir_accepted": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_existing_out_dir_refused"
+   ],
+   "seconds": 12.7,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_existing_out_dir_refused - FileE...",
+    "1 failed, 11 passed in 11.79s"
+   ],
+   "what": "an existing out dir is not refused",
+   "red": true
+  },
+  "s8_table_zero": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_good_run_passes_and_writes",
+    "..\\..\\..\\test_closeread_save.py::test_saved_forward_equals_fit_tool_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_net_file_matches_h_and_arm",
+    "..\\..\\..\\test_closeread_save.py::test_table_nan_where_history_is_not_valid",
+    "..\\..\\..\\test_closeread_save.py::test_table_is_the_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_planted_files",
+    "..\\..\\..\\test_closeread_save.py::test_existing_out_dir_refused",
+    "..\\..\\..\\test_closeread_save.py::test_r_inside_tolerance_passes",
+    "..\\..\\..\\test_closeread_save.py::test_record_has_hashes"
+   ],
+   "seconds": 11.8,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_record_has_hashes - KeyError: 'i...",
+    "9 failed, 3 passed in 10.84s"
+   ],
+   "what": "the est table holds zeros",
+   "red": true
+  },
+  "s9_planted_constant_one": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_planted_files"
+   ],
+   "seconds": 10.2,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_planted_files - AssertionError: ...",
+    "1 failed, 11 passed in 9.33s"
+   ],
+   "what": "the planted constant file holds 1.0 instead of 2.0",
+   "red": true
+  },
+  "s10_ridge_history_24": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_closeread_save.py::test_saved_forward_equals_fit_tool_estimate",
+    "..\\..\\..\\test_closeread_save.py::test_table_nan_where_history_is_not_valid"
+   ],
+   "seconds": 9.8,
+   "tail": [
+    "FAILED ..\\..\\..\\test_closeread_save.py::test_table_nan_where_history_is_not_valid",
+    "2 failed, 10 passed in 8.97s"
+   ],
+   "what": "the L25 estimator is fitted on 24 frames",
+   "red": true
+  }
+ },
+ "control_after": {
+  "rc": 0,
+  "failed": [],
+  "seconds": 10.4,
+  "tail": [
+   "............                                                             [100%]",
+   "12 passed in 9.52s"
+  ]
+ },
+ "counts": {
+  "red": 10,
+  "total": 10,
+  "control_before_green": true,
+  "control_after_green": true
+ }
+}

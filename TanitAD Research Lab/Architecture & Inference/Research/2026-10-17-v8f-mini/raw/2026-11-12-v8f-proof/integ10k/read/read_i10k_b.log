@@ -1,0 +1,22 @@
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (k1 to k10)
+   k1_reader_good_enough PASS {"gap_mae_m_mean_of_seeds": 4.7963, "bar_mae": 5.8, "auroc_per_seed": [0.8779, 0.8857], "bar_auroc": 0.85, "label_match_share_per_seed": [0.9644, 0.9644], "PASS": true}
+   k2_identity_RRid_equals_R0 PASS {"per_seed_files_differing": {"0": [141, 0], "1": [141, 0]}, "PASS": true}
+   k3_planted_RR0_raises_6s_error PASS {"per_seed": [4.1217, 4.5102], "pooled": 4.316, "interval": [3.5953, 5.1441], "excludes_0": true, "PASS": true}
+   k4_label_rule_cuts_U PASS {"per_seed": [-0.0569, -0.0623], "pooled": -0.0596, "interval": [-0.0933, -0.0288], "excludes_0": true, "PASS": true}
+   k5_model_is_the_banked_one PASS {"per_seed": {"UE_s0": {"fde_last_m": 9.0714, "banked_fde": 9.0714, "ade_dense_m": 2.7348, "banked_ade": 2.7348, "abs_diff": [0.0, 0.0], "banked_file": "F:/TanitAD-scratch/datascale/read3/t1/t1v8f_DS-UE_s0-A_m10_causal_heads.json", "banked_sha256": "2755705b23070769a0a476eee9b3ca9b65f2ca2e3b97917e50
+   k6_no_leak PASS {"leak_count": [0, 0], "planted_detected": [true, true], "fit_check_disjoint": [true, true], "PASS": true}
+   k7_causal_reader PASS {"all_unchanged": [true, true], "PASS": true}
+   k8_counts_and_train_log PASS {"train_log_part": "read by note N2 of the card (K8_N2.json, key k8_n2_pass); p5_all_pass is the tool check on every training step: reported, not used", "n_windows_total": 2399, "n_lead_windows": 642, "train": {"0": {"steps": 19164, "p5_all_pass": false, "k8_n2_pass": true}, "1": {"steps": 19164, "p
+   k9_map_coverage PASS {"share_below_Q": [0.17966101694915254, 0.18384845463609173], "band": [0.15, 0.25], "PASS": true}
+   k10_headway_h1_h6_and_family_q1_q5 PASS {"headway": true, "family": true, "PASS": true}
+== names
+   {"cut": "INTEG10K-CUTS-UNSAFE", "share_reached_per_seed": [1.0938, 1.0], "reaches_label_rule": "INTEG10K-REACHES-LABEL-RULE", "price": "INTEG10K-PRELIMINARY (COST-LATERAL COST-LONGITUDINAL COST-TACTICAL)", "cost_families": ["LATERAL", "LONGITUDINAL", "TACTICAL"]}
+   E1_U_RR_minus_R0 {"per_seed": [-0.0623, -0.0623], "pooled": -0.0623, "interval": [-0.101, -0.0271], "excludes_0": true}
+   E2_U_RR_minus_RLb {"per_seed": [-0.0053, 0.0], "pooled": -0.0027, "interval": [-0.0138, 0.0072], "excludes_0": false}
+   U_RLb_minus_R0 {"per_seed": [-0.0569, -0.0623], "pooled": -0.0596, "interval": [-0.0933, -0.0288], "excludes_0": true}
+   U_RRx_minus_R0 (crossed, per model seed) {"per_seed": [-0.0552, -0.0587], "pooled": -0.0569, "interval": [-0.096, -0.0244], "excludes_0": true}
+   ade6_RR_minus_R0_m {"per_seed": [0.7389, 0.6556], "pooled": 0.6973, "interval": [0.4171, 0.9909], "excludes_0": true}
+   contact_RR_minus_RLb {"C": {"per_seed": [-0.0047, 0.0016], "pooled": -0.0016, "interval": [-0.0103, 0.005], "excludes_0": false}}
+  * STRATEGIC, T0 at the first tick: the banked read of `UE_s0` and `UE_s1` of the other session, cited with its file, stated as unchanged by construction for an inference-time rule, and backed by one identity control that the other session runs: its strategic reader on the wrapper with the rule on and with the rule off gives equal outputs bit for bit. Without that control the family is reported as the banked read of the model without the rule and nothing is said about the candidate.
+  * STRATEGIC along the rule-driven rollout (T1): NOT COMPUTED (n = 0; no instrument exists for it and none is pre-registered). No strategic effect of the rule is claimed in either direction.

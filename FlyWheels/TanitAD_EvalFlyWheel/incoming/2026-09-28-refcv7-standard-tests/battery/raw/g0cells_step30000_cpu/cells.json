@@ -1,0 +1,96 @@
+{
+ "tool": "g0_cells_cpu_r7.py",
+ "what": "G0 cell-level numerics diagnosis on CPU; NOT a gate, NOT a result",
+ "started": "2026-10-04T08:13:01+0200",
+ "ckpt": "D:/refcv7_eval_kit/ckpt/ckpt_30000.pt",
+ "config": "D:/refcv7_eval_kit/ckpt/config.json",
+ "lever": "trunk fp32 NCHW on CPU (vs G0: eager bf16 NHWC on the RTX 4060); nothing else",
+ "cuda_visible_devices": "-1",
+ "commit_wait": {
+  "met": true,
+  "waited_s": 308.4,
+  "last": {
+   "t": "2026-10-04T08:18:10+0200",
+   "free_commit_gb": 11.8,
+   "commit_limit_gb": 58.87,
+   "free_phys_gb": 10.18,
+   "chain_or_g0_active": false
+  }
+ },
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "tanitad_file": "C:\\Users\\Admin\\ev7\\stack\\tanitad\\__init__.py",
+ "ckpt_md5": "ac4e4fab87e35b20de24d8d94910d910",
+ "config_md5": "e6512a01b9c70f0e4a4dac581621984a",
+ "step": 30000,
+ "model": {
+  "strict_missing": 0,
+  "strict_unexpected": 0,
+  "param_breakdown_equal": true,
+  "trunk_memory_levers_built": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "departures": [
+   "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+   "Thor data paths REMAPPED to the eval kit D:\\refcv6_eval_kit for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+   "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+  ],
+  "build_s": 5.3
+ },
+ "trunk_levers": {
+  "as_built": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": true,
+   "channels_last": true,
+   "bn_folded": 104,
+   "dedup_frames": true
+  },
+  "this_arm": {
+   "chunk_ckpt": 8,
+   "frozen_bn": true,
+   "bn_pinned": 104,
+   "relu_out_of_place": 100,
+   "bf16": false,
+   "channels_last": false,
+   "bn_folded": 104,
+   "dedup_frames": true
+  }
+ },
+ "inrun_tac": {
+  "eval_lat_tac": 0.5436,
+  "eval_lon_tac": 0.84707,
+  "eval_tac_label_v7": 1.0,
+  "eval_tac_label_rows": 3.625,
+  "eval_goal_tac": 9.40658,
+  "eval_goal2s_err_m": 3.67461,
+  "eval_goal_gate": 0.18471,
+  "eval_goal_score_absmean": 6.71645,
+  "eval_goal_gate_grad": 0.00041,
+  "eval_tac_v6": 0.06677,
+  "eval_tacv6_goal_bce": 0.61106,
+  "eval_tacv6_goal_conf_bce": 0.15189,
+  "eval_tacv6_lat_ce": 0.47263,
+  "eval_tacv6_lon_ce": 1.15958,
+  "eval_tacv6_total_weighted": 0.06677,
+  "eval_tacv6_n_supervised_goal_cells": 33.875,
+  "eval_tacv6_n_supervised_lat": 3.625,
+  "eval_tacv6_n_supervised_lon": 3.625,
+  "eval_tacv6_n_scene_mean": 780.0
+ },
+ "perm_sha256": "99adbc7ed285236adc1098cf5eb9dbccfb04a2ce3307fb977a292dc4dfbf6975",
+ "dataset": {
+  "n_episodes": 139,
+  "n_windows": 23772,
+  "build_s": 163.0
+ }
+}

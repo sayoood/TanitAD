@@ -1,0 +1,108 @@
+F...............................................FF..........             [100%]
+================================== FAILURES ===================================
+______________ test_all_flags_off_is_BIT_IDENTICAL_on_64_windows ______________
+
+    def test_all_flags_off_is_BIT_IDENTICAL_on_64_windows():
+        """⛔ CONTROL THAT MUST READ A KNOWN VALUE, and the premise of every other
+        test here. With ``refcv6=None`` the decoder must construct nothing new and
+        emit, for 64 windows, EXACTLY what the pre-refcv6 file emits — same
+        state_dict keys, same tensors, bit for bit."""
+>       old = _pre_refcv6_module()
+              ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv6_diffusion.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refcv6_diffusion.py:118: in _pre_refcv6_module
+    src = _git_blob(_BASELINE_REV)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+rev = 'cbadba5844a2db70a968172ab0b0bbe3a0140af0'
+
+    def _git_blob(rev: str) -> bytes:
+        """``git show <rev>:refc.py`` -> bytes, or ABORT.
+    
+        ⛔ Never returns an empty bytestring as if it were content: an empty result
+        from this mount is indistinguishable from a failed query, and a bit-identity
+        test whose baseline is empty would fail for the wrong reason (or, with a
+        lenient comparison, pass). Only a POSITIVE read is admissible.
+        """
+        p = subprocess.run(["git", "show", f"{rev}:{_REL}"], cwd=_ROOT,
+                           capture_output=True)
+        if p.returncode != 0 or not p.stdout:
+            err = (p.stderr or b"").decode("utf-8", errors="replace").strip()
+>           raise AssertionError(
+                f"INVALID: could not read `{rev}:{_REL}` (rc={p.returncode}, "
+                f"{len(p.stdout or b'')} bytes). This test's baseline must be a "
+                f"POSITIVE read; it is not skipped, because a missing baseline "
+                f"means the bit-identity claim was NOT checked. git said: {err}")
+E           AssertionError: INVALID: could not read `cbadba5844a2db70a968172ab0b0bbe3a0140af0:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git
+
+tests\test_refcv6_diffusion.py:79: AssertionError
+__________ test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6 __________
+
+    def test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6():
+        """⛔⛔ THE GUARD ON THE GUARD. ``_pre_refcv6_module`` materialised its
+        baseline from ``HEAD``, whose blob IS the worktree file — so the test
+        compared ``refc.py`` against itself while carrying 83 'refcv6' mentions on
+        both sides. Literals, with a same-breath control that must read a KNOWN
+        value in both blobs."""
+        if not shutil.which("git"):                            # pragma: no cover
+            pytest.skip("git is not on PATH")
+>       base = _git_blob(_BASELINE_REV)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refcv6_diffusion.py:1102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+rev = 'cbadba5844a2db70a968172ab0b0bbe3a0140af0'
+
+    def _git_blob(rev: str) -> bytes:
+        """``git show <rev>:refc.py`` -> bytes, or ABORT.
+    
+        ⛔ Never returns an empty bytestring as if it were content: an empty result
+        from this mount is indistinguishable from a failed query, and a bit-identity
+        test whose baseline is empty would fail for the wrong reason (or, with a
+        lenient comparison, pass). Only a POSITIVE read is admissible.
+        """
+        p = subprocess.run(["git", "show", f"{rev}:{_REL}"], cwd=_ROOT,
+                           capture_output=True)
+        if p.returncode != 0 or not p.stdout:
+            err = (p.stderr or b"").decode("utf-8", errors="replace").strip()
+>           raise AssertionError(
+                f"INVALID: could not read `{rev}:{_REL}` (rc={p.returncode}, "
+                f"{len(p.stdout or b'')} bytes). This test's baseline must be a "
+                f"POSITIVE read; it is not skipped, because a missing baseline "
+                f"means the bit-identity claim was NOT checked. git said: {err}")
+E           AssertionError: INVALID: could not read `cbadba5844a2db70a968172ab0b0bbe3a0140af0:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git
+
+tests\test_refcv6_diffusion.py:79: AssertionError
+________ test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED _________
+
+    def test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED():
+        """⛔ THE DELIBERATE REGRESSION, re-introducing the EXACT historical
+        defect: point the baseline back at ``HEAD``. The guard must ABORT as
+        INVALID rather than quietly comparing the file with itself."""
+        import test_refcv6_diffusion as me
+        old = me._BASELINE_REV
+        try:
+            me._BASELINE_REV = "HEAD"
+>           with pytest.raises(AssertionError, match="INVALID baseline"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'INVALID baseline'
+E             Actual message: "INVALID: could not read `HEAD:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git"
+
+tests\test_refcv6_diffusion.py:1127: AssertionError
+============================== warnings summary ===============================
+tests/test_refcv6_diffusion.py::test_F3_cascade_heads_are_ZERO_INIT
+  C:\Users\Admin\dvb_tip_b4a59b9_0927d\stack\tests\test_refcv6_diffusion.py:343: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(h.weight.abs().max()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_refcv6_diffusion.py::test_all_flags_off_is_BIT_IDENTICAL_on_64_windows
+FAILED tests/test_refcv6_diffusion.py::test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6
+FAILED tests/test_refcv6_diffusion.py::test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED
+3 failed, 57 passed, 1 warning in 3.99s

@@ -1,0 +1,36 @@
+{
+ "what": "R7_A1 step 5000 -> step 30000 on warmup",
+ "a": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw/milestones/step5000",
+ "b": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\navsim\\raw\\milestones\\step30000",
+ "step_a": 5000,
+ "step_b": 30000,
+ "device_a": "cuda as_trained",
+ "device_b": "cpu fp32",
+ "same_device": false,
+ "model_as_trained_a": "\"refcv7-r101-s0 as launched\" (FIX-1..5; NEW-1 ha0_ext_pose; NEW-2 10 cm map, A6/A7 pooled BEV; A9 box head 300 queries learned_ref; A2 selection mechanisms ON; strategic OFF; config.json md5 e6512a01...; no mid-run recipe change recorded -- INHERITED)",
+ "model_as_trained_b": "\"refcv7-r101-s0 as launched\" (FIX-1..5; NEW-1 ha0_ext_pose; NEW-2 10 cm map, A6/A7 pooled BEV; A9 box head 300 queries learned_ref; A2 selection mechanisms ON; strategic OFF; config.json md5 e6512a01...; no mid-run recipe change recorded -- INHERITED)",
+ "device_warning": "the two readings ran on DIFFERENT devices (amendment A3): read the delta against the precision floor KP before calling it a training effect",
+ "S2_EPDMS_u_a": 0.44868397036452,
+ "official_two_stage_EPDMS_a": {
+  "status": "UNAVAILABLE",
+  "reason": "stage-1 rows are the declared CV stand-in (no original stage-1 frames for this split on this box)",
+  "n": 16
+ },
+ "seed_floor_a": 0.008393982105334985,
+ "S2_EPDMS_u_b": 0.5223666823715276,
+ "official_two_stage_EPDMS_b": {
+  "status": "UNAVAILABLE",
+  "reason": "stage-1 rows are the declared CV stand-in (no original stage-1 frames for this split on this box)",
+  "n": 16
+ },
+ "seed_floor_b": 0.006927621365701908,
+ "delta_S2_EPDMS_u": 0.0736827120070076,
+ "scene_wtl_stage2": {
+  "win": 77,
+  "tie": 79,
+  "loss": 48,
+  "n": 204
+ },
+ "interval": "UNAVAILABLE by design (warmup: 7 logs < the 8-cluster floor)",
+ "exceeds_both_seed_floors": true
+}

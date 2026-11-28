@@ -1,0 +1,114 @@
+{
+  "verdict": "NO-GO",
+  "n_pass": 14,
+  "n_fail": 1,
+  "n_inconclusive": 2,
+  "checks": [
+    {
+      "state": "PASS",
+      "check": "refcv5 modules import",
+      "detail": "12/12 import"
+    },
+    {
+      "state": "PASS",
+      "check": "trainer imports",
+      "detail": "refc_v3_train loaded from C:\\Users\\Admin\\tanitad-wt\\stack\\scripts\\refc_v3_train.py"
+    },
+    {
+      "state": "PASS",
+      "check": "class enum is the corpus enum",
+      "detail": "n=10 identical=True fabricated=none; control: 'automobile' in enum=True"
+    },
+    {
+      "state": "PASS",
+      "check": "query budget covers the train corpus",
+      "detail": "--agent-queries default 100 (train max 94, val40 max 24). Upstream N_QUERIES_DEFAULT is still 16 and is REFUTED -- any AgentSlotDecoder built without an explicit n_queries inherits it.",
+      "agent_queries": 100,
+      "upstream_default": 16
+    },
+    {
+      "state": "FAIL",
+      "check": "every weighted term has a gradient",
+      "detail": "agent_w_ground grad=1.164e-10 n=64; agent_w_project grad=1.462e-03 n=64 | DEAD: ['agent_w_ground'] -- the weight would be stamped into config.json and add exactly 0 to the total | control: 1 of 2 terms are live",
+      "grads": {
+        "agent_w_project": 0.0014618588611483574,
+        "agent_w_ground": 1.1641532182693481e-10
+      },
+      "dead_terms": [
+        "agent_w_ground"
+      ]
+    },
+    {
+      "state": "PASS",
+      "check": "the seam guards refuse their defects",
+      "detail": "4/4 guards fired; control (legal config) passed"
+    },
+    {
+      "state": "PASS",
+      "check": "every knob reaches config.json",
+      "detail": "18 knobs derived from argparse, 0 missing from the stamp; control: n_knobs > 12 = True",
+      "n_knobs": 18
+    },
+    {
+      "state": "PASS",
+      "check": "the camera scope is stated",
+      "detail": "mount_pose_scope=PER-CLIP n_clips=2400 per_clip_bank=True",
+      "mount_pose_scope": "PER-CLIP",
+      "n_clips": 2400
+    },
+    {
+      "state": "PASS",
+      "check": "v2 cache present with stable ids",
+      "detail": "96 *.v2ep.pt (control: 98 entries in the dir), manifest present, path names the parity key: True",
+      "n_v2ep": 96,
+      "parity_in_path": true
+    },
+    {
+      "state": "PASS",
+      "check": "episode ids are collision-free",
+      "detail": "96 distinct stable ids for 96 files (control: a 16-bit legacy key collides on 34/2308 train clips)"
+    },
+    {
+      "state": "PASS",
+      "check": "the corpus clip list is the PARITY set",
+      "detail": "2400 clip_ids, sha256 e61a04553df5b9d5 vs committed e61a04553df5b9d5 -> MATCH (control: the manifest names 2376 episodes after the 24-clip skip)",
+      "n_clips": 2400,
+      "parity_digest_match": true
+    },
+    {
+      "state": "PASS",
+      "check": "agent join joins to the cache",
+      "detail": "2308/2400 episodes join on the STABLE id (0.9617); 0 only on the COLLIDING 16-bit legacy key; join carries 433040 records / 2308 clips",
+      "stable_join_frac": 0.9616666666666667,
+      "n_legacy_only": 0
+    },
+    {
+      "state": "PASS",
+      "check": "join digest declares its scope",
+      "detail": "declared scope: {'algo': 'md5', 'digest': '24cbdca8c3b23aafc2fb17e6bf99cf76', 'scope': 'compressed', 'filename': 'train2400_agents.jsonl.xz', 'declared_by': 'backfill-MEASURED', 'note': 'scope MEASURED by hashing both artifacts of train2400_agents.jsonl.xz; the other candidate was b7c6b5a7da2d942e8be9dc9fc316e9a9', 'schema': 'tanitad.join_digest_scope/1'}"
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "v7.2 tactical labels cover the corpus",
+      "detail": "no --v7-labels given. The trainer refuses --v7-labels below 50 % coverage; MEASURED on parity it is 7.92 %, so a parity arm either drops --nav-from-v7 and the 8x8 vocabulary, or waits for a parity v7.2 build."
+    },
+    {
+      "state": "PASS",
+      "check": "per-clip cameras cover the corpus",
+      "detail": "2400/2400 episodes have their own camera (1.0000); bank holds 2400 clips",
+      "camera_coverage": 1.0
+    },
+    {
+      "state": "INCONCLUSIVE",
+      "check": "anchor vocabulary declares its units",
+      "detail": "no --anchors given. A run without one silently falls back to the SYNTHETIC default, whose oracle-in-vocabulary ADE is 1.0882 m against 0.3796 m -- the ceiling below the floor."
+    },
+    {
+      "state": "PASS",
+      "check": "a 2-step run states every weight",
+      "detail": "config.json: 18 knobs stamped, camera scope 'NONE', missing none (control: seams block has 28 keys)",
+      "smoke_out": "C:\\Users\\Admin\\AppData\\Local\\Temp\\refcv5_pf_kz10gnl4",
+      "n_knobs_stamped": 18
+    }
+  ]
+}

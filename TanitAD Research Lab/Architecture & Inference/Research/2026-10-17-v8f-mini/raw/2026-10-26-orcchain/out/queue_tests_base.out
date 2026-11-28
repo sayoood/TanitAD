@@ -1,0 +1,99 @@
+..........s........s........................Fss...........s.....FF.s.... [ 81%]
+................                                                         [100%]
+================================== FAILURES ===================================
+_ test_the_tip_queues_own_trainmixo_lines_differ_in_the_seed_and_the_output_directory_only _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orcchain_build/pt/base/test_the_tip_queues_own_trainm0')
+
+    @win
+    def test_the_tip_queues_own_trainmixo_lines_differ_in_the_seed_and_the_output_directory_only(tmp_path):
+        env = dict(os.environ, V8F_DRYRUN="1")
+        lines = {}
+        for s in (0, 1):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" trainmixo {s}"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
+            ln = [x for x in r.stdout.splitlines() if ".py" in x]
+            assert r.returncode == 0 and len(ln) == 1, (r.stdout, r.stderr)
+            lines[s] = ln[0]
+            (tmp_path / f"l{s}.txt").write_text(ln[0], encoding="utf-8")
+        a, b = D.tokens(lines[0]), D.tokens(lines[1])
+        assert D.seed_only_violations(a, b) == [] and a[a.index("--seed") + 1] == "0" and b[b.index("--seed") + 1] == "1" and "--o-interface" not in b
+        assert subprocess.run([sys.executable, str(DRIVER), "assert-argv", "--base", str(tmp_path / "l0.txt"), "--other", str(tmp_path / "l1.txt")], capture_output=True, text=True).returncode == 0
+        # and the QUEUE's line is the argv MIXO's seed-0 run was banked with (the seed-0 form of the line, flag for flag, up to the python paths)
+>       banked = D.load_argv(str(S0_ARGV))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_kindx_s1.py:815: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path_or_line = 'E:\\Projects\\TanitAD-artifacts\\orcchain_build\\tree0\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-25-mixo\\run\\runs\\M2b_s0_mixo\\argv.json'
+
+    def load_argv(path_or_line: str) -> list:
+        """An argv.json (`{"argv": [...], "sha": ...}`) or a file holding one queue line."""
+>       with open(path_or_line, encoding="utf-8") as f:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\orcchain_build\\tree0\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-25-mixo\\run\\runs\\M2b_s0_mixo\\argv.json'
+
+scripts\v8f_mini_eval_kindx.py:233: FileNotFoundError
+_______ test_queue_mixo_real_lines_execute_exactly_the_printed_commands _______
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orcchain_build/pt/base/test_queue_mixo_real_lines_exe0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_real_lines_execute_exactly_the_printed_commands(tmp_path):
+        repo, rec = _H._fake_tree(tmp_path)
+        env = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        env.pop("V8F_DRYRUN", None)
+    
+        def real(args):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=180, encoding="utf-8")
+            assert r.returncode == 0, (args, r.stdout, r.stderr)
+            return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines()] if rec.exists() else []
+    
+        def printed(args):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(env, V8F_DRYRUN="1"), capture_output=True, text=True, timeout=60, encoding="utf-8")
+            return [_argv_of(x)[2:] for x in r.stdout.splitlines() if ".py" in x]       # drop python.exe and the script: sys.argv[1:]
+        want_gate, want_train, want_eval = printed("gatemixo"), printed("trainmixo 1"), printed("evalmixo 1")        # BEFORE the runs: a finished stage prints [skip]
+>       assert len(want_gate) == 1 and len(want_train) == 1 and len(want_eval) == 7
+E       AssertionError: assert (1 == 1 and 1 == 1 and 0 == 7)
+E        +  where 1 = len([['--arm', 'M2b', '--code-mix', 'kind', '--out', 'E:\\Projects\\TanitAD-artifacts\\orcchain_build\\pt\\base\\test_queue_mixo_real_lines_exe0\\runsm\\gate_M2b-mixo', ...]])
+E        +  and   1 = len([['--arm', 'M2b', '--seed', '1', '--grid', 'pool4x10', ...]])
+E        +  and   0 = len([])
+
+tests\test_v8f_mixo.py:1360: AssertionError
+_ test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orcchain_build/pt/base/test_queue_mixo_real_stages_no0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished(tmp_path):
+        repo, rec = _H._fake_tree(tmp_path)
+        runsm = tmp_path / "runsm"
+        ev = runsm / "eval"
+        base = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(runsm), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        base.pop("V8F_DRYRUN", None)
+    
+        def stage(args, **extra):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(base, **extra), capture_output=True, text=True, timeout=180, encoding="utf-8")
+            return r.returncode, r.stdout
+    
+        def evals():
+            return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines() if '"eval"' in x] if rec.exists() else []
+        rc, out = stage("gatemixo", FAKE_TRAIN="fail")
+        assert rc == 1 and "[FAIL] gate M2b-mixo" in out
+        rc, out = stage("trainmixo 1", FAKE_TRAIN="fail")
+        assert rc == 1 and "[FAIL] train M2b_s1_mixo - see" in out
+        rc, out = stage("trainmixo 1", FAKE_TRAIN="nosummary")                     # a trainer that exits 0 WITHOUT a summary (a crash that swallowed its code)
+        assert rc == 1 and "exited 0 without summary.json" in out
+        rc, out = stage("evalmixo 1")                                              # evaluation refuses a run that has not finished training
+>       assert rc == 2 and "has not finished training" in out and not evals()
+E       assert (255 == 2)
+
+tests\test_v8f_mixo.py:1400: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_kindx_s1.py::test_the_tip_queues_own_trainmixo_lines_differ_in_the_seed_and_the_output_directory_only
+FAILED tests/test_v8f_mixo.py::test_queue_mixo_real_lines_execute_exactly_the_printed_commands
+FAILED tests/test_v8f_mixo.py::test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished
+3 failed, 79 passed, 6 skipped, 1183 deselected in 153.25s (0:02:33)
+rc=1

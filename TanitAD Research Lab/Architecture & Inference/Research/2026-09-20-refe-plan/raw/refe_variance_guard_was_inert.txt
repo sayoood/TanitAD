@@ -1,0 +1,43 @@
+MY OWN GUARD WAS INERT, AND A DOC I WROTE CITED IT AS PROOF. MEASURED 2026-09-20.
+
+THE CLAIM I MADE (REFE_MODEL.md section 8.3):
+  'All six components discriminate, and train.py PROVES it rather than assuming it.'
+  'MEASURED over 664 rows: off_road sd 0.468, collision 0.412, ttc 0.375, goal_reaching
+   0.294, comfort 0.155, center_line 0.111 -- none inert.'
+
+IT IS WRONG. The guard pooled EVERY ROW IN THE BANK and reported one standard deviation per
+component. A component that is CONSTANT across the candidates of every single frame, and
+merely differs BETWEEN frames, shows a healthy pooled spread and passes -- while being
+completely unable to rank anything. The scorer's job is to choose among the candidates OF ONE
+FRAME, so the only measurement that answers the question is the spread WITHIN a frame.
+
+THE CORRECTED GUARD, run on the live bank (5,573 rows over 620 frames, 4 shards):
+  component        mean  pooled sd  varies in
+  off_road        0.720      0.449      99.8 %
+  collision       0.625      0.484      75.5 %
+  ttc             0.614      0.475      86.8 %
+  comfort         0.969      0.120       0.0 %   *** CANNOT RANK
+  goal_reaching   0.910      0.286      52.3 %
+  center_line     0.825      0.108      76.8 %
+
+⛔ comfort VARIES IN 0.0 % OF FRAMES. Its pooled sd of 0.120 is larger than center_line's
+  0.108, which DOES rank in 76.8 % of frames -- so the pooled number does not even order the
+  components correctly. One of the six is contributing nothing to proposal ranking, and the
+  instrument built to detect exactly that was blind to it.
+
+WHY IT MATTERS BEYOND THE ONE COMPONENT. The paper's scoring loss is a sum over all six
+  components, and at inference DriveZero selects the candidate with the highest aggregate.
+  A component that is constant within a frame adds a per-frame bias to every candidate
+  equally: it cannot change the argmax, so a sixth of the scoring head is doing no work.
+
+ROOT-CAUSE CLASS: a check whose QUESTION is narrower than the claim hung on it -- the same
+  family as the four self-referential checks of 2026-09-07 and as the episode-cluster
+  bootstrap being blind to training variance. The estimator was fine; it was answering
+  'do these numbers differ anywhere' when the claim was 'can this rank candidates here'.
+
+⭐ WHAT CAUGHT IT: not a re-reading. An INDEPENDENT reviewer measured within-frame variation
+  directly (0 of 540 frames on its snapshot) and named the guard as the reason it had
+  survived. I then reproduced it with the corrected guard on a larger bank: 0.0 % of 620.
+
+Instrument: refe/train.py ScorerBank.variance_report, now reporting 'varies in <frac> % of
+frames' and naming anything under 5 % as CANNOT RANK.

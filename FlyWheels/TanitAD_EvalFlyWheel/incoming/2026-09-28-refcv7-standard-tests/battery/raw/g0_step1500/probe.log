@@ -1,0 +1,96 @@
+[gpu_lock] WAIT job=refcv7-g0probe-1500 holder={'job': 'refcv7-navsim-validation-warmup', 'pid': 13976, 'token': 'refcv7-navsim-validation-warmup:13976:f4ba3189603e', 'utc': '2026-09-28T03:30:08Z'} smi_ok=False python_compute=[(41164, 'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe')] used=2212MiB free_ram=10.64GB
+[gpu_lock] WAIT job=refcv7-g0probe-1500 holder={'job': 'refcv7-navsim-validation-warmup', 'pid': 13976, 'token': 'refcv7-navsim-validation-warmup:13976:f4ba3189603e', 'utc': '2026-09-28T03:30:08Z'} smi_ok=False python_compute=[(41164, 'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe')] used=2212MiB free_ram=8.81GB
+[gpu_lock] WAIT job=refcv7-g0probe-1500 holder={'job': 'refcv7-navsim-validation-warmup', 'pid': 13976, 'token': 'refcv7-navsim-validation-warmup:13976:f4ba3189603e', 'utc': '2026-09-28T03:30:08Z'} smi_ok=False python_compute=[(41164, 'C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe')] used=2212MiB free_ram=8.35GB
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 8.8 s; strict missing=0 unexpected=0 step=1500; param_breakdown equal=True
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[g0] eval dataset: 139 episodes -> 23772 windows (267s); subset 128; batches 1
+[g0] collated 1 batches in 39.9 s
+[g0] requires_grad control: 23 of 444 terms differ between trained and loader flags (dev box)
+[g0] seed 0: eval_loss 74.07195 eval_traj 0.66377 (9s, peak 5.69 GiB, buffers unchanged True)
+{
+ "G0": "FAIL",
+ "reasons": [
+  "eval_agent_auroc_matched [DETECTION] in-run 0.75744 vs seeds mean 0.8204 (sd 0)",
+  "eval_agent_auroc_objectness [DETECTION] in-run 0.75055 vs seeds mean 0.84575 (sd 0)",
+  "eval_agent_cls [MATCHED] in-run 1.86538 vs seeds mean 1.43858 (sd 0)",
+  "eval_agent_det_ap0p5_automobile_20_40 [DETECTION] in-run 6e-05 vs seeds mean 0.05 (sd 0)",
+  "eval_agent_det_ap0p5_bus_20_40 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_bus_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_heavy_truck_0_20 [UNDEFINED rule] in-run 0.00441 vs seeds [None]",
+  "eval_agent_det_ap0p5_heavy_truck_20_40 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_heavy_truck_all [UNDEFINED rule] in-run 0.00031 vs seeds [None]",
+  "eval_agent_det_ap0p5_other_vehicle_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_other_vehicle_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_person_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_protruding_object_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_protruding_object_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_rider_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_rider_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_stroller_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_stroller_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_stroller_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_trailer_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_trailer_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap0p5_trailer_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_automobile_20_40 [DETECTION] in-run 6e-05 vs seeds mean 0.05 (sd 0)",
+  "eval_agent_det_ap1_bus_20_40 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_bus_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_heavy_truck_0_20 [UNDEFINED rule] in-run 0.00441 vs seeds [None]",
+  "eval_agent_det_ap1_heavy_truck_20_40 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_heavy_truck_all [UNDEFINED rule] in-run 0.00032 vs seeds [None]",
+  "eval_agent_det_ap1_other_vehicle_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_other_vehicle_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_person_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_protruding_object_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_protruding_object_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_rider_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_rider_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_stroller_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_stroller_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_stroller_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_trailer_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_trailer_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap1_trailer_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_all_0_20 [DETECTION] in-run 0.02029 vs seeds mean 0.0524 (sd 0)",
+  "eval_agent_det_ap2_automobile_20_40 [DETECTION] in-run 0.0052 vs seeds mean 0.05 (sd 0)",
+  "eval_agent_det_ap2_bus_20_40 [UNDEFINED rule] in-run 0.00046 vs seeds [None]",
+  "eval_agent_det_ap2_bus_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_heavy_truck_0_20 [UNDEFINED rule] in-run 0.00448 vs seeds [None]",
+  "eval_agent_det_ap2_heavy_truck_20_40 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_heavy_truck_all [UNDEFINED rule] in-run 0.00032 vs seeds [None]",
+  "eval_agent_det_ap2_other_vehicle_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_other_vehicle_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_person_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_protruding_object_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_protruding_object_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_rider_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_rider_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_stroller_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_stroller_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_stroller_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_trailer_0_20 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_trailer_40_60 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap2_trailer_all [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agent_det_ap4_all_0_20 [DETECTION] in-run 0.10083 vs seeds mean 0.30284 (sd 0)",
+  "eval_agent_det_ap4_all_all [DETECTION] in-run 0.03579 vs seeds mean 0.06659 (sd 0)",
+  "eval_agent_det_ap4_automobile_0_20 [DETECTION] in-run 0.08639 vs seeds mean 0 (sd 0)",
+  "eval_agent_det_ap4_automobile_20_40 [DETECTION] in-run 0.01998 vs seeds mean 0.05 (sd 0)",
+  "eval_agent_det_ap4_automobile_all [DETECTION] in-run 0.03167 vs seeds mean 0.0087 (sd 0)",
+  "eval_agent_det_ap4_bus_20_40 [UNDEFINED rule] in-run 0.00065 vs seeds [None]",
+  "eval_agent_det_ap4_bus_40_60 [UNDEFINED rule] in-run 0.00051 vs seeds [None]",
+  "eval_agent_det_ap4_heavy_truck_0_20 [UNDEFINED rule] in-run 0.0099 vs seeds [None]",
+  "eval_agent_det_ap4_heavy_truck_20_40 [UNDEFINED rule] in-run 0.0 vs seeds [None]",
+  "eval_agen
+[g0] wrote raw/g0_step1500/probe.json (332.7 s)

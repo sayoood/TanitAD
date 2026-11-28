@@ -1,0 +1,90 @@
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 20.87 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 3.19, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 20.87 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 3.19, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+{
+ "v7tiny_emao14_30k": {
+  "arm": "v7tiny_emao14_30k",
+  "rebuilt_n_trainable_params_GROUP_MAP_ALONE": 11742915,
+  "ckpt_recorded_freeze_n_trainable": 11742915,
+  "MATCH_rebuild_reproduces_the_run": true,
+  "n_trainable_tensors_rebuilt": 185,
+  "n_optimizer_slots_in_ckpt": 185,
+  "MATCH_slot_count": true,
+  "unknown_recorded_arg_keys": [
+   "control_arm_ack"
+  ],
+  "shape_alignment_ok": true,
+  "n_stepped": 100,
+  "n_NEVER_STEPPED": 85,
+  "stepped_by_module": {
+   "encoder": 41,
+   "o14_head": 4,
+   "predictor_op": 53,
+   "readout": 2
+  },
+  "NEVER_STEPPED_by_module": {
+   "ema_o5_enc": 41,
+   "ema_o5_ro": 2,
+   "masked_cells": 30,
+   "predictor_op": 6,
+   "step_readout_op": 6
+  },
+  "NEVER_STEPPED_numel_by_module": {
+   "step_readout_op": 2107395,
+   "masked_cells": 1621056,
+   "predictor_op": 1577216,
+   "ema_o5_enc": 972032,
+   "ema_o5_ro": 8256
+  },
+  "EMA_TEACHER_tensors_STEPPED": 0,
+  "EMA_TEACHER_tensors_NEVER_STEPPED": 43,
+  "EMA_TEACHER_examples_stepped": [],
+  "CONTROL_encoder_student_tensors_STEPPED": 41,
+  "CONTROL_encoder_student_tensors_SKIPPED": 0
+ },
+ "v7tiny_emao14_30k_tauramp": {
+  "arm": "v7tiny_emao14_30k_tauramp",
+  "rebuilt_n_trainable_params_GROUP_MAP_ALONE": 11742915,
+  "ckpt_recorded_freeze_n_trainable": 11742915,
+  "MATCH_rebuild_reproduces_the_run": true,
+  "n_trainable_tensors_rebuilt": 185,
+  "n_optimizer_slots_in_ckpt": 185,
+  "MATCH_slot_count": true,
+  "unknown_recorded_arg_keys": [
+   "control_arm_ack"
+  ],
+  "shape_alignment_ok": true,
+  "n_stepped": 100,
+  "n_NEVER_STEPPED": 85,
+  "stepped_by_module": {
+   "encoder": 41,
+   "o14_head": 4,
+   "predictor_op": 53,
+   "readout": 2
+  },
+  "NEVER_STEPPED_by_module": {
+   "ema_o5_enc": 41,
+   "ema_o5_ro": 2,
+   "masked_cells": 30,
+   "predictor_op": 6,
+   "step_readout_op": 6
+  },
+  "NEVER_STEPPED_numel_by_module": {
+   "step_readout_op": 2107395,
+   "masked_cells": 1621056,
+   "predictor_op": 1577216,
+   "ema_o5_enc": 972032,
+   "ema_o5_ro": 8256
+  },
+  "EMA_TEACHER_tensors_STEPPED": 0,
+  "EMA_TEACHER_tensors_NEVER_STEPPED": 43,
+  "EMA_TEACHER_examples_stepped": [],
+  "CONTROL_encoder_student_tensors_STEPPED": 41,
+  "CONTROL_encoder_student_tensors_SKIPPED": 0
+ }
+}

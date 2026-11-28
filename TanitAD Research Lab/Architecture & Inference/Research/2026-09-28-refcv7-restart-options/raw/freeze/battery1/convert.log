@@ -1,0 +1,76 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/refcv6_eval_kit/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] agent cls weight: b1 on corpus line v7-b1-physicalai-b1-w120-256x640cyl, population in_field_and_decode_box (derived-from-join (agrees with the weight key)) (10 classes, imbalance 1298.6:1, digest c9dbc340acf7d27e)
+[v3] refcv7 map-hires: w=1, extent 100 m x +-30 m -> [1000, 600] at 0.1 m, grad_ckpt True, near-lift 20 m, near-refine 1, tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 128, 's8_hw': [52, 128], 's8_frame': 'newest', 's8_temporal_fusion': None}, params {'lift': 32896, 'encoder': 406912, 'refine': 20936, 'near': 16448, 'near_refine': 18496, 'total': 495688}, class weights sha256 d70dec8087ed
+[v3] refcv6 perception: w_map=0 w_box3d=1 bev_source=map_hires_pool; params {'lift': 0, 'bev_encoder': 0, 'map_head': 0, 'box_memory': 91136, 'box_decoder': 3858199, 'bev_pool': 6336, 'box_qpos': 131584, 'box_refpts': 600, 'total': 4087855}
+[v3] anchors: loaded (117, 8, 2) from D:/refcv6_eval_kit/data/anchors/refc_anchors_6s_v0cond_alat_117.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['D:/refcv6_eval_kit/data/refcv6-b1-416x1024-eval139'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (112 tensors) head_lr=1.000e-04 (472 tensors)
+{
+ "declared": {
+  "core.strategic.gru": "--no-strategic: the strategic context is computed only as a diagnostic (out['ctx']); no training loss reads it",
+  "core.strategic.proj": "--no-strategic: the strategic context projection, bypassed with the layer",
+  "nav_to_str": "--no-strategic: nav -> strategic ctx feeds only the diagnostic ctx; nav still reaches tactical (nav_to_tac) and operative (meas_in)",
+  "str_goal_head": "--no-strategic: the strategic goal head; its hindsight loss is dropped with the layer (goal_str_loss_applied False)",
+  "gstr_embed": "--no-strategic (S-BYPASS-2): the strategic goal's FiLM on the tactical latent is skipped",
+  "gstr_film": "--no-strategic (S-BYPASS-2): the strategic goal's FiLM on the tactical latent is skipped",
+  "core.decoder.ctx_to_cond": "--no-strategic (S-BYPASS-1): the decoder receives ctx=None, so ctx_to_cond never runs",
+  "core.route_head": "--no-strategic: the route readout; route_loss_applied is False and the route graft is off",
+  "core.decoder.lat_to_anchor": "--graft-tac8-prior (refcv6 sec. 4): the tactical 8x8 posterior REPLACES the image-only lat3 prior; the call site passes lat_prior=None",
+  "core.decoder.lon_to_anchor": "--graft-tac8-prior (refcv6 sec. 4): the tactical 8x8 posterior REPLACES the image-only lon3 prior; the call site passes lon_prior=None"
+ },
+ "dropped": [
+  "core.strategic.gru.weight_ih_l0",
+  "core.strategic.gru.weight_hh_l0",
+  "core.strategic.gru.bias_ih_l0",
+  "core.strategic.gru.bias_hh_l0",
+  "core.strategic.proj.weight",
+  "core.strategic.proj.bias",
+  "core.decoder.ctx_to_cond.weight",
+  "core.decoder.ctx_to_cond.bias",
+  "core.decoder.lat_to_anchor.weight",
+  "core.decoder.lon_to_anchor.weight",
+  "core.route_head.weight",
+  "core.route_head.bias",
+  "str_goal_head.weight",
+  "str_goal_head.bias",
+  "gstr_embed.weight",
+  "gstr_embed.bias",
+  "gstr_film.weight",
+  "gstr_film.bias",
+  "nav_to_str.weight",
+  "nav_to_str.bias"
+ ],
+ "saved_group_sizes": [
+  112,
+  492
+ ],
+ "old_group_sizes": [
+  112,
+  492
+ ],
+ "new_group_sizes": [
+  112,
+  472
+ ],
+ "n_state_entries": 584,
+ "n_shape_checked": 584,
+ "dropped_with_state": [],
+ "n_state_entries_out": 584,
+ "n_state_dropped": 0,
+ "ckpt_in": "C:\\Users\\Admin\\rc7restart_work\\ab\\batch1\\U6\\run\\ckpt.pt",
+ "ckpt_in_sha256": "6c17e099ede3e66878f852220add1c563cfa29e37fa83d555ffdb999adbccd72",
+ "step": 6,
+ "tree": "C:/Users/Admin/rc7frozen",
+ "argv_file": "C:/Users/Admin/rc7restart_work/ab/batch1/conv_argv.json",
+ "build_dropped_flags": [],
+ "loaded_into_build_optimizer": true,
+ "utc": "2026-09-28T04:06:52Z",
+ "ckpt_out_sha256": "49b6ed5b7da78f811e62319bbec5d5200af97dab0723fabb65547b45f5cd2d9c"
+}
+ZZCONVERT-OK-584-20ZZ

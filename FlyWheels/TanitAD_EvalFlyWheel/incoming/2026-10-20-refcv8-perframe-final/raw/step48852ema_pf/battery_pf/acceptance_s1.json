@@ -1,0 +1,35 @@
+{
+ "tflip": {
+  "test": "T-FLIP",
+  "bars": {
+   "follows_FED_command": 0.5,
+   "paired_true_minus_shuffled": 0.38
+  },
+  "today_refcv5_v2": {
+   "follows_FED_command": 0.205,
+   "paired_true_minus_shuffled": 0.099
+  },
+  "verdict": "NOT_RUN",
+  "reason": "the block carries no `flipped` sub-block: the arm was rolled without --with-navflip (taniteval/tools/refcv3_arm.py:1888-1898). T-FLIP has NEVER been run on any REF-C arm \u2014 this is an absence of data, not a failing model.",
+  "nav_compliance_status": "UNAVAILABLE",
+  "nav_compliance_reason": "nav_compliance did not run: ValueError: operands could not be broadcast together with shapes (1093,) (4754,) "
+ },
+ "obedience": {
+  "test": "speed obedience",
+  "forced_limit_kmh": 30.0,
+  "population": "windows whose GT max speed exceeds 40.0 km/h",
+  "n_windows": 0,
+  "n_episodes": 0,
+  "bar_obeys_fraction": 0.99,
+  "tol_ms": 0.0,
+  "rows_with_no_compliant_candidate": 0,
+  "verdict": "UNPOWERED",
+  "reason": "0 windows / 0 episodes < 30 / 5"
+ },
+ "tzero": {
+  "test": "T-ZERO",
+  "verdict": "NOT_RUN",
+  "reason": "no nav_true / nav_zero goal block"
+ },
+ "note": "refcv6's FROZEN acceptance instruments read on refcv7 as INFORMATIVE (no refcv7 bar)"
+}

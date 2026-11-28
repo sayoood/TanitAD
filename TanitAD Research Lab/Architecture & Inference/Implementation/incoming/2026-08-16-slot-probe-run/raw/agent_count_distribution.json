@@ -1,0 +1,46 @@
+{
+ "_evidence_class": "MEASURED (ours; JoinFileReader over the 39-clip join)",
+ "_why": "AGENT_SLOT_DECODER.md \u00a72 records n_slot_queries=16 as A DECLARED PLACEHOLDER, NOT A FITTED VALUE, and instructs: measure the join's per-frame agent-count distribution (its 99th percentile) before the run and record it.",
+ "n_frames": 7287,
+ "n_clips": 39,
+ "all_agents": {
+  "mean": 33.8736,
+  "median": 26,
+  "p90": 87,
+  "p95": 106,
+  "p99": 130,
+  "max": 161
+ },
+ "in_grid": {
+  "mean": 5.6077,
+  "median": 3,
+  "p90": 16,
+  "p95": 21,
+  "p99": 31,
+  "max": 37
+ },
+ "in_grid_and_visible": {
+  "mean": 5.1741,
+  "median": 3,
+  "p90": 15,
+  "p95": 20,
+  "p99": 29,
+  "max": 35
+ },
+ "grid": {
+  "x_fwd_m": 60.0,
+  "y_half_m": 16.0
+ },
+ "overfull_frac_by_n_queries": {
+  "16": 0.0904,
+  "24": 0.034,
+  "32": 0.0075,
+  "48": 0.0
+ },
+ "DECISION": {
+  "n_slot_queries": 32,
+  "basis": "in-grid p99 = 31, rounded up",
+  "prereg_placeholder": 16,
+  "why_in_grid": "SlotDecodeRanges decodes into exactly these extents; an agent outside them is not representable, so scoring it would measure the coordinate transform rather than the latent"
+ }
+}

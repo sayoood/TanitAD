@@ -1,0 +1,333 @@
+{
+ "_task": "P4 permanence vs the FOV mask — are they the same predicate?",
+ "_date": "2026-08-16",
+ "_evidence_class": "MEASURED (ours) — pure geometry, no corpus / checkpoint / GPU / join file",
+ "grid": {
+  "x_fwd_m": 60.0,
+  "y_half_m": 16.0,
+  "cell_m": 0.5,
+  "shape": [
+   120,
+   64
+  ]
+ },
+ "A_predicate_identity": {
+  "_question": "is `occ == 0` the same set as `fov_mask == True`?",
+  "occ_source": "stack/scripts/build_obstacle_join.py:210-223 visibility_occ -> np.abs(arctan2(cy, cx)) <= radians(hfov_deg)/2",
+  "fov_source": "stack/tanitad/data/bev_raster.py:334-355 fov_mask -> np.abs(cell_azimuth_rad) <= half_angle_rad, with cell_azimuth_rad = arctan2(y, x) (:323-331)",
+  "per_hfov": [
+   {
+    "hfov_deg": 30.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 3856
+   },
+   {
+    "hfov_deg": 60.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 5904
+   },
+   {
+    "hfov_deg": 90.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 6688
+   },
+   {
+    "hfov_deg": 117.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 7054
+   },
+   {
+    "hfov_deg": 120.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 7090
+   },
+   {
+    "hfov_deg": 150.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 7408
+   },
+   {
+    "hfov_deg": 179.0,
+    "n_cells": 7680,
+    "n_disagree": 0,
+    "identical": true,
+    "n_in_field": 7680
+   }
+  ],
+  "all_identical": true
+ },
+ "B_default_half_angle": {
+  "_question": "do the two DEFAULTS agree bit-exactly, or only to within rounding?",
+  "fov_mask_default_rad": "1.0471975511965976",
+  "visibility_occ_default_rad": "1.0471975511965976",
+  "hex_fov_mask": "0x1.0c152382d7365p+0",
+  "hex_visibility_occ": "0x1.0c152382d7365p+0",
+  "bit_identical": true,
+  "ulp_gap": 0.0
+ },
+ "C_out_of_field_geometry": {
+  "hfov_deg": 120.0,
+  "n_out_of_field": 590,
+  "n_cells": 7680,
+  "frac_out_of_field": 0.076823,
+  "max_x_m_of_an_out_cell": 8.75,
+  "min_abs_y_m_of_an_out_cell": 0.75,
+  "boundary_rule": "|y| > x * tan(hfov/2)  =>  an out-of-field cell exists only where x < y_half_m / tan(hfov/2)",
+  "x_ceiling_m": 9.2376,
+  "_read": "the P4 occluded arm is scored ENTIRELY inside this wedge: near, off-axis, and 8 % of the grid. The visible arm is scored on the other 92 %. The two arms are therefore DISJOINT REGIONS of different size and different range."
+ },
+ "D_infov_twin_would": {
+  "_sampling": {
+   "agent_centres": "uniform over the OUT-OF-FIELD WEDGE (0 < x < 9.2376 m, |y| <= 16.0 m), rejection-tested against the occ predicate — not uniform over the whole grid",
+   "n_draws": 20000,
+   "yaw": "uniform on (-pi, pi]"
+  },
+  "subcell_agent_0p05": {
+   "agent_l_w_m": [
+    0.05,
+    0.05
+   ],
+   "n_occluded_agents_sampled": 100,
+   "cells_before_mask": 100,
+   "cells_after_mask": 0,
+   "cell_survival_frac": 0.0,
+   "agents_with_ANY_cell_left": 0,
+   "agents_emptied_by_the_mask": 100,
+   "agent_emptied_frac": 1.0,
+   "mean_per_agent_survival": 0.0
+  },
+  "subcell_agent_0p45": {
+   "agent_l_w_m": [
+    0.45,
+    0.45
+   ],
+   "n_occluded_agents_sampled": 8020,
+   "cells_before_mask": 8214,
+   "cells_after_mask": 123,
+   "cell_survival_frac": 0.014974,
+   "agents_with_ANY_cell_left": 123,
+   "agents_emptied_by_the_mask": 7897,
+   "agent_emptied_frac": 0.984663,
+   "mean_per_agent_survival": 0.014838
+  },
+  "automobile_4p5x2p0": {
+   "agent_l_w_m": [
+    4.5,
+    2.0
+   ],
+   "n_occluded_agents_sampled": 10000,
+   "cells_before_mask": 313545,
+   "cells_after_mask": 33911,
+   "cell_survival_frac": 0.108154,
+   "agents_with_ANY_cell_left": 3962,
+   "agents_emptied_by_the_mask": 6038,
+   "agent_emptied_frac": 0.6038,
+   "mean_per_agent_survival": 0.105029
+  },
+  "heavy_truck_12x2p6": {
+   "agent_l_w_m": [
+    12.0,
+    2.6
+   ],
+   "n_occluded_agents_sampled": 10000,
+   "cells_before_mask": 900769,
+   "cells_after_mask": 240797,
+   "cell_survival_frac": 0.267324,
+   "agents_with_ANY_cell_left": 7585,
+   "agents_emptied_by_the_mask": 2415,
+   "agent_emptied_frac": 0.2415,
+   "mean_per_agent_survival": 0.255273
+  },
+  "_read": "cell_recall (train_p8_occupancy.py) returns NaN when the subset raster is empty, and _mean_n drops NaN — so an emptied agent drops out of n silently. An `_infov` twin on the P4 path therefore does not 'correct' the occluded arm; it DELETES most of it and rescores the remainder on footprint slivers that straddle the +-hfov/2 ray — a population ordered by agent EXTENT, not by agent visibility. The survival fraction rising monotonically with vehicle length IS that re-selection, measured.",
+  "_the_residual_is_not_zero": "a sub-cell agent is not exactly emptied: the raster tests CELL CENTRES, so a hit can sit up to half a cell diagonal (0.354 m) from the agent centre, which near the ego origin crosses the azimuth boundary. That residual IS the agent-centre vs cell-centre granularity gap named in the stamp — it is small and it is real, and quoting it as 0 would be the same over-claim this census exists to prevent.",
+  "_evidence_class": "MEASURED (ours) on the real bev_raster.rasterize; the AGENT POSITION PRIOR is uniform-on-wedge (synthetic), not the corpus prior, which needs the pod-side join file."
+ },
+ "E_sensor_vs_encoder_frame": {
+  "n_out_120": 590,
+  "n_out_117": 626,
+  "n_cells_disagreeing": 36,
+  "frac_of_grid": 0.004687,
+  "disagreeing_cells_are_a_superset_only": true,
+  "disagree_band_deg": [
+   58.5,
+   60.0
+  ],
+  "disagree_cell_x_range_m": [
+   0.75,
+   9.25
+  ],
+  "disagree_cell_abs_y_range_m": [
+   1.25,
+   15.75
+  ],
+  "cell_azimuth_max_deg": 89.0906,
+  "_the_population_mismatch": "⛔ THE 36 CELLS ARE THE WRONG DENOMINATOR FOR THE JOIN. `fov_mask` grades CELLS; `visibility_occ` grades AGENT CENTRES. The join-side n is the number of AGENT ROWS whose centre azimuth falls in the [58.5, 60.0] deg annulus — flagged `visible` by the join, invisible to the encoder. That n is a property of the corpus, is NOT derivable from the grid, and needs the pod-side join file.",
+  "_direction_of_the_bias": "agents in the annulus are mislabelled VISIBLE while the encoder never saw them. They are therefore occluded-like rows sitting in the visible bucket. Since the published result is recall_occluded (0.2178) > recall_visible (0.1881), the contamination can only RAISE the visible arm and SHRINK the gap => correcting 120 -> 117 is CONSERVATIVE for the P4 claim.",
+  "lf0_corridor_overlap": {
+   "pm1.0m_minrow0": {
+    "n_corridor_cells": 720,
+    "n_disagreeing_in_corridor": 2
+   },
+   "pm1.0m_minrow2": {
+    "n_corridor_cells": 708,
+    "n_disagreeing_in_corridor": 0
+   },
+   "pm1.5m_minrow0": {
+    "n_corridor_cells": 960,
+    "n_disagreeing_in_corridor": 2
+   },
+   "pm1.5m_minrow2": {
+    "n_corridor_cells": 944,
+    "n_disagreeing_in_corridor": 0
+   },
+   "pm2.0m_minrow0": {
+    "n_corridor_cells": 1200,
+    "n_disagreeing_in_corridor": 2
+   },
+   "pm2.0m_minrow2": {
+    "n_corridor_cells": 1180,
+    "n_disagreeing_in_corridor": 0
+   },
+   "_read": "zero at LF0's run configuration (min_row 2) => the 120/117 disagreement cannot move the banked LF0 verdict, for the same reason the whole-field mask cannot."
+  }
+ },
+ "F_banked_p4_reread": {
+  "attempt1": {
+   "ks": [
+    "5",
+    "10",
+    "15",
+    "20"
+   ],
+   "per_k": {
+    "5": {
+     "enc_occ": 0.0,
+     "enc_vis": 0.00041189134956786424,
+     "enc_occ_minus_vis": -0.000412,
+     "pred_occ": 0.0,
+     "pred_vis": 0.00014191701264529348,
+     "pred_occ_minus_vis": -0.000142,
+     "n_occ": 165,
+     "n_vis": 556
+    },
+    "10": {
+     "enc_occ": 0.0,
+     "enc_vis": 0.00032005944190696423,
+     "enc_occ_minus_vis": -0.00032,
+     "pred_occ": 0.00046860357535254095,
+     "pred_vis": 0.00012862370188014894,
+     "pred_occ_minus_vis": 0.00034,
+     "n_occ": 194,
+     "n_vis": 548
+    },
+    "15": {
+     "enc_occ": 8.124796910345225e-05,
+     "enc_vis": 0.0003455633819409709,
+     "enc_occ_minus_vis": -0.000264,
+     "pred_occ": 0.0013812154696132596,
+     "pred_vis": 0.0011771597147798353,
+     "pred_occ_minus_vis": 0.000204,
+     "n_occ": 181,
+     "n_vis": 547
+    },
+    "20": {
+     "enc_occ": 0.0006237524801385617,
+     "enc_vis": 0.0004467857996537392,
+     "enc_occ_minus_vis": 0.000177,
+     "pred_occ": 0.0,
+     "pred_vis": 0.0016474242359618733,
+     "pred_occ_minus_vis": -0.001647,
+     "n_occ": 167,
+     "n_vis": 553
+    }
+   },
+   "enc_occ_gt_vis_at_all_k": false,
+   "pred_occ_gt_vis_at_all_k": false,
+   "pred_k_with_positive_gap": [
+    "10",
+    "15"
+   ],
+   "enc_occ_recall_range": [
+    0.0,
+    0.0006237524801385617
+   ],
+   "enc_occ_recall_spread": 0.000624,
+   "enc_occ_recall_monotone_in_k": true
+  },
+  "attempt2": {
+   "ks": [
+    "5",
+    "10",
+    "15",
+    "20"
+   ],
+   "per_k": {
+    "5": {
+     "enc_occ": 0.19914295436306434,
+     "enc_vis": 0.18638223410364602,
+     "enc_occ_minus_vis": 0.012761,
+     "pred_occ": 0.19002773268430523,
+     "pred_vis": 0.19353221364532056,
+     "pred_occ_minus_vis": -0.003504,
+     "n_occ": 165,
+     "n_vis": 556
+    },
+    "10": {
+     "enc_occ": 0.21777724747824453,
+     "enc_vis": 0.18813641449728857,
+     "enc_occ_minus_vis": 0.029641,
+     "pred_occ": 0.17434794974234916,
+     "pred_vis": 0.17170380491229711,
+     "pred_occ_minus_vis": 0.002644,
+     "n_occ": 194,
+     "n_vis": 548
+    },
+    "15": {
+     "enc_occ": 0.20173859411017012,
+     "enc_vis": 0.1874805135082903,
+     "enc_occ_minus_vis": 0.014258,
+     "pred_occ": 0.1838058484975475,
+     "pred_vis": 0.18719556053395517,
+     "pred_occ_minus_vis": -0.00339,
+     "n_occ": 181,
+     "n_vis": 547
+    },
+    "20": {
+     "enc_occ": 0.2000953373973241,
+     "enc_vis": 0.18329063803715392,
+     "enc_occ_minus_vis": 0.016805,
+     "pred_occ": 0.18014195384067333,
+     "pred_vis": 0.18586102592174442,
+     "pred_occ_minus_vis": -0.005719,
+     "n_occ": 167,
+     "n_vis": 553
+    }
+   },
+   "enc_occ_gt_vis_at_all_k": true,
+   "pred_occ_gt_vis_at_all_k": false,
+   "pred_k_with_positive_gap": [
+    "10"
+   ],
+   "enc_occ_recall_range": [
+    0.19914295436306434,
+    0.21777724747824453
+   ],
+   "enc_occ_recall_spread": 0.018634,
+   "enc_occ_recall_monotone_in_k": false
+  },
+  "_read": "attempt 2 (the published run): the ENC ordering occluded > visible holds at all four k, but the PRED ordering — the half the registry also quotes — holds at k=10 ONLY and reverses at k=5/15/20. And the occluded recall does NOT decay with k, which is what a memory claim predicts and what a fixed regional prior does not. attempt 1's decoder had collapsed to ~0 recall on BOTH arms, so it is silent on this question rather than a control.",
+  "_evidence_class": "MEASURED (ours; artifacts = p8_gate_attempt{1,2}.json, re-read, no re-run)"
+ }
+}

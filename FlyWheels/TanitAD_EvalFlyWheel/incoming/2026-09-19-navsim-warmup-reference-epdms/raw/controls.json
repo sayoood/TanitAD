@@ -1,0 +1,215 @@
+{
+ "split": "warmup_two_stage",
+ "alias": {},
+ "expected": {
+  "n_stage_one": 16,
+  "n_stage_two": 204,
+  "n_mapping_entries": 8
+ },
+ "C3_counts_A1": {
+  "n_rows": 220,
+  "n_stage_one_rows": 16,
+  "n_stage_two_rows": 204,
+  "stage_one_tokens_eq_yaml": true,
+  "stage_two_tokens_eq_yaml": true,
+  "n_valid": 220,
+  "summary_rows_present": [
+   "extended_pdm_score_stage_one",
+   "extended_pdm_score_stage_two",
+   "extended_pdm_score_combined"
+  ],
+  "summary_valid": {
+   "extended_pdm_score_stage_one": "True",
+   "extended_pdm_score_stage_two": "True",
+   "extended_pdm_score_combined": "True"
+  },
+  "pass": true
+ },
+ "C4_formula": {
+  "A1": {
+   "n_rows": 220,
+   "n_rows_with_nan_EC_dropped_to_14": 0,
+   "max_abs_diff": 1.1102230246251565e-16,
+   "tol": 1e-09,
+   "pass": true
+  },
+  "R1": {
+   "n_rows": 220,
+   "n_rows_with_nan_EC_dropped_to_14": 0,
+   "max_abs_diff": 1.1102230246251565e-16,
+   "tol": 1e-09,
+   "pass": true
+  },
+  "A1b": {
+   "n_rows": 16,
+   "n_rows_with_nan_EC_dropped_to_14": 8,
+   "max_abs_diff": 0.0,
+   "tol": 1e-09,
+   "pass": true
+  },
+  "A2b": {
+   "n_rows": 16,
+   "n_rows_with_nan_EC_dropped_to_14": 8,
+   "max_abs_diff": 1.1102230246251565e-16,
+   "tol": 1e-09,
+   "pass": true
+  },
+  "M1": {
+   "n_rows": 16,
+   "n_rows_with_nan_EC_dropped_to_14": 8,
+   "max_abs_diff": 1.1102230246251565e-16,
+   "tol": 1e-09,
+   "pass": true
+  }
+ },
+ "C5_aggregate_A1": {
+  "max_abs_weight_diff": 1.1102230246251565e-16,
+  "max_abs_summary_diff": 1.1102230246251565e-16,
+  "recomputed": {
+   "stage_one": {
+    "NC": 0.71875,
+    "DAC": 0.625,
+    "DDC": 0.90625,
+    "TLC": 1.0,
+    "EP": 0.8445232685540033,
+    "TTC": 0.6875,
+    "LK": 1.0,
+    "HC": 1.0,
+    "EC": 0.875,
+    "score": 0.4602892129691729
+   },
+   "stage_two": {
+    "NC": 0.6753149753128314,
+    "DAC": 0.6388556549147113,
+    "DDC": 0.8048395134816405,
+    "TLC": 0.875,
+    "EP": 0.759838895283274,
+    "TTC": 0.6753149753128314,
+    "LK": 0.6146559218168826,
+    "HC": 0.9958333333333333,
+    "EC": 0.7208095807118617,
+    "score": 0.3341286472565138
+   },
+   "combined": {
+    "NC": 0.5210386595233578,
+    "DAC": 0.34321171552077195,
+    "DDC": 0.7558811801483072,
+    "TLC": 0.875,
+    "EP": 0.6613199051624513,
+    "TTC": 0.48978865952335776,
+    "LK": 0.6146559218168826,
+    "HC": 0.9958333333333333,
+    "EC": 0.6639913988936799,
+    "score": 0.18535627451651127
+   }
+  },
+  "tol": 1e-09,
+  "pass": true
+ },
+ "C7_determinism": {
+  "same_token_set": true,
+  "max_abs_diff": 1.1102230246251565e-16,
+  "nan_pattern_mismatch": 0,
+  "n_calls_A1": 220,
+  "n_calls_R1": 220,
+  "evaluation_order_differed": true,
+  "pass": false,
+  "teeth": "order differed, so the identity also tests order-invariance"
+ },
+ "C6_cross_runner": {
+  "n_common": 16,
+  "max_abs_diff_8_metrics": 0.0,
+  "n_EC_nan_in_one_stage": 8,
+  "EC_nan_tokens_are_prev_tokens": true,
+  "max_abs_diff_EC_where_defined": 0.0,
+  "pass": true
+ },
+ "C1_human_filter": {
+  "n_tokens": 16,
+  "value_sets": {
+   "NC": [
+    1.0
+   ],
+   "DAC": [
+    1.0
+   ],
+   "DDC": [
+    1.0
+   ],
+   "TLC": [
+    1.0
+   ],
+   "EP": [
+    0.6482095590230377,
+    0.6789845634217825,
+    0.7231549441471165,
+    0.7304342241014848,
+    0.7828746215307257,
+    0.8252023923761503,
+    0.8341802012625693,
+    0.8440613763757093,
+    0.8669574865292714,
+    0.8841788097013557,
+    0.8844035419029012,
+    1.0
+   ],
+   "TTC": [
+    1.0
+   ],
+   "LK": [
+    1.0
+   ],
+   "HC": [
+    1.0
+   ]
+  },
+  "DAC_TLC_TTC_LK_exactly_1": {
+   "DAC": true,
+   "TLC": true,
+   "TTC": true,
+   "LK": true
+  },
+  "NC_DDC_in_half_one": {
+   "NC": true,
+   "DDC": true
+  },
+  "pass": true,
+  "P1_agent_vs_cache_human_traj": {
+   "n": 16,
+   "max_abs_pose_diff": 1.2371767395269462e-09,
+   "pass": true
+  },
+  "M1_mutation_filter_off": {
+   "zero_cells_per_metric": {
+    "NC": 0,
+    "DAC": 1,
+    "DDC": 0,
+    "TLC": 0,
+    "EP": 0,
+    "TTC": 0,
+    "LK": 2,
+    "HC": 0
+   },
+   "n_tokens_where_filter_fires": 3,
+   "fired_tokens": [
+    "5f53001e7e2d5347",
+    "68097b10029d5fe1",
+    "c054f473288d5515"
+   ],
+   "n_cells_changed_by_filter": 3,
+   "n_changed_cells_not_0_to_1": 0,
+   "unexplained": [],
+   "vacuous": false,
+   "pass": true
+  }
+ },
+ "C8_external": {
+  "local_combined_x100": 18.535627,
+  "local_combined_raw": 0.1853562745165113,
+  "reference": 18.5356,
+  "reference_source": "HF warmup LB baseline_constant_velocity, INHERITED via NAVSIM_PROTOCOL.md \u00a76.3",
+  "delta": 2.7e-05,
+  "tolerance": 0.01,
+  "reproduced": true
+ }
+}

@@ -1,0 +1,19 @@
+  bank: 6 tuples carved from D:/Projects/TanitAD/data/refe_consistent; spec {'factors': [0.75, 0.5], 'n_src': 8, 'stop': True, 'frac': 1.0, 'sources': 'random', 'seed': 20260927}
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  R-LOAD    sets 6, incomplete 0, superseded 6, NAVSIM DAC 6; v4 set served with its copies + their components: True; TargetBank.__getitem__ serves it (mask all ones): True
+  M-APPEND  64+17 sets: incomplete 6/6, every key still serves its v4 set: True -> appended copies never reach the loss
+  M-EXTRA   an extra copies-only set per key: it REPLACED the own-proposal set on every key: True; served sets hold no original: True
+  M-NODAC   one copy without navsim_dac.violation: NAVSIM DAC sets 5/6 (detected: True)
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  L-V4   120 steps in 699 s, 120 on-policy lines; NEW plans: P(no collision) slow 0.998 fast 0.003, AUC 1.000
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  L-MUT  120 steps in 705 s, 120 on-policy lines; NEW plans: P(no collision) slow 0.732 fast 0.060, AUC 1.000
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  L-V3   120 steps in 853 s, 120 on-policy lines; NEW plans: P(no collision) slow 1.000 fast 0.002, AUC 1.000
+  GATES     L-V4 - L-MUT on slow plans +0.266 (bar >= +0.20); L-V4 AUC 1.000 (bar >= 0.80); L-V3 (no copies, reported) P_slow 1.000
+  results: {'R-LOAD': True, 'M-APPEND': True, 'M-EXTRA': True, 'M-NODAC': True, 'L-V4_vs_L-MUT': True, 'L-V4_auc': True}
+ZZV4TRAIN_OK

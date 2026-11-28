@@ -1,0 +1,61 @@
+{
+ "spec": "E-DEPLOY-4b",
+ "controls": {
+  "fp32_repeat_bit_identical": {
+   "expect": "0.0 at every stage",
+   "measured": {
+    "z_op": 0.0,
+    "z_tac": 0.0,
+    "z_str": 0.0,
+    "plan.feat": 0.0,
+    "plan.waypoints": 0.0
+   },
+   "pass": true
+  }
+ },
+ "tf32_deviation": {
+  "z_op": {
+   "max_abs": 0.05608320236206055,
+   "mean_abs": 0.00012158041499787942,
+   "ref_absmax": 8.571907997131348,
+   "rel_to_scale": 0.006542674324179542,
+   "moved": true
+  },
+  "z_tac": {
+   "max_abs": 0.011478424072265625,
+   "mean_abs": 0.0025854483246803284,
+   "ref_absmax": 2.6084413528442383,
+   "rel_to_scale": 0.004400491527152634,
+   "moved": true
+  },
+  "z_str": {
+   "max_abs": 0.007079124450683594,
+   "mean_abs": 0.0028263230342417955,
+   "ref_absmax": 2.7272119522094727,
+   "rel_to_scale": 0.0025957368091425325,
+   "moved": true
+  },
+  "plan.feat": {
+   "max_abs": 0.002514466643333435,
+   "mean_abs": 0.000566367874853313,
+   "ref_absmax": 1.8790152072906494,
+   "rel_to_scale": 0.0013381832321405437,
+   "moved": true
+  },
+  "plan.waypoints": {
+   "max_abs": 0.0,
+   "mean_abs": 0.0,
+   "ref_absmax": 56.13212203979492,
+   "rel_to_scale": 0.0,
+   "moved": false
+  }
+ },
+ "moved_stages": [
+  "z_op",
+  "z_tac",
+  "z_str",
+  "plan.feat"
+ ],
+ "verdict": "TF32 is a LOSSY lever on this stack \u2014 it moves ['z_op', 'z_tac', 'z_str', 'plan.feat']. The 22 % TF32+graph speedup must go through the four-family gate exactly like fp16; it may NOT be described as free or bit-identical.",
+ "_evidence_class": "MEASURED (ours; Thor, in-process)"
+}

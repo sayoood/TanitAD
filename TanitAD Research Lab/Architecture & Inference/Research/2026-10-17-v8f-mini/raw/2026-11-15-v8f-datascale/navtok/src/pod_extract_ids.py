@@ -1,0 +1,11 @@
+import pyarrow.parquet as pq, pyarrow as pa, pyarrow.compute as pc, json
+t=pq.read_table("/root/datascale/meta/navigation/navigation.parquet")
+print(t.schema, t.num_rows)
+d=pc.unique(t["nav_text"]).to_pylist()
+json.dump(sorted(d),open("texts.json","w"))
+clips=set(open("/root/ops/train4572.txt").read().split())|set(open("/root/ops/clips141.txt").read().split())
+print(len(clips))
+m=pc.is_in(t["clip_id"],value_set=pa.array(sorted(clips)))
+s=t.filter(m)
+pq.write_table(s,"nav_sub.parquet",compression="zstd")
+print(s.num_rows)

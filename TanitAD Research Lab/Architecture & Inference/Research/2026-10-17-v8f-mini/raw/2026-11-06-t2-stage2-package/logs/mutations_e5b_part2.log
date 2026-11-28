@@ -1,0 +1,114 @@
+RED   DK         mutation no_rotation     : DK layer 2: 126b3a97 adapter changes a window state
+assert False
+RED   DK         mutation ego_time_shift  : DK layer 2: 126b3a97 adapter changes a window state
+assert False
+RED   DK         mutation width_as_length : DK layer 2: 126b3a97 lead track dev 2.84e-14 m, length dev 2.06
+assert (2.842170943040401e-14 <= 1e-09 and 2.0
+RED   DK         mutation stale           : DK layer 1: b05195bf differs from the banked block in ['leads'] (counts_equal True)
+assert (not ['leads'])
+RED   DK         mutation ts_spacing      : DK layer 1: 126b3a97 differs from the banked block in ['state', 'leads', 'lead_lens', 'is_lead'] (counts_equal
+RED   rc         mutation psi_deg         : rc pin: {'126b3a97': {'n_steps': 100, 'ok_equal': True, 'rc_bit_identical': False, 'n_not_ok_cells': 0}, 'c8a3
+RED   rc         mutation x_shift         : rc pin: {'126b3a97': {'n_steps': 100, 'ok_equal': True, 'rc_bit_identical': False, 'n_not_ok_cells': 0}, 'c8a3
+RED   S-POS      mutation kap_sign        : S-POS: per-window arrays differ from the reader: {'CTRV_pos_err_m_bit_identical': 115.76662381949279, 'CTRV_he
+RED   S-POS      mutation gt_frame        : S-POS: per-window arrays differ from the reader: {'S_pos_err_m_bit_identical': 129.26450759621673, 'S_head_err
+RED   S-POS      mutation no_onroute      : S-POS: per-window arrays differ from the reader: {'S_pos_err_m_bit_identical': inf, 'S_head_err_deg_bit_identi
+RED   S-POS      mutation tick0_in        : S-POS pooled S-POS@30 [-1.6822, -2.1102, -1.2992] != banked [-1.7428, -2.2737, -1.2861]
+assert [-1.6822, -2.11
+RED   S-POS      mutation s_frame         : S-POS: per-window arrays differ from the reader: {'S_pos_err_m_bit_identical': 147.66548163844683, 'S_head_err
+RED   bootstrap  mutation eid_window      : X1: the bootstrap clusters 84 units; the launch scenes are 42 (eid = scene)
+assert 84 == 42
+RED   bootstrap  mutation mask_ignored    : X1: the bootstrap clusters 62 units; the launch scenes are 42 (eid = scene)
+assert 62 == 42
+RED   bootstrap  mutation no_guard        : arms with different (scene, f0) lists were contrasted
+assert False
+.FF
+================================== FAILURES ===================================
+________________________________ test_records _________________________________
+
+    def test_records():
+>       print(check_records())
+              ^^^^^^^^^^^^^^^
+
+tests\test_t2v8f_e5b.py:299: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_t2v8f_e5b.py:283: in check_records
+    r = S.run_sub("records_smoke", scenes=SCENES, f0s=SMOKE_F0S, mut=mut)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+op = 'records_smoke'
+kw = {'scenes': ['F:/TanitAD-scratch/t2_scenes/9e17ce05-b221-40a7-8ded-08d3cb018147', 'F:/TanitAD-scratch/t2_scenes/e848c843-d275-4f60-a194-61cc7f699124'], 'f0s': [20, 40, 60, 80, 100, 120], 'mut': None}
+
+    def run_sub(op, **kw):
+        """Run `python -I t2v8f_score.py op json` and return its JSON; the scorer never shares a process with the E1 policy's tree."""
+        r = subprocess.run([PY, "-I", f"{HERE}/t2v8f_score.py", op, json.dumps(kw)], capture_output=True, text=True, env=dict(os.environ, CUDA_VISIBLE_DEVICES="-1"))
+        if r.returncode:
+>           raise RuntimeError(f"scorer subprocess failed rc={r.returncode}: {r.stderr[-1500:]}")
+E           RuntimeError: scorer subprocess failed rc=1: [taniteval] tanitad OVERRIDE -> E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack (E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack\tanitad\__init__.py)
+E           Traceback (most recent call last):
+E             File "E:\Projects\TanitAD-artifacts\dagland\motion_c\t2v8f\code\t2v8f_score.py", line 298, in <module>
+E               print(json.dumps(getattr(L, "op_" + op)(**kw)))
+E                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 595, in op_records_smoke
+E               rows, missing, info = rows_for_records(recs, scs, "oracle")
+E                                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 345, in rows_for_records
+E               sp = spos_from_records(recs, scenes) if all("s_ckpt" in r["extra"][0] for r in recs) else None
+E                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 310, in spos_from_records
+E               return spos_rows(spos_errors(routes, ck, sp, w0, trk, rs))
+E                                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 267, in spos_errors
+E               kap[w, k] = T1H.mean_curvature(tracks[w], int(r_s[w, k]))[0]
+E                                                             ~~~^^^^^^
+E           TypeError: list indices must be integers or slices, not tuple
+
+code\t2v8f_score.py:221: RuntimeError
+___________________________ test_records_mutations ____________________________
+
+    def test_records_mutations():
+        missed = []
+        for m in ("ckpt_swapped_xy", "exec_offset"):
+            try:
+>               check_records(mut=m)
+
+tests\test_t2v8f_e5b.py:306: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_t2v8f_e5b.py:283: in check_records
+    r = S.run_sub("records_smoke", scenes=SCENES, f0s=SMOKE_F0S, mut=mut)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+op = 'records_smoke'
+kw = {'scenes': ['F:/TanitAD-scratch/t2_scenes/9e17ce05-b221-40a7-8ded-08d3cb018147', 'F:/TanitAD-scratch/t2_scenes/e848c843-d275-4f60-a194-61cc7f699124'], 'f0s': [20, 40, 60, 80, 100, 120], 'mut': 'ckpt_swapped_xy'}
+
+    def run_sub(op, **kw):
+        """Run `python -I t2v8f_score.py op json` and return its JSON; the scorer never shares a process with the E1 policy's tree."""
+        r = subprocess.run([PY, "-I", f"{HERE}/t2v8f_score.py", op, json.dumps(kw)], capture_output=True, text=True, env=dict(os.environ, CUDA_VISIBLE_DEVICES="-1"))
+        if r.returncode:
+>           raise RuntimeError(f"scorer subprocess failed rc={r.returncode}: {r.stderr[-1500:]}")
+E           RuntimeError: scorer subprocess failed rc=1: [taniteval] tanitad OVERRIDE -> E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack (E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack\tanitad\__init__.py)
+E           Traceback (most recent call last):
+E             File "E:\Projects\TanitAD-artifacts\dagland\motion_c\t2v8f\code\t2v8f_score.py", line 298, in <module>
+E               print(json.dumps(getattr(L, "op_" + op)(**kw)))
+E                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 595, in op_records_smoke
+E               rows, missing, info = rows_for_records(recs, scs, "oracle")
+E                                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 345, in rows_for_records
+E               sp = spos_from_records(recs, scenes) if all("s_ckpt" in r["extra"][0] for r in recs) else None
+E                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 310, in spos_from_records
+E               return spos_rows(spos_errors(routes, ck, sp, w0, trk, rs))
+E                                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E             File "E:\Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/code\t2v8f_lead.py", line 267, in spos_errors
+E               kap[w, k] = T1H.mean_curvature(tracks[w], int(r_s[w, k]))[0]
+E                                                             ~~~^^^^^^
+E           TypeError: list indices must be integers or slices, not tuple
+
+code\t2v8f_score.py:221: RuntimeError
+=========================== short test summary info ===========================
+FAILED tests/test_t2v8f_e5b.py::test_records - RuntimeError: scorer subproces...
+FAILED tests/test_t2v8f_e5b.py::test_records_mutations - RuntimeError: scorer...
+2 failed, 1 passed, 6 deselected in 108.87s (0:01:48)
+EXIT 1

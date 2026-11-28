@@ -1,0 +1,126 @@
+{
+ "evidence": "MEASURED on P2, CPU dump (not the GPU that produced the banked seam); tier T1",
+ "n_tokens": 8,
+ "tokens_asked": 8,
+ "criteria": {
+  "same_proposal": "argmin over the 64 proposals of max|pose - banked P2 pick| == the dump's pick, d_pick <= 0.005 m, and the nearest OTHER proposal >= 100.0x farther",
+  "score": "table PDMS at the pick == 0.0 and the banked P2 csv score == 0.0 (all 8 are P2 zero tokens), all valid; sub-score differences REPORTED, not gating",
+  "why_not_the_C3_1e-3_m_pose_bar": "the first CPU attempt read max |d| 1.36e-3 m (1 of 8 tokens above 1e-3 m; attempt1_gate_fidelity_cpu.json). The 1e-3 m bar was registered for GPU-vs-GPU (C3 u400: 0.0 on 1,058). This CPU-vs-GPU smoke cannot be bit-exact, so it asks the question the bar stands for -- is it the SAME PROPOSAL -- and the strict 1e-3 m + score-equality proof is applied to all 509 on the GPU in the main run. Criterion pinned after seeing the 8 pose diffs (post-hoc, flagged)."
+ },
+ "pose_max_abs_m": 0.001361846923828125,
+ "pose_n_bit_identical": 0,
+ "n_same_proposal": 8,
+ "score_n_exact": 8,
+ "score_max_abs_diff": 0.0,
+ "subscore_max_abs_diff": 0.0,
+ "distinct_pick_columns": [
+  1,
+  4,
+  5,
+  31,
+  32,
+  37,
+  54,
+  55
+ ],
+ "per_token": [
+  {
+   "token": "6884907db45c5cad",
+   "pick": 4,
+   "pose_max_abs_m": 0.001361846923828125,
+   "nearest_other_proposal_m": 0.6585693359375,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "483042d5dc175e99",
+   "pick": 55,
+   "pose_max_abs_m": 0.00020313262939453125,
+   "nearest_other_proposal_m": 0.6319961547851562,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "2cbf505c735c5c34",
+   "pick": 1,
+   "pose_max_abs_m": 0.0004215240478515625,
+   "nearest_other_proposal_m": 0.34380340576171875,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "7a6d3719323a5188",
+   "pick": 5,
+   "pose_max_abs_m": 0.0001220703125,
+   "nearest_other_proposal_m": 0.19038772583007812,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "a622ff338b425c28",
+   "pick": 37,
+   "pose_max_abs_m": 0.00072479248046875,
+   "nearest_other_proposal_m": 0.3530731201171875,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "6cc1bbadf8f25f7c",
+   "pick": 32,
+   "pose_max_abs_m": 0.0007610321044921875,
+   "nearest_other_proposal_m": 0.8398265838623047,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "93a208914ea85781",
+   "pick": 54,
+   "pose_max_abs_m": 0.00019550323486328125,
+   "nearest_other_proposal_m": 0.3889341354370117,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  },
+  {
+   "token": "ca2552a32a0058bc",
+   "pick": 31,
+   "pose_max_abs_m": 0.0002658367156982422,
+   "nearest_other_proposal_m": 0.4155139923095703,
+   "same_proposal": true,
+   "table_pdms_at_pick": 0.0,
+   "banked_csv_score": 0.0,
+   "abs_diff": 0.0,
+   "subscore_max_abs_diff": 0.0,
+   "valid": true
+  }
+ ],
+ "PASS": true,
+ "reading": "P2's own pick is REPRODUCED on the smoke"
+}

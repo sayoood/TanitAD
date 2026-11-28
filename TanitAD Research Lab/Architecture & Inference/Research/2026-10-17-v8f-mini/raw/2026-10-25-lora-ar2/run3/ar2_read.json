@@ -1,0 +1,98 @@
+{
+ "identity": {
+  "ok": true,
+  "problems": [],
+  "worst_rel_l2": 0.0,
+  "worst_clip": "8f387977-4086-466d-bba4-b04f8cdc0743",
+  "mutant": "PIXEL_SCALE_255_to_256",
+  "mutant_worst_rel_l2": 0.027934142352860788,
+  "mutant_caught": true,
+  "per_clip_rel_l2": {
+   "8f387977": 0.0,
+   "bf5ec76e": 0.0,
+   "0e1526b3": 0.0,
+   "83e32d0f": 0.0,
+   "dca157a0": 0.0,
+   "e6cb7cd4": 0.0
+  },
+  "per_clip_frac_bitwise_equal": {
+   "8f387977": 1.0,
+   "bf5ec76e": 1.0,
+   "0e1526b3": 1.0,
+   "83e32d0f": 1.0,
+   "dca157a0": 1.0,
+   "e6cb7cd4": 1.0
+  },
+  "device": "NVIDIA GeForce RTX 4060"
+ },
+ "smoke": {
+  "ok": true,
+  "problems": [],
+  "device": "cuda",
+  "cuda": "NVIDIA GeForce RTX 4060",
+  "amp": false,
+  "n_steps_run": 200,
+  "evidence_class": {
+   "step_time_peak_memory": "MEASURED (the smoke, this run)",
+   "projected_hours": "ESTIMATED from the measured per-frame costs (not run)"
+  },
+  "step_time_batch1_s": {
+   "median": 1.9586248999694362,
+   "iter_median": 1.9702074999222532,
+   "n_in_medians": 195,
+   "first": 1.9439724000403658,
+   "max": 2.1366933999815956
+  },
+  "phases_median_s": {
+   "encode_nograd": 0.38932289998047054,
+   "heads_fwd_bwd": 0.1493987999856472,
+   "encode_grad_bwd": 1.3159766999306157
+  },
+  "unique_frames_per_step_median": 16.0,
+  "peak_memory_gib": {
+   "allocated_max": 1.4423861503601074,
+   "reserved_max": 1.62890625,
+   "heads_alone_at_batch_64_allocated": 0.7864847183227539,
+   "note": "the smoke's peak is the encoder at a 16-frame micro-batch with batch-1 heads; the real step also holds the batch-64 heads and the features of every unique frame; the two are NOT measured together"
+  },
+  "loss_first_to_last": [
+   46.984779357910156,
+   2.550105094909668
+  ],
+  "identity_probe_tau_device": {
+   "tau_device": 0.001,
+   "rel_l2": 0.0,
+   "max_abs": 0.0,
+   "frac_bitwise_equal": 1.0,
+   "pass": true,
+   "device": "cuda",
+   "n_frames_unique": 9,
+   "scope": "B = 0 features of the launch gate's probe windows through the TRAINING path (16-frame micro-batches) vs the cached tokens; Amendment 1 item 2 tau_device; recorded beside the verdict, not part of it"
+  },
+  "projection_ESTIMATED": {
+   "hours_one_seed": 470.2014725498856,
+   "steps": 19164,
+   "step_s_at_batch_64": 88.32839183779942,
+   "U_unique_frames_per_window": 12.9265625,
+   "census_scope": {
+    "smoke_trainer_argv_has_max_clips": true,
+    "census_and_heads_clips": 4512,
+    "census_clips_all": 4512,
+    "why": "a batch of 64 windows from a handful of clips shares most of its frames; U must come from the real clip list"
+   },
+   "assumes_micro_batch_frames": 16,
+   "formula": "step_s(64) = 64 * U * (t_phase1_per_frame + t_phase2_per_frame) + t_heads(64); hours = steps / 3600 * step_s(64)",
+   "not_in_the_model": [
+    "optimiser step",
+    "data-loading wait (overlapped by the prefetch thread)",
+    "the first-batch / LRU-miss decode bursts",
+    "temperature throttling"
+   ],
+   "assumes": "effective batch 64 reached by gradient caching in 16-frame encoder micro-batches (--accum 64); box 2's 8 GB card"
+  },
+  "venue_rule_proof5": "A40 under AR-1 to AR-4 (plan 13.5): box 2 projects 470.2 h per seed > 36 h"
+ },
+ "ok": true,
+ "problems": [],
+ "summary": "identity PASS worst rel-L2 0.00e+00 (8f387977), mutant PIXEL_SCALE_255_to_256 caught at 2.79e-02 | smoke 200 steps: step 1.96 s, peak 1.44 GiB alloc / 1.63 reserved, smoke-path identity probe rel-L2 0.00e+00 (<= 1e-3), projected 470.2 h/seed (ESTIMATED) -> A40 under AR-1 to AR-4 (plan 13.5): box 2 projects 470.2 h per seed > 36 h"
+}

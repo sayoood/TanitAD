@@ -1,0 +1,450 @@
+{
+ "tool": "dump_heads_r8.py",
+ "control_vs_banked": {
+  "checked": 3,
+  "max_abs_v0_diff": 0.0,
+  "traj_max_abs_diff_m_vs_banked_nav_true": 5.748973846435547,
+  "banked_tree": "C:\\Users\\Admin\\refcv8_pf\\smoke_batt\\smoke40kema_pf",
+  "note": "traj differs by sampler draw / device (and by FEED when the banked tree is clip-fed); informational only"
+ },
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_40000.pt",
+ "ckpt_md5": "57807456bd7169800be159ff95871d22",
+ "device": "cpu",
+ "seed": 0,
+ "episodes": [
+  0
+ ],
+ "n_windows": 3,
+ "wall_s": 82.3,
+ "nav_feed": {
+  "wired": {
+   "nav_feed": "perframe_full",
+   "asked": "perframe_full",
+   "mutated": false,
+   "overlay": {
+    "navfeed_overlay_sha256": "98293dd7411270160cb47d070bb1538babe1ff3a0f8ab85da61dcc84129ba72f",
+    "prereg_nav_feed_sha256": "e103a3b9d6fef39b1f7fc1e4937d9c2e6f12ac76d11c5afe8a03e92f4adde269"
+   },
+   "patched_refcv3_arm": {
+    "src_sha256": "a45677cc8f8accda25ec45882eb2f7daa951873af3c502c7c9d905cc6b4eab07",
+    "patched_sha256": "64e6ffbb1d0434d13badf82f39daf46608ad8404e2ec9e8797c375be5e5df543",
+    "patches": [
+     "P1-argparse",
+     "P2-nav_true",
+     "P3-item-assert",
+     "P4-model-call",
+     "P5-sidecar",
+     "P6-manifest"
+    ]
+   },
+   "argv_tail": [
+    "--nav-feed",
+    "perframe_full"
+   ],
+   "pf_code": "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\code",
+   "wiring": "roll_seed_r8_pf.py (overlay into r7_roll before install_patches; --nav-feed appended)",
+   "navfeed_overlay_file": "C:\\Users\\Admin\\qland\\hold_r8navfix\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-nav-feed-fix\\code\\overlay\\navfeed_overlay.py"
+  },
+  "join": {
+   "mode": "perframe_full",
+   "manifest_nav_feed": {
+    "mode": "perframe_full",
+    "spec": "PREREG_NAV_FEED.md",
+    "n_windows": 3,
+    "n_token_differs_from_clip": 3,
+    "n_args_known": 3,
+    "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+    "args_fed": true,
+    "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+    "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+   },
+   "n_windows_sidecar": 3,
+   "n_captured_token_differs_from_clip": 3,
+   "n_captured_args_known": 3,
+   "assertion": "every captured window: proxy-call token == sidecar nav_cmd AND proxy-call r8_nav == sidecar r8_nav_fed (<= 1e-6)"
+  },
+  "sidecar_census": {
+   "ok": true,
+   "manifest_nav_feed": {
+    "mode": "perframe_full",
+    "spec": "PREREG_NAV_FEED.md",
+    "n_windows": 3,
+    "n_token_differs_from_clip": 3,
+    "n_args_known": 3,
+    "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+    "args_fed": true,
+    "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+    "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+   },
+   "n_decision_files": 1,
+   "n_windows": 3,
+   "n_args_known": 3,
+   "n_token_differs_from_clip": 3,
+   "missing_keys_first": [],
+   "n_missing": 0
+  },
+  "banked_tree_feed": {
+   "tree": "smoke40kema_pf",
+   "mode": "perframe_full",
+   "battery_pf": {
+    "all_seeds_fed": true,
+    "overlay": {
+     "navfeed_overlay_sha256": "98293dd7411270160cb47d070bb1538babe1ff3a0f8ab85da61dcc84129ba72f",
+     "prereg_nav_feed_sha256": "e103a3b9d6fef39b1f7fc1e4937d9c2e6f12ac76d11c5afe8a03e92f4adde269"
+    },
+    "wrapper_sha256": "a4b3648ff369d45e17789342728e33b549d7afc1a662d9f5c54fb19978197191"
+   }
+  },
+  "parity": {
+   "tool": "r8v_feed.check_feed_parity",
+   "label": "heads vs smoke40kema_pf/dump_s0",
+   "status": "PASS",
+   "pf_dump": "C:\\Users\\Admin\\refcv8_pf\\smoke_batt\\smoke40kema_pf\\dump_s0",
+   "v9": "E:/refcv8_eval_kit/data/refcv8_v9labels/release/v9_labels_eval139.npz",
+   "mutated": false,
+   "checks": {
+    "PF_video_feed_equals_pf_battery_sidecar": true,
+    "V9_video_feed_equals_independent_v9_lookup": true
+   },
+   "counts": {
+    "n_windows": 3,
+    "n_discriminating_windows": 3,
+    "n_fail": {
+     "PF": 0,
+     "V9": 0
+    },
+    "raw_offset_from_manifest": 2
+   },
+   "first_failures": {}
+  }
+ },
+ "keys": {
+  "captured": {
+   "perception.map_hires_logits": [
+    8,
+    1000,
+    600
+   ],
+   "perc_bev_tokens": [
+    480,
+    96
+   ],
+   "perc_box_slots_raw": [
+    300,
+    23
+   ],
+   "perc_box_slots_presence_logit": [
+    300
+   ],
+   "perc_box_slots_cls_logits": [
+    300,
+    10
+   ],
+   "perc_box_slots_box": [
+    300,
+    4
+   ],
+   "perc_box_slots_yaw_vec": [
+    300,
+    2
+   ],
+   "perc_box_slots_yaw": [
+    300
+   ],
+   "perc_box_slots_rates": [
+    300,
+    3
+   ],
+   "perc_box_slots_occ_logit": [
+    300
+   ],
+   "perc_box_slots_cz": [
+    300
+   ],
+   "perc_box_slots_h": [
+    300
+   ],
+   "perc_box_slots_box3d": [
+    300,
+    7
+   ],
+   "perc_box_slots_anchors": [
+    300,
+    2
+   ],
+   "out_pooled": [
+    2048
+   ],
+   "out_traj": [
+    8,
+    2
+   ],
+   "out_wp_seq": [
+    8,
+    2
+   ],
+   "out_waypoints_5": [
+    2
+   ],
+   "out_waypoints_10": [
+    2
+   ],
+   "out_waypoints_15": [
+    2
+   ],
+   "out_waypoints_20": [
+    2
+   ],
+   "out_waypoints_30": [
+    2
+   ],
+   "out_waypoints_40": [
+    2
+   ],
+   "out_waypoints_50": [
+    2
+   ],
+   "out_waypoints_60": [
+    2
+   ],
+   "out_anchor_logits": [
+    117
+   ],
+   "out_refined_logits": [
+    149
+   ],
+   "out_sel_score": [
+    149
+   ],
+   "out_anchor_traj": [
+    149,
+    8,
+    2
+   ],
+   "out_anchor_bank": [
+    117,
+    8,
+    2
+   ],
+   "out_offset": [
+    149,
+    8,
+    2
+   ],
+   "out_sel_idx": [],
+   "out_maneuver_logits": [
+    5
+   ],
+   "out_route_logits": [
+    3
+   ],
+   "out_law_pred": [
+    2048
+   ],
+   "out_measurement": [
+    128
+   ],
+   "out_u0_hat": [
+    149,
+    8,
+    2
+   ],
+   "out_r8_cand_src": [
+    149
+   ],
+   "out_r8_kind": [],
+   "out_r8_lat3": [
+    149
+   ],
+   "out_r8_lon6": [
+    149
+   ],
+   "out_r8_alloc": [
+    149
+   ],
+   "out_r8_emit_keep": [
+    149
+   ],
+   "out_r8_cons_raw": [
+    149,
+    4
+   ],
+   "out_r8_cons_valid": [
+    149
+   ],
+   "out_r8_phi": [
+    149,
+    17
+   ],
+   "out_r8_hyp_alloc": [
+    32
+   ],
+   "out_r8_sub_logits": [
+    149,
+    4
+   ],
+   "out_reach_keep": [
+    149
+   ],
+   "out_ceil_keep": [
+    149
+   ],
+   "out_residual_prior_ctrl": [
+    2
+   ],
+   "out_residual_prior_v": [],
+   "out_residual_prior_path": [
+    8,
+    2
+   ],
+   "out_ctx": [
+    256
+   ],
+   "out_lat_logits": [
+    3
+   ],
+   "out_lon_logits": [
+    3
+   ],
+   "out_lat_decision": [],
+   "out_lon_decision": [],
+   "out_maneuver_decision": [],
+   "out_z_tac": [
+    512
+   ],
+   "out_g_str": [
+    3
+   ],
+   "out_g_str_raw": [
+    3
+   ],
+   "out_lat_logits_tac": [
+    8
+   ],
+   "out_lon_logits_tac": [
+    8
+   ],
+   "out_g_tac": [
+    3,
+    4
+   ],
+   "out_g_tac_delta": [
+    3,
+    4
+   ],
+   "out_bank_speed_pred": [],
+   "out_tacv6_goal_logits": [
+    22
+   ],
+   "out_tacv6_goal_conf": [
+    22
+   ],
+   "out_tacv6_lat_logits": [
+    8
+   ],
+   "out_tacv6_lon_logits": [
+    8
+   ],
+   "out_tacv6_n_scene": [],
+   "out_r8_cons_lat": [
+    8,
+    2
+   ],
+   "out_r8_cons_lon": [
+    8,
+    2
+   ],
+   "out_r8_v9_lat_c": [
+    8,
+    12
+   ],
+   "out_r8_v9_lon_c": [
+    8,
+    10
+   ],
+   "out_r8_v9_speed": [
+    8,
+    4
+   ],
+   "out_r8_logp_lat3": [
+    3
+   ],
+   "out_r8_logp_lon6": [
+    6
+   ],
+   "out_traj_base": [
+    8,
+    2
+   ],
+   "out_sel_idx_base": [],
+   "out_sel_score_v3": [
+    149
+   ],
+   "out_goal_point_tac": [
+    2
+   ],
+   "out_goal_dist": [
+    149
+   ],
+   "out_goal_point_free": [
+    2
+   ]
+  },
+  "skipped_large": {
+   "perc_bev_feats": [
+    96,
+    120,
+    64
+   ],
+   "out_fmap_s16": [
+    1024,
+    26,
+    64
+   ],
+   "out_fmap_s8": [
+    512,
+    52,
+    128
+   ]
+  },
+  "agent_slots": {
+   "raw": [
+    300,
+    21
+   ],
+   "presence_logit": [
+    300
+   ],
+   "cls_logits": [
+    300,
+    10
+   ],
+   "box": [
+    300,
+    4
+   ],
+   "yaw_vec": [
+    300,
+    2
+   ],
+   "yaw": [
+    300
+   ],
+   "rates": [
+    300,
+    3
+   ],
+   "occ_logit": [
+    300
+   ]
+  }
+ },
+ "class_weights": "E:/refcv6_eval_kit/data/refcv7/map_hires_class_weights_train_100x30.json",
+ "decision_rule": "prior_corrected",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+ "pose_clock": "R8_NO_POSE_SYNC=1 (standalone == every 48,852 battery pass)",
+ "written": [
+  "..\\smoke\\heads_cpu_ep000\\heads_ep000.npz"
+ ],
+ "roll_record_wall_s": 79.2
+}

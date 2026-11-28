@@ -1,0 +1,31 @@
+[v6] s2-labels v7.2: C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz md5=aa12c948f062181c3297265b51526ec5 records=147 schema=s2-geom-v7 vocab=v7 side=eval allow_oracle_nav=True
+[v6] ⚠ s2-labels v7.2: no clip index resolved beside C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz; the join is by stable_episode_id(clip_id) (the same function the index records) and the index cross-check was NOT performed.
+[v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not refused — v7_labels.effective_mask is the trainer-safe mask): [v7_labels] ⛔ mask/presence mismatch:
+  tac_lat: ABSENT BUT UNMASKED ['LANE_CHANGE_L', 'LANE_CHANGE_R'] — dead logits that degrade calibration; mask them
+[v6] s2-labels v7.2: C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz md5=aa12c948f062181c3297265b51526ec5 records=147 schema=s2-geom-v7 vocab=v7 side=eval allow_oracle_nav=True
+[v6] ⚠ s2-labels v7.2: no clip index resolved beside C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz; the join is by stable_episode_id(clip_id) (the same function the index records) and the index cross-check was NOT performed.
+[v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not refused — v7_labels.effective_mask is the trainer-safe mask): [v7_labels] ⛔ mask/presence mismatch:
+  tac_lat: ABSENT BUT UNMASKED ['LANE_CHANGE_L', 'LANE_CHANGE_R'] — dead logits that degrade calibration; mask them
+[v6] s2-labels v7.2: C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz md5=aa12c948f062181c3297265b51526ec5 records=147 schema=s2-geom-v7 vocab=v7 side=eval allow_oracle_nav=True
+[v6] ⚠ s2-labels v7.2: no clip index resolved beside C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz; the join is by stable_episode_id(clip_id) (the same function the index records) and the index cross-check was NOT performed.
+[v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not refused — v7_labels.effective_mask is the trainer-safe mask): [v7_labels] ⛔ mask/presence mismatch:
+  tac_lat: ABSENT BUT UNMASKED ['LANE_CHANGE_L', 'LANE_CHANGE_R'] — dead logits that degrade calibration; mask them
+[v6] s2-labels v7.2: C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz md5=aa12c948f062181c3297265b51526ec5 records=147 schema=s2-geom-v7 vocab=v7 side=eval allow_oracle_nav=True
+[v6] ⚠ s2-labels v7.2: no clip index resolved beside C:\Users\Admin\navcomp\data\s2_labels_v7.2_eval.jsonl.gz; the join is by stable_episode_id(clip_id) (the same function the index records) and the index cross-check was NOT performed.
+[v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not refused — v7_labels.effective_mask is the trainer-safe mask): [v7_labels] ⛔ mask/presence mismatch:
+  tac_lat: ABSENT BUT UNMASKED ['LANE_CHANGE_L', 'LANE_CHANGE_R'] — dead logits that degrade calibration; mask them
+in-band tactical windows: 6027/27930
+[reach_measured] clips 147 tokens reached 13/22 masked ['CORRIDOR_OFFSET', 'GAP_TARGET', 'LANE_CHANGE_L', 'REACT_ON_ONCOMING', 'SPEED_BAND', 'TAKE_EXIT_L', 'TRAFFIC_LIGHT_REACT', 'YIELD', 'YIELD_FOR_TURN_R'] speed-band arg rows [0, 1]
+    TRAFFIC_LIGHT_REACT_RED      {'n_pos_supervised': 8, 'n_neg_supervised': 18, 'class_mask': 1, 'grad_row_abs_sum': 0.032396867871284485, 'reached': True}
+    TRAFFIC_LIGHT_REACT_GREEN    {'n_pos_supervised': 15, 'n_neg_supervised': 11, 'class_mask': 1, 'grad_row_abs_sum': 0.02189110592007637, 'reached': True}
+    TRAFFIC_LIGHT_REACT_YELLOW   {'n_pos_supervised': 3, 'n_neg_supervised': 23, 'class_mask': 1, 'grad_row_abs_sum': 0.05208297446370125, 'reached': True}
+    TRAFFIC_LIGHT_REACT          {'n_pos_supervised': 0, 'n_neg_supervised': 0, 'class_mask': 0, 'grad_row_abs_sum': 0.0, 'reached': False}
+[reach_all] clips 147 tokens reached 17/22 masked ['LANE_CHANGE_L', 'SPEED_BAND', 'TAKE_EXIT_L', 'TRAFFIC_LIGHT_REACT', 'YIELD_FOR_TURN_R'] speed-band arg rows [0, 1]
+    TRAFFIC_LIGHT_REACT_RED      {'n_pos_supervised': 8, 'n_neg_supervised': 139, 'class_mask': 1, 'grad_row_abs_sum': 0.07955840975046158, 'reached': True}
+    TRAFFIC_LIGHT_REACT_GREEN    {'n_pos_supervised': 15, 'n_neg_supervised': 132, 'class_mask': 1, 'grad_row_abs_sum': 0.09563368558883667, 'reached': True}
+    TRAFFIC_LIGHT_REACT_YELLOW   {'n_pos_supervised': 3, 'n_neg_supervised': 144, 'class_mask': 1, 'grad_row_abs_sum': 0.11988174170255661, 'reached': True}
+    TRAFFIC_LIGHT_REACT          {'n_pos_supervised': 0, 'n_neg_supervised': 0, 'class_mask': 0, 'grad_row_abs_sum': 0.0, 'reached': False}
+ON  step 1 : {'terms': ['seam', 't1', 'tac_label_all'], 'tac_lat_ce': 2.0515763759613037, 'tac_lon_ce': 2.090682029724121, 'tac_goal_bce': 0.777298092842102, 'tac_speedband_l1_ms': 7.475927352905273}
+ON  step 30: {'tac_lat_ce': 0.8895790576934814, 'tac_lon_ce': 1.641100525856018, 'tac_goal_bce': 0.7230310440063477, 'tac_speedband_l1_ms': 9.25103759765625}
+OFF step 1 : {'terms': ['seam', 't1'], 'loss': 1.8757861852645874, 'tac_label_loss': None}
+OFF step 30: {'terms': ['seam', 't1'], 'loss': 1.7672052383422852}

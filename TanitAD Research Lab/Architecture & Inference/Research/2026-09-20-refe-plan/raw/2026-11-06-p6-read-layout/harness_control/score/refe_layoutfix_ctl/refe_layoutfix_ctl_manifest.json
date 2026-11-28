@@ -1,0 +1,105 @@
+{
+ "label": "refe_layoutfix_ctl",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=navtest",
+  "train_test_split.scene_filter.log_names=['2021.05.25.14.16.10_veh-35_02482_02649','2021.06.28.21.16.05_veh-14_00957_01198','2021.09.16.19.12.04_veh-42_00289_00398']",
+  "train_test_split.scene_filter.tokens=['108fd8b55b1952af','11b9e3f204815f4a','16a40c5db95c5467','206ccbdfb1e25bf2','2ba3f7adca335912','2d30620b507f5f7c','317f5b44a4615e30','63266bfd8e1f5f15','02325da26296565c','0561ac957ffc5c4f','0a91b3a6e4ae56fe','0d2403a8031f540c','0ffe6d569128598a','11482e143a4e5dec','140a3ea8607f528f','1517632ca5a8577b','003a1fdca9505c09','04d0fb4e3ab25115','0d40059cfdf75e7a','1134d05b608b54e8','116aacf9868e5e4e','12c01b203ea85b41','1819bb47db9e59ff','1c5aaf9e884b5ce9']",
+  "metric_cache_path=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_refe_layoutfix_ctl",
+  "output_dir=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/refe_layoutfix_ctl",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p2_full.npz",
+  "+agent.call_log=E:/Projects/TanitAD-artifacts/p6read_layout_fix/harness_control/score/refe_layoutfix_ctl/refe_layoutfix_ctl.calls.jsonl"
+ ],
+ "argv": [
+  "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\harness\\w3e\\code\\navsim_v1_win.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "refe_layoutfix_ctl",
+  "--out-dir",
+  "E:\\Projects\\TanitAD-artifacts\\p6read_layout_fix\\harness_control\\score\\refe_layoutfix_ctl",
+  "--patch-loader",
+  "--record-poses",
+  "--",
+  "train_test_split=navtest",
+  "train_test_split.scene_filter.log_names=['2021.05.25.14.16.10_veh-35_02482_02649','2021.06.28.21.16.05_veh-14_00957_01198','2021.09.16.19.12.04_veh-42_00289_00398']",
+  "train_test_split.scene_filter.tokens=['108fd8b55b1952af','11b9e3f204815f4a','16a40c5db95c5467','206ccbdfb1e25bf2','2ba3f7adca335912','2d30620b507f5f7c','317f5b44a4615e30','63266bfd8e1f5f15','02325da26296565c','0561ac957ffc5c4f','0a91b3a6e4ae56fe','0d2403a8031f540c','0ffe6d569128598a','11482e143a4e5dec','140a3ea8607f528f','1517632ca5a8577b','003a1fdca9505c09','04d0fb4e3ab25115','0d40059cfdf75e7a','1134d05b608b54e8','116aacf9868e5e4e','12c01b203ea85b41','1819bb47db9e59ff','1c5aaf9e884b5ce9']",
+  "metric_cache_path=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_refe_layoutfix_ctl",
+  "output_dir=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/refe_layoutfix_ctl",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p2_full.npz",
+  "+agent.call_log=E:/Projects/TanitAD-artifacts/p6read_layout_fix/harness_control/score/refe_layoutfix_ctl/refe_layoutfix_ctl.calls.jsonl"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "executable": "C:\\Users\\Admin\\navsim-crun\\venv\\Scripts\\python.exe",
+ "cwd": "F:\\Archive\\devbox-C\\navsim\\exp\\w3_navtest_v1",
+ "PYTHONPATH": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896;E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\harness\\w3e\\code",
+ "PYTHONHASHSEED": "1",
+ "priority": "BELOW_NORMAL",
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "F:/Archive/devbox-C/navsim/data/maps",
+  "NAVSIM_EXP_ROOT": "F:/Archive/devbox-C/navsim/exp/w3_navtest_v1",
+  "NAVSIM_DEVKIT_ROOT": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+  "OPENSCENE_DATA_ROOT": "F:/Archive/devbox-C/navsim/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_v11_tree": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+ "navsim_v11_sha": "3e8291bfa89ff247231e0227778840cd0a036896",
+ "nuplan_tree": "C:/Users/Admin/navsim-crun/nuplan-devkit",
+ "nuplan_sha_expected": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_sha_measured": null,
+ "nuplan_source_checkout": "F:/Archive/devbox-C/navsim/nuplan-devkit",
+ "nuplan_source_sha_measured": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_copy_verification": "E1 raw/devkit_copy_verify.json: repos.nuplan-devkit n_blobs 1324, n_match 1321, 3 diffs explained (setup.py packaging, docs/make.bat eol, nuboard html)",
+ "e1_wrapper": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/w3e/e1/navsim_win.py",
+ "imported_from": {
+  "navsim": "F:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "F:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\planning\\script\\run_pdm_score.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:170-181 (v1.1 @ 3e8291b)",
+   "replacement": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/w3e/e1/navsim_win.py::_load_metric_cache_paths_patched (E1, imported)",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows (control C7)"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)"
+ ],
+ "started_local": "2026-11-06 15:51:34",
+ "rows_jsonl": "E:\\Projects\\TanitAD-artifacts\\p6read_layout_fix\\harness_control\\score\\refe_layoutfix_ctl\\refe_layoutfix_ctl_rows.jsonl",
+ "status": "OK",
+ "ended_local": "2026-11-06 15:51:50",
+ "resources": {
+  "wall_s": 16.83,
+  "peak_rss_mb": 467.1,
+  "peak_process_tree_rss_mb": 467.1,
+  "min_system_available_mb": 12212.0,
+  "n_samples": 9,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.6,
+    12822.6
+   ]
+  ]
+ }
+}

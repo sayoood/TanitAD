@@ -1,0 +1,264 @@
+== A. the REAL queue through cmd.exe (V8F_DRYRUN)
+PASS  A1 dagoacc s0: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)
+PASS  A2 dagoacc s0: the gate line is the train line with --out and --selfcheck-only changed
+PASS  A3 dagoacc s0: --w-acc named exactly once, init M2b_s0, the ITERATION-1 bank dir and DAG's bank sha
+PASS  A4 dagoacc s0: eval = the standard T0 eval of M2b_s0_dagoacc, tag M2b-dagoacc_s0
+PASS  A1 dagoacc s1: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)
+PASS  A2 dagoacc s1: the gate line is the train line with --out and --selfcheck-only changed
+PASS  A3 dagoacc s1: --w-acc named exactly once, init M2b_s1, the ITERATION-1 bank dir and DAG's bank sha
+PASS  A4 dagoacc s1: eval = the standard T0 eval of M2b_s1_dagoacc, tag M2b-dagoacc_s1
+PASS  A5 no w_acc supplied: the dry run prints the placeholder WACCDAG_FROM_RULE (never a number)
+PASS  A6 `gatedag dagoacc 0` (no P) is REFUSED rc 2
+PASS  A6 `gatedag dagoacc 0 0.3` (P 0.3) is REFUSED rc 2
+PASS  A6 `gatedag dagoacc 0 0` (P 0) is REFUSED rc 2
+PASS  A6 `gatedag dagoacc 2 0.1` (seed 2) is REFUSED rc 2
+PASS  A6 `gatedag dagoacc` (no seed) is REFUSED rc 2
+PASS  A7 flatdag s0: FLAT's REAL banked argv minus the fine-tune / bank flags, `--o-interface cut` NAMED exactly once (every other flag is FLAT's)
+PASS  A8 flatdag s0: init FLAT_s0, the FLAT bank dir, p 0.1, seed, bank sha
+PASS  A9 flatdag0 s0: C-F2 -- differs from flatdag only in --out, --dagger-p's value and the three bank flags
+PASS  A10 flatdag s0: eval = standard eval + the GT-code oracle (tacorc) of M2b_s0_flatdag
+PASS  A7 flatdag s1: FLAT's REAL banked argv minus the fine-tune / bank flags, `--o-interface cut` NAMED exactly once (every other flag is FLAT's)
+PASS  A8 flatdag s1: init FLAT_s1, the FLAT bank dir, p 0.1, seed, bank sha
+PASS  A9 flatdag0 s1: C-F2 -- differs from flatdag only in --out, --dagger-p's value and the three bank flags
+PASS  A10 flatdag s1: eval = standard eval + the GT-code oracle (tacorc) of M2b_s1_flatdag
+PASS  A11 `gatedag flatdag 0` (no P) is REFUSED rc 2
+PASS  A11 `gatedag flatdag 0 0.3` (P 0.3) is REFUSED rc 2
+PASS  A11 `gatedag flatdag0 0 0.1` (flatdag0 with a P) is REFUSED rc 2
+PASS  A11 `gatedag flatdag 3 0.1` (seed 3) is REFUSED rc 2
+PASS  A12 waccdag: the rule's tool, DAG_s0's checkpoint with its sha256 pinned, banked fit windows of DAG_s0, everything in %RUNSM%\dagoacc and NOTHING in OACC's %RUNSM%\oacc
+PASS  A13 waccdag is waccoacc's rule: the same tool, subcommand and data arguments (only the checkpoint, the pin and the directory differ)
+PASS  A14 bankflat 0 == bankdag2 0 with the generator DAG -> FLAT (M2b_s0_dag -> M2b_s0_flat, dagger_bank_dag2 -> dagger_bank_flat) and nothing else
+PASS  A15 bankflat 0: generator FLAT_s0 (ckpt and argv.json), bank dir dagger_bank_flat\s0, the expectations of bankdag
+PASS  A15 bankflat 1: generator FLAT_s1 (ckpt and argv.json), bank dir dagger_bank_flat\s1, the expectations of bankdag
+PASS  A16 the staged queue is exactly what build_queue.py derives from the tip queue
+PASS  A17 the text diff against the tip queue is INSERTIONS ONLY (0 removed / replaced lines) and CRLF throughout
+PASS  A18 the new labels are exactly the 14 declared (and every old label is still there)
+PASS  A19 the two new stages are dispatched, and every dispatch target exists
+== S. byte-identity of every existing stage (tip 1d4f4fbb vs staged)
+PASS  S1 all 48 dispatched stages x 4 argument shapes print byte-identical lines and rc (21 s)
+PASS  S2 `gatedag dag 0 0.1` prints the same as on the tip
+PASS  S2 `traindag dag0 1` prints the same as on the tip
+PASS  S2 `evaldag dag 0` prints the same as on the tip
+PASS  S2 `evaldag dag0 1` prints the same as on the tip
+PASS  S2 `gatedag dag2 0 0.1` prints the same as on the tip
+PASS  S2 `traindag dag20 1` prints the same as on the tip
+PASS  S2 `evaldag dag2 0` prints the same as on the tip
+PASS  S2 `bankdag 0` prints the same as on the tip
+PASS  S2 `bankdag2 1` prints the same as on the tip
+PASS  S2 `waccoacc` prints the same as on the tip
+PASS  S2 `gateoacc` prints the same as on the tip
+PASS  S2 `trainoacc 0` prints the same as on the tip
+PASS  S2 `gateflat` prints the same as on the tip
+PASS  S2 `trainflat 1` prints the same as on the tip
+PASS  S2 `evalflat 0` prints the same as on the tip
+PASS  S2 `gatedag dag 0 0.3` prints the same as on the tip
+PASS  S2 `gatedag dag 0` prints the same as on the tip
+PASS  S2 `gatedag dag0 0 0.1` prints the same as on the tip
+PASS  S3 pre-existing label :dagname differs from the tip only by inserted lines
+PASS  S3 pre-existing label :dagarm differs from the tip only by inserted lines
+PASS  S3 pre-existing label :evaldag differs from the tip only by inserted lines
+PASS  S4 only :dagname, :dagarm, :evaldag (hand-offs) changed among the pre-existing labels
+== B. the real queue through cmd.exe, NOT dry, on a fake box
+PASS  B1 waccdag without the shipped banked fit windows is REFUSED rc 2 (nothing in OACC's directory)
+PASS  B2 waccdag with DAG_s0 unfinished (no summary.json) is REFUSED rc 2
+PASS  B3 a failing rule tool is reported [FAIL] rc 1 and leaves no w_acc.txt
+PASS  B4 waccdag runs the rule tool with DAG_s0's checkpoint, into %RUNSM%\dagoacc, and the number lands in w_acc.txt
+PASS  B5 a second waccdag is skipped
+PASS  B6 gatedag dagoacc pins the training argv in its OWN file and the gate ran with --w-acc <the file's number>, --selfcheck-only, the iteration-1 bank and its hash
+PASS  B7 DAG's own pin files are untouched (no dag pin written, no bank_sha_s0.txt)
+PASS  B8 a changed w_acc.txt makes a re-pin REFUSED (the pin is never silently replaced)
+PASS  B9 traindag dagoacc with a changed w_acc since the gate is REFUSED
+PASS  B10 traindag dagoacc runs EXACTLY the pinned argv (byte-identical tokens) into M2b_s0_dagoacc
+PASS  B11 with no w_acc.txt the dagoacc arm is REFUSED rc 2 (the placeholder is dry-run only; no env stand-in)
+PASS  B12 an inherited WACCDAG / WACCDAG_DRY cannot stand in for the rule in a real run
+PASS  B13 bankflat with FLAT unfinished (no summary.json) is REFUSED rc 2 and creates no bank directory
+PASS  B14 gatedag flatdag without a FLAT bank is REFUSED rc 2 (it does not fall back to the iteration-1 bank)
+PASS  B15 gatedag flatdag pins a line that names --o-interface cut, the FLAT init and the FLAT bank
+PASS  B16 gatedag flatdag0 pins a line with --o-interface cut and --dagger-p 0 and no bank flag (no bank needed)
+PASS  B17 bankflat 1 (FLAT_s1 finished) runs the bank tool with FLAT_s1's checkpoint AND argv.json (never M2b_s1's) into dagger_bank_flat\s1, four shards, bankdag's expectations
+PASS  B18 a second bankflat 1 is skipped (a finished bank is never regenerated)
+== C. the chain's decisions on files
+PASS  C1 C-O3: the box record equal to the offline recomputation is accepted
+PASS  C2 C-O3: a rounding-level difference (rel 5e-5) is accepted
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: w_acc +2e-4 relative
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: w_acc = OACC's M2b value 42.9311
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: L_traj +1e-3
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: L_acc -1e-3
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: n_windows 9581
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: the cross-check not passed
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: the cross-check on other windows
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: no cross-check record
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: frac 0.4
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: the checkpoint is M2b_s0's
+CAUGHT (deliberate regression) C3 C-O3 REFUSES: cross-check on other fit windows file
+CAUGHT (deliberate regression) C4 C-O3 REFUSES: w_acc.txt is not the bare number
+CAUGHT (deliberate regression) C5 C-O3 REFUSES: w_acc.txt without the LF
+CAUGHT (deliberate regression) C6 C-O3 REFUSES: the offline record is not the pinned file
+PASS  C7 init-match: a trainer whose INIT_CKPT_MATCH names o_interface (any formatting) passes
+CAUGHT (deliberate regression) C8 init-match REFUSES the tip's trainer (no o_interface in the tuple)
+CAUGHT (deliberate regression) C9 init-match REFUSES a trainer where o_interface sits only in a comment / another statement
+CAUGHT (deliberate regression) C10 init-match REFUSES the REAL trainer at the tip 1d4f4fbb (F1 is not landed there)
+PASS  C11 init-match ACCEPTS the staged F1 fix (oaccflat_check/stage)
+PASS  C12 disk-check: free - size == floor exactly passes
+CAUGHT (deliberate regression) C13 disk-check REFUSES one byte under the floor
+CAUGHT (deliberate regression) C14 disk-check REFUSES a pull larger than the free space
+PASS  C15 pred: DONE + BOX2_BUSY released -> GO
+PASS  C16 pred: a STOP of the predecessor's own (BLOCKED) + BOX2_BUSY released -> GO (a predecessor STOP must not idle box 2)
+PASS  C17 pred: a failed run's STOP + BOX2_BUSY released -> GO
+CAUGHT (deliberate regression) C18 pred: a GUARD stop -> HALT
+CAUGHT (deliberate regression) C19 pred: a STOP with BOX2_BUSY still held -> not GO (BUSY: the caller re-checks, then halts)
+CAUGHT (deliberate regression) C20 pred: DONE with BOX2_BUSY still held -> HALT
+PASS  C21 pred: no end marker -> WAIT
+PASS  C22 pred: the 'waiting for the predecessor ... ^ZZV8FMINI-STOP' echo (it starts with a date) is not a marker
+PASS  C23 pred: CRLF logs are read
+== D. the DAG-OACC chain script
+PASS  D1 bash -n: chain, lib, guard, waker parse
+PASS  D2 --dry-run: rc 0, both runs planned, ONE-LEVER on both planned lines, gate == train, C-O3 reference printed, no STOP marker line (a line that STARTS with it: the echo of the wait rule names it mid-line)
+PASS  D3 --dry-run with another W still plans one lever (--w-acc 50.0 in both train lines)
+PASS  D4 --check-tree: every lever pattern is in the staged tree (trainer, model, DAgger, oacc tool, the queue insertions)
+CAUGHT (deliberate regression) D5 --check-tree REFUSES a tree whose queue is the tip's (no DAG-OACC stages): the chain would stop before touching box 2
+PASS  D6 --co3-only on an equal record: ZZDAGOACC-CO3-PASS
+CAUGHT (deliberate regression) D7 --co3-only on OACC's M2b value 42.9311: ZZDAGOACC-CO3-STOP, rc 1 (the chain stops before any gate)
+PASS  D8 the real run stops at C-O3 BEFORE any gate: the co3 call sits before the first gate_one / queue gate in the source
+PASS  D21 every pinned hash in the chain (DAG ckpt / argv.json / summary.json, M2b init, iteration-1 bank, the offline record, DAG_s0's fit plans) equals the hash of the banked file
+PASS  D22 the chain's run list is s0 then s1 of the arm dagoacc, P = 0.1
+PASS  D9a control: the shims ARE what `ssh` / `scp` resolve to under the chain's shell (the log must be non-empty)
+PASS  D9 the real entry without AFTER_OUT: ZZV8FMINI-STOP, rc 1, no ssh / scp call (log empty, after the control above read non-empty)
+PASS  D10 wait: predecessor DONE, box released -> ZZOAF-WAIT-GO
+PASS  D11 wait: predecessor STOP of its own (BLOCKED), box released -> GO (box 2 is not idled)
+PASS  D12 wait: predecessor STOP after a failed run, box released -> GO
+CAUGHT (deliberate regression) D13 wait: predecessor stopped by the GUARD -> ZZV8FMINI-STOP, no GO
+CAUGHT (deliberate regression) D14 wait: predecessor STOP with BOX2_BUSY still held (after 3 re-checks) -> ZZV8FMINI-STOP, no GO
+CAUGHT (deliberate regression) D15 wait: predecessor DONE with BOX2_BUSY held -> ZZV8FMINI-STOP
+PASS  D16 wait: no end marker (only the echo of the rule) -> keeps waiting (still polling after 6 s, killed by the test's timeout rc 124)
+CAUGHT (deliberate regression) D16b the REAL entry with a predecessor that has not ended: still waiting after 8 s (killed by the test's timeout, rc 124), BOX2_BUSY not taken, no ssh / scp call
+PASS  D17a the chain's own disk floor is exactly 1 GiB (1073741824 bytes)
+PASS  D17 pull(): exactly the floor left -> the file lands (size verified, .part renamed)
+CAUGHT (deliberate regression) D18 pull(): one byte under the floor -> ZZDISK-FLOOR-STOP + ZZV8FMINI-STOP, NOTHING written (no file, no .part)
+CAUGHT (deliberate regression) D19 pull(): a transfer that lands short is refused and the .part removed (nothing half-written)
+PASS  DR0 the chain carries exactly one run-record heredoc and one REACHED-control heredoc (extracted and run below)
+PASS  DR1 dagoacc: the chain's run-record assertion PASSES a good record (CONTROL for the doctored ones below)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the pinned argv differs from the planned one (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where argv.json is not the planned argv (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where argv.json sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where selfcheck.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json done is false (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json steps differ (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json seed differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where selfcheck declared_vs_built is not PASS (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the init checkpoint differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built dagger_p differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built bank sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built w_acc differs from the argv's (rc 1)
+PASS  DR3 dagoacc: the REACHED control PASSES dagger_n / dagger_eligible = 0.100 (CONTROL)
+CAUGHT (deliberate regression) DR4 dagoacc: the REACHED control REFUSES a swap that never happened (dagger_n 0)
+CAUGHT (deliberate regression) DR5 dagoacc: the REACHED control REFUSES a swap rate of 0.20 (outside 0.1 +- 0.02)
+CAUGHT (deliberate regression) DR6 dagoacc: the REACHED control REFUSES zero eligible windows
+== E. gate_oaf_assert.py on the REAL DAG corpus gate (doctored into the arms) + doctored negatives
+PASS  E1 dagoacc s0: the check passes on the doctored real gate
+PASS  E1 dagoacc s1: the check passes on the doctored real gate
+PASS  E1 flatdag s0: the check passes on the doctored real gate
+PASS  E1 flatdag s1: the check passes on the doctored real gate
+PASS  E1 flatdag0 s0: the check passes on the doctored real gate
+PASS  E1 flatdag0 s1: the check passes on the doctored real gate
+PASS  E2 the token is written for dagoacc (prereg PREREG_V8F_DAG_OACC, w_acc, bank = DAG's, o_interface full)
+PASS  E3 the token is written for flatdag (prereg PREREG_V8F_FLATDAG, o_interface cut)
+CAUGHT (deliberate regression) E4 dagoacc: acc term absent from the loss dict  <- ['G-LIVE: the acc term is None (must be in the loss dict, finite and non-zero)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 60
+CAUGHT (deliberate regression) E4 dagoacc: acc term exactly 0.0  <- ['G-LIVE: the acc term is 0.0 (must be in the loss dict, finite and non-zero)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601
+CAUGHT (deliberate regression) E4 dagoacc: acc term NaN  <- ['G-LIVE: the acc term is nan (must be in the loss dict, finite and non-zero)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601
+CAUGHT (deliberate regression) E4 dagoacc: head_o gradient from the term is 0  <- ["O's head receives gradient 0.0 from the acceleration term (must be > 0)"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb43
+CAUGHT (deliberate regression) E4 dagoacc: acc_probe control not exactly 0  <- ['acc_probe control control_repeat_grad_diff = 1e-09 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4
+CAUGHT (deliberate regression) E4 dagoacc: acc_probe failed  <- ["acc_probe {'w_acc_declared': 49.6969, 'w_probe': 49.6969, 'acc': 0.006943174637854099, 'acc_at_zero_weight': 0.006943174637854099, 'total_w': 31.675
+CAUGHT (deliberate regression) E4 dagoacc: built w_acc != the argv's  <- ["built levers.w_acc 42.9311 != the argv's 49.6969"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff
+CAUGHT (deliberate regression) E4 dagoacc: the total does not move by w x acc  <- ['the total moved by 0.0 for w x acc = 0.3450542556599714: the term does not enter the loss at the declared weight'] | dagoacc s0 | p 0.1 | clips 4512
+CAUGHT (deliberate regression) E4 dagoacc: the swap did not reach the loss (dagger_probe grad diff 0)  <- ['the swapped batch moves the loss by 4.198308944702148 and the gradient by 0.0: the swap does not reach the loss'] | dagoacc s0 | p 0.1 | clips 4512 
+CAUGHT (deliberate regression) E4 dagoacc: dagger_probe p0 control not 0  <- ['dagger probe control control_p0_grad_diff = 3.0 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352
+CAUGHT (deliberate regression) E4 dagoacc: the init is FLAT/other checkpoint (sha)  <- ["the fine-tune does not start from M2b_s0's checkpoint: init sha256 0000000000000000 != 601cb43526731786", 'info.init_ckpt and levers.init_ckpt disag
+CAUGHT (deliberate regression) E4 dagoacc: the bank is the iteration-2 directory  <- ["built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank_dag2/s0/bank.json' does not end with /dagger_bank/s0/bank.json"] | dagoacc s0 | p 0.1 | c
+CAUGHT (deliberate regression) E4 dagoacc: the bank hash differs from DAG's  <- ["built / declared bank sha256 000000000000 / 197a68bb540b != the pulled bank.json's 197a68bb540b"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windo
+CAUGHT (deliberate regression) E4 dagoacc: ONE-LEVER broken: --lr changed in the train/gate/pin lines  <- ["the train line does not carry --lr 1e-4 exactly once (it has [['2e-4']])", "the gate line does not carry --lr 1e-4 exactly once (it has [['2e-4']])"
+CAUGHT (deliberate regression) E4 dagoacc: ONE-LEVER broken: --w-acc not last (a flag after it)  <- ["the train line sets --hist: a second lever beside the arm's own", "the gate line sets --hist: a second lever beside the arm's own", "the pin line se
+CAUGHT (deliberate regression) E4 dagoacc: the pin differs from the planned training line (box 2 pinned another argv)  <- ["the pin line does not carry --steps 3000 exactly once (it has [['3001']])", 'THE PIN IS NOT THE PLANNED TRAINING ARGV: box 2 pinned (and will run) a
+CAUGHT (deliberate regression) E4 dagoacc: box 2's DAG pin is not DAG's banked argv.json (the comparator is not the banked run)  <- ["box 2's DAG pin is not DAG_s's banked argv.json argv: the comparator is not the banked run", "ONE-LEVER RULE: the dagoacc pin is not DAG's pin + `--
+CAUGHT (deliberate regression) E4 dagoacc: the reference argv.json (DAG's) carries another bank hash  <- ["box 2's DAG pin is not DAG_s's banked argv.json argv: the comparator is not the banked run"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 30
+CAUGHT (deliberate regression) E4 dagoacc: a second lever on the line (--code-mix)  <- ["the train line sets --code-mix: a second lever beside the arm's own", "the gate line sets --code-mix: a second lever beside the arm's own", "the pin
+CAUGHT (deliberate regression) E4 flatdag: the cut is not built (levers.o_interface full)  <- ["built o_interface 'full' != 'cut'"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 10549.0703125 
+CAUGHT (deliberate regression) E4 flatdag: o_interface_probe: O moved with the donor code  <- ['o_interface_probe donor_code.max_abs_dtraj60 = 0.01 (the cut: exactly 0.0)'] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496
+CAUGHT (deliberate regression) E4 flatdag: o_interface_probe: O read a non-constant code  <- ['o_interface_probe gt_code.o_read_code_abs_max = 0.5 (the cut: exactly 0.0)'] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496
+CAUGHT (deliberate regression) E4 flatdag: o_interface_probe failed  <- ["o_interface_probe {'o_interface': 'cut', 'shift': 2.5, 'n_windows': 64, 'perturbations': {'donor_code': {'max_abs_dtraj60': 0.0, 'o_read_code_abs_ma
+CAUGHT (deliberate regression) E4 flatdag: e_code is not the declared dead weight (dead set empty)  <- ["G-LIVE dead set [] (declared []) != ['e_code.weight'] (the cut's dead weight, exactly)"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566
+CAUGHT (deliberate regression) E4 flatdag: the checkpoint perturbation did not reach S / T (blind probe)  <- ['the checkpoint perturbation did not reach S / T (2.500001907348633 / 0.0): the probe is blind'] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows
+CAUGHT (deliberate regression) E4 flatdag: the swap did not reach (dagger_probe failed) while the cut passes  <- ["dagger_probe {'p_declared': 0.1, 'n_rows': 64, 'n_eligible': 49, 'n_selected_at_p1': 49, 'keys_read': ['a_s', 'a_t', 'base', 'feats', 'frame_ok', 'l
+CAUGHT (deliberate regression) E4 flatdag: the argv forgets --o-interface cut (the gate would still build FULL: F1)  <- ['the train line does not carry --o-interface cut exactly once (it has None)', 'the gate line does not carry --o-interface cut exactly once (it has No
+CAUGHT (deliberate regression) E4 flatdag: the init is M2b_s0, not FLAT_s0  <- ["the fine-tune does not start from FLAT_s0's checkpoint: init sha256 601cb43526731786 != 8496934a2ce262c1"] | flatdag s0 | p 0.1 | clips 4512 steps 3
+CAUGHT (deliberate regression) E4 flatdag: the bank is the iteration-1 (M2b) bank directory  <- ["built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank/s0/bank.json' does not end with /dagger_bank_flat/s0/bank.json"] | flatdag s0 | p 0.1 | c
+CAUGHT (deliberate regression) E4 flatdag: K-B2: the bank's generator is M2b, not FLAT  <- ["K-B2: bank's checkpoint 601cb4352673 / init 8496934a2ce2 != FLAT_s0 8496934a2ce2"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | ini
+CAUGHT (deliberate regression) E4 flatdag: a FLAT flag moved (--hist) vs FLAT's banked argv  <- ["FLAT's every other flag: the fine-tune argv minus the fine-tune / bank flags is not FLAT's banked argv (data flags, grid, arm, seed, --o-interface c
+CAUGHT (deliberate regression) E4 flatdag: FLAT's banked argv does not name the cut  <- ["FLAT's every other flag: the fine-tune argv minus the fine-tune / bank flags is not FLAT's banked argv (data flags, grid, arm, seed, --o-interface c
+CAUGHT (deliberate regression) E4 flatdag: --w-acc on a FLAT arm (a second lever)  <- ["the train line sets --w-acc: a second lever beside the arm's own", "the gate line sets --w-acc: a second lever beside the arm's own", "the pin line 
+CAUGHT (deliberate regression) E4 flatdag0: flatdag0 carries a bank flag  <- ["the train line names --dagger-seed on a p = 0 arm: the trainer's gate refuses a DAgger flag set while p is 0", "the gate line names --dagger-seed on
+CAUGHT (deliberate regression) E4 flatdag0: flatdag0's dagger probe is live (a swap at p = 0)  <- ["p = 0: the dagger probe should read 'off', it read 'on'"] | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe g
+CAUGHT (deliberate regression) E4 flatdag0: flatdag0: the cut is not built  <- ["built o_interface 'full' != 'cut'"] | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff None | params
+CAUGHT (deliberate regression) E5 flatdag0 with --p is REFUSED rc 2
+== F. the FLAT-DAG chain script
+PASS  F1 bash -n: the FLAT-DAG chain, the lib, its guard copy and its waker parse
+PASS  F2 --dry-run: rc 0; the four runs in PREREG order; on every planned line gate == train, FLAT-CONSISTENT (FLAT's banked argv minus the fine-tune flags, --o-interface cut named, init FLAT_s<S>); both argv.json references hash to the pins
+PASS  F3 the pinned hashes in the chain are the banked FLAT files' (checkpoints re-hashed from v8f-mini-flat/, argv.json / summary.json from the repo blobs); the prefixes are 8496934a / 6fdfc9b0
+PASS  F4 the run list is flatdag s0, flatdag0 s0, flatdag s1, flatdag0 s1; P = 0.1; the chain's floor is 1 GiB; the bank directory is dagger_bank_flat and the M2b bank directory is named nowhere
+PASS  F5 order in the real run: the F1 check (in its exact STOP form) precedes the code archive; all four gates precede the first training; in the real run's segment the bank is judged once, published once (AFTER the judge) and the gates follow (judge before publish before gate)
+PASS  F6 --check-tree on a tree with the F1-fixed trainer and the staged queue: every lever pattern is there and F1 holds
+CAUGHT (deliberate regression) F7 --check-tree REFUSES the tip's trainer (INIT_CKPT_MATCH does not name o_interface): ZZFLATDAG-F1-STOP, rc 1, nothing would be touched on box 2
+CAUGHT (deliberate regression) F8 --check-tree REFUSES a tree whose queue is the tip's (no FLAT-DAG stages)
+CAUGHT (deliberate regression) F9 --judge-only: the M2b banks against FLAT's checkpoint shas -> ZZFLATDAG-REFUSED (K-B2: a FLAT bank must be generated by FLAT), rc 2, ZZV8FMINI-STOP REFUSED
+PASS  F10 --judge-only (CONTROL: the same chain with the generator shas the banks actually have): ZZFLATDAG-JUDGE-PASS, rc 0 -- so F9's refusal is the generator check and nothing else
+SKIP  F11 --publish-only: C: has only 1.0 GB free (the two 644 MB banks are copied); not run
+PASS  F13 wait: the DAG-OACC chain (the predecessor) STOPPED on its own, box released -> ZZOAF-WAIT-GO (box 2 is not idled)
+CAUGHT (deliberate regression) F14 wait: the predecessor was stopped by the GUARD -> ZZV8FMINI-STOP, no GO
+CAUGHT (deliberate regression) F15 wait: the predecessor STOPPED but BOX2_BUSY is still held -> ZZV8FMINI-STOP, no GO
+PASS  F16 wait: the predecessor DONE, box released -> GO
+PASS  F17 the real entry without AFTER_OUT: ZZV8FMINI-STOP, rc 1, no ssh / scp call (the shim control read non-empty first)
+CAUGHT (deliberate regression) F20 the REAL entry with a predecessor that has not ended: still waiting after 8 s (killed by the test's timeout, rc 124), BOX2_BUSY not taken, no ssh / scp call
+CAUGHT (deliberate regression) F18 the REAL entry against a fake mirror whose trainer is the tip's (INIT_CKPT_MATCH without o_interface): ZZFLATDAG-F1-STOP + ZZV8FMINI-STOP F1 not landed, rc 1, BOX2_BUSY released, the only box-2 call is the boot probe (no scp, no code archive)
+PASS  F19 the same REAL entry with the F1-fixed trainer (CONTROL): no ZZFLATDAG-F1-STOP; it goes past F1 and stops at the export-list check of the fake tip (so F18's stop is the F1 check and nothing else), still without an scp call
+PASS  FR0 the chain carries exactly one run-record heredoc and one REACHED-control heredoc (extracted and run below)
+PASS  FR1 flatdag: the chain's run-record assertion PASSES a good record (CONTROL for the doctored ones below)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the pinned argv differs from the planned one (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where argv.json is not the planned argv (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where argv.json sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where summary.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where selfcheck.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where summary.json done is false (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where summary.json steps differ (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where summary.json seed differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where selfcheck declared_vs_built is not PASS (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the init checkpoint differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the built dagger_p differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the built bank sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the cut is not built (o_interface full) (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the planned argv does not name --o-interface cut (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where o_interface_probe did not pass (rc 1)
+PASS  FR3 flatdag: the REACHED control PASSES dagger_n / dagger_eligible = 0.100 (CONTROL)
+CAUGHT (deliberate regression) FR4 flatdag: the REACHED control REFUSES a swap that never happened (dagger_n 0)
+CAUGHT (deliberate regression) FR5 flatdag: the REACHED control REFUSES a swap rate of 0.20 (outside 0.1 +- 0.02)
+CAUGHT (deliberate regression) FR6 flatdag: the REACHED control REFUSES zero eligible windows
+PASS  FR1 flatdag0: the chain's run-record assertion PASSES a good record (CONTROL for the doctored ones below)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the pinned argv differs from the planned one (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where argv.json is not the planned argv (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where argv.json sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where summary.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where selfcheck.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where summary.json done is false (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where summary.json steps differ (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where summary.json seed differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where selfcheck declared_vs_built is not PASS (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the init checkpoint differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the built dagger_p differs (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the p = 0 arm built a bank (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the cut is not built (o_interface full) (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the planned argv does not name --o-interface cut (rc 1)
+CAUGHT (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where o_interface_probe did not pass (rc 1)
+PASS  FR3 flatdag0: the REACHED control PASSES dagger_n exactly 0 (CONTROL)
+CAUGHT (deliberate regression) FR4 flatdag0: the REACHED control REFUSES a p = 0 arm that swapped 5 windows
+
+RESULT: 130/130 checks pass, 124/124 deliberate regressions caught, 0 missed; 0 failed checks (118 s)

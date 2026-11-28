@@ -1,0 +1,17 @@
+panel panel_turn75.json: 75 windows (sha256 c765fd4f9b0722b1)  |  CONTROL stride-16 path: 40 windows
+
+GT on the selected windows: {'turn_left': 30, 'lane_keep': 15, 'turn_right': 30}
+  ⭐ CONTROL, must match the panel file's own strata: {'turn_left': 30, 'turn_right': 30, 'lane_keep': 15}
+  episodes: turn_left [0, 1, 2, 5, 6, 7] | turn_right [0, 2, 3, 4, 6, 7] | carrying BOTH [0, 2, 6, 7]
+
+================================================================================================
+THE FLOORS' OWN DIRECTIONAL BASELINE ON THE WIDE PANEL (no planner, no GPU)
+================================================================================================
+  arm       | recall LEFT              | recall RIGHT             | pooled R - L             | within-episode
+  ha        | 0.7000 [0.5667, 0.8333] | 0.6667 [0.4231, 0.8571] | -0.0333            | -0.1917 [-0.4000, +0.0500]
+  ha0       | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | +0.0000            | +0.0000 [+0.0000, +0.0000]
+  ha0_ext   | 0.7333 [0.5667, 0.8667] | 0.7000 [0.4996, 0.8571] | -0.0333            | -0.1917 [-0.4000, +0.0500]
+  ol        | 0.8333 [0.6333, 1.0000] | 0.9333 [0.7388, 1.0000] | +0.1000            | +0.0000 [-0.3000, +0.3000]
+  CONTROL, GT against itself (must be exactly 1.0000 / 1.0000): 1.0000 / 1.0000
+
+  ⇒ this is the directional baseline the planner arms must be read against. A planner gap no larger than these is the CORPUS, not the cost.

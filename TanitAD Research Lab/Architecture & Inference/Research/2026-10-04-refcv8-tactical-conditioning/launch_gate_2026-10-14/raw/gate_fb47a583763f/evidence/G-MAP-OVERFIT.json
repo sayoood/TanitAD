@@ -1,0 +1,188 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-MAP-OVERFIT",
+ "status": "PASS",
+ "reasons": [
+  "G-MAP-OVERFIT PASS covers the head IN ISOLATION (trunk + branch on the frozen frames); the launch model's WIRING is G-LIVE's and G-DVB's job at the launch commit; MAIN-ONLY binding under SPEC_REFCV7 24 (A19, landed 36cc332): the must-fail arm(s) ['lane_w0', 'near_block_zeros', 's8_zeros'] were NOT RUN -- the map must-fail arms are INHERITED from A17.1 (the launch map config + the decay, 1,000 steps): s8_zeros read 0 on every thin class, near_block_zeros read edge 0.199, lane_w0 read lane 0 (A12 and A15 held them too) (evidence: TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/g_map_overfit_A171.EARLY_NONBINDING.json)"
+ ],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "fb47a583763ff98723e059eaaf07faf413c71a80",
+  "tree_sha256": "92afd7417388f6aa321764c757dca2288dd014d359a2b98f4c82b35d0b0d8060",
+  "argv_sha256": "188aa439258d28e712e9a1b4a8ebda982d5f068b4515022f54ba1172e18fd956"
+ },
+ "inputs_read": {
+  "gate:map-overfit-record": {
+   "kind": "file",
+   "bytes": 49654,
+   "sha256": "adf9bd1c3095164a068f1066a04cbabf6f93fe460fb0adf881684a331059c63e",
+   "method": "sha256-v1"
+  },
+  "gate:map-overfit-closure": {
+   "kind": "file",
+   "bytes": 15992,
+   "sha256": "cfc10fefc72637c1ad791018b5ece37ec72eb89376510394c387f29940f47dba",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": true,
+  "device": "NVIDIA Thor"
+ },
+ "arm": null,
+ "gate_sha256": "31a1b352351b9c860976d081613e45c7989ea5fc17292d56bbd2529a5c09250d",
+ "started_utc": "2026-10-15T02:52:23Z",
+ "details": {
+  "record": "/home/nvidia/refcv8_run/bind_fb47a583763f/run_map/g_map_overfit.json",
+  "sha256": "adf9bd1c3095164a068f1066a04cbabf6f93fe460fb0adf881684a331059c63e",
+  "verdict": "PASS",
+  "launch_commit": "2f40f900cfa90c4d98d815847d58fa0729ca6d23",
+  "launch_argv_sha256": "188aa439258d28e712e9a1b4a8ebda982d5f068b4515022f54ba1172e18fd956",
+  "a19": {
+   "policy": "A19_MAIN_ONLY_BINDING",
+   "source": "SPEC_REFCV7 24 (A19, landed 36cc332)",
+   "applied": true,
+   "absent_must_fail_arms": [
+    "lane_w0",
+    "near_block_zeros",
+    "s8_zeros"
+   ],
+   "harness_verdict_not_read": "PASS",
+   "statement": "MAIN-ONLY binding under SPEC_REFCV7 24 (A19, landed 36cc332): the must-fail arm(s) ['lane_w0', 'near_block_zeros', 's8_zeros'] were NOT RUN -- the map must-fail arms are INHERITED from A17.1 (the launch map config + the decay, 1,000 steps): s8_zeros read 0 on every thin class, near_block_zeros read edge 0.199, lane_w0 read lane 0 (A12 and A15 held them too) (evidence: TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv7-map-hires/raw/gmo_early/g_map_overfit_A171.EARLY_NONBINDING.json)"
+  },
+  "class_weights": {
+   "path": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+   "sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+   "weights": [
+    0.14101280705182365,
+    0.20596274047729562,
+    0.939417310793307,
+    1.0740514075923067,
+    2.957174122392341,
+    1.571183221356229,
+    2.152963655326075,
+    0.16493747629297098
+   ],
+   "split": "train",
+   "inputs_sha256": "205cdadc2d946e446ee1aed6fb2ed212a5f3ed36d28219997b736259e33ecef9",
+   "definition": "sqrt of median-frequency balancing (Eigen & Fergus, ICCV 2015): w_c = sqrt(median_k(f_k) / f_c), f_c = n_c / S_c, n_c = seen 10 cm cells of class c, S_c = seen cells of the frames in which c is present; clipped to <= 25; codes 0..7, 255 (not seen) never counted",
+   "definition_id": "sqrt_mf",
+   "pre_registered": true,
+   "extent": {
+    "x_max_m": 100.0,
+    "y_half_m": 30.0
+   }
+  },
+  "frames_match": true,
+  "optimiser": {
+   "name": "AdamW",
+   "lr": 0.001,
+   "betas": [
+    0.9,
+    0.999
+   ],
+   "eps": 1e-08,
+   "weight_decay": 0.0,
+   "batch": 4,
+   "steps": 3000,
+   "seed": 0,
+   "lr_decay": {
+    "kind": "cosine_to_zero",
+    "start_step": 2700
+   }
+  },
+  "band": "0_20",
+  "decision_rule": "prior_corrected",
+  "classes": {
+   "nocls": {
+    "n": 99924,
+    "iou": 0.9637789542046327,
+    "bar": 0.85
+   },
+   "drivable": {
+    "n": 414196,
+    "iou": 0.968626939008035,
+    "bar": 0.85
+   },
+   "sidewalk": {
+    "n": 303854,
+    "iou": 0.9818703874313507,
+    "bar": 0.85
+   },
+   "lane": {
+    "n": 12034,
+    "iou": 0.7812002124269782,
+    "bar": 0.5
+   },
+   "crosswalk": {
+    "n": 46488,
+    "iou": 0.9194005167958657,
+    "bar": 0.5
+   },
+   "arrow": {
+    "n": 3475,
+    "iou": 0.8404339772426568,
+    "bar": 0.5
+   },
+   "edge": {
+    "n": 8829,
+    "iou": 0.5411764705882353,
+    "bar": 0.5
+   },
+   "hatched": {
+    "n": 18476,
+    "iou": 0.8935072815533981,
+    "bar": 0.5
+   }
+  },
+  "regression_arms": {},
+  "must_fail": {
+   "lane_w0": "NOT RUN -- excused under SPEC_REFCV7 24 (A19, landed 36cc332); inherited",
+   "near_block_zeros": "NOT RUN -- excused under SPEC_REFCV7 24 (A19, landed 36cc332); inherited",
+   "s8_zeros": "NOT RUN -- excused under SPEC_REFCV7 24 (A19, landed 36cc332); inherited"
+  },
+  "controls_reproduced": true,
+  "closure": {
+   "closure": "/home/nvidia/refcv8_run/bind_fb47a583763f/map_closure.json",
+   "sha256": "cfc10fefc72637c1ad791018b5ece37ec72eb89376510394c387f29940f47dba",
+   "n_modules": 108,
+   "n_probed": 0,
+   "n_absent": 61,
+   "n_data": 17,
+   "scope": "covers the head IN ISOLATION (trunk + branch on the frozen frames); the launch model's WIRING is G-LIVE's and G-DVB's job at the launch commit",
+   "changed": [],
+   "missing_at_launch": [],
+   "absent_now_present": [],
+   "static_eager_files": 34,
+   "data_problems": [],
+   "env": {
+    "record": {
+     "python": "3.12.3",
+     "platform": "linux",
+     "torch": "2.13.0+cu130",
+     "timm": "1.0.29",
+     "cuda": "13.0",
+     "cudnn": 92000
+    },
+    "host": {
+     "python": "3.12.3",
+     "torch": "2.13.0+cu130",
+     "timm": "1.0.29",
+     "cuda": "13.0",
+     "cudnn": 92000
+    }
+   }
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv8_run/launch_tree/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": true
+  }
+ },
+ "finished_utc": "2026-10-15T02:52:24Z"
+}

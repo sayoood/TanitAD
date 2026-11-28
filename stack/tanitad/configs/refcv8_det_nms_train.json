@@ -1,0 +1,131 @@
+{
+ "schema": "tanitad.det_nms/1",
+ "definition": "score-ordered greedy centre-distance NMS (all classes together) on slots with sigmoid(logit) >= p_floor; radius_m = TRAIN-AP@2m argmax (tie -> smaller); gate = TRAIN P = R re-fitted AFTER the NMS (detection_metrics.pr_equal_gate). Radius and gate are ONE operating point.",
+ "heads": {
+  "box3d": {
+   "radius_m": 2.5,
+   "gate": 0.21648472547531128,
+   "p_floor": 0.05
+  },
+  "agent": {
+   "radius_m": 3.0,
+   "gate": 0.1843564212322235,
+   "p_floor": 0.05
+  }
+ },
+ "provenance": {
+  "run": "refcv8-r101-s0-ema48852",
+  "checkpoint_step": 48852,
+  "checkpoint_md5": "b4364029b68f29a33eeb4aebbbbd002b",
+  "fit_split": "TRAIN",
+  "fit_set": "TRAIN-DIAG: 139 TRAIN episodes x 8 windows of the refcv8 train4572 cache (sha12-sorted, first 139 with a 10 cm GT file); EMA-48,852 weights; unshifted pose clock",
+  "tool": "stack/scripts/refit_perception_thresholds.py",
+  "tool_sha256": "5a6db392be352a07daa819c51eca0753e3cbbf890f2db81ccc190a34cdc30d61",
+  "n_windows": 1074,
+  "source_file": "train_diag.packs.pkl",
+  "source_md5": "985537b0895ec5ea882836a3835f99a6",
+  "train_grid": {
+   "box3d": {
+    "none": {
+     "radius_m": null,
+     "train_ap2m": 0.3462452832319987,
+     "train_pr_gate": 0.26599645614624023,
+     "train_prec_at_gate": 0.37579013906447534
+    },
+    "0.5": {
+     "radius_m": 0.5,
+     "train_ap2m": 0.353187277899519,
+     "train_pr_gate": 0.2637527883052826,
+     "train_prec_at_gate": 0.3808470290771176
+    },
+    "1": {
+     "radius_m": 1.0,
+     "train_ap2m": 0.3954091581459674,
+     "train_pr_gate": 0.25402846932411194,
+     "train_prec_at_gate": 0.4077117572692794
+    },
+    "1.5": {
+     "radius_m": 1.5,
+     "train_ap2m": 0.4440120066620734,
+     "train_pr_gate": 0.239126056432724,
+     "train_prec_at_gate": 0.4440581542351454
+    },
+    "2": {
+     "radius_m": 2.0,
+     "train_ap2m": 0.4657697368662357,
+     "train_pr_gate": 0.2264452427625656,
+     "train_prec_at_gate": 0.463653603034134
+    },
+    "2.5": {
+     "radius_m": 2.5,
+     "train_ap2m": 0.47221459825904666,
+     "train_pr_gate": 0.21648472547531128,
+     "train_prec_at_gate": 0.4725031605562579
+    },
+    "3": {
+     "radius_m": 3.0,
+     "train_ap2m": 0.4561427042791299,
+     "train_pr_gate": 0.20799745619297028,
+     "train_prec_at_gate": 0.47092288242730723
+    },
+    "4": {
+     "radius_m": 4.0,
+     "train_ap2m": 0.4202204477249967,
+     "train_pr_gate": 0.19425135850906372,
+     "train_prec_at_gate": 0.4529077117572693
+    }
+   },
+   "agent": {
+    "none": {
+     "radius_m": null,
+     "train_ap2m": 0.18649316711252265,
+     "train_pr_gate": 0.2393922209739685,
+     "train_prec_at_gate": 0.24620733249051832
+    },
+    "0.5": {
+     "radius_m": 0.5,
+     "train_ap2m": 0.19857771852735745,
+     "train_pr_gate": 0.23613880574703217,
+     "train_prec_at_gate": 0.2588495575221239
+    },
+    "1": {
+     "radius_m": 1.0,
+     "train_ap2m": 0.2845588786826361,
+     "train_pr_gate": 0.22025439143180847,
+     "train_prec_at_gate": 0.32869785082174463
+    },
+    "1.5": {
+     "radius_m": 1.5,
+     "train_ap2m": 0.3478925825251953,
+     "train_pr_gate": 0.20786914229393005,
+     "train_prec_at_gate": 0.3808470290771176
+    },
+    "2": {
+     "radius_m": 2.0,
+     "train_ap2m": 0.39130581699475386,
+     "train_pr_gate": 0.19914036989212036,
+     "train_prec_at_gate": 0.41561314791403287
+    },
+    "2.5": {
+     "radius_m": 2.5,
+     "train_ap2m": 0.4139028295632795,
+     "train_pr_gate": 0.19073694944381714,
+     "train_prec_at_gate": 0.43805309734513276
+    },
+    "3": {
+     "radius_m": 3.0,
+     "train_ap2m": 0.41605908014888227,
+     "train_pr_gate": 0.1843564212322235,
+     "train_prec_at_gate": 0.452275600505689
+    },
+    "4": {
+     "radius_m": 4.0,
+     "train_ap2m": 0.3769752642403464,
+     "train_pr_gate": 0.17304180562496185,
+     "train_prec_at_gate": 0.4279393173198483
+    }
+   }
+  },
+  "caveat": "fitted on ONE checkpoint of ONE run; NEVER fed to the planner (raw presence is its input)"
+ }
+}

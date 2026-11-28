@@ -1,0 +1,39 @@
+diff --git a/test_sft4r_gate.py b/test_sft4r_gate.py
+index b0e5e55..0ed560a 100644
+--- a/test_sft4r_gate.py
++++ b/test_sft4r_gate.py
+@@ -283,8 +283,33 @@ def main() -> int:
+     ok(rc.returncode == 5 and "ZZGATE-REFUSEDZZ" in rc.stdout and "FORBIDS" in rc.stdout, rc.stdout[-300:])
+     rc = cli("refusals", "--profile", "refe_sft4r", "--arm-name", "N-s0", "--args", " ".join(base))
+     ok(rc.returncode != 0 and "only meaningful for a profile with arm rules" in (rc.stdout + rc.stderr), rc.stderr[-300:])      # one arm: naming one is an error, not a silent no-op
+-    rc = cli("run", "--profile", "refe_sft4r", "--args", " ".join(base), "--pkg", str(work / "nopkg"), "--out-dir", str(work / "o"))
++    # G-SUITE is EXCLUDED here (--only): the REAL refe_sft4r suite contains THIS FILE, so a `run` that reached G-SUITE would run this file, which would run `run`, which would run G-SUITE ... (the 2026-10-16
++    # runaway: ~80 python processes, RAM 8.6 GB).  refe_sft4r has no arm table, so -- unlike refe_rls1 / refe_aux_s1 -- nothing refuses an unnamed arm before the checks run.  Section 8 + test_suite_nesting.py
++    # pin the engine guard; this call keeps the property it was written for.  The gate key goes under the test's own dir: the default key_file is CREATED on first use.
++    rc = cli("run", "--profile", "refe_sft4r", "--args", " ".join(base), "--pkg", str(work / "nopkg"), "--out-dir", str(work / "o"), "--key-file", str(work / "k2" / "gate.key"),
++             "--only", "G-HYG,G-DVB,G-PREFLIGHT")
+     ok(rc.returncode != 0 and "mints for ONE named arm" not in (rc.stdout + rc.stderr), (rc.stdout + rc.stderr)[-300:])             # minting needs no --arm-name (it fails later, on the missing package/preflight)
++    ok("G-SUITE" not in "".join(ln for ln in rc.stdout.splitlines(True) if ln.startswith("  G-")), rc.stdout[-300:])                  # no G-SUITE row was run
++    # ======================================================================== 8. the real suite cannot re-enter itself: check_suite refuses to nest (the full proof, with mutations, is test_suite_nesting.py)
++    me = {"script": "test_sft4r_gate.py", "token": "ZZTEST_PASS"}
++    ok(me in L.SFT4R_SUITE and {"script": "test_suite_nesting.py", "token": "ZZTEST_PASS"} in L.SFT4R_SUITE)                       # the file the runaway came from IS an entry of the suite it used to run
++    spawned = []
++    real_run, real_env = C.subprocess.run, os.environ.get(C.SUITE_NEST_ENV)
++
++    def never_spawn(*a, **k):
++        spawned.append(a)
++        raise AssertionError("check_suite SPAWNED a process although the suite contains the script that is running it")
++    C.subprocess.run = never_spawn
++    os.environ[C.SUITE_NEST_ENV] = json.dumps([C.suite_entry_id(me)])                                                                 # exactly what the real G-SUITE sets for this file's own process
++    try:
++        ev = C.check_suite(PROF)
++    finally:
++        C.subprocess.run = real_run
++        if real_env is None:
++            os.environ.pop(C.SUITE_NEST_ENV, None)
++        else:
++            os.environ[C.SUITE_NEST_ENV] = real_env
++    ok(spawned == [] and ev["status"] == "FAIL" and any("refuses to nest" in r and "test_sft4r_gate.py" in r for r in ev["reasons"]), (spawned, ev["reasons"]))
+     print(f"ZZTEST_PASS {N}")
+     return 0
+ 

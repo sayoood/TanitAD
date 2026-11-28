@@ -1,0 +1,314 @@
+{
+  "_is": "os_navflip / os_navpred: PRESENCE vs CONTENT of the E13 nav token",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), n_boot=2000, seed=0",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "dump": "/home/nvidia/navpred/navflip_dump",
+  "ade": {
+    "os": {
+      "mean": 0.2965,
+      "ci95": [
+        0.2682,
+        0.3272
+      ]
+    },
+    "ha": {
+      "mean": 0.2996,
+      "ci95": [
+        0.2749,
+        0.328
+      ]
+    },
+    "ha0": {
+      "mean": 0.6723,
+      "ci95": [
+        0.6017,
+        0.7437
+      ]
+    },
+    "ha0_ext": {
+      "mean": 0.2874,
+      "ci95": [
+        0.2646,
+        0.3137
+      ]
+    },
+    "os_navshuf": {
+      "mean": 0.3006,
+      "ci95": [
+        0.2722,
+        0.3301
+      ]
+    },
+    "os_navzero": {
+      "mean": 0.3926,
+      "ci95": [
+        0.3652,
+        0.4212
+      ]
+    },
+    "os_navflip": {
+      "mean": 0.2987,
+      "ci95": [
+        0.2701,
+        0.3289
+      ]
+    },
+    "os_navpred": {
+      "mean": 0.3012,
+      "ci95": [
+        0.2721,
+        0.3314
+      ]
+    }
+  },
+  "paired_full": {
+    "os_navflip_minus_os": {
+      "delta_m": 0.0022,
+      "ci95": [
+        -0.0006,
+        0.0052
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navflip_minus_ha0_ext": {
+      "delta_m": 0.0113,
+      "ci95": [
+        -0.0033,
+        0.0274
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navpred_minus_os": {
+      "delta_m": 0.0047,
+      "ci95": [
+        0.0012,
+        0.0083
+      ],
+      "separated": true,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navpred_minus_ha0_ext": {
+      "delta_m": 0.0138,
+      "ci95": [
+        -0.0011,
+        0.0303
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navshuf_minus_os": {
+      "delta_m": 0.0041,
+      "ci95": [
+        0.0004,
+        0.0076
+      ],
+      "separated": true,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navshuf_minus_ha0_ext": {
+      "delta_m": 0.0132,
+      "ci95": [
+        -0.0016,
+        0.0294
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navzero_minus_os": {
+      "delta_m": 0.0961,
+      "ci95": [
+        0.0827,
+        0.1103
+      ],
+      "separated": true,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navzero_minus_ha0_ext": {
+      "delta_m": 0.1052,
+      "ci95": [
+        0.0876,
+        0.1246
+      ],
+      "separated": true,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navflip_minus_os_navshuf": {
+      "delta_m": -0.0019,
+      "ci95": [
+        -0.0051,
+        0.0014
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navflip_minus_os_navpred": {
+      "delta_m": -0.0025,
+      "ci95": [
+        -0.0065,
+        0.0016
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_navflip_minus_os_navzero": {
+      "delta_m": -0.0939,
+      "ci95": [
+        -0.1081,
+        -0.0802
+      ],
+      "separated": true,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_minus_ha0_ext": {
+      "delta_m": 0.0091,
+      "ci95": [
+        -0.0055,
+        0.0254
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    },
+    "os_minus_ha": {
+      "delta_m": -0.0031,
+      "ci95": [
+        -0.0179,
+        0.0133
+      ],
+      "separated": false,
+      "n_windows": 4823,
+      "n_episodes": 141
+    }
+  },
+  "paired_treated_subset": {
+    "os_navflip_minus_os_TREATED": {
+      "delta_m": 0.0062,
+      "ci95": [
+        -0.0024,
+        0.0142
+      ],
+      "separated": false,
+      "n_windows": 1743,
+      "n_episodes": 51
+    },
+    "os_navpred_minus_os_TREATED": {
+      "delta_m": 0.0119,
+      "ci95": [
+        0.0035,
+        0.0213
+      ],
+      "separated": true,
+      "n_windows": 1908,
+      "n_episodes": 96
+    },
+    "os_navshuf_minus_os_TREATED": {
+      "delta_m": 0.0082,
+      "ci95": [
+        0.0009,
+        0.0154
+      ],
+      "separated": true,
+      "n_windows": 2406,
+      "n_episodes": 141
+    },
+    "os_navzero_minus_os_TREATED": {
+      "delta_m": 0.0961,
+      "ci95": [
+        0.0827,
+        0.1103
+      ],
+      "separated": true,
+      "n_windows": 4823,
+      "n_episodes": 141
+    }
+  },
+  "subsets": {
+    "os_navflip_n_treated": 1743,
+    "os_navpred_n_treated": 1908,
+    "os_navshuf_n_treated": 2406,
+    "os_navzero_n_treated": 4823,
+    "flip_treated_n": 1743
+  },
+  "paired_on_FLIP_TREATED_windows": {
+    "os_navflip_minus_os": {
+      "delta_m": 0.0062,
+      "ci95": [
+        -0.0024,
+        0.0142
+      ],
+      "separated": false,
+      "n_windows": 1743,
+      "n_episodes": 51
+    },
+    "os_navpred_minus_os": {
+      "delta_m": 0.0028,
+      "ci95": [
+        -0.0024,
+        0.0082
+      ],
+      "separated": false,
+      "n_windows": 1743,
+      "n_episodes": 51
+    },
+    "os_navshuf_minus_os": {
+      "delta_m": 0.0031,
+      "ci95": [
+        -0.0055,
+        0.0114
+      ],
+      "separated": false,
+      "n_windows": 1743,
+      "n_episodes": 51
+    },
+    "os_navzero_minus_os": {
+      "delta_m": 0.0648,
+      "ci95": [
+        0.0463,
+        0.0857
+      ],
+      "separated": true,
+      "n_windows": 1743,
+      "n_episodes": 51
+    },
+    "os_navflip_minus_os_navzero": {
+      "delta_m": -0.0586,
+      "ci95": [
+        -0.0791,
+        -0.041
+      ],
+      "separated": true,
+      "n_windows": 1743,
+      "n_episodes": 51
+    }
+  },
+  "PRESENCE_VS_CONTENT": {
+    "no_token_minus_true_token_m": 0.0961,
+    "WRONG_token_minus_true_token_m": 0.0022,
+    "content_share_of_the_nav_margin": 0.0233,
+    "presence_share": 0.9767,
+    "_is": "CONTENT is what a DELIBERATELY WRONG token costs (os_navflip - os); PRESENCE is the remainder of what having no token at all costs (os_navzero - os). The flip is the sharpest intervention in the harness: it disagrees with the truth on EVERY commanded window."
+  },
+  "CONTROL_model_free": {
+    "ha": 0.2996,
+    "ha_known": 0.2996,
+    "ha0": 0.6723,
+    "ha0_known": 0.6723,
+    "verdict": "PASS"
+  }
+}

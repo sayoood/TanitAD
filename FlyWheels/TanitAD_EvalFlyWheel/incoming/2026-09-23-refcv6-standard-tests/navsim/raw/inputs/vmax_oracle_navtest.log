@@ -1,0 +1,46 @@
+[vmax_oracle] 20/136 logs
+[vmax_oracle] 40/136 logs
+[vmax_oracle] 60/136 logs
+[vmax_oracle] 80/136 logs
+[vmax_oracle] 100/136 logs
+[vmax_oracle] 120/136 logs
+{
+ "n_tokens": 12146,
+ "n_oracle_ok": 12084,
+ "n_no_future": 62,
+ "oracle_bin_share": {
+  "30": 0.7574,
+  "50": 0.235,
+  "100": 0.0075
+ },
+ "training_bin_share_reference": {
+  "30": 0.3808,
+  "50": 0.3484,
+  "100": 0.2218,
+  "120": 0.049,
+  "_source": "tanitad/refs/refcv6_max_speed.py docstring (v8 train blob, n = 4,572, MEASURED there)"
+ },
+ "map_vs_oracle_on_tokens_with_both": {
+  "n": 6623,
+  "map_above_oracle": 3474,
+  "equal": 3034,
+  "map_below_oracle": 115,
+  "frac_map_above_oracle": 0.5245,
+  "frac_equal": 0.4581,
+  "frac_map_below_oracle": 0.0174
+ },
+ "confusion_map_bin__oracle_bin": {
+  "100->30": 93,
+  "100->50": 64,
+  "100->100": 12,
+  "30->30": 1301,
+  "30->50": 37,
+  "50->30": 3317,
+  "50->50": 1721,
+  "50->100": 78,
+  "unknown->30": 4442,
+  "unknown->50": 1018,
+  "unknown->100": 1
+ },
+ "_read": "'map_above_oracle' = the deployable input tells the model a HIGHER band than the human actually drove in [t0+2, t0+6] s \u2014 the direction the containing-window one-hot never showed it in training (there, the realised max is INSIDE the band)."
+}

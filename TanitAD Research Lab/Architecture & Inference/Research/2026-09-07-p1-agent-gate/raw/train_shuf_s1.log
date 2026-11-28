@@ -1,0 +1,53 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (cli-override-legacy-file), schedule=constant, horizon_s=None, dt=None, ref_speed_ms=None, kappa_cap=None, alat_v_floor=None, schema=None
+[v3] anchors: loaded (117, 8, 2) from C:/Users/Admin/refcv4b_final/anchors.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: cli-override-legacy-file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['C:/Users/Admin/p1gate/corpus/train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] C:/Users/Admin/p1gate/corpus/train: 104 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 104 distinct for 104 clips]
+[v2] 104 providers, 104 distinct episode ids
+[v3] 104 lazy v2 providers from ['C:/Users/Admin/p1gate/corpus/train'] (lru 8)
+[v3] v7.2 labels: 147 records, joined 104/104 episodes = 100.0 % (release ?)
+[v3] nav_from_v7: follow 67 / left 10 / right 27, missing 0 (of 104 clips; md5=aa12c948f062181c3297265b51526ec5)
+[v3] agent join verified: md5(compressed of b1eval_agents_SHUFFLED.jsonl.xz) = f5e9ea4d78f131bfb2dbfa0dc7ab2aee
+[v3] agent join loaded: 19638 records / 104 clips (filtered out 6756) in 2.8 s
+[v3] agent join: 104/104 episodes (stable-63bit), 16874/17787 windows labelled (94.9 %), 578679 prefilter target boxes, pad 395
+[v3] 104 episodes -> 17787 windows (window 8, max_horizon 20, image_hw (256, 640), tac_vocab v7.0)
+[v2] C:/Users/Admin/p1gate/corpus/eval: 35 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 35 distinct for 35 clips]
+[v2] 35 providers, 35 distinct episode ids
+[v3] nav_from_v7: follow 21 / left 3 / right 11, missing 0 (of 35 clips; md5=aa12c948f062181c3297265b51526ec5)
+[v3] agent join: 35/35 episodes (stable-63bit), 5789/5985 windows labelled (96.7 %), 198122 prefilter target boxes, pad 395
+[v3] held-out eval: 35 episodes -> 5985 windows, 8 fixed batches every 250 steps
+[v3] u8_batches=True: frames+future_frames = 0.330 GB per collated batch (uint8), <= 1 in flight -> ~0.33 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] EFFECTIVE WEIGHTS (this arm) -- default -> layer -> effective -> builds a graph?
+[v3] term                                     flag               default  asked  effective  src   graph  status          layer/mask/missing                                                             
+[v3] ---------------------------------------  -----------------  -------  -----  ---------  ----  -----  --------------  -------------------------------------------------------------------------------
+[v3] u0 control-space x0 loss (WP-4)          --w-u0             0        0.5    0.5        op    yes    TRAINS                                                                                         
+[v3] GT-supervised detection set loss (WP-6)  --w-agent          0        1      1          op    yes    TRAINS                                                                                         
+[v3] agent projection consistency             --agent-w-project  0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                 
+[v3] agent ground-plane prior                 --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                 
+[v3] E15 geometric goal point (GP-2)          --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT  missing=no --goal-point-inject: the head that predicts the point is never built
+[v3] 2/5 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3:hier] step 25 loss 92.4297 traj 2.9889
+[v3:hier] step 50 loss 55.7870 traj 2.9931
+[v3:hier] step 75 loss 55.5603 traj 3.3556
+[v3:hier] step 100 loss 27.3419 traj 1.9858
+[v3:hier] step 125 loss 31.0303 traj 2.0193
+[v3:hier] step 150 loss 30.2616 traj 1.9847
+[v3:hier] step 175 loss 56.1388 traj 2.5530
+[v3:hier] step 200 loss 27.4163 traj 0.9914
+[v3:hier] step 225 loss 34.7387 traj 1.5170
+[v3:hier] step 250 loss 39.6679 traj 2.5515
+[v3:eval] step 250 loss 33.9713 traj 1.9716 lat_tac 0.9252
+[v3:hier] step 275 loss 35.9618 traj 2.2373
+[v3:hier] step 300 loss 34.9942 traj 1.4764
+[v3:hier] step 325 loss 32.0225 traj 1.6214
+[v3:hier] step 350 loss 27.4331 traj 1.4619
+[v3:hier] step 375 loss 31.6312 traj 1.5838
+[v3:hier] step 400 loss 40.8764 traj 1.5601
+[v3:hier] step 425 loss 27.1068 traj 1.6544
+[v3:hier] step 450 loss 27.4491 traj 1.6393
+[v3:hier] step 475 loss 35.2510 traj 1.6458
+[v3:hier] step 500 loss 28.1236 traj 1.3260
+[v3:hier] ckpt step 500 -> ckpt.pt
+[v3:eval] step 500 loss 29.7609 traj 1.4659 lat_tac 0.8398
+[v3:hier] DONE at 500 — summary.json written

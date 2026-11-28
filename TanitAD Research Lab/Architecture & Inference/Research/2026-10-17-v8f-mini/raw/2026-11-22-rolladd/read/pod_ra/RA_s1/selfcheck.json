@@ -1,0 +1,511 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 0.49337127804756165,
+   "goal": 0.036938898265361786,
+   "lat": 0.004407282918691635,
+   "lon": 0.4261479377746582,
+   "cons": 0.0911334902048111,
+   "ade": 1.8373891115188599,
+   "fde": 5.265109539031982,
+   "acc": 0.003924394957721233,
+   "pen_SPEED": 0.09107348322868347,
+   "pens_SPEED": 0.4374169111251831,
+   "pen_STOP": 0.0,
+   "pens_STOP": 0.5018571615219116,
+   "pen_TURN": 0.0,
+   "pens_TURN": 0.0,
+   "pen_LEAD": 0.2557799518108368,
+   "pens_LEAD": 0.020740291103720665,
+   "wm": 179.568359375,
+   "total": 20.407672882080078
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 246.15720134973526,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 6055.692858695984,
+   "S": 868.9635637458414,
+   "T": 470.97713184915483,
+   "O": 4615.510283537209,
+   "head_s": 510.98374032974243,
+   "head_o": 1641.811058819294,
+   "wm": 6242.453586159041
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 256,
+  "n_partial": 0,
+  "n_all_gt": 118,
+  "n_all_own": 138,
+  "unit_gt_rate": {
+   "decisions": 0.4609375,
+   "speed": 0.4609375,
+   "angle": 0.4609375,
+   "tte": 0.4609375,
+   "timegap": 0.4609375,
+   "geom": 0.4609375,
+   "leadgap": 0.4609375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 25.596092224121094,
+    "o_read_code_abs_max": 11.34891128540039,
+    "o_read_ck_minus_nominal_abs_max": 73.0089340209961,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 4.377118110656738,
+    "o_read_code_abs_max": 4.651522159576416,
+    "o_read_ck_minus_nominal_abs_max": 73.0089340209961,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 24.826444625854492,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 73.0089340209961,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 19.479278564453125,
+    "o_read_code_abs_max": 10.297545433044434,
+    "o_read_ck_minus_nominal_abs_max": 70.5265121459961,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 11.369600296020508
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 49.6969,
+  "w_probe": 49.6969,
+  "acc": 0.005502607673406601,
+  "acc_at_zero_weight": 0.005502607673406601,
+  "total_w": 23.226537704467773,
+  "total_0": 22.953075408935547,
+  "contribution": 0.27346229553222656,
+  "w_x_acc": 0.2734625432845205,
+  "head_o_grad_diff": 160.87261962890625,
+  "read_o_grad_diff": 348.3472595214844,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 49.6969,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_bank_readout": "causal_g1x",
+   "dagger_bank_kappa": "0.2",
+   "dagger_label": "human",
+   "dagger_mode": "add",
+   "dagger_p": 0.1,
+   "dagger_seed": 1,
+   "dagger_bank": "/root/rollhist/bank/s1/bank.json",
+   "dagger_bank_sha256": "bde6566ef573787995a92bae0e65c451a87249630b06b83aea1ea9bdc37279e6",
+   "kin_mode": "yaw",
+   "bank_hmax": 16,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.1,
+  "dagger_bank_sha256": "bde6566ef573787995a92bae0e65c451a87249630b06b83aea1ea9bdc37279e6",
+  "dagger_bank_sha256_declared": "bde6566ef573787995a92bae0e65c451a87249630b06b83aea1ea9bdc37279e6",
+  "recover": {
+   "recover_p": 0.0,
+   "recover_dev_law": "empirical",
+   "recover_dev_shape": "constant",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "/root/dscale10k/runs/UE_s1/A/ckpt_last.pt",
+   "sha256": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 61568,
+   "source_arm": "M2b",
+   "source_seed": 1,
+   "source_argv_sha": "fbcb4adc7192ea73"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "steps_total": 3000,
+ "S_steps_per_epoch_100pct": 15392,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 14512,
+  "n_clips_expected": 14512,
+  "n_clips_all": 14512,
+  "n_excluded": 0,
+  "n_excluded_declared": 0,
+  "excluded_in_train": 0,
+  "excluded_sha256": null,
+  "train_sha256": "9844151fcb15504fe9e729fdc6235aebd3e31bfd363cb362994852931ada60f4",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 985048,
+  "n_windows": 985048,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "c13477163d6515f75bbe8c18f64ff45b0dc33ae356706efa33df0b2f74448e60",
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "/root/dscale10k/runs/UE_s1/A/ckpt_last.pt",
+   "sha256": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 61568,
+   "source_arm": "M2b",
+   "source_seed": 1,
+   "source_argv_sha": "fbcb4adc7192ea73"
+  },
+  "dagger": {
+   "bank_path": "/root/rollhist/bank/s1/bank.json",
+   "bank_sha256": "bde6566ef573787995a92bae0e65c451a87249630b06b83aea1ea9bdc37279e6",
+   "n_records": 1970096,
+   "reason_counts": {
+    "ok": 1478090,
+    "off_lat": 89288,
+    "off_head": 16100,
+    "end_edge": 386618,
+    "nonfinite": 0
+   },
+   "coverage": {
+    "n_windows": 985048,
+    "n_eligible": 786763,
+    "fraction": 0.7987052407598412,
+    "min": 0.5,
+    "blocked": false
+   },
+   "kb2": {
+    "ckpt_sha256": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc",
+    "init_ckpt_sha256": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc"
+   },
+   "kb3": {
+    "n_bank_clips": 14512,
+    "n_train_clips": 14512,
+    "n_eval_clips": 141,
+    "overlap_with_eval": 0,
+    "window_list_sha256": "c13477163d6515f75bbe8c18f64ff45b0dc33ae356706efa33df0b2f74448e60",
+    "eval_sources": {
+     "grid": 141,
+     "bank_header": 141
+    },
+    "n_eval_clips_checked": 141
+   }
+  }
+ },
+ "argv_sha": "3a11874ffaacb511",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "p_declared": 0.1,
+  "n_rows": 64,
+  "n_eligible": 51,
+  "n_selected_at_p1": 51,
+  "mode": "add",
+  "rows_logged": 64,
+  "rows_appended": 51,
+  "rows_out": 115,
+  "appended_differs_from_logged": {
+   "p10f": true,
+   "kin3": true
+  },
+  "live_added": {
+   "pass": true,
+   "terms": {
+    "ckpt": 0.7093213796615601,
+    "goal": 0.05159178748726845,
+    "lat": 0.020952966064214706,
+    "lon": 0.6204357743263245,
+    "cons": 0.12913183867931366,
+    "ade": 4.913634300231934,
+    "fde": 10.984380722045898,
+    "acc": 0.40994343161582947,
+    "pen_SPEED": 1.9379029273986816,
+    "pens_SPEED": 2.099449872970581,
+    "pen_STOP": 0.05123831704258919,
+    "pens_STOP": 1.7770243883132935,
+    "pen_TURN": 0.0,
+    "pens_TURN": 0.0,
+    "pen_LEAD": 0.3670426309108734,
+    "pens_LEAD": 0.001629128702916205,
+    "wm": 179.9572296142578,
+    "total": 44.215675354003906
+   },
+   "control_prior_grad_sum": 0.0,
+   "groups_grad": {
+    "adapter": 6407.441130757332,
+    "S": 1917.9576511513442,
+    "T": 584.0651543941349,
+    "O": 17574.55410388112,
+    "head_s": 403.0188626497984,
+    "head_o": 19097.145027160645,
+    "wm": 6243.667424441082
+   }
+  },
+  "total_logged": 23.15885353088379,
+  "total_added": 53.689144134521484,
+  "loss_diff": 30.530290603637695,
+  "grad_diff_all": 27727.705078125,
+  "grad_diff_by_group": {
+   "adapter": 957.5957641601562,
+   "e_ego": 436.90478515625,
+   "read_s": 685.27392578125,
+   "read_t": 270.9997253417969,
+   "read_o": 12043.5341796875,
+   "head_s": 78.17353057861328,
+   "head_o": 12227.58203125,
+   "wm.": 497.181396484375
+  },
+  "control_repeat_loss_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_p0_same_object": true,
+  "control_p0_loss_diff": 0.0,
+  "control_p0_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "pass": true
+ },
+ "ego_dagger_compose_probe": {
+  "ego_dagger_compose": "off",
+  "pass": true,
+  "overlap": 0,
+  "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"
+ },
+ "recover_probe": {
+  "recover": "off",
+  "pass": true,
+  "skipped": "--recover-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "t2bank_probe": {
+  "t2_bank": "off",
+  "pass": true,
+  "skipped": "--t2-bank-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "launch_intent_probe": {
+  "launch_intent": "off",
+  "pass": true,
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"
+ },
+ "otband_probe": {
+  "otband": "detach-only",
+  "stok_dim": 0,
+  "detach_upper": true,
+  "purity": {
+   "upper_grad_abs_sum": 0.0,
+   "head_o": 3.237075274810195,
+   "by_term": {
+    "ade": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 139.92370235919952
+    },
+    "fde": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 731.3148626089096
+    },
+    "acc": {
+     "upper_grad_abs_sum": 0.0,
+     "head_o": 3.237075274810195
+    }
+   }
+  },
+  "code_edge_max_dknot": 33.501258850097656,
+  "pass": true
+ }
+}

@@ -1,0 +1,142 @@
+--- /dev/null
++++ b/stack/tests/test_refav1_dvb.py (R1-R6)
+@@ -0,0 +1,139 @@
++"""G-DVB for `refa_v1_train.py` (PI 2026-09-27 item 4) -- declared-vs-built, refav1 profile.
++
++Pins, each with its deliberate-regression arm that must be REFUSED:
++  * COVERAGE: every `build_parser()` dest has an entry (a new flag cannot land without one),
++    and every PI 2026-09-27 flag is registered -- the model levers as `built` / `loss`;
++  * CLEAN: the trainer's own smoke builds (all flags off; all flags on) read back clean;
++  * each new lever's reader catches a model that does not have what argv declares;
++  * the trainer REFUSES before the first step when the build and argv disagree;
++  * the shared refcv7 registry is UNTOUCHED (a refav1 entry there would break refcv7).
++"""
++import argparse
++import importlib.util
++import sys
++from pathlib import Path
++
++import pytest
++import torch
++
++from tanitad.train import declared_vs_built as dvb_refc
++from tanitad.train import declared_vs_built_refav1 as dvb
++
++_TRAIN = Path(__file__).resolve().parents[1] / "scripts" / "refa_v1_train.py"
++
++
++def _trainer():
++    spec = importlib.util.spec_from_file_location("_refa_v1_train_dvb", _TRAIN)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[spec.name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++T = _trainer()
++ON = ["--smoke", "--strategic-off", "--vmax-input", "--w-goal", "0.1", "--w-speed-band",
++      "0.1", "--w-traj", "1.0", "--r5-prior", "damp50"]
++
++
++def _built(argv):
++    a = T.build_parser().parse_args(argv)
++    torch.manual_seed(0)
++    return T.build_model(a), a
++
++
++def test_a_every_trainer_flag_has_an_entry_and_every_new_lever_is_checked():
++    p = T.build_parser()
++    assert dvb.coverage(p) == []
++    for d in dvb.NEW_2026_09_27:
++        assert d in dvb.REGISTRY, d
++    kinds = {d: dvb.REGISTRY[d].kind for d in dvb.NEW_2026_09_27}
++    for d in ("strategic_off", "vmax_input", "w_goal", "w_speed_band", "w_traj", "r5_prior",
++              "r5_kappa_source"):
++        assert kinds[d] in ("built", "loss"), (d, kinds[d])
++    # regression arm: a flag added to the parser WITHOUT an entry is reported by name
++    p.add_argument("--w-new-lever", type=float, default=0.0)
++    assert dvb.coverage(p) == ["w_new_lever"]
++    m, a = _built(["--smoke"])
++    bad = dvb.check(m, a, parser=p)
++    assert any("--w-new-lever" in str(x) for x in bad)
++
++
++@pytest.mark.parametrize("argv", [["--smoke"], ON, ["--smoke", "--no-hierarchy"],
++                                  ["--smoke", "--speed-channel", "--ema-targets",
++                                   "--proposal-k", "2", "--tmix-groups", "1"]])
++def test_b_the_trainers_own_builds_read_back_clean(argv):
++    m, a = _built(argv)
++    assert dvb.check(m, a, parser=T.build_parser()) == []
++
++
++def _drop(m, attr):
++    setattr(m, attr, None)
++    return m
++
++
++@pytest.mark.parametrize("argv,mutate,flag", [
++    (ON, lambda m: _drop(m, "traj_head"), "--w-traj"),
++    (ON, lambda m: _drop(m, "goal_head"), "--w-goal"),
++    (ON, lambda m: _drop(m, "speed_band_head"), "--w-speed-band"),
++    (ON, lambda m: _drop(m, "vmax_to_ctx"), "--vmax-input"),
++    (["--smoke", "--strategic-off"], None, "--strategic-off"),
++    (["--smoke", "--w-traj", "1", "--r5-prior", "cv"], None, "--r5-prior"),
++    (["--smoke", "--w-traj", "1", "--r5-kappa-source", "pose_past"], None,
++     "--r5-kappa-source"),
++    (["--smoke"], None, "--w-traj"),
++])
++def test_c_each_new_readers_regression_arm_is_caught(argv, mutate, flag):
++    m, a = _built(argv)
++    if mutate is not None:
++        mutate(m)
++    elif flag == "--strategic-off":
++        m, _ = _built(["--smoke"])                # built WITH the strategic layer
++    elif flag == "--r5-prior":
++        m.cfg.traj_prior = "kdx"                   # built on another prior than argv names
++    elif flag == "--r5-kappa-source":
++        m.cfg.traj_kappa_source = "steer_t0"       # built on another kappa0 source
++    else:
++        m, _ = _built(["--smoke", "--w-traj", "1"])   # a head argv never asked for
++    bad = dvb.check(m, a, parser=T.build_parser())
++    assert any(x.lever == flag for x in bad), [str(x) for x in bad]
++
++
++def test_d_G_HYG_an_undeclared_config_attribute_is_refused():
++    m, a = _built(["--smoke"])
++    m.cfg.w_traj_typo = 1.0                      # an ad-hoc attribute the next rebuild drops
++    bad = dvb.check(m, a)
++    assert any("w_traj_typo" in x.lever for x in bad)
++
++
++def test_e_the_trainer_refuses_before_the_first_step(tmp_path, monkeypatch):
++    real = T.build_model
++
++    def lossy(args):
++        m = real(args)
++        m.traj_head = None                       # the lever is LOST between argv and the build
++        return m
++    monkeypatch.setattr(T, "build_model", lossy)
++    with pytest.raises(SystemExit, match="G-DVB refav1"):
++        T.main(["--smoke", "--steps", "1", "--device", "cpu", "--out", str(tmp_path / "o"),
++                "--w-traj", "1"])
++    assert not (tmp_path / "o" / "train_log.jsonl").exists()
++
++
++def test_f_the_shared_refcv7_registry_is_untouched():
++    """A refav1 reader in the SHARED registry would run on a RefCV3Model at every refcv7
++    launch and fail it -- so the refav1 registry is its own dict and adds nothing there."""
++    assert dvb.REGISTRY is not dvb_refc.REGISTRY
++    for d in ("w_traj", "vmax_input", "strategic_off", "r5_prior", "w_speed_band", "w_goal"):
++        assert d not in dvb_refc.REGISTRY, d
++
++
++@pytest.mark.parametrize("argv,msg", [
++    (["--smoke", "--r5-prior", "cv"], "without --w-traj"),
++    (["--smoke", "--r5-kappa-source", "pose_past"], "without --w-traj"),
++    (["--smoke", "--goal-negatives", "cot-absence-negative"], "without --w-goal"),
++    (["--smoke", "--w-goal", "0.1", "--goal-negatives", "cot-absence-negative"], "ONE decision"),
++    (["--smoke", "--w-traj", "1", "--no-hierarchy"], "--no-hierarchy"),
++    (["--smoke", "--w-traj", "-1"], ">= 0")])
++def test_g_trainer_refusals(argv, msg, tmp_path):
++    with pytest.raises(SystemExit, match=msg):
++        T.main([*argv, "--steps", "1", "--device", "cpu", "--out", str(tmp_path / "o")])

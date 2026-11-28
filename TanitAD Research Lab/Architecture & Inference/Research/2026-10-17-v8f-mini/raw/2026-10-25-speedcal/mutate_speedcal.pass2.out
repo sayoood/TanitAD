@@ -1,0 +1,40 @@
+mutation check of 7 mutants (+ the end-to-end-only variants); copy under C:\Users\Admin\sc_mut; python 3.13.5
+BASELINE (unmutated): rc 0  59 passed  35.0 s
+M01 KILLED         22.2 s  FIT ON EVAL INSTEAD OF TRAIN: the `cal` arm applies a map fitted on the EVAL GT (the identity eval's cells), not the training-window fit
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_2_fitted_map_is_lstsq']
+M04 KILLED         20.9 s  SWAP SEEDS in the reader: seed s reads the OTHER seed's eval dumps AND checks them as that seed (so the reader's own refusals do not fire)
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_2_fitted_map_is_lstsq', 'control_3_gt_equals_kindx_speed_oracle', 'guards']
+M12 KILLED         15.2 s  the permutation seed moved off the committed one
+      caught by: stack\tests\test_v8f_speedcal.py::test_fit_arrays_are_the_trainers_windows_and_what_the_controls_refit  [None]  red controls: []
+M19 KILLED         15.8 s  the fit's checkpoint sha256 is no longer checked against the evaluated checkpoint
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_evals_refuse_a_limited_fit_and_a_fit_on_other_cells  [None]  red controls: []
+M46 KILLED         20.4 s  a LIMITED (smoke) eval is no longer refused
+      caught by: stack\tests\test_v8f_speedcal.py::test_refusals_of_load_all  [Assertio...]  red controls: []
+M49 KILLED         21.9 s  a LIMITED (smoke) FIT is no longer refused
+      caught by: stack\tests\test_v8f_speedcal.py::test_refusals_of_load_all  [Failed: ...]  red controls: []
+M57 KILLED         38.1 s  a STOP no longer banks what exists
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_stops_with_the_marker_on_a_missing_input_and_still_banks_what_exists  [None]  red controls: []
+M01e KILLED         16.8 s  FIT ON EVAL INSTEAD OF TRAIN: the `cal` arm applies a map fitted on the EVAL GT (the identity eval's cells), not the training-window fit  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_2_fitted_map_is_lstsq']
+M05e KILLED         15.1 s  IDENTITY NOT EXACT: the identity map moves every cell by 1e-5  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_1_identity_map_is_identity', 'guards']
+M09e KILLED         18.2 s  the fit is not least squares (a ridge-like shrinkage of the slope)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_2_fitted_map_is_lstsq']
+M13e KILLED         25.0 s  the hook recalibrates four of the five speed cells (the first is left)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['guards']
+M14e KILLED         22.9 s  a and b swapped in the hook  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_1_identity_map_is_identity', 'control_4_permuted_map_is_not_separated_better', 'guards']
+M15e KILLED         21.7 s  WRONG UNITS: the shift is not divided by the cell's sd (identity stays exact)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['guards']
+M17e KILLED         19.8 s  the hook clobbers the 55 non-speed cells (zeros)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_1_identity_map_is_identity', 'control_3_gt_equals_kindx_speed_oracle', 'guards']
+M18e KILLED         17.9 s  the CEILING map is the TRAINING fit (not fitted on the eval GT)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: ['control_2_fitted_map_is_lstsq']
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\speedcal\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-speedcal\mutate_speedcal.py", line 398, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\speedcal\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-speedcal\mutate_speedcal.py", line 372, in main
+    assert sha(work / rel) == sha(src / rel), f"{rel} was not restored"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedcal.sh was not restored

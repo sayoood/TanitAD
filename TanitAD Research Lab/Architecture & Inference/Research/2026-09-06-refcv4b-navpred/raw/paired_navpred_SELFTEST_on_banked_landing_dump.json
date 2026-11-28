@@ -1,0 +1,152 @@
+{
+  "_is": "os_navpred paired margins + the SPEC's pre-registered controls",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 for every arm here",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), n_boot=2000, seed=0; NEVER overlapping_holdout_se",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "dump": "dump/refcv4b_t1_dump",
+  "controls": {
+    "C2_grid": {
+      "want": "4823 windows / 141 episodes",
+      "got": "4823 / 141",
+      "verdict": "PASS"
+    },
+    "C1_model_free_known_value": {
+      "_is": "ha and ha0 consume no model output; on the same windows they MUST reproduce the pod's banked values or the two surfaces differ",
+      "measured_vs_banked": {
+        "ha": {
+          "measured": 0.2996,
+          "banked": 0.2996,
+          "abs_diff": 0.0
+        },
+        "ha0": {
+          "measured": 0.6723,
+          "banked": 0.6723,
+          "abs_diff": 0.0
+        }
+      },
+      "verdict": "PASS"
+    },
+    "C3_os_reproduction": {
+      "measured": 0.2975,
+      "banked": 0.2975,
+      "abs_diff": 2.6e-05,
+      "tolerance_m": 0.001,
+      "_why_a_tolerance": "`os` moves from row 0 of a 2-row batched call to row 0 of a 3-row one; the documented cross-call float32 batching floor on this model is ~6e-7 m",
+      "verdict": "PASS"
+    }
+  },
+  "ade": {
+    "os": {
+      "mean": 0.2975,
+      "ci95": [
+        0.269,
+        0.3282
+      ]
+    },
+    "ha": {
+      "mean": 0.2996,
+      "ci95": [
+        0.2749,
+        0.328
+      ]
+    },
+    "ha0": {
+      "mean": 0.6723,
+      "ci95": [
+        0.6017,
+        0.7437
+      ]
+    },
+    "ha0_ext": {
+      "mean": 0.2874,
+      "ci95": [
+        0.2646,
+        0.3137
+      ]
+    },
+    "os_navshuf": {
+      "mean": 0.3013,
+      "ci95": [
+        0.2728,
+        0.3308
+      ]
+    },
+    "os_navzero": {
+      "mean": 0.3928,
+      "ci95": [
+        0.3655,
+        0.4213
+      ]
+    }
+  },
+  "paired": {
+    "os_minus_ha": {
+      "delta_m": -0.0021,
+      "ci95": [
+        -0.017,
+        0.0145
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_minus_ha0": {
+      "delta_m": -0.3748,
+      "ci95": [
+        -0.4325,
+        -0.3223
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_minus_ha0_ext": {
+      "delta_m": 0.0101,
+      "ci95": [
+        -0.0047,
+        0.0266
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_minus_os_navshuf": {
+      "delta_m": -0.0038,
+      "ci95": [
+        -0.0074,
+        0.0001
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 2406
+    },
+    "os_minus_os_navzero": {
+      "delta_m": -0.0953,
+      "ci95": [
+        -0.1097,
+        -0.0818
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_navzero_minus_ha0_ext": {
+      "delta_m": 0.1054,
+      "ci95": [
+        0.0877,
+        0.125
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    }
+  }
+}

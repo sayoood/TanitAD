@@ -1,0 +1,21 @@
+episode dump files: 24
+dumps bit-identical  tip==off: True  off==heads: True  tip==tip2: True
+result JSON bytes    tip==off: True  tip==tip2: True (205860 bytes)
+heads JSON == off JSON after dropping ticks_file/ticks_heads: True | ticks_heads: True
+ticks keys: 32 N rows: 72 = 24 windows x 3 ticks
+  s_ckpt        float32  (72, 3, 3)   finite=True
+  s_ckpt_now    float32  (72, 3, 3)   finite=True
+  s_ckpt_w0     float32  (72, 3, 3)   finite=True
+  s_pose        float32  (72, 3)      finite=True
+  t_goal_prob   float32  (72, 22)     finite=True
+  t_lat_logits  float32  (72, 5)      finite=True
+  t_lon_logits  float32  (72, 7)      finite=True
+  t_cons_pred   float32  (72, 26)     finite=True
+  t_pose        float32  (72, 3)      finite=True
+  pose_w0       float64  (72, 3)      finite=True
+tick-0 s_ckpt x per arc (30/50/80 m): [29.85 49.36 77.2 ]
+tick-0 s_ckpt == s_ckpt_now == s_ckpt_w0 within 1e-4: True
+later ticks: mean |s_ckpt_now - s_ckpt| = 3.5734546184539795  mean |s_ckpt_w0 - s_ckpt_now| = 15.40085220336914
+ages (age_t, age_s) seen: [(0, 0), (1, 4), (2, 2)]
+goal_prob in [0,1]: True | lat argmax counts: [71, 0, 1, 0, 0] | lon argmax counts: [2, 0, 9, 19, 7, 12, 23]
+tick-0 plan rows == dump ol (C-T2-style): True

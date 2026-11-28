@@ -1,0 +1,37 @@
+{
+ "_what": "W0: a refcv6 checkpoint could not be loaded by ANY driver. It now loads STRICTLY.",
+ "_evidence_class": "MEASURED (ours; real ckpt from refcv6-windump-20260919, live taniteval/tools/refcv3_arm.py)",
+ "before": {
+  "refusal": "cross_check_config: config.json CONTRADICTS the rebuilt model",
+  "param_breakdown_config_total": 50519066,
+  "param_breakdown_rebuilt_total": 45703450,
+  "delta": 4815616,
+  "delta_equals": "refcv6_perception.branch_params.total in the SAME config.json",
+  "named_lines_agreeing": [
+   "core",
+   "phi_tac",
+   "str_goal_head",
+   "gstr_cond",
+   "tac_heads",
+   "tac_latent_proj",
+   "scorer",
+   "nav_inject",
+   "tac_decoder_v6",
+   "tac_behaviour_gate_v6"
+  ],
+  "allow_nonstrict_helps": false,
+  "why_not": "cross_check_config runs at :1102, the load at :1104 -- both settings refused identically"
+ },
+ "after": {
+  "loads": true,
+  "allow_nonstrict_required": false,
+  "state_dict_clean": "proven by the code path: with allow_nonstrict=False the load did NOT raise, and refcv3_arm raises whenever real_missing or unexpected_keys is non-empty -- so both were empty"
+ },
+ "mutation_control": {
+  "what": "rebuild_perception_branch monkeypatched to return None",
+  "result": "REFUSED again with the identical message",
+  "reading": "the fix is load-bearing, not decorative"
+ },
+ "_limitation_stated": "the LIFT BANK is not rebuilt -- it comes from a per-clip extrinsics FILE that may not exist off the training box. It holds NO parameters, so the load and the param cross-check are unaffected; a caller wanting MAP metrics must supply it and should refuse rather than report a map number without one. The rebuild's provenance says so explicitly.",
+ "_scope": "W0 gates W1-W4 and 14 of the 16 missing metric-family criteria, which are 'instrument exists in taniteval/, not wired'. Those are now reachable."
+}

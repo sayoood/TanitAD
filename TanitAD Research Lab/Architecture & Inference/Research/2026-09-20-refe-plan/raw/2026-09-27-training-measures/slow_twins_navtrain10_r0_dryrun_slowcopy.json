@@ -1,0 +1,99 @@
+{
+ "tool": "slow_twins.py",
+ "version": 1,
+ "tool_sha256": "edc3916ce7ccbd4d38e65d440c6a2fd446d936a099fb778a12452380138b54eb",
+ "slow_copies": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\refe\\slow_copies.py",
+ "slow_copies_sha256": "dff942d3106a145ca0fec15ebdd7648c2fbfa541aae1c29971ccdccaf2250629",
+ "bank": "D:\\Projects\\TanitAD\\data\\refe_navtrain10\\r0",
+ "out": "raw\\2026-09-27-training-measures\\_dry_unused",
+ "factors": [
+  0.75,
+  0.5
+ ],
+ "src_ranks": [
+  0
+ ],
+ "construction": "slow_copy",
+ "decel_limit": null,
+ "rank_map": {
+  "2": {
+   "src_rank": 0,
+   "factor": 0.75
+  },
+  "3": {
+   "src_rank": 0,
+   "factor": 0.5
+  }
+ },
+ "min_divergence_m": 0.3,
+ "fraction": 1.0,
+ "limit": 0,
+ "dry_run": true,
+ "sources": {
+  "targets_rank0.jsonl": {
+   "bytes_read": 114581709,
+   "rows": 33704,
+   "unparseable": 0
+  }
+ },
+ "counts": {
+  "2": {
+   "src_rank": 0,
+   "factor": 0.75,
+   "emitted": 33270,
+   "already_present": 0,
+   "skipped_divergence": 434,
+   "skipped_fraction": 0
+  },
+  "3": {
+   "src_rank": 0,
+   "factor": 0.5,
+   "emitted": 33576,
+   "already_present": 0,
+   "skipped_divergence": 128,
+   "skipped_fraction": 0
+  }
+ },
+ "kinematics": {
+  "definition": "a = 2 (v0 - |p_1| / 0.2 s) / 0.2 s: the constant deceleration from the ego's measured speed that yields the trajectory's first-interval mean speed (m/s^2); frac_gt_4 / frac_gt_8 count values above 4.01 / 8.01 (a 0.01 m/s^2 rounding allowance)",
+  "source_targets": {
+   "n": 33704,
+   "p5": -0.618,
+   "p25": -0.192,
+   "p50": 0.022,
+   "p75": 0.259,
+   "p95": 0.627,
+   "p99": 0.861,
+   "p100": 1.883,
+   "frac_gt_4": 0.0,
+   "frac_gt_8": 0.0
+  },
+  "twins": {
+   "0.75": {
+    "n": 33270,
+    "p5": 0.315,
+    "p25": 6.291,
+    "p50": 11.853,
+    "p75": 18.315,
+    "p95": 26.749,
+    "p99": 31.585,
+    "p100": 38.613,
+    "frac_gt_4": 0.8205,
+    "frac_gt_8": 0.6882
+   },
+   "0.5": {
+    "n": 33576,
+    "p5": 0.93,
+    "p25": 12.071,
+    "p50": 23.417,
+    "p75": 36.407,
+    "p95": 53.325,
+    "p99": 63.026,
+    "p100": 77.128,
+    "frac_gt_4": 0.9006,
+    "frac_gt_8": 0.8196
+   }
+  }
+ },
+ "at": "2026-09-27T11:02:05Z"
+}

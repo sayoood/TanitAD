@@ -1,0 +1,124 @@
+{
+ "tool": "feed_parity_pf.py",
+ "label": "stepwise050_pf s1 vs the clip-fed step40000ema_unc dump of the same windows",
+ "clause": "SHIP-R8 AMENDMENT 3 (1b) FEED PARITY",
+ "status": "PASS",
+ "pf_dump": "C:/Users/Admin/refcv8_eval_archive/battery/stepwise050_pf/dump_s1",
+ "clip_dump": "C:/Users/Admin/refcv8_eval_archive/battery/step40000ema_unc/dump_s1",
+ "v9": "E:/refcv8_eval_kit/data/refcv8_v9labels/release/v9_labels_eval139.npz",
+ "checks": {
+  "T_fed_token_equals_v9_per_frame_token": true,
+  "C_nav_cmd_clip_equals_clip_fed_reference": true,
+  "C_reference_constant_within_every_clip": true,
+  "C_same_window_set_as_clip_fed_reference": true,
+  "K_known_equals_release_args_valid": true,
+  "A_r8_nav_nonzero_exactly_where_known_and_equals_independent_scaling": true,
+  "I_clip_identity_sha12_matches_release": true,
+  "manifest_mode_is_perframe_full": true
+ },
+ "counts": {
+  "n_windows": 4754,
+  "n_episodes": 139,
+  "n_windows_clip_reference": 4754,
+  "n_windows_only_in_pf": 0,
+  "n_windows_only_in_reference": 0,
+  "n_token_differs_from_clip": 1157,
+  "n_args_known": 2802,
+  "n_clips_whose_v9_token_changes_within_clip": 46,
+  "n_fail": {
+   "T": 0,
+   "C": 0,
+   "K": 0,
+   "A": 0,
+   "I": 0
+  }
+ },
+ "v9_md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+ "raw_offset_from_manifest": 2,
+ "manifest_nav_feed_mode": "perframe_full",
+ "first_failures": {},
+ "subset_ok_smoke_only": false,
+ "known_value_windows": [
+  {
+   "sha12": "0dfe63214bc2",
+   "episode_index": 0,
+   "ws": 7,
+   "k": 9,
+   "sidecar_nav_cmd": 0,
+   "sidecar_nav_cmd_clip": 2,
+   "release_token": 0,
+   "sidecar_known": true,
+   "release_known": true,
+   "sidecar_r8_nav_fed": [
+    0.929438,
+    1.106732,
+    -0.721111,
+    -1.0,
+    3.044523,
+    1.0
+   ],
+   "independent_scaling": [
+    0.929438,
+    1.106732,
+    -0.721111,
+    -1.0,
+    3.044522,
+    1.0
+   ]
+  },
+  {
+   "sha12": "bfc3a203bd06",
+   "episode_index": 5,
+   "ws": 7,
+   "k": 9,
+   "sidecar_nav_cmd": 0,
+   "sidecar_nav_cmd_clip": 2,
+   "release_token": 0,
+   "sidecar_known": true,
+   "release_known": true,
+   "sidecar_r8_nav_fed": [
+    1.804279,
+    1.882484,
+    -0.49,
+    -1.0,
+    3.017274,
+    1.0
+   ],
+   "independent_scaling": [
+    1.804279,
+    1.882484,
+    -0.49,
+    -1.0,
+    3.017274,
+    1.0
+   ]
+  },
+  {
+   "sha12": "b435685d40c8",
+   "episode_index": 6,
+   "ws": 11,
+   "k": 13,
+   "sidecar_nav_cmd": 0,
+   "sidecar_nav_cmd_clip": 2,
+   "release_token": 0,
+   "sidecar_known": true,
+   "release_known": true,
+   "sidecar_r8_nav_fed": [
+    0.741525,
+    0.917296,
+    -0.776667,
+    -1.0,
+    2.521203,
+    1.0
+   ],
+   "independent_scaling": [
+    0.741525,
+    0.917296,
+    -0.776667,
+    -1.0,
+    2.521203,
+    1.0
+   ]
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+============================================================================================================
+THE CORRECTED TURNING CRITERION on the BANKED arms -- TURN-goal windows, n=22
+  (v1 recall is NOT used: the GT clears its gate on 3/9 TURN_L windows -- see turngate.txt)
+============================================================================================================
+  arm             ADE_all |   kappa MAE      vs ha0 |   v2 pass   v1 pass | signed dyaw
+  -------------------------------------------------------------------------------------
+  g  GT            0.0000 |     0.00000           - |       16/22       12/22 |     +0.0000   <- CONTROL (must be 0)
+  ha0 straight     1.1096 |     0.05936           - |        0/22        0/22 |     +0.0229   <- FLOOR (straight)
+  -------------------------------------------------------------------------------------
+  ccos_argmax      1.1410 |     0.07935   +0.01999 |       21/22       12/22 |     -0.0014
+  kamm07           1.0755 |     0.07227   +0.01291 |       21/22       11/22 |     -0.0014
+  combined         1.0687 |     0.07227   +0.01291 |       21/22       11/22 |     -0.0014
+  wk15             0.9877 |     0.04578   -0.01358 |       12/22        3/22 |     +0.0008
+  best             0.9937 |     0.04901   -0.01035 |       12/22        4/22 |     +0.0008
+  wk151            1.0149 |     0.06131   +0.00195 |        2/22        0/22 |     +0.0308
+  lonshift         0.9446 |     0.06252   +0.00316 |        2/22        0/22 |     +0.0381
+  bestlad          1.0738 |     0.05936   -0.00000 |        0/22        0/22 |     +0.0321
+
+  ⛔ 'BEATS THE STRAIGHT-LINE FLOOR ON CURVATURE' is the reachable form of 'it turns':
+     arms with kappa MAE BELOW ha0's 0.05936 : ['wk15', 'best', 'bestlad']
+
+  ⭐ RANK ON THE PI's ACTUAL QUESTION -- accurate AND turning, both columns:
+     (ADE over TURN-goal windows, and kappa MAE vs the human)
+       lonshift      ADE 0.9446   kappa MAE 0.06252   does NOT beat straight
+       wk15          ADE 0.9877   kappa MAE 0.04578   TURNS (beats straight)
+       best          ADE 0.9937   kappa MAE 0.04901   TURNS (beats straight)
+       wk151         ADE 1.0149   kappa MAE 0.06131   does NOT beat straight
+       combined      ADE 1.0687   kappa MAE 0.07227   does NOT beat straight

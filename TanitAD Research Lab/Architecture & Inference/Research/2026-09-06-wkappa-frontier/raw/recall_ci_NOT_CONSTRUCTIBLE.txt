@@ -1,0 +1,31 @@
+﻿PER-CLASS LATERAL RECALL HAS NO INTERVAL, AND ONE COULD NOT BE BUILT FROM THE DUMPS.
+
+Attempted: an episode-cluster bootstrap on the per-window lateral-decision hit
+indicator, to make PASS clause 2 decision-grade rather than a bare count.
+
+The decisions sidecar (dump_<arm>/decisions/ep*.npz) carries:
+  lat_label, lon_label, route_label, nav_cmd, nav_cmd_shuf, nav_valid,
+  lat_pred_nav_true, lat_pred_nav_shuffled, lat_pred_nav_zero, goal_lat_cl,
+  w_kappa_class_cl, w_kappa_eff_cl, ... (full list in the tool's first line)
+
+CONTROL FAILED, so nothing was quoted: scoring lat_label vs lat_pred_nav_true
+reads n_true = 2 for lane_keep on every arm, against the record's own
+four_families.tactical.lateral_decision per_class n_true = 21 / turn_left 11 /
+turn_right 8 (summing to all 40 windows). The sidecar's lat_label is therefore a
+DIFFERENT label object from the one the four-family TACTICAL block scores -- it is
+populated only on the in-band labelled subset (168/535 windows join in-band), while
+the tactical block scores all 40 from its own labeller path inside refav1_arm.py.
+
+=> The recall CI is NOT constructible from the banked artifacts alone; it needs the
+eval's own labeller, which is internal to the four-family computation. Reported as a
+STATED GAP rather than as a number from the wrong array.
+
+=> PASS clause 2 is therefore decided as the SPEC committed it: on the COUNT
+(>= 1 of n_true = 11) against the MEASURED inference-seed recall floor of EXACTLY
+0.00000 (frontier.txt), plus replication across inference seeds. That floor is the
+right instrument for this rig anyway -- it answers "would another INFERENCE RUN say
+this?", which is the variance a sampling planner actually has.
+
+WORK ITEM for whoever owns refav1_arm.py: emit the tactical block's own per-window
+hit indicator into the decisions sidecar. It is one array and it would make every
+future per-class recall claim interval-bearing.

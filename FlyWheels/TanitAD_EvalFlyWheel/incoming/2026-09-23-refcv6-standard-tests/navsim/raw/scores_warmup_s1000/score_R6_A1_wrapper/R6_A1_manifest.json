@@ -1,0 +1,220 @@
+{
+ "label": "R6_A1",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=warmup_two_stage",
+  "experiment_name=e6s1000b_warmup_two_stage_R6_A1",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "synthetic_sensor_path=C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs",
+  "synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/synthetic_scene_pickles",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/bridge_warmup_s1000/seam_R6_A1.npz",
+  "+agent.call_log=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/scores_warmup_s1000/score_R6_A1.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim/exp/e6s1000b/warmup_two_stage_R6_A1"
+ ],
+ "argv": [
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "R6_A1",
+  "--out-dir",
+  "C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/scores_warmup_s1000\\score_R6_A1_wrapper",
+  "--patch-loader",
+  "--ram-floor-mb",
+  "3000.0",
+  "--dump-final-scores",
+  "C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/scores_warmup_s1000\\score_R6_A1_wrapper\\R6_A1_final_scores_frame.csv",
+  "--",
+  "train_test_split=warmup_two_stage",
+  "experiment_name=e6s1000b_warmup_two_stage_R6_A1",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "synthetic_sensor_path=C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs",
+  "synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/synthetic_scene_pickles",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/bridge_warmup_s1000/seam_R6_A1.npz",
+  "+agent.call_log=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/scores_warmup_s1000/score_R6_A1.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim/exp/e6s1000b/warmup_two_stage_R6_A1"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "C:\\Users\\Admin\\navsim",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim/exp",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "f064e9ab9dcb841d",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)",
+  "navsim.planning.script.run_pdm_score.create_scene_aggregators (PRE-AGGREGATION dump)",
+  "navsim.planning.script.run_pdm_score.compute_final_scores (dump only)"
+ ],
+ "started_local": "2026-09-24 02:14:02",
+ "status": "OK",
+ "ended_local": "2026-09-24 02:22:05",
+ "resources": {
+  "wall_s": 482.36,
+  "peak_rss_mb": 505.3,
+  "peak_process_tree_rss_mb": 505.3,
+  "min_system_available_mb": 3484.0,
+  "n_samples": 236,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    23.0,
+    8176.5
+   ],
+   [
+    20.2,
+    377.3,
+    7965.9
+   ],
+   [
+    40.5,
+    451.6,
+    6273.9
+   ],
+   [
+    60.7,
+    451.6,
+    6309.7
+   ],
+   [
+    80.9,
+    492.7,
+    4263.9
+   ],
+   [
+    101.4,
+    492.5,
+    6121.9
+   ],
+   [
+    121.7,
+    495.5,
+    6140.5
+   ],
+   [
+    142.3,
+    495.6,
+    6070.5
+   ],
+   [
+    162.7,
+    496.8,
+    6042.9
+   ],
+   [
+    183.6,
+    496.8,
+    5387.4
+   ],
+   [
+    204.1,
+    497.2,
+    4552.7
+   ],
+   [
+    224.6,
+    498.0,
+    6013.6
+   ],
+   [
+    245.1,
+    498.5,
+    5975.0
+   ],
+   [
+    265.5,
+    498.5,
+    5908.3
+   ],
+   [
+    285.8,
+    499.3,
+    5842.9
+   ],
+   [
+    306.2,
+    499.9,
+    5799.0
+   ],
+   [
+    326.7,
+    501.1,
+    5782.4
+   ],
+   [
+    347.0,
+    501.2,
+    5774.8
+   ],
+   [
+    367.5,
+    501.7,
+    5715.5
+   ],
+   [
+    388.2,
+    501.7,
+    5669.3
+   ],
+   [
+    408.7,
+    502.1,
+    5195.4
+   ],
+   [
+    429.2,
+    502.2,
+    4913.9
+   ],
+   [
+    449.6,
+    503.6,
+    4501.0
+   ],
+   [
+    470.1,
+    504.4,
+    4145.0
+   ]
+  ]
+ },
+ "pre_aggregation_dump": {
+  "path": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\scores_warmup_s1000\\score_R6_A1_wrapper\\R6_A1_final_scores_frame_PRE_AGGREGATION.csv",
+  "rows": 220
+ },
+ "final_scores_dump": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\scores_warmup_s1000\\score_R6_A1_wrapper\\R6_A1_final_scores_frame.csv"
+}

@@ -1,0 +1,109 @@
+{
+ "tag": "eval_s0",
+ "split": "eval_diag",
+ "seed": 0,
+ "ckpt": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt",
+ "step": 50400,
+ "n_windows": 1112,
+ "n_episodes": 139,
+ "window_sha12_t_sha256": "92e36a1a74b8b699b69c799fba469376cafbcadd796e9a0737746f115ee92a1e",
+ "gates": {
+  "navc_gate": 0.16251657903194427,
+  "navc_tau_rad": 0.18063741505146028,
+  "goal_gate_e9": 0.2019398957490921,
+  "seam_clamp_decoder": 0.0,
+  "seam_clamp_e9": 1.0,
+  "speed_ceiling_filter": true,
+  "graft_behaviour_sel": true,
+  "refcv7_wta_built": false
+ },
+ "terms_per_surface": {
+  "conf": 2,
+  "refined": 2,
+  "rank": 2
+ },
+ "identity": {
+  "max_model_forwards_per_window": 1,
+  "traj_vs_fan_max_abs": 0.0,
+  "n_e9_argmax_mismatch": 0,
+  "n_core_argmax_mismatch": 0,
+  "n_core_ceil_absent": 0,
+  "graft_rank_recon_max_abs": 0.0,
+  "e9_recon_max_abs": 0.0
+ },
+ "names": {
+  "tac_lat": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "tac_lon": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD",
+   "ADAPT_SPEED_FOR_CURVE",
+   "ACCELERATE"
+  ],
+  "goal": [
+   "FOLLOW_LANE",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R",
+   "YIELD",
+   "STOP_POINT",
+   "SPEED_BAND",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "OVERTAKE_VEHICLE",
+   "MERGE",
+   "GAP_TARGET",
+   "REACT_ON_ONCOMING",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ]
+ },
+ "nav_commands": [
+  "follow",
+  "left",
+  "right",
+  "straight"
+ ],
+ "n_packs": {
+  "box3d": 1061,
+  "agent": 1061
+ },
+ "loader_departures": [
+  "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+  "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+  "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+ ],
+ "state_dict": {
+  "strict": true,
+  "missing": [],
+  "unexpected": [],
+  "step": 50400
+ },
+ "compute": {
+  "gpu_forward_s": 449.0,
+  "wall_s": 608.0,
+  "loop_s": 481.6,
+  "cuda_max_memory_allocated_gib": 1.338,
+  "device": "NVIDIA Thor"
+ },
+ "ignore_id": -100
+}

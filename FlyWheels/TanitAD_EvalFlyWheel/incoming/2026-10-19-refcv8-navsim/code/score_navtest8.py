@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+# PORTED from the refcv7 NavSim suite: score_navtest7.py (git-blob-sha1 5801210b6c0c612a2cd95e047b894c55bd0c7930 of the launch-tree copy) by hand-applied substitutions: label prefix r7 -> r8 (so the devkit scratch never collides with W3's or refcv7's) and ram_governor7 imported from the refcv7 suite's code dir ($R7_CODE). Nothing else changed: W3's cmd_score is called UNCHANGED.
+# PORTED from the refcv6 NavSim suite: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/score_navtest6.py (git blob 376474105b3b6c48a76b1adef066f58662e86e78 at 0c444082a08e) by code/port_from_refcv6.py; substitutions: [["if not a.label.startswith(\"r6\"):", "if not a.label.startswith(\"r7\"):", 1], ["⛔ labels must start with 'r6'", "⛔ labels must start with 'r8'", 1]]
+"""Score ONE refcv8 seam on NAVSIM v1.1 ``navtest`` with W3's harness, IMPORTED (any python).
+
+W3's ``run_v1.py`` (``…/2026-09-19-navsim-v1-navtest/code/``) is loaded by path and its
+``cmd_score`` is called UNCHANGED — the v1.1 tree ``3e8291b``, W3's Windows wrapper (the loader
+separator patch, observation-only hooks, RAM guard), W3's ``SeamAgentV1`` (token-keyed,
+fingerprint-checked), the navtest metric cache (12,146 cached), ``PYTHONHASHSEED=1``, and its
+guards: C1 the PDMS identity on every row, C2 log/CSV counts, C3 the token set, the seam call
+count. Only W3's module global ``RAW`` is re-pointed so every artifact lands in THIS package
+(``<out>/<label>/``); the devkit's scratch goes to ``w3_navtest_v1/runs/<label>`` under a
+refcv6-prefixed label, so nothing of W3's is overwritten.
+
+    python code/score_navtest6.py --label r6s1000_R6_A1_sub200 --seam <seam.npz> \
+        --tokens D:/…/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json
+"""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import os
+import sys
+import types
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+PKG = os.path.dirname(HERE)
+W3_CODE = ("D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/"
+           "2026-09-19-navsim-v1-navtest/code")
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--label", required=True)
+    ap.add_argument("--seam", default="")
+    ap.add_argument("--official", default="", choices=("", "STOP", "CV"),
+                    help="score a MODEL-FREE control through this same driver (harness control "
+                         "KH-navtest: must reproduce W3's banked CSV cell for cell)")
+    ap.add_argument("--tokens", default=None, help="W3-format {'tokens', 'token_log'} subset")
+    ap.add_argument("--out", default=os.path.join(PKG, "raw", "navtest"))
+    a = ap.parse_args(argv)
+    if not a.label.startswith("r8"):
+        sys.exit("⛔ labels must start with 'r7' so the devkit scratch never collides with W3's")
+    spec = importlib.util.spec_from_file_location("w3_run_v1", os.path.join(W3_CODE, "run_v1.py"))
+    w3 = importlib.util.module_from_spec(spec)
+    sys.modules["w3_run_v1"] = w3
+    spec.loader.exec_module(w3)
+    os.makedirs(a.out, exist_ok=True)
+    w3.RAW = os.path.abspath(a.out)                  # where every artifact lands
+    w3.PKG = PKG                                     # only used for a relpath in the counts (C: vs D:)
+    if bool(a.seam) == bool(a.official):
+        sys.exit("⛔ exactly one of --seam / --official")
+    arm = a.official if a.official else f"SEAM:{os.path.abspath(a.seam)}"
+    ns = types.SimpleNamespace(label=a.label, arm=arm,
+                               tokens=a.tokens, cache_name="navtest", worker="sequential",
+                               hashseed="1", record_poses=True, patch_loader=True)
+    # 2026-10-04 (step 50,400): the scorer's OWN RAM guard (hard floor = ONE 2 s sample < 2,000 MB) killed
+    # navtest scorers 11x although each held only ~2.2 GB -- other jobs swing the box 1-10 GB in seconds.
+    # The governor waits for a slot + RAM window, then PAUSES (suspends + trims) this scorer's process
+    # tree below 3,500 MB instead of letting the guard abort it. The guard itself is unchanged (still the
+    # last resort). ``R7_GOVERNOR=0`` restores the old behaviour. See code/ram_governor7.py.
+    import json
+    sys.path.insert(0, os.environ.get('R7_CODE', 'C:/lgs/Lfb47a58376/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/code'))
+    import ram_governor7 as RG
+    # idempotence (2026-10-04): never rescore (= truncate) a banked PASS; R7_FORCE_RESCORE=1 disables it
+    odir0 = os.path.join(os.path.abspath(a.out), a.label)
+    if a.seam:
+        import atexit
+        _jl = RG.JobLock(f"navtest_{a.label}")        # one live driver per job: a duplicate WAITS here
+        _jl.acquire()
+        atexit.register(_jl.release)
+        why = RG.already_scored(os.path.join(odir0, f"{a.label}.counts.json"), a.seam,
+                                os.path.join(odir0, f"{a.label}.csv"))
+        if why:
+            print(json.dumps({"label": a.label, "status": "PASS", "skipped": why}), flush=True)
+            return 0
+    est = 700.0 if a.tokens else 2300.0               # MEASURED peak RSS: 630 MB (200 tokens) / 2,222 MB (full)
+    odir = os.path.join(os.path.abspath(a.out), a.label)
+    with RG.governed(a.label, odir, est_rss_mb=est) as gov:
+        rc = w3.cmd_score(ns)
+    try:
+        with open(os.path.join(odir, f"{a.label}.governor.json"), "w", encoding="utf-8") as fh:
+            json.dump(gov.summary(), fh, indent=1)
+    except OSError:
+        pass
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

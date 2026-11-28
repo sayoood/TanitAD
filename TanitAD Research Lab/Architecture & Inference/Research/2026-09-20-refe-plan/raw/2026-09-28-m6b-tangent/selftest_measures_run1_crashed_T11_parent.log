@@ -1,0 +1,88 @@
+selftest_measures: temp C:\Users\Admin\AppData\Local\Temp\measures_selftest_9zj5wjm1
+  python 3.11.13  torch 2.7.1+cu128  exe C:\Users\Admin\venvs\driverl-eval\Scripts\python.exe
+  [T1] PASS  patch base blobs == today's files        bases={'model.py': True, 'train.py': True, 'ckpt_io.py': True}
+  [T1] PASS  patches apply + patched files compile    changed=['ckpt_io.py', 'model.py', 'train.py']
+  [T2] PASS  control: the on-policy score loss is live score_per_step=[0.12897, 0.12392, 0.11377, 0.11788]
+  [T2] PASS  orig vs orig_again: grads/weights/AdamW  max_grad_diff=0  max_state_diff=0  n_steps=4  expect=exactly 0.0
+  [T2] PASS  orig vs patched_off: grads/weights/AdamW max_grad_diff=0  max_state_diff=0  n_steps=4  expect=exactly 0.0
+  [T2] PASS  orig vs patched_lognorms: grads/weights/AdamW max_grad_diff=0  max_state_diff=0  n_steps=4  expect=exactly 0.0
+  [T2] PASS  orig vs orig_seed1: grads/weights/AdamW  max_grad_diff=0.3773  max_state_diff=0.7369  n_steps=4  expect=> 0
+  [T2] PASS  --log-grad-norms writes norm rows        rows=4  gn_all=[2.9433, 1.8813, 1.6317, 2.4068]  clip_coef_traj=[0.3398, 0.5315, 0.6129, 0.4155]
+  [T3] PASS  ON: traj grads+weights invariant to score x100 traj_grad_diff=0  traj_weight_diff=0  score_grad_diff=0.064  expect=traj 0.0 exactly, score > 0
+  [T3] PASS  MUTATION flag OFF: traj grads change     traj_grad_diff=0.3462  norms_and_traj_clip_factor={'off_w0.1': [(2.943, 0.3398), (1.881, 0.5315), (1.632, 0.6129), (2.407, 0.4155)], 'off_w10': [(64.08, 0.0156), (61.133, 0.0164), (57.975, 0.0172), (59.755, 0.0167)]}
+  [T3] PASS  MUTATION score_head in traj group: change traj_grad_diff=0.3348
+  [T3] PASS  ON logs both group norms + traj clip factor rows_w10=[(2.873, 64.015, 0.3481), (1.779, 61.107, 0.562), (1.525, 57.955, 0.6556), (2.332, 59.709, 0.4289)]
+  [T4] PASS  ViT-L 4-cam: every trainable tensor in 1 group n_trainable=276  n_traj=198  n_score=78  numel_traj=14694716  numel_score=4296710  score_modules=['score_dec', 'score_head', 'score_q_mlp']
+  [T4] PASS  gradient flow == name partition (detached) score_loss_reaches=['score_dec', 'score_head', 'score_q_mlp']  never_touched=[]
+  [T4] PASS  MUTATION context attached: leak + refusal score_loss_hits_traj_group=14  e_g=['backbone.blocks.0.attn.q.A', 'backbone.blocks.0.attn.q.B', 'backbone.blocks.0.attn.v.A', 'backbone.blocks.0.attn.v.B', 'backbone.blocks.1.attn.q.A', 'backbone.blocks.1.attn.q.B']  premise=REFUSED
+  [T5] PASS  profiles_literals                        max_err=3.553e-15  values={'a5f0_t0.2': 1.9, 'a5f0_t1.0': 7.5, 'a5f0_t4.0': 10.0, 'a2f.5_t2.4': 18.240000000000002, 'a2f.5_t2.6': 19.25, 'a2f.5_t4.0': 26.25, 'inf_f0_all': 0.0, 'inf_f.5_t4.0': 20.0}
+  [T5] PASS  profiles_standstill                      max=0
+  [T5] PASS  retime_real                              checks={'line_accel': {'ok': True, 'err': 1.7776891070298007e-11}, 'arc_on_polyline': {'ok': True, 'err': 8.881784197001252e-16}, 'arc_heading': {'ok': True, 'err': 6.235012506294879e-13}}
+  [T5] PASS  retime_mutation_NO_ORIGIN                must_fail=line_accel  err=0.06
+  [T5] PASS  retime_mutation_TIME_INDEX               must_fail=line_accel  err=4.5
+  [T5] PASS  retime_mutation_NO_WRAP                  must_fail=arc_heading  err=0.3931
+  [T5] PASS  retime_identity                          err=6.255e-12
+  [T5] PASS  retime_extrapolation                     err=6.246e-12
+  [T5] PASS  retime_zero_path_grad                    
+  [T5] PASS  slot_indices_honoured_and_checked        explicit=8,16,19,21,22,34,38,39  bad_lists_refused=3/3
+  [T5] PASS  loss_closest_anchor_literals             k_star=[7, 0, 1]  want=[7, 0, 1]  why=15 m/s cruise -> (1,0.875); standstill -> first; 10 m/s braking at 5 m/s2 -> (6,0) (hand-computed means 2.41 / 0 / 1.199 m)
+  [T5] PASS  loss_free_term_is_wta_loss               free_winner_in_free=True
+  [T5] PASS  loss_value_literals                      l_on_anchor=0  l_positive_plus_1m=1  l_nonpositive_plus_1m=0
+  [T6] PASS  not installed: forward+loss == today     max_diff=0  expect=exactly 0.0
+  [T6] PASS  installed: free slots bit-identical      free_equal=True
+  [T6] PASS  installed: reserved never ahead of anchor exceed_max_m=0  on_raw_polyline_max_m=4.8e-07
+  [T6] PASS  installed: no new state                  keys=True  trainable=True  frozen_fingerprint=True
+  [T6] PASS  installed: the scorer sees the anchored fan score_changed=True
+  [T7] PASS  ON: reserved slots within their anchor   exceed_max_m=3.478e-08  dev_mean_m=0.02807  euclid_to_straight_anchor_max_m=1.712  reserved_len_4s=36.11  anchor_len_4s=36.22  raw_reserved_exceed_max_m=67.58
+  [T7] PASS  OFF (contrast): the same slots drift     exceed_max_m=73.39  reserved_len_4s=60.08  at_init_exceed_max_m=13.31  target_len_4s=59.25
+  [T7] PASS  MUTATION loss kept, re-timing removed: drift exceed_max_m=67.58  reserved_len_4s=55.21
+  [T7] PASS  free slots learn with M4b ON (<= 10 % of init) best_free_wta_init_m=31.35  on_m=0.6802  off_m=0.4962  bar_m=3.135  traj_L1_on=[59.652, 3.999, 1.81, 3.644]  traj_L1_off=[31.005, 1.42, 0.669, 0.53]
+  [T7] PASS  raw reserved proposals stay bounded (ON) raw_len_4s_max_m=67.62  bar_m=118.5
+  [T7] PASS  MUTATION loss_through_hook: free stall or raw blow-up best_free_wta_m=27.05  raw_len_4s_max_m=1333  exceed_max_m=5.986e-06
+  [T7] PASS  MUTATION loss_through_hook_fullgrad: free stall or raw blow-up best_free_wta_m=7.815  raw_len_4s_max_m=45.77  exceed_max_m=6.672e-07
+  [T8] PASS  factor 1.0 twin == target BIT-exact (synthetic) twins=18  bit_exact=18  sources=18
+  [T8] PASS  factor 1.0 twin == target BIT-exact (real_navtrain) twins=2000  bit_exact=2000  sources=2000
+  [T8] PASS  twins == slow_copy (bits), valid rows, rank map twins=36  equal_to_slow_copy=36  grow_assemble_target_ok=36  fields_and_rank_ok=36  traj_world_dropped=24  rank_map={'2': {'src_rank': 0, 'factor': 0.75}, '3': {'src_rank': 0, 'factor': 0.5}, '4': {'src_rank': 1, 'factor': 0.75}, '5': {'src_rank': 1, 'factor': 0.5}}
+  [T8] PASS  decel-limited 4 m/s2: bounded/on path/not ahead (synthetic) twins=36  max_excess_over_bound=1.945e-11  max_off_path_m=1.776e-15  max_ahead_m=1.776e-15
+  [T8] PASS  decel-limited 4 m/s2: bounded/on path/not ahead (real_navtrain) twins=3975  max_excess_over_bound=9.434e-11  max_off_path_m=1.776e-15  max_ahead_m=-3.847e-05
+  [T8] PASS  CONTRAST the pure slow copy breaks that bound twins=3975  max_implied_decel=65.36
+  [T8] PASS  decel-limited factor 1.0 == source (rounding) max_abs_diff=7.105e-15
+  [T8] PASS  second pass appends nothing (append-only) files=4  unchanged=True
+  [T8] PASS  tool refusals (rc 4 each)                out == bank=4  factor 1.5=4  twin rank collides w/ genuine rank 1=4  twin ranks overlap source ranks=4  twin of a twin=4
+  [T8] PASS  patched loader + --slow-twins: twins load right per_rank={'0': 12, '1': 6, '2': 12, '3': 12, '4': 6, '5': 6}  group_sizes=[3, 6]  traj_exact=36  ego_goal_exact=36  images_same=36  set_same_as_source=36  set_empty=0  n=36  cov_norm=64
+  [T8] PASS  GUARD patched loader w/o --slow-twins refuses refused=True  msg=TargetBank: 36 SLOWED-TARGET TWIN rows (ranks [2, 3, 4, 5]) are in the bank but this run d
+  [T8] PASS  HAZARD today's loader absorbs twins silently refused=False  twins_loaded=36  twins_with_NO_scorer_set=36  note=today's code would train on them with no flag, and without their scorer labels
+  [T9] PASS  today's trainer halts at step 2 (rc 7)   rc=7
+  [T9] PASS  patched resume, all OFF == today's resume max_state_diff=0  expect=exactly 0.0
+  [T9] PASS  m4b_undeclared: refused                  rc=4  names=--slow-slots: 0 -> 8
+  [T9] PASS  m3_undeclared: refused                   rc=4  names=--clip-split: False -> True
+  [T9] PASS  m4b_indices_undeclared: refused          rc=4  names=--slow-slot-indices: '' -> '8,16,19,21,22,34,38,39'
+  [T9] PASS  m4b_declared: resumes + logs the change  rc=0  declared=['--slow-slots: 0 -> 8', "--slow-slot-indices: '' -> '8,16,19,21,22,34,38,39'"]  measures_rows=4
+  [T9] PASS  m3_declared: resumes + logs the change   rc=0  declared=['--clip-split: False -> True']  measures_rows=4
+  [T9] PASS  switched ckpt: load_for_inference installs M4b installed=True  exceed_max_m=0  fmt=refe-full-v1  reserved=[8, 16, 19, 21, 22, 34, 38, 39]
+  [T9] PASS  HAZARD today's consumer ignores M4b      installed=False  exceed_max_m=11.26  note=an eval/dump without measures_consumers.patch runs the RAW slots
+  [T9] PASS  grow: halted run + twin file written into its bank rc=7  tool_rc=0
+  [T9] PASS  HAZARD today's grow trainer absorbs twins bank_events=[(0, {'0': 8}), (0, {'0': 8}), (1, {'0': 8, '2': 8}), (2, {'0': 8, '2': 8})]  note=no flag, no identity change -- at the next epoch boundary
+  [T9] PASS  GUARD patched grow w/o --slow-twins refuses rc=1  last_step=3  msg=TargetBank: 8 SLOWED-TARGET TWIN rows (ranks [2]) are in the bank but this run d
+  [T9] PASS  declared: twins join AT the next epoch boundary bank_events=[(0, {'0': 8}), (0, {'0': 8}), (1, {'0': 8, '2': 8}), (2, {'0': 8, '2': 8})]
+  [T10] PASS  wrapped_is_wta_loss_bitwise              
+  [T10] PASS  plain_equals_wrapped_in_branch           diff=0
+  [T10] PASS  branch_shift_literals                    wrapped=1.192e-09  plain=0.1571  want_plain=0.1571  plain_pushes_toward_principal=True
+  [T10] PASS  seam_guard                               accepts_2.46=True  refuses_3.1=True
+  [T10] PASS  seam guard refuses --yaw-loss plain end to end rc=4
+  [T10] PASS  DEFECT reproduces under today's wrapped loss trapped_steps=[3, 7, 10, 11, 15]  max_frac_beyond_pi=0.7909
+  [T10] PASS  plain: no step trapped, every winner step <= 0.3 rad trapped_steps=[]  max_winner_err=0.1606  max_frac_beyond_pi=0
+  [T10] PASS  plain costs no position accuracy (<= +0.2 m) pos_off_m=0.7621  pos_plain_m=0.7836
+  [T10] PASS  switch without --declare-change refused  rc=4
+  [T10] PASS  declared mid-run switch frees the trapped steps trapped_if_kept_wrapped=[3, 7, 10, 11, 15]  trapped_after_switch=[]  max_winner_err_after_switch=0.1013  pos_kept_m=0.3447  pos_switched_m=0.3375
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\claude\D--Projects-TanitAD\91effc67-8c1e-4b66-9a63-341a3109dfc1\scratchpad\pkg_final\refe\selftest_measures.py", line 1433, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\D--Projects-TanitAD\91effc67-8c1e-4b66-9a63-341a3109dfc1\scratchpad\pkg_final\refe\selftest_measures.py", line 1429, in main
+    return main_parent(a)
+           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\D--Projects-TanitAD\91effc67-8c1e-4b66-9a63-341a3109dfc1\scratchpad\pkg_final\refe\selftest_measures.py", line 1065, in main_parent
+    for k, v in o.items():
+                ^^^^^^^
+AttributeError: 'WindowsPath' object has no attribute 'items'. Did you mean: 'stem'?

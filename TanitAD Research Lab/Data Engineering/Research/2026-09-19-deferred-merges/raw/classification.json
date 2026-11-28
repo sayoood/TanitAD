@@ -1,0 +1,113 @@
+{
+ "tip": "2a88524",
+ "d_head": "37645fc",
+ "backup": "57e2944",
+ "backup_base": "d221843",
+ "files": [
+  {
+   "path": "TanitAD Research Lab/Library/library.json",
+   "verdict": "THREE-WAY KEY UNION",
+   "authoritative": "merged",
+   "action": "written via kb_add._save under _IndexLock; staged",
+   "evidence": "521 keys (tip 489, backup 513, worktree 521); 0 non-empty scalar conflicts; 0 resurrections; every tip tag/citation/note segment/file field kept; 7 empty titles filled; earliest banked date kept"
+  },
+  {
+   "path": "TanitAD Research Lab/Library/LIBRARY.md",
+   "verdict": "REGENERATED",
+   "authoritative": "kb_add.py --reindex",
+   "action": "staged",
+   "evidence": "never hand-edited; --verify: 521 entries, 0 orphans, 0 problems"
+  },
+  {
+   "path": "TanitAD Research Lab/LAB_BACKLOG.md",
+   "verdict": "THREE-WAY MERGE",
+   "authoritative": "merged",
+   "action": "staged",
+   "evidence": "base = tip (unchanged since d221843). Backup replaces row I-1 (603 -> 2,189 chars) and appends the 2026-09-13 LAB-RUN-012 block; today's Lab replaces row I-3 (889 -> 1,080 chars) and appends the 2026-09-19 LAB-RUN-016 block. Disjoint rows; EOF order by date, asserted and mutation-tested"
+  },
+  {
+   "path": "Project Steering/GOALS_AND_CLAIMS.md",
+   "verdict": "TIP + LAB ADDS + RESTORED HEADING",
+   "authoritative": "merged",
+   "action": "staged",
+   "evidence": "tip == 37645fc; Lab adds the 2026-09-19 posted-limit section (0 deletions). Backup's LAB-RUN-012 table body already landed headless at tip line 12150 (unique exact 6-line match); its heading + marker restored there. 0 tip lines absent"
+  },
+  {
+   "path": "Project Steering/RETRACTION_LOG.md",
+   "verdict": "TIP + LAB ADDS",
+   "authoritative": "merged",
+   "action": "staged",
+   "evidence": "backup's pre-sync edits already in tip (0 missing); Lab's RETR-2026-09-19-POSTED-LIMIT-REFIND appended after the tip's RETR-2026-09-19-SOURCE-FRAMES-ABSENT. 0 tip lines absent"
+  },
+  {
+   "path": "Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md",
+   "verdict": "SHARED - LISTED, NOT RESOLVED",
+   "authoritative": "tip + A7 amendment (proposal)",
+   "action": "NOT staged; proposal in raw/",
+   "evidence": "the index/worktree addition is the Training FlyWheel's A7 BatchNorm amendment (A7 is do-not-touch). The index holds T0 + A7, which would REVERT the tip's E17/E18 section if committed. raw/PREREG_REFCV6_DEVBOX_PREPARATION.tip-based.md = tip + A7, 0 tip lines absent"
+  },
+  {
+   "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-09-11-agentgt-anchor-repair/ANCHOR_REPAIR.md",
+   "verdict": "BACKUP-REVISION",
+   "authoritative": "backup",
+   "action": "backup version written; staged",
+   "evidence": "all 6 sibling files byte-identical backup vs tip; backup carries every tip fact (rephrased with code formatting) plus the caveat that the full-suite failure set was not measured. Judgment, stated in RESULT.md"
+  },
+  {
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-11-lidar-bev-gt/raw/lidar_probe.json",
+   "verdict": "REDACTION-ONLY (exact)",
+   "authoritative": "HEAD",
+   "action": "none",
+   "evidence": "4 backup-only lines are raw clip ids in cache paths; tip carries their sha12"
+  },
+  {
+   "path": "TanitAD Research Lab/Tools & DevEnv/Research/2026-09-18-backlog-drift/raw/MUTATION_PROOF.json",
+   "verdict": "BLOB-IDENTICAL",
+   "authoritative": "HEAD (= backup)",
+   "action": "none",
+   "evidence": "backup captured the UNSTAGED worktree copy (newer by construction) == tip; the older staged copy differed only in 14 pytest tail lines of another run"
+  },
+  {
+   "path": "TanitAD Research Lab/Tools & DevEnv/Research/2026-09-18-backlog-drift/RESULT.md",
+   "verdict": "BLOB-IDENTICAL",
+   "authoritative": "HEAD (= backup)",
+   "action": "none",
+   "evidence": "unstaged copy == tip; the staged copy was a strict subset (0 lines not in tip)"
+  },
+  {
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-a4-factorised-vocabulary/RESULT.md",
+   "verdict": "BLOB-IDENTICAL",
+   "authoritative": "HEAD (= backup)",
+   "action": "none",
+   "evidence": "unstaged copy == tip; the staged copy was a strict subset (0 lines not in tip)"
+  },
+  {
+   "path": "stack/scripts/refc_v3_train.py",
+   "verdict": "SUPERSEDED - LISTED, NOT RESOLVED",
+   "authoritative": "HEAD",
+   "action": "none (live A7 edits in the worktree)",
+   "evidence": "backup edit vs d221843: 149/150 non-blank lines in tip. The 1 missing line is the PRE-WIDENING single-line w_tac_goal gate; the tip carries the gate twice (lines 6067, 6327) widened to a disjunction for refcv6 --w-tac-v6, pinned by the tip test re-pinned 2026-09-18"
+  },
+  {
+   "path": "stack/scripts/train_stage_a.py",
+   "verdict": "SUPERSEDED - LISTED, NOT RESOLVED",
+   "authoritative": "HEAD",
+   "action": "none (live edits in the worktree)",
+   "evidence": "backup's stopgrad_factual is a parallel implementation of the tip's --o1-stopgrad-factual (abb1344, 2026-09-18; default False = bit-identical, test_loss_determinism). The backup comment's H-PROOF-4 rationale is already in the register (6 mentions)"
+  },
+  {
+   "path": "stack/tests/test_refc_v3_agent_gt_reaches_forward.py",
+   "verdict": "HEAD-SUPERSET",
+   "authoritative": "HEAD",
+   "action": "none",
+   "evidence": "backup edit vs d221843: +49 lines, 0 missing from tip; -2 lines, 0 still in tip"
+  },
+  {
+   "path": "stack/tests/test_tacgoal_eval_target_wiring.py",
+   "verdict": "SUPERSEDED",
+   "authoritative": "HEAD",
+   "action": "none",
+   "evidence": "backup's 'count(gate) == 2' is the form the tip replaced on 2026-09-18 with spanning literals (gate + the statement it guards), because the count form passed a gate guarding the wrong statement"
+  }
+ ]
+}

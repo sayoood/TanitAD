@@ -1,0 +1,45 @@
+baseline check_g_id: 40
+baseline check_g_mov: 0.06524941467624112
+baseline check_g_phys: 200
+baseline check_tie_documented: ([1.0, 0.0, 0.0, 0.0], [1.0, 1.0, 0.0, 0.0])
+baseline check_cell_switch: True
+baseline check_order: 588
+baseline check_cell_argv: True
+baseline check_cell_footprint: 6
+baseline check_resume: {'batch': 'C:/Users/Admin/t2a_scratch/stage2_rehearsal/resume_135934_None/b.sftp', 'put': 2, 'reput': 1, 'skipped_complete': 1}
+baseline check_scorer_classes: {'00040136|f0=60': 17.8761, '7c72937c|f0=22': 0.0008}
+baseline check_start_class_rule: True
+baseline check_positive: {'seconds': 106.6, 'cells': 42, 'records': 70}
+baseline check_base_equals_direct: 2
+baseline check_hold_reachable: 2
+baseline check_planted_missing: {'rc': 1}
+baseline check_skip_policy: {'cells': 8}
+baseline check_changed_byte: {'rc': 1}
+baseline check_done_skipped: {'deciding': {'done': 0, 'skipped_done': 30, 'failed': []}, 'beside': {'done': 0, 'skipped_done': 12, 'failed': []}}
+baseline check_executor_mismatch: {'rc': 1}
+baseline check_gate_red: {'failures': ['cda8a096: rig has 200 ticks, the plan 201']}
+baseline check_builder_refuses_bad_plan: e848c843: the rig has 200 ticks, the plan 201
+check_g_id[eps_0.1]: RED (AssertionError: commit differs from base: history stopped, plan noise, seed 0, max |d| 3.33)
+check_g_mov[slow]: RED (AssertionError: hold(0.1) differs from base although every executed step exceeds 0.1 m)
+check_g_phys[hold_disabled]: RED (AssertionError: seed 0: a row with tangent <= 0.1 changed the heading)
+check_tie_documented[same_rule]: RED (AssertionError: the sub-eps midpoint frame must hold in both)
+check_cell_switch[no_restore]: RED (AssertionError: uninstall did not restore)
+check_order[beside_first]: RED (AssertionError: the deciding cells must all run before any beside cell)
+check_cell_argv[plumbing_kept]: RED (AssertionError: C0_s0 T2 7c72937c: ['--scene-dir', 'K/scenes/7c72937c-c620-4776-9555-d57222c0081f', '--arm', 'C0_s0', '--condition', 'objects', '--starts', '22,42', ')
+check_cell_footprint[off_by_one]: RED (AssertionError: a stage-1 cell takes 6 MiB, make_stage2.CELL_MIB says 6)
+check_resume[short_is_complete]: RED (AssertionError: {'batch': 'C:/Users/Admin/t2a_scratch/stage2_rehearsal/resume_140329_short_is_complete/b.sftp', 'put': 2, 'reput': 0, 'skipped_complete': 2})
+check_scorer_classes[pooled]: RED (AssertionError: moving: 2 starts in a group (the classes must not be pooled))
+check_start_class_rule[audit_rule]: RED (AssertionError: (0.5, 0.5))
+check_positive[footprint]: RED (AssertionError: a stub cell does not cost CELL_MIB)
+check_base_equals_direct[hold_instead]: GREEN  <-- the mutation was not caught
+check_hold_reachable[flag_dropped]: RED (AssertionError: hold(1e9) changed the heading: the flag did not reach the executor)
+check_planted_missing[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+check_skip_policy[not_applied]: RED (AssertionError: (0, {'preflight': 'PASS', 'gate': 'PASS', 'rollouts': 'PASS'}, 'COMPLETE'))
+check_changed_byte[not_applied]: RED (AssertionError: [])
+check_done_skipped[one_not_done]: RED (AssertionError: {'deciding': {'done': 1, 'skipped_done': 29, 'failed': []}, 'beside': {'done': 0, 'skipped_done': 12, 'failed': []}})
+check_executor_mismatch[not_applied]: RED (AssertionError: 0)
+check_gate_red[not_applied]: RED (AssertionError: {'preflight': 'PASS', 'gate': 'PASS', 'rollouts': 'PASS'})
+check_builder_refuses_bad_plan[not_applied]: RED (AssertionError: the builder accepted a plan whose n_ticks differs from the rig)
+mutations RED: 20 of 21
+rc=1
+RERUN after fixing the arm (hold_instead now uses --hold-eps 1e9; 0.5 left the stub plan unchanged): see logs/mutation_hold_instead_rerun.log -> RED. Effective: 21 of 21 RED.

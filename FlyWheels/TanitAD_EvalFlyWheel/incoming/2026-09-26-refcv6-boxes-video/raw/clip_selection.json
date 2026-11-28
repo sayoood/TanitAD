@@ -1,0 +1,197 @@
+{
+ "rule": "candidates = eval clips with full SAM3 coverage and >= 1 agent-labelled window; ranked by the number of GT agent boxes (agent join, trainer's _agent_item at each window's NOW) within 30 m of the ego AND inside the camera's 120 deg field (the trainer's visible predicate), summed over the clip's eval windows, ties by sha12; take the top 3; if none of them has a window whose GT path heading changes by > 30 deg within its valid 6 s, the 3rd is replaced by the highest-ranked clip that does",
+ "mode": "boxes",
+ "n_eval_clips": 139,
+ "n_clips_with_windows": 139,
+ "n_full_coverage": 137,
+ "n_full_coverage_by_nav": {
+  "left": 12,
+  "right": 37,
+  "follow": 88
+ },
+ "n_by_nav_all": {
+  "left": 13,
+  "right": 38,
+  "follow": 88
+ },
+ "not_full": [
+  {
+   "sha12": "081b986f8888",
+   "episode_index": 92,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 0,
+   "n_no_file": 171,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 535,
+   "n_boxes_30m_any_direction": 7433,
+   "turn_max_deg": 34.7,
+   "n_windows_turn_gt_30deg": 29
+  },
+  {
+   "sha12": "2aa810802777",
+   "episode_index": 136,
+   "nav": "left",
+   "n_windows": 171,
+   "n_ok": 0,
+   "n_no_file": 171,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 2185,
+   "n_boxes_30m_any_direction": 6541,
+   "turn_max_deg": 54.7,
+   "n_windows_turn_gt_30deg": 56
+  }
+ ],
+ "chosen": [
+  {
+   "sha12": "0191487845ef",
+   "episode_index": 116,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 7021,
+   "n_boxes_30m_any_direction": 18281,
+   "turn_max_deg": 12.4,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "9f8bedcfb9de",
+   "episode_index": 66,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 2779,
+   "n_boxes_30m_any_direction": 6461,
+   "turn_max_deg": 1.5,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "34765c024267",
+   "episode_index": 28,
+   "nav": "right",
+   "n_windows": 171,
+   "n_ok": 171,
+   "n_no_file": 0,
+   "n_out_of_range": 0,
+   "n_inconclusive": 0,
+   "n_windows_agent_labelled": 171,
+   "n_boxes_30m_in_field": 1963,
+   "n_boxes_30m_any_direction": 4705,
+   "turn_max_deg": 75.37,
+   "n_windows_turn_gt_30deg": 69
+  }
+ ],
+ "turn_swap": {
+  "out": "e902aba7fb9a",
+  "in": "34765c024267",
+  "in_rank": 5
+ },
+ "n_stack": 3,
+ "window": 8,
+ "selection_s": 91.1,
+ "ranking_top10": [
+  {
+   "sha12": "0191487845ef",
+   "nav": "right",
+   "n_boxes_30m_in_field": 7021,
+   "n_boxes_30m_any_direction": 18281,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 12.4,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "9f8bedcfb9de",
+   "nav": "right",
+   "n_boxes_30m_in_field": 2779,
+   "n_boxes_30m_any_direction": 6461,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 1.5,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "e902aba7fb9a",
+   "nav": "right",
+   "n_boxes_30m_in_field": 2391,
+   "n_boxes_30m_any_direction": 5283,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 7.7,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "693335b810c3",
+   "nav": "left",
+   "n_boxes_30m_in_field": 2030,
+   "n_boxes_30m_any_direction": 3842,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 4.13,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "34765c024267",
+   "nav": "right",
+   "n_boxes_30m_in_field": 1963,
+   "n_boxes_30m_any_direction": 4705,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 75.37,
+   "n_windows_turn_gt_30deg": 69
+  },
+  {
+   "sha12": "49f68312b36e",
+   "nav": "right",
+   "n_boxes_30m_in_field": 1760,
+   "n_boxes_30m_any_direction": 4182,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 5.98,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "7f6670448ef6",
+   "nav": "follow",
+   "n_boxes_30m_in_field": 1717,
+   "n_boxes_30m_any_direction": 3365,
+   "n_windows_agent_labelled": 172,
+   "turn_max_deg": 11.35,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "c7e31db0a5c5",
+   "nav": "right",
+   "n_boxes_30m_in_field": 1565,
+   "n_boxes_30m_any_direction": 4703,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 1.71,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "cf8839a4e491",
+   "nav": "follow",
+   "n_boxes_30m_in_field": 1450,
+   "n_boxes_30m_any_direction": 3330,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 9.42,
+   "n_windows_turn_gt_30deg": 0
+  },
+  {
+   "sha12": "198bb4517e28",
+   "nav": "follow",
+   "n_boxes_30m_in_field": 1359,
+   "n_boxes_30m_any_direction": 2991,
+   "n_windows_agent_labelled": 171,
+   "turn_max_deg": 2.78,
+   "n_windows_turn_gt_30deg": 0
+  }
+ ],
+ "agrees_with_previous_run": true
+}

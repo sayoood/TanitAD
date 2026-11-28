@@ -1,0 +1,30 @@
+=== P1: FIX `progress` -- the one term that rewards violation ===
+  object under test: fan2 (240, 128, 5, 2) from fan_bank_base_240w.npz
+  npz md5: ccecf0ade75631e315e6b9ae78d83478
+  C-OBJECT PASS=True  (max |component - banked| = 3.576e-07, flags mismatched = 0, emitted peak_g ours 4.1131 vs the 240w ref 4.1131)
+  H-PROG-SAT-1: median within-window IQR of feasibility = 0.24400  (predicted < 0.05) -> REFUTED ; 26.3% of candidates read < 0.01
+  ex_s (median NON-ZERO exceedance, calibrated once, not swept) = 3.6000 (88.8% of candidates exceed)
+
+  term                   peak_g   envelope  kamm_over  ttc_below    contact  off_reach
+  prog_v1                0.2900    -0.0078     0.0033     0.4697     0.3286     0.0787
+  prog_v0_noop           0.3134    -0.0121    -0.0030     0.4735     0.3370     0.1586
+  prog_v2               -0.5897    -0.5311    -0.5666    -0.1820     0.1241    -0.2225
+  prog_v2_caponly        0.1294    -0.1015    -0.0979     0.3463     0.2938    -0.0456
+  prog_v2_wonly         -0.4460    -0.5195    -0.5551    -0.0261     0.2081    -0.0876
+  prog_v3                0.5044     0.3002     0.3672     0.4925     0.2805    -0.0363
+  prog_v3_entry          0.3851     0.2697     0.3176     0.3044     0.1336    -0.1062
+  prog_raw               0.3134    -0.0121    -0.0030     0.4735     0.3370     0.1586
+  prog_raw_renorm        0.3134    -0.0121    -0.0030     0.4735     0.3370     0.1586
+  cmp_DEFAULT           -0.4603    -0.5367    -0.5790    -0.3544    -0.6326    -0.0756
+  cmp_DEFAULT_progv2    -0.6898    -0.5370    -0.5873    -0.5396    -0.6326    -0.2494
+  cmp_DEFAULT_progv3    -0.4891    -0.5367    -0.5746    -0.4620    -0.6326    -0.2323
+  cmp_no_progress       -0.7306    -0.5371    -0.5933    -0.5632    -0.6326    -0.2525
+
+  NO-OP claim (UNCLAMPED ratio) CONFIRMED=True  diff 0.00e+00 ; the CLAMPED component moves by 0.0234 -- ties, not monotonicity
+  P1-C1  rho(prog_v2, peak_g) = -0.5897 [-0.6707, -0.5002]  (was +0.2900) -> PASS
+  P1-C2  straight n=160 : along(argmax v2) 18.672 m vs (argmax v1) 26.216 m ratio 0.7123 ; floor 17.229 m -> FAIL
+  controls: self 1.000000 (PASS=True) | const undefined 240/240 (PASS=True) | rand -0.0012 (ref -0.0138)
+  VERDICT P1 (progress_v2) = FAIL
+  P1b prog_v3        C1 rho(peak_g) +0.5044 [+0.3922, +0.6066] FAIL | C2 along 21.672 m ratio 0.8267 vs floor 17.229 m (ha0 v0-hold) FAIL -> VERDICT FAIL
+  P1b prog_v3_entry  C1 rho(peak_g) +0.3851 [+0.2915, +0.4738] FAIL | C2 along 18.623 m ratio 0.7104 vs floor 17.229 m (ha0 v0-hold) FAIL -> VERDICT FAIL
+[p1] wrote C:/Users/Admin/feasdec/raw/progress_rank_fix_240w.json

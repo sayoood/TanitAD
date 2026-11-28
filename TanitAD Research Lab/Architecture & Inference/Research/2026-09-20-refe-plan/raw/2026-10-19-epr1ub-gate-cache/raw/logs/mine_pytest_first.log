@@ -1,0 +1,33 @@
+START 12:54:45,06 
+============================= test session starts =============================
+platform win32 -- Python 3.11.13, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\driverl-eval\Scripts\python.exe
+rootdir: D:\eu1\mine_ub
+plugins: hydra-core-1.3.2
+collecting ... collected 23 items
+
+test_epr1ub_gate.py::TestCommit::test_a_tampered_epr1_is_refused_when_the_ub_module_is_loaded PASSED [  4%]
+test_epr1ub_gate.py::TestDVB::test_dvb_every_lever_changed_fails PASSED  [  8%]
+test_epr1ub_gate.py::TestDVB::test_dvb_flag_hygiene PASSED               [ 13%]
+test_epr1ub_gate.py::TestDVB::test_dvb_mutated_module_fails PASSED       [ 17%]
+test_epr1ub_gate.py::TestDVB::test_dvb_non_strict_allows_synthetic_paths_only_with_an_override PASSED [ 21%]
+test_epr1ub_gate.py::TestDVB::test_dvb_registered_argv_passes_strict PASSED [ 26%]
+test_epr1ub_gate.py::TestCommit::test_commit_passes_on_the_deployed_code_and_reports_staged_files_as_not_landed PASSED [ 30%]
+test_epr1ub_gate.py::TestCommit::test_commit_regressions PASSED          [ 34%]
+test_epr1ub_gate.py::TestLive::test_live_green_on_a_synthetic_bank PASSED [ 39%]
+test_epr1ub_gate.py::TestLive::test_live_regressions_each_fail_the_gate PASSED [ 43%]
+test_epr1ub_gate.py::TestSuite::test_registered_floors PASSED            [ 47%]
+test_epr1ub_gate.py::TestSuite::test_suite_pass_and_the_three_regressions PASSED [ 52%]
+test_epr1ub_gate.py::TestToken::test_a_failing_check_mints_no_token_and_demotes_a_stale_pass PASSED [ 56%]
+test_epr1ub_gate.py::TestToken::test_cli_refuses_a_missing_commit_and_verify_without_a_token_is_refused PASSED [ 60%]
+test_epr1ub_gate.py::TestToken::test_the_landed_parent_gate_and_epr1_are_the_pinned_bytes PASSED [ 65%]
+test_epr1ub_gate.py::TestToken::test_token_refusals PASSED               [ 69%]
+test_epr1ub_gate.py::TestToken::test_token_round_trip_and_the_binding PASSED [ 73%]
+test_epr1ub_gate.py::TestLoaderIsNotACache::test_a_decoy_epr1_gate_already_in_sys_modules_is_refused PASSED [ 78%]
+test_epr1ub_gate.py::TestLoaderIsNotACache::test_a_parent_tampered_after_a_clean_load_in_the_same_dir_is_refused_in_a_fresh_interpreter PASSED [ 82%]
+test_epr1ub_gate.py::TestLoaderIsNotACache::test_a_refused_load_leaves_no_module_behind PASSED [ 86%]
+test_epr1ub_gate.py::TestLoaderIsNotACache::test_every_call_reverifies_and_returns_a_fresh_module PASSED [ 91%]
+test_epr1ub_gate.py::TestLoaderIsNotACache::test_second_dir_arm_passes_on_the_fixed_loader_and_goes_red_on_the_sha_only_cache PASSED [ 95%]
+test_epr1ub_gate.py::TestLoaderIsNotACache::test_the_arm_does_not_depend_on_what_ran_before_it PASSED [100%]
+
+======================= 23 passed in 101.58s (0:01:41) ========================
+EXIT=0 12:56:31,38 

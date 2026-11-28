@@ -1,0 +1,56 @@
+diff --git a/a/transp_score.py b/b/transp_score.py
+index f4f02b6..3cbdd11 100644
+--- a/a/transp_score.py
++++ b/b/transp_score.py	
+@@ -18,7 +18,7 @@ Plan file (--plans), npz:
+ 
+ Usage (one shard per process; at most 2 processes):
+   PYTHONPATH=<navsim devkit 3e8291b>;<refe dir>  python transp_score.py --refe <refe dir> --plans [name=]<plans.npz> [...] --out <rows.jsonl> \
+-      --shard i/N [--split navtrain|navtest] [--token-log <navtest_inputs.json.gz>] [--controls] [--limit n]
++      --shard i/N [--split navtrain|navtest] [--token-log <navtest_inputs.json.gz>] [--controls] [--limit n] [--metric-cache-root <metric_cache_navtest>]
+ Resumable: rows already in --out without an "error" are skipped; failures are re-attempted. Never reads a navtest token unless
+ the plan file names it.
+ """
+@@ -280,6 +280,21 @@ def score_one_arm(parts, ego, s0, p, a7: bool, shift_lat: float, controls: bool,
+     return out
+ 
+ 
++def load_cache_parts(root: str, log: str, token: str):
++    """(pdm_traj, ego, obs, centerline, route_lane_ids, drivable_area_map) exactly as navsim.evaluate.pdm_score reads a stored MetricCache.
++
++    The harness's own file `<root>/<log>/unknown/<token>/metric_cache.pkl` (lzma pickle). A missing file RAISES, naming the path: there is
++    deliberately NO fallback to the nuPlan-DB rebuild, because that rebuild is the not-harness-identical route (WTRANSP_DIAG.md)."""
++    import lzma
++    import pickle
++    p = os.path.join(root, log, "unknown", token, "metric_cache.pkl")
++    if not os.path.isfile(p):
++        raise FileNotFoundError(f"--metric-cache-root: no harness metric cache for token {token} at {p}")
++    with lzma.open(p, "rb") as fh:
++        mc = pickle.loads(fh.read())
++    return (mc.trajectory, mc.ego_state, mc.observation, mc.centerline, mc.route_lane_ids, mc.drivable_area_map)
++
++
+ def main() -> int:
+     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     ap.add_argument("--refe", required=True, help="dir with navsim_dac.py, navtrain_scenarios.py, navsim_pdm_targets.py, navsim_pdm/")
+@@ -300,6 +315,11 @@ def main() -> int:
+                          "row for the tracked arm, E2's builder for the transparent arm). Then reference8 == human8 exactly.")
+     ap.add_argument("--no-fam", action="store_true", help="skip the family payload (human future, lead track)")
+     ap.add_argument("--limit", type=int, default=0)
++    ap.add_argument("--metric-cache-root", default="",
++                    help="A1 FIX (WTRANSP_DIAG.md): hand the scorer the HARNESS'S OWN stored MetricCache parts (PDM-Closed, ego, observation, "
++                         "centerline, lanes, drivable map; <root>/<log>/unknown/<token>/metric_cache.pkl) instead of rebuilding them from the "
++                         "nuPlan DB. NAVTEST ONLY (navtrain has no harness cache). The DB scenario is still built for the human future and the "
++                         "lead track. Default empty = the DB rebuild, output unchanged. A missing cache file is an error, never a fallback.")
+     a = ap.parse_args()
+     sys.path.insert(0, a.refe)
+     import navtrain_scenarios as NS
+@@ -351,7 +371,7 @@ def main() -> int:
+                 rec = {"log": lg, "token": tok, "arms": {}}
+                 ts = time.time()
+                 try:
+-                    parts = PT.metric_cache_parts(sc)
++                    parts = load_cache_parts(a.metric_cache_root, lg, tok) if a.metric_cache_root else PT.metric_cache_parts(sc)
+                     ego = parts[1]
+                     s0 = ego_state_to_state_array(ego)
+                     hum = human_rel(sc, ego) if ((not a.no_fam) or a.human_arm) else None

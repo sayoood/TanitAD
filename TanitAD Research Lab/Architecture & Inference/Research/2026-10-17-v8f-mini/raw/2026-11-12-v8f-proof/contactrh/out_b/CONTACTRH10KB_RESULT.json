@@ -1,0 +1,118 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD142",
+ "tier": "T1-kin/hb0.2 (kinematic rollout on the model's own actions, logged camera frames; the lead does not react; not driving performance)",
+ "controls": {
+  "c0": {
+   "problems": [],
+   "n_runs": 6,
+   "PASS": true
+  },
+  "c1": {
+   "PASS": true,
+   "n_contact_cells": 126,
+   "runs_differing": []
+  },
+  "c2": {
+   "PASS": true,
+   "n_windows_X_S": 69,
+   "n_sample": 20,
+   "n_sample_checked": 20,
+   "max_abs_dev_m": 7.105427357601002e-15,
+   "tol_m": 0.001,
+   "problems": []
+  },
+  "c3": {
+   "PASS": true,
+   "planted_reads_plus_2": true,
+   "unchanged_reads_main_value": true,
+   "planted_deviation": 0.0
+  },
+  "c4": {
+   "PASS": true,
+   "n_passed": 19,
+   "tests_out_sha256": "4d3d2fd2f33c58e15e5bb2003fa89a8c5a6dda930b2cd54612f84e2f9cd6aa79"
+  },
+  "c5": {
+   "n_pairs": 53,
+   "max_abs_minus_c_src_diff": 0.0,
+   "n_pairs_v0_minus_vL_differ": 52,
+   "PASS": true
+  }
+ },
+ "values": {
+  "Q1": {
+   "value": 0.08213034476030545,
+   "interval": [
+    -1.2671446148573549,
+    2.411815134684245
+   ],
+   "n_a": 16,
+   "n_b": 53
+  },
+  "Q2": {
+   "value": 0.0,
+   "interval": [
+    0.0,
+    0.0
+   ],
+   "n_a": 16,
+   "n_b": 53
+  },
+  "Q3": {
+   "value": 0.5939611241502581,
+   "interval": [
+    -0.2318008475833469,
+    0.8558831691741944
+   ],
+   "n_a": 53,
+   "n_b": null
+  },
+  "beside_Q1_UE_contact_only": {
+   "value": -1.0193095409645225,
+   "interval": [
+    -3.4688417247259937,
+    1.5003554597163515
+   ],
+   "n_a": 4,
+   "n_b": 53
+  },
+  "beside_Q3_minus_c_src": {
+   "value": 0.0,
+   "interval": [
+    0.0,
+    0.0
+   ],
+   "n_a": 53,
+   "n_b": null
+  },
+  "counts": {
+   "0": {
+    "X": 4,
+    "S": 21,
+    "Y": 1
+   },
+   "1": {
+    "X": 6,
+    "S": 14,
+    "Y": 1
+   },
+   "2": {
+    "X": 6,
+    "S": 18,
+    "Y": 2
+   }
+  },
+  "n_X": 16,
+  "n_S": 53,
+  "n_Y": 4
+ },
+ "name": "CONTACTRH10KB-UNRESOLVED",
+ "name_reason": "no name condition met; X 16, S 53",
+ "families": [
+  "LONGITUDINAL: read here (where the contacts of RH under readout K are made, reader form, T1-kin/hb0.2)",
+  "LATERAL: not read by this card; n = 0",
+  "TACTICAL: not read by this card; n = 0",
+  "STRATEGIC: not read by this card; n = 0"
+ ],
+ "limits": "T1-kin only: the lead moves as logged, the reader reads logged frames. Contact windows of three model seeds over one evaluation set, so X is small and the intervals are wide. The interval answers what another draw of evaluation episodes would say, not what another training run or another inference run would say. A gap error is defined on windows where the reader reports a lead; a missed lead is counted in Q2 and not in Q1."
+}

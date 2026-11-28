@@ -1,0 +1,119 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "launch-gate-token",
+ "verdict": "INCOMPLETE",
+ "binding": {
+  "profile": "refc",
+  "commit": "0000000000000000000000000000000000000000",
+  "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+  "argv_sha256": "446b7796be1d2d8f56beadd899bf594d2c646cd8b4ffea5bc029bff06c90676f",
+  "argv": [
+   "--arm",
+   "hier",
+   "--smoke",
+   "--synth-episodes",
+   "4",
+   "--device",
+   "cpu",
+   "--sampler",
+   "ddim",
+   "--anchor-v0-conditioned",
+   "--n-anchors",
+   "20",
+   "--f1-random-t",
+   "--f2-dd-step",
+   "--f3-per-layer",
+   "--f4-adaln",
+   "--f5-focal",
+   "--f5-emitting-conf",
+   "--f6-w-u0-zero",
+   "--seed",
+   "0",
+   "--save-every",
+   "500",
+   "--log-every",
+   "50",
+   "--batch",
+   "2",
+   "--steps",
+   "50400",
+   "--anchors",
+   "/home/nvidia/gate_lg_0928/rig/anchors_v0cond_alat_20.pt",
+   "--out",
+   "/home/nvidia/gate_lg_0928/rig/launch_out"
+  ],
+  "trainer": "stack/scripts/refc_v3_train.py",
+  "gate_inputs": {
+   "gate:clock-reference[0]": "/home/nvidia/gate_lg_0928/in/q4c_grid_vs_egolog_ALLTRAIN.json"
+  },
+  "data": {
+   "--anchors": {
+    "path": "/home/nvidia/gate_lg_0928/rig/anchors_v0cond_alat_20.pt",
+    "kind": "file",
+    "bytes": 4317,
+    "sha256": "d9d6e5d60c33dc542eab0de0cb357880211cc9cd67b30ec00e84365dc95f1df6",
+    "method": "sha256-v1"
+   },
+   "gate:clock-reference[0]": {
+    "path": "/home/nvidia/gate_lg_0928/in/q4c_grid_vs_egolog_ALLTRAIN.json",
+    "kind": "file",
+    "bytes": 2105483,
+    "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+    "method": "sha256-v1"
+   }
+  },
+  "data_sha256": "7af51d32035b7d2d7aab7599b22e6d84bc094f2ea683fbdddf01141f6a904ec7"
+ },
+ "checks": {
+  "G-HYG": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-DVB": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-LIVE": {
+   "status": "PASS",
+   "evidence_path": "/home/nvidia/gate_lg_0928/out/tiny_live/evidence/G-LIVE.json",
+   "evidence_sha256": "4261e38d14e17a5df205559f11cbf7de97c2971fd9e1e28b78e28a53d09cea88",
+   "host": "thor6",
+   "finished_utc": "2026-09-27T07:29:55Z",
+   "reasons": []
+  },
+  "G-CLOCK": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-EVAL": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-CKPT": {
+   "status": "PASS",
+   "evidence_path": "/home/nvidia/gate_lg_0928/out/tiny_live/evidence/G-CKPT.json",
+   "evidence_sha256": "34c585626dca9a1444dd52c9bebc03e26180babdcddb8ecfa3146ba943c68a9a",
+   "host": "thor6",
+   "finished_utc": "2026-09-27T07:29:55Z",
+   "reasons": []
+  },
+  "G-SUITE": {
+   "status": "MISSING",
+   "rejected": []
+  }
+ },
+ "reasons": [
+  "no usable evidence yet for: ['G-HYG', 'G-DVB', 'G-CLOCK', 'G-EVAL', 'G-SUITE']"
+ ],
+ "gate_sha256": "8a059346cc2a45ec8d744a6bdd833bdc6be9af28d50c75d32ea26e54c8af0aa4",
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "created_utc": "2026-09-27T07:29:57Z",
+ "key_id": "c285d10317a605a3",
+ "hmac_sha256": "508e20022b9015557f96b0d76be3986151613b6fdee013032e6ccda34c9b2cf2"
+}

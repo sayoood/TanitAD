@@ -1,0 +1,106 @@
+{
+ "torch": "2.11.0+cu128",
+ "checks": {
+  "link2_LANE_KEEP_curvature_is_zero": {
+   "ok": true,
+   "lane_keep_kappa_absmax": 0.0,
+   "expect": 0.0
+  },
+  "link2_CONTROL_TURN_L_curvature_is_nonzero": {
+   "ok": true,
+   "turn_l_kappa_max": 0.07999999821186066,
+   "expect": 0.08,
+   "tol": 1e-06
+  },
+  "link2_CONTROL_TURN_R_curvature_is_negative": {
+   "ok": true,
+   "turn_r_kappa_min": -0.07999999821186066,
+   "expect": -0.08,
+   "tol": 1e-06
+  },
+  "link2_zero_curvature_tokens_are_exactly_LANE_KEEP_and_ABORT_LC": {
+   "ok": true,
+   "zero_curvature_tokens": [
+    "ABORT_LC",
+    "LANE_KEEP"
+   ]
+  },
+  "link5_no_baseline_carries_curvature": {
+   "ok": true,
+   "per_baseline_kappa_absmax": {
+    "cv": 0.0,
+    "hold_v0": 0.0,
+    "decel_1.5": 0.0
+   },
+   "n_baselines": 3
+  },
+  "link5_CONTROL_decel_carries_nonzero_accel": {
+   "ok": true,
+   "decel_1.5_accel_absmax": 1.5,
+   "expect": 1.5
+  },
+  "link6_beta0.0_white_is_not_centred": {
+   "ok": true,
+   "time_mean_absmax": 1.0277115106582642,
+   "note": "beta=0 returns randn un-centred, by design"
+  },
+  "link6_beta1.0_noise_time_mean_is_zero": {
+   "ok": true,
+   "time_mean_absmax": 1.668930025289228e-07
+  },
+  "link6_beta1.0_CONTROL_noise_is_nonzero": {
+   "ok": true,
+   "per_sample_std_min": 0.9999999403953552,
+   "expect": "~1.0"
+  },
+  "link6_beta2.0_noise_time_mean_is_zero": {
+   "ok": true,
+   "time_mean_absmax": 2.5369226364091446e-07
+  },
+  "link6_beta2.0_CONTROL_noise_is_nonzero": {
+   "ok": true,
+   "per_sample_std_min": 0.9999999403953552,
+   "expect": "~1.0"
+  },
+  "link6_beta3.0_noise_time_mean_is_zero": {
+   "ok": true,
+   "time_mean_absmax": 4.082918110270839e-07
+  },
+  "link6_beta3.0_CONTROL_noise_is_nonzero": {
+   "ok": true,
+   "per_sample_std_min": 0.9999999403953552,
+   "expect": "~1.0"
+  },
+  "composite_LANE_KEEP_seed_gives_zero_sustained_curvature": {
+   "ok": true,
+   "max_abs_time_mean_curvature": 7.092952500897809e-07,
+   "n_draws": 16384
+  },
+  "composite_CONTROL_TURN_L_seed_gives_nonzero_sustained_curvature": {
+   "ok": true,
+   "max_abs_time_mean_curvature": 0.08000029623508453
+  }
+ },
+ "PASS": true,
+ "curvature_by_lat_token": {
+  "LANE_KEEP": 0.0,
+  "LANE_CHANGE_L": 0.008750000037252903,
+  "LANE_CHANGE_R": 0.008750000037252903,
+  "ABORT_LC": 0.0,
+  "NUDGE_L": 0.009999999776482582,
+  "NUDGE_R": 0.009999999776482582,
+  "TURN_L": 0.07999999821186066,
+  "TURN_R": 0.07999999821186066
+ },
+ "baseline_curvature_absmax": {
+  "cv": 0.0,
+  "hold_v0": 0.0,
+  "decel_1.5": 0.0
+ },
+ "baseline_accel_absmax": {
+  "cv": 0.0,
+  "hold_v0": 0.0,
+  "decel_1.5": 1.5
+ },
+ "failed_checks": []
+}

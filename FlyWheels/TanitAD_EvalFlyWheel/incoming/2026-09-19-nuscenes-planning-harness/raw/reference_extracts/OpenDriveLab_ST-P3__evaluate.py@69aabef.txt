@@ -1,0 +1,54 @@
+# PUBLISHED-CODE extract - OpenDriveLab/ST-P3 @ 69aabefd2610951d9e34238142776ed2228673be
+# path: evaluate.py
+# git blob sha1 of the fetched file: f8ad434478305c6d661b10b390d66117b7ea6d44 (10852 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 54-74: metric instances n_future=2,4,6
+   54      n_classes = len(cfg.SEMANTIC_SEG.VEHICLE.WEIGHTS)
+   55      hdmap_class = cfg.SEMANTIC_SEG.HDMAP.ELEMENTS
+   56      metric_vehicle_val = IntersectionOverUnion(n_classes).to(device)
+   57      future_second = int(cfg.N_FUTURE_FRAMES / 2)
+   58  
+   59      if cfg.SEMANTIC_SEG.PEDESTRIAN.ENABLED:
+   60          metric_pedestrian_val = IntersectionOverUnion(n_classes).to(device)
+   61  
+   62      if cfg.SEMANTIC_SEG.HDMAP.ENABLED:
+   63          metric_hdmap_val = []
+   64          for i in range(len(hdmap_class)):
+   65              metric_hdmap_val.append(IntersectionOverUnion(2, absent_score=1).to(device))
+   66  
+   67      if cfg.INSTANCE_SEG.ENABLED:
+   68          metric_panoptic_val = PanopticMetric(n_classes=n_classes).to(device)
+   69  
+   70      if cfg.PLANNING.ENABLED:
+   71          metric_planning_val = []
+   72          for i in range(future_second):
+   73              metric_planning_val.append(PlanningMetric(cfg, 2*(i+1)).to(device))
+   74  
+
+## lines 121-137: per-horizon update on the first 2/4/6 steps
+  121          if cfg.PLANNING.ENABLED:
+  122              occupancy = torch.logical_or(seg_prediction, pedestrian_prediction)
+  123              _, final_traj = model.planning(
+  124                  cam_front=output['cam_front'].detach(),
+  125                  trajs=trajs[:, :, 1:],
+  126                  gt_trajs=labels['gt_trajectory'][:, 1:],
+  127                  cost_volume=output['costvolume'][:, n_present:].detach(),
+  128                  semantic_pred=occupancy[:, n_present:].squeeze(2),
+  129                  hd_map=output['hdmap'].detach(),
+  130                  commands=command,
+  131                  target_points=target_points
+  132              )
+  133              occupancy = torch.logical_or(labels['segmentation'][:, n_present:].squeeze(2),
+  134                                           labels['pedestrian'][:, n_present:].squeeze(2))
+  135              for i in range(future_second):
+  136                  cur_time = (i+1)*2
+  137                  metric_planning_val[i](final_traj[:,:cur_time].detach(), labels['gt_trajectory'][:,1:cur_time+1], occupancy[:,:cur_time])
+
+## lines 162-166: reduction: value.mean()
+  162      if cfg.PLANNING.ENABLED:
+  163          for i in range(future_second):
+  164              scores = metric_planning_val[i].compute()
+  165              for key, value in scores.items():
+  166                  results['plan_'+key+'_{}s'.format(i+1)]=value.mean()
+

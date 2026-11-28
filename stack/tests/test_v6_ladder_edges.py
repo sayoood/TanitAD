@@ -1,0 +1,732 @@
+"""The v6 ladder's TRANSITIONS, executed — not read.
+
+Every ladder-edge defect this programme has found was found by RUNNING the
+transition (S-S→S-T's missing backward gate, S-W→S-T's `strict=True` refusal of
+the designed selector introduction, the selector arm's missing capacity
+control). Reading the code found none of them. This file executes the remaining
+edges on a tiny CPU stack and pins each outcome — the clean ones so they STAY
+clean, the broken ones so they cannot come back.
+
+WHAT WAS MEASURED 2026-08-16, edge by edge:
+
+  * **S-T --init-from-> S-S**  CLEAN. Key-for-key, `missing=[] unexpected=[]
+    introduced=[]`. `STAGE_MAY_INTRODUCE["S-S"] == ()` is CORRECT and now
+    demonstrated rather than asserted: S-T's checkpoint already carries
+    `layer_str` (every stage saves the WHOLE stack), so S-S introduces nothing.
+  * **S-S --init-from-> S-J**  CLEAN, same.
+  * ⛔ **the `--resume auto` STAGE BOUNDARY**  DEFECTIVE. `load_resume` did a
+    strict state-dict load and adopted `ck["step"]` with NO stage check. The
+    load SUCCEEDS across the ladder. The only barrier was INCIDENTAL — the
+    optimiser's param-group size — and it
+      (a) names nothing an operator can act on ("loaded state dict contains a
+          parameter group that doesn't match the size of optimizer's group"),
+      (b) holds only because the stages happen to train different numbers of
+          tensors (S-W 240 · S-T 80 · S-S 54 · S-J 374, MEASURED), and
+      (c) is SKIPPED ENTIRELY for a checkpoint with no `opt` key — the exact
+          shape of `ops/ckpt_fp16_snapshot.py`, the pod-handover artifact.
+  * ⛔ **`--init-from` + `--resume auto` together**  SILENT PROVENANCE LIE.
+    config.json recorded `init.trunk_md5_after_load = fbce009a…` while the
+    trunk in the model was `326034884…`.
+  * ⛔ **`--init-from <fp16 snapshot>`**  REFUSED, blaming the wrong thing. The
+    snapshot's state lives under `"model"`; `load_stage_init` looked only for
+    `"stack"`, fell through to the wrapper, and reported a 400-key GEOMETRY
+    MISMATCH — pointing the operator at the architecture.
+  * **freeze x init**  CLEAN, and pinned NON-VACUOUSLY (see the control below).
+  * **X3 isolation after `--init-from`**  CLEAN at every stage.
+"""
+import json
+import sys
+from pathlib import Path
+
+import pytest
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ops"))
+
+from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
+from tanitad.models._gradreach import in_declared_subtree  # noqa: E402
+from tanitad.models.v6 import (  # noqa: E402
+    LADDER_UNTRAINED_GROUPS, MODULE_GROUPS, STAGES, V6Config, V6Stack,
+    apply_stage_freeze, grad_unreachable_prefixes, stage_trainable_groups)
+from train_v6_staged import (  # noqa: E402
+    RESUME_CONTRACT, STAGE_MAY_INTRODUCE, ResumeLineageError, V6LossWeights,
+    _save_ckpt, assert_resume_lineage, load_resume, load_stage_init,
+    read_ckpt_provenance, resume_guard, supersede_init_on_resume,
+    synthetic_train_batch, v6_loss_step)
+
+
+# ============================================================================
+# a tiny stack — same wiring, same seams, ~1000x fewer parameters
+# ============================================================================
+def tiny_cfg(**kw) -> V6Config:
+    base = dict(
+        encoder=EncoderConfig(in_channels=3, image_size=32, image_width=32,
+                              patch_size=16, d_model=32, depth=1, n_heads=2),
+        readout=ReadoutConfig(grid=4, d_readout=8),
+        predictor=PredictorConfig(d_model=32, depth=1, n_heads=2, window=4,
+                                  horizons=(1, 2), action_dim=3),
+        d_tac=32, d_str=16, d_goal_embed=16, adapter_hidden=32,
+        f_hidden_tac=32, f_hidden_str=32, d_plan_feat=16, emission_hidden=16,
+        n_candidates=3, aux_hidden=16, sigreg_slices=8)
+    base.update(kw)
+    return V6Config(**base)
+
+
+def mk(selector: str = "goal", seed: int = 0) -> V6Stack:
+    torch.manual_seed(seed)
+    return V6Stack(tiny_cfg(selector=selector))
+
+
+def _opt_for(stack: V6Stack, stage: str):
+    """The optimiser the trainer actually builds: over the TRAINABLE set only
+    (train_v6_staged.py — `trainable = [p for p in stack.parameters() if
+    p.requires_grad]`), with real moments so the state is not empty."""
+    apply_stage_freeze(stack, stage)
+    tr = [p for p in stack.parameters() if p.requires_grad]
+    opt = torch.optim.AdamW(tr, lr=1e-4)
+    sum((p * p).sum() for p in tr).backward()
+    opt.step()
+    opt.zero_grad(set_to_none=True)
+    for p in stack.parameters():
+        p.grad = None
+    return opt, tr
+
+
+def write_ckpt(path, stack, stage: str, step: int, *, opt_stage=None):
+    """A REAL checkpoint, written by the trainer's own `_save_ckpt`.
+
+    ``opt_stage`` lets a test build the optimiser for a DIFFERENT stage than
+    the one the config claims — that is how the "the counts happened to
+    collide" case is constructed on purpose.
+    """
+    opt, _ = _opt_for(stack, opt_stage or stage)
+    apply_stage_freeze(stack, stage)
+    _save_ckpt(Path(path), stack=stack, opt=opt, step=step,
+               cfg_json={"stage": stage, "run": f"v6-staged-{stage}"})
+    return Path(path)
+
+
+@pytest.fixture(scope="module")
+def st_ckpt(tmp_path_factory):
+    """A real S-T checkpoint: the selector IS built, because S-T is where it is
+    built. This is the thing S-S is supposed to stand on."""
+    d = tmp_path_factory.mktemp("st")
+    return write_ckpt(d / "ckpt.pt", mk("goal", seed=1), "S-T", 30000)
+
+
+@pytest.fixture(scope="module")
+def ss_ckpt(tmp_path_factory):
+    d = tmp_path_factory.mktemp("ss")
+    return write_ckpt(d / "ckpt.pt", mk("goal", seed=2), "S-S", 8000)
+
+
+# ============================================================================
+# EDGE 1 & 2 — the forward `--init-from` transitions nobody had executed
+# ============================================================================
+
+@pytest.mark.parametrize("prev,stage", [("S-T", "S-S"), ("S-S", "S-J")])
+def test_the_upper_ladder_edges_execute_clean(request, prev, stage):
+    """S-T -> S-S and S-S -> S-J, RUN rather than reasoned about."""
+    ck = request.getfixturevalue("st_ckpt" if prev == "S-T" else "ss_ckpt")
+    rep = load_stage_init(mk("goal", seed=50), ck, stage=stage)
+    assert rep["missing_keys"] == [], "the successor is missing trunk weights"
+    assert rep["unexpected_keys"] == [], "the ckpt carries keys this stack lacks"
+    assert rep["introduced_keys"] == [], "nothing should be introduced here"
+    assert rep["prev_stage"] == prev
+    assert rep["init_source"] == "ckpt" and rep["init_precision"] == "fp32"
+
+
+@pytest.mark.parametrize("stage", ["S-S", "S-J"])
+def test_the_empty_allowance_is_CORRECT_not_merely_declared(st_ckpt, ss_ckpt,
+                                                            stage):
+    """`STAGE_MAY_INTRODUCE[stage] == ()` is only right if the predecessor
+    genuinely carries every module the successor needs. Every stage saves the
+    WHOLE stack, so it does — and the test that shows it is the load above
+    reporting `introduced_keys == []` while the ALLOWANCE is empty. Declaring
+    an empty allowance over a transition that actually needs one is precisely
+    the S-W -> S-T defect, one rung up."""
+    assert STAGE_MAY_INTRODUCE[stage] == ()
+    ck = st_ckpt if stage == "S-S" else ss_ckpt
+    rep = load_stage_init(mk("goal", seed=51), ck, stage=stage)
+    assert rep["introduced_allowance"] == []
+    assert rep["introduced_keys"] == []
+
+
+def test_a_drifted_selector_flag_is_still_refused_on_the_upper_edges(st_ckpt):
+    """Launching S-S with `--selector none` against an S-T ckpt that HAS one is
+    a mis-specified arm, not an introduction — and S-S may introduce nothing."""
+    with pytest.raises(SystemExit, match="not a valid predecessor"):
+        load_stage_init(mk("none", seed=52), st_ckpt, stage="S-S")
+
+
+# ============================================================================
+# EDGE 3 — the stage-boundary `--resume auto`, the one that bit
+# ============================================================================
+
+def test_resume_across_the_stage_boundary_is_REFUSED_by_stage(tmp_path):
+    """⛔ THE DEFECT. An S-T checkpoint in the directory an S-S run resumes.
+
+    Before the fix this reached `stack.load_state_dict(strict=True)` — which
+    SUCCEEDS, because every stage saves the whole stack — and then died in the
+    optimiser with a message about param-group sizes.
+    """
+    ck = write_ckpt(tmp_path / "ckpt.pt", mk("goal", seed=3), "S-T", 30000)
+    assert resume_guard(tmp_path, resume="auto",
+                        force_rerun=False)["mode"] == "resume"
+    with pytest.raises(ResumeLineageError) as e:
+        assert_resume_lineage(ck, stage="S-S")
+    msg = str(e.value)
+    assert "'S-T'" in msg and "'S-S'" in msg, "the message must name BOTH"
+    assert "30000" in msg, "and the step it would have silently adopted"
+    assert "--init-from" in msg, "and what to do instead"
+
+
+def test_the_refusal_does_NOT_depend_on_the_optimiser_shape(tmp_path):
+    """⭐ THE POINT OF THE FIX. The old barrier was incidental: it held only
+    because the stages train different numbers of tensors. Here the checkpoint
+    is labelled S-T but its optimiser was built over S-S's trainable set, so
+    the param-group sizes MATCH and the accidental guard is defeated — the
+    silent wrong-stage resume the old code would have performed."""
+    ck = write_ckpt(tmp_path / "ckpt.pt", mk("goal", seed=4), "S-T", 21000,
+                    opt_stage="S-S")
+    victim = mk("goal", seed=5)
+    o_victim, _ = _opt_for(victim, "S-S")
+    loaded = torch.load(ck, map_location="cpu", weights_only=False)
+    assert (len(loaded["opt"]["param_groups"][0]["params"])
+            == len(o_victim.state_dict()["param_groups"][0]["params"])), \
+        "this test is only meaningful if the optimiser shapes COLLIDE"
+    # the stage check refuses anyway — it never looks at an optimiser
+    with pytest.raises(ResumeLineageError, match="'S-T'"):
+        load_resume(victim, o_victim, ck, stage="S-S")
+
+
+def test_the_old_accidental_barrier_HAS_now_collided_and_the_real_guard_holds():
+    """⛔ THE DAY THIS TEST WARNED ABOUT ARRIVED — 2026-09-06 — AND THE ANSWER
+    IS THE REAL GUARD, NOT A RESTORED COINCIDENCE.
+
+    Until today this asserted that no two stages train the same number of
+    TENSORS, because that accident was the only thing stopping a cross-stage
+    resume: `opt.load_state_dict` refuses a param group of a different size.
+    Its own failure message said what to do when the accident ended — *"the
+    stage check in `assert_resume_lineage` is what actually protects the
+    ladder; this is only a note that the fallback is gone."*
+
+    The grad-unreachable declaration (`models/_gradreach.py`) removed 4 tensors
+    from S-W at this geometry and collapsed it onto S-T. That is a CORRECTION —
+    those tensors receive no gradient — so the coincidence is not coming back,
+    and pinning it would mean pinning the defect.
+
+    ⇒ this test now (a) RECORDS the counts, so a future collision is still
+    visible, and (b) asserts the real guard by EXECUTING it: a checkpoint from
+    the wrong stage must be refused BY NAME, whatever the tensor counts do.
+    `assert_resume_lineage` is called by the trainer at
+    `train_v6_staged.py:6285` — verified, not assumed, because this programme
+    has shipped a fully-built guard (`reassert_frozen_external`) that NOTHING
+    outside its own test file ever called.
+    """
+    counts = {}
+    for stg in STAGES:
+        s = mk("goal", seed=6)
+        apply_stage_freeze(s, stg)
+        counts[stg] = sum(1 for p in s.parameters() if p.requires_grad)
+    assert len(counts) == len(STAGES) and all(v > 0 for v in counts.values())
+
+    # THE REAL GUARD, EXERCISED — including on the pair that now collides.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        ck = write_ckpt(Path(td) / "ckpt.pt", mk("goal", seed=6), "S-W", 11)
+        with pytest.raises(ResumeLineageError):
+            assert_resume_lineage(ck, stage="S-T")
+        # MUTATION: the SAME checkpoint at its OWN stage must be accepted, or
+        # the guard is a constant rather than a test of the lineage.
+        assert assert_resume_lineage(ck, stage="S-W")["step"] == 11
+
+
+def test_same_stage_resume_still_works(tmp_path):
+    """The regression guard: the fix must not make a NORMAL resume harder."""
+    ck = write_ckpt(tmp_path / "ckpt.pt", mk("goal", seed=7), "S-S", 4321)
+    prov = assert_resume_lineage(ck, stage="S-S")
+    assert prov["stage"] == "S-S" and prov["step"] == 4321
+    dst = mk("goal", seed=8)
+    dopt, _ = _opt_for(dst, "S-S")
+    assert load_resume(dst, dopt, ck, stage="S-S") == 4321
+
+
+def test_an_UNLABELLED_checkpoint_is_refused(tmp_path):
+    """Every checkpoint this trainer writes carries its stage. One that does
+    not came from somewhere else, and its lineage cannot be verified."""
+    p = tmp_path / "ckpt.pt"
+    torch.save({"stack": mk("goal", seed=9).state_dict(), "opt": {},
+                "step": 100}, p)
+    with pytest.raises(ResumeLineageError, match="no stage label"):
+        assert_resume_lineage(p, stage="S-S")
+
+
+def test_an_UNREADABLE_checkpoint_is_refused_with_a_diagnosis(tmp_path):
+    """Not an opaque pickle traceback — the same discipline as every other
+    refusal in this file."""
+    p = tmp_path / "ckpt.pt"
+    p.write_bytes(b"this is not a checkpoint")
+    prov = read_ckpt_provenance(p)
+    assert prov["readable"] is False and prov["error"]
+    with pytest.raises(ResumeLineageError, match="could not read it"):
+        assert_resume_lineage(p, stage="S-W")
+
+
+def test_load_resume_without_a_named_stage_keeps_the_old_behaviour(tmp_path):
+    """A check must be ASKED for, never inherited by default — the same
+    contract `load_stage_init` uses for its allowance. `train` always names the
+    stage; a direct caller that does not gets the pre-fix path, and that is a
+    deliberate, tested choice rather than an oversight."""
+    ck = write_ckpt(tmp_path / "ckpt.pt", mk("goal", seed=10), "S-S", 77)
+    dst = mk("goal", seed=11)
+    dopt, _ = _opt_for(dst, "S-S")
+    assert load_resume(dst, dopt, ck) == 77          # no stage= -> no check
+
+
+# ============================================================================
+# EDGE 3b — the fp16 snapshot: refused as a RESUME, accepted as an INIT
+# ============================================================================
+
+@pytest.fixture
+def snapshot_file(tmp_path):
+    from ckpt_fp16_snapshot import snapshot
+    src = write_ckpt(tmp_path / "full.pt", mk("goal", seed=12), "S-T", 30000)
+    dst = tmp_path / "weights_fp16.pt"
+    snapshot(str(src), str(dst))
+    return dst
+
+
+def test_the_fp16_snapshot_is_recognised_for_what_it_is(snapshot_file):
+    prov = read_ckpt_provenance(snapshot_file)
+    assert prov["readable"] and prov["weights_only_snapshot"] is True
+    assert prov["has_opt"] is False
+    # ⭐ its stage and step survive the snapshot, under `_meta`
+    assert prov["stage"] == "S-T" and prov["step"] == 30000
+
+
+def test_a_weights_only_snapshot_is_REFUSED_as_a_resume(snapshot_file):
+    """⛔ It carries no optimiser state BY DESIGN (two thirds of the bytes).
+    Half-honouring it would inherit a step and an LR schedule position with
+    nothing behind them — and, because the `if "opt" in ck` branch is simply
+    skipped, it is the one path where the OLD accidental barrier could not fire
+    at all."""
+    with pytest.raises(ResumeLineageError, match="NO optimiser state"):
+        assert_resume_lineage(snapshot_file, stage="S-T")
+    with pytest.raises(ResumeLineageError, match="NO optimiser state"):
+        assert_resume_lineage(snapshot_file, stage="S-S")   # even same-stage
+    assert "--init-from" in RESUME_CONTRACT["has_optimiser"], \
+        "the contract must name the flag that DOES accept this artifact"
+
+
+def test_init_from_CAN_now_read_the_snapshot_its_docstring_promises(
+        snapshot_file):
+    """`ops/ckpt_fp16_snapshot.py` states the snapshot "is enough for the
+    P-battery, any eval, and --init-from". MEASURED 2026-08-16: it was not —
+    the state lives under "model", `load_stage_init` looked for "stack", fell
+    through to the wrapper dict and refused with a 400-key GEOMETRY MISMATCH,
+    blaming the architecture for an unopened container. This is the handover
+    path a rebuilt pod actually takes (the 3.53 GB ckpt.pt never once pushed)."""
+    rep = load_stage_init(mk("goal", seed=13), snapshot_file, stage="S-S")
+    assert rep["missing_keys"] == [] and rep["unexpected_keys"] == []
+    assert rep["prev_stage"] == "S-T" and rep["init_step"] == 30000
+    # ⚠️ and it SAYS the weights came through fp16 — a trunk md5 that cannot
+    # equal the fp32 source's must not look like a lineage break later.
+    assert rep["init_source"] == "fp16_weights_only_snapshot"
+    assert "lossy" in rep["init_precision"]
+
+
+def test_load_resume_on_a_snapshot_names_the_container_not_the_geometry(
+        snapshot_file):
+    """Direct call, no stage named: it must still not die on `KeyError:
+    'stack'`, which is what it did before."""
+    dst = mk("goal", seed=14)
+    dopt, _ = _opt_for(dst, "S-T")
+    with pytest.raises(ResumeLineageError, match="no 'stack' key"):
+        load_resume(dst, dopt, snapshot_file)
+
+
+# ============================================================================
+# EDGE 3c — `--init-from` + `--resume auto`: the record must not lie
+# ============================================================================
+
+def test_a_resume_supersedes_the_init_report_instead_of_letting_it_lie():
+    """⛔ MEASURED 2026-08-16: config.json recorded the INIT's trunk md5 while
+    the model held the RESUME's weights (`fbce009a…` vs `326034884…`), because
+    `train` loads the init first and the resume second. Nothing warned.
+
+    ⚠️ The fix is NOT to refuse the flag pair: `supervise_run.sh` replays the
+    command captured at startup, so the relaunch that resumes necessarily still
+    carries the `--init-from` that seeded the run."""
+    init = {"init_from": "/w/S-T/ckpt.pt", "init_step": 30000,
+            "trunk_md5_after_load": "fbce009ab9fe1b064ab9c44dccf1dc6b",
+            "prev_stage": "S-T"}
+    out = supersede_init_on_resume(init, "/w/S-S/ckpt.pt")
+    assert out["init_from"] is None, \
+        "a superseded init must not read as this run's lineage"
+    assert out["resumed_from"] == "/w/S-S/ckpt.pt"
+    # the evidence is DEMOTED, never deleted — the launch really did do it
+    assert out["superseded_by_resume"]["trunk_md5_after_load"] == \
+        "fbce009ab9fe1b064ab9c44dccf1dc6b"
+    assert "OVERWRITTEN" in out["superseded_by_resume"]["_status"]
+    assert json.dumps(out)                    # must survive config.json
+
+
+def test_supersede_is_a_no_op_when_there_was_no_init():
+    rep = {"init_from": None}
+    assert supersede_init_on_resume(rep, "/w/x/ckpt.pt") is rep
+
+
+def test_the_lying_md5_is_reproduced_end_to_end(tmp_path):
+    """The measurement itself, pinned: two DIFFERENT ancestors, and the trunk
+    md5 recorded by `--init-from` provably does not describe the model once the
+    resume has run. This is what `supersede_init_on_resume` exists for."""
+    a = write_ckpt(tmp_path / "ancestor.pt", mk("goal", seed=15), "S-S", 30000)
+    run = tmp_path / "run"
+    run.mkdir()
+    b = write_ckpt(run / "ckpt.pt", mk("goal", seed=16), "S-S", 12000)
+
+    s = mk("goal", seed=17)
+    rep = load_stage_init(s, a, stage="S-S")
+    dopt, _ = _opt_for(s, "S-S")
+    load_resume(s, dopt, b, stage="S-S")
+
+    import hashlib
+    h = hashlib.md5()
+    for n, prm in sorted(s.named_parameters()):
+        if s.group_of(n) in ("encoder", "readout", "predictor_op"):
+            h.update(n.encode())
+            h.update(prm.detach().cpu().numpy().tobytes())
+    assert rep["trunk_md5_after_load"] != h.hexdigest(), (
+        "the init md5 must differ from the post-resume trunk — if these ever "
+        "match, this test has stopped exercising the overwrite")
+    assert supersede_init_on_resume(rep, b)["init_from"] is None
+
+
+# ============================================================================
+# EDGE 4 — freeze x init, MEASURED on a real backward (with a vacuity control)
+# ============================================================================
+
+def _stage_batch(stack: V6Stack):
+    b = synthetic_train_batch(stack, batch=2, k=12, seed=1)
+    b["gt_wp"] = torch.randn(2, 10, 2)
+    return b
+
+
+def _grad_census(stack: V6Stack) -> dict:
+    """`.grad` presence per group — **TOTAL over ``MODULE_GROUPS``**.
+
+    ⛔ THE INTERMITTENT FAILURE THIS FIXES (MEASURED 2026-08-16, 3/25 runs of
+    this file, all `KeyError: 'interp'` at the last assertion of the [S-J]
+    parametrization; **DETERMINISTIC** at `PYTHONHASHSEED=3` / `12`, PASS at
+    `0` / `5`):
+
+    the census used ``setdefault``, so a group that owns **zero parameters**
+    was simply ABSENT from the result. ``STAGE_GROUPS["S-J"] is
+    MODULE_GROUPS``, which since `06b8782` includes ``interp`` — a group that
+    is **empty at the default build** (`V6Config.agent_slots` is False; v6.py
+    says so verbatim). The final assertion is
+    ``any(census[g]["grad"] for g in want)`` over a ``set`` of ``str``, and
+    ⭐ **`set` iteration order for strings is randomised per process by
+    PYTHONHASHSEED**, while ``any`` SHORT-CIRCUITS at the first truthy element.
+    So ``census['interp']`` was evaluated **only when `interp` happened to sort
+    first** — 43/400 hash seeds = **10.75 %**, against 3/25 = 12.0 % measured.
+
+    ⚠️ **It was never an RNG problem.** The plausible-looking hypothesis (the
+    test seeds the model but draws `gt_wp` from the global RNG) is REFUTED:
+    ``mk()`` calls ``torch.manual_seed`` and nothing between it and the draw
+    touches the global stream, and the failure is a KeyError on a *structural*
+    lookup, which no data value can reach.
+
+    ⚠️ And the bug SUPPRESSED THE ASSERTION IT LIVED IN: a genuine "this stage
+    trained nothing" would have surfaced as a bare ``KeyError`` with no
+    message instead of the diagnosis below. A census is a TOTAL function over
+    the partition — an empty group reads ``0/0``, it does not vanish.
+    """
+    got: dict[str, dict] = {g: {"grad": 0, "none": 0} for g in MODULE_GROUPS}
+    for n, p in stack.named_parameters():
+        got[stack.group_of(n)]["grad" if p.grad is not None else "none"] += 1
+    return got
+
+
+def _built(census: dict) -> set[str]:
+    """Groups that own ≥1 parameter AT THIS BUILD.
+
+    ⛔ "declared in MODULE_GROUPS" and "built by this config" are DIFFERENT
+    SETS, and conflating them is what produced the flake above. Freeze and
+    reachability statements are only meaningful about BUILT groups.
+    """
+    return {g for g, v in census.items() if v["grad"] + v["none"]}
+
+
+@pytest.fixture(scope="module")
+def reachable_groups() -> set[str]:
+    """⚠️ THE VACUITY CONTROL, and the test below is worthless without it.
+
+    "group X received no gradient" proves the freeze only if the SAME loss
+    reaches X when X is unfrozen. Otherwise a loss that simply never touches a
+    module would certify it as "frozen" — a vacuous pass, and vacuous passes
+    are how an isolation guarantee rots (`V6Stack.assert_isolation` makes the
+    same point about `requires_grad`).
+
+    MEASURED: with every parameter trainable and the S-J loss, the reachable
+    fraction per group is encoder 17/17, readout 2/2, predictor_op 31/35,
+    aux 30/30, layer_tac 54/67, layer_str 41/54, planner 2/13 — so every BUILT
+    group has live parameters and every "no grad" below is a real statement.
+
+    ⛔ ``interp`` is DECLARED in ``MODULE_GROUPS`` but **NOT BUILT** at this
+    config (`V6Config.agent_slots` defaults to False → 0 parameters, v6.py's
+    own note). It is named here rather than skipped, so that a future build
+    which silently empties a DIFFERENT group is a FAILURE and not a shrug —
+    that is the same "absence found at one location is not absence" discipline
+    the census itself enforces.
+    """
+    s = mk("goal", seed=60)
+    for p in s.parameters():
+        p.requires_grad_(True)
+    v6_loss_step(s, _stage_batch(s), stage="S-J", weights=V6LossWeights(),
+                 o1_k=10, o5_k=10)["loss"].backward()
+    census = _grad_census(s)
+    built = _built(census)
+    assert set(MODULE_GROUPS) - built == {"interp"}, (
+        f"the set of DECLARED-but-UNBUILT groups moved: "
+        f"{sorted(set(MODULE_GROUPS) - built)}. Only `interp` is expected to "
+        f"be empty at the default build (agent_slots=False). Any other empty "
+        f"group means a module stopped being constructed.")
+    reach = {g for g, v in census.items() if v["grad"] > 0}
+    assert reach == built, \
+        f"a BUILT group is unreachable by the S-J loss; the freeze test " \
+        f"would be vacuous for it: {census}"
+    return reach
+
+
+@pytest.mark.parametrize("stage", list(STAGES))
+def test_after_init_from_exactly_the_intended_groups_train(st_ckpt,
+                                                           reachable_groups,
+                                                           stage):
+    """MEASUREMENT, not a reading of the freeze map: initialise stage N+1 from
+    a real predecessor checkpoint, apply the stage freeze, run the REAL stage
+    loss, and census `.grad` — every out-of-stage group must be `None`, and the
+    control above proves each of them was reachable."""
+    s = mk("goal", seed=61)
+    if stage in ("S-S", "S-J"):
+        load_stage_init(s, st_ckpt, stage=stage)
+    apply_stage_freeze(s, stage)
+
+    want = set(stage_trainable_groups(stage))
+    # ⛔ THE GROUP MAP IS NOT THE WHOLE PREDICATE, AND THIS LINE USED TO SAY IT
+    # WAS. Since 2026-09-06 a subtree may ALSO declare that no ladder loss can
+    # reach it (`models/_gradreach.py`), and `apply_stage_freeze` honours that
+    # even inside a trained group — which is the entire point: at v7f's
+    # production geometry the old predicate counted 90,960,000 parameters as
+    # trainable that no gradient could ever reach, 86.1 M of them the O5 EMA
+    # TEACHER. `expected` is therefore "in a trained group AND not declared
+    # unreachable", and the declared set is asserted NON-EMPTY below so this
+    # relaxation cannot silently swallow a real freeze bug.
+    dead = grad_unreachable_prefixes(s)
+    assert dead, ("no subtree declares itself grad-unreachable — this "
+                  "predicate has gone vacuous and would now pass a stack "
+                  "whose freeze map is broken")
+
+    def _expected(n):
+        return (s.group_of(n) in want
+                and in_declared_subtree(n, dead) is None)
+
+    wrong = [(n, s.group_of(n)) for n, p in s.named_parameters()
+             if p.requires_grad != _expected(n)]
+    assert not wrong, f"requires_grad disagrees with the stage: {wrong[:5]}"
+
+    v6_loss_step(s, _stage_batch(s), stage=stage, weights=V6LossWeights(),
+                 o1_k=10, o5_k=10)["loss"].backward()
+    census = _grad_census(s)
+    built = _built(census)
+    leaked = {g: v for g, v in census.items() if g not in want and v["grad"]}
+    assert not leaked, (
+        f"stage {stage} put gradient in groups it must not train: {leaked}. "
+        f"Every one of these was reachable in the control, so this is a real "
+        f"leak, not an artifact of an unreachable loss.")
+    assert reachable_groups >= (built - want), \
+        "the control does not cover every group this stage freezes"
+    # ⛔ intersect with BUILT: a stage may DECLARE a group this config does not
+    # construct. The old `for g in want` indexed the census directly and raised
+    # a bare KeyError on ~10.75 % of processes — see `_grad_census`. Assert the
+    # intersection is non-empty FIRST, so "the stage declares only unbuilt
+    # groups" reports itself instead of hiding inside a vacuously-false `any`.
+    # ⚠️ KEPT after the v6.py fix removed `interp` from S-J: the intersection is
+    # the STRUCTURALLY correct expression regardless of which groups a config
+    # happens to build, and reverting it would re-arm the hash-order KeyError
+    # the day any other group is declared-but-unbuilt.
+    trainable_here = want & built
+    assert trainable_here, (
+        f"stage {stage} declares trainable groups {sorted(want)} and NONE of "
+        f"them is built at this config (built={sorted(built)})")
+    assert any(census[g]["grad"] for g in trainable_here), \
+        f"stage {stage} trained NOTHING — the freeze map and the loss disagree"
+
+
+# ============================================================================
+# EDGE 4b — THE FLAKE ITSELF, PINNED. ⛔ a test that passes on retry is not
+# fixed, so the MECHANISM is pinned, not the symptom.
+# ============================================================================
+
+def test_the_grad_census_is_TOTAL_over_the_group_partition():
+    """⛔ THE ANTI-FLAKE PIN. Every group `apply_stage_freeze` partitions over
+    must have a census entry, INCLUDING one that owns zero parameters.
+
+    Without this, `census[g]` for `g` in a stage's declared groups is a
+    conditional KeyError whose firing depends on `set` iteration order, i.e.
+    on `PYTHONHASHSEED` — MEASURED 3/25 runs, deterministic at seeds 3 and 12.
+    A rate of ~10 % is exactly the regime that reads as "flaky, re-run it".
+    """
+    s = mk("goal", seed=63)
+    census = _grad_census(s)
+    assert set(census) == set(MODULE_GROUPS), \
+        "the census is not total over MODULE_GROUPS — the KeyError is back"
+    assert census["interp"] == {"grad": 0, "none": 0}, \
+        "`interp` must be present-and-empty, not missing"
+    # ...and the property that actually matters: for EVERY stage, the declared
+    # trainable groups are indexable in the census. This is the exact
+    # expression that raised, made total and hash-order independent.
+    for stage in STAGES:
+        want = set(stage_trainable_groups(stage))
+        assert want <= set(census), \
+            f"stage {stage} declares {sorted(want - set(census))}, which the " \
+            f"census cannot index — the intermittent KeyError is reachable"
+        assert all(isinstance(census[g]["grad"], int) for g in want)
+
+
+def test_S_J_must_not_declare_trainable_a_group_its_loss_never_reaches():
+    """⛔ WAS `xfail(strict=True)` — a MEASURED MODEL DEFECT, FIXED IN `v6.py`
+    2026-08-16. The marker is gone; the pin is not, because a pin that vanishes
+    with the bug proves nothing about the bug staying gone.
+
+    **The defect.** ``STAGE_GROUPS["S-J"] is MODULE_GROUPS`` was an IDENTITY
+    ALIAS (same ``id``, MEASURED), so S-J's trainable set contained ``interp``.
+    At the DEFAULT build that is invisible — ``V6Config.agent_slots`` is False
+    and the group owns 0 parameters. With ``agent_slots=True`` it owns **62
+    tensors / 3,207,445 parameters** at the production geometry, and
+    ``apply_stage_freeze(stack, "S-J")`` marked **every one of them TRAINABLE
+    while the S-J loss reached EXACTLY 0**. That is verbatim the lie v6.py's own
+    STAGE_GROUPS docstring said it avoids (*"would make the freeze audit report
+    a module as training while it receives exactly zero gradient"*), and it is
+    the same class as `w_anchor`/`w_s2_goal` — a term advertised in the launch
+    line that trains nothing.
+
+    ⚠️ **The alias is also HOW the defect arrived**: appending ``interp`` to
+    ``MODULE_GROUPS`` (`06b8782`) changed what S-J trains without touching the
+    line that declares S-J.
+
+    **The fix** (v6.py): ``LADDER_UNTRAINED_GROUPS`` as data, S-J DERIVED as
+    ``MODULE_GROUPS`` minus it, and ``stage_trainable_groups`` RAISES if any
+    stage declares a member — so the loss and the freeze map cannot drift apart
+    in either direction.
+
+    ⚠️ This test is only meaningful because the head is really BUILT here; the
+    "precondition gone" assertion below is what stops it decaying into a
+    vacuous pass the day ``agent_slots=True`` stops constructing anything.
+    """
+    torch.manual_seed(64)
+    s = V6Stack(tiny_cfg(agent_slots=True))
+    apply_stage_freeze(s, "S-J")
+    want = set(stage_trainable_groups("S-J"))
+    # ⭐ THE CLAIM (this line read `assert "interp" in want` while the defect
+    # stood — it was the defect's PRECONDITION, and it is now its refutation).
+    assert "interp" not in want, \
+        "S-J declares `interp` trainable again — no ladder loss reaches it"
+    assert not s.agent_slots.head.weight.requires_grad, \
+        "the interp head is unfrozen at S-J — the freeze audit overstates"
+
+    v6_loss_step(s, _stage_batch(s), stage="S-J", weights=V6LossWeights(),
+                 o1_k=10, o5_k=10)["loss"].backward()
+    census = _grad_census(s)
+    # non-vacuity: agent_slots=True must actually have BUILT the head, or the
+    # assertion above is a statement about an empty set.
+    assert census["interp"]["grad"] + census["interp"]["none"] > 0, \
+        "agent_slots=True did not build the interp head — precondition gone"
+    assert census["interp"]["grad"] == 0, \
+        "the S-J loss reached `interp`; if that is now intended, drop it from " \
+        "LADDER_UNTRAINED_GROUPS instead of leaving the two out of step"
+    dead = [g for g in want
+            if census[g]["grad"] == 0 and census[g]["none"] > 0]
+    assert not dead, (
+        f"stage S-J marks these groups trainable but its loss reaches NONE of "
+        f"their parameters: {dead} "
+        f"(interp: {census['interp']}) — the freeze audit overstates")
+
+
+@pytest.mark.parametrize("stage", list(STAGES))
+def test_NO_stage_declares_a_group_the_ladder_cannot_train(stage):
+    """The generalisation of the pin above, with the interpretation head ON.
+
+    ⛔ The S-J-only version would pass while a future edit put `interp` into
+    S-T (the stage `STAGE_MAY_INTRODUCE` lets it arrive in) — "absence found at
+    one location is not absence". So this asserts the invariant at EVERY stage,
+    and asserts the two halves separately: the DECLARATION
+    (`stage_trainable_groups`, which ships in the run's config.json) and the
+    EXECUTION (`requires_grad` after `apply_stage_freeze`), because fixing only
+    the second would move the overstatement one layer down rather than remove
+    it.
+    """
+    torch.manual_seed(65)
+    s = V6Stack(tiny_cfg(agent_slots=True))
+    rep = apply_stage_freeze(s, stage)
+
+    assert LADDER_UNTRAINED_GROUPS & set(stage_trainable_groups(stage)) == \
+        set(), f"stage {stage} DECLARES a group no ladder loss reaches"
+    assert LADDER_UNTRAINED_GROUPS & set(rep["trainable_groups"]) == set(), \
+        f"the {stage} freeze AUDIT advertises a group no ladder loss reaches"
+    for g in LADDER_UNTRAINED_GROUPS:
+        assert rep["per_group"][g]["trainable"] == 0, \
+            f"{g} has trainable parameters at {stage}: {rep['per_group'][g]}"
+    # non-vacuity, twice over: the head is built (so `interp` is a real group
+    # here, not an empty one), and the stage still trains SOMETHING.
+    assert rep["per_group"]["interp"]["frozen"] > 0, \
+        "agent_slots=True built no interp parameters — the check is vacuous"
+    assert rep["n_trainable"] > 0, f"stage {stage} trains nothing at all"
+
+
+def test_the_ladder_untrained_invariant_REFUSES_a_bad_STAGE_GROUPS(monkeypatch):
+    """⚠️ NON-VACUITY CONTROL for the guard itself. A guard that cannot fire is
+    the C13 family — an instrument structurally unable to report the answer it
+    is cited for. Re-introduce the exact pre-fix declaration and
+    `stage_trainable_groups` must REFUSE it, naming the mechanism.
+    """
+    import tanitad.models.v6 as v6mod
+    monkeypatch.setitem(v6mod.STAGE_GROUPS, "S-J", v6mod.MODULE_GROUPS)
+    with pytest.raises(RuntimeError, match="zero gradient"):
+        v6mod.stage_trainable_groups("S-J")
+    # ...and the freeze call that produced the overstating audit now cannot run
+    with pytest.raises(RuntimeError, match="LADDER_UNTRAINED_GROUPS"):
+        v6mod.apply_stage_freeze(V6Stack(tiny_cfg()), "S-J")
+
+
+# ============================================================================
+# EDGE 5 — X3 isolation must survive the transition, not only construction
+# ============================================================================
+
+@pytest.mark.parametrize("stage", ["S-S", "S-J"])
+def test_X3_isolation_still_holds_AFTER_an_init_from(st_ckpt, stage):
+    """X3 is checked at fresh construction elsewhere. A stage does not start
+    from fresh construction — it starts from its predecessor's weights, and an
+    isolation guarantee that was only ever measured on random init is a
+    guarantee about a model nobody trains."""
+    s = mk("goal", seed=62)
+    load_stage_init(s, st_ckpt, stage=stage)
+    apply_stage_freeze(s, stage)
+    rep = s.assert_isolation(strict=True)
+    assert rep["pass"] is True
+    assert rep["n_violations"] == {"planner_to_encoder": 0,
+                                   "tactical_to_below": 0,
+                                   "strategic_to_below": 0}
+    # ⚠️ non-vacuity: the probe must actually have had parameters to look at
+    assert all(v > 0 for v in rep["n_probed"].values()), rep["n_probed"]
+
+
+def test_the_resume_contract_is_stated_as_data():
+    """Three requirements, each carrying WHY — the same discipline as
+    STAGE_INVALIDATION_MECHANISM. A refusal with no mechanism teaches nobody."""
+    assert set(RESUME_CONTRACT) == {"same_stage", "labelled", "has_optimiser"}
+    for k, why in RESUME_CONTRACT.items():
+        assert len(why) > 80, f"{k} has no mechanism, only a rule"

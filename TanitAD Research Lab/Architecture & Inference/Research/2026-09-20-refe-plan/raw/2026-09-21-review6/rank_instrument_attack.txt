@@ -1,0 +1,21 @@
+REAL rank0-vs-rank1 4 s endpoint separation: min 0.0029 m  p10 0.128  median 1.415  max 16.875 m
+   keys separated by < 0.01 m:   22 / 1091 (2.0 %)
+   keys separated by < 0.10 m:   98 / 1091 (9.0 %)
+   keys separated by < 0.50 m:  280 / 1091 (25.7 %)
+
+ATTACK A  rank2 = relabelled copy of rank0 (3 rank files)
+   instrument -> exit 0  RANKS_ARE_DISTINCT   EXPECTED: exit 1 RANKS_ARE_A_RELABELLED_COPY
+   ** MISSED **
+
+ATTACK B  rank1 = rank0 + 1e-9 m on every coordinate (zero new information)
+   instrument -> exit 0  RANKS_ARE_DISTINCT   EXPECTED: exit 1 (a 1 nm 'route variant' is not one)
+   ** MISSED **
+
+ATTACK C  rank1 keeps its own traj/goal but its EGO is copied from rank0
+   (on the REAL data ego differs on 1054/1091 keys, so this is a real corruption)
+   instrument -> exit 0  RANKS_ARE_DISTINCT   EXPECTED: exit 1 (the ego is a model INPUT)
+   ** MISSED **
+
+CONTROL   rank1 = relabelled copy of rank0 (the historical defect, at position 1)
+   instrument -> exit 1  RANKS_ARE_A_RELABELLED_COPY   EXPECTED: exit 1 RANKS_ARE_A_RELABELLED_COPY
+   CAUGHT -- the probe is sensitive

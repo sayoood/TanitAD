@@ -1,0 +1,12 @@
+PASS init checkpoint on the dev box is the banked M2b_s0 (sha256 601cb435...)  [601cb4352673]
+PASS bank (cached from an earlier run in work/): bank.json present  [sha256 c58c1b8a71a32b35]
+PASS bank header names the REAL M2b_s0 checkpoint (K-B2 side), coverage clears 0.5  [{'bank.json common.ckpt_sha256': '601cb4352673', 'controls_PASS': {'K-B4': True, 'K-B5': True}, 'coverage': {'blocked': False, 'fraction': 0.6608187134502924, 'min': 0.5, 'n_eligible': 226, 'n_windows': 342}}]
+PASS DAG-OACC gate argv = DAG's real argv token-for-token except the declared data/path re-pointing, plus ONLY --w-acc  [{'bad': [], 'added': []}]
+PASS control gate argv = DAG's real argv token-for-token except the declared data/path re-pointing (NO --w-acc)  [{'bad': [], 'added': []}]
+PASS one-lever rule on the two gate argvs: they differ in --w-acc and --out ONLY  [['--out', '--w-acc']]
+PASS every DAG lever + --w-acc is NAMED on the treatment argv (a flag whose default disables it must be named)  [{'--init-ckpt': 'C:/Users/Admin/box2_ship/logs/v8f_mini/runs/M2b_s0/ckpt_last.pt', '--steps': '3000', '--lr': '1e-4', '--warmup': '100', '--p-gt-start': '0.2', '--p-gt-end': '0.2', '--ego-perturb-p': '0', '--dagger-p': '0.1', '--dagger-bank': 'E:\\Projects\\TanitAD-artifacts\\oaccflat_check\\work\\bank_m2b_s0', '--dagger-bank-sha256': 'c58c1b8a71a32b3543a7a9d78e3a5a41f3f4f54b4db182951337f728175610]
+FAIL REAL gate accepts DAG-OACC (rc 0, declared_vs_built PASS)  [rc ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch]
+FAIL REAL gate accepts the control (DAG, no --w-acc) (rc 0, declared_vs_built PASS)  [rc ZZDVB-REFUSEDZZ dagger: dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch]
+arm1_s0__MUT_swap_apply: 7/9 pass in 22s
+
+--stderr--

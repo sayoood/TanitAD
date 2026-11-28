@@ -1,0 +1,41 @@
+{
+ "tag": "off_fp32",
+ "torch": "2.11.0+cu128",
+ "gpu": "NVIDIA GeForce RTX 4060",
+ "flags": {
+  "cublas": "",
+  "late_cublas": false,
+  "fp32": true,
+  "sdpa": "",
+  "det": "off",
+  "tag": "off_fp32",
+  "ctx": 7680,
+  "batch": 2
+ },
+ "env_CUBLAS_WORKSPACE_CONFIG_at_start": null,
+ "x1_vs_x2": {
+  "params": 78,
+  "params_differ": 66,
+  "max_abs_diff": 1.0677613317966461e-06,
+  "first_differing": [
+   "score_dec.0.n1.bias",
+   "score_dec.0.n2.bias",
+   "score_dec.0.n3.bias",
+   "score_dec.0.self_attn.in_proj_weight"
+  ]
+ },
+ "x1_vs_y": {
+  "params": 78,
+  "params_differ": 65,
+  "max_abs_diff": 1.3923272490501404e-06,
+  "first_differing": [
+   "score_dec.0.n1.bias",
+   "score_dec.0.n2.bias",
+   "score_dec.0.n3.bias",
+   "score_dec.0.self_attn.in_proj_weight"
+  ]
+ },
+ "x1_eq_x2": false,
+ "x1_eq_y": false,
+ "warnings": []
+}

@@ -1,0 +1,22 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file + the two ckpts)",
+ "src": "ckpt/ckpt_D1.pt",
+ "dst": "ckpt/ckpt_D1_planner.pt",
+ "src_md5": "a792cd42c1b088a04677e51b6d2d8b74",
+ "dst_md5": "2d4ac99fd196d9e364e3b0b2c190951b",
+ "n_keys_src": 565,
+ "n_keys_dst": 559,
+ "dropped_keys": [
+  "core.bev_aux_head.ray.0.bias",
+  "core.bev_aux_head.ray.0.weight",
+  "core.bev_aux_head.ray.2.bias",
+  "core.bev_aux_head.ray.2.weight",
+  "core.bev_aux_head.tok.bias",
+  "core.bev_aux_head.tok.weight"
+ ],
+ "dropped_params": 182616,
+ "kept_params": 108307024,
+ "kept_tensors_bit_identical_to_src": true,
+ "step": 4000,
+ "why": "PREREG section 3: the BEV aux head is TRAINING-ONLY and its removal leaves the planner's output bit-identical. For the section 5B arm D0 and D1 must be rebuilt by the SAME code path, so the head is removed here rather than tolerated by a non-strict load."
+}

@@ -1,0 +1,415 @@
+{
+ "gates": {
+  "TB-0": {
+   "id": "TB-0",
+   "name": "cross-environment identity (P5-R, R-B)",
+   "status": "PASS",
+   "bar": "R-B: per rank, ALL of R-TOL-1 (sim8 identical >= 99.5%), R-TOL-2 (per-row max abs diff median <= 0.001, p99 <= 0.005), R-TOL-3 (TB-6 ratios within +-0.01 of the dev-box ratios on the same rows, sim8-fail rate within +-0.25 pp) on the P5-R EVAL control rows; AND Tc20s warm start == dev-box Tc20s build within 1e-08 (R-A)",
+   "value": 0.056656203040615916,
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "p5r_vs_eval_labels": {
+     "n_common_rows": 2400,
+     "n_control_rows": 2400,
+     "n_control_rows_not_in_bank": 0,
+     "n_control_ok_missing_in_table": 0,
+     "max_abs_diff": 0.056656203040615916,
+     "failed_criteria": [],
+     "per_rank": {
+      "0": {
+       "n_common_rows": 1200,
+       "n_control_rows": 1200,
+       "n_sim8_identical": 1200,
+       "frac_sim8_identical": 1.0,
+       "rowmax_median": 7.962924735877529e-06,
+       "rowmax_p99": 0.0012294842212838923,
+       "rowmax_max": 0.056656203040615916,
+       "p99_estimator": "numpy.percentile linear, over per-row max abs label difference (x, y, yaw)",
+       "R-TOL-1": true,
+       "R-TOL-2": true,
+       "tb6_ratio_acc": 1.1581804527852402,
+       "tb6_ratio_hr": 1.5637554601393233,
+       "reference_learn_vs_recomputed_max_abs_diff": 0.0,
+       "tb6_ref_source": "control records' learn / raw.learn",
+       "tb6_ref_acc": 1.1581809446765852,
+       "tb6_ref_hr": 1.5637556766379956,
+       "tb6_diff_acc": -4.918913449891704e-07,
+       "tb6_diff_hr": -2.1649867232298448e-07,
+       "verdict_json_context": {
+        "R_acc": 1.1581809446765852,
+        "R_hr": 1.5637556766379956,
+        "ref_minus_verdict_acc": 0.0,
+        "ref_minus_verdict_hr": 0.0,
+        "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+       },
+       "sim8_fail_rate_pod": 0.0025,
+       "sim8_fail_rate_dev_eval": 0.0025,
+       "sim8_fail_rate_diff_pp": 0.0,
+       "R-TOL-3": true
+      },
+      "1": {
+       "n_common_rows": 1200,
+       "n_control_rows": 1200,
+       "n_sim8_identical": 1200,
+       "frac_sim8_identical": 1.0,
+       "rowmax_median": 4.700964913895156e-06,
+       "rowmax_p99": 0.0013529027894190683,
+       "rowmax_max": 0.010384931511475015,
+       "p99_estimator": "numpy.percentile linear, over per-row max abs label difference (x, y, yaw)",
+       "R-TOL-1": true,
+       "R-TOL-2": true,
+       "tb6_ratio_acc": 1.1475483256129977,
+       "tb6_ratio_hr": 1.3437293742124592,
+       "reference_learn_vs_recomputed_max_abs_diff": 0.0,
+       "tb6_ref_source": "control records' learn / raw.learn",
+       "tb6_ref_acc": 1.1475479758491236,
+       "tb6_ref_hr": 1.3437289308216207,
+       "tb6_diff_acc": 3.4976387408569565e-07,
+       "tb6_diff_hr": 4.433908384893215e-07,
+       "verdict_json_context": {
+        "R_acc": 1.1475479758491236,
+        "R_hr": 1.3437289308216207,
+        "ref_minus_verdict_acc": 0.0,
+        "ref_minus_verdict_hr": 0.0,
+        "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+       },
+       "sim8_fail_rate_pod": 0.0016666666666666668,
+       "sim8_fail_rate_dev_eval": 0.0016666666666666668,
+       "sim8_fail_rate_diff_pp": 0.0,
+       "R-TOL-3": true
+      }
+     },
+     "criteria": {
+      "R-TOL-1": "sim8 identical >= 99.5% of common rows",
+      "R-TOL-2": "per-row max abs diff: median <= 0.001 and p99 <= 0.005",
+      "R-TOL-3": "TB-6 acc/hr ratio within +-0.01 of the dev-box ratio on the SAME common rows (row-matched; verdict.json is context only) and sim8-fail rate within +-0.25 pp of the dev-box EVAL value"
+     }
+    },
+    "tc20s_warm_start_vs_dev_build": {
+     "status": "PASS",
+     "value": 1.4901395672950457e-09,
+     "n": 2400,
+     "n_common_rows": 2400,
+     "n_control_logs": 318,
+     "n_control_ok_missing_in_table": 0,
+     "n_traj_sha_mismatch": 0,
+     "tol": 1e-08,
+     "n_sim8_compared": 0,
+     "n_sim8_verdict_differs": 0
+    }
+   }
+  },
+  "TB-1": {
+   "id": "TB-1",
+   "name": "reproduction (Tc20s npz + P5-R EVAL)",
+   "status": "PASS",
+   "bar": "Tc20s TB-1 (1018/1018, diff <= 1e-09) AND reproduction of all 2400 P5-R EVAL labels under R-TOL-1/2/3 (per rank, as TB-0)",
+   "value": "2400/2400",
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "p5r_eval_reproduction": {
+     "n_common_rows": 2400,
+     "n_control_rows": 2400,
+     "n_control_rows_not_in_bank": 0,
+     "n_control_ok_missing_in_table": 0,
+     "max_abs_diff": 0.056656203040615916,
+     "failed_criteria": [],
+     "per_rank": {
+      "0": {
+       "n_common_rows": 1200,
+       "n_control_rows": 1200,
+       "n_sim8_identical": 1200,
+       "frac_sim8_identical": 1.0,
+       "rowmax_median": 7.962924735877529e-06,
+       "rowmax_p99": 0.0012294842212838923,
+       "rowmax_max": 0.056656203040615916,
+       "p99_estimator": "numpy.percentile linear, over per-row max abs label difference (x, y, yaw)",
+       "R-TOL-1": true,
+       "R-TOL-2": true,
+       "tb6_ratio_acc": 1.1581804527852402,
+       "tb6_ratio_hr": 1.5637554601393233,
+       "reference_learn_vs_recomputed_max_abs_diff": 0.0,
+       "tb6_ref_source": "control records' learn / raw.learn",
+       "tb6_ref_acc": 1.1581809446765852,
+       "tb6_ref_hr": 1.5637556766379956,
+       "tb6_diff_acc": -4.918913449891704e-07,
+       "tb6_diff_hr": -2.1649867232298448e-07,
+       "verdict_json_context": {
+        "R_acc": 1.1581809446765852,
+        "R_hr": 1.5637556766379956,
+        "ref_minus_verdict_acc": 0.0,
+        "ref_minus_verdict_hr": 0.0,
+        "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+       },
+       "sim8_fail_rate_pod": 0.0025,
+       "sim8_fail_rate_dev_eval": 0.0025,
+       "sim8_fail_rate_diff_pp": 0.0,
+       "R-TOL-3": true
+      },
+      "1": {
+       "n_common_rows": 1200,
+       "n_control_rows": 1200,
+       "n_sim8_identical": 1200,
+       "frac_sim8_identical": 1.0,
+       "rowmax_median": 4.700964913895156e-06,
+       "rowmax_p99": 0.0013529027894190683,
+       "rowmax_max": 0.010384931511475015,
+       "p99_estimator": "numpy.percentile linear, over per-row max abs label difference (x, y, yaw)",
+       "R-TOL-1": true,
+       "R-TOL-2": true,
+       "tb6_ratio_acc": 1.1475483256129977,
+       "tb6_ratio_hr": 1.3437293742124592,
+       "reference_learn_vs_recomputed_max_abs_diff": 0.0,
+       "tb6_ref_source": "control records' learn / raw.learn",
+       "tb6_ref_acc": 1.1475479758491236,
+       "tb6_ref_hr": 1.3437289308216207,
+       "tb6_diff_acc": 3.4976387408569565e-07,
+       "tb6_diff_hr": 4.433908384893215e-07,
+       "verdict_json_context": {
+        "R_acc": 1.1475479758491236,
+        "R_hr": 1.3437289308216207,
+        "ref_minus_verdict_acc": 0.0,
+        "ref_minus_verdict_hr": 0.0,
+        "note": "recorded only, not gated; with full 2,400-row coverage the row-matched reference must agree with verdict.json to 1e-9"
+       },
+       "sim8_fail_rate_pod": 0.0016666666666666668,
+       "sim8_fail_rate_dev_eval": 0.0016666666666666668,
+       "sim8_fail_rate_diff_pp": 0.0,
+       "R-TOL-3": true
+      }
+     },
+     "criteria": {
+      "R-TOL-1": "sim8 identical >= 99.5% of common rows",
+      "R-TOL-2": "per-row max abs diff: median <= 0.001 and p99 <= 0.005",
+      "R-TOL-3": "TB-6 acc/hr ratio within +-0.01 of the dev-box ratio on the SAME common rows (row-matched; verdict.json is context only) and sim8-fail rate within +-0.25 pp of the dev-box EVAL value"
+     }
+    },
+    "tc20s_tb1": {
+     "status": "PASS",
+     "value": "1018/1018"
+    }
+   }
+  },
+  "TB-2": {
+   "id": "TB-2",
+   "name": "S3 re-simulation identity",
+   "status": "PASS",
+   "bar": "S3: tracked8 of the stored label, simulated alone, equals the solver's final s: <= 1e-06 (m, rad) on every p5r row (replaces TB-2's spline knot exactness)",
+   "value": 0.0,
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "n_over_bar": 0,
+    "n_rows_missing_S3_field": 0,
+    "per_rank": {
+     "0": {
+      "n_tc20s": 1200,
+      "n_p5r": 1200,
+      "knot_fail": 0,
+      "knot_dev_bad": 0,
+      "note": "keys named for rank_policy(): n_tc20s == n_p5r, knot_fail == S3 failures"
+     },
+     "1": {
+      "n_tc20s": 1200,
+      "n_p5r": 1200,
+      "knot_fail": 0,
+      "knot_dev_bad": 0,
+      "note": "keys named for rank_policy(): n_tc20s == n_p5r, knot_fail == S3 failures"
+     }
+    }
+   }
+  },
+  "TB-3": {
+   "id": "TB-3",
+   "name": "identity control",
+   "status": "PASS",
+   "bar": "ident == traj bit-for-bit on 100 % of rows",
+   "value": "2400/2400",
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "note": "the driver's own `ident` row (sign 0.0) is not persisted; this checks the identity TABLE (label := traj through the table's JSON encoding) against the bank bytes"
+   }
+  },
+  "TB-4": {
+   "id": "TB-4",
+   "name": "coverage",
+   "status": "PASS",
+   "bar": "table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows; S4: fallbacks <= 1.0 % of rows PER RANK",
+   "value": "2400/2400",
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "bank_rows": 2400,
+    "expected_rows": 2400,
+    "unique_bank_keys": 2400,
+    "table_keys": 2400,
+    "absent": 0,
+    "extra_label_records": 0,
+    "duplicate_label_records": 0,
+    "traj_sha_mismatch": 0,
+    "n_raw_fallback": 0,
+    "raw_fallback_frac": 0.0,
+    "fallback_causes": {},
+    "REFUSE_if_fallback_over_1pct": false,
+    "S4_per_rank": {
+     "0": {
+      "n_rows": 1200,
+      "n_raw_fallback": 0,
+      "frac": 0.0
+     },
+     "1": {
+      "n_rows": 1200,
+      "n_raw_fallback": 0,
+      "frac": 0.0
+     }
+    }
+   }
+  },
+  "TB-5": {
+   "id": "TB-5",
+   "name": "sanity",
+   "status": "PASS",
+   "bar": "every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %); S1/S2/S5 flags recorded true on every p5r row",
+   "value": "2400/2400",
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "non_finite": 0,
+    "yaw_branch_ge_pi": 0,
+    "sim_hz_not_10": 0,
+    "max_abs_dyaw": 2.3830868392574773,
+    "S1_S2_S5_not_true": {
+     "S1": 0,
+     "S2": 0,
+     "S5": 0
+    }
+   }
+  },
+  "TB-6": {
+   "id": "TB-6",
+   "name": "learnability per rank",
+   "status": "PASS",
+   "bar": "per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (PREREG_P5R 10: next lever P5-T); rank-1 FAIL => rank-0 only",
+   "value": {
+    "rank0": [
+     1.1581804527852402,
+     1.5637554601393233
+    ],
+    "rank1": [
+     1.1475483256129977,
+     1.3437293742124592
+    ]
+   },
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "rank0": {
+     "rank": 0,
+     "n": 1200,
+     "diag_median_of_row_ratios_acc": 1.131498070168269,
+     "diag_median_of_row_ratios_hr": 1.4307022262323266,
+     "median_max_acc_label": 1.6507880800535686,
+     "median_max_acc_traj": 1.425328908015746,
+     "ratio_acc": 1.1581804527852402,
+     "median_max_hr_label_deg_s": 7.620031645912409,
+     "median_max_hr_traj_deg_s": 4.872904901149633,
+     "ratio_hr": 1.5637554601393233,
+     "pass": true
+    },
+    "rank1": {
+     "rank": 1,
+     "n": 1200,
+     "diag_median_of_row_ratios_acc": 1.1205687487044278,
+     "diag_median_of_row_ratios_hr": 1.3306839873279919,
+     "median_max_acc_label": 1.6690563458561036,
+     "median_max_acc_traj": 1.454454081456244,
+     "ratio_acc": 1.1475483256129977,
+     "median_max_hr_label_deg_s": 11.893727799702084,
+     "median_max_hr_traj_deg_s": 8.8512821316218,
+     "ratio_hr": 1.3437293742124592,
+     "pass": true
+    },
+    "rank0_fail_STOP_next_lever_P5R": false,
+    "rank1_fail_means_rank0_only": false,
+    "population": "rows whose label source is p5r (raw_fallback rows are identity and excluded)",
+    "rank0_fail_next_lever": "P5-T (selective label), PREREG_P5R 10"
+   }
+  },
+  "TB-7": {
+   "id": "TB-7",
+   "name": "n_differs recorded",
+   "status": "PASS",
+   "bar": "n_differs per rank recorded",
+   "value": {
+    "0": 1200,
+    "1": 1200
+   },
+   "n": 2400,
+   "evidence": "MEASURED",
+   "detail": {
+    "per_rank": {
+     "0": {
+      "n_rows": 1200,
+      "n_tc20s": 1200,
+      "n_raw_fallback": 0,
+      "n_differs": 1200
+     },
+     "1": {
+      "n_rows": 1200,
+      "n_tc20s": 1200,
+      "n_raw_fallback": 0,
+      "n_differs": 1200
+     }
+    },
+    "feeds": "G-LIVE (a): n_differs must be > 0 for the substitution to be non-trivial",
+    "warn_zero_differs": []
+   }
+  }
+ },
+ "rank_policy": {
+  "decision": "UNDECIDED",
+  "missing_inputs": [
+   "repair_rank0.json (per-row records) for r_0 WITH p5r_sim8 (p5c_dual_labels.py repair)",
+   "repair_rank1.json (per-row records) for r_1 WITH p5r_sim8 (p5c_dual_labels.py repair)"
+  ]
+ },
+ "failing": [],
+ "merged_jsonl": {
+  "written": true,
+  "all": "/workspace/data/p5c_label_a33/gates/control/merged_labels_all.jsonl",
+  "rank0only": "/workspace/data/p5c_label_a33/gates/control/merged_labels_rank0only.jsonl"
+ },
+ "label_records": 2400,
+ "bank_files": [
+  "/workspace/data/p5c_label_a33/control/bank/targets_rank0.jsonl",
+  "/workspace/data/p5c_label_a33/control/bank/targets_rank1.jsonl"
+ ],
+ "inputs": {
+  "labels": [
+   "/workspace/data/p5c_label_a33/control/out/labels_s0of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s10of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s11of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s12of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s13of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s14of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s1of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s2of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s3of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s4of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s5of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s6of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s7of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s8of15.jsonl",
+   "/workspace/data/p5c_label_a33/control/out/labels_s9of15.jsonl"
+  ],
+  "control": [
+   "/workspace/data/p5c_ship/dev_labels/labels_s0of2.jsonl",
+   "/workspace/data/p5c_ship/dev_labels/labels_s1of2.jsonl"
+  ],
+  "tb1": "/workspace/data/p5c_ship/TB1_control_1018.json"
+ },
+ "tc20s_ranks": "all"
+}

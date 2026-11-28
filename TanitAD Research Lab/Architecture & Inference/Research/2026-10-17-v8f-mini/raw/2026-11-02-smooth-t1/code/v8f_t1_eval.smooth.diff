@@ -1,0 +1,131 @@
+--- a/stack/scripts/v8f_t1_eval.py (blob 3a516754954c170082e0af1223c30ab9ab3e83b4)
++++ b/stack/scripts/v8f_t1_eval.py
+@@ -25,6 +25,12 @@
+ ``t_goal_prob``, ``t_lat_logits``, ``t_lon_logits``, ``t_cons_pred``, and the poses that frame them. Both flags default OFF; absent, the tool's output is unchanged bit for bit
+ (control C-T, and ``tests/test_v8f_t1_heads.py``). The P10 floor has no heads and is never recorded.
+ 
++``--smooth {off,sg72}`` (SMOOTH-T1, default off): ``sg72`` applies PREREG_V8F_SMOOTH's operator, verbatim, to the model's plan at EVERY replan, before the executor:
++``S(plan) = P + SG(plan - P)`` with ``P`` = the prior the model computed in the very ``forward_infer`` call (``out["p10"]``, the P10 at the EXECUTED state) and SG = a
++Savitzky-Golay filter along time, per coordinate, window 7, order 2, ``mode="interp"`` (``scipy.signal.savgol_filter``). The smoothed plan is what the executor commits, what ``ol``
++(the tick-0 plan) holds and what ``--dump-ticks`` calls ``plan``; with ``--dump-ticks`` the ticks file also carries ``plan_raw`` (the model's plan before S) and ``smooth``.
++The P10 floor is never smoothed. Absent the flag (or ``off``) the output is unchanged bit for bit (``tests/test_v8f_t1_smooth.py``).
++
+ Modes:  run  (rollout + dumps + analysis)   |   analyze  (re-score existing dumps)
+ """
+ from __future__ import annotations
+@@ -69,6 +75,9 @@
+ CAUSAL_STEPS = 20
+ CAUSAL_STATS = {}            # per run: ticks, ticks with no finite past, agreement with the logged bucket, 4 x 4 confusion (logged x causal)
+ SCHEDULES = ("periodic", "fresh")
++#: SMOOTH-T1 (PREREG_V8F_SMOOTH, sha256 a2f19e48...): the operator is fixed there and is NOT tuned here -- window 7 steps (1.4 s), polynomial order 2, ``mode="interp"``, along time, per coordinate.
++SMOOTH_MODES = ("off", "sg72")
++SG_WINDOW, SG_ORDER = 7, 2
+ TIER_DOCTRINE = ("EVAL_DOCTRINE.md, PI amendment 2026-09-02: T0 and T1 are both OPEN LOOP; T2 is the only closed loop and is not "
+                  "provisioned. T1 here = the ego state is the model's OWN executed motion; the camera stream is logged. "
+                  "It supports open-loop trajectory-quality claims only, never 'drives'.")
+@@ -273,13 +282,28 @@
+ 
+ 
+ # ------------------------------------------------------------------------------------------------ planners
++def smooth_plan(plan, prior, mode: str = "off"):
++    """PREREG_V8F_SMOOTH's operator ``S(plan) = P + SG(plan - P)`` on a batch of plans [B, 30, 2] and their prior ``P`` [B, 30, 2] (the SAME arithmetic as
++    ``v8f_smooth_read.smooth``: ``base + savgol_filter(pred - base, 7, 2, axis=1, mode="interp")``, evaluated in float64). ``off`` returns ``plan`` itself (the same object)."""
++    if mode == "off":
++        return plan
++    if mode != "sg72":
++        raise ValueError(f"--smooth must be one of {SMOOTH_MODES}, got {mode!r}")
++    from scipy.signal import savgol_filter
++    plan64, p64 = np.asarray(plan, np.float64), np.asarray(prior, np.float64)
++    if plan64.shape != p64.shape or plan64.ndim != 3 or plan64.shape[1] < SG_WINDOW:
++        raise ValueError(f"smooth_plan: plan {plan64.shape} and prior {p64.shape} must match and be [B, T>={SG_WINDOW}, 2]")
++    return (p64 + savgol_filter(plan64 - p64, SG_WINDOW, SG_ORDER, axis=1, mode="interp")).astype(np.asarray(plan).dtype)
++
++
+ #: the S / T head outputs ``--dump-heads`` keeps from ``forward_infer`` (the names ``v8f_mini_eval.cmd_run`` collects into ``outs``); float32, as the T0 eval stores them
+ HEAD_KEYS = ("ckpt", "goal_prob", "lat_logits", "lon_logits", "cons_pred")
+ 
+ 
+-def model_planner(model, device, keep_aux: bool = False, keep_heads: bool = False):
++def model_planner(model, device, keep_aux: bool = False, keep_heads: bool = False, smooth: str = "off"):
+     """The model's plan. ``keep_aux`` (``--dump-ticks``) additionally keeps, per call, O's plan before the post-map (``tau``), the prior (``P``) and the gate flags;
+-    ``keep_heads`` (``--dump-heads``) keeps :data:`HEAD_KEYS` of the SAME ``forward_infer`` call (never a second call). Neither changes any output."""
++    ``keep_heads`` (``--dump-heads``) keeps :data:`HEAD_KEYS` of the SAME ``forward_infer`` call (never a second call). Neither changes any output.
++    ``smooth`` (``--smooth``): ``sg72`` returns :func:`smooth_plan` of the model's plan over its own prior ``out["p10"]`` (the pre-S plan is kept as ``plan.plan_raw``); ``off`` returns the plan untouched."""
+     import torch
+ 
+     def plan(batch):
+@@ -291,10 +315,15 @@
+                         "fired": None if "hacc_gate_fired" not in out else out["hacc_gate_fired"].cpu().numpy()}
+         if keep_heads:
+             plan.heads = {k: out[k].float().cpu().numpy() for k in HEAD_KEYS}
+-        return out["traj30"].float().cpu().numpy()
++        raw = out["traj30"].float().cpu().numpy()
++        if smooth == "off":
++            return raw
++        plan.plan_raw = raw
++        return smooth_plan(raw, out["p10"].float().cpu().numpy(), smooth)
+     plan.keys_read = set()
+     plan.aux = None
+     plan.heads = None
++    plan.plan_raw = None
+     return plan
+ 
+ 
+@@ -338,9 +367,9 @@
+     RAW_HEAD_FIELDS = ("s_ckpt", "s_pose", "t_goal_prob", "t_lat_logits", "t_lon_logits", "t_cons_pred", "t_pose", "pose_w0")      # recorded per tick
+     HEAD_FIELDS = RAW_HEAD_FIELDS + ("s_ckpt_now", "s_ckpt_w0")                                                                      # + the two frames derived at save()
+ 
+-    def __init__(self, planner, store, J, heads: bool = False):
+-        self.planner, self.store, self.J, self.heads = planner, store, J, bool(heads)
+-        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ())}
++    def __init__(self, planner, store, J, heads: bool = False, smooth: str = "off"):
++        self.planner, self.store, self.J, self.heads, self.smooth = planner, store, J, bool(heads), smooth
++        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ()) + (("plan_raw",) if smooth != "off" else ())}
+         self.clip = []
+         self.base = 0                                                    # the index of the chunk's first window in the run's window list
+ 
+@@ -360,6 +389,8 @@
+             gt, ok = gt_in_frame(self.store.get(clip)["pose"], pose_now, st.j)
+             r = self.rows
+             r["tau"].append(aux["tau"][b]); r["P"].append(aux["P"][b]); r["plan"].append(np.asarray(plan[b], np.float64))
++            if self.smooth != "off":                                     # only then: the pre-S plan beside the issued (smoothed) one
++                r["plan_raw"].append(np.asarray(self.planner.plan_raw[b], np.float64))
+             r["gt"].append(gt); r["gt_ok"].append(ok); r["v0"].append(v0[b]); r["pose"].append(pose_now[:4])
+             r["fired"].append(False if aux["fired"] is None else bool(aux["fired"][b]))
+             r["win"].append(self.base + b); r["ci"].append(st.ci); r["t0"].append(st.t0); r["tick"].append(n); r["j"].append(st.j)
+@@ -490,6 +521,7 @@
+     p.add_argument("--device", default="auto")
+     p.add_argument("--no-analyze", action="store_true")
+     p.add_argument("--dump-ticks", default="", help="PREREG_V8F_HACC_LAT: a directory; writes ticks_<tag>.npz = one row per (window, tick) of the model's rollout (tau, P, plan, v0, GT in the executed frame, ids)")
++    p.add_argument("--smooth", choices=SMOOTH_MODES, default="off", help="SMOOTH-T1: sg72 = PREREG_V8F_SMOOTH's S(plan) = P + SG(plan - P) (window 7, order 2, interp) on the model's plan at every replan, before the executor; off (default) = unchanged bit for bit")
+     p.add_argument("--dump-heads", action="store_true", help="T1-HEADS (needs --dump-ticks): add the S head and T head outputs of each tick's forward_infer call to those rows (s_ckpt*, t_goal_prob, t_lat_logits, t_lon_logits, t_cons_pred + poses)")
+     p = sub.add_parser("analyze")
+     p.add_argument("--dump-dir", required=True)
+@@ -527,10 +559,10 @@
+     t_start = time.time()
+     for b0 in range(0, len(wins), a.batch):
+         chunk = wins[b0:b0 + a.batch]
+-        mp = model_planner(model, dev, keep_aux=bool(a.dump_ticks), keep_heads=bool(a.dump_heads))
++        mp = model_planner(model, dev, keep_aux=bool(a.dump_ticks), keep_heads=bool(a.dump_heads), smooth=a.smooth)
+         st_m = make_states(store, tracks, J, chunk, a.nav)
+         if a.dump_ticks:
+-            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads)
++            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads, smooth=a.smooth)
+             rec.planner, rec.base = mp, b0
+             plan0, exe = rollout(mp, st_m, ds, proxy, hook=rec, **kw)
+         else:
+@@ -567,9 +599,13 @@
+         header["causal_bucket"] = {"rule": "speed_max_bin(max finite measured ego speed over rows "
+                                            + (f"[j - {CAUSAL_STEPS}, j])" if a.limit == "causal" else "[0, j])"),
+                                    "stats_model_ticks": CAUSAL_STATS}
++    if a.smooth != "off":                                                # only then: --smooth off / absent => the header (and the result JSON) is byte-identical to the pre-flag tool's
++        header["smooth"] = {"mode": a.smooth, "operator": f"P + savgol_filter(plan - P, {SG_WINDOW}, {SG_ORDER}, axis=1, mode='interp')", "prereg": "PREREG_V8F_SMOOTH (sha256 a2f19e48...)",
++                            "applied": "to the model's plan at every replan, before the executor; the P10 floor is not smoothed"}
+     if a.dump_ticks:                                                     # only then: flags absent => the header (and the result JSON) is byte-identical to the pre-flag tool's
+         tick_path = os.path.join(a.dump_ticks, f"ticks_{a.tag}.npz")
+-        rec.save(tick_path, {"split": "eval", "tag": a.tag, "ckpt": a.ckpt, "replan_steps": a.replan_steps, "n_windows": len(wins), "clip_names": np.asarray(J["clip"])})
++        rec.save(tick_path, {"split": "eval", "tag": a.tag, "ckpt": a.ckpt, "replan_steps": a.replan_steps, "n_windows": len(wins), "clip_names": np.asarray(J["clip"]),
++                             **({"smooth": a.smooth} if a.smooth != "off" else {})})
+         header["ticks_file"] = tick_path
+         header["ticks_heads"] = bool(a.dump_heads)
+     os.makedirs(a.out_dir, exist_ok=True)

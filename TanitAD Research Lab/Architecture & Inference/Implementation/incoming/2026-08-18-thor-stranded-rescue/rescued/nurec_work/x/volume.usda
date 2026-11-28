@@ -1,0 +1,99 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary renderSettings = {
+            int "rtx:directLighting:sampledLighting:samplesPerPixel" = 8
+            bool "rtx:material:enableRefraction" = 0
+            bool "rtx:matteObject:visibility:secondaryRays" = 1
+            bool "rtx:post:histogram:enabled" = 0
+            bool "rtx:post:registeredCompositing:invertColorCorrection" = 1
+            bool "rtx:post:registeredCompositing:invertToneMap" = 1
+            int "rtx:post:tonemap:op" = 2
+            bool "rtx:raytracing:fractionalCutoutOpacity" = 0
+            string "rtx:rendermode" = "RaytracedLighting"
+        }
+    }
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World"
+{
+    def Volume "volume"
+    {
+        float3[] extent = [(-inf, -inf, -inf), (inf, inf, inf)]
+        custom rel field:density = </World/volume/density_field>
+        custom rel field:emissiveColor = </World/volume/emissive_color_field>
+        custom float3 omni:nurec:crop:maxBounds = (inf, inf, inf)
+        custom float3 omni:nurec:crop:minBounds = (-inf, -inf, -inf)
+        custom bool omni:nurec:isNuRecVolume = 1
+        custom float3 omni:nurec:offset = (-163.97589, 20.33144, -1.5638398)
+        custom bool omni:nurec:useProxyTransform = 0
+        custom rel tracks = [
+            </World/sequence_tracks/bounding_boxes/track_00000_121/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00001_103/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00002_171/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00003_142/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00004_0/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00005_131/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00006_169/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00007_159/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00008_108/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00009_6/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00010_64/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00011_91/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00012_151/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00013_147/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00014_129/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00015_111/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00016_56/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00017_161/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00018_172/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00019_107/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00020_157/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00021_45/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00022_90/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00023_127/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00024_101/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00025_133/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00026_135/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00027_69/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00028_60/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00029_124/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00030_93/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00031_102/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00032_77/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00033_164/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00034_123/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00035_130/cuboid>,
+            </World/sequence_tracks/bounding_boxes/track_00036_174/cuboid>,
+        ]
+
+        def OmniNuRecFieldAsset "density_field"
+        {
+            custom token fieldDataType = "float"
+            custom token fieldName = "density"
+            custom token fieldRole = "density"
+            custom asset filePath = @./volume.nurec@
+        }
+
+        def OmniNuRecFieldAsset "emissive_color_field"
+        {
+            custom token fieldDataType = "float3"
+            custom token fieldName = "emissiveColor"
+            custom token fieldRole = "emissiveColor"
+            custom asset filePath = @./volume.nurec@
+            custom float4 omni:nurec:ccmB = (0, 0, 1, 0)
+            custom float4 omni:nurec:ccmG = (0, 1, 0, 0)
+            custom float4 omni:nurec:ccmR = (1, 0, 0, 0)
+        }
+    }
+
+    over "sequence_tracks" (
+        prepend references = @sequence_tracks.usda@
+    )
+    {
+    }
+}
+

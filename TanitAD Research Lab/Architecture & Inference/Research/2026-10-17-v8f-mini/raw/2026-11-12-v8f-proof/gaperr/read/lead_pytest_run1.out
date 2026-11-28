@@ -1,0 +1,18 @@
+........................................................................ [ 59%]
+.............................................F...                        [100%]
+================================== FAILURES ===================================
+_______________ test_no_file_above_5_mb_and_no_lead_pytest_out ________________
+
+    def test_no_file_above_5_mb_and_no_lead_pytest_out():
+        for p in HERE.rglob("*"):
+            if p.is_file():
+                assert p.stat().st_size <= 5 * 1024 * 1024, p
+>       assert not (HERE / "lead_pytest.out").exists()
+E       AssertionError: assert not True
+E        +  where True = exists()
+E        +    where exists = (WindowsPath('F:/TanitAD-scratch/v8proof/gaperr/read') / 'lead_pytest.out').exists
+
+gaperr\read\test_gaperr_read.py:827: AssertionError
+=========================== short test summary info ===========================
+FAILED gaperr/read/test_gaperr_read.py::test_no_file_above_5_mb_and_no_lead_pytest_out
+1 failed, 120 passed in 29.29s

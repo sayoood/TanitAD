@@ -1,0 +1,16 @@
+baseline rc 3 fails ['FAIL C0 banked read reproduced: max |dk141 - banked dk_read.json| over 126 cells'] OK
+KILLED    L1 gap without half the lead length rc 2 | ['DK141 REFUSED (pinned reader guard): KINEMATIC-CONTRACT CHECK FAILED: median |headway(recomputed human) - block gt_headw']
+KILLED    L2 headway = max instead of min rc 2 | ['DK141 REFUSED (pinned reader guard): KINEMATIC-CONTRACT CHECK FAILED: median |headway(recomputed human) - block gt_headw']
+KILLED    L3 corridor disabled rc 3 | ['FAIL C0p point values (means, n, n_viol, progress, delta points) reproduce the banked read (bootstrap-free)', 'FAIL C2b tight-gap rate is over exactly the windows with a defined time gap (n equals the banked human time-gap n)']
+KILLED    L4 time gap = headway * speed rc 3 | ['FAIL C0p point values (means, n, n_viol, progress, delta points) reproduce the banked read (bootstrap-free)']
+KILLED    L5 closing-rate sign flipped rc 3 | ['FAIL C0p point values (means, n, n_viol, progress, delta points) reproduce the banked read (bootstrap-free)', 'FAIL C5 STOP has ZERO TTC violations (min TTC < 1.5 s) (k10)']
+KILLED    L6 LEAD-VIOL inequality flipped rc 2 | ['DK141 REFUSED: k10/M2b_s0: my LEAD-VIOL flags sum to 5, lead_metrics.lead_viol says 596']
+KILLED    L7 behind-the-lead steps admitted (gap>=0 dropped) rc 3 | ['FAIL C0p point values (means, n, n_viol, progress, delta points) reproduce the banked read (bootstrap-free)', 'FAIL C2b tight-gap rate is over exactly the windows with a defined time gap (n equals the banked human time-gap n)']
+KILLED    D1 TTC violation threshold 0 rc 3 | ['FAIL C8 THROUGH: >=99 % of lead windows read min TTC < 0.0 s, and every miss has a SHORT admissible span (<= 4 corridor steps) (k10)', "FAIL C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k10)"]
+KILLED    D2 oracle without half the lead length rc 3 | ['FAIL C3 STOP headway == independent oracle, all windows, same NaN pattern (k10)', 'FAIL C3 STOP headway == independent oracle, all windows, same NaN pattern (k30)']
+KILLED    D3 at-risk condition broken rc 2 | ['DK141 REFUSED: k10/M2b_s0: my LEAD-VIOL flags sum to 0, lead_metrics.lead_viol says 5']
+KILLED    D4 join frame = t instead of 2t rc 2 | ['DK141 REFUSED (pinned reader guard): LABEL-FREE SPEED PROOF FAILED: max |eval v0 - block speed at the joined row| = 15.9']
+KILLED    D5 paired rate delta sign flipped rc 3 | ["FAIL C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k10)", "FAIL C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k30)"]
+KILLED    D6 non-finite time gaps scored as 0 (free flow) rc 3 | ['FAIL C2b tight-gap rate is over exactly the windows with a defined time gap (n equals the banked human time-gap n)']
+KILLED    D7 pred shifted one step rc 2 | ['DK141 REFUSED (pinned reader guard): M2b_s0: ||pred - gt|| differs from its saved ade6 by 6.15 m (> 1e-05): the rebuilt ']
+MUTATION 14/14 killed; baseline_ok=True

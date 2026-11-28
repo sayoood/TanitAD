@@ -1,0 +1,29 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] /home/nvidia/r8ns/perc8/cache/train_diag139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 90 / left 24 / right 25, missing 0 (of 139 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_train.jsonl): 23751/23751 windows fed, per-step windows {'30': 7864, '50': 8718, '100': 5984, '120': 1185}, per-clip rows {'30': 1741, '50': 1593, '100': 1014, '120': 224}
+[v3] agent join: 139/139 episodes (stable-63bit), 22946/23751 windows labelled (96.6 %), 763600 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 23751 windows over 139 clips (verdict PASS)
+[diag] built: step 48852 episodes 139 windows 23751 build 130s
+[diag] split train_diag: 1112 windows over 139 episodes, batch 8
+Traceback (most recent call last):
+  File "/home/nvidia/r8ns/perc8/code/run_diag_r8.py", line 14, in <module>
+    sys.exit(run_diag.main())
+             ^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/perc8/code/run_diag.py", line 202, in main
+    el = tr.compute_losses_v3(model, b, "cuda", mode=args.mode, ablate_frames=args.ablate_frames)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/scripts/refc_v3_train.py", line 6464, in compute_losses_v3
+    _mh_term = _map_hires_loss(model, out, batch, device, extra,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/r8ns/code/tree/stack/scripts/refc_v3_train.py", line 5043, in _map_hires_loss
+    row = _mhr.map_hires_loss_row(
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: main.<locals>.wrapped() got an unexpected keyword argument 'class_thresholds'

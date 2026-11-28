@@ -1,0 +1,446 @@
+{
+ "prereg": "PREREG_V8F_KHYP",
+ "decision": {
+  "outcome": "HEADROOM, NO SELECTOR",
+  "PRIMARY_per_seed": {
+   "0": false,
+   "1": false
+  },
+  "SECONDARY_per_seed": {
+   "0": true,
+   "1": true
+  },
+  "HEADROOM_le_minus_2F_per_seed": {
+   "0": true,
+   "1": true
+  },
+  "headroom_seed_split": false,
+  "F": 0.1207,
+  "bar_primary": -0.1207,
+  "bar_headroom": -0.2414,
+  "committed_next_step_quoted": "the alternatives exist but the cheap features cannot pick them. Next: a scorer that reads the scene (a trained head; box 2)"
+ },
+ "controls_all_pass": false,
+ "F_exact": 0.12074003333057703,
+ "evidence_class": "MEASURED (ours), artifacts under C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\khyp",
+ "tier": {
+  "ORACLE": "T0 diagnostic (reads the GT; headroom, never a result)",
+  "selectors": "T1-class open loop (own held outputs, no GT read at inference)"
+ },
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, 141 episodes (taniteval/ci.py)",
+ "per_seed": {
+  "s0": {
+   "HEADROOM": {
+    "read": "ADE6 ORACLE - B (T0, descriptive)",
+    "point_unrounded": -0.4233447853671317,
+    "mean": -0.4233,
+    "lo": -0.4656,
+    "hi": -0.3833,
+    "separated": true
+   },
+   "PRIMARY": {
+    "read": "ADE6 SEL-LEARN - B",
+    "bar": "<= -0.1207 and separated",
+    "point_unrounded": -0.09824306784315517,
+    "mean": -0.0982,
+    "lo": -0.141,
+    "hi": -0.0586,
+    "separated": true
+   },
+   "SECONDARY": {
+    "speed_mae": {
+     "point_unrounded": -0.09199839806795218,
+     "mean": -0.092,
+     "lo": -0.1195,
+     "hi": -0.0672,
+     "separated": true,
+     "worse": false
+    },
+    "accel_mae": {
+     "point_unrounded": -0.12469526846466494,
+     "mean": -0.1247,
+     "lo": -0.1464,
+     "hi": -0.1039,
+     "separated": true,
+     "worse": false
+    }
+   },
+   "controls": {
+    "alignment": {
+     "gt_maxabs": 7.628115213265119e-06,
+     "limit_ms_equal": true,
+     "lead_gap_h_equal": true,
+     "s_h_maxabs": 0.0,
+     "n": 2399
+    },
+    "own_vs_diag_identity_maxabs_m": 0.0,
+    "control2_reproduction": {
+     "banked_kind_own": {
+      "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad/hblend/inputs/banked/eval_M2b_s0-kind-own.npz",
+      "ade6_mean_mine": 2.1753060537342375,
+      "ade6_mean_banked": 2.175306138079546,
+      "ade6_abs_diff_m": 8.434530851531008e-08,
+      "traj30_maxabs_vs_banked_pred_m": 4.1961669921875e-05,
+      "stop_bar_m": 0.001,
+      "pass": true
+     },
+     "sfresh_cycle_rerun": {
+      "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad/sfresh/eval/eval_M2b_s0-sfresh-cycle.npz",
+      "ade6_mean_mine": 2.1753060537342375,
+      "ade6_mean_banked": 2.1753060638040864,
+      "ade6_abs_diff_m": 1.0069848954685767e-08,
+      "traj30_maxabs_vs_banked_pred_m": 3.0517578125e-05,
+      "stop_bar_m": 0.001,
+      "pass": true
+     }
+    },
+    "train_window_list": {
+     "n_mine": 9582,
+     "n_hblend": 9582,
+     "ci": true,
+     "t": true,
+     "a_t": true,
+     "a_s": true,
+     "gt_maxabs": 0.0,
+     "own_traj30_maxabs_vs_hblend_fit_m": 3.814697265625e-05,
+     "pass": true
+    },
+    "control1": {
+     "n_exact_onehot_windows": 0,
+     "max_abs_delta_m": null,
+     "pass": null,
+     "note": "vacuous on this data (no exactly one-hot softmax)",
+     "harness_identity_maxabs_m": 0.0
+    },
+    "control4": {
+     "ARGMAX": {
+      "n_violations": 0,
+      "max_excess_m": 0.0
+     },
+     "LEARN": {
+      "n_violations": 0,
+      "max_excess_m": 0.0
+     },
+     "pass": true,
+     "MIX_reported": {
+      "n_windows_mix_beats_oracle": 56,
+      "max_excess_m": 0.12814712524693617
+     }
+    },
+    "hypotheses_distinct": true,
+    "stack_H_on_B_vs_hblend_banked_H_maxabs_m": 3.783620204700355e-05,
+    "control3": {
+     "perm_minus_argmax_ade6": {
+      "point_unrounded": -0.10677097981516681,
+      "mean": -0.1068,
+      "lo": -0.1467,
+      "hi": -0.0696,
+      "separated": true
+     },
+     "pass": false,
+     "bar": "SEL-LEARN fitted on permuted labels must NOT separate from SEL-ARGMAX"
+    }
+   },
+   "selector_accuracy": {
+    "ARGMAX_vs_kstar": 0.1433930804501876,
+    "LEARN_vs_kstar": 0.5127136306794498,
+    "LEARN_PERM_vs_kstar": 0.5035431429762401,
+    "LEARN_in_sample_train": 0.49384262158213316,
+    "majority_train_class_acc_on_eval": 0.5035431429762401,
+    "kstar_eval_counts": [
+     290,
+     208,
+     314,
+     82,
+     130,
+     1208,
+     167
+    ],
+    "kstar_train_counts": [
+     1100,
+     897,
+     1409,
+     306,
+     531,
+     4541,
+     798
+    ],
+    "pick_counts_ARGMAX": [
+     89,
+     25,
+     120,
+     545,
+     434,
+     534,
+     652
+    ],
+    "pick_counts_LEARN": [
+     58,
+     13,
+     169,
+     0,
+     0,
+     2143,
+     16
+    ],
+    "n_eval": 2399,
+    "n_train": 9582
+   },
+   "B_ade6_mean": 2.1753060537342375
+  },
+  "s1": {
+   "HEADROOM": {
+    "read": "ADE6 ORACLE - B (T0, descriptive)",
+    "point_unrounded": -0.3593725872386162,
+    "mean": -0.3594,
+    "lo": -0.4072,
+    "hi": -0.3147,
+    "separated": true
+   },
+   "PRIMARY": {
+    "read": "ADE6 SEL-LEARN - B",
+    "bar": "<= -0.1207 and separated",
+    "point_unrounded": 0.02040780888231053,
+    "mean": 0.0204,
+    "lo": -0.0059,
+    "hi": 0.0467,
+    "separated": false
+   },
+   "SECONDARY": {
+    "speed_mae": {
+     "point_unrounded": 0.0036947545954563177,
+     "mean": 0.0037,
+     "lo": -0.0125,
+     "hi": 0.0198,
+     "separated": false,
+     "worse": false
+    },
+    "accel_mae": {
+     "point_unrounded": 0.0009179242939787446,
+     "mean": 0.0009,
+     "lo": -0.0165,
+     "hi": 0.0183,
+     "separated": false,
+     "worse": false
+    }
+   },
+   "controls": {
+    "alignment": {
+     "gt_maxabs": 7.628115213265119e-06,
+     "limit_ms_equal": true,
+     "lead_gap_h_equal": true,
+     "s_h_maxabs": 0.0,
+     "n": 2399
+    },
+    "own_vs_diag_identity_maxabs_m": 0.0,
+    "control2_reproduction": {
+     "banked_kind_own": {
+      "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad/hblend/inputs/banked/eval_M2b_s1-kind-own.npz",
+      "ade6_mean_mine": 2.0545660204036604,
+      "ade6_mean_banked": 2.0545660167647672,
+      "ade6_abs_diff_m": 3.6388931867747942e-09,
+      "traj30_maxabs_vs_banked_pred_m": 9.918212890625e-05,
+      "stop_bar_m": 0.001,
+      "pass": true
+     },
+     "sfresh_cycle_rerun": {
+      "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad/sfresh/eval/eval_M2b_s1-sfresh-cycle.npz",
+      "ade6_mean_mine": 2.0545660204036604,
+      "ade6_mean_banked": 2.054566010448041,
+      "ade6_abs_diff_m": 9.955619439949714e-09,
+      "traj30_maxabs_vs_banked_pred_m": 3.0517578125e-05,
+      "stop_bar_m": 0.001,
+      "pass": true
+     }
+    },
+    "train_window_list": {
+     "n_mine": 9582,
+     "n_hblend": 9582,
+     "ci": true,
+     "t": true,
+     "a_t": true,
+     "a_s": true,
+     "gt_maxabs": 0.0,
+     "own_traj30_maxabs_vs_hblend_fit_m": 3.0517578125e-05,
+     "pass": true
+    },
+    "control1": {
+     "n_exact_onehot_windows": 0,
+     "max_abs_delta_m": null,
+     "pass": null,
+     "note": "vacuous on this data (no exactly one-hot softmax)",
+     "harness_identity_maxabs_m": 0.0
+    },
+    "control4": {
+     "ARGMAX": {
+      "n_violations": 0,
+      "max_excess_m": 0.0
+     },
+     "LEARN": {
+      "n_violations": 0,
+      "max_excess_m": 0.0
+     },
+     "pass": true,
+     "MIX_reported": {
+      "n_windows_mix_beats_oracle": 30,
+      "max_excess_m": 0.06131967016199502
+     }
+    },
+    "hypotheses_distinct": true,
+    "stack_H_on_B_vs_hblend_banked_H_maxabs_m": 8.685091061977346e-05,
+    "control3": {
+     "perm_minus_argmax_ade6": {
+      "point_unrounded": 0.0015312171954646736,
+      "mean": 0.0015,
+      "lo": -0.0111,
+      "hi": 0.0145,
+      "separated": false
+     },
+     "pass": true,
+     "bar": "SEL-LEARN fitted on permuted labels must NOT separate from SEL-ARGMAX"
+    }
+   },
+   "selector_accuracy": {
+    "ARGMAX_vs_kstar": 0.14089203834931222,
+    "LEARN_vs_kstar": 0.35806586077532304,
+    "LEARN_PERM_vs_kstar": 0.35431429762401,
+    "LEARN_in_sample_train": 0.41859737006887915,
+    "majority_train_class_acc_on_eval": 0.35556481867444767,
+    "kstar_eval_counts": [
+     442,
+     272,
+     382,
+     56,
+     173,
+     853,
+     221
+    ],
+    "kstar_train_counts": [
+     1857,
+     1043,
+     1574,
+     360,
+     585,
+     3493,
+     670
+    ],
+    "pick_counts_ARGMAX": [
+     22,
+     12,
+     52,
+     593,
+     351,
+     562,
+     807
+    ],
+    "pick_counts_LEARN": [
+     364,
+     45,
+     463,
+     1,
+     19,
+     1442,
+     65
+    ],
+    "n_eval": 2399,
+    "n_train": 9582
+   },
+   "B_ade6_mean": 2.0545660204036604
+  }
+ },
+ "distance_keeping": {
+  "status": "ERROR",
+  "error": "Refusal: B_s0: ||pred - gt|| differs from its saved ade6 by 1.35e-05 m (> 1e-05): the rebuilt ground truth is not this run's grid / frame / units"
+ },
+ "phaseB_run": {
+  "status": "COMPLETED, no stop-control fired",
+  "guard": "C: free >= 0.7 GB AND commit headroom >= 5 GB (run_phaseB.sh), never tripped",
+  "peak_memory": [
+   {
+    "stage": "eval0",
+    "peak_private_commit_gb": 1.476,
+    "peak_working_set_gb": 0.932,
+    "seconds": 87.4
+   },
+   {
+    "stage": "train0",
+    "peak_private_commit_gb": 1.579,
+    "peak_working_set_gb": 1.083,
+    "seconds": 326.2
+   },
+   {
+    "stage": "eval1",
+    "peak_private_commit_gb": 1.476,
+    "peak_working_set_gb": 0.932,
+    "seconds": 84.8
+   },
+   {
+    "stage": "train1",
+    "peak_private_commit_gb": 1.578,
+    "peak_working_set_gb": 1.082,
+    "seconds": 333.6
+   },
+   {
+    "stage": "read",
+    "peak_private_commit_gb": 1.137,
+    "peak_working_set_gb": 0.726,
+    "seconds": 188.2
+   },
+   {
+    "stage": "post",
+    "peak_private_commit_gb": 1.165,
+    "peak_working_set_gb": 0.737,
+    "seconds": 61.9
+   }
+  ],
+  "control3_seed0": "FAILED (LEARN_PERM - ARGMAX separated); table printed verbatim, flagged; seed-0 SEL-LEARN gain == always-class-5 override (posthoc.json)",
+  "control1_real_data": "vacuous (0 exactly-one-hot softmax windows); harness identity maxabs 0.0",
+  "khyp_py_distance_keeping": "ERROR kept as recorded (reader TOL_ADE 1e-5 vs float32 1.35e-5); see posthoc.distance_keeping_tol1e4",
+  "posthoc_descriptive": {
+   "artifact": "posthoc.json",
+   "dk_artifact": "dk_read_tol1e4.json",
+   "declared_deviation": "v8f_dk_read.TOL_ADE raised 1e-5 -> 1e-4 in post_read.py only",
+   "constant_selectors_ade6_minus_B": {
+    "s0": {
+     "always_0": 0.26732225196890624,
+     "always_1": 0.32138785042450024,
+     "always_2": 0.2243408269808458,
+     "always_3": -0.03477722133302397,
+     "always_4": 0.02630273069265332,
+     "always_5": -0.0995869728441594,
+     "always_6": -0.05686562472439061
+    },
+    "s1": {
+     "always_0": 0.11441505657402917,
+     "always_1": 0.09811281879205502,
+     "always_2": 0.07426903107233951,
+     "always_3": 0.005232672417316397,
+     "always_4": 0.0026337330501178258,
+     "always_5": 0.010783485981802787,
+     "always_6": -0.019445152411099897
+    }
+   },
+   "LEARN_minus_LEARN_PERM_ade6": {
+    "s0": {
+     "point_unrounded": 2.391716108052222e-05,
+     "lo": -0.0112,
+     "hi": 0.0112,
+     "separated": false
+    },
+    "s1": {
+     "point_unrounded": 0.009713173390039742,
+     "lo": -0.0174,
+     "hi": 0.0365,
+     "separated": false
+    }
+   },
+   "promoted": false,
+   "note": "post-hoc, descriptive; changes no class set, feature, regularisation, selector or bar; cannot change the outcome"
+  },
+  "strategic_family": "PAUSED (PI ITEM 25), never a pass",
+  "unrun_precursors": [
+   "same logistic regression on T's frozen scene latent with permuted-label control (needs its own pre-registration)",
+   "confidence gate vs majority class"
+  ]
+ }
+}

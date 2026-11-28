@@ -1,0 +1,99 @@
+<title>LEDGER A4 — vision-action and vision-language-action models</title>
+
+# LEDGER A4 — Vision-action · vision-language-action (VLA)
+
+⛔ **APPEND-ONLY.**
+
+`⭐ CREATED 2026-09-02. TRACKS.md had linked this file since 2026-08-31 without it existing (backlog FS-6).`
+`The 2026-08-31 A4 DEEP is recorded below as INHERITED and marked as such.`
+
+## Our position in this track
+
+TanitAD is **not** a VLA — it is a latent world model with a planner. This track matters for three
+reasons: (1) VLAs are the dominant competing paradigm and set the comparison our paper is read against;
+(2) the **action-channel question** is live for us (P-2 branch (b): *our "action" is realised motion, not a
+command — a genuine command channel has never been tested*), and VLAs are where action representation is
+studied hardest; (3) their **latency** literature is the closest external analogue to our MEASURED 100 ms
+budget and the P-7 finding that a flat strategic rollout (K=300, ~350-1,015 ms) is undeployable.
+
+---
+
+## Entry 2026-08-31-01 — DriveWorld-VLA (INHERITED from the 2026-08-31 pass)
+
+⚠️ `INHERITED — recorded for continuity at ledger creation; NOT re-verified.` Full-text read on that pass;
+one of the two reads that carried its actionable findings (V-2).
+
+---
+
+## Entry 2026-09-02-01 — the driving-VLA survey, and a number that did not survive contact
+
+`PUBLISHED lib 2512.16760 · FULL TEXT READ 2026-09-02 · Hu et al. · arXiv 2025-12-18 · debt D-6 (A4) DISCHARGED`
+
+### ⛔ CORRECTION — the "sub-50 ms" latency requirement is NOT in this primary
+
+A web search summary asserted *"Achieving sub-50ms inference remains an unmet requirement for
+safety-critical deployment"* and attributed it to this survey. **The primary contains no latency
+requirement at all.** Latency appears once, qualitatively — *"Sparse query methods significantly reduce
+inference latency"* — with **no concrete number anywhere in the document**, and there is **no
+parameter-count-vs-performance data in any table**.
+
+⇒ **Barred from every TanitAD document.** Its evidence class is not even `RELAYED`; it is **UNATTRIBUTED**.
+Had it been carried, a fabricated 50 ms budget would have sat beside our MEASURED 100 ms budget and the
+MEASURED ~1,015 ms K=300 figure. *(Third correction in three days whose root cause is identical: the
+load-bearing number was the one nobody opened the primary for — cf. D-1's 85.1/92.1 and B2's 25 %.)*
+
+### The taxonomy (what the survey actually gives us)
+
+| paradigm | description | subclasses |
+|---|---|---|
+| **End-to-End VLA** | perception, reasoning and planning in one model | textual action generators (language heads) · numerical action generators (regression/generative heads) |
+| ⭐ **Dual-System VLA** | *"separates slow deliberation (via VLMs) from fast, safety-critical execution (via planners)"* | explicit action guidance (textual rationales) · implicit representation transfer (**structured latent intents**) |
+
+⭐ **"Implicit representations transfer / structured latent intents" is architecturally the nearest
+published relative of TanitAD's strategic→tactical latent interface.** Worth tracking by name.
+
+### Stated limitations, and one that argues FOR us
+
+- *"VLA models provide little insight into their decision-making process"* — the interpretability gap.
+- *"must simultaneously reason and act in real time, creating challenges for latency and safety"*.
+- ⭐⭐ *"the **absence of a dense future-world representation** can restrict long-horizon reasoning and
+  planning safety"* — **a VLA survey naming the missing world model as a limitation of VLAs.** This is
+  quotable support for the programme's premise, from outside the programme.
+- Occupancy models *"rely on costly 3D annotations, which can limit scalability"* — ⭐ independently
+  consistent with today's B13/F2 finding that SparseOcc++ needs occupancy GT we cannot produce.
+
+### Evidence class of the whole document
+
+`PUBLISHED` — but it is a **survey**: nothing in it is an ablation, and it makes **no deployment claims**
+and names **no deployable architecture**. It may inform positioning; it may not decide a GPU-day.
+
+### Consequence for live rows
+
+| row | movement |
+|---|---|
+| **P-7** (flat strategic rollout undeployable) | **no external latency budget obtained** — our MEASURED 100 ms stands alone and unchallenged. E-empty recorded. |
+| **H1 positioning** | Dual-System VLA is a **third** independent stack with a fast/slow seam (with Waymo W-13 and Mobileye M-1). ⚠️ Convergence of designs is **not** evidence of necessity — FS-3 remains the only route to that. |
+| **paper** | the *"absence of a dense future-world representation"* line is a citable external argument for an in-loop world model. |
+
+`Next in this track: RT-VLA 2606.14010 (distillation, claimed 7.9x), VLA-Cache 2502.02175 (claimed 1.7x`
+`CUDA speedup) and LinkVLA (claimed 86 % latency cut) are all UNREAD and UNBANKED. ⚠️ All three speedup`
+`figures above are RELAYED from search summaries and are barred from use until primaries are read —`
+`this ledger's own first entry is a correction of exactly that failure.`
+
+
+## 2026-09-13-01 — Language Residue taxonomy: TanitAD is an L1 system
+
+`READ (survey)` · arXiv **2608.30144** (banked 2026-09-05) · Guo, Su (Northeastern).
+L1 train-time-only language (zero inference cost) · L2 latent reasoning · L3 conditional invocation · L4 per-frame generation; five deployment axes (latency, params, memory, FLOPs, tokens). Relayed cost frame: one onboard autoregressive VLM call **500–2,000 ms** vs a **20–100 ms** loop (Huang et al. 2026 — RELAYED, unbanked).
+**Our position:** Alpamayo CoT → v7 labels at train time only ⇒ **L1 by construction** — a positioning line for the paper, not a lever. BLUE `2606.08684` (L3 gate, 0.11 M params, 2.54× speed-up) stays the reference if a language path is ever admitted.
+→ `Frontier Scan/Daily/2026-09-13/RESULT.md` F6
+
+## 2026-09-18-01 — A dedicated VLA deep (debt from 09-17): open-loop scores barely see whether the model uses its eyes
+
+`HTML primary` · arXiv **2605.31041** (ITSC 2026) · banked. Impromptu-VLA 3B: removing images entirely → open-loop L2 **+7.1 %**; closed-loop NeuroNCAP **−14.6 %**; 75 % downsampling **−27.2 %** closed-loop. Single model (conceded).
+**Our position:** independent, controlled corroboration of our action-echo finding and of the tier doctrine. Experiment FS18-3: image-removal/shuffle audit on our T1 (committed: < 10 % degradation ⇒ T1 is vision-blind).
+
+## 2026-09-19-01 — World Tokens: world modelling at TRAINING time only, with EXCLUSIVE routing so the action head cannot bypass it
+
+`HTML via summariser` · arXiv **2608.09730** (Tang et al., 2026-08-10) · banked. Real robot R1 Pro, **96 trials/arm**: **59.4 → 76.0 %** vs a **matched action-only** baseline (Qwen-GR00T). LIBERO **98.2 vs 96.9**. Ablation (LIBERO-Long): baseline **92.8**, routing-only **95.0**, WM-with-bypass **94.1**, full **97.0**. Deploy: WM branch removed, **61.85 ms vs π0.5 56.32 ms**. ⚠️ No seeds or CIs.
+**Our position:** a published structural remedy for our **bypass/echo** defect class (nav-echo 369/369; open-loop action echo 97.9 % → 0.0 %). Guidelines **S-8** (train-time WM) and **T-10** (exclusive routing + a bypass control in every arm). Experiment FS19-1. Also: RT-VLA `2606.14010` (re-find) distils SimLingo **44.8×** faster with competitive closed loop (abstract-only), a 3rd confirmation of train-large/deploy-small (S-7).

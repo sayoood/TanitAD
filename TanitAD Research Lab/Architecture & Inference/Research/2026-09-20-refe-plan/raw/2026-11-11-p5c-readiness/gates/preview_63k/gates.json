@@ -1,0 +1,216 @@
+{
+ "gates": {
+  "TB-0": {
+   "id": "TB-0",
+   "name": "cross-environment bit-identity",
+   "status": "NOT_RUN",
+   "bar": "max abs diff == 0.0 on every common row; every control-ok row present and ok in the table build",
+   "value": null,
+   "n": null,
+   "evidence": "MEASURED",
+   "detail": {
+    "reason": "no --control shards given"
+   }
+  },
+  "TB-1": {
+   "id": "TB-1",
+   "name": "reproduction of p5s_cubic.npz",
+   "status": "NOT_RUN",
+   "bar": "bit_identical == n == 1018, max_abs_diff == 0.0, n_errors == 0",
+   "value": null,
+   "n": null,
+   "evidence": "MEASURED",
+   "detail": {
+    "reason": "no --tb1 file given"
+   }
+  },
+  "TB-2": {
+   "id": "TB-2",
+   "name": "knot exactness C2'",
+   "status": "PASS",
+   "bar": "knot deviation <= 1e-09 on every row (no row failed the driver's knot control)",
+   "value": null,
+   "n": 63495,
+   "evidence": "MEASURED-INDIRECT",
+   "detail": {
+    "n_knot_control_failures": 0,
+    "n_rows_with_knot_maxdev_field": 0,
+    "n_knot_maxdev_over_bar": 0,
+    "per_rank": {
+     "0": {
+      "n_tc20s": 38578,
+      "knot_fail": 0,
+      "knot_dev_bad": 0
+     },
+     "1": {
+      "n_tc20s": 24917,
+      "knot_fail": 0,
+      "knot_dev_bad": 0
+     }
+    },
+    "note": "the driver does not persist the per-row knot deviation; its control raises (=> error record => raw_fallback) when dev > 1e-9, so 'no knot-control failure among the ok rows' is the available evidence"
+   }
+  },
+  "TB-3": {
+   "id": "TB-3",
+   "name": "identity control",
+   "status": "PASS",
+   "bar": "ident == traj bit-for-bit on 100 % of rows",
+   "value": "150603/150603",
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "note": "the driver's own `ident` row (sign 0.0) is not persisted; this checks the identity TABLE (label := traj through the table's JSON encoding) against the bank bytes"
+   }
+  },
+  "TB-4": {
+   "id": "TB-4",
+   "name": "coverage",
+   "status": "FAIL",
+   "bar": "table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows",
+   "value": "150603/150603",
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "bank_rows": 150603,
+    "expected_rows": 150603,
+    "unique_bank_keys": 150603,
+    "table_keys": 150603,
+    "absent": 0,
+    "extra_label_records": 0,
+    "duplicate_label_records": 0,
+    "traj_sha_mismatch": 0,
+    "n_raw_fallback": 87108,
+    "raw_fallback_frac": 0.5783948526921775,
+    "fallback_causes": {
+     "no local DB": 87108
+    },
+    "REFUSE_if_fallback_over_1pct": true
+   }
+  },
+  "TB-5": {
+   "id": "TB-5",
+   "name": "sanity",
+   "status": "PASS",
+   "bar": "every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %)",
+   "value": "150603/150603",
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "non_finite": 0,
+    "yaw_branch_ge_pi": 0,
+    "sim_hz_not_10": 0,
+    "max_abs_dyaw": 1.0277514766952147
+   }
+  },
+  "TB-6": {
+   "id": "TB-6",
+   "name": "learnability per rank",
+   "status": "PASS",
+   "bar": "per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (P5-R); rank-1 FAIL => rank-0 only",
+   "value": {
+    "rank0": [
+     1.6813164817887105,
+     1.9394675246002255
+    ],
+    "rank1": [
+     1.6513108937697243,
+     1.7291322869465213
+    ]
+   },
+   "n": 63495,
+   "evidence": "MEASURED",
+   "detail": {
+    "rank0": {
+     "rank": 0,
+     "n": 38578,
+     "diag_median_of_row_ratios_acc": 1.6088527526656242,
+     "diag_median_of_row_ratios_hr": 1.8329809603244767,
+     "median_max_acc_label": 2.4329062090824007,
+     "median_max_acc_traj": 1.4470245402543682,
+     "ratio_acc": 1.6813164817887105,
+     "median_max_hr_label_deg_s": 9.575614301586839,
+     "median_max_hr_traj_deg_s": 4.937238793704793,
+     "ratio_hr": 1.9394675246002255,
+     "pass": true
+    },
+    "rank1": {
+     "rank": 1,
+     "n": 24917,
+     "diag_median_of_row_ratios_acc": 1.601204924356643,
+     "diag_median_of_row_ratios_hr": 1.6680217617662783,
+     "median_max_acc_label": 2.4433976618004594,
+     "median_max_acc_traj": 1.4796714967600715,
+     "ratio_acc": 1.6513108937697243,
+     "median_max_hr_label_deg_s": 15.6631130697291,
+     "median_max_hr_traj_deg_s": 9.058365972327442,
+     "ratio_hr": 1.7291322869465213,
+     "pass": true
+    },
+    "rank0_fail_STOP_next_lever_P5R": false,
+    "rank1_fail_means_rank0_only": false,
+    "population": "rows whose label source is tc20s (raw_fallback rows are identity and excluded)"
+   }
+  },
+  "TB-7": {
+   "id": "TB-7",
+   "name": "n_differs recorded",
+   "status": "PASS",
+   "bar": "n_differs per rank recorded",
+   "value": {
+    "0": 38573,
+    "1": 24914
+   },
+   "n": 63495,
+   "evidence": "MEASURED",
+   "detail": {
+    "per_rank": {
+     "0": {
+      "n_rows": 92896,
+      "n_tc20s": 38578,
+      "n_raw_fallback": 54318,
+      "n_differs": 38573
+     },
+     "1": {
+      "n_rows": 57707,
+      "n_tc20s": 24917,
+      "n_raw_fallback": 32790,
+      "n_differs": 24914
+     }
+    },
+    "feeds": "G-LIVE (a): n_differs must be > 0 for the substitution to be non-trivial",
+    "warn_zero_differs": []
+   }
+  }
+ },
+ "rank_policy": {
+  "decision": "UNDECIDED",
+  "missing_inputs": [
+   "repair_rank0.json (per-row records) for r_0",
+   "repair_rank1.json (per-row records) for r_1"
+  ]
+ },
+ "failing": [
+  "TB-0",
+  "TB-1",
+  "TB-4"
+ ],
+ "merged_jsonl": {
+  "written": true,
+  "all": "F:/tanitad_scratch/p5c_tb6/out\\merged_labels_all.jsonl",
+  "rank0only": "F:/tanitad_scratch/p5c_tb6/out\\merged_labels_rank0only.jsonl"
+ },
+ "label_records": 150603,
+ "bank_files": [
+  "F:/tanitad_scratch/p5c_tb6/bank/targets_rank0.jsonl",
+  "F:/tanitad_scratch/p5c_tb6/bank/targets_rank1.jsonl"
+ ],
+ "inputs": {
+  "labels": [
+   "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c/labels/out/labels_s0of2.jsonl",
+   "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p5c/labels/out/labels_s1of2.jsonl"
+  ],
+  "control": null,
+  "tb1": null
+ }
+}

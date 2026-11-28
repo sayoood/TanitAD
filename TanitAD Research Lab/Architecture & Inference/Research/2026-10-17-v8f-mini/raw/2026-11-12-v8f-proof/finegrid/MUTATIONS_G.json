@@ -1,0 +1,291 @@
+{
+ "tool": "F:\\TanitAD-scratch\\v8proof\\finegrid\\tok_probe_g.py",
+ "mutations": {
+  "m1_loss_line_removed": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g1_default_grid_gives_bit_identical_probe_weights_to_the_banked_tool"
+   ],
+   "summary": "1 failed",
+   "seconds": 28.4,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g1_default_grid_gives_bit_identical_probe_weights_to_the_banked_tool",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 27.43s"
+   ],
+   "what": "the loss line of the probe step is replaced by a loss with no graph to the parameters (g4: gradients)",
+   "red": true,
+   "intended_k": "g4",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g4_gradients_reach_the_probe_at_160_tokens_and_the_control_reads_exactly_zero"
+    ],
+    "summary": "1 failed",
+    "seconds": 4.2,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g4_gradients_reach_the_probe_at_160_tokens_and_the_control_reads_exactly_zero",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 18 deselected in 3.14s"
+    ],
+    "red": true
+   }
+  },
+  "m2_4x10_grid_under_the_8x20_flag": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g5_the_cli_run_on_the_160_token_world_records_160_tokens_everywhere"
+   ],
+   "summary": "5 passed 1 error",
+   "seconds": 26.1,
+   "tail": [
+    "ERROR test_tok_probe_g.py::test_g5_the_cli_run_on_the_160_token_world_records_160_tokens_everywhere",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "5 passed, 1 error in 25.07s"
+   ],
+   "what": "the trainer's data builder is handed pool4x10 although the run declares pool8x20 (g5: declared against built; g4: 160 tokens)",
+   "red": true,
+   "intended_k": "g5_the_cli or extract_at_160 or host_memory",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g5_the_cli_run_on_the_160_token_world_records_160_tokens_everywhere"
+    ],
+    "summary": "1 error",
+    "seconds": 2.7,
+    "tail": [
+     "ERROR test_tok_probe_g.py::test_g5_the_cli_run_on_the_160_token_world_records_160_tokens_everywhere",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "17 deselected, 1 error in 2.00s"
+    ],
+    "red": true
+   }
+  },
+  "m3_token_count_refusal_removed": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 29.9,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 28.70s"
+   ],
+   "what": "the shape check of every training batch is replaced by a read of the shape without a refusal (g5)",
+   "red": true,
+   "intended_k": "g5_a_stream",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training"
+    ],
+    "summary": "1 failed",
+    "seconds": 4.9,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 19 deselected in 3.68s"
+    ],
+    "red": true
+   }
+  },
+  "m4_checkpoint_records_40_tokens": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 33.3,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 32.12s"
+   ],
+   "what": "the checkpoint records 40 tokens seen for an 8x20 run (g5: the checkpoint records the token count actually seen)",
+   "red": true,
+   "intended_k": "g5_a_stream or g5_the_cli",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training"
+    ],
+    "summary": "1 failed",
+    "seconds": 6.2,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 18 deselected in 5.08s"
+    ],
+    "red": true
+   }
+  },
+  "m4b_checkpoint_declares_40_tokens": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 30.4,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 29.20s"
+   ],
+   "what": "the checkpoint's declared n_tok is 40 for an 8x20 probe (g5)",
+   "red": true,
+   "intended_k": "g5_a_stream or g5_the_cli or extract_at_160",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training"
+    ],
+    "summary": "1 failed",
+    "seconds": 5.6,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g5_a_stream_with_the_wrong_token_count_is_refused_in_training",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 17 deselected in 4.49s"
+    ],
+    "red": true
+   }
+  },
+  "m5_extract_reads_the_4x10_key": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_extract_at_160_tokens_writes_the_layouts_records_the_grid_and_the_reader_loads_them"
+   ],
+   "summary": "1 failed 13 passed",
+   "seconds": 115.0,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_extract_at_160_tokens_writes_the_layouts_records_the_grid_and_the_reader_loads_them",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 13 passed in 112.77s (0:01:52)"
+   ],
+   "what": "extract reads the 4 by 10 cache key under the 8 by 20 flag (g5; the key the unchanged tool reads)",
+   "red": true,
+   "intended_k": "extract_at_160 or extract_refusals",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_extract_at_160_tokens_writes_the_layouts_records_the_grid_and_the_reader_loads_them"
+    ],
+    "summary": "1 failed",
+    "seconds": 33.6,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_extract_at_160_tokens_writes_the_layouts_records_the_grid_and_the_reader_loads_them",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 18 deselected in 31.99s"
+    ],
+    "red": true
+   }
+  },
+  "m6_arm_grid_refusal_removed": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g5_batch_shape_refusals_and_arm_grid_refusals"
+   ],
+   "summary": "1 failed 3 passed",
+   "seconds": 38.3,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g5_batch_shape_refusals_and_arm_grid_refusals",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 34.28s"
+   ],
+   "what": "an F arm under pool4x10 or a TK arm under pool8x20 is accepted",
+   "red": true,
+   "intended_k": "g5_batch_shape or cli_refusals or extract_refusals or g5_a_stream",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g5_batch_shape_refusals_and_arm_grid_refusals"
+    ],
+    "summary": "1 failed",
+    "seconds": 5.8,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g5_batch_shape_refusals_and_arm_grid_refusals",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 16 deselected in 4.19s"
+    ],
+    "red": true
+   }
+  },
+  "m7_g2_bar_always_passes": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g2_pool2x2_is_exact_and_the_control_reads_a_refinement_and_an_unrelated_grid"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 170.7,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g2_pool2x2_is_exact_and_the_control_reads_a_refinement_and_an_unrelated_grid",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 167.25s (0:02:47)"
+   ],
+   "what": "control g2 reports pass whatever the correlation",
+   "red": true,
+   "intended_k": "g2_pool2x2",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g2_pool2x2_is_exact_and_the_control_reads_a_refinement_and_an_unrelated_grid"
+    ],
+    "summary": "1 failed",
+    "seconds": 13.0,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g2_pool2x2_is_exact_and_the_control_reads_a_refinement_and_an_unrelated_grid",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 19 deselected in 11.49s"
+    ],
+    "red": true
+   }
+  },
+  "m8_control_parameter_in_the_graph": {
+   "rc": 1,
+   "failed_tests": [
+    "test_tok_probe_g.py::test_g4_gradients_reach_the_probe_at_160_tokens_and_the_control_reads_exactly_zero"
+   ],
+   "summary": "1 failed 1 passed",
+   "seconds": 50.1,
+   "tail": [
+    "FAILED test_tok_probe_g.py::test_g4_gradients_reach_the_probe_at_160_tokens_and_the_control_reads_exactly_zero",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 46.92s"
+   ],
+   "what": "the control parameter is added to the forward output, so its gradient differs from exactly 0.0 (g4)",
+   "red": true,
+   "intended_k": "g4_gradients",
+   "intended": {
+    "rc": 1,
+    "failed_tests": [
+     "test_tok_probe_g.py::test_g4_gradients_reach_the_probe_at_160_tokens_and_the_control_reads_exactly_zero"
+    ],
+    "summary": "1 failed",
+    "seconds": 9.6,
+    "tail": [
+     "FAILED test_tok_probe_g.py::test_g4_gradients_reach_the_probe_at_160_tokens_and_the_control_reads_exactly_zero",
+     "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+     "1 failed, 19 deselected in 7.24s"
+    ],
+    "red": true
+   }
+  }
+ },
+ "written_utc": "2026-11-18T22:26:21Z",
+ "control": {
+  "rc": 0,
+  "failed_tests": [],
+  "summary": "20 passed",
+  "seconds": 277.7,
+  "tail": [
+   "....................                                                     [100%]",
+   "20 passed in 275.37s (0:04:35)"
+  ],
+  "green": true
+ },
+ "n_mutations": 9,
+ "n_red": 9,
+ "n_red_on_intended_tests": 9,
+ "control_green": true
+}

@@ -1,0 +1,44 @@
+..............F.                                                         [100%]
+================================== FAILURES ===================================
+________________________________ test_contract ________________________________
+
+    def test_contract():
+>       check_contract()
+
+tests\test_t2v8f_stage4.py:666: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_t2v8f_stage4.py:552: in check_contract
+    blocks = RT.read_blocks(arrays, n_boot=20)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+code\read_t2_dominance.py:484: in read_blocks
+    rows, _ = rr.rows_of(rr.Aof(ar), rr.Bof(ar), ar["eid"], cls, n_boot)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\recover_next\read\code\recover_read.py:411: in rows_of
+    r = GD.decompose(ua[i], va[i], eid, cls, GD.POOL[lab], n_boot)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = array([nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan])
+b = array([nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan])
+eid = array([ 0,  0,  1,  1,  2, 42, 42, 43, 43, 44, 44])
+cls = array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], dtype=int8), pool = 'masked'
+n_boot = 20, seed = 0
+
+    def decompose(a, b, eid, cls, pool="masked", n_boot=N_BOOT, seed=SEED):
+        """Class split of  mean(a - b)  over the pairs where both are finite.  pool 'masked': the draws resample the episodes that hold a valid pair (t1k_read.paired);
+        pool 'all': all episodes of eid, ineligible windows staying in the pool (t1hd_read.srow).  -> dict (floats unrounded)."""
+        a, b = np.asarray(a, np.float64), np.asarray(b, np.float64)
+        cls = np.asarray(cls)
+        if not (a.shape == b.shape == cls.shape == np.asarray(eid).shape):
+            raise ValueError("a, b, cls, eid must be aligned")
+        ok = np.isfinite(a) & np.isfinite(b)
+        if not ok.any():
+>           raise ValueError("no valid pair")
+E           ValueError: no valid pair
+
+..\..\gapdecomp\gapdecomp.py:132: ValueError
+=========================== short test summary info ===========================
+FAILED tests/test_t2v8f_stage4.py::test_contract - ValueError: no valid pair
+1 failed, 15 passed in 270.32s (0:04:30)
+rc=1
+ZZ O-ARMS1-DONE ZZ

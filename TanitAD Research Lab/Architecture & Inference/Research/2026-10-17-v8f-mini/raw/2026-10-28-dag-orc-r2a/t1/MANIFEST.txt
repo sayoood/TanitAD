@@ -1,0 +1,43 @@
+# DAG-ORC T1-kin chain (dagorc_t1) -- deliverable manifest, 2026-10-28 (r2 K-BUILD addendum: kbuild --fix-pkg).  Everything is on E: ONLY; nothing committed, staged or pushed (no repo path was asked for; integration into the repo is the coordinator's call).
+# sha256 (first 16) path (relative to E:/Projects/TanitAD-artifacts/dagorc_t1/)  -- role
+22aafea6d7d775c4 dagorct1_chain.sh  -- chain-script (r2: KBOPTS array reaches all three K-BUILD calls)
+aa8efdded3967a8b dagorct1_chain.cmd  -- WMI-launcher (r2: rem block with the env the Master Mind sets; none set here)
+3e3266ada774db13 wake_dagorct1.sh  -- waker
+59697d866e3ec36c dagorct1_lib.py  -- helper-lib (r2: kbuild --fix-pkg two-step mode)
+084d4e11258b5f11 PINS.txt  -- pins (only the lib= line changed)
+3cba9435adb54b5e argv/rollout_causal.tmpl  -- argv-template
+5912b56a8acfd4a9 argv/rollout_logged.tmpl  -- argv-template
+2eddc6d892127bf4 argv/t0fresh.tmpl  -- argv-template
+0ff36083378c0a11 argv/reader.tmpl  -- argv-template
+b7f1ee8576cafb28 trace_imports.py  -- smoke-import-tracer
+f958949ec5f4f675 dagorct1_selftest.py  -- selftest (153 checks)
+41c912f2cd04ea67 DRY_RUN.out  -- dry-run-output (re-run after the r2 K-BUILD edit)
+154ec36067d76c50 NOTES.md  -- notes
+ae79ea44d74396d3 selftest/SELFTEST.out  -- selftest-output (153/153)
+69a4bd629b9213cd selftest/MUTATE_CHECKER.out  -- mutation-proof-of-the-new-checker-clauses (11/11 killed)
+4eb838f1436d87fe selftest/mutate_checker.py  -- mutation-proof-script (run: python -I selftest/mutate_checker.py)
+ee868a043f9e6a51 selftest/REHEARSAL_fail.out  -- rehearsal-output
+84f67ecb4064f108 selftest/REHEARSAL_pass.out  -- rehearsal-output
+127f23540266c880 selftest/rehearsal_world.py  -- rehearsal-builder
+4693eb137355d1fc selftest/box2_log_snapshot_20261028_0213_Kreach_FAIL.out  -- real-r1-log-fixture
+3b72ab9c6491f0b7 smoke/SMOKE_RUN.out  -- real-smoke-output
+3dc891165fe7bdac smoke/ROLLOUTCODE_RUNTIME_vs_r1_e7ea20d1.out  -- rollout-code-answer
+8a709844a78d4cc9 smoke/trace_SMOKE_DAGOACC_s0_m10_causal_heads.json  -- runtime-import-trace
+08e5e5ec6bae7c45 smoke/trace_SMOKE_M2b-dagoacc_s0-fresh.json  -- runtime-import-trace
+04643e3eedb30f14 logs/PINS.stale_before_r2.txt  -- superseded-pins
+b1c5c36b6c3cb483 kbuild_r2_launch_8c24823f.json  -- R2-KBUILD-REAL-RECORD (launch 8c24823f, 37 hunks all PASS; the proof the task asked for)
+b1c5c36b6c3cb483 logs/kbuild_r2_from_tokens.json  -- R2-KBUILD-REAL-RECORD derived from the four real launch-gate tokens (equal to the above)
+4acbe116a6e51c36 logs/DRY_RUN_r2env_processlocal.out  -- dry-run with the r2 env set PROCESS-LOCALLY (not persisted): K-BUILD 37 hunks PASS through KBOPTS
+d43f237f637f5a1c dagorct1_lib_pre_r2.py  -- pre-change-copy (lib before the --fix-pkg mode; selftest loads it to prove r1 mode unchanged)
+7fc2ac0baa73072e dagorct1_selftest_pre_r2.py  -- pre-change-copy (selftest before the r2 cases, 103 checks)
+f40997829bf12309 selftest/SELFTEST.pre_fixpkg.out  -- pre-change-copy (103/103)
+f23600cfaa443cf4 logs/PINS.pre_fixpkg.txt  -- pre-change-copy
+f7ae486636fa9bc5 logs/dagorct1_chain.pre_fixpkg.sh  -- pre-change-copy
+17748bfd870c808e logs/dagorct1_chain.pre_fixpkg.cmd  -- pre-change-copy
+46e0a9f7b0ecfbe7 logs/NOTES.pre_fixpkg.md  -- pre-change-copy
+a5a114996aa4f794 logs/MANIFEST.pre_fixpkg.txt  -- pre-change-copy
+c092597f88d7b314 logs/DRY_RUN.pre_fixpkg.out  -- pre-change-copy
+# scratch (not deliverables): smoke/out/ (30 MB, DAG-OACC stand-in outputs, never read), smoke/logs/
+# pinned external inputs: dagorc_rebase/read/dag_orc_read.py sha256 2e5f9f1778e104615d4480f51c6246703c9e3bb8f6c0eeaa3fc0c5621bd8adcf (never edited); tool tree dagt1_tree_b43c7a9a digest 6a4b47c8acfadf07ffc82ab174cccce78aa0404f6a4f89231f331013bbcda3d9
+# evidence read by the r2 K-BUILD, all in the git mirror C:/Users/Admin/tanitad-push (nothing copied): see kbuild_r2_launch_8c24823f.json evidence.evidence_files (path, commit, sha256)
+# NOT produced (does not exist until the real chain runs): v8f-dag-orc-oacc-t1/{runs.json,read/DAGORC_READ.json}

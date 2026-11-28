@@ -1,0 +1,1058 @@
+diff --git a/stack/tanitad/refs/refcv6_selection.py b/stack/tanitad/refs/refcv6_selection.py
+index 7b2dd69..b4e0e80 100644
+--- a/stack/tanitad/refs/refcv6_selection.py
++++ b/stack/tanitad/refs/refcv6_selection.py
+@@ -53,6 +53,7 @@ __all__ = [
+     "admissibility_mask", "nav_compliance_prior", "SpeedCeilingFilter",
+     "BehaviourSelectionGate", "assert_situation_columns_dead",
+     "planned_max_speed", "step_durations_s",
++    "cap_plan_to_limit",
+ ]
+ 
+ #: The goal tokens that MAY reach selection: the 22 minus the situation
+@@ -227,6 +228,79 @@ class SpeedCeilingFilter(nn.Module):
+         return keep, tele
+ 
+ 
++# ---------------------------------------------------------------------------
++# 2b. the HARD CAP on the EMITTED plan -- refcv8's equivalent of v7F's R1 `plan_vmax_cap`
++# ---------------------------------------------------------------------------
++
++def cap_plan_to_limit(traj: Tensor, v_limit_ms: Tensor, *, horizons: Sequence[int],
++                      tick_s: float = 0.1, v0: Tensor | None = None,
++                      brake_ms2: float = 0.0) -> tuple[Tensor, dict]:
++    """Clamp the EMITTED plan so no waypoint interval is faster than the fed ceiling. -> (capped, diag).
++
++    PI R1 (2026-09-27): the max speed "must not be exceeded". :class:`SpeedCeilingFilter` cannot promise that:
++    it only CHOOSES among the fan, and a row with no compliant candidate keeps its whole fan (the "exempt"
++    rows the CEIL-OBEY instrument counts and never folds into the bar), so the plan it emits there can be
++    above the ceiling. This function is the missing half: a projection of the SELECTED plan, v7F's
++    `plan_speed_cap.cap_speed_profile` semantics expressed on refcv8's waypoint grid.
++
++    ``traj`` ``[B, S, 2]`` metres, ego frame, origin at t0. ``horizons`` are its waypoint TICKS: the interval
++    durations come from :func:`step_durations_s`, the SAME derivation :func:`planned_max_speed` (and so the
++    CEIL-OBEY statistic) uses -- one rule, never a typed 0.1 (a 5x error). ``v_limit_ms`` ``[B]``, ``+inf`` =
++    no ceiling for that row (the X15 rule: unknown is never a fabricated limit).
++
++    * per interval ``i`` the displacement vector is scaled by ``min(1, allowed_i * dt_i / |d_i|)`` and the
++      path is re-integrated: headings are kept, progress is compressed;
++    * a row whose plan is already under the ceiling is returned BIT-IDENTICAL (``torch.where`` on the
++      per-row binding mask), so a non-binding cap equals no cap;
++    * ``allowed_i = max(limit, v0 - brake_ms2 * t_mid_i)`` when ``v0`` and ``brake_ms2 > 0`` are given: an ego
++      already above the ceiling brakes at ``brake_ms2`` until under it (v7F: "brakes at -a_max until it is
++      under"); that residual is a property of the INPUT state and is REPORTED (``plan_cap_v0_over_limit``),
++      never hidden. With ``brake_ms2 = 0`` the allowance is the ceiling itself (strict).
++    * the cap holds on the WAYPOINT grid (0.5 s steps here), which is the grid CEIL-OBEY measures on.
++    """
++    if traj.dim() != 3 or traj.shape[-1] != 2:
++        raise ValueError(f"traj must be [B, S, 2], got {tuple(traj.shape)}")
++    dts = step_durations_s(horizons, tick_s)
++    if len(dts) != traj.shape[1]:
++        raise ValueError(f"[plan-cap] {len(dts)} horizons but the plan has {traj.shape[1]} waypoints; a "
++                         f"mismatched grid pairs waypoint i with interval j")
++    b, s, _ = traj.shape
++    lim = v_limit_ms.reshape(-1).to(traj.dtype)
++    if lim.shape[0] != b:
++        raise ValueError(f"v_limit_ms must be [B={b}], got {tuple(v_limit_ms.shape)}")
++    if bool(torch.isnan(lim).any()) or bool((lim <= 0).any()):
++        raise ValueError("[plan-cap] every row's limit must be > 0 m/s or +inf (no cap). A NaN or non-positive "
++                         "limit is not a speed limit; it would brake every plan to a standstill.")
++    dt = torch.tensor(dts, device=traj.device, dtype=traj.dtype)                      # [S]
++    t_mid = torch.cumsum(dt, 0) - 0.5 * dt                                             # [S]
++    allow = lim[:, None].expand(b, s)
++    over = None
++    if v0 is not None and float(brake_ms2) > 0.0:
++        v0r = v0.reshape(-1).to(traj.dtype)
++        allow = torch.maximum(allow, v0r[:, None] - float(brake_ms2) * t_mid[None, :])
++        over = v0r > lim
++    seq = torch.cat([torch.zeros_like(traj[:, :1]), traj], dim=1)                      # [B, S+1, 2]
++    disp = seq[:, 1:] - seq[:, :-1]                                                    # [B, S, 2]
++    ln = disp.norm(dim=-1)                                                             # [B, S]
++    room = allow * dt[None, :]                                                         # metres per interval
++    scale = torch.where(ln > room, room / ln.clamp_min(1e-12), torch.ones_like(ln))
++    capped = torch.cumsum(disp * scale[..., None], dim=1)
++    binding = (scale < 1.0).any(dim=1)                                                 # [B]
++    out = torch.where(binding[:, None, None], capped, traj)
++    with torch.no_grad():
++        before = planned_max_speed(traj.detach()[:, None], horizons=horizons, tick_s=tick_s)[:, 0]
++        after = planned_max_speed(out.detach()[:, None], horizons=horizons, tick_s=tick_s)[:, 0]
++        diag = {
++            "plan_cap_binding": binding.detach(),
++            "plan_cap_speed_before": before,
++            "plan_cap_speed_after": after,
++            "plan_cap_excess_ms": (after - lim.detach()).clamp_min(0.0),
++        }
++        if over is not None:
++            diag["plan_cap_v0_over_limit"] = over.detach() & torch.isfinite(lim.detach())
++    return out, diag
++
++
+ # ---------------------------------------------------------------------------
+ # 3. the valid-behaviour set -> selection
+ # ---------------------------------------------------------------------------
+diff --git a/stack/tanitad/refs/refc_v3.py b/stack/tanitad/refs/refc_v3.py
+index 68ff839..335103c 100644
+--- a/stack/tanitad/refs/refc_v3.py
++++ b/stack/tanitad/refs/refc_v3.py
+@@ -629,6 +629,14 @@ class RefCV3Config:
+     # carries the stamp with the channel off.
+     max_speed_onehot_v6: bool = False
+ 
++    # --- v7F R1 EQUIVALENT (PI 2026-09-27: the max speed "must not be exceeded"); refcv8 audit 2026-10-18 ---
++    # ⛔ `speed_ceiling_filter` only CHOOSES among the fan: a row with no compliant candidate keeps its whole
++    # fan (`refcv6_selection.SpeedCeilingFilter`, `e9_rank`), so the EMITTED plan can exceed the fed ceiling.
++    # True adds a CLAMP on the emitted plan (`refcv6_selection.cap_plan_to_limit`), INFERENCE ONLY
++    # (`not self.training`: the label is the ego's own realised max, so the training plan must stay uncapped).
++    # Default False = byte-identical to every banked arm. Needs `max_speed_onehot_v6` (the ceiling channel).
++    plan_vmax_clamp: bool = False
++
+     # --- refcv6 arm D: `--sampler ddim` with `--w-u0 0` (PI RULING 2026-09-11) -------------
+     # ⛔ A DECLARED FIELD since 2026-09-26 (G-HYG). `_pin_refcv5_seams` set it as an AD-HOC
+     # attribute, which survived only because nothing rebuilt `RefCV3Config` -- and nothing read
+@@ -1121,6 +1129,17 @@ class RefCV3Model(nn.Module):
+                 "A flat arm would construct them, never call them, and report "
+                 "as refcv6 while running refcv5. Use --arm hier, or turn the "
+                 "flags off.")
++        if getattr(cfg, "plan_vmax_clamp", False):
++            # ⛔ a clamp whose limit is +inf on every row is BUILT and INERT -- the false-provenance class
++            if not getattr(cfg, "max_speed_onehot_v6", False):
++                raise ValueError(
++                    "[refcv8] plan_vmax_clamp without max_speed_onehot_v6: the clamp's limit IS the fed 4-way "
++                    "set speed; with no channel every row's limit is +inf and the clamp is built and INERT.")
++            # ⛔ the refcv7 scorer pick REPLACES out["traj"] after E9, so it would emit an unclamped plan
++            if bool(getattr(cfg, "refcv7_select", False)):
++                raise ValueError(
++                    "[refcv8] plan_vmax_clamp with refcv7_select: the scorer's pick replaces the emitted plan "
++                    "after the E9 block where the clamp sits -- the cap would not reach the plan.")
+         self.core = refc.RefCModel(cfg.core)
+         if not cfg.hier:
+             return
+@@ -1945,6 +1964,8 @@ class RefCV3Model(nn.Module):
+                                       dtype=ref.dtype)
+                 v_lim = torch.full((b,), float("inf"), device=dev,
+                                    dtype=torch.float32)
++            if bool(getattr(self.cfg, "plan_vmax_clamp", False)):
++                cache["plan_v_lim_ms"] = v_lim.detach()          # the E9 block clamps the EMITTED plan to it
+             if ego_state is not None:
+                 es = ego_state.to(ref.dtype)
+                 keep = es[:, 4:5]
+@@ -2632,6 +2653,20 @@ class RefCV3Model(nn.Module):
+         out.update(e9_tele)
+         idx = rank.argmax(dim=1)
+         traj = fan[torch.arange(b, device=fan.device), idx]
++        if bool(getattr(self.cfg, "plan_vmax_clamp", False)) and not self.training:
++            # ⛔ v7F R1 EQUIVALENT. The argmax filter above CHOOSES; this CLAMPS. A row with no compliant
++            # candidate keeps its whole fan (counted in `e9_ceil_dead_frac`), so without this the emitted plan
++            # can exceed the fed ceiling there. Non-binding rows are returned bit-identical.
++            _pl = cache.get("plan_v_lim_ms")
++            if _pl is None:
++                raise ValueError("[refcv8] plan_vmax_clamp is on but the scene hook exported no limit "
++                                 "(`plan_v_lim_ms`): the clamp would silently not run.")
++            _dec = self.core.decoder
++            out["traj_precap"] = traj
++            traj, _cd = v6sel.cap_plan_to_limit(
++                traj, _pl, horizons=_dec.anchor_horizons, tick_s=_dec.anchor_dt, v0=v0,
++                brake_ms2=float(_dec.sel.accel_max))
++            out.update(_cd)
+         out.update(cache)
+         out.update(tele)
+         out["traj_base"], out["sel_idx_base"] = out["traj"], out["sel_idx"]
+diff --git a/stack/scripts/refc_v3_train.py b/stack/scripts/refc_v3_train.py
+index 73d4d32..9facbfd 100644
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -1340,6 +1340,14 @@ def _pin_refcv6_tactical(cfg, args) -> None:
+                 "ceiling IS the fed 4-way set speed; with no channel every row's limit is "
+                 "+inf and the argmax filter is built and INERT.")
+         cfg.core.speed_ceiling_filter = True
++    # ⭐ v7F R1 EQUIVALENT (audit 2026-10-18; PI 2026-09-27 "must not be exceeded"): the CLAMP on the emitted
++    # plan, beside the argmax filter above. INFERENCE ONLY. Needs the ceiling channel (else every limit is +inf).
++    if bool(getattr(args, "plan_vmax_clamp", False)):
++        if not bool(getattr(args, "max_speed_input_v6", False)):
++            raise SystemExit(
++                "[v3] ⛔ --plan-vmax-clamp without --max-speed-input-v6: the clamp's limit IS the fed 4-way set "
++                "speed; with no channel every row's limit is +inf and the clamp is built and INERT.")
++        cfg.plan_vmax_clamp = True
+     # ---- §5: the 4-way one-hot set-speed -------------------------------- #
+     if bool(getattr(args, "max_speed_input_v6", False)):
+         if args.arm != "hier":
+@@ -7073,6 +7081,7 @@ def _seam_stamp(cfg, args) -> dict:
+              "tau": float(getattr(core, "nav_compliance_tau_rad", 0.0))}
+             if getattr(cfg, "nav_compliance_tau_file", None) else None),
+         "speed_ceiling_filter": bool(getattr(core, "speed_ceiling_filter", False)),
++        "plan_vmax_clamp": bool(getattr(cfg, "plan_vmax_clamp", False)),
+         # ⭐⭐ E15 (GP-2, 2026-09-06) — THE GOAL-POINT STAMP, INCLUDING THE
+         # MACHINE-READABLE ADMISSIBILITY DECLARATION.
+         #
+@@ -12326,6 +12335,12 @@ def build_parser() -> argparse.ArgumentParser:
+                      help="refcv6 §5: the fed 4-way set speed FILTERS THE ARGMAX (the S2 "
+                           "pattern; the score stays unmasked). Needs --max-speed-input-v6. "
+                           "⚠️ CHANGES THE ARM, and the channel is EGO-FUTURE derived.")
++    g6t.add_argument("--plan-vmax-clamp", action="store_true",
++                     help="v7F R1 equivalent (PI 2026-09-27: the max speed 'must not be exceeded'): CLAMP the "
++                          "EMITTED plan to the fed ceiling at INFERENCE (refcv6_selection.cap_plan_to_limit), "
++                          "beside --speed-ceiling-filter, which only CHOOSES among the fan and leaves a row with "
++                          "no compliant candidate uncapped. Needs --max-speed-input-v6. The TRAINING forward "
++                          "stays uncapped. Default OFF = byte-identical. CHANGES THE ARM.")
+     # ---- refcv7 (PI 2026-09-19): DrivoR's proven planning heads ---------- #
+     # `Project Steering/SPEC_REFCV7.md`. ⛔ A run that passes none of these is
+     # BIT-IDENTICAL to refcv6 (`test_refcv7_model.py`).
+diff --git a/stack/tanitad/train/declared_vs_built.py b/stack/tanitad/train/declared_vs_built.py
+index 12f2644..cadc6be 100644
+--- a/stack/tanitad/train/declared_vs_built.py
++++ b/stack/tanitad/train/declared_vs_built.py
+@@ -911,6 +911,11 @@ register("max_speed_mode", "elsewhere", reason=(
+     "refused as INERT without --max-speed-input (`_pin_trainer_cfg`); the conditioner carries it"))
+ _b("max_speed_input_v6", _c_mod("max_speed_input_v6", "max_speed_1h_v6",
+                                 lambda a: bool(_a(a, "max_speed_input_v6", False))))
++# v7F R1 equivalent (audit 2026-10-18): argv --plan-vmax-clamp == the BUILT model's cfg.plan_vmax_clamp
++_b("plan_vmax_clamp", _c_attr("plan_vmax_clamp", "plan_vmax_clamp",
++                              lambda a: bool(_a(a, "plan_vmax_clamp", False)),
++                              owner=lambda m: m.cfg,
++                              where="model.cfg.plan_vmax_clamp (the E9 block clamps the emitted plan)"))
+ _b("goal_point_inject", _c_goal_point)
+ register("goal_point_geo_prior", "elsewhere", reason="checked with --goal-point-inject (G-DVB)")
+ register("goal_point_t", "elsewhere", reason="checked with --goal-point-inject (G-DVB)")
+diff --git a/stack/tests/test_declared_vs_built.py b/stack/tests/test_declared_vs_built.py
+index 4dc1be8..27e0561 100644
+--- a/stack/tests/test_declared_vs_built.py
++++ b/stack/tests/test_declared_vs_built.py
+@@ -287,7 +287,8 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
+     #   (273 -> 276)
+     # + v8F rung alpha, arm alpha-1: --p10-prior ("built": core.decoder.p10, the frozen P10) and --p10-prior-sha256
+     #   ("elsewhere": checked with it, `_c_p10_prior`) (276 -> 278)
+-    assert len(dvb.REGISTRY) == 278
++    # + v7F R1 equivalent (audit 2026-10-18): --plan-vmax-clamp ("built": model.cfg.plan_vmax_clamp) (278 -> 279)
++    assert len(dvb.REGISTRY) == 279
+     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
+     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
+     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"
+diff --git a/stack/tests/test_refcv8_plan_vmax_clamp.py b/stack/tests/test_refcv8_plan_vmax_clamp.py
+new file mode 100644
+index 0000000..c65979f
+--- /dev/null
++++ b/stack/tests/test_refcv8_plan_vmax_clamp.py
+@@ -0,0 +1,329 @@
++"""v7F R1 EQUIVALENT FOR refcv8 -- the max speed "must not be exceeded" holds on the EMITTED plan.
++
++PI R1 (2026-09-27): *"both of them should get the max speed, which it must not be exceeded."* v7F built a HARD
++cap on the emitted plan (`plan_speed_cap.cap_fan`). refcv8 has the INPUT (`--max-speed-input-v6`) and an ARGMAX
++FILTER (`--speed-ceiling-filter`: `refc.py:3941`, `refc_v3.e9_rank`) -- and the filter only CHOOSES among the fan.
++`SpeedCeilingFilter` keeps the whole fan on a row with no compliant candidate (`refcv6_selection.py`, "the ONLY
++reason the obedience bar is 99 % and not 100 %"), and the existing refcv8 test
++(`test_refcv8_speed_input.py::test_the_EMITTED_plan_obeys...`) therefore asserts obedience on `picked[~exempt]` --
++the EXEMPT rows are outside every refcv8 bound. `--plan-vmax-clamp` closes them: a projection of the SELECTED plan,
++inference-only, bit-identical on non-binding rows, default OFF.
++
++THE CHAIN, one hop per test (flag -> namespace -> cfg -> model -> forward):
++  argv `--plan-vmax-clamp` -> `refc_v3_train.py` argparse -> `_pin_trainer_cfg` sets `cfg.plan_vmax_clamp`
++  -> `RefCV3Model.cfg` -> scene hook exports `plan_v_lim_ms` -> E9 block `cap_plan_to_limit` -> `out["traj"]`.
++
++DELIBERATE-REGRESSION ARMS (each must go RED, and does): the clamp replaced by identity; the limit export removed;
++the G-DVB entry's built value flipped; the pin's refusal removed.
++"""
++from __future__ import annotations
++
++import dataclasses
++import math
++import sys
++from pathlib import Path
++
++import pytest
++
++torch = pytest.importorskip("torch")
++pytest.importorskip("timm")
++_HERE = Path(__file__).resolve().parent
++_STACK = _HERE.parent
++for _p in (str(_HERE), str(_STACK), str(_STACK / "scripts")):
++    if _p not in sys.path:
++        sys.path.insert(0, _p)
++
++import _refcv8_rig as R  # noqa: E402
++from tanitad.refs import refcv6_selection as v6sel  # noqa: E402
++from tanitad.refs.refcv6_selection import cap_plan_to_limit, planned_max_speed  # noqa: E402
++
++HOR = (5, 10, 15, 20)            # waypoint TICKS at 0.1 s -> 0.5 s apart (NOT 0.1 s)
++
++
++def _straight(speeds):
++    """A straight plan along +x whose interval i runs at speeds[i] m/s (0.5 s intervals)."""
++    return torch.cumsum(torch.tensor([[s * 0.5, 0.0] for s in speeds]), 0)[None]
++
++
++# =========================================================================== #
++# 1. the pure function, LITERAL expectations                                   #
++# =========================================================================== #
++def test_literal_a_binding_plan_is_compressed_to_the_ceiling():
++    out, d = cap_plan_to_limit(_straight([10, 20, 30, 40]), torch.tensor([25.0]), horizons=HOR)
++    # intervals 5, 10, 15, 20 m -> allowed 12.5 m each -> 5, 10, 12.5, 12.5 -> cumulative 5, 15, 27.5, 40
++    assert out[0, :, 0].tolist() == pytest.approx([5.0, 15.0, 27.5, 40.0], abs=1e-5)
++    assert out[0, :, 1].tolist() == [0.0, 0.0, 0.0, 0.0]
++    assert float(d["plan_cap_speed_before"]) == pytest.approx(40.0, abs=1e-5)
++    assert float(d["plan_cap_speed_after"]) == pytest.approx(25.0, abs=1e-4)
++    assert bool(d["plan_cap_binding"][0]) and float(d["plan_cap_excess_ms"]) <= 1e-4
++
++
++def test_literal_headings_are_kept():
++    tr = torch.tensor([[[6.0, 0.0], [12.0, 2.0], [18.0, 8.0], [20.0, 20.0]]])
++    out, _ = cap_plan_to_limit(tr, torch.tensor([6.0]), horizons=HOR)     # 6 m/s -> 3 m per 0.5 s interval
++    seq = torch.cat([torch.zeros(1, 1, 2), out], 1)
++    d_new = seq[:, 1:] - seq[:, :-1]
++    seq0 = torch.cat([torch.zeros(1, 1, 2), tr], 1)
++    d_old = seq0[:, 1:] - seq0[:, :-1]
++    assert torch.allclose(d_new.norm(dim=-1), torch.full((1, 4), 3.0), atol=1e-5)
++    cos = torch.nn.functional.cosine_similarity(d_new, d_old, dim=-1)
++    assert torch.allclose(cos, torch.ones(1, 4), atol=1e-5)               # same direction per interval
++
++
++def test_literal_non_binding_and_infinite_rows_are_BIT_identical():
++    tr = torch.cat([_straight([5, 5, 5, 5]), _straight([10, 20, 30, 40]), _straight([10, 20, 30, 40])])
++    lim = torch.tensor([25.0, float("inf"), 25.0])
++    out, d = cap_plan_to_limit(tr, lim, horizons=HOR)
++    assert torch.equal(out[0], tr[0]) and torch.equal(out[1], tr[1])      # under the ceiling / no ceiling
++    assert not torch.equal(out[2], tr[2])                                 # the binding control moved
++    assert d["plan_cap_binding"].tolist() == [False, False, True]
++
++
++def test_literal_a_ceiling_exactly_at_the_plan_max_is_the_identity():
++    tr = _straight([10, 20, 30, 40])
++    out, d = cap_plan_to_limit(tr, torch.tensor([40.0]), horizons=HOR)
++    assert torch.equal(out, tr) and not bool(d["plan_cap_binding"][0])
++
++
++def test_literal_v0_above_the_ceiling_brakes_and_is_REPORTED():
++    # v0 = 20 m/s, ceiling 10, brake 2.5 m/s^2: allowed speed in interval i is max(10, 20 - 2.5 * t_mid_i),
++    # t_mid = 0.25, 0.75, 1.25, 1.75 s -> 19.375, 18.125, 16.875, 15.625 m/s -> metres 9.6875, 9.0625, 8.4375, 7.8125
++    tr = _straight([25, 25, 25, 25])
++    out, d = cap_plan_to_limit(tr, torch.tensor([10.0]), horizons=HOR, v0=torch.tensor([20.0]), brake_ms2=2.5)
++    got = torch.diff(torch.cat([torch.zeros(1), out[0, :, 0]]))
++    assert got.tolist() == pytest.approx([9.6875, 9.0625, 8.4375, 7.8125], abs=1e-4)
++    assert bool(d["plan_cap_v0_over_limit"][0])
++    strict, d2 = cap_plan_to_limit(tr, torch.tensor([10.0]), horizons=HOR, v0=torch.tensor([20.0]), brake_ms2=0.0)
++    assert float(planned_max_speed(strict[:, None], horizons=HOR)[0, 0]) == pytest.approx(10.0, abs=1e-4)
++    assert "plan_cap_v0_over_limit" not in d2                              # strict mode has no allowance to report
++
++
++def test_property_the_cap_holds_on_random_plans_under_the_CEIL_OBEY_statistic():
++    g = torch.Generator().manual_seed(7)
++    tr = torch.cumsum(torch.randn(256, 4, 2, generator=g) * 6.0, 1)
++    lim = torch.where(torch.rand(256, generator=g) < 0.2, torch.full((256,), float("inf")),
++                      4.0 + 30.0 * torch.rand(256, generator=g))
++    out, _ = cap_plan_to_limit(tr, lim, horizons=HOR)
++    vm = planned_max_speed(out[:, None], horizons=HOR)[:, 0]
++    finite = torch.isfinite(lim)
++    assert bool((vm[finite] <= lim[finite] * (1 + 1e-5)).all())
++    v0 = planned_max_speed(tr[:, None], horizons=HOR)[:, 0]
++    assert int((v0[finite] > lim[finite]).sum()) > 20                     # NOT VACUOUS: many plans were over
++    assert torch.equal(out[~finite], tr[~finite])
++
++
++@pytest.mark.parametrize("bad", [float("nan"), 0.0, -3.0])
++def test_a_non_limit_REFUSES(bad):
++    with pytest.raises(ValueError, match="not a speed limit"):
++        cap_plan_to_limit(_straight([5, 5, 5, 5]), torch.tensor([bad]), horizons=HOR)
++
++
++def test_a_mismatched_grid_REFUSES():
++    with pytest.raises(ValueError, match="mismatched grid"):
++        cap_plan_to_limit(_straight([5, 5, 5, 5]), torch.tensor([9.0]), horizons=(5, 10, 15))
++
++
++# =========================================================================== #
++# 2. the REAL RefCV3Model: the filter alone leaves exempt rows over the ceiling #
++# =========================================================================== #
++V0_GRID = [9.0, 10.0, 11.0, 12.0, 12.5, 13.0, 13.5, 13.8]
++
++
++def _speed_batch(cfg, v0s, seed=4):
++    b = len(v0s)
++    enc = cfg.core.encoder
++    h, w = enc.image_hw()
++    W = int(cfg.core.window)
++    g = torch.Generator().manual_seed(seed)
++    v_s = torch.tensor(v0s, dtype=torch.float32)
++    t = torch.arange(W, dtype=torch.float32)
++    ph = torch.zeros(b, W, 4)
++    ph[:, :, 3] = v_s[:, None]
++    ph[:, :, 0] = v_s[:, None] * 0.1 * t[None]
++    return {"frames": torch.rand(b, W, int(enc.in_channels), h, w, generator=g),
++            "nav_cmd": torch.zeros(b, dtype=torch.long), "v0": v_s.clone(), "pose_hist": ph}
++
++
++@pytest.fixture(scope="module")
++def rig():
++    T = R.trainer()
++    cfg, m = R.build(T, True, vmax=True, speed_input="n2", n_alloc=8, alloc_emit=True)
++    return T, cfg, m
++
++
++def _run(rig, kmh, clamp, train=False, valid=1.0):
++    """``kmh``: one ceiling for every row, or a per-row list."""
++    T, cfg, m = rig
++    cfg.plan_vmax_clamp = bool(clamp)
++    bt = _speed_batch(cfg, V0_GRID)
++    b = len(V0_GRID)
++    ks = list(kmh) if isinstance(kmh, (list, tuple)) else [kmh] * b
++    out = R.forward(cfg, m, bt, train=train, v_max_ms=torch.tensor([k / 3.6 for k in ks]),
++                    v_max_valid=torch.full((b,), float(valid)))
++    dec = m.core.decoder
++    vm = planned_max_speed(out["traj"][:, None], horizons=dec.anchor_horizons, tick_s=dec.anchor_dt)[:, 0]
++    return out, vm
++
++
++#: rows 0-3 sit under a 30 km/h ceiling while the ego drives 9-12 m/s (every candidate is rolled from v0, so the
++#: fan has nothing compliant: EXEMPT rows); rows 4-7 sit under a 120 km/h ceiling (never binding)
++MIXED = [30, 30, 30, 30, 120, 120, 120, 120]
++
++
++def test_the_filter_alone_leaves_EXEMPT_rows_over_the_ceiling_and_the_clamp_closes_them(rig):
++    """The decisive A/B: SAME windows, SAME sampler seed, clamp OFF vs ON.
++
++    On this rig an exempt row IS an ego already above the ceiling (every candidate is rolled from v0, so a
++    constant-speed anchor is compliant whenever v0 <= ceiling). v7F's rule for that case applies unchanged: the
++    plan brakes at `a_max` until under the ceiling, and the residual is REPORTED (`plan_cap_v0_over_limit`), not
++    hidden -- so the bound on such a row is the braking envelope, not the ceiling."""
++    T, cfg, m = rig
++    lim = torch.tensor([k / 3.6 for k in MIXED])
++    v0 = torch.tensor(V0_GRID)
++    off, vm_off = _run(rig, MIXED, clamp=False)
++    on, vm_on = _run(rig, MIXED, clamp=True)
++    exempt = vm_off > lim + 1e-5                                          # the emitted plan is over the ceiling
++    assert bool(exempt.any()), "no exempt row -- the A/B would prove nothing (raise v0 or lower the ceiling)"
++    assert bool((~exempt).any()), "no non-binding row -- the bit-identity clause would be vacuous"
++    dec = m.core.decoder
++    brake = float(dec.sel.accel_max)
++    env = torch.maximum(lim, v0 - brake * (0.5 * float(dec.anchor_horizons[0]) * float(dec.anchor_dt)))
++    # (1) with the clamp ON no row exceeds its envelope; a row with v0 <= ceiling is bounded by the CEILING itself
++    assert bool((vm_on <= env * (1 + 1e-4)).all()), (vm_on.tolist(), env.tolist())
++    strict = v0 <= lim
++    assert bool((vm_on[strict] <= lim[strict] * (1 + 1e-4)).all())
++    # (2) the clamp MOVED every exempt row (the filter alone had left them above the ceiling) and only those
++    assert bool((vm_on[exempt] < vm_off[exempt]).all()), (vm_on.tolist(), vm_off.tolist())
++    assert torch.equal(on["traj"][~exempt], off["traj"][~exempt])         # bit-identical where it is not needed
++    # (3) the residual is reported, per v7F: exactly the rows whose ego is above the ceiling
++    assert on["plan_cap_v0_over_limit"].tolist() == (v0 > lim).tolist()
++    # (4) the clamp changed ONLY the plan: the candidate, its index and the pre-clamp plan are the filter's
++    assert torch.equal(on["sel_idx"], off["sel_idx"]) and torch.equal(on["traj_precap"], off["traj"])
++    assert "traj_precap" not in off and "plan_cap_binding" not in off
++
++
++def test_the_clamp_is_inference_only_and_the_default_is_off(rig):
++    T, cfg, m = rig
++    assert [f for f in dataclasses.fields(type(cfg)) if f.name == "plan_vmax_clamp"][0].default is False
++    tr, _ = _run(rig, MIXED, clamp=True, train=True)
++    # TRAINING forward: the clamp did not run (no pre-clamp plan, no diagnostics) and the emitted plan is the raw
++    # fan member. (Not a cross-run equality: the refcv8 seams draw from a DEDICATED generator that advances.)
++    assert "traj_precap" not in tr and "plan_cap_binding" not in tr
++    ar = torch.arange(tr["traj"].shape[0])
++    assert torch.equal(tr["traj"], tr["anchor_traj"][ar, tr["sel_idx"]])
++
++
++def test_an_unknown_ceiling_row_is_never_capped(rig):
++    _o, vm = _run(rig, MIXED, clamp=True, valid=0.0)                          # channel fed but unknown on every row
++    _f, vm_off = _run(rig, MIXED, clamp=False, valid=0.0)
++    assert torch.equal(_o["traj"], _f["traj"]) and torch.equal(vm, vm_off)  # +inf = no cap, no fabricated limit
++
++
++def test_REGRESSION_ARM_the_clamp_replaced_by_identity_goes_RED(rig, monkeypatch):
++    """The obedience assertion of the A/B above, run with the clamp neutered: it must FAIL."""
++    monkeypatch.setattr(v6sel, "cap_plan_to_limit",
++                        lambda traj, lim, **kw: (traj, {"plan_cap_binding": torch.zeros(traj.shape[0], dtype=torch.bool)}))
++    T, cfg, m = rig
++    lim = torch.tensor([k / 3.6 for k in MIXED])
++    v0 = torch.tensor(V0_GRID)
++    dec = m.core.decoder
++    env = torch.maximum(lim, v0 - float(dec.sel.accel_max) * (0.5 * float(dec.anchor_horizons[0]) * float(dec.anchor_dt)))
++    _on, vm_on = _run(rig, MIXED, clamp=True)
++    assert not bool((vm_on <= env * (1 + 1e-4)).all()), "the neutered clamp still obeyed -- the A/B proves nothing"
++
++
++def test_REGRESSION_ARM_a_missing_limit_export_REFUSES_instead_of_silently_not_running(rig, monkeypatch):
++    """The hook exports `plan_v_lim_ms` only while the flag reads True AT HOOK TIME; flip it off for the core
++    forward and on again for the E9 block: the clamp finds no limit and must REFUSE, not skip."""
++    T, cfg, m = rig
++    real = m.core.forward
++
++    def flip(*a, **k):
++        cfg.plan_vmax_clamp = False
++        try:
++            return real(*a, **k)
++        finally:
++            cfg.plan_vmax_clamp = True
++    monkeypatch.setattr(m.core, "forward", flip)
++    with pytest.raises(ValueError, match="exported no limit"):
++        _run(rig, MIXED, clamp=True)
++
++
++# =========================================================================== #
++# 3. the BUILD guards                                                          #
++# =========================================================================== #
++def test_build_refuses_a_clamp_with_no_ceiling_channel():
++    T = R.trainer()
++    cfg, _m = R.build(T, False)                                           # vmax=False: no max_speed_onehot_v6
++    cfg.plan_vmax_clamp = True
++    with pytest.raises(ValueError, match="INERT"):
++        T.v3.RefCV3Model(cfg)
++
++
++def test_build_refuses_a_clamp_beside_the_refcv7_scorer_pick():
++    T = R.trainer()
++    cfg, _m = R.build(T, False, vmax=True)
++    cfg.plan_vmax_clamp = True
++    cfg.refcv7_select = True
++    with pytest.raises(ValueError, match="refcv7_select"):
++        T.v3.RefCV3Model(cfg)
++
++
++# =========================================================================== #
++# 4. the TRAINER chain: argv -> namespace -> cfg -> G-DVB                        #
++# =========================================================================== #
++BASE = ["--arm", "hier", "--size", "tiny", "--out", "X", "--v7-labels", "labels.jsonl.gz",
++        "--agents", "head", "--w-agent", "1.0", "--agent-join", "join.jsonl.xz", "--agent-join-verify", "off",
++        "--tac-decoder-v6", "--w-tac-v6", "1.0", "--max-speed-input-v6", "--speed-max-sidecar-v6", "s.jsonl"]
++
++
++def _pin(argv):
++    T = R.trainer()
++    args = T.build_parser().parse_args(argv)
++    cfg = T.v3.RefCV3Config(hier=(args.arm == "hier"))
++    try:
++        T._pin_trainer_cfg(cfg, args)
++    except SystemExit as e:
++        return False, str(e), cfg, args
++    return True, "", cfg, args
++
++
++def test_GREEN_the_flag_reaches_the_cfg():
++    ok, msg, cfg, args = _pin(BASE + ["--plan-vmax-clamp"])
++    assert ok, msg
++    assert args.plan_vmax_clamp is True and cfg.plan_vmax_clamp is True
++
++
++def test_the_default_is_off_as_a_LITERAL():
++    ok, msg, cfg, args = _pin(BASE)
++    assert ok, msg
++    assert args.plan_vmax_clamp is False and cfg.plan_vmax_clamp is False
++
++
++def test_RED_the_flag_without_the_channel_refuses():
++    argv = [t for t in BASE if t not in ("--max-speed-input-v6",)]
++    i = argv.index("--speed-max-sidecar-v6")
++    del argv[i:i + 2]
++    ok, msg, _c, _a = _pin(argv + ["--plan-vmax-clamp"])
++    assert not ok and "--plan-vmax-clamp without --max-speed-input-v6" in msg, msg[:200]
++
++
++def test_GDVB_has_an_entry_and_reads_the_BUILT_value(rig):
++    from tanitad.train import declared_vs_built as dvb
++    T, cfg, m = rig
++    parser = T.build_parser()
++    assert "plan_vmax_clamp" in dvb.REGISTRY and dvb.coverage(parser) == []
++    args = parser.parse_args(["--arm", "hier", "--out", "X", "--plan-vmax-clamp"])
++    cfg.plan_vmax_clamp = False                                            # the model was BUILT without it
++    got = [x for x in dvb.check(m, args, parser) if x.lever == "--plan-vmax-clamp"]
++    assert len(got) == 1 and got[0].declared is True and got[0].built is False       # declared-but-not-built: RED
++    cfg.plan_vmax_clamp = True
++    assert [x for x in dvb.check(m, args, parser) if x.lever == "--plan-vmax-clamp"] == []   # built: clean
++    cfg.plan_vmax_clamp = False
++
++
++def test_REGRESSION_ARM_the_gdvb_entry_removed_goes_RED(monkeypatch):
++    from tanitad.train import declared_vs_built as dvb
++    T = R.trainer()
++    monkeypatch.delitem(dvb.REGISTRY, "plan_vmax_clamp")
++    assert "plan_vmax_clamp" in dvb.coverage(T.build_parser())            # the gate refuses a flag with no entry
+diff --git a/stack/tests/test_refcv8_v7f_equivalence.py b/stack/tests/test_refcv8_v7f_equivalence.py
+new file mode 100644
+index 0000000..6fa9798
+--- /dev/null
++++ b/stack/tests/test_refcv8_v7f_equivalence.py
+@@ -0,0 +1,488 @@
++"""v7F's fix set R1..R6 -- is each one carried by refcv8? Reachability from the ACTUAL caller, by probe.
++
++PI, 2026-10-18: "assure that refcv8 includes the fixes". v7F (train_v6_staged.py / V6Stack) was never landed and is
++superseded; refcv8 is a different line (refc_v3_train.py / RefCV3Model). The five fix classes are therefore not
++ported by diff -- each is decided by EVIDENCE from refcv8's own code and its live argv
++(`stack/ops/runs.d/refcv8-r101-s0.argv.json`):
++
++  R2  start defects of nav conditioning ... three defects that CANNOT exist here (proven below) + nav REACHES
++  R3  EVERY tactical label family reaches the tactical loss, traffic-light colours included
++  R4  the tactical behaviours reach the operative plan (swap them -> the plan moves)
++  R6  the strategic layer is OFF (`--no-strategic`) -- bypassed, never merely untrained
++  R1  see `test_refcv8_plan_vmax_clamp.py`
++
++EVERY probe carries a CONTROL that must read EXACTLY 0.0 and a DELIBERATE-REGRESSION arm that must go RED. A probe
++whose control is not exactly zero is a broken probe, not a result.
++"""
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++from types import SimpleNamespace
++
++import pytest
++
++torch = pytest.importorskip("torch")
++pytest.importorskip("timm")
++_HERE = Path(__file__).resolve().parent
++_STACK = _HERE.parent
++for _p in (str(_HERE), str(_STACK), str(_STACK / "scripts")):
++    if _p not in sys.path:
++        sys.path.insert(0, _p)
++
++import _refcv8_rig as R  # noqa: E402
++from tanitad.refs import refc_v3 as v3  # noqa: E402
++from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
++from tanitad.refs import refcv8_conditioning as C  # noqa: E402
++
++LIVE_ARGV = _STACK / "ops" / "runs.d" / "refcv8-r101-s0.argv.json"
++
++
++@pytest.fixture(scope="module")
++def T():
++    return R.trainer()
++
++
++def _live_args(T):
++    if not LIVE_ARGV.exists():
++        pytest.skip("the live refcv8 argv file is not in this tree")
++    return T.build_parser().parse_args(json.loads(LIVE_ARGV.read_text(encoding="utf-8"))["argv"])
++
++
++# =========================================================================== #
++# 0. the live argv carries the levers every class below hangs on               #
++# =========================================================================== #
++def test_the_live_refcv8_argv_names_the_levers_the_audit_relies_on(T):
++    a = _live_args(T)
++    assert a.no_strategic is True                                           # R6
++    assert a.tac_decoder_v6 is True and a.w_tac_v6 == 1.0                   # R3: the 22-goal + 8 + 8 head, live weight
++    assert a.max_speed_input_v6 is True and a.speed_ceiling_filter is True  # R1: input + argmax filter
++    assert a.graft_tac8_prior is True and a.graft_behaviour_sel is True     # R4: tactical posterior -> the plan
++    assert a.refcv8 is True and a.r8_n_alloc == 32 and a.r8_alloc_emit is True
++    assert a.nav_from_v7 is True and a.r8_nav_from_v9 is True               # R2: nav sources
++    # the DEFAULTS the audit leans on, as literals: the generic goal head and its weight are NOT what trains R3
++    assert a.w_tac_goal == 0.0 and not a.tac_goal_tok_head                  # `--tac-decoder-v6` carries the goal set
++
++
++def test_R6_the_flag_reaches_the_core_config_through_the_real_pin_and_the_default_is_off(T):
++    """argv `--no-strategic` -> argparse (`refc_v3_train.py:12682`) -> `_pin_trainer_cfg` (`:577`) ->
++    `cfg.core.no_strategic`, the ONE field `refc.py` and `refc_v3.py` read."""
++    def pin(extra):
++        args = T.build_parser().parse_args(["--arm", "hier", "--size", "tiny", "--out", "X"] + extra)
++        cfg = T.v3.RefCV3Config(hier=True)
++        T._pin_trainer_cfg(cfg, args)
++        return cfg.core.no_strategic
++    assert pin(["--no-strategic"]) is True
++    assert pin([]) is False                                                   # the default, as a literal
++
++
++# =========================================================================== #
++# 1. R6 -- the strategic layer is BYPASSED, not merely untrained               #
++# =========================================================================== #
++def _strategic_modules(m):
++    from tanitad.refs.refc_v3 import BYPASS_DECLARATIONS, _module_at
++    mods = []
++    for path, flag, _why in BYPASS_DECLARATIONS:
++        if flag == "no_strategic":
++            mod = _module_at(m, path)
++            if mod is not None:
++                mods.append((path, mod))
++    return mods
++
++
++def _plan_keys(o):
++    return {k: o[k] for k in ("traj", "anchor_traj", "sel_score_v3", "g_tac", "z_tac") if k in o}
++
++
++def test_R6_every_strategic_parameter_is_OFF_the_plan_path(T):
++    cfg, m = R.build(T, False)
++    bt = R.batch(cfg)
++    mods = _strategic_modules(m)
++    assert len(mods) >= 4, [p for p, _ in mods]                              # NOT VACUOUS: the layer exists here
++
++    def perturbed(bypass: bool):
++        cfg.core.no_strategic = bypass
++        base = R.forward(cfg, m, bt)
++        saved = {n: p.detach().clone() for _p, mod in mods for n, p in mod.named_parameters(prefix=_p)}
++        g = torch.Generator().manual_seed(11)
++        with torch.no_grad():
++            for _p, mod in mods:
++                for p in mod.parameters():
++                    p.add_(torch.randn(p.shape, generator=g) * 0.5)
++        try:
++            pert = R.forward(cfg, m, bt)
++        finally:
++            with torch.no_grad():
++                for _p, mod in mods:
++                    for n, p in mod.named_parameters():
++                        p.copy_(saved[f"{_p}.{n}"])
++        return base, pert
++
++    base, pert = perturbed(True)                                             # --no-strategic
++    for k, v in _plan_keys(base).items():
++        assert torch.equal(v, _plan_keys(pert)[k]), f"{k} moved under --no-strategic"      # exactly 0.0
++    assert not torch.equal(base["ctx"], pert["ctx"])        # CONTROL: the perturbation is real (ctx is diagnostic)
++    base0, pert0 = perturbed(False)                                          # strategic ON (the control arm)
++    moved = [k for k, v in _plan_keys(base0).items() if not torch.equal(v, _plan_keys(pert0)[k])]
++    assert moved, "with the strategic layer ON the same perturbation moved nothing -- the probe cannot fire"
++    cfg.core.no_strategic = False
++
++
++def test_R6_REGRESSION_ARM_the_bypass_removed_goes_RED(T, monkeypatch):
++    """With `ctx_dec = None if no_strategic else ctx` neutered (the decoder is handed the strategic token again) the
++    R6 assertion above must FAIL: emulate by reading the strategic ON arm under the bypass flag's name."""
++    cfg, m = R.build(T, False)
++    bt = R.batch(cfg)
++    mods = _strategic_modules(m)
++    cfg.core.no_strategic = False                                            # the bypass "removed"
++    base = R.forward(cfg, m, bt)
++    g = torch.Generator().manual_seed(11)
++    with torch.no_grad():
++        for _p, mod in mods:
++            for p in mod.parameters():
++                p.add_(torch.randn(p.shape, generator=g) * 0.5)
++    pert = R.forward(cfg, m, bt)
++    assert any(not torch.equal(v, _plan_keys(pert)[k]) for k, v in _plan_keys(base).items())
++
++
++# =========================================================================== #
++# 2. R2 -- the three v7F start defects cannot exist here, and nav REACHES      #
++# =========================================================================== #
++def test_R2_defect_1_the_batch_always_carries_nav_and_a_missing_key_is_LOUD(T):
++    cfg, m = R.build(T, False)
++    eps = T._synth_episodes(2, cfg.core, seed=0)
++    ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
++    it = ds[0]
++    assert "nav_cmd" in it and "nav_valid" in it                              # every item, from the dataset
++    batch = torch.utils.data.default_collate([ds[0], ds[1]])
++    del batch["nav_cmd"]
++    with pytest.raises(KeyError):                                             # not a silent skip (v7F: NavTokenMissing)
++        T.compute_losses_v3(m, batch, "cpu", mode="diffusion")
++
++
++def test_R2_defect_2_the_nav_token_reaches_the_forward_unmodified_on_BOTH_wrappers(T):
++    """v7F: the batch literal splatted the emitter output and then wrote `nav_token: b.get(...)` -- the later key
++    won and every emitted token became None. Here: ONE hop, `batch['nav_cmd'] -> model(nav_cmd=...)`; the refcv8
++    wrapper merges `{**kwargs, **r8_fwd}` and r8_fwd's keys are listed -- `nav_cmd` is not among them."""
++    from tanitad.train import refcv8_train as RT
++    cfg, m = R.build(T, True)
++    eps = T._synth_episodes(2, cfg.core, seed=0)
++    ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
++    ds.ego_history = True
++    batch = torch.utils.data.default_collate([ds[0], ds[1]])
++    batch["nav_cmd"] = torch.tensor([1, 2], dtype=torch.long)
++    batch["nav_valid"] = torch.tensor([True, True])
++    seen = {}
++    real = m.forward
++
++    def spy(*a, **k):
++        seen["nav_cmd"] = k.get("nav_cmd")
++        return real(*a, **k)
++    m.forward = spy
++    v7l = T.v7l
++    batch["lat_v7"] = torch.tensor([0, v7l.IGNORE_ID], dtype=torch.long)
++    batch["lon_v7"] = torch.tensor([0, v7l.IGNORE_ID], dtype=torch.long)
++    batch["tac_goal_y"] = torch.zeros(2, len(v7l.TAC_GOAL_TOKENS))
++    batch["tac_goal_w"] = torch.zeros(2, len(v7l.TAC_GOAL_TOKENS))
++    m._w_tac_v6 = 1.0
++    T.compute_losses_v3(m, batch, "cpu", mode="diffusion")
++    m.forward = real
++    assert seen["nav_cmd"] is not None and seen["nav_cmd"].tolist() == [1, 2]
++    # the keys the refcv8 wrapper adds to the forward are exactly these -- none is the nav token
++    import inspect
++    src = inspect.getsource(RT.r8_before_forward)
++    for k in ("r8_nav", "r8_rc", "v_max_ms", "v_max_valid"):
++        assert f'fwd["{k}"]' in src or f"fwd['{k}']" in src or k in src
++    assert 'fwd["nav_cmd"]' not in src and "fwd['nav_cmd']" not in src
++
++
++def test_R2_defect_3_every_trainable_parameter_is_in_exactly_one_optimiser_group_nav_included(T):
++    cfg, m = R.build(T, True)
++    args = SimpleNamespace(opt="dd", lr=1e-4, encoder_lr_mult=0.5, weight_decay=1e-4)
++    opt = T.build_optimizer(m, args)
++    in_opt = {id(p) for g in opt.param_groups for p in g["params"]}
++    n_total = sum(1 for p in m.parameters() if p.requires_grad)
++    assert len(in_opt) == n_total and sum(len(g["params"]) for g in opt.param_groups) == n_total
++    nav = [(n, p) for n, p in m.named_parameters() if "nav" in n.lower() and p.requires_grad]
++    assert len(nav) >= 4, [n for n, _ in nav]                                 # NOT VACUOUS: the conditioner exists
++    assert all(id(p) in in_opt for _n, p in nav)
++    # CONTROL: a parameter built OUTSIDE the model is in no group
++    stray = torch.nn.Parameter(torch.zeros(1))
++    assert id(stray) not in in_opt
++
++
++def test_R2_nav_REACHES_the_tactical_state_and_the_operative_selection(T):
++    cfg, m = R.build(T, False)
++    bt = R.batch(cfg)
++    swapped = dict(bt, nav_cmd=torch.tensor([2, 0, 1]))
++    a = R.forward(cfg, m, bt)
++    same = R.forward(cfg, m, bt)
++    for k in ("traj", "sel_score_v3", "anchor_logits", "z_tac"):
++        assert torch.equal(a[k], same[k]), k                                  # CONTROL: identical nav -> exactly 0.0
++    b = R.forward(cfg, m, swapped)
++    # OPERATIVE: nav rides the measurement vector, NOT a zero-init port -> the plan's selection surface moves at init
++    assert float((a["anchor_logits"] - b["anchor_logits"]).abs().max()) > 0.0
++    assert float((a["sel_score_v3"] - b["sel_score_v3"]).abs().max()) > 0.0
++    # TACTICAL: `nav_to_tac` is the zero-init OUTPUT projection (E13) -> z_tac is exactly unmoved at step 0 ...
++    assert torch.equal(a["z_tac"], b["z_tac"])
++    # ... but the port RECEIVES gradient at step 0 (so training can open it) -- the F7 question, answered for refcv8
++    m.train()
++    out = R.forward(cfg, m, bt, train=True)
++    out["z_tac"].sum().backward()
++    assert m.nav_to_tac.weight.grad is not None and float(m.nav_to_tac.weight.grad.abs().sum()) > 0.0
++    m.zero_grad(set_to_none=True)
++    # once opened, nav moves the TACTICAL state too
++    with torch.no_grad():
++        m.nav_to_tac.weight.normal_(0.0, 0.5)
++    c, d = R.forward(cfg, m, bt), R.forward(cfg, m, swapped)
++    assert not torch.equal(c["z_tac"], d["z_tac"])
++
++
++# =========================================================================== #
++# 3. R3 -- EVERY tactical label family reaches the tactical loss (end to end)  #
++# =========================================================================== #
++def _loss_batch(T, cfg, seed=0):
++    eps = T._synth_episodes(2, cfg.core, seed=seed)
++    ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
++    ds.ego_history = True                                                     # emit `pose_hist` (the live argv has --ego-history)
++    batch = torch.utils.data.default_collate([ds[0], ds[1]])
++    v7l = T.v7l
++    batch["lat_v7"] = torch.tensor([0, 6], dtype=torch.long)
++    batch["lon_v7"] = torch.tensor([0, 3], dtype=torch.long)
++    batch["nav_cmd"] = torch.tensor([1, 2], dtype=torch.long)
++    batch["nav_valid"] = torch.tensor([True, True])
++    n = len(v7l.TAC_GOAL_TOKENS)
++    batch["tac_goal_y"] = torch.zeros(2, n)
++    batch["tac_goal_w"] = torch.ones(2, n)
++    return batch
++
++
++def _tac_model(T):
++    cfg, m = R.build(T, False)
++    v7l = T.v7l
++    m._w_tac_v6 = 1.0
++    n = len(v7l.TAC_GOAL_TOKENS)
++    m._tac_goal_pos_weight = torch.ones(n)
++    mask = torch.ones(n)
++    mask[list(v7l.TAC_GOAL_TOKENS).index("SPEED_BAND")] = 0.0                  # the one class the v9 census masks
++    m._tac_goal_class_mask = mask
++    return cfg, m
++
++
++def _loss(T, m, batch, seed=5):
++    """EVAL mode: the training forward draws sampler / dropout noise, so a same-seed A/B is not exactly repeatable
++    there; the loss graph is identical in eval and the CONTROL below must read exactly 0.0 to prove it."""
++    torch.manual_seed(seed)
++    m.eval()
++    return T.compute_losses_v3(m, batch, "cpu", mode="diffusion")["loss"]
++
++
++def _with(batch, **kw):
++    b = {k: (v.clone() if torch.is_tensor(v) else v) for k, v in batch.items()}
++    for k, fn in kw.items():
++        fn(b)
++    return b
++
++
++def _delta(T, m, b0, b1):
++    return abs(float(_loss(T, m, b1)) - float(_loss(T, m, b0)))
++
++
++def test_R3_the_traffic_light_COLOUR_changes_the_loss_and_its_controls_read_exactly_zero(T):
++    cfg, m = _tac_model(T)
++    v7l = T.v7l
++    tok = list(v7l.TAC_GOAL_TOKENS)
++    red, green, band = tok.index("TRAFFIC_LIGHT_REACT_RED"), tok.index("TRAFFIC_LIGHT_REACT_GREEN"), tok.index("SPEED_BAND")
++    b0 = _loss_batch(T, cfg)
++    assert _delta(T, m, b0, _with(b0)) == 0.0                                 # CONTROL 1: same batch, same seed -> 0.0
++    d_red = _delta(T, m, b0, _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), red), 1.0)))
++    d_green = _delta(T, m, b0, _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), green), 1.0)))
++    assert d_red > 0.0 and d_green > 0.0                                     # each colour reaches the loss
++    r = _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), red), 1.0))
++    g = _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), green), 1.0))
++    assert _delta(T, m, r, g) > 0.0                                          # RED vs GREEN are told apart (the D-TLIGHT-1 mutation)
++    # CONTROL 2: a MASKED class and a w=0 cell are invisible to the loss -- exactly 0.0
++    assert _delta(T, m, b0, _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), band), 1.0))) == 0.0
++    w0 = _with(b0, a=lambda b: b["tac_goal_w"].__setitem__((slice(None), red), 0.0))
++    w0f = _with(w0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), red), 1.0))
++    assert _delta(T, m, w0, w0f) == 0.0
++
++
++def test_R3_lat_lon_action_labels_reach_the_loss_and_the_ignore_id_does_not(T):
++    cfg, m = _tac_model(T)
++    v7l = T.v7l
++    b0 = _loss_batch(T, cfg)
++    assert _delta(T, m, b0, _with(b0, a=lambda b: b.__setitem__("lat_v7", torch.tensor([6, 6])))) > 0.0
++    assert _delta(T, m, b0, _with(b0, a=lambda b: b.__setitem__("lon_v7", torch.tensor([7, 7])))) > 0.0
++    ig = torch.full((2,), v7l.IGNORE_ID, dtype=torch.long)
++    i0 = _with(b0, a=lambda b: b.__setitem__("lat_v7", ig.clone()))
++    i1 = _with(b0, a=lambda b: b.__setitem__("lat_v7", ig.clone()), c=lambda b: b.__setitem__("lon_v7", ig.clone()))
++    i2 = _with(i0, a=lambda b: b.__setitem__("lon_v7", ig.clone()))
++    assert _delta(T, m, i1, i2) == 0.0                                       # CONTROL: all-ignored rows move nothing
++
++
++def test_R3_the_gradient_of_the_traffic_light_term_lands_on_the_tactical_goal_head_and_nowhere_strategic(T):
++    cfg, m = _tac_model(T)
++    tok = list(T.v7l.TAC_GOAL_TOKENS)
++    red = tok.index("TRAFFIC_LIGHT_REACT_RED")
++    b0 = _loss_batch(T, cfg)
++    b1 = _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), red), 1.0))
++    la, lb = _loss(T, m, b1), _loss(T, m, b0)
++    params = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
++    grads = torch.autograd.grad(la - lb, [p for _n, p in params], allow_unused=True)
++    reach = {n: (0.0 if g is None else float(g.abs().sum())) for (n, _p), g in zip(params, grads)}
++    tac = sum(v for n, v in reach.items() if n.startswith("tac_decoder_v6."))
++    assert tac > 0.0, "the traffic-light cell put no gradient on the tactical decoder"
++    strat = [n for n, v in reach.items() if v != 0.0 and any(n.startswith(p) for p in
++             ("core.strategic.", "core.route_head", "str_goal_head", "nav_to_str", "gstr_"))]
++    assert strat == [], strat                                                # CONTROL: the strategic layer: exactly 0.0
++    enc = sum(v for n, v in reach.items() if n.startswith("core.encoder."))
++    # the label is a TARGET of a head that reads the scene: it MAY reach the trunk; what it must not do is nothing
++    assert tac > 0.0 and enc >= 0.0
++
++
++def test_R3_REGRESSION_ARM_the_goal_head_unwired_goes_RED(T, monkeypatch):
++    """`w_tac_v6 = 0` (the tac_goal_tok_head defect: built, forward-run, weight 0 -> the term is absent): the SAME
++    colour flip that moved the loss above now reads exactly 0.0 -- the assertion `d_red > 0` FAILS."""
++    cfg, m = _tac_model(T)
++    m._w_tac_v6 = 0.0
++    red = list(T.v7l.TAC_GOAL_TOKENS).index("TRAFFIC_LIGHT_REACT_RED")
++    b0 = _loss_batch(T, cfg)
++    d = _delta(T, m, b0, _with(b0, a=lambda b: b["tac_goal_y"].__setitem__((slice(None), red), 1.0)))
++    assert d == 0.0
++
++
++# =========================================================================== #
++# 4. R4 -- the tactical behaviours reach the OPERATIVE plan                    #
++# =========================================================================== #
++def _swap_hook(m, lat_cls=None, lon_cls=None):
++    """Replace the tactical decoder's lat / lon posteriors at the SOURCE with a one-hot on the chosen class: the
++    'swap the behaviours' experiment, applied to every route at once (tac8 prior, behaviour gate, r8 feeds)."""
++    def hook(_mod, _inp, out):
++        out = dict(out)
++        if lat_cls is not None:
++            z = torch.full_like(out["lat_logits"], -8.0)
++            z[..., lat_cls] = 8.0
++            out["lat_logits"] = z
++        if lon_cls is not None:
++            z = torch.full_like(out["lon_logits"], -8.0)
++            z[..., lon_cls] = 8.0
++            out["lon_logits"] = z
++        return out
++    return m.tac_decoder_v6.register_forward_hook(hook)
++
++
++def _wake(m):
++    """Training moves the zero-init ports off zero; emulate the smallest such move (every port, deterministic)."""
++    g = torch.Generator().manual_seed(3)
++    with torch.no_grad():
++        for mod in (m.core.decoder.tac8_lat_to_anchor, m.core.decoder.tac8_lon_to_anchor):
++            mod.weight.normal_(0.0, 0.5, generator=g)
++        m.core.decoder.r8_mod.proj[-1].weight.normal_(0.0, 0.2, generator=g)
++        for p in (m.core.decoder.r8_sel.beta_lat, m.core.decoder.r8_sel.beta_lon):
++            p.fill_(1.5)
++
++
++def _plan(T, m, cfg, bt, lat=None, lon=None, train=False):
++    h = _swap_hook(m, lat, lon)
++    try:
++        return R.forward(cfg, m, bt, train=train)
++    finally:
++        h.remove()
++
++
++def _r4_model(T, monkeypatch, alloc_emit=True, **kw):
++    """The live argv has `--graft-tac8-prior`: `_pin_trainer_cfg` sets `cfg.core.graft_tac8_prior`. `_refcv8_rig.build`
++    does not pass it, so wrap the pin for this build only."""
++    real = T._pin_trainer_cfg
++
++    def pin(cfg, args):
++        out = real(cfg, args)
++        out.core.graft_tac8_prior = True
++        return out
++    monkeypatch.setattr(T, "_pin_trainer_cfg", pin)
++    return R.build(T, True, n_alloc=8, alloc_emit=alloc_emit, **kw)
++
++
++def test_R4_before_emission_the_swap_moves_the_emitted_plan_by_exactly_zero_and_every_port_gets_gradient(T, monkeypatch):
++    """Steps < `--r8-alloc-emit-start` (1000 in the live argv): the extra candidates are generated and trained but
++    never EMITTED, and every port is zero-init -> the warm-started plan is refcv7's, so a swap moves it by exactly
++    0.0 (the same number v7F MEASURED at the tip -- but there NO PORT existed). What separates the two cases: here
++    the plan-side loss lands a NON-ZERO gradient on every port, so training can open them."""
++    cfg, m = _r4_model(T, monkeypatch, alloc_emit=False)
++    bt = R.batch(cfg)
++    a = _plan(T, m, cfg, bt, lat=6, lon=3)
++    b = _plan(T, m, cfg, bt, lat=7, lon=3)
++    c = _plan(T, m, cfg, bt, lat=6, lon=7)
++    assert torch.equal(a["traj"], b["traj"]) and torch.equal(a["traj"], c["traj"])
++    out = _plan(T, m, cfg, bt, lat=6, lon=3, train=True)
++    loss = torch.nn.functional.cross_entropy(out["sel_score_v3"], torch.zeros(out["sel_score_v3"].shape[0], dtype=torch.long))
++    loss = loss + out["traj"].abs().mean()
++    loss.backward()
++    dec = m.core.decoder
++    for name, p in (("tac8_lat", dec.tac8_lat_to_anchor.weight), ("tac8_lon", dec.tac8_lon_to_anchor.weight),
++                    ("beta_lat", dec.r8_sel.beta_lat), ("beta_lon", dec.r8_sel.beta_lon),
++                    ("mod_last", dec.r8_mod.proj[-1].weight)):
++        assert p.grad is not None and float(p.grad.abs().sum()) > 0.0, name
++
++
++def test_R4_after_emission_starts_the_swap_moves_the_EMITTED_plan_with_every_port_still_zero_init(T, monkeypatch):
++    """From the emission step on, the tactical posterior decides WHICH hypotheses the allocated candidates carry
++    (parameter-free, proportional to p(h)) -- so a swap moves the fan and the emitted plan BEFORE any port opens."""
++    cfg, m = _r4_model(T, monkeypatch, alloc_emit=True)
++    m.eval()
++    bt = R.batch(cfg)
++    assert float(m.core.decoder.r8_sel.beta_lat) == 0.0 and float(m.core.decoder.tac8_lat_to_anchor.weight.abs().sum()) == 0.0
++    base = _plan(T, m, cfg, bt, lat=6, lon=3)
++    again = _plan(T, m, cfg, bt, lat=6, lon=3)
++    assert torch.equal(base["traj"], again["traj"])                           # CONTROL: the same swap twice -> exactly 0.0
++    lat_swap = _plan(T, m, cfg, bt, lat=7, lon=3)                             # TURN_L -> TURN_R
++    lon_swap = _plan(T, m, cfg, bt, lat=6, lon=7)                             # BRAKE_TO -> ACCELERATE
++    both = _plan(T, m, cfg, bt, lat=7, lon=7)
++    # the CANDIDATE SET moves on each axis (the swap reaches the planner's fan) ...
++    assert float((base["anchor_traj"] - lat_swap["anchor_traj"]).abs().max()) > 0.0
++    assert float((base["anchor_traj"] - lon_swap["anchor_traj"]).abs().max()) > 0.0
++    # ... and the EMITTED plan moves once an allocated candidate wins (zero-init selection => base scores decide
++    # most windows; MEASURED on this rig: lat swap 0.31 m, both axes 0.94 m, lon alone 0.0 -- stated, not hidden)
++    assert float((base["traj"] - both["traj"]).abs().max()) > 0.0
++
++
++def test_R4_once_the_ports_move_a_swap_of_lat_or_lon_moves_the_EMITTED_plan_and_the_control_reads_zero(T, monkeypatch):
++    cfg, m = _r4_model(T, monkeypatch)
++    if m.core.decoder.tac8_lat_to_anchor is None:
++        pytest.skip("this rig build has no tac8 port")
++    _wake(m)
++    m.eval()
++    bt = R.batch(cfg)
++    base = _plan(T, m, cfg, bt, lat=6, lon=3)                                 # TURN_L + BRAKE_TO
++    again = _plan(T, m, cfg, bt, lat=6, lon=3)
++    assert torch.equal(base["traj"], again["traj"])                           # CONTROL: the same swap twice -> exactly 0.0
++    lat_swap = _plan(T, m, cfg, bt, lat=7, lon=3)                             # TURN_R + BRAKE_TO
++    lon_swap = _plan(T, m, cfg, bt, lat=6, lon=7)                             # TURN_L + ACCELERATE
++    d_lat = float((base["sel_score_v3"] - lat_swap["sel_score_v3"]).abs().max())
++    d_lon = float((base["sel_score_v3"] - lon_swap["sel_score_v3"]).abs().max())
++    assert d_lat > 0.0 and d_lon > 0.0                                        # the SELECTION surface moved on both axes
++    moved = (not torch.equal(base["traj"], lat_swap["traj"])) or (not torch.equal(base["traj"], lon_swap["traj"]))
++    moved = moved or (not torch.equal(base["anchor_traj"], lat_swap["anchor_traj"])) \
++        or (not torch.equal(base["anchor_traj"], lon_swap["anchor_traj"]))
++    assert moved, "the swap moved the scores but neither the fan nor the emitted plan"
++
++
++def test_R4_REGRESSION_ARM_a_severed_port_goes_RED(T, monkeypatch):
++    cfg, m = _r4_model(T, monkeypatch)
++    if m.core.decoder.tac8_lat_to_anchor is None:
++        pytest.skip("this rig build has no tac8 port")
++    _wake(m)
++    m.eval()
++    bt = R.batch(cfg)
++    # sever the whole tactical -> planner hand-off: the planner sees a CONSTANT posterior whatever the decoder says
++    monkeypatch.setattr(C, "hypothesis_posteriors",
++                        lambda lat, lon: (torch.zeros(lat.shape[0], C.N_LAT3), torch.zeros(lon.shape[0], C.N_LON6)))
++    monkeypatch.setattr(v6tac, "planner_feeds", lambda out, valid_threshold=0.5: {
++        "lat_logprob": torch.zeros_like(out["lat_logits"]), "lon_logprob": torch.zeros_like(out["lon_logits"]),
++        "valid_behaviour": torch.ones(out["lat_logits"].shape[0], 22),
++        "valid_mask": torch.ones(out["lat_logits"].shape[0], 22, dtype=torch.bool)})
++    a = _plan(T, m, cfg, bt, lat=6, lon=3)
++    b = _plan(T, m, cfg, bt, lat=7, lon=7)
++    assert torch.equal(a["sel_score_v3"], b["sel_score_v3"]) and torch.equal(a["traj"], b["traj"])   # 0.0: R4 would FAIL

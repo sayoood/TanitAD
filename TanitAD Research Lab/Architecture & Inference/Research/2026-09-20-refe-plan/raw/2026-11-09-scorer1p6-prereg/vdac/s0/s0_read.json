@@ -1,0 +1,185 @@
+{
+ "stage": "S0",
+ "card": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/vdac/PREREG_VDAC_P6.md",
+ "card_sha256": "5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4",
+ "caveat": "IN-SAMPLE CAVEAT (card S0): the FIT sets are in-sample for P6, so P6 fails on them less often than on navtest (PDMS-0 picks 1.01 % in-sample vs 3.06 % on E1); R is a ratio of gains and is read as a CEILING ESTIMATE, not a navtest value.",
+ "counts": {
+  "pack_sets": 8489,
+  "pack_logs": 101,
+  "sets_in_label_store": 8489,
+  "logs_in_label_store": 101,
+  "pack_has_pdm_all": true,
+  "heldout_flagged_sets_in_population": 1705
+ },
+ "n_boot_logs": 101,
+ "bootstrap": {
+  "draws": 10000,
+  "seed": 20260927,
+  "estimator": "paired log-cluster bootstrap over the pack's logs (sel_common.log_boot_idx draws); it answers 'another draw of logs' only; R CI = percentile of per-draw gain_rule / gain_O-DAC"
+ },
+ "field": "true raster mask (sdf>0) -> EDT on the 0.5 m grid, pose-only footprint, bilinear; the log of a set comes from the PACK",
+ "footprint_points_outside_extent_share": 0.0,
+ "proposals_with_no_point_inside": 0,
+ "p6_pick_pdms100": 94.49147480998673,
+ "best_of_64_pdms100": 98.10198561605148,
+ "arms": {
+  "O-DAC": {
+   "gain": 0.5861387683640578,
+   "gain_ci": [
+    0.28253354620649684,
+    0.9985382165862279
+   ],
+   "n_changed": 54
+  },
+  "V0": {
+   "gain": 0.2037350695269986,
+   "gain_ci": [
+    0.02260320520299905,
+    0.4397944004437365
+   ],
+   "R": 0.34758845605048994,
+   "R_ci": [
+    0.06525535782916948,
+    0.512004616861685
+   ],
+   "n_changed": 123
+  },
+  "V25": {
+   "gain": 0.16419471981303826,
+   "gain_ci": [
+    0.055655246010427345,
+    0.3088490734140602
+   ],
+   "R": 0.2801294312459724,
+   "R_ci": [
+    0.1455113024664138,
+    0.3933103705331608
+   ],
+   "n_changed": 47
+  },
+  "Phi-GT0.5": {
+   "gain": 0.05635834948616913,
+   "gain_ci": [
+    -0.188694284236744,
+    0.35753247737394456
+   ],
+   "R": 0.09615188847423975,
+   "R_ci": [
+    -0.6157582444938721,
+    0.38523182021536906
+   ],
+   "n_changed": 3117
+  },
+  "Phi-GT1.0": {
+   "gain": -0.12666167727992902,
+   "gain_ci": [
+    -0.34776279011274525,
+    0.13446543536308997
+   ],
+   "R": -0.21609503434391145,
+   "R_ci": [
+    -1.1279690079678963,
+    0.1433700085267624
+   ],
+   "n_changed": 3816
+  },
+  "Phi-GT2.0": {
+   "gain": -0.2516728828829328,
+   "gain_ci": [
+    -0.4552995200308516,
+    -0.04268074110492148
+   ],
+   "R": -0.4293742309271988,
+   "R_ci": [
+    -1.3911634903071766,
+    -0.046798485957590216
+   ],
+   "n_changed": 4427
+  }
+ },
+ "R_max": 0.34758845605048994,
+ "R_max_arm": "V0",
+ "R_max_ci_of_max_over_arms": [
+  0.06651690886320658,
+  0.5121263021849581
+ ],
+ "outcome": "S0-GO",
+ "valid": true,
+ "controls": {
+  "zero_all_drivable": {
+   "ok": true,
+   "n_changed": {
+    "V0": 0,
+    "V25": 0,
+    "Phi-GT0.5": 0,
+    "Phi-GT1.0": 0,
+    "Phi-GT2.0": 0
+   },
+   "delta_sum": {
+    "V0": 0.0,
+    "V25": 0.0,
+    "Phi-GT0.5": 0.0,
+    "Phi-GT1.0": 0.0,
+    "Phi-GT2.0": 0.0
+   }
+  },
+  "pick_reproduces": {
+   "ok": true,
+   "n_sets": 8489,
+   "n_equal": 8489,
+   "note": "the pack records no pick; recomputed pick from the pack's logits via sel_common.pick_from_logits(torch, lane=False)"
+  },
+  "odac_ge_all": {
+   "ok": true,
+   "O-DAC": 0.5861387683640578,
+   "rules": {
+    "V0": 0.2037350695269986,
+    "V25": 0.16419471981303826,
+    "Phi-GT0.5": 0.05635834948616913,
+    "Phi-GT1.0": -0.12666167727992902,
+    "Phi-GT2.0": -0.2516728828829328
+   }
+  },
+  "yflip_below_true": {
+   "ok": true,
+   "R_max_true": 0.34758845605048994,
+   "R_max_flip": -5.487249894166709,
+   "per_rule_flip_below_true": {
+    "V0": true,
+    "Phi-GT0.5": true,
+    "Phi-GT1.0": true,
+    "Phi-GT2.0": true
+   }
+  }
+ },
+ "reported_not_deciding": {
+  "R_yflipped_field": {
+   "V0": -5.487249894166709,
+   "Phi-GT0.5": -14.447229619577804,
+   "Phi-GT1.0": -12.268861531750385,
+   "Phi-GT2.0": -10.168085581285586
+  },
+  "R_stored_sdf_field": {
+   "V0": 0.3477080347265494,
+   "V25": 0.2515274117562786,
+   "Phi-GT0.5": 0.0548005777280525,
+   "Phi-GT1.0": -0.25369413303193417,
+   "Phi-GT2.0": -0.36412834929152776
+  },
+  "alignment": {
+   "proposals_dac0": 68257,
+   "share_dac0_with_d_lt0": 0.840734283663214,
+   "share_dac1_with_d_lt0": 0.036285441826881586,
+   "p6_pick_dac0_sets": 61
+  }
+ },
+ "inputs": {
+  "pack": "F:/tanitad_scratch/p6fit/fit_pack8.npz",
+  "pack_sha256": "9a6f7f1b568ab2b20589cb309fb19eaa684a22b60853d9107eacecaaffe92d7c",
+  "label_store_sha256": "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a",
+  "card_sha256": "5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4",
+  "sel_common": "E:/Projects/TanitAD-artifacts/refe_selection_probe_20261107/sel_common.py",
+  "sel_common_sha256": "50727023525c86b2be503db5c7f84d56de9b2be98f260aab700e4c9438f27d23"
+ },
+ "elapsed_s": 79.0
+}

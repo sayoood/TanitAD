@@ -1,0 +1,318 @@
+"""box2_crhc_queue.py -- queue of card ADD143 (CONTACTRH10KC): 6 rollouts, run ON box 2. Made from box2_rhacc_queue.py (card ADD139, amendments 1 to 3) by mk_rhk_queue; only the rows, their order and the names of this card differ.
+
+Python only, no bash. One job at a time, safe mode of box 2 (4 threads, AVX2 caps, below-normal priority, affinity 0xFF).
+  --dry     print the 6 argv lines and run nothing (creates no folder, writes no file)
+  (none)    run the queue in the order of record: m = 0, 1, 2; per m the rows e, a, b, c, d, f, g, h
+
+Stop rules (a STOP file is written and the driver exits with a non-zero code):
+  - a STOP file already exists; a run exits with a non-zero code (a native crash gives a large or negative code);
+  - D: free space below 1.5 GB; free VRAM below 2.5 GB at a run start (an unreadable probe also stops);
+  - an output folder that exists without its done file; a missing input; a checkpoint whose sha256 differs from the card's table;
+  - a finished run whose dump file count differs from the grid's clip count, or whose pre-roll log is missing.
+A run whose done file exists is skipped.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+ROOT = "D:/tanitad/rhacc10k"
+PY = "D:/tanitad/venv/Scripts/python.exe"
+CACHE = "D:/tanitad/cache"
+TRACKS = CACHE + "/native_tracks.pt"
+
+MIN_FREE_DISK_GB = 1.5
+MIN_FREE_VRAM_MIB = 2560  # 2.5 GiB
+RUN_TIMEOUT_S = 15 * 60  # card ADD140 section 6
+
+# full sha256 of the six checkpoints (RH: registry section 20 prefixes and amendment 1; UE: fork bank and the pod run line)
+CKPT_SHA = {
+    "RH_s0": "351bb5f26ed0e1566ac9a3dd1c94f5d8b7b5dde5888654a09b859044e56348d5",
+    "RH_s1": "c387f4ce363ebb8cc534424cbd1934f5b8ab8191ce97f97caf62d10ec5ac9fd9",
+    "RH_s2": "0ba5d78e766b6fd1575937bb0659757ab0b091f4c1bf54835ee81c01ba6064eb",
+    "UE_s0": "2fd4b747532f55b24523c578948cb713fb80fa0e698586c329dd23ba6e6df914",
+    "UE_s1": "f13df8ce026eed31e0d9d1df72de3e7b7977fefa6da3def2b411b7d74dbd4ebc",
+    "UE_s2": "6d4345258e07dee15b1c5171268182967189df1cdc13b89b81d26aae71c3f327",
+}
+PINNED_SHA = {
+    "wrapper": "373ffe72f2655c35d8c5033867cc5b37268ece2eb21a41d5d865fb8dcbb517b9",
+    "wrapper_pre": "92a8034cc0f7b0d232a6f18a5b8d1f03cbb3f3776b6b23384c5766ef04f27b12",  # amendment 3: rows g and h
+    "tool": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+    "grid141": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+    "gridp30": "0a59f173b88c77ad3c1710f52d3fe391592375f48b88c0bc8328b76b29811adc",
+    "join": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a",
+}
+
+# reader and map seed per model seed: the line candidate had model seeds 0 and 1 only; seed 2 uses reader seed 0
+# (the precedent of card ADD134: reader seed m - 2 for m >= 2)
+READER_SEED = {0: 0, 1: 1, 2: 0}
+MODEL_SEEDS = (0, 1, 2)
+
+# row: letter -> (name, model family, form, readout acc gain, rule every, grid key, preroll steps or None)
+ROWS = {
+    "p": ("H_RQ50K_P30", "RH", "RR", 0, 5, "gridp30", 30),
+    "q": ("U_RQ50K_P30", "UE", "RR", 0, 5, "gridp30", 30),
+}
+ROW_ORDER = ("p", "q")
+
+
+def paths(root=ROOT):
+    return {
+        "root": root,
+        "tree": root + "/tree",
+        "build": root + "/build",
+        "wrapper": root + "/build/v8f_t1_eval_reader_rule_rzgfh.py",
+        "wrapper_pre": root + "/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+        "tool": root + "/tree/stack/scripts/v8f_t1_eval.py",
+        "grid141": root + "/pins/eval_grid_windows.json",
+        "gridp30": root + "/pins/grid_p30.json",
+        "join": root + "/pins/join_eval141.npz",
+        "runs": root + "/runs",
+        "logs": root + "/logs",
+        "stop": root + "/STOP.txt",
+        "busy": root + "/BOX2_BUSY.txt",
+    }
+
+
+def ckpt_path(root, key):
+    return "%s/inputs/%s/ckpt_last.pt" % (root, key)
+
+
+def build_runs(root=ROOT, py=PY, cache=CACHE):
+    """The 6 runs in the order of record: list of dicts with name, argv, outdir, ckpt key, grid key, preroll."""
+    P = paths(root)
+    tracks = cache + "/native_tracks.pt"
+    runs = []
+    for m in MODEL_SEEDS:
+        r = READER_SEED[m]
+        for letter in ROW_ORDER:
+            rname, fam, form, accg, every, gkey, pre = ROWS[letter]
+            arm = "%s_s%d" % (rname, m)
+            out = "%s/%s" % (P["runs"], arm)
+            tag = "%s_m10_causal_heads" % arm
+            ck = "%s_s%d" % (fam, m)
+            extra = []
+            if form == "RR":
+                extra += ["--reader", "%s/inputs/lr16/TK16_s%d/ckpt_last.pt" % (root, r)]
+            if every is not None:
+                extra += ["--rule-every", str(every)]
+            extra += ["--kappa-max", "0.2", "--acc-gain", str(accg), "--path-exec"]
+            extra += ["--readout", "causal_g", "--readout-log", "%s/ticks/readout_log_%s.json" % (out, arm)]
+            if pre is not None:
+                extra += ["--preroll-steps", str(pre)]
+            if form == "RR":
+                extra += ["--qmap", "%s/inputs/qmap/QMAP_LR16_s%d_q50.json" % (root, r)]
+            if form != "R0":
+                extra += ["--rule-log", "%s/ticks/rule_log_%s.npz" % (out, arm)]
+            wkey = "wrapper_pre" if pre is not None else "wrapper"
+            argv = [py, P[wkey], "--tree", P["tree"], "--form", form] + extra + [
+                "run", "--ckpt", ckpt_path(root, ck), "--tag", tag, "--tracks", tracks,
+                "--eval-cache", cache, "--eval-grid", P[gkey], "--eval-join", P["join"],
+                "--out-dir", out, "--replan-steps", "10", "--nav", "deadreckon", "--scene", "logged",
+                "--schedule", "periodic", "--limit", "causal", "--dump-ticks", out + "/ticks",
+                "--dump-heads", "--no-analyze", "--device", "cuda",
+            ]
+            runs.append({"m": m, "letter": letter, "name": rname, "arm": arm, "tag": tag, "ckpt": ck,
+                         "grid": gkey, "preroll": pre, "outdir": out, "argv": argv, "wrapper": wkey})
+    return runs
+
+
+def safe_env(root=ROOT):
+    """Safe-mode environment of box 2 (as env.cmd) with the overlay tree as PYTHONPATH and DISTRULE_DIR set."""
+    e = dict(os.environ)
+    P = paths(root)
+    e.update({
+        "HF_HOME": "D:/tanitad/hf", "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+        "PYTHONPATH": P["tree"] + "/stack", "DISTRULE_DIR": P["build"],
+        "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "PYTHONDONTWRITEBYTECODE": "1",
+        "OMP_NUM_THREADS": "4", "MKL_NUM_THREADS": "4", "OPENBLAS_NUM_THREADS": "4", "NUMEXPR_NUM_THREADS": "4",
+        "ATEN_CPU_CAPABILITY": "avx2", "ONEDNN_MAX_CPU_ISA": "AVX2", "DNNL_MAX_CPU_ISA": "AVX2",
+        "MKL_ENABLE_INSTRUCTIONS": "AVX2",
+        "NPY_DISABLE_CPU_FEATURES": "AVX512F AVX512CD AVX512_SKX AVX512_CLX AVX512_CNL AVX512_ICL",
+        "TEMP": "D:\\tanitad\\tmp", "TMP": "D:\\tanitad\\tmp",
+    })
+    return e
+
+
+# ---- probes (module level so the tests can replace them) -------------------------------------------------------------
+def free_disk_gb(path):
+    return shutil.disk_usage(path).free / 1073741824.0
+
+
+def free_vram_mib():
+    """Free VRAM of GPU 0 in MiB, or None when unreadable (the caller stops)."""
+    try:
+        o = subprocess.run(["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+                           capture_output=True, text=True, encoding="utf-8", timeout=60)
+        return float(o.stdout.strip().splitlines()[0])
+    except Exception:
+        return None
+
+
+def execute(argv, env, log_path, timeout_s):
+    """Run one job at below-normal priority with affinity 0xFF; returns the exit code (124 on timeout)."""
+    flags = 0
+    if os.name == "nt":
+        flags = 0x00004000 | 0x08000000  # BELOW_NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW
+    with open(log_path, "ab") as lf:
+        p = subprocess.Popen(argv, env=env, stdout=lf, stderr=subprocess.STDOUT, creationflags=flags)
+        if os.name == "nt":
+            try:
+                import ctypes
+                from ctypes import wintypes
+                ctypes.windll.kernel32.SetProcessAffinityMask(wintypes.HANDLE(int(p._handle)), 0xFF)
+            except Exception:
+                pass
+        try:
+            return p.wait(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.wait()
+            return 124
+
+
+def sha256_file(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for b in iter(lambda: f.read(1 << 20), b""):
+            h.update(b)
+    return h.hexdigest()
+
+
+def grid_clip_count(path):
+    g = json.load(open(path, encoding="utf-8"))
+    return len(g["order"])
+
+
+# ---- driver ------------------------------------------------------------------------------------------------------------
+class Stop(Exception):
+    pass
+
+
+def now():
+    return time.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def write_stop(P, why):
+    try:
+        with open(P["stop"], "w", encoding="utf-8") as f:
+            f.write("%s %s\n" % (now(), why))
+    except OSError:
+        pass
+    print("STOP", why, flush=True)
+
+
+def preflight(root, runs, check_sha=True):
+    P = paths(root)
+    need = set()
+    for r in runs:
+        need.add(ckpt_path(root, r["ckpt"]))
+        for i, a in enumerate(r["argv"]):
+            if a in ("--reader", "--qmap"):
+                need.add(r["argv"][i + 1])
+    need.update([P["wrapper"], P["wrapper_pre"], P["tool"], P["grid141"], P["gridp30"], P["join"], TRACKS if root == ROOT else None])
+    need.discard(None)
+    for p in sorted(need):
+        if not os.path.isfile(p):
+            raise Stop("MISSING-INPUT %s" % p)
+    if check_sha:
+        for k, want in CKPT_SHA.items():
+            got = sha256_file(ckpt_path(root, k))
+            if got != want:
+                raise Stop("CKPT-SHA %s %s" % (k, got))
+        for k in ("wrapper", "wrapper_pre", "tool", "grid141", "gridp30", "join"):
+            got = sha256_file(P[k])
+            if got != PINNED_SHA[k]:
+                raise Stop("PINNED-SHA %s %s" % (k, got))
+
+
+def run_one(root, r, env):
+    P = paths(root)
+    out = r["outdir"]
+    done = out + "/RUN_DONE.json"
+    if os.path.exists(done):
+        print("skip (done)", r["arm"], flush=True)
+        return
+    if os.path.exists(P["stop"]):
+        raise Stop("STOP-FILE-PRESENT")
+    if os.path.exists(out):
+        raise Stop("OUTPUT-EXISTS-WITHOUT-DONE %s" % out)
+    fd = free_disk_gb(root)
+    if fd < MIN_FREE_DISK_GB:
+        raise Stop("DISK-LOW %.2f GB" % fd)
+    vr = free_vram_mib()
+    if vr is None:
+        raise Stop("VRAM-PROBE-UNREADABLE")
+    if vr < MIN_FREE_VRAM_MIB:
+        raise Stop("VRAM-LOW %.0f MiB" % vr)
+    os.makedirs(out + "/ticks")
+    t0 = now()
+    with open(out + "/argv.json", "w", encoding="utf-8") as f:
+        json.dump({"arm": r["arm"], "argv": r["argv"], "start": t0}, f, indent=1)
+    os.makedirs(P["logs"], exist_ok=True)
+    rc = execute(r["argv"], env, out + "/t1.log", RUN_TIMEOUT_S)
+    t1 = now()
+    if rc != 0:
+        raise Stop("ROLLOUT-RC %s %s" % (rc, r["arm"]))
+    want = grid_clip_count(P[r["grid"]])
+    dd = "%s/dump_%s" % (out, r["tag"])
+    n = len([x for x in os.listdir(dd) if x.startswith("ep") and x.endswith(".npz")]) if os.path.isdir(dd) else 0
+    if n != want:
+        raise Stop("DUMP-COUNT %d expected %d %s" % (n, want, r["arm"]))
+    if r["preroll"]:
+        if not os.path.isfile("%s/ticks/preroll_log_%s.json" % (out, r["arm"])):
+            raise Stop("NO-PREROLL-LOG %s" % r["arm"])
+    with open(done, "w", encoding="utf-8") as f:
+        json.dump({"arm": r["arm"], "rc": rc, "start": t0, "end": t1, "dump_files": n}, f)
+    print("done", r["arm"], t0, t1, flush=True)
+
+
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--root", default=ROOT)
+    ap.add_argument("--no-sha", action="store_true", help="skip the sha256 checks (tests only)")
+    ap.add_argument("--max-runs", type=int, default=0, help="run only the first N runs of the order of record, then stop with QUEUE-PAUSED")
+    a = ap.parse_args(argv)
+    runs = build_runs(a.root)
+    if a.dry:
+        for i, r in enumerate(runs, 1):
+            print("RUN %02d %s ckpt %s grid %s" % (i, r["arm"], r["ckpt"], r["grid"]))
+            print("CMD: " + " ".join(r["argv"]))
+        print("DRY: %d runs listed, nothing executed" % len(runs))
+        miss = [p for p in {ckpt_path(a.root, r["ckpt"]) for r in runs} if not os.path.isfile(p)]
+        print("DRY: checkpoints missing: %d" % len(miss))
+        return 0
+    P = paths(a.root)
+    env = safe_env(a.root)
+    try:
+        preflight(a.root, runs, check_sha=not a.no_sha)
+        os.makedirs(P["runs"], exist_ok=True)
+        os.makedirs(P["logs"], exist_ok=True)
+        with open(P["busy"], "w", encoding="utf-8") as f:
+            f.write("card ADD143 CONTACTRH10KC queue, started %s. Do NOT launch box 2 jobs while this file exists.\n" % now())
+        todo = runs[:a.max_runs] if a.max_runs > 0 else runs
+        for r in todo:
+            run_one(a.root, r, env)
+    except Stop as e:
+        write_stop(P, str(e))
+        return 3
+    try:
+        os.remove(P["busy"])
+    except OSError:
+        pass
+    if len(todo) < len(runs):
+        print("QUEUE-PAUSED after %d of %d runs" % (len(todo), len(runs)), now(), flush=True)
+        return 0
+    print("QUEUE-COMPLETE", now(), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

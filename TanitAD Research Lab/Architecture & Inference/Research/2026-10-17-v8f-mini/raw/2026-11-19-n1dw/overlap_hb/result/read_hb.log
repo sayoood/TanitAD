@@ -1,0 +1,56 @@
+[taniteval] tanitad OVERRIDE -> /root/strat1/n1dw/tree/stack (/root/strat1/n1dw/tree/stack/tanitad/__init__.py)
+cells N1R_s0 6s
+cells N1R_s1 6s
+cells N1D_s0 7s
+cells N1D_s1 7s
+cells N1D_s0Z 7s
+cells N1D_s1Z 7s
+cells N1DW2_s0 7s
+cells N1DW2_s0Z 7s
+cells N1DW2_s1 7s
+cells N1DW2_s1Z 7s
+cells N1DW4_s0 7s
+cells N1DW4_s0Z 7s
+cells N1DW4_s1 7s
+cells N1DW4_s1Z 7s
+READ_N1DW_D1HO (MEASURED; T1-kin; D1-HO 5,736 windows / 497 held-out episodes; pod CPU; B 2,000 seed 0 paired episode-cluster bootstrap = 'another draw of EPISODES' only)
+card PREREG_V8F_N1DW.md sha256 59f2b7f9 + Amendment 1; eval-141 guard and STRATEGIC NOT computed here: every label that needs them is PENDING-GUARD
+problems: ['K-RE: N1D - N1R recomputed from the dumps != RESULT_NAVRBD.json']
+
+CONTROLS
+  K-RE   : FAIL (N1R/N1D/N1D-zero accuracies and N1D-N1R deltas recomputed from dumps vs RESULT_NAVRBD.json)
+           N1R_s0   live 0.610181 banked 0.590481 equal False
+           N1R_s1   live 0.634763 banked 0.632845 equal False
+           N1D_s0   live 0.634589 banked 0.619596 equal False
+           N1D_s1   live 0.651499 banked 0.649930 equal False
+           N1D_s0Z  live 0.596932 banked 0.573222 equal False
+           N1D_s1Z  live 0.632497 banked 0.629707 equal False
+  K1     : N1R_s0 self-pair delta 0.0 lo 0.0 hi 0.0 -> PASS
+  K-CONST: majority turn_right share 0.338215, constant predictor 0.338215 (must read 0.338215) -> PASS
+
+FLOORS: F_HO banked 0.042364, live 0.024582; seed draws |N1D_s1-N1D_s0| 0.0169, |N1DW2_s1-N1DW2_s0| 0.0178, |N1DW4_s1-N1DW4_s0| 0.0160
+  bar w2 = 0.042364   bar w4 = 0.042364   (rule max(0.0383, F_HO, |N1D seed draw|, |N1DW_w seed draw|))
+
+D1-HO accuracy by arm: N1R_s0 0.6102, N1R_s1 0.6348, N1D_s0 0.6346, N1D_s1 0.6515, N1DW2_s0 0.6513, N1DW2_s1 0.6691, N1DW4_s0 0.6491, N1DW4_s1 0.6651
+
+DECIDING  D1-HO N1DW - N1R (paired, same windows)       delta [95% CI]            sep  gain(>=bar & lo>0)  cost   | beside N1DW - N1D delta [CI] sep
+  N1DW2_s0   +0.0411 [+0.0271,+0.0549]  sep True  gain False cost False bar 0.0424 | +0.0167 [+0.0068,+0.0261] sep True
+  N1DW2_s1   +0.0343 [+0.0217,+0.0464]  sep True  gain False cost False bar 0.0424 | +0.0176 [+0.0061,+0.0286] sep True
+  N1DW4_s0   +0.0389 [+0.0262,+0.0510]  sep True  gain False cost False bar 0.0424 | +0.0145 [+0.0044,+0.0238] sep True
+  N1DW4_s1   +0.0303 [+0.0174,+0.0430]  sep True  gain False cost False bar 0.0424 | +0.0136 [+0.0018,+0.0246] sep True
+
+Z-USE (channel real - zero, D1-HO TAC-LAT)
+  N1DW2_s0   +0.0439 [+0.0290,+0.0590] sep True
+  N1DW2_s1   +0.0268 [+0.0140,+0.0386] sep True
+  N1DW4_s0   +0.0410 [+0.0270,+0.0536] sep True
+  N1DW4_s1   +0.0352 [+0.0228,+0.0477] sep True
+  N1D_s0     +0.0377 [+0.0239,+0.0508] sep True
+  N1D_s1     +0.0190 [+0.0054,+0.0316] sep True
+
+K-CLIP (share of logged steps with grad_norm > 1.0)
+  N1DW2_s0   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW2_s0/train/train_log.jsonl'}
+  N1DW2_s1   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW2_s1/train/train_log.jsonl'}
+  N1DW4_s0   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW4_s0/train/train_log.jsonl'}
+  N1DW4_s1   {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/n1dw/runs/N1DW4_s1/train/train_log.jsonl'}
+  N1D_s0     {'status': 'not re-read under T1-kin/hb0.2 (training-log property, executor-independent); see the T1-kin/old read', 'path': '/root/strat1/navrbd/runs/N1D_s0/train/train_log.jsonl'}
+WROTE /root/strat1/n1dw/hb/read problems 1

@@ -1,0 +1,70 @@
+#!/bin/bash
+# rk_arm.sh TAG -- REVISION 2 (commit 1a8b11a1, Amendment 1: the label cache). ONE stage-B arm of KINLAB (TAG = RK_s0 | RK_s1; card PREREG_V8F_KINLAB).
+# Revision 2 differences from revision 1, and only these: the argv carries the execution-only tokens `--dagger-label-cache $R/kin_cache/s<K>_kin_v1.npz` AFTER the label pair (rk_argv.py verify admits exactly three differences from RL);
+#   the pair check runs on the argv minus BOTH trailing pairs (label and cache); the cache file and the CPU precompute's selfcheck must exist BEFORE anything runs (written by the trainer's --selfcheck-only on the CPU, outside the lock);
+#   the selfcheck under the lock READS the cache (a hit); rk_gate_record.py binds the file's sha256 and requires the built levers to read it; shared pod files (rh_selfcheck.py) are read from $R, not from the kit folder. THIN COPY of ra_arm.sh (itself of rh_arm.sh sha256 0e794f68...) for kind RK. Called by rh_rk_chain.sh, which ALREADY HOLDS /root/gpu_queue.lock (fd 9): takes no lock.
+# Differences from ra_arm.sh, and only these: the accepted kind is RK; the argv is RL's with `--dagger-label kin_v1` (rk_argv.py verify re-checks the two differences against RL_s$seed just before the pair check); the pair check is
+#   `RK argv minus the last four tokens (--dagger-label kin_v1 --dagger-label-cache <path>) vs the EXISTING B0_s$seed argv` (as RL's: the label flag is the arm's own, checked by the study-side checker); the gate record is rk_gate_record.py (the RH branch + the kin_v1 label
+#   checks + the CENSUS BAR of card section 4: relabelled share of ok records >= 0.5 from the selfcheck's full-bank kin_status_counts); the study-side calls go to chk_arm_rk.sh; after training a LEVER-ACTS check reads the train log's
+#   dagger_label_kin (summed over the log intervals; must be > 0, card section 3).
+# Order is ra_arm.sh's: idle GPU -> rk_argv.py verify -> pair check (stock rollhist_pair_check.py on the filled argv minus the label; p > 0 only) -> the trainer's --selfcheck-only of THIS argv (real bank, real init)
+#   -> rk_gate_record.py mint + verify -> MINT THE STUDY-SIDE GATE TOKEN (chk_arm_rk.sh mint: dscale10k_check_rk.py) -> train (3,000 steps) THROUGH THE TOKEN (chk_arm_rk.sh run) -> lever-acts -> summary -> post gate -> zerograd_gate.py (report) -> K-CLIP.
+# Last line: `ZZ ARM TAG DONE ZZ` or `ZZ ARM TAG FAIL ZZ <why>`.
+HERE=$(cd "$(dirname "$0")" && pwd)
+. $HERE/rk_env.sh
+tag=$1; seed=${tag##*_s}; kind=${tag%%_*}; D=$R/runs/$tag; OUT=$D/train
+afail() { echo "ZZ ARM $tag FAIL ZZ $1"; exit 1; }
+[ "$kind" = RK ] || afail "unknown tag (RK_s0 | RK_s1 only)"
+rh_readout_flags; export_py; unset CUDA_VISIBLE_DEVICES
+INIT=$DS/runs/UE_s$seed/A/ckpt_last.pt
+gpu_idle() { u=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1 | tr -d ' '); [ "${u:-99999}" -lt 3500 ]; }
+n=0; until gpu_idle; do n=$((n+1)); [ $n -gt 360 ] && afail "GPU not idle (>= 3500 MiB used)"; sleep 10; done
+[ -s $D/argv.json ] || afail "no $D/argv.json (rk_argv.py render first)"
+[ -s $KC/s${seed}_kin_v1.npz ] && [ -s $KC/s${seed}_selfcheck_cpu.json ] || afail "no label cache $KC/s${seed}_kin_v1.npz / $KC/s${seed}_selfcheck_cpu.json: the CPU precompute (Amendment 1 section 3) must run before the lock"
+mkdir -p $D/gate
+$PY $HERE/rk_argv.py verify --seeds $seed > $D/argv_verify.log 2>&1 || afail "argv verify (RK vs RL, two differences only): $(tail -c 300 $D/argv_verify.log | tr '\n' ' ')"
+sha=$($PY -c "import hashlib;print(hashlib.sha256(open('$R/bank/s$seed/bank.json','rb').read()).hexdigest())")
+$PY - $D/argv.json $D/argv_nolabel.json <<'PYE'
+import json, sys
+t = json.load(open(sys.argv[1]))["argv"]
+i = t.index("--dagger-label")
+assert t[i + 1] == "kin_v1" and t[i + 2] == "--dagger-label-cache" and i + 4 == len(t)          # the label pair, then exactly the cache pair, as the LAST four tokens
+json.dump({"argv": t[:i]}, open(sys.argv[2], "w"), indent=1)
+PYE
+  $PY $TREE/stack/scripts/rollhist_pair_check.py --rh $D/argv_nolabel.json --b0 $R/runs/B0_s$seed/argv.json --bank-sha256 $sha > $D/pair_$tag.log 2>&1 || afail "pair check: $(tail -c 300 $D/pair_$tag.log)"
+if [ ! -s $D/selfcheck/selfcheck.json ]; then
+  echo "$(date -u +%T) selfcheck $tag"
+  RH_TREE=$TREE $PY $R/rh_selfcheck.py $D/argv.json $D/selfcheck $D/selfcheck.result.json > $D/selfcheck.log 2>&1 || afail "selfcheck refused: $(tail -c 400 $D/selfcheck.log | tr '\n' ' ')"
+fi
+[ -s $D/selfcheck/selfcheck.json ] || afail "selfcheck wrote no selfcheck.json: $(tail -c 300 $D/selfcheck.log | tr '\n' ' ')"
+$PY $HERE/rk_gate_record.py mint --tag $tag --readout $RH_READOUT > $D/mint.log 2>&1 || afail "gate record refused: $(tail -c 500 $D/mint.log | tr '\n' ' ')"
+grep "^census:" $D/mint.log
+$PY $HERE/rk_gate_record.py verify --tag $tag > $D/verify.log 2>&1 || afail "gate record verify: $(tail -c 300 $D/verify.log | tr '\n' ' ')"
+bash $HERE/chk_arm_rk.sh mint $tag > $D/mint_token.log 2>&1 || afail "gate token mint refused: $(tail -c 500 $D/mint_token.log | tr '\n' ' ')"
+grep -q "^TOKEN-WRITTEN $tag" $D/mint_token.log && [ -s $D/gate/gate_token.json ] || afail "no gate token written: $(tail -c 300 $D/mint_token.log | tr '\n' ' ')"
+echo "$(date -u +%T) train $tag"
+mkdir -p $OUT
+cd $TREE || afail "cd tree"
+bash $HERE/chk_arm_rk.sh run $tag > $D/train.log 2>&1      # REFUSED (rc 2, nothing started) unless the token binds exactly this argv, commit, data, tree, trainer, checker, template and pair
+rc=$?
+[ $rc -eq 0 ] || afail "trainer / gate runner rc=$rc: $(tail -c 400 $D/train.log | tr '\n' ' ')"
+$PY - $OUT/train_log.jsonl $D/lever_acts_$tag.json <<'PYE' || afail "lever-acts: the train log's dagger_label_kin is absent or 0 (card section 3): $(cat $D/lever_acts_$tag.json 2>/dev/null | tail -c 300)"
+import json, sys
+tot, n, rows = 0, 0, 0
+for line in open(sys.argv[1], encoding="utf-8"):
+    try:
+        r = json.loads(line)
+    except ValueError:
+        continue
+    if "dagger_label_kin" in r:
+        n += 1
+        tot += int(r["dagger_label_kin"])
+        rows += int(r.get("dagger_rows", 0))
+json.dump({"records_with_key": n, "dagger_label_kin_sum": tot, "dagger_rows_sum": rows}, open(sys.argv[2], "w"))
+sys.exit(0 if tot > 0 else 1)
+PYE
+$PY $DS/chainlib.py summary $OUT 3000 > $OUT/summary_check.json 2> $OUT/summary_check.err || afail "summary: $(cat $OUT/summary_check.err | tail -c 300)"
+$PY $DS/chainlib.py post $OUT/ckpt_last.pt $INIT > $OUT/post.json 2> $OUT/post.err || afail "post gate (zero-gradient / unmoved tensors): $(tail -c 300 $OUT/post.err)"
+PYTHONPATH=$TREE/stack:$TREE $PY $TREE/stack/scripts/zerograd_gate.py --ckpt $OUT/ckpt_last.pt --json-out $D/zerograd_$tag.json > $D/zerograd_$tag.log 2>&1 || echo "zerograd_gate.py rc!=0 (report only; the fatal gate is chainlib post): $(tail -n 2 $D/zerograd_$tag.log | tr '\n' ' ')"
+$PY $S1/n1dc/kclip.py $OUT/train_log.jsonl --json > $D/kclip_$tag.json 2> $D/kclip_$tag.err || afail "K-CLIP: $(tail -c 300 $D/kclip_$tag.err)"
+echo "ZZ ARM $tag DONE ZZ" | tee $D/ARM_DONE

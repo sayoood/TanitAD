@@ -1,0 +1,338 @@
+{
+  "repo": "D:\\Projects\\TanitAD",
+  "tree": "C:\\Users\\Admin\\AppData\\Local\\Temp\\refcv6_mut_tree",
+  "when": "2026-09-23T00:42:50",
+  "testfile": "tests/test_refcv6_diffusion.py",
+  "census": {
+    "files_copied": 1104,
+    "refc_sha256": "0854378f3017fa4ae7807d5d2e0c9e1d3c1cd1a5fce47dc91ae062f8c593bdb9",
+    "repo_refc_sha256": "0854378f3017fa4ae7807d5d2e0c9e1d3c1cd1a5fce47dc91ae062f8c593bdb9"
+  },
+  "baseline": {
+    "verdict": "RAN",
+    "failed": [],
+    "counts": {
+      "passed": 60
+    },
+    "rc": 0,
+    "secs": 6.5,
+    "tail": "............................................................             [100%]\r\n============================== warnings summary ===============================\r\ntests/test_refcv6_diffusion.py::test_F3_cascade_heads_are_ZERO_INIT\r\n  C:\\Users\\Admin\\AppData\\Local\\Temp\\refcv6_mut_tree\\stack\\tests\\test_refcv6_diffusion.py:343: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.\r\n  Consider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\r\n    assert float(h.weight.abs().max()) == 0.0\r\n\r\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\r\n60 passed, 1 warning in 5.68s\r\n"
+  },
+  "arms": [
+    {
+      "id": "M1-coupling1-sampler-arity",
+      "finding": "1 \u2014 coupling (1) built and never called",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "                agent_pos, bev)",
+      "repl": "                agent_pos)",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "THE defect: `_sample` got EIGHT positionals and `bev` is its NINTH parameter, so coupling (1) was None on the whole diffusion path.",
+      "expect_red": [
+        "test_coupling1_REACHES_the_sampler_and_the_classifier",
+        "test_coupling1_fires_on_the_CLASSIFIER_ONLY_pass",
+        "test_coupling1_is_GATED_not_DEAD"
+      ],
+      "went_red": [
+        "test_coupling1_REACHES_the_sampler_and_the_classifier",
+        "test_coupling1_fires_on_the_CLASSIFIER_ONLY_pass",
+        "test_coupling1_is_GATED_not_DEAD"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 3,
+        "passed": 57
+      },
+      "secs": 6.2,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M2-coupling1-classifier-arity",
+      "finding": "1 \u2014 the DEFAULT classifier pass omitted it too",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "                                         agent_pos, bev)   # classifier",
+      "repl": "                                         agent_pos)   # classifier",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "the second of the three breaks; independent of M1.",
+      "expect_red": [
+        "test_coupling1_REACHES_the_sampler_and_the_classifier",
+        "test_coupling1_fires_on_the_CLASSIFIER_ONLY_pass"
+      ],
+      "went_red": [
+        "test_BREAK_B_the_perception_branch_FEEDS_the_coupling",
+        "test_coupling1_REACHES_the_sampler_and_the_classifier",
+        "test_coupling1_fires_on_the_CLASSIFIER_ONLY_pass",
+        "test_the_map_REACHES_the_decoder_through_a_full_RefCModel_forward"
+      ],
+      "missed": [],
+      "unexpected_also_red": [
+        "test_BREAK_B_the_perception_branch_FEEDS_the_coupling",
+        "test_the_map_REACHES_the_decoder_through_a_full_RefCModel_forward"
+      ],
+      "counts": {
+        "failed": 4,
+        "passed": 56
+      },
+      "secs": 5.9,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M10-break-B-no-caller-supplies-the-map",
+      "finding": "1 \u2014 Break B: `RefCModel.forward` declared `bev` and NO caller in `stack/` ever supplied it",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "                if bev is None:",
+      "repl": "                if False:",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "with the feed removed the built coupling gets no map and the model's own guard refuses \u2014 which is the CORRECT failure, and it is still a RED test.",
+      "expect_red": [
+        "test_BREAK_B_the_perception_branch_FEEDS_the_coupling"
+      ],
+      "went_red": [
+        "test_BREAK_B_the_perception_branch_FEEDS_the_coupling"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 1,
+        "passed": 59
+      },
+      "secs": 11.7,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M11-built-coupling-with-no-map-allowed",
+      "finding": "1 \u2014 the self-enforcing guard: BUILT + no map == the measured 0-fires state, and must not be runnable",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "        if bev is None and int(getattr(self.decoder, \"bev_coupling_params\",",
+      "repl": "        if False and int(getattr(self.decoder, \"bev_coupling_params\",",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "a coupling that is built, counted and stamped while never called is the state that would publish 'the BEV coupling does not help'.",
+      "expect_red": [
+        "test_a_BUILT_coupling_with_NO_map_is_REFUSED_before_the_compute"
+      ],
+      "went_red": [
+        "test_a_BUILT_coupling_with_NO_map_is_REFUSED_before_the_compute"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 1,
+        "passed": 59
+      },
+      "secs": 10.9,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M3-blind-rank",
+      "finding": "2 \u2014 the ranked score is blind to the emitted trajectory",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "        base = refined if (sel.refined or self.rv6.f5_emitting_conf) else conf",
+      "repl": "        base = refined if sel.refined else conf",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "drops the F5 term, so even an F5 arm ranks with the classifier surface. The DEFAULT-is-blind test must STAY GREEN \u2014 it pins the documented behaviour, not the bug.",
+      "expect_red": [
+        "test_F5_makes_the_ranked_score_SEE_the_emitted_trajectory"
+      ],
+      "went_red": [
+        "test_F5_makes_the_ranked_score_SEE_the_emitted_trajectory",
+        "test_F5_ranks_by_the_SAMPLERS_OWN_confidence"
+      ],
+      "missed": [],
+      "unexpected_also_red": [
+        "test_F5_ranks_by_the_SAMPLERS_OWN_confidence"
+      ],
+      "counts": {
+        "failed": 2,
+        "passed": 58
+      },
+      "secs": 11.1,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M4-telemetry-lies",
+      "finding": "2 \u2014 `sampler_ranks_the_fan` contradicted the line it describes",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "                                              or rv6.f5_emitting_conf)}",
+      "repl": "                                              or False)}",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "`bool(self.sel.refined or False)` is exactly the historical `bool(self.sel.refined)`.",
+      "expect_red": [
+        "test_sampler_ranks_the_fan_TELEMETRY_no_longer_lies_on_an_F5_arm"
+      ],
+      "went_red": [
+        "test_F5_makes_the_ranked_score_SEE_the_emitted_trajectory",
+        "test_sampler_ranks_the_fan_TELEMETRY_no_longer_lies_on_an_F5_arm"
+      ],
+      "missed": [],
+      "unexpected_also_red": [
+        "test_F5_makes_the_ranked_score_SEE_the_emitted_trajectory"
+      ],
+      "counts": {
+        "failed": 2,
+        "passed": 58
+      },
+      "secs": 7.1,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M5-v0-guard-reads-the-flag",
+      "finding": "3 \u2014 the v0 refusal tested the DECLARATION, not the tensor",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "                if float(self.anchor_controls.abs().sum()) == 0.0:",
+      "repl": "                if False:",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "\u2b50 MEASURED, and it is DEFENCE IN DEPTH rather than redundancy: with ONLY the decoder refusal disarmed, `test_F9_reaches_the_tensor_THROUGH_THE_FORWARD` STAYS GREEN, because `assert_f9_vocabulary`'s own tensor check still fires on an F9 build. My first `expect_red` listed it and this harness scored the arm NOT CAUGHT \u2014 the harness caught MY error, which is what rule 2 is for. Both guards must go to restore the full defect: arm M5b.",
+      "expect_red": [
+        "test_v0_refusal_READS_THE_TENSOR_not_the_flag"
+      ],
+      "went_red": [
+        "test_v0_refusal_READS_THE_TENSOR_not_the_flag"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 1,
+        "passed": 59
+      },
+      "secs": 6.5,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M5b-both-v0-guards-disarmed",
+      "finding": "3 \u2014 the FULL historical state: neither guard reads a tensor",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "                if float(self.anchor_controls.abs().sum()) == 0.0:",
+      "repl": "                if False:",
+      "also": [
+        "tanitad/models/refcv6_diffusion.py"
+      ],
+      "in_test_by_design": false,
+      "note": "the exactly-degenerate bank (spread 0.000000000 m) then runs silently, which is what was MEASURED on 2026-09-22.",
+      "expect_red": [
+        "test_F9_reaches_the_tensor_THROUGH_THE_FORWARD",
+        "test_assert_f9_vocabulary_READS_the_controls_tensor",
+        "test_v0_refusal_READS_THE_TENSOR_not_the_flag"
+      ],
+      "went_red": [
+        "test_F9_reaches_the_tensor_THROUGH_THE_FORWARD",
+        "test_assert_f9_vocabulary_READS_the_controls_tensor",
+        "test_v0_refusal_READS_THE_TENSOR_not_the_flag"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 3,
+        "passed": 57
+      },
+      "secs": 8.6,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M6-f9-assert-has-no-tensor",
+      "finding": "3 \u2014 `assert_f9_vocabulary(n, v0, expect_n)` had no tensor",
+      "file": "tanitad/models/refcv6_diffusion.py",
+      "anchor": "    if anchor_controls is not None and bool(v0_conditioned):",
+      "repl": "    if False:",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "the declaration-only signature, restored.",
+      "expect_red": [
+        "test_assert_f9_vocabulary_READS_the_controls_tensor"
+      ],
+      "went_red": [
+        "test_assert_f9_vocabulary_READS_the_controls_tensor"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 1,
+        "passed": 59
+      },
+      "secs": 6.3,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M7-bitidentity-baseline-is-HEAD",
+      "finding": "4 \u2014 the bit-identity baseline had rotted to a tautology",
+      "file": "tests/test_refcv6_diffusion.py",
+      "anchor": "_BASELINE_REV = \"cbadba5844a2db70a968172ab0b0bbe3a0140af0\"   # == 8c7d215^",
+      "repl": "_BASELINE_REV = \"HEAD\"",
+      "also": [],
+      "in_test_by_design": true,
+      "note": "\u26a0\ufe0f THE ONE ARM THAT MUTATES THE TEST MODULE, and it is legitimate because the defect LIVED there: the guard materialised its 'pre-refcv6' baseline from `HEAD`, whose blob IS the worktree file. The 64-window comparison then passes trivially, which is the point \u2014 only the PINNED guard can see it.",
+      "expect_red": [
+        "test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6"
+      ],
+      "went_red": [
+        "test_all_flags_off_is_BIT_IDENTICAL_on_64_windows",
+        "test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6"
+      ],
+      "missed": [],
+      "unexpected_also_red": [
+        "test_all_flags_off_is_BIT_IDENTICAL_on_64_windows"
+      ],
+      "counts": {
+        "failed": 2,
+        "passed": 58
+      },
+      "secs": 5.7,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M8-f8-clamp-outside-the-ladder",
+      "finding": "5 \u2014 F8 clamped once, outside the ladder",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "            if rv6.f8_flat_waypoint_noise:",
+      "repl": "            if False:",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "\u26a0\ufe0f THE ANCHOR IS WHY RULE 1 EXISTS: the identical text occurs at 8 spaces (the pre-loop / DD-training clamp, which STAYS) and at 12 spaces (the in-ladder / DD-test clamp, which is the fix). A substring anchor would have hit the wrong one.",
+      "expect_red": [
+        "test_F8_clamps_INSIDE_the_ladder_like_DiffusionDrive"
+      ],
+      "went_red": [
+        "test_F8_clamps_INSIDE_the_ladder_like_DiffusionDrive"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 1,
+        "passed": 59
+      },
+      "secs": 7.0,
+      "VERDICT": "CAUGHT"
+    },
+    {
+      "id": "M9-blind-rank-guard-disarmed",
+      "finding": "2 \u2014 the opt-in refusal itself",
+      "file": "tanitad/refs/refc.py",
+      "anchor": "            if (self.rv6.f5_refuse_blind_rank",
+      "repl": "            if (False",
+      "also": [],
+      "in_test_by_design": false,
+      "note": "a guard that cannot refuse is a stamp.",
+      "expect_red": [
+        "test_f5_refuse_blind_rank_REFUSES_and_is_OPT_IN"
+      ],
+      "went_red": [
+        "test_f5_refuse_blind_rank_REFUSES_and_is_OPT_IN"
+      ],
+      "missed": [],
+      "unexpected_also_red": [],
+      "counts": {
+        "failed": 1,
+        "passed": 59
+      },
+      "secs": 6.1,
+      "VERDICT": "CAUGHT"
+    }
+  ],
+  "VERDICT": "12/12 arms CAUGHT"
+}

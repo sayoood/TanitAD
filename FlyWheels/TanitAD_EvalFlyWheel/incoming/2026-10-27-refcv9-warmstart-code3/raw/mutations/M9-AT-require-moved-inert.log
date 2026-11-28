@@ -1,0 +1,37 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+________________ test_ASSERT_TOOL_r9_require_each_module_moved ________________
+
+tmp_path = WindowsPath('F:/c_overflow_2026-10-26/tmp/mut_M9-AT-require-moved-inert/test_ASSERT_TOOL_r9_require_ea0')
+
+    def test_ASSERT_TOOL_r9_require_each_module_moved(tmp_path):
+        src = _r9_state()
+        dst = copy.deepcopy(src)
+        dst["core.decoder.w"] = dst["core.decoder.w"] + 0.5
+        rc, res = _at(src, dst, tmp_path, "--sets", "planner,map")
+        assert rc == 0 and res["views"]["ema"]["modules_unmoved"] == list(MAP_MODULES)
+        rc, res = _at(src, dst, tmp_path, "--sets", "planner,map", "--require-each-module-moved")
+>       assert rc == 1 and res["views"]["ema"]["modules_unmoved"] == list(MAP_MODULES)
+E       assert (0 == 1)
+
+tests\test_r9_train_only.py:1064: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[assert-map-only] src F:\c_overflow_2026-10-26\tmp\mut_M9-AT-require-moved-inert\test_ASSERT_TOOL_r9_require_ea0\src.pt (view `ema`, step 48852) -> dst F:\c_overflow_2026-10-26\tmp\mut_M9-AT-require-moved-inert\test_ASSERT_TOOL_r9_require_ea0\dst.pt (step 3000, views ['ema'])
+  [ema] non-map tensors checked 8, changed 0; keys missing 0, extra 0; map-only tensors 5, changed 1 -> PASS
+    perception (every tensor outside the sets ['planner', 'map']) + also-frozen {}: 8 checked, 0 changed
+    set `planner`: 1 of 2 tensors changed; per module {'core.decoder': 1}
+      planner changed: core.decoder.w
+    set `map`: 0 of 3 tensors changed; per module {'_map_hires.refine': 0, '_map_hires.near': 0, '_map_hires.near_refine': 0}
+    NOTE: modules with NO changed tensor: ['_map_hires.refine', '_map_hires.near', '_map_hires.near_refine']
+[assert-map-only] PASS
+[assert-map-only] src F:\c_overflow_2026-10-26\tmp\mut_M9-AT-require-moved-inert\test_ASSERT_TOOL_r9_require_ea0\src.pt (view `ema`, step 48852) -> dst F:\c_overflow_2026-10-26\tmp\mut_M9-AT-require-moved-inert\test_ASSERT_TOOL_r9_require_ea0\dst.pt (step 3000, views ['ema'])
+  [ema] non-map tensors checked 8, changed 0; keys missing 0, extra 0; map-only tensors 5, changed 1 -> PASS
+    perception (every tensor outside the sets ['planner', 'map']) + also-frozen {}: 8 checked, 0 changed
+    set `planner`: 1 of 2 tensors changed; per module {'core.decoder': 1}
+      planner changed: core.decoder.w
+    set `map`: 0 of 3 tensors changed; per module {'_map_hires.refine': 0, '_map_hires.near': 0, '_map_hires.near_refine': 0}
+    FAIL: modules with NO changed tensor: ['_map_hires.refine', '_map_hires.near', '_map_hires.near_refine']
+[assert-map-only] PASS
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_ASSERT_TOOL_r9_require_each_module_moved
+1 failed in 5.14s

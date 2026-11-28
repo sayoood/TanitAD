@@ -1,0 +1,400 @@
+{
+ "read": "DOSE",
+ "arm": "P2HEAD search, O4 config (M 256, elites 32, widen 2.0), no head substitution",
+ "outcome": "O1_CONFIRMED",
+ "classification": {
+  "outcome": "O1_CONFIRMED",
+  "dpdms_terms": {
+   "point_ge_bar": true,
+   "lower_ci_gt_0": true,
+   "point_gt_seed_range": true
+  },
+  "safety_terms": {
+   "nc": true,
+   "dac": true,
+   "ttc": true,
+   "c": true
+  },
+  "safety_fail_beside_directional": false
+ },
+ "next_arm": "the config sent to the ONE navtest look (C2) is set mechanically by the committed table (section 5b) from C1's read and this read, and is printed as ZZDOSE_C2CONFIG: O4 if C1's C2 licence is NOT met and this read is O1 with each safety point >= -0.25 and moved share >= 5 %; C8 if C1's licence is met and this read does not license; if both license, C8 unless the paired O4-minus-C8 contrast has its lower CI > 0, then O4. H-SEARCH-P2-1 gets exactly ONE navtest look with ONE config, still behind EP-ADMISSION and C2's own amendment, which carries the per-token search cost of that config (about 2.9x for O4, ESTIMATED) MEASURED on the deployment target or named UNMEASURED. The M-only follow-up arm (DQ1) goes under its own amendment. No navtest token is read.",
+ "endpoint_dPDMS_points": {
+  "point": 0.43829736842021727,
+  "lo": 0.026937059793586786,
+  "hi": 0.8029801532031591,
+  "n_valid_resamples": 10000,
+  "den": 905.0
+ },
+ "per_seed_points": {
+  "points": [
+   0.4397717990890437,
+   0.44150389739856694,
+   0.4336164087730415
+  ],
+  "range": 0.007887488625525463,
+  "std": 0.004145308016580927
+ },
+ "safety_points": {
+  "nc": 0.0,
+  "dac": 0.3314917127071823,
+  "ttc": -0.03683241252302027,
+  "c": 0.0
+ },
+ "sub_score_deltas_points": {
+  "nc": {
+   "point": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "dac": {
+   "point": 0.3314917127071823,
+   "lo": 0.0,
+   "hi": 0.7339593942836238,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "ep": {
+   "point": 0.47732804884940566,
+   "lo": 0.012187486731258987,
+   "hi": 0.9405704155455407,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "ttc": {
+   "point": -0.03683241252302027,
+   "lo": -0.6259824138199362,
+   "hi": 0.4566340508806261,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "c": {
+   "point": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "ddc": {
+   "point": -0.018416206261510134,
+   "lo": -0.05192310496158165,
+   "hi": 0.0,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  }
+ },
+ "inert": {
+  "inert": false,
+  "frac_moved": 0.17495395948434622,
+  "n": 2715,
+  "ade_median_m": 0.0,
+  "thr_m": 0.5,
+  "min_frac": 0.05,
+  "per_seed_frac_moved": [
+   0.1734806629834254,
+   0.17679558011049723,
+   0.17458563535911603
+  ]
+ },
+ "families": {
+  "LONGITUDINAL": {
+   "dEP_points": {
+    "point": 0.47732804884940566,
+    "lo": 0.012187486731258987,
+    "hi": 0.9405704155455407,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "dTTC_points": {
+    "point": -0.03683241252302027,
+    "lo": -0.6259824138199362,
+    "hi": 0.4566340508806261,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "share_outputs_speed_up": 0.14401473296500922,
+   "share_outputs_slow_down": 0.10828729281767956,
+   "dPDMS_points_given_speed_up (descriptive)": 1.9192476658323905,
+   "dPDMS_points_given_slow_down (descriptive)": 1.4950731902055283
+  },
+  "LATERAL": {
+   "dDAC_points": {
+    "point": 0.3314917127071823,
+    "lo": 0.0,
+    "hi": 0.7339593942836238,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "dDDC_points": {
+    "point": -0.018416206261510134,
+    "lo": -0.05192310496158165,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "mean_abs_offset_m_given_moved": 0.26715023376875546,
+   "heading_dev_end_rad_mean": 0.004852421422751404,
+   "yaw_rate_dev_max_rad_s_mean": 0.10074143465294541
+  },
+  "TACTICAL": {
+   "command_class_change_share (proxy, HYPOTHESIS: nav_command bearing rule on the end point)": 0.0066298342541436465
+  },
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, not as a pass"
+ },
+ "sealed_step_b_rule_for_reference": {
+  "outcome": "O1_PASS",
+  "dpdms_terms": {
+   "point_ge_bar": true,
+   "lower_ci_gt_0": true,
+   "point_gt_seed_range": true
+  },
+  "safety_terms": {
+   "nc": true,
+   "dac": true,
+   "ttc": true,
+   "c": true
+  }
+ },
+ "moved_share": 0.2523020257826888,
+ "n_tokens": 905,
+ "n_logs": 24,
+ "units": "PDMS points = 100 x the [0,1] difference",
+ "stamps": "MEASURED; SEEN-SCENE (all of B-REST is inside M-SCENE; M-PDM overlap 0); the SAME bundle and the SAME 905 tokens / 24 logs as C1, so this is a SECOND READ OF THE SAME TOKENS (not a fresh draw); SELECTION tier, label-only (not T1, not navtest); ONE training seed, no head substitution (H-ESTIM-SEED-1 open); the interval is the paired log-cluster bootstrap (B = 10,000, seed 20260927) = 'another draw of LOGS' only, the 3-search-seed spread beside it; the contrast O4 minus C8 is DESCRIPTIVE and UNGATED and moves M x4, elites x4 AND widen x2 together (not a dose-response in M); no capability claim; STRATEGIC PAUSED",
+ "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): reported as PAUSED, not as a pass",
+ "not_computable_families": {
+  "LONGITUDINAL.headway": "n = 0: the label-only tier carries no lead-agent headway row beyond TTC",
+  "LATERAL.curvature_and_cross_track": "n = 0: no closed-loop rollout at the selection tier",
+  "TACTICAL.manoeuvre_decision_quality": "n = 0: no manoeuvre decision is scored at this tier"
+ },
+ "concordance_reported_only": {
+  "pooled": {
+   "A3": {
+    "point": 0.85,
+    "lo": 0.5555555555555556,
+    "hi": 1.0,
+    "n_valid_resamples": 10000,
+    "den": 40.0,
+    "num": 34.0
+   },
+   "A4": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 149.0,
+    "num": 0.0
+   },
+   "A5": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 149.0,
+    "num": 0.0
+   }
+  },
+  "per_seed": [
+   {
+    "A3": {
+     "point": 0.8571428571428571,
+     "lo": 0.5714285714285714,
+     "hi": 1.0,
+     "n_valid_resamples": 10000,
+     "den": 14.0,
+     "num": 12.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 49.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 49.0,
+     "num": 0.0
+    }
+   },
+   {
+    "A3": {
+     "point": 0.8461538461538461,
+     "lo": 0.5555555555555556,
+     "hi": 1.0,
+     "n_valid_resamples": 10000,
+     "den": 13.0,
+     "num": 11.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 51.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 51.0,
+     "num": 0.0
+    }
+   },
+   {
+    "A3": {
+     "point": 0.8461538461538461,
+     "lo": 0.5555555555555556,
+     "hi": 1.0,
+     "n_valid_resamples": 10000,
+     "den": 13.0,
+     "num": 11.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 49.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 49.0,
+     "num": 0.0
+    }
+   }
+  ],
+  "pair_counts": {
+   "A3_counted": 40.0,
+   "A3_concordant_weight": 34.0,
+   "A4_rise": 149.0,
+   "A4_rise_and_fall": 0.0,
+   "A5_rise_and_flip": 0.0
+  },
+  "counts": {
+   "n_tokens": 905,
+   "n_seeds": 3,
+   "n_pairs_total": 2715,
+   "n_identical_excluded": 2030,
+   "n_dropped_invalid_anchor": 0,
+   "n_pairs": 685
+  },
+  "status": "REPORTED ONLY, ungated; model identity NOT RUN here (Step B Amendment 1 ran it on 16 tokens)",
+  "hypothesis": "H-SEARCH-ADMIT-A3 (one scorer here: n = 1, so the relation is stated, not tested)"
+ },
+ "c1_outcome": "O1_CONFIRMED",
+ "contrast_O4_minus_C8": {
+  "definition": "mean over the 3 search seeds per token of 100 x [PDMS(O4 output) - PDMS(C8 output)], ratio of sums over WHOLE LOGS, paired log-cluster bootstrap; DESCRIPTIVE, UNGATED",
+  "pooled": {
+   "point": -0.11924166715500717,
+   "lo": -0.22662491895048426,
+   "hi": -0.020793788110127026,
+   "n_valid_resamples": 10000,
+   "den": 905.0
+  },
+  "per_seed": [
+   {
+    "point": -0.19269614152640704,
+    "lo": -0.3882511960180931,
+    "hi": -0.0168033898008131,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   {
+    "point": -0.09387232564235184,
+    "lo": -0.18469757408868426,
+    "hi": -0.014632970521777608,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   {
+    "point": -0.07115653429626259,
+    "lo": -0.16790699282037042,
+    "hi": -0.017471773442969567,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   }
+  ],
+  "sub_scores_points": {
+   "nc": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "dac": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "ep": {
+    "point": -0.02835311351087536,
+    "lo": -0.06835300279037611,
+    "hi": 0.021817041821459177,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "ttc": {
+    "point": -0.29465930018416203,
+    "lo": -0.5667251050114455,
+    "hi": -0.042787162152907364,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "c": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   },
+   "ddc": {
+    "point": -0.018416206261510127,
+    "lo": -0.05192310496158163,
+    "hi": 0.0,
+    "n_valid_resamples": 10000,
+    "den": 905.0
+   }
+  },
+  "moved_share": {
+   "O4": 0.2523020257826888,
+   "C8": 0.2567219152854512
+  },
+  "confound": "M x4, elites x4 and widen x2 move together in the pinned O4 file: the contrast is O4 minus C8, not a dose-response in M"
+ },
+ "c2_config": {
+  "config": "C8",
+  "row": 3,
+  "why": "both licences met: C8 unless the paired O4-minus-C8 contrast has lower CI > 0 (lower CI > 0: False): C8",
+  "c1_licensed": true,
+  "dose_licensed": true,
+  "dose_o1_strict": true,
+  "contrast_lower_ci_gt_0": false,
+  "moved_term": {
+   "quantity": "inert.frac_moved",
+   "bar": 0.05,
+   "c1": 0.1731123388581952,
+   "dose": 0.17495395948434622
+  }
+ },
+ "c1": {
+  "outcome": "O1_CONFIRMED",
+  "result_sha256": "d6278e9d37788e954672015e35c8619140d72ea9c8e9cfd992bd8c22f30cabbe",
+  "bundle_sha256": "7b7dfff38c1f380810e61a3a2720dc9c8377df7455d867790c3f0398dd5af968",
+  "config_c8_sha256": "299c6e63dd3016100149f88b6ca498529d79f8a5fbcfc6845753c8121d62c441",
+  "config_o4_sha256": "1ebd719617e8978a03cea0254edd6f531504c1d070792d066736130ceb929013"
+ }
+}

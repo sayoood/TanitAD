@@ -1,0 +1,20 @@
+PASS STATIC staged readers, Read A's banked inputs, PREREG text, RF0 pin
+PASS K-P0 {'RF0_sha256': '1608d70b21b6b6a4...', 'inputs': 'PINS.txt tool files + the recorded dump digests re-hashed', 'rollout_files_checked': 0}
+PASS SLOTS-BANKED {'CTRL': {'s0': 'PRESENT', 's1': 'PRESENT'}}
+PASS SUMMARY:CTRL_s0 {'argv_sha': '0ee46fc1a9a0493b', 'steps': 3000}
+PASS K-INIT:CTRL_s0 {'init_sha256': '601cb43526731786...', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:CTRL_s0 argv names the registered fine-tune
+PASS K-GATE:CTRL_s0 {'commit': 'aeb544683b1c6b70e29f241fe7133d4290a1b4a5', 'argv_sha256': '8e2fee6e0daf86f4a12d583a8d8b3cecd9662c30ff14e3115f564fc7ffe57f44', 'data_sha256': '37f4f9
+PASS CTRL-CKPT:CTRL_s0 {'ckpt_sha256': '67265ec1666fae3a', 'A1 (DAG-OACC)': '67265ec1666fae3a'}
+PASS K-PAIR-selfcheck:CTRL_s0 A / REP / B argv built from DAG-OACC's banked argv pass K-PAIR; DAG-OACC's own argv does not pass as A
+PASS K-REGISTERED-selfcheck:CTRL_s0 the registered-argv control passes DAG-OACC / A / REP built from its banked argv and refuses A without the composition flag and REP with it
+PASS SUMMARY:CTRL_s1 {'argv_sha': '2d846e7c9fbcc28b', 'steps': 3000}
+PASS K-INIT:CTRL_s1 {'init_sha256': '6104fb15dc21d524...', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:CTRL_s1 argv names the registered fine-tune
+PASS K-GATE:CTRL_s1 {'commit': 'aeb544683b1c6b70e29f241fe7133d4290a1b4a5', 'argv_sha256': 'fb932fe8f2b4ae7a1cefb28f4a6739e2eee3c2b45efabf7ebc17a4472413acd3', 'data_sha256': '37f4f9
+PASS CTRL-CKPT:CTRL_s1 {'ckpt_sha256': '90b01474819082a6', 'A1 (DAG-OACC)': '90b01474819082a6'}
+PASS K-PAIR-selfcheck:CTRL_s1 A / REP / B argv built from DAG-OACC's banked argv pass K-PAIR; DAG-OACC's own argv does not pass as A
+PASS K-REGISTERED-selfcheck:CTRL_s1 the registered-argv control passes DAG-OACC / A / REP built from its banked argv and refuses A without the composition flag and REP with it
+DAG-ORC slots (A / REP / B) reported missing: {"A": ["s0", "s1"], "REP": ["s0", "s1"], "B": ["s0", "s1"]}
+wrote DRY_RUN.json  sha256 a267d3edb8dd05d91ff7a1c3893351076647052babf308abc0aefd2d2666d2ea
+ZZDAG-ORC-READ-DRY-OK

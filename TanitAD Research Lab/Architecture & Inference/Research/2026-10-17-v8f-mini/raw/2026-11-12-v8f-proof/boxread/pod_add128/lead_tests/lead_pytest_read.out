@@ -1,0 +1,19 @@
+.......................................F.                                [100%]
+=================================== FAILURES ===================================
+__________________ test_driver_and_defs_are_present_and_clean __________________
+
+    def test_driver_and_defs_are_present_and_clean():
+        sh = open(os.path.join(HERE, "podread_boxread.sh"), encoding="utf-8").read()
+        assert "ZZ POD-BOXREAD" in sh and "read_args.txt" in sh
+        for bad in (r"\brm\b", r"\bmv\b", r"\bkill\b", r"\bpkill\b"):
+            assert not re.search(bad, sh.split("\n", 1)[1]), bad
+        banned = ["vo" + "id", "super" + "seded", "re" + "tracted", "for" + "merly", "cor" + "rection", "with" + "drawn", "no lon" + "ger", "closed " + "loop"]
+        for fn in ("box_geom.py", "read_boxread.py", "test_read_boxread.py", "podread_boxread.sh", "BOXREAD_READ_DEFS.md", "read_args.txt"):
+>           t = open(os.path.join(HERE, fn), encoding="utf-8").read().lower()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           FileNotFoundError: [Errno 2] No such file or directory: '/workspace/v8proof/boxread/kit/read/read_args.txt'
+
+kit/read/test_read_boxread.py:591: FileNotFoundError
+=========================== short test summary info ============================
+FAILED kit/read/test_read_boxread.py::test_driver_and_defs_are_present_and_clean
+1 failed, 40 passed in 36.53s

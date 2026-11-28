@@ -1,0 +1,32 @@
+# BUILD_NAVECHO3 -- cue missing or cue present on the labelled turns (D-STRAT1-TACLAT-F1)
+
+Evidence class: MEASURED (ours; banked T1-kin dumps, CPU, zero training). Tier: T1-kin tick 0. Result: `out/RESULT_NAVECHO3.md` / `.json`. Imports (never edits) `navecho/navecho.py`, `navecho2/navecho2.py`, `fam/fam_extra.py`.
+
+## Reading (committed before any number): **CUE-MISSING**
+
+On the 197 windows labelled TURN_L / TURN_R (30 episodes; TURN_L 47, TURN_R 150), the text feed names the correct turn at NOW on 112 (0.569 [0.393, 0.725]) and v9 on 178 (0.904 [0.777, 0.995]); v9 minus text, paired, +0.335 [+0.137, +0.533] (separated). Neither feed names the wrong side on any window; the text feed's failure is naming no turn. Of the missed turns of S1 and N1 at s0 and s1, 0.733 to 0.787 have no correct text turn at NOW while v9 names it (rule bar 0.50 in every cell; lowest lower CI bound 0.528); 0.087 to 0.156 have the correct text turn present; 0.111 to 0.127 are windows neither feed names. The same side of the bar holds for S1d and for S1 / N1 / S1d at s10 / s11.
+
+The head reads the cue it is given: S1 / N1 recall is 0.875 to 0.938 on the 112 windows where the text feed names the correct turn and 0.106 to 0.153 on the 85 where it does not. C0 recalls 0.865 / 0.927 where v9 names the turn and 0 of 19 where it does not.
+
+Where both feeds name the correct turn (103 windows, 17 episodes) the text distance is longer than the v9 distance in 98 of 103 (median 8.9 m, paired mean +7.8 m [+4.1, +10.6]), about 1.4 s at the window's ego speed (median 6.3 m/s). The text countdown sits inside the label's 2-8 s band for 0.80 of those windows, the v9 countdown for 0.47 (0.53 below 2 s).
+
+## Method (as built)
+* Windows and labels as navecho / navecho2: 2,399 dump windows, label `lat_cls` from the join, `nav_in` and the lateral head's argmax at the window's first tick (`navecho.tick0`); v9 nav from the C0 s0 dump, text nav from the N1 s0 dump (K-FEED checks every arm of a feed carries identical nav_in).
+* Channel layout (read from source): channels 0-2 one-hot FOLLOW / TURN_L / TURN_R, all-zero = no nav row; 3 = distance / 100 m clipped to [0, 3]; 4 = distance valid (`v8f_mini_data.py:219-222` v9, `:390-394` text; the dump keeps `batch["nav"][b, -1]`, `v8f_t1_eval.py:370`). Distance m = ch3 x 100 where ch4 = 1. Ego speed at NOW = dump `v0`; time to turn = distance / speed (speed below 0.5 m/s excluded).
+* Cue state of a feed for a turn window: CORRECT (its token equals the label side), WRONG (the other side), NONE (FOLLOW or no row). Missed turn = head argmax is not the label. Partition of the missed turns: cue_missing (text not CORRECT, v9 CORRECT), cue_present (text CORRECT), neither.
+* Rule cells: S1 and N1 at s0 and s1. CUE-MISSING if the cue_missing share >= 0.50 in all four; CUE-PRESENT-MODEL if the cue_present share >= 0.50 in all four; else MIXED.
+* Intervals: `taniteval.ci` episode-cluster bootstrap, B 2,000, seed 0, over the episodes holding the turn windows (shares via `stat_cluster_bootstrap`, deltas via `paired_stat_cluster_bootstrap`).
+* Beside: permutation importance (navecho2 classifier, episode-grouped 5-fold out-of-fold, test-fold channel permuted, 20 repeats, seed 0, per channel and per group, on ALL and INF_ANY); unweighted shuffled-nav control (10 permutations).
+
+## Controls and tests (`test_navecho3.py`, run on the dev box)
+K-SELF (a feed's indicator paired with itself reads exactly 0; a mutant that shifts one arm goes RED), K-REACH (label as token reads CORRECT on every turn window), K-FEED / K-LANDED (17 head macro-F1 values equal the landed `RESULT_FAM_EXTRA.json` to 1e-12) / K-BASE (unpermuted fold models equal `navecho2.crossfit_hgb` exactly): problems list empty. A mutation per rule goes RED: cue-state side swap and wrong-side definition, the cue_missing partition (v9 condition dropped, non-missed windows counted, missed inverted), the reading (`>=` to `>`, bar 0.5 to 0.4, `all` to `any`), distance scale and time formula, window-level folds, identity permutation, class weights kept in the unweighted control.
+
+## Beside readings (descriptive, not rule inputs)
+* Importance on ALL labelled windows, v9 classifier (base 0.705): token group +0.324 (0.289 to 0.371 over repeats), distance group +0.213; text classifier (base 0.594): token group +0.217, distance group +0.111, with the text distance value (+0.155) near the TURN_R token (+0.167) and the text TURN_L token at +0.001. The ordering is read with the one-hot collinearity caveat in the result.
+* Unweighted shuffled nav: v9 0.318, text 0.316 against the majority-class score 0.317 (navecho2's weighted K-SHUFFLE band is unchanged and stays FAILED as reported there).
+
+## Limits
+197 windows in 30 episodes carry the question; TURN_L rests on 47 windows in 9 episodes. The bootstrap answers another draw of episodes only. The agreement across 4 seeds and 3 text families is the training-run check available; the dump holds no earlier-frame nav, so a cue named before NOW is not seen here.
+
+## Next lever
+The reading points at the text nav's content, not the head: when the text feed names the correct turn the S1 / N1 head recalls 0.88 to 0.94, close to C0's recall on its own feed, and the 85 turn windows where the text names nothing account for three quarters of the missed turns. The build target is the text nav's announcement coverage and timing. Two measured differences are available to aim at: (1) coverage, 112 of 197 turn windows named by text against 178 by v9, with the 75 windows named by v9 only as the first set to inspect against `navtext_nav.npz` and the GPS / OSM route match (does the route lack the turn, or does the announcement cut `d_ann = max(30 m, 6 s x v)` start too late); (2) timing, where text and v9 both name the turn the text distance is about 9 m, 1.4 s, longer. The cheapest next experiment is a CPU audit of those 75 windows by episode (are they concentrated in a few episodes or routes, and is a route turn present within 100 m of the ego track at NOW), then a rebuild of `navtext_nav.npz` with a wider announcement horizon and the turn side taken from the route, scored with this tool unchanged: the CUE-MISSING share of S1 / N1 missed turns and the text-correct count (112 of 197) are the two numbers it must move before any retrain is spent. A retrain on the rebuilt text nav then has a committed bar: S1 TURN recall on INF_ANY toward C0's 0.82 to 0.93 against the paired-bootstrap interval and the seed floor.

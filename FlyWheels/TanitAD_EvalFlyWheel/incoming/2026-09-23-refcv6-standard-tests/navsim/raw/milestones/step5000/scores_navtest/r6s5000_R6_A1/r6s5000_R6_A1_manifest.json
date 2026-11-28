@@ -1,0 +1,381 @@
+{
+ "label": "r6s5000_R6_A1",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=navtest",
+  "metric_cache_path=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_r6s5000_R6_A1",
+  "output_dir=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/r6s5000_R6_A1",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R6_A1.npz",
+  "+agent.call_log=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r6s5000_R6_A1/r6s5000_R6_A1.calls.jsonl"
+ ],
+ "argv": [
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-v1-navtest\\code\\navsim_v1_win.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "r6s5000_R6_A1",
+  "--out-dir",
+  "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\milestones\\step5000\\scores_navtest\\r6s5000_R6_A1",
+  "--patch-loader",
+  "--record-poses",
+  "--",
+  "train_test_split=navtest",
+  "metric_cache_path=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_r6s5000_R6_A1",
+  "output_dir=D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/r6s5000_R6_A1",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000/bridge_navtest/seam_R6_A1.npz",
+  "+agent.call_log=C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000/scores_navtest/r6s5000_R6_A1/r6s5000_R6_A1.calls.jsonl"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "executable": "C:\\Users\\Admin\\navsim-crun\\venv\\Scripts\\python.exe",
+ "cwd": "D:\\Archive\\devbox-C\\navsim\\exp\\w3_navtest_v1",
+ "PYTHONPATH": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896;D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-navsim-v1-navtest\\code",
+ "PYTHONHASHSEED": "1",
+ "priority": "BELOW_NORMAL",
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "D:/Archive/devbox-C/navsim/data/maps",
+  "NAVSIM_EXP_ROOT": "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1",
+  "NAVSIM_DEVKIT_ROOT": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+  "OPENSCENE_DATA_ROOT": "D:/Archive/devbox-C/navsim/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_v11_tree": "D:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+ "navsim_v11_sha": "3e8291bfa89ff247231e0227778840cd0a036896",
+ "nuplan_tree": "C:/Users/Admin/navsim-crun/nuplan-devkit",
+ "nuplan_sha_expected": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_sha_measured": null,
+ "nuplan_source_checkout": "D:/Archive/devbox-C/navsim/nuplan-devkit",
+ "nuplan_source_sha_measured": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_copy_verification": "E1 raw/devkit_copy_verify.json: repos.nuplan-devkit n_blobs 1324, n_match 1321, 3 diffs explained (setup.py packaging, docs/make.bat eol, nuboard html)",
+ "e1_wrapper": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+ "imported_from": {
+  "navsim": "D:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "D:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\planning\\script\\run_pdm_score.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:170-181 (v1.1 @ 3e8291b)",
+   "replacement": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py::_load_metric_cache_paths_patched (E1, imported)",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows (control C7)"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)"
+ ],
+ "started_local": "2026-09-24 13:02:25",
+ "rows_jsonl": "C:\\Users\\Admin\\ev6\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-23-refcv6-standard-tests\\navsim\\raw\\milestones\\step5000\\scores_navtest\\r6s5000_R6_A1\\r6s5000_R6_A1_rows.jsonl",
+ "status": "OK",
+ "ended_local": "2026-09-24 13:22:40",
+ "resources": {
+  "wall_s": 1215.35,
+  "peak_rss_mb": 2259.5,
+  "peak_process_tree_rss_mb": 2259.5,
+  "min_system_available_mb": 6751.4,
+  "n_samples": 564,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    22.8,
+    8983.4
+   ],
+   [
+    20.2,
+    573.6,
+    8399.8
+   ],
+   [
+    40.4,
+    1140.0,
+    7830.3
+   ],
+   [
+    62.0,
+    2197.0,
+    6774.2
+   ],
+   [
+    82.9,
+    2203.6,
+    6761.0
+   ],
+   [
+    104.1,
+    2204.9,
+    6758.8
+   ],
+   [
+    125.7,
+    2205.7,
+    6762.0
+   ],
+   [
+    146.2,
+    2207.2,
+    8275.9
+   ],
+   [
+    167.5,
+    2207.0,
+    9688.9
+   ],
+   [
+    189.2,
+    2208.0,
+    9679.5
+   ],
+   [
+    210.0,
+    2208.5,
+    9682.7
+   ],
+   [
+    231.3,
+    2209.0,
+    9673.3
+   ],
+   [
+    253.3,
+    2215.7,
+    9647.8
+   ],
+   [
+    274.5,
+    2215.5,
+    9649.3
+   ],
+   [
+    295.0,
+    2219.1,
+    9640.0
+   ],
+   [
+    315.9,
+    2220.2,
+    9632.6
+   ],
+   [
+    337.4,
+    2221.2,
+    9623.0
+   ],
+   [
+    358.7,
+    2222.0,
+    9618.0
+   ],
+   [
+    380.6,
+    2223.7,
+    9607.2
+   ],
+   [
+    401.9,
+    2223.8,
+    9600.3
+   ],
+   [
+    423.5,
+    2224.5,
+    9589.8
+   ],
+   [
+    443.9,
+    2224.5,
+    9545.2
+   ],
+   [
+    465.1,
+    2225.8,
+    9524.6
+   ],
+   [
+    486.2,
+    2226.4,
+    11038.1
+   ],
+   [
+    508.7,
+    2227.0,
+    11025.4
+   ],
+   [
+    530.6,
+    2227.7,
+    11037.2
+   ],
+   [
+    551.8,
+    2228.7,
+    11033.3
+   ],
+   [
+    574.7,
+    2229.1,
+    11023.0
+   ],
+   [
+    597.8,
+    2231.3,
+    11018.2
+   ],
+   [
+    621.5,
+    2231.4,
+    11011.2
+   ],
+   [
+    644.2,
+    2232.7,
+    11020.9
+   ],
+   [
+    665.6,
+    2233.7,
+    11005.2
+   ],
+   [
+    686.3,
+    2234.2,
+    11000.2
+   ],
+   [
+    708.6,
+    2237.2,
+    10981.4
+   ],
+   [
+    730.8,
+    2237.2,
+    10978.7
+   ],
+   [
+    752.3,
+    2237.5,
+    10976.1
+   ],
+   [
+    773.2,
+    2239.4,
+    10965.2
+   ],
+   [
+    795.1,
+    2239.0,
+    10961.2
+   ],
+   [
+    818.1,
+    2240.0,
+    10948.1
+   ],
+   [
+    840.5,
+    2241.7,
+    10932.7
+   ],
+   [
+    862.8,
+    2242.4,
+    10921.6
+   ],
+   [
+    885.4,
+    2243.9,
+    10924.2
+   ],
+   [
+    906.0,
+    2245.7,
+    10909.8
+   ],
+   [
+    926.6,
+    2246.6,
+    10902.7
+   ],
+   [
+    947.4,
+    2248.7,
+    12412.3
+   ],
+   [
+    969.3,
+    2249.9,
+    12405.3
+   ],
+   [
+    991.9,
+    2250.6,
+    12389.1
+   ],
+   [
+    1012.7,
+    2250.9,
+    12406.4
+   ],
+   [
+    1035.0,
+    2252.2,
+    12378.7
+   ],
+   [
+    1056.2,
+    2252.0,
+    12376.0
+   ],
+   [
+    1078.5,
+    2252.5,
+    12267.9
+   ],
+   [
+    1098.8,
+    2254.2,
+    12297.1
+   ],
+   [
+    1120.2,
+    2255.0,
+    12293.4
+   ],
+   [
+    1140.9,
+    2255.0,
+    12299.8
+   ],
+   [
+    1163.8,
+    2256.3,
+    12289.4
+   ],
+   [
+    1185.5,
+    2258.2,
+    12280.9
+   ],
+   [
+    1206.6,
+    2258.9,
+    12299.9
+   ]
+  ]
+ }
+}

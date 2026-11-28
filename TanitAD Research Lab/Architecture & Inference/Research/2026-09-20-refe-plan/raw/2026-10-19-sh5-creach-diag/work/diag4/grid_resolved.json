@@ -1,0 +1,188 @@
+{
+ "runs": [
+  {
+   "name": "W12_s0",
+   "seed": 0,
+   "cycles": 3,
+   "inner": 4,
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "base_k8o8_lr3e-3",
+     "lr": 0.003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null
+    },
+    {
+     "tag": "BEST_lr3e-3",
+     "lr": 0.003,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "best_from": "cos16_k6o8"
+    },
+    {
+     "tag": "base_k8o8_psub64",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null,
+     "p_sub": 64
+    },
+    {
+     "tag": "BEST_psub64",
+     "lr": 0.0003,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "p_sub": 64,
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "best_from": "cos16_k6o8"
+    }
+   ]
+  },
+  {
+   "name": "W12_s1",
+   "seed": 1,
+   "cycles": 3,
+   "inner": 4,
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "base_k8o8_lr3e-3",
+     "lr": 0.003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null
+    },
+    {
+     "tag": "BEST_lr3e-3",
+     "lr": 0.003,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "best_from": "cos16_k6o8"
+    },
+    {
+     "tag": "base_k8o8_psub64",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null,
+     "p_sub": 64
+    },
+    {
+     "tag": "BEST_psub64",
+     "lr": 0.0003,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "p_sub": 64,
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "best_from": "cos16_k6o8"
+    }
+   ]
+  },
+  {
+   "name": "W60_s0",
+   "seed": 0,
+   "cycles": 15,
+   "inner": 4,
+   "eval_cycles": [
+    3,
+    6,
+    9,
+    12,
+    15
+   ],
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "base_k8o8_60ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null
+    },
+    {
+     "tag": "BEST_60ep",
+     "lr": 0.0003,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "best_from": "cos16_k6o8"
+    }
+   ]
+  },
+  {
+   "name": "W60_s1",
+   "seed": 1,
+   "cycles": 15,
+   "inner": 4,
+   "eval_cycles": [
+    3,
+    6,
+    9,
+    12,
+    15
+   ],
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "base_k8o8_60ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null
+    },
+    {
+     "tag": "BEST_60ep",
+     "lr": 0.0003,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "best_from": "cos16_k6o8"
+    }
+   ]
+  }
+ ]
+}

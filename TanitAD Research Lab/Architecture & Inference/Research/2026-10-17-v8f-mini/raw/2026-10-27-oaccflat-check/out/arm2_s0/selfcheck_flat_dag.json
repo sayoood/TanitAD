@@ -1,0 +1,448 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 0.5153058171272278,
+   "goal": 0.011667980812489986,
+   "lat": 0.01760898530483246,
+   "lon": 0.20164000988006592,
+   "cons": 0.06288067996501923,
+   "ade": 2.755833387374878,
+   "fde": 6.376548767089844,
+   "acc": 0.016038980334997177,
+   "pen_SPEED": 0.01642906665802002,
+   "pens_SPEED": 0.494808554649353,
+   "pen_STOP": 0.0,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.0,
+   "pens_TURN": 0.0,
+   "pen_LEAD": 0.0,
+   "pens_LEAD": 0.0,
+   "wm": 252.29989624023438,
+   "total": 27.479934692382812
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [
+   "e_code.weight"
+  ],
+  "declared_dead": [
+   "e_code.weight"
+  ],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 1625.8893214464188,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 25577.15295982361,
+   "S": 2544.2851582840085,
+   "T": 2718.0900793168694,
+   "O": 8356.473436310887,
+   "head_s": 772.0691305100918,
+   "head_o": 3638.4631021022797,
+   "wm": 27329.475182909053
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 16,
+  "n_draws_samples": 64,
+  "n_partial": 0,
+  "n_all_gt": 28,
+  "n_all_own": 36,
+  "unit_gt_rate": {
+   "decisions": 0.4375,
+   "speed": 0.4375,
+   "angle": 0.4375,
+   "tte": 0.4375,
+   "timegap": 0.4375,
+   "geom": 0.4375,
+   "leadgap": 0.4375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "cut",
+  "shift": 2.5,
+  "n_windows": 16,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 0.0,
+    "o_read_code_abs_max": 0.0,
+    "o_read_ck_minus_nominal_abs_max": 0.0,
+    "o_read_ck_ok_abs_max": 0.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 0.0,
+    "o_read_code_abs_max": 0.0,
+    "o_read_ck_minus_nominal_abs_max": 0.0,
+    "o_read_ck_ok_abs_max": 0.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 0.0,
+    "o_read_code_abs_max": 0.0,
+    "o_read_ck_minus_nominal_abs_max": 0.0,
+    "o_read_ck_ok_abs_max": 0.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 0.0,
+    "o_read_code_abs_max": 0.0,
+    "o_read_ck_minus_nominal_abs_max": 0.0,
+    "o_read_ck_ok_abs_max": 0.0,
+    "max_abs_d_ckpt": 2.5000038146972656,
+    "t_reads_s_max_abs_dgoal_logits": 7.702900409698486
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 0.0,
+  "w_probe": 1.0,
+  "acc": 0.007798339705914259,
+  "acc_at_zero_weight": 0.007798339705914259,
+  "total_w": 49.690452575683594,
+  "total_0": 49.682655334472656,
+  "contribution": 0.0077972412109375,
+  "w_x_acc": 0.007798339705914259,
+  "head_o_grad_diff": 7.614100456237793,
+  "read_o_grad_diff": 7.886967658996582,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "declared_zero_total_reproduces_exactly": true,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "cut",
+  "w_acc": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.1,
+   "dagger_seed": 0,
+   "dagger_bank": "E:\\Projects\\TanitAD-artifacts\\oaccflat_check\\work\\bank_flat_s0\\bank.json",
+   "dagger_bank_sha256": "0abcaedf7df07ab16e762f19e710a6f394484cf5c53aeef2ce96c3f6ebf8393f",
+   "kin_mode": "yaw",
+   "bank_hmax": 16,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.1,
+  "dagger_bank_sha256": "0abcaedf7df07ab16e762f19e710a6f394484cf5c53aeef2ce96c3f6ebf8393f",
+  "dagger_bank_sha256_declared": "0abcaedf7df07ab16e762f19e710a6f394484cf5c53aeef2ce96c3f6ebf8393f",
+  "init_ckpt": {
+   "path": "E:\\Projects\\TanitAD-artifacts\\v8f-mini-flat\\M2b_s0_flat.pt",
+   "sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "33d9e5e27e44a23b"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "steps_total": 3000,
+ "S_steps_per_epoch_100pct": 22,
+ "info": {
+  "batch": 16,
+  "md5_overridden": false,
+  "n_clips": 6,
+  "n_clips_expected": 6,
+  "n_clips_all": 6,
+  "n_excluded": 0,
+  "n_excluded_declared": 0,
+  "excluded_in_train": 0,
+  "excluded_sha256": null,
+  "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62",
+  "lru": 203,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 342,
+  "n_windows": 342,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "d4e5c5e9f47e417f668d6a39d33807fcfbafc34dfeee809141467ab2d2de0a5e",
+  "p10_units": null,
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "E:\\Projects\\TanitAD-artifacts\\v8f-mini-flat\\M2b_s0_flat.pt",
+   "sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 19164,
+   "source_arm": "M2b",
+   "source_seed": 0,
+   "source_argv_sha": "33d9e5e27e44a23b"
+  },
+  "dagger": {
+   "bank_path": "E:\\Projects\\TanitAD-artifacts\\oaccflat_check\\work\\bank_flat_s0\\bank.json",
+   "bank_sha256": "0abcaedf7df07ab16e762f19e710a6f394484cf5c53aeef2ce96c3f6ebf8393f",
+   "n_records": 684,
+   "reason_counts": {
+    "ok": 400,
+    "off_lat": 121,
+    "off_head": 28,
+    "end_edge": 135,
+    "nonfinite": 0
+   },
+   "coverage": {
+    "n_windows": 342,
+    "n_eligible": 221,
+    "fraction": 0.6461988304093568,
+    "min": 0.5,
+    "blocked": false
+   },
+   "kb2": {
+    "ckpt_sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc",
+    "init_ckpt_sha256": "8496934a2ce262c128a3e975da156de2f40e422925893c9979169a4c114493cc"
+   },
+   "kb3": {
+    "n_bank_clips": 6,
+    "n_train_clips": 6,
+    "n_eval_clips": 2,
+    "overlap_with_eval": 0,
+    "window_list_sha256": "d4e5c5e9f47e417f668d6a39d33807fcfbafc34dfeee809141467ab2d2de0a5e",
+    "eval_sources": {
+     "grid": 2,
+     "bank_header": 2,
+     "cache_eval_manifest": 2
+    },
+    "n_eval_clips_checked": 2
+   }
+  }
+ },
+ "argv_sha": "0ea44d1c3a3b1321",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "p_declared": 0.1,
+  "n_rows": 16,
+  "n_eligible": 8,
+  "n_selected_at_p1": 8,
+  "keys_read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "rows_changed": {
+   "p10f": 8,
+   "base": 8,
+   "kin3": 8,
+   "p10_t": 8,
+   "pose": 8,
+   "pose_t": 5,
+   "pose_s": 8,
+   "nav": 5
+  },
+  "selected_rows_bit_identical_exempt": 0,
+  "base_rows_at_rest_exempt": 0,
+  "rc_max_abs_err": 0.0,
+  "live_swapped": {
+   "pass": true,
+   "terms": {
+    "ckpt": 0.6761341094970703,
+    "goal": 0.03011242114007473,
+    "lat": 0.03139282017946243,
+    "lon": 0.4555386006832123,
+    "cons": 0.09186872839927673,
+    "ade": 4.459923267364502,
+    "fde": 7.3643388748168945,
+    "acc": 0.024438366293907166,
+    "pen_SPEED": 0.5763422250747681,
+    "pens_SPEED": 1.3516247272491455,
+    "pen_STOP": 0.0,
+    "pens_STOP": 0.0,
+    "pen_TURN": 0.4363934397697449,
+    "pens_TURN": 2.500166177749634,
+    "pen_LEAD": 0.0,
+    "pens_LEAD": 0.0,
+    "wm": 252.28067016601562,
+    "total": 29.793365478515625
+   },
+   "control_prior_grad_sum": 0.0,
+   "groups_grad": {
+    "adapter": 26086.786680221558,
+    "S": 4818.270600691438,
+    "T": 2936.242818184197,
+    "O": 7708.852486163378,
+    "head_s": 1538.4105984568596,
+    "head_o": 3516.7082456946373,
+    "wm": 27368.9880791544
+   }
+  },
+  "total_logged": 49.42619705200195,
+  "total_swapped": 51.37577438354492,
+  "loss_diff": 1.9495773315429688,
+  "grad_diff_all": 17720.177734375,
+  "grad_diff_by_group": {
+   "adapter": 7887.3828125,
+   "e_ego": 128.58114624023438,
+   "read_s": 3228.156494140625,
+   "read_t": 1259.7412109375,
+   "read_o": 2470.407470703125,
+   "head_s": 595.2141723632812,
+   "head_o": 717.5606689453125,
+   "wm.": 0.0
+  },
+  "control_repeat_loss_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_p0_same_object": true,
+  "control_p0_loss_diff": 0.0,
+  "control_p0_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "loss_diff_replacing_only": {
+   "p10f": 2.4735183715820312,
+   "base": 1.3946189880371094,
+   "pose_t": 0.037998199462890625,
+   "pose_s": -0.018402099609375,
+   "kin3": 0.0,
+   "p10_t": 0.0
+  },
+  "pass": true
+ }
+}

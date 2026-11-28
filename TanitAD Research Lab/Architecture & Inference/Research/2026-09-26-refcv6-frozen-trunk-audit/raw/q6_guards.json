@@ -1,0 +1,66 @@
+{
+ "what": "Q6: constructed regressions for the guards this audit touched",
+ "evidence_class": "MEASURED (ours, dev box CPU)",
+ "G1_max_speed_sidecar": {
+  "C_real_sidecar_real_meta_run_md5": {
+   "raised": false
+  },
+  "R1_wrong_bin_row": {
+   "raised": true,
+   "type": "SpeedMaxStampError",
+   "msg": "[refcv6-vmax] \u26d4 sid 1760025021937651541: the sidecar says bin 2 but this module's ladder puts v_hi_ms=12.85 in bin 1 (50 km/h). Two ladders is two experiments; "
+  },
+  "R2_md5_mismatch_meta_present": {
+   "raised": true,
+   "type": "SpeedMaxStampError",
+   "msg": "[refcv6-vmax] \u26d4 the sidecar was built over label blob md5 'eefc38d1453bd1c73802d44d45affced' but this run loaded '00000000000000000000000000000000'. The join wo"
+  },
+  "R3_md5_mismatch_meta_ABSENT": {
+   "raised": false
+  },
+  "kit_has_meta": false,
+  "verdict": {
+   "R1_red": true,
+   "R2_red": true,
+   "R3_red": false,
+   "C_green": true
+  }
+ },
+ "G3_label_time": {
+  "guard": "|t_trainer(row) - t_true(row)| <= 0.05 s (PROPOSED; none exists)",
+  "n_checks": 408,
+  "shipped_mapping_violations": 408,
+  "fixed_mapping_passes": 408,
+  "worst_shipped_offset_s": 0.5161,
+  "verdict": {
+   "shipped_red": true,
+   "fixed_green": true
+  }
+ },
+ "G2_pretrained_weights": {
+  "C_downloaded": {
+   "raised": false
+  },
+  "C_stem_abs_sum": 1402.778076171875,
+  "R2_stem_x1.05": {
+   "raised": true,
+   "type": "RuntimeError",
+   "msg": "refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 1472.9169 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~"
+  },
+  "R3_stem_intact_layer4_random": {
+   "raised": false
+  },
+  "R1_random_init": {
+   "raised": true,
+   "type": "RuntimeError",
+   "msg": "refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 190.7475 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~8"
+  },
+  "R1_stem_abs_sum": 190.7474822998047,
+  "verdict": {
+   "C_green": true,
+   "R1_red": true,
+   "R2_red": true,
+   "R3_red": false
+  }
+ }
+}

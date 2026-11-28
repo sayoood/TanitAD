@@ -1,0 +1,109 @@
+{
+ "tool": "aux_navtest_forward/1",
+ "date": "2026-10-13 10:50-11:10 Europe/Berlin",
+ "device": "cuda",
+ "gpu": "RTX 4060 8 GB (shared), lock taken via wait_idle.py + O_EXCL, released on exit",
+ "n_tokens": 32,
+ "n_logs": 1,
+ "head": {
+  "arm": "H2-s0",
+  "what": "FRESHLY INITIALISED, NEVER TRAINED (seed 0, depth 2, tap visual), saved in scorer_finetune.save_aux format",
+  "sha256": "af19121ce854e70a9cdf3f18f90a9f0b6091c0efae04fc53035c83159e1b064d",
+  "n_params": 2440450
+ },
+ "identity": {
+  "PASS": true,
+  "n_tokens": 32,
+  "n_tokens_bit_identical": 32,
+  "n_values": 14336,
+  "n_values_differ": 0,
+  "max_abs_delta": 0.0,
+  "median_token_max_delta": 0.0,
+  "from_ctx_cache": 0,
+  "mutate_swap_cams": false,
+  "worst_tokens": [
+   [
+    "5e74b6a61b715f47",
+    0.0
+   ],
+   [
+    "c65181647b3b5092",
+    0.0
+   ],
+   [
+    "5d3573d6da7952d3",
+    0.0
+   ],
+   [
+    "75bf56ae8b9d5673",
+    0.0
+   ],
+   [
+    "a9fb1181686753ec",
+    0.0
+   ]
+  ]
+ },
+ "cost_cold_first_touch_of_the_log": {
+  "s_per_token_total": 12.509,
+  "sums_s_over_32": {
+   "model_load_s": 2.1,
+   "init_route": 102.97,
+   "image": 73.31,
+   "trunk_infer": 102.01,
+   "heads": 13.54,
+   "cache_write": 54.18,
+   "loop_s": 400.3
+  },
+  "scenario_build_s_once": 54.2,
+  "note": "includes the trainer-path second forward (~'heads') and a 7.9 MB/token cache write; the log's DB, map and zips were read from the exFAT drive for the first time"
+ },
+ "cost_warm_chunk_3_tokens": {
+  "s_per_token": {
+   "init_route": 0.627,
+   "image": 0.287,
+   "trunk_infer": 1.853,
+   "heads": 0.01,
+   "cache_write": 0.193
+  },
+  "loop_s": 10.7,
+  "n": 3,
+  "model_load_s": 6.9,
+  "scenario_build_s": 1.09
+ },
+ "projection_full_1058_tokens_123_logs": {
+  "warm_best_case_s": 3174,
+  "cold_case_s": 18068,
+  "c3_run_dump_2026-10-11_s_per_token": 2.15,
+  "bar_s": 900,
+  "verdict": "ALL THREE exceed the 15 min bar -> not run; HANDOFF.md"
+ },
+ "gpu_memory": {
+  "peak_allocated_gb": 2.41,
+  "peak_reserved_gb": 3.02,
+  "nvidia_smi_used_mib": 4873
+ },
+ "trainer_vs_planner_ctx_32_tokens": {
+  "ctx_rel_l2_min_mean_max": [
+   0.010542471893131733,
+   0.012657441722694784,
+   0.01461831759661436
+  ],
+  "ctx_max_abs_max": 0.11676973104476929,
+  "ctx_mean_abs": 0.14004398323595524,
+  "head_output_delta_fresh_head": {
+   "arm": "H2-s0",
+   "n": 32,
+   "logit_max_abs_delta": 0.00985407829284668,
+   "sdf_m_max_abs_delta": 0.06958556175231934,
+   "mask_sign_disagree_share": 0.0006103515625,
+   "logit_abs_mean": 0.4281996786594391
+  },
+  "reading": "the S1 trainer's bf16-autocast trunk gives a ctx ~1.2-1.5 % (rel L2) away from the planner's fp32 ctx. A head trained on bf16 ctx but read on fp32 ctx sees that shift. The fresh head's output deltas are PLUMBING NUMBERS ONLY (a random head says nothing about a trained head's sensitivity)"
+ },
+ "ctx_cache": {
+  "bytes_per_token": 7864320,
+  "files_32": 32,
+  "full_1058_gb": 7.75
+ }
+}

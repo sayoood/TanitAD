@@ -1,0 +1,113 @@
+{
+ "rev": "8522e49",
+ "script": "code/build_patch.py",
+ "checks": {
+  "A1_doc_figures_equal_base30k_banked_raw_git": true,
+  "A2_X8_reproduction_of_base30k_equals_banked": true,
+  "A3_no_doc_figure_equals_refcv7_seed0_or_seed1": true,
+  "A4_base30k_881_windows_40_eps_128_anchors": true,
+  "A5_refcv7_4754_windows_139_eps_117_cands_both_seeds": true,
+  "A6_base30k_ckpt_step_29999": true,
+  "A7_refcv7_ckpt_md5_declared_b418d0fc": true,
+  "A8_refcv7_config_sampler_ranks_the_fan_is_False": true,
+  "B1_old_goals_row_verbatim_exactly_once_at_8522e49": true,
+  "B2_old_goals_row_verbatim_exactly_once_in_live_worktree": true,
+  "B3_old_registry_block_verbatim_exactly_once_at_8522e49": true,
+  "B4_old_registry_block_verbatim_exactly_once_in_live_worktree": true,
+  "C1_numeric_token_superset_GOALS_row": true,
+  "C2_numeric_token_superset_REGISTRY_15_3_block": true,
+  "C3_numeric_token_superset_REGISTRY_15_3_header": true,
+  "C4_optionA_removes_exactly_1_GOALS_line_adds_1": true,
+  "C5_optionA_removes_exactly_2_REGISTRY_lines_adds_3": true,
+  "C6_optionB_removes_zero_lines_in_both_files": true,
+  "C7_goals_row_keeps_3_cell_shape": true,
+  "C8_file_level_numeric_tokens_lost_GOALS_is_zero": true,
+  "C9_file_level_numeric_tokens_lost_REGISTRY_is_zero": true,
+  "C10_new_text_is_ascii_outside_carried_old_text": true,
+  "M1_superset_guard_goes_red_when_an_old_figure_is_dropped": true,
+  "M2_arm_guard_goes_red_when_a_doc_figure_equals_refcv7": true,
+  "M3_oldtext_uniqueness_guard_goes_red_on_a_mutated_line": true,
+  "M4_line_superset_guard_goes_red_for_option_A_in_GOALS": true
+ },
+ "all_pass": true,
+ "line_numbers": {
+  "at_8522e49": {
+   "goals_row": 15762,
+   "registry_header_15_3": 5330,
+   "registry_old_lines": [
+    5332,
+    5333
+   ]
+  },
+  "live_worktree_D": {
+   "goals_row": 12229,
+   "reg_hdr": 5298
+  }
+ },
+ "figures": {
+  "doc_row": {
+   "oracle": "0.1914",
+   "selected": "0.4728",
+   "gap": "0.2813",
+   "gap_lo": "0.2127",
+   "gap_hi": "0.3543",
+   "frac2x": "41.09"
+  },
+  "base30k_banked_git": {
+   "oracle": "0.1914",
+   "selected": "0.4728",
+   "gap": "0.2813",
+   "gap_lo": "0.2127",
+   "gap_hi": "0.3543",
+   "frac2x": "41.09"
+  },
+  "base30k_battery_repro": {
+   "oracle": "0.1914",
+   "selected": "0.4728",
+   "gap": "0.2813",
+   "gap_lo": "0.2127",
+   "gap_hi": "0.3543",
+   "frac2x": "41.09"
+  },
+  "refcv7_s0": {
+   "oracle": "0.1143",
+   "selected": "0.2772",
+   "gap": "0.1630",
+   "gap_lo": "0.1446",
+   "gap_hi": "0.1825",
+   "frac2x": "44.17"
+  },
+  "refcv7_s1": {
+   "oracle": "0.1145",
+   "selected": "0.2790",
+   "gap": "0.1645",
+   "gap_lo": "0.1454",
+   "gap_hi": "0.1847",
+   "frac2x": "44.95"
+  }
+ },
+ "windows_eps_cands": {
+  "base30k": [
+   881,
+   40,
+   128
+  ],
+  "refcv7": [
+   4754,
+   139,
+   117
+  ]
+ },
+ "tier_stamp_raw": "T0 diagnostic (oracle and every difference containing it use GT); selected alone is the T1 open-loop pick",
+ "refcv7_config_sampler_ranks_the_fan": false,
+ "overstatement_ratio_doc_over_true_refcv7": {
+  "oracle": 1.675,
+  "selected": 1.706,
+  "gap": 1.726
+ },
+ "token_misses": {
+  "goals": [],
+  "registry_block": [],
+  "registry_hdr": []
+ }
+}

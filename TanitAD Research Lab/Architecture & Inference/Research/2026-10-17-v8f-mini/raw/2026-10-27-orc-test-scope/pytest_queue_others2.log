@@ -1,0 +1,526 @@
+........................................................................ [ 12%]
+......F................................................................. [ 24%]
+F...............F.F.F..................................F................ [ 36%]
+........................................................................ [ 49%]
+s....................................................................... [ 61%]
+..................................................F..................... [ 73%]
+........................................................................ [ 85%]
+.................................................F..........F.F..FF..... [ 98%]
+...........                                                              [100%]
+================================== FAILURES ===================================
+_____________ test_reader_missing_inputs_are_rc2_not_a_traceback ______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_reader_missing_inputs_are0')
+no_known = None
+capsys = <_pytest.capture.CaptureFixture object at 0x000002AAB923F9D0>
+
+    @needs_pkg
+    def test_reader_missing_inputs_are_rc2_not_a_traceback(tmp_path, no_known, capsys):
+        assert R.main(["--stage", "final", "--base", "M2b", "--pgt-dir", str(tmp_path / "none"), "--eval-dir", str(tmp_path), "--runs-dir", str(tmp_path), "--out", str(tmp_path / "o.json")]) == 2
+>       assert "has no read" in capsys.readouterr().err
+E       assert 'has no read' in "GRID READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Lo...anitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n"
+E        +  where "GRID READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Lo...anitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n" = CaptureResult(out='', err="GRID READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users...nitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n").err
+E        +    where CaptureResult(out='', err="GRID READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users...nitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n") = readouterr()
+E        +      where readouterr = <_pytest.capture.CaptureFixture object at 0x000002AAB923F9D0>.readouterr
+
+stack\tests\test_v8f_grid.py:897: AssertionError
+_ test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identical _
+
+    @needs_queue
+    def test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identical():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 600 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        for label, h in PRE_EXISTING.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            assert "kind" not in blocks[label].lower().replace("kinds", ""), f"{label} mentions the new stage"
+>       assert set(blocks) - MIXO_LABELS - FLAT_LABELS - OACC_LABELS - ORC_LABELS == set(PRE_EXISTING) | set(KIND_LABELS), "the only new labels are the four of this edit (and PREREG_V8F_MIXO's and PREREG_V8F_FLAT's, pinned in test_v8f_mixo.py / test_v8f_flat.py)"
+E       AssertionError: the only new labels are the four of this edit (and PREREG_V8F_MIXO's and PREREG_V8F_FLAT's, pinned in test_v8f_mixo.py / test_v8f_flat.py)
+E       assert {'bankdag', '...dag2arm', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'bankdag'
+E         'dagarm_dry'
+E         'dagname'
+E         'dag2arm_have'
+E         'prepdag'...
+E         
+E         ...Full output truncated (9 lines hidden), use '-vv' to show
+
+stack\tests\test_v8f_kind.py:266: AssertionError
+__________ test_reader_check_inputs_validates_the_banked_side_alone ___________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_reader_check_inputs_valid0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000002AABA2B19D0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002AAB539F540>
+
+    @needs_pkg
+    def test_reader_check_inputs_validates_the_banked_side_alone(tmp_path, capsys, monkeypatch):
+        f = _PGT._pgt_files(tmp_path / "chk")
+        monkeypatch.setattr(R.PGT, "known_values", lambda *a, **k: {"checked": False})
+        monkeypatch.setattr(R, "known_values", lambda F: {"checked": False})
+        out = tmp_path / "chk" / "inputs.json"
+        base = ["--check-inputs", "--eval-dir", str(f["eval"]), "--runs-dir", str(f["runs"]), "--out", str(out), "--n-boot", "300", "--dk-n-boot", "60", "--no-families",
+                "--n-windows", str(N_WIN), "--n-episodes", str(N_EP), "--lead-block", str(f["d"] / "lead.npz"), "--p10-pred", str(f["d"] / "p10.npy"), "--gt-npz", str(f["d"] / "gt.npz"),
+                "--no-strata"]
+        assert R.main(base) == 0
+        msg = capsys.readouterr().out
+        assert "KIND INPUTS OK" in msg and "partition 26 = 5 + 3 + 5 + 2 + 9 + 2" in msg and "expects 30 evals (15 per seed)" in msg
+        res = json.loads(out.read_text(encoding="utf-8"))
+        assert res["expected_evals"] == 30 and res["expected_suffixes"] == R.arm_suffixes() and res["partition"]["union_is_constraints"] is True
+        assert res["banked"]["identity_control"]["s0"]["mdk"]["delta"] == 0.0 and res["n_windows"] == N_WIN
+        # the committed counts are checked on the banked side too; a corrupt banked run stops the chain while box 2 is idle
+        assert R.main([*base, "--n-windows", "2399", "--n-episodes", "141"]) == 2                              # a later flag wins: the committed grid size
+        assert "committed eval-141 grid" in capsys.readouterr().err
+        ru = Path(f["runs"]) / "M2b_s1" / "summary.json"
+        keep = ru.read_text(encoding="utf-8")
+        ru.write_text("{", encoding="utf-8")
+        assert R.main(base) == 2
+        ru.write_text(keep, encoding="utf-8")
+        (Path(f["eval"]) / "eval_M2b_s0-tacorc.npz").rename(Path(f["eval"]) / "moved.npz")
+        assert R.main(base) == 2 and "eval_M2b_s0-tacorc.npz is missing" in capsys.readouterr().err
+>       assert R.main(["--check-inputs", "--eval-dir", str(f["eval"]), "--out", str(out)]) == 2 and "--runs-dir is required" in capsys.readouterr().err
+E       assert (2 == 2 and '--runs-dir is required' in "KIND READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Lo...anitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n")
+E        +  where 2 = <function main at 0x000002AAB53ABF60>(['--check-inputs', '--eval-dir', 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-81\\test_reader_chec...C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-81\\test_reader_check_inputs_valid0\\chk\\inputs.json'])
+E        +    where <function main at 0x000002AAB53ABF60> = R.main
+E        +  and   "KIND READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Lo...anitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n" = CaptureResult(out='', err="KIND READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users...nitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n").err
+E        +    where CaptureResult(out='', err="KIND READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users...nitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n") = readouterr()
+E        +      where readouterr = <_pytest.capture.CaptureFixture object at 0x000002AABA2B19D0>.readouterr
+
+stack\tests\test_v8f_kind.py:816: AssertionError
+_______ test_strata_file_is_the_eval_grids_and_is_pinned_to_its_inputs ________
+
+    @needs_pkg
+    @needs_strata
+    def test_strata_file_is_the_eval_grids_and_is_pinned_to_its_inputs():
+        z = np.load(STRATA_FILE, allow_pickle=False)
+        s, prov = z["stratum"], json.loads(str(z["provenance"]))
+        assert R.STRATA == ("JUNCTION", "CURVE", "NO-TURN") and R.MIN_STRATUM_EPISODES == 10
+        assert Path(R.STRATA_DEFAULT).resolve() == STRATA_FILE.resolve(), "the reader's default strata file is the one that rides in the PK archive of the chain"
+        assert s.shape == (2399,) and s.dtype == np.int8 and hashlib.sha256(np.ascontiguousarray(s).tobytes()).hexdigest() == STRATA_STRATUM_SHA
+        assert {nm: int((s == i).sum()) for i, nm in enumerate(R.STRATA)} == STRATA_COUNTS == prov["counts"]
+        assert {nm: int(np.unique(z["eid"][s == i]).size) for i, nm in enumerate(R.STRATA)} == STRATA_EPISODES == prov["episodes"]
+        assert prov["release_md5"] == R.RELEASE_MD5 == "6b5c7f207cffc3b7eb3cd527fd433599" and prov["n_both_curve_and_turn"] == 0 and prov["n_no_v9_row"] == int((~z["has"]).sum()) == 34
+        # the stratum is a function of the two label columns and the v9-row presence (the reader's restatement)
+        assert np.array_equal(s, R.stratum_codes(z["curve"], z["turn_is_turn"], z["has"]))
+        assert not ((z["curve"] == 1) & (z["turn_is_turn"] == 1)).any(), "curve = int(big and not is_junc): never both"
+        # the windows ARE the eval grid's, the T-tick row is the evaluator's, and the file was built from THIS join and THIS grid
+>       grid = json.loads((PKG / "raw" / "eval_grid_windows.json").read_text(encoding="utf-8"))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kind.py:869: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/orcfix_tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\orcfix_tree\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json'
+
+..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_______ test_strata_file_is_reproduced_by_its_builder_from_the_release ________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_strata_file_is_reproduced0')
+
+    @pytest.mark.skipif(not RELEASE.exists(), reason="the v9 eval139 release is on the dev box only")
+    @needs_strata
+    def test_strata_file_is_reproduced_by_its_builder_from_the_release(tmp_path):
+        B = _load("mk_window_strata_for_repro", STRATA_BUILDER)
+        out = tmp_path / "again.npz"
+>       assert B.main(["--release", str(RELEASE), "--out", str(out)]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kind.py:910: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kind\mk_window_strata.py:77: in main
+    J = D.load_join(a.join)
+        ^^^^^^^^^^^^^^^^^^^
+stack\tanitad\data\v8f_mini_data.py:250: in load_join
+    with np.load(path, allow_pickle=False) as z:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+file = 'C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/orcfix_tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz'
+mmap_mode = None, allow_pickle = False, fix_imports = True, encoding = 'ASCII'
+max_header_size = 10000
+
+    @set_module('numpy')
+    def load(file, mmap_mode=None, allow_pickle=False, fix_imports=True,
+             encoding='ASCII', *, max_header_size=_MAX_HEADER_SIZE):
+        """
+        Load arrays or pickled objects from ``.npy``, ``.npz`` or pickled files.
+    
+        .. warning:: Loading files that contain object arrays uses the ``pickle``
+                     module, which is not secure against erroneous or maliciously
+                     constructed data. Consider passing ``allow_pickle=False`` to
+                     load data that is known not to contain object arrays for the
+                     safer handling of untrusted sources.
+    
+        Parameters
+        ----------
+        file : file-like object, string, or pathlib.Path
+            The file to read. File-like objects must support the
+            ``seek()`` and ``read()`` methods and must always
+            be opened in binary mode.  Pickled files require that the
+            file-like object support the ``readline()`` method as well.
+        mmap_mode : {None, 'r+', 'r', 'w+', 'c'}, optional
+            If not None, then memory-map the file, using the given mode (see
+            `numpy.memmap` for a detailed description of the modes).  A
+            memory-mapped array is kept on disk. However, it can be accessed
+            and sliced like any ndarray.  Memory mapping is especially useful
+            for accessing small fragments of large files without reading the
+            entire file into memory.
+        allow_pickle : bool, optional
+            Allow loading pickled object arrays stored in npy files. Reasons for
+            disallowing pickles include security, as loading pickled data can
+            execute arbitrary code. If pickles are disallowed, loading object
+            arrays will fail. Default: False
+        fix_imports : bool, optional
+            Only useful when loading Python 2 generated pickled files,
+            which includes npy/npz files containing object arrays. If `fix_imports`
+            is True, pickle will try to map the old Python 2 names to the new names
+            used in Python 3.
+        encoding : str, optional
+            What encoding to use when reading Python 2 strings. Only useful when
+            loading Python 2 generated pickled files, which includes
+            npy/npz files containing object arrays. Values other than 'latin1',
+            'ASCII', and 'bytes' are not allowed, as they can corrupt numerical
+            data. Default: 'ASCII'
+        max_header_size : int, optional
+            Maximum allowed size of the header.  Large headers may not be safe
+            to load securely and thus require explicitly passing a larger value.
+            See :py:func:`ast.literal_eval()` for details.
+            This option is ignored when `allow_pickle` is passed.  In that case
+            the file is by definition trusted and the limit is unnecessary.
+    
+        Returns
+        -------
+        result : array, tuple, dict, etc.
+            Data stored in the file. For ``.npz`` files, the returned instance
+            of NpzFile class must be closed to avoid leaking file descriptors.
+    
+        Raises
+        ------
+        OSError
+            If the input file does not exist or cannot be read.
+        UnpicklingError
+            If ``allow_pickle=True``, but the file cannot be loaded as a pickle.
+        ValueError
+            The file contains an object array, but ``allow_pickle=False`` given.
+        EOFError
+            When calling ``np.load`` multiple times on the same file handle,
+            if all data has already been read
+    
+        See Also
+        --------
+        save, savez, savez_compressed, loadtxt
+        memmap : Create a memory-map to an array stored in a file on disk.
+        lib.format.open_memmap : Create or load a memory-mapped ``.npy`` file.
+    
+        Notes
+        -----
+        - If the file contains pickle data, then whatever object is stored
+          in the pickle is returned.
+        - If the file is a ``.npy`` file, then a single array is returned.
+        - If the file is a ``.npz`` file, then a dictionary-like object is
+          returned, containing ``{filename: array}`` key-value pairs, one for
+          each file in the archive.
+        - If the file is a ``.npz`` file, the returned value supports the
+          context manager protocol in a similar fashion to the open function::
+    
+            with load('foo.npz') as data:
+                a = data['a']
+    
+          The underlying file descriptor is closed when exiting the 'with'
+          block.
+    
+        Examples
+        --------
+        >>> import numpy as np
+    
+        Store data to disk, and load it again:
+    
+        >>> np.save('/tmp/123', np.array([[1, 2, 3], [4, 5, 6]]))
+        >>> np.load('/tmp/123.npy')
+        array([[1, 2, 3],
+               [4, 5, 6]])
+    
+        Store compressed data to disk, and load it again:
+    
+        >>> a=np.array([[1, 2, 3], [4, 5, 6]])
+        >>> b=np.array([1, 2])
+        >>> np.savez('/tmp/123.npz', a=a, b=b)
+        >>> data = np.load('/tmp/123.npz')
+        >>> data['a']
+        array([[1, 2, 3],
+               [4, 5, 6]])
+        >>> data['b']
+        array([1, 2])
+        >>> data.close()
+    
+        Mem-map the stored array, and then access the second row
+        directly from disk:
+    
+        >>> X = np.load('/tmp/123.npy', mmap_mode='r')
+        >>> X[1, :]
+        memmap([4, 5, 6])
+    
+        """
+        if encoding not in ('ASCII', 'latin1', 'bytes'):
+            # The 'encoding' value for pickle also affects what encoding
+            # the serialized binary data of NumPy arrays is loaded
+            # in. Pickle does not pass on the encoding information to
+            # NumPy. The unpickling code in numpy._core.multiarray is
+            # written to assume that unicode data appearing where binary
+            # should be is in 'latin1'. 'bytes' is also safe, as is 'ASCII'.
+            #
+            # Other encoding values can corrupt binary data, and we
+            # purposefully disallow them. For the same reason, the errors=
+            # argument is not exposed, as values other than 'strict'
+            # result can similarly silently corrupt numerical data.
+            raise ValueError("encoding must be 'ASCII', 'latin1', or 'bytes'")
+    
+        pickle_kwargs = {'encoding': encoding, 'fix_imports': fix_imports}
+    
+        with contextlib.ExitStack() as stack:
+            if hasattr(file, 'read'):
+                fid = file
+                own_fid = False
+            else:
+>               fid = stack.enter_context(open(os.fspath(file), "rb"))
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/orcfix_tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz'
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\lib\_npyio_impl.py:454: FileNotFoundError
+__________ test_s0_mode_reproduces_the_banked_deciding_block_exactly __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002AABA2EB380>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_s0_mode_reproduces_the_ba0')
+
+    def test_s0_mode_reproduces_the_banked_deciding_block_exactly(monkeypatch, tmp_path):
+        """The reader was PARAMETRISED, not rewritten: on the banked s0 evals and controls it writes the banked READ.json's deciding block bit for bit (B = 2,000)."""
+        if not (RAWX / "eval" / "eval_M2b-mixo_s0-kindx-own.npz").exists() or not (RAWX / "controls.json").exists():
+            pytest.skip("the banked s0 evals are not in this checkout")
+        (tmp_path / "controls.json").write_bytes((RAWX / "controls.json").read_bytes())
+        _env(monkeypatch, tmp_path, 0, ev=RAWX / "eval")
+        R = _load(f"kindx_read_s0_{next(CNT)}", READER)
+        assert R.SEED == 0 and R.T == "M2b-mixo_s0" and R.B_BOOT == 2000
+>       rc = R.main(["--no-beside", "--out", str(tmp_path / "READ.json")])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kindx_s1.py:388: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kindx\kindx_read.py:328: in main
+    R, eid = load_x()
+             ^^^^^^^^
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kindx\kindx_read.py:105: in load_x
+    E = K.load_eval(ev, f"{t}-kindx-{nm}", need_json=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_kind_read.py:203: in load_eval
+    refuse(f"eval_{name}.json is missing from {eval_dir}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+msg = 'eval_M2b-mixo_s0-kindx-only-speed.json is missing from C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/b...chpad/orcfix_tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-kindx/eval'
+
+    def refuse(msg):
+        print(f"KIND READ REFUSED: {msg}", file=sys.stderr)
+>       raise SystemExit(2)
+E       SystemExit: 2
+
+TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_kind_read.py:108: SystemExit
+---------------------------- Captured stderr call -----------------------------
+KIND READ REFUSED: eval_M2b-mixo_s0-kindx-only-speed.json is missing from C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/orcfix_tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-kindx/eval
+____________ test_queue_ar2_every_existing_stage_is_byte_identical ____________
+
+    @needs_queue
+    def test_queue_ar2_every_existing_stage_is_byte_identical():
+        """The edit only ADDS labels: the text of every label that existed before hashes as it did, the dispatch of each old stage is still there, and none mentions the new stages."""
+        blocks, q = _blocks(), _queue_text()
+        for label, h in PRE_EXISTING.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            for new in ("lora", "LORA", "identity", "smokelora"):
+                assert new not in blocks[label], (label, new)
+        # PREREG_V8F_KIND later added its own four labels (test_v8f_kind.py pins them and the byte-identity of every label here); this edit's three are still the only others
+        mixo = {"gatemixo", "trainmixo", "evalmixo"} | {f"evalmixo_{i}" for i in range(1, 8)}      # PREREG_V8F_MIXO appended these (test_v8f_mixo.py pins them); widened here, nothing else
+        flat = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in range(1, 5)}      # PREREG_V8F_FLAT appended these (test_v8f_flat.py pins them); widened here, nothing else
+        oacc = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}          # PREREG_V8F_OACC appended these (test_v8f_oacc.py pins them); widened here, nothing else
+        orc = {"orcarm", "gateorc", "trainorc", "evalorc"}          # PREREG_V8F_ORECOVER appended these (test_v8f_orc_chain.py pins them); widened here, nothing else
+>       assert set(blocks) - {"kind", "kindseed", "kindown", "kindorc"} - mixo - flat - oacc - orc == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
+E       AssertionError: the only new labels are the three of this edit
+E       assert {'bankdag', '...dag2arm', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'bankdag'
+E         'dagarm_dry'
+E         'dagname'
+E         'dag2arm_have'
+E         'prepdag'...
+E         
+E         ...Full output truncated (9 lines hidden), use '-vv' to show
+
+stack\tests\test_v8f_lora_ar2.py:758: AssertionError
+_____________ test_reader_missing_inputs_are_rc2_not_a_traceback ______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_reader_missing_inputs_are1')
+no_known = None
+capsys = <_pytest.capture.CaptureFixture object at 0x000002AB8C5E27D0>
+
+    @needs_pkg
+    def test_reader_missing_inputs_are_rc2_not_a_traceback(tmp_path, no_known, capsys):
+        assert R.main(["--stage", "final", "--eval-dir", str(tmp_path), "--runs-dir", str(tmp_path), "--out", str(tmp_path / "o.json")]) == 2
+>       assert "is missing" in capsys.readouterr().err
+E       assert 'is missing' in "MIXO READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Lo...anitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n"
+E        +  where "MIXO READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\AppData\\\\Lo...anitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n" = CaptureResult(out='', err="MIXO READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users...nitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n").err
+E        +    where CaptureResult(out='', err="MIXO READ INPUT ERROR: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users...nitAD Research Lab\\\\Architecture & Inference\\\\Research\\\\2026-10-17-v8f-mini\\\\raw\\\\eval_grid_windows.json'\n") = readouterr()
+E        +      where readouterr = <_pytest.capture.CaptureFixture object at 0x000002AB8C5E27D0>.readouterr
+
+stack\tests\test_v8f_mixo.py:1171: AssertionError
+_ test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_ten_new_ones_are_added _
+
+    @needs_queue
+    @pytest.mark.skipif(_K is None, reason="test_v8f_kind.py (the pre-existing label pins) is not in this checkout")
+    def test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_ten_new_ones_are_added():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 700 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        for label, h in {**_K.PRE_EXISTING, **KIND_PINS}.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            assert "mixo" not in blocks[label].lower() and "code-mix" not in blocks[label], f"{label} mentions the new stages"
+>       assert set(blocks) - FLAT_LABELS - OACC_LABELS - ORC_LABELS == set(_K.PRE_EXISTING) | set(KIND_PINS) | MIXO_LABELS and len(MIXO_LABELS) == 10, "the only new labels are the ten of this edit (and PREREG_V8F_FLAT's, pinned in test_v8f_flat.py)"
+E       AssertionError: the only new labels are the ten of this edit (and PREREG_V8F_FLAT's, pinned in test_v8f_flat.py)
+E       assert ({'bankdag', '...dag2arm', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'bankdag'
+E         'dagarm_dry'
+E         'dagname'
+E         'dag2arm_have'
+E         'prepdag'...
+E         
+E         ...Full output truncated (9 lines hidden), use '-vv' to show)
+
+stack\tests\test_v8f_mixo.py:1354: AssertionError
+____________________ test_queue_mixo_stages_dry_one_lever _____________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_queue_mixo_stages_dry_one0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_stages_dry_one_lever(tmp_path):
+        env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        rc, ln = _dry("gatemixo", env)
+        assert rc == 0 and len(ln) == 1 and "--selfcheck-only" in ln[0] and "gate_M2b-mixo" in ln[0], ln
+        t = _argv_of(ln[0])
+        assert t[t.index("--arm"):t.index("--arm") + 4] == ["--arm", "M2b", "--code-mix", "kind"] and t.count("--code-mix") == 1, ln
+        rc, ln = _dry("trainmixo 1", env)
+        assert rc == 0 and len(ln) == 1, ln
+        t = _argv_of(ln[0])
+        assert t[t.index("--arm") + 1] == "M2b" and t[t.index("--seed") + 1] == "1" and t[t.index("--code-mix") + 1] == "kind" and t.count("--code-mix") == 1, ln
+        assert t[t.index("--grid") + 1] == "pool4x10" and t.count("--grid") == 1 and t[t.index("--out") + 1].endswith("M2b_s1_mixo"), ln
+        assert "--exclude 540:600" in ln[0] and "--kin-mode yaw" in ln[0] and "--steps-mult 4" in ln[0] and "--batch 64" in ln[0], ln
+        for no in ("--w-cons", "--w-tac", "--w-wm", "--hmax", "--steps ", "--p-gt", "--hist", "--window-start"):
+            assert no not in ln[0], f"ONE lever: {no} is not on the line"
+        rc, ev = _dry("evalmixo 0", env)
+>       assert rc == 0 and len(ev) == 7, ev
+E       AssertionError: []
+E       assert (255 == 0)
+
+stack\tests\test_v8f_mixo.py:1424: AssertionError
+_______ test_queue_mixo_real_lines_execute_exactly_the_printed_commands _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_queue_mixo_real_lines_exe0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_real_lines_execute_exactly_the_printed_commands(tmp_path):
+        repo, rec = _H._fake_tree(tmp_path)
+        env = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        env.pop("V8F_DRYRUN", None)
+    
+        def real(args):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=180, encoding="utf-8")
+            assert r.returncode == 0, (args, r.stdout, r.stderr)
+            return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines()] if rec.exists() else []
+    
+        def printed(args):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(env, V8F_DRYRUN="1"), capture_output=True, text=True, timeout=60, encoding="utf-8")
+            return [_argv_of(x)[2:] for x in r.stdout.splitlines() if ".py" in x]       # drop python.exe and the script: sys.argv[1:]
+        want_gate, want_train, want_eval = printed("gatemixo"), printed("trainmixo 1"), printed("evalmixo 1")        # BEFORE the runs: a finished stage prints [skip]
+>       assert len(want_gate) == 1 and len(want_train) == 1 and len(want_eval) == 7
+E       AssertionError: assert (1 == 1 and 1 == 1 and 0 == 7)
+E        +  where 1 = len([['--arm', 'M2b', '--code-mix', 'kind', '--out', 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-81\\test_queue_mixo_real_lines_exe0\\runsm\\gate_M2b-mixo', ...]])
+E        +  and   1 = len([['--arm', 'M2b', '--seed', '1', '--grid', 'pool4x10', ...]])
+E        +  and   0 = len([])
+
+stack\tests\test_v8f_mixo.py:1476: AssertionError
+_ test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-81/test_queue_mixo_real_stages_no0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished(tmp_path):
+        repo, rec = _H._fake_tree(tmp_path)
+        runsm = tmp_path / "runsm"
+        ev = runsm / "eval"
+        base = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(runsm), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        base.pop("V8F_DRYRUN", None)
+    
+        def stage(args, **extra):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(base, **extra), capture_output=True, text=True, timeout=180, encoding="utf-8")
+            return r.returncode, r.stdout
+    
+        def evals():
+            return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines() if '"eval"' in x] if rec.exists() else []
+        rc, out = stage("gatemixo", FAKE_TRAIN="fail")
+        assert rc == 1 and "[FAIL] gate M2b-mixo" in out
+        rc, out = stage("trainmixo 1", FAKE_TRAIN="fail")
+        assert rc == 1 and "[FAIL] train M2b_s1_mixo - see" in out
+        rc, out = stage("trainmixo 1", FAKE_TRAIN="nosummary")                     # a trainer that exits 0 WITHOUT a summary (a crash that swallowed its code)
+        assert rc == 1 and "exited 0 without summary.json" in out
+        rc, out = stage("evalmixo 1")                                              # evaluation refuses a run that has not finished training
+>       assert rc == 2 and "has not finished training" in out and not evals()
+E       assert (255 == 2)
+
+stack\tests\test_v8f_mixo.py:1516: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_grid.py::test_trainer_argv_grid_is_the_array_the_model_trains_on[pool8x20]
+  C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\orcfix_tree\stack\scripts\v8f_mini_train.py:1641: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_grid.py::test_reader_missing_inputs_are_rc2_not_a_traceback
+FAILED stack\tests\test_v8f_kind.py::test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identical
+FAILED stack\tests\test_v8f_kind.py::test_reader_check_inputs_validates_the_banked_side_alone
+FAILED stack\tests\test_v8f_kind.py::test_strata_file_is_the_eval_grids_and_is_pinned_to_its_inputs
+FAILED stack\tests\test_v8f_kind.py::test_strata_file_is_reproduced_by_its_builder_from_the_release
+FAILED stack\tests\test_v8f_kindx_s1.py::test_s0_mode_reproduces_the_banked_deciding_block_exactly
+FAILED stack\tests\test_v8f_lora_ar2.py::test_queue_ar2_every_existing_stage_is_byte_identical
+FAILED stack\tests\test_v8f_mixo.py::test_reader_missing_inputs_are_rc2_not_a_traceback
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_ten_new_ones_are_added
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_stages_dry_one_lever - A...
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_real_lines_execute_exactly_the_printed_commands
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished
+12 failed, 574 passed, 1 skipped, 1 warning in 623.95s (0:10:23)
+rc=1

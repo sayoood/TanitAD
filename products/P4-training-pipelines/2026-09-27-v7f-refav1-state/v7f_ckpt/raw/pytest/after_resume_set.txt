@@ -1,0 +1,16 @@
+# scripts/train_v6_staged.py fa5ef2ba23d5f714 | scripts/launch_gate.py b232aeadaf977bd7 | tests/test_launch_gate_v7f.py 30fd870985ccd7ea
+# env TANITAD_R3_REF_TRAINER=C:/Users/Admin/v7f_ckpt_gate/ref/train_v6_staged_c36b6ddd.py TANITAD_V6_PRE_R1R4=C:/Users/Admin/v7f_ckpt_gate/ref/v6_c36b6ddd.py
+........................................................................ [ 26%]
+........................................................................ [ 53%]
+........................................................................ [ 80%]
+......................................................                   [100%]
+============================== warnings summary ===============================
+tests/test_v6_staged.py::test_modern_predictor_blocks_have_the_vit5_properties
+  C:\Users\Admin\v7f_ckpt\stack\tests\test_v6_staged.py:1260: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(blk.film.to_scale_shift.weight.abs().sum()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+270 passed, 1 warning in 90.89s (0:01:30)
+
+--- stderr ---

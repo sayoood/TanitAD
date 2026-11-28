@@ -1,0 +1,22 @@
+PASS C0 window states reproduce the banked read (k10)
+PASS C0 window states reproduce the banked read (k30)
+PASS C0 banked read reproduced: max |dk141 - banked dk_read.json| over 126 cells
+PASS C0p point values (means, n, n_viol, progress, delta points) reproduce the banked read (bootstrap-free)
+PASS C1 kinematic contract: recomputed human headway vs the block's gt_headway_min_m
+PASS C2b tight-gap rate is over exactly the windows with a defined time gap (n equals the banked human time-gap n)
+PASS C2 the human's own distribution is stated and non-degenerate (headway n>=700, p10<p50<p90)
+PASS C3 STOP headway == independent oracle, all windows, same NaN pattern (k10)
+PASS C4 STOP keeps >= the human's headway on >=99 % of windows where both have one (k10)
+PASS C5 STOP has ZERO TTC violations (min TTC < 1.5 s) (k10)
+PASS C6 STOP has ZERO LEAD-VIOL and progress ratio EXACTLY 0.0, the crawl guard fires (k10)
+PASS C7 THROUGH flags EVERY at-risk lead window (registered LEAD-VIOL) (k10)
+PASS C8 THROUGH: >=99 % of lead windows read min TTC < 1.5 s, and every miss has a SHORT admissible span (<= 4 corridor steps) (k10)
+PASS C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k10)
+PASS C3 STOP headway == independent oracle, all windows, same NaN pattern (k30)
+PASS C4 STOP keeps >= the human's headway on >=99 % of windows where both have one (k30)
+PASS C5 STOP has ZERO TTC violations (min TTC < 1.5 s) (k30)
+PASS C6 STOP has ZERO LEAD-VIOL and progress ratio EXACTLY 0.0, the crawl guard fires (k30)
+PASS C7 THROUGH flags EVERY at-risk lead window (registered LEAD-VIOL) (k30)
+PASS C8 THROUGH: >=99 % of lead windows read min TTC < 1.5 s, and every miss has a SHORT admissible span (<= 4 corridor steps) (k30)
+PASS C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k30)
+ALL PASS

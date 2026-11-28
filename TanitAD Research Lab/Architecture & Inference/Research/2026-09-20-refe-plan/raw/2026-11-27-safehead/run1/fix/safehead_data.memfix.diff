@@ -1,0 +1,27 @@
+--- "F:/TanitAD_safehead_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/safehead_data.py"	2026-11-27 18:09:52.000000000 +0100
++++ F:/TanitAD_safehead_tmp/patched/safehead_data.py	2026-11-27 18:20:53.675844100 +0100
+@@ -182,6 +182,7 @@
+     if require_sealed and any(not r.get("sha256") for r in rows):
+         raise ContractError(f"index {index} is NOT SEALED (a row has no sha256): run `safehead_data.py seal` into the run directory")
+     files: dict = {}
++    memo: dict = {"p": None, "a": {}}
+     hashed: dict = {}
+     tokrow: dict = {}
+     S, LG, PK, PR = [], [], [], []
+@@ -212,8 +213,14 @@
+             i = None
+ 
+         def take(key):
+-            v = _get(z, key)
+-            return v[i] if i is not None else v
++            # MEMORY FIX (run1 launch agent): read each array of a file ONCE (not once per row) and COPY the row, so a row never pins
++            # its whole-file base array (the unpatched view kept ~N_rows x file_size alive: tens of GB on the real cache).
++            if memo["p"] != p:
++                memo["p"], memo["a"] = p, {}
++            if key not in memo["a"]:
++                memo["a"][key] = _get(z, key)
++            v = memo["a"][key]
++            return np.array(v[i]) if i is not None else v
+         one = {"s": np.asarray(take("s"), np.float32), "logits": np.asarray(take("logits"), np.float32), "props": np.asarray(take("props"), np.float32)}
+         for k in Y:
+             one[k] = np.asarray(take(k), np.float32)

@@ -1,0 +1,39 @@
+{
+ "_read": "the trainer's IMPORT-TIME closure of loose scripts/ modules, measured two INDEPENDENT ways. The runtime arm runs in a CLEAN CHILD PROCESS that imports only train_v6_staged -- an earlier attempt measured it in the same process as the AST helper and picked up v6_chain, i.e. the instrument's own import. A closure measurement contaminated by the measurer is exactly the class of error this artifact exists to refute.",
+ "static_module_level_ast": [
+  "stage_a_probes",
+  "train_stage_a",
+  "train_v58f_unicycle_head",
+  "train_v6_staged"
+ ],
+ "runtime_sys_modules_clean_child": [
+  "stage_a_probes",
+  "train_stage_a",
+  "train_v58f_unicycle_head",
+  "train_v6_staged"
+ ],
+ "agree": true,
+ "runbook_step_zero_must_md5": [
+  "tanitad/models/v6.py",
+  "scripts/stage_a_probes.py",
+  "scripts/train_stage_a.py",
+  "scripts/train_v58f_unicycle_head.py",
+  "scripts/train_v6_staged.py"
+ ],
+ "the_old_runbook_listed": [
+  "tanitad/models/v6.py",
+  "scripts/train_v6_staged.py",
+  "scripts/train_v58f_unicycle_head.py"
+ ],
+ "missing_from_the_old_list": [
+  "stage_a_probes",
+  "train_stage_a"
+ ],
+ "consequence": "ModuleNotFound: train_stage_a at launch, after the file-ship and after the md5 verification",
+ "was_it_already_true_at_the_cited_commit": {
+  "commit": "2b8d09e",
+  "answer": "YES -- train_v6_staged.py:114 and :117 carry the same module-level imports there",
+  "method": "git show 2b8d09e:stack/scripts/train_v6_staged.py"
+ },
+ "_evidence_class": "MEASURED (ours) 2026-08-16"
+}

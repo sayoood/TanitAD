@@ -1,0 +1,548 @@
+{
+ "card_sha256": "59f2b7f919af958fd2da9c21f559c0f68db64add84e6fcb70cd5d6c7905c2301",
+ "code_of_record": "0c3b374f (stack/ + taniteval/ exported with core.autocrlf=false)",
+ "phase": "B1",
+ "R2": "Z0, Z1, Z2 and Z-ID run on CPU (CUDA_VISIBLE_DEVICES=-1), fp32, torch.set_num_threads(1); same-code runs are bit-identical there. Nothing was run on a GPU.",
+ "regression_notes": {
+  "first_pass": "regress_new/ (before the resume check and the two old-test anchor fixes)",
+  "rerun_summary_regress_new2": "test_v8f_n1dw rc=0 free_before=10.45GB\ntest_strat1_s1d rc=0 free_before=10.2GB\ntest_strat1_navrbd_check rc=0 free_before=10.19GB\n",
+  "base_tree_summary_regress_base": "pending",
+  "first_pass_failures": {
+   "test_text_encoding_is_explicit": "test_r9_e3_make_argv.py:497,502 (pre-existing, named in the brief)",
+   "test_v8f_launch_intent::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit": "summary keys t2_bank_* (not rb; base run pending)",
+   "test_v8f_flat": "1 test, AttributeError NoneType BAR_2F (missing import in the partial export; base run pending)",
+   "test_v8f_oacc": "2 tests (base run pending)",
+   "test_v8f_ego_dagger_compose": "2 tests incl. ArrayMemoryError ones (rerun after the gate in regress_new2)",
+   "test_strat1_navrbd_check / test_strat1_s1d": "mutation anchors names_d_use_r_files, post_drop_width_clause, kinds_drop_s1d: FIXED (anchors updated), rerun green in regress_new2"
+  }
+ },
+ "controls": {
+  "device": "cpu",
+  "dtype": "float32",
+  "num_threads": 1,
+  "torch": "2.11.0+cu128",
+  "batch": 16,
+  "rb_in_batch": 3,
+  "gt_ok_in_batch": 16,
+  "Z0": {
+   "state_dict_keys": 114,
+   "state_dict_values_equal": true,
+   "loss_terms": [
+    "acc",
+    "ade",
+    "ckpt",
+    "cons",
+    "fde",
+    "goal",
+    "lat",
+    "lon",
+    "pen_LEAD",
+    "pen_SPEED",
+    "pen_STOP",
+    "pen_TURN",
+    "pens_LEAD",
+    "pens_SPEED",
+    "pens_STOP",
+    "pens_TURN",
+    "total"
+   ],
+   "n_terms": 17,
+   "terms_and_outputs_problems": [],
+   "extra_terms": [],
+   "total_equal": true,
+   "built_levers_equal": true
+  },
+  "Z1": {
+   "w_traj": 1.0,
+   "existing_terms_and_outputs_problems": [],
+   "extra_terms": [
+    "rb_traj"
+   ],
+   "rb_traj": 1.0303261280059814,
+   "rb_traj_independent_float64": 1.0303262133299196,
+   "rb_traj_rel_err": 8.281254716536321e-08,
+   "total_w1": 78.29660034179688,
+   "total_w4": 81.3875732421875,
+   "total_diff": 3.090972900390625,
+   "expected_w_traj_x3_x_rb_traj": 3.0909786399897587,
+   "total_diff_rel_err": 1.8568873493626719e-06
+  },
+  "Z2": {
+   "rb_window_w_declared": 4.0,
+   "rb_n": 3,
+   "rb_n_eligible": 3,
+   "rb_eligible": 16,
+   "term_forced": 2.176255702972412,
+   "term_at_unit_weight": null,
+   "contribution": 6.528770446777344,
+   "w_traj_x_wm1_x_term": 6.528767108917236,
+   "head_o_grad_diff": 35.9355583190918,
+   "natural_term": 1.0304231643676758,
+   "natural_contribution": 3.0912704467773438,
+   "natural_head_o_grad_diff": 19.909582138061523,
+   "control_repeat_total_diff": 0.0,
+   "control_repeat_grad_diff": 0.0,
+   "control_allfalse_term": 0.0,
+   "control_allfalse_total_diff": 0.0,
+   "control_allfalse_grad_diff": 0.0,
+   "control_prior_grad_diff": 0.0,
+   "pass": true
+  },
+  "Z_ID": {
+   "w": 4.0,
+   "n_rb_samples": 3,
+   "n_other_samples": 13,
+   "rb_ratio_min": 3.999999523162842,
+   "rb_ratio_max": 4.000000476837158,
+   "rb_max_rel_err_vs_w": 1.1920928955078125e-07,
+   "non_rb_bit_equal": true
+  }
+ },
+ "mutants": [
+  {
+   "mutant": "a_delete_extra_term_line",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "edit": "111 -> 21 chars",
+   "tests": [
+    {
+     "test": "test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+      "1 failed, 1 warning in 6.09s"
+     ]
+    },
+    {
+     "test": "test_z2_probe_term_positive_head_gradient_and_exact_zero_controls",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_z2_probe_term_positive_head_gradient_and_exact_zero_controls",
+      "1 failed in 7.30s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "file_sha256_after_restore": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "b_mask_all_ones",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "42 -> 59 chars",
+   "tests": [
+    {
+     "test": "test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+      "1 failed in 4.64s"
+     ]
+    },
+    {
+     "test": "test_z2_probe_term_positive_head_gradient_and_exact_zero_controls",
+     "rc": 0,
+     "red": false,
+     "tail": [
+      "1 passed in 6.23s"
+     ]
+    }
+   ],
+   "named_test_red": false,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "c_mask_read_at_now_plus_5",
+   "file": "stack/tanitad/data/v8f_mini_data.py",
+   "edit": "75 -> 91 chars",
+   "tests": [
+    {
+     "test": "test_mask_no_future_row_garbage_after_now_leaves_it_unchanged",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_mask_no_future_row_garbage_after_now_leaves_it_unchanged",
+      "1 failed in 5.29s"
+     ]
+    },
+    {
+     "test": "test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_mask_is_c0_of_the_nav_rb_row_at_now_a_bool_per_sample",
+      "1 failed in 4.98s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "de2fbc19d56733ba0a91eecd65ba1a335d9f4e33923f870784459839d43e75ab",
+   "file_sha256_after_restore": "de2fbc19d56733ba0a91eecd65ba1a335d9f4e33923f870784459839d43e75ab",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "d_divide_by_rb_count",
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "edit": "63 -> 61 chars",
+   "tests": [
+    {
+     "test": "test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_z1_w4_vs_w1_every_existing_term_and_output_bit_equal_total_moves_by_exactly_the_term",
+      "1 failed in 6.14s"
+     ]
+    },
+    {
+     "test": "test_zid_per_sample_trajectory_gradient_scales_by_exactly_w_on_rb_and_not_on_others",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_zid_per_sample_trajectory_gradient_scales_by_exactly_w_on_rb_and_not_on_others",
+      "1 failed in 6.45s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "file_sha256_after_restore": "4048801d2a135c01782f1ab9e327a4dd7f850be5e63a29712afd4628da4153dc",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "e_flag_without_gdvb_entry",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "38 -> 0 chars",
+   "tests": [
+    {
+     "test": "test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself",
+      "1 failed in 12.06s"
+     ]
+    },
+    {
+     "test": "test_flag_default_is_one_has_a_flag_check_and_a_wm_only_default",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_flag_default_is_one_has_a_flag_check_and_a_wm_only_default",
+      "1 failed in 3.27s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "f_flag_not_applied_in_make_config",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "199 -> 0 chars",
+   "tests": [
+    {
+     "test": "test_gdvb_passes_an_honoured_argv_and_names_the_flag_in_built_levers",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_gdvb_passes_an_honoured_argv_and_names_the_flag_in_built_levers",
+      "1 failed in 8.37s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  },
+  {
+   "mutant": "g_mask_not_attached_to_the_batch",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "edit": "36 -> 25 chars",
+   "tests": [
+    {
+     "test": "test_end_to_end_n1dw_arm_probe_levers_counts_and_checkpoint",
+     "rc": 1,
+     "red": true,
+     "tail": [
+      "FAILED tests/test_v8f_n1dw.py::test_end_to_end_n1dw_arm_probe_levers_counts_and_checkpoint",
+      "1 failed in 12.28s"
+     ]
+    }
+   ],
+   "named_test_red": true,
+   "any_named_test_red": true,
+   "file_sha256_before": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "file_sha256_after_restore": "3e086b67276da59fc666d186e313d9b9b5a1a58eb1e6a3e47be600dfbcabb3b4",
+   "restored": true,
+   "primary_named_test_red": true
+  }
+ ],
+ "regression_patched_tree": {
+  "test_navtext_nav_rbd": {
+   "tests": 18,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_strat1_n1dw_check": {
+   "tests": 59,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_strat1_navrb2_check": {
+   "tests": 24,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_strat1_navrbd_check": {
+   "tests": 33,
+   "failures": 2,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_strat1_s1d": {
+   "tests": 19,
+   "failures": 1,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_text_encoding_is_explicit": {
+   "tests": 3,
+   "failures": 1,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_ego_dagger_compose": {
+   "tests": 36,
+   "failures": 2,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_flat": {
+   "tests": 263,
+   "failures": 1,
+   "errors": 0,
+   "skipped": 222
+  },
+  "test_v8f_launch_intent": {
+   "tests": 36,
+   "failures": 1,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_n1dw": {
+   "tests": 34,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 1
+  },
+  "test_v8f_navrb2": {
+   "tests": 29,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_navrbd": {
+   "tests": 58,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_navrbd_dagger": {
+   "tests": 2,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_navrbd_eval": {
+   "tests": 16,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 0
+  },
+  "test_v8f_oacc": {
+   "tests": 133,
+   "failures": 2,
+   "errors": 0,
+   "skipped": 94
+  },
+  "test_v8f_window_start": {
+   "tests": 77,
+   "failures": 0,
+   "errors": 0,
+   "skipped": 11
+  }
+ },
+ "regression_base_tree": {},
+ "real_table_mask_agreement": {
+  "table": "navtext_nav_rbd.npz",
+  "sha256": "298049df71dc469874dd2429781c9019c4727b917bc3bd2233314542f6bbc82a",
+  "pairs": 200,
+  "all_equal": true,
+  "p_table_all_rows": 0.064648,
+  "rb_steps": 29836,
+  "train_steps": 461518,
+  "sampled_pair_rb_share": 0.055,
+  "scope": "the mask gather is the expression of V8FMiniWindows.item over the real table's rows (no image cache on this box); item + collate + rb_mask itself is exercised on the synthetic world"
+ },
+ "sampler_replay_N1D_s0": {
+  "n_windows": 306566,
+  "n_clips_trained": 4512,
+  "batch": 64,
+  "seed": 0,
+  "lru": 174,
+  "chunk": 48,
+  "steps": 3000,
+  "epoch_batches": 4810,
+  "run_covers_epoch_share": 0.6237006237006237,
+  "p_table_all_rows": 0.06464753299951553,
+  "one_epoch": {
+   "batches": 4810,
+   "rows": 306566,
+   "rb_rows": 20779,
+   "p": 0.06777985817083435,
+   "batches_with_no_rb": 352,
+   "share_batches_with_no_rb": 0.07318087318087318,
+   "rb_count_per_batch": {
+    "0": 352,
+    "1": 498,
+    "2": 573,
+    "3": 714,
+    "4": 654,
+    "5": 542,
+    "6": 442,
+    "7": 376,
+    "8": 233,
+    "9": 151,
+    "10": 95,
+    "11": 85,
+    "12": 43,
+    "13": 18,
+    "14": 16,
+    "15": 6,
+    "16": 5,
+    "17": 1,
+    "18": 2,
+    "19": 3,
+    "21": 1
+   },
+   "mean_rb_per_batch": 4.31995841995842,
+   "min_rb_per_batch": 0,
+   "max_rb_per_batch": 21,
+   "leftover_batches": 86,
+   "leftover_sizes": [
+    1,
+    2,
+    3,
+    4,
+    7,
+    52,
+    53,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63
+   ],
+   "leftover_batches_with_no_rb": 20,
+   "k_share_w2": 0.12695474193893297,
+   "k_share_w4": 0.22530583920434374
+  },
+  "first_steps_batches": {
+   "batches": 3000,
+   "rows": 191203,
+   "rb_rows": 12858,
+   "p": 0.06724789883003927,
+   "batches_with_no_rb": 227,
+   "share_batches_with_no_rb": 0.07566666666666666,
+   "rb_count_per_batch": {
+    "0": 227,
+    "1": 291,
+    "2": 369,
+    "3": 455,
+    "4": 404,
+    "5": 348,
+    "6": 274,
+    "7": 238,
+    "8": 142,
+    "9": 95,
+    "10": 55,
+    "11": 44,
+    "12": 25,
+    "13": 14,
+    "14": 11,
+    "15": 2,
+    "16": 2,
+    "17": 1,
+    "18": 1,
+    "19": 1,
+    "21": 1
+   },
+   "mean_rb_per_batch": 4.286,
+   "min_rb_per_batch": 0,
+   "max_rb_per_batch": 21,
+   "leftover_batches": 54,
+   "leftover_sizes": [
+    1,
+    2,
+    3,
+    4,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63
+   ],
+   "leftover_batches_with_no_rb": 14,
+   "k_share_w2": 0.12602114073732856,
+   "k_share_w4": 0.22383441336600268
+  }
+ },
+ "hops_patched_tree": {
+  "flag": "v8f_mini_train.py:186 (--rb-window-w, default 1.0)",
+  "make_config": "v8f_mini_train.py:484",
+  "FLAG_CHECKS": "v8f_mini_train.py:130",
+  "cfg+validator": "v8f_mini.py:258,295",
+  "G-DVB clauses": "v8f_mini_train.py:1975-1985 and cfg loop 1999",
+  "mask": "rb_mask v8f_mini_train.py:2433 = nav_rb[:, -1, 0] > 0.5; nav_rb [B,hmax,W] from v8f_mini_data.py:869 (item) and :920 (collate); NOW = last index = last_now = Fn-1 at v8f_mini.py:1105, run_o -> _nav_tok(b, last_o) at :936",
+  "loop": "rmask = rb_mask(b) :4196 (before stages) -> b['rb']=rmask :4237 -> model.loss",
+  "loss": "rb_traj_terms v8f_mini.py:576; term :1273-1277; total line :1337; built_levers :1421",
+  "backward": "T['total'].backward() v8f_mini_train.py:4273 region, clip_grad_norm_ at :4273",
+  "probe": "rb_window_probe :2449, wired :4006, probe batch :3928",
+  "K-CLIP source": "--clip-grad default 1.0 at v8f_mini_train.py:334; clip_grad_norm_ returns the pre-clip norm, logged as grad_norm (tip :4125-4135)",
+  "resume cfg check": "after the argv-sha refusal in the resume block (test_resume_refuses_a_checkpoint_whose_cfg_weight_differs_from_the_argv passes; its mutant not run)"
+ },
+ "K_CLIP": "kclip.py written and smoke-tested; N1D_s0/s1 train logs are NOT on the dev box (searched F:/TanitAD-scratch/strat1): left for B2",
+ "card_vs_brief": "none found. Extra: rb_n_eligible counted beside rb_n so rb_weight_share is exact over GT-valid samples."
+}

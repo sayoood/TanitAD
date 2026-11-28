@@ -1,0 +1,23 @@
+  [timing] run: tree_manifest 0.7s, data_manifest 0.0s (--targets 0.0s, --images 0.0s, --calib 0.0s, --metric-cache 0.0s)
+  G-HYG     FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-DVB     FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-LIVE    FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-CLOCK   FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-EVAL    FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-CKPT    FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-SUITE   FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-LIVE-LAB FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-LIVE-MEM FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-EGR     FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  G-RESERVE FAIL  profile refusal: refe_p7 requires --w-aux-drv 0.1; the argv does not carry it
+  [timing] finalize: tree_manifest 0.6s, data_manifest 0.0s (--targets 0.0s, --images 0.0s, --calib 0.0s, --metric-cache 0.0s)
+ZZP7HEAD mutation table (each arm: a real gate run on a temp copy of the tree; RED = the check FAILS with the named reason)
+  PASS   CONTROL: the unmutated trainer: G-DVB PASS, G-LIVE PASS
+  RED    M1 delete the line that adds L_aux to the total loss (plain backward site): G-DVB FAIL (--w-aux-drv: declared 0.1 != built None (the multiplier measured at the graph: d(loss)/d(L_aux) x accum on 0 o); G-LIVE FAIL (only 0 of 43 head tensors received a gradient (the rest have no autograd path))
+  RED    M2 default weight 0.0, --w-aux-drv omitted from the argv (profile requires it): G-DVB FAIL (profile refusal: refe_rehearsal_p7 requires --w-aux-drv 0.1; the argv does not carry it); G-LIVE FAIL (profile refusal: refe_rehearsal_p7 requires --w-aux-drv 0.1; the argv does not carry it)
+  RED    M2b ... and on a profile WITHOUT that requirement the trainer's own refusal stops it: G-DVB FAIL (the BUILD run did not reach the optimiser: rc=4 ); G-LIVE FAIL (the SMOKE trainer run did not finish: rc=4 )
+  RED    M3 drop the head's param group from the optimiser: G-LIVE FAIL (43 of 43 head tensors are NOT held by the optimiser (the head's param group was dropped: it computes a gradien)
+  RED    M4 tap scene_ctx instead of visual_ctx: G-DVB FAIL (--aux-drv-tap: declared 'visual' != built 'scene' (the storage the head's input IS, on 4 forwards: scene_proj')
+  RED    M5 flag on, head not built: G-DVB FAIL (--aux-drv: declared True != built False (an AuxDrivable is constructed iff --aux-drv))
+  RED    M6 build 1 block instead of 2: G-DVB FAIL (--aux-drv-depth: declared 2 != built 1 (AuxDrivable.built_facts(): the CrossBlocks the head holds))
+ZZP7HEAD_PASS 187

@@ -1,0 +1,98 @@
+{
+ "arms": {
+  "A": {
+   "bit_equal_to_p2": 0,
+   "by_module": {
+    "score_dec": {
+     "bit_equal": 0,
+     "max_abs_diff": 0.0290265791118145,
+     "tensors": 72
+    },
+    "score_q_mlp": {
+     "bit_equal": 0,
+     "max_abs_diff": 0.018480971455574036,
+     "tensors": 4
+    }
+   },
+   "max_abs_diff": 0.0290265791118145,
+   "score_head_shape": [
+    7,
+    256
+   ],
+   "shape_mismatches": [
+    [
+     "score_head.weight",
+     [
+      6,
+      256
+     ],
+     [
+      7,
+      256
+     ]
+    ],
+    [
+     "score_head.bias",
+     [
+      6
+     ],
+     [
+      7
+     ]
+    ]
+   ],
+   "tensors_compared": 76
+  },
+  "B": {
+   "bit_equal_to_p2": 0,
+   "by_module": {
+    "score_dec": {
+     "bit_equal": 0,
+     "max_abs_diff": 0.03098590299487114,
+     "tensors": 72
+    },
+    "score_q_mlp": {
+     "bit_equal": 0,
+     "max_abs_diff": 0.01685500144958496,
+     "tensors": 4
+    }
+   },
+   "max_abs_diff": 0.03098590299487114,
+   "score_head_shape": [
+    7,
+    256
+   ],
+   "shape_mismatches": [
+    [
+     "score_head.weight",
+     [
+      6,
+      256
+     ],
+     [
+      7,
+      256
+     ]
+    ],
+    [
+     "score_head.bias",
+     [
+      6
+     ],
+     [
+      7
+     ]
+    ]
+   ],
+   "tensors_compared": 76
+  }
+ },
+ "conclusion": "V1's rows do NOT apply to S0's feat: the RL scorer is a 7-output head on a re-trained scorer decoder; none of the shared score_q_mlp / score_dec tensors equals P2's, so the 256-d pre-head feature differs from S0's `feat`.",
+ "p2_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "p2_score_head_shape": [
+  6,
+  256
+ ],
+ "rl_states": "C:/Users/Admin/par18/rl/r0d_dl/r0d/scorer_states/scorer_states_u1000.pt",
+ "rl_states_sha256": "49e17854bdbdbefe281103c37faa87df8bd5a1129a4f99bb2427a41b06a46f6c"
+}

@@ -1,0 +1,39 @@
+{
+ "_class": "ESTIMATED (linear scaling of MEASURED warmup per-scene costs; 1 process, sequential worker)",
+ "navhard_counts_MEASURED_from_yaml": {
+  "stage_one": 450,
+  "stage_two": 5462,
+  "logs": 76
+ },
+ "warmup_measured": {
+  "cache_stage_one_s": {
+   "n": 16,
+   "mean": 2.4314666666666667,
+   "median": 2.8695000000000004
+  },
+  "cache_stage_two_s": {
+   "n": 204,
+   "mean": 2.301078431372549,
+   "median": 2.097
+  },
+  "cache_first_scene_s_incl_map_load": 4.309,
+  "cache_wall_s": 551.78,
+  "cache_peak_rss_mb": 382.5,
+  "scoring_A1": {
+   "n_calls": 220,
+   "median_gap_s": 2.001999855041504,
+   "mean_gap_s": 2.209785388484937,
+   "pdm_score_s_mean_s1": 2.393625,
+   "pdm_score_s_mean_s2": 0.8537906862745098,
+   "wall_s": 532.1,
+   "peak_rss_mb": 508.0
+  }
+ },
+ "estimate": {
+  "cache_cpu_h": 3.8,
+  "score_per_agent_h": 3.63,
+  "cache_plus_cv_plus_human_h_upper": 11.05,
+  "_human_note": "upper bound: the human agent fails fast on stage 2 (no future frames), so its real cost is ~ N1/(N1+N2) of this",
+  "one_off_not_scaled": "import (~20-30 s on C:) + map load per process; data copy to C: mirror"
+ }
+}

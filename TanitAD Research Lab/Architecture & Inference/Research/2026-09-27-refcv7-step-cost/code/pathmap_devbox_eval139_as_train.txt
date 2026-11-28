@@ -1,0 +1,11 @@
+# refcv7 step-cost harness: Thor path -> dev-box path.
+# The TRAIN cache is replaced by the eval139 cache ON PURPOSE: the dev box has no 10 cm map GT for
+# the train-a6 clips (0/139 sha12 hits in sam3_gt_v3_eval), so a train-a6 run would read ALL-255
+# map targets and skip the npz decompress -- an unrepresentative loader. eval139 has 137/139 hits.
+# This is a TIMING rig, not a training run: nothing it produces is a model result.
+/home/nvidia/data/refcv6-b1-416x1024-train=D:/refcv6_eval_kit/data/refcv6-b1-416x1024-eval139
+/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz=D:/refcv6_eval_kit/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz
+/home/nvidia/data/refcv6_speed_max_v8_train.jsonl=D:/refcv6_eval_kit/data/refcv6_speed_max_v8_eval.jsonl
+/home/nvidia/data/sam3_gt_v3=D:/refcv6_eval_kit/data/sam3_gt_v3_eval
+/home/nvidia/data/sam3_corpus=D:/refcv6_eval_kit/data/sam3_gt_eval_thor137
+/home/nvidia/data=D:/refcv6_eval_kit/data

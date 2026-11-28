@@ -1,0 +1,51 @@
+19c19,22
+< SP = "C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/a085b71c-4fb3-409b-ae6b-65f605ed575e/scratchpad"
+---
+> # A1 (TF-N1 amendment 1): the harness working directory is the BANKED, sha256-pinned eval/harness/ of the tree this file sits in
+> # (was: a deleted %TEMP% scratchpad). The score output root is an argument (was: E:/Projects/TanitAD/data/refe_navtest).
+> HERE = os.path.dirname(os.path.abspath(__file__))
+> SP = os.path.join(HERE, "harness")
+21c24,48
+< D = "E:/Projects/TanitAD/data/refe_navtest"
+---
+> D = os.environ.get("TFN1_A1_SCORE_ROOT", "")
+> 
+> 
+> def _lf_sha(path):
+>     import hashlib
+>     b = open(path, "rb").read()
+>     return hashlib.sha256(b.replace(b"\r\n", b"\n")).hexdigest()
+> 
+> 
+> def preflight() -> None:
+>     """A1 guards: (1) harness bytes == HARNESS_PINS (harness_pins.verify); (2) score_e.py loads its caller from the hard-coded
+>     E:/Projects/TanitAD/... PKG path, so that file must be byte-identical (LF-normalised) to THIS tree's copy; (3) interpreter exists."""
+>     sys.path.insert(0, HERE)
+>     import harness_pins
+>     v = harness_pins.verify(root=harness_pins.Path(SP), caller=harness_pins.Path(HERE) / "score_navtest_refe.py")
+>     if not v.get("ok"):
+>         sys.exit("A1-PREFLIGHT REFUSED: harness pins do not hold: " + json.dumps(v, default=str)[:600])
+>     src = open(os.path.join(SP, "score_e.py"), encoding="utf-8").read()
+>     import re
+>     m = re.search(r'^PKG = "([^"]+)"', src, re.M)
+>     ec = (m.group(1) + "/eval/score_navtest_refe.py") if m else None
+>     if not ec or not os.path.isfile(ec) or _lf_sha(ec) != _lf_sha(os.path.join(HERE, "score_navtest_refe.py")):
+>         sys.exit(f"A1-PREFLIGHT REFUSED: score_e.py's caller {ec} is missing or differs from {HERE}/score_navtest_refe.py")
+>     if not os.path.isfile(PY_D):
+>         sys.exit(f"A1-PREFLIGHT REFUSED: {PY_D} missing")
+39a67,68
+>     ap.add_argument("--score-root", default=None, help="A1: output root; the CSV lands in <root>/score/<label>/<label>.csv "
+>                                                          "(default $TFN1_A1_SCORE_ROOT)")
+44a74,81
+>     global D
+>     a.seam = os.path.abspath(a.seam)                      # A1: the harness runs with cwd = eval/harness, so relative paths would break
+>     a.tokens = a.tokens if a.tokens == "all" else os.path.abspath(a.tokens)
+>     a.log_dir = os.path.abspath(a.log_dir)
+>     D = a.score_root or D
+>     if not D:
+>         sys.exit("A1: --score-root (or $TFN1_A1_SCORE_ROOT) is required")
+>     preflight()
+63c100
+<                         ["--out", f"{D}/score"], cwd=SP, env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+---
+>                         ["--out", f"{D}/score"], cwd=SP, env=dict(os.environ, PYTHONIOENCODING="utf-8", RUN_V1_FIX1_ALLOW_DRIFT="1"),   # A1: as stage2_sft.py:191; the repointed run_v1.py differs from W3's original by the drive roots only

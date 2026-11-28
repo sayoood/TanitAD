@@ -1,0 +1,16 @@
+..........F...........                                                   [100%]
+================================== FAILURES ===================================
+______________________ test_subfloor_delta_is_not_a_gain ______________________
+
+    def test_subfloor_delta_is_not_a_gain():
+        sub = (-0.005, 0.0, 0.4, 0.01)                      # |delta| 0.005 < floor 0.01, yet the paired interval separates it
+        per, o = lever("BAL-G", (sub, sub))
+        c = per[0]["P_cell"]
+>       assert c["separated"] and c["delta"] < 0 and not c["above_floor"], c
+E       AssertionError: {'status': 'OK', 'delta': -0.004999999999999671, 'lo': -0.005, 'hi': -0.005, ...}
+E       assert (True and -0.004999999999999671 < 0 and not True)
+
+test_stopbal_read.py:120: AssertionError
+=========================== short test summary info ===========================
+FAILED test_stopbal_read.py::test_subfloor_delta_is_not_a_gain - AssertionErr...
+1 failed, 21 passed in 1.75s

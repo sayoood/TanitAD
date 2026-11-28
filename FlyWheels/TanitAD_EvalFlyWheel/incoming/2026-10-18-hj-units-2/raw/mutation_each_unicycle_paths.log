@@ -1,0 +1,63 @@
+### units (-k test_a_ or test_a2_ or test_g_omitted or test_g2_unit or test_h_cli)
+......F....F.....                                                        [100%]
+================================== FAILURES ===================================
+_____ test_g_omitted_units_raises_TypeError[refa_v1_plan.unicycle_paths] ______
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x000001BCD03F7240>, <function unicycle_...urfaces.<locals>.<lambda> at 0x000001BCD03F7420>, <function RefAV1._imagine_tactical_goal at 0x000001BCD0310EA0>), ...}
+name = 'refa_v1_plan.unicycle_paths'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g_omitted_units_raises_TypeError(new_live, name):
+        call, _ = new_live[name]
+>       assert _omission_rejected_for(call, _NEW_PARAM[name]), (
+            name + ": a call without " + _NEW_PARAM[name] + " must raise TypeError")
+E       AssertionError: refa_v1_plan.unicycle_paths: a call without action_units must raise TypeError
+E       assert False
+E        +  where False = _omission_rejected_for(<function _new_surfaces.<locals>.<lambda> at 0x000001BCD03F7240>, 'action_units')
+
+tests\test_refav1_units_required.py:686: AssertionError
+_ test_g2_unit_parameter_is_keyword_only_with_no_default[refa_v1_plan.unicycle_paths] _
+
+new_live = {'refa_v1_plan.unicycle_paths': (<function _new_surfaces.<locals>.<lambda> at 0x000001BCD03F7240>, <function unicycle_...urfaces.<locals>.<lambda> at 0x000001BCD03F7420>, <function RefAV1._imagine_tactical_goal at 0x000001BCD0310EA0>), ...}
+name = 'refa_v1_plan.unicycle_paths'
+
+    @pytest.mark.parametrize("name", _NEW_NAMES)
+    def test_g2_unit_parameter_is_keyword_only_with_no_default(new_live, name):
+        _, fn = new_live[name]
+        prm = inspect.signature(fn).parameters[_NEW_PARAM[name]]
+>       assert prm.default is inspect.Parameter.empty, (name, prm.default)
+E       AssertionError: ('refa_v1_plan.unicycle_paths', 'kappa')
+E       assert 'kappa' is <class 'inspect._empty'>
+E        +  where 'kappa' = <Parameter "action_units: 'str' = 'kappa'">.default
+E        +  and   <class 'inspect._empty'> = <class 'inspect.Parameter'>.empty
+E        +    where <class 'inspect.Parameter'> = inspect.Parameter
+
+tests\test_refav1_units_required.py:694: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_g_omitted_units_raises_TypeError[refa_v1_plan.unicycle_paths]
+FAILED tests/test_refav1_units_required.py::test_g2_unit_parameter_is_keyword_only_with_no_default[refa_v1_plan.unicycle_paths]
+2 failed, 15 passed, 104 deselected in 4.17s
+
+### pinned files (full)
+.....F................................                                   [100%]
+================================== FAILURES ===================================
+_ test_B2_unicycle_paths_REQUIRES_action_units_and_stated_kappa_is_bit_identical_to_the_old_call _
+
+    def test_B2_unicycle_paths_REQUIRES_action_units_and_stated_kappa_is_bit_identical_to_the_old_call():
+        """HJ-UNITS-2 (2026-10-18): the ``"kappa"`` default is gone. Omitting the unit raises
+        TypeError; the STATED legacy value is still bit-identical to the raw integrator."""
+        import inspect
+        c = _ctrl(n=6)
+        v0 = torch.tensor([9.0])
+        state0 = torch.zeros(6, 4)
+        state0[:, 3] = 9.0
+        legacy = rollout_unicycle(state0, c, dt=DT)[..., :2]
+>       with pytest.raises(TypeError, match="action_units"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE TypeError
+
+tests\test_steer_curvature_interface.py:146: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_steer_curvature_interface.py::test_B2_unicycle_paths_REQUIRES_action_units_and_stated_kappa_is_bit_identical_to_the_old_call
+1 failed, 37 passed in 6.86s
+

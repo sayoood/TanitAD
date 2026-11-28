@@ -1,0 +1,284 @@
+{
+ "o4": {
+  "default": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_w_rule_own": null,
+   "levers_rule_relabel_weight": null,
+   "own_keys_present": [],
+   "probe": null,
+   "info_rule_own": null,
+   "PASS": true
+  },
+  "GOW": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_w_rule_own": 1.0,
+   "levers_rule_relabel_weight": null,
+   "own_keys_present": [
+    "w_rule_own",
+    "rule_own_rule",
+    "rule_own",
+    "rule_own_probe"
+   ],
+   "probe": {
+    "rule_own": "on",
+    "w_rule_own": 1.0,
+    "term": 425.5323791503906,
+    "n_rows": 64,
+    "n_lead": 50,
+    "n_active": 50,
+    "grad_norm_term_on_traj30": 34.21853256225586,
+    "grad_norm_traj_loss_on_traj30": 0.5090994238853455,
+    "total_before": 100.89950561523438,
+    "total_after": 526.431884765625,
+    "total_delta": 425.5323791503906,
+    "control_same_call_term_diff": 0.0,
+    "control_all_false_term": 0.0,
+    "control_all_false_n_lead": 0,
+    "control_all_false_requires_grad": false,
+    "reach_visible": true,
+    "pass": true
+   },
+   "info_rule_own": 1.0,
+   "gate_extra_right": {
+    "rc": 0,
+    "out": "extra token written F:/TanitAD-scratch/v8proof/ruletrain2/work/tmp/r3o4_extra_token.json",
+    "expect": [
+     "levers.wm_state=grid",
+     "levers.w_rule_own=1"
+    ]
+   },
+   "gate_extra_wrong": {
+    "levers.w_rule_own=2": {
+     "rc": 1
+    },
+    "levers.w_rule_own=0": {
+     "rc": 1
+    }
+   },
+   "PASS": true
+  },
+  "GOW4_RT": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_w_rule_own": 4.0,
+   "levers_rule_relabel_weight": null,
+   "own_keys_present": [
+    "w_rule_own",
+    "rule_own_rule",
+    "rule_own",
+    "rule_own_probe"
+   ],
+   "probe": {
+    "rule_own": "on",
+    "w_rule_own": 4.0,
+    "term": 425.5323791503906,
+    "n_rows": 64,
+    "n_lead": 50,
+    "n_active": 50,
+    "grad_norm_term_on_traj30": 136.87413024902344,
+    "grad_norm_traj_loss_on_traj30": 0.5090994238853455,
+    "total_before": 100.89950561523438,
+    "total_after": 1803.029052734375,
+    "total_delta": 1702.1295166015625,
+    "control_same_call_term_diff": 0.0,
+    "control_all_false_term": 0.0,
+    "control_all_false_n_lead": 0,
+    "control_all_false_requires_grad": false,
+    "reach_visible": true,
+    "pass": true
+   },
+   "info_rule_own": 4.0,
+   "gate_extra_right": {
+    "rc": 0,
+    "out": "extra token written F:/TanitAD-scratch/v8proof/ruletrain2/work/tmp/r3o4_extra_token.json",
+    "expect": [
+     "levers.w_rule_own=4",
+     "levers.rule_relabel=on"
+    ]
+   },
+   "gate_extra_wrong": {
+    "levers.w_rule_own=2": {
+     "rc": 1
+    },
+    "levers.w_rule_own=0": {
+     "rc": 1
+    }
+   },
+   "PASS": true
+  },
+  "GRW": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_w_rule_own": null,
+   "levers_rule_relabel_weight": 4.0,
+   "own_keys_present": [
+    "rule_relabel_weight",
+    "rule_relabel_weight"
+   ],
+   "probe": null,
+   "info_rule_own": null,
+   "gate_extra_right": {
+    "rc": 0,
+    "out": "extra token written F:/TanitAD-scratch/v8proof/ruletrain2/work/tmp/r3o4_extra_token.json",
+    "expect": [
+     "levers.rule_relabel=on",
+     "levers.rule_relabel_weight=4"
+    ]
+   },
+   "gate_extra_wrong": {
+    "levers.rule_relabel_weight=2": {
+     "rc": 1
+    }
+   },
+   "PASS": true
+  },
+  "refusals": {
+   "own_with_ego_perturb": {
+    "rc": 1,
+    "refused": true,
+    "tail": "ZZDVB-REFUSEDZZ declared-vs-built: w_rule_own > 0 with --ego-perturb-p 0.5: the rule is applied to the LOGGED frame, which that stage rewrites "
+   },
+   "own_with_recover": {
+    "rc": 1,
+    "refused": true,
+    "tail": " deviations come from; --recover-dev-bank-sha256 is required when --recover-p is 0.5 with the empirical law: the arm must declare which bank it draws from; w_rule_own > 0 with --recover-p 0.5: the rule is applied to the LOGGED frame, which that stage rewrites "
+   },
+   "own_with_dagger": {
+    "rc": 1,
+    "refused": true,
+    "tail": " to the LOGGED frame, which that stage rewrites; DAgger swap: dagger_p 0.5 > 0 but no bank is loaded; --dagger-bank-sha256 is required when --dagger-p is 0.5 (DAG names all four flags, PREREG_V8F_DAGGER section 4): the arm must declare which bank it trains on "
+   },
+   "weight_without_relabel": {
+    "rc": 1,
+    "refused": true,
+    "tail": "ZZDVB-REFUSEDZZ declared-vs-built: rule_relabel_weight 4.0 needs --rule-relabel on (the weight is on the samples the relabel changed) "
+   },
+   "negative_own": {
+    "rc": 1,
+    "refused": true,
+    "tail": "bel arrays)   File \"F:\\TanitAD-scratch\\v8proof\\ruletrain2\\work\\tree_patch\\stack\\tanitad\\data\\rule_own.py\", line 34, in __init__     raise ValueError(f\"w_rule_own must be finite and >= 0, got {w_own!r}\") ValueError: w_rule_own must be finite and >= 0, got -1.0 "
+   },
+   "own_on_a_join_with_no_lead_rows": {
+    "rc": 1,
+    "refused": true,
+    "tail": "n_pres = 0: no label lead rows (a lever that is declared and does nothing); rule_own labels: n_gap = 0: no label lead rows (a lever that is declared and does nothing); rule_own labels: n_clos = 0: no label lead rows (a lever that is declared and does nothing) "
+   }
+  },
+  "train_log": {
+   "off": {
+    "n_lines": 4,
+    "rule_own_or_weighted_keys": []
+   },
+   "own": {
+    "n_lines": 4,
+    "rule_own_or_weighted_keys": [
+     "rule_own_n_active",
+     "rule_own_n_lead",
+     "rule_own_term"
+    ],
+    "term_finite_all": true,
+    "n_lead_per_line": [
+     7,
+     7,
+     8,
+     7
+    ],
+    "n_active_per_line": [
+     7,
+     7,
+     8,
+     7
+    ],
+    "term_per_line": [
+     311.9550476074219,
+     446.78582763671875,
+     165.04759216308594,
+     598.9840698242188
+    ]
+   },
+   "own4": {
+    "n_lines": 4,
+    "rule_own_or_weighted_keys": [
+     "rule_own_n_active",
+     "rule_own_n_lead",
+     "rule_own_term"
+    ]
+   },
+   "wt": {
+    "n_lines": 4,
+    "rule_own_or_weighted_keys": [
+     "rule_relabel_weighted_n"
+    ],
+    "weighted_n_per_line": [
+     2,
+     1,
+     2,
+     2
+    ]
+   },
+   "rt": {
+    "n_lines": 4,
+    "rule_own_or_weighted_keys": []
+   },
+   "own_total_minus_off_total": [
+    311.95506286621094,
+    446.78855895996094,
+    165.05635833740234,
+    599.0032653808594
+   ],
+   "wt_total_minus_rt_total": [
+    1.0705642700195312,
+    1.3951950073242188,
+    5.4593963623046875,
+    5.7162322998046875
+   ],
+   "PASS": true
+  },
+  "PASS": true
+ },
+ "o5": {
+  "eval_tool_sha256": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "eval_tool_sha256_is_pinned": true,
+  "ckpts": {
+   "own": {
+    "strict_load": "<All keys matched successfully>",
+    "cfg_keys_equal_base": true,
+    "cfg_values_equal_base": true,
+    "state_keys_equal_base": true,
+    "extra_top_level_keys_vs_base": [
+     "rule_own_totals"
+    ],
+    "init_ckpt_n_mismatch": 0
+   },
+   "own4": {
+    "strict_load": "<All keys matched successfully>",
+    "cfg_keys_equal_base": true,
+    "cfg_values_equal_base": true,
+    "state_keys_equal_base": true,
+    "extra_top_level_keys_vs_base": [
+     "rule_own_totals"
+    ],
+    "init_ckpt_n_mismatch": 0
+   },
+   "wt": {
+    "strict_load": "<All keys matched successfully>",
+    "cfg_keys_equal_base": true,
+    "cfg_values_equal_base": true,
+    "state_keys_equal_base": true,
+    "extra_top_level_keys_vs_base": [
+     "rule_relabel_totals",
+     "rule_relabel_weight_totals"
+    ],
+    "init_ckpt_n_mismatch": 0
+   }
+  },
+  "PASS": true
+ },
+ "PASS": true
+}

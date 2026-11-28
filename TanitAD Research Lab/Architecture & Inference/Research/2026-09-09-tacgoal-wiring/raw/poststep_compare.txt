@@ -1,0 +1,10 @@
+n_shared_tensors     : 167
+
+--- POST-STEP: patched-OFF vs HEAD  (must be 0) ---
+  n_differing        : 0
+  loss_bitwise_equal : True
+
+--- POST-STEP: patched-ON vs HEAD   (must be >0, else blind) ---
+  n_differing        : 68
+  first 6 differing  : ['core.encoder.stages.0.0.bn1.bias', 'core.encoder.stages.0.0.bn1.weight', 'core.encoder.stages.0.0.bn2.bias', 'core.encoder.stages.0.0.bn2.weight', 'core.encoder.stages.0.0.conv1.weight', 'core.encoder.stages.0.0.conv2.weight']
+  tac_goal_tok_head moved: ['tac_goal_tok_head.net.bias', 'tac_goal_tok_head.net.weight']

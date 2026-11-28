@@ -1,0 +1,17 @@
+===== v2-cache end-to-end training smoke: hier, B1-format clips, 2 steps =====
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['C:/Users/Admin/refav1_probe/eps'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] C:/Users/Admin/refav1_probe/eps: 24 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 24 distinct for 24 clips]
+[v2] 24 providers, 24 distinct episode ids
+[v3] 24 lazy v2 providers from ['C:/Users/Admin/refav1_probe/eps'] (lru 6)
+[v3] 24 episodes -> 4102 windows (window 8, max_horizon 20, image_hw (256, 640), tac_vocab kin3)
+[v3:hier] step 1 loss 123.2798 traj 17.0691
+[v3:hier] step 2 loss 116.7878 traj 15.3695
+[v3:hier] DONE at 2 — summary.json written
+EXIT=0
+===== anchor builder v2 smoke (B1-format, 8-slot horizons) =====
+[v2] C:/Users/Admin/refav1_probe/eps: 24 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 24 distinct for 24 clips]
+[v2] 24 providers, 24 distinct episode ids
+{"saved": "C:\\Users\\Admin\\tanitad-wt\\v3b1smoke-01\\anchors_6s_20.pt", "shape": [20, 8, 2], "method": "fps", "horizons": [5, 10, 15, 20, 30, 40, 50, 60], "n_anchors": 20, "pool_size": 3334, "source": "v2-cache ['C:/Users/Admin/refav1_probe/eps'] (24 clips)", "seed": 0}
+EXIT=0
+
+[exited with code 0]

@@ -1,0 +1,48 @@
+# LANDING_READY — refcv6 semantic-map video at step 35,000 (EvalFlyWheel). Paths are repo-relative.
+# Nothing here is staged or committed. The Master Mind lands it through the guarded lander.
+# NOT landable, because *.mp4 is gitignored (.gitignore:24); these exist on the D: working tree only:
+#   FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/refcv6_map_step35000.mp4        (20,613,316 B)
+#   FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/smoke/refcv6_map_step35000_smoke.mp4  (424,669 B)
+
+## 2026-09-26 batch 1
+taniteval/tools/render_refcv6_map_video.py
+taniteval/tools/RENDER_REFCV6_MAP_VIDEO.md
+taniteval/tests/test_render_refcv6_map_video.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/LANDING_READY.txt
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/code/orientation_control.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/code/unit_test_mutation_check.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/clip_selection.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/contact_sheet.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/per_frame.jsonl
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/per_clip.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/render_record.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/orientation_control.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/RENDER_DONE.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/render_gpu.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/smoke_cpu.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/unit_test.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/unit_test_mutation_check.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/smoke/contact_sheet_smoke.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/smoke/per_clip_smoke.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/smoke/per_frame_smoke.jsonl
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/smoke/render_record_smoke.json
+
+## 2026-09-26 batch 2 (caption correction: the step-35,000 video's "bottom 43 rows ZEROED inside the trunk" is false -- D-REFCV6-EQUALIZE-DROPPED; the renderer gained --boxes / --dump-map / --gpu-smoke, used by the 2026-09-26-refcv6-boxes-video and -map-class-analysis packages)
+taniteval/tools/render_refcv6_map_video.py
+taniteval/tools/RENDER_REFCV6_MAP_VIDEO.md
+taniteval/tests/test_render_refcv6_map_video.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/code/fix_equalize_caption.py
+
+## 2026-09-27 batch 3 (the caption correction RAN: 513 frames, 0 pixels outside the box, the mp4 re-encoded and decoded back 588/588;
+##   the renderer now carries the box-head audit's cuboid_edge_runs patch VERBATIM -- sampled, border-clipped cuboid edges --
+##   from TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/patch_draw_cuboid/, md5 e5890efb...;
+##   the renderer + GT-tool unit tests pass 24/24)
+taniteval/tools/render_refcv6_map_video.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/code/fix_equalize_caption.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/caption_fix_record.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/caption_fix.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-map-video/raw/logs/pytest_renderers.log
+taniteval/tools/RENDER_REFCV6_MAP_VIDEO.md

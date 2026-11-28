@@ -1,0 +1,2035 @@
+{
+ "tier": "NavSim open-loop benchmark (T1-family), zero-shot PhysicalAI-AV -> nuPlan cameras, non-parity; NEVER closed loop. NOT leaderboard-submitted (PI 2026-10-04).",
+ "n_tokens": 5,
+ "n_logs": 5,
+ "estimator": {
+  "name": "navsim_log_cluster_bootstrap",
+  "paired": "paired_navsim_log_cluster_bootstrap",
+  "cluster_unit": "log_name",
+  "sensitivity_unit": "nuplan_drive",
+  "aggregation": "single_stage_token_mean",
+  "n_boot": 2000,
+  "seed": 0,
+  "alpha": 0.05,
+  "module": "C:\\lgs\\Lfb47a58376\\taniteval\\adapters\\navsim_ci.py",
+  "module_sha256": "00e0e39ef6cfc9de5b16212c0c91386099a085b8d780b24eebd9f10cea849285",
+  "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+  "separated_means": "interval excludes 0 at the log_name level AND at the nuplan_drive level (SPEC 5)"
+ },
+ "arms": {
+  "PRIOR_ha0p": {
+   "NC": 80.0,
+   "DAC": 20.0,
+   "TTC": 80.0,
+   "EP": 6.8809,
+   "C": 100.0,
+   "DDC": 40.0,
+   "PDMS": 14.5337,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 4,
+   "pdms_recompute_max_abs": 0.0,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "model-free reference (this run)",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.0,
+    "median_4s_distance_m": 31.45593581740408,
+    "n_cv_standin_excluded": 0
+   },
+   "backend": {
+    "device": [
+     "model-free"
+    ],
+    "precision": [
+     "fp32 (kinematic_prior, CPU)"
+    ],
+    "partial": false,
+    "gpu_lock_token": null
+   }
+  },
+  "R8_LEGAL_s1": {
+   "NC": 100.0,
+   "DAC": 60.0,
+   "TTC": 100.0,
+   "EP": 14.2611,
+   "C": 100.0,
+   "DDC": 90.0,
+   "PDMS": 40.9421,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 2,
+   "pdms_recompute_max_abs": 0.0,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "inference-seed floor arm",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.2,
+    "median_4s_distance_m": 16.97196554415734,
+    "n_cv_standin_excluded": 0
+   },
+   "backend": {
+    "device": [
+     "cpu"
+    ],
+    "precision": [
+     "fp32"
+    ],
+    "partial": false,
+    "gpu_lock_token": null
+   }
+  },
+  "R8_LEGAL": {
+   "NC": 100.0,
+   "DAC": 60.0,
+   "TTC": 100.0,
+   "EP": 15.9292,
+   "C": 100.0,
+   "DDC": 100.0,
+   "PDMS": 41.6371,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 2,
+   "pdms_recompute_max_abs": 0.0,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "BAR ARM",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.2,
+    "median_4s_distance_m": 21.129017639537064,
+    "n_cv_standin_excluded": 0
+   },
+   "backend": {
+    "device": [
+     "cpu"
+    ],
+    "precision": [
+     "fp32"
+    ],
+    "partial": false,
+    "gpu_lock_token": null
+   }
+  },
+  "R8_PRIV": {
+   "NC": 100.0,
+   "DAC": 60.0,
+   "TTC": 100.0,
+   "EP": 28.7829,
+   "C": 100.0,
+   "DDC": 100.0,
+   "PDMS": 46.9929,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 2,
+   "pdms_recompute_max_abs": 0.0,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "DIAGNOSTIC ONLY (never a bar)",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.0,
+    "median_4s_distance_m": 21.129017639537064,
+    "n_cv_standin_excluded": 0
+   },
+   "backend": {
+    "device": [
+     "cpu"
+    ],
+    "precision": [
+     "fp32"
+    ],
+    "partial": false,
+    "gpu_lock_token": null
+   }
+  },
+  "R8_RT": {
+   "NC": 100.0,
+   "DAC": 40.0,
+   "TTC": 100.0,
+   "EP": 14.8842,
+   "C": 100.0,
+   "DDC": 100.0,
+   "PDMS": 29.5351,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 3,
+   "pdms_recompute_max_abs": 1.1102230246251565e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "beside; carries a bar only if SHIP-R8 passed",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.2,
+    "median_4s_distance_m": 24.137525692321393,
+    "n_cv_standin_excluded": 0
+   },
+   "backend": {
+    "device": [
+     "derived"
+    ],
+    "precision": [
+     "derived"
+    ],
+    "partial": false,
+    "gpu_lock_token": null
+   }
+  },
+  "STOP": {
+   "NC": 100.0,
+   "DAC": 80.0,
+   "TTC": 100.0,
+   "EP": 14.0825,
+   "C": 60.0,
+   "DDC": 100.0,
+   "PDMS": 49.2011,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 1,
+   "pdms_recompute_max_abs": 1.1102230246251565e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "reference (banked floor, INHERITED)",
+   "stop_rate": {
+    "status": "BY CONSTRUCTION",
+    "note": "the zero plan"
+   },
+   "backend": null
+  },
+  "CV": {
+   "NC": 70.0,
+   "DAC": 40.0,
+   "TTC": 60.0,
+   "EP": 8.2965,
+   "C": 100.0,
+   "DDC": 60.0,
+   "PDMS": 15.5345,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 3,
+   "pdms_recompute_max_abs": 5.551115123125783e-17,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "reference (banked floor, INHERITED)",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.2,
+    "median_4s_distance_m": 22.251272201538086
+   },
+   "backend": null
+  },
+  "HUMAN": {
+   "NC": 100.0,
+   "DAC": 100.0,
+   "TTC": 100.0,
+   "EP": 83.9945,
+   "C": 100.0,
+   "DDC": 100.0,
+   "PDMS": 93.331,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 0,
+   "pdms_recompute_max_abs": 1.1102230246251565e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "reference (banked floor, INHERITED)",
+   "stop_rate": {
+    "n": 5,
+    "frac_endpoint_lt_1m": 0.0,
+    "median_4s_distance_m": 24.32485824187178
+   },
+   "backend": null
+  },
+  "REFCV7_50400_LEGAL": {
+   "NC": 100.0,
+   "DAC": 60.0,
+   "TTC": 100.0,
+   "EP": 44.1736,
+   "C": 100.0,
+   "DDC": 80.0,
+   "PDMS": 53.4057,
+   "n": 5,
+   "zeroed_by_NC_or_DAC": 2,
+   "pdms_recompute_max_abs": 1.1102230246251565e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "DAC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "TTC": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "EP": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "C": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    },
+    "PDMS": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 5 units are 5 independent draws \u2014 an interval here could not rule. \u26d4 Not a pass; not a scene-token fallback.",
+     "n_clusters": 5
+    }
+   },
+   "role": "reference (banked floor, INHERITED)"
+  }
+ },
+ "refused_pairing": {},
+ "pairs": {
+  "PRIOR_ha0p__minus__STOP": {
+   "delta_x100": -34.6674,
+   "wins": 1,
+   "ties": 1,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "PRIOR_ha0p__minus__CV": {
+   "delta_x100": -1.0008,
+   "wins": 1,
+   "ties": 3,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "PRIOR_ha0p__minus__HUMAN": {
+   "delta_x100": -78.7973,
+   "wins": 0,
+   "ties": 0,
+   "losses": 5,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "PRIOR_ha0p__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -38.872,
+   "wins": 0,
+   "ties": 2,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL_s1__minus__STOP": {
+   "delta_x100": -8.2589,
+   "wins": 3,
+   "ties": 0,
+   "losses": 2,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL_s1__minus__CV": {
+   "delta_x100": 25.4076,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL_s1__minus__HUMAN": {
+   "delta_x100": -52.3889,
+   "wins": 0,
+   "ties": 0,
+   "losses": 5,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL_s1__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -12.4635,
+   "wins": 0,
+   "ties": 2,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL_s1__minus__PRIOR_ha0p": {
+   "delta_x100": 26.4085,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL__minus__STOP": {
+   "delta_x100": -7.5639,
+   "wins": 3,
+   "ties": 0,
+   "losses": 2,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL__minus__CV": {
+   "delta_x100": 26.1026,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL__minus__HUMAN": {
+   "delta_x100": -51.6939,
+   "wins": 0,
+   "ties": 0,
+   "losses": 5,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -11.7685,
+   "wins": 0,
+   "ties": 2,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL__minus__PRIOR_ha0p": {
+   "delta_x100": 27.1035,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_PRIV__minus__STOP": {
+   "delta_x100": -2.2082,
+   "wins": 3,
+   "ties": 0,
+   "losses": 2,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_PRIV__minus__CV": {
+   "delta_x100": 31.4583,
+   "wins": 3,
+   "ties": 2,
+   "losses": 0,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_PRIV__minus__HUMAN": {
+   "delta_x100": -46.3382,
+   "wins": 0,
+   "ties": 0,
+   "losses": 5,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_PRIV__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -6.4128,
+   "wins": 0,
+   "ties": 2,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_PRIV__minus__PRIOR_ha0p": {
+   "delta_x100": 32.4592,
+   "wins": 3,
+   "ties": 2,
+   "losses": 0,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_RT__minus__STOP": {
+   "delta_x100": -19.666,
+   "wins": 2,
+   "ties": 0,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_RT__minus__CV": {
+   "delta_x100": 14.0006,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_RT__minus__HUMAN": {
+   "delta_x100": -63.7959,
+   "wins": 0,
+   "ties": 0,
+   "losses": 5,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_RT__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -23.8706,
+   "wins": 0,
+   "ties": 2,
+   "losses": 3,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_RT__minus__PRIOR_ha0p": {
+   "delta_x100": 15.0014,
+   "wins": 1,
+   "ties": 3,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_LEGAL__minus__R8_LEGAL_s1": {
+   "delta_x100": 0.695,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_PRIV__minus__R8_LEGAL": {
+   "delta_x100": 5.3557,
+   "wins": 1,
+   "ties": 4,
+   "losses": 0,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  },
+  "R8_RT__minus__R8_LEGAL": {
+   "delta_x100": -12.102,
+   "wins": 2,
+   "ties": 2,
+   "losses": 1,
+   "n": 5,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+    "n_clusters": 5
+   }
+  }
+ },
+ "inference_seed_floor": {
+  "x100": 0.695,
+  "pair": "R8_LEGAL__minus__R8_LEGAL_s1",
+  "interval": {
+   "status": "UNAVAILABLE",
+   "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+   "n_clusters": 5
+  },
+  "rule": "a difference below this floor is not an effect (one pair of inference draws: a lower bound on the noise, not an estimate of it)"
+ },
+ "strata": {
+  "partition_sums_ok": true,
+  "partitions": {
+   "city": {
+    "Singapore": {
+     "n": 2,
+     "n_logs": 2,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 36.4369,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 73.5154
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 32.2734,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 71.7806
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 30.1787,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 41.7411
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 36.4369,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 73.5154
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 8.6859,
+       "C": 50.0,
+       "DDC": 100.0,
+       "PDMS": 32.7858
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 71.8817,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 88.284
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 40.7296,
+       "wins": 2,
+       "ties": 0,
+       "losses": 0,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       },
+       "floor_used_x100": 1.7348,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -14.7687,
+       "wins": 0,
+       "ties": 0,
+       "losses": 2,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       },
+       "floor_used_x100": 1.7348,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 2,
+       "losses": 0,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       },
+       "floor_used_x100": 1.7348,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 1.7348,
+       "wins": 1,
+       "ties": 0,
+       "losses": 1,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 1.7348
+    },
+    "US": {
+     "n": 3,
+     "n_logs": 3,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 2.2573,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 20.385
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 2.253,
+       "C": 100.0,
+       "DDC": 83.3333,
+       "PDMS": 20.3832
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 4.6879,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 21.3978
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 23.6803,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 29.3112
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 17.6803,
+       "C": 66.6667,
+       "DDC": 100.0,
+       "PDMS": 60.1446
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 25.7015,
+       "C": 100.0,
+       "DDC": 66.6667,
+       "PDMS": 30.1534
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": -39.7596,
+       "wins": 1,
+       "ties": 0,
+       "losses": 2,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -9.7684,
+       "wins": 0,
+       "ties": 2,
+       "losses": 1,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 8.9262,
+       "wins": 1,
+       "ties": 2,
+       "losses": 0,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.0018,
+       "wins": 1,
+       "ties": 2,
+       "losses": 0,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.0018
+    }
+   },
+   "command": {
+    "straight": {
+     "n": 2,
+     "n_logs": 2,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 3.386,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 30.5775
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 3.3795,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 30.5748
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 7.0319,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 32.0966
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 35.5204,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 43.9668
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 16.6176,
+       "C": 50.0,
+       "DDC": 100.0,
+       "PDMS": 56.924
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 50.0,
+       "TTC": 100.0,
+       "EP": 38.5523,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 45.2301
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": -26.3465,
+       "wins": 1,
+       "ties": 0,
+       "losses": 1,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -14.6526,
+       "wins": 0,
+       "ties": 1,
+       "losses": 1,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 13.3893,
+       "wins": 1,
+       "ties": 1,
+       "losses": 0,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.0027,
+       "wins": 1,
+       "ties": 1,
+       "losses": 0,
+       "n": 2,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=2 < floor 8 (RG-14) \u2014 a paired interval over 2 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 2
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.0027
+    },
+    "turn": {
+     "n": 3,
+     "n_logs": 3,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 24.2913,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 49.0103
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 21.5156,
+       "C": 100.0,
+       "DDC": 83.3333,
+       "PDMS": 47.8537
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 20.1191,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 27.8274
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 24.2913,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 49.0103
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 12.3925,
+       "C": 66.6667,
+       "DDC": 100.0,
+       "PDMS": 44.0524
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 47.9211,
+       "C": 100.0,
+       "DDC": 66.6667,
+       "PDMS": 58.856
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 4.9578,
+       "wins": 2,
+       "ties": 0,
+       "losses": 1,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 1.1565,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -9.8458,
+       "wins": 0,
+       "ties": 1,
+       "losses": 2,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 1.1565,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 3,
+       "losses": 0,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 1.1565,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 1.1565,
+       "wins": 1,
+       "ties": 1,
+       "losses": 1,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 1.1565
+    },
+    "unknown": {
+     "n": 0
+    },
+    "malformed": {
+     "n": 0
+    }
+   },
+   "t0_speed_band": {
+    "[0,2)": {
+     "n": 1,
+     "n_logs": 1,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 6.772,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 61.155
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 6.7589,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 61.1496
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 14.0638,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 64.1933
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 71.0408,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 87.9337
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 6.6288,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 61.0953
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 77.1046,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 90.4602
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 0.0597,
+       "wins": 1,
+       "ties": 0,
+       "losses": 0,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -29.3052,
+       "wins": 0,
+       "ties": 0,
+       "losses": 1,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 26.7787,
+       "wins": 1,
+       "ties": 0,
+       "losses": 0,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.0054,
+       "wins": 1,
+       "ties": 0,
+       "losses": 0,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.0054
+    },
+    "[2,8.33)": {
+     "n": 3,
+     "n_logs": 3,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 24.2913,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 49.0103
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 21.5156,
+       "C": 100.0,
+       "DDC": 83.3333,
+       "PDMS": 47.8537
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 33.3333,
+       "TTC": 100.0,
+       "EP": 20.1191,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 27.8274
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 24.2913,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 49.0103
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 12.3925,
+       "C": 66.6667,
+       "DDC": 100.0,
+       "PDMS": 44.0524
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 66.6667,
+       "TTC": 100.0,
+       "EP": 47.9211,
+       "C": 100.0,
+       "DDC": 66.6667,
+       "PDMS": 58.856
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 4.9578,
+       "wins": 2,
+       "ties": 0,
+       "losses": 1,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 1.1565,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -9.8458,
+       "wins": 0,
+       "ties": 1,
+       "losses": 2,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 1.1565,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 3,
+       "losses": 0,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       },
+       "floor_used_x100": 1.1565,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 1.1565,
+       "wins": 1,
+       "ties": 1,
+       "losses": 1,
+       "n": 3,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=3 < floor 8 (RG-14) \u2014 a paired interval over 3 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 3
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 1.1565
+    },
+    "[8.33,13.89)": {
+     "n": 1,
+     "n_logs": 1,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 0.0,
+       "TTC": 100.0,
+       "EP": 0.0,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 0.0
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 0.0,
+       "TTC": 100.0,
+       "EP": 0.0,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 0.0
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 0.0,
+       "TTC": 100.0,
+       "EP": 0.0,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 0.0
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 0.0,
+       "TTC": 100.0,
+       "EP": 0.0,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 0.0
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 100.0,
+       "TTC": 100.0,
+       "EP": 26.6065,
+       "C": 0.0,
+       "DDC": 100.0,
+       "PDMS": 52.7527
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 0.0,
+       "TTC": 100.0,
+       "EP": 0.0,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 0.0
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": -52.7527,
+       "wins": 0,
+       "ties": 0,
+       "losses": 1,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 1,
+       "losses": 0,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 1,
+       "losses": 0,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 1,
+       "losses": 0,
+       "n": 1,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=1 < floor 8 (RG-14) \u2014 a paired interval over 1 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 1
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.0
+    },
+    ">=13.89": {
+     "n": 0
+    },
+    "invalid": {
+     "n": 0
+    }
+   },
+   "ep_clause": {
+    "fired": {
+     "n": 0
+    },
+    "not_fired": {
+     "n": 5,
+     "n_logs": 5,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 100.0,
+       "DAC": 60.0,
+       "TTC": 100.0,
+       "EP": 15.9292,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 41.6371
+      },
+      "R8_LEGAL_s1": {
+       "NC": 100.0,
+       "DAC": 60.0,
+       "TTC": 100.0,
+       "EP": 14.2611,
+       "C": 100.0,
+       "DDC": 90.0,
+       "PDMS": 40.9421
+      },
+      "R8_RT": {
+       "NC": 100.0,
+       "DAC": 40.0,
+       "TTC": 100.0,
+       "EP": 14.8842,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 29.5351
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 60.0,
+       "TTC": 100.0,
+       "EP": 28.7829,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 46.9929
+      },
+      "STOP": {
+       "NC": 100.0,
+       "DAC": 80.0,
+       "TTC": 100.0,
+       "EP": 14.0825,
+       "C": 60.0,
+       "DDC": 100.0,
+       "PDMS": 49.2011
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 100.0,
+       "DAC": 60.0,
+       "TTC": 100.0,
+       "EP": 44.1736,
+       "C": 100.0,
+       "DDC": 80.0,
+       "PDMS": 53.4057
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": -7.5639,
+       "wins": 3,
+       "ties": 0,
+       "losses": 2,
+       "n": 5,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 5
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": -11.7685,
+       "wins": 0,
+       "ties": 2,
+       "losses": 3,
+       "n": 5,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 5
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 5.3557,
+       "wins": 1,
+       "ties": 4,
+       "losses": 0,
+       "n": 5,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 5
+       },
+       "floor_used_x100": 0.695,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.695,
+       "wins": 2,
+       "ties": 2,
+       "losses": 1,
+       "n": 5,
+       "interval": {
+        "status": "UNAVAILABLE",
+        "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+        "n_clusters": 5
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.695
+    }
+   }
+  }
+ },
+ "ep_clause_fired": {
+  "n": 0,
+  "fraction": 0.0,
+  "rule": "max compliant progress <= 5.0 m => EP is set to 1 (the oracle's progress, model-independent)"
+ },
+ "bars": {
+  "BAR-R8-N1": {
+   "bar": "BAR-R8-N1",
+   "statement": "navtest PDMS(R8_LEGAL) > STOP, paired interval excluding 0 (log_name AND nuplan_drive), margin > 2x the full-split inference floor |PDMS(R8_LEGAL) - PDMS(R8_LEGAL_s1)|",
+   "baseline": "STOP",
+   "carrying_arm": "R8_LEGAL",
+   "mirror_arm": "R8_LEGAL_s1",
+   "verdict": "NOT_EVALUATED -- VALIDATION ONLY",
+   "verdict_if_eligible_ARITHMETIC_ONLY": "NOT_EVALUATED -- SUBSET (the bar needs the FULL split)",
+   "per_arm_verdict": {
+    "R8_LEGAL": "NOT_EVALUATED -- SUBSET (the bar needs the FULL split)",
+    "R8_LEGAL_s1": "NOT_EVALUATED -- SUBSET (the bar needs the FULL split)"
+   },
+   "arithmetic": {
+    "R8_LEGAL": {
+     "PDMS_x100": 41.6371,
+     "margin_x100": -7.5639,
+     "paired_interval": {
+      "status": "UNAVAILABLE",
+      "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+      "n_clusters": 5
+     },
+     "wins_ties_losses": [
+      3,
+      0,
+      2
+     ]
+    },
+    "R8_LEGAL_s1": {
+     "PDMS_x100": 40.9421,
+     "margin_x100": -8.2589,
+     "paired_interval": {
+      "status": "UNAVAILABLE",
+      "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+      "n_clusters": 5
+     },
+     "wins_ties_losses": [
+      3,
+      0,
+      2
+     ]
+    }
+   },
+   "seed_floor_x100": 0.695,
+   "seed_floor_rule": "margin must exceed 2x the floor",
+   "n_tokens": 5,
+   "full_split": false,
+   "caveats": [
+    "ONE training seed: separated is necessary, not sufficient (H-ESTIM-SEED-1)."
+   ]
+  },
+  "BAR-R8-N4": {
+   "bar": "BAR-R8-N4",
+   "statement": "navtest PDMS(R8_LEGAL) - PDMS(refcv7-50,400 LEGAL) > 0, separated; margin > 2x the full-split inference floor (the SPEC's general NOT PROVEN rule, A-R8-NS1 AMENDMENT 2)",
+   "baseline": "REFCV7_50400_LEGAL",
+   "carrying_arm": "R8_LEGAL",
+   "mirror_arm": "R8_LEGAL_s1",
+   "verdict": "NOT_EVALUATED -- VALIDATION ONLY",
+   "verdict_if_eligible_ARITHMETIC_ONLY": "NOT_EVALUATED -- SUBSET (the bar needs the FULL split)",
+   "per_arm_verdict": {
+    "R8_LEGAL": "NOT_EVALUATED -- SUBSET (the bar needs the FULL split)",
+    "R8_LEGAL_s1": "NOT_EVALUATED -- SUBSET (the bar needs the FULL split)"
+   },
+   "arithmetic": {
+    "R8_LEGAL": {
+     "PDMS_x100": 41.6371,
+     "margin_x100": -11.7685,
+     "paired_interval": {
+      "status": "UNAVAILABLE",
+      "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+      "n_clusters": 5
+     },
+     "wins_ties_losses": [
+      0,
+      2,
+      3
+     ]
+    },
+    "R8_LEGAL_s1": {
+     "PDMS_x100": 40.9421,
+     "margin_x100": -12.4635,
+     "paired_interval": {
+      "status": "UNAVAILABLE",
+      "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+      "n_clusters": 5
+     },
+     "wins_ties_losses": [
+      0,
+      2,
+      3
+     ]
+    }
+   },
+   "seed_floor_x100": 0.695,
+   "seed_floor_rule": "margin must exceed 2x the floor (A-R8-NS1 AMENDMENT 2)",
+   "n_tokens": 5,
+   "full_split": false,
+   "margin_exceeds_1x_floor_BESIDE": false,
+   "caveats": [
+    "MIXED-BACKEND: refcv7-50,400 LEGAL was scored on the Thor backend (INHERITED, MODEL_REGISTRY 15.4.1); the refcv8 backend is stated in the arm table -- comparable only under RULING_BACKEND_POLICY.",
+    "ONE training seed per model: a separated paired interval is NECESSARY, NOT SUFFICIENT (H-ESTIM-SEED-1); the interval answers 'another draw of LOGS?' only."
+   ]
+  },
+  "R8_RT": {
+   "verdict": "NO_BAR (SHIP-R8 has not passed on the per-frame feed; R8_RT is reported beside, D-R8-SHIP-RETIME / D-NS8-3)"
+  },
+  "R8_PRIV": {
+   "verdict": "NO_BAR (diagnostic only, never a bar, never submitted)",
+   "PRIV_minus_LEGAL": {
+    "delta_x100": 5.3557,
+    "wins": 1,
+    "ties": 4,
+    "losses": 0,
+    "n": 5,
+    "interval": {
+     "status": "UNAVAILABLE",
+     "reason": "n_clusters=5 < floor 8 (RG-14) \u2014 a paired interval over 5 logs cannot rule; report the per-unit paired deltas descriptively, with NO interval.",
+     "n_clusters": 5
+    }
+   }
+  },
+  "BAR-R8-N2": {
+   "bar": "BAR-R8-N2",
+   "statement": "official two-stage EPDMS(R8_LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excludes 0; margin > 2x the seed floor",
+   "verdict": "UNAVAILABLE (summary_navhard.json not supplied: needs official two-stage EPDMS for R8_LEGAL, R8_LEGAL_s1, CV_official, STOP_zero, ECHO_ha0_ext and the paired interval vs STOP_zero)"
+  },
+  "BAR-R8-N3": {
+   "bar": "BAR-R8-N3",
+   "statement": "warmup S2-EPDMS-u(R8_LEGAL) > max(CV, STOP, ECHO), margin > 2x the seed floor; R8_BLIND must FAIL it (else the panel is VOID)",
+   "verdict": "UNAVAILABLE (summary_warmup.json not supplied)"
+  }
+ },
+ "meta": {
+  "label": "VALIDATION ONLY (not refcv8's NavSim score)",
+  "step": 40000,
+  "weights": "ema",
+  "ckpt_md5": "57807456bd7169800be159ff95871d22",
+  "run_dir": "C:\\Users\\Admin\\qland\\landed_hold_r8navsim2\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-19-refcv8-navsim\\raw\\smoke_cpu_ema40k_VALIDATION_ONLY",
+  "rt_table_sha256": "f18359be021dd400f4865cdcb3ca053bb8c0910b54c0611ba09d44da9a97219e"
+ },
+ "controls": {
+  "city_census": {
+   "status": "OK",
+   "sg_tokens_inputs": 1914,
+   "sg_tokens_census": 1914,
+   "n_tokens_inputs": 12146,
+   "n_tokens_census": 12146
+  },
+  "ep_clause_source_consistent": {
+   "max_abs_diff_m": 0.0,
+   "n_compared": 30,
+   "status": "OK"
+  },
+  "v0_inputs_vs_scorer_rows": {
+   "max_abs_diff_mps": 2.2774418440008048e-07,
+   "n": 5,
+   "status": "OK"
+  },
+  "banked_STOP": {
+   "status": "SKIPPED (subset)",
+   "banked": 61.8202
+  },
+  "banked_CV": {
+   "status": "SKIPPED (subset)",
+   "banked": 20.6517
+  },
+  "banked_HUMAN": {
+   "status": "SKIPPED (subset)",
+   "banked": 94.5514
+  },
+  "banked_REFCV7_50400_LEGAL": {
+   "status": "SKIPPED (subset)",
+   "banked": 70.2048
+  }
+ },
+ "validation_only": true,
+ "ineligible_because": [
+  "the run's own label says VALIDATION ONLY",
+  "checkpoint step 40000 != 48852"
+ ],
+ "label": "VALIDATION ONLY (not refcv8's NavSim score): the run's own label says VALIDATION ONLY; checkpoint step 40000 != 48852",
+ "ship_r8_passed_flag": false
+}

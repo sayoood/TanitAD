@@ -17,7 +17,7 @@ simulator; the live rollout is exercised by a test that skips when MetaDrive is
 not importable (``pytest.importorskip``).
 
 Setup status -- measured 2026-07-06, RTX 4060 / Python 3.13 / Windows
-(full note: ``TanitAD Research Hub/Tools&DevEnv/Research/2026-07-06-metadrive-adoption-and-alpasim-verdict.md``):
+(full note: ``TanitAD Research Lab/Tools&DevEnv/Research/2026-07-06-metadrive-adoption-and-alpasim-verdict.md``):
 
   * PyPI ``metadrive-simulator`` (0.2.6.0) does NOT install on py3.13 -- it
     pins ``gym==0.19.0`` whose ``setup.py`` fails to build under modern

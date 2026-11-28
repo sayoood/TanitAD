@@ -1,0 +1,523 @@
+{
+ "kind": "LAMBDA_SELECTION",
+ "amendment": "AMEND_HWMPLAN_3 (frozen, sha256 7bbdc9fe..., commit 4dc4876c)",
+ "tier": "T0 diagnostic on TRAIN windows: a selection record, never a result",
+ "evidence": "MEASURED when run; this file is written by the runner",
+ "chassis": "R35_s1",
+ "lam_star": 100.0,
+ "label": "SELECTED",
+ "grid_as_run": [
+  -1.0,
+  0.0,
+  0.3,
+  1.0,
+  3.0,
+  10.0,
+  30.0,
+  100.0,
+  300.0
+ ],
+ "sign_check": {
+  "C_neg1_minus_C0": 0.21897630098201337,
+  "ok": true,
+  "rule": "C(-1) > C(0) on TRAIN before any SCORE plan at lambda != 0 (C-REG)"
+ },
+ "trace": [
+  {
+   "step": 1,
+   "lam": 0.0,
+   "why": "base grid",
+   "C": 1.2304,
+   "D": 1.4352126514767685,
+   "admissible": false
+  },
+  {
+   "step": 2,
+   "lam": 0.3,
+   "why": "base grid",
+   "C": 1.1568,
+   "D": 1.3474023336811352,
+   "admissible": true
+  },
+  {
+   "step": 3,
+   "lam": 1.0,
+   "why": "base grid",
+   "C": 1.0045,
+   "D": 1.1680563778233175,
+   "admissible": true
+  },
+  {
+   "step": 4,
+   "lam": 3.0,
+   "why": "base grid",
+   "C": 0.7796,
+   "D": 0.8915866207813853,
+   "admissible": true
+  },
+  {
+   "step": 5,
+   "lam": 10.0,
+   "why": "base grid",
+   "C": 0.5713,
+   "D": 0.6026260856707637,
+   "admissible": true
+  },
+  {
+   "step": 6,
+   "lam": 30.0,
+   "why": "base grid",
+   "C": 0.4202,
+   "D": 0.3631148965708909,
+   "admissible": true
+  },
+  {
+   "step": 7,
+   "lam": 100.0,
+   "why": "base grid",
+   "C": 0.3299,
+   "D": 0.1775065602176922,
+   "admissible": true
+  },
+  {
+   "step": 8,
+   "lam": -1.0,
+   "why": "sign check (never a candidate)",
+   "C": 1.4494,
+   "D": 1.6917319629236103,
+   "admissible": false
+  },
+  {
+   "step": 9,
+   "lam": 300.0,
+   "why": "extension up: the chosen lambda is the largest run",
+   "C": 0.3056,
+   "D": 0.09342134909570607,
+   "admissible": false
+  },
+  {
+   "note": "extension up stops: C above the running minimum or D < 0.10",
+   "lam": 300.0
+  }
+ ],
+ "runs": {
+  "-1.0": {
+   "C": 1.4494228097286113,
+   "C_rounded": 1.4494,
+   "D": 1.6917319629236103,
+   "D_yaw": 1.4027939573543846,
+   "admissible": false,
+   "dir_acc": {
+    "r": 0.2673603508318098,
+    "lo": 0.20412930586510664,
+    "hi": 0.35997998694828415,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=-1.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_m1"
+   ],
+   "plan_sha256": "05a31d4add32e64c500881d605b8e74f753bc1177d27659a0c1ab0b8b02af2b3"
+  },
+  "0.0": {
+   "C": 1.2304465087465979,
+   "C_rounded": 1.2304,
+   "D": 1.4352126514767685,
+   "D_yaw": 1.1982297739824423,
+   "admissible": false,
+   "dir_acc": {
+    "r": 0.2787433044107295,
+    "lo": 0.21724637824697943,
+    "hi": 0.3778452913170975,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=0.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_0"
+   ],
+   "plan_sha256": "64d530aa47e0a906e1c383a79590852b882f52dd48c380ce2f8a020b05d66998"
+  },
+  "0.3": {
+   "C": 1.15675897676977,
+   "C_rounded": 1.1568,
+   "D": 1.3474023336811352,
+   "D_yaw": 1.13406818815799,
+   "admissible": true,
+   "dir_acc": {
+    "r": 0.28051529230818306,
+    "lo": 0.21985154014060834,
+    "hi": 0.3783217516887294,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=0.3",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_0.3"
+   ],
+   "plan_sha256": "fc41e3a8fad5216029cb50f7365264538fa0ffbc8ff3efa64bd02b97efe2109d"
+  },
+  "1.0": {
+   "C": 1.0045410529421996,
+   "C_rounded": 1.0045,
+   "D": 1.1680563778233175,
+   "D_yaw": 1.0215129112038994,
+   "admissible": true,
+   "dir_acc": {
+    "r": 0.29063915549153313,
+    "lo": 0.2270418353803624,
+    "hi": 0.39187071904294307,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=1.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_1"
+   ],
+   "plan_sha256": "47b78d3a75a5f0d03ddbc7fde7b42e545814fcc773c481823ef6b3f65fde51ba"
+  },
+  "3.0": {
+   "C": 0.7796055408789225,
+   "C_rounded": 0.7796,
+   "D": 0.8915866207813853,
+   "D_yaw": 0.8109262065136166,
+   "admissible": true,
+   "dir_acc": {
+    "r": 0.3078278154449155,
+    "lo": 0.24154297495455848,
+    "hi": 0.417013892812663,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=3.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_3"
+   ],
+   "plan_sha256": "e0ac84b4ec3d2a523032ff3b29e8fa62304385c4f9376dc38ed1e57a4571425d"
+  },
+  "10.0": {
+   "C": 0.5713231410221477,
+   "C_rounded": 0.5713,
+   "D": 0.6026260856707637,
+   "D_yaw": 0.5047727359488005,
+   "admissible": true,
+   "dir_acc": {
+    "r": 0.3265673115526078,
+    "lo": 0.2507757957904427,
+    "hi": 0.4415321117074149,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=10.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_10"
+   ],
+   "plan_sha256": "d3c962d805e329a2bfd165e2888169c6e3b2818e14541d693995966c009ddcf7"
+  },
+  "30.0": {
+   "C": 0.4201817012492816,
+   "C_rounded": 0.4202,
+   "D": 0.3631148965708909,
+   "D_yaw": 0.266656549699243,
+   "admissible": true,
+   "dir_acc": {
+    "r": 0.3396123252189573,
+    "lo": 0.25918185324013215,
+    "hi": 0.456533637261987,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=30.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_30"
+   ],
+   "plan_sha256": "381f42b40718750e432d866e9a1f5a8aaa292e3827cf4fca63d03f2c9d051901"
+  },
+  "100.0": {
+   "C": 0.32986321445962774,
+   "C_rounded": 0.3299,
+   "D": 0.1775065602176922,
+   "D_yaw": 0.14433234379525794,
+   "admissible": true,
+   "dir_acc": {
+    "r": 0.3562447121137216,
+    "lo": 0.273897909526698,
+    "hi": 0.4821431715166104,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=100.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_100"
+   ],
+   "plan_sha256": "0c7e72848668270879040565793422c1f95f703b246fbfa00662eed8dbdced10"
+  },
+  "300.0": {
+   "C": 0.3055778347482638,
+   "C_rounded": 0.3056,
+   "D": 0.09342134909570607,
+   "D_yaw": 0.10479606043825929,
+   "admissible": false,
+   "dir_acc": {
+    "r": 0.3281168589452671,
+    "lo": 0.23825082210464388,
+    "hi": 0.4747760814032478,
+    "n_windows": 564,
+    "n_episodes": 141,
+    "estimator": "episode_cluster_bootstrap",
+    "B": 2000,
+    "seed": 0
+   },
+   "argv": [
+    "--tag",
+    "R35_s1",
+    "--ckpt",
+    "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+    "--train-latents",
+    "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+    "--train-tag",
+    "R35_s1",
+    "--seed-mode",
+    "hold",
+    "--lam=300.0",
+    "--arms",
+    "hwm_oracle",
+    "--seeds",
+    "0",
+    "--workers",
+    "1",
+    "--out",
+    "F:/TanitAD-scratch/actrsp/lonplan/sel_s1\\lam_300"
+   ],
+   "plan_sha256": "6e404a007ce83d09152c1ae08f0c22bec69d10b0a4b485575463e8e7c047a011"
+  }
+ },
+ "beside_no_bar": {
+  "C_at_0": 1.2304465087465979,
+  "C_HOLD": 0.2965495160027863,
+  "C_PRIOR": 0.5132226257263609,
+  "TRAIN_CEILING_flag": false
+ },
+ "prior_std_raw": [
+  0.859835147857666,
+  0.09500561356544496
+ ],
+ "windows": {
+  "sha256": "a8c6835b9672ff53e4e66b8ebdde376c05d84a9663dae701d9a11fbebadc3b3b",
+  "meta": {
+   "tag": "R35_s1",
+   "F": 31,
+   "no_goal_frame": false,
+   "n": 564,
+   "n_clips": 141,
+   "per_clip": 4,
+   "n_valid_positions": 5486,
+   "min_valid_per_clip": 34,
+   "n_unique_frames": 11690,
+   "max_abs_dz_repeated": 0.0,
+   "max_abs_da_repeated": 0.0,
+   "kind": "LONPLAN_TRAIN_SELECTION",
+   "source": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt"
+  }
+ },
+ "train_clips_in_eval": 0,
+ "inputs_sha256": {
+  "ckpt": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881",
+  "train_latents": "692eb0021a4b39295a52589ab2b7f2de0a45615345bca7a7acea62101d32708a"
+ },
+ "code_of_record_sha256": {
+  "run_hwm.py": "935b34226158ae50be6edc7d282aa8a8e90b855728e5624a800c6082e26e095e",
+  "hwm_plan.py": "5a0722719f7ce06c94c91213db6ef542b2fe16d346622ba506ce8808bd6d714b",
+  "hwm_eval.py": "7939207520159b5be82c7c7430239819842dfa1a3f320789a499d5a114607e8d",
+  "hwm_data.py": "a2d3922e9cb96304a08eba6e7826ab6bf4a5ae64a2cc2724a4a140d0f959fad7",
+  "goal_head.py": "c152c57cd2b780b8500372da83b6c3fa04a40ad72f3abfcd6018d77c565e79b7",
+  "plantest2_lib.py": "6fcbf0c8a3ced930cec97185d649a026c30d74b2d39b4a24c1a914d985dd89bc",
+  "plantest_lib.py": "dd04f89c93c74251893c19055b45bb1d40d4e5195bce23a89f3a01327d262c0e"
+ },
+ "rule": {
+  "grid": [
+   0.0,
+   0.3,
+   1.0,
+   3.0,
+   10.0,
+   30.0,
+   100.0
+  ],
+  "sign": -1.0,
+  "ext_up": [
+   300.0,
+   1000.0,
+   3000.0
+  ],
+  "ext_down": [
+   0.1,
+   0.03,
+   0.01
+  ],
+  "D_min": 0.1,
+  "tie": "C rounded to 4 decimals, then the smaller lambda"
+ },
+ "written": "2026-11-16T19:31:35"
+}

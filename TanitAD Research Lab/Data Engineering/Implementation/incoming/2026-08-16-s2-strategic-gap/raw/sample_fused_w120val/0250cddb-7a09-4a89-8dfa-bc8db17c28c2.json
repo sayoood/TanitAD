@@ -1,0 +1,300 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "0250cddb-7a09-4a89-8dfa-bc8db17c28c2",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 12.22,
+   "v_now_kmh": 44.0,
+   "v_mean_ms": 14.54,
+   "v_min_ms": 11.98,
+   "v_max_ms": 17.59,
+   "accel_1s_ms2": 0.2,
+   "accel_3s_ms2": -0.19,
+   "yaw_rate_rad_s": -0.26,
+   "net_dyaw_rad": -0.711,
+   "dist_travelled_m": 117.0,
+   "motion": "steady",
+   "turning": "turning_right"
+  },
+  "speed_profile": {
+   "v_t0": 17.589574813842773,
+   "v_min_future": 11.109560012817383,
+   "v_max_future": 17.589574813842773,
+   "net_dv": -4.065573692321777,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [
+   {
+    "track_id": 0,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     8,
+     8
+    ],
+    "mean_score": 0.544,
+    "boxes": [
+     [
+      8,
+      [
+       305.1,
+       73.2,
+       308.5,
+       79.5
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 1,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     16,
+     16
+    ],
+    "mean_score": 0.871,
+    "boxes": [
+     [
+      16,
+      [
+       -0.5,
+       83.1,
+       13.9,
+       109.6
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 2,
+    "concept": "car",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.807,
+    "boxes": [
+     [
+      24,
+      [
+       91.4,
+       93.5,
+       113.3,
+       100.7
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 3,
+    "concept": "truck",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.609,
+    "boxes": [
+     [
+      24,
+      [
+       329.6,
+       78.6,
+       342.8,
+       88.4
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 4,
+    "concept": "car",
+    "n_frames": 1,
+    "frame_span": [
+     32,
+     32
+    ],
+    "mean_score": 0.841,
+    "boxes": [
+     [
+      32,
+      [
+       216.2,
+       86.0,
+       232.1,
+       95.1
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   }
+  ],
+  "per_concept_hits": {
+   "car": 2,
+   "truck": 1,
+   "bus": 0,
+   "pedestrian": 0,
+   "cyclist": 0,
+   "traffic light": 0,
+   "traffic sign": 2
+  },
+  "src": "sam3"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 1,
+   "lane_ego": 0,
+   "conf": "high",
+   "road_type": "urban",
+   "weather": "rain",
+   "illumination": "day",
+   "domain": "urban"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "20",
+     "state": "none",
+     "applies_to_ego": true,
+     "kind": "speed"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "turn_left",
+   "actions": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left"
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "left"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "left"
+    }
+   ],
+   "goal_evidence_sign": 0,
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": null,
+ "corroboration": {
+  "speed_sign_vs_ego": {
+   "sign_text": "20",
+   "v_now_ms": 12.22,
+   "v_min_future": 11.109560012817383,
+   "src": [
+    "vlm",
+    "ego"
+   ],
+   "verdict": "conflict"
+  }
+ },
+ "vocab": {
+  "g_str": {
+   "token": "TURN_LEFT",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_CHANGE_L",
+   "voters": [
+    "vlm"
+   ],
+   "votes": [
+    [
+     "ego",
+     null
+    ],
+    [
+     "vlm",
+     "LANE_CHANGE_L"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     "LANE_KEEP"
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": "CRUISE",
+   "voters": [
+    "ego"
+   ],
+   "votes": [
+    [
+     "ego",
+     "CRUISE"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     "HOLD"
+    ]
+   ]
+  }
+ },
+ "scenario_description": "day, rain, urban 1-lane; ego 12.2 m/s steady/turning_right; 2 car, 2 traffic sign, 1 truck",
+ "_conflicts": [
+  {
+   "check": "speed_sign_vs_ego",
+   "sign_text": "20",
+   "v_now_ms": 12.22,
+   "v_min_future": 11.109560012817383,
+   "src": [
+    "vlm",
+    "ego"
+   ],
+   "verdict": "conflict"
+  }
+ ],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}

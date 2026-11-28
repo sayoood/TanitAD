@@ -1,0 +1,289 @@
+{
+ "schema": "tanitad.corpus_augmentation_release/1",
+ "release": "aug-2026-09",
+ "generated": "2026-09-15T08:52:24+0200",
+ "repo": "Sayood/tanitad-v7-training-corpus",
+ "corpus_id": "a48251e89c7a8603",
+ "clips": 4719,
+ "request": "PI 2026-09-15: the dataset should include all augmentations, the Alpamayo outputs, the newest nav commands, tactical and strategic labels and the semantic maps",
+ "additive": "no pre-existing file was modified except DATACARD.md (one pointer paragraph + one appended section); alpamayo/vqa_bank_500.json is new",
+ "components": {
+  "camera": {
+   "status": "SHIPPED, unchanged",
+   "paths": "camera/<clip_id>.mp4",
+   "verify": "camera/camera_sha256.json"
+  },
+  "egomotion / timestamps / index / splits": {
+   "status": "SHIPPED, unchanged",
+   "verify": "MANIFEST.json"
+  },
+  "alpamayo": {
+   "status": "SHIPPED, unchanged",
+   "paths": "alpamayo/records.parquet, alpamayo/selection_manifest.json",
+   "what": "Alpamayo2-Super augmentation: trajectory, meta_action, chain_of_causation, auto-labeling, VQA, grounding boxes (records.parquet byte-identical to Sayood/tanitad-alpamayo2-augmentation)",
+   "added_2026_09_15": "alpamayo/vqa_bank_500.json: the VQA question bank the vqa_qid column refers to, byte-identical to Sayood/tanitad-alpamayo2-augmentation@cedbf57c"
+  },
+  "labels": {
+   "status": "SHIPPED, unchanged",
+   "current_release": "v8.1",
+   "paths": "labels/s2_labels_v8_{train,eval}.jsonl.gz",
+   "what": "strategic goal + action, tactical multi-label goals, lateral / longitudinal actions, nav_command + nav_30s, tac_SIT, lane_change_text, speed_max_input",
+   "verify": "V8_MANIFEST.json files.{train,eval} (never build_chain)"
+  },
+  "semantic_maps": {
+   "status": "IN_PROGRESS (published every 6 h from Thor; the live status is semantic_maps/SEMANTIC_MAPS_MANIFEST.json:status)",
+   "paths": "semantic_maps/gt/<clip_id>.sam3mapgt.npz (all checks passed), semantic_maps/gt_flagged/<clip_id>.sam3mapgt.npz (failed only where nothing contradicts the map: parked / stopped ego, or near-field road unlabelled; reason per clip in the manifest), semantic_maps/worldmap/<clip_id>.worldmap.npz, semantic_maps/logs/logs_<NNNN>.tar",
+   "manifest": "semantic_maps/SEMANTIC_MAPS_MANIFEST.json",
+   "schema": "tanitad.sam3_map_gt/2",
+   "published_when_this_file_was_written": 3
+  },
+  "lidar_bev_gt": {
+   "status": "COMPLETE",
+   "paths": "lidar_bev_gt/<clip_id>.bevgt.npz",
+   "manifest": "lidar_bev_gt/LIDAR_BEV_GT_MANIFEST.json",
+   "schema": "tanitad.lidar_bev_gt/2",
+   "clips": 315,
+   "by_subset": {
+    "b1eval": 134,
+    "b1train200": 181
+   },
+   "by_split": {
+    "train": 180,
+    "test": 55,
+    "val": 80
+   }
+  },
+  "agents/obstacle_offline": {
+   "status": "COMPLETE (upstream labels, not an augmentation)",
+   "paths": "agents/obstacle_offline/obstacle_offline_<NNN>.parquet + index.parquet",
+   "manifest": "agents/AGENTS_MANIFEST.json",
+   "clips_with_source_file": 4585,
+   "clips_with_zero_cuboids": 6,
+   "clips_without_source_file": 134,
+   "rows": 29415112
+  },
+  "calibration": {
+   "status": "COMPLETE (upstream rows)",
+   "paths": "calibration/camera_intrinsics.parquet, calibration/sensor_extrinsics.parquet",
+   "rows": {
+    "camera_intrinsics": 33033,
+    "sensor_extrinsics": 62317
+   },
+   "clips": 4719
+  },
+  "tools/augment_loader.py": {
+   "what": "loaders for every component above + sha256 verification against the manifests"
+  }
+ },
+ "files": {
+  "agents/AGENTS_MANIFEST.json": {
+   "sha256": "12035b84f0e9355a230a14de21f14610854402f4ac18f8d7275d748fc41dc82c",
+   "bytes": 11455
+  },
+  "agents/obstacle_offline/index.parquet": {
+   "sha256": "471d98b28f24e4ae0d162516ca8f8503b49ce92f2b85eeba62a81d76a849a3a6",
+   "bytes": 535812
+  },
+  "agents/obstacle_offline/obstacle_offline_000.parquet": {
+   "sha256": "d869bbce8b39a9cffc626644122c108b0b42070d36182ae7ab399b14aac06a97",
+   "bytes": 52773709
+  },
+  "agents/obstacle_offline/obstacle_offline_001.parquet": {
+   "sha256": "8f75d3eda9977dfc797a4e6b7960786182208d8e5a79596306c6bd57dbe35f31",
+   "bytes": 59200801
+  },
+  "agents/obstacle_offline/obstacle_offline_002.parquet": {
+   "sha256": "a26a7006a6e63f1f7211e20e67938aafbfe5706e0d08e79d0329ea20b2576e8a",
+   "bytes": 48144180
+  },
+  "agents/obstacle_offline/obstacle_offline_003.parquet": {
+   "sha256": "264884716bcd9ddbcab3a12a001214d9ca25803cd36b4f6eb91a1998384585e6",
+   "bytes": 53730944
+  },
+  "agents/obstacle_offline/obstacle_offline_004.parquet": {
+   "sha256": "ffefdf113aab5e6ac7eca4c7e6f0dc2659602c8f13ac7a595cbc4514e7faa6b9",
+   "bytes": 54737826
+  },
+  "agents/obstacle_offline/obstacle_offline_005.parquet": {
+   "sha256": "1ed657f59a47366fbbeb14a4541579d05db66153294013625eb561eee29c5bd0",
+   "bytes": 53348263
+  },
+  "agents/obstacle_offline/obstacle_offline_006.parquet": {
+   "sha256": "1e78b479ef72d3615452c1818bc469d7edb880c8dbd763f84cacde5990898f15",
+   "bytes": 47159512
+  },
+  "agents/obstacle_offline/obstacle_offline_007.parquet": {
+   "sha256": "786ac60481345e2eb13036a694c894a507cc724f1beef062413b84fdbb86d262",
+   "bytes": 62516359
+  },
+  "agents/obstacle_offline/obstacle_offline_008.parquet": {
+   "sha256": "dc2f188a581717772b88aa9c9a2175a1b50c15d3d8673149cdcf8798b66944cd",
+   "bytes": 50689535
+  },
+  "agents/obstacle_offline/obstacle_offline_009.parquet": {
+   "sha256": "d3ac0def943749b426baae322f9705c0f8ebfdaca599f70bd65e5c4bf26cdb7d",
+   "bytes": 52146524
+  },
+  "agents/obstacle_offline/obstacle_offline_010.parquet": {
+   "sha256": "11e31a1d04c06176e89fde86bf78d5f889d94767f1ccca9acf8965ddc921f527",
+   "bytes": 43764559
+  },
+  "agents/obstacle_offline/obstacle_offline_011.parquet": {
+   "sha256": "b60187f9b3b4566ff6a1cf7e714a123b29fc2b8e9823b93cbc1489ef5a560222",
+   "bytes": 46199912
+  },
+  "agents/obstacle_offline/obstacle_offline_012.parquet": {
+   "sha256": "7347bc5530b893e5cc5909fff0c3155f9b4abd04f417dd3b423a62b50cc6527a",
+   "bytes": 36296511
+  },
+  "agents/obstacle_offline/obstacle_offline_013.parquet": {
+   "sha256": "7acac5eb6dea8f97ff903016b6b61ad357a3b39fb6a882c0023d9d067d4418b5",
+   "bytes": 48264298
+  },
+  "agents/obstacle_offline/obstacle_offline_014.parquet": {
+   "sha256": "413eb346a4e41818448ba10642c3dad5995776a154f05440688871f12ace3e74",
+   "bytes": 54436833
+  },
+  "agents/obstacle_offline/obstacle_offline_015.parquet": {
+   "sha256": "35c9e87298beabe9d9d4b2017b37e7929fd1bf0f3f6219ed5827aeec4f440b2e",
+   "bytes": 49118841
+  },
+  "agents/obstacle_offline/obstacle_offline_016.parquet": {
+   "sha256": "1816e4fc1c642d030dc42359881ed58537e7c78d3bb1f5981da9543bbed9d9e6",
+   "bytes": 57972650
+  },
+  "agents/obstacle_offline/obstacle_offline_017.parquet": {
+   "sha256": "c4866434048ebf3069ba0ea38ce499b49cd87ce552032a569147da04597f9e5f",
+   "bytes": 48660293
+  },
+  "agents/obstacle_offline/obstacle_offline_018.parquet": {
+   "sha256": "c4e063939d04453b6cb74a362c6cf8acbe7d8c133b937be7eebd20524dbd07a1",
+   "bytes": 48661655
+  },
+  "agents/obstacle_offline/obstacle_offline_019.parquet": {
+   "sha256": "6e8a0317f9ed127f1bf7420457a8497b45260abd1a2a6de4af8a07bf83d7ff31",
+   "bytes": 63632980
+  },
+  "agents/obstacle_offline/obstacle_offline_020.parquet": {
+   "sha256": "cbc1899b389f31c3b52e793b871ed03b77a8c847f2292983dc0d00fd7ee7f44a",
+   "bytes": 57246405
+  },
+  "agents/obstacle_offline/obstacle_offline_021.parquet": {
+   "sha256": "06e27f2a8591e231cf5e9d3aa98eac03e43de0e0b5f203bf8d20a6f1c30b7ded",
+   "bytes": 53187876
+  },
+  "agents/obstacle_offline/obstacle_offline_022.parquet": {
+   "sha256": "215dcbc6e5e916c1e9cd0b17a1516d8256f2fc41dfac3f59399235299ae8b859",
+   "bytes": 46078967
+  },
+  "agents/obstacle_offline/obstacle_offline_023.parquet": {
+   "sha256": "af94d402bd34eb16d5d3f1bb6e21e94fefd7014cb72e9489ca1206a93f0c67e1",
+   "bytes": 50540056
+  },
+  "agents/obstacle_offline/obstacle_offline_024.parquet": {
+   "sha256": "913777b07c86161206ae49f416713c8ea7eb2f6b9caf8c4ecfd8a6779192aaa6",
+   "bytes": 64568659
+  },
+  "agents/obstacle_offline/obstacle_offline_025.parquet": {
+   "sha256": "ac76b8016e05263ddb046efc4635ea674265887db71d381ccd06ecba5a06bb77",
+   "bytes": 47598377
+  },
+  "agents/obstacle_offline/obstacle_offline_026.parquet": {
+   "sha256": "c93a922b7fb0648e76c6aa2ca9c4e5bcdae126411ee00aec5aa39c15dc0ba3f9",
+   "bytes": 52684991
+  },
+  "agents/obstacle_offline/obstacle_offline_027.parquet": {
+   "sha256": "5c2c5530f9bda6c9b742b92471f1e62ce7f4c52bd8fef9e9ba3c5421c94b0498",
+   "bytes": 43418761
+  },
+  "agents/obstacle_offline/obstacle_offline_028.parquet": {
+   "sha256": "6ad67db585c95f68ddf55ad872dac3498b8a2b4fb37ddfc14c559123b652aee4",
+   "bytes": 39798494
+  },
+  "agents/obstacle_offline/obstacle_offline_029.parquet": {
+   "sha256": "67efe97c7bf9b4de311085abf9302c1309cd17fe86c29aaa9b6818d5eb8e57c1",
+   "bytes": 51071346
+  },
+  "agents/obstacle_offline/obstacle_offline_030.parquet": {
+   "sha256": "7389eea7ae6adccfdf87cb4f1dab2c812755141253da9fe953a300e5937558ef",
+   "bytes": 53912882
+  },
+  "agents/obstacle_offline/obstacle_offline_031.parquet": {
+   "sha256": "fa2050f35630101f2318de7c50365cb4093bae5b078e3feb28612a1c823c5786",
+   "bytes": 51171195
+  },
+  "agents/obstacle_offline/obstacle_offline_032.parquet": {
+   "sha256": "a4a790a50b4c5fc67ac73c813a57004c3f16be536e77c1da99f419236d63ccf9",
+   "bytes": 50949643
+  },
+  "agents/obstacle_offline/obstacle_offline_033.parquet": {
+   "sha256": "d5809f0c5ee955947164bd39ca197a891e646bc570a30fde63f19a508774457a",
+   "bytes": 55739511
+  },
+  "agents/obstacle_offline/obstacle_offline_034.parquet": {
+   "sha256": "c737af3281077b48160f3f9290ebc34780ec4b292d1802495c16dd812ec3f08c",
+   "bytes": 49477605
+  },
+  "agents/obstacle_offline/obstacle_offline_035.parquet": {
+   "sha256": "53865c1d46dc21fe6f7c34f6d4a62e651385a5e9b2c722cf454ff40cb7a32c5f",
+   "bytes": 49769015
+  },
+  "agents/obstacle_offline/obstacle_offline_036.parquet": {
+   "sha256": "dc25f8e6297cbf782cbbc9809682829f792baff548122aa8bbec14f69a029e72",
+   "bytes": 53778834
+  },
+  "agents/obstacle_offline/obstacle_offline_037.parquet": {
+   "sha256": "f89583fdc1818e7afafb3a26dbdbd8b7eabf255306e7b5f96591742d376eee81",
+   "bytes": 45716892
+  },
+  "agents/obstacle_offline/obstacle_offline_038.parquet": {
+   "sha256": "8ae07f6b26b45dd07d7ce064163382209c9ec65a97207d25a86b40a4a82e2237",
+   "bytes": 58263784
+  },
+  "agents/obstacle_offline/obstacle_offline_039.parquet": {
+   "sha256": "516d45478ff752b35913b950762ec98cdd30db8dd8e881a40a76f8f36c13df8e",
+   "bytes": 50908380
+  },
+  "agents/obstacle_offline/obstacle_offline_040.parquet": {
+   "sha256": "71cbd0766e803fe2e122cd4d5032bd1963b3f300442221e60334b6a3f2e9aa08",
+   "bytes": 47394487
+  },
+  "agents/obstacle_offline/obstacle_offline_041.parquet": {
+   "sha256": "83c28953b9a39253b18258ebb105cb46fd7ee191038a8f7f840a61acdec343b1",
+   "bytes": 55973473
+  },
+  "agents/obstacle_offline/obstacle_offline_042.parquet": {
+   "sha256": "b3d6e6be995767c040ec81f547053b5ec6817bb29d6f1558de3fbe9daed9a9db",
+   "bytes": 47897749
+  },
+  "agents/obstacle_offline/obstacle_offline_043.parquet": {
+   "sha256": "9ad1fa4acb67a3136c9898d74031b643b87b0308bbf2b3d0989dde2ba30e233b",
+   "bytes": 52410889
+  },
+  "agents/obstacle_offline/obstacle_offline_044.parquet": {
+   "sha256": "bdf3084a6a451561253cea6b0fc7097abd3d6c979a92f314e6fe2c8c6ed586f4",
+   "bytes": 52955255
+  },
+  "agents/obstacle_offline/obstacle_offline_045.parquet": {
+   "sha256": "e178447ba4de21656eaa5269a8e2ddff1dfe6901a49816c247910f388e8a02bc",
+   "bytes": 37017812
+  },
+  "calibration/camera_intrinsics.parquet": {
+   "sha256": "fb6a42a241d85f2815696efcbfcc4de39cf7b86a070d983d8f8d7aa1cd1260ab",
+   "bytes": 543400
+  },
+  "calibration/sensor_extrinsics.parquet": {
+   "sha256": "1847c4bbad0f3c3531f1bfc06656ed773ab8548001c21377f600b6d442e2af67",
+   "bytes": 1647694
+  },
+  "alpamayo/vqa_bank_500.json": {
+   "sha256": "26abe486e63ee57e123ba7168cc0409e58b09bde82d8b1ce9cf8c3194e59fed9",
+   "bytes": 71642,
+   "source": "Sayood/tanitad-alpamayo2-augmentation@cedbf57c124149310a9ecd661ef42bb73cec34d5"
+  },
+  "tools/augment_loader.py": {
+   "sha256": "0182fdae61ec1f32ab29931df68ea4e02f11c61400c9493259eeff9cfbec73c7",
+   "bytes": 8584
+  }
+ }
+}

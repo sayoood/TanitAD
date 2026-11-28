@@ -1,0 +1,80 @@
+{
+ "card": "PREREG_P5C_NEXT.md section 3",
+ "smoke": false,
+ "controls_rule_1_5_reproduces_pick": {
+  "C1": true,
+  "C0": true,
+  "base": true
+ },
+ "split": {
+  "tune_tokens": 5895,
+  "eval_tokens": 6251,
+  "tune_logs": 70,
+  "eval_logs": 66
+ },
+ "tune_mean_pdms_by_rule": {
+  "a1_w5": 92.51966565731948,
+  "a1_w10": 92.55851640196839,
+  "a2_w5": 92.58369173585065,
+  "a2_w10": 92.53718327165528,
+  "a4_w5": 92.38439391532785,
+  "a4_w10": 92.30149770628127,
+  "a8_w5": 92.2038487233697,
+  "a8_w10": 92.12000265385532
+ },
+ "chosen_rule": {
+  "a": 2.0,
+  "w": 5.0
+ },
+ "eval_primary": {
+  "pdms": {
+   "point": -0.1719278580843009,
+   "lo": -0.318289634732372,
+   "hi": -0.012287009939407845
+  },
+  "nc": {
+   "point": 0.047992321228603425,
+   "lo": -0.0172266030555422,
+   "hi": 0.12027888025758705
+  },
+  "dac": {
+   "point": 0.0639897616381379,
+   "lo": -0.015590894917368257,
+   "hi": 0.1637696891377509
+  },
+  "ttc": {
+   "point": 0.14397696368581028,
+   "lo": -0.05295768745226198,
+   "hi": 0.36700593840830037
+  },
+  "ep": {
+   "point": -0.6724397436687976,
+   "lo": -0.8786643784182177,
+   "hi": -0.4542194850652736
+  },
+  "c": {
+   "point": 0.015997440409534474,
+   "lo": 0.0,
+   "hi": 0.057582403283340335
+  },
+  "n_tokens": 6251,
+  "n_logs": 66
+ },
+ "eval_separated_adverse": [
+  "ep"
+ ],
+ "replicates": {
+  "C0": {
+   "delta_point_eval": -0.12346034552317062,
+   "n_eval_tokens": 6251
+  },
+  "base": {
+   "delta_point_eval": 0.01217639580733543,
+   "n_eval_tokens": 6251
+  }
+ },
+ "verdict": "NOT ADOPTED",
+ "estimator": "paired log-cluster bootstrap over EVAL logs, 10000 draws, seed 20260927, 95 % percentile; LOGS only",
+ "tier": "T1 executed (NAVSIM v1.1 LQR-tracked)",
+ "evidence": "MEASURED (this read)"
+}

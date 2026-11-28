@@ -1,0 +1,394 @@
+{
+ "tags": {
+  "RIC0_s0": {
+   "checks": {
+    "scene_is_reindexed": true,
+    "n_windows_2399": true,
+    "past_rows_bit_identical": true,
+    "no_future_frame_model_and_floor": true,
+    "rows_reindexed_gt_0": true,
+    "rows_by_class_sum": true,
+    "feasible_as_declared": true,
+    "ticks_scene_reindexed_and_heads": true
+   },
+   "tag": "RIC0_s0",
+   "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt",
+   "n_windows": 2399,
+   "feasible": null,
+   "ticks_rows": 7197,
+   "scene_reindex": {
+    "scene": "reindexed",
+    "items": 7197,
+    "rows": 115152,
+    "rows_logged": 52778,
+    "rows_reindexed": 8028,
+    "rows_on_time": 46816,
+    "rows_clamped": 7530,
+    "rows_monotone_raised": 910,
+    "future_frame_rows": 0,
+    "lag_cache_steps_all_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.34902363164138905,
+     "p50": 0.0,
+     "p90": 1.0,
+     "max": 28.0
+    },
+    "lag_cache_steps_reindexed_rows": {
+     "n": 8028,
+     "mean": 2.7117588440458396,
+     "p50": 1.0,
+     "p90": 6.0,
+     "max": 28.0
+    },
+    "lateral_offset_m_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.3256860699485515,
+     "p50": 0.07669884415556069,
+     "p90": 0.8856044999563246,
+     "max": 18.787246684008963
+    },
+    "floor": {
+     "items": 7197,
+     "rows": 115152,
+     "rows_logged": 52778,
+     "rows_reindexed": 5740,
+     "rows_on_time": 46607,
+     "rows_clamped": 10027,
+     "rows_monotone_raised": 348,
+     "future_frame_rows": 0,
+     "lag_cache_steps_all_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.20179882643409114,
+      "p50": 0.0,
+      "p90": 0.0,
+      "max": 28.0
+     },
+     "lag_cache_steps_reindexed_rows": {
+      "n": 5740,
+      "mean": 2.192857142857143,
+      "p50": 1.0,
+      "p90": 4.0,
+      "max": 28.0
+     },
+     "lateral_offset_m_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.5029163628954921,
+      "p50": 0.08723955539792164,
+      "p90": 1.3779412020049477,
+      "max": 20.14616246657355
+     }
+    },
+    "past_rows_checked": 105556,
+    "past_rows_changed": 0,
+    "past_rows_bit_identical": true,
+    "rule": "rows i <= t0 stay logged (byte-compared); rows i > t0: tau(i) = min(i, tau*), tau* = the logged cache index nearest in arc length to the projection of the model's executed (x, y) at i on the logged polyline (ties and a dwell under dwell_m -> the latest index), tau non-decreasing over the item's rows; the row takes the logged feats[tau] and the frame_ok of that index",
+    "dwell_m": 0.05,
+    "role_note": "top level = the MODEL's rollout (the ticks the network reads); 'floor' = the P10 floor's rollout, which reads no frames",
+    "limits": "longitudinal only: the lateral offset of the own position from the logged path is ignored (reported as lateral_offset_m); dynamic agents are shown at the human's time; the current frame still depicts a logged position (the along-track one of the own position) and T2 is not provisioned"
+   },
+   "done": {
+    "tag": "RIC0_s0",
+    "flags": "--smooth sg72 --scene reindexed",
+    "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt",
+    "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+    "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+    "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+    "threads": 12,
+    "wall_s": 271
+   }
+  },
+  "RIC0_s1": {
+   "checks": {
+    "scene_is_reindexed": true,
+    "n_windows_2399": true,
+    "past_rows_bit_identical": true,
+    "no_future_frame_model_and_floor": true,
+    "rows_reindexed_gt_0": true,
+    "rows_by_class_sum": true,
+    "feasible_as_declared": true,
+    "ticks_scene_reindexed_and_heads": true
+   },
+   "tag": "RIC0_s1",
+   "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_C0/ckpt_last.pt",
+   "n_windows": 2399,
+   "feasible": null,
+   "ticks_rows": 7197,
+   "scene_reindex": {
+    "scene": "reindexed",
+    "items": 7197,
+    "rows": 115152,
+    "rows_logged": 52778,
+    "rows_reindexed": 7786,
+    "rows_on_time": 46528,
+    "rows_clamped": 8060,
+    "rows_monotone_raised": 1070,
+    "future_frame_rows": 0,
+    "lag_cache_steps_all_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.3617372623208388,
+     "p50": 0.0,
+     "p90": 1.0,
+     "max": 28.0
+    },
+    "lag_cache_steps_reindexed_rows": {
+     "n": 7786,
+     "mean": 2.8978936552787053,
+     "p50": 2.0,
+     "p90": 7.0,
+     "max": 28.0
+    },
+    "lateral_offset_m_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.3217490644076692,
+     "p50": 0.0783602234329367,
+     "p90": 0.8675939877679703,
+     "max": 15.097196241369684
+    },
+    "floor": {
+     "items": 7197,
+     "rows": 115152,
+     "rows_logged": 52778,
+     "rows_reindexed": 5740,
+     "rows_on_time": 46607,
+     "rows_clamped": 10027,
+     "rows_monotone_raised": 348,
+     "future_frame_rows": 0,
+     "lag_cache_steps_all_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.20179882643409114,
+      "p50": 0.0,
+      "p90": 0.0,
+      "max": 28.0
+     },
+     "lag_cache_steps_reindexed_rows": {
+      "n": 5740,
+      "mean": 2.192857142857143,
+      "p50": 1.0,
+      "p90": 4.0,
+      "max": 28.0
+     },
+     "lateral_offset_m_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.5029163628954921,
+      "p50": 0.08723955539792164,
+      "p90": 1.3779412020049477,
+      "max": 20.14616246657355
+     }
+    },
+    "past_rows_checked": 105556,
+    "past_rows_changed": 0,
+    "past_rows_bit_identical": true,
+    "rule": "rows i <= t0 stay logged (byte-compared); rows i > t0: tau(i) = min(i, tau*), tau* = the logged cache index nearest in arc length to the projection of the model's executed (x, y) at i on the logged polyline (ties and a dwell under dwell_m -> the latest index), tau non-decreasing over the item's rows; the row takes the logged feats[tau] and the frame_ok of that index",
+    "dwell_m": 0.05,
+    "role_note": "top level = the MODEL's rollout (the ticks the network reads); 'floor' = the P10 floor's rollout, which reads no frames",
+    "limits": "longitudinal only: the lateral offset of the own position from the logged path is ignored (reported as lateral_offset_m); dynamic agents are shown at the human's time; the current frame still depicts a logged position (the along-track one of the own position) and T2 is not provisioned"
+   },
+   "done": {
+    "tag": "RIC0_s1",
+    "flags": "--smooth sg72 --scene reindexed",
+    "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_C0/ckpt_last.pt",
+    "ckpt_sha256": "43a303980f063a495f4d745e66efb870cf7f2f9c25acc0a7998562fb4978be93",
+    "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+    "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+    "threads": 12,
+    "wall_s": 262
+   }
+  },
+  "RIC0C_s0": {
+   "checks": {
+    "scene_is_reindexed": true,
+    "n_windows_2399": true,
+    "past_rows_bit_identical": true,
+    "no_future_frame_model_and_floor": true,
+    "rows_reindexed_gt_0": true,
+    "rows_by_class_sum": true,
+    "feasible_as_declared": true,
+    "ticks_scene_reindexed_and_heads": true
+   },
+   "tag": "RIC0C_s0",
+   "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt",
+   "n_windows": 2399,
+   "feasible": "kbox",
+   "ticks_rows": 7197,
+   "scene_reindex": {
+    "scene": "reindexed",
+    "items": 7197,
+    "rows": 115152,
+    "rows_logged": 52778,
+    "rows_reindexed": 7780,
+    "rows_on_time": 46748,
+    "rows_clamped": 7846,
+    "rows_monotone_raised": 702,
+    "future_frame_rows": 0,
+    "lag_cache_steps_all_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.34557668259210567,
+     "p50": 0.0,
+     "p90": 1.0,
+     "max": 46.0
+    },
+    "lag_cache_steps_reindexed_rows": {
+     "n": 7780,
+     "mean": 2.770565552699229,
+     "p50": 1.0,
+     "p90": 6.0,
+     "max": 46.0
+    },
+    "lateral_offset_m_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.3313923773510952,
+     "p50": 0.07856422820025355,
+     "p90": 0.8666047992855832,
+     "max": 20.357020006174896
+    },
+    "floor": {
+     "items": 7197,
+     "rows": 115152,
+     "rows_logged": 52778,
+     "rows_reindexed": 5740,
+     "rows_on_time": 46607,
+     "rows_clamped": 10027,
+     "rows_monotone_raised": 348,
+     "future_frame_rows": 0,
+     "lag_cache_steps_all_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.20179882643409114,
+      "p50": 0.0,
+      "p90": 0.0,
+      "max": 28.0
+     },
+     "lag_cache_steps_reindexed_rows": {
+      "n": 5740,
+      "mean": 2.192857142857143,
+      "p50": 1.0,
+      "p90": 4.0,
+      "max": 28.0
+     },
+     "lateral_offset_m_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.5029163628954921,
+      "p50": 0.08723955539792164,
+      "p90": 1.3779412020049477,
+      "max": 20.14616246657355
+     }
+    },
+    "past_rows_checked": 105556,
+    "past_rows_changed": 0,
+    "past_rows_bit_identical": true,
+    "rule": "rows i <= t0 stay logged (byte-compared); rows i > t0: tau(i) = min(i, tau*), tau* = the logged cache index nearest in arc length to the projection of the model's executed (x, y) at i on the logged polyline (ties and a dwell under dwell_m -> the latest index), tau non-decreasing over the item's rows; the row takes the logged feats[tau] and the frame_ok of that index",
+    "dwell_m": 0.05,
+    "role_note": "top level = the MODEL's rollout (the ticks the network reads); 'floor' = the P10 floor's rollout, which reads no frames",
+    "limits": "longitudinal only: the lateral offset of the own position from the logged path is ignored (reported as lateral_offset_m); dynamic agents are shown at the human's time; the current frame still depicts a logged position (the along-track one of the own position) and T2 is not provisioned"
+   },
+   "done": {
+    "tag": "RIC0C_s0",
+    "flags": "--smooth sg72 --scene reindexed --feasible kbox",
+    "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_C0/ckpt_last.pt",
+    "ckpt_sha256": "bc3f926b7d5bc034ebb7043e5ef186a9dcad29ef404341fcd0493c7a22ca9fdf",
+    "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+    "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+    "threads": 12,
+    "wall_s": 265
+   }
+  },
+  "RIC0C_s1": {
+   "checks": {
+    "scene_is_reindexed": true,
+    "n_windows_2399": true,
+    "past_rows_bit_identical": true,
+    "no_future_frame_model_and_floor": true,
+    "rows_reindexed_gt_0": true,
+    "rows_by_class_sum": true,
+    "feasible_as_declared": true,
+    "ticks_scene_reindexed_and_heads": true
+   },
+   "tag": "RIC0C_s1",
+   "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_C0/ckpt_last.pt",
+   "n_windows": 2399,
+   "feasible": "kbox",
+   "ticks_rows": 7197,
+   "scene_reindex": {
+    "scene": "reindexed",
+    "items": 7197,
+    "rows": 115152,
+    "rows_logged": 52778,
+    "rows_reindexed": 7573,
+    "rows_on_time": 46499,
+    "rows_clamped": 8302,
+    "rows_monotone_raised": 873,
+    "future_frame_rows": 0,
+    "lag_cache_steps_all_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.35686343668836373,
+     "p50": 0.0,
+     "p90": 1.0,
+     "max": 46.0
+    },
+    "lag_cache_steps_reindexed_rows": {
+     "n": 7573,
+     "mean": 2.9392578898719135,
+     "p50": 1.0,
+     "p90": 7.0,
+     "max": 46.0
+    },
+    "lateral_offset_m_rows_after_t0": {
+     "n": 62374,
+     "mean": 0.328674677677372,
+     "p50": 0.08053760411263312,
+     "p90": 0.8433870033253267,
+     "max": 15.70839175641034
+    },
+    "floor": {
+     "items": 7197,
+     "rows": 115152,
+     "rows_logged": 52778,
+     "rows_reindexed": 5740,
+     "rows_on_time": 46607,
+     "rows_clamped": 10027,
+     "rows_monotone_raised": 348,
+     "future_frame_rows": 0,
+     "lag_cache_steps_all_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.20179882643409114,
+      "p50": 0.0,
+      "p90": 0.0,
+      "max": 28.0
+     },
+     "lag_cache_steps_reindexed_rows": {
+      "n": 5740,
+      "mean": 2.192857142857143,
+      "p50": 1.0,
+      "p90": 4.0,
+      "max": 28.0
+     },
+     "lateral_offset_m_rows_after_t0": {
+      "n": 62374,
+      "mean": 0.5029163628954921,
+      "p50": 0.08723955539792164,
+      "p90": 1.3779412020049477,
+      "max": 20.14616246657355
+     }
+    },
+    "past_rows_checked": 105556,
+    "past_rows_changed": 0,
+    "past_rows_bit_identical": true,
+    "rule": "rows i <= t0 stay logged (byte-compared); rows i > t0: tau(i) = min(i, tau*), tau* = the logged cache index nearest in arc length to the projection of the model's executed (x, y) at i on the logged polyline (ties and a dwell under dwell_m -> the latest index), tau non-decreasing over the item's rows; the row takes the logged feats[tau] and the frame_ok of that index",
+    "dwell_m": 0.05,
+    "role_note": "top level = the MODEL's rollout (the ticks the network reads); 'floor' = the P10 floor's rollout, which reads no frames",
+    "limits": "longitudinal only: the lateral offset of the own position from the logged path is ignored (reported as lateral_offset_m); dynamic agents are shown at the human's time; the current frame still depicts a logged position (the along-track one of the own position) and T2 is not provisioned"
+   },
+   "done": {
+    "tag": "RIC0C_s1",
+    "flags": "--smooth sg72 --scene reindexed --feasible kbox",
+    "ckpt": "E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_C0/ckpt_last.pt",
+    "ckpt_sha256": "43a303980f063a495f4d745e66efb870cf7f2f9c25acc0a7998562fb4978be93",
+    "tool": "F:/TanitAD-scratch/motion_c/ri/tree_ri/stack/scripts/v8f_t1_eval_ri.py",
+    "tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+    "threads": 12,
+    "wall_s": 271
+   }
+  }
+ },
+ "failures": [],
+ "PASS": true
+}

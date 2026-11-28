@@ -1,0 +1,112 @@
+{
+ "S1 default run (UUID half), new tool + new baseline": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 27,
+  "total_uuids": 120,
+  "total_prefixes": 0,
+  "n_shrank": 0,
+  "shrank_head": []
+ },
+ "S2 --clips v7 corpus list, new tool + new baseline": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 67,
+  "total_uuids": 120,
+  "total_prefixes": 530,
+  "n_shrank": 0,
+  "shrank_head": []
+ },
+ "S3 --clips list rebuilt from mp4 names (reversed, BOM, CRLF)": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 67,
+  "total_uuids": 120,
+  "total_prefixes": 530,
+  "n_shrank": 0,
+  "shrank_head": []
+ },
+ "S4 --clips 306,152-id index (the wrong list)": {
+  "exit": 1,
+  "refused_with": "ClipListMismatch",
+  "message": "ClipListMismatch: the prefix floor was recorded against the list v7 corpus a48251e89c7a8603 (4,719 clip ids) (n=4719, sha256 a48251e89c7a8603…); this run's list is n=306152, sha256 14e02003148d7619…. Prefix counts are only comparable against the SAME list."
+ },
+ "S5 --clips same size, ONE id swapped": {
+  "exit": 1,
+  "refused_with": "ClipListMismatch",
+  "message": "ClipListMismatch: the prefix floor was recorded against the list v7 corpus a48251e89c7a8603 (4,719 clip ids) (n=4719, sha256 a48251e89c7a8603…); this run's list is n=4719, sha256 d6389590a51dabd7…. Prefix counts are only comparable against the SAME list."
+ },
+ "S6 growth: +1 prefix in a file that already carries some": {
+  "file": "Project Steering/Decisions/2026-09-06-mm-decisions.md",
+  "exit": 1,
+  "refused_with": "LeakGrew",
+  "message": "LeakGrew: identifiers were ADDED to the record. ⛔ Use sha12 (`sha256(clip_id)[:12]`) — a UUID in prose is an unstable handle and the reason this guard exists.\n  grew: Project Steering/Decisions/2026-09-06-mm-decisions.md:prefixes 2 -> 3"
+ },
+ "S7 growth: a NEW file carrying one prefix": {
+  "exit": 1,
+  "refused_with": "LeakGrew",
+  "message": "LeakGrew: identifiers were ADDED to the record. ⛔ Use sha12 (`sha256(clip_id)[:12]`) — a UUID in prose is an unstable handle and the reason this guard exists.\n  new files: Project Steering/zz_floor_probe_new_file.md (+0 uuid, +1 prefix)"
+ },
+ "S8 cleanup: -1 prefix in one file (allowed, reported)": {
+  "file": "Project Steering/Decisions/2026-09-06-mm-decisions.md",
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 67,
+  "total_uuids": 120,
+  "total_prefixes": 529,
+  "n_shrank": 1,
+  "shrank_head": [
+   "Project Steering/Decisions/2026-09-06-mm-decisions.md:prefixes 2 -> 1"
+  ]
+ },
+ "S8b the copy restored: back to green": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 67,
+  "total_uuids": 120,
+  "total_prefixes": 530,
+  "n_shrank": 0,
+  "shrank_head": []
+ },
+ "S9a OLD tool + NEW baseline, default": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 27,
+  "total_uuids": 120,
+  "total_prefixes": 0,
+  "n_shrank": 13,
+  "shrank_head": [
+   "Project Steering/GOALS_AND_CLAIMS.md:prefixes 23 -> 0",
+   "Project Steering/LEAK_v1arch_val_2026-08-05.md:prefixes 1 -> 0",
+   "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/THOR_CONCURRENCY_PILOT.md:prefixes 1 -> 0"
+  ]
+ },
+ "S9b OLD tool + NEW baseline, --clips corpus": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 67,
+  "total_uuids": 120,
+  "total_prefixes": 530,
+  "n_shrank": 0,
+  "shrank_head": []
+ },
+ "S9c OLD tool + NEW baseline, --clips index": {
+  "exit": 1,
+  "refused_with": "LeakGrew",
+  "message": "LeakGrew: identifiers were ADDED to the record. ⛔ Use sha12 (`sha256(clip_id)[:12]`) — a UUID in prose is an unstable handle and the reason this guard exists.\n  new files: Project Steering/CLOSED_LOOP_FEASIBILITY_2026-09-03.md (+0 uuid, +3 prefix); Project Steering/MODEL_REGISTRY.md (+0 uuid, +4 prefix); Project Steering/eval_corpus/V2EP_FORMAT_SPEC.md (+0 uuid, +2 prefix); TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-26-4brain-gates/GATE_RESULTS.md (+0 uuid, +16 prefix); TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-26-vectormap-corridor/VECTORMAP_CORRIDOR.md (+0 uuid, +4 prefix); TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-18-thor-stranded-rescue/THOR_STRANDED_RESCUE.md (+0 uuid, +1 prefix); TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refcv5-completeness-review/RESUL"
+ },
+ "S10a NEW tool + OLD baseline, default": {
+  "exit": 0,
+  "verdict": "NO-GROWTH",
+  "files_with_ids": 27,
+  "total_uuids": 120,
+  "total_prefixes": 0,
+  "n_shrank": 0,
+  "shrank_head": []
+ },
+ "S10b NEW tool + OLD baseline, --clips corpus": {
+  "exit": 1,
+  "refused_with": "ClipListMismatch",
+  "message": "ClipListMismatch: this baseline records NO prefix floor, so the prefix half has nothing to compare against. Record one with --write-baseline --clips <list>."
+ }
+}

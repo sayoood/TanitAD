@@ -1,0 +1,109 @@
+# READ_40000 -- bar-deciding cells, READ from banked artifacts (EARLY READ; T1 self-action open loop; single training seed)
+
+## step40000ema_unc
+
+* compliant re-read `raw/compliant_reread/trees/step40000ema_unc.json`: controls ALL_PASS = **True** (C4 pose reference valid: True), status WRITTEN (all controls passed)
+  * BAR-R8-E1 / E3 reference (D-R8-E1-REF): **ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)**; the registered `ha0_ext` read is BESIDE
+  * `compliant/capped`  [reference ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)]  E1 FAILED  (s0 -0.0068 [-0.0225, +0.0088]; s1 -0.0064 [-0.0208, +0.0091])
+    E3 PASS (single training seed; training-seed floor unmeasured)  (s0 -0.6614 [-1.0102, -0.3527] sep; s1 -0.6578 [-0.9932, -0.3505] sep)
+    E1 beside (ha0_ext) FAILED  (s0 -0.0017 [-0.0165, +0.0138]; s1 -0.0013 [-0.0153, +0.0141])
+    E3 beside (ha0_ext) PASS (single training seed; training-seed floor unmeasured)  (s0 -0.6326 [-0.9708, -0.3257] sep; s1 -0.6291 [-0.9599, -0.3244] sep)
+    NR per family {"ADE": "FAIL: S6:ade_m", "LATERAL": "PASS", "LONGITUDINAL": "PASS"}
+  * `compliant/uncapped`  [reference ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)]  E1 FAILED  (s0 -0.0068 [-0.0225, +0.0088]; s1 -0.0064 [-0.0208, +0.0091])
+    E3 PASS (single training seed; training-seed floor unmeasured)  (s0 -0.6614 [-1.0102, -0.3527] sep; s1 -0.6578 [-0.9932, -0.3505] sep)
+    E1 beside (ha0_ext) FAILED  (s0 -0.0017 [-0.0165, +0.0138]; s1 -0.0013 [-0.0153, +0.0141])
+    E3 beside (ha0_ext) PASS (single training seed; training-seed floor unmeasured)  (s0 -0.6326 [-0.9708, -0.3257] sep; s1 -0.6291 [-0.9599, -0.3244] sep)
+    NR per family {"ADE": "FAIL: S6:ade_m", "LATERAL": "PASS", "LONGITUDINAL": "PASS"}
+  * `all_window/capped`  [reference ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)]  E1 FAILED  (s0 +0.0628 [+0.0268, +0.1039]; s1 +0.0631 [+0.0276, +0.1041])
+    E3 PASS (single training seed; training-seed floor unmeasured)  (s0 -0.6070 [-0.9732, -0.2562] sep; s1 -0.5950 [-0.9525, -0.2440] sep)
+    E1 beside (ha0_ext) FAILED  (s0 +0.0684 [+0.0327, +0.1092]; s1 +0.0686 [+0.0334, +0.1094])
+    E3 beside (ha0_ext) PASS (single training seed; training-seed floor unmeasured)  (s0 -0.5785 [-0.9380, -0.2328] sep; s1 -0.5665 [-0.9203, -0.2212] sep)
+    NR per family {"ADE": "FAIL: S2:ade_m, S6:ade_m", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid", "LONGITUDINAL": "FAIL: S2:LON_speed_mae_mps, S2:LON_along_abs_final_m"}
+  * `all_window/uncapped`  [reference ha0_ext_pose (D-R8-E1-REF, PI 2026-10-19)]  E1 FAILED  (s0 +0.0015 [-0.0142, +0.0177]; s1 +0.0023 [-0.0133, +0.0182])
+    E3 PASS (single training seed; training-seed floor unmeasured)  (s0 -0.7257 [-1.0574, -0.4010] sep; s1 -0.7075 [-1.0366, -0.3881] sep)
+    E1 beside (ha0_ext) FAILED  (s0 +0.0070 [-0.0082, +0.0227]; s1 +0.0079 [-0.0075, +0.0232])
+    E3 beside (ha0_ext) PASS (single training seed; training-seed floor unmeasured)  (s0 -0.6971 [-1.0214, -0.3796] sep; s1 -0.6789 [-1.0007, -0.3676] sep)
+    NR per family {"ADE": "FAIL: S2:ade_m, S6:ade_m", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid", "LONGITUDINAL": "FAIL: S2:LON_speed_mae_mps, S2:LON_along_abs_final_m"}
+
+* forward `raw/a0k0_headroom/FORWARD_step40000ema_unc.json`: controls ALL_PASS = **True**
+  * `compliant|RS_FROZEN30k` FZ-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0430 [-0.0539, -0.0331] sep; s1 -0.0434 [-0.0539, -0.0335] sep)
+  * `compliant|RS_FROZEN30k` FZ-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0482 [-0.0598, -0.0377] sep; s1 -0.0485 [-0.0596, -0.0380] sep)
+  * `compliant|RS_FROZEN30k` FZ-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.8866 [-1.1593, -0.6321] sep; s1 -0.8939 [-1.1621, -0.6459] sep)
+  * `compliant|RS_FROZEN30k` FZ-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_curvature_mae_1pm_valid", "LONGITUDINAL": "PASS"}
+  * `compliant|GATED_RS_FROZEN30k` FZ-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0458 [-0.0563, -0.0360] sep; s1 -0.0456 [-0.0558, -0.0359] sep)
+  * `compliant|GATED_RS_FROZEN30k` FZ-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0510 [-0.0622, -0.0407] sep; s1 -0.0508 [-0.0616, -0.0404] sep)
+  * `compliant|GATED_RS_FROZEN30k` FZ-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.9679 [-1.2311, -0.7244] sep; s1 -0.9690 [-1.2355, -0.7298] sep)
+  * `compliant|GATED_RS_FROZEN30k` FZ-NR: {"ADE": "PASS", "LATERAL": "PASS", "LONGITUDINAL": "PASS"}
+  * `all|RS_FROZEN30k` FZ-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0410 [-0.0510, -0.0313] sep; s1 -0.0412 [-0.0508, -0.0316] sep)
+  * `all|RS_FROZEN30k` FZ-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0465 [-0.0573, -0.0360] sep; s1 -0.0467 [-0.0577, -0.0362] sep)
+  * `all|RS_FROZEN30k` FZ-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.9713 [-1.2455, -0.7162] sep; s1 -0.9655 [-1.2357, -0.7107] sep)
+  * `all|RS_FROZEN30k` FZ-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_curvature_mae_1pm_valid", "LONGITUDINAL": "PASS"}
+  * `all|GATED_RS_FROZEN30k` FZ-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0448 [-0.0549, -0.0353] sep; s1 -0.0445 [-0.0543, -0.0349] sep)
+  * `all|GATED_RS_FROZEN30k` FZ-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0503 [-0.0613, -0.0401] sep; s1 -0.0500 [-0.0611, -0.0397] sep)
+  * `all|GATED_RS_FROZEN30k` FZ-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -1.0561 [-1.3357, -0.8019] sep; s1 -1.0460 [-1.3173, -0.7931] sep)
+  * `all|GATED_RS_FROZEN30k` FZ-NR: {"ADE": "PASS", "LATERAL": "PASS", "LONGITUDINAL": "PASS"}
+* forward `raw/a0k0_lon/FORWARD_LON_step40000ema_unc.json`: controls ALL_PASS = **True**
+  * `compliant|RS_LON_FROZEN30k` FZL-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0256 [-0.0364, -0.0144] sep; s1 -0.0251 [-0.0356, -0.0142] sep)
+  * `compliant|RS_LON_FROZEN30k` FZL-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0307 [-0.0420, -0.0194] sep; s1 -0.0302 [-0.0413, -0.0191] sep)
+  * `compliant|RS_LON_FROZEN30k` FZL-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.8653 [-1.1408, -0.6071] sep; s1 -0.8705 [-1.1406, -0.6217] sep)
+  * `compliant|RS_LON_FROZEN30k` FZL-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid", "LONGITUDINAL": "PASS"}
+  * `compliant|RS_LON_FROZEN30k` FZL-LAT: ?  ()
+  * `compliant|GATED_RS_LON_FROZEN30k` FZL-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0283 [-0.0394, -0.0171] sep; s1 -0.0273 [-0.0380, -0.0164] sep)
+  * `compliant|GATED_RS_LON_FROZEN30k` FZL-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0334 [-0.0446, -0.0223] sep; s1 -0.0324 [-0.0435, -0.0214] sep)
+  * `compliant|GATED_RS_LON_FROZEN30k` FZL-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.9375 [-1.2066, -0.6909] sep; s1 -0.9377 [-1.2074, -0.6954] sep)
+  * `compliant|GATED_RS_LON_FROZEN30k` FZL-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid", "LONGITUDINAL": "PASS"}
+  * `compliant|GATED_RS_LON_FROZEN30k` FZL-LAT: ?  ()
+  * `compliant|RS_LAT1_FROZEN30k` FZL-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0256 [-0.0364, -0.0144] sep; s1 -0.0251 [-0.0356, -0.0142] sep)
+  * `compliant|RS_LAT1_FROZEN30k` FZL-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0307 [-0.0420, -0.0194] sep; s1 -0.0302 [-0.0413, -0.0191] sep)
+  * `compliant|RS_LAT1_FROZEN30k` FZL-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.8653 [-1.1408, -0.6071] sep; s1 -0.8705 [-1.1406, -0.6217] sep)
+  * `compliant|RS_LAT1_FROZEN30k` FZL-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid", "LONGITUDINAL": "PASS"}
+  * `compliant|RS_LAT1_FROZEN30k` FZL-LAT: ?  ()
+  * `all|RS_LON_FROZEN30k` FZL-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0234 [-0.0341, -0.0126] sep; s1 -0.0227 [-0.0337, -0.0120] sep)
+  * `all|RS_LON_FROZEN30k` FZL-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0289 [-0.0402, -0.0176] sep; s1 -0.0283 [-0.0397, -0.0174] sep)
+  * `all|RS_LON_FROZEN30k` FZL-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.9509 [-1.2255, -0.6935] sep; s1 -0.9429 [-1.2120, -0.6885] sep)
+  * `all|RS_LON_FROZEN30k` FZL-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid", "LONGITUDINAL": "PASS"}
+  * `all|RS_LON_FROZEN30k` FZL-LAT: ?  ()
+  * `all|GATED_RS_LON_FROZEN30k` FZL-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0269 [-0.0377, -0.0160] sep; s1 -0.0257 [-0.0365, -0.0149] sep)
+  * `all|GATED_RS_LON_FROZEN30k` FZL-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0324 [-0.0438, -0.0211] sep; s1 -0.0312 [-0.0427, -0.0200] sep)
+  * `all|GATED_RS_LON_FROZEN30k` FZL-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -1.0276 [-1.3081, -0.7759] sep; s1 -1.0163 [-1.2878, -0.7633] sep)
+  * `all|GATED_RS_LON_FROZEN30k` FZL-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid", "LONGITUDINAL": "PASS"}
+  * `all|GATED_RS_LON_FROZEN30k` FZL-LAT: ?  ()
+  * `all|RS_LAT1_FROZEN30k` FZL-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0234 [-0.0341, -0.0126] sep; s1 -0.0227 [-0.0337, -0.0120] sep)
+  * `all|RS_LAT1_FROZEN30k` FZL-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0289 [-0.0402, -0.0176] sep; s1 -0.0283 [-0.0397, -0.0174] sep)
+  * `all|RS_LAT1_FROZEN30k` FZL-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.9509 [-1.2255, -0.6935] sep; s1 -0.9429 [-1.2120, -0.6885] sep)
+  * `all|RS_LAT1_FROZEN30k` FZL-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid", "LONGITUDINAL": "PASS"}
+  * `all|RS_LAT1_FROZEN30k` FZL-LAT: ?  ()
+* forward `raw/a0k0_retime/FORWARD_RETIME_step40000ema_unc.json`: controls ALL_PASS = **True**
+  * `compliant|RETIME_FROZEN30k` FZR-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0270 [-0.0380, -0.0160] sep; s1 -0.0267 [-0.0374, -0.0159] sep)
+  * `compliant|RETIME_FROZEN30k` FZR-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0321 [-0.0433, -0.0210] sep; s1 -0.0319 [-0.0428, -0.0206] sep)
+  * `compliant|RETIME_FROZEN30k` FZR-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.9709 [-1.2492, -0.7168] sep; s1 -0.9742 [-1.2485, -0.7275] sep)
+  * `compliant|RETIME_FROZEN30k` FZR-NR: {"ADE": "PASS", "LATERAL": "PASS", "LONGITUDINAL": "PASS"}
+  * `compliant|RETIME_FROZEN30k` FZR-LAT: ?  ()
+  * `compliant|GATED_RETIME_FROZEN30k` FZR-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0299 [-0.0407, -0.0187] sep; s1 -0.0290 [-0.0397, -0.0182] sep)
+  * `compliant|GATED_RETIME_FROZEN30k` FZR-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0350 [-0.0462, -0.0237] sep; s1 -0.0341 [-0.0452, -0.0230] sep)
+  * `compliant|GATED_RETIME_FROZEN30k` FZR-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -1.0091 [-1.2870, -0.7611] sep; s1 -1.0105 [-1.2810, -0.7674] sep)
+  * `compliant|GATED_RETIME_FROZEN30k` FZR-NR: {"ADE": "PASS", "LATERAL": "PASS", "LONGITUDINAL": "PASS"}
+  * `compliant|GATED_RETIME_FROZEN30k` FZR-LAT: ?  ()
+  * `all|RETIME_FROZEN30k` FZR-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0248 [-0.0359, -0.0138] sep; s1 -0.0243 [-0.0354, -0.0136] sep)
+  * `all|RETIME_FROZEN30k` FZR-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0303 [-0.0418, -0.0187] sep; s1 -0.0298 [-0.0415, -0.0185] sep)
+  * `all|RETIME_FROZEN30k` FZR-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -1.0613 [-1.3568, -0.7917] sep; s1 -1.0535 [-1.3432, -0.7877] sep)
+  * `all|RETIME_FROZEN30k` FZR-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid", "LONGITUDINAL": "PASS"}
+  * `all|RETIME_FROZEN30k` FZR-LAT: ?  ()
+  * `all|GATED_RETIME_FROZEN30k` FZR-E1: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0282 [-0.0392, -0.0171] sep; s1 -0.0271 [-0.0383, -0.0160] sep)
+  * `all|GATED_RETIME_FROZEN30k` FZR-E1P: PASS (single training seed; training-seed floor unmeasured)  (s0 -0.0337 [-0.0454, -0.0224] sep; s1 -0.0326 [-0.0444, -0.0211] sep)
+  * `all|GATED_RETIME_FROZEN30k` FZR-E3: PASS (single training seed; training-seed floor unmeasured)  (s0 -1.0994 [-1.3976, -0.8331] sep; s1 -1.0903 [-1.3782, -0.8255] sep)
+  * `all|GATED_RETIME_FROZEN30k` FZR-NR: {"ADE": "PASS", "LATERAL": "FAIL: S2:LAT_heading_mae_deg", "LONGITUDINAL": "PASS"}
+  * `all|GATED_RETIME_FROZEN30k` FZR-LAT: ?  ()
+
+* heading drift: `raw/heading_drift/HEADING_DRIFT_step40000ema.json` present = True
+
+## step40000_unc
+
+* compliant re-read: MISSING
+
+* forward `a0k0_headroom`: MISSING
+* forward `a0k0_lon`: MISSING
+* forward `a0k0_retime`: MISSING
+
+* heading drift: `raw/heading_drift/HEADING_DRIFT_step40000raw.json` present = False
+

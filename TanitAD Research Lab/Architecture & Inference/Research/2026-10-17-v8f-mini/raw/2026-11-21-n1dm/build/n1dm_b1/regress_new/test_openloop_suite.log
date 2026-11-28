@@ -1,0 +1,1062 @@
+EEE.EEEEEEEEEE..EE.EEEE                                                  [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_constant_only_control_reads_its_known_value_exactly __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+---------------------------- Captured stdout setup ----------------------------
+[suite] taniteval/tools/openloop_suite.py
+[suite] regime: OPEN LOOP (PI ruling 2026-09-02) — every arm
+[v3] nav_from_v7: follow 1 / left 1 / right 1, missing 0 (of 3 clips; md5=ffe781e088cd05a47b01f1d31c6263c0)
+[model] F:\TanitAD-scratch\n1dc\build\n1dm_b1\tmp\rg\test_openloop_suite\bt\openloop_suite_e2e0\fx\run\ckpt.pt step=11 arm=hier anchors=20 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=4 decoder=diffusion/2 config<-config.json[refcv3_arm_model_cfg] (explicit RefCV3Config)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[roll] 42 windows / 3 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'os_navshuf', 'os_navzero', 'oracle_sel'] · fed conditionings=['nav_true', 'nav_shuffled'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 25/42
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (2 fed row(s) + 1 nav-null call, 3 rows total) took 0.04 s -> ESTIMATED 0.00 h for 42 windows (forward only; IO/analysis extra)
+  [1/3] clip-aaaaaaa 14 windows 1s
+  [2/3] clip-bbbbbbb 14 windows 2s
+  [3/3] clip-ccccccc 14 windows 2s
+[dump] 42 windows over 3 episodes (0 skipped: none)
+[provenance] SYNTHETIC_FIXTURE - ckpt=SMOKE corpus=SMOKE step=11 eps=3 windows=42 anchors=20  [UNVERIFIED-ON-A-REAL-CHECKPOINT]
+REFCV3_DUMP_DONE
+[suite] checkpoint step VERIFIED BY CONTENT: 11 == --expect-step
+[trivial-profile] 42 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os_navshuf=17/42
+  ha             n=  42 straight=0.0000 const_speed=0.0714 CONSTANT-VELOCITY=0.0000
+  ha0            n=  42 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n=  42 straight=0.0000 const_speed=0.0714 CONSTANT-VELOCITY=0.0000
+  os_navshuf     n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os=17/42
+  os_navzero     n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  oracle_sel     n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+[selection-profile] 42 windows over 20 anchors — the model's OWN choice, before any family row
+  n_distinct=   1  modal=#2 (1.0000)  entropy=0.0000/2.9957 nats (ratio 0.0000)  agrees_with_oracle=0.0
+  ⛔ VOID-RISK: the selection is a CONSTANT on 100.00% of windows — the arm is 'always anchor #2, refined'. Read every family row below as a property of that one anchor, NEVER as scene understanding. The trivial profile CANNOT see this.
+[suite] record acquired: ROLLED OUT by taniteval/tools/refcv3_arm.py::run_dump
+[suite] artifact assembled: 42 windows / 3 episodes, headline arm `os`
+_ ERROR at setup of test_a_failing_control_is_a_harness_verdict_not_a_model_one _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_neither_rendering_uses_the_superseded_regime_phrase __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+______ ERROR at setup of test_stale_loop_labels_are_reported_not_edited _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_______ ERROR at setup of test_criteria_checker_reports_zero_violations _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_forbidden_estimator_is_never_a_decision_grade_interval _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+______ ERROR at setup of test_all_four_families_present_and_never_pooled ______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_strategic_is_in_the_headline_even_with_no_paired_block _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_ade_and_the_longitudinal_lateral_split_are_both_reported _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_refused_criteria_carry_a_reason_and_are_named_as_gaps _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+______ ERROR at setup of test_every_arm_carries_tier_and_evidence_class _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_the_two_nav_controls_are_both_present_and_distinguished _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+___ ERROR at setup of test_random_init_loses_to_the_constant_velocity_floor ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+__ ERROR at setup of test_provenance_records_which_tree_produced_the_numbers __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_arm_json_roundtrip_is_the_contract_with_another_stream _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+__ ERROR at setup of test_checkpoint_is_verified_by_content_not_by_filename ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_____ ERROR at setup of test_non_parity_is_stated_not_left_to_be_assumed ______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_the_deployment_margin_has_equal_billing_with_the_oracle_one _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+________ ERROR at setup of test_html_is_a_complete_standalone_document ________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _t...th('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_openloop_suite/bt'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\taniteval\tools\openloop_suite.py:2352: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+..\taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+..\taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x0000027EDD72C8F0>
+path = 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\n1dc\\build\\n1dm_b1\\tree\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+=========================== short test summary info ===========================
+ERROR tests/test_openloop_suite.py::test_constant_only_control_reads_its_known_value_exactly
+ERROR tests/test_openloop_suite.py::test_a_failing_control_is_a_harness_verdict_not_a_model_one
+ERROR tests/test_openloop_suite.py::test_neither_rendering_uses_the_superseded_regime_phrase
+ERROR tests/test_openloop_suite.py::test_stale_loop_labels_are_reported_not_edited
+ERROR tests/test_openloop_suite.py::test_criteria_checker_reports_zero_violations
+ERROR tests/test_openloop_suite.py::test_forbidden_estimator_is_never_a_decision_grade_interval
+ERROR tests/test_openloop_suite.py::test_all_four_families_present_and_never_pooled
+ERROR tests/test_openloop_suite.py::test_strategic_is_in_the_headline_even_with_no_paired_block
+ERROR tests/test_openloop_suite.py::test_ade_and_the_longitudinal_lateral_split_are_both_reported
+ERROR tests/test_openloop_suite.py::test_refused_criteria_carry_a_reason_and_are_named_as_gaps
+ERROR tests/test_openloop_suite.py::test_every_arm_carries_tier_and_evidence_class
+ERROR tests/test_openloop_suite.py::test_the_two_nav_controls_are_both_present_and_distinguished
+ERROR tests/test_openloop_suite.py::test_random_init_loses_to_the_constant_velocity_floor
+ERROR tests/test_openloop_suite.py::test_provenance_records_which_tree_produced_the_numbers
+ERROR tests/test_openloop_suite.py::test_arm_json_roundtrip_is_the_contract_with_another_stream
+ERROR tests/test_openloop_suite.py::test_checkpoint_is_verified_by_content_not_by_filename
+ERROR tests/test_openloop_suite.py::test_non_parity_is_stated_not_left_to_be_assumed
+ERROR tests/test_openloop_suite.py::test_the_deployment_margin_has_equal_billing_with_the_oracle_one
+ERROR tests/test_openloop_suite.py::test_html_is_a_complete_standalone_document
+4 passed, 19 errors in 18.92s

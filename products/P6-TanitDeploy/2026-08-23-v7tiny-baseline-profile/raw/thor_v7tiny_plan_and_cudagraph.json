@@ -1,0 +1,261 @@
+{
+ "spec": "E-DEPLOY-1c",
+ "plan_keys": [
+  "a",
+  "controls",
+  "feat",
+  "kappa",
+  "waypoints"
+ ],
+ "plan_contents": {
+  "a": {
+   "shape": [
+    1,
+    8,
+    60
+   ],
+   "dtype": "torch.float32",
+   "absmax": 0.0,
+   "mean": 0.0,
+   "std": 0.0,
+   "n_zero": 480,
+   "numel": 480,
+   "all_zero": true,
+   "finite": true
+  },
+  "kappa": {
+   "shape": [
+    1,
+    8,
+    60
+   ],
+   "dtype": "torch.float32",
+   "absmax": 0.0,
+   "mean": 0.0,
+   "std": 0.0,
+   "n_zero": 480,
+   "numel": 480,
+   "all_zero": true,
+   "finite": true
+  },
+  "controls": {
+   "shape": [
+    1,
+    8,
+    60,
+    2
+   ],
+   "dtype": "torch.float32",
+   "absmax": 0.0,
+   "mean": 0.0,
+   "std": 0.0,
+   "n_zero": 960,
+   "numel": 960,
+   "all_zero": true,
+   "finite": true
+  },
+  "waypoints": {
+   "shape": [
+    1,
+    8,
+    60,
+    2
+   ],
+   "dtype": "torch.float32",
+   "absmax": 56.13212203979492,
+   "mean": 14.266913414001465,
+   "std": 18.306867599487305,
+   "n_zero": 480,
+   "numel": 960,
+   "all_zero": false,
+   "finite": true
+  },
+  "feat": {
+   "shape": [
+    1,
+    8,
+    384
+   ],
+   "dtype": "torch.float32",
+   "absmax": 1.8793392181396484,
+   "mean": 0.013277512043714523,
+   "std": 0.625870943069458,
+   "n_zero": 0,
+   "numel": 3072,
+   "all_zero": false,
+   "finite": true
+  }
+ },
+ "top_keys": [
+  "a_lat",
+  "a_lon",
+  "a_str",
+  "e_g_str",
+  "e_g_tac",
+  "g_str",
+  "g_tac",
+  "g_tac_lat",
+  "g_tac_lon",
+  "plan",
+  "planner_side",
+  "uplink_side",
+  "z_op",
+  "z_op_win",
+  "z_plan",
+  "z_str",
+  "z_str_target",
+  "z_tac",
+  "z_tac_target",
+  "zhat_op",
+  "zhat_op_seam",
+  "zhat_str",
+  "zhat_tac"
+ ],
+ "cfg_planner": {
+  "proposals": "query",
+  "selector": "none",
+  "n_candidates": 8,
+  "plan_steps": 60,
+  "dt": 0.1,
+  "a_max": 4.0,
+  "kappa_max": 0.2,
+  "emission_squash": "squash",
+  "mpc_refine": false,
+  "diffusion_steps": 4
+ },
+ "graph_grid": [
+  {
+   "batch": 1,
+   "dtype": "fp32",
+   "eager": {
+    "n": 40,
+    "median_ms": 13.019830454140902,
+    "p90_ms": 13.34751897957176
+   },
+   "eager_peak_mb": 171.53,
+   "captured": true,
+   "replay": {
+    "n": 40,
+    "median_ms": 7.839573954697698,
+    "p90_ms": 7.869033026508987
+   },
+   "replay_peak_mb": 180.28,
+   "speedup": 1.661,
+   "saved_ms": 5.18,
+   "replay_vs_eager_max_abs": 0.0,
+   "bit_identical": true,
+   "windows_per_s": 127.55795222784667
+  },
+  {
+   "batch": 1,
+   "dtype": "fp16",
+   "eager": {
+    "n": 40,
+    "median_ms": 15.237957471981645,
+    "p90_ms": 15.866462024860084
+   },
+   "eager_peak_mb": 192.03,
+   "captured": true,
+   "replay": {
+    "n": 40,
+    "median_ms": 5.673870502505451,
+    "p90_ms": 5.694792023859918
+   },
+   "replay_peak_mb": 200.16,
+   "speedup": 2.686,
+   "saved_ms": 9.564,
+   "replay_vs_eager_max_abs": 0.0,
+   "bit_identical": true,
+   "windows_per_s": 176.24653216149767
+  },
+  {
+   "batch": 4,
+   "dtype": "fp32",
+   "eager": {
+    "n": 40,
+    "median_ms": 27.51575951697305,
+    "p90_ms": 27.571648941375315
+   },
+   "eager_peak_mb": 403.28,
+   "captured": true,
+   "replay": {
+    "n": 40,
+    "median_ms": 23.760539013892412,
+    "p90_ms": 23.80732900928706
+   },
+   "replay_peak_mb": 411.42,
+   "speedup": 1.158,
+   "saved_ms": 3.755,
+   "replay_vs_eager_max_abs": 0.0,
+   "bit_identical": true,
+   "windows_per_s": 168.34634928362792
+  },
+  {
+   "batch": 4,
+   "dtype": "fp16",
+   "eager": {
+    "n": 40,
+    "median_ms": 19.775175489485264,
+    "p90_ms": 19.89483810029924
+   },
+   "eager_peak_mb": 456.98,
+   "captured": true,
+   "replay": {
+    "n": 40,
+    "median_ms": 15.693358553107828,
+    "p90_ms": 15.747649944387376
+   },
+   "replay_peak_mb": 465.73,
+   "speedup": 1.26,
+   "saved_ms": 4.082,
+   "replay_vs_eager_max_abs": 0.0,
+   "bit_identical": true,
+   "windows_per_s": 254.88489200470485
+  },
+  {
+   "batch": 8,
+   "dtype": "fp32",
+   "eager": {
+    "n": 40,
+    "median_ms": 48.39003592496738,
+    "p90_ms": 48.493772046640515
+   },
+   "eager_peak_mb": 703.79,
+   "captured": true,
+   "replay": {
+    "n": 40,
+    "median_ms": 44.5179840316996,
+    "p90_ms": 44.613241916522384
+   },
+   "replay_peak_mb": 712.93,
+   "speedup": 1.087,
+   "saved_ms": 3.872,
+   "replay_vs_eager_max_abs": 0.0,
+   "bit_identical": true,
+   "windows_per_s": 179.70265666799958
+  },
+  {
+   "batch": 8,
+   "dtype": "fp16",
+   "eager": {
+    "n": 40,
+    "median_ms": 32.854052959010005,
+    "p90_ms": 32.97296504024416
+   },
+   "eager_peak_mb": 803.37,
+   "captured": true,
+   "replay": {
+    "n": 40,
+    "median_ms": 28.596505988389254,
+    "p90_ms": 28.686944977380335
+   },
+   "replay_peak_mb": 811.5,
+   "speedup": 1.149,
+   "saved_ms": 4.258,
+   "replay_vs_eager_max_abs": 0.0,
+   "bit_identical": true,
+   "windows_per_s": 279.7544568293818
+  }
+ ],
+ "_evidence_class": "MEASURED (ours; Thor, in-process probes only)"
+}

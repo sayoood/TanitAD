@@ -1,0 +1,13 @@
+# E-only lines of TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in c2d4042; E mtime 2026-10-15 06:22; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+173:              "epo_terms_train", "epo_terms_heldout")          # every EPO lever except the switch itself (named without --epo = refused)
+556:     bad_cli = epo_refusals(a, ap)                            # RL-S1: a command line that names EPO levers inconsistently never starts
+671:                        "k": a.epo_k, "lam_k": a.epo_lam_k, "l": a.epo_l, "lam_l": a.epo_lam_l, "eps": EPO_EPS,
+763:             ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)
+977:                     the head-less reference is run twice under STRICT deterministic algorithms (warn_only=False, A5: a warn_only run keeps the non-deterministic SDPA
+981:                     cast cache cleared (A5: a mutation inside one region is invisible to the next call in it -- see the comment at the probe)
+1042:             # ⛔ STRICT DETERMINISM, NOT warn_only (MEASURED 2026-10-14, raw/2026-10-14-s1-g12-bf16/probe_d_*.json, PREREG_AUX_DRIVABLE_S1.md A5): with warn_only=True the
+1068:             # ⛔ THE AUTOCAST WEIGHT-CAST CACHE (MEASURED 2026-10-14, raw/2026-10-14-s1-g12-bf16/, PREREG_AUX_DRIVABLE_S1.md A5): inside ONE autocast region the first bf16 use of a
+1318:         if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS):
+1387:                             **({"AUX": aux.state_dict()} if aux is not None else {})},
+1395:     log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600})

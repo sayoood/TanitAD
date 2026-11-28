@@ -1,0 +1,1057 @@
+{
+ "block": "refa_reconciliation/paired_four_families",
+ "tier": "T0",
+ "tier_note": "teacher-forced. Source dumps are taniteval.driving/tier0. NEVER quotable as driving performance (EVAL_DOCTRINE).",
+ "estimator": "paired_episode_cluster_bootstrap",
+ "n_boot": 2000,
+ "seed": 0,
+ "arms": {
+  "refa-dinov2": "REF-A DINOv2 4B (frozen encoder)",
+  "flagship-30k": "flagship v1 (flagship4b-speedjerk-30k, trained encoder)",
+  "refa-dynin-30k": "REF-A dyn-in 4B (the H4 final answer)"
+ },
+ "alignment_gate": {
+  "reference_arm": "refa-dinov2",
+  "checks": {
+   "flagship-30k": {
+    "eid_identical": true,
+    "gt_bit_identical": true,
+    "cv_bit_identical": true,
+    "speed_bit_identical": true,
+    "head_deg_bit_identical": true,
+    "wp_steps_identical": true,
+    "n_windows": 881,
+    "all_pass": true
+   },
+   "refa-dynin-30k": {
+    "eid_identical": true,
+    "gt_bit_identical": true,
+    "cv_bit_identical": true,
+    "speed_bit_identical": true,
+    "head_deg_bit_identical": true,
+    "wp_steps_identical": true,
+    "n_windows": 881,
+    "all_pass": true
+   }
+  },
+  "n_windows": 881,
+  "n_episodes": 40,
+  "passed": true
+ },
+ "reproduction_gate": {
+  "tol": 0.0005,
+  "passed": true,
+  "n_rows": 48,
+  "max_abs_diff": 4.9e-05
+ },
+ "paired_refa_dinov2_minus_flagship": [
+  {
+   "metric": "ade_0_2s",
+   "family": "TRAJECTORY (ADE \u2014 the incumbent, kept, never the whole result)",
+   "a_point": 2.1675,
+   "b_point": 0.4271,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 1.7404,
+    "lo": 1.487,
+    "hi": 1.987,
+    "ci95": 0.25,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "fde_2s",
+   "family": "TRAJECTORY",
+   "a_point": 3.2803,
+   "b_point": 0.9075,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 2.3728,
+    "lo": 1.9494,
+    "hi": 2.7961,
+    "ci95": 0.4233,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "miss_2m",
+   "family": "TRAJECTORY",
+   "a_point": 0.6129,
+   "b_point": 0.0454,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.5675,
+    "lo": 0.5023,
+    "hi": 0.6349,
+    "ci95": 0.0663,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "long_abs_2s_m",
+   "family": "LONGITUDINAL",
+   "a_point": 3.0993,
+   "b_point": 0.8412,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 2.2581,
+    "lo": 1.8455,
+    "hi": 2.6648,
+    "ci95": 0.4096,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "long_signed_2s_m",
+   "family": "LONGITUDINAL (signed diagnostic)",
+   "a_point": -0.0966,
+   "b_point": 0.3498,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "speed_mae_mps",
+   "family": "LONGITUDINAL",
+   "a_point": 1.7754,
+   "b_point": 0.471,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 1.3044,
+    "lo": 1.1196,
+    "hi": 1.4901,
+    "ci95": 0.1852,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "speed_bias_mps",
+   "family": "LONGITUDINAL (signed diagnostic)",
+   "a_point": 0.0123,
+   "b_point": 0.1911,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "progress_abs_err_m",
+   "family": "LONGITUDINAL",
+   "a_point": 3.1009,
+   "b_point": 0.837,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 2.2638,
+    "lo": 1.8516,
+    "hi": 2.6775,
+    "ci95": 0.413,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "progress_signed_err_m",
+   "family": "LONGITUDINAL (signed diagnostic)",
+   "a_point": 0.0246,
+   "b_point": 0.3821,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "lat_abs_2s_m",
+   "family": "LATERAL",
+   "a_point": 0.5776,
+   "b_point": 0.2369,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.3407,
+    "lo": 0.2032,
+    "hi": 0.493,
+    "ci95": 0.1449,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "lat_signed_2s_m",
+   "family": "LATERAL (signed diagnostic)",
+   "a_point": -0.1582,
+   "b_point": 0.0221,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "heading_mae_2s_deg",
+   "family": "LATERAL",
+   "a_point": 5.0346,
+   "b_point": 6.6062,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": -1.5716,
+    "lo": -7.1424,
+    "hi": 2.5419,
+    "ci95": 4.8421,
+    "p_delta_gt0": 0.282,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "neither (CI contains 0)",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "heading_med_2s_deg",
+   "family": "LATERAL",
+   "a_point": 1.2317,
+   "b_point": 1.2742,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": -0.0425,
+    "lo": -0.3661,
+    "hi": 0.5455,
+    "ci95": 0.4558,
+    "p_delta_gt0": 0.467,
+    "separated": false,
+    "reducer": "median",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "neither (CI contains 0)",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "heading_exceed_5deg",
+   "family": "LATERAL",
+   "a_point": 0.2043,
+   "b_point": 0.0874,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.1169,
+    "lo": 0.0509,
+    "hi": 0.1818,
+    "ci95": 0.0654,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "pathgeom_crosstrack_m",
+   "family": "LATERAL",
+   "a_point": 0.245,
+   "b_point": 0.111,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.1341,
+    "lo": 0.0848,
+    "hi": 0.1845,
+    "ci95": 0.0498,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "curv_sign_agree",
+   "family": "LATERAL",
+   "a_point": 0.8664,
+   "b_point": 0.9535,
+   "a_arm": "refa-dinov2",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": -0.087,
+    "lo": -0.1192,
+    "hi": -0.0572,
+    "ci95": 0.031,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": true
+   }
+  }
+ ],
+ "paired_refa_dynin_minus_flagship": [
+  {
+   "metric": "ade_0_2s",
+   "family": "TRAJECTORY (ADE \u2014 the incumbent, kept, never the whole result)",
+   "a_point": 3.0471,
+   "b_point": 0.4271,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 2.62,
+    "lo": 2.0945,
+    "hi": 3.257,
+    "ci95": 0.5812,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "fde_2s",
+   "family": "TRAJECTORY",
+   "a_point": 4.7642,
+   "b_point": 0.9075,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 3.8566,
+    "lo": 3.0434,
+    "hi": 4.8553,
+    "ci95": 0.906,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "miss_2m",
+   "family": "TRAJECTORY",
+   "a_point": 0.7412,
+   "b_point": 0.0454,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.6958,
+    "lo": 0.6345,
+    "hi": 0.7517,
+    "ci95": 0.0586,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "long_abs_2s_m",
+   "family": "LONGITUDINAL",
+   "a_point": 4.5362,
+   "b_point": 0.8412,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 3.695,
+    "lo": 2.8901,
+    "hi": 4.6652,
+    "ci95": 0.8875,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "long_signed_2s_m",
+   "family": "LONGITUDINAL (signed diagnostic)",
+   "a_point": 1.3893,
+   "b_point": 0.3498,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "speed_mae_mps",
+   "family": "LONGITUDINAL",
+   "a_point": 2.3791,
+   "b_point": 0.471,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 1.9081,
+    "lo": 1.5076,
+    "hi": 2.3878,
+    "ci95": 0.4401,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "speed_bias_mps",
+   "family": "LONGITUDINAL (signed diagnostic)",
+   "a_point": 0.7652,
+   "b_point": 0.1911,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "progress_abs_err_m",
+   "family": "LONGITUDINAL",
+   "a_point": 4.587,
+   "b_point": 0.837,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 3.75,
+    "lo": 2.938,
+    "hi": 4.7291,
+    "ci95": 0.8956,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "progress_signed_err_m",
+   "family": "LONGITUDINAL (signed diagnostic)",
+   "a_point": 1.5305,
+   "b_point": 0.3821,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "lat_abs_2s_m",
+   "family": "LATERAL",
+   "a_point": 0.7821,
+   "b_point": 0.2369,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.5452,
+    "lo": 0.3435,
+    "hi": 0.7672,
+    "ci95": 0.2119,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "lat_signed_2s_m",
+   "family": "LATERAL (signed diagnostic)",
+   "a_point": -0.1803,
+   "b_point": 0.0221,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": null,
+   "paired_refused": "SIGNED DIAGNOSTIC \u2014 a paired delta on a signed bias is not a win/loss; closer-to-zero is the question and that is not what a difference of means measures. Reported as two point values, per the same rule that excludes biases from driving.PAIRED."
+  },
+  {
+   "metric": "heading_mae_2s_deg",
+   "family": "LATERAL",
+   "a_point": 6.7233,
+   "b_point": 6.6062,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.1171,
+    "lo": -3.0188,
+    "hi": 2.6311,
+    "ci95": 2.8249,
+    "p_delta_gt0": 0.5555,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "neither (CI contains 0)",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "heading_med_2s_deg",
+   "family": "LATERAL",
+   "a_point": 1.4725,
+   "b_point": 1.2742,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.1983,
+    "lo": -0.2277,
+    "hi": 0.793,
+    "ci95": 0.5104,
+    "p_delta_gt0": 0.8095,
+    "separated": false,
+    "reducer": "median",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "neither (CI contains 0)",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "heading_exceed_5deg",
+   "family": "LATERAL",
+   "a_point": 0.2213,
+   "b_point": 0.0874,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.1339,
+    "lo": 0.0795,
+    "hi": 0.1873,
+    "ci95": 0.0539,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "pathgeom_crosstrack_m",
+   "family": "LATERAL",
+   "a_point": 0.2967,
+   "b_point": 0.111,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": 0.1857,
+    "lo": 0.1196,
+    "hi": 0.2568,
+    "ci95": 0.0686,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": false
+   }
+  },
+  {
+   "metric": "curv_sign_agree",
+   "family": "LATERAL",
+   "a_point": 0.8384,
+   "b_point": 0.9535,
+   "a_arm": "refa-dynin-30k",
+   "b_arm": "flagship-30k",
+   "paired": {
+    "delta": -0.115,
+    "lo": -0.1506,
+    "hi": -0.0816,
+    "ci95": 0.0345,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "favours": "flagship-30k",
+    "higher_is_better": true
+   }
+  }
+ ],
+ "strata_refa_dinov2_minus_flagship": {
+  "longitudinal_regime": {
+   "brake": {
+    "n_windows": 95,
+    "n_episodes": 21,
+    "ade_0_2s": {
+     "delta": 2.2936,
+     "lo": 1.8087,
+     "hi": 2.7712,
+     "ci95": 0.4813,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 95,
+     "n_episodes": 21,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 1.6661,
+     "lo": 1.2773,
+     "hi": 2.0353,
+     "ci95": 0.379,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 95,
+     "n_episodes": 21,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "long_abs_2s_m": {
+     "delta": 3.0705,
+     "lo": 2.261,
+     "hi": 3.84,
+     "ci95": 0.7895,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 95,
+     "n_episodes": 21,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": 0.8033,
+     "lo": 0.3743,
+     "hi": 1.3713,
+     "ci95": 0.4985,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 95,
+     "n_episodes": 21,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "steady": {
+    "n_windows": 639,
+    "n_episodes": 40,
+    "ade_0_2s": {
+     "delta": 1.6386,
+     "lo": 1.37,
+     "hi": 1.9263,
+     "ci95": 0.2781,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 639,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 1.26,
+     "lo": 1.0661,
+     "hi": 1.4721,
+     "ci95": 0.203,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 639,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "long_abs_2s_m": {
+     "delta": 2.2057,
+     "lo": 1.7302,
+     "hi": 2.7183,
+     "ci95": 0.494,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 639,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": 0.211,
+     "lo": 0.0987,
+     "hi": 0.3338,
+     "ci95": 0.1175,
+     "p_delta_gt0": 0.9995,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 639,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "accel": {
+    "n_windows": 147,
+    "n_episodes": 23,
+    "ade_0_2s": {
+     "delta": 1.8253,
+     "lo": 1.4183,
+     "hi": 2.2167,
+     "ci95": 0.3992,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 147,
+     "n_episodes": 23,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 1.2638,
+     "lo": 0.9288,
+     "hi": 1.6525,
+     "ci95": 0.3618,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 147,
+     "n_episodes": 23,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "long_abs_2s_m": {
+     "delta": 1.9612,
+     "lo": 1.3282,
+     "hi": 2.7744,
+     "ci95": 0.7231,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 147,
+     "n_episodes": 23,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": 0.6057,
+     "lo": 0.37,
+     "hi": 0.8337,
+     "ci95": 0.2318,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 147,
+     "n_episodes": 23,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "speed_strata": {
+   "low": {
+    "n_windows": 294,
+    "n_episodes": 20,
+    "ade_0_2s": {
+     "delta": 1.9831,
+     "lo": 1.6038,
+     "hi": 2.4021,
+     "ci95": 0.3991,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 294,
+     "n_episodes": 20,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 1.423,
+     "lo": 1.1201,
+     "hi": 1.7489,
+     "ci95": 0.3144,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 294,
+     "n_episodes": 20,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": 0.6917,
+     "lo": 0.4097,
+     "hi": 1.0449,
+     "ci95": 0.3176,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 294,
+     "n_episodes": 20,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "med": {
+    "n_windows": 293,
+    "n_episodes": 25,
+    "ade_0_2s": {
+     "delta": 1.9789,
+     "lo": 1.5661,
+     "hi": 2.4579,
+     "ci95": 0.4459,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 293,
+     "n_episodes": 25,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 1.4174,
+     "lo": 1.1031,
+     "hi": 1.7844,
+     "ci95": 0.3406,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 293,
+     "n_episodes": 25,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": 0.2545,
+     "lo": 0.1338,
+     "hi": 0.414,
+     "ci95": 0.1401,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 293,
+     "n_episodes": 25,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "high": {
+    "n_windows": 294,
+    "n_episodes": 19,
+    "ade_0_2s": {
+     "delta": 1.26,
+     "lo": 0.861,
+     "hi": 1.6895,
+     "ci95": 0.4142,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 294,
+     "n_episodes": 19,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 1.0732,
+     "lo": 0.796,
+     "hi": 1.3951,
+     "ci95": 0.2995,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 294,
+     "n_episodes": 19,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": 0.0757,
+     "lo": -0.0888,
+     "hi": 0.2539,
+     "ci95": 0.1714,
+     "p_delta_gt0": 0.791,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 294,
+     "n_episodes": 19,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "top10pct": {
+    "n_windows": 89,
+    "n_episodes": 5,
+    "ade_0_2s": {
+     "delta": 0.9317,
+     "lo": 0.3556,
+     "hi": 1.8544,
+     "ci95": 0.7494,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 89,
+     "n_episodes": 5,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 0.8221,
+     "lo": 0.418,
+     "hi": 1.4845,
+     "ci95": 0.5333,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 89,
+     "n_episodes": 5,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "lat_abs_2s_m": {
+     "delta": -0.1962,
+     "lo": -0.4501,
+     "hi": 0.0186,
+     "ci95": 0.2344,
+     "p_delta_gt0": 0.041,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 89,
+     "n_episodes": 5,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  }
+ },
+ "families_not_computable": {
+  "TACTICAL": {
+   "status": "UNAVAILABLE",
+   "reason": "the tier-0 window dumps carry waypoints only (pred/gt/cv, 4 waypoints 0.5 s apart). No decoded manoeuvre, no tactical goal, no anchor selection was persisted for EITHER arm, so a manoeuvre-confusion matrix cannot be built from banked data for either side of this comparison.",
+   "n": 0,
+   "what_would_close_it": "a decode-traversing pass (`run_one` reports 'the scored pass did NOT traverse the hierarchy') over the same 881 windows for both arms \u2014 GPU, not free"
+  },
+  "STRATEGIC": {
+   "status": "UNAVAILABLE",
+   "reason": "same dump limitation, plus: PhysicalAI-AV carries no map, lane graph or route/goal signal, and the flagship's route head was measured to be an exact bijection of the nav input it is fed \u2014 so even a persisted strategic decision would be scoring an echo, not a capability.",
+   "n": 0,
+   "what_would_close_it": "a route/goal signal that is not the ego's own future path; blocked on corpus, not on compute"
+  }
+ },
+ "sources": {
+  "dumps": [
+   "taniteval/results/windows_refa-dinov2.pt",
+   "taniteval/results/windows_flagship-30k.pt",
+   "taniteval/results/windows_refa-dynin-30k.pt"
+  ],
+  "banked": [
+   "taniteval/results/driving_refa-dinov2.json",
+   "taniteval/results/driving_flagship-30k.json",
+   "taniteval/results/driving_refa-dynin-30k.json"
+  ],
+  "metric_defs": "taniteval/taniteval/driving.py:per_window",
+  "estimator": "taniteval/taniteval/ci.py:paired_episode_cluster_bootstrap"
+ }
+}

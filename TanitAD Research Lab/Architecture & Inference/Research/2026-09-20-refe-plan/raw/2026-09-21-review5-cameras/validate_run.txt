@@ -1,0 +1,45 @@
+== 1. parameter accounting ==
+  REFe total       322,071,110  (322.07 M)
+  REFe trainable    18,991,682  (18.99 M)  = 5.90 %
+  DriveZero pub.   338,460,000  (338.46 M) / 18.58 M = 5.49 %   [ViT-L, 4 cameras -- NOT a target]
+  per group (total / trainable):
+    backbone.frozen        303,079,424 /          0
+    reg_compress             6,303,744 /  6,303,744
+    dec                      4,213,760 /  4,213,760
+    score_dec                4,213,760 /  4,213,760
+    backbone.lora            3,145,728 /  3,145,728
+    pos3d_mlp                  528,896 /    528,896
+    scene_proj                 262,400 /    262,400
+    score_q_mlp                 81,408 /     81,408
+    traj_head                   81,212 /     81,212
+    ego_enc                     77,312 /     77,312
+    registers                   65,536 /     65,536
+    queries                     16,384 /     16,384
+    score_head                   1,542 /      1,542
+    goal_freqs                       4 /          0
+
+== 2. LoRA is identity at init (B zeroed) ==
+  max |with_lora - without_lora| = 0.000e+00   PASS
+
+== 3. trainable tensors, asserted BY NAME ==
+  trainable tensors: 276   backbone ones: 96 (all LoRA A/B)
+  backbone tensors trainable that are NOT LoRA: 0   PASS
+  expected LoRA tensors = 2 proj x 2 mats x 24 blocks = 96   got 96   PASS
+
+== 4-6. forward/backward on cuda ==
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\validate_model.py", line 184, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\validate_model.py", line 92, in main
+    traj, score = m(img, ego, goal)
+                  ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\driverl-venv\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\model.py", line 553, in forward
+    raise ValueError(
+ValueError: REFe is configured for 4 cameras (CAM_F0, CAM_L0, CAM_R0, CAM_B0) but received 1. Either feed all 4, or set REFeConfig.n_cameras=1 so the run RECORDS what it actually trained on.

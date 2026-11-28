@@ -1,0 +1,19 @@
+tier: T0 (recorded frames, no rollout; a diagnostic of a perception head, not driving performance)
+families: LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not read (n = 0 for each; reason: T0 read of a perception head, no trajectory is produced; they are read by the rollout card that follows if the bar is met)
+rows: lead rows of D_0 3986 (of them beyond 60 m 0); rows of control t3 (finite gap in D_0 to D_2) 3841; common frame set 3817 (tele_dropped removed 24 of the t3 rows); rows where another dump's label fields differ from D_0: 0
+E (mean absolute gap error in m, common frame set, 141 evaluation clips): D_0 3.962; D_1 3.915; D_2 4.114; M_0 4.615; M_1 4.335; M_2 4.445; F_0 4.724; F_1 5.963; F_2 5.595
+ratio F / D = mean E(F) / mean E(D) = 1.3579 (5.4274 / 3.9969); interval [1.2268, 1.5062] (2000 draws, RandomState(122), two-sided 95 % percentile, cluster bootstrap over the evaluation clips, fits held fixed)
+ratio M / D = mean E(M) / mean E(D) = 1.1171 (4.4651 / 3.9969); interval [1.0036, 1.2411] (2000 draws, RandomState(122), two-sided 95 % percentile, cluster bootstrap over the evaluation clips, fits held fixed)
+name: TELEGAP-T0-F-WORSE
+name: TELEGAP-T0-M-WORSE
+far leads (label gap 40-60 m), n 780 in 39 clips; mean signed error (read minus label) of the mean of three fits: D -6.252, M -6.181, F -6.741; paired difference F minus D interval [-2.3553, 1.1179]
+name: TELEGAP-T0-FAR-LEADS-STAY-SHORT
+bar met: no (arm F ratio 1.3579 at most 0.85 and its interval [1.2268, 1.5062] below 1)
+by label gap, arm D (mean of three fits): 0-10 m n 587 E 1.154 signed 0.454 short>5m 0.002; 10-20 m n 1107 E 3.427 signed 2.122 short>5m 0.006; 20-40 m n 1343 E 3.778 signed -1.180 short>5m 0.118; 40-60 m n 780 E 7.321 signed -6.252 short>5m 0.474
+by label gap, arm M (mean of three fits): 0-10 m n 587 E 1.725 signed 1.138 short>5m 0.000; 10-20 m n 1107 E 4.012 signed 2.997 short>5m 0.012; 20-40 m n 1343 E 4.181 signed -0.822 short>5m 0.139; 40-60 m n 780 E 7.660 signed -6.181 short>5m 0.448
+by label gap, arm F (mean of three fits): 0-10 m n 587 E 1.827 signed 0.692 short>5m 0.001; 10-20 m n 1107 E 5.223 signed 3.244 short>5m 0.036; 20-40 m n 1343 E 5.506 signed -0.433 short>5m 0.214; 40-60 m n 780 E 8.292 signed -6.741 short>5m 0.509
+printed with no name: share of lead frames with a box whose label box centre lies inside T8 0.7247 and inside T4 0.4847 (3817 of 3817 lead frames have a box)
+arm F error (mean of three fits) inside T8: n 2766 E 3.848; outside T8: n 1051 E 9.583
+correlation of read closing speed with label closing speed over 25-frame windows (n windows 121): D 0.8257; M 0.8412; F 0.8192 (the requirement of r 0.9 of row 147 is not a claim of this card)
+interval note: it answers what another draw of evaluation clips would say for these fits; three fit seeds on one set of train clips is a small number, and a separated interval is necessary, not sufficient
+ZZ READ-TELEGAP names rc 0

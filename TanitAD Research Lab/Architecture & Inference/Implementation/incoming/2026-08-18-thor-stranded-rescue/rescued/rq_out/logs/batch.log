@@ -1,0 +1,52 @@
+[rs] decoded 17/17 refs in 3.6s (clip 599 frames)
+[rs] shutter ROLLING_TOP_TO_BOTTOM  ego moves [0.3695, 0.6282, 0.484] m over the readout
+[rs] building renderer once: chosen:background,road,dynamic_rigids,dynamic_deformables:cull=0.95:sky=0,6,0.3
+[rs] g_p1.00          gradNCC 0.3241  margin +0.0908  negctl FAIL      50.5 ms  wall    116.9 ms
+[rs] b2               gradNCC 0.3266  margin +0.0934  negctl FAIL     126.3 ms  wall    203.4 ms
+[rs] s2               gradNCC 0.3266  margin +0.0934  negctl FAIL      98.7 ms  wall    221.2 ms
+[rs] b4               gradNCC 0.3282  margin +0.0950  negctl FAIL     205.0 ms  wall    237.3 ms
+[rs] s4               gradNCC 0.3282  margin +0.0950  negctl FAIL     207.6 ms  wall    503.4 ms
+[rs] b8               gradNCC 0.3265  margin +0.0943  negctl FAIL     331.2 ms  wall    347.8 ms
+[rs] s8               gradNCC 0.3265  margin +0.0943  negctl FAIL     420.9 ms  wall   1029.9 ms
+[rs] b16              gradNCC 0.3243  margin +0.0934  negctl FAIL     692.4 ms  wall    710.0 ms
+[rs] s16              gradNCC 0.3243  margin +0.0934  negctl FAIL     443.9 ms  wall    787.9 ms
+
+== RS SWEEP  config=chosen  run_dir=/home/nvidia/rq_out/rs_batch_chosen  n_frames=12 ==
+BASELINE = g_p1.00 (shutter-END pose): what every render before today used.
+arm               calls  gradNCC d vs p1.00      %   margin negctl  ms/frame  wall ms |d| native   meanA   rmean
+g_p1.00               1   0.3241    +0.0000   +0.0  +0.0908   FAIL      50.5    116.9        nan  0.3412  0.2045
+s2                    2   0.3266    +0.0025   +0.8  +0.0934   FAIL      98.7    221.2        nan  0.3345  0.2018
+s4                    4   0.3282    +0.0041   +1.3  +0.0950   FAIL     207.6    503.4        nan  0.3335  0.2014
+s8                    8   0.3265    +0.0024   +0.7  +0.0943   FAIL     420.9   1029.9        nan  0.3377  0.2033
+s16                  16   0.3243    +0.0002   +0.1  +0.0934   FAIL     443.9    787.9        nan  0.3361  0.2024
+b2                    1   0.3266    +0.0025   +0.8  +0.0934   FAIL     126.3    203.4        nan  0.3345  0.2018
+b4                    1   0.3282    +0.0041   +1.3  +0.0950   FAIL     205.0    237.3        nan  0.3335  0.2014
+b8                    1   0.3265    +0.0024   +0.7  +0.0943   FAIL     331.2    347.8        nan  0.3377  0.2033
+b16                   1   0.3243    +0.0002   +0.1  +0.0934   FAIL     692.4    710.0        nan  0.3361  0.2024
+(reference frame mean = 0.2399; a render_mean far ABOVE it is over-brightening, not fidelity)
+
+PER-BAND grad-NCC (band 0 = TOP of the frame = shutter START under TOP_TO_BOTTOM):
+arm                    b0      b1      b2      b3      b4      b5      b6      b7
+g_p1.00            0.0162  0.0914  0.0777  0.1121  0.2455  0.1943  0.1490  0.1416
+s2                 0.0197  0.0845  0.1033  0.1340  0.2512  0.1961  0.1553  0.1457
+s4                 0.0207  0.0828  0.1008  0.1335  0.2561  0.1986  0.1600  0.1394
+s8                 0.0221  0.0899  0.1036  0.1268  0.2575  0.1972  0.1552  0.1354
+s16                0.0172  0.0820  0.1052  0.1217  0.2516  0.1948  0.1560  0.1428
+b2                 0.0197  0.0845  0.1033  0.1340  0.2512  0.1961  0.1553  0.1457
+b4                 0.0207  0.0828  0.1008  0.1335  0.2561  0.1986  0.1600  0.1394
+b8                 0.0221  0.0899  0.1036  0.1268  0.2575  0.1972  0.1552  0.1354
+b16                0.0172  0.0820  0.1052  0.1217  0.2516  0.1948  0.1560  0.1428
+
+PER-BAND DELTA vs g_p1.00 (where does the gain actually live?):
+arm                    b0      b1      b2      b3      b4      b5      b6      b7
+g_p1.00           +0.0000 +0.0000 +0.0000 +0.0000 +0.0000 +0.0000 +0.0000 +0.0000
+s2                +0.0035 -0.0069 +0.0256 +0.0219 +0.0057 +0.0018 +0.0063 +0.0041
+s4                +0.0045 -0.0086 +0.0231 +0.0214 +0.0106 +0.0043 +0.0110 -0.0022
+s8                +0.0059 -0.0015 +0.0259 +0.0147 +0.0120 +0.0029 +0.0062 -0.0062
+s16               +0.0010 -0.0094 +0.0275 +0.0096 +0.0061 +0.0005 +0.0070 +0.0012
+b2                +0.0035 -0.0069 +0.0256 +0.0219 +0.0057 +0.0018 +0.0063 +0.0041
+b4                +0.0045 -0.0086 +0.0231 +0.0214 +0.0106 +0.0043 +0.0110 -0.0022
+b8                +0.0059 -0.0015 +0.0259 +0.0147 +0.0120 +0.0029 +0.0062 -0.0062
+b16               +0.0010 -0.0094 +0.0275 +0.0096 +0.0061 +0.0005 +0.0070 +0.0012
+
+report: /home/nvidia/rq_out/rs_batch_chosen/report.json

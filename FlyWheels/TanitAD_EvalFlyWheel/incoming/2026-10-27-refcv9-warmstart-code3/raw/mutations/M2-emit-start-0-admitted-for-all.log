@@ -1,0 +1,20 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_R9W_EMIT_START_zero_is_admitted_under_the_r9_freeze_only ________
+
+    def test_R9W_EMIT_START_zero_is_admitted_under_the_r9_freeze_only():
+        assert _pin8(_ON8 + ["--r8-alloc-emit", "--r8-alloc-emit-start", "0"] + _R9PT).emit_start == 0
+        assert _pin8(_ON8 + ["--r8-alloc-emit", "--r8-alloc-emit-start", "1000"] + _R9PT).emit_start == 1000
+        # MUTATIONS: MM ruling Q1's two refusals keep their meaning for every other run
+        for argv, needle in ((_ON8 + ["--r8-alloc-emit", "--r8-alloc-emit-start", "0", "--init-from", "c.pt"], ">= 1"),
+                             (_ON8 + ["--r8-alloc-emit", "--r8-alloc-emit-start", "0"], ">= 1"),
+                             (_ON8 + ["--r8-alloc-emit"] + _R9PT, "WARM-STARTED"),
+                             (_ON8 + ["--r8-alloc-emit", "--init-from", "c.pt"], "WARM-STARTED")):
+>           with pytest.raises(SystemExit) as e:
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE SystemExit
+
+tests\test_r9_train_only.py:619: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_R9W_EMIT_START_zero_is_admitted_under_the_r9_freeze_only
+1 failed in 5.34s

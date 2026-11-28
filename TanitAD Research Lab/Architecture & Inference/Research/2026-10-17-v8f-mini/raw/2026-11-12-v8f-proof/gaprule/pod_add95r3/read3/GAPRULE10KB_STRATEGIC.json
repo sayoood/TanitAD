@@ -1,0 +1,676 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD95",
+ "tier": "T1-kin/hb0.2 (kinematic rollout on the model's own actions), pre-roll of 30 steps (6 s)",
+ "what": "addition after the names of the card: STRATEGIC family of the twelve pairs, no name",
+ "controls_file_sha256": "47e01ebce7d0b70a13ecdafa9e1ef9620d1e5af2d64ef3215a3a54da20ab0d8e",
+ "strategic_controls": {
+  "PASS": true,
+  "detail": {
+   "s4": {
+    "pass": true,
+    "checks": [
+     {
+      "name": "line: labels at the first logged steps reaching 30/50/80 m",
+      "ok": true
+     },
+     {
+      "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+      "ok": true
+     },
+     {
+      "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+      "ok": true
+     },
+     {
+      "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+      "ok": true
+     },
+     {
+      "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+      "ok": true
+     },
+     {
+      "name": "circle R=100: label positions equal the analytic ones to the step",
+      "ok": true
+     },
+     {
+      "name": "short track: 30 and 50 valid, 80 invalid",
+      "ok": true
+     },
+     {
+      "name": "join label: known pose and label -> analytic world position and heading",
+      "ok": true
+     },
+     {
+      "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+      "ok": true
+     },
+     {
+      "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+      "ok": true
+     },
+     {
+      "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+      "ok": true
+     }
+    ],
+    "all_checks_hold": true,
+    "planted_fault_fails": true,
+    "planted_fault_checks_failed": [
+     "line: labels at the first logged steps reaching 30/50/80 m",
+     "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+     "circle R=100: label positions equal the analytic ones to the step",
+     "short track: 30 and 50 valid, 80 invalid"
+    ],
+    "planted_fault_2_checks_failed": [
+     "join label: known pose and label -> analytic world position and heading",
+     "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+    ]
+   },
+   "s1": {
+    "max_dxy_m": 7.075355844676778e-05,
+    "max_dpsi_rad": 6.74965782820891e-07,
+    "per_file": {
+     "R0_s0": [
+      5.3405761732960855e-05,
+      6.74965782820891e-07
+     ],
+     "R0_s1": [
+      6.267449371932798e-05,
+      5.175722677108752e-07
+     ],
+     "RLcKF5P30Hb20_s0": [
+      6.186110678640944e-05,
+      3.8743019104003906e-07
+     ],
+     "RLcKF5P30Hb20_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ],
+     "RLcKF5P30Hb20jG0_s0": [
+      6.186110678640944e-05,
+      3.8743019104003906e-07
+     ],
+     "RLcKF5P30Hb20jG0_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ],
+     "RLcKF5P30Hb20jGC10_s0": [
+      6.186110678640944e-05,
+      4.172325134277344e-07
+     ],
+     "RLcKF5P30Hb20jGC10_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ],
+     "RLcKF5P30Hb20jGC20_s0": [
+      6.186110678640944e-05,
+      3.8743019104003906e-07
+     ],
+     "RLcKF5P30Hb20jGC20_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ],
+     "RLcKF5P30Hb20jGR1_s0": [
+      6.186110678640944e-05,
+      3.8743019104003906e-07
+     ],
+     "RLcKF5P30Hb20jGR1_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ],
+     "RLcKF5P30Hb20jGR2_s0": [
+      6.186110678640944e-05,
+      3.8743019104003906e-07
+     ],
+     "RLcKF5P30Hb20jGR2_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ],
+     "RLcKF5P30Hb20jGW05_s0": [
+      6.186110678640944e-05,
+      3.8743019104003906e-07
+     ],
+     "RLcKF5P30Hb20jGW05_s1": [
+      7.075355844676778e-05,
+      4.246830940246582e-07
+     ],
+     "RQ50KF5P30Hb20_s0": [
+      6.186110678640944e-05,
+      4.172325134277344e-07
+     ],
+     "RQ50KF5P30Hb20_s1": [
+      5.939363046536528e-05,
+      4.246830940246582e-07
+     ]
+    },
+    "pass": true
+   },
+   "s2": {
+    "max_first_tick_anchor_dist_m": 0.0,
+    "n_rows_anchor_not_t0": 0,
+    "files": [
+     "R0_s0",
+     "R0_s1"
+    ],
+    "pass": true
+   },
+   "s6": {
+    "per_file": {
+     "R0_s0": true,
+     "R0_s1": true,
+     "RLcKF5P30Hb20_s0": true,
+     "RLcKF5P30Hb20_s1": true,
+     "RLcKF5P30Hb20jG0_s0": true,
+     "RLcKF5P30Hb20jG0_s1": true,
+     "RLcKF5P30Hb20jGC10_s0": true,
+     "RLcKF5P30Hb20jGC10_s1": true,
+     "RLcKF5P30Hb20jGC20_s0": true,
+     "RLcKF5P30Hb20jGC20_s1": true,
+     "RLcKF5P30Hb20jGR1_s0": true,
+     "RLcKF5P30Hb20jGR1_s1": true,
+     "RLcKF5P30Hb20jGR2_s0": true,
+     "RLcKF5P30Hb20jGR2_s1": true,
+     "RLcKF5P30Hb20jGW05_s0": true,
+     "RLcKF5P30Hb20jGW05_s1": true,
+     "RQ50KF5P30Hb20_s0": true,
+     "RQ50KF5P30Hb20_s1": true
+    },
+    "pass": true
+   },
+   "s9": {
+    "pass": true,
+    "n_files": 18,
+    "missing": []
+   },
+   "s5": {
+    "pass": true,
+    "largest_difference": 0.0,
+    "note": "first-tick cells of every run with no pre-roll equal those of R0 at the same model seed (pre-rolled runs excluded by construction)"
+   },
+   "s3": true
+  }
+ },
+ "pairs": {
+  "G0-VS-RR": {
+   "A": "RLcKF5P30Hb20jG0",
+   "B": "RQ50KF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.009455639906497965,
+     "lo": -0.20703653667834013,
+     "hi": 0.22761469053682074,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.006444850829950552,
+     "lo": -0.2961323327468837,
+     "hi": 0.2699056420268789,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": -0.014908970450502452,
+     "lo": -0.44394863093019227,
+     "hi": 0.3607658929940683,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "G0-VS-RLc": {
+   "A": "RLcKF5P30Hb20jG0",
+   "B": "RLcKF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1215,
+      1215
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GR1-VS-RR": {
+   "A": "RLcKF5P30Hb20jGR1",
+   "B": "RQ50KF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.04515749027014098,
+     "lo": -0.10022283433173867,
+     "hi": 0.22732306725290544,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.06808964527450768,
+     "lo": -0.11214290065104512,
+     "hi": 0.2689444454616565,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.08560761825808112,
+     "lo": -0.1495974689617679,
+     "hi": 0.34080555460762135,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GR1-VS-RLc": {
+   "A": "RLcKF5P30Hb20jGR1",
+   "B": "RLcKF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.035701850363643026,
+     "lo": -0.06633310031584551,
+     "hi": 0.18394470230345042,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.06164479444455715,
+     "lo": -0.10114762128425289,
+     "hi": 0.2968655590589257,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.10051658870858358,
+     "lo": -0.14103831799710315,
+     "hi": 0.4518698918535616,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GR2-VS-RR": {
+   "A": "RLcKF5P30Hb20jGR2",
+   "B": "RQ50KF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.044767745163639454,
+     "lo": -0.13804990654903238,
+     "hi": 0.2504160979416732,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.05818063135188229,
+     "lo": -0.20155064462726374,
+     "hi": 0.3200549542271552,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.10094627029426721,
+     "lo": -0.2610456233794427,
+     "hi": 0.43695395502104256,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GR2-VS-RLc": {
+   "A": "RLcKF5P30Hb20jGR2",
+   "B": "RLcKF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.03531210525714148,
+     "lo": -0.121796036897621,
+     "hi": 0.2538299272915272,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.05173578052193177,
+     "lo": -0.1959127345073257,
+     "hi": 0.39035506321414526,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.11585524074476963,
+     "lo": -0.2763686447538868,
+     "hi": 0.6131576589671244,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GW05-VS-RR": {
+   "A": "RLcKF5P30Hb20jGW05",
+   "B": "RQ50KF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.05916110868473892,
+     "lo": -0.09948994846737053,
+     "hi": 0.25828799757718535,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.08867220713183867,
+     "lo": -0.10562857783536005,
+     "hi": 0.30093571749476017,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.1016433710147532,
+     "lo": -0.1601429620684432,
+     "hi": 0.36745881221505794,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GW05-VS-RLc": {
+   "A": "RLcKF5P30Hb20jGW05",
+   "B": "RLcKF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.04970546877824097,
+     "lo": -0.06381102698685819,
+     "hi": 0.2337077672189067,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.07993878541258499,
+     "lo": -0.09698388515469251,
+     "hi": 0.3638351117464865,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1215,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.11655234146525564,
+     "lo": -0.17407472512200106,
+     "hi": 0.5538923969659683,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GC10-VS-RR": {
+   "A": "RLcKF5P30Hb20jGC10",
+   "B": "RQ50KF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.020440478036583852,
+     "lo": -0.15900104427135658,
+     "hi": 0.22337810015589285,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.030591884502831086,
+     "lo": -0.2036216887382958,
+     "hi": 0.2693174316923302,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.02466593690134504,
+     "lo": -0.32642675573001617,
+     "hi": 0.3483824791576206,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GC10-VS-RLc": {
+   "A": "RLcKF5P30Hb20jGC10",
+   "B": "RLcKF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.010984838130085894,
+     "lo": -0.037538316978259094,
+     "hi": 0.07360468484385091,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.02073896293764334,
+     "lo": -0.04409987557369381,
+     "hi": 0.10470686098971953,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1215,
+      1215
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.0395749073518475,
+     "lo": -0.04581855309443459,
+     "hi": 0.15448261747728714,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GC20-VS-RR": {
+   "A": "RLcKF5P30Hb20jGC20",
+   "B": "RQ50KF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.028834749572517467,
+     "lo": -0.15056136910635876,
+     "hi": 0.22794915425520218,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.05325281842117976,
+     "lo": -0.17327344391440633,
+     "hi": 0.2799343065115297,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1214,
+      1214
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.03752740998654211,
+     "lo": -0.2918230722202125,
+     "hi": 0.35194241559432,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "GC20-VS-RLc": {
+   "A": "RLcKF5P30Hb20jGC20",
+   "B": "RLcKF5P30Hb20",
+   "pos_30_50_80m_tick_t0_plus_20": [
+    {
+     "arc_m": 30.0,
+     "mean": 0.01937910966601951,
+     "lo": -0.04667169851902386,
+     "hi": 0.09796845557003284,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1220,
+      1222
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.04264606825251824,
+     "lo": -0.0540925426171508,
+     "hi": 0.15753609556138926,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1215,
+      1215
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.0524363804370446,
+     "lo": -0.07576269295296903,
+     "hi": 0.213895500299301,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      1196,
+      1196
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  }
+ }
+}

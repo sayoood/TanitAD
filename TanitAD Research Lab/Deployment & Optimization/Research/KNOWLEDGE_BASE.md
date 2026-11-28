@@ -1,0 +1,80 @@
+# KNOWLEDGE_BASE — Production & Optimization
+
+> **Curated, deduplicated, newest first.** Format:
+> `- [YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
+>
+> This is the **Production & Optimization** agent's findings log. The router across all areas is
+> [`../../KNOWLEDGE_BASE.md`](../../KNOWLEDGE_BASE.md).
+>
+> ⛔ **Three layers, and they are not interchangeable.**
+> **PAPER** (`Paper/TANITAD_PAPER.md`) = the scientific account of the frontier work — derivations,
+> argument, results in narrative form.
+> **KNOWLEDGE_BASE** (this file) = what we learned, written for an agent about to make a decision.
+> **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
+> not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
+
+⚠️ **This area carried no entries through the 2026-08-18 restructure.** That is an emptiness to be
+filled, not a statement that nothing was learned here — deployment, latency and quantisation
+findings have been living inside other areas' reports. File them here.
+
+- [2026-08-30] [PUBLISHED/github+api] **TRT #4590 is STILL OPEN** — verified twice (HTML + REST API): state open,
+  created 2025-10-04, updated 2026-01-09, **1 comment from `author_association: NONE`** (a user, not NVIDIA), no
+  fix version, no workaround; labels `Module:Quantization`/`Module:Runtime`; reported on TRT 10.13.3.9 / SM 110 —
+  impact: D-B1-GATE — `2026-08-30-b1-gate-strongly-typed/RESULT.md` F1
+- [2026-08-30] [PUBLISHED/nvidia-docs] ⭐⭐ **REFRAME: #4590 is a DIAGNOSTICS bug, not "FP8 is broken on Thor".**
+  TRT docs: *"FP8 quantization exclusively supports explicit quantization via Q/DQ layers… implicit quantization
+  is limited to INT8 only."* The reporter set builder flags on a graph with NO Q/DQ nodes ⇒ nothing was ever
+  going to be quantised; the real defect is the MISSING WARNING. Issue #4599 shows FP8 DID engage on Thor with
+  ONNX Q/DQ surgery (~20 % latency win, ViT-Base). ⇒ our exposure is "we built via builder flags", not the
+  platform — impact: D-B1-GATE re-scope, un-blockable today — same RESULT.md F2
+- [2026-08-30] [derived] ⛔ **A NUMERICAL CHECK CAN NEVER CATCH THIS: comparing FP32 against a secretly-FP32
+  engine yields ZERO error — the failure makes the gate score BETTER.** Detection must be STRUCTURAL: plan-file
+  size vs the FP16 baseline (#4590's tell: 199 MB FP16 vs 382 MB "FP8"), output `DataType` enumeration, `Total
+  Weights Memory` from the build log. Same family as the jpeg_buf-is-png all-zero FLOOR arm — impact: gate stage
+  order — same RESULT.md F3
+- [2026-08-30] [PUBLISHED/nvidia-docs] **Strongly-typed does NOT abolish fallback — it converts a silent ACCURACY
+  lie into a visible SPEED loss.** Builder-flag+no-Q/DQ ⇒ the whole quantisation is lost and the gate lies;
+  strongly-typed+Q/DQ ⇒ only the kernel/tactic falls back while Q/DQ nodes still round the values, so the
+  accuracy number stays valid. Documented residual fallbacks: FP8 convs with kernel > 32 (SM89/90/120/121 —
+  ⚠️ SM110 NOT listed) and FP8 group convs — impact: budget as latency, not accuracy risk — same RESULT.md F4
+- [2026-08-30] [PUBLISHED/nvidia-docs] ⛔ **VERSION WALL: TRT 11 removes weak typing (bug class impossible) but
+  "JetPack is not supported in TensorRT 11.2.1 — Jetson deployments must remain on a TensorRT 10.x release".**
+  JetPack 7.2.1 (2026-08-11) ships **TRT 10.16.2** on Thor ⇒ our fix is the opt-in `kSTRONGLY_TYPED` /
+  `trtexec --stronglyTyped`, available now. NVIDIA staff prescribe **ModelOpt explicit quantization +
+  `--stronglyTyped`** for Thor specifically (they measured +37 % Orin vs +2.7 % Thor INT8) — impact: D-B1-GATE
+  migration path — same RESULT.md F5
+- [2026-08-30] [PUBLISHED/nvidia-docs] ⚠️ **Three caveats before trusting `IEngineInspector` for per-layer
+  precision:** (1) with dynamic shapes dims read `-1` and *"tensor format information will not be shown"*;
+  (2) the JSON's `"Datatype"` is a TENSOR dtype, not provably the layer's COMPUTE precision — MEASURE it on our
+  TRT 10.16.2 Thor build first; (3) ⛔ NVIDIA: *"The network layers will always report FP32. The engine layers
+  are the ones which will have different precisions"* — never read `getPrecision()` on the NETWORK. Polygraphy's
+  `--trt-outputs mark all` is NOT an attestation tool (documented Heisenberg: it perturbs the very Q/DQ fusions
+  under test) — impact: gate implementation — same RESULT.md F6
+- [2026-08-30] [PUBLISHED/library] **No published work audits whether a compiled engine RAN in its claimed
+  precision** (two probes). Nearest: `2204.04220` (quantised-vs-FP32 disagreement; `Margin` best indicator),
+  `2012.08185` (bit-exact QNN verification is PSPACE-hard), `2601.12638` (AV+TensorRT per-layer sensitivity
+  loop), `2603.08747` (NVFP4/MXFP4 layer-wise sensitivity = a prior on where fallback hurts). ⛔ CAUTION: a
+  search summariser fabricated a concrete per-layer SQNR example attributed to a real NVIDIA blog — the blog does
+  NOT contain those numbers — impact: quant-gate literature basis — same RESULT.md F7
+
+- [2026-08-31] [RELAYED lib `2601.22156` BANKED-BUT-UNREAD] Transformer->hybrid linear-attention DISTILLATION is claimed at ~25% of from-scratch training budget; an SSM/linear-attention predictor carries O(1) state rather than a growing KV cache.
+  impact: **the only architectural family that could make the K~300 strategic rollout fit the budget today's rollout-depth measurement says nothing else fits; RELAYED, so it may NOT decide a GPU-day until the primary is read** - `Frontier Scan/Daily/2026-08-31/RESULT.md` F5
+
+- [2026-08-31] [RELAYED/UNECE-GRVA trade summary 2026-07] **GRVA reportedly discussed 'the ban of online learning' in vehicles - this lands directly on INJECTED BACKLOG ROW I-3 (online encoder updates from T1 rollout disagreement at deployment).** If adopted, I-3 survives only as an OFFLINE/fleet-loop method, never an in-vehicle one.
+  impact: **constraint-to-VERIFY, not a constraint - it is a relayed report of a DISCUSSION and no GRVA primary was read. Read the primary BEFORE designing I-3** - `Frontier Scan/LEDGER_C3_regulatory.md`
+
+- [2026-09-01] [MEASURED ours, RTX 4060, 120 reps] **AT EQUAL ROLLOUT BUDGET, BREADTH COSTS 5.94x LESS THAN DEPTH** - B=960 predictor-steps spent as (N=16, K=60) costs **73.33 ms**; as (N=320, K=3) costs **12.34 ms**. Breadth grows only **11.1x for 960x the candidates** (flat to N~32 - extra candidates are FREE), while depth is linear in K. The terminal value head that buys a small K costs **0.150 ms = 1.2 %**, flat in N.
+  impact: **"equal budget" means two different things (steps vs latency) and they differ ~6x - a step-parity comparison silently handicaps the deep arm; TD-MPC2's H=3 is also the cheapest point on OUR measured budget surface. ⛔ COST half of injected I-1 only - the QUALITY half is untouched and is the real experiment** - `Deployment & Optimization/Research/2026-09-01-terminal-value-vs-fan-scoring/RESULT.md`
+
+- [2026-09-02] [MEASURED ours, dev-box CPU ONNX export, torch 2.11.0, opset 17] **O2-pre's REPAIR IS ALREADY IN THE TREE BUT ITS ACTUAL ASK WAS UNMET - THE ENCODER NOW EXPORTS END-TO-END AT THE DEPLOYED 176x624** - the shipped test exports a bare `SpatialGridReadout` against a `[1,429,32]` TOKEN tensor at `d_model` 32; the false 2026-07-08 "exports clean" claim was an ENCODER claim from a script hard-coded to `[1,9,256,256]` with **no geometry flag at all**. Composed `image -> ViTEncoder -> readout` at `[1,9,176,624]`: **exports, no pooling op in the graph, ORT vs eager 6.87e-07**; the 256x640 tiling control still exports (6.16e-07); the negative control (pre-repair `adaptive_avg_pool2d` re-spliced) **FAILS with the original Thor `SymbolicValueError` verbatim**.
+  impact: **O2's named ONNX blocker is measured cleared and the BACKLOG row + `Research/STATE.md` are stale (0 hits for `O2-pre`, 0 for `176x624`); this is ONNX only - `quant_gate.py` and the #4590 silent-FP32 finding still gate every precision claim** - `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-02-o2pre-deployed-geometry-export/RESULT.md`
+
+[2026-09-09] [lib 2608.12939, FULL TEXT] Action-conditioned latent divergence PROVABLY bounds planner cost (CEM selection regret -15.2 +/- 2.0 %) - impact: injected row I-1's quality half gains a 0-GPU Stage-0 pre-screen that can refute the line before any value-head arm is spent, and the comparison is bound to matched LATENCY, inference-seed replicates (0.30 m floor) and FS5-1 landing first - TanitAD Research Lab/Deployment & Optimization/Research/2026-09-09-i1-quality-half-prescreen/RESULT.md
+- [2026-09-10] [arXiv 2601.00844v1 value-guided JEPA (LeCun et al.), full text] A learned value beats prediction-shaped representations for planning **only as an ENCODER loss** (VF quasi 0.71/0.96/0.63 vs pred VCReg 0.55/0.89/0.54), and the **joint bolt-on variant loses in 5 of 6 cells** — impact: **injected row I-1's quality half is a REPRESENTATION question, not a scoring one; our frozen trunk blocks the winning variant; do not build the bolted-on value head** — `Deployment & Optimization/Research/2026-09-10-i1-value-guided-latent/RESULT.md`
+- [2026-09-10] [arXiv 2609.03572v1 Drive-HWM Table III] Temporal abstraction is published and priced (`Tavg = Tf + Ts/N` = 84.8 ms) — **but `Tpeak = Tf + Ts` = 107.2 ms misses a 100 ms budget on every 8th tick** — impact: **every TanitAD temporal-abstraction design is gated on `Tpeak`, never `Tavg`**, and `Tpeak` joins the quality-per-FLOP ledger — `Deployment & Optimization/Research/2026-09-10-i1-value-guided-latent/RESULT.md`
+- [2026-09-13] [MEASURED, frozen refcv5-v2 tokens, 139 clips] Latent distance ranks time-to-goal at ρ 0.42 (bar 0.50) and **below a pixel floor** (−0.073, separated); a learned metric reaches 0.56 but **ties a learned pixel metric** (+0.015 [−0.027, 0.053]) — impact: I-1 unblocked for a metric head, not for trunk credit; every trunk head needs a same-head pixel arm — `Deployment & Optimization/Research/2026-09-13-i1-value-geometry-screen/RESULT.md`
+
+- [2026-09-17] [MEASURED, E-DEP-VGEO-4] The DP15-1 **position-matched null WORKS** (C-presid +0.0044 [-0.0163, +0.0259] vs VGEO-3's failed cross-clip +0.0942) — but a NEW positive control **C-oracle reads 0.8983 < its committed 0.90 bar, so VOID-POWER fires**, and the deficit is **collinearity, not sample size**: rho(oracle, |r_lp|) = **-0.7116** vs rho(oracle, n_pairs) = **-0.0504**, with 86/348 cells at |r_lp| >= 0.95 reading oracle 0.7644 — impact: a null-only control panel cannot separate *no effect* from *no power*, and the fix (`E-DEP-VGEO-5`, a pre-registered |r_lp| < 0.80 screen) is 0 GPU and ~5 min — `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-17-i1-position-matched-null/RESULT.md`
+
+- [2026-09-18] [MEASURED `E-DEP-VGEO-5`] **The pre-registered collinearity screen restores power (C-oracle 0.9978 ≥ 0.99; 182/377 cells dropped; 17 clips) and every gate passes: path geometry is a powered TIE (−0.0707 [−0.263, +0.144]) while place identity is the line's FIRST VERDICT, ID-TRUNK (+0.2088 [+0.1329, +0.2782])** — a value head reading metric distance does not get the frozen trunk; one reading place/progress might — `Deployment & Optimization/Research/2026-09-18-i1-collinearity-screen/RESULT.md`
+- [2026-09-20] [E-DEP-VGEO-6, own measurement] Place identity REPLICATES across trunk stages: s16 P2 +0.2045 [+0.1289, +0.2766] vs s32 +0.2088 [+0.1329, +0.2782], points 0.0043 apart; metric path geometry does not (pixels ahead on s16). Every gate cleared first time, and the pixel control reproduced the landed numbers EXACTLY, which is what makes the cross-run comparison legitimate. — impact: I-1's value head should target place/progress, not distance (LR15-2, an MM decision) — [Deployment & Optimization/Research/2026-09-20-i1-s16-stage-replication/RESULT.md]

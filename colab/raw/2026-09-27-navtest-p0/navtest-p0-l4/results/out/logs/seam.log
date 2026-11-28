@@ -1,0 +1,87 @@
+  tokens: 200 over 93 logs; ckpt /content/relay/snap_epoch016.pt
+  planner: trained=True per_sample_calib=True device=cuda select=best
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [5/93] rows 7  misses 0  12 s
+    [10/93] rows 17  misses 0  23 s
+    [15/93] rows 26  misses 0  33 s
+    [20/93] rows 32  misses 0  40 s
+    [25/93] rows 39  misses 0  48 s
+    [30/93] rows 52  misses 0  64 s
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [35/93] rows 63  misses 0  79 s
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [40/93] rows 71  misses 0  89 s
+    [45/93] rows 78  misses 0  98 s
+    [50/93] rows 85  misses 0  106 s
+    [55/93] rows 93  misses 0  115 s
+    [60/93] rows 101  misses 0  124 s
+    [65/93] rows 110  misses 0  134 s
+    [70/93] rows 124  misses 0  151 s
+    [75/93] rows 134  misses 0  162 s
+    [80/93] rows 157  misses 0  189 s
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [85/93] rows 174  misses 0  209 s
+    [90/93] rows 190  misses 0  228 s
+    [93/93] rows 200  misses 0  240 s
+{
+ "tokens_asked": 200,
+ "rows": 200,
+ "misses": 0,
+ "ckpt": "/content/relay/snap_epoch016.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "frame_control": {
+  "n": 200,
+  "max_m": 1.687538997430238e-14,
+  "median_m": 1.78053274379012e-15,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 200,
+  "max_m": 0.07447520110324377,
+  "median_m": 0.007128277651025337,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 239.9,
+ "proposals": {
+  "n": 200,
+  "M": 64,
+  "ade_selected_m": 1.8716,
+  "ade_random_m": 1.8502,
+  "ade_oracle_m": 0.3241,
+  "oracle_index_distinct": 53,
+  "oracle_index_top5": [
+   [
+    4,
+    15
+   ],
+   [
+    6,
+    11
+   ],
+   [
+    56,
+    10
+   ],
+   [
+    32,
+    9
+   ],
+   [
+    36,
+    7
+   ]
+  ],
+  "selected_index_distinct": 42,
+  "endpoint_spread_m": 2.937,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ },
+ "proposal_dump": "/content/p0/out/seam/proposals_vm.npz"
+}
+ZZSEAM_OK 200 0.0000

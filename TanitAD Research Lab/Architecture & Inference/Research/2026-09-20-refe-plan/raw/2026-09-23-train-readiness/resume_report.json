@@ -1,0 +1,13 @@
+{
+ "U": "PASS -- exit 0, final + epoch snapshots",
+ "H.halt": "PASS -- exit 7, halted at step 3 epoch 1 pos 2 (want 3 / 1 / 2: MID-epoch)",
+ "H.resume==U": "PASS -- exit 0, identical",
+ "M1.pos_lost_DIFFERS": "PASS -- exit 0, 228 tensor(s) differ, e.g. ['registers', 'queries']",
+ "M2.opt_lost_DIFFERS": "PASS -- exit 0, 228 tensor(s) differ, e.g. ['registers', 'queries']",
+ "R1.changed_lr_REFUSED": "PASS -- exit 4",
+ "R2.no_out_REFUSED": "PASS -- exit 4",
+ "R3.done_is_final": "PASS -- exit 0, model_final sha unchanged",
+ "P.planner_strict_load": "PASS -- 415 tensors, strict; planner's loader reads it as refe-full-v1",
+ "S.snapshot_loads": "PASS -- refe-partial-v1, 228 partial tensors applied exactly",
+ "S.wrong_trunk_REFUSED": "PASS -- partial checkpoint refused: frozen-trunk fingerprint 9a3631954881 != recorded 000000000000 -- this partial was trained o"
+}

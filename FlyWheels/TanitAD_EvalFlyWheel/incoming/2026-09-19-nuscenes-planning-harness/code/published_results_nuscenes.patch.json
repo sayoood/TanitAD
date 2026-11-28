@@ -1,0 +1,1525 @@
+{
+ "_for": "W4 — products/P7-TanitEval/benchmarks/published_results.json (W4 OWNS that file; this is a PATCH FILE, never a direct edit). Append `rows` to `results`; they use W4's row schema and W4's protocol keys, and none collides with the 8 nuScenes rows already there.",
+ "_built": {
+  "by": "W6 (E5)",
+  "utc": "2026-09-20",
+  "evidence_class": "PUBLISHED (every number re-read from the banked PDF named in its row)",
+  "token_verification": "every page_token occurs in the pypdf text of its cited page - checked by the script that built this file (FlyWheels/.../2026-09-19-nuscenes-planning-harness/code/make_w4_rows.py), which also re-hashes each PDF against library.json and refuses to write on a miss. ⛔ NOT AN INDEPENDENT CHECK: the tokens were chosen with pypdf and re-found with pypdf - the producer's own derivation re-run, which measures transcription, not correctness. W4's verify_published_against_pdfs.py (PyMuPDF) is the admissible check and is still OUTSTANDING on these rows.",
+  "independent_reads": "NONE. 0 of these 39 rows share a (paper, page, system) cell with a row W4 extracted, and 0 carry a value-set W4 also published - so no number here has been read twice by two readers. 15 rows sit on a paper W4 also cites and 5 on an exactly-shared (paper, table); those 5+15 agree on the PAGE, which is a consistency check on layout, not on any value. An earlier draft offered the 15 as an independent control; that was wrong and is retracted - see RESULT.md F12.",
+  "human_readable_twin": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/raw/nuscenes_external_rows.md"
+ },
+ "_already_in_w4": [
+  "nus.stp3.vad_base",
+  "nus.stp3.vad_base_ego",
+  "nus.stp3.ad_mlp",
+  "nus.uniad.uniad",
+  "nus.bevp.bev_planner",
+  "nus.bevp.bev_planner_pp",
+  "nus.bevp.ego_mlp",
+  "nus.bevp.gostraight"
+ ],
+ "_harness_version_note": {
+  "why": "W4's finding applies here too: a published number needs its HARNESS, not just its table. For nuScenes there is no devkit at all - the harness IS the research codebase, and the codebases disagree by more than the methods do.",
+  "reduction_pin": {
+   "nuScenes_OL_L2_uniad": "OpenDriveLab/UniAD@609ee083ea51c3521c323f1279dfc4cee0e60467 projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py:1043-1044. MEASURED: UniAD's FIRST public commit (4e91222da855fa83a8caa55f512536e82f9f9818, 2023-03-29) had value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ecf7ad5ea4b7d779a2176841d3c1c4d4174, 'Add option for legacy planning metric definition') - so every 2023 UniAD number is at-timestep.",
+   "nuScenes_OL_L2_stp3": "OpenDriveLab/ST-P3@69aabefd2610951d9e34238142776ed2228673be evaluate.py:71-73,135-137,166; VAD@1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8 metric_stp3.py; AD-MLP@4b93ba085ee47474152f282177865796ea577fc0 re-uses ST-P3's code (deps/stp3)."
+  },
+  "collision_implementations": {
+   "0.5 m grid, axis-aligned ego box": "ST-P3 / UniAD / VAD (the legacy rows)",
+   "0.1 m grid, estimated yaw, trajectory-level": "BEV-Planner (2312.03031)",
+   "box-vs-box polygons, estimated yaw": "SparseDrive (2405.19620) and DiffusionDrive",
+   "oriented box, 0.1 m, first frame removed": "PARA-Drive (code not released)"
+  },
+  "why_it_bites": "the same VAD checkpoint reads 0.72 m under VAD's harness and 1.22 m with the averaging removed (paradrive-cvpr2024 Tab. 1), and the UniAD/VAD ranking flips between the two legacy harnesses (Tab. 8). Our own runs carry (reduction, pipeline) on every row for exactly this reason.",
+  "our_harness": "taniteval/adapters/nuscenes_planning.py @ this commit + taniteval/taniteval/bench/plugins/nuscenes_ol.py; both conventions ported verbatim from the pins above; cv2.fillPoly ported from opencv@4.5.4 (parity vs a real cv2: NOT RUN - no OpenCV in the venv)."
+ },
+ "_command_note": "GT-derived: the high-level command is the GT future's final lateral offset thresholded at +-2 m (VAD vad_nuscenes_converter.py:452-457, UniAD trajectory_api.py:272-280, ST-P3 NuscenesData.py:525-530, SparseDrive models/motion/decoder.py:167-173 - MEASURED-from-source at the pinned commits)",
+ "_our_row": {
+  "status": "NOT MEASURED - pending the PI's nuScenes download (W6 RESULT.md, PI ACTION LIST)",
+  "produced_by": "python -m taniteval.bench nuscenes_ol --ckpt <path> --split val (ONE run per convention)",
+  "comparable_only_with": "the ego-status-free rows - nus.bevp.uniad_noego (1.03), nus.bevp.vad_noego (1.25), nus.bevp.bev_planner (0.55) - because our binding rule forbids ego status at inference and our arm is command-free",
+  "must_carry": [
+   "protocol",
+   "implementation",
+   "gt_control (the GT human trajectory's raw collision under the same protocol)",
+   "command_source",
+   "the non-straight subset with its n",
+   "input observed_frac (our 120 deg frame sees ~43 % on nuScenes' ~64.6 deg CAM_FRONT)"
+  ]
+ },
+ "rows": [
+  {
+   "id": "nus.uniad.ff",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "UniAD planning_metrics (at-timestep)",
+   "system": "FF (LiDAR)",
+   "role": "reference",
+   "values": {
+    "l2_1s": 0.55,
+    "l2_2s": 1.2,
+    "l2_3s": 2.54,
+    "l2_avg": 1.43,
+    "col_1s": 0.06,
+    "col_2s": 0.17,
+    "col_3s": 1.07,
+    "col_avg": 0.43
+   },
+   "source": {
+    "library_key": "2212.10156",
+    "table": "Tab. 7",
+    "page": 7
+   },
+   "page_tokens": [
+    "0.55",
+    "1.20",
+    "2.54",
+    "1.43",
+    "0.43"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "UniAD's at-timestep reduction. MEASURED-from-source: at UniAD's FIRST public commit (4e91222, 2023-03-29) nuscenes_e2e_dataset.py:1024-1036 printed value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ec) - so a 2023 UniAD number is at-t"
+   },
+   "modality": "LiDAR",
+   "ego_status": "unstated",
+   "command": "unstated",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.uniad.eo",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "UniAD planning_metrics (at-timestep)",
+   "system": "EO (LiDAR)",
+   "role": "reference",
+   "values": {
+    "l2_1s": 0.67,
+    "l2_2s": 1.36,
+    "l2_3s": 2.78,
+    "l2_avg": 1.6,
+    "col_1s": 0.04,
+    "col_2s": 0.09,
+    "col_3s": 0.88,
+    "col_avg": 0.33
+   },
+   "source": {
+    "library_key": "2212.10156",
+    "table": "Tab. 7",
+    "page": 7
+   },
+   "page_tokens": [
+    "0.67",
+    "1.36",
+    "2.78",
+    "1.60",
+    "0.33"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "UniAD's at-timestep reduction. MEASURED-from-source: at UniAD's FIRST public commit (4e91222, 2023-03-29) nuscenes_e2e_dataset.py:1024-1036 printed value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ec) - so a 2023 UniAD number is at-t"
+   },
+   "modality": "LiDAR",
+   "ego_status": "unstated",
+   "command": "unstated",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.uniad.stp3_as_printed",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "UniAD planning_metrics (at-timestep)",
+   "system": "ST-P3 (as printed in UniAD's table)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 1.33,
+    "l2_2s": 2.11,
+    "l2_3s": 2.9,
+    "l2_avg": 2.11,
+    "col_1s": 0.23,
+    "col_2s": 0.62,
+    "col_3s": 1.27,
+    "col_avg": 0.71
+   },
+   "source": {
+    "library_key": "2212.10156",
+    "table": "Tab. 7",
+    "page": 7
+   },
+   "page_tokens": [
+    "1.33",
+    "2.11",
+    "2.90",
+    "0.71"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "UniAD's at-timestep reduction. MEASURED-from-source: at UniAD's FIRST public commit (4e91222, 2023-03-29) nuscenes_e2e_dataset.py:1024-1036 printed value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ec) - so a 2023 UniAD number is at-t"
+   },
+   "modality": "6 cameras",
+   "ego_status": "not claimed",
+   "command": "yes",
+   "comparison_admissible": false,
+   "inadmissible_reason": "these are ST-P3's OWN averaged-up-to-t numbers reprinted inside an at-timestep table - a published cross-convention mix; the same numbers already appear under nuScenes_OL_L2_stp3 as nus.stp3.stp3"
+  },
+  {
+   "id": "nus.uniad.vad_rescored",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "UniAD planning_metrics (at-timestep)",
+   "system": "VAD (re-scored under UniAD's methodology)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.5,
+    "l2_2s": 1.02,
+    "l2_3s": 1.68,
+    "l2_avg": 1.07,
+    "col_1s": 0.02,
+    "col_2s": 0.28,
+    "col_3s": 0.85,
+    "col_avg": 0.38
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 8",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.50",
+    "1.02",
+    "1.68",
+    "1.07"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "UniAD's at-timestep reduction. MEASURED-from-source: at UniAD's FIRST public commit (4e91222, 2023-03-29) nuscenes_e2e_dataset.py:1024-1036 printed value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ec) - so a 2023 UniAD number is at-t"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "re-scored by PARA-Drive's authors under UniAD's methodology (their Tab. 8) - not a number UniAD's own code printed. It is the re-scoring that flips the ranking: UniAD 1.03 < VAD 1.07 here, VAD 0.72 < UniAD 0.76 under VAD's"
+  },
+  {
+   "id": "nus.uniad.paradrive_rescored",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "UniAD planning_metrics (at-timestep)",
+   "system": "PARA-Drive (re-scored under UniAD's methodology)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.4,
+    "l2_2s": 0.77,
+    "l2_3s": 1.31,
+    "l2_avg": 0.83,
+    "col_1s": 0.07,
+    "col_2s": 0.25,
+    "col_3s": 0.6,
+    "col_avg": 0.3
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 8",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.40",
+    "0.77",
+    "1.31",
+    "0.83"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "UniAD's at-timestep reduction. MEASURED-from-source: at UniAD's FIRST public commit (4e91222, 2023-03-29) nuscenes_e2e_dataset.py:1024-1036 printed value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ec) - so a 2023 UniAD number is at-t"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "unverified",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.uniad.gt_human",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "UniAD planning_metrics (at-timestep)",
+   "system": "GT HUMAN TRAJECTORY (the instrument's false-positive floor)",
+   "role": "control",
+   "values": {
+    "col_1s": 0.35,
+    "col_2s": 0.38,
+    "col_3s": 0.35,
+    "col_avg": 0.36
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 8",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.35",
+    "0.38",
+    "0.36"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "UniAD's at-timestep reduction. MEASURED-from-source: at UniAD's FIRST public commit (4e91222, 2023-03-29) nuscenes_e2e_dataset.py:1024-1036 printed value[i] ONLY; the 'stp3' option arrived 2024-03-19 (33cd8ec) - so a 2023 UniAD number is at-t"
+   },
+   "modality": "-",
+   "ego_status": "-",
+   "command": "-",
+   "comparison_admissible": true,
+   "notes": "the recorded human driver 'collides' at 0.36 % under this protocol. No collision number within ~2x of it is readable. The AV-stack rows EXCLUDE steps where the GT box collides (PARA-Drive fn. 4), so an in-protocol GT arm scores 0 by construction"
+  },
+  {
+   "id": "nus.stp3.stp3",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "ST-P3",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 1.33,
+    "l2_2s": 2.11,
+    "l2_3s": 2.9,
+    "l2_avg": 2.11,
+    "col_1s": 0.23,
+    "col_2s": 0.62,
+    "col_3s": 1.27,
+    "col_avg": 0.71
+   },
+   "source": {
+    "library_key": "2207.07601",
+    "table": "Tab. 3",
+    "page": 13
+   },
+   "page_tokens": [
+    "1.33",
+    "2.11",
+    "2.90",
+    "0.23",
+    "0.62",
+    "1.27"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "averaged-up-to-t reduction: ST-P3 evaluate.py:166 @69aabef (three PlanningMetric instances at n_future 2/4/6, reported as value.mean()); VAD metric_stp3.py @1688c4b computes the same per sample"
+   },
+   "modality": "6 cameras",
+   "ego_status": "not claimed",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "the Avg columns (2.11 / 0.71) are computed by later papers - ST-P3's own table has none. BEV-Planner flags ST-P3's tail-sample GT defect (its ID-0 row carries a dagger)"
+  },
+  {
+   "id": "nus.stp3.vad_tiny",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "VAD-Tiny (ego status switched off)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.46,
+    "l2_2s": 0.76,
+    "l2_3s": 1.12,
+    "l2_avg": 0.78,
+    "col_1s": 0.21,
+    "col_2s": 0.35,
+    "col_3s": 0.58,
+    "col_avg": 0.38
+   },
+   "source": {
+    "library_key": "2303.12077",
+    "table": "Tab. 1",
+    "page": 6
+   },
+   "page_tokens": [
+    "0.46",
+    "0.76",
+    "1.12",
+    "0.78",
+    "0.38"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "averaged-up-to-t reduction: ST-P3 evaluate.py:166 @69aabef (three PlanningMetric instances at n_future 2/4/6, reported as value.mean()); VAD metric_stp3.py @1688c4b computes the same per sample"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no (official ckpt: ego in BEV - 2312.03031 Tab. 1)",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.stp3.vad_tiny_ego",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "VAD-Tiny‡ (ego status as input)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.2,
+    "l2_2s": 0.38,
+    "l2_3s": 0.65,
+    "l2_avg": 0.41,
+    "col_1s": 0.1,
+    "col_2s": 0.12,
+    "col_3s": 0.27,
+    "col_avg": 0.16
+   },
+   "source": {
+    "library_key": "2303.12077",
+    "table": "Tab. 1",
+    "page": 6
+   },
+   "page_tokens": [
+    "0.20",
+    "0.38",
+    "0.65",
+    "0.41",
+    "0.16"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "averaged-up-to-t reduction: ST-P3 evaluate.py:166 @69aabef (three PlanningMetric instances at n_future 2/4/6, reported as value.mean()); VAD metric_stp3.py @1688c4b computes the same per sample"
+   },
+   "modality": "6 cameras + ego status",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.stp3.uniad_rescored",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "UniAD (re-scored under VAD's methodology)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.48,
+    "l2_2s": 0.74,
+    "l2_3s": 1.07,
+    "l2_avg": 0.76,
+    "col_1s": 0.12,
+    "col_2s": 0.13,
+    "col_3s": 0.28,
+    "col_avg": 0.17
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 8",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.48",
+    "0.74",
+    "1.07",
+    "0.76"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "averaged-up-to-t reduction: ST-P3 evaluate.py:166 @69aabef (three PlanningMetric instances at n_future 2/4/6, reported as value.mean()); VAD metric_stp3.py @1688c4b computes the same per sample"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "re-scored by PARA-Drive's authors under VAD's methodology (their Tab. 8). Under it VAD (0.72) beats UniAD (0.76); under UniAD's the ranking is the other way round"
+  },
+  {
+   "id": "nus.stp3.paradrive_rescored",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "PARA-Drive (re-scored under VAD's methodology)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.25,
+    "l2_2s": 0.46,
+    "l2_3s": 0.74,
+    "l2_avg": 0.48,
+    "col_1s": 0.14,
+    "col_2s": 0.23,
+    "col_3s": 0.39,
+    "col_avg": 0.25
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 8",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.25",
+    "0.46",
+    "0.74",
+    "0.48"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "averaged-up-to-t reduction: ST-P3 evaluate.py:166 @69aabef (three PlanningMetric instances at n_future 2/4/6, reported as value.mean()); VAD metric_stp3.py @1688c4b computes the same per sample"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "unverified",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.stp3.admlp_traj",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "AD-MLP ablation: past trajectory only",
+   "role": "floor",
+   "values": {
+    "l2_1s": 0.53,
+    "l2_2s": 0.91,
+    "l2_3s": 1.48,
+    "l2_avg": 0.97,
+    "col_1s": 0.17,
+    "col_2s": 0.46,
+    "col_3s": 0.83,
+    "col_avg": 0.49
+   },
+   "source": {
+    "library_key": "2305.10430",
+    "table": "Tab. 1 (Ours, row 1)",
+    "page": 3
+   },
+   "page_tokens": [
+    "0.53",
+    "0.91",
+    "1.48",
+    "0.97",
+    "0.49"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "the authors use ST-P3's metric implementation (p.3)"
+   },
+   "modality": "none (no perception)",
+   "ego_status": "yes - past trajectory only",
+   "command": "no",
+   "comparison_admissible": true,
+   "notes": "the ego-status ladder starts here: 0.97 m with no perception and no velocity"
+  },
+  {
+   "id": "nus.stp3.admlp_vel",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "AD-MLP ablation: + velocity",
+   "role": "floor",
+   "values": {
+    "l2_1s": 0.33,
+    "l2_2s": 0.48,
+    "l2_3s": 0.66,
+    "l2_avg": 0.49,
+    "col_1s": 0.21,
+    "col_2s": 0.29,
+    "col_3s": 0.4,
+    "col_avg": 0.3
+   },
+   "source": {
+    "library_key": "2305.10430",
+    "table": "Tab. 1 (Ours, row 2)",
+    "page": 3
+   },
+   "page_tokens": [
+    "0.33",
+    "0.48",
+    "0.66",
+    "0.49",
+    "0.30"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "the authors use ST-P3's metric implementation (p.3)"
+   },
+   "modality": "none (no perception)",
+   "ego_status": "yes - + velocity",
+   "command": "no",
+   "comparison_admissible": true,
+   "notes": "adding ONE ego scalar (velocity) halves L2: 0.97 -> 0.49, with no perception at all"
+  },
+  {
+   "id": "nus.stp3.admlp_acc",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "AD-MLP ablation: + acceleration",
+   "role": "floor",
+   "values": {
+    "l2_1s": 0.24,
+    "l2_2s": 0.32,
+    "l2_3s": 0.49,
+    "l2_avg": 0.35,
+    "col_1s": 0.18,
+    "col_2s": 0.22,
+    "col_3s": 0.28,
+    "col_avg": 0.23
+   },
+   "source": {
+    "library_key": "2305.10430",
+    "table": "Tab. 1 (Ours, row 3)",
+    "page": 3
+   },
+   "page_tokens": [
+    "0.24",
+    "0.32",
+    "0.49",
+    "0.35",
+    "0.23"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "the authors use ST-P3's metric implementation (p.3)"
+   },
+   "modality": "none (no perception)",
+   "ego_status": "yes - + acceleration",
+   "command": "no",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.stp3.gt_human",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "GT HUMAN TRAJECTORY (the instrument's false-positive floor)",
+   "role": "control",
+   "values": {
+    "col_1s": 1.02,
+    "col_2s": 0.96,
+    "col_3s": 0.91,
+    "col_avg": 0.96
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 8",
+    "page": 8
+   },
+   "page_tokens": [
+    "1.02",
+    "0.96",
+    "0.91"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "averaged-up-to-t reduction: ST-P3 evaluate.py:166 @69aabef (three PlanningMetric instances at n_future 2/4/6, reported as value.mean()); VAD metric_stp3.py @1688c4b computes the same per sample"
+   },
+   "modality": "-",
+   "ego_status": "-",
+   "command": "-",
+   "comparison_admissible": true,
+   "notes": "0.96 % under VAD's methodology - WORSE than every model row in this table. Any collision number here is measuring rasterisation artefacts, not safety"
+  },
+  {
+   "id": "nus.stp3.senna",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "Senna (VLM + VAD)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.37,
+    "l2_2s": 0.54,
+    "l2_3s": 0.86,
+    "l2_avg": 0.59,
+    "col_1s": 0.09,
+    "col_2s": 0.12,
+    "col_3s": 0.33,
+    "col_avg": 0.18
+   },
+   "source": {
+    "library_key": "2410.22313",
+    "table": "Tab. II",
+    "page": 6
+   },
+   "page_tokens": [
+    "0.37",
+    "0.54",
+    "0.86",
+    "0.59"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "INFERRED: 'we incorporate Senna with VAD for a fair comparison' (p.6); the paper does not state the averaging convention"
+   },
+   "modality": "6 cameras + VLM",
+   "ego_status": "no",
+   "command": "yes",
+   "comparison_admissible": false,
+   "inadmissible_reason": "the paper never states its reduction; the tag is inferred from its VAD backbone",
+   "evidence_class": "PUBLISHED; protocol tag INFERRED"
+  },
+  {
+   "id": "nus.stp3.senna_ego",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "ST-P3 metric code as re-used by VAD / AD-MLP (0.5 m collision grid)",
+   "system": "Senna* (ego status)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.11,
+    "l2_2s": 0.21,
+    "l2_3s": 0.35,
+    "l2_avg": 0.22,
+    "col_1s": 0.04,
+    "col_2s": 0.08,
+    "col_3s": 0.13,
+    "col_avg": 0.08
+   },
+   "source": {
+    "library_key": "2410.22313",
+    "table": "Tab. II",
+    "page": 6
+   },
+   "page_tokens": [
+    "0.11",
+    "0.21",
+    "0.35",
+    "0.22"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "INFERRED as above"
+   },
+   "modality": "6 cameras + VLM + ego status",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": false,
+   "inadmissible_reason": "the paper never states its reduction; the tag is inferred from its VAD backbone",
+   "evidence_class": "PUBLISHED; protocol tag INFERRED"
+  },
+  {
+   "id": "nus.bevp.stp3",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "ST-P3 (ID-0, official ckpt) † erroneous tail GT",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 1.59,
+    "l2_2s": 2.64,
+    "l2_3s": 3.73,
+    "l2_avg": 2.65,
+    "col_1s": 0.69,
+    "col_2s": 3.62,
+    "col_3s": 8.39,
+    "col_avg": 4.23,
+    "ccr_avg": 8.37
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-0)",
+    "page": 5
+   },
+   "page_tokens": [
+    "1.59",
+    "2.64",
+    "3.73",
+    "2.65",
+    "8.37"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.bevp.uniad_noego",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "UniAD (ID-1, no ego status, reproduced)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.59,
+    "l2_2s": 1.01,
+    "l2_3s": 1.48,
+    "l2_avg": 1.03,
+    "col_1s": 0.16,
+    "col_2s": 0.51,
+    "col_3s": 1.64,
+    "col_avg": 0.77,
+    "ccr_avg": 1.93
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-1)",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.59",
+    "1.01",
+    "1.48",
+    "1.03",
+    "1.93"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "the row our vision-only arm is comparable with (no ego status anywhere)"
+  },
+  {
+   "id": "nus.bevp.uniad_ego_bev",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "UniAD (ID-2, ego status in BEV - the OFFICIAL ckpt)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.35,
+    "l2_2s": 0.63,
+    "l2_3s": 0.99,
+    "l2_avg": 0.66,
+    "col_1s": 0.16,
+    "col_2s": 0.43,
+    "col_3s": 1.27,
+    "col_avg": 0.62,
+    "ccr_avg": 1.72
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-2)",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.35",
+    "0.63",
+    "0.99",
+    "0.66",
+    "1.72"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras + ego status in BEV",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "what the RELEASED UniAD checkpoint actually does - 1.03 -> 0.66 from ego status alone"
+  },
+  {
+   "id": "nus.bevp.uniad_ego_planner",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "UniAD (ID-3, ego status in BEV + planner)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.2,
+    "l2_2s": 0.42,
+    "l2_3s": 0.75,
+    "l2_avg": 0.46,
+    "col_1s": 0.02,
+    "col_2s": 0.25,
+    "col_3s": 0.84,
+    "col_avg": 0.37,
+    "ccr_avg": 1.59
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-3)",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.20",
+    "0.42",
+    "0.75",
+    "0.46",
+    "1.59"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras + ego status",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.bevp.vad_noego",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "VAD-Base (ID-4, no ego status, reproduced)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.69,
+    "l2_2s": 1.22,
+    "l2_3s": 1.83,
+    "l2_avg": 1.25,
+    "col_1s": 0.06,
+    "col_2s": 0.68,
+    "col_3s": 2.52,
+    "col_avg": 1.09,
+    "ccr_avg": 3.82
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-4)",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.69",
+    "1.22",
+    "1.83",
+    "1.25",
+    "3.82"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras",
+   "ego_status": "no",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "the second row our vision-only arm is comparable with"
+  },
+  {
+   "id": "nus.bevp.vad_ego_bev",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "VAD-Base (ID-5, ego in BEV - the OFFICIAL ckpt)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.41,
+    "l2_2s": 0.7,
+    "l2_3s": 1.06,
+    "l2_avg": 0.72,
+    "col_1s": 0.04,
+    "col_2s": 0.43,
+    "col_3s": 1.15,
+    "col_avg": 0.54,
+    "ccr_avg": 2.72
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-5)",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.41",
+    "0.70",
+    "1.06",
+    "0.72",
+    "2.72"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras + ego status in BEV",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.bevp.vad_ego_planner",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "BEV-Planner union re-implementation (0.1 m collision grid, 2312.03031)",
+   "system": "VAD-Base (ID-6, ego in BEV + planner)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.17,
+    "l2_2s": 0.34,
+    "l2_3s": 0.6,
+    "l2_avg": 0.37,
+    "col_1s": 0.04,
+    "col_2s": 0.27,
+    "col_3s": 0.67,
+    "col_avg": 0.33,
+    "ccr_avg": 2.47
+   },
+   "source": {
+    "library_key": "2312.03031",
+    "table": "Tab. 1 (ID-6)",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.17",
+    "0.34",
+    "0.60",
+    "0.37",
+    "2.47"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "union implementation, 0.1 m grid"
+   },
+   "modality": "6 cameras + ego status",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.sd.uniad_repro",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "SparseDrive re-implemented collision (box-vs-box, estimated yaw; L2 per VAD)",
+   "system": "UniAD (reproduced with the official ckpt)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.45,
+    "l2_2s": 0.7,
+    "l2_3s": 1.04,
+    "l2_avg": 0.73,
+    "col_1s": 0.62,
+    "col_2s": 0.58,
+    "col_3s": 0.63,
+    "col_avg": 0.61
+   },
+   "source": {
+    "library_key": "2405.19620",
+    "table": "Tab. 2b",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.45",
+    "0.70",
+    "1.04",
+    "0.73",
+    "0.61"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "SparseDrive's re-implemented collision (box-vs-box, estimated yaw); L2 aligned with VAD"
+   },
+   "modality": "6 cameras",
+   "ego_status": "not claimed",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "collision 0.61 vs UniAD's own 0.31 - SparseDrive re-adds the pedestrians UniAD's protocol excludes"
+  },
+  {
+   "id": "nus.sd.vad_repro",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "SparseDrive re-implemented collision (box-vs-box, estimated yaw; L2 per VAD)",
+   "system": "VAD (reproduced with the official ckpt)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.41,
+    "l2_2s": 0.7,
+    "l2_3s": 1.05,
+    "l2_avg": 0.72,
+    "col_1s": 0.03,
+    "col_2s": 0.19,
+    "col_3s": 0.43,
+    "col_avg": 0.21
+   },
+   "source": {
+    "library_key": "2405.19620",
+    "table": "Tab. 2b",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.41",
+    "0.70",
+    "1.05",
+    "0.72",
+    "0.21"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "SparseDrive's re-implemented collision; L2 aligned with VAD"
+   },
+   "modality": "6 cameras + ego status",
+   "ego_status": "yes",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.sd.sparsedrive_s",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "SparseDrive re-implemented collision (box-vs-box, estimated yaw; L2 per VAD)",
+   "system": "SparseDrive-S",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.29,
+    "l2_2s": 0.58,
+    "l2_3s": 0.96,
+    "l2_avg": 0.61,
+    "col_1s": 0.01,
+    "col_2s": 0.05,
+    "col_3s": 0.18,
+    "col_avg": 0.08
+   },
+   "source": {
+    "library_key": "2405.19620",
+    "table": "Tab. 2b",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.29",
+    "0.58",
+    "0.96",
+    "0.61",
+    "0.08"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "SparseDrive's re-implemented collision; L2 aligned with VAD"
+   },
+   "modality": "6 cameras (ResNet50, 256x704)",
+   "ego_status": "predicted, not GT (the paper adds an auxiliary ego-status head to avoid the leak)",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.sd.sparsedrive_b",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "SparseDrive re-implemented collision (box-vs-box, estimated yaw; L2 per VAD)",
+   "system": "SparseDrive-B",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.29,
+    "l2_2s": 0.55,
+    "l2_3s": 0.91,
+    "l2_avg": 0.58,
+    "col_1s": 0.01,
+    "col_2s": 0.02,
+    "col_3s": 0.13,
+    "col_avg": 0.06
+   },
+   "source": {
+    "library_key": "2405.19620",
+    "table": "Tab. 2b",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.29",
+    "0.55",
+    "0.91",
+    "0.58",
+    "0.06"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "SparseDrive's re-implemented collision; L2 aligned with VAD"
+   },
+   "modality": "6 cameras (ResNet101)",
+   "ego_status": "predicted, not GT",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.sd.diffusiondrive",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "implementation": "SparseDrive re-implemented collision (box-vs-box, estimated yaw; L2 per VAD)",
+   "system": "DiffusionDrive",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.27,
+    "l2_2s": 0.54,
+    "l2_3s": 0.9,
+    "l2_avg": 0.57,
+    "col_1s": 0.03,
+    "col_2s": 0.05,
+    "col_3s": 0.16,
+    "col_avg": 0.08
+   },
+   "source": {
+    "library_key": "2411.15139",
+    "table": "Tab. 7",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.27",
+    "0.54",
+    "0.90",
+    "0.57",
+    "0.08"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "built on SparseDrive's recipe; 'metric calculation follows ST-P3' (p.8)"
+   },
+   "modality": "6 cameras (ResNet50)",
+   "ego_status": "predicted, not GT (follows SparseDrive)",
+   "command": "yes (INFERRED: follows SparseDrive's recipe)",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.pdstd.uniad",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "UniAD",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.4774,
+    "l2_2s": 0.8947,
+    "l2_3s": 1.4703,
+    "l2_avg": 0.9474,
+    "col_1s": 0.32,
+    "col_2s": 0.29,
+    "col_3s": 0.73,
+    "col_avg": 0.45,
+    "l2_ave_all": 0.8317,
+    "col_ave_all": 0.4,
+    "offroad_pct": 0.91,
+    "offlane_pct": 1.74
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (val)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.4774",
+    "0.8947",
+    "1.4703",
+    "0.8317",
+    "1.74"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras",
+   "ego_status": "No (the paper's own column)",
+   "command": "yes",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.pdstd.vad",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "VAD",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.4084,
+    "l2_2s": 0.8577,
+    "l2_3s": 1.4596,
+    "l2_avg": 0.9086,
+    "col_1s": 0.02,
+    "col_2s": 0.26,
+    "col_3s": 0.83,
+    "col_avg": 0.37,
+    "l2_ave_all": 0.783,
+    "col_ave_all": 0.3,
+    "offroad_pct": 1.03,
+    "offlane_pct": 1.93
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (val)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.4084",
+    "0.8577",
+    "1.4596",
+    "0.7830",
+    "1.93"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras",
+   "ego_status": "No",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "the gap to UniAD collapses from 0.31 m (1.03 vs 0.72, cross-protocol) to 0.039 m here"
+  },
+  {
+   "id": "nus.pdstd.paradrive",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "PARA-Drive",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.2581,
+    "l2_2s": 0.5927,
+    "l2_3s": 1.1196,
+    "l2_avg": 0.6568,
+    "col_1s": 0.0,
+    "col_2s": 0.12,
+    "col_3s": 0.65,
+    "col_avg": 0.26,
+    "l2_ave_all": 0.5574,
+    "col_ave_all": 0.17,
+    "offroad_pct": 0.12,
+    "offlane_pct": 0.83
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (val)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.2581",
+    "0.5927",
+    "1.1196",
+    "0.5574",
+    "0.83"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras",
+   "ego_status": "No",
+   "command": "unverified",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.pdstd.admlp",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "AD-MLP (re-implemented by PARA-Drive)",
+   "role": "floor",
+   "values": {
+    "l2_1s": 0.2267,
+    "l2_2s": 0.5847,
+    "l2_3s": 1.1782,
+    "l2_avg": 0.6632,
+    "col_1s": 0.0,
+    "col_2s": 0.14,
+    "col_3s": 0.7,
+    "col_avg": 0.28,
+    "l2_ave_all": 0.5568,
+    "col_ave_all": 0.2,
+    "offroad_pct": 1.21,
+    "offlane_pct": 2.45
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (val)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.2267",
+    "0.5847",
+    "1.1782",
+    "0.5568",
+    "2.45"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "none (no perception)",
+   "ego_status": "Yes",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "⭐ the row that decides what this benchmark measures: a perception-free MLP ties the full stack on L2 (0.5568 vs 0.5574) while its map compliance is 10x worse off-road"
+  },
+  {
+   "id": "nus.pdstd.paradrive_plus",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "PARA-Drive+ (ego states)",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.2035,
+    "l2_2s": 0.5195,
+    "l2_3s": 1.0425,
+    "l2_avg": 0.5885,
+    "col_1s": 0.0,
+    "col_2s": 0.09,
+    "col_3s": 0.49,
+    "col_avg": 0.19,
+    "l2_ave_all": 0.4939,
+    "col_ave_all": 0.13,
+    "offroad_pct": 0.11,
+    "offlane_pct": 0.78
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (val)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.2035",
+    "0.5195",
+    "1.0425",
+    "0.4939",
+    "0.78"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras + ego states",
+   "ego_status": "Yes",
+   "command": "unverified",
+   "comparison_admissible": true
+  },
+  {
+   "id": "nus.pdstd.uniad_targeted",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "UniAD - 686 non-straight frames",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.4698,
+    "l2_2s": 1.0921,
+    "l2_3s": 1.9162,
+    "l2_avg": 1.1594,
+    "col_1s": 0.0,
+    "col_2s": 0.0,
+    "col_3s": 0.73,
+    "col_avg": 0.24,
+    "l2_ave_all": 0.9935,
+    "col_ave_all": 0.15
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (targeted)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.4698",
+    "1.0921",
+    "1.9162",
+    "0.9935"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras",
+   "ego_status": "No",
+   "command": "yes",
+   "comparison_admissible": true,
+   "subset": "targeted-686 (command != keep forward)"
+  },
+  {
+   "id": "nus.pdstd.vad_targeted",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "VAD - 686 non-straight frames",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.5305,
+    "l2_2s": 1.2015,
+    "l2_3s": 2.0696,
+    "l2_avg": 1.2672,
+    "col_1s": 0.0,
+    "col_2s": 0.29,
+    "col_3s": 0.87,
+    "col_avg": 0.39,
+    "l2_ave_all": 1.084,
+    "col_ave_all": 0.34
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (targeted)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.5305",
+    "1.2015",
+    "2.0696",
+    "1.0840"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras",
+   "ego_status": "No",
+   "command": "yes",
+   "comparison_admissible": true,
+   "subset": "targeted-686"
+  },
+  {
+   "id": "nus.pdstd.paradrive_targeted",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "PARA-Drive - 686 non-straight frames",
+   "role": "competitor",
+   "values": {
+    "l2_1s": 0.3844,
+    "l2_2s": 0.9729,
+    "l2_3s": 1.8805,
+    "l2_avg": 1.0793,
+    "col_1s": 0.0,
+    "col_2s": 0.0,
+    "col_3s": 0.72,
+    "col_avg": 0.24,
+    "l2_ave_all": 0.9082,
+    "col_ave_all": 0.14
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (targeted)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.3844",
+    "0.9729",
+    "1.8805",
+    "0.9082"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "6 cameras",
+   "ego_status": "No",
+   "command": "unverified",
+   "comparison_admissible": true,
+   "subset": "targeted-686"
+  },
+  {
+   "id": "nus.pdstd.admlp_targeted",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "AD-MLP - 686 non-straight frames",
+   "role": "floor",
+   "values": {
+    "l2_1s": 0.3309,
+    "l2_2s": 0.9938,
+    "l2_3s": 2.0559,
+    "l2_avg": 1.1269,
+    "col_1s": 0.0,
+    "col_2s": 0.58,
+    "col_3s": 3.62,
+    "col_avg": 1.4,
+    "l2_ave_all": 0.936,
+    "col_ave_all": 0.94
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 6 (targeted)",
+    "page": 8
+   },
+   "page_tokens": [
+    "0.3309",
+    "0.9938",
+    "2.0559",
+    "0.9360",
+    "0.94"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "none (no perception)",
+   "ego_status": "Yes",
+   "command": "yes",
+   "comparison_admissible": true,
+   "notes": "⭐ where the shortcut breaks: 0.94 % collision vs PARA-Drive's 0.14 % on the same 686 frames - 6.7x - while the two are indistinguishable on full val",
+   "subset": "targeted-686"
+  },
+  {
+   "id": "nus.pdstd.gt_human",
+   "protocol": "nuScenes_OL_L2_uniad",
+   "implementation": "PARA-Drive standardized (oriented ego box, 0.1 m grid, first frame removed, + map compliance)",
+   "system": "GT HUMAN TRAJECTORY under the UniAD methodology, corrected step by step",
+   "role": "control",
+   "values": {
+    "col_ave_all_uniad_method": 0.384,
+    "col_ave_all_plus_orientation": 0.32,
+    "col_ave_all_plus_finer_grid": 0.0
+   },
+   "source": {
+    "library_key": "paradrive-cvpr2024",
+    "table": "Tab. 2",
+    "page": 5
+   },
+   "page_tokens": [
+    "0.384",
+    "0.32"
+   ],
+   "harness": {
+    "fix151": "n/a",
+    "basis": "PARA-Drive's standardized methodology: oriented ego box, 0.1 m grid, first frame removed; code not released (its own Table 2 shows the GT trajectory going 0.384 -> 0.32 -> 0.00 as those corrections land)"
+   },
+   "modality": "-",
+   "ego_status": "-",
+   "command": "-",
+   "comparison_admissible": true,
+   "notes": "the measurement that condemns the legacy collision metric: the GT human trajectory 'collides' 0.384 % with an axis-aligned box on a 0.5 m grid, 0.32 % once the ego's orientation is used, and EXACTLY 0.00 % at 0.1 m"
+  }
+ ]
+}

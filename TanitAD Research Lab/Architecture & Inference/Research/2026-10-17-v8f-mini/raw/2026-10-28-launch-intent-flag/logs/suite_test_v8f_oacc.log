@@ -1,0 +1,35 @@
+...ss.................................s..Fssssssssssssssssssssssssssssss [ 54%]
+sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss            [100%]
+================================== FAILURES ===================================
+_ test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs __
+
+fitworld = {'ckpt': WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_suite_test_v8f_oacc/run/oacc_fit0/b/ckpt_last.pt'), 'roo...it_clips.json'), 'base': WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_suite_test_v8f_oacc/run/oacc_fit0'), ...}
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_suite_test_v8f_oacc/run/test_the_hx_fit_is_hblends_own0')
+
+    def test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs(fitworld, tmp_path):
+        fw = fitworld
+        out, npz = tmp_path / "hx.json", tmp_path / "hx.npz"
+>       assert _no_crash(OE.main, ["hx", *_model_route_args(fw, out, ["--tag", "M2b-oacc_s0", "--fit-windows-out", str(npz)])]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_oacc.py:865: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fn = <function main at 0x00000146F2575440>
+a = (['hx', '--ckpt', 'F:\\TanitAD-scratch\\launch_intent\\tmp\\bt_suite_test_v8f_oacc\\run\\oacc_fit0\\b\\ckpt_last.pt', ...F:\\TanitAD-scratch\\launch_intent\\tmp\\bt_suite_test_v8f_oacc\\run\\oacc_fit0\\fit_clips.json', '--cache-dir', ...],)
+k = {}
+
+    def _no_crash(fn, *a, **k):
+        """Call ``fn``; an exception out of the instrument under test is a FAILED assertion (it crashed on an input it must judge), never an error. SystemExit (a refusal) passes through."""
+        try:
+            return fn(*a, **k)
+        except Exception as e:                                                             # noqa: BLE001
+            err = f"{getattr(fn, '__name__', fn)} raised {type(e).__name__}: {str(e)[:300]}"
+>       pytest.fail(err)                                     # outside the except: no chained context, so the first E line of the report is this Failed, not the instrument's own traceback
+        ^^^^^^^^^^^^^^^^
+E       Failed: main raised FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\launch_intent\\tree\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-25-hblend\\v8f_hblend.py'
+
+stack\tests\test_v8f_oacc.py:82: Failed
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_oacc.py::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs
+1 failed, 38 passed, 94 skipped in 30.56s

@@ -1,0 +1,21 @@
+=== P1c: does the reward's ranking defect SURVIVE the feasibility-aware decode? ===
+  object: kingate_bank_drawA_v1_selscore.npz [fan8] (400, 128, 5, 2)  md5 9bda7715a6571186935243b242c2ab74
+
+  arm                      term               peak_g   envelope  kamm_over  ttc_below    contact
+  emitted                  progress           0.3130    -0.0007     0.0161     0.4431     0.2944
+  emitted                  progress_v2       -0.5708    -0.5334    -0.5598    -0.1302     0.0335
+  emitted                  DEFAULT           -0.4558    -0.5391    -0.5778    -0.3081    -0.6258
+      [object] envelope 0.8879  kamm_over 0.8408  infeasible 0.8916  peak_g 4.1789
+  projected_mu0.70         progress           0.3190   UNDEFINED   UNDEFINED     0.4090     0.2405
+  projected_mu0.70         progress_v2        0.1828   UNDEFINED   UNDEFINED     0.2294     0.1806
+  projected_mu0.70         DEFAULT           -0.0663   UNDEFINED   UNDEFINED    -0.3560    -0.6040
+      [object] envelope 0.0000  kamm_over 0.0000  infeasible 0.3405  peak_g 0.5964
+  projected_mu0.70_entry   progress           0.2787   UNDEFINED   UNDEFINED     0.4793     0.4355
+  projected_mu0.70_entry   progress_v2        0.1868   UNDEFINED   UNDEFINED     0.4938     0.2659
+  projected_mu0.70_entry   DEFAULT           -0.1507   UNDEFINED   UNDEFINED    -0.0448    -0.6578
+      [object] envelope 0.0000  kamm_over 0.0000  infeasible 0.0000  peak_g 0.5743
+
+  P1c-C0 rho vs envelope UNDEFINED on 400/400 windows, kamm on 400/400 -> PASS
+  P1c-C1 rho(progress, peak_g | projected) = +0.3190 [+0.2184, +0.4068] (emitted +0.3130) -> FAIL
+  P1c-C3 rho vs ttc_below emitted +0.4431 -> projected +0.4090 (|change| 0.0341; predicted ~unchanged)
+[p1c] wrote C:/Users/Admin/feasdec/raw/projected_fan_rank_400w.json

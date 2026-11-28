@@ -1,0 +1,129 @@
+{
+ "_experiment": "E-DEPLOY-O2PRE-E2E",
+ "_date": "2026-09-02",
+ "_generated_utc": "2026-09-02T00:02:31.081367+00:00",
+ "_evidence_class": "MEASURED (ours; dev-box CPU export, live G: stack tree)",
+ "_tier": "N/A -- an export/graph property, not a model capability read",
+ "_torch": "2.11.0+cu128",
+ "_opset": 17,
+ "arms": {
+  "deployed_176x624_NONTILING": {
+   "geometry": "176x624",
+   "token_grid": [
+    11,
+    39
+   ],
+   "n_tokens": 429,
+   "readout_grid": [
+    4,
+    4
+   ],
+   "tiles_exactly": false,
+   "route": "constant-matrix matmul (non-tiling)",
+   "forced_pre_repair_adaptive_op": false,
+   "must_export": true,
+   "eager_out_dim": 512,
+   "exported": true,
+   "export_error": "",
+   "op_types": [
+    "Add",
+    "Cast",
+    "Concat",
+    "Constant",
+    "Conv",
+    "Div",
+    "Erf",
+    "Flatten",
+    "Gather",
+    "Gemm",
+    "Identity",
+    "LayerNormalization",
+    "MatMul",
+    "Mod",
+    "Mul",
+    "Reshape",
+    "Shape",
+    "Slice",
+    "Softmax",
+    "Sqrt",
+    "Squeeze",
+    "Transpose",
+    "Unsqueeze"
+   ],
+   "has_pooling_op": false,
+   "has_matmul_or_gemm": true,
+   "ort_vs_eager_max_rel_err": 6.868343120913778e-07,
+   "verdict": "PASS"
+  },
+  "training_256x640_TILING_control": {
+   "geometry": "256x640",
+   "token_grid": [
+    16,
+    40
+   ],
+   "n_tokens": 640,
+   "readout_grid": [
+    4,
+    4
+   ],
+   "tiles_exactly": true,
+   "route": "AvgPool2d (exact)",
+   "forced_pre_repair_adaptive_op": false,
+   "must_export": true,
+   "eager_out_dim": 512,
+   "exported": true,
+   "export_error": "",
+   "op_types": [
+    "Add",
+    "AveragePool",
+    "Cast",
+    "Concat",
+    "Constant",
+    "Conv",
+    "Div",
+    "Erf",
+    "Flatten",
+    "Gather",
+    "Gemm",
+    "Identity",
+    "LayerNormalization",
+    "MatMul",
+    "Mod",
+    "Mul",
+    "Reshape",
+    "Shape",
+    "Slice",
+    "Softmax",
+    "Sqrt",
+    "Squeeze",
+    "Transpose",
+    "Unsqueeze"
+   ],
+   "has_pooling_op": true,
+   "has_matmul_or_gemm": true,
+   "ort_vs_eager_max_rel_err": 6.160926773191022e-07,
+   "verdict": "PASS"
+  },
+  "negative_control_176x624_PRE_REPAIR_OP": {
+   "geometry": "176x624",
+   "token_grid": [
+    11,
+    39
+   ],
+   "n_tokens": 429,
+   "readout_grid": [
+    4,
+    4
+   ],
+   "tiles_exactly": false,
+   "route": "constant-matrix matmul (non-tiling)",
+   "forced_pre_repair_adaptive_op": true,
+   "must_export": false,
+   "eager_out_dim": 512,
+   "exported": false,
+   "export_error": "SymbolicValueError: Unsupported: ONNX export of operator adaptive_avg_pool2d, output size that are not factor of input size. Please feel free to request support or submit a pull request on PyTorch GitHub: https://github.com/pytorch/pytorch/issues  [Caused by the value '361 defined in (%361 : Long(2, strides=[1], device",
+   "verdict": "PASS"
+  }
+ },
+ "all_pass": true
+}

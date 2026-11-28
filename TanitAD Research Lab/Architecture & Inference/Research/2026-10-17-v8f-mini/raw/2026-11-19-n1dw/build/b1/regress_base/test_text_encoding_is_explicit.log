@@ -1,0 +1,33 @@
+F..                                                                      [100%]
+================================== FAILURES ===================================
+_____________ test_subprocess_text_mode_always_names_its_encoding _____________
+
+    def test_subprocess_text_mode_always_names_its_encoding():
+        """Repo-wide: what is being decoded is our own tool's stdout, and that is
+        UTF-8 on every platform this programme runs on."""
+        bad = []
+        for p in _py_files(STACK, REPO / "Paper", REPO / "tools"):
+            t = _tree(p)
+            if t is None:
+                continue
+            for node in ast.walk(t):
+                if not (isinstance(node, ast.Call) and _is_subprocess_call(node)):
+                    continue
+                if _kw(node, "encoding") is not None:
+                    continue
+                if any(_is_true(_kw(node, f)) for f in _TEXT_FLAGS):
+                    bad.append(f"{p.relative_to(REPO)}:{node.lineno}")
+>       assert not bad, (
+            "text-mode subprocess without encoding= decodes with the LOCALE codec; "
+            "on Windows that is cp1252 and any non-Latin-1 glyph in the child's "
+            "output raises UnicodeDecodeError, which reads as a bug in the tool. "
+            'Add encoding="utf-8":\n  ' + "\n  ".join(bad))
+E       AssertionError: text-mode subprocess without encoding= decodes with the LOCALE codec; on Windows that is cp1252 and any non-Latin-1 glyph in the child's output raises UnicodeDecodeError, which reads as a bug in the tool. Add encoding="utf-8":
+E           stack\tests\test_r9_e3_make_argv.py:497
+E           stack\tests\test_r9_e3_make_argv.py:502
+E       assert not ['stack\\tests\\test_r9_e3_make_argv.py:497', 'stack\\tests\\test_r9_e3_make_argv.py:502']
+
+tests\test_text_encoding_is_explicit.py:113: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_text_encoding_is_explicit.py::test_subprocess_text_mode_always_names_its_encoding
+1 failed, 2 passed in 38.63s

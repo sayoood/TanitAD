@@ -1,0 +1,164 @@
+{
+ "cases": [
+  {
+   "name": "FLAT checkpoint on the dev box is the banked M2b_s1_flat (sha256 6fdfc9b0...)",
+   "ok": true,
+   "detail": "6fdfc9b02ce8"
+  },
+  {
+   "name": "FLAT checkpoint's own cfg reads o_interface: cut (and the M2b one has no such key)",
+   "ok": true,
+   "detail": "cut"
+  },
+  {
+   "name": "(b) generator's train_list() parses FLAT's REAL banked argv.json (--o-interface cut included) as --m2b-argv",
+   "ok": true,
+   "detail": "{'o_interface': 'cut', 'arm': 'M2b'}"
+  },
+  {
+   "name": "(b) generator's load_ckpt() builds the FLAT checkpoint as a CUT model (cfg.o_interface == cut) and loads it strictly",
+   "ok": true,
+   "detail": "cut"
+  },
+  {
+   "name": "(b) FLAT bank (cached from an earlier run in work/): bank.json present",
+   "ok": true,
+   "detail": "9f0e265df8cfbaf9"
+  },
+  {
+   "name": "(b) C-F1: the FLAT bank's bank.json header names the FLAT checkpoint's sha256 (common.ckpt_sha256), is not PARTIAL, coverage clears 0.5, controls K-B4 / K-B5 recorded True",
+   "ok": true,
+   "detail": "{'common.ckpt_sha256': '6fdfc9b02ce8', 'coverage': {'blocked': False, 'fraction': 0.6491228070175439, 'min': 0.5, 'n_eligible': 222, 'n_windows': 342}, 'controls_PASS': {'K-B4': True, 'K-B5': True}}"
+  },
+  {
+   "name": "FLAT-DAG gate argv = FLAT's real argv + DAG's recipe tail, token-for-token, except the declared data/path re-pointing",
+   "ok": true,
+   "detail": "{'bad': [], 'added': []}"
+  },
+  {
+   "name": "pair vs DAG (both mapped onto the same world): FLAT-DAG adds exactly `--o-interface cut`; values differ only in --out / --init-ckpt (FLAT_s) / --dagger-bank / --dagger-bank-sha256 (FLAT's bank)",
+   "ok": true,
+   "detail": "{'flags': ['--o-interface'], 'values': ['--dagger-bank', '--dagger-bank-sha256', '--init-ckpt', '--out']}"
+  },
+  {
+   "name": "every lever incl. `--o-interface cut` is NAMED on the FLAT-DAG argv",
+   "ok": true,
+   "detail": "{'--o-interface': 'cut', '--dagger-p': '0.1', '--dagger-seed': '1'}"
+  },
+  {
+   "name": "REAL gate accepts FLAT-DAG (rc 0, declared_vs_built PASS)",
+   "ok": true,
+   "detail": "rc 0"
+  },
+  {
+   "name": "init is the REAL FLAT_s checkpoint: sha256 matches, applied, 0 tensors differ after the strict load",
+   "ok": true,
+   "detail": "{'sha256': '6fdfc9b02ce87248c5315dd7604d3642a3b39f7ae0f593ec6b6ef5ef8df64c95', 'applied': True, 'n_mismatch_after_load': 0, 'source_step': 19164}"
+  },
+  {
+   "name": "G-DVB lists o_interface = cut AND dagger_p 0.1, dagger_seed, the bank sha256 (declared == built)",
+   "ok": true,
+   "detail": "{'o_interface': 'cut', 'dagger_p': 0.1, 'seed': 1, 'bank': '9f0e265df8cfbaf9'}"
+  },
+  {
+   "name": "CUT, the trainer's own probe: O invariant to S and T -- traj60 bit-for-bit under donor / GT / random code and shifted S checkpoints; O is handed the constants (code 0, ck = nominal, ok 0)",
+   "ok": true,
+   "detail": "{'donor_code': 0.0, 'gt_code': 0.0, 'random_code': 0.0, 'shifted_checkpoints': 0.0}"
+  },
+  {
+   "name": "CUT, T still reads S (goal logits move with S's checkpoints): the cut leaves S->T intact",
+   "ok": true,
+   "detail": "10.68752670288086"
+  },
+  {
+   "name": "CUT, gradient (my probe, beside the trainer's): the O-PLAN loss gives e_code.weight EXACTLY 0.0 and S / T groups EXACTLY 0.0; O's own groups > 0",
+   "ok": true,
+   "detail": "{'traj_loss_only': True, 'e_code.weight': 0.0, 'e_code.bias': 4.2302350997924805, 'e_ck.weight': 13.536752700805664, 'e_ck.bias': 4.2302350997924805, 'S_groups(read_s,head_s)': 0.0, 'T_groups(read_t,trunk_t,h_goal)': 0.0, 'O_groups(read_o,head_o)': 2453.896240234375}"
+  },
+  {
+   "name": "CUT + SWAP composed: on the SWAPPED batch the same gradient readings hold (e_code.weight, S, T exactly 0.0; O > 0)",
+   "ok": true,
+   "detail": "{'traj_loss_only': True, 'e_code.weight': 0.0, 'e_code.bias': 3.9893956184387207, 'e_ck.weight': 12.766064643859863, 'e_ck.bias': 3.9893956184387207, 'S_groups(read_s,head_s)': 0.0, 'T_groups(read_t,trunk_t,h_goal)': 0.0, 'O_groups(read_o,head_o)': 2292.980712890625}"
+  },
+  {
+   "name": "SWAP reached, trainer's own probe: swapped batch moves loss and gradient; p = 0 control EXACTLY 0.0",
+   "ok": true,
+   "detail": "{'p_declared': 0.1, 'n_selected_at_p1': 11, 'loss_diff': 2.700847625732422, 'grad_diff_all': 19523.607421875, 'control_p0_loss_diff': 0.0, 'control_p0_grad_diff': 0.0}"
+  },
+  {
+   "name": "SWAP reached: share 0.1 +- 0.02 at the declared p (400 steps of the loop's own dag.apply schedule)",
+   "ok": true,
+   "detail": "{'share': 0.09022727272727273, 'draws': 4400}"
+  },
+  {
+   "name": "K-B2 ties the bank to the INIT checkpoint (= FLAT_s): read, equal, and COVERAGE >= 0.5",
+   "ok": true,
+   "detail": "{'kb2': {'ckpt_sha256': '6fdfc9b02ce87248c5315dd7604d3642a3b39f7ae0f593ec6b6ef5ef8df64c95', 'init_ckpt_sha256': '6fdfc9b02ce87248c5315dd7604d3642a3b39f7ae0f593ec6b6ef5ef8df64c95'}, 'coverage': {'n_windows': 342, 'n_eligible': 222, 'fraction': 0.6491228070175439, 'min': 0.5, 'blocked': False}}"
+  },
+  {
+   "name": "live_check on the SWAPPED batch under the cut: pass (declared-dead set is the cut's O-input weights, nothing else)",
+   "ok": true,
+   "detail": "{'terms_finite': True, 'groups_grad': {'adapter': 30384.796760559082, 'S': 4244.481457367539, 'T': 3032.7964599505067, 'O': 5897.329222038388, 'head_s': 854.854130834341, 'head_o': 2649.646464109421, 'wm': 35577.00424583536}, 'dead': ['e_code.weight'], 'declared_dead': ['e_code.weight']}"
+  },
+  {
+   "name": "(a) NEGATIVE: FLAT-DAG on a bank generated by M2b_s (the iteration-1 stand-in) is REFUSED by the real gate with K-B2",
+   "ok": true,
+   "detail": "ZZDVB-REFUSEDZZ dagger-bank E:\\Projects\\TanitAD-artifacts\\oaccflat_check\\work\\bank_m2b_s1: K-B2: the bank was generated by checkpoint 6104fb15dc21, the arm fine-tunes 6fdfc9b02ce8: the states are not on-policy for this init"
+  },
+  {
+   "name": "CONTROL for the cut reading: the SAME argv WITHOUT `--o-interface cut` builds `full` and the gradient readings flip (e_code.weight > 0, S / T groups > 0) -- the probe can see the cut",
+   "ok": true,
+   "detail": "{'traj_loss_only': True, 'e_code.weight': 87.1977310180664, 'e_code.bias': 5.759471416473389, 'e_ck.weight': 40.78779983520508, 'e_ck.bias': 6.160943508148193, 'S_groups(read_s,head_s)': 311.4602355957031, 'T_groups(read_t,trunk_t,h_goal)': 280.6687927246094, 'O_groups(read_o,head_o)': 3089.813720703125}"
+  },
+  {
+   "name": "(documented, not a pass criterion) the gate refuses a FLAT-DAG argv that drops the cut",
+   "ok": true,
+   "detail": "ACCEPTED (hole F1)"
+  },
+  {
+   "name": "FLAT-DAG-0 (--dagger-p 0, no bank flags): REAL gate accepts; cut live; dagger off",
+   "ok": true,
+   "detail": "{'rc': '0', 'dagger_probe': {'dagger': 'off', 'pass': True, 'skipped': '--dagger-p 0: no row is swapped; the default run is the pre-change run'}}"
+  },
+  {
+   "name": "(b) the model the BANK GENERATOR builds from the FLAT checkpoint passes the trainer's cut probe (traj60 invariant to S/T): the bank is rolled out by the CUT policy",
+   "ok": true,
+   "detail": "{'donor_code': 0.0, 'gt_code': 0.0, 'random_code': 0.0, 'shifted_checkpoints': 0.0}"
+  }
+ ],
+ "t0": 1793091633.9078565,
+ "mutant": null,
+ "tree": "E:\\Projects\\TanitAD-artifacts\\dagt1_tree_b43c7a9a",
+ "finding_F1_nocut_argv_accepted_by_gate": true,
+ "finding_F1_detail": {
+  "rc": "0",
+  "built_o_interface": "full",
+  "init_ckpt_cfg_o_interface": "cut",
+  "grad_readings_full_built": {
+   "logged": {
+    "traj_loss_only": true,
+    "e_code.weight": 87.1977310180664,
+    "e_code.bias": 5.759471416473389,
+    "e_ck.weight": 40.78779983520508,
+    "e_ck.bias": 6.160943508148193,
+    "S_groups(read_s,head_s)": 311.4602355957031,
+    "T_groups(read_t,trunk_t,h_goal)": 280.6687927246094,
+    "O_groups(read_o,head_o)": 3089.813720703125
+   },
+   "swapped": {
+    "traj_loss_only": true,
+    "e_code.weight": 60.940887451171875,
+    "e_code.bias": 3.369607448577881,
+    "e_ck.weight": 24.678346633911133,
+    "e_ck.bias": 3.412713050842285,
+    "S_groups(read_s,head_s)": 271.8157958984375,
+    "T_groups(read_t,trunk_t,h_goal)": 246.17173767089844,
+    "O_groups(read_o,head_o)": 2539.931640625
+   }
+  }
+ },
+ "seconds": 102.01389122009277,
+ "n_pass": 25,
+ "n_cases": 25,
+ "all_pass": true
+}

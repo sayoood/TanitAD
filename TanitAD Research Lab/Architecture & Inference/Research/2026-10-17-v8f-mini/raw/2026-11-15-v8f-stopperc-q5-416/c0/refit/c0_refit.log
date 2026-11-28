@@ -1,0 +1,66 @@
+START 2026-11-16 04:47:43
+F:\TanitAD-scratch\q5_416\run\c0\refit\code\s0p_lib.py:90: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+  return torch.from_numpy(np.ascontiguousarray(u8)).view(torch.float8_e4m3fn).to(torch.float32).numpy()
+  pca mean: 16000 tokens, top-64 variance 5.13 (1 s)
+  pca v40: 640000 tokens, top-64 variance 33.35 (17 s)
+  pca v160: 2560000 tokens, top-64 variance 41.39 (78 s)
+    cv E/linear {'dim': None, 'C': 0.001} mean 0.8345
+    cv E/linear {'dim': None, 'C': 0.01} mean 0.8378
+    cv E/linear {'dim': None, 'C': 0.1} mean 0.8409
+    cv E/linear {'dim': None, 'C': 1.0} mean 0.8434
+  fit E_linear: best {'dim': None, 'C': 1.0}, eval AUROC 0.8525 (2.2 s)
+    cv V40+E/linear {'dim': 16, 'C': 0.001} mean 0.8517
+    cv V40+E/linear {'dim': 16, 'C': 0.01} mean 0.8508
+    cv V40+E/linear {'dim': 16, 'C': 0.1} mean 0.8383
+    cv V40+E/linear {'dim': 16, 'C': 1.0} mean 0.8310
+    cv V40+E/linear {'dim': 32, 'C': 0.001} mean 0.8488
+    cv V40+E/linear {'dim': 32, 'C': 0.01} mean 0.8424
+    cv V40+E/linear {'dim': 32, 'C': 0.1} mean 0.8239
+    cv V40+E/linear {'dim': 32, 'C': 1.0} mean 0.8086
+    cv V40+E/linear {'dim': 64, 'C': 0.001} mean 0.8415
+    cv V40+E/linear {'dim': 64, 'C': 0.01} mean 0.8235
+    cv V40+E/linear {'dim': 64, 'C': 0.1} mean 0.7969
+    cv V40+E/linear {'dim': 64, 'C': 1.0} mean 0.7746
+  fit V40+E_linear: best {'dim': 16, 'C': 0.001}, eval AUROC 0.8615 (66.9 s)
+{
+ "tier": "T0 probe (situation-cue decodability), not driving",
+ "arms": {
+  "E": {
+   "npy_bytes_equal": true,
+   "sha_new": "bdf67f418a39d995c50451b0af3a00612a5e83a252d0ba18624bc324f6cd8f83",
+   "sha_banked": "bdf67f418a39d995c50451b0af3a00612a5e83a252d0ba18624bc324f6cd8f83",
+   "shape": [
+    2365
+   ],
+   "max_abs_diff": 0.0,
+   "best_new": {
+    "dim": null,
+    "C": 1.0
+   },
+   "best_banked": {
+    "dim": null,
+    "C": 1.0
+   }
+  },
+  "V40+E": {
+   "npy_bytes_equal": true,
+   "sha_new": "55a97978b140105b20e4a84a09cf6ca9c0c3d0887b07ba0846e53cb8178dcc6d",
+   "sha_banked": "55a97978b140105b20e4a84a09cf6ca9c0c3d0887b07ba0846e53cb8178dcc6d",
+   "shape": [
+    2365
+   ],
+   "max_abs_diff": 0.0,
+   "best_new": {
+    "dim": 16,
+    "C": 0.001
+   },
+   "best_banked": {
+    "dim": 16,
+    "C": 0.001
+   }
+  }
+ },
+ "C0_refit_bitwise": true
+}
+ZZ C0REFIT PASS ZZ
+END 2026-11-16 04:50:37

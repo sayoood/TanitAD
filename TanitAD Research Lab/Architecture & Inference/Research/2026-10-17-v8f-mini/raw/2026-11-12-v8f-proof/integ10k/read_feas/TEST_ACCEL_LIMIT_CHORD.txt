@@ -1,0 +1,26 @@
+PASS 1 straight plans: chord form equals path form largest knot difference 1.92e-11 m; clipped steps up 84 down 16
+PASS 1b arm: on bent plans the two forms differ 
+PASS 2 limits out of reach return the input object 
+PASS 3 steps before the first clip are the original knots bit for bit (the jump lies after the executed steps: n_up over the executed steps 0)
+PASS 4 batched sampler equals dist_rule.sample_path (and returns a knot at its own arc length) largest difference 0.00e+00 m; at a knot 0.0e+00
+path material: 800 bent tracks of 30 knots
+PASS 5 chord form holds the limit on the chord speeds of every step (a_max 3.0 m 5) largest excess 3.55e-15 m/s; tracks with a lower bound not reached 0 of 800; clipped up 187 down 6
+PASS 5b arm: the path form leaves the limit on the chord speeds of the same tracks (a_max 3.0 m 5) largest excess 12.420 m/s
+PASS 6 the f5 quantity of the reader is 0 on the chord form and above 0 on the path form (a_max 3.0 m 5) chord form 0.00000, path form 0.05339
+PASS 7 the log speeds are the chord speeds of the output (a_max 3.0 m 5) 
+PASS 5 chord form holds the limit on the chord speeds of every step (a_max 3.0 m 10) largest excess 3.55e-15 m/s; tracks with a lower bound not reached 0 of 800; clipped up 1222 down 9
+PASS 5b arm: the path form leaves the limit on the chord speeds of the same tracks (a_max 3.0 m 10) largest excess 12.420 m/s
+PASS 6 the f5 quantity of the reader is 0 on the chord form and above 0 on the path form (a_max 3.0 m 10) chord form 0.00000, path form 0.05417
+PASS 7 the log speeds are the chord speeds of the output (a_max 3.0 m 10) 
+PASS 5 chord form holds the limit on the chord speeds of every step (a_max 1.5 m 5) largest excess 5.33e-15 m/s; tracks with a lower bound not reached 0 of 800; clipped up 402 down 6
+PASS 5b arm: the path form leaves the limit on the chord speeds of the same tracks (a_max 1.5 m 5) largest excess 7.065 m/s
+PASS 6 the f5 quantity of the reader is 0 on the chord form and above 0 on the path form (a_max 1.5 m 5) chord form 0.00000, path form 0.04703
+PASS 7 the log speeds are the chord speeds of the output (a_max 1.5 m 5) 
+PASS 5c arm: a wrong limit is seen (output of 3.0 checked against 2.0) 
+PASS 8 every knot of the limited plan lies on the plan's own path largest distance 7.11e-15 m over 60 changed plans
+PASS 8b arm: a knot moved off the path is seen 
+PASS 9 the arc positions never run backwards 
+PASS 10 float32 plans: the limit holds on the stored knots to 1e-3 m/s largest excess 1.25e-04 m/s
+PASS 11 rows without a finite start speed keep their plan 
+PASS 12 default form path: the wrapper's accel_limit is that of card ADD53 bit for bit 
+ZZ TEST-ACCEL-LIMIT-CHORD PASS 24/24

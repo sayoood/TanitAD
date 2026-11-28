@@ -1,0 +1,230 @@
+##### test_v8f_orc_chain.py (tip version, unedited) 18:34:23
+F
+================================== FAILURES ===================================
+_ test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added _
+
+    @needs_queue
+    def test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 1000 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        assert len(PRE_LABELS) == 79
+        for label, h in PRE_LABELS.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert _sha16("\n" + blocks[label]) == h, f"the stage {label} was edited"
+        assert len(ORC_LABELS) == 4 and ORC_LABELS <= set(blocks), "the four labels of this edit are present"
+>       assert set(blocks) == set(PRE_LABELS) | ORC_LABELS | set(LATER_LABELS), \
+            f"a label that is neither older, ORC's nor a declared later edit: {sorted(set(blocks) - set(PRE_LABELS) - ORC_LABELS - set(LATER_LABELS))}"
+E       AssertionError: a label that is neither older, ORC's nor a declared later edit: ['dagorcarm']
+E       assert {'bankdag', '...d_train', ...} == {'bankdag', '...d_train', ...}
+E         
+E         Extra items in the left set:
+E         'dagorcarm'
+E         Use -v to get more diff
+
+stack\tests_oldlabels\test_v8f_orc_chain.py:220: AssertionError
+=========================== short test summary info ===========================
+FAILED stack\tests_oldlabels\test_v8f_orc_chain.py::test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc_labels_are_added
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 0.30s
+##### test_v8f_orc_chain.py rc=1 18:34:24
+##### test_v8f_flat.py (tip version, unedited) 18:34:24
+........................................................................ [ 27%]
+........................................................................ [ 54%]
+...............................................F
+================================== FAILURES ===================================
+_ test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_seven_new_ones_are_added _
+
+    @needs_queue
+    @pytest.mark.skipif(_K is None or _MX is None, reason="test_v8f_kind.py / test_v8f_mixo.py (the pre-existing label pins) are not in this checkout")
+    def test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_seven_new_ones_are_added():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 800 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        for label, h in {**_K.PRE_EXISTING, **_MX.KIND_PINS, **MIXO_PINS}.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            assert "o-interface" not in blocks[label] and "_flat" not in blocks[label] and "M2b-flat" not in blocks[label], f"{label} mentions the new stages"
+>       assert set(blocks) - OACC_LABELS - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
+E       AssertionError: the only new labels are the seven of this edit
+E       assert ({'compare', '...ldscale', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'dagorcarm'
+E         Use -v to get more diff)
+
+stack\tests_oldlabels\test_v8f_flat.py:1748: AssertionError
+============================== warnings summary ===============================
+tests_oldlabels/test_v8f_flat.py::test_trainer_argv_reaches_the_config_the_checkpoint_the_records_and_the_gate
+  F:\TanitAD-scratch\dagorc_tree\stack\scripts\v8f_mini_train.py:1641: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests_oldlabels\test_v8f_flat.py::test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_seven_new_ones_are_added
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 191 passed, 1 warning in 111.98s (0:01:51)
+##### test_v8f_flat.py rc=1 18:36:17
+##### test_v8f_oacc.py (tip version, unedited) 18:36:17
+........................................................................ [ 54%]
+..................................F
+================================== FAILURES ===================================
+_ test_queue_oacc_is_crlf_every_existing_label_is_byte_identical_and_only_the_six_new_ones_are_added _
+
+    @needs_queue
+    @pytest.mark.skipif(_K is None or _MX is None, reason="test_v8f_kind.py / test_v8f_mixo.py (the pre-existing label pins) are not in this checkout")
+    def test_queue_oacc_is_crlf_every_existing_label_is_byte_identical_and_only_the_six_new_ones_are_added():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 900 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        for label, h in {**_K.PRE_EXISTING, **_MX.KIND_PINS, **MIXO_PINS, **FLAT_PINS}.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            assert "w-acc" not in blocks[label] and "oacc" not in blocks[label] and "WACC" not in blocks[label], f"{label} mentions the new stages"
+>       assert set(blocks) - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | set(FLAT_PINS) | OACC_LABELS and len(OACC_LABELS) == 6, "the only new labels are the six of this edit"
+E       AssertionError: the only new labels are the six of this edit
+E       assert ({'compare', '...ldscale', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'dagorcarm'
+E         Use -v to get more diff)
+
+stack\tests_oldlabels\test_v8f_oacc.py:1958: AssertionError
+============================== warnings summary ===============================
+tests_oldlabels/test_v8f_oacc.py::test_traj_terms_is_the_losses_own_spelling_of_ade_and_fde
+  F:\TanitAD-scratch\dagorc_tree\stack\tests_oldlabels\test_v8f_oacc.py:238: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(ade) == pytest.approx(d.mean(1)[ok].mean(), rel=1e-5) and float(fde) == pytest.approx(d[:, -1][ok].mean(), rel=1e-5)
+
+tests_oldlabels/test_v8f_oacc.py::test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles
+tests_oldlabels/test_v8f_oacc.py::test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position
+tests_oldlabels/test_v8f_oacc.py::test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant
+tests_oldlabels/test_v8f_oacc.py::test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds
+tests_oldlabels/test_v8f_oacc.py::test_oacc_reader_refuses_a_hx_evaluation_without_a_family
+  F:\TanitAD-scratch\dagorc_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_oacc_read.py:441: RuntimeWarning: Mean of empty slice
+    strat_pair = {"mean_over_checkpoints": BE.paired_row(np.nanmean(cx, 1), np.nanmean(cb, 1), eid, nb), "per_checkpoint": [BE.paired_row(cx[:, j], cb[:, j], eid, nb) for j in range(cx.shape[1])]}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests_oldlabels\test_v8f_oacc.py::test_queue_oacc_is_crlf_every_existing_label_is_byte_identical_and_only_the_six_new_ones_are_added
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 106 passed, 6 warnings in 149.12s (0:02:29)
+##### test_v8f_oacc.py rc=1 18:38:48
+##### test_v8f_kind.py (tip version, unedited) 18:38:48
+.......F
+================================== FAILURES ===================================
+_ test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identical _
+
+    @needs_queue
+    def test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identical():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 600 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        for label, h in PRE_EXISTING.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            assert "kind" not in blocks[label].lower().replace("kinds", ""), f"{label} mentions the new stage"
+>       assert set(blocks) - MIXO_LABELS - FLAT_LABELS - OACC_LABELS - ORC_LABELS - DAG_LABELS == set(PRE_EXISTING) | set(KIND_LABELS), "the only new labels are the four of this edit (and PREREG_V8F_MIXO's and PREREG_V8F_FLAT's, pinned in test_v8f_mixo.py / test_v8f_flat.py)"
+E       AssertionError: the only new labels are the four of this edit (and PREREG_V8F_MIXO's and PREREG_V8F_FLAT's, pinned in test_v8f_mixo.py / test_v8f_flat.py)
+E       assert {'compare', '...ldscale', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'dagorcarm'
+E         Use -v to get more diff
+
+stack\tests_oldlabels\test_v8f_kind.py:269: AssertionError
+============================== warnings summary ===============================
+tests_oldlabels/test_v8f_kind.py::test_eval_accepts_kind_specs_and_replaces_exactly_the_kinds_cells
+  F:\TanitAD-scratch\dagorc_tree\stack\scripts\v8f_mini_train.py:1641: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests_oldlabels\test_v8f_kind.py::test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identical
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 7 passed, 1 warning in 6.18s
+##### test_v8f_kind.py rc=1 18:38:55
+##### test_v8f_mixo.py (tip version, unedited) 18:38:55
+........................................................................ [ 43%]
+.......................................................................F [ 86%]
+
+================================== FAILURES ===================================
+_ test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_ten_new_ones_are_added _
+
+    @needs_queue
+    @pytest.mark.skipif(_K is None, reason="test_v8f_kind.py (the pre-existing label pins) is not in this checkout")
+    def test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_ten_new_ones_are_added():
+        raw = QUEUE.read_bytes()
+        assert raw.count(b"\r\n") == raw.count(b"\n") > 700 and raw.count(b"\r") == raw.count(b"\r\n") and raw.endswith(b"\r\n"), "every line CRLF, no bare CR"
+        q, blocks = _queue_text(), _blocks()
+        for label, h in {**_K.PRE_EXISTING, **KIND_PINS}.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            assert "mixo" not in blocks[label].lower() and "code-mix" not in blocks[label], f"{label} mentions the new stages"
+>       assert set(blocks) - FLAT_LABELS - OACC_LABELS - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(KIND_PINS) | MIXO_LABELS and len(MIXO_LABELS) == 10, "the only new labels are the ten of this edit (and PREREG_V8F_FLAT's, pinned in test_v8f_flat.py)"
+E       AssertionError: the only new labels are the ten of this edit (and PREREG_V8F_FLAT's, pinned in test_v8f_flat.py)
+E       assert ({'compare', '...ldscale', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'dagorcarm'
+E         Use -v to get more diff)
+
+stack\tests_oldlabels\test_v8f_mixo.py:1357: AssertionError
+============================== warnings summary ===============================
+tests_oldlabels/test_v8f_mixo.py::test_trainer_argv_reaches_the_config_the_checkpoint_the_records_and_the_gate
+  F:\TanitAD-scratch\dagorc_tree\stack\scripts\v8f_mini_train.py:1641: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests_oldlabels\test_v8f_mixo.py::test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_ten_new_ones_are_added
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 143 passed, 1 warning in 107.93s (0:01:47)
+##### test_v8f_mixo.py rc=1 18:40:44
+##### test_v8f_lora_ar2.py (tip version, unedited) 18:40:49
+.....................................................F
+================================== FAILURES ===================================
+____________ test_queue_ar2_every_existing_stage_is_byte_identical ____________
+
+    @needs_queue
+    def test_queue_ar2_every_existing_stage_is_byte_identical():
+        """The edit only ADDS labels: the text of every label that existed before hashes as it did, the dispatch of each old stage is still there, and none mentions the new stages."""
+        blocks, q = _blocks(), _queue_text()
+        for label, h in PRE_EXISTING.items():
+            assert label in blocks, f"the stage {label} was removed"
+            assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
+            for new in ("lora", "LORA", "identity", "smokelora"):
+                assert new not in blocks[label], (label, new)
+        # PREREG_V8F_KIND later added its own four labels (test_v8f_kind.py pins them and the byte-identity of every label here); this edit's three are still the only others
+        mixo = {"gatemixo", "trainmixo", "evalmixo"} | {f"evalmixo_{i}" for i in range(1, 8)}      # PREREG_V8F_MIXO appended these (test_v8f_mixo.py pins them); widened here, nothing else
+        flat = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in range(1, 5)}      # PREREG_V8F_FLAT appended these (test_v8f_flat.py pins them); widened here, nothing else
+        oacc = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}          # PREREG_V8F_OACC appended these (test_v8f_oacc.py pins them); widened here, nothing else
+        orc = {"orcarm", "gateorc", "trainorc", "evalorc"}          # PREREG_V8F_ORECOVER appended these (test_v8f_orc_chain.py pins them); widened here, nothing else
+        dag = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag", "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}      # PREREG_V8F_DAGGER / PREREG_V8F_DAGGER2 appended these after ORC's (widened here, nothing else)
+        dag |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
+        dag |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
+>       assert set(blocks) - {"kind", "kindseed", "kindown", "kindorc"} - mixo - flat - oacc - orc - dag == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
+E       AssertionError: the only new labels are the three of this edit
+E       assert {'compare', '...ldscale', ...} == {'compare', '...scale_1', ...}
+E         
+E         Extra items in the left set:
+E         'dagorcarm'
+E         Use -v to get more diff
+
+stack\tests_oldlabels\test_v8f_lora_ar2.py:761: AssertionError
+============================== warnings summary ===============================
+tests_oldlabels/test_v8f_lora_ar2.py::test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device
+  F:\TanitAD-scratch\dagorc_tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_lora_smoke.py:223: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    rec = {"step": step, "terms": {k: float(v) for k, v in out_["terms"].items()}, "timing": out_.get("timing", {}), "step_wall_s": now - t0,
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests_oldlabels\test_v8f_lora_ar2.py::test_queue_ar2_every_existing_stage_is_byte_identical
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 53 passed, 1 warning in 223.23s (0:03:43)
+##### test_v8f_lora_ar2.py rc=1 18:44:34
+##### ALL DONE

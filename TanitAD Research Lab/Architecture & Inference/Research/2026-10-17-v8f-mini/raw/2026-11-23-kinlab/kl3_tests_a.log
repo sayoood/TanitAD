@@ -1,0 +1,32 @@
+commit free 11.51 GB >= 5.5 after 0 min
+tanitad from F:\TanitAD-scratch\kinlab\tree\stack\tanitad\__init__.py cuda False
+......................F.......                                           [100%]
+================================== FAILURES ===================================
+_ test_planted_a_o_above_a_lim_is_refused_for_the_checkers_accel_term_and_keeps_the_speed_label _
+
+    def test_planted_a_o_above_a_lim_is_refused_for_the_checkers_accel_term_and_keeps_the_speed_label():
+        g, r, own, (a0, k0) = planted(dict(), 0.0, da=6.0)                                            # own acceleration beyond A_LIM: clipped to A_LIM in the integration, and the speed step at the merge breaks the envelope
+        assert own[1] > RV.A_LIM
+        res = kin(g, r, own)
+>       assert res["status"] == "refused_infeasible" and res["viol"]["accel"] > 0, (res["status"], res["viol"])
+E       AssertionError: ('kin_emitted', {'n_checked': 30, 'accel': 0, 'curv': 0, 'fric': 0, ...})
+E       assert ('kin_emitted' == 'refused_infeasible'
+E         
+E         - refused_infeasible
+E         + kin_emitted)
+
+stack\tests\test_v8f_kinlab.py:234: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_kinlab.py::test_reachability_through_the_trainer_argv_namespace_bank_swap_gt_and_the_plan_loss_gradient
+  F:\TanitAD-scratch\kinlab\tree\stack\scripts\v8f_mini_train.py:3798: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_kinlab.py::test_planted_a_o_above_a_lim_is_refused_for_the_checkers_accel_term_and_keeps_the_speed_label
+1 failed, 29 passed, 1 warning in 63.39s (0:01:03)
+RC 1
+209M	/f/TanitAD-scratch/kinlab/tmp/pt_kl3_tests_a.log
+4.0K	/f/TanitAD-scratch/kinlab/tmp/tt_kl3_tests_a.log
+DONE

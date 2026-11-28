@@ -1,0 +1,11 @@
+unmutated suite: 16 checks, 0 failing []
+mutation                                                                                             caught-by (failing checks)
+DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (the defect itself)                   A_default_names_are_checks_of_the_real_profile, C_the_named_check_is_the_one_that_judges_G
+DEFAULTS: only G15 keeps the old name (a half fix)                                                   A_default_names_are_checks_of_the_real_profile, D_a_real_token_reads_G14_and_G15_true
+DEFAULTS: both gates are read from G-HYG (a real check, so MEMBERSHIP alone passes; it is the wrong  C_the_named_check_is_the_one_that_judges_G14_and_G15, D_G_PREFLIGHT_not_PASS_reads_G14_and
+assemble_gates: the config override is ignored (the module constant is used)                         A_the_override_reaches_assemble_gates
+token_checks: any status but FAIL counts as PASS                                                     D_G_PREFLIGHT_not_PASS_reads_G14_and_G15_false
+assemble_gates: G15 ignores its own evidence file                                                    D_G15_still_needs_its_own_evidence_file
+assemble_gates: G14 / G15 are `any` over the passes, not `all`                                       D_one_bad_pass_is_enough
+ZZTEST_PASS 23  (16 checks on the unmutated module, 2 of them the RED arms of the invariant, + 7 RED mutations of hnscreen_devbox.py; the REAL launch_gate.PROFILES and gate_token.mint)
+EXIT_CODE 0 secs=1 free_c_mb=148

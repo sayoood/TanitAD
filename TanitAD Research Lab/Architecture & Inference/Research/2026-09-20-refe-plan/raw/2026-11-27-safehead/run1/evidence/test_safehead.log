@@ -1,0 +1,59 @@
+ok 01 row mapping NC,DAC,EP,TTC,C,DDC from train.py:269 + planner.py:547-549; aggregate text pinned; C1 sha == SCORERFT_BASE_SHA256
+ok 02 agg32 = navsim_v1 (float64 reference within 1e-6), float32, DDC does not enter
+ok 03 delta form: untrained head bit-exact, EP/C untouched, = direct form within 1e-4
+ok 04 no pre-existing profile moved (40 pinned); the three SAFE-HEAD arms are registered
+ok 05 cache contract: the per-log (data agent's), per-token and stacked layouts; unsealed refused, seal outside the cache, 5 breaches refused, sha change after sealing refused
+ok 06 CTRL-LEAK: a navtest log in the training cache is refused by leak_problems and by the trainer; an empty navtest list is refused
+ok 07 CTRL-FEAT (max, p99 <= 1e-4): a checkpoint whose head is not the cache's head, and an s stored at float16, are refused
+ok 08 the trainer refuses a real run without a launch-gate token, and under a regression arm
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  trained rows [0, 1, 3, 5] but the optimiser holds [0, 1, 5] (a trained row outside the optimiser never moves); trained row ttc did not move in 5 steps
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: frozen row2 received gradient 0.3646346628665924 (must be EXACTLY 0.0: the zero control); step 2: frozen row2 received gradient 0.36030158400535583 (must be EXACTLY 0.0: the zero control); ste
+ok 09 CTRL-REACH: non-zero grad on rows 0,1,3,5; EXACTLY 0.0 on EP/C; EP/C bit-identical; removing a row from the optimiser and EP in the loss turn G-LIVE RED
+ok 10 held-out rule (safety labels only) chooses step 1000 (miss rate 0.319 -> 0.069); CTRL-RED (permuted labels): AUC nc/dac/ttc fall and the miss rate rises (0.653)
+ok 11 refusals: the three template argvs are clean; 9 moved / extra / missing levers, a non-empty --out and a new flag without a G-DVB entry are refused
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-CLOCK   NA    SAFE-HEAD has no label clock: its labels are a fixed, sealed cache bound by sha256 (--cache-index)
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB init-from sha256 a635338fa278cd7d is not C1's f09949e2a5f2f966 (MODEL_REGISTRY 14.6)
+ok 12 gate: G-HYG G-DVB G-LIVE G-EVAL G-CKPT PASS on the synthetic cache, G-CLOCK NA; the real profile's G-DVB refuses a non-C1 checkpoint
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     FAIL  SafeHeadConfig ACCEPTED an undeclared attribute (the slots guard is absent)
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     FAIL  the trainer reads namespace attributes its parser does not declare: ['undeclared_lever_g_hyg']
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB lr: argv 0.0003 != the optimiser's [0.0006, 0.0006, 0.0006, 0.0006]
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  parser flag(s) ['undeclared_new_lever'] have no G-DVB entry: REFUSED (a new lever arrives with its check)
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: declared loss term 'qfl_ttc' absent or non-finite; step 2: declared loss term 'qfl_ttc' absent or non-finite; step 3: declared loss term 'qfl_ttc' absent or non-finite; step 4: declared loss t
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  trained rows [0, 1, 3, 5] but the optimiser holds [0, 1, 5] (a trained row outside the optimiser never moves); trained row ttc did not move in 5 steps
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: frozen row2 received gradient 0.3646346628665924 (must be EXACTLY 0.0: the zero control); step 2: frozen row2 received gradient 0.36030158400535583 (must be EXACTLY 0.0: the zero control); ste
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-EVAL    FAIL  the read's change on the trained rows differs from the trainer's by 0.0606 > 0.0001
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-CKPT    FAIL  round trip: the loaded head is not the in-memory head that was saved
+  [timing] run: tree_manifest 0.4s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-CKPT    FAIL  ckpt run A1 failed (rc 1):  | F:\safehead_cache\mm_memfix\pk\refe\safehead_train.py:234: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior. Consider 
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-SUITE   FAIL  raw: rc 1, 'ZZTEST_PASS' NOT seen
+ok 13 every deliberate-regression arm turns its check RED (11 arms over G-HYG G-DVB G-LIVE G-EVAL G-CKPT G-SUITE)
+  [timing] run: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-SUITE   PASS  
+  G-CLOCK   NA    SAFE-HEAD has no label clock: its labels are a fixed, sealed cache bound by sha256 (--cache-index)
+  [timing] finalize: tree_manifest 0.3s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+ok 14 end to end: the gate mints PASS, verify MATCHes the argv and REFUSES a moved lever, the trainer refuses a mismatched token and trains on a matching one
+ZZSAFEHEAD_PASS 14

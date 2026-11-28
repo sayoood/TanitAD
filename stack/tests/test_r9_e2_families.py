@@ -1,0 +1,359 @@
+"""Tests for r9_e2_families.py (the paired four-family readers for the E2 judge) on SYNTHETIC refcv3_arm-form dumps.  CPU only.
+
+  * the emitted files VALIDATE against the judge (``r9_e2_verdict``: imported from stack/scripts when landed, else the parked hold's code/ path);
+  * RED arms: a flipped direction, a window-set mismatch (refused), a GT disagreement (refused), a non-DEV window (dropped / refused), a missing family
+    (the judge must read NOT-COMPUTABLE), K2 == camera-blind (W4 must NOT pass), pairing by (clip, ws) and not by file index.
+"""
+import copy
+import hashlib
+import importlib
+import importlib.util
+import json
+import math
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+for p in (SCRIPTS,):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+import r9_e2_families as F  # noqa: E402
+
+
+def _judge():
+    for d in (SCRIPTS,):
+        if (d / "r9_e2_verdict.py").is_file():
+            if str(d) not in sys.path:
+                sys.path.insert(0, str(d))
+            return importlib.import_module("r9_e2_verdict")
+    pytest.fail("r9_e2_verdict.py not found in stack/scripts: the contract this reader produces for cannot be checked")
+
+
+def sha12(c):
+    return hashlib.sha256(c.encode()).hexdigest()[:12]
+
+
+K, NW = 20, 10
+DEV_CLIPS = [f"clipD{i}" for i in range(8)]
+HOLD_CLIPS = [f"clipH{i}" for i in range(3)]
+
+
+def gt_windows(e, n=NW):
+    """[n,K,2] ego-frame waypoints: speed / curvature / accel vary per window and episode."""
+    out = np.zeros((n, K, 2))
+    for i in range(n):
+        v, yaw, a, h = 5.0 + 1.5 * e + 0.4 * i, 0.03 * (e - 3) * (1 if i % 2 else -1), (0.4 if (e + i) % 3 == 0 else -0.5 if (e + i) % 3 == 1 else 0.0), 0.0
+        x = y = 0.0
+        for k in range(K):
+            v = max(v + a * 0.1, 0.0)
+            h += yaw * 0.1
+            x += v * 0.1 * math.cos(h)
+            y += v * 0.1 * math.sin(h)
+            out[i, k] = (x, y)
+    return out
+
+
+def gt_v0(e, n=NW):
+    """The true speed at t0 of gt_windows(e) (its integrator's initial v)."""
+    return np.array([5.0 + 1.5 * e + 0.4 * i for i in range(n)])
+
+
+SPARSE = slice(4, None, 5)        # the real E2 dump shape: instants 0.5 / 1.0 / 1.5 / 2.0 s of the dense 0.1 s grid -> k 4, dt_s 0.5
+
+
+def write_dump(d, clips, noise, seed, order=None, drop_last_of=None, gt_shift=0.0, stationary_clip=None, sparse=False, dt_s="auto", v0="true", scale=1.0):
+    """refcv3_arm-form dump.  ``sparse`` keeps the 4 waypoints the real E2 dumps hold (dt 0.5); ``dt_s`` = the manifest's grid.dt_s ("auto" = the true spacing,
+    None = omitted); ``v0`` = "true" (the integrator's t0 speed), "ones", or None (no v0 key); ``scale`` multiplies the prediction (a speed bias)."""
+    d.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(seed)
+    eps = []
+    for fi, c in enumerate(order or clips):
+        e = int(c[-1]) + (0 if c.startswith("clipD") else 20)
+        G = gt_windows(e)
+        V = gt_v0(e)
+        if c == stationary_clip:
+            G, V = np.zeros_like(G), np.zeros_like(V)
+        if sparse:
+            G = G[:, SPARSE]
+        P = G * scale + (rng.normal(0.0, noise, G.shape) if noise else 0.0)
+        ws = np.arange(NW) + 7
+        if drop_last_of == c:
+            G, P, ws, V = G[:-1], P[:-1], ws[:-1], V[:-1]
+        extra = {} if v0 is None else {"v0": (V if v0 == "true" else np.ones(len(ws))).astype(np.float32)}
+        np.savez_compressed(d / f"ep{fi:03d}.npz", g=(G + gt_shift).astype(np.float32), os=P.astype(np.float32), ws=ws, eid=np.array([fi]), clip_index=np.array([e]),
+                            **extra)
+        eps.append({"file_index": fi, "episode_index": e, "clip_id": c, "episode_id": e, "n_windows": int(len(ws))})
+    grid = {"n_windows": sum(x["n_windows"] for x in eps)}
+    if dt_s is not None:
+        grid["dt_s"] = (0.5 if sparse else 0.1) if dt_s == "auto" else dt_s
+    (d / "manifest.json").write_text(json.dumps({"episodes": eps, "grid": grid}), encoding="utf-8")
+    return d
+
+
+@pytest.fixture()
+def dev_split(tmp_path):
+    p = tmp_path / "DEV_HOLD_SPLIT.json"
+    p.write_text(json.dumps({"DEV": {"sha12": [sha12(c) for c in DEV_CLIPS]}, "HOLD": {"sha12": [sha12(c) for c in HOLD_CLIPS]}}), encoding="utf-8")
+    return p
+
+
+@pytest.fixture()
+def dumps(tmp_path):
+    allc = DEV_CLIPS + HOLD_CLIPS
+    return {"good": write_dump(tmp_path / "good", allc, 0.02, 1), "bad": write_dump(tmp_path / "bad", allc, 0.6, 2), "good2": write_dump(tmp_path / "good2", allc, 0.02, 1)}
+
+
+def fam(dumps, dev_split, a="good", b="bad", **kw):
+    return F.build(dumps[a], dumps[b], mode=kw.pop("mode", "families"), dev_split=dev_split, n_boot=300, **kw)
+
+
+def test_families_json_validates_against_judge(dumps, dev_split):
+    J = _judge()
+    doc = fam(dumps, dev_split, "good", "bad")                      # K2 = good, K0 = bad -> nothing separated worse
+    assert set(doc["rows"]) == {"LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC"}
+    c, rep = J.families_clause(json.loads(json.dumps(doc)))
+    assert c["status"] == "PASS", c
+    for f in F.FAMILIES:
+        assert rep[f]["rows"] and all(r["ok"] for r in rep[f]["rows"].values())
+    assert rep["STRATEGIC"]["status"] == "NOT-SUPPLIED" and "PAUSED" not in json.dumps(rep)   # the judge reads no rows from the producer's stamp dict (PI 2026-11-16)
+    assert doc["STRATEGIC"]["status"] == "NOT-SUPPLIED" and doc["rows"]["STRATEGIC"]["status"] == "NOT-SUPPLIED"
+    assert "PAUSED" not in json.dumps(doc)                           # PI 2026-11-16: strategic is not paused; never a pass, never omitted
+    assert not any(isinstance(v, dict) for v in doc["rows"]["STRATEGIC"].values())   # the stamp must carry no row-shaped entry
+    assert doc["n_windows_paired"] == len(DEV_CLIPS) * NW and doc["a"]["n_non_dev_dropped"] == len(HOLD_CLIPS) * NW
+    # K2 beats K0 on every distance row: delta < 0 (lower better) and separated
+    assert doc["rows"]["LATERAL"]["LAT_cross_mae_m"]["delta"] < 0 and doc["rows"]["LATERAL"]["LAT_cross_mae_m"]["separated"]
+
+
+def test_row_directions_are_the_registered_table(dumps, dev_split):
+    registered = {"ade_m": "lower", "fde_m": "lower", "LON_speed_mae_mps": "lower", "LON_along_mae_m": "lower", "LON_along_abs_final_m": "lower",
+                  "LON_speed_within_0p5": "higher", "LON_accel_mae_mps2": "lower", "LAT_heading_mae_deg": "lower", "LAT_curvature_mae_1pm_valid": "lower",
+                  "LAT_yaw_rate_mae_radps_valid": "lower", "LAT_cross_mae_m": "lower", "LAT_cross_abs_final_m": "lower", "TAC_traj_lat_correct": "higher",
+                  "TAC_traj_lon_correct": "higher"}                  # pair_read_r8.METRICS, copied literally
+    doc = fam(dumps, dev_split)
+    got = {rid: r["better"] for f in F.FAMILIES for rid, r in doc["rows"][f].items()}
+    got["ade_m"], got["fde_m"] = doc["ade_m"]["better"], doc["beside_ade_fde"]["better"]
+    for rid, d in registered.items():
+        assert got[rid] == d, (rid, got[rid], d)
+
+
+@pytest.mark.parametrize("how", ["swap_arms", "flip_better"])
+def test_RED_flipped_direction_is_read_separated_worse(dumps, dev_split, how):
+    J = _judge()
+    if how == "swap_arms":
+        doc = fam(dumps, dev_split, "bad", "good")                   # K2 = the worse arm
+    else:
+        doc = copy.deepcopy(fam(dumps, dev_split, "good", "bad"))    # the right data with every direction flipped
+        for f in F.FAMILIES:
+            for r in doc["rows"][f].values():
+                r["better"] = "higher" if r["better"] == "lower" else "lower"
+    c, _ = J.families_clause(json.loads(json.dumps(doc)))
+    assert c["status"] == "FAIL" and c["failing_rows"], c
+
+
+def test_RED_window_set_mismatch_is_refused_not_intersected(dumps, dev_split, tmp_path):
+    short = write_dump(tmp_path / "short", DEV_CLIPS + HOLD_CLIPS, 0.6, 2, drop_last_of="clipD3")
+    with pytest.raises(SystemExit, match="window-set mismatch"):
+        F.build(dumps["good"], short, mode="families", dev_split=dev_split, n_boot=50)
+    with pytest.raises(SystemExit, match="window-set mismatch"):
+        F.build(short, dumps["good"], mode="families", dev_split=dev_split, n_boot=50)
+
+
+def test_RED_gt_disagreement_is_refused(dumps, dev_split, tmp_path):
+    # v0=None: a 0.5 m GT offset is not a trajectory, so the waypoint-clock guard would refuse it first; this test is about the PAIRING refusal
+    shifted = write_dump(tmp_path / "shift", DEV_CLIPS + HOLD_CLIPS, 0.6, 2, gt_shift=0.5, v0=None)
+    with pytest.raises(SystemExit, match="label clocks"):
+        F.build(dumps["good"], shifted, mode="families", dev_split=dev_split, n_boot=50)
+
+
+def test_pairing_is_by_clip_and_ws_not_file_index(dumps, dev_split, tmp_path):
+    rev = write_dump(tmp_path / "rev", DEV_CLIPS + HOLD_CLIPS, 0.6, 2, order=list(reversed(DEV_CLIPS + HOLD_CLIPS)))
+    ref = write_dump(tmp_path / "ref", DEV_CLIPS + HOLD_CLIPS, 0.6, 2)           # same clips, same noise stream per clip? (rng differs by order) -> compare pairing only
+    d1 = F.build(dumps["good"], rev, mode="families", dev_split=dev_split, n_boot=50)
+    assert d1["n_windows_paired"] == len(DEV_CLIPS) * NW and d1["pairing"]["n_only_a"] == 0 and d1["pairing"]["n_only_b"] == 0
+    assert F.load_dump(rev)["keys"][0][0] == "clipH2" and F.load_dump(ref)["keys"][0][0] == "clipD0"      # file index 0 is a different clip in the two dumps
+
+
+def test_non_dev_windows_dropped_by_default_and_refusable(dumps, dev_split, tmp_path):
+    doc = fam(dumps, dev_split)
+    assert doc["a"]["n_non_dev_dropped"] == doc["b"]["n_non_dev_dropped"] == len(HOLD_CLIPS) * NW and doc["rows"]["LATERAL"]["LAT_cross_mae_m"]["n"] == len(DEV_CLIPS) * NW
+    with pytest.raises(SystemExit, match="not DEV windows"):
+        fam(dumps, dev_split, non_dev="refuse")
+    hold_only = write_dump(tmp_path / "ho", HOLD_CLIPS, 0.1, 3)
+    with pytest.raises(SystemExit, match="no DEV window"):
+        F.build(hold_only, hold_only, mode="families", dev_split=dev_split, n_boot=50)
+    # a changed DEV list changes the result: the restriction is applied, not decorative
+    sub = tmp_path / "dev_sub.json"
+    sub.write_text(json.dumps({"DEV": {"sha12": [sha12(c) for c in DEV_CLIPS[:4]]}}), encoding="utf-8")
+    d = F.build(dumps["good"], dumps["bad"], mode="families", dev_split=sub, n_boot=50)
+    assert d["n_windows_paired"] == 4 * NW and d["a"]["n_non_dev_dropped"] == (len(DEV_CLIPS) - 4 + len(HOLD_CLIPS)) * NW
+
+
+def test_RED_missing_family_reads_not_computable(dumps, dev_split):
+    J = _judge()
+    doc = json.loads(json.dumps(fam(dumps, dev_split)))
+    for f in F.FAMILIES:
+        broken = copy.deepcopy(doc)
+        del broken["rows"][f]
+        c, rep = J.families_clause(broken)
+        assert c["status"] == "NOT-COMPUTABLE" and f in c["missing_families"], (f, c)
+        broken["rows"][f] = {}
+        assert J.families_clause(broken)[0]["status"] == "NOT-COMPUTABLE"
+
+
+def test_stopped_windows_drop_from_the_heading_row_and_are_counted(dumps, dev_split, tmp_path):
+    allc = DEV_CLIPS + HOLD_CLIPS
+    a = write_dump(tmp_path / "sa", allc, 0.02, 1, stationary_clip="clipD0")
+    b = write_dump(tmp_path / "sb", allc, 0.6, 2, stationary_clip="clipD0")
+    doc = F.build(a, b, mode="families", dev_split=dev_split, n_boot=50)
+    h = doc["rows"]["LATERAL"]["LAT_heading_mae_deg"]
+    assert h["n_dropped_nonfinite"] >= NW and h["n"] + h["n_dropped_nonfinite"] == len(DEV_CLIPS) * NW
+
+
+def test_camblind_rows_validate_w4_and_equal_arms_do_not_pass(dumps, dev_split):
+    J = _judge()
+    cb = fam(dumps, dev_split, "good", "bad", mode="camblind")      # K2 = good, "blind" = bad -> separated better on every primary row
+    assert set(cb["rows"]) == {"ade_m", "LONGITUDINAL", "LATERAL", "TACTICAL"}
+    assert cb["primary_rows"] == F.PRIMARY and cb["primary_cite"] and "all_rows" in cb and cb["STRATEGIC"]["status"] == "NOT-SUPPLIED"
+    c, rep = J.w4_clause(json.loads(json.dumps(cb)))
+    assert c["status"] == "PASS" and all(rep[k]["separated_better"] for k in ("ade_m",) + F.FAMILIES), (c, rep)
+    same = fam(dumps, dev_split, "good", "good2", mode="camblind")  # K2 identical to its "camera-blind": the W4 bar must NOT be read as passed
+    c2, _ = J.w4_clause(json.loads(json.dumps(same)))
+    assert c2["status"] != "PASS", c2
+    worse = fam(dumps, dev_split, "bad", "good", mode="camblind")   # K2 worse than blind
+    assert J.w4_clause(json.loads(json.dumps(worse)))[0]["status"] == "FAIL"
+    ov = fam(dumps, dev_split, "good", "bad", mode="camblind", primary={"LATERAL": "LAT_cross_mae_m"})
+    assert ov["primary_rows"]["LATERAL"] == "LAT_cross_mae_m" and ov["rows"]["LATERAL"]["better"] == "lower"
+
+
+def test_cli_files_feed_the_judge_end_to_end(dumps, dev_split, tmp_path):
+    J = _judge()
+    out = tmp_path / "o"
+    assert F.main(["--mode", "families", "--a-dump", str(dumps["good"]), "--b-dump", str(dumps["bad"]), "--dev-split", str(dev_split), "--boot", "200",
+                   "--out", str(out / "families_s0.json")]) == 0
+    assert F.main(["--mode", "camblind", "--a-dump", str(dumps["good"]), "--b-dump", str(dumps["bad"]), "--dev-split", str(dev_split), "--boot", "200",
+                   "--out", str(out / "camblind_s0.json")]) == 0
+    r = J.judge_seed({"families": str(out / "families_s0.json"), "camblind": str(out / "camblind_s0.json")})
+    st = {c["id"]: c["status"] for c in r["clauses"]}
+    assert st["d"] == "PASS" and st["e"] == "PASS"
+    assert st["a"] == st["b"] == st["c"] == "NOT-COMPUTABLE"          # the other clauses' inputs are absent here -> NOT-COMPUTABLE, never dropped
+    # a refused pairing returns rc 2 and writes nothing
+    assert F.main(["--mode", "families", "--a-dump", str(dumps["good"]), "--b-dump", str(tmp_path / "nope"), "--dev-split", str(dev_split), "--out", str(out / "x.json")]) == 2
+    assert not (out / "x.json").exists()
+
+
+def _t1_eval():
+    import taniteval
+    p = Path(taniteval.__file__).resolve().parents[1] / "tools" / "t1_eval.py"
+    spec = importlib.util.spec_from_file_location("t1_eval_for_famroll", str(p))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_per_window_rows_reproduce_t1_eval_pooled_points(dumps):
+    """The reader's per-window rows are the SAME geometry as t1_eval.analyze (not a re-derivation): the mean of each row over the windows = analyze's pooled point."""
+    d = F.load_dump(dumps["bad"])
+    assert d["dt_s"] == 0.1                                      # the dense fixture: t1_eval.analyze reads it at its own 0.1 s default (no wp_steps)
+    rows = F.window_rows(d["P"], d["G"], d["dt_s"])
+    out = _t1_eval().analyze(sorted(str(p) for p in Path(dumps["bad"]).glob("ep*.npz")), tiers={"os": "T1"}, n_boot=50)
+    m = out["arms"]["os"]["intervals"]["metrics"]
+    pairs = {"ade_dense_m": "ade_m", "fde_last_m": "fde_m", "LON_speed_mae_mps": "LON_speed_mae_mps", "LON_along_mae_m": "LON_along_mae_m",
+             "LAT_cross_mae_m": "LAT_cross_mae_m", "LAT_heading_mae_deg": "LAT_heading_mae_deg"}
+    for tk, rk in pairs.items():
+        pt = m[tk].get("point", m[tk].get("mean"))
+        mine = rows[rk][np.isfinite(rows[rk])].mean()
+        assert pt is not None and abs(float(pt) - float(mine)) < 5e-3 * max(1.0, abs(float(pt))), (tk, pt, mine)
+
+
+def test_window_set_sha256_is_stamped_and_equals_the_distance_keeping_hash(dumps, dev_split):
+    """families.json carries the paired window set's identity, computed exactly as r9_e2_distkeep does, so the merge's window-set check has teeth."""
+    import r9_e2_distkeep as D
+    doc = fam(dumps, dev_split, "good", "bad")
+    keys = F.restrict_dev(F.load_dump(dumps["good"]), F.load_dev(dev_split))[0]["keys"]
+    assert len(doc["window_set_sha256"]) == 64 and doc["window_set_sha256"] == doc["pairing"]["window_set_sha256"]
+    assert doc["window_set_sha256"] == D.window_set_sha256(keys) == F.window_set_sha256(list(reversed(keys)))
+    assert fam(dumps, dev_split, "bad", "good")["window_set_sha256"] == doc["window_set_sha256"]         # an identity of the WINDOWS, not of the arm order
+
+
+def test_RED_a_different_dev_window_set_gives_a_different_hash(dumps, dev_split, tmp_path):
+    full = fam(dumps, dev_split, "good", "bad")["window_set_sha256"]
+    sub = tmp_path / "sub_split.json"                                                                    # one DEV clip fewer, both arms alike
+    sub.write_text(json.dumps({"DEV": {"sha12": [sha12(c) for c in DEV_CLIPS[:-1]]}, "HOLD": {"sha12": [sha12(c) for c in HOLD_CLIPS]}}), encoding="utf-8")
+    assert F.build(dumps["good"], dumps["bad"], mode="families", dev_split=sub, n_boot=50)["window_set_sha256"] != full
+
+
+# ---- THE WAYPOINT CLOCK (2026-11-12): v1 read the real 0.5 s / k 4 dumps at a hard-coded 0.1 s ----------------------------------------------------------------
+
+ALLC = DEV_CLIPS + HOLD_CLIPS
+
+
+def _refused(fn, *a, **kw):
+    with pytest.raises(SystemExit) as ei:
+        fn(*a, **kw)
+    return str(ei.value)
+
+
+def test_dt_is_read_from_the_manifest_checked_and_stamped(dumps, dev_split):
+    doc = fam(dumps, dev_split)
+    assert doc["schema"] == "r9e2-families-v2" and doc["dt_s"] == 0.1 and "grid.dt_s" in doc["dt_source"]
+    for side in ("a", "b"):
+        ck = doc["dt_check"][side]
+        assert ck["status"] == "PASS" and ck["n"] == len(ALLC) * NW and abs(ck["median_g0_over_v0_s"] - 0.1) < 0.005, ck
+
+
+def test_RED_dump_without_grid_dt_is_refused_not_assumed(dev_split, tmp_path):
+    a = write_dump(tmp_path / "a", ALLC, 0.02, 1, dt_s=None)
+    b = write_dump(tmp_path / "b", ALLC, 0.6, 2)
+    assert "publishes no grid.dt_s" in _refused(F.build, a, b, mode="families", dev_split=dev_split, n_boot=50)
+    assert F.main(["--mode", "families", "--a-dump", str(a), "--b-dump", str(b), "--dev-split", str(dev_split), "--out", str(tmp_path / "x.json")]) == 2
+    assert not (tmp_path / "x.json").exists()
+
+
+def test_RED_arms_on_different_waypoint_spacings_are_refused(dev_split, tmp_path):
+    a = write_dump(tmp_path / "dense", ALLC, 0.02, 1)
+    b = write_dump(tmp_path / "sparse", ALLC, 0.02, 1, sparse=True)
+    assert "different waypoint spacings" in _refused(F.build, a, b, mode="families", dev_split=dev_split, n_boot=50)
+
+
+def test_RED_manifest_dt_contradicting_the_gt_spacing_is_refused(dev_split, tmp_path):
+    """The production defect, both ways round: data on a 0.5 s grid read at 0.1 s, and data on a 0.1 s grid read at 0.5 s."""
+    s01 = write_dump(tmp_path / "s01", ALLC, 0.02, 1, sparse=True, dt_s=0.1)
+    d05 = write_dump(tmp_path / "d05", ALLC, 0.02, 1, dt_s=0.5)
+    for bad in (s01, d05):
+        msg = _refused(F.load_dump, bad)
+        assert "contradicts the GT's own spacing" in msg, msg
+    ok = F.load_dump(write_dump(tmp_path / "s05", ALLC, 0.02, 1, sparse=True))
+    assert ok["dt_s"] == 0.5 and ok["dt_check"]["status"] == "PASS" and abs(ok["dt_check"]["median_g0_over_v0_s"] - 0.5) < 0.025, ok["dt_check"]
+
+
+def test_guard_without_usable_v0_reads_not_checked_and_says_so(dev_split, tmp_path):
+    for kw, why in (({"v0": None}, "no v0"), ({"v0": "ones"}, "v0 > 2.0")):
+        d = F.load_dump(write_dump(tmp_path / str(kw["v0"]), ALLC, 0.02, 1, sparse=True, **kw))
+        assert d["dt_s"] == 0.5 and d["dt_check"]["status"] == "NOT-CHECKED" and why in d["dt_check"]["reason"], d["dt_check"]
+
+
+def test_sparse_real_shape_dump_reads_physical_units(dev_split, tmp_path):
+    """A prediction 10 % too fast on the real k 4 / 0.5 s shape reads LON_speed_mae ~= 0.1 x the true speed (m/s), not 5x it; positions are dt-free."""
+    a = write_dump(tmp_path / "a", ALLC, 0.0, 1, sparse=True, scale=1.1)
+    b = write_dump(tmp_path / "b", ALLC, 0.0, 1, sparse=True)
+    doc = F.build(a, b, mode="families", dev_split=dev_split, n_boot=50)
+    assert doc["dt_s"] == 0.5
+    true_speed = np.concatenate([gt_v0(int(c[-1])) for c in DEV_CLIPS]).mean()
+    sp = doc["rows"]["LONGITUDINAL"]["LON_speed_mae_mps"]["a_mean"]
+    assert abs(sp / (0.1 * true_speed) - 1.0) < 0.10, (sp, true_speed)
+    A = F.restrict_dev(F.load_dump(a), F.load_dev(dev_split))[0]
+    assert sp == pytest.approx(F.window_rows(A["P"], A["G"], 0.5)["LON_speed_mae_mps"].mean(), rel=1e-12)
+
+
+def test_rates_scale_with_dt_positions_do_not_and_dt_has_no_default(tmp_path):
+    d = F.load_dump(write_dump(tmp_path / "s", ALLC, 0.3, 1, sparse=True))
+    r1, r5 = F.window_rows(d["P"], d["G"], 0.1), F.window_rows(d["P"], d["G"], 0.5)
+    np.testing.assert_allclose(r1["LON_speed_mae_mps"], 5.0 * r5["LON_speed_mae_mps"], rtol=1e-5)
+    np.testing.assert_allclose(r1["LON_accel_mae_mps2"], 25.0 * r5["LON_accel_mae_mps2"], rtol=1e-4)
+    for k in ("ade_m", "fde_m", "LON_along_mae_m", "LAT_cross_mae_m", "LAT_cross_abs_final_m"):
+        np.testing.assert_array_equal(r1[k], r5[k])
+    with pytest.raises(TypeError):
+        F.window_rows(d["P"], d["G"])

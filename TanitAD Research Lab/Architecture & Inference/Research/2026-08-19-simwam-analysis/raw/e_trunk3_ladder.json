@@ -1,0 +1,659 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU dual ridge)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "prereg": "PREREG_E_TRUNK_3.md (committed 548548f, BEFORE any ladder number was computed)",
+ "n_frames": 5617,
+ "n_episodes": 130,
+ "controls": {
+  "C-EGO": {
+   "lead_gap_m": {
+    "metric": "R2",
+    "point": 0.334,
+    "ci95": [
+     0.2543,
+     0.4182
+    ],
+    "n": 5394,
+    "lambda_at_grid_edge": 1
+   },
+   "nearest_any_m": {
+    "metric": "R2",
+    "point": 0.1194,
+    "ci95": [
+     0.0211,
+     0.193
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "n_agents_log": {
+    "metric": "R2",
+    "point": 0.1601,
+    "ci95": [
+     0.0663,
+     0.2343
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "occluded_frac": {
+    "metric": "R2",
+    "point": -0.0081,
+    "ci95": [
+     -0.0354,
+     -0.0021
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "ego_speed": {
+    "metric": "R2",
+    "point": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "ego_yawrate": {
+    "metric": "R2",
+    "point": 0.9845,
+    "ci95": [
+     0.9785,
+     0.9892
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "ego_accel": {
+    "metric": "R2",
+    "point": 1.0,
+    "ci95": [
+     1.0,
+     1.0
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 5
+   },
+   "left_occupied": {
+    "metric": "AUC",
+    "point": 0.5009,
+    "ci95": [
+     0.4379,
+     0.5649
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 3
+   },
+   "right_occupied": {
+    "metric": "AUC",
+    "point": 0.5307,
+    "ci95": [
+     0.4534,
+     0.6046
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "vru_ahead": {
+    "metric": "AUC",
+    "point": 0.5612,
+    "ci95": [
+     0.4916,
+     0.6314
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   }
+  },
+  "C-PIXEL": {
+   "lead_gap_m": {
+    "metric": "R2",
+    "point": 0.002,
+    "ci95": [
+     -0.0174,
+     0.0156
+    ],
+    "n": 5394,
+    "lambda_at_grid_edge": 4
+   },
+   "nearest_any_m": {
+    "metric": "R2",
+    "point": 0.0227,
+    "ci95": [
+     -0.0396,
+     0.0742
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "n_agents_log": {
+    "metric": "R2",
+    "point": 0.0661,
+    "ci95": [
+     -0.0553,
+     0.1742
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "occluded_frac": {
+    "metric": "R2",
+    "point": -0.0082,
+    "ci95": [
+     -0.0454,
+     0.0128
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "ego_speed": {
+    "metric": "R2",
+    "point": -0.051,
+    "ci95": [
+     -0.1232,
+     -0.0109
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 3
+   },
+   "ego_yawrate": {
+    "metric": "R2",
+    "point": -0.0546,
+    "ci95": [
+     -0.1391,
+     -0.005
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   },
+   "ego_accel": {
+    "metric": "R2",
+    "point": -0.0141,
+    "ci95": [
+     -0.0376,
+     0.0015
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "left_occupied": {
+    "metric": "AUC",
+    "point": 0.4672,
+    "ci95": [
+     0.3957,
+     0.5404
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "right_occupied": {
+    "metric": "AUC",
+    "point": 0.4703,
+    "ci95": [
+     0.3989,
+     0.5457
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 1
+   },
+   "vru_ahead": {
+    "metric": "AUC",
+    "point": 0.5967,
+    "ci95": [
+     0.5155,
+     0.6791
+    ],
+    "n": 5617,
+    "lambda_at_grid_edge": 0
+   }
+  }
+ },
+ "ladder": {
+  "2000": {
+   "spectrum": {
+    "participation_ratio": 3.2870423955170907,
+    "effective_rank": 697.8346572245797,
+    "top_k_share": 0.836421482760758,
+    "rank_ceiling": 2048,
+    "verdict": "INCONCLUSIVE"
+   },
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": -0.0093,
+     "ci95": [
+      -0.0948,
+      0.0537
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 2
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": 0.0381,
+     "ci95": [
+      -0.0256,
+      0.0982
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.1426,
+     "ci95": [
+      -0.0576,
+      0.312
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": -0.1037,
+     "ci95": [
+      -0.2314,
+      -0.02
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 2
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": -0.0171,
+     "ci95": [
+      -0.0533,
+      -0.0017
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 4
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.0055,
+     "ci95": [
+      -0.0159,
+      -0.002
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0413,
+     "ci95": [
+      -0.0789,
+      -0.0119
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.5554,
+     "ci95": [
+      0.487,
+      0.6225
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.6286,
+     "ci95": [
+      0.5527,
+      0.7046
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.5272,
+     "ci95": [
+      0.4382,
+      0.6181
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    }
+   }
+  },
+  "16000": {
+   "spectrum": {
+    "participation_ratio": 6.944780181456666,
+    "effective_rank": 527.5091686929004,
+    "top_k_share": 0.765285114660705,
+    "rank_ceiling": 2048,
+    "verdict": "INCONCLUSIVE"
+   },
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": -0.0147,
+     "ci95": [
+      -0.0421,
+      0.0019
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 4
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": 0.0161,
+     "ci95": [
+      -0.0537,
+      0.0592
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.1583,
+     "ci95": [
+      -0.0443,
+      0.32
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": -0.0015,
+     "ci95": [
+      -0.0544,
+      0.0386
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": 0.0169,
+     "ci95": [
+      -0.1523,
+      0.1466
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.0212,
+     "ci95": [
+      -0.0508,
+      -0.0025
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0242,
+     "ci95": [
+      -0.065,
+      0.0065
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.534,
+     "ci95": [
+      0.4629,
+      0.6063
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.5911,
+     "ci95": [
+      0.5181,
+      0.6664
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.5544,
+     "ci95": [
+      0.4632,
+      0.6454
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "18000": {
+   "spectrum": {
+    "participation_ratio": 6.779551497505761,
+    "effective_rank": 495.1695964890372,
+    "top_k_share": 0.7719926359245417,
+    "rank_ceiling": 2048,
+    "verdict": "INCONCLUSIVE"
+   },
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": -0.019,
+     "ci95": [
+      -0.0502,
+      0.001
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 4
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": 0.0321,
+     "ci95": [
+      -0.016,
+      0.0626
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.1546,
+     "ci95": [
+      -0.0478,
+      0.3181
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": -0.0094,
+     "ci95": [
+      -0.0683,
+      0.037
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": 0.0005,
+     "ci95": [
+      -0.1829,
+      0.1415
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.0331,
+     "ci95": [
+      -0.0696,
+      -0.0099
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0291,
+     "ci95": [
+      -0.0702,
+      0.0042
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.5344,
+     "ci95": [
+      0.4601,
+      0.6062
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.593,
+     "ci95": [
+      0.5176,
+      0.6709
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.5645,
+     "ci95": [
+      0.4757,
+      0.6532
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "20000": {
+   "spectrum": {
+    "participation_ratio": 4.899047170392969,
+    "effective_rank": 515.5817044055331,
+    "top_k_share": 0.8064192646596369,
+    "rank_ceiling": 2048,
+    "verdict": "INCONCLUSIVE"
+   },
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": -0.0176,
+     "ci95": [
+      -0.0454,
+      0.0001
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 4
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": 0.0371,
+     "ci95": [
+      -0.0531,
+      0.1105
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.17,
+     "ci95": [
+      -0.0251,
+      0.327
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": 0.0031,
+     "ci95": [
+      -0.0542,
+      0.0491
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": -0.0048,
+     "ci95": [
+      -0.1395,
+      0.1093
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 2
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.0125,
+     "ci95": [
+      -0.0377,
+      0.0045
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0339,
+     "ci95": [
+      -0.0735,
+      -0.0018
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.5321,
+     "ci95": [
+      0.458,
+      0.6068
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.589,
+     "ci95": [
+      0.5145,
+      0.6648
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.5728,
+     "ci95": [
+      0.4865,
+      0.6582
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    }
+   }
+  }
+ }
+}

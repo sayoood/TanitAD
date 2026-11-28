@@ -1,0 +1,6 @@
+74a75
+>     d.add_argument("--batch", type=int, default=64, help="the EVALUATOR's window batch (v8f_mini_eval.py --batch, default 64): a different batch changes the CPU matmul reduction order, ~1e-5 on logits of magnitude ~16")
+219c220
+<     lg = W.predict(model, src, np.arange(len(sel)), torch.device("cpu"))
+---
+>     lg = W.predict(model, src, np.arange(len(sel)), torch.device("cpu"), bs=a.batch)

@@ -1,0 +1,257 @@
+{
+ "strategic_flag_DEFAULT": {
+  "total_state_dict_keys": 391,
+  "total_params": 14777262,
+  "targets": {
+   "route_head (refc.py:3575)": {
+    "n_keys": 2,
+    "n_params": 1539,
+    "keys": [
+     "core.route_head.weight",
+     "core.route_head.bias"
+    ]
+   },
+   "strategic GRU (refc.py:3419 StrategicCtx)": {
+    "n_keys": 6,
+    "n_params": 25576,
+    "keys": [
+     "core.strategic.gru.weight_ih_l0",
+     "core.strategic.gru.weight_hh_l0",
+     "core.strategic.gru.bias_ih_l0",
+     "core.strategic.gru.bias_hh_l0",
+     "core.strategic.proj.weight",
+     "core.strategic.proj.bias"
+    ]
+   },
+   "g_str head (refc_v3.py:943 str_goal_head)": {
+    "n_keys": 2,
+    "n_params": 27,
+    "keys": [
+     "str_goal_head.weight",
+     "str_goal_head.bias"
+    ]
+   },
+   "g_str -> tactical FiLM (refc_v3.py:946-950)": {
+    "n_keys": 4,
+    "n_params": 608,
+    "keys": [
+     "gstr_embed.weight",
+     "gstr_embed.bias",
+     "gstr_film.weight",
+     "gstr_film.bias"
+    ]
+   },
+   "ctx -> operative cond (refc.py:1737 ctx_to_cond)": {
+    "n_keys": 2,
+    "n_params": 288,
+    "keys": [
+     "core.decoder.ctx_to_cond.weight",
+     "core.decoder.ctx_to_cond.bias"
+    ]
+   }
+  },
+  "controls": {
+   "core.decoder.layers.": {
+    "n_keys": 42,
+    "n_params": 29890,
+    "keys": [
+     "core.decoder.layers.0.agent_gate",
+     "core.decoder.layers.0.norm_q.weight",
+     "core.decoder.layers.0.norm_q.bias",
+     "core.decoder.layers.0.cross.in_proj_weight",
+     "core.decoder.layers.0.cross.in_proj_bias",
+     "core.decoder.layers.0.cross.out_proj.weight",
+     "core.decoder.layers.0.cross.out_proj.bias",
+     "core.decoder.layers.0.norm_f.weight"
+    ]
+   },
+   "tac_decoder_v6.": {
+    "n_keys": 58,
+    "n_params": 109572,
+    "keys": [
+     "tac_decoder_v6.queries.weight",
+     "tac_decoder_v6.agent_in.weight",
+     "tac_decoder_v6.agent_in.bias",
+     "tac_decoder_v6.bev_in.weight",
+     "tac_decoder_v6.bev_in.bias",
+     "tac_decoder_v6.source_code.weight",
+     "tac_decoder_v6.kv_norm.weight",
+     "tac_decoder_v6.kv_norm.bias"
+    ]
+   }
+  },
+  "forward_emits": {
+   "g_str": [
+    4,
+    3
+   ],
+   "g_str_raw": [
+    4,
+    3
+   ],
+   "route_logits": [
+    4,
+    3
+   ],
+   "g_tac": [
+    4,
+    3,
+    4
+   ],
+   "z_tac": [
+    4,
+    32
+   ]
+  },
+  "forward_moves_with_input": {
+   "g_str": 0.02751734,
+   "route_logits": 0.06569351,
+   "z_tac": 0.13583541
+  },
+  "cfg_no_strategic": false
+ },
+ "no_strategic_TRUE": {
+  "total_state_dict_keys": 391,
+  "total_params": 14777262,
+  "targets": {
+   "route_head (refc.py:3575)": {
+    "n_keys": 2,
+    "n_params": 1539,
+    "keys": [
+     "core.route_head.weight",
+     "core.route_head.bias"
+    ]
+   },
+   "strategic GRU (refc.py:3419 StrategicCtx)": {
+    "n_keys": 6,
+    "n_params": 25576,
+    "keys": [
+     "core.strategic.gru.weight_ih_l0",
+     "core.strategic.gru.weight_hh_l0",
+     "core.strategic.gru.bias_ih_l0",
+     "core.strategic.gru.bias_hh_l0",
+     "core.strategic.proj.weight",
+     "core.strategic.proj.bias"
+    ]
+   },
+   "g_str head (refc_v3.py:943 str_goal_head)": {
+    "n_keys": 2,
+    "n_params": 27,
+    "keys": [
+     "str_goal_head.weight",
+     "str_goal_head.bias"
+    ]
+   },
+   "g_str -> tactical FiLM (refc_v3.py:946-950)": {
+    "n_keys": 4,
+    "n_params": 608,
+    "keys": [
+     "gstr_embed.weight",
+     "gstr_embed.bias",
+     "gstr_film.weight",
+     "gstr_film.bias"
+    ]
+   },
+   "ctx -> operative cond (refc.py:1737 ctx_to_cond)": {
+    "n_keys": 2,
+    "n_params": 288,
+    "keys": [
+     "core.decoder.ctx_to_cond.weight",
+     "core.decoder.ctx_to_cond.bias"
+    ]
+   }
+  },
+  "controls": {
+   "core.decoder.layers.": {
+    "n_keys": 42,
+    "n_params": 29890,
+    "keys": [
+     "core.decoder.layers.0.agent_gate",
+     "core.decoder.layers.0.norm_q.weight",
+     "core.decoder.layers.0.norm_q.bias",
+     "core.decoder.layers.0.cross.in_proj_weight",
+     "core.decoder.layers.0.cross.in_proj_bias",
+     "core.decoder.layers.0.cross.out_proj.weight",
+     "core.decoder.layers.0.cross.out_proj.bias",
+     "core.decoder.layers.0.norm_f.weight"
+    ]
+   },
+   "tac_decoder_v6.": {
+    "n_keys": 58,
+    "n_params": 109572,
+    "keys": [
+     "tac_decoder_v6.queries.weight",
+     "tac_decoder_v6.agent_in.weight",
+     "tac_decoder_v6.agent_in.bias",
+     "tac_decoder_v6.bev_in.weight",
+     "tac_decoder_v6.bev_in.bias",
+     "tac_decoder_v6.source_code.weight",
+     "tac_decoder_v6.kv_norm.weight",
+     "tac_decoder_v6.kv_norm.bias"
+    ]
+   }
+  },
+  "forward_emits": {
+   "g_str": [
+    4,
+    3
+   ],
+   "g_str_raw": [
+    4,
+    3
+   ],
+   "route_logits": [
+    4,
+    3
+   ],
+   "g_tac": [
+    4,
+    3,
+    4
+   ],
+   "z_tac": [
+    4,
+    32
+   ]
+  },
+  "forward_moves_with_input": {
+   "g_str": 0.06745911,
+   "route_logits": 0.03423342,
+   "z_tac": 0.13886136
+  },
+  "cfg_no_strategic": true
+ },
+ "DELTA_params_default_minus_nostrategic": 0,
+ "VERDICT": {
+  "route_head (refc.py:3575)": {
+   "built_default": true,
+   "built_no_strategic": true,
+   "params_default": 1539,
+   "params_no_strategic": 1539
+  },
+  "strategic GRU (refc.py:3419 StrategicCtx)": {
+   "built_default": true,
+   "built_no_strategic": true,
+   "params_default": 25576,
+   "params_no_strategic": 25576
+  },
+  "g_str head (refc_v3.py:943 str_goal_head)": {
+   "built_default": true,
+   "built_no_strategic": true,
+   "params_default": 27,
+   "params_no_strategic": 27
+  },
+  "g_str -> tactical FiLM (refc_v3.py:946-950)": {
+   "built_default": true,
+   "built_no_strategic": true,
+   "params_default": 608,
+   "params_no_strategic": 608
+  },
+  "ctx -> operative cond (refc.py:1737 ctx_to_cond)": {
+   "built_default": true,
+   "built_no_strategic": true,
+   "params_default": 288,
+   "params_no_strategic": 288
+  }
+ }
+}

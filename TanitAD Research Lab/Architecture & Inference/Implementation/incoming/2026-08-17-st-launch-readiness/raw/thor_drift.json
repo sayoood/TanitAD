@@ -1,0 +1,129 @@
+{
+ "_evidence_class": "MEASURED (ours; md5 + real import on the Thor training venv)",
+ "_date": "2026-08-17",
+ "host": "tanitad-thor-wifi (thor6)",
+ "repo_head": "72e0c20",
+ "_method": "NO git fetch on Thor (it hangs, no credentials). md5 per file, then a CPU-only import with CUDA_VISIBLE_DEVICES='' under the LAUNCH's own PYTHONPATH.",
+ "thor_git_head_reported": "30d6d60 (NOT the truth about the working tree \u2014 it is file-shipped)",
+ "files": {
+  "stack/scripts/eval_flagship_v4.py": {
+   "repo": "21c1e0b5f35e07b92d88f19bb5185c72",
+   "thor": "bd021afaa9e4523aad9d574dd5f16629",
+   "drift": true
+  },
+  "stack/scripts/train_flagship_v4.py": {
+   "repo": "74adc6f787e10606c1ca3bb0aa8e5ef7",
+   "thor": "f8c71b384daa81370645171330030f2c",
+   "drift": true
+  },
+  "stack/scripts/train_v6_staged.py": {
+   "repo": "a37ddba074aafd72aef60e1385947e22",
+   "thor": "97daef493b6f764385a1a7bf08d2d8cd",
+   "drift": true
+  },
+  "stack/scripts/v6_chain.py": {
+   "repo": "ee6384910acfe0967f700fea41433eba",
+   "thor": null,
+   "drift": true
+  },
+  "stack/tanitad/data/calib.py": {
+   "repo": "041c600e7264685e38545994c599e2a4",
+   "thor": "2f042d633e0d70596f6cabaae8011c95",
+   "drift": true
+  },
+  "stack/tanitad/data/parity.py": {
+   "repo": "7b42991893b27182c2384e79349d4acf",
+   "thor": "eb8c2dad86df51be7646a1df0674617b",
+   "drift": true
+  },
+  "stack/tanitad/data/v2_dataset.py": {
+   "repo": "da5577deb7a2d9dc88f0504bb2eaa7e5",
+   "thor": "30bd5fd81900ca700a40a470f7c72a44",
+   "drift": true
+  },
+  "stack/tanitad/geometry.py": {
+   "repo": "b7798dfeca51810282ebb2d490fc9638",
+   "thor": "18969b47802182fd9846c8301514240e",
+   "drift": true
+  },
+  "stack/tanitad/models/tactical.py": {
+   "repo": "c45375b841e1085ebdc551698c3deba5",
+   "thor": "6e8c80c412cbcdcd8ff14e579c5df9d8",
+   "drift": true
+  },
+  "stack/tanitad/models/v6.py": {
+   "repo": "1e91b074eeb5d9ed0964321365b0c6d0",
+   "thor": "241600853989feb7251b2a2263f37030",
+   "drift": true
+  },
+  "taniteval/taniteval/seam.py": {
+   "repo": "c206417b23670c04ff95d183c459b3af",
+   "thor": null,
+   "drift": true
+  },
+  "taniteval/taniteval/seam_dump.py": {
+   "repo": "0ae7859207f32da2b40dca18d94c153b",
+   "thor": null,
+   "drift": true
+  },
+  "taniteval/tools/seam_probe.py": {
+   "repo": "e4a876d9d46ee3486f28df342549cbf0",
+   "thor": null,
+   "drift": true
+  }
+ },
+ "n_drift": 13,
+ "n_files": 13,
+ "blob_to_commit": {
+  "stack/scripts/train_v6_staged.py": "97daef49\u2026 == commit be3b89b (2026-08-14) \u2014 15 commits behind HEAD",
+  "stack/tanitad/models/v6.py": "24160085\u2026 == commit 30d6d60 (2026-08-15)"
+ },
+ "imports": {
+  "torch": {
+   "ok": true,
+   "value": "2.13.0+cu130"
+  },
+  "train_v6_staged": {
+   "ok": true,
+   "value": {
+    "STAGE_MAY_INTRODUCE": false,
+    "RESUME_CONTRACT": false,
+    "STAGE_GATE_SPEC": true,
+    "cli_selector": false,
+    "cli_tac_goal_cond": false,
+    "cli_dump_seam_plan": false
+   }
+  },
+  "v6": {
+   "ok": true,
+   "value": {
+    "LADDER_UNTRAINED_GROUPS": false
+   }
+  },
+  "v6_probe_trunk": {
+   "ok": true,
+   "value": true
+  },
+  "v6_chain": {
+   "ok": false,
+   "err": "ModuleNotFoundError: No module named 'v6_chain'"
+  },
+  "taniteval": {
+   "ok": false,
+   "err": "ModuleNotFoundError: No module named 'taniteval'"
+  },
+  "taniteval.ci": {
+   "ok": false,
+   "err": "ModuleNotFoundError: No module named 'taniteval'"
+  },
+  "taniteval.seam": {
+   "ok": false,
+   "err": "ModuleNotFoundError: No module named 'taniteval'"
+  },
+  "taniteval.seam_dump": {
+   "ok": false,
+   "err": "ModuleNotFoundError: No module named 'taniteval'"
+  }
+ },
+ "_reading": "Thor is a MIXED-VINTAGE tree: the trainer is 2026-08-14 and v6.py is 2026-08-15. An S-T launched from it would NOT crash \u2014 with no --selector and no --tac-goal-cond the stack is key-identical to S-W's and the old strict load succeeds \u2014 it would SILENTLY be the pre-F-1, pre-selector, pre-seam-dump ladder."
+}

@@ -1,0 +1,55 @@
+{
+ "control_units": "m_s",
+ "tier": "NONE -- no model runs. The scored trajectory is the EGO'S OWN realised path over 2-6 s; a T0/T1 stamp would be a category error.",
+ "what_was_scored": "ego realised speed over the 2-6 s tactical band vs min(posted-limit ceiling, kinematic 0.35 g ceiling)",
+ "n_clips": 4572,
+ "n_steps_scored": 187452,
+ "estimator": "episode_cluster_bootstrap / paired (taniteval.ci), cluster = clip",
+ "variance_question": "sampling variance over CLIPS from this corpus -- NOT seed variance, NOT split variance",
+ "QUANTIZED_ceiling": {
+  "frac_over_ceiling_mean": 0.012046,
+  "ci": [
+   0.009383,
+   0.014644
+  ],
+  "n_clips_with_any_overshoot": 132,
+  "frac_clips_with_any_overshoot": 0.028871391076115485,
+  "mean_overshoot_ms_over_clips": 0.014038167104111987,
+  "frac_under_when_allowed_mean": 0.498288,
+  "frac_under_ci": [
+   0.48407,
+   0.512545
+  ],
+  "n_clips_with_an_allowing_step": 3758,
+  "n_situation_allows_steps": 147738
+ },
+ "COMBINED_raw_ceiling": {
+  "frac_over_ceiling_mean": 0.006482,
+  "ci": [
+   0.004924,
+   0.008173
+  ],
+  "n_clips_with_any_overshoot": 104,
+  "reading": "NOT a vacuity control: this ceiling is min(raw posted, kinematic 0.35 g), and the kinematic half binds. The vacuity identity lives in POSTED_ONLY_vacuity_identity below."
+ },
+ "POSTED_ONLY_vacuity_identity": {
+  "quantized_frac_over_mean": 0.005564091207349082,
+  "quantized_n_clips_with_overshoot": 28,
+  "raw_frac_over_mean": 0.0,
+  "raw_n_clips_with_overshoot": 0,
+  "raw_expected": 0.0,
+  "raw_identity_holds": true,
+  "reading": "\u26d4 THE INSTRUMENT CHECK AND THE WHOLE ARGUMENT IN ONE ROW. Against the RAW ego-derived ceiling alone, frac_over is exactly 0.000000 on every clip BY CONSTRUCTION -- the ceiling IS the max of the speed being scored, so the metric can never fire and says nothing about driving. Against the QUANTIZED posted-limit ceiling the same instrument CAN fire. A non-zero raw number would mean the join is broken."
+ },
+ "paired_quantized_minus_raw": {
+  "delta": 0.0056,
+  "ci": [
+   0.0036,
+   0.0077
+  ],
+  "separated": true,
+  "n_episodes": 4572
+ },
+ "manoeuvre_rate": 0.3530183727034121,
+ "_vacuity_gate": "manoeuvre_rate is reported beside every satisfaction number: a constraint-satisfaction zero bought by declining the manoeuvre is not a safety result."
+}

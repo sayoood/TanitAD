@@ -1,0 +1,125 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD149",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    20,
+    20
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 30000,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "7048714afbb5301664dbe1544c19945cded571f07e4930380f94361babdf37c4",
+   "sha256_at_read": "7048714afbb5301664dbe1544c19945cded571f07e4930380f94361babdf37c4",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 0.9999999999999999,
+   "A": 1.0,
+   "PASS": true
+  }
+ },
+ "leadspeed_py_sha256": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 1500,
+  "held_out": 443,
+  "eval": 141
+ },
+ "guard": {
+  "amendment": "AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 16.31,
+  "own_commit_at_start_GB": 1.057,
+  "need_GB": 7.09,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (amendment 3)",
+  "touch_check": 806,
+  "fit_clips": 1500,
+  "seconds": 166.9,
+  "commit_avail_after_GB": 16.35,
+  "own_commit_after_GB": 1.106
+ },
+ "train": {
+  "steps": 30000,
+  "windows_fit": 137906,
+  "seconds": 1604.7,
+  "loss_first1000": 0.5998,
+  "loss_last1000": 0.0952,
+  "finite": true,
+  "ckpt_sha256": {
+   "10000": "f71f0689b17fbbb2f854cb692afc8a7ec2ecc3d1c7154963c1c22baed76d4fa3",
+   "20000": "aacb5d730b84e147f385441395ab801a5f79ea7733082aac79239d061098e7ea",
+   "30000": "7048714afbb5301664dbe1544c19945cded571f07e4930380f94361babdf37c4"
+  }
+ },
+ "held_out": {
+  "S": 0.2877359893295343,
+  "n_S": 11623,
+  "A": 0.19120802261869796,
+  "n_A": 10325,
+  "gap_mae_m": 7.540468339737513,
+  "presence_auc": 0.877615187415293
+ },
+ "held_out_halves": [
+  {
+   "S": 0.2967058256290341,
+   "n_S": 6122,
+   "A": 0.1972922275384587,
+   "n_A": 5468,
+   "gap_mae_m": 7.202835818015518,
+   "presence_auc": 0.8677523371541368
+  },
+  {
+   "S": 0.2745501664857549,
+   "n_S": 5501,
+   "A": 0.18415776539433892,
+   "n_A": 4857,
+   "gap_mae_m": 7.908726048885926,
+   "presence_auc": 0.8875235482553213
+  }
+ ],
+ "eval141": {
+  "S": 0.25273209999063945,
+  "n_S": 3430,
+  "A": 0.12814539267662323,
+  "n_A": 3035,
+  "gap_mae_m": 6.736992301124839,
+  "presence_auc": 0.8704922699856336
+ },
+ "token_reader_ADD146_beside": {
+  "A": [
+   0.0872,
+   0.0714
+  ],
+  "S": [
+   0.3337,
+   0.2731
+  ]
+ },
+ "controls_all_pass": true,
+ "name": "LEADSPEEDFULL10K-NOT-CARRIED",
+ "consequence": "BLOCKER-NAMED: no successor arm from this read; the blocker is named with the measured values (more fit clips needing a disk for the token store, or a second seed)"
+}

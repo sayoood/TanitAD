@@ -1,0 +1,705 @@
+{
+ "tool": "bank_battery_r8.py",
+ "tag": "step5000",
+ "written": "2026-10-16T11:48:55+0200",
+ "chain_status": "both passes complete",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames; EARLY READ at step 5,000 of 48,852, raw weights",
+ "stamps": [
+  "single training seed; training-seed floor at full scale unmeasured",
+  "no bar verdict: the SPEC bars apply to the final checkpoint; these are early reads (EARLY READ at step 5,000 of 48,852, raw weights)",
+  "numbers are PROVISIONAL unless G0 is PASS as coded or under the registered amendments (A7 + W-R8-1 [+ W-R8-2]): read passes.<pass>.paired_read.g0.G0_amended (SPEC_REFCV8 section 5)"
+ ],
+ "passes": {
+  "unc": {
+   "status": "COMPLETE",
+   "started": "2026-10-16T06:56:06",
+   "finished": "2026-10-16T10:12:42",
+   "tag": "step5000_unc",
+   "ckpt_md5": "a32e3b70f46aabbd3ab55f285d03f82d",
+   "step": 5000,
+   "S2": {
+    "n_clips": 139,
+    "n_windows": 4754,
+    "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+   },
+   "SMOKE_RESTRICTED_S2": null,
+   "G0_NONBLOCKING": {
+    "G0_as_coded": "FAIL",
+    "reasons": [
+     "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+     "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+    ],
+    "stamp": "G0 did NOT pass as coded; the battery proceeded by explicit request (EARLY READ). SPEC_REFCV8 section 5: no refcv8 battery number counts unless its G0 passes -- every number in this run is PROVISIONAL and is not bar evidence."
+   },
+   "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+   "r8": {
+    "pose_sync_policy": "OFF (R8_NO_POSE_SYNC): the standalone, refcv7-comparable clock",
+    "g0_nonblocking": true,
+    "no_baselines": false,
+    "smoke_cpu": false,
+    "wall_s": 11796.6
+   },
+   "child_rewrites": [
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    },
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    }
+   ],
+   "baselines_dropped": {},
+   "baselines_used": {
+    "b_refcv4b": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump",
+    "b_refcv5v2_s0": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2_dump",
+    "b_refcv5v2_s1": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2-seed1_dump",
+    "b_refcv7_50400_s0": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0",
+    "b_refcv7_50400_s1": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1"
+   },
+   "baselines_missing": [
+    "b_refcv6_38k_s0",
+    "b_refcv6_38k_s1"
+   ],
+   "rolls": {
+    "s0": {
+     "arm_set": "full (SPEC \u00a73.2)",
+     "wall_s": 7883.1,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 3.037,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 355720,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    },
+    "s1": {
+     "arm_set": "os + model-free controls (SPEC A3)",
+     "wall_s": 2455.0,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 1.222,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 0,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    }
+   },
+   "pairing": {
+    "s0": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    },
+    "s1": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    }
+   },
+   "void_gates_3_4": {
+    "s0": {
+     "pass": true,
+     "failures": []
+    },
+    "s1": {
+     "pass": true,
+     "failures": []
+    }
+   },
+   "inference_seed_replicate": {
+    "max_abs_path_diff_m": 4.786956787109375,
+    "floor_m": 0.0014,
+    "ade": {
+     "delta": -0.0014,
+     "lo": -0.005,
+     "hi": 0.0025,
+     "ci95": 0.0038,
+     "p_delta_gt0": 0.24,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "bars_r7_form_informative": [
+    [
+     "BAR-R7-1",
+     "FAILED"
+    ],
+    [
+     "BAR-R7-2",
+     "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+    ],
+    [
+     "BAR-R7-3",
+     "PASS (single training seed; training-seed floor unmeasured)"
+    ]
+   ],
+   "strategic": {
+    "status": "NOT APPLICABLE",
+    "n": 0,
+    "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+   },
+   "paired_read": {
+    "file": "PAIRED_READ_step5000_unc.json",
+    "clock": "standalone",
+    "g0": {
+     "G0": "FAIL",
+     "amendment": "A7",
+     "M1_detected": true,
+     "ckpt_md5": "a32e3b70f46aabbd3ab55f285d03f82d",
+     "G0_amended": "NOT PASS",
+     "amendments": [],
+     "amended_why": "2 gate reason(s), not the wrapper clause alone",
+     "wrapfix_json": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\step5000\\wrapper_clause_r8fix_gpu.json",
+     "fp64_json": null,
+     "provisional": true,
+     "stamp": "PROVISIONAL: G0 is not PASS as coded nor under the registered amendments (2 gate reason(s), not the wrapper clause alone): per SPEC_REFCV8 section 5 no refcv8 battery number counts as bar evidence"
+    },
+    "bars": {
+     "BAR-R8-E1": "FAILED",
+     "BAR-R8-E3": "PASS (single training seed; training-seed floor unmeasured)",
+     "BAR-R8-NR": {
+      "verdict": null,
+      "per_family": {
+       "ADE": "FAIL: S2:ade_m, S6:ade_m",
+       "LONGITUDINAL": "FAIL: S2:LON_speed_mae_mps, S2:LON_along_abs_final_m",
+       "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid"
+      }
+     }
+    },
+    "inference_floor_ade": {
+     "S2": 0.0014074742794036865,
+     "S6": 0.024900197982788086
+    },
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0,
+     "reason": "the strategic layer is OFF (--no-strategic in the run's argv; PI ruling R5): its route loss is gated off in training, the route head is untrained and is not scored. Route-level decisions are measured inside LATERAL / TACTICAL, not relabelled strategic."
+    },
+    "controls_all_bit_identical": {
+     "S2_s0": true,
+     "S2_s1": true
+    },
+    "windows_check": {
+     "S2_s0": true,
+     "S2_s1": true,
+     "S6_s0": true,
+     "S6_s1": true
+    }
+   }
+  },
+  "corr": {
+   "status": "COMPLETE",
+   "started": "2026-10-16T10:13:35",
+   "finished": "2026-10-16T11:48:41",
+   "tag": "step5000_corr",
+   "ckpt_md5": "a32e3b70f46aabbd3ab55f285d03f82d",
+   "step": 5000,
+   "S2": {
+    "n_clips": 139,
+    "n_windows": 4754,
+    "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+   },
+   "SMOKE_RESTRICTED_S2": null,
+   "G0_NONBLOCKING": {
+    "G0_as_coded": "FAIL",
+    "reasons": [
+     "eval_box3d_det_ap2_automobile_0_20 [DETECTION] in-run 0.33835 vs seeds mean 0.31453 (sd 0)",
+     "wrapper clause FAIL: ['merge defect: cascade wrapper 1.235e-01 > bar 8.638e-02', 'merge defect: r8_subscore wrapper 1.642e-02 > bar 1.379e-02']"
+    ],
+    "stamp": "G0 did NOT pass as coded; the battery proceeded by explicit request (EARLY READ). SPEC_REFCV8 section 5: no refcv8 battery number counts unless its G0 passes -- every number in this run is PROVISIONAL and is not bar evidence."
+   },
+   "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+   "r8": {
+    "pose_sync_policy": "ON: the corrected clock the run trained and was evaluated on",
+    "g0_nonblocking": true,
+    "no_baselines": true,
+    "smoke_cpu": false,
+    "wall_s": 5716.0
+   },
+   "child_rewrites": [
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": true
+    },
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": true
+    }
+   ],
+   "baselines_dropped": {},
+   "baselines_used": {},
+   "baselines_missing": [
+    "b_refcv6_38k_s0",
+    "b_refcv6_38k_s1"
+   ],
+   "rolls": {
+    "s0": {
+     "arm_set": "os + model-free controls (SPEC A3)",
+     "wall_s": 3162.6,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 1.222,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 0,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    },
+    "s1": {
+     "arm_set": "os + model-free controls (SPEC A3)",
+     "wall_s": 2081.7,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 1.222,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 0,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    }
+   },
+   "pairing": {
+    "s0": {},
+    "s1": {}
+   },
+   "void_gates_3_4": {
+    "s0": {
+     "pass": true,
+     "failures": []
+    },
+    "s1": {
+     "pass": true,
+     "failures": []
+    }
+   },
+   "inference_seed_replicate": {
+    "max_abs_path_diff_m": 4.792457580566406,
+    "floor_m": 0.0041,
+    "ade": {
+     "delta": -0.0041,
+     "lo": -0.0078,
+     "hi": -0.0007,
+     "ci95": 0.0036,
+     "p_delta_gt0": 0.0085,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "bars_r7_form_informative": [
+    [
+     "BAR-R7-1",
+     "FAILED"
+    ],
+    [
+     "BAR-R7-2",
+     "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+    ],
+    [
+     "BAR-R7-3",
+     "PASS (single training seed; training-seed floor unmeasured)"
+    ]
+   ],
+   "strategic": {
+    "status": "NOT APPLICABLE",
+    "n": 0,
+    "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+   },
+   "paired_read": {
+    "file": "PAIRED_READ_step5000_corr.json",
+    "clock": "corrected",
+    "g0": {
+     "G0": "FAIL",
+     "amendment": "A7",
+     "M1_detected": true,
+     "ckpt_md5": "a32e3b70f46aabbd3ab55f285d03f82d",
+     "G0_amended": "NOT PASS",
+     "amendments": [],
+     "amended_why": "2 gate reason(s), not the wrapper clause alone",
+     "wrapfix_json": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\step5000\\wrapper_clause_r8fix_gpu.json",
+     "fp64_json": null,
+     "provisional": true,
+     "stamp": "PROVISIONAL: G0 is not PASS as coded nor under the registered amendments (2 gate reason(s), not the wrapper clause alone): per SPEC_REFCV8 section 5 no refcv8 battery number counts as bar evidence"
+    },
+    "bars": {
+     "BAR-R8-E1": "FAILED",
+     "BAR-R8-E3": "PASS (single training seed; training-seed floor unmeasured)",
+     "BAR-R8-NR": {
+      "verdict": "NOT PAIRABLE on this clock (refcv7's GT is on the uncorrected clock; the paired difference would compare two eval sets)",
+      "per_family": null
+     }
+    },
+    "inference_floor_ade": {
+     "S2": 0.0041465163230896,
+     "S6": 0.037853240966796875
+    },
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0,
+     "reason": "the strategic layer is OFF (--no-strategic in the run's argv; PI ruling R5): its route loss is gated off in training, the route head is untrained and is not scored. Route-level decisions are measured inside LATERAL / TACTICAL, not relabelled strategic."
+    },
+    "controls_all_bit_identical": {},
+    "windows_check": {
+     "S2_s0": null,
+     "S2_s1": null,
+     "S6_s0": null,
+     "S6_s1": null
+    }
+   }
+  }
+ },
+ "banked": {
+  "unc": {
+   "banked": [
+    "acceptance_s0.json",
+    "acceptance_s1.json",
+    "analysis_s0.json",
+    "analysis_s1.json",
+    "analysis_s6_s0.json",
+    "analysis_s6_s1.json",
+    "battery_summary.json",
+    "criteria_s0.json",
+    "criteria_s0.log",
+    "criteria_s1.json",
+    "criteria_s1.log",
+    "cross_paired_s0.json",
+    "cross_paired_s1.json",
+    "cross_paired_s6_s0.json",
+    "cross_paired_s6_s1.json",
+    "gate_roll_s0.json",
+    "gate_roll_s1.json",
+    "inference_seed_replicate.json",
+    "PAIRED_READ_step5000_unc.json",
+    "PAIRED_READ_step5000_unc.md",
+    "roll_s0.json",
+    "roll_s0.log",
+    "roll_s1.json",
+    "roll_s1.log",
+    "tactical_v6_s0.json",
+    "tactical_v6_s1.json",
+    "void_gates_s0.json",
+    "void_gates_s1.json"
+   ],
+   "left_on_E": []
+  },
+  "corr": {
+   "banked": [
+    "acceptance_s0.json",
+    "acceptance_s1.json",
+    "analysis_s0.json",
+    "analysis_s1.json",
+    "analysis_s6_s0.json",
+    "analysis_s6_s1.json",
+    "battery_summary.json",
+    "criteria_s0.json",
+    "criteria_s0.log",
+    "criteria_s1.json",
+    "criteria_s1.log",
+    "cross_paired_s0.json",
+    "cross_paired_s1.json",
+    "cross_paired_s6_s0.json",
+    "cross_paired_s6_s1.json",
+    "gate_roll_s0.json",
+    "gate_roll_s1.json",
+    "inference_seed_replicate.json",
+    "PAIRED_READ_step5000_corr.json",
+    "PAIRED_READ_step5000_corr.md",
+    "roll_s0.json",
+    "roll_s0.log",
+    "roll_s1.json",
+    "roll_s1.log",
+    "tactical_v6_s0.json",
+    "tactical_v6_s1.json",
+    "void_gates_s0.json",
+    "void_gates_s1.json"
+   ],
+   "left_on_E": []
+  }
+ },
+ "g0_gate": {
+  "g0_json": "E:/refcv8_eval_kit/battery/step5000/g0.json",
+  "require_pass": false,
+  "G0": "FAIL",
+  "amendment": "A7",
+  "M1_detected": true,
+  "ckpt_md5_in_g0": "a32e3b70f46aabbd3ab55f285d03f82d",
+  "result": "ok:FAIL"
+ },
+ "timings_raw": [
+  "1792099866 2026-10-15T23:31:06 armed",
+  "1792102755 2026-10-16T00:19:15 g0 chain ended",
+  "1792102808 2026-10-16T00:20:08 armed",
+  "1792111420 2026-10-16T02:43:40 g0 chain ended",
+  "1792117611 2026-10-16T04:26:51 lock acquired",
+  "1792117611 2026-10-16T04:26:51 pass unc start",
+  "1792126107 2026-10-16T06:48:27 pass unc battery end",
+  "1792126306 2026-10-16T06:51:46 armed",
+  "1792126306 2026-10-16T06:51:46 g0 chain ended",
+  "1792126560 2026-10-16T06:56:00 lock acquired",
+  "1792126560 2026-10-16T06:56:00 pass unc start",
+  "1792138363 2026-10-16T10:12:43 pass unc battery end",
+  "1792138400 2026-10-16T10:13:20 pass unc paired read end",
+  "1792138401 2026-10-16T10:13:21 pass corr start",
+  "1792144122 2026-10-16T11:48:42 pass corr battery end",
+  "1792144135 2026-10-16T11:48:55 pass corr paired read end"
+ ],
+ "chain_log_tail": [
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=9.0GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.96GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.9GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.93GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.98GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.99GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=9.0GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.9GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.83GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.93GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.91GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.9GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.91GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.82GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.85GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.92GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 31340, 'owner': 'aux_navtest_forward', 't': 1792116426.0018098} smi_ok=False python_compute=[(31340, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1965MiB free_ram=8.88GB",
+  "{\"ok\": true, \"waited_s\": 6120.6, \"polls\": 102, \"gate\": {\"ok\": true, \"gpu_used_mib\": 421, \"python_compute\": [], \"self_pids_excluded\": [33152, 49035], \"free_ram_gb\": 18.01, \"rule\": \"used<4300 MiB, no other python compute, free RAM>=8.0 GB\", \"t\": \"2026-10-16T04:26:51\", \"probe_ok\": true}, \"probe_failures\": 0, \"last_probe_error\": null, \"lock\": {\"job\": \"refcv8-battery-step5000\", \"pid\": 49035, \"win_pid_of_locker\": 33152, \"host\": \"FREEDOM2035\", \"acquired\": \"2026-10-16T04:26:51+0200\"}}",
+  "{\"created\": true}",
+  "ZZR8BATTLOCKEDZZ 2026-10-16T04:26:51+0200 ",
+  "ZZR8BATTRETRYZZ 2026-10-16T05:37:18+0200 pass unc incomplete, retrying once (resumes from complete seed dumps)",
+  "ZZR8BATTFAILZZ 2026-10-16T06:48:27+0200 pass unc: no complete battery_summary (see chain/battery_run_step5000_unc.log)",
+  "{\"summary\": \"C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-refcv8-milestone-battery\\\\raw\\\\step5000\\\\BATTERY_SUMMARY_step5000.json\", \"passes\": {\"unc\": \"INCOMPLETE\", \"corr\": \"NOT RUN\"}, \"uuid_hits\": {}}",
+  "{\"released\": true, \"holder\": {\"job\": \"refcv8-battery-step5000\", \"pid\": 49035, \"win_pid_of_locker\": 33152, \"host\": \"FREEDOM2035\", \"acquired\": \"2026-10-16T04:26:51+0200\"}}",
+  "{\"removed\": true}",
+  "ZZR8BATTSTARTZZ 2026-10-16T06:51:46+0200 pid 64306 step 5000",
+  "ZZR8BATTG0ENDEDZZ 2026-10-16T06:51:46+0200 ended:CHAINEND:49003",
+  "ZZR8BATTGATEOKZZ 2026-10-16T06:51:56+0200 ok:FAIL",
+  "{\"met\": true, \"min_gb\": 6.0, \"waited_s\": 60.8, \"last\": {\"t\": \"2026-10-16T06:52:57+0200\", \"free_commit_gb\": 14.26, \"commit_limit_gb\": 48.92, \"free_phys_gb\": 8.86}}",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 32304, 'owner': 'aux_navtest_forward', 't': 1792126238.956711} smi_ok=False python_compute=[(32304, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1979MiB free_ram=8.79GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 32304, 'owner': 'aux_navtest_forward', 't': 1792126238.956711} smi_ok=False python_compute=[(32304, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1979MiB free_ram=8.87GB",
+  "[gpu_lock] WAIT job=refcv8-battery-step5000 holder={'pid': 32304, 'owner': 'aux_navtest_forward', 't': 1792126238.956711} smi_ok=False python_compute=[(32304, 'C:\\\\Users\\\\Admin\\\\AppData\\\\Roaming\\\\uv\\\\python\\\\cpython-3.11.13-windows-x86_64-none\\\\python.exe')] used=1979MiB free_ram=8.89GB",
+  "{\"ok\": true, \"waited_s\": 181.9, \"polls\": 4, \"gate\": {\"ok\": true, \"gpu_used_mib\": 434, \"python_compute\": [], \"self_pids_excluded\": [31076, 64306], \"free_ram_gb\": 18.03, \"rule\": \"used<4300 MiB, no other python compute, free RAM>=8.0 GB\", \"t\": \"2026-10-16T06:55:59\", \"probe_ok\": true}, \"probe_failures\": 0, \"last_probe_error\": null, \"lock\": {\"job\": \"refcv8-battery-step5000\", \"pid\": 64306, \"win_pid_of_locker\": 31076, \"host\": \"FREEDOM2035\", \"acquired\": \"2026-10-16T06:55:59+0200\"}}",
+  "{\"created\": true}",
+  "ZZR8BATTLOCKEDZZ 2026-10-16T06:56:00+0200 ",
+  "ZZR8BATTPASSDONEZZ 2026-10-16T10:12:43+0200 unc (battery)",
+  "ZZR8BATTPAIREDZZ 2026-10-16T10:13:20+0200 unc",
+  "{\"summary\": \"C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-refcv8-milestone-battery\\\\raw\\\\step5000\\\\BATTERY_SUMMARY_step5000.json\", \"passes\": {\"unc\": \"COMPLETE\", \"corr\": \"NOT RUN\"}, \"uuid_hits\": {}}",
+  "ZZR8BATTDONEZZ 2026-10-16T10:13:21+0200 primary (standalone-clock, paired) pass banked: C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/step5000/BATTERY_SUMMARY_step5000.json",
+  "ZZR8BATTPASSDONEZZ 2026-10-16T11:48:42+0200 corr (battery)"
+ ],
+ "restamped": {
+  "at": "2026-10-18T03:07:08",
+  "by": "restamp_banked_r8.py",
+  "what": "tier, stamps and passes.<p>.paired_read.g0 only (the PAIRED_READ files were re-stamped the same way); every number unchanged"
+ }
+}

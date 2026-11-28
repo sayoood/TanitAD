@@ -1,0 +1,575 @@
+{
+ "chassis": "s1",
+ "controls": {
+  "C-RA-SHA": {
+   "green": {
+    "ok": true,
+    "refused": false,
+    "sha256": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495"
+   },
+   "regression": {
+    "ok": false,
+    "refused": true,
+    "why": "readout F:/TanitAD-scratch/actrsp/lonplan/amend5/controls/tmp_s1\\readout_flip.pt sha256 78f5ca2f8293 != the frozen a6d252aa405f"
+   },
+   "passed": true
+  },
+  "C-RA-FIT": {
+   "green": {
+    "n_pairs": 8306,
+    "n_clips": 141,
+    "n_pairs_record": 8306,
+    "n_clips_record": 141,
+    "max_abs_dW": 1.7542442035676023e-09,
+    "max_abs_dmu": 3.837528905759058e-10,
+    "max_abs_dsd": 1.036163821410696e-09,
+    "abs_dym": 0.0,
+    "train_clips_in_score_episodes": 0,
+    "tol": 1e-08,
+    "ok": true
+   },
+   "regression": {
+    "n_pairs": 8307,
+    "n_clips": 141,
+    "n_pairs_record": 8306,
+    "n_clips_record": 141,
+    "max_abs_dW": 0.00015256349432042973,
+    "max_abs_dmu": 0.00013668361134545198,
+    "max_abs_dsd": 0.00012065599416216655,
+    "abs_dym": 6.294725402579502e-05,
+    "train_clips_in_score_episodes": 0,
+    "tol": 1e-08,
+    "ok": false
+   },
+   "passed": true,
+   "regression_planted_eid": {
+    "n_pairs": 8306,
+    "n_clips": 142,
+    "n_pairs_record": 8306,
+    "n_clips_record": 141,
+    "max_abs_dW": 1.7542442035676023e-09,
+    "max_abs_dmu": 3.837528905759058e-10,
+    "max_abs_dsd": 1.036163821410696e-09,
+    "abs_dym": 0.0,
+    "train_clips_in_score_episodes": 1,
+    "tol": 1e-08,
+    "ok": false
+   }
+  },
+  "C-TRAIN-ISO": {
+   "green": {
+    "n_train_windows": 564,
+    "n_overlap_with_score_episodes": 0,
+    "path_equal": true,
+    "ok": true
+   },
+   "regression": {
+    "n_train_windows": 6,
+    "n_overlap_with_score_episodes": 1,
+    "path_equal": true,
+    "ok": false
+   },
+   "passed": true
+  },
+  "C-GRAD": {
+   "green": {
+    "min_abs_knots_1_10": 9.09596460729987,
+    "max_abs_knots_11_12": 0.0,
+    "max_abs_yaw": 0.0,
+    "ok": true
+   },
+   "regression": {
+    "min_abs_knots_1_10": 5.581117848759924,
+    "max_abs_knots_11_12": 11.939509503899313,
+    "max_abs_yaw": 0.0,
+    "ok": false
+   },
+   "passed": true,
+   "real_16_windows": {
+    "green": {
+     "min_abs_knots_1_10": 6.194168236106634e-07,
+     "max_abs_knots_11_12": 0.0,
+     "max_abs_yaw": 0.0,
+     "ok": true
+    },
+    "regression": {
+     "min_abs_knots_1_10": 4.460453055799007e-06,
+     "max_abs_knots_11_12": 0.01354074478149414,
+     "max_abs_yaw": 0.0,
+     "ok": false
+    },
+    "passed": true
+   }
+  },
+  "C-PLANT-i": {
+   "green": {
+    "max_cost": 1.8280779999038653e-05,
+    "median_cost": 5.890681323322803e-06,
+    "max_read_err_vs_target": 0.004275602881353535,
+    "plan_mean_minus_source_mean_max": 0.0003794568532144993,
+    "iterations": 90,
+    "analytic_cost_at_source_actions": 0.0,
+    "analytic_closed_form_read_err": 3.552713678800501e-15,
+    "ok": true
+   },
+   "regression": {
+    "max_cost": 0.0,
+    "median_cost": 0.0,
+    "max_read_err_vs_target": 5.329403712122659,
+    "plan_mean_minus_source_mean_max": 0.47298096156938374,
+    "iterations": 11,
+    "analytic_cost_at_source_actions": 0.0,
+    "analytic_closed_form_read_err": 3.552713678800501e-15,
+    "ok": false
+   },
+   "passed": true
+  },
+  "C-PLANT-ii-smoke": {
+   "green": {
+    "n": 64,
+    "median_cost": 9.65405755337656e-10,
+    "q90_cost": 2.4812012711095142e-08,
+    "max_cost": 0.0034615746699273586,
+    "bar": 0.0001,
+    "ok": true
+   },
+   "regression": {
+    "n": 64,
+    "median_cost": 0.0012738638324663043,
+    "q90_cost": 0.0537492610514164,
+    "max_cost": 0.3695172965526581,
+    "bar": 0.0001,
+    "ok": false
+   },
+   "passed": true
+  },
+  "C-YAW-ID": {
+   "green": {
+    "ok": true,
+    "per_mode": {
+     "l1": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 2.9724098443984985,
+      "ok": true
+     },
+     "neg": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 3.439340591430664,
+      "ok": true
+     },
+     "shuf": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 3.423604726791382,
+      "ok": true
+     },
+     "oracle": {
+      "yaw_1_30": 0.0,
+      "acc_11_30": 0.0,
+      "a1_raw": 0.0,
+      "cost1": 0.0,
+      "acc_1_10_moved": 3.439340591430664,
+      "ok": true
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "write12": {
+     "yaw_1_30": 0.0,
+     "acc_11_30": 1.7265207767486572,
+     "a1_raw": 0.0,
+     "cost1": 0.0,
+     "acc_1_10_moved": 2.9724098443984985,
+     "ok": false
+    },
+    "write_yaw": {
+     "yaw_1_30": 0.24943341517448425,
+     "acc_11_30": 0.0,
+     "a1_raw": 0.0,
+     "cost1": 0.0,
+     "acc_1_10_moved": 2.9724098443984985,
+     "ok": false
+    }
+   },
+   "passed": true,
+   "regression_each_red": true
+  },
+  "C-OFF5": {
+   "green": {
+    "ok": true,
+    "files": {
+     "train/A0_s0": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      },
+      "n": 564
+     },
+     "score/A0_s0": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      },
+      "n": 994
+     },
+     "score/A0_s1": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      },
+      "n": 994
+     },
+     "wrapper_file_train_A0_s0": {
+      "ok": true,
+      "keys": {
+       "plan_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "a1_raw": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "cost1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "iters1": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "idx": {
+        "equal": true,
+        "maxabs": 0.0
+       },
+       "decode_resid": {
+        "equal": true,
+        "maxabs": 0.0
+       }
+      }
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "keys": {
+     "plan_raw": {
+      "equal": false,
+      "maxabs": 2.9724098443984985
+     },
+     "a1_raw": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "cost1": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "iters1": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "idx": {
+      "equal": true,
+      "maxabs": 0.0
+     },
+     "decode_resid": {
+      "equal": true,
+      "maxabs": 0.0
+     }
+    }
+   },
+   "passed": true
+  },
+  "C-MEAN": {
+   "green": {
+    "ok": true,
+    "zero": {
+     "equal": true,
+     "maxabs": 0.0,
+     "ok": true
+    },
+    "guard": {
+     "ok": true,
+     "refused": false
+    }
+   },
+   "regression": {
+    "ok": false,
+    "guard_mutation": {
+     "ok": false,
+     "refused": true,
+     "why": "MEAN's shift does not come from the source file's knots (C-MEAN guard)"
+    }
+   },
+   "passed": true
+  },
+  "C-L4-RA": {
+   "green": {
+    "ok": true,
+    "argv": {
+     "ok": true,
+     "refused": false
+    },
+    "built": {
+     "ok": true,
+     "refused": false,
+     "built": {
+      "mode": "l1",
+      "src": "l1",
+      "kind": "ra",
+      "mirror": false,
+      "perm": false,
+      "readout_sha256": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495",
+      "mean_src": "none",
+      "src_key": "a1_raw"
+     }
+    },
+    "fresh": {
+     "ok": true,
+     "refused": false
+    }
+   },
+   "regression": {
+    "argv_mismatch": {
+     "ok": false,
+     "refused": true,
+     "why": "declared mode 'l1' != argv 'l2'"
+    },
+    "argv_unnamed": {
+     "ok": false,
+     "refused": true,
+     "why": "--ra-l1 is not named in the argv: its default would be a silent choice (--ra-l1 off disables the pass)"
+    },
+    "built_mismatch": {
+     "ok": false,
+     "refused": true,
+     "why": "built != declared: source key 'l2_prim_raw' != 'a1_raw'"
+    },
+    "preplanted": {
+     "ok": false,
+     "refused": true,
+     "why": "out folder F:/TanitAD-scratch/actrsp/lonplan/amend5/controls/tmp_s1/fresh_bad is not empty (1 entries: ['plans_hwm_oracle_s0.npz']); a pre-planted plans_*.npz is refused"
+    }
+   },
+   "passed": true
+  },
+  "C-IN": {
+   "green": {
+    "ok": true,
+    "inputs": {
+     "ckpt": {
+      "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+      "sha256": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881",
+      "want": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881",
+      "equal": true
+     },
+     "windows": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s1/windows.npz",
+      "sha256": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0",
+      "want": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0",
+      "equal": true
+     },
+     "train_latents": {
+      "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+      "sha256": "692eb0021a4b39295a52589ab2b7f2de0a45615345bca7a7acea62101d32708a",
+      "want": "692eb002",
+      "equal": true
+     },
+     "readout": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/readout_in/readout_K10_R35_s1.pt",
+      "sha256": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495",
+      "want": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495",
+      "equal": true
+     },
+     "spec": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/AMEND_HWMPLAN_5.md",
+      "sha256": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "want": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "equal": true
+     },
+     "base_A0_s0": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s1/plans_hwm_oracle_s0.npz",
+      "sha256": "252c4945e96be75a241b8b741f869b5276b91185aab9653735144b21928eaae1",
+      "want": "252c4945e96be75a241b8b741f869b5276b91185aab9653735144b21928eaae1",
+      "equal": true
+     },
+     "base_A0_s1": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s1/plans_hwm_oracle_s1.npz",
+      "sha256": "29ea96a5506b1cfcbe602462d834fb3fd4deb293f53ad62b269c1be9c39a8b96",
+      "want": "29ea96a5506b1cfcbe602462d834fb3fd4deb293f53ad62b269c1be9c39a8b96",
+      "equal": true
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "inputs": {
+     "ckpt": {
+      "path": "C:/Users/Admin/t2v8f_pulls/ladder_R35_s1/ckpt_last.pt",
+      "sha256": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881",
+      "want": "a97e6017cffb13830dacd04e1ea108fa8534bc3ab3007b8f536f01ac0846f881",
+      "equal": true
+     },
+     "windows": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s1/windows.npz",
+      "sha256": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0",
+      "want": "8833e2923c1781d7678f8483775487db476117e3ddd563a444d2d122334061f0",
+      "equal": true
+     },
+     "train_latents": {
+      "path": "F:/TanitAD-scratch/hwm_plan/latents_train_R35_s1.pt",
+      "sha256": "692eb0021a4b39295a52589ab2b7f2de0a45615345bca7a7acea62101d32708a",
+      "want": "692eb002",
+      "equal": true
+     },
+     "readout": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/readout_in/readout_K10_R35_s1.pt",
+      "sha256": "a6d252aa405f624a7cea4129a7f7d65ba5c047045d88e89b340a8abb935bb495",
+      "want": "0000000000000000000000000000000000000000000000000000000000000000",
+      "equal": false
+     },
+     "spec": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/amend5/AMEND_HWMPLAN_5.md",
+      "sha256": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "want": "de6f74773e110c49fcd37e1d9d851b15b5744fc6c32392b3f3c6a6ff8a124781",
+      "equal": true
+     },
+     "base_A0_s0": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s1/plans_hwm_oracle_s0.npz",
+      "sha256": "252c4945e96be75a241b8b741f869b5276b91185aab9653735144b21928eaae1",
+      "want": "252c4945e96be75a241b8b741f869b5276b91185aab9653735144b21928eaae1",
+      "equal": true
+     },
+     "base_A0_s1": {
+      "path": "F:/TanitAD-scratch/actrsp/lonplan/score/A0_s1/plans_hwm_oracle_s1.npz",
+      "sha256": "29ea96a5506b1cfcbe602462d834fb3fd4deb293f53ad62b269c1be9c39a8b96",
+      "want": "29ea96a5506b1cfcbe602462d834fb3fd4deb293f53ad62b269c1be9c39a8b96",
+      "equal": true
+     }
+    }
+   },
+   "passed": true,
+   "code_of_record_equal_A0_solver": true
+  },
+  "C-READBACK": {
+   "green": {
+    "ok": true,
+    "files": {
+     "A0_s0": {
+      "equal": true,
+      "plan_equal": true,
+      "cost1_equal": true,
+      "n": 64,
+      "lam_used": 0.0,
+      "arm": "hwm_oracle",
+      "seed": 0
+     },
+     "A0_s1": {
+      "equal": true,
+      "plan_equal": true,
+      "cost1_equal": true,
+      "n": 64,
+      "lam_used": 0.0,
+      "arm": "hwm_oracle",
+      "seed": 1
+     }
+    }
+   },
+   "regression": {
+    "ok": false,
+    "lam_override": {
+     "equal": false,
+     "plan_equal": false,
+     "cost1_equal": false,
+     "n": 64,
+     "lam_used": 10.0,
+     "arm": "hwm_oracle",
+     "seed": 0
+    }
+   },
+   "passed": true
+  }
+ },
+ "wall_s": 255.2,
+ "red": [],
+ "ok": true
+}

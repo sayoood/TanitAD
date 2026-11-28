@@ -1,0 +1,136 @@
+diff --git a/launch_gate.py b/launch_gate.py
+index 2fab9eb..601e3de 100644
+--- a/launch_gate.py
++++ b/launch_gate.py
+@@ -20,6 +20,10 @@ CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: e
+     # P2-s1, the P2 training-seed replicate (refe/p2rep_pod.sh): P2's gates on P2's argv PLUS exactly two changes (--out, --seed 1), PINNED token for token
+     python launch_gate.py run --profile refe_p2rep --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-sets <d> --gate-pdm <d> --gate-bank <d> --p2-gate-json <gate.json>
+ 
++    # SFT-4R (refe/sft4r_chain.sh; trained by scorer_finetune.py): the SFT-4 recipe on the deployed model_final.pt over the COMPLETE PDM labels.  The argv is PINNED token for token, the preflight is the trainer's own,
++    # and the egress gate (hf_egress.py gate) is a required check, so the token covers 'the run can leave the pod'.  See eval/PREREG_SFT4R.md Amendment 3.
++    python launch_gate.py run --profile refe_sft4r --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl> --gate-egr-json <g_egr_result.json>
++
+     # OPTIONAL, to take G-SUITE's CPU-only minutes OFF the GPU's idle clock: run the suite beforehand (the chain's WAIT stage), then hand the signed result to `run`.
+     # `run` re-measures EVERY binding (signature, commit, profile, tree digest, suite entries, gate code, environment, age <= 12 h, PASS with 0 skips) and otherwise runs the suite LIVE, exactly as without the flag
+     python launch_gate.py suite-prerun --profile refe_p2rep --pkg <pkg> --out <suite_prerun.json>            # exits 0 + ZZSUITE-PRERUN-PASSZZ, or 1 + ZZSUITE-PRERUN-FAILZZ (a FAIL evidence is written too)
+@@ -143,6 +147,31 @@ def p2rep_argv(p2_argv: str = P2_ARGV) -> list:
+ 
+ 
+ P2REP_ARGV = p2rep_argv()
++# SFT-4R (eval/PREREG_SFT4R.md + Amendment 3; chain refe/sft4r_chain.sh; pod script refe/sft4r_pod.sh): the SFT-4 recipe on the DEPLOYED model_final.pt, ONE pass over the COMPLETE PDM labels, scorer only
++# (score_q_mlp / score_dec / score_head), arms A and B in one pass.  It is ONE argv, so the profile PINS it token for token (`pinned_argv`, like refe_p2rep), and asserts what a pin cannot:
++#   * the EFFECTIVE recipe (`sft4r_refusals`): a parser DEFAULT can move under a pinned argv (--epochs, --warmup, --batch, --accum, --eval-every and --seed are NOT named in it);
++#   * from the trainer's OWN `data` event (`data_expect`, G-DVB), that the labels are COMPLETE: SFT-4 launched on 146,185 of 174,912 because "complete" was never a computed fact (PREREG_SFT4 Amendment 4).
++#     `train_sets` is the number of served sets that have a PDM label under --require-pdm, so it IS the label coverage as the trainer sees it; the schedule is re-derived from it (2,733 updates).
++# The values are MEASURED on the pod: the S1 chain's preflight `data` event for the very same inputs (raw/2026-10-16-sft4r-readiness/evidence/s1_n_s0_data_event.json, written 2026-10-14).
++SFT4R_RUN_DIR = "/workspace/data/refe_sft4r"
++SFT4R_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "epochs": 1.0, "max_updates": 0, "eval_every": 400, "seed": 0,       # PREREG_SFT4 "Settings" (AdamW, 50-update warm-up, cosine to 0, 8 x 8, 1 epoch, seed 0)
++                "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
++SFT4R_UPDATES = 2733                                                                    # ceil(174,912 / 8 / 8) = scorer_finetune.py:1363; PREREG_SFT4R's "2,335" is the lost run's 146,185-label epoch
++SFT4R_DATA_EXPECT = {"train_sets": 174912, "train_sets_in_bank": 174912, "heldout_sets": 3137, "heldout_in_bank": 3137, "heldout_logs": 24, "train_rows_in_heldout_logs": 0,
++                     "lane_labels.pdm_train": 174912, "lane_labels.pdm_train_stale": 0, "lane_labels.pdm_train_superseded": 0, "lane_labels.pdm_heldout": 3137,
++                     "lane_labels.heldout_sets": 3137, "lane_labels.heldout_stale": 0, "lane_labels.teacher_lane_heldout": 3137}
++SFT4R_DATA_MIN = {"lane_labels.teacher_lane_train": 2109}                              # PREREG_SFT4R "Changed 2": the lost run's count is the FLOOR (the seeded 15,000-set subset, the rows written by launch)
++SFT4R_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed", "--max-updates") + AUX_HEAD_FLAGS + AUXS1_EPO_FLAGS
++SFT4R_SUITE = [{"script": "test_sft4r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_sft4r_gate.py", "token": "ZZTEST_PASS"},
++               {"script": "test_suite_nesting.py", "token": "ZZTEST_PASS"},                                   # G-SUITE refuses to nest (gate_checks.check_suite); mutation-proven, process-bounded
++               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
++# SFT4R_ARGV is the pod script's argv as it EXPANDS on the pod (WS=/workspace): `MODE=argv bash refe/sft4r_pod.sh`; test_sft4r_gate.py diffs the two copies.
++SFT4R_ARGV = ("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels "
++              "--calib /workspace/data/refe_navtrain/train_grow/calib_table.json --onpolicy /workspace/data/refe_navtrain/onpolicy/sets --heldout /workspace/data/refe_heldout/sets "
++              "--heldout-logs /workspace/data/refe_heldout/heldout_logs.txt --workers 3 --lr 1e-4 --b-mode expreward --lam 1.0 --tau-s 0.1 --lane-head --lane-weight 1.0 "
++              "--teacher-lane-train /workspace/data/refe_sft2/train_teacher_lane --teacher-lane-heldout /workspace/data/refe_sft2/heldout_teacher_lane "
++              "--lane-labels-heldout /workspace/data/refe_sft2/heldout_lane --pdm-labels-heldout /workspace/data/refe_sft2/heldout_pdm "
++              "--pdm-labels-train /workspace/data/refe_sft2/train_pdm --require-pdm --out " + SFT4R_RUN_DIR)
+ # L_field, the proposal-level drivable-area field loss (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md; PI decision D-AUX-4).  A host is a `refe/train.py` run (P2's recipe).  The registered values below
+ # are the draft's: an amendment of the prereg is a one-line change HERE.  --w-field is NOT registered here: it is set once by the committed gradient-norm rule (refe/weight_rule.py) and
+ # lands in the prereg's blanks, so the F profile requires it NAMED and POSITIVE and the C profile requires it NAMED and EXACTLY 0.0 (a flag whose default disables the term must be named,
+@@ -227,6 +256,19 @@ PROFILES = {
+ # the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
+ PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
+                           "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
++# SFT-4R: scorer_finetune.py's runner (static checks + the trainer's own --preflight, like refe_rls1 / refe_aux_s1) with NO arm table (one arm: A and B share a pass), the whole argv PINNED, the registered recipe
++# asserted on the EFFECTIVE values (`recipe_rules` = sft4r), the labels' completeness asserted from the trainer's `data` event (`data_expect` / `data_expect_min` / `data_expect_updates`, G-DVB) and the
++# egress gate a REQUIRED check (G-EGR, PREREG_SFT4R "Changed 3": the run must be able to leave the pod before its first step; no checkpoint is pushed, so `egr_require_ckpt` is False).
++PROFILES["refe_sft4r"] = {**_BASE, "name": "refe_sft4r", "runner": "scorer", "recipe_rules": "sft4r", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
++                          "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe", "aux_s1_refusals"), "data_flags": RLS1_DATA,
++                          "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE", "G-EGR"), "na_ok": ("G-CLOCK",), "suite": SFT4R_SUITE, "live_terms": ("bceA", "lossB"),
++                          "clock_na": "SFT-4R has no label clock of its own: its labels are the PDM relabel of an on-policy bank, stamped by the relabeller's ckpt_step; the preflight's G9 bounds the stale "
++                                      "share and G-DVB asserts the coverage (train_sets == 174,912, pdm_train_stale == 0) from the trainer's own data event",
++                          "forbidden_flags": SFT4R_FORBIDDEN, "output_flags": ("--out",),
++                          "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--lane-head": None, "--teacher-lane-train": None,
++                                             "--teacher-lane-heldout": None, "--lane-labels-heldout": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4"},
++                          "provisional_flags": (), "pinned_argv": tuple(SFT4R_ARGV.split()), "data_expect": SFT4R_DATA_EXPECT, "data_expect_min": SFT4R_DATA_MIN,
++                          "data_expect_updates": SFT4R_UPDATES, "egr_require_ckpt": False}
+ # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+ # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+ PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
+@@ -328,6 +370,10 @@ def profile_refusals(prof: dict, argv: list) -> list:
+         rs, extra = auxs1_refusals(prof, argv, T, parser)
+         out += rs
+         terms += extra
++    elif prof.get("recipe_rules") == "sft4r":
++        rs, extra = sft4r_refusals(prof, argv, T, parser)
++        out += rs
++        terms += extra
+     for t in terms:
+         if not re.search(r'["\']' + re.escape(t) + r'["\']', src):
+             out.append(f"DECLARED, NOT BUILT: {prof['name']} requires the loss term {t!r}; {trainer_src} never emits it")
+@@ -521,6 +567,39 @@ def auxs1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+     return out, (AUXS1_HEAD_TERMS if cls != "N" else ())
+ 
+ 
++# ============================================================================================ SFT-4R recipe rules (refe_sft4r)
++def sft4r_refusals(prof: dict, argv: list, mod, parser) -> tuple:
++    """(refusals, extra live terms) of the SFT-4R recipe rules.  The argv is PINNED (`pinned_argv`), so this asserts what a pin cannot: the EFFECTIVE recipe (a parser default moving under an argv that
++    does not name it), exact flag spelling (argparse accepts a unique prefix; the gate's flag tests are on exact tokens), scorer_finetune's OWN refusals (epo + aux), and that the arm is the
++    plain scorer fine-tune: no EPO term, no auxiliary head, the full epoch (no --max-updates), the lane head with both of its label sets."""
++    import gate_checks as C
++    out = []
++    name = prof["name"]
++    ns, err = C.parse_scorer_argv(parser, argv)
++    if err:
++        out.append(f"{name}: the trainer's parser rejects this argv ({err})")
++        return out, ()
++    known = {o for x in parser._actions for o in x.option_strings}
++    for t in argv:
++        if t.startswith("--") and t not in known:
++            out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
++    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser) + mod.AUX.aux_refusals(ns) + mod.aux_s1_refusals(ns)]
++
++    def how(flag):
++        return "named" if flag in argv else "the parser DEFAULT"
++    for dest, want in SFT4R_RECIPE.items():
++        f = "--" + dest.replace("_", "-")
++        if not C._close(getattr(ns, dest), want):
++            out.append(f"{name} requires {f} {want} (PREREG_SFT4 'Settings', the SFT-4R recipe); the argv resolves to {getattr(ns, dest)} ({how(f)})")
++    if ns.epo or ns.aux_drv:
++        out.append(f"{name}: --epo / --aux-drv are on; SFT-4R is the plain scorer fine-tune (the lever is the COMPLETE labels, nothing else)")
++    if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
++        out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
++    if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
++        out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
++    return out, ()
++
++
+ # ============================================================================================ orchestration
+ def derived_argvs(prof: dict, argv: list, work: Path, gate_sets=None, gate_pdm=None, gate_bank=None) -> tuple:
+     """(build_argv, smoke_argv).  BUILD keeps every launch lever (the schedule is observed) and points the on-policy side at the gate's small
+@@ -609,6 +688,8 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
+             emit(consume_scorer_preflight(preflight_json, argv, prof, arm=arm, rehearsal=rehearsal))
+         if "G-SUITE" in want:
+             emit(suite_check(prof, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
++        if "G-EGR" in want:                                  # refe_sft4r: hf_egress.py gate's own result, bound into the token (`gate:egr_json`); this arm pushes no checkpoint
++            emit(C.check_egr(egr_json, arm=arm, rehearsal=rehearsal, require_ckpt=bool(prof.get("egr_require_ckpt", True))))
+         if "G-CLOCK" in want:
+             emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
+         return status
+@@ -990,7 +1071,7 @@ def main(argv=None) -> int:
+             p.add_argument("--p2-gate-json")
+             p.add_argument("--gate-lab-json", help="refe_p6: diag_p6_labeller_identity.py --out (G-LIVE-LAB)")
+             p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")
+-            p.add_argument("--gate-egr-json", help="refe_p6: hf_egress.py gate's g_egr_result.json (G-EGR)")
++            p.add_argument("--gate-egr-json", help="refe_p6, refe_sft4r: hf_egress.py gate's g_egr_result.json (G-EGR)")
+             p.add_argument("--gate-preflight-json", help="refe_rls1: scorer_finetune.py --preflight's preflight.jsonl (G-PREFLIGHT; also G-DVB's built side)")
+             p.add_argument("--suite-evidence", help="OPTIONAL: a `suite-prerun` JSON.  G-SUITE ACCEPTS it in place of the live run only if its signature verifies and the commit, profile, tree digest, suite entries, "
+                                                     "gate code and environment all re-measure equal now, it is <= 12 h old and it is PASS with 0 skips; otherwise the suite runs LIVE and the token says why. Absent = today's gate")

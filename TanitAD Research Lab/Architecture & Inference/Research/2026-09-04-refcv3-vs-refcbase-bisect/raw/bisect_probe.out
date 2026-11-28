@@ -1,0 +1,80 @@
+dump=dump/refcv3_40284_dump
+n windows = 4823   n episodes = 141
+
+P0  POSITIVE CONTROL — must reproduce MODEL_REGISTRY.md 4.5
+  os           ADE 0.4419 [0.4098, 0.4743]
+  ha           ADE 0.2996 [0.2755, 0.3278]
+  ha0          ADE 0.6723 [0.6007, 0.7469]
+  oracle_sel   ADE 0.3668 [0.3437, 0.3914]
+  os_navzero   ADE 0.4659 [0.4310, 0.5010]
+  os - ha  (registry +0.1423)        +0.1423 [+0.1187, +0.1658]  SEPARATED
+
+P1  is the E9 goal-distance re-rank doing anything?
+  emitted anchor CHANGED by the graft on 266 / 4823 = 5.5152% of windows
+  goal_gate [0.17443979]  goal_score_absmean 4.0686
+  assignment-oracle hit: re-ranked 0.5652 vs pre-graft 0.5654
+  re-ranked - pre-graft              -0.0002 [-0.0071, +0.0066]  not sep
+    same, changed windows only       -0.0038 [-0.1250, +0.1183]  not sep  n=266
+
+P2  v7.2 tactical-label coverage on the EVAL split
+  lat_label    in-band  1157 / 4823 = 23.9892%
+  lon_label    in-band  1157 / 4823 = 23.9892%
+  route_label  present  3622 / 4823 = 75.0985%
+
+P3  what the 8-wide tactical head emits, and what the port reads
+  lat_pred_nav_true:
+     [0] LANE_KEEP                3953  81.961%  <- READ by derive_man5_logprobs
+     [1] LANE_CHANGE_L               0   0.000%  <- READ by derive_man5_logprobs
+     [2] LANE_CHANGE_R               0   0.000%  <- READ by derive_man5_logprobs
+     [3] ABORT_LC                    0   0.000%
+     [4] NUDGE_L                   234   4.852%
+     [5] NUDGE_R                   326   6.759%
+     [6] TURN_L                     81   1.679%
+     [7] TURN_R                    229   4.748%
+     mass in READ indices (0, 1, 2): 81.961%
+  lon_pred_nav_true:
+     [0] FOLLOW                      0   0.000%  <- READ by derive_man5_logprobs
+     [1] CRUISE                   2111  43.769%  <- READ by derive_man5_logprobs
+     [2] YIELD_MERGE                 0   0.000%  <- READ by derive_man5_logprobs
+     [3] BRAKE_TO                  770  15.965%
+     [4] CREEP                      49   1.016%
+     [5] HOLD                      207   4.292%
+     [6] ADAPT_SPEED_FOR_CURVE     909  18.847%
+     [7] ACCELERATE                777  16.110%
+     mass in READ indices (0, 1, 2): 43.769%
+  nav sensitivity (agreement of the argmax):
+     lat_pred    true==zero 84.3666%   true==shuffled 92.4736%
+     lon_pred    true==zero 85.5484%   true==shuffled 88.5963%
+     route_pred  true==zero 100.0000%   true==shuffled 100.0000%
+
+P4  ALONG vs LATERAL decomposition of the os - ha deficit
+  ALONG  |dx|  os - ha               +0.1682 [+0.1441, +0.1923]  SEPARATED
+  LATERAL|dy|  os - ha               -0.0142 [-0.0288, +0.0004]  not sep
+  ALONG  |dx|  os - ha0              -0.0674 [-0.0923, -0.0415]  SEPARATED
+  LATERAL|dy|  os - ha0              -0.2048 [-0.2686, -0.1500]  SEPARATED
+  per horizon (ALONG):
+     t=0.5s  os 0.0678  ha 0.0484  oracle 0.0614  os-ha +0.0193 [+0.0137, +0.0247]
+     t=1.0s  os 0.2248  ha 0.1257  oracle 0.1843  os-ha +0.0991 [+0.0838, +0.1141]
+     t=1.5s  os 0.4766  ha 0.2674  oracle 0.3697  os-ha +0.2092 [+0.1783, +0.2391]
+     t=2.0s  os 0.8430  ha 0.4977  oracle 0.6902  os-ha +0.3453 [+0.2944, +0.3942]
+  per horizon (LATERAL):
+     t=0.5s  os 0.0166  ha 0.0112  oracle 0.0171  os-ha +0.0054 [+0.0043, +0.0065]
+     t=1.0s  os 0.0560  ha 0.0492  oracle 0.0560  os-ha +0.0068 [+0.0013, +0.0126]
+     t=1.5s  os 0.1275  ha 0.1374  oracle 0.1218  os-ha -0.0099 [-0.0262, +0.0067]
+     t=2.0s  os 0.2337  ha 0.2926  oracle 0.2184  os-ha -0.0589 [-0.0960, -0.0219]
+
+P5  the FAN's own assignment-oracle against the trivial floor
+  (oracle_sel = the REFINED trajectory of the raw anchor nearest GT
+   over ALL 8 slots — the trainer's own assignment, NOT the fan's
+   true minimum, so read it as the assignment ceiling.)
+  ADE     oracle_sel - ha            +0.0672 [+0.0496, +0.0849]  SEPARATED
+  ALONG   oracle_sel - ha            +0.0916 [+0.0763, +0.1073]  SEPARATED
+  LATERAL oracle_sel - ha            -0.0193 [-0.0340, -0.0052]  SEPARATED
+
+P6  does the deficit depend on tactical-label coverage? (LOCAL test)
+  in-band   n= 1157  os-ha +0.1631 [+0.1235, +0.2068]
+  no label  n= 3666  os-ha +0.1357 [+0.1100, +0.1611]
+  DiD (in-band minus no-label) +0.0274 [-0.0135, +0.0726]
+  NOTE: this tests only the LOCAL hypothesis (windows near a label
+  score better). A head made globally weaker by 24 % coverage would
+  NOT show up here — that needs a training ablation.

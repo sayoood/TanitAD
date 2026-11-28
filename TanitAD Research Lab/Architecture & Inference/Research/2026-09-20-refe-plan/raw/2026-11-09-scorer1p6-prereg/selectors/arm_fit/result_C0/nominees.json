@@ -1,0 +1,132 @@
+{
+ "card": "PREREG_P6_SELECTORS",
+ "split_sha256": "ee53393ff177bf07ae4ddc681241ef234ff97b2431101c2eb847f10c28c6c10e",
+ "estimator": "paired log-cluster bootstrap on FIT-B, 10,000 draws, seed 20260927, 95 % percentile; 'another draw of logs' only",
+ "variants": {
+  "R1": {
+   "fit_b_mean_pdms_x100": 93.48637184621612,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": 0.036431959250092794,
+   "ci_lo": -0.21144312918697716,
+   "ci_hi": 0.22408290793904076,
+   "n_pick_differs_from_p6": 519,
+   "fit_secs": 27.8
+  },
+  "R2": {
+   "fit_b_mean_pdms_x100": 93.57259144136711,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": 0.12265155440108967,
+   "ci_lo": -0.1996664673805307,
+   "ci_hi": 0.41804666195758744,
+   "n_pick_differs_from_p6": 927,
+   "fit_secs": 20.2
+  },
+  "C_platt": {
+   "fit_b_mean_pdms_x100": 93.43889690550338,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": -0.01104298146262279,
+   "ci_lo": -0.16076506508737512,
+   "ci_hi": 0.10408557700369861,
+   "n_pick_differs_from_p6": 345,
+   "fit_secs": 2.2
+  },
+  "C_isotonic": {
+   "fit_b_mean_pdms_x100": 93.57284843186679,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": 0.1229085449007834,
+   "ci_lo": -0.07080739578565239,
+   "ci_hi": 0.27740529276351145,
+   "n_pick_differs_from_p6": 651,
+   "fit_secs": 1.8
+  },
+  "C_platt_binned": {
+   "fit_b_mean_pdms_x100": 93.4961590486191,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": 0.046219161653101394,
+   "ci_lo": -0.08558003187830422,
+   "ci_hi": 0.19091551366719214,
+   "n_pick_differs_from_p6": 461,
+   "fit_secs": 3.2
+  },
+  "S_gbdt_pdms": {
+   "fit_b_mean_pdms_x100": 93.39753177754919,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": -0.052408109416825104,
+   "ci_lo": -0.33931523797855284,
+   "ci_hi": 0.24091919253984304,
+   "n_pick_differs_from_p6": 1345,
+   "fit_secs": 9.5
+  },
+  "S_gbdt_heads": {
+   "fit_b_mean_pdms_x100": 93.44246018331205,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": -0.0074797036539683195,
+   "ci_lo": -0.3600778302813236,
+   "ci_hi": 0.25358877482757813,
+   "n_pick_differs_from_p6": 1106,
+   "fit_secs": 24.8
+  },
+  "S_mlp_heads": {
+   "fit_b_mean_pdms_x100": 92.41573980393729,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": -1.0342000830287297,
+   "ci_lo": -1.6699205058894273,
+   "ci_hi": -0.4430193906022943,
+   "n_pick_differs_from_p6": 1951,
+   "fit_secs": 188.2
+  },
+  "P_pg": {
+   "fit_b_mean_pdms_x100": 93.77831340476266,
+   "p6_rule_fit_b_mean_pdms_x100": 93.44993988696602,
+   "delta_vs_p6_x100": 0.32837351779664614,
+   "ci_lo": -0.04401161021960835,
+   "ci_hi": 0.6574901368330165,
+   "n_pick_differs_from_p6": 1611,
+   "fit_secs": 409.4
+  }
+ },
+ "families": {
+  "R": {
+   "name": "R rule shape",
+   "n_variants_fitted": 2,
+   "nominated": [],
+   "note": "no variant has a paired log-cluster CI-lo > 0 against P6's rule on FIT-B: the family nominates none (reported, not a failure of the tool)"
+  },
+  "C": {
+   "name": "C calibration",
+   "n_variants_fitted": 3,
+   "nominated": [],
+   "note": "no variant has a paired log-cluster CI-lo > 0 against P6's rule on FIT-B: the family nominates none (reported, not a failure of the tool)"
+  },
+  "S": {
+   "name": "S stackers",
+   "n_variants_fitted": 3,
+   "nominated": [],
+   "note": "no variant has a paired log-cluster CI-lo > 0 against P6's rule on FIT-B: the family nominates none (reported, not a failure of the tool)"
+  },
+  "P": {
+   "name": "P policy gradient",
+   "n_variants_fitted": 1,
+   "nominated": [],
+   "note": "no variant has a paired log-cluster CI-lo > 0 against P6's rule on FIT-B: the family nominates none (reported, not a failure of the tool)"
+  }
+ },
+ "nominees": [],
+ "evidence_class": "MEASURED (ours; fit_pack sha256 and split sha256 above). P6 logits are IN-SAMPLE on these logs (PREREG section 1): FIT numbers are not performance claims.",
+ "prereg": {
+  "checked": true,
+  "sha256": "d4778ca40be22cbe706efe68e6d3878a9b6f070179dd2b604373b5eef5fc690b"
+ },
+ "navtest_tokens_checked": 12146,
+ "waited_for_ram_s": 0.00022530555725097656,
+ "smoke": false,
+ "pack": {
+  "path": "F:/tanitad_scratch/p6armfit2/fit_pack8_C0.npz",
+  "sha256": "c023e31b0b9706a4e0ee11b5c1f5e9326ba6e08a41b2e954d20d1658b1649c60",
+  "n_sets_kept": 8489,
+  "n_no_label": 0,
+  "n_nonfinite_excluded": 0,
+  "v0_source": "proxy_median_first_chord"
+ },
+ "total_secs": 687.2
+}

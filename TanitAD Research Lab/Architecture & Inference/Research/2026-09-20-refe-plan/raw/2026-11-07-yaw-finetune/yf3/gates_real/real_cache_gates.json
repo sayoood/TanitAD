@@ -1,0 +1,43 @@
+{
+ "G2 sign green on the real cache": {
+  "as_required": true,
+  "detail": "corr(omega, ay/v)=0.9569 (bar 0.85, n=2499), corr(omega, yaw@4s)=0.7387 (bar >0)"
+ },
+ "RED-AS-REQUIRED G2: negated omega": {
+  "as_required": true,
+  "detail": "rc 3 corr_ay_over_v -0.9569"
+ },
+ "G3 cache: frozen_in_proxy fingerprint == u400's == model_final's, snapshot sha == u400": {
+  "as_required": true,
+  "detail": "160b61bc8cb0"
+ },
+ "G3 cache: frames 4000, zero visual frames, C1 == 0.0 on every pass": {
+  "as_required": true,
+  "detail": "frames 4000 visual 0 C1 0.0"
+ },
+ "RED-AS-REQUIRED G3: the ep015 cache carries a DIFFERENT fingerprint": {
+  "as_required": true,
+  "detail": "e155e5277ead != 160b61bc8cb0"
+ },
+ "G4+G5 green on the real cache (arm B, 512 frames)": {
+  "as_required": true,
+  "detail": "n 512 grad_table 0.1076 grad_control 0.0"
+ },
+ "G4 green on the real cache (arm C)": {
+  "as_required": true,
+  "detail": "identity yaw0 True yaw!=0 True"
+ },
+ "RED-AS-REQUIRED G4 (real cache): u400's random column left in place": {
+  "as_required": true,
+  "detail": "rc 3 identity_yaw_nonzero False"
+ },
+ "RED-AS-REQUIRED G5 (real cache): table loaded but not applied": {
+  "as_required": true,
+  "detail": "rc 3 grad_table 0.0"
+ },
+ "RED-AS-REQUIRED G9 (real cache): 2 % of the tokens missing -> TableRefused": {
+  "as_required": true,
+  "detail": "rc 1, dropped 80 of 4000 tokens"
+ },
+ "_ok": true
+}

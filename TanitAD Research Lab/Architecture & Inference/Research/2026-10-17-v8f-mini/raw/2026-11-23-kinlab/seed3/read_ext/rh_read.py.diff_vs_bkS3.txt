@@ -1,0 +1,149 @@
+--- F:/TanitAD-scratch/rollhist/read/rh_read.py.bk_s3	2026-11-23 17:18:15.841765400 +0100
++++ F:/TanitAD-scratch/rollhist/read/rh_read.py	2026-11-23 17:23:00.246314100 +0100
+@@ -52,6 +52,33 @@
+     return None if a is None or b is None else abs(float(a) - float(b))
+ 
+ 
++def load_floors(path):
++    """SEED3: the frozen two-seed F_c of a finished read (RESULT_ROLLHIST*.json, seeds [0, 1], every non-STRATEGIC cell floor_source 'two-seed F_c') -> {pair: {"cells": {cell: F}, "strat": {pos30, pos50, pos80}}}.
++    A file that is not a finished two-seed read is refused (None); the cell or arc a pair lacks stays absent and reads NOT-COMPUTABLE, never a made-up floor."""
++    if not path or not os.path.exists(path):
++        return None
++    d = json.load(open(path, encoding="utf-8"))
++    if list(d.get("seeds") or []) != [0, 1]:
++        return None
++    out = {}
++    for name, pr in (d.get("pairs") or {}).items():
++        cells, strat = {}, {}
++        for cell, v in (pr.get("cells") or {}).items():
++            if isinstance(v, dict) and v.get("floor_source") == "two-seed F_c" and v.get("F") is not None:
++                cells[cell] = float(v["F"])
++            elif isinstance(v, list):
++                for c in v:
++                    if c.get("F") is not None and c.get("arc_m") is not None:
++                        strat[f"pos{int(c['arc_m'])}"] = float(c["F"])
++        out[name] = {"cells": cells, "strat": strat}
++    return out
++
++
++def floor_from(floors, name, cell):
++    F = ((floors.get(name) or {}).get("cells") or {}).get(cell)
++    return (F, "two-seed F_c (frozen RH/KI read floor file)") if F is not None else (None, "frozen floor missing for this pair/cell")
++
++
+ def floor_of(getter, A, B, seeds, refgetter=None, forms=None):
+     """-> (F, source).  Two seeds: max of the two arms' seed spreads.  One seed: stage-A floor from the references, same forms."""
+     if len(seeds) == 2:
+@@ -128,7 +155,7 @@
+     return {"family": family_of([c["verdict"] for c in cells]), "cells": cells}
+ 
+ 
+-def pair_read(name, q3, hw, sj, seeds, refget_q3, refget_hw, refl):  # refget_q3(form, cell, s), refget_hw(form, s): stage-A levels
++def pair_read(name, q3, hw, sj, seeds, refget_q3, refget_hw, refl, floors=None):  # refget_q3(form, cell, s), refget_hw(form, s): stage-A levels
+     A, B = C.PAIRS[name]
+     key = pk(A, B)
+     P = (q3.get("pairs") or {}).get(key)
+@@ -139,10 +166,10 @@
+         cells = {}
+         for cell in CELL_ORDER[f]:
+             if cell == "HEADWAY:U":
+-                F, src = floor_of(lambda r, s: lvl_hw(hw, r, s), A, B, seeds, refget_hw)
++                F, src = floor_from(floors, name, cell) if floors is not None else floor_of(lambda r, s: lvl_hw(hw, r, s), A, B, seeds, refget_hw)
+                 cells[cell] = dict(cell_verdict(None if H is None else H["cells"].get("U"), F), floor_source=src)
+             else:
+-                F, src = floor_of(lambda r, s, c=cell: lvl_q3(q3, r, s, c), A, B, seeds, (lambda r, s, c=cell: refget_q3(r, c, s)) if refget_q3 else None)
++                F, src = floor_from(floors, name, cell) if floors is not None else floor_of(lambda r, s, c=cell: lvl_q3(q3, r, s, c), A, B, seeds, (lambda r, s, c=cell: refget_q3(r, c, s)) if refget_q3 else None)
+                 cells[cell] = dict(cell_verdict(None if P is None else P["families"].get(cell), F), floor_source=src)
+         out["cells"].update(cells)
+         out["families"][f] = family_of([cells[c]["verdict"] for c in cells])
+@@ -253,7 +280,7 @@
+     return out
+ 
+ 
+-def decide(q3, hw, sj, gt0, refq3, seeds, blocked, provenance=None, refhw=None, add68_q3=None, add68_hw=None, strat_floor=None):
++def decide(q3, hw, sj, gt0, refq3, seeds, blocked, provenance=None, refhw=None, add68_q3=None, add68_hw=None, strat_floor=None, floors=None):
+     seeds = tuple(seeds)
+     one = len(seeds) == 1
+     res = {"card": "PREREG_V8F_ROLLHIST.md sha256 781eea87 + Amendment 1 sha256 87928487 + Amendment 2 sha256 15004dc9", "tier": "T1-kin/hb0.2 (executor of record); G-T0 at T0", "evidence_class": "MEASURED (ours; zero training on the dev box; checkpoints from the pod chain)",
+@@ -264,7 +291,7 @@
+     aq, ah = ref_getters(add68_q3, add68_hw)
+     refl = (dict(strat_floor or {}) if one else None)                                   # strategic one-seed floor: no stage-A tick-2 pos level is banked locally -> NOT COMPUTABLE
+     for name in C.PAIRS:
+-        pr = pair_read(name, q3 or {}, hw or {}, sj or {}, seeds, rq if one else None, rh if one else None, refl)
++        pr = pair_read(name, q3 or {}, hw or {}, sj or {}, seeds, rq if one else None, rh if one else None, (((floors.get(name) or {}).get("strat") or {}) if (one and floors is not None) else refl), floors if one else None)
+         if one and add68_q3 is not None:                         # ADD68's floors (INHERITED) beside ours (MEASURED)
+             A, B = C.PAIRS[name]
+             for cell, v in pr["cells"].items():
+@@ -400,6 +427,7 @@
+     rep["K-HARMS"] = {"pass": bool(r5["outcome"] == "ROLLHIST-HARMS"), "outcome": r5["outcome"]}
+     rep.update(selftest_r2())
+     rep.update(selftest_r3())
++    rep.update(selftest_s3())
+     rep["MUTATION_other_seed_arm"] = mutation_provenance()
+     rep["ALL_PASS"] = bool(all(v["pass"] for v in rep.values() if isinstance(v, dict)))
+     return rep
+@@ -509,6 +537,33 @@
+                                      "strategic_family_with_floor": sf, "outcome_with_floor": with_f["outcome"], "regression_arm_outcome": reg["outcome"], "failed_controls_floor_outcome": bad_r["outcome"]}}
+ 
+ 
++def selftest_s3():
++    """SEED3: a one-seed read with --floors-from takes F_c from the finished two-seed file unchanged (planted: floor 0.3; an effect 0.5 clears it, 0.2 straddles it); the regression arms (no floors file / a file that is not a two-seed read) must NOT produce a verdict."""
++    import tempfile
++    d = tempfile.mkdtemp(dir=C.HERE + "/tmp")
++    fp, one = os.path.join(d, "two.json"), os.path.join(d, "one.json")
++    q3, hw, sj, g, rq = synth(levels_spread=0.3, seeds=(0, 1))
++    two = decide(q3, hw, sj, g, rq, (0, 1), None)
++    json.dump(two, open(fp, "w"))
++    json.dump(dict(two, seeds=[0]), open(one, "w"))
++    fl, bad = load_floors(fp), load_floors(one)
++    out = {}
++    for lab, D in (("clears", -0.5), ("inside", -0.2)):
++        q, h, s, g1, r1 = synth(seeds=(0,), plant={"TACTICAL:ade_tac_m": (D, [D])})
++        r = decide(q, h, s, g1, r1, (0,), None, floors=fl)
++        c = r["pairs"]["P1"]["cells"]["TACTICAL:ade_tac_m"]
++        out[lab] = {"verdict": c["verdict"], "F": c.get("F"), "straddles_floor": c.get("straddles_floor"), "family": r["pairs"]["P1"]["families"]["TACTICAL"]}
++    q, h, s, g1, r1 = synth(seeds=(0,), plant={"TACTICAL:ade_tac_m": (-0.5, [-0.5])})
++    noflo = decide(q, h, s, g1, r1, (0,), None)
++    for x in (fp, one):
++        os.remove(x)
++    os.rmdir(d)
++    ok = bool(out["clears"]["verdict"] == "BETTER" and abs(out["clears"]["F"] - 0.3) < 1e-9 and out["inside"]["verdict"] == "NOT-SEPARATED" and out["inside"]["straddles_floor"] is True
++              and bad is None and fl is not None and noflo["pairs"]["P1"]["families"]["TACTICAL"] == "NOT-COMPUTABLE")
++    return {"S3-FLOORS-FROM-FILE": {"pass": ok, "must_read": "floors come from the two-seed file (0.3): -0.5 BETTER, -0.2 NOT-SEPARATED + straddle; a one-seed file is refused; without a floors source the one-seed cell is NOT-COMPUTABLE",
++                                    "cases": out, "one_seed_file_refused": bad is None, "no_floor_family": noflo["pairs"]["P1"]["families"]["TACTICAL"]}}
++
++
+ def provenance(w, shas, seeds=None):
+     """every rollout's recorded checkpoint sha256 equals the arm's own (RH_s0 != RH_s1); -> (ok, problems).  shas = {"RH_s0": sha256, ...}"""
+     bad = []
+@@ -682,6 +737,7 @@
+     ap.add_argument("--add68-q3", default="")
+     ap.add_argument("--add68-hw", default="")
+     ap.add_argument("--seeds", default="0,1")
++    ap.add_argument("--floors-from", default="", help="SEED3, one-seed read only: take every cell floor F_c (and the STRATEGIC arcs) from this finished two-seed read (RESULT_ROLLHIST*.json), unchanged")
+     ap.add_argument("--w", default=C.OUT)
+     ap.add_argument("--blocked", default="")
+     ap.add_argument("--rh-result", default=C.OUT + "/read/RESULT_ROLLHIST.json", help="P03: the finished PARTIAL read of RH at p = 0.1 (read only), printed beside")
+@@ -693,6 +749,11 @@
+         print("ZZ RH-READ-SELFTEST all hold: " + str(rep["ALL_PASS"]))
+         return 0 if rep["ALL_PASS"] else 1
+     seeds = tuple(int(x) for x in a.seeds.split(","))
++    floors = None
++    if a.floors_from:
++        floors = load_floors(a.floors_from)
++        if floors is None or len(seeds) != 1:
++            raise SystemExit(f"REFUSED: --floors-from needs a ONE-seed read and a finished two-seed result file with seeds [0, 1] ({a.floors_from})")
+     J = lambda p: json.load(open(p, encoding="utf-8")) if p and os.path.exists(p) else None      # noqa: E731
+     shas = {}
+     for k in C.RUN_KINDS:
+@@ -703,7 +764,9 @@
+     blocked = J(a.blocked) or {"blocked": False}
+     if not prov_ok:
+         blocked = {"blocked": True, "why": "provenance: " + "; ".join(prov[:3])}
+-    res = decide(J(a.q3), J(a.hw), J(a.strat), J(a.gt0), J(a.refs_q3), seeds, blocked, {"ok": prov_ok, "problems": prov, "checkpoint_sha256": shas}, J(a.refs_hw), J(a.add68_q3), J(a.add68_hw), strat_floor=load_strat_floor(a.strat_floor))
++    res = decide(J(a.q3), J(a.hw), J(a.strat), J(a.gt0), J(a.refs_q3), seeds, blocked, {"ok": prov_ok, "problems": prov, "checkpoint_sha256": shas}, J(a.refs_hw), J(a.add68_q3), J(a.add68_hw), strat_floor=load_strat_floor(a.strat_floor), floors=floors)
++    if floors is not None:
++        res["floors_file"] = {"path": a.floors_from.replace("\\", "/"), "sha256": C.sha256_file(a.floors_from), "source": "frozen two-seed F_c, taken unchanged (SEED3 card section 3)"}
+     if C.A_KIND == "RHp3":
+         res["p03_answer"] = p03_answer(res, J(a.rh_result))
+         print("P03:", res["p03_answer"])

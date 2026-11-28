@@ -1,0 +1,18 @@
+PASS STATIC staged readers, Read A's banked inputs, PREREG text, RF0 pin
+PASS K-P0 {'RF0_sha256': '1608d70b21b6b6a4...', 'inputs': 'PINS.txt tool files + the recorded dump digests re-hashed', 'rollout_files_checked': 0}
+PASS SLOTS-BANKED {'CTRL': {'s0': 'PRESENT', 's1': 'PRESENT'}, 'DAG': {'s0': 'PRESENT', 's1': 'PRESENT'}}
+PASS SUMMARY:CTRL_s0 {'argv_sha': '126b68ca8d72abfb', 'steps': 3000}
+PASS K-INIT:CTRL_s0 {'init_sha256': 'd186fd0bcfa7ee9f...', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:CTRL_s0 argv names the registered fine-tune
+PASS K-GATE:CTRL_s0 {'commit': '1d4f4fbb11922f4dd62b51871d898c03e0c88635', 'argv_sha256': '499d1a93a09a282f95116cf5c53b938787131b62b7f299a322c948b466c161b3', 'data_sha256': '37f4f9
+PASS CTRL-CKPT:CTRL_s0 {'ckpt_sha256': '603b9151f5119886', 'PREREG': '603b9151f5119886'}
+PASS K-PAIR-selfcheck:CTRL_s0 A / REP / B argv built from DAG2-0's banked argv pass K-PAIR; DAG2-0's own argv does not pass as A
+PASS SUMMARY:CTRL_s1 {'argv_sha': 'ca17ec6555580ba0', 'steps': 3000}
+PASS K-INIT:CTRL_s1 {'init_sha256': '1d12ec2eb825990d...', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:CTRL_s1 argv names the registered fine-tune
+PASS K-GATE:CTRL_s1 {'commit': '1d4f4fbb11922f4dd62b51871d898c03e0c88635', 'argv_sha256': '87baebb959025741dbf4d7907f08a62107f988797fbd6ca45dfdd4bb050b1d3b', 'data_sha256': '37f4f9
+PASS CTRL-CKPT:CTRL_s1 {'ckpt_sha256': 'f4234ac11854076b', 'PREREG': 'f4234ac11854076b'}
+PASS K-PAIR-selfcheck:CTRL_s1 A / REP / B argv built from DAG2-0's banked argv pass K-PAIR; DAG2-0's own argv does not pass as A
+DAG-ORC slots (A / REP / B) reported missing: {"A": ["s0", "s1"], "REP": ["s0", "s1"], "B": ["s0", "s1"]}
+wrote E:/Projects/TanitAD-artifacts/dag_orc_read/DRY_RUN.json  sha256 f86d5800ac0c8d154cc14062c5adc4c02c6bbc948b7949e644d62e01788531b2
+ZZDAG-ORC-READ-DRY-OK

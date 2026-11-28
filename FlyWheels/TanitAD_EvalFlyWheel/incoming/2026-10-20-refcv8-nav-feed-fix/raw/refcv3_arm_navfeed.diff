@@ -1,0 +1,69 @@
+--- a/taniteval/tools/refcv3_arm.py
++++ b/taniteval/tools/refcv3_arm.py (navfeed overlay)
+@@ -2069,6 +2069,16 @@
+             nid = ds._nav_by_sid.get(int(ds.episodes[e_i].episode_id))
+             nav_true[i] = 0 if nid is None else int(nid)
+             nav_valid[i] = nid is not None
++    nav_feed = str(getattr(a, "nav_feed", "clip") or "clip")
++    nav_clip = nav_true.copy()
++    pf_args = None
++    if nav_feed != "clip":
++        import navfeed_overlay as _navfeed
++        nav_true, nav_valid, pf_args = _navfeed.perframe_nav(
++            ds, sel, nav_feed, nav_on, nav_map=tr.R8_V9_NAV_TO_NAV_CMD, scale_nav=tr.r8train.scale_nav)
++        _p(f"[nav-feed] {nav_feed}: nav_true = the v9 PER-FRAME token on {len(nav_true)} windows; it differs from the clip "
++           f"token on {int((nav_true != nav_clip).sum())}; r8_nav args known on {int(pf_args['known'].sum())} "
++           f"({'FED' if nav_feed == 'perframe_full' else 'NOT fed'})")
+     nav_shuf, shuf_stats = ra.shuffle_nav(nav_true, nav_valid, a.nav_shuffle_seed)
+ 
+     # ⭐ `ha0_ext` is NOT optional: refcv5's acceptance bar is "beat BOTH `ha`
+@@ -2210,6 +2220,8 @@
+         for (i, wi, t) in by_ep[e_i]:
+             t0 = t + W - 1                       # PROVIDER index of the origin
+             item = ds[wi]
++            if pf_args is not None:
++                _navfeed.assert_item_matches(item, i, nav_true, pf_args)
+             fv = item["future_valid_ext"]
+             if not bool(fv[[h - 1 for h in grid["horizons_steps"]]].all()):
+                 n_skipped += 1
+@@ -2357,7 +2369,9 @@
+                                          dtype=torch.long, device=dev)
+                 out = model(fr_b, nav_cmd=nav_t if nav_on else None,
+                             v0=_v0_fed, steps=steps, ego_state=ego_b,
+-                            **_geom(int(fr_b.shape[0])))
++                            **_geom(int(fr_b.shape[0])),
++                            **({} if pf_args is None else
++                               _navfeed.model_kw(nav_feed, pf_args, i, conds_fed, dev)))
+                 # ⭐ THE NAV NULL — ITS OWN CALL. `nav_cmd=None` is a whole-call
+                 # property (it gates the E13 injection, refc_v3.py:437-441), so
+                 # it cannot be one row of the batch above. Same frames, same v0,
+@@ -2500,6 +2514,12 @@
+             dec.setdefault("route_label", []).append(
+                 int(item["route_target"]) if rv else -100)
+             dec.setdefault("nav_cmd", []).append(int(nav_true[i]))
++            if pf_args is not None:
++                dec.setdefault("nav_cmd_clip", []).append(int(nav_clip[i]))
++                dec.setdefault("r8_nav_known", []).append(bool(pf_args["known"][i]))
++                dec.setdefault("r8_nav_fed", []).append(
++                    pf_args["fed_row"][i:i + 1] if nav_feed == "perframe_full"
++                    else np.zeros((1, 6), dtype=np.float32))
+             dec.setdefault("nav_cmd_shuf", []).append(int(nav_shuf[i]))
+             if nav_flip is not None:
+                 dec.setdefault("nav_cmd_flip", []).append(int(nav_flip[i]))
+@@ -2694,6 +2714,7 @@
+                           "within a clip"),
+         } if navpred_on else None),
+         "nav_shuffle": shuf_stats,
++        **({} if pf_args is None else {"nav_feed": _navfeed.manifest_record(nav_feed, pf_args, nav_clip, nav_true)}),
+         "nav_null": (dict(NAV_NULL, emitted=bool(do_navzero))
+                      if do_navzero else
+                      {**NAV_NULL, "emitted": False,
+@@ -3763,6 +3784,8 @@
+                          "window): the sharpest nav intervention for the "
+                          "nav-compliance metric (taniteval.nav_compliance). "
+                          "Optional; shuffle + zero remain the REQUIRED controls.")
++    ap.add_argument("--nav-feed", choices=("clip", "perframe_token", "perframe_full"), default="clip",
++                    help="which nav the true-nav forward is fed. clip (DEFAULT, byte-identical to the banked battery): the clip-level v7 token. perframe_token: the v9 per-frame token the run TRAINED on. perframe_full: that token AND r8_nav = scale_nav(args, known) exactly as the trainer builds it. See PREREG_NAV_FEED.md.")
+     ap.add_argument("--with-navpred", action="store_true",
+                     help="ALSO roll the nav-PREDICTED arm `os_navpred`: the nav "
+                          "token is the model's OWN route-head argmax, read off "

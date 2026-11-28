@@ -1,0 +1,35 @@
+...ssF                                                                   [100%]
+================================== FAILURES ===================================
+____________________________ test_queue_cz_stages _____________________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_cz/test_queue_cz_stages0')
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+    def test_queue_cz_stages(tmp_path):
+        import os
+        import re
+        import subprocess
+        q = PKG / "code" / "v8f_mini_box2_queue.cmd"
+        env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
+                   V9=str(tmp_path / "v9"))
+    
+        def dry(args):
+            r = subprocess.run(f'cmd /c ""{q}" {args}"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
+            return r.returncode, [x for x in r.stdout.splitlines() if ".py" in x]
+        rc, ln = dry("tacabs")
+>       assert rc == 0 and [(re.search(r"--tag (\S+)", x).group(1), re.search(r"--tac (\S+)", x).group(1)) for x in ln] == \
+            [(f"{a}_s{s}-tacabs", "absmask") for a in ("M1", "M2b") for s in (0, 1)], ln
+E       AssertionError: []
+E       assert (1 == 0)
+
+tests\test_v8f_cz.py:233: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_cz.py::test_eval_absmask_zeroes_only_the_gt_absent_constraint_slots
+  F:\TanitAD-scratch\ladder_tree\stack\scripts\v8f_mini_train.py:3389: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_cz.py::test_queue_cz_stages - AssertionError: []
+1 failed, 3 passed, 2 skipped, 1 warning in 9.59s

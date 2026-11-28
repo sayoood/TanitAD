@@ -677,7 +677,7 @@ def ftheta_undistort(vid: Tensor, intr: FThetaIntrinsics, size: int = 256,
 # D-016 R1 — PINHOLE rectify-to-canvas (undistort + pad)                      #
 # =========================================================================== #
 # FOLDED IN 2026-07-26 from the 2026-07-17 R1 bundle
-# (`TanitAD Research Hub/Data Engineering/Implementation/incoming/
+# (`TanitAD Research Lab/Data Engineering/Implementation/incoming/
 #   2026-07-17-d016-r1-pinhole-rectify/calib_r1.py`, 9/9 tests green), where it
 # sat UNMERGED for 9 days. It is the standing prerequisite for the whole
 # owned-real-urban tier and it is what unblocks nuScenes.

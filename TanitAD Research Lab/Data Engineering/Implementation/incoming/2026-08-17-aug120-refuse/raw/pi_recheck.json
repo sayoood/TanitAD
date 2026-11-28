@@ -1,0 +1,803 @@
+{
+ "class": "MEASURED",
+ "source": "review/PI_VERDICTS_2026-08-16.json (PRIMARY)",
+ "scope_note": "Only the S1_LANE_TARGET section was adjudicated; every other section is v=null and MUST NOT be read as agreement.",
+ "claim_limit": "This measures whether the SPECIFIC DEFECT THE PI NAMED is still present in the new record. It is NOT a re-adjudication \u2014 only the PI can grade the new label.",
+ "n_rows": 19,
+ "tally": {
+  "addressed": 14,
+  "partial": 0,
+  "not_addressed": 0,
+  "n_graded_wrong": 13,
+  "n_graded_correct": 4,
+  "n_ungraded": 2,
+  "no_complaint_text": 5
+ },
+ "cross_check_vs_s2_labels_v2": {
+  "n": 201,
+  "g_str_agree": 201,
+  "a_str_agree": 201,
+  "g_str_diff": [],
+  "a_str_diff": []
+ },
+ "rows": [
+  {
+   "clip_id": "03ba450b-121a-483b-aa48-6d9097c308de",
+   "pi_verdict": "wrong",
+   "pi_note": "No Lane change here, I also noticed that the pipeline is saying there is one lane, better: There two lanes, one ego lane and  one for oncoming traffic. Also wrong: not agent said by the pipeline. In the picture of frame 9 there is clear a car as incoming traffic",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents",
+    "lane_count"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 8
+    },
+    "lane_count": {
+     "was": "day, snow, rural 1-lane",
+     "now": "day, snow, rural 1-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, snow, rural 1-lane; ego 13.7 m/s steady/straight; no agents",
+   "new_scenario": "day, snow, rural 1-lane-ego-carriageway; ego 13.7 m/s steady/straight; sam3 tracks (NOT object counts): 5 car, 3 truck; peak 6/frame"
+  },
+  {
+   "clip_id": "24b6948f-4206-4ef1-85ec-ff344b400635",
+   "pi_verdict": "wrong",
+   "pi_note": "Prepare lane change is wrong, the ego vehicleremains the whole time of the left lane, no agents is also wrong",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 42
+    },
+    "lane_count": {
+     "was": "day, rain, highway 2-lane",
+     "now": "day, rain, highway 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, rain, highway 2-lane; ego 18.6 m/s steady/straight; no agents",
+   "new_scenario": "day, rain, highway 2-lane-ego-carriageway; ego 18.6 m/s steady/straight; sam3 tracks (NOT object counts): 15 car, 3 pedestrian, 10 traffic light, 14 traffic sign; peak 30/frame"
+  },
+  {
+   "clip_id": "2bc52cd7-0117-4f5c-a7d9-c301a70827f2",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare lane change wrong, no agents wrong",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 2
+    },
+    "lane_count": {
+     "was": "day, clear, rural 2-lane",
+     "now": "day, clear, rural 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, clear, rural 2-lane; ego 16.5 m/s steady/straight; no agents",
+   "new_scenario": "day, clear, rural 2-lane-ego-carriageway; ego 16.5 m/s steady/straight; sam3 tracks (NOT object counts): 2 car; peak 2/frame"
+  },
+  {
+   "clip_id": "31308c82-c53a-427a-9201-8520832b51eb",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare  lane change wrong, no agents wrong",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 19
+    },
+    "lane_count": {
+     "was": "day, rain, highway 2-lane",
+     "now": "day, rain, highway 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, rain, highway 2-lane; ego 20.5 m/s steady/straight; no agents",
+   "new_scenario": "day, rain, highway 2-lane-ego-carriageway; ego 20.5 m/s steady/straight; sam3 tracks (NOT object counts): 14 car, 5 truck; peak 7/frame"
+  },
+  {
+   "clip_id": "34be5130-6c6c-4c0e-a207-2c8f4e40ef8c",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare  lane change wrong, no agents wrong",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 70
+    },
+    "lane_count": {
+     "was": "night, rain, urban 2-lane",
+     "now": "night, rain, urban 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, rain, urban 2-lane; ego 12.6 m/s steady/straight; no agents",
+   "new_scenario": "night, rain, urban 2-lane-ego-carriageway; ego 12.6 m/s steady/straight; sam3 tracks (NOT object counts): 1 bus, 48 car, 2 pedestrian, 12 traffic sign, 7 truck; peak 21/frame"
+  },
+  {
+   "clip_id": "4bea0a51-5e53-4d11-a0d5-67a3cc022b6c",
+   "pi_verdict": null,
+   "pi_note": "prepare  lane change wrong,",
+   "complaints_raised": [
+    "lane_change"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 23
+    },
+    "lane_count": {
+     "was": "day, rain, urban 2-lane",
+     "now": "day, rain, urban 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, rain, urban 2-lane; ego 12.9 m/s steady/straight; 17 car, 2 traffic light, 2 traffic sign, 2 truck",
+   "new_scenario": "day, rain, urban 2-lane-ego-carriageway; ego 12.9 m/s steady/straight; sam3 tracks (NOT object counts): 17 car, 2 traffic light, 2 traffic sign, 2 truck; peak 6/frame"
+  },
+  {
+   "clip_id": "4c92162d-095a-4efc-a1e1-071592338506",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare  lane change wrong, no agents wrong",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 19
+    },
+    "lane_count": {
+     "was": "day, clear, highway 3-lane",
+     "now": "day, clear, highway 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, clear, highway 3-lane; ego 27.4 m/s steady/straight; 6 car, 12 traffic sign, 1 truck",
+   "new_scenario": "day, clear, highway 3-lane-ego-carriageway; ego 27.4 m/s steady/straight; sam3 tracks (NOT object counts): 6 car, 12 traffic sign, 1 truck; peak 8/frame"
+  },
+  {
+   "clip_id": "51fd1c9f-fc1d-4a04-94d4-2e6d50161944",
+   "pi_verdict": "wrong",
+   "pi_note": "3 lane wrong, prepare lane change wrong, no agents wrong",
+   "complaints_raised": [
+    "lane_change",
+    "no_agents",
+    "lane_count"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 8
+    },
+    "lane_count": {
+     "was": "night, clear, highway 3-lane",
+     "now": "night, clear, highway 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, clear, highway 3-lane; ego 33.1 m/s steady/straight; no agents",
+   "new_scenario": "night, clear, highway 3-lane-ego-carriageway; ego 33.1 m/s steady/straight; sam3 tracks (NOT object counts): 4 car, 4 traffic sign; peak 3/frame"
+  },
+  {
+   "clip_id": "58f2d1eb-5578-4a70-8668-7b5ffad67f5c",
+   "pi_verdict": "wrong",
+   "pi_note": "no agents is wrong",
+   "complaints_raised": [
+    "no_agents"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 67
+    },
+    "lane_count": {
+     "was": "day, clear, highway 3-lane",
+     "now": "day, clear, highway 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, clear, highway 3-lane; ego 19.8 m/s steady/straight; no agents",
+   "new_scenario": "day, clear, highway 3-lane-ego-carriageway; ego 19.8 m/s steady/straight; sam3 tracks (NOT object counts): 20 car, 5 traffic light, 23 traffic sign, 19 truck; peak 18/frame"
+  },
+  {
+   "clip_id": "5f32e0f4-11cd-45e2-9d88-30a2bc4a785f",
+   "pi_verdict": "correct",
+   "pi_note": "",
+   "complaints_raised": [],
+   "status": "no_complaint_text",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 22
+    },
+    "lane_count": {
+     "was": "day, snow, highway 3-lane",
+     "now": "day, snow, highway 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, snow, highway 3-lane; ego 16.4 m/s steady/turning_right; 12 car, 3 traffic sign, 7 truck",
+   "new_scenario": "day, snow, highway 3-lane-ego-carriageway; ego 16.4 m/s steady/turning_right; sam3 tracks (NOT object counts): 12 car, 3 traffic sign, 7 truck; peak 8/frame"
+  },
+  {
+   "clip_id": "6544f1b5-76f6-4fc9-89b9-bc9708499f5e",
+   "pi_verdict": "correct",
+   "pi_note": "",
+   "complaints_raised": [],
+   "status": "no_complaint_text",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 27
+    },
+    "lane_count": {
+     "was": "night, clear, urban 3-lane",
+     "now": "night, clear, urban 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, clear, urban 3-lane; ego 18.1 m/s steady/straight; 13 car, 8 traffic light, 6 traffic sign",
+   "new_scenario": "night, clear, urban 3-lane-ego-carriageway; ego 18.1 m/s steady/straight; sam3 tracks (NOT object counts): 13 car, 8 traffic light, 6 traffic sign; peak 10/frame"
+  },
+  {
+   "clip_id": "6c5c503d-0dd2-4330-a87e-bcdb0830bc31",
+   "pi_verdict": "wrong",
+   "pi_note": "prpare lane change wrong",
+   "complaints_raised": [
+    "lane_change"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 22
+    },
+    "lane_count": {
+     "was": "dusk, rain, highway 3-lane",
+     "now": "dusk, rain, highway 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "dusk, rain, highway 3-lane; ego 18.0 m/s steady/straight; 4 bus, 11 car, 5 traffic sign, 2 truck",
+   "new_scenario": "dusk, rain, highway 3-lane-ego-carriageway; ego 18.0 m/s steady/straight; sam3 tracks (NOT object counts): 4 bus, 11 car, 5 traffic sign, 2 truck; peak 13/frame"
+  },
+  {
+   "clip_id": "6d78e9f8-43b0-4403-8bf5-37740f469095",
+   "pi_verdict": "correct",
+   "pi_note": "",
+   "complaints_raised": [],
+   "status": "no_complaint_text",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 9
+    },
+    "lane_count": {
+     "was": "day, clear, highway 2-lane",
+     "now": "day, clear, highway 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, clear, highway 2-lane; ego 27.9 m/s accelerating/straight; 8 car, 1 traffic sign",
+   "new_scenario": "day, clear, highway 2-lane-ego-carriageway; ego 27.9 m/s accelerating/straight; sam3 tracks (NOT object counts): 8 car, 1 traffic sign; peak 6/frame"
+  },
+  {
+   "clip_id": "71415a38-16d8-40dd-b818-e20a8d9bc682",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare lane change wrong",
+   "complaints_raised": [
+    "lane_change"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "REDUCE_TO",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 113
+    },
+    "lane_count": {
+     "was": "dusk, rain, highway 3-lane",
+     "now": "dusk, rain, highway 3-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "dusk, rain, highway 3-lane; ego 20.4 m/s steady/straight; no agents",
+   "new_scenario": "dusk, rain, highway 3-lane-ego-carriageway; ego 20.4 m/s steady/straight; sam3 tracks (NOT object counts): 81 car, 3 pedestrian, 28 traffic sign, 1 truck; peak 42/frame"
+  },
+  {
+   "clip_id": "7526e299-0404-407e-bf63-39901ba08ff2",
+   "pi_verdict": "wrong",
+   "pi_note": "lane change wrong",
+   "complaints_raised": [
+    "lane_change"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 2
+    },
+    "lane_count": {
+     "was": "night, clear, highway 2-lane",
+     "now": "night, clear, highway 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, clear, highway 2-lane; ego 21.8 m/s steady/straight; 1 car, 1 traffic sign",
+   "new_scenario": "night, clear, highway 2-lane-ego-carriageway; ego 21.8 m/s steady/straight; sam3 tracks (NOT object counts): 1 car, 1 traffic sign; peak 1/frame"
+  },
+  {
+   "clip_id": "7a28718f-50d5-48e2-bcf8-7ceb340c6cc3",
+   "pi_verdict": "correct",
+   "pi_note": "the vlm ist not readin the sign, follow route in direction X",
+   "complaints_raised": [],
+   "status": "no_complaint_text",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 9
+    },
+    "lane_count": {
+     "was": "night, clear, urban 2-lane",
+     "now": "night, clear, urban 2-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, clear, urban 2-lane; ego 10.3 m/s accelerating/straight; 9 traffic sign",
+   "new_scenario": "night, clear, urban 2-lane-ego-carriageway; ego 10.3 m/s accelerating/straight; sam3 tracks (NOT object counts): 9 traffic sign; peak 4/frame"
+  },
+  {
+   "clip_id": "b9073ea5-4e75-450f-9fac-6f0becca6720",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare lane change wrong",
+   "complaints_raised": [
+    "lane_change"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": false,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 3
+    },
+    "lane_count": {
+     "was": "day, clear, rural 1-lane",
+     "now": "day, clear, rural 1-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "day, clear, rural 1-lane; ego 11.7 m/s steady/straight; 3 car",
+   "new_scenario": "day, clear, rural 1-lane-ego-carriageway; ego 11.7 m/s steady/straight; sam3 tracks (NOT object counts): 3 car; peak 2/frame"
+  },
+  {
+   "clip_id": "d60f06cb-948b-40f3-9e5a-8f18435a206e",
+   "pi_verdict": "wrong",
+   "pi_note": "prepare lane change wrong",
+   "complaints_raised": [
+    "lane_change"
+   ],
+   "status": "addressed",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 6
+    },
+    "lane_count": {
+     "was": "night, clear, rural 1-lane",
+     "now": "night, clear, rural 1-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, clear, rural 1-lane; ego 13.2 m/s steady/straight; no agents",
+   "new_scenario": "night, clear, rural 1-lane-ego-carriageway; ego 13.2 m/s steady/straight; sam3 tracks (NOT object counts): 6 car; peak 2/frame"
+  },
+  {
+   "clip_id": "f5d9f6d7-21a1-4371-8fde-1be27683eb9e",
+   "pi_verdict": null,
+   "pi_note": "",
+   "complaints_raised": [],
+   "status": "no_complaint_text",
+   "old_g_str": "LANE_TARGET",
+   "old_a_str": "PREPARE_LANE_CHANGE",
+   "new_g_str": "FOLLOW_MAIN_ROAD",
+   "new_a_str": "HOLD_CORRIDOR",
+   "s2v2_g_str": "FOLLOW_MAIN_ROAD",
+   "checks": {
+    "lane_change": {
+     "was": [
+      "LANE_TARGET",
+      "PREPARE_LANE_CHANGE"
+     ],
+     "now": []
+    },
+    "no_agents": {
+     "was": true,
+     "now": false,
+     "census_state": "measured",
+     "n_agent_tracks": 3
+    },
+    "lane_count": {
+     "was": "night, clear, highway 1-lane",
+     "now": "night, clear, highway 1-lane-ego-carriageway",
+     "scope_named": true
+    }
+   },
+   "resolved": {
+    "lane_change": true,
+    "no_agents": true,
+    "lane_count": true
+   },
+   "old_scenario": "night, clear, highway 1-lane; ego 18.2 m/s steady/turning_right; no agents",
+   "new_scenario": "night, clear, highway 1-lane-ego-carriageway; ego 18.2 m/s steady/turning_right; sam3 tracks (NOT object counts): 2 car, 1 traffic sign; peak 2/frame"
+  }
+ ]
+}

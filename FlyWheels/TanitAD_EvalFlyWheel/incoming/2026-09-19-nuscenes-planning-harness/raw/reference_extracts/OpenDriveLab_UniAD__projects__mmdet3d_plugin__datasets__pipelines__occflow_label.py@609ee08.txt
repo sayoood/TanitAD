@@ -1,0 +1,104 @@
+# PUBLISHED-CODE extract - OpenDriveLab/UniAD @ 609ee083ea51c3521c323f1279dfc4cee0e60467
+# path: projects/mmdet3d_plugin/datasets/pipelines/occflow_label.py
+# git blob sha1 of the fetched file: 3c46060a965bdd0cded7c4552997f2da59889978 (11750 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 11-44: vehicle classes; only_vehicle
+   11  class GenerateOccFlowLabels(object):
+   12      def __init__(self, grid_conf, ignore_index=255, only_vehicle=True, filter_invisible=True, deal_instance_255=False):
+   13          self.grid_conf = grid_conf
+   14          self.bev_resolution, self.bev_start_position, self.bev_dimension = calculate_birds_eye_view_parameters(
+   15              grid_conf['xbound'], grid_conf['ybound'], grid_conf['zbound'],
+   16          )
+   17          # convert numpy
+   18          self.bev_resolution = self.bev_resolution.numpy()
+   19          self.bev_start_position = self.bev_start_position.numpy()
+   20          self.bev_dimension = self.bev_dimension.numpy()
+   21          self.spatial_extent = (grid_conf['xbound'][1], grid_conf['ybound'][1])
+   22          self.ignore_index = ignore_index
+   23          self.only_vehicle = only_vehicle
+   24          self.filter_invisible = filter_invisible
+   25          self.deal_instance_255 = deal_instance_255
+   26          assert self.deal_instance_255 is False
+   27          
+   28          nusc_classes = ['car', 'truck', 'construction_vehicle', 'bus', 'trailer',
+   29                          'barrier', 'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone']
+   30          vehicle_classes = ['car', 'bus', 'construction_vehicle',
+   31                             'bicycle', 'motorcycle', 'truck', 'trailer']
+   32          plan_classes = vehicle_classes + ['pedestrian']
+   33  
+   34          self.vehicle_cls_ids = np.array([nusc_classes.index(
+   35              cls_name) for cls_name in vehicle_classes])
+   36  
+   37          self.plan_cls_ids = np.array([nusc_classes.index(
+   38              cls_name) for cls_name in plan_classes])
+   39          
+   40          if only_vehicle:
+   41              self.filter_cls_ids = self.vehicle_cls_ids
+   42          else:
+   43              self.filter_cls_ids = self.plan_cls_ids
+   44  
+
+## lines 100-160: invalid frame = 255; vehicle filter; fillPoly
+  100          instances = []
+  101          gt_future_boxes = []
+  102          gt_future_labels = []
+  103  
+  104          # num_frame is 5
+  105          for i in range(num_frame):
+  106              # bbox, label, index of curr frame
+  107              gt_bboxes_3d, gt_labels_3d = all_gt_bboxes_3d[i], all_gt_labels_3d[i]
+  108              ins_inds = all_gt_inds[i]
+  109              vis_tokens = all_vis_tokens[i]
+  110              
+  111              if gt_bboxes_3d is None:
+  112                  # for invalid samples, no loss calculated
+  113                  segmentation = np.ones(
+  114                      (self.bev_dimension[1], self.bev_dimension[0])) * self.ignore_index
+  115                  instance = np.ones(
+  116                      (self.bev_dimension[1], self.bev_dimension[0])) * self.ignore_index
+  117              else:
+  118                  # reframe bboxes to reference frame
+  119                  t_curr = dict(l2e_r=l2e_r_mats[i], l2e_t=l2e_t_vecs[i], e2g_r=e2g_r_mats[i], e2g_t=e2g_t_vecs[i])
+  120                  ref_bboxes_3d = self.reframe_boxes(gt_bboxes_3d, t_ref, t_curr)
+  121                  gt_future_boxes.append(ref_bboxes_3d)
+  122                  gt_future_labels.append(gt_labels_3d)
+  123  
+  124                  # for valid samples
+  125                  segmentation = np.zeros(
+  126                      (self.bev_dimension[1], self.bev_dimension[0]))
+  127                  instance = np.zeros(
+  128                      (self.bev_dimension[1], self.bev_dimension[0]))
+  129  
+  130                  if self.only_vehicle:
+  131                      vehicle_mask = np.isin(gt_labels_3d, self.filter_cls_ids)
+  132                      ref_bboxes_3d = ref_bboxes_3d[vehicle_mask]
+  133                      gt_labels_3d = gt_labels_3d[vehicle_mask]
+  134                      ins_inds = ins_inds[vehicle_mask]
+  135                      if vis_tokens is not None:
+  136                          vis_tokens = vis_tokens[vehicle_mask]
+  137  
+  138                  if self.filter_invisible:
+  139                      assert vis_tokens is not None
+  140                      visible_mask = (vis_tokens != 1)   # obj are filtered out with visibility(1) between 0 and 40% 
+  141                      ref_bboxes_3d = ref_bboxes_3d[visible_mask]
+  142                      gt_labels_3d = gt_labels_3d[visible_mask]
+  143                      ins_inds = ins_inds[visible_mask]
+  144  
+  145                  # valid sample and has objects
+  146                  if len(ref_bboxes_3d.tensor) > 0:                    
+  147                      bbox_corners = ref_bboxes_3d.corners[:, [
+  148                          0, 3, 7, 4], :2].numpy()
+  149                      bbox_corners = np.round(
+  150                          (bbox_corners - self.bev_start_position[:2] + self.bev_resolution[:2] / 2.0) / self.bev_resolution[:2]).astype(np.int32)
+  151  
+  152                      for index, gt_ind in enumerate(ins_inds):
+  153                          if gt_ind == self.ignore_index:
+  154                              gt_ind = SPECIAL_INDEX   # 255 -> -20
+  155                          poly_region = bbox_corners[index]
+  156  
+  157                          cv2.fillPoly(segmentation, [poly_region], 1.0)
+  158                          cv2.fillPoly(instance, [poly_region], int(gt_ind))
+  159  
+  160              segmentations.append(segmentation)
+

@@ -1,0 +1,85 @@
+{
+ "checks": {
+  "check_selection": "PASS",
+  "check_auc": "PASS",
+  "check_label_matches_p1p": "PASS",
+  "check_q0_is_base": "PASS",
+  "check_q1_is_lever": "PASS",
+  "check_random_gate_matches_reader": "PASS",
+  "check_oracle_gate": "PASS",
+  "check_noskill_line": "PASS",
+  "check_corner_known_values": "PASS"
+ },
+ "mutants": {
+  "select_top inverted (lowest scores gate ON)": {
+   "RED": true,
+   "failed_checks": [
+    "check_selection"
+   ]
+  },
+  "scope mask dropped": {
+   "RED": true,
+   "failed_checks": [
+    "check_selection"
+   ]
+  },
+  "labels margin +2.0 instead of +1.0": {
+   "RED": true,
+   "failed_checks": [
+    "check_label_matches_p1p"
+   ]
+  },
+  "shuffled-label arm not shuffled": {
+   "RED": true,
+   "failed_checks": [
+    "check_auc"
+   ]
+  },
+  "P10 contrast ignores the base excess": {
+   "RED": true,
+   "failed_checks": [
+    "check_q0_is_base",
+    "check_q1_is_lever",
+    "check_random_gate_matches_reader",
+    "check_oracle_gate",
+    "check_noskill_line",
+    "check_corner_known_values"
+   ]
+  },
+  "GUARD ignores ACTIVE-family rows": {
+   "RED": true,
+   "failed_checks": [
+    "check_corner_known_values"
+   ]
+  },
+  "ADE6 guard disabled": {
+   "RED": true,
+   "failed_checks": [
+    "check_corner_known_values"
+   ]
+  }
+ },
+ "values": {
+  "anchor_auc_v0lt6_card_label": 0.7094039417980781,
+  "anchor_auc_v0lt8_card_label": 0.7493994286456305,
+  "anchor_auc_v0lt8_vs_P1P_go": 0.7854287645030867,
+  "LF100_q1_share_s0": 0.899027347528789,
+  "oracle_gate_LF100": {
+   "q": 0.30387661525635684,
+   "share_mean": 0.5165006426755034,
+   "ade6": {
+    "0": 0.010750439433091756,
+    "1": 0.0057281553297956435
+   },
+   "q1_share_mean": 0.8411818687083765
+  },
+  "noskill_half_gate_share": 0.4269370723024456,
+  "ungated_LF100_share": 0.8411818687083765,
+  "C9_known_values": {
+   "positive_corner_full": true,
+   "active_row_worse_corner_full": false,
+   "ade6_past_guard_corner_full": false
+  }
+ },
+ "wall_s": 21.20929479598999
+}

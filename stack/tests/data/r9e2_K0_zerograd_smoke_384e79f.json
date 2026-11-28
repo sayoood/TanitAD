@@ -1,0 +1,173 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "FAIL",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 2,
+    "n_registered": 822,
+    "n_with_state_entry": 819,
+    "n_trained": 819,
+    "n_case_a_no_state": 3,
+    "n_case_b_zero_state": 0,
+    "step_max": 102,
+    "ckpt_step": 102
+  },
+  "alignment": {
+    "mode": "param_names",
+    "unique": true,
+    "n_alignments": 1.0,
+    "param_names_source": "ckpt",
+    "param_names_rejected": null,
+    "n_model_float_entries": 853,
+    "n_entries_excluded": 208,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 0,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [
+    {
+      "id": 328,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.r8_rc_gate"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 1,
+      "numel_hi": 1,
+      "allowed_by": null
+    },
+    {
+      "id": 498,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.r8_rc_to_cond.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 1536,
+      "numel_hi": 1536,
+      "allowed_by": null
+    },
+    {
+      "id": 499,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.r8_rc_to_cond.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 384,
+      "numel_hi": 384,
+      "allowed_by": null
+    }
+  ],
+  "allowed": [],
+  "unused_allow": [],
+  "untrained_numel": {
+    "offending_lo": 1921,
+    "offending_hi": 1921,
+    "allowed_lo": 0,
+    "allowed_hi": 0
+  },
+  "controls": [
+    {
+      "pattern": "core\\.encoder\\..*",
+      "trained_matches": 316,
+      "example": [
+        "core.encoder.net.conv1.weight",
+        "core.encoder.net.bn1.weight",
+        "core.encoder.net.bn1.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "core\\.decoder\\..*",
+      "trained_matches": 175,
+      "example": [
+        "core.decoder.navc_gate",
+        "core.decoder.feat_proj.weight",
+        "core.decoder.feat_proj.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "tac_decoder_v6\\..*",
+      "trained_matches": 72,
+      "example": [
+        "tac_decoder_v6.queries.weight",
+        "tac_decoder_v6.agent_in.weight",
+        "tac_decoder_v6.agent_in.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "_perception\\.lift\\..*",
+      "trained_matches": 0,
+      "example": [],
+      "ok": false
+    },
+    {
+      "pattern": "_perception\\.box_dec\\..*",
+      "trained_matches": 62,
+      "example": [
+        "_perception.box_dec.mem_pos",
+        "_perception.box_dec.queries",
+        "_perception.box_dec.mem_proj.weight"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "_perception\\.box_mem\\..*",
+      "trained_matches": 5,
+      "example": [
+        "_perception.box_mem.src_embed",
+        "_perception.box_mem.img_proj.weight",
+        "_perception.box_mem.img_proj.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "_perception\\.map_branch\\..*",
+      "trained_matches": 0,
+      "example": [],
+      "ok": false
+    },
+    {
+      "pattern": "_map_hires\\..*",
+      "trained_matches": 54,
+      "example": [
+        "_map_hires.lift.unobserved",
+        "_map_hires.lift.proj.weight",
+        "_map_hires.lift.proj.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "core\\.agent_head\\..*",
+      "trained_matches": 62,
+      "example": [
+        "core.agent_head.mem_pos",
+        "core.agent_head.queries",
+        "core.agent_head.mem_proj.weight"
+      ],
+      "ok": true
+    }
+  ],
+  "info": {
+    "partial_grad": []
+  },
+  "ckpt": "/home/nvidia/r8ns/r9e2/gate3_explore/384e79f2b162_K0/smoke/20261104T234811/ckpt.pt",
+  "ckpt_size_bytes": 1560465801,
+  "load": {
+    "weights_only": true,
+    "mmap": true,
+    "earlier_load_failures": []
+  },
+  "ckpt_sha256": "18612a05f8cffe39b6e07a68cdb598a0865641b2e1ae52136bf1b3c99369a1bb"
+}

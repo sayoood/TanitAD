@@ -1,0 +1,174 @@
+selftest_oaf_r2: r2 ship E:\Projects\TanitAD-artifacts\oaccflatq\r2\box2_ship_r2, scratch F:\TanitAD-scratch\oaf_r2_tmp\mw\w0\st, merged ship F:\TanitAD-scratch\oaf_r2_tmp\mw\w0\st\ship_merged
+== E. gate_oaf_assert.py on the REAL DAG corpus gate (doctored into the arms) + doctored negatives
+PASS  E1 dagoacc s0: the check passes on the doctored real gate
+PASS  E1 dagoacc s1: the check passes on the doctored real gate
+PASS  E1 flatdag s0: the check passes on the doctored real gate
+PASS  E1 flatdag s1: the check passes on the doctored real gate
+PASS  E1 flatdag0 s0: the check passes on the doctored real gate
+PASS  E1 flatdag0 s1: the check passes on the doctored real gate
+PASS  E2 the token is written for dagoacc (prereg PREREG_V8F_DAG_OACC, w_acc, bank = DAG's, o_interface full)
+PASS  E3 the token is written for flatdag (prereg PREREG_V8F_FLATDAG, o_interface cut)
+CAUGHT (deliberate regression) E4 dagoacc: acc term absent from the loss dict  <- ['G-LIVE: the acc term is None (must be in the loss dict, finite and non-zero)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 60
+CAUGHT (deliberate regression) E4 dagoacc: acc term exactly 0.0  <- ['G-LIVE: the acc term is 0.0 (must be in the loss dict, finite and non-zero)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601
+CAUGHT (deliberate regression) E4 dagoacc: acc term NaN  <- ['G-LIVE: the acc term is nan (must be in the loss dict, finite and non-zero)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601
+CAUGHT (deliberate regression) E4 dagoacc: head_o gradient from the term is 0  <- ["O's head receives gradient 0.0 from the acceleration term (must be > 0)"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb43
+CAUGHT (deliberate regression) E4 dagoacc: acc_probe control not exactly 0  <- ['acc_probe control control_repeat_grad_diff = 1e-09 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4
+CAUGHT (deliberate regression) E4 dagoacc: acc_probe failed  <- ["acc_probe {'w_acc_declared': 49.6969, 'w_probe': 49.6969, 'acc': 0.010739156976342201, 'acc_at_zero_weight': 0.010739156976342201, 'total_w': 20.442
+CAUGHT (deliberate regression) E4 dagoacc: built w_acc != the argv's  <- ["built levers.w_acc 42.9311 != the argv's 49.6969"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff
+CAUGHT (deliberate regression) E4 dagoacc: the total does not move by w x acc  <- ['the total moved by 0.0 for w x acc = 0.5337028103375807: the term does not enter the loss at the declared weight'] | dagoacc s0 | p 0.1 | clips 4512
+CAUGHT (deliberate regression) E4 dagoacc: the swap did not reach the loss (dagger_probe grad diff 0)  <- ['the swapped batch moves the loss by 4.198308944702148 and the gradient by 0.0: the swap does not reach the loss'] | dagoacc s0 | p 0.1 | clips 4512 
+CAUGHT (deliberate regression) E4 dagoacc: dagger_probe p0 control not 0  <- ['dagger probe control control_p0_grad_diff = 3.0 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352
+CAUGHT (deliberate regression) E4 dagoacc: the init is FLAT/other checkpoint (sha)  <- ["the fine-tune does not start from M2b_s0's checkpoint: init sha256 0000000000000000 != 601cb43526731786", 'info.init_ckpt and levers.init_ckpt disag
+CAUGHT (deliberate regression) E4 dagoacc: the bank is the iteration-2 directory  <- ["built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank_dag2/s0/bank.json' does not end with /dagger_bank/s0/bank.json"] | dagoacc s0 | p 0.1 | c
+CAUGHT (deliberate regression) E4 dagoacc: the bank hash differs from DAG's  <- ["built / declared bank sha256 000000000000 / 197a68bb540b != the pulled bank.json's 197a68bb540b"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windo
+CAUGHT (deliberate regression) E4 dagoacc: ONE-LEVER broken: --lr changed in the train/gate/pin lines  <- ["the train line does not carry --lr 1e-4 exactly once (it has [['2e-4']])", "the gate line does not carry --lr 1e-4 exactly once (it has [['2e-4']])"
+CAUGHT (deliberate regression) E4 dagoacc: ONE-LEVER broken: --w-acc not last (a flag after it)  <- ["the train line sets --hist: a second lever beside the arm's own", "the gate line sets --hist: a second lever beside the arm's own", "the pin line se
+CAUGHT (deliberate regression) E4 dagoacc: the pin differs from the planned training line (box 2 pinned another argv)  <- ["the pin line does not carry --steps 3000 exactly once (it has [['3001']])", 'THE PIN IS NOT THE PLANNED TRAINING ARGV: box 2 pinned (and will run) a
+CAUGHT (deliberate regression) E4 dagoacc: box 2's DAG pin is not DAG's banked argv.json (the comparator is not the banked run)  <- ["box 2's DAG pin is not DAG_s's banked argv.json argv: the comparator is not the banked run", "ONE-LEVER RULE: the dagoacc pin is not DAG's pin + `--
+CAUGHT (deliberate regression) E4 dagoacc: the pin differs from the planned training line ONLY in --out (box 2 pinned a run that writes elsewhere; no other check reads --out)  <- ['THE PIN IS NOT THE PLANNED TRAINING ARGV: box 2 pinned (and will run) a line other than the one the token binds'] | dagoacc s0 | p 0.1 | clips 4512 
+CAUGHT (deliberate regression) E4 dagoacc: ONE-LEVER broken by a flag outside every lever list (--threads 3, identically on the train / gate / pin lines): only the comparison with DAG's pin sees it  <- ["ONE-LEVER RULE: the dagoacc pin is not DAG's pin + `--w-acc W` at the end with only --out differing (C-O1)"] | dagoacc s0 | p 0.1 | clips 4512 steps
+CAUGHT (deliberate regression) E4 dagoacc: the reference argv.json (DAG's) carries another bank hash  <- ["box 2's DAG pin is not DAG_s's banked argv.json argv: the comparator is not the banked run"] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 30
+CAUGHT (deliberate regression) E4 dagoacc: a second lever on the line (--code-mix)  <- ["the train line sets --code-mix: a second lever beside the arm's own", "the gate line sets --code-mix: a second lever beside the arm's own", "the pin
+CAUGHT (deliberate regression) E4 flatdag: the cut is not built (levers.o_interface full)  <- ["built o_interface 'full' != 'cut'"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 10549.0703125 
+CAUGHT (deliberate regression) E4 flatdag: o_interface_probe: O moved with the donor code  <- ['o_interface_probe donor_code.max_abs_dtraj60 = 0.01 (the cut: exactly 0.0)'] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496
+CAUGHT (deliberate regression) E4 flatdag: o_interface_probe: O read a non-constant code  <- ['o_interface_probe gt_code.o_read_code_abs_max = 0.5 (the cut: exactly 0.0)'] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496
+CAUGHT (deliberate regression) E4 flatdag: o_interface_probe failed  <- ["o_interface_probe {'o_interface': 'cut', 'shift': 2.5, 'n_windows': 64, 'perturbations': {'donor_code': {'max_abs_dtraj60': 0.0, 'o_read_code_abs_ma
+CAUGHT (deliberate regression) E4 flatdag: e_code is not the declared dead weight (dead set empty)  <- ["G-LIVE dead set [] (declared []) != ['e_code.weight'] (the cut's dead weight, exactly)"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566
+CAUGHT (deliberate regression) E4 flatdag: the checkpoint perturbation did not reach S / T (blind probe)  <- ['the checkpoint perturbation did not reach S / T (2.500001907348633 / 0.0): the probe is blind'] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows
+CAUGHT (deliberate regression) E4 flatdag: the swap did not reach (dagger_probe failed) while the cut passes  <- ["dagger_probe {'p_declared': 0.1, 'n_rows': 64, 'n_eligible': 49, 'n_selected_at_p1': 49, 'keys_read': ['a_s', 'a_t', 'base', 'feats', 'frame_ok', 'l
+CAUGHT (deliberate regression) E4 flatdag: the argv forgets --o-interface cut (the gate would still build FULL: F1)  <- ['the train line does not carry --o-interface cut exactly once (it has None)', 'the gate line does not carry --o-interface cut exactly once (it has No
+CAUGHT (deliberate regression) E4 flatdag: the init is M2b_s0, not FLAT_s0  <- ["the fine-tune does not start from FLAT_s0's checkpoint: init sha256 601cb43526731786 != 8496934a2ce262c1"] | flatdag s0 | p 0.1 | clips 4512 steps 3
+CAUGHT (deliberate regression) E4 flatdag: the bank is the iteration-1 (M2b) bank directory  <- ["built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank/s0/bank.json' does not end with /dagger_bank_flat/s0/bank.json"] | flatdag s0 | p 0.1 | c
+CAUGHT (deliberate regression) E4 flatdag: K-B2: the bank's generator is M2b, not FLAT  <- ["K-B2: bank's checkpoint 601cb4352673 / init 8496934a2ce2 != FLAT_s0 8496934a2ce2"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | ini
+CAUGHT (deliberate regression) E4 flatdag: a FLAT flag moved (--hist) vs FLAT's banked argv  <- ["FLAT's every other flag: the fine-tune argv minus the fine-tune / bank flags is not FLAT's banked argv (data flags, grid, arm, seed, --o-interface c
+CAUGHT (deliberate regression) E4 flatdag: FLAT's banked argv does not name the cut  <- ["FLAT's every other flag: the fine-tune argv minus the fine-tune / bank flags is not FLAT's banked argv (data flags, grid, arm, seed, --o-interface c
+CAUGHT (deliberate regression) E4 flatdag: --w-acc on a FLAT arm (a second lever)  <- ["the train line sets --w-acc: a second lever beside the arm's own", "the gate line sets --w-acc: a second lever beside the arm's own", "the pin line 
+CAUGHT (deliberate regression) E4 flatdag0: flatdag0 carries a bank flag  <- ["the train line names --dagger-seed on a p = 0 arm: the trainer's gate refuses a DAgger flag set while p is 0", "the gate line names --dagger-seed on
+CAUGHT (deliberate regression) E4 flatdag0: flatdag0's dagger probe is live (a swap at p = 0)  <- ["p = 0: the dagger probe should read 'off', it read 'on'"] | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe g
+CAUGHT (deliberate regression) E4 flatdag0: flatdag0: the cut is not built  <- ["built o_interface 'full' != 'cut'"] | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff None | params
+CAUGHT (deliberate regression) E5 flatdag0 with --p is REFUSED rc 2
+== D. the DAG-OACC chain script
+PASS  D1 bash -n: chain, lib, guard, waker parse
+PASS  D2 --dry-run: rc 0, both runs planned, ONE-LEVER on both planned lines, gate == train, C-O3 reference printed, no STOP marker line (a line that STARTS with it: the echo of the wait rule names it mid-line)
+PASS  D3 --dry-run with another W still plans one lever (--w-acc 50.0 in both train lines)
+PASS  D4 --check-tree: every lever pattern is in the staged tree (trainer, model, DAgger, oacc tool, the queue insertions)
+CAUGHT (deliberate regression) D5 --check-tree REFUSES a tree whose queue is the tip's (no DAG-OACC stages): the chain would stop before touching box 2
+PASS  D6 --co3-only on an equal record: ZZDAGOACC-CO3-PASS
+CAUGHT (deliberate regression) D7 --co3-only on OACC's M2b value 42.9311: ZZDAGOACC-CO3-STOP, rc 1 (the chain stops before any gate)
+PASS  D8 the real run stops at C-O3 BEFORE any gate: the co3 call sits before the first gate_one / queue gate in the source
+PASS  D8b the real run's C-O3 line is in its exact STOP form (`co3 ... || { echo ZZDAGOACC-CO3-STOP ...; stop ...; }`): a mismatch cannot fall through (TEXT-PINNED: the decision itself is executed by D6 / D7 through --co3-only; the real-run wiring is not executed)
+PASS  D21 every pinned hash in the chain (DAG ckpt / argv.json / summary.json, M2b init, iteration-1 bank, the offline record, DAG_s0's fit plans) equals the hash of the banked file
+PASS  D22 the chain's run list is s0 then s1 of the arm dagoacc, P = 0.1
+PASS  D9a control: the shims ARE what `ssh` / `scp` resolve to under the chain's shell (the log must be non-empty)
+PASS  D9 the real entry without AFTER_OUT: ZZV8FMINI-STOP, rc 1, no ssh / scp call (log empty, after the control above read non-empty)
+PASS  D10 wait: predecessor DONE, box released -> ZZOAF-WAIT-GO
+PASS  D11 wait: predecessor STOP of its own (BLOCKED), box released -> GO (box 2 is not idled)
+PASS  D12 wait: predecessor STOP after a failed run, box released -> GO
+CAUGHT (deliberate regression) D13 wait: predecessor stopped by the GUARD -> ZZV8FMINI-STOP, no GO
+CAUGHT (deliberate regression) D14 wait: predecessor STOP with BOX2_BUSY still held (after 3 re-checks) -> ZZV8FMINI-STOP, no GO
+CAUGHT (deliberate regression) D15 wait: predecessor DONE with BOX2_BUSY held -> ZZV8FMINI-STOP
+PASS  D16 wait: no end marker (only the echo of the rule) -> keeps waiting (still polling after 6 s, killed by the test's timeout rc 124)
+CAUGHT (deliberate regression) D16b the REAL entry with a predecessor that has not ended: still waiting after 8 s (killed by the test's timeout, rc 124), BOX2_BUSY not taken, no ssh / scp call
+PASS  D17a the chain's own disk floor is exactly 1 GiB (1073741824 bytes)
+PASS  D17 pull(): exactly the floor left -> the file lands (size verified, .part renamed)
+CAUGHT (deliberate regression) D18 pull(): one byte under the floor -> ZZDISK-FLOOR-STOP + ZZV8FMINI-STOP, NOTHING written (no file, no .part)
+CAUGHT (deliberate regression) D19 pull(): a transfer that lands short is refused and the .part removed (nothing half-written)
+PASS  DR0 the chain carries exactly one run-record heredoc and one REACHED-control heredoc (extracted and run below)
+PASS  DR1 dagoacc: the chain's run-record assertion PASSES a good record (CONTROL for the doctored ones below)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the pinned argv differs from the planned one (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where argv.json is not the planned argv (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where argv.json sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where selfcheck.json argv_sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json done is false (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json steps differ (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where summary.json seed differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where selfcheck declared_vs_built is not PASS (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the init checkpoint differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built dagger_p differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built bank sha differs (rc 1)
+CAUGHT (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built w_acc differs from the argv's (rc 1)
+PASS  DR3 dagoacc: the REACHED control PASSES dagger_n / dagger_eligible = 0.100 (CONTROL)
+CAUGHT (deliberate regression) DR4 dagoacc: the REACHED control REFUSES a swap that never happened (dagger_n 0)
+CAUGHT (deliberate regression) DR5 dagoacc: the REACHED control REFUSES a swap rate of 0.20 (outside 0.1 +- 0.02)
+CAUGHT (deliberate regression) DR6 dagoacc: the REACHED control REFUSES zero eligible windows
+== RA. gate_oaf_assert_r2.py on the REAL pulled gate (the one that stopped the first attempt) + the new branch
+PASS  RA0 the fixture IS the real gate: residual_zero_init False, init_ckpt applied, read_o_grad_diff 864.79, the four registered controls exactly 0.0, selfcheck sha256 ab32c3d3...
+PASS  RA1 CONTROL: the FIRST attempt's asserter REFUSES the real gate with exactly the first attempt's message (the stop is reproduced offline: 864.79 'must be exactly 0.0') and nothing else
+PASS  RA2 the r2 asserter PASSES the real pulled gate under the chain's exact invocation (every other assertion of the check holds on the real record)
+PASS  RA2b the token is not written without --out etc. (mode token needs its arguments): rc != 0 and no PASS line
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff 0.0 (the term does not reach read_o although the head is trained): r2 REFUSES  <- ["acc_probe read_o_grad_diff = 0.0 (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fini
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff NaN: r2 REFUSES  <- ["acc_probe read_o_grad_diff = nan (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fini
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff inf: r2 REFUSES  <- ["acc_probe read_o_grad_diff = inf (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fini
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff -1.0: r2 REFUSES  <- ["acc_probe read_o_grad_diff = -1.0 (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fin
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff None: r2 REFUSES  <- ["acc_probe read_o_grad_diff = None (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fin
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff True (a bool is not a gradient): r2 REFUSES  <- ["acc_probe read_o_grad_diff = True (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fin
+CAUGHT (deliberate regression) RA3 real gate with read_o_grad_diff key ABSENT: r2 REFUSES  <- ["acc_probe read_o_grad_diff = None (levers.residual_zero_init is False: a trained head passes the term's gradient to read_o, it must be fin
+PASS  RA4 CONTROL of RA3: any strictly positive finite read_o_grad_diff (1e-300) on the trained head PASSES -- the rule is 'reaches', not a magnitude
+CAUGHT (deliberate regression) RA3 real gate with registered control control_repeat_total_diff = 1e-9: r2 REFUSES  <- ['acc_probe control control_repeat_total_diff = 1e-09 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | 
+CAUGHT (deliberate regression) RA3 real gate with registered control control_repeat_total_diff = None: r2 REFUSES  <- ['acc_probe control control_repeat_total_diff = None (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | i
+CAUGHT (deliberate regression) RA3 real gate with registered control control_repeat_grad_diff = 1e-9: r2 REFUSES  <- ['acc_probe control control_repeat_grad_diff = 1e-09 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | i
+CAUGHT (deliberate regression) RA3 real gate with registered control control_repeat_grad_diff = None: r2 REFUSES  <- ['acc_probe control control_repeat_grad_diff = None (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | in
+CAUGHT (deliberate regression) RA3 real gate with registered control control_prior_grad_diff = 1e-9: r2 REFUSES  <- ['acc_probe control control_prior_grad_diff = 1e-09 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | in
+CAUGHT (deliberate regression) RA3 real gate with registered control control_prior_grad_diff = None: r2 REFUSES  <- ['acc_probe control control_prior_grad_diff = None (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | ini
+CAUGHT (deliberate regression) RA3 real gate with registered control control_wm_grad_diff = 1e-9: r2 REFUSES  <- ['acc_probe control control_wm_grad_diff = 1e-09 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 
+CAUGHT (deliberate regression) RA3 real gate with registered control control_wm_grad_diff = None: r2 REFUSES  <- ['acc_probe control control_wm_grad_diff = None (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 6
+PASS  RA5 the OACC gate is the from-scratch record it is claimed to be: residual_zero_init True, no init checkpoint, read_o_grad_diff exactly 0.0, head_o_grad_diff > 0
+PASS  RA6 from-scratch (residual_zero_init True) with read_o_grad_diff 0.0: r2 PASSES the acc_probe rule, and returns exactly what the first attempt's asserter returned (r2 did not weaken the identity)
+CAUGHT (deliberate regression) RA7 from-scratch record with read_o_grad_diff 864.79: r2 REFUSES (the zero-layer identity is broken)  <- acc_probe read_o_grad_diff = 864.7907104492188 (levers.residual_zero_init is True: O's last layer is zero, so 
+CAUGHT (deliberate regression) RA7 from-scratch record with read_o_grad_diff 1e-9: r2 REFUSES (the zero-layer identity is broken)  <- acc_probe read_o_grad_diff = 1e-09 (levers.residual_zero_init is True: O's last layer is zero, so read_o gets 
+CAUGHT (deliberate regression) RA7 from-scratch record with read_o_grad_diff None: r2 REFUSES (the zero-layer identity is broken)  <- acc_probe read_o_grad_diff = None (levers.residual_zero_init is True: O's last layer is zero, so read_o gets e
+CAUGHT (deliberate regression) RA7 from-scratch record with read_o_grad_diff NaN: r2 REFUSES (the zero-layer identity is broken)  <- acc_probe read_o_grad_diff = nan (levers.residual_zero_init is True: O's last layer is zero, so read_o gets ex
+CAUGHT (deliberate regression) RA7 from-scratch record with read_o_grad_diff inf: r2 REFUSES (the zero-layer identity is broken)  <- acc_probe read_o_grad_diff = inf (levers.residual_zero_init is True: O's last layer is zero, so read_o gets ex
+CAUGHT (deliberate regression) RA7 from-scratch record with read_o_grad_diff -0.5: r2 REFUSES (the zero-layer identity is broken)  <- acc_probe read_o_grad_diff = -0.5 (levers.residual_zero_init is True: O's last layer is zero, so read_o gets e
+CAUGHT (deliberate regression) RA8 residual_zero_init None with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init None with read_o_grad_diff 864.7907104492188: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init absent with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init absent with read_o_grad_diff 864.7907104492188: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init the string 'false' with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init the string 'false' with read_o_grad_diff 864.7907104492188: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init int 1 with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init int 1 with read_o_grad_diff 864.7907104492188: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init int 0 with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA8 residual_zero_init int 0 with read_o_grad_diff 864.7907104492188: r2 REFUSES (neither True nor False: cannot be judged)
+CAUGHT (deliberate regression) RA9 the REAL fine-tune gate relabelled residual_zero_init True (read_o 864.79): r2 REFUSES -- the identity is not available to a record that measured a non-zero gradient
+CAUGHT (deliberate regression) RA10 the from-scratch OACC gate relabelled residual_zero_init False (read_o 0.0): r2 REFUSES -- a trained head must pass the term's gradient
+PASS  RA11 on 16 perturbations of the other acc_probe fields (both start states) r1 and r2 return the same failures apart from the read_o line
+PASS  RA12 AST: the two asserters have the same top-level nodes (25) in the same order and differ in exactly one: wacc_problems (flatdag / flatdag0 logic, cut_problems, swap_problems, check, token, main ... are identical)
+PASS  RA13 inside wacc_problems only the controls loop and the appended read_o rule differ: the 12 statements before the loop are identical, the loop differs (read_o_grad_diff left it), exactly two statements were appended (the reading, the rule), the closing `return bad` is kept
+CAUGHT (deliberate regression) RA15 the ORIGINAL proof's dagoacc positive fixture (OACC's from-scratch acc_probe, read_o_grad_diff 0.0, spliced into the fine-tune record) is REFUSED by r2 -- that fixture stood a from-scratch record in for a fine-tune, which is why the original proof was green while the real gate was red; the positive fixture is now the real gate's acc_probe
+PASS  RA14 flatdag s0 still passes under the r2 asserter
+PASS  RA14 flatdag0 s0 still passes under the r2 asserter
+== RB. the r2 chain (static, regenerated, and EXECUTED up to the aside under ssh / scp shims)
+PASS  RB1 the r2 chain / waker / launcher on disk are byte-identical to a fresh regeneration (every pinned sha256 COMPUTED from the banked artifacts, not retyped)
+PASS  RB2 the first attempt's chain and waker REGENERATE byte-identically (so the r2 chain = the first attempt's chain + the declared edits only); and the installed first-attempt chain is that same file
+PASS  RB3 no non-comment line of the r2 chain names a first-attempt log / marker / tar / asserter or anything of FLAT-DAG (every write target is r2's own)
+PASS  RB3b the launcher names the FLAT-DAG log exactly once, as AFTER_OUT (read by the predecessor poll), and the r2 chain log as its own output; the waker polls only r2's log / guard / marker
+PASS  RB4 the r2 chain uses the r2 asserter at its single ASSERT assignment and calls it for check and token (twice)
+PASS  RB5 order in the real run: predecessor wait < BOX2_BUSY taken < boot probe < r2_aside_all < every other box-2 / git action (the aside is the first action after BOX2_BUSY and the boot probe)
+PASS  RB6 r2_aside_all is called exactly once, and the real-run entry refuses (named STOP, nothing touched) when the r2 files are not installed beside the chain
+PASS  RB7 EXECUTED under shims: the box-2 call sequence of the r2 chain is exactly [boot probe, scp of the r2aside job, launch of the r2aside job, wait for it] and nothing else -- no code archive, no w_acc, no gate -- before the stop at the tip lookup
+PASS  RB8 EXECUTED: the dev box's pull dir was renamed to <ART>_r1_assert_stop with its content (selfcheck.json preserved), <ART> itself is gone; after six ASIDE reports the chain went on to the code refresh and stopped at the missing tip (ZZV8FMINI-STOP remote tip); BOX2_BUSY.txt released
+PASS  RB9 the job the chain shipped is byte-identical to r2_aside_job_text for box 2's runs root (D:\tanitad\runs\v8f_mini_full), CRLF throughout
+CAUGHT (deliberate regression) RB10 a SHORT aside report (2 of 6 items) stops the chain: ZZV8FMINI-STOP 'expected 6', no code refresh, BOX2_BUSY released (the pull dir was already renamed -- preserved, not lost)
+CAUGHT (deliberate regression) RB11 an aside job that ends rc=1 stops the chain at once (waitrc): ZZV8FMINI-STOP ... rc=1, no code refresh
+PASS  RB12 a RELAUNCH (box marker present: ONE ASIDE-ALREADY-DONE line; no pull dir): accepted, the chain goes on to the code refresh (stops at the missing tip); <ART> is not created or renamed
+CAUGHT (deliberate regression) RB13 ALREADY-DONE with extra ASIDE lines is an inconsistent report: the chain stops ('expected 1')
+CAUGHT (deliberate regression) RB15 oaf_r2_lib.sh NOT installed beside the chain: ZZV8FMINI-STOP 'the r2 files are not installed', rc 1, no ssh / scp call, BOX2_BUSY.txt never taken
+PASS  RB14 a relaunch with r2's own <ART> and the first attempt's aside copy both present: ASIDE-KEPT, neither tree changed
+== RC. the aside EXECUTED: the box-2 job by cmd.exe on a fake runs tree, the local aside by bash on a fake pull dir
+PASS  RC1 the job text: CRLF throughout, six `call :aside` items, exactly one `ren`, exactly one redirection (the aside marker line) and nothing that deletes, overwrites, copies or moves (no del / erase / rd / rmdir / move / copy / xcopy / robocopy / format / rename / Remove-Item / powershell / >> )
+PASS  RC1b the six items are exactly: gate_M2b-dagoacc_s{0,1}, gate_M2b-dagoacc_s{0,1}.log, dagpin\M2b_s{0,1}_dagoacc.train.argv.txt -- not <runs>\dagoacc (the w_acc record), not DAG's, FLAT-DAG's or any other arm's file
+PASS  RC2 first launch on the first attempt's leftovers: rc 0, ZZJOB-END rc=0, three ASIDE-MOVED (gate dir, gate log, dagpin file of seed 0), three ASIDE-ABSENT (seed 1), the marker r2_aside_done.txt written
+PASS  RC3 the first attempt's artifacts are RENAMED, not deleted: every file of the tree exists afterwards with identical bytes (sha256), the gate dir / gate log / dagpin file under *_r1_assert_stop, and NOTHING ELSE moved (w_acc record, DAG's pin, other arms' gates, checkpoints, bank_sha file in place)
+PASS  RC3b the untouched set is exactly the w_acc record, DAG's pin, bank_sha_dagoacc_s0, the other arms' gates and the checkpoints
+PASS  RC4 IDEMPOTENT: a second launch prints ASIDE-ALREADY-DONE, touches nothing (rc 0, digest equal)
+PASS  RC5 a RELAUNCH of r2 after its OWN progress (gates and pins of both seeds, including seed 1 that has no aside copy): ASIDE-ALREADY-DONE, rc 0, not one of r2's files moved, not one byte of the first attempt's aside copies overwritten
+CAUGHT (deliberate regression) RC6 a rename that FAILS (a file inside the gate dir is held open): the job ends rc 1 with ASIDE-FAIL and ZZJOB-END rc=1, writes NO marker, and leaves the tree as it was -- never a silent success
+PASS  RC6b the RETRY after the failed job (handle released) completes: rc 0, the three items moved, the marker written, every byte preserved
+CAUGHT (deliberate regression) RC7 the item and its aside sibling BOTH exist (no marker): ASIDE-FAIL 'refusing to overwrite or to guess', rc 1, no marker, not one byte changed in either tree
+PASS  RC8 local aside: <ART> renamed to <ART>_r1_assert_stop, every file byte-identical, <ART> itself gone (the chain recreates it), rc 0
+PASS  RC9 local aside again (r2's own progress now in <ART>): KEPT -- <ART> untouched, the first attempt's copy not overwritten and not nested into
+PASS  RC10 local aside with no <ART>: ASIDE-ABSENT, rc 0, nothing created
+
+RESULT: 63/63 checks pass, 103/103 deliberate regressions caught, 0 missed; 0 failed checks (55 s)

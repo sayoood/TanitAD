@@ -1,0 +1,49 @@
+{
+ "_what": "does the occ channel carry INFORMATION, or only CALIBRATION, over its own box?",
+ "_evidence_class": "MEASURED (ours), CPU, A8 ckpt_5000",
+ "_function_class": "H2/H3 are LOGISTIC; beating them is evidence against a LINEAR soft read of the head's own box, not against every possible read",
+ "n_supervised_pairs": 1482,
+ "n_episodes": 35,
+ "n_scored_pairs": 848,
+ "n_scored_episodes": 18,
+ "base_rate_FIT": 0.55047,
+ "logloss": {
+  "BASE_RATE_control": 0.67462,
+  "H1_hard_predicate_own_box": 0.44896,
+  "H2_logistic_own_azimuth": 0.16055,
+  "H3_logistic_whole_own_box": 0.16211,
+  "O_head_occ_logit": 0.28818
+ },
+ "H2_coefficients": {
+  "azimuth": 6.6902,
+  "bias": -7.1085
+ },
+ "d_H3": 5,
+ "O_vs": {
+  "H1_hard_predicate_own_box": {
+   "gain_logloss_arm_minus_O": 0.16078,
+   "CI95": [
+    0.01685,
+    0.36186
+   ],
+   "separated": true
+  },
+  "H2_logistic_own_azimuth": {
+   "gain_logloss_arm_minus_O": -0.12763,
+   "CI95": [
+    -0.18443,
+    -0.03762
+   ],
+   "separated": true
+  },
+  "H3_logistic_whole_own_box": {
+   "gain_logloss_arm_minus_O": -0.12607,
+   "CI95": [
+    -0.18114,
+    -0.04321
+   ],
+   "separated": true
+  }
+ },
+ "_VERDICT": "⛔ the occ channel LOSES to a soft read of the head's own box"
+}

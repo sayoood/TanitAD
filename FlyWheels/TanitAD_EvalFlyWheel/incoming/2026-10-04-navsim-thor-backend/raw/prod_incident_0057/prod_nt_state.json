@@ -1,0 +1,208 @@
+{
+ "t": 1791154687.8952043,
+ "pool_pid": 505090,
+ "mem_available_gb": 8.73,
+ "alive": {},
+ "queued": [
+  "r7thor_s50400_R7_A1"
+ ],
+ "done": {
+  "r7thor_s50400_R7_VMAXOFF": {
+   "status": "KILLED_MEM_LT_20GB",
+   "signalled": [
+    505092
+   ],
+   "avail_gb": 16.78,
+   "rc": -15,
+   "wall_s": 1395.2
+  },
+  "r7thor_s50400_R7_A1_s1": {
+   "status": "KILLED_MEM_LT_20GB",
+   "signalled": [
+    505259
+   ],
+   "avail_gb": 16.78,
+   "rc": -15,
+   "wall_s": 1350.2
+  },
+  "r7thor_s50400_R7_CEILDECL_d": {
+   "status": "KILLED_MEM_LT_20GB",
+   "signalled": [
+    505546
+   ],
+   "avail_gb": 16.78,
+   "rc": -15,
+   "wall_s": 1305.2
+  },
+  "r7thor_s50400_PRIOR_ha0p": {
+   "status": "KILLED_MEM_LT_20GB",
+   "signalled": [
+    505746
+   ],
+   "avail_gb": 16.78,
+   "rc": -15,
+   "wall_s": 1260.2
+  }
+ },
+ "events": [
+  {
+   "t": 1791153257.3090355,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_VMAXOFF",
+   "pid": 505092,
+   "avail_gb": 58.0,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_VMAXOFF",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_VMAXOFF__navtest.npz",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest"
+   ]
+  },
+  {
+   "t": 1791153302.3135529,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_A1_s1",
+   "pid": 505259,
+   "avail_gb": 55.93,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_A1_s1",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_A1_s1__navtest.npz",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest"
+   ]
+  },
+  {
+   "t": 1791153347.318563,
+   "event": "launch",
+   "job": "r7thor_s50400_R7_CEILDECL_d",
+   "pid": 505546,
+   "avail_gb": 53.89,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_R7_CEILDECL_d",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_R7_CEILDECL_d__navtest.npz",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest"
+   ]
+  },
+  {
+   "t": 1791153392.324071,
+   "event": "launch",
+   "job": "r7thor_s50400_PRIOR_ha0p",
+   "pid": 505746,
+   "avail_gb": 51.85,
+   "cmd": [
+    "nice",
+    "-n",
+    "19",
+    "ionice",
+    "-c3",
+    "setsid",
+    "/home/nvidia/venvs/navsim-cpu/bin/python",
+    "/home/nvidia/navsim-thor/code/thor/score_navtest_thor.py",
+    "--label",
+    "r7thor_s50400_PRIOR_ha0p",
+    "--seam",
+    "/dev/shm/navsim/seams/step50400/seam_PRIOR_ha0p__navtest.npz",
+    "--out",
+    "/dev/shm/navsim/thor_scores/navtest"
+   ]
+  },
+  {
+   "t": 1791154647.4932187,
+   "event": "sigterm",
+   "job": "r7thor_s50400_R7_VMAXOFF",
+   "why": "MEM_LT_20GB",
+   "pids": [
+    505092
+   ]
+  },
+  {
+   "t": 1791154647.4932451,
+   "event": "sigterm",
+   "job": "r7thor_s50400_R7_A1_s1",
+   "why": "MEM_LT_20GB",
+   "pids": [
+    505259
+   ]
+  },
+  {
+   "t": 1791154647.4932618,
+   "event": "sigterm",
+   "job": "r7thor_s50400_R7_CEILDECL_d",
+   "why": "MEM_LT_20GB",
+   "pids": [
+    505546
+   ]
+  },
+  {
+   "t": 1791154647.4932764,
+   "event": "sigterm",
+   "job": "r7thor_s50400_PRIOR_ha0p",
+   "why": "MEM_LT_20GB",
+   "pids": [
+    505746
+   ]
+  },
+  {
+   "t": 1791154652.4938781,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_VMAXOFF",
+   "rc": -15
+  },
+  {
+   "t": 1791154652.4939039,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_A1_s1",
+   "rc": -15
+  },
+  {
+   "t": 1791154652.493924,
+   "event": "exit",
+   "job": "r7thor_s50400_R7_CEILDECL_d",
+   "rc": -15
+  },
+  {
+   "t": 1791154652.4939396,
+   "event": "exit",
+   "job": "r7thor_s50400_PRIOR_ha0p",
+   "rc": -15
+  }
+ ],
+ "policy": {
+  "max_jobs": 4,
+  "launch_min_gb": 35.0,
+  "kill_below_gb": 20.0,
+  "settle_s": 45.0,
+  "poll_s": 5.0
+ }
+}

@@ -1,0 +1,89 @@
+{
+ "_what": "the INDEPENDENT UNIT behind the 6.06 m near-forward bar",
+ "_evidence_class": "MEASURED (ours)",
+ "n_windows": 24,
+ "n_distinct_episodes": 21,
+ "windows_per_episode": {
+  "1": 18,
+  "2": 3
+ },
+ "episodes_with_more_than_one_window": 3,
+ "window_len_frames": 8,
+ "same_episode_frame_gaps": [
+  2,
+  20,
+  89
+ ],
+ "min_same_episode_gap": 2,
+ "any_overlapping_pair": true,
+ "total_grid_windows": 10600,
+ "sweep_over_n": {
+  "24": {
+   "n_windows": 24,
+   "n_distinct_episodes": 21,
+   "episodes_per_window": 0.875,
+   "n_overlapping_pairs": 1,
+   "min_same_episode_gap": 2,
+   "max_windows_in_one_episode": 2
+  },
+  "50": {
+   "n_windows": 50,
+   "n_distinct_episodes": 31,
+   "episodes_per_window": 0.62,
+   "n_overlapping_pairs": 2,
+   "min_same_episode_gap": 2,
+   "max_windows_in_one_episode": 4
+  },
+  "100": {
+   "n_windows": 100,
+   "n_distinct_episodes": 46,
+   "episodes_per_window": 0.46,
+   "n_overlapping_pairs": 8,
+   "min_same_episode_gap": 2,
+   "max_windows_in_one_episode": 7
+  },
+  "200": {
+   "n_windows": 200,
+   "n_distinct_episodes": 57,
+   "episodes_per_window": 0.285,
+   "n_overlapping_pairs": 36,
+   "min_same_episode_gap": 1,
+   "max_windows_in_one_episode": 8
+  },
+  "400": {
+   "n_windows": 400,
+   "n_distinct_episodes": 59,
+   "episodes_per_window": 0.1475,
+   "n_overlapping_pairs": 137,
+   "min_same_episode_gap": 1,
+   "max_windows_in_one_episode": 13
+  }
+ },
+ "n_eligible_in_pool": 2882,
+ "pool_size_drawn": 4000,
+ "frac_eligible_OF_POOL": 0.7205,
+ "selection": "s1_pass.trainer_windows(ds, 1000) randperm seed 12345, eligibility-filtered, first 24 \u2014 the probe's own line",
+ "cluster_sizes": {
+  "_why": "an episode-clustered bootstrap weights every cluster EQUALLY; unequal sizes make the effective n smaller than the cluster count",
+  "bar_draw_near_forward_targets_per_episode": {
+   "n_clusters": 19,
+   "total": 139,
+   "min": 1,
+   "median": 6.0,
+   "max": 17,
+   "n_eff": 12.6,
+   "n_eff_over_n_clusters": 0.663
+  },
+  "bar_draw_total_cross_check_vs_banked_129": 139,
+  "eligible_pool_windows_per_clip": {
+   "n_clusters": 60,
+   "total": 2882,
+   "min": 3,
+   "median": 49.0,
+   "max": 72,
+   "n_eff": 56.89,
+   "n_eff_over_n_clusters": 0.948
+  }
+ },
+ "verdict": "the 24 windows land in 21 distinct episodes; at least one pair OVERLAPS in frames, so the window is NOT independent and the unit must be the EPISODE"
+}

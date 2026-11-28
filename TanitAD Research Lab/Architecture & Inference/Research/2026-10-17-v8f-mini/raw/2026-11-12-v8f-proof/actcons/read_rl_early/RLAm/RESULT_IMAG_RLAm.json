@@ -1,0 +1,333 @@
+{
+ "arm": "RLAm",
+ "seeds": [
+  0
+ ],
+ "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+ "strategic": "STRATEGIC: PAUSED (PI item 25)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read",
+ "card": "PREREG_V8F_PROOF_ADD36",
+ "B": 2000,
+ "estimator": "two-level bootstrap (seeds with replacement, then episodes), rng seed 0",
+ "n_episodes": 139,
+ "controls": {
+  "c1": {
+   "max_abs_response_offset0": [
+    0.0
+   ],
+   "bar": "exactly 0.0",
+   "pass": true
+  },
+  "c2": {
+   "at_dump": [
+    {
+     "rollout_vs_roll_pairs_max_abs": 0.0,
+     "head_vs_sequence_max_abs": 1.430511474609375e-06,
+     "head_vs_sequence_max_abs_physical_units": 5.7220458984375e-06,
+     "tol": 1e-05,
+     "n_windows": 48,
+     "pass": true
+    }
+   ],
+   "label_vs_banked": [
+    {
+     "n_both": 441,
+     "n_mine_only": 0,
+     "n_banked_only": 0,
+     "max_abs": 0.0
+    }
+   ],
+   "pass": true,
+   "note": "rollout equality is measured at dump time against the trainer's roll_pairs on the same model; the banked-file comparison is 'banked' in at_dump only if --banked-roll was given"
+  },
+  "c4": {
+   "max_abs_response_zero_action_copy": [
+    0.0
+   ],
+   "max_abs_response_real_model": [
+    9.175816535949707
+   ],
+   "pass": true
+  },
+  "c3": {
+   "slope": 1.0,
+   "pooled_draw_max_abs_dev": 0.0,
+   "pass": true
+  },
+  "c5": {
+   "permuted": {
+    "H1": {
+     "point": -0.002713272516922327,
+     "ci": [
+      -0.01451464687355412,
+      0.008034999426582295
+     ]
+    },
+    "H1e": {
+     "point": -0.0038775325902551394,
+     "ci": [
+      -0.015863103968262977,
+      0.006906328935254255
+     ]
+    }
+   },
+   "present_as_rollout": {
+    "H1": [
+     -1.1102230246251565e-16
+    ],
+    "H1e": [
+     -2.220446049250313e-16
+    ]
+   },
+   "true_future_as_rollout": {
+    "H1": [
+     0.14812075979019035
+    ]
+   },
+   "pass": true,
+   "parts": {
+    "permuted_not_above_0": true,
+    "present_as_rollout_is_0": true,
+    "true_future_as_rollout_above_0": true
+   }
+  }
+ },
+ "controls_pass": true,
+ "dumps": [
+  {
+   "path": "F:/TanitAD-scratch/v8proof/imaghead/dump/DUMP_RLAm_s0.npz",
+   "sha256": "bbbf5e0d29cd90a7a6993276009c5b144c3b8e6e37e9482beb104d0a9d5006ad",
+   "ckpt_sha256": "51a280fedb5a8226fc9768f8dcf540d37694cbe1e2ed8a4f93c5e89626963bf3",
+   "n": 534
+  }
+ ],
+ "floors": [
+  {
+   "path": "F:/TanitAD-scratch/v8proof/spatial/q2/out/OOF_RB_G_s0.npz",
+   "sha256": "1383e414c4c04dd88fe7ab8452f7aa49cd264cf0a02965b830b59e593e822fb6",
+   "chosen": "ivb"
+  }
+ ],
+ "H1": {
+  "H1": {
+   "per_seed": [
+    0.025539715601644364
+   ],
+   "pooled": 0.025539715601644364,
+   "ci": [
+    -0.007109520843260844,
+    0.06351850662525449
+   ]
+  },
+  "H1e": {
+   "per_seed": [
+    0.023915212013485232
+   ],
+   "pooled": 0.023915212013485232,
+   "ci": [
+    -0.00794258576520122,
+    0.06348204031206507
+   ]
+  },
+  "H1c": {
+   "per_seed": [
+    0.14812075979019035
+   ],
+   "pooled": 0.14812075979019035,
+   "ci": [
+    0.05247306484857828,
+    0.2485763104307209
+   ]
+  },
+  "H1ec": {
+   "per_seed": [
+    0.13822710508623248
+   ],
+   "pooled": 0.13822710508623248,
+   "ci": [
+    0.045350137996236155,
+    0.23740335796071332
+   ]
+  },
+  "n_windows_with_lead_t_and_t2": [
+   441
+  ],
+  "r2": [
+   {
+    "i": 0.3898066640348372,
+    "ii": 0.30417437828828897,
+    "iii": 0.5631191507955043,
+    "fl": 0.17870649128721838,
+    "c_ii": 0.47825120322696557,
+    "c_i2": 0.5037909188286099,
+    "c_t2": 0.6263719630171559,
+    "c_iif": 0.48451779616722057,
+    "c_iifi": 0.5084330081807058,
+    "c_iift": 0.622744901253453
+   }
+  ],
+  "mae_m": {
+   "per_seed": [
+    {
+     "i": 5.89908646462726,
+     "ii": 6.271827884204264,
+     "iii": 4.7397513702478
+    }
+   ],
+   "mean": {
+    "i": 5.89908646462726,
+    "ii": 6.271827884204264,
+    "iii": 4.7397513702478
+   },
+   "note": "i = head on rolled-out states (logged actions), ii = head on the present states, iii = head on the true future states; label = lead gap at t + 2.0 s; no calibration"
+  }
+ },
+ "H2": {
+  "windows": {
+   "per_seed": [
+    356
+   ],
+   "gap_lt_20": [
+    146
+   ],
+   "rule": "label gap 5 to 50 m, ego speed >= 5 m/s at t"
+  },
+  "b_T2.0": {
+   "per_seed": [
+    0.8046953516283285
+   ],
+   "per_seed_ci_episodes": [
+    [
+     0.7483140245236909,
+     0.8616179266177267
+    ]
+   ],
+   "pooled": 0.8046953516283285,
+   "ci_two_level": [
+    0.7483140245236909,
+    0.8616179266177267
+   ],
+   "n_windows": [
+    356
+   ]
+  },
+  "b_T1.0": {
+   "per_seed": [
+    1.1867579610160228
+   ],
+   "per_seed_ci_episodes": [
+    [
+     1.0903397653928468,
+     1.2934050041787672
+    ]
+   ],
+   "pooled": 1.1867579610160228,
+   "ci_two_level": [
+    1.0903397653928468,
+    1.2934050041787672
+   ],
+   "n_windows": [
+    356
+   ]
+  },
+  "b_T2.0_lt20": {
+   "per_seed": [
+    0.7225382162011378
+   ],
+   "per_seed_ci_episodes": [
+    [
+     0.6378502496098769,
+     0.804791045557757
+    ]
+   ],
+   "pooled": 0.7225382162011378,
+   "ci_two_level": [
+    0.6378502496098769,
+    0.804791045557757
+   ],
+   "n_windows": [
+    146
+   ]
+  },
+  "b_T1.0_lt20": {
+   "per_seed": [
+    1.0839128820863488
+   ],
+   "per_seed_ci_episodes": [
+    [
+     0.9489937670739907,
+     1.2441168860499403
+    ]
+   ],
+   "pooled": 1.0839128820863488,
+   "ci_two_level": [
+    0.9489937670739907,
+    1.2441168860499403
+   ],
+   "n_windows": [
+    146
+   ]
+  },
+  "mean_response_m": [
+   {
+    "T2.0": {
+     "-2": 3.239980381526304,
+     "-1": 1.6030654344665871,
+     "+1": -1.5733180220207472,
+     "expected": {
+      "-2": 4.0,
+      "-1": 2.0,
+      "+1": -2.0
+     }
+    },
+    "T1.0": {
+     "-2": 1.1954034821371013,
+     "-1": 0.58697076861778,
+     "+1": -0.5824961501560854,
+     "expected": {
+      "-2": 1.0,
+      "-1": 0.5,
+      "+1": -0.5
+     }
+    }
+   }
+  ],
+  "presence_response": [
+   {
+    "T2.0": {
+     "-2": {
+      "logit": -0.3887807145986832,
+      "prob": -0.03127439700955904
+     },
+     "-1": {
+      "logit": -0.17063015327119174,
+      "prob": -0.013795444294409567
+     },
+     "+1": {
+      "logit": 0.11110400864488204,
+      "prob": 0.009076759757090658
+     }
+    },
+    "T1.0": {
+     "-2": {
+      "logit": -0.13965524230126208,
+      "prob": -0.010326090334103121
+     },
+     "-1": {
+      "logit": -0.059215529157330145,
+      "prob": -0.004390260946761481
+     },
+     "+1": {
+      "logit": 0.035696926751707714,
+      "prob": 0.002689254845659095
+     }
+    }
+   }
+  ]
+ },
+ "names": {
+  "H1": "IMAG-HEAD-FLAT",
+  "H2": "IMAG-RESPONDS",
+  "H2_overshoot_seeds": []
+ }
+}

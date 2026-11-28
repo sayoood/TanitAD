@@ -1,0 +1,84 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/aux_hb.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/aux_hb.py
+@@ -325,3 +325,81 @@
+         c = hb.ctx(model, img, calib)
+     same = tuple(c.shape) == tuple(sctx.shape) and bool(torch.equal(c.to(sctx.dtype), sctx))
+     return {"step0_ctx_equal": same, "step0_ctx_max_abs_diff": float((c.float() - sctx.float()).abs().max()) if tuple(c.shape) == tuple(sctx.shape) else None}
++
++
++# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
++# HB memory instrument + hygiene (HB_MEMORY.md).  Neither changes a number: the first only READS the allocator's counters, the second only drops references whose values nothing reads again.
++# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
++
++MEM_EVENT = "preflight_mem"
++MEM_FAIL_EVENT = "preflight_mem_fail"
++
++
++def mem_fields(reset: bool = True) -> dict:
++    """The allocator counters since the last call, in bytes: peak allocated, peak reserved, reserved now.  CUDA only; on CPU every value is None (a null, never a 0 that reads like a measurement).
++    `reset` restarts the peak, so each gate reads its OWN peak."""
++    if not torch.cuda.is_available():
++        return {"max_allocated_bytes": None, "max_reserved_bytes": None, "reserved_bytes": None, "allocated_bytes": None}
++    f = {"max_allocated_bytes": int(torch.cuda.max_memory_allocated()), "max_reserved_bytes": int(torch.cuda.max_memory_reserved()),
++         "reserved_bytes": int(torch.cuda.memory_reserved()), "allocated_bytes": int(torch.cuda.memory_allocated())}
++    if reset:
++        torch.cuda.reset_peak_memory_stats()
++    return f
++
++
++class MemGates(dict):
++    """The preflight's `gates` dict.  Assigning a gate (which the trainer does when the gate FINISHES) appends one `preflight_mem` row to preflight.jsonl with that gate's own peak allocated / reserved
++    bytes, then resets the peak.  A dict subclass, so `ok = all(v["ok"] for v in gates.values())`, `json.dump` and every consumer of the gates read exactly what they read from a plain dict.
++    `peak_allocated` is the running maximum over every window, so the end-of-preflight `gpu_mem_gb` still reports the whole preflight's peak although the counter was reset between gates."""
++
++    def __init__(self, log):
++        super().__init__()
++        self._log = log
++        self.last = None
++        self.peak_allocated = 0
++        mem_fields(reset=True)                                                    # the first gate's window starts here
++
++    def __setitem__(self, name, value):
++        super().__setitem__(name, value)
++        f = mem_fields(reset=True)
++        if f["max_allocated_bytes"] is not None:
++            self.peak_allocated = max(self.peak_allocated, f["max_allocated_bytes"])
++        self.last = name
++        self._log({"event": MEM_EVENT, "after_gate": name, **f})
++
++    def fail_row(self, et, ev, tb) -> dict:
++        """The row for an unhandled exception (an OOM): the last gate that FINISHED, the peak since it, and the innermost frames -- the failing gate is the one whose function is on the stack."""
++        import traceback
++        fr = [f"{os.path.basename(x.filename)}:{x.lineno}:{x.name}" for x in traceback.extract_tb(tb)][-6:]
++        return {"event": MEM_FAIL_EVENT, "after_gate": self.last, "error": f"{getattr(et, '__name__', et)}: {str(ev)[:300]}", "frames": fr, **mem_fields(reset=False)}
++
++    def install_fail_hook(self):
++        import sys
++        prev = sys.excepthook
++
++        def hook(et, ev, tb):
++            try:
++                self._log(self.fail_row(et, ev, tb))
++            except Exception:                                                       # noqa: BLE001 -- the instrument must never hide the original failure
++                pass
++            prev(et, ev, tb)
++        sys.excepthook = hook
++        return prev
++
++
++def release_aux_graph(cap: dict) -> int:
++    """Drop the head's PREVIOUS forward from the trainer's `cap` dict: `cap["aux"]` = (logit, sdf) and `cap["aux_ctx"]` = the tensor the head read.  Under HB these are the output of the LoRA trunk COPY's
++    forward and keep its whole autograd graph (every ViT-L activation) alive until the NEXT fwd() overwrites them -- which happens only AFTER that next fwd() has built a second graph, so two copies
++    of the trunk's activations coexist (the gate-to-gate doubling at G12 and at G21).  Every reader of these two keys (aux_backward, G12's tap row, G19's _vdac_run) reads them right after
++    ITS OWN fwd(), so dropping the stale pair before a gate's fresh fwd() changes no value.  -> the number of keys dropped.  Also returns the allocator's free blocks to the driver."""
++    n = 0
++    for k in ("aux", "aux_ctx"):
++        if cap.get(k) is not None:
++            cap[k] = None
++            n += 1
++    import gc
++    gc.collect()
++    if torch.cuda.is_available():
++        torch.cuda.empty_cache()
++    return n
++

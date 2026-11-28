@@ -1,0 +1,3503 @@
+{
+ "n_tokens": 12146,
+ "n_rows": 12146,
+ "n_error_lines": 0,
+ "n_duplicate_lines": 0,
+ "controls": {
+  "C-COVB": {
+   "pass": true,
+   "missing": 0,
+   "extra": 0,
+   "error_lines": 0,
+   "duplicate_lines": 0
+  },
+  "C-DACMAP6": {
+   "pass": true,
+   "tokens": 12146,
+   "mismatches": 0,
+   "examples": [],
+   "what": "builder tracked DAC of the banked N5-A plan == harness DAC of N5-A, all tokens",
+   "reference": "refe_tfn5_n5a.csv"
+  },
+  "C-DERIV": {
+   "pass": true,
+   "n": 200,
+   "expected_n": 200,
+   "max_dev_m": 0.0,
+   "bar_m": 1e-09
+  },
+  "C-LABELEGO": {
+   "pass": true,
+   "label_rows": 220,
+   "db": 220,
+   "not_db": 0,
+   "examples": [],
+   "human_rows_not_db": 0,
+   "what": "every row that built labels (C-DERIV tokens + residual tokens x iterates) and every human future used the nuPlan-DB ego"
+  },
+  "C-SET": {
+   "pass": true,
+   "builder_residual": 20,
+   "expected": 20,
+   "residual_flag_disagrees_with_builder_dac": [],
+   "harness_n5a_zero_dac": 20,
+   "expected_source": "banked TF-N5 A1 build report unrepaired_l1.N5A",
+   "missing_from_builder": [],
+   "extra_in_builder": [],
+   "what": "builder tracked N5-A DAC-0 set == the banked TF-N5 A1 residual (and, on navtest, == the harness N5-A zero-DAC set)"
+  },
+  "C-REPLAY": {
+   "pass": true,
+   "residual": 20,
+   "violations": [],
+   "what": "the re-run repairs reproduce the banked results (REPAIR-D and L1 return the same applied / not applied as TF-N4 A1 / TF-N5 A1 on every residual token; iterate 0 is the banked plan)"
+  },
+  "C-DET": {
+   "pass": true,
+   "checked": 20,
+   "equal": 20,
+   "what": "the whole candidate capture (REPAIR-D + L1, every iterate) run twice on every residual token gives bit-identical plans and scores"
+  },
+  "C-SELECT": {
+   "pass": true,
+   "tokens": 20,
+   "violations": 0,
+   "examples": [],
+   "what": "the card selector run in the merge on the stored candidates picks exactly what the derive recorded, per arm and token"
+  },
+  "C-CERT-B6": {
+   "pass": true,
+   "violations": {
+    "N6H": 0,
+    "N6T": 0,
+    "N6X": 0
+   },
+   "examples": {
+    "N6H": [],
+    "N6T": [],
+    "N6X": []
+   },
+   "what": "every applied plan, re-scored by a separate scorer call, reproduces its score and passes the arm's CARD certificate against the N5-A builder score (DAC; NC and DDC not worse; builder PDMS strictly better; TTC and C free)"
+  },
+  "C-ORDER": {
+   "pass": true,
+   "violations": [],
+   "what": "N6-H == N6-T wherever N6-T applies; N6-H differs only through the human candidate, only where no teacher candidate passes"
+  },
+  "C-X0": {
+   "pass": true,
+   "n6x_applied": 0,
+   "what": "the deliberate-regression arm (certificate inverted: DAC = 0 required) changes 0 tokens, so its seam is bit-identical to N5-A (a DAC-0 plan has builder PDMS 0)"
+  },
+  "C-SEAMFN": {
+   "pass": true,
+   "tokens": 12146,
+   "mismatches": 0,
+   "examples": [],
+   "what": "ND.to_navsim reproduces the banked N5-A seam poses bit for bit on every token, so the changed rows are made by the function that made the banked ones"
+  },
+  "C-UNCH": {
+   "pass": true,
+   "arms": {
+    "N6H": {
+     "changed_plan20": 20,
+     "changed_seam": 20,
+     "applied": 20,
+     "tokens": 12146,
+     "seam_tokens": 12146,
+     "unflagged_changed": [],
+     "flagged_unchanged": [],
+     "pass": true
+    },
+    "N6T": {
+     "changed_plan20": 4,
+     "changed_seam": 4,
+     "applied": 4,
+     "tokens": 12146,
+     "seam_tokens": 12146,
+     "unflagged_changed": [],
+     "flagged_unchanged": [],
+     "pass": true
+    },
+    "N6X": {
+     "changed_plan20": 0,
+     "changed_seam": 0,
+     "applied": 0,
+     "tokens": 12146,
+     "seam_tokens": 12146,
+     "unflagged_changed": [],
+     "flagged_unchanged": [],
+     "bit_identical_to_n5a": true,
+     "pass": true
+    }
+   },
+   "n_residual": 20,
+   "n_expected": 20,
+   "residual_count_ok": true
+  },
+  "C-REACH": {
+   "pass": true,
+   "arms_ok": {
+    "REPAIR-D at A1 settings": true,
+    "L1 at the TF-N5 frozen parameters": true,
+    "selector N6H": true,
+    "selector N6T": true,
+    "selector N6X": true
+   },
+   "real": {
+    "easy": true,
+    "multi_iter": true
+   }
+  }
+ },
+ "diagnostics": {
+  "builder_vs_harness_max_abs_all_tokens": {
+   "nc": 0.0,
+   "ddc": 0.0,
+   "ttc": 0.0,
+   "c": 0.0,
+   "pdms": 3.8112846212357e-12
+  }
+ },
+ "files": {
+  "n6_plans_N6H.npz": "49bae7ca8f23c4b55e28ac4ccabb3c69ac676b7b2969a61a9429de5c88b8e06f",
+  "n6_plans_N6T.npz": "1c79202f25b6747799d7cb6512d4985a7490cfc7619433c969c4d8a67c93a5ee",
+  "n6_plans_N6X.npz": "ef02aff84376d2b6640833721462e1da8b1ed2e2609e458d8831582d76eade2a",
+  "refe_tfn6_n6h.npz": "5126298c820ec8db5d05eb54aea51af2eed37e84ecb5536fb1f053d4697374ae",
+  "refe_tfn6_n6t.npz": "876df88df7c13bd84e252cfb9b5f98f737c57f960f5cd2904479e054f549b95b",
+  "refe_tfn6_n6x.npz": "2b686d1634b0ad448137cf7bab24149307e0cb596552dec17ac76c28a98f7cd2"
+ },
+ "residual": [
+  "0b3d3edbc52d5ddd",
+  "11568fab86df5183",
+  "12b32c24d2cf5309",
+  "2b04c510144e5545",
+  "3c542be991515ccd",
+  "4d31d76919495557",
+  "50eebed7d9655bb5",
+  "6bd234c45e885cb2",
+  "7a7ff4cc1f1a501e",
+  "7cb9260c8be35c5c",
+  "8209b6700b535e8e",
+  "a305b24487775cfc",
+  "b2872eb05a455f97",
+  "c296ded44f9a509a",
+  "d49b986924cd5bed",
+  "e1b3e5e086a05ff9",
+  "e7c485c237b352cd",
+  "f140d31943145068",
+  "f1bdf7e4e9f5534e",
+  "fc7b8441f81b5296"
+ ],
+ "repaired": {
+  "N6H": [
+   "0b3d3edbc52d5ddd",
+   "11568fab86df5183",
+   "12b32c24d2cf5309",
+   "2b04c510144e5545",
+   "3c542be991515ccd",
+   "4d31d76919495557",
+   "50eebed7d9655bb5",
+   "6bd234c45e885cb2",
+   "7a7ff4cc1f1a501e",
+   "7cb9260c8be35c5c",
+   "8209b6700b535e8e",
+   "a305b24487775cfc",
+   "b2872eb05a455f97",
+   "c296ded44f9a509a",
+   "d49b986924cd5bed",
+   "e1b3e5e086a05ff9",
+   "e7c485c237b352cd",
+   "f140d31943145068",
+   "f1bdf7e4e9f5534e",
+   "fc7b8441f81b5296"
+  ],
+  "N6T": [
+   "2b04c510144e5545",
+   "6bd234c45e885cb2",
+   "a305b24487775cfc",
+   "d49b986924cd5bed"
+  ],
+  "N6X": []
+ },
+ "source_class": {
+  "N6H": {
+   "0b3d3edbc52d5ddd": "human",
+   "11568fab86df5183": "human",
+   "12b32c24d2cf5309": "human",
+   "2b04c510144e5545": "teacher",
+   "3c542be991515ccd": "human",
+   "4d31d76919495557": "human",
+   "50eebed7d9655bb5": "human",
+   "6bd234c45e885cb2": "teacher",
+   "7a7ff4cc1f1a501e": "human",
+   "7cb9260c8be35c5c": "human",
+   "8209b6700b535e8e": "human",
+   "a305b24487775cfc": "teacher",
+   "b2872eb05a455f97": "human",
+   "c296ded44f9a509a": "human",
+   "d49b986924cd5bed": "teacher",
+   "e1b3e5e086a05ff9": "human",
+   "e7c485c237b352cd": "human",
+   "f140d31943145068": "human",
+   "f1bdf7e4e9f5534e": "human",
+   "fc7b8441f81b5296": "human"
+  },
+  "N6T": {
+   "2b04c510144e5545": "teacher",
+   "6bd234c45e885cb2": "teacher",
+   "a305b24487775cfc": "teacher",
+   "d49b986924cd5bed": "teacher"
+  },
+  "N6X": {}
+ },
+ "counts": {
+  "N6H": {
+   "teacher_tol": 4,
+   "human": 16
+  },
+  "N6T": {
+   "teacher_tol": 4,
+   "human": 0
+  },
+  "N6X": {
+   "teacher_tol": 0,
+   "human": 0
+  }
+ },
+ "n_human_unavailable": [],
+ "residual_table": {
+  "0b3d3edbc52d5ddd": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9653434093540275,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "11568fab86df5183": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9633415349074012,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "12b32c24d2cf5309": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "2b04c510144e5545": {
+   "resolved_by": [
+    "D",
+    4,
+    "teacher"
+   ],
+   "n_candidates": 6,
+   "n_dac1_candidates": 2,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.5,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.8333333333333334,
+     "failed": []
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "3c542be991515ccd": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9095323458485485,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "4d31d76919495557": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 7,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.5,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "50eebed7d9655bb5": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "6bd234c45e885cb2": {
+   "resolved_by": [
+    "D",
+    3,
+    "teacher"
+   ],
+   "n_candidates": 5,
+   "n_dac1_candidates": 2,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.5,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.8333333333333334,
+     "failed": []
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "7a7ff4cc1f1a501e": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9442656878648995,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "7cb9260c8be35c5c": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9738667687078045,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "8209b6700b535e8e": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 7,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "a305b24487775cfc": {
+   "resolved_by": [
+    "L1",
+    4,
+    "teacher"
+   ],
+   "n_candidates": 11,
+   "n_dac1_candidates": 2,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.5833333333333334,
+     "failed": []
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "b2872eb05a455f97": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 8,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.880412141389202,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "c296ded44f9a509a": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9163647548090853,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "d49b986924cd5bed": {
+   "resolved_by": [
+    "D",
+    2,
+    "teacher"
+   ],
+   "n_candidates": 5,
+   "n_dac1_candidates": 3,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.5,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.5833333333333334,
+     "failed": []
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.5833333333333334,
+     "failed": []
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.8121217935509053,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "e1b3e5e086a05ff9": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 0.0,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "nc",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9631725615840244,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "e7c485c237b352cd": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 9,
+   "n_dac1_candidates": 2,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 1.0,
+     "nc": 0.5,
+     "ddc": 1.0,
+     "ttc": 0.0,
+     "c": 1.0,
+     "pdms": 0.15756319303084948,
+     "failed": [
+      "nc"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9706420635532543,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "f140d31943145068": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9470857168257915,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "f1bdf7e4e9f5534e": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 12,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "L1",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.9223787237811024,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  },
+  "fc7b8441f81b5296": {
+   "resolved_by": [
+    "H",
+    0,
+    "human"
+   ],
+   "n_candidates": 7,
+   "n_dac1_candidates": 1,
+   "blocking_class": null,
+   "candidates": [
+    {
+     "src": "D",
+     "k": 0,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.5,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 1,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 2,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 0.5,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 3,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 0.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 4,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "D",
+     "k": 5,
+     "cls": "teacher",
+     "dac": 0.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 0.0,
+     "failed": [
+      "dac",
+      "pdms"
+     ]
+    },
+    {
+     "src": "H",
+     "k": 0,
+     "cls": "human",
+     "dac": 1.0,
+     "nc": 1.0,
+     "ddc": 1.0,
+     "ttc": 1.0,
+     "c": 1.0,
+     "pdms": 1.0,
+     "failed": []
+    }
+   ],
+   "ref_pdms": 0.0,
+   "repl": {
+    "D": false,
+    "L1": false
+   }
+  }
+ },
+ "timing": {
+  "n": 12146,
+  "t_s_mean": 0.11286810472583567,
+  "cpu_h_sum": 0.38080444444444445
+ },
+ "verdict": "PASS"
+}

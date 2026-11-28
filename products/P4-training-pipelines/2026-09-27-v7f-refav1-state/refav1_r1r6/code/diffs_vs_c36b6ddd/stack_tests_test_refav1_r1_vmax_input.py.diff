@@ -1,0 +1,197 @@
+--- /dev/null
++++ b/stack/tests/test_refav1_r1_vmax_input.py (R1-R6)
+@@ -0,0 +1,194 @@
++"""R1 (PI 2026-09-27): the clip's MAX SPEED is a TACTICAL INPUT (training and inference).
++
++The input is the refcv6 4-way CONTAINING-WINDOW one-hot over {30, 50, 100, 120} km/h of
++`g_tac.goals.SPEED_BAND.v_hi_ms`, applied ONCE on the model side; it enters the tactical FiLM
++cond, the intent (bias-free, down-scaled -- the nav_inj pattern) and the R5 head. The HARD CAP is
++the R1-VMAX planner lever (`PlanConfig.v_max`, separate batch) and `refav1_traj.cap_path_speed`
++for `trajectory()`; both use `limit_ms_of_bin(speed_max_bin(v_hi))`.
++"""
++import importlib.util
++import json
++import os
++import sys
++from pathlib import Path
++
++import pytest
++import torch
++
++from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
++from tanitad.refs.refa_v1 import SPEED_MAX_DERIVATION_REFAV1, RefAV1, RefAV1Config
++from tanitad.refs.refcv6_max_speed import (MaxSpeedOneHotEncoder, assert_speed_max_stamp_v6,
++                                           limit_ms_of_bin, speed_max_bin)
++
++_TRAIN = Path(__file__).resolve().parents[1] / "scripts" / "refa_v1_train.py"
++
++
++def _cfg(**kw) -> RefAV1Config:
++    base = dict(d_enc=16, d_state=16, n_tokens=8, op_layers=1, op_heads=2, op_window=2,
++                tac_queries=4, tac_layers=1, str_dim=8, str_layers=1,
++                strategic_cfg=StrategicPolicyConfig(d_model=16, depth=1, n_heads=2, d_ctx=8,
++                                                    d_cmd=8),
++                tactical_cfg=TacticalPolicyConfig(d_model=16, depth=1, n_heads=2, d_intent=8))
++    base.update(kw)
++    return RefAV1Config(**base)
++
++
++def _model(seed=0, **kw):
++    torch.manual_seed(seed)
++    m = RefAV1(_cfg(**kw))
++    with torch.no_grad():
++        m.std.fit(torch.randn(32, 16, generator=torch.Generator().manual_seed(9)))
++    return m
++
++
++def _data(c):
++    g = torch.Generator().manual_seed(4)
++    return (torch.randn(2, c.op_window, c.n_tokens, c.d_enc, generator=g),
++            torch.randn(2, c.op_steps, c.a_dim, generator=g) * 0.1,
++            torch.randn(2, c.op_steps, c.n_tokens, c.d_enc, generator=g))
++
++
++def test_a_the_one_hot_is_refcv6s_and_an_unknown_row_is_all_zero():
++    m = _model(vmax_input=True)
++    v = torch.tensor([5.0, 13.05, 20.0, 40.0])
++    valid = torch.tensor([True, True, True, False])
++    oh = m._vmax_onehot(v, valid, 4, "cpu", torch.float32)
++    ref, _ = MaxSpeedOneHotEncoder()(torch.where(valid, v, torch.zeros_like(v)), valid)
++    assert torch.equal(oh, ref)
++    assert oh[:3].sum(-1).tolist() == [1.0, 1.0, 1.0] and oh[3].abs().sum() == 0
++    # 13.05 m/s = 47.0 km/h lands in the 50 km/h window (containing, never nearest)
++    assert int(oh[1].argmax()) == 1
++
++
++def test_b_the_limit_is_the_R1_VMAX_limit_function():
++    m = _model(vmax_input=True)
++    v = torch.tensor([7.3, 13.05, 27.9, 33.5, 40.0])
++    got = m.speed_limit_ms(v)
++    want = torch.stack([limit_ms_of_bin(torch.tensor([speed_max_bin(float(x))[0]]))[0]
++                        for x in v])
++    assert torch.equal(got, want)
++    assert torch.isnan(m.speed_limit_ms(v, torch.zeros(5, dtype=torch.bool))).all()
++
++
++def test_c_all_unknown_rows_forward_bit_identically_to_the_input_being_off():
++    """Bias-free + built AFTER every shipped module: an all-zero row adds EXACTLY 0, and the
++    shared weights are the vmax-off model's at the same seed."""
++    on, off = _model(seed=2, vmax_input=True), _model(seed=2)
++    f, a, fut = _data(on.cfg)
++    kw = dict(future_feats=fut, nav_cmd=torch.tensor([0, 1]), v0=torch.tensor([3.0, 8.0]))
++    o_on = on(f, a, speed_max_ms=torch.tensor([0.0, 0.0]),
++              speed_max_valid=torch.tensor([False, False]), **kw)
++    o_off = off(f, a, **kw)
++    for k in ("op_pred", "tac_pred", "lat_logits", "lon_logits", "loss"):
++        assert torch.equal(o_on[k], o_off[k]), k
++    # control: a KNOWN max speed moves the tactical decision and both field predictors
++    o_kn = on(f, a, speed_max_ms=torch.tensor([8.0, 30.0]),
++              speed_max_valid=torch.tensor([True, True]), **kw)
++    for k in ("op_pred", "tac_pred", "lat_logits", "lon_logits"):
++        assert not torch.equal(o_kn[k], o_off[k]), k
++
++
++def test_d_a_different_bin_is_a_different_tactical_input_and_gradient_reaches_it():
++    m = _model(vmax_input=True)
++    with torch.no_grad():
++        for lin in (m.vmax_to_ctx, m.vmax_to_intent):
++            lin.weight.data.normal_(0, 0.5)
++    f, a, fut = _data(m.cfg)
++    o30 = m(f, a, future_feats=fut, speed_max_ms=torch.tensor([7.0, 7.0]))
++    o120 = m(f, a, future_feats=fut, speed_max_ms=torch.tensor([33.0, 33.0]))
++    assert not torch.allclose(o30["lat_logits"], o120["lat_logits"])
++    o30["loss"].backward()
++    assert m.vmax_to_intent.weight.grad.abs().sum() > 0     # max speed -> intent -> predictors
++    # only the ACTIVE bin's column carries gradient (a one-hot input; 7 m/s = the 30 km/h bin)
++    assert m.vmax_to_intent.weight.grad[:, [1, 2, 3]].abs().sum() == 0
++    # max speed -> the tactical FiLM cond: `predictor.FiLM` is ZERO-initialised, so its cond
++    # receives no gradient at step 0 (a known value, exactly 0) -- and does after one step
++    assert float(m.vmax_to_ctx.weight.grad.abs().sum()) == 0.0
++    torch.optim.SGD(m.parameters(), lr=0.1).step()
++    m.zero_grad(set_to_none=True)
++    m(f, a, future_feats=fut, speed_max_ms=torch.tensor([7.0, 7.0]))["loss"].backward()
++    assert m.vmax_to_ctx.weight.grad[:, 0].abs().sum() > 0
++    assert m.vmax_to_ctx.weight.grad[:, [1, 2, 3]].abs().sum() == 0
++
++
++def test_e_refusals_supplied_while_off_and_training_without_it():
++    off, on = _model(), _model(vmax_input=True)
++    f, a, fut = _data(off.cfg)
++    with pytest.raises(ValueError, match="vmax_input is OFF"):
++        off(f, a, future_feats=fut, speed_max_ms=torch.tensor([9.0, 9.0]))
++    with pytest.raises(ValueError, match="TRAINING forward without speed_max_ms"):
++        on(f, a, future_feats=fut)
++    with pytest.raises(ValueError, match="needs the hierarchy"):
++        RefAV1(_cfg(vmax_input=True, strategic_cfg=None, tactical_cfg=None))
++
++
++def test_f_plan_carries_the_input_and_stamps_it_only_when_on():
++    from tanitad.refs.refa_v1_plan import PlanConfig
++    pc = dict(n_samples=8, n_iters=2, n_elites=2, min_samples=4)
++    on, off = _model(vmax_input=True).eval(), _model().eval()
++    f, _, _ = _data(on.cfg)
++    r = on.plan(f[:1], v0=6.0, speed_max_ms=torch.tensor([13.05]),
++                plan_cfg=PlanConfig(horizon=on.cfg.plan_steps, dt=0.2, **pc))
++    assert r.speed_max_input["known"] is True
++    assert r.speed_max_input["limit_ms"] == pytest.approx([50 / 3.6])
++    r2 = off.plan(f[:1], v0=6.0, plan_cfg=PlanConfig(horizon=off.cfg.plan_steps, dt=0.2, **pc))
++    assert not hasattr(r2, "speed_max_input")
++    with pytest.raises(ValueError, match="vmax_input is OFF"):
++        off.plan(f[:1], v0=6.0, speed_max_ms=torch.tensor([13.0]))
++
++
++def test_g_the_stamp_carries_every_token_the_shared_guard_requires():
++    assert_speed_max_stamp_v6({"speed_max_derivation_v6": SPEED_MAX_DERIVATION_REFAV1}, on=True)
++    with pytest.raises(SystemExit):              # the mirror: a stamp with the input OFF
++        assert_speed_max_stamp_v6({"speed_max_derivation_v6": SPEED_MAX_DERIVATION_REFAV1},
++                                  on=False)
++
++
++def _trainer():
++    spec = importlib.util.spec_from_file_location("_refa_v1_train_r1", _TRAIN)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[spec.name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def test_h_trainer_smoke_stamps_config_and_logs_the_valid_fraction(tmp_path):
++    T = _trainer()
++    out = tmp_path / "r1"
++    assert T.main(["--smoke", "--steps", "1", "--log-every", "1", "--bs", "2", "--device",
++                   "cpu", "--out", str(out), "--vmax-input"]) == 0
++    cfg = json.loads((out / "config.json").read_text("utf-8"))
++    assert cfg["speed_max_derivation_v6"] == SPEED_MAX_DERIVATION_REFAV1
++    assert_speed_max_stamp_v6(cfg, on=True)
++    row = json.loads((out / "train_log.jsonl").read_text("utf-8").splitlines()[0])
++    assert row["speed_max_valid_frac"] == 1.0
++    # control: OFF writes no stamp (the mirror guard would refuse one)
++    out2 = tmp_path / "off"
++    assert T.main(["--smoke", "--steps", "1", "--device", "cpu", "--out", str(out2)]) == 0
++    assert "speed_max_derivation_v6" not in json.loads((out2 / "config.json").read_text("utf-8"))
++
++
++#: the dev-box eval kit, overridable -- an absolute home path only as an env default
++_EVAL = Path(os.environ.get("TANITAD_REFAV1_EVAL_ROOT",
++                            "C:/Users/Admin/tanitad-data/refav1-eval141"))
++_LBL = Path(os.environ.get("TANITAD_V72_EVAL_LABELS",
++                           "C:/Users/Admin/navcomp/data/s2_labels_v7.2_eval.jsonl.gz"))
++
++
++@pytest.mark.skipif(not (_EVAL / "refav1-fp8-eval").is_dir() or not _LBL.is_file(),
++                    reason="the dev-box refav1 eval cache is not on this host")
++def test_i_loader_emits_the_RAW_clip_v_hi_on_every_window_of_a_labelled_clip():
++    from tanitad.data.refav1_loader import RefAV1Windows
++    from tanitad.data.v7_labels import load_v7_labels
++    C, E = _EVAL / "refav1-fp8-eval", _EVAL / "eps"
++    names = sorted(p.stem for p in C.glob("*.pt") if p.stem != "index")[:3]
++    ld = RefAV1Windows(C, E, op_window=4, op_steps=30, str_ext_steps=0, lru=3, seed=0,
++                       episodes=names, labels_path=_LBL, nav_path=_LBL, speed_max=True)
++    labels, _ = load_v7_labels(_LBL, allow_oracle_nav=True)
++    vhi = {x.clip_id: x.tac_goal_meta["SPEED_BAND"]["v_hi_ms"] for x in labels}
++    ld._order = list(range(len(ld)))            # every window, in order
++    ld._cursor = 0
++    b = ld.batch(len(ld))
++    want = torch.tensor([vhi[ld.clip_id[ld.names[ei]]] for ei, _t in ld.windows],
++                        dtype=torch.float32)
++    assert torch.equal(b["speed_max_ms"], want) and bool(b["speed_max_valid"].all())

@@ -1,0 +1,196 @@
+{
+ "schema": "ra1-full-final-v1",
+ "prereg": "PREREG_RA1_FULL.md",
+ "phase": "phase2",
+ "S_star": {
+  "R0": 3000,
+  "A1": 3000
+ },
+ "K_arm": "A1",
+ "cell": "b0.08g50",
+ "instrument_ok_all": true,
+ "A1x_control": {
+  "delta_A1x_minus_A1_ade6": {
+   "delta": 0.0376,
+   "lo": 0.0119,
+   "hi": 0.0643,
+   "separated": true,
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "loses_point": true,
+  "loses_separated": true,
+  "verdict": "OK: A1x loses to A1, separated"
+ },
+ "K": {
+  "bar": "best(R0, A1, A2) - P10 ADE@6s < 0, separated at both seeds, |delta| > 2x the training-seed floor",
+  "candidates": {
+   "R0": {
+    "seed0": {
+     "ade6": 2.2842584086492996,
+     "p10_ade6": 2.4869921170700966,
+     "arm_minus_p10": {
+      "delta": -0.2027,
+      "lo": -0.3258,
+      "hi": -0.0809,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    "seed1": {
+     "ade6": 2.3301523903245243,
+     "p10_ade6": 2.4869921170700966,
+     "arm_minus_p10": {
+      "delta": -0.1568,
+      "lo": -0.2744,
+      "hi": -0.0413,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    "mean_ade6": 2.3072053994869117,
+    "PASS": true
+   },
+   "A1": {
+    "seed0": {
+     "ade6": 2.200520357762343,
+     "p10_ade6": 2.4869921170700966,
+     "arm_minus_p10": {
+      "delta": -0.2865,
+      "lo": -0.3936,
+      "hi": -0.179,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    "seed1": {
+     "ade6": 2.2111424620603324,
+     "p10_ade6": 2.4869921170700966,
+     "arm_minus_p10": {
+      "delta": -0.2758,
+      "lo": -0.3756,
+      "hi": -0.1799,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    "mean_ade6": 2.2058314099113376,
+    "PASS": true
+   },
+   "A2": {
+    "seed0": "missing",
+    "seed1": "missing",
+    "mean_ade6": null,
+    "PASS": false
+   }
+  },
+  "best_arm": "A1",
+  "PASS": true
+ },
+ "training_seed_floor_A1": 0.010622104297989488,
+ "not_read": {
+  "SENS": "needs A0: not in this design",
+  "COST": "not a PREREG_RA1_FULL reading",
+  "branch_text_of_queue_verdict": "assumes A0 runs; superseded by `reading` below"
+ },
+ "K_read": {
+  "bar": "K-arm - P10-yaw-4512 ADE@6s < 0, separated at both seeds, |delta| > 2x |A1_s0 - A1_s1|",
+  "K_arm": "A1",
+  "PASS": true,
+  "K_arm_row": {
+   "seed0": {
+    "ade6": 2.200520357762343,
+    "p10_ade6": 2.4869921170700966,
+    "arm_minus_p10": {
+     "delta": -0.2865,
+     "lo": -0.3936,
+     "hi": -0.179,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "below_p10": true,
+    "separated": true,
+    "beats_2x_floor": true
+   },
+   "seed1": {
+    "ade6": 2.2111424620603324,
+    "p10_ade6": 2.4869921170700966,
+    "arm_minus_p10": {
+     "delta": -0.2758,
+     "lo": -0.3756,
+     "hi": -0.1799,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "below_p10": true,
+    "separated": true,
+    "beats_2x_floor": true
+   },
+   "mean_ade6": 2.2058314099113376,
+   "PASS": true
+  },
+  "other_arm_DESCRIPTIVE": {
+   "seed0": {
+    "ade6": 2.2842584086492996,
+    "p10_ade6": 2.4869921170700966,
+    "arm_minus_p10": {
+     "delta": -0.2027,
+     "lo": -0.3258,
+     "hi": -0.0809,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "below_p10": true,
+    "separated": true,
+    "beats_2x_floor": true
+   },
+   "seed1": {
+    "ade6": 2.3301523903245243,
+    "p10_ade6": 2.4869921170700966,
+    "arm_minus_p10": {
+     "delta": -0.1568,
+     "lo": -0.2744,
+     "hi": -0.0413,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "below_p10": true,
+    "separated": true,
+    "beats_2x_floor": true
+   },
+   "mean_ade6": 2.3072053994869117,
+   "PASS": true
+  }
+ },
+ "outcome": "K_PASS",
+ "reading": "READING 4 PASS: the gate holds at S*_A1 = 3000 and A1 beats P10-yaw-4512 at both seeds. Data scale is the lever. Next: A2 and SENS (with A0) at S* on the full corpus, under PREREG_HJ_STAGE0's other bars."
+}

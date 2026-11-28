@@ -1,0 +1,32 @@
+{
+ "tool": "vdac_stage0/1",
+ "utc": "2026-11-12T20:11:01Z",
+ "rule": "per city (LV, BOS, PIT, SG) the lowest-sha256('<log>|<token>') labelled bank rows at step 0 rank 0 whose log is in neither H48 nor sft_heldout_logs; 512 each; a pure function of the bank keys, the store manifest and the two exclusion lists; no model output is read",
+ "frame_list_file": "stage0_frames.tsv",
+ "frame_list_sha256": "1d353309a1d81a78cc04197ac39bd4e7ef467853ff59f5f7d3e97fde538eda45",
+ "frames": 2048,
+ "per_city": {
+  "LV": 512,
+  "BOS": 512,
+  "PIT": 512,
+  "SG": 512
+ },
+ "distinct_logs": 550,
+ "repro_frames": 256,
+ "excluded_logs": 48,
+ "bank_rows": 60000,
+ "store_sha256": "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a",
+ "inputs": {
+  "bank_keys": {
+   "path": "/workspace/data/refe_vdac/stage0/bank/bank_keys.tsv",
+   "sha256": "0aeb214bb84cc08efb919bb3ed3d17543d931d22015ea886dc8cb0ae283bcd29"
+  },
+  "h48_logs_sha256": "2ae13935a3ead7f30b015f33b0bebc7a35e70eb2a4194161f8cbb66ac89b8da8",
+  "sft_heldout_sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902",
+  "store_sha256": "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a"
+ },
+ "tool_sha256": "04a3d5f4dde23dd669167c18a6090cb16a37c3a680ee3351729b4fd8b51dc2b7",
+ "frozen_reader_sha256": "58aa3a77b976a6fb4b08b4bc5126d572e8be8ef1fc37926d9c9ce0983eed718e",
+ "repro256_sha256": "26cd3a1168d15cef041c81772bc64d9014b4177cc7e8a39a1d877924cd2770df",
+ "repro256_rule": "the 256 lowest sha256('<log>|<token>') keys of the SFT-24 logs among the rows of the banked head_pred_update10000.npz (keys only; values unread)"
+}

@@ -1,0 +1,31 @@
+#### postrain30k (194 args) vs postrain30k_freeze (194 args)
+  keys only in postrain30k (0): []
+  keys only in postrain30k_freeze (0): []
+  SHARED KEYS WITH DIFFERENT VALUES:
+    freeze_encoder               False  ->  True
+    out                          '/home/nvidia/v7tiny/postrain30k'  ->  '/home/nvidia/v7tiny/postrain30k_freeze'
+  -> 2 shared-key differences
+
+#### postrain30k (194 args) vs splitp30k (181 args)
+  keys only in postrain30k (13): ['freeze_readout', 'o11_k', 'o11_negs', 'o11_tau', 'o9_mask_frac', 'o9_momentum', 'o9_neighbour_k', 'psg_enc_only', 'psg_eval_every', 'psg_labels', 'w_o10_psg', 'w_o11_cf', 'w_o9_ema']
+  keys only in splitp30k (0): []
+  SHARED KEYS WITH DIFFERENT VALUES:
+    freeze_encoder               False  ->  True
+    o5_k                         8  ->  4
+    out                          '/home/nvidia/v7tiny/postrain30k'  ->  '/home/nvidia/v7tiny/splitp30k'
+  -> 3 shared-key differences
+
+#### postrain30k_freeze (194 args) vs splitp30k (181 args)
+  keys only in postrain30k_freeze (13): ['freeze_readout', 'o11_k', 'o11_negs', 'o11_tau', 'o9_mask_frac', 'o9_momentum', 'o9_neighbour_k', 'psg_enc_only', 'psg_eval_every', 'psg_labels', 'w_o10_psg', 'w_o11_cf', 'w_o9_ema']
+  keys only in splitp30k (0): []
+  SHARED KEYS WITH DIFFERENT VALUES:
+    o5_k                         8  ->  4
+    out                          '/home/nvidia/v7tiny/postrain30k_freeze'  ->  '/home/nvidia/v7tiny/splitp30k'
+  -> 2 shared-key differences
+
+METRICS postrain30k: top=['_evidence_class', '_read', 'history', 'stage']
+   history rows=150  last-row keys=['cuda_max_mem_gb', 'cuda_max_mem_note', 'gnorm', 'loss', 'lr', 'o5_form', 'o5_growth', 'o5_k', 'o5_loss', 'o5_mode', 'o5_step1', 'o5_stepK', 'o6_row_renorm', 'o6_rows', 'o6_sigreg', 'pred_batch', 'pred_health_note', 'pred_mean_frac', 'pred_mean_frac_excess', 'pred_rel_scale', 'stage', 'step', 'step_s', 'step_s_interval', 'step_s_interval_note', 'step_s_note', 'steps_this_process', 'terms']
+METRICS postrain30k_freeze: top=['_evidence_class', '_read', 'history', 'stage']
+   history rows=150  last-row keys=['cuda_max_mem_gb', 'cuda_max_mem_note', 'gnorm', 'loss', 'lr', 'o5_form', 'o5_growth', 'o5_k', 'o5_loss', 'o5_mode', 'o5_step1', 'o5_stepK', 'o6_row_renorm', 'o6_rows', 'o6_sigreg', 'pred_batch', 'pred_health_note', 'pred_mean_frac', 'pred_mean_frac_excess', 'pred_rel_scale', 'stage', 'step', 'step_s', 'step_s_interval', 'step_s_interval_note', 'step_s_note', 'steps_this_process', 'terms']
+METRICS splitp30k: top=['_evidence_class', '_read', 'history', 'stage']
+   history rows=150  last-row keys=['cuda_max_mem_gb', 'cuda_max_mem_note', 'gnorm', 'loss', 'lr', 'o5_form', 'o5_growth', 'o5_k', 'o5_loss', 'o5_mode', 'o5_step1', 'o5_stepK', 'o6_row_renorm', 'o6_rows', 'o6_sigreg', 'stage', 'step', 'step_s', 'step_s_interval', 'step_s_interval_note', 'step_s_note', 'steps_this_process', 'terms']

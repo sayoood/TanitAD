@@ -1,0 +1,51 @@
+--- F:/TanitAD-scratch/rollhist/read/rh_read.py.bk_ki	2026-11-23 10:00:32.625891400 +0100
++++ F:/TanitAD-scratch/rollhist/read/rh_read.py	2026-11-23 10:02:17.998770700 +0100
+@@ -301,7 +301,7 @@
+     res["P2_reference_UE_A"] = {"from": "our stage-A rollouts under the form of record, MEASURED; the card expects WORSE; beside, decides no name", "pairs": reference_pairs(refq3, refhw)}
+     name = ("PROVISIONAL " + base) if (one and base in NAMES) else base
+     res["outcome"], res["outcome_reason"] = name, why
+-    res["next_lever"] = (NEXT_P03 if C.A_KIND == "RHp3" else NEXT_K if C.A_KIND == "RHK" else NEXT_RL if C.A_KIND == "RL" else NEXT_RA if C.A_KIND == "RA" else NEXT_RK if C.A_KIND == "RK" else NEXT).get(base)
++    res["next_lever"] = (NEXT_P03 if C.A_KIND == "RHp3" else NEXT_K if C.A_KIND == "RHK" else NEXT_RL if C.A_KIND == "RL" else NEXT_RA if C.A_KIND == "RA" else NEXT_RK if C.A_KIND == "RK" else NEXT_KI if C.A_KIND == "KI" else NEXT).get(base)
+     res["treated_arm"] = C.A_KIND
+     return res
+ 
+@@ -646,6 +646,29 @@
+             + ("" if rh else " [the RH result file was not found]"))
+ 
+ 
++# KI (PREREG_V8F_KINPUT, sha256 05e786a8): the card's section 5 (KINPUT-REPAIRS / HARMS / PARTIAL / SEED-DISAGREE / BLOCKED) is the MM's table; this reader prints the facts it needs and the lever the card names for the closest
++# ROLLHIST outcome name.  MECH4 (KI - RH at T0) is mech_ki.py's.  A lever the card does not name is never decided here.
++NEXT_KI = dict(NEXT_K)
++NEXT_KI["ROLLHIST-REPAIRS"] = "KINPUT-REPAIRS if at both seeds (G-T0 holds, a family BETTER at both, none WORSE): the own base input carried the T0 cost; a deployable form under a new card (the prior fed a base consistent at train and test)"
++NEXT_KI["ROLLHIST-PARTIAL"] = "KINPUT-PARTIAL: read MECH4 (KI - RH at T0, mech_ki.py): MECH4-YES -> the dose of logged-base samples; MECH4-NO -> the third seed pair (B0_s2, RH_s2, KI_s2), each under a new card"
++NEXT_KI["ROLLHIST-NO-EFFECT"] = "KI moved nothing: check the lever-acts line (dagger_base = logged, base unchanged on every selected row) BEFORE reading it as a refutation; the MM pre-registers the next lever"
++NEXT_KI["ROLLHIST-HARMS"] = "KINPUT-HARMS: the own base is load-bearing for the own-action gains. MECH4-YES -> the dose of logged-base samples; MECH4-NO -> the third seed pair, under a new card"
++
++
++def ki_answer(res, rh):
++    """ONE line: does keeping the logged `base` in swapped samples hold G-T0 and keep P2 / P3?  KI's P2 / P3 and G-T0 against RH's (same bank, dose, label, own base), read only, beside.  MECH4 (KI - RH at T0) is mech_ki.py's."""
++    P = res.get("P") or {}
++    p2, p3 = (P.get("P2") or {}).get("pass"), (P.get("P3") or {}).get("pass")
++    g = P.get("G_T0") or {}
++    gword = "G-T0 HOLDS" if g.get("holds") else ("G-T0 FAILS at all seeds" if g.get("fails_at_all_seeds") else "G-T0 FAILS at one seed" if g.get("fails_at_exactly_one_seed") else f"G-T0 reads {g.get('per_seed')}")
++    rp = (rh or {}).get("P") or {}
++    r2, r3 = (rp.get("P2") or {}).get("pass"), (rp.get("P3") or {}).get("pass")
++    rg = ((rp.get("G_T0") or {}).get("per_seed"))
++    word = "keeps both P2 and P3" if (p2 and p3) else "keeps P2 but NOT P3" if p2 else "keeps P3 but NOT P2" if p3 else "keeps NEITHER P2 nor P3"
++    return (f"logged-base input {word} and {gword}: KI P2 {p2}, P3 {p3} (outcome {res.get('outcome')}); RH on the same bank with the own base (the PARTIAL read): P2 {r2}, P3 {r3}, G-T0 per seed {rg}"
++            + ("" if rh else " [the RH result file was not found]"))
++
++
+ def main():
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--selftest", action="store_true")
+@@ -696,6 +719,9 @@
+     if C.A_KIND == "RK":
+         res["rk_answer"] = rk_answer(res, J(a.rh_result))
+         print("RK:", res["rk_answer"])
++    if C.A_KIND == "KI":
++        res["ki_answer"] = ki_answer(res, J(a.rh_result))
++        print("KI:", res["ki_answer"])
+     os.makedirs(os.path.dirname(a.out), exist_ok=True)
+     json.dump(res, open(a.out, "w", encoding="utf-8"), indent=1)
+     print("OUTCOME:", res["outcome"], "|", res["outcome_reason"])

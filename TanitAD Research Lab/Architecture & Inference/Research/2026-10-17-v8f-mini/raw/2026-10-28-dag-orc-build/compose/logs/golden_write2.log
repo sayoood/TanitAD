@@ -1,0 +1,91 @@
+sFF                                                                      [100%]
+================================== FAILURES ===================================
+______________ test_glive_a_flag_off_gate_runs_no_composed_probe ______________
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001ABE1634EC0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/compose_tmp/bt3/test_glive_a_flag_off_gate_run0')
+
+    def test_glive_a_flag_off_gate_runs_no_composed_probe(pack, tmp_path):
+        assert TR.main(_run(tmp_path / "g", ["--steps", "2", *DAG(pack, 0.3, 3), "--selfcheck-only"])) == 0
+        sc = _selfcheck(tmp_path / "g")
+>       assert sc["ego_dagger_compose_probe"]["ego_dagger_compose"] == "off" and sc["ego_dagger_compose_probe"]["pass"] is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'ego_dagger_compose_probe'
+
+stack\tests\test_v8f_ego_dagger_compose.py:223: KeyError
+---------------------------- Captured stdout call -----------------------------
+SELFCHECK PASS {"steps_total": 2, "info": {"batch": 16, "md5_overridden": false, "n_clips": 6, "n_clips_expected": 6, "n_clips_all": 6, "n_excluded": 0, "n_excluded_declared": 0, "excluded_in_train": 0, "excluded_sha256": null, "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62", "lru": 203, "kin_mode": "yaw", "n_windows_all_clips": 342, "n_windows": 342, "window_start": 3, "window_t_min": 3, "train_window_list_sha256": "d4e5c5e9f47e417f668d6a39d33807fcfbafc34dfeee809141467ab2d2de0a5e", "p10_units": null, "ds_window_start": 3, "init_ckpt": {"path": "F:\\TanitAD-scratch\\compose_tmp\\bt3\\dagt0\\init_tame.pt", "sha256": "87930e5753547939e5f7a603a3d98b50e0c3a17637a1656392e1760314a0228f", "applied": true, "skipped": null, "n_tensors": 276, "n_mismatch_after_load": 0, "source_step": 2, "source_arm": "M2b", "source_seed": 5, "source_argv_sha": "38c84d59edbac82d"}, "dagger": {"bank_path": "F:\\TanitAD-scratch\\compose_tmp\\bt3\\dagt0\\bank\\bank.json", "bank_sha256": "0fbc748695a2106900acfcf81a9e42c665c76745aaf6d031e33f9eee07ea42cf", "n_records": 684, "reason_counts": {"ok": 383, "off_lat": 71, "off_head": 113, "end_edge": 117, "nonfinite": 0}, "coverage": {"n_windows": 342, "n_eligible": 221, "fraction": 0.6461988304093568, "min": 0.5, "blocked": false}, "kb2": {"ckpt_sha256": "87930e5753547939e5f7a603a3d98b50e0c3a17637a1656392e1760314a0228f", "init_ckpt_sha256": "87930e5753547939e5f7a603a3d98b50e0c3a17637a1656392e1760314a0228f"}, "kb3": {"n_bank_clips": 6, "n_train_clips": 6, "n_eval_clips": 2, "overlap_with_eval": 0, "window_list_sha256": "d4e5c5e9f47e417f668d6a39d33807fcfbafc34dfeee809141467ab2d2de0a5e", "eval_sources": {"grid": 2, "bank_header": 2, "cache_eval_manifest": 2}, "n_eval_clips_checked": 2}}}}
+_ test_the_log_interval_overlap_counts_add_up_and_a_flag_off_log_has_no_overlap_key _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000001ABE1634EC0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/compose_tmp/bt3/test_the_log_interval_overlap_0')
+
+    def test_the_log_interval_overlap_counts_add_up_and_a_flag_off_log_has_no_overlap_key(pack, tmp_path):
+        common = list(COMMON)
+        common[common.index("--log-every") + 1] = "3"
+>       assert TR.main(_run(tmp_path / "r", ["--steps", "7", *COMPOSED(pack, 0.5, 0.5)], common)) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_ego_dagger_compose.py:411: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\scripts\v8f_mini_train.py:1440: in main
+    a = build_parser().parse_args(argv)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1902: in parse_args
+    self.error(msg)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='v8F-mini training (track M): S -> T -> O on the cached fro...-testable, 8 GB GPU-sized.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --ego-perturb-with-dagger\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h]
+                   [--arm {M1,M1-navonly,M1-navshuf,M1-nocons,M2a,M2b,M2b-cz}]
+                   [--navonly] [--no-consistency] [--wm {off,a,b}]
+                   [--cons-absent {mask,zero}] [--code-mix {whole,kind}]
+                   [--o-interface {full,cut}] [--w-acc W_ACC]
+                   [--ego-perturb-p EGO_PERTURB_P]
+                   [--ego-perturb-vscale LO HI]
+                   [--ego-perturb-vmax EGO_PERTURB_VMAX]
+                   [--ego-perturb-adrop EGO_PERTURB_ADROP]
+                   [--ego-perturb-yawrate-std EGO_PERTURB_YAWRATE_STD]
+                   [--ego-perturb-seed EGO_PERTURB_SEED] [--dagger-p DAGGER_P]
+                   [--dagger-bank DAGGER_BANK]
+                   [--dagger-bank-sha256 DAGGER_BANK_SHA256]
+                   [--dagger-seed DAGGER_SEED] [--init-ckpt INIT_CKPT]
+                   [--cache-dir CACHE_DIR] --out OUT [--v9-train V9_TRAIN]
+                   [--v9-train-md5 V9_TRAIN_MD5] [--speed-train SPEED_TRAIN]
+                   [--lead-train LEAD_TRAIN] [--join-train JOIN_TRAIN]
+                   [--fit-join] [--p10 P10] [--kin-mode {steer,yaw}]
+                   [--tracks TRACKS] [--grid {pool4x10,pool8x20}]
+                   [--data-frac DATA_FRAC] [--max-clips MAX_CLIPS]
+                   [--exclude EXCLUDE] [--steps-mult STEPS_MULT]
+                   [--steps STEPS] [--batch BATCH] [--seed SEED] [--lr LR]
+                   [--wd WD] [--warmup WARMUP] [--clip-grad CLIP_GRAD]
+                   [--device DEVICE] [--amp] [--lru LRU] [--workers WORKERS]
+                   [--threads THREADS] [--ckpt-every CKPT_EVERY]
+                   [--log-every LOG_EVERY] [--resume] [--no-resume]
+                   [--hist HIST] [--window-start WINDOW_START] [--hmax HMAX]
+                   [--d D] [--n-q N_Q] [--nb NB] [--p-gt-start P_GT_START]
+                   [--p-gt-end P_GT_END] [--w-ckpt W_CKPT] [--w-tac W_TAC]
+                   [--w-cons W_CONS] [--w-traj W_TRAJ] [--w-pen W_PEN]
+                   [--w-pen-self W_PEN_SELF] [--w-wm W_WM] [--detach-upper]
+                   [--synthetic] [--selfcheck-only] [--encoder {cache,lora}]
+                   [--lora-r LORA_R] [--lora-alpha LORA_ALPHA]
+                   [--lora-targets LORA_TARGETS] [--lora-lr LORA_LR]
+                   [--frames-root FRAMES_ROOT] [--accum ACCUM] [--enc-ckpt]
+__main__.py: error: unrecognized arguments: --ego-perturb-with-dagger
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_flag_off_gate_runs_no_composed_probe
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_log_interval_overlap_counts_add_up_and_a_flag_off_log_has_no_overlap_key
+2 failed, 1 skipped, 23 deselected in 65.73s (0:01:05)

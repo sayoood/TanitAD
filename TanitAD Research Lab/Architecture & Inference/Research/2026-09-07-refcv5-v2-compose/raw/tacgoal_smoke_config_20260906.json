@@ -1,0 +1,443 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "base",
+  "--v2-cache",
+  "/root/data/train",
+  "--v7-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "--eval-cache",
+  "/root/data/eval",
+  "--eval-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz",
+  "--eval-every",
+  "100000",
+  "--eval-batches",
+  "1",
+  "--image-hw",
+  "256",
+  "640",
+  "--steps",
+  "4",
+  "--batch",
+  "4",
+  "--workers",
+  "2",
+  "--prefetch-factor",
+  "1",
+  "--v2-lru",
+  "8",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--log-every",
+  "1",
+  "--save-every",
+  "2",
+  "--u8-batches",
+  "--out",
+  "/workspace/experiments/refcv5-v2-tacgoal-smoke",
+  "--nav-from-v7",
+  "--ego-state-inject",
+  "--ego-dropout",
+  "0.5",
+  "--anchors",
+  "/workspace/experiments/refcv5-v2-tacgoal-smoke/anchors.pt",
+  "--n-anchors",
+  "117",
+  "--anchor-v0-conditioned",
+  "--anchor-control-units",
+  "alat",
+  "--sel-accel-max",
+  "2.0",
+  "--sampler",
+  "ddim",
+  "--w-u0",
+  "0.5",
+  "--sel-refined",
+  "--sel-score-emitted",
+  "--goal-str",
+  "--tac-goal-tok-head",
+  "--agents",
+  "off"
+ ],
+ "effective_weights": {
+  "_what": "argparse default -> later layers -> effective weight, and whether the term therefore builds an autograd graph at all",
+  "_why": "V6LossWeights.for_stage(stage) rewrites the argparse defaults per stage; the effective weight is not the default. MEASURED: 42/138 optimizer tensors took no gradient (5,305,667 params = 52.2 % of a declared trainable budget) because zero-weighted terms are guarded out of the loss.",
+  "_discriminator": "p.grad is None -- never the weight's value",
+  "where": "this arm",
+  "explicit_source": "argv",
+  "acknowledged_discarded": false,
+  "n_terms": 5,
+  "n_builds_graph": 1,
+  "terms": [
+   {
+    "term": "u0 control-space x0 loss (WP-4)",
+    "flag": "--w-u0",
+    "declared": 0.0,
+    "requested": 0.5,
+    "effective": 0.5,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "GT-supervised detection set loss (WP-6)",
+    "flag": "--w-agent",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-agent needs `--agents head` AND `--agent-join` (no seam => no `agent_slots` in `out`; no join => no labels)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "agent projection consistency",
+    "flag": "--agent-w-project",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "agent ground-plane prior",
+    "flag": "--agent-w-ground",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "E15 geometric goal point (GP-2)",
+    "flag": "--goal-point-w",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "no --goal-point-inject: the head that predicts the point is never built",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   }
+  ],
+  "_evidence_class": "MEASURED (ours; this run's own configuration)"
+ },
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 106067312,
+  "phi_tac": 1757440,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1145,
+  "ego_inject": 25536,
+  "nav_inject": 50176,
+  "tac_goal_tok_head": 11286,
+  "total": 108257502
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx)",
+   "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep) \u2014 MEASURED at the last OBSERVED frame (E11')"
+  ],
+  "required_live_edges": [
+   "ego_state -> {z_tac, g_str, g_tac}",
+   "frames -> every goal"
+  ],
+  "refused_edges": [
+   "lan -> inference (E12; label-only)",
+   "situation classifier output -> any goal node (PI 2026-08-03, UNCHANGED)",
+   "future_poses/future_actions -> any goal node (E11'; the PI's 'not the future one', pinned interventionally)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)",
+  "_reads": "`required_live_edges` is not decoration: an arm where the SCENE edge does not fire is ECHOING, and an arm where the EGO edge does not fire is v3 wearing a v4 config. Both are failures and both are measured."
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "anchors": {
+  "path": "/workspace/experiments/refcv5-v2-tacgoal-smoke/anchors.pt",
+  "shape": [
+   117,
+   8,
+   2
+  ],
+  "sha256_installed": "51f930dc6f3564ff8f21c9070ca97b805d4e82908e42d0ef1f99be9f5a3a66df",
+  "source": "file",
+  "controls_shape": [
+   117,
+   2
+  ],
+  "controls_sha256_installed": "b072f4c052331beb79bef117c7b233f702802b517429cc9157a841294e089664",
+  "v0_conditioned": true,
+  "control_units": "alat",
+  "straight_ahead_control_present": true,
+  "control_units_source": "file+cli",
+  "artifact_schema": "tanitad.anchor_artifact/1",
+  "artifact_declared": {
+   "control_units": "alat",
+   "horizon_s": 6.0,
+   "dt": 0.1,
+   "ref_speed_ms": 10.0,
+   "kappa_cap": 0.12,
+   "alat_v_floor": 4.0
+  },
+  "artifact_provenance": {
+   "builder": "emit_anchors_alat.py",
+   "builder_path": "/workspace/TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-refcv4b-vocabulary/scripts/emit_anchors_alat.py",
+   "builder_sha256": null,
+   "argv": [],
+   "created_utc": "2026-09-06T10:26:25+00:00",
+   "torch_version": "2.8.0+cu128",
+   "schema": "tanitad.anchor_artifact/1"
+  },
+  "file_sha256": "4e0f0233dddb0b9f22fda7ae83d913a77a599345ad283eb579e3ae345e04f22e"
+ },
+ "seams": {
+  "hier": true,
+  "hierarchy": true,
+  "no_strategic": false,
+  "goal_str_loss_applied": true,
+  "graft_maneuver": true,
+  "factored_maneuver": true,
+  "graft_prior_center": true,
+  "graft_target_latent": true,
+  "grounded_selector": false,
+  "graft_imagination": false,
+  "tactical_speed_input": false,
+  "lan_enable": true,
+  "graft_lan": false,
+  "goal_str": true,
+  "withheld_bank": "fixed",
+  "withheld_bank_warmup": 0,
+  "withheld_speed_max_ms": 35.0,
+  "agents": null,
+  "cross_agent": false,
+  "sampler": "ddim",
+  "sampler_space": "control",
+  "sampler_infer_t": 8,
+  "sampler_steps": 2,
+  "sampler_groups": 1,
+  "control_norm": [
+   4.0,
+   3.0
+  ],
+  "feasible_decode": false,
+  "feasible_mu": 0.7,
+  "feasible_entry": false,
+  "feasible_a_max": 4.0,
+  "feasible_kappa_max": 0.2,
+  "feasible_prefix_slots": 4,
+  "w_agent": 0.0,
+  "w_u0": 0.5,
+  "goal_point": null,
+  "tac_goal_tok_head": {
+   "requested": true,
+   "cfg": true,
+   "tac_vocab_version": "v7.0",
+   "built": true
+  },
+  "agent_rig_camera": {
+   "source": "off",
+   "reason": "not requested",
+   "mount_pose_scope": "NONE",
+   "n_clips": 0,
+   "w_project": 0.0,
+   "w_ground": 0.0
+  },
+  "agent_knobs": {
+   "agent_cam_height": 1.5,
+   "agent_join": null,
+   "agent_join_allow_legacy_ids": false,
+   "agent_join_no_rates": false,
+   "agent_join_verify": "auto",
+   "agent_miss_rate": 0.0,
+   "agent_pad": 0,
+   "agent_presence_hard": false,
+   "agent_queries": 100,
+   "agent_rig_camera": "off",
+   "agent_rig_extrinsics": null,
+   "agent_rig_extrinsics_allow_partial": false,
+   "agent_sigma_range": 0.0,
+   "agent_w_ground": 0.0,
+   "agent_w_project": 0.0,
+   "agents": "off",
+   "w_agent": 0.0,
+   "w_u0": 0.5
+  },
+  "agent_ground_prior_probe": {
+   "checked": false,
+   "reason": "w_ground == 0 or no camera"
+  }
+ },
+ "withheld_bank": {
+  "mode": "fixed",
+  "warmup_steps": 0,
+  "speed_max_ms": 35.0,
+  "random_pool": null
+ },
+ "selection": {
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.0,
+  "sel_refined": true,
+  "sel_score_emitted": true,
+  "sel_score_emitted_t": 0,
+  "sel_score_emitted_t_source": "auto-zero-on-ddim",
+  "sampler_ranks_the_fan": true,
+  "p14_note": "sampler_ranks_the_fan is False unless BOTH sel_refined and sel_score_emitted are set. False means the emitted fan was ranked by a score computed before any sample was drawn. MEASURED ceiling on the banked fan (n=881/40 ep, paired episode-cluster bootstrap): base 0.4728 -> 0.1914 m ADE (+0.2813, CI [+0.2127,+0.3543]), a >2x-better trajectory in the fan on 41.09 % of windows; xl +0.3075 m, 45.40 %.",
+  "horizon_s": 6.0,
+  "band_ms": 12.0,
+  "note": "horizon_s is DERIVED from max(horizons); the 72.08 % / 77.28 % kill statistics quoted elsewhere are 2 s numbers and do NOT hold here (re-derived 2026-09-04)."
+ },
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "ego": {
+  "ego_state_inject": true,
+  "echo_base": false,
+  "ego_valid_channel": true,
+  "ego_dropout": 0.5,
+  "tactical_speed_input": false,
+  "channels": [
+   "v0",
+   "a_long",
+   "yaw_rate",
+   "curvature",
+   "keep"
+  ],
+  "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+  "wheelbase_mode": "const2p9"
+ },
+ "size": "base",
+ "rig_rung": false,
+ "ablate_frames": false,
+ "image_hw": [
+  256,
+  640
+ ],
+ "tac_vocab_version": "v7.0",
+ "v2_cache": [
+  "/root/data/train"
+ ],
+ "require_parity": false,
+ "v2_parity": {
+  "parity": false,
+  "cache_dirs": [
+   "/root/data/train"
+  ],
+  "corpus_key": null,
+  "label": "v3 v2-cache",
+  "uid_kind": "v2ep_clipid",
+  "checked": false,
+  "clips_present": 4572
+ },
+ "u8_batches": true,
+ "frame_batch_bytes_est": 165150720,
+ "nav_from_v7": true,
+ "nav_cmd_derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+ "nav_from_v7_stats": {
+  "train": {
+   "n_clips": 4572,
+   "follow": 2897,
+   "left": 811,
+   "right": 864,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "allow_oracle_nav": true
+  },
+  "eval": {
+   "n_clips": 141,
+   "follow": 90,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "aa12c948f062181c3297265b51526ec5",
+   "allow_oracle_nav": true
+  }
+ },
+ "nav_args": false,
+ "nav_args_stats": null,
+ "v7_labels": {
+  "path": "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "md5": "0ff902130ce76886b8a925eceed9e3a5",
+  "n_records": 4572,
+  "schema_version": "s2-geom-v7",
+  "vocab": "v7",
+  "allow_oracle_nav": true,
+  "divergences": [],
+  "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+ },
+ "agent_join": null,
+ "agent_join_digest": null,
+ "agent_join_stats": null
+}

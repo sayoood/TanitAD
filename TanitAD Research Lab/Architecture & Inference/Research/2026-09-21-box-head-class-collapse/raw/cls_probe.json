@@ -1,0 +1,116 @@
+{
+ "_what": "is the class signal IN the per-slot features and unused, or absent?",
+ "_evidence_class": "MEASURED (ours), CPU, forward hook, A8 ckpt_5000",
+ "_function_class": "LINEAR (ridge, one-vs-rest argmax). A failure bounds LINEAR separability only; a success is conclusive.",
+ "_hooked": "_perception.box_dec.head",
+ "arms": {
+  "UNBALANCED_shares_the_head_defect": {
+   "lambda": 100.0,
+   "balanced_accuracy": 0.11111,
+   "raw_accuracy": 0.76526,
+   "distinct_classes_predicted": 1,
+   "per_class_recall": {
+    "automobile": 1.0,
+    "heavy_truck": 0.0,
+    "bus": 0.0,
+    "trailer": 0.0,
+    "person": 0.0,
+    "rider": 0.0,
+    "stroller": 0.0,
+    "animal": 0.0,
+    "protruding_object": 0.0
+   }
+  },
+  "BALANCED_inverse_frequency": {
+   "lambda": 10.0,
+   "balanced_accuracy": 0.07087,
+   "raw_accuracy": 0.05366,
+   "distinct_classes_predicted": 9,
+   "per_class_recall": {
+    "automobile": 0.028,
+    "heavy_truck": 0.1579,
+    "bus": 0.0,
+    "trailer": 0.0833,
+    "person": 0.123,
+    "rider": 0.2456,
+    "stroller": 0.0,
+    "animal": 0.0,
+    "protruding_object": 0.0
+   }
+  }
+ },
+ "n_pairs": 2731,
+ "d": 41,
+ "n_episodes": 48,
+ "n_scored": 1491,
+ "n_classes_present_in_scored": 9,
+ "lambda_chosen_on_FIT_only": 10.0,
+ "balanced_accuracy": {
+  "PROBE_on_head_features": 0.07087,
+  "MAJORITY_constant_control": 0.11111,
+  "_control_is_a_known_value": "1/9 exactly, for any constant predictor",
+  "gain": -0.04024
+ },
+ "raw_accuracy_reported_but_not_the_statistic": {
+  "PROBE": 0.05366,
+  "MAJORITY_constant": 0.76526,
+  "THE_HEAD_ITSELF": 0.77935
+ },
+ "per_class": {
+  "automobile": {
+   "support_scored": 1141,
+   "support_fit": 958,
+   "probe_recall": 0.028
+  },
+  "heavy_truck": {
+   "support_scored": 19,
+   "support_fit": 43,
+   "probe_recall": 0.1579
+  },
+  "bus": {
+   "support_scored": 3,
+   "support_fit": 1,
+   "probe_recall": 0.0
+  },
+  "trailer": {
+   "support_scored": 12,
+   "support_fit": 41,
+   "probe_recall": 0.0833
+  },
+  "person": {
+   "support_scored": 244,
+   "support_fit": 127,
+   "probe_recall": 0.123
+  },
+  "rider": {
+   "support_scored": 57,
+   "support_fit": 36,
+   "probe_recall": 0.2456
+  },
+  "stroller": {
+   "support_scored": 2,
+   "support_fit": 2,
+   "probe_recall": 0.0
+  },
+  "animal": {
+   "support_scored": 4,
+   "support_fit": 0,
+   "probe_recall": 0.0
+  },
+  "protruding_object": {
+   "support_scored": 9,
+   "support_fit": 10,
+   "probe_recall": 0.0
+  }
+ },
+ "classes_with_no_fit_support": [
+  "animal"
+ ],
+ "power": {
+  "n_fit": 1240,
+  "d_after_pca": 41,
+  "rule": "n_fit >= 5*d required to read a NEGATIVE as evidence",
+  "underpowered": false
+ },
+ "_VERDICT": "⚠️ NOT A LOSS DEFECT BY THIS TEST — a linear probe on the head's own features barely beats a constant predictor, so the features may not linearly separate the classes and a re-weighting alone would not fix it. ⛔ LINEAR only: this does not prove the signal is absent, and a nonlinear probe is the next arm."
+}

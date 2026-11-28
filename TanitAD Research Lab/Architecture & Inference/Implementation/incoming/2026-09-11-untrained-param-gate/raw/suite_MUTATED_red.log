@@ -1,0 +1,284 @@
+FF.FFFFFFF.F.......FF                                                    [100%]
+================================== FAILURES ===================================
+________________ test_gate_NAMES_the_known_untrained_parameter ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_gate_NAMES_the_known_untr0')
+
+    def test_gate_NAMES_the_known_untrained_parameter(tmp_path):
+        """⛔ The core claim. A head that never entered the loss must be named, with its count.
+    
+        ⚠️ The same-breath control is inside this test: ``n_with_state`` must read **4** (non-zero).
+        A gate that read nothing would report 0 untrained AND 0 with state, and the pair
+        distinguishes the two.
+        """
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+        rc, r = _run(g, ck, tmp_path / "v.json", "--param-total-ref", 112)
+    
+>       assert r["status"] == "FAIL"                                   # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'PASS' == 'FAIL'
+E         
+E         - FAIL
+E         + PASS
+
+tests\test_check_untrained_params.py:224: AssertionError
+_____ test_the_artifacts_own_total_matches_the_rows_it_actually_contains ______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_the_artifacts_own_total_m0')
+
+    def test_the_artifacts_own_total_matches_the_rows_it_actually_contains(tmp_path):
+        """⚠️ A tally line that disagrees with its own rows is how a truncated artifact reads as
+        finished. MEASURED in this programme: a pytest run reported 24 rows under a tally of 41."""
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+        _, r = _run(g, ck, tmp_path / "v.json", "--param-total-ref", 112)
+        rows = r["untrained"]["params"]
+        assert len(rows) == r["untrained"]["count_params"]
+        assert sum(p["numel"] for p in rows) == r["untrained"]["count_numel"]
+>       assert r["untrained"]["count_numel"] == 45                     # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 == 45
+
+tests\test_check_untrained_params.py:248: AssertionError
+_______ test_REGRESSION_ARM_removing_the_state_set_difference_goes_RED ________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_REGRESSION_ARM_removing_t0')
+
+    def test_REGRESSION_ARM_removing_the_state_set_difference_goes_RED(tmp_path):
+        """⛔ THE MUTATION THE BRIEF ASKS FOR. ``id_shapes[k] is not None`` IS the set difference
+        between registered ids and ids with optimizer state — the whole analytic method. Remove it
+        and the gate can no longer tell trained from untrained.
+    
+        The mutant is run against the SAME fixture that the real gate just failed on. It must now
+        report a clean PASS with zero untrained — i.e. exactly the silent pass that shipped
+        ``tac_goal_tok_head``. This test is GREEN only because the mutant is BLIND.
+        """
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+    
+        # the real gate sees it
+        _, real = _run(g, ck, tmp_path / "real.json", "--param-total-ref", 112)
+>       assert real["untrained"]["count_numel"] == 45                  # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 == 45
+
+tests\test_check_untrained_params.py:300: AssertionError
+_________ test_REGRESSION_ARM_an_allow_everything_allowlist_goes_RED __________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_REGRESSION_ARM_an_allow_e0')
+
+    def test_REGRESSION_ARM_an_allow_everything_allowlist_goes_RED(tmp_path):
+        """⛔ The allow-list is what keeps the gate switched ON, so its discrimination is mutated
+        too. A gate that allows everything cannot tell DELIBERATELY FROZEN from ACCIDENTALLY
+        UNREACHED, which is the failure mode that gets a gate deleted within a week."""
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+        _, real = _run(g, ck, tmp_path / "real.json", "--param-total-ref", 112)
+>       assert real["unexpected_untrained"]["count_params"] == 2       # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 == 2
+
+tests\test_check_untrained_params.py:325: AssertionError
+_________ test_REGRESSION_ARM_blinding_the_exactly_zero_flag_goes_RED _________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_REGRESSION_ARM_blinding_t0')
+
+    def test_REGRESSION_ARM_blinding_the_exactly_zero_flag_goes_RED(tmp_path):
+        """⛔ ``scorer.goal_point`` is zero-init PLUS zero-gradient, so it emits the constant
+        origin — an identity, not a noisy measurement. Blinding that flag must be detectable."""
+        g = _gate()
+        ck = _bake(_TwoOrphans(), tmp_path)
+        _, real = _run(g, ck, tmp_path / "real.json", "--param-total-ref", 130)
+>       assert sum(1 for p in real["untrained"]["params"] if p["exactly_zero"]) == 2   # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 == 2
+E        +  where 0 = sum(<generator object test_REGRESSION_ARM_blinding_the_exactly_zero_flag_goes_RED.<locals>.<genexpr> at 0x000001D25913B370>)
+
+tests\test_check_untrained_params.py:343: AssertionError
+__________ test_zero_init_AND_zero_gradient_is_flagged_exactly_zero ___________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_zero_init_AND_zero_gradie0')
+
+    def test_zero_init_AND_zero_gradient_is_flagged_exactly_zero(tmp_path):
+        """⭐ ``orphan_zero`` is the ``scorer.goal_point`` shape: zero-init and never reached, so
+        its values are STILL exactly zero — an analytic target, not an estimate.
+    
+        ⚠️ The same-breath discriminator is ``orphan_rand`` IN THE SAME CHECKPOINT: equally
+        untrained, default-initialised, and therefore NOT exactly zero. Without it, an
+        ``exactly_zero`` that was stuck at True would look like a finding.
+        """
+        g = _gate()
+        ck = _bake(_TwoOrphans(), tmp_path)
+        _, r = _run(g, ck, tmp_path / "v.json", "--param-total-ref", 130)
+    
+        by = {p["name"]: p for p in r["untrained"]["params"]}
+>       assert sorted(by) == ["orphan_rand.bias", "orphan_rand.weight",
+                              "orphan_zero.bias", "orphan_zero.weight"]        # literal
+E       AssertionError: assert [] == ['orphan_rand..._zero.weight']
+E         
+E         Right contains 4 more items, first extra item: 'orphan_rand.bias'
+E         Use -v to get more diff
+
+tests\test_check_untrained_params.py:368: AssertionError
+________ test_an_allow_listed_frozen_head_PASSES_and_is_still_reported ________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_an_allow_listed_frozen_he0')
+
+    def test_an_allow_listed_frozen_head_PASSES_and_is_still_reported(tmp_path):
+        """⭐ Deliberately frozen is not a silent pass: the parameter is still named in the JSON,
+        with the allow-list entry that covered it. A gate that hides what it allowed is a gate
+        nobody can audit."""
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+        rc, r = _run(g, ck, tmp_path / "v.json", "--param-total-ref", 112,
+                     "--expect-frozen", "orphan_head")
+    
+        assert r["status"] == "PASS"
+        assert rc == 0
+        assert r["unexpected_untrained"]["count_params"] == 0                  # literal
+        # still reported, not hidden -- and the NON-zero control for the line above
+>       assert r["untrained"]["count_params"] == 2                             # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 0 == 2
+
+tests\test_check_untrained_params.py:398: AssertionError
+______ test_an_allow_list_that_misses_one_head_still_FAILS_on_that_head _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_an_allow_list_that_misses0')
+
+    def test_an_allow_list_that_misses_one_head_still_FAILS_on_that_head(tmp_path):
+        """⛔ Partial coverage must not buy a pass. This is the refcv5-v2 shape: two heads known
+        and allow-listed, a third nobody had looked at."""
+        g = _gate()
+        ck = _bake(_TwoOrphans(), tmp_path)
+        rc, r = _run(g, ck, tmp_path / "v.json", "--param-total-ref", 130,
+                     "--expect-frozen", "orphan_rand")
+    
+>       assert r["status"] == "FAIL"
+E       AssertionError: assert 'PASS' == 'FAIL'
+E         
+E         - FAIL
+E         + PASS
+
+tests\test_check_untrained_params.py:412: AssertionError
+______ test_a_STALE_allow_list_entry_is_reported_and_fails_under_strict _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_a_STALE_allow_list_entry_0')
+
+    def test_a_STALE_allow_list_entry_is_reported_and_fails_under_strict(tmp_path):
+        """⚠️ An allow-list nobody prunes is how a gate rots into a rubber stamp. An entry that
+        matches nothing untrained is reported always, and fails under ``--strict-allowlist``."""
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+    
+        _, lax = _run(g, ck, tmp_path / "lax.json", "--param-total-ref", 112,
+                      "--expect-frozen", "orphan_head", "--expect-frozen", "head")
+        assert lax["status"] == "PASS"
+>       assert lax["allowlist"]["unmatched"] == ["head"]                       # literal
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ['orphan_head', 'head'] == ['head']
+E         
+E         At index 0 diff: 'orphan_head' != 'head'
+E         Left contains one more item: 'head'
+E         Use -v to get more diff
+
+tests\test_check_untrained_params.py:428: AssertionError
+____________ test_ambiguous_alignment_REFUSES_rather_than_guessing ____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_ambiguous_alignment_REFUS0')
+
+    def test_ambiguous_alignment_REFUSES_rather_than_guessing(tmp_path):
+        """⛔ The id->name mapping is the ONE inferential step in the gate. With the buffer filter
+        removed, BatchNorm's ``running_mean``/``running_var`` collide in shape with real
+        parameters and the order-preserving embedding is no longer forced.
+    
+        The leftmost and rightmost embeddings then disagree, and the gate must say so. ⭐ An
+        element's position is forced exactly when leftmost == rightmost, because every feasible
+        embedding places it at >= leftmost and <= rightmost — so a disagreement is a PROOF of
+        ambiguity, not a heuristic.
+    
+        ⚠️ Paired with the filtered run on the SAME checkpoint, which must be forced and name the
+        orphan. Without that control, an always-INCONCLUSIVE gate would pass this test.
+        """
+        g = _gate()
+        ck = _bake(_WithBuffers(), tmp_path)
+    
+        # control: with the declared buffer filter the alignment IS forced
+        _, ok = _run(g, ck, tmp_path / "ok.json", "--param-total-ref", 128)
+        assert ok["alignment"]["forced"] is True
+        assert ok["alignment"]["n_ambiguous"] == 0                             # literal
+>       assert sorted(p["name"] for p in ok["untrained"]["params"]) == [
+            "orphan.bias", "orphan.weight"]                                    # literal
+E       AssertionError: assert [] == ['orphan.bias...rphan.weight']
+E         
+E         Right contains 2 more items, first extra item: 'orphan.bias'
+E         Use -v to get more diff
+
+tests\test_check_untrained_params.py:481: AssertionError
+_____ test_a_missing_parameter_total_reference_must_be_WAIVED_explicitly ______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_a_missing_parameter_total0')
+
+    def test_a_missing_parameter_total_reference_must_be_WAIVED_explicitly(tmp_path):
+        """⛔ Cross-check 2 cannot silently not-happen. With no ``config.json`` beside the
+        checkpoint and no reference passed, the gate is INCONCLUSIVE until an operator says, in
+        the argv and therefore in the record, that the check is waived."""
+        g = _gate()
+        ck = _bake(_OneOrphan(), tmp_path)
+    
+        rc, silent = _run(g, ck, tmp_path / "a.json")
+        assert silent["status"] == "INCONCLUSIVE"
+        assert rc == 2
+    
+        rc, waived = _run(g, ck, tmp_path / "b.json", "--no-param-total-ref")
+>       assert waived["status"] == "FAIL"          # it can now report the real finding
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'PASS' == 'FAIL'
+E         
+E         - FAIL
+E         + PASS
+
+tests\test_check_untrained_params.py:603: AssertionError
+______________________ test_reproduces_refcv5v2_exactly _______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2002/test_reproduces_refcv5v2_exact0')
+
+    @pytest.mark.slow
+    def test_reproduces_refcv5v2_exactly(tmp_path):
+        """⛔ THE PROOF ON THE REAL ARTIFACT. refcv5-v2 (md5 9405ec73b2d797c4cebd44f82dbce54b)
+        carries THREE untrained heads totalling 18,472 parameters. Every number here is a literal
+        transcribed from the independent finding at
+        ``TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
+        2026-09-10-refcv5v2-zerograd-heads/FINDING.md`` — none is derived from this gate.
+    
+        ⚠️ 1.3 GB, loaded on CPU. Marked slow; skipped when the artifact is not on this box.
+        """
+        ck = _refcv5v2_path()
+        if ck is None:
+            pytest.skip("refcv5-v2 checkpoint not on this box")
+    
+        g = _gate()
+        rc, r = _run(g, ck, tmp_path / "v.json")           # config.json is found beside the ckpt
+    
+>       assert r["status"] == "FAIL"
+E       AssertionError: assert 'PASS' == 'FAIL'
+E         
+E         - FAIL
+E         + PASS
+
+tests\test_check_untrained_params.py:639: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_check_untrained_params.py::test_gate_NAMES_the_known_untrained_parameter
+FAILED tests/test_check_untrained_params.py::test_the_artifacts_own_total_matches_the_rows_it_actually_contains
+FAILED tests/test_check_untrained_params.py::test_REGRESSION_ARM_removing_the_state_set_difference_goes_RED
+FAILED tests/test_check_untrained_params.py::test_REGRESSION_ARM_an_allow_everything_allowlist_goes_RED
+FAILED tests/test_check_untrained_params.py::test_REGRESSION_ARM_blinding_the_exactly_zero_flag_goes_RED
+FAILED tests/test_check_untrained_params.py::test_zero_init_AND_zero_gradient_is_flagged_exactly_zero
+FAILED tests/test_check_untrained_params.py::test_an_allow_listed_frozen_head_PASSES_and_is_still_reported
+FAILED tests/test_check_untrained_params.py::test_an_allow_list_that_misses_one_head_still_FAILS_on_that_head
+FAILED tests/test_check_untrained_params.py::test_a_STALE_allow_list_entry_is_reported_and_fails_under_strict
+FAILED tests/test_check_untrained_params.py::test_ambiguous_alignment_REFUSES_rather_than_guessing
+FAILED tests/test_check_untrained_params.py::test_a_missing_parameter_total_reference_must_be_WAIVED_explicitly
+FAILED tests/test_check_untrained_params.py::test_reproduces_refcv5v2_exactly
+12 failed, 9 passed in 2.72s

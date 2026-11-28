@@ -1,0 +1,136 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD71",
+ "tier": "TIER: T1-kin (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance; heading bound 0.2 1/m",
+ "controls": {
+  "b1_zero_offset_identity": {
+   "PASS": true,
+   "cells_compared": [
+    "ade6_m",
+    "ade_tac_m",
+    "along_mae_m",
+    "cross_mae_m",
+    "curvature_mae_1pm",
+    "heading_mae_deg",
+    "speed_mae_mps",
+    "yaw_rate_mae_degps"
+   ],
+   "track_identical": true
+  },
+  "b2_one_metre_ahead": {
+   "PASS": true,
+   "along_change_m": 1.0,
+   "lateral_cells_max_abs_change": {
+    "cross_mae_m": 0.0,
+    "heading_mae_deg": 0.0,
+    "curvature_mae_1pm": 0.0,
+    "yaw_rate_mae_degps": 0.0
+   }
+  },
+  "b3_ninety_degrees": {
+   "PASS": true,
+   "max_abs_x": 2.204364238465236e-15,
+   "max_abs_y_minus_old_x": 0.0,
+   "max_length_difference_m": 0.0,
+   "heading_error_deg": 89.99999999999999
+  },
+  "b4_sum_of_parts_equals_bank": {
+   "PASS": false,
+   "largest_abs_dev_sum_of_parts": 0.017326818608335515,
+   "largest_abs_dev_total": 0.0,
+   "cells_missing_in_bank": [],
+   "tolerance": 1e-09,
+   "n_cells": 10
+  },
+  "b5_first_point_at_offset": {
+   "PASS": true,
+   "required_share": 0.99,
+   "slack_m": 0.5,
+   "per_seed": {
+    "seed0": {
+     "share_within": 1.0,
+     "max_dist_m": 7.310094355164504,
+     "n": 1271,
+     "offsets_file": {
+      "max_abs_dpos_diff_m": 7.105427357601002e-15,
+      "max_abs_dpsi_diff_deg": 0.0
+     }
+    },
+    "seed1": {
+     "share_within": 1.0,
+     "max_dist_m": 7.097475440338259,
+     "n": 1271,
+     "offsets_file": {
+      "max_abs_dpos_diff_m": 3.552713678800501e-15,
+      "max_abs_dpsi_diff_deg": 0.0
+     }
+    }
+   }
+  },
+  "b6_window_identity": {
+   "PASS": true,
+   "n_dumps": 6,
+   "n_windows": 1271,
+   "order_of_the_grid": true,
+   "g_ws_eid_clip_v0_identical": true,
+   "aged_tick0_rows_exactly_the_grid": true
+  }
+ },
+ "controls_all_pass": false,
+ "names": null,
+ "parts": null,
+ "share_pose_of_total": null,
+ "offsets_at_t0_from_tick_files": {
+  "seed0": {
+   "position_m": {
+    "n": 1271,
+    "mean": 6.267845544247476,
+    "median": 4.493289549030071,
+    "p90": 13.870333412125609,
+    "max": 40.10777737921202
+   },
+   "heading_abs_deg": {
+    "n": 1271,
+    "mean": 7.248075244135173,
+    "median": 2.6403966734045197,
+    "p90": 19.815593314342152,
+    "max": 73.44303811677314
+   },
+   "own_speed_mps": {
+    "n": 1271,
+    "mean": 11.054134049633873,
+    "median": 10.215698266684305,
+    "p90": 21.974590381265237,
+    "max": 35.347829708512606
+   }
+  },
+  "seed1": {
+   "position_m": {
+    "n": 1271,
+    "mean": 6.079116017115322,
+    "median": 4.40773080884531,
+    "p90": 13.234937494681672,
+    "max": 37.87993830443508
+   },
+   "heading_abs_deg": {
+    "n": 1271,
+    "mean": 7.11346135775197,
+    "median": 2.7778694610463632,
+    "p90": 20.1049136402248,
+    "max": 82.81928630769198
+   },
+   "own_speed_mps": {
+    "n": 1271,
+    "mean": 10.813033093757017,
+    "median": 9.747364436672635,
+    "p90": 21.501428202659397,
+    "max": 34.647773964842536
+   }
+  }
+ },
+ "counts": {
+  "n_windows": 1271,
+  "n_episodes": 141,
+  "spread_run": "R0Hb20",
+  "n_boot": 2000
+ }
+}

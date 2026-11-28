@@ -1,0 +1,20 @@
+{
+ "trt": "10.13.3.9",
+ "note": "random weights \u2014 NUMERICS check, NOT the four-family gate",
+ "fp32": {
+  "rel_err_1step": 0.72824168,
+  "rel_err_20step_roll": 1.3771925,
+  "error_growth_x": 1.89,
+  "verdict": "\u26d4 FAIL \u2014 error compounds beyond 1 % over the roll; do not deploy without a four-family gate"
+ },
+ "fp16": {
+  "rel_err_1step": 0.72818363,
+  "rel_err_20step_roll": 1.37719738,
+  "error_growth_x": 1.89,
+  "verdict": "\u26d4 FAIL \u2014 error compounds beyond 1 % over the roll; do not deploy without a four-family gate"
+ },
+ "bars": {
+  "their_decision_agreement_bar": "95.3 % vs fp32",
+  "\u26d4 still_required": "four-family accuracy gate on REAL windows with a TRAINED checkpoint \u2014 this file is numerics only"
+ }
+}

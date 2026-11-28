@@ -1,0 +1,25 @@
+# Produced 2026-10-26 12:24 by verify_triples.py and verify_numbers.py (CPU, no model). Checks that every printed point [low, high] triple, and every numeric token with >= 3 decimals, in each RESULT file occurs in the named JSON files.
+
+doc: C:/Users/Admin/results_1026/RESULT_V8F_OACC.md
+json triples loaded: 474 from ['oacc_read_s0.json', 'eval_M2b-oacc_s0.json', 'eval_M2b_s0.json']
+point [low, high] patterns found in doc: 173
+matched in one JSON object: 169
+NOT matched: 4
+  line 152 : 0.035294 [0.019, 0.0553]
+  line 153 : 0.036975 [0.0198, 0.0574]
+  line 154 : 0.052101 [0.0294, 0.0781]
+  line 155 : 0.080672 [0.0504, 0.1147]
+
+doc: C:/Users/Admin/results_1026/RESULT_V8F_HACC_MC.md
+json triples loaded: 282 from ['HMC_READ.json', 'probe_c1_operand.json']
+point [low, high] patterns found in doc: 268
+matched in one JSON object: 268
+NOT matched: 0
+
+RESULT_V8F_OACC.md distinct numeric tokens (>=3 decimals): 505  not found among JSON floats: 0
+[]
+
+RESULT_V8F_HACC_MC.md distinct numeric tokens (>=3 decimals): 725  not found among JSON floats: 2
+['0.1207', '0.06037']
+
+Known non-matches, by hand: HMC '0.1207' is the PREREG's F (the read JSON stores no F); HMC '0.06037' is the PREREG/HLAT spelling of F/2 (a key name in KEEP_by_F_half_reading, not a stored value); OACC 0.035294 / 0.036975 / 0.052101 / 0.080672 are 'share_of_at_risk' values whose interval is in the sibling object share_of_at_risk_ci (checked by hand: B [0.019, 0.0553], X [0.0198, 0.0574], HX [0.0294, 0.0781], P10 [0.0504, 0.1147]).

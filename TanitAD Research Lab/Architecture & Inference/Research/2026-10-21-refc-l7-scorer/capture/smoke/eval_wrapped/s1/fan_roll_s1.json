@@ -1,0 +1,184 @@
+{
+ "mode": "eval139",
+ "n_windows": 8,
+ "fan_shape": [
+  8,
+  149,
+  8,
+  2
+ ],
+ "fan_extras_keys": [
+  "anchor_logits",
+  "anchor_traj",
+  "ceil_keep",
+  "clip_index",
+  "e9_argmax",
+  "e9_keep",
+  "goal_dist",
+  "inference_seed",
+  "is_alloc",
+  "r8_cand_src",
+  "r8_emit_keep",
+  "r8_sub_logits",
+  "reach_keep",
+  "refined_logits",
+  "sel_idx",
+  "sel_idx_base",
+  "sel_score",
+  "sel_score_v3",
+  "t",
+  "traj",
+  "traj_base",
+  "v0",
+  "ws"
+ ],
+ "scene_keys": [
+  "r7_agent_pad",
+  "r7_agent_tokens",
+  "r7_bev_tokens"
+ ],
+ "scene_shapes": {
+  "r7_agent_pad": [
+   8,
+   300
+  ],
+  "r7_agent_tokens": [
+   8,
+   300,
+   384
+  ],
+  "r7_bev_tokens": [
+   8,
+   480,
+   96
+  ]
+ },
+ "scene_storage": {
+  "r7_agent_tokens": {
+   "stored": "float16",
+   "max_abs": 0.67529296875,
+   "n_rows_fp32_fallback": 0
+  },
+  "r7_bev_tokens": {
+   "stored": "float16",
+   "max_abs": 7.37890625,
+   "n_rows_fp32_fallback": 0
+  }
+ },
+ "n_label_windows": 8,
+ "label_keys": [
+  "map_drivable_u8",
+  "map_label",
+  "map_seen",
+  "r7_agent_fut",
+  "r7_agent_fut_label",
+  "r7_agent_fut_valid"
+ ],
+ "label_shapes": {
+  "map_drivable_u8": [
+   8,
+   120,
+   64
+  ],
+  "map_label": [
+   8
+  ],
+  "map_seen": [
+   8,
+   120,
+   64
+  ],
+  "r7_agent_fut": [
+   8,
+   8,
+   397,
+   5
+  ],
+  "r7_agent_fut_label": [
+   8,
+   8
+  ],
+  "r7_agent_fut_valid": [
+   8,
+   8,
+   397
+  ]
+ },
+ "keys_missing_counts": {
+  "r7_bev_pad": 8
+ },
+ "conds_seen": [
+  [
+   "nav_true"
+  ]
+ ],
+ "n_calls_navzero": 0,
+ "n_calls_without_nav_true": 0,
+ "n_label_agent_windows": 8,
+ "n_label_map_windows": 8,
+ "scene_missing_windows": 0,
+ "K3a_max_abs_fan_at_sel_minus_traj_m": 0.0,
+ "K3b_traj_equals_sidecar_nav_true": true,
+ "K4_e9_argmax_equals_sel_idx_frac": 1.0,
+ "e9_keep_min_per_row": 142,
+ "registered_windows_check": null,
+ "inference_seed": 1,
+ "mutation": null,
+ "device": "cpu",
+ "child_rc": 0,
+ "child_argv": [
+  "C:\\Users\\Admin\\qland\\hold_r8pf\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-20-refcv8-perframe-final\\code\\roll_seed_r8_pf.py",
+  "--ckpt",
+  "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+  "--config",
+  "E:/refcv8_eval_kit/ckpt/config.json",
+  "--seed",
+  "1",
+  "--dump-dir",
+  "C:/Users/Admin/refcv8_pf/l7cap/smoke/eval_wrapped/s1/dump",
+  "--windows-json",
+  "C:/Users/Admin/refcv8_pf/picker/smoke/windows_smoke.json",
+  "--device",
+  "cpu",
+  "--out-json",
+  "C:/Users/Admin/refcv8_pf/l7cap/smoke/eval_wrapped/s1/roll_s1.json",
+  "--smoke-cpu-fp32-trunk",
+  "--os-only"
+ ],
+ "model_call_s": {
+  "n": 8,
+  "first": 7.74,
+  "median": 9.18,
+  "mean": 8.94,
+  "max": 9.34
+ },
+ "wall_s": 161.7,
+ "wall_s_per_window_incl_build": 20.22,
+ "peak_working_set_gb": 3.759,
+ "peak_commit_gb": 4.481,
+ "cuda_max_memory_allocated_gib": null,
+ "remap": {
+  "dev_default": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\refcv8_eval_remap_devbox.json",
+  "re_pointed_eval": false,
+  "re_pointed_train": false
+ },
+ "env": {
+  "R8_LAUNCH_TREE": null,
+  "R8_EVAL_KIT": null,
+  "PF_R8_CODE": null,
+  "PF_NF_HOLD": null,
+  "R8_NO_POSE_SYNC": "1",
+  "OMP_NUM_THREADS": "4",
+  "PYTHONPATH": "C:/lgs/Lfb47a58376/stack;C:/lgs/Lfb47a58376/taniteval",
+  "CUDA_VISIBLE_DEVICES": "-1"
+ },
+ "torch": "2.11.0+cu128",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+ "config": "E:/refcv8_eval_kit/ckpt/config.json",
+ "this_script_sha256": "7b30e22fb341e4b31f314fa545253f51927825b2d20aaff15db4ebe819d0d199",
+ "hooks_sha256": "207995d26e6462c6b604026223942c7a1518e9b20a84d7a09451b34a158e0abd",
+ "refc_v3_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\refs\\refc_v3.py",
+ "refc_v3_sha256": "e4e7ac621f91ea09f9d2dba588e5f317fdc7eca6f3d0b57cd145311d98834459",
+ "prereg": "PREREG_L7_SCORER.md sha256 f9c1431c... (sealed 2026-10-21 23:33 +0200)",
+ "producer": "fan_roll_r8_l7cap.py (wrapper over roll_seed_r8_train_pf.main / roll_seed_r8_pf.main; capture on r7_roll.Refcv6Proxy.__call__)"
+}

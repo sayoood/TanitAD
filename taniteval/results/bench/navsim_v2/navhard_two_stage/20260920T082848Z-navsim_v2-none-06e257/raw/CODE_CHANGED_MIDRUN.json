@@ -1,0 +1,28 @@
+{
+  "_what": "W1 changed a devkit-side file WHILE THIS RUN WAS SCORING. This file exists so the run's provenance is CORRECTED rather than silently false: bench_run.json.git.suite_code_blobs was captured at run start (cli.py:153) and therefore records the PRE-CHANGE blob for every arm, including arms scored AFTER the change.",
+  "when_local": "2026-09-20 10:34:58",
+  "file": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py",
+  "blob_before": "64186cceb3b032bf5002b824f452695e4107cd28",
+  "blob_after": "935fa44c459a3ee52c5582db288c5b95394ece54",
+  "origin_before": "96d13540aa3bb678de1d34577391ced29c2eb07f",
+  "origin_after": "11d5e3ccd9201580046d33b03ea8940c09d97077",
+  "change": "RAM-guard Monitor default sustain 3 -> 60 samples (2 min); hard_floor_mb 2000.0 UNCHANGED",
+  "requested_by": "E1, relayed by the orchestrator 2026-09-20",
+  "why_applied_mid_run": "E1 MEASURED that sustain=3 killed a navhard CV run at 5,576/5,912 scored scenes on a six-second dip. THIS run is a navhard run and was exposed to exactly that death; waiting for it to finish would have left it exposed for ~2 more hours.",
+  "which_arms_are_affected": "A running process does NOT re-read its source, and each arm is a FRESH subprocess. The arm in flight at the time of the change (CV, subprocess started 10:31:17 local) ran the PRE-change file to completion. Arms started AFTER the change run the POST-change file.",
+  "can_any_SCORE_differ": "NO. The diff is 19 lines, entirely inside Monitor.__init__ (the RAM guard). The guard decides only WHEN TO ABORT; it is not in the scoring path, computes no metric and feeds nothing to the agent or the scorer. A completed arm is therefore bit-identical either way; the only possible difference is that an arm which WOULD have been aborted by a transient dip now completes.",
+  "verification": "taniteval/tests/test_bench_suite_promotion.py -- 15 passed after the change; the binding re-promotion check (strip the marked W1 ADDITION blocks -> E1's origin byte-for-byte) passed BEFORE the file was written.",
+  "durable_fix_filed": "suite_code_blobs is a RUN-START snapshot and cannot see a mid-run change. Filed to W1's COMMS as an integration item: capture the devkit-side blob PER ARM at launch, so this note becomes unnecessary.",
+  "THE_ASYMMETRY_THAT_MATTERS": {
+    "_why_this_field_exists": "E1, 2026-09-20: a note recording ONLY 'no score can move' would leave a reader thinking the two arms were equivalent in every respect that matters. They were not. The difference is about SURVIVAL, not value.",
+    "abort_policy_per_arm": {
+      "CV": "sustain=3  (6 s) -- the PRE-change policy; the arm was already in flight and a running process does not re-read its source",
+      "STOP": "sustain=60 (2 min) -- the POST-change policy"
+    },
+    "consequence_if_CV_completes": "its number is exactly as valid as STOP's -- the guard is not in the scoring path and cannot touch a metric.",
+    "what_CV_surviving_does_NOT_prove": "⛔ 'CV survived' is NOT evidence that sustain=3 was safe. The same policy killed E1's own navhard CV run at 5,576/5,912 -- 95 % -- on a dip lasting three samples. Survival under a policy is a draw from a distribution, not a property of the policy.",
+    "what_a_CV_death_would_have_meant": "⛔ it would have been the POLICY, not the DATA. A RAM_GUARD_ABORT on this arm must never be read as a scoring failure, a corpus problem or an arm defect -- scoring.py classifies it as RAM_GUARD_ABORT with retryable=true for exactly this reason."
+  },
+  "hash_basis_reminder": "Both blob pairs above are RAW-BYTE git blobs (no eol conversion). ⚠ `git hash-object` would print DIFFERENT ids for the same files and is BLIND to a pure line-ending change; devkit_patches() now carries BOTH, labelled.",
+  "superseded_by": "PER-ARM capture, implemented 2026-09-20 on the orchestrator's ruling: scoring.score_arm now records devkit_side_blobs_at_launch + devkit_side_drift in <arm>.counts.json and WARNS at the moment a drift is seen. ⚠ THIS RUN PREDATES IT -- its parent process imported scoring.py before the change, so no arm of THIS run carries those fields. That is precisely why this file exists."
+}

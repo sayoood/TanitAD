@@ -1,0 +1,25 @@
+card PREREG_V8F_PROOF_ADD118, tier T0 (a presence head's reads on recorded evaluation frames against the label; a diagnostic of the head, not driving performance)
+clips with frames 141, bootstrap draws 2000, bar: M at most 0.0779 and X at most 0.4488
+fit D_H5_s0: samples {'fit': 157919, 'sel': 4845}, with a lead {'fit': 104241, 'sel': 2810}, kept epoch 0, kept loss 0.5521, seconds 714
+fit D_H5_s1: samples {'fit': 157919, 'sel': 4845}, with a lead {'fit': 104241, 'sel': 2810}, kept epoch 0, kept loss 0.5689, seconds 635
+fit D_H5_s0_perm: samples {'fit': 157919, 'sel': 4845}, with a lead {'fit': 104241, 'sel': 2810}, kept epoch 3, kept loss 0.6890, seconds 1082
+form READER pooled: M 0.1558 [0.0959, 0.2162], X 0.2244 [0.1762, 0.2811]; M at gaps from 20 m 0.2278, below 20 m 0.0656
+form READER seed 0: frames 10865, with a lead 3383, without 7482, M 0.1847, X 0.2134, auc 0.8750; bins (lo-hi m: misses/leads) 0-10: 6/511, 10-20: 118/991, 20-40: 169/1200, 40-60: 332/681
+form READER seed 1: frames 10865, with a lead 3383, without 7482, M 0.1268, X 0.2354, auc 0.8866; bins (lo-hi m: misses/leads) 0-10: 5/511, 10-20: 68/991, 20-40: 105/1200, 40-60: 251/681
+form HEAD pooled: M 0.1007 [0.0560, 0.1535], X 0.1814 [0.1339, 0.2348]; M at gaps from 20 m 0.1385, below 20 m 0.0533
+form HEAD seed 0: frames 10865, with a lead 3383, without 7482, M 0.0949, X 0.1778, auc 0.9418; bins (lo-hi m: misses/leads) 0-10: 6/511, 10-20: 76/991, 20-40: 103/1200, 40-60: 136/681
+form HEAD seed 1: frames 10865, with a lead 3383, without 7482, M 0.1064, X 0.1850, auc 0.9297; bins (lo-hi m: misses/leads) 0-10: 6/511, 10-20: 72/991, 20-40: 93/1200, 40-60: 189/681
+form HEAD-OR-READER pooled: M 0.0338 [0.0145, 0.0553], X 0.3217 [0.2638, 0.3875]; M at gaps from 20 m 0.0420, below 20 m 0.0236
+form HEAD-OR-READER seed 0: frames 10865, with a lead 3383, without 7482, M 0.0337, X 0.3109, auc 0.9142; bins (lo-hi m: misses/leads) 0-10: 0/511, 10-20: 47/991, 20-40: 26/1200, 40-60: 41/681
+form HEAD-OR-READER seed 1: frames 10865, with a lead 3383, without 7482, M 0.0340, X 0.3325, auc 0.9036; bins (lo-hi m: misses/leads) 0-10: 0/511, 10-20: 24/991, 20-40: 17/1200, 40-60: 74/681
+form PERMUTED pooled: M 0.0000 [0.0000, 0.0000], X 1.0000 [1.0000, 1.0000]; M at gaps from 20 m 0.0000, below 20 m 0.0000
+form PERMUTED seed 0: frames 10865, with a lead 3383, without 7482, M 0.0000, X 1.0000, auc 0.5534; bins (lo-hi m: misses/leads) 0-10: 0/511, 10-20: 0/991, 20-40: 0/1200, 40-60: 0/681
+form PERMUTED seed 1: frames 10865, with a lead 3383, without 7482, M 0.0000, X 1.0000, auc 0.5534; bins (lo-hi m: misses/leads) 0-10: 0/511, 10-20: 0/991, 20-40: 0/1200, 40-60: 0/681
+HEAD minus READER: M -0.0551 [-0.1259, 0.0173], X -0.0430 [-0.0993, 0.0134]
+HEAD-OR-READER minus READER: M -0.1219 [-0.1758, -0.0735], X 0.0973 [0.0621, 0.1362]
+form HEAD by threshold: t 0.1 M 0.0052 X 0.5446; t 0.2 M 0.0136 X 0.4191; t 0.3 M 0.0270 X 0.3258; t 0.4 M 0.0619 X 0.2421; t 0.5 M 0.1007 X 0.1814; t 0.6 M 0.1413 X 0.1302; t 0.7 M 0.2232 X 0.0770; t 0.8 M 0.4698 X 0.0347; t 0.9 M 0.9041 X 0.0033
+no name: HEAD at the threshold whose extra-mark rate is nearest to the reader's: t 0.4, M 0.0619, X 0.2421 (READER: M 0.1558, X 0.2244)
+NAME PRESHEAD-T0-HEAD-NO-CUT-OF-MISSES
+NAME PRESHEAD-T0-HEAD-OR-READER-MEETS-BAR
+NAME PRESHEAD-T0-BAR-MET (form for the T1-kin card: HEAD-OR-READER)
+ZZ PRESHEAD-T0 names done

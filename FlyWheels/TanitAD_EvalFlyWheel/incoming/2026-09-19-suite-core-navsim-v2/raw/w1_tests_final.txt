@@ -1,0 +1,25 @@
+# W1 test suite -- FINAL run at the tip, 2026-09-20. 187 tests, 8 files, ALL GREEN.
+#
+# Covers, beyond the earlier state:
+#  * THE PRESENT-BUT-NULL KEY (named class): a dict default fires only on an ABSENT key.
+#    Hidden because DEFAULT_BANKS has a warmup entry and none for navhard -- every warmup run
+#    exercised the path while being structurally unable to fail.
+#  * provenance.ckpt (W4): structural refusal of an anonymous MODEL row + registry_key_display,
+#    which is NEVER blank (no key -> sha256 prefix).
+#  * M-SELFREF: an external reference must be ARITHMETICALLY self-consistent. It reproduces the
+#    real defect I banked -- 'HF leaderboard 11.4 at 1 dp, delta 0.0000' against our 11.4816 --
+#    using only the entry's own fields, no external data. PAPER truncates (1 dp), LEADERBOARD
+#    rounds (4 dp); one underlying value 20.65165... explains both.
+#  * ORPHANED_PROMOTIONS: E1's restructure deleted three promoted functions; the pin was
+#    CHANGED, not dropped, with a control that goes RED if they are restored.
+#
+# Mutations proven RED then restored: M-DRYRUN, M-NULLSCENE, M-ANONROW, M-BLANKKEY, M-SELFREF.
+# M-DRIFT / M-S1REF are exercised inside their own tests.
+# venv C:/Users/Admin/venvs/tanitad | PYTHONPATH=D:/Projects/TanitAD/stack;D:/Projects/TanitAD/taniteval
+
+........................................................................ [ 38%]
+........................................................................ [ 77%]
+...........................................                              [100%]
+187 passed in 5.62s
+
+[exited with code 0]

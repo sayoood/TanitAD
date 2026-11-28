@@ -1,0 +1,165 @@
+{
+ "_caveat": "SYNTHETIC WEIGHTS AND SYNTHETIC FRAMES. Proves the PATH runs. Makes NO claim about R1/R2/R3.",
+ "_evidence_class": "MEASURED (ours; this run)",
+ "_what": "RL pilot cold-start load + step smoke (PI queue item 8)",
+ "batch_shapes": {
+  "dt": 0.5,
+  "frames": [
+   2,
+   8,
+   9,
+   256,
+   256
+  ],
+  "gt_traj": [
+   2,
+   4,
+   2
+  ],
+  "lead_path": [
+   2,
+   1,
+   1,
+   4,
+   2
+  ],
+  "obstacles": [
+   2,
+   1,
+   1,
+   1,
+   2
+  ],
+  "v0": [
+   2
+  ]
+ },
+ "checkpoint": {
+  "keys_built": 488,
+  "keys_written": 487,
+  "missing": [
+   "decoder.anchor_controls"
+  ],
+  "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/out/smokerun\\coldstart\\ckpt.pt"
+ },
+ "conditioning": {
+  "contract": "RefCConditioningContract",
+  "requirement_map": {
+   "agent_gt": false,
+   "ego_keep": false,
+   "hierarchy_hook": false,
+   "lan": false,
+   "maneuver_logits": false,
+   "nav_cmd": false,
+   "nav_known": false,
+   "target_latent": false,
+   "v0": false,
+   "withheld_speed": false
+  },
+  "resolutions": 1,
+  "resolved_required": [],
+  "strict": true
+ },
+ "config_json": {
+  "cold_start_load": {
+   "_caveat": "the tensor below was NOT read from the checkpoint. It is the model's own zero-initialised buffer (refc.py:1496). Any future change that makes `anchor_controls` readable with `anchor_v0_cond = False` INVALIDATES this allowance and must update `tanitad.refs.cold_start`, not work around it.",
+   "_evidence_class": "MEASURED (ours; this run's own load)",
+   "_what": "the declared allowance for a pre-2026-09-04 REF-C cold start (PI DECISION QUEUE item 8, option (c)). Records what this load was permitted to default, and on what grounds.",
+   "_why_permitted": "`decoder.anchor_controls` is read ONLY when the decoder is v0-conditioned (refc.py:1727 via the WP-4 sampler, which refc.py:2270 refuses un-conditioned; and refc.py:1836/roll_bank, which returns the stored `anchors` unchanged when the flag is False). This decoder's flag is False, so the defaulted tensor is UNREACHABLE on every code path in this process.",
+   "allowed_absent_keys": [
+    "decoder.anchor_controls"
+   ],
+   "anchor_controls_source": "defaulted-zeros-v0-unconditioned",
+   "ckpt_confirmation": "UNVERIFIED_BY_CKPT_CONFIG",
+   "ckpt_v0_conditioned": null,
+   "ckpt_v0_source": "ABSENT",
+   "defaulted_detail": {
+    "decoder.anchor_controls": {
+     "dtype": "torch.float32",
+     "nonzero_entries": 0,
+     "shape": [
+      128,
+      2
+     ],
+     "source": "model's own initialised buffer (refc.py:1496 registers it as torch.zeros)"
+    }
+   },
+   "defaulted_keys": [
+    "decoder.anchor_controls"
+   ],
+   "keys_after_load": 488,
+   "keys_built": 488,
+   "keys_in_checkpoint": 487,
+   "missing_from_checkpoint": [
+    "decoder.anchor_controls"
+   ],
+   "run_v0_conditioned": false,
+   "run_v0_source": "AnchoredDiffusionDecoder.anchor_v0_cond (the CONSTRUCTED module, not a CLI flag)",
+   "strict": true,
+   "unexpected_in_checkpoint": []
+  },
+  "method": "grpo",
+  "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/7c618562-39eb-4a61-af81-755048086a13/scratchpad/out/smokerun\\config.json"
+ },
+ "device": "cuda",
+ "guard_probe": {
+  "lan": "PASSED (this channel is not REQUIRED by this build)",
+  "nav_cmd": "PASSED (this channel is not REQUIRED by this build)",
+  "v0": "PASSED (this channel is not REQUIRED by this build)"
+ },
+ "load": {
+  "keys_after_load": 488,
+  "seconds": 0.75,
+  "stamp": {
+   "_caveat": "the tensor below was NOT read from the checkpoint. It is the model's own zero-initialised buffer (refc.py:1496). Any future change that makes `anchor_controls` readable with `anchor_v0_cond = False` INVALIDATES this allowance and must update `tanitad.refs.cold_start`, not work around it.",
+   "_evidence_class": "MEASURED (ours; this run's own load)",
+   "_what": "the declared allowance for a pre-2026-09-04 REF-C cold start (PI DECISION QUEUE item 8, option (c)). Records what this load was permitted to default, and on what grounds.",
+   "_why_permitted": "`decoder.anchor_controls` is read ONLY when the decoder is v0-conditioned (refc.py:1727 via the WP-4 sampler, which refc.py:2270 refuses un-conditioned; and refc.py:1836/roll_bank, which returns the stored `anchors` unchanged when the flag is False). This decoder's flag is False, so the defaulted tensor is UNREACHABLE on every code path in this process.",
+   "allowed_absent_keys": [
+    "decoder.anchor_controls"
+   ],
+   "anchor_controls_source": "defaulted-zeros-v0-unconditioned",
+   "ckpt_confirmation": "UNVERIFIED_BY_CKPT_CONFIG",
+   "ckpt_v0_conditioned": null,
+   "ckpt_v0_source": "ABSENT",
+   "defaulted_detail": {
+    "decoder.anchor_controls": {
+     "dtype": "torch.float32",
+     "nonzero_entries": 0,
+     "shape": [
+      128,
+      2
+     ],
+     "source": "model's own initialised buffer (refc.py:1496 registers it as torch.zeros)"
+    }
+   },
+   "defaulted_keys": [
+    "decoder.anchor_controls"
+   ],
+   "keys_after_load": 488,
+   "keys_built": 488,
+   "keys_in_checkpoint": 487,
+   "missing_from_checkpoint": [
+    "decoder.anchor_controls"
+   ],
+   "run_v0_conditioned": false,
+   "run_v0_source": "AnchoredDiffusionDecoder.anchor_v0_cond (the CONSTRUCTED module, not a CLI flag)",
+   "strict": true,
+   "unexpected_in_checkpoint": []
+  }
+ },
+ "steps": {
+  "all_finite": true,
+  "losses": [
+   0.07848231494426727,
+   0.0734662115573883,
+   0.0664597600698471
+  ],
+  "max_abs_delta": 2.9940158128738403e-05,
+  "n": 3,
+  "seconds": 1.7,
+  "weights_moved": true
+ },
+ "torch": "2.11.0+cu128",
+ "verdict": "PATH PROVEN (synthetic weights; no capability claim)"
+}

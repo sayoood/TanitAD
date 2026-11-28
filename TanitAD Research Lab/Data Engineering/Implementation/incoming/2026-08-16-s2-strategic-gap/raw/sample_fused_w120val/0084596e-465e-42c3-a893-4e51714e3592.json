@@ -1,0 +1,166 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "0084596e-465e-42c3-a893-4e51714e3592",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 11.87,
+   "v_now_kmh": 42.7,
+   "v_mean_ms": 11.2,
+   "v_min_ms": 10.39,
+   "v_max_ms": 11.87,
+   "accel_1s_ms2": 0.09,
+   "accel_3s_ms2": 0.13,
+   "yaw_rate_rad_s": -0.035,
+   "net_dyaw_rad": -0.229,
+   "dist_travelled_m": 90.2,
+   "motion": "steady",
+   "turning": "straight"
+  },
+  "speed_profile": {
+   "v_t0": 10.387815475463867,
+   "v_min_future": 7.091836452484131,
+   "v_max_future": 11.978543281555176,
+   "net_dv": -2.977668285369873,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [],
+  "per_concept_hits": {
+   "car": 0,
+   "truck": 0,
+   "bus": 0,
+   "pedestrian": 0,
+   "cyclist": 0,
+   "traffic light": 0,
+   "traffic sign": 0
+  },
+  "src": "sam3"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 1,
+   "lane_ego": 0,
+   "conf": "high",
+   "road_type": "urban",
+   "weather": "snow",
+   "illumination": "day",
+   "domain": "urban"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "BOSCH",
+     "state": "none",
+     "applies_to_ego": false,
+     "kind": "other"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "route_to",
+   "goal_evidence_sign": 0,
+   "actions": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "right"
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "none"
+    }
+   ],
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": null,
+ "corroboration": {
+  "goal_evidence": {
+   "evidence_sign_idx": 0,
+   "sam3_sign_tracks": 0,
+   "verdict": "provisional",
+   "src": [
+    "vlm",
+    "sam3"
+   ]
+  },
+  "census_vs_scene": {
+   "verdict": "flagged_empty_urban",
+   "src": [
+    "sam3",
+    "vlm"
+   ]
+  }
+ },
+ "vocab": {
+  "g_str": {
+   "token": "ROUTE_TO",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_KEEP",
+   "voters": [
+    "ego"
+   ],
+   "votes": [
+    [
+     "ego",
+     "LANE_KEEP"
+    ],
+    [
+     "vlm",
+     "LANE_CHANGE_R"
+    ],
+    [
+     "vlm",
+     null
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": "CRUISE",
+   "voters": [
+    "ego"
+   ],
+   "votes": [
+    [
+     "ego",
+     "CRUISE"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ]
+   ]
+  }
+ },
+ "scenario_description": "day, snow, urban 1-lane; ego 11.9 m/s steady/straight; no agents",
+ "_conflicts": [],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}

@@ -1,0 +1,50 @@
+2026-10-01T18:44:59Z START ckpt=D:/refcv7_eval_kit/ckpt\ckpt_30000.pt step=30000 md5=ac4e4fab87e35b20de24d8d94910d910 label=RESULT config_md5=e6512a01b9c70f0e4a4dac581621984a
+2026-10-01T18:59:59Z GPU lock NOT acquired within 900 s for warmup -> CPU fp32 for the whole split
+2026-10-01T19:00:59Z RAM gate passed for the CPU bridge of warmup (9.9 GB)
+2026-10-01T19:00:59Z BRIDGE warmup arms=R7_A1,R7_A1_s1,R7_FILTOFF,R7_BLIND,R7_VMAXOFF,R7_A1NT,R7_NAVOFF device=cpu
+2026-10-01T19:33:54Z SEAMS warmup {'main': {'R7_A1': 'OK', 'R7_A1_s1': 'OK', 'R7_FILTOFF': 'OK', 'R7_BLIND': 'OK', 'R7_VMAXOFF': 'OK', 'R7_A1NT': 'OK', 'R7_NAVOFF': 'OK', 'R7_CEILDECL_d': 'OK', 'PRIOR_ha0p': 'OK'}}
+2026-10-01T22:33:55Z GPU lock NOT acquired within 10800 s for navtest -> CPU fp32 for the whole split
+2026-10-01T22:34:55Z RAM gate passed for the CPU bridge of navtest (8.4 GB)
+2026-10-01T22:34:55Z BRIDGE navtest arms=R7_A1,R7_A1_s1 device=cpu
+2026-10-02T10:50:26Z BRIDGE navtest sub200 arms=R7_VMAXOFF,R7_FILTOFF,R7_VMAXORACLE device=cpu
+2026-10-02T11:15:12Z SEAMS navtest {'main': {'R7_A1': 'NO_SEAM', 'R7_A1_s1': 'NO_SEAM', 'R7_CEILDECL_d': 'NO_SEAM', 'PRIOR_ha0p': 'NO_SEAM'}, 'sub200': {'R7_VMAXOFF': 'OK', 'R7_FILTOFF': 'OK', 'R7_VMAXORACLE': 'OK'}}
+2026-10-02T11:15:12Z SCORE warmup:R7_A1 launched try=1 (free 9.2 GB)
+2026-10-02T11:15:12Z GPU lock ACQUIRED for navhard (refcv7-navsim-navhard:20392:443e82784497)
+2026-10-02T11:15:25Z CUDA controls navhard: K0=True KD=False
+2026-10-02T11:15:25Z KD failed on CUDA for navhard: the exact dedup is DROPPED (native path)
+2026-10-02T11:15:25Z BRIDGE navhard arms=R7_A1,R7_A1_s1 device=cuda
+2026-10-02T12:25:59Z GPU lock RELEASED=True after navhard
+2026-10-02T12:25:59Z SEAMS navhard {'main': {'R7_A1': 'OK', 'R7_A1_s1': 'OK', 'R7_CEILDECL_d': 'OK', 'PRIOR_ha0p': 'OK'}}
+2026-10-02T12:25:59Z SCORE warmup:R7_A1 ended counts=PASS ram_guard_abort=False
+2026-10-02T12:25:59Z SCORE warmup:R7_A1_s1 launched try=1 (free 9.0 GB)
+2026-10-02T12:25:59Z all bridges done; draining the scorer pool
+2026-10-02T12:25:59Z SCORE warmup:R7_FILTOFF launched try=1 (free 9.0 GB)
+2026-10-02T12:26:19Z SCORE warmup:R7_BLIND launched try=1 (free 8.2 GB)
+2026-10-02T12:28:59Z SCORE warmup:R7_A1_s1 ended counts=PASS ram_guard_abort=False
+2026-10-02T12:28:59Z SCORE warmup:R7_FILTOFF ended counts=PASS ram_guard_abort=False
+2026-10-02T12:28:59Z SCORE warmup:R7_BLIND ended counts=PASS ram_guard_abort=False
+2026-10-02T12:29:19Z SCORE warmup:R7_VMAXOFF launched try=1 (free 9.1 GB)
+2026-10-02T12:29:39Z SCORE warmup:R7_A1NT launched try=1 (free 8.6 GB)
+2026-10-02T12:29:59Z SCORE warmup:R7_NAVOFF launched try=1 (free 8.2 GB)
+2026-10-02T12:31:59Z SCORE warmup:R7_VMAXOFF ended counts=PASS ram_guard_abort=False
+2026-10-02T12:32:19Z SCORE warmup:R7_A1NT ended counts=PASS ram_guard_abort=False
+2026-10-02T12:32:19Z SCORE warmup:R7_CEILDECL_d launched try=1 (free 8.6 GB)
+2026-10-02T12:32:39Z SCORE warmup:R7_NAVOFF ended counts=PASS ram_guard_abort=False
+2026-10-02T12:32:39Z SCORE warmup:PRIOR_ha0p launched try=1 (free 8.6 GB)
+2026-10-02T12:32:59Z SCORE navtest:r7s30000_R7_VMAXOFF_sub launched try=1 (free 8.2 GB)
+2026-10-02T12:33:59Z SCORE navtest:r7s30000_R7_VMAXOFF_sub ended counts=PASS ram_guard_abort=False
+2026-10-02T12:34:19Z SCORE navtest:r7s30000_R7_FILTOFF_sub launched try=1 (free 8.3 GB)
+2026-10-02T12:34:59Z SCORE warmup:R7_CEILDECL_d ended counts=PASS ram_guard_abort=False
+2026-10-02T12:34:59Z SCORE navtest:r7s30000_R7_FILTOFF_sub ended counts=PASS ram_guard_abort=False
+2026-10-02T12:35:19Z SCORE warmup:PRIOR_ha0p ended counts=PASS ram_guard_abort=False
+2026-10-02T12:35:19Z SCORE navtest:r7s30000_R7_VMAXORACLE_sub launched try=1 (free 9.2 GB)
+2026-10-02T12:35:39Z SCORE navhard:R7_A1 launched try=1 (free 8.5 GB)
+2026-10-02T12:35:59Z SCORE navtest:r7s30000_R7_VMAXORACLE_sub ended counts=PASS ram_guard_abort=False
+2026-10-02T12:35:59Z SCORE navhard:R7_A1_s1 launched try=1 (free 8.6 GB)
+2026-10-02T12:36:19Z SCORE navhard:R7_CEILDECL_d launched try=1 (free 8.1 GB)
+2026-10-02T13:54:40Z SCORE navhard:R7_A1 ended counts=PASS ram_guard_abort=False
+2026-10-02T13:54:40Z SCORE navhard:R7_A1_s1 ended counts=PASS ram_guard_abort=False
+2026-10-02T13:54:40Z SCORE navhard:R7_CEILDECL_d ended counts=PASS ram_guard_abort=False
+2026-10-02T13:55:00Z SCORE navhard:PRIOR_ha0p launched try=1 (free 9.0 GB)
+2026-10-03T22:33:10Z RESUMED by complete_milestone7.py (pid 9240) -> D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step30000\complete.log
+2026-10-04T08:23:02Z RESUMED by complete_milestone7.py (pid 30976) -> D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\raw\milestones\step30000\complete.log

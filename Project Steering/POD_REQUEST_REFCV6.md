@@ -1,0 +1,184 @@
+<!-- POD-REQUEST-REFCV6-DRAFT-2026-09-20 -->
+# ⚠️ DRAFT — the refcv6 POD REQUEST, and the preparation that earns it
+
+**Status: DRAFT.** It is landed while incomplete, on purpose: the PI parked the pod *"we will do it
+later"* (2026-09-19), and a request that appears only when everything is finished is a request
+nobody could check on the way. ⛔ **Every gap below is named as a gap, and the request is not made
+until §5's list is empty.** Checklist item **E20** of `PREREG_REFCV6_DEVBOX_PREPARATION.md` is
+discharged by §4 of this file.
+
+---
+
+## 1. What the dev box PROVED (each line has an artifact; none is a capability claim)
+
+| # | proven | evidence |
+|---|---|---|
+| **P1** | The chain carries end to end at the ruled **416 × 1024**, every head live | §10.6 closure, 900 windows / 139 clips |
+| **P2** | ⭐ `resnet101` — §10.2's PRIMARY trunk — **FITS** the 8 GiB card: **2.887 GB** @ b1, **3.890 GB** @ b2, all 22 heads live | `8b1f1db`; levers `--trunk-chunk-ckpt 1 --trunk-frozen-bn`, real stamped flags (`0f6036d`) |
+| **P3** | The dev-box rate is **2.51 s/step** (197 marginal deltas, production logging) — the 28–29 s/step this plan was built on was **host paging**, not compute | `a5e6710` |
+| **P4** | A **clean held-out set** exists: 124 clips, two disjoint 62/62 halves, parity-guarded, every clip mapped | `782571c`; 11 of the 139 eval clips were inside the parity TRAIN corpus (`c93182e`) |
+| **P5** | The occupancy head clears its no-information floor **HELD OUT**: IoU **0.576** vs **0.3388** = **1.70×** (A3), confirmed at **0.584 = 1.72×** at 5,000 steps (A8) | `6e2ea33`, `b3feb4d` |
+| **P6** | ⚠️ **More dev-box steps are NOT the lever for that head**: A8's curve is not monotone and its 2,000 → 5,000 gain (+0.0147) sits inside the rig's own run-to-run spread (0.007 at 2k, 0.040 at 1k, n = 2) | `b3feb4d` |
+| **P7** | The refcv6 eval produces **all four metric families with paired episode-cluster intervals**, end to end, from a refcv6 checkpoint | W0–W3 (`5fd7c63`, `4000946`, `f7ad8b5`, `603bd32`) |
+| **P8** | The conflict detector costs **+79.8 %** per step at 416 × 1024, with its three identity controls EXACT | `37645fc` |
+| **P9** | The training source frames are **already on this box** (4,719/4,719 matching HF size + LFS sha256, 61.6 GB) ⇒ C3's transfer leg is void | `2a88524` |
+| **P10** | HF has room: private **176.9 GB of 1 TB**; ⛔ the ceiling **BILLS** rather than refuses, so every push carries pre-push arithmetic | `2a88524`, ITEM 26 |
+
+## 2. What the dev box CANNOT do, with the arithmetic
+
+* **Sample-matched work.** This box runs `--batch 2` where a pod arm runs `--batch 20`, so matching
+  the data a banked arm saw costs **10× the steps**: `resnet101` is **2.28 d step-matched** and
+  **39.9–45.7 d sample-matched**; the 10-arm panel is **3.89 d at the 12,000-step cut** and
+  **130.6 d sample-matched** (`aa3dfbb` §R.5).
+* **Corpus scale.** The held-out set here is **124 clips**, 1/38th of the 4,713-clip corpus.
+* **The driving claim.** `E-REFCV6V2-DRIVE` needs T1 on a corpus-scale held-out set with a training
+  replicate. Both the compute and the corpus forbid it here; either alone would.
+
+## 3. THE ASK
+
+| what | ask | why this number |
+|---|---|---|
+| **GPU** | the PI's choice of **4 × 48 GB** or **2 × 80 GB** (dossier default: 4 × 48 GB) | D10 |
+| **Volume** | ⭐ **≥ 600 GB** | the cache build peaks at **~458 GB** and sits at ~391 GB before checkpoints; the last measured `/workspace` quota was ~466 GB. ⛔ Verify with a real `dd` write test, never `df` |
+| **First job** | a **200-step rate measurement**, before any arm | `SPEC` §11 R1: the token count rises 1.63× at the new geometry ⇒ *"re-measure rather than scale"*; the A40 rates on record (4.0–4.21 s/step) were all taken at 256 × 640 |
+| **Data path** | ⭐ **build the cache ON the pod** (route c) | 76.2 GB down from the private HF corpus (~0.2–0.7 h) + 0.32 GB up, then **2–8 h of CPU build**. The alternatives are **86–92 h**: this box uploads at a MEASURED **1.2 MB/s**. Cache size re-derived: **380.6 GB** (370.3 train over the **4,572**-clip v8 split + 10.35 clean-124) |
+| **Build host** | a **CPU pod on the same volume** for the build | the build needs no GPU; it keeps 2–8 h off the GPU bill |
+| **Order** | **Tier 0 first**: rebuild the 139 eval episodes on the pod and match this box's per-episode sha256 | ⭐ the builder's POSITIVE CONTROL, before 4,572 clips depend on it |
+
+## 4. ⛔ E20 — what the request must SAY about this rig's limits
+
+1. **There is no `--resume`.** A dead arm **restarts from zero**, and `MAX_RELAUNCH=1` forbids the
+   automatic relaunch. ⇒ the pod plan must budget checkpoint cadence and a done-marker
+   (`summary.json`) per arm, and never assume a long arm can be resumed after a crash.
+2. **There is no gradient accumulation.** The dev box cannot reach the pod's effective batch by
+   configuration ⇒ **a dev-box arm and a pod arm are not the same experiment**, and every
+   dev-box number quoted in support of a pod arm carries §1.2's step-vs-sample conversion with it.
+3. **The memory levers change the arm.** `--trunk-frozen-bn` pins BN to stored statistics; there is
+   **no configuration that both fits this card and reproduces an unfrozen-BN arm**. Any comparison
+   against a banked unfrozen arm says so. On the pod this lever is not needed and should be OFF —
+   which makes the pod arm the first unfrozen-BN arm of the line.
+4. **Two build inputs do not exist yet** and are built ON the pod, after the cache: the train-side
+   **3-D agent join** and the train-side **rig-extrinsics table**. Their run time is unmeasured.
+5. **SAM3 gates training, not the build**: the cache build reads no map.
+
+## 5. ⛔ NOT YET TRUE — the request is not made until this list is empty
+
+* **E13 — A7**, the ImageNet knockout (2 conditions × 2 seeds). ⛔ **Blocked on the GPU**, which the
+  PI's own reconstruction-studio servers hold; the panel is armed and launches when the card frees.
+  > ⚠️ **CORRECTION 2026-09-20 — the attribution above is FALSE and is kept only to be corrected.**
+  > The card was **never** held by reconstruction-studio servers. Every holder was named by
+  > `nvidia-smi --query-compute-apps`: `dwm.exe`, `explorer.exe`, SearchHost, ShellExperienceHost,
+  > NVIDIA Overlay ×2, `msedgewebview2.exe`, `GCC.exe` — **the user's desktop**, equally not ours
+  > to touch. ⛔ And A7 is now blocked on the **PI's explicit HOLD** (*"Stay paused until I say"*),
+  > not on the card: a free-card reading does not override it.
+  It is the **only admissible lever claim** the dev box can buy.
+* **E11/E12 — the S1 inference-only arms** (`S1-RANDOM` at the no-information value,
+  `S1-GATE-CONST` at EXACTLY 0). The pass is running on CPU.
+* **E9 — the T1 route's s/window** at 416 × 1024 (`refcv3_arm.py`; `t1_eval.py` does not run refc
+  checkpoints by design).
+* **`D-S1-DEP-BOX`** — the held-out BOX read (AP vs its base rate, velocity MAE) that
+  `S1-GATE-PRED` actually depends on.
+* **`D-DAC-HUMAN-ZERO-1`** — the drivable-compliance term zeroes the recorded human on **44.6 %** of
+  held-out windows. Any pod plan that quotes PDMS/EP/DAC, and the D9 reward repair, are gated on
+  its resolution.
+* **PI decisions still open:** item 6 (the optional traffic-light spot-check) and v6F's fate.
+  > ### ✅ **BOTH RULED 2026-09-20 — this blocker is CLEARED.** Item 6: **SKIP** (residual accepted).
+  > v6F: **RETIRED**, the line goes to **v7F**. ⇒ the PI queue holds no open item.
+* > ### ✅ **`D-DAC-HUMAN-ZERO-1` is CLEARED 2026-09-20 by the PI's fork ruling (B)** (`50857f4`).
+  > That blocker reads *"any pod plan that quotes PDMS/EP/DAC … gated on its resolution"*, and (B)
+  > **is** the resolution: DAC is a **LOW-NOISE PENALTY**, not a correctness criterion. ⚠️ The
+  > 44.6 % measurement is untouched and is now read as evidence FOR (B) — DAC false-alarming on the
+  > recorded human — rather than as a correctness claim.
+  > ⇒ ⛔ **§5 goes from SIX blockers to THREE:** E13 (on the PI's HOLD), E11/E12 + E9, and
+  > `D-S1-DEP-BOX`. The request remains a DRAFT until they close.
+
+---
+
+⭐ **The sentence this request will be able to make, and cannot yet:** *here is the chain carrying
+end to end at your geometry, every instrument reading a known value; here is the trunk that fits
+and its measured rate; here is the held-out occupancy your collision gate was gated on; here is the
+one lever claim an 8 GiB card could buy and what it cost; and here is the arithmetic showing the
+remainder is not a dev-box question.*
+
+<!-- S5-BOXBAR-2026-09-20 -->
+### ⭐ §5 addendum — `D-S1-DEP-BOX` now has its sentence, and it is an admission
+
+*"At 5,000 steps the box head is **5.16× above the 2 m matching bar** (`box3d_centre` 10.32 m) and
+still falling. **This run cannot say how many steps close that gap**: neither log-log fit is
+quotable (R² 0.4100 full window, 0.0931 last half) and the fallback matched-step ratio's projection
+(~13,885 steps) lands past the 2× extrapolation bound. Nothing here bounds the CORPUS scale either —
+A8 is one corpus at one size, so a scale claim would have no second point to rest on. On the
+population a collision gate actually acts on — near-forward pairs — the head is **~3×** from the
+bar, not ~6×."*
+⇒ That is the pod request's strongest honest line for the perception half: **the dev box has proved
+the instrument and CANNOT answer the question it was built to ask.**
+
+
+<!-- EXTERNAL-BENCHMARK-2026-09-20 -->
+## ⭐ ADDENDUM 2026-09-20 — the request now has an EXTERNAL instrument, and an external limit
+
+Everything in §1 above is measured by instruments this programme wrote. A pod request that rests
+only on those is asking a reviewer to trust the ruler as well as the reading. As of `3b02a41` it
+does not have to. ⚠️ Every row below was measured on **refcv4b** (`refcv4b-b1-v72-40k`,
+`ckpt_40284_FINAL.pt`, md5 `99b573e8…`), NOT on refcv6 — it is evidence about the programme's
+perception path, never about the arm this request would fund.
+
+### P11 — the external ruler is CALIBRATED (MEASURED, the strongest single line here)
+
+Constant velocity on the official NavSim v2 two-stage runner scores combined EPDMS
+**0.1853562745** against the published HF warmup leaderboard's **0.185356**: **Δ +0.000027**,
+identical at the leaderboard's printed precision. Harness `autonomousvision/navsim@0a380a9`,
+post-#151 by two probes. Artifact `…/2026-09-19-navsim-warmup-reference-epdms/raw/A1/`.
+⇒ The programme can now place a number on a scale other people also stand on. ⛔ With one
+standing caveat: warmup NEVER carries an interval (7 log groups against the RG-14 floor of 8), so
+no difference below is quotable with a CI, and none is presented with one.
+
+### P12 — VISION IS LOAD-BEARING, measured on that external scale (MEASURED)
+
+| arm | S2-EPDMS-u | what it says |
+|---|---|---|
+| A1 frames + t0 ego + command | **0.4670** | the pre-registered bar arm |
+| A4 **frames-blind** (constant grey, same ego + command) | **0.0950** | leaves the drivable area on **86.3 %** of scenes; official two-stage EPDMS **0.0** |
+| ECHO `ha0_ext` (a kinematic echo of A1's OWN ego inputs) | 0.4287 | the control that answers *"is it just replaying its inputs?"* |
+
+**A1 − A4 = +0.372** (paired W/T/L 111/81/12), won on **DAC +0.632** and **DDC +0.512** — the
+drivable-area and driving-direction terms, i.e. road geometry read out of pixels. And
+**A1 − ECHO = +0.0383** (W/T/L 55/78/71), again won on **DAC +0.083 / DDC +0.081** while losing
+**EC −0.451**. ⭐ **That pair is the load-bearing sentence for the perception half of this
+request:** the model's advantage over an echo of its own ego state is concentrated exactly in the
+terms that require seeing the road — which is what the P-arms of `PREREG_PERCEPTION_BOX_QUALITY.md`
+(`6a052cb`) exist to improve, and what §5's `D-S1-DEP-BOX` admission says the dev box cannot finish.
+
+### ⛔ P13 — AND THE EXTERNAL LIMIT, stated before anyone quotes the win
+
+A1 beats the devkit CV agent **0.4670 vs 0.3971 (+0.0699)** and that was the pre-registered bar
+BAR-E2-1, which **PASSES**. ⛔ **It must not be quoted as a capability claim, because an all-zero
+STOP plan scores 0.5212 on the same 204 scenes** — above A1, above ECHO, above CV; on the official
+protocol STOP is **0.3009** against CV's **0.1854**. The cause is a protocol property read from
+source, not a defect of ours: EP is set to 1 for EVERY proposal when the best rule-compliant
+progress is ≤ 5 m (`pdm_scorer.py:231-236`), and warmup's stage-2 starts are slow (median v0
+**4.14 m/s**, **36/204** below 1 m/s). ⇒ **This request therefore claims P12 and NOT the CV win**,
+and the discriminating experiment is already assigned: the same arms on a split whose starts are
+not slow, pre-registered before scoring. If STOP wins there too, the defect is ours.
+
+### ⭐ §5 addendum — what the PUBLISHED evidence says the pod money buys
+
+From the DrivoR/TOAD/CLOVER/DriveZero read landed in the same commit (four primaries banked, read
+in full):
+
+* **The largest published lever is ENCODER PRETRAINING** — DrivoR Tab. 4a, navval PDMS: random
+  init **70.1**, ImageNet-21k **87.5**, DINOv2 **90.0**, i.e. **+19.9**. The next largest are
+  +9.9, +6.1, +5.6 and +5.3; compression moves ≤ 0.9. **Our pre-refcv6 REF-C trunk is a randomly
+  initialised 90,458,632-parameter ResNet** (MEASURED). refcv6's PI-directed ImageNet `resnet101`
+  is a move onto the biggest lever anyone has published — and §1's **P2** already proves that
+  trunk FITS this card, so the dev box can test the SWITCH (arm P5-TRUNK) while only a pod can
+  test it **at corpus scale**, which is §2's standing limit.
+* **The scorer is the other half, and ours is the type shown to fail.** TOAD: re-used as a search
+  reward, a fixed-vocabulary scorer drives iPad **34.7 → 23.9** EPDMS while DrivoR's disentangled
+  one drives it to **49.8**. refcv5-v2's scorer is **1,145 parameters** over a fixed anchor
+  vocabulary, anchor-selection accuracy **0.5271**. Registered as backlog rows DR-1/DR-2, both
+  **unranked and awaiting the PI** — neither is in this ask.
+
+⚠️ **What this addendum does NOT change:** §5 is still non-empty and the request is still a DRAFT.
+It adds an external calibration and an external limit; it does not add a driving claim, and A7
+remains the open checklist item.

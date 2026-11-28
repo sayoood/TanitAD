@@ -1,0 +1,121 @@
+{
+ "run": "BPC",
+ "arm": "BPC",
+ "tag": "",
+ "dose": null,
+ "tar": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/BPC/t2v8f_stage5_overlay_BPC.tar",
+ "tar_bytes": 174069760,
+ "tar_sha256": "a43cac11f0d764246b1cdce2c7d6a863e7549fda548f2f62997d5a292f39840a",
+ "n_files": 6,
+ "members": [
+  "pkg/MANIFEST5.json",
+  "pkg/ckpt/BPC_s0.pt",
+  "pkg/ckpt/BPC_s1.pt",
+  "pkg/code/t2v8f_stage5.py",
+  "pkg/code/t2v8f_stage5_cell.py",
+  "pkg/jobs/stage5_BPC.cmd"
+ ],
+ "manifest5_sha256": "94b2513256453e530645f3eeba1f213361ae15554be06cd0d51e247133843b1a",
+ "n_scenes": 62,
+ "n_starts": 121,
+ "n_cells": {
+  "deciding": 124,
+  "beside": 124,
+  "total": 248
+ },
+ "footprint": {
+  "cells": {
+   "deciding": 124,
+   "beside": 124,
+   "total": 248
+  },
+  "pass_mib": {
+   "deciding": 1016,
+   "beside": 746
+  },
+  "cell_mib_measured_stage1": 6,
+  "floor_gib": 10.0,
+  "box2_C_new_writes_mib": 0,
+  "box2_D_overlay_mib": 337,
+  "box2_D_pull_deciding_mib": 1016,
+  "box2_D_pull_beside_mib": 746,
+  "box2_D_total_mib": 2099,
+  "D_free_gib_needed_to_run_both_passes": 12.05,
+  "D_free_gib_needed_for_deciding_pass_only": 11.32,
+  "note": "pull figures ESTIMATED from stage 1's MEASURED per-cell allocation (6 MiB on 1 MiB-cluster exFAT, as stage 4); the overlay figure is the tar plus each extracted file at ceil(size / 1 MiB). The driver checks the floor on the PULL drive (D:) at preflight and before each pass."
+ },
+ "driver_sha256": "1fb1af10682f7ddf782dee23b6bc32dc2d048c34ad841857ebfd75636d9c0e01",
+ "cell_sha256": "7fb89e5dda15e63f13955c25dad910c7f5751c477aeb46706c8316bd9ed303a0",
+ "cmd_sha256": "597afd83a4d95eb04a1266295e750c95e25367975c436351f6612589aa57ffbe",
+ "ckpt_sha256": {
+  "BPC_s0": "b9aaf33e458c4da7a4e38becae905fbdd20b35b7dccf8858c973791e7e61c1a7",
+  "BPC_s1": "a4bcc4722a37cfada1ac5640bed900e47d29d2278632a889fb1be1fed9ebd3a9"
+ },
+ "ckpt_bytes": {
+  "BPC_s0": 86970645,
+  "BPC_s1": 86970645
+ },
+ "ri_tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+ "stage1_manifest_sha256": "7c30471a519f97c0691b817474f0dd7f060d76d2f772e40ba63800d66b1f0291",
+ "requires": {
+  "code/t2v8f_stage2.py": {
+   "size": 25484,
+   "sha256": "33b65b19a563b8fe275de5e46e0f569db6487bd7fdf40b7eab34e021094f4898"
+  },
+  "code/t2v8f_stage2_cell.py": {
+   "size": 2253,
+   "sha256": "cd5bda37519c50bd225cd63623d648a5a4ff67bc0bb7ca5a44e98bbae2022e92"
+  },
+  "code/t2v8f_exec_hold.py": {
+   "size": 4683,
+   "sha256": "c04ceb65f792707a435faee4472b51daf243e1f2885c5827ef708c74dbdc856d"
+  },
+  "code/t2v8f_c0c.py": {
+   "size": 6762,
+   "sha256": "1a78317951ae5086a8e30839ec3c827fe55ce0195b7eb8537a21e336268a62bc"
+  },
+  "code/t2v8f_stage4.py": {
+   "size": 16230,
+   "sha256": "588e764264cdbb4ec785184bae92c1c7d9a0d528abf9aeb000a312fb94744c87"
+  },
+  "refs/tool/v8f_t1_eval_ri.py": {
+   "size": 76704,
+   "sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7"
+  }
+ },
+ "source_manifests": {
+  "stage4": {
+   "member": "pkg/MANIFEST4.json",
+   "sha256": "b186fcffceaa05efec398ad69d0f4529e265e535b87112fa280cd1aea55cb3d2",
+   "tar": "t2v8f_stage4_overlay.tar"
+  }
+ },
+ "overlay_files": [
+  {
+   "path": "ckpt/BPC_s0.pt",
+   "size": 86970645,
+   "sha256": "b9aaf33e458c4da7a4e38becae905fbdd20b35b7dccf8858c973791e7e61c1a7"
+  },
+  {
+   "path": "ckpt/BPC_s1.pt",
+   "size": 86970645,
+   "sha256": "a4bcc4722a37cfada1ac5640bed900e47d29d2278632a889fb1be1fed9ebd3a9"
+  },
+  {
+   "path": "code/t2v8f_stage5.py",
+   "size": 16609,
+   "sha256": "1fb1af10682f7ddf782dee23b6bc32dc2d048c34ad841857ebfd75636d9c0e01"
+  },
+  {
+   "path": "code/t2v8f_stage5_cell.py",
+   "size": 3741,
+   "sha256": "7fb89e5dda15e63f13955c25dad910c7f5751c477aeb46706c8316bd9ed303a0"
+  },
+  {
+   "path": "jobs/stage5_BPC.cmd",
+   "size": 1240,
+   "sha256": "597afd83a4d95eb04a1266295e750c95e25367975c436351f6612589aa57ffbe"
+  }
+ ],
+ "seconds": 9.4
+}

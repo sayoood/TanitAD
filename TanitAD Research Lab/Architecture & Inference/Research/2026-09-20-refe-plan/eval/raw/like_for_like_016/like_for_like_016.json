@@ -1,0 +1,702 @@
+{
+ "_label": "like-for-like PDMS readout for REFe snapshot 016: 015 re-read with SPEC_NAVTEST Amendment 7's repair on the same 200 tokens (W3's A1_sub200 subset), so 015 -> 016 is repaired-vs-repaired",
+ "tier": "NAVSIM v1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents (SPEC_NAVTEST tier stamp); W3's 200-token paired subset, NOT the published split",
+ "repair": "on the planner's native [20, 3] output, heading[19] := heading[18] for the EXECUTED plan, before the NAVSIM conversion (refe/planner.py repair_last_heading); it acts after selection, so the pick is unchanged",
+ "analyzed_local": "2026-09-27T17:55:53",
+ "tokens": {
+  "file": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json",
+  "md5": "114deb5bf6d2631a9cdd6e8c0724273d",
+  "n": 200
+ },
+ "points": {
+  "sub200_ep015": {
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "ckpt_md5": "d7c59f4f2fbcbde3e2dec8f67d63a7e7",
+   "seam": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_sub200_ep015.npz",
+   "csv": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015/refe_sub200_ep015.csv"
+  },
+  "sub200_ep016": {
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch016.pt",
+   "ckpt_md5": "eacd8e8fa76ce55eead1779a08876c03",
+   "seam": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_sub200_ep016.npz",
+   "csv": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep016/refe_sub200_ep016.csv"
+  }
+ },
+ "structure": {
+  "dump_traj_shape": [
+   200,
+   64,
+   20,
+   3
+  ],
+  "dump_traj_dtype": "float32",
+  "dump_token_key": "token",
+  "n_tokens": 200,
+  "dump_holds_every_ep015_seam_token_once": true,
+  "dump_tokens_same_order_as_ep015_seam": true,
+  "ep015_ep016_seams_same_token_order": true,
+  "ep015_ep016_seams_same_fingerprints": true,
+  "seam_tokens_equal_token_file": true,
+  "every_token_has_a_log": true,
+  "tokens_unique": true,
+  "pass": true
+ },
+ "rules_each_point_was_picked_with": {
+  "sub200_ep015": {
+   "report_rule": "navsim_v1",
+   "report_select": "best",
+   "dump_rule": "navsim_v1",
+   "dump_select": "best",
+   "report_repair_last_heading": "ABSENT (the report predates Amendment 7)",
+   "dump_repair_last_heading": "ABSENT (the dump predates Amendment 7)",
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "rows": 200,
+   "misses": 0
+  },
+  "sub200_ep016": {
+   "report_rule": "navsim_v1",
+   "report_select": "best",
+   "dump_rule": "navsim_v1",
+   "dump_select": "best",
+   "report_repair_last_heading": true,
+   "dump_repair_last_heading": true,
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch016.pt",
+   "rows": 200,
+   "misses": 0
+  }
+ },
+ "repair_function": {
+  "planner_py": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\refe\\planner.py",
+  "planner_py_sha256": "8f15c9f62a91642568f7667f20dc32e0f0eca6d884369b473acbd5dcf64f7a9a",
+  "function_source_sha256": "3242dd4adb077248c607b65aef00818bd0d62a36a27c2de4b209c8b49c7e633e",
+  "function_first_line": "def repair_last_heading(traj):",
+  "planner_fn_equals_independent_literal_bitwise": true,
+  "planner_fn_changes_only_heading19": true
+ },
+ "cross_checks_reported": {
+  "recovered_k_equals_pipeline_proposal_dump_pick": "200/200",
+  "recovered_k_equals_dump_pick_infer": "200/200",
+  "rebuilt_unrepaired_seam_bit_identical_to_shipped_ep015_seam": true,
+  "repaired_conversion_also_matches_shipped_seam_on_tokens": 0,
+  "dump_meta": {
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+   "tokens": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json",
+   "planner_rule": "navsim_v1",
+   "planner_select": "best",
+   "rows": 200,
+   "n_misses": 0,
+   "gpu_finished_local": "2026-09-27T11:12:17",
+   "extra_forward": true
+  },
+  "dump_second_forward_max_abs_pose_diff": 0.0,
+  "what": "the pick recovered by exact match against the pipeline's own record of its pick (proposals.npz, written by the 09:30 forward) and the dump's; the dump's forward repeated itself bit-for-bit (traj2_maxdiff), consistent with a deterministic forward"
+ },
+ "gates": {
+  "A_unique_exact_pick_recovery": {
+   "what": "each token's shipped pick recovered from the ep015 native dump: to_navsim(traj[token, k]) as float32 must equal the shipped ep015 seam's 8 poses bit-for-bit, for exactly ONE k",
+   "tokens_with_unique_exact_match": "200/200",
+   "tokens_with_0_matches": 0,
+   "tokens_with_more_than_1_match": 0,
+   "failing_tokens": [],
+   "pass": true
+  },
+  "R_same_selection_rule": {
+   "what": "the selection rule and `select` each point was picked with, from its seam report AND its pipeline proposal dump: one rule for both points, or the readout is not like-for-like",
+   "distinct_rule_select_pairs": [
+    [
+     "navsim_v1",
+     "best"
+    ]
+   ],
+   "pass": true
+  },
+  "B_only_the_4s_heading_differs": {
+   "what": "repaired seam vs the shipped ep015 seam: x, y bit-identical on all 8 poses of all tokens; headings 0.5-3.5 s bit-identical; the 4.0 s heading bit-identical to the native heading[18] -- so only the 4.0 s heading can differ",
+   "x_y_bit_identical_all_8_poses": true,
+   "heading_bit_identical_0.5_to_3.5s": true,
+   "heading_4.0s_bit_identical_to_native_heading18": true,
+   "tokens_whose_4.0s_heading_changed": 200,
+   "n": 200,
+   "pass": true
+  },
+  "seams_on_disk_equal_rebuild": {
+   "unrepaired": true,
+   "repaired": true,
+   "token_order": true,
+   "pass": true
+  },
+  "C_rebuilt_unrepaired_reproduces_pipeline_ep015": {
+   "what": "the rebuilt UNREPAIRED seam, scored today by the unchanged harness, reproduces the pipeline's own ep015 scores token-for-token (PDMS and all six sub-scores, |diff| <= 1e-12)",
+   "harness_status": "PASS",
+   "tokens_missing": 0,
+   "valid_rebuilt": "200/200",
+   "valid_pipeline": "200/200",
+   "max_abs_pdms_diff": 0.0,
+   "max_abs_subscore_diff": 0.0,
+   "pdms_rebuilt_x100": 61.183,
+   "pdms_pipeline_x100": 61.183,
+   "pass": true
+  },
+  "D_every_harness_run_PASS_every_token_valid": {
+   "new_runs": {
+    "unrepaired": {
+     "label": "refe_lfl016_ep015_unrepaired",
+     "status": "PASS",
+     "csv_valid_rows": 200,
+     "tokens_valid": "200/200",
+     "C1_max_abs_delta": 0.0,
+     "failures": [],
+     "summary_x100_4dp": {
+      "NC": 89.75,
+      "DAC": 78.5,
+      "EP": 58.2392,
+      "TTC": 83.5,
+      "C": 60.5,
+      "DDC": 92.0,
+      "PDMS": 61.183
+     },
+     "wall_s": 111.4,
+     "stdout_log": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\logs\\score_unrepaired.log"
+    },
+    "repaired": {
+     "label": "refe_lfl016_ep015_repaired",
+     "status": "PASS",
+     "csv_valid_rows": 200,
+     "tokens_valid": "200/200",
+     "C1_max_abs_delta": 0.0,
+     "failures": [],
+     "summary_x100_4dp": {
+      "NC": 92.25,
+      "DAC": 92.0,
+      "EP": 72.0515,
+      "TTC": 88.0,
+      "C": 100.0,
+      "DDC": 91.75,
+      "PDMS": 77.9381
+     },
+     "wall_s": 111.4,
+     "stdout_log": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\logs\\score_repaired.log"
+    }
+   },
+   "pipeline_runs": {
+    "sub200_ep015": {
+     "label": "refe_sub200_ep015",
+     "status": "PASS",
+     "csv_valid_rows": 200,
+     "tokens_valid": "200/200",
+     "summary_PDMS_x100": 61.183,
+     "csv": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015/refe_sub200_ep015.csv",
+     "point_record": "D:/Projects/TanitAD/data/refe_navtest/points/sub200_ep015.json",
+     "point_tokens": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json",
+     "point_tokens_are_this_token_file": true,
+     "point_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch015.pt",
+     "point_ckpt_is_this_snapshot": true
+    },
+    "sub200_ep016": {
+     "label": "refe_sub200_ep016",
+     "status": "PASS",
+     "csv_valid_rows": 200,
+     "tokens_valid": "200/200",
+     "summary_PDMS_x100": 76.5243,
+     "csv": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep016/refe_sub200_ep016.csv",
+     "point_record": "D:/Projects/TanitAD/data/refe_navtest/points/sub200_ep016.json",
+     "point_tokens": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json",
+     "point_tokens_are_this_token_file": true,
+     "point_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch016.pt",
+     "point_ckpt_is_this_snapshot": true
+    }
+   },
+   "pass": true
+  },
+  "all_gates_pass": true
+ },
+ "statistic": {
+  "headline": "016_repaired_minus_015_repaired",
+  "estimator": "paired log-cluster bootstrap over the 93 logs, 10000 resamples, percentile 95 %, seed 20260927 (eval/snapshot_pair_under_rule.py's estimator); all three comparisons on the SAME draws",
+  "variance_answered": "EPISODES only (another draw of logs). One checkpoint per point, one deterministic forward: NOT training variance (another run of epoch 16 -- no replicate exists) and NOT inference variance",
+  "n_tokens": 200,
+  "n_logs": 93,
+  "pdms_x100": {
+   "015_shipped": 61.18,
+   "015_repaired": 77.94,
+   "016_repaired": 76.52
+  },
+  "subscores_x100": {
+   "015_shipped": {
+    "NC": 89.75,
+    "DAC": 78.5,
+    "EP": 58.24,
+    "TTC": 83.5,
+    "C": 60.5,
+    "DDC": 92.0
+   },
+   "015_repaired": {
+    "NC": 92.25,
+    "DAC": 92.0,
+    "EP": 72.05,
+    "TTC": 88.0,
+    "C": 100.0,
+    "DDC": 91.75
+   },
+   "016_repaired": {
+    "NC": 94.25,
+    "DAC": 90.5,
+    "EP": 66.31,
+    "TTC": 90.5,
+    "C": 100.0,
+    "DDC": 94.25
+   }
+  },
+  "comparisons": {
+   "016_repaired_minus_015_repaired": {
+    "delta": -1.41,
+    "ci95": [
+     -6.45,
+     3.88
+    ],
+    "separated": false,
+    "better": 40,
+    "worse": 103,
+    "tied": 57,
+    "delta_unrounded": -1.4138368646650212,
+    "ci95_unrounded": [
+     -6.4537369414492485,
+     3.8751812310468736
+    ],
+    "what": "LIKE-FOR-LIKE: both points executed with the repair; the epoch of training, read against another draw of episodes",
+    "a": "015_repaired",
+    "b": "016_repaired",
+    "a_pdms": 77.94,
+    "b_pdms": 76.52,
+    "subscore_deltas_x100": {
+     "NC": 2.0,
+     "DAC": -1.5,
+     "EP": -5.74,
+     "TTC": 2.5,
+     "C": 0.0,
+     "DDC": 2.5
+    },
+    "where_the_difference_comes_from_reported": {
+     "a multiplier moved (NC or DAC)": {
+      "n": 33,
+      "better": 17,
+      "worse": 16,
+      "contribution_to_mean_difference_x100": 0.58
+     },
+     "only ego progress moved": {
+      "n": 104,
+      "better": 19,
+      "worse": 85,
+      "contribution_to_mean_difference_x100": -2.17
+     },
+     "tied": {
+      "n": 57,
+      "better": 0,
+      "worse": 0,
+      "contribution_to_mean_difference_x100": 0.0
+     },
+     "TTC or comfort moved, multipliers unchanged": {
+      "n": 6,
+      "better": 4,
+      "worse": 2,
+      "contribution_to_mean_difference_x100": 0.18
+     }
+    }
+   },
+   "015_repaired_minus_015_shipped": {
+    "delta": 16.76,
+    "ci95": [
+     11.72,
+     22.13
+    ],
+    "separated": true,
+    "better": 109,
+    "worse": 24,
+    "tied": 67,
+    "delta_unrounded": 16.755101312718004,
+    "ci95_unrounded": [
+     11.718891400252454,
+     22.127358415305757
+    ],
+    "what": "the repair alone, snapshot 015, these 200 tokens",
+    "a": "015_shipped",
+    "b": "015_repaired",
+    "a_pdms": 61.18,
+    "b_pdms": 77.94,
+    "subscore_deltas_x100": {
+     "NC": 2.5,
+     "DAC": 13.5,
+     "EP": 13.81,
+     "TTC": 4.5,
+     "C": 39.5,
+     "DDC": -0.25
+    }
+   },
+   "016_repaired_minus_015_shipped": {
+    "delta": 15.34,
+    "ci95": [
+     9.97,
+     21.41
+    ],
+    "separated": true,
+    "better": 91,
+    "worse": 58,
+    "tied": 51,
+    "delta_unrounded": 15.341264448052982,
+    "ci95_unrounded": [
+     9.971011217722065,
+     21.41487489362807
+    ],
+    "what": "the curve's step as published (repair + one epoch mixed)",
+    "a": "015_shipped",
+    "b": "016_repaired",
+    "a_pdms": 61.18,
+    "b_pdms": 76.52,
+    "subscore_deltas_x100": {
+     "NC": 4.5,
+     "DAC": 12.0,
+     "EP": 8.07,
+     "TTC": 7.0,
+     "C": 39.5,
+     "DDC": 2.25
+    }
+   }
+  },
+  "decomposition_identity_per_token": true,
+  "a7_on_923_fresh_tokens_for_comparison": {
+   "delta": 16.2,
+   "ci95": [
+    12.83,
+    19.52
+   ],
+   "source": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\a7_confirm\\a7_confirm_ep015.json",
+   "shipped_pdms": 60.76,
+   "repaired_pdms": 76.96
+  }
+ },
+ "estimator_control": {
+  "what": "this script's estimator on Amendment 7's own per-token CSVs (923 tokens) must reproduce the banked delta and interval exactly",
+  "banked": {
+   "delta": 16.2,
+   "ci95": [
+    12.83,
+    19.52
+   ],
+   "source": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\a7_confirm\\a7_confirm_ep015.json"
+  },
+  "reread": {
+   "delta": 16.2,
+   "ci95": [
+    12.83,
+    19.52
+   ],
+   "n_logs": 43
+  },
+  "pass": true
+ },
+ "exploration_reproduction": {
+  "what": "Amendment 7's motivating exploration on THESE 200 tokens (slow_copy_probe.py, the shipped pick with heading[19] := heading[18], 'pickhold'): a reported reproduction, not a gate",
+  "seam": "D:/Projects/TanitAD/data/refe_navtest/seams/proptable/sub200_ep015_slow/refe_sub200_ep015_f100_pickhold.npz",
+  "poses_bit_identical_to_this_repaired_seam": true,
+  "csv": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015_f100_pickhold/refe_sub200_ep015_f100_pickhold.csv",
+  "per_token_max_abs_pdms_diff_vs_this_run": 0.0,
+  "banked": {
+   "pdms": 77.94,
+   "minus_shipped": 16.76,
+   "ci95_vs_shipped": [
+    11.72,
+    22.13
+   ],
+   "source": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\e6_sub200_ep015\\slow_copies.json"
+  }
+ },
+ "code_path_check_reported": {
+  "what": "REPORTED: apart from the repair, did 015's forward (10:45) and 016's (16:24) run one inference path? Net diff of -- net diff vs the last committed versions",
+  "mirror_git_dir": "C:/Users/Admin/tanitad-push/.git",
+  "files": {
+   "refe/model.py": {
+    "committed_rev": "4ac00b4",
+    "identical": true,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "changed_lines": []
+   },
+   "refe/planner.py": {
+    "committed_rev": "7e9ccdd",
+    "identical": false,
+    "lines_added": 50,
+    "lines_removed": 4,
+    "changed_lines": [
+     "+def repair_last_heading(traj):",
+     "+    \"\"\"SPEC_NAVTEST Amendment 7 (ADOPTED 2026-09-27, eval/RESULT_A7_a7confirm_ep015.md): the model's OWN heading at",
+     "+    the last native pose (index -1, t = 4.0 s) is corrupted in every evaluated snapshot (median ~1.1 rad off the",
+     "+    path, |heading| > pi on ~60 %; GOALS_AND_CLAIMS D-REFE-LASTYAW-1), so the executed plan takes the previous pose's",
+     "+    heading there. Positions, speed and every other heading are untouched. [..., T, 3] numpy or torch in -> a COPY of",
+     "+    the same type and dtype out; confirmed +16.20 [+12.83, +19.52] PDMS on 923 tokens disjoint from W3's subset.\"\"\"",
+     "+    out = traj.clone() if isinstance(traj, torch.Tensor) else np.array(traj, copy=True)",
+     "+    out[..., -1, 2] = out[..., -2, 2]",
+     "+    return out",
+     "+",
+     "+",
+     "-                 horizon_s: float = 12.0, min_speed_mps: float = 5.0, scenario=None):",
+     "+                 horizon_s: float = 12.0, min_speed_mps: float = 5.0, scenario=None, rule: str | None = None,",
+     "+                 repair_last_heading: bool | None = None):",
+     "+        # the selection RULE is named and recorded, never implicit (SPEC_NAVTEST Amendment 5, RETRACTION_LOG R25)",
+     "+        self.rule = rule or self.DEFAULT_RULE",
+     "+        if self.rule not in self.RULES:",
+     "+            raise ValueError(f\"unknown selection rule {self.rule!r}; one of {self.RULES}\")",
+     "+        # the last-pose heading repair is named and recorded too (SPEC_NAVTEST Amendment 7); False reproduces every",
+     "+        # evaluation before 2026-09-27 ~14:30 Berlin",
+     "+        self.repair_last_heading = (self.REPAIR_LAST_HEADING if repair_last_heading is None",
+     "+                                    else bool(repair_last_heading))",
+     "-        return self._to_trajectory(ego, traj[k].cpu().numpy())",
+     "+        return self._to_trajectory(ego, self.executed(traj, k).cpu().numpy())",
+     "+",
+     "+    def executed(self, traj, k: int):",
+     "+        \"\"\"The plan this planner EXECUTES: proposal `k` of `traj` [M, T, 3], with the Amendment-7 repair when it is",
+     "+        on. Every consumer (the nuPlan loop above, the NAVSIM seam) takes the executed plan from here, so the repair",
+     "+        cannot be applied in one path and forgotten in another.\"\"\"",
+     "+        p = traj[k]",
+     "+        return repair_last_heading(p) if self.repair_last_heading else p",
+     "-    PDM_W = (5.0, 5.0, 4.0)          # progress, time-to-collision, comfort(=LK+HC), sum 14",
+     "+    PDM_W = (5.0, 5.0, 4.0)          # progress, time-to-collision, comfort(=LK+HC), sum 14 (rule \"v2_shape\")",
+     "+    # \u2b50 SPEC_NAVTEST AMENDMENT 5 (PI option 3, 2026-09-26): the harness REFe is scored on is NAVSIM **v1** PDMS --",
+     "+    # NC x DAC x (5 EP + 5 TTC + 2 C) / 12, driving direction at weight 0 (navsim @ 3e8291b `pdm_scorer.py:38-42`).",
+     "+    # \"v2_shape\" above is NAVSIM v2's EPDMS shape, which every point before Amendment 5 was selected with",
+     "+    # (RETRACTION_LOG R25). Both stay selectable BY NAME so every earlier point remains reproducible.",
+     "+    V1_W = (5.0, 5.0, 2.0)           # progress, time-to-collision, comfort, sum 12 (rule \"navsim_v1\")",
+     "+    RULES = (\"v2_shape\", \"navsim_v1\")",
+     "+    # \u2b50 FLIPPED 2026-09-26 21:23 Berlin by SPEC Amendment 5's verdict (eval/RESULT_A5_a5confirm_ep013.md): NO MEASURABLE",
+     "+    # DIFFERENCE, +0.78 [-0.30, +1.82] PDMS on 923 tokens from the 43 logs outside W3's subset -- not harmful, so the",
+     "+    # benchmark's own formula becomes the selection rule for every evaluation from then on (the pre-registered branch).",
+     "+    DEFAULT_RULE = \"navsim_v1\"",
+     "+    # \u2b50 ON from 2026-09-27 ~14:30 Berlin by SPEC Amendment 7's verdict (eval/RESULT_A7_a7confirm_ep015.md): ADOPT,",
+     "+    # 60.76 -> 76.96 PDMS, +16.20 [+12.83, +19.52] on the 923 confirmation tokens (43 logs outside W3's subset).",
+     "+    REPAIR_LAST_HEADING = True",
+     "+        if self.rule == \"navsim_v1\":",
+     "+            # NAVSIM v1 PDMS: NC x DAC x (5 EP + 5 TTC + 2 C) / 12 -- driving direction does not enter",
+     "+            w1 = torch.tensor(self.V1_W, device=p.device, dtype=p.dtype)",
+     "+            return p[..., 0] * p[..., 1] * (p[..., 2] * w1[0] + p[..., 3] * w1[1] + p[..., 4] * w1[2]) / w1.sum()",
+     "+        # rule \"v2_shape\" (every point before Amendment 5):",
+     "-                \"select\": self.select, \"backbone\": self.cfg.backbone}",
+     "+                \"select\": self.select, \"backbone\": self.cfg.backbone, \"rule\": self.rule,",
+     "+                \"repair_last_heading\": self.repair_last_heading}"
+    ]
+   },
+   "eval/refe_navtest_seam.py": {
+    "committed_rev": "4ac00b4",
+    "identical": false,
+    "lines_added": 14,
+    "lines_removed": 5,
+    "changed_lines": [
+     "+    ap.add_argument(\"--rule\", default=None, choices=(\"v2_shape\", \"navsim_v1\"),",
+     "+                    help=\"the selection RULE for --select best (default: planner.py DEFAULT_RULE; SPEC Amendment 5)\")",
+     "+    ap.add_argument(\"--no-repair-last-heading\", action=\"store_true\",",
+     "+                    help=\"reproduce an evaluation from before SPEC Amendment 7 (2026-09-27): execute the raw last-pose heading\")",
+     "-                          backbone=a.backbone, device=a.device, select=a.select)",
+     "+                          backbone=a.backbone, device=a.device, select=a.select, rule=a.rule,",
+     "+                          repair_last_heading=(False if a.no_repair_last_heading else None))",
+     "-            poses = to_navsim(traj[k].float().cpu().numpy())",
+     "+            # the EXECUTED plan -- with SPEC Amendment 7's last-pose heading repair when it is on (planner.executed)",
+     "+            poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())",
+     "-                dump_props.append(np.stack([to_navsim(traj[j].float().cpu().numpy())",
+     "+                # any proposal the planner executes gets Amendment 7's repair, so the E-6 table scores them that way",
+     "+                dump_props.append(np.stack([to_navsim(planner.executed(traj, j).float().cpu().numpy())",
+     "-           \"miss_examples\": misses[:10], \"ckpt\": a.ckpt, \"select\": a.select,",
+     "+           \"miss_examples\": misses[:10], \"ckpt\": a.ckpt, \"select\": a.select, \"rule\": planner.rule,",
+     "+           \"repair_last_heading\": planner.repair_last_heading,",
+     "-                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select),",
+     "+                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select), rule=np.array(planner.rule),",
+     "+                 repair_last_heading=np.array(planner.repair_last_heading),"
+    ]
+   }
+  }
+ },
+ "csv_to_seam_ties_reported": {
+  "what": "each compared CSV was scored from exactly this seam file (the harness's call log), unmodified since",
+  "pipeline_sub200_ep015": {
+   "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep015/refe_sub200_ep015.calls.jsonl",
+   "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_sub200_ep015.npz",
+   "arm_served": "REFe_sub200_ep015",
+   "is_this_seam": true,
+   "seam_calls": 200,
+   "scored_local": "2026-09-27T09:48:12",
+   "seam_mtime_local": "2026-09-27T09:45:16",
+   "seam_unmodified_since_scored": true,
+   "pass": true
+  },
+  "pipeline_sub200_ep016": {
+   "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_sub200_ep016/refe_sub200_ep016.calls.jsonl",
+   "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_sub200_ep016.npz",
+   "arm_served": "REFe_sub200_ep016",
+   "is_this_seam": true,
+   "seam_calls": 200,
+   "scored_local": "2026-09-27T16:41:45",
+   "seam_mtime_local": "2026-09-27T16:40:48",
+   "seam_unmodified_since_scored": true,
+   "pass": true
+  },
+  "unrepaired": {
+   "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_lfl016_ep015_unrepaired/refe_lfl016_ep015_unrepaired.calls.jsonl",
+   "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_lfl016_ep015_unrepaired.npz",
+   "arm_served": "REFe_lfl016_ep015_unrepaired",
+   "is_this_seam": true,
+   "seam_calls": 200,
+   "scored_local": "2026-09-27T17:25:23",
+   "seam_mtime_local": "2026-09-27T17:24:06",
+   "seam_unmodified_since_scored": true,
+   "pass": true
+  },
+  "repaired": {
+   "call_log": "D:/Projects/TanitAD/data/refe_navtest/score/refe_lfl016_ep015_repaired/refe_lfl016_ep015_repaired.calls.jsonl",
+   "seam_file_served": "D:/Projects/TanitAD/data/refe_navtest/seams/refe_lfl016_ep015_repaired.npz",
+   "arm_served": "REFe_lfl016_ep015_repaired",
+   "is_this_seam": true,
+   "seam_calls": 200,
+   "scored_local": "2026-09-27T17:25:23",
+   "seam_mtime_local": "2026-09-27T17:24:06",
+   "seam_unmodified_since_scored": true,
+   "pass": true
+  }
+ },
+ "heading_signature_reported": {
+  "what": "the corrupted native heading[19] lands verbatim at NAVSIM t = 4.0 s (an exact grid point); a seam executed WITHOUT the repair shows |heading| > pi there on most tokens, one executed WITH it does not",
+  "015_shipped_seam": {
+   "share_abs_heading_4.0s_above_pi": 0.58,
+   "median_abs_heading_4.0s_rad": 5.2694
+  },
+  "015_repaired_seam": {
+   "share_abs_heading_4.0s_above_pi": 0.0,
+   "median_abs_heading_4.0s_rad": 0.1169
+  },
+  "016_shipped_seam": {
+   "share_abs_heading_4.0s_above_pi": 0.0,
+   "median_abs_heading_4.0s_rad": 0.0983
+  }
+ },
+ "four_families": {
+  "what": "NOT recomputed. The four families read positions only (the NAVSIM family adapter drops the heading column; its heading_mae_deg is the path tangent), and gate B proves 015-repaired has 015-shipped's positions bit-for-bit, so the pipeline's existing per-snapshot family readouts for 015 (computed on the unrepaired seam) and 016 (computed on the repaired seam) are already like-for-like. Strategic: unavailable in NAVSIM.",
+  "pipeline_family_readouts": {
+   "sub200_ep015": {
+    "path": "D:/Projects/TanitAD/data/refe_navtest/points/sub200_ep015/4_families.json",
+    "sha256": "6b6b78c0e5bcbe6f9dbe903ccb10d206f09ad32a527d3b56d7d6215f768c4956"
+   },
+   "sub200_ep016": {
+    "path": "D:/Projects/TanitAD/data/refe_navtest/points/sub200_ep016/4_families.json",
+    "sha256": "f749e6ae836c9db52436933337ac8f5ab78f1a7c23cded4a2131fb5837ce56b1"
+   }
+  },
+  "a7_evidence_positions_only": {
+   "headline_numbers_identical": true,
+   "full_blocks_identical_apart_from_run_labels": true,
+   "source": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\a7_confirm\\a7_confirm_ep015.json -> four_families (families6.py run on a shipped and a repaired seam)"
+  }
+ },
+ "harness_artifacts": {
+  "refe_lfl016_ep015_unrepaired": {
+   "harness_dir": "D:/Projects/TanitAD/data/refe_navtest/score/refe_lfl016_ep015_unrepaired",
+   "files": {
+    "refe_lfl016_ep015_unrepaired.calls.jsonl": {
+     "sha256": "1fe0c4989ab38342dd68e81a3d508580ce7d1c2c7b8b6a1b7aeca922c0a76f3a",
+     "bytes": 17574
+    },
+    "refe_lfl016_ep015_unrepaired.counts.json": {
+     "sha256": "cf1465ed7fffe37a963b65083074b07ffe5ebb8d3e4d67762bad3af92f58f1d4",
+     "bytes": 2058,
+     "repo_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\harness\\refe_lfl016_ep015_unrepaired\\refe_lfl016_ep015_unrepaired.counts.json",
+     "repo_copy_sha256_equal": true
+    },
+    "refe_lfl016_ep015_unrepaired.csv": {
+     "sha256": "b7dc808223cefa17133a40564ea03e5087fbac906392ab53b731526fa99042ac",
+     "bytes": 13946,
+     "repo_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\harness\\refe_lfl016_ep015_unrepaired\\refe_lfl016_ep015_unrepaired.csv",
+     "repo_copy_sha256_equal": true
+    },
+    "refe_lfl016_ep015_unrepaired.log": {
+     "sha256": "767936ea545e365592af89c804d64079332a4db3bd22ffdbf0a5edc5817bb10d",
+     "bytes": 67046,
+     "repo_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\harness\\refe_lfl016_ep015_unrepaired\\refe_lfl016_ep015_unrepaired.log",
+     "repo_copy_sha256_equal": true
+    },
+    "refe_lfl016_ep015_unrepaired_hooks.json": {
+     "sha256": "92e6c93c233343a2f10913e852e70d808918b80ae3f8d6d7046f5f1353936000",
+     "bytes": 197993
+    },
+    "refe_lfl016_ep015_unrepaired_manifest.json": {
+     "sha256": "1d9ed22d906a243d971327d9a09ab5e76f73aea83f508885ebf216daed0b34be",
+     "bytes": 20893
+    },
+    "refe_lfl016_ep015_unrepaired_rows.jsonl": {
+     "sha256": "1b69225e7826283777282a57b5e50b0a7d13f8ce38ed3f9461d9794c4bbb09d3",
+     "bytes": 92076
+    }
+   }
+  },
+  "refe_lfl016_ep015_repaired": {
+   "harness_dir": "D:/Projects/TanitAD/data/refe_navtest/score/refe_lfl016_ep015_repaired",
+   "files": {
+    "refe_lfl016_ep015_repaired.calls.jsonl": {
+     "sha256": "33aa9932ba85d0101078a5a3eaf1b614c0117be6fda6adc7ca9f6a4942bbe4be",
+     "bytes": 17575
+    },
+    "refe_lfl016_ep015_repaired.counts.json": {
+     "sha256": "ebc1e6cd2f5287ca983375c1bafe15d23457f2426aba8c7163f4c43ebbc4e28a",
+     "bytes": 2068,
+     "repo_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\harness\\refe_lfl016_ep015_repaired\\refe_lfl016_ep015_repaired.counts.json",
+     "repo_copy_sha256_equal": true
+    },
+    "refe_lfl016_ep015_repaired.csv": {
+     "sha256": "a0bbd26f2cc4cb5050026c412eaf426ec38e6196adbd6baa565b21e9d1162869",
+     "bytes": 14055,
+     "repo_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\harness\\refe_lfl016_ep015_repaired\\refe_lfl016_ep015_repaired.csv",
+     "repo_copy_sha256_equal": true
+    },
+    "refe_lfl016_ep015_repaired.log": {
+     "sha256": "b83e0c067bf773588d45ec1cd757deec44480552eedca7dc3b925e72883e156e",
+     "bytes": 67034,
+     "repo_copy": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\raw\\like_for_like_016\\harness\\refe_lfl016_ep015_repaired\\refe_lfl016_ep015_repaired.log",
+     "repo_copy_sha256_equal": true
+    },
+    "refe_lfl016_ep015_repaired_hooks.json": {
+     "sha256": "99f0b484c8568d3de660e47b62548bf221a00aba637f799b842cfdd5ffa2afa8",
+     "bytes": 198254
+    },
+    "refe_lfl016_ep015_repaired_manifest.json": {
+     "sha256": "5598f92ed6747e4a218b6482e91175111370ba3135255163f8c6ed53068a4848",
+     "bytes": 20863
+    },
+    "refe_lfl016_ep015_repaired_rows.jsonl": {
+     "sha256": "bb3986de40f1a5cd46f6ca80b3794d3f21895fbcf3aeb2d9512a7cef0c23b6d7",
+     "bytes": 92197
+    }
+   }
+  }
+ },
+ "provenance": {
+  "script": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\like_for_like_016.py",
+  "script_sha256": "9732caa9537f028bdead9af3c71a2b5045e9e5e807458d60eb074e27b2745043",
+  "dump_sha256": "c1667b481d2e228a3883fb84e9443e7215235cfa6fb48751265a1b2fadc813e0",
+  "seam_sha256": {
+   "sub200_ep015": "5ed8656adfb479d1b2c7538a032214ad6cb1e9eb3a47248a6ed83f71acbda854",
+   "sub200_ep016": "475027dcca649c742f83e00132b4cbcb8532075bae8d0cd04a5c2099d27eb469",
+   "unrepaired": "7e0e33c6f1a53b0fe72fea0cae6f739c986d8d07ebbcdd16560bc9cd26da4b3e",
+   "repaired": "107b035b6fed10b7d52709ccd4401e224af124eee9231ca67b40f85bbba6a88f"
+  },
+  "seam_md5": {
+   "unrepaired": "a3d2a0e57f0784c42d3552c83f94e5b2",
+   "repaired": "065b967c587df31f7cdc26a96c702981"
+  },
+  "csv_sha256": {
+   "sub200_ep015": "b7dc808223cefa17133a40564ea03e5087fbac906392ab53b731526fa99042ac",
+   "sub200_ep016": "2464e8834c552002d489280b3273836c653ebc81a8f3f65acc10e0fcca47b969",
+   "unrepaired": "b7dc808223cefa17133a40564ea03e5087fbac906392ab53b731526fa99042ac",
+   "repaired": "a0bbd26f2cc4cb5050026c412eaf426ec38e6196adbd6baa565b21e9d1162869"
+  },
+  "tokens_sha256": "52a59595136387051e39cebced530e484277536e147be9caf383989e9d192032"
+ },
+ "cpu_only": {
+  "torch_imported": false,
+  "python": "C:\\Users\\Admin\\venvs\\driverl-eval\\Scripts\\python.exe",
+  "CUDA_VISIBLE_DEVICES": "-1"
+ }
+}

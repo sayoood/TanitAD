@@ -1,0 +1,146 @@
+{
+ "shapes": {
+  "LFT": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_lead_cond": "ABSENT",
+   "levers_lead_cond_zero_init": "ABSENT",
+   "init_ckpt_fresh_keys": null,
+   "init_ckpt_n_mismatch": 0,
+   "steps_total": 6000,
+   "probe": "ABSENT",
+   "text_has_lead_cond": false,
+   "key_set_equal_to_base_tree": true,
+   "key_set_symmetric_difference": [],
+   "gate_extra_wrong": {
+    "levers.lead_cond=on": 1
+   },
+   "PASS": true
+  },
+  "LC": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_lead_cond": "on",
+   "levers_lead_cond_zero_init": true,
+   "init_ckpt_fresh_keys": [
+    "lead_cond.bias",
+    "lead_cond.weight"
+   ],
+   "init_ckpt_n_mismatch": 0,
+   "steps_total": 6000,
+   "probe": {
+    "lead_cond": "on",
+    "n_rows": 7,
+    "n_batch": 8,
+    "p_mean": 0.5438042879104614,
+    "p_std": 0.016945358365774155,
+    "g_mean": 0.04445960372686386,
+    "g_std": 0.05429796501994133,
+    "u_abs_max": 0.5731838941574097,
+    "grad_norm_weight": 0.009416227228939533,
+    "grad_norm_bias": 0.018431754782795906,
+    "control_zero_u_grad_norm_weight": 0.0,
+    "control_zero_u_grad_norm_bias": 0.018431754782795906,
+    "grad_lead_head_through_u_max_abs_diff": 0.0,
+    "pass": true
+   },
+   "text_has_lead_cond": true,
+   "gate_extra_right": {
+    "rc": 0,
+    "out": "extra token written F:/TanitAD-scratch/v8proof/leadcond/work/tmp/c6_extra_token.json",
+    "expect": [
+     "levers.wm_state=grid",
+     "levers.lead_sup=on",
+     "levers.w_lead_sup=1",
+     "levers.lead_hist=5",
+     "levers.lead_cond=on"
+    ]
+   },
+   "gate_extra_wrong": {
+    "levers.lead_cond=off": 1,
+    "levers.lead_cond=on_wrong": 1
+   },
+   "PASS": true
+  },
+  "LO": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_lead_cond": "ABSENT",
+   "levers_lead_cond_zero_init": "ABSENT",
+   "init_ckpt_fresh_keys": null,
+   "init_ckpt_n_mismatch": 0,
+   "steps_total": 6000,
+   "probe": "ABSENT",
+   "text_has_lead_cond": false,
+   "key_set_equal_to_base_tree": true,
+   "key_set_symmetric_difference": [],
+   "gate_extra_wrong": {
+    "levers.lead_cond=on": 1
+   },
+   "PASS": true
+  },
+  "LCO": {
+   "rc": 0,
+   "declared_vs_built": "PASS",
+   "live_pass": true,
+   "levers_lead_cond": "on",
+   "levers_lead_cond_zero_init": true,
+   "init_ckpt_fresh_keys": [
+    "lead_cond.bias",
+    "lead_cond.weight"
+   ],
+   "init_ckpt_n_mismatch": 0,
+   "steps_total": 6000,
+   "probe": {
+    "lead_cond": "on",
+    "n_rows": 7,
+    "n_batch": 8,
+    "p_mean": 0.5438042879104614,
+    "p_std": 0.016945358365774155,
+    "g_mean": 0.04445960372686386,
+    "g_std": 0.05429796501994133,
+    "u_abs_max": 0.5731838941574097,
+    "grad_norm_weight": 0.009416227228939533,
+    "grad_norm_bias": 0.018431754782795906,
+    "control_zero_u_grad_norm_weight": 0.0,
+    "control_zero_u_grad_norm_bias": 0.018431754782795906,
+    "grad_lead_head_through_u_max_abs_diff": 0.0,
+    "pass": true
+   },
+   "text_has_lead_cond": true,
+   "gate_extra_right": {
+    "rc": 0,
+    "out": "extra token written F:/TanitAD-scratch/v8proof/leadcond/work/tmp/c6_extra_token.json",
+    "expect": [
+     "levers.wm_state=grid",
+     "levers.lead_sup=on",
+     "levers.w_lead_sup=1",
+     "levers.lead_hist=5",
+     "levers.lead_cond=on",
+     "levers.w_rule_own=4",
+     "levers.rule_own_form=l1"
+    ]
+   },
+   "gate_extra_wrong": {
+    "levers.lead_cond=off": 1,
+    "levers.lead_cond=on_wrong": 1
+   },
+   "PASS": true
+  }
+ },
+ "refusals": {
+  "on_without_lead_sup": {
+   "rc": 1,
+   "tail": "utputs, so with no head it is a lever that is declared and does nothing\") ValueError: lead_cond on needs lead_sup on: the conditioning reads the lead head's outputs, so with no head it is a lever that is declared and does nothing "
+  },
+  "unknown_value": {
+   "rc": 2,
+   "tail": "TARGETS] [--lora-lr LORA_LR]                          [--frames-root FRAMES_ROOT] [--accum ACCUM]                          [--enc-ckpt] v8f_mini_train.py: error: argument --lead-cond: invalid choice: 'maybe' (choose from off, on) "
+  }
+ },
+ "refusals_ok": true,
+ "PASS": true
+}

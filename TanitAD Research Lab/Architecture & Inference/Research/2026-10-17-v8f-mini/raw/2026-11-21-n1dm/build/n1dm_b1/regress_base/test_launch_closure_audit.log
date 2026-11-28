@@ -1,0 +1,26 @@
+..................F..........                                            [100%]
+================================== FAILURES ===================================
+________ test_launch_sources_exist_or_the_whole_audit_silently_narrows ________
+
+    def test_launch_sources_exist_or_the_whole_audit_silently_narrows():
+        """⛔ The one remaining hand-list is of launch SOURCES. It must be real.
+    
+        A moved runbook makes the derivation return fewer entry points, the closure
+        return fewer files, and the audit report DRIFT=0 for a reason that has
+        nothing to do with the box. That is the failure this tool exists to kill,
+        reappearing as its own input.
+        """
+        repo = Path(__file__).resolve().parents[2]
+        for rel in LCA.DEFAULT_LAUNCH_SOURCES:
+>           assert (repo / rel).is_file(), (
+                f"launch source moved: {rel}. Repoint DEFAULT_LAUNCH_SOURCES — do "
+                "NOT let the derivation quietly shrink.")
+E           AssertionError: launch source moved: TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md. Repoint DEFAULT_LAUNCH_SOURCES — do NOT let the derivation quietly shrink.
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = (WindowsPath('C:/Users/Admin/n1dmbase/tree') / 'TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md').is_file
+
+tests\test_launch_closure_audit.py:243: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_launch_closure_audit.py::test_launch_sources_exist_or_the_whole_audit_silently_narrows
+1 failed, 28 passed in 23.58s

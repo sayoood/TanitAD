@@ -1,0 +1,624 @@
+{
+ "hypothesis_attenuation(PREREG6, not a clause)": {
+  "measured_ratio_to_AXON_ref": {
+   "s0": 0.5254346690009362,
+   "s1": 0.5107714486942535
+  },
+  "measured_ratio_to_u400": {
+   "s0": 0.4594038187391242,
+   "s1": 0.5175518532537209
+  },
+  "predicted_gain_ratio": 0.398
+ },
+ "n_tokens": 923,
+ "per_seed_verdict": {
+  "s0": "REFUTED",
+  "s1": "NOT PROVEN"
+ },
+ "prereg_sha256": "1d33a9ed9df630063b9d4cfbec47027b5e8102a2884ec4650f87e57cdc19b6ba",
+ "relative_gain_reference": "AXON_s in-run IDT gain, per seed (AMENDMENT_1)",
+ "seed_floor_F": {
+  "gain_down": 0.06278715862740625,
+  "pdms_delta": 3.3998751873786084
+ },
+ "seeds": {
+  "s0": {
+   "AXON_ref_repro_vs_banked_X1_seam(reported)": {
+    "bit_identical_to_banked_X1_AXON_seam": true,
+    "max_abs_m": 0.0,
+    "n": 923
+   },
+   "decision": {
+    "clauses": {
+     "cruise_floor": true,
+     "d_lon": false,
+     "gain_ci_abs": true,
+     "gain_ci_rel": true,
+     "gain_half": false,
+     "gain_point": true,
+     "pdms_ni": false
+    },
+    "verdict": "REFUTED",
+    "why": "PDMS cost certainly beyond the margin"
+   },
+   "descriptive_decision_vs_u400_banked_gain(not the rule)": "REFUTED",
+   "families": {
+    "LATERAL(T-Ref)": {
+     "cross_mae_m": {
+      "ci95": [
+       0.014018551658207356,
+       0.054946403178026584
+      ],
+      "point": 0.03343613558007219
+     },
+     "curvature_mae_1pm": {
+      "ci95": [
+       0.0021966566234032456,
+       0.007069488656158065
+      ],
+      "point": 0.004440962172519956
+     },
+     "heading_mae_deg": {
+      "ci95": [
+       0.013887782684533388,
+       0.11219506951715874
+      ],
+      "point": 0.06283984586960199
+     },
+     "yaw_rate_mae_degps": {
+      "ci95": [
+       0.1190318282175434,
+       0.3426376636565217
+      ],
+      "point": 0.2273113615784065
+     }
+    },
+    "LONGITUDINAL": {
+     "D_lon": 0.9709344715933745,
+     "D_lon_ci95": [
+      0.7122803452453903,
+      1.2647279771723159
+     ],
+     "along_bias_m(T-Ref)": {
+      "ci95": [
+       -1.04180083665319,
+       -0.7483216113997032
+      ],
+      "point": -0.8994410858722404
+     },
+     "along_mae_m(T-Ref)": {
+      "ci95": [
+       0.622069630129566,
+       0.9058616128572116
+      ],
+      "point": 0.7657449669437986
+     },
+     "cruise_b4_Ref": -1.4036451514858495,
+     "cruise_b4_T": -2.374579623079224,
+     "headway_ttc": "n/a: the NAVSIM seam carries no lead-agent headway; PDMS TTC sub-score is the proxy (subscores)",
+     "speed_bias_4s_all_T": -1.0071497407821142,
+     "speed_mae_4s_all_Ref": 1.237994323648347,
+     "speed_mae_4s_all_T": 1.7190240986785437
+    },
+    "STRATEGIC": "STRATEGIC: PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE.md item 25) -- not a pass, not omitted.",
+    "TACTICAL": "TACTICAL: n/a as a test -- REFe has no tactical layer; an ax change moves no decision head (families6 decisions derive from executed geometry; not gated)."
+   },
+   "gain_AXON_ref_IDT(in-run)": {
+    "down": {
+     "ci95": [
+      0.6921980680147879,
+      1.2399550831417447
+     ],
+     "point": 0.9440862369187635
+    },
+    "probe_literal_sym": {
+     "ci95": [
+      0.8493191267622056,
+      1.380310684150409
+     ],
+     "point": 1.0790457313995605,
+     "what": "ax SET to +-0.5 (refe_ego_probe.py:312), the 1.10 instrument on these tokens"
+    },
+    "sym": {
+     "ci95": [
+      0.8465552378310713,
+      1.3749090152770915
+     ],
+     "point": 1.0788334278827483
+    },
+    "up": {
+     "ci95": [
+      0.920696075358954,
+      1.6313837098715307
+     ],
+     "point": 1.2135806188467333
+    }
+   },
+   "gain_own_IDT": {
+    "down": {
+     "ci95": [
+      0.3022829120129587,
+      0.6759800161467792
+     ],
+     "point": 0.49605563940374986
+    },
+    "probe_literal_sym": {
+     "ci95": [
+      0.45659010630543473,
+      0.8379658937618952
+     ],
+     "point": 0.6455665381552715,
+     "what": "ax SET to +-0.5 (refe_ego_probe.py:312), the 1.10 instrument on these tokens"
+    },
+    "sym": {
+     "ci95": [
+      0.4279587787523184,
+      0.8321914986644499
+     ],
+     "point": 0.6291202985232207
+    },
+    "up": {
+     "ci95": [
+      0.49925266049792993,
+      1.0302376699681235
+     ],
+     "point": 0.7621849576426917
+    }
+   },
+   "gain_ratio_to_AXON_ref": 0.5254346690009362,
+   "gain_ratio_to_u400": 0.4594038187391242,
+   "gates": {
+    "G-HARNESS:AXN": {
+     "PASS": true
+    },
+    "G-HARNESS:CONTROL": {
+     "PASS": true
+    },
+    "G-IDT": {
+     "PASS": true,
+     "a0_record_equals_seam_file": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "G-MEMO": {
+     "PASS": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "G-REACH:IDTgain": {
+     "PASS": true,
+     "bad": [],
+     "n": 90
+    },
+    "G-SEAM": {
+     "PASS": true,
+     "missing_records": [],
+     "n": 923,
+     "rc": 0
+    },
+    "REF:G-IDT": {
+     "PASS": true,
+     "a0_record_equals_seam_file": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "REF:G-MEMO": {
+     "PASS": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "REF:G-REACH:IDTgain": {
+     "PASS": true,
+     "bad": [],
+     "n": 90
+    },
+    "REF:G-SEAM": {
+     "PASS": true,
+     "missing_records": [],
+     "n": 923,
+     "rc": 0
+    },
+    "REF:G_CKPT_identity": {
+     "PASS": true
+    },
+    "REF:compose_K1_K5": {
+     "PASS": true
+    }
+   },
+   "gates_red": [],
+   "n_cruise": 90,
+   "n_cruise_logs": 29,
+   "pdms_delta_x100": {
+    "Ref_AXON_x100": 89.44851966788556,
+    "T_x100": 85.34743306487425,
+    "ci95": [
+     -5.798226995560613,
+     -2.4541850605009587
+    ],
+    "point": -4.1010866030113045
+   },
+   "share_plans_changed_vs_Ref": 1.0,
+   "subscores_delta_x100": {
+    "comfort": {
+     "ci95": [
+      0.0,
+      0.340522133938706
+     ],
+     "point": 0.10834236186348863
+    },
+    "drivable_area_compliance": {
+     "ci95": [
+      -1.4131204414132803,
+      1.668453938888643
+     ],
+     "point": 0.10834236186348863
+    },
+    "driving_direction_compliance": {
+     "ci95": [
+      -0.4215185662004021,
+      0.6564579050902901
+     ],
+     "point": 0.05417118093174431
+    },
+    "ego_progress": {
+     "ci95": [
+      -10.194876349405158,
+      -5.682943454525581
+     ],
+     "point": -7.914113806057034
+    },
+    "no_at_fault_collisions": {
+     "ci95": [
+      -2.6749659889893325,
+      -0.3184713375796178
+     ],
+     "point": -1.408450704225352
+    },
+    "score": {
+     "ci95": [
+      -5.798226995560613,
+      -2.4541850605009587
+     ],
+     "point": -4.1010866030113045
+    },
+    "time_to_collision_within_bound": {
+     "ci95": [
+      -1.98600064987312,
+      1.7709721133751286
+     ],
+     "point": -0.21668472372697725
+    }
+   },
+   "train_gates": {
+    "G_CKPT_identity": true,
+    "G_DECL": true,
+    "G_REACH": true,
+    "compose_K1_K5": true,
+    "post_gates_pass(G_NOISE_N,G_NOISE_STD_TRAIN,G_HONEST_VAL)": true,
+    "sigma_recorded_equals_prereg": true,
+    "train_gates_pass(G-REACH,G-DECL,GA_FEED,GB_STEP0,AXN_NOISE_STD,AXN_HONEST_GATE)": true
+   }
+  },
+  "s1": {
+   "AXON_ref_repro_vs_banked_X1_seam(reported)": {
+    "bit_identical_to_banked_X1_AXON_seam": true,
+    "max_abs_m": 0.0,
+    "n": 923
+   },
+   "decision": {
+    "clauses": {
+     "cruise_floor": true,
+     "d_lon": false,
+     "gain_ci_abs": true,
+     "gain_ci_rel": true,
+     "gain_half": false,
+     "gain_point": false,
+     "pdms_ni": false
+    },
+    "failing": [
+     "pdms_ni",
+     "gain_point",
+     "gain_half",
+     "d_lon"
+    ],
+    "verdict": "NOT PROVEN"
+   },
+   "descriptive_decision_vs_u400_banked_gain(not the rule)": "NOT PROVEN",
+   "families": {
+    "LATERAL(T-Ref)": {
+     "cross_mae_m": {
+      "ci95": [
+       0.0030736886677003613,
+       0.022715107791110863
+      ],
+      "point": 0.012671477335794934
+     },
+     "curvature_mae_1pm": {
+      "ci95": [
+       -0.0016172703368095005,
+       0.0009795563606096389
+      ],
+      "point": -0.00030384863022493366
+     },
+     "heading_mae_deg": {
+      "ci95": [
+       -0.06521229253388731,
+       0.03167048719712792
+      ],
+      "point": -0.015570877125221297
+     },
+     "yaw_rate_mae_degps": {
+      "ci95": [
+       -0.06410534459564769,
+       0.0667860300072664
+      ],
+      "point": 0.0012278089469893011
+     }
+    },
+    "LONGITUDINAL": {
+     "D_lon": 0.35638782469156505,
+     "D_lon_ci95": [
+      0.13483090628308703,
+      0.6349378673023695
+     ],
+     "along_bias_m(T-Ref)": {
+      "ci95": [
+       -0.4343915459040962,
+       -0.177349919554389
+      ],
+      "point": -0.308724276441223
+     },
+     "along_mae_m(T-Ref)": {
+      "ci95": [
+       0.38005375017984416,
+       0.53831425045359
+      ],
+      "point": 0.45807495326301195
+     },
+     "cruise_b4_Ref": -1.9033239666436335,
+     "cruise_b4_T": -2.2597117913351985,
+     "headway_ttc": "n/a: the NAVSIM seam carries no lead-agent headway; PDMS TTC sub-score is the proxy (subscores)",
+     "speed_bias_4s_all_T": -0.6879179438621166,
+     "speed_mae_4s_all_Ref": 1.3722530196948368,
+     "speed_mae_4s_all_T": 1.5978778744070452
+    },
+    "STRATEGIC": "STRATEGIC: PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE.md item 25) -- not a pass, not omitted.",
+    "TACTICAL": "TACTICAL: n/a as a test -- REFe has no tactical layer; an ax change moves no decision head (families6 decisions derive from executed geometry; not gated)."
+   },
+   "gain_AXON_ref_IDT(in-run)": {
+    "down": {
+     "ci95": [
+      0.8268654555193499,
+      1.3615536963361934
+     ],
+     "point": 1.094115184902745
+    },
+    "probe_literal_sym": {
+     "ci95": [
+      0.9526236328695356,
+      1.4044478644910803
+     ],
+     "point": 1.1739707498793437,
+     "what": "ax SET to +-0.5 (refe_ego_probe.py:312), the 1.10 instrument on these tokens"
+    },
+    "sym": {
+     "ci95": [
+      0.884391778581804,
+      1.354616113334043
+     ],
+     "point": 1.1231042820935557
+    },
+    "up": {
+     "ci95": [
+      0.8814436027803927,
+      1.448446827376259
+     ],
+     "point": 1.1520933792843664
+    }
+   },
+   "gain_own_IDT": {
+    "down": {
+     "ci95": [
+      0.4026815306922555,
+      0.6986663139416464
+     ],
+     "point": 0.5588427980311561
+    },
+    "probe_literal_sym": {
+     "ci95": [
+      0.42890647280159844,
+      0.6581924804856386
+     ],
+     "point": 0.5426359647131599,
+     "what": "ax SET to +-0.5 (refe_ego_probe.py:312), the 1.10 instrument on these tokens"
+    },
+    "sym": {
+     "ci95": [
+      0.4345776113468974,
+      0.6607886681716717
+     ],
+     "point": 0.5491215047682456
+    },
+    "up": {
+     "ci95": [
+      0.3899516560536093,
+      0.6829948307528809
+     ],
+     "point": 0.5394002115053352
+    }
+   },
+   "gain_ratio_to_AXON_ref": 0.5107714486942535,
+   "gain_ratio_to_u400": 0.5175518532537209,
+   "gates": {
+    "G-HARNESS:AXN": {
+     "PASS": true
+    },
+    "G-HARNESS:CONTROL": {
+     "PASS": true
+    },
+    "G-IDT": {
+     "PASS": true,
+     "a0_record_equals_seam_file": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "G-MEMO": {
+     "PASS": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "G-REACH:IDTgain": {
+     "PASS": true,
+     "bad": [],
+     "n": 90
+    },
+    "G-SEAM": {
+     "PASS": true,
+     "missing_records": [],
+     "n": 923,
+     "rc": 0
+    },
+    "REF:G-IDT": {
+     "PASS": true,
+     "a0_record_equals_seam_file": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "REF:G-MEMO": {
+     "PASS": true,
+     "fed_equal_raw": true,
+     "poses_equal_A0": true
+    },
+    "REF:G-REACH:IDTgain": {
+     "PASS": true,
+     "bad": [],
+     "n": 90
+    },
+    "REF:G-SEAM": {
+     "PASS": true,
+     "missing_records": [],
+     "n": 923,
+     "rc": 0
+    },
+    "REF:G_CKPT_identity": {
+     "PASS": true
+    },
+    "REF:compose_K1_K5": {
+     "PASS": true
+    }
+   },
+   "gates_red": [],
+   "n_cruise": 90,
+   "n_cruise_logs": 29,
+   "pdms_delta_x100": {
+    "Ref_AXON_x100": 87.98254533284891,
+    "T_x100": 87.28133391721623,
+    "ci95": [
+     -2.0862066248759072,
+     0.6933827881532241
+    ],
+    "point": -0.7012114156326958
+   },
+   "share_plans_changed_vs_Ref": 1.0,
+   "subscores_delta_x100": {
+    "comfort": {
+     "ci95": [
+      0.0,
+      0.340522133938706
+     ],
+     "point": 0.10834236186348863
+    },
+    "drivable_area_compliance": {
+     "ci95": [
+      -0.3157894736842105,
+      1.5367727771679474
+     ],
+     "point": 0.5417118093174431
+    },
+    "driving_direction_compliance": {
+     "ci95": [
+      -0.49944506104328523,
+      0.21345287287122924
+     ],
+     "point": -0.16251354279523295
+    },
+    "ego_progress": {
+     "ci95": [
+      -2.476085774071399,
+      0.5414068374871427
+     ],
+     "point": -0.967847809219444
+    },
+    "no_at_fault_collisions": {
+     "ci95": [
+      -2.1954212576184156,
+      -0.10764262648008611
+     ],
+     "point": -1.0834236186348862
+    },
+    "score": {
+     "ci95": [
+      -2.0862066248759072,
+      0.6933827881532241
+     ],
+     "point": -0.7012114156326958
+    },
+    "time_to_collision_within_bound": {
+     "ci95": [
+      -3.1645569620253164,
+      0.5359344617860679
+     ],
+     "point": -1.191765980498375
+    }
+   },
+   "train_gates": {
+    "G_CKPT_identity": true,
+    "G_DECL": true,
+    "G_REACH": true,
+    "compose_K1_K5": true,
+    "post_gates_pass(G_NOISE_N,G_NOISE_STD_TRAIN,G_HONEST_VAL)": true,
+    "sigma_recorded_equals_prereg": true,
+    "train_gates_pass(G-REACH,G-DECL,GA_FEED,GB_STEP0,AXN_NOISE_STD,AXN_HONEST_GATE)": true
+   }
+  }
+ },
+ "smoke": false,
+ "strategic": "STRATEGIC: PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE.md item 25) -- not a pass, not omitted.",
+ "tactical": "TACTICAL: n/a as a test -- REFe has no tactical layer; an ax change moves no decision head (families6 decisions derive from executed geometry; not gated).",
+ "tier": "TIER: NAVSIM v1.1 PDMS + families6 of an OPEN-LOOP plan against logged agents on the 923 A5 tokens (T0-family) -- NOT the action-closed-loop tier. Open loop has no ax feedback, so it shows what AXNOISE COSTS (against the same-recipe, same-seed AXON control) and how far it cuts the plan's ax GAIN; it is never proof that the stall is fixed. Closed-loop ADOPT = PREREG_AXOFF 6c, run by MM.",
+ "u400_IDT_gain_DESCRIPTIVE_ONLY(P1.json, INHERITED-banked, same tokens; not a clause reference since AMENDMENT_1)": {
+  "down": {
+   "ci95": [
+    0.839125048976842,
+    1.3131775510593477
+   ],
+   "point": 1.0797812712249975
+  },
+  "probe_literal_sym": {
+   "ci95": [
+    0.9513862447928597,
+    1.4948357224879565
+   ],
+   "point": 1.213269410884679,
+   "what": "ax SET to +-0.5 (refe_ego_probe.py:312), the 1.10 instrument on these tokens"
+  },
+  "sym": {
+   "ci95": [
+    1.0031628293228732,
+    1.5468675713487352
+   ],
+   "point": 1.2563186070753365
+  },
+  "up": {
+   "ci95": [
+    1.0580260850791423,
+    1.9247106069783757
+   ],
+   "point": 1.4328559429256758
+  }
+ },
+ "u400_P1_json_sha256": "60c76782ea306174dda4bb839df2c325ef6b06bf400a6e954737edfa735db360",
+ "variance": "Q1 another draw of LOGS: paired log-cluster bootstrap, 10,000 resamples, percentile 95 %, seed 20260927 (ax_stats.Boot). Q2 another TRAINING run: TWO seeds, both must pass; the seed floor F = |value(s0) - value(s1)| is reported (H-ESTIM-SEED-1). Q3 another INFERENCE run: deterministic planner; G-IDT (fresh-trunk identity arm == the seam's own call, bit for bit) measures it.",
+ "verdict": "NOT PROVEN",
+ "written": "2026-11-08T09:39:13"
+}

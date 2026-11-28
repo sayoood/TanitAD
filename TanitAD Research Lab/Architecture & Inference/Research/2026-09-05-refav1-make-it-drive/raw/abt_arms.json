@@ -1,0 +1,218 @@
+{
+ "panel": "14 episodes / 28 windows, stride 40, ccos + Stage-B weights, step 21109, T1",
+ "design": "TARGETED: these 14 episodes carry the 18 windows where prior tau=0.5 changes the decode",
+ "estimator": "episode_cluster_bootstrap, n_boot 2000, 14 clusters (PER-ARM; paired delta is the decision-grade form)",
+ "arms": {
+  "argmax": {
+   "cl": {
+    "ade_dense_m": {
+     "mean": 1.6098,
+     "lo": 1.0741,
+     "hi": 2.1836,
+     "ci95": 0.5548,
+     "se": 0.2854,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_last_m": {
+     "mean": 3.3396,
+     "lo": 2.341,
+     "hi": 4.3015,
+     "ci95": 0.9803,
+     "se": 0.4993,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "mean": 0.5361,
+     "lo": 0.4161,
+     "hi": 0.6587,
+     "ci95": 0.1213,
+     "se": 0.0631,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+     "mean": 0.7171,
+     "lo": 0.5156,
+     "hi": 0.9243,
+     "ci95": 0.2044,
+     "se": 0.1033,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+     "mean": 1.3358,
+     "lo": 0.807,
+     "hi": 1.9067,
+     "ci95": 0.5499,
+     "se": 0.2829,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+     "mean": 12.0674,
+     "lo": 8.978,
+     "hi": 15.0461,
+     "ci95": 3.0341,
+     "se": 1.5494,
+     "reducer": "mean",
+     "n_windows": 27,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n_windows_dropped_no_valid_step": 1
+    }
+   },
+   "goal_rule": null,
+   "trivial_profile": {}
+  },
+  "prior050": {
+   "cl": {
+    "ade_dense_m": {
+     "mean": 2.5025,
+     "lo": 1.7352,
+     "hi": 3.4684,
+     "ci95": 0.8666,
+     "se": 0.4346,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde_last_m": {
+     "mean": 5.2108,
+     "lo": 3.5469,
+     "hi": 7.0361,
+     "ci95": 1.7446,
+     "se": 0.8637,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "mean": 0.5311,
+     "lo": 0.4127,
+     "hi": 0.6559,
+     "ci95": 0.1216,
+     "se": 0.0633,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LON_along_mae_m": {
+     "mean": 1.0943,
+     "lo": 0.6827,
+     "hi": 1.635,
+     "ci95": 0.4761,
+     "se": 0.2464,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_cross_mae_m": {
+     "mean": 2.159,
+     "lo": 1.4837,
+     "hi": 2.9479,
+     "ci95": 0.7321,
+     "se": 0.3722,
+     "reducer": "mean",
+     "n_windows": 28,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "LAT_heading_mae_deg": {
+     "mean": 21.1325,
+     "lo": 17.2086,
+     "hi": 24.9472,
+     "ci95": 3.8693,
+     "se": 1.9427,
+     "reducer": "mean",
+     "n_windows": 27,
+     "n_episodes": 14,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n_windows_dropped_no_valid_step": 1
+    }
+   },
+   "goal_rule": null,
+   "trivial_profile": {}
+  },
+  "argmax_seed1": {
+   "status": "NOT LANDED"
+  }
+ },
+ "floors": {
+  "ha": {
+   "mean": 0.4417,
+   "lo": 0.3336,
+   "hi": 0.5648,
+   "ci95": 0.1156,
+   "se": 0.0587,
+   "reducer": "mean",
+   "n_windows": 28,
+   "n_episodes": 14,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "ha0_ext": {
+   "mean": 0.4263,
+   "lo": 0.3379,
+   "hi": 0.5296,
+   "ci95": 0.0959,
+   "se": 0.0496,
+   "reducer": "mean",
+   "n_windows": 28,
+   "n_episodes": 14,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "ha0": {
+   "mean": 0.436,
+   "lo": 0.3418,
+   "hi": 0.539,
+   "ci95": 0.0986,
+   "se": 0.0509,
+   "reducer": "mean",
+   "n_windows": 28,
+   "n_episodes": 14,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "ol": {
+   "mean": 0.3142,
+   "lo": 0.2184,
+   "hi": 0.4302,
+   "ci95": 0.1059,
+   "se": 0.0543,
+   "reducer": "mean",
+   "n_windows": 28,
+   "n_episodes": 14,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  }
+ }
+}

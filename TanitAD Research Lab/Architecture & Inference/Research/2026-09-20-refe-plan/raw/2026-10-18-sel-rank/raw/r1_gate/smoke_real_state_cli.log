@@ -1,0 +1,15 @@
+# REAL-STATE CLI smoke 2026-10-18 ~14:40, strict mode (no test hooks), against the real default paths while S0 is still running.
+# cmd: python -I srttc_r1_gate.py --fraction 10 --commit <scratch commit holding tip code + the 3 new files> --code-dir <overlay export> --git-dir <scratch repo> --token <scratch> --key-file <scratch key>
+# Expected today: G-COMMIT/G-DVB/G-PATH/G-SUITE PASS (strict G-DVB on the real defaults, real 33-test suite), G-BANK FAIL (no S0_DONE), G-LIVE NOT-RUN; rc=1; no token.
+SR-TTC R1 launch gate: stage run, fraction 10, commit f703c860933d
+  G-COMMIT PASS
+  G-DVB    PASS
+  G-PATH   PASS
+  G-BANK   FAIL
+  G-LIVE   NOT-RUN
+  G-SUITE  PASS
+FAIL: no token minted; report C:\Users\Admin\srttc_gate\work\smoke_tok\r1_gate_FAIL.json
+  - G-BANK: C:/Users/Admin/srttc_s0/run/S0_DONE does not exist: S0 is not done, R1 does not start
+  - G-LIVE: G-BANK is not PASS: no unit is verified to read
+  - G-LIVE: NOT-RUN
+rc=1

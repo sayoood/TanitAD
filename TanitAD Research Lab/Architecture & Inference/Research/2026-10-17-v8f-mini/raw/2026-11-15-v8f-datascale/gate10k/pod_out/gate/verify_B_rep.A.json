@@ -1,0 +1,84 @@
+{
+ "arm": "B_rep",
+ "stage": "A",
+ "token": "/root/dscale10k/gate/tokens/B_rep.A/gate_token.json",
+ "problems": [],
+ "body_sha256": "d7e4db00463b0c0052a3705fcc2e0605056e7b9113974f5bd989c9b3505b7720",
+ "bound_data": [
+  "--join-train",
+  "--lead-train",
+  "--p10",
+  "--speed-train",
+  "--tracks",
+  "--v9-train",
+  "cache/train/manifest.jsonl",
+  "dry_record",
+  "evidence"
+ ],
+ "required_checks": [
+  "C-ARGV",
+  "C-CHUNK",
+  "C-DISJ",
+  "C-HOLD",
+  "C-MD5",
+  "C-NCLIPS",
+  "C-STEPS",
+  "C-TRAIN-SHA",
+  "G-CKPT",
+  "G-CLOCK",
+  "G-EVAL",
+  "G-HYG",
+  "G-LIVE",
+  "G-SUITE"
+ ],
+ "checks_pass": {
+  "C-ARGV": true,
+  "C-CHUNK": true,
+  "C-DISJ": true,
+  "C-HOLD": true,
+  "C-INIT": true,
+  "C-MD5": true,
+  "C-NCLIPS": true,
+  "C-STEPS": true,
+  "C-TRAIN-SHA": true,
+  "G-CKPT": true,
+  "G-CLOCK": true,
+  "G-EVAL": true,
+  "G-HYG": true,
+  "G-LIVE": true,
+  "G-SUITE": true
+ },
+ "regression": [
+  {
+   "arm": "token_body_edited",
+   "red": true,
+   "problems": [
+    "token body was edited (body_sha256)",
+    "token checks not PASS: ['G-LIVE']"
+   ]
+  },
+  {
+   "arm": "argv_one_flag_added",
+   "red": true,
+   "problems": [
+    "token argv_sha256 differs from the current argv_sha256"
+   ]
+  },
+  {
+   "arm": "other_commit",
+   "red": true,
+   "problems": [
+    "token commit differs from the current commit"
+   ]
+  },
+  {
+   "arm": "runner_without_the_bound_extra_files",
+   "red": true,
+   "problems": [
+    "token data dry_record differs from the current file",
+    "token data evidence differs from the current file"
+   ]
+  }
+ ],
+ "pass": true
+}

@@ -1,0 +1,144 @@
+{
+ "tool": "guard_oracle_ceiling.py",
+ "script_sha256": "8995652c91eeabe463902c87e91a0e09ffe9a64767a964f519eaff74a7963353",
+ "reading": "DESCRIPTIVE, privileged (GT class) -- a ceiling, not a deployable arm",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames",
+ "estimator": "paired episode-cluster bootstrap (pair_read_r8.paired_cell -> taniteval.ci), B 2000, seed 0, over EPISODES: answers 'would another draw of EPISODES say this?' ONLY; NOT another training run (one refcv8 training seed), NOT another inference run (one inference seed, 0)",
+ "arms": {
+  "ORACLE": {
+   "md": 0.3411580594679186,
+   "fd": 0.13793103448275862,
+   "worse": [
+    "LAT_curvature_mae_1pm_valid",
+    "LAT_heading_mae_deg",
+    "LAT_yaw_rate_mae_radps_valid"
+   ],
+   "cells": {
+    "missed_decel": {
+     "delta": -0.1283,
+     "lo": -0.1802,
+     "hi": -0.0762,
+     "separated": true
+    },
+    "false_decel": {
+     "delta": -0.0016,
+     "lo": -0.0255,
+     "hi": 0.0189,
+     "separated": false
+    },
+    "ade_m": {
+     "delta": -0.1504,
+     "lo": -0.2564,
+     "hi": -0.0631,
+     "separated": true
+    },
+    "fde_m": {
+     "delta": -0.4845,
+     "lo": -0.7758,
+     "hi": -0.2431,
+     "separated": true
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.1935,
+     "lo": 0.0867,
+     "hi": 0.3107,
+     "separated": true
+    },
+    "LAT_cross_mae_m": {
+     "delta": 0.0227,
+     "lo": -0.0153,
+     "hi": 0.0629,
+     "separated": false
+    }
+   }
+  },
+  "GUARD-ORACLE": {
+   "md": 0.3411580594679186,
+   "fd": 0.13793103448275862,
+   "worse": [],
+   "cells": {
+    "missed_decel": {
+     "delta": -0.1283,
+     "lo": -0.1802,
+     "hi": -0.0762,
+     "separated": true
+    },
+    "false_decel": {
+     "delta": -0.0016,
+     "lo": -0.0255,
+     "hi": 0.0189,
+     "separated": false
+    },
+    "ade_m": {
+     "delta": -0.1793,
+     "lo": -0.2731,
+     "hi": -0.0954,
+     "separated": true
+    },
+    "fde_m": {
+     "delta": -0.5781,
+     "lo": -0.8325,
+     "hi": -0.3504,
+     "separated": true
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.0043,
+     "lo": -0.0303,
+     "hi": 0.0358,
+     "separated": false
+    },
+    "LAT_cross_mae_m": {
+     "delta": -0.0039,
+     "lo": -0.0222,
+     "hi": 0.0151,
+     "separated": false
+    }
+   }
+  },
+  "GUARD-ALL": {
+   "md": 0.38967136150234744,
+   "fd": 0.15032327586206898,
+   "worse": [],
+   "cells": {
+    "missed_decel": {
+     "delta": -0.0798,
+     "lo": -0.1317,
+     "hi": -0.0357,
+     "separated": true
+    },
+    "false_decel": {
+     "delta": 0.0108,
+     "lo": -0.0165,
+     "hi": 0.0358,
+     "separated": false
+    },
+    "ade_m": {
+     "delta": -0.109,
+     "lo": -0.2105,
+     "hi": -0.0153,
+     "separated": true
+    },
+    "fde_m": {
+     "delta": -0.341,
+     "lo": -0.6152,
+     "hi": -0.0932,
+     "separated": true
+    },
+    "LAT_heading_mae_deg": {
+     "delta": 0.0347,
+     "lo": -0.0106,
+     "hi": 0.0945,
+     "separated": false
+    },
+    "LAT_cross_mae_m": {
+     "delta": 0.0192,
+     "lo": -0.0021,
+     "hi": 0.0414,
+     "separated": false
+    }
+   }
+  }
+ },
+ "base_md": 0.4694835680751174,
+ "share_of_guarded_ceiling_reached_by_GUARD-ALL": 0.6219512195121949
+}

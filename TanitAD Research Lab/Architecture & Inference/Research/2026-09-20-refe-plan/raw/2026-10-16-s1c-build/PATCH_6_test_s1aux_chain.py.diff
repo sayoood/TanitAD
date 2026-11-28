@@ -1,0 +1,116 @@
+--- a/refe/test_s1aux_chain.py
++++ b/refe/test_s1aux_chain.py
+@@ -105,7 +105,7 @@
+ # ============================================================================================ 1. static properties
+ ORDER = ['[ -n "${HF_TOKEN:-}" ] || refuse', "s1aux_checks.py tree", 'bad="$(arms_ok)"', 'upw="$(upstream)"; [ $? = 1 ] && refuse', "s1aux_checks.py fetch --repo \"$U400_REPO\"",
+          "s1aux_checks.py store", "onpolicy_relabel_pdm.py --sets \"$HO\"", "pdm_label_complete.py", "select_bank_subset.py", "onpolicy_relabel_teacher_lane.py --queue \"$Q\" --files 'props_r0_*'",
+-         "bank_push s1_labels labels", "\nSTAGE=gpu_wait\nwait_clear\n", "dd if=/dev/zero", "scorer_finetune.py $ARGS --preflight", "s1aux_checks.py data-check", "launch_gate.py run --profile refe_aux_s1", "s1aux_checks.py manifest-row --arm \"$ARM\" --event token_verified",
++         "bank_push s1_labels labels", "\nSTAGE=gpu_wait\nwait_clear\n", "dd if=/dev/zero", "scorer_finetune.py $ARGS --preflight", "s1aux_checks.py data-check", "launch_gate.py run --profile \"$PROFILE\"", "s1aux_checks.py manifest-row --arm \"$ARM\" --event token_verified",
+          "    wait_clear\n", 'stage_mark "trainstart_$ARM"', '"$PY" scorer_finetune.py $ARGS >>', "s1aux_checks.py run-check", 'bank_push "arm_$ARM"']
+ HF_CHILDREN = ("s1aux_checks.py fetch", "hf_egress.py", "s1aux_checks.py remote-verify")          # the only children that may hold the token (private repos, write scope)
+ CHILD_RX = re.compile(r'"\$PY" +(?:[\w./-]+\.py\b|-c\b|--|")|bash +"\$PKG/code/|\bsleep +"?\$?\w+"? +200|\bdd +if=')
+@@ -137,8 +137,16 @@
+     pr = BLANKS.read_text(encoding="utf-8")
+     sec = pr[pr.index("**Priority order**"):]
+     names = re.findall(r"\d\. `((?:N|H1|H2)-s\d)`", sec[:sec.index("are registered but last")])
+-    if len(names) != 9 or " ".join(names) != re.search(r'ARM_ORDER="([^"]+)"', text).group(1):
++    if len(names) != 9 or " ".join(names) != re.search(r'ARM_ORDER_S1="([^"]+)"', text).group(1):
+         v.append("ARM_ORDER")
++    # ---- S1c (raw/2026-10-16-s1c-build): the S1c arms are registered AFTER S1's nine, the default list stays S1's nine (an S1c launch NAMES its arm), an S1c arm is judged under refe_aux_s1c
++    m = re.search(r'ARM_ORDER_S1C="([^"]+)"', text)
++    if not m or m.group(1) != "H1u10k-s0 H1u2k-s0" or 'ARM_ORDER="$ARM_ORDER_S1 $ARM_ORDER_S1C"' not in text:
++        v.append("ARM_ORDER_S1C")
++    if 'ARMS="${S1AUX_ARMS:-$ARM_ORDER_S1}"' not in text:
++        v.append("ARMS_DEFAULT_NOT_S1")
++    if 'arm_profile() { case "$1" in H1u*) echo refe_aux_s1c ;; *) echo refe_aux_s1 ;; esac; }' not in text:
++        v.append("ARM_PROFILE")
+     # ---- command order
+     pos = -1
+     for needle in ORDER:
+@@ -188,9 +196,9 @@
+         v.append("NO_NAVTEST_CHECK")
+     if "--resume" in text:
+         v.append("RESUME")
+-    if not re.search(r"^token_ok\(\) \{\n.*launch_gate\.py\" verify --profile refe_aux_s1 --token \"\$tok\" --args \"\$ARGS\" --pkg \"\$PKG\"", text, re.S | re.M):
++    if not re.search(r"^token_ok\(\) \{\n.*launch_gate\.py\" verify --profile \"\$PROFILE\" --token \"\$tok\" --args \"\$ARGS\" --pkg \"\$PKG\"", text, re.S | re.M):
+         v.append("TOKEN_NOT_VERIFIED_BY_THE_GATE")
+-    if "launch_gate.py run --profile refe_aux_s1 --arm-name \"$ARM\"" not in text:
++    if "launch_gate.py run --profile \"$PROFILE\" --arm-name \"$ARM\"" not in text or '  PROFILE="$(arm_profile "$ARM")"' not in text:
+         v.append("GATE_PROFILE_OR_ARM")
+     if "--gate-preflight-json \"$ARMDIR/preflight.jsonl\"" not in text:
+         v.append("GATE_NO_PREFLIGHT_INPUT")
+@@ -220,6 +228,9 @@
+             v.append("ARGV_FORBIDDEN:" + bad)
+     if "--max-updates 400 --eval-every 400" not in aa:
+         v.append("ARGV_BUDGET")
++    for b in ("--max-updates 10000 --batch 8 --accum 1 --eval-every 5000", "--max-updates 2000 --batch 8 --accum 8 --eval-every 1000"):
++        if b not in aa:
++            v.append("ARGV_BUDGET_S1C:" + b[:24])
+     # ---- stage checks
+     for need, tag in (('s1aux_checks.py tree', "NO_TREE_CHECK"), ("dd if=/dev/zero", "NO_DISK_WRITE_TEST"), ("s1aux_checks.py store", "NO_STORE_CHECK"),
+                       ('bad="$(arms_ok)" || refuse', "ARMS_UNVALIDATED"), ("grep -q \"ZZRLS1_DONE\"", "NO_RLS1_GATE"), ('--expect "$HELDOUT_SETS_N"', "PDM_NOT_EXPECT_3137"),
+@@ -263,7 +274,11 @@
+     sub("u400 size pin edited", "U400_SIZE=1288489838", "U400_SIZE=1288489839", "PIN:U400_SIZE")
+     sub("seed edited", "TLANE_SEED=20261004", "TLANE_SEED=20261005", "PIN:TLANE_SEED")
+     sub("lane floor edited", "TLANE_MIN_ROWS=2109", "TLANE_MIN_ROWS=100", "PIN:TLANE_MIN_ROWS")
+-    sub("arm order edited", 'ARM_ORDER="N-s0 H2-s0 H1-s0', 'ARM_ORDER="N-s0 H1-s0 H2-s0', "ARM_ORDER")
++    sub("arm order edited", 'ARM_ORDER_S1="N-s0 H2-s0 H1-s0', 'ARM_ORDER_S1="N-s0 H1-s0 H2-s0', "ARM_ORDER")
++    sub("S1c arms dropped from the registered universe", 'ARM_ORDER="$ARM_ORDER_S1 $ARM_ORDER_S1C"', 'ARM_ORDER="$ARM_ORDER_S1"', "ARM_ORDER_S1C")
++    sub("the default arm list includes the S1c arms", 'ARMS="${S1AUX_ARMS:-$ARM_ORDER_S1}"', 'ARMS="${S1AUX_ARMS:-$ARM_ORDER}"', "ARMS_DEFAULT_NOT_S1")
++    sub("S1c arms judged under S1's profile", "H1u*) echo refe_aux_s1c ;;", "H1u*) echo refe_aux_s1 ;;", "ARM_PROFILE")
++    sub("S1c budget edited", "--max-updates 10000 --batch 8 --accum 1 --eval-every 5000", "--max-updates 1000 --batch 8 --accum 1 --eval-every 5000", "ARGV_BUDGET_S1C")
+     sub("GPU wait removed before the arms", "\nSTAGE=gpu_wait\nwait_clear\n", "\nSTAGE=gpu_wait\n", "NO_GPU_WAIT_BEFORE_ARMS")
+     sub("upstream refusal removed at the precheck", 'upw="$(upstream)"; [ $? = 1 ] && refuse "$upw"', 'upw="$(upstream)"', "NO_UPSTREAM_REFUSAL_AT_PRECHECK")
+     sub("navtest content check disarmed", '= "$NAVTEST_SHA" ] || refuse', '= "$NAVTEST_SHA" ] || true', "NO_NAVTEST_CHECK")
+@@ -282,7 +297,9 @@
+     sub("minted flag set before the mint's verify", '    stage_mark "gate_$ARM"\n    GATE_MINTED_NOW=1\n', '    GATE_MINTED_NOW=1\n    stage_mark "gate_$ARM"\n', "MINTED_FLAG")
+     sub("mint's own verify removed", '    token_ok || refuse "the launch gate did not mint a PASS token that verifies for $ARM (launch_gate.log, lg/, token_verify.log)"\n', "", "MINT_NOT_VERIFIED")
+     sub("token not verified by the gate", 'launch_gate.py" verify --profile', 'launch_gate.py" refusals --profile', "TOKEN_NOT_VERIFIED_BY_THE_GATE")
+-    sub("gate profile swapped", "launch_gate.py run --profile refe_aux_s1", "launch_gate.py run --profile refe_rls1", "GATE_PROFILE_OR_ARM")
++    sub("gate profile swapped", 'launch_gate.py run --profile "$PROFILE"', "launch_gate.py run --profile refe_rls1", "GATE_PROFILE_OR_ARM")
++    sub("gate profile pinned to S1's", 'launch_gate.py run --profile "$PROFILE"', "launch_gate.py run --profile refe_aux_s1", "GATE_PROFILE_OR_ARM")
++    sub("token verified under a fixed profile", 'launch_gate.py" verify --profile "$PROFILE"', 'launch_gate.py" verify --profile refe_aux_s1', "TOKEN_NOT_VERIFIED_BY_THE_GATE")
+     sub("trainer keeps HF_TOKEN", 'env -u HF_TOKEN OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1 "$PY" scorer_finetune.py $ARGS >>', 'env OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1 "$PY" scorer_finetune.py $ARGS >>', "TRAINER_LINE")
+     sub("trainer inherits fd 200", '"$ARMDIR/sft.log" 2>&1 ) 200>&-', '"$ARMDIR/sft.log" 2>&1 )', "TRAINER_LINE")
+     sub("resume flag", "--seed $seed --out $ad\"", "--seed $seed --out $ad --resume\"", "RESUME")
+@@ -446,14 +463,15 @@
+     lgdir, armdir = tmp / "lg", tmp / "armdir"
+     armdir.mkdir()
+ 
+-    def mint(arm, checks):
++    def mint(arm, checks, profile="refe_aux_s1", argv=None):
+         shutil.rmtree(lgdir, ignore_errors=True)
+-        av = GT.argv_from_string(argv_of[arm])
+-        return GT.mint(profile="refe_aux_s1", commit="a" * 40, tree_man=GT.tree_manifest(PKGROOT), argv=av, trainer="refe/scorer_finetune.py",
+-                       data=GT.data_manifest(av, LGM.PROFILES["refe_aux_s1"]["data_flags"]), checks=checks, reasons=[], key=key, out_dir=lgdir)
+-
+-    def tok(args, keyfile=None):
+-        env = {"PY": posix(sys.executable), "PKG": posix(PKGROOT), "LG": posix(lgdir), "ARMDIR": posix(armdir), "ARGS": args, "PYTHONIOENCODING": "utf-8",
++        av = GT.argv_from_string(argv or argv_of[arm])
++        return GT.mint(profile=profile, commit="a" * 40, tree_man=GT.tree_manifest(PKGROOT), argv=av, trainer="refe/scorer_finetune.py",
++                       data=GT.data_manifest(av, LGM.PROFILES[profile]["data_flags"]), checks=checks, reasons=[], key=key, out_dir=lgdir)
++
++    def tok(args, keyfile=None, profile="refe_aux_s1"):
++        # PROFILE is what the chain sets from arm_profile() before token_ok runs (s1aux_pod.sh): the token is verified under the arm's OWN profile
++        env = {"PY": posix(sys.executable), "PKG": posix(PKGROOT), "LG": posix(lgdir), "ARMDIR": posix(armdir), "ARGS": args, "PYTHONIOENCODING": "utf-8", "PROFILE": profile,
+                "TANITAD_GATE_KEY_FILE": posix(keyfile or (tmp / "k" / "gate.key"))}
+         return bash_run(f'bash -c \'. "{posix(h3)}"; token_ok\'', env)[0]
+     mint("H2-s0", {"G-HYG": {"status": "PASS"}})
+@@ -471,6 +489,17 @@
+     ok(not list(lgdir.glob("PASS_*.json")) and tok(argv_of["H2-s0"]) != 0)                   # a FAIL token is no PASS token
+     shutil.rmtree(lgdir, ignore_errors=True)
+     ok(tok(argv_of["H2-s0"]) != 0)                                                           # NO token at all
++    # ---- S1c (raw/2026-10-16-s1c-build): a token minted under refe_aux_s1c verifies under refe_aux_s1c ONLY, and only for its own arm's argv
++    rc, a10, err = arm_args_of(text, "H1u10k-s0", tmp); ok(rc == 0, err)
++    rc, a2, err = arm_args_of(text, "H1u2k-s0", tmp); ok(rc == 0, err)
++    mint("H1u10k-s0", {"G-HYG": {"status": "PASS"}}, profile="refe_aux_s1c", argv=a10)
++    ok(tok(a10, profile="refe_aux_s1c") == 0)                                                # the S1c arm under its own profile: may start
++    ok(tok(a10, profile="refe_aux_s1") != 0)                                                 # ... a token of one profile is no token of the other
++    ok(tok(a2, profile="refe_aux_s1c") != 0)                                                 # ... nor for the other S1c budget's argv
++    ok(tok(argv_of["H1-s0"], profile="refe_aux_s1c") != 0)                                   # ... nor for S1's H1 arm
++    mint("H1-s0", {"G-HYG": {"status": "PASS"}})
++    ok(tok(argv_of["H1-s0"]) == 0 and tok(argv_of["H1-s0"], profile="refe_aux_s1c") != 0)    # and S1's own token does not open the S1c profile
++    shutil.rmtree(lgdir, ignore_errors=True)
+     return argv_of
+ 
+ 

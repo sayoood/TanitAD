@@ -1,0 +1,49 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] /home/nvidia/data/refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 0 / left 0 / right 5, missing 0 (of 5 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 855/855 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 5/5 episodes (stable-63bit), 855/855 windows labelled (100.0 %), 72687 prefilter target boxes, pad 397
+[v3] SAM3 map GT: 855/855 windows covered (1.0000, floor 0.90, verdict PASS) over 5 clips; states {'ok': 855, 'no_file': 0, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['canonical']
+{
+ "n_targets": 22432,
+ "n_targets_any_edge_in_frame": 21884,
+ "old_lt12_new_gt_old": 943,
+ "old_le4_new_gt4": 569,
+ "old_zero_new_pos": 56,
+ "by_clip": {
+  "0191487845ef": {
+   "n_targets": 13726,
+   "old_lt12_new_gt_old": 351,
+   "old_le4_new_gt4": 218
+  },
+  "22d47ae7e052": {
+   "n_targets": 453,
+   "old_lt12_new_gt_old": 40,
+   "old_le4_new_gt4": 26
+  },
+  "34765c024267": {
+   "n_targets": 3590,
+   "old_lt12_new_gt_old": 304,
+   "old_le4_new_gt4": 171
+  },
+  "59d98b34ae8b": {
+   "n_targets": 471,
+   "old_lt12_new_gt_old": 27,
+   "old_le4_new_gt4": 20
+  },
+  "9f8bedcfb9de": {
+   "n_targets": 4192,
+   "old_lt12_new_gt_old": 221,
+   "old_le4_new_gt4": 134
+  }
+ }
+}
+vis_0191487845ef_w064.png [('automobile', 3.8, 0.197), ('automobile', 5.5, 0.451), ('person', 5.6, 0.0), ('person', 10.3, 0.0), ('person', 14.6, 0.0), ('person', 15.8, 0.0)]
+vis_34765c024267_w108.png [('automobile', 5.3, 0.22), ('automobile', 9.4, 0.903), ('automobile', 10.4, 1.0), ('automobile', 13.7, 0.518), ('automobile', 14.6, 0.395)]
+vis_9f8bedcfb9de_w104.png [('automobile', 5.5, 0.498), ('automobile', 10.9, 0.0), ('bus', 13.1, 0.0), ('person', 14.8, 1.0), ('automobile', 15.5, 1.0)]
+EXIT=0

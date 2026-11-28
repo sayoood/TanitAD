@@ -1,0 +1,637 @@
+CMD: ["/content/navplan/venv_navsim/bin/python", "/content/navplan/bundle/navsim_v1_linux.py", "--script", "pdm_score", "--label", "refe_navplan_e2chk_linux", "--out-dir", "/content/navplan/score/refe_navplan_e2chk_linux", "--patch-loader", "--record-poses", "--", "train_test_split=navtest", "train_test_split.scene_filter.log_names=['2021.05.25.14.16.10_veh-35_02482_02649']", "train_test_split.scene_filter.tokens=['b92ea560ae10562b','2d30620b507f5f7c','bd09fe587b1a59e3','b667e90bf3055cea','a6d4b1f4870852a4','6f11adda2af357ff','f8fd766eb013577f','206ccbdfb1e25bf2','a9343b1abc5957ab','2ba3f7adca335912','11b9e3f204815f4a','be9423a8f0e75d33','63266bfd8e1f5f15','6507522e38405857','317f5b44a4615e30','16a40c5db95c5467','8e9f743d92c05d10','108fd8b55b1952af','ccc2b2377fea5191','6a3518e83ad751f6','68188bae28595f7c','ee545028f8a85e6f','84aa4100e3cc59c4','f7b170baa6bd5b95','cf7045e0db215eea']", "metric_cache_path=/content/navplan/exp/metric_cache_navtest", "worker=sequential", "experiment_name=w3_refe_navplan_e2chk_linux", "output_dir=/content/navplan/exp/runs/refe_navplan_e2chk_linux", "agent=constant_velocity_agent", "agent._target_=w3_agents_v1.SeamAgentV1", "+agent.seam_file=/content/navplan/bundle/seam/refe_e2chk_newvenv.npz", "+agent.call_log=/content/navplan/score/refe_navplan_e2chk_linux/refe_navplan_e2chk_linux.calls.jsonl"]
+/content/navplan/venv_navsim/lib/python3.9/site-packages/torchvision/io/image.py:13: UserWarning: Failed to load image Python extension: 'libc10_cuda.so: cannot open shared object file: No such file or directory'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+2026-09-27 15:40:36,024 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/builders/worker_pool_builder.py:20}  Building WorkerPool...
+2026-09-27 15:40:36,032 INFO {/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/planning/utils/multithreading/worker_pool.py:101}  Worker: Sequential
+2026-09-27 15:40:36,032 INFO {/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/planning/utils/multithreading/worker_pool.py:102}  Number of nodes: 1
+Number of CPUs per node: 1
+Number of GPUs per node: 0
+Number of threads across all nodes: 1
+2026-09-27 15:40:36,032 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/builders/worker_pool_builder.py:31}  Building WorkerPool...DONE!
+Loading logs:   0%|          | 0/1 [00:00<?, ?it/s]Loading logs: 100%|██████████| 1/1 [00:00<00:00, 24.92it/s]
+2026-09-27 15:40:36,087 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:130}  Starting pdm scoring of 25 scenarios...
+2026-09-27 15:40:36,088 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:42}  Starting worker in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+Loading logs:   0%|          | 0/1 [00:00<?, ?it/s]Loading logs: 100%|██████████| 1/1 [00:00<00:00, 28.62it/s]
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+2026-09-27 15:40:36,156 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 1 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:36,305 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 317f5b44a4615e30:
+2026-09-27 15:40:36,307 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 2 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:36,463 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 2ba3f7adca335912:
+2026-09-27 15:40:36,463 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 3 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:36,659 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token ccc2b2377fea5191:
+2026-09-27 15:40:36,659 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 4 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:36,792 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token a6d4b1f4870852a4:
+2026-09-27 15:40:36,793 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 5 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:37,296 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 8e9f743d92c05d10:
+2026-09-27 15:40:37,296 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 6 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:37,494 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token cf7045e0db215eea:
+2026-09-27 15:40:37,495 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 7 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:37,646 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 206ccbdfb1e25bf2:
+2026-09-27 15:40:37,647 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 8 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:37,790 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 11b9e3f204815f4a:
+2026-09-27 15:40:37,791 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 9 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:37,949 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 6507522e38405857:
+2026-09-27 15:40:37,950 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 10 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:38,135 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 68188bae28595f7c:
+2026-09-27 15:40:38,136 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 11 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:38,613 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token f7b170baa6bd5b95:
+2026-09-27 15:40:38,614 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 12 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:38,767 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 6f11adda2af357ff:
+2026-09-27 15:40:38,768 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 13 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:38,958 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 84aa4100e3cc59c4:
+2026-09-27 15:40:38,958 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 14 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:39,108 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token a9343b1abc5957ab:
+2026-09-27 15:40:39,109 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 15 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:39,229 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token b92ea560ae10562b:
+2026-09-27 15:40:39,229 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 16 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:39,348 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 2d30620b507f5f7c:
+2026-09-27 15:40:39,349 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 17 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:39,472 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token bd09fe587b1a59e3:
+2026-09-27 15:40:39,473 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 18 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:39,917 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token f8fd766eb013577f:
+2026-09-27 15:40:39,918 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 19 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 81, in run_pdm_score
+    scene = scene_loader.get_scene_from_token(token)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataloader.py", line 119, in get_scene_from_token
+    return Scene.from_scene_dict_list(
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 430, in from_scene_dict_list
+    map_api = cls._build_map_api(scene_metadata.map_name)
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/common/dataclasses.py", line 372, in _build_map_api
+    return get_maps_api(NUPLAN_MAPS_ROOT, "nuplan-maps-v1.0", map_name)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 60, in get_maps_api
+    maps_db = get_maps_db(map_root, map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/common/maps/nuplan_map/map_factory.py", line 48, in get_maps_db
+    return GPKGMapsDB(map_root=map_root, map_version=map_version)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/maps_db/gpkg_mapsdb.py", line 72, in __init__
+    self._blob_store = BlobStoreCreator.create_mapsdb(map_root=self._map_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 54, in create_mapsdb
+    return cls.create(map_root, conf, verbose)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/creator.py", line 76, in create
+    return LocalStore(data_root)
+  File "/content/navplan/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/database/common/blob_store/local_store.py", line 22, in __init__
+    assert os.path.isdir(self._root_dir), '%s does not exist!' % self._root_dir
+AssertionError: /content/navplan/exp/_no_maps_needed_for_scoring does not exist!
+Error executing job with overrides: ['train_test_split=navtest', "train_test_split.scene_filter.log_names=['2021.05.25.14.16.10_veh-35_02482_02649']", "train_test_split.scene_filter.tokens=['b92ea560ae10562b','2d30620b507f5f7c','bd09fe587b1a59e3','b667e90bf3055cea','a6d4b1f4870852a4','6f11adda2af357ff','f8fd766eb013577f','206ccbdfb1e25bf2','a9343b1abc5957ab','2ba3f7adca335912','11b9e3f204815f4a','be9423a8f0e75d33','63266bfd8e1f5f15','6507522e38405857','317f5b44a4615e30','16a40c5db95c5467','8e9f743d92c05d10','108fd8b55b1952af','ccc2b2377fea5191','6a3518e83ad751f6','68188bae28595f7c','ee545028f8a85e6f','84aa4100e3cc59c4','f7b170baa6bd5b95','cf7045e0db215eea']", 'metric_cache_path=/content/navplan/exp/metric_cache_navtest', 'worker=sequential', 'experiment_name=w3_refe_navplan_e2chk_linux', 'output_dir=/content/navplan/exp/runs/refe_navplan_e2chk_linux', 'agent=constant_velocity_agent', 'agent._target_=w3_agents_v1.SeamAgentV1', '+agent.seam_file=/content/navplan/bundle/seam/refe_e2chk_newvenv.npz', '+agent.call_log=/content/navplan/score/refe_navplan_e2chk_linux/refe_navplan_e2chk_linux.calls.jsonl']
+Traceback (most recent call last):
+  File "/content/navplan/venv_navsim/lib/python3.9/site-packages/pandas/core/indexes/base.py", line 3812, in get_loc
+    return self._engine.get_loc(casted_key)
+  File "pandas/_libs/index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'score'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py", line 158, in main
+    Final average score of valid results: {pdm_score_df['score'].mean()}.
+  File "/content/navplan/venv_navsim/lib/python3.9/site-packages/pandas/core/frame.py", line 4113, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "/content/navplan/venv_navsim/lib/python3.9/site-packages/pandas/core/indexes/base.py", line 3819, in get_loc
+    raise KeyError(key) from err
+KeyError: 'score'
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+2026-09-27 15:40:40,085 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 16a40c5db95c5467:
+2026-09-27 15:40:40,086 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 20 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:40,283 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token ee545028f8a85e6f:
+2026-09-27 15:40:40,284 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 21 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:40,487 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 108fd8b55b1952af:
+2026-09-27 15:40:40,488 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 22 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:40,710 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 6a3518e83ad751f6:
+2026-09-27 15:40:40,711 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 23 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:41,155 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token be9423a8f0e75d33:
+2026-09-27 15:40:41,156 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 24 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:41,315 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token 63266bfd8e1f5f15:
+2026-09-27 15:40:41,316 INFO {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:70}  Processing scenario 25 / 25 in thread_id=47100f3c-c0a9-491c-aa28-735ca2e623a3, node_id=0
+2026-09-27 15:40:41,522 WARNING {/content/navplan/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py:95}  ----------- Agent failed for token b667e90bf3055cea:
+W3_WRAPPER_DONE label=refe_navplan_e2chk_linux status=SYSTEM_EXIT_1 wall_s=20.05 peak_rss_mb=529.5 min_avail_mb=11569.8 pdm_calls=0 cache_scenes=0

@@ -1,0 +1,117 @@
+{
+ "tool": "refe_ego_probe/1",
+ "tier": "T0",
+ "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt",
+ "ckpt_sha256": "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d",
+ "n_tokens": 1058,
+ "n_logs": 123,
+ "arms": [
+  "A0",
+  "A0r",
+  "AX0",
+  "AXP",
+  "AXM",
+  "DEAD",
+  "GREY",
+  "SWAP"
+ ],
+ "device": "cuda",
+ "rule": "navsim_v1_lane",
+ "goal_fix": "pdm_route",
+ "repair_last_heading": true,
+ "nav_mode": "goal",
+ "C1_determinism": {
+  "n": 265,
+  "n_tokens_total": 1058,
+  "traj_bit_identical": 265,
+  "logit_bit_identical": 265,
+  "pick_equal": 265,
+  "trunk_bit_identical": 265,
+  "max_abs_traj_m": 0.0,
+  "max_abs_logit": 0.0,
+  "PASS": true
+ },
+ "C2_identity_vs_table": {
+  "n": 1058,
+  "logit_bit_identical": 1058,
+  "pick_equal": 1058,
+  "max_abs_logit": 0.0,
+  "max_abs_props8_m": 0.0,
+  "PASS_strict": true,
+  "PASS_fallback": true
+ },
+ "C3_reachability": {
+  "A0": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "A0r": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "AX0": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "AXP": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "AXM": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "DEAD": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "GREY": {
+   "n_ok": 1058,
+   "n": 1058
+  },
+  "SWAP": {
+   "n_ok": 1058,
+   "n": 1058
+  }
+ },
+ "C3_failures_first10": [],
+ "C4_memo": {
+  "hits": 4232,
+  "misses": 2117,
+  "bypasses": 265,
+  "grey_hits": 1057,
+  "grey_fresh_checks": 42,
+  "grey_fresh_checks_bit_identical": 42
+ },
+ "C5_ego_slots_real": {
+  "frac_yaw_rate_nonzero": 0.0,
+  "frac_steer_nonzero": 0.0,
+  "ax_pcts_1_50_99": [
+   -1.589817200899124,
+   0.01075670262798667,
+   1.6228236758708958
+  ],
+  "ay_pcts_1_50_99": [
+   -1.7596622812747955,
+   0.026456687599420547,
+   2.614211833477028
+  ]
+ },
+ "timing": {
+  "loop_s": 3422.9,
+  "wall_s": 3540.8,
+  "s_per_token": 3.235,
+  "mean_infer_s_per_arm": {
+   "A0": 1.2013484221550377,
+   "A0r": 1.1865420089101522,
+   "AX0": 0.020023952134390184,
+   "AXP": 0.019705498826976985,
+   "AXM": 0.019558070738058684,
+   "DEAD": 0.019840367574998245,
+   "GREY": 0.06517924320494971,
+   "SWAP": 1.1536251439489353
+  }
+ },
+ "gt_valid_share": 1.0,
+ "controls_pass": true
+}

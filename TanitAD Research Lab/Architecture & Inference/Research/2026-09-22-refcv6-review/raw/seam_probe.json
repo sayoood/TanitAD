@@ -1,0 +1,192 @@
+{
+  "stamp_keys_pass1": [
+    "agent_cls_weight",
+    "agent_knobs",
+    "agent_rig_camera",
+    "agents",
+    "bev_aux",
+    "control_norm",
+    "cross_agent",
+    "ego_history",
+    "encoder_lr_mult",
+    "factored_maneuver",
+    "feasible_a_max",
+    "feasible_decode",
+    "feasible_entry",
+    "feasible_kappa_max",
+    "feasible_mu",
+    "feasible_prefix_slots",
+    "goal_point",
+    "goal_str",
+    "goal_str_loss_applied",
+    "graft_imagination",
+    "graft_lan",
+    "graft_maneuver",
+    "graft_prior_center",
+    "graft_target_latent",
+    "grounded_selector",
+    "hier",
+    "hierarchy",
+    "lan_enable",
+    "max_speed_input",
+    "max_speed_onehot_v6",
+    "no_strategic",
+    "opt",
+    "refcv6",
+    "sampler",
+    "sampler_groups",
+    "sampler_infer_t",
+    "sampler_space",
+    "sampler_steps",
+    "tac_decoder_v6",
+    "tac_goal_tok_head",
+    "tactical_speed_input",
+    "trunk",
+    "trunk_chunk_ckpt",
+    "trunk_frames",
+    "trunk_frozen_bn",
+    "trunk_fuse",
+    "trunk_fuse_identity",
+    "trunk_imagenet_norm",
+    "trunk_in_channels",
+    "trunk_mode",
+    "trunk_name",
+    "trunk_pretrained",
+    "w_agent",
+    "w_u0",
+    "weight_decay",
+    "withheld_bank",
+    "withheld_bank_warmup",
+    "withheld_speed_max_ms",
+    "wp_index"
+  ],
+  "arms": [
+    {
+      "arm": "A-sampler-ddim-no-denoiser",
+      "key": "sampler",
+      "clean_value": "none",
+      "falsified_to": "ddim",
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp says sampler='ddim' but decoder.control_head is None -- the record would claim a denoiser the weights do not contain\n  - stamp says sampler='ddim' but decoder.time_mlp is None -- the record would claim a denoiser the weights do not contain\n  - stamp says sampler='ddim' but decoder.sched is None -- the record would claim a denoiser the weights do not c",
+      "why_it_is_a_regression": "the 2026-09-06 defect verbatim: a record claiming a denoiser the weights do not contain"
+    },
+    {
+      "arm": "A-w_u0-positive-no-control-head",
+      "key": "w_u0",
+      "clean_value": 0.0,
+      "falsified_to": 1.0,
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp says w_u0=1.0 but there is no control_head for that loss to supervise: the term would be silently skipped while the weight is stamped",
+      "why_it_is_a_regression": "a stamped reconstruction weight with nothing to supervise"
+    },
+    {
+      "arm": "A-trunk-timm-on-refc-encoder",
+      "key": "trunk",
+      "clean_value": "refc",
+      "falsified_to": "timm",
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp says trunk='timm' but core.encoder is a ResNetEncoder -- the record would claim an ImageNet prior the weights do not have",
+      "why_it_is_a_regression": "a record claiming an ImageNet prior the weights do not have"
+    },
+    {
+      "arm": "A-cross_agent-true-no-agent-attn",
+      "key": "cross_agent",
+      "clean_value": false,
+      "falsified_to": true,
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp says cross_agent=True but decoder layers [0, 1] have no agent attention -- the tokens would reach nothing",
+      "why_it_is_a_regression": "a stamped agent seam whose tokens reach nothing"
+    },
+    {
+      "arm": "A-agents-block-no-detector",
+      "key": "agents",
+      "clean_value": null,
+      "falsified_to": {
+        "n_queries": 100
+      },
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp carries an `agents` block but core.agent_head is None -- the record would claim a detector that was never built\n  - stamp carries an `agents` block but core.agent_embed is None -- the record would claim a detector that was never built",
+      "why_it_is_a_regression": "a record claiming a detector that was never built"
+    },
+    {
+      "arm": "A-ego_history-enabled-not-built",
+      "key": "ego_history",
+      "clean_value": null,
+      "falsified_to": {
+        "enable": true,
+        "kind": "gru"
+      },
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp carries an `ego_history` block but core.ego_hist is None -- the record would claim an input the model never reads",
+      "why_it_is_a_regression": "a record claiming an input the model never reads"
+    },
+    {
+      "arm": "A-goal_point-inject-no-head",
+      "key": "goal_point",
+      "clean_value": null,
+      "falsified_to": {
+        "goal_point_inject": true,
+        "graft_gp_point": false,
+        "w_goal_point": 1.0,
+        "gp_slot": 0
+      },
+      "refused": true,
+      "message": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:\n  - stamp says goal_point_inject=True but model.gp_head is None -- the record would claim an E15 head the weights do not contain",
+      "why_it_is_a_regression": "a record claiming an E15 head the weights do not contain"
+    },
+    {
+      "arm": "B-opt-dd-on-a-plain-Adam-run",
+      "key": "opt",
+      "clean_value": "adam",
+      "falsified_to": "dd",
+      "refused": false,
+      "message": "",
+      "why_it_is_a_regression": "SPEC \u00a72's optimiser. config.json is the only record of the recipe, and the optimiser object exists 57 lines before the guard runs, so this IS checkable."
+    },
+    {
+      "arm": "B-encoder_lr_mult-2.0",
+      "key": "encoder_lr_mult",
+      "clean_value": 0.5,
+      "falsified_to": 2.0,
+      "refused": false,
+      "message": "",
+      "why_it_is_a_regression": "the encoder learning-rate multiplier the run reports."
+    },
+    {
+      "arm": "B-weight-decay-1e-2",
+      "key": "weight_decay",
+      "clean_value": 0.0001,
+      "falsified_to": 0.01,
+      "refused": false,
+      "message": "",
+      "why_it_is_a_regression": "SPEC \u00a72: wd 1e-4, NOT torch AdamW's 1e-2. Under `--opt adam` the real wd is 0.0 and the stamp says 1e-4 either way."
+    },
+    {
+      "arm": "B2-trunk_name-r34-record-says-r101",
+      "key": "trunk_name",
+      "clean_value": "resnet34",
+      "falsified_to": "resnet101.a1_in1k",
+      "refused": false,
+      "message": "",
+      "why_it_is_a_regression": "SPEC \u00a710.2: resnet101 is the PRIMARY arm, resnet34 the comparison run. The record is the only thing that says which one ran."
+    },
+    {
+      "arm": "B2-pretrained-random-record-says-ImageNet",
+      "key": "trunk_pretrained",
+      "clean_value": false,
+      "falsified_to": true,
+      "refused": false,
+      "message": "",
+      "why_it_is_a_regression": "the registered ImageNet KNOCKOUT arm. If the record can claim a prior the weights do not have, 'the prior helps' is unfalsifiable."
+    },
+    {
+      "arm": "B2-in_channels-3-record-says-9",
+      "key": "trunk_in_channels",
+      "clean_value": 3,
+      "falsified_to": 9,
+      "refused": false,
+      "message": "",
+      "why_it_is_a_regression": "\u00a710.3's K-frame history is read off in_channels; the record would name a different input stack (K=3 vs K=1)."
+    }
+  ]
+}

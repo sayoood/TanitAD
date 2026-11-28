@@ -1,0 +1,34 @@
+meta: {"n_train_windows": 5398, "n_train_episodes": 600, "n_train_6s": 5398, "n_eval_windows": 2399, "n_eval_6s": 2399, "sel": {"P2_kin": {"2s": [316.22776601683796, 0], "6s": [10.0, 0]}, "P3_raw": {"2s": [316.22776601683796, 8], "6s": [10.0, 8]}, "P4_trunk": {"2s": [316.22776601683796, 8], "6s": [10.0, 8]}, "P5_shuf": {"2s": [316.22776601683796, 8], "6s": [10.0, 8]}, "P6_trunk_sp": {"2s": [316.22776601
+means 2s ADE: {'P0_kdx': 0.3085, 'P2_kin': 0.2518, 'P3_raw': 0.2521, 'P4_trunk': 0.2539, 'P5_shuf': 0.2541, 'P6_trunk_sp': 0.253, 'P7_raw_sp': 0.2523, 'P8_shuf_sp': 0.2524, 'P9_trunk_sp_mlp': 0.2282}
+means 6s ADE: {'P0_kdx': 3.5584, 'P2_kin': 3.4281, 'P3_raw': 3.46, 'P4_trunk': 3.4678, 'P5_shuf': 3.4286, 'P6_trunk_sp': 3.4526, 'P7_raw_sp': 3.4554, 'P8_shuf_sp': 3.4335, 'P9_trunk_sp_mlp': 3.0244}
+  2s ADE P6_trunk_sp-P2_kin: +0.0012 [-0.0014, +0.0040]
+  2s ADE P4_trunk-P2_kin: +0.0021 [-0.0008, +0.0051]
+  2s ADE P9_trunk_sp_mlp-P2_kin: -0.0236 [-0.0343, -0.0144] SEP
+  2s ADE P6_trunk_sp-P7_raw_sp: +0.0007 [-0.0006, +0.0020]
+  2s ADE P9_trunk_sp_mlp-P6_trunk_sp: -0.0248 [-0.0353, -0.0158] SEP
+  2s ADE P2_kin-P0_kdx: -0.0567 [-0.0705, -0.0442] SEP
+  2s ADE P5_shuf-P2_kin: +0.0023 [+0.0012, +0.0034] SEP
+  2s ADE P8_shuf_sp-P2_kin: +0.0006 [+0.0001, +0.0012] SEP
+  2s ADE P3_raw-P2_kin: +0.0003 [-0.0021, +0.0027]
+  2s ADE P0_kdx-P0_kdx: +0.0000 [+0.0000, +0.0000]
+  6s P6_trunk_sp-P2_kin: ADE +0.0244 [-0.0194, +0.0715] | FDE +0.0714 [-0.0725, +0.2251]
+  6s P4_trunk-P2_kin: ADE +0.0396 [-0.0101, +0.0926] | FDE +0.1191 [-0.0510, +0.2956]
+  6s P9_trunk_sp_mlp-P2_kin: ADE -0.4037 [-0.5502, -0.2569] SEP | FDE -1.3279 [-1.7641, -0.9046] SEP
+  6s P6_trunk_sp-P7_raw_sp: ADE -0.0028 [-0.0226, +0.0178] | FDE -0.0168 [-0.0830, +0.0520]
+  6s P9_trunk_sp_mlp-P6_trunk_sp: ADE -0.4282 [-0.5688, -0.2925] SEP | FDE -1.3993 [-1.8238, -1.0007] SEP
+  6s P2_kin-P0_kdx: ADE -0.1302 [-0.2209, -0.0373] SEP | FDE -0.3023 [-0.5586, -0.0285] SEP
+  6s P5_shuf-P2_kin: ADE +0.0005 [-0.0053, +0.0068] | FDE -0.0142 [-0.0365, +0.0086]
+  6s P8_shuf_sp-P2_kin: ADE +0.0054 [-0.0045, +0.0150] | FDE +0.0098 [-0.0275, +0.0442]
+  6s P3_raw-P2_kin: ADE +0.0319 [-0.0164, +0.0834] | FDE +0.1034 [-0.0577, +0.2778]
+  6s P0_kdx-P0_kdx: ADE +0.0000 [+0.0000, +0.0000] | FDE +0.0000 [+0.0000, +0.0000]
+  stratum 2s:turn: n=202 cl=35 | P6_trunk_sp-P2_kin -0.0220* | P9_trunk_sp_mlp-P2_kin -0.2086* | P2_kin-P0_kdx -0.1493*
+  stratum 2s:straight: n=1893 cl=137 | P6_trunk_sp-P2_kin +0.0037* | P9_trunk_sp_mlp-P2_kin -0.0023 | P2_kin-P0_kdx -0.0404*
+  stratum 2s:stop: n=14 cl=11 | P6_trunk_sp-P2_kin +0.0149 | P9_trunk_sp_mlp-P2_kin +0.0115 | P2_kin-P0_kdx -0.0199*
+  stratum 2s:accelerate: n=221 cl=55 | P6_trunk_sp-P2_kin -0.0050 | P9_trunk_sp_mlp-P2_kin -0.1159* | P2_kin-P0_kdx -0.1765*
+  stratum 2s:hard: n=600 cl=115 | P6_trunk_sp-P2_kin -0.0081* | P9_trunk_sp_mlp-P2_kin -0.0963* | P2_kin-P0_kdx -0.1576*
+  stratum 6s:turn: n=518 cl=62 | P6_trunk_sp-P2_kin -0.0475 | P9_trunk_sp_mlp-P2_kin -0.8079* | P2_kin-P0_kdx -0.4124*
+  stratum 6s:straight: n=1517 cl=133 | P6_trunk_sp-P2_kin +0.0715* | P9_trunk_sp_mlp-P2_kin -0.1715* | P2_kin-P0_kdx -0.0437
+  stratum 6s:stop: n=94 cl=23 | P6_trunk_sp-P2_kin +0.0882 | P9_trunk_sp_mlp-P2_kin +0.4132* | P2_kin-P0_kdx +0.6244*
+  stratum 6s:accelerate: n=599 cl=83 | P6_trunk_sp-P2_kin -0.0244 | P9_trunk_sp_mlp-P2_kin -0.9418* | P2_kin-P0_kdx -0.5612*
+  stratum 6s:hard: n=600 cl=99 | P6_trunk_sp-P2_kin -0.0967* | P9_trunk_sp_mlp-P2_kin -1.7272* | P2_kin-P0_kdx -0.6222*
+VALIDITY OK | BAR-A2 (P6-P2 < 0 sep) NOT MET | P9 MLP-P2 better-sep: True | VERDICT: NEGATIVE-LINEAR / MLP-POSITIVE

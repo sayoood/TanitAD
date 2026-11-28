@@ -1,0 +1,941 @@
+{
+ "tools": [
+  "check_constclose.py",
+  "make_const_files.py",
+  "make_constclose_queue.py",
+  "read_constclose10k.py"
+ ],
+ "control_before": {
+  "check_constclose.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: True (14 of 14)"
+   ]
+  },
+  "make_const_files.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.4,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ CONSTFILES-SELFTEST rc 0 (temporary folder F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_cf_vx0sn4cf)"
+   ]
+  },
+  "make_constclose_queue.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.8,
+   "tail": [
+    "....                                                                     [100%]",
+    "4 passed in 0.34s"
+   ]
+  },
+  "read_constclose10k.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: True (40 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_cr_thh3yrnu F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_cr_tst2x3xj"
+   ]
+  }
+ },
+ "mutations": {
+  "r01_k2_tolerance_wide": {
+   "rc": 1,
+   "failed": [
+    "the values and pre-rolls of the card: 1.0, 2.0, 4.0 m/s; AGE pre-roll 30 grid 30, FRESH pre-roll 0 f",
+    "k2 fails on a planted 1e-4 difference, passes at 1e-7                                               "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r01_k2_tolerance_wide\\tmp_cr_l8qrp2ji F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r01_k2_tolerance_wide\\tmp_cr_ec4bw_g4"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "k2 accepts 0.1 m/s",
+   "red": true
+  },
+  "r02_coverage_bar_low": {
+   "rc": 1,
+   "failed": [
+    "the values and pre-rolls of the card: 1.0, 2.0, 4.0 m/s; AGE pre-roll 30 grid 30, FRESH pre-roll 0 f",
+    "cov: gate False below 0.99 by the logs (0.98) or by the run text (980 of 1000), and False when a run"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r02_coverage_bar_low\\tmp_cr_2mvjxl7w F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r02_coverage_bar_low\\tmp_cr_i48sea64"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the coverage bar is 0.40",
+   "red": true
+  },
+  "r03_age_c_not_lower": {
+   "rc": 1,
+   "failed": [
+    "verdict C20 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), C10 and C40 NOT-SUPPORT",
+    "verdict NOT-SUPPORTED for each of the six failing conditions: ['AGE C not LOWER', 'AGE U HIGHER', 'A"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r03_age_c_not_lower\\tmp_cr_dvj_ilbx F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r03_age_c_not_lower\\tmp_cr_qzaf4nxz"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the verdict accepts an AGE C that is not LOWER",
+   "red": true
+  },
+  "r04_fresh_c_unchecked": {
+   "rc": 1,
+   "failed": [
+    "verdict NOT-SUPPORTED for each of the six failing conditions: ['AGE C not LOWER', 'AGE U HIGHER', 'A"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r04_fresh_c_unchecked\\tmp_cr__44fwc20 F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r04_fresh_c_unchecked\\tmp_cr_rwco8cbp"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the verdict ignores FRESH C",
+   "red": true
+  },
+  "r05_age_u_unchecked": {
+   "rc": 1,
+   "failed": [
+    "verdict NOT-SUPPORTED for each of the six failing conditions: ['AGE C not LOWER', 'AGE U HIGHER', 'A"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r05_age_u_unchecked\\tmp_cr_dz_x22ls F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r05_age_u_unchecked\\tmp_cr_4zeofqmm"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the verdict ignores AGE U",
+   "red": true
+  },
+  "r06_fresh_family_unchecked": {
+   "rc": 1,
+   "failed": [
+    "verdict NOT-SUPPORTED for each of the six failing conditions: ['AGE C not LOWER', 'AGE U HIGHER', 'A"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r06_fresh_family_unchecked\\tmp_cr_ta_xtzrt F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r06_fresh_family_unchecked\\tmp_cr_uaiisc1y"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the verdict ignores a WORSE family at FRESH",
+   "red": true
+  },
+  "r07_one_of_three_always": {
+   "rc": 1,
+   "failed": [
+    "verdict: all three SUPPORTED names three and no one-of-three mark                                   ",
+    "verdict: two SUPPORTED, no one-of-three mark                                                        "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r07_one_of_three_always\\tmp_cr_8wmmgqzb F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r07_one_of_three_always\\tmp_cr_v3bi6dzq"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the one-of-three mark is written when two or three are SUPPORTED",
+   "red": true
+  },
+  "r08_f_beside_dropped": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                     ~~^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_C20_F_AGE'"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the F name is not written beside the verdict",
+   "red": true
+  },
+  "r09_match_ignores_f": {
+   "rc": 1,
+   "failed": [
+    "E: no value matches (C HIGHER at two values, F HIGHER at one): BEYOND-A-CONSTANT                    ",
+    "E: one matching value is enough: NOT-BEYOND for N10 and BEYOND for L25                              ",
+    "E: an unavailable word and no match writes no name and says why; an unavailable word beside a match "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (37 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r09_match_ignores_f\\tmp_cr__0q7wenb F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r09_match_ignores_f\\tmp_cr__gl9_0yf"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "a value matches E whatever F reads",
+   "red": true
+  },
+  "r10_not_beyond_needs_all": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "                                                                                  ~~~^^^^^^^^^^^^^^^",
+    "KeyError: 'VERDICT_N10'"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "NOT-BEYOND needs all three values to match",
+   "red": true
+  },
+  "r11_not_beyond_name_swapped": {
+   "rc": 1,
+   "failed": [
+    "E: NOT-SEPARATED on both measures counts as a match: NOT-BEYOND-A-CONSTANT for both estimators      ",
+    "E: one matching value is enough: NOT-BEYOND for N10 and BEYOND for L25                              ",
+    "E: an unavailable word and no match writes no name and says why; an unavailable word beside a match "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (37 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r11_not_beyond_name_swapped\\tmp_cr_22fa9cir F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r11_not_beyond_name_swapped\\tmp_cr_n63pza0h"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "a match is named BEYOND",
+   "red": true
+  },
+  "r12_not_separated_not_a_match": {
+   "rc": 1,
+   "failed": [
+    "verdict C20 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), C10 and C40 NOT-SUPPORT",
+    "E: NOT-SEPARATED on both measures counts as a match: NOT-BEYOND-A-CONSTANT for both estimators      "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r12_not_separated_not_a_match\\tmp_cr_a3c9syyn F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r12_not_separated_not_a_match\\tmp_cr_f1gagkws"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "NOT-SEPARATED does not count as not HIGHER",
+   "red": true
+  },
+  "r13_e_age_gate_ignored": {
+   "rc": 1,
+   "failed": [
+    "E: AGE below the coverage bar writes no E verdict                                                   "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r13_e_age_gate_ignored\\tmp_cr_n3anzgyf F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r13_e_age_gate_ignored\\tmp_cr_uftuchaz"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "E verdicts are written below the coverage bar at AGE",
+   "red": true
+  },
+  "r14_verdict_gate_ignored": {
+   "rc": 1,
+   "failed": [
+    "verdict: a setting below the coverage bar gives no verdict of any value and says why                "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r14_verdict_gate_ignored\\tmp_cr_0jxr8cwf F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r14_verdict_gate_ignored\\tmp_cr_p9z3soqp"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "a verdict is written with a setting below the coverage bar",
+   "red": true
+  },
+  "r15_names_gate_ignored": {
+   "rc": 1,
+   "failed": [
+    "names: the names of a setting below the coverage bar are not written (FRESH), the others are; the ou"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r15_names_gate_ignored\\tmp_cr_mm0m5j7x F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r15_names_gate_ignored\\tmp_cr_ussolj3l"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "names are written below the coverage bar",
+   "red": true
+  },
+  "r16_gate_text_share_dropped": {
+   "rc": 1,
+   "failed": [
+    "cov: gate False below 0.99 by the logs (0.98) or by the run text (980 of 1000), and False when a run"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r16_gate_text_share_dropped\\tmp_cr_k95f53wu F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r16_gate_text_share_dropped\\tmp_cr_0722ycg4"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the gate ignores the run-text share",
+   "red": true
+  },
+  "r17_k0_hash_unchecked": {
+   "rc": 1,
+   "failed": [
+    "k0 fails on a run line with another file hash, a missing line, a missing file                       "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r17_k0_hash_unchecked\\tmp_cr_13icyje5 F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r17_k0_hash_unchecked\\tmp_cr_a4i2iv5n"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "k0 does not compare the file hash of the run line",
+   "red": true
+  },
+  "r18_k0_value_unchecked": {
+   "rc": 1,
+   "failed": [
+    "k0 fails on a file whose value is not c (planted 4.5 for C40)                                       "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r18_k0_value_unchecked\\tmp_cr_n83ll_eb F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r18_k0_value_unchecked\\tmp_cr_daxzyo6q"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "k0 does not check the returned value",
+   "red": true
+  },
+  "r19_k2_value_unchecked": {
+   "rc": 1,
+   "failed": [
+    "k2 fails on a planted 1e-4 difference, passes at 1e-7                                               ",
+    "k2 fails on the value of another c (2.0 in the C10 run), a non-NaN estimate without a full history, "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r19_k2_value_unchecked\\tmp_cr_5vr_akbs F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r19_k2_value_unchecked\\tmp_cr_kp4qtng7"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "k2 compares the estimate with itself",
+   "red": true
+  },
+  "r20_k2_nan_unchecked": {
+   "rc": 1,
+   "failed": [
+    "k2 fails on the value of another c (2.0 in the C10 run), a non-NaN estimate without a full history, "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r20_k2_nan_unchecked\\tmp_cr_kkdjjael F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r20_k2_nan_unchecked\\tmp_cr_6wzk3lrf"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "k2 does not check NaN without a full history",
+   "red": true
+  },
+  "r21_k2_first_tick_not_required": {
+   "rc": 1,
+   "failed": [
+    "k2 fails on the value of another c (2.0 in the C10 run), a non-NaN estimate without a full history, "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r21_k2_first_tick_not_required\\tmp_cr_oli6g5wa F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r21_k2_first_tick_not_required\\tmp_cr_lcaykjh9"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "k2 does not need a compared first-tick row",
+   "red": true
+  },
+  "r22_x1_fallback_unchecked": {
+   "rc": 1,
+   "failed": [
+    "x1 fails on a closing of 1.9 for C20, a closing that is not 0 without a full history, another form, "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r22_x1_fallback_unchecked\\tmp_cr_vp8ohah_ F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r22_x1_fallback_unchecked\\tmp_cr_buuzy0qi"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "x1 does not check the 0.0 fallback",
+   "red": true
+  },
+  "r23_x1_rr_unchecked": {
+   "rc": 1,
+   "failed": [
+    "x1 fails on a closing of 1.9 for C20, a closing that is not 0 without a full history, another form, "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r23_x1_rr_unchecked\\tmp_cr_43xvn766 F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r23_x1_rr_unchecked\\tmp_cr_5_40z6_7"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "x1 does not check that RR feeds 0",
+   "red": true
+  },
+  "r24_m1_counts_unchecked": {
+   "rc": 1,
+   "failed": [
+    "m1 passes on equal later-look row counts and fails on a different count or an empty log             "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r24_m1_counts_unchecked\\tmp_cr_7ihfvo0q F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r24_m1_counts_unchecked\\tmp_cr_ebqerk0d"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "m1 does not compare the row counts",
+   "red": true
+  },
+  "r25_r1_dump_count_unchecked": {
+   "rc": 1,
+   "failed": [
+    "r1 passes at AGE and (pre-roll 0) FRESH and fails on a missing dump file, a pre-roll mismatch, anoth"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r25_r1_dump_count_unchecked\\tmp_cr_b8c8jr9o F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r25_r1_dump_count_unchecked\\tmp_cr_pqcn6okg"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "r1 does not count the dump files",
+   "red": true
+  },
+  "r26_failed_control_keeps_payload": {
+   "rc": 1,
+   "failed": [
+    "a failed control leaves no name and prints no name and no value                                     "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r26_failed_control_keeps_payload\\tmp_cr_fhei1ccp F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r26_failed_control_keeps_payload\\tmp_cr_jrgu5ddy"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "a failed control still carries names and values",
+   "red": true
+  },
+  "r27_estclose_card_unchecked": {
+   "rc": 1,
+   "failed": [
+    "estclose file: absent path / unreadable / other card / not all-pass are not admitted (no failed cont"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r27_estclose_card_unchecked\\tmp_cr_l4__r10u F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r27_estclose_card_unchecked\\tmp_cr_gfx27i82"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "a file of another card is admitted",
+   "red": true
+  },
+  "r28_estclose_not_all_pass_admitted": {
+   "rc": 1,
+   "failed": [
+    "estclose file: absent path / unreadable / other card / not all-pass are not admitted (no failed cont"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r28_estclose_not_all_pass_admitted\\tmp_cr_dlreumg4 F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r28_estclose_not_all_pass_admitted\\tmp_cr_us39rjrf"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "a read of card ADD79 with a failed control is admitted",
+   "red": true
+  },
+  "r29_pair_order_swapped": {
+   "rc": 1,
+   "failed": [
+    "names: pair table of the card (A minus B) with and without the estimators                           "
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r29_pair_order_swapped\\tmp_cr_0xksv1qb F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r29_pair_order_swapped\\tmp_cr_i62f_wrr"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the pair is RR minus RRe instead of RRe minus RR",
+   "red": true
+  },
+  "r30_name_order_changed": {
+   "rc": 1,
+   "failed": [
+    "verdict C20 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), C10 and C40 NOT-SUPPORT",
+    "names: pattern CONSTCLOSE10K-<PAIR>-<SETTING>-C-<word>, U, F and the four families per pair and sett"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (38 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r30_name_order_changed\\tmp_cr_n_2yc_y9 F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r30_name_order_changed\\tmp_cr_jipxw9fx"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "setting and kind swapped in a name",
+   "red": true
+  },
+  "r31_run_names_changed": {
+   "rc": 1,
+   "failed": [
+    "run names of the card: AGE and FRESH, C10 C20 C40 (and N10 L25 when admitted), the banked forms of r"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "                                                                                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'RQ50eC10KF5P30Hb20'"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the run names of the constant runs are wrong",
+   "red": true
+  },
+  "r32_value_changed": {
+   "rc": 1,
+   "failed": [
+    "the values and pre-rolls of the card: 1.0, 2.0, 4.0 m/s; AGE pre-roll 30 grid 30, FRESH pre-roll 0 f"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r32_value_changed\\tmp_cr_416znu3l F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r32_value_changed\\tmp_cr_3ivufe1d"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the value of C20 is 2.5",
+   "red": true
+  },
+  "r33_form_of_changed": {
+   "rc": 1,
+   "failed": [
+    "register_runs enters the constant runs with form RRe, readout K, rule every 5, pre-roll of the setti"
+   ],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: False (39 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r33_form_of_changed\\tmp_cr_9_uybj3u F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\r33_form_of_changed\\tmp_cr_woxbkn2j"
+   ],
+   "tool": "read_constclose10k.py",
+   "what": "the constant runs are registered as form RRh",
+   "red": true
+  },
+  "c01_closing_tolerance": {
+   "rc": 1,
+   "failed": [
+    "planted 1.9 in the closing column of the replan log: K1a fails (and only the closing check [])      "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "K1a accepts 1.9",
+   "red": true
+  },
+  "c02_c_est_nan_unchecked": {
+   "rc": 1,
+   "failed": [
+    "c_est not NaN on a short row: K1b fails                                                             "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "K1b does not check NaN without a full history",
+   "red": true
+  },
+  "c03_count_unchecked": {
+   "rc": 1,
+   "failed": [
+    "planted wrong count in the run line (full + 1): L1 fails []                                         "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "L1 does not compare the full count",
+   "red": true
+  },
+  "c04_sha_unchecked": {
+   "rc": 1,
+   "failed": [
+    "run line: another file hash, a non-zero pre-roll count and a missing line each fail                 "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "L1 does not compare the file hash",
+   "red": true
+  },
+  "c05_preroll_unchecked": {
+   "rc": 1,
+   "failed": [
+    "run line: another file hash, a non-zero pre-roll count and a missing line each fail                 "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "L1 does not check the pre-roll counts",
+   "red": true
+  },
+  "c06_late_short_allowed": {
+   "rc": 1,
+   "failed": [
+    "planted short look at frame 7 in the mid-look log: K1c fails []                                     ",
+    "a short look at frame 4 fails K1c, short looks at frames 0 to 3 are allowed                         "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (12 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "K1c allows a short look at frame 7",
+   "red": true
+  },
+  "c07_vL_unchecked": {
+   "rc": 1,
+   "failed": [
+    "v_L that is not max(0, v_l + closing): K1d fails                                                    "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "K1d passes a wrong v_L",
+   "red": true
+  },
+  "c08_short_zero_unchecked": {
+   "rc": 1,
+   "failed": [
+    "a closing of 2.0 on a present look without a full history: K1a fails                                "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "K1a does not check the 0.0 fallback",
+   "red": true
+  },
+  "c09_full_from_changed": {
+   "rc": 1,
+   "failed": [
+    "the constants of the card: closing 2.0 m/s, a full history from frame index 4 on                    ",
+    "a short look at frame 4 fails K1c, short looks at frames 0 to 3 are allowed                         "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (12 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "the full history is taken from frame 5",
+   "red": true
+  },
+  "c10_value_changed": {
+   "rc": 1,
+   "failed": [
+    "the constants of the card: closing 2.0 m/s, a full history from frame index 4 on                    "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: False (13 of 14)"
+   ],
+   "tool": "check_constclose.py",
+   "what": "the check reads 1.0 instead of 2.0",
+   "red": true
+  },
+  "f01_value_changed": {
+   "rc": 1,
+   "failed": [
+    "FAIL the values of the card: 1.0, 2.0 and 4.0 m/s for C10, C20, C40, history one frame, five frames"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ CONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\f01_value_changed\\tmp_cf_yc5os9l6)"
+   ],
+   "tool": "make_const_files.py",
+   "what": "C20 is written as 2.5",
+   "red": true
+  },
+  "f02_need_frames_changed": {
+   "rc": 1,
+   "failed": [
+    "FAIL the values of the card: 1.0, 2.0 and 4.0 m/s for C10, C20, C40, history one frame, five frames",
+    "FAIL three files, rc 0, PASS line"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ CONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\f02_need_frames_changed\\tmp_cf_ta5gljvm)"
+   ],
+   "tool": "make_const_files.py",
+   "what": "k0 asks six frames",
+   "red": true
+  },
+  "f03_existing_out_dir_accepted": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "  File \"<frozen os>\", line 228, in makedirs",
+    "FileExistsError: [WinError 183] Eine Datei kann nicht erstellt werden, wenn sie bereits vorhanden ist: 'F:\\\\TanitAD-scratch\\\\v8proof\\\\constclose\\\\tmp_mut\\\\mm1\\\\f03_existing_out_dir_accepted\\\\tmp_cf_f0g12o2t\\\\a'"
+   ],
+   "tool": "make_const_files.py",
+   "what": "an existing output folder is not refused",
+   "red": true
+  },
+  "f04_k0_tolerance": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ CONSTFILES-SELFTEST rc 0 (temporary folder F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\f04_k0_tolerance\\tmp_cf_rch_cxsd)"
+   ],
+   "tool": "make_const_files.py",
+   "what": "k0 accepts a value 0.5 off",
+   "red": false
+  },
+  "f05_written_value_ignored": {
+   "rc": 1,
+   "failed": [
+    "FAIL three files, rc 0, PASS line"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ CONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_mut\\mm1\\f05_written_value_ignored\\tmp_cf__ym40pt8)"
+   ],
+   "tool": "make_const_files.py",
+   "what": "every file holds 1.0",
+   "red": true
+  },
+  "q01_order_swapped": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed in 0.42s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "AGE C10 runs before AGE C20",
+   "red": true
+  },
+  "q02_wrapper_hash_wrong": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "1 failed, 3 passed in 0.42s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the queue admits another wrapper hash",
+   "red": true
+  },
+  "q03_const_file_check_dropped": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "1 failed, 3 passed in 0.44s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the queue does not name the missing constant file",
+   "red": true
+  },
+  "q04_reader_seed_wrong": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed in 0.47s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "reader seed 0 for both model seeds",
+   "red": true
+  },
+  "q05_rule_every_ten": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed in 0.45s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the rule every 10 steps",
+   "red": true
+  },
+  "q06_done_marker_changed": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "1 failed, 3 passed in 0.50s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the done marker has another name",
+   "red": true
+  },
+  "q07_file_of_c20_for_all": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed in 0.47s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "every rollout reads the file of 2.0 m/s",
+   "red": true
+  },
+  "q08_age_preroll_dropped": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed in 0.41s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "AGE without the pre-roll",
+   "red": true
+  },
+  "q09_check_marker_of_parent": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks"
+   ],
+   "seconds": 1.1,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "1 failed, 3 passed in 0.49s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the queue asks the pass line of the parent check",
+   "red": true
+  },
+  "q10_const_hash_not_checked": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "1 failed, 3 passed in 0.45s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the queue does not bind the check to the constant file",
+   "red": true
+  },
+  "q11_banked_rrc_dropped": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED ..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "1 failed, 3 passed in 0.40s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "the banked RRc run of AGE is not required",
+   "red": true
+  },
+  "q12_parent_hash_unchecked": {
+   "rc": 1,
+   "failed": [
+    "..\\..\\..\\test_constclose_queue.py::test_bash_syntax_and_refusal_of_overwrite",
+    "..\\..\\..\\test_constclose_queue.py::test_text_markers_names_and_checks",
+    "..\\..\\..\\test_constclose_queue.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "..\\..\\..\\test_constclose_queue.py::test_log_markers_in_dry"
+   ],
+   "seconds": 0.7,
+   "tail": [
+    "ERROR ..\\..\\..\\test_constclose_queue.py::test_log_markers_in_dry - AssertionE...",
+    "4 errors in 0.23s"
+   ],
+   "tool": "make_constclose_queue.py",
+   "what": "another parent queue is accepted",
+   "red": true
+  }
+ },
+ "control_after": {
+  "check_constclose.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-CONSTCLOSE ok: True (14 of 14)"
+   ]
+  },
+  "make_const_files.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ CONSTFILES-SELFTEST rc 0 (temporary folder F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_cf_zb1hd1ya)"
+   ]
+  },
+  "make_constclose_queue.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.8,
+   "tail": [
+    "....                                                                     [100%]",
+    "4 passed in 0.34s"
+   ]
+  },
+  "read_constclose10k.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.4,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-CONSTCLOSE10K ok: True (40 of 40) temporary folders F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_cr_gg8lrtup F:\\TanitAD-scratch\\v8proof\\constclose\\tmp_cr_d7ka5euc"
+   ]
+  }
+ },
+ "counts": {
+  "red": 59,
+  "total": 60,
+  "control_before_green": true,
+  "control_after_green": true
+ }
+}

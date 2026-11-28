@@ -1,0 +1,499 @@
+{
+ "schema": "taniteval.bench.bench_run/1",
+ "run_id": "20260926T135821Z-navsim_v2-none-ce7ac0",
+ "utc": "2026-09-26T13:58:21Z",
+ "utc_end": "2026-09-26T14:01:31Z",
+ "benchmark": "navsim_v2",
+ "arms": [
+  {
+   "name": "CV",
+   "kind": "floor",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "added_by_rule": false,
+   "status": "OK"
+  },
+  {
+   "name": "STOP",
+   "kind": "floor",
+   "declared_inputs": [],
+   "added_by_rule": false,
+   "status": "OK"
+  },
+  {
+   "name": "HUMAN",
+   "kind": "reference",
+   "declared_inputs": [
+    "logged future trajectory (PRIVILEGED, label-side only)"
+   ],
+   "added_by_rule": false,
+   "status": "OK"
+  }
+ ],
+ "status": "COMPLETE",
+ "report": {
+  "status": "REPORT_FAILED",
+  "rc": 1,
+  "index": null,
+  "index_exists": false,
+  "log": "raw/benchreport.log",
+  "wall_s": 0.4,
+  "reason": "AttributeError: 'bool' object has no attribute 'split'",
+  "how_to_retry": "python -m taniteval.benchreport <run_dir>  (safe to re-run; it rewrites report/)"
+ },
+ "command": [
+  "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\__main__.py",
+  "navsim_v2",
+  "--ckpt",
+  "none",
+  "--split",
+  "navtest_single_stage",
+  "--arms",
+  "CV,STOP,HUMAN",
+  "--tokens-file",
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/raw/smoke_tokens_wholelog218.json",
+  "--metric-cache",
+  "C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2_smoke218",
+  "--ram-floor-mb",
+  "9000"
+ ],
+ "git_head": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+ "git": {
+  "sha": "37645fcc61b158a327e6597e64e0abb64dcbc46d",
+  "branch": "agent/arch-inf-20260803",
+  "suite_code_blobs": {
+   "taniteval/taniteval/bench/__init__.py": "b20b83f09ffebcca3b36d1cc1ead9ae199b0df6f",
+   "taniteval/taniteval/bench/__main__.py": "f15d4c6ac42eac1be4c2e3d47e2e37004719a2ea",
+   "taniteval/taniteval/bench/_legacy.py": "3e263ebba1229b2df9261d608f5e54d0a6a0e6b7",
+   "taniteval/taniteval/bench/cli.py": "e896e24239b63c73f69daff08c34dec3776acfff",
+   "taniteval/taniteval/bench/contract.py": "a84e9210319d1919873518fd36c84f6f8ee850d5",
+   "taniteval/taniteval/bench/gpu_gap.py": "987ac5a613761ea97d99439bd598dd34d3afe672",
+   "taniteval/taniteval/bench/internal_t1.py": "cf9de71c21a83ba8a2457151efb2700607750033",
+   "taniteval/taniteval/bench/navsim/__init__.py": "a684bc2b39d3a3b59cb2244a6e56d56481f346e8",
+   "taniteval/taniteval/bench/navsim/artifacts.py": "c9a924d96e15fb4b761bf774337456b05a870be0",
+   "taniteval/taniteval/bench/navsim/benchmark.py": "573b19be6d3d10291f3d9d7514afabca0d98b226",
+   "taniteval/taniteval/bench/navsim/bridge.py": "f5f2d82cf867f2911ea9ebc8c62f4d75949dfbb4",
+   "taniteval/taniteval/bench/navsim/cache_build.py": "64ba0d05fc5473f7720595ee27bd13abd8a0a662",
+   "taniteval/taniteval/bench/navsim/devkit_side/export_agent_inputs.py": "fe88f5e0002cf8efbff5882cd9056a464589a41e",
+   "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py": "935fa44c459a3ee52c5582db288c5b95394ece54",
+   "taniteval/taniteval/bench/navsim/devkit_side/reaggregate.py": "78b004f9869c291445ecae4de056bae529cfab5b",
+   "taniteval/taniteval/bench/navsim/devkit_side/tanitad_seam_agent.py": "d9561bc67639f20ecd148a3b7ab81a1ec42ee8de",
+   "taniteval/taniteval/bench/navsim/devkit_side/write_cache_metadata.py": "f86d702ec160ac44b269a131f2b40b4e2071792c",
+   "taniteval/taniteval/bench/navsim/export.py": "e10d44b4f1d4362e40402863cbbb03a9abbea5e9",
+   "taniteval/taniteval/bench/navsim/floor_reuse.py": "e4bbf6fab2d49a870e3c07d870b341649b16577f",
+   "taniteval/taniteval/bench/navsim/model_arms.py": "ed5eae26609ab6846f4c71cf0e47299f7c7dc09f",
+   "taniteval/taniteval/bench/navsim/plans.py": "cfbf5fca08d5118be69af923695c8d25deb504a2",
+   "taniteval/taniteval/bench/navsim/profiles.py": "91c8006f55ffa60655aaa9e6702e3f5e6366ad3d",
+   "taniteval/taniteval/bench/navsim/scoring.py": "c1ea935cf5e6d00cdc19ee70385cd379cece76b8",
+   "taniteval/taniteval/bench/navsim/seams.py": "fc4e270c5a3356d4ec60fd87bb9da8edecd03a4c",
+   "taniteval/taniteval/bench/navsim/single_stage.py": "9d67f496662bd0bda3325de5b820c6436d13879f",
+   "taniteval/taniteval/bench/navsim/summarize.py": "98b014d8d9293758d91f2090c32613cf8533a7ba",
+   "taniteval/taniteval/bench/plugins/__init__.py": "be8e23d52a914757ae2822c25a554ecbc1d0d36f",
+   "taniteval/taniteval/bench/plugins/navsim_v1.py": "32a0925bde71fb4bc9b608a00edbdf45857beeff",
+   "taniteval/taniteval/bench/plugins/nuscenes_ol.py": "d123d005fdc9b1fd47daa9bcc0b07fb6e59fb47f",
+   "taniteval/taniteval/bench/report_hook.py": "1770fbce95bb4d3443b944a61590ccf99cce9713",
+   "taniteval/taniteval/bench/schema_check.py": "81c6e306246faac2777411e83410edb2ba1f8e32",
+   "taniteval/taniteval/bench/submission.py": "5babcd1c29d35c519da6466cb46584eb3f2f66bf"
+  }
+ },
+ "ckpt": {
+  "path": null,
+  "sha256": null,
+  "registry_key": null,
+  "note": "--ckpt none: floors / references only",
+  "registry_key_display": "no checkpoint (devkit floors only)"
+ },
+ "suite_version": "1.0.0",
+ "protocol": "EPDMS_v2_navtest_single_stage",
+ "split": {
+  "name": "navtest_single_stage",
+  "n_scenes": 218,
+  "n_logs": 3,
+  "n_stage_one": 218,
+  "n_stage_two": 0,
+  "single_stage": true,
+  "devkit_split": "navtest",
+  "notes": [
+   "ONE-STAGE runner (run_pdm_score_one_stage.py @0a380a9): one query per original log frame; the summary row is `average_all_frames` (a plain skipna mean over tokens, L293) -- there is no stage 2, no synthetic scene and no mapping",
+   "background traffic NON-REACTIVE (traffic_agents=non_reactive: log replay, 'identical to NAVSIM v1', docs/traffic_agents.md) -- the devkit DEFAULT for this runner (default_common.yaml), passed explicitly; E1's navhard N2b used traffic_agents=reactive, a DIFFERENT setting",
+   "logs are read from D: (the full 147-log OpenScene test set); the C: navsim_logs/test holds only navhard's 76 and would silently score a subset (dataloader.py:34-36)",
+   "EPDMS is POST-#151 (devkit 0a380a9); published rows of this column mix pre/post/unverified implementations (published_results.json harness.fix151) -- comparable ONLY to fix151=post"
+  ],
+  "subset": {
+   "n_tokens": 218,
+   "n_logs": 3,
+   "tokens_file": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-navtest-single-stage/raw/smoke_tokens_wholelog218.json",
+   "why_not_a_result": "a SUBSET: EC pairs adjacent scored tokens (run_pdm_score_one_stage.py:129-156), so per-token scores differ from the full split; forced to _scratch/, not claim-bearing"
+  }
+ },
+ "devkit": {
+  "repo": "autonomousvision/navsim",
+  "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "patches": [
+   {
+    "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md §4 (blob 596cb7d in the source checkout)",
+    "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec",
+    "normalised_git_blob_now": "596cb7d6bd5744093b4409f9cbb70d9fcf8535e7",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "venv fcntl.py flock shim",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md §4 (sha256 75184a48...)",
+    "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+    "normalised_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "nuplan-devkit setup.py packaging-only change",
+    "kind": "pre-existing",
+    "evidence": "E1 RESULT.md §4"
+   },
+   {
+    "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+    "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9",
+    "normalised_git_blob_now": "ad06ac3cc552e2316484096cb93b5683f6624002",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+    "kind": "harness",
+    "evidence": "E1 code/patches/apply_idm_degenerate_path_patch.py, applied 2026-09-20 08:58 (raw/navhard/idm_degenerate_path_patch.json). MECHANISM: a fully consumed IDM baseline yields a ZERO-LENGTH path_to_go whose flat-cap buffer is an EMPTY polygon under shapely 2.0.7, so the agent cannot intersect its own path and the assert at navsim_idm_agent_manager.py:84 fires. Scope: the ASSERT CONDITION ONLY - it falls through to the devkit's own free-road branch. Verified by E1 effective 3/3 and INERT 4/4 (healthy tokens bit-identical).",
+    "why_it_is_a_precondition_not_a_footnote": "MEASURED by E1: 166 of 5,462 stage-2 tokens (0 of 450 stage-1) hit it, and ONE assert takes the whole run down. Without this patch the navhard numbers DO NOT EXIST - it is a precondition of the number, not a caveat on it.",
+    "blob_pre_patch": "1924b7c1e9ea2bd0436d475741e6b2e3a2f7b652",
+    "blob_post_patch_e1": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+    "reader_note": "⚠ VERIFY THIS ONE WITH RAW BYTES, NOT `git hash-object`. The file is 100% CRLF (166/166), and `git hash-object` applies the text/eol conversion, returning 214ef5ee39944c3584cb16eaaffd53853fc9db85 for these same bytes - a DIFFERENT number that looks exactly like a mismatch with E1's record. git_blob() below reads raw bytes and agrees with E1 (MEASURED 2026-09-20). A pure line-ending change is invisible to the normalising hash and visible to this one.",
+    "raw_bytes_git_blob_now": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+    "normalised_git_blob_now": "214ef5ee39944c3584cb16eaaffd53853fc9db85",
+    "hash_basis": {
+     "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+     "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+    }
+   },
+   {
+    "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+    "kind": "in-process",
+    "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+   }
+  ],
+  "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+  "sha_probe": {
+   "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+   "matches_pin": true,
+   "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+  },
+  "runtime": "C:/Users/Admin/navsim-crun",
+  "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py",
+  "runner": "navsim.planning.script.run_pdm_score_one_stage",
+  "fix151": "post"
+ },
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "single_stage": "OPEN (PI ruling 2026-09-02): one query on a real logged frame; the plan is fixed and propagated by LQR + kinematic bicycle at 10 Hz over 4 s; the ego is never re-queried",
+   "background_traffic": "NON-REACTIVE log replay (traffic_agents=non_reactive, log_replay_traffic_agents.py; agents intersecting the ego at t0 are removed)",
+   "reactive_background_traffic": false
+  },
+  "evidence_class": "MEASURED",
+  "closed_loop": false,
+  "traffic_agents": "non_reactive"
+ },
+ "claim_bearing": false,
+ "device": {
+  "requested": "auto",
+  "used": "none",
+  "scoring": "cpu",
+  "gpu_gap": {
+   "status": "NOT_INVOKED",
+   "reason": "no model inference in this run"
+  }
+ },
+ "wall_s": 189.2,
+ "files": {
+  "artifacts/CV.json": {
+   "bytes": 64255,
+   "sha256": "5e2984304836444ea99b67c47d34260645e7756d07e73b7bd994c92764c54c48",
+   "location": "repo"
+  },
+  "artifacts/HUMAN.json": {
+   "bytes": 62810,
+   "sha256": "565ffcd6da474f3708ca2ddea99426da7701ee67fed31cc8dd9fd2c1c7fa9a8b",
+   "location": "repo"
+  },
+  "artifacts/STOP.json": {
+   "bytes": 64582,
+   "sha256": "204e3e1800a2faadf11a85ba1b3c02383ca75f11b2a9b3b741103401985d0638",
+   "location": "repo"
+  },
+  "criteria/CV.txt": {
+   "bytes": 4598,
+   "sha256": "a8e4dbe20dc5637ef359a5d8d88bc06463f07140c4a84810dc9a1f768cb35087",
+   "location": "repo"
+  },
+  "criteria/HUMAN.txt": {
+   "bytes": 4632,
+   "sha256": "cc3bc391aa0f940471498ff6ab1ecebb44f00d1ab7955228800d222f4969c19f",
+   "location": "repo"
+  },
+  "criteria/STOP.txt": {
+   "bytes": 5369,
+   "sha256": "cfe834d1a99aeabd159100540826f5e246b05389b7bd8c68fe2b8169be1ec6b4",
+   "location": "repo"
+  },
+  "plans/CV.npz": {
+   "bytes": 10526,
+   "sha256": "5d5f1b38db69bfe42619d594777d2ce2fbdca1ea78cfceb090db449dafdd403f",
+   "location": "repo"
+  },
+  "plans/HUMAN.npz": {
+   "bytes": 24119,
+   "sha256": "7ecca12a5b5d48313bd085b240d746e2002387f34ca1247439cfb2ca4a287914",
+   "location": "repo"
+  },
+  "plans/STOP.npz": {
+   "bytes": 4093,
+   "sha256": "7082fb957f5e6bfe7e041cec7e25d53a7d5b5c18f1d3d0e7c22ad48753121886",
+   "location": "repo"
+  },
+  "raw/bench.log": {
+   "bytes": 739,
+   "sha256": "158539564620e585f7b2c4b2781947787c2f4c7ea6ba2f010d9b53d4be2002d3",
+   "location": "repo"
+  },
+  "raw/benchreport.log": {
+   "bytes": 1552,
+   "sha256": "eaa28053464c2ae55ea720bc9eb9e12a30ee719536d7b44f34e5cb6faff7ef10",
+   "location": "repo"
+  },
+  "raw/criteria_CV.json": {
+   "bytes": 13823,
+   "sha256": "1d35de868713943c08345c9ca1fdd9f3ac724fc52947003cfd35b9bac540dd2c",
+   "location": "repo"
+  },
+  "raw/criteria_HUMAN.json": {
+   "bytes": 13882,
+   "sha256": "8d6ecc83550c3a695ed9add71f5a9a4f85411ad64da32bf687848ae022d5febf",
+   "location": "repo"
+  },
+  "raw/criteria_STOP.json": {
+   "bytes": 15576,
+   "sha256": "aaee81d53f42766b7d03291e646cc36d5de2caa4bba51aed42486ca16cca744d",
+   "location": "repo"
+  },
+  "raw/CV/CV.counts.json": {
+   "bytes": 8837,
+   "sha256": "8d4be115c0b6d1b993bbe85f134e125d6328f010f23df05e4f26dd4a10bdeabc",
+   "location": "repo"
+  },
+  "raw/CV/CV.devkit.csv": {
+   "bytes": 16522,
+   "sha256": "6fae1d180af758c79ac7dbb765d47f715b4578291442540856c4edd591594ee6",
+   "location": "repo"
+  },
+  "raw/CV/CV.run_pdm_score_one_stage.log": {
+   "bytes": 39089,
+   "sha256": "a96ccb258e2ce781f492d79ab97b86410782e7f9eab1efaab256b7a3bfc4554e",
+   "location": "repo"
+  },
+  "raw/CV/CV.score.log": {
+   "bytes": 53467,
+   "sha256": "a8087a61072b5e9ad7bda3ee14780b8663b66b1aaf46b12bb72e283b74f4c408",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame.csv": {
+   "bytes": 45814,
+   "sha256": "ee30f4fd21e8d7e5913b5ad37ae680c67eb020f94e7a982589fdae30cb83cedb",
+   "location": "repo"
+  },
+  "raw/CV/CV_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 54814,
+   "sha256": "ca6b165197fb3237d8dc13486ded76cdff26011ef6fccdf525849f8162e4316c",
+   "location": "repo"
+  },
+  "raw/CV/CV_hooks.json": {
+   "bytes": 299184,
+   "sha256": "855d7495c4007b7f1c6f7de66ba70243d4698a43fb501cdb87dd3f340f98e327",
+   "location": "repo"
+  },
+  "raw/CV/CV_manifest.json": {
+   "bytes": 14603,
+   "sha256": "d5fcdc59bfa95c74fb4412c4e46f978163c0c66cff5e1892e86e755088c4c470",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.csv": {
+   "bytes": 1691143,
+   "sha256": "2369b914bc34ce865fefca867dc8777c1e786c95510041f30493fff5f165a27c",
+   "location": "repo"
+  },
+  "raw/CV/CV_preaggregation.pkl": {
+   "bytes": 865550,
+   "sha256": "e811e24f2ab5f6639e754571149e304c9c513dea9b65f8baae0d11bbfdb5ccc4",
+   "location": "repo"
+  },
+  "raw/export_record.json": {
+   "bytes": 1466,
+   "sha256": "aca73ebb25036589aeb632544baf01f6f9fc3a7214f8a0cf74ccba9a855f93cb",
+   "location": "repo"
+  },
+  "raw/gallery_inputs.json": {
+   "bytes": 980,
+   "sha256": "2df8a5aac2fb9d82690916d5714aabdec3db83da48e27efbb45152366886af7d",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN.counts.json": {
+   "bytes": 8867,
+   "sha256": "d198beff6982acfca0a060b693fa2b52c427402c03437f6616ddd7776c5f6648",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN.devkit.csv": {
+   "bytes": 17958,
+   "sha256": "439579482e705e81a8d36df19c6f911b01994fc4cf4e5b8a6b1be71a61c1ce4f",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN.run_pdm_score_one_stage.log": {
+   "bytes": 39091,
+   "sha256": "0f6558fb57b86a8322ecd340a79df34f008df2d2fd269ffe3c530e2e3d9fe768",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN.score.log": {
+   "bytes": 53489,
+   "sha256": "c0f30cb4d0d82c485b1b1726caba133d8c41899ae8036477eabe807b3ef910b0",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN_final_scores_frame.csv": {
+   "bytes": 48683,
+   "sha256": "07d1eb166acab58908b765d130453b85422cec771a23c4fbe36346d9ad5b4165",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 57977,
+   "sha256": "b65b0d8367bdb1bbb08a355bbdd306ff9e2b6bdb117f90098dd43c9820905f79",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN_hooks.json": {
+   "bytes": 358617,
+   "sha256": "e734b884a67d08238d843e391afa28042a333ecb69eecdefd5069220997c542d",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN_manifest.json": {
+   "bytes": 14636,
+   "sha256": "3e771566c53f1d396fefb9a6044b96b1a0b85039cc8eecb434d10c6e576b7499",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN_preaggregation.csv": {
+   "bytes": 1694306,
+   "sha256": "865f2f60742d5f1e970880faa5eb63543f4d4c15a90635e5170fc138cf0155d1",
+   "location": "repo"
+  },
+  "raw/HUMAN/HUMAN_preaggregation.pkl": {
+   "bytes": 865550,
+   "sha256": "1b5a03c0c88f3eb5291e79a62d889e70c3067b982340a570b11b3855ded9ecf1",
+   "location": "repo"
+  },
+  "raw/preflight.json": {
+   "bytes": 1236,
+   "sha256": "a48b63ef41abb60387d490692035cffe1ca12d1c21cabc213151c306b67fe1b2",
+   "location": "repo"
+  },
+  "raw/seams/STOP.npz": {
+   "bytes": 95068,
+   "sha256": "83671dccaa63cfa110eb1e4f64d96d7b24f9838f592e89280e9ff17d7a53c1c4",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.calls.jsonl": {
+   "bytes": 19199,
+   "sha256": "e18e10f14343b36fa632681f0705d30d6ffeecb42b033d9b6d5613787aa2d724",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.counts.json": {
+   "bytes": 9317,
+   "sha256": "01de320ae7591546743e54f6999377385237d7578a5157d865ad26e26228f632",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.devkit.csv": {
+   "bytes": 20441,
+   "sha256": "8e0e776f7e56a2d8299bf10ded5672c357e7a881c73f7839b516081795925325",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.run_pdm_score_one_stage.log": {
+   "bytes": 39089,
+   "sha256": "9978849e92eda4deeca2186430a403e6edd2d2ecea63501e439a387952f2706f",
+   "location": "repo"
+  },
+  "raw/STOP/STOP.score.log": {
+   "bytes": 53864,
+   "sha256": "2725c90297b03af682883ecd2869723e80f462ebe8b92aa9e3102582e244c6bc",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame.csv": {
+   "bytes": 51875,
+   "sha256": "9ffe99eeeac6057752caeb74e1458158119b70cfccde70da9dd65b82752556cd",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_final_scores_frame_PRE_AGGREGATION.csv": {
+   "bytes": 63422,
+   "sha256": "8e1f19db80e16d59ea88680f1e72977bb4a705cfc75574dcd15df5ca758bba0e",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_hooks.json": {
+   "bytes": 277825,
+   "sha256": "47ace5b38fdb84ceda9407460f46597d51a713b49741dae6bb108a1df12cbe03",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_manifest.json": {
+   "bytes": 15427,
+   "sha256": "54a05baea1faf591052a182d01bc85b2653e9ec8ac309051bace74e1938e41c4",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.csv": {
+   "bytes": 1699751,
+   "sha256": "53d897441bbc30cf362d711d2e9687b26ec3cc861aad2138bf5e2a8b52f9c247",
+   "location": "repo"
+  },
+  "raw/STOP/STOP_preaggregation.pkl": {
+   "bytes": 865550,
+   "sha256": "36682f245aad8dedfde870484390cee45e8f2e230ef77bedb24de66ae2c6305e",
+   "location": "repo"
+  },
+  "scenes.json": {
+   "bytes": 84802,
+   "sha256": "94b02eb88e6de7bc06a0b60cd03ca4bad4eeadde8000cc44c9156a16ee7a9e02",
+   "location": "repo"
+  },
+  "scores/CV.csv": {
+   "bytes": 16522,
+   "sha256": "6fae1d180af758c79ac7dbb765d47f715b4578291442540856c4edd591594ee6",
+   "location": "repo"
+  },
+  "scores/HUMAN.csv": {
+   "bytes": 17958,
+   "sha256": "439579482e705e81a8d36df19c6f911b01994fc4cf4e5b8a6b1be71a61c1ce4f",
+   "location": "repo"
+  },
+  "scores/STOP.csv": {
+   "bytes": 20441,
+   "sha256": "8e0e776f7e56a2d8299bf10ded5672c357e7a881c73f7839b516081795925325",
+   "location": "repo"
+  },
+  "summary.json": {
+   "bytes": 47091,
+   "sha256": "6a6ba9add477436efac9cedd54f2271b5b30f0523688e4e05fd56647728cdba8",
+   "location": "repo"
+  }
+ }
+}

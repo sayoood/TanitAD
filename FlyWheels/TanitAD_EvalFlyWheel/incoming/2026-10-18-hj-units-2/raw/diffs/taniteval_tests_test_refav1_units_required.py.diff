@@ -1,0 +1,672 @@
+--- a/taniteval/tests/test_refav1_units_required.py (bbf2aefd2f)
++++ b/taniteval/tests/test_refav1_units_required.py (210513a63e)
+@@ -14,6 +14,17 @@
+   * ``taniteval/taniteval/floors_kin.py::const_control_paths``
+   * ``taniteval/taniteval/floors_kin.py::ha0_ext_paths``  (its own main input ``kin[:, 2]`` IS the
+     recorded steer angle, so a default of "kappa" was wrong by construction for its main caller)
++
++HJ-UNITS-2 (2026-10-18) EXTENDS THE SAME CLASS TO FOUR MORE SURFACES AND THE CLI (families g, h, i):
++
++  * ``stack/tanitad/refs/refa_v1_plan.py::unicycle_paths``  (``action_units``; the shared integrator)
++  * ``RefAV1.plan``  (``model_action_units``)  -- the planner->model crossing: the unit is a property of
++    the CHECKPOINT (what its action channel 1 was trained on), which ``plan`` cannot see
++  * ``RefAV1.imagined_goal``  (``model_action_units``) and ``RefAV1._imagine_tactical_goal`` (``units``)
++  * ``taniteval/tools/cost_surface_probe.py::WindowContext.score``  (``units``; also now REFUSES an unknown
++    value instead of treating "anything but kappa" as steer)
++  * ``refav1_arm.py --action-units``  -- no default; a rollout without it exits 2 naming both values;
++    ``--analyze-only`` reads the unit from the dump manifest and is not blocked
+ 
+ FAMILIES
+   (a) omitting the unit raises TypeError and the parameter is keyword-only with NO default
+@@ -27,6 +38,10 @@
+   (e) CENSUS: every live call of these integrators names its unit; with a positive control and a
+       mutation on a real file, because a census that reads 0 suspects on BOTH the fixed and the
+       broken code proves nothing
++  (g) the HJ-UNITS-2 surfaces: (a) + (b) + a closed-form known answer for the shared integrator and for
++      the model boundary, and the (d) mutation arms in-process and in a temp copy
++  (h) the CLI flag, behaviourally (the real ``main``) and by mutation
++  (i) the CLI census over live docs / launchers (an invocation of ``refav1_arm.py`` states the unit)
+ 
+ ASCII-only assertion text: this dev box's console is cp1252.
+ """
+@@ -38,6 +53,7 @@
+ import inspect
+ import math
+ import os
++import re
+ import shutil
+ import subprocess
+ import sys
+@@ -53,9 +69,16 @@
+ _REPO = _TANI.parent                        # <repo>
+ _ARM_PATH = _TANI / "tools" / "refav1_arm.py"
+ _FK_PATH = _TANI / "taniteval" / "floors_kin.py"
++_PLAN_PATH = _REPO / "stack" / "tanitad" / "refs" / "refa_v1_plan.py"
++_V1_PATH = _REPO / "stack" / "tanitad" / "refs" / "refa_v1.py"
++_PROBE_PATH = _TANI / "tools" / "cost_surface_probe.py"
+ 
+ from taniteval import floors_kin as fk                                       # noqa: E402
++from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig       # noqa: E402
+ from tanitad.models.kinematic import STEER_WHEELBASE_M                       # noqa: E402
++from tanitad.models.v6 import tactical_lat_actions, tactical_lon_actions_v   # noqa: E402
++from tanitad.refs import refa_v1 as _v1_live                                 # noqa: E402
++from tanitad.refs import refa_v1_plan as _plan_live                          # noqa: E402
+ 
+ DT = 0.2
+ N = 30
+@@ -366,13 +389,32 @@
+ #: callee name -> keyword names that count as STATING the unit.
+ #: ``const_control_paths`` is also the name of ``stack/tanitad/models/p10_prior.py``'s torch port,
+ #: whose unit is a bool ``steer_units`` (two in-file calls, both explicit).
++#: HJ-UNITS-2 adds the shared integrator, the planner->model crossing, and the probe's re-scoring.
++#: ``plan`` and ``score`` are COMMON names (``policy.plan(frames, intr, v, nav)`` is a different API;
++#: ``score`` is everywhere), so ``_selected`` claims them only where they mean the unit-bearing callee.
+ _CALLEES = {
+     "paths_from_controls": {"action_units"},
+     "ha0_ext_paths": {"action_units"},
+     "const_control_paths": {"action_units", "steer_units"},
+     "integrate_select": {"action_units"},
++    "unicycle_paths": {"action_units"},
++    "imagined_goal": {"model_action_units"},
++    "_imagine_tactical_goal": {"units"},
++    "plan": {"model_action_units"},
++    "score": {"units"},
+ }
+ _LIVE_ROOTS = ["stack/tanitad", "stack/scripts", "taniteval/taniteval", "taniteval/tools", "tools"]
++
++
++def _selected(node: ast.Call, name: str, label: str) -> bool:
++    """Is this call the unit-bearing callee? Generic names are claimed only where they mean it."""
++    if name == "plan":                  # RefAV1.plan(feats, *, v0=...): the policy adapters' plan() has no v0 kw
++        return any(k.arg == "v0" for k in node.keywords)
++    if name == "score":                 # cost_surface_probe.WindowContext.score, always called on `ctx`
++        f = node.func
++        return (label.endswith("cost_surface_probe.py") and isinstance(f, ast.Attribute)
++                and isinstance(f.value, ast.Name) and f.value.id == "ctx")
++    return True
+ 
+ 
+ def _callee_name(call: ast.Call) -> str | None:
+@@ -384,25 +426,35 @@
+     return None
+ 
+ 
+-def _census_source(src: str, label: str) -> tuple[int, list[str]]:
+-    """(calls scanned, [offending call sites]). A call with ``**kwargs`` cannot be verified -> flagged."""
++def _census_detail(src: str, label: str) -> tuple[dict, list[str]]:
++    """({callee: calls scanned}, [offending call sites]). A call with ``**kwargs`` cannot be verified -> flagged."""
+     tree = ast.parse(src)
+-    scanned, bad = 0, []
++    by, bad = {}, []
+     for node in ast.walk(tree):
+         if not isinstance(node, ast.Call):
+             continue
+         name = _callee_name(node)
+-        if name not in _CALLEES:
++        if name not in _CALLEES or not _selected(node, name, label):
+             continue
+-        scanned += 1
++        by[name] = by.get(name, 0) + 1
+         kws = {k.arg for k in node.keywords}
+         if None in kws or not (kws & _CALLEES[name]):
+             bad.append(f"{label}:{node.lineno} {name}(...)")
+-    return scanned, bad
++    return by, bad
++
++
++def _census_source(src: str, label: str) -> tuple[int, list[str]]:
++    """(calls scanned, [offending call sites])."""
++    by, bad = _census_detail(src, label)
++    return sum(by.values()), bad
++
++
++_REPO_BY_CALLEE: dict = {}
+ 
+ 
+ def _census_repo() -> tuple[int, list[str], list[str]]:
+     scanned, bad, files = 0, [], []
++    _REPO_BY_CALLEE.clear()
+     for rel in _LIVE_ROOTS:
+         root = _REPO / rel
+         if not root.is_dir():
+@@ -419,10 +471,13 @@
+                 continue
+             label = str(path.relative_to(_REPO)).replace("\\", "/")
+             try:
+-                n, b = _census_source(src, label)
++                by, b = _census_detail(src, label)
+             except SyntaxError as ex:                     # unverifiable == flagged, never skipped
+                 bad.append(f"{label}: UNPARSEABLE ({ex.msg} line {ex.lineno})")
+                 continue
++            n = sum(by.values())
++            for k, v in by.items():
++                _REPO_BY_CALLEE[k] = _REPO_BY_CALLEE.get(k, 0) + v
+             if n:
+                 files.append(label)
+             scanned += n
+@@ -462,3 +517,525 @@
+     n1, bad1 = _census_source(mutated, "refav1_add_floor.py[mutant]")
+     assert n1 == n0 and len(bad1) == n0, (n1, bad1)
+ 
++
++# --------------------------------------------------------------------------- #
++# (e, extended) HJ-UNITS-2 census: the new required arguments                  #
++# --------------------------------------------------------------------------- #
++#: Minimum live calls the census must SCAN per callee. A callee that scans 0 would pass vacuously --
++#: the failure this guards is the census silently ceasing to see a surface (e.g. the selector
++#: rejecting every ``plan``). MEASURED on the tip at the time of writing; ``>=`` so a new caller is fine.
++_MIN_SCANNED = {"unicycle_paths": 1, "plan": 2, "_imagine_tactical_goal": 4, "score": 5,
++                "paths_from_controls": 3, "ha0_ext_paths": 1}
++
++
++def test_e4_census_covers_every_new_required_argument_in_live_code():
++    scanned, bad, files = _census_repo()
++    assert not bad, "live call(s) that do not state their unit:\n  " + "\n  ".join(bad)
++    for callee, floor in _MIN_SCANNED.items():
++        got = _REPO_BY_CALLEE.get(callee, 0)
++        assert got >= floor, f"census scanned only {got} live {callee}() call(s) (< {floor}): {_REPO_BY_CALLEE}"
++    # the two files whose callers HJ-UNITS-2 had to fix are in the scan
++    assert "taniteval/tools/cost_surface_probe.py" in files and "taniteval/tools/refav1_arm.py" in files, files
++
++
++def test_e5_census_positive_controls_for_the_new_callees_and_the_selector():
++    for src, name in [
++            ("x = model.plan(feats, v0=8.0, plan_cfg=pc)\n", "plan"),
++            ("x = model.plan(feats, v0=8.0, **kw)\n", "plan"),                       # unverifiable == flagged
++            ("x = m.imagined_goal(feats, v0=8.0)\n", "imagined_goal"),
++            ("x = m._imagine_tactical_goal(last, brains, v0_t)\n", "_imagine_tactical_goal"),
++            ("x = unicycle_paths(c, v0, dt)\n", "unicycle_paths"),
++            ("x = ctx.score(grid, chunk=64)\n", "score")]:
++        label = "tools/cost_surface_probe.py" if name == "score" else "ctl.py"
++        n, bad = _census_source(src, label)
++        assert n == 1 and len(bad) == 1, (name, n, bad)
++    stated = [("model.plan(feats, v0=8.0, plan_cfg=pc, model_action_units='steer')", "plan"),
++              ("m.imagined_goal(feats, v0=8.0, model_action_units='kappa')", "imagined_goal"),
++              ("m._imagine_tactical_goal(last, brains, v0_t, units='kappa')", "_imagine_tactical_goal"),
++              ("unicycle_paths(c, v0, dt, action_units='kappa')", "unicycle_paths"),
++              ("ctx.score(grid, units='steer')", "score")]
++    for src, name in stated:
++        label = "tools/cost_surface_probe.py" if name == "score" else "ctl.py"
++        assert _census_source("x = " + src + "\n", label) == (1, []), src
++    # SELECTIVITY (the negative control): another API's plan() / score() is NOT claimed
++    assert _census_source("x = policy.plan(frames, intr, v, nav, nav_known=None)\n", "ctl.py") == (0, [])
++    assert _census_source("x = ctx.score(grid)\n", "stack/scripts/other.py") == (0, [])
++    assert _census_source("x = self.score(grid)\n", "tools/cost_surface_probe.py") == (0, [])
++
++
++def test_e6_census_mutation_stripping_the_keyword_from_a_REAL_call_is_caught():
++    """For every new callee that a real live file calls: strip its unit keyword with an AST transform
++    and require the census to flag EXACTLY those calls (and nothing was flagged before)."""
++    targets = [("taniteval/tools/refav1_arm.py", "plan"),
++               ("taniteval/tools/refav1_arm.py", "unicycle_paths"),
++               ("taniteval/tools/cost_surface_probe.py", "plan"),
++               ("taniteval/tools/cost_surface_probe.py", "_imagine_tactical_goal"),
++               ("taniteval/tools/cost_surface_probe.py", "score"),
++               ("stack/tanitad/refs/refa_v1.py", "_imagine_tactical_goal")]
++    for rel, callee in targets:
++        src = (_REPO / rel).read_text(encoding="utf-8")
++        by0, bad0 = _census_detail(src, rel)
++        assert by0.get(callee, 0) >= 1 and not bad0, (rel, callee, by0, bad0)
++        kwset = _CALLEES[callee]
++
++        class _Strip(ast.NodeTransformer):
++            def visit_Call(self, node):
++                self.generic_visit(node)
++                if _callee_name(node) == callee and _selected(node, callee, rel):
++                    node.keywords = [k for k in node.keywords if k.arg not in kwset]
++                return node
++
++        mutated = ast.unparse(ast.fix_missing_locations(_Strip().visit(copy.deepcopy(ast.parse(src)))))
++        by1, bad1 = _census_detail(mutated, rel)
++        assert by1.get(callee) == by0[callee], (rel, callee, by0, by1)
++        assert len(bad1) == by0[callee] and all(callee in b for b in bad1), (rel, callee, bad1)
++
++
++# =========================================================================== #
++# (g) HJ-UNITS-2 surfaces                                                      #
++# =========================================================================== #
++def _tiny_cfg(v1_mod):
++    return v1_mod.RefAV1Config(
++        tac_vocab_version="v7.0", d_enc=32, n_tokens=8, d_state=32,
++        op_layers=1, op_heads=2, op_window=4, tac_layers=1, tac_queries=4,
++        str_dim=16, str_layers=1,
++        strategic_cfg=StrategicPolicyConfig(d_model=32, depth=1, n_heads=2, d_ctx=16, d_cmd=8),
++        tactical_cfg=TacticalPolicyConfig(d_model=32, depth=1, n_heads=2, d_intent=16))
++
++
++class _ConstHead(torch.nn.Module):
++    def __init__(self, n: int, idx: int):
++        super().__init__()
++        self.n, self.idx = n, idx
++
++    def forward(self, x):
++        out = torch.full((x.shape[0], self.n), -10.0, device=x.device, dtype=x.dtype)
++        out[:, self.idx] = 10.0
++        return out
++
++
++def _tiny_model(v1_mod, plan_mod):
++    """(model, cfg, feats) built from the GIVEN modules (live or mutant). The decode is pinned to a
++    TURN so the imagined goal CARRIES CURVATURE -- with LANE_KEEP a unit change is a no-op."""
++    torch.manual_seed(0)
++    cfg = _tiny_cfg(v1_mod)
++    m = v1_mod.RefAV1(cfg).eval()
++    lat_v, lon_v = tactical_lat_actions(cfg.tac_vocab_version), tactical_lon_actions_v(cfg.tac_vocab_version)
++    m.lat_head = _ConstHead(len(lat_v), lat_v.index("TURN_R"))
++    m.lon_head = _ConstHead(len(lon_v), lon_v.index("CRUISE"))
++    feats = torch.randn(1, cfg.op_window, cfg.n_tokens, cfg.d_enc)
++    pc = v1_mod.PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt, n_samples=8, n_iters=1, n_elites=2, seed=0)
++    return m, cfg, feats, pc
++
++
++#: surface -> the name of its unit parameter
++_NEW_PARAM = {"refa_v1_plan.unicycle_paths": "action_units",
++              "RefAV1.plan": "model_action_units",
++              "RefAV1.imagined_goal": "model_action_units",
++              "RefAV1._imagine_tactical_goal": "units",
++              "cost_surface_probe.WindowContext.score": "units"}
++_NEW_NAMES = list(_NEW_PARAM)
++
++
++def _new_surfaces(v1_mod, plan_mod, probe_mod) -> dict:
++    """surface name -> (``call(**unit_kwargs)``, function object); the omit case passes NO kwargs."""
++    m, cfg, feats, pc = _tiny_model(v1_mod, plan_mod)
++    with torch.no_grad():
++        field = m.encode(feats)
++        last = m._last_state(field)
++        brains = m._run_brains(field.mean(dim=-2), None)
++        ctx = probe_mod.WindowContext(m, cfg, feats, 8.0, None, pc)       # a REAL context, no stub
++    v0_t = torch.as_tensor([8.0], dtype=torch.float32)
++    c = torch.tensor(_CONTROLS, dtype=torch.float32)[None]
++    return {
++        "refa_v1_plan.unicycle_paths":
++            (lambda **kw: plan_mod.unicycle_paths(c, torch.tensor([9.0]), DT, **kw), plan_mod.unicycle_paths),
++        "RefAV1.plan":
++            (lambda **kw: m.plan(feats, v0=8.0, plan_cfg=pc, **kw), v1_mod.RefAV1.plan),
++        "RefAV1.imagined_goal":
++            (lambda **kw: m.imagined_goal(feats, v0=8.0, **kw), v1_mod.RefAV1.imagined_goal),
++        "RefAV1._imagine_tactical_goal":
++            (lambda **kw: m._imagine_tactical_goal(last, brains, v0_t, **kw), v1_mod.RefAV1._imagine_tactical_goal),
++        "cost_surface_probe.WindowContext.score":
++            (lambda **kw: ctx.score(c, **kw), probe_mod.WindowContext.score),
++    }
++
++
++@pytest.fixture(scope="module")
++def new_live():
++    probe = _load_module(_PROBE_PATH, "_hj_units_probe_live")
++    yield _new_surfaces(_v1_live, _plan_live, probe)
++    sys.modules.pop("_hj_units_probe_live", None)
++
++
++def _omission_rejected_for(call, param: str) -> bool:
++    """True iff a call that omits the unit is REFUSED with a TypeError naming it. Any other outcome --
++    including a different exception raised AFTER argument binding -- means the omission got through."""
++    try:
++        call()
++    except TypeError as e:
++        return param in str(e)
++    except Exception:                                          # noqa: BLE001
++        return False
++    return False
++
++
++@pytest.mark.parametrize("name", _NEW_NAMES)
++def test_g_omitted_units_raises_TypeError(new_live, name):
++    call, _ = new_live[name]
++    assert _omission_rejected_for(call, _NEW_PARAM[name]), (
++        name + ": a call without " + _NEW_PARAM[name] + " must raise TypeError")
++
++
++@pytest.mark.parametrize("name", _NEW_NAMES)
++def test_g2_unit_parameter_is_keyword_only_with_no_default(new_live, name):
++    _, fn = new_live[name]
++    prm = inspect.signature(fn).parameters[_NEW_PARAM[name]]
++    assert prm.default is inspect.Parameter.empty, (name, prm.default)
++    assert prm.kind is inspect.Parameter.KEYWORD_ONLY, (name, prm.kind)
++
++
++@pytest.mark.parametrize("name", _NEW_NAMES)
++@pytest.mark.parametrize("bad", _BAD, ids=[repr(b) for b in _BAD])
++def test_g3_unknown_units_raise_ValueError_naming_both_legal_values(new_live, name, bad):
++    call, _ = new_live[name]
++    with pytest.raises(ValueError) as ei:
++        with torch.no_grad():
++            call(**{_NEW_PARAM[name]: bad})
++    msg = str(ei.value)
++    assert "kappa" in msg and "steer" in msg, msg
++
++
++def test_g4_unicycle_paths_known_answer_against_the_closed_form(new_live):
++    """The shared integrator itself, under the SAME derived tolerance as (c): constant steer integrated as
++    "steer" == its equivalent curvature as "kappa" == the closed form; the R46 error (steer fed as kappa)
++    and a wrong wheelbase sit orders of magnitude outside the same tolerance."""
++    L = STEER_WHEELBASE_M
++    for v0, steer in _STEER_CASES:
++        kappa = math.tan(steer) / L
++        want = _closed_form(v0, kappa, DT, N)
++        psi_max = abs(v0 * kappa * DT * N)
++        tol = _tolerance(EPS32, want, psi_max)
++        cs = torch.tensor([[[0.0, steer]] * N], dtype=torch.float32)
++        ck = torch.tensor([[[0.0, kappa]] * N], dtype=torch.float32)
++        v = torch.tensor([v0])
++        ps = _plan_live.unicycle_paths(cs, v, DT, action_units="steer")[0].double().numpy()
++        pk = _plan_live.unicycle_paths(ck, v, DT, action_units="kappa")[0].double().numpy()
++        assert np.abs(ps - want).max() <= tol and np.abs(pk - want).max() <= tol, (v0, steer, tol)
++        assert np.abs(ps - pk).max() <= tol
++        wrong = _plan_live.unicycle_paths(cs, v, DT, action_units="kappa")[0].double().numpy()
++        assert np.abs(wrong - want).max() > 1000.0 * tol, (v0, steer)          # the R46 error is not hidden
++        wrong_L = _plan_live.unicycle_paths(cs, v, DT, action_units="steer", wheelbase=3.085)[0].double().numpy()
++        assert np.abs(wrong_L - want).max() > 100.0 * tol, (v0, steer)         # nor is a wrong wheelbase
++
++
++def test_g5_the_model_boundary_known_answer_steer_is_arctan_of_Lkappa_and_kappa_is_pass_through():
++    """``_model_actions`` is the ONE planner->model crossing. Known answer: "steer" writes
++    ``arctan(2.9 * kappa)`` into channel 1 (to 2 float32 eps of |L kappa|), "kappa" returns channel 1
++    untouched -- and the same tolerance REJECTS the unconverted value and a wrong wheelbase."""
++    m, cfg, feats, pc = _tiny_model(_v1_live, _plan_live)
++    kappas = torch.tensor([[-0.2, -0.08, 0.0, 0.01, 0.08, 0.2]], dtype=torch.float32).T[None, :, 0]  # [1, 6]
++    ctrl = torch.stack([torch.zeros_like(kappas), kappas], dim=-1)                                   # [1, 6, 2]
++    with torch.no_grad():
++        out_s = m._model_actions(ctrl, torch.tensor([8.0]), "steer")[..., 1].double()
++        out_k = m._model_actions(ctrl, torch.tensor([8.0]), "kappa")[..., 1].double()
++    k64 = kappas.double()
++    want = torch.atan(STEER_WHEELBASE_M * k64)
++    tol = 2.0 * EPS32 * (STEER_WHEELBASE_M * k64.abs()) + 1e-12
++    assert bool((out_s - want).abs().le(tol).all()), (out_s, want)
++    assert torch.equal(out_k, k64)                                             # pass-through, bit for bit
++    nz = k64.abs() > 0
++    assert bool((out_k - want).abs()[nz].gt(1000.0 * tol[nz]).all())           # pass-through is NOT arctan
++    wrong_L = torch.atan(3.085 * k64)
++    assert bool((wrong_L - want).abs()[nz].gt(100.0 * tol[nz]).all())          # nor is a wrong wheelbase
++
++
++# --- (d, extended) mutation: restore each new default -------------------------
++_PLAN_NEEDLE = ("                   action_units: str,\n"
++                "                   wheelbase: float = STEER_WHEELBASE_M) -> Tensor:")
++_V1_NEEDLES = [
++    ("                               *, units: str,\n", "                               *, units: str = \"kappa\",\n"),
++    ("model_action_units: str,\n                      nav_cmd: Tensor | None = None,",
++     "model_action_units: str = \"kappa\",\n                      nav_cmd: Tensor | None = None,"),
++    ("cost_chunk: int = 64, model_action_units: str,\n",
++     "cost_chunk: int = 64, model_action_units: str = \"kappa\",\n"),
++]
++
++
++_PROBE_NEEDLE = "    def score(self, controls, *, units: str, wheelbase: float = 2.9,"
++
++
++def _mutated_new_sources() -> tuple[str, str, str]:
++    """(refa_v1_plan.py, refa_v1.py, cost_surface_probe.py) with the pre-HJ-UNITS-2 ``= "kappa"`` defaults restored."""
++    plan_src = _PLAN_PATH.read_text(encoding="utf-8")
++    v1_src = _V1_PATH.read_text(encoding="utf-8")
++    probe_src = _PROBE_PATH.read_text(encoding="utf-8")
++    assert probe_src.count(_PROBE_NEEDLE) == 1, "cost_surface_probe.score signature moved: update this mutation"
++    probe_src = probe_src.replace(_PROBE_NEEDLE, _PROBE_NEEDLE.replace("units: str,", 'units: str = "kappa",'))
++    assert plan_src.count(_PLAN_NEEDLE) == 1, "refa_v1_plan signature moved: update this mutation"
++    plan_src = plan_src.replace(_PLAN_NEEDLE, _PLAN_NEEDLE.replace("action_units: str,", 'action_units: str = "kappa",'))
++    for old, new in _V1_NEEDLES:
++        assert v1_src.count(old) == 1, ("refa_v1 signature moved: update this mutation", old)
++        v1_src = v1_src.replace(old, new)
++    return plan_src, v1_src, probe_src
++
++
++def test_g6_mutation_in_process_restoring_the_defaults_turns_the_omission_check_RED(new_live):
++    plan_src, v1_src, probe_src = _mutated_new_sources()
++    m_plan = _load_module(_PLAN_PATH, "_hj_units_plan_mutant", plan_src)
++    m_v1 = _load_module(_V1_PATH, "_hj_units_v1_mutant", v1_src)
++    m_probe = _load_module(_PROBE_PATH, "_hj_units_probe_mutant", probe_src)
++    try:
++        with torch.no_grad():
++            mutant = _new_surfaces(m_v1, m_plan, m_probe)
++            for name in _NEW_NAMES:
++                param = _NEW_PARAM[name]
++                call, fn = new_live[name]
++                assert _omission_rejected_for(call, param), name + ": the live code must refuse an omission"
++                mcall, mfn = mutant[name]
++                assert not _omission_rejected_for(mcall, param), (
++                    name + ": with the default restored the omission is ACCEPTED -- test (g) is RED")
++                assert inspect.signature(mfn).parameters[param].default == "kappa"
++                # the mutation really IS 'the old default': omitting == stating "kappa", bit for bit
++                got, want = mcall(), mcall(**{param: "kappa"})
++                assert _same(got, want), name
++                # and the units still differ, so the silent default is not a no-op
++                steer = mcall(**{param: "steer"})
++                assert not _same(got, steer), name + ": the unit does not matter on this surface -- vacuous"
++    finally:
++        sys.modules.pop("_hj_units_plan_mutant", None)
++        sys.modules.pop("_hj_units_v1_mutant", None)
++        sys.modules.pop("_hj_units_probe_mutant", None)
++
++
++def _same(a, b) -> bool:
++    """Equality of whatever a surface returns: a tensor, a (tensor, dict) pair, a score dict, or a PlanResult."""
++    if isinstance(a, torch.Tensor):
++        return torch.equal(a, b)
++    if isinstance(a, tuple):
++        return torch.equal(a[0], b[0])
++    if isinstance(a, dict):
++        return all(torch.equal(a[k], b[k]) for k in a if isinstance(a[k], torch.Tensor))
++    return torch.equal(a.controls, b.controls) and a.cost == b.cost and a.baseline_costs == b.baseline_costs
++
++
++def _run_pytest_in_copy_v2(tmp: Path, mutate: str | None, select: str):
++    """Like ``_run_pytest_in_copy`` but also copies ``stack/tanitad`` so the temp tree is SELF-CONTAINED
++    (the mutant ``refa_v1*.py`` must be the ones the nested run imports). ``mutate`` is None | "new" | "cli".
++    Returns (returncode, combined output)."""
++    tag = "clean" if mutate is None else "mutant_" + mutate
++    root = tmp / tag
++    tani = root / "taniteval"
++    (tani / "tests").mkdir(parents=True)
++    ign = shutil.ignore_patterns("__pycache__")
++    shutil.copytree(_TANI / "taniteval", tani / "taniteval", ignore=ign)
++    shutil.copytree(_TANI / "tools", tani / "tools", ignore=ign)
++    shutil.copytree(_REPO / "stack" / "tanitad", root / "stack" / "tanitad", ignore=ign)
++    shutil.copy2(_TANI / "conftest.py", tani / "conftest.py")
++    shutil.copy2(Path(__file__), tani / "tests" / Path(__file__).name)
++    if mutate == "new":
++        plan_src, v1_src, probe_src = _mutated_new_sources()
++        (root / "stack" / "tanitad" / "refs" / "refa_v1_plan.py").write_text(plan_src, encoding="utf-8", newline="\n")
++        (root / "stack" / "tanitad" / "refs" / "refa_v1.py").write_text(v1_src, encoding="utf-8", newline="\n")
++        (tani / "tools" / "cost_surface_probe.py").write_text(probe_src, encoding="utf-8", newline="\n")
++    elif mutate == "cli":
++        (tani / "tools" / "refav1_arm.py").write_text(_mutated_cli_source(), encoding="utf-8", newline="\n")
++    env = dict(os.environ)
++    env["PYTHONUTF8"] = "1"
++    env["HJ_UNITS_NESTED"] = "1"                              # recursion guard
++    env["PYTHONPATH"] = os.pathsep.join(
++        [str(root / "stack"), str(_REPO / "stack" / "scripts")] + ([env["PYTHONPATH"]] if env.get("PYTHONPATH") else []))
++    cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-k", select,
++           str(tani / "tests" / Path(__file__).name)]
++    p = subprocess.run(cmd, cwd=str(tani), env=env, capture_output=True, text=True, timeout=900)
++    return p.returncode, (p.stdout or "") + (p.stderr or "")
++
++
++def test_g7_mutation_in_a_temp_copy_turns_the_real_omission_check_RED(tmp_path):
++    """The deliberate-regression arm, end to end, for the five HJ-UNITS-2 surfaces: in a SELF-CONTAINED
++    temp copy restore ``= "kappa"`` and run this file's own (g) checks. The CLEAN copy is the control."""
++    if os.environ.get("HJ_UNITS_NESTED") == "1":
++        pytest.skip("nested run: this test is not selected inside its own subprocess")
++    sel = "test_g_omitted or test_g2_unit"
++    rc_clean, out_clean = _run_pytest_in_copy_v2(tmp_path, None, sel)
++    assert rc_clean == 0, out_clean[-3000:]
++    assert "10 passed" in out_clean, out_clean[-1500:]           # 5 x test_g_ + 5 x test_g2_
++    rc_mut, out_mut = _run_pytest_in_copy_v2(tmp_path, "new", sel)
++    assert rc_mut != 0, "the mutant tree still passed test (g):\n" + out_mut[-3000:]
++    for name in _NEW_NAMES:
++        assert f"test_g_omitted_units_raises_TypeError[{name}]" in out_mut, out_mut[-3000:]
++        assert f"test_g2_unit_parameter_is_keyword_only_with_no_default[{name}]" in out_mut
++    assert "10 failed" in out_mut, out_mut[-1500:]
++
++
++# =========================================================================== #
++# (h) the CLI flag, behaviourally                                              #
++# =========================================================================== #
++_CLI_NEEDLE = 'ap.add_argument("--action-units", choices=("kappa", "steer"), default=None,'
++_ROLLOUT = ["--ckpt", "c.pt", "--cache", "x", "--episodes", "x", "--dump-dir", "d", "--out", "o.json"]
++
++
++class _Reached(Exception):
++    """Raised by the sentinel that replaces the first stage AFTER the unit gate."""
++
++
++def _cli_source() -> str:
++    return _ARM_PATH.read_text(encoding="utf-8")
++
++
++def _mutated_cli_source() -> str:
++    src = _cli_source()
++    assert src.count(_CLI_NEEDLE) == 1, "refav1_arm --action-units declaration moved: update this mutation"
++    return src.replace(_CLI_NEEDLE, 'ap.add_argument("--action-units", choices=("kappa", "steer"), default="kappa",')
++
++
++def _cli_gate(mod, argv, monkeypatch):
++    """Run ``mod.main(argv)`` with the stage after the unit gate replaced by a sentinel.
++    Returns "REACHED" if the gate let it through, else the SystemExit code."""
++    monkeypatch.setattr(mod, "preflight_analysis_imports", lambda *a, **k: (_ for _ in ()).throw(_Reached()))
++    try:
++        mod.main(argv)
++    except _Reached:
++        return "REACHED"
++    except SystemExit as e:
++        return e.code
++    return "RETURNED"
++
++
++def test_h_cli_rollout_without_units_is_refused_naming_both_legal_values(arm, capsys, monkeypatch):
++    assert _cli_gate(arm, list(_ROLLOUT), monkeypatch) == 2
++    err = capsys.readouterr().err
++    assert "--action-units" in err and "kappa" in err and "steer" in err, err
++    assert "required" in err.lower() or "REQUIRED" in err, err
++
++
++def test_h2_cli_a_bad_value_is_refused_by_argparse(arm, capsys, monkeypatch):
++    assert _cli_gate(arm, _ROLLOUT + ["--action-units", "radians"], monkeypatch) == 2
++    err = capsys.readouterr().err
++    assert "kappa" in err and "steer" in err, err
++
++
++def test_h3_cli_a_stated_unit_passes_the_gate(arm, monkeypatch):
++    for units in ("kappa", "steer"):
++        assert _cli_gate(arm, _ROLLOUT + ["--action-units", units], monkeypatch) == "REACHED", units
++
++
++def test_h4_cli_analyze_only_needs_no_unit(arm, monkeypatch):
++    """``--analyze-only`` reads the unit from the dump manifest and never integrates a control."""
++    assert _cli_gate(arm, ["--analyze-only", "dump", "--out", "o.json"], monkeypatch) == "REACHED"
++
++
++def test_h5_cli_declaration_has_no_default_by_ast():
++    tree = ast.parse(_cli_source())
++    decl = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and _callee_name(n) == "add_argument"
++            and n.args and isinstance(n.args[0], ast.Constant) and n.args[0].value == "--action-units"]
++    assert len(decl) == 1, len(decl)
++    kw = {k.arg: k.value for k in decl[0].keywords}
++    assert isinstance(kw.get("default"), ast.Constant) and kw["default"].value is None, ast.dump(kw.get("default"))
++    assert "kappa" in ast.unparse(kw["choices"]) and "steer" in ast.unparse(kw["choices"])
++
++
++def test_h6_cli_mutation_in_process_restoring_the_default_lets_a_forgetful_launch_through(monkeypatch):
++    live = _load_module(_ARM_PATH, "_hj_units_arm_cli_live")
++    mutant = _load_module(_ARM_PATH, "_hj_units_arm_cli_mutant", _mutated_cli_source())
++    try:
++        assert _cli_gate(live, list(_ROLLOUT), monkeypatch) == 2
++        # with the old default restored the forgetful launch line is ACCEPTED -- test (h) is RED
++        assert _cli_gate(mutant, list(_ROLLOUT), monkeypatch) == "REACHED"
++    finally:
++        sys.modules.pop("_hj_units_arm_cli_live", None)
++        sys.modules.pop("_hj_units_arm_cli_mutant", None)
++
++
++def test_h7_cli_mutation_in_a_temp_copy_turns_the_real_check_RED(tmp_path):
++    if os.environ.get("HJ_UNITS_NESTED") == "1":
++        pytest.skip("nested run: this test is not selected inside its own subprocess")
++    sel = "test_h_cli"
++    rc_clean, out_clean = _run_pytest_in_copy_v2(tmp_path, None, sel)
++    assert rc_clean == 0 and "1 passed" in out_clean, out_clean[-3000:]
++    rc_mut, out_mut = _run_pytest_in_copy_v2(tmp_path, "cli", sel)
++    assert rc_mut != 0 and "test_h_cli_rollout_without_units_is_refused_naming_both_legal_values" in out_mut, out_mut[-3000:]
++    assert "1 failed" in out_mut, out_mut[-1500:]
++
++
++# =========================================================================== #
++# (i) the CLI census: live docs / launchers that invoke refav1_arm.py          #
++# =========================================================================== #
++_CLI_GLOBS = ["taniteval/tools/*.md", "taniteval/tools/*.sh", "taniteval/tools/*.ps1",
++              "stack/scripts/*.sh", "stack/scripts/*.ps1", "tools/*.sh", "tools/*.ps1", "tools/*.md"]
++
++
++def _logical_commands(text: str):
++    """Yield (first line number, joined command text) for every shell command, joining ``\\`` continuations."""
++    cur, start = [], 0
++    for i, ln in enumerate(text.split("\n"), 1):
++        if not cur:
++            start = i
++        stripped = ln.rstrip()
++        if stripped.endswith("\\"):
++            cur.append(stripped[:-1])
++            continue
++        cur.append(stripped)
++        yield start, " ".join(c.strip() for c in cur)
++        cur = []
++    if cur:
++        yield start, " ".join(c.strip() for c in cur)
++
++
++def _cli_census_text(text: str, label: str) -> tuple[int, list[str]]:
++    """(rollout invocations scanned, [those that omit --action-units]). An invocation is a logical command
++    that runs ``refav1_arm.py`` under a python interpreter; ``--analyze-only`` / ``--help`` never read the unit."""
++    scanned, bad = 0, []
++    run = re.compile(r"(?:^|[\s/\\])(?:python[0-9.]*(?:\.exe)?|py|\$PY|\"\$PY\")\s+(?:\S+\s+)*?\S*refav1_arm\.py(?:\s|$)")
++    for ln, cmd in _logical_commands(text):
++        if "refav1_arm.py" not in cmd or not run.search(cmd):
++            continue
++        if "--analyze-only" in cmd or "--help" in cmd:
++            continue
++        scanned += 1
++        if "--action-units" not in cmd:
++            bad.append(f"{label}:{ln}")
++    return scanned, bad
++
++
++def test_i_cli_census_every_live_invocation_of_refav1_arm_states_the_unit():
++    scanned, bad, files = 0, [], []
++    for pat in _CLI_GLOBS:
++        for path in sorted(_REPO.glob(pat)):
++            label = str(path.relative_to(_REPO)).replace("\\", "/")
++            try:
++                text = path.read_text(encoding="utf-8")
++            except (UnicodeDecodeError, OSError):
++                continue
++            n, b = _cli_census_text(text, label)
++            if n:
++                files.append(label)
++            scanned += n
++            bad += b
++    assert scanned >= 2, f"CLI census is vacuous: {scanned} invocations in {files}"
++    assert not bad, "live invocation(s) of refav1_arm.py without --action-units:\n  " + "\n  ".join(bad)
++
++
++def test_i2_cli_census_positive_and_negative_controls():
++    omitted = "python taniteval/tools/refav1_arm.py \\\n  --ckpt a \\\n  --out b\n"
++    stated = "python taniteval/tools/refav1_arm.py \\\n  --ckpt a \\\n  --action-units steer \\\n  --out b\n"
++    analyze = "python taniteval/tools/refav1_arm.py --analyze-only d --out b\n"
++    prose = "see refav1_arm.py for the flag list\n"
++    thor = "/home/nvidia/venvs/tanitad-train/bin/python taniteval/tools/refav1_arm.py \\\n  --ckpt a\n"
++    assert _cli_census_text(omitted, "ctl") == (1, ["ctl:1"])
++    assert _cli_census_text(stated, "ctl") == (1, [])
++    assert _cli_census_text(analyze, "ctl") == (0, [])                 # never reads the unit
++    assert _cli_census_text(prose, "ctl") == (0, [])                   # selectivity
++    assert _cli_census_text(thor, "ctl") == (1, ["ctl:1"])             # a full interpreter path is still seen
++
++
++def test_i3_cli_census_mutation_removing_the_flag_from_a_REAL_doc_is_caught():
++    path = _TANI / "tools" / "REFAV1_ARM.md"
++    text = path.read_text(encoding="utf-8")
++    n0, bad0 = _cli_census_text(text, "REFAV1_ARM.md")
++    assert n0 >= 1 and not bad0, (n0, bad0)
++    mutated = "\n".join(ln for ln in text.split("\n") if ln.strip() != "--action-units steer \\")
++    assert mutated != text
++    n1, bad1 = _cli_census_text(mutated, "REFAV1_ARM.md")
++    assert n1 == n0 and len(bad1) == n0, (n1, bad1)
++

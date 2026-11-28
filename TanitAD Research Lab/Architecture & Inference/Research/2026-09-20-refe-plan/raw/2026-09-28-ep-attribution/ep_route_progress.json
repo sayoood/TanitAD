@@ -1,0 +1,85 @@
+{
+ "status": "EXPLORATORY / ABANDONED -- PI ruling 2026-09-28 ~14:0x: 'no hd map as input'; the route polyline and lane graph this EP numerator projects onto are HD-map inputs, inadmissible at inference. The run had already completed (ELIMINATED by its own rule) when the stop arrived; kept as a record only.",
+ "_label": "EXPLORATORY (W3's 200 selection tokens): the exact NAVSIM EP numerator from admissible inputs",
+ "ep_definition": "pdm_scorer.py:398-412 raw progress (LQR-simulated bbox centre, projected on the route centerline, clipped >= 0); :165-173 normalised by the max over {PDM-Closed, agent} (privileged, replaced here), = 1 when that max <= 5 m",
+ "n_tokens": 200,
+ "tokens_without_route": 0,
+ "amendment8_route_used_on": 4,
+ "snapshots": {
+  "017": {
+   "shipped_pick": 82.62767800184614,
+   "control_true_EP": 89.44346998071786,
+   "control_reference_true_head_EP": 89.44346998071786,
+   "true_EP_gain": 6.815791978871729,
+   "bar": 3.4,
+   "variants": {
+    "a_scene_max": {
+     "pick_pdms": 82.45221350112446,
+     "gain": -0.17546450072167374,
+     "passes_bar": false,
+     "within_scene_spearman_median": 0.5040647912837546,
+     "n_scenes_rho": 196,
+     "mae_vs_true_EP": 0.3037514356404553
+    },
+    "b_cv_v0": {
+     "pick_pdms": 81.59608119640883,
+     "gain": -1.031596805437303,
+     "passes_bar": false,
+     "within_scene_spearman_median": 0.33580305329616317,
+     "n_scenes_rho": 157,
+     "mae_vs_true_EP": 0.33264898836825296
+    },
+    "c_v5x4": {
+     "pick_pdms": 82.63181840987096,
+     "gain": 0.004140408024824183,
+     "passes_bar": false,
+     "within_scene_spearman_median": 0.4349108578541553,
+     "n_scenes_rho": 193,
+     "mae_vs_true_EP": 0.33780446000302006
+    }
+   },
+   "control_ok": true,
+   "raw_progress_within_scene_spearman_median": 0.5040647912837546,
+   "EP_head_within_scene_spearman_median": 0.5229942221597138
+  },
+  "018": {
+   "shipped_pick": 83.71344752992681,
+   "control_true_EP": 89.82563139988179,
+   "control_reference_true_head_EP": 89.82563139988179,
+   "true_EP_gain": 6.1121838699549755,
+   "bar": 3.1,
+   "variants": {
+    "a_scene_max": {
+     "pick_pdms": 84.08457311592252,
+     "gain": 0.37112558599571344,
+     "passes_bar": false,
+     "within_scene_spearman_median": 0.43318619974200956,
+     "n_scenes_rho": 195,
+     "mae_vs_true_EP": 0.3176877740227062
+    },
+    "b_cv_v0": {
+     "pick_pdms": 81.33502334036072,
+     "gain": -2.37842418956609,
+     "passes_bar": false,
+     "within_scene_spearman_median": 0.2782880983550126,
+     "n_scenes_rho": 155,
+     "mae_vs_true_EP": 0.3312609866941202
+    },
+    "c_v5x4": {
+     "pick_pdms": 83.75445257995037,
+     "gain": 0.04100505002355703,
+     "passes_bar": false,
+     "within_scene_spearman_median": 0.3275390297733188,
+     "n_scenes_rho": 194,
+     "mae_vs_true_EP": 0.34206940996980234
+    }
+   },
+   "control_ok": true,
+   "raw_progress_within_scene_spearman_median": 0.43318619974200956,
+   "EP_head_within_scene_spearman_median": 0.4218053610316477
+  }
+ },
+ "variants_passing_both_bars": [],
+ "decision": "ELIMINATED: no admissible reference recovers half of the true-EP gain at both snapshots",
+ "at_local": "2026-09-28T13:48:21"
+}

@@ -1,0 +1,717 @@
+--- orig/hwm_eval.py	2026-11-16 11:49:13.676943300 +0100
++++ src/hwm_eval.py	2026-11-16 11:57:41.879333500 +0100
+@@ -1,32 +1,39 @@
+ """HWM-PLAN T1-kin evaluation: per-window metrics per band and family, plan units, and the paired episode-cluster report (taniteval/ci.py).
+ T1-kin: the plan is the model's OWN action sequence, integrated by the kinematic model (friction + speed bounds) and scored against the logged actions integrated by the same model. No logged action after a0 reaches
+ a planner. HWM-ORACLE / FLAT-ORACLE read a true-future goal: tier T0, never a driving number. Families are reported separately, never pooled; TACTICAL is PLAN-DERIVED (the planned and the logged 6 s trajectories classified by one rule, the programme's own factored manoeuvre labeller, geometry only);
+-LONGITUDINAL headway / time gap / TTC come from taniteval.lead_metrics over the b1 eval lead block (2 s horizon: the 0-2 s band only); STRATEGIC PAUSED (PI item 25)."""
++LONGITUDINAL headway / time gap / TTC come from taniteval.lead_metrics over the b1 eval lead block (2 s horizon: the 0-2 s band only); STRATEGIC (PI 2026-11-16, the pause ended) reads the plan against the NVIDIA navigation text
++(strategic_cells, strategic_text): S_ADH, its signed-degrees twin and S_FALSE on the full 6 s band only, a T0 HWM-ORACLE diagnostic on the oracle arms."""
+ import json, os, sys, time
+ sys.dont_write_bytecode = True
+ HERE = os.path.dirname(os.path.abspath(__file__))
+ sys.path.insert(0, HERE)
+ import numpy as np
+ import hwm_plan as H
++import strategic_cells as S
++import strategic_text as ST
+ 
+ BANDS = {"0-2s": (0, 10), "2-6s": (10, 30), "full6s": (0, 30)}           # step ranges [lo, hi); states lo+1 .. hi
+ FAMILIES = {"LONGITUDINAL": ("acc_mae", "speed_err", "hw_err", "tg_err", "ttc_err"), "LATERAL": ("yaw_mae", "head_err", "curv_err", "xtrack"),
+-            "TACTICAL": ("tac_man_dis", "tac_lat_dis", "tac_lon_dis")}
++            "TACTICAL": ("tac_man_dis", "tac_lat_dis", "tac_lon_dis"), "STRATEGIC": ("s_adh", "s_adh_deg", "s_false")}
+ BESIDE = ("ade",)                                  # LATERAL only
+ SIGNED = ("hw_d", "tg_d", "ttc_d")                 # LONGITUDINAL, plan minus logged, arm rows only (direction, not a lower-is-better score)
+ LEAD_METRICS = ("hw_err", "tg_err", "ttc_err") + SIGNED
+ CLS_KEYS = ("_lat_p", "_lon_p", "_man_p", "_lat_l", "_lon_l", "_man_l")
+ LOWER_IS_BETTER = True
++STRAT_BAND = "full6s"                              # the only band a STRATEGIC cell is filled in; the other two are empty by construction
++DIRECTION = {"s_adh": "higher", "s_adh_deg": "higher", "s_false": "neutral"}   # every other metric: lower is better. S_FALSE is read as plan minus logged, never as better or worse
++STRAT_LOGGED = {m: "_" + m + "_l" for m in FAMILIES["STRATEGIC"]}             # the logged-action path read by the same cell: S_ADH ceiling, S_FALSE logged-path rate
++DEFAULT_TABLE = "F:/TanitAD-scratch/datascale/navtok/navtok_table.npz"          # navtok_table.npz, sha256 prefix 2836369e (strategic_text.TABLE_SHA_PREFIX)
+ V_CURV = 1.0                                       # curvature compared only where the logged speed >= 1 m/s
+ NOT_COMPUTED = {"LATERAL.cross_track_vs_lane": "n = 0: no lane geometry; xtrack here is the lateral offset of the plan end from the logged-action trajectory end",
+                 "TACTICAL.goal_setting": "n = 0: the planner exposes no goal or anchor selection; TACTICAL here is the manoeuvre implied by the planned trajectory, not a vocabulary output"}
++NOT_COMPUTED.update(S.STRATEGIC_NOT_COMPUTED)
+ HEADWAY_SCOPE = ("headway / time gap / TTC use taniteval.lead_metrics.distance_keeping over the b1 eval lead blocks (taniteval/tools/build_lead_block_b1.py): the 0-2 s band reads the banked K = 10 block (2 s lead track); the 2-6 s and "
+                  "full 6 s bands read the K = 30 block hwm_plan/data/b1_eval_lead_block_k30.npz (same sources, sha256 equal, 6 s lead track). A window needs a lead track and labelled span over the whole of the block's horizon, so the K = 30 block has fewer LEAD rows than the K = 10 block. "
+                  "In a band that starts after NOW the time-gap denominator is each path's own speed at the band start")
+ TACTICAL_SCOPE = ("plan-derived decision, NOT a vocabulary output: the planned and the logged trajectory (both the kinematic integration of the action sequence from the same v0) are classified by ONE rule, "
+                   "tanitad.refs.refc_tactical.factor_from_kinematics through taniteval.four_families.maneuver_kinematics, on the path of each band re-expressed in the frame of the pose at the band start. The rule reads path geometry only "
+                   "(net path tangent, chord speeds); the goal that conditioned the plan is not an input of the rule. Thresholds are the programme's 2 s thresholds applied unchanged to each band (not rescaled to 4 s or 6 s)")
+-STRATEGIC = "PAUSED (PI item 25, 2026-09-19): not a pass, not omitted"
+ _WRAP = lambda a: (a + np.pi) % (2 * np.pi) - np.pi
+ 
+ 
+@@ -75,13 +82,40 @@
+             "tac_lat_dis": (lp != ll).astype(float), "tac_lon_dis": (np_ != nl).astype(float), "tac_man_dis": (mp != ml).astype(float)}
+ 
+ 
+-def band_metrics(plan, A_raw, v0, lead=None, lead6=None):
++def strategic_cells_of(psi, xy, text):
++    """The STRATEGIC cells of ONE path (plan or logged-action path from NOW): s_adh, s_adh_deg, s_false [n]. Without a text row every cell is NaN (n = 0), never 0."""
++    n = psi.shape[0]
++    if text is None:
++        return {m: np.full(n, np.nan) for m in FAMILIES["STRATEGIC"]}
++    c = S.cells(psi, xy, text["side"], text["theta_deg"], text["d_text"], text["text_ok"])
++    return {"s_adh": c["s_adh"], "s_adh_deg": c["s_adh_signed_deg"], "s_false": c["s_false"]}
++
++
++def attach_text(ws, tab=None):
++    """Attach the navigation-text row of every window's NOW (strategic_text.attach, offset ST.NOW_OFFSET) as ws.text. The table is ws.nav_table, else tab, else the default file (sha256-checked)."""
++    tab = getattr(ws, "nav_table", None) or tab or ST.load_table(DEFAULT_TABLE)
++    ws.text = ST.attach(tab, ws.eid, ws.now)
++    return ws.text
++
++
++def strategic_band(sp, sl, band):
++    """STRATEGIC metrics of one band: the plan's cells and, beside them, the logged path's cells (keys '_<m>_l'). Only the full 6 s band is filled; the other bands are NaN (n = 0) by construction."""
++    n = len(sp["s_adh"])
++    out = {}
++    for m in FAMILIES["STRATEGIC"]:
++        out[m] = sp[m] if band == STRAT_BAND else np.full(n, np.nan)
++        out[STRAT_LOGGED[m]] = sl[m] if band == STRAT_BAND else np.full(n, np.nan)
++    return out
++
++
++def band_metrics(plan, A_raw, v0, lead=None, lead6=None, text=None):
+     """plan (n, 30, 2), A_raw (n, >=30, 2) raw (a, yaw rate), v0 (n,), lead (optional) the dict of hwm_data.lead_for on the K = 10 block, lead6 (optional) the same on the K = 30 block, used by a band past 2 s. Returns {band: {metric: (n,)}} and kinematic-bound rates for plan and logged.
+-    Without a lead block the headway metrics are NaN (n = 0), never zero."""
++    Without a lead block the headway metrics are NaN (n = 0), never zero. text (optional) is strategic_text.attach's dict for the windows; without it every STRATEGIC cell is NaN (n = 0), never zero."""
+     L = np.asarray(A_raw[:, :plan.shape[1]], np.float64)
+     vp, pp, xp, ap = H.integrate(v0, plan)
+     vl, pl, xl, al = H.integrate(v0, L)
+     out = {}
++    sp, sl = strategic_cells_of(pp, xp, text), strategic_cells_of(pl, xl, text)
+     for b, (lo, hi) in BANDS.items():
+         s = slice(lo, hi); e = hi                                         # steps lo..hi-1, band end state hi
+         km = (vl[:, lo:hi] >= V_CURV)
+@@ -94,7 +128,8 @@
+         out[b] = dict(acc_mae=np.abs(plan[:, s, 0] - L[:, s, 0]).mean(1), yaw_mae=np.abs(plan[:, s, 1] - L[:, s, 1]).mean(1), speed_err=np.abs(vp[:, e] - vl[:, e]),
+                       head_err=np.abs(_WRAP(pp[:, e] - pl[:, e])), curv_err=curv, xtrack=np.abs(((xp[:, e] - xl[:, e]) * nrm).sum(1)),
+                       ade=np.linalg.norm(xp[:, lo + 1:hi + 1] - xl[:, lo + 1:hi + 1], axis=-1).mean(1),
+-                      **lead_band(xp, xl, (np.asarray(v0, np.float64) if lo == 0 else vp[:, lo]), (np.asarray(v0, np.float64) if lo == 0 else vl[:, lo]), (lead6 if (hi > 10 and lead6 is not None) else lead), lo, hi), **tac_band(xp, pp, xl, pl, lo, hi))
++                      **lead_band(xp, xl, (np.asarray(v0, np.float64) if lo == 0 else vp[:, lo]), (np.asarray(v0, np.float64) if lo == 0 else vl[:, lo]), (lead6 if (hi > 10 and lead6 is not None) else lead), lo, hi), **tac_band(xp, pp, xl, pl, lo, hi),
++                      **strategic_band(sp, sl, b))
+     return out, dict(plan_bound_frac=float(ap), logged_bound_frac=float(al))
+ 
+ 
+@@ -128,13 +163,19 @@
+     return CI
+ 
+ 
+-def contrast(a, b, eid, n_boot):
+-    """Paired episode-cluster bootstrap of mean(a) - mean(b) over the windows where both are finite. Lower is better: 'better' = interval wholly below 0."""
++def contrast(a, b, eid, n_boot, direction="lower"):
++    """Paired episode-cluster bootstrap of mean(a) - mean(b) over the windows where both are finite. direction 'lower' (default): lower is better, 'better' = interval wholly below 0; 'higher': higher is better
++    (S_ADH); 'neutral': no better or worse, the label reads 'higher' / 'lower' for the side of the interval (S_FALSE, plan minus logged)."""
+     ok = np.isfinite(a) & np.isfinite(b)
+     if not ok.any():
+         return dict(delta=float("nan"), lo=float("nan"), hi=float("nan"), label="n/a", n_windows=0, n_episodes=0, estimator="paired_episode_cluster_bootstrap", reason="n = 0: no window finite in both rows")
+     r = _ci().paired_episode_cluster_bootstrap(a[ok], b[ok], np.asarray(eid)[ok], n_boot=n_boot, seed=0)
+-    lab = "better" if r["hi"] < 0 else ("worse" if r["lo"] > 0 else "none")
++    if direction == "neutral":
++        lab = "lower" if r["hi"] < 0 else ("higher" if r["lo"] > 0 else "none")
++    elif direction == "higher":
++        lab = "better" if r["lo"] > 0 else ("worse" if r["hi"] < 0 else "none")
++    else:
++        lab = "better" if r["hi"] < 0 else ("worse" if r["lo"] > 0 else "none")
+     return dict(delta=r["delta"], lo=r["lo"], hi=r["hi"], label=lab, n_windows=r["n_windows"], n_episodes=r["n_episodes"], estimator=r["estimator"])
+ 
+ 
+@@ -149,7 +190,9 @@
+ def metrics_of(plans, ws):
+     """plans {name: plan_raw (n,30,2)} -> {name: {band: {metric: array}}}."""
+     lead = getattr(ws, "lead", None)
+-    return {k: band_metrics(v, ws.A, ws.v0, lead, getattr(ws, "lead6", None))[0] for k, v in plans.items()}
++    ws.text = getattr(ws, "text", None) if (getattr(ws, "text", None) is not None or not hasattr(ws, "now")) else attach_text(ws)        # TEXT-ATTACH: the one line that attaches the nav-text row
++    text = getattr(ws, "text", None)
++    return {k: band_metrics(v, ws.A, ws.v0, lead, getattr(ws, "lead6", None), text)[0] for k, v in plans.items()}
+ 
+ 
+ CONTRASTS = (("hwm_oracle", "hold"), ("hwm_oracle", "flat_oracle"), ("flat_oracle", "hold"), ("hwm_plan", "hold"), ("hwm_plan", "flat_plan"), ("flat_plan", "hold"), ("hwm_plan", "prior"))
+@@ -201,39 +244,101 @@
+     return out
+ 
+ 
++def _arr(M, a, b, m, n):
++    """M[a][b][m], or NaN [n] when the arm's metrics do not carry m (n = 0 rows, never silently dropped)."""
++    v = M[a][b].get(m)
++    return np.full(n, np.nan) if v is None else v
++
++
++def _empty_row(fam, b, m, a, tier, reason):
++    return dict(kind="arm", family=fam, band=b, metric=m, arm=a, tier=tier, evidence="MEASURED", mean=float("nan"), lo=float("nan"), hi=float("nan"), n_windows=0, estimator="episode_cluster_bootstrap", reason=reason)
++
++
++def _rate(x, eid):
++    """n windows, n episodes and mean of the finite entries (a rate for the 0 / 1 cells)."""
++    x = np.asarray(x, float)
++    ok = np.isfinite(x)
++    return dict(n_windows=int(ok.sum()), n_episodes=int(len(set(np.asarray(eid)[ok]))), mean=float(x[ok].mean()) if ok.any() else None)
++
++
++def strategic_block(M, ws):
++    """The computed STRATEGIC block: state, tier stamp, hypotheses, text coverage, per arm the S_ADH and S_FALSE rate with n, the logged-path ceiling (S_ADH) and logged-path rate (S_FALSE), and the n/a entries."""
++    first = next(iter(M)) if M else None
++    text = getattr(ws, "text", None)
++    blk = {"state": S.STRATEGIC_STATE, "tier_stamp": S.STRATEGIC_TIER_STAMP, "scope": S.STRATEGIC_SCOPE, "bands": {b: (S.STRATEGIC_BAND_EMPTY if b != STRAT_BAND else "filled") for b in BANDS},
++           "hypotheses": {"evidence": "HYPOTHESIS", "COMPLETE_M": S.COMPLETE_M, "theta_deg": dict(S.THETA_DEG), "false_margin_m": S.FALSE_MARGIN_M},
++           "nav_text": {"table": "navtok_table.npz sha256 prefix " + ST.TABLE_SHA_PREFIX, "now_offset": ST.NOW_OFFSET, "evidence": "MEASURED (STRATEGIC_TEXT_OFFSET_CHECK.json)"},
++           "not_computed": {k: v for k, v in NOT_COMPUTED.items() if k.startswith("STRATEGIC.")}}
++    if text is None:
++        blk["text_rows"] = "n = 0: no navigation-text row attached to the window set, so every STRATEGIC cell is NaN (n = 0), never 0"
++    else:
++        blk["text_rows"] = {"n_windows": int(len(text["text_ok"])), "n_text_ok": int(text["text_ok"].sum()), "flag_counts": {str(int(k)): int((text["flag"] == k).sum()) for k in np.unique(text["flag"])}}
++    arms = {}
++    for a in M:
++        tier = ARMS[a][2] if a in ARMS else "T1-kin"
++        arms[a] = dict(tier=tier, **{m: _rate(_arr(M, a, STRAT_BAND, m, ws.n), ws.eid) for m in ("s_adh", "s_false")})
++    blk["arms"] = arms
++    if first is not None:
++        blk["logged_path"] = {"s_adh_ceiling": _rate(_arr(M, first, STRAT_BAND, STRAT_LOGGED["s_adh"], ws.n), ws.eid), "s_false_logged_rate": _rate(_arr(M, first, STRAT_BAND, STRAT_LOGGED["s_false"], ws.n), ws.eid),
++                              "note": "the logged-action path read by the same cells; S_FALSE is read only as plan minus this rate"}
++    return blk
++
++
+ def build_report(M, ws, n_boot=2000, seeds_M=None):
+-    """M {arm: metrics} at the primary inference seed (0); seeds_M {arm: {seed: metrics}} for the inference-seed replicate. Rows carry tier, estimator, evidence class."""
++    """M {arm: metrics} at the primary inference seed (0); seeds_M {arm: {seed: metrics}} for the inference-seed replicate. Rows carry tier, estimator, evidence class.
++    STRATEGIC: filled in the full 6 s band only (the other bands emit n = 0 rows with the reason); beside each arm row a 'logged' row (the logged path through the same cell) and a contrast of every arm against it."""
+     rows = []
++    n = ws.n
++    first = next(iter(M)) if M else None
+     for fam, mets in FAMILIES.items():
+         for b in BANDS:
+             for m in mets + (BESIDE if fam == "LATERAL" else ()) + (SIGNED if fam == "LONGITUDINAL" else ()):
++                if fam == "STRATEGIC" and b != STRAT_BAND:
++                    for a in [x for x in ARMS if x in M] + [x for x in REFS if x in M]:
++                        rows.append(_empty_row(fam, b, m, a, ARMS[a][2] if a in ARMS else "T1-kin", S.STRATEGIC_BAND_EMPTY))
++                    continue
++                dr = DIRECTION.get(m, "lower") if fam == "STRATEGIC" else "lower"
+                 for a, (mode, gk, tier) in ARMS.items():
+                     if a in M:
+-                        rows.append(dict(kind="arm", family=fam, band=b, metric=m, arm=a, tier=tier, evidence="MEASURED", **single(M[a][b][m], ws.eid, n_boot)))
++                        rows.append(dict(kind="arm", family=fam, band=b, metric=m, arm=a, tier=tier, evidence="MEASURED", **single(_arr(M, a, b, m, n), ws.eid, n_boot)))
+                 for ref in REFS:
+                     if ref in M:
+-                        rows.append(dict(kind="arm", family=fam, band=b, metric=m, arm=ref, tier="T1-kin", evidence="MEASURED", **single(M[ref][b][m], ws.eid, n_boot)))
++                        rows.append(dict(kind="arm", family=fam, band=b, metric=m, arm=ref, tier="T1-kin", evidence="MEASURED", **single(_arr(M, ref, b, m, n), ws.eid, n_boot)))
+                 for a, bb in CONTRASTS:
+                     if a in M and bb in M and m not in SIGNED:
+                         t = "T0" if "oracle" in a else "T1-kin"
+-                        rows.append(dict(kind="contrast", family=fam, band=b, metric=m, a=a, b=bb, tier=t, evidence="MEASURED", **contrast(M[a][b][m], M[bb][b][m], ws.eid, n_boot)))
++                        rows.append(dict(kind="contrast", family=fam, band=b, metric=m, a=a, b=bb, tier=t, evidence="MEASURED", **contrast(_arr(M, a, b, m, n), _arr(M, bb, b, m, n), ws.eid, n_boot, dr)))
++                if fam == "STRATEGIC" and first is not None:
++                    rows.append(dict(kind="arm", family=fam, band=b, metric=m, arm="logged", tier="logged path", evidence="MEASURED", **single(_arr(M, first, b, STRAT_LOGGED[m], n), ws.eid, n_boot)))
++                    for a in [x for x in ARMS if x in M] + [x for x in REFS if x in M]:
++                        t = "T0" if "oracle" in a else "T1-kin"
++                        rows.append(dict(kind="contrast", family=fam, band=b, metric=m, a=a, b="logged", tier=t, evidence="MEASURED", **contrast(_arr(M, a, b, m, n), _arr(M, first, b, STRAT_LOGGED[m], n), ws.eid, n_boot, dr)))
+     rep = []
+     for a, per in (seeds_M or {}).items():
+         if 0 in per and 1 in per:
+             for fam, mets in FAMILIES.items():
+                 for b in BANDS:
++                    if fam == "STRATEGIC" and b != STRAT_BAND:
++                        continue
+                     for m in mets:
+-                        rep.append(dict(kind="inference_seed_replicate", arm=a, family=fam, band=b, metric=m, tier=ARMS[a][2], evidence="MEASURED", **contrast(per[1][b][m], per[0][b][m], ws.eid, n_boot)))
+-    return dict(rows=rows, replicate=rep, coverage=coverage_of(M, ws), tactical=tactical_blocks(M), scopes=dict(headway=HEADWAY_SCOPE, tactical=TACTICAL_SCOPE), not_computed=NOT_COMPUTED, strategic=STRATEGIC, n_windows=int(ws.n), n_episodes=int(len(set(ws.eid))), bands=BANDS,
++                        rep.append(dict(kind="inference_seed_replicate", arm=a, family=fam, band=b, metric=m, tier=ARMS[a][2], evidence="MEASURED",
++                                        **contrast(per[1][b].get(m, np.full(n, np.nan)), per[0][b].get(m, np.full(n, np.nan)), ws.eid, n_boot, DIRECTION.get(m, "lower") if fam == "STRATEGIC" else "lower")))
++    return dict(rows=rows, replicate=rep, coverage=coverage_of(M, ws), tactical=tactical_blocks(M), scopes=dict(headway=HEADWAY_SCOPE, tactical=TACTICAL_SCOPE, strategic=S.STRATEGIC_SCOPE), not_computed=NOT_COMPUTED, strategic=strategic_block(M, ws), n_windows=int(ws.n),
++                n_episodes=int(len(set(ws.eid))), bands=BANDS,
+                 note="a claim that a lever moved a metric needs the replicate row to be smaller than the contrast (H-ESTIM-SEED-1); the bootstrap answers the episode question only")
+ 
+ 
+ def to_markdown(rep):
++    st = rep["strategic"]
+     L = [f"# HWM-PLAN read, every row stamped with its tier: T0 oracle-goal rows are diagnostics, T1-kin rows score the plan integrated by the kinematic model ({rep['n_windows']} windows, {rep['n_episodes']} episodes; estimator paired episode-cluster bootstrap, taniteval/ci.py)",
+-         f"STRATEGIC: {rep['strategic']}", ""]
++         f"STRATEGIC: {st['state']}", f"* STRATEGIC tier: {st['tier_stamp']}", f"* STRATEGIC text rows: {st['text_rows']}"]
++    lp = st.get("logged_path")
++    if lp:
++        L.append(f"* STRATEGIC logged path: S_ADH ceiling {lp['s_adh_ceiling']}; S_FALSE logged-path rate {lp['s_false_logged_rate']} (S_FALSE is read only as plan minus this rate)")
++    L.append("")
+     for k, v in rep["not_computed"].items():
+         L.append(f"* {k}: {v}")
+-    L += ["", f"* headway scope: {rep['scopes']['headway']}", f"* tactical scope: {rep['scopes']['tactical']}", f"* lead-state counts of the join: {rep['coverage']['lead_states']}"]
++    L += ["", f"* headway scope: {rep['scopes']['headway']}", f"* tactical scope: {rep['scopes']['tactical']}", f"* strategic scope: {rep['scopes']['strategic']}", f"* lead-state counts of the join: {rep['coverage']['lead_states']}"]
+     L += ["", "| kind | family | band | metric | row | tier | n | delta or mean | 95 % interval | label |", "|---|---|---|---|---|---|---|---|---|---|"]
+     for r in rep["rows"] + rep["replicate"]:
+         nm = r.get("arm") or f"{r['a']} - {r['b']}"
+--- orig/assemble_arm.py	2026-11-16 11:49:13.791248800 +0100
++++ src/assemble_arm.py	2026-11-16 11:57:42.216667700 +0100
+@@ -1,8 +1,11 @@
+ """Assemble ONE arm's compact read JSON (the only input verdict_actsens.py reads per arm). Tier T0 (oracle goal; a world-model diagnostic, never driving performance). Evidence MEASURED.
+ usage: assemble_arm.py <arm_out_dir> <name> <chassis 0|1> <out.json>
+ Reads <dir>/ia_read.json, contrast_hwm.json, contrast_flat.json, c6.json, decode_check/result_<name>.json (optional: absent -> recorded as missing, not silently dropped).
++STRATEGIC (PI 2026-11-16, the pause ended): the arm JSON carries the report's computed STRATEGIC block (contrast_hwm.json "strategic") and the STRATEGIC cells with a vs_logged slot; a report built before the family existed gets a block that says so and carries the n/a entries.
+ Sign convention (hwm_eval.contrast): delta = mean(A) - mean(B), LOWER IS BETTER. vs_r35 = arm - R35_k; vs_hold = arm - HOLD; rep_arm / rep_r35 = inference-seed-1 minus seed-0 of the arm / of R35_k."""
+ import json, os, sys, hashlib
++sys.path.insert(0, os.environ.get("STRATEGIC_CODE_DIR", os.path.dirname(os.path.abspath(__file__))))      # strategic_cells.py: the one source of the STRATEGIC text and n/a entries
++import strategic_cells as SC
+ d, name, chassis, out = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
+ if os.path.exists(out):
+     sys.exit(f"REFUSED: {out} exists")
+@@ -21,7 +24,7 @@
+         if r["kind"] != "contrast":
+             continue
+         key = f"{r['family']}|{r['band']}|{r['metric']}"
+-        slot = {("A", "B"): "vs_r35", ("A", "HOLD"): "vs_hold", ("B", "HOLD"): "r35_vs_hold"}[(r["a"], r["b"])]
++        slot = {("A", "B"): "vs_r35", ("A", "HOLD"): "vs_hold", ("B", "HOLD"): "r35_vs_hold", ("A", "logged"): "vs_logged", ("B", "logged"): "r35_vs_logged"}[(r["a"], r["b"])]
+         cells.setdefault(key, {})[slot] = pick(r)
+     for r in c["replicate"]:
+         key = f"{r['family']}|{r['band']}|{r['metric']}"
+@@ -33,8 +36,17 @@
+ ch, cf, c6 = J(f"{d}/contrast_hwm.json"), J(f"{d}/contrast_flat.json"), J(f"{d}/c6.json")
+ dc = J(f"{d}/decode_check/result_{name}.json") if os.path.exists(f"{d}/decode_check/result_{name}.json") else None
+ i3 = ia["beside"]["ia3"]
++def strategic_of(c):
++    """The report's computed STRATEGIC block, or an explicit statement that this read has none (never a pause string, never a silent omission)."""
++    b = c.get("strategic")
++    if isinstance(b, dict):
++        return b
++    return {"state": "NOT COMPUTED IN THIS READ: the hwm_eval report of this arm was built before the STRATEGIC family existed (no STRATEGIC rows, no text attached)", "pause_ended": "PI 2026-11-16",
++            "tier_stamp": SC.STRATEGIC_TIER_STAMP, "not_computed": SC.STRATEGIC_NOT_COMPUTED, "recompute": "re-run hwm_eval.build_report with the navigation text attached (hwm_eval.attach_text) on the banked windows"}
++
++
+ res = {"tier": "T0", "evidence": "MEASURED", "name": name, "chassis": chassis, "lever": name.split("_")[0],
+-       "strategic": "PAUSED (PI item 25, 2026-09-19): not a pass, not omitted",
++       "strategic": strategic_of(ch),
+        "n_windows": ch["n_windows"], "n_episodes": ch["n_episodes"], "estimator": "paired episode-cluster bootstrap, B 2000, seed 0 (answers: another draw of episodes)",
+        "ia": {"zero_act": ia["zero_act"], "wm_gamma_levels": ia.get("wm_gamma_levels"), "ckpt_step": ia["ckpt_step"], "argv_sha256": ia["argv_sha256"], "adapter_sha256": ia["adapter_sha256"],
+               "ia3": {k: {"gain_lon": v["gain_lon"], "gain_lat": v["gain_lat"], "cos": v["cos"], "n": v["n"]} for k, v in i3.items()},
+--- orig/verdict_actsens.py	2026-11-16 11:49:13.934718000 +0100
++++ src/verdict_actsens.py	2026-11-16 11:54:57.869121400 +0100
+@@ -1,7 +1,7 @@
+ """verdict_actsens.py: card section 6 applied mechanically to the arm JSONs of read_actsens.sh. Tier T0 (oracle goal; a world-model diagnostic, never driving performance). Evidence: MEASURED inputs, rule-derived labels.
+ usage: python verdict_actsens.py [--arms-dir DIR] [--out verdict.json] [--md verdict.md] [--r35-ia-dir DIR]
+ Inputs: DIR/arm_{IDM_s0,IDM_s1,DIV_s0,DIV_s1,NULL_s2,NULL_s3}.json (arm_<name>.json); R35 IA-3 / BAND-MET references from the banked ladder_read results (arm_R35_s0/1.json).
+-Conventions (hwm_eval.contrast): delta = mean(A) - mean(B), lower is better. Deciding quantities, HWM-ORACLE, band 0-2 s: acc_mae (LONGITUDINAL), yaw_mae (LATERAL). STRATEGIC: PAUSED (PI item 25), reported, not a pass.
++Conventions (hwm_eval.contrast): delta = mean(A) - mean(B), lower is better. Deciding quantities, HWM-ORACLE, band 0-2 s: acc_mae (LONGITUDINAL), yaw_mae (LATERAL). STRATEGIC: reported in full (PI 2026-11-16, the pause ended); it is never part of a lever label and never a pass by itself.
+ Chassis k: IDM_s0 / DIV_s0 / NULL_s2 -> 0, IDM_s1 / DIV_s1 / NULL_s3 -> 1 (the arm JSON carries 'chassis').
+ Rules (card 4.2 / 4.4 / 6):
+   Floor_k(q)  = max(F_T,k(q), F_I(q)); F_T,k = |delta(NULL_k - R35_k)| on the row; F_I = max over {lever arm k, R35_k} of |inference seed 1 - seed 0| on the row.
+@@ -12,6 +12,8 @@
+   Order: HARM > CEILING > NARROWS > MECH-ONLY > NULL, and SEEDS-DISAGREE when the label differs between the chassis (label evaluated per chassis alone, 'both chassis required' rules then give the weaker).
+ A missing arm or NULL floor makes the lever INCOMPLETE (no label): the card requires both chassis and the floor. NULL also needs C2/C4 (the lever ran) which this script cannot see: pass --lever-ran IDM=1,DIV=1 only after C2/C4 hold."""
+ import argparse, glob, json, os, sys
++sys.path.insert(0, os.environ.get("STRATEGIC_CODE_DIR", os.path.dirname(os.path.abspath(__file__))))      # strategic_cells.py: the one source of the STRATEGIC text and n/a entries
++import strategic_cells as SC
+ 
+ QS = {"acc_mae": "LONGITUDINAL|0-2s|acc_mae", "yaw_mae": "LATERAL|0-2s|yaw_mae"}
+ LEVERS = ("IDM", "DIV")
+@@ -48,6 +50,17 @@
+     return out
+ 
+ 
++def strategic_summary(arms):
++    """The STRATEGIC section of the verdict, computed from the arm JSONs: per arm the report's block (rates with n, logged-path ceiling and rate) and the STRATEGIC cells, plus the n/a entries. Reads, never labels."""
++    per = {}
++    for n, a in sorted(arms.items()):
++        blk = a.get("strategic") if isinstance(a.get("strategic"), dict) else None
++        cells = {k: v for k, v in a.get("hwm", {}).get("cells", {}).items() if k.startswith("STRATEGIC|")}
++        per[n] = {"state": blk.get("state") if blk else "not in this arm's read: the arm JSON carries no STRATEGIC block", "arms": blk.get("arms") if blk else None,
++                  "logged_path": blk.get("logged_path") if blk else None, "cells": cells}
++    return {"state": SC.STRATEGIC_STATE, "tier_stamp": SC.STRATEGIC_TIER_STAMP, "role": "reported beside the lever labels; not an input of any label", "not_computed": SC.STRATEGIC_NOT_COMPUTED, "per_arm": per}
++
++
+ def r35_ref(dirp, k):
+     p = os.path.join(dirp, f"arm_R35_s{k}.json")
+     j = json.load(open(p, encoding="utf-8"))
+@@ -123,7 +136,7 @@
+ 
+ def run(arms, refs, lever_ran=None):
+     lever_ran = lever_ran or {}
+-    out = {"tier": "T0", "evidence": "MEASURED inputs; labels are rule-derived (card section 6)", "strategic": "PAUSED (PI item 25, 2026-09-19): not a pass, not omitted", "levers": {}}
++    out = {"tier": "T0", "evidence": "MEASURED inputs; labels are rule-derived (card section 6)", "strategic": strategic_summary(arms), "levers": {}}
+     labels = {}
+     for lv in LEVERS:
+         L = label_lever(arms, refs, lv)
+@@ -164,7 +177,7 @@
+ 
+ 
+ def md(out):
+-    L = ["# ACTSENS verdict (T0, oracle goal: a world-model diagnostic, never driving performance)", "", "STRATEGIC: PAUSED (PI item 25), not a pass.", "", "| lever | label | next label applied | per chassis |", "|---|---|---|---|"]
++    L = ["# ACTSENS verdict (T0, oracle goal: a world-model diagnostic, never driving performance)", "", "| lever | label | next label applied | per chassis |", "|---|---|---|---|"]
+     for lv, v in out["levers"].items():
+         L.append(f"| {lv} | {v['label']} | {v.get('next_label_applied', '-')} | {v.get('per_chassis_label', v.get('missing_arms', '-'))} |")
+     for lv, v in out["levers"].items():
+@@ -174,6 +187,17 @@
+                 L.append(f"* {q}: BETTER {p['BETTER']}, WORSE {p['WORSE']}, beats HOLD at both chassis {p['BEATS_HOLD_both']}; floors " + ", ".join(f"c{k}: {v['floors'][k][q]['Floor']:.4f}" for k in (0, 1)))
+             L.append(f"* MECH-MOVED {v['MECH_MOVED']}; BAND-MET lost {list(v['band_met_lost'])}")
+             L.append(f"* next: {v.get('next_step')}")
++    L += ["", f"## STRATEGIC: {out['strategic']['state']}", "", f"* tier: {out['strategic']['tier_stamp']}", f"* role: {out['strategic']['role']}"]
++    for k, v in out["strategic"]["not_computed"].items():
++        L.append(f"* {k}: {v}")
++    for n, v in out["strategic"]["per_arm"].items():
++        cs = v["cells"]
++        if not cs:
++            L.append(f"* {n}: {v['state']}")
++            continue
++        for k, c in sorted(cs.items()):
++            for slot, r in sorted(c.items()):
++                L.append(f"* {n} {k} {slot}: delta {r['delta']:.4f} [{r['lo']:.4f}, {r['hi']:.4f}] n {r.get('n_windows')} episodes {r.get('n_episodes')} label {r.get('label')}")
+     if "lever_of_record" in out:
+         L += ["", f"Lever of record: {out['lever_of_record']['lever']} ({out['lever_of_record']['rule']})"]
+     return "\n".join(L) + "\n"
+--- orig/strategic_cells.py	2026-11-16 11:49:14.240394500 +0100
++++ src/strategic_cells.py	2026-11-16 11:57:42.141306800 +0100
+@@ -1,4 +1,4 @@
+-"""STRATEGIC cells from the NVIDIA nav text (CPU prototype, numpy only; staged, not landed).
++"""STRATEGIC cells from the NVIDIA nav text (numpy only; staged, not landed).
+ 
+ Cells (all per window; NaN = not scorable, never 0):
+   S_ADH   route adherence: an announced L/R manoeuvre whose point lies inside the plan's own arc; 1 if the plan turns the
+@@ -6,7 +6,7 @@
+   S_FALSE false turn: no manoeuvre announced within the plan's arc + margin; 1 if the plan turns by >= theta either side.
+   S_CKPT  S's route checkpoint (30 / 50 / 80 m of arc, NOW frame) heading agrees with the announced side (v8f-mini only).
+ Ground truth: navigation.parquet text parsed by navtok (class, distance); coarse side only.
+-Integrator below is a copy of hwm_plan.integrate (hwm_plan.py:523); production imports it instead.
++The path integrator is hwm_plan.integrate (lazy import). The prototype's own copy stays as _proto_integrate, used only by a test that pins the two as equal.
+ """
+ from __future__ import annotations
+ 
+@@ -18,7 +18,7 @@
+ FALSE_MARGIN_M = 30.0
+ 
+ 
+-def integrate(v0, plan, dt=DT):
++def _proto_integrate(v0, plan, dt=DT):
+     n, K, _ = plan.shape
+     v = np.array(v0, np.float64)
+     psi, x, y = np.zeros(n), np.zeros(n), np.zeros(n)
+@@ -37,6 +37,13 @@
+     return np.stack(PSI, 1), np.stack(XY, 1)
+ 
+ 
++def integrate(v0, plan):
++    """(psi [N, K+1], xy [N, K+1, 2]) of a raw (a, yaw rate) sequence from NOW, by the production kinematic model hwm_plan.integrate (friction and speed bounds)."""
++    import hwm_plan
++    _, psi, xy, _ = hwm_plan.integrate(v0, plan)
++    return psi, xy
++
++
+ def parse_side(vocab_name: str):
+     """(side +1 left / -1 right / 0 none, theta_deg, is_uturn) from a navtok class name. UTURN and non-TURN classes -> side 0."""
+     n = str(vocab_name)
+@@ -91,3 +98,24 @@
+         ok = text_ok & ck_ok[:, m] & (side != 0) & np.isfinite(d_text) & (d_text + COMPLETE_M <= a)
+         out[ok, m] = (np.degrees(ck_psi_rad[ok, m]) * side[ok] >= theta_deg[ok]).astype(float)
+     return out
++
++
++# ---------------------------------------------------------------------------------------------- report text shared by hwm_eval, assemble_arm and verdict_actsens (one source)
++STRATEGIC_STATE = "REPORTED IN FULL (PI 2026-11-16: the strategic pause ended); never a pass by itself"
++STRATEGIC_TIER_STAMP = ("T0 HWM-ORACLE diagnostic on the oracle rows: the goal that conditioned the plan is the ENCODED TRUE FUTURE, so a cell on those plans measures the world model's use of an oracle goal, "
++                        "not a strategic decision and never a driving number. Rows of the predicted-goal arms (hwm_plan, flat_plan) are T1-kin")
++STRATEGIC_BAND_EMPTY = ("empty by construction: a STRATEGIC cell reads the whole plan arc against the announced manoeuvre distance (median 127 m ahead, NAVPROBE), "
++                        "so only the full 6 s band is filled; the 0-2 s and 2-6 s bands carry n = 0")
++STRATEGIC_SCOPE = ("S_ADH: an announced L/R turn at distance d_text with d_text + COMPLETE_M inside the plan's own arc; 1 if the plan's side-signed heading change over [0, d_text + COMPLETE_M] reaches theta; "
++                   "s_adh_deg is the same heading change in signed degrees (side-positive), the continuous twin. S_FALSE: no turn announced within the plan arc + 30 m, 1 if the plan's net heading change reaches 25 deg either side; "
++                   "the text does not announce bends or ramps the logged path takes, so S_FALSE is read ONLY as plan minus logged-path rate, never as an absolute. COMPLETE_M, the thetas and the 30 m margin are HYPOTHESIS. "
++                   "Ground truth is the NVIDIA navigation text (navtok table, flag 0 rows only; every other row is NaN). The text and the trained nav input both derive from the drive's own path, so the cells are optimistic as route-following evidence. "
++                   "Estimator: paired episode-cluster bootstrap (taniteval/ci.py), which answers 'another draw of episodes' only")
++STRATEGIC_NOT_COMPUTED = {
++    "STRATEGIC.intent_6_30s": "n = 0: no arm outputs an intent or goal at 6-30 s (the HWM plan is 6 s; v8f-mini's S emits route checkpoints out to 80 m only). Would-have n, MEASURED count on the 994 ACTSENS windows by time to the announced "
++                              "manoeuvre d / v0 (strategic-audit count_n.py): 6-12 s 32 windows, 12-30 s 69, over 30 s 20. Unblocks with a PI go on a strategic head and training",
++    "STRATEGIC.derived_goals": "n = 0: no derived-goal output exists on the HWM planner. Would-have n: n/a (no output or label is defined; STRATEGIC_PLAN section 2)",
++    "STRATEGIC.detected_info": "n = 0: no detected-information output exists on the HWM planner (the HWM ctx token is an input, not scored). Would-have n: n/a (STRATEGIC_PLAN section 2)",
++    "STRATEGIC.S_CKPT": "structural n = 0: the HWM planner has no S head, so no route checkpoint exists to score. S_CKPT is read on v8f-mini arms only; would-have n on the eval141 grid, MEASURED "
++                        "(proto_eval141_counts.json): 46 / 120 / 214 windows (18 / 22 / 24 episodes) at 30 / 50 / 80 m of arc",
++}
+--- orig/test_strategic_cells.py	2026-11-16 11:49:14.317466500 +0100
++++ src/test_strategic_cells.py	2026-11-16 11:57:42.265518600 +0100
+@@ -76,3 +76,82 @@
+     w = _w()
+     w["theta_deg"][:] = 0.0
+     assert np.all(S.cells(psi, xy, **w)["s_adh"] == 1.0)
++
++
++# ------------------------------------------------------------------------------------------ strategic_text: the table join, and its deliberate-regression arms
++import pytest
++import strategic_text as ST
++
++
++def synthetic_table(eids, side_name="TURN_L", d=30.0, flag=0, n_steps=60):
++    """A navtok-shaped eval table: every step of every clip carries one class, one distance and one flag."""
++    vocab = ["UNPARSED", "CONTINUE", "TURN_L", "TURN_R", "TURN_SLIGHT_L", "UTURN"]
++    eids = list(dict.fromkeys(eids))
++    tot = len(eids) * n_steps
++    tab = dict(eval_clip=np.array(eids), eval_off=np.arange(len(eids)) * n_steps, eval_n=np.full(len(eids), n_steps),
++               eval_cls_id=np.full(tot, vocab.index(side_name), np.int16), eval_dist_m=np.full(tot, d, np.float32), eval_flag=np.full(tot, flag, np.uint8), vocab=np.array(vocab))
++    tab["clip_index"] = {e: i for i, e in enumerate(eids)}
++    tab["side"], tab["theta"] = S.side_table(vocab)
++    return tab
++
++
++def test_proto_integrator_equals_the_production_integrator():
++    r = np.random.default_rng(1)
++    plan = np.stack([r.normal(0, 3, (50, 30)), r.normal(0, 0.4, (50, 30))], -1)
++    v0 = r.uniform(0, 25, 50)
++    psi0, xy0 = S._proto_integrate(v0, plan)
++    psi1, xy1 = S.integrate(v0, plan)
++    assert np.array_equal(psi0, psi1) and np.array_equal(xy0, xy1)
++
++
++def test_attach_row_with_flag_is_nan_not_zero():
++    e = np.array(["a", "a", "b"])
++    for fl in (1, 2, 3):
++        a = ST.attach(synthetic_table(e, flag=fl), e, np.array([5, 6, 7]), offset=0)
++        assert not a["text_ok"].any() and np.all(np.isnan(a["d_text"])) and np.all(a["side"] == 0)
++        psi, xy = S.integrate(np.full(3, 10.0), _plan(0.3, n=3))
++        assert all(np.all(np.isnan(v)) for v in S.cells(psi, xy, a["side"], a["theta_deg"], a["d_text"], a["text_ok"]).values())   # NaN in every cell
++    a = ST.attach(synthetic_table(e, flag=0), e, np.array([5, 6, 7]), offset=0)
++    assert a["text_ok"].all() and np.all(a["d_text"] == 30.0) and np.all(a["side"] == 1)                                            # control: the same call on flag 0 reads the text
++
++
++def test_attach_unmapped_clip_and_step_out_of_range():
++    tab = synthetic_table(np.array(["a", "b"]), n_steps=10)
++    a = ST.attach(tab, np.array(["a", "zzz", "b", "a"]), np.array([3, 3, 9, 10]), offset=0)
++    assert a["text_ok"].tolist() == [True, False, True, False] and a["row"].tolist() == [3, -1, 19, -1]
++
++
++def test_attach_applies_the_offset_to_the_step():
++    tab = synthetic_table(np.array(["a"]), n_steps=10)
++    tab["eval_cls_id"][5] = tab["vocab"].tolist().index("TURN_R")
++    assert ST.attach(tab, np.array(["a"]), np.array([2]), offset=3)["side"][0] == -1
++    assert ST.attach(tab, np.array(["a"]), np.array([2]), offset=0)["side"][0] == 1
++
++
++def test_default_offset_is_the_verified_one():
++    assert ST.NOW_OFFSET == 0                                   # STRATEGIC_TEXT_OFFSET_CHECK.json: offset 0 reads 84.1 % within 0.05 m/s, offset 3 reads 24.4 %
++
++
++def test_load_table_refuses_a_file_with_the_wrong_sha(tmp_path):
++    p = tmp_path / "t.npz"
++    np.savez(p, x=np.arange(3))
++    with pytest.raises(ValueError):
++        ST.load_table(str(p))
++
++
++def test_verify_offset_finds_a_planted_offset(tmp_path):
++    """Deliberate regression of the check itself: windows whose v0 is the speed at table step now + 2 must make verify_offset answer 2, not 0."""
++    import torch
++    n_steps, dt_step = 40, 0.2
++    now_s = 0.3 + dt_step * np.arange(n_steps)
++    speed = lambda t: 5.0 + 0.8 * t + 0.3 * np.sin(1.7 * t)                       # time-varying, so the offset is identifiable
++    k = np.arange(0, 120)
++    trk = np.full((120, 4), np.nan)
++    trk[:, 3] = speed(k * ST.RAW_DT_S + 0.0)
++    np.savez(tmp_path / "join.npz", now_s=now_s)
++    torch.save({"tracks": {"a": trk}}, tmp_path / "trk.pt")
++    tab = synthetic_table(np.array(["a"]), n_steps=n_steps)
++    nows = np.arange(3, 30, 3)
++    v0 = speed(now_s[nows + 2])                                                     # the plant: NOW belongs to table step now + 2
++    res = ST.verify_offset(tab, str(tmp_path / "join.npz"), str(tmp_path / "trk.pt"), np.array(["a"] * len(nows)), nows, v0, offsets=range(0, 5), shift_s=0.0)
++    assert res["best_offset"] == 2 and res["by_offset"][2]["frac_within_0p05"] == 1.0 and res["by_offset"][0]["frac_within_0p05"] < 0.5
+--- orig/test_verdict_actsens.py	2026-11-16 11:49:14.040179800 +0100
++++ src/test_verdict_actsens.py	2026-11-16 11:57:42.199391700 +0100
+@@ -125,6 +125,86 @@
+     assert r["labels"] == {"IDM": "ACTSENS-NARROWS", "DIV": "ACTSENS-NARROWS"} and r["lever_of_record"]["lever"] == "DIV"
+ 
+ 
++# ------------------------------------------------------------------------------------------ STRATEGIC (PI 2026-11-16, the pause ended): the readers state the family, not a pause
++HERE_V = os.path.dirname(os.path.abspath(__file__))
++OLD_PAUSE = "PAUSED (PI item 25, 2026-09-19): not a pass, not omitted"
++
++
++def _reader_text(name):
++    for d in (HERE_V, os.environ.get("STRATEGIC_CODE_DIR", HERE_V)):
++        p = os.path.join(d, name)
++        if os.path.exists(p):
++            return open(p, encoding="utf-8").read()
++    raise AssertionError(f"{name} not found beside this test or under STRATEGIC_CODE_DIR")
++
++
++def test_no_pause_string_in_the_three_readers_with_a_control():
++    for name in ("hwm_eval.py", "assemble_arm.py", "verdict_actsens.py"):
++        t = _reader_text(name)
++        assert t.count("PAUSED") == 0, name                                  # the grep that must return 0 ...
++        assert t.count("STRATEGIC") > 0, name                                # ... and its same-breath control, a string that exists, which must return non-zero
++    assert OLD_PAUSE.count("PAUSED") == 1                                    # the probe can fire on the old text
++
++
++def _strategic_cells_for(arm):
++    arm["hwm"]["cells"]["STRATEGIC|full6s|s_adh"] = {"vs_hold": c(0.40), "vs_logged": c(-0.30)}
++    arm["strategic"] = {"state": "REPORTED IN FULL", "arms": {"hwm_oracle": {"tier": "T0"}}, "logged_path": {"s_adh_ceiling": {"mean": 1.0, "n_windows": 8}}}
++
++
++def test_verdict_carries_the_strategic_section_and_the_labels_do_not_move():
++    w = world(NUL, NUL)
++    base = V.run(w, REF)["labels"]
++    _strategic_cells_for(w["IDM_s0"])
++    out = V.run(w, REF)
++    assert out["labels"] == base                                             # STRATEGIC is reported beside the labels, never an input of one
++    s = out["strategic"]
++    assert "REPORTED IN FULL" in s["state"] and "T0 HWM-ORACLE" in s["tier_stamp"] and set(s["not_computed"]) >= {"STRATEGIC.intent_6_30s", "STRATEGIC.derived_goals", "STRATEGIC.detected_info", "STRATEGIC.S_CKPT"}
++    assert s["per_arm"]["IDM_s0"]["cells"]["STRATEGIC|full6s|s_adh"]["vs_logged"]["delta"] == -0.30
++    assert s["per_arm"]["DIV_s0"]["state"].startswith("not in this arm's read")        # an arm without a block says so
++    md = V.md(out)
++    assert "PAUSED" not in md and "STRATEGIC: REPORTED IN FULL" in md and "STRATEGIC.S_CKPT" in md and "IDM_s0 STRATEGIC|full6s|s_adh vs_logged" in md
++
++
++def _write_arm_dir(d, strategic):
++    import json
++    gain = lambda p: {"point": p, "lo": p - 0.02, "hi": p + 0.02}
++    ia3 = {"1|10": {"gain_lon": gain(0.3), "gain_lat": gain(-0.03), "cos": 0.1, "n": 5}}
++    row = lambda fam, band, met, a, b: dict(kind="contrast", family=fam, band=band, metric=met, a=a, b=b, delta=0.1, lo=0.0, hi=0.2, label="none", n_windows=994, n_episodes=71)
++    rows = [row("LONGITUDINAL", "0-2s", "acc_mae", "A", "B"), row("LONGITUDINAL", "0-2s", "acc_mae", "A", "HOLD"), row("LONGITUDINAL", "0-2s", "acc_mae", "B", "HOLD")]
++    if strategic:
++        rows += [row("STRATEGIC", "full6s", "s_adh", "A", "logged"), row("STRATEGIC", "full6s", "s_adh", "B", "logged")]
++    rep = {"rows": rows, "replicate": [], "n_windows": 994, "n_episodes": 71, "tactical_kappa": {}}
++    rep["strategic"] = {"state": "REPORTED IN FULL (test)", "arms": {}} if strategic else OLD_PAUSE
++    os.makedirs(d, exist_ok=True)
++    json.dump({"zero_act": {}, "ckpt_step": 1, "argv_sha256": "x", "adapter_sha256": "y", "beside": {"ia3": ia3}, "passes": {"1": {"skill": 0.0}}}, open(f"{d}/ia_read.json", "w"))
++    for n in ("contrast_hwm.json", "contrast_flat.json"):
++        json.dump(rep, open(f"{d}/{n}", "w"))
++    json.dump({}, open(f"{d}/c6.json", "w"))
++
++
++def _assemble(d, out):
++    import runpy
++    old = sys.argv
++    sys.argv = ["assemble_arm.py", d, "IDM_s0", "0", out]
++    try:
++        runpy.run_path(os.path.join(HERE_V, "assemble_arm.py"), run_name="__main__")
++    finally:
++        sys.argv = old
++    import json
++    return json.load(open(out, encoding="utf-8"))
++
++
++def test_assemble_arm_carries_the_computed_block_or_says_there_is_none(tmp_path):
++    _write_arm_dir(str(tmp_path / "new"), True)
++    new = _assemble(str(tmp_path / "new"), str(tmp_path / "new.json"))
++    assert new["strategic"]["state"] == "REPORTED IN FULL (test)" and new["hwm"]["cells"]["STRATEGIC|full6s|s_adh"]["vs_logged"]["delta"] == 0.1
++    assert "r35_vs_logged" in new["hwm"]["cells"]["STRATEGIC|full6s|s_adh"]
++    _write_arm_dir(str(tmp_path / "old"), False)
++    old = _assemble(str(tmp_path / "old"), str(tmp_path / "old.json"))
++    assert old["strategic"]["state"].startswith("NOT COMPUTED IN THIS READ") and "STRATEGIC.S_CKPT" in old["strategic"]["not_computed"]
++    assert "PAUSED" not in str(old["strategic"])                              # the old report carried the pause string; the assembled arm must not copy it
++
++
+ if __name__ == "__main__":
+     n = 0
+     for k, f in sorted(globals().items()):
+--- orig/test_hwm_plan.py	2026-11-16 11:49:14.093289000 +0100
++++ src/test_hwm_plan.py	2026-11-16 11:57:42.164359800 +0100
+@@ -393,7 +393,7 @@
+ 
+ 
+ # ------------------------------------------------------------------------------------------ (j) the report
+-def test_j_report_runs_pairs_arms_and_states_the_pause():
++def test_j_report_runs_pairs_arms_and_states_the_strategic_family():
+     r = np.random.default_rng(0)
+     n, eps = 120, 24
+     ws = types.SimpleNamespace(eid=np.array([f"e{i % eps}" for i in range(n)]), n=n, lead=dict(state=np.array(["LEAD", "NO_LEAD", "NOT_STRAIGHT", "NO_LABEL"] * (n // 4))))
+@@ -411,7 +411,7 @@
+     M = {"hold": base, "prior": mk(0.5), "hwm_oracle": {b: {m: v - 0.5 for m, v in d.items()} for b, d in base.items()}, "flat_oracle": mk(0.2)}
+     rep = E.build_report(M, ws, n_boot=200, seeds_M={"hwm_oracle": {0: M["hwm_oracle"], 1: M["hwm_oracle"]}})
+     md = E.to_markdown(rep)
+-    assert "PAUSED" in md and "TACTICAL" in md and "T0" in md
++    assert "TACTICAL" in md and "T0" in md and "STRATEGIC" in md and "PAUSED" not in md and "PAUSED" in "PAUSED (control)"       # the family is reported; the same-breath control proves the probe can fire
+     assert rep["coverage"]["lead_states"]["LEAD"] == 30 and rep["coverage"]["bands"]["2-6s"]["hold"]["n_headway_finite"] == 0 and "outside the 2 s lead track" in rep["coverage"]["bands"]["2-6s"]["hold"]["reason"]
+     z = [x for x in rep["rows"] if x["family"] == "LONGITUDINAL" and x["metric"] == "hw_err" and x["band"] == "2-6s"]
+     assert z and all(x["n_windows"] == 0 and np.isnan(x["lo"]) for x in z)                                      # n = 0 rows are kept, with the reason, not dropped
+@@ -974,3 +974,99 @@
+         assert rb["wm_stale_grads_before_probe"] >= 1 and p0.grad is None
+     finally:
+         restore()
++
++
++# ------------------------------------------------------------------------------------------ (k) the STRATEGIC family through the real pipeline: text row attached, cells, report
++def _k_world(side_name="TURN_L", d=30.0, flag=0, theta0=False):
++    """40 windows over 8 episodes; the logged path turns left for 6 s after a straight first step, so HOLD (a0 repeated: straight) never turns and the logged path always does."""
++    from test_strategic_cells import synthetic_table
++    n, eps = 40, 8
++    eid = np.array([f"e{i % eps}" for i in range(n)])
++    now = np.array([(i // eps) * 4 for i in range(n)])
++    A = np.zeros((n, 31, 2))
++    A[:, 1:, 1] = 0.3
++    ws = types.SimpleNamespace(eid=eid, now=now, n=n, A=A, v0=np.full(n, 10.0))
++    tab = synthetic_table(eid, side_name, d, flag)
++    if theta0:
++        tab["theta"] = np.zeros_like(tab["theta"])
++    ws.nav_table = tab
++    turn = np.zeros((n, 30, 2)); turn[:, :, 1] = 0.3
++    plans = {"hold": H.hold_plan(A[:, 0], 30), "hwm_oracle": turn}
++    return ws, plans
++
++
++def test_k_strategic_cells_through_metrics_of_hold_zero_and_oracle_turn():
++    ws, plans = _k_world()
++    M = E.metrics_of(plans, ws)
++    f = lambda arm, m, b="full6s": M[arm][b][m]
++    assert np.all(f("hold", "s_adh") == 0.0) and np.all(f("hold", "s_adh_deg") == 0.0)              # HOLD reads exactly 0.0, finite on every window
++    assert np.all(f("hwm_oracle", "s_adh") == 1.0) and np.all(f("hwm_oracle", "s_adh_deg") > 25)
++    assert np.all(f("hold", "_s_adh_l") == 1.0)                                                   # the logged path is the ceiling of the cell
++    assert np.all(np.isnan(f("hold", "s_adh", "0-2s"))) and np.all(np.isnan(f("hwm_oracle", "s_false", "2-6s")))   # the other bands are empty by construction
++    assert ws.text["text_ok"].all() and ws.text["side"][0] == 1
++
++
++def test_k_strategic_mirrored_side_flips_the_cell():
++    ws, plans = _k_world("TURN_R")
++    M = E.metrics_of(plans, ws)
++    assert np.all(M["hwm_oracle"]["full6s"]["s_adh"] == 0.0) and np.all(M["hwm_oracle"]["full6s"]["s_adh_deg"] < 0)
++    assert np.all(M["hold"]["full6s"]["_s_adh_l"] == 0.0)
++
++
++def test_k_strategic_threshold_zero_mutation_makes_hold_adhere():
++    ws, plans = _k_world(theta0=True)
++    M = E.metrics_of(plans, ws)
++    assert np.all(M["hold"]["full6s"]["s_adh"] == 1.0)                                              # the deliberate regression: with theta 0 the straight HOLD plan "adheres"
++
++
++def test_k_strategic_flagged_text_rows_are_nan_never_zero():
++    ws, plans = _k_world(flag=3)
++    M = E.metrics_of(plans, ws)
++    for arm in plans:
++        for m in E.FAMILIES["STRATEGIC"]:
++            assert np.all(np.isnan(M[arm]["full6s"][m]))
++
++
++def test_k_strategic_without_a_text_row_is_nan_and_the_report_says_so():
++    ws, plans = _k_world()
++    del ws.now                                                                                     # nothing to attach the text row to
++    M = E.metrics_of(plans, ws)
++    assert np.all(np.isnan(M["hold"]["full6s"]["s_adh"]))
++    rep = E.build_report(M, ws, n_boot=50)
++    assert "n = 0" in rep["strategic"]["text_rows"] and rep["strategic"]["arms"]["hold"]["s_adh"]["n_windows"] == 0
++
++
++def test_k_strategic_report_rows_block_and_not_computed_entries():
++    ws, plans = _k_world()
++    M = E.metrics_of(plans, ws)
++    rep = E.build_report(M, ws, n_boot=200)
++    md = E.to_markdown(rep)
++    st = rep["strategic"]
++    assert "PAUSED" not in md and "PAUSED" not in str(rep) and "T0 HWM-ORACLE" in st["tier_stamp"] and "REPORTED IN FULL" in st["state"]
++    rows = [x for x in rep["rows"] if x["family"] == "STRATEGIC"]
++    assert {x["band"] for x in rows} == {"0-2s", "2-6s", "full6s"}
++    assert all(x["n_windows"] == 0 and "empty by construction" in x["reason"] for x in rows if x["band"] != "full6s")                  # the empty bands say so
++    full = {(x["metric"], x["arm"]): x for x in rows if x["band"] == "full6s" and x["kind"] == "arm"}
++    assert full[("s_adh", "hold")]["mean"] == 0.0 and full[("s_adh", "hwm_oracle")]["mean"] == 1.0 and full[("s_adh", "logged")]["mean"] == 1.0
++    assert full[("s_false", "logged")]["n_windows"] == 0                                           # the text announces a turn at 30 m, so no window is scorable for S_FALSE: n = 0, not 0.0
++    c = [x for x in rows if x["kind"] == "contrast" and x["a"] == "hwm_oracle" and x["b"] == "hold" and x["metric"] == "s_adh"][0]
++    assert c["label"] == "better" and c["delta"] == 1.0 and c["tier"] == "T0"
++    cl = [x for x in rows if x["kind"] == "contrast" and x["a"] == "hold" and x["b"] == "logged" and x["metric"] == "s_adh"][0]
++    assert cl["label"] == "worse" and cl["delta"] == -1.0                                          # arm against the logged path
++    for k in ("STRATEGIC.intent_6_30s", "STRATEGIC.derived_goals", "STRATEGIC.detected_info", "STRATEGIC.S_CKPT"):
++        assert k in rep["not_computed"] and k in st["not_computed"] and "n = 0" in rep["not_computed"][k]
++    assert "6-12 s 32" in rep["not_computed"]["STRATEGIC.intent_6_30s"] and "46 / 120 / 214" in rep["not_computed"]["STRATEGIC.S_CKPT"]
++    assert st["logged_path"]["s_adh_ceiling"]["mean"] == 1.0 and st["arms"]["hwm_oracle"]["s_adh"]["n_windows"] == 40 and st["arms"]["hwm_oracle"]["s_adh"]["n_episodes"] == 8
++    assert st["hypotheses"]["evidence"] == "HYPOTHESIS"
++    banned = ("void", "superseded", "retracted", "formerly", "no longer", "correction", "withdrawn", "closed loop", "closed-loop")
++    assert not [w for w in banned if w in md.lower()]
++
++
++def test_k_strategic_false_turn_is_read_against_the_logged_path():
++    ws, plans = _k_world("CONTINUE", d=float("nan"))                                               # no turn announced
++    M = E.metrics_of(plans, ws)
++    f = M["hwm_oracle"]["full6s"]
++    assert np.all(f["s_false"] == 1.0) and np.all(M["hold"]["full6s"]["s_false"] == 0.0) and np.all(M["hold"]["full6s"]["_s_false_l"] == 1.0)
++    rep = E.build_report(M, ws, n_boot=100)
++    c = [x for x in rep["rows"] if x["kind"] == "contrast" and x["a"] == "hold" and x["b"] == "logged" and x["metric"] == "s_false"][0]
++    assert c["delta"] == -1.0 and c["label"] == "lower"                                            # neutral direction: plan minus logged, no better or worse

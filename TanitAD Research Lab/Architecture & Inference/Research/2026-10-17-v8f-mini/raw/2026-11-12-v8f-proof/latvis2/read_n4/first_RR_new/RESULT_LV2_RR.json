@@ -1,0 +1,500 @@
+{
+ "arm": "RR",
+ "seeds": [
+  2,
+  3
+ ],
+ "tier": "T0 (a world-model diagnostic on logged frames, never driving performance)",
+ "families": "LONGITUDINAL, LATERAL, TACTICAL: not measured by this read",
+ "strategic": "STRATEGIC: PAUSED (PI item 25)",
+ "card": "PREREG_V8F_PROOF_ADD38",
+ "B": 2000,
+ "bootstrap": "per seed: episode-cluster; pooled: two-level (seeds, then episodes), rng seed 0",
+ "n_windows": 1948,
+ "n_episodes": 139,
+ "moving_cells_per_window": 10,
+ "controls": [
+  {
+   "name": "k1",
+   "rule": "held-out skill of the token map with the states permuted across frames <= 0.02",
+   "value_max_per_seed": [
+    -0.07064129876400305,
+    -0.07220050531750677
+   ],
+   "pass": true
+  },
+  {
+   "name": "k2",
+   "rule": "training-fold skill > held-out skill in every fold, and held-out skill of the true present state on the present tokens > 0 in every fold",
+   "train_gt_heldout": [
+    true,
+    true
+   ],
+   "present_heldout_gt0": [
+    true,
+    true
+   ],
+   "skill_train": [
+    [
+     0.8850819252912718,
+     0.8900495276022757,
+     0.8886348149007829,
+     0.8895299797122427,
+     0.8886224509292089
+    ],
+    [
+     0.8864317673003546,
+     0.8916165847829323,
+     0.8907836658532466,
+     0.890691046408164,
+     0.8909689561509783
+    ]
+   ],
+   "skill_heldout": [
+    [
+     0.5480799406399477,
+     0.5730318532138051,
+     0.5466222122685523,
+     0.5703546876655432,
+     0.5394076249106581
+    ],
+    [
+     0.547959886923894,
+     0.5656267461645617,
+     0.5388030099443564,
+     0.5735834386267034,
+     0.5409048162728267
+    ]
+   ],
+   "skill_heldout_present": [
+    [
+     0.5463372637367131,
+     0.5747170638147028,
+     0.5473497076067841,
+     0.5738114173354176,
+     0.538894665026381
+    ],
+    [
+     0.5470021146812957,
+     0.5677979438352336,
+     0.5387925444077093,
+     0.5737937866650298,
+     0.5429003018035994
+    ]
+   ],
+   "pass": true
+  },
+  {
+   "name": "k3",
+   "rule": "with the present state given as the imagined state D is exactly 0",
+   "max_abs_episode_sum_of_D": [
+    0.0,
+    0.0
+   ],
+   "pass": true
+  },
+  {
+   "name": "k4",
+   "rule": "with the true future state given as the imagined state D equals the headroom and its two-level interval lies above 0",
+   "D_equals_headroom": [
+    true,
+    true
+   ],
+   "pooled": {
+    "D_all": 3.7296802693983695,
+    "D_mov": 9.012799334306521
+   },
+   "pooled_ci": {
+    "D_all": [
+     3.5347131480518357,
+     3.929447469754611
+    ],
+    "D_mov": [
+     8.547570374894823,
+     9.481923556279773
+    ]
+   },
+   "pass": true
+  },
+  {
+   "name": "k5",
+   "rule": "the rollout of the tool equals the banked rollout (pred_2s) of the same checkpoint to 0.0001",
+   "max_abs_per_seed": [
+    0.23908495903015137,
+    0.1954425573348999
+   ],
+   "run": [
+    true,
+    true
+   ],
+   "files": [
+    "/workspace/v8proof/probe/lv2/banked/LATENTS_CTX_RR_s2_R3g.npz",
+    "/workspace/v8proof/probe/lv2/banked/LATENTS_CTX_RR_s3_R3g.npz"
+   ],
+   "pass": false
+  },
+  {
+   "name": "k6",
+   "rule": "the windows, folds and episodes equal those of the r-b read (same ids, same count)",
+   "ref": "C:/Users/Admin/v8proof_c/ctxroll/LATENTS_CTX_G_s0_R1.npz",
+   "per_seed": [
+    {
+     "n": 1948,
+     "ref_n": 1948,
+     "same_ids_and_order": true,
+     "same_folds": true,
+     "same_episodes": true,
+     "n_episodes": 139
+    },
+    {
+     "n": 1948,
+     "ref_n": 1948,
+     "same_ids_and_order": true,
+     "same_folds": true,
+     "same_episodes": true,
+     "n_episodes": 139
+    }
+   ],
+   "pass": true
+  },
+  {
+   "name": "k5p",
+   "rule": "k5 in parts (note ADD38_N2): rollout function on the banked inputs to 1e-4; same windows and actions; frames aligned (share >= 0.99); pod and banked states agree (mean cosine >= 0.999); the probe is tied to the dump (1e-6, same checkpoint)",
+   "per_seed": [
+    {
+     "probe": "ops/k5_probe_RR_s2.out",
+     "a_rollout_fn_max_abs": 6.198883056640625e-06,
+     "b_actions_max_abs": 0.0,
+     "b_same_window_list": true,
+     "c_start_frame_share": 1.0,
+     "c_future_frame_share": 1.0,
+     "d_cosine_start": 0.9996615052223206,
+     "d_cosine_future": 0.9996641278266907,
+     "e_tie_to_dump": 0.0,
+     "e_same_ckpt": true,
+     "rms_diff_start": 0.024265367537736893,
+     "rms_state": 0.9562075734138489,
+     "pass": true
+    },
+    {
+     "probe": "ops/k5_probe_RR_s3.out",
+     "a_rollout_fn_max_abs": 5.125999450683594e-06,
+     "b_actions_max_abs": 0.0,
+     "b_same_window_list": true,
+     "c_start_frame_share": 1.0,
+     "c_future_frame_share": 1.0,
+     "d_cosine_start": 0.9996729493141174,
+     "d_cosine_future": 0.9996753334999084,
+     "e_tie_to_dump": 0.0,
+     "e_same_ckpt": true,
+     "rms_diff_start": 0.023791180923581123,
+     "rms_state": 0.9549119472503662,
+     "pass": true
+    }
+   ],
+   "bars": {
+    "a_rollout_fn_max_abs": 0.0001,
+    "c_share_min": 0.99,
+    "d_cosine_min": 0.999,
+    "e_tie_max": 1e-06
+   },
+   "pass": true
+  }
+ ],
+ "controls_pass": true,
+ "controls_pass_as_written": false,
+ "k5_form": "in parts (note PREREG_V8F_PROOF_ADD38_N2); k5 as written: FAIL",
+ "stats": {
+  "D_all": {
+   "per_seed": [
+    1.760868713049719,
+    1.7869787173234768
+   ],
+   "per_seed_ci": [
+    [
+     1.5916275396334376,
+     1.933458540924582
+    ],
+    [
+     1.6003903698539497,
+     1.9764352841139865
+    ]
+   ],
+   "pooled": 1.7739237151865979,
+   "pooled_ci": [
+    1.6489838808785102,
+    1.8967578049965632
+   ]
+  },
+  "D_mov": {
+   "per_seed": [
+    4.506841213239292,
+    4.659042159175726
+   ],
+   "per_seed_ci": [
+    [
+     4.103321817806174,
+     4.926404758485524
+    ],
+    [
+     4.219440105116215,
+     5.094904573718096
+    ]
+   ],
+   "pooled": 4.5829416862075085,
+   "pooled_ci": [
+    4.274412154808568,
+    4.8939618986878894
+   ]
+  },
+  "H_all": {
+   "per_seed": [
+    3.686002054189005,
+    3.7733584846077335
+   ],
+   "per_seed_ci": [
+    [
+     3.420935555846831,
+     3.950937610600074
+    ],
+    [
+     3.489282816622032,
+     4.054839042937326
+    ]
+   ],
+   "pooled": 3.7296802693983695,
+   "pooled_ci": [
+    3.5347131480518357,
+    3.929447469754611
+   ]
+  },
+  "H_mov": {
+   "per_seed": [
+    8.887354636334601,
+    9.138244032278443
+   ],
+   "per_seed_ci": [
+    [
+     8.276142983301598,
+     9.481275851281257
+    ],
+    [
+     8.502508831032896,
+     9.762357528824761
+    ]
+   ],
+   "pooled": 9.012799334306521,
+   "pooled_ci": [
+    8.547570374894823,
+    9.481923556279773
+   ]
+  },
+  "D_row0": {
+   "per_seed": [
+    2.792148028722595,
+    2.9034609425759412
+   ],
+   "per_seed_ci": [
+    [
+     2.4591345051131106,
+     3.1267232754255128
+    ],
+    [
+     2.5520611786818117,
+     3.256667488670581
+    ]
+   ],
+   "pooled": 2.8478044856492684,
+   "pooled_ci": [
+    2.6064304647944185,
+    3.084752834336038
+   ]
+  },
+  "D_row1": {
+   "per_seed": [
+    2.11201958714447,
+    2.0947917240539864
+   ],
+   "per_seed_ci": [
+    [
+     1.9108395273862486,
+     2.3226183694993874
+    ],
+    [
+     1.8912264985984353,
+     2.3179515977680634
+    ]
+   ],
+   "pooled": 2.103405655599228,
+   "pooled_ci": [
+    1.9537808892024255,
+    2.2418068045275032
+   ]
+  },
+  "D_row2": {
+   "per_seed": [
+    1.728827219635432,
+    1.7281992562987232
+   ],
+   "per_seed_ci": [
+    [
+     1.5447038586853834,
+     1.9287002291293494
+    ],
+    [
+     1.52762270617084,
+     1.9485228046773853
+    ]
+   ],
+   "pooled": 1.7285132379670776,
+   "pooled_ci": [
+    1.5899270642397783,
+    1.87441531020614
+   ]
+  },
+  "D_row3": {
+   "per_seed": [
+    0.4104800166963797,
+    0.4214629463652566
+   ],
+   "per_seed_ci": [
+    [
+     0.36152947277182806,
+     0.4635787216817331
+    ],
+    [
+     0.36901762837166796,
+     0.4782744462650414
+    ]
+   ],
+   "pooled": 0.41597148153081814,
+   "pooled_ci": [
+    0.3787738468747945,
+    0.4558452932793609
+   ]
+  },
+  "share_all": {
+   "per_seed": [
+    0.47771777854777825,
+    0.47357777550500757
+   ],
+   "pooled": 0.4756235352776627,
+   "pooled_ci": [
+    0.4599209615582785,
+    0.4896470347079155
+   ]
+  },
+  "share_mov": {
+   "per_seed": [
+    0.5071071649165158,
+    0.5098399804950366
+   ],
+   "pooled": 0.5084925910602377,
+   "pooled_ci": [
+    0.4953776176332251,
+    0.5210013190893114
+   ]
+  }
+ },
+ "D_per_row": {
+  "sky": {
+   "per_seed": [
+    2.792148028722595,
+    2.9034609425759412
+   ],
+   "per_seed_ci": [
+    [
+     2.4591345051131106,
+     3.1267232754255128
+    ],
+    [
+     2.5520611786818117,
+     3.256667488670581
+    ]
+   ],
+   "pooled": 2.8478044856492684,
+   "pooled_ci": [
+    2.6064304647944185,
+    3.084752834336038
+   ]
+  },
+  "far": {
+   "per_seed": [
+    2.11201958714447,
+    2.0947917240539864
+   ],
+   "per_seed_ci": [
+    [
+     1.9108395273862486,
+     2.3226183694993874
+    ],
+    [
+     1.8912264985984353,
+     2.3179515977680634
+    ]
+   ],
+   "pooled": 2.103405655599228,
+   "pooled_ci": [
+    1.9537808892024255,
+    2.2418068045275032
+   ]
+  },
+  "near": {
+   "per_seed": [
+    1.728827219635432,
+    1.7281992562987232
+   ],
+   "per_seed_ci": [
+    [
+     1.5447038586853834,
+     1.9287002291293494
+    ],
+    [
+     1.52762270617084,
+     1.9485228046773853
+    ]
+   ],
+   "pooled": 1.7285132379670776,
+   "pooled_ci": [
+    1.5899270642397783,
+    1.87441531020614
+   ]
+  },
+  "hood": {
+   "per_seed": [
+    0.4104800166963797,
+    0.4214629463652566
+   ],
+   "per_seed_ci": [
+    [
+     0.36152947277182806,
+     0.4635787216817331
+    ],
+    [
+     0.36901762837166796,
+     0.4782744462650414
+    ]
+   ],
+   "pooled": 0.41597148153081814,
+   "pooled_ci": [
+    0.3787738468747945,
+    0.4558452932793609
+   ]
+  }
+ },
+ "name": "TOKENS-IMAGINED",
+ "name_rule": "D on the moving cells above 0 at both seeds and the two-level interval above 0",
+ "name_withheld_reason": null,
+ "dumps": [
+  {
+   "path": "F:/TanitAD-scratch/v8proof/latvis2/dump/DUMP_LV2F_RR_s2.npz",
+   "ckpt_sha256": "186e893d64c9f091de469c70b4ec9725f5aa22075ec7825ca0627f03ee26b016",
+   "sha256": "2b7ce4623c4b2bad3d212c88eb2c168a588708d3e6cc18ab224fde12f1cac0e4"
+  },
+  {
+   "path": "F:/TanitAD-scratch/v8proof/latvis2/dump/DUMP_LV2F_RR_s3.npz",
+   "ckpt_sha256": "b3b63e0cdde2733ded7a5b0b2e893c33b59b6da8664b8d2cae0ea2a13f1c2589",
+   "sha256": "691899dacabee503b8875f80a20fa3ed13895f64fd652077fa505ef20f77c697"
+  }
+ ]
+}

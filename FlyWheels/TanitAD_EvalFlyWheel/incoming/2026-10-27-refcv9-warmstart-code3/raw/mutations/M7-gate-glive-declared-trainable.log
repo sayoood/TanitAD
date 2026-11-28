@@ -1,0 +1,13 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+__________ test_the_gate_reads_declared_subtrees_as_frozen_in_G_LIVE __________
+
+    def test_the_gate_reads_declared_subtrees_as_frozen_in_G_LIVE():
+        src = inspect.getsource(LG)
+>       assert "    def mo_is_frozen(n_):\n        return not _under_any(n_, mo_mods) or _under_any(n_, mo_decl)\n" in src
+E       assert '    def mo_is_frozen(n_):\n        return not _under_any(n_, mo_mods) or _under_any(n_, mo_decl)\n' in '#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n"""THE LAUNCH GATE -- no training step runs until this writes a PASS... print("ZZGATE-ERRORZZ", flush=True)\n        return 3\n\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
+
+tests\test_r9_train_only.py:745: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_the_gate_reads_declared_subtrees_as_frozen_in_G_LIVE
+1 failed in 4.86s

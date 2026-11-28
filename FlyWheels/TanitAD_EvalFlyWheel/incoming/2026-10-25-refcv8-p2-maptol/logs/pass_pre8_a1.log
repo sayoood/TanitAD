@@ -1,0 +1,16 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[p2] LAW-frame control: PASS on 1 windows
+[p2] ZZ1-4ZZ windows (3 s; map 1; timing {'wait_decode': 0.1, 'forward': 2.9, 'stats_submit': 0.0}; peak 1.10 GiB)
+[p2] done: {"arm": "refcv8_ema48852", "n_windows": 4, "n_map_windows": 4, "controls": {"law_frame": {"pass": true, "windows": [{"sha12": "0dfe63214bc2", "ws": 7, "perception_equal": {"map_hires_logits": true, "box_slots.presence_logit": true, "box_slots.box": true, "box_slots.cls_logits": true, "box_slots.cz": true}, "law_zero_frame": 0.00462860893458128, "law_real_frame": 0.0002585065085440874, "law_differs": true}]}, "C4_cheb_k1_vs_EDT_0p2m": {"windows": 4, "mismatching_cells": 0, "rule": "classes 2,3,5; tp_pred and tp_gt; every window; integer-exact"}, "C0_counts_vs_MH_window_stats": {"mismatching_arrays": 0, "rule": "inter/union/n_gt/n_pred of tol_stats == MH.window_stats, every window"}, "C1p_gt_as_pred": {"windows": 4, "all_pass": true}, "C2p_all_one_class": {"windows": 4, "all_pass": true}}, "timing_s": {"wait_decode": 0.1, "forward": 7.9, "stats_submit": 0.0}, "build_s": 420.6, "loop_s": 19.6}

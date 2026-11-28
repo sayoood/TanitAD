@@ -1,0 +1,75 @@
+{
+ "all_pass": true,
+ "cases": [
+  {
+   "case": "control",
+   "file": "2026-09-13-qwen-drive-usage-review/code/temporal_filter.py",
+   "want": "REDACTION-ONLY",
+   "got": "REDACTION-ONLY (exact)",
+   "pass": true
+  },
+  {
+   "case": "M1 append a code line",
+   "file": "2026-09-13-qwen-drive-usage-review/code/temporal_filter.py",
+   "want": "UNEXPLAINED",
+   "got": "UNEXPLAINED",
+   "pass": true
+  },
+  {
+   "case": "control",
+   "file": "2026-09-13-qwen-drive-usage-review/raw/sam3_paint_ours.json",
+   "want": "REDACTION-ONLY",
+   "got": "REDACTION-ONLY (exact)",
+   "pass": true
+  },
+  {
+   "case": "M2 change one number",
+   "file": "2026-09-13-qwen-drive-usage-review/raw/sam3_paint_ours.json",
+   "want": "UNEXPLAINED",
+   "got": "UNEXPLAINED",
+   "pass": true
+  },
+  {
+   "case": "control",
+   "file": "2026-09-11-qwen-drive-perception-sample/code/build_frames.py",
+   "want": "HEADER+BACKUP",
+   "got": "HEADER+BACKUP (HEAD prepends 8 lines)",
+   "pass": true
+  },
+  {
+   "case": "M3 edit a body line",
+   "file": "2026-09-11-qwen-drive-perception-sample/code/build_frames.py",
+   "want": "UNEXPLAINED",
+   "got": "UNEXPLAINED",
+   "pass": true
+  },
+  {
+   "case": "control",
+   "file": "2026-09-13-sam3-only-road-map/RESULT.md",
+   "want": "STUB-FILLED",
+   "got": "STUB-FILLED (HEAD replaces the SEE_MANIFEST stub, +1007 lines)",
+   "pass": true
+  },
+  {
+   "case": "M4 line before the stub",
+   "file": "2026-09-13-sam3-only-road-map/RESULT.md",
+   "want": "UNEXPLAINED",
+   "got": "UNEXPLAINED",
+   "pass": true
+  },
+  {
+   "case": "control",
+   "file": "2026-09-11-qwen-drive-perception-sample/code/sample_plan.json",
+   "want": "REDACTION-ONLY",
+   "got": "REDACTION-ONLY (semantic JSON: clip -> clip_sha12)",
+   "pass": true
+  },
+  {
+   "case": "M5 add a JSON key",
+   "file": "2026-09-11-qwen-drive-perception-sample/code/sample_plan.json",
+   "want": "UNEXPLAINED",
+   "got": "UNEXPLAINED",
+   "pass": true
+  }
+ ]
+}

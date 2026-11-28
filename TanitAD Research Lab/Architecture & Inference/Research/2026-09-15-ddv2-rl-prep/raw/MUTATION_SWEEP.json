@@ -1,0 +1,403 @@
+{
+ "_what": "mutation proof, PREREG_DDV2_RL_VALIDATION.md \u00a72 machinery",
+ "tests": [
+  "tests/test_ddv2_rl.py",
+  "tests/test_ddv2_refc_chain.py",
+  "tests/test_pdm_proxy.py"
+ ],
+ "baseline": {
+  "returncode": 0,
+  "summary": "73 passed, 1 warning in 5.94s",
+  "failed_tests": [],
+  "secs": 6.8
+ },
+ "mutants": [
+  {
+   "mutant": "M01 no clip_sample clamp",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "8 failed, 65 passed, 1 warning in 3.95s",
+   "failed_tests": [
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-0.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-0.0]",
+    "test_logprob_at_a_supplied_prev_sample_is_bitwise_the_release",
+    "test_clamped_coordinate_gradient_analytic",
+    "test_the_final_step_mean_is_the_CLAMPED_x0_hat_outside_the_box",
+    "test_rollout_chain_is_bitwise_the_released_rollout_loop"
+   ],
+   "secs": 6.1
+  },
+  {
+   "mutant": "M02 abar(-1) = table[0] not 1.0",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "10 failed, 63 passed, 1 warning in 4.13s",
+   "failed_tests": [
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-0.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-0.0]",
+    "test_logprob_at_a_supplied_prev_sample_is_bitwise_the_release",
+    "test_clamped_coordinate_gradient_analytic",
+    "test_the_final_step_mean_is_exactly_x0_hat",
+    "test_the_final_step_mean_is_the_CLAMPED_x0_hat_outside_the_box",
+    "test_likelihood_uses_the_0p1_floor_and_sums_16_terms_analytically",
+    "test_rollout_chain_is_bitwise_the_released_rollout_loop"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "M03 per-coordinate exploration",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "8 failed, 65 passed, 1 warning in 3.90s",
+   "failed_tests": [
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-0.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-0.0]",
+    "test_exploration_is_two_scalars_per_trajectory_constant_along_the_waypoints",
+    "test_exploration_std_is_the_0p04_floor_at_every_label",
+    "test_REGRESSION_removing_the_floor_is_visible",
+    "test_rollout_chain_is_bitwise_the_released_rollout_loop"
+   ],
+   "secs": 6.0
+  },
+  {
+   "mutant": "M04 no exploration floor",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "5 failed, 68 passed, 1 warning in 3.99s",
+   "failed_tests": [
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-1.0]",
+    "test_exploration_is_two_scalars_per_trajectory_constant_along_the_waypoints",
+    "test_exploration_std_is_the_0p04_floor_at_every_label",
+    "test_rollout_chain_is_bitwise_the_released_rollout_loop"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "M05 likelihood floor 0.04 not 0.1",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "7 failed, 66 passed, 1 warning in 3.97s",
+   "failed_tests": [
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[0.3-0.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-1.0]",
+    "test_step_is_bitwise_the_released_step_at_every_rollout_label[1.5-0.0]",
+    "test_logprob_at_a_supplied_prev_sample_is_bitwise_the_release",
+    "test_likelihood_uses_the_0p1_floor_and_sums_16_terms_analytically",
+    "test_rollout_chain_is_bitwise_the_released_rollout_loop"
+   ],
+   "secs": 6.1
+  },
+  {
+   "mutant": "M06 GT bar dropped",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.06s",
+   "failed_tests": [
+    "test_advantage_literal_the_bar_admits_0p7_and_the_constraint_overrides"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "M07 veto dropped",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "2 failed, 71 passed, 1 warning in 4.11s",
+   "failed_tests": [
+    "test_advantage_literal_the_bar_admits_0p7_and_the_constraint_overrides",
+    "test_REGRESSION_veto_before_the_mask_would_erase_the_minus_one"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "M08 std eps 1e-8 not 1e-4",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "3 failed, 70 passed, 1 warning in 4.08s",
+   "failed_tests": [
+    "test_advantage_literals_by_hand",
+    "test_advantage_literal_the_bar_admits_0p7_and_the_constraint_overrides",
+    "test_REGRESSION_without_the_bar_the_sub_bar_positive_survives"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "M09 RL loss averaged over all samples",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "3 failed, 70 passed, 1 warning in 4.00s",
+   "failed_tests": [
+    "test_rl_loss_averages_over_nonzero_advantage_samples_only",
+    "test_REGRESSION_averaging_over_all_samples_changes_the_row_loss",
+    "test_per_step_backward_equals_the_released_one_graph_loss"
+   ],
+   "secs": 6.1
+  },
+  {
+   "mutant": "M10 IL weights swapped",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "2 failed, 71 passed, 1 warning in 4.05s",
+   "failed_tests": [
+    "test_il_row_weights_and_batch_global_il",
+    "test_per_step_backward_equals_the_released_one_graph_loss"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "M11 discount reversed",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.03s",
+   "failed_tests": [
+    "test_discount_literals"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "M12 rollout transition t -> t-2",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.17s",
+   "failed_tests": [
+    "test_rollout_chain_is_bitwise_the_released_rollout_loop"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "M13 per-step decomposition divides by M",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "2 failed, 71 passed, 1 warning in 4.14s",
+   "failed_tests": [
+    "test_per_step_backward_equals_the_released_one_graph_loss",
+    "test_REGRESSION_all_sample_denominator_in_the_decomposition_changes_the_gradient"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "M14 anchor-major tiling",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "2 failed, 71 passed, 1 warning in 4.06s",
+   "failed_tests": [
+    "test_truncated_start_is_bitwise_diffusers_add_noise_and_group_major",
+    "test_REGRESSION_anchor_major_tiling_breaks_the_untile"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "M15 grad pass evaluates at a fresh sample, not the stored one",
+   "module": "ddv2_rl",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.21s",
+   "failed_tests": [
+    "test_per_step_backward_equals_the_released_one_graph_loss"
+   ],
+   "secs": 6.4
+  },
+  {
+   "mutant": "C01 residual dropped",
+   "module": "ddv2_refc_chain",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.13s",
+   "failed_tests": [
+    "test_parity_the_binding_reproduces_the_deployed_sampler_bitwise"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "C02 input clamp ignored",
+   "module": "ddv2_refc_chain",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.29s",
+   "failed_tests": [
+    "test_REGRESSION_the_release_input_clamp_is_a_different_pass_outside_the_box"
+   ],
+   "secs": 6.4
+  },
+  {
+   "mutant": "C03 sampler speed = reference speed",
+   "module": "ddv2_refc_chain",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.16s",
+   "failed_tests": [
+    "test_parity_the_binding_reproduces_the_deployed_sampler_bitwise"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "C04 capture accepts agents",
+   "module": "ddv2_refc_chain",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.08s",
+   "failed_tests": [
+    "test_capture_refuses_agent_tokens_reaching_the_sampler"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P01 no rear-axle offset",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.09s",
+   "failed_tests": [
+    "test_REGRESSION_without_the_rear_axle_offset_a_near_miss_disappears"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P02 every overlap at fault",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "2 failed, 71 passed, 1 warning in 4.24s",
+   "failed_tests": [
+    "test_nc_rear_ended_while_stopped_is_not_at_fault",
+    "test_nc_moving_rear_contact_from_behind_while_ego_moves_is_not_at_fault"
+   ],
+   "secs": 6.4
+  },
+  {
+   "mutant": "P03 static object scores 0 not 0.5",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.05s",
+   "failed_tests": [
+    "test_nc_static_object_is_half"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P04 initial overlap not ignored",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.09s",
+   "failed_tests": [
+    "test_nc_a_track_already_in_contact_at_t0_is_ignored_even_while_moving"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P05 TTC forward cone dropped",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.04s",
+   "failed_tests": [
+    "test_ttc_ignores_a_track_outside_the_forward_cone"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P06 no lower lon-accel bound",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.06s",
+   "failed_tests": [
+    "test_comfort_constant_speed_passes_hard_brake_fails"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P07 EP reference = best candidate",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "2 failed, 71 passed, 1 warning in 4.29s",
+   "failed_tests": [
+    "test_ep_pairwise_against_the_human",
+    "test_REGRESSION_normalising_ep_by_the_best_candidate_changes_it"
+   ],
+   "secs": 6.4
+  },
+  {
+   "mutant": "P08 comfort term weighted on EP",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.08s",
+   "failed_tests": [
+    "test_pdms_formula_literal"
+   ],
+   "secs": 6.2
+  },
+  {
+   "mutant": "P09 human frame rotation sign",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.20s",
+   "failed_tests": [
+    "test_human_states_are_in_the_t0_ego_frame"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "P10 agent ego@k -> world sign",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.16s",
+   "failed_tests": [
+    "test_agent_frames_compose_ego_at_k_to_ego_at_t0"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "P11 DAC never off-road",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.11s",
+   "failed_tests": [
+    "test_dac_from_drivable_grid"
+   ],
+   "secs": 6.3
+  },
+  {
+   "mutant": "P12 candidates rolled at 10 m/s",
+   "module": "pdm_proxy",
+   "status": "KILLED",
+   "returncode": 1,
+   "summary": "1 failed, 72 passed, 1 warning in 4.21s",
+   "failed_tests": [
+    "test_controls_states_agree_with_roll_controls_at_the_slots"
+   ],
+   "secs": 6.3
+  }
+ ],
+ "n_killed": 31,
+ "n_survived": 0,
+ "n_not_applied": 0
+}

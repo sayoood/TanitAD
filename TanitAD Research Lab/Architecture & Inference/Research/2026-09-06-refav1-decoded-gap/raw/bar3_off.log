@@ -1,0 +1,49 @@
+[preflight] 11 analysis imports OK  (this probe exists because a 3.0 h rollout once died in analyze())
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1370: UserWarning: expandable_segments not supported on this platform (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\c10/cuda/CUDAAllocatorConfig.h:39.)
+  return t.to(
+[refav1-labels] v7.2 join: labels 17/17 eps (0 missing), 357/1142 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 17/17 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[model] C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt step=21109 params=0 a_dim=2 target_space=frozen vocab=v7.0 config<-C:/Users/Admin/refav1_eval_slice/ckpt_ep3/config.json
+[loader] 1142 windows over 17 episodes (W=4, K_loader=30, grid 0.2 s); labels=ON nav=ON
+[window-list] 29 windows from C:/Users/Admin/dkhead_run/bar3_windows_sub.json sha256=779fa0a6b4b2c111 rule='D-REFAV1-DK-DECODED BAR-3: every LEAD window of the 17 episodes carryi' (--window-stride IGNORED)
+[cost] metric=cos weights={'W_JERK': 0.02, 'W_KAPPA': 0.05, 'W_VEND': 0.1} (shipped module constants); COST_METRICS=('cos', 'chord', 'ccos', 'ccosh') from C:\Users\Admin\dkhead_run\stack\tanitad\refs\refa_v1.py
+[goal-rule] lat_logit_bias=None -> plain argmax (the legacy path, bit-identical to pre-2026-09-05 arms)
+[goal-vocab] goal_kappa_turn=None -> shipped GOAL_KAPPA_TURN=0.08 (bit-identical to pre-2026-09-05 arms)
+[grid] K=10 (2.0 s) K_wm=30 stride=1 windows=29 arms=['cl', 'ha', 'ha0', 'ha0_ext', 'ol'] plan={samples 300, iters 30, elites 30, seed 0} nav_shuffle=6/29 changed
+[seed-pool] seed_kappa_ladder=None -> the SHIPPED pool (proposal modes + the decoded goal's canonical controls), bit-identical to every arm banked before 2026-09-05
+[cost] first plan() took 21.61 s -> ESTIMATED 0.17 h for 29 windows x 1 planning arms (plan only; forward()/IO extra)
+  [1/17] 2172a5a3-8a1 2 windows 47s
+  [2/17] 2602baaa-436 2 windows 92s
+  [3/17] 269478eb-2da 1 windows 114s
+  [4/17] 2cd0f4e4-dce 2 windows 159s
+  [5/17] 32f9b6b2-edc 1 windows 181s
+  [6/17] 4ee70f88-f03 2 windows 226s
+  [7/17] 51c01ba4-900 2 windows 271s
+  [8/17] 5271d125-613 2 windows 315s
+  [9/17] 80b890fc-114 2 windows 360s
+  [10/17] 829320e2-ba1 2 windows 405s
+  [11/17] 8df0cb04-8b6 1 windows 427s
+  [12/17] 9c50f803-c78 2 windows 472s
+  [13/17] af6f5964-263 1 windows 494s
+  [14/17] b99058dc-680 2 windows 540s
+  [15/17] dca157a0-20a 1 windows 562s
+  [16/17] ea019ab7-bd2 2 windows 607s
+  [17/17] f901e9e6-cc3 2 windows 651s
+REFAV1_DUMP_DONE
+[trivial-profile] 29 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n=  29 straight=1.0000 const_speed=0.8966 CONSTANT-VELOCITY=0.8966  identical_to: ha0=26/29
+  ha             n=  29 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha0            n=  29 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl=26/29
+  ha0_ext        n=  29 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ol             n=  29 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['cl', 'ha0'] — read their LATERAL rows as a control, never as planning skill
+[lead] b1_eval_lead_block.npz: 29 windows / 17 eps · OK eps 17 · LEAD 29 NO_LEAD 0 NOT_STRAIGHT 0 NO_LABEL 0 (no-row 0) · speed-check max 1e-06 m/s · PRESENT
+[out] C:/Users/Admin/dkhead_run/ab/out_off.json
+  cl             tier=T1  ADE=0.4688 [0.3418, 0.6176]  families_unavailable=['strategic']  distance_keeping=OK n=27 headway=23.1701 time_gap=1.7342 min_ttc=21.3431
+  ha             tier=T1  ADE=0.5442 [0.3461, 0.8152]  families_unavailable=['strategic']  distance_keeping=OK n=28 headway=23.792 time_gap=1.8411 min_ttc=24.2704
+  ha0            tier=T1  ADE=0.4125 [0.2948, 0.5487]  families_unavailable=['strategic']  distance_keeping=OK n=27 headway=23.1079 time_gap=1.7295 min_ttc=21.2072
+  ha0_ext        tier=T1  ADE=0.5246 [0.3504, 0.7637]  families_unavailable=['strategic']  distance_keeping=OK n=28 headway=23.8389 time_gap=1.8468 min_ttc=24.2847
+  ol             tier=T0  ADE=0.4008 [0.2779, 0.5448]  families_unavailable=['strategic']  distance_keeping=OK n=28 headway=23.873 time_gap=1.8504 min_ttc=24.1134
+  distance_keeping coverage: {'LEAD': 29, 'NO_LEAD': 0, 'NOT_STRAIGHT': 0, 'NO_LABEL': 0} of 29 windows (no-row 0; eps OK 17/17) status=PRESENT
+  planner[cl] baseline_won_frac=0.4483 sources={'cem': 0.5517, 'baseline:hold_v0': 0.3793, 'baseline:decel_1.5': 0.069} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.4828, 'ADAPT_SPEED_FOR_CURVE': 0.3448, 'ACCELERATE': 0.1724}
+  strategic nav_valid_frac=1.0 n_labeled=16
+EXIT_off=0

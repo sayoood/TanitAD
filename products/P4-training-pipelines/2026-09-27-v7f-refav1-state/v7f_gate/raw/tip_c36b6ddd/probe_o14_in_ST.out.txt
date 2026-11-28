@@ -1,0 +1,5 @@
+STATUS FAIL
+  - term `o14` is in force but its gradient reaches NO trainable parameter at S-T -- a term advertised in the launch line that trains nothing
+TERMS [{"key": "o14", "present_steps": 4, "nonfinite_steps": 0}, {"key": "plan", "present_steps": 4, "nonfinite_steps": 0}, {"key": "seam", "present_steps": 4, "nonfinite_steps": 0}, {"key": "t1", "present_steps": 4, "nonfinite_steps": 0}]
+REACH {"o14": {"groups": [], "n_params": 0, "why": "no autograd graph"}, "seam": {"groups": ["planner"], "n_params": 2}, "t1": {"groups": ["layer_tac"], "n_params": 54}, "plan": {"groups": ["planner"], "n_params": 2}}
+DECL [('o14_fut', True, 'TRAINS'), ('t1_latent', True, 'TRAINS'), ('lambda_plan', True, 'TRAINS'), ('seam_op', True, 'TRAINS')]

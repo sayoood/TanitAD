@@ -1,0 +1,157 @@
+{
+ "_what": "BANKED official NavSim outputs the suite re-checks itself against on every run of the same split + arm (a standing harness-drift control; ACC-2..ACC-5 of FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-suite-core-navsim-v2/SPEC.md). Paths are repo-relative. Values MEASURED by E1/E2 on 2026-09-19 with PYTHONHASHSEED=1, worker=sequential, devkit 0a380a9 + E1's loader patch.",
+ "warmup_two_stage": {
+  "CV": {
+   "csv": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/A1/devkit_2026.09.19.12.24.20.csv",
+   "md5": "b4b33ac29c39c37832371b8b68c9f898",
+   "combined_score": 0.1853562745165113,
+   "source": "E1 A1 constant_velocity_agent, official two-stage runner (MEASURED); E2 CV_official is byte-identical",
+   "external": {
+    "value_x100": 18.5356,
+    "round_dp": 4,
+    "source": "HF warmup leaderboard baseline_constant_velocity, INHERITED via products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md §6.3 (retrieved 2026-08-23)"
+   }
+  },
+  "STOP": {
+   "csv": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/score_STOP_zero.csv",
+   "md5": "4a15c3a1d59234e518291a1a9e1d5bff",
+   "combined_score": 0.3009023137456225,
+   "source": "E2 STOP_zero seam (all-zero plan), official two-stage runner (MEASURED)"
+  },
+  "ECHO": {
+   "csv": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/score_ECHO_ha0_ext.csv",
+   "source": "E2 ECHO_ha0_ext (MEASURED). Reads only the NavSim t0 ego status, so it is checkpoint-independent: every ckpt run on warmup must reproduce it.",
+   "md5": "55510aad1e8b629331055348aa11a55b",
+   "combined_score": 0.22478486478433085
+  },
+  "_export": {
+   "path": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/navsim_agent_inputs.json",
+   "source": "E2 export (devkit SceneLoader.get_agent_input_from_token), 220 tokens"
+  }
+ },
+ "navhard_two_stage": {
+  "_what": "STAGE-1 sub-metric reference for the CV floor on navhard. MEASURED by E1 (their aborted navhard CV run: all 450 stage-1 scenes COMPLETED before the RAM guard killed stage 2), and independently cross-checked against the PUBLISHED navhard leaderboard.",
+  "CV": {
+   "stage_one": {
+    "n": 450,
+    "scale": "x100 (percent), as the paper prints them",
+    "measured_e1": {
+     "NC": 88.89,
+     "DAC": 42.89,
+     "DDC": 70.67,
+     "TLC": 99.33,
+     "EP": 77.53,
+     "TTC": 87.33,
+     "LK": 78.67,
+     "HC": 97.11
+    },
+    "published_n2": {
+     "NC": 88.8,
+     "DAC": 42.8,
+     "DDC": 70.6,
+     "TLC": 99.3,
+     "EP": 77.5,
+     "TTC": 87.3,
+     "LK": 78.6,
+     "HC": 97.1
+    },
+    "published_source": "PRIMARY, banked: library key 2506.04218 ('Pseudo-Simulation for Autonomous Driving', sha256 a8431697ffa2...), PDF page 8, Table 2 'navhard leaderboard. Snapshot from 03/2026', column 'CV [8]', rows '<metric> S1'. READ FROM THE BANKED PDF by W1 2026-09-20 (pypdf), NOT inherited from a summary: E1 reported the match and W1 re-derived the published column itself.",
+    "excluded": "EC (published S1 60.4) is deliberately absent: EC is MASKED in the two-stage EPDMS, so it is not part of this floor's comparison.",
+    "comparison_rule": "TRUNCATE to 1 dp, never round",
+    "why_truncate": "MEASURED 2026-09-20 by W1 against the banked PDF: under TRUNCATION all 8 of 8 match; under ROUNDING only 4 of 8 do (NC 88.89->88.9 vs printed 88.8; DAC 42.89->42.9 vs 42.8; DDC 70.67->70.7 vs 70.6; LK 78.67->78.7 vs 78.6). The paper TRUNCATES. ⚠ A reproduction rule written around rounding would mark a CORRECT reproduction as a MISS on half the metrics -- the discriminator is that the 4 failures are all and only the cells whose 2nd decimal is >= 5.",
+    "how_to_use": "Our navhard stage-1 numbers must equal E1's EXACTLY (same split, same scorer, same 450 scenes) -- this is an identity check, not a tolerance. Any difference is the FIRST thing to chase, ahead of everything else. The published column is the weaker, independent check: it confirms the harness reproduces the leaderboard, to the precision the paper prints.",
+    "w1_reproduction": {
+     "status": "IDENTICAL",
+     "when": "2026-09-20",
+     "n": 450,
+     "how": "W1's suite scored the same split independently; code/w1_stage1_check.py compared all 8 sub-metrics against E1's banked values.",
+     "result": "8/8 equal at 2 dp (ours 88.8889/42.8889/70.6667/99.3333/77.5334/87.3333/78.6667/97.1111), n = 450 as expected, and 8/8 truncating vs the published column (4/8 rounding).",
+     "artifact": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-suite-core-navsim-v2/raw/navhard_CV_stage1_check.json"
+    },
+    "stronger_primary_read_by_e1": {
+     "claim": "ALL 19 published terms of [N2] v3 Table 2 reproduce EXACTLY under truncation; 9/19 under rounding.",
+     "by": "E1 (MEASURED, 2026-09-20)",
+     "scope": "19 = 9 sub-metrics x 2 stages + the EPDMS row. SUPERSEDES W1's 8/8 as the primary read of the convention: W1's 8 are the CV stage-1 column minus EC, i.e. a SUBSET of E1's 19. The two agree where they overlap; E1's is strictly stronger evidence that the paper TRUNCATES.",
+     "why_it_matters": "a reproduction rule written around ROUNDING would mark a correct reproduction as a MISS on 10 of 19 terms."
+    }
+   },
+   "combined_score_x100": 11.4816,
+   "stage_one_epdms_x100": 28.96,
+   "stage_two_epdms_x100": 34.25,
+   "interval_x100": {
+    "lo": 8.25,
+    "hi": 14.5,
+    "estimator": "log-cluster bootstrap (76 log clusters)",
+    "note": "the FIRST NavSim interval the programme can quote: warmup has 7 log clusters and can NEVER carry one (RG-14 floor is 8); navhard has 76."
+   },
+   "external": {
+    "_retraction": "CORRECTED 2026-09-20. The earlier entry recorded the HF leaderboard as publishing 11.4 at 1 dp under TRUNCATION. That merged TWO DIFFERENT ARTIFACTS with two different precisions and two different conventions. ⛔ It was self-refuting and banked anyway: it carried delta 0.0000 beside value_x100 11.4, while our value is 11.4816 -- a delta of 0.0816. A delta of exactly zero is only possible against a 4-dp source.",
+    "paper": {
+     "source": "arXiv 2506.04218 v3, Table 2 (navhard leaderboard, snapshot 03/2026), column CV [8]",
+     "value_x100": 11.4,
+     "dp": 1,
+     "rule": "TRUNCATES",
+     "ours_under_rule": 11.4,
+     "match": true,
+     "note": "11.4816 -> 11.4 truncating; ROUNDING gives 11.5 and would read as a MISS."
+    },
+    "leaderboard": {
+     "source": "HF navhard leaderboard",
+     "value_x100": 11.4816,
+     "dp": 4,
+     "rule": "ROUNDS",
+     "delta": 0.0,
+     "match": true,
+     "note": "reported by E1 as delta 0.0000 against our 11.4816, which is only possible at 4 dp. Settled independently by W3 at full scale on navsim v1: ONE underlying value 20.65165... explains BOTH sources -- the paper prints 20.6 (truncated to 1 dp) and the leaderboard prints 20.6517 (rounded to 4 dp)."
+    },
+    "the_rule_that_travels": "⚠ STATE THE ARTIFACT BEFORE THE CONVENTION. 'NavSim publishes X' is not a claim until you say WHICH publication: the PAPER truncates to 1 dp, the LEADERBOARD rounds to 4 dp. They do not disagree -- they are different renderings of the same number, and quoting one convention against the other source manufactures a mismatch (or, as here, a false agreement)."
+   },
+   "source": "E1 navhard CV, official two-stage runner, 5,912 scenarios (MEASURED). REQUIRES the IDM degenerate-path patch: 166/5,462 stage-2 tokens assert without it and one assert takes the whole run down -- it is a precondition of the number existing."
+  },
+  "STOP": {
+   "combined_score_x100": 29.8532,
+   "source": "E1 navhard STOP_zero seam, official two-stage runner (MEASURED)",
+   "note": "STOP > CV on navhard as on warmup -- the standing floor result: a stationary plan beats a moving one whenever best progress is small (EP=1 when best progress <= 5 m)."
+  },
+  "HUMAN": {
+   "stage_one_x100": 93.4796,
+   "source": "E1 (MEASURED)",
+   "note": "stage 1 ONLY. The human agent is UNDEFINED on two-stage splits (E1's reason), which is why the suite REFUSES a HUMAN two-stage headline rather than printing one."
+  }
+ },
+ "navtest_v1": {
+  "_what": "NavSim v1.1 PDMS on navtest (12,146 scenes / 136 logs) -- W3's full-split run. Banked here so the suite can re-check itself; W3 owns the run.",
+  "protocol": "PDMS_v1_navtest",
+  "n_tokens": 12146,
+  "n_logs": 136,
+  "estimator": "log-cluster bootstrap over 136 logs",
+  "CV": {
+   "pdms_x100": 20.6517,
+   "interval_x100": {
+    "lo": 19.2,
+    "hi": 22.22
+   },
+   "successful": "12146/12146"
+  },
+  "STOP": {
+   "pdms_x100": 61.8202,
+   "interval_x100": {
+    "lo": 60.7,
+    "hi": 63.08
+   },
+   "successful": "12146/12146"
+  },
+  "HUMAN": {
+   "pdms_x100": 94.5514,
+   "interval_x100": {
+    "lo": 93.79,
+    "hi": 95.23
+   },
+   "successful": "12146/12146",
+   "note": "HUMAN is DEFINED on v1 navtest (single stage), unlike the v2 two-stage splits."
+  },
+  "pdms_identity_check": "max |delta| = 0.0 across 3 x 12,146 rows",
+  "source": "W3 (MEASURED, 2026-09-20), FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/",
+  "summary_row_shape_confirmed_at_full_scale": "all three 12,147-row CSVs = 12,146 hex token rows + EXACTLY ONE summary row, token verbatim 'average', valid = True; per-file sha256 banked at raw/W1_summary_row_shape_navsim_v1_FULLSPLIT.json. This is the 20-token smoke read REPRODUCED at 12,146 tokens on THREE independent arms."
+ }
+}

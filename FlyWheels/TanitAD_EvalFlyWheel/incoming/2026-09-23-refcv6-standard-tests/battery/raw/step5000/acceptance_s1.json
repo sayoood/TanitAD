@@ -1,0 +1,294 @@
+{
+ "tflip": {
+  "test": "T-FLIP",
+  "bars": {
+   "follows_FED_command": 0.5,
+   "paired_true_minus_shuffled": 0.38
+  },
+  "today_refcv5_v2": {
+   "follows_FED_command": 0.205,
+   "paired_true_minus_shuffled": 0.099
+  },
+  "measured": {
+   "follows_FED_command": {
+    "mean": 0.25,
+    "ci": [
+     0.1593,
+     0.3508
+    ],
+    "n_windows": 352,
+    "n_episodes": 29
+   },
+   "follows_TRUE_command": {
+    "mean": 0.1903,
+    "ci": [
+     0.1039,
+     0.2804
+    ]
+   },
+   "paired_true_minus_shuffled": {
+    "delta": 0.1335,
+    "ci": [
+     0.0858,
+     0.1825
+    ],
+    "separated": true,
+    "n_windows": 352
+   }
+  },
+  "gates": {
+   "follows_FED_lower_bound_clears_bar": false,
+   "true_minus_shuffled_lower_bound_clears_bar_and_separated": false
+  },
+  "verdict": "FAIL",
+  "reason": "the plan does not follow a flipped command: ['follows_FED_lower_bound_clears_bar', 'true_minus_shuffled_lower_bound_clears_bar_and_separated'] did not clear. The operative plan is still vision/ego-driven and only weakly steerable by nav \u2014 the refcv5-v2 reading (0.205).",
+  "nav_compliance_status": null,
+  "nav_compliance_reason": null
+ },
+ "obedience": {
+  "test": "speed obedience",
+  "forced_limit_kmh": 30.0,
+  "population": "windows whose GT max speed exceeds 40.0 km/h",
+  "n_windows": 2294,
+  "n_episodes": 81,
+  "bar_obeys_fraction": 0.99,
+  "tol_ms": 0.0,
+  "rows_with_no_compliant_candidate": 2216,
+  "obeys": {
+   "mean": 0.0166,
+   "lo": 0.0038,
+   "hi": 0.0331,
+   "ci95": 0.0146,
+   "se": 0.0076,
+   "reducer": "mean",
+   "n_windows": 2294,
+   "n_episodes": 81,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "violation_ms": {
+   "max": 27.878256479899086,
+   "p95": 22.787918154398596,
+   "mean_over_violators": 9.46054356656176,
+   "n_violating": 2256
+  },
+  "ade_cost": {
+   "delta": 0.0023,
+   "lo": -0.0015,
+   "hi": 0.006,
+   "ci95": 0.0037,
+   "p_delta_gt0": 0.8845,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 2294,
+   "n_episodes": 81,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "_reads": "forced minus baseline, in metres. A model can obey ANY ceiling by planning to stop; this delta is what says it did not."
+  },
+  "verdict": "FAIL",
+  "reason": "obedience lower bound 0.0038 < 0.99. 2256 of 2294 windows exceeded the forced ceiling; 2216 of them had no compliant candidate in the fan at all, which is a VOCABULARY limit, not a model one \u2014 separate the two before reading this as disobedience."
+ },
+ "tzero": {
+  "test": "T-ZERO (non-turn diagnostic)",
+  "classes": {
+   "FOLLOW_LANE": {
+    "n": 911,
+    "recall_nav_true": 0.4632272228320527,
+    "recall_nav_zero": 0.4105378704720088,
+    "retained_fraction": 0.8862559241706162,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "TURN_L": {
+    "n": 40,
+    "recall_nav_true": 0.8,
+    "recall_nav_zero": 0.6,
+    "retained_fraction": 0.7499999999999999,
+    "is_turn_class": true,
+    "powered": true,
+    "_note": "EXCLUDED from the summary. Deriving the turn command from nav is BY DESIGN (PI 2026-09-16); 42.7 % of the TURN label's entropy is already in the nav token, so a collapse here is PERMITTED and uninformative about learning. \u26d4 Do not read a low retained fraction on a turn class as a defect."
+   },
+   "TURN_R": {
+    "n": 67,
+    "recall_nav_true": 0.9850746268656716,
+    "recall_nav_zero": 0.23880597014925373,
+    "retained_fraction": 0.24242424242424243,
+    "is_turn_class": true,
+    "powered": true,
+    "_note": "EXCLUDED from the summary. Deriving the turn command from nav is BY DESIGN (PI 2026-09-16); 42.7 % of the TURN label's entropy is already in the nav token, so a collapse here is PERMITTED and uninformative about learning. \u26d4 Do not read a low retained fraction on a turn class as a defect."
+   },
+   "YIELD_FOR_TURN_L": {
+    "n": 16,
+    "recall_nav_true": 0.4375,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": 0.0,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 16 < 30: reported with its n, excluded from the summary"
+   },
+   "YIELD_FOR_TURN_R": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "YIELD": {
+    "n": 139,
+    "recall_nav_true": 0.10071942446043165,
+    "recall_nav_zero": 0.37410071942446044,
+    "retained_fraction": 3.7142857142857144,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "STOP_POINT": {
+    "n": 74,
+    "recall_nav_true": 0.7567567567567568,
+    "recall_nav_zero": 0.6351351351351351,
+    "retained_fraction": 0.8392857142857142,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "SPEED_BAND": {
+    "n": 1141,
+    "recall_nav_true": 0.04820333041191937,
+    "recall_nav_zero": 0.175284837861525,
+    "retained_fraction": 3.6363636363636367,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "CORRIDOR_OFFSET": {
+    "n": 200,
+    "recall_nav_true": 0.025,
+    "recall_nav_zero": 0.135,
+    "retained_fraction": 5.4,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "EVADE_IN_CORRIDOR": {
+    "n": 49,
+    "recall_nav_true": 0.0,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "OVERTAKE_VEHICLE": {
+    "n": 9,
+    "recall_nav_true": 0.0,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 9 < 30: reported with its n, excluded from the summary"
+   },
+   "MERGE": {
+    "n": 40,
+    "recall_nav_true": 0.0,
+    "recall_nav_zero": 0.2,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "GAP_TARGET": {
+    "n": 97,
+    "recall_nav_true": 0.05154639175257732,
+    "recall_nav_zero": 0.3402061855670103,
+    "retained_fraction": 6.6000000000000005,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "REACT_ON_ONCOMING": {
+    "n": 82,
+    "recall_nav_true": 0.0,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "TAKE_EXIT_L": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TAKE_EXIT_R": {
+    "n": 41,
+    "recall_nav_true": 0.8048780487804879,
+    "recall_nav_zero": 0.3902439024390244,
+    "retained_fraction": 0.48484848484848486,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "n": 65,
+    "recall_nav_true": 0.0,
+    "recall_nav_zero": 0.0,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "n": 25,
+    "recall_nav_true": 0.0,
+    "recall_nav_zero": 0.36,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 25 < 30: reported with its n, excluded from the summary"
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "n": 122,
+    "recall_nav_true": 0.07377049180327869,
+    "recall_nav_zero": 0.19672131147540983,
+    "retained_fraction": 2.6666666666666665,
+    "is_turn_class": false,
+    "powered": true
+   },
+   "LANE_CHANGE_L": {
+    "n": 0,
+    "recall_nav_true": null,
+    "recall_nav_zero": null,
+    "retained_fraction": null,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 0 < 30: reported with its n, excluded from the summary"
+   },
+   "LANE_CHANGE_R": {
+    "n": 8,
+    "recall_nav_true": 1.0,
+    "recall_nav_zero": 1.0,
+    "retained_fraction": 1.0,
+    "is_turn_class": false,
+    "powered": false,
+    "_note": "n = 8 < 30: reported with its n, excluded from the summary"
+   }
+  },
+  "summary": {
+   "n_classes_summarised": 8,
+   "median_retained_fraction": 3.1515151515151514,
+   "min_retained_fraction": 0.48484848484848486,
+   "_reads": "retained ~ 0 on the NON-TURN classes means the tactical layer learned nothing from the scene on the behaviours nav cannot explain (longitudinal 5.2 %, speed bucket 5.5 %, lane keeping / nudges / yielding / gap targets). retained ~ 1 means the behaviour is read from the scene. \u26d4 TURN classes are excluded: deriving them from nav is BY DESIGN (PI 2026-09-16), so their collapse is permitted. \u26d4 This is a DIAGNOSTIC: there is no pass/fail bar, because a high retained fraction on a class the model never fires is not a success."
+  },
+  "turn_classes_excluded": [
+   "TURN_L",
+   "TURN_R"
+  ],
+  "min_n": 30
+ }
+}

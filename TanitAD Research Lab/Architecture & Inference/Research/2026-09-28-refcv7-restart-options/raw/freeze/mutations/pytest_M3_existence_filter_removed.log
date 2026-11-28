@@ -1,0 +1,29 @@
+...........F                                                             [100%]
+================================== FAILURES ===================================
+_________ test_8_a_module_the_build_did_not_construct_is_not_demanded _________
+
+    def test_8_a_module_the_build_did_not_construct_is_not_demanded():
+        """`--goal-point-inject` turns `nav_inject` OFF (PREREG E15), so `nav_to_str` is never built:
+        the argv side must not demand its declaration (a module that does not exist cannot be a dead
+        trainable group) -- and must still demand the other seven."""
+        args, _cfg, model = _smoke(R7_CORE + F1_F6 + ["--no-strategic", "--goal-point-inject"])
+        assert getattr(model, "nav_to_str", None) is None
+        assert set(model._bypass_declared) == set(TEN_STRATEGIC) - {"nav_to_str"}
+        assert "nav_to_str" in dvb.expected_grad_unreachable(args)          # argv alone names it...
+>       assert dvb.check_grad_unreachable(model, args) == []                  # ...the build is judged
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert [Mismatch(lev...IVE refuses')] == []
+E         
+E         Left contains one more item: Mismatch(lever='grad_unreachable[nav_to_str]', declared='declared (argv: bypassed by design)', built='not declared', read_from='nav_to_str', why='nav -> strategic ctx (diagnostic only) -- left trainable it is a dead group G-LIVE refuses')
+E         Use -v to get more diff
+
+tests\test_refcv7_admitted_freeze.py:294: AssertionError
+============================== warnings summary ===============================
+tests/test_refcv7_admitted_freeze.py: 14 warnings
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\jit\_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_refcv7_admitted_freeze.py::test_8_a_module_the_build_did_not_construct_is_not_demanded
+1 failed, 11 passed, 14 warnings in 8.18s

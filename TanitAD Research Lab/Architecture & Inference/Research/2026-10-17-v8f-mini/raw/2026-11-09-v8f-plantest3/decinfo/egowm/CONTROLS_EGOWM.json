@@ -1,0 +1,234 @@
+{
+ "batch": {
+  "source": "F:/TanitAD-scratch/ladder_read/cache/frames_s0.npz",
+  "windows": 4,
+  "F": 91,
+  "note": "zmean and act are REAL val frames; v is PLANTED (12 m/s at the window start + the floored integration of the real accelerations): that file carries no speed"
+ },
+ "control1_off_identity": {
+  "n_arrays": 579,
+  "n_bit_equal": 579,
+  "keys_only_in_patched": [],
+  "differing": [],
+  "pass_off_identity": true
+ },
+ "control1b_zero_weights_and_mutation": {
+  "kin": {
+   "extra_keys": [
+    "wm.stack.spd.0.weight",
+    "wm.stack.spd.1.weight",
+    "wm.stack.spd.2.weight"
+   ],
+   "all_control_tensors_bit_equal_at_init": true,
+   "n_terms": 25,
+   "n_terms_bit_equal_zero_weights": 25,
+   "mutation_nonzero_weights_n_terms_bit_equal": 9,
+   "pass": true
+  },
+  "now": {
+   "extra_keys": [
+    "wm.stack.spd.0.weight",
+    "wm.stack.spd.1.weight",
+    "wm.stack.spd.2.weight"
+   ],
+   "all_control_tensors_bit_equal_at_init": true,
+   "n_terms": 25,
+   "n_terms_bit_equal_zero_weights": 25,
+   "mutation_nonzero_weights_n_terms_bit_equal": 9,
+   "pass": true
+  }
+ },
+ "control2_reachability": {
+  "kin": {
+   "live_pass": true,
+   "dead_wm_groups": [],
+   "control_nonwm_grad_sum": 0.0,
+   "spd_group_grad_sum": 0.01824072515591979,
+   "per_level_grad_abs_sum": {
+    "0": 0.0014029620215296745,
+    "1": 0.002941888989880681,
+    "2": 0.0035027461126446724
+   },
+   "all_levels_nonzero": true
+  },
+  "now": {
+   "live_pass": true,
+   "dead_wm_groups": [],
+   "control_nonwm_grad_sum": 0.0,
+   "spd_group_grad_sum": 0.018239576747873798,
+   "per_level_grad_abs_sum": {
+    "0": 0.0014025097480043769,
+    "1": 0.0029423304367810488,
+    "2": 0.003501512110233307
+   },
+   "all_levels_nonzero": true
+  },
+  "mutation_speed_input_deleted": {
+   "went_red": true,
+   "why": "G-LIVE (wm_only) failed: {\"terms\": {\"wm\": 196.11380004882812, \"wm/pred/L1\": 0.03200219199061394, \"wm/sigreg/L1\": 1.5986213684082031, \"wm/idm/L1\": 0.05328114330768585, \"wm/rollout/L1\": 0.03243577852845192, \"wm/rollout_valid/L1\": 700.0, \"wm/r"
+  },
+  "pass": true
+ },
+ "control3_speed_values": {
+  "kin": {
+   "teacher_forced_equal_measured": true,
+   "free_run_matches_hand_integration": true,
+   "max_abs_err_vs_hand": 4.76837158203125e-07,
+   "levels_checked": 3,
+   "window_rows": 4,
+   "floor_engaged_in_batch": true
+  },
+  "now": {
+   "teacher_forced_equal_measured": true,
+   "free_run_matches_hand_integration": true,
+   "max_abs_err_vs_hand": 0.0,
+   "levels_checked": 3,
+   "window_rows": 4,
+   "floor_engaged_in_batch": true
+  },
+  "floor_primitive": {
+   "got": [
+    1.0,
+    0.0,
+    2.0,
+    4.0
+   ],
+   "hand": [
+    1.0,
+    0.0,
+    2.0,
+    4.0
+   ],
+   "pass": true
+  },
+  "mutations": {
+   "integration_sign_flipped": {
+    "went_red": true,
+    "teacher_forced_equal_measured": true,
+    "free_run_matches_hand_integration": false,
+    "max_abs_err_vs_hand": 27.0,
+    "levels_checked": 3,
+    "window_rows": 4,
+    "floor_engaged_in_batch": true
+   },
+   "now_takes_future_speed": {
+    "went_red": true,
+    "teacher_forced_equal_measured": true,
+    "free_run_matches_hand_integration": false,
+    "max_abs_err_vs_hand": 12.0,
+    "levels_checked": 3,
+    "window_rows": 4,
+    "floor_engaged_in_batch": true
+   }
+  },
+  "pass": true
+ },
+ "control4_echo_guard": {
+  "kin": {
+   "target_latents_equal_off_vs_on": [
+    true,
+    true,
+    true
+   ],
+   "target_latents_invariant_to_future_speed": [
+    true,
+    true,
+    true
+   ],
+   "goal_latents_equal": [
+    true,
+    true
+   ],
+   "lifted_goal_equal": true,
+   "control_that_actions_DO_differ": [
+    true,
+    true,
+    true
+   ],
+   "pass": true
+  },
+  "now": {
+   "target_latents_equal_off_vs_on": [
+    true,
+    true,
+    true
+   ],
+   "target_latents_invariant_to_future_speed": [
+    true,
+    true,
+    true
+   ],
+   "goal_latents_equal": [
+    true,
+    true
+   ],
+   "lifted_goal_equal": true,
+   "control_that_actions_DO_differ": [
+    true,
+    true,
+    true
+   ],
+   "pass": true
+  },
+  "mutation_speed_leaks_into_target": {
+   "went_red": true
+  },
+  "pass": true
+ },
+ "control5_launch": {
+  "arms": [
+   {
+    "arm": "E-KIN_s0",
+    "seed": 0,
+    "wm_speed_named": true,
+    "declared": "kin",
+    "built": "kin",
+    "bad": [],
+    "mutation_refused": true
+   },
+   {
+    "arm": "E-KIN_s1",
+    "seed": 1,
+    "wm_speed_named": true,
+    "declared": "kin",
+    "built": "kin",
+    "bad": [],
+    "mutation_refused": true
+   },
+   {
+    "arm": "E-NOW_s0",
+    "seed": 0,
+    "wm_speed_named": true,
+    "declared": "now",
+    "built": "now",
+    "bad": [],
+    "mutation_refused": true
+   },
+   {
+    "arm": "E-NOW_s1",
+    "seed": 1,
+    "wm_speed_named": true,
+    "declared": "now",
+    "built": "now",
+    "bad": [],
+    "mutation_refused": true
+   },
+   {
+    "arm": "E-KIN_rep_s2",
+    "seed": 2,
+    "wm_speed_named": true,
+    "declared": "kin",
+    "built": "kin",
+    "bad": [],
+    "mutation_refused": true
+   }
+  ],
+  "control_R35H": {
+   "declared": "off",
+   "built": "off",
+   "bad": []
+  },
+  "pass": true
+ },
+ "all_pass": true
+}

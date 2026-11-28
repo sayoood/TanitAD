@@ -1,0 +1,15 @@
+{
+ "tool": "code/brake_locus_r8.py --ckpt-scalars",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_30000.pt",
+ "step": 30000,
+ "kind": "ema_model_only",
+ "values": {
+  "r8_sel.beta_lat": -0.038776323199272156,
+  "r8_sel.beta_lon": -0.00679604709148407,
+  "r8_sel.gamma_prog": 0.10099703818559647,
+  "r8_sel.gamma_head": 0.3810942471027374,
+  "r8_rc_gate": 0.0
+ },
+ "meaning": "ranking term r8_sel = beta_lat*log p(lat3 of the candidate) + beta_lon*log p(lon6 of the candidate) + gamma_prog*sat_prog + gamma_head*sat_head (refcv8_conditioning.py:472-499); all four are zero-init and LEARNED.  beta_lon ~ 0 means the head's lon POSTERIOR hardly enters the ranking; gamma_prog is the weight on satisfying the head's lon CONSTRAINT output (progress), which is NOT banked.",
+ "evidence_class": "MEASURED (ours, checkpoint read, mmap, 4 scalars)"
+}

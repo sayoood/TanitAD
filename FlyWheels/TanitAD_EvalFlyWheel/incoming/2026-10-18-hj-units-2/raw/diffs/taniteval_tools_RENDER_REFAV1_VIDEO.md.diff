@@ -1,0 +1,23 @@
+--- a/taniteval/tools/RENDER_REFAV1_VIDEO.md (a305fc06a5)
++++ b/taniteval/tools/RENDER_REFAV1_VIDEO.md (64c239c543)
+@@ -215,6 +215,7 @@
+     --cache  <a dir of symlinks to just the chosen clips' fp8 .pt> \
+     --episodes <the v2ep dir> --labels <v7.2 blob> --nav <v7.2 blob> \
+     --no-lead-block --device cuda --window-stride 4 --wm-k 15 --no-navshuf \
++    --action-units steer \
+     --dump-dir render_dump --out render.json --arm refav1-21109-render8
+ 
+ # 3. the reel
+@@ -227,6 +228,12 @@
+ python taniteval/tools/verify_mp4.py refav1_reel_step21109.mp4 \
+                                      refav1_reel_step21109_small.mp4
+ ```
++
++⛔ **`--action-units` has no default (HJ-UNITS-2, 2026-10-18)** -- the dump step exits 2 without it.
++Step 2 states `steer`, the true unit of the recorded v2ep channel (`physicalai.py:621`). The reel
++DELIVERED before this change was rolled under `kappa` (§5), so a reel re-rendered with `steer` will
++differ on the `ha` and `ol` arms (not on `cl` / `ha0`); pass `--action-units kappa` to reproduce the
++delivered one.
+ 
+ ⚠️ **`--wm-k` must be ≥ 15.** `refa_v1.forward` refuses fewer operative steps
+ than the strategic level's first target (`refa_v1.py:1522`); `--wm-k 10` dies

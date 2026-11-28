@@ -1,0 +1,511 @@
+{
+ "host": "dev-box RTX 4060 8188 MiB",
+ "torch": "2.11.0+cu128",
+ "alloc_conf": "",
+ "geometry": [
+  416,
+  1024
+ ],
+ "batch": 1,
+ "frames": 3,
+ "arms": [
+  {
+   "arm": "r34_base",
+   "model": "resnet34.a1_in1k",
+   "levers": {},
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 1.0952906608581543,
+   "peak_reserved_gb": 1.38671875,
+   "iter_s_all": [
+    0.376,
+    0.0845,
+    0.0828
+   ],
+   "iter_s": 0.0845,
+   "s16_shape": [
+    1,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 631.7496294141492,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_base",
+   "model": "resnet101.a1_in1k",
+   "levers": {},
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 3.861748218536377,
+   "peak_reserved_gb": 4.4453125,
+   "iter_s_all": [
+    0.2879,
+    0.2302,
+    0.2315
+   ],
+   "iter_s": 0.2315,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 871.2979498743052,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_gc",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "gc_applied": true,
+   "trainable_params": 58231872,
+   "status": "ERROR",
+   "error": "RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [3, 64, 208, 512]], which is output 0 of ReluBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True, check_nan=False)."
+  },
+  {
+   "arm": "r101_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 2.579507827758789,
+   "peak_reserved_gb": 2.8359375,
+   "iter_s_all": [
+    0.6875,
+    0.1318,
+    0.1309
+   ],
+   "iter_s": 0.1318,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 884.926736176426,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_chlast",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "channels_last": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 4.056666851043701,
+   "peak_reserved_gb": 4.37109375,
+   "iter_s_all": [
+    0.7718,
+    0.7486,
+    0.7484
+   ],
+   "iter_s": 0.7486,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 874.0850526090524,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_freeze_l1",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "freeze": "layer1"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "frozen": [
+    "conv1",
+    "bn1",
+    "layer1"
+   ],
+   "trainable_params": 58006528,
+   "peak_alloc_gb": 3.1098408699035645,
+   "peak_reserved_gb": 3.54296875,
+   "iter_s_all": [
+    0.2056,
+    0.1906,
+    0.1897
+   ],
+   "iter_s": 0.1906,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 836.7406029522815,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_freeze_l2",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "freeze": "layer2"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "frozen": [
+    "conv1",
+    "bn1",
+    "layer1",
+    "layer2"
+   ],
+   "trainable_params": 56786944,
+   "peak_alloc_gb": 2.4959912300109863,
+   "peak_reserved_gb": 2.734375,
+   "iter_s_all": [
+    0.1806,
+    0.1694,
+    0.1685
+   ],
+   "iter_s": 0.1694,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 832.2842527136575,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_inflate",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "trunk_mode": "inflate"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "inflate",
+   "backbone_params": 42518976,
+   "total_params": 42518976,
+   "trainable_params": 42518976,
+   "peak_alloc_gb": 1.750378131866455,
+   "peak_reserved_gb": 1.947265625,
+   "iter_s_all": [
+    0.1729,
+    0.0812,
+    0.0797
+   ],
+   "iter_s": 0.0812,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 111.58596158667297,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_gc_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true,
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "gc_applied": true,
+   "trainable_params": 58231872,
+   "status": "ERROR",
+   "error": "RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [CUDABFloat16Type [3, 64, 208, 512]], which is output 0 of ReluBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True, check_nan=False)."
+  },
+  {
+   "arm": "r101_gc_freeze",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true,
+    "freeze": "layer1"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "gc_applied": true,
+   "frozen": [
+    "conv1",
+    "bn1",
+    "layer1"
+   ],
+   "trainable_params": 58006528,
+   "peak_alloc_gb": 2.6019959449768066,
+   "peak_reserved_gb": 3.12890625,
+   "iter_s_all": [
+    0.2513,
+    0.2361,
+    0.2356
+   ],
+   "iter_s": 0.2361,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 845.9547156671556,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_bf16_chl",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "bf16": true,
+    "channels_last": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 2.678105354309082,
+   "peak_reserved_gb": 2.861328125,
+   "iter_s_all": [
+    0.2512,
+    0.1255,
+    0.126
+   ],
+   "iter_s": 0.126,
+   "s16_shape": [
+    1,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 876.2287337420687,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_gc_bf16_chl",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true,
+    "bf16": true,
+    "channels_last": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "gc_applied": true,
+   "trainable_params": 58231872,
+   "status": "ERROR",
+   "error": "RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [CUDABFloat16Type [3, 64, 208, 512]], which is output 0 of ReluBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True, check_nan=False)."
+  },
+  {
+   "arm": "r34_gc",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "gc_applied": true,
+   "trainable_params": 22268480,
+   "status": "ERROR",
+   "error": "RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [3, 64, 208, 512]], which is output 0 of ReluBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True, check_nan=False)."
+  },
+  {
+   "arm": "r34_bf16",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "batch": 1,
+   "frames": 3,
+   "mode": "shared",
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 1.258166790008545,
+   "peak_reserved_gb": 1.412109375,
+   "iter_s_all": [
+    0.1042,
+    0.052,
+    0.0528
+   ],
+   "iter_s": 0.0528,
+   "s16_shape": [
+    1,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    1,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 639.7188562434449,
+   "n_grad_none": 0,
+   "status": "OK"
+  }
+ ]
+}

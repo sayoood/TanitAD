@@ -1,0 +1,8 @@
+# SPEC_GAPS (SCORER1-IMPL) - where the card could not be implemented as written, or needed an interpretation
+1. "The loss's speed direction is zero by construction" holds for pair COUNTS (kept F == kept S, tested), NOT for gradient mass: pairs are weighted by sigmoid and carry different dv. test_pair_loss T4 prints it (balanced 3.03 vs unbalanced 3.99 on a synthetic speed-only score). Bars unchanged; read the claim as "count-balanced".
+2. "mean over the kept pairs": pooled over all kept pairs of the micro-batch (sets and heads together). Per-head or per-set means are alternatives; not chosen.
+3. Per-proposal `valid` flag (used in p1_diag) is not in the trainer batch; L_pair uses the set mask only (all 64 proposals).
+4. lambda_p rule: weight_rule.py is L_field/train.py-specific. Re-implemented in-trainer as --pair-calibrate (50 micro-batches, gradients pooled over micro-batches then norms, as weight_rule.py; L_BCE = arm-B pointwise BCE incl. lane term, without the expected-reward term). --pair-calibrate is a measuring mode (DVB kind "control", to be FORBIDDEN in launch argv); its value goes into --pair-w via the chain.
+5. C0r data-order seed: --seed (the DataLoader generator `g`, scorer_finetune.py); it also seeds torch.manual_seed. C0 = --seed 0, C0r = --seed 1. PairLoss has its own generator (20261107), independent of --seed.
+6. "400 further updates" = --max-updates 400 (forbidden today in SFT4R_FORBIDDEN; the refe_scorer1 profile must allow it). The cosine LR then runs over 400 updates with 50 warm-up; the card does not say - UNVERIFIED that this equals "u400's recipe".
+7. --ckpt for all arms must be model_sft4_B_u400.pt (7-row head loads natively, native7 path). The profile's checkpoint-sha binding (8b4dba48...) is not implemented.

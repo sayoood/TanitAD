@@ -1,0 +1,887 @@
+{
+ "schema": "r9e2-verdict-v1",
+ "rule": "GO iff K2 beats K0 in point estimate on the map primary and the planner's S6c sidewalk rate, K2 is not separated worse than K0 on box AP@2 m, no four-family row is separated worse, and a partial W4 preview (K2 vs camera-blind) is separated -- at inference seeds 0 and 1 (REFCV9_DESIGN 4.4) (clause (b) amended by the PI 2026-11-17: not separated worse).",
+ "verdict": "NO-GO",
+ "failing_clauses": [
+  {
+   "id": "d",
+   "name": "no four-family row separated worse (paired, episodes)",
+   "status": "FAIL",
+   "seeds": [
+    "0",
+    "1"
+   ],
+   "next_lever": "the separated-worse row(s) named in the clause: diagnose that family before the 214 h are spent"
+  }
+ ],
+ "clauses": [
+  {
+   "id": "a",
+   "name": "MAP primary nf_swedge_prec_lv_5_20: K2 > K0 (point)",
+   "status": "PASS",
+   "tier": "T0 (label level)",
+   "estimator": "single-arm point (episode-cluster bootstrap in the eval JSON)",
+   "per_seed": {
+    "0": {
+     "id": "a",
+     "name": "MAP primary nf_swedge_prec_lv_5_20: K2 > K0 (point)",
+     "status": "PASS",
+     "detail": "nearfield.ci.nf_swedge_prec_lv_5_20.point: K2=0.474155 K0=0.466485 delta=+0.00766991 (higher is better)",
+     "tier": "T0 (label level)",
+     "estimator": "single-arm point (episode-cluster bootstrap in the eval JSON)",
+     "k2": 0.47415488198038874,
+     "k0": 0.46648497053804383,
+     "delta": 0.007669911442344912
+    },
+    "1": {
+     "id": "a",
+     "name": "MAP primary nf_swedge_prec_lv_5_20: K2 > K0 (point)",
+     "status": "PASS",
+     "detail": "nearfield.ci.nf_swedge_prec_lv_5_20.point: K2=0.474155 K0=0.466485 delta=+0.00766991 (higher is better)",
+     "tier": "T0 (label level)",
+     "estimator": "single-arm point (episode-cluster bootstrap in the eval JSON)",
+     "k2": 0.47415488198038874,
+     "k0": 0.46648497053804383,
+     "delta": 0.007669911442344912
+    }
+   },
+   "seeds_failing": []
+  },
+  {
+   "id": "b",
+   "name": "box AP@2 m head output no NMS: K2 not separated worse than K0 (paired, episodes)",
+   "status": "PASS",
+   "tier": "T0 (label level)",
+   "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES (not separated worse; point delta informational)",
+   "per_seed": {
+    "0": {
+     "id": "b",
+     "name": "box AP@2 m head output no NMS: K2 not separated worse than K0 (paired, episodes)",
+     "status": "PASS",
+     "detail": "box AP@2 m K2 - K0: delta=+0.0108 paired CI [0.0039, 0.0182] -> not separated worse (interval reaches 0 or above); K2 higher by point=True (information only)",
+     "tier": "T0 (label level)",
+     "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES (not separated worse; point delta informational)",
+     "delta": 0.0108,
+     "lo": 0.0039,
+     "hi": 0.0182,
+     "separated_worse": false,
+     "separated_better": true
+    },
+    "1": {
+     "id": "b",
+     "name": "box AP@2 m head output no NMS: K2 not separated worse than K0 (paired, episodes)",
+     "status": "PASS",
+     "detail": "box AP@2 m K2 - K0: delta=+0.0108 paired CI [0.0039, 0.0182] -> not separated worse (interval reaches 0 or above); K2 higher by point=True (information only)",
+     "tier": "T0 (label level)",
+     "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES (not separated worse; point delta informational)",
+     "delta": 0.0108,
+     "lo": 0.0039,
+     "hi": 0.0182,
+     "separated_worse": false,
+     "separated_better": true
+    }
+   },
+   "seeds_failing": []
+  },
+  {
+   "id": "c",
+   "name": "planner sidewalk rate S6c-DEV: K2 < K0 (point)",
+   "status": "PASS",
+   "tier": "T1 self-action open loop (S6c-DEV)",
+   "estimator": "point (S6c rate)",
+   "per_seed": {
+    "0": {
+     "id": "c",
+     "name": "planner sidewalk rate S6c-DEV: K2 < K0 (point)",
+     "status": "PASS",
+     "detail": "S6c-DEV sidewalk (off_drivable) rate: K2=0.185185 K0=0.191358 delta=-0.00617284 (lower is better)",
+     "tier": "T1 self-action open loop (S6c-DEV)",
+     "estimator": "point (S6c rate)",
+     "k2": 0.18518518518518517,
+     "k0": 0.19135802469135801,
+     "delta": -0.006172839506172839
+    },
+    "1": {
+     "id": "c",
+     "name": "planner sidewalk rate S6c-DEV: K2 < K0 (point)",
+     "status": "PASS",
+     "detail": "S6c-DEV sidewalk (off_drivable) rate: K2=0.182099 K0=0.196296 delta=-0.0141975 (lower is better)",
+     "tier": "T1 self-action open loop (S6c-DEV)",
+     "estimator": "point (S6c rate)",
+     "k2": 0.18209876543209877,
+     "k0": 0.1962962962962963,
+     "delta": -0.014197530864197533
+    }
+   },
+   "seeds_failing": []
+  },
+  {
+   "id": "d",
+   "name": "no four-family row separated worse (paired, episodes)",
+   "status": "FAIL",
+   "tier": "T1 self-action open loop",
+   "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES",
+   "per_seed": {
+    "0": {
+     "id": "d",
+     "name": "no four-family row separated worse (paired, episodes)",
+     "status": "FAIL",
+     "detail": "separated WORSE: LONGITUDINAL/LON_dk_headway_abs_err_m, LATERAL/LAT_cross_mae_m, LATERAL/LAT_cross_abs_final_m",
+     "tier": "T1 self-action open loop",
+     "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES",
+     "failing_rows": [
+      "LONGITUDINAL/LON_dk_headway_abs_err_m",
+      "LATERAL/LAT_cross_mae_m",
+      "LATERAL/LAT_cross_abs_final_m"
+     ]
+    },
+    "1": {
+     "id": "d",
+     "name": "no four-family row separated worse (paired, episodes)",
+     "status": "FAIL",
+     "detail": "separated WORSE: LONGITUDINAL/LON_accel_mae_mps2, LONGITUDINAL/LON_dk_headway_min_m, LONGITUDINAL/LON_dk_min_ttc_s, LATERAL/LAT_heading_mae_deg, LATERAL/LAT_yaw_rate_mae_radps_valid, LATERAL/LAT_cross_mae_m, LATERAL/LAT_cross_abs_final_m, TACTICAL/TAC_traj_lat_correct",
+     "tier": "T1 self-action open loop",
+     "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES",
+     "failing_rows": [
+      "LONGITUDINAL/LON_accel_mae_mps2",
+      "LONGITUDINAL/LON_dk_headway_min_m",
+      "LONGITUDINAL/LON_dk_min_ttc_s",
+      "LATERAL/LAT_heading_mae_deg",
+      "LATERAL/LAT_yaw_rate_mae_radps_valid",
+      "LATERAL/LAT_cross_mae_m",
+      "LATERAL/LAT_cross_abs_final_m",
+      "TACTICAL/TAC_traj_lat_correct"
+     ]
+    }
+   },
+   "seeds_failing": [
+    "0",
+    "1"
+   ]
+  },
+  {
+   "id": "e",
+   "name": "W4 preview: K2 separated BETTER than camera-blind on ade_m + each family primary",
+   "status": "PASS",
+   "tier": "T1 self-action open loop",
+   "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES",
+   "per_seed": {
+    "0": {
+     "id": "e",
+     "name": "W4 preview: K2 separated BETTER than camera-blind on ade_m + each family primary",
+     "status": "PASS",
+     "detail": "K2 separated better than camera-blind on ade_m + LONGITUDINAL + LATERAL + TACTICAL primary rows",
+     "tier": "T1 self-action open loop",
+     "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES"
+    },
+    "1": {
+     "id": "e",
+     "name": "W4 preview: K2 separated BETTER than camera-blind on ade_m + each family primary",
+     "status": "PASS",
+     "detail": "K2 separated better than camera-blind on ade_m + LONGITUDINAL + LATERAL + TACTICAL primary rows",
+     "tier": "T1 self-action open loop",
+     "estimator": "taniteval.ci paired episode-cluster bootstrap, B 2000 seed 0, over EPISODES"
+    }
+   },
+   "seeds_failing": []
+  }
+ ],
+ "four_families": {
+  "0": {
+   "LONGITUDINAL": {
+    "status": "FAIL",
+    "rows": {
+     "LON_speed_mae_mps": {
+      "delta": 0.0072,
+      "lo": -0.0037,
+      "hi": 0.0189,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0087,
+      "lo": -0.0025,
+      "hi": 0.0207,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_along_abs_final_m": {
+      "delta": 0.0149,
+      "lo": -0.0089,
+      "hi": 0.0399,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_speed_within_0p5": {
+      "delta": -0.0006,
+      "lo": -0.0097,
+      "hi": 0.0082,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.0079,
+      "lo": -0.0023,
+      "hi": 0.0186,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_headway_min_m": {
+      "delta": -0.002,
+      "lo": -0.0471,
+      "hi": 0.0518,
+      "separated": false,
+      "n": 710,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_time_gap_min_s": {
+      "delta": 0.0005,
+      "lo": -0.0093,
+      "hi": 0.0124,
+      "separated": false,
+      "n": 644,
+      "n_episodes": 39,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_min_ttc_s": {
+      "delta": -0.1983,
+      "lo": -0.6544,
+      "hi": 0.2327,
+      "separated": false,
+      "n": 710,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_headway_abs_err_m": {
+      "delta": 0.0486,
+      "lo": 0.0004,
+      "hi": 0.1201,
+      "separated": true,
+      "n": 698,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LON_dk_ttc_viol_rate": {
+      "delta": -0.0014,
+      "lo": -0.0049,
+      "hi": 0.0,
+      "separated": false,
+      "n": 710,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_lead_viol_at_risk": {
+      "delta": 0.0055,
+      "lo": 0.0,
+      "hi": 0.0124,
+      "separated": false,
+      "n": 546,
+      "n_episodes": 37,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_lead_progress_shortfall": {
+      "delta": -0.0066,
+      "lo": -0.0142,
+      "hi": -0.0001,
+      "separated": true,
+      "n": 539,
+      "n_episodes": 37,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": true
+     }
+    }
+   },
+   "LATERAL": {
+    "status": "FAIL",
+    "rows": {
+     "LAT_heading_mae_deg": {
+      "delta": 0.0589,
+      "lo": -0.0007,
+      "hi": 0.1217,
+      "separated": false,
+      "n": 2293,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LAT_curvature_mae_1pm_valid": {
+      "delta": 0.0001,
+      "lo": -0.0003,
+      "hi": 0.0006,
+      "separated": false,
+      "n": 2275,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0012,
+      "lo": -0.0,
+      "hi": 0.0024,
+      "separated": false,
+      "n": 2275,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LAT_cross_mae_m": {
+      "delta": 0.0075,
+      "lo": 0.0024,
+      "hi": 0.0126,
+      "separated": true,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LAT_cross_abs_final_m": {
+      "delta": 0.0173,
+      "lo": 0.0064,
+      "hi": 0.0283,
+      "separated": true,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     }
+    }
+   },
+   "TACTICAL": {
+    "status": "PASS",
+    "rows": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0054,
+      "lo": -0.0126,
+      "hi": 0.0013,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "TAC_traj_lon_correct": {
+      "delta": 0.0075,
+      "lo": -0.0071,
+      "hi": 0.0233,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "TAC_traj_man5_correct": {
+      "delta": 0.0025,
+      "lo": -0.0113,
+      "hi": 0.0175,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     }
+    }
+   },
+   "STRATEGIC": {
+    "status": "PAUSED",
+    "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; reported PAUSED -- never a pass, never omitted, never extended to the other families.",
+    "rows": {}
+   }
+  },
+  "1": {
+   "LONGITUDINAL": {
+    "status": "FAIL",
+    "rows": {
+     "LON_speed_mae_mps": {
+      "delta": 0.009,
+      "lo": -0.0026,
+      "hi": 0.0217,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_along_mae_m": {
+      "delta": 0.0088,
+      "lo": -0.003,
+      "hi": 0.022,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_along_abs_final_m": {
+      "delta": 0.0159,
+      "lo": -0.0088,
+      "hi": 0.043,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_speed_within_0p5": {
+      "delta": -0.0097,
+      "lo": -0.0199,
+      "hi": 0.0005,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_accel_mae_mps2": {
+      "delta": 0.014,
+      "lo": 0.0032,
+      "hi": 0.0256,
+      "separated": true,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LON_dk_headway_min_m": {
+      "delta": -0.062,
+      "lo": -0.1002,
+      "hi": -0.0248,
+      "separated": true,
+      "n": 702,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LON_dk_time_gap_min_s": {
+      "delta": -0.0112,
+      "lo": -0.0234,
+      "hi": 0.0015,
+      "separated": false,
+      "n": 636,
+      "n_episodes": 39,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_min_ttc_s": {
+      "delta": -0.4354,
+      "lo": -0.7771,
+      "hi": -0.1387,
+      "separated": true,
+      "n": 702,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LON_dk_headway_abs_err_m": {
+      "delta": 0.0186,
+      "lo": -0.0193,
+      "hi": 0.0578,
+      "separated": false,
+      "n": 692,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_ttc_viol_rate": {
+      "delta": 0.0043,
+      "lo": 0.0,
+      "hi": 0.01,
+      "separated": false,
+      "n": 702,
+      "n_episodes": 40,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_lead_viol_at_risk": {
+      "delta": 0.0,
+      "lo": -0.0098,
+      "hi": 0.008,
+      "separated": false,
+      "n": 546,
+      "n_episodes": 37,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LON_dk_lead_progress_shortfall": {
+      "delta": -0.0044,
+      "lo": -0.0108,
+      "hi": 0.0009,
+      "separated": false,
+      "n": 539,
+      "n_episodes": 37,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     }
+    }
+   },
+   "LATERAL": {
+    "status": "FAIL",
+    "rows": {
+     "LAT_heading_mae_deg": {
+      "delta": 0.0759,
+      "lo": 0.014,
+      "hi": 0.1451,
+      "separated": true,
+      "n": 2294,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LAT_curvature_mae_1pm_valid": {
+      "delta": 0.0003,
+      "lo": -0.0001,
+      "hi": 0.0007,
+      "separated": false,
+      "n": 2276,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "LAT_yaw_rate_mae_radps_valid": {
+      "delta": 0.0015,
+      "lo": 0.0002,
+      "hi": 0.0027,
+      "separated": true,
+      "n": 2276,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LAT_cross_mae_m": {
+      "delta": 0.0083,
+      "lo": 0.0024,
+      "hi": 0.0147,
+      "separated": true,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "LAT_cross_abs_final_m": {
+      "delta": 0.0198,
+      "lo": 0.0065,
+      "hi": 0.034,
+      "separated": true,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "lower",
+      "separated_worse": true,
+      "separated_better": false
+     }
+    }
+   },
+   "TACTICAL": {
+    "status": "FAIL",
+    "rows": {
+     "TAC_traj_lat_correct": {
+      "delta": -0.0088,
+      "lo": -0.0162,
+      "hi": -0.0021,
+      "separated": true,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": true,
+      "separated_better": false
+     },
+     "TAC_traj_lon_correct": {
+      "delta": -0.0025,
+      "lo": -0.0155,
+      "hi": 0.0133,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     },
+     "TAC_traj_man5_correct": {
+      "delta": -0.005,
+      "lo": -0.018,
+      "hi": 0.0088,
+      "separated": false,
+      "n": 2397,
+      "n_episodes": 70,
+      "src": "precomputed paired record",
+      "ok": true,
+      "better": "higher",
+      "separated_worse": false,
+      "separated_better": false
+     }
+    }
+   },
+   "STRATEGIC": {
+    "status": "PAUSED",
+    "reason": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; reported PAUSED -- never a pass, never omitted, never extended to the other families.",
+    "rows": {}
+   }
+  }
+ },
+ "w4_rows": {
+  "0": {
+   "ade_m": {
+    "delta": -0.4722,
+    "lo": -0.5682,
+    "hi": -0.3835,
+    "separated": true,
+    "n": 2397,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "lower",
+    "separated_worse": false,
+    "separated_better": true
+   },
+   "LONGITUDINAL": {
+    "delta": -0.1924,
+    "lo": -0.2718,
+    "hi": -0.1223,
+    "separated": true,
+    "n": 2397,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "lower",
+    "separated_worse": false,
+    "separated_better": true
+   },
+   "LATERAL": {
+    "delta": -2.5599,
+    "lo": -3.0897,
+    "hi": -2.0741,
+    "separated": true,
+    "n": 2294,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "lower",
+    "separated_worse": false,
+    "separated_better": true
+   },
+   "TACTICAL": {
+    "delta": 0.1773,
+    "lo": 0.1296,
+    "hi": 0.23,
+    "separated": true,
+    "n": 2397,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "higher",
+    "separated_worse": false,
+    "separated_better": true
+   }
+  },
+  "1": {
+   "ade_m": {
+    "delta": -0.4701,
+    "lo": -0.5653,
+    "hi": -0.3821,
+    "separated": true,
+    "n": 2397,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "lower",
+    "separated_worse": false,
+    "separated_better": true
+   },
+   "LONGITUDINAL": {
+    "delta": -0.1905,
+    "lo": -0.2706,
+    "hi": -0.1212,
+    "separated": true,
+    "n": 2397,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "lower",
+    "separated_worse": false,
+    "separated_better": true
+   },
+   "LATERAL": {
+    "delta": -2.5559,
+    "lo": -3.086,
+    "hi": -2.073,
+    "separated": true,
+    "n": 2294,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "lower",
+    "separated_worse": false,
+    "separated_better": true
+   },
+   "TACTICAL": {
+    "delta": 0.1748,
+    "lo": 0.1264,
+    "hi": 0.2271,
+    "separated": true,
+    "n": 2397,
+    "n_episodes": 70,
+    "src": "precomputed paired record",
+    "ok": true,
+    "better": "higher",
+    "separated_worse": false,
+    "separated_better": true
+   }
+  }
+ },
+ "n": {
+  "0": {
+   "n_windows_boxes": 2308,
+   "n_clips": 70,
+   "n_files_map": 2329,
+   "n_s6c": 1620
+  },
+  "1": {
+   "n_windows_boxes": 2308,
+   "n_clips": 70,
+   "n_files_map": 2329,
+   "n_s6c": 1620
+  }
+ },
+ "identical_inputs_across_seeds_note": {
+  "0": false,
+  "1": false
+ },
+ "windows": "DEV (eval139 even half, DEV_HOLD_SPLIT.json); HOLD is never read here",
+ "labels": "K2 vs K0",
+ "strategic": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE ITEM 25): the strategic layer is switched off until tactical and operative drive with high quality; reported PAUSED -- never a pass, never omitted, never extended to the other families.",
+ "caveat": "H-ESTIM-SEED-1: the paired interval answers another draw of EPISODES, not another TRAINING run; K2 and K0 are ONE training run each."
+}

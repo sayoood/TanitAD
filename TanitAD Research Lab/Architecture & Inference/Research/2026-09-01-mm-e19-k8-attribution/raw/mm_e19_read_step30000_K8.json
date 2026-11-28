@@ -1,0 +1,959 @@
+{
+ "_prereg": "Project Steering/PREREG_MM_E19_K60_HORIZON.md",
+ "_generated_utc": "2026-09-01T19:54:21Z",
+ "_evidence_class": "MEASURED (ours; dev-box cuda)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "metric_families": {
+  "longitudinal": "REFUSED",
+  "lateral": "REFUSED",
+  "tactical": "REFUSED",
+  "strategic": "REFUSED",
+  "reason": "T0-DIAGNOSTIC world-model probe panel (action ratios, latent ego-marginals, weight norms) \u2014 no driving metrics exist here to family-ise. The four families bind driving evals (EVAL_DOCTRINE); nothing in this file is a driving-performance claim."
+ },
+ "caveat_MUST_TRAVEL": "This arm trained through an intermittent-spiking regime (gnorm excursions, clip 0.5 containing the damage but not the cause), recorded in the prereg as spanning steps ~4,000-14,000 and peaking at 8,000-10,000 at the 14.4k amendment. \u26d4 Any MM-E19 number travels with this caveat. The 'spike_arrival' block below recomputes the regime from the FULL log shipped with the read \u2014 quote THOSE bounds, not the interim ones.",
+ "criteria_FOR_ORCHESTRATOR_verdicts_EMPTY": {
+  "primary_action_ratio": {
+   "instrument": "actdiv (MM-E10/MM-E17), h1 ratio_action_over_scene",
+   "incumbent_h1": 0.005947,
+   "criterion": "HORIZON-WORKS: h1 ratio rises >=10x (>= 0.0595) | HORIZON-PARTIAL: rises, but <10x | HORIZON-INERT: unchanged within noise | VOID: C0 != 0 or any scene_spread ~ 0 (C160)",
+   "attribution_gate": "\u26d4 HORIZON-WORKS additionally REQUIRES the clip-0.5 k=8 control (prereg \u00a73c): this arm is o5_k 60 + clip 0.5 \u2014 TWO changes from the incumbent.",
+   "verdict": ""
+  },
+  "secondary_gains": {
+   "instrument": "state-dict norms (stage NORMS below) \u2014 Frobenius of the .weight tensor, VERIFIED 2026-09-01 to be MM-E18's own definition: it reproduces msg_e18.txt's step-30000 row on o1ctrl30k/ckpt_step30000.pt (md5 eeb12bd11269\u2026) to all four decimals (2.9700/3.0605/5.4368, act_emb2 9.4015)",
+   "criterion": "||to_scale_shift|| at 30k should EXCEED the incumbent's converged values and ||act_emb.2|| should stop declining. \u26a0\ufe0f ATTRIBUTION DISCREPANCY IN THE PREREG, flagged for the orchestrator: prereg \u00a73 quotes 2.97/3.06/5.44 (and 9.5694\u21929.4015) as 'the incumbent's', but MM-E18's own artifact (msg_e18.txt) measured those on o1ctrl30k, NOT on postrain30k. The ACTUAL matched incumbent postrain30k (final ckpt, md5 a58585883c27\u2026) reads to_scale_shift 3.8301/4.3603/4.2527, act_emb.2.weight 9.6288 \u2014 extracted with the same verified instrument, in norms.incumbent below. Which baseline the criterion binds to is the orchestrator's call. If the ratio rises but the gains do NOT, the mechanism story is wrong \u2014 report both.",
+   "verdict": ""
+  },
+  "ego_marginal_band_0_8": {
+   "instrument": "latentmotion (E-DEC-59) ego_marginal_over_drift, band 0:8",
+   "banked_reference_k4_rdw8p30k": {
+    "delta": -0.0006,
+    "t": -0.48
+   },
+   "criterion": "positive and material (t >> 2) at k=60 => horizon hypothesis CONFIRMED on the data side; ~0 => actions do not predict the latent transition at any horizon we can reach. \u26d4 a null in THIS band alone is NOT 'actions carry nothing' \u2014 see band 8:16.",
+   "verdict": ""
+  },
+  "ego_marginal_band_8_16": {
+   "instrument": "latentmotion (E-DEC-59) ego_marginal_over_drift, band 8:16",
+   "criterion": "the band where E-DEC-40's band control found the ONLY hint of action content (+0.0258, t 2.73) \u2014 a low-variance subspace the top-8 projection is blind to by construction. Both bands or the read is inadmissible.",
+   "verdict": ""
+  },
+  "void_checks": {
+   "criterion": "actdiv C0_identity == 0 for every arm/horizon; no scene_spread ~ 0; latentmotion constant control reads 0.0000; drift positive control clears its shuffle.",
+   "verdict": ""
+  },
+  "anti_gates": {
+   "criterion": "\u26d4 o5_loss MUST NOT be compared across different o5_k \u2014 a 60-step rollout is a harder task, not a worse score. \u26d4 k=60 saw ~43% fewer windows per episode (319,002 total) \u2014 same parity CORPUS, different window count. T0 regression WITH action-ratio gain = intended trade, escalates to T1; T0 regression with NO gain = dead arm.",
+   "verdict": ""
+  }
+ },
+ "stages": {
+  "install": {
+   "arm_dir": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_k60clip05p30k",
+   "source": "C:\\Users\\Admin\\k8-pull\\ckpt.pt",
+   "source_md5": "2d744d6d2faa6e62d3b5eb2e9c2eecd6",
+   "overwrote_md5": "7e3c776d19a6ccbac6b46c15d39f61f1",
+   "installed_md5": "2d744d6d2faa6e62d3b5eb2e9c2eecd6",
+   "config_md5": "f7d48ab64ac268e01480454d46f92a7c"
+  },
+  "spikes": {
+   "train_log": "C:/Users/Admin/k8-pull/train_log.jsonl",
+   "train_log_md5": "1b642c11dabdc58da6a8c0d2cb310f08"
+  },
+  "latentmotion_k4_band0_8": {
+   "cmd": [
+    "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\latentmotion.py",
+    "--k",
+    "4",
+    "--band",
+    "0:8",
+    "--arms",
+    "k60clip05p30k,postrain30k",
+    "--assets",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "--stack",
+    "C:\\Users\\Admin\\tanitad-wt\\stack",
+    "--corpus",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "--nclips",
+    "80",
+    "--device",
+    "cuda",
+    "--out",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k4_band0_8.json"
+   ],
+   "rc": 0,
+   "seconds": 890.4,
+   "log": "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k4_band0_8.log"
+  },
+  "latentmotion_k4_band8_16": {
+   "cmd": [
+    "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\latentmotion.py",
+    "--k",
+    "4",
+    "--band",
+    "8:16",
+    "--arms",
+    "k60clip05p30k,postrain30k",
+    "--assets",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "--stack",
+    "C:\\Users\\Admin\\tanitad-wt\\stack",
+    "--corpus",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "--nclips",
+    "80",
+    "--device",
+    "cuda",
+    "--out",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k4_band8_16.json"
+   ],
+   "rc": 0,
+   "seconds": 873.5,
+   "log": "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k4_band8_16.log"
+  },
+  "latentmotion_k60_band0_8": {
+   "cmd": [
+    "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\latentmotion.py",
+    "--k",
+    "60",
+    "--band",
+    "0:8",
+    "--arms",
+    "k60clip05p30k,postrain30k",
+    "--assets",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "--stack",
+    "C:\\Users\\Admin\\tanitad-wt\\stack",
+    "--corpus",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "--nclips",
+    "80",
+    "--device",
+    "cuda",
+    "--out",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k60_band0_8.json"
+   ],
+   "rc": 0,
+   "seconds": 550.4,
+   "log": "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k60_band0_8.log"
+  },
+  "latentmotion_k60_band8_16": {
+   "cmd": [
+    "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\latentmotion.py",
+    "--k",
+    "60",
+    "--band",
+    "8:16",
+    "--arms",
+    "k60clip05p30k,postrain30k",
+    "--assets",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "--stack",
+    "C:\\Users\\Admin\\tanitad-wt\\stack",
+    "--corpus",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "--nclips",
+    "80",
+    "--device",
+    "cuda",
+    "--out",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k60_band8_16.json"
+   ],
+   "rc": 0,
+   "seconds": 554.3,
+   "log": "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\latentmotion_k60_band8_16.log"
+  },
+  "actdiv": {
+   "cmd": [
+    "C:\\Users\\Admin\\venvs\\tanitad\\Scripts\\python.exe",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\actdiv_local.py",
+    "--corpus",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val-w120-256x640cyl",
+    "--arms",
+    "k60clip05p30k,postrain30k",
+    "--assets",
+    "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "--stack",
+    "C:\\Users\\Admin\\tanitad-wt\\stack",
+    "--out",
+    "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\actdiv_local.json",
+    "--device",
+    "cuda"
+   ],
+   "rc": 0,
+   "seconds": 19.9,
+   "log": "C:\\Users\\Admin\\tanitad-wt\\mm-e19-probes\\mm_e19_out\\raw\\actdiv_local.log"
+  }
+ },
+ "spike_arrival": {
+  "instrument": "rows with gnorm > 50 per 1,000 steps, per 2000-step window (prereg \u00a73c, committed step 7,800)",
+  "log_rows_used": 150,
+  "max_step": 30000,
+  "windows": [
+   {
+    "steps": [
+     0,
+     2000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 2.23,
+    "gnorm_max": 3.4
+   },
+   {
+    "steps": [
+     2000,
+     4000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 2.92,
+    "gnorm_max": 11.2
+   },
+   {
+    "steps": [
+     4000,
+     6000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 4.12,
+    "gnorm_max": 20.3
+   },
+   {
+    "steps": [
+     6000,
+     8000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 3.27,
+    "gnorm_max": 23.3
+   },
+   {
+    "steps": [
+     8000,
+     10000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 11.31,
+    "gnorm_max": 16.8
+   },
+   {
+    "steps": [
+     10000,
+     12000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 6.48,
+    "gnorm_max": 10.9
+   },
+   {
+    "steps": [
+     12000,
+     14000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 4.35,
+    "gnorm_max": 14.7
+   },
+   {
+    "steps": [
+     14000,
+     16000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 4.67,
+    "gnorm_max": 19.7
+   },
+   {
+    "steps": [
+     16000,
+     18000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 8.74,
+    "gnorm_max": 44.5
+   },
+   {
+    "steps": [
+     18000,
+     20000
+    ],
+    "rows": 10,
+    "spikes_gt50": 1,
+    "rate_per_1000": 0.5,
+    "gnorm_median": 30.32,
+    "gnorm_max": 314.1
+   },
+   {
+    "steps": [
+     20000,
+     22000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 24.21,
+    "gnorm_max": 46.4
+   },
+   {
+    "steps": [
+     22000,
+     24000
+    ],
+    "rows": 10,
+    "spikes_gt50": 1,
+    "rate_per_1000": 0.5,
+    "gnorm_median": 26.44,
+    "gnorm_max": 51.2
+   },
+   {
+    "steps": [
+     24000,
+     26000
+    ],
+    "rows": 10,
+    "spikes_gt50": 2,
+    "rate_per_1000": 1.0,
+    "gnorm_median": 17.32,
+    "gnorm_max": 153.4
+   },
+   {
+    "steps": [
+     26000,
+     28000
+    ],
+    "rows": 10,
+    "spikes_gt50": 0,
+    "rate_per_1000": 0.0,
+    "gnorm_median": 14.91,
+    "gnorm_max": 43.0
+   },
+   {
+    "steps": [
+     28000,
+     30000
+    ],
+    "rows": 10,
+    "spikes_gt50": 2,
+    "rate_per_1000": 1.0,
+    "gnorm_median": 33.43,
+    "gnorm_max": 108.8
+   }
+  ],
+  "spike_steps": [
+   {
+    "step": 19600,
+    "gnorm": 314.1
+   },
+   {
+    "step": 22200,
+    "gnorm": 51.2
+   },
+   {
+    "step": 24800,
+    "gnorm": 69.5
+   },
+   {
+    "step": 26000,
+    "gnorm": 153.4
+   },
+   {
+    "step": 28800,
+    "gnorm": 101.6
+   },
+   {
+    "step": 29400,
+    "gnorm": 108.8
+   }
+  ],
+  "first_half_rate_per_1000": 0.0,
+  "second_half_rate_per_1000": 0.4,
+  "last_window_rate_per_1000": 1.0,
+  "spiking_regime_bounds_steps": [
+   19600,
+   29400
+  ],
+  "clean_steps_since_last_spike": 600
+ },
+ "arm": {
+  "name": "k60clip05p30k",
+  "step": 30000,
+  "ckpt_md5": "2d744d6d2faa6e62d3b5eb2e9c2eecd6"
+ },
+ "_label": "MM-E19 read at step 30000",
+ "interim_dryrun": false,
+ "norms": {
+  "arm": {
+   "step": 30000,
+   "to_scale_shift": {
+    "predictor_op.blocks.0.film.to_scale_shift.weight": 2.9552,
+    "predictor_op.blocks.0.film.to_scale_shift.bias": 0.275,
+    "predictor_op.blocks.1.film.to_scale_shift.weight": 3.1005,
+    "predictor_op.blocks.1.film.to_scale_shift.bias": 0.3025,
+    "predictor_op.blocks.2.film.to_scale_shift.weight": 3.7114,
+    "predictor_op.blocks.2.film.to_scale_shift.bias": 0.2492
+   },
+   "act_emb": {
+    "predictor_op.act_emb.0.weight": 8.4681,
+    "predictor_op.act_emb.0.bias": 5.1137,
+    "predictor_op.act_emb.2.weight": 8.9981,
+    "predictor_op.act_emb.2.bias": 0.5474
+   },
+   "args_subset": {
+    "o5_k": 8,
+    "clip": 0.5,
+    "lr": 0.0001,
+    "steps": 30000,
+    "horizons": [
+     1,
+     2,
+     4
+    ],
+    "batch": 8,
+    "o5_mode": "uniform",
+    "seed": 0
+   }
+  },
+  "incumbent": {
+   "step": 30000,
+   "to_scale_shift": {
+    "predictor_op.blocks.0.film.to_scale_shift.weight": 3.8301,
+    "predictor_op.blocks.0.film.to_scale_shift.bias": 0.3142,
+    "predictor_op.blocks.1.film.to_scale_shift.weight": 4.3603,
+    "predictor_op.blocks.1.film.to_scale_shift.bias": 0.3118,
+    "predictor_op.blocks.2.film.to_scale_shift.weight": 4.2527,
+    "predictor_op.blocks.2.film.to_scale_shift.bias": 0.259
+   },
+   "act_emb": {
+    "predictor_op.act_emb.0.weight": 8.6992,
+    "predictor_op.act_emb.0.bias": 5.023,
+    "predictor_op.act_emb.2.weight": 9.6288,
+    "predictor_op.act_emb.2.bias": 0.5849
+   },
+   "args_subset": {
+    "o5_k": 8,
+    "clip": 1.0,
+    "lr": 0.0001,
+    "steps": 30000,
+    "horizons": [
+     1,
+     2,
+     4
+    ],
+    "batch": 8,
+    "o5_mode": "uniform",
+    "seed": 0
+   }
+  },
+  "references": {
+   "norm_definition": "Frobenius norm of the .weight tensor",
+   "known_value_control": "VERIFIED 2026-09-01: this extractor reproduces msg_e18.txt's o1ctrl30k step-30000 row (2.9700/3.0605/5.4368, act_emb2 9.4015) to all four decimals from ckpt_step30000.pt md5 eeb12bd11269\u2026",
+   "prereg_quoted_values": [
+    2.97,
+    3.06,
+    5.44
+   ],
+   "prereg_attribution": "'the incumbent' (prereg \u00a73)",
+   "measured_provenance": "o1ctrl30k, msg_e18.txt 10-snapshot trajectory \u2014 NOT postrain30k; the prereg misattributes. The actual incumbent's norms are in 'incumbent' above.",
+   "act_emb2_o1ctrl30k_trajectory": [
+    9.5694,
+    9.4015
+   ]
+  }
+ },
+ "one_variable_check_args_diff": {
+  "clip": {
+   "arm": 0.5,
+   "incumbent": 1.0
+  },
+  "cond_param": {
+   "arm": "steer_accel_v",
+   "incumbent": null
+  },
+  "ema_decay_ramp": {
+   "arm": "off",
+   "incumbent": null
+  },
+  "ema_decay_start": {
+   "arm": 0.99,
+   "incumbent": null
+  },
+  "init_from": {
+   "arm": null,
+   "incumbent": "/home/nvidia/v7tiny/distill_init.pt"
+  },
+  "o13_k": {
+   "arm": 4,
+   "incumbent": null
+  },
+  "o13_seed": {
+   "arm": 1300,
+   "incumbent": null
+  },
+  "o14_k": {
+   "arm": 4,
+   "incumbent": null
+  },
+  "o14_mode": {
+   "arm": "fut",
+   "incumbent": null
+  },
+  "o14_shuffle_targets": {
+   "arm": false,
+   "incumbent": null
+  },
+  "o5_target": {
+   "arm": "live",
+   "incumbent": null
+  },
+  "o5_target_crop": {
+   "arm": 0.0,
+   "incumbent": null
+  },
+  "o6_innovation": {
+   "arm": false,
+   "incumbent": null
+  },
+  "o6_innovation_shuffle": {
+   "arm": false,
+   "incumbent": null
+  },
+  "out": {
+   "arm": "/home/nvidia/v7tiny/k8clip05p30k",
+   "incumbent": "/home/nvidia/v7tiny/postrain30k"
+  },
+  "tac_vocab_version": {
+   "arm": "v7.0",
+   "incumbent": null
+  },
+  "w_o13_ego": {
+   "arm": 0.0,
+   "incumbent": null
+  },
+  "w_o14": {
+   "arm": 0.0,
+   "incumbent": null
+  }
+ },
+ "latentmotion": {
+  "arms_requested": "k60clip05p30k,postrain30k",
+  "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+  "reads": {
+   "k4_band0_8": {
+    "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+    "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+    "_helper_files": {
+     "panel_kfold": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\panel_kfold.py",
+     "rangeprobe_rff": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\rangeprobe_rff.py",
+     "v7tiny_g2": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_g2.py"
+    },
+    "_assets": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "_corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "eval_tier": "T0-DIAGNOSTIC",
+    "split": "HELD-OUT",
+    "k": 4,
+    "frames_per_clip": 100,
+    "device": "cuda",
+    "null_mode": false,
+    "pca_band": [
+     0,
+     8
+    ],
+    "arms": {
+     "k60clip05p30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 7680,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6618,
+        "t": 138.86
+       },
+       "ego_state [w, a, v]": {
+        "r": 0.0003,
+        "t": -0.2
+       },
+       "z_t + ego_state": {
+        "r": 0.6606,
+        "t": 137.81
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 138.86,
+      "ego_marginal_over_drift": {
+       "delta": -0.0011,
+       "t": -0.83
+      }
+     },
+     "postrain30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 7680,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6674,
+        "t": 146.85
+       },
+       "ego_state [w, a, v]": {
+        "r": 0.0032,
+        "t": 1.06
+       },
+       "z_t + ego_state": {
+        "r": 0.6667,
+        "t": 142.45
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 146.85,
+      "ego_marginal_over_drift": {
+       "delta": -0.0007,
+       "t": -0.54
+      }
+     }
+    }
+   },
+   "k4_band8_16": {
+    "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+    "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+    "_helper_files": {
+     "panel_kfold": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\panel_kfold.py",
+     "rangeprobe_rff": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\rangeprobe_rff.py",
+     "v7tiny_g2": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_g2.py"
+    },
+    "_assets": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "_corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "eval_tier": "T0-DIAGNOSTIC",
+    "split": "HELD-OUT",
+    "k": 4,
+    "frames_per_clip": 100,
+    "device": "cuda",
+    "null_mode": false,
+    "pca_band": [
+     8,
+     16
+    ],
+    "arms": {
+     "k60clip05p30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 7680,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6598,
+        "t": 139.54
+       },
+       "ego_state [w, a, v]": {
+        "r": 0.0024,
+        "t": -1.37
+       },
+       "z_t + ego_state": {
+        "r": 0.6603,
+        "t": 141.3
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 139.54,
+      "ego_marginal_over_drift": {
+       "delta": 0.0005,
+       "t": 0.36
+      }
+     },
+     "postrain30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 7680,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6712,
+        "t": 144.06
+       },
+       "ego_state [w, a, v]": {
+        "r": -0.0009,
+        "t": -0.76
+       },
+       "z_t + ego_state": {
+        "r": 0.6694,
+        "t": 146.49
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 144.06,
+      "ego_marginal_over_drift": {
+       "delta": -0.0018,
+       "t": -1.68
+      }
+     }
+    }
+   },
+   "k60_band0_8": {
+    "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+    "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+    "_helper_files": {
+     "panel_kfold": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\panel_kfold.py",
+     "rangeprobe_rff": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\rangeprobe_rff.py",
+     "v7tiny_g2": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_g2.py"
+    },
+    "_assets": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "_corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "eval_tier": "T0-DIAGNOSTIC",
+    "split": "HELD-OUT",
+    "k": 60,
+    "frames_per_clip": 100,
+    "device": "cuda",
+    "null_mode": false,
+    "pca_band": [
+     0,
+     8
+    ],
+    "arms": {
+     "k60clip05p30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 3200,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.646,
+        "t": 71.55
+       },
+       "ego_state [w, a, v]": {
+        "r": -0.0119,
+        "t": -0.77
+       },
+       "z_t + ego_state": {
+        "r": 0.6488,
+        "t": 72.58
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 71.55,
+      "ego_marginal_over_drift": {
+       "delta": 0.0027,
+       "t": 1.23
+      }
+     },
+     "postrain30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 3200,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6625,
+        "t": 86.19
+       },
+       "ego_state [w, a, v]": {
+        "r": -0.0114,
+        "t": -0.54
+       },
+       "z_t + ego_state": {
+        "r": 0.6627,
+        "t": 87.36
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 86.19,
+      "ego_marginal_over_drift": {
+       "delta": 0.0002,
+       "t": 0.12
+      }
+     }
+    }
+   },
+   "k60_band8_16": {
+    "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+    "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+    "_helper_files": {
+     "panel_kfold": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\panel_kfold.py",
+     "rangeprobe_rff": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\rangeprobe_rff.py",
+     "v7tiny_g2": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_g2.py"
+    },
+    "_assets": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901",
+    "_corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+    "eval_tier": "T0-DIAGNOSTIC",
+    "split": "HELD-OUT",
+    "k": 60,
+    "frames_per_clip": 100,
+    "device": "cuda",
+    "null_mode": false,
+    "pca_band": [
+     8,
+     16
+    ],
+    "arms": {
+     "k60clip05p30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 3200,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6529,
+        "t": 78.7
+       },
+       "ego_state [w, a, v]": {
+        "r": 0.0032,
+        "t": 0.38
+       },
+       "z_t + ego_state": {
+        "r": 0.6553,
+        "t": 78.68
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 78.7,
+      "ego_marginal_over_drift": {
+       "delta": 0.0023,
+       "t": 1.05
+      }
+     },
+     "postrain30k": {
+      "step": 30000,
+      "n_clips": 80,
+      "n_rows": 3200,
+      "columns": {
+       "z_t (DRIFT / POSITIVE CONTROL)": {
+        "r": 0.6585,
+        "t": 84.27
+       },
+       "ego_state [w, a, v]": {
+        "r": -0.0082,
+        "t": 0.37
+       },
+       "z_t + ego_state": {
+        "r": 0.6595,
+        "t": 86.8
+       },
+       "constant (control)": {
+        "r": 0.0,
+        "t": 0.0
+       }
+      },
+      "drift_control_t": 84.27,
+      "ego_marginal_over_drift": {
+       "delta": 0.0011,
+       "t": 0.67
+      }
+     }
+    }
+   }
+  }
+ },
+ "actdiv": {
+  "_evidence_class": "MEASURED (ours; dev-box cuda)",
+  "eval_tier": "T0-DIAGNOSTIC",
+  "hypothesis": "H-ARCH-ACTINS",
+  "tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+  "banked_thor_reference": {
+   "postrain30k_h1_ratio": 0.005947,
+   "source": "actdiv_result.json (MEASURED ours; Thor; 24 clips of physicalai-val-0c5f7dac3b11-w120-256x640cyl)"
+  },
+  "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val-w120-256x640cyl",
+  "n_clips": 24,
+  "n_action_variants": 8,
+  "variant_draw": "roll (never permutation)",
+  "arms": {
+   "k60clip05p30k": {
+    "step": 30000,
+    "n_windows": 144,
+    "h1": {
+     "action_spread": 0.001319,
+     "scene_spread": 0.213915,
+     "ratio_action_over_scene": 0.006165,
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true
+    },
+    "h2": {
+     "action_spread": 6e-06,
+     "scene_spread": 0.37561,
+     "ratio_action_over_scene": 1.7e-05,
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true
+    },
+    "h4": {
+     "action_spread": 6e-06,
+     "scene_spread": 0.375613,
+     "ratio_action_over_scene": 1.7e-05,
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true
+    }
+   },
+   "postrain30k": {
+    "step": 30000,
+    "n_windows": 144,
+    "h1": {
+     "action_spread": 0.001394,
+     "scene_spread": 0.234344,
+     "ratio_action_over_scene": 0.005947,
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true
+    },
+    "h2": {
+     "action_spread": 6e-06,
+     "scene_spread": 0.399058,
+     "ratio_action_over_scene": 1.6e-05,
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true
+    },
+    "h4": {
+     "action_spread": 6e-06,
+     "scene_spread": 0.399061,
+     "ratio_action_over_scene": 1.6e-05,
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true
+    }
+   }
+  }
+ },
+ "n": {
+  "latentmotion_k4_band0_8_k60clip05p30k_rows": 7680,
+  "latentmotion_k4_band0_8_postrain30k_rows": 7680,
+  "latentmotion_k4_band8_16_k60clip05p30k_rows": 7680,
+  "latentmotion_k4_band8_16_postrain30k_rows": 7680,
+  "latentmotion_k60_band0_8_k60clip05p30k_rows": 3200,
+  "latentmotion_k60_band0_8_postrain30k_rows": 3200,
+  "latentmotion_k60_band8_16_k60clip05p30k_rows": 3200,
+  "latentmotion_k60_band8_16_postrain30k_rows": 3200,
+  "actdiv_k60clip05p30k_windows": 144,
+  "actdiv_postrain30k_windows": 144
+ }
+}

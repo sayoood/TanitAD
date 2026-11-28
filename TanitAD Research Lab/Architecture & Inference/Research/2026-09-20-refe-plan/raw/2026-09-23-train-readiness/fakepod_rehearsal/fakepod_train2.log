@@ -1,0 +1,21 @@
+ZZSTART pod_train stages=[batch smoke train] backbone=vits16 epochs=1 eff=256 run=C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_runs/vits16_navtrain_aug_tau0.3 2026-09-23T09:13:04Z ZZ
+=== batch: largest RESIDENT batch, powers of two ===
+  card 8.00 GiB, free at start 6.93 GiB -> budget 4.93 GiB
+  batch   1  peak   1.85 GiB / budget 4.93  1.122 s/sample  RESIDENT
+  batch   2  peak   3.61 GiB / budget 4.93  0.818 s/sample  RESIDENT
+  batch   4  predicted   7.22 GiB > budget -- not tried
+ZZBATCH_2ZZ
+ZZOK batch 2 x accum 128 = 256 ZZ
+  batch 2 x accum 128 = 256 (paper: 256)
+=== smoke: one real step on the full bank ===
+  trunk: loaded 186 tensors from C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/backbones\dinov3-
+  scorer bank: 1,309 rows over 119 frames  <- C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe
+  targets: 119 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 61, 1: 58}
+  images: 119/119 tuples resolve ALL cameras under C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data
+  calib: 119/119 tuples carry their own rig (1 distinct rigs) <- C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpa
+  bank: 119 tuples   batch 2   training
+    step     0  traj_L1   9.2157  score  0.0731  winners 1/2  assign_d   8.43 m  scorer_cov 100.0 %  lr 0.00e+00     2.4s
+TRAIN_DONE
+ZZOK smoke ZZ
+=== train: 1 epochs, batch 2 x accum 128, run dir C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/fakepod/data/refe_runs/vits16_navtrain_aug_tau0.3 ===
+ZZFAIL flock not installed (util-linux) -- apt-get install -y util-linux ZZ

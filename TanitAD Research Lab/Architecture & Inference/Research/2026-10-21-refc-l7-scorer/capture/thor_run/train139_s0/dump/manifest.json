@@ -1,0 +1,1549 @@
+{
+ "tool": "taniteval/tools/refcv3_arm.py",
+ "doc": "taniteval/tools/REFCV3_ARM.md",
+ "model": {
+  "ckpt": "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt",
+  "step": 48852,
+  "config_json": "/home/nvidia/r8ns/ckpt/config.json",
+  "rebuilt_from": "refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)",
+  "config_cross_checks": {
+   "param_breakdown_equal": true
+  },
+  "state_dict_load": {
+   "strict": true,
+   "missing": [],
+   "unexpected": [],
+   "n_keys": 1165,
+   "n_map_hires_keys": 54,
+   "ckpt_keys": [
+    "ema_decay",
+    "kind",
+    "num_updates",
+    "step"
+   ],
+   "step": 48852
+  },
+  "eval_time_cfg_overrides": {},
+  "param_breakdown": {
+   "core": 90897767,
+   "phi_tac": 2101504,
+   "str_goal_head": 771,
+   "gstr_cond": 66816,
+   "tac_heads": 14364,
+   "tac_latent_proj": 262656,
+   "scorer": 1145,
+   "nav_inject": 50176,
+   "tac_decoder_v6": 2272802,
+   "tac_behaviour_gate_v6": 2574,
+   "total": 100598182
+  },
+  "arm": "hier",
+  "hier": true,
+  "tac_vocab_version": "v7.0",
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_anchors": 117,
+  "n_anchors_provenance": "checkpoint anchor buffer",
+  "window": 8,
+  "decoder_steps": 2,
+  "decoder_mode": "diffusion",
+  "nav_from_v7_trained": true,
+  "nav_cmd_derivation_trained": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+  "train_labels_manifest": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_records": 4572,
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "cot_absence_negative": null,
+   "goal_geometry_tokens": [
+    "FOLLOW_LANE",
+    "SPEED_BAND",
+    "STOP_POINT",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "goal_cot_tokens": [
+    "CORRIDOR_OFFSET",
+    "EVADE_IN_CORRIDOR",
+    "GAP_TARGET",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "REACT_ON_ONCOMING",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD"
+   ],
+   "divergences": [],
+   "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+  },
+  "eval_labels_md5_at_train": "eefc38d1453bd1c73802d44d45affced",
+  "u8_batches_trained": true,
+  "refcv6_loader": {
+   "argv_remap": {
+    "remapped": {
+     "--anchors": {
+      "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+      "local": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+      "source": "kit default",
+      "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+     },
+     "--eval-cache": {
+      "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+      "local": "/home/nvidia/r8ns/l7cap/a6cache",
+      "source": "recorded override"
+     },
+     "--eval-labels": {
+      "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+      "local": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+      "source": "recorded override"
+     },
+     "--speed-max-sidecar-v6-eval": {
+      "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+      "local": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+      "source": "recorded override"
+     },
+     "--agent-join": {
+      "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+      "local": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+      "source": "kit default",
+      "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+     },
+     "--agent-rig-extrinsics": {
+      "thor": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+      "local": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+      "source": "recorded override"
+     },
+     "--map-gt-root": {
+      "thor": "/home/nvidia/data/sam3_gt_v3",
+      "local": "/home/nvidia/data/sam3_gt_v3",
+      "source": "kit default",
+      "basename_expected": "sam3_gt_v3"
+     },
+     "--join3d": {
+      "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+      "local": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+      "source": "kit default",
+      "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+     },
+     "--vis1-sidecar": {
+      "thor": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+      "local": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+      "source": "recorded override"
+     },
+     "--nav-compliance-tau-file": {
+      "thor": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+      "local": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+      "source": "recorded override"
+     },
+     "--map-hires-class-weights": {
+      "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+      "local": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+      "source": "kit default",
+      "basename_expected": "map_hires_class_weights_train_100x30.json"
+     },
+     "--clip-clock-sidecar": {
+      "thor": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+      "local": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+      "source": "recorded override"
+     },
+     "--r8-v9-labels-eval": {
+      "thor": "/home/nvidia/refcv8_v9labels/release/v9_labels_eval139.npz",
+      "local": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
+      "source": "recorded override"
+     },
+     "--join-defect-masks": {
+      "thor": "/home/nvidia/refcv8_run/launch_tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json",
+      "local": "/home/nvidia/r8ns/fanceil/tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json",
+      "source": "recorded override"
+     },
+     "--pose-sync-sidecar": {
+      "thor": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+      "local": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+      "source": "recorded override"
+     }
+    },
+    "dropped": {
+     "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+    },
+    "train_only_kept_unread": {
+     "--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+     "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+     "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+     "--out": "/home/nvidia/refcv8_run/runs/refcv8-r101-s0"
+    },
+    "kit": "/home/nvidia",
+    "overrides_file": "/home/nvidia/r8ns/l7cap/code/refcv8_train_remap_thor_l7cap.json"
+   },
+   "departures": [
+    "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+    "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join-defect-masks', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--pose-sync-sidecar', '--r8-v9-labels-eval', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+    "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+   ],
+   "trunk_memory_levers_built": {
+    "chunk_ckpt": 8,
+    "frozen_bn": true,
+    "bn_pinned": 104,
+    "relu_out_of_place": 100,
+    "bf16": true,
+    "channels_last": true,
+    "bn_folded": 104,
+    "dedup_frames": true
+   },
+   "trunk_memory_levers_run": {
+    "chunk_ckpt": 8,
+    "frozen_bn": true,
+    "bn_pinned": 104,
+    "relu_out_of_place": 100,
+    "bf16": true,
+    "channels_last": true,
+    "bn_folded": 104,
+    "dedup_frames": true,
+    "compile_donated_buffer": false,
+    "compile": "inductor"
+   },
+   "sampler": "ddim",
+   "anchor_file_vs_ckpt_buffers": {
+    "core.decoder.anchors": {
+     "shape": [
+      117,
+      8,
+      2
+     ],
+     "max_abs_diff": 0.0
+    },
+    "core.decoder.anchor_controls": {
+     "shape": [
+      117,
+      2
+     ],
+     "max_abs_diff": 0.0
+    }
+   }
+  },
+  "frame_memo": "ON: exact per-window backbone memo (torch.equal frames, BN frozen)"
+ },
+ "inference_seed": {
+  "seed": 0,
+  "flag": "--infer-seed (defaults to --seed)",
+  "stochastic_at_inference": true,
+  "sampler": "ddim",
+  "_reading": "a DETERMINISTIC arm ignores this seed entirely (every other eval draw in the stack is behind `self.training` and the model is in .eval()); a SAMPLER arm does not, and its inference-run variance is NOT answered by the episode-cluster bootstrap"
+ },
+ "t1_definition": {
+  "arm": "os",
+  "_is": "ONE forward pass of RefCV3Model at the window origin, consuming the observed frames, the clip's v7.2 nav token and the MEASURED v0 at t0 and nothing else, emitting the whole 6 s path as the model's OWN sel_score_v3-ranked choice among its 117 anchors (the run's OWN bank size, `model.n_anchors` \u2014 \u26d4 this line was a hardcoded '128' until D-EVALTOOL-ANCHOR-CHANCE, which is the v3 DEFAULT and NOT refcv4b's 117).",
+  "no_closed_loop_because": "refc_v3.py:480 \u2014 forward(frames, nav_cmd, v0, steps, lan, nav_known) has NO action argument; there is no per-step decode and no state that advances, so t1_eval.roll_closed (t1_eval.py:760) has no action to feed back and CANNOT be ported. The flagship is supervised AND autoregressive; that is the difference.",
+  "selection": "out['traj'] \u2014 refc_v3.py:520-525: rank = sel_score_v3 (= apply_seam_clamp(sel_score, goal_gate*score), banked at :527) masked by reach_keep, then argmax \u2014 on the hier arm; the core's own sel_score at refc.py:1531-1534 on the flat arm. \u26d4 NEVER a_star (refc_v3_train.py:460), which is the GT-nearest anchor and makes eval_traj an ORACLE-SELECTED lower bound.",
+  "inputs_admitted": [
+   "frames <= t0",
+   "nav_cmd (v7.2 token)",
+   "v0 = pose_last[:, 3] measured at t0"
+  ],
+  "ade_note": "ADE here is recomputed as an L2 norm from the dumped path. refcv3's training-time `traj` is a mean L1 PER COORDINATE (refc_v3_train.py:464-465) \u2014 \u26d4 a different statistic; never convert one into the other."
+ },
+ "tier_ruling": {
+  "arm": "os",
+  "stamped": "T1",
+  "status": "UNRULED",
+  "decided_by": "PI / Master Mind \u2014 NOT a FlyWheel",
+  "question": "does EVAL_DOCTRINE admit as T1 a model that consumes NO actions at all? Its T1 row reads 'the predictor consumes the decoder/planner's own actions', which does not literally cover refcv3.",
+  "benchmarks_recommendation": "ADMIT IT, flagged as a recommendation: the doctrine's PURPOSE is to keep future information out of inference, and a correctly-gated refcv3 forward pass (frames <= t0, nav token, measured v0, selection by sel_score_v3 and never by a_star) admits none \u2014 but keep the DISTINCT arm name `os` so no reader believes two `cl` columns describe the same procedure.",
+  "why_the_numbers_are_valid_either_way": "every headline statistic here is a MARGIN over `ha0` measured on the same windows with the same instrument (`os - ha0`), so the ruling changes the LABEL on the row, never the arithmetic in it."
+ },
+ "grid": {
+  "name": "2s",
+  "dt_s": 0.5,
+  "k": 4,
+  "horizons_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "slots": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "instants_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "dropped_model_slots": [
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_frames": 20,
+  "n_windows": 4855,
+  "n_windows_skipped": 0,
+  "skip_reasons": {},
+  "n_episodes": 139,
+  "n_episodes_available": 139,
+  "window_stride": 1,
+  "obs_window": 8,
+  "ws_is": "the PROVIDER frame index of the window origin t0 (= t + window - 1); RAW frame = ws + 2 (see corpus.frames)"
+ },
+ "arms": [
+  "os",
+  "ha",
+  "ha0",
+  "ha0_ext",
+  "oracle_sel"
+ ],
+ "tiers": {
+  "os": "T1",
+  "ha": "T1",
+  "ha0": "T1",
+  "ha0_ext": "T1",
+  "oracle_sel": "T0"
+ },
+ "arm_meaning": {
+  "os": "T1 (RULING OPEN) \u2014 ONE forward pass at t0: observed frames + the clip's v7.2 nav token + the MEASURED v0, path = the model's OWN sel_score_v3 selection out['traj']. NEVER a_star. No action input, no rollout, no loop to close \u2014 hence 'os', never 'cl'.",
+  "ha": "T1 \u2014 HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for the horizon. Consumes no recorded future. NOT the floor \u2014 a held noisy steer drifts, so this arm can be WORSE than trivial.",
+  "ha0": "T1 \u2014 \u2b50 CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE and the ONLY arm bit-comparable with refav1's (zero is zero in either action unit). \u26d4 NOT 'the echo test's real bar' \u2014 that line stood here and stack/tanitad/eval/echo_gate.py RETRACTS it by name: `ha` is 2.2x harder, and the bar is `ha` AND `ha0_ext` TOGETHER.",
+  "ha0_ext": "T1 \u2014 \u2b50\u2b50 THE ECHO CONTROL: constant a0 AND constant curvature k0, both read at the MEASURED t0 (a0 the backward difference of v, k0 the recorded channel AT t0 \u2014 where `ha` holds the one at t0-1). The SHARPENED form of `ha`, and the OTHER HALF of the acceptance bar: beating `ha` while TYING `ha0_ext` means the gain is echo, and the gate reads it that way (stack/tanitad/eval/echo_gate.py::ha0_ext). Derived by the ONE shared implementation refav1_arm.hold_ext_controls, called here with stride=1 \u2014 never re-derived (Rung A1, 2026-09-05).",
+  "oracle_sel": "T0 \u2014 the a_star-selected anchor's refinement: a_star is the GT-NEAREST anchor (refc_v3_train.py:460), so this is the CEILING, not a driveable arm. Never compared to a T1 number."
+ },
+ "absent_arms": {
+  "ol": {
+   "status": "ABSENT",
+   "arm": "ol",
+   "tier_if_it_existed": "T0",
+   "reason": "`ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (refc_v3.py:480 \u2014 the forward signature has no action argument), so integrating the recorded actions is not a rollout OF THIS MODEL: it is a property of the corpus and of the unicycle, identical for every refcv3 checkpoint ever trained. Emitting it under this model's name would put the same name on two different objects across the H-vs-F table \u2014 the exact failure D-HF-COMPARABILITY forbids.",
+   "for_comparison": "use `ha0` \u2014 the ONLY bit-comparable arm across refav1 and refcv3 \u2014 as the shared floor; the kinematic-contract control that `ol` provides lives in refav1_arm.py, where the model actually consumes actions."
+  }
+ },
+ "action_units": {
+  "recorded": "steer",
+  "L_enc_m": 2.9,
+  "applies_to": [
+   "ha",
+   "ha0_ext"
+  ],
+  "does_not_apply_to": [
+   "os",
+   "os_navshuf",
+   "oracle_sel (the model emits a PATH, not a control \u2014 there is no channel to convert)",
+   "ha0 (exactly zero in either unit)"
+  ],
+  "rule": "v2ep actions[:,0] is a road-wheel angle (physicalai.py:621 steer = arctan(L_enc*curvature), :632 the column stack). 'steer' = the repaired contract (kappa = tan(steer)/L_enc before any integration); 'kappa' = the LEGACY unconverted reading, which carries the C-REFCV3-ARM-SAME-DEFECT over-rotation. NOT comparable."
+ },
+ "hold_action_rule": "\u2b50 THE ACTION THAT **CLOSES** AT t0 \u2014 ``(a, channel-1)`` from ``v[t0]``,\n    ``v[t0-1]`` and ``kap[t0-1]``.\n\n    Every frame index is ``<= t0``, so NOTHING recorded after the window origin\n    enters the hold-action arm. (The action *opening* at t0 would need\n    ``v[t0+1]`` \u2014 a future value \u2014 which is exactly why it is not the one held.)\n    ``kap`` is ``episode.actions[:, 0]``, which ``physicalai.py:621`` wrote as a\n    road-wheel STEER ANGLE; the unit travels with the integration call, not with\n    this function.",
+ "hold_v0_rule": "\u2b50 THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for ``n`` ticks.\n\n    Integrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE.\n    It consumes strictly LESS than ``hold_controls`` \u2014 not even the last observed\n    action, only the ``v0`` the PI ruling of 2026-09-02 admits \u2014 and it is EXACTLY\n    ZERO in either action unit, which is what makes it the one arm that is\n    bit-comparable between refav1 and refcv3.",
+ "ha0_ext_rule": "``ha0_ext`` (refav1 form): the (a0, kappa0) of the MEASURED t0 state.\n\n    ``a0 = (v[i0] - v[i0-stride]) / dt`` \u2014 the SAME backward difference\n    `hold_action_controls` holds (the forward one, ``v[i0+stride]``, is future);\n    ``kappa0 = kap[i0]`` \u2014 the recorded curvature AT t0, where ``ha`` holds\n    ``kap[i0-stride]`` (`echo_gate.ha_finite_diff_accel`'s \"reads the steer at\n    t0-1\" weakness, closed). Every index is <= i0: nothing recorded after t0\n    enters. \u26a0\ufe0f `echo_gate.ha0_ext`'s STRONGER form is built on the corpus's own\n    measured ``ax``; the v2ep carries none, so this is the sharpest ADMISSIBLE\n    form on these inputs, and `ARM_MEANING` names it as such.\n\n    \u2b50 ``stride`` EXISTS SO THERE IS ONE IMPLEMENTATION, NOT TWO (Rung A1,\n    2026-09-05). refav1 windows a 0.1 s pose array on its own 0.2 s operative\n    tick, so its origin is ``i0 = 2t`` \u2014 the DEFAULT, and with it this function\n    is bit-identical to the pre-Rung-A1 file. ``refcv3_arm.py`` indexes the same\n    array at the native 0.1 s tick and calls this with ``stride=1, dt=0.1``,\n    passing ``loader=None`` (the loader is read ONLY for its ``dt``). A control\n    re-implemented beside the harness that uses it is a control that can drift\n    away from it, and then the gate measures the drift instead of the model \u2014\n    `echo_gate.ha0_ext`'s own docstring says exactly this about its shared base.\n    Pinned by ``stack/tests/test_refcv3_ha0_ext_shared.py``.\n    ",
+ "ha0_ext_call": "refav1_arm.hold_ext_controls(None, v_ep, kap_ep, t0, dt=0.1, stride=1) -> integrate_select \u2014 the SAME function refav1_arm.py calls at stride=2; pinned bit-equal by stack/tests/test_refcv3_ha0_ext_shared.py",
+ "nav_predicted": null,
+ "nav_shuffle": {
+  "seed": 0,
+  "n_windows": 4855,
+  "n_valid": 4855,
+  "n_changed": 1706,
+  "changed_frac": 0.3514,
+  "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+ },
+ "nav_feed": {
+  "mode": "perframe_full",
+  "spec": "PREREG_NAV_FEED.md",
+  "n_windows": 4855,
+  "n_token_differs_from_clip": 979,
+  "n_args_known": 2809,
+  "token_source": "v9 per-frame nav_token via ds.r8_join.item (refc_v3_train.py:4657-4668, refcv8_train.py:895-898)",
+  "args_fed": true,
+  "args_rule": "r8_nav = refcv8_train.scale_nav(item r8_nav_raw, item r8_nav_known) on the nav_true row; unknown (known=0) -> exactly zeros; shuffled / flipped rows carry the unknown row; nav-zero call carries none",
+  "other_conditions": "nav_shuffled / nav_flipped are derived from the SAME per-frame nav_true vector"
+ },
+ "nav_null": {
+  "arm": "os_navzero",
+  "how": "model(frames, nav_cmd=None, v0=v0, steps=steps) \u2014 a SEPARATE forward",
+  "why_not_nav_known": "RefCConfig.nav_known_channel is False for every v3 build (refc.py:594 default; 0 references in refc_v3.py and in _pin_trainer_cfg), and refc.py:2042-2045 RAISES if nav_known is supplied while the gate is off. There is no companion bit to set, so nav_known is not available as a null here.",
+  "why_not_a_zero_embedding": "zeroing nav_inj's output would be an INVENTED null the model was never trained to see. nav_cmd=None is the model's own documented path and the published REF-C eval convention.",
+  "what_each_condition_removes": {
+   "nav_true": "nothing \u2014 the clip's real v7.2 token, the input the run trained on",
+   "nav_shuffled": "the PAIRING between the window and its token. The nav MARGINAL is preserved exactly (it is a permutation), so the model still sees a plausible token on every window. Answers: is the model using THIS window's nav?",
+   "nav_zero": "the SIGNAL. Answers: what happens when the oracle nav is absent, i.e. at deployment. \u26d4 Not a stronger shuffle \u2014 a different intervention."
+  },
+  "what_nav_zero_removes_per_layer": {
+   "tactical (E13 PhiTac)": "REMOVED ENTIRELY \u2014 refc_v3.py:437-441 guards the injection on `nav_cmd is not None`, so nav_to_tac is never added to z_tac_raw",
+   "strategic (E13 ctx)": "REMOVED ENTIRELY \u2014 the same guard; nav_to_str is never added to ctx, and out['nav_injected'] reads False (refc_v3.py:471)",
+   "core (measurement encoder)": "\u26a0\ufe0f NOT REMOVED \u2014 COLLAPSED ONTO THE MAJORITY TOKEN. refc.py:2021-2024 substitutes one_hot(0) = 'follow'. NAV_COMMANDS (refc.py:136) has no 'unknown' entry and nav_known_channel is off, so at the core's input 'no nav' and 'a genuine follow' are BYTE-IDENTICAL \u2014 the exact defect nav_known_channel was written to fix (refc.py:594-604: 62.4 % of `follow` windows are a collapsed UNKNOWN)."
+  },
+  "\u26d4 read_it_as": "`os_navzero` removes nav COMPLETELY at 2 of the 3 layers it is injected at and PINS it to the majority class at the third. It is therefore a LOWER BOUND on how much this model leans on nav: a model that read nav only through the core would look LESS nav-dependent here than it is. State that beside any nav-dependence number taken from it.",
+  "consequence_for_the_flat_arm": "on a hier=False build there is no E13 path at all, so nav_cmd=None differs from the true nav ONLY through the core one-hot \u2014 and therefore `os_navzero` is BIT-IDENTICAL to `os` on exactly the windows whose token is already `follow` (index 0). That is the control that isolates the mechanism, and stack/tests/test_refcv3_arm.py runs it.",
+  "\u26a0\ufe0f cross_call_float32_floor": "`os_navzero` is produced by a SEPARATE forward call (nav_cmd=None is a whole-call property), while `os` and `os_navshuf` are two ROWS of one batched call. Different batch sizes take different GEMM kernel paths, so two arms that are the SAME computation still differ by a float32 floor. MEASURED on the flat smoke build, CPU: batch-2-row-0 vs batch-1 with the SAME nav = max 5.96e-07 m; the same call at MATCHED batch size with nav_cmd=None vs nav_cmd=0 = EXACTLY 0.0; a real nav difference (follow vs left) = 2.78e-02..3.41e-02 m, i.e. ~4.7e4x the floor. \u26d4 CONSEQUENCE: `trivial_profile.identical_to` uses a 1e-9 m threshold and therefore CANNOT resolve a cross-call arm as identical even when it is. Read `identical_to` for os-vs-os_navshuf (same call, exact) and IGNORE it for os-vs-os_navzero; the separation above is what makes a nav-zero difference readable, and it is 4-5 orders of magnitude clear.",
+  "why_it_is_not_the_shuffle": "MEASURED elsewhere (D-REFAV1-TAC-DECODER-PANEL): refav1's tactical head ranked turns at AUC 0.873 under true nav but collapsed to 0.520 (chance) under nav_zero, and a NAV-ONLY predictor beat the model outright (0.684 > 0.650). BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm beside the nav-shuffle one.",
+  "emitted": false,
+  "reason_absent": "--no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm)"
+ },
+ "head_conditionings": [
+  "nav_true"
+ ],
+ "fed_conditionings": [
+  "nav_true"
+ ],
+ "sidecar_schema": {
+  "sel_idx": "the anchor the MODEL selected (out['sel_idx'])",
+  "sel_idx_base": "hier only: the pre-graft core selection (out['sel_idx_base'])",
+  "sel_score_max": "max of the ranking score the selection argmaxed over",
+  "a_star": "the GT-NEAREST anchor (refc_v3_train.py:460) \u2014 the ORACLE, banked as a diagnostic; the deployed arm NEVER selects with it",
+  "anchor_acc": "1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); chance = 1/117 = 0.008547 \u2014 DERIVED from THIS run's bank (`model.n_anchors`), which is why it may differ from another arm's. \u26d4 Never compare an `anchor_acc` against a bank size it was not measured on.",
+  "sel_agrees_oracle": "1.0 where sel_idx == a_star \u2014 how much of `traj` was selection rather than refinement",
+  "goal_gate": "hier only: out['goal_gate_value'] \u2014 the zero-init E9 gate",
+  "goal_score_absmean": "hier only: the SCALE the gate multiplies. The gate alone cannot distinguish 'has not opened yet' from 'will never open'; both are required.",
+  "goal_dist_sel": "hier only: the selected anchor's goal distance",
+  "lat_label/lon_label": "the v7.2 tactical class ids (IGNORE_ID -> -100)",
+  "route_label": "the v2.1 route target (ROUTE_UNKNOWN/invalid -> -100)",
+  "nav_cmd/nav_cmd_shuf/nav_valid": "the fed token, its permutation, validity",
+  "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head argmaxes under each nav conditioning (-1 = the head does not exist or the conditioning was not rolled). \u2b50 nav_zero comes from the SEPARATE nav_cmd=None forward, not from a row of the fed batch \u2014 see NAV_NULL",
+  "nav_injected_true/nav_injected_zero": "out['nav_injected'] (refc_v3.py:471) under each forward: the E13 edge is LIVE under the fed nav and DEAD under nav_cmd=None. A conditioning edge that silently no-ops is the advertised-but-inert defect; this makes it visible per window.",
+  "ha_controls": "the held (a, channel-1) actually integrated, in the run's declared action units",
+  "plan_full_{cond}": "[S, 2] the emitted plan out['traj'] at EVERY model slot (not the dump grid) under each conditioning",
+  "gstr_{cond}": "[3] the strategic goal g_str = (cos, sin, dist_pref) (hier only)",
+  "sel_idx_{cond}": "the SELECTED anchor under each conditioning",
+  "sel_bank_{cond}": "[S, 2] the selected anchor's UNREFINED bank path (out['anchor_bank'][sel_idx]) \u2014 the selection surface",
+  "fan_term_heading_{cond}": "[N_anchors] terminal heading of every REFINED candidate (out['anchor_traj']) \u2014 fan coverage",
+  "reach_keep_{cond}": "[N_anchors] the S2 reach mask (1.0 = survivor)",
+  "gt_future_ext": "[60, 4] the recorded future poses (WORLD frame), clamped at the episode end; gt_future_valid_ext [60] says where",
+  "pose_last": "[4] (x, y, yaw, v) at t0 (world frame)",
+  "ego_t0": "[4] (v0, a_long, yaw_rate, curvature) at t0 \u2014 refc_v3.ego_state_at_t0 without the keep bit",
+  "ep_poses": "[T, 4] the episode's PROVIDER poses, once per file (for the label time-base control)"
+ },
+ "ego_state_fed": false,
+ "ablation": {
+  "applied": [],
+  "requested": [],
+  "prereg": "PREREG_REFCV4B_HIERARCHY_EVAL.md \u00a73",
+  "is": "FULL \u2014 the final checkpoint as trained",
+  "verified": {},
+  "n_gstr_windows": 0
+ },
+ "navcomp_sidecar": true,
+ "corpus": {
+  "episodes": "/home/nvidia/r8ns/l7cap/a6cache",
+  "labels_path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+  "n_episodes_available": 139,
+  "labels": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_records": 4572,
+   "n_episodes": 139,
+   "n_joined": 139,
+   "join_key": "stable_episode_id(clip_id) (the trainer's key)"
+  },
+  "frames": {
+   "n_stack": 3,
+   "provider_to_raw_frame_offset": 2,
+   "rule": "v2_dataset.py:36-38"
+  },
+  "refcv6_channels": {
+   "nav": {
+    "n_clips": 139,
+    "follow": 90,
+    "left": 24,
+    "right": 25,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+    "allow_oracle_nav": true
+   },
+   "max_speed_v6": {
+    "sidecar": "refcv6_speed_max_v8_train.jsonl",
+    "n_rows": 4572,
+    "n_valid": 4572,
+    "n_over_ceiling": 86,
+    "over_ceiling_frac": 0.01881,
+    "source_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+    "source_labels": "s2_labels_v8_train.jsonl.gz",
+    "join_key": "sid = stable_episode_id(clip_id)",
+    "ladder_kmh": [
+     30,
+     50,
+     100,
+     120
+    ],
+    "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+    "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+    "channel": "refcv8 label source -> the refcv6 4-way one-hot (road-type step fed, never v_hi_ms)",
+    "source": "label",
+    "road_type_kmh": [
+     30,
+     50,
+     100,
+     120
+    ],
+    "histogram_kmh": {
+     "30": 1741,
+     "50": 1593,
+     "100": 1014,
+     "120": 224
+    },
+    "n_unknown": 0,
+    "exact_future_speed_fed": false,
+    "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+    "n_windows": 23751,
+    "n_windows_fed": 23751,
+    "window_ceiling_frac": 1.0,
+    "window_histogram_kmh": {
+     "30": 7864,
+     "50": 8718,
+     "100": 5984,
+     "120": 1185
+    },
+    "window_n_unknown": 0
+   },
+   "labels": {
+    "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+    "n_records": 4572
+   }
+  },
+  "window_restriction": {
+   "rule": "the eval dataset's V3Dataset index restricted to t % 5 == 0 (ws = t + W - 1), TRAIN clips (SPEC A6 precedent)",
+   "n_index_before": 23751,
+   "n_index_after": 4855,
+   "n_clips_after": 139,
+   "smoke_max_clips": null,
+   "smoke_max_windows_per_clip": null
+  },
+  "nav": {
+   "source": "v72",
+   "stats": {
+    "n_clips": 139,
+    "follow": 90,
+    "left": 24,
+    "right": 25,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+    "allow_oracle_nav": true
+   },
+   "trained_on": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)"
+  }
+ },
+ "episodes": [
+  {
+   "file_index": 0,
+   "episode_index": 0,
+   "clip_id": "clip-sha12-07b61be0acf7",
+   "episode_id": 262433755479042650,
+   "n_windows": 35
+  },
+  {
+   "file_index": 1,
+   "episode_index": 1,
+   "clip_id": "clip-sha12-03dc6c78adb9",
+   "episode_id": 7325545196360342104,
+   "n_windows": 35
+  },
+  {
+   "file_index": 2,
+   "episode_index": 2,
+   "clip_id": "clip-sha12-0252e8fcd0a4",
+   "episode_id": 8983413519504320124,
+   "n_windows": 35
+  },
+  {
+   "file_index": 3,
+   "episode_index": 3,
+   "clip_id": "clip-sha12-059b96507a37",
+   "episode_id": 6629332065565156788,
+   "n_windows": 35
+  },
+  {
+   "file_index": 4,
+   "episode_index": 4,
+   "clip_id": "clip-sha12-02b239dd8a35",
+   "episode_id": 5906241581166519616,
+   "n_windows": 35
+  },
+  {
+   "file_index": 5,
+   "episode_index": 5,
+   "clip_id": "clip-sha12-03a7f1fdd7ca",
+   "episode_id": 6844927284228479469,
+   "n_windows": 35
+  },
+  {
+   "file_index": 6,
+   "episode_index": 6,
+   "clip_id": "clip-sha12-0545e84987bb",
+   "episode_id": 3218481787169692361,
+   "n_windows": 35
+  },
+  {
+   "file_index": 7,
+   "episode_index": 7,
+   "clip_id": "clip-sha12-035cc36de712",
+   "episode_id": 7094553126422214645,
+   "n_windows": 35
+  },
+  {
+   "file_index": 8,
+   "episode_index": 8,
+   "clip_id": "clip-sha12-071ede2f8c8d",
+   "episode_id": 8688848939497177204,
+   "n_windows": 35
+  },
+  {
+   "file_index": 9,
+   "episode_index": 9,
+   "clip_id": "clip-sha12-036578a19f38",
+   "episode_id": 1204925856658491734,
+   "n_windows": 35
+  },
+  {
+   "file_index": 10,
+   "episode_index": 10,
+   "clip_id": "clip-sha12-00407448d806",
+   "episode_id": 3182937994908551050,
+   "n_windows": 35
+  },
+  {
+   "file_index": 11,
+   "episode_index": 11,
+   "clip_id": "clip-sha12-04922c4ff16d",
+   "episode_id": 6032780539247100003,
+   "n_windows": 35
+  },
+  {
+   "file_index": 12,
+   "episode_index": 12,
+   "clip_id": "clip-sha12-029a585e015e",
+   "episode_id": 921906866535333030,
+   "n_windows": 35
+  },
+  {
+   "file_index": 13,
+   "episode_index": 13,
+   "clip_id": "clip-sha12-0775378976b8",
+   "episode_id": 4576793478236604370,
+   "n_windows": 35
+  },
+  {
+   "file_index": 14,
+   "episode_index": 14,
+   "clip_id": "clip-sha12-069ea0e95edb",
+   "episode_id": 7643469732989216536,
+   "n_windows": 35
+  },
+  {
+   "file_index": 15,
+   "episode_index": 15,
+   "clip_id": "clip-sha12-014e4dd092be",
+   "episode_id": 4942244001661201859,
+   "n_windows": 35
+  },
+  {
+   "file_index": 16,
+   "episode_index": 16,
+   "clip_id": "clip-sha12-069fe5a48991",
+   "episode_id": 5844889943644759940,
+   "n_windows": 35
+  },
+  {
+   "file_index": 17,
+   "episode_index": 17,
+   "clip_id": "clip-sha12-029f313f841a",
+   "episode_id": 2458961592719611846,
+   "n_windows": 35
+  },
+  {
+   "file_index": 18,
+   "episode_index": 18,
+   "clip_id": "clip-sha12-004ec4b2780d",
+   "episode_id": 3706633149995020122,
+   "n_windows": 35
+  },
+  {
+   "file_index": 19,
+   "episode_index": 19,
+   "clip_id": "clip-sha12-086812263073",
+   "episode_id": 2632330811646230472,
+   "n_windows": 35
+  },
+  {
+   "file_index": 20,
+   "episode_index": 20,
+   "clip_id": "clip-sha12-036682d50bf7",
+   "episode_id": 2903338125945165142,
+   "n_windows": 35
+  },
+  {
+   "file_index": 21,
+   "episode_index": 21,
+   "clip_id": "clip-sha12-03038b162025",
+   "episode_id": 8979136879507254485,
+   "n_windows": 35
+  },
+  {
+   "file_index": 22,
+   "episode_index": 22,
+   "clip_id": "clip-sha12-037d9e68df6f",
+   "episode_id": 6974395433418179674,
+   "n_windows": 35
+  },
+  {
+   "file_index": 23,
+   "episode_index": 23,
+   "clip_id": "clip-sha12-0498bf3ff1b0",
+   "episode_id": 3707315420348541716,
+   "n_windows": 35
+  },
+  {
+   "file_index": 24,
+   "episode_index": 24,
+   "clip_id": "clip-sha12-0783de21a057",
+   "episode_id": 6298433848504644736,
+   "n_windows": 35
+  },
+  {
+   "file_index": 25,
+   "episode_index": 25,
+   "clip_id": "clip-sha12-04c95c9103a9",
+   "episode_id": 5600673232114040804,
+   "n_windows": 35
+  },
+  {
+   "file_index": 26,
+   "episode_index": 26,
+   "clip_id": "clip-sha12-077bf5cc1244",
+   "episode_id": 6635051378624468882,
+   "n_windows": 35
+  },
+  {
+   "file_index": 27,
+   "episode_index": 27,
+   "clip_id": "clip-sha12-00a7249b9758",
+   "episode_id": 3737770847536198234,
+   "n_windows": 35
+  },
+  {
+   "file_index": 28,
+   "episode_index": 28,
+   "clip_id": "clip-sha12-021be01a117d",
+   "episode_id": 4130088730192076222,
+   "n_windows": 35
+  },
+  {
+   "file_index": 29,
+   "episode_index": 29,
+   "clip_id": "clip-sha12-04e9094ada2b",
+   "episode_id": 7130527734464456811,
+   "n_windows": 35
+  },
+  {
+   "file_index": 30,
+   "episode_index": 30,
+   "clip_id": "clip-sha12-042826a6faf9",
+   "episode_id": 8506180231424617443,
+   "n_windows": 35
+  },
+  {
+   "file_index": 31,
+   "episode_index": 31,
+   "clip_id": "clip-sha12-07e14b7dd6c5",
+   "episode_id": 1085295708590952456,
+   "n_windows": 35
+  },
+  {
+   "file_index": 32,
+   "episode_index": 32,
+   "clip_id": "clip-sha12-00e879180df8",
+   "episode_id": 3821554248866482764,
+   "n_windows": 35
+  },
+  {
+   "file_index": 33,
+   "episode_index": 33,
+   "clip_id": "clip-sha12-01156c9ce069",
+   "episode_id": 4937510725089360509,
+   "n_windows": 35
+  },
+  {
+   "file_index": 34,
+   "episode_index": 34,
+   "clip_id": "clip-sha12-0376ab382692",
+   "episode_id": 8529622020099963050,
+   "n_windows": 35
+  },
+  {
+   "file_index": 35,
+   "episode_index": 35,
+   "clip_id": "clip-sha12-074aac717706",
+   "episode_id": 536967013798073459,
+   "n_windows": 35
+  },
+  {
+   "file_index": 36,
+   "episode_index": 36,
+   "clip_id": "clip-sha12-02607661a547",
+   "episode_id": 4391176909001399841,
+   "n_windows": 35
+  },
+  {
+   "file_index": 37,
+   "episode_index": 37,
+   "clip_id": "clip-sha12-0710811e8c77",
+   "episode_id": 8336262567004631510,
+   "n_windows": 35
+  },
+  {
+   "file_index": 38,
+   "episode_index": 38,
+   "clip_id": "clip-sha12-047c28976246",
+   "episode_id": 2558896015059569631,
+   "n_windows": 35
+  },
+  {
+   "file_index": 39,
+   "episode_index": 39,
+   "clip_id": "clip-sha12-06286e9cd123",
+   "episode_id": 7525302905125361629,
+   "n_windows": 35
+  },
+  {
+   "file_index": 40,
+   "episode_index": 40,
+   "clip_id": "clip-sha12-037758fd2a58",
+   "episode_id": 8109774493893137545,
+   "n_windows": 33
+  },
+  {
+   "file_index": 41,
+   "episode_index": 41,
+   "clip_id": "clip-sha12-0690cc9e2d6a",
+   "episode_id": 7114879137900306718,
+   "n_windows": 35
+  },
+  {
+   "file_index": 42,
+   "episode_index": 42,
+   "clip_id": "clip-sha12-04406a6c5417",
+   "episode_id": 1725146305230387500,
+   "n_windows": 35
+  },
+  {
+   "file_index": 43,
+   "episode_index": 43,
+   "clip_id": "clip-sha12-080368c0874b",
+   "episode_id": 38600957137404375,
+   "n_windows": 35
+  },
+  {
+   "file_index": 44,
+   "episode_index": 44,
+   "clip_id": "clip-sha12-051e7d2ff48a",
+   "episode_id": 6016961964264814577,
+   "n_windows": 35
+  },
+  {
+   "file_index": 45,
+   "episode_index": 45,
+   "clip_id": "clip-sha12-005f95c23c6c",
+   "episode_id": 801675486447647274,
+   "n_windows": 35
+  },
+  {
+   "file_index": 46,
+   "episode_index": 46,
+   "clip_id": "clip-sha12-084d8550a1f4",
+   "episode_id": 8386550258421488261,
+   "n_windows": 35
+  },
+  {
+   "file_index": 47,
+   "episode_index": 47,
+   "clip_id": "clip-sha12-00719cc697cc",
+   "episode_id": 8951689235626968768,
+   "n_windows": 35
+  },
+  {
+   "file_index": 48,
+   "episode_index": 48,
+   "clip_id": "clip-sha12-035b59b5b801",
+   "episode_id": 2177182071136653916,
+   "n_windows": 35
+  },
+  {
+   "file_index": 49,
+   "episode_index": 49,
+   "clip_id": "clip-sha12-0593d0a0d60c",
+   "episode_id": 2016887660044163666,
+   "n_windows": 35
+  },
+  {
+   "file_index": 50,
+   "episode_index": 50,
+   "clip_id": "clip-sha12-01fe3cfed9f0",
+   "episode_id": 8407314277704537905,
+   "n_windows": 35
+  },
+  {
+   "file_index": 51,
+   "episode_index": 51,
+   "clip_id": "clip-sha12-0710f411498c",
+   "episode_id": 6421687583579910817,
+   "n_windows": 35
+  },
+  {
+   "file_index": 52,
+   "episode_index": 52,
+   "clip_id": "clip-sha12-04b3621a7b46",
+   "episode_id": 5339835808160144038,
+   "n_windows": 35
+  },
+  {
+   "file_index": 53,
+   "episode_index": 53,
+   "clip_id": "clip-sha12-00a9f72ef853",
+   "episode_id": 4738983733521988797,
+   "n_windows": 35
+  },
+  {
+   "file_index": 54,
+   "episode_index": 54,
+   "clip_id": "clip-sha12-03f0be20346c",
+   "episode_id": 3585823251355975472,
+   "n_windows": 35
+  },
+  {
+   "file_index": 55,
+   "episode_index": 55,
+   "clip_id": "clip-sha12-0184f64720f4",
+   "episode_id": 2764736746295589121,
+   "n_windows": 35
+  },
+  {
+   "file_index": 56,
+   "episode_index": 56,
+   "clip_id": "clip-sha12-06f7fe68c3ca",
+   "episode_id": 9073513983515731758,
+   "n_windows": 35
+  },
+  {
+   "file_index": 57,
+   "episode_index": 57,
+   "clip_id": "clip-sha12-0683cdee76fa",
+   "episode_id": 6253321303100158591,
+   "n_windows": 35
+  },
+  {
+   "file_index": 58,
+   "episode_index": 58,
+   "clip_id": "clip-sha12-02094073847f",
+   "episode_id": 8396169231678012934,
+   "n_windows": 35
+  },
+  {
+   "file_index": 59,
+   "episode_index": 59,
+   "clip_id": "clip-sha12-0119f6cd59a5",
+   "episode_id": 5220195561797962415,
+   "n_windows": 34
+  },
+  {
+   "file_index": 60,
+   "episode_index": 60,
+   "clip_id": "clip-sha12-04ea6bda95b4",
+   "episode_id": 8773558564384804257,
+   "n_windows": 35
+  },
+  {
+   "file_index": 61,
+   "episode_index": 61,
+   "clip_id": "clip-sha12-01cb74650aff",
+   "episode_id": 5387660108689144909,
+   "n_windows": 35
+  },
+  {
+   "file_index": 62,
+   "episode_index": 62,
+   "clip_id": "clip-sha12-0198206e0111",
+   "episode_id": 1428837238990827176,
+   "n_windows": 35
+  },
+  {
+   "file_index": 63,
+   "episode_index": 63,
+   "clip_id": "clip-sha12-046846d02831",
+   "episode_id": 1352937956978700362,
+   "n_windows": 35
+  },
+  {
+   "file_index": 64,
+   "episode_index": 64,
+   "clip_id": "clip-sha12-02dcd655883e",
+   "episode_id": 3543662530355956332,
+   "n_windows": 35
+  },
+  {
+   "file_index": 65,
+   "episode_index": 65,
+   "clip_id": "clip-sha12-0275ce06ddfd",
+   "episode_id": 7213322256628201148,
+   "n_windows": 34
+  },
+  {
+   "file_index": 66,
+   "episode_index": 66,
+   "clip_id": "clip-sha12-07d19c1514d7",
+   "episode_id": 5998031493785275199,
+   "n_windows": 35
+  },
+  {
+   "file_index": 67,
+   "episode_index": 67,
+   "clip_id": "clip-sha12-04b32d12ac9f",
+   "episode_id": 3904410068596580923,
+   "n_windows": 35
+  },
+  {
+   "file_index": 68,
+   "episode_index": 68,
+   "clip_id": "clip-sha12-04f89dcd1e58",
+   "episode_id": 3661944992266386401,
+   "n_windows": 35
+  },
+  {
+   "file_index": 69,
+   "episode_index": 69,
+   "clip_id": "clip-sha12-05c575ed45be",
+   "episode_id": 5570814556911559136,
+   "n_windows": 35
+  },
+  {
+   "file_index": 70,
+   "episode_index": 70,
+   "clip_id": "clip-sha12-023f9679d5f6",
+   "episode_id": 6417934414185088651,
+   "n_windows": 35
+  },
+  {
+   "file_index": 71,
+   "episode_index": 71,
+   "clip_id": "clip-sha12-00d3108ba31a",
+   "episode_id": 6807972947386487696,
+   "n_windows": 35
+  },
+  {
+   "file_index": 72,
+   "episode_index": 72,
+   "clip_id": "clip-sha12-0384547594c4",
+   "episode_id": 2500631862771705997,
+   "n_windows": 35
+  },
+  {
+   "file_index": 73,
+   "episode_index": 73,
+   "clip_id": "clip-sha12-00bbd5035b2c",
+   "episode_id": 643590648108415378,
+   "n_windows": 35
+  },
+  {
+   "file_index": 74,
+   "episode_index": 74,
+   "clip_id": "clip-sha12-037cfbe80493",
+   "episode_id": 6932813300829262516,
+   "n_windows": 35
+  },
+  {
+   "file_index": 75,
+   "episode_index": 75,
+   "clip_id": "clip-sha12-05fb34da0770",
+   "episode_id": 126449541205190687,
+   "n_windows": 35
+  },
+  {
+   "file_index": 76,
+   "episode_index": 76,
+   "clip_id": "clip-sha12-054327c6bd81",
+   "episode_id": 806393547123258334,
+   "n_windows": 35
+  },
+  {
+   "file_index": 77,
+   "episode_index": 77,
+   "clip_id": "clip-sha12-04a1e4982766",
+   "episode_id": 5443427460260986853,
+   "n_windows": 35
+  },
+  {
+   "file_index": 78,
+   "episode_index": 78,
+   "clip_id": "clip-sha12-034334ad956e",
+   "episode_id": 6915796390906564991,
+   "n_windows": 35
+  },
+  {
+   "file_index": 79,
+   "episode_index": 79,
+   "clip_id": "clip-sha12-0045221d060c",
+   "episode_id": 3362655590490033972,
+   "n_windows": 35
+  },
+  {
+   "file_index": 80,
+   "episode_index": 80,
+   "clip_id": "clip-sha12-03952195f146",
+   "episode_id": 4460537016638685943,
+   "n_windows": 35
+  },
+  {
+   "file_index": 81,
+   "episode_index": 81,
+   "clip_id": "clip-sha12-014a1bcdc965",
+   "episode_id": 4170951777193444563,
+   "n_windows": 34
+  },
+  {
+   "file_index": 82,
+   "episode_index": 82,
+   "clip_id": "clip-sha12-02f7878099fa",
+   "episode_id": 8912252556681195059,
+   "n_windows": 34
+  },
+  {
+   "file_index": 83,
+   "episode_index": 83,
+   "clip_id": "clip-sha12-028f78772fda",
+   "episode_id": 6275651200426822541,
+   "n_windows": 35
+  },
+  {
+   "file_index": 84,
+   "episode_index": 84,
+   "clip_id": "clip-sha12-02bffd58099a",
+   "episode_id": 8917998429905209890,
+   "n_windows": 35
+  },
+  {
+   "file_index": 85,
+   "episode_index": 85,
+   "clip_id": "clip-sha12-006fd1b65c1b",
+   "episode_id": 4966163608099211999,
+   "n_windows": 35
+  },
+  {
+   "file_index": 86,
+   "episode_index": 86,
+   "clip_id": "clip-sha12-036c18fd3e43",
+   "episode_id": 6667434664952040917,
+   "n_windows": 34
+  },
+  {
+   "file_index": 87,
+   "episode_index": 87,
+   "clip_id": "clip-sha12-054120f27048",
+   "episode_id": 4958042605139719378,
+   "n_windows": 34
+  },
+  {
+   "file_index": 88,
+   "episode_index": 88,
+   "clip_id": "clip-sha12-056698c1d76b",
+   "episode_id": 6269755172184876161,
+   "n_windows": 35
+  },
+  {
+   "file_index": 89,
+   "episode_index": 89,
+   "clip_id": "clip-sha12-001e7d520dd0",
+   "episode_id": 689376903817811424,
+   "n_windows": 35
+  },
+  {
+   "file_index": 90,
+   "episode_index": 90,
+   "clip_id": "clip-sha12-01fbe016688e",
+   "episode_id": 4591456645444565391,
+   "n_windows": 35
+  },
+  {
+   "file_index": 91,
+   "episode_index": 91,
+   "clip_id": "clip-sha12-075e230dacec",
+   "episode_id": 5654477120640850152,
+   "n_windows": 35
+  },
+  {
+   "file_index": 92,
+   "episode_index": 92,
+   "clip_id": "clip-sha12-038351da7f32",
+   "episode_id": 1786123677177512036,
+   "n_windows": 35
+  },
+  {
+   "file_index": 93,
+   "episode_index": 93,
+   "clip_id": "clip-sha12-0858c2406c24",
+   "episode_id": 6346536791574557312,
+   "n_windows": 35
+  },
+  {
+   "file_index": 94,
+   "episode_index": 94,
+   "clip_id": "clip-sha12-03df23057f5a",
+   "episode_id": 8091307154935410486,
+   "n_windows": 35
+  },
+  {
+   "file_index": 95,
+   "episode_index": 95,
+   "clip_id": "clip-sha12-0538720ebf05",
+   "episode_id": 3934111227368008622,
+   "n_windows": 35
+  },
+  {
+   "file_index": 96,
+   "episode_index": 96,
+   "clip_id": "clip-sha12-00b751945401",
+   "episode_id": 4469994793599586224,
+   "n_windows": 35
+  },
+  {
+   "file_index": 97,
+   "episode_index": 97,
+   "clip_id": "clip-sha12-02dba36f981f",
+   "episode_id": 7029003093368036352,
+   "n_windows": 35
+  },
+  {
+   "file_index": 98,
+   "episode_index": 98,
+   "clip_id": "clip-sha12-03a02abb8f1d",
+   "episode_id": 5632203306443392032,
+   "n_windows": 35
+  },
+  {
+   "file_index": 99,
+   "episode_index": 99,
+   "clip_id": "clip-sha12-0622a7903174",
+   "episode_id": 9153862930649490248,
+   "n_windows": 35
+  },
+  {
+   "file_index": 100,
+   "episode_index": 100,
+   "clip_id": "clip-sha12-0587cfbcd0c6",
+   "episode_id": 5799158555877271396,
+   "n_windows": 35
+  },
+  {
+   "file_index": 101,
+   "episode_index": 101,
+   "clip_id": "clip-sha12-086830066c20",
+   "episode_id": 6584387173222094155,
+   "n_windows": 35
+  },
+  {
+   "file_index": 102,
+   "episode_index": 102,
+   "clip_id": "clip-sha12-055107ecbc4f",
+   "episode_id": 94540889556902550,
+   "n_windows": 35
+  },
+  {
+   "file_index": 103,
+   "episode_index": 103,
+   "clip_id": "clip-sha12-06e92f4a4413",
+   "episode_id": 6020972786568027167,
+   "n_windows": 35
+  },
+  {
+   "file_index": 104,
+   "episode_index": 104,
+   "clip_id": "clip-sha12-01ebf2a80bbd",
+   "episode_id": 3318364395293555027,
+   "n_windows": 35
+  },
+  {
+   "file_index": 105,
+   "episode_index": 105,
+   "clip_id": "clip-sha12-03d33eec7ae0",
+   "episode_id": 1631735125529044554,
+   "n_windows": 35
+  },
+  {
+   "file_index": 106,
+   "episode_index": 106,
+   "clip_id": "clip-sha12-07f23c306783",
+   "episode_id": 6712790336440292704,
+   "n_windows": 35
+  },
+  {
+   "file_index": 107,
+   "episode_index": 107,
+   "clip_id": "clip-sha12-082fe957ec14",
+   "episode_id": 3636519548100271440,
+   "n_windows": 35
+  },
+  {
+   "file_index": 108,
+   "episode_index": 108,
+   "clip_id": "clip-sha12-038a50273027",
+   "episode_id": 3528809296533693719,
+   "n_windows": 35
+  },
+  {
+   "file_index": 109,
+   "episode_index": 109,
+   "clip_id": "clip-sha12-04e941edb256",
+   "episode_id": 6177724719345751663,
+   "n_windows": 35
+  },
+  {
+   "file_index": 110,
+   "episode_index": 110,
+   "clip_id": "clip-sha12-003b733271dd",
+   "episode_id": 1590349508715903476,
+   "n_windows": 35
+  },
+  {
+   "file_index": 111,
+   "episode_index": 111,
+   "clip_id": "clip-sha12-03ef04f0d748",
+   "episode_id": 4389363965584863604,
+   "n_windows": 35
+  },
+  {
+   "file_index": 112,
+   "episode_index": 112,
+   "clip_id": "clip-sha12-074f3464855b",
+   "episode_id": 4996857452382496148,
+   "n_windows": 34
+  },
+  {
+   "file_index": 113,
+   "episode_index": 113,
+   "clip_id": "clip-sha12-0749625285f4",
+   "episode_id": 9070113749847624995,
+   "n_windows": 35
+  },
+  {
+   "file_index": 114,
+   "episode_index": 114,
+   "clip_id": "clip-sha12-0501aaf9d954",
+   "episode_id": 7544670938448210678,
+   "n_windows": 35
+  },
+  {
+   "file_index": 115,
+   "episode_index": 115,
+   "clip_id": "clip-sha12-04e59df09d92",
+   "episode_id": 7408384309953470720,
+   "n_windows": 35
+  },
+  {
+   "file_index": 116,
+   "episode_index": 116,
+   "clip_id": "clip-sha12-0825f5ac9c7e",
+   "episode_id": 8489082112637836455,
+   "n_windows": 35
+  },
+  {
+   "file_index": 117,
+   "episode_index": 117,
+   "clip_id": "clip-sha12-046c8d9a8cc0",
+   "episode_id": 7146364396970144337,
+   "n_windows": 35
+  },
+  {
+   "file_index": 118,
+   "episode_index": 118,
+   "clip_id": "clip-sha12-032f081d34f1",
+   "episode_id": 214366083674192260,
+   "n_windows": 35
+  },
+  {
+   "file_index": 119,
+   "episode_index": 119,
+   "clip_id": "clip-sha12-0189e6128422",
+   "episode_id": 5217263489856820782,
+   "n_windows": 35
+  },
+  {
+   "file_index": 120,
+   "episode_index": 120,
+   "clip_id": "clip-sha12-086bb25ad2fd",
+   "episode_id": 2027969720123130067,
+   "n_windows": 35
+  },
+  {
+   "file_index": 121,
+   "episode_index": 121,
+   "clip_id": "clip-sha12-070985985c35",
+   "episode_id": 6634795893710314496,
+   "n_windows": 35
+  },
+  {
+   "file_index": 122,
+   "episode_index": 122,
+   "clip_id": "clip-sha12-072b6ef6a1a0",
+   "episode_id": 479859090658633223,
+   "n_windows": 35
+  },
+  {
+   "file_index": 123,
+   "episode_index": 123,
+   "clip_id": "clip-sha12-03f43c1ed521",
+   "episode_id": 1870624059529842992,
+   "n_windows": 35
+  },
+  {
+   "file_index": 124,
+   "episode_index": 124,
+   "clip_id": "clip-sha12-05d89c5418a3",
+   "episode_id": 4050843285348482136,
+   "n_windows": 34
+  },
+  {
+   "file_index": 125,
+   "episode_index": 125,
+   "clip_id": "clip-sha12-00ed1965cf1d",
+   "episode_id": 8958217638310775258,
+   "n_windows": 35
+  },
+  {
+   "file_index": 126,
+   "episode_index": 126,
+   "clip_id": "clip-sha12-0257e4426c97",
+   "episode_id": 9006870084334713740,
+   "n_windows": 35
+  },
+  {
+   "file_index": 127,
+   "episode_index": 127,
+   "clip_id": "clip-sha12-059da4abab9b",
+   "episode_id": 8911939319969827044,
+   "n_windows": 35
+  },
+  {
+   "file_index": 128,
+   "episode_index": 128,
+   "clip_id": "clip-sha12-055824e58835",
+   "episode_id": 2484560726688751216,
+   "n_windows": 35
+  },
+  {
+   "file_index": 129,
+   "episode_index": 129,
+   "clip_id": "clip-sha12-07659d289daf",
+   "episode_id": 1846446927378639777,
+   "n_windows": 35
+  },
+  {
+   "file_index": 130,
+   "episode_index": 130,
+   "clip_id": "clip-sha12-078ef6858bc6",
+   "episode_id": 1182637849650846127,
+   "n_windows": 35
+  },
+  {
+   "file_index": 131,
+   "episode_index": 131,
+   "clip_id": "clip-sha12-01aab543e9a4",
+   "episode_id": 3554999017495317566,
+   "n_windows": 35
+  },
+  {
+   "file_index": 132,
+   "episode_index": 132,
+   "clip_id": "clip-sha12-0096d5aae681",
+   "episode_id": 7932513910693121601,
+   "n_windows": 35
+  },
+  {
+   "file_index": 133,
+   "episode_index": 133,
+   "clip_id": "clip-sha12-02360db99599",
+   "episode_id": 6678674012227697019,
+   "n_windows": 35
+  },
+  {
+   "file_index": 134,
+   "episode_index": 134,
+   "clip_id": "clip-sha12-035e022d854b",
+   "episode_id": 3689727432194731627,
+   "n_windows": 35
+  },
+  {
+   "file_index": 135,
+   "episode_index": 135,
+   "clip_id": "clip-sha12-00ab8f697a09",
+   "episode_id": 4680945431307300494,
+   "n_windows": 35
+  },
+  {
+   "file_index": 136,
+   "episode_index": 136,
+   "clip_id": "clip-sha12-00877c7351bf",
+   "episode_id": 2497947870366005262,
+   "n_windows": 35
+  },
+  {
+   "file_index": 137,
+   "episode_index": 137,
+   "clip_id": "clip-sha12-04a26c244584",
+   "episode_id": 1837110545185404342,
+   "n_windows": 35
+  },
+  {
+   "file_index": 138,
+   "episode_index": 138,
+   "clip_id": "clip-sha12-00cac5692bdc",
+   "episode_id": 6321648094155719148,
+   "n_windows": 35
+  }
+ ],
+ "wallclock_s": 1449.1,
+ "first_forward_s": 0.9480202198028564,
+ "_provenance": {
+  "verdict": "REAL_CHECKPOINT_ON_REAL_CORPUS",
+  "checkpoint_scale": "TRAINED",
+  "corpus_scale": "FULL",
+  "bank_scale": "REAL",
+  "unverified_on_a_real_checkpoint": false,
+  "discriminators": {
+   "model.step": 48852,
+   "model.n_anchors": 117,
+   "grid.n_episodes": 139,
+   "grid.n_windows": 4855
+  },
+  "thresholds": {
+   "trained_step_at_or_above": 1000,
+   "full_corpus_episodes_at_or_above": 10,
+   "full_corpus_windows_at_or_above": 500,
+   "real_bank_anchors_above": 64
+  },
+  "not_a_discriminator": {
+   "model.state_dict_load": "CARRIED for the record, NEVER read here: a random-init model saved and reloaded also reports empty missing/unexpected keys, so a clean strict load says nothing about trainedness",
+   "the tool's own validation history": "`_unverified` used to be emitted unconditionally and therefore described the TOOL, not the RUN \u2014 that is the defect this block replaces (D-EVALTOOL-STAMP-BLIND)"
+  },
+  "_reading": "SYNTHETIC_FIXTURE = a smoke/random-init checkpoint; nothing here is a result. REAL_CHECKPOINT_ON_SMOKE_CORPUS = a real arm exercised on a slice \u2014 the TOOL is verified, the NUMBERS are not an eval. REAL_CHECKPOINT_ON_REAL_CORPUS = a quotable arm, subject to its tier stamp and estimator as usual. `bank_scale` is reported BESIDE the verdict rather than folded into it: a real step count on a smoke-sized bank is a coherent thing to want (a long smoke run) and must stay visible instead of being averaged into one label.",
+  "_not_what_this_proves": "the stamp reads the run's SELF-REPORTED fields. It ends the unconditional boilerplate \u2014 it is NOT a forgery detector, and a manifest whose `model.step` is wrong is outside what any stamp can see."
+ }
+}

@@ -1,0 +1,1714 @@
+{
+  "meta": {
+    "n_rows": 2372,
+    "n_clips": 24,
+    "stride": 2,
+    "dt": 0.1,
+    "v2dir": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val-w120-256x640cyl",
+    "agents": "C:\\Users\\Admin\\tanitad-caches\\val40-obstacle-20260818\\join\\val40_agents.jsonl",
+    "label_coverage_min": 0.8606965174129353,
+    "label_coverage_mean": 0.9797207501141635,
+    "label_cols": [
+      "n_agents",
+      "v_mps",
+      "yaw_rate"
+    ],
+    "frame_geometry": "256x640 cylindrical RGB",
+    "n_agents_definition": "count of obstacle.offline cuboids in the frame, ALL classes, no range or occlusion filter",
+    "frame_mean": 63.098715480141855,
+    "nonzero_frac": 0.8878507720278246,
+    "evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+    "arms": [
+      "dino_hf",
+      "seed_asis",
+      "seed_imnet",
+      "seed_imnet_pos0",
+      "scratch",
+      "pixel"
+    ],
+    "pca_k": 256,
+    "n_boot": 2000,
+    "k_outer": 4,
+    "k_inner": 4,
+    "estimator": "4-fold clip-disjoint out-of-fold prediction; pooled R2; clip-cluster bootstrap over 24 clips, 2000 draws; paired for contrasts",
+    "n_agents_psg_definition": "sum over the 8 in-FOV azimuth columns of log1p(count) -- tanitad.data.psg_targets.frame_target channel 0, IMPORTED not re-implemented"
+  },
+  "arms": {
+    "dino_hf": {
+      "global": {
+        "n_agents_psg": {
+          "r2": -0.10379014315520374,
+          "ci95": [
+            -1.0063180848360533,
+            0.32684712678060607
+          ],
+          "rho": 0.2936634085043601,
+          "lambdas": [
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.15362144013626966,
+          "ci95": [
+            -1.1186315188668414,
+            0.2346113791533305
+          ],
+          "rho": 0.232829666478516,
+          "lambdas": [
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.38991904113138753,
+          "ci95": [
+            -1.3002188729187107,
+            0.03180821405448275
+          ],
+          "rho": -0.006313886916600634,
+          "lambdas": [
+            100.0,
+            100.0,
+            100.0,
+            1.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.5094092570600868,
+          "ci95": [
+            -0.0015084890635534455,
+            0.6632514897702603
+          ],
+          "rho": 0.7226470402306547,
+          "lambdas": [
+            10.0,
+            0.0001,
+            1.0,
+            10.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      },
+      "spatial4x4": {
+        "n_agents_psg": {
+          "r2": -0.07689678169078396,
+          "ci95": [
+            -0.6265673024808597,
+            0.23501095588257956
+          ],
+          "rho": 0.23777170563281777,
+          "lambdas": [
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.05782882189673444,
+          "ci95": [
+            -0.7495916682258028,
+            0.22317895775058078
+          ],
+          "rho": 0.2470674019213302,
+          "lambdas": [
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.068700464751422,
+          "ci95": [
+            -0.5457501525557156,
+            0.1425084619967816
+          ],
+          "rho": 0.14699706623132058,
+          "lambdas": [
+            100.0,
+            100.0,
+            100.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.5071778892107162,
+          "ci95": [
+            0.07777629854335151,
+            0.6224837608599225
+          ],
+          "rho": 0.7153814628139188,
+          "lambdas": [
+            1.0,
+            0.0001,
+            0.1,
+            0.0001
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      }
+    },
+    "seed_asis": {
+      "global": {
+        "n_agents_psg": {
+          "r2": -0.17199045380984046,
+          "ci95": [
+            -0.4314133249762117,
+            -0.05748374829941938
+          ],
+          "rho": -0.15233854286462625,
+          "lambdas": [
+            1000.0,
+            100000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.1528132162010214,
+          "ci95": [
+            -0.5124446446083434,
+            -0.05376885372445077
+          ],
+          "rho": -0.20699415756113543,
+          "lambdas": [
+            10000.0,
+            100000000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.10252265707752084,
+          "ci95": [
+            -0.46052304677730005,
+            0.010829919647076854
+          ],
+          "rho": 0.0015184135387772617,
+          "lambdas": [
+            10000.0,
+            100000000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.20834831630384554,
+          "ci95": [
+            -0.1624575488481533,
+            0.34591495299221353
+          ],
+          "rho": 0.4593940423450683,
+          "lambdas": [
+            1000.0,
+            10.0,
+            0.0001,
+            1000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      },
+      "spatial4x4": {
+        "n_agents_psg": {
+          "r2": -0.1405202226268807,
+          "ci95": [
+            -0.4032482875224558,
+            -0.02128631904205341
+          ],
+          "rho": -0.09950225430680823,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.14917228187879172,
+          "ci95": [
+            -0.5161297722076337,
+            -0.05306724398384718
+          ],
+          "rho": -0.2025684316559754,
+          "lambdas": [
+            10000.0,
+            100000000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.10444741328365259,
+          "ci95": [
+            -0.4704668155757766,
+            0.012244977734072467
+          ],
+          "rho": -0.0009207055686267057,
+          "lambdas": [
+            10000.0,
+            100000000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.1721763542675092,
+          "ci95": [
+            -0.27294271103506307,
+            0.3083631018812008
+          ],
+          "rho": 0.417598504910915,
+          "lambdas": [
+            1000.0,
+            10.0,
+            0.0001,
+            10000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      }
+    },
+    "seed_imnet": {
+      "global": {
+        "n_agents_psg": {
+          "r2": -0.03788944306884856,
+          "ci95": [
+            -0.3312442083861737,
+            0.07744294841901607
+          ],
+          "rho": 0.08949238233385168,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.08828939262851643,
+          "ci95": [
+            -0.5173246928196897,
+            0.0625918045111995
+          ],
+          "rho": 0.05198185854462055,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.16027872768279505,
+          "ci95": [
+            -0.7226073446546881,
+            0.019157190284947993
+          ],
+          "rho": 0.06846863344326858,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            100.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.22878666680072846,
+          "ci95": [
+            -0.0792638763089136,
+            0.310259516019616
+          ],
+          "rho": 0.5074000904813389,
+          "lambdas": [
+            100.0,
+            1000.0,
+            0.0001,
+            10.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      },
+      "spatial4x4": {
+        "n_agents_psg": {
+          "r2": -0.11435726139352131,
+          "ci95": [
+            -0.5283804774070943,
+            0.05631177150081174
+          ],
+          "rho": 0.03726083690537051,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.12058803263966289,
+          "ci95": [
+            -0.6148510537234207,
+            0.06045817349218859
+          ],
+          "rho": 0.02122951187654905,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.23780789215026088,
+          "ci95": [
+            -0.9583873047486259,
+            -0.0067508940057559655
+          ],
+          "rho": 0.007305713311266166,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            1000.0,
+            10.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.2713575918893014,
+          "ci95": [
+            -0.14184917084104232,
+            0.38782297026724577
+          ],
+          "rho": 0.5400237458611287,
+          "lambdas": [
+            100.0,
+            10.0,
+            0.0001,
+            10.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      }
+    },
+    "seed_imnet_pos0": {
+      "global": {
+        "n_agents_psg": {
+          "r2": -0.005719347859565405,
+          "ci95": [
+            -0.341203022922885,
+            0.13696645376024452
+          ],
+          "rho": 0.16727796333511508,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.014265786991539464,
+          "ci95": [
+            -0.49979364554594763,
+            0.15159575033103112
+          ],
+          "rho": 0.20289626684922968,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.14087497762397594,
+          "ci95": [
+            -0.7148450902829883,
+            0.03618948169199419
+          ],
+          "rho": 0.0820462066094788,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            100.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.38132686896427426,
+          "ci95": [
+            0.09607888323371627,
+            0.4807100542623912
+          ],
+          "rho": 0.6240972278621266,
+          "lambdas": [
+            100.0,
+            10.0,
+            1.0,
+            0.0001
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      },
+      "spatial4x4": {
+        "n_agents_psg": {
+          "r2": -0.1310725872528804,
+          "ci95": [
+            -0.7285031425199516,
+            0.13316189346746163
+          ],
+          "rho": 0.13173316746396893,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            1000.0,
+            100.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.05854757346436146,
+          "ci95": [
+            -0.6074520761288915,
+            0.13134843299784266
+          ],
+          "rho": 0.1572198661871465,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.30884751739736016,
+          "ci95": [
+            -1.2001721160993253,
+            -0.03064373180712649
+          ],
+          "rho": -0.005090504388898921,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            1000.0,
+            10.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.38863378130702964,
+          "ci95": [
+            0.038157764769175075,
+            0.5035776658581667
+          ],
+          "rho": 0.6266603311277906,
+          "lambdas": [
+            100.0,
+            1.0,
+            0.0001,
+            10.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      }
+    },
+    "scratch": {
+      "global": {
+        "n_agents_psg": {
+          "r2": -0.18314884502350903,
+          "ci95": [
+            -0.5034704872481834,
+            0.017423640434625152
+          ],
+          "rho": -0.01338875074473411,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.18100997556667098,
+          "ci95": [
+            -0.5359958835599836,
+            -0.0027540662881214554
+          ],
+          "rho": -0.00631371465002162,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.060569451242044936,
+          "ci95": [
+            -0.48673171328921494,
+            0.11698619386172496
+          ],
+          "rho": 0.18716383899699585,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.24989693408814395,
+          "ci95": [
+            -0.1210640117296702,
+            0.4400364748285296
+          ],
+          "rho": 0.5200256251909198,
+          "lambdas": [
+            100.0,
+            1000.0,
+            0.0001,
+            1000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 1024,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      },
+      "spatial4x4": {
+        "n_agents_psg": {
+          "r2": -0.21555642337176972,
+          "ci95": [
+            -0.6380440967532298,
+            0.01783880321756741
+          ],
+          "rho": 0.06968934699915481,
+          "lambdas": [
+            1000.0,
+            1000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.19989851650445112,
+          "ci95": [
+            -0.7571161394973621,
+            0.03714055210470435
+          ],
+          "rho": 0.04133130751073643,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            1000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.22008102642426564,
+          "ci95": [
+            -0.877202494555223,
+            0.03607328650408454
+          ],
+          "rho": 0.13124289662274582,
+          "lambdas": [
+            1000.0,
+            1000.0,
+            10000.0,
+            1000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": 0.005029254180428322,
+          "ci95": [
+            -0.6131434700348135,
+            0.3840645321520132
+          ],
+          "rho": 0.3616525389133088,
+          "lambdas": [
+            100.0,
+            100.0,
+            1.0,
+            10.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 16384,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      }
+    },
+    "pixel": {
+      "global": {
+        "n_agents_psg": {
+          "r2": -0.03740163629837312,
+          "ci95": [
+            -0.2215787400181087,
+            0.0003008801260819097
+          ],
+          "rho": -0.21847255536132917,
+          "lambdas": [
+            100000000.0,
+            100000000.0,
+            100000000.0,
+            100000000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 3,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": -0.035506861270448775,
+          "ci95": [
+            -0.22801023566710205,
+            0.0034713671361041383
+          ],
+          "rho": -0.21267107992661335,
+          "lambdas": [
+            100000000.0,
+            100000000.0,
+            100000000.0,
+            100000000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 3,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.09783126722840696,
+          "ci95": [
+            -0.3967411723714317,
+            -0.03331540465829563
+          ],
+          "rho": -0.34171615739691813,
+          "lambdas": [
+            100000000.0,
+            100000000.0,
+            1000.0,
+            100000000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 3,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": -0.12452935639377549,
+          "ci95": [
+            -0.47474089757731214,
+            -0.03666845988540105
+          ],
+          "rho": -0.3313712054375227,
+          "lambdas": [
+            10000.0,
+            100000000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_at_grid_edge": true,
+          "n": 2372,
+          "d_ambient": 3,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      },
+      "spatial4x4": {
+        "n_agents_psg": {
+          "r2": -0.001409643590398968,
+          "ci95": [
+            -0.20531406534809632,
+            0.07664501147933346
+          ],
+          "rho": 0.07077771750905891,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 48,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_fov": {
+          "r2": 0.010519010029572784,
+          "ci95": [
+            -0.19682553271378433,
+            0.09156272066737985
+          ],
+          "rho": 0.11505190091212351,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 48,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "n_agents_all": {
+          "r2": -0.027805843678230913,
+          "ci95": [
+            -0.2616922743813721,
+            0.05441926721389328
+          ],
+          "rho": 0.010968906284864856,
+          "lambdas": [
+            10000.0,
+            10000.0,
+            10000.0,
+            10000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 48,
+          "d_probe": 256,
+          "n_clusters": 24
+        },
+        "speed": {
+          "r2": -0.3976970605492629,
+          "ci95": [
+            -1.1888518393411855,
+            -0.0562903684947058
+          ],
+          "rho": -0.014724264967581563,
+          "lambdas": [
+            1000.0,
+            10000.0,
+            100.0,
+            10000.0
+          ],
+          "lambda_at_grid_edge": false,
+          "n": 2372,
+          "d_ambient": 48,
+          "d_probe": 256,
+          "n_clusters": 24
+        }
+      }
+    }
+  },
+  "contrasts": {
+    "global::n_agents_psg::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.07935870186830529,
+      "ci95": [
+        -0.7777637699885143,
+        0.5931174450192839
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": -0.06638850685683062,
+      "ci95": [
+        -0.8688873022969549,
+        0.3933073776739718
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": 0.011158391213668573,
+      "ci95": [
+        -0.18956019835401486,
+        0.24367849865104468
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": 0.14525940195466047,
+      "ci95": [
+        -0.10742978480744804,
+        0.3972665508844854
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": 0.1341010107409919,
+      "ci95": [
+        0.0055825858250507015,
+        0.2840460595703436
+      ],
+      "separated": true
+    },
+    "global::n_agents_psg::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": -0.06590070008635518,
+      "ci95": [
+        -0.9087554578616045,
+        0.4233310721159791
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": 0.06820031065463672,
+      "ci95": [
+        -0.7395596951049995,
+        0.4993305974341274
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": -0.00048780677047544074,
+      "ci95": [
+        -0.16686043117155835,
+        0.11081732756359164
+      ],
+      "separated": false
+    },
+    "global::n_agents_psg::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": -0.13458881751146734,
+      "ci95": [
+        -0.29376784111554166,
+        -0.018277690063180547
+      ],
+      "separated": true
+    },
+    "global::n_agents_psg::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": -0.032170095209283156,
+      "ci95": [
+        -0.10332372684607621,
+        0.06336418851081309
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.027388535430401317,
+      "ci95": [
+        -0.8607675808272062,
+        0.442647595872415
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": -0.11811457886582089,
+      "ci95": [
+        -0.990144758952902,
+        0.28655703462518095
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": 0.028196759365649582,
+      "ci95": [
+        -0.1724625872204794,
+        0.22078664086164285
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": 0.09272058293815455,
+      "ci95": [
+        -0.14423537384931415,
+        0.29903042673287217
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": 0.06452382357250497,
+      "ci95": [
+        -0.1400184430845983,
+        0.2531384293678794
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": -0.06533204750775323,
+      "ci95": [
+        -0.9211665885656758,
+        0.39259311331437474
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": -0.0008082239352482645,
+      "ci95": [
+        -0.8567695376563638,
+        0.40648222242613724
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": -0.05278253135806765,
+      "ci95": [
+        -0.3350111420903982,
+        0.10320515629412086
+      ],
+      "separated": false
+    },
+    "global::n_agents_fov::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": -0.11730635493057262,
+      "ci95": [
+        -0.339144598115782,
+        -0.011465831054272695
+      ],
+      "separated": true
+    },
+    "global::n_agents_fov::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": -0.07402360563697696,
+      "ci95": [
+        -0.17542261092886585,
+        0.04658920544402324
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": -0.3293495898893426,
+      "ci95": [
+        -1.082416318741257,
+        0.09581686082402459
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": -0.2920877739029806,
+      "ci95": [
+        -1.0684207467827533,
+        0.12282994315959518
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": -0.041953205835475904,
+      "ci95": [
+        -0.2502820821258776,
+        0.14797721095251498
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": -0.09970927644075012,
+      "ci95": [
+        -0.44284161050164483,
+        0.07617777862792989
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": -0.05775607060527421,
+      "ci95": [
+        -0.3393672424616218,
+        0.07705197222868142
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": -0.22964031344859248,
+      "ci95": [
+        -0.9037411536428395,
+        0.28506409783605086
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": -0.2873963840538667,
+      "ci95": [
+        -1.048318167521985,
+        0.1629661120564678
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": -0.06244746045438809,
+      "ci95": [
+        -0.4468014754102919,
+        0.11694454768217794
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": -0.004691389849113881,
+      "ci95": [
+        -0.17190502997534107,
+        0.1193629365656251
+      ],
+      "separated": false
+    },
+    "global::n_agents_all::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": -0.019403750058819114,
+      "ci95": [
+        -0.1537707893276284,
+        0.10400571942576212
+      ],
+      "separated": false
+    },
+    "global::speed::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.2595123229719428,
+      "ci95": [
+        -0.12855974466347436,
+        0.5117168336585128
+      ],
+      "separated": false
+    },
+    "global::speed::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": 0.6339386134538623,
+      "ci95": [
+        0.2574660476042492,
+        0.8765181674523067
+      ],
+      "separated": true
+    },
+    "global::speed::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": -0.041548617784298414,
+      "ci95": [
+        -0.23715038770227062,
+        0.125225361781552
+      ],
+      "separated": false
+    },
+    "global::speed::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": -0.021110267287415496,
+      "ci95": [
+        -0.2763056125616239,
+        0.25012464805975204
+      ],
+      "separated": false
+    },
+    "global::speed::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": 0.020438350496882918,
+      "ci95": [
+        -0.1648000301688439,
+        0.20592188143381943
+      ],
+      "separated": false
+    },
+    "global::speed::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": 0.2806225902593583,
+      "ci95": [
+        -0.03579026599957595,
+        0.46564898975704977
+      ],
+      "separated": false
+    },
+    "global::speed::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": 0.30106094075624124,
+      "ci95": [
+        -0.008702621217545552,
+        0.4981179687264863
+      ],
+      "separated": false
+    },
+    "global::speed::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": 0.35331602319450395,
+      "ci95": [
+        0.12720509125143833,
+        0.5489853597211253
+      ],
+      "separated": true
+    },
+    "global::speed::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": 0.33287767269762103,
+      "ci95": [
+        0.1373354842508107,
+        0.495937329860902
+      ],
+      "separated": true
+    },
+    "global::speed::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": -0.1525402021635458,
+      "ci95": [
+        -0.2713220683903595,
+        -0.06691243611067489
+      ],
+      "separated": true
+    },
+    "spatial4x4::n_agents_psg::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.13865964168098577,
+      "ci95": [
+        -0.32318545871442683,
+        0.5739593346624497
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": -0.07548713810038499,
+      "ci95": [
+        -0.5146492454700179,
+        0.2484070108288121
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": 0.07503620074488904,
+      "ci95": [
+        -0.14314708829828937,
+        0.35226064293848647
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": 0.10119916197824841,
+      "ci95": [
+        -0.18423435353465978,
+        0.3822960649324232
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": 0.026162961233359372,
+      "ci95": [
+        -0.22013706619660442,
+        0.22210286204265778
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": 0.03746047970273736,
+      "ci95": [
+        -0.4057394979305162,
+        0.41093355979098733
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": 0.06362344093609673,
+      "ci95": [
+        -0.36421022107861084,
+        0.40250377665243414
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": -0.11294761780312235,
+      "ci95": [
+        -0.4084149390676526,
+        0.05803612674167986
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": -0.13911057903648172,
+      "ci95": [
+        -0.3154186365171836,
+        0.0020308879676533306
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_psg::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": 0.016715325859359087,
+      "ci95": [
+        -0.12631723881863974,
+        0.2268725750212456
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.14206969460771668,
+      "ci95": [
+        -0.3527166044133301,
+        0.48234123258862305
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": -0.06834783192630722,
+      "ci95": [
+        -0.6340623588736323,
+        0.23420128292168751
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": 0.050726234625659394,
+      "ci95": [
+        -0.1775649462945463,
+        0.36594407633978954
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": 0.07931048386478823,
+      "ci95": [
+        -0.09251181266828365,
+        0.29328678153682924
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": 0.028584249239128834,
+      "ci95": [
+        -0.21556999585207057,
+        0.2249958997493016
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": 0.06275921074292845,
+      "ci95": [
+        -0.42778619102135507,
+        0.3854455969072756
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": 0.09134345998205728,
+      "ci95": [
+        -0.36771857620645954,
+        0.3604220396970146
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": -0.13110704266923567,
+      "ci95": [
+        -0.46608401875706834,
+        0.03154026922274912
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_fov::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": -0.1596912919083645,
+      "ci95": [
+        -0.3946708686468015,
+        -0.040125616117814164
+      ],
+      "separated": true
+    },
+    "spatial4x4::n_agents_fov::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": -0.06204045917530143,
+      "ci95": [
+        -0.1688896860808537,
+        0.06655392820042376
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.15138056167284364,
+      "ci95": [
+        -0.20505011316962424,
+        0.5985924290740252
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": -0.040894621073191084,
+      "ci95": [
+        -0.414731374597162,
+        0.15507566518455257
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": 0.11563361314061305,
+      "ci95": [
+        -0.12425160722810949,
+        0.5368088800263615
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": -0.017726865725995244,
+      "ci95": [
+        -0.39777759422666475,
+        0.33206899897034853
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": -0.1333604788666083,
+      "ci95": [
+        -0.5259556991150435,
+        0.043662107821121746
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": 0.16910742739883888,
+      "ci95": [
+        -0.12614272890415001,
+        0.5946272282816355
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": 0.035746948532230594,
+      "ci95": [
+        -0.30797893299500656,
+        0.2709888054734155
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": -0.21000204847202997,
+      "ci95": [
+        -0.8217199006752043,
+        0.03203653751401579
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": -0.07664156960542168,
+      "ci95": [
+        -0.32410343602164193,
+        0.06177633792828659
+      ],
+      "separated": false
+    },
+    "spatial4x4::n_agents_all::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": 0.07103962524709928,
+      "ci95": [
+        -0.04509904896000704,
+        0.29875214159928487
+      ],
+      "separated": false
+    },
+    "spatial4x4::speed::dino_hf-scratch": {
+      "question": "INSTRUMENT VALIDITY: can the probe see it?",
+      "delta": 0.5021486350302878,
+      "ci95": [
+        0.07786091175921633,
+        1.05759864319245
+      ],
+      "separated": true
+    },
+    "spatial4x4::speed::dino_hf-pixel": {
+      "question": "does DINOv3 beat the raw-input floor?",
+      "delta": 0.9048749497599791,
+      "ci95": [
+        0.44260408944343094,
+        1.4878279800395036
+      ],
+      "separated": true
+    },
+    "spatial4x4::speed::seed_asis-scratch": {
+      "question": "is the seed AS WIRED better than random?",
+      "delta": 0.1671471000870809,
+      "ci95": [
+        -0.1742336431703718,
+        0.6124102959379379
+      ],
+      "separated": false
+    },
+    "spatial4x4::speed::seed_imnet-scratch": {
+      "question": "is the REPAIRED seed better than random?",
+      "delta": 0.2663283377088731,
+      "ci95": [
+        -0.11200883155877618,
+        0.7496102143510949
+      ],
+      "separated": false
+    },
+    "spatial4x4::speed::seed_imnet-seed_asis": {
+      "question": "does input normalisation help?",
+      "delta": 0.0991812376217922,
+      "ci95": [
+        -0.11004730987846077,
+        0.2909650128136262
+      ],
+      "separated": false
+    },
+    "spatial4x4::speed::dino_hf-seed_imnet": {
+      "question": "how much does the repaired seed lose?",
+      "delta": 0.23582029732141474,
+      "ci95": [
+        0.06083128556266735,
+        0.4065902818123032
+      ],
+      "separated": true
+    },
+    "spatial4x4::speed::dino_hf-seed_asis": {
+      "question": "how much does the seed AS WIRED lose?",
+      "delta": 0.33500153494320695,
+      "ci95": [
+        0.09015842364966553,
+        0.5540861426151438
+      ],
+      "separated": true
+    },
+    "spatial4x4::speed::seed_imnet-pixel": {
+      "question": "does the repaired seed beat raw input?",
+      "delta": 0.6690546524385643,
+      "ci95": [
+        0.2325686995541445,
+        1.2349820076045421
+      ],
+      "separated": true
+    },
+    "spatial4x4::speed::seed_asis-pixel": {
+      "question": "does the seed as wired beat raw input?",
+      "delta": 0.5698734148167721,
+      "ci95": [
+        0.25865226774281713,
+        1.093565927872903
+      ],
+      "separated": true
+    },
+    "spatial4x4::speed::seed_imnet-seed_imnet_pos0": {
+      "question": "does the random `pos` help?",
+      "delta": -0.11727618941772822,
+      "ci95": [
+        -0.2551047880411081,
+        -0.0322684357747901
+      ],
+      "separated": true
+    }
+  },
+  "controls": {
+    "constant_only_r2": 0.0,
+    "note": "a predictor emitting the scored-set mean reads R2 = 0.0 EXACTLY; every R2 above is against that same SST",
+    "deliberate_regression_arm": "scratch (random-init ViTEncoder)",
+    "raw_input_floor_arm": "pixel"
+  }
+}

@@ -1,0 +1,884 @@
+{
+ "control_after": {
+  "failed_tests": [],
+  "rc": 0,
+  "seconds": 8.7,
+  "summary": "69 passed",
+  "tail": [
+   ".....................................................................    [100%]",
+   "69 passed in 6.80s"
+  ]
+ },
+ "control_before": {
+  "failed_tests": [],
+  "rc": 0,
+  "seconds": 13.5,
+  "summary": "69 passed",
+  "tail": [
+   ".....................................................................    [100%]",
+   "69 passed in 12.50s"
+  ]
+ },
+ "controls_green": true,
+ "mutations": {
+  "m01_run_min_two": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.4,
+   "summary": "1 error",
+   "tail": [
+    "ERROR test_tab_tables.py::test_clean_case_passes_every_control - SystemExit: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 error in 1.37s"
+   ],
+   "what": "a trailing run of two frames counts as a closing speed"
+  },
+  "m02_run_condition_dropped": {
+   "failed_tests": [
+    "test_tab_tables.py::test_l100_is_the_label_slope_where_the_label_has_one"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.9,
+   "summary": "1 failed 3 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_l100_is_the_label_slope_where_the_label_has_one",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 2.02s"
+   ],
+   "what": "valued frames ignore the run length"
+  },
+  "m03_run_strictly_above": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.9,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.96s"
+   ],
+   "what": "a run of exactly three frames carries no value"
+  },
+  "m04_l100_value_zero": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.2,
+   "summary": "1 error",
+   "tail": [
+    "ERROR test_tab_tables.py::test_clean_case_passes_every_control - SystemExit: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 error in 0.87s"
+   ],
+   "what": "L100 carries 0 where valued"
+  },
+  "m05_ar_coef": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.3,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 1.12s"
+   ],
+   "what": "autoregression coefficient 0.8"
+  },
+  "m06_ar_innovation": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[S70-4-0.7-kw3]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 5.0,
+   "summary": "1 failed 9 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[S70-4-0.7-kw3]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 9 passed in 2.13s"
+   ],
+   "what": "innovation weight 1 - coef instead of sqrt(1 - coef^2)"
+  },
+  "m07_ar_no_restart": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[S70-4-0.7-kw3]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.1,
+   "summary": "1 failed 9 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[S70-4-0.7-kw3]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 9 passed in 3.12s"
+   ],
+   "what": "the autoregression is not restarted at a clip"
+  },
+  "m08_ar_row_order": {
+   "failed_tests": [
+    "test_tab_tables.py::test_autoregression_formula_and_restart"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.0,
+   "summary": "1 failed 14 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_autoregression_formula_and_restart - assert F...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 2.04s"
+   ],
+   "what": "the autoregression runs in row order, not frame order"
+  },
+  "m09_no_projection": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.9,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.13s"
+   ],
+   "what": "the noise is not made uncorrelated with L"
+  },
+  "m10_no_scaling": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.0,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.08s"
+   ],
+   "what": "the noise is not scaled to unit sd"
+  },
+  "m11_w00_mean_not_removed": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[W00-0-0.0-kw4]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.2,
+   "summary": "1 failed 10 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[W00-0-0.0-kw4]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 10 passed in 2.63s"
+   ],
+   "what": "W00 noise keeps its drawn mean"
+  },
+  "m12_ddof_one": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[W50-1-0.5-kw0]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.6,
+   "summary": "1 failed 6 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[W50-1-0.5-kw0]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 1.39s"
+   ],
+   "what": "the noise sd uses ddof 1"
+  },
+  "m13_rng_seed_without_k": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[W50-1-0.5-kw0]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.2,
+   "summary": "1 failed 6 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[W50-1-0.5-kw0]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 1.93s"
+   ],
+   "what": "the rng seed ignores the seed index"
+  },
+  "m14_arm_index_swapped": {
+   "failed_tests": [
+    "test_tab_tables.py::test_record_contents"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.0,
+   "summary": "1 failed 1 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_record_contents - AssertionError: assert {'W0...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 2.16s"
+   ],
+   "what": "W50 and W70 swap their rng index"
+  },
+  "m15_r_instead_of_r2": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.2,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.31s"
+   ],
+   "what": "the signal part uses r, not r^2"
+  },
+  "m16_noise_weight": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.9,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.00s"
+   ],
+   "what": "the noise weight is sqrt(r (1 - r))"
+  },
+  "m17_w00_spread": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.1,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.38s"
+   ],
+   "what": "W00 spread s instead of 0.5 s"
+  },
+  "m18_r_target_w90": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[W90-3-0.9-kw2]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.1,
+   "summary": "1 failed 8 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[W90-3-0.9-kw2]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 8 passed in 2.78s"
+   ],
+   "what": "W90 plants r 0.85"
+  },
+  "m19_std_ddof_one": {
+   "failed_tests": [
+    "test_tab_tables.py::test_arm_formula_rng_and_planting[W50-1-0.5-kw0]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.6,
+   "summary": "1 failed 6 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_arm_formula_rng_and_planting[W50-1-0.5-kw0]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 2.49s"
+   ],
+   "what": "m and s of the formula use ddof 1"
+  },
+  "m20_draw_reversed": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.3,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 1.05s"
+   ],
+   "what": "the draw is used on the frames in reverse"
+  },
+  "m21_s70_without_ar": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.1,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 1.39s"
+   ],
+   "what": "S70 skips the autoregression"
+  },
+  "m22_a0_tolerance": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a0_shifted_label_fails_and_is_counted"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.1,
+   "summary": "1 failed 49 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a0_shifted_label_fails_and_is_counted - asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 49 passed in 1.32s"
+   ],
+   "what": "a0 tolerance 1e-3"
+  },
+  "m23_a0_share": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a0_share_threshold_is_999_per_thousand"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 5.4,
+   "summary": "1 failed 53 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a0_share_threshold_is_999_per_thousand - asse...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 53 passed in 2.48s"
+   ],
+   "what": "a0 share 0.99"
+  },
+  "m24_a0_wide_compare": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a0_shifted_label_fails_and_is_counted"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.2,
+   "summary": "1 failed 49 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a0_shifted_label_fails_and_is_counted - asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 49 passed in 2.31s"
+   ],
+   "what": "a0 compares to within 1.0"
+  },
+  "m25_a0_zero_always_agrees": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a0_log_zero_where_table_has_a_value_fails"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.1,
+   "summary": "1 failed 52 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a0_log_zero_where_table_has_a_value_fails - a...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 52 passed in 2.28s"
+   ],
+   "what": "a0 accepts any table value where the log is 0"
+  },
+  "m26_a0_nonzero_not_required": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a0_reading_nothing_fails"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 6.4,
+   "summary": "1 failed 61 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a0_reading_nothing_fails - assert True is False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 61 passed in 4.69s"
+   ],
+   "what": "a0 passes a log without nonzero values"
+  },
+  "m27_a0_present_only_judged": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a0_share_threshold_is_999_per_thousand"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.7,
+   "summary": "1 failed 53 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a0_share_threshold_is_999_per_thousand - asse...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 53 passed in 1.18s"
+   ],
+   "what": "a0 judges the present looks only"
+  },
+  "m28_a0_key_stride": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.3,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.73s"
+   ],
+   "what": "a0 keys the table without the stride"
+  },
+  "m29_a0_frame_offset": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.4,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.81s"
+   ],
+   "what": "a0 reads the table one frame late"
+  },
+  "m30_a1_r_tol": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_r_tolerance[0.675-False]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.4,
+   "summary": "1 failed 20 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_r_tolerance[0.675-False] - assert True is ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 20 passed in 0.77s"
+   ],
+   "what": "a1 r tolerance 0.05"
+  },
+  "m31_a1_r_tol_w00": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_w00_r_band_is_plus_minus_003[0.05-False]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.5,
+   "summary": "1 failed 43 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_w00_r_band_is_plus_minus_003[0.05-False]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 43 passed in 0.94s"
+   ],
+   "what": "a1 W00 r band 0.06"
+  },
+  "m32_a1_sd_band": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_sd_band[0.93-False]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.5,
+   "summary": "1 failed 25 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_sd_band[0.93-False] - assert True is False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 25 passed in 0.91s"
+   ],
+   "what": "a1 sd band 0.90 to 1.10"
+  },
+  "m33_a1_mean_tol": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_mean_tolerance[0.055-False]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.6,
+   "summary": "1 failed 30 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_mean_tolerance[0.055-False] - assert True ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 30 passed in 0.94s"
+   ],
+   "what": "a1 mean tolerance 0.5"
+  },
+  "m34_a1_ac_s70": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_autocorrelation_bands[S70-0.8-False]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.7,
+   "summary": "1 failed 33 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_autocorrelation_bands[S70-0.8-False] - ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 33 passed in 1.03s"
+   ],
+   "what": "a1 S70 band 0.5 to 0.99"
+  },
+  "m35_a1_ac_w70": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_autocorrelation_bands[W70-0.2-False]"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.7,
+   "summary": "1 failed 37 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_autocorrelation_bands[W70-0.2-False] - ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 37 passed in 1.00s"
+   ],
+   "what": "a1 W70 band -0.5 to 0.5"
+  },
+  "m36_a1_valued_set": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_valued_frame_sets_must_equal_those_of_l100"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.1,
+   "summary": "1 failed 46 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_valued_frame_sets_must_equal_those_of_l100",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 passed in 1.18s"
+   ],
+   "what": "a1 does not compare the valued frames with L100"
+  },
+  "m37_a1_sd_target": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.5,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.76s"
+   ],
+   "what": "a1 sd target is s"
+  },
+  "m38_a1_noise_formula": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.3,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.78s"
+   ],
+   "what": "a1 recovers the noise without removing the signal part"
+  },
+  "m39_a1_aggregate_or": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a1_rows_must_be_the_rows_of_l100"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.6,
+   "summary": "1 failed 47 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a1_rows_must_be_the_rows_of_l100 - assert Tru...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 47 passed in 0.99s"
+   ],
+   "what": "a1 passes when any arm passes"
+  },
+  "m40_u4_h": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a4_surrogate_equal_to_estimate_fails_u4"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.7,
+   "summary": "1 failed 59 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a4_surrogate_equal_to_estimate_fails_u4 - Ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 59 passed in 2.07s"
+   ],
+   "what": "a4 u4 uses H = 10"
+  },
+  "m41_stk_from_l100": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.5,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.88s"
+   ],
+   "what": "STK is the map of the L100 table"
+  },
+  "m42_map_reversed_share": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.5,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.80s"
+   ],
+   "what": "the map is built from the reversed share order"
+  },
+  "m43_tk_perturbed": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.5,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.85s"
+   ],
+   "what": "TK differs from the input table"
+  },
+  "m44_a0_table_is_tk": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 1.6,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.93s"
+   ],
+   "what": "a0 reads the TK table instead of L100"
+  },
+  "m45_pass_ignores_a0": {
+   "failed_tests": [
+    "test_tab_tables.py::test_missing_rule_log_fails_a0_but_writes_the_tables"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.7,
+   "summary": "1 failed 67 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_missing_rule_log_fails_a0_but_writes_the_tables",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 67 passed in 2.98s"
+   ],
+   "what": "a0 does not enter the verdict"
+  },
+  "m46_pass_ignores_a1": {
+   "failed_tests": [
+    "test_tab_tables.py::test_tables_are_written_when_a_control_fails"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.6,
+   "summary": "1 failed 63 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_tables_are_written_when_a_control_fails - Ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 63 passed in 2.86s"
+   ],
+   "what": "a1 does not enter the verdict"
+  },
+  "m47_pass_ignores_u1": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a4_fixed_point_fails_u1"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.9,
+   "summary": "1 failed 57 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a4_fixed_point_fails_u1 - AssertionError: ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 57 passed in 3.92s"
+   ],
+   "what": "a4_u1 does not enter the verdict"
+  },
+  "m48_pass_ignores_u4": {
+   "failed_tests": [
+    "test_tab_tables.py::test_a4_surrogate_equal_to_estimate_fails_u4"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 6.6,
+   "summary": "1 failed 59 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_a4_surrogate_equal_to_estimate_fails_u4 - Ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 59 passed in 4.78s"
+   ],
+   "what": "a4_u4 does not enter the verdict"
+  },
+  "m49_label_columns_unchecked": {
+   "failed_tests": [
+    "test_tab_tables.py::test_label_columns_that_differ_between_seeds_are_refused"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 9.7,
+   "summary": "1 failed 65 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_label_columns_that_differ_between_seeds_are_refused",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 65 passed in 7.76s"
+   ],
+   "what": "differing label columns between the seeds are accepted"
+  },
+  "m50_tk_rows_unchecked": {
+   "failed_tests": [
+    "test_tab_tables.py::test_tk_rows_that_differ_from_the_dump_are_refused"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 9.5,
+   "summary": "1 failed 66 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_tk_rows_that_differ_from_the_dump_are_refused",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 66 passed in 8.24s"
+   ],
+   "what": "TK rows that differ from the dump rows are accepted"
+  },
+  "m51_existing_out_accepted": {
+   "failed_tests": [
+    "test_tab_tables.py::test_existing_out_folder_is_refused"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 9.3,
+   "summary": "1 failed 64 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_existing_out_folder_is_refused - FileExistsEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 64 passed in 7.76s"
+   ],
+   "what": "an existing out folder is accepted"
+  },
+  "m52_run_min_guard_dropped": {
+   "failed_tests": [
+    "test_tab_tables.py::test_run_min_of_the_fit_module_must_agree"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 7.6,
+   "summary": "1 failed 62 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_run_min_of_the_fit_module_must_agree - Failed...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 62 passed in 6.16s"
+   ],
+   "what": "a RUN_MIN that differs from closeread_fit is accepted"
+  },
+  "m53_planting_regressor_dropped": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.4,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 1.08s"
+   ],
+   "what": "the projection regresses on the constant only"
+  },
+  "m54_mid_log_name": {
+   "failed_tests": [
+    "test_tab_tables.py::test_find_rrc_logs_layouts"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 4.8,
+   "summary": "1 failed 56 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_find_rrc_logs_layouts - AssertionError: asser...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 56 passed in 1.53s"
+   ],
+   "what": "the mid-look log is the replan log"
+  },
+  "m55_u1_map_from_clips": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.1,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 1.00s"
+   ],
+   "what": "u1 reads the map clips as the map"
+  },
+  "m56_stk_not_from_dump_share": {
+   "failed_tests": [
+    "test_tab_tables.py::test_clean_case_passes_every_control"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 3.8,
+   "summary": "1 failed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_clean_case_passes_every_control - AssertionEr...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 2.05s"
+   ],
+   "what": "the share of the map is taken from the first seed's dump for every seed"
+  },
+  "m57_rng_record_seed": {
+   "failed_tests": [
+    "test_tab_tables.py::test_record_contents"
+   ],
+   "rc": 1,
+   "red": true,
+   "seconds": 2.9,
+   "summary": "1 failed 1 passed",
+   "tail": [
+    "FAILED test_tab_tables.py::test_record_contents - AssertionError: assert {'W0...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 2.00s"
+   ],
+   "what": "the record's rng seeds omit the seed index"
+  }
+ },
+ "red": 57,
+ "tool": "F:\\TanitAD-scratch\\v8proof\\tabclose\\make_tab_tables.py",
+ "tool_sha256_16": "c8be231c48b1ec4e",
+ "total": 57
+}

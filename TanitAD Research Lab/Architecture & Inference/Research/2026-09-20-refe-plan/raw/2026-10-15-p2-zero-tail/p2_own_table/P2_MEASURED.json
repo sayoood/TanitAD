@@ -1,0 +1,330 @@
+{
+ "meta": {
+  "title": "P2's OWN 64-proposal table on its 509 zero-PDMS navtest tokens",
+  "when": "2026-10-15T22:53:21+0200",
+  "tier": "T1 (NAVSIM v1.1 PDMS, pseudo-simulation of an open-loop plan)",
+  "evidence": "MEASURED on P2 (own table); the INFERRED row it replaces is in comparison_to_inferred",
+  "estimator": {
+   "name": "log-cluster bootstrap (zero_tail.Boot)",
+   "B": 10000,
+   "seed": 20260927,
+   "n_logs": 136,
+   "answers": "another draw of LOGS only; NOT another training run (H-ESTIM-SEED-1: P2 is one seed) and NOT another inference run (P2's inference is deterministic)"
+  },
+  "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+  "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+  "rule": "navsim_v1",
+  "banked_p2_csv_sha256": "61073a61e44a3dcf41fad6dc8c5b261ce97eb8f8d8b49c1adc077dd7c04b61e6",
+  "table_npz_sha256": "289f4b15c4fdae9100b9388d0baaa668f511556c951709bc34d666766dd75b92",
+  "tokens_json_sha256": "c6b5cae636df9915f2408f7a39cbd15e3bdafe28d808b442284a7f36cd1768b7",
+  "same_pick_proof": {
+   "PASS": true,
+   "pose_max_abs_m": 0.0,
+   "pose_n_bit_identical": 509,
+   "pdms_n_exact": 509,
+   "n": 509
+  },
+  "code": {
+   "classifier": "zero_tail.py (landed ddc9ce9): fan_stats, q1_block, cause_block, cause_labels, Boot, verdict, cleanliness",
+   "pipeline": "c3_run_p2.py = c3_run.py + c3_run_vs_p2.diff"
+  }
+ },
+ "Q1_SEL_PROP": {
+  "evidence": "MEASURED on P2",
+  "n_zero": 509,
+  "n_SEL": 445,
+  "n_PROP": 64,
+  "SEL_share": {
+   "point": 0.8742632612966601,
+   "lo": 0.809815650186455,
+   "hi": 0.9320069062581827,
+   "B": 10000,
+   "n_nan": 0
+  },
+  "PROP_share": {
+   "point": 0.12573673870333987,
+   "lo": 0.06799309374181722,
+   "hi": 0.19018434981354507,
+   "B": 10000,
+   "n_nan": 0
+  },
+  "oracle_on_SEL_gain_pdms_pts": {
+   "point": 3.5376954888978354,
+   "lo": 2.8990280045038053,
+   "hi": 4.23128833687377,
+   "B": 10000,
+   "n_nan": 0
+  },
+  "verdict": "SELECTION"
+ },
+ "Q2_cause_split": {
+  "evidence": "MEASURED on P2 (cause at the pick from the banked csv; SEL/PROP from P2's own table)",
+  "all": {
+   "DAC_only": {
+    "n": 376,
+    "share": {
+     "point": 0.7387033398821218,
+     "lo": 0.6673860442629025,
+     "hi": 0.8025374017327129,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "NC_only": {
+    "n": 129,
+    "share": {
+     "point": 0.25343811394891946,
+     "lo": 0.19047619047619047,
+     "hi": 0.3240949194912139,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "both": {
+    "n": 4,
+    "share": {
+     "point": 0.007858546168958742,
+     "lo": 0.0,
+     "hi": 0.018867924528301886,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "neither": {
+    "n": 0,
+    "share": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "B": 10000,
+     "n_nan": 0
+    }
+   }
+  },
+  "SEL": {
+   "DAC_only": {
+    "n": 315
+   },
+   "NC_only": {
+    "n": 127
+   },
+   "both": {
+    "n": 3
+   },
+   "neither": {
+    "n": 0
+   },
+   "n_total": 445
+  },
+  "PROP": {
+   "DAC_only": {
+    "n": 61
+   },
+   "NC_only": {
+    "n": 2
+   },
+   "both": {
+    "n": 1
+   },
+   "neither": {
+    "n": 0
+   },
+   "n_total": 64
+  },
+  "gain_by_cause_pdms_pts_SEL": {
+   "DAC_only": {
+    "point": 2.501781433880855,
+    "lo": 1.8814459313115124,
+    "hi": 3.195074312862503,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "NC_only": {
+    "point": 1.0119811046095974,
+    "lo": 0.7694509609612404,
+    "hi": 1.262874014390922,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "both": {
+    "point": 0.023932950407382487,
+    "lo": 0.0,
+    "hi": 0.06571681600653462,
+    "B": 10000,
+    "n_nan": 0
+   }
+  }
+ },
+ "SAFE_sensitivity": {
+  "n_SAFE_NC1_DAC1_some_proposal": 445,
+  "n_zero": 509,
+  "what": "C3's 'rescuable' definition, beside SEL, never in place of it"
+ },
+ "fan_cleanliness_POSTHOC": {
+  "n": 445,
+  "exactly_1_of_64": 19,
+  "2_to_4_of_64": 56,
+  "5_to_31_of_64": 233,
+  "32_or_more_of_64": 137,
+  "median_nonzero_of_64": 19.0,
+  "mean_nonzero_share": 0.3535112359550562
+ },
+ "PROP_failure_kinds": {
+  "all_DAC0": 59,
+  "all_NC0": 0,
+  "all_both": 0,
+  "mixed": 5,
+  "other": 0
+ },
+ "context": {
+  "mean_pdms_of_nonzero_tokens_x100": 92.70330792941927,
+  "proposal_side_ceiling_pts_ESTIMATED": 0.48847453544235414,
+  "proposal_side_ceiling_def": "n_PROP / N * mean non-zero PDMS: an ESTIMATE, not a measurement"
+ },
+ "comparison_to_inferred": {
+  "inferred_V1_row_in_RESULT_json": {
+   "n_SEL": 439,
+   "n_PROP": 70,
+   "SEL_share": {
+    "point": 0.862475442043222,
+    "lo": 0.8044420289855072,
+    "hi": 0.9184551929272033,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "oracle_on_SEL_gain_pdms_pts": {
+    "point": 3.4913143008425456,
+    "lo": 2.8619020562076765,
+    "hi": 4.1784818712131555,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "Q2_cause": {
+    "all": {
+     "DAC_only": {
+      "n": 376,
+      "share": {
+       "point": 0.7387033398821218,
+       "lo": 0.6673860442629025,
+       "hi": 0.8025374017327129,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "NC_only": {
+      "n": 129,
+      "share": {
+       "point": 0.25343811394891946,
+       "lo": 0.19047619047619047,
+       "hi": 0.3240949194912139,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "both": {
+      "n": 4,
+      "share": {
+       "point": 0.007858546168958742,
+       "lo": 0.0,
+       "hi": 0.018867924528301886,
+       "B": 10000,
+       "n_nan": 0
+      }
+     },
+     "neither": {
+      "n": 0,
+      "share": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      }
+     }
+    },
+    "SEL": {
+     "DAC_only": {
+      "n": 309
+     },
+     "NC_only": {
+      "n": 127
+     },
+     "both": {
+      "n": 3
+     },
+     "neither": {
+      "n": 0
+     },
+     "n_total": 439
+    },
+    "PROP": {
+     "DAC_only": {
+      "n": 67
+     },
+     "NC_only": {
+      "n": 2
+     },
+     "both": {
+      "n": 1
+     },
+     "neither": {
+      "n": 0
+     },
+     "n_total": 70
+    }
+   },
+   "evidence": "INFERRED (proxy fans)"
+  },
+  "bridge_reconstruction_reproduces_RESULT_json_V1_n_SEL": true,
+  "token_by_token_inferred_V1_vs_measured": {
+   "contingency_n": {
+    "inferred_SEL__measured_SEL": 433,
+    "inferred_SEL__measured_PROP": 6,
+    "inferred_PROP__measured_SEL": 12,
+    "inferred_PROP__measured_PROP": 58
+   },
+   "agreement": 0.9646365422396856,
+   "by_tier": {
+    "tier1": {
+     "n": 343,
+     "agreement": 0.9475218658892128
+    },
+    "tier2": {
+     "n": 166,
+     "agreement": 1.0
+    }
+   },
+   "both_SEL_tokens": {
+    "n": 433,
+    "median_abs_diff_best_pdms": 0.0,
+    "sum_best_inferred_over_N_x100": 3.4469089394848127,
+    "sum_best_measured_over_N_x100": 3.445199765726686
+   }
+  }
+ },
+ "reading": {
+  "verdict_PREREG_section_6_rule": "SELECTION",
+  "P2_MEASURED": {
+   "n_zero": 509,
+   "n_SEL": 445,
+   "n_PROP": 64,
+   "SEL_share": 0.8742632612966601,
+   "SEL_share_ci95": [
+    0.81,
+    0.932
+   ],
+   "oracle_on_SEL_ceiling_pdms_pts": 3.5376954888978354,
+   "ceiling_ci95": [
+    2.899,
+    4.231
+   ]
+  },
+  "P2_INFERRED_V1_for_comparison": {
+   "n_SEL": 439,
+   "n_PROP": 70,
+   "SEL_share": 0.862475442043222,
+   "ceiling": 3.4913143008425456
+  },
+  "ceiling_is_a_CEILING_not_an_expected_gain": true
+ }
+}

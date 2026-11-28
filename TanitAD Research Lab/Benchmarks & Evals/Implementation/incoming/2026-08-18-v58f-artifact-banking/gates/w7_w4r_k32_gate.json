@@ -1,0 +1,173 @@
+{
+ "item": "W7 = X0 full \u2014 WM-roll MPC re-rank on the frozen W4 unicycle fan (DIFFUSION_MPC_SYNTHESIS.md L1/X0; V58F_FUSION.md \u00a73 W7) \u2014 PRIMARY selection mechanism by measured elimination (W4b G2 engaged feat 0.5600 / kin 0.5637; p7_regrade: neither arm's scores calibrated)",
+ "gate_W7_selgap_closed": {
+  "rule": "PRE-REGISTERED (V58F_FUSION.md \u00a73 W7 row, verbatim): '\u226550 % sel_gap closed at T1'. This run is the T0-FIRST read per the brief; the T1 confirmation (taniteval/tools/t1_eval.py) runs pod-side before any capability claim.",
+  "definition": "(0.7933 - W7)/(0.7933 - 0.1077) >= 0.5  <=>  W7 <= 0.4505 m \u2014 the threshold is the authoritative form; the fraction is shown at float precision",
+  "w7_selected_ade": 3.614226,
+  "threshold_m": 0.4505,
+  "frac_selgap_closed_vs_frozen_argmax": -4.114536,
+  "pass": false
+ },
+ "tougher_read_vs_rescorer_top8_kincost": {
+  "note": "NOT the pre-registered gate \u2014 reported per the brief: closing half the frozen gap while losing to the deployed interim arm (0.4815) would be a pass that changes nothing, so both fractions are stated",
+  "reference_arm_selected_ade": 0.4815,
+  "frac_selgap_closed_vs_0.4815": -8.380754,
+  "w7_beats_rescorer_arm": false
+ },
+ "argmax_inclusion_guarantee": {
+  "statement": "the frozen selector's own pick (out['sel_idx'] \u2014 its FULL select(), incl. vt-keep) is ALWAYS in the shortlist (force_include), so the shortlist's ORACLE is never worse than the frozen pick \u2014 W7 cannot lose by exclusion; the realised pick beats the frozen pick only where the cost ranks correctly, which is what this gate measures",
+  "frozen_pick_in_shortlist_frac": 1.0,
+  "w7_pick_equals_frozen_frac": 0.009081
+ },
+ "prune": {
+  "rule": "frozen",
+  "topk": 32,
+  "diagnostic_only": false,
+  "surface": "out['refined_logits'] \u2014 the frozen selector's per-candidate sel_score on the new fan (refc.py:1514; the p7_regrade frozen-argmax ranking surface)",
+  "argmax_inclusion": "force_include(shortlist, out['sel_idx'])"
+ },
+ "cost": {
+  "terms": {
+   "roll_consistency": {
+    "weight": 1.0,
+    "def": "ADE(candidate unicycle waypoints, WM-rolled decoded waypoints) over the roll horizon \u2014 the WM's veto"
+   },
+   "kinematic": {
+    "weight": 0.2,
+    "def": "mean|a| + 0.5*mean|jerk| FROM THE CONTROLS (tanitad.models.v58f.kinematic_cost, v58f.py:99-116, imported)"
+   },
+   "progress": {
+    "weight": 0.0,
+    "def": "MINUS candidate arc length (origin prepended); default OFF"
+   }
+  },
+  "selection": "argmin cost inside the shortlist",
+  "_weights_note": "DEFAULTS ARE KNOBS, NOT MEASURED OPTIMA \u2014 a weight sweep re-scores from the banked w7_eval_windows.pt without a re-roll"
+ },
+ "roll": {
+  "k": 10,
+  "seconds": 1.0,
+  "fn": "tanitad.models.metric_dynamics.rollout_transitions (metric_dynamics.py:247-266)",
+  "decode": "decode_transitions(grounding.step['op'], ...) (metric_dynamics.py:269-280) \u2014 pinned twin of the canary's rollout_decode (train_flagship_v4.py:584-586)",
+  "action_lift": "train_p8_occupancy.lift_actions3 (train_p8_occupancy.py:417-424) \u2014 the canary 3-channel speed-append; \u26a0\ufe0f speed channel held at OBSERVED v0 for every candidate (the trunk's rollout contract \u2014 the stage_a stated limitation)",
+  "kappa_to_steer": "stage_a_probes.steer_of_kappa \u2014 steer_road_rad = atan(2.9 * kappa) (physicalai.py:621, legacy const2p9 regime)",
+  "action_placement": "candidate step 0 in the LAST window slot, steps 1..k-1 as futures; history OBSERVED (stage_a_probes.py:44-47, 219-232 convention)",
+  "states": "StateTap on world.readout (hook, not recompute \u2014 the W4c SpatialTokenTap pattern)",
+  "imagination_closed": true
+ },
+ "calibration_p7": {
+  "across_windows_cost_vs_realised_error": {
+   "spearman_rho": 0.439,
+   "n": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "seed": 0,
+   "estimator": "episode_cluster_bootstrap",
+   "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+   "rho_ci_cluster": [
+    0.2805,
+    0.5685
+   ],
+   "n_boot_degenerate": 0,
+   "gate_rho_ge_0.3_ci_excl_0": true
+  },
+  "within_window_cost_vs_error_over_shortlist": {
+   "rho_mean": 0.2878,
+   "rho_median": 0.3446,
+   "n_windows": 881,
+   "n_dropped_degenerate": 0,
+   "note": "rank correlation over only 32 shortlist candidates per window \u2014 coarse by construction; the across-window block is the P7 analogue"
+  },
+  "p7_reference": {
+   "gate": "PRE-REGISTERED (WM_PHYSICS_PROOF P7): rho >= 0.3 with CI excluding 0",
+   "rescorer_top8_kincost_rho": 0.0542,
+   "rescorer_top8_kincost_ci": [
+    -0.1395,
+    0.2387
+   ],
+   "frozen_argmax_rho": 0.2622,
+   "frozen_argmax_ci": [
+    0.0909,
+    0.4098
+   ],
+   "read": "both learned-score arms FAILED P7 (p7_regrade.json) \u2014 W7's explicit costs should be calibrated where scores were not; this block is that check on the same grid"
+  }
+ },
+ "reference": {
+  "frozen_argmax_selected_ade": 0.7933,
+  "rescorer_top8_kincost_selected_ade": 0.4815,
+  "w4_oracle_ade": 0.1077,
+  "w4b_feat_selected_ade": 0.56,
+  "w4b_kin_selected_ade": 0.5637,
+  "_source": "w4_gate.json / w4b_gate_feat.json / p7_regrade.json \u2014 banked 881-grid numbers; the in-run recomputed frozen/oracle land in mini_eval as the grid-parity cross-check"
+ },
+ "mini_eval": {
+  "n_windows": 881,
+  "n_candidates": 256,
+  "shortlist_k": 32,
+  "grid": {
+   "episodes": 40,
+   "stride": 8,
+   "batch": 16,
+   "expected_n": 881,
+   "matches_banked_grid": true
+  },
+  "selected_ade": 3.614226,
+  "frozen_selected_ade_in_run": 4.415884,
+  "oracle_ade_in_run": 0.127303,
+  "shortlist_oracle_ade": 2.180346,
+  "sel_gap": 3.486922,
+  "winner_hit_frac": 0.014756,
+  "sel_rank_pct_mean": 0.334041,
+  "frozen_in_shortlist_frac": 1.0,
+  "sel_matches_frozen_frac": 0.009081,
+  "winner_in_shortlist_frac": 0.128263,
+  "w7_pick_le_frozen_pick_frac": 0.783201,
+  "families": {
+   "LONGITUDINAL": {
+    "speed_mae_ms": 0.514073,
+    "accel_mae_ms2": 0.550704,
+    "headway_ttc": "not computable here: no lead-agent channel in this instrument \u2014 pod-side taniteval harness item, stated per the 2026-08-02 rule"
+   },
+   "LATERAL": {
+    "heading_mae_rad": 0.271275,
+    "yaw_rate_mae_rads": 0.355766,
+    "curvature_mae_1pm": 6.057167,
+    "note": "waypoint-derived adjuncts (atan2 of finite differences; noisy near standstill)"
+   },
+   "TACTICAL": {
+    "note": "re-rank decision quality IS this instrument's family: shortlist coverage of the true winner + the pick's rank",
+    "winner_hit_frac": 0.014756,
+    "winner_in_shortlist_frac": 0.128263,
+    "sel_rank_pct_mean": 0.334041
+   },
+   "STRATEGIC": "n/a: no route/goal label exists on PhysicalAI-AV (settled, five probes \u2014 CLAUDE.md rule 2); stated per the 2026-08-02 rule"
+  },
+  "selgap_ci": "taniteval unavailable here (ModuleNotFoundError: No module named 'taniteval.selgap') \u2014 rescore pod-side from w7_eval_windows.pt",
+  "wallclock_s": 210.0
+ },
+ "tier": "T0",
+ "_tier_note": "T0 \u2014 the OUTER eval conditions on logged frames and scores against the logged future: a WM diagnostic, NEVER driving performance (EVAL_DOCTRINE.md). The roll inside is imagination-closed under the candidate's OWN actions (the MPC-style path, not GT teacher-forcing) \u2014 that does not upgrade the outer tier; T1 confirmation is pod-side t1_eval.",
+ "_estimator_note": "POINT ESTIMATES over the eval grid (episodes<40, stride 8). The decision-grade interval for any registry claim is the EPISODE-CLUSTER BOOTSTRAP (taniteval.selgap / taniteval/ci.py) on the banked per-window arrays (w7_eval_windows.pt) \u2014 run it before publishing; never overlapping_holdout_se.",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "base_ckpt": "/workspace/experiments/stage-a-predictor/ckpt_stage_a.pt",
+ "base_step": 29999,
+ "w4_ckpt": "/workspace/experiments/w4r-unicycle-head-stagea/unicycle_emission.pt",
+ "w4_meta": {
+  "w4_step": 4000,
+  "w4_base_ckpt": "/workspace/experiments/stage-a-predictor/ckpt_stage_a.pt",
+  "w4_base_step": 29999,
+  "cond_mode": "feature",
+  "feat_dim": 384,
+  "k": 20
+ },
+ "n_trainable": 0,
+ "_training_note": "W7 trains NOTHING \u2014 a training-free re-rank instrument over frozen artifacts",
+ "frozen_proof": {
+  "md5_before": "06019658062d5179714fc9edf51967c0",
+  "md5_after": "06019658062d5179714fc9edf51967c0",
+  "identical": true,
+  "modules": "world + head + W4 emission + grounding"
+ },
+ "wall_s": 211.9
+}

@@ -1,0 +1,16 @@
+TRAIN_DONE {"steps": 30, "p5_all_pass": false, "seconds": 2}
+TRAIN_DONE {"steps": 30, "p5_all_pass": false, "seconds": 1}
+extract TK16_s0 eval: 96 rows, 88 with a 5-frame history
+extract TK16_s0 eval: 96 rows, 88 with a 5-frame history
+PASS g1_default_path_bit_identical_to_the_pilot_tool (4 s): 4 arms, 30 steps: weights, losses, extract outputs identical
+TRAIN_DONE {"steps": 30, "p5_all_pass": false, "seconds": 0}
+TRAIN_DONE {"steps": 30, "p5_all_pass": false, "seconds": 0}
+r1: pass True (30 batches, chunks 48 / 48) -> /workspace/v8proof/finegrid_r/checks_tmp/r1_ok.json
+r1: pass False (30 batches, chunks 48 / 6) -> /workspace/v8proof/finegrid_r/checks_tmp/r1_bad.json
+PASS r1_batch_log_and_sampler_chunk (1 s): 30 batches logged; equal runs equal; chunk 48 vs 6 differs and r1 fails; formula 43/41 and 174/48
+PASS p5_intact_parts_for_permuted_label_arms (0 s): intact parts read for SH arms, whole lead term for the others
+PASS g4_g6_gradients_mutation_forward (1 s): gradients non-zero, control 0.0, loss-line mutation reads 0.0, forward takes tokens only
+PASS g3_planted_tokens_at_160 (14 s): held-out gap R2 0.950 at 160 tokens (bar 0.9)
+PASS refusals (0 s): arm/grid pairing and an unknown chunk grid refused
+tool sha256: 89efd1567b2d787f66c948ca37e96d0742f46ce2562dd46ba1b35431a02d6338
+ZZ CHECKS-POD DONE 6 0

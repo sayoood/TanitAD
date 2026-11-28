@@ -1,0 +1,146 @@
+{
+ "_evidence_class": "MEASURED (ours; banked fp16 checkpoints + Thor's own train_log.jsonl lr field)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "run": "v6F-SW-30k",
+ "steps_compared": [
+  12000,
+  14000,
+  16000,
+  18000,
+  20000
+ ],
+ "lr_at_step": {
+  "11950": 5.8911319000666e-05,
+  "13950": 4.975364334077322e-05,
+  "15950": 4.038094838329002e-05,
+  "17950": 3.120286587303872e-05,
+  "19950": 2.262052205704337e-05,
+  "24950": 6.124501140449847e-06,
+  "25200": 5.545645712876312e-06
+ },
+ "lr_max": 9.999931461237134e-05,
+ "lr_integral": {
+  "0_25200": 1.39362,
+  "12000_20000": 0.32227,
+  "12000_25200": 0.39088,
+  "25200_30000_extrapolated": 0.01496
+ },
+ "moving_groups": {
+  "readout": {
+   "raw": [
+    0.11676,
+    0.102402,
+    0.097873,
+    0.05257
+   ],
+   "lr_normalised": [
+    2149.0,
+    2272.2,
+    2734.5,
+    1953.4
+   ],
+   "raw_ratio_last_over_first": 0.45,
+   "lr_normalised_ratio_last_over_first": 0.909
+  },
+  "masked_cells": {
+   "raw": [
+    0.049454,
+    0.037989,
+    0.031514,
+    0.022058
+   ],
+   "lr_normalised": [
+    910.2,
+    843.0,
+    880.5,
+    819.6
+   ],
+   "raw_ratio_last_over_first": 0.446,
+   "lr_normalised_ratio_last_over_first": 0.9
+  },
+  "predictor_op": {
+   "raw": [
+    0.033325,
+    0.032902,
+    0.032508,
+    0.021339
+   ],
+   "lr_normalised": [
+    613.3,
+    730.1,
+    908.2,
+    792.9
+   ],
+   "raw_ratio_last_over_first": 0.64,
+   "lr_normalised_ratio_last_over_first": 1.293
+  },
+  "step_readout_op": {
+   "raw": [
+    0.023658,
+    0.014861,
+    0.014201,
+    0.011944
+   ],
+   "lr_normalised": [
+    435.4,
+    329.8,
+    396.8,
+    443.8
+   ],
+   "raw_ratio_last_over_first": 0.505,
+   "lr_normalised_ratio_last_over_first": 1.019
+  },
+  "encoder": {
+   "raw": [
+    0.020123,
+    0.014312,
+    0.011205,
+    0.005528
+   ],
+   "lr_normalised": [
+    370.4,
+    317.6,
+    313.1,
+    205.4
+   ],
+   "raw_ratio_last_over_first": 0.275,
+   "lr_normalised_ratio_last_over_first": 0.555
+  }
+ },
+ "frozen_groups": [
+  "act_head_lat",
+  "act_head_lon",
+  "act_head_str",
+  "adapter_str",
+  "adapter_tac",
+  "cand_queries",
+  "cond_op",
+  "cond_tac",
+  "emission",
+  "goal_head_str",
+  "goal_head_tac",
+  "plan_proj",
+  "predictor_str",
+  "predictor_tac",
+  "vocab_a_lat",
+  "vocab_a_lon",
+  "vocab_a_str",
+  "vocab_str",
+  "vocab_tac"
+ ],
+ "n_frozen": 19,
+ "n_moving": 5,
+ "stage": "S-W",
+ "declared_trainable_groups": [
+  "encoder",
+  "readout",
+  "predictor_op",
+  "aux"
+ ],
+ "declaration_matches_observation": true,
+ "declaration_check": "step_readout_op.->predictor_op and masked_cells.->aux via V6Stack._GROUP_PREFIXES; observed movement == declared trainability",
+ "budget": {
+  "remaining_pct_of_consumed": 1.073,
+  "remaining_pct_of_12k_20k_window": 4.642
+ }
+}

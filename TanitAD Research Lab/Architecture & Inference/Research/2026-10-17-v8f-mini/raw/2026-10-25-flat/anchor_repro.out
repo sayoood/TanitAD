@@ -1,0 +1,11 @@
+172 mutants over 6 files, each anchor found exactly once
+unmutated: anchors OK (collection would pass)
+0 the cut never runs (cut == full) -> AssertionError at collection: exactly one cut line in the model
+1 the cut runs under full (and not under cut) -> AssertionError at collection: exactly one cut line in the model
+2 the checkpoint half is deleted: O still reads S's checkpoints -> AssertionError at collection: the cut block is the cut line, the checkpoint line, the ok line, the code line, then O is called
+3 the ok half is deleted: O reads the nominal arcs but is told they are present -> AssertionError at collection: the cut block is the cut line, the checkpoint line, the ok line, the code line, then O is called
+4 the code half is deleted: O still reads T's code -> AssertionError at collection: the cut block is the cut line, the checkpoint line, the ok line, the code line, then O is called
+5 the cut hands O ones, not zeros -> AssertionError at collection: the cut block is the cut line, the checkpoint line, the ok line, the code line, then O is called
+6 the cut hands O a nominal arc that is not the model's -> anchors OK (collection would pass)
+7 the cut hands O the ok flag set -> AssertionError at collection: the cut block is the cut line, the checkpoint line, the ok line, the code line, then O is called
+8 out['code'] stops recording the code OFFERED to the interface -> anchors OK (collection would pass)

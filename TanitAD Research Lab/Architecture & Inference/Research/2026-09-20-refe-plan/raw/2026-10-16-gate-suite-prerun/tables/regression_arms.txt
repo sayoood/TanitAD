@@ -1,0 +1,67 @@
+| # | arm | expected | observed | the gate's first reason (verbatim, cut at 130 chars) |
+|---|---|---|---|---|
+| 1 | resigned_unchanged | ACCEPTED | ACCEPTED | (accepted) |
+| 2 | age_11h59 | ACCEPTED | ACCEPTED | (accepted) |
+| 3 | stale_13h | REJECTED | REJECTED | evidence is 13.00 h old (limit 12 h) |
+| 4 | stale_12h_plus | REJECTED | REJECTED | evidence is 12.03 h old (limit 12 h) |
+| 5 | future_dated | REJECTED | REJECTED | evidence is dated 3600 s in the future |
+| 6 | created_unparseable | REJECTED | REJECTED | created_utc 'yesterday' is not a UTC timestamp |
+| 7 | verdict_FAIL_only | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 8 | status_FAIL_only | REJECTED | REJECTED | the recorded suite status is 'FAIL' with reasons [] |
+| 9 | reasons_nonempty_only | REJECTED | REJECTED | the recorded suite status is 'PASS' with reasons ['x'] |
+| 10 | script_rc_1_only | REJECTED | REJECTED | ppData\Local\Temp\tmpf61xhqkl\w\probe.py: rc 1, token_seen True |
+| 11 | token_not_seen_only | REJECTED | REJECTED | ppData\Local\Temp\tmpf61xhqkl\w\probe.py: rc 0, token_seen False |
+| 12 | skip_in_row_only | REJECTED | REJECTED | ppData\Local\Temp\tmpf61xhqkl\w\probe.py: skip(s) 'ZZTEST_SKIP x' -- a skip is not a pass |
+| 13 | row_count_short | REJECTED | REJECTED | the recorded suite ran 1 script(s), the profile lists 2 |
+| 14 | row_script_renamed | REJECTED | REJECTED | a recorded script row (other.py) is not the profile's entry ppData\Local\Temp\tmpf61xhqkl\w\probe.py |
+| 15 | check_name_wrong | REJECTED | REJECTED | the recorded result is for check 'G-LIVE', not G-SUITE |
+| 16 | kind_is_token | REJECTED | REJECTED | not a gate-suite pre-run evidence (kind 'launch-gate-token', schema 'tanitad.launch_gate.suite_prerun/1') |
+| 17 | schema_wrong | REJECTED | REJECTED | not a gate-suite pre-run evidence (kind 'gate-suite-prerun-evidence', schema 'tanitad.launch_gate/1') |
+| 18 | gate_sha_changed | REJECTED | REJECTED | gate code differs from the pre-run's: gate_sha256 32c3d4b9e98156df now vs 0000000000000000 |
+| 19 | gate_checks_sha_changed | REJECTED | REJECTED | gate code differs from the pre-run's: gate_checks_sha256 5659211c05750b75 now vs 0000000000000000 |
+| 20 | gate_token_sha_changed | REJECTED | REJECTED | gate code differs from the pre-run's: gate_token_sha256 e90096efba925cd6 now vs 0000000000000000 |
+| 21 | env_sha_changed | REJECTED | REJECTED | environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\user |
+| 22 | tree_sha_changed_resigned | REJECTED | REJECTED | code tree differs from the pre-run's (c9f4be783d8d280b now vs 0000000000000000) |
+| 23 | suite_sha_changed_resigned | REJECTED | REJECTED | suite entries differ from the pre-run's (8635013c0e30f5fe now vs 0000000000000000) |
+| 24 | arm_recorded | REJECTED | REJECTED | a regression arm is involved (now None, evidence 'suite_failing_test'): an arm run is never short-cut |
+| 25 | valid | ACCEPTED | ACCEPTED | (accepted) |
+| 26 | valid_same_commit | ACCEPTED | ACCEPTED | (accepted) |
+| 27 | commit_changed | REJECTED | REJECTED | evidence commit cccccccccccc != launch commit dddddddddddd |
+| 28 | commit_none_vs_set | REJECTED | REJECTED | evidence commit None != launch commit cccccccccccc |
+| 29 | tree_edited_file | REJECTED | REJECTED | code tree differs from the pre-run's (88146f1c4e029c66 now vs c9f4be783d8d280b) |
+| 30 | tree_added_file | REJECTED | REJECTED | code tree differs from the pre-run's (25ddb9f69838a789 now vs c9f4be783d8d280b) |
+| 31 | tree_removed_file | REJECTED | REJECTED | code tree differs from the pre-run's (5e9cbae885f12777 now vs c9f4be783d8d280b) |
+| 32 | profile_renamed_same_suite | REJECTED | REJECTED | evidence profile 'refe_synth' != launch profile 'refe_synth_other' |
+| 33 | profile_other_real_profile | REJECTED | REJECTED | evidence profile 'refe_synth' != launch profile 'refe_p2rep' |
+| 34 | suite_args_edited | REJECTED | REJECTED | suite entries differ from the pre-run's (4f484c111b72c8e8 now vs 8635013c0e30f5fe) |
+| 35 | suite_token_edited | REJECTED | REJECTED | suite entries differ from the pre-run's (3ef6886c608f9005 now vs 8635013c0e30f5fe) |
+| 36 | suite_entry_dropped | REJECTED | REJECTED | suite entries differ from the pre-run's (05d4e4d6a0999c1b now vs 8635013c0e30f5fe) |
+| 37 | suite_entry_added | REJECTED | REJECTED | suite entries differ from the pre-run's (e0ec224b06c641d2 now vs 8635013c0e30f5fe) |
+| 38 | suite_entries_reordered | REJECTED | REJECTED | suite entries differ from the pre-run's (a22f7e27d3295fb8 now vs 8635013c0e30f5fe) |
+| 39 | tampered_one_byte | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd) |
+| 40 | key_other | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 8064c07560fe1b22, this host's 0bd08fed787ab9bd) |
+| 41 | hmac_removed | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd) |
+| 42 | hmac_garbage | REJECTED | REJECTED | HMAC does not verify -- edited, or signed with another key (evidence key_id 0bd08fed787ab9bd, this host's 0bd08fed787ab9bd) |
+| 43 | no_key | REJECTED | REJECTED | cannot judge the suite evidence: TypeError: key: expected bytes or bytearray, but got 'NoneType' |
+| 44 | token_as_evidence | REJECTED | REJECTED | not a gate-suite pre-run evidence (kind 'launch-gate-token', schema 'tanitad.launch_gate/1') |
+| 45 | regression_arm_active | REJECTED | REJECTED | a regression arm is involved (now 'suite_failing_test', evidence 'None'): an arm run is never short-cut |
+| 46 | env_var_set_after_prerun | REJECTED | REJECTED | environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\user |
+| 47 | env_var_set_at_prerun_only | REJECTED | REJECTED | environment differs from the pre-run's (python / installed distributions / suite dir / env vars): now 102 dists, suite dir c:\user |
+| 48 | env_var_unbound_is_ignored | ACCEPTED | ACCEPTED | (accepted) |
+| 49 | real_prerun_FAIL | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 50 | real_prerun_skip | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 51 | real_prerun_pass_under_arm_env | REJECTED | REJECTED | a regression arm is involved (now None, evidence 'suite_failing_test'): an arm run is never short-cut |
+| 52 | real_prerun_tree_moved_during | REJECTED | REJECTED | evidence verdict is 'FAIL', not PASS |
+| 53 | evidence_missing | REJECTED | REJECTED | suite evidence unreadable: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\tmpf61 |
+| 54 | evidence_empty | REJECTED | REJECTED | suite evidence unreadable: JSONDecodeError: Expecting value: line 1 column 1 (char 0) |
+| 55 | evidence_not_json | REJECTED | REJECTED | suite evidence unreadable: JSONDecodeError: Expecting value: line 1 column 1 (char 0) |
+| 56 | evidence_json_list | REJECTED | REJECTED | suite evidence is not a JSON object |
+| 57 | evidence_truncated | REJECTED | REJECTED | suite evidence unreadable: JSONDecodeError: Unterminated string starting at: line 19 column 16 (char 939) |
+| 58 | e2e_main_accepted [e2e] | ACCEPTED | ACCEPTED | (accepted) |
+| 59 | e2e_scorer_accepted [e2e] | ACCEPTED | ACCEPTED | (accepted) |
+| 60 | e2e_ship_manifest_commit_accepted [e2e] | ACCEPTED | ACCEPTED | (accepted) |
+| 61 | e2e_main_rejected_falls_back_live [e2e] | REJECTED | REJECTED | (end-to-end arm: see the token's suite_source) |
+| 62 | e2e_scorer_rejected_falls_back_live [e2e] | REJECTED | REJECTED | (end-to-end arm: see the token's suite_source) |
+| 63 | e2e_no_flag_is_todays_live_run [e2e] | REJECTED | REJECTED | (end-to-end arm: see the token's suite_source) |
+
+63 arms: 8 positive twins/controls (must be ACCEPTED), 55 must be REJECTED (live fallback). expected != observed: none

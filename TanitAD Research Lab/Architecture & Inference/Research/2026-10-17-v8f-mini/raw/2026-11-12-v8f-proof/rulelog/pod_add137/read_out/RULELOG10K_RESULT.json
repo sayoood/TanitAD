@@ -1,0 +1,193 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD137",
+ "tier": "T1-kin/hb0.2 (kinematic rollout on the model's own actions, executor of record v8f_t1_eval_hb.py with the heading bound 0.2 1/m; not driving performance)",
+ "names": [
+  "RULELOG10K-K0-MIXED",
+  "RULELOG10K-K0-RULE-ON",
+  "RULELOG10K-K0-BRAKING-LIMIT-BINDS"
+ ],
+ "measures": {
+  "R1": {
+   "value": 1.0,
+   "interval": [
+    1.0,
+    1.0
+   ],
+   "n": 83
+  },
+  "R2": {
+   "value": 1.0,
+   "interval": [
+    1.0,
+    1.0
+   ],
+   "n": 83
+  },
+  "R3": {
+   "value": null,
+   "interval": [
+    null,
+    null
+   ],
+   "n": 83
+  },
+  "R4": {
+   "value": 0.8072289156626506,
+   "interval": [
+    0.68,
+    0.8823720397249808
+   ],
+   "n": 83
+  }
+ },
+ "beside": {
+  "tier": "T1-kin/hb0.2",
+  "n_evaluation_episodes": 141,
+  "subject": {
+   "tier": "T1-kin/hb0.2",
+   "n_unsafe_windows": 83,
+   "n_rule_on_windows": 83,
+   "medians_rule_on": {
+    "S": -0.1294844493014793,
+    "e_L": 0.20564817906385713,
+    "e_X": -0.2884931656319747,
+    "i": 3.0
+   },
+   "medians_all_unsafe": {
+    "S": -0.1294844493014793,
+    "i": 3.0
+   },
+   "share_lead_mean_speed_more_than_0.5_below_v_L": 0.40963855421686746,
+   "share_negative_e_X": 0.9879518072289156,
+   "share_tick_at_step_0": 0.012048192771084338,
+   "per_seed_R1_to_R4": {
+    "R1": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "R2": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "R3": [
+     null,
+     null,
+     null,
+     3.09405936137011
+    ],
+    "R4": [
+     0.8636363636363636,
+     0.8421052631578947,
+     0.6363636363636364,
+     0.9
+    ]
+   },
+   "n_unsafe_windows_per_seed": [
+    22,
+    19,
+    22,
+    20
+   ]
+  },
+  "GEc": {
+   "tier": "T1-kin/hb0.2",
+   "n_unsafe_windows": 108,
+   "n_rule_on_windows": 108,
+   "medians_rule_on": {
+    "S": 0.9643494771118384,
+    "e_L": 0.3893537106375433,
+    "e_X": -0.16305031158961247,
+    "i": 3.0
+   },
+   "medians_all_unsafe": {
+    "S": 0.9643494771118384,
+    "i": 3.0
+   },
+   "share_lead_mean_speed_more_than_0.5_below_v_L": 0.5555555555555556,
+   "share_negative_e_X": 0.9537037037037037,
+   "share_tick_at_step_0": 0.046296296296296294,
+   "third_part_g0_minus_label_gap_at_the_tick": {
+    "median": 0.7804303169250488,
+    "share_positive": 0.8333333333333334
+   },
+   "R1_to_R4": {
+    "R1": {
+     "value": 1.0,
+     "interval": [
+      1.0,
+      1.0
+     ],
+     "n": 108
+    },
+    "R2": {
+     "value": 0.8611111111111112,
+     "interval": [
+      0.6753020235578375,
+      0.9697045454545454
+     ],
+     "n": 108
+    },
+    "R3": {
+     "value": 0.6171861540440648,
+     "interval": [
+      0.23436982535988735,
+      1.1538214443753732
+     ],
+     "n": 108
+    },
+    "R4": {
+     "value": 0.7685185185185185,
+     "interval": [
+      0.6373577749683944,
+      0.9642857142857143
+     ],
+     "n": 108
+    }
+   },
+   "per_seed_R1_to_R4": {
+    "R1": [
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "R2": [
+     0.896551724137931,
+     0.8518518518518519,
+     0.7692307692307693,
+     0.9230769230769231
+    ],
+    "R3": [
+     0.35001258704342436,
+     0.9957049543083761,
+     0.7104954179650834,
+     0.3691825895494926
+    ],
+    "R4": [
+     0.7586206896551724,
+     0.8518518518518519,
+     0.8076923076923077,
+     0.6538461538461539
+    ]
+   },
+   "n_unsafe_windows_per_seed": [
+    29,
+    27,
+    26,
+    26
+   ]
+  }
+ },
+ "families": [
+  "LONGITUDINAL: read here (distance keeping: the gap lost against the rule's target split into the lead's forecast and the rollout's execution), T1-kin/hb0.2, not driving performance",
+  "LATERAL: not read by this card (the family reads of these banked runs are in rows 193 and 202); n = 0 here",
+  "TACTICAL: not read by this card (the family reads of these banked runs are in rows 193 and 202); n = 0 here",
+  "STRATEGIC: not read by this card (the family reads of these banked runs are in rows 193 and 202); n = 0 here"
+ ],
+ "estimator": "cluster bootstrap over the evaluation episodes, 2000 draws, seed 137, 95 percent interval; the interval answers what another draw of episodes would say, not what another training run would say",
+ "controls_sha256": "9d56d21f59a24f1a2568015aec0fdff92176393f86299f44cf7bbe7fa56e48f4"
+}

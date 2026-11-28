@@ -1,0 +1,94 @@
+C1R-READ  stamp: VALID
+tier T1; n=12146 tokens, 136 logs; paired log-cluster bootstrap 10,000 draws seed 20260927 95% percentile; MEASURED; one seed per arm
+M1  d_seed = PDMS(C1r) - PDMS(C1) = +0.1158 [-0.1783, +0.4007]   CI contains 0  -> R-NULL
+M2  C1r PDMS 92.6706 [91.9481, 93.3795]  (NC 98.8638 [98.4908, 99.2066]  DAC 98.2793 [97.8535, 98.6641]  TTC 95.5459 [94.6321, 96.4061]  EP 89.6641 [88.8066, 90.4935]  C 99.9753 [99.9411, 100.0000]  DDC 96.2663 [95.3950, 97.1032])
+    C1r-C1 sub-scores: NC +0.0617 [-0.0859, +0.2035]  DAC +0.0576 [-0.1564, +0.2855]  TTC +0.2141 [-0.0867, +0.4906]  EP -0.0570 [-0.3738, +0.2600]  C +0.0000 [+0.0000, +0.0000]  DDC +0.0864 [-0.0794, +0.2594]
+M4  descriptive, cross-seed, NOT seed-matched: C1r - C0 = +1.2861 [+0.8780, +1.7062]   (C1 - C0 = +1.1702 [+0.6730, +1.6450])
+F_REFe = |d_seed| = 0.1158 (ONE draw, 1 df)
+(a) C1 - C0 +1.1702 vs max(B=0.7031, 2F=0.2316) = 0.7031: 1.1702 > 2F (exceeds 2*F_REFe); vs B: above B. Descriptive; P5-C GUARD-FAIL unchanged.
+F_REFe=0.1158 printed beside frozen cards: SCORER-FT T - C -0.9015 (|T-C| > F); field F-C and P-C: F_REFe qualifier only, bars unchanged; cards frozen after this read use max(F, F_REFe) at 2F terms
+C1r is never adopted on this read (selection on noise)
+goal 94.55: C1r 92.6706 [91.9481, 93.3795] -> BELOW GOAL
+M3 families (executed_tracked frame, new - ref; separated = CI excludes 0; each with n):
+  LONGITUDINAL: 22 components, 8 separated
+    headway_min_m: +0.0613 [+0.0170, +0.1028] n=6198 logs=131 SEPARATED
+    time_gap_min_s: +0.0057 [-0.0132, +0.0230] n=5665 logs=131
+    min_ttc_s: +0.0594 [-0.0335, +0.1484] n=6198 logs=131
+    lead_viol: -0.0006 [-0.0026, +0.0012] n=6435 logs=133
+    lead_at_risk: +0.0000 [+0.0000, +0.0000] n=6435 logs=133
+    lead_progress_ratio: -0.0040 [-0.0075, -0.0005] n=5331 logs=132 SEPARATED
+    speed_mae_mps: +0.0001 [-0.0048, +0.0053] n=12146 logs=136
+    speed_bias_mps: -0.0197 [-0.0259, -0.0131] n=12146 logs=136 SEPARATED
+    speed_rmse_mps: -0.0042 [-0.0106, +0.0025] n=12146 logs=136
+    target_speed_acc.within_0.5_mps: -0.0013 [-0.0042, +0.0014] n=12146 logs=136
+    target_speed_acc.within_1.0_mps: -0.0021 [-0.0047, +0.0006] n=12146 logs=136
+    target_speed_acc.within_2.0_mps: -0.0002 [-0.0020, +0.0014] n=12146 logs=136
+    along_mae_m: -0.0049 [-0.0121, +0.0028] n=12146 logs=136
+    along_bias_m: -0.0282 [-0.0367, -0.0190] n=12146 logs=136 SEPARATED
+    along_final_bias_m: -0.0842 [-0.1064, -0.0605] n=12146 logs=136 SEPARATED
+    accel_mae_mps2: -0.0010 [-0.0035, +0.0017] n=12146 logs=136
+    ego_progress.progress_ratio_mean: -0.0049 [-0.0067, -0.0030] n=12053 logs=136 SEPARATED
+    ego_progress.progress_ratio_median: -0.0035 [-0.0056, -0.0009] n=12053 logs=136 SEPARATED
+    ego_progress.progress_error_mean: -0.0002 [-0.0019, +0.0015] n=12053 logs=136
+    ego_progress.under_progress_rate: +0.0081 [+0.0034, +0.0127] n=12053 logs=136 SEPARATED
+    ego_progress.gt_progress_mean_m: HUMAN-ONLY None
+    ego_progress.t0_axis_gt_self_ratio: HUMAN-ONLY None
+  LATERAL: 8 components, 3 separated
+    heading_mae_deg: -0.0236 [-0.0556, +0.0077] n=12101 logs=136
+    yaw_rate_mae_degps: -0.0259 [-0.0485, -0.0039] n=11949 logs=136 SEPARATED
+    curvature_mae_1pm: -0.0001 [-0.0002, +0.0000] n=11949 logs=136
+    curvature_bias_1pm: +0.0001 [-0.0000, +0.0002] n=11949 logs=136
+    cross_mae_m: +0.0046 [-0.0007, +0.0100] n=12146 logs=136
+    cross_bias_m: +0.0216 [+0.0154, +0.0278] n=12146 logs=136 SEPARATED
+    cross_final_mae_m: +0.0111 [-0.0020, +0.0244] n=12146 logs=136
+    last_pose_heading_err_deg: -0.0683 [-0.1387, -0.0013] n=12146 logs=136 SEPARATED
+  TACTICAL: 34 components, 8 separated
+    lateral_decision.accuracy: +0.0005 [-0.0028, +0.0038] n=12146 logs=136
+    lateral_decision.kappa: +0.0012 [-0.0049, +0.0074] n=12146 logs=136
+    lateral_decision.per_class.lane_keep.recall: -0.0013 [-0.0047, +0.0024] n=7516 logs=136
+    lateral_decision.per_class.lane_keep.precision: +0.0013 [-0.0028, +0.0051] n=7463 logs=136
+    lateral_decision.per_class.turn_left.recall: -0.0025 [-0.0083, +0.0031] n=2811 logs=102
+    lateral_decision.per_class.turn_left.precision: -0.0003 [-0.0071, +0.0062] n=3073 logs=109
+    lateral_decision.per_class.turn_right.recall: +0.0126 [+0.0005, +0.0243] n=1819 logs=92 SEPARATED
+    lateral_decision.per_class.turn_right.precision: -0.0003 [-0.0088, +0.0089] n=1940 logs=102
+    longitudinal_decision.accuracy: -0.0030 [-0.0075, +0.0014] n=12146 logs=136
+    longitudinal_decision.kappa: -0.0047 [-0.0113, +0.0018] n=12146 logs=136
+    longitudinal_decision.per_class.brake_stop.recall: -0.0005 [-0.0072, +0.0058] n=4285 logs=127
+    longitudinal_decision.per_class.brake_stop.precision: -0.0101 [-0.0166, -0.0044] n=4633 logs=131 SEPARATED
+    longitudinal_decision.per_class.steady.recall: -0.0027 [-0.0124, +0.0062] n=4000 logs=125
+    longitudinal_decision.per_class.steady.precision: -0.0092 [-0.0237, +0.0057] n=2287 logs=130
+    longitudinal_decision.per_class.accelerate.recall: -0.0062 [-0.0115, -0.0010] n=3861 logs=133 SEPARATED
+    longitudinal_decision.per_class.accelerate.precision: +0.0032 [-0.0005, +0.0073] n=5898 logs=133
+    maneuver_5way_collapsed.accuracy: +0.0024 [-0.0018, +0.0063] n=12146 logs=136
+    maneuver_5way_collapsed.kappa: +0.0029 [-0.0025, +0.0078] n=12146 logs=136
+    maneuver_5way_collapsed.per_class.lane_keep.recall: +0.0049 [-0.0085, +0.0184] n=2040 logs=122
+    maneuver_5way_collapsed.per_class.lane_keep.precision: +0.0052 [-0.0128, +0.0238] n=1244 logs=120
+    maneuver_5way_collapsed.per_class.turn_left.recall: -0.0025 [-0.0083, +0.0031] n=2811 logs=102
+    maneuver_5way_collapsed.per_class.turn_left.precision: -0.0003 [-0.0071, +0.0062] n=3073 logs=109
+    maneuver_5way_collapsed.per_class.turn_right.recall: +0.0126 [+0.0005, +0.0243] n=1819 logs=92 SEPARATED
+    maneuver_5way_collapsed.per_class.turn_right.precision: -0.0003 [-0.0088, +0.0089] n=1940 logs=102
+    maneuver_5way_collapsed.per_class.accelerate.recall: -0.0069 [-0.0148, +0.0014] n=1750 logs=124
+    maneuver_5way_collapsed.per_class.accelerate.precision: +0.0097 [+0.0007, +0.0181] n=2770 logs=131 SEPARATED
+    maneuver_5way_collapsed.per_class.brake_stop.recall: +0.0040 [-0.0026, +0.0108] n=3726 logs=121
+    maneuver_5way_collapsed.per_class.brake_stop.precision: -0.0044 [-0.0121, +0.0022] n=3760 logs=130
+    goal_setting.goal_point_error_m: -0.0037 [-0.0238, +0.0176] n=12146 logs=136
+    goal_setting.goal_long_bias_m: -0.0842 [-0.1064, -0.0605] n=12146 logs=136 SEPARATED
+    goal_setting.goal_lat_bias_m: +0.0173 [+0.0005, +0.0334] n=12146 logs=136 SEPARATED
+    goal_setting.goal_bearing_mae_deg: +0.0070 [-0.0406, +0.0679] n=12053 logs=136
+    goal_setting.goal_range_ratio: -0.0050 [-0.0069, -0.0031] n=12053 logs=136 SEPARATED
+    goal_setting.goal_bearing_bias_deg: NO-PER-TOKEN-DATA families_run.py emits no per-token array for this metric (only longitudinal.distance_keeping._per_window is exported); a paired CI needs it
+  STRATEGIC: 0 components, 0 separated
+  TACTICAL command adherence status COMPUTED: turn-active accuracy C1r 0.8808 ci95 [0.8549386514866655, 0.9038839505877987]; paired vs C1: {"point": 0.004170755642787046, "ci95": [-0.002276052047888554, 0.010782501566604881], "separated": false}; selection quality / goal-setting: NOT COMPUTABLE (REFe has no tactical goal head, and NAVSIM carries no manoeuvre label beyond the... n=12146)
+  STRATEGIC (unpaused 2026-11-16) paired C1r_minus_C1: S_DEC turn-active accuracy delta {"point": 0.004170755642787046, "ci95": [-0.002276052047888554, 0.010782501566604881], "separated": false} n=4076.0
+    S_GOAL LEFT n=2501: endpoint_error_m {"point": 0.04721778719042646, "ci95": [-0.0007801772007864899, 0.09975286734339373], "separated": false, "n_undefined_resamples": 0}  route_progress_ratio {"point": -0.0038492912729817252, "ci95": [-0.007161148813232959, -0.0006876850419380244], "separated": true, "n_undefined_resamples": 0}
+    S_GOAL STRAIGHT n=8070: endpoint_error_m {"point": -0.018795962256607623, "ci95": [-0.045500233320746285, 0.009321334322059678], "separated": false, "n_undefined_resamples": 0}  route_progress_ratio {"point": -0.005897930808655749, "ci95": [-0.007439872744708487, -0.004373744448046046], "separated": true, "n_undefined_resamples": 0}
+    S_GOAL RIGHT n=1575: endpoint_error_m {"point": -0.05687975579140847, "ci95": [-0.1300736040240671, 0.02197293919072423], "separated": false, "n_undefined_resamples": 0}  route_progress_ratio {"point": 0.0028696296652335196, "ci95": [-0.002830208598064371, 0.009522006007917973], "separated": false, "n_undefined_resamples": 0}
+    S_GOAL TURN_ACTIVE n=4076: endpoint_error_m {"point": 0.00699363846707346, "ci95": [-0.033944355580548514, 0.04959113870562018], "separated": false, "n_undefined_resamples": 0}  route_progress_ratio {"point": -0.0014558907381225783, "ci95": [-0.00430091410670348, 0.001743226948446019], "separated": false, "n_undefined_resamples": 0}
+CONTROLS: CTRL-ID=PASS  CTRL-REPRO=PASS  CTRL-SET=PASS  CTRL-T=PASS  CTRL-SHA=PASS  CTRL-ARGV=PASS  CTRL-CODE=PASS
+  CTRL-ID: {"pass": true, "n_metrics": 7}
+  CTRL-REPRO: {"pass": true, "extra": true, "d_ref_minus_c0": {"point": 1.1702488667044415, "lo": 0.6729959574034279, "hi": 1.6450325684105436}, "committed_P5C": 1.1702, "max_abs_diff_new_REF_rows_vs_P5C_REF_rows": 0.0}
+  CTRL-SET: {"pass": true, "reports": {"C1r": {"rows": 12146, "misses": 0, "tokens_asked": 12146}, "C1": {"rows": 12146, "misses": 0, "tokens_asked": 12146}}, "token_sets_identical": true, "n_tokens": 12146, "n_logs": 136}
+  CTRL-T: {"pass": true, "items": [{"arm": "C1r", "verdict": "PASS", "n": 12146, "n_over_bar": 0, "bar": 1e-06, "max_abs_diff": 2.537881016451138e-11}, {"arm": "C1", "verdict": "PASS", "n": 12146, "n_over_bar": 0, "bar": 1e-06, "max_abs_diff": 2.5355273436389325e-11}]}
+  CTRL-SHA: {"pass": true, "sha256": {"C1r": "6e39a57c9a2e3ead0fef2b0d00d1684a708c901b6602ffe0717444f6180654a8", "C1": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"}}
+  CTRL-ARGV: {"pass": true, "differing_flags": ["--out", "--seed"], "values": {"--out": ["/workspace/data/refe_runs/p5c_c1", "/workspace/data/refe_runs/p5c_c1r"], "--seed": ["0", "1"]}, "argv0": ["/workspace/data/refe_p5c/code_33824420/refe/train.py", "/workspace/data/refe_p5c/code_bce4f9a7/refe/train.py"], "argv0_same_script_name": true, "config_keys_differing_other_than_argv": ["args", "identity"], "config_rank_keys_new_only_in_C1r": {}, "source_sha256": {"C1": {"train.py": "56ea5e34f5bb055b2ccc0b34195cc76c2c64ffb92ffec495227b6d212cc4e1f0", "model.py": "e6011cd83c846dfbd9756301ae731f4b84541b7b8e07a139a2c2c2b663a8a46d", "load_dinov3.py": "92b9c308694366dcb280e5c3c9d6ba4dc5b12a18da25c52f6728182156b64f38", "ckpt_io.py": "240de3486a1ebe306bb9a7fa176bf2d9349faf9511f9b45da8e3de43a70a2488"}, "C1r": {"train.py": "59a737f43947175001202d0114e3d4c83f8a30c984b171c3d284ca1b4684a755", "model.py": "e6011cd83c846d
+  CTRL-CODE: {"pass": true, "decision": "NEUTRAL", "packages": {"C1": "code_33824420 == mirror commit 33824420 (all 232 refe/*.py sha256-equal to the pod)", "C1r": "code_bce4f9a7: train.py, field_loss.py, planner.py, rank_loss.py, weight_rule_rank.py sha256-equal to mirror commit c98e6114; gate_checks.py/launch_gate.py are the later C1r-profile bytes (launch-time only)"}, "exports": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/c1r/read/tmp/pk/r1 (C1 refe) and r2 (C1r refe)", "training_path_hunks": [{"file": "train.py", "hunks": "SCORER-FT --rank-* term: import rank_loss; rank_refusals; rank built only if a.rank_w>0.0 (default 0.0 -> None); identity keys + defaults; monitor/log rows only under rank is not None", "argv_evidence": "C1/C1r argv carry no --rank-* flag; config rank_w 0.0, rank_heads '', so term not built", "pinned_test": "refe/test_rank_loss.py chk_off_path_identity(--pristine <C1 re

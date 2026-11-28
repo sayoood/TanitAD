@@ -1,0 +1,41 @@
+..............F..F.                                                      [100%]
+================================== FAILURES ===================================
+__________________ test_job_cmd_is_lf_only_and_has_no_labels __________________
+
+    def test_job_cmd_is_lf_only_and_has_no_labels():
+        c = MK.JOB_CMD
+>       assert "\r" not in c and "goto" not in c.lower() and ":" not in "".join(l[:1] for l in c.split("\n") if l)
+E       assert ('\r' not in '@echo off\n...RRORLEVEL%\n'
+E         
+E         '\r' is contained here:
+E           RRORLEVEL% and 'goto' not in '@echo off\n...rrorlevel%\n'
+E         
+E         'goto' is contained here:
+E           ls and no goto on purpose: this file is lf-only, and cmd.exe can mis-read labels in an lf-only batch file.
+E         ?           ++++
+E           call d:\tanitad\env.cmd
+E           set "pythonpath="
+E           set "vcv=c:\program files\microsoft visual studio\2022\community\vc\auxiliary\build\vcvars64.bat"...
+E         
+E         ...Full output truncated (10 lines hidden), use '-vv' to show)
+
+tests\test_gap48.py:421: AssertionError
+_________ test_chain_box2_marker_present_moves_only_our_marker_aside __________
+
+    def test_chain_box2_marker_present_moves_only_our_marker_aside():
+        root = work()
+        marker = f"{root}/BOX2_BUSY.txt"                                               # absent: the chain may claim the dev-box marker
+        log = f"{root}/ssh_calls.txt"
+        stub = f"{root}/ssh_stub.sh"
+        open(stub, "w", newline="\n").write(f'#!/bin/bash\necho "$@" >> "{log}"\necho B2EXISTS\n')
+        p = run_chain({"GAP48_BUILD": stand_in_build(root), "GAP48_BUSY_MARKER": marker, "GAP48_ASIDE_DIR": f"{root}/aside", "GAP48_SSH": f"{bash_exe()} {stub}"})
+>       assert p.returncode == 3 and "exists on box 2" in p.stdout
+E       AssertionError: assert (3 == 3 and 'exists on box 2' in 'ZZ GAP48-BUSY: C:/Users/Admin/t2a_scratch/gap48_rehearsal/run_050933_80608/BOX2_BUSY.txt exists, STOP (read it, do not delete it) ZZ\nowner=T2V8F stage5 BPC\nstart=x\n')
+E        +  where 3 = CompletedProcess(args=['C:/Program Files/Git/bin/bash.exe', 'E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/gap4..._050933_80608/BOX2_BUSY.txt exists, STOP (read it, do not delete it) ZZ\nowner=T2V8F stage5 BPC\nstart=x\n', stderr='').returncode
+E        +  and   'ZZ GAP48-BUSY: C:/Users/Admin/t2a_scratch/gap48_rehearsal/run_050933_80608/BOX2_BUSY.txt exists, STOP (read it, do not delete it) ZZ\nowner=T2V8F stage5 BPC\nstart=x\n' = CompletedProcess(args=['C:/Program Files/Git/bin/bash.exe', 'E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/gap4..._050933_80608/BOX2_BUSY.txt exists, STOP (read it, do not delete it) ZZ\nowner=T2V8F stage5 BPC\nstart=x\n', stderr='').stdout
+
+tests\test_gap48.py:473: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_gap48.py::test_job_cmd_is_lf_only_and_has_no_labels - asser...
+FAILED tests/test_gap48.py::test_chain_box2_marker_present_moves_only_our_marker_aside
+2 failed, 17 passed in 72.41s (0:01:12)

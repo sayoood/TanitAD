@@ -1,0 +1,89 @@
+--- a/stack/tanitad/train/declared_vs_built.py (NEW-1 package, base of batch 2)
++++ b/stack/tanitad/train/declared_vs_built.py (batch 2)
+@@ -418,6 +418,24 @@
+     return chk
+ 
+ 
++def _c_navc_tau_file(m, a):
++    """SPEC_REFCV7 §7: the BUILT tolerance against the BANKED file's τ -- a literal read from the
++    file, never from the argv float the file exists to verify."""
++    p = _a(a, "nav_compliance_tau_file", None)
++    if not p:
++        return []
++    import json as _json
++    try:
++        with open(p, encoding="utf-8") as fh:
++            want = float(_json.load(fh)["tau"])
++    except (OSError, ValueError, KeyError, TypeError) as exc:
++        return [Mismatch(_flag("nav_compliance_tau_file"), p, None, "the banked tau file",
++                         f"unreadable ({type(exc).__name__})")]
++    return _near("nav_compliance_tau_file", want, getattr(_dec(m), "navc_tau_rad", None),
++                 "core.decoder.navc_tau_rad", "the BUILT tolerance must be the banked one",
++                 tol=1e-12)
++
++
+ def _c_navc_tau(m, a):
+     if not bool(_a(a, "graft_nav_compliance", False)):
+         return []
+@@ -758,6 +776,7 @@
+ for _d in SELECTION_KEYS.values():
+     _b(_d, _c_selection(_d))
+ _b("nav_compliance_tau_rad", _c_navc_tau)
++_b("nav_compliance_tau_file", _c_navc_tau_file)
+ _b("bev_coupling", _c_bev_coupling)
+ register("bev_coupling_learned_offsets", "elsewhere", reason="checked with --bev-coupling (G-DVB)")
+ register("bev_coupling_offset_max_m", "elsewhere", reason="checked with --bev-coupling (G-DVB)")
+@@ -1035,3 +1054,53 @@
+             f"its record names this one is FALSE PROVENANCE (D-REFCV6-EQUALIZE-DROPPED, "
+             f"D-REFCV6-F3-WHITELIST, D-REFCV6-CONFIG-BUILD):\n  - "
+             + "\n  - ".join(str(b) for b in bad))
++
++
++# ============================================================================
++# D3 (2026-09-26): declared vs LOGGED -- the same defect class, one step later
++# ============================================================================
++
++def check_logged_rows(config: dict, rows) -> list[Mismatch]:
++    """-> a Mismatch per key the run DECLARED it logs (config.json ``grad_reach_logging``) that a
++    regular metrics row (one carrying ``loss``) does NOT carry, and per ``ga_*`` key in any row of
++    a run that declared none ([] == the rows carry exactly what config.json declared).
++
++    ⛔⛔ An instrument that is BUILT and DECLARED but never WRITES is the declared-vs-built defect
++    one step later. MEASURED 2026-09-26 by the map-signal audit: refcv6-r101-s0 reports per-head
++    gradient reach, and **0 of its 4,621 metrics rows carry a `ga_*` key** -- the row was filled
++    on the pre-increment step and written on the post-increment one. Run this on a launch
++    smoke's ``metrics.jsonl``; the trainer runs it itself on its FIRST log row and refuses.
++    ⚠️ A config.json with NO declaration (a pre-D3 trainer) is itself a Mismatch: nothing in it
++    says what should have been logged, so nothing can be shown to have been.
++    """
++    dec = (config or {}).get("grad_reach_logging")
++    if not isinstance(dec, dict):
++        return [Mismatch("grad_reach_logging", "a declaration in config.json", None,
++                         "config.json", "pre-D3 trainer: nothing says what the run logs")]
++    keys = [str(k) for k in (dec.get("keys") or [])]
++    regular = [r for r in rows if isinstance(r, dict) and "loss" in r]
++    out: list[Mismatch] = []
++    if dec.get("declared"):
++        if not keys:
++            out.append(Mismatch("grad_reach_logging.keys", "the ga_* keys of the built heads",
++                                [], "config.json", "declared ON with an empty key list"))
++        if not regular:
++            out.append(Mismatch("grad_reach_logging", "at least one metrics row", 0,
++                                "metrics.jsonl",
++                                "no regular (loss-carrying) row to hold the declaration against"))
++        for r in regular:
++            miss = [k for k in keys if k not in r]
++            if miss:
++                out.append(Mismatch("grad_reach_logging", keys, [k for k in keys if k in r],
++                                    f"metrics.jsonl row step={r.get('step')}",
++                                    f"declared ga_* keys MISSING: {miss}"))
++    else:
++        for r in rows:
++            extra = sorted(k for k in (r if isinstance(r, dict) else {})
++                           if str(k).startswith("ga_"))
++            if extra:
++                out.append(Mismatch("grad_reach_logging", "no ga_* key (declared OFF)", extra,
++                                    f"metrics.jsonl row step={r.get('step')}",
++                                    "a key the run did not declare: an OFF arm's schema must "
++                                    "equal the pre-instrument trainer's"))
++    return out

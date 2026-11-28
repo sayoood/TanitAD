@@ -1,0 +1,1502 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--tag",
+  "r34_b2_ref",
+  "--outroot",
+  "C:/Users/Admin/tanitad-wt-bevtac/TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-resnet101-8gb-fit/raw",
+  "--trunk-name",
+  "resnet34.a1_in1k",
+  "--batch",
+  "2",
+  "--steps",
+  "5"
+ ],
+ "effective_weights": {
+  "_what": "argparse default -> later layers -> effective weight, and whether the term therefore builds an autograd graph at all",
+  "_why": "V6LossWeights.for_stage(stage) rewrites the argparse defaults per stage; the effective weight is not the default. MEASURED: 42/138 optimizer tensors took no gradient (5,305,667 params = 52.2 % of a declared trainable budget) because zero-weighted terms are guarded out of the loss.",
+  "_discriminator": "p.grad is None -- never the weight's value",
+  "where": "this arm",
+  "explicit_source": "argv",
+  "acknowledged_discarded": false,
+  "n_terms": 10,
+  "n_builds_graph": 4,
+  "terms": [
+   {
+    "term": "u0 control-space x0 loss (WP-4)",
+    "flag": "--w-u0",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--sampler none: `control_head` is built only for --sampler ddim, so `u0_hat` is absent from `out` and the term is skipped",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "GT-supervised detection set loss (WP-6)",
+    "flag": "--w-agent",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "WP-D BEV auxiliary loss",
+    "flag": "--w-bev-aux",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "D-TACGOAL 22-token tactical goal SET (multi-label BCE)",
+    "flag": "--w-tac-goal",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-tac-goal needs `--tac-goal-tok-head` (no head => no `tac_goal_logits` in `out`) AND `--v7-labels` (no join => no `tac_goal_y`/`tac_goal_w` target)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "agent projection consistency",
+    "flag": "--agent-w-project",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "agent ground-plane prior",
+    "flag": "--agent-w-ground",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "E15 geometric goal point (GP-2)",
+    "flag": "--goal-point-w",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "no --goal-point-inject: the head that predicts the point is never built",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "refcv6 SAM3 BEV map soft-CE (\u00a72)",
+    "flag": "--w-map",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "refcv6 3-D cuboid set loss (\u00a76)",
+    "flag": "--w-box3d",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "refcv6 \u00a74 tactical behaviour decoder (22-token BCE + lat/lon CE + confidence)",
+    "flag": "--w-tac-v6",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   }
+  ],
+  "_evidence_class": "MEASURED (ours; this run's own configuration)"
+ },
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 41342579,
+  "phi_tac": 1708288,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1156,
+  "nav_inject": 50176,
+  "tac_decoder_v6": 2253828,
+  "tac_behaviour_gate_v6": 2816,
+  "total": 50519066
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD",
+   "tac_SIT"
+  ],
+  "situation_output_role": "auxiliary TARGETS of the refcv6 behaviour head; never inputs",
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx only)"
+  ],
+  "selection_inputs": [
+   "anchor confidence (the decoder's own)",
+   "tactical lat/lon posterior -> anchor prior (DETACHED, zero-init 8 -> n_anchors)",
+   "valid-behaviour set over the 17 ADMISSIBLE tokens (DETACHED, zero-init; the 5 situation columns are structurally dead)",
+   "nav compliance (PARAMETER-FREE geometric predicate, one zero-init gate)",
+   "max-speed ceiling (ARGMAX FILTER, no parameters)"
+  ],
+  "required_live_edges": [
+   "frames -> every goal"
+  ],
+  "refused_edges": [
+   "lan -> inference (E12; label-only)",
+   "situation classifier output -> any goal node (PI 2026-08-03, UNCHANGED)",
+   "v0 -> any goal node (E11)",
+   "tac_SIT / TRAFFIC_LIGHT_* / YIELD -> selection (PI 2026-08-03, extended to the refcv6 behaviour gate; the columns are structurally dead and proven so by mutation)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)",
+  "_reads": "`required_live_edges` is not decoration: an arm where the SCENE edge does not fire is ECHOING, and an arm where the EGO edge does not fire is v3 wearing a v4 config. Both are failures and both are measured."
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "anchors": {
+  "path": null,
+  "shape": [
+   128,
+   8,
+   2
+  ],
+  "sha256_installed": "42ec4ce281ee6f3d0718535417ac30374e08f0577cbb6e4e1d18c4808dec1fa4",
+  "source": "refc.default_anchors (SYNTHETIC)",
+  "v0_conditioned": false
+ },
+ "seams": {
+  "hier": true,
+  "hierarchy": true,
+  "no_strategic": false,
+  "goal_str_loss_applied": false,
+  "graft_maneuver": true,
+  "factored_maneuver": true,
+  "graft_prior_center": true,
+  "graft_target_latent": true,
+  "grounded_selector": false,
+  "graft_imagination": false,
+  "bev_aux": null,
+  "tactical_speed_input": false,
+  "lan_enable": false,
+  "graft_lan": false,
+  "goal_str": false,
+  "withheld_bank": "fixed",
+  "withheld_bank_warmup": 0,
+  "withheld_speed_max_ms": 35.0,
+  "agents": {
+   "enable": true,
+   "oracle": false,
+   "oracle_sigma_range_m": 0.0,
+   "oracle_miss_rate": 0.0,
+   "queries": 16,
+   "d_model": 256,
+   "depth": 3,
+   "n_heads": 8,
+   "enforce_band": true,
+   "w_project": 0.0,
+   "w_ground": 0.0,
+   "presence_gate": 0.5,
+   "presence_hard": false,
+   "n_classes": 10,
+   "classes": [
+    "automobile",
+    "heavy_truck",
+    "bus",
+    "other_vehicle",
+    "trailer",
+    "person",
+    "rider",
+    "stroller",
+    "animal",
+    "protruding_object"
+   ],
+   "n_queries_default_upstream": 100
+  },
+  "cross_agent": true,
+  "wp_index": null,
+  "sampler": "none",
+  "sampler_space": "control",
+  "sampler_infer_t": 8,
+  "sampler_steps": 2,
+  "sampler_groups": 1,
+  "control_norm": [
+   4.0,
+   3.0
+  ],
+  "trunk": "timm",
+  "trunk_name": "resnet34.a1_in1k",
+  "trunk_mode": "shared",
+  "trunk_fuse": "concat1x1",
+  "trunk_fuse_identity": true,
+  "trunk_frames": 3,
+  "trunk_pretrained": true,
+  "trunk_imagenet_norm": true,
+  "trunk_in_channels": 9,
+  "ego_history": null,
+  "opt": "adam",
+  "weight_decay": 0.0001,
+  "encoder_lr_mult": 0.5,
+  "refcv6": null,
+  "feasible_decode": false,
+  "feasible_mu": 0.7,
+  "feasible_entry": false,
+  "feasible_a_max": 4.0,
+  "feasible_kappa_max": 0.2,
+  "feasible_prefix_slots": 4,
+  "w_agent": 1.0,
+  "w_u0": 0.0,
+  "goal_point": null,
+  "tac_goal_tok_head": {
+   "requested": false,
+   "cfg": false,
+   "tac_vocab_version": "v7.0",
+   "built": false
+  },
+  "tac_decoder_v6": {
+   "requested": true,
+   "cfg": true,
+   "w": 1.0,
+   "valid_threshold": 0.5,
+   "graft_behaviour_sel": false,
+   "decoder_cfg": {
+    "d_model": 256,
+    "n_layers": 2,
+    "n_heads": 8,
+    "ff_mult": 4,
+    "dropout": 0.0,
+    "d_agent": 384,
+    "d_bev": 96,
+    "sources": [
+     "agent",
+     "bev"
+    ],
+    "n_queries": 38,
+    "n_goal_tokens": 22,
+    "n_lat": 8,
+    "n_lon": 8,
+    "cond_dims": 10
+   },
+   "sources": [
+    "agent",
+    "bev"
+   ],
+   "bev_tokens_reach_decoder": true,
+   "bev_grad_reaches_trunk": true,
+   "bev_detached": false,
+   "bev_unblocked_by": "PI RULING 2026-09-17 (SPEC_REFCV6_V2.md, items 15/18 CLOSED): the BEV encoder moved INTO the model forward (refc_v3.RefCV3Model._bev_hook -> refc.py's `bev_hook` seam), so a BEV token exists where the scene hook fires. An arm with d_bev 0 is still AGENT-ONLY and must be reported as such.",
+   "built": true,
+   "param_breakdown": {
+    "queries": 9728,
+    "agent_in": 98560,
+    "bev_in": 24832,
+    "source_code": 512,
+    "kv_norm": 512,
+    "layers": 2118144,
+    "out_norm": 512,
+    "heads": 1028,
+    "film_within_layers": 11264,
+    "total": 2253828
+   },
+   "provenance": {
+    "keys_values": [
+     "agent",
+     "bev"
+    ],
+    "refused_keys_values": [
+     "image tokens (behaviours are about the scene, not the pixels; PI 2026-09-16)"
+    ],
+    "condition": [
+     "nav one-hot (4)",
+     "max-speed one-hot (4)",
+     "v0",
+     "a0"
+    ],
+    "outputs_are_targets_only": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW",
+     "YIELD",
+     "tac_SIT"
+    ],
+    "feeds_planner": [
+     "lat/lon posterior -> anchor prior (DETACHED)",
+     "valid behaviour set -> selection (DETACHED)",
+     "speed ceiling -> selection mask (DETACHED)"
+    ]
+   },
+   "loss_weights": {
+    "w_tac_goal_bce": 0.05,
+    "w_tac_goal_validity": 0.04000000000000001,
+    "w_tac_goal_confidence": 0.010000000000000002,
+    "w_tac_lat_ce": 0.025,
+    "w_tac_lon_ce": 0.025,
+    "budget": 0.1,
+    "total": 0.1
+   }
+  },
+  "max_speed_onehot_v6": {
+   "requested": false,
+   "cfg": false,
+   "sidecar": null,
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "provenance": "ego-future (oracle INPUT, ~1.7555 bits)",
+   "built": false
+  },
+  "max_speed_input": {
+   "requested": false,
+   "cfg": false,
+   "mode": "quantized",
+   "d_speed": 32,
+   "meta": null,
+   "required_controls": [
+    "shuffled",
+    "withheld"
+   ],
+   "controls_note": "\u26d4 EVAL OBLIGATION, inseparable from this edge and identical to E13's: a max-speed-conditioned result carries a SHUFFLE control (serve another clip's ceiling) and a WITHHOLD control (valid = 0), or 'the arm improved' cannot be separated from 'the arm gained a parameter'.",
+   "built": false
+  },
+  "agent_rig_camera": {
+   "source": "extrinsics",
+   "mount_pose": "from-sensor_extrinsics",
+   "mount_pose_scope": "PER-CLIP",
+   "extrinsics_path": "D:/Projects/TanitAD-artifacts/refcv5v2_final/extrinsics141.json",
+   "n_clips": 141,
+   "key": "stable_episode_id(clip_id)",
+   "height_m_min": 1.2131489515304565,
+   "height_m_max": 1.6621625423431396,
+   "height_m_median": 1.315846562385559,
+   "optical_axis_pitch_rad_min": -0.04608039781201208,
+   "optical_axis_pitch_rad_max": 0.04256744656937488,
+   "frame": {
+    "height": 416,
+    "width": 1024,
+    "f_ref": 488.92398517830253,
+    "projection": "cylindrical"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "w_project": 0.0,
+   "w_ground": 0.0,
+   "coverage": {
+    "n": 70,
+    "n_covered": 70,
+    "frac": 1.0,
+    "n_missing": 0,
+    "missing_sample": [],
+    "has_default": false,
+    "bank_n_clips": 141,
+    "allow_partial": false
+   }
+  },
+  "agent_knobs": {
+   "agent_cam_height": 1.5,
+   "agent_join": "D:/Projects/TanitAD-artifacts/b1-agent-join-3d-20260917/b1eval_agents_3d.jsonl.xz",
+   "agent_join_allow_legacy_ids": false,
+   "agent_join_no_rates": false,
+   "agent_join_verify": "off",
+   "agent_miss_rate": 0.0,
+   "agent_pad": 32,
+   "agent_presence_hard": false,
+   "agent_queries": 16,
+   "agent_rig_camera": "extrinsics",
+   "agent_rig_extrinsics": "D:/Projects/TanitAD-artifacts/refcv5v2_final/extrinsics141.json",
+   "agent_rig_extrinsics_allow_partial": false,
+   "agent_sigma_range": 0.0,
+   "agent_w_ground": 0.0,
+   "agent_w_project": 0.0,
+   "agents": "head",
+   "bev_aux": "off",
+   "bev_aux_detach": false,
+   "bev_aux_dtok": 64,
+   "bev_aux_hidden": 256,
+   "bev_aux_occlusion": "mask",
+   "bev_aux_pos_weight": 30.61,
+   "bev_aux_rmax": 60.0,
+   "bev_aux_rng": 24,
+   "bev_aux_shuffle": false,
+   "w_agent": 1.0,
+   "w_bev_aux": 0.0,
+   "w_box3d": 1.0,
+   "w_map": 1.0,
+   "w_tac_goal": 0.0,
+   "w_tac_v6": 1.0,
+   "w_u0": 0.0,
+   "wp_index": "off",
+   "wp_index_const_xy": [
+    10.0,
+    0.0
+   ],
+   "wp_index_detach": false,
+   "wp_index_hidden": 32,
+   "wp_index_mode": "geom",
+   "wp_index_radius_m": 0.0,
+   "wp_index_scale_m": 10.0
+  },
+  "agent_ground_prior_probe": {
+   "checked": false,
+   "reason": "w_ground == 0 or no camera"
+  }
+ },
+ "withheld_bank": {
+  "mode": "fixed",
+  "warmup_steps": 0,
+  "speed_max_ms": 35.0,
+  "random_pool": null
+ },
+ "selection": {
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.5,
+  "sel_refined": false,
+  "sel_score_emitted": false,
+  "sel_score_emitted_t": -1,
+  "sel_score_emitted_t_source": "operator",
+  "sampler_ranks_the_fan": false,
+  "p14_note": "sampler_ranks_the_fan is False unless BOTH sel_refined and sel_score_emitted are set. False means the emitted fan was ranked by a score computed before any sample was drawn. MEASURED ceiling on the banked fan (n=881/40 ep, paired episode-cluster bootstrap): base 0.4728 -> 0.1914 m ADE (+0.2813, CI [+0.2127,+0.3543]), a >2x-better trajectory in the fan on 41.09 % of windows; xl +0.3075 m, 45.40 %.",
+  "horizon_s": 6.0,
+  "band_ms": 15.0,
+  "note": "horizon_s is DERIVED from max(horizons); the 72.08 % / 77.28 % kill statistics quoted elsewhere are 2 s numbers and do NOT hold here (re-derived 2026-09-04)."
+ },
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "ego": {
+  "ego_state_inject": false,
+  "echo_base": false,
+  "ego_valid_channel": false,
+  "ego_dropout": 0.5,
+  "tactical_speed_input": false,
+  "channels": [
+   "v0"
+  ],
+  "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+  "wheelbase_mode": "const2p9"
+ },
+ "size": "tiny",
+ "rig_rung": true,
+ "ablate_frames": false,
+ "image_hw": [
+  416,
+  1024
+ ],
+ "tac_vocab_version": "v7.0",
+ "v2_cache": [
+  "D:/Projects/TanitAD-artifacts/v2ep-eval139-416x1024cyl-splitA"
+ ],
+ "require_parity": false,
+ "v2_parity": {
+  "parity": false,
+  "cache_dirs": [
+   "D:/Projects/TanitAD-artifacts/v2ep-eval139-416x1024cyl-splitA"
+  ],
+  "corpus_key": null,
+  "label": "v3 v2-cache",
+  "uid_kind": "v2ep_clipid",
+  "checked": false,
+  "clips_present": 70
+ },
+ "u8_batches": false,
+ "frame_batch_bytes_est": 858783744,
+ "nav_from_v7": false,
+ "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+ "nav_from_v7_stats": null,
+ "w_tac_goal": 0.0,
+ "tac_goal_stats": {
+  "negatives": "measured",
+  "cot_absence_negative": null,
+  "n_trainable": 13,
+  "n_total": 22,
+  "trainable": [
+   "FOLLOW_LANE",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "STOP_POINT",
+   "EVADE_IN_CORRIDOR",
+   "OVERTAKE_VEHICLE",
+   "MERGE",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "LANE_CHANGE_R"
+  ],
+  "masked_why": {
+   "YIELD_FOR_TURN_R": "no positives in this split",
+   "YIELD": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "SPEED_BAND": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "CORRIDOR_OFFSET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "GAP_TARGET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "REACT_ON_ONCOMING": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "TAKE_EXIT_L": "no positives in this split",
+   "TRAFFIC_LIGHT_REACT": "no positives in this split",
+   "LANE_CHANGE_L": "no positives in this split"
+  },
+  "pos_weight": [
+   0.23529411764705882,
+   28.4,
+   17.375,
+   50.0,
+   0.0,
+   0.0,
+   15.333333333333334,
+   0.0,
+   0.0,
+   0.16666666666666666,
+   50.0,
+   23.8,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   2.25,
+   7.666666666666667,
+   0.7333333333333333,
+   0.0,
+   8.0
+  ],
+  "census": {
+   "FOLLOW_LANE": {
+    "pos": 119,
+    "neg": 28,
+    "ignored": 0,
+    "prevalence": 0.8095238095238095,
+    "provenance": [
+     "geometry"
+    ],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "MERGE",
+     "OVERTAKE_VEHICLE",
+     "STOP_POINT",
+     "TURN_L",
+     "TURN_R"
+    ]
+   },
+   "TURN_L": {
+    "pos": 5,
+    "neg": 142,
+    "ignored": 0,
+    "prevalence": 0.034013605442176874,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_L",
+     "TAKE_EXIT_R",
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "TURN_R": {
+    "pos": 8,
+    "neg": 139,
+    "ignored": 0,
+    "prevalence": 0.05442176870748299,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_R",
+     "TAKE_EXIT_L",
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD_FOR_TURN_L": {
+    "pos": 2,
+    "neg": 145,
+    "ignored": 0,
+    "prevalence": 0.013605442176870748,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "YIELD_FOR_TURN_R": {
+    "pos": 0,
+    "neg": 147,
+    "ignored": 0,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD": {
+    "pos": 17,
+    "neg": 0,
+    "ignored": 130,
+    "prevalence": 0.11564625850340136,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "STOP_POINT": {
+    "pos": 9,
+    "neg": 138,
+    "ignored": 0,
+    "prevalence": 0.061224489795918366,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "SPEED_BAND": {
+    "pos": 147,
+    "neg": 0,
+    "ignored": 0,
+    "prevalence": 1.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "CORRIDOR_OFFSET": {
+    "pos": 25,
+    "neg": 0,
+    "ignored": 122,
+    "prevalence": 0.17006802721088435,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "EVADE_IN_CORRIDOR": {
+    "pos": 6,
+    "neg": 1,
+    "ignored": 140,
+    "prevalence": 0.04081632653061224,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "OVERTAKE_VEHICLE"
+    ]
+   },
+   "OVERTAKE_VEHICLE": {
+    "pos": 1,
+    "neg": 119,
+    "ignored": 27,
+    "prevalence": 0.006802721088435374,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "EVADE_IN_CORRIDOR",
+     "FOLLOW_LANE"
+    ]
+   },
+   "MERGE": {
+    "pos": 5,
+    "neg": 119,
+    "ignored": 23,
+    "prevalence": 0.034013605442176874,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "GAP_TARGET": {
+    "pos": 14,
+    "neg": 0,
+    "ignored": 133,
+    "prevalence": 0.09523809523809523,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "REACT_ON_ONCOMING": {
+    "pos": 11,
+    "neg": 0,
+    "ignored": 136,
+    "prevalence": 0.07482993197278912,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "TAKE_EXIT_L": {
+    "pos": 0,
+    "neg": 13,
+    "ignored": 134,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TAKE_EXIT_R",
+     "TURN_R"
+    ]
+   },
+   "TAKE_EXIT_R": {
+    "pos": 5,
+    "neg": 5,
+    "ignored": 137,
+    "prevalence": 0.034013605442176874,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TAKE_EXIT_L",
+     "TURN_L"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "pos": 0,
+    "neg": 26,
+    "ignored": 121,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "pos": 8,
+    "neg": 18,
+    "ignored": 121,
+    "prevalence": 0.05442176870748299,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "pos": 3,
+    "neg": 23,
+    "ignored": 121,
+    "prevalence": 0.02040816326530612,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "pos": 15,
+    "neg": 11,
+    "ignored": 121,
+    "prevalence": 0.10204081632653061,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "LANE_CHANGE_L": {
+    "pos": 0,
+    "neg": 147,
+    "ignored": 0,
+    "prevalence": 0.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "LANE_CHANGE_R",
+     "TURN_L"
+    ]
+   },
+   "LANE_CHANGE_R": {
+    "pos": 1,
+    "neg": 8,
+    "ignored": 138,
+    "prevalence": 0.006802721088435374,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "LANE_CHANGE_L",
+     "TURN_R"
+    ]
+   }
+  },
+  "n_on_pos_weight_cap": 2,
+  "pos_weight_cap": 50.0,
+  "n_under_scoreability_floor": 22,
+  "scoreability_floor_n": 200
+ },
+ "nav_args": false,
+ "nav_args_stats": null,
+ "max_speed_input": false,
+ "max_speed_mode": null,
+ "max_speed_stats": null,
+ "speed_max_derivation": null,
+ "synth_clip_ids_from_labels": null,
+ "v7_labels": {
+  "path": "C:\\Users\\Admin\\tanitad-wt\\_s2build\\release\\v8\\s2_labels_v8_eval.jsonl.gz",
+  "md5": "eefc38d1453bd1c73802d44d45affced",
+  "n_records": 147,
+  "schema_version": "s2-geom-v7",
+  "vocab": "v7",
+  "allow_oracle_nav": true,
+  "cot_absence_negative": null,
+  "divergences": [],
+  "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+ },
+ "agent_join": "D:/Projects/TanitAD-artifacts/b1-agent-join-3d-20260917/b1eval_agents_3d.jsonl.xz",
+ "agent_join_digest": {
+  "verified": false,
+  "mode": "off",
+  "reason": "operator passed --agent-join-verify off"
+ },
+ "agent_join_stats": {
+  "train": {
+   "path": "D:/Projects/TanitAD-artifacts/b1-agent-join-3d-20260917/b1eval_agents_3d.jsonl.xz",
+   "n_episodes": 70,
+   "n_episodes_joined_stable_id": 70,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 11973,
+   "n_windows_labelled": 11490,
+   "frac_windows_labelled": 0.9597,
+   "n_windows_labelled_clear": 78,
+   "n_target_boxes_prefilter": 462957,
+   "agent_pad": 32,
+   "reader_max_agents_per_frame": 395,
+   "reader_n_records": 13373,
+   "reader_n_clips": 70,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true
+  },
+  "eval": null
+ },
+ "refcv6_perception": {
+  "w_map": 1.0,
+  "w_box3d": 1.0,
+  "d_bev": 128,
+  "n_queries": 100,
+  "d_model": 256,
+  "bev_tokens_hw": [
+   30,
+   16
+  ],
+  "heights_m": [
+   0.0,
+   0.5,
+   1.5,
+   2.5
+  ],
+  "stride": 16,
+  "use_bev_in_box_head": true,
+  "bev_encoder": {
+   "d_in": 128,
+   "d_model": 96,
+   "d_out": 96,
+   "dilations": [
+    1,
+    2,
+    4,
+    8
+   ]
+  },
+  "branch_params": {
+   "lift": 131328,
+   "bev_encoder": 785280,
+   "map_head": 873,
+   "box_memory": 91136,
+   "box_decoder": 3806999,
+   "total": 4815616
+  },
+  "fmap_s16_channels": 256,
+  "fmap_s16_hw": [
+   26,
+   64
+  ],
+  "frame": {
+   "height": 416,
+   "width": 1024,
+   "projection": "cylindrical",
+   "f_ref": 488.92398517830253
+  },
+  "map_gt_root": "D:/Projects/TanitAD-artifacts/sam3-maps-eval",
+  "join3d": "D:/Projects/TanitAD-artifacts/b1-agent-join-3d-20260917/b1eval_agents_3d.jsonl.xz",
+  "lift_bank_n_clips": 141,
+  "bev_map_target": "SAM3 semantic maps (tanitad.sam3_map_gt/2)",
+  "lidar_as_training_target": false,
+  "map_gt_stats": {
+   "train": {
+    "root": "D:\\Projects\\TanitAD-artifacts\\sam3-maps-eval",
+    "n_windows": 11973,
+    "n_clips": 70,
+    "frac_ok": 0.9857178651966926,
+    "frac_ok_upper": 0.9857178651966926,
+    "verdict": "PASS",
+    "min_coverage": 0.9,
+    "states": {
+     "ok": 11802,
+     "no_file": 171,
+     "frame_out_of_range": 0,
+     "inconclusive": 0
+    },
+    "reasons": {
+     "e902aba7fb9a": "FileNotFoundError errno 2"
+    },
+    "n_stack": 3,
+    "layouts": [
+     "flat_sha12"
+    ]
+   },
+   "eval": null
+  },
+  "join3d_stats": {
+   "train": {
+    "path": "D:\\Projects\\TanitAD-artifacts\\b1-agent-join-3d-20260917\\b1eval_agents_3d.jsonl.xz",
+    "n_lines": 13373,
+    "n_agents": 537510,
+    "n_clips": 70,
+    "frame_key": "RAW v2ep (= episode index + n_stack - 1)",
+    "n_stack": 3
+   },
+   "eval": null
+  }
+ },
+ "refcv6_tactical": {
+  "w_tac_v6": 1.0,
+  "loss_weights": {
+   "w_tac_goal_bce": 0.05,
+   "w_tac_goal_validity": 0.04000000000000001,
+   "w_tac_goal_confidence": 0.010000000000000002,
+   "w_tac_lat_ce": 0.025,
+   "w_tac_lon_ce": 0.025,
+   "budget": 0.1,
+   "total": 0.1
+  },
+  "valid_threshold": 0.5,
+  "graft_behaviour_sel": false,
+  "label_limits": {
+   "negatives": "measured",
+   "cot_absence_negative": null,
+   "n_trainable": 13,
+   "n_total": 22,
+   "trainable": [
+    "FOLLOW_LANE",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "STOP_POINT",
+    "EVADE_IN_CORRIDOR",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "LANE_CHANGE_R"
+   ],
+   "masked_why": {
+    "YIELD_FOR_TURN_R": "no positives in this split",
+    "YIELD": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "SPEED_BAND": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "CORRIDOR_OFFSET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "GAP_TARGET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "REACT_ON_ONCOMING": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "TAKE_EXIT_L": "no positives in this split",
+    "TRAFFIC_LIGHT_REACT": "no positives in this split",
+    "LANE_CHANGE_L": "no positives in this split"
+   },
+   "pos_weight": [
+    0.23529411764705882,
+    28.4,
+    17.375,
+    50.0,
+    0.0,
+    0.0,
+    15.333333333333334,
+    0.0,
+    0.0,
+    0.16666666666666666,
+    50.0,
+    23.8,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    2.25,
+    7.666666666666667,
+    0.7333333333333333,
+    0.0,
+    8.0
+   ],
+   "census": {
+    "FOLLOW_LANE": {
+     "pos": 119,
+     "neg": 28,
+     "ignored": 0,
+     "prevalence": 0.8095238095238095,
+     "provenance": [
+      "geometry"
+     ],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "MERGE",
+      "OVERTAKE_VEHICLE",
+      "STOP_POINT",
+      "TURN_L",
+      "TURN_R"
+     ]
+    },
+    "TURN_L": {
+     "pos": 5,
+     "neg": 142,
+     "ignored": 0,
+     "prevalence": 0.034013605442176874,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE",
+      "LANE_CHANGE_L",
+      "TAKE_EXIT_R",
+      "TURN_R",
+      "YIELD_FOR_TURN_R"
+     ]
+    },
+    "TURN_R": {
+     "pos": 8,
+     "neg": 139,
+     "ignored": 0,
+     "prevalence": 0.05442176870748299,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE",
+      "LANE_CHANGE_R",
+      "TAKE_EXIT_L",
+      "TURN_L",
+      "YIELD_FOR_TURN_L"
+     ]
+    },
+    "YIELD_FOR_TURN_L": {
+     "pos": 2,
+     "neg": 145,
+     "ignored": 0,
+     "prevalence": 0.013605442176870748,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TURN_R",
+      "YIELD_FOR_TURN_R"
+     ]
+    },
+    "YIELD_FOR_TURN_R": {
+     "pos": 0,
+     "neg": 147,
+     "ignored": 0,
+     "prevalence": 0.0,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TURN_L",
+      "YIELD_FOR_TURN_L"
+     ]
+    },
+    "YIELD": {
+     "pos": 17,
+     "neg": 0,
+     "ignored": 130,
+     "prevalence": 0.11564625850340136,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "STOP_POINT": {
+     "pos": 9,
+     "neg": 138,
+     "ignored": 0,
+     "prevalence": 0.061224489795918366,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE"
+     ]
+    },
+    "SPEED_BAND": {
+     "pos": 147,
+     "neg": 0,
+     "ignored": 0,
+     "prevalence": 1.0,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "CORRIDOR_OFFSET": {
+     "pos": 25,
+     "neg": 0,
+     "ignored": 122,
+     "prevalence": 0.17006802721088435,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "EVADE_IN_CORRIDOR": {
+     "pos": 6,
+     "neg": 1,
+     "ignored": 140,
+     "prevalence": 0.04081632653061224,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "OVERTAKE_VEHICLE"
+     ]
+    },
+    "OVERTAKE_VEHICLE": {
+     "pos": 1,
+     "neg": 119,
+     "ignored": 27,
+     "prevalence": 0.006802721088435374,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "EVADE_IN_CORRIDOR",
+      "FOLLOW_LANE"
+     ]
+    },
+    "MERGE": {
+     "pos": 5,
+     "neg": 119,
+     "ignored": 23,
+     "prevalence": 0.034013605442176874,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE"
+     ]
+    },
+    "GAP_TARGET": {
+     "pos": 14,
+     "neg": 0,
+     "ignored": 133,
+     "prevalence": 0.09523809523809523,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "REACT_ON_ONCOMING": {
+     "pos": 11,
+     "neg": 0,
+     "ignored": 136,
+     "prevalence": 0.07482993197278912,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "TAKE_EXIT_L": {
+     "pos": 0,
+     "neg": 13,
+     "ignored": 134,
+     "prevalence": 0.0,
+     "provenance": [],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TAKE_EXIT_R",
+      "TURN_R"
+     ]
+    },
+    "TAKE_EXIT_R": {
+     "pos": 5,
+     "neg": 5,
+     "ignored": 137,
+     "prevalence": 0.034013605442176874,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TAKE_EXIT_L",
+      "TURN_L"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT": {
+     "pos": 0,
+     "neg": 26,
+     "ignored": 121,
+     "prevalence": 0.0,
+     "provenance": [],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT_GREEN",
+      "TRAFFIC_LIGHT_REACT_RED",
+      "TRAFFIC_LIGHT_REACT_YELLOW"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT_RED": {
+     "pos": 8,
+     "neg": 18,
+     "ignored": 121,
+     "prevalence": 0.05442176870748299,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT",
+      "TRAFFIC_LIGHT_REACT_GREEN",
+      "TRAFFIC_LIGHT_REACT_YELLOW"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT_YELLOW": {
+     "pos": 3,
+     "neg": 23,
+     "ignored": 121,
+     "prevalence": 0.02040816326530612,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT",
+      "TRAFFIC_LIGHT_REACT_GREEN",
+      "TRAFFIC_LIGHT_REACT_RED"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT_GREEN": {
+     "pos": 15,
+     "neg": 11,
+     "ignored": 121,
+     "prevalence": 0.10204081632653061,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT",
+      "TRAFFIC_LIGHT_REACT_RED",
+      "TRAFFIC_LIGHT_REACT_YELLOW"
+     ]
+    },
+    "LANE_CHANGE_L": {
+     "pos": 0,
+     "neg": 147,
+     "ignored": 0,
+     "prevalence": 0.0,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "LANE_CHANGE_R",
+      "TURN_L"
+     ]
+    },
+    "LANE_CHANGE_R": {
+     "pos": 1,
+     "neg": 8,
+     "ignored": 138,
+     "prevalence": 0.006802721088435374,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "LANE_CHANGE_L",
+      "TURN_R"
+     ]
+    }
+   },
+   "n_on_pos_weight_cap": 2,
+   "pos_weight_cap": 50.0,
+   "n_under_scoreability_floor": 22,
+   "scoreability_floor_n": 200
+  },
+  "scene_sources_live": [
+   "agent"
+  ],
+  "scene_sources_blocked": [
+   "bev"
+  ],
+  "\u26d4": "AGENT-ONLY. The PI asked for 'the agent and the map'; no BEV token reaches the behaviour decoder on this path (refc_v3.RefCV3Model.forward does not pass `bev_tokens=` to self.core). Any result from this arm is about the AGENT half and must say so."
+ },
+ "refcv6_max_speed": null,
+ "speed_max_derivation_v6": null
+}

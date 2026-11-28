@@ -1,0 +1,1368 @@
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_chain.sh b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_chain.sh
+new file mode 100644
+index 0000000..3785046
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_chain.sh	
+@@ -0,0 +1,315 @@
++#!/bin/bash
++# DIV chain (PREREG_DIV_P6): ONE arm per invocation, DV0 or DV1 = C0's argv + `--split-half <h>` (DV0: half 0, C0's seed 0; DV1: half 1, C0r's seed 1), 400 updates, from P6's model_final.pt, on the L40 pod.  NOT PLACED ON THE POD by its author; the Master Mind ships it with the landed tree.
++#   bash /workspace/refe-plan-div/refe/div_chain.sh DV0|DV1        (DIV_HF_TOKEN_FILE=<the pod's HF token file> in the environment; refe/div_pause_p7.sh runs DV0 then DV1 inside ONE P7 pause)
++# Pattern: refe/dose_chain.sh (same fail-closed stages and the SAME wait functions, markers keyed by the SHA-256 of SHIP_MANIFEST.json, REFUSED lines in the arm's log), with the DIV differences:
++#  * OWN POD DIRECTORY: package $WS/refe-plan-div, data $DATA/refe_div.  gate_token.TREE_ROOTS = (refe, code, splits): shipping this refe/ over refe-plan-p6, -p7, -scorer1p6, -s1z, -s1zsm, -rep or -dose (a dir that holds a minted token) would VOID that token.
++#  * THE PARENT'S INPUTS: C0's card (PREREG_SCORER1P6.md, by bytes) AND the DIV card (PREREG_DIV_P6.md, by bytes, shipped to $ROOT, sha256 e5fb2f8e...), the navtest lists, the checkpoint and the label dump are C0's.  No lambda: C0 names no pair / twin lever.
++#  * THE SPLIT IS CHECKED THREE TIMES: (1) the preflight's own data event (the half, the rule, 0 kept rows off the half, both halves >= 25,000 sets) is printed with both halves' set and log counts and PARSED here; (2) the DELIBERATE-REGRESSION MUTANT
++#    (mutate_nofilter: the split filter removed) must be REFUSED by the trainer (rc 4, `REFUSED: split:`, no preflight pass), or the chain refuses to train; (3) the real run's own data event is parsed again.
++#  * NO PAUSING OR RESUMING OF P7 here (refe/div_pause_p7.sh does that).  The chain waits for NO chain lock held (the parents', refe_rep and refe_dose included) and the GPU idle on 3 consecutive polls.
++#  * ORDER: precheck, inputs, G-EGR, dd, wait, preflight (G1-G11 on the real bank + the split block), the mutant, the LAUNCH GATE (profile refe_div_p6; a PASS token minted by launch_gate.py, never hand-written), the run, the run check
++#    (updates == min(400, ceil(split sets / 64)); the card: a half whose epoch is shorter stops at the epoch and that is stated), the HF egress under the prefix div/<arm> with the LFS sha256 recorded, ZZDIV_CHAIN_DONE <arm>.
++# Markers: $ROOT/stage_<arm>/<name>.ok = date + tree sha.  DIV_STOP_AFTER=<stage> ends the chain after that stage (a dry run).
++set -u
++ARMN=${1:-}
++case "$ARMN" in
++  DV0) PARENT=C0;  HALF=0; PROOT_NAME=refe_scorer1p6; PCARD=PREREG_SCORER1P6.md; CARD_SHA=adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed; PROFILE=refe_div_p6; PPOD=scorer1p6_pod.sh ;;
++  DV1) PARENT=C0r; HALF=1; PROOT_NAME=refe_scorer1p6; PCARD=PREREG_SCORER1P6.md; CARD_SHA=adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed; PROFILE=refe_div_p6; PPOD=scorer1p6_pod.sh ;;
++  *) echo "REFUSED: unknown arm '$ARMN' (usage: div_chain.sh DV0 | DV1)"; exit 2 ;;
++esac
++DCARD_NAME=PREREG_DIV_P6.md; DCARD_SHA=e5fb2f8e4123fcfe3a599b0cc71537bab187716c6a5d3e46735ce094bacf6fac
++SPLIT_MIN=25000
++LA=$(echo "$ARMN" | tr 'A-Z' 'a-z')
++WS=${DIV_WS:-/workspace}
++DATA=$WS/data
++PKG=${DIV_PKG:-$WS/refe-plan-div}
++RUN=$PKG/refe
++ROOT=$DATA/refe_div
++PROOT=$DATA/$PROOT_NAME
++DUMP=$DATA/p6base_labels
++OUT=$ROOT/$LA
++S=$ROOT/stage_$LA
++L=$ROOT/chain_$LA.log
++REPO=${DIV_HF_REPO:-Sayood/tanitad-refe-scorer1p6}          # an existing repo (G-EGR passes on it); the arm is banked under the prefix div/<arm lower>
++HFTOK=${DIV_HF_TOKEN_FILE:-}
++CKPT=$DATA/refe_runs/p6_paper_faithful/model_final.pt
++CKPT_SHA=968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1
++CARD=$PROOT/$PCARD
++NTL=$PROOT/navtest_ids/navtest_logs.json;  NTL_SHA=79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0
++NTT=$PROOT/navtest_ids/navtest_tokens.txt.gz; NTT_SHA=e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a
++DCARD=$ROOT/$DCARD_NAME
++export TANITAD_GATE_KEY_FILE=${TANITAD_GATE_KEY_FILE:-$ROOT/launch_gate.key}      # the HMAC key lives on the volume, OUTSIDE the shipped tree and anything the egress pushes
++mkdir -p $ROOT $S
++STAGE=start
++TREE=""
++export DIV_WS=$WS SCORER1P6_WS=$WS
++log() { echo "$(date -u +%FT%T) $*" >> $L; }
++refuse() { log "REFUSED: stage=$STAGE: $*"; exit 1; }
++stop_after() { if [ "${DIV_STOP_AFTER:-}" = "$1" ]; then log "stopping after $1 (DIV_STOP_AFTER)"; exit 0; fi; }
++tree_sha() { sha256sum "$PKG/SHIP_MANIFEST.json" 2>/dev/null | cut -c1-64; }
++stage_done() { [ -f "$S/$1.ok" ] && [ "$(sed -n 2p "$S/$1.ok")" = "$TREE" ]; }
++stage_mark() { { date -u +%FT%T; echo "$TREE"; } > "$S/$1.ok"; }
++# gate JSON is PARSED, never grepped:  gate_is <log> <gate-key-prefix> <key> <json literal>  -> rc 0 iff the log's single preflight row has that gate's field equal to it
++gate_is() {
++  $PY_C - "$@" <<'PYEOF'
++import json, sys
++log, gate, key, want = sys.argv[1:5]
++rows = [json.loads(ln) for ln in open(log, encoding="utf-8", errors="replace") if ln.startswith('{"event": "preflight"')]
++if len(rows) != 1:
++    sys.exit("%s: %d preflight rows, want 1" % (log, len(rows)))
++g = next((v for k, v in rows[0]["gates"].items() if k.split("_", 1)[0] == gate), None)
++got = json.dumps("<absent>" if g is None else g.get(key, "<absent>"))
++if got != want:
++    sys.exit("%s: %s.%s = %s, want %s" % (log, gate, key, got, want))
++PYEOF
++}
++gpu_busy() {          # rc 0 = a process is on the GPU, OR the GPU cannot be asked (what cannot be proven idle is busy).  Never pgrep -f.
++  local nv="${DIV_NVSMI:-nvidia-smi}" apps
++  apps="$("$nv" --query-compute-apps=pid --format=csv,noheader 2> /dev/null)" || return 0
++  [ -n "$(echo "$apps" | tr -d '[:space:]')" ]
++}
++lock_held() { [ -e "$1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$1/chain.lock"; }        # READ-WRITE fd: an exclusive flock on a read-only fd is EBADF on nfs4
++others_hold() {
++  local c
++  for c in refe_p2 refe_p2rep rls1 s1aux refe_p6 refe_p7 refe_scorer1p6 refe_s1z refe_s1zsm refe_rep refe_dose; do
++    if lock_held "$DATA/$c"; then echo "the $c chain holds $DATA/$c/chain.lock"; return 2; fi
++  done
++  return 0
++}
++wait_clear() {        # BLOCK until no chain holds the pod (P7 is PAUSED for this run: its lock must be free) and the GPU was idle on DIV_IDLE_POLLS consecutive polls
++  local poll="${DIV_POLL_S:-30}" need="${DIV_IDLE_POLLS:-3}" max="${DIV_WAIT_MAX_S:-0}" idle=0 waited=0 since=0 why rc
++  while :; do
++    why=""; rc=0
++    why="$(others_hold)"; rc=$?
++    if [ "$rc" = 0 ] && gpu_busy; then why="a process is on the GPU (or nvidia-smi cannot say)"; rc=2; fi
++    if [ "$rc" = 0 ]; then idle=$((idle + 1)); [ "$idle" -ge "$need" ] && return 0
++    else
++      idle=0
++      if [ "$since" = 0 ] || [ "$since" -ge 600 ]; then log "ZZDIV_WAITING $why (waited ${waited}s)"; since=0; fi
++    fi
++    [ "$max" -gt 0 ] && [ "$waited" -ge "$max" ] && refuse "waited ${waited}s for the pod (DIV_WAIT_MAX_S): $why"
++    sleep "$poll" 200>&-
++    waited=$((waited + poll)); since=$((since + poll))
++  done
++}
++arm_argv() { ARGS="$(ARM=$1 MODE=argv DIV_WS=$WS bash $RUN/div_pod.sh)" && [ -n "$ARGS" ] || refuse "div_pod.sh ARM=$1 MODE=argv printed nothing"; }
++token_ok() {          # $1 = arm, uses $ARGS.  `launch_gate.py verify` RE-MEASURES the argv, the code tree, the checkpoint sha and the data and checks the HMAC.
++  local tok
++  tok="$(ls "$ROOT/lg_$1"/PASS_*.json 2> /dev/null | head -n 1)"
++  [ -n "$tok" ] || return 1
++  env -u HF_TOKEN "$PY_C" "$RUN/launch_gate.py" verify --profile $PROFILE --token "$tok" --args "$ARGS" --pkg "$PKG" --json "$ROOT/token_verify_$1.json" >> "$ROOT/token_verify_$1.log" 2>&1 200>&-
++}
++
++
++# the split of a preflight / run log's data event, PARSED (never grepped):  split_is <log> <half>  -> rc 0 iff the log's data event carries the split block of that half with 0 kept rows off the half, the filter built,
++# both halves >= SPLIT_MIN sets and sets == train_sets; prints the counts (the two halves' set and log counts are reported before any update is trained)
++split_is() {
++  $PY_C - "$1" "$2" "$SPLIT_MIN" <<'PYEOF'
++import json, sys
++log, half, floor = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
++rows = [json.loads(ln) for ln in open(log, encoding="utf-8", errors="replace") if ln.startswith('{"event": "data"')]
++if len(rows) != 1:
++    sys.exit("%s: %d data events, want 1" % (log, len(rows)))
++d = rows[0]
++b = d.get("split")
++if not isinstance(b, dict):
++    sys.exit("%s: the data event carries no split block (--split-half was not built)" % log)
++bad = []
++if b.get("half") != half: bad.append("split.half %r != %d" % (b.get("half"), half))
++if b.get("rule") != "int(sha256(log_name utf-8).hexdigest(), 16) % 2": bad.append("split.rule %r" % (b.get("rule"),))
++if b.get("filter_built") is not True: bad.append("split.filter_built %r" % (b.get("filter_built"),))
++if b.get("rows_off_half") != 0: bad.append("split.rows_off_half %r != 0" % (b.get("rows_off_half"),))
++if b.get("sets") != d.get("train_sets"): bad.append("split.sets %r != train_sets %r" % (b.get("sets"), d.get("train_sets")))
++hs, hl = b.get("half_sets") or {}, b.get("half_logs") or {}
++if sorted(hs) != ["0", "1"] or not all(isinstance(v, int) and v >= floor for v in hs.values()): bad.append("half_sets %r: a half below %d sets is a launch blocker" % (hs, floor))
++if b.get("sets") != hs.get(str(half)) or b.get("logs") != hl.get(str(half)): bad.append("kept %r sets / %r logs are not half %d's %r / %r" % (b.get("sets"), b.get("logs"), half, hs.get(str(half)), hl.get(str(half))))
++if bad:
++    sys.exit("%s: %s" % (log, "; ".join(bad)))
++print("half=%d sets=%d logs=%d | half0 sets=%s logs=%s | half1 sets=%s logs=%s | pre_split_sets=%s | heldout_sets=%s" % (half, b["sets"], b["logs"], hs["0"], hl["0"], hs["1"], hl["1"], b.get("pre_split_sets"), d.get("heldout_sets")))
++PYEOF
++}
++
++# ---- 0. precheck: the lock, the card, the package
++exec 200>"$ROOT/chain.lock"
++flock -n 200 || { echo "REFUSED: another DIV chain holds $ROOT/chain.lock"; exit 1; }
++STAGE=precheck
++[ -n "$HFTOK" ] || refuse "DIV_HF_TOKEN_FILE is not set (hf_egress.py reads the token file in place; no default path in source)"
++TREE="$(tree_sha)"
++log "chain armed (ZZDIV_START $ARMN of $PARENT, half $HALF; div_chain.sh md5 $(md5sum "$0" | cut -c1-12), tree ${TREE:0:12})"
++[ -n "$TREE" ] || refuse "no $PKG/SHIP_MANIFEST.json: ship the landed tree with its manifest (launch_gate.py ship-manifest --commit <40-hex>)"
++[ -r "$HFTOK" ] && grep -qE 'hf_[A-Za-z0-9]{8,}' "$HFTOK" || refuse "$HFTOK is missing, unreadable or holds no hf_ token"
++# the parent's card, by bytes: a card with other bytes is not the frozen experiment this arm builds on
++[ -f "$CARD" ] || refuse "$CARD is missing: the parent's frozen $PCARD must be on the pod"
++[ "$(sha256sum "$CARD" | cut -c1-64)" = "$CARD_SHA" ] || refuse "$CARD is not the frozen $PCARD (sha256 ${CARD_SHA:0:12}...)"
++# the DIV card, by bytes: a card with other bytes is not the frozen experiment this arm runs (ship PREREG_DIV_P6.md into $ROOT; its sha256 is in the .sha256 file beside it)
++[ -f "$DCARD" ] || refuse "$DCARD is missing: ship the frozen $DCARD_NAME into $ROOT"
++[ "$(sha256sum "$DCARD" | cut -c1-64)" = "$DCARD_SHA" ] || refuse "$DCARD is not the frozen $DCARD_NAME (sha256 ${DCARD_SHA:0:12}...)"
++[ -f "$WS/teacher_env.sh" ] || refuse "$WS/teacher_env.sh is missing"
++source $WS/teacher_env.sh
++export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DATA/navtrain_dbs" REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml"
++PY_C="${DRIVERL_EVAL_PYTHON:-}"
++[ -n "$PY_C" ] && [ -x "$PY_C" ] || refuse "teacher_env.sh did not set a runnable DRIVERL_EVAL_PYTHON"
++HPY=${HF_PY:-$PY_C}
++NEED="refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/scorer1p6_pod.sh refe/div_pod.sh refe/div_chain.sh refe/test_div_gate.py refe/div_layer.py refe/s1zsm_layer.py \
++      refe/test_pair_loss.py refe/test_pair_loss_p6.py refe/test_scorer1_gate.py refe/test_scorer1p6_gate.py refe/test_scorer1p6_preflight.py refe/test_scorer1_mutation.py refe/test_scorer1_layer.py refe/scorer1_layer.py refe/test_suite_nesting.py refe/test_launch_gate.py refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py splits/navtrain.yaml SHIP_MANIFEST.json"
++for f in $NEED; do
++  [ -f "$PKG/$f" ] || refuse "$PKG/$f is missing from the shipped package"
++done
++env -u HF_TOKEN "$PY_C" - "$PKG" "$RUN" > "$ROOT/tree_check_$LA.log" 2>&1 200>&- <<'PYEOF' || refuse "the shipped tree is not its SHIP_MANIFEST.json: $(tail -n 1 "$ROOT/tree_check_$LA.log" | cut -c1-300)"
++import sys
++from pathlib import Path
++sys.path.insert(0, sys.argv[2])
++import gate_token as GT
++pkg = Path(sys.argv[1])
++man = GT.read_json(pkg / GT.SHIP_MANIFEST)
++tree = GT.tree_manifest(pkg)
++if man.get("files") != tree:
++    sys.exit("tree differs from the manifest: %s" % GT.tree_diff(man.get("files") or {}, tree))
++print("ZZDIV_TREE_OK %d files commit %s" % (len(tree), str(man.get("commit"))[:12]))
++PYEOF
++log "ZZDIV_PRECHECK_OK ($(tail -n 1 $ROOT/tree_check_$LA.log))"; stop_after precheck
++
++# ---- 1. the inputs, AUDITED (read-only): the parent's label dump, bank, checkpoint and navtest lists
++STAGE=inputs
++if ! stage_done inputs; then
++  for p in "$DUMP/train_sets" "$DUMP/heldout_sets" "$DUMP/logs/heldout_logs.txt" "$DUMP/labels_manifest.json" "$DUMP/labels.DONE" "$DUMP/train_pdm" "$DUMP/heldout_pdm" "$DATA/refe_navtrain/train_grow_cmd_3c_p7" "$DATA/refe_navtrain/train_grow/calib_table.json" "$DATA/navtrain_pixels" "$CKPT" "$NTL" "$NTT"; do
++    [ -e "$p" ] || refuse "$p is missing: the parent's inputs must be on the pod (DIV reads C0's label dump, bank, checkpoint and navtest lists)"
++  done
++  [ "$(sha256sum "$CKPT" | cut -c1-64)" = "$CKPT_SHA" ] || refuse "$CKPT is not P6's model_final.pt (sha256 968a469d...)"
++  [ "$(sha256sum "$NTL" | cut -c1-64)" = "$NTL_SHA" ] || refuse "$NTL is not the registered navtest log list"
++  [ "$(sha256sum "$NTT" | cut -c1-64)" = "$NTT_SHA" ] || refuse "$NTT is not the registered navtest token list"
++  PIN="$($PY_C -c 'import sys; sys.path.insert(0, sys.argv[1]); import launch_gate as L; p = L.SCORER1P6_DATA_PIN; print("UNSET" if p is None else "%d %d" % (p["train_sets"], p["heldout_sets"]))' "$RUN" 2> /dev/null)"
++  case "$PIN" in UNSET|"") refuse "launch_gate.SCORER1P6_DATA_PIN is unset: the exact P6 label counts are not pinned" ;; esac
++  NTR=${PIN% *}; NHO=${PIN#* }
++  [ "$(cat $DUMP/train_pdm/*.jsonl | wc -l)" -ge "$NTR" ] || refuse "train PDM labels hold $(cat $DUMP/train_pdm/*.jsonl | wc -l) rows, want >= $NTR (the pin)"
++  [ "$(cat $DUMP/heldout_pdm/*.jsonl | wc -l)" = "$NHO" ] || refuse "held-out PDM labels hold $(cat $DUMP/heldout_pdm/*.jsonl | wc -l) rows, want $NHO (the pin)"
++  stage_mark inputs
++fi
++log "ZZDIV_INPUTS_OK"; stop_after inputs
++
++# ---- 2. G-EGR (the run must be able to leave the pod), a real disk write test
++STAGE=egr
++$HPY -c "import huggingface_hub, torch" 2>> $L || refuse "huggingface_hub/torch not importable by $HPY"
++if ! stage_done egr; then
++  $HPY $RUN/hf_egress.py gate --repo $REPO --out $ROOT/gate --chain-log $L --egress-log $ROOT/egress.jsonl --token-file "$HFTOK" > $ROOT/gate_$LA.log 2>&1 200>&-
++  grep -q " ZZEGR_PASS " $ROOT/gate_$LA.log || refuse "G-EGR did not pass ($(tail -1 $ROOT/gate_$LA.log | cut -c1-300)); the HF repo $REPO must exist"
++  [ -f $ROOT/gate/g_egr_result.json ] || refuse "G-EGR wrote no g_egr_result.json"
++  stage_mark egr
++fi
++log "ZZDIV_EGR_OK"; stop_after egr
++STAGE=dd
++if ! stage_done dd; then
++  DDMB=${DIV_DD_MB:-6144}                 # one arm: model_sft_A/B 2.6 GB + states + staging
++  dd if=/dev/zero of=$ROOT/dd_test_$LA.tmp bs=1M count=$DDMB conv=fsync > $ROOT/dd_test_$LA.log 2>&1 200>&- ; ddrc=$?
++  rm -f $ROOT/dd_test_$LA.tmp
++  [ $ddrc -eq 0 ] || refuse "the ${DDMB} MB write test failed: $(tail -n 1 $ROOT/dd_test_$LA.log)"
++  stage_mark dd
++fi
++log "ZZDIV_DD_OK"; stop_after dd
++
++# ---- 3. the pod: P7 over, nothing else holds it, GPU idle.
++STAGE=gpu_wait
++wait_clear
++
++# ---- 4. the arm: preflight + the split audit + the NOFILTER mutant -> LAUNCH GATE -> train -> check -> bank
++STAGE="preflight_$ARMN"
++arm_argv "$ARMN"
++if ! stage_done "preflight_$LA"; then
++  wait_clear
++  rm -f $OUT/preflight.jsonl $OUT/PREFLIGHT_PASS.json
++  ARM=$ARMN MODE=preflight bash $RUN/div_pod.sh 200>&-
++  grep -q "^ZZSFT_PREFLIGHT_PASS" $OUT/preflight.log || refuse "$ARMN preflight did not pass ($(tail -n 2 $OUT/preflight.log | tr '\n' ' ' | cut -c1-300))"
++  m=$(split_is $OUT/preflight.log $HALF 2>&1) || refuse "the $ARMN preflight's split audit failed: $m"
++  log "ZZDIV_SPLIT $ARMN $m"
++  # the deliberate regression: the split filter REMOVED on the real argv.  The trainer must REFUSE it (rc 4, `REFUSED: split:`) and must NOT pass the preflight; a mutant that passes means the audit cannot see a missing filter: no training
++  ARM=$ARMN MODE=mutate_nofilter bash $RUN/div_pod.sh 200>&-; mrc=$?
++  [ "$mrc" = 4 ] && grep -q "^REFUSED: split:" $OUT/mutate_nofilter.log || refuse "the NOFILTER mutant was NOT refused by the trainer's split audit (rc $mrc): the audit cannot see a removed filter, so $ARMN is not trained ($(tail -n 2 $OUT/mutate_nofilter.log | tr '\n' ' ' | cut -c1-200))"
++  ! grep -q "^ZZSFT_PREFLIGHT_PASS" $OUT/mutate_nofilter.log || refuse "the NOFILTER mutant passed the preflight: no training"
++  log "$ARMN NOFILTER mutant REFUSED as required ($(grep -m1 '^REFUSED: split:' $OUT/mutate_nofilter.log | cut -c1-160))"
++  stage_mark "preflight_$LA"
++fi
++log "ZZDIV_PREFLIGHT_OK $ARMN"; stop_after "preflight_$LA"
++STAGE="gate_$ARMN"
++if ! stage_done "gate_$LA"; then
++  rm -rf "$ROOT/lg_$ARMN"; mkdir -p "$ROOT/lg_$ARMN"
++  env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY_C" $RUN/launch_gate.py run --profile $PROFILE --pkg "$PKG" --args "$ARGS" --out-dir "$ROOT/lg_$ARMN" \
++    --gate-preflight-json $OUT/preflight.jsonl --gate-egr-json $ROOT/gate/g_egr_result.json > $ROOT/launch_gate_$ARMN.log 2>&1 200>&-
++  echo "ZZEXIT $?" >> $ROOT/launch_gate_$ARMN.log
++  token_ok "$ARMN" || refuse "the launch gate did not mint a PASS token that verifies for $ARMN: $(grep -E 'REASON|FAIL' $ROOT/launch_gate_$ARMN.log | head -n 3 | cut -c1-300 | tr '\n' ' ')"
++  stage_mark "gate_$LA"
++fi
++log "ZZDIV_GATE_OK $ARMN"; stop_after "gate_$LA"
++STAGE="train_$ARMN"
++if stage_done "trainstart_$LA" && ! stage_done "train_$LA"; then
++  k=1; while [ -e "$OUT.killed_$k" ]; do k=$((k + 1)); done
++  refuse "a previous attempt of $ARMN STARTED training and did not finish; scorer_finetune.py has no resume. Archive it (mv $OUT $OUT.killed_$k), re-run: the chain restarts the arm at update 0 under a fresh preflight and token"
++fi
++if ! stage_done "train_$LA"; then
++  wait_clear
++  token_ok "$ARMN" || refuse "the launch-gate token does not verify for $ARMN: scorer_finetune.py is NOT started ($(tail -n 2 $ROOT/token_verify_$ARMN.log | tr '\n' ' ' | cut -c1-300))"
++  stage_mark "trainstart_$LA"
++  log "run launch $ARMN (ZZDIV_TRAIN_START)"
++  set -m
++  ARM=$ARMN MODE=run bash $RUN/div_pod.sh 200>&- &
++  TPID=$!
++  set +m
++  wait $TPID; RRC=$?
++  log "RUN EXIT $ARMN $RRC ($(tail -1 $OUT/sft.log))"
++  env -u HF_TOKEN "$PY_C" - "$OUT" "$HALF" "$SPLIT_MIN" > "$OUT/run_check.log" 2>&1 200>&- <<'PYEOF'
++import json, math, os, sys
++out, half, floor = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
++rows = [json.loads(ln) for ln in open(os.path.join(out, "sft.jsonl"), encoding="utf-8") if ln.startswith("{")]
++done = [r for r in rows if r.get("event") == "done"]
++start = [r for r in rows if r.get("event") == "start"]
++data = [r for r in rows if r.get("event") == "data"]
++bad = []
++if "ZZSFT_DONE" not in open(os.path.join(out, "sft.log"), encoding="utf-8", errors="replace").read():
++    bad.append("no ZZSFT_DONE in sft.log")
++# the REAL run's own data event: the split block of this half, nothing off the half, both halves above the floor
++b = (data[0].get("split") if len(data) == 1 else None) or {}
++hs = b.get("half_sets") or {}
++if len(data) != 1 or b.get("half") != half or b.get("rows_off_half") != 0 or b.get("filter_built") is not True or b.get("sets") != data[0].get("train_sets") or sorted(hs) != ["0", "1"] or min(hs.values() or [0]) < floor:
++    bad.append("the run's data event split block is %s (want half %d, 0 rows off the half, both halves >= %d sets)" % (b, half, floor))
++# 400 updates, or the half's epoch when it is shorter: ceil(sets / batch 8 / accum 8) (the card: a shorter epoch stops the run there, and that is stated)
++n = data[0].get("train_sets") if len(data) == 1 else None
++want = min(400, int(math.ceil(n / 8 / 8))) if isinstance(n, int) and n > 0 else None
++if want is not None and want < 400:
++    print("NOTE: the half's epoch is shorter than 400 updates: the run stops at update %d (%d sets), as the card allows" % (want, n))
++if len(done) != 1 or done[0].get("updates") != want:
++    bad.append("done event %s, want updates %s" % ([d.get("updates") for d in done], want))
++if len(start) != 1 or start[0].get("updates") != want or start[0].get("train_sets") != n:
++    bad.append("start event %s, want updates %s on %s sets" % ([(s.get("updates"), s.get("train_sets")) for s in start], want, n))
++for m in ("model_sft_A.pt", "model_sft_B.pt"):
++    if not os.path.isfile(os.path.join(out, m)):
++        bad.append("missing " + m)
++if bad:
++    sys.exit("; ".join(bad))
++print("ZZDIV_RUN_OK updates %s half %d sets %s" % (want, half, n))
++PYEOF
++  RCC=$?
++  log "run check $ARMN: $(tail -n 1 $OUT/run_check.log | cut -c1-300)"
++  [ $RRC -eq 0 ] && [ $RCC -eq 0 ] || { log "ZZDIV_CHAIN_FAIL $ARMN"; exit 1; }
++  # bank the arm off the pod (a verified remote listing, not the push call)
++  N0=$(wc -l < $L)
++  $HPY $RUN/hf_egress.py push --repo $REPO --prefix "div/$LA" --max-push-bytes 6e9 --tag "arm_div_$LA" --chain-log $L --egress-log $ROOT/egress.jsonl --token-file "$HFTOK" \
++    --files $OUT/model_sft_B.pt $OUT/sft.log $OUT/sft.jsonl $OUT/preflight.log $OUT/mutate_nofilter.log $ROOT/launch_gate_$ARMN.log $OUT/run_check.log >> $ROOT/gate_$LA.log 2>&1 200>&-
++  tail -n +$((N0 + 1)) $L | grep -q " ZZEGRESS_OK arm_div_$LA " || refuse "the $ARMN egress push did not verify: the arm lives on the pod only"
++  # the LFS sha256 of the banked model (what the hub holds) next to the sha256 of the pod's file: both recorded, and they must agree (the token file is read in place, never printed)
++  LOCSHA=$(sha256sum $OUT/model_sft_B.pt | cut -c1-64)
++  env -u HF_TOKEN "$HPY" - "$REPO" "div/$LA/model_sft_B.pt" "$HFTOK" "$LOCSHA" "$OUT/lfs_sha.json" >> $L 2>&1 200>&- <<'PYEOF' || log "ZZDIV_LFS_SHA_UNVERIFIED $ARMN: the hub's LFS sha256 could not be read or differs; the pod file's sha256 is $LOCSHA (verify by sha256 after the pull)"
++import json, re, sys
++from huggingface_hub import HfApi
++repo, path, tokfile, loc, outp = sys.argv[1:6]
++tok = re.search(r"hf_[A-Za-z0-9]+", open(tokfile, encoding="utf-8").read()).group(0)
++info = HfApi(token=tok).get_paths_info(repo, [path], expand=True)
++lfs = getattr(info[0], "lfs", None)
++sha = lfs.get("sha256") if isinstance(lfs, dict) else getattr(lfs, "sha256", None)
++json.dump({"repo": repo, "path": path, "lfs_sha256": sha, "pod_sha256": loc, "equal": sha == loc}, open(outp, "w"))
++print("ZZDIV_LFS_SHA %s %s pod %s equal %s" % (path, sha, loc, sha == loc))
++if sha != loc:
++    sys.exit("the hub's LFS sha256 %s != the pod file's %s" % (sha, loc))
++PYEOF
++  stage_mark "train_$LA"
++fi
++log "ZZDIV_ARM_DONE $ARMN"
++log "ZZDIV_CHAIN_DONE $ARMN"
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_layer.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_layer.py
+new file mode 100644
+index 0000000..fcb67df
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_layer.py	
+@@ -0,0 +1,33 @@
++#!/usr/bin/env python3
++"""DIV layer of refe/scorer_finetune.py (PREREG_DIV_P6): the reversal table that undoes the --split-half edits, so the trainer peels back to the tip blob d665ed995d064f9e1cae956c3c48867cd348cd3d (commit ee1ba225 = the trainer BEFORE DIV).
++It sits OUTERMOST: s1zsm_layer.peel calls this layer first (then it peels S1ZSM, s1z_layer peels S1Z, scorer1_layer peels SCORER1), so every older pin that peels the layers (test_s1zsm_layer, test_s1z_layer, test_scorer1_layer, ...
++via hnscreen_layer.peel -> carvefeed_layer.peel -> scorer1_layer.peel) keeps working unchanged.  A trainer without the layer (the marker below is absent) is returned unchanged.  refe/test_div_gate.py proves peel(trainer) == the tip blob.
++"""
++TIP_TRAINER_BLOB = "d665ed995d064f9e1cae956c3c48867cd348cd3d"          # refe/scorer_finetune.py at ee1ba225 = the trainer BEFORE DIV
++MARKER = "SPLIT_MIN_SETS = 25000"
++# <<<GEN DIV_FILE_REVERSALS
++REVERSALS = (
++    ('SPLIT_MIN_SETS = 25000                                       # PREREG_DIV_P6 section 2: a half below this many training sets is a launch blocker (refused, never trained)\nSPLIT_RULE = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"\nSPLIT_MUTATE_ENV = "REFE_SPLIT_MUTATE_NOFILTER"              # the deliberate regression: the split filter is REMOVED; the audit below must still see the other half\'s rows and the preflight must REFUSE\n\n\ndef split_half_of(log_name) -> int:\n    """PREREG_DIV_P6: the half a training LOG belongs to, h = int(sha256(log name), 16) % 2; every set of a log follows its log"""\n    if not isinstance(log_name, str) or not log_name:\n        raise ValueError(f"split_half_of: a training row\'s log_name must be a non-empty string, got {log_name!r}")\n    return int(hashlib.sha256(log_name.encode("utf-8")).hexdigest(), 16) % 2\n\n\ndef split_training_index(log_of, tr_idx, half, no_filter=False):\n    """(kept index, facts).  Keeps ONLY the training rows whose log hashes to `half` (log_of(i) = row i\'s log name).  The facts are MEASURED on the index that results (rows_off_half re-hashes every kept row), never echoed\n    from the flag.  no_filter=True is the deliberate regression (REFE_SPLIT_MUTATE_NOFILTER): nothing is filtered, so rows_off_half is > 0 and split_refusals refuses."""\n    by = {0: [0, set()], 1: [0, set()]}\n    for i in tr_idx:\n        h_ = split_half_of(log_of(i))\n        by[h_][0] += 1\n        by[h_][1].add(log_of(i))\n    kept = list(tr_idx) if no_filter else [i for i in tr_idx if split_half_of(log_of(i)) == half]\n    kept_logs = {log_of(i) for i in kept}\n    return kept, {"half": int(half), "rule": SPLIT_RULE, "min_sets": SPLIT_MIN_SETS, "filter_built": not no_filter, "sets": len(kept), "logs": len(kept_logs),\n                  "rows_off_half": sum(1 for i in kept if split_half_of(log_of(i)) != half), "pre_split_sets": len(tr_idx),\n                  "half_sets": {"0": by[0][0], "1": by[1][0]}, "half_logs": {"0": len(by[0][1]), "1": len(by[1][1])}}\n\n\ndef split_refusals(facts):\n    """PREREG_DIV_P6: every kept row\'s log hashes to the half; the kept sets ARE the half\'s sets; BOTH halves hold >= SPLIT_MIN_SETS sets (a half below that is a launch blocker)"""\n    out, h = [], str(facts["half"])\n    if facts["rows_off_half"] != 0:\n        out.append(f"{facts[\'rows_off_half\']} kept training rows have a log that hashes to the other half (the split filter is missing or wrong)")\n    if facts["sets"] != facts["half_sets"][h] or facts["logs"] != facts["half_logs"][h]:\n        out.append(f"the kept {facts[\'sets\']} sets / {facts[\'logs\']} logs are not half {h}\'s {facts[\'half_sets\'][h]} sets / {facts[\'half_logs\'][h]} logs")\n    if min(facts["half_sets"].values()) < facts["min_sets"]:\n        out.append(f"a half holds fewer than {facts[\'min_sets\']} training sets (half 0: {facts[\'half_sets\'][\'0\']}, half 1: {facts[\'half_sets\'][\'1\']}): a launch blocker")\n    return out\n\n\ndef key(r):\n    return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))\n',
++     'def key(r):\n    return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))\n'),
++    ('    ap.add_argument("--split-half", type=int, default=-1, choices=(-1, 0, 1), help="DIV (PREREG_DIV_P6 section 2): train ONLY on the training sets whose LOG hashes to this half, h = int(sha256(log name), 16) % 2 (every set of a log follows its log); "\n                    "the held-out monitor is unchanged.  A half below 25,000 sets is refused.  -1 = OFF = this trainer exactly, so a DV launch argv must NAME it")\n    return ap\n\n\ndef main() -> int:\n',
++     '    return ap\n\n\ndef main() -> int:\n'),
++    ('        print(f"REFUSED: {len(tr_idx)} training sets and {len(ho_idx)} held-out sets survive the filters -- an empty side would train or evaluate on nothing"); return 4\n    split_info = None\n    if a.split_half >= 0:                                    # DIV (PREREG_DIV_P6): the split applies to the TRAINING index only; the held-out index above is untouched\n        try:\n            tr_idx, split_info = split_training_index(lambda i_: ds.rows[i_].get("log_name"), tr_idx, a.split_half, os.environ.get(SPLIT_MUTATE_ENV) == "1")\n        except ValueError as e_:\n            print(f"REFUSED: split: {e_}"); return 4\n        print("ZZSPLIT " + json.dumps(split_info), flush=True)\n        bad_split = split_refusals(split_info)\n        if bad_split:\n            for m_ in bad_split:\n                print("REFUSED: split: " + m_)\n            return 4\n',
++     '        print(f"REFUSED: {len(tr_idx)} training sets and {len(ho_idx)} held-out sets survive the filters -- an empty side would train or evaluate on nothing"); return 4\n'),
++    ('    if split_info is not None:                               # DIV: the BUILT facts of the split (absent without --split-half: every pre-DIV data event is byte-identical)\n        info["split"] = split_info\n    log(info)\n    g = torch.Generator().manual_seed(a.seed)\n',
++     '    log(info)\n    g = torch.Generator().manual_seed(a.seed)\n'),
++)
++# >>>GEN DIV_FILE_REVERSALS
++
++
++def has_layer(src: str) -> bool:
++    return MARKER in src
++
++
++def peel(src: str) -> str:
++    """undo the DIV edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
++    if not has_layer(src):
++        return src
++    for new, old in REVERSALS:
++        assert src.count(new) == 1, f"DIV reversal: the text occurs {src.count(new)} times (must be exactly 1): {new[:70]!r}"
++        src = src.replace(new, old)
++    return src
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_pause_p7.sh b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_pause_p7.sh
+new file mode 100644
+index 0000000..8981b8b
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_pause_p7.sh	
+@@ -0,0 +1,56 @@
++#!/usr/bin/env bash
++# Runs on the pod, detached.  Usage: div_pause_p7.sh <p7_pod.sh pid> <train.py pid> DV0 DV1      (both arms, one after the other, in ONE P7 pause)
++# Style of refe/dose_pause_p7.sh (PREREG_DIV_P6).  Waits for P7's next ckpt_last.pt, stops P7 by explicit PID, confirms the GPU is empty, runs div_chain.sh DV0 then div_chain.sh DV1 (about 2.9 L40-h ESTIMATED: 2 x (400 x 8.7 s + preflight, mutant, gate, egress)), then ALWAYS resumes P7 (also when this script is killed or errors after P7 was stopped), unless /workspace/data/refe_div/HOLD_P7 exists.
++# If DV0's chain does not end in ZZDIV_CHAIN_DONE, DV1 is NOT run (the comparison needs both halves; the pod goes back to P7).  Terminal lines in pause.log: PAUSE_STOPPED_EARLY (P7 not touched), P7_RESUMED or P7_HELD.
++set -u
++CHAIN=${1:-}; TR=${2:-}; shift 2 2>/dev/null || true
++ARMS="$*"
++R=/workspace/data/refe_runs/p7_reserve_head; OUT=/workspace/data/refe_div; L=$OUT/pause.log
++mkdir -p "$OUT"
++say() { echo "$(date -u +%FT%TZ) $*" >> "$L"; }
++early() { say "PAUSE_STOPPED_EARLY $*"; exit 1; }
++[ -n "$CHAIN" ] && [ -n "$TR" ] && [ -n "$ARMS" ] || early "usage: div_pause_p7.sh <p7_pod.sh pid> <train.py pid> DV0 DV1"
++for a in $ARMS; do case "$a" in DV0|DV1) ;; *) early "unknown arm $a (DV0 | DV1)" ;; esac; done
++TF=$(grep -o "/root/\.[A-Za-z0-9_.]*" /workspace/data/refe_scorer1p6/after_arms.sh | head -1); [ -f "$TF" ] || early "no token file"
++tr '\0' ' ' < /proc/$CHAIN/cmdline | grep -q 'p7_pod.sh' || early "pid $CHAIN is not the launch script"
++tr '\0' ' ' < /proc/$TR/cmdline | grep -q 'train.py' || early "pid $TR is not the trainer"
++STOPPED=0; RESUMED=0
++resume_p7() {
++  [ "$STOPPED" = 1 ] && [ "$RESUMED" = 0 ] || return 0
++  RESUMED=1
++  for i in $(seq 1 90); do n=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | wc -l); [ "$n" = "0" ] && break; sleep 2; done
++  if [ -e $OUT/HOLD_P7 ]; then say "P7_HELD ($OUT/HOLD_P7 exists)"; return 0; fi
++  HF_TOKEN=$(cat "$TF") P7_LABEL_WORKERS=13 P7_WAIT_P6=1 setsid nohup bash /workspace/refe-plan-p7/refe/p7_pod.sh >> /workspace/data/refe_p7/p7_stdout.log 2>&1 < /dev/null &
++  say "P7_RESUMED pid $!"
++}
++trap 'resume_p7' EXIT
++m0=$(stat -c %Y "$R/ckpt_last.pt"); say "waiting for a checkpoint newer than mtime $m0 (arms: $ARMS)"; m=$m0
++for i in $(seq 1 3600); do m=$(stat -c %Y "$R/ckpt_last.pt"); [ "$m" != "$m0" ] && break; kill -0 $TR 2>/dev/null || early "the trainer ended by itself"; sleep 1; done
++[ "$m" != "$m0" ] || early "no new checkpoint within 60 min"
++sleep 15
++desc() { local c; for c in $(ps -o pid= --ppid "$1"); do echo "$c"; desc "$c"; done; }
++D="$(desc $TR | tr '\n' ' ')"
++say "checkpoint mtime $m; stopping launch script $CHAIN, then trainer $TR; descendants: $D"
++STOPPED=1
++kill -TERM $CHAIN; kill -TERM $TR
++for i in $(seq 1 60); do kill -0 $TR 2>/dev/null || break; sleep 1; done
++kill -0 $TR 2>/dev/null && { say "trainer still alive after 60 s, SIGKILL"; kill -9 $TR; sleep 2; }
++for p in $D; do kill -0 "$p" 2>/dev/null && kill -TERM "$p" 2>/dev/null; done
++sleep 10
++for p in $D; do kill -0 "$p" 2>/dev/null && { say "descendant $p still alive, SIGKILL"; kill -9 "$p" 2>/dev/null; }; done
++empty=0; for i in $(seq 1 90); do n=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader | wc -l); [ "$n" = "0" ] && { empty=1; break; }; sleep 2; done
++if [ "$empty" != 1 ]; then say "PAUSE_STOPPED_EARLY GPU still has a compute process after P7 was stopped"; exit 1; fi      # the EXIT trap resumes P7
++for i in $(seq 1 240); do kill -0 $CHAIN 2>/dev/null || break; sleep 1; done
++if kill -0 $CHAIN 2>/dev/null; then say "PAUSE_STOPPED_EARLY launch script $CHAIN did not exit"; exit 1; fi
++say "left over P7 helpers: $(ps -eo pid,cmd | grep -E 'p2r_sync|p7_pod' | grep -v grep | cut -c1-80 | tr '\n' ';')"
++say "P7 stopped, GPU empty"
++# the DIV arms, one chain invocation each, in the order given; the first arm that does not finish stops the loop
++for A in $ARMS; do
++  LA=$(echo "$A" | tr 'A-Z' 'a-z')
++  say "chain $A starting"
++  DIV_HF_TOKEN_FILE="$TF" timeout 9000 bash /workspace/refe-plan-div/refe/div_chain.sh "$A" >> $OUT/chain_$LA.out 2>&1 < /dev/null      # 9000 s per arm = 2.5 h against ~1.4 h ESTIMATED (3,480 s of updates + preflight, mutant, gate, egress)
++  crc=$?
++  say "chain $A rc $crc (last: $(grep -E 'ZZDIV_|REFUSED' $OUT/chain_$LA.log 2>/dev/null | tail -1 | cut -c1-160))"
++  grep -q "ZZDIV_CHAIN_DONE $A" $OUT/chain_$LA.log 2>/dev/null || { say "chain $A did not finish: the remaining arms are NOT run"; break; }
++done
++resume_p7
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_pod.sh b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_pod.sh
+new file mode 100644
+index 0000000..392872f
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/div_pod.sh	
+@@ -0,0 +1,45 @@
++#!/bin/bash
++# DATA-DIVERSE ensemble members of P6's scorer (PREREG_DIV_P6, frozen 2026-11-10, sha256 e5fb2f8e...).  ARM=DV0|DV1   MODE=argv | preflight | mutate_nofilter | run      (no calibrate mode: C0 names no pair / twin lever)
++#   DV0 = C0 (PREREG_SCORER1P6, seed 0) + `--split-half 0`      DV1 = C0r (seed 1) + `--split-half 1`.  The split keeps only the training sets whose LOG hashes to the half, h = int(sha256(log name), 16) % 2; the held-out monitor is unchanged.  400 updates each (the parent's).
++# THE ARGV IS THE PARENT'S, NOT A COPY: this script runs scorer1p6_pod.sh (ARM=C0 / C0r) MODE=argv and adds exactly `--split-half <h>` and swaps --out, nothing else (launch_gate.div_argv builds the same argv from the parent's Python builder;
++# refe/test_div_gate.py diffs this script's output against it AND against the parent's, token by token).  It refuses unless the parent's argv carries exactly one --seed and one --out, no --split-half, and the seed the card names (DV0 0, DV1 1).
++# Mutant: mutate_nofilter = REFE_SPLIT_MUTATE_NOFILTER=1, the split filter REMOVED on the real argv; the trainer's own audit (every kept row re-hashed) must REFUSE it (rc 4, `REFUSED: split:`), and div_chain.sh refuses to train if it does not.
++# DIV_WS (default /workspace) moves the layout (the sandbox of the tests).
++set -u
++WS=${DIV_WS:-/workspace}
++DATA=$WS/data
++ROOT=$DATA/refe_div
++HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++ARM=${ARM:-}
++case "$ARM" in
++  DV0) PARENT=C0; HALF=0; SEED=0 ;;
++  DV1) PARENT=C0r; HALF=1; SEED=1 ;;
++  *) echo "unknown ARM=$ARM (DV0 | DV1)" >&2; exit 2 ;;
++esac
++LARM=$(echo "$ARM" | tr 'A-Z' 'a-z')
++OUT=$ROOT/$LARM
++PARGS="$(ARM=$PARENT MODE=argv SCORER1P6_WS=$WS bash "$HERE/scorer1p6_pod.sh")" || { echo "the parent script scorer1p6_pod.sh ARM=$PARENT MODE=argv failed" >&2; exit 2; }
++[ -n "$PARGS" ] || { echo "the parent script scorer1p6_pod.sh printed no argv" >&2; exit 2; }
++[ "$(echo "$PARGS" | grep -o -- ' --seed [0-9][0-9]*' | wc -l)" = 1 ] && [ "$(echo "$PARGS" | grep -o -- ' --out [^ ][^ ]*' | wc -l)" = 1 ] || { echo "the parent argv does not carry exactly one --seed and one --out" >&2; exit 2; }
++echo "$PARGS" | grep -q -- '--split-half' && { echo "REFUSED: the parent argv already names --split-half" >&2; exit 2; }
++echo "$PARGS" | grep -q -- '--pair-\|--twin-' && { echo "REFUSED: the parent $PARENT names a pair / twin lever; DV is C0's argv" >&2; exit 2; }
++PSEED="$(echo "$PARGS" | grep -o -- ' --seed [0-9][0-9]*' | cut -d' ' -f3)"
++[ "$PSEED" = "$SEED" ] || { echo "REFUSED: the parent $PARENT's --seed is $PSEED, not the $SEED the card gives $ARM (DV0 = C0's seed, DV1 = C0r's)" >&2; exit 2; }
++ARGS="$(echo "$PARGS" | sed -E "s# --out [^ ]+# --split-half $HALF --out $OUT#")"
++if [ "${MODE:-}" = "argv" ]; then echo "$ARGS" | tr -s ' ' | sed 's/ $//'; exit 0; fi
++case "${MODE:-}" in
++  preflight|run|mutate_nofilter) ;;
++  *) echo "unknown MODE=${MODE:-} (argv | preflight | mutate_nofilter | run)" >&2; exit 2 ;;
++esac
++source $WS/teacher_env.sh
++PY="$DRIVERL_EVAL_PYTHON"
++cd "$HERE"
++mkdir -p $OUT
++export OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1
++rc=2
++case "${MODE:-}" in
++  preflight) "$PY" scorer_finetune.py $ARGS --preflight > $OUT/preflight.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/preflight.log ;;
++  mutate_nofilter) env REFE_SPLIT_MUTATE_NOFILTER=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_nofilter > $OUT/mutate_nofilter.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_nofilter.log ;;
++  run) "$PY" scorer_finetune.py $ARGS > $OUT/sft.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/sft.log ;;      # the script's own exit status IS the trainer's
++esac
++exit $rc
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
+index 73ab128..6f92652 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py	
+@@ -880,6 +880,8 @@ DVB_KINDS_SCORER = {
+     # S1ZSM (PREREG_S1ZSM_P6 section 1): the speed-neutral pair rule, default OFF.  `built` = compared with the trainer's `twin` block (speed_neutral, sn_dv, sn_balance, sn_band_filter, sn_seed), observed iff --twin-speed-neutral is on
+     # (or the block says it is built: a built-ON block under an argv without the flag is RED).  The default-off flag left out of an S1ZSM argv is refused by the profile (required_flags + the pinned argv).
+     "twin_speed_neutral": "built",
++    # DIV (PREREG_DIV_P6 section 2): the data-split lever, default OFF (-1).  `built` = compared with the trainer's `split` block (scorer_dvb_rows), which split_training_index MEASURES on the index the run holds (every kept row re-hashed).
++    "split_half": "built",
+     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
+     "out": "run", "eval_every": "run", "workers": "run",
+     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
+@@ -910,6 +912,8 @@ HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "
+ SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+ SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads", "pair_nobalance_heads", "pair_nospeed_heads", "pair_gap_heads", "pair_mean")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
+ SCORER_TWIN_DESTS = ("twin_w", "twin_ade", "twin_topk", "twin_heads")          # S1Z: the L_twin levers, observed only when --twin-w > 0
++SPLIT_RULE_REGISTERED = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"      # DIV (PREREG_DIV_P6 section 2): the gate's OWN statement of the split rule and of the floor, independent of the trainer's constants
++SPLIT_MIN_SETS_REGISTERED = 25000
+ SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
+ # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
+ SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
+@@ -1574,6 +1578,19 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
+                     add("twin_speed_neutral", True, blk.get("sn_band_filter"), "data event: twin.sn_band_filter (the speed band is built)")
+                     add("twin_speed_neutral", True, blk.get("sn_balance"), "data event: twin.sn_balance (the F/S balancing is built; the NOSNBALANCE regression reads False)")
+                     add("twin_speed_neutral", 20261107, blk.get("sn_seed"), "data event: twin.sn_seed (the registered balancing seed)")
++    split_named = getattr(ns, "split_half", -1) >= 0                    # DIV: the `split` block exists iff --split-half is 0 or 1
++    if split_named or "split" in data:
++        blk = data.get("split") if isinstance(data.get("split"), dict) else {}
++        add("split_half", split_named, "split" in data, "the data event carries a `split` block iff --split-half is 0 or 1")
++        if split_named:
++            hs = blk.get("half_sets") if isinstance(blk.get("half_sets"), dict) else {}
++            add("split_half", int(ns.split_half), blk.get("half"), "data event: split.half (the half the built training index keeps)")
++            add("split_half", SPLIT_RULE_REGISTERED, blk.get("rule"), "data event: split.rule (the hash rule the trainer applied)")
++            add("split_half", True, blk.get("filter_built"), "data event: split.filter_built (the split filter is built; the NOFILTER regression reads False)")
++            add("split_half", 0, blk.get("rows_off_half"), "data event: split.rows_off_half (every KEPT training row's log re-hashed by the trainer: none may belong to the other half)")
++            add("split_half", data.get("train_sets"), blk.get("sets"), "data event: split.sets == data.train_sets (the sets the run trains on ARE the half's)")
++            add("split_half", True, bool(hs) and all(isinstance(v, int) and v >= SPLIT_MIN_SETS_REGISTERED for v in hs.values()) and len(hs) == 2,
++                f"data event: split.half_sets {hs} (BOTH halves hold >= {SPLIT_MIN_SETS_REGISTERED} sets: PREREG_DIV_P6's launch blocker)")
+     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
+     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
+         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
+@@ -1753,7 +1770,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
+         for r in rows:
+             if not r["ok"]:
+                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
+-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral")}
++        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral") and (getattr(ns, "split_half", -1) >= 0 or d != "split_half")}
+         missing = sorted(expect - {r["dest"] for r in rows})
+         det["built_without_observer"] = missing
+         if missing:
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
+index 4dd0e5a..3bec384 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py	
+@@ -810,6 +810,57 @@ PROFILES["refe_dose_s1z_p6"] = {**copy.deepcopy(PROFILES["refe_s1z_p6"]), "name"
+                                 "recipe": {**SCORER1P6_RECIPE, "max_updates": DOSE_ARMS["S1ZD"]["max_updates"], **({"epochs": DOSE_EPOCHS} if DOSE_EPOCHS is not None else {})},
+                                 "required_flags": {**PROFILES["refe_s1z_p6"]["required_flags"], "--max-updates": str(DOSE_ARMS["S1ZD"]["max_updates"]), **({"--epochs": str(DOSE_EPOCHS)} if DOSE_EPOCHS is not None else {})}}
+ 
++# ============================================================================================ DIV: data-diverse ensemble members DV0 / DV1 (PREREG_DIV_P6, frozen 2026-11-10, sha256 e5fb2f8e...; chain refe/div_chain.sh; pod script refe/div_pod.sh)
++# DV0 = C0's argv + `--split-half 0`; DV1 = C0r's argv (seed 1) + `--split-half 1` (the data-order seed is the PARENT's, so DV1 differs from C0 by the seed too).  The ONLY moved levers against the parent are the split flag and --out.
++# div_argv derives the argv FROM scorer1p6_argv (the parent's builder), so "the parent's argv + the split flag" is true by construction and test_div_gate.py proves it by a token diff.  A NEW profile `refe_div_p6`; no existing
++# profile or constant is edited (test_div_gate.py pins the 24 older digests).  The training index is the half's, so the registered `train_sets` count (60,000, the whole bank) does NOT apply: G-DVB asserts the `split` block of the
++# trainer's data event instead (half, rule, filter built, 0 off-half rows, sets == train_sets, both halves >= 25,000) and a registered FLOOR on train_sets.  The run ends at min(400, ceil(sets / 64)) updates: a half of fewer than 25,600 sets
++# stops at its epoch (the card says so); the chain's run check derives that number, G-DVB's schedule row is not registered (data_expect_updates None).
++DIV_ROOT = "/workspace/data/refe_div"
++DIV_PKG = "/workspace/refe-plan-div"
++DIV_MIN_SETS = 25000
++DIV_ARMS = {"DV0": {"parent": "C0", "family": "p6", "half": 0}, "DV1": {"parent": "C0r", "family": "p6", "half": 1}}          # div arm -> its parent (C0 / C0r: the seed is the parent's) and the half it trains on
++DIV_SUITE_EXTRA = [{"script": "test_div_gate.py", "token": "ZZTEST_PASS"}]
++
++
++def div_arm_refusals(table: dict) -> list:
++    """Refusals of a DIV table {arm: {parent, family, half}}: a parent that is not a C0 arm of family 'p6', a name that is a registered arm, a half that is not 0 or 1, two arms on one half."""
++    out, halves = [], []
++    for arm, sp in table.items():
++        if sp.get("family") != "p6" or sp.get("parent") not in ("C0", "C0r"):
++            out.append(f"div {arm}: parent {sp.get('parent')!r} is not a C0 arm of family 'p6'")
++        if any(arm in s for s in (SCORER1P6_ARM_SEED, S1Z_ARM_SEED, S1ZSM_ARM_SEED, DOSE_ARMS)) or arm in REP_ARMS:
++            out.append(f"div {arm}: the name is a registered arm")
++        h = sp.get("half")
++        if h not in (0, 1) or isinstance(h, bool):
++            out.append(f"div {arm}: half {h!r} is not 0 or 1")
++        halves.append(h)
++    if len(set(halves)) != len(halves):
++        out.append(f"div: two arms train on the same half ({halves})")
++    return out
++
++
++def div_argv(arm: str) -> list:
++    """The argv of a DIV arm: the parent's (scorer1p6_argv of C0 / C0r) with `--split-half <h>` added right after the --seed value and --out swapped; nothing else."""
++    if arm not in DIV_ARMS:
++        raise KeyError(f"{arm!r} is not a DIV arm (one of {sorted(DIV_ARMS)})")
++    sp = DIV_ARMS[arm]
++    bad = div_arm_refusals({arm: sp})
++    if bad:
++        raise ValueError("; ".join(bad))
++    toks = list(scorer1p6_argv(sp["parent"]))
++    i = toks.index("--seed")
++    toks[i + 2:i + 2] = ["--split-half", str(sp["half"])]
++    toks[toks.index("--out") + 1] = DIV_ROOT + "/" + arm.lower()
++    return toks
++
++
++PROFILES["refe_div_p6"] = {**copy.deepcopy(PROFILES["refe_scorer1p6"]), "name": "refe_div_p6", "argv_kind": "div", "root": DIV_ROOT, "suite": SCORER1P6_SUITE + DIV_SUITE_EXTRA,
++                           "div_arms": {a: dict(DIV_ARMS[a]) for a in DIV_ARMS}, "arm_seed": {"DV0": SCORER1P6_ARM_SEED["C0"], "DV1": SCORER1P6_ARM_SEED["C0r"]}, "pair_spec": {},
++                           "data_expect": {k: v for k, v in PROFILES["refe_scorer1p6"]["data_expect"].items() if k != "train_sets"}, "data_expect_min": {"train_sets": DIV_MIN_SETS}, "data_expect_updates": None,
++                           "required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--split-half": None}}
++
++
+ # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+ # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+ PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
+@@ -1370,7 +1421,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+     p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
+     arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
+     pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
+-    argv_of = dose_argv if prof.get("argv_kind") == "dose" else rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
++    argv_of = div_argv if prof.get("argv_kind") == "div" else dose_argv if prof.get("argv_kind") == "dose" else rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
+     if p6 and prof.get("data_pin") is None:
+         out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
+                    "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
+@@ -1404,6 +1455,10 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+         rp = prof["rep_arms"][arm]
+         if ns.seed == REP_PARENT_SEEDS[rp["family"]][rp["parent"]]:
+             out.append(f"{name} ({arm}) resolves to --seed {ns.seed}, its parent {rp['parent']}'s seed: a replicate must move the data-order seed")
++    if prof.get("div_arms"):                                     # a DIV arm (PREREG_DIV_P6): its table is valid, the seed is the parent's (pinned above) and --split-half is the arm's half, named
++        out += div_arm_refusals({arm: prof["div_arms"][arm]})
++        if "--split-half" not in argv or ns.split_half != prof["div_arms"][arm]["half"]:
++            out.append(f"{name} ({arm}) requires --split-half {prof['div_arms'][arm]['half']} named (the half of PREREG_DIV_P6 section 2); the argv resolves to {ns.split_half} ({'named' if '--split-half' in argv else 'the parser DEFAULT, OFF'})")
+     if prof.get("dose_arms"):                                    # a dose of S1Z (PREREG_DOSE_P6): its table is valid, the seed is the parent's (pinned above), --max-updates is the dose's AND the schedule can reach it
+         out += dose_arm_refusals({arm: prof["dose_arms"][arm]})
+         out += dose_reach_refusals(prof["dose_arms"][arm]["max_updates"], ns.epochs)
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/s1zsm_layer.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/s1zsm_layer.py
+index 7ed85b9..5101126 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/s1zsm_layer.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/s1zsm_layer.py	
+@@ -70,7 +70,9 @@ def has_layer(src: str) -> bool:
+ 
+ 
+ def peel(src: str) -> str:
+-    """undo the S1ZSM edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
++    """undo the S1ZSM edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The DIV layer (refe/div_layer.py, PREREG_DIV_P6) sits ON TOP of this one and is peeled first"""
++    import div_layer as DIV
++    src = DIV.peel(src)
+     if not has_layer(src):
+         return src
+     for new, old in REVERSALS:
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py
+index d665ed9..e8b8626 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/scorer_finetune.py	
+@@ -487,6 +487,45 @@ def pair_refusals(a):
+     return out
+ 
+ 
++SPLIT_MIN_SETS = 25000                                       # PREREG_DIV_P6 section 2: a half below this many training sets is a launch blocker (refused, never trained)
++SPLIT_RULE = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"
++SPLIT_MUTATE_ENV = "REFE_SPLIT_MUTATE_NOFILTER"              # the deliberate regression: the split filter is REMOVED; the audit below must still see the other half's rows and the preflight must REFUSE
++
++
++def split_half_of(log_name) -> int:
++    """PREREG_DIV_P6: the half a training LOG belongs to, h = int(sha256(log name), 16) % 2; every set of a log follows its log"""
++    if not isinstance(log_name, str) or not log_name:
++        raise ValueError(f"split_half_of: a training row's log_name must be a non-empty string, got {log_name!r}")
++    return int(hashlib.sha256(log_name.encode("utf-8")).hexdigest(), 16) % 2
++
++
++def split_training_index(log_of, tr_idx, half, no_filter=False):
++    """(kept index, facts).  Keeps ONLY the training rows whose log hashes to `half` (log_of(i) = row i's log name).  The facts are MEASURED on the index that results (rows_off_half re-hashes every kept row), never echoed
++    from the flag.  no_filter=True is the deliberate regression (REFE_SPLIT_MUTATE_NOFILTER): nothing is filtered, so rows_off_half is > 0 and split_refusals refuses."""
++    by = {0: [0, set()], 1: [0, set()]}
++    for i in tr_idx:
++        h_ = split_half_of(log_of(i))
++        by[h_][0] += 1
++        by[h_][1].add(log_of(i))
++    kept = list(tr_idx) if no_filter else [i for i in tr_idx if split_half_of(log_of(i)) == half]
++    kept_logs = {log_of(i) for i in kept}
++    return kept, {"half": int(half), "rule": SPLIT_RULE, "min_sets": SPLIT_MIN_SETS, "filter_built": not no_filter, "sets": len(kept), "logs": len(kept_logs),
++                  "rows_off_half": sum(1 for i in kept if split_half_of(log_of(i)) != half), "pre_split_sets": len(tr_idx),
++                  "half_sets": {"0": by[0][0], "1": by[1][0]}, "half_logs": {"0": len(by[0][1]), "1": len(by[1][1])}}
++
++
++def split_refusals(facts):
++    """PREREG_DIV_P6: every kept row's log hashes to the half; the kept sets ARE the half's sets; BOTH halves hold >= SPLIT_MIN_SETS sets (a half below that is a launch blocker)"""
++    out, h = [], str(facts["half"])
++    if facts["rows_off_half"] != 0:
++        out.append(f"{facts['rows_off_half']} kept training rows have a log that hashes to the other half (the split filter is missing or wrong)")
++    if facts["sets"] != facts["half_sets"][h] or facts["logs"] != facts["half_logs"][h]:
++        out.append(f"the kept {facts['sets']} sets / {facts['logs']} logs are not half {h}'s {facts['half_sets'][h]} sets / {facts['half_logs'][h]} logs")
++    if min(facts["half_sets"].values()) < facts["min_sets"]:
++        out.append(f"a half holds fewer than {facts['min_sets']} training sets (half 0: {facts['half_sets']['0']}, half 1: {facts['half_sets']['1']}): a launch blocker")
++    return out
++
++
+ def key(r):
+     return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))
+ 
+@@ -1588,6 +1627,8 @@ def build_parser() -> argparse.ArgumentParser:
+     ap.add_argument("--twin-speed-neutral", action="store_true", help="S1ZSM (PREREG_S1ZSM_P6 section 1): the L_twin pairs are SPEED-NEUTRAL: a pair needs |v4_i - v4_j| / max(v0, 1) < 0.15 and the kept pairs are F/S balanced (seed 20261107).  DEFAULT OFF = S1Z exactly, so a launch argv must NAME it")
+     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
+                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
++    ap.add_argument("--split-half", type=int, default=-1, choices=(-1, 0, 1), help="DIV (PREREG_DIV_P6 section 2): train ONLY on the training sets whose LOG hashes to this half, h = int(sha256(log name), 16) % 2 (every set of a log follows its log); "
++                    "the held-out monitor is unchanged.  A half below 25,000 sets is refused.  -1 = OFF = this trainer exactly, so a DV launch argv must NAME it")
+     return ap
+ 
+ 
+@@ -1692,6 +1733,18 @@ def main() -> int:
+         print(f"REFUSED: {' '.join(empty)} named but loaded 0 labels -- a missing or empty label dir would silently mask its loss or empty the eval"); return 4
+     if not tr_idx or not ho_idx:
+         print(f"REFUSED: {len(tr_idx)} training sets and {len(ho_idx)} held-out sets survive the filters -- an empty side would train or evaluate on nothing"); return 4
++    split_info = None
++    if a.split_half >= 0:                                    # DIV (PREREG_DIV_P6): the split applies to the TRAINING index only; the held-out index above is untouched
++        try:
++            tr_idx, split_info = split_training_index(lambda i_: ds.rows[i_].get("log_name"), tr_idx, a.split_half, os.environ.get(SPLIT_MUTATE_ENV) == "1")
++        except ValueError as e_:
++            print(f"REFUSED: split: {e_}"); return 4
++        print("ZZSPLIT " + json.dumps(split_info), flush=True)
++        bad_split = split_refusals(split_info)
++        if bad_split:
++            for m_ in bad_split:
++                print("REFUSED: split: " + m_)
++            return 4
+     # ---------------- P6-HN-S (--hn-bank / --ctx-cache; default OFF = nothing below runs).  The bank and the cache are VERIFIED here, before the first step: a bank of another partition / label_version / fan
+     # fingerprint / bytes, a bank with no hard negative, a cache of another trunk, or a scene the cache does not hold REFUSES (the join is strict; nothing is skipped or defaulted).
+     hn_obj = cc_obj = trunk_fp = None
+@@ -1816,6 +1869,8 @@ def main() -> int:
+         info["hn"] = hn_obj.hn_block(HN_ARM)
+     if cc_obj is not None:                                   # ... and of the cache (the trunk fingerprint is the CHECKPOINT's: CtxCache refused the load unless it equals the manifest's)
+         info["ctx_cache"] = {"manifest_sha256": CC.sha256_file(os.path.join(a.ctx_cache, "manifest.json")), "trunk_fingerprint": trunk_fp, "n_scenes": int(cc_obj.man["n_scenes"]), "dtype": cc_obj.man["dtype"]}
++    if split_info is not None:                               # DIV: the BUILT facts of the split (absent without --split-half: every pre-DIV data event is byte-identical)
++        info["split"] = split_info
+     log(info)
+     g = torch.Generator().manual_seed(a.seed)
+     dl = DataLoader(make_train_set(ds, tr_idx, a.epo), batch_size=a.batch, shuffle=True, generator=g, num_workers=a.workers,
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_div_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_div_gate.py
+new file mode 100644
+index 0000000..0b742ca
+--- /dev/null
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_div_gate.py	
+@@ -0,0 +1,587 @@
++#!/usr/bin/env python3
++"""DIV launch-gate tests (CPU, no data).  Prints ZZTEST_PASS.  PREREG_DIV_P6 (frozen 2026-11-10, sha256 e5fb2f8e...): DV0 = C0's argv + `--split-half 0` (seed 0), DV1 = C0r's argv + `--split-half 1` (seed 1); the split keeps only the
++training sets whose LOG hashes to the half, h = int(sha256(log name), 16) % 2; a half below 25,000 sets is a launch blocker; the held-out monitor is unchanged.
++
++  V1 THE SPLIT (scorer_finetune.split_half_of / split_training_index / split_refusals): the hash rule pinned by literals, a hand-made log list -> the exact halves (disjoint, covering, every set follows its log), the audit re-hashes every kept row,
++     the 25,000 floor at 24,999 / 25,000, a missing log name raises, the flag defaults OFF (-1) and takes only -1 / 0 / 1.
++  V2 MUTATION: a trainer copy with the filter REMOVED, and one with the audit's off-half count zeroed, are both still refused by split_refusals; the NOFILTER regression (no_filter=True) is refused.
++  V3 REACHABILITY from the caller: main() applies split_training_index to tr_idx under a.split_half, before the data event and before the DataLoader, and writes info["split"]; `wired()` is True on the real source and FALSE on a copy with the call deleted
++     and on one with the data-event line deleted; the namespace read of split_half is seen by G-DVB's dead-lever check.
++  V4 G-DVB (gate_checks): the new flag has a registry entry (a copy of the table WITHOUT it is refused as an unknown flag), its rows are green on a good data event and RED on each of 8 mutated events (no block, wrong half, filter not built, rows off the half,
++     sets != train_sets, a half below 25,000, wrong rule, a block with the flag off); a trainer whose --split-half DEFAULT is 0 turns the control (C0's own argv, no flag) RED.
++  V5 PROFILE refe_div_p6: DV0 / DV1 argvs legal; argv diff vs C0 / C0r is exactly the split flag + --out (DV1 vs C0: + --seed); refused: split flag missing / wrong half / wrong seed / wrong --out / C0's own argv / extra lever / lane flag / wrong ckpt.
++  V6 FINGERPRINTS: the 24 older profile digests unmoved, the new one stable, 25 profiles.
++  V7 LAYER: div_layer.peel(trainer) is the tip blob; s1zsm_layer.peel (which peels DIV first) still gives the S1ZSM tip blob; one changed character inside any reversal makes peel REFUSE.
++  V8 SCRIPTS: bash -n x3; div_pod.sh vs launch_gate.div_argv vs scorer1p6_pod.sh; the chain's split audit / run-check python run on synthetic logs (good passes, off-half rows / a small half / a wrong half fail); chain and pause structure; MUTATIONS RED.
++"""
++import copy
++import hashlib
++import importlib.util
++import json
++import math
++import os
++import re
++import shutil
++import subprocess
++import sys
++import tempfile
++
++os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
++HERE = os.path.dirname(os.path.abspath(__file__))
++sys.path.insert(0, HERE)
++import torch  # noqa: E402,F401
++import div_layer as DL  # noqa: E402
++import gate_checks as C  # noqa: E402
++import gate_token as GT  # noqa: E402
++import launch_gate as L  # noqa: E402
++import s1zsm_layer as ZSM  # noqa: E402
++import scorer_finetune as SF  # noqa: E402
++
++PD = L.PROFILES["refe_div_p6"]
++SHA = {L.SCORER1P6_CKPT: L.SCORER1P6_CKPT_SHA256}
++for _root in (L.SCORER1P6_ROOT, L.DIV_ROOT):
++    for _k, _f in (("--navtest-logs", _root + "/navtest_ids/navtest_logs.json"), ("--navtest-tokens", _root + "/navtest_ids/navtest_tokens.txt.gz")):
++        SHA[_f] = L.SCORER1_NAVTEST_SHA256[_k]
++
++
++def fake_sha(path):
++    if path in SHA:
++        return SHA[path]
++    raise FileNotFoundError(path)
++
++
++L.sha256_of_file = fake_sha
++
++
++def refusals(argv, prof=PD):
++    return L.profile_refusals(prof, argv)
++
++
++def has(rs, needle):
++    return any(needle in r for r in rs)
++
++
++def swap(argv, flag, *vals):
++    out, i = [], 0
++    while i < len(argv):
++        if argv[i] == flag:
++            out += [flag] + list(vals)
++            i += 1
++            while i < len(argv) and not argv[i].startswith("--"):
++                i += 1
++            continue
++        out.append(argv[i])
++        i += 1
++    return out
++
++
++def drop(argv, flag):
++    out, i = [], 0
++    while i < len(argv):
++        if argv[i] == flag:
++            i += 1
++            while i < len(argv) and not argv[i].startswith("--"):
++                i += 1
++            continue
++        out.append(argv[i])
++        i += 1
++    return out
++
++
++def pairs(toks):
++    return sorted((f, tuple(v)) for f, v in GT.flag_pairs(list(toks)))
++
++
++def differing_flags(a, b):
++    da, db = {}, {}
++    for f, v in GT.flag_pairs(list(a)):
++        da.setdefault(f, []).append(tuple(v))
++    for f, v in GT.flag_pairs(list(b)):
++        db.setdefault(f, []).append(tuple(v))
++    return {f for f in set(da) | set(db) if da.get(f) != db.get(f)}
++
++
++def blob(src: str) -> str:
++    b = src.encode("utf-8")
++    return hashlib.sha1(b"blob %d\0" % len(b) + b).hexdigest()
++
++
++def load_copy(src_text, name, directory):
++    p = os.path.join(directory, name + ".py")
++    open(p, "w", encoding="utf-8", newline="").write(src_text)
++    spec = importlib.util.spec_from_file_location(name, p)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++TRAINER = open(os.path.join(HERE, "scorer_finetune.py"), "rb").read().decode("utf-8").replace("\r\n", "\n")
++tmp = os.environ.get("SCORER1_TMP") or None
++
++# ---------------------------------------------------------------- V1 the split
++assert SF.SPLIT_MIN_SETS == 25000 and C.SPLIT_MIN_SETS_REGISTERED == 25000 and L.DIV_MIN_SETS == 25000
++assert SF.SPLIT_RULE == C.SPLIT_RULE_REGISTERED
++for nm, want in (("a", 1), ("log_0001", 0), ("2021.05.12.22.00.38_veh-35_01008_01518", 0)):          # pinned literals: a changed rule (md5, sha1, a prefix, a different modulus) moves one of them
++    assert SF.split_half_of(nm) == want == int(hashlib.sha256(nm.encode("utf-8")).hexdigest(), 16) % 2, nm
++for bad in (None, "", 7, b"x"):
++    try:
++        SF.split_half_of(bad)
++    except ValueError:
++        pass
++    else:
++        raise AssertionError("a training row without a usable log name was hashed: %r" % (bad,))
++names = ["log_%04d" % i for i in range(300)] + ["2021.05.12.22.00.38_veh-35_01008_01518", "a"]
++expect = {n: int(hashlib.sha256(n.encode()).hexdigest(), 16) % 2 for n in names}
++assert 100 < sum(expect.values()) < 200, "both halves must be populated"
++rows = [{"log_name": n, "token": "t%d" % k} for n in names for k in range(3)]               # every log has 3 sets
++idx = list(range(len(rows)))
++lo = lambda i: rows[i]["log_name"]  # noqa: E731
++kept = {}
++for h in (0, 1):
++    kept[h], facts = SF.split_training_index(lo, idx, h)
++    assert kept[h] == [i for i in idx if expect[rows[i]["log_name"]] == h] and all(expect[lo(i)] == h for i in kept[h])
++    assert facts["rows_off_half"] == 0 and facts["filter_built"] is True and facts["half"] == h and facts["rule"] == SF.SPLIT_RULE
++    assert facts["sets"] == len(kept[h]) == 3 * sum(1 for n in names if expect[n] == h) and facts["logs"] == sum(1 for n in names if expect[n] == h)
++    assert facts["pre_split_sets"] == len(rows) and facts["half_sets"] == {"0": 3 * sum(1 for n in names if expect[n] == 0), "1": 3 * sum(1 for n in names if expect[n] == 1)}
++    assert facts["half_logs"] == {"0": sum(1 for n in names if expect[n] == 0), "1": sum(1 for n in names if expect[n] == 1)}
++    assert all(sum(1 for i in kept[h] if lo(i) == n) in (0, 3) for n in names), "every set of a log follows its log"
++    json.dumps(facts)                                                                            # the data event is JSON
++assert not set(kept[0]) & set(kept[1]) and sorted(kept[0] + kept[1]) == idx, "the halves are disjoint and cover the index"
++sub_idx = idx[::2]                                                                               # a training index that is a SUBSET of the rows (the filters before the split)
++k2, f2 = SF.split_training_index(lo, sub_idx, 1)
++assert k2 == [i for i in sub_idx if expect[lo(i)] == 1] and f2["pre_split_sets"] == len(sub_idx) and f2["rows_off_half"] == 0
++# the 25,000 floor: exact boundary, both halves count
++n0 = next(n for n in names if expect[n] == 0)
++n1 = next(n for n in names if expect[n] == 1)
++
++
++def facts_for(c0, c1, half):
++    r = [{"log_name": n0}] * c0 + [{"log_name": n1}] * c1
++    _, f = SF.split_training_index(lambda i: r[i]["log_name"], list(range(len(r))), half)
++    return f
++
++
++assert SF.split_refusals(facts_for(25000, 25000, 0)) == [] and SF.split_refusals(facts_for(25000, 25000, 1)) == []
++r_lo = SF.split_refusals(facts_for(24999, 30000, 0))
++assert has(r_lo, "fewer than 25000") and has(r_lo, "launch blocker"), r_lo
++assert has(SF.split_refusals(facts_for(30000, 24999, 0)), "fewer than 25000"), "the OTHER half below the floor blocks the arm too (both arms must run)"
++assert has(SF.split_refusals(facts_for(30000, 24999, 1)), "fewer than 25000")
++# the audit: forged facts are refused
++good = facts_for(25000, 26000, 0)
++assert SF.split_refusals(good) == []
++assert has(SF.split_refusals({**good, "rows_off_half": 1}), "other half") and has(SF.split_refusals({**good, "sets": good["sets"] + 5}), "not half 0")
++ap = SF.build_parser()
++ns0 = ap.parse_args(["--ckpt", "c", "--targets", "t", "--images", "i", "--calib", "k", "--onpolicy", "o", "--heldout", "h", "--heldout-logs", "l", "--out", "x"])
++assert ns0.split_half == -1, "the split defaults OFF"
++for bad in ("2", "-2", "x"):
++    try:
++        with open(os.devnull, "w", encoding="utf-8") as dn:
++            old, sys.stderr = sys.stderr, dn
++            try:
++                ap.parse_args(["--ckpt", "c", "--targets", "t", "--images", "i", "--calib", "k", "--onpolicy", "o", "--heldout", "h", "--heldout-logs", "l", "--out", "x", "--split-half", bad])
++            finally:
++                sys.stderr = old
++    except SystemExit:
++        pass
++    else:
++        raise AssertionError("--split-half %s was accepted" % bad)
++print("V1 ok (the hash rule by literals; exact halves; the audit re-hashes; the 25,000 floor at 24,999 / 25,000; default OFF)")
++
++# ---------------------------------------------------------------- V2 mutation of the filter and of the audit
++FILT = "    kept = list(tr_idx) if no_filter else [i for i in tr_idx if split_half_of(log_of(i)) == half]\n"
++assert TRAINER.count(FILT) == 1
++AUDIT = '"rows_off_half": sum(1 for i in kept if split_half_of(log_of(i)) != half)'
++assert TRAINER.count(AUDIT) == 1
++with tempfile.TemporaryDirectory(dir=tmp) as td:
++    m_nof = load_copy(TRAINER.replace(FILT, "    kept = list(tr_idx)\n"), "sf_mut_nofilter", td)                  # the filter line REMOVED from the function
++    k_, f_ = m_nof.split_training_index(lo, idx, 1)
++    assert k_ == idx and f_["rows_off_half"] > 0 and has(m_nof.split_refusals(f_), "other half"), "MUTATION: a removed filter must be refused by the audit"
++    m_aud = load_copy(TRAINER.replace(AUDIT, '"rows_off_half": 0'), "sf_mut_noaudit", td)                       # the audit's count zeroed AND the filter removed: the second rule (kept != the half's sets) still refuses
++    m_aud2 = load_copy(TRAINER.replace(AUDIT, '"rows_off_half": 0').replace(FILT, "    kept = list(tr_idx)\n"), "sf_mut_both", td)
++    k_, f_ = m_aud2.split_training_index(lo, idx, 1)
++    assert f_["rows_off_half"] == 0 and k_ == idx and has(m_aud2.split_refusals(f_), "not half 1"), "MUTATION: filter removed AND the off-half count zeroed is still refused"
++    k_, f_ = m_aud.split_training_index(lo, idx, 1)
++    assert k_ == kept[1] and [r for r in m_aud.split_refusals(f_) if "fewer than" not in r] == [], "(the audit-only mutant keeps a correct filter: nothing to refuse)"
++kn, fn = SF.split_training_index(lo, idx, 1, no_filter=True)                                       # THE NOFILTER REGRESSION (REFE_SPLIT_MUTATE_NOFILTER)
++assert kn == idx and fn["filter_built"] is False and fn["rows_off_half"] == len(idx) - len(kept[1]) > 0 and has(SF.split_refusals(fn), "other half")
++assert SF.SPLIT_MUTATE_ENV == "REFE_SPLIT_MUTATE_NOFILTER"
++print("V2 ok (a removed filter, a removed filter + zeroed audit, and the NOFILTER regression are all refused)")
++
++
++# ---------------------------------------------------------------- V3 reachability from the caller
++def wired(src: str) -> bool:
++    """True iff main() applies the split to the TRAINING index before the data event and the loader, under a.split_half and the mutate env, and the block reaches the data event"""
++    m = re.search(r"^def main\(\) -> int:\n(.*?)^\S", src + "\nX", re.S | re.M)
++    body = m.group(1) if m else ""
++    call = body.find("tr_idx, split_info = split_training_index(")
++    gate = body.find("a.split_half >= 0")
++    event = body.find('info = {"event": "data"')
++    loader = body.find("dl = DataLoader(make_train_set(ds, tr_idx")
++    put = body.find('info["split"] = split_info')
++    logi = body.find("    log(info)\n")
++    ref = body.find("bad_split = split_refusals(split_info)")
++    return (0 <= gate < call < ref < event < put < logi < loader and "SPLIT_MUTATE_ENV" in body[call:call + 400] and "a.split_half" in body[call:call + 400] and "return 4" in body[ref:ref + 300]
++            and body.find("ho_idx = [i for i") < call)
++
++
++assert wired(TRAINER), "main() does not apply the split to the training index"
++assert not wired(TRAINER.replace("tr_idx, split_info = split_training_index(", "_unused, split_info = split_training_index(")), "MUTATION: the result never reaches tr_idx"
++assert not wired(TRAINER.replace('        info["split"] = split_info\n', "        pass\n")), "MUTATION: the data event loses the split block"
++assert not wired(TRAINER.replace("        if bad_split:\n", "        if False:\n").replace("bad_split = split_refusals(split_info)", "bad_split = []")), "MUTATION: the refusal is never raised"
++assert "split_half" in C.namespace_reads(TRAINER, C.SCORER_NAMESPACE_FUNCS), "the dead-lever check must see the trainer read a.split_half"
++assert "split_half" not in C.namespace_reads(TRAINER.replace("a.split_half >= 0", "False").replace("a.split_half, os.environ", "0, os.environ"), C.SCORER_NAMESPACE_FUNCS), "a trainer that never reads the flag is a dead lever"
++print("V3 ok (main() applies the split to tr_idx before the event and the loader; wired() RED on 3 mutants; the dead-lever check sees the read)")
++
++# ---------------------------------------------------------------- V4 G-DVB
++DA = {a: L.div_argv(a) for a in ("DV0", "DV1")}
++C0A, C0RA = L.scorer1p6_argv("C0"), L.scorer1p6_argv("C0r")
++
++
++def parse(argv):
++    ns, err = C.parse_scorer_argv(SF.build_parser(), argv)
++    assert err is None or not err, err
++    return ns
++
++
++def nest(d, dotted, v):
++    cur = d
++    ks = dotted.split(".")
++    for k in ks[:-1]:
++        cur = cur.setdefault(k, {})
++    cur[ks[-1]] = v
++
++
++def good_data(half, n=31000, other=29000):
++    d = {"b_mode": "expreward", "b_compw": "1,1,1,1,1,1", "train_sets": n}
++    for k, v in PD["data_expect"].items():
++        nest(d, k, v)
++    hs = {"0": n if half == 0 else other, "1": n if half == 1 else other}
++    d["split"] = {"half": half, "rule": SF.SPLIT_RULE, "min_sets": 25000, "filter_built": True, "sets": n, "logs": 410, "rows_off_half": 0, "pre_split_sets": n + other,
++                  "half_sets": hs, "half_logs": {str(half): 410, str(1 - half): 400}}
++    return d
++
++
++def split_rows(argv, data):
++    return [r for r in C.scorer_dvb_rows(parse(argv), data, PD) if r["dest"] == "split_half"]
++
++
++for a, h in (("DV0", 0), ("DV1", 1)):
++    rr = split_rows(DA[a], good_data(h))
++    assert len(rr) == 7 and all(r["ok"] for r in rr), [r for r in rr if not r["ok"]]
++muts = {
++    "no block": lambda d: {k: v for k, v in d.items() if k != "split"},
++    "wrong half": lambda d: {**d, "split": {**d["split"], "half": 1 - d["split"]["half"]}},
++    "filter not built": lambda d: {**d, "split": {**d["split"], "filter_built": False}},
++    "rows off the half": lambda d: {**d, "split": {**d["split"], "rows_off_half": 12}},
++    "sets != train_sets": lambda d: {**d, "train_sets": d["train_sets"] + 1},
++    "a half below 25,000": lambda d: {**d, "split": {**d["split"], "half_sets": {"0": 24999, "1": 31000}}},
++    "wrong rule": lambda d: {**d, "split": {**d["split"], "rule": "int(md5(log_name)) % 2"}},
++}
++for nm, f in muts.items():
++    rr = split_rows(DA["DV0"], f(good_data(0)))
++    assert any(not r["ok"] for r in rr), "MUTATION %r must turn a split row RED" % nm
++rr = split_rows(C0A, good_data(0))                                                                   # a block with the flag OFF: RED (`iff`)
++assert any(not r["ok"] for r in rr), "a split block under an argv without the flag"
++rr = split_rows(C0A, {k: v for k, v in good_data(0).items() if k != "split"})
++assert rr == [], "flag OFF and no block: no split row at all (every other profile's G-DVB is unchanged)"
++# the registry entry: a copy of the table WITHOUT the new flag is refused as an unknown flag by check_dvb_scorer (a new flag without a G-DVB entry is refused by the gate itself)
++assert C.DVB_KINDS_SCORER["split_half"] == "built"
++dests = {x.dest for x in SF.build_parser()._actions if x.dest != "help"}
++assert set(C.DVB_KINDS_SCORER) == dests, (dests ^ set(C.DVB_KINDS_SCORER))
++v_ok = C.check_dvb_scorer(DA["DV0"], {"data": good_data(0)}, {**PD, "declared_arm": "DV0"})
++print("   G-DVB verdict on a good DV0 data event:", v_ok.get("status") or v_ok.get("verdict"), "; reasons:", [r[:140] for r in (v_ok.get("reasons") or [])][:4])
++assert not [r for r in (v_ok.get("reasons") or []) if "split" in r or "unknown" in r or "NO declared-vs-built" in r or "never read" in r], v_ok.get("reasons")
++saved = dict(C.DVB_KINDS_SCORER)
++del C.DVB_KINDS_SCORER["split_half"]
++try:
++    v_bad = C.check_dvb_scorer(DA["DV0"], {"data": good_data(0)}, {**PD, "declared_arm": "DV0"})
++finally:
++    C.DVB_KINDS_SCORER.clear()
++    C.DVB_KINDS_SCORER.update(saved)
++assert any("split_half" in r and "NO declared-vs-built" in r for r in (v_bad.get("reasons") or [])), "MUTATION: a flag without a registry entry must be refused: %s" % (v_bad.get("reasons"),)
++v_mut = C.check_dvb_scorer(DA["DV0"], {"data": muts["rows off the half"](good_data(0))}, {**PD, "declared_arm": "DV0"})
++assert any("--split-half" in r for r in (v_mut.get("reasons") or [])), "the full G-DVB check must go RED on the NOFILTER-shaped data event"
++# the DEFAULT mutation: a trainer whose --split-half default is 0 would split C0 silently: C0's own argv (no flag) must read RED against a data event with no block
++DEF = 'ap.add_argument("--split-half", type=int, default=-1,'
++assert TRAINER.count(DEF) == 1
++with tempfile.TemporaryDirectory(dir=tmp) as td:
++    m_def = load_copy(TRAINER.replace(DEF, 'ap.add_argument("--split-half", type=int, default=0,'), "sf_mut_default", td)
++    ns_def, err = C.parse_scorer_argv(m_def.build_parser(), C0A)
++    assert not err and ns_def.split_half == 0
++    rr = [r for r in C.scorer_dvb_rows(ns_def, {k: v for k, v in good_data(0).items() if k != "split"}, L.PROFILES["refe_scorer1p6"]) if r["dest"] == "split_half"]
++    assert rr and any(not r["ok"] for r in rr), "MUTATION: a default of 0 must turn the control (C0's argv, no flag) RED"
++assert parse(C0A).split_half == -1, "the real default leaves C0 unsplit"
++print("V4 ok (7 rows green on both arms; 7 mutated data events + a block under flag OFF RED; a table without the flag refused; a default of 0 turns the control RED)")
++
++# ---------------------------------------------------------------- V5 the profile
++for a, parent, half, seed in (("DV0", "C0", 0, "0"), ("DV1", "C0r", 1, "1")):
++    A, P = DA[a], L.scorer1p6_argv(parent)
++    assert refusals(A) == [], (a, refusals(A))
++    assert differing_flags(A, P) == {"--split-half", "--out"} and len(A) == len(P) + 2, differing_flags(A, P)
++    i = A.index("--seed")
++    assert A[i + 1] == seed and A[i + 2:i + 4] == ["--split-half", str(half)] and A.count("--split-half") == 1 == A.count("--out") and A.count("--max-updates") == 1
++    assert A[A.index("--out") + 1] == L.DIV_ROOT + "/" + a.lower() and "--pair-w" not in A and "--twin-w" not in A
++assert differing_flags(DA["DV1"], C0A) == {"--split-half", "--out", "--seed"}, "DV1 vs C0: the split flag, --out and the seed"
++assert differing_flags(DA["DV0"], C0A) == {"--split-half", "--out"}
++A0, A1 = DA["DV0"], DA["DV1"]
++assert has(refusals(drop(A0, "--split-half")), "--split-half") and has(refusals(drop(A1, "--split-half")), "--split-half"), "the split flag must be NAMED"
++assert has(refusals(swap(A0, "--split-half", "1")), "--split-half") and has(refusals(swap(A1, "--split-half", "0")), "--split-half"), "a wrong half"
++assert has(refusals(swap(A0, "--split-half", "-1")), "--split-half"), "--split-half -1 is OFF: refused"
++assert has(refusals(swap(A1, "--seed", "0")), "requires --seed") and has(refusals(swap(A0, "--seed", "1")), "requires --seed")
++assert refusals(swap(A0, "--out", L.DIV_ROOT + "/dv1")) and refusals(swap(A0, "--out", L.SCORER1P6_ROOT + "/c0")) and has(refusals(swap(A0, "--max-updates", "800")), "--max-updates")
++assert refusals(C0A) and refusals(C0RA), "C0's / C0r's own argvs are not DIV arms"
++assert refusals(A0 + ["--twin-w", "1.0", "--twin-heads", "NC"]) and refusals(A0 + ["--pair-w", "0.5", "--pair-heads", "NC"]) and has(refusals(A0 + ["--lane-head"]), "--lane-head")
++assert refusals(A0 + ["--split-half", "0"]), "the split flag twice"
++assert refusals(A0, L.PROFILES["refe_scorer1p6"]) and refusals(A0, L.PROFILES["refe_rep_p6"]), "the DIV argvs are not arms of the parent's or the replicate profile"
++SHA[L.SCORER1P6_CKPT] = "0" * 64
++assert has(refusals(A0), "registered P6 checkpoint")
++SHA[L.SCORER1P6_CKPT] = L.SCORER1P6_CKPT_SHA256
++assert refusals(A0) == [] and refusals(A1) == []
++for bad in ("C0", "C0r", "S1Z", "DV2", "", "dv0"):
++    try:
++        L.div_argv(bad)
++    except KeyError:
++        pass
++    else:
++        raise AssertionError("an unknown arm %r was accepted" % bad)
++assert L.div_arm_refusals({k: dict(v) for k, v in L.DIV_ARMS.items()}) == []
++assert has(L.div_arm_refusals({"DV0": {"parent": "C0", "family": "p6", "half": 2}}), "not 0 or 1") and has(L.div_arm_refusals({"DV0": {"parent": "S1Z", "family": "p6", "half": 0}}), "not a C0 arm")
++assert has(L.div_arm_refusals({"C0": {"parent": "C0", "family": "p6", "half": 0}}), "registered arm") and has(L.div_arm_refusals({"S1ZD": {"parent": "C0", "family": "p6", "half": 0}}), "registered arm")
++assert has(L.div_arm_refusals({"DV0": {"parent": "C0", "family": "p6", "half": 0}, "DV1": {"parent": "C0r", "family": "p6", "half": 0}}), "same half")
++assert PD["data_expect_min"] == {"train_sets": 25000} and "train_sets" not in PD["data_expect"] and PD["data_expect"]["train_sets_in_bank"] == 60000 and PD["data_expect_updates"] is None
++assert PD["required_flags"] == {**L.PROFILES["refe_scorer1p6"]["required_flags"], "--split-half": None} and PD["arm_seed"] == {"DV0": 0, "DV1": 1} and PD["pair_spec"] == {}
++assert PD["suite"][:-1] == L.SCORER1P6_SUITE and PD["suite"][-1] == {"script": "test_div_gate.py", "token": "ZZTEST_PASS"}
++print("V5 ok (DV0 / DV1 legal; argv diff vs C0 / C0r = the split flag + --out (DV1 vs C0 also the seed); %d refusal cases)" % 20)
++
++# ---------------------------------------------------------------- V6 fingerprints
++
++
++def fp(n):
++    return hashlib.sha256(repr(sorted(L.PROFILES[n].items())).encode()).hexdigest()
++
++
++TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_field": "5ddc49053a99fa78", "refe_field_ctrl": "0b6281b1bfa996ed", "refe_rehearsal": "821cd1ef3bf55d4e",
++          "refe_rls1": "bce7e25ee8718c08", "refe_aux_s1": "f95f48727b62ccc6", "refe_p7": "94cca167ce121a94", "refe_p2rep": "44ca107f53aceee8", "refe_sft4r": "8972e3c348206b94",
++          "refe_scorer1": "88d02fb7b34d4fd8", "refe_scorer1p6": "e74d64617f514d35", "refe_s1z_p6": "5c3bff457aa3bf1e", "refe_rep_p6": "dd348f44c9638f1a", "refe_rep_s1z_p6": "2356afd4efeeb52a",
++          "refe_rls1b": "5d6bfbc10152ae96", "refe_rls1c": "26214cf954099d51", "refe_rls1d": "fcc2585f2a5d9b94", "refe_rls1e": "54d96289b19c3cd6", "refe_hnscreen": "d30126bbb5a32957",
++          "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4", "refe_dose_s1z_p6": "9085f9e5cf59c016"}      # MEASURED at the tip ee1ba225 (the 24 profiles before DIV)
++moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
++assert not moved, f"existing profile fingerprints moved: {moved}"
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_div_p6"} and len(L.PROFILES) == 25
++r = repr(sorted(PD.items()))
++assert fp("refe_div_p6") == fp("refe_div_p6") and "function" not in r and "0x" not in r and fp("refe_div_p6") != fp("refe_scorer1p6")
++base = L.PROFILES["refe_scorer1p6"]
++assert PD is not base and PD["recipe"] is not base["recipe"] and PD["required_flags"] is not base["required_flags"] and PD["data_expect"] is not base["data_expect"]
++for k in ("data_pin", "ckpt_sha256", "navtest_sha256", "forbidden_flags", "recipe", "data_flags"):
++    assert PD[k] == base[k], k
++print("V6 ok (the 24 older digests unmoved; NEW refe_div_p6 = %s...)" % fp("refe_div_p6")[:16])
++
++# ---------------------------------------------------------------- V7 the layer
++assert DL.has_layer(TRAINER) and DL.MARKER == "SPLIT_MIN_SETS = 25000"
++pre = DL.peel(TRAINER)
++assert not DL.has_layer(pre) and blob(pre) == DL.TIP_TRAINER_BLOB == "d665ed995d064f9e1cae956c3c48867cd348cd3d", blob(pre)
++assert DL.peel(pre) == pre and "split_half" not in pre and "--split-half" not in pre
++zp = ZSM.peel(TRAINER)
++assert blob(zp) == ZSM.TIP_TRAINER_BLOB == "6a16d35c1818422ff514e97c4b292c32dde81795", "S1ZSM's pin still peels (DIV first, then S1ZSM)"
++assert ZSM.peel(pre) == zp
++for k, (new, old) in enumerate(DL.REVERSALS):
++    bad = TRAINER.replace(new, new.replace("e", "E", 1), 1)
++    try:
++        DL.peel(bad)
++    except AssertionError:
++        continue
++    raise AssertionError("DIV reversal %d: a drifted trainer was accepted" % k)
++print("V7 ok (peel -> the tip blob d665ed99; S1ZSM's pin 6a16d35c unchanged; every reversal refuses a drifted trainer)")
++
++# ---------------------------------------------------------------- V8 the scripts
++bash = None
++for cand in ("C:/Program Files/Git/bin/bash.exe", "C:/Program Files/Git/usr/bin/bash.exe"):
++    if os.path.exists(cand):
++        bash = cand
++        break
++bash = bash or shutil.which("bash")
++pod, chain, pause = (os.path.join(HERE, n) for n in ("div_pod.sh", "div_chain.sh", "div_pause_p7.sh"))
++chain_dose, ppod = os.path.join(HERE, "dose_chain.sh"), os.path.join(HERE, "scorer1p6_pod.sh")
++for f in (pod, chain, pause, chain_dose, ppod):
++    assert os.path.exists(f), f
++    assert b"\r" not in open(f, "rb").read(), "LF only: " + f
++    assert os.path.basename(f).split(".")[0].lower() not in ("aux", "con", "prn", "nul"), f
++ctext = open(chain, "rb").read().decode("utf-8")
++joined = "\n".join(ln for ln in ctext.split("\n") if not ln.lstrip().startswith("#"))
++assert "PROFILE=refe_div_p6" in joined and "--profile $PROFILE" in joined and "ROOT=$DATA/refe_div" in joined and 'PKG=${DIV_PKG:-$WS/refe-plan-div}' in joined and "SPLIT_MIN=25000" in joined
++assert L.SCORER1P6_CARD_SHA256 in ctext and "e5fb2f8e4123fcfe3a599b0cc71537bab187716c6a5d3e46735ce094bacf6fac" in ctext and L.SCORER1P6_CKPT_SHA256 in ctext
++assert "DV0) PARENT=C0;  HALF=0;" in joined and "DV1) PARENT=C0r; HALF=1;" in joined and "ZZDIV_CHAIN_DONE" in joined and '--prefix "div/$LA"' in joined and "arm_div_$LA" in joined and "lfs_sha256" in joined
++assert "MODE=mutate_nofilter" in joined and '[ "$mrc" = 4 ] && grep -q "^REFUSED: split:"' in joined and "the NOFILTER mutant was NOT refused" in joined and "ZZDIV_SPLIT" in joined and "split_is $OUT/preflight.log $HALF" in joined
++assert "--max-updates" not in joined and "--seed" not in joined and "MODE=calibrate" not in joined and "--pair-calibrate" not in joined and "--twin" not in joined and "refe-plan-rep" not in joined and "refe-plan-dose" not in joined
++assert not re.search(r"\bkill -|SIGSTOP|SIGCONT|pkill|taskkill|ZZP7|P7_PAUSE|pause_p7|resume_p7|lane_pause|lane_restart|refe_p7/", joined), "the chain neither pauses nor resumes P7"
++assert ctext.index("mutate_nofilter") < ctext.index("launch_gate.py run") < ctext.index("ZZDIV_TRAIN_START") < ctext.index("hf_egress.py push"), "the mutant is checked BEFORE the gate and the run"
++
++
++def fn_body(text, name):
++    m1 = re.search(r"^%s\(\) \{.*$" % re.escape(name), text, re.M)
++    if m1 and "; }" in m1.group(0):
++        return m1.group(0)
++    m = re.search(r"^%s\(\) \{.*?^\}" % re.escape(name), text, re.S | re.M)
++    assert m, name
++    return m.group(0)
++
++
++dt = open(chain_dose, "rb").read().decode("utf-8")
++nr = lambda t: t.replace("DOSE_", "DIV_")          # noqa: E731
++for name in ("gpu_busy", "lock_held", "wait_clear", "gate_is", "stage_done", "stage_mark", "tree_sha", "refuse", "token_ok"):
++    assert nr(fn_body(dt, name)) == fn_body(ctext, name), name                       # the wait / marker functions are dose_chain's, byte for byte (DOSE_ -> DIV_ only)
++assert nr(fn_body(dt, "others_hold")).replace("refe_rep; do", "refe_rep refe_dose; do") == fn_body(ctext, "others_hold"), "others_hold differs by exactly the one added lock (refe_dose)"
++ps = open(pause, "rb").read().decode("utf-8")
++assert "trap 'resume_p7' EXIT" in ps and "HOLD_P7" in ps and "div_chain.sh" in ps and "STOPPED=1" in ps and "P7_RESUMED" in ps and "timeout 9000" in ps and "refe_div" in ps and "DV0|DV1) ;;" in ps
++assert ps.index("STOPPED=1") < ps.index("kill -TERM $CHAIN") < ps.index("for A in $ARMS") < ps.rindex("resume_p7") and ps.count("exit 1") >= 3 and "PAUSE_STOPPED_EARLY" in ps
++assert 'grep -q "ZZDIV_CHAIN_DONE $A"' in ps and "break" in ps and "refe-plan-dose" not in ps and "dose_chain" not in ps, "DV1 does not run after a failed DV0"
++ptxt = open(pod, encoding="utf-8").read()
++assert "scorer1p6_pod.sh" in ptxt and "DV0) PARENT=C0; HALF=0; SEED=0" in ptxt and "DV1) PARENT=C0r; HALF=1; SEED=1" in ptxt and "REFE_SPLIT_MUTATE_NOFILTER=1" in ptxt and "--pair-calibrate" not in ptxt.replace("# ", "")
++
++# the chain's own python: split_is and the run check, run on synthetic logs
++def heredoc(text, anchor):
++    i = text.index(anchor)
++    j = text.index("<<'PYEOF'\n", i) + len("<<'PYEOF'\n")
++    return text[j:text.index("\nPYEOF", j)]
++
++
++SPLIT_PY = heredoc(ctext, "split_is() {")
++RUN_PY = heredoc(ctext, '> "$OUT/run_check.log"')
++
++
++def run_py(code, *args):
++    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, dir=tmp, encoding="utf-8") as f:
++        f.write(code)
++    try:
++        return subprocess.run([sys.executable, f.name, *map(str, args)], capture_output=True, encoding="utf-8")
++    finally:
++        os.unlink(f.name)
++
++
++with tempfile.TemporaryDirectory(dir=tmp) as td:
++    def write_log(name, data):
++        p = os.path.join(td, name)
++        open(p, "w", encoding="utf-8").write("noise line\n" + json.dumps({"event": "data", **data}) + "\n")
++        return p
++    for half in (0, 1):
++        g = good_data(half)
++        r = run_py(SPLIT_PY, write_log("g%d.log" % half, g), half, 25000)
++        assert r.returncode == 0 and "half=%d sets=31000" % half in r.stdout and "half0 sets=" in r.stdout, (r.returncode, r.stdout, r.stderr[:200])
++        for nm, f in muts.items():
++            if nm in ("sets != train_sets", "wrong rule", "no block", "wrong half", "filter not built", "rows off the half", "a half below 25,000"):
++                r = run_py(SPLIT_PY, write_log("m.log", f(g)), half, 25000)
++                assert r.returncode != 0, "MUTATION %r must fail the chain's split audit (half %d)" % (nm, half)
++    r = run_py(SPLIT_PY, write_log("w.log", good_data(0)), 1, 25000)
++    assert r.returncode != 0, "a half-0 run audited as half 1 fails"
++    # the run check
++    def make_out(updates, n, half=0, off=0, models=True, done=True):
++        o = os.path.join(td, "out_%d_%d_%d_%d" % (updates, n, half, off))
++        os.makedirs(o, exist_ok=True)
++        d = good_data(half, n=n)
++        d["split"]["rows_off_half"] = off
++        rows = [{"event": "data", **d}, {"event": "start", "updates": updates, "train_sets": n}] + ([{"event": "done", "updates": updates}] if done else [])
++        open(os.path.join(o, "sft.jsonl"), "w", encoding="utf-8").write("\n".join(json.dumps(x) for x in rows) + "\n")
++        open(os.path.join(o, "sft.log"), "w", encoding="utf-8").write("ZZSFT_DONE\n")
++        if models:
++            for m in ("model_sft_A.pt", "model_sft_B.pt"):
++                open(os.path.join(o, m), "wb").write(b"x")
++        return o
++    r = run_py(RUN_PY, make_out(400, 31000), 0, 25000)
++    assert r.returncode == 0 and "ZZDIV_RUN_OK updates 400 half 0 sets 31000" in r.stdout, (r.stdout, r.stderr[:300])
++    r = run_py(RUN_PY, make_out(391, 25000), 0, 25000)
++    assert r.returncode == 0 and "stops at update 391" in r.stdout, (r.stdout, r.stderr[:300])                 # a half of 25,000 sets: its epoch is 391 updates (stated)
++    for nm, o in (("too few updates", make_out(399, 31000)), ("off-half rows", make_out(400, 31000, off=3)), ("wrong half", make_out(400, 31000, half=1)), ("no model", make_out(400, 31001, models=False)),
++                  ("no done", make_out(400, 31002, done=False)), ("half below the floor", make_out(400, 24999)), ("391 where 400 is due", make_out(391, 31003))):
++        r = run_py(RUN_PY, o, 0, 25000)
++        assert r.returncode != 0, "the run check must fail: " + nm
++print("V8a ok (the chain's split audit and run check: good logs pass, 12 mutated ones fail)")
++
++if bash:
++    for sh in (pod, chain, pause):
++        r = subprocess.run([bash, "-n", sh], capture_output=True, encoding="utf-8")
++        assert r.returncode == 0, (sh, r.stderr[:300])
++
++    def run_pod(arm, ws, script=pod, mode="argv", extra=None):
++        env = dict(os.environ, ARM=arm, MODE=mode, DIV_WS=ws, SCORER1P6_WS=ws)
++        env.update(extra or {})
++        return subprocess.run([bash, script], env=env, capture_output=True, encoding="utf-8")
++
++    def norm(out, ws):
++        return [t.replace(ws, "/workspace") for t in out.strip().split()]
++
++    with tempfile.TemporaryDirectory(dir=tmp) as td:
++        wsx = td.replace(chr(92), "/")
++        for a, parent in (("DV0", "C0"), ("DV1", "C0r")):
++            r = run_pod(a, wsx)
++            assert r.returncode == 0, r.stderr[:300]
++            out = norm(r.stdout, wsx)
++            assert pairs(out) == pairs(L.div_argv(a)), set(pairs(out)) ^ set(pairs(L.div_argv(a)))                      # the pod script's argv IS launch_gate's
++            pr = subprocess.run([bash, ppod], env=dict(os.environ, ARM=parent, MODE="argv", SCORER1P6_WS=wsx), capture_output=True, encoding="utf-8")
++            assert pr.returncode == 0, pr.stderr[:300]
++            pout = norm(pr.stdout, wsx)
++            assert differing_flags(out, pout) == {"--split-half", "--out"} and len(out) == len(pout) + 2, differing_flags(out, pout)       # the pod scripts' own output: the split flag and --out only
++            assert out[out.index("--seed") + 1] == pout[pout.index("--seed") + 1] == ("0" if a == "DV0" else "1") and out[out.index("--split-half") + 1] == ("0" if a == "DV0" else "1")
++            assert " ".join(out).count("--split-half") == 1 and refusals(out) == []
++        for bad in ("C0", "C0r", "S1ZD", "", "dv0"):
++            r = run_pod(bad, "/workspace")
++            assert r.returncode == 2 and "unknown ARM" in r.stderr, (bad, r.returncode, r.stderr[:200])
++            r = subprocess.run([bash, chain] + ([bad] if bad else []), env=dict(os.environ, DIV_WS="/nonexistent_ws"), capture_output=True, encoding="utf-8")
++            assert r.returncode == 2 and "REFUSED" in r.stdout and "unknown arm" in r.stdout, (bad, r.returncode, r.stdout[:200])
++        for m in ("calibrate", "mutate_noradius", "mutate_nobalance", "bogus"):
++            r = run_pod("DV0", wsx, mode=m)
++            assert r.returncode == 2 and "unknown MODE" in r.stderr, (m, r.returncode, r.stderr[:200])
++        # ---- MUTATIONS of the pod script: each must turn a check RED
++        os.makedirs(os.path.join(td, "red"))
++        for n in ("div_pod.sh", "scorer1p6_pod.sh"):
++            shutil.copyfile(os.path.join(HERE, n), os.path.join(td, "red", n))
++        rp = os.path.join(td, "red", "div_pod.sh")
++        txt = open(rp, encoding="utf-8", newline="").read()
++        a1 = '"s# --out [^ ]+# --split-half $HALF --out $OUT#"'
++        assert txt.count(a1) == 1
++        for label, new in (("the split flag dropped", '"s# --out [^ ]+# --out $OUT#"'), ("the wrong half", '"s# --out [^ ]+# --split-half 1 --out $OUT#"')):
++            open(rp, "w", encoding="utf-8", newline="").write(txt.replace(a1, new))
++            r = run_pod("DV0", wsx, script=rp)
++            assert r.returncode == 0
++            mo = norm(r.stdout, wsx)
++            assert pairs(mo) != pairs(L.div_argv("DV0")), "MUTATION %s: the pod argv must differ from launch_gate's" % label
++            assert refusals(mo), "MUTATION %s: the real profile must refuse that argv" % label
++        # a parent whose seed is not the card's is refused (DV1 must carry C0r's seed 1)
++        sp = os.path.join(td, "red", "scorer1p6_pod.sh")
++        st = open(sp, encoding="utf-8", newline="").read()
++        assert "  C0r) SEED=1 ;;" in st
++        open(sp, "w", encoding="utf-8", newline="").write(st.replace("  C0r) SEED=1 ;;", "  C0r) SEED=5 ;;"))
++        open(rp, "w", encoding="utf-8", newline="").write(txt)
++        r = run_pod("DV1", wsx, script=rp)
++        assert r.returncode == 2 and "not the 1 the card gives" in r.stderr, (r.returncode, r.stderr[:200])
++        open(sp, "w", encoding="utf-8", newline="").write(st.replace("--max-updates 400 --eval-every", "--split-half 0 --max-updates 400 --eval-every"))
++        r = run_pod("DV0", wsx, script=rp)
++        assert r.returncode == 2 and "already names --split-half" in r.stderr, (r.returncode, r.stderr[:200])
++    # launch_gate mutations (a mutated COPY of the module, loaded under another name; the real module is untouched)
++    src = open(os.path.join(HERE, "launch_gate.py"), encoding="utf-8", newline="").read()
++
++    def load_mut(a, b):
++        assert src.count(a) == 1, a
++        with tempfile.TemporaryDirectory(dir=tmp) as tdm:
++            p = os.path.join(tdm, "launch_gate_mut.py")
++            open(p, "w", encoding="utf-8", newline="").write(src.replace(a, b))
++            spec = importlib.util.spec_from_file_location("launch_gate_mut", p)
++            m = importlib.util.module_from_spec(spec)
++            spec.loader.exec_module(m)
++            return m
++
++    mut_nosplit = load_mut('    toks[i + 2:i + 2] = ["--split-half", str(sp["half"])]\n', '')                      # div_argv never adds the flag: the argv IS C0's
++    assert differing_flags(mut_nosplit.div_argv("DV0"), C0A) == {"--out"}, "MUTATION: no split flag in div_argv must turn the argv-diff RED"
++    mut_nosplit.sha256_of_file = fake_sha
++    mut_nosplit.HERE = L.HERE                                                                          # the mutant copy lives in a temp dir; its sibling sources are the real ones
++    assert has(mut_nosplit.profile_refusals(mut_nosplit.PROFILES["refe_div_p6"], mut_nosplit.div_argv("DV0")), "--split-half"), "the profile refuses an argv without the flag"
++    mut_half = load_mut('"DV0": {"parent": "C0", "family": "p6", "half": 0}, "DV1": {"parent": "C0r", "family": "p6", "half": 1}}', '"DV0": {"parent": "C0", "family": "p6", "half": 1}, "DV1": {"parent": "C0r", "family": "p6", "half": 0}}')
++    assert pairs(mut_half.div_argv("DV0")) != pairs(L.div_argv("DV0")) and differing_flags(mut_half.div_argv("DV0"), L.div_argv("DV0")) == {"--split-half"}
++    mut_req = load_mut('"required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--split-half": None}}', '"required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"]}}')
++    assert "--split-half" not in mut_req.PROFILES["refe_div_p6"]["required_flags"] and "--split-half" in PD["required_flags"]
++    assert hashlib.sha256(repr(sorted(mut_req.PROFILES["refe_div_p6"].items())).encode()).hexdigest() != fp("refe_div_p6"), "the digest moves with the required flag"
++    mut_min = load_mut('"data_expect_min": {"train_sets": DIV_MIN_SETS}', '"data_expect_min": {}')
++    assert PD["data_expect_min"] == {"train_sets": 25000} and mut_min.PROFILES["refe_div_p6"]["data_expect_min"] == {}
++    print("V8 ok (bash -n x3; div_pod.sh vs launch_gate vs scorer1p6_pod.sh; chain + pause structure; pod-script and launch_gate mutations RED)")
++else:
++    print("V8 SKIPPED (no bash)")
++print("ZZTEST_PASS")
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dose_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dose_gate.py
+index ec44d72..4f29d75 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dose_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dose_gate.py	
+@@ -172,7 +172,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4"}          # MEASURED at the tip e5437f6c (the 23 profiles that exist before the dose)
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_dose_s1z_p6"} and len(L.PROFILES) == 24
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_dose_s1z_p6", "refe_div_p6"} and len(L.PROFILES) == 25          # + refe_div_p6 (PREREG_DIV_P6)
+ r = repr(sorted(PD.items()))
+ assert fp("refe_dose_s1z_p6") == fp("refe_dose_s1z_p6") and "function" not in r and "0x" not in r, "the new digest must be stable"
+ assert fp("refe_dose_s1z_p6") != fp("refe_s1z_p6")
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dump_scores.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dump_scores.py
+index f80c250..8c3e82f 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dump_scores.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_dump_scores.py	
+@@ -264,8 +264,9 @@ def suite(src):
+         hn_dests = {"hn_bank", "ctx_cache"}          # P6-HN-S (raw/2026-10-18-p6hn-prereg; test_hn_screen_wiring.py): two default-"" dests, flags absent = this trainer bit for bit (that test's I3)
+         pair_dests = {"pair_w", "pair_dv", "pair_heads", "pair_calibrate", "navtest_logs", "navtest_tokens", "pair_gap_heads", "pair_mean", "pair_nobalance_heads", "pair_nospeed_heads"}          # SCORER1 (PREREG_SCORER1; test_pair_loss.py / test_scorer1_gate.py): six default-OFF dests (--pair-*, --navtest-*), flags absent = this trainer bit for bit
+         twin_dests = {"twin_w", "twin_ade", "twin_topk", "twin_heads", "twin_speed_neutral"}          # S1Z (PREREG_S1Z_P6; test_s1z_loss.py / test_s1z_gate.py): four default-OFF dests (--twin-*), + S1ZSM (PREREG_S1ZSM_P6): --twin-speed-neutral (store_true, default False); flags absent = this trainer bit for bit
++        split_dests = {"split_half"}          # DIV (PREREG_DIV_P6; test_div_gate.py): ONE default-OFF dest (--split-half, -1), flag absent = this trainer bit for bit
+         check("parser: exactly ONE new dest from the dump edit (dump_scores); every pre-edit dest is still there",
+-              dests - set(BASE_DESTS) - aux_dests - epo_dests - hn_dests - pair_dests - twin_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests)
++              dests - set(BASE_DESTS) - aux_dests - epo_dests - hn_dests - pair_dests - twin_dests - split_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests) and (dests & split_dests) in (set(), split_dests) and getattr(ns_, "split_half", -1) == -1
+               and (dests & epo_dests) in (set(), epo_dests) and (dests & hn_dests) in (set(), hn_dests) and (dests & pair_dests) in (set(), pair_dests) and (dests & twin_dests) in (set(), twin_dests) and getattr(ns_, "twin_w", 0.0) == 0.0 and getattr(ns_, "twin_heads", "") == "" and getattr(ns_, "twin_speed_neutral", False) is False and getattr(ns_, "pair_w", 0.0) == 0.0 and getattr(ns_, "pair_heads", "") == "" and getattr(ns_, "navtest_logs", "") == "" and getattr(ns_, "hn_bank", "") == "" and getattr(ns_, "ctx_cache", "") == "" and getattr(ns_, "epo_ref", "base") == "base" and getattr(ns_, "epo_con", "off") == "off"
+               and getattr(ns_, "epo_con_temp", None) is None, str(sorted(dests - set(BASE_DESTS))))
+     guarded("parser", t_parser)
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py
+index cd7e2c7..c6ececb 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rep_gate.py	
+@@ -161,7 +161,7 @@ for n in ("refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6"):
+     r = repr(sorted(L.PROFILES[n].items()))
+     assert fp(n) == fp(n) and "function" not in r and "0x" not in r, n
+ assert len({fp(n) for n in ("refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_s1zsm_p6")}) == 4 and fp("refe_rep_p6") != fp("refe_rep_s1z_p6") != fp("refe_s1z_p6") and fp("refe_rep_p6") != fp("refe_scorer1p6")
+-assert len(L.PROFILES) == 24 and len(set(L.PROFILES) - {"refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6"}) == 19, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6
++assert len(L.PROFILES) == 25 and len(set(L.PROFILES) - {"refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6"}) == 19, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6
+ assert PC["suite"][-1] == {"script": "test_rep_gate.py", "token": "ZZTEST_PASS"} and PZ["suite"][-1] == PC["suite"][-1] == PM["suite"][-1] and PC["suite"][:-1] == L.SCORER1P6_SUITE and PZ["suite"][:-1] == L.S1Z_SUITE and PM["suite"][:-1] == L.S1ZSM_SUITE
+ for k in ("data_pin", "data_expect", "ckpt_sha256", "navtest_sha256", "required_flags", "recipe", "forbidden_flags"):
+     assert PC[k] == L.PROFILES["refe_scorer1p6"][k] and PZ[k] == L.PROFILES["refe_s1z_p6"][k], k
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py
+index f9659e8..375e0e4 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_s1zsm_gate.py	
+@@ -138,7 +138,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_aux_s1c": "dcdf2dbd2a674f1c"}          # MEASURED at the tip 0c19b8fd (sha256 of repr(sorted(profile.items())), first 16 hex): the 21 profiles that exist before S1ZSM
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name
+ assert fp("refe_s1zsm_p6") == fp("refe_s1zsm_p6") and "function" not in repr(sorted(PROF.items())) and "0x" not in repr(sorted(PROF.items())), "the digest of the new profile must be stable"
+ base = L.PROFILES["refe_s1z_p6"]
+ assert PROF is not base and PROF["recipe"] is not base["recipe"] and PROF["required_flags"] is not base["required_flags"] and PROF["arm_seed"] is not base["arm_seed"] and PROF["twin_spec"] is not base["twin_spec"]
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py
+index c6ca45d..5b92e51 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_scorer1p6_gate.py	
+@@ -151,7 +151,7 @@ def fp(n):
+ 
+ moved = [n for n, want in PINNED_FP.items() if fp(n) != want]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged
++assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged
+ assert PROF is not L.PROFILES["refe_scorer1"] and PROF["recipe"] is not L.PROFILES["refe_scorer1"]["recipe"] and "lane_weight" not in PROF["recipe"] and "lane_weight" in L.PROFILES["refe_scorer1"]["recipe"]
+ assert "--lane-head" not in PROF["required_flags"] and "--lane-head" in L.PROFILES["refe_scorer1"]["required_flags"]
+ print(f"T4 ok ({len(PINNED_FP)} existing fingerprints unmoved; refe_scorer1p6 = {fp('refe_scorer1p6')[:16]}...)")

@@ -1,0 +1,40 @@
+{
+ "_evidence_class": "MEASURED (ours; this run)",
+ "_what": "does v0 change the production forward, and does the RL conditioning contract require it?",
+ "anchor_traj_shape": [
+  2,
+  128,
+  4,
+  2
+ ],
+ "config": {
+  "ego_dropout": 0.5,
+  "graft_lan": false,
+  "sel_reach_clamp": false,
+  "v0_conditioned": false
+ },
+ "contract": {
+  "drop_v0_verdict": "PASSED \u2014 no refusal",
+  "required": [],
+  "requirement_map": {
+   "agent_gt": false,
+   "ego_keep": false,
+   "hierarchy_hook": false,
+   "lan": false,
+   "maneuver_logits": false,
+   "nav_cmd": false,
+   "nav_known": false,
+   "target_latent": false,
+   "v0": false,
+   "withheld_speed": false
+  },
+  "v0_required": false
+ },
+ "control_determinism_bitwise_equal": true,
+ "control_v0_conditioned_differs": true,
+ "control_v0_conditioned_max_abs_m": 0.132843017578125,
+ "controls_valid": true,
+ "v0_5_vs_25_max_abs_m": 0.13552570343017578,
+ "v0_5_vs_DROPPED_max_abs_m": 0.013027191162109375,
+ "verdict": "v0 REACHES the forward through the measurement encoder (refc.py:3199) on a build where the contract does NOT require it"
+}

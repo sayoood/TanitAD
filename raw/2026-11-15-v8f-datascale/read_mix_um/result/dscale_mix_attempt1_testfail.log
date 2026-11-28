@@ -1,0 +1,18 @@
+[dscale mix read] start 2026-11-18T19:38:09Z
+card, amendment UM-A1 and replay record sha256 OK
+commit free 11.78 GB >= 5.5 after 0 min
+.......................................................F................ [ 66%]
+..................................ss                                     [100%]
+================================== FAILURES ===================================
+_____ test_launcher_keeps_the_bars_the_order_the_sentinels_and_the_checks _____
+
+    def test_launcher_keeps_the_bars_the_order_the_sentinels_and_the_checks():
+        sh = open(HERE + "/launch_dscale_mix.sh", encoding="utf-8", newline="").read()
+>       assert '[ "$FREE" -lt 25 ]' in sh and "ZZ DSCALE MIX READ DONE ZZ" in sh and "ZZ DSCALE MIX READ FAIL ZZ" in sh and "DS_BLOCK=mix" in sh
+E       assert ('[ "$FREE" -lt 25 ]' in '#!/bin/bash\n# launch_dscale_mix.sh -- the DSCALE mixture-arm read (UM_s0): dev box CPU, 2 threads, zero training.  L...d, an item is blocked or an input is missing; see the log above)"\necho "ZZ DSCALE MIX READ DONE ZZ" | tee -a "$LOG"\n')
+
+test_ds_read_mix.py:423: AssertionError
+=========================== short test summary info ===========================
+FAILED test_ds_read_mix.py::test_launcher_keeps_the_bars_the_order_the_sentinels_and_the_checks
+1 failed, 105 passed, 2 skipped in 44.33s
+ZZ DSCALE MIX READ FAIL ZZ the reader tests are not green

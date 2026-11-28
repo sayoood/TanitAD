@@ -1,0 +1,113 @@
+{
+  "tool": "mutation_proof.py",
+  "trainer_path": "C:/Users/Admin/tanitad-agentgt-verify/stack/scripts/refc_v3_train.py",
+  "baseline_pairs": 9,
+  "baseline_green": true,
+  "n_mutants": 6,
+  "n_killed": 6,
+  "n_survived": 0,
+  "survivors": [],
+  "mutants": [
+    {
+      "mutant": "M1",
+      "description": "arm D additionally carries --wp-index on",
+      "real_defect": "the `--v2` conflation failure: ten levers on two axes, non-attributable",
+      "arm": "D",
+      "base": "V0",
+      "verdict": "REFUSE",
+      "classified": {
+        "out": "BOOKKEEPING",
+        "w_u0": "LEVER",
+        "wp_index": "VIOLATION"
+      },
+      "problems": [
+        "unexpected keys differ: wp_index (VIOLATION): 'off' -> 'on'"
+      ],
+      "KILLED": true
+    },
+    {
+      "mutant": "M2",
+      "description": "arm D silently changes --lr 1e-4 -> 3e-4 alongside its lever",
+      "real_defect": "'a past sweep was invalidated because an arm silently changed the effective lambda alongside its named lever'",
+      "arm": "D",
+      "base": "V0",
+      "verdict": "REFUSE",
+      "classified": {
+        "lr": "VIOLATION",
+        "out": "BOOKKEEPING",
+        "w_u0": "LEVER"
+      },
+      "problems": [
+        "unexpected keys differ: lr (VIOLATION): 0.0001 -> 0.0003"
+      ],
+      "KILLED": true
+    },
+    {
+      "mutant": "M3",
+      "description": "replicate V0b carries seed 0, the same as V0",
+      "real_defect": "a noise-floor arm that measures nothing while looking like one that does",
+      "arm": "V0b",
+      "base": "V0",
+      "verdict": "REFUSE",
+      "classified": {
+        "out": "BOOKKEEPING"
+      },
+      "problems": [
+        "replicate arm carries the SAME seed as its treatment -- it would measure nothing"
+      ],
+      "KILLED": true
+    },
+    {
+      "mutant": "M4",
+      "description": "arm D points at its OWN anchors.pt",
+      "real_defect": "a hidden second lever: a different anchor vocabulary per arm",
+      "arm": "D",
+      "base": "V0",
+      "verdict": "REFUSE",
+      "classified": {
+        "anchors": "VIOLATION_PARITY",
+        "out": "BOOKKEEPING",
+        "w_u0": "LEVER"
+      },
+      "problems": [
+        "unexpected keys differ: anchors (VIOLATION_PARITY): '/root/data/refcv6/anchors.pt' -> '/root/data/refcv6/anchors_D.pt'"
+      ],
+      "KILLED": true
+    },
+    {
+      "mutant": "M5",
+      "description": "arm D sets --w-u0 0.9 instead of 0 (one key differs, wrong value)",
+      "real_defect": "a lever recorded as moved that never reached its pre-registered target",
+      "arm": "D",
+      "base": "V0",
+      "verdict": "REFUSE",
+      "classified": {
+        "out": "BOOKKEEPING",
+        "w_u0": "LEVER"
+      },
+      "problems": [
+        "w_u0: arm is 0.9, pre-registered target is 0.0"
+      ],
+      "KILLED": true
+    },
+    {
+      "mutant": "M6",
+      "description": "arm B compared against V0 instead of A (wp-index needs agents on)",
+      "real_defect": "`--wp-index on` refuses `--agents off`; the arm would read as 'the index does not help' while never having had agent tokens",
+      "arm": "B",
+      "base": "V0",
+      "verdict": "REFUSE",
+      "classified": {
+        "agents": "VIOLATION",
+        "out": "BOOKKEEPING",
+        "w_agent": "VIOLATION",
+        "wp_index": "LEVER"
+      },
+      "problems": [
+        "unexpected keys differ: agents (VIOLATION): 'off' -> 'head', w_agent (VIOLATION): 0.0 -> 1.0"
+      ],
+      "KILLED": true
+    }
+  ],
+  "verdict": "PASS"
+}

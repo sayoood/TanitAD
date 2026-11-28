@@ -1,0 +1,50 @@
+[bank] env -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[refav1-labels] v7.2 join: labels 1/6 eps (5 missing, e.g. ['001d413e-2803-4c6b-a11a-8f7793a3534e', '09376a99-6406-4595-bdf1-b52f13b9b289', '1e3fb085-c747-4c05-a88d-a514067835cf']), 10/222 windows in-band +-[2.0]s, md5=0ff902130ce76886b8a925eceed9e3a5 | nav 1/6 eps (5 missing -> nav_cmd=0+nav_valid=False), md5=0ff902130ce76886b8a925eceed9e3a5, allow_oracle_nav=True
+loader: 222 windows over 6 episodes
+[bank] loader_join_report -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+model 175,164,468 params; arms ['fit', 'loader', 'eig', 'sweep', 'graph']; bs 8; precision fp32
+[fit] {'precision': 'fp32', 'bs': 8, 'fits': False, 'max_mem_gb': 6.341978549957275, 'error': 'CUDA out of memory. Tried to allocate 80.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 571.00 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.34 GiB is allocated by PyTorch, and 9.8'}
+[fit] {'precision': 'fp32', 'bs': 4, 'fits': False, 'max_mem_gb': 6.385430812835693, 'error': 'CUDA out of memory. Tried to allocate 30.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 525.00 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.39 GiB is allocated by PyTorch, and 11.'}
+[fit] {'precision': 'fp32', 'bs': 2, 'fits': False, 'max_mem_gb': 6.365185737609863, 'error': 'CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 91.07 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.37 GiB is allocated by PyTorch, and 20.0'}
+[fit] {'precision': 'fp32', 'bs': 1, 'fits': False, 'max_mem_gb': 6.375647068023682, 'error': 'CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 264.17 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.38 GiB is allocated by PyTorch, and 3.3'}
+[fit] {'precision': 'bf16', 'bs': 8, 'fits': False, 'max_mem_gb': 6.353960037231445, 'error': 'CUDA out of memory. Tried to allocate 30.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 245.85 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.35 GiB is allocated by PyTorch, and 41.'}
+[fit] {'precision': 'bf16', 'bs': 4, 'fits': False, 'max_mem_gb': 6.378381252288818, 'error': 'CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 525.00 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.38 GiB is allocated by PyTorch, and 12.'}
+[fit] {'precision': 'bf16', 'bs': 2, 'fits': False, 'max_mem_gb': 6.379538059234619, 'error': 'CUDA out of memory. Tried to allocate 10.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 249.85 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.38 GiB is allocated by PyTorch, and 11.'}
+[fit] {'precision': 'bf16', 'bs': 1, 'fits': False, 'max_mem_gb': 6.395533561706543, 'error': 'CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 243.85 MiB is free. 6.40 GiB allowed; Of the allocated memory 6.40 GiB is allocated by PyTorch, and 100'}
+[bank] fit -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[loader] hot 0.100s  cold 0.190s  miss/window 0.022s  slice+dequant/window 0.0059s
+[bank] loader -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[eig] live fp64 GPU 73.5 ms, fp32 variant 14.8 ms, chan_std_op 2.6 ms
+[bank] eig -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[sweep/forward_full] fp32 bs1 632.5758666992188
+[sweep/op_rollout] fp32 bs1 480.1812438964844
+[sweep/forward_full] fp32 bs2 1169.095703125
+[sweep/op_rollout] fp32 bs2 951.2816772460938
+[sweep/forward_full] fp32 bs4 2243.66259765625
+[sweep/op_rollout] fp32 bs4 1953.3482666015625
+[sweep/forward_full] fp32 bs8 4492.85302734375
+[sweep/op_rollout] fp32 bs8 3946.699462890625
+[sweep/forward_full] tf32 bs1 439.40447998046875
+[sweep/op_rollout] tf32 bs1 303.4961853027344
+[sweep/forward_full] tf32 bs2 787.3867797851562
+[sweep/op_rollout] tf32 bs2 615.3758544921875
+[sweep/forward_full] tf32 bs4 1518.8192138671875
+[sweep/op_rollout] tf32 bs4 1252.6141357421875
+[sweep/forward_full] tf32 bs8 2938.543212890625
+[sweep/op_rollout] tf32 bs8 2560.0830078125
+[sweep/forward_full] bf16 bs1 300.4119873046875
+[sweep/op_rollout] bf16 bs1 152.79000854492188
+[sweep/forward_full] bf16 bs2 605.8369140625
+[sweep/op_rollout] bf16 bs2 301.4441833496094
+[sweep/forward_full] bf16 bs4 962.3736572265625
+[sweep/op_rollout] bf16 bs4 598.3262939453125
+[sweep/forward_full] bf16 bs8 1741.643310546875
+[sweep/op_rollout] bf16 bs8 1287.004150390625
+[bank] sweep -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[graph] {'bs': 1, 'precision': 'fp32', 'steps': 30, 'eager': {'median_ms': 480.721923828125, 'all_ms': [480.8720703125, 477.8410339355469, 481.923828125, 476.8757629394531, 480.721923828125]}, 'graph_replay': {'median_ms': 476.7078552246094, 'all_ms': [476.7078552246094, 482.3109436035156, 475.2842102050781, 482.2831726074219, 474.6872863769531]}, 'max_abs_diff_vs_eager': 0.0, 'speedup': 1.008420395341764}
+[graph] {'bs': 1, 'precision': 'bf16', 'steps': 30, 'eager': {'median_ms': 155.3131561279297, 'all_ms': [152.17152404785156, 153.9061737060547, 156.44117736816406, 155.3131561279297, 159.9754180908203]}, 'graph_replay': {'median_ms': 196.18783569335938, 'all_ms': [195.6953582763672, 196.00384521484375, 196.18783569335938, 197.39852905273438, 196.28440856933594]}, 'max_abs_diff_vs_eager': 0.0, 'speedup': 0.7916553826032486}
+[graph] {'bs': 8, 'precision': 'fp32', 'steps': 30, 'eager': {'median_ms': 3931.4033203125, 'all_ms': [3921.405029296875, 3931.4033203125, 3945.448486328125, 3903.3251953125, 3973.5947265625]}, 'graph_replay': {'median_ms': 3955.619873046875, 'all_ms': [3904.8544921875, 3994.8359375, 4006.514404296875, 3955.619873046875, 3925.1669921875]}, 'max_abs_diff_vs_eager': 0.0, 'speedup': 0.9938779373368549}
+[graph] {'bs': 8, 'precision': 'bf16', 'steps': 30, 'eager': {'median_ms': 1290.282958984375, 'all_ms': [1290.282958984375, 1290.6865234375, 1288.076416015625, 1287.114990234375, 1304.1798095703125]}, 'graph_replay': {'median_ms': 2692.1103515625, 'all_ms': [2692.1103515625, 2712.562744140625, 2714.244140625, 2682.4541015625, 2676.643798828125]}, 'max_abs_diff_vs_eager': 0.0, 'speedup': 0.4792830866816047}
+[bank] graph -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+done
+EXIT=0

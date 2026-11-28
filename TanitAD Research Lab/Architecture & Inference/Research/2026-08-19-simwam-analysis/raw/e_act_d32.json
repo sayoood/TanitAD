@@ -1,0 +1,47 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC \u2014 future-field prediction error is a world-model fidelity number, NEVER driving performance",
+ "task": "predict cell field at t+6 from a 4-frame causal window + ego actions (accel, yaw-rate)",
+ "cache": "cache_s16000 (v6F-SW-30k@16000)",
+ "n_windows": 4447,
+ "n_train": 2054,
+ "n_eval": 2393,
+ "n_eval_episodes": 70,
+ "epochs": 30,
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "n_act_tok": 2,
+ "arms": {
+  "concat": {
+   "params": 31104,
+   "mse_per_seed": [
+    0.0005691942060366273,
+    0.0005644226330332458,
+    0.000687265070155263
+   ],
+   "mse_mean": 0.0006069606364083787
+  },
+  "token": {
+   "params": 31200,
+   "mse_per_seed": [
+    0.00012987377704121172,
+    8.94766635610722e-05,
+    0.00027874988154508173
+   ],
+   "mse_mean": 0.00016603344071578854
+  }
+ },
+ "paired_delta_token_minus_concat": {
+  "mean": -0.0004399352183099836,
+  "ci95": [
+   -0.0005431013414636254,
+   -0.00034108886029571295
+  ],
+  "estimator": "episode-cluster bootstrap, n_boot 2000, 70 episode clusters",
+  "separated": true,
+  "_read": "NEGATIVE means the SimWAM-style action-TOKEN stream predicts the future field BETTER than our broadcast-concat"
+ }
+}

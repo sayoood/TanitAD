@@ -1,0 +1,215 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD45 + N1",
+ "status": "LIST ONLY: NOT RUN. run_mutations_u.py reads this list, runs the suite against each mutated copy and writes MUTATIONS_U_RESULT.json",
+ "note": "each mutation: the old text must occur exactly once in the target file; the test file named must turn RED on the mutated copy; the unmutated suite must be GREEN before and after. target 'tool' = tok_probe_u.py (tests need torch and DSCALE_TREE: pod only), target 'precheck' = dscale_precheck.py (numpy only).",
+ "mutations": [
+  {
+   "name": "clip_filter_dropped",
+   "target": "tool",
+   "old": "    cl = _OPTS.get(\"clip_list\")\n",
+   "new": "    cl = None\n",
+   "test_file": "test_tok_probe_u.py",
+   "k": "clip_list_keeps"
+  },
+  {
+   "name": "evaluation_clips_let_into_training",
+   "target": "tool",
+   "old": "        if shared:\n",
+   "new": "        if False:\n",
+   "test_file": "test_tok_probe_u.py",
+   "k": "eval_guard"
+  },
+  {
+   "name": "closing_weight_not_zero",
+   "target": "tool",
+   "old": "    if _OPTS.get(\"w_clos\", 1.0) == 0.0:",
+   "new": "    if _OPTS.get(\"w_clos\", 1.0) == 9.0:",
+   "test_file": "test_tok_probe_u.py",
+   "k": "w_clos_zero"
+  },
+  {
+   "name": "gap_shuffle_shuffles_presence_too",
+   "target": "tool",
+   "old": "    LS[\"gap\"] = g\n",
+   "new": "    LS[\"gap\"] = g\n    LS[\"pres\"] = np.random.default_rng(seed).permutation(np.asarray(LS[\"pres\"]))\n",
+   "test_file": "test_tok_probe_u.py",
+   "k": "gap_shuffle_keeps"
+  },
+  {
+   "name": "gap_shuffle_applied_to_nothing",
+   "target": "tool",
+   "old": "    g[idx] = g[idx][np.random.default_rng(seed).permutation(len(idx))]\n    LS[\"gap\"] = g\n",
+   "new": "    LS[\"gap\"] = g\n",
+   "test_file": "test_tok_probe_u.py",
+   "k": "gap_shuffle_keeps"
+  },
+  {
+   "name": "presence_only_form_dropped_from_check_log",
+   "target": "tool",
+   "old": "    parts_keys = (\"lead_sup_bce_mean\",) if hdr.get(\"shuffle_gap\") else (\"lead_sup_bce_mean\", \"lead_sup_gap_mean\")",
+   "new": "    parts_keys = (\"lead_sup_bce_mean\", \"lead_sup_gap_mean\")",
+   "test_file": "test_tok_probe_u.py",
+   "k": "check_log_reads"
+  },
+  {
+   "name": "precheck_d2_compares_the_wrong_column",
+   "target": "precheck",
+   "old": "D2_COLUMNS = (\"lead\", \"gap\")",
+   "new": "D2_COLUMNS = (\"lead\", \"k\")",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "precheck_d1_ignores_shared_ids",
+   "target": "precheck",
+   "old": "\"pass\": bool(len(shared) == 0 and len(ev) > 0)",
+   "new": "\"pass\": bool(len(ev) > 0)",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "precheck_d2_ignores_rows_in_one_file_only",
+   "target": "precheck",
+   "old": "ok = bool(n_absent == 0 and n_only == 0 and n_bad == 0 and n_rows > 0)",
+   "new": "ok = bool(n_absent == 0 and n_bad == 0 and n_rows > 0)",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "precheck_d2j_ignores_the_lead_flag",
+   "target": "precheck",
+   "old": "            want = gp if ld == 1 else np.nan\n",
+   "new": "            want = gp\n",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "precheck_d2_tolerance_loosened",
+   "target": "precheck",
+   "old": "ap.add_argument(\"--tol\", type=float, default=1e-4)",
+   "new": "ap.add_argument(\"--tol\", type=float, default=10.0)",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_seed_level_switched_off",
+   "target": "reader",
+   "old": "    idx = rng.integers(0, n, size=(B, n))\n",
+   "new": "    idx = np.tile(np.arange(n), (B, 1))\n",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_pair_sign_swapped",
+   "target": "reader",
+   "old": "def two_level_pair(ctx, outs, measure, inner=\"shared\", a_kind=\"U\", b_kind=\"C\"):",
+   "new": "def two_level_pair(ctx, outs, measure, inner=\"shared\", a_kind=\"C\", b_kind=\"U\"):",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_interval_touching_zero_separates",
+   "target": "reader",
+   "old": "    return bool(t[\"mean\"] > 0 and t[\"ci95\"][0] > 0 and t[\"n_pos\"] >= MIN_POS_SEEDS)",
+   "new": "    return bool(t[\"mean\"] > 0 and t[\"ci95\"][0] >= 0 and t[\"n_pos\"] >= MIN_POS_SEEDS)",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_three_of_four_clause_lowered",
+   "target": "reader",
+   "old": "MIN_POS_SEEDS = 3",
+   "new": "MIN_POS_SEEDS = 1",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_error_clause_dropped",
+   "target": "reader",
+   "old": "MAE_FRACTION = 0.10",
+   "new": "MAE_FRACTION = 0.0",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_d5_does_not_look_at_the_interval",
+   "target": "reader",
+   "old": "\"pass\": bool(ci is not None and ci[0] <= 0 and auc >= D5_AUROC_BAR)",
+   "new": "\"pass\": bool(auc >= D5_AUROC_BAR)",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_new_clip_gap_labels_not_required",
+   "target": "reader",
+   "old": "gn.get(\"gap_label_frames\", 0) > 0 and ",
+   "new": "",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "precheck_d2n_samples_corpus_clips",
+   "target": "precheck",
+   "old": "new_ids = [c for c in union_ids if c not in cs]",
+   "new": "new_ids = [c for c in union_ids if c in cs]",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "precheck_d2g_does_not_need_gap_labels",
+   "target": "precheck",
+   "old": "good = bool(len(ids) > 0 and absent == 0 and pres > 0 and gap_ok > 0)",
+   "new": "good = bool(len(ids) > 0 and absent == 0 and pres > 0)",
+   "test_file": "test_dscale_precheck.py",
+   "k": "not zz_none"
+  },
+  {
+   "name": "reader_clock_control_does_not_need_the_new_clips",
+   "target": "reader",
+   "old": "g[n].get(\"clips_read\", 0) >= 200 for n in (\"corpus\", \"new\")))",
+   "new": "g[n].get(\"clips_read\", 0) >= 200 for n in (\"corpus\",)))",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "clock_controls"
+  },
+  {
+   "name": "reader_evalset_control_does_not_need_the_order",
+   "target": "reader",
+   "old": "d.get(\"same_ids_same_order\") is True and d.get(\"planted_swap\") is False",
+   "new": "d.get(\"planted_swap\") is False",
+   "test_file": "test_dscale_lead_read.py",
+   "k": "evalset_controls"
+  },
+  {
+   "name": "evalview_keeps_the_source_order",
+   "target": "evalview",
+   "old": "    body = b\"\".join(by[c] + b\"\\n\" for c in want)\n",
+   "new": "    body = b\"\".join(by[c] + b\"\\n\" for c in ids)\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "study_order"
+  },
+  {
+   "name": "evalview_does_not_compare_the_id_sets",
+   "target": "evalview",
+   "old": "    if set(ids) != set(want):\n",
+   "new": "    if False:\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "another_id_set"
+  },
+  {
+   "name": "evalview_accepts_a_changed_existing_view",
+   "target": "evalview",
+   "old": "        if open(vman, \"rb\").read() != body:\n",
+   "new": "        if False:\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "existing_view_manifest_that_differs"
+  },
+  {
+   "name": "evalview_overwrites_a_real_entry",
+   "target": "evalview",
+   "old": "            if not (os.path.islink(lnk) and os.path.realpath(lnk) == os.path.realpath(tgt)):\n",
+   "new": "            if False:\n",
+   "test_file": "test_dscale_evalview.py",
+   "k": "not_the_link"
+  }
+ ]
+}

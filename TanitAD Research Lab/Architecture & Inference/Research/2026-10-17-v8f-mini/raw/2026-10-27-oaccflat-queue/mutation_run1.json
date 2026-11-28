@@ -1,0 +1,1428 @@
+{
+ "control_green": true,
+ "n_mutants": 85,
+ "killed": 80,
+ "killed_by_crash_only": 1,
+ "survived": 5,
+ "anchor_errors": 0,
+ "not_run": 0,
+ "results": [
+  {
+   "id": "Q1",
+   "kind": "Q",
+   "desc": "WRONG INIT: flatdag starts from M2b_s<S> instead of FLAT_s<S>",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.2,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A8 flatdag s0: init FLAT_s0, the FLAT bank dir, p 0.1, seed, bank sha",
+    "FAIL  A8 flatdag s1: init FLAT_s1, the FLAT bank dir, p 0.1, seed, bank sha",
+    "FAIL  B15 gatedag flatdag pins a line that names --o-interface cut, the FLAT init and the FLAT bank   [(0, ['[ok] gate M2b-flatdag_s0'])]"
+   ],
+   "n_red": 3,
+   "free_mb_before": 957,
+   "free_mb_after": 956,
+   "result_line": "RESULT: 50/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 3 failed checks (10 s)"
+  },
+  {
+   "id": "Q2",
+   "kind": "Q",
+   "desc": "WRONG INIT: dagoacc starts from DAG_s<S> instead of M2b_s<S>",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A1 dagoacc s0: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)",
+    "FAIL  A3 dagoacc s0: --w-acc named exactly once, init M2b_s0, the ITERATION-1 bank dir and DAG's bank sha",
+    "FAIL  A1 dagoacc s1: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)"
+   ],
+   "n_red": 4,
+   "free_mb_before": 957,
+   "free_mb_after": 956,
+   "result_line": "RESULT: 49/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 4 failed checks (10 s)"
+  },
+  {
+   "id": "Q3",
+   "kind": "Q",
+   "desc": "w_acc FROM M2b: waccdag evaluates M2b_s0's checkpoint instead of DAG_s0's",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A12 waccdag: the rule's tool, DAG_s0's checkpoint with its sha256 pinned, banked fit windows of DAG_s0, everything in %RUNSM%\\dagoacc and NOTHING in OACC's %RUNSM%\\oacc",
+    "FAIL  B4 waccdag runs the rule tool with DAG_s0's checkpoint, into %RUNSM%\\dagoacc, and the number lands in w_acc.txt   [(0, ['[27.10.2026 11:53:11,18] w_acc DAG-OACC', '[ok] w_acc DAG-OACC'])]"
+   ],
+   "n_red": 2,
+   "free_mb_before": 957,
+   "free_mb_after": 956,
+   "result_line": "RESULT: 51/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 2 failed checks (10 s)"
+  },
+  {
+   "id": "Q4",
+   "kind": "Q",
+   "desc": "--o-interface cut MISSING from the flatdag argv",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 2.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A7 flatdag s0: FLAT's REAL banked argv minus the fine-tune / bank flags, `--o-interface cut` NAMED exactly once (every other flag is FLAT's)",
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 2,
+   "free_mb_before": 957,
+   "free_mb_after": 957,
+   "result_line": "KeyError: '--o-interface'"
+  },
+  {
+   "id": "Q5",
+   "kind": "Q",
+   "desc": "FLAT BANK FROM M2b: bankflat's generator is M2b_s<S>",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A14 bankflat 0 == bankdag2 0 with the generator DAG -> FLAT (M2b_s0_dag -> M2b_s0_flat, dagger_bank_dag2 -> dagger_bank_flat) and nothing else",
+    "FAIL  A15 bankflat 0: generator FLAT_s0 (ckpt and argv.json), bank dir dagger_bank_flat\\s0, the expectations of bankdag",
+    "FAIL  A15 bankflat 1: generator FLAT_s1 (ckpt and argv.json), bank dir dagger_bank_flat\\s1, the expectations of bankdag"
+   ],
+   "n_red": 5,
+   "free_mb_before": 957,
+   "free_mb_after": 956,
+   "result_line": "RESULT: 48/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 5 failed checks (10 s)"
+  },
+  {
+   "id": "Q6",
+   "kind": "Q",
+   "desc": "-0 ARM CARRYING A BANK: flatdag0 gets --dagger-bank",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A9 flatdag0 s0: C-F2 -- differs from flatdag only in --out, --dagger-p's value and the three bank flags",
+    "FAIL  A9 flatdag0 s1: C-F2 -- differs from flatdag only in --out, --dagger-p's value and the three bank flags",
+    "FAIL  B16 gatedag flatdag0 pins a line with --o-interface cut and --dagger-p 0 and no bank flag (no bank needed)   [(0, ['[ok] gate M2b-flatdag0_s0'])]"
+   ],
+   "n_red": 3,
+   "free_mb_before": 957,
+   "free_mb_after": 956,
+   "result_line": "RESULT: 50/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 3 failed checks (10 s)"
+  },
+  {
+   "id": "Q7",
+   "kind": "Q",
+   "desc": "AN EXISTING STAGE LINE CHANGED: DAG's own fine-tune lr 1e-4 -> 2e-4 (the iteration-1 DAGF0)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 62.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A17 the text diff against the tip queue is INSERTIONS ONLY (0 removed / replaced lines) and CRLF throughout   [[('replace', 1110, 1111, 1124, 1125)]]",
+    "FAIL  S1 all 48 dispatched stages x 4 argument shapes print byte-identical lines and rc (47 s)   [[('gatedag dag 0 0.1', 0, 0), ('traindag dag 0 0.1', 0, 0)]]",
+    "FAIL  S2 `gatedag dag 0 0.1` prints the same as on the tip   [((0, ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v8f_mini_train.py\" --arm M2b --seed 0 --grid pool4x10 --out \"D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\gate_M2b-dag_s0\" --"
+   ],
+   "n_red": 6,
+   "free_mb_before": 957,
+   "free_mb_after": 952,
+   "result_line": "RESULT: 70/76 checks pass, 0/0 deliberate regressions caught, 0 missed; 6 failed checks (63 s)"
+  },
+  {
+   "id": "Q8",
+   "kind": "Q",
+   "desc": "--w-acc missing from the dagoacc argv",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 0.5,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A1 dagoacc s0: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)",
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 2,
+   "free_mb_before": 956,
+   "free_mb_after": 956,
+   "result_line": "KeyError: '--w-acc'"
+  },
+  {
+   "id": "Q9",
+   "kind": "Q",
+   "desc": "dagoacc reads OACC's w_acc (the oacc directory) instead of DAG-OACC's",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 6.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  B6 gatedag dagoacc pins the training argv in its OWN file and the gate ran with --w-acc <the file's number>, --selfcheck-only, the iteration-1 bank and its hash   [(2, ['REFUSED: no w_acc '])]",
+    "FAIL  B8 a changed w_acc.txt makes a re-pin REFUSED (the pin is never silently replaced)   [(2, ['REFUSED: no w_acc '])]",
+    "FAIL  B9 traindag dagoacc with a changed w_acc since the gate is REFUSED   [(2, ['REFUSED: no w_acc '])]"
+   ],
+   "n_red": 4,
+   "free_mb_before": 956,
+   "free_mb_after": 956,
+   "result_line": "FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\oqf\\\\m5\\\\box\\\\runs\\\\dagpin\\\\M2b_s0_dagoacc.train.argv.txt'"
+  },
+  {
+   "id": "Q10",
+   "kind": "Q",
+   "desc": "flatdag uses the ITERATION-1 (M2b) bank directory",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A8 flatdag s0: init FLAT_s0, the FLAT bank dir, p 0.1, seed, bank sha",
+    "FAIL  A8 flatdag s1: init FLAT_s1, the FLAT bank dir, p 0.1, seed, bank sha",
+    "FAIL  A14 bankflat 0 == bankdag2 0 with the generator DAG -> FLAT (M2b_s0_dag -> M2b_s0_flat, dagger_bank_dag2 -> dagger_bank_flat) and nothing else"
+   ],
+   "n_red": 8,
+   "free_mb_before": 956,
+   "free_mb_after": 956,
+   "result_line": "ValueError: '--ckpt' is not in list"
+  },
+  {
+   "id": "Q11",
+   "kind": "Q",
+   "desc": "flatdag accepts P = 0.3",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A11 `gatedag flatdag 0 0.3` (P 0.3) is REFUSED rc 2   [(0, ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v8f_mini_train.py\" --arm M2b --seed 0 --grid pool4x10 --out \"D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\gate_M2b-flatdag_s0\" "
+   ],
+   "n_red": 1,
+   "free_mb_before": 956,
+   "free_mb_after": 956,
+   "result_line": "RESULT: 52/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 1 failed checks (10 s)"
+  },
+  {
+   "id": "Q12",
+   "kind": "Q",
+   "desc": "waccdag writes into OACC's directory (%RUNSM%\\oacc)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 5.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A12 waccdag: the rule's tool, DAG_s0's checkpoint with its sha256 pinned, banked fit windows of DAG_s0, everything in %RUNSM%\\dagoacc and NOTHING in OACC's %RUNSM%\\oacc",
+    "FAIL  B1 waccdag without the shipped banked fit windows is REFUSED rc 2 (nothing in OACC's directory)   [(2, [\"REFUSED: C:\\\\Users\\\\Admin\\\\oqf\\\\m1\\\\box\\\\runs\\\\oacc\\\\fit_windows_DAG_s0.npz is missing - the chain ships DAG_s0's banked fit windows \"])]",
+    "FAIL  B3 a failing rule tool is reported [FAIL] rc 1 and leaves no w_acc.txt   [(2, [\"REFUSED: C:\\\\Users\\\\Admin\\\\oqf\\\\m1\\\\box\\\\runs\\\\oacc\\\\fit_windows_DAG_s0.npz is missing - the chain ships DAG_s0's banked fit windows \"])]"
+   ],
+   "n_red": 4,
+   "free_mb_before": 956,
+   "free_mb_after": 956,
+   "result_line": "FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Admin\\\\oqf\\\\m1\\\\box\\\\runs\\\\dagoacc\\\\w_acc.json.stub_argv.json'"
+  },
+  {
+   "id": "Q13",
+   "kind": "Q",
+   "desc": "AN EXISTING STAGE NOBODY LISTED changed (evalpgt's tag): only the all-stage sweep can see it",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 63.8,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A17 the text diff against the tip queue is INSERTIONS ONLY (0 removed / replaced lines) and CRLF throughout   [[('replace', 390, 391, 396, 397)]]",
+    "FAIL  S1 all 48 dispatched stages x 4 argument shapes print byte-identical lines and rc (49 s)   [[('evalpgt 0', 0, 0), ('evalpgt dag 0 0.1', 0, 0), ('evalpgt dag2 1', 0, 0)]]",
+    "FAIL  S3 pre-existing label :evalpgt differs from the tip only by inserted lines"
+   ],
+   "n_red": 4,
+   "free_mb_before": 956,
+   "free_mb_after": 952,
+   "result_line": "RESULT: 73/77 checks pass, 0/0 deliberate regressions caught, 0 missed; 4 failed checks (64 s)"
+  },
+  {
+   "id": "Q14",
+   "kind": "Q",
+   "desc": "bankflat accepts a half-trained FLAT (the summary.json guard removed)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 11.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  B13 bankflat with FLAT unfinished (no summary.json) is REFUSED rc 2 and creates no bank directory   [(2, ['REFUSED: C:\\\\Users\\\\Admin\\\\oqf\\\\m1\\\\box\\\\runs\\\\M2b_s0_flat\\\\argv.json is missing '])]"
+   ],
+   "n_red": 1,
+   "free_mb_before": 956,
+   "free_mb_after": 955,
+   "result_line": "RESULT: 52/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 1 failed checks (12 s)"
+  },
+  {
+   "id": "Q15",
+   "kind": "Q",
+   "desc": "the :evaldag hand-off for flatdag removed (flatdag falls into the DAG eval, no oracle read)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A10 flatdag s0: eval = standard eval + the GT-code oracle (tacorc) of M2b_s0_flatdag",
+    "FAIL  A10 flatdag s1: eval = standard eval + the GT-code oracle (tacorc) of M2b_s1_flatdag"
+   ],
+   "n_red": 2,
+   "free_mb_before": 956,
+   "free_mb_after": 955,
+   "result_line": "RESULT: 51/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 2 failed checks (11 s)"
+  },
+  {
+   "id": "Q16",
+   "kind": "Q",
+   "desc": "flatdag0 runs at --dagger-p 0.1 (the -0 control is not a control)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A9 flatdag0 s0: C-F2 -- differs from flatdag only in --out, --dagger-p's value and the three bank flags",
+    "FAIL  A9 flatdag0 s1: C-F2 -- differs from flatdag only in --out, --dagger-p's value and the three bank flags"
+   ],
+   "n_red": 2,
+   "free_mb_before": 956,
+   "free_mb_after": 955,
+   "result_line": "RESULT: 51/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 2 failed checks (10 s)"
+  },
+  {
+   "id": "Q17",
+   "kind": "Q",
+   "desc": "--w-acc moved ahead of the dagger flags (the lever is not the LAST token)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 10.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A1 dagoacc s0: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)",
+    "FAIL  A1 dagoacc s1: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)"
+   ],
+   "n_red": 2,
+   "free_mb_before": 956,
+   "free_mb_after": 955,
+   "result_line": "RESULT: 51/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 2 failed checks (10 s)"
+  },
+  {
+   "id": "Q18",
+   "kind": "Q",
+   "desc": "an inherited WACCDAG can stand in for the rule in a real run (the clearing removed)",
+   "status": "SURVIVED",
+   "sections": "A,B",
+   "seconds": 10.5,
+   "rc": 0,
+   "red_by": [],
+   "n_red": 0,
+   "free_mb_before": 955,
+   "free_mb_after": 955,
+   "result_line": "RESULT: 53/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 0 failed checks (10 s)"
+  },
+  {
+   "id": "Q19",
+   "kind": "Q",
+   "desc": "the :dagarm hand-off for dagoacc removed",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 0.5,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A1 dagoacc s0: DAG's REAL banked argv.json argv + `--w-acc 49.6969` at the end, only --out differing (C-O1)",
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 2,
+   "free_mb_before": 955,
+   "free_mb_after": 955,
+   "result_line": "KeyError: '--w-acc'"
+  },
+  {
+   "id": "Q20",
+   "kind": "Q",
+   "desc": "dagoacc accepts P = 0.3",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 11.5,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A6 `gatedag dagoacc 0 0.3` (P 0.3) is REFUSED rc 2   [(0, ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v8f_mini_train.py\" --arm M2b --seed 0 --grid pool4x10 --out \"D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\gate_M2b-dagoacc_s0\" -"
+   ],
+   "n_red": 1,
+   "free_mb_before": 955,
+   "free_mb_after": 955,
+   "result_line": "RESULT: 52/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 1 failed checks (11 s)"
+  },
+  {
+   "id": "Q21",
+   "kind": "Q",
+   "desc": "waccdag drops the cross-check against DAG_s0's banked fit windows",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 11.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A12 waccdag: the rule's tool, DAG_s0's checkpoint with its sha256 pinned, banked fit windows of DAG_s0, everything in %RUNSM%\\dagoacc and NOTHING in OACC's %RUNSM%\\oacc"
+   ],
+   "n_red": 1,
+   "free_mb_before": 955,
+   "free_mb_after": 954,
+   "result_line": "RESULT: 52/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 1 failed checks (12 s)"
+  },
+  {
+   "id": "Q22",
+   "kind": "Q",
+   "desc": "waccdag drops the checkpoint sha256 pin",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 11.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A12 waccdag: the rule's tool, DAG_s0's checkpoint with its sha256 pinned, banked fit windows of DAG_s0, everything in %RUNSM%\\dagoacc and NOTHING in OACC's %RUNSM%\\oacc"
+   ],
+   "n_red": 1,
+   "free_mb_before": 955,
+   "free_mb_after": 954,
+   "result_line": "RESULT: 52/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 1 failed checks (12 s)"
+  },
+  {
+   "id": "Q23",
+   "kind": "Q",
+   "desc": "the flatdag oracle eval (tacorc) dropped from the evaluation",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 11.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A10 flatdag s0: eval = standard eval + the GT-code oracle (tacorc) of M2b_s0_flatdag",
+    "FAIL  A10 flatdag s1: eval = standard eval + the GT-code oracle (tacorc) of M2b_s1_flatdag"
+   ],
+   "n_red": 2,
+   "free_mb_before": 955,
+   "free_mb_after": 954,
+   "result_line": "RESULT: 51/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 2 failed checks (11 s)"
+  },
+  {
+   "id": "Q24",
+   "kind": "Q",
+   "desc": "flatdag's --dagger-seed dropped",
+   "status": "KILLED_BY_CRASH_ONLY",
+   "sections": "A,B",
+   "seconds": 3.2,
+   "rc": 1,
+   "red_by": [
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 1,
+   "free_mb_before": 955,
+   "free_mb_after": 954,
+   "result_line": "KeyError: '--dagger-seed'"
+  },
+  {
+   "id": "Q25",
+   "kind": "Q",
+   "desc": "waccdag runs on a half-trained DAG_s0 (the summary.json guard removed)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 11.8,
+   "rc": 1,
+   "red_by": [
+    "FAIL  B2 waccdag with DAG_s0 unfinished (no summary.json) is REFUSED rc 2   [(0, ['[27.10.2026 11:53:54,99] w_acc DAG-OACC', '[ok] w_acc DAG-OACC'])]",
+    "FAIL  B3 a failing rule tool is reported [FAIL] rc 1 and leaves no w_acc.txt   [(0, ['[skip] w_acc DAG-OACC '])]"
+   ],
+   "n_red": 2,
+   "free_mb_before": 954,
+   "free_mb_after": 953,
+   "result_line": "RESULT: 51/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 2 failed checks (12 s)"
+  },
+  {
+   "id": "Q26",
+   "kind": "Q",
+   "desc": "bankflat reads M2b's argv.json instead of FLAT's (the TRAIN list is rebuilt from the wrong run)",
+   "status": "KILLED",
+   "sections": "A,B",
+   "seconds": 12.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  A14 bankflat 0 == bankdag2 0 with the generator DAG -> FLAT (M2b_s0_dag -> M2b_s0_flat, dagger_bank_dag2 -> dagger_bank_flat) and nothing else",
+    "FAIL  A15 bankflat 0: generator FLAT_s0 (ckpt and argv.json), bank dir dagger_bank_flat\\s0, the expectations of bankdag",
+    "FAIL  A15 bankflat 1: generator FLAT_s1 (ckpt and argv.json), bank dir dagger_bank_flat\\s1, the expectations of bankdag"
+   ],
+   "n_red": 4,
+   "free_mb_before": 954,
+   "free_mb_after": 953,
+   "result_line": "RESULT: 49/53 checks pass, 0/0 deliberate regressions caught, 0 missed; 4 failed checks (12 s)"
+  },
+  {
+   "id": "K1",
+   "kind": "K",
+   "desc": "C-O3 tolerance 1e-4 -> 1e-2",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 111.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: w_acc +2e-4 relative",
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: L_traj +1e-3",
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: L_acc -1e-3"
+   ],
+   "n_red": 3,
+   "free_mb_before": 954,
+   "free_mb_after": 240,
+   "result_line": "RESULT: 46/46 checks pass, 84/87 deliberate regressions caught, 3 missed; 0 failed checks (111 s)"
+  },
+  {
+   "id": "K2",
+   "kind": "K",
+   "desc": "C-O3 does not require the model route's cross-check to pass",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 0.3,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: the cross-check not passed",
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: the cross-check on other windows",
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 3,
+   "free_mb_before": 954,
+   "free_mb_after": 954,
+   "result_line": "AttributeError: 'NoneType' object has no attribute 'get'"
+  },
+  {
+   "id": "K3",
+   "kind": "K",
+   "desc": "C-O3 does not compare the checkpoint the rule was evaluated with",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 104.7,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: the checkpoint is M2b_s0's"
+   ],
+   "n_red": 1,
+   "free_mb_before": 954,
+   "free_mb_after": 240,
+   "result_line": "RESULT: 46/46 checks pass, 86/87 deliberate regressions caught, 1 missed; 0 failed checks (104 s)"
+  },
+  {
+   "id": "K4",
+   "kind": "K",
+   "desc": "C-O3 does not check that w_acc.txt is the record's number",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 103.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C4 C-O3 REFUSES: w_acc.txt is not the bare number",
+    "MISSED (deliberate regression) C5 C-O3 REFUSES: w_acc.txt without the LF"
+   ],
+   "n_red": 2,
+   "free_mb_before": 953,
+   "free_mb_after": 240,
+   "result_line": "RESULT: 46/46 checks pass, 85/87 deliberate regressions caught, 2 missed; 0 failed checks (104 s)"
+  },
+  {
+   "id": "K5",
+   "kind": "K",
+   "desc": "F1: init-match accepts every trainer",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 104.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C8 init-match REFUSES the tip's trainer (no o_interface in the tuple)",
+    "MISSED (deliberate regression) C9 init-match REFUSES a trainer where o_interface sits only in a comment / another statement",
+    "MISSED (deliberate regression) C10 init-match REFUSES the REAL trainer at the tip 1d4f4fbb (F1 is not landed there)"
+   ],
+   "n_red": 5,
+   "free_mb_before": 953,
+   "free_mb_after": 240,
+   "result_line": "RESULT: 46/46 checks pass, 82/87 deliberate regressions caught, 5 missed; 0 failed checks (104 s)"
+  },
+  {
+   "id": "K6",
+   "kind": "K",
+   "desc": "DISK FLOOR REMOVED: disk-check always passes",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 98.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C13 disk-check REFUSES one byte under the floor",
+    "MISSED (deliberate regression) C14 disk-check REFUSES a pull larger than the free space",
+    "MISSED (deliberate regression) D18 pull(): one byte under the floor -> ZZDISK-FLOOR-STOP + ZZV8FMINI-STOP, NOTHING written (no file, no .part)   [PULLED-OK"
+   ],
+   "n_red": 3,
+   "free_mb_before": 952,
+   "free_mb_after": 241,
+   "result_line": "RESULT: 46/46 checks pass, 84/87 deliberate regressions caught, 3 missed; 0 failed checks (98 s)"
+  },
+  {
+   "id": "K7",
+   "kind": "K",
+   "desc": "PREDECESSOR-STOP BRANCH INVERTED: a predecessor STOP of its own (box released) HALTs instead of going",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 96.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  C16 pred: a STOP of the predecessor's own (BLOCKED) + BOX2_BUSY released -> GO (a predecessor STOP must not idle box 2)",
+    "FAIL  C17 pred: a failed run's STOP + BOX2_BUSY released -> GO",
+    "FAIL  D11 wait: predecessor STOP of its own (BLOCKED), box released -> GO (box 2 is not idled)   [r the predecessor chain (C:/Users/Admin/oqf/m3/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)"
+   ],
+   "n_red": 5,
+   "free_mb_before": 952,
+   "free_mb_after": 241,
+   "result_line": "RESULT: 41/46 checks pass, 87/87 deliberate regressions caught, 0 missed; 5 failed checks (96 s)"
+  },
+  {
+   "id": "K8",
+   "kind": "K",
+   "desc": "the predecessor's GUARD stop no longer halts",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 105.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C18 pred: a GUARD stop -> HALT",
+    "MISSED (deliberate regression) D13 wait: predecessor stopped by the GUARD -> ZZV8FMINI-STOP, no GO   [iting for the predecessor chain (C:/Users/Admin/oqf/m1/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)",
+    "MISSED (deliberate regression) F14 wait: the predecessor was stopped by the GUARD -> ZZV8FMINI-STOP, no GO   [ng for the predecessor chain (C:/Users/Admin/oqf/m1/ship_fw/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)"
+   ],
+   "n_red": 3,
+   "free_mb_before": 240,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 46/46 checks pass, 84/87 deliberate regressions caught, 3 missed; 0 failed checks (105 s)"
+  },
+  {
+   "id": "K9",
+   "kind": "K",
+   "desc": "a held BOX2_BUSY after the predecessor's DONE no longer halts",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 103.2,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C20 pred: DONE with BOX2_BUSY still held -> HALT",
+    "MISSED (deliberate regression) D15 wait: predecessor DONE with BOX2_BUSY held -> ZZV8FMINI-STOP   [10-27 11:56 waiting for the predecessor chain (C:/Users/Admin/oqf/m5/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)"
+   ],
+   "n_red": 2,
+   "free_mb_before": 240,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 46/46 checks pass, 85/87 deliberate regressions caught, 2 missed; 0 failed checks (103 s)"
+  },
+  {
+   "id": "K10",
+   "kind": "K",
+   "desc": "C-O3 does not check the window count",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 102.5,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C3 C-O3 REFUSES: n_windows 9581"
+   ],
+   "n_red": 1,
+   "free_mb_before": 240,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 46/46 checks pass, 86/87 deliberate regressions caught, 1 missed; 0 failed checks (102 s)"
+  },
+  {
+   "id": "K11",
+   "kind": "K",
+   "desc": "a held BOX2_BUSY after a predecessor STOP reads GO (the box would be taken while held)",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 96.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) C19 pred: a STOP with BOX2_BUSY still held -> not GO (BUSY: the caller re-checks, then halts)",
+    "MISSED (deliberate regression) D14 wait: predecessor STOP with BOX2_BUSY still held (after 3 re-checks) -> ZZV8FMINI-STOP, no GO   [10-27 11:56 waiting for the predecessor chain (C:/Users/Admin/oqf/m2/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMIN",
+    "MISSED (deliberate regression) F15 wait: the predecessor STOPPED but BOX2_BUSY is still held -> ZZV8FMINI-STOP, no GO   [10-27 11:56 waiting for the predecessor chain (C:/Users/Admin/oqf/m2/ship_fw/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; "
+   ],
+   "n_red": 3,
+   "free_mb_before": 240,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 46/46 checks pass, 84/87 deliberate regressions caught, 3 missed; 0 failed checks (96 s)"
+  },
+  {
+   "id": "G1",
+   "kind": "G",
+   "desc": "dagoacc's init tail is FLAT's",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 22.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  E1 dagoacc s0: the check passes on the doctored real gate   [OAF gate: [\"init_ckpt path 'D:\\\\\\\\tanitad\\\\\\\\runs\\\\\\\\v8f_mini_full\\\\\\\\M2b_s0\\\\\\\\ckpt_last.pt' is not .../M2b_s0_flat/ckpt_last.pt\", \"the train line --init-ckpt [['D:\\\\\\\\tanitad\\\\\\\\runs\\\\\\\\v8f_m",
+    "FAIL  E1 dagoacc s1: the check passes on the doctored real gate   [OAF gate: [\"init_ckpt path 'D:\\\\\\\\tanitad\\\\\\\\runs\\\\\\\\v8f_mini_full\\\\\\\\M2b_s1\\\\\\\\ckpt_last.pt' is not .../M2b_s1_flat/ckpt_last.pt\", \"the train line --init-ckpt [['D:\\\\\\\\tanitad\\\\\\\\runs\\\\\\\\v8f_m",
+    "FAIL  E2 the token is written for dagoacc (prereg PREREG_V8F_DAG_OACC, w_acc, bank = DAG's, o_interface full)   [OAF gate: [\"init_ckpt path 'D:\\\\\\\\tanitad\\\\\\\\runs\\\\\\\\v8f_mini_full\\\\\\\\M2b_s0\\\\\\\\ckpt_last.pt' is not .../M2b_s0_flat/ckpt_last.pt\", \"the train line"
+   ],
+   "n_red": 3,
+   "free_mb_before": 241,
+   "free_mb_after": 241,
+   "result_line": "RESULT: 5/8 checks pass, 37/37 deliberate regressions caught, 0 missed; 3 failed checks (21 s)"
+  },
+  {
+   "id": "G2",
+   "kind": "G",
+   "desc": "flatdag's bank directory tail is the iteration-1 one",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 18.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  E1 flatdag s0: the check passes on the doctored real gate   [OAF gate: [\"built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank_flat/s0/bank.json' does not end with /dagger_bank/s0/bank.json\"] | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 3065",
+    "FAIL  E1 flatdag s1: the check passes on the doctored real gate   [OAF gate: [\"built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank_flat/s1/bank.json' does not end with /dagger_bank/s1/bank.json\"] | flatdag s1 | p 0.1 | clips 4512 steps 3000 windows 3065",
+    "FAIL  E3 the token is written for flatdag (prereg PREREG_V8F_FLATDAG, o_interface cut)   [OAF gate: [\"built bank path 'D:/tanitad/runs/v8f_mini_full/dagger_bank_flat/s1/bank.json' does not end with /dagger_bank/s1/bank.json\"] | flatdag s1 | p 0.1 | clips 4512 "
+   ],
+   "n_red": 4,
+   "free_mb_before": 241,
+   "free_mb_after": 240,
+   "result_line": "RESULT: 5/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 3 failed checks (19 s)"
+  },
+  {
+   "id": "G3",
+   "kind": "G",
+   "desc": "K-B2 (the bank's generator is the init) not checked",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 21.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 flatdag: K-B2: the bank's generator is M2b, not FLAT  <- PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate: PASS | flatd"
+   ],
+   "n_red": 1,
+   "free_mb_before": 241,
+   "free_mb_after": 240,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (21 s)"
+  },
+  {
+   "id": "G4",
+   "kind": "G",
+   "desc": "the pin need not equal the planned training argv",
+   "status": "SURVIVED",
+   "sections": "E",
+   "seconds": 22.7,
+   "rc": 0,
+   "red_by": [],
+   "n_red": 0,
+   "free_mb_before": 240,
+   "free_mb_after": 238,
+   "result_line": "RESULT: 8/8 checks pass, 37/37 deliberate regressions caught, 0 missed; 0 failed checks (22 s)"
+  },
+  {
+   "id": "G5",
+   "kind": "G",
+   "desc": "the init checkpoint's sha256 is not compared",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 22.6,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 flatdag: the init is M2b_s0, not FLAT_s0  <- PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate: PASS | flatdag s0 | p 0."
+   ],
+   "n_red": 1,
+   "free_mb_before": 240,
+   "free_mb_after": 239,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (22 s)"
+  },
+  {
+   "id": "G6",
+   "kind": "G",
+   "desc": "the acc term may be exactly zero",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 21.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 dagoacc: acc term exactly 0.0  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate: PASS | dagoacc s0 | p 0.1 | clips 4"
+   ],
+   "n_red": 1,
+   "free_mb_before": 238,
+   "free_mb_after": 245,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (20 s)"
+  },
+  {
+   "id": "G7",
+   "kind": "G",
+   "desc": "ONE-LEVER: the dagoacc pin need not be DAG's pin + --w-acc W",
+   "status": "SURVIVED",
+   "sections": "E",
+   "seconds": 25.8,
+   "rc": 0,
+   "red_by": [],
+   "n_red": 0,
+   "free_mb_before": 239,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 8/8 checks pass, 37/37 deliberate regressions caught, 0 missed; 0 failed checks (26 s)"
+  },
+  {
+   "id": "G8",
+   "kind": "G",
+   "desc": "ONE-LEVER: box 2's DAG pin need not be DAG's banked argv.json",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 26.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 dagoacc: the reference argv.json (DAG's) carries another bank hash  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate"
+   ],
+   "n_red": 1,
+   "free_mb_before": 245,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (26 s)"
+  },
+  {
+   "id": "G9",
+   "kind": "G",
+   "desc": "the cut is not required to be built (o_interface may be full)",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 23.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 flatdag: the cut is not built (levers.o_interface full)  <- PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate: PASS | fl",
+    "MISSED (deliberate regression) E4 flatdag0: flatdag0: the cut is not built  <- PASS | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff None | params 7214495 | lru 174   [OAF gate: PASS | flatdag0 s0 | p 0.0 | cli"
+   ],
+   "n_red": 2,
+   "free_mb_before": 244,
+   "free_mb_after": 244,
+   "result_line": "RESULT: 8/8 checks pass, 35/37 deliberate regressions caught, 2 missed; 0 failed checks (23 s)"
+  },
+  {
+   "id": "G10",
+   "kind": "G",
+   "desc": "the swap need not reach the loss",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 23.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 dagoacc: the swap did not reach the loss (dagger_probe grad diff 0)  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 0.0 | params 7214495 | lru 174   [OAF gate: PASS | "
+   ],
+   "n_red": 1,
+   "free_mb_before": 244,
+   "free_mb_after": 243,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (23 s)"
+  },
+  {
+   "id": "G11",
+   "kind": "G",
+   "desc": "head_o's gradient from the acc term need not be non-zero",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 22.9,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 dagoacc: head_o gradient from the term is 0  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate: PASS | dagoacc s0 | p"
+   ],
+   "n_red": 1,
+   "free_mb_before": 244,
+   "free_mb_after": 243,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (23 s)"
+  },
+  {
+   "id": "G12",
+   "kind": "G",
+   "desc": "FLAT's every other flag is not compared",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 23.2,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) E4 flatdag: a FLAT flag moved (--hist) vs FLAT's banked argv  <- PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 10549.0703125 | params 7214495 | lru 174   [OAF gate: PASS | "
+   ],
+   "n_red": 1,
+   "free_mb_before": 245,
+   "free_mb_after": 243,
+   "result_line": "RESULT: 8/8 checks pass, 36/37 deliberate regressions caught, 1 missed; 0 failed checks (23 s)"
+  },
+  {
+   "id": "C1",
+   "kind": "C",
+   "desc": "DISK FLOOR REMOVED from pull()",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 40.2,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) D18 pull(): one byte under the floor -> ZZDISK-FLOOR-STOP + ZZV8FMINI-STOP, NOTHING written (no file, no .part)   [PULLED-OK"
+   ],
+   "n_red": 1,
+   "free_mb_before": 245,
+   "free_mb_after": 242,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (40 s)"
+  },
+  {
+   "id": "C2",
+   "kind": "C",
+   "desc": "the chain's floor value 1 GiB -> 1 MiB",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 41.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  D17a the chain's own disk floor is exactly 1 GiB (1073741824 bytes)   [1048576]",
+    "MISSED (deliberate regression) D18 pull(): one byte under the floor -> ZZDISK-FLOOR-STOP + ZZV8FMINI-STOP, NOTHING written (no file, no .part)   [PULLED-OK"
+   ],
+   "n_red": 2,
+   "free_mb_before": 245,
+   "free_mb_after": 242,
+   "result_line": "RESULT: 18/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 1 failed checks (41 s)"
+  },
+  {
+   "id": "C3",
+   "kind": "C",
+   "desc": "pull() renames a short transfer (the size check removed)",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 38.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) D19 pull(): a transfer that lands short is refused and the .part removed (nothing half-written)   [PULLED-OK"
+   ],
+   "n_red": 1,
+   "free_mb_before": 244,
+   "free_mb_after": 242,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (39 s)"
+  },
+  {
+   "id": "C4",
+   "kind": "C",
+   "desc": "RUNS in the wrong order (seed 1 first)",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 40.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  D22 the chain's run list is s0 then s1 of the arm dagoacc, P = 0.1"
+   ],
+   "n_red": 1,
+   "free_mb_before": 244,
+   "free_mb_after": 242,
+   "result_line": "RESULT: 18/19 checks pass, 24/24 deliberate regressions caught, 0 missed; 1 failed checks (40 s)"
+  },
+  {
+   "id": "C5",
+   "kind": "C",
+   "desc": "PVAL 0.3",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 34.4,
+   "rc": 1,
+   "red_by": [
+    "FAIL  D2 --dry-run: rc 0, both runs planned, ONE-LEVER on both planned lines, gate == train, C-O3 reference printed, no STOP marker line (a line that STARTS with it: the echo of the wait rule names it mid-line)   [ows_DAG_s0.npz\" --out \"D:\\tanitad\\runs\\v8f_min",
+    "FAIL  D3 --dry-run with another W still plans one lever (--w-acc 50.0 in both train lines)   [PREREG_V8F_DAG_OACC\", \"binding\": {\"commit\": \"<the remote tip, 40 hex>\", \"argv_sha256\": \"<launch_gate.argv_sha256 of THE TRAINING ARGV as pinned by box 2>\", \"data_sha2",
+    "FAIL  D22 the chain's run list is s0 then s1 of the arm dagoacc, P = 0.1"
+   ],
+   "n_red": 3,
+   "free_mb_before": 244,
+   "free_mb_after": 242,
+   "result_line": "RESULT: 16/19 checks pass, 24/24 deliberate regressions caught, 0 missed; 3 failed checks (34 s)"
+  },
+  {
+   "id": "C6",
+   "kind": "C",
+   "desc": "one hex digit of DAG_s0's checkpoint sha256 changed in the chain",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 39.4,
+   "rc": 1,
+   "red_by": [
+    "FAIL  D6 --co3-only on an equal record: ZZDAGOACC-CO3-PASS   [as evaluated with checkpoint d186fd0bcfa7ee9f, not DAG_s0's e186fd0bcfa7ee9f\"], \"outcome\": \"REFUSED\", \"rtol\": 0.0001, \"w_acc\": {\"box\": 49.6969, \"offline\": 49.6969, \"rel\": 0.0}}",
+    "FAIL  D21 every pinned hash in the chain (DAG ckpt / argv.json / summary.json, M2b init, iteration-1 bank, the offline record, DAG_s0's fit plans) equals the hash of the banked file   [['CKPT_SHA']]"
+   ],
+   "n_red": 2,
+   "free_mb_before": 244,
+   "free_mb_after": 241,
+   "result_line": "RESULT: 17/19 checks pass, 24/24 deliberate regressions caught, 0 missed; 2 failed checks (39 s)"
+  },
+  {
+   "id": "C7",
+   "kind": "C",
+   "desc": "PREDECESSOR-STOP BRANCH INVERTED in the shell: a HALT verdict returns GO",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 36.3,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) D13 wait: predecessor stopped by the GUARD -> ZZV8FMINI-STOP, no GO   [10-27 11:58 waiting for the predecessor chain (C:/Users/Admin/oqf/m6/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)",
+    "MISSED (deliberate regression) D15 wait: predecessor DONE with BOX2_BUSY held -> ZZV8FMINI-STOP   [10-27 11:58 waiting for the predecessor chain (C:/Users/Admin/oqf/m6/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)"
+   ],
+   "n_red": 2,
+   "free_mb_before": 243,
+   "free_mb_after": 332,
+   "result_line": "RESULT: 19/19 checks pass, 22/24 deliberate regressions caught, 2 missed; 0 failed checks (36 s)"
+  },
+  {
+   "id": "C8",
+   "kind": "C",
+   "desc": "the wait loop treats BUSY as GO",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 31.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) D14 wait: predecessor STOP with BOX2_BUSY still held (after 3 re-checks) -> ZZV8FMINI-STOP, no GO   [10-27 11:58 waiting for the predecessor chain (C:/Users/Admin/oqf/m3/ship/logs/pred.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMIN"
+   ],
+   "n_red": 1,
+   "free_mb_before": 242,
+   "free_mb_after": 332,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (32 s)"
+  },
+  {
+   "id": "C9",
+   "kind": "C",
+   "desc": "the real entry does not wait for a predecessor at all (wait_predecessor removed)",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 30.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) D16b the REAL entry with a predecessor that has not ended: still waiting after 8 s (killed by the test's timeout, rc 124), BOX2_BUSY not taken, no ssh / scp call   [(1, 'ZZV8FMINI-STOP box 2 unreachable\\n', 'ssh -o BatchMode=yes "
+   ],
+   "n_red": 1,
+   "free_mb_before": 242,
+   "free_mb_after": 332,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (30 s)"
+  },
+  {
+   "id": "C10",
+   "kind": "C",
+   "desc": "C-O3's STOP is swallowed: the chain goes on after a mismatch",
+   "status": "SURVIVED",
+   "sections": "D",
+   "seconds": 38.7,
+   "rc": 0,
+   "red_by": [],
+   "n_red": 0,
+   "free_mb_before": 242,
+   "free_mb_after": 328,
+   "result_line": "RESULT: 19/19 checks pass, 24/24 deliberate regressions caught, 0 missed; 0 failed checks (39 s)"
+  },
+  {
+   "id": "K12",
+   "kind": "K",
+   "desc": "K-B2 (the bank's checkpoint is the banked generator's) always passes in bank-judge",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 98.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) F9 --judge-only: the M2b banks against FLAT's checkpoint shas -> ZZFLATDAG-REFUSED (K-B2: a FLAT bank must be generated by FLAT), rc 2, ZZV8FMINI-STOP REFUSED   [751a9f044b9e281ee1823bb2cd3b3f58fa2\", \"ba00b76d1f37dede5ee54b672e15"
+   ],
+   "n_red": 1,
+   "free_mb_before": 242,
+   "free_mb_after": 272,
+   "result_line": "RESULT: 46/46 checks pass, 86/87 deliberate regressions caught, 1 missed; 0 failed checks (98 s)"
+  },
+  {
+   "id": "K13",
+   "kind": "K",
+   "desc": "COVERAGE_MIN 0.5 -> 0.1 (a bank with 30 % eligible windows passes)",
+   "status": "KILLED",
+   "sections": "C,D,F",
+   "seconds": 97.5,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F10 --judge-only (CONTROL: the same chain with the generator shas the banks actually have): ZZFLATDAG-JUDGE-PASS, rc 0 -- so F9's refusal is the generator check and nothing else   [ASS\": true, \"log_pose_sha256_by_shard\": [\"94ba6afb27717fa457735eead2231e7"
+   ],
+   "n_red": 1,
+   "free_mb_before": 242,
+   "free_mb_after": 272,
+   "result_line": "RESULT: 45/46 checks pass, 87/87 deliberate regressions caught, 0 missed; 1 failed checks (97 s)"
+  },
+  {
+   "id": "K14",
+   "kind": "K",
+   "desc": "the BLOCKED outcome is never reached (a COVERAGE-blocked bank judged PASS)",
+   "status": "SURVIVED",
+   "sections": "C,D,F",
+   "seconds": 99.6,
+   "rc": 0,
+   "red_by": [],
+   "n_red": 0,
+   "free_mb_before": 332,
+   "free_mb_after": 272,
+   "result_line": "RESULT: 46/46 checks pass, 87/87 deliberate regressions caught, 0 missed; 0 failed checks (99 s)"
+  },
+  {
+   "id": "F1",
+   "kind": "F",
+   "desc": "RUNS in the wrong order (the two FLATDAG arms before the two FLATDAG-0 arms)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 55.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F2 --dry-run: rc 0; the four runs in PREREG order; on every planned line gate == train, FLAT-CONSISTENT (FLAT's banked argv minus the fine-tune flags, --o-interface cut named, init FLAT_s<S>); both argv.json references hash to the pins   [ D:\\tanitad\\run",
+    "FAIL  F4 the run list is flatdag s0, flatdag0 s0, flatdag s1, flatdag0 s1; P = 0.1; the chain's floor is 1 GiB; the bank directory is dagger_bank_flat and the M2b bank directory is named nowhere"
+   ],
+   "n_red": 2,
+   "free_mb_before": 332,
+   "free_mb_after": 273,
+   "result_line": "RESULT: 14/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 2 failed checks (55 s)"
+  },
+  {
+   "id": "F2",
+   "kind": "F",
+   "desc": "PVAL 0.3",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 47.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F2 --dry-run: rc 0; the four runs in PREREG order; on every planned line gate == train, FLAT-CONSISTENT (FLAT's banked argv minus the fine-tune flags, --o-interface cut named, init FLAT_s<S>); both argv.json references hash to the pins   [ shard_002of004",
+    "FAIL  F4 the run list is flatdag s0, flatdag0 s0, flatdag s1, flatdag0 s1; P = 0.1; the chain's floor is 1 GiB; the bank directory is dagger_bank_flat and the M2b bank directory is named nowhere"
+   ],
+   "n_red": 2,
+   "free_mb_before": 332,
+   "free_mb_after": 273,
+   "result_line": "RESULT: 14/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 2 failed checks (47 s)"
+  },
+  {
+   "id": "F3",
+   "kind": "F",
+   "desc": "THE F1 CHECK REMOVED from the real run (the line deleted)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 57.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F5 order in the real run: the F1 check (in its exact STOP form) precedes the code archive; all four gates precede the first training; in the real run's segment the bank is judged once, published once (AFTER the judge) and the gates follow (judge before p",
+    "MISSED (deliberate regression) F18 the REAL entry against a fake mirror whose trainer is the tip's (INIT_CKPT_MATCH without o_interface): ZZFLATDAG-F1-STOP + ZZV8FMINI-STOP F1 not landed, rc 1, BOX2_BUSY released, the only box-2 call is the boot probe (no scp,",
+    "FAIL  F19 the same REAL entry with the F1-fixed trainer (CONTROL): no ZZFLATDAG-F1-STOP; it goes past F1 and stops at the export-list check of the fake tip (so F18's stop is the F1 check and nothing else), still without an scp call   [(1, \"10-27 11:59 waiting "
+   ],
+   "n_red": 3,
+   "free_mb_before": 328,
+   "free_mb_after": 270,
+   "result_line": "RESULT: 14/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 2 failed checks (57 s)"
+  },
+  {
+   "id": "F4",
+   "kind": "F",
+   "desc": "THE F1 CHECK NEUTERED in the real run (text kept, a failing check falls through to `true`)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 62.5,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F5 order in the real run: the F1 check (in its exact STOP form) precedes the code archive; all four gates precede the first training; in the real run's segment the bank is judged once, published once (AFTER the judge) and the gates follow (judge before p",
+    "MISSED (deliberate regression) F18 the REAL entry against a fake mirror whose trainer is the tip's (INIT_CKPT_MATCH without o_interface): ZZFLATDAG-F1-STOP + ZZV8FMINI-STOP F1 not landed, rc 1, BOX2_BUSY released, the only box-2 call is the boot probe (no scp,"
+   ],
+   "n_red": 2,
+   "free_mb_before": 273,
+   "free_mb_after": 272,
+   "result_line": "RESULT: 15/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 1 failed checks (62 s)"
+  },
+  {
+   "id": "F5",
+   "kind": "F",
+   "desc": "F1 REMOVED from --check-tree (the check-only mode passes a tip trainer)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 61.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) F7 --check-tree REFUSES the tip's trainer (INIT_CKPT_MATCH does not name o_interface): ZZFLATDAG-F1-STOP, rc 1, nothing would be touched on box 2   [lever check: every one of 33 patterns is in C:/Users/Admin/oqf/m5/ft_tree, and F"
+   ],
+   "n_red": 1,
+   "free_mb_before": 273,
+   "free_mb_after": 272,
+   "result_line": "RESULT: 16/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 0 failed checks (61 s)"
+  },
+  {
+   "id": "F6",
+   "kind": "F",
+   "desc": "one hex digit of FLAT_s0's checkpoint sha256 changed in the chain",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 62.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F3 the pinned hashes in the chain are the banked FLAT files' (checkpoints re-hashed from v8f-mini-flat/, argv.json / summary.json from the repo blobs); the prefixes are 8496934a / 6fdfc9b0   [(['CKPT_SHA'], ['8496934a2ce262c128a3e975da156de2f40e422925893"
+   ],
+   "n_red": 1,
+   "free_mb_before": 270,
+   "free_mb_after": 252,
+   "result_line": "RESULT: 15/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 1 failed checks (62 s)"
+  },
+  {
+   "id": "F7",
+   "kind": "F",
+   "desc": "BANK DIRECTORY -> dagger_bank (the iteration-1 M2b bank directory, in bank_one)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 61.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F4 the run list is flatdag s0, flatdag0 s0, flatdag s1, flatdag0 s1; P = 0.1; the chain's floor is 1 GiB; the bank directory is dagger_bank_flat and the M2b bank directory is named nowhere"
+   ],
+   "n_red": 1,
+   "free_mb_before": 272,
+   "free_mb_after": 252,
+   "result_line": "RESULT: 15/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 1 failed checks (61 s)"
+  },
+  {
+   "id": "F8",
+   "kind": "F",
+   "desc": "GATES AFTER RUNS (the four gates run after the first training)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 63.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F5 order in the real run: the F1 check (in its exact STOP form) precedes the code archive; all four gates precede the first training; in the real run's segment the bank is judged once, published once (AFTER the judge) and the gates follow (judge before p"
+   ],
+   "n_red": 1,
+   "free_mb_before": 272,
+   "free_mb_after": 209,
+   "result_line": "RESULT: 15/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 1 failed checks (62 s)"
+  },
+  {
+   "id": "F9",
+   "kind": "F",
+   "desc": "PUBLISH BEFORE THE JUDGE in the real run (the banks are copied to the dev box before the controls and COVERAGE are judged)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 63.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F5 order in the real run: the F1 check (in its exact STOP form) precedes the code archive; all four gates precede the first training; in the real run's segment the bank is judged once, published once (AFTER the judge) and the gates follow (judge before p"
+   ],
+   "n_red": 1,
+   "free_mb_before": 272,
+   "free_mb_after": 182,
+   "result_line": "RESULT: 15/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 1 failed checks (63 s)"
+  },
+  {
+   "id": "F10",
+   "kind": "F",
+   "desc": "the chain's floor value 1 GiB -> 1 MiB",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 56.8,
+   "rc": 1,
+   "red_by": [
+    "FAIL  F4 the run list is flatdag s0, flatdag0 s0, flatdag s1, flatdag0 s1; P = 0.1; the chain's floor is 1 GiB; the bank directory is dagger_bank_flat and the M2b bank directory is named nowhere"
+   ],
+   "n_red": 1,
+   "free_mb_before": 273,
+   "free_mb_after": 202,
+   "result_line": "RESULT: 15/16 checks pass, 41/41 deliberate regressions caught, 0 missed; 1 failed checks (57 s)"
+  },
+  {
+   "id": "F11",
+   "kind": "F",
+   "desc": "the real entry does not wait for a predecessor at all (wait_predecessor removed)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 51.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) F20 the REAL entry with a predecessor that has not ended: still waiting after 8 s (killed by the test's timeout, rc 124), BOX2_BUSY not taken, no ssh / scp call   [(1, 'ZZV8FMINI-STOP box 2 unreachable\\n', 'ssh -o BatchMode=yes -"
+   ],
+   "n_red": 1,
+   "free_mb_before": 273,
+   "free_mb_after": 203,
+   "result_line": "RESULT: 16/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 0 failed checks (51 s)"
+  },
+  {
+   "id": "F12",
+   "kind": "F",
+   "desc": "the REACHED control (the swap reached the loss) is not enforced for FLATDAG: the 'swap-reached' FAIL exits 0",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 66.7,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR4 flatdag: the REACHED control REFUSES a swap that never happened (dagger_n 0)   [FLATDAG swap-reached: FAIL | flatdag s0 | dagger_n 0 / eligible 4900 = n/a (must lie in 0.1 +- 0.02)",
+    "MISSED (deliberate regression) FR5 flatdag: the REACHED control REFUSES a swap rate of 0.20 (outside 0.1 +- 0.02)   [FLATDAG swap-reached: FAIL | flatdag s0 | dagger_n 980 / eligible 4900 = n/a (must lie in 0.1 +- 0.02)",
+    "MISSED (deliberate regression) FR6 flatdag: the REACHED control REFUSES zero eligible windows   [FLATDAG swap-reached: FAIL | flatdag s0 | dagger_n 490 / eligible 0 = n/a (must lie in 0.1 +- 0.02)"
+   ],
+   "n_red": 4,
+   "free_mb_before": 252,
+   "free_mb_after": 200,
+   "result_line": "RESULT: 16/16 checks pass, 37/41 deliberate regressions caught, 4 missed; 0 failed checks (67 s)"
+  },
+  {
+   "id": "F13",
+   "kind": "F",
+   "desc": "the judge's REFUSED branch (a bank control failed) is reported as PASS (judge_banks swallows the rc)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 62.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) F9 --judge-only: the M2b banks against FLAT's checkpoint shas -> ZZFLATDAG-REFUSED (K-B2: a FLAT bank must be generated by FLAT), rc 2, ZZV8FMINI-STOP REFUSED   [ge\": {\"blocked\": false, \"fraction\": 0.7556284780438797, \"min\": 0.5,"
+   ],
+   "n_red": 1,
+   "free_mb_before": 252,
+   "free_mb_after": 199,
+   "result_line": "RESULT: 16/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 0 failed checks (61 s)"
+  },
+  {
+   "id": "F14",
+   "kind": "F",
+   "desc": "FLATDAG run record: the built dagger_p need not equal P",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 57.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the built dagger_p differs (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag s0 | argv sha16 603f5d3f3607c2db | steps 3000 | o_interface cut\\n')]",
+    "MISSED (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the built dagger_p differs (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag0 s0 | argv sha16 00840614f3d34b0d | steps 3000 | o_interface cut\\n')]"
+   ],
+   "n_red": 2,
+   "free_mb_before": 210,
+   "free_mb_after": 199,
+   "result_line": "RESULT: 16/16 checks pass, 39/41 deliberate regressions caught, 2 missed; 0 failed checks (57 s)"
+  },
+  {
+   "id": "F15",
+   "kind": "F",
+   "desc": "FLATDAG run record: the cut need not be built (levers.o_interface)",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 54.5,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the cut is not built (o_interface full) (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag s0 | argv sha16 603f5d3f3607c2db | steps 3000 | o_interface full\\n')]",
+    "MISSED (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the cut is not built (o_interface full) (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag0 s0 | argv sha16 00840614f3d34b0d | steps 3000 | o_interface full\\n')]"
+   ],
+   "n_red": 2,
+   "free_mb_before": 183,
+   "free_mb_after": 198,
+   "result_line": "RESULT: 16/16 checks pass, 39/41 deliberate regressions caught, 2 missed; 0 failed checks (54 s)"
+  },
+  {
+   "id": "F16",
+   "kind": "F",
+   "desc": "FLATDAG run record: FLATDAG-0 may have built a bank",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 53.5,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the p = 0 arm built a bank (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag0 s0 | argv sha16 00840614f3d34b0d | steps 3000 | o_interface cut\\n')]"
+   ],
+   "n_red": 1,
+   "free_mb_before": 203,
+   "free_mb_after": 199,
+   "result_line": "RESULT: 16/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 0 failed checks (53 s)"
+  },
+  {
+   "id": "F17",
+   "kind": "F",
+   "desc": "FLATDAG REACHED control: the swap-rate window +- 0.02 -> +- 0.5",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 53.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR4 flatdag: the REACHED control REFUSES a swap that never happened (dagger_n 0)   [FLATDAG swap-reached: PASS | flatdag s0 | dagger_n 0 / eligible 4900 = 0.0 (must lie in 0.1 +- 0.02)",
+    "MISSED (deliberate regression) FR5 flatdag: the REACHED control REFUSES a swap rate of 0.20 (outside 0.1 +- 0.02)   [FLATDAG swap-reached: PASS | flatdag s0 | dagger_n 980 / eligible 4900 = 0.2 (must lie in 0.1 +- 0.02)"
+   ],
+   "n_red": 2,
+   "free_mb_before": 202,
+   "free_mb_after": 199,
+   "result_line": "RESULT: 16/16 checks pass, 39/41 deliberate regressions caught, 2 missed; 0 failed checks (54 s)"
+  },
+  {
+   "id": "F18",
+   "kind": "F",
+   "desc": "FLATDAG run record: the pinned argv need not equal the planned one",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 51.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR2 flatdag: the run-record assertion REFUSES a record where the pinned argv differs from the planned one (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag s0 | argv sha16 603f5d3f3607c2db | steps 3000 | o_interface cut\\n')]",
+    "MISSED (deliberate regression) FR2 flatdag0: the run-record assertion REFUSES a record where the pinned argv differs from the planned one (rc 1)   [(0, 'FLATDAG run record: PASS | flatdag0 s0 | argv sha16 00840614f3d34b0d | steps 3000 | o_interface cut\\n')]"
+   ],
+   "n_red": 2,
+   "free_mb_before": 199,
+   "free_mb_after": 197,
+   "result_line": "RESULT: 16/16 checks pass, 39/41 deliberate regressions caught, 2 missed; 0 failed checks (50 s)"
+  },
+  {
+   "id": "F19",
+   "kind": "F",
+   "desc": "FLATDAG REACHED control: FLATDAG-0 may swap windows",
+   "status": "KILLED",
+   "sections": "F",
+   "seconds": 50.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) FR4 flatdag0: the REACHED control REFUSES a p = 0 arm that swapped 5 windows   [FLATDAG swap-reached: PASS | flatdag0 s0 | dagger_n 5 (must be exactly 0) | eligible 4900"
+   ],
+   "n_red": 1,
+   "free_mb_before": 200,
+   "free_mb_after": 197,
+   "result_line": "RESULT: 16/16 checks pass, 40/41 deliberate regressions caught, 1 missed; 0 failed checks (50 s)"
+  },
+  {
+   "id": "C11",
+   "kind": "C",
+   "desc": "DAG-OACC run record: the built w_acc need not equal the argv's (C-O2)",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 42.6,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built w_acc differs from the argv's (rc 1)   [(0, 'DAG-OACC run record: PASS | dagoacc s0 | argv sha16 550294fb56b81260 | steps 3000 | w_acc 50.0\\n')]"
+   ],
+   "n_red": 1,
+   "free_mb_before": 200,
+   "free_mb_after": 197,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (42 s)"
+  },
+  {
+   "id": "C12",
+   "kind": "C",
+   "desc": "DAG-OACC REACHED control: the swap-rate window +- 0.02 -> +- 0.5",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 40.3,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) DR4 dagoacc: the REACHED control REFUSES a swap that never happened (dagger_n 0)   [DAG-OACC swap-reached: PASS | dagoacc s0 | dagger_n 0 / eligible 4900 = 0.0 (must lie in 0.1 +- 0.02)",
+    "MISSED (deliberate regression) DR5 dagoacc: the REACHED control REFUSES a swap rate of 0.20 (outside 0.1 +- 0.02)   [DAG-OACC swap-reached: PASS | dagoacc s0 | dagger_n 980 / eligible 4900 = 0.2 (must lie in 0.1 +- 0.02)"
+   ],
+   "n_red": 2,
+   "free_mb_before": 199,
+   "free_mb_after": 197,
+   "result_line": "RESULT: 19/19 checks pass, 22/24 deliberate regressions caught, 2 missed; 0 failed checks (40 s)"
+  },
+  {
+   "id": "C13",
+   "kind": "C",
+   "desc": "DAG-OACC run record: the init checkpoint need not be M2b's",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 37.3,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the init checkpoint differs (rc 1)   [(0, 'DAG-OACC run record: PASS | dagoacc s0 | argv sha16 550294fb56b81260 | steps 3000 | w_acc 49.6969\\n')]"
+   ],
+   "n_red": 1,
+   "free_mb_before": 199,
+   "free_mb_after": 195,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (37 s)"
+  },
+  {
+   "id": "C14",
+   "kind": "C",
+   "desc": "DAG-OACC run record: the built bank need not be DAG's",
+   "status": "KILLED",
+   "sections": "D",
+   "seconds": 36.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) DR2 dagoacc: the run-record assertion REFUSES a record where the built bank sha differs (rc 1)   [(0, 'DAG-OACC run record: PASS | dagoacc s0 | argv sha16 550294fb56b81260 | steps 3000 | w_acc 49.6969\\n')]"
+   ],
+   "n_red": 1,
+   "free_mb_before": 199,
+   "free_mb_after": 195,
+   "result_line": "RESULT: 19/19 checks pass, 23/24 deliberate regressions caught, 1 missed; 0 failed checks (36 s)"
+  }
+ ]
+}

@@ -1,0 +1,101 @@
+{
+ "tool": "force_lon_reroll_r8.py select",
+ "generated": "2026-10-18T19:29:10",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+ "sel_seed": 20261018,
+ "banked_tree": "C:/Users/Admin/refcv8_eval_archive/battery/step30000ema_unc",
+ "n_s6_windows": 3668,
+ "n_s6_episodes": 139,
+ "cruising_windows": 1739,
+ "FB_all": 460,
+ "FB_all_episodes": 52,
+ "CT_pool": 1279,
+ "CT_pool_episodes": 108,
+ "FB_used": 250,
+ "FB_used_episodes": 50,
+ "CT_used": 250,
+ "CT_used_episodes": 90,
+ "fb_max": 250,
+ "ct_max": 250,
+ "kb_n": 100,
+ "n_chunks": 5,
+ "control_subset_sizes": {
+  "FB": 100,
+  "CT": 100
+ },
+ "F1_class_vs_head_class_FB": {
+  "F1_class_is_BRAKE_TO": 51,
+  "F1_class_is_CRUISE": 157
+ },
+ "F1_excluded": {
+  "FB": {
+   "n_set": 250,
+   "n_excluded": 14,
+   "by_reason": {
+    "unlabelled (-100)": 14
+   }
+  },
+  "CT": {
+   "n_set": 250,
+   "n_excluded": 10,
+   "by_reason": {
+    "unlabelled (-100)": 10
+   }
+  }
+ },
+ "F1_class_counts": {
+  "FB": {
+   "FOLLOW": 6,
+   "CRUISE": 157,
+   "BRAKE_TO": 51,
+   "CREEP": 0,
+   "HOLD": 0,
+   "ACCELERATE": 22
+  },
+  "CT": {
+   "FOLLOW": 68,
+   "CRUISE": 137,
+   "BRAKE_TO": 16,
+   "CREEP": 0,
+   "HOLD": 0,
+   "ACCELERATE": 19
+  }
+ },
+ "arms_per_set": {
+  "FB": [
+   "F1",
+   "F2",
+   "Fown",
+   "N2"
+  ],
+  "CT": [
+   "F1",
+   "Fbrake",
+   "Fown",
+   "N2"
+  ]
+ },
+ "n_forward_calls_per_window_mean": {
+  "FB": 3.744,
+  "CT": 3.16
+ },
+ "head_argmax_hist_in_CT_pool": {
+  "FOLLOW": 447,
+  "CRUISE": 729,
+  "YIELD_MERGE": 0,
+  "BRAKE_TO": 0,
+  "CREEP": 1,
+  "HOLD": 2,
+  "ADAPT_SPEED_FOR_CURVE": 0,
+  "ACCELERATE": 100
+ },
+ "dvclass_counts_all_S6": {
+  "accelerating": 781,
+  "cruising": 1739,
+  "decelerating": 717,
+  "slow_both": 165,
+  "start_from_stop": 101,
+  "stopping": 165
+ },
+ "note": "raw clip ids are in E:/refcv8_eval_kit/force_lon_scratch/plan_raw.json only; this file is sha12-keyed"
+}

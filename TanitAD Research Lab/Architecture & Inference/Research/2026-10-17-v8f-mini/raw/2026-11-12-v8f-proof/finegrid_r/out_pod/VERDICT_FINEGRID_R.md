@@ -1,0 +1,314 @@
+# VERDICT_FINEGRID_R: card PREREG_V8F_PROOF_ADD43 (FINEGRID-R)
+
+Tier T0 (a diagnostic on logged frames, never driving performance). LONGITUDINAL (distance keeping) is the family this lever serves and it is not measured by this read; LATERAL, TACTICAL: not measured by this read; STRATEGIC: NOT COMPUTED (a token probe reads no strategic quantity; n = 0).
+Evidence class of every number: MEASURED once run. B 2000; two-level bootstrap (seed indices, then episodes; rng 0); the 429 scored windows of 48 evaluation episodes.
+
+## Controls (card section 4; all must pass before any outcome is named)
+
+- a1_records|F16SH_s2: PASS
+- a1_records|F16_s2: PASS
+- a1_records|F16_s3: PASS
+- a1_records|F16_s4: PASS
+- a1_records|F16_s5: PASS
+- a1_records|F16_s6: PASS
+- a1_records|F16_s7: PASS
+- a1_records|F16_s8: PASS
+- a1_records|F16_s9: PASS
+- a1_records|TK16SH_s2: PASS
+- a1_records|TK16_s0: PASS
+- a1_records|TK16_s1: PASS
+- a1_records|TK16_s2: PASS
+- a1_records|TK16_s3: PASS
+- a1_records|TK16_s4: PASS
+- a1_records|TK16_s5: PASS
+- a1_records|TK16_s6: PASS
+- a1_records|TK16_s7: PASS
+- a1_records|TK16_s8: PASS
+- a1_records|TK16_s9: PASS
+- a1_records|TK64_s0: PASS
+- a1_records|TK64_s1: PASS
+- a1_records|TK64_s2: PASS
+- a1_records|TK64_s3: PASS
+- a1_records|TK64_s4: PASS
+- a1_records|TK64_s5: PASS
+- a1_records|TK64_s6: PASS
+- a1_records|TK64_s7: PASS
+- a1_records|TK64_s8: PASS
+- a1_records|TK64_s9: PASS
+- a2_pack_counts: PASS
+- a3_same_head_eval_train|TK16_s0: PASS
+- a3_same_head_eval_train|TK16_s1: PASS
+- a3_same_head_eval_train|TK64_s0: PASS
+- a3_same_head_eval_train|TK64_s1: PASS
+- a4_window_states|F16SH_s2: PASS
+- a4_window_states|F16_s2: PASS
+- a4_window_states|F16_s3: PASS
+- a4_window_states|F16_s4: PASS
+- a4_window_states|F16_s5: PASS
+- a4_window_states|F16_s6: PASS
+- a4_window_states|F16_s7: PASS
+- a4_window_states|F16_s8: PASS
+- a4_window_states|F16_s9: PASS
+- a4_window_states|TK16SH_s2: PASS
+- a4_window_states|TK16_s0: PASS
+- a4_window_states|TK16_s1: PASS
+- a4_window_states|TK16_s2: PASS
+- a4_window_states|TK16_s3: PASS
+- a4_window_states|TK16_s4: PASS
+- a4_window_states|TK16_s5: PASS
+- a4_window_states|TK16_s6: PASS
+- a4_window_states|TK16_s7: PASS
+- a4_window_states|TK16_s8: PASS
+- a4_window_states|TK16_s9: PASS
+- a4_window_states|TK64_s0: PASS
+- a4_window_states|TK64_s1: PASS
+- a4_window_states|TK64_s2: PASS
+- a4_window_states|TK64_s3: PASS
+- a4_window_states|TK64_s4: PASS
+- a4_window_states|TK64_s5: PASS
+- a4_window_states|TK64_s6: PASS
+- a4_window_states|TK64_s7: PASS
+- a4_window_states|TK64_s8: PASS
+- a4_window_states|TK64_s9: PASS
+- a5_train_layout|TK16_s0: PASS
+- a5_train_layout|TK16_s1: PASS
+- a5_train_layout|TK64_s0: PASS
+- a5_train_layout|TK64_s1: PASS
+- g1_given: PASS
+- g2_grids_belong_together: PASS
+- g3_given: PASS
+- g4_given: PASS
+- g5_r2_records|F16SH_s2: PASS
+- g5_r2_records|F16_s2: PASS
+- g5_r2_records|F16_s3: PASS
+- g5_r2_records|F16_s4: PASS
+- g5_r2_records|F16_s5: PASS
+- g5_r2_records|F16_s6: PASS
+- g5_r2_records|F16_s7: PASS
+- g5_r2_records|F16_s8: PASS
+- g5_r2_records|F16_s9: PASS
+- g5_r2_records|TK16SH_s2: PASS
+- g5_r2_records|TK16_s2: PASS
+- g5_r2_records|TK16_s3: PASS
+- g5_r2_records|TK16_s4: PASS
+- g5_r2_records|TK16_s5: PASS
+- g5_r2_records|TK16_s6: PASS
+- g5_r2_records|TK16_s7: PASS
+- g5_r2_records|TK16_s8: PASS
+- g5_r2_records|TK16_s9: PASS
+- g5_r2_records|TK64_s2: PASS
+- g5_r2_records|TK64_s3: PASS
+- g5_r2_records|TK64_s4: PASS
+- g5_r2_records|TK64_s5: PASS
+- g5_r2_records|TK64_s6: PASS
+- g5_r2_records|TK64_s7: PASS
+- g5_r2_records|TK64_s8: PASS
+- g5_r2_records|TK64_s9: PASS
+- g6_forward_given: PASS
+- g6_shuffled_closing|F16SH_s2: PASS
+- g6_shuffled_closing|TK16SH_s2: PASS
+- g7_tk_reproduces_banked|TK16_s0: PASS
+- g7_tk_reproduces_banked|TK16_s1: PASS
+- g7_tk_reproduces_banked|TK64_s0: PASS
+- g7_tk_reproduces_banked|TK64_s1: PASS
+- k1_label_path: PASS
+- k2_head_forward_eval|F16SH_s2: PASS
+- k2_head_forward_eval|F16_s2: PASS
+- k2_head_forward_eval|F16_s3: PASS
+- k2_head_forward_eval|F16_s4: PASS
+- k2_head_forward_eval|F16_s5: PASS
+- k2_head_forward_eval|F16_s6: PASS
+- k2_head_forward_eval|F16_s7: PASS
+- k2_head_forward_eval|F16_s8: PASS
+- k2_head_forward_eval|F16_s9: PASS
+- k2_head_forward_eval|TK16SH_s2: PASS
+- k2_head_forward_eval|TK16_s0: PASS
+- k2_head_forward_eval|TK16_s1: PASS
+- k2_head_forward_eval|TK16_s2: PASS
+- k2_head_forward_eval|TK16_s3: PASS
+- k2_head_forward_eval|TK16_s4: PASS
+- k2_head_forward_eval|TK16_s5: PASS
+- k2_head_forward_eval|TK16_s6: PASS
+- k2_head_forward_eval|TK16_s7: PASS
+- k2_head_forward_eval|TK16_s8: PASS
+- k2_head_forward_eval|TK16_s9: PASS
+- k2_head_forward_eval|TK64_s0: PASS
+- k2_head_forward_eval|TK64_s1: PASS
+- k2_head_forward_eval|TK64_s2: PASS
+- k2_head_forward_eval|TK64_s3: PASS
+- k2_head_forward_eval|TK64_s4: PASS
+- k2_head_forward_eval|TK64_s5: PASS
+- k2_head_forward_eval|TK64_s6: PASS
+- k2_head_forward_eval|TK64_s7: PASS
+- k2_head_forward_eval|TK64_s8: PASS
+- k2_head_forward_eval|TK64_s9: PASS
+- k2_head_forward_train|TK16_s0: PASS
+- k2_head_forward_train|TK16_s1: PASS
+- k2_head_forward_train|TK64_s0: PASS
+- k2_head_forward_train|TK64_s1: PASS
+- k3_card_form_slot|F16_s2: PASS (printed, gates nothing)
+- k3_card_form_slot|F16_s3: PASS (printed, gates nothing)
+- k3_card_form_slot|F16_s4: PASS (printed, gates nothing)
+- k3_card_form_slot|F16_s5: PASS (printed, gates nothing)
+- k3_card_form_slot|F16_s6: FAIL (printed, gates nothing)
+- k3_card_form_slot|F16_s7: FAIL (printed, gates nothing)
+- k3_card_form_slot|F16_s8: PASS (printed, gates nothing)
+- k3_card_form_slot|F16_s9: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s2: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s3: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s4: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s5: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s6: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s7: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s8: PASS (printed, gates nothing)
+- k3_card_form_slot|TK16_s9: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s2: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s3: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s4: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s5: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s6: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s7: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s8: PASS (printed, gates nothing)
+- k3_card_form_slot|TK64_s9: PASS (printed, gates nothing)
+- k3_closing|F16_s2: PASS
+- k3_closing|F16_s3: PASS
+- k3_closing|F16_s4: PASS
+- k3_closing|F16_s5: PASS
+- k3_closing|F16_s6: PASS
+- k3_closing|F16_s7: PASS
+- k3_closing|F16_s8: PASS
+- k3_closing|F16_s9: PASS
+- k3_closing|TK16_s2: PASS
+- k3_closing|TK16_s3: PASS
+- k3_closing|TK16_s4: PASS
+- k3_closing|TK16_s5: PASS
+- k3_closing|TK16_s6: PASS
+- k3_closing|TK16_s7: PASS
+- k3_closing|TK16_s8: PASS
+- k3_closing|TK16_s9: PASS
+- k3_closing|TK64_s2: PASS
+- k3_closing|TK64_s3: PASS
+- k3_closing|TK64_s4: PASS
+- k3_closing|TK64_s5: PASS
+- k3_closing|TK64_s6: PASS
+- k3_closing|TK64_s7: PASS
+- k3_closing|TK64_s8: PASS
+- k3_closing|TK64_s9: PASS
+- k3_slot_n1|F16_s2: PASS
+- k3_slot_n1|F16_s3: PASS
+- k3_slot_n1|F16_s4: PASS
+- k3_slot_n1|F16_s5: PASS
+- k3_slot_n1|F16_s6: PASS
+- k3_slot_n1|F16_s7: PASS
+- k3_slot_n1|F16_s8: PASS
+- k3_slot_n1|F16_s9: PASS
+- k3_slot_n1|TK16_s2: PASS
+- k3_slot_n1|TK16_s3: PASS
+- k3_slot_n1|TK16_s4: PASS
+- k3_slot_n1|TK16_s5: PASS
+- k3_slot_n1|TK16_s6: PASS
+- k3_slot_n1|TK16_s7: PASS
+- k3_slot_n1|TK16_s8: PASS
+- k3_slot_n1|TK16_s9: PASS
+- k3_slot_n1|TK64_s2: PASS
+- k3_slot_n1|TK64_s3: PASS
+- k3_slot_n1|TK64_s4: PASS
+- k3_slot_n1|TK64_s5: PASS
+- k3_slot_n1|TK64_s6: PASS
+- k3_slot_n1|TK64_s7: PASS
+- k3_slot_n1|TK64_s8: PASS
+- k3_slot_n1|TK64_s9: PASS
+- k4_no_future_input|F16_s2: PASS
+- k4_no_future_input|F16_s3: PASS
+- k4_no_future_input|F16_s4: PASS
+- k4_no_future_input|F16_s5: PASS
+- k4_no_future_input|F16_s6: PASS
+- k4_no_future_input|F16_s7: PASS
+- k4_no_future_input|F16_s8: PASS
+- k4_no_future_input|F16_s9: PASS
+- k4_no_future_input|TK16_s2: PASS
+- k4_no_future_input|TK16_s3: PASS
+- k4_no_future_input|TK16_s4: PASS
+- k4_no_future_input|TK16_s5: PASS
+- k4_no_future_input|TK16_s6: PASS
+- k4_no_future_input|TK16_s7: PASS
+- k4_no_future_input|TK16_s8: PASS
+- k4_no_future_input|TK16_s9: PASS
+- k4_no_future_input|TK64_s2: PASS
+- k4_no_future_input|TK64_s3: PASS
+- k4_no_future_input|TK64_s4: PASS
+- k4_no_future_input|TK64_s5: PASS
+- k4_no_future_input|TK64_s6: PASS
+- k4_no_future_input|TK64_s7: PASS
+- k4_no_future_input|TK64_s8: PASS
+- k4_no_future_input|TK64_s9: PASS
+- p5_train_log|F16SH_s2: FAIL
+- p5_train_log|F16_s2: PASS
+- p5_train_log|F16_s3: PASS
+- p5_train_log|F16_s4: PASS
+- p5_train_log|F16_s5: PASS
+- p5_train_log|F16_s6: PASS
+- p5_train_log|F16_s7: PASS
+- p5_train_log|F16_s8: PASS
+- p5_train_log|F16_s9: PASS
+- p5_train_log|TK16SH_s2: FAIL
+- p5_train_log|TK16_s2: PASS
+- p5_train_log|TK16_s3: PASS
+- p5_train_log|TK16_s4: PASS
+- p5_train_log|TK16_s5: PASS
+- p5_train_log|TK16_s6: PASS
+- p5_train_log|TK16_s7: PASS
+- p5_train_log|TK16_s8: PASS
+- p5_train_log|TK16_s9: PASS
+- p5_train_log|TK64_s2: PASS
+- p5_train_log|TK64_s3: PASS
+- p5_train_log|TK64_s4: PASS
+- p5_train_log|TK64_s5: PASS
+- p5_train_log|TK64_s6: PASS
+- p5_train_log|TK64_s7: PASS
+- p5_train_log|TK64_s8: PASS
+- p5_train_log|TK64_s9: PASS
+- paired_planted_shift_read_back: PASS
+- paired_self_reads_exactly_0: PASS
+- paired_swap_reads_the_negative: PASS
+- r1_same_windows_same_order: PASS
+- r3_planted_difference_two_level: PASS
+- tool_sha_matches_the_devbox_controls: PASS
+
+## Names
+
+No name is given and no outcome difference is printed: withheld: a control did not pass (card section 4): p5_train_log|F16SH_s2, p5_train_log|TK16SH_s2
+
+## Per arm (reported; M4 and the control arms name nothing)
+
+- TK16_s2: M2 gap R2 +0.738; M1 closing R2 +0.046; M4 AUROC 0.887
+- TK16_s3: M2 gap R2 +0.665; M1 closing R2 -0.005; M4 AUROC 0.897
+- TK16_s4: M2 gap R2 +0.703; M1 closing R2 +0.111; M4 AUROC 0.888
+- TK16_s5: M2 gap R2 +0.755; M1 closing R2 +0.044; M4 AUROC 0.905
+- TK16_s6: M2 gap R2 +0.791; M1 closing R2 +0.140; M4 AUROC 0.894
+- TK16_s7: M2 gap R2 +0.513; M1 closing R2 +0.042; M4 AUROC 0.902
+- TK16_s8: M2 gap R2 +0.735; M1 closing R2 +0.141; M4 AUROC 0.891
+- TK16_s9: M2 gap R2 +0.730; M1 closing R2 +0.078; M4 AUROC 0.910
+- TK64_s2: M2 gap R2 +0.645; M1 closing R2 +0.027; M4 AUROC 0.909
+- TK64_s3: M2 gap R2 +0.582; M1 closing R2 +0.117; M4 AUROC 0.914
+- TK64_s4: M2 gap R2 +0.705; M1 closing R2 +0.047; M4 AUROC 0.886
+- TK64_s5: M2 gap R2 +0.702; M1 closing R2 +0.041; M4 AUROC 0.906
+- TK64_s6: M2 gap R2 +0.611; M1 closing R2 -0.093; M4 AUROC 0.905
+- TK64_s7: M2 gap R2 +0.523; M1 closing R2 +0.052; M4 AUROC 0.903
+- TK64_s8: M2 gap R2 +0.616; M1 closing R2 -0.202; M4 AUROC 0.896
+- TK64_s9: M2 gap R2 +0.610; M1 closing R2 +0.013; M4 AUROC 0.897
+- F16_s2: M2 gap R2 +0.673; M1 closing R2 -0.144; M4 AUROC 0.921
+- F16_s3: M2 gap R2 +0.823; M1 closing R2 -0.000; M4 AUROC 0.919
+- F16_s4: M2 gap R2 +0.726; M1 closing R2 +0.084; M4 AUROC 0.908
+- F16_s5: M2 gap R2 +0.678; M1 closing R2 +0.080; M4 AUROC 0.919
+- F16_s6: M2 gap R2 +0.619; M1 closing R2 -0.079; M4 AUROC 0.900
+- F16_s7: M2 gap R2 +0.688; M1 closing R2 -0.007; M4 AUROC 0.922
+- F16_s8: M2 gap R2 +0.761; M1 closing R2 +0.094; M4 AUROC 0.909
+- F16_s9: M2 gap R2 +0.772; M1 closing R2 +0.047; M4 AUROC 0.908
+- TK16SH_s2: M2 gap R2 +0.161; M1 closing R2 +0.015; M4 AUROC 0.899
+- F16SH_s2: M2 gap R2 +0.585; M1 closing R2 +0.003; M4 AUROC 0.913
+
+## Limits
+
+A probe on the tokens says what the tokens allow, not what a model does with them; 429 scored windows of 48 episodes; one corpus; tokens stored as float8; the grid before pooling is not read; eight seeds bound the probe's run-to-run variance and not the variance of the encoder (one frozen encoder).
+

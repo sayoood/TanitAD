@@ -1,0 +1,69 @@
+# LANDING_READY — refcv6 agent GROUND-TRUTH validation: GT-only camera + GT-only BEV reel, stills, sanity stats
+# (EvalFlyWheel, 2026-09-26/27). Paths are repo-relative. Nothing here is staged or committed; the Master Mind
+# lands it through the guarded lander.
+# NOT landable (*.mp4 is gitignored), on the D: working tree ONLY:
+#   FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/refcv6_gt_validation_step38000.mp4
+#   FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/refcv6_gt_validation_step38000_compact.mp4
+# NOT landable (size / raw clip ids), dev-box local disk ONLY:
+#   C:/Users/Admin/qland/work/gtval/frames_refcv6_gt_validation_step38000/   (the rendered frames)
+#   C:/Users/Admin/qland/work/gtval/eval_agents.jsonl, eval_agents_3d.jsonl   (eval-only join LINE subsets; carry raw clip ids)
+#   C:/Users/Admin/qland/work/gtval/superseded_pre_patch/refcv6_gt_validation_step38000.mp4   (the pre-patch full reel)
+#   and, gitignored: raw/superseded_pre_patch/refcv6_gt_validation_step38000_compact.mp4
+
+## 2026-09-27 batch 1
+taniteval/tools/render_refcv6_gt_validation.py
+taniteval/tests/test_render_refcv6_gt_validation.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/LANDING_READY.txt
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/code/extract_eval_joins.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/code/ram_watchdog.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/code/chain.sh
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/clip_selection_gt.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_pooled.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_0191487845ef.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_9f8bedcfb9de.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_34765c024267.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_22d47ae7e052.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_59d98b34ae8b.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/render_record.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_9f8bedcfb9de_w104.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_0191487845ef_w064.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_34765c024267_w108.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_22d47ae7e052_w086.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/gtval.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/chain.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/ram_watchdog.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/extract_record_2d.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/extract_record_3d.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/attempts_aborted_and_failed.txt
+
+## 2026-09-27 batch 2 (RE-RENDERED with the box-head audit's drawing patch, installed verbatim: sampled, border-clipped cuboid
+##   edges; caption = the audit's verdict; camera A labelled PRE-PATCH. The stats are the same code on the same data.
+##   The batch-1 stills and render_record are replaced by these; the pre-patch versions sit in raw/superseded_pre_patch/)
+taniteval/tools/render_refcv6_gt_validation.py
+taniteval/tools/render_refcv6_map_video.py
+taniteval/tests/test_render_refcv6_gt_validation.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/LANDING_READY.txt
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/code/chain.sh
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/render_record.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_pooled.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_0191487845ef.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_9f8bedcfb9de.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_34765c024267.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_22d47ae7e052.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/gt_stats_59d98b34ae8b.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_9f8bedcfb9de_w104.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_0191487845ef_w064.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_34765c024267_w108.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/stills/still_22d47ae7e052_w086.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/gtval.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/chain.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/ram_watchdog.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/logs/attempts_aborted_and_failed.txt
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/superseded_pre_patch/render_record_pre_patch.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/superseded_pre_patch/gtval_pre_patch.log
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/superseded_pre_patch/stills/still_9f8bedcfb9de_w104.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/superseded_pre_patch/stills/still_0191487845ef_w064.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/superseded_pre_patch/stills/still_34765c024267_w108.png
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw/superseded_pre_patch/stills/still_22d47ae7e052_w086.png

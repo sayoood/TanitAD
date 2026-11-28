@@ -1,0 +1,86 @@
+{
+ "_evidence_class": "MEASURED (ours; CPU, production widths)",
+ "config_source": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/v6F_config.json",
+ "n_slot_queries": 74,
+ "arms": {
+  "cells": {
+   "total_params": 339764318,
+   "per_group": {
+    "aux": 1649792,
+    "encoder": 87284736,
+    "interp": 3222293,
+    "layer_str": 27442849,
+    "layer_tac": 29317165,
+    "planner": 788344,
+    "predictor_op": 189960707,
+    "readout": 98432
+   },
+   "interp_params": 3222293,
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0,
+    "perception_to_trunk": 0
+   },
+   "n_probed": {
+    "planner_to_encoder": 151,
+    "tactical_to_below": 342,
+    "strategic_to_below": 427,
+    "perception_to_trunk": 538
+   },
+   "pass": true,
+   "config": {
+    "isolate_planner_from_encoder": true,
+    "isolate_uplink": true,
+    "uplink": "stopgrad",
+    "shared_encoder": true,
+    "isolate_interp_from_encoder": true,
+    "agent_slots": true,
+    "slot_src": "cells"
+   }
+  },
+  "tokens": {
+   "total_params": 340087902,
+   "per_group": {
+    "aux": 1649792,
+    "encoder": 87284736,
+    "interp": 3545877,
+    "layer_str": 27442849,
+    "layer_tac": 29317165,
+    "planner": 788344,
+    "predictor_op": 189960707,
+    "readout": 98432
+   },
+   "interp_params": 3545877,
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0,
+    "perception_to_trunk": 0
+   },
+   "n_probed": {
+    "planner_to_encoder": 151,
+    "tactical_to_below": 342,
+    "strategic_to_below": 427,
+    "perception_to_trunk": 538
+   },
+   "pass": true,
+   "config": {
+    "isolate_planner_from_encoder": true,
+    "isolate_uplink": true,
+    "uplink": "stopgrad",
+    "shared_encoder": true,
+    "isolate_interp_from_encoder": true,
+    "agent_slots": true,
+    "slot_src": "tokens"
+   }
+  }
+ },
+ "miswired_control": {
+  "arm": "isolate_interp_from_encoder=False",
+  "raised_IsolationViolation": true,
+  "detail": "X3 gradient-isolation VIOLATED \u2014 live forbidden edges {'perception_to_trunk': ['encoder.pos', 'encoder.registers', 'encoder.patch.weight', 'encoder.patch.bias', 'encoder.blocks.0.ls1']}. Config: {'isolate_planner_from_encoder': True, 'isolate_uplink': True, 'uplink': 'stopgrad', 'shared_encoder': True, 'isolate_interp_from_encoder': False, 'agent_slots': True, 'slot_src': 'cells'}. A planner gradi",
+  "_read": "the guard is only a guard if it can fail; this arm is the demonstration that perception_to_trunk is non-vacuous"
+ },
+ "probe_isolation_note": "sp2_probe.py trains on a BANKED, DETACHED latent tensor with no autograd graph \u2014 strictly stronger than the structural edge above: no gradient path to the trunk exists even in principle."
+}

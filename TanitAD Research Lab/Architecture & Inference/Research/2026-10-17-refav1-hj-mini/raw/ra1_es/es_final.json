@@ -1,0 +1,115 @@
+{
+ "schema": "ra1-es-final-v1",
+ "prereg": "PREREG_RA1_ES.md",
+ "S_star": 250,
+ "cell": "b0.08g50",
+ "es1_reading": "ES-1: S* = 250 (seed-mean holdout delta -0.0409). ES-2 runs at S*: A1 b0.08g50 x2 seeds + A1x seed 0.",
+ "instrument_ok_all": true,
+ "A1x_control": {
+  "delta_A1x_minus_A1_ade6": {
+   "delta": -0.0011,
+   "lo": -0.0046,
+   "hi": 0.0026,
+   "separated": false,
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "loses_point": false,
+  "loses_separated": false,
+  "verdict": "INSTRUMENT BROKEN: A1x does not lose to A1 -- nothing else is read until this is fixed"
+ },
+ "K": {
+  "bar": "best(R0, A1, A2) - P10 ADE@6s < 0, separated at both seeds, |delta| > 2x the training-seed floor",
+  "candidates": {
+   "R0": {
+    "seed0": {
+     "ade6": 2.5771293689356227,
+     "p10_ade6": 2.562742903768671,
+     "arm_minus_p10": {
+      "delta": 0.0144,
+      "lo": -0.0361,
+      "hi": 0.0717,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": false,
+     "separated": false,
+     "beats_2x_floor": true
+    },
+    "seed1": {
+     "ade6": 2.5647697926965334,
+     "p10_ade6": 2.562742903768671,
+     "arm_minus_p10": {
+      "delta": 0.002,
+      "lo": -0.0493,
+      "hi": 0.0543,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": false,
+     "separated": false,
+     "beats_2x_floor": false
+    },
+    "mean_ade6": 2.570949580816078,
+    "PASS": false
+   },
+   "A1": {
+    "seed0": {
+     "ade6": 2.5110215740627817,
+     "p10_ade6": 2.562742903768671,
+     "arm_minus_p10": {
+      "delta": -0.0517,
+      "lo": -0.0792,
+      "hi": -0.0234,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    "seed1": {
+     "ade6": 2.5147787282773355,
+     "p10_ade6": 2.562742903768671,
+     "arm_minus_p10": {
+      "delta": -0.048,
+      "lo": -0.0764,
+      "hi": -0.0201,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below_p10": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    "mean_ade6": 2.512900151170059,
+    "PASS": true
+   },
+   "A2": {
+    "seed0": "missing",
+    "seed1": "missing",
+    "mean_ade6": null,
+    "PASS": false
+   }
+  },
+  "best_arm": "A1",
+  "PASS": true
+ },
+ "training_seed_floor_A1": 0.003757154214553804,
+ "not_read": {
+  "SENS": "needs A0 at S*: not in this sweep",
+  "COST": "not a PREREG_RA1_ES reading",
+  "branch_text_of_es2_verdict": "assumes A0 runs (it would print SENS FAIL); superseded by `reading` below"
+ },
+ "reading": "ES-2 INSTRUMENT STILL BROKEN at S* = 250: INSTRUMENT BROKEN: A1x does not lose to A1 -- nothing else is read until this is fixed. K is NOT read. Memorisation alone does not explain A1x. Next lever: what A1x's shuffled target leaves intact -- first, whether the world-model gradient moves the latent the readout reads.",
+ "outcome": "INSTRUMENT_BROKEN"
+}

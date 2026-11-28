@@ -1,0 +1,94 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file + WP-A's own bank C:/Users/Admin/wpa-readout/bank/k8r1)",
+ "tier": "NOT APPLICABLE - frozen-feature representation probe",
+ "question": "was E-READOUT-CEILING-1's dissociation an artifact of a MIRRORED azimuth address? Run on WP-A's OWN banked v6 features, both signs, everything else identical.",
+ "bank": "C:\\Users\\Admin\\wpa-readout\\bank\\k8r1",
+ "ckpt": "C:\\Users\\Admin\\k8-pull\\ckpt.pt",
+ "step": 30000,
+ "token_grid": [
+  16,
+  40
+ ],
+ "d_model": 128,
+ "patch_px": 16,
+ "n_cells": 7054,
+ "n_test_rows": 2974,
+ "n_scored_cells": 20978596,
+ "base_rate_test": 0.016124196299885846,
+ "n_pos_test": 338263,
+ "constant_control_ap": 0.016124196299885846,
+ "constant_equals_base_rate_exactly": true,
+ "wpa_banked_reference": {
+  "tok_16x40": 0.0295,
+  "tok_8x20": 0.033,
+  "tok_1x1": 0.0335,
+  "pix_16x40": 0.027,
+  "pos_only": 0.0325,
+  "note": "read from wpa-readout/raw/indexed_k8.json"
+ },
+ "arms": {
+  "pix_prog": {
+   "ap_val": 0.05519281563481161,
+   "ap_test": 0.059609711746339215
+  },
+  "tok_prog": {
+   "ap_val": 0.052849164500386174,
+   "ap_test": 0.045721348326876035
+  },
+  "pix_wpa": {
+   "ap_val": 0.03428429938656365,
+   "ap_test": 0.028399996470566805
+  },
+  "tok_wpa": {
+   "ap_val": 0.027305152323803816,
+   "ap_test": 0.029190988821281686
+  },
+  "pos_only": {
+   "ap_val": 0.028153307106073264,
+   "ap_test": 0.029685882415332092
+  },
+  "ladder_prog_16x40": {
+   "ap_val": 0.05283117983738734,
+   "ap_test": 0.045707061390051484
+  },
+  "ladder_prog_8x20": {
+   "ap_val": 0.05364987506456515,
+   "ap_test": 0.04412857750241909
+  },
+  "ladder_prog_4x4": {
+   "ap_val": 0.048397365216651236,
+   "ap_test": 0.039798690362980504
+  },
+  "ladder_prog_1x1": {
+   "ap_val": 0.0342428185176517,
+   "ap_test": 0.038580768038471866
+  },
+  "ladder_wpa_16x40": {
+   "ap_val": 0.02730401834199551,
+   "ap_test": 0.029185895970804343
+  },
+  "ladder_wpa_8x20": {
+   "ap_val": 0.03178349644307641,
+   "ap_test": 0.033749767326367267
+  },
+  "ladder_wpa_4x4": {
+   "ap_val": 0.03239040361808705,
+   "ap_test": 0.03643239436800925
+  },
+  "ladder_wpa_1x1": {
+   "ap_val": 0.03328245293018775,
+   "ap_test": 0.03762602396989184
+  }
+ },
+ "seed": 0,
+ "steps": 1500,
+ "ladder_prediction": "under a CORRECT address more azimuth resolution cannot hurt, so AP must FALL as the pool coarsens; WP-A's banked ladder RISES (16x40 0.0295 -> 1x1 0.0335), which is what a MIRRORED address produces because a mirrored feature actively misleads and destroying it helps.",
+ "wpa_banked_ladder": {
+  "tok_16x40": 0.0295,
+  "tok_8x20": 0.033,
+  "tok_4x8": 0.0318,
+  "tok_4x4": 0.0327,
+  "tok_4x2": 0.0332,
+  "tok_1x1": 0.0335
+ }
+}

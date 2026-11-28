@@ -1,0 +1,20 @@
+.................................F........................               [100%]
+================================== FAILURES ===================================
+____________________ test_n4_inside_2x_floor_is_not_proven ____________________
+
+    def test_n4_inside_2x_floor_is_not_proven():
+        # A-R8-NS1 AMENDMENT 2.  LEGAL .60 / s1 .59 -> floor 1.0 ; R7 .585 : seed-0 margin 1.5 is ABOVE 1x the floor but inside 2x,
+        # so it reads NOT PROVEN (the builder's 1x gate read PASS here -- the n4_floor_1x mutation restores it and must go red)
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.59, "STOP": 0.40, B.R7_ARM: 0.585})
+        n4 = r["bars"]["BAR-R8-N4"]
+        assert n4["seed_floor_x100"] == 1.0 and n4["arithmetic"]["R8_LEGAL"]["margin_x100"] == 1.5
+>       assert n4["per_arm_verdict"]["R8_LEGAL"] == "NOT PROVEN (margin inside 2x the inference-seed floor)"
+E       AssertionError: assert 'PASS' == 'NOT PROVEN (...e-seed floor)'
+E         
+E         - NOT PROVEN (margin inside 2x the inference-seed floor)
+E         + PASS
+
+tests\test_navsim_bars8.py:206: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_n4_inside_2x_floor_is_not_proven - As...
+1 failed, 57 passed, 2 deselected in 32.01s

@@ -1,0 +1,333 @@
+{
+ "tool": "rbvis.py",
+ "card": "PREREG_RBVIS.md",
+ "card_sha256": "412ebd743ba529cdd040256a5ab782d4f0c5022374029b4cdca6448645e059b0",
+ "smoke": false,
+ "evidence_class": "MEASURED (ours; frozen DINOv3 pooled features, frozen N1R adapters, small probe fit on train RB windows, CPU)",
+ "tier": "T0 vision-only decodability and T0 head read (NOT driving performance)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap on per-window correctness indicators, B=2000, seed 0, episodes of the RB windows; answers 'another draw of EPISODES' only",
+ "margin": 0.0383,
+ "windows": {
+  "disjointness": {
+   "table_train_vs_eval": 0,
+   "train_cache_files_vs_eval": 0,
+   "eval_cache_files_vs_train": 0
+  },
+  "train_rb_windows_labelled": 24722,
+  "train_episodes": 426,
+  "dropped_t_lt3": 515,
+  "dropped_bad_frame_count_clips": 0,
+  "train_windows_after_filters": 24207,
+  "train_windows_kept_stride": 12201,
+  "train_episodes_kept": 426,
+  "train_label_counts": [
+   8022,
+   2476,
+   1703,
+   0,
+   0
+  ],
+  "eval_rb_windows": 235,
+  "eval_scored_windows": 202,
+  "eval_scored_episodes": 16,
+  "eval_label_counts": [
+   159,
+   8,
+   35,
+   0,
+   0
+  ],
+  "inputs_sha256": {
+   "navtok_table.npz": "2836369e3e14a8c3c49a6b1a42116c36cda522ca42f98a6bcbc8c4e4d45c8992",
+   "join_train.npz": "978f41bf4f1e4c8b75bdfad31d39ee184b59634feb5da902157d306595ac3124",
+   "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"
+  }
+ },
+ "provenance": {
+  "train": {
+   "meta.json": "absent",
+   "first_manifest_row": {
+    "dtype": "float8_e4m3fn",
+    "enc_dtype": "bf16",
+    "source": "local256",
+    "grids": [
+     "4x10",
+     "8x20"
+    ]
+   }
+  },
+  "eval": {
+   "pipeline": "ra1a-pooled-v1",
+   "script_sha256": "4a2bf980d10f31c9c59ca2204651e9b26dbce5413febe770a66272666e76e648",
+   "encoder_module_sha256": "361bc287c306a8f40092ec95f6d3b06562ef32de75c9f5ea6235091196c93b48",
+   "model": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+   "enc_dtype": "bf16",
+   "torch": "2.11.0+cu128",
+   "transformers": "5.15.0"
+  },
+  "same_encoder_pipeline": false
+ },
+ "controls": {
+  "K-CONST": {
+   "majority_class": 0,
+   "S_pred_unique": [
+    0
+   ],
+   "S_accuracy": 0.7871287128712872,
+   "eval_share_of_majority": 0.7871287128712872,
+   "pass": true
+  },
+  "K-DISJOINT": {
+   "pass": true,
+   "table_train_vs_eval": 0,
+   "train_cache_files_vs_eval": 0,
+   "eval_cache_files_vs_train": 0
+  },
+  "R-SHUF-TRAIN": {
+   "accuracy": 0.7871287128712872,
+   "gain_over_S": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "E": 4,
+   "pass": true
+  }
+ },
+ "S": {
+  "accuracy": {
+   "point": 0.7871287128712872,
+   "lo": 0.6359,
+   "hi": 0.92,
+   "n_windows": 202,
+   "n_episodes": 16
+  },
+  "timing3_accuracy": 0.7871287128712872,
+  "side_given_turn": {
+   "n": 43,
+   "accuracy": 0.0
+  },
+  "macro_f1": 0.17617728531855956,
+  "pred_counts": [
+   202,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "arms": {
+  "H_s0": {
+   "accuracy": {
+    "point": 0.7673267326732673,
+    "lo": 0.6021,
+    "hi": 0.9091,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "timing3_accuracy": 0.8415841584158416,
+   "side_given_turn": {
+    "n": 43,
+    "accuracy": 0.13953488372093023
+   },
+   "macro_f1": 0.22424242424242427,
+   "pred_counts": [
+    171,
+    11,
+    20,
+    0,
+    0
+   ],
+   "source": "F:/TanitAD-scratch/strat1/navrb2/read/out/t0/eval_NAVRB2-N1R_s0_real.npz",
+   "H_minus_S": {
+    "delta": -0.01980198019801982,
+    "lo": -0.068,
+    "hi": 0.024,
+    "separated": false,
+    "n_windows": 202,
+    "n_episodes": 16
+   }
+  },
+  "H_s1": {
+   "accuracy": {
+    "point": 0.8217821782178217,
+    "lo": 0.6855,
+    "hi": 0.9324,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "timing3_accuracy": 0.8465346534653465,
+   "side_given_turn": {
+    "n": 43,
+    "accuracy": 0.3488372093023256
+   },
+   "macro_f1": 0.2781555749297685,
+   "pred_counts": [
+    174,
+    1,
+    27,
+    0,
+    0
+   ],
+   "source": "F:/TanitAD-scratch/strat1/navrb2/read/out/t0/eval_NAVRB2-N1R_s1_real.npz",
+   "H_minus_S": {
+    "delta": 0.03465346534653457,
+    "lo": -0.0283,
+    "hi": 0.1148,
+    "separated": false,
+    "n_windows": 202,
+    "n_episodes": 16
+   }
+  },
+  "V_s0": {
+   "ckpt_sha256": "35dc943e0c7989656359cb0d1973b9801f6220c71b395f8be5b5a1dd833b7048",
+   "adapter_tensor_sha256": {
+    "pos": "812990360c001682",
+    "time": "e46a3474c7d5d1ce",
+    "adapter.0.weight": "6da05f3d25dc8cec",
+    "adapter.1.weight": "bcdd49a6e12a7cbd"
+   },
+   "E": 4,
+   "holdout": {
+    "2": 0.6545528787260106,
+    "4": 0.6631278072682728
+   },
+   "accuracy": {
+    "point": 0.7673267326732673,
+    "lo": 0.6161,
+    "hi": 0.8991,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "timing3_accuracy": 0.7821782178217822,
+   "side_given_turn": {
+    "n": 43,
+    "accuracy": 0.16279069767441862
+   },
+   "macro_f1": 0.239233926128591,
+   "pred_counts": [
+    181,
+    13,
+    8,
+    0,
+    0
+   ],
+   "V_minus_S": {
+    "delta": -0.01980198019801982,
+    "lo": -0.0777,
+    "hi": 0.041,
+    "separated": false,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "V_minus_H": {
+    "delta": 0.0,
+    "lo": -0.0481,
+    "hi": 0.0533,
+    "separated": false,
+    "n_windows": 202,
+    "n_episodes": 16
+   }
+  },
+  "V_s1": {
+   "ckpt_sha256": "32b0336d9243dfeeb266bed88767c76ca34bf7fbd578cdf64184b5f10d78a03a",
+   "adapter_tensor_sha256": {
+    "pos": "f66a1ec712bd079d",
+    "time": "5aaf739262823741",
+    "adapter.0.weight": "62946b2ec21133cd",
+    "adapter.1.weight": "061357d38446033c"
+   },
+   "E": 2,
+   "holdout": {
+    "2": 0.6700694160881993,
+    "4": 0.6684360963658637
+   },
+   "accuracy": {
+    "point": 0.7227722772277227,
+    "lo": 0.5407,
+    "hi": 0.8827,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "timing3_accuracy": 0.7673267326732673,
+   "side_given_turn": {
+    "n": 43,
+    "accuracy": 0.06976744186046512
+   },
+   "macro_f1": 0.2051051051051051,
+   "pred_counts": [
+    174,
+    28,
+    0,
+    0,
+    0
+   ],
+   "V_minus_S": {
+    "delta": -0.06435643564356441,
+    "lo": -0.1237,
+    "hi": -0.0137,
+    "separated": true,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "V_minus_H": {
+    "delta": -0.09900990099009899,
+    "lo": -0.1991,
+    "hi": -0.0104,
+    "separated": true,
+    "n_windows": 202,
+    "n_episodes": 16
+   }
+  },
+  "RAND": {
+   "E": 4,
+   "holdout": {
+    "2": 0.6402613311555737,
+    "4": 0.6606778276847693
+   },
+   "accuracy": {
+    "point": 0.7227722772277227,
+    "lo": 0.5585,
+    "hi": 0.8757,
+    "n_windows": 202,
+    "n_episodes": 16
+   },
+   "timing3_accuracy": 0.7475247524752475,
+   "side_given_turn": {
+    "n": 43,
+    "accuracy": 0.09302325581395349
+   },
+   "macro_f1": 0.20955223880597015,
+   "pred_counts": [
+    176,
+    21,
+    5,
+    0,
+    0
+   ],
+   "V_minus_S": {
+    "delta": -0.06435643564356441,
+    "lo": -0.1813,
+    "hi": 0.0186,
+    "separated": false,
+    "n_windows": 202,
+    "n_episodes": 16
+   }
+  }
+ },
+ "RAND_flag": {
+  "RAND_carries": false,
+  "reading": "RAND does not carry"
+ },
+ "problems": [],
+ "verdict": {
+  "VIS_CARRIES": false,
+  "HEAD_GAP": false,
+  "suggestive_unseparated": false,
+  "reading": "VIS-SILENT"
+ },
+ "elapsed_s": 969.9
+}

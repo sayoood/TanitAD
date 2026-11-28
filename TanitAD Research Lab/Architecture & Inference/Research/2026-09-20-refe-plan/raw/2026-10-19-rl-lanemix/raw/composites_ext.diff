@@ -1,0 +1,104 @@
+49c49,50
+<     return rlh.load_dump(f"{a.dl}/{arm}/final/scores_update{u}_{ab}.npz", kv, ck)
+---
+>     root = DLD if arm == "r0d" else a.dl
+>     return rlh.load_dump(f"{root}/{arm}/final/scores_update{u}_{ab}.npz", kv, ck)
+54,55c55,56
+< res = {"tool": "composites/1", "prereg_B_sha256": open(os.path.join(HERE, "out/raw/PREREG_RL1_B_COMPOSITES.sha256")).read().split()[0],
+<        "prereg_A_sha256": open(os.path.join(HERE, "out/raw/PREREG_RL1_A_MECHANISM.sha256")).read().split()[0], "controls": {}, "states": {}}
+---
+> res = {"tool": "composites/1", "prereg_B_sha256": open("C:/Users/Admin/par18/rl/out/raw/PREREG_RL1_B_COMPOSITES.sha256").read().split()[0],
+>        "prereg_A_sha256": open("C:/Users/Admin/par18/rl/out/raw/PREREG_RL1_A_MECHANISM.sha256").read().split()[0], "controls": {}, "states": {}}
+57c58,59
+< STATES = [("r0", 250), ("r0", 500), ("r0", 750), ("r0", 1000), ("r0b", 250), ("r0b", 500)]
+---
+> STATES = [("r0", 1000), ("r0d", 250), ("r0d", 500), ("r0d", 750), ("r0d", 1000)]
+> DLD = "C:/Users/Admin/par18/rl/r0d_dl"
+74c76
+<     if (arm, u) in (("r0", 1000), ("r0", 500)):
+---
+>     if (arm, u) in (("r0", 1000), ("r0d", 1000)):
+84c86
+< # ---------------- controls
+---
+> # ---------------- controls (RL-2 extension: the git-show machinery check of the original is replaced by a REPRODUCTION of RL-1's banked composites_rlval.json)
+86,118c88,123
+< B, Aown, C0A = ld("r0", 1000, "B"), ld("r0", 1000, "A"), ld("c0", 1000, "A")
+< iB = pick(B)
+< C["all_RL_equals_B"] = {"V1_allheads_picks_equal": bool(np.array_equal(pick(compose(B, base0, range(7))), iB)),
+<                         "V2_allheads_picks_equal": bool(np.array_equal(pick(compose(B, C0A, range(7))), iB))}
+< C["zero_RL_equals_SRC"] = {"base0": bool(np.array_equal(pick(compose(B, base0, ())), ib0)), "C0A": bool(np.array_equal(pick(compose(B, C0A, ())), pick(C0A)))}
+< # machinery identity: H1 / H4 vs C0A at R0 u1000 against attribution.json (embedded from the banked file)
+< import subprocess
+< R = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-14-rls1b-attribution/attribution.json"
+< j = json.loads(subprocess.check_output(["git", "-C", "C:/Users/Admin/tanitad-push", "show", "FETCH_HEAD:" + R]))["Q5_hybrid_vs_C0A_u1000_x100"]
+< iC = pick(C0A)
+< H1 = compose(B, Aown, (2, 4, 5, 6))              # safety NC, DAC, TTC from R0-A, the rest from R0-B
+< H4 = compose(B, Aown, (0, 1, 3))                 # safety from R0-B, the rest from R0-A
+< mx = 0.0
+< rows = {}
+< for nm, x, key in (("H1", H1, "H1_safety_R0A_progress_R0B"), ("H4", H4, "H4_safety_R0B_progress_R0A")):
+<     d = delta(pick(x), iC, ("ttc", "nc", "ep", "dac", "pdms"))
+<     for q in ("ttc", "nc", "ep", "dac", "pdms"):
+<         ref = j[key][q.upper() if q != "pdms" else "PDMS"]
+<         mx = max(mx, abs(d[q][0] - ref["mean"]), abs(d[q][1] - ref["ci95"][0]), abs(d[q][2] - ref["ci95"][1]))
+<     rows[nm] = d
+< C["machinery_identity_H1_H4_vs_attribution_json_max_abs"] = mx
+< C["machinery_rows"] = rows
+< dB0 = delta(iB, ib0)
+< C["R0B_vs_base0_u1000"] = {"mine": dB0, "banked_text": {"pdms": [0.59, 0.14, 1.02], "ttc": [-0.17, -0.71, 0.38]}}
+< perm = np.random.default_rng(20261018).permutation(N)
+< xr = compose(B, base0[perm], (2, 4))
+< dr = delta(pick(xr), ib0)
+< C["regression_arm_shuffled_SRC"] = {"vs_base0": dr, "pdms_lb_below_zero": bool(dr["pdms"][1] < 0)}
+< C["boot_identity_max_abs"] = rlh.ctl_boot(kv, logs, 100 * (s["ttc"][ar, iB] - s["ttc"][ar, ib0]))[2]
+< r1 = res["states"]["r0_u1000"]
+< sel_v = min(("V1", "V2"), key=lambda v: (round(r1[v]["deficit"], 9), -r1[v]["vs_base0"]["pdms"][0]))
+< res["selected_variant"] = sel_v
+< res["selection"] = {v: {"deficit": r1[v]["deficit"], "label": r1[v]["label"], "dPDMS": r1[v]["vs_base0"]["pdms"]} for v in ("V1", "V2")}
+---
+> for arm in ("r0", "r0d"):
+>     B, Aown, C0A = ld(arm, 1000, "B"), ld(arm, 1000, "A"), ld("c0", 1000, "A")
+>     iB = pick(B)
+>     C[f"{arm}_u1000"] = {}
+>     k = C[f"{arm}_u1000"]
+>     k["all_RL_equals_B"] = {"V1_allheads_picks_equal": bool(np.array_equal(pick(compose(B, base0, range(7))), iB)),
+>                             "V2_allheads_picks_equal": bool(np.array_equal(pick(compose(B, C0A, range(7))), iB))}
+>     k["zero_RL_equals_SRC"] = {"base0": bool(np.array_equal(pick(compose(B, base0, ())), ib0)), "C0A": bool(np.array_equal(pick(compose(B, C0A, ())), pick(C0A)))}
+>     k["B_vs_base0"] = delta(iB, ib0)
+>     perm = np.random.default_rng(20261018).permutation(N)
+>     xr = compose(B, base0[perm], (2, 4))
+>     dr = delta(pick(xr), ib0)
+>     k["regression_arm_shuffled_SRC"] = {"vs_base0": dr, "pdms_lb_below_zero": bool(dr["pdms"][1] < 0)}
+>     k["boot_identity_max_abs"] = rlh.ctl_boot(kv, logs, 100 * (s["ttc"][ar, iB] - s["ttc"][ar, ib0]))[2]
+> # reproduction of RL-1's banked file (same code path; the R0 u1000 block must be identical to 1e-9)
+> banked = json.load(open("C:/Users/Admin/par18/rl/out/raw/composites_rlval.json"))["states"]["r0_u1000"]
+> mine = res["states"]["r0_u1000"]
+> mx, nk = 0.0, 0
+> 
+> 
+> def walk(x, y):
+>     global mx, nk
+>     if isinstance(x, dict):
+>         for kk in x:
+>             walk(x[kk], y[kk])
+>     elif isinstance(x, list):
+>         for p, q in zip(x, y):
+>             walk(p, q)
+>     elif isinstance(x, (int, float)) and not isinstance(x, bool):
+>         mx = max(mx, abs(x - y)); nk += 1
+>     else:
+>         assert x == y, (x, y)
+> 
+> 
+> walk(mine, banked)
+> C["reproduce_RL1_banked_r0_u1000"] = {"max_abs_over_numbers": mx, "n_numbers": nk}
+120,122c125,128
+< print("controls:", {k: v for k, v in C.items() if k not in ("machinery_rows", "R0B_vs_base0_u1000", "regression_arm_shuffled_SRC")})
+< print("regression arm dPDMS:", dr["pdms"], "| R0B vs base0:", dB0["pdms"], dB0["ttc"])
+< print("SELECTED", sel_v, res["selection"])
+---
+> print("controls:", json.dumps({k: v for k, v in C.items()})[:3000])
+> for st_ in ("r0d_u250", "r0d_u500", "r0d_u750", "r0d_u1000"):
+>     r = res["states"][st_]
+>     print(st_, {v: (r[v]["label"], [round(x, 3) for x in r[v]["vs_base0"]["pdms"]], round(r[v]["deficit"], 3)) for v in ("V1", "V2")})

@@ -1,0 +1,1191 @@
+{
+ "tool": "n1dw_strategic.py",
+ "tier": "T0 at the window's first tick (fresh ages)",
+ "evidence_class": "MEASURED (ours; T0 evals, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0; 'another draw of EPISODES' only",
+ "reading_r4": "T0 donor-nav passes: the evaluator swaps only the nav array, so the channel is held at ZERO beside the donor nav (the T1 donor rule would use the donor's rows; this deviation is named in the result)",
+ "rule": "ROUTE-COST = an RC-A cell that is a cost at BOTH seeds (navrb2_strategic.route_cost_cells, unchanged), read N1D - N1R",
+ "hmax": 16,
+ "RC-A_floor": {
+  "pos_err_m@30": 0.002532851366698896,
+  "pos_err_m@50": 0.05114829191819181,
+  "pos_err_m@80": 0.07917628217843031,
+  "head_err_deg@30": 0.07095049347764126,
+  "head_err_deg@50": 0.07556891237064711,
+  "head_err_deg@80": 0.12358008767828466
+ },
+ "pairs": {
+  "N1DW2-N1R": {
+   "0": {
+    "S_CKPT_R_minus_banked": {
+     "real": [
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.008196721311475419,
+       "lo": -0.0256,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "donor": [
+      {
+       "status": "OK",
+       "delta": 0.013333333333333364,
+       "lo": 0.0,
+       "hi": 0.0408,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.006711409395973145,
+       "lo": -0.0429,
+       "hi": 0.0278,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": -0.0207,
+       "hi": 0.0195,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "zero": [
+      {
+       "status": "OK",
+       "delta": -0.013333333333333364,
+       "lo": -0.0735,
+       "hi": 0.0448,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.01342281879194629,
+       "lo": -0.0522,
+       "hi": 0.0219,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": 0.0040983606557377095,
+       "lo": -0.0254,
+       "hi": 0.0359,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ]
+    },
+    "skill_real_minus_donor_R_minus_banked": [
+     {
+      "status": "OK",
+      "delta": -0.013333333333333308,
+      "lo": -0.0408,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 75,
+      "n_episodes": 19,
+      "arc_m": 30
+     },
+     {
+      "status": "OK",
+      "delta": 0.006711409395973256,
+      "lo": -0.0278,
+      "hi": 0.0429,
+      "separated": false,
+      "n_windows": 149,
+      "n_episodes": 23,
+      "arc_m": 50
+     },
+     {
+      "status": "OK",
+      "delta": -0.008196721311475419,
+      "lo": -0.0264,
+      "hi": 0.0124,
+      "separated": false,
+      "n_windows": 244,
+      "n_episodes": 25,
+      "arc_m": 80
+     }
+    ],
+    "on_RB_beside": {
+     "n_windows": 235,
+     "n_episodes": 16,
+     "R_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "banked_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "R_real_minus_banked_real": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ]
+    },
+    "route_setting_RC-A_R_minus_banked": {
+     "pos_err_m@30": {
+      "status": "OK",
+      "delta": -0.11271946743644112,
+      "delta_rounded": -0.1127,
+      "lo": -0.3276,
+      "hi": 0.018,
+      "separated": false,
+      "floor": 0.002532851366698896,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "pos_err_m@50": {
+      "status": "OK",
+      "delta": -0.28646514369256604,
+      "delta_rounded": -0.2865,
+      "lo": -0.8251,
+      "hi": 0.0478,
+      "separated": false,
+      "floor": 0.05114829191819181,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "pos_err_m@80": {
+      "status": "OK",
+      "delta": -0.792800109569952,
+      "delta_rounded": -0.7928,
+      "lo": -1.9132,
+      "hi": -0.0136,
+      "separated": true,
+      "floor": 0.07917628217843031,
+      "above_floor": true,
+      "gain": true,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     },
+     "head_err_deg@30": {
+      "status": "OK",
+      "delta": -0.4801250467154565,
+      "delta_rounded": -0.4801,
+      "lo": -1.3742,
+      "hi": 0.0651,
+      "separated": false,
+      "floor": 0.07095049347764126,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "head_err_deg@50": {
+      "status": "OK",
+      "delta": -0.729134716121381,
+      "delta_rounded": -0.7291,
+      "lo": -1.9379,
+      "hi": 0.0923,
+      "separated": false,
+      "floor": 0.07556891237064711,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "head_err_deg@80": {
+      "status": "OK",
+      "delta": -1.159282537760868,
+      "delta_rounded": -1.1593,
+      "lo": -2.6164,
+      "hi": -0.0734,
+      "separated": true,
+      "floor": 0.12358008767828466,
+      "above_floor": true,
+      "gain": true,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     }
+    }
+   },
+   "1": {
+    "S_CKPT_R_minus_banked": {
+     "real": [
+      {
+       "status": "OK",
+       "delta": -0.040000000000000036,
+       "lo": -0.0909,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": 0.006711409395973145,
+       "lo": 0.0,
+       "hi": 0.0227,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.004098360655737765,
+       "lo": -0.0252,
+       "hi": 0.0115,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "donor": [
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": -0.0526,
+       "hi": 0.0566,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": -0.035,
+       "hi": 0.0308,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": -0.0247,
+       "hi": 0.0233,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "zero": [
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": -0.069,
+       "hi": 0.0625,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": 0.013422818791946345,
+       "lo": -0.0333,
+       "hi": 0.058,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.0040983606557377095,
+       "lo": -0.0353,
+       "hi": 0.0275,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ]
+    },
+    "skill_real_minus_donor_R_minus_banked": [
+     {
+      "status": "OK",
+      "delta": -0.040000000000000036,
+      "lo": -0.1143,
+      "hi": 0.026,
+      "separated": false,
+      "n_windows": 75,
+      "n_episodes": 19,
+      "arc_m": 30
+     },
+     {
+      "status": "OK",
+      "delta": 0.006711409395973145,
+      "lo": -0.0267,
+      "hi": 0.0441,
+      "separated": false,
+      "n_windows": 149,
+      "n_episodes": 23,
+      "arc_m": 50
+     },
+     {
+      "status": "OK",
+      "delta": -0.004098360655737765,
+      "lo": -0.0332,
+      "hi": 0.0266,
+      "separated": false,
+      "n_windows": 244,
+      "n_episodes": 25,
+      "arc_m": 80
+     }
+    ],
+    "on_RB_beside": {
+     "n_windows": 235,
+     "n_episodes": 16,
+     "R_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "banked_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "R_real_minus_banked_real": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ]
+    },
+    "route_setting_RC-A_R_minus_banked": {
+     "pos_err_m@30": {
+      "status": "OK",
+      "delta": 0.001029549522275408,
+      "delta_rounded": 0.001,
+      "lo": -0.0664,
+      "hi": 0.0712,
+      "separated": false,
+      "floor": 0.002532851366698896,
+      "above_floor": false,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "pos_err_m@50": {
+      "status": "OK",
+      "delta": -0.033698703848513034,
+      "delta_rounded": -0.0337,
+      "lo": -0.2126,
+      "hi": 0.1366,
+      "separated": false,
+      "floor": 0.05114829191819181,
+      "above_floor": false,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "pos_err_m@80": {
+      "status": "OK",
+      "delta": -0.22915776396952747,
+      "delta_rounded": -0.2292,
+      "lo": -0.6718,
+      "hi": 0.1511,
+      "separated": false,
+      "floor": 0.07917628217843031,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     },
+     "head_err_deg@30": {
+      "status": "OK",
+      "delta": -0.03192834148573809,
+      "delta_rounded": -0.0319,
+      "lo": -0.3136,
+      "hi": 0.2608,
+      "separated": false,
+      "floor": 0.07095049347764126,
+      "above_floor": false,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "head_err_deg@50": {
+      "status": "OK",
+      "delta": -0.2739228300921974,
+      "delta_rounded": -0.2739,
+      "lo": -0.8521,
+      "hi": 0.2253,
+      "separated": false,
+      "floor": 0.07556891237064711,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "head_err_deg@80": {
+      "status": "OK",
+      "delta": -0.5555174312303475,
+      "delta_rounded": -0.5555,
+      "lo": -1.4104,
+      "hi": 0.1761,
+      "separated": false,
+      "floor": 0.12358008767828466,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     }
+    }
+   }
+  },
+  "N1DW4-N1R": {
+   "0": {
+    "S_CKPT_R_minus_banked": {
+     "real": [
+      {
+       "status": "OK",
+       "delta": -0.01333333333333342,
+       "lo": -0.0408,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.008196721311475419,
+       "lo": -0.0198,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "donor": [
+      {
+       "status": "OK",
+       "delta": -0.040000000000000036,
+       "lo": -0.0946,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.026845637583892606,
+       "lo": -0.0719,
+       "hi": 0.007,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.012295081967213128,
+       "lo": -0.0377,
+       "hi": 0.0127,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "zero": [
+      {
+       "status": "OK",
+       "delta": 0.0,
+       "lo": -0.0441,
+       "hi": 0.0341,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.01342281879194629,
+       "lo": -0.0333,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.01639344262295081,
+       "lo": -0.0437,
+       "hi": 0.0091,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ]
+    },
+    "skill_real_minus_donor_R_minus_banked": [
+     {
+      "status": "OK",
+      "delta": 0.026666666666666672,
+      "lo": -0.0206,
+      "hi": 0.0896,
+      "separated": false,
+      "n_windows": 75,
+      "n_episodes": 19,
+      "arc_m": 30
+     },
+     {
+      "status": "OK",
+      "delta": 0.02684563758389269,
+      "lo": -0.007,
+      "hi": 0.0719,
+      "separated": false,
+      "n_windows": 149,
+      "n_episodes": 23,
+      "arc_m": 50
+     },
+     {
+      "status": "OK",
+      "delta": 0.004098360655737765,
+      "lo": -0.0202,
+      "hi": 0.0269,
+      "separated": false,
+      "n_windows": 244,
+      "n_episodes": 25,
+      "arc_m": 80
+     }
+    ],
+    "on_RB_beside": {
+     "n_windows": 235,
+     "n_episodes": 16,
+     "R_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "banked_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "R_real_minus_banked_real": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ]
+    },
+    "route_setting_RC-A_R_minus_banked": {
+     "pos_err_m@30": {
+      "status": "OK",
+      "delta": -0.10191670569973144,
+      "delta_rounded": -0.1019,
+      "lo": -0.3043,
+      "hi": 0.0196,
+      "separated": false,
+      "floor": 0.002532851366698896,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "pos_err_m@50": {
+      "status": "OK",
+      "delta": -0.24736594854595317,
+      "delta_rounded": -0.2474,
+      "lo": -0.7971,
+      "hi": 0.0875,
+      "separated": false,
+      "floor": 0.05114829191819181,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "pos_err_m@80": {
+      "status": "OK",
+      "delta": -0.4947745810192794,
+      "delta_rounded": -0.4948,
+      "lo": -1.5656,
+      "hi": 0.2631,
+      "separated": false,
+      "floor": 0.07917628217843031,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     },
+     "head_err_deg@30": {
+      "status": "OK",
+      "delta": -0.5806932694249767,
+      "delta_rounded": -0.5807,
+      "lo": -1.5719,
+      "hi": 0.0611,
+      "separated": false,
+      "floor": 0.07095049347764126,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "head_err_deg@50": {
+      "status": "OK",
+      "delta": -0.5183527445290217,
+      "delta_rounded": -0.5184,
+      "lo": -1.8003,
+      "hi": 0.3339,
+      "separated": false,
+      "floor": 0.07556891237064711,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "head_err_deg@80": {
+      "status": "OK",
+      "delta": -0.523754135764559,
+      "delta_rounded": -0.5238,
+      "lo": -1.859,
+      "hi": 0.63,
+      "separated": false,
+      "floor": 0.12358008767828466,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     }
+    }
+   },
+   "1": {
+    "S_CKPT_R_minus_banked": {
+     "real": [
+      {
+       "status": "OK",
+       "delta": -0.026666666666666727,
+       "lo": -0.0667,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.006711409395973145,
+       "lo": -0.0291,
+       "hi": 0.0147,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": 0.004098360655737654,
+       "lo": -0.009,
+       "hi": 0.0178,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "donor": [
+      {
+       "status": "OK",
+       "delta": -0.040000000000000036,
+       "lo": -0.0926,
+       "hi": 0.0,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.026845637583892634,
+       "lo": -0.0574,
+       "hi": -0.0059,
+       "separated": true,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.012295081967213128,
+       "lo": -0.0319,
+       "hi": 0.0041,
+       "separated": false,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ],
+     "zero": [
+      {
+       "status": "OK",
+       "delta": -0.026666666666666672,
+       "lo": -0.0847,
+       "hi": 0.0233,
+       "separated": false,
+       "n_windows": 75,
+       "n_episodes": 19,
+       "arc_m": 30
+      },
+      {
+       "status": "OK",
+       "delta": -0.02684563758389258,
+       "lo": -0.068,
+       "hi": 0.0063,
+       "separated": false,
+       "n_windows": 149,
+       "n_episodes": 23,
+       "arc_m": 50
+      },
+      {
+       "status": "OK",
+       "delta": -0.02868852459016394,
+       "lo": -0.052,
+       "hi": -0.0049,
+       "separated": true,
+       "n_windows": 244,
+       "n_episodes": 25,
+       "arc_m": 80
+      }
+     ]
+    },
+    "skill_real_minus_donor_R_minus_banked": [
+     {
+      "status": "OK",
+      "delta": 0.013333333333333308,
+      "lo": -0.029,
+      "hi": 0.0625,
+      "separated": false,
+      "n_windows": 75,
+      "n_episodes": 19,
+      "arc_m": 30
+     },
+     {
+      "status": "OK",
+      "delta": 0.020134228187919434,
+      "lo": -0.0125,
+      "hi": 0.0573,
+      "separated": false,
+      "n_windows": 149,
+      "n_episodes": 23,
+      "arc_m": 50
+     },
+     {
+      "status": "OK",
+      "delta": 0.016393442622950727,
+      "lo": 0.0,
+      "hi": 0.0377,
+      "separated": false,
+      "n_windows": 244,
+      "n_episodes": 25,
+      "arc_m": 80
+     }
+    ],
+    "on_RB_beside": {
+     "n_windows": 235,
+     "n_episodes": 16,
+     "R_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "banked_real_minus_donor": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ],
+     "R_real_minus_banked_real": [
+      {
+       "arc_m": 30,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 50,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      },
+      {
+       "arc_m": 80,
+       "status": "n/a",
+       "reason": "below 30 windows or 10 episodes",
+       "n_windows": 0,
+       "n_episodes": 0
+      }
+     ]
+    },
+    "route_setting_RC-A_R_minus_banked": {
+     "pos_err_m@30": {
+      "status": "OK",
+      "delta": -0.05208028396161768,
+      "delta_rounded": -0.0521,
+      "lo": -0.221,
+      "hi": 0.0736,
+      "separated": false,
+      "floor": 0.002532851366698896,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "pos_err_m@50": {
+      "status": "OK",
+      "delta": -0.18369164695387807,
+      "delta_rounded": -0.1837,
+      "lo": -0.6144,
+      "hi": 0.1302,
+      "separated": false,
+      "floor": 0.05114829191819181,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "pos_err_m@80": {
+      "status": "OK",
+      "delta": -0.48549862079274053,
+      "delta_rounded": -0.4855,
+      "lo": -1.3113,
+      "hi": 0.1751,
+      "separated": false,
+      "floor": 0.07917628217843031,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     },
+     "head_err_deg@30": {
+      "status": "OK",
+      "delta": -0.21998761390298327,
+      "delta_rounded": -0.22,
+      "lo": -0.9485,
+      "hi": 0.3275,
+      "separated": false,
+      "floor": 0.07095049347764126,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2322,
+      "n_episodes": 137
+     },
+     "head_err_deg@50": {
+      "status": "OK",
+      "delta": -0.4338691455082859,
+      "delta_rounded": -0.4339,
+      "lo": -1.3543,
+      "hi": 0.3354,
+      "separated": false,
+      "floor": 0.07556891237064711,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "head_err_deg@80": {
+      "status": "OK",
+      "delta": -0.693916323640094,
+      "delta_rounded": -0.6939,
+      "lo": -1.8165,
+      "hi": 0.2959,
+      "separated": false,
+      "floor": 0.12358008767828466,
+      "above_floor": true,
+      "gain": false,
+      "cost": false,
+      "n_windows": 2294,
+      "n_episodes": 136
+     }
+    }
+   }
+  }
+ },
+ "route_cost": {
+  "N1DW2-N1R": [],
+  "N1DW4-N1R": []
+ }
+}

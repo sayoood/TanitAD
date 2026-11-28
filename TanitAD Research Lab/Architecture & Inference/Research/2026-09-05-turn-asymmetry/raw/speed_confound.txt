@@ -1,0 +1,59 @@
+================================================================================================
+1. THE SPEED OF A GT TURN, BY DIRECTION -- banked 40-window panel
+================================================================================================
+  stratum       n |   v0 med  v0 mean   v0 min | k_need med charge~k^2 med
+  turn_left    11 |    1.497    2.688    0.196 |    0.05008    2.508e-03
+  turn_right    8 |    5.428    5.335    1.120 |    0.01382    1.910e-04
+  lane_keep    21 |    7.018    6.478    0.000 |    0.01069    1.142e-04
+  -> LEFT needs 3.62x the curvature of RIGHT to be LABELLED a turn, and pays 13.14x the W_KAPPA charge for it.
+
+================================================================================================
+2. WHICH windows does each arm get right? -- ordered by v0
+================================================================================================
+  win  eid    v0   GT      | cos_argmax  ccos_argmax wk15        wk151       cos_wk      | ha0_ext     ol
+   30    6   0.20  turn_left| lane_keep   lane_keep   lane_keep   lane_keep   lane_keep   | lane_keep   lane_keep  
+   10    2   0.55  turn_left| lane_keep   lane_keep   lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   33    6   0.71  turn_left| lane_keep   lane_keep   lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   32    6   1.06  turn_left| lane_keep   turn_left   lane_keep   lane_keep   lane_keep   | lane_keep   lane_keep  
+   13    2   1.12  turn_right| turn_right  turn_right  turn_right  lane_keep   lane_keep   | turn_right  turn_right 
+   31    6   1.40  turn_left| lane_keep   turn_left   lane_keep   lane_keep   lane_keep   | lane_keep   lane_keep  
+   34    6   1.50  turn_left| lane_keep   turn_left   lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   27    5   3.26  turn_left| lane_keep   lane_keep   lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   38    7   3.47  turn_right| lane_keep   turn_right  turn_right  lane_keep   lane_keep   | lane_keep   turn_right 
+   36    7   3.63  turn_left| lane_keep   turn_right  lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   24    4   4.89  turn_right| turn_left   lane_keep   lane_keep   lane_keep   lane_keep   | turn_right  turn_right 
+    8    1   5.27  turn_left| lane_keep   turn_left   lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   23    4   5.37  turn_right| turn_left   turn_right  turn_right  lane_keep   lane_keep   | turn_right  turn_right 
+    4    0   5.48  turn_right| lane_keep   turn_right  lane_keep   lane_keep   lane_keep   | turn_right  turn_right 
+    0    0   5.65  turn_left| lane_keep   turn_right  lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+   19    3   5.81  turn_right| lane_keep   lane_keep   lane_keep   lane_keep   lane_keep   | turn_right  turn_right 
+   26    5   6.34  turn_left| lane_keep   lane_keep   lane_keep   lane_keep   lane_keep   | turn_left   turn_left  
+    3    0   6.38  turn_right| turn_right  turn_right  turn_right  lane_keep   lane_keep   | turn_right  turn_right 
+   18    3  10.15  turn_right| lane_keep   turn_right  lane_keep   lane_keep   lane_keep   | lane_keep   turn_right 
+
+================================================================================================
+3. RECALL BY SPEED BAND (both directions pooled) -- the confound test
+================================================================================================
+  median v0 over GT-turn windows = 3.627 m/s
+  cos_argmax     SLOW 1/10 = 0.1000   FAST 1/9 = 0.1111  |  LEFT 0/11 = 0.0000   RIGHT 2/8 = 0.2500
+  ccos_argmax    SLOW 5/10 = 0.5000   FAST 5/9 = 0.5556  |  LEFT 4/11 = 0.3636   RIGHT 6/8 = 0.7500
+  wk15           SLOW 2/10 = 0.2000   FAST 2/9 = 0.2222  |  LEFT 0/11 = 0.0000   RIGHT 4/8 = 0.5000
+  wk151          SLOW 0/10 = 0.0000   FAST 0/9 = 0.0000  |  LEFT 0/11 = 0.0000   RIGHT 0/8 = 0.0000
+  cos_wk         SLOW 0/10 = 0.0000   FAST 0/9 = 0.0000  |  LEFT 0/11 = 0.0000   RIGHT 0/8 = 0.0000
+  ha0_ext        (CONTROL, no planner) SLOW 0.6000 FAST 0.8889 | LEFT 0.7273 RIGHT 0.7500
+
+================================================================================================
+4. MATCHED-SPEED CONTRAST -- is there ANY left/right gap at matched v0?
+================================================================================================
+  GT-turn windows with v0 > 3.63 m/s (the band where RIGHT lives):
+    cos_argmax    LEFT 0/3   RIGHT 1/6
+    ccos_argmax   LEFT 1/3   RIGHT 4/6
+    wk15          LEFT 0/3   RIGHT 2/6
+    wk151         LEFT 0/3   RIGHT 0/6
+    cos_wk        LEFT 0/3   RIGHT 0/6
+  GT-turn windows with v0 <= 3.63 m/s (the band where LEFT lives):
+    cos_argmax    LEFT 0/8   RIGHT 1/2
+    ccos_argmax   LEFT 3/8   RIGHT 2/2
+    wk15          LEFT 0/8   RIGHT 2/2
+    wk151         LEFT 0/8   RIGHT 0/2
+    cos_wk        LEFT 0/8   RIGHT 0/2

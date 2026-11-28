@@ -1,0 +1,20 @@
+# HANDOFF_AUCMAP (AUCMAP agent, 2026-11-07 ~03:25, context limit reached). Folder `E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/aucmap/`
+Python `C:/Users/Admin/venvs/tanitad/Scripts/python.exe -I`, `CUDA_VISIBLE_DEVICES=-1`. Nothing staged, committed or pushed. No headline number exists yet.
+
+## DONE
+* `PREREG_AUCMAP.md` + `.sha256` (sha 1daf6fbceff28a46..., frozen 2026-11-07 02:59:17 +0100, before any gated number). `AMEND_1_AUCMAP.md` + `.sha256` restates control C6 only (P1P `go` is population-limited to v0<6: equal on all 608, differs on 81 of 253 windows at 6<=v0<8).
+* `aucmap.py` (Rig, row_stat = vectorised gapdecomp bootstrap with per-gate pair mask, evaluate = corner predicates, run_synthetic, anchor_curve, load_post, a_star, interval) and `test_aucmap.py`: C1 q=0 == RIC0, C2/C3 q=1 and a random mixed gate == `rr.rows_of` to 1e-9 on all 19 rows (LF100 s0 share_closed 0.8990 = P3 record), C4 realized AUC within 0.02, C5 no-skill, C6 (amended), C7 oracle gate, 8 checks PASS; 5 of 5 mutants RED. `raw/CONTROLS.json` holds it.
+* Control values [M, T1-kin, CEILING]: card-label AUC of the real posterior 0.709 (v0<6, n 608), 0.749 (v0<8, n 861); vs P1P go 0.785 (population-limited label). Oracle gate (AUC 1.0, q = GO rate 0.304, ALL scope, LF100): share_closed mean 0.517, ADE6 +0.011 / +0.006 m (ungated LF100: share 0.841 mean, ADE6 +1.256 m at s0). No-skill q=0.5 gate share 0.427 vs 0.5 x 0.841.
+
+## NEXT (one scoped agent; the run is the whole remaining deliverable)
+1. Write `run_all.py` (import aucmap, `A.init()`, `rig = A.Rig()` all 9 levers): for lever in 5 ADMISSIBLE + 4 CEILING, scope in {ANCHOR (v0<8), ALL}, label GO: `A.run_synthetic(rig, lever, name, "GO", scope, y, ...)`; the shuffled-label arm (`permuted=True`, LF100, ANCHOR scope); label KEEP for the 5 admissible levers, ANCHOR scope; `A.anchor_curve(rig, lever, post, y)` for the 5 admissible levers (post from `A.load_post`). Parallel by (lever, scope) with multiprocessing (each worker `A.init()`; 6 workers), background, markers `raw/AUCMAP.running|done|fail`, results `raw/AUCMAP_RESULT.json`. Cost estimate [E]: evaluate() skips bootstraps unless the point share >= 0.5; about 8 levels x 20 draws x 21 q per task.
+2. Aggregate per PREREG sections 8-10: A* per (lever, scope, corner) from `a_star(res, "rate_FULL")`, interval, headline A*_any (5 admissible, FULL, ANCHOR, GO), the anchor's corner status and the NEAR test (section 9), the outcome (i)/(ii)/(iii)/(iv), four families at the reached q or best q (STRATEGIC PAUSED). Write `RESULTS_AUCMAP.md`; every number [M] with tier T1-kin; CEILING-TYPE label on every table; avoid the banned words.
+3. Hand back <= 300 words with the manifest; note that S-POS b-arrays differ between arms (STRATEGIC PAUSED; no X - P10 contrast on S-POS is read).
+
+## 2026-11-07 03:17 (second AUCMAP agent): NEXT items 1-3 DONE
+* Card sha verified before anything (1daf6fbc...); card and amendment untouched.
+* `run_all.py` ran with 4 workers, 29 tasks (18 lever x scope GO, 1 shuffled, 5 KEEP, 5 anchor curves), about 3 min; markers `raw/AUCMAP.done` and `raw/AUCMAP.running.ended`; results `raw/AUCMAP_RESULT.json`, per task `raw/tasks/`.
+* Small code changes: `run_synthetic` also stores per-seed share (`share_s`) for the NEAR test; `test_aucmap.py` gained C9 (corner predicate known values) and 2 mutants; controls re-run after: 9 checks PASS, 7 of 7 mutants RED (`raw/CONTROLS.json`; the previous file is `raw/CONTROLS_v1_before_C9.json.aside`).
+* `aggregate.py` -> `raw/AGG.json`, `raw/FOUR_FAMILIES.md`; `write_results.py` -> `RESULTS_AUCMAP.md` (numbers are read from the JSON, not typed).
+* Verdict: outcome (iii). Reach rate 0.00 at every level for every lever, both scopes, label GO and KEEP, corner FULL and P; A*_any undefined (> 1.0); anchor reaches no corner; NEAR 0 of 5.
+* Remaining for the Master Mind: land the folder; add the outcome-(iii) row to GOALS_AND_CLAIMS.md; the next arm is a lever / decode-path change under its own card (card section 10 (iii)).

@@ -1,0 +1,68 @@
+10:53:47 WINDOWS {"disjointness": {"table_train_vs_eval": 0, "train_cache_files_vs_eval": 0, "eval_cache_files_vs_train": 0}, "train_rb_windows_labelled": 24722, "train_episodes": 426, "dropped_t_lt3": 515, "dropped_bad_frame_count_clips": 0, "train_windows_after_filters": 24207, "train_windows_kept_stride": 12201, "train_episodes_kept": 426, "train_label_counts": [8022, 2476, 1703, 0, 0], "eval_rb_windows": 235, "eval_scored_windows": 202, "eval_scored_episodes": 16, "eval_label_counts": [159, 8, 35, 0, 0], "inputs_sha256": {"navtok_table.npz": "2836369e3e14a8c3c49a6b1a42116c36cda522ca42f98a6bcbc8c4e4d45c8992", "join_train.npz": "978f41bf4f1e4c8b75bdfad31d39ee184b59634feb5da902157d306595ac3124", "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"}}
+10:53:47 PROVENANCE {"train": {"meta.json": "absent", "first_manifest_row": {"dtype": "float8_e4m3fn", "enc_dtype": "bf16", "source": "local256", "grids": ["4x10", "8x20"]}}, "eval": {"pipeline": "ra1a-pooled-v1", "script_sha256": "4a2bf980d10f31c9c59ca2204651e9b26dbce5413febe770a66272666e76e648", "encoder_module_sha256": "361bc287c306a8f40092ec95f6d3b06562ef32de75c9f5ea6235091196c93b48", "model": "facebook/dinov3-vitl16-pretrain-lvd1689m", "enc_dtype": "bf16", "torch": "2.11.0+cu128", "transformers": "5.15.0"}, "same_encoder_pipeline": false}
+11:00:20 features (12201, 4, 40, 1024) (202, 4, 40, 1024) 394s
+11:00:21 V_s0: holdout fit E=2 on 9752 windows
+F:\TanitAD-scratch\strat1\rbvis\rbvis.py:207: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  tot += float(loss) * len(ix)
+11:00:36     ep 1/2 loss 0.9756 13s
+11:00:50     ep 2/2 loss 0.6591 13s
+11:00:52 V_s0: E=2 held-out accuracy 0.6546
+11:00:52 V_s0: holdout fit E=4 on 9752 windows
+11:01:05     ep 1/4 loss 0.9706 13s
+11:01:17     ep 2/4 loss 0.6511 13s
+11:01:30     ep 3/4 loss 0.6315 13s
+11:01:43     ep 4/4 loss 0.6127 13s
+11:01:45 V_s0: E=4 held-out accuracy 0.6631
+11:01:45 V_s0: E chosen 4; final fit on 12201 windows
+11:02:01     ep 1/4 loss 0.9357 16s
+11:02:17     ep 2/4 loss 0.6625 16s
+11:02:33     ep 3/4 loss 0.6296 16s
+11:02:49     ep 4/4 loss 0.6126 16s
+11:02:49 V_s0 done acc 0.7673 543s
+11:02:49 V_s1: holdout fit E=2 on 9752 windows
+11:03:03     ep 1/2 loss 1.0268 13s
+11:03:15     ep 2/2 loss 0.6652 13s
+11:03:17 V_s1: E=2 held-out accuracy 0.6701
+11:03:17 V_s1: holdout fit E=4 on 9752 windows
+11:03:30     ep 1/4 loss 1.0223 13s
+11:03:43     ep 2/4 loss 0.6565 13s
+11:03:56     ep 3/4 loss 0.6365 13s
+11:04:09     ep 4/4 loss 0.6212 13s
+11:04:10 V_s1: E=4 held-out accuracy 0.6684
+11:04:10 V_s1: E chosen 2; final fit on 12201 windows
+11:04:28     ep 1/2 loss 0.9723 17s
+11:04:48     ep 2/2 loss 0.6722 20s
+11:04:48 V_s1 done acc 0.7228 661s
+11:04:48 RAND: holdout fit E=2 on 9752 windows
+11:05:03     ep 1/2 loss 1.0372 15s
+11:05:17     ep 2/2 loss 0.7369 14s
+11:05:20 RAND: E=2 held-out accuracy 0.6403
+11:05:20 RAND: holdout fit E=4 on 9752 windows
+11:05:34     ep 1/4 loss 1.0337 14s
+11:05:47     ep 2/4 loss 0.7090 14s
+11:06:00     ep 3/4 loss 0.6460 13s
+11:06:14     ep 4/4 loss 0.6205 14s
+11:06:16 RAND: E=4 held-out accuracy 0.6607
+11:06:16 RAND: E chosen 4; final fit on 12201 windows
+11:06:32     ep 1/4 loss 1.0040 17s
+11:06:49     ep 2/4 loss 0.6968 17s
+11:07:06     ep 3/4 loss 0.6351 17s
+11:07:23     ep 4/4 loss 0.6023 17s
+11:07:24 RAND done acc 0.7228 817s
+11:07:24 R-SHUF-TRAIN: holdout fit E=2 on 9752 windows
+11:07:38     ep 1/2 loss 1.0602 14s
+11:07:51     ep 2/2 loss 0.8021 13s
+11:07:52 R-SHUF-TRAIN: E=2 held-out accuracy 0.7178
+11:07:52 R-SHUF-TRAIN: holdout fit E=4 on 9752 windows
+11:08:05     ep 1/4 loss 1.0578 13s
+11:08:19     ep 2/4 loss 0.7976 14s
+11:08:32     ep 3/4 loss 0.7801 13s
+11:08:45     ep 4/4 loss 0.7674 13s
+11:08:47 R-SHUF-TRAIN: E=4 held-out accuracy 0.7187
+11:08:47 R-SHUF-TRAIN: E chosen 4; final fit on 12201 windows
+11:09:04     ep 1/4 loss 1.0079 18s
+11:09:20     ep 2/4 loss 0.7935 16s
+11:09:38     ep 3/4 loss 0.7718 18s
+11:09:55     ep 4/4 loss 0.7564 17s
+11:09:56 RESULT {"verdict": {"VIS_CARRIES": false, "HEAD_GAP": false, "suggestive_unseparated": false, "reading": "VIS-SILENT"}, "problems": []}

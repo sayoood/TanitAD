@@ -1,0 +1,1694 @@
+{
+ "populations": {
+  "all": {
+   "label": "every scored window",
+   "n_windows": 140,
+   "n_episodes": 20,
+   "n_distinct_tokens": 3,
+   "tokens": [
+    "LANE_KEEP x ADAPT_SPEED_FOR_CURVE",
+    "LANE_KEEP x CRUISE",
+    "TURN_R x ADAPT_SPEED_FOR_CURVE"
+   ],
+   "episodes": [
+    "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "060531e1-9935-482e-8c25-2abf37bdc41b",
+    "0fa2b231-435e-4700-9138-30f333dc5d6e",
+    "10804db8-d070-444e-a1f1-89c1871588d5",
+    "11e40da1-3d9e-4ee6-8406-8db2eed4a594",
+    "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+    "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+    "14157960-84db-4f4e-84f1-a4664086c6f8",
+    "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+    "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+    "16d89725-2f31-4a12-9244-658d2b83994c",
+    "17775e74-2d89-4c4f-9347-c58cea5585cb",
+    "18b72291-84f4-45e0-a736-908fc303020e",
+    "1bd040a8-1828-4f1f-933e-20fd53c45641",
+    "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+    "204b15b4-bd0a-4155-b01e-572c55197d0e",
+    "2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8",
+    "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+    "2602baaa-4364-4c50-8fb5-a27254c77cb3",
+    "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc"
+   ]
+  },
+  "curved_goal": {
+   "label": "the DECODER asked for curvature (goal_kappa_max > 0)",
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "tokens": [
+    "TURN_R x ADAPT_SPEED_FOR_CURVE"
+   ],
+   "episodes": [
+    "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+    "18b72291-84f4-45e0-a736-908fc303020e",
+    "1bd040a8-1828-4f1f-933e-20fd53c45641"
+   ]
+  },
+  "gt_turn_ge_5deg": {
+   "label": "the CAR actually turns \u2014 a DIFFERENT denominator, never mixed with the curved-goal stratum",
+   "n_windows": 27,
+   "n_episodes": 10,
+   "n_distinct_tokens": 3,
+   "tokens": [
+    "LANE_KEEP x ADAPT_SPEED_FOR_CURVE",
+    "LANE_KEEP x CRUISE",
+    "TURN_R x ADAPT_SPEED_FOR_CURVE"
+   ],
+   "episodes": [
+    "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "10804db8-d070-444e-a1f1-89c1871588d5",
+    "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+    "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+    "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+    "18b72291-84f4-45e0-a736-908fc303020e",
+    "1bd040a8-1828-4f1f-933e-20fd53c45641",
+    "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+    "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+    "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc"
+   ]
+  }
+ },
+ "controls": {
+  "X0_zero_model": {
+   "cos": {
+    "goal_ptp_max": 0.0,
+    "penalty_recovery_max_abs": 0.0,
+    "penalty_recovery_max_f64_ulps": 0.0,
+    "n_argmin_at_kappa_0": 140,
+    "n": 140,
+    "pass": true
+   },
+   "chord": {
+    "goal_ptp_max": 0.0,
+    "penalty_recovery_max_abs": 4.336808689942018e-19,
+    "penalty_recovery_max_f64_ulps": 0.5,
+    "n_argmin_at_kappa_0": 140,
+    "n": 140,
+    "pass": true
+   }
+  },
+  "X0_note": "the predictor is fed the ZERO action for every candidate, so it cannot see kappa: the goal term MUST be flat (peak-to-peak EXACTLY 0.0 \u2014 asserted, not toleranced) and total(k)-total(0) MUST recover W_KAPPA*k^2. This isolates the penalty exactly. \u26a0\ufe0f the recovery residue is quoted in float64 ULPs of the total, because the residue is a property of THIS analysis's subtraction and its absolute size therefore scales with the metric's magnitude: `cos` reads 0.0 and `chord` reads ~1 ULP for the SAME exact arithmetic.",
+  "X1_constant_cost": {
+   "c_total_max_abs": 0.0,
+   "argmin_index": 0,
+   "pass": true,
+   "note": "goal term dropped and every weight 0 -> c_total == 0 everywhere; the argmin is the FIRST index, a deterministic tie, so the argmin machinery cannot manufacture structure"
+  },
+  "X3_deliberate_regression": {
+   "n_distinct_cos": {
+    "n": 140,
+    "median": 3.0,
+    "mean": 3.0642857142857145,
+    "min": 1.0,
+    "max": 7.0,
+    "p25": 3.0,
+    "p75": 3.0
+   },
+   "n_distinct_sqrt_of_1mcos_f32": {
+    "n": 140,
+    "median": 3.0,
+    "mean": 2.835714285714286,
+    "min": 1.0,
+    "max": 7.0,
+    "p25": 2.0,
+    "p75": 3.0
+   },
+   "n_distinct_chord": {
+    "n": 140,
+    "median": 21.0,
+    "mean": 21.0,
+    "min": 21.0,
+    "max": 21.0,
+    "p25": 21.0,
+    "p75": 21.0
+   },
+   "n_windows_where_sqrt_beats_cos": 0,
+   "pass": true,
+   "note": "sqrt(2*(1-cos)) in f32 is the SAME ALGEBRA as the chord and must recover NOTHING; if it does, the panel cannot see the defect it exists to catch"
+  },
+  "X2a_c1_shipped_cost": {
+   "n": 5,
+   "worst_rel_err": 0.0,
+   "pass": true
+  },
+  "X2a_bit_identity": {
+   "n": 5,
+   "all_bit_identical": true,
+   "max_abs_diff": 0.0
+  },
+  "X2b_banked_winner": {
+   "n": 5,
+   "gate_m": 3.8e-06,
+   "max_abs_m": 0.0,
+   "pass": true,
+   "detail": [
+    {
+     "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+     "t": 3,
+     "max_abs_m": 0.0,
+     "gate_m": 3.8e-06,
+     "pass": true,
+     "plan_source": "cem"
+    },
+    {
+     "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+     "t": 13,
+     "max_abs_m": 0.0,
+     "gate_m": 3.8e-06,
+     "pass": true,
+     "plan_source": "baseline:hold_v0"
+    },
+    {
+     "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+     "t": 23,
+     "max_abs_m": 0.0,
+     "gate_m": 3.8e-06,
+     "pass": true,
+     "plan_source": "baseline:hold_v0"
+    },
+    {
+     "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+     "t": 33,
+     "max_abs_m": 0.0,
+     "gate_m": 3.8e-06,
+     "pass": true,
+     "plan_source": "baseline:hold_v0"
+    },
+    {
+     "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+     "t": 43,
+     "max_abs_m": 0.0,
+     "gate_m": 3.8e-06,
+     "pass": true,
+     "plan_source": "cem"
+    }
+   ]
+  }
+ },
+ "cells": {
+  "cos__A__full": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 3.0,
+    "mean": 3.0642857142857145,
+    "min": 1.0,
+    "max": 7.0,
+    "p25": 3.0,
+    "p75": 3.0
+   },
+   "q_realised_f32": {
+    "n": 139,
+    "median": 5.960464477539063e-08,
+    "mean": 6.08910759575933e-08,
+    "min": 5.960464477539063e-08,
+    "max": 1.1920928955078125e-07,
+    "p25": 5.960464477539063e-08,
+    "p75": 5.960464477539063e-08
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 1.1920928955078125e-07,
+    "mean": 1.3709068298339843e-07,
+    "min": 0.0,
+    "max": 3.5762786865234375e-07,
+    "p25": 1.1920928955078125e-07,
+    "p75": 1.7881393432617188e-07
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 5.81573639246713e-08,
+    "mean": 6.260691726790922e-08,
+    "min": 5.025434257621697e-08,
+    "max": 3.135599484505036e-07,
+    "p25": 5.5760792011527727e-08,
+    "p75": 6.006104913414134e-08
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 2.0,
+    "mean": 2.2785714285714285,
+    "min": 0.0,
+    "max": 6.0,
+    "p25": 2.0,
+    "p75": 3.0
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 0.9757186565548182,
+    "mean": 1.0503697740978428,
+    "min": 0.8431279603391886,
+    "max": 5.260662984102964,
+    "p25": 0.9355108519084752,
+    "p75": 1.0076571945101023
+   },
+   "n_goal_argmin_at_kappa_0": 5
+  },
+  "cos__A__plan": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 3.0,
+    "mean": 3.2857142857142856,
+    "min": 2.0,
+    "max": 12.0,
+    "p25": 3.0,
+    "p75": 3.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 5.960464477539063e-08,
+    "mean": 6.173338208879744e-08,
+    "min": 5.960464477539063e-08,
+    "max": 1.1920928955078125e-07,
+    "p25": 5.960464477539063e-08,
+    "p75": 5.960464477539063e-08
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 1.1920928955078125e-07,
+    "mean": 1.5156609671456472e-07,
+    "min": 5.960464477539063e-08,
+    "max": 7.748603820800781e-07,
+    "p25": 1.1920928955078125e-07,
+    "p75": 1.7881393432617188e-07
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 5.952489662286453e-08,
+    "mean": 8.035236132654587e-08,
+    "min": 5.0254214789546836e-08,
+    "max": 7.644788033722705e-07,
+    "p25": 5.637086455956286e-08,
+    "p75": 6.304650312927151e-08
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 2.0,
+    "mean": 2.507142857142857,
+    "min": 1.0,
+    "max": 13.0,
+    "p25": 2.0,
+    "p75": 3.0
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 0.9986620480194688,
+    "mean": 1.3480889220855066,
+    "min": 0.8431258164346218,
+    "max": 12.82582601159811,
+    "p25": 0.945746170822531,
+    "p75": 1.0577448010444641
+   },
+   "n_goal_argmin_at_kappa_0": 2
+  },
+  "cos__B__full": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 8.0,
+    "mean": 8.178571428571429,
+    "min": 3.0,
+    "max": 13.0,
+    "p25": 8.0,
+    "p75": 9.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 5.960464477539063e-08,
+    "mean": 5.960464477539063e-08,
+    "min": 5.960464477539063e-08,
+    "max": 5.960464477539063e-08,
+    "p25": 5.960464477539063e-08,
+    "p75": 5.960464477539063e-08
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 5.364418029785156e-07,
+    "mean": 5.436795098440988e-07,
+    "min": 1.1920928955078125e-07,
+    "max": 1.0728836059570312e-06,
+    "p25": 4.76837158203125e-07,
+    "p75": 5.960464477539062e-07
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 5.411413893097183e-07,
+    "mean": 5.274676432441363e-07,
+    "min": 1.329594013776969e-07,
+    "max": 1.0541796027219164e-06,
+    "p25": 5.138937991255865e-07,
+    "p75": 5.615308582562761e-07
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 9.0,
+    "mean": 9.121428571428572,
+    "min": 2.0,
+    "max": 18.0,
+    "p25": 8.0,
+    "p75": 10.0
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 9.078845974989235,
+    "mean": 8.849438583717815,
+    "min": 2.2306885961443186,
+    "max": 17.68619889765978,
+    "p25": 8.621707268990576,
+    "p75": 9.420924499630928
+   },
+   "n_goal_argmin_at_kappa_0": 11
+  },
+  "cos__B__plan": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 9.0,
+    "mean": 8.735714285714286,
+    "min": 6.0,
+    "max": 19.0,
+    "p25": 8.0,
+    "p75": 9.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 5.960464477539063e-08,
+    "mean": 5.960464477539063e-08,
+    "min": 5.960464477539063e-08,
+    "max": 5.960464477539063e-08,
+    "p25": 5.960464477539063e-08,
+    "p75": 5.960464477539063e-08
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 5.960464477539062e-07,
+    "mean": 6.054128919328962e-07,
+    "min": 2.980232238769531e-07,
+    "max": 2.86102294921875e-06,
+    "p25": 5.364418029785156e-07,
+    "p75": 5.960464477539062e-07
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 5.5788248226607e-07,
+    "mean": 5.943752458183381e-07,
+    "min": 2.0850966020447004e-07,
+    "max": 2.8736798310946554e-06,
+    "p25": 5.292929366462751e-07,
+    "p75": 5.826283022980494e-07
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 10.0,
+    "mean": 10.157142857142857,
+    "min": 5.0,
+    "max": 48.0,
+    "p25": 9.0,
+    "p75": 10.0
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 9.359714907594025,
+    "mean": 9.971961884147355,
+    "min": 3.498211607336998,
+    "max": 48.21234724111855,
+    "p25": 8.880061925388873,
+    "p75": 9.774880875367671
+   },
+   "n_goal_argmin_at_kappa_0": 9
+  },
+  "chord__A__full": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 21.0,
+    "mean": 21.0,
+    "min": 21.0,
+    "max": 21.0,
+    "p25": 21.0,
+    "p75": 21.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 4.122466634726152e-07,
+    "mean": 4.215028509081874e-07,
+    "min": 5.820766091346741e-10,
+    "max": 2.219807356595993e-06,
+    "p25": 4.0093254938255996e-07,
+    "p75": 4.247167453286238e-07
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 0.00033859984250739217,
+    "mean": 0.0003140195025480352,
+    "min": 4.824274219572544e-05,
+    "max": 0.0003629748825915158,
+    "p25": 0.0003208764101145789,
+    "p75": 0.00034579179191496223
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 0.0003386166874097604,
+    "mean": 0.00031402625473095634,
+    "min": 4.824264683312438e-05,
+    "max": 0.00036297860439057515,
+    "p25": 0.0003208855658604955,
+    "p75": 0.00034585913286647315
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 820.6162459450843,
+    "mean": 2264.258433133149,
+    "min": 27.280417453324944,
+    "max": 158974.5,
+    "p25": 806.8130376654256,
+    "p75": 835.6803153766176
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 23269561.572876412,
+    "mean": 21309586.71671285,
+    "min": 117476.78565642983,
+    "max": 24943699.760083877,
+    "p25": 22051088.178068515,
+    "p75": 23767258.634950735
+   },
+   "n_goal_argmin_at_kappa_0": 110
+  },
+  "chord__A__plan": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 21.0,
+    "mean": 21.0,
+    "min": 21.0,
+    "max": 21.0,
+    "p25": 21.0,
+    "p75": 21.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 4.1829480323940516e-07,
+    "mean": 5.025719734216442e-07,
+    "min": 3.4458935260772705e-08,
+    "max": 3.6922283470630646e-06,
+    "p25": 4.0420854929834604e-07,
+    "p75": 4.335724952397868e-07
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 0.00034298009995836765,
+    "mean": 0.0003333052990326126,
+    "min": 5.874678026884794e-05,
+    "max": 0.000434735557064414,
+    "p25": 0.00033323359821224585,
+    "p75": 0.000349559573805891
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 0.0003429828098984059,
+    "mean": 0.0003333139816018596,
+    "min": 5.8746847563715104e-05,
+    "max": 0.0004347719217092381,
+    "p25": 0.00033323581051312393,
+    "p75": 0.0003495713119512208
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 817.7376192524671,
+    "mean": 792.177371777636,
+    "min": 27.457939210493127,
+    "max": 1774.972972972973,
+    "p25": 794.7157578236888,
+    "p75": 833.6700202930543
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 23569599.225661416,
+    "mean": 22453425.688561276,
+    "min": 85806.05996179208,
+    "max": 29877298.959364,
+    "p25": 22899790.528158724,
+    "p75": 24022357.639204916
+   },
+   "n_goal_argmin_at_kappa_0": 110
+  },
+  "chord__B__full": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 21.0,
+    "mean": 21.0,
+    "min": 21.0,
+    "max": 21.0,
+    "p25": 21.0,
+    "p75": 21.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 1.6343838069587946e-06,
+    "mean": 1.4650539274693333e-06,
+    "min": 9.255018085241318e-09,
+    "max": 3.1739473342895508e-06,
+    "p25": 7.361086318269372e-07,
+    "p75": 2.1454543457366526e-06
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 0.001037842477671802,
+    "mean": 0.0009703355675031032,
+    "min": 6.336416117846966e-05,
+    "max": 0.0011101907584816217,
+    "p25": 0.0009839011763688177,
+    "p75": 0.001059168454958126
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 0.0010378591846821545,
+    "mean": 0.0009703423419561793,
+    "min": 6.336399326882167e-05,
+    "max": 0.001110194582641646,
+    "p25": 0.000983910292444563,
+    "p75": 0.001059192827604838
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 594.58779585223,
+    "mean": 3692.519466395473,
+    "min": 160.40957137878965,
+    "max": 112900.41509433962,
+    "p25": 479.9575344116143,
+    "p75": 1295.140534181919
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 18264616.992980577,
+    "mean": 22257146.15781575,
+    "min": 272146.2788335532,
+    "max": 35134369.481232196,
+    "p25": 17950760.395097822,
+    "p75": 32992490.28260752
+   },
+   "n_goal_argmin_at_kappa_0": 130
+  },
+  "chord__B__plan": {
+   "n_windows": 140,
+   "n_distinct_f32": {
+    "n": 140,
+    "median": 21.0,
+    "mean": 21.0,
+    "min": 21.0,
+    "max": 21.0,
+    "p25": 21.0,
+    "p75": 21.0
+   },
+   "q_realised_f32": {
+    "n": 140,
+    "median": 1.972206518985331e-06,
+    "mean": 1.7912871823812436e-06,
+    "min": 1.280568540096283e-09,
+    "max": 6.68293796479702e-06,
+    "p25": 9.274081094190478e-07,
+    "p75": 2.528249751776457e-06
+   },
+   "goal_ptp_along_kappa_f32": {
+    "n": 140,
+    "median": 0.0010506308171898127,
+    "mean": 0.0009983663796447218,
+    "min": 0.0001294334651902318,
+    "max": 0.001141048502177,
+    "p25": 0.0010217056260444224,
+    "p75": 0.0010709668858908117
+   },
+   "goal_ptp_along_kappa_f64": {
+    "n": 140,
+    "median": 0.001050633674673005,
+    "mean": 0.0009983750756319282,
+    "min": 0.00012943369938052483,
+    "max": 0.0011410518147721453,
+    "p25": 0.0010217079472408218,
+    "p75": 0.0010709783073366403
+   },
+   "steps_f32_ptp_over_realised_quantum": {
+    "n": 140,
+    "median": 516.052729941885,
+    "mean": 10823.252848224898,
+    "min": 54.70564052538062,
+    "max": 815961.0909090909,
+    "p25": 408.5608904054962,
+    "p75": 890.0545119090594
+   },
+   "steps_true_f64ptp_over_f32ulp": {
+    "n": 140,
+    "median": 18262031.653588876,
+    "mean": 20239092.897734422,
+    "min": 326367.5212283898,
+    "max": 35134566.833621405,
+    "p25": 17949044.08093439,
+    "p75": 19255144.71726488
+   },
+   "n_goal_argmin_at_kappa_0": 110
+  },
+  "GAIN__A__full": {
+   "n_distinct_f32_ratio": {
+    "n": 140,
+    "median": 7.0,
+    "mean": 7.251428571428572,
+    "min": 3.0,
+    "max": 21.0,
+    "p25": 7.0,
+    "p75": 7.0
+   },
+   "n_distinct_f32_ratio_cluster_ci": {
+    "median": 7.0,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     7.0,
+     7.0
+    ]
+   },
+   "steps_true_ratio": {
+    "n": 140,
+    "median": 23737957.228631996,
+    "mean": 21999006.733201556,
+    "min": 25110.588999495405,
+    "max": 25834706.566523913,
+    "p25": 23066133.36791841,
+    "p75": 24392930.850963756
+   },
+   "steps_true_ratio_cluster_ci": {
+    "median": 23737957.228631996,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     23374092.940346934,
+     24098652.693915956
+    ]
+   },
+   "note": "paired per window; the clusters are EPISODES"
+  },
+  "GAIN__A__plan": {
+   "n_distinct_f32_ratio": {
+    "n": 140,
+    "median": 7.0,
+    "mean": 6.988035714285715,
+    "min": 1.75,
+    "max": 10.5,
+    "p25": 7.0,
+    "p75": 7.0
+   },
+   "n_distinct_f32_ratio_cluster_ci": {
+    "median": 7.0,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     7.0,
+     7.0
+    ]
+   },
+   "steps_true_ratio": {
+    "n": 140,
+    "median": 23738201.866478804,
+    "mean": 21579196.114958264,
+    "min": 6690.10010616077,
+    "max": 25834951.152349688,
+    "p25": 23066094.044108186,
+    "p75": 24393162.660708334
+   },
+   "steps_true_ratio_cluster_ci": {
+    "median": 23738201.866478804,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     23374233.318421334,
+     24099161.45420169
+    ]
+   },
+   "note": "paired per window; the clusters are EPISODES"
+  },
+  "GAIN__B__full": {
+   "n_distinct_f32_ratio": {
+    "n": 140,
+    "median": 2.625,
+    "mean": 2.6439789377289378,
+    "min": 1.6153846153846154,
+    "max": 7.0,
+    "p25": 2.3333333333333335,
+    "p75": 2.625
+   },
+   "n_distinct_f32_ratio_cluster_ci": {
+    "median": 2.625,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     2.625,
+     2.625
+    ]
+   },
+   "steps_true_ratio": {
+    "n": 140,
+    "median": 1960598.3419304958,
+    "mean": 2516178.6423517414,
+    "min": 25481.435948002796,
+    "max": 4213311.652356229,
+    "p25": 1928069.1287236188,
+    "p75": 3856336.563759077
+   },
+   "steps_true_ratio_cluster_ci": {
+    "median": 1960598.3419304958,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     1936121.8212073422,
+     2900679.7707137764
+    ]
+   },
+   "note": "paired per window; the clusters are EPISODES"
+  },
+  "GAIN__B__plan": {
+   "n_distinct_f32_ratio": {
+    "n": 140,
+    "median": 2.3333333333333335,
+    "mean": 2.471071768144136,
+    "min": 1.105263157894737,
+    "max": 3.5,
+    "p25": 2.3333333333333335,
+    "p75": 2.625
+   },
+   "n_distinct_f32_ratio_cluster_ci": {
+    "median": 2.3333333333333335,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     2.3333333333333335,
+     2.625
+    ]
+   },
+   "steps_true_ratio": {
+    "n": 140,
+    "median": 1937698.2856419415,
+    "mean": 2206102.645802547,
+    "min": 6769.376309271308,
+    "max": 4213327.95025331,
+    "p25": 1889978.3333855716,
+    "p75": 1990218.3249333012
+   },
+   "steps_true_ratio_cluster_ci": {
+    "median": 1937698.2856419415,
+    "n": 140,
+    "n_clusters": 20,
+    "ci95": [
+     1908499.1383617832,
+     1966597.4606050702
+    ]
+   },
+   "note": "paired per window; the clusters are EPISODES"
+  }
+ },
+ "weights": {
+  "cos__A__full": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": -3.967211115174507e-09,
+    "mean": 9.644385801088617e-08,
+    "min": -4.221382021718512e-09,
+    "max": 1.8920177131676041e-06,
+    "p25": -4.0716471305657365e-09,
+    "p75": -3.819019989137473e-09
+   },
+   "n_goal_advantage_positive": 5,
+   "n_turn_total_cost_wins_at_shipped_w": 0,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": -3.0993837620271034e-08,
+    "mean": 5.433224059707203e-08,
+    "min": -3.2979547877809326e-08,
+    "max": 5.655025768701799e-07,
+    "p25": -3.180974401112654e-08,
+    "p75": -2.983609441885965e-08
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 1.4279949445139548e-06,
+    "mean": 1.6409460100730293e-06,
+    "min": 1.3192960862662415e-06,
+    "max": 5.458797425195171e-06,
+    "p25": 1.3825617761753504e-06,
+    "p75": 1.4584998930811108e-06
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": -6.361948802225308e-07,
+    "mean": -0.026476695094765468,
+    "min": -0.5024743599175667,
+    "max": -5.96721888377193e-07,
+    "p25": -6.595909575561865e-07,
+    "p75": -6.198767524054206e-07
+   },
+   "n_tipping_weight_is_a_deletion": 25,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "cos__A__plan": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": 8.473350687765446e-09,
+    "mean": 1.4615021915886927e-06,
+    "min": 7.855597949912863e-09,
+    "max": 2.815536829170462e-05,
+    "p25": 8.2008237978215e-09,
+    "p75": 8.722952249407001e-09
+   },
+   "n_goal_advantage_positive": 25,
+   "n_turn_total_cost_wins_at_shipped_w": 0,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": 6.619805392047105e-08,
+    "mean": 1.1761751155458934e-06,
+    "min": 6.137186053407784e-08,
+    "max": 8.415319376176198e-06,
+    "p25": 6.406893753899797e-08,
+    "p75": 6.814806617005716e-08
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 2.2952682088295258e-06,
+    "mean": 3.142122356525333e-06,
+    "min": 2.1268017319497896e-06,
+    "max": 1.4221017896609563e-05,
+    "p25": 2.2243931030452298e-06,
+    "p75": 2.363511231173731e-06
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": 1.2813787507799593e-06,
+    "mean": -0.026263404724755763,
+    "min": -0.49837071128600346,
+    "max": 1.362961323401143e-06,
+    "p25": 1.2274372106815568e-06,
+    "p75": 1.323961078409421e-06
+   },
+   "n_tipping_weight_is_a_deletion": 20,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "cos__B__full": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": -6.376026506771382e-08,
+    "mean": 7.50781922853605e-09,
+    "min": -6.887335368688241e-08,
+    "max": 1.3907589599959636e-06,
+    "p25": -6.539823305118375e-08,
+    "p75": -6.152515630297728e-08
+   },
+   "n_goal_advantage_positive": 3,
+   "n_turn_total_cost_wins_at_shipped_w": 0,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": -4.981270834252628e-07,
+    "mean": -3.879253980161464e-07,
+    "min": -5.304201010335296e-07,
+    "max": 4.1568203627771156e-07,
+    "p25": -5.109237086193915e-07,
+    "p75": -4.806652957596367e-07
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 1.2645500241381667e-05,
+    "mean": 1.1895409696593971e-05,
+    "min": 4.47753485954827e-06,
+    "max": 1.660770960476565e-05,
+    "p25": 1.2220057343803601e-05,
+    "p75": 1.297220979523672e-05
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": -1.0183551741974102e-05,
+    "mean": -0.02649059135117626,
+    "min": -0.5025526815997284,
+    "max": -9.46758247819125e-06,
+    "p25": -1.0495555783576102e-05,
+    "p75": -9.866663135273991e-06
+   },
+   "n_tipping_weight_is_a_deletion": 25,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "cos__B__plan": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": 7.772068622013961e-08,
+    "mean": 1.5872806489181102e-06,
+    "min": 7.210389207923384e-08,
+    "max": 2.9097260932364755e-05,
+    "p25": 7.521715927882866e-08,
+    "p75": 8.001298856807892e-08
+   },
+   "n_goal_advantage_positive": 25,
+   "n_turn_total_cost_wins_at_shipped_w": 0,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": 6.07192876433823e-07,
+    "mean": 1.709168717147489e-06,
+    "min": 5.633116710994642e-07,
+    "max": 8.696840374484727e-06,
+    "p25": 5.876340717107343e-07,
+    "p75": 6.251014889795085e-07
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 1.572210577005517e-05,
+    "mean": 1.7766503128457952e-05,
+    "min": 1.465030988467841e-05,
+    "max": 5.914746206425735e-05,
+    "p25": 1.5346220594292245e-05,
+    "p75": 1.6152643123046314e-05
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": 1.1752681434214684e-05,
+    "mean": -0.02624375184030157,
+    "min": -0.4982235405571825,
+    "max": 1.2502029779590169e-05,
+    "p25": 1.1266233421989283e-05,
+    "p75": 1.2143857528676459e-05
+   },
+   "n_tipping_weight_is_a_deletion": 20,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "chord__A__full": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": -5.028481636679324e-05,
+    "mean": 2.8189468293783516e-06,
+    "min": -5.197721181137887e-05,
+    "max": 0.0005034798575686396,
+    "p25": -5.1032054017872236e-05,
+    "p75": -4.95136733304464e-05
+   },
+   "n_goal_advantage_positive": 5,
+   "n_turn_total_cost_wins_at_shipped_w": 0,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": -0.0003928501377898014,
+    "mean": -0.00024261648379817678,
+    "min": -0.00040607197753463845,
+    "max": 0.00039855711453135414,
+    "p25": -0.00039868793208633113,
+    "p75": -0.00038682558266614866
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 0.007335231791583149,
+    "mean": 0.006215780128676658,
+    "min": 0.0013676097809387116,
+    "max": 0.007558296208666308,
+    "p25": 0.007165141254499381,
+    "p75": 0.007451508196592859
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": -0.00789626090717777,
+    "mean": -0.02605130399474301,
+    "min": -0.42410125796027814,
+    "max": -0.0010040463990936507,
+    "p25": -0.008048456805531129,
+    "p75": -0.007816133483524272
+   },
+   "n_tipping_weight_is_a_deletion": 20,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "chord__A__plan": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": 0.0001301794958357991,
+    "mean": 0.000714707963709967,
+    "min": 0.00012534430862210918,
+    "max": 0.007504048013144913,
+    "p25": 0.00012806891792737756,
+    "p75": 0.0001320829455281811
+   },
+   "n_goal_advantage_positive": 25,
+   "n_turn_total_cost_wins_at_shipped_w": 5,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": 0.0010170273369094522,
+    "mean": 0.0017681392612974287,
+    "min": 0.0009792524358482252,
+    "max": 0.005674984944324967,
+    "p25": 0.0010005384465833643,
+    "p75": 0.0010318980380068518
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 0.010544520489345609,
+    "mean": 0.008860406423147164,
+    "min": 0.0019016364931818222,
+    "max": 0.01086929804273095,
+    "p25": 0.0103106093929497,
+    "p75": 0.010711220842088563
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": 0.020340546738189042,
+    "mean": 0.08518135770282234,
+    "min": 0.019585048716964506,
+    "max": 0.669737543981207,
+    "p25": 0.020010768931667287,
+    "p75": 0.020637960760137037
+   },
+   "n_tipping_weight_is_a_deletion": 0,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "chord__B__full": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": -0.00030572206667570665,
+    "mean": -0.00023029189927473514,
+    "min": -0.00031543844832096826,
+    "max": 0.00036331560170490456,
+    "p25": -0.0003103691032035623,
+    "p75": -0.00029966040513866967
+   },
+   "n_goal_advantage_positive": 3,
+   "n_turn_total_cost_wins_at_shipped_w": 0,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": -0.002388453706241374,
+    "mean": -0.0019198961565542643,
+    "min": -0.002464362939762609,
+    "max": 0.00013886300005200926,
+    "p25": -0.002424758680032387,
+    "p75": -0.002341096974286941
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 0.023721642326103586,
+    "mean": 0.02025977169329088,
+    "min": 0.002833296316290018,
+    "max": 0.024463093394852444,
+    "p25": 0.023251134569168684,
+    "p75": 0.024096808555660036
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": -0.04800100292661237,
+    "mean": -0.06247487461864753,
+    "min": -0.4460019234922441,
+    "max": -0.024941095113674504,
+    "p25": -0.048715096682517264,
+    "p75": -0.047187967414471815
+   },
+   "n_tipping_weight_is_a_deletion": 22,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  },
+  "chord__B__plan": {
+   "n_windows": 25,
+   "n_episodes": 4,
+   "n_distinct_tokens": 1,
+   "goal_advantage_f64": {
+    "n": 25,
+    "median": 0.00039426053884176196,
+    "mean": 0.0009448847256732374,
+    "min": 0.0003797470003271585,
+    "max": 0.007628533401963456,
+    "p25": 0.00038785863226021655,
+    "p75": 0.00040003246991842566
+   },
+   "n_goal_advantage_positive": 25,
+   "n_turn_total_cost_wins_at_shipped_w": 25,
+   "w_kappa_tip_scale_both_weights": {
+    "n": 25,
+    "median": 0.003067563523004839,
+    "mean": 0.003448782009814758,
+    "min": 0.0022800818758341207,
+    "max": 0.006201998715558417,
+    "p25": 0.0030237323210588196,
+    "p75": 0.0031135707921977757
+   },
+   "w_kappa_commensurable_ptp_over_kmax2": {
+    "n": 25,
+    "median": 0.02769884235379311,
+    "mean": 0.023997770878088326,
+    "min": 0.007374763163721179,
+    "max": 0.028526295369303626,
+    "p25": 0.027063505149882938,
+    "p75": 0.028110466154713295
+   },
+   "w_kappa_only_holding_w_jerk": {
+    "n": 25,
+    "median": 0.06160321075025331,
+    "mean": 0.12114647766813867,
+    "min": 0.05933547030005857,
+    "max": 0.6891883864754739,
+    "p25": 0.060602912821617186,
+    "p75": 0.06250507500376502
+   },
+   "n_tipping_weight_is_a_deletion": 0,
+   "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+  }
+ },
+ "argmin": {
+  "note": "the kappa-marginal argmin of the TOTAL cost at a == 0. The SHIPPED-w column is the DECISION number; the derived-w column is a SIZING number and is labelled as such \u2014 at a weight chosen from these same windows roughly half of them move BY CONSTRUCTION. `sign_matches_human` is scored ONLY on the geometric turn stratum and uses the SIGNED ground-truth heading change, which is ground truth and only ever describes a window.",
+  "by_cell": {
+   "cos__A__full": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 0,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 1.4279949445139548e-06,
+    "n_argmin_off_zero_at_derived_w": 23,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 0,
+    "n_sign_matches_human_at_derived_w": 6
+   },
+   "cos__A__plan": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 0,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 2.2952682088295258e-06,
+    "n_argmin_off_zero_at_derived_w": 30,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 0,
+    "n_sign_matches_human_at_derived_w": 7
+   },
+   "cos__B__full": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 0,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 1.2645500241381667e-05,
+    "n_argmin_off_zero_at_derived_w": 9,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 0,
+    "n_sign_matches_human_at_derived_w": 1
+   },
+   "cos__B__plan": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 0,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 1.572210577005517e-05,
+    "n_argmin_off_zero_at_derived_w": 30,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 0,
+    "n_sign_matches_human_at_derived_w": 7
+   },
+   "chord__A__full": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 0,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 0.007335231791583149,
+    "n_argmin_off_zero_at_derived_w": 27,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 0,
+    "n_sign_matches_human_at_derived_w": 6
+   },
+   "chord__A__plan": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 19,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": -0.002714285653616701,
+     "min": -0.019999999552965164,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 0.010544520489345609,
+    "n_argmin_off_zero_at_derived_w": 24,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 5,
+    "n_sign_matches_human_at_derived_w": 6
+   },
+   "chord__B__full": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 0,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 0.023721642326103586,
+    "n_argmin_off_zero_at_derived_w": 4,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 0,
+    "n_sign_matches_human_at_derived_w": 0
+   },
+   "chord__B__plan": {
+    "n_windows": 140,
+    "w_shipped": 0.05,
+    "n_argmin_off_zero_at_shipped_w": 24,
+    "argmin_kappa_at_shipped_w": {
+     "n": 140,
+     "median": 0.0,
+     "mean": -0.007714285541857992,
+     "min": -0.05999999865889549,
+     "max": 0.0,
+     "p25": 0.0,
+     "p75": 0.0
+    },
+    "w_derived_commensurable_median": 0.02769884235379311,
+    "n_argmin_off_zero_at_derived_w": 28,
+    "n_gt_turners": 27,
+    "n_sign_matches_human_at_shipped_w": 6,
+    "n_sign_matches_human_at_derived_w": 7
+   }
+  }
+ },
+ "strata": {
+  "note": "the curved-goal stratum is what the DECODER asked for; the gt_turn stratum is where the CAR turns. DIFFERENT denominators; never mixed.",
+  "by_cell": {
+   "cos__A__full": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 0,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": 3.935359167757442e-08,
+     "min": -4.221382021718512e-09,
+     "max": 1.0981977254242992e-06,
+     "p25": -3.952448812682974e-09,
+     "p75": 0.0
+    }
+   },
+   "cos__A__plan": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 0,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": 5.544278619910396e-07,
+     "min": 0.0,
+     "max": 1.4875700745542453e-05,
+     "p25": 0.0,
+     "p75": 8.288719044458048e-09
+    }
+   },
+   "cos__B__full": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 0,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": 1.8939624107722003e-08,
+     "min": -6.887335368688241e-08,
+     "max": 1.0981977254242992e-06,
+     "p25": -6.345345376912448e-08,
+     "p75": 0.0
+    }
+   },
+   "cos__B__plan": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 0,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": 5.777117037674839e-07,
+     "min": 0.0,
+     "max": 1.4875700745542453e-05,
+     "p25": 0.0,
+     "p75": 7.601725721118058e-08
+    }
+   },
+   "chord__A__full": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 0,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": -1.0967726784579058e-06,
+     "min": -5.197721181137887e-05,
+     "max": 0.000402447329767258,
+     "p25": -5.0202730874093334e-05,
+     "p75": 0.0
+    }
+   },
+   "chord__A__plan": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 1,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": 0.0002489792766359154,
+     "min": 0.0,
+     "max": 0.0054544845302986296,
+     "p25": 0.0,
+     "p75": 0.0001287533990009819
+    }
+   },
+   "chord__B__full": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 0,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": -8.696395099025726e-05,
+     "min": -0.00031543844832096826,
+     "max": 0.000402447329767258,
+     "p25": -0.00030533061510634317,
+     "p75": 0.0
+    }
+   },
+   "chord__B__plan": {
+    "n_windows": 27,
+    "n_episodes": 10,
+    "n_turn_total_cost_wins_at_shipped_w": 10,
+    "goal_advantage_f64": {
+     "n": 27,
+     "median": 0.0,
+     "mean": 0.0003353936754535084,
+     "min": 0.0,
+     "max": 0.0054544845302986296,
+     "p25": 0.0,
+     "p75": 0.0003899160045174403
+    }
+   }
+  }
+ },
+ "tool": "cost_repair_probe.py",
+ "tier": "T0",
+ "tier_note": "a COST/WM diagnostic anchored at t0; every win count is a property of the COST, never of the car. No driving claim without the T1 adapter.",
+ "evidence_class": "MEASURED",
+ "arm": "ep2",
+ "meta": {
+  "ckpt": "C:/Users/Admin/refav1_eval_slice/ckpt_ep2/ckpt.pt",
+  "config": "C:/Users/Admin/refav1_eval_slice/ckpt_ep2/config.json",
+  "step": 1000,
+  "config_source": "C:/Users/Admin/refav1_eval_slice/ckpt_ep2/config.json",
+  "n_windows": 140,
+  "n_episodes": 20,
+  "window_stride": 10,
+  "kappa_axis": [
+   -0.20000000298023224,
+   -0.18000000715255737,
+   -0.1599999964237213,
+   -0.14000000059604645,
+   -0.11999999731779099,
+   -0.10000000149011612,
+   -0.07999999821186066,
+   -0.05999999865889549,
+   -0.03999999910593033,
+   -0.019999999552965164,
+   0.0,
+   0.019999999552965164,
+   0.03999999910593033,
+   0.05999999865889549,
+   0.07999999821186066,
+   0.10000000149011612,
+   0.11999999731779099,
+   0.14000000059604645,
+   0.1599999964237213,
+   0.18000000715255737,
+   0.20000000298023224
+  ],
+  "accel_axis": [
+   0.0
+  ],
+  "kappa_max": 0.2,
+  "plan_steps": 10,
+  "plan_level": "tactical",
+  "tac_vocab_version": "v7.0",
+  "goal_dim": 65536,
+  "W_JERK": 0.02,
+  "W_KAPPA": 0.05,
+  "W_VEND": 0.1,
+  "cost_time_grid": "dense (held constant)",
+  "wheelbase": 2.9,
+  "source_md5": {
+   "C:/Users/Admin/tanitad-wt/taniteval/tools/cost_surface_probe.py": "4c5dc3d57bf2cb06376fb788ec0cab3e",
+   "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\refs\\refa_v1.py": "3a539ea2996f1337e627a1e64c5fddda"
+  },
+  "wallclock_s": 231.8
+ },
+ "gates_raw": {
+  "X2a_c1_shipped_cost": [
+   {
+    "label": "imagined",
+    "rel_err": 0.0,
+    "worst_candidate": "",
+    "cost_scale": 0.00696362741291523,
+    "pass": true,
+    "shipped": {
+     "cv": 8.046627044677734e-06,
+     "hold_v0": 8.046627044677734e-06,
+     "proposal": 0.00696362741291523,
+     "decel_1.5": 7.528066635131836e-05
+    },
+    "mine": {
+     "cv": 8.046627044677734e-06,
+     "hold_v0": 8.046627044677734e-06,
+     "proposal": 0.00696362741291523,
+     "decel_1.5": 7.528066635131836e-05
+    },
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 3
+   },
+   {
+    "label": "imagined",
+    "rel_err": 0.0,
+    "worst_candidate": "",
+    "cost_scale": 0.007726953364908695,
+    "pass": true,
+    "shipped": {
+     "cv": 2.384185791015625e-07,
+     "hold_v0": 2.384185791015625e-07,
+     "proposal": 0.007726953364908695,
+     "decel_1.5": 0.00012546777725219727
+    },
+    "mine": {
+     "cv": 2.384185791015625e-07,
+     "hold_v0": 2.384185791015625e-07,
+     "proposal": 0.007726953364908695,
+     "decel_1.5": 0.00012546777725219727
+    },
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 13
+   },
+   {
+    "label": "imagined",
+    "rel_err": 0.0,
+    "worst_candidate": "",
+    "cost_scale": 0.015815947204828262,
+    "pass": true,
+    "shipped": {
+     "cv": 0.0,
+     "hold_v0": 0.0,
+     "proposal": 0.015815947204828262,
+     "decel_1.5": 0.0001366138458251953
+    },
+    "mine": {
+     "cv": 0.0,
+     "hold_v0": 0.0,
+     "proposal": 0.015815947204828262,
+     "decel_1.5": 0.0001366138458251953
+    },
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 23
+   },
+   {
+    "label": "imagined",
+    "rel_err": 0.0,
+    "worst_candidate": "",
+    "cost_scale": 0.02063278667628765,
+    "pass": true,
+    "shipped": {
+     "cv": 0.0,
+     "hold_v0": 0.0,
+     "proposal": 0.02063278667628765,
+     "decel_1.5": 0.0001380443572998047
+    },
+    "mine": {
+     "cv": 0.0,
+     "hold_v0": 0.0,
+     "proposal": 0.02063278667628765,
+     "decel_1.5": 0.0001380443572998047
+    },
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 33
+   },
+   {
+    "label": "imagined",
+    "rel_err": 0.0,
+    "worst_candidate": "",
+    "cost_scale": 0.013290615752339363,
+    "pass": true,
+    "shipped": {
+     "cv": 0.0,
+     "hold_v0": 0.0,
+     "proposal": 0.013290615752339363,
+     "decel_1.5": 0.00013530254364013672
+    },
+    "mine": {
+     "cv": 0.0,
+     "hold_v0": 0.0,
+     "proposal": 0.013290615752339363,
+     "decel_1.5": 0.00013530254364013672
+    },
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 43
+   }
+  ],
+  "X2a_bit_identity": [
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 3,
+    "max_abs_diff": 0.0,
+    "bit_identical": true,
+    "note": "units='kappa' -> as_command returns the input object unchanged, so our rollout and cost_surface_probe's must be bit-identical"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 13,
+    "max_abs_diff": 0.0,
+    "bit_identical": true,
+    "note": "units='kappa' -> as_command returns the input object unchanged, so our rollout and cost_surface_probe's must be bit-identical"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 23,
+    "max_abs_diff": 0.0,
+    "bit_identical": true,
+    "note": "units='kappa' -> as_command returns the input object unchanged, so our rollout and cost_surface_probe's must be bit-identical"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 33,
+    "max_abs_diff": 0.0,
+    "bit_identical": true,
+    "note": "units='kappa' -> as_command returns the input object unchanged, so our rollout and cost_surface_probe's must be bit-identical"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 43,
+    "max_abs_diff": 0.0,
+    "bit_identical": true,
+    "note": "units='kappa' -> as_command returns the input object unchanged, so our rollout and cost_surface_probe's must be bit-identical"
+   }
+  ],
+  "X2b_banked_winner": [
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 3,
+    "max_abs_m": 0.0,
+    "gate_m": 3.8e-06,
+    "pass": true,
+    "plan_source": "cem"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 13,
+    "max_abs_m": 0.0,
+    "gate_m": 3.8e-06,
+    "pass": true,
+    "plan_source": "baseline:hold_v0"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 23,
+    "max_abs_m": 0.0,
+    "gate_m": 3.8e-06,
+    "pass": true,
+    "plan_source": "baseline:hold_v0"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 33,
+    "max_abs_m": 0.0,
+    "gate_m": 3.8e-06,
+    "pass": true,
+    "plan_source": "baseline:hold_v0"
+   },
+   {
+    "ep": "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "t": 43,
+    "max_abs_m": 0.0,
+    "gate_m": 3.8e-06,
+    "pass": true,
+    "plan_source": "cem"
+   }
+  ]
+ },
+ "written_utc": "2026-09-03T08:59:11Z"
+}

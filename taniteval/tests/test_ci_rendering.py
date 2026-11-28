@@ -11,7 +11,7 @@ read::
     {"delta": 0.0, "lo": 0.0, "hi": 0.0, "separated": true}
 
 Found in a committed artifact:
-``TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+``TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/
 2026-07-27-vtband-decision/raw/legA_v5config_structural.json`` — the Leg A
 structural probe, where a from-scratch model's ``sel_gate`` is **exactly 0.0** so
 two goal options produce bit-identical plans.

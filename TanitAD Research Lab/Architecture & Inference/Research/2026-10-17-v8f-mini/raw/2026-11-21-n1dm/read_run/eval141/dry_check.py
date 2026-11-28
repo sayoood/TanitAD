@@ -1,0 +1,171 @@
+"""dry_check.py -- resolves every step of run_n1dm141.sh without running a long step: tree problems, checkpoint refusals, every T1 dump argv (rendered through the shim, not run), every T0 argv (input paths exist),
+the STRATEGIC view plans (banked sources exist; sources that the chain itself makes are listed as made-by-chain), the strategic / read scripts import and parse, and the chain script is syntax-checked.
+Usage: python dry_check.py   (prints one line per check; exit 1 if any check fails; writes DRY_CHECK.json)"""
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+res, bad = [], []
+BN = os.environ.get("N1DM_BN", "F:/TanitAD-scratch/n1dc/read/eval141/banked_n1d/x")
+CKN1D = os.environ.get("N1DM_CKPTS_N1D", "F:/TanitAD-scratch/n1dc/read/eval141/ckpts")
+TREE = "F:/TanitAD-scratch/n1dc/read_n1dm/tree"
+# stand-in N1DM checkpoints (EMPTY files, own temp, removed at the end): the N1DM arms are still training; the dry check proves the chain's argv, refusals and paths render, it never reads a checkpoint
+STAND = HERE + "/dry_scratch/ckpts"
+for _s in (0, 1):
+    os.makedirs(f"{STAND}/N1DM_s{_s}", exist_ok=True)
+    open(f"{STAND}/N1DM_s{_s}/ckpt_last.pt", "wb").close()
+open(f"{STAND}/SHA256_PODS.txt", "w").write("".join(f"{hashlib.sha256(b'').hexdigest()}  N1DM_s{_s}/ckpt_last.pt" + chr(10) for _s in (0, 1)))
+ENV0 = {"N1DM_TREE": TREE, "N1DM_CKPTS": STAND, "N1DM_CKPTS_N1D": CKN1D, "N1DM_N1D_T0": BN + "/out/t0"}
+
+
+def chk(name, ok, detail=""):
+    res.append({"check": name, "ok": bool(ok), "detail": str(detail)[:300]})
+    print(("ok   " if ok else "FAIL "), name, str(detail)[:200], flush=True)
+    if not ok:
+        bad.append(name)
+
+
+def sub(code, env_extra):
+    env = dict(os.environ, **ENV0, **env_extra)
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, cwd=HERE, encoding="utf-8")
+    return r.returncode, (r.stdout + r.stderr).strip().splitlines()[-1:] if (r.stdout + r.stderr).strip() else []
+
+
+DUMP_CODE = r'''
+import sys, os, json
+sys.path.insert(0, ".")
+import n1dm_dumps as ND
+tp = ND.tree_problem()
+assert tp is None, tp
+out = {}
+for t in ND.TAGS:
+    assert ND.refusal(t) is None, (t, ND.refusal(t))
+    a = ND.extra_args(t)
+    assert a[a.index("--nav-rb-variant") + 1] == ("zero" if t.endswith("Z") else "follow")
+    ND._Shim.cur = t
+    class R:  # capture the argv instead of running it
+        pass
+    import subprocess as sp
+    cap = []
+    ND._Shim.run.__func__  # exists
+    orig = sp.run
+    sp.run = lambda argv, **kw: (cap.append(argv), R())[1]
+    try:
+        ND._Shim.run([ND.RD.PY, ND.TREE + "/stack/scripts/v8f_t1_eval.py", "run", "--ckpt", "X", "--tag", "T"])
+    finally:
+        sp.run = orig
+    argv = cap[0]
+    assert argv[1].endswith("v8f_t1_eval_hb.py") and argv[argv.index("--kappa-max") + 1] == ND.KAPPA and argv[argv.index("--inner") + 1] == "v8f_t1_eval_rbd", argv[:8]
+    assert os.path.isfile(argv[1])
+out["tags"] = len(ND.TAGS); out["out"] = ND.OUT; out["kappa"] = ND.KAPPA
+for k, v in ND.RD.INPUTS.items():
+    assert os.path.exists(v), (k, v)
+print(json.dumps(out))
+'''
+for kappa in ("0.2", "none"):
+    rc, last = sub(DUMP_CODE, {"N1DM_KAPPA": kappa, "N1DM_D_141": HERE + "/dry_scratch/dumps_unused"})
+    chk(f"T1 dump argv routing, kappa {kappa} (8 tags, hb wrapper, inner v8f_t1_eval_rbd, inputs exist, ckpt sha refusals none)", rc == 0, last)
+
+T0_CODE = r'''
+import sys, os
+sys.path.insert(0, ".")
+import n1dm_t0 as T
+n = 0
+for arm in T.D_ARMS:
+    for v in ("real", "donor", "zero"):
+        a = T.argv_for(arm, v, "OUT")
+        for i, x in enumerate(a):
+            if x.startswith(("F:/", "E:/", "C:/")) and not x.endswith("OUT"):
+                if x.endswith(".py") or x.endswith(".pt") or x.endswith(".npz") or x.endswith(".json") or x.endswith(".jsonl") or "cache" in x:
+                    assert os.path.exists(x), x
+        assert os.path.isfile(a[1]) and a[a.index("--ckpt") + 1].endswith(f"{arm}/ckpt_last.pt") and os.path.isfile(a[a.index("--ckpt") + 1])
+        n += 1
+print(n, "T0 argvs")
+'''
+rc, last = sub(T0_CODE, {})
+chk("T0 argv render + inputs exist (2 arms x 3 variants)", rc == 0, last)
+
+VIEW_CODE = r'''
+import sys, os
+sys.path.insert(0, ".")
+import n1dm_view as V, n1dw_view_s1slot as S1
+BN = os.environ["N1DM_BN_"]
+# N1-slot view for N1DM: banked C0 sources must exist; the N1DM passes / ticks are made by the chain
+p = V.plan()
+made = [s for s, _ in p if not os.path.exists(s)]
+banked_missing = [s for s in made if "N1DM" not in os.path.basename(s)]
+assert not banked_missing, banked_missing
+# S1-slot view for the N1D reference: ALL sources exist now
+p1 = S1.plan("NAVRBD-N1D", BN + "/out/t0", BN + "/dumps141/ticks")
+miss = [s for s, _ in p1 if not os.path.exists(s)]
+assert not miss, miss
+# S1-slot view for N1DM: only the N1DM files are chain-made
+p2 = S1.plan("N1DM-N1DM", "out/t0", "dumps141_hb02/ticks")
+m2 = [s for s, _ in p2 if not os.path.exists(s) and "N1DM" not in os.path.basename(s)]
+assert not m2, m2
+print(len(made), "N1-slot sources made by the chain;", len(p1), "N1D-reference S1 sources present;", len([1 for s, _ in p2 if "N1DM" in os.path.basename(s)]), "N1DM S1 sources made by the chain")
+'''
+rc, last = sub(VIEW_CODE, {"N1DM_BN_": BN})
+chk("STRATEGIC view plans (banked sources present, chain-made ones named)", rc == 0, last)
+
+IMPORT_CODE = r'''
+import sys
+sys.path.insert(0, ".")
+import ast, json
+for f in ("n1dm_strategic.py", "n1dm_read141.py", "k_hb0_141.py", "check_banked_n1d.py", "n1dm_dumps.py", "n1dm_t0.py", "n1dm_view.py"):
+    ast.parse(open(f, encoding="utf-8").read())
+sys.path[:0] = ["F:/TanitAD-scratch/strat1/navrb2/read", "F:/TanitAD-scratch/strat1/read", "F:/TanitAD-scratch/strat1/read/theory/obd/read", "F:/TanitAD-scratch/strat1/read/theory/otband/read"]
+import n1dm_strategic as NS
+assert NS.pair_name("N1D") == "N1DM-N1D" and NS.COMPARATORS[0][1] == "NAVRBD-N1D"
+import n1dm_read141 as NR
+assert NR.arm(0) == "N1DM_s0"
+G = NR.guard_of
+assert G({0: set(), 1: set()}, False) == "GUARD-HOLDS-BOTH" and G({0: set(), 1: {"x"}}, False) == "GUARD-COST-ONE-SEED" and G({0: {"y"}, 1: {"x"}}, False) == "GUARD-COST-BOTH-SEEDS"
+assert G({0: {"y"}, 1: {"y"}}, False) == "GUARD-COST-BOTH-SEEDS" and G({0: set(), 1: set()}, True) == "ROUTE-COST" and G({0: set(), 1: set()}, None) == "PENDING-STRATEGIC" and G({0: set(), 1: None}, False) == "NOT-YET"
+assert NR.holds_by_seed({0: set(), 1: {"x"}}, False) == {0: True, 1: False} and NR.holds_by_seed({0: set(), 1: set()}, None) == {0: None, 1: None}
+# the N1DH eval-141 result of record read through the per-seed rule: each seed has a cost cell (the N1DH label of record), and the named-risk rows recover the along_mae_m cost at both seeds
+d = json.load(open("F:/TanitAD-scratch/n1dc/read_n1dh/eval141/out/RESULT_N1DH_EVAL141.json"))
+cc = {int(k[-1]): set(v) for k, v in d["cost_cells"].items()}
+assert G(cc, False) == "GUARD-COST-BOTH-SEEDS" and {"operative_0_2s:along_mae_m", "operative_0_2s:ade_m", "tactical_2_6s:dk_tg_abs_err_s"} <= cc[0] and "operative_0_2s:along_mae_m" in cc[1]
+rows = NR.named_risk_rows({0: d["guard_eval141_hb02_N1DH-N1D"]["N1DH_s0-N1D_s0"], 1: d["guard_eval141_hb02_N1DH-N1D"]["N1DH_s1-N1D_s1"]})
+assert rows["N1DH_cost_cell_s1:operative_0_2s:along_mae_m @ N1DM_s1"]["cost"] is True and rows["N1DH_cost_cell_s0:operative_0_2s:along_mae_m @ N1DM_s0"]["cost"] is True and len(rows) == 8
+import navrb2_read, strat1_read, obd_read, obd_geom, navrb2_strategic, strat1_strategic, strat1_ctx_read
+print("imports ok")
+'''
+rc, last = sub(IMPORT_CODE, {})
+chk("strategic / read scripts parse and import their frozen readers", rc == 0, last)
+
+for f in ("SR", "N2R"):
+    pass
+need = [TREE + "/stack/scripts/v8f_t1_eval_rbd.py", TREE + "/stack/scripts/v8f_mini_eval_rbd.py", TREE + "/stack/scripts/n1dh_klim.py", "F:/TanitAD-scratch/strat1/read/strat1_strategic.py", "F:/TanitAD-scratch/strat1/read/strat1_ctx_read.py", "F:/TanitAD-scratch/strat1/navrb2/read/navrb2_ctx_nofog.py",
+        "F:/TanitAD-scratch/strat1/read/seeds/wait_commit.py", "C:/Users/Admin/venvs/tanitad/Scripts/python.exe", "C:/Program Files/Git/usr/bin/bash.exe",
+        "F:/TanitAD-scratch/strat1/navrb2/read/out/RESULT_NAVRB2.json"]
+chk("chain-script external files exist", all(os.path.exists(x) for x in need), [x for x in need if not os.path.exists(x)])
+r = subprocess.run(["C:/Program Files/Git/usr/bin/bash.exe", "-n", HERE + "/run_n1dm141.sh"], capture_output=True, text=True)
+chk("run_n1dm141.sh bash -n", r.returncode == 0, r.stderr)
+r = subprocess.run([sys.executable, HERE + "/check_banked_n1d.py", BN], capture_output=True, text=True)
+chk("banked N1D inputs present", r.returncode == 0, r.stdout.strip())
+r = subprocess.run(["sha256sum", "-c", "SHA256_PODS.txt"], capture_output=True, text=True, cwd=CKN1D)
+chk("N1D checkpoint sha256 equals the pod's (N1D_s0/s1 + the N1DH lines in the same file)", r.returncode == 0, r.stdout.replace(chr(10), " "))
+_r = subprocess.run(["sha256sum", "-c", "SHA256_PODS.txt"], capture_output=True, text=True, cwd=HERE + "/ckpts") if os.path.isfile(HERE + "/ckpts/SHA256_PODS.txt") else None
+chk("N1DM checkpoints pulled (MM 2026-11-21, post-training form of this item): ckpts/N1DM_s{0,1}/ckpt_last.pt exist and their sha256 equals the pod's list (SHA256_PODS.txt)",
+    all(os.path.isfile(HERE + f"/ckpts/N1DM_s{_s}/ckpt_last.pt") for _s in (0, 1)) and _r is not None and _r.returncode == 0 and _r.stdout.count(": OK") == 2,
+    (_r.stdout.replace(chr(10), " ") if _r is not None else "no SHA256_PODS.txt") + " | the argv render still uses the stand-in empty files")
+# static scan: every python script and file the chain names exists next to it
+txt = open(HERE + "/run_n1dm141.sh", encoding="utf-8").read()
+named = sorted(set(re.findall(r"((?:n1dm_|n1dw_|k_hb0_|check_banked_)[A-Za-z0-9_]*\.py)", txt)))
+chk("every script the chain names exists in eval141/ (%d: %s)" % (len(named), ", ".join(named)), all(os.path.isfile(HERE + "/" + n) for n in named), [n for n in named if not os.path.isfile(HERE + "/" + n)])
+# the chain's step names are unique and every gate is wired
+steps = re.findall(r"^\s*step\s+\"?([A-Za-z0-9_$\{\}]+)\"?", txt, re.M) + re.findall(r"^\s*s1slot\s+(\w+)", txt, re.M)
+chk("chain steps listed (%d), gate() before every step()" % len(steps), "gate \"$n\"" in txt and len(steps) >= 12, steps[:6])
+shutil.rmtree(HERE + "/dry_scratch", ignore_errors=True)
+open("F:/TanitAD-scratch/n1dc/DELETIONS.log", "a").write(__import__("time").strftime("%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime()) + " F:/TanitAD-scratch/n1dc/read_n1dm/eval141/dry_scratch (empty stand-in checkpoints, 0 MB, own temp) removed by dry_check.py" + chr(10))
+json.dump({"checks": res, "all_ok": not bad}, open(HERE + "/DRY_CHECK.json", "w"), indent=1)
+print("DRY CHECK", "PASS" if not bad else "FAIL " + str(bad))
+sys.exit(1 if bad else 0)

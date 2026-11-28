@@ -1,0 +1,226 @@
+# stack/tanitad/models/plan_speed_cap.py -- vs origin tip c36b6ddd (LF blobs) -- R1/R4 2026-09-27; apply from the repo root with: git apply <this file>
+--- /dev/null
++++ b/stack/tanitad/models/plan_speed_cap.py
+@@ -0,0 +1,222 @@
++"""R1 (PI directive 2026-09-27) -- the HARD MAX-SPEED CAP on the v6/v7F emitted plan.
++
++PI, verbatim (2026-09-27 ~02:40 Berlin): *"Regarding refav1 and refv7, both of them should
++get the max speed, which it must not be exceeded. This included in our last training
++corpus."*
++
++WHAT THIS MODULE IS
++-------------------
++The v7F half of R1's HARD CAP. ``V6Stack.emit`` integrates ONE 60-step ``(a, kappa)``
++sequence through ``unicycle_rollout`` (``scripts/train_v58f_unicycle_head.py``); this
++module limits each step's longitudinal accel so the speed that step CLOSES at never
++exceeds the clip's limit, and re-integrates the waypoints through THE SAME integrator.
++
++⭐ THE SEMANTICS ARE refav1's ``_cap_speed`` (``tanitad/refs/refa_v1_plan.py``, R1 fix
++2026-09-27, banked under ``products/P4-training-pipelines/2026-09-27-v7f-refav1-state/
++code/fix/``), reused, not re-invented:
++
++* per step: ``lim = (v_max - v) / dt``, floored at ``-a_max``; ``a <- min(a, lim)``;
++* a step already under the cap is returned UNCHANGED (``torch.minimum`` with a larger
++  bound is the identity), which is what keeps a NON-BINDING cap BIT-IDENTICAL to no cap;
++* if ``v0`` already exceeds the limit the plan brakes at ``-a_max`` until it is under;
++  that residual is a property of the INPUT state and is REPORTED separately
++  (``vmax_v0_over_limit``), never hidden -- the refav1 evaluator's
++  ``n_v0_over_limit`` vs ``n_plan_over_limit`` split.
++
++⛔ ONE DELIBERATE DIFFERENCE, AND WHY. v6's integrator FLOORS the speed at 0 after every
++step (``v = (v + a*dt).clamp_min(0.0)``, train_v58f_unicycle_head.py:136); refav1's
++plan integrates without the floor. A cap that tracked the speed WITHOUT the floor would
++under-estimate the true speed after a braking-to-standstill segment and let a later
++acceleration exceed the limit by exactly the clipped deficit. So the speed is tracked
++here EXACTLY as the v6 integrator produces it -- the cap binds the speed the plan will
++actually have, which is refav1's own rule ("the friction circle is evaluated on the
++speed profile the plan will actually have") applied to this integrator.
++
++WHERE THE LIMIT COMES FROM
++--------------------------
++:func:`plan_limit_from_vhi`: the clip's ``g_tac.goals.SPEED_BAND.v_hi_ms`` through the
++corpus's ONE quantizer (:func:`tanitad.refs.refcv6_max_speed.speed_max_bin_tensor`,
++containing window over {30, 50, 100, 120} km/h, > 120 CLAMPS) and its ONE unit
++conversion (:func:`~tanitad.refs.refcv6_max_speed.limit_ms_of_bin`) -- the same two
++functions refav1's ``--vmax-from-labels`` and refcv6's sidecar use, so the three can
++never disagree. A row with no known limit gets ``+inf`` = no cap (``min(a, +inf) == a``
++exactly), never a fabricated 30 km/h (the X15 rule).
++
++TRAINING vs INFERENCE
++---------------------
++⛔ The cap is an INFERENCE constraint. The training forward is UNCAPPED on purpose: the
++label is the ego's own realised maximum over [t0+2 s, +6 s], so on windows whose t0
++speed is above the bin (decelerating clips) and on the 1.88 % of clips above 120 km/h
++the ground-truth trajectory itself exceeds the limit -- capping the TRAINING plan would
++make the imitation target unreachable there and bias the plan loss. ``V6Config.
++plan_vmax_cap`` records that an arm REQUIRES the cap at inference, and ``V6Stack.emit``
++REFUSES an eval-mode call without a limit when it is set (mandatory, never defaulted --
++the nav idiom).
++
++TIER STAMP: mechanism, not measurement. No number produced here is a result.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++import torch
++from torch import Tensor
++
++__all__ = [
++    "SpeedMaxInputMissing", "PlanSpeedLimitMissing", "cap_speed_profile",
++    "closing_speeds", "plan_limit_from_vhi", "cap_fan", "CAP_SEMANTICS",
++]
++
++#: What the cap does, as ONE string written into ``config.json`` beside the flag, so a
++#: reader who opens the record in isolation learns the rule without finding this file.
++CAP_SEMANTICS = (
++    "R1 hard cap (PI 2026-09-27), refav1 _cap_speed semantics: per step a <- min(a, "
++    "(v_max - v)/dt) floored at -a_max, speed tracked EXACTLY as the v6 unicycle "
++    "integrator (floored at 0 after each step); binds EVERY candidate of the fan (and "
++    "the diffusion arm's query reference fan and the MPC-refined top-K) BEFORE "
++    "anchor/selection/fallback read it; non-binding rows are BIT-IDENTICAL; v0 > v_max "
++    "brakes at -a_max and is reported as an INPUT property (vmax_v0_over_limit). Limit = "
++    "refcv6_max_speed.limit_ms_of_bin(speed_max_bin(SPEED_BAND.v_hi_ms)) (containing "
++    "window {30, 50, 100, 120} km/h, > 120 clamps); no known limit = +inf = no cap. "
++    "INFERENCE ONLY: the training forward is uncapped by design.")
++
++
++class SpeedMaxInputMissing(ValueError):
++    """``V6Config.max_speed_input_v6`` is on but the forward was handed no max speed.
++
++    ⛔ A NAMED error, raised before any tensor work, for the reason ``NavTokenMissing``
++    is: a silently defaulted channel trains an arm without it while its config claims
++    otherwise.
++    """
++
++
++class PlanSpeedLimitMissing(ValueError):
++    """``V6Config.plan_vmax_cap`` is on and an EVAL-mode emission was handed no limit.
++
++    ⛔ The cap is MANDATORY at inference for an arm built with it: an eval harness that
++    forgets the limit would score an uncapped plan under a capped arm's name.
++    """
++
++
++def _ensure_scripts() -> None:
++    """``stack/scripts`` importable (the ``tanitad/models/v6.py:_ensure_scripts``
++    precedent) -- the ONE integrator lives in a script."""
++    sp = str(Path(__file__).resolve().parents[2] / "scripts")
++    if sp not in sys.path:
++        sys.path.insert(0, sp)
++
++
++def _as_rows(x: Tensor | float, b: int, like: Tensor) -> Tensor:
++    t = torch.as_tensor(x, dtype=like.dtype, device=like.device)
++    if t.ndim == 0:
++        t = t.expand(b)
++    if t.shape != (b,):
++        raise ValueError(f"expected a per-row [B={b}] tensor, got {tuple(t.shape)}")
++    return t
++
++
++def cap_speed_profile(a: Tensor, v0: Tensor | float, v_max: Tensor | float, *,
++                      dt: float, a_max: float) -> Tensor:
++    """Limit each step's accel so the speed that step CLOSES at is ``<= v_max``.
++
++    ``a`` is ``[B, N, K]`` (a fan) or ``[B, K]``; ``v0`` and ``v_max`` are ``[B]`` (or
++    scalars) in m/s, ``v_max = +inf`` meaning no cap for that row. Sequential by
++    construction (a cap at step t lowers every later speed), vectorised over rows and
++    candidates. The speed is advanced exactly as ``unicycle_rollout`` advances it:
++    ``v <- clamp_min(v + a*dt, 0)``.
++    """
++    if a.ndim not in (2, 3):
++        raise ValueError(f"a must be [B, K] or [B, N, K], got {tuple(a.shape)}")
++    if dt <= 0 or a_max <= 0:
++        raise ValueError(f"dt and a_max must be > 0, got {dt}, {a_max}")
++    squeeze = a.ndim == 2
++    x = a[:, None] if squeeze else a
++    b, n, k = x.shape
++    vmax = _as_rows(v_max, b, x)
++    if bool(torch.isnan(vmax).any()) or bool((vmax <= 0).any()):
++        raise ValueError(
++            "[vmax-cap] every row's limit must be > 0 m/s or +inf (no cap). A NaN or "
++            "non-positive limit is not a speed limit; it would brake every plan to a "
++            "standstill or propagate NaN into the emitted controls.")
++    vmax = vmax[:, None].expand(b, n)
++    v = _as_rows(v0, b, x)[:, None].expand(b, n).clone()
++    cols = []
++    for j in range(k):
++        lim = ((vmax - v) / float(dt)).clamp(min=-float(a_max))
++        aj = torch.minimum(x[..., j], lim)
++        cols.append(aj)
++        v = (v + aj * float(dt)).clamp_min(0.0)
++    out = torch.stack(cols, dim=-1)
++    return out[:, 0] if squeeze else out
++
++
++def closing_speeds(a: Tensor, v0: Tensor | float, *, dt: float) -> Tensor:
++    """The speed each step CLOSES at, integrated as ``unicycle_rollout`` does
++    (floored at 0). ``a`` ``[B, N, K]`` -> ``[B, N, K]``."""
++    b, n, k = a.shape
++    v = _as_rows(v0, b, a)[:, None].expand(b, n).clone()
++    cols = []
++    for j in range(k):
++        v = (v + a[..., j] * float(dt)).clamp_min(0.0)
++        cols.append(v)
++    return torch.stack(cols, dim=-1)
++
++
++def plan_limit_from_vhi(v_hi_ms: Tensor, valid: Tensor | None = None) -> Tensor:
++    """``[B]`` realised-max speed (the sidecar's RAW ``v_hi_ms``) -> ``[B]`` LIMIT in m/s.
++
++    ``limit_ms_of_bin(speed_max_bin_tensor(v_hi))`` -- the ladder's one quantizer and its
++    one unit conversion. Rows where ``valid`` is false get ``+inf`` (no cap).
++    """
++    from tanitad.refs.refcv6_max_speed import limit_ms_of_bin, speed_max_bin_tensor
++    v = v_hi_ms.reshape(-1).float()
++    ok = (torch.ones_like(v, dtype=torch.bool) if valid is None
++          else valid.reshape(-1).to(torch.bool))
++    # an invalid row's value is never binned (0.0 stands in, then masked to +inf), so
++    # a NaN placeholder cannot trip the quantizer's non-finite refusal -- while a NaN
++    # on a VALID row still does, which is the refusal's whole point.
++    idx, _over = speed_max_bin_tensor(torch.where(ok, v, torch.zeros_like(v)))
++    lim = limit_ms_of_bin(idx).to(v.dtype)
++    return torch.where(ok, lim, torch.full_like(lim, float("inf")))
++
++
++def cap_fan(a: Tensor, kappa: Tensor, wp: Tensor, v0: Tensor, v_max: Tensor, *,
++            dt: float, a_max: float) -> tuple[Tensor, Tensor, dict]:
++    """Cap every candidate of a fan and re-integrate it through THE integrator.
++
++    ``a``/``kappa`` ``[B, N, K]``, ``wp`` ``[B, N, K, 2]`` (the fan's own uncapped
++    waypoints), ``v0``/``v_max`` ``[B]`` -> ``(a_capped, wp_capped, diag)``.
++
++    ⭐ A NON-BINDING CANDIDATE KEEPS ITS ORIGINAL ``wp`` TENSOR VALUES BY CONSTRUCTION
++    (``torch.where`` on the per-candidate binding mask), so bit-identity does not rest
++    on the integrator being deterministic across devices.
++    """
++    _ensure_scripts()
++    from train_v58f_unicycle_head import unicycle_rollout  # noqa: E402
++    if a.shape != kappa.shape or a.ndim != 3 or wp.shape[:3] != a.shape:
++        raise ValueError(f"fan shapes disagree: a {tuple(a.shape)} kappa "
++                         f"{tuple(kappa.shape)} wp {tuple(wp.shape)}")
++    work = a if a.dtype in (torch.float32, torch.float64) else a.float()
++    lim = _as_rows(v_max, a.shape[0], work)
++    a_cap = cap_speed_profile(work, v0, lim, dt=dt, a_max=a_max).to(a.dtype)
++    binding = (a_cap != a).any(dim=-1)                                   # [B, N]
++    if bool(binding.any()):
++        wp_new, _ = unicycle_rollout(a_cap, kappa, v0, dt=dt)
++        wp_cap = torch.where(binding[..., None, None], wp_new.to(wp.dtype), wp)
++    else:
++        wp_cap = wp
++    with torch.no_grad():
++        vu = closing_speeds(work.detach(), v0.detach(), dt=dt).amax(dim=-1)
++        vc = closing_speeds(a_cap.detach().to(work.dtype), v0.detach(),
++                            dt=dt).amax(dim=-1)
++        lim_d = lim.detach()
++        diag = {
++            "vmax_limit_ms": lim_d,
++            "vmax_v0_over_limit": v0.detach().to(lim_d.dtype) > lim_d,
++            "vmax_binding": binding.detach(),
++            "vmax_plan_max_speed_uncapped": vu,
++            "vmax_plan_max_speed": vc,
++            "vmax_plan_excess_ms": (vc - lim_d[:, None]).clamp_min(0.0),
++        }
++    return a_cap, wp_cap, diag

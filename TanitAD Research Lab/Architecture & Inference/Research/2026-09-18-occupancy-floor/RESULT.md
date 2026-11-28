@@ -1,0 +1,222 @@
+# The occupancy floor — what a no-information predictor scores against SAM3 map GT
+
+**Date:** 2026-09-18 · **Evidence class: MEASURED (ours)** · **Zero GPU** ·
+⛔ **No tier stamp and no metric family: this is a property of the CORPUS, not of any
+model.** Nothing here is a capability claim about anything.
+
+## Why this before any model read
+
+`PREREG_S1_AGENT_SEAM_AND_COLLISION_GATE.md` §8 orders it: *"`S1-GATE-ORACLE` and
+`S1-RANDOM` need **no** trained perception and run first: they bound the problem and make
+everything after them readable."*
+
+⭐ An occupancy IoU quoted **without** this floor is the *oracle gap needs a random
+control* error in a new costume — **a number that looks like skill and may be prevalence.**
+⭐ And it is the part that does not rot: the floor is a property of the corpus, so it is
+measured once and reused by every later arm.
+
+## Method
+
+Every SAM3 map on the dev box, every 20th frame. Scored on **SEEN cells only** — an unseen
+cell carries no evidence, the same rule `dac_from_drivable` applies, which makes every
+number here an **upper** bound on what an unseen-blind predictor faces.
+
+| | |
+|---|---|
+| clips read | **135** (the 4 without a map are absent here too) |
+| frames sampled | **1,475** (stride 20) |
+| cells | **11,328,000** |
+| cells SEEN | **10,068,274** = **88.88 %** of the grid |
+
+## The floor
+
+| predictor | IoU vs GT | |
+|---|---|---|
+| **all-drivable** | **0.3412** | = `P(drivable \| seen)` — **the no-information IoU** |
+| none-drivable | **0.0000** | degenerate control |
+| **GT against itself** | **1.0000** | ⛔ **INSTRUMENT CHECK** — if this is not exactly 1.0 the comparison is wired wrong and nothing above is readable |
+
+⇒ **Any occupancy head must beat IoU 0.3412 to have learned anything at all.**
+
+## By range band — and the flatness is the finding
+
+| band [m] | seen cells | `P(drivable \| seen)` |
+|---|---|---|
+| 0–15 | 2,587,607 | **0.3518** |
+| 15–30 | 2,773,144 | 0.3507 |
+| 30–45 | 2,524,507 | 0.3339 |
+| 45–60 | 2,183,016 | **0.3250** |
+
+⭐ **Prevalence barely moves with range — 2.7 points from the nearest band to the
+farthest.** Two consequences:
+
+* **A head cannot game the pooled metric by specialising near or far.** A per-band read
+  would have been mandatory if the bands differed sharply; measured, they do not, so the
+  pooled 0.3412 is honest on its own — **and that is a result, not an assumption.**
+* **The far field is not mostly unseen.** 45–60 m still carries 2.18 M seen cells, 84 % of
+  the nearest band's. The SAM3 maps are **dense**, so a collision gate's range is not
+  limited by map coverage.
+
+## What this does NOT establish
+
+* ⛔ **Nothing about any model.** No checkpoint was run. The predicted occupancy's quality
+  is **not** measured here and remains `S1-GATE-PRED`'s blocking dependency.
+* ⚠️ **IoU on the drivable channel only.** The map carries 9 channels; a collision gate
+  needs *drivable*, so that is what is bounded. Other channels are not characterised.
+* ⚠️ **Sampled every 20th frame**, not every frame. With 1,475 frames over 135 clips the
+  sampling error on a prevalence near 0.34 is far below the 2.7-point range spread, but
+  the number is a sample and is stated as one.
+
+## Artifacts
+
+`raw/occ_floor.json` · `code/occ_floor.py`. Clip identifiers appear only as **sha12**.
+
+## ⭐ The head is now MEASURED against that floor — and it starts at the DEGENERATE one
+
+The floor above needed a companion: **where does the head actually sit?** `map_iou_drivable`
+is now computed **in the same block as the map loss, from the same tensors**, so divergence
+between them is structurally impossible — and that adjacency is what makes the loss the
+instrument check.
+
+### ⛔ The instrument check, run first
+
+Re-ran the eval pass on the **same 400 windows** with the new metric in place:
+
+| | banked (`cov2_evalB`) | this run (`cov3_evalB`) |
+|---|---|---|
+| `eval_map` | **2.35437** | **2.35437** |
+| `eval_windows` | 400 | 400 |
+
+⇒ the loss reproduces **exactly**, so the IoU beside it is admissible. Had it not, the IoU
+would have been a number from a different forward pass wearing this one's name.
+
+### The reading
+
+| | |
+|---|---|
+| `eval_map_iou_drivable` | **0.0** |
+| `eval_map_pred_drivable_frac` | **0.0** — the head calls **no** cell majority-drivable |
+| `eval_map_gt_drivable_frac` | 0.35473 — consistent with the corpus floor 0.3412 |
+
+⭐ **The untrained head starts at the DEGENERATE floor (0.0), not the prevalence floor
+(0.3412).** The head is trained with a **soft CE against fraction vectors**, so
+`softmax[drivable]` *is* a predicted cell-coverage fraction — the same quantity the GT
+thresholds — and at init nothing reaches 0.5. **Any training must move it off exactly
+zero**, and the distance to travel is to 0.3412 merely to match a constant.
+
+### ⚠️ The weakness this exposed, and the companion it earned
+
+A head that learned the shape but stayed **under-confident** — 0.45 on genuinely drivable
+cells — would score IoU **0.0**, indistinguishable from one that learned nothing. So
+`map_pred_drivable_prob_mean` is logged beside it: threshold-free, and it moves
+continuously toward the GT's ~0.35.
+
+**MEASURED after 1 step: 0.0717 (train) / 0.0728 (eval).**
+
+⚠️ **Not 1/9 = 0.1111.** A randomly initialised head does not produce equal logits, so
+uniform is the *expectation of a draw* and not the value of any particular one. Quoting
+0.111 as "the init value" would have been theory standing in for a measurement — the
+number above is the measurement.
+
+⇒ **Quote the two together.** The IoU answers *"usable by a gate yet?"*; the mean answers
+*"is it learning at all?"*. Neither answers the other's question.
+
+### ⛔ Still not established
+
+This is the **untrained** position. `S1-GATE-PRED` needs a **trained** map head, and the
+ten arms that would produce one are pod work (`PREREG_REFCV6.md`: *"NO TRAINING RUN
+LAUNCHED"*). What has changed is that the instrument, the floor and the starting point all
+now exist, so the first trained number will be readable the moment it arrives.
+
+<!-- OCC-FLOOR-UNTRAINED-HEAD-MEASURED-2026-09-18 -->
+
+## ⭐ THE HEAD LEARNS — 1,000 steps, and it has NOT yet cleared the floor
+
+An **instrument run**, not an arm: one configuration, no replicate, no comparison. It
+answers the one question `PREREG_S1` §8 gates `S1-GATE-PRED` on — *does the occupancy head
+move at all, and how fast?* ⛔ It makes **no capability claim** about refcv6; that needs the
+pre-registered panel.
+
+`resnet34`, 416 × 1024, batch 2, every head live, **1,000 steps in 29,196.7 s**
+(**29.2 s/step**, against 28.30 predicted from a 30-step probe).
+
+### It learns, unambiguously
+
+| | first 20 logs | last 20 | last 10 |
+|---|---|---|---|
+| `map` (soft CE) | 2.1204 | **1.1801** | 1.1786 |
+| `map_pred_drivable_prob_mean` | 0.1107 | 0.3208 | **0.3370** |
+| `map_iou_drivable` mean | **0.0000** | 0.1653 | **0.2511** |
+
+⭐ The loss roughly **halves**. ⭐ The threshold-free probability climbs **0.111 → 0.337**,
+into the GT's ~0.35 band — which is exactly the progress the IoU is structurally blind to
+while the head is under-confident, and the reason that companion metric was added.
+⭐ **`map_iou_drivable` is EXACTLY 0.0 for the first 62 logs** and first non-zero at
+**step 630** — a clean, dated threshold-crossing rather than a drift.
+
+### ⛔ But it has NOT beaten the no-information floor, and the final number must not be quoted
+
+The run's **last logged IoU is 0.3577**, above the **0.3412** floor. ⛔ **That is one batch
+of two windows and it is not the result.** Per-batch IoU is very noisy here:
+`map_gt_drivable_frac` ranges **0.1324 – 0.6542** across batches, and only **27 of 100**
+logs have a non-zero IoU at all.
+
+The defensible statement is the aggregate: **last-10 mean IoU 0.2511**, still **below**
+0.3412. ⇒ **1,000 steps is not enough for the occupancy head to beat a constant
+predictor.** The trend is rising and the run is continuing to 2,000.
+
+⚠️ **And the comparison is not yet like-for-like.** The floor was measured over
+**10,068,274 seen cells**; these IoUs come from batches of **2 windows**. Even the
+aggregate is a train-side read on a noisy estimator, not the held-out, many-window number
+the gate will eventually need.
+
+### What this unblocks, and what it does not
+
+⭐ **`S1-GATE-PRED`'s dependency is no longer hypothetical** — the occupancy head demonstrably
+learns, the instrument reads it, and the floor it must clear is known. ⛔ It is **not yet
+good enough to gate on**: a collision gate driven by an occupancy that scores below a
+constant predictor would reorder candidates on noise.
+
+<!-- OCC-MAPHEAD-1K-2026-09-18 -->
+
+## ⭐⭐ 2,000 STEPS — the occupancy head CLEARS the floor, by 1.43×
+
+The 1,000-step read left it **below** the no-information floor (last-10 mean IoU 0.2511 vs
+**0.3412**). Continued to 2,000 from the same checkpoint (`metrics.jsonl` is append-mode,
+so the trajectory is one series).
+
+| | steps 1–1000 | steps 1010–2000 | last 40 logs |
+|---|---|---|---|
+| `map` (soft CE) | 1.5437 | 1.0462 | **1.0240** |
+| **`map_iou_drivable` mean** | 0.0421 | **0.4532** | **0.4865** |
+| `map_iou_drivable` median | 0.0000 | 0.4618 | **0.5022** |
+| `map_pred_drivable_prob_mean` | 0.2421 | 0.3393 | **0.3460** |
+
+⭐ **The second thousand steps is where it happens.** IoU goes from a mean of 0.0421 (median
+**exactly 0**) to **0.4532**, and logs with a non-zero IoU go **27/100 → 127/200**.
+⭐ **`prob_mean` lands on the GT's own prevalence** — 0.3460 against a corpus `P(drivable |
+seen)` of **0.3412**. The head is no longer under-confident; it now predicts drivable
+coverage at about the rate the ground truth has it.
+⭐ **The margin is not marginal:** last-40 mean **0.4865 / 0.3412 = 1.43×** the
+no-information floor, over 40 batches (80 windows) rather than the single batch the
+1,000-step run's final number came from.
+
+### ⚠️ What is still not established
+
+* ⛔ **Instrument, not arm.** One configuration, no replicate, no comparison — **no
+  capability claim about refcv6**, which needs the pre-registered panel.
+* ⚠️ **Train-side, per-batch.** The floor was measured over **10,068,274 seen cells**;
+  these are batches of 2 windows. The last-40 aggregate is a far better estimate than the
+  last-10 was, but it is still not the held-out many-window number a gate should quote.
+* ⚠️ **Not a generalisation read** — the head is scored on what it trained on.
+
+### ⭐ What it unblocks
+
+`PREREG_S1` §8 made `S1-GATE-PRED` conditional on *"a read of the PREDICTED occupancy's
+quality against SAM3 map GT"*. That read now exists and is **positive**: an occupancy head
+trained for 2,000 steps (≈16 h on this box at 29.2 s/step) predicts drivable area
+**1.43× better than a constant predictor**. ⇒ a collision gate driven by it would be
+reordering candidates on **signal**, not on noise — which was the precise worry the floor
+was measured to settle.
+
+<!-- OCC-MAPHEAD-2K-CLEARS-FLOOR-2026-09-18 -->

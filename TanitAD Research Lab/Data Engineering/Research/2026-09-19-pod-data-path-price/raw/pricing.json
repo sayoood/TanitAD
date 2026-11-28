@@ -1,0 +1,159 @@
+{
+ "inputs": {
+  "uplink_MBps": [
+   1.144,
+   1.23
+  ],
+  "hf_to_pod_MBps_inherited": 118.0,
+  "build_worker_s_per_clip_inherited": 48.9,
+  "d_read_MBps_measured": 18.7,
+  "private_used_GB": 176.92,
+  "sam3_growth_to_completion_GB": 6.5,
+  "sam3_maps_remaining_clips": 2136,
+  "sam3_eta_h": 85.0,
+  "largest_public_repo": {
+   "repo": "Sayood/tanitad-physicalai-w120-256x640cyl",
+   "type": "dataset",
+   "private": false,
+   "bytes": 455376580774
+  }
+ },
+ "sizes_GB": {
+  "train_cache_M2": 370.3,
+  "train_cache_M2_ci95": [
+   363.8,
+   377.0
+  ],
+  "clean124": 10.35,
+  "eval139": 11.54,
+  "cache_to_pod": 380.6,
+  "train_maps_projected": 9.98,
+  "map_MB_per_clip": 2.182
+ },
+ "routes": {
+  "a_hf_private_push": {
+   "bytes_GB": 380.6,
+   "upload_from_devbox_h": [
+    86.0,
+    92.4
+   ],
+   "upload_MBps": [
+    1.144,
+    1.23
+   ],
+   "upload_class": "MEASURED today (random bytes, neutral endpoint)",
+   "pod_pull_h": 0.9,
+   "pod_pull_class": "ESTIMATED from the INHERITED 118 MB/s",
+   "devbox_build_h_6_workers": 10.4,
+   "devbox_build_class": "ESTIMATED from the INHERITED 442 clips/h (408x1024)",
+   "hf_today": {
+    "private_after_GB": 564.0,
+    "over_1TB_GB": 0.0,
+    "usd_per_month_at_base_rate": 0.0
+   },
+   "hf_if_largest_public_repo_goes_private": {
+    "private_after_GB": 1019.4,
+    "over_1TB_GB": 19.4,
+    "usd_per_month_at_base_rate": 0.35
+   }
+  },
+  "b_direct_upload": {
+   "bytes_GB": 380.6,
+   "upload_h": [
+    86.0,
+    92.4
+   ],
+   "upload_MBps": [
+    1.144,
+    1.23
+   ],
+   "hf_usd": 0.0,
+   "second_probe_2026_07_relay_MBps": 1.16,
+   "note": "a pod (or its volume behind a CPU pod) must be online for the whole upload"
+  },
+  "c_build_on_pod": {
+   "download_GB": 76.2,
+   "download_breakdown_GB": {
+    "train mp4 (4,572, MEASURED)": 59.501,
+    "eval139 mp4 (MEASURED)": 2.035,
+    "egomotion tar": 1.967,
+    "timestamps tar": 0.053,
+    "calibration (intrinsics + extrinsics parquet)": 0.002,
+    "agents/obstacle_offline (for the train agent join)": 2.352,
+    "labels": 0.009,
+    "SAM3 map GT, train, projected": 9.98,
+    "eval aux (maps, 3-D join, extrinsics, labels)": 0.315
+   },
+   "download_h_at_118MBps": 0.18,
+   "download_h_at_30MBps": 0.7,
+   "eval_aux_from_devbox_min": 4.6,
+   "build_h_by_workers": {
+    "8": 8.0,
+    "16": 4.0,
+    "32": 2.0
+   },
+   "build_class": "ESTIMATED: the dev box's 48.9 worker-s/clip, scaled linearly",
+   "hf_usd": 0.0,
+   "pod_disk_peak_GB": 457.7,
+   "pod_disk_steady_GB": 390.9
+  }
+ },
+ "first_subset": {
+  "tier0_clean124_plus_eval_aux_GB": 10.67,
+  "tier0_upload_from_devbox_h": 2.6,
+  "tier0_build_on_pod_min_16_workers": 7.1,
+  "shards": [
+   {
+    "shard": 0,
+    "clips": 571,
+    "cache_GB": 46.57,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 1,
+    "clips": 571,
+    "cache_GB": 45.82,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 2,
+    "clips": 571,
+    "cache_GB": 46.55,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 3,
+    "clips": 571,
+    "cache_GB": 46.59,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 4,
+    "clips": 571,
+    "cache_GB": 46.37,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 5,
+    "clips": 571,
+    "cache_GB": 46.01,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 6,
+    "clips": 571,
+    "cache_GB": 46.22,
+    "maps_GB": 1.25
+   },
+   {
+    "shard": 7,
+    "clips": 575,
+    "cache_GB": 46.15,
+    "maps_GB": 1.25
+   }
+  ],
+  "first_two_shards_GB": 94.9,
+  "first_two_shards_build_min_16_workers": 58.2,
+  "per_step_reads_GB_batch20": 1.6
+ }
+}

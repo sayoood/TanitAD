@@ -1,0 +1,821 @@
+--- a/safehead_data.py
++++ b/safehead_data.py
+@@ -36,6 +36,12 @@
+ FROZEN_ROWS = (2, 4)                             # EP, C
+ LABELS = ("tr_nc", "tr_dac", "tr_ddc", "tr_ttc", "tr_ep", "tr_c", "tr_pdms")
+ ROW_LABEL = {0: "tr_nc", 1: "tr_dac", 3: "tr_ttc", 5: "tr_ddc"}
++# L2-NEXT (PREREG_EPHEAD): row 2 (EP) may be a TRAINED row, with the SOFT label tr_ep (the cache's EP is a rebuilt metric cache; see PREREG_EPHEAD 2.3).  ROW_LABEL above is
++# unchanged (the SAFE-HEAD card and its read use it); ROW_LABEL_ALL names every output's label (also used by the gate's "a frozen row enters the loss" arm).
++ROW_LABEL_ALL = {0: "tr_nc", 1: "tr_dac", 2: "tr_ep", 3: "tr_ttc", 4: "tr_c", 5: "tr_ddc"}
++TRAINABLE_ROWS = (0, 1, 2, 3, 5)                 # SAFETY_ROWS + EP; row 4 (C) is never a parameter in any arm
++SCHEMA_HEAD_MLP = "safehead.head/2"              # a head whose trained rows carry a residual MLP (SH-MLP, card 8.1); the linear W, b are C1's, bit for bit
++MLP_IN = 256
+ LABEL_VALUES = {"tr_nc": (0.0, 0.5, 1.0), "tr_dac": (0.0, 1.0), "tr_ttc": (0.0, 1.0), "tr_ddc": (0.0, 0.5, 1.0), "tr_c": (0.0, 1.0)}
+ SPLITS_NAVTRAIN = ("train", "heldout")
+ PDMS_TOL = 1e-6                                  # tr_pdms == NC*DAC*(5EP+5TTC+2C)/12 (NAVSIM v1.1; DDC does not enter: MEASURED on the C1 table, max diff 0)
+@@ -306,11 +312,18 @@
+ 
+ 
+ # ------------------------------------------------------------------------------------------ the head file (npz, no pickle)
+-def save_head(path, *, W, b, W0, b0, meta: dict) -> str:
++MLP_KEYS = ("mlp_w1", "mlp_b1", "mlp_w2", "mlp_b2")
++
++
++def save_head(path, *, W, b, W0, b0, meta: dict, mlp=None) -> str:
++    """`mlp` (SH-MLP only): {mlp_w1 [R,H,256], mlp_b1 [R,H], mlp_w2 [R,H], mlp_b2 [R]} over the trained rows in `meta["rows"]` order; the file is then schema /2.
++    Without it the file is schema /1 and byte-identical to what SAFE-HEAD wrote."""
+     path = Path(path)
+     tmp = path.with_suffix(".tmp.npz")
++    extra = {} if mlp is None else {k: np.asarray(mlp[k], np.float32) for k in MLP_KEYS}
++    schema = SCHEMA_HEAD if mlp is None else SCHEMA_HEAD_MLP
+     np.savez(tmp, weight=np.asarray(W, np.float32), bias=np.asarray(b, np.float32), init_weight=np.asarray(W0, np.float32),
+-             init_bias=np.asarray(b0, np.float32), meta=np.array(json.dumps({"schema": SCHEMA_HEAD, **meta}, sort_keys=True)))
++             init_bias=np.asarray(b0, np.float32), meta=np.array(json.dumps({"schema": schema, **meta}, sort_keys=True)), **extra)
+     os.replace(tmp, path)
+     return sha256_file(path)
+ 
+@@ -318,19 +331,76 @@
+ def load_head(path) -> dict:
+     z = np.load(path, allow_pickle=False)
+     meta = json.loads(str(z["meta"]))
+-    if meta.get("schema") != SCHEMA_HEAD:
+-        raise ContractError(f"{path}: not a {SCHEMA_HEAD} file")
+-    h = {"W": z["weight"], "b": z["bias"], "W0": z["init_weight"], "b0": z["init_bias"], "meta": meta}
++    if meta.get("schema") not in (SCHEMA_HEAD, SCHEMA_HEAD_MLP):
++        raise ContractError(f"{path}: not a {SCHEMA_HEAD} / {SCHEMA_HEAD_MLP} file")
++    h = {"W": z["weight"], "b": z["bias"], "W0": z["init_weight"], "b0": z["init_bias"], "meta": meta, "mlp": None}
+     if h["W"].shape != (N_OUT, D_S) or h["b"].shape != (N_OUT,):
+         raise ContractError(f"{path}: head shape {h['W'].shape}/{h['b'].shape}")
+-    frozen = [r for r in range(N_OUT) if r not in meta.get("rows", SAFETY_ROWS)]
++    rows = list(meta.get("rows", SAFETY_ROWS))
++    if meta["schema"] == SCHEMA_HEAD_MLP:
++        h["mlp"] = {k: z[k] for k in MLP_KEYS}
++        R, H = len(rows), int(meta["mlp_hidden"])
++        want = {"mlp_w1": (R, H, MLP_IN), "mlp_b1": (R, H), "mlp_w2": (R, H), "mlp_b2": (R,)}
++        bad = {k: h["mlp"][k].shape for k, v in want.items() if h["mlp"][k].shape != v}
++        if bad:
++            raise ContractError(f"{path}: mlp array shape(s) {bad}, expected {want}")
++        if not (np.array_equal(h["W"], h["W0"]) and np.array_equal(h["b"], h["b0"])):
++            raise ContractError(f"{path}: an SH-MLP head's LINEAR part must be C1's, bit for bit (the residual MLP is the only trained part)")
++        return h
++    frozen = [r for r in range(N_OUT) if r not in rows]
+     if not (np.array_equal(h["W"][frozen], h["W0"][frozen]) and np.array_equal(h["b"][frozen], h["b0"][frozen])):
+         raise ContractError(f"{path}: an untrained row ({[ROW_NAMES[r] for r in frozen]}) differs from C1's init")
+     return h
+ 
+ 
++def mlp_forward(s, mlp) -> np.ndarray:
++    """The residual MLPs on s: z_r = W2_r . gelu(W1_r s + b1_r) + b2_r for each trained row r (torch exact-erf GELU, float32, CPU).  [..., 256] -> [..., R].
++    ONE definition, shared by the read and the gate (the trainer's own forward is the same arithmetic in torch)."""
++    import torch
++    s = torch.from_numpy(np.ascontiguousarray(np.asarray(s, np.float32)))
++    out = []
++    with torch.no_grad():
++        for i in range(mlp["mlp_w1"].shape[0]):
++            h = torch.nn.functional.gelu(s @ torch.from_numpy(np.asarray(mlp["mlp_w1"][i], np.float32)).T + torch.from_numpy(np.asarray(mlp["mlp_b1"][i], np.float32)))
++            out.append(h @ torch.from_numpy(np.asarray(mlp["mlp_w2"][i], np.float32)) + torch.from_numpy(np.asarray(mlp["mlp_b2"][i:i + 1], np.float32)))
++    return torch.stack(out, -1).numpy()
++
++
++def head_forward(s, h) -> np.ndarray:
++    """The deployed head on s: the linear part, plus the residual MLPs on the trained rows (schema /2).  [..., 256] -> [..., 6]."""
++    out = direct_logits(s, h["W"], h["b"])
++    if h.get("mlp") is not None:
++        rows = list(h["meta"]["rows"])
++        out = out.copy()
++        out[..., rows] = out[..., rows] + mlp_forward(s, h["mlp"])
++    return out
++
++
++def head_logits(base_logits, s, h, rows=None) -> np.ndarray:
++    """The READ's logits of ANY saved head (card 4.1, generalised): C1's banked float32 logits plus the head's CHANGE on the trained rows.  Schema /1: delta_logits
++    (the SAFE-HEAD form, unchanged).  Schema /2: base + the residual MLP on s (zero at step 0 by construction: the last layer is zero-initialised, so the untrained
++    head returns `base` BIT FOR BIT).  `rows` overrides the trained rows (the gate's row-shift arm only)."""
++    rows = list(h["meta"]["rows"]) if rows is None else list(rows)
++    if h.get("mlp") is None:
++        return delta_logits(base_logits, s, h["W"], h["b"], h["W0"], h["b0"], rows)
++    base = np.asarray(base_logits, np.float32)
++    out = base.copy()
++    out[..., rows] = base[..., rows] + mlp_forward(s, h["mlp"])
++    return out
++
++
++def cv_folds(logs, k: int = 5) -> dict:
++    """The fixed 5-fold log-level split of PREREG_EPHEAD 4.3: logs sorted by NAME, fold = index mod k.  -> {log: fold}."""
++    u = sorted(set(map(str, logs)))
++    return {lg: i % k for i, lg in enumerate(u)}
++
++
+ def head_arrays_sha256(h: dict) -> str:
+-    return sha256_bytes(b"".join(np.ascontiguousarray(h[k], np.float32).tobytes() for k in ("W", "b")))
++    """sha256 of the head's arrays.  Schema /1: W, b (unchanged).  Schema /2 also hashes the residual MLP arrays (W, b are C1's there: they alone would be blind)."""
++    parts = [np.ascontiguousarray(h[k], np.float32).tobytes() for k in ("W", "b")]
++    if h.get("mlp") is not None:
++        parts += [np.ascontiguousarray(h["mlp"][k], np.float32).tobytes() for k in MLP_KEYS]
++    return sha256_bytes(b"".join(parts))
+ 
+ 
+ def c1_head_from_checkpoint(path) -> tuple:
+--- a/safehead_train.py
++++ b/safehead_train.py
+@@ -1,10 +1,17 @@
+ #!/usr/bin/env python3
+-"""L2 SAFE-HEAD: the HEAD-ONLY trainer (PREREG_SAFEHEAD.md 2-3, PK/raw/2026-11-27-safehead/).  CPU, seconds per run, no GPU, no trunk.
++"""L2 SAFE-HEAD family: the HEAD-ONLY trainer (PREREG_SAFEHEAD.md 2-3; PREREG_SHMLP.md; PREREG_EPHEAD.md).  CPU, seconds per run, no GPU, no trunk.
+ 
+-It trains ONLY rows 0, 1, 3, 5 (NC, DAC, TTC, DDC) of C1's `score_head = nn.Linear(256, 6)` (model.py:563) on the cached post-decoder features `s` [64, 256]
+-(the exact input of the head, model.py:706-709), initialised from C1's own weights, with ONE loss: the quality-focal BCE (Li et al. 2020; for 0/1 labels it is the
+-focal loss) on the TRACKED NAVSIM v1.1 labels.  Rows 2 (EP) and 4 (C) are never parameters, and no other tensor of C1 is ever loaded.  At the end it applies the
+-card's pre-registered held-out rule (4.3) to the saved steps.  It never reads a navtest token.
++SAFE-HEAD (the default flags) trains ONLY rows 0, 1, 3, 5 (NC, DAC, TTC, DDC) of C1's `score_head = nn.Linear(256, 6)` (model.py:563) on the cached post-decoder features
++`s` [64, 256] (the exact input of the head, model.py:706-709), initialised from C1's own weights, with ONE loss: the quality-focal BCE (Li et al. 2020; for 0/1 labels it is
++the focal loss) on the TRACKED NAVSIM v1.1 labels.  Rows 2 (EP) and 4 (C) are never parameters, and no other tensor of C1 is ever loaded.  At the end it applies the card's
++pre-registered held-out rule (4.3) to the saved steps.  It never reads a navtest token.
++
++Two flags added for the committed next arms (every default reproduces SAFE-HEAD exactly; each has its G-DVB entry in safehead_gate.py):
++  --mlp-hidden 64   SH-MLP (PREREG_SHMLP, SAFE-HEAD card 8.1): the trained rows get a residual MLP 256 -> 64 -> 1 (GELU), z_r = C1_r(s) + MLP_r(s), LAST LAYER ZERO-INITIALISED
++                    (step 0 = C1 bit for bit); C1's linear W, b are constants.  4 rows x (256*64 + 64 + 64 + 1) = 66,052 parameters.  0 (default) = the linear head.
++  --select cv5      EP-HEAD (PREREG_EPHEAD): the saved step is chosen by 5-FOLD LOG-LEVEL CROSS-VALIDATION over ALL navtrain logs (folds = sorted log name, index mod 5; the
++                    out-of-fold mean tracked PDMS of the agg32 pick, argmax, ties earliest) and the final head is trained on ALL logs; row 2 (EP) may then be the trained row
++                    (--rows 2, SOFT label tr_ep).  heldout (default) = SAFE-HEAD's rule on the 6 SFT held-out logs (4.3).
+ 
+     # a REAL run: refused unless TANITAD_SH_GATE_TOKEN names a PASS token that verifies for this exact argv, tree and data (CLAUDE.md, PI 2026-09-26)
+     TANITAD_SH_GATE_TOKEN=<PASS_*.json> python refe/safehead_train.py --cache-index <run>/index_sealed.csv --init-from <C1 model_final.pt> \
+@@ -34,9 +41,11 @@
+ TOKEN_ENV = "TANITAD_SH_GATE_TOKEN"
+ LOSS_NAME = "qfocal"
+ OPT = {"name": "Adam", "betas": (0.9, 0.999), "eps": 1e-8, "weight_decay": 0.0}     # registered (card 3); not flags
+-LIVE_TERMS = ("qfl_nc", "qfl_dac", "qfl_ttc", "qfl_ddc")                            # one per trained row; their mean is the loss
+-TERM_OF_ROW = {0: "qfl_nc", 1: "qfl_dac", 3: "qfl_ttc", 5: "qfl_ddc"}
++TERM_OF_ROW = {0: "qfl_nc", 1: "qfl_dac", 2: "qfl_ep", 3: "qfl_ttc", 5: "qfl_ddc"}  # one term per trained row; their mean is the loss
++LIVE_TERMS = ("qfl_nc", "qfl_dac", "qfl_ttc", "qfl_ddc")                            # the SAFE-HEAD arm's four terms (kept: safehead_gate.LIVE_TERMS)
+ FEAT_MAX, FEAT_P99 = 1e-4, 1e-4         # CTRL-FEAT: C1's head on the cached float32 s reproduces the cached logits (the data agent MEASURED 7.6e-6; a wrong tensor is off by O(1))
++SELECTS = ("heldout", "cv5")
++N_FOLDS = 5
+ 
+ 
+ @dataclasses.dataclass(slots=True)
+@@ -55,6 +64,8 @@
+     rows: tuple
+     save_steps: tuple
+     permute_labels_seed: int
++    mlp_hidden: int
++    select: str
+     smoke_steps: int
+     build_only: bool
+ 
+@@ -75,9 +86,11 @@
+     ap.add_argument("--lr", type=float, required=True)
+     ap.add_argument("--batch", type=int, required=True, help="tokens per step (each with all 64 proposals)")
+     ap.add_argument("--gamma", type=float, required=True, help="the quality-focal exponent")
+-    ap.add_argument("--rows", required=True, help="the trained score_head rows, e.g. 0,1,3,5")
+-    ap.add_argument("--save-steps", required=True, help="steps whose head is saved; the held-out rule chooses among them")
++    ap.add_argument("--rows", required=True, help="the trained score_head rows, e.g. 0,1,3,5 (SAFE-HEAD, SH-MLP) or 2 (EP-HEAD, needs --select cv5)")
++    ap.add_argument("--save-steps", required=True, help="steps whose head is saved; the selection rule chooses among them")
+     ap.add_argument("--permute-labels-seed", type=int, default=-1, help="CTRL-RED ONLY: permute the label rows across train tokens (-1 = off)")
++    ap.add_argument("--mlp-hidden", type=int, default=0, help="SH-MLP: hidden width of the residual MLP on each trained row (0 = the linear head, SAFE-HEAD)")
++    ap.add_argument("--select", default="heldout", choices=SELECTS, help="heldout = SAFE-HEAD 4.3 (6 SFT held-out logs); cv5 = EP-HEAD 4.3 (5-fold log CV over all navtrain logs)")
+     ap.add_argument("--smoke-steps", type=int, default=0, help="GATE ONLY (forbidden in a launch): train this many steps; heads marked smoke")
+     ap.add_argument("--build-only", action="store_true", help="GATE ONLY (forbidden in a launch): build, write built.json, exit")
+     return ap
+@@ -86,11 +99,12 @@
+ def build_config(a) -> SafeHeadConfig:
+     return SafeHeadConfig(cache_index=a.cache_index, init_from=a.init_from, heldout_logs=a.heldout_logs, navtest_logs=a.navtest_logs, out=a.out,
+                           seed=a.seed, steps=a.steps, lr=a.lr, batch=a.batch, gamma=a.gamma, rows=_ints(a.rows), save_steps=_ints(a.save_steps),
+-                          permute_labels_seed=a.permute_labels_seed, smoke_steps=a.smoke_steps, build_only=bool(a.build_only))
++                          permute_labels_seed=a.permute_labels_seed, mlp_hidden=a.mlp_hidden, select=a.select, smoke_steps=a.smoke_steps,
++                          build_only=bool(a.build_only))
+ 
+ 
+ def qfocal_terms(z, y, gamma: float):
+-    """Quality-focal BCE per output column: mean over (token, proposal) of |y - sigmoid(z)|^gamma * BCE(z, y).  [B, 64, R] -> [R]."""
++    """Quality-focal BCE per output column: mean over (token, proposal) of |y - sigmoid(z)|^gamma * BCE(z, y).  [B, 64, R] -> [R].  Soft labels (EP) are the quality form."""
+     import torch
+     import torch.nn.functional as F
+     p = torch.sigmoid(z)
+@@ -104,7 +118,7 @@
+     import safehead_gate as SHG
+     tok = os.environ.get(TOKEN_ENV)
+     if not tok:
+-        raise SystemExit(f"REFUSED: no launch-gate token ({TOKEN_ENV} unset). Run `launch_gate.py run --profile <refe_safehead_*>` first (CLAUDE.md, PI 2026-09-26)")
++        raise SystemExit(f"REFUSED: no launch-gate token ({TOKEN_ENV} unset). Run `launch_gate.py run --profile <refe_safehead_* | refe_shmlp_* | refe_ephead_*>` first (CLAUDE.md, PI 2026-09-26)")
+     prof = SHG.profile_name_for_argv(argv)
+     key = GT.load_key(None, create=False)
+     ok, reasons, info = GT.verify_token(tok, list(argv), HERE.parent, key=key, profile=prof, data_flags=SHG.DATA_FLAGS)
+@@ -113,6 +127,149 @@
+     return {"token": tok, "token_sha256": D.sha256_file(tok), "profile": prof, "binding": info.get("binding")}
+ 
+ 
++# ============================================================================================ the model
++class HeadModel:
++    """The trainable part of a run.  Linear (mlp_hidden == 0): one weight row + one bias per trained row, in `params`.  MLP (> 0): per trained row a residual MLP
++    256 -> H -> 1 (GELU) with a ZERO-INITIALISED last layer; C1's linear W, b are constants.  Rows outside `rows` are leaves OUTSIDE the optimiser (their gradient is the
++    zero control).  `arm` is the launch gate's deliberate-regression arm (None in a launch)."""
++
++    def __init__(self, rows, mlp_hidden, W0, b0, lr, arm, seed):
++        import torch
++        self.torch = torch
++        self.rows, self.arm = list(rows), arm
++        self.W0, self.b0 = W0, b0
++        torch.manual_seed(seed)                                                                      # the MLP init is a function of the seed, identical in every fold
++        self.mlp_hidden = 0 if arm == "sh_mlp_off" else int(mlp_hidden)                              # sh_mlp_off: the flag is ignored (G-DVB must catch it)
++        self.params, self.frozen, self.layers = {}, {}, {}
++        if self.mlp_hidden:
++            H = self.mlp_hidden
++            for r in self.rows:
++                l1, l2 = torch.nn.Linear(D.MLP_IN, H), torch.nn.Linear(H, 1)
++                if arm != "sh_mlp_nonzero_init":                                                     # THE zero init: step 0 is C1 exactly
++                    torch.nn.init.zeros_(l2.weight)
++                    torch.nn.init.zeros_(l2.bias)
++                self.layers[r] = (l1, l2)
++                self.params[r] = [l1.weight, l1.bias, l2.weight, l2.bias]
++            self.Wc, self.bc = torch.from_numpy(W0.copy()), torch.from_numpy(b0.copy())              # C1's linear head: CONSTANTS on the trained rows
++            self.frozen = {r: (torch.from_numpy(W0[r].copy()).requires_grad_(True), torch.from_numpy(b0[r:r + 1].copy()).requires_grad_(True))
++                           for r in range(D.N_OUT) if r not in self.rows}
++        else:
++            self.params = {r: [torch.nn.Parameter(torch.from_numpy(W0[r].copy())), torch.nn.Parameter(torch.from_numpy(b0[r:r + 1].copy()))] for r in self.rows}
++            self.frozen = {r: (torch.from_numpy(W0[r].copy()).requires_grad_(True), torch.from_numpy(b0[r:r + 1].copy()).requires_grad_(True))
++                           for r in range(D.N_OUT) if r not in self.rows}
++        groups = [{"params": list(self.params[r]), "name": f"row{r}"} for r in self.rows]
++        self.lr = lr * (2.0 if arm == "sh_dvb_lr_drift" else 1.0)
++        if arm == "sh_reach_row_dropped":                                                           # deliberate regression: one trained row is not in the optimizer
++            groups = [g for g in groups if g["name"] != f"row{self.rows[min(2, len(self.rows) - 1)]}"]
++            if not groups:                                                                          # a single-row arm (EP-HEAD): the optimiser keeps a dummy group so the build still runs
++                groups = [{"params": [torch.nn.Parameter(torch.zeros(1))], "name": "row-1"}]
++        self.opt = torch.optim.Adam(groups, lr=self.lr, betas=OPT["betas"], eps=OPT["eps"], weight_decay=OPT["weight_decay"])
++        self.n_params = int(sum(p.numel() for g in self.opt.param_groups for p in g["params"]))
++        self.last_layer_init_abs = float(sum(float(self.layers[r][1].weight.detach().abs().sum() + self.layers[r][1].bias.detach().abs().sum()) for r in self.rows)) if self.mlp_hidden else None
++
++    def _lin(self):
++        torch = self.torch
++        if self.mlp_hidden:
++            Wr = [self.frozen[r][0] if r in self.frozen else self.Wc[r] for r in range(D.N_OUT)]
++            br = [self.frozen[r][1] if r in self.frozen else self.bc[r:r + 1] for r in range(D.N_OUT)]
++        else:
++            Wr = [self.params[r][0] if r in self.params else self.frozen[r][0] for r in range(D.N_OUT)]
++            br = [self.params[r][1] if r in self.params else self.frozen[r][1] for r in range(D.N_OUT)]
++        return torch.stack(Wr), torch.cat(br)
++
++    def logits(self, Sb):
++        """[B, 64, 256] -> [B, 64, 6]: the trainer's own forward (the head the checkpoint holds)."""
++        torch = self.torch
++        W, b = self._lin()
++        z = Sb @ W.T + b
++        if not self.mlp_hidden:
++            return z
++        cols = [z[..., r] for r in range(D.N_OUT)]
++        for r in self.rows:
++            l1, l2 = self.layers[r]
++            cols[r] = cols[r] + (torch.nn.functional.gelu(Sb @ l1.weight.T + l1.bias) @ l2.weight[0] + l2.bias[0])
++        return torch.stack(cols, -1)
++
++    def state(self) -> dict:
++        """numpy copies of what a head file holds: W, b and (MLP) the residual arrays."""
++        torch = self.torch
++        with torch.no_grad():
++            if self.mlp_hidden:
++                W, b = self.W0.copy(), self.b0.copy()
++                mlp = {"mlp_w1": np.stack([self.layers[r][0].weight.detach().numpy() for r in self.rows]).copy(),
++                       "mlp_b1": np.stack([self.layers[r][0].bias.detach().numpy() for r in self.rows]).copy(),
++                       "mlp_w2": np.stack([self.layers[r][1].weight[0].detach().numpy() for r in self.rows]).copy(),
++                       "mlp_b2": np.array([float(self.layers[r][1].bias[0]) for r in self.rows], np.float32)}
++            else:
++                W = np.stack([self.params[r][0].detach().numpy() if r in self.params else self.frozen[r][0].detach().numpy() for r in range(D.N_OUT)]).copy()
++                b = np.concatenate([self.params[r][1].detach().numpy() if r in self.params else self.frozen[r][1].detach().numpy() for r in range(D.N_OUT)]).copy()
++                mlp = None
++        if self.arm == "sh_ckpt_nondet":
++            W[self.rows[0], 0] += np.float32(1e-3 * ((time.time_ns() // 1000) % 997 + 1))
++        return {"W": W, "b": b, "mlp": mlp}
++
++    def grad_abs(self) -> dict:
++        return {f"row{r}": float(sum(p.grad.abs().sum() for p in self.params[r])) for r in self.rows}
++
++    def frozen_grad_abs(self) -> dict:
++        return {f"row{r}": float((0.0 if w_.grad is None else w_.grad.abs().sum()) + (0.0 if b_.grad is None else b_.grad.abs().sum())) for r, (w_, b_) in self.frozen.items()}
++
++
++def fit(M: HeadModel, S, Y, *, steps, batch, gamma, seed, save, on_save, metrics=None, extra_label=None):
++    """The ONE training loop (the SAFE-HEAD one, unchanged in arithmetic).  S [N,64,256] and Y [N,64,R] torch tensors (labels of M.rows, in order), `extra_label` [N,64]
++    (arm sh_reach_ep_in_loss: the label of a FROZEN row that wrongly enters the loss).  `on_save(step, state)` is called at every saved step (0 included);
++    `metrics` is an open file for metrics.jsonl or None."""
++    import torch
++    n = S.shape[0]
++    rows = M.rows
++    extra_row = (2 if 2 not in rows else 0)
++    if 0 in save:
++        on_save(0, M.state())
++    rng = np.random.default_rng(seed)
++    order, pos = rng.permutation(n), 0
++    for step in range(1, steps + 1):
++        if pos + batch > n:
++            order, pos = rng.permutation(n), 0
++        idx = torch.from_numpy(order[pos:pos + batch])
++        pos += batch
++        z = M.logits(S[idx])                                                                     # [B, 64, 6]
++        loss_rows = rows + ([extra_row] if M.arm == "sh_reach_ep_in_loss" else [])
++        yb = Y[idx]
++        if M.arm == "sh_reach_ep_in_loss":
++            yb = torch.cat([yb, extra_label[idx].unsqueeze(-1).float()], -1)
++        terms = qfocal_terms(z[..., loss_rows], yb, gamma)
++        loss = terms.mean()
++        M.opt.zero_grad(set_to_none=True)
++        for w_, b_ in M.frozen.values():
++            w_.grad, b_.grad = None, None
++        loss.backward()
++        rec = {"step": step, "loss": float(loss)}
++        for i, r in enumerate(rows):
++            if not (M.arm == "sh_live_term_dropped" and r == 3):
++                rec[TERM_OF_ROW[r]] = float(terms[i])
++        rec["grad_abs"] = M.grad_abs()
++        rec["frozen_grad_abs"] = M.frozen_grad_abs()
++        rec["finite"] = bool(np.isfinite(rec["loss"]) and all(np.isfinite(v) for v in rec["grad_abs"].values()))
++        M.opt.step()
++        if metrics is not None:
++            metrics.write(json.dumps(rec) + "\n")
++        if not rec["finite"]:
++            if metrics is not None:
++                metrics.close()
++            raise SystemExit(f"FAILED: non-finite loss or gradient at step {step}")
++        if step in save:
++            on_save(step, M.state())
++
++
++def head_dict(st: dict, W0, b0, rows, mlp_hidden: int) -> dict:
++    """A head in the form safehead_data.head_logits reads (the same dict load_head returns)."""
++    meta = {"rows": list(rows)}
++    if st["mlp"] is not None:
++        meta["mlp_hidden"] = int(mlp_hidden)
++    return {"W": st["W"], "b": st["b"], "W0": W0, "b0": b0, "meta": meta, "mlp": st["mlp"]}
++
++
++# ============================================================================================ the run
+ def run(argv: list) -> int:
+     import torch
+     a = build_parser().parse_args(argv)
+@@ -125,10 +282,16 @@
+         tok = require_token(argv)
+     else:
+         tok = None
+-    if sorted(cfg.rows) != sorted(set(cfg.rows)) or not set(cfg.rows) <= set(D.SAFETY_ROWS) or not cfg.rows:
+-        raise SystemExit(f"REFUSED: --rows {cfg.rows}: only the safety rows {D.SAFETY_ROWS} may train (EP/C rows {D.FROZEN_ROWS} are never parameters)")
++    if sorted(cfg.rows) != sorted(set(cfg.rows)) or not set(cfg.rows) <= set(D.TRAINABLE_ROWS) or not cfg.rows:
++        raise SystemExit(f"REFUSED: --rows {cfg.rows}: only the rows {D.TRAINABLE_ROWS} may train (the C row {4} is never a parameter)")
++    if 2 in cfg.rows and cfg.select != "cv5":
++        raise SystemExit("REFUSED: --rows containing 2 (EP) needs --select cv5 (the EP row has no held-out rule of the SAFE-HEAD card: its label is the rebuilt cache's soft EP)")
++    if 2 in cfg.rows and len(cfg.rows) != 1:
++        raise SystemExit("REFUSED: EP-HEAD trains row 2 ALONE (--rows 2)")
++    if cfg.mlp_hidden < 0:
++        raise SystemExit(f"REFUSED: --mlp-hidden {cfg.mlp_hidden}")
+     if 0 not in cfg.save_steps:
+-        raise SystemExit("REFUSED: --save-steps must include 0 (the untrained head: CTRL-ID and the held-out rule's step 0)")
++        raise SystemExit("REFUSED: --save-steps must include 0 (the untrained head: CTRL-ID and the selection rule's step 0)")
+     out = Path(cfg.out)
+     out.mkdir(parents=True, exist_ok=True)
+     if any(out.iterdir()):
+@@ -147,51 +310,43 @@
+     feat = {"max_abs": float(dl.max()), "p99_abs": float(np.percentile(dl, 99)), "bar_max": FEAT_MAX, "bar_p99": FEAT_P99}
+     if feat["max_abs"] > FEAT_MAX or feat["p99_abs"] > FEAT_P99:
+         raise SystemExit(f"REFUSED (CTRL-FEAT): C1's head on the cached s is not the cached logits ({feat}): s is not the head's input, or init-from is not the cache's model")
+-    tr = np.where(c["split"] == "train")[0]
+     ho = np.where(c["split"] == "heldout")[0]
+-    if len(tr) < cfg.batch or len(ho) == 0:
+-        raise SystemExit(f"REFUSED: {len(tr)} train / {len(ho)} held-out tokens (batch {cfg.batch})")
++    cv = cfg.select == "cv5"
++    pool = np.arange(len(c["token"])) if cv else np.where(c["split"] == "train")[0]            # the tokens the head is FITTED on: all navtrain (cv5) | the 29 train logs
++    if len(pool) < cfg.batch or len(ho) == 0:
++        raise SystemExit(f"REFUSED: {len(pool)} train-pool / {len(ho)} held-out tokens (batch {cfg.batch})")
+     rows = list(cfg.rows)
+-    Y = np.stack([c[D.ROW_LABEL[r]][tr] for r in rows], -1).astype(np.float32)                 # [Ntr, 64, R]
++    Y = np.stack([c[D.ROW_LABEL_ALL[r]][pool] for r in rows], -1).astype(np.float32)           # [Npool, 64, R]
+     n_fixed = None
+     if cfg.permute_labels_seed >= 0:                                                            # CTRL-RED: every token gets another token's 64 label rows
+-        perm = np.random.default_rng(cfg.permute_labels_seed).permutation(len(tr))
+-        n_fixed = int((perm == np.arange(len(tr))).sum())
++        perm = np.random.default_rng(cfg.permute_labels_seed).permutation(len(pool))
++        n_fixed = int((perm == np.arange(len(pool))).sum())
+         Y = Y[perm]
+-    S = torch.from_numpy(np.ascontiguousarray(c["s"][tr]))
++    S = torch.from_numpy(np.ascontiguousarray(c["s"][pool]))
+     YT = torch.from_numpy(Y)
+-    # the parameters: ONE weight row + ONE bias per trained row; the frozen rows are leaves OUTSIDE the optimizer (their grad is the zero control)
+-    params = {r: (torch.nn.Parameter(torch.from_numpy(W0[r].copy())), torch.nn.Parameter(torch.from_numpy(b0[r:r + 1].copy()))) for r in rows}
+-    frozen = {r: (torch.from_numpy(W0[r].copy()).requires_grad_(True), torch.from_numpy(b0[r:r + 1].copy()).requires_grad_(True))
+-              for r in range(D.N_OUT) if r not in rows}
+-    groups = [{"params": list(params[r]), "name": f"row{r}"} for r in rows]
+-    lr = cfg.lr * (2.0 if arm == "sh_dvb_lr_drift" else 1.0)
+-    if arm == "sh_reach_row_dropped":                                                           # deliberate regression: one trained row is not in the optimizer
+-        groups = [g for g in groups if g["name"] != f"row{rows[min(2, len(rows) - 1)]}"]
+-    opt = torch.optim.Adam(groups, lr=lr, betas=OPT["betas"], eps=OPT["eps"], weight_decay=OPT["weight_decay"])
+-
+-    def head():
+-        Wr = [params[r][0] if r in params else frozen[r][0] for r in range(D.N_OUT)]
+-        br = [params[r][1] if r in params else frozen[r][1] for r in range(D.N_OUT)]
+-        return torch.stack(Wr), torch.cat(br)
+-
+-    def head_np():
+-        with torch.no_grad():
+-            W, b = head()
+-            W, b = W.detach().numpy().copy(), b.detach().numpy().copy()
+-        if arm == "sh_ckpt_nondet":
+-            W[rows[0], 0] += np.float32(1e-3 * ((time.time_ns() // 1000) % 997 + 1))
+-        return W, b
+-
++    extra_row = 2 if 2 not in rows else 0
++    EXTRA = torch.from_numpy(c[D.ROW_LABEL_ALL[extra_row]][pool].astype(np.float32))
++    tok_fold = fold_of_log = None
++    if cv:
++        fold_of_log = D.cv_folds(c["log"][pool], N_FOLDS)
++        if len(fold_of_log) < N_FOLDS:
++            raise SystemExit(f"REFUSED: --select cv5 needs >= {N_FOLDS} logs, the cache has {len(fold_of_log)}")
++        tok_fold = (np.arange(len(pool)) % N_FOLDS) if arm == "sh_cv_token_folds" else np.array([fold_of_log[lg] for lg in c["log"][pool]])
++        for k in range(N_FOLDS):
++            if (tok_fold != k).sum() < cfg.batch or (tok_fold == k).sum() == 0:
++                raise SystemExit(f"REFUSED: CV fold {k} has {(tok_fold == k).sum()} test / {(tok_fold != k).sum()} train tokens (batch {cfg.batch})")
++    M = HeadModel(rows, cfg.mlp_hidden, W0, b0, cfg.lr, arm, cfg.seed)
+     data_sha = {"init_sha256": init_sha, "index_sha256": D.sha256_file(cfg.cache_index), "heldout_logs_sha256": D.sha256_file(cfg.heldout_logs),
+                 "navtest_logs_sha256": D.sha256_file(cfg.navtest_logs)}
+-    built = {"seed": cfg.seed, "steps": cfg.steps, "lr": [g["lr"] for g in opt.param_groups], "batch": cfg.batch, "gamma": cfg.gamma,
+-             "rows": [int(g["name"][3:]) for g in opt.param_groups], "rows_declared": rows, "save_steps": list(cfg.save_steps),
+-             "permute_labels_seed": cfg.permute_labels_seed, "n_fixed_points": n_fixed, "optimizer": type(opt).__name__,
+-             "betas": [list(g["betas"]) for g in opt.param_groups], "eps": [g["eps"] for g in opt.param_groups],
+-             "weight_decay": [g["weight_decay"] for g in opt.param_groups], "loss": LOSS_NAME, "live_terms": [TERM_OF_ROW[r] for r in rows],
+-             "frozen_rows": sorted(frozen), "n_train": int(len(tr)), "n_heldout": int(len(ho)), "n_train_logs": int(len(set(c["log"][tr]))),
++    built = {"seed": cfg.seed, "steps": cfg.steps, "lr": [g["lr"] for g in M.opt.param_groups], "batch": cfg.batch, "gamma": cfg.gamma,
++             "rows": [int(g["name"][3:]) for g in M.opt.param_groups], "rows_declared": rows, "save_steps": list(cfg.save_steps),
++             "permute_labels_seed": cfg.permute_labels_seed, "n_fixed_points": n_fixed, "optimizer": type(M.opt).__name__,
++             "betas": [list(g["betas"]) for g in M.opt.param_groups], "eps": [g["eps"] for g in M.opt.param_groups],
++             "weight_decay": [g["weight_decay"] for g in M.opt.param_groups], "loss": LOSS_NAME, "live_terms": [TERM_OF_ROW[r] for r in rows],
++             "frozen_rows": sorted(M.frozen), "n_train": int(len(pool)), "n_heldout": int(len(ho)), "n_train_logs": int(len(set(c["log"][pool]))),
+              "n_heldout_logs": int(len(set(c["log"][ho]))), "ctrl_feat": feat, "threads": torch.get_num_threads(), **data_sha,
++             "mlp_hidden": int(M.mlp_hidden), "select": cfg.select, "n_trainable_params": M.n_params, "mlp_last_layer_abs_sum_init": M.last_layer_init_abs,
++             "cv_fold_of_log": ({lg: sorted({int(f) for f in tok_fold[c["log"][pool] == lg]}) for lg in sorted(fold_of_log)} if cv else None),
+              "gate_mode": "build" if cfg.build_only else ("smoke" if cfg.smoke_steps else None), "arm": arm}
+     (out / "built.json").write_text(json.dumps(built, indent=1), encoding="utf-8")
+     if cfg.build_only:
+@@ -201,68 +356,95 @@
+     save = sorted({s for s in cfg.save_steps if s <= n_steps} | ({n_steps} if cfg.smoke_steps else set()))
+     meta0 = {"rows": rows, "seed": cfg.seed, "init_sha256": init_sha, "index_sha256": data_sha["index_sha256"], "argv": list(argv),
+              "smoke": bool(cfg.smoke_steps), "permute_labels_seed": cfg.permute_labels_seed, "loss": LOSS_NAME, "token": tok}
+-    shas = {}
+-    probe = {}
+-
+-    def save_step(step):
+-        W, b = head_np()
+-        Wsave, bsave = W, (b0.copy() if arm == "sh_ckpt_bias_dropped" else b)
+-        shas[step] = D.save_head(out / f"head_step{step:05d}.npz", W=Wsave, b=bsave, W0=W0, b0=b0, meta={**meta0, "step": step})
+-        probe[step] = (W, b)
+-    if 0 in save:
+-        save_step(0)
+-    rng = np.random.default_rng(cfg.seed)
+-    order, pos = rng.permutation(len(tr)), 0
++    if M.mlp_hidden:                                                                            # only a NON-default lever enters the head's meta (SAFE-HEAD heads stay byte-identical)
++        meta0["mlp_hidden"] = int(M.mlp_hidden)
++    if cv:
++        meta0["select"] = "cv5"
++    sel_cv = cv_select(c, pool, tok_fold, S, YT, EXTRA, cfg, M, W0, b0, save, n_steps, arm) if cv else None
++    if sel_cv is not None:
++        (out / "cv_select.json").write_text(json.dumps(sel_cv, indent=1), encoding="utf-8")
++        M = HeadModel(rows, cfg.mlp_hidden, W0, b0, cfg.lr, arm, cfg.seed)                      # the FINAL head: a fresh model, trained on ALL logs
++    shas, probe = {}, {}
++
++    def save_step(step, st):
++        Wsave, bsave = st["W"], (b0.copy() if arm == "sh_ckpt_bias_dropped" else st["b"])
++        shas[step] = D.save_head(out / f"head_step{step:05d}.npz", W=Wsave, b=bsave, W0=W0, b0=b0, meta={**meta0, "step": step}, mlp=st["mlp"])
++        probe[step] = st
+     mf = open(out / "metrics.jsonl", "w", encoding="utf-8")
+-    for step in range(1, n_steps + 1):
+-        if pos + cfg.batch > len(tr):
+-            order, pos = rng.permutation(len(tr)), 0
+-        idx = torch.from_numpy(order[pos:pos + cfg.batch])
+-        pos += cfg.batch
+-        W, b = head()
+-        z = S[idx] @ W.T + b                                                                     # [B, 64, 6]
+-        loss_rows = rows + ([2] if arm == "sh_reach_ep_in_loss" else [])
+-        yb = YT[idx]
+-        if arm == "sh_reach_ep_in_loss":
+-            yb = torch.cat([yb, torch.from_numpy(c["tr_ep"][tr])[idx].unsqueeze(-1).float()], -1)
+-        terms = qfocal_terms(z[..., loss_rows], yb, cfg.gamma)
+-        loss = terms.mean()
+-        opt.zero_grad(set_to_none=True)
+-        for w_, b_ in frozen.values():
+-            w_.grad, b_.grad = None, None
+-        loss.backward()
+-        rec = {"step": step, "loss": float(loss)}
+-        for i, r in enumerate(rows):
+-            if not (arm == "sh_live_term_dropped" and r == 3):
+-                rec[TERM_OF_ROW[r]] = float(terms[i])
+-        rec["grad_abs"] = {f"row{r}": float(params[r][0].grad.abs().sum() + params[r][1].grad.abs().sum()) for r in rows}
+-        rec["frozen_grad_abs"] = {f"row{r}": float((0.0 if w_.grad is None else w_.grad.abs().sum()) + (0.0 if b_.grad is None else b_.grad.abs().sum()))
+-                                  for r, (w_, b_) in frozen.items()}
+-        rec["finite"] = bool(np.isfinite(rec["loss"]) and all(np.isfinite(v) for v in rec["grad_abs"].values()))
+-        opt.step()
+-        mf.write(json.dumps(rec) + "\n")
+-        if not rec["finite"]:
+-            mf.close()
+-            raise SystemExit(f"FAILED: non-finite loss or gradient at step {step}")
+-        if step in save:
+-            save_step(step)
++    fit(M, S, YT, steps=n_steps, batch=cfg.batch, gamma=cfg.gamma, seed=cfg.seed, save=set(save), on_save=save_step, metrics=mf, extra_label=EXTRA)
+     mf.close()
+     if cfg.smoke_steps:                                                                          # G-EVAL / G-CKPT probes: the trainer's own in-memory head and forward
+-        Wf, bf = probe[n_steps]
++        st = probe[n_steps]
+         k = min(8, len(ho))
+         with torch.no_grad():
+-            zt = (torch.from_numpy(np.ascontiguousarray(c["s"][ho[:k]])) @ torch.from_numpy(Wf).T + torch.from_numpy(bf)).numpy()
+-        np.savez(out / "probe.npz", W=Wf, b=bf, ho_idx=ho[:k], torch_logits=zt, cached_logits=c["logits"][ho[:k]], s=c["s"][ho[:k]],
+-                 cached_pick=c["pick"][ho], ho_s=c["s"][ho], ho_logits=c["logits"][ho])
+-    sel = heldout_select(c, ho, out, save, W0, b0, rows)
++            zt = M.logits(torch.from_numpy(np.ascontiguousarray(c["s"][ho[:k]]))).numpy()
++        extra = {} if st["mlp"] is None else dict(st["mlp"])
++        np.savez(out / "probe.npz", W=st["W"], b=st["b"], ho_idx=ho[:k], torch_logits=zt, cached_logits=c["logits"][ho[:k]], s=c["s"][ho[:k]],
++                 cached_pick=c["pick"][ho], ho_s=c["s"][ho], ho_logits=c["logits"][ho], **extra)
++    if cv:
++        sel = sel_cv
++        line = (f"cv5 chosen_step {sel['chosen_step']} oof_pdms {sel['per_step'][str(sel['chosen_step'])]['oof_pdms']:.4f} "
++                f"(step 0: {sel['per_step']['0']['oof_pdms']:.4f})")
++    else:
++        sel = heldout_select(c, ho, out, save, W0, b0, rows)
++        line = f"chosen_step {sel['chosen_step']} heldout_safety_miss_rate {sel['per_step'][str(sel['chosen_step'])]['safety_miss_rate']:.4f}"
+     (out / "heads.sha256").write_text("".join(f"{shas[s]}  head_step{s:05d}.npz\n" for s in sorted(shas)), encoding="utf-8")
+     (out / "run.json").write_text(json.dumps({"argv": list(argv), "built": built, "chosen_step": sel["chosen_step"], "seconds": round(time.time() - t0, 1),
+                                               "token": tok, "evidence": "MEASURED (this run)"}, indent=1, default=str), encoding="utf-8")
+-    print(f"ZZSH_TRAIN_DONE steps {n_steps} chosen_step {sel['chosen_step']} heldout_safety_miss_rate {sel['per_step'][str(sel['chosen_step'])]['safety_miss_rate']:.4f} "
+-          f"({time.time() - t0:.1f} s)", flush=True)
++    print(f"ZZSH_TRAIN_DONE steps {n_steps} {line} ({time.time() - t0:.1f} s)", flush=True)
+     return 0
+ 
+ 
++def cv_select(c, pool, tok_fold, S, YT, EXTRA, cfg, M0, W0, b0, save, n_steps, arm) -> dict:
++    """PREREG_EPHEAD 4.3: 5-fold LOG-level cross-validation over ALL navtrain logs.  For each fold k a FRESH model is trained on the other 4 folds (same recipe, same seed,
++    same steps), and at every saved step its head scores the fold-k tokens (the read's delta arithmetic, safehead_data.head_logits).  Per step the OUT-OF-FOLD pooled mean
++    tracked PDMS of the agg32 pick is formed; the chosen step is the argmax, ties -> the EARLIEST; step 0 (C1's own head) is a column of the same table.  The cache's
++    PDMS is the rebuilt metric cache (approximate, disclosed in the card): the rule only RANKS steps; every navtest number comes from the harness-exact table."""
++    import torch
++    rows = list(cfg.rows)
++    n = len(pool)
++    LG, SS, PK = c["logits"][pool], c["s"][pool], c["pick"][pool]
++    oof = {s: np.zeros((n, D.N_PROP, D.N_OUT), np.float32) for s in save}
++    for k in range(N_FOLDS):
++        trk, tek = np.where(tok_fold != k)[0], np.where(tok_fold == k)[0]
++        Mk = HeadModel(rows, cfg.mlp_hidden, W0, b0, cfg.lr, arm, cfg.seed)
++        trk_t = torch.from_numpy(trk)
++
++        def on_save(step, st, tek=tek):
++            oof[step][tek] = D.head_logits(LG[tek], SS[tek], head_dict(st, W0, b0, rows, cfg.mlp_hidden))
++        fit(Mk, S[trk_t], YT[trk_t], steps=n_steps, batch=cfg.batch, gamma=cfg.gamma, seed=cfg.seed, save=set(save), on_save=on_save, metrics=None, extra_label=EXTRA[trk_t])
++    ar = np.arange(n)
++    pdms, ep = c["tr_pdms"][pool].astype(np.float64), c["tr_ep"][pool].astype(np.float64)
++    safe = (c["tr_nc"][pool] == 1) & (c["tr_dac"][pool] == 1) & (c["tr_ttc"][pool] == 1)
++    logs = np.array(c["log"][pool])
++    ulogs = sorted(set(logs))
++    per, picks = {}, {}
++    for s in save:
++        k = D.select(oof[s])
++        picks[s] = k
++        p = pdms[ar, k]
++        per[str(s)] = {"oof_pdms": float(p.mean() * 100), "per_fold_oof_pdms": [float(p[tok_fold == f].mean() * 100) for f in range(N_FOLDS)],
++                       "oof_safety_miss_rate": float(((~safe[ar, k]) & safe.any(1)).mean()), "oof_ep": float(ep[ar, k].mean() * 100),
++                       "oof_nc": float(c["tr_nc"][pool][ar, k].mean() * 100), "oof_dac": float(c["tr_dac"][pool][ar, k].mean() * 100),
++                       "oof_ttc": float(c["tr_ttc"][pool][ar, k].mean() * 100), "oof_c": float(c["tr_c"][pool][ar, k].mean() * 100),
++                       "switch_rate_vs_c1": float((k != PK).mean())}
++    if 0 in picks and not np.array_equal(picks[0], PK):
++        raise SystemExit(f"FAILED (CTRL-ID, out-of-fold): the untrained head does not reproduce C1's cached pick on {int((picks[0] != PK).sum())} of {n} tokens")
++    p0 = pdms[ar, picks[0]]
++    for s in save:
++        d = pdms[ar, picks[s]] - p0
++        per[str(s)]["oof_delta_vs_step0"] = float(d.mean() * 100)
++        pl = np.array([d[logs == lg].mean() for lg in ulogs])
++        per[str(s)]["descriptive_logs_improved_worsened_of"] = [int((pl > 0).sum()), int((pl < 0).sum()), int(len(ulogs))]
++    best = max(per[str(s)]["oof_pdms"] for s in save)
++    chosen = min(s for s in save if per[str(s)]["oof_pdms"] == best)
++    return {"rule": "argmax over --save-steps of the out-of-fold pooled mean tracked PDMS of the agg32 pick (cache tr_pdms, 5-fold log CV over ALL navtrain logs, folds = sorted "
++                    "log name index mod 5); ties -> earliest; step 0 = C1 (PREREG_EPHEAD 4.3)",
++            "n_tokens": int(n), "n_logs": len(ulogs), "folds": {str(f): sorted(lg for lg in ulogs if D.cv_folds(ulogs, N_FOLDS)[lg] == f) for f in range(N_FOLDS)},
++            "per_step": per, "chosen_step": int(chosen), "chosen_is_untrained": chosen == 0,
++            "evidence": "MEASURED (out-of-fold navtrain, rebuilt-cache PDMS; NOT navtest)"}
++
++
+ def heldout_metrics(c, ho, L) -> dict:
+     """Held-out (navtrain, the 6 SFT held-out logs) read of logits L [Nho, 64, 6]: the pick by agg32 and its tracked labels."""
+     k = D.select(L)
+@@ -288,7 +470,7 @@
+     per, picks = {}, {}
+     for s in save:
+         h = D.load_head(out / f"head_step{s:05d}.npz")
+-        L = D.delta_logits(c["logits"][ho], c["s"][ho], h["W"], h["b"], W0, b0, rows)
++        L = D.head_logits(c["logits"][ho], c["s"][ho], h)
+         m = heldout_metrics(c, ho, L)
+         picks[s] = m.pop("pick")
+         per[str(s)] = m
+--- a/safehead_gate.py
++++ b/safehead_gate.py
+@@ -14,6 +14,12 @@
+   G-CKPT  sh_ckpt_bias_dropped (the saved file is not the in-memory head)    | sh_ckpt_nondet (two identical runs differ)
+   G-SUITE suite_failing_test (gate_checks.check_suite's own arm)
+ 
++L2-NEXT (PREREG_SHMLP.md, PREREG_EPHEAD.md, PK/raw/2026-11-27-l2next/): six more NEW profiles, same runner, same checks:
++  refe_shmlp_{s0,s1,red}   SH-MLP: SAFE-HEAD's recipe + --mlp-hidden 64 (residual MLP, zero-init last layer; 66,052 parameters)
++  refe_ephead_{s0,s1,red}  EP-HEAD: row 2 (EP) alone, SOFT label tr_ep, --select cv5 (5-fold log CV over all navtrain logs); red = labels permuted across tokens
++  extra deliberate-regression arms: sh_mlp_off (G-DVB: --mlp-hidden ignored) | sh_mlp_nonzero_init (G-DVB + G-EVAL: the last layer is not zero) | sh_cv_token_folds (G-DVB: folds by
++  token, not by log: a log would sit in train AND test)
++
+     python launch_gate.py refusals --profile refe_safehead_s0 --args "$ARGS"
+     python launch_gate.py run --profile refe_safehead_s0 --pkg <pkg> --args "$ARGS" --out-dir <gate dir> --commit <landed 40-hex>
+     python launch_gate.py verify --profile refe_safehead_s0 --token <PASS_*.json> --args "$ARGS" --pkg <pkg>
+@@ -55,10 +61,50 @@
+ #   output  = where it writes (fresh)                                          control = gate-only switch, FORBIDDEN in a launch argv
+ DVB = {"cache_index": "data", "init_from": "data", "heldout_logs": "data", "navtest_logs": "data", "out": "output", "seed": "built", "steps": "built",
+        "lr": "built", "batch": "built", "gamma": "built", "rows": "built", "save_steps": "built", "permute_labels_seed": "built",
++       "mlp_hidden": "built", "select": "built",                                        # L2-NEXT: judged in check_dvb (the built value, the parameter count, the zero-init last layer, the CV folds)
+        "smoke_steps": "control", "build_only": "control"}
+ REGISTERED_BUILT = {"optimizer": "Adam", "betas": [0.9, 0.999], "eps": 1e-8, "weight_decay": 0.0, "loss": "qfocal"}
+ 
+ 
++# ---- L2-NEXT: the SH-MLP and EP-HEAD families (new profile names; the three SAFE-HEAD dicts below are untouched) ------------------------------------------------
++SUITE_NEXT = SUITE + [{"script": "test_safehead_next.py", "args": ["--fast"], "token": "ZZSHNEXT_PASS"}]
++FAMILIES = {
++    "shmlp": {"registered": {**REGISTERED, "--mlp-hidden": "64"}, "live_terms": LIVE_TERMS, "card": "PK/raw/2026-11-27-l2next/PREREG_SHMLP.md",
++              "name": {"s0": "refe_shmlp_s0", "s1": "refe_shmlp_s1", "red": "refe_shmlp_red"}},
++    "ephead": {"registered": {**REGISTERED, "--rows": "2", "--select": "cv5"}, "live_terms": ("qfl_ep",), "card": "PK/raw/2026-11-27-l2next/PREREG_EPHEAD.md",
++               "name": {"s0": "refe_ephead_s0", "s1": "refe_ephead_s1", "red": "refe_ephead_red"}},
++}
++NEXT_PROFILE_NAMES = tuple(n for f in FAMILIES.values() for n in f["name"].values())
++
++
++def family_of_argv(argv: list) -> str:
++    import gate_token as GT
++    sel, mh = GT.flag_values(argv, "--select"), GT.flag_values(argv, "--mlp-hidden")
++    if sel and sel[0] == "cv5":
++        return "ephead"
++    if mh and int(mh[0]) > 0:
++        return "shmlp"
++    return "safehead"
++
++
++def _next_profiles() -> dict:
++    out = {}
++    for fam, F in FAMILIES.items():
++        for arm, spec in ARMS.items():
++            req = {**{f: None for f in DATA_FLAGS + OUTPUT_FLAGS}, **F["registered"], "--seed": str(spec["seed"])}
++            if spec["perm"] is not None:
++                req["--permute-labels-seed"] = str(spec["perm"])
++            name = F["name"][arm]
++            out[name] = {"name": name, "runner": "safehead", "safehead_rules": True, "safehead_arm": arm, "safehead_family": fam, "trainer": "refe/safehead_train.py",
++                         "parser_module": "safehead_train", "trainer_src": "safehead_train.py", "namespace_funcs": ("build_config", "run"),
++                         "live_terms": F["live_terms"], "data_flags": DATA_FLAGS, "output_flags": OUTPUT_FLAGS,
++                         "forbidden_flags": CONTROL_FLAGS + (() if spec["perm"] is not None else ("--permute-labels-seed",)),
++                         "required_flags": req, "registered": dict(F["registered"]), "suite": [dict(e) for e in SUITE_NEXT], "checks": CHECKS, "na_ok": ("G-CLOCK",),
++                         "clock_na": "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
++                         "mintable": True, "require_commit": True, "rehearsal": False, "init_from_sha256": C1_SHA256, "smoke_steps": SMOKE_STEPS, "card": F["card"]}
++    return out
++
++
+ def profiles() -> dict:
+     out = {}
+     for arm, spec in ARMS.items():
+@@ -74,18 +120,21 @@
+                      "clock_na": "SAFE-HEAD has no label clock: its labels are a fixed, sealed cache bound by sha256 (--cache-index)",
+                      "mintable": True, "require_commit": True, "rehearsal": False, "init_from_sha256": C1_SHA256, "smoke_steps": SMOKE_STEPS,
+                      "card": "PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md"}
++    out.update(_next_profiles())
+     return out
+ 
+ 
+ def profile_name_for_argv(argv: list) -> str:
+     import gate_token as GT
++    fam = family_of_argv(argv)
++    names = PROFILE_NAME if fam == "safehead" else FAMILIES[fam]["name"]
+     perm = GT.flag_values(argv, "--permute-labels-seed")
+     if perm and int(perm[0]) >= 0:
+-        return PROFILE_NAME["red"]
++        return names["red"]
+     seed = GT.flag_values(argv, "--seed")
+     for arm, spec in ARMS.items():
+         if spec["perm"] is None and seed and int(seed[0]) == spec["seed"]:
+-            return PROFILE_NAME[arm]
++            return names[arm]
+     raise SystemExit(f"REFUSED: the argv is no registered SAFE-HEAD arm (seed {seed}, permute {perm})")
+ 
+ 
+@@ -110,10 +159,11 @@
+     for f, n in sorted(seen.items()):
+         if n > 1:
+             out.append(f"{name}: {f} is carried {n} times")
+-    for f in ("--rows", "--save-steps"):
++    reg = prof.get("registered", REGISTERED)
++    for f in ("--rows", "--save-steps", "--mlp-hidden", "--select"):
+         got = GT.flag_values(argv, f)
+-        if got and got[0] != REGISTERED[f]:
+-            out.append(f"{name} PINS {f} {REGISTERED[f]}; the argv has {f} {got[0]}")
++        if f in reg and got and got[0] != reg[f]:
++            out.append(f"{name} PINS {f} {reg[f]}; the argv has {f} {got[0]}")
+     o = GT.flag_values(argv, "--out")
+     if o and Path(o[0]).is_dir() and any(Path(o[0]).iterdir()):
+         out.append(f"{name}: --out {o[0]} exists and is not empty (a run never writes over another)")
+@@ -192,9 +242,10 @@
+         reasons.append(f"the BUILD run failed (rc {r.returncode}): {_tail(r)}")
+         return C.verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+     b = json.loads(bj.read_text(encoding="utf-8"))
+-    det["built"] = {k: b.get(k) for k in ("seed", "steps", "lr", "batch", "gamma", "rows", "save_steps", "permute_labels_seed", "optimizer", "loss")}
++    det["built"] = {k: b.get(k) for k in ("seed", "steps", "lr", "batch", "gamma", "rows", "save_steps", "permute_labels_seed", "optimizer", "loss", "mlp_hidden", "select",
++                                          "n_trainable_params", "mlp_last_layer_abs_sum_init")}
+     want = {"seed": ns.seed, "steps": ns.steps, "batch": ns.batch, "gamma": ns.gamma, "permute_labels_seed": ns.permute_labels_seed,
+-            "save_steps": list(T._ints(ns.save_steps))}
++            "save_steps": list(T._ints(ns.save_steps)), "mlp_hidden": ns.mlp_hidden, "select": ns.select}
+     for k, v in want.items():
+         if b.get(k) != v:
+             reasons.append(f"G-DVB {k}: argv {v!r} != built {b.get(k)!r}")
+@@ -210,7 +261,21 @@
+     if any(list(x) != REGISTERED_BUILT["betas"] for x in b.get("betas", [None])) or any(x != REGISTERED_BUILT["eps"] for x in b.get("eps", [None])) \
+             or any(x != REGISTERED_BUILT["weight_decay"] for x in b.get("weight_decay", [None])):
+         reasons.append(f"G-DVB Adam constants {b.get('betas')}/{b.get('eps')}/{b.get('weight_decay')} != registered {REGISTERED_BUILT}")
+-    if b.get("live_terms") != [dict(zip((0, 1, 3, 5), LIVE_TERMS))[r] for r in rows]:
++    H = int(ns.mlp_hidden)
++    n_exp = len(rows) * ((D.MLP_IN * H + H + H + 1) if H else (D.D_S + 1))
++    det["n_trainable_params_expected"] = n_exp
++    if b.get("n_trainable_params") != n_exp:
++        reasons.append(f"G-DVB trainable parameters: the optimiser holds {b.get('n_trainable_params')}, the argv implies {n_exp} ({len(rows)} rows, mlp_hidden {H})")
++    if H and b.get("mlp_last_layer_abs_sum_init") != 0.0:
++        reasons.append(f"G-DVB zero-init: the MLP's last layer has |w|+|b| = {b.get('mlp_last_layer_abs_sum_init')!r} at init, not EXACTLY 0.0 (step 0 would not be C1)")
++    if ns.select == "cv5":
++        idx = D.read_index(ns.cache_index)
++        exp = {lg: [i % T.N_FOLDS] for i, lg in enumerate(sorted({r["log"] for r in idx if r["split"] in D.SPLITS_NAVTRAIN}))}
++        det["cv_logs"] = len(exp)
++        if b.get("cv_fold_of_log") != exp:
++            bad = sorted(k for k in set(exp) | set(b.get("cv_fold_of_log") or {}) if (b.get("cv_fold_of_log") or {}).get(k) != exp.get(k))
++            reasons.append(f"G-DVB cv5 folds: {len(bad)} log(s) are not in the one fold (sorted-name index mod 5) (first {bad[:2]}): a log must be in exactly one fold")
++    if b.get("live_terms") != [T.TERM_OF_ROW[r] for r in rows]:
+         reasons.append(f"G-DVB live terms {b.get('live_terms')} do not match the trained rows {rows}")
+     if b.get("init_sha256") != prof["init_from_sha256"]:
+         reasons.append(f"G-DVB init-from sha256 {str(b.get('init_sha256'))[:16]} is not C1's {prof['init_from_sha256'][:16]} (MODEL_REGISTRY 14.6)")
+@@ -224,6 +289,14 @@
+     return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()] if p.is_file() else []
+ 
+ 
++def _row_moved(h0: dict, hN: dict, g: int, rows) -> float:
++    """How far row g's TRAINED parameters moved between two heads: |W - W0| + |b - b0| (schema /1) or the residual-MLP arrays' change (schema /2)."""
++    if hN.get("mlp") is not None:
++        i = list(rows).index(g)
++        return float(sum(np.abs(hN["mlp"][k][i] - h0["mlp"][k][i]).sum() for k in D.MLP_KEYS))
++    return float(np.abs(hN["W"][g] - h0["W"][g]).sum() + abs(hN["b"][g] - h0["b"][g]))
++
++
+ def check_live(prof: dict, argv: list, smoke: Path, r, data: dict, arm=None, rehearsal=False) -> dict:
+     T = importlib.import_module(prof["parser_module"])
+     reasons, det = [], {"smoke_rc": r.returncode}
+@@ -231,7 +304,7 @@
+         reasons.append(f"the real-data smoke failed (rc {r.returncode}): {_tail(r)}")
+         return C.verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
+     rows = list(T._ints(T.build_parser().parse_args(argv).rows))
+-    terms = [dict(zip((0, 1, 3, 5), LIVE_TERMS))[x] for x in rows]
++    terms = [T.TERM_OF_ROW[x] for x in rows]
+     M = _metrics(smoke / "metrics.jsonl")
+     det["steps"] = len(M)
+     if len(M) != SMOKE_STEPS:
+@@ -250,7 +323,7 @@
+     if b.get("rows") != rows:
+         reasons.append(f"trained rows {rows} but the optimiser holds {b.get('rows')} (a trained row outside the optimiser never moves)")
+     h0, hN = D.load_head(smoke / "head_step00000.npz"), D.load_head(smoke / f"head_step{SMOKE_STEPS:05d}.npz")
+-    moved = {D.ROW_NAMES[g]: float(np.abs(hN["W"][g] - h0["W"][g]).sum() + abs(hN["b"][g] - h0["b"][g])) for g in rows}
++    moved = {D.ROW_NAMES[g]: _row_moved(h0, hN, g, rows) for g in rows}
+     det["row_moved_abs"] = moved
+     for g, v in moved.items():
+         if not v > 0.0:
+@@ -271,15 +344,15 @@
+     hN, h0 = D.load_head(smoke / f"head_step{SMOKE_STEPS:05d}.npz"), D.load_head(smoke / "head_step00000.npz")
+     rows = list(hN["meta"]["rows"])
+     rows_read = [(g + 1) % D.N_OUT for g in rows] if C.arm_is("sh_eval_rowshift", arm) else rows
+-    if not (np.array_equal(hN["W"], p["W"]) and np.array_equal(hN["b"], p["b"])):
++    if not (np.array_equal(hN["W"], p["W"]) and np.array_equal(hN["b"], p["b"]) and (hN["mlp"] is None or all(np.array_equal(hN["mlp"][k], p[k]) for k in D.MLP_KEYS))):
+         reasons.append("the saved head is not the trainer's in-memory head")
+     # (b) the loader builds the SAME FUNCTION as the trainer: the loaded head on the same s vs the trainer's own torch forward
+-    dd = float(np.abs(D.direct_logits(p["s"], hN["W"], hN["b"]) - p["torch_logits"]).max())
++    dd = float(np.abs(D.head_forward(p["s"], hN) - p["torch_logits"]).max())
+     det["max_abs_loaded_head_vs_trainer_forward"] = dd
+     if not dd <= EVAL_TOL:
+         reasons.append(f"the loaded head differs from the trainer's forward by {dd:.3g} > {EVAL_TOL}")
+     # (c) the read's delta form adds exactly the head's CHANGE on the trained rows (like for like: the cached logits carry the forward's own precision of s)
+-    L = D.delta_logits(p["cached_logits"], p["s"], hN["W"], hN["b"], hN["W0"], hN["b0"], rows_read)
++    L = D.head_logits(p["cached_logits"], p["s"], hN, rows_read)
+     chg = p["torch_logits"] - D.direct_logits(p["s"], hN["W0"], hN["b0"])
+     d = float(np.abs((L - p["cached_logits"])[..., rows] - chg[..., rows]).max())
+     fr = [g for g in range(D.N_OUT) if g not in rows]
+@@ -288,7 +361,7 @@
+         reasons.append(f"the read's change on the trained rows differs from the trainer's by {d:.3g} > {EVAL_TOL}")
+     if not np.array_equal(L[..., fr], p["cached_logits"][..., fr]):
+         reasons.append("the read changes an untrained row (EP/C)")
+-    L0 = D.delta_logits(p["ho_logits"], p["ho_s"], h0["W"], h0["b"], h0["W0"], h0["b0"], rows_read)
++    L0 = D.head_logits(p["ho_logits"], p["ho_s"], h0, rows_read)
+     det["step0_bitexact"] = bool(np.array_equal(L0, p["ho_logits"]))
+     det["step0_pick_agree"] = int((D.select(L0) == p["cached_pick"]).sum())
+     det["n_heldout"] = int(len(p["cached_pick"]))
+@@ -315,6 +388,8 @@
+     det["sha_A1"], det["sha_A2"] = D.head_arrays_sha256(hA1), D.head_arrays_sha256(hA2)
+     if det["sha_A1"] != det["sha_A2"] or (runs["A1"] / "metrics.jsonl").read_bytes() != (runs["A2"] / "metrics.jsonl").read_bytes():
+         reasons.append("determinism: two runs of the same argv differ")
++    if (runs["A1"] / "cv_select.json").is_file() and (runs["A1"] / "cv_select.json").read_bytes() != (runs["A2"] / "cv_select.json").read_bytes():
++        reasons.append("determinism: the cross-validation report of two runs of the same argv differs")
+     hp, hB = D.load_head(runs["A1"] / "head_step00002.npz"), D.load_head(runs["B"] / "head_step00002.npz")
+     if D.head_arrays_sha256(hp) != D.head_arrays_sha256(hB):
+         reasons.append("prefix: the step-2 head of a 4-step run is not the final head of a 2-step run")

@@ -1,0 +1,422 @@
+{
+ "schema": "taniteval.bench.summary/1",
+ "run_id": "20260927T032007Z-navsim_v2-none-54a002",
+ "benchmark": "navsim_v2",
+ "protocol": "EPDMS_v2_navtest_single_stage",
+ "split": "navtest_single_stage",
+ "claim_bearing": true,
+ "evidence_class": "MEASURED",
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "single_stage": "OPEN (PI ruling 2026-09-02): one query on a real logged frame; the plan is fixed and propagated by LQR + kinematic bicycle at 10 Hz over 4 s; the ego is never re-queried",
+   "background_traffic": "NON-REACTIVE log replay (traffic_agents=non_reactive, log_replay_traffic_agents.py; agents intersecting the ego at t0 are removed)",
+   "reactive_background_traffic": "NO (log replay; the ego is non-reactive in every NAVSIM runner)"
+  },
+  "closed_loop": false,
+  "traffic_agents": "non_reactive",
+  "reactive_background_traffic": false
+ },
+ "headline_metric": {
+  "name": "EPDMS (NAVSIM v2, one-stage)",
+  "column": "score",
+  "higher_is_better": true,
+  "statistic": "official ONE-STAGE EPDMS (row average_all_frames)",
+  "forbidden_column": "pdm_score",
+  "range": [
+   0.0,
+   1.0
+  ]
+ },
+ "floors": [
+  "STOP",
+  "CV"
+ ],
+ "arms": {
+  "CV": {
+   "kind": "floor",
+   "status": "FAILED",
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "headline": {
+    "status": "UNAVAILABLE",
+    "reason": "scoring FAILED: [\"summary line 'Number of successful scenarios' ABSENT — cannot confirm work\", 'failed scenarios = None', 'no result CSV found']",
+    "n": 0
+   },
+   "per_stage": {},
+   "submetrics": {},
+   "per_log": {},
+   "paired": {
+    "STOP": {
+     "status": "UNAVAILABLE",
+     "reason": "this arm was not scored",
+     "n": 0
+    },
+    "CV": {
+     "status": "SELF"
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "not scored",
+    "n": 0
+   },
+   "families": {
+    "longitudinal": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "lateral": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    }
+   },
+   "files": {
+    "counts": "raw/CV/CV.counts.json"
+   }
+  },
+  "STOP": {
+   "kind": "floor",
+   "status": "FAILED",
+   "declared_inputs": [],
+   "headline": {
+    "status": "UNAVAILABLE",
+    "reason": "scoring FAILED: [\"summary line 'Number of successful scenarios' ABSENT — cannot confirm work\", 'failed scenarios = None', 'no result CSV found', \"agent calls {'seam': 394, 'cv_standin': 0, 'UNKNOWN_TOKEN': 0} != seam declaration {'seam': 12146, 'cv_standin': 0}\"]",
+    "n": 0
+   },
+   "per_stage": {},
+   "submetrics": {},
+   "per_log": {},
+   "paired": {
+    "STOP": {
+     "status": "SELF"
+    },
+    "CV": {
+     "status": "UNAVAILABLE",
+     "reason": "this arm was not scored",
+     "n": 0
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "not scored",
+    "n": 0
+   },
+   "families": {
+    "longitudinal": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "lateral": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    }
+   },
+   "files": {
+    "counts": "raw/STOP/STOP.counts.json"
+   }
+  },
+  "HUMAN": {
+   "kind": "reference",
+   "status": "FAILED",
+   "declared_inputs": [
+    "logged future trajectory (PRIVILEGED, label-side only)"
+   ],
+   "headline": {
+    "status": "UNAVAILABLE",
+    "reason": "scoring FAILED: [\"summary line 'Number of successful scenarios' ABSENT — cannot confirm work\", 'failed scenarios = None', 'no result CSV found']",
+    "n": 0
+   },
+   "per_stage": {},
+   "submetrics": {},
+   "per_log": {},
+   "paired": {
+    "STOP": {
+     "status": "UNAVAILABLE",
+     "reason": "this arm was not scored",
+     "n": 0
+    },
+    "CV": {
+     "status": "UNAVAILABLE",
+     "reason": "this arm was not scored",
+     "n": 0
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "not scored",
+    "n": 0
+   },
+   "families": {
+    "longitudinal": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "lateral": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "not scored",
+     "n": 0
+    }
+   },
+   "files": {
+    "counts": "raw/HUMAN/HUMAN.counts.json"
+   }
+  }
+ },
+ "controls": {
+  "arm_notes": [],
+  "route_command_is_a_route_level_oracle": {
+   "what": "NavSim driving_command is a ROUTE-LEVEL ORACLE",
+   "source": "W2 / E3 (2026-09-20), four probes",
+   "verdict": {
+    "status": "CHECKED",
+    "verdict": "PARTIAL — ROUTE-LEVEL ORACLE",
+    "evidence_class": "PUBLISHED-CODE (mechanism) + MEASURED (four empirical probes)",
+    "one_line": "driving_command is computed from (the ego pose NOW, nuPlan's route, the map) — not from the expert's future trajectory — but the route is the expert's own driven path at ROADBLOCK granularity, so the command carries the expert's future ROUTE CHOICE. Not a trajectory leak (no speed, stop or lane-change information).",
+    "measured": {
+     "reproduction_by_openscene_code": "1,902/1,902 frames (turning 739/739)",
+     "turning_commands_from_FUTURE_route": "710/739 = 96.1 %",
+     "turning_commands_from_NO_FUTURE_route": "491/739 = 66.4 %",
+     "route_starts_behind_the_ego": "83.5 % of 1,921 nuPlan scenes",
+     "stage_two_command_copied_from_expert_frame": "5,462/5,462 navhard, 204/204 warmup",
+     "best_threshold_rule_on_future_path": "94.2-94.7 % (n 65,783) — below the 99 % bar"
+    },
+    "consequence": "a command-conditioned NavSim number is 'driving with an ORACLE ROUTE': comparable within NavSim, never evidence of route/strategic skill; the command may never be a route-head LABEL; pair the command arm with a command-withheld arm.",
+    "evidence": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/RESULT.md §B; raw/route_leak_probe.json; raw/stage2_command_provenance.json",
+    "n": 1902
+   },
+   "applies_to": "every arm that consumes driving_command"
+  },
+  "floors_provenance": {
+   "status": "SCORED_IN_THIS_RUN",
+   "arms": []
+  },
+  "model_scores_provenance": {
+   "status": "SCORED_IN_THIS_RUN"
+  },
+  "gallery_inputs": {
+   "scenes": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "path": "scenes.json",
+    "frame_bank_declared": false,
+    "omitted_null_keys": [
+     "frame_bank",
+     "synthetic_scene_pickles"
+    ]
+   }
+  },
+  "scoring_counts": {
+   "CV": {
+    "status": "RAM_GUARD_ABORT",
+    "failures": [
+     "summary line 'Number of successful scenarios' ABSENT — cannot confirm work",
+     "failed scenarios = None",
+     "no result CSV found"
+    ],
+    "wall_s": 169.9,
+    "log_successful": null,
+    "log_failed": null,
+    "csv_valid_rows": null,
+    "agent_calls": null,
+    "runner_script": "pdm_score_one_stage",
+    "traffic_agents": "non_reactive"
+   },
+   "STOP": {
+    "status": "RAM_GUARD_ABORT",
+    "failures": [
+     "summary line 'Number of successful scenarios' ABSENT — cannot confirm work",
+     "failed scenarios = None",
+     "no result CSV found",
+     "agent calls {'seam': 394, 'cv_standin': 0, 'UNKNOWN_TOKEN': 0} != seam declaration {'seam': 12146, 'cv_standin': 0}"
+    ],
+    "wall_s": 133.7,
+    "log_successful": null,
+    "log_failed": null,
+    "csv_valid_rows": null,
+    "agent_calls": {
+     "seam": 394,
+     "cv_standin": 0,
+     "UNKNOWN_TOKEN": 0
+    },
+    "runner_script": "pdm_score_one_stage",
+    "traffic_agents": "non_reactive"
+   },
+   "HUMAN": {
+    "status": "RAM_GUARD_ABORT",
+    "failures": [
+     "summary line 'Number of successful scenarios' ABSENT — cannot confirm work",
+     "failed scenarios = None",
+     "no result CSV found"
+    ],
+    "wall_s": 123.9,
+    "log_successful": null,
+    "log_failed": null,
+    "csv_valid_rows": null,
+    "agent_calls": null,
+    "runner_script": "pdm_score_one_stage",
+    "traffic_agents": "non_reactive"
+   }
+  }
+ },
+ "provenance": {
+  "devkit": {
+   "repo": "autonomousvision/navsim",
+   "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+   "patches": [
+    {
+     "name": "navsim/common/dataclasses.py PosixPath unpickler (Windows)",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md §4 (blob 596cb7d in the source checkout)",
+     "raw_bytes_git_blob_now": "20673663a56e9239daf4ebceff7a2ef5db99e8ec",
+     "normalised_git_blob_now": "596cb7d6bd5744093b4409f9cbb70d9fcf8535e7",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "venv fcntl.py flock shim",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md §4 (sha256 75184a48...)",
+     "raw_bytes_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+     "normalised_git_blob_now": "6dfec7cf53c89d847886cfbe5328494195bff866",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "nuplan-devkit setup.py packaging-only change",
+     "kind": "pre-existing",
+     "evidence": "E1 RESULT.md §4"
+    },
+    {
+     "name": "C: copy navsim/common/dataloader.py: MetricCacheLoader token split on either separator",
+     "kind": "harness",
+     "evidence": "E1 code/patches/apply_dataloader_patch.py, applied 2026-09-19 13:04 (raw/navhard/dataloader_copy_patch.json); needed for process-pool scoring",
+     "raw_bytes_git_blob_now": "b850e1624f581f7dda6d33082caf017a8aad55f9",
+     "normalised_git_blob_now": "ad06ac3cc552e2316484096cb93b5683f6624002",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)",
+     "kind": "harness",
+     "evidence": "E1 code/patches/apply_idm_degenerate_path_patch.py, applied 2026-09-20 08:58 (raw/navhard/idm_degenerate_path_patch.json). MECHANISM: a fully consumed IDM baseline yields a ZERO-LENGTH path_to_go whose flat-cap buffer is an EMPTY polygon under shapely 2.0.7, so the agent cannot intersect its own path and the assert at navsim_idm_agent_manager.py:84 fires. Scope: the ASSERT CONDITION ONLY - it falls through to the devkit's own free-road branch. Verified by E1 effective 3/3 and INERT 4/4 (healthy tokens bit-identical).",
+     "why_it_is_a_precondition_not_a_footnote": "MEASURED by E1: 166 of 5,462 stage-2 tokens (0 of 450 stage-1) hit it, and ONE assert takes the whole run down. Without this patch the navhard numbers DO NOT EXIST - it is a precondition of the number, not a caveat on it.",
+     "blob_pre_patch": "1924b7c1e9ea2bd0436d475741e6b2e3a2f7b652",
+     "blob_post_patch_e1": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+     "reader_note": "⚠ VERIFY THIS ONE WITH RAW BYTES, NOT `git hash-object`. The file is 100% CRLF (166/166), and `git hash-object` applies the text/eol conversion, returning 214ef5ee39944c3584cb16eaaffd53853fc9db85 for these same bytes - a DIFFERENT number that looks exactly like a mismatch with E1's record. git_blob() below reads raw bytes and agrees with E1 (MEASURED 2026-09-20). A pure line-ending change is invisible to the normalising hash and visible to this one.",
+     "raw_bytes_git_blob_now": "b95bcc7f62246017ea9ab5dca92383c6b50d234b",
+     "normalised_git_blob_now": "214ef5ee39944c3584cb16eaaffd53853fc9db85",
+     "hash_basis": {
+      "raw_bytes_git_blob_now": "sha1('blob <len>\u0000' + RAW bytes), no eol conversion. STRONGER for 'did this file change at all'. This is what E1's apply_*_patch.py prints.",
+      "normalised_git_blob_now": "`git hash-object` = the blob AFTER git's text/eol conversion. ⛔ BLIND to a pure CRLF<->LF change. Quote it only against other git-side ids, never against a raw-byte record."
+     }
+    },
+    {
+     "name": "MetricCacheLoader._load_metric_cache_paths monkeypatch (navsim_win.py --patch-loader)",
+     "kind": "in-process",
+     "evidence": "E1 code/navsim_win.py, pinned by test_navsim_win_patch.py; separator only"
+    }
+   ],
+   "pin": "autonomousvision/navsim@0a380a9 (2025-10-27; post-#151 fix, MEASURED by E1: README changelog 2025/09/29 + pdm_score.py:194-219)",
+   "sha_probe": {
+    "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+    "matches_pin": true,
+    "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+   },
+   "runtime": "C:/Users/Admin/navsim-crun",
+   "wrapper": "taniteval/taniteval/bench/navsim/devkit_side/navsim_win.py",
+   "runner": "navsim.planning.script.run_pdm_score_one_stage",
+   "fix151": "post"
+  },
+  "split_yaml_counts": {
+   "stage_one": 12146,
+   "stage_two": 0,
+   "log_names": 136,
+   "mapping": 0
+  },
+  "ckpt": {
+   "path": null,
+   "sha256": null,
+   "registry_key": null,
+   "note": "--ckpt none: floors / references only",
+   "registry_key_display": "no checkpoint (devkit floors only)"
+  },
+  "subset": null,
+  "metric_cache": {
+   "cache": "C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+   "metadata_csv": "metric_cache_navtest_v2_metadata_node_0.csv",
+   "n_metadata_rows": 12146,
+   "n_tokens": 12146,
+   "verified_by": "CACHE_DONE.json",
+   "cache_done": {
+    "n_cached": {
+     "total": 12146,
+     "stage_one_original": 12146,
+     "stage_two_synthetic": 0
+    },
+    "n_expected_from_yaml": {
+     "stage_one": 12146,
+     "stage_two": 0,
+     "log_groups": 136
+    },
+    "token_sets_equal_yaml": true,
+    "scene_types_match_yaml": true,
+    "written_local": "2026-09-26 20:21:20",
+    "token_set": "FULL_SPLIT",
+    "tokens_sha256": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108",
+    "manifest_sha256": "b02d1a833f205035421e5ce5b180a8d41657bd7d234dd5866e2aa3df6ca04706"
+   }
+  },
+  "logs_dir": "D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "harness": {
+   "fix151": "post",
+   "basis": "MEASURED: devkit 0a380a9 = post-#151 (E1: README changelog 2025/09/29 + pdm_score.py:194-219)"
+  },
+  "promoted_from": [
+   "W1 navsim_v2 suite (two-stage)",
+   "W3 navsim_v1 navtest cache recipe"
+  ]
+ }
+}

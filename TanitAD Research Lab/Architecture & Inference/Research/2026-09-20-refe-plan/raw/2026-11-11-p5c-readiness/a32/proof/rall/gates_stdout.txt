@@ -1,0 +1,11 @@
+LABEL p5r (PREREG_P5C amendment A1, conditional)
+TB-0 FAIL     n=2400 value=0.056656203040615916 bar=[R-B: per rank, ALL of R-TOL-1 (sim8 identical >= 99.5%), R-TOL-2 (per-row max abs diff median <= 0.001, p99 <= 0.005), R-TOL-3 (TB-6 ratios within +-0.01 of the dev-box ratios on the same rows, sim8-fail rate within +-0.25 pp) on the P5-R EVAL control rows; AND Tc20s warm start == dev-box Tc20s build within 1e-09 (R-A)]
+TB-1 PASS     n=2400 value=2400/2400 bar=[Tc20s TB-1 (1018/1018, diff <= 1e-09) AND reproduction of all 2400 P5-R EVAL labels under R-TOL-1/2/3 (per rank, as TB-0)]
+TB-2 PASS     n=2400 value=0.0 bar=[S3: tracked8 of the stored label, simulated alone, equals the solver's final s: <= 1e-06 (m, rad) on every p5r row (replaces TB-2's spline knot exactness)]
+TB-3 PASS     n=2400 value=2400/2400 bar=[ident == traj bit-for-bit on 100 % of rows]
+TB-4 PASS     n=2400 value=2400/2400 bar=[table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows; S4: fallbacks <= 1.0 % of rows PER RANK]
+TB-5 PASS     n=2400 value=2400/2400 bar=[every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %); S1/S2/S5 flags recorded true on every p5r row]
+TB-6 PASS     n=2400 value={'rank0': [1.1581804527852402, 1.5637554601393233], 'rank1': [1.1475483256129977, 1.3437293742124592]} bar=[per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (PREREG_P5R 10: next lever P5-T); rank-1 FAIL => rank-0 only]
+TB-7 PASS     n=2400 value={'0': 1200, '1': 1200} bar=[n_differs per rank recorded]
+RANK_POLICY UNDECIDED ["repair_rank0.json (per-row records) for r_0 WITH p5r_sim8 (p5c_dual_labels.py repair)", "repair_rank1.json (per-row records) for r_1 WITH p5r_sim8 (p5c_dual_labels.py repair)"]
+ZZTB_FAIL TB-0

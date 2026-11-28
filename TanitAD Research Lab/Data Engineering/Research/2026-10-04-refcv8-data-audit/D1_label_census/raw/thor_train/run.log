@@ -1,0 +1,39 @@
+[d1     0.0s] tanitad from /home/nvidia/refcv7_run/fec3a0dccf/stack/tanitad/__init__.py
+[d1     1.0s] blobs {"stack/scripts/refc_v3_train.py": {"git_blob_raw_bytes": "203b437f0d0d86e97949cba3a8dedb810dc4d620", "git_blob_lf_normalised": "c34198e1c9b79c97bacdddbdadf098cd6adb8da3", "n_crlf": 11372, "bytes": 712810}, "stack/tanitad/data/v7_labels.py": {"git_blob_raw_bytes": "86f0c46ed63eaa9f07a303e0c61d9aec5bbdf076", "git_blob_lf_normalised": "86f0c46ed63eaa9f07a303e0c61d9aec5bbdf076", "n_crlf": 0, "bytes": 68771}, "stack/tanitad/data/v2_dataset.py": {"git_blob_raw_bytes": "ee61ea938f2a7ec249513e28d0029fe8ab2d6d5d", "git_blob_lf_normalised": "ee61ea938f2a7ec249513e28d0029fe8ab2d6d5d", "n_crlf": 0, "bytes": 30076}}
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[d1     2.7s] raw label records read: 4572; turn entries 2419, follow-road pseudo entries 2833, turn entries with a missing field 0
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 746946/746946 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] nav_from_v7: follow 2752 / left 779 / right 838, missing 0 (of 4369 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[d1    84.5s] agent join loaded: 838130 records / 4369 clips in 80.1s
+[v3] agent join: 4369/4369 episodes (stable-63bit), 719739/746946 windows labelled (96.4 %), 23779188 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 746946 windows over 4369 clips (verdict PASS)
+[d1    94.8s] map census 9.5s over 4369 clips
+[d1   174.4s] join3d loaded 79.6s
+[d1   174.5s] dataset built: 4369 clips, 746946 windows in 171.8s
+[d1   174.5s] census over 746946 windows, 4369 clips, window 8
+[d1   175.4s]   clip 250/4369  1s  ETA 15s
+[d1   176.3s]   clip 500/4369  2s  ETA 14s
+[d1   177.2s]   clip 750/4369  3s  ETA 13s
+[d1   178.1s]   clip 1000/4369  4s  ETA 12s
+[d1   178.9s]   clip 1250/4369  4s  ETA 11s
+[d1   179.8s]   clip 1500/4369  5s  ETA 10s
+[d1   180.7s]   clip 1750/4369  6s  ETA 9s
+[d1   181.6s]   clip 2000/4369  7s  ETA 8s
+[d1   182.5s]   clip 2250/4369  8s  ETA 8s
+[d1   183.4s]   clip 2500/4369  9s  ETA 7s
+[d1   184.2s]   clip 2750/4369  10s  ETA 6s
+[d1   185.1s]   clip 3000/4369  11s  ETA 5s
+[d1   186.0s]   clip 3250/4369  12s  ETA 4s
+[d1   186.9s]   clip 3500/4369  12s  ETA 3s
+[d1   187.8s]   clip 3750/4369  13s  ETA 2s
+[d1   188.7s]   clip 4000/4369  14s  ETA 1s
+[d1   189.6s]   clip 4250/4369  15s  ETA 0s
+[d1   190.0s] census done 15.5s
+[d1   197.6s] C2 {"n_windows": 24, "n_clips": 6, "n_in_band": 12, "pass": true} mismatches: []
+[d1   197.8s] pose_controls {"n_ratio_clips": 4362, "speed_over_finite_diff_median": 0.9999944727325937, "speed_over_finite_diff_p05_p95": [0.9995951079581156, 1.0004011429106165], "n_entries_inside_pose_range": 980, "label_token_L_has_positive_dyaw_deg": 1.0, "label_token_R_has_negative_dyaw_deg": 1.0, "n_big": 980, "sign_agree_big": 1.0, "median_abs_diff_deg": 0.5744024003826951, "p90_abs_diff_deg": 0.640032511612149, "pearson_r": 0.9999945449495279, "mean_pose_dyaw_deg_by_token": {"L": 71.89783866001231, "R": -59.29831227472234}}
+[d1   199.4s] wrote /home/nvidia/refcv8_audit/D1/out wall 199.4

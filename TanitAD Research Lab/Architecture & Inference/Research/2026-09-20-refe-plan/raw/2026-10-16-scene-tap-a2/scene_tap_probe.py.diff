@@ -1,0 +1,240 @@
+--- ../2026-10-15-scene-tap-probe/scene_tap_probe.py	2026-10-15 18:47:41.393740900 +0200
++++ scene_tap_probe.py	2026-10-16 00:32:17.568958700 +0200
+@@ -18,6 +18,12 @@
+     python scene_tap_probe.py smoke  --out <dir>        # ~20 updates on a tiny subset: timing only, NO metric
+     python scene_tap_probe.py run    --out <dir> [--updates 2000]      # the whole grid (resumable); writes PROBE_RESULT.json then PROBE_DONE | PROBE_FAILED
+     python scene_tap_probe.py report --out <dir>        # re-assemble PROBE_RESULT.json from the unit files
++    python scene_tap_probe.py run --out <dir> --work <dir> --updates 10000 --arms V --seeds 0   # A2 (2026-10-16): a FILTERED grid = only the named (arm, seed) units, no init floors, no assembly
++
++A2 COPY (2026-10-16): this file is the banked 2026-10-15 probe plus (i) the `--arms` / `--seeds` filter (`plan_units`; default = the full 35-unit grid, byte-for-byte the old path),
++(ii) `unit_done` (the old config-sha refusal, factored out so it can be tested), (iii) an optional per-update loss curve (`curve_out`, saved as `loss_curve` in the unit file;
++a diagnostic that adds no numerics), (iv) `Lease.ensure` never calls `acquire_gpu_lock` while a lock file exists (that function deletes a lock whose pid Windows cannot see after 10 min).
++Nothing else differs; see scene_tap_probe.py.diff.
+ 
+ TIER: T0-like (a head's perception on teacher-forced navtest frames); never driving performance.
+ """
+@@ -68,6 +74,57 @@
+               + [("V", 1, f) for f in range(K_FOLDS)] + [("S", 1, f) for f in range(K_FOLDS)]
+               + [("V", 2, f) for f in range(K_FOLDS)] + [("S", 2, f) for f in range(K_FOLDS)])
+ 
++
++
++def parse_filter(text, cast, name: str):
++    """'V,S' -> ('V','S'); None / '' -> None (= no filter).  A malformed or unknown value is refused loudly, never skipped."""
++    if text is None or str(text).strip() == "":
++        return None
++    out = []
++    for tok in str(text).split(","):
++        tok = tok.strip()
++        try:
++            out.append(cast(tok))
++        except (ValueError, TypeError):
++            raise GuardFailed(f"--{name}: cannot parse {tok!r}")
++    if len(set(out)) != len(out):
++        raise GuardFailed(f"--{name}: duplicate entries in {text!r}")
++    return tuple(out)
++
++
++def filter_units(order, arms=None, seeds=None):
++    """The units of `order` whose arm is in `arms` AND whose seed is in `seeds` (None = no restriction), original order kept."""
++    return [u for u in order if (arms is None or u[0] in arms) and (seeds is None or u[1] in seeds)]
++
++
++def guard_unit_plan(sel, order, arms, seeds) -> None:
++    """The selection is re-derived INDEPENDENTLY (arm x seed x fold product over the declared ARMS / SEEDS) and must equal `sel`: same set, no duplicates, `order`'s relative order,
++    non-empty; no filter at all must give `order` itself.  An unknown arm, or a seed that selects nothing, is refused."""
++    if arms is not None:
++        bad = [a for a in arms if a not in ARMS]
++        if bad:
++            raise GuardFailed(f"--arms: unknown arm(s) {bad}; known {sorted(ARMS)}")
++    want = {(a, s, f) for a in (arms if arms is not None else tuple(ARMS)) for s in SEEDS[a] if (seeds is None or s in seeds) for f in range(K_FOLDS)}
++    if not want:
++        raise GuardFailed(f"the filter --arms {arms} --seeds {seeds} selects no unit")
++    if len(sel) != len(set(sel)):
++        raise GuardFailed("the unit plan has duplicate units")
++    if set(sel) != want:
++        raise GuardFailed(f"the unit plan ({len(sel)} units) is not the filter's {len(want)}-unit product (extra {sorted(set(sel) - want)[:2]}, missing {sorted(want - set(sel))[:2]})")
++    if list(sel) != [u for u in order if u in want]:
++        raise GuardFailed("the unit plan does not keep the committed unit order")
++    if arms is None and seeds is None and list(sel) != list(order):
++        raise GuardFailed("no filter must give the full committed grid, unchanged")
++
++
++def plan_units(arms=None, seeds=None, order=None):
++    """-> the list of (arm, seed, fold) units to run.  Default (no filter) = UNIT_ORDER (the 35-unit grid)."""
++    order = UNIT_ORDER if order is None else order
++    sel = filter_units(order, arms, seeds)
++    guard_unit_plan(sel, order, arms, seeds)
++    return sel
++
++
+ # ---- paths -------------------------------------------------------------------------------------------------------------------------------------------------------------
+ ART = "D:/Projects/TanitAD-artifacts"
+ C3_DIR = os.path.join(PKG, "raw", "2026-10-11-c3-selection-headroom")
+@@ -307,9 +364,10 @@
+ 
+ 
+ def train_unit(ctx_all: torch.Tensor, labels_train: torch.Tensor, train_idx, held_idx, tap: str, seed: int, fold: int, *, n_updates: int, batch: int = BATCH, device="cpu",
+-               amp: bool | None = None, draw=None):
++               amp: bool | None = None, draw=None, curve_out: list | None = None):
+     """One (arm, seed, fold) training: the S1 head, its loss, its optimiser, a FIXED number of updates at `batch`, on the train tokens only.
+-    -> (head, info).  Nothing here sees a held-out label; a held-out token in a batch raises (guard e)."""
++    -> (head, info).  Nothing here sees a held-out label; a held-out token in a batch raises (guard e).
++    `curve_out` (A2 copy): if a list is passed, each update's (bce, huber) -- the very two floats the running means below already read -- is appended to it.  A diagnostic only."""
+     dev = torch.device(device)
+     amp = (dev.type == "cuda") if amp is None else amp
+     box = make_box(tap, seed, dev)
+@@ -338,6 +396,8 @@
+         opt.step()
+         opt.zero_grad(set_to_none=True)
+         sums += (float(bce), float(hub))
++        if curve_out is not None:
++            curve_out.append((float(bce), float(hub)))
+         if u >= n_updates - 100:
+             tail.append((float(bce), float(hub)))
+         if u % 50 == 0:
+@@ -401,7 +461,8 @@
+     if spec["perm"]:
+         labels_train, src = permute_train_labels(labels, train_idx, fold)
+         guard_label_perm(labels, labels_train, src, train_idx, held_idx)
+-    head, info = train_unit(ctx_all, labels_train, train_idx, held_idx, tap, seed, fold, n_updates=n_updates, device=device)
++    curve: list = []
++    head, info = train_unit(ctx_all, labels_train, train_idx, held_idx, tap, seed, fold, n_updates=n_updates, device=device, curve_out=curve)
+     lg_h, sd_h = predict_head(head, ctx_all, held_idx, device)
+     lg_t, sd_t = predict_head(head, ctx_all, train_idx, device)
+     keys_t = [U.keys[i] for i in train_idx]
+@@ -412,13 +473,23 @@
+     p = unit_path(root, arm, seed, fold)
+     os.makedirs(os.path.dirname(p), exist_ok=True)
+     tmp = p + ".tmp.npz"
+-    np.savez(tmp, held_idx=np.asarray(held_idx, np.int64), logit=lg_h, sdf=sd_h, meta_json=np.asarray(json.dumps(meta, sort_keys=True)))
++    np.savez(tmp, held_idx=np.asarray(held_idx, np.int64), logit=lg_h, sdf=sd_h, meta_json=np.asarray(json.dumps(meta, sort_keys=True)),
++             loss_curve=np.asarray(curve, np.float32).reshape(-1, 2))
+     os.replace(tmp, p)
+     log(f"unit {arm} s{seed} f{fold}: {info['wall_s']} s, bce_last100 {info['loss_bce_last100']:.4f}, in-sample IoU0-40 "
+         f"{ins['inter_0-40'] / max(ins['union_0-40'], 1):.4f} (train-side, not a held-out read)", fh)
+     return meta
+ 
+ 
++def unit_done(path: str, n_updates: int) -> bool:
++    """True = a finished unit of THIS config already exists (resume skips it); False = no file; a file of ANOTHER config raises (the units of different n_updates are never mixed)."""
++    if not os.path.exists(path):
++        return False
++    if load_unit(path)[3]["config_sha256"] == config_sha(n_updates):
++        return True
++    raise GuardFailed(f"{path} exists with another config; refusing to mix")
++
++
+ def run_init(U: Universe, ctxs: dict, tap: str, seed: int, *, device, root: str, fh=None) -> None:
+     """The untrained-head floor: the head at init (seed), on every token, fp32."""
+     box = make_box(tap, seed, torch.device(device))
+@@ -616,6 +687,16 @@
+ # =====================================================================================================================================================================
+ # the GPU lease (the shared dev-box lock of aux_navtest_forward.py, held in bounded stretches)
+ # =====================================================================================================================================================================
++def lock_holder(lock: str):
++    """None = no lock file; else the lock's parsed body (or a marker for an unreadable one).  Read-only: nothing here ever deletes a lock."""
++    if not os.path.exists(lock):
++        return None
++    try:
++        return json.loads(open(lock, encoding="utf-8").read())
++    except (OSError, ValueError):
++        return {"unreadable": True}
++
++
+ class Lease:
+     def __init__(self, enabled: bool, max_hold_s: float = 1200.0, max_wait_s: float = 48 * 3600.0, fh=None):
+         self.enabled, self.max_hold_s, self.max_wait_s, self.fh = enabled, max_hold_s, max_wait_s, fh
+@@ -632,16 +713,23 @@
+             self.ANF = ANF
+         waited = time.time()
+         while True:
+-            try:
+-                self.body = self.ANF.acquire_gpu_lock(wait_timeout_s=240.0)
+-                self.t0 = time.time()
+-                log(f"GPU lock taken after {time.time() - waited:.0f} s", self.fh)
+-                return
+-            except self.ANF.GpuBusy as e:
+-                if time.time() - waited > self.max_wait_s:
+-                    raise RuntimeError(f"GPU busy for {self.max_wait_s:.0f} s: {e}")
+-                log(f"GPU busy ({str(e)[:120]}); retry in 90 s", self.fh)
+-                time.sleep(90)
++            # A2 copy: NEVER break a lock.  `acquire_gpu_lock` deletes a lock whose holder pid `tasklist` cannot see once it is >10 min old -- but another session's lock writes an MSYS pid that
++            # Windows cannot see (gpu_lock.py's own docstring), and an A2 wait outlasts 10 min.  So when the lock file exists we only wait; `acquire_gpu_lock` runs only when it is absent.
++            held = lock_holder(self.ANF.LOCK)
++            if held is None:
++                try:
++                    self.body = self.ANF.acquire_gpu_lock(wait_timeout_s=240.0)
++                    self.t0 = time.time()
++                    log(f"GPU lock taken after {time.time() - waited:.0f} s", self.fh)
++                    return
++                except self.ANF.GpuBusy as e:
++                    busy = str(e)[:120]
++            else:
++                busy = f"lock held by {held}"
++            if time.time() - waited > self.max_wait_s:
++                raise RuntimeError(f"GPU busy for {self.max_wait_s:.0f} s: {busy}")
++            log(f"GPU busy ({busy}); retry in 90 s", self.fh)
++            time.sleep(90)
+ 
+     def release(self) -> None:
+         if self.enabled and self.body is not None:
+@@ -732,12 +820,17 @@
+     os.makedirs(os.path.join(work, "units"), exist_ok=True)
+     fh = open(os.path.join(out, "probe.log"), "a", encoding="utf-8")
+     try:
+-        for mk in ("PROBE_DONE", "PROBE_FAILED"):
++        for mk in ("PROBE_DONE", "PROBE_FAILED", "GRID_FILTERED_DONE"):
+             if os.path.exists(os.path.join(out, mk)):
+                 os.remove(os.path.join(out, mk))
+         U = load_universe()
+         n_updates = int(a.updates)
+-        log(f"{TOOL}: {U.n} tokens, {len(set(U.logs.tolist()))} logs, updates {n_updates}, config {config_sha(n_updates)[:12]}", fh)
++        f_arms, f_seeds = parse_filter(getattr(a, "arms", None), str, "arms"), parse_filter(getattr(a, "seeds", None), int, "seeds")
++        plan = plan_units(f_arms, f_seeds)
++        guard_unit_plan(plan, UNIT_ORDER, f_arms, f_seeds)                           # the caller re-checks the plan it was handed (a replaced plan_units cannot widen the run)
++        filtered = plan != UNIT_ORDER
++        plan_txt = (" (FILTERED: " + " ".join("%s-s%d-f%d" % u for u in plan) + ")") if filtered else ""
++        log(f"{TOOL}: {U.n} tokens, {len(set(U.logs.tolist()))} logs, updates {n_updates}, config {config_sha(n_updates)[:12]}, plan {len(plan)} units{plan_txt}", fh)
+         guard_p1_function()
+         for f in range(K_FOLDS):
+             tr, ho = make_fold_split(U.fold, f)
+@@ -763,19 +856,23 @@
+         try:
+             for tap in ("visual", "scene"):
+                 for seed in (0, 1, 2):
+-                    if not os.path.exists(init_path(work, tap, seed)):
++                    if not filtered and not os.path.exists(init_path(work, tap, seed)):                    # the init floors belong to the full grid's assembly only
+                         lease.ensure()
+                         run_init(U, ctxs, tap, seed, device=dev, root=work, fh=fh)
+-            for (arm, seed, fold) in UNIT_ORDER:
++            for (arm, seed, fold) in plan:
+                 p = unit_path(work, arm, seed, fold)
+-                if os.path.exists(p):
+-                    if load_unit(p)[3]["config_sha256"] == config_sha(n_updates):
+-                        continue
+-                    raise GuardFailed(f"{p} exists with another config; refusing to mix")
++                if unit_done(p, n_updates):
++                    continue
+                 lease.ensure()
+                 run_unit(U, lab, ctxs, arm, seed, fold, n_updates=n_updates, device=dev, source=source, root=work, fh=fh)
+         finally:
+             lease.release()
++        if filtered:                                                                    # a filtered grid is never assembled (it lacks the other arms); its reader is a2_read.py
++            with open(os.path.join(out, "GRID_FILTERED_DONE"), "w", encoding="utf-8") as f:
++                f.write(json.dumps({"units": [f"{x}_s{y}_f{z}" for x, y, z in plan], "n_updates": n_updates, "config_sha256": config_sha(n_updates), "work": work,
++                                    "at": time.strftime("%Y-%m-%dT%H:%M:%S")}, sort_keys=True) + chr(10))
++            log(f"filtered grid complete ({len(plan)} units, n_updates {n_updates}); not assembled", fh)
++            return 0
+         log("grid complete; assembling", fh)
+         result = assemble(work, U, source, n_updates, fh)
+         result["folds_sha256"] = sha256_bytes(folds_b)
+@@ -831,6 +928,8 @@
+     p.add_argument("--cpu", action="store_true")
+     p.add_argument("--no-gpu-lock", action="store_true")
+     p.add_argument("--lease-s", type=float, default=1200.0)
++    p.add_argument("--arms", default=None, help="A2: comma-separated arms to run (default: all = the 35-unit grid)")
++    p.add_argument("--seeds", default=None, help="A2: comma-separated seeds to run (default: all)")
+     p = sub.add_parser("report")
+     p.add_argument("--out", required=True)
+     p.add_argument("--work", default=None)

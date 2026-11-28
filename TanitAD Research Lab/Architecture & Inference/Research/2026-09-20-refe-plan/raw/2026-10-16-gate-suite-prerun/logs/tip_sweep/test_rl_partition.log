@@ -1,0 +1,20 @@
+mutation                             class      caught-by (failing checks)
+train_reuses_val_logs                log_split  logs_disjoint, tokens_disjoint_and_unique, verify_control_clean, train_follows_val_in_log_order
+heldout_log_admitted                 heldout    tally_exact, heldout_absent, verify_control_clean, all_eligible_taken_exactly
+navtest_token_admitted               navtest    tally_exact, all_eligible_taken_exactly, exclusions_absent_when_all_taken, cli_manifest_counts
+navtest_log_admitted                 navtest    tally_exact, all_eligible_taken_exactly, exclusions_absent_when_all_taken, cli_manifest_counts
+trained_token_admitted               trained    tally_exact, all_eligible_taken_exactly, exclusions_absent_when_all_taken, cli_manifest_counts
+unknown_log_admitted                 unknown    tally_exact, no_blank_log, verify_control_clean, all_eligible_taken_exactly
+seed_is_urandom                      seed       val_logs_are_the_first_hash_ordered_logs, val_scenes_are_the_first_hash_ordered_scenes, train_follows_val_in_log_order, input_order_free
+seed_ignored                         seed       val_logs_are_the_first_hash_ordered_logs, val_scenes_are_the_first_hash_ordered_scenes, seed_changes_the_split
+log_order_is_input_order             order      val_logs_are_the_first_hash_ordered_logs, val_scenes_are_the_first_hash_ordered_scenes, train_follows_val_in_log_order, input_order_free
+val_cap_removed                      cap        val_cap_and_log_span, val_last_log_trimmed, verify_control_clean, val_logs_are_the_first_hash_ordered_logs
+val_not_trimmed                      count      val_exact_count, val_last_log_trimmed, verify_control_clean, cli_raised_FileNotFoundError
+train_not_trimmed                    count      train_exact_count, verify_control_clean, cli_raised_FileNotFoundError
+shortfall_silent                     shortfall  short_train_flagged, short_val_flagged, cli_short_pool_refused_and_nothing_written, cli_allow_short_writes_and_flags
+verify_blind                         verify     verify_log_on_both_sides, verify_heldout, verify_navtest_token, verify_navtest_log
+conflicting_logs_allowed             input      conflicting_logs_refused
+duplicate_rows_kept                  input      tally_exact, cli_manifest_counts
+manifest_val_hash_is_train_hash      manifest   cli_manifest_hashes_are_the_files'
+manifest_claims_trained_always       manifest   cli_no_list_is_flagged
+ZZTEST_PASS 20  (1 unmutated suite + 18 RED mutations + coverage)

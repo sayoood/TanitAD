@@ -1,0 +1,290 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-DVB",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refcv8",
+  "commit": "d014ff2fd695c306abf769af0572a17e8d713991",
+  "tree_sha256": "a88a01986eac321c1ac7a7132e4fd0314dc1b0495f3955e092b6e3761e2b419b",
+  "argv_sha256": "d1fa48b2654d33cd7af7f5077076b0f7b807efc359fe6549919ddb16e721d600"
+ },
+ "inputs_read": {
+  "--anchors": {
+   "kind": "file",
+   "bytes": 13477,
+   "sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d",
+   "method": "sha256-v1"
+  },
+  "--agent-rig-extrinsics": {
+   "kind": "file",
+   "bytes": 3519480,
+   "sha256": "933c779b52a0fbb20e37445a933d49d8fa7a630307d3b5eceaeb1a751cc3eb1a",
+   "method": "sha256-v1"
+  },
+  "--nav-compliance-tau-file": {
+   "kind": "file",
+   "bytes": 2566,
+   "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+   "method": "sha256-v1"
+  },
+  "--map-hires-class-weights": {
+   "kind": "file",
+   "bytes": 3046,
+   "sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+   "method": "sha256-v1"
+  },
+  "--join-defect-masks": {
+   "kind": "file",
+   "bytes": 151824,
+   "sha256": "dde7a4cb862d11acf0a86535c12ca7039e27cfa6e036454a16c50790993a6149",
+   "method": "sha256-v1"
+  },
+  "implicit:timm-pretrained:resnet101.a1_in1k": {
+   "kind": "file",
+   "bytes": 178675806,
+   "sha256": "1ba5b660e7c175b3c27c557fc7dc8b2815be830c516815b0155f61b403f27380",
+   "method": "sha256-v1",
+   "hub": "timm/resnet101.a1_in1k/model.safetensors"
+  },
+  "gate:nav-tau-record": {
+   "kind": "file",
+   "bytes": 2566,
+   "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "e7b47e3dde5059cd00023f9563ce838754a1dbb9cd62d9de4f0db0b3a189ea50",
+ "started_utc": "2026-10-12T00:05:55Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--anchors": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+    "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+    "--map-hires-class-weights": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+    "--join-defect-masks": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+   },
+   "sentinel": {
+    "--v2-cache": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/v2-cache",
+    "--v7-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/v7-labels",
+    "--eval-cache": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/eval-cache",
+    "--eval-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/eval-labels",
+    "--speed-max-sidecar-v6-eval": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/speed-max-sidecar-v6-eval",
+    "--speed-max-sidecar-v6": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/speed-max-sidecar-v6",
+    "--agent-join": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/agent-join",
+    "--map-gt-root": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/map-gt-root",
+    "--join3d": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/join3d",
+    "--vis1-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/vis1-sidecar",
+    "--clip-clock-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/clip-clock-sidecar",
+    "--init-from": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/init-from",
+    "--r8-v9-labels": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/r8-v9-labels",
+    "--r8-v9-labels-eval": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/r8-v9-labels-eval",
+    "--pose-sync-sidecar": "/home/nvidia/pregate_d014ff2/gate_out_diag_d1/scratch/__gate_unread__/pose-sync-sidecar"
+   },
+   "dropped": {
+    "--trunk-compile": "the model job is CPU-only on every host; torch.compile wraps the backbone CALL only (module tree and state_dict unchanged) -- the eval loader drops it too"
+   }
+  },
+  "build_s": 4.1,
+  "model_params": 100598182,
+  "gate_probe_equalize": {
+   "trunk": "TimmResNetTrunk",
+   "image_hw": [
+    416,
+    1024
+   ],
+   "rows_equalised_measured": 43,
+   "trunk_cfg_equalize_bottom_rows": 43
+  },
+  "dvb_call": "check(model, args, build_parser(), forbid_kinds=('drivort',))",
+  "mismatches": [],
+  "uncovered_dests": [],
+  "registry_size": 276,
+  "control_flip_equalize_n_mismatches": 1,
+  "forbidden_levers": {
+   "argv_hits": [],
+   "built_hits": []
+  },
+  "passthrough": {
+   "decoder_passthrough": [
+    "prefinal_logits",
+    "reach_keep",
+    "layer_u0_hat",
+    "layer_logits",
+    "ceil_keep",
+    "residual_prior_ctrl",
+    "residual_prior_v",
+    "residual_prior_path",
+    "fmap_s8"
+   ],
+   "required": [
+    "layer_u0_hat",
+    "layer_logits",
+    "fmap_s8"
+   ]
+  },
+  "nav_compliance": {
+   "on": true,
+   "record": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json",
+   "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+   "tau_record": 0.1806411302089691,
+   "tau_argv": 0.1806411302089691,
+   "schema": "banked (inputs.manifest / inputs.labels)",
+   "manifest": "/home/nvidia/data/refcv8-b1-416x1024-train-4572/_v2manifest.pt",
+   "labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "labels_sha256_here": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371"
+  },
+  "required_on": {
+   "required_on": [
+    "--graft-tac8-prior",
+    "--graft-nav-compliance",
+    "--speed-ceiling-filter"
+   ],
+   "required_values": {
+    "--residual-prior": "ha0_ext_pose",
+    "--map-hires": "on",
+    "--bev-source": "map_hires_pool",
+    "--map-hires-decision-rule": "prior_corrected",
+    "--map-hires-x-max-m": "100",
+    "--map-hires-y-half-m": "30",
+    "--map-hires-grad-ckpt": "on",
+    "--bev-planner-crop-m": [
+     "60",
+     "16"
+    ],
+    "--w-map": "0",
+    "--slot-presence-loss": "focal",
+    "--slot-presence-prior": "0.01",
+    "--slot-query-select": "learned_ref",
+    "--vis1-sidecar": "/home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+    "--map-hires-near-lift-m": "20",
+    "--map-hires-near-refine-blocks": "1",
+    "--r8-v9-md5": "83e30bd3791f0767707eade5f4671759",
+    "--r8-v9-eval-md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+    "--r8-v9-lat-variant": "a",
+    "--r8-nav-args-dropout": "0.5",
+    "--r8-speed-unknown-p": "0.45",
+    "--r8-alloc-emit-start": "1000",
+    "--w-r8-cons": "0.05",
+    "--r8-speed-input": "label",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--speed-max-sidecar-v6-eval": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+    "--ema-decay": "0.9998",
+    "--b1-guard-ref-ap2m": "0.21211",
+    "--b1-guard-step": "1000",
+    "--warmup": "1000",
+    "--steps": "48852",
+    "--v2-cache": "/home/nvidia/data/refcv8-b1-416x1024-train-4572",
+    "--agent-rig-extrinsics": "/home/nvidia/data/refcv8_train4572_eval139_extrinsics.json",
+    "--pose-sync-sidecar": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl",
+    "--clip-clock-sidecar": "/home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+    "--r8-v9-labels": "/home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz",
+    "--nav-compliance-tau-file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+    "--nav-compliance-tau-rad": "0.1806411302089691",
+    "--batch": "16",
+    "--eval-batches": "8",
+    "--eval-every": "500"
+   },
+   "dvb_required_on": [
+    "--graft-nav-compliance",
+    "--graft-tac8-prior",
+    "--speed-ceiling-filter"
+   ],
+   "helper": "check_refcv7_required",
+   "helper_call": "check_refcv7_required(model, args, tau_file=<the banked tau record>)",
+   "helper_result": []
+  },
+  "box_required": {
+   "box_required": "tanitad.train.box_head_guard.check_refcv7_box_required",
+   "result": []
+  },
+  "nav_tau_file_flag": {
+   "on": true,
+   "trainer_has_flag": true,
+   "argv_file": "/home/nvidia/data/refcv8/nav_compliance_tau_train4572.json",
+   "argv_file_sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3"
+  },
+  "pi_pending": [],
+  "fix5_stage_check": {
+   "present_in_tree": true,
+   "calls": [
+    {
+     "model_name": "resnet101.a1_in1k",
+     "fingerprints": {
+      "layer1.0.conv1": "3cd8d151e1cbfa2e",
+      "layer2.0.conv1": "8cc9f36651fa491e",
+      "layer3.0.conv1": "5c5edf2459e14471",
+      "layer4.0.conv1": "a6c9af2e13eeea37"
+     },
+     "outcome": "PASS"
+    }
+   ]
+  },
+  "map_hires": {
+   "on": true,
+   "modules": [
+    "_map_hires.encoder.blocks.0.conv1",
+    "_map_hires.encoder.blocks.0.conv2",
+    "_map_hires.encoder.blocks.0.norm1",
+    "_map_hires.encoder.blocks.0.norm2",
+    "_map_hires.encoder.blocks.1.conv1",
+    "_map_hires.encoder.blocks.1.conv2",
+    "_map_hires.encoder.blocks.1.norm1",
+    "_map_hires.encoder.blocks.1.norm2",
+    "_map_hires.encoder.blocks.2.conv1",
+    "_map_hires.encoder.blocks.2.conv2",
+    "_map_hires.encoder.blocks.2.norm1",
+    "_map_hires.encoder.blocks.2.norm2",
+    "_map_hires.encoder.blocks.3.conv1",
+    "_map_hires.encoder.blocks.3.conv2",
+    "_map_hires.encoder.blocks.3.norm1",
+    "_map_hires.encoder.blocks.3.norm2",
+    "_map_hires.encoder.blocks.4.conv1",
+    "_map_hires.encoder.blocks.4.conv2",
+    "_map_hires.encoder.blocks.4.norm1",
+    "_map_hires.encoder.blocks.4.norm2",
+    "_map_hires.encoder.stem.0",
+    "_map_hires.encoder.stem.1",
+    "_map_hires.lift",
+    "_map_hires.lift.proj",
+    "_map_hires.near.lift",
+    "_map_hires.near.lift.proj",
+    "_map_hires.near_refine.0.c1",
+    "_map_hires.near_refine.0.c2",
+    "_map_hires.near_refine.0.n1",
+    "_map_hires.refine.cls"
+   ],
+   "n_params": 643144,
+   "weight": 1.0,
+   "class_weights": [
+    "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json"
+   ],
+   "class_weights_file": {
+    "n": 8,
+    "dry_run": false
+   },
+   "eval_key_list": {
+    "source": "_eval_row_from_acc on the BUILT model",
+    "n_emitted": 120,
+    "missing": []
+   },
+   "outputs": "no probe forward in this job: the 600x320 / 240x128 / fmap_s8 shapes are asserted by G-EVAL (dev box) and G-LIVE (Thor)"
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv6_run/d014ff2fd6/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-10-12T00:06:03Z"
+}

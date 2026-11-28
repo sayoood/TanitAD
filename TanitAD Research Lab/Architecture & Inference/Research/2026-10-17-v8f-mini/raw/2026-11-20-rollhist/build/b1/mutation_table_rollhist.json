@@ -1,0 +1,225 @@
+[
+ {
+  "mutant": "M1_no_readout_install",
+  "file": "stack/scripts/v8f_dagger_bank.py",
+  "what": "R4: the line that installs the readout deleted",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_r4_every_call_of_the_installed_frames_obeys_the_bound_and_the_acceleration_control",
+   "test_r4_the_rh_bank_holds_the_executed_acceleration_and_the_pinned_bank_does_not"
+  ],
+  "restored_sha_ok": true,
+  "tail": "the_pinned_bank_does_not\nFAILED tests/test_v8f_rollhist.py::test_r4_every_call_of_the_installed_frames_obeys_the_bound_and_the_acceleration_control\n2 failed, 23 passed, 1 warning in 155.53s (0:02:35)\n"
+ },
+ {
+  "mutant": "M2_no_heading_bound",
+  "file": "stack/scripts/v8f_dagger_bank.py",
+  "what": "R4: the line that installs the bound deleted",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_r4_every_call_of_the_installed_frames_obeys_the_bound_and_the_acceleration_control"
+  ],
+  "restored_sha_ok": true,
+  "tail": "========================\nFAILED tests/test_v8f_rollhist.py::test_r4_every_call_of_the_installed_frames_obeys_the_bound_and_the_acceleration_control\n1 failed, 24 passed, 1 warning in 158.33s (0:02:38)\n"
+ },
+ {
+  "mutant": "M3_no_restore",
+  "file": "stack/scripts/v8f_dagger_bank.py",
+  "what": "N2: the executor is not restored after the run",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_defaults_install_nothing_by_identity",
+   "test_the_executor_is_installed_for_the_run_and_restored_after"
+  ],
+  "restored_sha_ok": true,
+  "tail": "hist.py::test_the_executor_is_installed_for_the_run_and_restored_after\nFAILED tests/test_v8f_rollhist.py::test_defaults_install_nothing_by_identity\n2 failed, 23 passed, 1 warning in 187.15s (0:03:07)\n"
+ },
+ {
+  "mutant": "M4_default_installs_the_bound",
+  "file": "stack/scripts/v8f_dagger_bank.py",
+  "what": "N2: the defaults no longer reproduce today's generator (the bound is always on)",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_defaults_install_nothing_by_identity",
+   "test_n2_a_default_bank_is_byte_identical_to_the_unpatched_generators_files",
+   "test_n2_a_default_bank_is_byte_identical_to_todays_generator",
+   "test_r4_control_pinned_none_is_todays_generator_array_for_array_max_abs_difference_zero",
+   "test_the_executor_is_installed_for_the_run_and_restored_after"
+  ],
+  "restored_sha_ok": true,
+  "tail": "is_byte_identical_to_todays_generator\nFAILED tests/test_v8f_rollhist.py::test_n2_a_default_bank_is_byte_identical_to_the_unpatched_generators_files\n5 failed, 20 passed, 1 warning in 152.64s (0:02:32)\n"
+ },
+ {
+  "mutant": "M5_nondefault_header_without_generator",
+  "file": "stack/scripts/v8f_dagger_bank.py",
+  "what": "N2/N3: a NON-default bank carries no generator record in its header",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_n3_built_levers_read_the_loaded_header_and_default_to_pinned_none",
+   "test_r1_dagger_probe_passes_on_the_rh_bank_and_the_p0_controls_read_exactly_zero",
+   "test_r5_declared_equals_the_header_passes_and_each_mismatch_is_refused",
+   "test_tool_files_name_the_two_new_tools_and_provenance_carries_the_generator"
+  ],
+  "restored_sha_ok": true,
+  "tail": "es_and_each_mismatch_is_refused\nFAILED tests/test_v8f_rollhist.py::test_r1_dagger_probe_passes_on_the_rh_bank_and_the_p0_controls_read_exactly_zero\n4 failed, 21 passed, 1 warning in 148.50s (0:02:28)\n"
+ },
+ {
+  "mutant": "M6_inert_param_accepted",
+  "file": "stack/scripts/v8f_dagger_bank.py",
+  "what": "N2: a declared-and-inert --acc-gain / --path-exec is accepted",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_the_generator_refuses_a_declared_and_inert_or_missing_parameter[extra0]",
+   "test_the_generator_refuses_a_declared_and_inert_or_missing_parameter[extra1]"
+  ],
+  "restored_sha_ok": true,
+  "tail": "_inert_or_missing_parameter[extra0]\nFAILED tests/test_v8f_rollhist.py::test_the_generator_refuses_a_declared_and_inert_or_missing_parameter[extra1]\n2 failed, 23 passed, 1 warning in 111.90s (0:01:51)\n"
+ },
+ {
+  "mutant": "M7_built_levers_ignore_header",
+  "file": "stack/tanitad/data/v8f_dagger.py",
+  "what": "N3: built_levers does not read the loaded bank header",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_n3_built_levers_read_the_loaded_header_and_default_to_pinned_none",
+   "test_r1_dagger_probe_passes_on_the_rh_bank_and_the_p0_controls_read_exactly_zero",
+   "test_r5_declared_equals_the_header_passes_and_each_mismatch_is_refused",
+   "test_r5_the_declaration_names_the_whole_readout_gain_and_path_exec_included"
+  ],
+  "restored_sha_ok": true,
+  "tail": "out_gain_and_path_exec_included\nFAILED tests/test_v8f_rollhist.py::test_r1_dagger_probe_passes_on_the_rh_bank_and_the_p0_controls_read_exactly_zero\n4 failed, 21 passed, 1 warning in 127.70s (0:02:07)\n"
+ },
+ {
+  "mutant": "M8_no_declared_vs_header_clause",
+  "file": "stack/scripts/v8f_mini_train.py",
+  "what": "N4/R5: declared != loaded header is not refused",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_r5_a_header_without_the_field_reads_pinned_none",
+   "test_r5_declared_equals_the_header_passes_and_each_mismatch_is_refused",
+   "test_r5_the_declaration_names_the_whole_readout_gain_and_path_exec_included"
+  ],
+  "restored_sha_ok": true,
+  "tail": "_without_the_field_reads_pinned_none\nFAILED tests/test_v8f_rollhist.py::test_r5_the_declaration_names_the_whole_readout_gain_and_path_exec_included\n3 failed, 22 passed, 1 warning in 135.60s (0:02:15)\n"
+ },
+ {
+  "mutant": "M9_no_p0_clause",
+  "file": "stack/scripts/v8f_mini_train.py",
+  "what": "N4/R5: a declaration at --dagger-p 0 is not refused",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_r5_a_declaration_at_dagger_p_zero_is_refused[extra0]",
+   "test_r5_a_declaration_at_dagger_p_zero_is_refused[extra1]",
+   "test_r5_a_declaration_at_dagger_p_zero_is_refused[extra2]"
+  ],
+  "restored_sha_ok": true,
+  "tail": "t_r5_a_declaration_at_dagger_p_zero_is_refused[extra1]\nFAILED tests/test_v8f_rollhist.py::test_r5_a_declaration_at_dagger_p_zero_is_refused[extra2]\n3 failed, 22 passed, 1 warning in 127.04s (0:02:07)\n"
+ },
+ {
+  "mutant": "M10_no_flag_check_entry",
+  "file": "stack/scripts/v8f_mini_train.py",
+  "what": "N4: the FLAG_CHECKS entries removed (G-DVB table)",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_n4_flag_checks_name_both_dests_and_the_defaults_are_the_legacy_bank"
+  ],
+  "restored_sha_ok": true,
+  "tail": "the_p0_controls_read_exactly_zero\nERROR tests/test_v8f_rollhist.py::test_r2_r3_s_and_o_train_on_the_swapped_rolled_history_and_the_p0_controls_read_exactly_zero\n1 failed, 4 passed, 20 errors in 4.05s\n"
+ },
+ {
+  "mutant": "M11_readout_arithmetic",
+  "file": "stack/scripts/v8f_t1_readout.py",
+  "what": "N1: the readout's arithmetic changed (study golden)",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_t1_readout.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_a3_the_acceleration_at_the_last_executed_knot_is_gain_times_the_executed_one[False--0.25]",
+   "test_a3_the_acceleration_at_the_last_executed_knot_is_gain_times_the_executed_one[False-0.5]",
+   "test_a3_the_acceleration_at_the_last_executed_knot_is_gain_times_the_executed_one[True--0.25]",
+   "test_a3_the_acceleration_at_the_last_executed_knot_is_gain_times_the_executed_one[True-0.5]",
+   "test_gain_one_is_causal_and_gain_zero_is_causal_z_array_for_array",
+   "test_promoted_functions_equal_the_study_functions_bit_for_bit_golden_digest"
+  ],
+  "restored_sha_ok": true,
+  "tail": "is_gain_times_the_executed_one[True--0.25]\nFAILED tests/test_v8f_t1_readout.py::test_a3_the_acceleration_at_the_last_executed_knot_is_gain_times_the_executed_one[True-0.5]\n6 failed, 8 passed in 3.02s\n"
+ },
+ {
+  "mutant": "M12_gain1_not_routed_through_causal",
+  "file": "stack/scripts/v8f_t1_readout.py",
+  "what": "N1: gain 1.0 no longer routed through the formula of causal (identity control)",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_t1_readout.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_gain_one_is_causal_and_gain_zero_is_causal_z_array_for_array",
+   "test_promoted_functions_equal_the_study_functions_bit_for_bit_golden_digest"
+  ],
+  "restored_sha_ok": true,
+  "tail": "moted_functions_equal_the_study_functions_bit_for_bit_golden_digest\nFAILED tests/test_v8f_t1_readout.py::test_gain_one_is_causal_and_gain_zero_is_causal_z_array_for_array\n2 failed, 12 passed in 2.66s\n"
+ },
+ {
+  "mutant": "M13_pair_check_drops_declaration",
+  "file": "stack/scripts/rollhist_pair_check.py",
+  "what": "chain checker: the declaration flags are no longer required in RH's argv",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_rollhist_pair_check.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_g_name_a_wrong_value_or_a_wrong_sha_is_refused",
+   "test_g_name_the_whole_token_is_required_not_the_base_name[causal_g0.5x]",
+   "test_g_name_the_whole_token_is_required_not_the_base_name[causal_g1.0x]",
+   "test_g_name_the_whole_token_is_required_not_the_base_name[causal_g1]",
+   "test_g_name_the_whole_token_is_required_not_the_base_name[causal_g]"
+  ],
+  "restored_sha_ok": true,
+  "tail": "k.py::test_g_name_the_whole_token_is_required_not_the_base_name[causal_g1.0x]\nFAILED tests/test_rollhist_pair_check.py::test_g_name_a_wrong_value_or_a_wrong_sha_is_refused\n5 failed, 8 passed in 2.40s\n"
+ },
+ {
+  "mutant": "M14_compare_readout_base_name_only",
+  "file": "stack/scripts/v8f_mini_train.py",
+  "what": "N4 fix 2: only the readout BASE NAME is compared (gain and path-exec bound only through the sha)",
+  "pattern_found": 1,
+  "test_file": "stack/tests/test_v8f_rollhist.py",
+  "rc": 1,
+  "went_red": true,
+  "red_tests": [
+   "test_r5_the_declaration_names_the_whole_readout_gain_and_path_exec_included"
+  ],
+  "restored_sha_ok": true,
+  "tail": "ary info ===========================\nFAILED tests/test_v8f_rollhist.py::test_r5_the_declaration_names_the_whole_readout_gain_and_path_exec_included\n1 failed, 24 passed, 1 warning in 136.17s (0:02:16)\n"
+ }
+]

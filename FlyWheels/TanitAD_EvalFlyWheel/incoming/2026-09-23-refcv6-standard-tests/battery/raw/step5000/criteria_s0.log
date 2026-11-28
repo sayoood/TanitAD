@@ -1,0 +1,47 @@
+=== analysis_s0.json ===
+tier: T1  (driving-performance tier)
+
+LONGITUDINAL  [4/4 present]
+   [  ok  ] target-speed accuracy
+   [  ok  ] along-track displacement error
+   [  ok  ] ego progress
+   [  ok  ] distance-keeping (headway / time-gap / TTC to the lead agent)
+
+LATERAL  [4/4 present]
+   [  ok  ] cross-track error
+   [  ok  ] heading error
+   [  ok  ] curvature error
+   [  ok  ] yaw-rate error
+
+TACTICAL  [3/3 present]
+   [  ok  ] manoeuvre-decision quality (selected vs executed)
+   [  ok  ] confusion over the manoeuvre classes
+   [  ok  ] tactical goal / anchor selection quality
+
+STRATEGIC  [3/5 present]
+   [ WORK ] strategic decision quality
+            -> arms.os.four_families.strategic: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this fa (n=0)
+   [ WORK ] strategic route / goal-setting quality
+            -> arms.os.four_families.strategic: strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this fa (n=0)
+   [  ok  ] nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)
+   [  ok  ] nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)
+   [  ok  ] nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)
+
+ARTIFACT HYGIENE
+   [  ok  ] tier stamp present
+   [  ok  ] estimator named
+   [  ok  ] n printed (windows and episodes)
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [  ok  ] corpus identity recorded (parity key + skip-hash)
+   [  ok  ] headline metrics reported against their trivial control(s)
+   [  ok  ] stochastic planner: inference-seed replicate + the seed floor
+
+LEAK GUARDS
+   [  ok  ] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+   [  ok  ] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+   [  ok  ] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+
+VIOLATIONS (silently absent, required): 0
+WORK ITEMS (refused with a reason, or partial): 2
+
+wrote C:\Users\Admin\ev6_battery\raw\step5000\criteria_s0.json

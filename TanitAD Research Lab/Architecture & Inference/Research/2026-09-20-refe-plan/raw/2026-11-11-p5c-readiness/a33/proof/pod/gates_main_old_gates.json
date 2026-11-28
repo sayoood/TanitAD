@@ -1,0 +1,276 @@
+{
+ "gates": {
+  "TB-0": {
+   "id": "TB-0",
+   "name": "cross-environment identity (P5-R, R-B)",
+   "status": "NOT_RUN",
+   "bar": "R-B: per rank, ALL of R-TOL-1 (sim8 identical >= 99.5%), R-TOL-2 (per-row max abs diff median <= 0.001, p99 <= 0.005), R-TOL-3 (TB-6 ratios within +-0.01 of the dev-box ratios on the same rows, sim8-fail rate within +-0.25 pp) on the P5-R EVAL control rows; AND Tc20s warm start == dev-box Tc20s build within 1e-09 (R-A)",
+   "value": null,
+   "n": null,
+   "evidence": "MEASURED",
+   "detail": {
+    "reason": "needs --eval-control (P5-R EVAL jsonl) and --control (dev-box Tc20s shards)"
+   }
+  },
+  "TB-1": {
+   "id": "TB-1",
+   "name": "reproduction (Tc20s npz + P5-R EVAL)",
+   "status": "NOT_RUN",
+   "bar": "Tc20s TB-1 (1018/1018, diff <= 1e-09) AND reproduction of all 2400 P5-R EVAL labels under R-TOL-1/2/3 (per rank, as TB-0)",
+   "value": null,
+   "n": null,
+   "evidence": "MEASURED",
+   "detail": {
+    "reason": "no --eval-control given",
+    "tc20s_tb1": "NOT_RUN"
+   }
+  },
+  "TB-2": {
+   "id": "TB-2",
+   "name": "S3 re-simulation identity",
+   "status": "PASS",
+   "bar": "S3: tracked8 of the stored label, simulated alone, equals the solver's final s: <= 1e-06 (m, rad) on every p5r row (replaces TB-2's spline knot exactness)",
+   "value": 0.0,
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "n_over_bar": 0,
+    "n_rows_missing_S3_field": 0,
+    "per_rank": {
+     "0": {
+      "n_tc20s": 92896,
+      "n_p5r": 92896,
+      "knot_fail": 0,
+      "knot_dev_bad": 0,
+      "note": "keys named for rank_policy(): n_tc20s == n_p5r, knot_fail == S3 failures"
+     },
+     "1": {
+      "n_tc20s": 57707,
+      "n_p5r": 57707,
+      "knot_fail": 0,
+      "knot_dev_bad": 0,
+      "note": "keys named for rank_policy(): n_tc20s == n_p5r, knot_fail == S3 failures"
+     }
+    }
+   }
+  },
+  "TB-3": {
+   "id": "TB-3",
+   "name": "identity control",
+   "status": "PASS",
+   "bar": "ident == traj bit-for-bit on 100 % of rows",
+   "value": "150603/150603",
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "note": "the driver's own `ident` row (sign 0.0) is not persisted; this checks the identity TABLE (label := traj through the table's JSON encoding) against the bank bytes"
+   }
+  },
+  "TB-4": {
+   "id": "TB-4",
+   "name": "coverage",
+   "status": "PASS",
+   "bar": "table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows; S4: fallbacks <= 1.0 % of rows PER RANK",
+   "value": "150603/150603",
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "bank_rows": 150603,
+    "expected_rows": 150603,
+    "unique_bank_keys": 150603,
+    "table_keys": 150603,
+    "absent": 0,
+    "extra_label_records": 0,
+    "duplicate_label_records": 0,
+    "traj_sha_mismatch": 0,
+    "n_raw_fallback": 0,
+    "raw_fallback_frac": 0.0,
+    "fallback_causes": {},
+    "REFUSE_if_fallback_over_1pct": false,
+    "S4_per_rank": {
+     "0": {
+      "n_rows": 92896,
+      "n_raw_fallback": 0,
+      "frac": 0.0
+     },
+     "1": {
+      "n_rows": 57707,
+      "n_raw_fallback": 0,
+      "frac": 0.0
+     }
+    }
+   }
+  },
+  "TB-5": {
+   "id": "TB-5",
+   "name": "sanity",
+   "status": "FAIL",
+   "bar": "every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %); S1/S2/S5 flags recorded true on every p5r row",
+   "value": "150602/150603",
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "non_finite": 0,
+    "yaw_branch_ge_pi": 1,
+    "sim_hz_not_10": 0,
+    "max_abs_dyaw": 3.5778645899711736,
+    "S1_S2_S5_not_true": {
+     "S1": 0,
+     "S2": 1,
+     "S5": 0
+    }
+   }
+  },
+  "TB-6": {
+   "id": "TB-6",
+   "name": "learnability per rank",
+   "status": "PASS",
+   "bar": "per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (PREREG_P5R 10: next lever P5-T); rank-1 FAIL => rank-0 only",
+   "value": {
+    "rank0": [
+     1.3229928750893978,
+     1.7052521722557064
+    ],
+    "rank1": [
+     1.1372542528854357,
+     1.3663305648984196
+    ]
+   },
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "rank0": {
+     "rank": 0,
+     "n": 92896,
+     "diag_median_of_row_ratios_acc": 1.2258192570885038,
+     "diag_median_of_row_ratios_hr": 1.5410957384353088,
+     "median_max_acc_label": 1.902385127279652,
+     "median_max_acc_traj": 1.4379405687661797,
+     "ratio_acc": 1.3229928750893978,
+     "median_max_hr_label_deg_s": 6.909007570717465,
+     "median_max_hr_traj_deg_s": 4.051604614922281,
+     "ratio_hr": 1.7052521722557064,
+     "pass": true
+    },
+    "rank1": {
+     "rank": 1,
+     "n": 57707,
+     "diag_median_of_row_ratios_acc": 1.1209715843559096,
+     "diag_median_of_row_ratios_hr": 1.3360787373741025,
+     "median_max_acc_label": 1.6559185924889153,
+     "median_max_acc_traj": 1.4560671796016829,
+     "ratio_acc": 1.1372542528854357,
+     "median_max_hr_label_deg_s": 12.250396188373774,
+     "median_max_hr_traj_deg_s": 8.965909497373012,
+     "ratio_hr": 1.3663305648984196,
+     "pass": true
+    },
+    "rank0_fail_STOP_next_lever_P5R": false,
+    "rank1_fail_means_rank0_only": false,
+    "population": "rows whose label source is p5r (raw_fallback rows are identity and excluded)",
+    "rank0_fail_next_lever": "P5-T (selective label), PREREG_P5R 10"
+   }
+  },
+  "TB-7": {
+   "id": "TB-7",
+   "name": "n_differs recorded",
+   "status": "PASS",
+   "bar": "n_differs per rank recorded",
+   "value": {
+    "0": 92896,
+    "1": 57707
+   },
+   "n": 150603,
+   "evidence": "MEASURED",
+   "detail": {
+    "per_rank": {
+     "0": {
+      "n_rows": 92896,
+      "n_tc20s": 92896,
+      "n_raw_fallback": 0,
+      "n_differs": 92896
+     },
+     "1": {
+      "n_rows": 57707,
+      "n_tc20s": 57707,
+      "n_raw_fallback": 0,
+      "n_differs": 57707
+     }
+    },
+    "feeds": "G-LIVE (a): n_differs must be > 0 for the substitution to be non-trivial",
+    "warn_zero_differs": []
+   }
+  }
+ },
+ "rank_policy": {
+  "decision": "all",
+  "r0": {
+   "n": 300,
+   "n_logs": 231,
+   "point_pp": 3.0,
+   "lo_pp": 1.2903225806451613,
+   "hi_pp": 5.033557046979865,
+   "raw_fail": 10,
+   "tc_fail": 1,
+   "estimator": "paired log-cluster bootstrap, ratio, 10000 draws, seed 20260927, 95% percentile"
+  },
+  "r1": {
+   "n": 300,
+   "n_logs": 235,
+   "point_pp": 3.3333333333333335,
+   "lo_pp": 1.4335637480798773,
+   "hi_pp": 5.498281786941581,
+   "raw_fail": 10,
+   "tc_fail": 0,
+   "estimator": "paired log-cluster bootstrap, ratio, 10000 draws, seed 20260927, 95% percentile"
+  },
+  "rk": {
+   "RK0_stop_rule_r0_hi_lt_0": false,
+   "RK1_n_ge_200_and_logs_ge_5": true,
+   "RK2_r1_lo_gt_0": true,
+   "RK3_r0_point_gt_0": true,
+   "RK4_TB6_passes_on_rank1": true,
+   "RK5_TB2_TB3_pass_on_every_rank1_row": true,
+   "RK6_guards": "not required: the repair json carries sim8 only (no DDC / comfort / lk10 / executed-vs-intended)"
+  },
+  "repair_reports_own_numbers_(seed 20261111, NOT the 4.3 estimator)": {
+   "rank0_report": {
+    "raw_minus_tc20s": null,
+    "ci95_log_cluster_bootstrap": null,
+    "n": 300,
+    "n_logs": null
+   },
+   "rank1_report": {
+    "raw_minus_tc20s": null,
+    "ci95_log_cluster_bootstrap": null,
+    "n": 300,
+    "n_logs": null
+   }
+  },
+  "also_STOP_if_TB6_rank0_fails": false,
+  "disclosure": "section 17 item 9: the rule was written after the MM's one-line rank-1 summary; the estimator here is 4.3's (seed 20260927), recomputed from the per-row records"
+ },
+ "failing": [
+  "TB-0",
+  "TB-1",
+  "TB-5"
+ ],
+ "merged_jsonl": {
+  "written": true,
+  "all": "/workspace/data/p5c_a33_check/gates_main_old/merged_labels_all.jsonl",
+  "rank0only": "/workspace/data/p5c_a33_check/gates_main_old/merged_labels_rank0only.jsonl"
+ },
+ "label_records": 150603,
+ "bank_files": [
+  "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7/targets_rank0.jsonl",
+  "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7/targets_rank1.jsonl"
+ ],
+ "inputs": {
+  "labels": [
+   "/workspace/data/p5c_label_a32/rekeyed/labels_rekeyed.jsonl"
+  ],
+  "control": null,
+  "tb1": null
+ },
+ "tc20s_ranks": "all"
+}

@@ -1,0 +1,184 @@
+{
+ "schema": "tanitad.r9_map_thresholds/1",
+ "planes": {
+  "psw": [
+   88,
+   90,
+   79
+  ],
+  "pedge": [
+   7,
+   7,
+   5
+  ]
+ },
+ "bands_m": [
+  [
+   0,
+   10
+  ],
+  [
+   10,
+   40
+  ],
+  [
+   40,
+   100
+  ]
+ ],
+ "rule": "flag = plane_u8 >= level, per plane and per band (r9_e1_eval.MapThresholds); a plane absent here keeps the fixed 128",
+ "criterion": {
+  "name": "PER PLANE (see per_plane): iou = one-vs-rest, per plane and per band: the uint8 level that maximises the pooled IoU of {plane >= level} against the plane's GT class(es) over GT-valid cells (gt != 255); first level on ties (refit_perception_thresholds.best_threshold); level 0 is never emitted; f_tol = thin-class rule of E0d (REFCV9_DESIGN 2.1; e0d_score.py _edge_stats / fit_grid_threshold): the uint8 level in 1..255 that maximises the pooled F@0.3 m = 2PR/(P+R) of {pedge >= level} vs GT class 5 over the band's rows; R = |GT5 & dilate(flag, 3)| / |GT5|, P = |flag & judged & dilate(GT5, 3)| / |flag & judged|, judged = gt != 255 and gt != 0; square 3-cell element, zero padding, dilation on the whole raster; first level on ties; a band with no GT edge cell (or with F = 0 at every level) is refused",
+  "population": "all",
+  "gt_classes": {
+   "psw": [
+    7
+   ],
+   "pedge": [
+    5
+   ]
+  },
+  "valid_cells": "gt != 255",
+  "per_plane": {
+   "psw": {
+    "criterion": "iou",
+    "definition": "one-vs-rest, per plane and per band: the uint8 level that maximises the pooled IoU of {plane >= level} against the plane's GT class(es) over GT-valid cells (gt != 255); first level on ties (refit_perception_thresholds.best_threshold); level 0 is never emitted"
+   },
+   "pedge": {
+    "criterion": "f_tol",
+    "definition": "thin-class rule of E0d (REFCV9_DESIGN 2.1; e0d_score.py _edge_stats / fit_grid_threshold): the uint8 level in 1..255 that maximises the pooled F@0.3 m = 2PR/(P+R) of {pedge >= level} vs GT class 5 over the band's rows; R = |GT5 & dilate(flag, 3)| / |GT5|, P = |flag & judged & dilate(GT5, 3)| / |flag & judged|, judged = gt != 255 and gt != 0; square 3-cell element, zero padding, dilation on the whole raster; first level on ties; a band with no GT edge cell (or with F = 0 at every level) is refused",
+    "gt_classes": [
+     5
+    ],
+    "tol_cells": 3,
+    "judged_cells": "gt != 255 and gt != 0 (e0d_score.gt_static J)",
+    "mirrors": "e0d_score.py _edge_stats 149-157 / fit_grid_threshold 391-405"
+   }
+  }
+ },
+ "provenance": {
+  "arm": "K0",
+  "tool": "stack/scripts/r9_map_fit_thresholds.py",
+  "tool_sha256": "455952178068309296adab9996af150097a509f42d8ada360f66bf8d1db8f514",
+  "fit_split": "TRAIN (FIT dump)",
+  "fit": {
+   "n_clips": 139,
+   "k_per_ep": 8,
+   "clips_sha12_digest": "0a7f50f90e7835a297c52b0170b92cff11ee565d7b015238814c48ad354f60da",
+   "dev_hold_file": "DEV_HOLD_SPLIT.json",
+   "dev_hold_sha256": "ca5af0203320aba4f89e09be81a6bf079d9d4d77708ccb8a3ca2a0ea57e8db0a",
+   "n_eval_clips_checked": 139,
+   "disjoint_from_dev_and_hold": true,
+   "rule": "TRAIN clips; K windows per clip at ts[int((j + 0.5) * len(ts) / K)] of the dataset's sorted starts (run_diag.py train_diag)"
+  },
+  "n_rasters_fitted": 1112,
+  "n_episodes_fitted": 139,
+  "rast_dir_names_sha256": "b1fc5844c8e6af51de7e79b16e533b1ac6f563936f2d6be28a9f74b5a6579b45",
+  "dump_json": {
+   "sha256": "76693adfecc50ce3afa2d2468cdd15eec6ce7d91cb9524dbcde32dd5419b168e",
+   "ckpt_md5": "c1dd38fbb5a14eb5115fc8882c6ffbef",
+   "ckpt_kind": "ema_model_only",
+   "step": 6000,
+   "weights_are_ema": true,
+   "config_md5": "0ffd3a9a53d427f80bd919bc42477f6b",
+   "order_digest": "031e0b4e85aa25066eb866b25041e2855485730fea93cd236e9110605ae1bc71",
+   "tree_commit": null
+  },
+  "ckpt_md5": "c1dd38fbb5a14eb5115fc8882c6ffbef",
+  "fit_detail": {
+   "psw": [
+    {
+     "band_m": [
+      0,
+      10
+     ],
+     "level": 88,
+     "iou_at_level": 0.4325086365667011,
+     "iou_at_128": 0.2559805710314064,
+     "n_pos": 20208317,
+     "n_neg": 42209952,
+     "flag_rate_at_level": 0.4556630527514308
+    },
+    {
+     "band_m": [
+      10,
+      40
+     ],
+     "level": 90,
+     "iou_at_level": 0.5586363882986489,
+     "iou_at_128": 0.5230650216826815,
+     "n_pos": 63915917,
+     "n_neg": 129859457,
+     "flag_rate_at_level": 0.38352624725162443
+    },
+    {
+     "band_m": [
+      40,
+      100
+     ],
+     "level": 79,
+     "iou_at_level": 0.4596320313004734,
+     "iou_at_128": 0.39735592960455407,
+     "n_pos": 82509565,
+     "n_neg": 186372842,
+     "flag_rate_at_level": 0.432726507837309
+    }
+   ],
+   "pedge": [
+    {
+     "band_m": [
+      0,
+      10
+     ],
+     "criterion": "f_tol",
+     "level": 7,
+     "f_at_level": 0.35144683786034814,
+     "p_at_level": 0.35275081568154154,
+     "r_at_level": 0.350152465095713,
+     "f_at_128": 0.00011679270546131032,
+     "p_at_128": 1.0,
+     "r_at_128": 5.8399763063818425e-05,
+     "n_pos": 239727,
+     "n_judged_flags_at_level": 977710,
+     "n_judged_flags_at_128": 4
+    },
+    {
+     "band_m": [
+      10,
+      40
+     ],
+     "criterion": "f_tol",
+     "level": 7,
+     "f_at_level": 0.36732414214947584,
+     "p_at_level": 0.33100453497482396,
+     "r_at_level": 0.41259645603477096,
+     "f_at_128": 0.0006737893618046683,
+     "p_at_128": 0.9758064516129032,
+     "r_at_128": 0.0003370110330992979,
+     "n_pos": 747750,
+     "n_judged_flags_at_level": 4585913,
+     "n_judged_flags_at_128": 124
+    },
+    {
+     "band_m": [
+      40,
+      100
+     ],
+     "criterion": "f_tol",
+     "level": 5,
+     "f_at_level": 0.24228766872844323,
+     "p_at_level": 0.20401504408901908,
+     "r_at_level": 0.29823583836901574,
+     "f_at_128": 0.0,
+     "p_at_128": 0.0,
+     "r_at_128": 0.0,
+     "n_pos": 866814,
+     "n_judged_flags_at_level": 7017507,
+     "n_judged_flags_at_128": 0
+    }
+   ]
+  },
+  "warnings": [],
+  "caveat": "bound to THIS checkpoint's planes: valid for this model's rasters only; fitted on TRAIN clips (the arm may have trained on them: the FIT operating point is then optimistic, as for the 8-way refits); one seed"
+ }
+}

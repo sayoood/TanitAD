@@ -1,0 +1,95 @@
+### smoke2: train n=2 via the Thor-416 fallback (2 clips scp'd read-only), resume, verify  [CPU fp32; 2026-10-17 15:08-15:17]
+== TRAIN n=2 via auto source (Thor 416 fallback, read-only) 15:08:36
+ZZSPLIT-OKZZ split=train pick=2 listing=4713 eval=141 train_all=4572 train==labels=True train&eval=False
+[parity] pull_encode_pooled train: ingest gate — 2 clip(s); 0 in physicalai-train-e438721ae894; 0 of 40 deployed-val episodes. role=train mode=refuse (membership by per-clip sha256, not by provenance).
+[parity] {"role": "train", "mode": "refuse", "n_in": 2, "n_disqualifying": 0, "n_kept": 2}
+ZZSOURCE-FALLBACK-416ZZ the native 256x640 v2ep source is gone from Thor; resampling the 416x1024 cache to the 256x640 cylinder (see validation.json V3b for the measured fidelity)
+[source] kind=thor416-resize dir=/home/nvidia/data/physicalai-b1-w120-416x1024cyl remote=True resample416=True
+[plan] 2 in pick, 0 already done+verified (0s check), 2 to build, grids=['4x10', '8x20'], dtype=float8_e4m3fn, device=cpu, out=C:\Users\Admin\refav1_hj_cache\test_cpu_fp32\train
+[pull_encode_pooled] 1/2 001e7d520dd0 T=101 242s (242.20 s/clip, free 65 GB)
+[pull_encode_pooled] 2/2 003b733271dd T=101 468s (234.20 s/clip, free 65 GB)
+ZZENC-DONE done=2 skipped=0 468s 234.20s_per_clipZZ
+== RESUME train (must skip both) 15:17:06
+ZZSPLIT-OKZZ split=train pick=2 listing=4713 eval=141 train_all=4572 train==labels=True train&eval=False
+[parity] pull_encode_pooled train: ingest gate — 2 clip(s); 0 in physicalai-train-e438721ae894; 0 of 40 deployed-val episodes. role=train mode=refuse (membership by per-clip sha256, not by provenance).
+[parity] {"role": "train", "mode": "refuse", "n_in": 2, "n_disqualifying": 0, "n_kept": 2}
+ZZSOURCE-FALLBACK-416ZZ the native 256x640 v2ep source is gone from Thor; resampling the 416x1024 cache to the 256x640 cylinder (see validation.json V3b for the measured fidelity)
+[source] kind=thor416-resize dir=/home/nvidia/data/physicalai-b1-w120-416x1024cyl remote=True resample416=True
+[plan] 2 in pick, 2 already done+verified (0s check), 0 to build, grids=['4x10', '8x20'], dtype=float8_e4m3fn, device=cpu, out=C:\Users\Admin\refav1_hj_cache\test_cpu_fp32\train
+ZZENC-DONE done=0 skipped=0 0s (dry-run or nothing to do)ZZ
+== VERIFY train 15:17:10
+  },
+  "C1b_no_orphan_files": {
+  },
+  "C3_disjoint_from_eval": {
+  },
+  "C4_coverage": {
+  },
+  "C2_content": {
+  }
+ },
+ "ok": true,
+ "failed": []
+}
+ZZVERIFY-OK
+== VERIFY eval + redo 1 (bit-exact re-encode, CPU fp32) 15:17:16
+ "checks": {
+  "C1_manifest_files": {
+  },
+  "C1b_no_orphan_files": {
+  },
+  "C3_disjoint_from_train": {
+  },
+  "C4_coverage": {
+  },
+  "C2_content": {
+  },
+  "C5_bit_exact_redo": {
+  }
+ },
+ "ok": false,
+ "failed": [
+  "C5_bit_exact_redo"
+ ]
+}
+ZZVERIFY-FAIL ['C5_bit_exact_redo']
+== SMOKE2-END 15:17:32
+
+### smoke3: eval clip rebuilt with the FINAL code + full-clip bit-exact redo  [CPU fp32; 15:18-15:27] (the validate step is in validate_cpu.log)
+== PREPARE timing, uncontended (416 route, 1 clip, local file) 15:18:33
+prepare (load+assert+resize416, python threads=16) 5.68 s
+== EVAL rebuild with the final code 15:18:41
+ZZSPLIT-OKZZ split=eval pick=1 listing=4713 eval=141 train_all=4572 train==labels=True train&eval=False
+[parity] pull_encode_pooled eval: ingest gate — 1 clip(s); 0 in physicalai-train-e438721ae894; 0 of 40 deployed-val episodes. role=eval mode=exclude (membership by per-clip sha256, not by provenance).
+[parity] {"role": "eval", "mode": "exclude", "n_in": 1, "n_disqualifying": 0, "n_kept": 1}
+[source] kind=local256 dir=C:/Users/Admin/tanitad-data/refav1-eval141/eps remote=False resample416=False
+[plan] 1 in pick, 0 already done+verified (0s check), 1 to build, grids=['4x10', '8x20'], dtype=float8_e4m3fn, device=cpu, out=C:\Users\Admin\refav1_hj_cache\test_cpu_fp32\eval
+[pull_encode_pooled] 1/1 00213e99adca T=101 215s (214.92 s/clip, free 65 GB)
+ZZENC-DONE done=1 skipped=0 215s 214.93s_per_clipZZ
+== VERIFY eval + redo 1 (full clip, CPU fp32, bit-exact?) 15:22:30
+[verify] C1_manifest_files: OK {"n_entries": 1, "n_manifest_lines": 2, "n_duplicate_lines": 1, "n_bad": 0, "first_bad": [], "secs": 0.0}
+[verify] C1b_no_orphan_files: OK {"n_files": 1, "n_files_without_manifest": 0, "n_manifest_without_file": 0}
+[verify] C3_disjoint_from_train: OK {"n_clips": 1, "n_in_train": 0, "n_outside_eval141": 0}
+[verify] C4_coverage: OK {"n_expected": 141, "n_have": 1, "n_missing": 140, "n_extra": 0, "partial_ok": true}
+[verify] C2_content: OK {"n_checked": 1, "n_problems": 0, "first": []}
+[verify] redo source: local256
+[verify] redo 00213e99adca bit_exact=True
+[verify] C5_bit_exact_redo: OK {"n_redone": 1, "n_bit_exact": 1, "n_skipped_source_mismatch": 0, "skipped": [], "cross_device": false, "note": "same device"}
+  "C1_manifest_files": {
+   "ok": true,
+  "C1b_no_orphan_files": {
+   "ok": true,
+  "C3_disjoint_from_train": {
+   "ok": true,
+  "C4_coverage": {
+   "ok": true,
+   "partial_ok": true
+  "C2_content": {
+   "ok": true,
+  "C5_bit_exact_redo": {
+   "ok": true,
+   "n_redone": 1,
+   "n_bit_exact": 1,
+ "ok": true,
+ZZVERIFY-OK
+== VALIDATE (bf16 CPU, 6 spread frames) 15:26:43

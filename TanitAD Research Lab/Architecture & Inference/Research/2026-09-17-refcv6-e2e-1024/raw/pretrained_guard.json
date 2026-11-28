@@ -1,0 +1,151 @@
+{
+ "evidence_class": "MEASURED",
+ "frame": {
+  "height": 256,
+  "width": 1024,
+  "f_ref": 488.92398517830253,
+  "projection": "cylindrical"
+ },
+ "arms": {
+  "resnet101.a1_in1k": {
+   "model_name": "resnet101.a1_in1k",
+   "provenance": {
+    "trunk": "timm",
+    "model_name": "resnet101.a1_in1k",
+    "timm_version": "1.0.29",
+    "pretrained": true,
+    "verified_pretrained": true,
+    "frames": 3,
+    "mode": "shared",
+    "fuse": "concat1x1",
+    "fuse_identity_init": true,
+    "in_channels": 9,
+    "imagenet_norm": true,
+    "image_hw": [
+     256,
+     1024
+    ],
+    "s16": [
+     1024,
+     16,
+     64
+    ],
+    "s32": [
+     2048,
+     8,
+     32
+    ],
+    "params": 58231872,
+    "backbone_params": 42500160
+   },
+   "stem": {
+    "module": "conv1",
+    "abs_sum": 1402.778076171875,
+    "pinned": 1402.778076171875,
+    "rtol": 0.02,
+    "band": [
+     1374.7225146484375,
+     1430.8336376953125
+    ],
+    "he_init_reference_in_docstring": 875.0
+   },
+   "CONTROL_shipped_build": "PASS",
+   "MUT_A_he_reinit_stem": {
+    "abs_sum_after": 187.3873291015625,
+    "guard": "RED (correct): refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 187.3873 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that clai"
+   },
+   "MUT_B_pretrained_false": {
+    "stem_abs_sum": 190.22496032714844,
+    "guard": "RED (correct): refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 190.2250 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that clai"
+   },
+   "feature_info": {
+    "perception": {
+     "stride": 16,
+     "channels": 1024,
+     "hw": [
+      16,
+      64
+     ]
+    },
+    "planner": {
+     "stride": 32,
+     "channels": 2048,
+     "hw": [
+      8,
+      32
+     ]
+    }
+   }
+  },
+  "resnet34.a1_in1k": {
+   "model_name": "resnet34.a1_in1k",
+   "provenance": {
+    "trunk": "timm",
+    "model_name": "resnet34.a1_in1k",
+    "timm_version": "1.0.29",
+    "pretrained": true,
+    "verified_pretrained": true,
+    "frames": 3,
+    "mode": "shared",
+    "fuse": "concat1x1",
+    "fuse_identity_init": true,
+    "in_channels": 9,
+    "imagenet_norm": true,
+    "image_hw": [
+     256,
+     1024
+    ],
+    "s16": [
+     256,
+     16,
+     64
+    ],
+    "s32": [
+     512,
+     8,
+     32
+    ],
+    "params": 22268480,
+    "backbone_params": 21284672
+   },
+   "stem": {
+    "module": "conv1",
+    "abs_sum": 1279.853759765625,
+    "pinned": 1279.853759765625,
+    "rtol": 0.02,
+    "band": [
+     1254.2566845703125,
+     1305.4508349609375
+    ],
+    "he_init_reference_in_docstring": 875.0
+   },
+   "CONTROL_shipped_build": "PASS",
+   "MUT_A_he_reinit_stem": {
+    "abs_sum_after": 187.47955322265625,
+    "guard": "RED (correct): refcv6 trunk 'resnet34.a1_in1k': conv1.weight |w|.sum() = 187.4796 is outside [1254.2567, 1305.4508] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that claim"
+   },
+   "MUT_B_pretrained_false": {
+    "stem_abs_sum": 191.12689208984375,
+    "guard": "RED (correct): refcv6 trunk 'resnet34.a1_in1k': conv1.weight |w|.sum() = 191.1269 is outside [1254.2567, 1305.4508] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that claim"
+   },
+   "feature_info": {
+    "perception": {
+     "stride": 16,
+     "channels": 256,
+     "hw": [
+      16,
+      64
+     ]
+    },
+    "planner": {
+     "stride": 32,
+     "channels": 512,
+     "hw": [
+      8,
+      32
+     ]
+    }
+   }
+  }
+ }
+}

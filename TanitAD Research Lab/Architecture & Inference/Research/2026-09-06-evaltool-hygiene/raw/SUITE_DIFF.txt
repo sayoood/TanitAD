@@ -1,0 +1,71 @@
+CONTROLLED COMPARISON of stack/tests, pre-edit vs post-edit refcv3_arm.py
+pre-edit blob : 5e1349a9a9874d83685572bca30ef9d69bfed91b (the file as received, incl. the sibling's a_star fix)
+post-edit blob: 6e87fd84d26d647f9ca7a89a437db95b73b2c6de
+env           : C:\Users\Admin\tanitad-evtool-20260906, PYTHONPATH=<clone>/stack, OMP_NUM_THREADS=6, CPU only, ZERO GPU
+
+PRE  totals: 55 failed, 7002 passed, 119 skipped, 2 xfailed, 11 warnings, 29 errors in 739.93s (0:12:19)
+POST totals: 53 failed, 7035 passed, 120 skipped, 2 xfailed, 11 warnings, 29 errors in 920.43s (0:15:20)
+  (the PRE run ignores test_refcv3_arm.py, whose 12 NEW tests fail there BY CONSTRUCTION;
+   the POST id-set below is compared with that file excluded so the two are like-for-like)
+
+=== ONLY IN PRE  (FAILING BEFORE, PASSING AFTER) ===
+FAILED stack\tests\test_refcv3_ablations.py::test_each_ablation_moves_the_record[e7_off]
+FAILED stack\tests\test_refcv3_ablations.py::test_the_ablation_stamp_reaches_the_manifest_and_every_arm_block
+
+=== ONLY IN POST (INTRODUCED BY THIS WORK) ===
+(empty above = NONE introduced)
+
+=== SHARED, PRE-EXISTING, UNTOUCHED BY THIS STREAM ===
+FAILED stack\tests\test_bev_consumer_fov.py::test_the_banked_p8_frame_is_recoverable_from_the_launch_chains
+FAILED stack\tests\test_build_parity_guard.py::test_a_single_contaminated_clip_is_enough_to_refuse
+FAILED stack\tests\test_build_parity_guard.py::test_a_truncated_oracle_is_refused_not_silently_under_excluding
+FAILED stack\tests\test_build_parity_guard.py::test_a_typo_in_role_or_mode_refuses_rather_than_weakening_the_check
+FAILED stack\tests\test_build_parity_guard.py::test_audit_requires_a_reason_and_voids_decision_grade
+FAILED stack\tests\test_build_parity_guard.py::test_epcache_gate_is_scoped_to_physicalai_clip_sources
+FAILED stack\tests\test_build_parity_guard.py::test_every_derived_corpus_writer_is_gated_or_classified
+FAILED stack\tests\test_build_parity_guard.py::test_exclude_mode_drops_exactly_the_contaminated_clips
+FAILED stack\tests\test_build_parity_guard.py::test_positive_control_a_clean_corpus_passes
+FAILED stack\tests\test_build_parity_guard.py::test_the_gate_refuses_when_its_oracle_is_missing
+FAILED stack\tests\test_build_parity_guard.py::test_the_refusal_never_prints_a_clip_id
+FAILED stack\tests\test_build_parity_guard.py::test_the_six_val_episodes_are_derived_from_the_oracle
+FAILED stack\tests\test_build_parity_guard.py::test_train_role_does_not_refuse_the_parity_train_corpus
+FAILED stack\tests\test_build_parity_guard.py::test_undeclared_role_refuses_the_alpamayo_corpus
+FAILED stack\tests\test_build_parity_guard.py::test_v2_compressed_build_refuses_before_any_download
+FAILED stack\tests\test_build_parity_guard.py::test_val_role_flips_the_check_to_the_train_split
+FAILED stack\tests\test_decision_check.py::test_frozen_encoder_also_surfaces_the_comparative_arm_decision
+FAILED stack\tests\test_decision_check.py::test_frozen_encoder_surfaces_D003_the_decision_C129_violated
+FAILED stack\tests\test_decision_check.py::test_the_record_files_the_tool_depends_on_exist
+FAILED stack\tests\test_eval_contamination.py::test_loading_the_labels_as_an_EVAL_set_is_refused
+FAILED stack\tests\test_eval_contamination.py::test_s2_labels_report_discloses_contamination_into_every_run_config
+FAILED stack\tests\test_eval_contamination.py::test_the_aug120_label_leg_is_entirely_inside_the_parity_train_split
+FAILED stack\tests\test_eval_contamination.py::test_the_deployed_val_digest_set_is_cross_checked_by_a_second_source
+FAILED stack\tests\test_eval_contamination.py::test_the_digest_set_reproduces_the_committed_manifest_clip_membership
+FAILED stack\tests\test_gate_emitters.py::test_BOTH_disputed_emitters_EXIST_and_produce_a_value_off_committed_artifacts
+FAILED stack\tests\test_gate_emitters.py::test_deploy_tick_reads_the_composed_lever_p99_from_the_v1_panel
+FAILED stack\tests\test_gate_emitters.py::test_gate_values_formats_the_secondary_value_args
+FAILED stack\tests\test_gate_emitters.py::test_gate_values_reports_missing_when_an_input_absent
+FAILED stack\tests\test_gate_emitters.py::test_missing_metric_yields_none_not_a_fabricated_pass
+FAILED stack\tests\test_gate_emitters.py::test_reducer_reproduces_the_published_81_8_and_18_6_at_8_10k
+FAILED stack\tests\test_launch_closure_audit.py::test_launch_sources_exist_or_the_whole_audit_silently_narrows
+FAILED stack\tests\test_openloop_suite.py::test_all_four_families_present_and_never_pooled
+FAILED stack\tests\test_openloop_suite.py::test_arm_json_roundtrip_is_the_contract_with_another_stream
+FAILED stack\tests\test_openloop_suite.py::test_criteria_checker_reports_zero_violations
+FAILED stack\tests\test_openloop_suite.py::test_forbidden_estimator_is_never_a_decision_grade_interval
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_a_homogeneous_corpus_passes_so_the_refusals_mean_something
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_the_census_refuses_a_pre_schema_record_that_stamps_nothing
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_the_census_refuses_a_record_carrying_an_error_entry
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_the_census_refuses_a_record_detected_at_a_different_floor
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_the_census_refuses_a_record_whose_filename_and_content_disagree
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_the_census_refuses_a_record_whose_liveness_control_is_dead
+FAILED stack\tests\test_perception_floor_homogeneity.py::test_the_local_and_far_side_censuses_are_the_same_predicate
+FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_forward_keys_covers_every_required_channel
+FAILED stack\tests\test_rl_gate_statistic.py::test_the_family_ordering_is_a_property_of_the_statistics_not_of_our_data
+FAILED stack\tests\test_rl_gate_statistic.py::test_the_rate_is_bit_identical_under_a_magnitude_change_and_the_wmr_is_not
+FAILED stack\tests\test_rl_gate_statistic.py::test_the_split_rule_is_deterministic_and_content_addressed
+FAILED stack\tests\test_rl_refc_adapter_robust.py::test_forward_kwargs_plumbs_every_channel_the_forward_accepts
+FAILED stack\tests\test_rl_veto_explicit.py::test_driver_arm_table_declares_the_veto
+FAILED stack\tests\test_secret_scan.py::test_hook_is_installed_and_current
+FAILED stack\tests\test_text_encoding_is_explicit.py::test_subprocess_text_mode_always_names_its_encoding
+FAILED stack\tests\test_v6_chain.py::test_the_WHOLE_LADDER_executes_end_to_end_on_cpu
+FAILED stack\tests\test_v6_chain.py::test_the_dry_ancestor_is_never_named_ckpt_pt
+FAILED stack\tests\test_v6_st_launch_fixes.py::test_E4_the_resolution_is_banked_with_its_reasons

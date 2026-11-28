@@ -1,0 +1,13 @@
+PCDONE orcdir_seed0
+PCDONE orcdir_seed1
+PCFAIL orcdir_seed2 rc=127
+[sp2] cache 5617 frames · GT-ORACLE-DIRECT-n0.1@11250 · tier T0-DIAGNOSTIC
+[sp2] split source: DECLARED p3_selection.json (stratum n_lead_frames >= 120 over the full train join, seed 0)
+[sp2] clips 130 -> EVAL 70 clips / 3023 windows · TRAIN 60 clips / 2594 windows (episode-disjoint)
+[sp2] GT lead present in 2721/3023 eval windows (0.900); C-CONST = train-median 15.0133 m (n_train_leads=2231)
+[sp2] C-SHUF discriminability: {"within_episode_gt_gap_sd_m": 3.6878, "between_episode_gt_gap_sd_m": 6.1999, "realised_swap_mae_m": 3.8769, "n_episodes_with_ge2_leads": 70, "fixed_points": 0, "_read": "realised_swap_mae_m is the perturbation C-SHUF actually applies to the QUESTION. If an arm's own error is much larger than this, K2 has little to detect and its 'not separated' is uninformative \u2014 say so rather than reading it as a null."}
+[sp2] arm cells: memory [16, 128] · head 3,222,293 params · §6 band (2000000, 4000000) -> IN
+[sp2:cells] {'step': 0, 'loss_presence': 0.4678, 'loss_cls': 1.9659, 'loss_centre': 31.9426, 'loss_size': 3.9416, 'loss_yaw': 0.9856, 'loss_rates': 6.6587, 'loss_occ': 0.4927, 'total': 42.8791, 'n_matched': 289, 'n_dropped': 0}
+[sp2:cells] {'step': 200, 'loss_presence': 0.1382, 'loss_cls': 0.7792, 'loss_centre': 3.2964, 'loss_size': 1.4863, 'loss_yaw': 0.5845, 'loss_rates': 5.5671, 'loss_occ': 0.1223, 'total': 9.1292, 'n_matched': 268, 'n_dropped': 0}
+[sp2:cells] {'step': 400, 'loss_presence': 0.1391, 'loss_cls': 0.8914, 'loss_centre': 2.9982, 'loss_size': 1.7459, 'loss_yaw': 0.7114, 'loss_rates': 5.3724, 'loss_occ': 0.1149, 'total': 9.2297, 'n_matched': 275, 'n_dropped': 0}
+CHAIN_A_DONE orcdir

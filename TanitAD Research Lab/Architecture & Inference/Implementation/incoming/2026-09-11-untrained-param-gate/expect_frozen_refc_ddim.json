@@ -1,0 +1,29 @@
+{
+  "_schema": "check_untrained_params allow-list",
+  "_arm": "refc family, --sampler ddim",
+  "_why_this_file_is_SHORT": [
+    "An allow-list is not a list of everything the gate found. It is the list of parameters",
+    "that are DELIBERATELY frozen. Two of refcv5-v2's three untrained heads are DEFECTS and",
+    "are therefore deliberately NOT listed here, so the gate keeps failing on them:",
+    "  * tac_goal_tok_head  -- 11,286 params untrained because --w-tac-goal defaults to 0.0",
+    "                          and the arm never passed it. The head is built and unreachable.",
+    "  * scorer.goal_point  -- 1,026 params, zero-init AND zero-gradient, so it emits the",
+    "                          CONSTANT ORIGIN for every input. MEASURED untrained and exactly",
+    "                          zero in refcv5-v2, refcv3_final AND refcv4b_final.",
+    "A gate that allow-listed those would be a rubber stamp."
+  ],
+  "expect_frozen": [
+    "core.decoder.offset_head"
+  ],
+  "_evidence_for_the_one_entry": {
+    "claim": "core.decoder.offset_head is bypassed BY THE ddim SAMPLER, not accidentally unreached",
+    "evidence_class": "MEASURED (ours)",
+    "measured_2026-09-11": {
+      "refcv5v2_final (--sampler ddim)": "UNTRAINED: no optimizer state, 6,160 params at init",
+      "refcv3_final (--sampler unset)": "TRAINED: has optimizer state, moment abs sum 55.818",
+      "refcv4b_final (--sampler unset)": "TRAINED: has optimizer state, moment abs sum 58.360"
+    },
+    "note": "This is the discriminating check FINDING.md (2026-09-10) left OPEN as a hypothesis. It is now CONFIRMED, at zero GPU cost. The entry is scoped to ddim arms; do NOT carry it onto a non-ddim arm, where the same head being untrained WOULD be a defect.",
+    "run_the_gate_with": "--strict-allowlist, so that if a future ddim change starts training this head the STALE entry fails and this file gets pruned"
+  }
+}

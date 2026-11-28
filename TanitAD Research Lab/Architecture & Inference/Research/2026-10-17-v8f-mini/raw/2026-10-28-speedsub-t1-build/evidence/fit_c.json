@@ -1,0 +1,253 @@
+{
+ "schema": "v8f-speedsub-t1-fit-v1",
+ "readout_key": "mlp_ego_c",
+ "threads": 4,
+ "torch": "2.11.0+cu128",
+ "numpy": "2.5.1",
+ "controls": {
+  "C-INSTR": {
+   "pass": true,
+   "problems": []
+  },
+  "C-PARITY": {
+   "pass": true,
+   "n_windows": 306566,
+   "n_clips": 4512,
+   "ego_shape": [
+    306566,
+    22
+   ],
+   "fit_json": [
+    306566,
+    4512
+   ],
+   "extract_parity_ok": true,
+   "window_list_sha256": "61a6126e5ba5f204d45e32fb9a634f30a243a039a8b55b5c4554336f32957caa",
+   "extract_window_list_sha256": "61a6126e5ba5f204d45e32fb9a634f30a243a039a8b55b5c4554336f32957caa",
+   "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+   "train_arrays_sha256": "d062f6646a049042089c4263ea9a9c4fdc9984c8ceddd5e73be55219c8413545"
+  },
+  "C-DISJ": {
+   "pass": true,
+   "n_eval_clips": 141,
+   "n_fit_clips": 4512,
+   "intersection": []
+  },
+  "C-COVER": {
+   "pass": true,
+   "n_windows": 306566,
+   "n_limit_ok_causal": 306566,
+   "n_limit_ok_zero_no_finite_past": 0,
+   "n_clips_with_v": 4512,
+   "n_logged_limit_ok": 306566,
+   "confusion_logged_x_causal": [
+    [
+     91429,
+     22994,
+     1961,
+     0
+    ],
+    [
+     24019,
+     74013,
+     9220,
+     0
+    ],
+    [
+     1877,
+     8647,
+     56313,
+     1037
+    ],
+    [
+     0,
+     2,
+     1603,
+     13451
+    ]
+   ],
+   "unset_counts": {
+    "logged_ok_only": 0,
+    "causal_ok_only": 0,
+    "neither": 0
+   },
+   "agreement_with_logged": 0.7672279378665605,
+   "layout": {
+    "other_columns_bit_identical": true,
+    "limit_rowsum_in_0_1": true,
+    "limit_ok_iff_onehot": true
+   }
+  },
+  "C-CAUSAL": {
+   "pass": true,
+   "n_windows": 2399,
+   "n_compared": {
+    "a_t=0": 2399,
+    "a_t=1": 600,
+    "a_t=2": 600
+   },
+   "n_mismatch": {
+    "a_t=0": 0,
+    "a_t=1": 0,
+    "a_t=2": 0
+   },
+   "n_limit_ok": 2399,
+   "bucket_counts": [
+    728,
+    871,
+    684,
+    116
+   ],
+   "seconds": 3.2
+  },
+  "C-FIT": {
+   "pass": true,
+   "holdout_pred_max_abs_diff_ms": 9.412224223126486e-06,
+   "tolerance_ms": 1e-05,
+   "best_epoch": 8,
+   "best_epoch_banked": 8,
+   "holdout_rmse_sd_max_abs_diff_vs_fit_json": 3.992310648737174e-09,
+   "xm_xs_max_abs_diff_vs_banked": 0.0,
+   "seconds": 21.7
+  }
+ },
+ "instrument": {
+  "path": "F:/TanitAD-scratch/speedsub_t1/tree/stack/scripts/v8f_mini_eval_speedread.py",
+  "sha256": "a95f4fb14da3fd8f6f89e55dfcb23d5d26a81b09dd24285aba394f36546634ca"
+ },
+ "causal_steps": 20,
+ "seconds_causal_block": 5.6,
+ "speed_source": {
+  "primary": "F:/TanitAD-scratch/speedread/cache/train/clips/<clip>.pt['v'] (the field ClipStore.get reads as d['v'], mmap)",
+  "second_location": "E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt tracks[clip][0::2, 3]",
+  "agreement": {
+   "clips_compared": 4512,
+   "clips_missing_in_tracks": 0,
+   "len_mismatch": 0,
+   "max_abs_diff_ms": 0.0,
+   "rows_compared": 450950
+  }
+ },
+ "controls_pass": true,
+ "fit_seconds": 36.4,
+ "beside": {
+  "note": "TRAIN fold-0 holdout, decides nothing (PREREG section 2). 'logged' = the control refit of mlp_ego (= banked, C-FIT); 'causal' = mlp_ego_c.",
+  "logged": {
+   "best_epoch": 8,
+   "holdout_rmse_ms": [
+    2.5662480639591987,
+    0.7988109583877633,
+    2.548186064489209,
+    1.8381132314577617,
+    1.8060098098071586
+   ],
+   "holdout_rmse_sd": [
+    0.32904631216887287,
+    0.10364687747094448,
+    0.3291424942821424,
+    0.23133031396027326,
+    0.2443726036883854
+   ],
+   "holdout_skill_vs_trainmean": [
+    0.8965674197986008,
+    0.9898780562919753,
+    0.8958117926602425,
+    0.9492437363986576,
+    0.9432819227639007
+   ],
+   "holdout_rmse_sd_mean": 0.24750772031412369,
+   "n_holdout_rows": 57479,
+   "n_holdout_clips": 846
+  },
+  "causal": {
+   "best_epoch": 18,
+   "holdout_rmse_ms": [
+    2.890317694769478,
+    0.8241471952760244,
+    2.947053619201083,
+    2.019298714201668,
+    2.10004036579238
+   ],
+   "holdout_rmse_sd": [
+    0.37059877095165167,
+    0.10693429086050603,
+    0.38066316762528046,
+    0.2541328779649678,
+    0.2841581088057271
+   ],
+   "holdout_skill_vs_trainmean": [
+    0.8687947380913955,
+    0.9892257894185122,
+    0.860641851370415,
+    0.938744334981295,
+    0.92331038192927
+   ],
+   "holdout_rmse_sd_mean": 0.27929744324162664,
+   "n_holdout_rows": 57479,
+   "n_holdout_clips": 846
+  },
+  "train_sd": [
+   7.799048246564609,
+   7.707043163087045,
+   7.741893279525593,
+   7.945838139369076,
+   7.390393941663417
+  ],
+  "const": [
+   10.707660740543924,
+   10.581136585964707,
+   10.83117731649109,
+   9.244733848461006,
+   11.987222795910865
+  ],
+  "fit_json_mlp_ego_holdout_rmse_sd": [
+   0.3290463122832265,
+   0.10364687724087708,
+   0.3291424936509642,
+   0.2313303179525839,
+   0.24437260372668454
+  ]
+ },
+ "inputs": {
+  "train_arrays": "F:/TanitAD-scratch/speedread/train/train_arrays.npz",
+  "fit_json": "F:/TanitAD-scratch/speedread/fit/fit.json",
+  "fit_json_sha256": "c2e51ac204e5284dac5546ed80f03a3762f569f482a3e498c9c9ae12b4f04ae7",
+  "readout_banked": "F:/TanitAD-scratch/speedread/fit/readout.pt",
+  "readout_banked_sha256": "a205609ab47325a0ad9c0141be8ae3a0fec653d59c6db17ec1cf0d460bf2316d",
+  "tool": "E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/stack/scripts/v8f_t1_eval.py",
+  "tool_sha256": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "tracks": "E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt",
+  "tracks_sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+  "train_cache": "F:/TanitAD-scratch/speedread/cache",
+  "eval_cache": "E:/Projects/TanitAD-artifacts/sfresh_inputs/cache",
+  "eval_grid_sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+  "eval_join_sha256": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a",
+  "mlp_cfg": {
+   "hidden": 256,
+   "dropout": 0.1,
+   "lr": 0.001,
+   "wd": 0.01,
+   "batch": 1024,
+   "max_epochs": 40,
+   "patience": 4,
+   "seed": 0
+  },
+  "holdout_fold": 0,
+  "instrument_a1": "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py"
+ },
+ "limit_causal_npz_sha256": "7274c8e52f76b873925c2d2e9938c9bacd179a9f95cca65d8734b27b3e100384",
+ "container": {
+  "path": "F:/TanitAD-scratch/speedsub_t1/fit\\readout_c.pt",
+  "sha256": "799f65ed1c597063bf98c6dd53138f63d219a8ecb90d5b9fcae2564d459e3fcb",
+  "key": "mlp_ego_c",
+  "kind": "mlp_ego",
+  "ego_only": true,
+  "xm_shape": [
+   22
+  ],
+  "cols_field": "none: the block stays 22 wide, the same columns as mlp_ego (only the limit / limit_ok values differ)",
+  "roundtrip_pred_max_abs_diff": 0.0
+ },
+ "outcome": "FITTED",
+ "seconds": 69.8
+}

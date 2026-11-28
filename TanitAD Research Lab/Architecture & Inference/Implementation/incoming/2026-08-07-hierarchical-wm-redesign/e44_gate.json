@@ -1,0 +1,115 @@
+{
+ "item": "V18 backlog E4.4 \u2014 stage-0 tactical layer, pre-registered gates",
+ "gate_goal_fde": {
+  "rule": "goal FDE@4s of the SELECTED candidate < CV-extrapolated goal FDE@4s (constant velocity + heading hold from v0)",
+  "selected_fde_4s_m": 12.8599,
+  "cv_fde_4s_m": 6.0881,
+  "n_4s": 761,
+  "pass": false,
+  "reason_if_null": null,
+  "estimator": "POINT ESTIMATE over the eval grid (episodes<40, stride 8). The decision-grade interval is the PAIRED episode-cluster bootstrap (taniteval/ci.py) \u2014 POD-SIDE RESCORE REQUIRED before any registry or report claim."
+ },
+ "gate_maneuver_f1": {
+  "rule": "manoeuvre 3-axis macro-F1 > the 5-way head's remapped F1",
+  "macro_f1_3axis": null,
+  "reference_5way_remapped_f1": null,
+  "pass": null,
+  "note": "aux heads DISABLED (weights 0, the E4.2 default) \u2014 macro_f1 null per the E4.4 brief"
+ },
+ "sel_gap_tac": {
+  "rule": "reported, no threshold \u2014 baseline row (V18 E4.4)",
+  "gap": 8.9463,
+  "selected_err": 15.5414,
+  "oracle_err": 6.5951,
+  "units_note": "mixed-unit fan_goal_error (m + rad + m/s) \u2014 an ORDERING quantity, never a quotable metric (tanitad/models/tactical.py fan_goal_error)"
+ },
+ "families": {
+  "TACTICAL": "goal FDE per tau + sel_gap_tac + (aux) 3-axis manoeuvre macro-F1 \u2014 this instrument's family",
+  "LATERAL": "goal-point heading |err| per tau (adjunct; full curvature/yaw-rate family is the pod-side taniteval harness)",
+  "LONGITUDINAL": "goal-point speed |err| per tau (adjunct; headway/TTC need a lead agent \u2014 pod-side)",
+  "STRATEGIC": "n/a at stage 0 \u2014 the strategic layer is E7 (v1.9); stated per the 2026-08-02 rule"
+ },
+ "mini_eval": {
+  "n_windows": 881,
+  "grid": {
+   "episodes": 40,
+   "stride": 8,
+   "batch": 16
+  },
+  "n_per_tau": {
+   "2s": 881,
+   "4s": 761,
+   "6s": 681
+  },
+  "goal_fde_m": {
+   "selected": {
+    "2s": 5.8922,
+    "4s": 12.8599,
+    "6s": 21.5042
+   },
+   "cv_baseline": {
+    "2s": 1.6521,
+    "4s": 6.0881,
+    "6s": 12.4591
+   },
+   "fan_oracle": {
+    "2s": 2.3823,
+    "4s": 5.2829,
+    "6s": 9.9155
+   },
+   "fan_min": {
+    "2s": 2.0093,
+    "4s": 5.1371,
+    "6s": 9.66
+   }
+  },
+  "goal_heading_err_rad": {
+   "selected": {
+    "2s": 0.0865,
+    "4s": 0.1766,
+    "6s": 0.2786
+   }
+  },
+  "goal_speed_err_ms": {
+   "selected": {
+    "2s": 3.03,
+    "4s": 3.3271,
+    "6s": 3.5929
+   }
+  },
+  "sel_gap_tac": {
+   "selected_err": 15.5414,
+   "oracle_err": 6.5951,
+   "gap": 8.9463,
+   "n": 881
+  },
+  "macro_f1": null,
+  "wallclock_s": 81.5
+ },
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "steps": 0,
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "d_op": 2048,
+ "n_trainable": 6392859,
+ "zop_window": {
+  "window_frames": 8,
+  "slots": 4,
+  "stride_requested": 10,
+  "stride_effective": 2,
+  "indices": [
+   1,
+   3,
+   5,
+   7
+  ],
+  "note": "DEGRADED: window 8 cannot span 30 steps \u2014 using the available stride tail (0.2 s spacing); the f_tac step stays 1 s via z_op_next"
+ },
+ "aux_enabled": false,
+ "trunk_frozen_proof": {
+  "md5_before": "49bb5b81d4b8b59c8a5193c5b26fb60f",
+  "md5_after": "49bb5b81d4b8b59c8a5193c5b26fb60f",
+  "identical": true
+ },
+ "wall_s": 83.7
+}

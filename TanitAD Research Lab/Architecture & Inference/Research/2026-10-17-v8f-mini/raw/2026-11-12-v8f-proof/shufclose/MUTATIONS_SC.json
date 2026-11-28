@@ -1,0 +1,384 @@
+{
+ "wrapper": "F:\\TanitAD-scratch\\v8proof\\shufclose\\v8f_t1_eval_reader_rule_rzgfhqet.py",
+ "wrapper_sha256_16": "02a58e655e5c1979",
+ "mutations": {
+  "s01_table_frame_one_late": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look"
+   ],
+   "summary": "1 failed",
+   "seconds": 8.4,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 6.39s"
+   ],
+   "what": "the look takes the table value of frame j + e_off + 1",
+   "old": "e = np.array([int(s.j) + int(e_off) for s in states], np.int64)",
+   "new": "e = np.array([int(s.j) + int(e_off) + 1 for s in states], np.int64)",
+   "red": true
+  },
+  "s02_table_frame_ignores_the_later_look_offset": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look"
+   ],
+   "summary": "1 failed",
+   "seconds": 4.9,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 3.56s"
+   ],
+   "what": "a later look takes the table value of frame j instead of j + q",
+   "old": "e = np.array([int(s.j) + int(e_off) for s in states], np.int64)",
+   "new": "e = np.array([int(s.j) + 0 for s in states], np.int64)",
+   "red": true
+  },
+  "s03_position_instead_of_clip_index": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look"
+   ],
+   "summary": "1 failed",
+   "seconds": 4.7,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 3.59s"
+   ],
+   "what": "the table is read by the position of the window in the batch, not by its clip index",
+   "old": "ci = np.array([int(s.ci) for s in states], np.int64)",
+   "new": "ci = np.arange(len(states), dtype=np.int64)",
+   "red": true
+  },
+  "s04_nan_value_counts_as_full": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_missing_rows_and_nan_values_are_short_and_feed_zero"
+   ],
+   "summary": "1 failed 2 passed",
+   "seconds": 10.5,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_missing_rows_and_nan_values_are_short_and_feed_zero",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 8.44s"
+   ],
+   "what": "a table row that holds NaN is marked full",
+   "old": "est_ok = hit & np.isfinite(v)",
+   "new": "est_ok = hit",
+   "red": true
+  },
+  "s05_every_look_marked_full": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look"
+   ],
+   "summary": "1 failed",
+   "seconds": 6.1,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 4.32s"
+   ],
+   "what": "every look is marked full, rows or not",
+   "old": "est_ok = hit & np.isfinite(v)",
+   "new": "est_ok = np.ones(B, bool)",
+   "red": true
+  },
+  "s06_small_stride_key": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look"
+   ],
+   "summary": "1 failed",
+   "seconds": 6.0,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 4.08s"
+   ],
+   "what": "the key of the table uses a stride of 16 instead of 2**20 in the lookup",
+   "old": "key = np.where(inside, ci * TABLE_STRIDE + e, -1)",
+   "new": "key = np.where(inside, ci * 16 + e, -1)",
+   "red": true
+  },
+  "s07_table_path_never_taken": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look"
+   ],
+   "summary": "1 failed",
+   "seconds": 8.7,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_value_at_clip_index_and_frame_of_the_look",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 7.49s"
+   ],
+   "what": "the estimate does not look at the table",
+   "old": "    if S.get(\"table\") is not None:",
+   "new": "    if False:",
+   "red": true
+  },
+  "s08_duplicate_rows_accepted": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_file_refusals"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 10.0,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_file_refusals - Failed: DID NOT RAISE...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 7.69s"
+   ],
+   "what": "two rows with the same clip index and frame are accepted",
+   "old": "    if len(key) > 1 and bool(np.any(key[1:] == key[:-1])):",
+   "new": "    if False:",
+   "red": true
+  },
+  "s09_table_not_sorted": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_row_order_of_the_table_does_not_matter"
+   ],
+   "summary": "1 failed 5 passed",
+   "seconds": 9.8,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_row_order_of_the_table_does_not_matter - As...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 5 passed in 8.19s"
+   ],
+   "what": "the table keys are not sorted before the search",
+   "old": "    key, v = key[order], v[order]\n",
+   "new": "    pass\n",
+   "red": true
+  },
+  "s10_table_sha_not_its_own": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_run_line_carries_the_sha256_of_the_table"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 7.0,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_run_line_carries_the_sha256_of_the_table - ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 6.00s"
+   ],
+   "what": "the run line carries another file hash than the table's",
+   "old": "\"sha256\": W.sha256_file(path), \"emb\": {}, \"reads\": {}, \"cache\": True, \"embed_calls\": 0, \"rule_log\": rule_log}\n    for k in MID_EST:\n        STATE[\"cols\"][k] = []\n        STATE[\"mid\"][\"rows\"][k] = []\n    return STATE[\"est\"][\"table\"]",
+   "new": "\"sha256\": \"0\" * 64, \"emb\": {}, \"reads\": {}, \"cache\": True, \"embed_calls\": 0, \"rule_log\": rule_log}\n    for k in MID_EST:\n        STATE[\"cols\"][k] = []\n        STATE[\"mid\"][\"rows\"][k] = []\n    return STATE[\"est\"][\"table\"]",
+   "red": true
+  },
+  "s11_table_flag_accepted_with_other_forms": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_flag_refusals"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 10.1,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_flag_refusals - AssertionError: assert '--c...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 8.71s"
+   ],
+   "what": "--closing-table is accepted with every form",
+   "old": "if mine.form != \"RRe\" and mine.closing_table:",
+   "new": "if False:",
+   "red": true
+  },
+  "s12_both_sources_accepted": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_flag_refusals"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 5.6,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_flag_refusals - AssertionError: assert '--c...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 4.67s"
+   ],
+   "what": "--closing-est and --closing-table together are accepted",
+   "old": "    if mine.closing_est and mine.closing_table:",
+   "new": "    if False:",
+   "red": true
+  },
+  "s13_table_flag_not_loaded": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_form_wiring_text"
+   ],
+   "summary": "1 failed 17 passed",
+   "seconds": 5.8,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_form_wiring_text - assert 'if f == \"RRe\":\\n...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 17 passed in 3.87s"
+   ],
+   "what": "form RRe with --closing-table loads the estimator path",
+   "old": "            if mine.closing_table:\n                load_table(",
+   "new": "            if False:\n                load_table(",
+   "red": true
+  },
+  "s14_no_source_accepted": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_flag_refusals"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 6.8,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_flag_refusals - AssertionError: assert ('ne...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 5.76s"
+   ],
+   "what": "form RRe without any source is accepted",
+   "old": "    if mine.form == \"RRe\" and not (mine.closing_est or mine.closing_table):",
+   "new": "    if False:",
+   "red": true
+  },
+  "s15_infinite_value_kept_in_the_column": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_infinite_value_is_short"
+   ],
+   "summary": "1 failed 4 passed",
+   "seconds": 8.0,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_infinite_value_is_short - AssertionError: a...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 6.03s"
+   ],
+   "what": "the logged estimate keeps an infinite table value",
+   "old": "        c_est = np.where(est_ok, v, np.nan)\n",
+   "new": "        c_est = v\n",
+   "red": true
+  },
+  "s16_missing_array_not_refused": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_file_refusals"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 8.6,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_file_refusals - KeyError: 'est is not...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 7.61s"
+   ],
+   "what": "a table without the est array is not refused cleanly",
+   "old": "        for k in (\"clip_index\", \"frame\", \"est\"):",
+   "new": "        for k in (\"clip_index\", \"frame\"):",
+   "red": true
+  },
+  "s17_negative_index_accepted": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_file_refusals"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 6.4,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_file_refusals - Failed: DID NOT RAISE...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 5.32s"
+   ],
+   "what": "negative clip index, negative frame and a frame at or above the stride are accepted",
+   "old": "    if len(ci) and (ci.min() < 0 or fr.min() < 0 or fr.max() >= TABLE_STRIDE):",
+   "new": "    if False:",
+   "red": true
+  },
+  "s18_missing_row_takes_the_neighbour": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_a_look_between_two_rows_without_its_own_row_is_short"
+   ],
+   "summary": "1 failed 20 passed",
+   "seconds": 5.9,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_a_look_between_two_rows_without_its_own_row_is_short",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 20 passed in 4.91s"
+   ],
+   "what": "a look without a row takes the value of the next row",
+   "old": "        hit = inside & (pos < len(T[\"key\"])) & (T[\"key\"][posc] == key)",
+   "new": "        hit = inside & (pos < len(T[\"key\"]))",
+   "red": true
+  },
+  "s19_nan_to_zero_in_table": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_missing_rows_and_nan_values_are_short_and_feed_zero"
+   ],
+   "summary": "1 failed 2 passed",
+   "seconds": 5.8,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_missing_rows_and_nan_values_are_short_and_feed_zero",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 4.19s"
+   ],
+   "what": "NaN values of the table are read as 0.0 and marked full",
+   "old": "        v = np.where(hit, T[\"val\"][posc], np.nan)\n",
+   "new": "        v = np.where(hit, np.nan_to_num(T[\"val\"][posc]), np.nan)\n",
+   "red": true
+  },
+  "s20_table_rows_not_sized_checked": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_table_file_refusals"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 10.1,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_table_file_refusals - IndexError: index 1 i...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 8.80s"
+   ],
+   "what": "arrays of different lengths are accepted",
+   "old": "    if not (ci.ndim == fr.ndim == v.ndim == 1 and len(ci) == len(fr) == len(v)):",
+   "new": "    if False:",
+   "red": true
+  },
+  "s21_est_file_branch_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_shuf_wrapper.py::test_form_wiring_text"
+   ],
+   "summary": "1 failed 17 passed",
+   "seconds": 12.1,
+   "tail": [
+    "FAILED test_shuf_wrapper.py::test_form_wiring_text - assert 'if f == \"RRe\":\\n...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 17 passed in 11.05s"
+   ],
+   "what": "form RRe with --closing-est does not load the estimator",
+   "old": "                load_estimator(mine.closing_est, STATE[\"reader\"], mine.rule_log)\n        if f == \"RRd\":",
+   "new": "                pass\n        if f == \"RRd\":",
+   "red": true
+  }
+ },
+ "control_before": {
+  "rc": 0,
+  "failed_tests": [],
+  "summary": "21 passed",
+  "seconds": 14.9,
+  "tail": [
+   ".....................                                                    [100%]",
+   "21 passed in 11.38s"
+  ]
+ },
+ "control_after": {
+  "rc": 0,
+  "failed_tests": [],
+  "summary": "21 passed",
+  "seconds": 6.8,
+  "tail": [
+   ".....................                                                    [100%]",
+   "21 passed in 4.62s"
+  ]
+ },
+ "all_red_and_controls_green": true
+}

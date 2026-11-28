@@ -1,0 +1,18 @@
+== BASELINE tree (clean tip)
+test_rls1_queue.py anchors once: 13  absent: 0  multiple: 0
+test_rls1_chain.py anchors once: 106  absent: 0  multiple: 6
+    ('MULTI', 520, 'rl_fan_dump.py --ckpt "$FINAL"')
+    ('MULTI', 521, ' --expect-ckpt-sha256 "$FINAL_SHA256"')
+    ('MULTI', 536, 'ZZRLS1_ARM_KILLED')
+    ('MULTI', 539, '${RLS1_ARMS:-C0 R0 C1 R1 R2}')
+    ('MULTI', 546, ' --eval-every 250')
+    ('MULTI', 651, 'a + 0 == p + 0')
+== FINAL tree (patch stack)
+test_rls1_queue.py anchors once: 21  absent: 0  multiple: 0
+test_rls1_chain.py anchors once: 121  absent: 0  multiple: 6
+    ('MULTI', 587, 'rl_fan_dump.py --ckpt "$FINAL"')
+    ('MULTI', 588, ' --expect-ckpt-sha256 "$FINAL_SHA256"')
+    ('MULTI', 603, 'ZZRLS1_ARM_KILLED')
+    ('MULTI', 606, '${RLS1_ARMS:-C0 R0 C1 R1 R2}')
+    ('MULTI', 613, ' --eval-every 250')
+    ('MULTI', 718, 'a + 0 == p + 0')

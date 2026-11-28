@@ -1,0 +1,426 @@
+{
+ "control_pick_replicated": {
+  "equal": 12146,
+  "n": 12146,
+  "ties": 1,
+  "rule": "navsim_v1 V1_W=(5,5,2) sigmoid aggregate, argmax first-max, per-token [1,64,6] torch float32"
+ },
+ "proposals_already_repaired": "dump proposals built by planner.executed(traj, j) for every j (refe_navtest_seam.py:294-295), i.e. post-A7 at the 20-pose level BEFORE to_navsim; verified: dump[pick] == seam poses bitwise (s1)",
+ "rerank": {
+  "all_tokens": {
+   "cell": {
+    "n": 12146,
+    "n_logs": 136,
+    "accuracy": {
+     "point": 0.9689609748065207,
+     "ci95": [
+      0.9609736145932205,
+      0.9764493783272378
+     ]
+    },
+    "kappa": {
+     "point": 0.9392417272578589,
+     "ci95": [
+      0.9247184310479324,
+      0.9528894409726744
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      2467.0,
+      33.0,
+      1.0
+     ],
+     [
+      188.0,
+      7741.0,
+      141.0
+     ],
+     [
+      2.0,
+      12.0,
+      1561.0
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.98640543782487,
+     "STRAIGHT": 0.9592317224287484,
+     "RIGHT": 0.9911111111111112
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 8070.0,
+     "RIGHT": 1575.0
+    },
+    "_what": "rerank"
+   },
+   "vs_pick": {
+    "n": 12146.0,
+    "n_logs": 136,
+    "accuracy_delta": {
+     "point": 0.10670179482957352,
+     "ci95": [
+      0.08990225013790633,
+      0.12497271093213176
+     ],
+     "separated": true
+    },
+    "kappa_delta": {
+     "point": 0.19967558173724065,
+     "ci95": [
+      0.1731278233454907,
+      0.22828885122027534
+     ],
+     "separated": true,
+     "n_undefined_resamples": 0
+    }
+   }
+  },
+  "turn_active": {
+   "cell": {
+    "n": 4076,
+    "n_logs": 113,
+    "accuracy": {
+     "point": 0.9882237487733072,
+     "ci95": [
+      0.9797791357140785,
+      0.9945638456819997
+     ]
+    },
+    "kappa": {
+     "point": 0.9754785799163945,
+     "ci95": [
+      0.9578815054072962,
+      0.9886472673093754
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      2467.0,
+      33.0,
+      1.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      2.0,
+      12.0,
+      1561.0
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.98640543782487,
+     "STRAIGHT": null,
+     "RIGHT": 0.9911111111111112
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 0.0,
+     "RIGHT": 1575.0
+    },
+    "_what": "rerank"
+   },
+   "vs_pick": {
+    "n": 4076.0,
+    "n_logs": 113,
+    "accuracy_delta": {
+     "point": 0.1077036310107949,
+     "ci95": [
+      0.08799496969531154,
+      0.12984228363092506
+     ],
+     "separated": true
+    },
+    "kappa_delta": {
+     "point": 0.20161029395138808,
+     "ci95": [
+      0.1683213124828305,
+      0.23734757617662974
+     ],
+     "separated": true,
+     "n_undefined_resamples": 0
+    }
+   }
+  }
+ },
+ "n_changed": {
+  "all": 1296,
+  "turn_active": 439,
+  "by_cmd": {
+   "LEFT": 184,
+   "STRAIGHT": 857,
+   "RIGHT": 255
+  }
+ },
+ "rerank_per_class": {
+  "LEFT": {
+   "pick": 0.9128348660535786,
+   "rerank": 0.98640543782487
+  },
+  "STRAIGHT": {
+   "pick": 0.8530359355638166,
+   "rerank": 0.9592317224287484
+  },
+  "RIGHT": {
+   "pick": 0.8292063492063492,
+   "rerank": 0.9911111111111112
+  }
+ },
+ "pdms_all_tokens_mean": 0.9107242577382513,
+ "pdms_of_changed_current_picks": {
+  "changed_all": {
+   "n": 1296,
+   "mean_pdms_of_current_pick": 0.893090586519891,
+   "median": 0.9601408093121848,
+   "frac_zero": 0.04243827160493827,
+   "frac_ge_0.9": 0.7569444444444444
+  },
+  "changed_turn_active": {
+   "n": 439,
+   "mean_pdms_of_current_pick": 0.8720400732394462,
+   "median": 0.959226065293867,
+   "frac_zero": 0.04555808656036447,
+   "frac_ge_0.9": 0.6492027334851936
+  },
+  "unchanged_all": {
+   "n": 10850,
+   "mean_pdms_of_current_pick": 0.912830546945532,
+   "median": 0.9726085432874386,
+   "frac_zero": 0.031152073732718895,
+   "frac_ge_0.9": 0.795668202764977
+  },
+  "all_tokens": {
+   "n": 12146,
+   "mean_pdms_of_current_pick": 0.9107242577382513,
+   "median": 0.9708860642512329,
+   "frac_zero": 0.03235633130248641,
+   "frac_ge_0.9": 0.7915363082496295
+  }
+ },
+ "scorer_aggregate_on_changed": {
+  "mean_old_pick": 0.9130359888076782,
+  "mean_new_pick": 0.7437627911567688,
+  "n": 1296
+ },
+ "control_permuted_command": {
+  "seed": 20261117,
+  "n_changed": 2798,
+  "all_tokens": {
+   "adherence_vs_TRUE_command": {
+    "n": 12146,
+    "n_logs": 136,
+    "accuracy": {
+     "point": 0.7469948954388276,
+     "ci95": [
+      0.7315138979913381,
+      0.7629955490179811
+     ]
+    },
+    "kappa": {
+     "point": 0.5139612001665191,
+     "ci95": [
+      0.48665259081747475,
+      0.5399744934408743
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      1861.0,
+      619.0,
+      21.0
+     ],
+     [
+      1111.0,
+      6294.0,
+      665.0
+     ],
+     [
+      57.0,
+      600.0,
+      918.0
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.7441023590563774,
+     "STRAIGHT": 0.7799256505576209,
+     "RIGHT": 0.5828571428571429
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 8070.0,
+     "RIGHT": 1575.0
+    },
+    "_what": ""
+   },
+   "vs_pick": {
+    "n": 12146.0,
+    "n_logs": 136,
+    "accuracy_delta": {
+     "point": -0.11526428453811954,
+     "ci95": [
+      -0.1306369730853685,
+      -0.09904919200177521
+     ],
+     "separated": true
+    },
+    "kappa_delta": {
+     "point": -0.22560494535409914,
+     "ci95": [
+      -0.25504433654916137,
+      -0.19679100723266313
+     ],
+     "separated": true,
+     "n_undefined_resamples": 0
+    }
+   }
+  },
+  "turn_active": {
+   "adherence_vs_TRUE_command": {
+    "n": 4076,
+    "n_logs": 113,
+    "accuracy": {
+     "point": 0.6817958783120707,
+     "ci95": [
+      0.6516367876511684,
+      0.7095343881100342
+     ]
+    },
+    "kappa": {
+     "point": 0.4886238864190742,
+     "ci95": [
+      0.45575520175898177,
+      0.5195221558545424
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      1861.0,
+      619.0,
+      21.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      57.0,
+      600.0,
+      918.0
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.7441023590563774,
+     "STRAIGHT": null,
+     "RIGHT": 0.5828571428571429
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 0.0,
+     "RIGHT": 1575.0
+    },
+    "_what": ""
+   },
+   "vs_pick": {
+    "n": 4076.0,
+    "n_logs": 113,
+    "accuracy_delta": {
+     "point": -0.1987242394504416,
+     "ci95": [
+      -0.22099329462179187,
+      -0.17599301374657078
+     ],
+     "separated": true
+    },
+    "kappa_delta": {
+     "point": -0.2852443995459322,
+     "ci95": [
+      -0.3155137808979893,
+      -0.2540620380645625
+     ],
+     "separated": true,
+     "n_undefined_resamples": 0
+    }
+   }
+  },
+  "expect": "adherence to the TRUE command must NOT exceed the pick"
+ },
+ "DESCRIPTIVE_strata_by_human_adherence_turn_active": {
+  "human_adheres": {
+   "n": 3591,
+   "pick": 0.9521024784182679,
+   "rerank": 0.9997215260373155,
+   "changed": 171,
+   "mean_pdms_changed_current": 0.8130829455238978
+  },
+  "human_does_not_adhere": {
+   "n": 485,
+   "pick": 0.35051546391752575,
+   "rerank": 0.9030927835051547,
+   "changed": 268,
+   "mean_pdms_changed_current": 0.9096582405504865
+  }
+ },
+ "DESCRIPTIVE_plan_class_equals_human_class_turn_active": {
+  "pick": 0.9109421000981355,
+  "rerank": 0.8910696761530913
+ },
+ "repair_changed_values": "not applied: proposals are already executed/post-A7 forms",
+ "seam_unchanged_tokens_bit_equal": true,
+ "seam_keys": [
+  "token",
+  "fingerprint",
+  "poses",
+  "sampling",
+  "arm"
+ ],
+ "seam_n_changed_rows": 1296,
+ "seam_sha256": "ced64bce101379f82c5ca1efb27610a6586c528816c3db93c022075ee1d81fee"
+}

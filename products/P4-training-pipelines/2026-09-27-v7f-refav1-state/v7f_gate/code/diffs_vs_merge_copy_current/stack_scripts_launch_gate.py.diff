@@ -1,0 +1,45 @@
+diff --git a/stack/scripts/launch_gate.py b/stack/scripts/launch_gate.py
+--- a/stack/scripts/launch_gate.py
++++ b/stack/scripts/launch_gate.py
+@@ -76,9 +76,10 @@
+   v6 checkpoint carries no data position). The dev-box stage is a REHEARSAL (tiny geometry, synthetic
+   corpus): it runs every instrument on the real trainer code on CPU, and `finalize` never counts its
+   evidence (arms: `v6_undeclared_attribute`, `v6_candidates_not_built`, `missing_dvb_v6_module`,
+-  `v6_uncovered_flag`, `v6_nav_not_mapped`, `v6_strategic_leaf_trainable`, `v6_drop_term`,
+-  `v6_resume_drops_opt`, `v6_loader_drops_vocab_version`). The rehearsal keeps `--nav-cond`: its data
+-  seam serves synthetic nav records to the REAL join / NavEmitter / batch splat.
++  `v6_uncovered_flag`, `v6_nav_not_mapped`, `v6_nav_unbound_wm`, `v6_strategic_leaf_trainable`,
++  `v6_drop_term`, `v6_resume_drops_opt`, `v6_loader_drops_vocab_version`). The rehearsal keeps
++  `--nav-cond`: its data seam serves synthetic nav records to the REAL join / NavEmitter / batch splat
++  (a nav-less smoke cannot judge whether the nav path TRAINS -- MEASURED: it hid F7).
+ 
+ THE TOKEN. `PASS_<commit12>.json` is written ONLY if every required check PASSed on evidence bound
+ to the same (profile, commit, tree_sha256, argv_sha256), and every input each check READ has the
+@@ -6556,6 +6557,17 @@
+         state["resumed"] = True
+         rec["resumed_at"] = int(n)
+         return n
++    if arms and arm_is(ctx, "v6_nav_unbound_wm"):
++        # F7 re-introduced: the WM-loss helpers (stage_a_losses, both rollout_transitions) get the BARE
++        # operative predictor again, as before the merge's `_NavBoundPredictor` -- the operative nav
++        # path then receives no gradient in S-W (MEASURED before the fix)
++        if not hasattr(T, "_NavBoundPredictor"):
++            rec["exit"] = ("arm v6_nav_unbound_wm cannot be installed: this trainer has no "
++                           "_NavBoundPredictor (the F7 fix, the arm's premise, is absent)")
++            return rec
++        pat.set(T, "_NavBoundPredictor", lambda predictor, nav_cond: predictor)
++        rec["arm"] = {"v6_nav_unbound_wm": "train_v6_staged._NavBoundPredictor -> the bare predictor_op "
++                                           "(the pre-fix WM-loss call sites)"}
+     pat.set(T, "apply_stage_freeze", freeze_wrap)
+     pat.set(T, "build_trunk_optimizer", bto_wrap)
+     pat.set(T, "v6_loss_step", loss_wrap)
+@@ -6704,6 +6716,9 @@
+                     # the top-level modules with at least one live leaf (e.g. `nav` once nav is fed)
+                     "live_top_modules": sorted({e["leaf"].split(".", 1)[0] for e in leaves.values()
+                                                 if e["nz"]}),
++                    # per leaf module: [tensors with a non-zero gradient on >= 1 step, tensors]
++                    "leaf_live": {e["leaf"]: [e["nz"], e["params"]] for e in
++                                  sorted(leaves.values(), key=lambda x: x["leaf"])},
+                     "dead_leaves": dead[:40], "acknowledged_by_allow_unreached": ack,
+                     "nonfinite": sorted(n for n, r in gr.items() if r["nonfinite"])[:20]}
+     if not gr:

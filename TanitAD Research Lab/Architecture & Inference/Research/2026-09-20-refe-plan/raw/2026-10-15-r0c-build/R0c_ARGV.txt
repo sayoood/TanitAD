@@ -1,0 +1,11 @@
+R0c argv = R0's banked token argv (HF Sayood/tanitad-refe-rls1-r0 final/PASS_a120418a870f.json) with the arm directory R0 -> R0c and ONE added flag pair `--epo-ref armA`.
+Reconstructed from refe/rls1_pod.sh arm_args (pod chain layout); the R0 reconstruction hashes to the banked sha256 (test_rl_r0c.py A_R0_argv_template_is_the_banked_R0_token_argv).
+
+R0   argv sha256 24451b621d515066bf8febefaf66bea2c7a345b48bf7a89c9443e2d848d8eef6  (banked: 24451b621d515066bf8febefaf66bea2c7a345b48bf7a89c9443e2d848d8eef6)  MATCH
+R0c  argv sha256 f588a6cbdf8319bc30e8da12407f5eeb65a5e0a82d392320f2676ca3f94ed534
+tokens only in R0c: ['/workspace/data/rls1/arms/R0c', '/workspace/data/rls1/arms/R0c/scores', '--epo-ref', 'armA']
+tokens only in R0 : ['/workspace/data/rls1/arms/R0', '/workspace/data/rls1/arms/R0/scores']
+
+profile: refe_rls1c   arm: R0c   (launch_gate.py run --profile refe_rls1c --arm-name R0c ...)   -- NOT LAUNCHED; a PI decision on ~3.5 A40-h is pending
+
+--ckpt /workspace/data/rls1/base/model_sft4_B_u400.pt --backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels --calib /workspace/data/refe_navtrain/train_grow/calib_table.json --onpolicy /workspace/data/rls1/sets_train --heldout /workspace/data/rls1/sets_val --heldout-logs /workspace/data/rls1/rl_val_logs.txt --out /workspace/data/rls1/arms/R0c --pdm-labels-train /workspace/data/rls1/pdm_train --pdm-labels-heldout /workspace/data/rls1/pdm_val --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 --workers 3 --seed 0 --eval-every 250 --dump-scores /workspace/data/rls1/arms/R0c/scores --lane-head --teacher-lane-train /workspace/data/rls1/tlane_train --teacher-lane-heldout /workspace/data/rls1/tlane_heldout --epo --epo-terms-train /workspace/data/rls1/terms_train --epo-terms-heldout /workspace/data/rls1/terms_val --epo-ref armA

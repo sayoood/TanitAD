@@ -1,0 +1,2488 @@
+{
+ "_evidence_class": "MEASURED (ours) for every leg value; the PI verdicts this sheet collects are the first HUMAN adjudication of any tactical label AT THE BAND.",
+ "_supersedes": "TACTICAL_VISUAL_REVIEW.html (read at the 2.0 s SEAM; C89). Kept beside this one, banner-marked.",
+ "band_s": [
+  2.0,
+  6.0
+ ],
+ "op_band_s": [
+  0.0,
+  2.0
+ ],
+ "_band_spec_source": "stack/tanitad/models/v6.py:136-140 (TAC_BAND_S)",
+ "ego_statistic": "mean_band (mean in-band deviation from t0+20)",
+ "t0_idx": 80,
+ "band_lo_idx": 100,
+ "band_hi_idx": 140,
+ "fps": 10.0,
+ "dv_thresh_ms": 1.0,
+ "dyaw_thresh_rad": 0.15,
+ "_threshold_source": "PRODUCTION (a3:120-121) \u2014 spec lookup, NOT the argmax cell the 2.0 s sheet used (0.75/0.05).",
+ "frame_idxs": [
+  70,
+  80,
+  100,
+  110,
+  120,
+  130,
+  140
+ ],
+ "localstorage_key": "tacrev_band_v1_",
+ "_localstorage_note": "deliberately DIFFERENT from the 2.0 s sheet's `tacrev_v1_`, so seam verdicts cannot pre-fill or export as band verdicts.",
+ "n_candidate_pool": 98,
+ "n_dropped_track_shorter_than_band": 0,
+ "_pool_bound": "the 201 aug120 clips are ALL that have our w120 video; of those the pool here is the subset with a LOCAL mp4. The other 4,528 Alpamayo clips have NO video anywhere local or on HF \u2014 a visual sheet for them is impossible (TACTICAL_LABEL_VALIDATION.md \u00a75.5).",
+ "pool_by_stratum": {
+  "D_UNREPRESENTABLE": 4,
+  "A_UNANIMOUS": 19,
+  "B_TWO_OF_THREE": 67,
+  "E_STOP_ROW_ONE_AXIS": 3,
+  "C_THREE_WAY_SPLIT": 4,
+  "F_INSUFFICIENT": 1
+ },
+ "n_selected": 42,
+ "n_rendered": 42,
+ "selected_by_stratum": {
+  "D_UNREPRESENTABLE": 4,
+  "E_STOP_ROW_ONE_AXIS": 3,
+  "C_THREE_WAY_SPLIT": 4,
+  "B_TWO_OF_THREE": 18,
+  "A_UNANIMOUS": 12,
+  "F_INSUFFICIENT": 1
+ },
+ "render_failures": [],
+ "stop_class_on_the_band": {
+  "n": 3,
+  "v_t0": 0.27,
+  "v_band_lo": 2.95,
+  "v_band_hi": 5.55,
+  "dv_mean_band": 1.68
+ },
+ "html_mb": 5.76,
+ "clips": [
+  {
+   "clip_id": "0089a096-68be-40df-8097-780bf1ae1c19",
+   "alp_lane": "Turn Left",
+   "alp_lat_raw": "Sharp Steer Left",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Yield to the pedestrians crossing the road ahead because they occupy the path of the right turn.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "no v6 token exists for 'Turn Left'",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "left",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.44434232711791993,
+    "dyaw_mean": 0.018556416034698486,
+    "dv_net": -1.0492897033691406,
+    "dyaw_net": 0.005739688873291016,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 6.038102149963379,
+    "v_band_lo": 6.982934951782227,
+    "v_band_hi": 5.933645248413086,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_left",
+   "ego_motion": "accelerating",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "D_UNREPRESENTABLE"
+  },
+  {
+   "clip_id": "00d05901-ed0a-4a43-adca-bdab70d30bfa",
+   "alp_lane": "Turn Right",
+   "alp_lat_raw": "Sharp Steer Right",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Turn right at the intersection since the traffic light is green.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "no v6 token exists for 'Turn Right'",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "right",
+     "lat": "LANE_CHANGE_R",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_R",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "right",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 1.5312583088874816,
+    "dyaw_mean": -0.3056153416633606,
+    "dv_net": 3.5016322135925293,
+    "dyaw_net": -0.4104931354522705,
+    "lat3": "right",
+    "lon3": "accelerate",
+    "lat3_net": "right",
+    "lon3_net": "accelerate",
+    "v_t0": 4.141696929931641,
+    "v_band_lo": 3.4152650833129883,
+    "v_band_hi": 6.916897296905518,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_right",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "D_UNREPRESENTABLE"
+  },
+  {
+   "clip_id": "079707d3-c6ac-4b41-9b61-1b98b298ecc9",
+   "alp_lane": "Turn Left",
+   "alp_lat_raw": "Sharp Steer Left",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Yield to the pedestrian crossing the crosswalk ahead.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "no v6 token exists for 'Turn Left'",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "prepare_exit",
+     "direction": "left",
+     "lat": null,
+     "lon": null
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    }
+   ],
+   "vlm_lat_v6": null,
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": null,
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 0.21338382959365845,
+    "dyaw_mean": 0.8824251145124435,
+    "dv_net": 0.6710786819458008,
+    "dyaw_net": 1.739074945449829,
+    "lat3": "left",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 5.5467023849487305,
+    "v_band_lo": 5.598289489746094,
+    "v_band_hi": 6.2693681716918945,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_left",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "snow",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "agree2",
+   "lon_state": "two_of_three",
+   "stratum": "D_UNREPRESENTABLE"
+  },
+  {
+   "clip_id": "855fded3-cdf1-4c19-99b0-d511585d4242",
+   "alp_lane": "Turn Right",
+   "alp_lat_raw": "Sharp Steer Right",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Nudge right to pass the parked car in the same lane.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "no v6 token exists for 'Turn Right'",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "right",
+     "lat": "LANE_CHANGE_R",
+     "lon": null
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "right",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "right",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_R",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "right",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 3.714151990413666,
+    "dyaw_mean": -0.015689218044281007,
+    "dv_net": 6.477667331695557,
+    "dyaw_net": -0.11736202239990234,
+    "lat3": "straight",
+    "lon3": "accelerate",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 3.254002332687378,
+    "v_band_lo": 6.5716938972473145,
+    "v_band_hi": 13.049361228942871,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_right",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "D_UNREPRESENTABLE"
+  },
+  {
+   "clip_id": "08fc0af2-ffeb-4a7c-9166-8f052f1a9b94",
+   "alp_lane": "",
+   "alp_lat_raw": "",
+   "alp_lon_raw": "Stop",
+   "cot": "Stop to yield to the cross-traffic vehicle crossing ahead.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "axis absent in the generation",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": null,
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_stop",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "resume_cruise",
+     "direction": "none",
+     "lat": null,
+     "lon": "CRUISE"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 3.191922199726105,
+    "dyaw_mean": -0.8295769624412059,
+    "dv_net": 6.450472354888916,
+    "dyaw_net": -1.372373715043068,
+    "lat3": "right",
+    "lon3": "accelerate",
+    "lat3_net": "right",
+    "lon3_net": "accelerate",
+    "v_t0": 0.6916405558586121,
+    "v_band_lo": 1.6334681510925293,
+    "v_band_hi": 8.083940505981445,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "E_STOP_ROW_ONE_AXIS"
+  },
+  {
+   "clip_id": "15ac5a34-91ed-4c12-8a9f-eaee12b0b588",
+   "alp_lane": "",
+   "alp_lat_raw": "",
+   "alp_lon_raw": "Stop",
+   "cot": "Resume speed from stop since the traffic light turns green.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "axis absent in the generation",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": null,
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "left",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.435037100315094,
+    "dyaw_mean": 0.5027936326514464,
+    "dv_net": -0.5967912673950195,
+    "dyaw_net": 1.3088133968412876,
+    "lat3": "left",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 0.0,
+    "v_band_lo": 4.7187981605529785,
+    "v_band_hi": 4.122006893157959,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "stopped",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "agree2",
+   "lon_state": "two_of_three",
+   "stratum": "E_STOP_ROW_ONE_AXIS"
+  },
+  {
+   "clip_id": "4d58621f-6c13-488f-a09e-65baceeb6604",
+   "alp_lane": "",
+   "alp_lat_raw": "",
+   "alp_lon_raw": "Stop",
+   "cot": "Stop to keep distance to the lead vehicle.",
+   "alp_lat_v6": null,
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lat": "axis absent in the generation",
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": null,
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "right",
+     "lat": "LANE_CHANGE_R",
+     "lon": null
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "right",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "right",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_R",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "right",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 2.281346744298935,
+    "dyaw_mean": -0.012592609321291092,
+    "dv_net": 1.9642744064331055,
+    "dyaw_net": -0.022009944776073098,
+    "lat3": "straight",
+    "lon3": "accelerate",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 0.11508218944072723,
+    "v_band_lo": 2.484004497528076,
+    "v_band_hi": 4.448278903961182,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "stopped",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lane_ego": 1,
+    "lanes_visible": 2,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "snow",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "E_STOP_ROW_ONE_AXIS"
+  },
+  {
+   "clip_id": "2d6a15f2-1865-49f2-ab19-a1b8a1953983",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Right",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Nudge left to pass the parked car on the right",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "left",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.256818950176239,
+    "dyaw_mean": 0.05055165982339531,
+    "dv_net": -0.37154483795166016,
+    "dyaw_net": 0.15231788903474808,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 8.00561809539795,
+    "v_band_lo": 8.125044822692871,
+    "v_band_hi": 7.753499984741211,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_right",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lane_ego": 0,
+    "lanes_visible": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "three_way_split",
+   "lon_state": "agree2",
+   "stratum": "C_THREE_WAY_SPLIT"
+  },
+  {
+   "clip_id": "652024fc-b17e-44b1-80b4-dc710eee09cc",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Right",
+   "alp_lon_raw": "Strong Acceleration",
+   "cot": "Accelerate because the light turns green and the lead vehicle ahead starts moving.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "left",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "left",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -0.5783993482589722,
+    "dyaw_mean": 0.5012635894119739,
+    "dv_net": -0.8807229995727539,
+    "dyaw_net": 0.6350046396255493,
+    "lat3": "left",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 6.176706790924072,
+    "v_band_lo": 6.044094085693359,
+    "v_band_hi": 5.1633710861206055,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "accelerating",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "three_way_split",
+   "stratum": "C_THREE_WAY_SPLIT"
+  },
+  {
+   "clip_id": "6568c4ff-f8d6-4b95-8a37-756a2f5e17f8",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Sharp Steer Right",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Nudge right due to trash bins protruding into the lane from the left.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 0.1836388885974884,
+    "dyaw_mean": -0.03929941058158874,
+    "dv_net": -1.7769598960876465,
+    "dyaw_net": -0.05499565601348877,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 2.338768243789673,
+    "v_band_lo": 4.975727081298828,
+    "v_band_hi": 3.1987671852111816,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_right",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "three_way_split",
+   "stratum": "C_THREE_WAY_SPLIT"
+  },
+  {
+   "clip_id": "6e97691a-28f1-4f1b-bfdd-4245e24dd36d",
+   "alp_lane": "Slightly Shift Left",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Slow down due to the speed bumps ahead",
+   "alp_lat_v6": "NUDGE_L",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "right",
+     "lat": "LANE_CHANGE_R",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_R",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "right",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 1.572490042448044,
+    "dyaw_mean": 0.23880986968288198,
+    "dv_net": 2.977200746536255,
+    "dyaw_net": 0.4784318320453167,
+    "lat3": "left",
+    "lon3": "accelerate",
+    "lat3_net": "left",
+    "lon3_net": "accelerate",
+    "v_t0": 2.333479404449463,
+    "v_band_lo": 2.244560956954956,
+    "v_band_hi": 5.221761703491211,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_right",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "unclear",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "three_way_split",
+   "lon_state": "two_of_three",
+   "stratum": "C_THREE_WAY_SPLIT"
+  },
+  {
+   "clip_id": "03ba450b-121a-483b-aa48-6d9097c308de",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Adapt speed for the right curve ahead.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.034447884559631346,
+    "dyaw_mean": 0.09112136587500572,
+    "dv_net": 0.2000560760498047,
+    "dyaw_net": 0.20171814411878586,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 13.721402168273926,
+    "v_band_lo": 13.293200492858887,
+    "v_band_hi": 13.493256568908691,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "snow",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "04041586-53aa-47b8-af2d-550162e6a6f4",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Right",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Nudge right due to the vehicle encroaching from the left",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 1.0980175971984862,
+    "dyaw_mean": -0.08057340899831615,
+    "dv_net": 1.3015375137329102,
+    "dyaw_net": -0.13279587775468826,
+    "lat3": "straight",
+    "lon3": "accelerate",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 9.635758399963379,
+    "v_band_lo": 11.65869426727295,
+    "v_band_hi": 12.96023178100586,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "accelerating",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "rain",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "093bfa29-93f2-4b86-b85e-0de4cd3e3839",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Resume speed because the speed bump is cleared.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.32386302947998047,
+    "dyaw_mean": 0.004154013097286224,
+    "dv_net": 0.4688272476196289,
+    "dyaw_net": -0.009450571611523628,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 10.606956481933594,
+    "v_band_lo": 10.837311744689941,
+    "v_band_hi": 11.30613899230957,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "accelerating",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "0db8dd88-812a-4b26-8371-779a06126a76",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Left",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Nudge left to pass the bus in the same lane",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.21437151432037355,
+    "dyaw_mean": 0.09104321002960206,
+    "dv_net": 0.3522834777832031,
+    "dyaw_net": 0.1417112946510315,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 12.17600154876709,
+    "v_band_lo": 12.30020809173584,
+    "v_band_hi": 12.652491569519043,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "12bb97af-e850-4ecb-86a9-6e6d0e517ae9",
+   "alp_lane": "Slightly Shift Left",
+   "alp_lat_raw": "Steer Right",
+   "alp_lon_raw": "Strong Deceleration",
+   "cot": "Slow down to wait for a gap from the passing vehicles in the left lane because the lead vehicle ahead in our lane is slowing.",
+   "alp_lat_v6": "NUDGE_L",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -1.9434031770564615,
+    "dyaw_mean": -0.016967232897877695,
+    "dv_net": -2.3872570991516113,
+    "dyaw_net": -0.019284792244434357,
+    "lat3": "straight",
+    "lon3": "decelerate",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 5.3274126052856445,
+    "v_band_lo": 2.3872570991516113,
+    "v_band_hi": 0.0,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "snow",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "14bc3af3-7764-4ab0-96d1-06b304feea33",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Right",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Slow down due to the upcoming right curve.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "left",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 1.1865398406982421,
+    "dyaw_mean": 0.8617752071470022,
+    "dv_net": 4.1481614112854,
+    "dyaw_net": 1.3080850318074226,
+    "lat3": "left",
+    "lon3": "accelerate",
+    "lat3_net": "left",
+    "lon3_net": "accelerate",
+    "v_t0": 6.287259101867676,
+    "v_band_lo": 4.939568042755127,
+    "v_band_hi": 9.087729454040527,
+    "n_in_band": 40
+   },
+   "ego_turning": "turning_right",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "highway"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "15a65b76-a2f0-4413-bde6-695052f45b9d",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Adapt speed to maintain a safe distance from the lead vehicle.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.8235066294670105,
+    "dyaw_mean": 0.016249391972087322,
+    "dv_net": -3.0965452194213867,
+    "dyaw_net": 0.026518238708376884,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 5.3410539627075195,
+    "v_band_lo": 7.893684387207031,
+    "v_band_hi": 4.7971391677856445,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "20070bb6-333f-475e-bba3-d724cc1894b0",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Decelerate to maintain a safe distance from the lead vehicle.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.8561122361337766,
+    "dyaw_mean": 0.001097380806459114,
+    "dv_net": -1.138416051864624,
+    "dyaw_net": 0.0015920591540634632,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 2.2813007831573486,
+    "v_band_lo": 1.138416051864624,
+    "v_band_hi": 0.0,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "snow",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "20f7710a-3638-4565-baa0-7307cb5ad447",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Nudge left due to the parked car on the right.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.8241914987564087,
+    "dyaw_mean": -0.042291995424602644,
+    "dv_net": 0.9843292236328125,
+    "dyaw_net": -0.06315241567790508,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 10.385732650756836,
+    "v_band_lo": 10.303312301635742,
+    "v_band_hi": 11.287641525268555,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lane_ego": 0,
+    "lanes_visible": 1,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "21dd9ee8-67ed-4865-b2b0-a8bcd83b31e3",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Nudge right due to the parked car on the left.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -1.6579647183418273,
+    "dyaw_mean": -0.010126311142812483,
+    "dv_net": -3.9141387939453125,
+    "dyaw_net": 0.013448243495076895,
+    "lat3": "straight",
+    "lon3": "decelerate",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 10.226797103881836,
+    "v_band_lo": 9.765314102172852,
+    "v_band_hi": 5.851175308227539,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lane_ego": 0,
+    "lanes_visible": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "24ae03a3-19fb-418f-bb1e-386a440a3e03",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Right",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Resume speed because the oncoming vehicle has passed",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "right",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 1.3652753591537476,
+    "dyaw_mean": -0.12210760191082955,
+    "dv_net": 2.8355178833007812,
+    "dyaw_net": -0.15188050270080566,
+    "lat3": "straight",
+    "lon3": "accelerate",
+    "lat3_net": "right",
+    "lon3_net": "accelerate",
+    "v_t0": 14.206186294555664,
+    "v_band_lo": 15.449031829833984,
+    "v_band_hi": 18.284549713134766,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "accelerating",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "24b6948f-4206-4ef1-85ec-ff344b400635",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Left",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Keep distance to the lead vehicle because it is directly ahead in the same lane.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.33486371040344237,
+    "dyaw_mean": 0.03092428781092167,
+    "dv_net": 0.6448383331298828,
+    "dyaw_net": 0.030756354331970215,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 18.653409957885742,
+    "v_band_lo": 18.91167449951172,
+    "v_band_hi": 19.5565128326416,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "26245a32-aa1b-465f-a1f2-a8ecaa5fee31",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Keep lane because the lane ahead is clear.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.7701031684875488,
+    "dyaw_mean": 0.019093003729358314,
+    "dv_net": 1.7161369323730469,
+    "dyaw_net": 0.03189173713326454,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 34.6468620300293,
+    "v_band_lo": 34.24388122558594,
+    "v_band_hi": 35.960018157958984,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "snow",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "269478eb-2da4-42cb-bfd3-3ad9b024d88b",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Left",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Keep distance to the lead vehicle because it is directly ahead through the intersection.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 0.9773249685764313,
+    "dyaw_mean": 0.009655649703927339,
+    "dv_net": 2.587303876876831,
+    "dyaw_net": 0.011152978055179119,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 3.44203782081604,
+    "v_band_lo": 2.1449568271636963,
+    "v_band_hi": 4.732260704040527,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "2bc52cd7-0117-4f5c-a7d9-c301a70827f2",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Left",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Nudge right to increase clearance to the oncoming truck.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.10411863327026367,
+    "dyaw_mean": 0.06380834877490997,
+    "dv_net": -0.07021141052246094,
+    "dyaw_net": 0.09963342547416687,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 16.541976928710938,
+    "v_band_lo": 16.525184631347656,
+    "v_band_hi": 16.454973220825195,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "2ea756cd-57bc-4ab2-9b21-eeda73a40bce",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Keep distance to the lead vehicle because traffic ahead is slower.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "left",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "left",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": 0.349259614944458,
+    "dyaw_mean": 0.009276172518730164,
+    "dv_net": 0.6145534515380859,
+    "dyaw_net": 0.027786143124103546,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 25.902795791625977,
+    "v_band_lo": 26.167503356933594,
+    "v_band_hi": 26.78205680847168,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "highway"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "306f1312-5f37-42fc-9a65-12989b566471",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Nudge left to pass the bus ahead",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left",
+     "lat": "LANE_CHANGE_L",
+     "lon": null
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    }
+   ],
+   "vlm_lat_v6": "LANE_CHANGE_L",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "left",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -0.8093187808990479,
+    "dyaw_mean": 0.7655503652989865,
+    "dv_net": -0.6462244987487793,
+    "dyaw_net": 1.2527514100074768,
+    "lat3": "left",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 6.954461097717285,
+    "v_band_lo": 6.677348613739014,
+    "v_band_hi": 6.031124114990234,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "two_of_three",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "31308c82-c53a-427a-9201-8520832b51eb",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Steer Left",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Nudge right to increase clearance to the oncoming vehicle",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "left",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.02088918685913086,
+    "dyaw_mean": -0.07671531423693523,
+    "dv_net": -0.09427070617675781,
+    "dyaw_net": -0.1524338498711586,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "right",
+    "lon3_net": "maintain",
+    "v_t0": 20.484121322631836,
+    "v_band_lo": 20.49079704284668,
+    "v_band_hi": 20.396526336669922,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "two_of_three",
+   "lon_state": "agree2",
+   "stratum": "B_TWO_OF_THREE"
+  },
+  {
+   "clip_id": "029ae2b0-f063-4c0d-83f3-8d8781bd69a3",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Slow down due to the upcoming intersection.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "prepare_stop",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    }
+   ],
+   "vlm_lat_v6": null,
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": null,
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -4.929292900860309,
+    "dyaw_mean": -0.004469102807343006,
+    "dv_net": -6.963175415992737,
+    "dyaw_net": 0.004386313259601593,
+    "lat3": "straight",
+    "lon3": "decelerate",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 9.49071216583252,
+    "v_band_lo": 7.876556873321533,
+    "v_band_hi": 0.9133814573287964,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "urban"
+   },
+   "lat_state": "agree2",
+   "lon_state": "unanimous",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "0cd622e0-5a5f-4c12-b1d6-77af7c37e585",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Keep distance to the lead vehicle because it is directly ahead in the same lane.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.25940570831298826,
+    "dyaw_mean": -0.046834796667099,
+    "dv_net": -0.655029296875,
+    "dyaw_net": -0.08323615789413452,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 20.5154972076416,
+    "v_band_lo": 20.747432708740234,
+    "v_band_hi": 20.092403411865234,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "rural",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "19c0c0ed-8818-4e6f-90c8-5c6826aacbd9",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Keep distance to the lead vehicle because traffic is queued ahead.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 3.691798007488251,
+    "dyaw_mean": -0.014296050471966738,
+    "dv_net": 5.217443227767944,
+    "dyaw_net": -0.01998099684715271,
+    "lat3": "straight",
+    "lon3": "accelerate",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 0.9343931674957275,
+    "v_band_lo": 3.5142576694488525,
+    "v_band_hi": 8.731700897216797,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "fog",
+    "illumination": "dusk",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "20f3e589-ffb9-4965-8850-903eb04f2f7a",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Keep distance to the lead vehicle because it is ahead in the same lane.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.04462263584136963,
+    "dyaw_mean": -0.004782625939697027,
+    "dv_net": -0.2834005355834961,
+    "dyaw_net": -0.00040192902088165283,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 14.58089542388916,
+    "v_band_lo": 15.13037395477295,
+    "v_band_hi": 14.846973419189453,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lane_ego": 0,
+    "lanes_visible": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "snow",
+    "illumination": "night",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "26481faf-0aba-4f76-905a-949715362455",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Slow down due to the lead vehicle ahead.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "prepare_stop",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -1.263845443725586,
+    "dyaw_mean": 0.03919394686818123,
+    "dv_net": -2.2881383895874023,
+    "dyaw_net": 0.06331315636634827,
+    "lat3": "straight",
+    "lon3": "decelerate",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 8.43027114868164,
+    "v_band_lo": 8.141554832458496,
+    "v_band_hi": 5.853416442871094,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "braking",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "unanimous",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "355200d0-4a86-4f97-855d-8cbb61535747",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Lane change to the left due to the current lane becoming right-turn-only ahead.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "prepare_stop",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -5.463852486014366,
+    "dyaw_mean": -0.0021213686268310994,
+    "dv_net": -9.854395627975464,
+    "dyaw_net": -0.005540609825402498,
+    "lat3": "straight",
+    "lon3": "decelerate",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 16.51398468017578,
+    "v_band_lo": 11.65988540649414,
+    "v_band_hi": 1.8054897785186768,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "unanimous",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "45ba2b63-07c9-42e3-b2d6-4d7fbe74eea2",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Keep distance to the lead vehicle because it is directly ahead in the same lane.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.4783450126647949,
+    "dyaw_mean": -0.000701400451362133,
+    "dv_net": 0.8200817108154297,
+    "dyaw_net": 0.012193068861961365,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 17.332670211791992,
+    "v_band_lo": 17.8821964263916,
+    "v_band_hi": 18.70227813720703,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lane_ego": 1,
+    "lanes_visible": 2,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "4bea0a51-5e53-4d11-a0d5-67a3cc022b6c",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Nudge left to increase clearance to the parked vehicle on the right.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.007832551002502441,
+    "dyaw_mean": 0.11414813864976167,
+    "dv_net": -0.0011796951293945312,
+    "dyaw_net": 0.21258841082453728,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "left",
+    "lon3_net": "maintain",
+    "v_t0": 12.864931106567383,
+    "v_band_lo": 12.903826713562012,
+    "v_band_hi": 12.902647018432617,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "51fd1c9f-fc1d-4a04-94d4-2e6d50161944",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Keep lane because the road ahead is clear.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": -0.05422544479370117,
+    "dyaw_mean": -0.08015565786336083,
+    "dv_net": -0.06513214111328125,
+    "dyaw_net": -0.1528121903538704,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "right",
+    "lon3_net": "maintain",
+    "v_t0": 33.14301681518555,
+    "v_band_lo": 33.040523529052734,
+    "v_band_hi": 32.97539138793945,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "5ead1fa8-8dc5-4a9d-b419-e5bb46ee62dd",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Acceleration",
+   "cot": "Slow down due to the speed bump ahead",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "accelerate",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 3.1894309639930727,
+    "dyaw_mean": -0.04821685552597046,
+    "dv_net": 5.426759719848633,
+    "dyaw_net": -0.06893801689147949,
+    "lat3": "straight",
+    "lon3": "accelerate",
+    "lat3_net": "straight",
+    "lon3_net": "accelerate",
+    "v_t0": 3.4068946838378906,
+    "v_band_lo": 6.4614973068237305,
+    "v_band_hi": 11.888257026672363,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 1,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "6544f1b5-76f6-4fc9-89b9-bc9708499f5e",
+   "alp_lane": "Slightly Shift Left",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Change lanes to the left due to a slower lead vehicle ahead in the right lane and an available gap in the left lane under green signals.",
+   "alp_lat_v6": "NUDGE_L",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": null,
+   "vlm_lat3": "straight",
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.08726320266723633,
+    "dyaw_mean": -0.008953839068999514,
+    "dv_net": 0.1475696563720703,
+    "dyaw_net": -0.011247363174334168,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 18.154874801635742,
+    "v_band_lo": 18.250707626342773,
+    "v_band_hi": 18.398277282714844,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 3,
+    "lane_ego": 1,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "highway"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "agree2",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "6a4ea986-1415-4293-8d51-640792489e60",
+   "alp_lane": "Lane Keep",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Gentle Deceleration",
+   "cot": "Keep distance to the lead vehicle because it is ahead in the same lane.",
+   "alp_lat_v6": "LANE_KEEP",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "decelerate",
+   "vlm_acts": [
+    {
+     "verb": "reduce_to",
+     "direction": "none",
+     "lat": null,
+     "lon": "BRAKE_TO"
+    },
+    {
+     "verb": "hold_corridor",
+     "direction": "none",
+     "lat": "LANE_KEEP",
+     "lon": null
+    }
+   ],
+   "vlm_lat_v6": "LANE_KEEP",
+   "vlm_lon_v6": "BRAKE_TO",
+   "vlm_lat3": "straight",
+   "vlm_lon3": "decelerate",
+   "ego": {
+    "dv_mean": -4.653828581422568,
+    "dyaw_mean": 0.006124628453380865,
+    "dv_net": -7.563015937805176,
+    "dyaw_net": 0.00801082223188132,
+    "lat3": "straight",
+    "lon3": "decelerate",
+    "lat3_net": "straight",
+    "lon3_net": "decelerate",
+    "v_t0": 9.100893020629883,
+    "v_band_lo": 7.563015937805176,
+    "v_band_hi": 0.0,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "urban",
+    "weather": "rain",
+    "illumination": "day",
+    "domain": "urban"
+   },
+   "lat_state": "unanimous",
+   "lon_state": "unanimous",
+   "stratum": "A_UNANIMOUS"
+  },
+  {
+   "clip_id": "69f12ef3-3690-4c66-9297-38e2a22c3703",
+   "alp_lane": "Right Lane Change",
+   "alp_lat_raw": "Go Straight",
+   "alp_lon_raw": "Maintain Speed",
+   "cot": "Keep lane because the road ahead is clear.",
+   "alp_lat_v6": "LANE_CHANGE_R",
+   "alp_lon_v6": null,
+   "alp_notes": {
+    "lon": "magnitude-typed axis, reason-typed vocabulary \u2014 the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)"
+   },
+   "alp_lat3": "straight",
+   "alp_lon3": "maintain",
+   "vlm_acts": [],
+   "vlm_lat_v6": null,
+   "vlm_lon_v6": null,
+   "vlm_lat3": null,
+   "vlm_lon3": null,
+   "ego": {
+    "dv_mean": 0.011171627044677734,
+    "dyaw_mean": -0.008884090557694435,
+    "dv_net": 0.0194091796875,
+    "dyaw_net": -0.019006963819265366,
+    "lat3": "straight",
+    "lon3": "maintain",
+    "lat3_net": "straight",
+    "lon3_net": "maintain",
+    "v_t0": 36.14745330810547,
+    "v_band_lo": 36.14833068847656,
+    "v_band_hi": 36.16773986816406,
+    "n_in_band": 40
+   },
+   "ego_turning": "straight",
+   "ego_motion": "steady",
+   "ego_prompt_mode": "past",
+   "scene": {
+    "lanes_visible": 2,
+    "lane_ego": 0,
+    "conf": "high",
+    "road_type": "highway",
+    "weather": "clear",
+    "illumination": "night",
+    "domain": "highway"
+   },
+   "lat_state": "agree2",
+   "lon_state": "agree2",
+   "stratum": "F_INSUFFICIENT"
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+# The three cost terms at the PROPOSED seam-arm weights
+# (W_JERK 0.0200, W_KAPPA 15.11245), computed from the banked plans exactly as
+# `_cost_chunk` does. `plan_cost` is what the arm actually minimised at
+# ITS OWN weights (W_JERK = 0), so the goal term is recovered as
+# plan_cost - W_KAPPA*mean(kappa^2), which is exact for those arms.
+
+arm            n     jerk term    SEAM delta    kappa term     goal term
+------------------------------------------------------------------------
+wk15          40     3.552e-02     7.403e-02     2.314e-02     2.646e-01
+lonshift      40     2.606e-02     2.786e-02     4.067e-03     6.975e-03
+lonseam       40     3.552e-02     7.403e-02     2.314e-02     2.646e-01
+
+== THE QUESTION: can the seam term MOVE a decision? ==
+  wk15        |seam contribution| median 1.979e-02   max 5.375e-01
+             vs |goal term| median 3.901e-02   vs |kappa term| median 1.052e-03
+             seam / (goal + kappa)  median ratio  4.939e-01
+
+  lonshift    |seam contribution| median 4.482e-03   max 2.060e-01
+             vs |goal term| median 5.949e-04   vs |kappa term| median 5.114e-04
+             seam / (goal + kappa)  median ratio  4.051e+00
+
+  lonseam     |seam contribution| median 1.979e-02   max 5.375e-01
+             vs |goal term| median 3.901e-02   vs |kappa term| median 1.052e-03
+             seam / (goal + kappa)  median ratio  4.939e-01
+
+# A term whose magnitude is orders below the spread of the terms it trades
+# against cannot re-rank candidates, and an arm built on it would be
+# 'technically live, practically inert' -- the same trap one notch weaker.

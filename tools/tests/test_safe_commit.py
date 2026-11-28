@@ -26,7 +26,7 @@ import safe_commit  # noqa: E402
 
 def _git(repo: Path, *args: str) -> str:
     proc = subprocess.run(["git", *args], cwd=str(repo), capture_output=True,
-                          text=True, errors="replace")
+                          text=True, errors="replace", encoding="utf-8")
     assert proc.returncode == 0, f"git {args} -> {proc.stderr}"
     return proc.stdout.strip()
 
@@ -104,9 +104,9 @@ def test_empty_index_refuses(repo):
 
 
 def test_directory_prefix_and_glob_declarations_match(repo):
-    _stage(repo, "TanitAD Research Hub/Data Engineering/x.md")
+    _stage(repo, "TanitAD Research Lab/Data Engineering/x.md")
     _stage(repo, "tools/a.py")
-    assert _run(repo, "-p", "TanitAD Research Hub/", "-p", "tools/*.py",
+    assert _run(repo, "-p", "TanitAD Research Lab/", "-p", "tools/*.py",
                 "-m", "both") == 0
 
 
@@ -156,7 +156,14 @@ def test_ordinary_hf_filenames_are_not_blocked(repo):
 
 
 def test_allow_secret_path_never_overrides_a_token(repo):
-    _stage(repo, "tools/x.pem", "-----BEGIN RSA PRIVATE KEY-----\n")
+    # ⚠️ The PEM header is ASSEMBLED, never written as one literal. This file is
+    # itself scanned by tools/secret_scan.py, and a whole-literal fixture makes
+    # the repo-wide gate fire on its own test suite -- the same self-match trap
+    # as a monitor whose filter contains the pattern it searches for. MEASURED
+    # 2026-08-18: as a single literal this line was 1 of the 7 blocking findings
+    # in the whole-tracked-repo scan, and it was the only artifact of its class.
+    pem = "-----BEGIN RSA PRIVATE" + " KEY-----\n"
+    _stage(repo, "tools/x.pem", pem)
     assert _run(repo, "-p", "tools/", "--allow-secret-path", "-m", "pem") == 1
 
 
@@ -284,10 +291,10 @@ def test_message_file_is_used_verbatim(repo, tmp_path):
 
 
 def test_paths_with_spaces_survive_the_index_listing(repo):
-    _stage(repo, "TanitAD Research Hub/Data Engineering/note with space.md")
-    plan = safe_commit.build_plan(repo, ["TanitAD Research Hub/"], False, True,
+    _stage(repo, "TanitAD Research Lab/Data Engineering/note with space.md")
+    plan = safe_commit.build_plan(repo, ["TanitAD Research Lab/"], False, True,
                                   False, False)
-    assert plan.index == ["TanitAD Research Hub/Data Engineering/note with space.md"]
+    assert plan.index == ["TanitAD Research Lab/Data Engineering/note with space.md"]
     assert not plan.foreign
 
 

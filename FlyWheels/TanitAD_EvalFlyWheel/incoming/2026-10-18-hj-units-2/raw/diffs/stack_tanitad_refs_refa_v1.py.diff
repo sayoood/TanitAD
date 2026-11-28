@@ -1,0 +1,83 @@
+--- a/stack/tanitad/refs/refa_v1.py (d504eb9b68)
++++ b/stack/tanitad/refs/refa_v1.py (8763d85f75)
+@@ -2216,7 +2216,7 @@
+ 
+     # -- the imagined goal: the tactical brain's own 6 s field --------------- #
+     def _imagine_tactical_goal(self, last: Tensor, brains: dict, v0: Tensor,
+-                               *, units: str = "kappa",
++                               *, units: str,
+                                lat_logit_bias: Tensor | None = None,
+                                goal_kappa_turn: float | None = None,
+                                goal_kappa_levels=None,
+@@ -2250,6 +2250,10 @@
+         ``"kappa"`` is the legacy pass-through and is byte-identical to the
+         pre-2026-09-03 expression; `plan` forwards its own
+         ``model_action_units`` here, so the two sides can no longer disagree.
++        ⛔ ``units`` IS REQUIRED, KEYWORD-ONLY, NO DEFAULT (BACKLOG HJ-UNITS-2,
++        2026-10-18): it used to default to ``"kappa"``, so a caller that forgot
++        it handed the model a curvature where its predictor was trained on a
++        road-wheel angle -- the R46 mislabel at the planner->model boundary.
+         """
+         cfg = self.cfg
+         intent = brains["intent"]
+@@ -2359,8 +2363,8 @@
+                                        for q in ash]}
+ 
+     @torch.no_grad()
+-    def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
+-                      model_action_units: str = "kappa",
++    def imagined_goal(self, feats: Tensor, *, v0, model_action_units: str,
++                      nav_cmd: Tensor | None = None,
+                       lat_logit_bias: Tensor | None = None,
+                       goal_kappa_turn: float | None = None
+                       ) -> tuple[Tensor, dict]:
+@@ -2371,7 +2375,9 @@
+         and MUST match the value used there: a goal imagined under one spelling
+         and scored against candidates converted under the other is the exact
+         defect `_model_actions` documents. ``"controls"`` comes back in
+-        CURVATURE either way — it is a search-space object, not a model input."""
++        CURVATURE either way — it is a search-space object, not a model input.
++        ⛔ REQUIRED, KEYWORD-ONLY, NO DEFAULT (BACKLOG HJ-UNITS-2, 2026-10-18),
++        for the same reason `plan` has none."""
+         if self.tactical_policy is None:
+             raise ValueError("imagined_goal needs the hierarchy (tactical_cfg) "
+                              "— without a tactical brain there is no tactical "
+@@ -2394,7 +2400,7 @@
+              target_speed: float | None = None, nav_cmd: Tensor | None = None,
+              seed_kappa_ladder: tuple[float, ...] | None = None,
+              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
+-             cost_chunk: int = 64, model_action_units: str = "kappa",
++             cost_chunk: int = 64, model_action_units: str,
+              cost_time_grid: str = "dense", goal_time_grid: str = "full",
+              cost_metric: str = "cos",
+              cost_weights: tuple[float, float, float] | None = None,
+@@ -2409,6 +2415,18 @@
+              goal_keeps_seed: bool = False):
+         """One MPC tick for ONE window (B must be 1).
+ 
++        ⛔ ``model_action_units`` IS REQUIRED, KEYWORD-ONLY, NO DEFAULT (BACKLOG
++        HJ-UNITS-2, 2026-10-18; RETRACTION_LOG R46). It used to default to
++        ``"kappa"``, the LEGACY pass-through described below -- so a caller that
++        forgot it silently conditioned a road-wheel-angle-trained predictor on a
++        curvature. The unit is a property of the CHECKPOINT (what channel 1 of
++        its action input was trained on), which `plan` cannot see; the caller
++        must state it. Omitting it raises ``TypeError``; a value outside
++        ``ACTION_UNITS`` raises ``ValueError`` naming both legal values.
++        (The path `plan` itself integrates is NOT affected: a planner candidate
++        is a curvature by construction -- `PlanConfig.kappa_max`, `_clip`,
++        `GOAL_KAPPA_*` -- so there is no unit question on the integration side.)
++
+         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
+         2026-09-03; contract on `kinematic.STEER_WHEELBASE_M`). The search space
+         is GEOMETRY: ``PlanConfig.kappa_max``, ``_clip`` and the canonical
+@@ -2416,8 +2434,8 @@
+         metre-valued path is integrated as curvature. The PREDICTOR, however,
+         was trained on the v2ep COMMAND channel — a road-wheel angle. So:
+ 
+-        * ``"kappa"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller)
+-          hands the candidate to the model unconverted. ⛔ This is the LEGACY
++        * ``"kappa"`` (byte-identical to every pre-2026-09-03 caller, which took
++          it as the default) hands the candidate to the model unconverted. ⛔ This is the LEGACY
+           path and it is wrong by ``arctan(L*kappa)``: a ``GOAL_KAPPA_TURN =
+           0.08`` (R = 12.5 m) candidate is imagined by the model as the
+           consequence of a 0.08 rad *steering angle* — R ~ 36 m — so the cost

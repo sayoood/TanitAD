@@ -1,0 +1,63 @@
+[14:41:11Z] headway rc 0
+[14:41:20Z] families rc 0
+[14:41:23Z] read rc 0
+TIER: T1-kin (kinematic rollout on the model's own actions; the lead does not react); never driving performance
+== controls (m1 to m7)
+   m1_maps PASS {"PASS": true, "coverage": {"LR16_s0": [0.17966101694915254, 0.28713858424725824, 0.38803589232303093], "LR16_s1": [0.18384845463609173, 0.2993020937188435, 0.4251246261216351]}, "identity_file": true}
+   m2_identity_in_the_run PASS {"per_seed": {"0": {"n_ticks": 7197, "n_finite": 7197, "max_abs_used_minus_read": 0.0, "PASS": true}, "1": {"n_ticks": 7197, "n_finite": 7197, "max_abs_used_minus_read": 0.0, "PASS": true}}, "PASS": true}
+   m3_same_read_ordered_feed PASS {"per_seed": {"0": {"same_ticks": true, "same_read_and_presence": true, "fed_gap_ordered": true, "mean_fed_gap_m": [30.948, 33.976, 37.944, 41.289], "PASS": true}, "1": {"same_ticks": true, "same_read_and_presence": true, "fed_gap_ordered": true, "mean_fed_gap_m": [25.388, 29.222, 32.819, 32.954], "PASS": true}}, "PASS": true}
+   m4_counts PASS {"dump_files": {"I10RQ50_s0": 141, "I10RQ50_s1": 141, "I10RQ35_s0": 141, "I10RQ35_s1": 141, "I10RRaw_s0": 141, "I10RRaw_s1": 141}, "n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}
+   m5_reused_dumps PASS {"n_files": 6, "differing": [], "PASS": true}
+   m6_reader_controls PASS {"headway": true, "family": true, "PASS": true}
+   m7_model PASS {"per_run": {"I10RQ50_s0": true, "I10RQ50_s1": true, "I10RQ35_s0": true, "I10RQ35_s1": true, "I10RRaw_s0": true, "I10RRaw_s1": true}, "PASS": true}
+== name
+   PRICE10K-MEDIAN-KEEPS-CUT-PRICE-REMAINS
+   P1_U_RQ50_minus_R0 {"per_seed": [-0.0587, -0.0409], "pooled": -0.0498, "interval": [-0.0868, -0.0174]}
+   P2_U_RQ50_minus_RLb {"per_seed": [-0.0018, 0.0214], "pooled": 0.0098, "interval": [-0.0084, 0.0353]}
+   P3_F_RQ50_minus_RLb {"per_seed": [0.0296, 0.0265], "pooled": 0.028, "interval": [0.0011, 0.0557]}
+   P4_F_RQ50_minus_RR {"per_seed": [-0.0888, -0.0701], "pooled": -0.0794, "interval": [-0.1187, -0.0468]}
+   P2 reaches the label-fed rule on U: True ; P4 below 0: True
+== curve (per model seed)
+   I10R0    U [0.1459, 0.1139]  C [0.0763, 0.0421]  F [0.095, 0.1854]
+   I10RLb   U [0.089, 0.0516]  C [0.0327, 0.0156]  F [0.1978, 0.2648]
+   I10RR    U [0.0836, 0.0516]  C [0.028, 0.0171]  F [0.3162, 0.3614]
+   I10RQ35  U [0.089, 0.0605]  C [0.0327, 0.0171]  F [0.2617, 0.3193]
+   I10RQ50  U [0.0872, 0.073]  C [0.0312, 0.0218]  F [0.2274, 0.2913]
+   I10RRaw  U [0.0907, 0.073]  C [0.0312, 0.0218]  F [0.2165, 0.2726]
+   beside I10RQ35: {"U_minus_R0": {"per_seed": [-0.0569, -0.0534], "pooled": -0.0552, "interval": [-0.0913, -0.0225]}, "U_minus_RLb": {"per_seed": [0.0, 0.0089], "pooled": 0.0044, "interval": [-0.0066, 0.0159]}, "F_minus_RLb": {"per_seed": [0.0639, 0.0545], "pooled": 0.0592, "interval": [0.0282, 0.0955]}}
+   beside I10RRaw: {"U_minus_R0": {"per_seed": [-0.0552, -0.0409], "pooled": -0.048, "interval": [-0.084, -0.0168]}, "U_minus_RLb": {"per_seed": [0.0018, 0.0214], "pooled": 0.0116, "interval": [-0.0039, 0.0357]}, "F_minus_RLb": {"per_seed": [0.0187, 0.0078], "pooled": 0.0132, "interval": [-0.0141, 0.0441]}}
+== families I10RQ50_minus_I10R0
+   LONGITUDINAL:speed_mae_mps         D  +0.0572 [-0.0338, +0.1486] [0.058, 0.0565] OPEN
+   LONGITUDINAL:along_mae_m           D  +0.3339 [+0.1600, +0.5405] [0.3333, 0.3344] WORSE
+   LATERAL:cross_mae_m                D  -0.0321 [-0.0581, -0.0072] [-0.0402, -0.024] INSIDE-SPREAD
+   LATERAL:heading_mae_deg            D  +0.5503 [+0.3387, +0.7956] [0.5669, 0.5337] WORSE
+   LATERAL:curvature_mae_1pm          D  +0.0181 [+0.0109, +0.0264] [0.0198, 0.0164] INSIDE-SPREAD
+   LATERAL:yaw_rate_mae_degps         D  +1.3296 [-0.2464, +2.7075] [1.8792, 0.78] OPEN
+   TACTICAL:lon_err_rate              D  -0.0027 [-0.0131, +0.0071] [-0.0054, 0.0] OPEN
+   TACTICAL:lat_err_rate              D  +0.0131 [-0.0004, +0.0271] [0.01, 0.0163] OPEN
+   TACTICAL:joint_err_rate            D  +0.0063 [-0.0019, +0.0146] [0.0063, 0.0063] OPEN
+   TACTICAL:ade_tac_m                 D  +0.3988 [+0.1675, +0.6661] [0.3888, 0.4088] WORSE
+== families I10RQ50_minus_I10RLb
+   LONGITUDINAL:speed_mae_mps         D  -0.0149 [-0.0687, +0.0353] [-0.019, -0.0108] OPEN
+   LONGITUDINAL:along_mae_m           D  +0.0368 [-0.0535, +0.1258] [0.0271, 0.0464] OPEN
+   LATERAL:cross_mae_m                D  -0.0092 [-0.0340, +0.0116] [-0.0174, -0.001] OPEN
+   LATERAL:heading_mae_deg            D  +0.0787 [-0.1467, +0.3115] [0.0032, 0.1541] OPEN
+   LATERAL:curvature_mae_1pm          D  +0.0058 [-0.0027, +0.0142] [0.0095, 0.0022] OPEN
+   LATERAL:yaw_rate_mae_degps         D  -0.0785 [-1.2879, +1.0191] [0.175, -0.3321] OPEN
+   TACTICAL:lon_err_rate              D  -0.0052 [-0.0108, +0.0002] [-0.0054, -0.005] OPEN
+   TACTICAL:lat_err_rate              D  +0.0052 [-0.0042, +0.0152] [0.0033, 0.0071] OPEN
+   TACTICAL:joint_err_rate            D  -0.0006 [-0.0056, +0.0048] [0.0004, -0.0017] OPEN
+   TACTICAL:ade_tac_m                 D  +0.0324 [-0.0952, +0.1530] [0.0126, 0.0521] OPEN
+== families I10RQ50_minus_I10RR
+   LONGITUDINAL:speed_mae_mps         D  -0.1614 [-0.2410, -0.0939] [-0.1891, -0.1337] BETTER
+   LONGITUDINAL:along_mae_m           D  -0.4188 [-0.6109, -0.2589] [-0.4641, -0.3735] BETTER
+   LATERAL:cross_mae_m                D  -0.0169 [-0.0372, +0.0069] [-0.0244, -0.0094] OPEN
+   LATERAL:heading_mae_deg            D  -0.4386 [-0.7060, -0.1944] [-0.5703, -0.3069] INSIDE-SPREAD
+   LATERAL:curvature_mae_1pm          D  -0.0130 [-0.0231, -0.0059] [-0.0088, -0.0173] INSIDE-SPREAD
+   LATERAL:yaw_rate_mae_degps         D  -2.0907 [-3.0994, -1.1893] [-2.313, -1.8685] INSIDE-SPREAD
+   TACTICAL:lon_err_rate              D  -0.0065 [-0.0192, +0.0042] [-0.0133, 0.0004] OPEN
+   TACTICAL:lat_err_rate              D  -0.0129 [-0.0233, -0.0040] [-0.0154, -0.0104] INSIDE-SPREAD
+   TACTICAL:joint_err_rate            D  -0.0063 [-0.0177, +0.0029] [-0.0117, -0.0008] OPEN
+   TACTICAL:ade_tac_m                 D  -0.5701 [-0.8352, -0.3492] [-0.6414, -0.4988] BETTER
+STRATEGIC: as note N1 of card ADD46 (T0 first tick: the banked read of the two models without the rule; along the rule-driven rollout NOT COMPUTED, n = 0, no instrument)
+ZZ READ-PRICE10K DONE 14:41:23Z

@@ -1,0 +1,30 @@
+..F...F.......                                                           [100%]
+================================== FAILURES ===================================
+________________________ test_control1_v_ones_equals_H ________________________
+
+ctl = {'M2b_s0': {'basis_vs_checkpoint_buffer_maxabs': 2.05289653558427e-06, 'ck_nb': 12, 'P_vs_hblend_saved_maxabs': 0.0, '...maxabs': 2.05289653558427e-06, 'ck_nb': 12, 'P_vs_hblend_saved_maxabs': 0.0, 'H_saved_vs_recomputed_maxabs': 0.0, ...}}
+
+    def test_control1_v_ones_equals_H(ctl):
+        for s in SEEDS:
+            c = ctl[s]
+            assert c["c1_v1_vs_H_plan_maxabs_m"] <= 1e-4
+>           assert c["c1_v1_vs_H_evaluate_block_n_mismatches"] == 0, c["c1_v1_vs_H_evaluate_block_mismatches"]
+E           AssertionError: ['/traj/acts/zero_accel_frac: 0.0020123327248422473 vs 0.0020554541403745813']
+E           assert 1 == 0
+
+test_v8f_hspec.py:84: AssertionError
+___________________________ test_all_controls_pass ____________________________
+
+ctl = {'M2b_s0': {'basis_vs_checkpoint_buffer_maxabs': 2.05289653558427e-06, 'ck_nb': 12, 'P_vs_hblend_saved_maxabs': 0.0, '...maxabs': 2.05289653558427e-06, 'ck_nb': 12, 'P_vs_hblend_saved_maxabs': 0.0, 'H_saved_vs_recomputed_maxabs': 0.0, ...}}
+
+    def test_all_controls_pass(ctl):
+        for s in SEEDS:
+>           assert ctl[s]["all_pass"], {k: v for k, v in ctl[s]["pass"].items() if not v}
+E           AssertionError: {'c1_v1_equals_H': False}
+E           assert False
+
+test_v8f_hspec.py:123: AssertionError
+=========================== short test summary info ===========================
+FAILED test_v8f_hspec.py::test_control1_v_ones_equals_H - AssertionError: ['/...
+FAILED test_v8f_hspec.py::test_all_controls_pass - AssertionError: {'c1_v1_eq...
+2 failed, 12 passed in 21.57s

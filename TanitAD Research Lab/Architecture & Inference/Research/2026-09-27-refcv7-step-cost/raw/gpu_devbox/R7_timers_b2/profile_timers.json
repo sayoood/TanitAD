@@ -1,0 +1,2160 @@
+{
+ "mode": "timers",
+ "rung": "R7",
+ "args": {
+  "tree": "C:/lgt/rc7cost",
+  "rung": "R7",
+  "pathmap": "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-refcv7-step-cost/code/pathmap_devbox_eval139_as_train.txt",
+  "mode": "timers",
+  "batch": 2,
+  "steps": 36,
+  "warm": 6,
+  "workers": 0,
+  "prefetch": null,
+  "log_every": 50,
+  "eval_every": 1000000,
+  "save_every": 1000000,
+  "hook_depth": 2,
+  "prof_wait": 8,
+  "prof_active": 6,
+  "loader_n": 24,
+  "loader_clips": 0,
+  "edit": [
+   "set:--allow-eval-clips-in-train:",
+   "set:--label-clock-max-unverified:0.05",
+   "set:--episodes:12"
+  ],
+  "out": "C:\\lgt\\rc7cost_runs\\gpu\\R7_timers_b2",
+  "no_eval_at_end": true,
+  "require_cpu": false,
+  "keep_compile": false,
+  "ab": null,
+  "ab_block": 3,
+  "lever": [
+   "capture_costs"
+  ]
+ },
+ "tanitad_file": "C:\\lgt\\rc7cost\\stack\\tanitad\\__init__.py",
+ "torch": "2.11.0+cu128",
+ "cuda": true,
+ "device": "NVIDIA GeForce RTX 4060",
+ "host": "FREEDOM2035",
+ "python": "3.13.5",
+ "omp_threads": "4",
+ "torch_threads": 4,
+ "spec": {
+  "rung": "R7",
+  "edits": [
+   [
+    "set",
+    "--allow-eval-clips-in-train",
+    []
+   ],
+   [
+    "set",
+    "--label-clock-max-unverified",
+    [
+     "0.05"
+    ]
+   ],
+   [
+    "set",
+    "--episodes",
+    [
+     "12"
+    ]
+   ],
+   [
+    "drop",
+    "--eval-cache"
+   ],
+   [
+    "drop",
+    "--eval-labels"
+   ],
+   [
+    "drop",
+    "--speed-max-sidecar-v6-eval"
+   ]
+  ],
+  "devbox_departures": [
+   [
+    "set",
+    "--batch",
+    [
+     "2"
+    ]
+   ],
+   [
+    "set",
+    "--steps",
+    [
+     "36"
+    ]
+   ],
+   [
+    "set",
+    "--out",
+    [
+     "C:/lgt/rc7cost_runs/gpu/R7_timers_b2/run"
+    ]
+   ],
+   [
+    "set",
+    "--workers",
+    [
+     "0"
+    ]
+   ],
+   [
+    "set",
+    "--log-every",
+    [
+     "50"
+    ]
+   ],
+   [
+    "set",
+    "--eval-every",
+    [
+     "1000000"
+    ]
+   ],
+   [
+    "set",
+    "--save-every",
+    [
+     "1000000"
+    ]
+   ],
+   [
+    "drop",
+    "--trunk-compile"
+   ]
+  ],
+  "argv_thor_form": [
+   "--arm",
+   "hier",
+   "--size",
+   "small",
+   "--trunk",
+   "timm",
+   "--trunk-name",
+   "resnet101.a1_in1k",
+   "--trunk-mode",
+   "shared",
+   "--trunk-fuse",
+   "concat1x1",
+   "--ego-history",
+   "--no-strategic",
+   "--image-hw",
+   "416",
+   "1024",
+   "--sampler",
+   "ddim",
+   "--f1-random-t",
+   "--f2-dd-step",
+   "--f3-per-layer",
+   "--f4-adaln",
+   "--f5-focal",
+   "--f5-emitting-conf",
+   "--f6-w-u0-zero",
+   "--f9-assert-vocab",
+   "--anchors",
+   "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+   "--anchor-v0-conditioned",
+   "--n-anchors",
+   "117",
+   "--v2-cache",
+   "/home/nvidia/data/refcv6-b1-416x1024-train",
+   "--v7-labels",
+   "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "--nav-from-v7",
+   "--eval-every",
+   "1000000",
+   "--eval-batches",
+   "8",
+   "--tac-decoder-v6",
+   "--w-tac-v6",
+   "1.0",
+   "--tac-decoder-d-bev",
+   "96",
+   "--graft-behaviour-sel",
+   "--max-speed-input-v6",
+   "--speed-max-sidecar-v6",
+   "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+   "--agents",
+   "head",
+   "--agent-join",
+   "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "--agent-rig-camera",
+   "extrinsics",
+   "--agent-rig-extrinsics",
+   "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+   "--agent-cls-weight",
+   "b1",
+   "--w-agent",
+   "1.0",
+   "--w-map",
+   "0",
+   "--map-gt-root",
+   "/home/nvidia/data/sam3_gt_v3",
+   "--w-box3d",
+   "1.0",
+   "--join3d",
+   "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "--slot-presence-loss",
+   "focal",
+   "--slot-presence-prior",
+   "0.01",
+   "--slot-deep-supervision",
+   "--slot-vis1",
+   "--vis1-sidecar",
+   "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+   "--slot-query-select",
+   "learned_ref",
+   "--bev-coupling",
+   "--equalize-bottom-rows",
+   "43",
+   "--residual-prior",
+   "ha0_ext_pose",
+   "--graft-tac8-prior",
+   "--graft-nav-compliance",
+   "--nav-compliance-tau-rad",
+   "0.18063741505146028",
+   "--nav-compliance-tau-file",
+   "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+   "--speed-ceiling-filter",
+   "--map-hires",
+   "on",
+   "--w-map-hires",
+   "1.0",
+   "--map-hires-class-weights",
+   "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+   "--map-hires-decision-rule",
+   "prior_corrected",
+   "--map-hires-x-max-m",
+   "100",
+   "--map-hires-y-half-m",
+   "30",
+   "--map-hires-grad-ckpt",
+   "on",
+   "--map-hires-near-lift-m",
+   "20",
+   "--map-hires-near-refine-blocks",
+   "1",
+   "--bev-source",
+   "map_hires_pool",
+   "--bev-planner-crop-m",
+   "60",
+   "16",
+   "--opt",
+   "dd",
+   "--lr",
+   "1e-4",
+   "--warmup",
+   "2000",
+   "--seed",
+   "0",
+   "--u8-batches",
+   "--trunk-chunk-ckpt",
+   "8",
+   "--trunk-frozen-bn",
+   "--trunk-bf16",
+   "--trunk-channels-last",
+   "--trunk-fold-bn",
+   "--trunk-dedup-frames",
+   "--clip-clock-sidecar",
+   "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+   "--workers",
+   "0",
+   "--conflict-every",
+   "10",
+   "--save-every",
+   "1000000",
+   "--log-every",
+   "50",
+   "--batch",
+   "2",
+   "--steps",
+   "36",
+   "--out",
+   "C:/lgt/rc7cost_runs/gpu/R7_timers_b2/run",
+   "--allow-eval-clips-in-train",
+   "--label-clock-max-unverified",
+   "0.05",
+   "--episodes",
+   "12"
+  ],
+  "argv": [
+   "--arm",
+   "hier",
+   "--size",
+   "small",
+   "--trunk",
+   "timm",
+   "--trunk-name",
+   "resnet101.a1_in1k",
+   "--trunk-mode",
+   "shared",
+   "--trunk-fuse",
+   "concat1x1",
+   "--ego-history",
+   "--no-strategic",
+   "--image-hw",
+   "416",
+   "1024",
+   "--sampler",
+   "ddim",
+   "--f1-random-t",
+   "--f2-dd-step",
+   "--f3-per-layer",
+   "--f4-adaln",
+   "--f5-focal",
+   "--f5-emitting-conf",
+   "--f6-w-u0-zero",
+   "--f9-assert-vocab",
+   "--anchors",
+   "D:/refcv6_eval_kit/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+   "--anchor-v0-conditioned",
+   "--n-anchors",
+   "117",
+   "--v2-cache",
+   "D:/refcv6_eval_kit/data/refcv6-b1-416x1024-eval139",
+   "--v7-labels",
+   "D:/refcv6_eval_kit/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+   "--nav-from-v7",
+   "--eval-every",
+   "1000000",
+   "--eval-batches",
+   "8",
+   "--tac-decoder-v6",
+   "--w-tac-v6",
+   "1.0",
+   "--tac-decoder-d-bev",
+   "96",
+   "--graft-behaviour-sel",
+   "--max-speed-input-v6",
+   "--speed-max-sidecar-v6",
+   "D:/refcv6_eval_kit/data/refcv6_speed_max_v8_eval.jsonl",
+   "--agents",
+   "head",
+   "--agent-join",
+   "D:/refcv6_eval_kit/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "--agent-rig-camera",
+   "extrinsics",
+   "--agent-rig-extrinsics",
+   "D:/refcv6_eval_kit/data/refcv6_train_eval139_extrinsics.json",
+   "--agent-cls-weight",
+   "b1",
+   "--w-agent",
+   "1.0",
+   "--w-map",
+   "0",
+   "--map-gt-root",
+   "D:/refcv6_eval_kit/data/sam3_gt_v3_eval",
+   "--w-box3d",
+   "1.0",
+   "--join3d",
+   "D:/refcv6_eval_kit/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+   "--slot-presence-loss",
+   "focal",
+   "--slot-presence-prior",
+   "0.01",
+   "--slot-deep-supervision",
+   "--slot-vis1",
+   "--vis1-sidecar",
+   "D:/refcv6_eval_kit/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+   "--slot-query-select",
+   "learned_ref",
+   "--bev-coupling",
+   "--equalize-bottom-rows",
+   "43",
+   "--residual-prior",
+   "ha0_ext_pose",
+   "--graft-tac8-prior",
+   "--graft-nav-compliance",
+   "--nav-compliance-tau-rad",
+   "0.18063741505146028",
+   "--nav-compliance-tau-file",
+   "D:/refcv6_eval_kit/data/refcv7/nav_compliance_tau_train.json",
+   "--speed-ceiling-filter",
+   "--map-hires",
+   "on",
+   "--w-map-hires",
+   "1.0",
+   "--map-hires-class-weights",
+   "D:/refcv6_eval_kit/data/refcv7/map_hires_class_weights_train_100x30.json",
+   "--map-hires-decision-rule",
+   "prior_corrected",
+   "--map-hires-x-max-m",
+   "100",
+   "--map-hires-y-half-m",
+   "30",
+   "--map-hires-grad-ckpt",
+   "on",
+   "--map-hires-near-lift-m",
+   "20",
+   "--map-hires-near-refine-blocks",
+   "1",
+   "--bev-source",
+   "map_hires_pool",
+   "--bev-planner-crop-m",
+   "60",
+   "16",
+   "--opt",
+   "dd",
+   "--lr",
+   "1e-4",
+   "--warmup",
+   "2000",
+   "--seed",
+   "0",
+   "--u8-batches",
+   "--trunk-chunk-ckpt",
+   "8",
+   "--trunk-frozen-bn",
+   "--trunk-bf16",
+   "--trunk-channels-last",
+   "--trunk-fold-bn",
+   "--trunk-dedup-frames",
+   "--clip-clock-sidecar",
+   "D:/refcv6_eval_kit/data/refcv6_clip_clock_sidecar.jsonl",
+   "--workers",
+   "0",
+   "--conflict-every",
+   "10",
+   "--save-every",
+   "1000000",
+   "--log-every",
+   "50",
+   "--batch",
+   "2",
+   "--steps",
+   "36",
+   "--out",
+   "C:/lgt/rc7cost_runs/gpu/R7_timers_b2/run",
+   "--allow-eval-clips-in-train",
+   "--label-clock-max-unverified",
+   "0.05",
+   "--episodes",
+   "12"
+  ],
+  "n_tokens_canonical": 154,
+  "pathmap": [
+   [
+    "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "D:/refcv6_eval_kit/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz"
+   ],
+   [
+    "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "D:/refcv6_eval_kit/data/refcv6_speed_max_v8_eval.jsonl"
+   ],
+   [
+    "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "D:/refcv6_eval_kit/data/refcv6-b1-416x1024-eval139"
+   ],
+   [
+    "/home/nvidia/data/sam3_corpus",
+    "D:/refcv6_eval_kit/data/sam3_gt_eval_thor137"
+   ],
+   [
+    "/home/nvidia/data/sam3_gt_v3",
+    "D:/refcv6_eval_kit/data/sam3_gt_v3_eval"
+   ],
+   [
+    "/home/nvidia/data",
+    "D:/refcv6_eval_kit/data"
+   ]
+  ]
+ },
+ "t_start": "2026-09-28T03:29:48",
+ "instrumented": [
+  "h2d_frames",
+  "clip_grad",
+  "log_row",
+  "grad_probe_row",
+  "grad_reach",
+  "grad_reach_hires",
+  "lr_sched",
+  "conflict_measure",
+  "conflict_selfcheck",
+  "conflict_terms",
+  "trunk_main",
+  "trunk_s8_tap",
+  "match_cost_build",
+  "hungarian_cpu",
+  "match_slots",
+  "slot_set_loss",
+  "box3d_set_loss",
+  "refined_slot_losses",
+  "presence_term",
+  "ignore_presence_weight",
+  "det_window_packs",
+  "det_train_row_keys",
+  "map_hires_ce",
+  "map_per_class_signal",
+  "map_per_class_log_values",
+  "map_hires_loss_row",
+  "map_near_geometry"
+ ],
+ "levers": [
+  "capture_costs"
+ ],
+ "t_total_s": 210.2,
+ "error": null,
+ "meta": {
+  "hooked_modules": 118,
+  "module_tree": [
+   [
+    "core",
+    "RefCModel",
+    90787546,
+    90775226
+   ],
+   [
+    "core.encoder",
+    "TimmResNetTrunk",
+    58231872,
+    58231872
+   ],
+   [
+    "core.encoder.net",
+    "FeatureListNet",
+    42500160,
+    42500160
+   ],
+   [
+    "core.encoder.net.conv1",
+    "Conv2d",
+    9408,
+    9408
+   ],
+   [
+    "core.encoder.net.bn1",
+    "BatchNorm2d",
+    128,
+    128
+   ],
+   [
+    "core.encoder.net.act1",
+    "ReLU",
+    0,
+    0
+   ],
+   [
+    "core.encoder.net.maxpool",
+    "MaxPool2d",
+    0,
+    0
+   ],
+   [
+    "core.encoder.net.layer1",
+    "Sequential",
+    215808,
+    215808
+   ],
+   [
+    "core.encoder.net.layer2",
+    "Sequential",
+    1219584,
+    1219584
+   ],
+   [
+    "core.encoder.net.layer3",
+    "Sequential",
+    26090496,
+    26090496
+   ],
+   [
+    "core.encoder.net.layer4",
+    "Sequential",
+    14964736,
+    14964736
+   ],
+   [
+    "core.encoder.fuse16",
+    "TemporalFuse",
+    3146752,
+    3146752
+   ],
+   [
+    "core.encoder.fuse16.proj",
+    "Conv2d",
+    3146752,
+    3146752
+   ],
+   [
+    "core.encoder.fuse32",
+    "TemporalFuse",
+    12584960,
+    12584960
+   ],
+   [
+    "core.encoder.fuse32.proj",
+    "Conv2d",
+    12584960,
+    12584960
+   ],
+   [
+    "core.ego_hist",
+    "EgoHistoryEncoder",
+    15328,
+    15328
+   ],
+   [
+    "core.ego_hist.body",
+    "GRU",
+    13248,
+    13248
+   ],
+   [
+    "core.ego_hist.out",
+    "Linear",
+    2080,
+    2080
+   ],
+   [
+    "core.strategic",
+    "StrategicCtx",
+    4066560,
+    4066560
+   ],
+   [
+    "core.strategic.gru",
+    "GRU",
+    3935232,
+    3935232
+   ],
+   [
+    "core.strategic.proj",
+    "Linear",
+    131328,
+    131328
+   ],
+   [
+    "core.measurement",
+    "Sequential",
+    17280,
+    17280
+   ],
+   [
+    "core.measurement.0",
+    "Linear",
+    768,
+    768
+   ],
+   [
+    "core.measurement.1",
+    "ReLU",
+    0,
+    0
+   ],
+   [
+    "core.measurement.2",
+    "Linear",
+    16512,
+    16512
+   ],
+   [
+    "core.measurement.3",
+    "ReLU",
+    0,
+    0
+   ],
+   [
+    "core.decoder",
+    "AnchoredDiffusionDecoder",
+    15255580,
+    15243260
+   ],
+   [
+    "core.decoder.feat_proj",
+    "Linear",
+    786816,
+    786816
+   ],
+   [
+    "core.decoder.traj_proj",
+    "Linear",
+    6528,
+    6528
+   ],
+   [
+    "core.decoder.cond_proj",
+    "Linear",
+    49536,
+    49536
+   ],
+   [
+    "core.decoder.time_embed",
+    "Embedding",
+    1152,
+    1152
+   ],
+   [
+    "core.decoder.layers",
+    "ModuleList",
+    11401768,
+    11401768
+   ],
+   [
+    "core.decoder.layers.0",
+    "CrossAttnLayer",
+    2850442,
+    2850442
+   ],
+   [
+    "core.decoder.layers.1",
+    "CrossAttnLayer",
+    2850442,
+    2850442
+   ],
+   [
+    "core.decoder.layers.2",
+    "CrossAttnLayer",
+    2850442,
+    2850442
+   ],
+   [
+    "core.decoder.layers.3",
+    "CrossAttnLayer",
+    2850442,
+    2850442
+   ],
+   [
+    "core.decoder.conf_head",
+    "Linear",
+    385,
+    385
+   ],
+   [
+    "core.decoder.offset_head",
+    "Linear",
+    6160,
+    0
+   ],
+   [
+    "core.decoder.ctx_to_cond",
+    "Linear",
+    98688,
+    98688
+   ],
+   [
+    "core.decoder.lat_to_anchor",
+    "Linear",
+    351,
+    351
+   ],
+   [
+    "core.decoder.lon_to_anchor",
+    "Linear",
+    351,
+    351
+   ],
+   [
+    "core.decoder.tac8_lat_to_anchor",
+    "Linear",
+    936,
+    936
+   ],
+   [
+    "core.decoder.tac8_lon_to_anchor",
+    "Linear",
+    936,
+    936
+   ],
+   [
+    "core.decoder.tgt_proj",
+    "Linear",
+    196992,
+    196992
+   ],
+   [
+    "core.decoder.tgt_film",
+    "FiLM",
+    295680,
+    295680
+   ],
+   [
+    "core.decoder.tgt_film.to_scale_shift",
+    "Linear",
+    295680,
+    295680
+   ],
+   [
+    "core.decoder.control_head",
+    "Linear",
+    6160,
+    0
+   ],
+   [
+    "core.decoder.time_mlp",
+    "Sequential",
+    1181568,
+    1181568
+   ],
+   [
+    "core.decoder.time_mlp.0",
+    "SinusoidalPosEmb",
+    0,
+    0
+   ],
+   [
+    "core.decoder.time_mlp.1",
+    "Linear",
+    591360,
+    591360
+   ],
+   [
+    "core.decoder.time_mlp.2",
+    "Mish",
+    0,
+    0
+   ],
+   [
+    "core.decoder.time_mlp.3",
+    "Linear",
+    590208,
+    590208
+   ],
+   [
+    "core.decoder.ego_to_cond",
+    "Linear",
+    12672,
+    12672
+   ],
+   [
+    "core.decoder.cascade",
+    "CascadeHeads",
+    26180,
+    26180
+   ],
+   [
+    "core.decoder.cascade.control_heads",
+    "ModuleList",
+    24640,
+    24640
+   ],
+   [
+    "core.decoder.cascade.conf_heads",
+    "ModuleList",
+    1540,
+    1540
+   ],
+   [
+    "core.decoder.adaln",
+    "ModuleList",
+    1182720,
+    1182720
+   ],
+   [
+    "core.decoder.adaln.0",
+    "AdaLNModulation",
+    295680,
+    295680
+   ],
+   [
+    "core.decoder.adaln.1",
+    "AdaLNModulation",
+    295680,
+    295680
+   ],
+   [
+    "core.decoder.adaln.2",
+    "AdaLNModulation",
+    295680,
+    295680
+   ],
+   [
+    "core.decoder.adaln.3",
+    "AdaLNModulation",
+    295680,
+    295680
+   ],
+   [
+    "core.agent_head",
+    "AgentSlotDecoder",
+    3874069,
+    3874069
+   ],
+   [
+    "core.agent_head.mem_proj",
+    "Linear",
+    524544,
+    524544
+   ],
+   [
+    "core.agent_head.blocks",
+    "TransformerDecoder",
+    3160320,
+    3160320
+   ],
+   [
+    "core.agent_head.blocks.layers",
+    "ModuleList",
+    3160320,
+    3160320
+   ],
+   [
+    "core.agent_head.norm",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "core.agent_head.head",
+    "Linear",
+    5397,
+    5397
+   ],
+   [
+    "core.agent_embed",
+    "AgentTokenEmbed",
+    106112,
+    106112
+   ],
+   [
+    "core.agent_embed.geo",
+    "Sequential",
+    105344,
+    105344
+   ],
+   [
+    "core.agent_embed.geo.0",
+    "Linear",
+    6656,
+    6656
+   ],
+   [
+    "core.agent_embed.geo.1",
+    "GELU",
+    0,
+    0
+   ],
+   [
+    "core.agent_embed.geo.2",
+    "Linear",
+    98688,
+    98688
+   ],
+   [
+    "core.agent_embed.norm",
+    "LayerNorm",
+    768,
+    768
+   ],
+   [
+    "core.tactical_trunk",
+    "Sequential",
+    786816,
+    786816
+   ],
+   [
+    "core.tactical_trunk.0",
+    "Linear",
+    786816,
+    786816
+   ],
+   [
+    "core.tactical_trunk.1",
+    "ReLU",
+    0,
+    0
+   ],
+   [
+    "core.lat_head",
+    "Linear",
+    1155,
+    1155
+   ],
+   [
+    "core.lon_head",
+    "Linear",
+    1155,
+    1155
+   ],
+   [
+    "core.route_head",
+    "Linear",
+    6147,
+    6147
+   ],
+   [
+    "core.law_head",
+    "Sequential",
+    8425472,
+    8425472
+   ],
+   [
+    "core.law_head.0",
+    "Linear",
+    4229120,
+    4229120
+   ],
+   [
+    "core.law_head.1",
+    "ReLU",
+    0,
+    0
+   ],
+   [
+    "core.law_head.2",
+    "Linear",
+    4196352,
+    4196352
+   ],
+   [
+    "phi_tac",
+    "PhiTac",
+    2101504,
+    2101504
+   ],
+   [
+    "phi_tac.in_proj",
+    "Linear",
+    524544,
+    524544
+   ],
+   [
+    "phi_tac.blocks",
+    "ModuleList",
+    1181184,
+    1181184
+   ],
+   [
+    "phi_tac.blocks.0",
+    "ModuleDict",
+    393728,
+    393728
+   ],
+   [
+    "phi_tac.blocks.0.conv1",
+    "Conv1d",
+    196864,
+    196864
+   ],
+   [
+    "phi_tac.blocks.0.conv2",
+    "Conv1d",
+    196864,
+    196864
+   ],
+   [
+    "phi_tac.blocks.1",
+    "ModuleDict",
+    393728,
+    393728
+   ],
+   [
+    "phi_tac.blocks.1.conv1",
+    "Conv1d",
+    196864,
+    196864
+   ],
+   [
+    "phi_tac.blocks.1.conv2",
+    "Conv1d",
+    196864,
+    196864
+   ],
+   [
+    "phi_tac.blocks.2",
+    "ModuleDict",
+    393728,
+    393728
+   ],
+   [
+    "phi_tac.blocks.2.conv1",
+    "Conv1d",
+    196864,
+    196864
+   ],
+   [
+    "phi_tac.blocks.2.conv2",
+    "Conv1d",
+    196864,
+    196864
+   ],
+   [
+    "phi_tac.norms",
+    "ModuleList",
+    1536,
+    1536
+   ],
+   [
+    "phi_tac.norms.0",
+    "GroupNorm",
+    512,
+    512
+   ],
+   [
+    "phi_tac.norms.1",
+    "GroupNorm",
+    512,
+    512
+   ],
+   [
+    "phi_tac.norms.2",
+    "GroupNorm",
+    512,
+    512
+   ],
+   [
+    "phi_tac.out",
+    "Sequential",
+    394240,
+    394240
+   ],
+   [
+    "phi_tac.out.0",
+    "Linear",
+    131584,
+    131584
+   ],
+   [
+    "phi_tac.out.1",
+    "GELU",
+    0,
+    0
+   ],
+   [
+    "phi_tac.out.2",
+    "Linear",
+    262656,
+    262656
+   ],
+   [
+    "str_goal_head",
+    "Linear",
+    771,
+    771
+   ],
+   [
+    "gstr_embed",
+    "Linear",
+    256,
+    256
+   ],
+   [
+    "gstr_film",
+    "Linear",
+    66560,
+    66560
+   ],
+   [
+    "nav_inj",
+    "Embedding",
+    256,
+    256
+   ],
+   [
+    "nav_to_tac",
+    "Linear",
+    33280,
+    33280
+   ],
+   [
+    "nav_to_str",
+    "Linear",
+    16640,
+    16640
+   ],
+   [
+    "lat_head_tac",
+    "Linear",
+    4104,
+    4104
+   ],
+   [
+    "lon_head_tac",
+    "Linear",
+    4104,
+    4104
+   ],
+   [
+    "tac_decoder_v6",
+    "TacticalBehaviourDecoder",
+    2253828,
+    2253828
+   ],
+   [
+    "tac_decoder_v6.queries",
+    "Embedding",
+    9728,
+    9728
+   ],
+   [
+    "tac_decoder_v6.agent_in",
+    "Linear",
+    98560,
+    98560
+   ],
+   [
+    "tac_decoder_v6.bev_in",
+    "Linear",
+    24832,
+    24832
+   ],
+   [
+    "tac_decoder_v6.source_code",
+    "Embedding",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.kv_norm",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers",
+    "ModuleList",
+    2118144,
+    2118144
+   ],
+   [
+    "tac_decoder_v6.layers.0",
+    "_DecoderLayer",
+    1059072,
+    1059072
+   ],
+   [
+    "tac_decoder_v6.layers.0.film",
+    "_QueryFiLM",
+    5632,
+    5632
+   ],
+   [
+    "tac_decoder_v6.layers.0.n1",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers.0.n2",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers.0.n3",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers.0.self_attn",
+    "MultiheadAttention",
+    263168,
+    263168
+   ],
+   [
+    "tac_decoder_v6.layers.0.cross_attn",
+    "MultiheadAttention",
+    263168,
+    263168
+   ],
+   [
+    "tac_decoder_v6.layers.0.ff",
+    "Sequential",
+    525568,
+    525568
+   ],
+   [
+    "tac_decoder_v6.layers.1",
+    "_DecoderLayer",
+    1059072,
+    1059072
+   ],
+   [
+    "tac_decoder_v6.layers.1.film",
+    "_QueryFiLM",
+    5632,
+    5632
+   ],
+   [
+    "tac_decoder_v6.layers.1.n1",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers.1.n2",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers.1.n3",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.layers.1.self_attn",
+    "MultiheadAttention",
+    263168,
+    263168
+   ],
+   [
+    "tac_decoder_v6.layers.1.cross_attn",
+    "MultiheadAttention",
+    263168,
+    263168
+   ],
+   [
+    "tac_decoder_v6.layers.1.ff",
+    "Sequential",
+    525568,
+    525568
+   ],
+   [
+    "tac_decoder_v6.out_norm",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "tac_decoder_v6.validity_head",
+    "Linear",
+    257,
+    257
+   ],
+   [
+    "tac_decoder_v6.conf_head",
+    "Linear",
+    257,
+    257
+   ],
+   [
+    "tac_decoder_v6.lat_head",
+    "Linear",
+    257,
+    257
+   ],
+   [
+    "tac_decoder_v6.lon_head",
+    "Linear",
+    257,
+    257
+   ],
+   [
+    "tac_behaviour_gate_v6",
+    "BehaviourSelectionGate",
+    2574,
+    2574
+   ],
+   [
+    "tac_behaviour_gate_v6.proj",
+    "Linear",
+    2574,
+    2574
+   ],
+   [
+    "max_speed_1h_v6",
+    "MaxSpeedOneHotEncoder",
+    0,
+    0
+   ],
+   [
+    "tac_goal_head",
+    "Linear",
+    6156,
+    6156
+   ],
+   [
+    "tac_latent_proj",
+    "Linear",
+    262656,
+    262656
+   ],
+   [
+    "scorer",
+    "GoalDistanceScorer",
+    1144,
+    118
+   ],
+   [
+    "scorer.goal_point",
+    "Linear",
+    1026,
+    0
+   ],
+   [
+    "_map_hires",
+    "MapHiresBranch",
+    643144,
+    643144
+   ],
+   [
+    "_map_hires.lift",
+    "BEVLiftProjectFirst",
+    131200,
+    131200
+   ],
+   [
+    "_map_hires.lift.proj",
+    "Conv2d",
+    131136,
+    131136
+   ],
+   [
+    "_map_hires.encoder",
+    "HiresBEVEncoder",
+    406912,
+    406912
+   ],
+   [
+    "_map_hires.encoder.stem",
+    "Sequential",
+    36992,
+    36992
+   ],
+   [
+    "_map_hires.encoder.stem.0",
+    "Conv2d",
+    36864,
+    36864
+   ],
+   [
+    "_map_hires.encoder.stem.1",
+    "GroupNorm",
+    128,
+    128
+   ],
+   [
+    "_map_hires.encoder.stem.2",
+    "GELU",
+    0,
+    0
+   ],
+   [
+    "_map_hires.encoder.blocks",
+    "ModuleList",
+    369920,
+    369920
+   ],
+   [
+    "_map_hires.encoder.blocks.0",
+    "_DilatedBlock",
+    73984,
+    73984
+   ],
+   [
+    "_map_hires.encoder.blocks.1",
+    "_DilatedBlock",
+    73984,
+    73984
+   ],
+   [
+    "_map_hires.encoder.blocks.2",
+    "_DilatedBlock",
+    73984,
+    73984
+   ],
+   [
+    "_map_hires.encoder.blocks.3",
+    "_DilatedBlock",
+    73984,
+    73984
+   ],
+   [
+    "_map_hires.encoder.blocks.4",
+    "_DilatedBlock",
+    73984,
+    73984
+   ],
+   [
+    "_map_hires.refine",
+    "HiresRefine",
+    20936,
+    20936
+   ],
+   [
+    "_map_hires.refine.inp",
+    "Sequential",
+    2112,
+    2112
+   ],
+   [
+    "_map_hires.refine.inp.0",
+    "Conv2d",
+    2048,
+    2048
+   ],
+   [
+    "_map_hires.refine.inp.1",
+    "GroupNorm",
+    64,
+    64
+   ],
+   [
+    "_map_hires.refine.conv1",
+    "Conv2d",
+    9216,
+    9216
+   ],
+   [
+    "_map_hires.refine.norm1",
+    "GroupNorm",
+    64,
+    64
+   ],
+   [
+    "_map_hires.refine.conv2",
+    "Conv2d",
+    9216,
+    9216
+   ],
+   [
+    "_map_hires.refine.norm2",
+    "GroupNorm",
+    64,
+    64
+   ],
+   [
+    "_map_hires.refine.act",
+    "GELU",
+    0,
+    0
+   ],
+   [
+    "_map_hires.refine.cls",
+    "Conv2d",
+    264,
+    264
+   ],
+   [
+    "_map_hires.near",
+    "NearLiftSkip",
+    65600,
+    65600
+   ],
+   [
+    "_map_hires.near.lift",
+    "BEVLiftProjectFirst",
+    65600,
+    65600
+   ],
+   [
+    "_map_hires.near.lift.proj",
+    "Conv2d",
+    65568,
+    65568
+   ],
+   [
+    "_map_hires.near_refine",
+    "ModuleList",
+    18496,
+    18496
+   ],
+   [
+    "_map_hires.near_refine.0",
+    "NearRefineBlock",
+    18496,
+    18496
+   ],
+   [
+    "_map_hires.near_refine.0.c1",
+    "Conv2d",
+    9216,
+    9216
+   ],
+   [
+    "_map_hires.near_refine.0.n1",
+    "GroupNorm",
+    64,
+    64
+   ],
+   [
+    "_map_hires.near_refine.0.c2",
+    "Conv2d",
+    9216,
+    9216
+   ],
+   [
+    "_perception",
+    "PerceptionBranch",
+    4284463,
+    4284463
+   ],
+   [
+    "_perception.bev_pool",
+    "PlannerBEVPool",
+    6336,
+    6336
+   ],
+   [
+    "_perception.bev_pool.proj",
+    "Sequential",
+    6336,
+    6336
+   ],
+   [
+    "_perception.bev_pool.proj.0",
+    "Conv2d",
+    6144,
+    6144
+   ],
+   [
+    "_perception.bev_pool.proj.1",
+    "GroupNorm",
+    192,
+    192
+   ],
+   [
+    "_perception.box_mem",
+    "Box3DMemory",
+    287744,
+    287744
+   ],
+   [
+    "_perception.box_mem.img_proj",
+    "Linear",
+    262400,
+    262400
+   ],
+   [
+    "_perception.box_mem.bev_proj",
+    "Linear",
+    24832,
+    24832
+   ],
+   [
+    "_perception.box_dec",
+    "Box3DSlotDecoder",
+    3858199,
+    3858199
+   ],
+   [
+    "_perception.box_dec.mem_proj",
+    "Linear",
+    65792,
+    65792
+   ],
+   [
+    "_perception.box_dec.blocks",
+    "TransformerDecoder",
+    3160320,
+    3160320
+   ],
+   [
+    "_perception.box_dec.blocks.layers",
+    "ModuleList",
+    3160320,
+    3160320
+   ],
+   [
+    "_perception.box_dec.norm",
+    "LayerNorm",
+    512,
+    512
+   ],
+   [
+    "_perception.box_dec.head",
+    "Linear",
+    5911,
+    5911
+   ],
+   [
+    "_perception.box_refpts",
+    "LearnedRefPoints",
+    600,
+    600
+   ],
+   [
+    "_perception.box_qpos",
+    "AnchorPosEmbed",
+    131584,
+    131584
+   ],
+   [
+    "_perception.box_qpos.mlp",
+    "Sequential",
+    131584,
+    131584
+   ],
+   [
+    "_perception.box_qpos.mlp.0",
+    "Linear",
+    65792,
+    65792
+   ],
+   [
+    "_perception.box_qpos.mlp.1",
+    "ReLU",
+    0,
+    0
+   ],
+   [
+    "_perception.box_qpos.mlp.2",
+    "Linear",
+    65792,
+    65792
+   ]
+  ]
+ },
+ "peak_mem_gb": 5.18,
+ "summary": {
+  "n_rows": 36,
+  "warm_excluded": 6,
+  "n_plain": 26,
+  "n_conflict": 3,
+  "plain_median": {
+   "autograd_grad": 0.0,
+   "backward": 1.08718,
+   "box3d_set_loss": 0.01001,
+   "clip_grad": 0.00713,
+   "conflict_measure": 0.0,
+   "conflict_terms": 0.00015,
+   "data_wait": 0.54749,
+   "det_train_row_keys": 0.00014,
+   "det_window_packs": 0.00663,
+   "fwd_loss": 0.72307,
+   "grad_probe_row": 1e-05,
+   "grad_reach": 0.0,
+   "grad_reach_hires": 0.0,
+   "h2d_frames": 0.03153,
+   "hungarian_cpu": 0.0016,
+   "ignore_presence_weight": 0.00323,
+   "log_row": 0.0,
+   "lr_sched": 1e-05,
+   "map_hires_ce": 0.00074,
+   "map_hires_loss_row": 0.0242,
+   "map_near_geometry": 0.00189,
+   "map_per_class_log_values": 0.00017,
+   "map_per_class_signal": 0.02289,
+   "match_cost_build": 0.00546,
+   "match_slots": 0.00933,
+   "max_mem_gb": 5.176,
+   "mod:_map_hires": 0.06667,
+   "mod:_map_hires.encoder": 0.03217,
+   "mod:_map_hires.encoder.stem": 0.00243,
+   "mod:_map_hires.encoder.stem@recompute": 0.00252,
+   "mod:_map_hires.lift": 0.00511,
+   "mod:_map_hires.near": 0.00442,
+   "mod:_map_hires.near.lift": 0.00335,
+   "mod:_map_hires.near.lift@recompute": 0.00332,
+   "mod:_map_hires.near@recompute": 0.00429,
+   "mod:_map_hires.near_refine.0": 0.00303,
+   "mod:_map_hires.near_refine.0@recompute": 0.00303,
+   "mod:_map_hires.refine": 0.02352,
+   "mod:_map_hires.refine.act": 0.00253,
+   "mod:_map_hires.refine.act@recompute": 0.00254,
+   "mod:_map_hires.refine.cls": 0.00174,
+   "mod:_map_hires.refine.conv1": 0.00312,
+   "mod:_map_hires.refine.conv1@recompute": 0.00312,
+   "mod:_map_hires.refine.conv2": 0.00312,
+   "mod:_map_hires.refine.conv2@recompute": 0.00312,
+   "mod:_map_hires.refine.inp": 0.00075,
+   "mod:_map_hires.refine.inp@recompute": 0.00075,
+   "mod:_map_hires.refine.norm1": 0.0026,
+   "mod:_map_hires.refine.norm1@recompute": 0.0026,
+   "mod:_map_hires.refine.norm2": 0.00261,
+   "mod:_map_hires.refine.norm2@recompute": 0.00259,
+   "mod:_perception": 0.01001,
+   "mod:_perception.bev_pool": 0.00043,
+   "mod:_perception.bev_pool.proj": 0.00015,
+   "mod:_perception.box_dec.head": 0.00017,
+   "mod:_perception.box_dec.mem_proj": 0.00013,
+   "mod:_perception.box_dec.norm": 0.00017,
+   "mod:_perception.box_mem": 0.00075,
+   "mod:_perception.box_mem.bev_proj": 9e-05,
+   "mod:_perception.box_mem.img_proj": 0.00045,
+   "mod:_perception.box_qpos": 0.00044,
+   "mod:_perception.box_qpos.mlp": 0.00017,
+   "mod:_perception.box_refpts": 2e-05,
+   "mod:core": 0.46766,
+   "mod:core.agent_embed": 0.0007,
+   "mod:core.agent_embed.geo": 0.00016,
+   "mod:core.agent_embed.norm": 4e-05,
+   "mod:core.agent_head": 0.0047,
+   "mod:core.agent_head.head": 0.00017,
+   "mod:core.agent_head.mem_proj": 0.00023,
+   "mod:core.agent_head.norm": 0.00017,
+   "mod:core.decoder": 0.06886,
+   "mod:core.decoder.cond_proj": 5e-05,
+   "mod:core.decoder.conf_head": 7e-05,
+   "mod:core.decoder.ego_to_cond": 5e-05,
+   "mod:core.decoder.feat_proj": 0.00028,
+   "mod:core.decoder.offset_head": 6e-05,
+   "mod:core.decoder.tac8_lat_to_anchor": 4e-05,
+   "mod:core.decoder.tac8_lon_to_anchor": 4e-05,
+   "mod:core.decoder.tgt_film": 0.00012,
+   "mod:core.decoder.tgt_proj": 5e-05,
+   "mod:core.decoder.time_mlp": 0.0003,
+   "mod:core.decoder.traj_proj": 0.00025,
+   "mod:core.ego_hist": 0.00032,
+   "mod:core.ego_hist.body": 0.00021,
+   "mod:core.ego_hist.out": 6e-05,
+   "mod:core.encoder": 0.08303,
+   "mod:core.encoder.fuse16": 0.01442,
+   "mod:core.encoder.fuse32": 0.01529,
+   "mod:core.lat_head": 4e-05,
+   "mod:core.law_head": 0.00038,
+   "mod:core.law_head.0": 0.00016,
+   "mod:core.law_head.1": 4e-05,
+   "mod:core.law_head.2": 0.00014,
+   "mod:core.lon_head": 4e-05,
+   "mod:core.measurement": 0.00021,
+   "mod:core.measurement.0": 6e-05,
+   "mod:core.measurement.1": 3e-05,
+   "mod:core.measurement.2": 5e-05,
+   "mod:core.measurement.3": 3e-05,
+   "mod:core.route_head": 5e-05,
+   "mod:core.strategic": 0.00056,
+   "mod:core.strategic.gru": 0.00042,
+   "mod:core.strategic.proj": 8e-05,
+   "mod:core.tactical_trunk": 0.00011,
+   "mod:core.tactical_trunk.0": 6e-05,
+   "mod:core.tactical_trunk.1": 3e-05,
+   "mod:lat_head_tac": 5e-05,
+   "mod:lon_head_tac": 5e-05,
+   "mod:max_speed_1h_v6": 0.00044,
+   "mod:nav_inj": 4e-05,
+   "mod:nav_to_str": 5e-05,
+   "mod:nav_to_tac": 6e-05,
+   "mod:phi_tac": 0.00148,
+   "mod:phi_tac.in_proj": 9e-05,
+   "mod:phi_tac.norms.0": 8e-05,
+   "mod:phi_tac.norms.1": 7e-05,
+   "mod:phi_tac.norms.2": 6e-05,
+   "mod:phi_tac.out": 0.0002,
+   "mod:phi_tac.out.0": 8e-05,
+   "mod:phi_tac.out.1": 3e-05,
+   "mod:phi_tac.out.2": 5e-05,
+   "mod:scorer": 0.00027,
+   "mod:scorer.goal_point": 6e-05,
+   "mod:str_goal_head": 5e-05,
+   "mod:tac_behaviour_gate_v6": 0.0001,
+   "mod:tac_behaviour_gate_v6.proj": 5e-05,
+   "mod:tac_decoder_v6": 0.00389,
+   "mod:tac_decoder_v6.agent_in": 9e-05,
+   "mod:tac_decoder_v6.bev_in": 6e-05,
+   "mod:tac_decoder_v6.conf_head": 8e-05,
+   "mod:tac_decoder_v6.kv_norm": 4e-05,
+   "mod:tac_decoder_v6.lat_head": 8e-05,
+   "mod:tac_decoder_v6.layers.0": 0.00151,
+   "mod:tac_decoder_v6.layers.1": 0.00132,
+   "mod:tac_decoder_v6.lon_head": 8e-05,
+   "mod:tac_decoder_v6.out_norm": 4e-05,
+   "mod:tac_decoder_v6.validity_head": 9e-05,
+   "mod:tac_goal_head": 4e-05,
+   "mod:tac_latent_proj": 5e-05,
+   "opt_step": 0.03395,
+   "presence_term": 0.00437,
+   "refined_slot_losses": 0.04341,
+   "save": 0.0,
+   "slot_set_loss": 0.00855,
+   "trunk_main": 0.36903,
+   "trunk_s8_tap": 0.01187,
+   "wall": 2.43152
+  },
+  "plain_mean": {
+   "autograd_grad": 0.0,
+   "backward": 1.09144,
+   "box3d_set_loss": 0.01168,
+   "clip_grad": 0.00726,
+   "conflict_measure": 0.0,
+   "conflict_terms": 0.00021,
+   "data_wait": 0.56625,
+   "det_train_row_keys": 0.00014,
+   "det_window_packs": 0.00718,
+   "fwd_loss": 0.73145,
+   "grad_probe_row": 1e-05,
+   "grad_reach": 0.0,
+   "grad_reach_hires": 0.0,
+   "h2d_frames": 0.0319,
+   "hungarian_cpu": 0.00164,
+   "ignore_presence_weight": 0.0027,
+   "log_row": 0.0,
+   "lr_sched": 1e-05,
+   "map_hires_ce": 0.00083,
+   "map_hires_loss_row": 0.02402,
+   "map_near_geometry": 0.00216,
+   "map_per_class_log_values": 0.00019,
+   "map_per_class_signal": 0.02282,
+   "match_cost_build": 0.00593,
+   "match_slots": 0.01045,
+   "max_mem_gb": 5.11585,
+   "mod:_map_hires": 0.06664,
+   "mod:_map_hires.encoder": 0.03213,
+   "mod:_map_hires.encoder.stem": 0.00248,
+   "mod:_map_hires.encoder.stem@recompute": 0.00258,
+   "mod:_map_hires.lift": 0.00549,
+   "mod:_map_hires.near": 0.00468,
+   "mod:_map_hires.near.lift": 0.00346,
+   "mod:_map_hires.near.lift@recompute": 0.0035,
+   "mod:_map_hires.near@recompute": 0.00458,
+   "mod:_map_hires.near_refine.0": 0.00323,
+   "mod:_map_hires.near_refine.0@recompute": 0.00321,
+   "mod:_map_hires.refine": 0.02367,
+   "mod:_map_hires.refine.act": 0.00256,
+   "mod:_map_hires.refine.act@recompute": 0.00267,
+   "mod:_map_hires.refine.cls": 0.00181,
+   "mod:_map_hires.refine.conv1": 0.00339,
+   "mod:_map_hires.refine.conv1@recompute": 0.00323,
+   "mod:_map_hires.refine.conv2": 0.00333,
+   "mod:_map_hires.refine.conv2@recompute": 0.00326,
+   "mod:_map_hires.refine.inp": 0.00085,
+   "mod:_map_hires.refine.inp@recompute": 0.00078,
+   "mod:_map_hires.refine.norm1": 0.00272,
+   "mod:_map_hires.refine.norm1@recompute": 0.00277,
+   "mod:_map_hires.refine.norm2": 0.00278,
+   "mod:_map_hires.refine.norm2@recompute": 0.00274,
+   "mod:_perception": 0.01025,
+   "mod:_perception.bev_pool": 0.00053,
+   "mod:_perception.bev_pool.proj": 0.00024,
+   "mod:_perception.box_dec.head": 0.00023,
+   "mod:_perception.box_dec.mem_proj": 0.00014,
+   "mod:_perception.box_dec.norm": 0.00027,
+   "mod:_perception.box_mem": 0.00095,
+   "mod:_perception.box_mem.bev_proj": 0.00018,
+   "mod:_perception.box_mem.img_proj": 0.00045,
+   "mod:_perception.box_qpos": 0.00049,
+   "mod:_perception.box_qpos.mlp": 0.00019,
+   "mod:_perception.box_refpts": 2e-05,
+   "mod:core": 0.48062,
+   "mod:core.agent_embed": 0.00082,
+   "mod:core.agent_embed.geo": 0.00019,
+   "mod:core.agent_embed.norm": 4e-05,
+   "mod:core.agent_head": 0.00822,
+   "mod:core.agent_head.head": 0.00018,
+   "mod:core.agent_head.mem_proj": 0.00023,
+   "mod:core.agent_head.norm": 0.00019,
+   "mod:core.decoder": 0.07762,
+   "mod:core.decoder.cond_proj": 8e-05,
+   "mod:core.decoder.conf_head": 9e-05,
+   "mod:core.decoder.ego_to_cond": 6e-05,
+   "mod:core.decoder.feat_proj": 0.00029,
+   "mod:core.decoder.offset_head": 8e-05,
+   "mod:core.decoder.tac8_lat_to_anchor": 5e-05,
+   "mod:core.decoder.tac8_lon_to_anchor": 5e-05,
+   "mod:core.decoder.tgt_film": 0.00015,
+   "mod:core.decoder.tgt_proj": 5e-05,
+   "mod:core.decoder.time_mlp": 0.00035,
+   "mod:core.decoder.traj_proj": 0.00026,
+   "mod:core.ego_hist": 0.00035,
+   "mod:core.ego_hist.body": 0.00023,
+   "mod:core.ego_hist.out": 6e-05,
+   "mod:core.encoder": 0.08298,
+   "mod:core.encoder.fuse16": 0.01431,
+   "mod:core.encoder.fuse32": 0.01529,
+   "mod:core.lat_head": 5e-05,
+   "mod:core.law_head": 0.00043,
+   "mod:core.law_head.0": 0.00017,
+   "mod:core.law_head.1": 7e-05,
+   "mod:core.law_head.2": 0.00015,
+   "mod:core.lon_head": 8e-05,
+   "mod:core.measurement": 0.00023,
+   "mod:core.measurement.0": 6e-05,
+   "mod:core.measurement.1": 4e-05,
+   "mod:core.measurement.2": 5e-05,
+   "mod:core.measurement.3": 3e-05,
+   "mod:core.route_head": 6e-05,
+   "mod:core.strategic": 0.00064,
+   "mod:core.strategic.gru": 0.00049,
+   "mod:core.strategic.proj": 9e-05,
+   "mod:core.tactical_trunk": 0.00012,
+   "mod:core.tactical_trunk.0": 6e-05,
+   "mod:core.tactical_trunk.1": 3e-05,
+   "mod:lat_head_tac": 6e-05,
+   "mod:lon_head_tac": 5e-05,
+   "mod:max_speed_1h_v6": 0.00057,
+   "mod:nav_inj": 5e-05,
+   "mod:nav_to_str": 6e-05,
+   "mod:nav_to_tac": 6e-05,
+   "mod:phi_tac": 0.00174,
+   "mod:phi_tac.in_proj": 0.0001,
+   "mod:phi_tac.norms.0": 8e-05,
+   "mod:phi_tac.norms.1": 8e-05,
+   "mod:phi_tac.norms.2": 7e-05,
+   "mod:phi_tac.out": 0.00025,
+   "mod:phi_tac.out.0": 9e-05,
+   "mod:phi_tac.out.1": 3e-05,
+   "mod:phi_tac.out.2": 8e-05,
+   "mod:scorer": 0.00035,
+   "mod:scorer.goal_point": 7e-05,
+   "mod:str_goal_head": 5e-05,
+   "mod:tac_behaviour_gate_v6": 0.00011,
+   "mod:tac_behaviour_gate_v6.proj": 6e-05,
+   "mod:tac_decoder_v6": 0.00435,
+   "mod:tac_decoder_v6.agent_in": 0.0001,
+   "mod:tac_decoder_v6.bev_in": 6e-05,
+   "mod:tac_decoder_v6.conf_head": 0.0001,
+   "mod:tac_decoder_v6.kv_norm": 4e-05,
+   "mod:tac_decoder_v6.lat_head": 0.0001,
+   "mod:tac_decoder_v6.layers.0": 0.0017,
+   "mod:tac_decoder_v6.layers.1": 0.0015,
+   "mod:tac_decoder_v6.lon_head": 0.00011,
+   "mod:tac_decoder_v6.out_norm": 4e-05,
+   "mod:tac_decoder_v6.validity_head": 0.00012,
+   "mod:tac_goal_head": 5e-05,
+   "mod:tac_latent_proj": 5e-05,
+   "opt_step": 0.03391,
+   "presence_term": 0.00478,
+   "refined_slot_losses": 0.04117,
+   "save": 0.0,
+   "slot_set_loss": 0.00923,
+   "trunk_main": 0.36898,
+   "trunk_s8_tap": 0.01173,
+   "wall": 2.43502
+  },
+  "conflict_median": {
+   "autograd_grad": 1.77375,
+   "backward": 1.05905,
+   "box3d_set_loss": 0.00399,
+   "clip_grad": 0.00707,
+   "conflict_measure": 1.88296,
+   "conflict_terms": 0.00014,
+   "data_wait": 0.52458,
+   "det_train_row_keys": 0.00016,
+   "det_window_packs": 0.01056,
+   "fwd_loss": 0.74694,
+   "grad_probe_row": 1e-05,
+   "grad_reach": 0.0,
+   "grad_reach_hires": 0.0,
+   "h2d_frames": 0.03138,
+   "hungarian_cpu": 0.0,
+   "ignore_presence_weight": 0.00091,
+   "log_row": 0.0,
+   "lr_sched": 1e-05,
+   "map_hires_ce": 0.00077,
+   "map_hires_loss_row": 0.02344,
+   "map_near_geometry": 0.00347,
+   "map_per_class_log_values": 0.00017,
+   "map_per_class_signal": 0.0224,
+   "match_cost_build": 0.0,
+   "match_slots": 0.00129,
+   "max_mem_gb": 5.18,
+   "mod:_map_hires": 0.06692,
+   "mod:_map_hires.encoder": 0.03205,
+   "mod:_map_hires.encoder.stem": 0.00309,
+   "mod:_map_hires.encoder.stem@recompute": 0.0084,
+   "mod:_map_hires.lift": 0.0051,
+   "mod:_map_hires.near": 0.00504,
+   "mod:_map_hires.near.lift": 0.00335,
+   "mod:_map_hires.near.lift@recompute": 0.00747,
+   "mod:_map_hires.near@recompute": 0.00941,
+   "mod:_map_hires.near_refine.0": 0.00304,
+   "mod:_map_hires.near_refine.0@recompute": 0.0061,
+   "mod:_map_hires.refine": 0.02347,
+   "mod:_map_hires.refine.act": 0.00253,
+   "mod:_map_hires.refine.act@recompute": 0.00511,
+   "mod:_map_hires.refine.cls": 0.00173,
+   "mod:_map_hires.refine.conv1": 0.00313,
+   "mod:_map_hires.refine.conv1@recompute": 0.00702,
+   "mod:_map_hires.refine.conv2": 0.00312,
+   "mod:_map_hires.refine.conv2@recompute": 0.00711,
+   "mod:_map_hires.refine.inp": 0.00076,
+   "mod:_map_hires.refine.inp@recompute": 0.00151,
+   "mod:_map_hires.refine.norm1": 0.00262,
+   "mod:_map_hires.refine.norm1@recompute": 0.00522,
+   "mod:_map_hires.refine.norm2": 0.00259,
+   "mod:_map_hires.refine.norm2@recompute": 0.00522,
+   "mod:_perception": 0.01054,
+   "mod:_perception.bev_pool": 0.00041,
+   "mod:_perception.bev_pool.proj": 0.00014,
+   "mod:_perception.box_dec.head": 0.00024,
+   "mod:_perception.box_dec.mem_proj": 0.00013,
+   "mod:_perception.box_dec.norm": 0.0003,
+   "mod:_perception.box_mem": 0.00074,
+   "mod:_perception.box_mem.bev_proj": 9e-05,
+   "mod:_perception.box_mem.img_proj": 0.00045,
+   "mod:_perception.box_qpos": 0.00048,
+   "mod:_perception.box_qpos.mlp": 0.00017,
+   "mod:_perception.box_refpts": 3e-05,
+   "mod:core": 0.49467,
+   "mod:core.agent_embed": 0.00077,
+   "mod:core.agent_embed.geo": 0.00016,
+   "mod:core.agent_embed.norm": 4e-05,
+   "mod:core.agent_head": 0.00653,
+   "mod:core.agent_head.head": 0.00022,
+   "mod:core.agent_head.mem_proj": 0.00024,
+   "mod:core.agent_head.norm": 0.00024,
+   "mod:core.decoder": 0.07128,
+   "mod:core.decoder.cond_proj": 5e-05,
+   "mod:core.decoder.conf_head": 7e-05,
+   "mod:core.decoder.ego_to_cond": 5e-05,
+   "mod:core.decoder.feat_proj": 0.00029,
+   "mod:core.decoder.offset_head": 6e-05,
+   "mod:core.decoder.tac8_lat_to_anchor": 4e-05,
+   "mod:core.decoder.tac8_lon_to_anchor": 4e-05,
+   "mod:core.decoder.tgt_film": 0.00012,
+   "mod:core.decoder.tgt_proj": 5e-05,
+   "mod:core.decoder.time_mlp": 0.0003,
+   "mod:core.decoder.traj_proj": 0.00026,
+   "mod:core.ego_hist": 0.00032,
+   "mod:core.ego_hist.body": 0.00021,
+   "mod:core.ego_hist.out": 6e-05,
+   "mod:core.encoder": 0.08293,
+   "mod:core.encoder.fuse16": 0.01443,
+   "mod:core.encoder.fuse32": 0.01527,
+   "mod:core.lat_head": 5e-05,
+   "mod:core.law_head": 0.00039,
+   "mod:core.law_head.0": 0.00016,
+   "mod:core.law_head.1": 4e-05,
+   "mod:core.law_head.2": 0.00014,
+   "mod:core.lon_head": 4e-05,
+   "mod:core.measurement": 0.00022,
+   "mod:core.measurement.0": 6e-05,
+   "mod:core.measurement.1": 3e-05,
+   "mod:core.measurement.2": 5e-05,
+   "mod:core.measurement.3": 3e-05,
+   "mod:core.route_head": 5e-05,
+   "mod:core.strategic": 0.00056,
+   "mod:core.strategic.gru": 0.00043,
+   "mod:core.strategic.proj": 8e-05,
+   "mod:core.tactical_trunk": 0.00015,
+   "mod:core.tactical_trunk.0": 6e-05,
+   "mod:core.tactical_trunk.1": 4e-05,
+   "mod:lat_head_tac": 5e-05,
+   "mod:lon_head_tac": 5e-05,
+   "mod:max_speed_1h_v6": 0.00043,
+   "mod:nav_inj": 4e-05,
+   "mod:nav_to_str": 5e-05,
+   "mod:nav_to_tac": 6e-05,
+   "mod:phi_tac": 0.00142,
+   "mod:phi_tac.in_proj": 9e-05,
+   "mod:phi_tac.norms.0": 7e-05,
+   "mod:phi_tac.norms.1": 7e-05,
+   "mod:phi_tac.norms.2": 6e-05,
+   "mod:phi_tac.out": 0.0002,
+   "mod:phi_tac.out.0": 8e-05,
+   "mod:phi_tac.out.1": 3e-05,
+   "mod:phi_tac.out.2": 5e-05,
+   "mod:scorer": 0.00026,
+   "mod:scorer.goal_point": 6e-05,
+   "mod:str_goal_head": 5e-05,
+   "mod:tac_behaviour_gate_v6": 0.00011,
+   "mod:tac_behaviour_gate_v6.proj": 5e-05,
+   "mod:tac_decoder_v6": 0.0049,
+   "mod:tac_decoder_v6.agent_in": 9e-05,
+   "mod:tac_decoder_v6.bev_in": 6e-05,
+   "mod:tac_decoder_v6.conf_head": 8e-05,
+   "mod:tac_decoder_v6.kv_norm": 4e-05,
+   "mod:tac_decoder_v6.lat_head": 9e-05,
+   "mod:tac_decoder_v6.layers.0": 0.00149,
+   "mod:tac_decoder_v6.layers.1": 0.00206,
+   "mod:tac_decoder_v6.lon_head": 7e-05,
+   "mod:tac_decoder_v6.out_norm": 4e-05,
+   "mod:tac_decoder_v6.validity_head": 0.0001,
+   "mod:tac_goal_head": 4e-05,
+   "mod:tac_latent_proj": 5e-05,
+   "opt_step": 0.03395,
+   "presence_term": 0.00493,
+   "refined_slot_losses": 0.01841,
+   "save": 0.0,
+   "slot_set_loss": 0.00211,
+   "trunk_main": 0.36962,
+   "trunk_s8_tap": 0.01184,
+   "wall": 4.39275
+  },
+  "wall_all_median": 2.45725,
+  "wall_all_mean": 2.65825,
+  "conflict_extra_s": 1.9612,
+  "conflict_amortised_s_per_step": 0.1961
+ }
+}

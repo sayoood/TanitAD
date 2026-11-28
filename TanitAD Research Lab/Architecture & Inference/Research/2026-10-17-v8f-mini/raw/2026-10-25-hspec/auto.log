@@ -1,0 +1,31 @@
+[fit s1 M2b_s0] 1s  lambda 0  v mean 0.839 min 0.324 max 1.000  kkt 2.6e-15/8.6e-16  train recov 1.52e-05  perm v mean 0.040 max 0.136
+[fit s1 M2b_s1] 1s  lambda 0  v mean 0.787 min 0.000 max 1.000  kkt 5.1e-17/3.9e-15  train recov 1.49e-05  perm v mean 0.030 max 0.121
+[score s1 M2b_s0] CONTROLS {"c1_recovery": true, "c1_v1_equals_H": true, "c2_v0_equals_P10": true, "c3_regression_collapses": true, "c4_noise_collapses": true, "basis_matches_checkpoint": true, "P_and_H_reproduce_hblend": true, "kkt_optimal": true}  all_pass=True
+[score s1 M2b_s0] DONE 83s  HS-P10 ADE2 -0.0119 [-0.0163,-0.0071]  ADE6 -0.5225 [-0.6360,-0.4125]  accel +0.0942 [+0.0684,+0.1269]  curv +0.00570 [+0.00250,+0.00930]
+[score s1 M2b_s1] CONTROLS {"c1_recovery": true, "c1_v1_equals_H": true, "c2_v0_equals_P10": true, "c3_regression_collapses": true, "c4_noise_collapses": true, "basis_matches_checkpoint": true, "P_and_H_reproduce_hblend": true, "kkt_optimal": true}  all_pass=True
+[score s1 M2b_s1] DONE 87s  HS-P10 ADE2 -0.0090 [-0.0137,-0.0037]  ADE6 -0.5050 [-0.6240,-0.3886]  accel +0.0898 [+0.0645,+0.1221]  curv +0.00890 [+0.00340,+0.01560]
+[dk s1] states {'LEAD': 743, 'NO_LEAD': 552, 'NOT_STRAIGHT': 931, 'NO_LABEL': 173} contract OK
+  B_s0   headway 25.6223 time-gap 4.0223 LEAD-VIOL at-risk 0.035294
+  H_s0   headway 25.5529 time-gap 3.92 LEAD-VIOL at-risk 0.048739
+  HS_s0  headway 25.546 time-gap 3.9431 LEAD-VIOL at-risk 0.05042
+  B_s1   headway 25.5441 time-gap 3.9505 LEAD-VIOL at-risk 0.060504
+  H_s1   headway 25.6057 time-gap 3.9498 LEAD-VIOL at-risk 0.058824
+  HS_s1  headway 25.6405 time-gap 3.9375 LEAD-VIOL at-risk 0.060504
+  P10    headway 25.1162 time-gap 3.8316 LEAD-VIOL at-risk 0.080672
+[auto] stage 1: DOM_both False  KEEP_both True  SMOOTHER_both False
+[fit s2 M2b_s0] 3s  lambda 2500  v mean 0.731 min 0.343 max 1.000  kkt 1.9e-14/5.1e-15  train recov 1.52e-05  perm v mean 0.042 max 0.156
+[fit s2 M2b_s1] 4s  lambda 2308  v mean 0.735 min 0.231 max 1.000  kkt 7.3e-15/9.0e-16  train recov 1.49e-05  perm v mean 0.042 max 0.187
+[score s2 M2b_s0] CONTROLS {"c1_recovery": true, "c1_v1_equals_H": true, "c2_v0_equals_P10": true, "c3_regression_collapses": true, "c4_noise_collapses": true, "basis_matches_checkpoint": true, "P_and_H_reproduce_hblend": true, "kkt_optimal": true}  all_pass=True
+[score s2 M2b_s0] DONE 77s  HS-P10 ADE2 -0.0051 [-0.0081,-0.0019]  ADE6 -0.5114 [-0.6174,-0.4108]  accel +0.0258 [+0.0105,+0.0444]  curv +0.00120 [-0.00090,+0.00360]
+[score s2 M2b_s1] CONTROLS {"c1_recovery": true, "c1_v1_equals_H": true, "c2_v0_equals_P10": true, "c3_regression_collapses": true, "c4_noise_collapses": true, "basis_matches_checkpoint": true, "P_and_H_reproduce_hblend": true, "kkt_optimal": true}  all_pass=True
+[score s2 M2b_s1] DONE 125s  HS-P10 ADE2 -0.0053 [-0.0090,-0.0012]  ADE6 -0.4904 [-0.5977,-0.3846]  accel +0.0057 [-0.0110,+0.0283]  curv +0.00310 [-0.00010,+0.00660]
+[dk s2] states {'LEAD': 743, 'NO_LEAD': 552, 'NOT_STRAIGHT': 931, 'NO_LABEL': 173} contract OK
+  B_s0   headway 25.6223 time-gap 4.0223 LEAD-VIOL at-risk 0.035294
+  H_s0   headway 25.5529 time-gap 3.92 LEAD-VIOL at-risk 0.048739
+  HS_s0  headway 25.4943 time-gap 3.9374 LEAD-VIOL at-risk 0.048739
+  B_s1   headway 25.5441 time-gap 3.9505 LEAD-VIOL at-risk 0.060504
+  H_s1   headway 25.6057 time-gap 3.9498 LEAD-VIOL at-risk 0.058824
+  HS_s1  headway 25.6625 time-gap 3.951 LEAD-VIOL at-risk 0.058824
+  P10    headway 25.1162 time-gap 3.8316 LEAD-VIOL at-risk 0.080672
+[auto] stage 2: DOM_both False  KEEP_both True  SMOOTHER_both True
+[auto] OUTCOME: SMOOTHER, NOT DOMINANT  (final stage 2)  -> READ.json

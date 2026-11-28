@@ -1,0 +1,1 @@
+p1p_tp_lib.py (sha256 44b8797740af5cb01dfbdb37d35f4caba80783393c932536127824ca98ee8932) is a byte copy of the go/stay probe library trigger_probe/tp_lib.py (CRLF, as the original); kept on the dev box at E:/Projects/TanitAD-artifacts/dagland/motion_c/theory/wsp_read/p1p_tp_lib.py and not landed here because the lander requires LF in .py files.

@@ -1,0 +1,24 @@
+ZZPM START 2026-10-17T16:03:24Z from=a to=d dry=0 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/D4_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM a OK merge rc 0 (judged from artifacts, input+output re-hashed): kept=23 (K1=17 K2=4 K3=2) dropped=51 K1_share_eval=0.3696 all=0.3333 shares[K1=0.3696,K2=0.2857,K3=0.2222] out_sha=fd4ff8ea389f2135
+ZZPM_INFO a expected keep shares K1/K2/K3 = 0.37/0.29/0.22 (mini bank, PREREG_3C); yield guard: K1 < 0.20 STOPs
+ZZPM_INFO b gpu: state=idle n=0 procs=-
+ZZPM_INFO b launched (c'2) detached on the pod: 12 shards, CPU, <=300 twins/rank; polling every 2s
+ZZPM_INFO b (c'2) K1[n=17/17,ratio=1.0,dv=0.0,judged=True,pass=True] K2[n=4/4,ratio=1.0,dv=0.0,judged=False,pass=None] K3[n=2/2,ratio=1.0,dv=0.0,judged=False,pass=None]
+ZZPM b OK (c'2) PASS: per judged rank median path ratio >= 0.95 and median end-speed change >= -0.3 m/s
+ZZPM_INFO c gpu: state=idle n=0 procs=-
+ZZPM_INFO c launched (c'3) detached on the pod: verify for ranks [1 2 3] in parallel (--limit 1000), then the hold check; polling every 2s
+ZZPM_INFO c c3 k=1 state=judged a=True b=True c_reported=False n_checked=17 n_requested=17 n_error=0 digest_differs=1.0 spec_ok=1.0 harness_control=1.0 c_traj_closer=0.41 n_div_ge_0_5=15
+ZZPM_INFO c c3 k=2 state=judged a=True b=True c_reported=False n_checked=17 n_requested=17 n_error=0 digest_differs=1.0 spec_ok=1.0 harness_control=1.0 c_traj_closer=0.41 n_div_ge_0_5=15
+ZZPM_INFO c c3 k=3 state=judged a=True b=True c_reported=False n_checked=17 n_requested=17 n_error=0 digest_differs=1.0 spec_ok=1.0 harness_control=1.0 c_traj_closer=0.41 n_div_ge_0_5=15
+ZZPM_INFO c c3hold state=ok detail=lane_rank_rows=23_route_hold_step0=23
+ZZPM c OK (c'3) PASS: D7 (a),(b) hold for ranks [1 2 3]; (c) reported only; ZZTWIN_HOLD_OK lane_rank_rows=23_route_hold_step0=23
+ZZPM c ZZTWIN_HOLD_OK lane_rank_rows=23_route_hold_step0=23
+ZZPM_INFO d plan: state=plan_ok rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=-
+ZZPM_INFO d launched the parts placement (mode=copy, 23 files, 3956 bytes if copied; ~0 bytes if hard-linked)
+ZZPM_INFO d apply: rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=- state=ok linked=0 copied=23 errors=0 err_first=- dst_missing_after=0 mode=copy logged_parts_in_dst=224 twin_parts_in_dst=23 extras_in_dst=0 wall_s=0.1
+ZZPM_INFO d P6's D7 acceptance K=1: ZZD7_DISTINCT_OK k=1 sampled=17 differ=17 frac=1.0
+ZZPM_INFO d P6's D7 acceptance K=2: ZZD7_DISTINCT_OK k=2 sampled=4 differ=4 frac=1.0
+ZZPM_INFO d P6's D7 acceptance K=3: ZZD7_DISTINCT_OK k=3 sampled=2 differ=2 frac=1.0
+ZZPM d OK kept twins' parts placed (23 distinct, mode=copy, present=23, 0 missing, 0 conflicts) and P6's D7 acceptance passes for ranks [1 2 3]
+ZZPM DONE result=OK through=d exit=0 dry=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/D4_run

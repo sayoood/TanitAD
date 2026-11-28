@@ -1,0 +1,199 @@
+original fp_forward.py md5 82bf21514f919ee4eafab72690004e34; variant sha256 218b115a17ce5062; irep_tool sha256 e4253e57d823d0bf; 29 checks, 10 RED mutations
+fixture built: _tmp_prwl1vho
+  PASS  variant:original_is_the_pinned_free_point_file  [0s]
+  PASS  variant:shipped_file_is_regenerated_from_the_original_by_make_variant  [0s]
+  PASS  variant:diff_is_a_pure_addition_and_the_default_function_body_is_verbatim  [0s]
+  PASS  identity:defaults_return_code_and_stdout_identical  [18s]
+      (original and variant npz: sha256 1e77fba49abad5b6..., 82746 bytes, 40 tokens, 7 arrays)
+  PASS  identity:defaults_file_byte_identical  [0s]
+  PASS  identity:defaults_arrays_and_meta_equal  [0s]
+  PASS  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]
+  PASS  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [9s]
+  PASS  batch_order:output_token_array_is_the_original_order  [18s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+      v_b8_s3/traj: aligned max |diff| 2.38e-07; nearest OTHER token's row 0.127 away (margin x5.33e+05)
+      v_b8_s3/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b8_s3/logits_R0d_B: aligned max |diff| 1.43e-06; nearest OTHER token's row 0.163 away (margin x1.14e+05)
+      v_b32_s5/traj: aligned max |diff| 4.77e-07; nearest OTHER token's row 0.127 away (margin x2.67e+05)
+      v_b32_s5/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b32_s5/logits_R0d_B: aligned max |diff| 1.91e-06; nearest OTHER token's row 0.163 away (margin x8.56e+04)
+  PASS  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]
+  PASS  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]
+  PASS  batch_order:a_bad_seed_is_refused  [10s]
+  PASS  chain:driver_writes_one_chunk_per_plan_entry_and_passes_the_options  [65s]
+  PASS  chain:driver_resumes_and_refuses_mixed_settings  [2s]
+  PASS  chain:serve_mode_the_pods_entry_point_matches_run_mode  [10s]
+  PASS  chain:expected_subcommand_is_the_workers_hash_and_refuses_a_wrong_key_or_update  [22s]
+  PASS  chain:fixture_has_signal_so_the_pipeline_has_something_to_carry  [0s]
+  PASS  guard:legit_pair_passes_and_the_value_is_independently_recomputed  [2s]
+  PASS  chain:the_file_passes_the_reader_build_uses  [0s]
+  PASS  guard:two_different_scorer_states_are_refused  [2s]
+  PASS  guard:identical_token_order_seeds_are_refused  [0s]
+  PASS  guard:unregistered_batch_sizes_are_refused  [0s]
+  PASS  guard:a_hash_other_than_the_independently_computed_one_is_refused  [2s]
+  PASS  guard:a_csv_scored_from_another_reads_seam_is_refused  [0s]
+  PASS  guard:a_failed_harness_status_or_a_wrong_token_count_is_refused  [1s]
+  PASS  guard:parses_the_real_harness_artifacts_of_the_free_point_dry_run  [0s]
+  PASS  real:i_rep_seam_step_reproduces_the_live_pickers_seam_bit_for_bit  [23s]
+unmutated suite: 29/29 checks green
+  PASS  identity:defaults_return_code_and_stdout_identical  [7s]
+      (original and variant npz: sha256 1e77fba49abad5b6..., 82746 bytes, 40 tokens, 7 arrays)
+  PASS  identity:defaults_file_byte_identical  [0s]
+  PASS  identity:defaults_arrays_and_meta_equal  [0s]
+  PASS  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]
+  FAIL  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [4s]   <- AssertionError: array traj differs after shuffle + restore at batch 1
+  PASS  batch_order:output_token_array_is_the_original_order  [6s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+  FAIL  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]   <- AssertionError: v_b8_s3/traj: row i of the batched read is 1.07 away from the batch-1 row of the SAME token (not float noise: misaligned or mis-batched)
+  PASS  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]
+  PASS  batch_order:a_bad_seed_is_refused  [3s]
+  RED  order_not_restored  ->  2 check(s): batch_order:rows_are_per_token_aligned_to_the_same_token_ids, identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [19s]
+  PASS  identity:defaults_return_code_and_stdout_identical  [7s]
+      (original and variant npz: sha256 1e77fba49abad5b6..., 82746 bytes, 40 tokens, 7 arrays)
+  PASS  identity:defaults_file_byte_identical  [0s]
+  PASS  identity:defaults_arrays_and_meta_equal  [0s]
+  PASS  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]
+  PASS  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [7s]
+  PASS  batch_order:output_token_array_is_the_original_order  [13s]
+  FAIL  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]   <- AssertionError: v_b8_s3: the model was called with batch sizes [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], expected [8, 8, 8, 8, 8]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+      v_b8_s3/traj: aligned max |diff| 0; nearest OTHER token's row 0.127 away (margin x1.27e+11)
+      v_b8_s3/logits_BASE: aligned max |diff| 0; nearest OTHER token's row 0.0107 away (margin x1.07e+10)
+      v_b8_s3/logits_R0d_B: aligned max |diff| 0; nearest OTHER token's row 0.163 away (margin x1.63e+11)
+      v_b32_s5/traj: aligned max |diff| 0; nearest OTHER token's row 0.127 away (margin x1.27e+11)
+      v_b32_s5/logits_BASE: aligned max |diff| 0; nearest OTHER token's row 0.0107 away (margin x1.07e+10)
+      v_b32_s5/logits_R0d_B: aligned max |diff| 0; nearest OTHER token's row 0.163 away (margin x1.63e+11)
+  PASS  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]
+  FAIL  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]   <- AssertionError: {'eval_batch': 8, 'token_order_seed': 3, 'n': 40, 'order_sha256': 'c4997def30d276453e422401cf38606abf2f65c7a20ee6cff7e68b1018c69e69', 'batch_size_counts': {'1': 40}, 'variant_of': 'navtestE/fp/fp_forward.py md5 82bf21514f919ee4eafab72690004e34 (irep/make_variant.py)'}
+  PASS  batch_order:a_bad_seed_is_refused  [6s]
+  RED  batch_option_ignored_but_still_reported  ->  2 check(s): batch_order:forward_ran_at_the_requested_batch_sizes, batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [32s]
+  PASS  identity:defaults_return_code_and_stdout_identical  [7s]
+      (original and variant npz: sha256 1e77fba49abad5b6..., 82746 bytes, 40 tokens, 7 arrays)
+  PASS  identity:defaults_file_byte_identical  [0s]
+  PASS  identity:defaults_arrays_and_meta_equal  [0s]
+  PASS  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]
+  FAIL  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [7s]   <- AssertionError: 
+  PASS  batch_order:output_token_array_is_the_original_order  [16s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  FAIL  batch_order:processing_order_is_the_seeded_permutation  [0s]   <- AssertionError: v_b8_s3: tokens were visited in order [0, 1, 2, 3, 4, 5, 6, 7]..., the seeded permutation starts [29, 16, 9, 27, 4, 18, 28, 38]
+      v_b8_s3/traj: aligned max |diff| 2.38e-07; nearest OTHER token's row 0.127 away (margin x5.33e+05)
+      v_b8_s3/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b8_s3/logits_R0d_B: aligned max |diff| 1.43e-06; nearest OTHER token's row 0.163 away (margin x1.14e+05)
+      v_b32_s5/traj: aligned max |diff| 4.77e-07; nearest OTHER token's row 0.127 away (margin x2.67e+05)
+      v_b32_s5/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b32_s5/logits_R0d_B: aligned max |diff| 1.91e-06; nearest OTHER token's row 0.163 away (margin x8.56e+04)
+  PASS  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]
+  FAIL  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]   <- AssertionError: the recorded order hash is not the hash of the seeded permutation
+  PASS  batch_order:a_bad_seed_is_refused  [7s]
+  RED  shuffle_ignored  ->  3 check(s): batch_order:meta_records_the_run_and_ic2_is_zero_per_token, batch_order:processing_order_is_the_seeded_permutation, identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [38s]
+  PASS  identity:defaults_return_code_and_stdout_identical  [9s]
+      (original and variant npz: sha256 1e77fba49abad5b6..., 82746 bytes, 40 tokens, 7 arrays)
+  PASS  identity:defaults_file_byte_identical  [0s]
+  PASS  identity:defaults_arrays_and_meta_equal  [0s]
+  PASS  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]
+  PASS  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [8s]
+  PASS  batch_order:output_token_array_is_the_original_order  [15s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+  FAIL  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]   <- AssertionError: v_b8_s3/traj: row i of the batched read is 0.000334 away from the batch-1 row of the SAME token (not float noise: misaligned or mis-batched)
+  PASS  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]
+  PASS  batch_order:a_bad_seed_is_refused  [7s]
+  RED  one_rig_for_the_whole_batch  ->  1 check(s): batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [39s]
+  PASS  identity:defaults_return_code_and_stdout_identical  [9s]
+  FAIL  identity:defaults_file_byte_identical  [0s]   <- AssertionError: original npz 1e77fba49abad5b6 != variant npz 6c7be6c079c060f5
+  FAIL  identity:defaults_arrays_and_meta_equal  [0s]   <- AssertionError: array logits_BASE differs
+  PASS  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]
+  PASS  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [8s]
+  PASS  batch_order:output_token_array_is_the_original_order  [12s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+      v_b8_s3/traj: aligned max |diff| 2.38e-07; nearest OTHER token's row 0.127 away (margin x5.33e+05)
+      v_b8_s3/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b8_s3/logits_R0d_B: aligned max |diff| 1.43e-06; nearest OTHER token's row 0.163 away (margin x1.14e+05)
+      v_b32_s5/traj: aligned max |diff| 4.77e-07; nearest OTHER token's row 0.127 away (margin x2.67e+05)
+      v_b32_s5/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b32_s5/logits_R0d_B: aligned max |diff| 1.91e-06; nearest OTHER token's row 0.163 away (margin x8.56e+04)
+  PASS  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]
+  PASS  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]
+  PASS  batch_order:a_bad_seed_is_refused  [7s]
+  RED  default_path_changed_output_perturbed  ->  2 check(s): identity:defaults_arrays_and_meta_equal, identity:defaults_file_byte_identical  [37s]
+  FAIL  identity:defaults_return_code_and_stdout_identical  [10s]   <- AssertionError: 
+--- original
+  25/40 tokens  0.00 s/token  ic2 max so far 0
+  40/40 tokens  0.00 s/token  ic2 max so far 0
+IC5 forward repeat: {"n": 4, "traj_max_abs": 0.0, "logits_BASE_max_abs": 0.0, "logits_R0d_B_max_abs": 0.0, "bit_identical": true}
+ZZFWD_OK 40 ic2_max 0 0s -> <OUT>
+
+--- variant
+  25/40 tokens 
+  FAIL  identity:defaults_file_byte_identical  [0s]   <- AssertionError: original npz 1e77fba49abad5b6 != variant npz 1c3a7887e66decb4
+  FAIL  identity:defaults_arrays_and_meta_equal  [0s]   <- AssertionError: array meta_json differs
+  FAIL  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]   <- AssertionError: ([1, 1, 1, 1, 1, 1], [22, 20, 25, 4, 10, 15])
+  PASS  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [6s]
+  PASS  batch_order:output_token_array_is_the_original_order  [13s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+      v_b8_s3/traj: aligned max |diff| 2.38e-07; nearest OTHER token's row 0.127 away (margin x5.33e+05)
+      v_b8_s3/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b8_s3/logits_R0d_B: aligned max |diff| 1.43e-06; nearest OTHER token's row 0.163 away (margin x1.14e+05)
+      v_b32_s5/traj: aligned max |diff| 4.77e-07; nearest OTHER token's row 0.127 away (margin x2.67e+05)
+      v_b32_s5/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b32_s5/logits_R0d_B: aligned max |diff| 1.91e-06; nearest OTHER token's row 0.163 away (margin x8.56e+04)
+  PASS  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]
+  PASS  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]
+  PASS  batch_order:a_bad_seed_is_refused  [8s]
+  RED  default_path_changed_default_seed_is_0  ->  4 check(s): identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order, identity:defaults_arrays_and_meta_equal, identity:defaults_file_byte_identical, identity:defaults_return_code_and_stdout_identical  [37s]
+  FAIL  identity:defaults_return_code_and_stdout_identical  [8s]   <- AssertionError: 
+--- original
+  25/40 tokens  0.00 s/token  ic2 max so far 0
+  40/40 tokens  0.00 s/token  ic2 max so far 0
+IC5 forward repeat: {"n": 4, "traj_max_abs": 0.0, "logits_BASE_max_abs": 0.0, "logits_R0d_B_max_abs": 0.0, "bit_identical": true}
+ZZFWD_OK 40 ic2_max 0 0s -> <OUT>
+
+--- variant
+  26/40 tokens 
+  FAIL  identity:defaults_file_byte_identical  [0s]   <- AssertionError: original npz 1e77fba49abad5b6 != variant npz 2b56fba26b7c0061
+  FAIL  identity:defaults_arrays_and_meta_equal  [0s]   <- AssertionError: array traj differs
+  FAIL  identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order  [0s]   <- AssertionError: ([2, 2, 2, 2, 2, 2], [0, 1, 2, 3, 4, 5])
+  PASS  identity:batch_1_with_a_shuffled_order_reproduces_the_original_bit_for_bit  [8s]
+  PASS  batch_order:output_token_array_is_the_original_order  [13s]
+  PASS  batch_order:forward_ran_at_the_requested_batch_sizes  [0s]
+  PASS  batch_order:processing_order_is_the_seeded_permutation  [0s]
+      v_b8_s3/traj: aligned max |diff| 2.38e-07; nearest OTHER token's row 0.127 away (margin x5.33e+05)
+      v_b8_s3/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b8_s3/logits_R0d_B: aligned max |diff| 1.43e-06; nearest OTHER token's row 0.163 away (margin x1.14e+05)
+      v_b32_s5/traj: aligned max |diff| 4.77e-07; nearest OTHER token's row 0.127 away (margin x2.67e+05)
+      v_b32_s5/logits_BASE: aligned max |diff| 8.94e-08; nearest OTHER token's row 0.0107 away (margin x1.19e+05)
+      v_b32_s5/logits_R0d_B: aligned max |diff| 1.91e-06; nearest OTHER token's row 0.163 away (margin x8.56e+04)
+  PASS  batch_order:rows_are_per_token_aligned_to_the_same_token_ids  [0s]
+  PASS  batch_order:meta_records_the_run_and_ic2_is_zero_per_token  [0s]
+  PASS  batch_order:a_bad_seed_is_refused  [7s]
+  RED  default_path_changed_default_batch_is_2  ->  4 check(s): identity:default_forward_calls_are_the_planners_batch_1_in_sorted_order, identity:defaults_arrays_and_meta_equal, identity:defaults_file_byte_identical, identity:defaults_return_code_and_stdout_identical  [36s]
+  PASS  guard:legit_pair_passes_and_the_value_is_independently_recomputed  [5s]
+  FAIL  guard:two_different_scorer_states_are_refused  [1s]   <- AssertionError: (0, '{"irep_abs_delta": 0.4974821006765353, "unit": "PDMS x100", "n_tokens": 40, "state": "R0d_B", "facts": {"n_tokens": 40, "settings": {"a": {"eval_batch": ["8"], "token_order_seed": ["1"]}, "b": {"eval_batch": ["32"], "token_order_seed": ["2"]}}, "logit_maxabs_a_vs_b": 6.233898162841797, "pick_ch
+  PASS  guard:identical_token_order_seeds_are_refused  [1s]
+  PASS  guard:unregistered_batch_sizes_are_refused  [0s]
+  PASS  guard:a_hash_other_than_the_independently_computed_one_is_refused  [2s]
+  PASS  guard:a_csv_scored_from_another_reads_seam_is_refused  [0s]
+  PASS  guard:a_failed_harness_status_or_a_wrong_token_count_is_refused  [1s]
+  RED  irep_from_two_different_states  ->  1 check(s): guard:two_different_scorer_states_are_refused  [11s]
+  PASS  guard:legit_pair_passes_and_the_value_is_independently_recomputed  [6s]
+  PASS  guard:two_different_scorer_states_are_refused  [0s]
+  FAIL  guard:identical_token_order_seeds_are_refused  [2s]   <- AssertionError: (0, '{"irep_abs_delta": 2.0182668723926867, "unit": "PDMS x100", "n_tokens": 40, "state": "R0d_B", "facts": {"n_tokens": 40, "settings": {"a": {"eval_batch": ["8"], "token_order_seed": ["1"]}, "b": {"eval_batch": ["32"], "token_order_seed": ["1"]}}, "logit_maxabs_a_vs_b": 0.569198727607727, "pick_ch
+  PASS  guard:unregistered_batch_sizes_are_refused  [1s]
+  PASS  guard:a_hash_other_than_the_independently_computed_one_is_refused  [1s]
+  PASS  guard:a_csv_scored_from_another_reads_seam_is_refused  [1s]
+  PASS  guard:a_failed_harness_status_or_a_wrong_token_count_is_refused  [2s]
+  RED  identical_seeds_accepted_both_layers_removed  ->  1 check(s): guard:identical_token_order_seeds_are_refused  [13s]
+  PASS  guard:legit_pair_passes_and_the_value_is_independently_recomputed  [5s]
+  PASS  guard:two_different_scorer_states_are_refused  [0s]
+  PASS  guard:identical_token_order_seeds_are_refused  [0s]
+  PASS  guard:unregistered_batch_sizes_are_refused  [1s]
+  FAIL  guard:a_hash_other_than_the_independently_computed_one_is_refused  [1s]   <- AssertionError: (0, '{"irep_abs_delta": 2.0182668723926867, "unit": "PDMS x100", "n_tokens": 40, "state": "R0d_B", "facts": {"n_tokens": 40, "settings": {"a": {"eval_batch": ["8"], "token_order_seed": ["1"]}, "b": {"eval_batch": ["32"], "token_order_seed": ["2"]}}, "logit_maxabs_a_vs_b": 0.569198727607727, "pick_ch
+  PASS  guard:a_csv_scored_from_another_reads_seam_is_refused  [1s]
+  PASS  guard:a_failed_harness_status_or_a_wrong_token_count_is_refused  [1s]
+  RED  expected_hash_not_compared  ->  1 check(s): guard:a_hash_other_than_the_independently_computed_one_is_refused  [10s]
+ZZTEST_PASS 11  (1 unmutated suite of 29 checks, 10 RED mutations, 3 read-only files unchanged)  total 466 s
+ZZEXIT rc=0 seconds=467

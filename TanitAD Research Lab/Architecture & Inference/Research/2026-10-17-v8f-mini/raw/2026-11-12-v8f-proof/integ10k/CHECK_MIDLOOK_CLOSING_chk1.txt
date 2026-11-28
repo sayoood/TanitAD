@@ -1,0 +1,38 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhqc.py 8732329b4476347d
+PASS A1 helper: closing read on the window ending at frame j + q (rows with e-4 < 0 or e past the clip are NaN), largest difference 0
+PASS A1b helper: the row at j = 34, q = 5 (frame 39, the last frame of the clip) is finite; j = 2, q = 5 (frame 7) is finite; the clip end rule: j = 38, q = 5 is NaN
+PASS planted wrong arm caught: helper read at frame j + q - 1
+PASS planted wrong arm caught: helper value scaled by ten
+PASS A1c helper: identical windows give identical values (rows 0 and 3), a row is independent of the others
+PASS A2 the refusal names RRd and admits RRc and RRh
+PASS A3 the reader branch of mid_looks takes RR, RRc, RRh
+PASS A4 closing of the later look is the reader read in RRh only (zeros otherwise)
+PASS A5 c_read is a key of the mid-look log (MID_FIELDS) and of the row
+PASS A6 the label forms log c_read as NaN
+PASS planted wrong arm caught: a text without the RRd refusal
+PASS A7 the new text (header, helper) and this check have none of the banned words -- []
+RUN p_RR10 wrapper=v8f_t1_eval_reader_rule_rzgfhq.py form=RR every=10 rc=0
+RUN n_RR10 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RR every=10 rc=0
+RUN p_RRc10 wrapper=v8f_t1_eval_reader_rule_rzgfhq.py form=RRc every=10 rc=0
+RUN n_RRc10 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RRc every=10 rc=0
+RUN p_RRh10 wrapper=v8f_t1_eval_reader_rule_rzgfhq.py form=RRh every=10 rc=0
+RUN n_RRh10 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RRh every=10 rc=0
+RUN p_RR5 wrapper=v8f_t1_eval_reader_rule_rzgfhq.py form=RR every=5 rc=0
+RUN n_RR5 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RR every=5 rc=0
+RUN p_RLc5 wrapper=v8f_t1_eval_reader_rule_rzgfhq.py form=RLc every=5 rc=0
+RUN n_RLc5 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RLc every=5 rc=0
+RUN n_RRc5 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RRc every=5 rc=0
+RUN n_RRh5 wrapper=v8f_t1_eval_reader_rule_rzgfhqc.py form=RRh every=5 rc=0
+PASS A RR --rule-every 10: dump, tick-file and rule-log arrays of the new wrapper equal the parent's, largest difference 0 (6 files) -- []
+PASS A RRc --rule-every 10: dump, tick-file and rule-log arrays of the new wrapper equal the parent's, largest difference 0 (6 files) -- []
+PASS A RRh --rule-every 10: dump, tick-file and rule-log arrays of the new wrapper equal the parent's, largest difference 0 (6 files) -- []
+PASS B RR --rule-every 5: dump, tick, rule-log and mid-look-log arrays equal the parent's, largest difference 0 (9 files); new keys of the new wrapper (not compared): {"mid-look log": ["c_read"]} -- []
+PASS B RLc --rule-every 5: dump, tick, rule-log and mid-look-log arrays equal the parent's, largest difference 0 (7 files); new keys of the new wrapper (not compared): {"mid-look log": ["c_read"]} -- []
+PASS C1 RRc later looks: c_src equals the label closing at (clip, frame j + q) on 32 present rows (largest difference 0, bar 1e-9), and is not 0 on 23 of them
+FAIL C2 RRh later looks: c_src equals the reader closing recomputed from the cache tokens at j + q on 32 present rows (largest difference 4.93e-06, bar 1e-06), and is not 0 on 32 of them; c_src equals the logged c_read, largest difference 0 (bar 0)
+PASS C3 RR later looks (control): c_src is exactly 0 on every row (81 rows, largest |c_src| 0)
+FAIL C4 c_read of the later-look log equals the reader closing recomputed from the cache tokens on the present rows: {"RR": [4.932284355163574e-06, 32, 32], "RRc": [4.932284355163574e-06, 32, 32], "RRh": [4.932284355163574e-06, 32, 32]} (largest difference, present rows, rows not 0; bar 1e-06)
+PASS planted wrong arm caught: the RR mid-look log (closing 0) read as if it were RRh -- largest difference 1.18
+PASS C5 label form RLc: c_read of the later-look log is NaN on every row (the label forms read no token)
+PASS D --rule-every 5 with form RRd is refused: non-zero return code 1, the text names RRd -- REFUSED: --rule-every below the replan interval is not available for the rule form RRd (its closing speed is a gap rate over an earlier read; the later looks carry none)
+ZZ CHECK-MIDLOOK-CLOSING FAIL C2 RRh later looks: c_src equals the reader closing recomputed from the cache tokens at j + q on 32 present rows (largest difference 4.93e-06, bar 1e-06), and is not 0 on 32 of them; c_src equals the logged c_read, largest difference 0 (bar 0); C4 c_read of the later-look log equals the reader closing recomputed from the cache tokens on the present rows: {"RR": [4.932284355163574e-06, 32, 32], "RRc": [4.932284355163574e-06, 32, 32], "RRh": [4.932284355163574e-06, 32, 32]} (largest difference, present rows, rows not 0; bar 1e-06)

@@ -1,0 +1,13 @@
+{
+ "evidence": "MEASURED: F:/TanitAD-scratch/strat1/navrbd/b3/logs/new1_test_v8f_navrbd_eval.log (16 passed), new2_test_v8f_navrbd_dagger.log (2 passed), mut_report_key.json. A mutation test PASSES when the mutated copy makes the named check raise AssertionError (RED).",
+ "mutations": [
+  {"arm": "delete the c13 arc subtraction in v8f_t1_eval_rbd.py (RBDWindowState._finish line)", "red_check": "check_c13", "test": "test_v8f_navrbd_eval.py::test_mutation_deleting_the_arc_subtraction_turns_the_c13_check_red", "result": "RED"},
+  {"arm": "hold c13 fixed (self.nav_rb0[C13] - 0.0)", "red_check": "check_c13", "test": "test_v8f_navrbd_eval.py::test_mutation_holding_c13_fixed_turns_the_c13_check_red", "result": "RED"},
+  {"arm": "drop the feat check in v8f_t1_eval_rbd.py (if a.nav_rb_feat != cfg_feat -> if False)", "red_check": "check_t1_feat_clause_alone + check_t1_refusals", "test": "test_v8f_navrbd_eval.py::test_mutation_dropping_the_feat_check_turns_the_refusal_checks_red", "result": "RED"},
+  {"arm": "drop the feat check in v8f_mini_eval_rbd.py (T0)", "red_check": "check_t0_refusals", "test": "test_v8f_navrbd_eval.py::test_mutation_dropping_the_feat_check_turns_the_refusal_checks_red", "result": "RED"},
+  {"arm": "drop the weight-width clause in v8f_t1_eval_rbd.py (G-GEN: 15-column weight, cfg without feat, flag state)", "red_check": "check_t1_refusals", "test": "test_v8f_navrbd_eval.py::test_mutation_dropping_the_width_clause_turns_the_g_gen_check_red", "result": "RED"},
+  {"arm": "NAV_RB_KEYS emptied (DAgger partition) with the 15-column channel", "red_check": "TR.dagger_probe", "test": "test_v8f_navrbd_dagger.py::test_dagger_probe_mutation_without_the_partition_is_red_for_the_wide_channel", "result": "RED"},
+  {"arm": "strat1_check.py reads the old report key navtext_nav_rbd_sha256 (item 1a)", "red_check": "rb_report_problems on B2's real report", "test": "b3/mut_report_key.py", "result": "RED (returns 'the nav_rbd report describes a different npz'); fixed checker returns []"}
+ ],
+ "stale_pin_patch": {"before_RED": ["test_strat1_navrb2_check.py::test_kinds_and_bases", "test_strat1_s1d.py::test_mutation_turns_a_check_red[kinds_drop_s1d]", "test_v8f_navrb2.py::test_z1_mutation_no_fork_rng_moves_the_global_stream", "test_v8f_navrb2.py::test_mutation_deleting_the_join_line_turns_the_selfcheck_red"], "after_GREEN": "24 + 19 + 29 passed", "logs": "b3/logs/pre_stale_*.log, post_stale_*.log"}
+}

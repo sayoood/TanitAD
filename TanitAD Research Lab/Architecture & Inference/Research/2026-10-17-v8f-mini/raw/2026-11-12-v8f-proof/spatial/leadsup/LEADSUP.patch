@@ -1,0 +1,926 @@
+diff --git a/stack/tanitad/models/v8f_mini.py b/stack/tanitad/models/v8f_mini.py
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -167,6 +167,16 @@
+ MOTION_CFG_DEFAULTS = {"wm_l1_residual": "off", "wm_l1_roll_k": 0, "w_wm_roll": 0.0, "wm_l1_diag": "off"}
+ #: TARGET config fields (EGOV, FUTTOK) and their defaults: the same rule as MOTION_CFG_DEFAULTS (recorded in a checkpoint cfg ONLY when they differ from the default; an absent key = the default)
+ TARGET_CFG_DEFAULTS = {"wm_l1_act": "acc_yaw", "wm_l1_futtok_k": 0, "w_wm_futtok": 0.0}
++LEAD_SUP_MODES = ("off", "on")                            # LEADSUP (--lead-sup): a supervised lead-vehicle head on the level-1 grid states of the last `lead_hist` frames (train-time label only; the driving path never reads it)
++LEAD_SUP_DETACH_MODES = ("off", "on")                     # LEADSUP (--lead-sup-detach): on = the head reads state.detach(): its term reaches no parameter outside the head (the zero control and the comparison arm)
++LEAD_SUP_GAP_SCALE_M = 50.0                               # LEADSUP: the gap output is gap / this [m]
++LEAD_SUP_CLOS_SCALE_MS = 10.0                             # LEADSUP: the closing-speed output is closing speed / this [m/s]
++LEAD_SUP_HUBER_GAP = 0.1                                  # LEADSUP: Huber delta in gap / 50 m units (= 5 m); the builder's choice, a module constant (LEADSUP_DEFS.md)
++LEAD_SUP_HUBER_CLOS = 0.2                                 # LEADSUP: Huber delta in closing / 10 m/s units (= 2 m/s); the builder's choice
++LEAD_SUP_FRAME_DIM = 64                                   # LEADSUP: per-frame linear width (640 -> 64)
++LEAD_SUP_HIDDEN = 128                                     # LEADSUP: hidden width of the read-out MLP (hist * 64 -> 128 -> 3)
++#: LEADSUP config fields and their defaults: recorded in a checkpoint cfg ONLY when they differ from the default (every earlier checkpoint keeps its key set; an absent key = the default)
++LEADSUP_CFG_DEFAULTS = {"lead_sup": "off", "w_lead_sup": 0.0, "lead_hist": 5, "lead_sup_detach": "off"}
+ WM_CELL_PRED_WIDTH = 128                                  # the cell predictor's token width (depth 2, 4 heads; PREREG_V8F_PROOF_ADD16 section 3)
+ L1PRED_CFG_FIELDS = ("wm_l1_pred",)                       # recorded in a checkpoint's cfg ONLY when wm_l1_pred is cell (every earlier checkpoint keeps its key set and loads bit for bit)
+ WM_UPPER_DIM = 128                                        # levels 2 and 3 of the WM stack keep this width whatever the level-1 state width is
+@@ -227,6 +237,10 @@
+     wm_l1_act: str = "acc_yaw"         # TARGET lever EGOV: acc_yaw | speed (level-1 action gets a third channel: the logged ego speed of the start frame / WM_SPEED_SCALE)
+     wm_l1_futtok_k: int = 0            # TARGET lever FUTTOK: K, rollout length of the token-read term of level 1 (0 = off; else 2 <= K <= hmax - 1, needs wm_state grid)
+     w_wm_futtok: float = 0.0           # TARGET lever FUTTOK: W, the weight of futtok/L1 in the level-1 loss (0.0 exactly when K is 0; > 0 when K >= 2)
++    lead_sup: str = "off"              # LEADSUP: off | on (a supervised lead head on the level-1 grid states; needs wm_state grid)
++    w_lead_sup: float = 0.0            # LEADSUP: weight of the lead_sup term in the total (0.0 exactly when off; > 0 when on)
++    lead_hist: int = 5                 # LEADSUP: number of consecutive frames (ending at t) whose level-1 states the head reads
++    lead_sup_detach: str = "off"       # LEADSUP: on = the head reads state.detach() (needs lead_sup on)
+     wm_strides: tuple = (2, 2)
+     w_ckpt: float = 1.0
+     w_tac: float = 1.0
+@@ -331,6 +345,23 @@
+             raise ValueError("wm_l1_futtok_k > 0 needs wm_state grid: the token read is per cell, and a mean state has no cells")
+         if self.wm == "off" and (self.wm_l1_act != "acc_yaw" or self.wm_l1_futtok_k != 0):
+             raise ValueError("wm_l1_act / wm_l1_futtok_k need the world-model auxiliary (wm a or b): with wm off there is no level-1 predictor")
++        if self.lead_sup not in LEAD_SUP_MODES:
++            raise ValueError(f"lead_sup must be one of {LEAD_SUP_MODES}, got {self.lead_sup!r}")
++        if self.lead_sup_detach not in LEAD_SUP_DETACH_MODES:
++            raise ValueError(f"lead_sup_detach must be one of {LEAD_SUP_DETACH_MODES}, got {self.lead_sup_detach!r}")
++        if not (isinstance(self.lead_hist, int) and not isinstance(self.lead_hist, bool) and self.lead_hist >= 1):
++            raise ValueError(f"lead_hist must be an integer >= 1, got {self.lead_hist!r}")
++        if not (math.isfinite(self.w_lead_sup) and self.w_lead_sup >= 0.0):
++            raise ValueError(f"w_lead_sup must be a finite number >= 0, got {self.w_lead_sup!r}")
++        if self.lead_sup == "off" and (self.w_lead_sup != 0.0 or self.lead_sup_detach != "off" or self.lead_hist != 5):
++            raise ValueError("w_lead_sup / lead_sup_detach / lead_hist are set but lead_sup is off: a lever that is declared and does nothing")
++        if self.lead_sup == "on":
++            if not self.w_lead_sup > 0.0:
++                raise ValueError(f"lead_sup on with w_lead_sup {self.w_lead_sup}: a head with no loss weight is a lever that is declared and does nothing")
++            if self.wm == "off" or self.wm_state != "grid":
++                raise ValueError("lead_sup on needs the world-model auxiliary with wm_state grid: the head reads the level-1 grid states")
++            if self.lead_hist > self.hmax:
++                raise ValueError(f"lead_hist {self.lead_hist} does not fit the training sequence (hmax {self.hmax})")
+         if self.cons_absent not in ("mask", "zero"):
+             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
+         if self.code_mix not in CODE_MIX_MODES:
+@@ -747,6 +778,30 @@
+     return m
+ 
+ 
++def lead_sup_terms(out: Tensor, batch: dict, hist: int) -> dict:
++    """LEADSUP: the three parts and their sum, from the head output ``out`` [B, F - hist + 1, 3] (end frames t = hist - 1 .. F - 1) and the per-frame batch labels ``lead_pres`` / ``lead_gapm`` / ``lead_clos`` [B, F]
++    (``v8f_mini_data.lead_sup_label_arrays``; NaN = no label). A window end frame counts only when ALL ``hist`` frames behind it are real (``frame_ok``). BCE(presence, every counted frame) + Huber(gap / 50, frames
++    with a gap label) + Huber(closing / 10, frames with a closing label); each part is the mean over its own mask. Returns T entries: ``lead_sup`` (live), the parts and the counts (detached)."""
++    for k in ("lead_pres", "lead_gapm", "lead_clos"):
++        if k not in batch:
++            raise ValueError(f"lead_sup on but the batch carries no `{k}`: v8f_mini_data builds it when the dataset is made with lead_sup=True (the trainer does it from --lead-sup on)")
++    fe = out.shape[1]
++    sl = slice(hist - 1, hist - 1 + fe)
++    okw = batch["frame_ok"].unfold(1, hist, 1).all(-1)                                  # [B, fe]
++    pres, gap, clos = batch["lead_pres"][:, sl].float(), batch["lead_gapm"][:, sl].float(), batch["lead_clos"][:, sl].float()
++    m_p = okw.float()
++    m_g = (okw & torch.isfinite(gap)).float()
++    m_c = (okw & torch.isfinite(clos)).float()
++    bce = F.binary_cross_entropy_with_logits(out[..., 0], pres, reduction="none")
++    hg = F.huber_loss(out[..., 1], torch.nan_to_num(gap) / LEAD_SUP_GAP_SCALE_M, reduction="none", delta=LEAD_SUP_HUBER_GAP)
++    hc = F.huber_loss(out[..., 2], torch.nan_to_num(clos) / LEAD_SUP_CLOS_SCALE_MS, reduction="none", delta=LEAD_SUP_HUBER_CLOS)
++    t_b = (bce * m_p).sum() / m_p.sum().clamp_min(1.0)
++    t_g = (hg * m_g).sum() / m_g.sum().clamp_min(1.0)
++    t_c = (hc * m_c).sum() / m_c.sum().clamp_min(1.0)
++    return {"lead_sup": t_b + t_g + t_c, "lead_sup_bce": t_b.detach(), "lead_sup_gap": t_g.detach(), "lead_sup_clos": t_c.detach(),
++            "lead_sup_n_pres": m_p.sum().detach(), "lead_sup_n_gap": m_g.sum().detach(), "lead_sup_n_clos": m_c.sum().detach()}
++
++
+ def wm_frame_speed(batch_or_item) -> Tensor:
+     """TARGET lever EGOV: the logged ego speed [m/s] of every cached frame, [B, F] (or [F] for one item) -- the field ``wm_speed``, built in ``v8f_mini_data.ClipStore`` from the clip's
+     logged speed array (``d["v"]``, the cache's ``v``). ONE function for the trainer (``V8FMini.loss``) and the read tools: ``WMAux.scale_actions(act, wm_frame_speed(batch))``."""
+@@ -754,6 +809,25 @@
+         return batch_or_item["wm_speed"]
+     except KeyError:
+         raise KeyError("the batch carries no `wm_speed` (the logged ego speed of every cached frame); build it with v8f_mini_data.item / collate of this tree") from None
++
++
++class LeadSupHead(nn.Module):
++    """LEADSUP: reads the level-1 grid states [B, F, D] of `hist` consecutive frames: a per-frame linear D -> 64, the `hist` embeddings concatenated (hist * 64), then Linear(hist * 64, 128) - GELU - Linear(128, 3).
++    Output [B, F - hist + 1, 3] = (presence logit, gap / 50 m, closing speed / 10 m/s) at the END frames t = hist - 1 .. F - 1. Inputs are the states only (no ego, nav, limit, label): the labels enter the loss, never the head."""
++
++    def __init__(self, state_dim: int, hist: int):
++        super().__init__()
++        self.hist = hist
++        self.frame = nn.Linear(state_dim, LEAD_SUP_FRAME_DIM)
++        self.mlp = nn.Sequential(nn.Linear(hist * LEAD_SUP_FRAME_DIM, LEAD_SUP_HIDDEN), nn.GELU(), nn.Linear(LEAD_SUP_HIDDEN, 3))
++
++    def forward(self, z: Tensor) -> Tensor:
++        F_ = z.shape[1]
++        if F_ < self.hist:
++            raise ValueError(f"lead head needs at least {self.hist} frames, got {F_}")
++        e = self.frame(z)                                                       # [B, F, 64]
++        w = e.unfold(1, self.hist, 1).permute(0, 1, 3, 2)                       # [B, F - hist + 1, hist, 64]: window i = frames i .. i + hist - 1
++        return self.mlp(w.flatten(2)).float()
+ 
+ 
+ class WMAux(nn.Module):
+@@ -791,6 +865,10 @@
+         if cfg.wm_l1_futtok_k > 0:                                      # TARGET lever FUTTOK: built ONLY when on (no new key in the state dict when off); ONE linear map, the same weights for every cell
+             self.tok_head = nn.Linear(cfg.wm_cell_dim, cfg.d_feat)
+         self.tok_dim = cfg.d_feat
++        self.lead_head = None
++        self.lead_detach = cfg.lead_sup_detach == "on"
++        if cfg.lead_sup == "on":                                        # LEADSUP: built LAST in the WM (no draw before it moves; off = no module, no key in the state dict)
++            self.lead_head = LeadSupHead(cfg.n_tok * cfg.wm_cell_dim, cfg.lead_hist)
+ 
+     def z1(self, adapt: Tensor) -> Tensor:
+         """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
+@@ -888,7 +966,11 @@
+             kw = {"tok_head": self.tok_head, "tok_tgt": F.layer_norm(feats.detach().float(), (self.tok_dim,))}
+         if self.diag:                                                           # MOTION diagnostics: extra no-grad keys only, the terms and the total are the same
+             kw["diag"] = True
+-        return self.stack.loss(z1, a, **kw)
++        res = self.stack.loss(z1, a, **kw)
++        if self.lead_head is not None:                                          # LEADSUP: the head reads the SAME z1 the stack's loss used (detach on: state.detach())
++            res = dict(res)
++            res["lead_out"] = self.lead_head(z1.detach() if self.lead_detach else z1)
++        return res
+ 
+ 
+ class V8FMini(nn.Module):
+@@ -1292,6 +1374,8 @@
+                 T["wm_futtok"] = wm["futtok/L1"].detach()                   # TARGET lever FUTTOK: logged (and required by G-LIVE) whenever it is declared; it is inside T["wm"] already
+             if cfg.wm_l1_roll_k > 0:
+                 T["wm_roll"] = wm["roll/L1"].detach()                       # MOTION lever B: the rollout term, logged (and required by G-LIVE) whenever it is declared; it is inside T["wm"] already
++            if cfg.lead_sup == "on":                                        # LEADSUP: computed ONLY when the head is built (off = no new tensor op, no new T key = the base, bit for bit)
++                T.update(lead_sup_terms(wm["lead_out"], batch, cfg.lead_hist))
+             if cfg.wm_l1_diag == "on":                                      # MOTION diagnostics: logged only, detached, not in the total
+                 T["wm_pred_l1"], T["wm_copy_l1"] = wm["pred/L1"].detach(), wm["diag/copy_L1"]
+                 if cfg.wm_l1_roll_k > 0:
+@@ -1305,6 +1389,7 @@
+         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
+         total = total + cfg.w_lead * T["lead"] if cfg.lead_head == "on" else total             # PREREG_LEVELHEAD_A2: ONE line (a mutation deletes it); head off adds nothing: the tip's total
+         total = total + cfg.w_stop_aux * T["stop_aux"] if cfg.stop_aux == "on" else total       # PREREG_V8F_STOPPERC arm A: ONE line (a mutation deletes it); head off adds nothing: the tip's total
++        total = total + cfg.w_lead_sup * T["lead_sup"] if cfg.lead_sup == "on" else total       # LEADSUP: ONE line (a mutation deletes it); head off adds nothing: the base total
+         if cfg.consistency:
+             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
+         if self.wm is not None:
+@@ -1386,6 +1471,11 @@
+             lv["wm_l1_act"] = "speed" if int(self.wm.stack.act_embed[0].in_features) == 3 else "acc_yaw"       # TARGET lever EGOV: read from the BUILT level-1 action embedding (its input width: 3 channels = speed)
+             lv["wm_l1_futtok_k"] = int(self.wm.stack.cfg[0].futtok_k) if self.wm.tok_head is not None else 0         # TARGET lever FUTTOK: the K and the W the stack's loss reads, and only when the head is built
+             lv["w_wm_futtok"] = float(self.wm.stack.cfg[0].futtok_weight) if self.wm.tok_head is not None else 0.0
++            lh = self.wm.lead_head                                      # LEADSUP: read from the BUILT module (is there a head, its history width from its read-out layer's input, and whether the wiring detaches)
++            lv["lead_sup"] = "on" if lh is not None else "off"
++            lv["lead_hist"] = int(lh.mlp[0].in_features // LEAD_SUP_FRAME_DIM) if lh is not None else 5
++            lv["lead_sup_detach"] = "on" if (lh is not None and self.wm.lead_detach) else "off"
++            lv["w_lead_sup"] = float(self.cfg.w_lead_sup) if lh is not None else 0.0
+             lv["wm_cell_dim"] = int(self.wm.proj[1].out_features) if pr["location_sensitive"] else None
+             lv["wm_dim"] = int(self.wm.proj[1].out_features) if not pr["location_sensitive"] else None
+         if self.lvl_head is not None:                                      # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
+diff --git a/stack/scripts/v8f_mini_train.py b/stack/scripts/v8f_mini_train.py
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -70,6 +70,7 @@
+     # PREREG_V8F_PROOF_ADD12 (SPATIAL): argv -> make_config -> the BUILT config AND the BUILT model (built_levers: z1's measured width and location sensitivity, the stack's level-1 width and predictor width) -> declared_vs_built (bad_wm_state)
+     "wm_state": "lever:wm_state", "wm_cell_dim": "cfg:wm_cell_dim", "wm_dim": "cfg:wm_dim",
+     "wm_l1_residual": "lever:wm_l1_residual", "wm_l1_roll_k": "lever:wm_l1_roll_k", "w_wm_roll": "lever:w_wm_roll", "wm_l1_diag": "lever:wm_l1_diag",
++    "lead_sup": "lever:lead_sup", "w_lead_sup": "lever:w_lead_sup", "lead_hist": "lever:lead_hist", "lead_sup_detach": "lever:lead_sup_detach",     # LEADSUP: read back from the BUILT head (see bad_lead_sup)
+     "wm_l1_act": "lever:wm_l1_act", "wm_l1_futtok_k": "lever:wm_l1_futtok_k", "w_wm_futtok": "lever:w_wm_futtok",     # TARGET: EGOV from the BUILT level-1 action embedding width, FUTTOK from the built head and the stack's loss config, see bad_wm_state
+     # MOTION: read back from the BUILT predictor module / the stack's loss config, see bad_wm_state
+     "wm_l1_pred": "lever:wm_l1_pred",         # PREREG_V8F_PROOF_ADD16 (CELLPRED): read back from the BUILT level-1 predictor (class + per-cell embedding), see bad_wm_state
+@@ -152,6 +153,13 @@
+                     help="TARGET lever EGOV: level-1 action of the WM auxiliary. acc_yaw (default, every earlier arm bit for bit) = (acceleration, ch1); speed = + the logged ego speed of the start frame / WM_SPEED_SCALE (10 m/s) as a third channel")
+     ap.add_argument("--wm-l1-futtok-k", dest="wm_l1_futtok_k", type=int, default=0,
+                     help="TARGET lever FUTTOK: K, the rollout length of the token-read term (a per-cell linear head reads the rolled-out states of steps 1..K against the frozen cached token of the same cell at the same frame, layer-normalised, no gradient). 0 (default) = off; else 2 <= K <= hmax - 1, needs --wm-state grid and --w-wm-futtok > 0")
++    ap.add_argument("--lead-sup", dest="lead_sup", choices=M.LEAD_SUP_MODES, default="off",
++                    help="LEADSUP: on = a supervised lead-vehicle head (presence logit, gap / 50 m, closing speed / 10 m/s) reads the level-1 grid states of the last --lead-hist frames; trained with --w-lead-sup x "
++                         "(BCE + Huber + Huber) from privileged labels built from the label join (training only; the driving path never reads the head). Needs --wm-state grid and --w-lead-sup > 0. off (default) builds nothing")
++    ap.add_argument("--w-lead-sup", dest="w_lead_sup", type=float, default=0.0, help="LEADSUP: the weight of the lead_sup term in the total. 0.0 (default) with --lead-sup off; must be > 0 with it on (a head with no loss is refused)")
++    ap.add_argument("--lead-hist", dest="lead_hist", type=int, default=5, help="LEADSUP: consecutive frames (ending at t) whose level-1 states the head reads (default 5)")
++    ap.add_argument("--lead-sup-detach", dest="lead_sup_detach", choices=M.LEAD_SUP_DETACH_MODES, default="off",
++                    help="LEADSUP: on = the head reads state.detach(): the lead_sup term then reaches no parameter outside the head (the zero control / comparison arm). Needs --lead-sup on")
+     ap.add_argument("--w-wm-futtok", dest="w_wm_futtok", type=float, default=0.0, help="TARGET lever FUTTOK: W, the weight of the token-read term in the level-1 loss (0.0 exactly when --wm-l1-futtok-k is 0)")
+     ap.add_argument("--wm-dim", dest="wm_dim", type=int, default=128, help="mean state: level-1 state width (default 128; 640 = the capacity control of PREREG_V8F_PROOF_ADD12)")
+     ap.add_argument("--cons-absent", choices=("mask", "zero"), default=None,
+@@ -357,7 +365,7 @@
+     lv = declared_levers(a)
+     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+-                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_l1_pred=a.wm_l1_pred, wm_l1_residual=a.wm_l1_residual, wm_l1_roll_k=a.wm_l1_roll_k, w_wm_roll=a.w_wm_roll, wm_l1_diag=a.wm_l1_diag, wm_l1_act=a.wm_l1_act, wm_l1_futtok_k=a.wm_l1_futtok_k, w_wm_futtok=a.w_wm_futtok, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
++                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_l1_pred=a.wm_l1_pred, wm_l1_residual=a.wm_l1_residual, wm_l1_roll_k=a.wm_l1_roll_k, w_wm_roll=a.w_wm_roll, wm_l1_diag=a.wm_l1_diag, wm_l1_act=a.wm_l1_act, wm_l1_futtok_k=a.wm_l1_futtok_k, w_wm_futtok=a.w_wm_futtok, lead_sup=a.lead_sup, w_lead_sup=a.w_lead_sup, lead_hist=a.lead_hist, lead_sup_detach=a.lead_sup_detach, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
+@@ -698,7 +706,7 @@
+ #: the architecture-defining fields of V8FMiniConfig: a checkpoint may start a fine-tune only for a model of THIS shape and wiring (the training levers -- w_*, p_gt_*, code_mix, o_interface, cons_absent,
+ #: consistency, detach_upper -- may differ: a fine-tune moves them on purpose)
+ INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q", "depth_s", "depth_t", "depth_o", "nb", "res_scale_m", "navonly", "wm", "wm_dim", "wm_strides", "wm_beta", "wm_gamma",
+-                   "wm_state", "wm_cell_dim", "wm_l1_pred", "wm_l1_residual", "wm_l1_roll_k", "w_wm_roll", "wm_l1_act", "wm_l1_futtok_k", "w_wm_futtok",        # TARGET (EGOV / FUTTOK, same rule); MOTION: an absent key = the default (off / 0 / 0.0); # PREREG_V8F_PROOF_ADD12 / ADD16 (an absent wm_l1_pred is flat): a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
++                   "wm_state", "wm_cell_dim", "wm_l1_pred", "wm_l1_residual", "wm_l1_roll_k", "w_wm_roll", "wm_l1_act", "wm_l1_futtok_k", "w_wm_futtok", "lead_sup", "w_lead_sup", "lead_hist", "lead_sup_detach",        # TARGET (EGOV / FUTTOK, same rule); LEADSUP (an absent key = the default); MOTION: an absent key = the default (off / 0 / 0.0); # PREREG_V8F_PROOF_ADD12 / ADD16 (an absent wm_l1_pred is flat): a checkpoint without the keys is a mean-state one (defaults supplied below), so a grid argv cannot start from it nor the reverse
+                    "kin_mode", "max_age_t", "max_age_s",
+                    "o_interface")                      # PREREG_V8F_FLATDAG: a checkpoint trained under the cut must be fine-tuned under the cut (and a full one under full). The key is read only when the checkpoint HAS it:
+                                                        # checkpoints written before --o-interface existed (every M2b) carry none and load exactly as before. Without it a FLAT-DAG argv that forgets `--o-interface cut`
+@@ -718,7 +726,7 @@
+         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+     ck_cfg = dict(ck["cfg"])
+-    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16), ("wm_l1_pred", "flat"), *M.MOTION_CFG_DEFAULTS.items(), *M.TARGET_CFG_DEFAULTS.items()):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
++    for k_, d_ in (("wm_state", "mean"), ("wm_cell_dim", 16), ("wm_l1_pred", "flat"), *M.MOTION_CFG_DEFAULTS.items(), *M.TARGET_CFG_DEFAULTS.items(), *M.LEADSUP_CFG_DEFAULTS.items()):                 # PREREG_V8F_PROOF_ADD12: an absent key is the default (a mean checkpoint is written without them)
+         ck_cfg.setdefault(k_, d_)
+     if ck_cfg["wm_state"] == "mean":
+         ck_cfg["wm_cell_dim"] = getattr(cfg, "wm_cell_dim") if getattr(cfg, "wm_state") == "mean" else ck_cfg["wm_cell_dim"]     # the cell width of a mean state is unused: not a mismatch
+@@ -1033,13 +1041,50 @@
+     return bad
+ 
+ 
++def bad_lead_sup(a, cfg, model, data_info=None) -> list:
++    """LEADSUP, G-DVB: --lead-sup / --w-lead-sup / --lead-hist / --lead-sup-detach read back from the BUILT head and the BUILT dataset. Empty = pass. Refused: a head declared on that builds nothing (or built and not
++    declared), a head with no loss (weight 0 with it on), a weight / history / detach with the head off, a history width that is not the declared one (read from the head's read-out layer), a detach wiring that
++    is not the declared one, a non-grid state, the lora encoder (no cached tokens, no labels path), a dataset that does not carry the labels, and a label file whose hash is not recorded."""
++    bad = []
++    built = model.built_levers()
++    if not (math.isfinite(a.w_lead_sup) and a.w_lead_sup >= 0.0):
++        bad.append(f"w_lead_sup {a.w_lead_sup!r} is not a finite number >= 0")
++    if a.lead_sup == "off":
++        if a.w_lead_sup != 0.0 or a.lead_sup_detach != "off" or a.lead_hist != 5:
++            bad.append(f"lead_sup off with w_lead_sup {a.w_lead_sup} / lead_sup_detach {a.lead_sup_detach} / lead_hist {a.lead_hist}: a lever that is declared and does nothing")
++        if model.wm is not None and model.wm.lead_head is not None:
++            bad.append("lead_sup off declared but a lead head was built")
++        return bad
++    if not a.w_lead_sup > 0.0:
++        bad.append(f"lead_sup on declared but w_lead_sup is {a.w_lead_sup}: a head with no loss -- a lever that is declared and does nothing")
++    if model.wm is None or model.wm.lead_head is None:
++        bad.append("lead_sup on declared but no lead head was built")
++        return bad
++    for k, want in (("lead_sup", a.lead_sup), ("lead_hist", a.lead_hist), ("lead_sup_detach", a.lead_sup_detach), ("w_lead_sup", a.w_lead_sup)):
++        if built.get(k) != want:
++            bad.append(f"lever {k}: declared {want!r} but built {built.get(k)!r}")
++    if a.wm_state != "grid":
++        bad.append("lead_sup needs --wm-state grid")
++    if a.encoder == "lora":
++        bad.append("lead_sup is not built for --encoder lora (the labels ride the cached-token dataset)")
++    ll = (data_info or {}).get("lead_sup_labels")
++    if not (data_info or {}).get("ds_lead_sup") or not ll:
++        bad.append("lead_sup on declared but the built dataset carries no lead_sup labels")
++    else:
++        if not (isinstance(ll.get("sha256"), str) and len(ll["sha256"]) == 64):
++            bad.append(f"lead_sup labels: the sha256 of the label arrays is not recorded ({ll.get('sha256')!r})")
++        if ll.get("n_pres", 0) <= 0 or ll.get("n_gap", 0) <= 0 or ll.get("n_clos", 0) <= 0:
++            bad.append(f"lead_sup labels: presence {ll.get('n_pres')} / gap {ll.get('n_gap')} / closing {ll.get('n_clos')} labelled rows: a part of the head has nothing to learn from")
++    return bad
++
++
+ def bad_wm_state(a, cfg, model) -> list:
+     """PREREG_V8F_PROOF_ADD12: --wm-state / --wm-cell-dim / --wm-dim read back from the BUILT model. A declared lever the model does not build, or a built one nobody declared, is a launch blocker."""
+     bad = []
+     built = model.built_levers()
+     if model.wm is None:
+         d = build_parser()
+-        for f in ("wm_state", "wm_cell_dim", "wm_dim", "wm_l1_pred", "wm_l1_residual", "wm_l1_roll_k", "w_wm_roll", "wm_l1_diag", "wm_l1_act", "wm_l1_futtok_k", "w_wm_futtok"):
++        for f in ("wm_state", "wm_cell_dim", "wm_dim", "wm_l1_pred", "wm_l1_residual", "wm_l1_roll_k", "w_wm_roll", "wm_l1_diag", "wm_l1_act", "wm_l1_futtok_k", "w_wm_futtok", "lead_sup", "w_lead_sup", "lead_hist", "lead_sup_detach"):
+             if getattr(a, f) != d.get_default(f):
+                 bad.append(f"--{f.replace('_', '-')} {getattr(a, f)!r} declared but no WM auxiliary was built (wm off): a lever that is declared and builds nothing")
+         return bad
+@@ -1093,6 +1138,7 @@
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+     bad += bad_wm_state(a, cfg, model)                                                           # PREREG_V8F_PROOF_ADD12: --wm-state / --wm-cell-dim / --wm-dim read back from the BUILT model
+     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
++    bad += bad_lead_sup(a, cfg, model, data_info)                                                # LEADSUP: --lead-sup / --w-lead-sup / --lead-hist / --lead-sup-detach read back from the BUILT head and dataset
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+     bad += bad_stop_aux(a, model, data_info)                                                     # PREREG_V8F_STOPPERC: --stop-aux / --w-stop-aux / --stop-aux-extr read back from the BUILT model and the built camera arrays
+     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
+@@ -1240,6 +1286,8 @@
+         expect.add("wm_roll")                                            # MOTION lever B: a declared rollout term that never appears is a launch blocker
+     if cfg.wm_l1_futtok_k > 0:
+         expect.add("wm_futtok")                                          # TARGET lever FUTTOK: a declared token term that never appears is a launch blocker
++    if cfg.lead_sup == "on":
++        expect |= {"lead_sup", "lead_sup_bce", "lead_sup_gap", "lead_sup_clos"}      # LEADSUP: the term and its three parts must appear (finite) in the log
+     if cfg.level_head == "on":
+         expect.add("level")                                              # PREREG_V8F_LEVEL
+     if cfg.lead_head == "on":
+@@ -2609,6 +2657,8 @@
+         expect.add("wm_roll")                                            # MOTION lever B: a declared rollout term that never appears is a launch blocker
+     if cfg.wm_l1_futtok_k > 0:
+         expect.add("wm_futtok")                                          # TARGET lever FUTTOK: a declared token term that never appears is a launch blocker
++    if cfg.lead_sup == "on":
++        expect |= {"lead_sup", "lead_sup_bce", "lead_sup_gap", "lead_sup_clos"}      # LEADSUP: the term and its three parts must appear (finite) in the log
+     if cfg.level_head == "on":
+         expect.add("level")                                              # PREREG_V8F_LEVEL
+     if cfg.lead_head == "on":
+@@ -2645,6 +2695,8 @@
+         root = os.path.join(a.out, "_synthetic")
+         w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=a.seed)
+         J = D.load_join(os.path.join(root, "join_train.npz"))
++        if a.lead_sup == "on":                                       # LEADSUP: the synthetic join carries no lead track; this opt-in fills one (selfcheck only; a real launch never passes --synthetic)
++            D.synthetic_lead_labels(J, a.seed)
+         cache = root
+         clips_all = w["names"]["train"]
+     else:
+@@ -2766,7 +2818,10 @@
+                                    window_start=cfg.window_start)
+     else:
+         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+-                              window_start=cfg.window_start)
++                              window_start=cfg.window_start, lead_sup=cfg.lead_sup == "on")
++    info["ds_lead_sup"] = bool(getattr(ds, "lead_sup", False))      # LEADSUP: read back from the BUILT dataset (G-DVB compares it)
++    if info["ds_lead_sup"]:
++        info["lead_sup_labels"] = {k: ds.lead_sup_labels[k] for k in ("sha256", "n_rows", "n_pres", "n_gap", "n_clos")}
+     info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+     LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
+     SA = make_stop_aux(a, cfg, J, clips, info)                      # PREREG_V8F_STOPPERC arm A: the per-clip camera arrays (None with the head off: nothing read, nothing built)
+@@ -2812,6 +2867,12 @@
+             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
+         if cfg.stop_aux == "on":                         # PREREG_V8F_STOPPERC arm A: as above (the stop labels, from the probe's own NOW-frame label and clip camera)
+             probe["stop_cell"], probe["stop_pos"], probe["stop_has"] = stop_aux_stage(probe, SA)
++        if cfg.lead_sup == "on":                         # LEADSUP: the number of frames with a label that the G-LIVE probe batch carries (counted like the loss counts: all `lead_hist` frames behind the end frame are real)
++            okw = probe["frame_ok"].unfold(1, cfg.lead_hist, 1).all(-1)
++            sl = slice(cfg.lead_hist - 1, None)
++            info["lead_sup_n_labelled"] = int((okw & torch.isfinite(probe["lead_gapm"][:, sl])).sum())
++            info["lead_sup_n_presence"] = int(okw.sum())
++            info["lead_sup_n_closing"] = int((okw & torch.isfinite(probe["lead_clos"][:, sl])).sum())
+         live = live_check(model.cpu(), probe, cfg)
+     else:
+         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+@@ -2953,7 +3014,7 @@
+ 
+     def save(final=False):
+         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
+-                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS) and (cfg.wm_l1_pred == "cell" or k not in M.L1PRED_CFG_FIELDS) and (k not in M.MOTION_CFG_DEFAULTS or v != M.MOTION_CFG_DEFAULTS[k]) and (k not in M.TARGET_CFG_DEFAULTS or v != M.TARGET_CFG_DEFAULTS[k])}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
++                "argv_sha": argv_sha(argv), "cfg": {k: v for k, v in cfg.__dict__.items() if (cfg.stop_aux == "on" or k not in M.STOPAUX_CFG_FIELDS) and (cfg.wm_state == "grid" or k not in M.SPATIAL_CFG_FIELDS) and (cfg.wm_l1_pred == "cell" or k not in M.L1PRED_CFG_FIELDS) and (k not in M.MOTION_CFG_DEFAULTS or v != M.MOTION_CFG_DEFAULTS[k]) and (k not in M.TARGET_CFG_DEFAULTS or v != M.TARGET_CFG_DEFAULTS[k]) and (k not in M.LEADSUP_CFG_DEFAULTS or v != M.LEADSUP_CFG_DEFAULTS[k])}, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
+                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
+                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
+                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
+diff --git a/stack/tanitad/data/v8f_mini_data.py b/stack/tanitad/data/v8f_mini_data.py
+--- a/stack/tanitad/data/v8f_mini_data.py
++++ b/stack/tanitad/data/v8f_mini_data.py
+@@ -301,6 +301,77 @@
+     return {"has": has, "near": near, "y": y, "off": off, "n_rows": N, "n_has": int(has.sum()), "n_near": int(near.sum()), "n_clips": int(len(off)), "n_clips_with_labels": n_with}
+ 
+ 
++#: LEADSUP label rule (the rule of spatial/objslot ``hist_run`` / ``ls_slope`` and of S0E E3): gap labels are the join's ``lead_gap`` where ``lead_valid`` is 1 and 0 <= gap <= 60 m
++LEAD_SUP_GAP_MAX_M = 60.0
++LEAD_SUP_STEP_MAX_M = 3.0          # a 0.2 s step of the gap above this breaks the run (another lead)
++LEAD_SUP_RUN_MAX = 5               # at most this many trailing frames enter the slope
++LEAD_SUP_RUN_MIN = 3               # fewer labelled frames: no closing label
++LEAD_SUP_DT = 0.2                  # s between two cache steps
++
++
++def lead_sup_label_arrays(J: dict) -> dict:
++    """LEADSUP: per-join-row labels, ROW-ALIGNED to ``J`` (row ``off[c] + j`` = cache step ``j`` of clip ``c``, 0.2 s apart). Computed ONCE from the join arrays (no extra file): privileged, training only.
++
++      ``pres`` [N] float32  1.0 where ``lead_valid`` is 1, else 0.0 (every row has a presence label)
++      ``gap``  [N] float32  ``lead_gap`` [m] where ``lead_valid`` == 1, the gap is finite and 0 <= gap <= 60 m; else NaN
++      ``clos`` [N] float32  closing speed [m/s] = least-squares slope of the gap over the trailing run of labelled frames ending at this row (0.2 s apart), at most 5 frames, a step above 3.0 m breaks the run
++                            (the run never crosses a clip), at least 3 frames; else NaN. Positive = the gap opens.
++    plus ``sha256`` of the three arrays (bytes, in this order) and the counts ``n_rows``, ``n_pres``, ``n_gap``, ``n_clos``."""
++    import hashlib
++    off, n = np.asarray(J["off"], np.int64), np.asarray(J["n"], np.int64)
++    N = int(n.sum())
++    lv = np.asarray(J["lead_valid"])[:N] == 1
++    g = np.asarray(J["lead_gap"], np.float64)[:N]
++    ok = lv & np.isfinite(g) & (g >= 0.0) & (g <= LEAD_SUP_GAP_MAX_M)
++    gap = np.where(ok, g, np.nan)
++    first = np.zeros(N, bool)                                       # first row of each clip: its predecessor belongs to another clip
++    first[off[n > 0]] = True
++    s = np.zeros(N, bool)                                           # s[r]: row r links to row r - 1 (both labelled, same clip, a step within the bound)
++    s[1:] = ok[1:] & ok[:-1] & ~first[1:] & (np.abs(g[1:] - g[:-1]) <= LEAD_SUP_STEP_MAX_M)
++    alive = ok.copy()
++    run = ok.astype(np.int64)
++    for k in range(1, LEAD_SUP_RUN_MAX):                            # frame r - k is in the run iff s[r], s[r-1], ..., s[r-k+1] all hold
++        sh = np.zeros(N, bool)
++        sh[k - 1:] = s[:N - (k - 1)]
++        alive = alive & sh
++        run += alive
++    clos = np.full(N, np.nan, np.float64)
++    r_all = np.arange(N)
++    for m in range(LEAD_SUP_RUN_MIN, LEAD_SUP_RUN_MAX + 1):
++        r = r_all[run == m]
++        if len(r) == 0:
++            continue
++        G = np.stack([g[r - (m - 1) + j] for j in range(m)], 1)    # [n, m], oldest first
++        tt = np.arange(m, dtype=np.float64) * LEAD_SUP_DT
++        tb = tt.mean()
++        clos[r] = ((tt - tb)[None, :] * (G - G.mean(1, keepdims=True))).sum(1) / ((tt - tb) ** 2).sum()
++    pres = lv.astype(np.float32)
++    gap32, clos32 = gap.astype(np.float32), clos.astype(np.float32)
++    h = hashlib.sha256()
++    for a_ in (pres, gap32, clos32):
++        h.update(np.ascontiguousarray(a_).tobytes())
++    return {"pres": pres, "gap": gap32, "clos": clos32, "off": off, "sha256": h.hexdigest(), "n_rows": N, "n_pres": int(lv.sum()),
++            "n_gap": int(np.isfinite(gap32).sum()), "n_clos": int(np.isfinite(clos32).sum())}
++
++
++def synthetic_lead_labels(J: dict, seed: int = 0) -> dict:
++    """LEADSUP, SYNTHETIC worlds only (tests and the trainer's --synthetic selfcheck with --lead-sup on): fills ``J["lead_valid"]`` / ``J["lead_gap"]`` IN PLACE with a lead that is present in two blocks per clip
++    (rows 6..34 and 40..end, a jump between them = a lead change), a gap that random-walks around 25 m (steps N(0, 0.4 m)), NaN while absent. Deterministic in ``seed``. Returns J."""
++    rng = np.random.default_rng(seed + 7)
++    for ci in range(len(J["off"])):
++        o, n = int(J["off"][ci]), int(J["n"][ci])
++        pres = np.zeros(n, bool)
++        pres[6:35] = True
++        pres[40:] = True
++        g = np.empty(n)
++        g[:] = 25.0 + np.cumsum(rng.normal(0.0, 0.4, n))
++        g[40:] += 9.0                                               # a second lead appears with a jump
++        g = np.clip(g, 1.0, 59.0)
++        J["lead_valid"][o:o + n] = pres.astype(J["lead_valid"].dtype)
++        J["lead_gap"][o:o + n] = np.where(pres, g, np.nan).astype(J["lead_gap"].dtype)
++    return J
++
++
+ # ------------------------------------------------------------------------------------------------ kinematic floors
+ KIN_MODES = ("steer", "yaw")
+ #: ``floors_kin`` action unit the third kinematic channel is integrated in, per mode
+@@ -556,8 +627,10 @@
+     It is the SAME number ``train_windows(start=...)`` starts each clip at, so the window list and the held-age clamp move together."""
+ 
+     def __init__(self, store: ClipStore, J: dict, windows, *, hist: int = 4, hmax: int = 10, max_age_t: int = 2,
+-                 max_age_s: int = 6, window_start=None):
++                 max_age_s: int = 6, window_start=None, lead_sup: bool = False):
+         self.store, self.J, self.windows = store, J, list(windows)
++        self.lead_sup = bool(lead_sup)                              # LEADSUP: True adds the per-frame labels lead_pres / lead_gapm / lead_clos to every item (False = today's item, key for key)
++        self.lead_sup_labels = lead_sup_label_arrays(J) if self.lead_sup else None
+         self.hist, self.hmax = int(hist), int(hmax)
+         self.window_start = effective_window_start(self.hist, window_start)
+         self.max_age_t, self.max_age_s = int(max_age_t), int(max_age_s)
+@@ -594,6 +667,10 @@
+               "lead_gap_h": J["lead_gap"][self.row(ci, 0) + np.minimum(np.arange(t + 1, t + 1 + HORIZON), T - 1)],
+               "a_t": a_t, "a_s": a_s, "t": t, "ci": ci, "T": T,
+               "lab": _lab_pack(J, rows[0]), "lab_t": _lab_pack(J, rows[1]), "lab_s": _lab_pack(J, rows[2])}
++        if self.lead_sup:                                        # LEADSUP: the labels of the F frames of the window (join rows off + idc; the clamped frames before the clip start are masked by frame_ok)
++            LS = self.lead_sup_labels
++            rr = int(self.J["off"][ci]) + idc
++            it["lead_pres"], it["lead_gapm"], it["lead_clos"] = LS["pres"][rr], LS["gap"][rr], LS["clos"][rr]
+         # geometry between the tick frames and NOW (measured odometry): used to re-express held outputs in the NOW frame
+         it["pose_now"] = d["pose"][t][:3].astype(np.float32)
+         it["pose_t"] = d["pose"][t - a_t][:3].astype(np.float32)
+@@ -639,6 +716,9 @@
+     for k in ("p10f", "act", "wm_speed", "nav", "pose", "limit", "gt", "base", "kin3", "s_h", "lead_gap_h", "pose_now", "pose_t",
+               "pose_s"):
+         out[k] = stack(k, torch.float32)
++    for k in ("lead_pres", "lead_gapm", "lead_clos"):         # LEADSUP: present only when the dataset was made with lead_sup=True (NaN = no label)
++        if k in items[0]:
++            out[k] = stack(k, torch.float32)
+     out["p10_t"] = torch.as_tensor(np.stack([np.nan_to_num(it["p10_t"]) for it in items]), dtype=torch.float32)
+     for k in ("a_t", "a_s", "t", "ci"):
+         out[k] = torch.as_tensor([it[k] for it in items], dtype=torch.long)
+diff --git a/stack/tests/test_v8f_lead_sup.py b/stack/tests/test_v8f_lead_sup.py
+new file mode 100644
+--- /dev/null
++++ b/stack/tests/test_v8f_lead_sup.py
+@@ -0,0 +1,359 @@
++"""LEADSUP (supervised lead-vehicle head on the level-1 grid states): the labels, the batch, the head, the term, its reach (and the exact-zero controls), the gate, the checkpoint and the read hook.
++
++Everything runs on tiny models (d 32) on CPU. A test that the mechanism WORKS is not evidence that it RUNS: the reach tests trace the flag to the term and the term to the weights, with a control that must read EXACTLY 0.0.
++Run with the tree's own stack on the path (the helper below inserts it)."""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
++GRID = ["--wm-state", "grid", "--wm-cell-dim", "16"]
++LS = GRID + ["--lead-sup", "on", "--w-lead-sup", "1.0"]
++
++
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("leadsup")
++    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    store = D.ClipStore(root, "train", lru=8)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    ds0 = D.V8FMiniWindows(store, J, wins, hmax=16)
++    idx = np.random.default_rng(0).choice(len(wins), 8, replace=False)
++    default_batch = D.collate([ds0.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    D.synthetic_lead_labels(J, 0)
++    ds = D.V8FMiniWindows(store, J, wins, hmax=16, lead_sup=True)
++    batch = D.collate([ds.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    return {"batch": batch, "default_batch": default_batch, "J": J, "ds": ds, "wins": wins, "idx": idx}
++
++
++def _args(extra=()):
++    return TR.build_parser().parse_args(["--out", "x", "--d", "32", "--n-q", "2", "--arm", "M2b", *extra])
++
++
++def _built(world, extra=(), **over):
++    a = _args(extra)
++    c0 = TR.make_config(a)
++    keep = {k: v for k, v in TINY.items() if k not in ("nb", "n_q", "d", "ff")}
++    cfg = M.V8FMiniConfig(**{**c0.__dict__, **keep, "d": 32, "ff": 64, **over})
++    mu, sd = M.cons_stats(world["J"])
++    torch.manual_seed(0)
++    model = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
++    return a, cfg, model
++
++
++def _terms(model, batch, **over):
++    b = dict(batch)
++    b.update(over)
++    return model.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(11))["terms"]
++
++
++def _gsum(ps):
++    return float(sum(float(p.grad.abs().sum()) for p in ps if p.grad is not None))
++
++
++def _outside_head(model):
++    return [n for n, p in model.named_parameters() if p.grad is not None and float(p.grad.abs().sum()) > 0 and not n.startswith("wm.lead_head.")]
++
++
++# ------------------------------------------------------------------------------------------------ labels
++def _ref_clos(off, n, valid, gap):
++    ok = (valid == 1) & np.isfinite(gap) & (gap >= 0) & (gap <= 60)
++    out = np.full(int(sum(n)), np.nan)
++    for c in range(len(off)):
++        for r in range(off[c], off[c] + n[c]):
++            if not ok[r]:
++                continue
++            idx, j = [r], r - 1
++            while j >= off[c] and len(idx) < 5 and ok[j] and abs(gap[j + 1] - gap[j]) <= 3.0:
++                idx.append(j)
++                j -= 1
++            if len(idx) < 3:
++                continue
++            idx = idx[::-1]
++            t = np.arange(len(idx)) * 0.2
++            out[r] = ((t - t.mean()) * (gap[idx] - gap[idx].mean())).sum() / ((t - t.mean()) ** 2).sum()
++    return np.where(ok, gap, np.nan), out
++
++
++def test_label_rule_equals_the_literal_hist_run_ls_slope_rule():
++    rng = np.random.default_rng(5)
++    n = np.array([60, 45, 7, 80])
++    off = np.concatenate([[0], np.cumsum(n)[:-1]])
++    N = int(n.sum())
++    valid = (rng.random(N) < 0.8).astype(np.int8)
++    gap = 20 + np.cumsum(rng.normal(0, 1.5, N))
++    gap[rng.random(N) < 0.05] += 8.0
++    gap[rng.random(N) < 0.03] = np.nan
++    gap[rng.random(N) < 0.02] = 75.0
++    gap[rng.random(N) < 0.02] = -1.0
++    gap = gap.astype(np.float32)
++    L = D.lead_sup_label_arrays({"off": off, "n": n, "lead_valid": valid, "lead_gap": gap})
++    rg, rc = _ref_clos(off, n, valid, gap.astype(np.float64))
++    assert np.array_equal(np.isfinite(L["gap"]), np.isfinite(rg)) and np.allclose(L["gap"][np.isfinite(rg)], rg[np.isfinite(rg)])
++    assert np.array_equal(np.isfinite(L["clos"]), np.isfinite(rc)) and int(np.isfinite(rc).sum()) > 50
++    assert np.abs(L["clos"][np.isfinite(rc)] - rc[np.isfinite(rc)]).max() < 1e-4
++    assert np.array_equal(L["pres"], valid.astype(np.float32))
++    assert len(L["sha256"]) == 64 and L["n_clos"] == int(np.isfinite(rc).sum())
++
++
++def test_planted_series_give_the_exact_slope_and_the_run_breaks_where_it_must():
++    off, n = np.array([0, 12, 18]), np.array([12, 6, 10])
++    g = np.concatenate([30.0 - 0.4 * np.arange(12), 10.0 + 0.2 * np.arange(6), 40.0 - 0.1 * np.arange(5), 50.0 - 0.1 * np.arange(5)])
++    g[23] = g[22] - 2.9
++    g[24] = g[23] - 3.1                                                       # above 3.0 m: breaks the run
++    c = D.lead_sup_label_arrays({"off": off, "n": n, "lead_valid": np.ones(28, np.int8), "lead_gap": g.astype(np.float32)})["clos"]
++    assert np.isnan(c[:2]).all() and np.allclose(c[2:12], -2.0, atol=1e-5)    # fewer than 3 frames: no label; a run capped at 5 frames keeps the exact slope of a line
++    assert np.isnan(c[12:14]).all() and np.allclose(c[14:18], 1.0, atol=1e-5)  # a clip start breaks the run
++    assert np.isnan(c[18:20]).all() and np.allclose(c[20:23], -0.5, atol=1e-5)
++    assert np.isnan(c[24])                                                    # the 3.1 m step: a run of one frame
++
++
++def test_the_label_file_is_not_read_from_the_lead_head_arrays_and_gap_range_is_0_to_60():
++    off, n = np.array([0]), np.array([6])
++    L = D.lead_sup_label_arrays({"off": off, "n": n, "lead_valid": np.array([1, 1, 1, 0, 1, 1], np.int8), "lead_gap": np.array([0.0, 60.0, 61.0, 20.0, np.nan, -0.5], np.float32)})
++    assert list(np.isfinite(L["gap"])) == [True, True, False, False, False, False]
++    assert list(L["pres"]) == [1, 1, 1, 0, 1, 1]
++
++
++# ------------------------------------------------------------------------------------------------ the batch
++def test_batch_carries_the_labels_only_when_the_dataset_is_made_with_lead_sup(world):
++    b, d = world["batch"], world["default_batch"]
++    assert sorted(set(b) - set(d)) == ["lead_clos", "lead_gapm", "lead_pres"] and not (set(d) - set(b))
++    for k in ("lead_pres", "lead_gapm", "lead_clos"):
++        assert tuple(b[k].shape) == (8, 16) and b[k].dtype == torch.float32
++    assert int(torch.isfinite(b["lead_gapm"]).sum()) > 0 and int(torch.isfinite(b["lead_clos"]).sum()) > 0
++    for k in d:                                                               # every other key is the default batch's, value for value
++        if torch.is_tensor(d[k]):
++            assert torch.equal(torch.nan_to_num(d[k].float()), torch.nan_to_num(b[k].float())) or k == "lead_gap_h"
++
++
++def test_synthetic_lead_labels_are_deterministic():
++    root_J = lambda: {"off": np.array([0, 30]), "n": np.array([30, 30]), "lead_valid": np.zeros(60, np.int8), "lead_gap": np.full(60, np.nan, np.float32)}   # noqa: E731
++    a, b = D.synthetic_lead_labels(root_J(), 3), D.synthetic_lead_labels(root_J(), 3)
++    assert np.array_equal(a["lead_gap"], b["lead_gap"], equal_nan=True) and int(a["lead_valid"].sum()) > 0
++
++
++# ------------------------------------------------------------------------------------------------ flags, config, defaults
++def test_flags_have_entries_defaults_and_the_config_refuses_what_it_cannot_build():
++    d = TR.build_parser()
++    assert (d.get_default("lead_sup"), d.get_default("w_lead_sup"), d.get_default("lead_hist"), d.get_default("lead_sup_detach")) == ("off", 0.0, 5, "off")
++    for f in ("lead_sup", "w_lead_sup", "lead_hist", "lead_sup_detach"):
++        assert TR.FLAG_CHECKS[f] == f"lever:{f}" and f in TR.INIT_CKPT_MATCH
++    mk = lambda **kw: M.V8FMiniConfig(wm="b", hmax=16, wm_state="grid", **kw)       # noqa: E731
++    mk()
++    mk(lead_sup="on", w_lead_sup=1.0)
++    mk(lead_sup="on", w_lead_sup=0.5, lead_hist=3, lead_sup_detach="on")
++    for kw, pat in (({"lead_sup": "on"}, "no loss weight"), ({"lead_sup": "on", "w_lead_sup": float("nan")}, "finite"), ({"w_lead_sup": 1.0}, "does nothing"),
++                    ({"lead_sup_detach": "on"}, "does nothing"), ({"lead_hist": 3}, "does nothing"), ({"lead_sup": "on", "w_lead_sup": 1.0, "lead_hist": 17}, "does not fit"),
++                    ({"lead_sup": "on", "w_lead_sup": 1.0, "lead_hist": 0}, ">= 1"), ({"lead_sup": "maybe"}, "lead_sup must"), ({"lead_sup": "on", "w_lead_sup": -1.0}, ">= 0")):
++        with pytest.raises(ValueError, match=pat):
++            mk(**kw)
++    with pytest.raises(ValueError, match="grid"):
++        M.V8FMiniConfig(wm="b", hmax=16, wm_state="mean", lead_sup="on", w_lead_sup=1.0)
++    with pytest.raises(ValueError, match="grid"):
++        M.V8FMiniConfig(wm="off", hmax=16, wm_state="grid", lead_sup="on", w_lead_sup=1.0)
++
++
++def test_default_model_has_no_head_no_key_no_term(world):
++    a, cfg, model = _built(world, GRID)
++    assert model.wm.lead_head is None and not [k for k in model.state_dict() if "lead_head" in k and k.startswith("wm.")]
++    T = _terms(model, world["default_batch"])
++    assert not [k for k in T if k.startswith("lead_sup")]
++    lv = model.built_levers()
++    assert (lv["lead_sup"], lv["lead_hist"], lv["lead_sup_detach"], lv["w_lead_sup"]) == ("off", 5, "off", 0.0)
++
++
++def test_init_of_the_head_arm_is_G_plus_the_head_only_and_the_count(world):
++    _, _, g = _built(world, GRID)
++    _, _, l = _built(world, LS)
++    sg, sl = g.state_dict(), l.state_dict()
++    assert all(k in sl and torch.equal(sg[k], sl[k]) for k in sg)
++    assert all(k.startswith("wm.lead_head.") for k in sl if k not in sg)
++    n = sum(p.numel() for p in l.wm.lead_head.parameters())
++    assert n == 640 * 64 + 64 + 320 * 128 + 128 + 128 * 3 + 3 == 82499
++    assert sum(p.numel() for p in l.parameters()) - sum(p.numel() for p in g.parameters()) == n
++
++
++# ------------------------------------------------------------------------------------------------ reach (flag -> model -> term -> weights) with exact-zero controls
++def test_reach_term_alone_head_and_state_encoder_nonzero_everything_else_exactly_zero(world):
++    a, cfg, model = _built(world, LS)
++    assert cfg.lead_sup == "on" and cfg.w_lead_sup == 1.0 and model.wm.lead_head is not None            # argparse -> config -> built head
++    model.train()
++    T = _terms(model, world["batch"])
++    assert float(T["lead_sup"]) > 0 and all(torch.isfinite(T[k]) for k in ("lead_sup_bce", "lead_sup_gap", "lead_sup_clos"))
++    assert float(T["lead_sup_n_gap"]) > 0 and float(T["lead_sup_n_clos"]) > 0
++    T["lead_sup"].backward()
++    st = model.wm.stack
++    assert _gsum(model.wm.lead_head.parameters()) > 0 and _gsum(model.wm.proj.parameters()) > 0 and _gsum(model.adapter.parameters()) > 0
++    assert _gsum(st.predictors[0].parameters()) == 0.0 and _gsum(st.act_embed[0].parameters()) == 0.0 and _gsum(st.idm_heads[0].parameters()) == 0.0       # controls
++    assert _gsum(p for m in (st.predictors[1], st.predictors[2]) for p in m.parameters()) == 0.0
++    assert _gsum(p for m in (model.read_s, model.head_s, model.read_t, model.trunk_t, model.read_o, model.head_o) for p in m.parameters()) == 0.0
++    model.zero_grad()
++    _terms(model, world["batch"])["total"].backward()
++    assert _gsum(st.predictors[0].parameters()) > 0                                                                                                      # the total does reach the predictor
++
++
++def test_detach_on_the_term_reaches_nothing_outside_the_head_exactly(world):
++    _, _, off = _built(world, LS)
++    _, _, on = _built(world, LS + ["--lead-sup-detach", "on"])
++    off.train()
++    on.train()
++    t_off, t_on = _terms(off, world["batch"]), _terms(on, world["batch"])
++    assert float(t_off["lead_sup"]) == float(t_on["lead_sup"])                                       # same init, same value: only the wiring differs
++    t_off["lead_sup"].backward()
++    t_on["lead_sup"].backward()
++    assert len(_outside_head(off)) > 0                                                              # detach off: the state encoder moves (so the zero below is the wiring, not the data)
++    assert _outside_head(on) == [] and _gsum(on.wm.lead_head.parameters()) > 0                      # detach on: EXACTLY 0.0 outside the head; the head itself trains
++    assert on.built_levers()["lead_sup_detach"] == "on" and off.built_levers()["lead_sup_detach"] == "off"
++
++
++def test_all_labels_masked_reads_exactly_zero_term_parts_and_gradients(world):
++    _, _, model = _built(world, LS)
++    b = world["batch"]
++    nan = torch.full_like(b["lead_gapm"], float("nan"))
++    T = _terms(model, b, lead_gapm=nan, lead_clos=nan, lead_pres=torch.zeros_like(b["lead_pres"]), frame_ok=torch.zeros_like(b["frame_ok"]))
++    assert float(T["lead_sup"]) == 0.0 and float(T["lead_sup_n_pres"]) == 0.0
++    T["lead_sup"].backward()
++    assert _gsum(model.wm.lead_head.parameters()) == 0.0
++    _, _, m2 = _built(world, LS)
++    T2 = _terms(m2, b, lead_gapm=nan, lead_clos=nan)
++    assert float(T2["lead_sup_bce"]) > 0 and float(T2["lead_sup_gap"]) == 0.0 and float(T2["lead_sup_clos"]) == 0.0
++
++
++def test_frame_alignment_labels_of_non_end_frames_change_nothing_end_frames_do(world):
++    _, _, model = _built(world, LS)
++    model.eval()
++    b = world["batch"]
++    ref = float(_terms(model, b)["lead_sup"])
++    moved = []
++    for f in range(16):
++        g, p = b["lead_gapm"].clone(), b["lead_pres"].clone()
++        g[:, f] += 7.0
++        p[:, f] = 1.0 - p[:, f]
++        diff = float(_terms(model, b, lead_gapm=g, lead_pres=p)["lead_sup"]) - ref
++        if f < 4:
++            assert diff == 0.0, f                                                                   # frames 0 .. hist-2 are never an end frame
++        elif diff != 0.0:
++            moved.append(f)
++    assert len(moved) >= 8
++    adapt = torch.randn(2, 16, model.cfg.n_tok, model.cfg.d, generator=torch.Generator().manual_seed(3))
++    with torch.no_grad():
++        base = model.wm.lead_head(model.wm.z1(adapt))
++        for f in range(16):
++            a2 = adapt.clone()
++            a2[:, f] += 1.0
++            d = (model.wm.lead_head(model.wm.z1(a2)) - base).abs().amax((0, 2))
++            assert [int(i) + 4 for i in torch.nonzero(d > 0).flatten()] == [e for e in range(4, 16) if e - 4 <= f <= e], f          # the output at end frame e reads frames e-4 .. e, nothing else
++
++
++def test_the_total_gains_exactly_w_times_the_term_and_the_line_is_load_bearing(world):
++    _, _, model = _built(world, LS)
++    model.eval()
++    b = dict(world["batch"])
++    import copy
++    twin = copy.deepcopy(model)                                                                       # made before any call: the SIGReg term draws random projections from the GLOBAL rng (two calls differ by 1.7e-4, measured): reseed before each call
++    object.__setattr__(twin.cfg, "w_lead_sup", 0.0)
++    w = model.cfg.w_lead_sup
++    with torch.no_grad():
++        torch.manual_seed(77)
++        t = model.loss(dict(b), p_gt=0.5, gen=torch.Generator().manual_seed(11))["terms"]
++        torch.manual_seed(77)
++        t0 = twin.loss(dict(b), p_gt=0.5, gen=torch.Generator().manual_seed(11))["terms"]
++    assert float(t["lead_sup"]) > 0 and abs(float(t["total"]) - float(t0["total"]) - w * float(t["lead_sup"])) < 8 * 1.1920929e-07 * max(abs(float(t["total"])), abs(float(t0["total"])))   # a few float32 ulps of the total
++    src = Path(M.__file__).read_text(encoding="utf-8")
++    assert sum(1 for ln in src.splitlines() if ln.lstrip().startswith("total = total + cfg.w_lead_sup * T[")) == 1      # the ONE line a mutation deletes (checks/t3_checks.py does it and goes red)
++
++
++# ------------------------------------------------------------------------------------------------ the gate (declared vs built)
++def _info(world, on=True):
++    ll = {k: world["ds"].lead_sup_labels[k] for k in ("sha256", "n_rows", "n_pres", "n_gap", "n_clos")}
++    return {"ds_lead_sup": on, "lead_sup_labels": ll if on else None}
++
++
++def test_declared_vs_built_goes_red_on_every_lie(world):
++    a, cfg, model = _built(world, LS)
++    assert TR.bad_lead_sup(a, cfg, model, _info(world)) == []
++    a0, cfg0, model0 = _built(world, GRID)
++    assert TR.bad_lead_sup(a0, cfg0, model0, {}) == []
++    assert TR.bad_lead_sup(a, cfg0, model0, _info(world))                                            # declared on, built off
++    assert TR.bad_lead_sup(a0, cfg, model, _info(world))                                             # built on, declared off
++    for extra, what in ((LS[:-1] + ["2.0"], "w"), (LS + ["--lead-hist", "3"], "hist"), (LS + ["--lead-sup-detach", "on"], "detach")):
++        assert TR.bad_lead_sup(_args(extra), cfg, model, _info(world)), what                         # the built head is the LS one; the declaration differs
++    assert TR.bad_lead_sup(a, cfg, model, _info(world, on=False))                                    # the dataset carries no labels
++    bad_hash = _info(world)
++    bad_hash["lead_sup_labels"] = {**bad_hash["lead_sup_labels"], "sha256": None}
++    assert TR.bad_lead_sup(a, cfg, model, bad_hash)
++    none_gap = _info(world)
++    none_gap["lead_sup_labels"] = {**none_gap["lead_sup_labels"], "n_gap": 0}
++    assert TR.bad_lead_sup(a, cfg, model, none_gap)
++    zero_w = _args(LS[:-1] + ["0.0"])
++    assert any("no loss" in m for m in TR.bad_lead_sup(zero_w, cfg, model, _info(world)))             # a head with weight 0 is refused by the gate too (the config already refuses it)
++    assert TR.bad_lead_sup(_args(GRID + ["--w-lead-sup", "1.0"]), cfg0, model0, {})                  # a weight with the head off
++    # mutation of the readback: a built_levers that lies is caught by the gate through the declared/built comparison
++    lie = type("L", (), {})()
++    lie.wm, lie.built_levers = model.wm, lambda: {**model.built_levers(), "lead_hist": 4}
++    assert TR.bad_lead_sup(a, cfg, lie, _info(world))
++
++
++# ------------------------------------------------------------------------------------------------ the checkpoint and the read hook
++def test_checkpoint_cfg_round_trip_loads_in_the_eval_builder_and_the_read_hook_runs(world, tmp_path):
++    a, cfg, model = _built(world, LS + ["--lead-hist", "3"])
++    cfg_rec = {k: v for k, v in cfg.__dict__.items() if (k not in M.LEADSUP_CFG_DEFAULTS or v != M.LEADSUP_CFG_DEFAULTS[k])}
++    assert {k: cfg_rec[k] for k in M.LEADSUP_CFG_DEFAULTS if k in cfg_rec} == {"lead_sup": "on", "w_lead_sup": 1.0, "lead_hist": 3}              # defaults are not written
++    off_rec = {k: v for k, v in _built(world, GRID)[1].__dict__.items() if (k not in M.LEADSUP_CFG_DEFAULTS or v != M.LEADSUP_CFG_DEFAULTS[k])}
++    assert not [k for k in off_rec if k in M.LEADSUP_CFG_DEFAULTS]                                    # a flag-off checkpoint keeps its key set
++    path = tmp_path / "ck.pt"
++    torch.save({"model": model.state_dict(), "cfg": cfg_rec, "grid": "pool4x10"}, path)
++    ck = torch.load(path, map_location="cpu", weights_only=False)
++    cfg2 = M.V8FMiniConfig(**ck["cfg"])                                                               # exactly what v8f_t1_eval.cmd_run does
++    m2 = M.V8FMini(cfg2, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    m2.load_state_dict(ck["model"])                                                                   # strict: the extra head keys are built, so they load
++    assert m2.wm.lead_head is not None and m2.wm.lead_head.hist == 3
++    # the read hook on synthetic frames: tokens and states give the same numbers, and they equal the head called by hand
++    import lead_dump as LD
++    cfg3, m3 = LD.load_model(str(path))
++    feats = torch.randn(4, 6, cfg3.n_tok, cfg3.d_feat, generator=torch.Generator().manual_seed(9)).half()
++    o1 = LD.head_outputs(m3, cfg3, feats, "feats")
++    with torch.no_grad():
++        adapt = m3.adapter(feats.float()) + m3.pos[None, None]
++        z1 = m3.wm.z1(adapt)
++    o2 = LD.head_outputs(m3, cfg3, z1, "states")
++    assert o1.shape == (4, 4, 3) and torch.equal(o1, o2)
++    np.save(tmp_path / "f.npy", feats.numpy())
++    LD.main(["--ckpt", str(path), "--feats", str(tmp_path / "f.npy"), "--out", str(tmp_path / "o.npz"), "--end-frame", "4"])
++    z = np.load(tmp_path / "o.npz")
++    assert z["presence_prob"].shape == (4,) and np.allclose(z["gap_m"], o1[:, 4 - 2, 1].numpy() * 50.0, atol=1e-4) and np.allclose(z["closing_ms"], o1[:, 4 - 2, 2].numpy() * 10.0, atol=1e-4)
++    assert ((z["presence_prob"] >= 0) & (z["presence_prob"] <= 1)).all() and int(z["end_frame"]) == 4
++    off_ck = tmp_path / "off.pt"
++    torch.save({"model": _built(world, GRID)[2].state_dict(), "cfg": off_rec, "grid": "pool4x10"}, off_ck)
++    with pytest.raises(SystemExit, match="no lead head"):
++        LD.load_model(str(off_ck))
++
++
++def test_the_driving_output_path_does_not_read_the_head_or_the_labels(world):
++    for k in ("lead_pres", "lead_gapm", "lead_clos"):
++        assert k not in M.INFERENCE_INPUT_KEYS
++    _, _, model = _built(world, LS)
++    _, _, ref = _built(world, GRID)
++    model.eval()
++    ref.eval()
++    b = {k: v for k, v in world["batch"].items() if k in M.INFERENCE_INPUT_KEYS or k == "frame_ok"}
++    # the heads share every parameter with G at init (test above); the inference output of both is the same function of the batch: the head adds a branch that forward_infer never calls
++    with torch.no_grad():
++        o1, o2 = model.forward_infer(dict(b)), ref.forward_infer(dict(b))
++    assert all(torch.equal(o1[k], o2[k]) for k in o1 if torch.is_tensor(o1[k]) and k in o2)
+diff --git a/stack/scripts/lead_dump.py b/stack/scripts/lead_dump.py
+new file mode 100644
+--- /dev/null
++++ b/stack/scripts/lead_dump.py
+@@ -0,0 +1,105 @@
++"""lead_dump.py: the READ HOOK of the LEADSUP head (new file, outside the pinned set; nothing of the driving path imports it).
++
++Loads a checkpoint trained with --lead-sup on, takes frames in the layout of the eval windows (frames 0 .. 4 of a window: the S0 = 4 history of spatial/objslot) and writes the head's outputs per window:
++  presence probability (sigmoid of the logit), gap [m] (output x 50), closing speed [m/s] (output x 10; the slope of the gap, positive = the gap opens), at the END frame of the supplied frames.
++
++Input (exactly one):
++  --feats  FILE  .npy / .npz[key feats]   cached DINOv3 tokens [n, F, n_tok, d_feat] (float16 ok): the path adapter -> + pos -> level-1 projection -> head, exactly as V8FMini.loss feeds the head
++  --states FILE  .npy / .npz[key Z1]      level-1 grid states [n, F, n_tok * wm_cell_dim] (the Z1 arrays of the latents files): straight into the head
++F must be >= the head's history (5 by default); with F = 5 the single end frame is frame 4 (window frames 0 .. 4). With F > hist the end frames are hist-1 .. F-1 and --end-frame picks one (default: the last).
++Output: --out NPZ with presence_prob, gap_m, closing_ms [n], logits [n, 3], end_frame, hist, plus the sha256 of the checkpoint and of the input file and the lead fields of the checkpoint config.
++Tier T0 (a world-model diagnostic read on logged frames): never driving performance. CPU or cuda; chunks of --chunk windows.
++Usage: python lead_dump.py --ckpt CKPT --feats FILE|--states FILE --out OUT.npz [--end-frame N] [--chunk 256]"""
++import argparse
++import hashlib
++import json
++import os
++import sys
++
++import numpy as np
++import torch
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++for p in (os.path.join(HERE, ".."), HERE):
++    if p not in sys.path:
++        sys.path.insert(0, p)
++
++from tanitad.models import v8f_mini as M  # noqa: E402
++
++
++def sha256_file(path: str) -> str:
++    h = hashlib.sha256()
++    with open(path, "rb") as fh:
++        for blk in iter(lambda: fh.read(1 << 20), b""):
++            h.update(blk)
++    return h.hexdigest()
++
++
++def load_array(path: str, key: str) -> np.ndarray:
++    if path.endswith(".npy"):
++        return np.load(path)
++    z = np.load(path)
++    if key not in z.files:
++        raise SystemExit(f"REFUSED: {path} has no array {key!r} (it has {z.files})")
++    return z[key]
++
++
++def load_model(ckpt_path: str):
++    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
++    cfg = M.V8FMiniConfig(**ck["cfg"])                                   # the same rebuild v8f_t1_eval.py does: the cfg carries the lead fields, so the head is built and the load is strict
++    if cfg.lead_sup != "on":
++        raise SystemExit(f"REFUSED: {ckpt_path} was trained with lead_sup {cfg.lead_sup!r}: it has no lead head to read")
++    model = M.V8FMini(cfg, M.P10Prior(torch.zeros(8), torch.ones(8), torch.zeros(2 * M.K30)))
++    model.load_state_dict(ck["model"])
++    return cfg, model.eval()
++
++
++@torch.no_grad()
++def head_outputs(model, cfg, x: torch.Tensor, kind: str) -> torch.Tensor:
++    """x: tokens [B, F, n_tok, d_feat] (kind feats) or states [B, F, D] (kind states) -> head output [B, F - hist + 1, 3] (presence logit, gap / 50, closing / 10)."""
++    if kind == "feats":
++        adapt = model.adapter(x.float()) + model.pos[None, None]          # as V8FMini.loss: [B, F, n_tok, d]
++        z1 = model.wm.z1(adapt)
++    else:
++        z1 = x.float()
++    return model.wm.lead_head(z1)
++
++
++def main(argv=None):
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--ckpt", required=True)
++    g = ap.add_mutually_exclusive_group(required=True)
++    g.add_argument("--feats")
++    g.add_argument("--states")
++    ap.add_argument("--out", required=True)
++    ap.add_argument("--end-frame", type=int, default=-1, help="the end frame to report (default: the last supplied frame)")
++    ap.add_argument("--chunk", type=int, default=256)
++    ap.add_argument("--threads", type=int, default=4)
++    a = ap.parse_args(argv)
++    torch.set_num_threads(a.threads)
++    cfg, model = load_model(a.ckpt)
++    kind, path = ("feats", a.feats) if a.feats else ("states", a.states)
++    X = load_array(path, "feats" if kind == "feats" else "Z1")
++    hist = cfg.lead_hist
++    F_ = X.shape[1]
++    if F_ < hist:
++        raise SystemExit(f"REFUSED: the input has {F_} frames per window, the head reads {hist}")
++    end = (F_ - 1) if a.end_frame < 0 else a.end_frame
++    if not hist - 1 <= end <= F_ - 1:
++        raise SystemExit(f"REFUSED: end frame {end} outside [{hist - 1}, {F_ - 1}]")
++    n = X.shape[0]
++    outs = []
++    for i in range(0, n, a.chunk):
++        xb = torch.as_tensor(np.asarray(X[i:i + a.chunk]))
++        outs.append(head_outputs(model, cfg, xb, kind)[:, end - (hist - 1)].float())
++    o = torch.cat(outs).numpy() if outs else np.zeros((0, 3), np.float32)
++    res = dict(presence_prob=(1.0 / (1.0 + np.exp(-o[:, 0]))).astype(np.float32), gap_m=(o[:, 1] * M.LEAD_SUP_GAP_SCALE_M).astype(np.float32),
++               closing_ms=(o[:, 2] * M.LEAD_SUP_CLOS_SCALE_MS).astype(np.float32), logits=o.astype(np.float32), end_frame=np.int64(end), hist=np.int64(hist))
++    np.savez_compressed(a.out, **res, ckpt_sha256=sha256_file(a.ckpt), input_sha256=sha256_file(path), input_kind=kind,
++                        cfg_lead=json.dumps({k: getattr(cfg, k) for k in ("lead_sup", "w_lead_sup", "lead_hist", "lead_sup_detach")}))
++    print(f"lead_dump: {n} windows, end frame {end}, hist {hist}, input {kind} {tuple(X.shape)} -> {a.out}")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())

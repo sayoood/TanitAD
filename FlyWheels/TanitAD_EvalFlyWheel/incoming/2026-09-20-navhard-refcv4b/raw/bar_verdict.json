@@ -1,0 +1,630 @@
+{
+ "run_id": "20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25",
+ "split": "navhard_two_stage",
+ "protocol": "EPDMS_v2_navhard_two_stage",
+ "headline_column": "score",
+ "forbidden_column": "pdm_score",
+ "stamps": {
+  "tier": "T1-family",
+  "loop": {
+   "stage_one": "OPEN (PI ruling 2026-09-02)",
+   "stage_two": "UNRULED (2026-09-02 vocabulary)",
+   "background_traffic": "IDM-reactive vehicles in BOTH stages; ego non-reactive"
+  },
+  "closed_loop": false
+ },
+ "arms": {
+  "CV": {
+   "kind": "floor",
+   "status": "OK",
+   "headline": {
+    "value": 0.11481608441648,
+    "x100": 11.481608441648,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 5912,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "S2_EPDMS_u": 0.3389137264888157,
+   "stage_one_scene_mean": 0.28958783902161,
+   "stage_two_scene_mean": 0.329355734515099,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.0825,
+    "hi": 0.145,
+    "n_clusters": 76,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "two_stage_mapping_key_mean",
+     "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 \u2014 per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+     "point": 0.1148,
+     "mean": 0.1148,
+     "lo": 0.0825,
+     "hi": 0.145,
+     "ci95": 0.0313,
+     "se": 0.0153,
+     "bootstrap_mean": 0.1145,
+     "n_clusters": 76,
+     "n_units": 225,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.11481608441648,
+      "point": 0.11481608441648,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 34,
+      "lo": 0.091,
+      "hi": 0.1471,
+      "se": 0.0146
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navhard_two_stage"
+    },
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25/raw/CV/CV_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 1.015,
+      "along_mae_m": 1.6269,
+      "speed_bias_mps": 0.1636,
+      "along_bias_m": 0.7664,
+      "accel_mae_mps2": 0.5144,
+      "progress_ratio_mean": 0.9693
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.488,
+      "heading_mae_deg": 11.8811,
+      "curvature_mae_1pm": 0.027533,
+      "yaw_rate_mae_degps": 6.5721,
+      "cross_bias_m": -0.4882
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.42,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.4133,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 6.3223
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal \u2014 the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. \u21d2 there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. \u26d4 The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all \u2014 that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL \u00a70.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: \u26a0\ufe0f The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it \u2014 which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 450
+    }
+   },
+   "declared_inputs": [
+    "ego_velocity[t0]"
+   ],
+   "modality": {
+    "sensor_set": "none \u2014 ego-status only (ego_statuses[-1].ego_velocity)",
+    "setting": "kinematic floor: constant-velocity straight-line extrapolation; perception-free, map-free, route-free",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "criteria": {
+    "rc": 0,
+    "json": "raw/criteria_CV.json",
+    "json_written": true,
+    "registry_version": "2.10.3",
+    "unreadable": [],
+    "n_violations": 0,
+    "n_work_items": 9,
+    "scope": [
+     "IN_SCOPE"
+    ]
+   }
+  },
+  "STOP": {
+   "kind": "floor",
+   "status": "OK",
+   "headline": {
+    "value": 0.2985321254269824,
+    "x100": 29.853212542698238,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 5912,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "S2_EPDMS_u": 0.4828269144777932,
+   "stage_one_scene_mean": 0.5631618564494981,
+   "stage_two_scene_mean": 0.4702319636950667,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.2737,
+    "hi": 0.3253,
+    "n_clusters": 76,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "two_stage_mapping_key_mean",
+     "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 \u2014 per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+     "point": 0.2985,
+     "mean": 0.2985,
+     "lo": 0.2737,
+     "hi": 0.3253,
+     "ci95": 0.0258,
+     "se": 0.0131,
+     "bootstrap_mean": 0.2986,
+     "n_clusters": 76,
+     "n_units": 225,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.2985321254269824,
+      "point": 0.2985321254269824,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 34,
+      "lo": 0.2765,
+      "hi": 0.3275,
+      "se": 0.0133
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navhard_two_stage"
+    },
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25/raw/STOP/STOP_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 5.5426,
+      "along_mae_m": 12.0816,
+      "speed_bias_mps": -5.5426,
+      "along_bias_m": -12.0725,
+      "accel_mae_mps2": 0.5144,
+      "progress_ratio_mean": 0.0
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 1.488,
+      "cross_bias_m": -0.4882
+     },
+     "reason": "undefined or refused terms \u2014 heading_mae_deg: heading_mae_deg is UNDEFINED here: 0 of 3600 steps cleared the min-displacement gate min_ds_m=0.25 m (= MIN_DS_MPS 0.5 m/s x dt 0.5 s). A path whose steps do not move has NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. \u26d4 Refused with its n rather than returned as null (whic | curvature_mae_1pm: curvature_mae_1pm is UNDEFINED here: 0 of 3150 step pairs cleared the min-displacement gate min_ds_m=0.25 m (= MIN_DS_MPS 0.5 m/s x dt 0.5 s). A path whose steps do not move has NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. \u26d4 Refused with its n rather than returned as nul | yaw_rate_mae_degps: yaw_rate_mae_degps is UNDEFINED here: 0 of 3150 step PAIRS cleared the min-displacement gate min_ds_m=0.25 m (= MIN_DS_MPS 0.5 m/s x dt 0.5 s). A path whose steps do not move has NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. \u26d4 Refused with its n rather than returned as nu"
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.42,
+      "lateral_decision.kappa": 0.0,
+      "longitudinal_decision.accuracy": 0.4133,
+      "longitudinal_decision.kappa": 0.0,
+      "goal_setting.goal_point_error_m": 21.8602
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal \u2014 the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. \u21d2 there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. \u26d4 The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all \u2014 that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL \u00a70.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: \u26a0\ufe0f The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it \u2014 which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 450
+    }
+   },
+   "declared_inputs": [],
+   "modality": {
+    "sensor_set": "none \u2014 reads no input at all",
+    "setting": "trivial floor: x = y = heading = 0 at every 0.5 s pose (EP == 1 when the best compliant progress <= 5 m, pdm_scorer.py:231-236)",
+    "ego_status_used": false,
+    "vision_only_claimed": false
+   },
+   "criteria": {
+    "rc": 0,
+    "json": "raw/criteria_STOP.json",
+    "json_written": true,
+    "registry_version": "2.10.3",
+    "unreadable": [],
+    "n_violations": 0,
+    "n_work_items": 12,
+    "scope": [
+     "IN_SCOPE"
+    ]
+   }
+  },
+  "ECHO": {
+   "kind": "floor",
+   "status": "OK",
+   "headline": {
+    "value": 0.14293848144114832,
+    "x100": 14.293848144114833,
+    "column": "score",
+    "row": "extended_pdm_score_combined",
+    "n": 5912,
+    "statistic": "official two-stage EPDMS: run_pdm_score.py::compute_final_scores (EC injected, /16) aggregated over mapping keys ((s1*wavg(now) + s1'*wavg(prev))/2)"
+   },
+   "S2_EPDMS_u": 0.3412802138302167,
+   "stage_one_scene_mean": 0.386637542152985,
+   "stage_two_scene_mean": 0.32680148822593724,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.1168,
+    "hi": 0.1698,
+    "n_clusters": 76,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "two_stage_mapping_key_mean",
+     "aggregation_source": "run_pdm_score.py::calculate_individual_mapping_scores L242-290 @0a380a9 \u2014 per key ((s1(orig)*wavg(now)) + (s1(prev)*wavg(prev)))/2, then pd.DataFrame(...).mean() (skipna) over keys",
+     "point": 0.1429,
+     "mean": 0.1429,
+     "lo": 0.1168,
+     "hi": 0.1698,
+     "ci95": 0.0265,
+     "se": 0.0135,
+     "bootstrap_mean": 0.1429,
+     "n_clusters": 76,
+     "n_units": 225,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.14293848144114832,
+      "point": 0.14293848144114832,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 34,
+      "lo": 0.1184,
+      "hi": 0.1733,
+      "se": 0.0139
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navhard_two_stage"
+    },
+    "pre_csv_frame": {
+     "captured": true,
+     "path": "D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/navhard_two_stage/20260921T122714Z-navsim_v2-refcv4b_b1_v72_40k-859e25/raw/ECHO/ECHO_final_scores_frame.csv",
+     "why_needed": "the published CSV drops `weight`/`log_name` (run_pdm_score.py:422)"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "speed_mae_mps": 0.711,
+      "along_mae_m": 1.2184,
+      "speed_bias_mps": 0.1492,
+      "along_bias_m": 0.2477,
+      "accel_mae_mps2": 0.4334,
+      "progress_ratio_mean": 0.9455
+     },
+     "reason": "distance-keeping UNAVAILABLE: no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+    },
+    "lateral": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "cross_mae_m": 0.9718,
+      "heading_mae_deg": 9.1368,
+      "curvature_mae_1pm": 0.024787,
+      "yaw_rate_mae_degps": 6.3533,
+      "cross_bias_m": 0.0617
+     }
+    },
+    "tactical": {
+     "status": "OK",
+     "n": 450,
+     "scope": "OUR instruments on the 450 STAGE-1 scenes only (agent vs logged human future, dt 0.5 s, K=8); stage-2 synthetic scenes have NO human future (0 future frames) \u2014 frame check: verified",
+     "tier": "T1",
+     "metrics": {
+      "lateral_decision.accuracy": 0.6044,
+      "lateral_decision.kappa": 0.3744,
+      "longitudinal_decision.accuracy": 0.6044,
+      "longitudinal_decision.kappa": 0.4032,
+      "goal_setting.goal_point_error_m": 4.8327
+     },
+     "_is_not": "trajectory-derived EXECUTED manoeuvres on both sides \u2014 NOT selected-vs-executed"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal \u2014 the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. \u21d2 there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. \u26d4 The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all \u2014 that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL \u00a70.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path. | NavSim: \u26a0\ufe0f The generic reason above is PhysicalAI-specific (no map in the corpus). On NavSim the fact is DIFFERENT and must not be conflated: the lane graph and route EXIST, but `driving_command` is an INPUT and is never scored, and the Scene object carrying the map is TRAINING-ONLY at inference (NAVSIM_PROTOCOL.md:470-474, :812). So STRATEGIC is absent because the BENCHMARK declines to measure it, not because the data lacks it \u2014 which makes it a buildable WORK ITEM here (audit seam 7, taniteval/strategic_optionset.py:193), unlike on PhysicalAI.",
+     "n": 450
+    }
+   },
+   "declared_inputs": [
+    "ego_velocity[t0]",
+    "ego_acceleration[t0]"
+   ],
+   "modality": {
+    "sensor_set": "none \u2014 the model arm's own declared t0 ego inputs, echoed",
+    "setting": "echo floor: what the ego inputs alone produce, no perception, no route",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "criteria": {
+    "rc": 0,
+    "json": "raw/criteria_ECHO.json",
+    "json_written": true,
+    "registry_version": "2.10.3",
+    "unreadable": [],
+    "n_violations": 0,
+    "n_work_items": 9,
+    "scope": [
+     "IN_SCOPE"
+    ]
+   }
+  },
+  "A1": {
+   "kind": "model",
+   "status": "OK",
+   "headline": {
+    "status": "UNAVAILABLE",
+    "n": 450,
+    "reason": "two-stage EPDMS UNDEFINED for A1: 450 stage-1 rows are the devkit CV stand-in (no stage-1 frames), which set both the stage-1 factor and the stage-2 kernel weights \u2014 see statistics.S2_EPDMS_u (stage 2 only) and statistics.official_combined_row_HYBRID"
+   },
+   "S2_EPDMS_u": 0.3841356231421308,
+   "stage_one_scene_mean": 0.28958783902161,
+   "stage_two_scene_mean": 0.37421086717974317,
+   "interval": {
+    "status": "UNAVAILABLE",
+    "n": 76,
+    "reason": "the only two-stage aggregate for A1 is the CV-stand-in HYBRID (450 stage-1 rows are the devkit CV agent, which also sets the stage-2 kernel weights); an interval on it is not an interval on this arm. The hybrid's own interval is kept under statistics.official_combined_row_HYBRID.interval_NOT_this_arm"
+   },
+   "families": {
+    "longitudinal": {
+     "status": "UNAVAILABLE",
+     "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box \u2014 so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+     "n": 450
+    },
+    "lateral": {
+     "status": "UNAVAILABLE",
+     "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box \u2014 so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+     "n": 450
+    },
+    "tactical": {
+     "status": "UNAVAILABLE",
+     "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box \u2014 so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+     "n": 450
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "reason": "no navhard_two_stage scene carries BOTH this arm's camera input and a logged human future: the 5462 stage-2 synthetic scenes have frames but num_future_frames = 0 (no human drove them), and the 450 stage-1 scenes have a human future but their camera frames are not unpacked on this box \u2014 so 450 stage-1 rows of this arm are the devkit CV STAND-IN and none of this arm's plans can be compared with a human future. Unblock = extract the stage-1 frames from the verified OpenScene test camera archives (then n = 450).",
+     "n": 450
+    }
+   },
+   "declared_inputs": [
+    "cameras: cam_l0+cam_f0+cam_r0 stitched -> 256x640 cylindrical, t0 frame (ST)",
+    "ego_velocity[t0]",
+    "ego_acceleration[t0]",
+    "driving_command[t0]"
+   ],
+   "modality": {
+    "sensor_set": "3-camera stitch cam_l0+cam_f0+cam_r0 -> 256x640 cylindrical (PHYSICALAI_WIDE120_256x640), frames construction ST",
+    "setting": "perception-free one-shot anchor planner, ZERO-SHOT on NavSim (no NavSim training)",
+    "ego_status_used": true,
+    "vision_only_claimed": false
+   },
+   "criteria": {
+    "rc": 0,
+    "json": "raw/criteria_A1.json",
+    "json_written": true,
+    "registry_version": "2.10.3",
+    "unreadable": [],
+    "n_violations": 0,
+    "n_work_items": 21,
+    "scope": [
+     "IN_SCOPE"
+    ]
+   }
+  }
+ },
+ "bar_verdict": {
+  "status": "FAIL",
+  "bar": "BAR-W7-1: A1 > max(CV, STOP, ECHO) on S2-EPDMS-u (PREREG.md)",
+  "arm": "A1",
+  "arm_value": 0.3841356231421308,
+  "strongest_floor": "STOP",
+  "strongest_floor_value": 0.4828269144777932,
+  "delta_vs_strongest_floor": -0.098691,
+  "all_floors": {
+   "CV": 0.3389137264888157,
+   "STOP": 0.4828269144777932,
+   "ECHO": 0.3412802138302167
+  },
+  "deltas": {
+   "CV": 0.045222,
+   "STOP": -0.098691,
+   "ECHO": 0.042855
+  },
+  "sub_case": "FAIL-A (beats CV, loses to a floor)",
+  "floors_beaten": [
+   "CV",
+   "ECHO"
+  ]
+ },
+ "paired": {
+  "STOP": {
+   "status": "OK",
+   "headline_delta": null,
+   "S2_EPDMS_u_delta": -0.0986912913356624,
+   "by_stage": {
+    "stage_one": {
+     "n": 450,
+     "score_mean_delta": -0.2735740174278881,
+     "official_stage_row_delta": -0.2735740174278881,
+     "wins": 135,
+     "ties": 39,
+     "losses": 276,
+     "submetric_mean_deltas": {
+      "NC": -0.10777777777777786,
+      "DAC": -0.5022222222222222,
+      "DDC": -0.29333333333333333,
+      "TLC": -0.004444444444444473,
+      "EP": 0.43438858378489265,
+      "TTC": -0.12444444444444447,
+      "LK": -0.10444444444444445,
+      "HC": 0.4822222222222223,
+      "EC": 0.5155555555555555
+     }
+    },
+    "stage_two": {
+     "n": 5462,
+     "score_mean_delta": -0.09602109651532348,
+     "official_stage_row_delta": -0.1300365070775103,
+     "wins": 2176,
+     "ties": 1434,
+     "losses": 1852,
+     "submetric_mean_deltas": {
+      "NC": -0.10316733797143907,
+      "DAC": -0.21274258513365074,
+      "DDC": -0.16779567923837424,
+      "TLC": -0.008787989747345293,
+      "EP": 0.24422850176041777,
+      "TTC": -0.1202856096667887,
+      "LK": -0.02819480043939948,
+      "HC": 0.2980593189307946,
+      "EC": 0.14024166971805202
+     }
+    }
+   },
+   "wins": 2311,
+   "ties": 1473,
+   "losses": 2128,
+   "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+   "n_common": 5912
+  },
+  "CV": {
+   "status": "OK",
+   "headline_delta": null,
+   "S2_EPDMS_u_delta": 0.04522189665331511,
+   "by_stage": {
+    "stage_one": {
+     "n": 450,
+     "score_mean_delta": 0.0,
+     "official_stage_row_delta": 0.0,
+     "wins": 0,
+     "ties": 450,
+     "losses": 0,
+     "submetric_mean_deltas": {
+      "NC": 0.0,
+      "DAC": 0.0,
+      "DDC": 0.0,
+      "TLC": 0.0,
+      "EP": 0.0,
+      "TTC": 0.0,
+      "LK": 0.0,
+      "HC": 0.0,
+      "EC": 0.0
+     }
+    },
+    "stage_two": {
+     "n": 5462,
+     "score_mean_delta": 0.044855132664644186,
+     "official_stage_row_delta": 0.03434597607106693,
+     "wins": 1426,
+     "ties": 2635,
+     "losses": 1401,
+     "submetric_mean_deltas": {
+      "NC": 0.019498352251922313,
+      "DAC": 0.0811058220432076,
+      "DDC": 0.048425485170267346,
+      "TLC": 0.0005492493592090808,
+      "EP": -0.07203140593581281,
+      "TTC": 0.008055657268399852,
+      "LK": 0.03332112779201757,
+      "HC": -0.022336140607835953,
+      "EC": -0.20248993042841446
+     }
+    }
+   },
+   "wins": 1426,
+   "ties": 3085,
+   "losses": 1401,
+   "_wtl_scope": "per-scene wins/ties/losses pooled over the common tokens of BOTH stages (tie band 1e-12); per stage in by_stage.<stage>",
+   "n_common": 5912
+  }
+ }
+}

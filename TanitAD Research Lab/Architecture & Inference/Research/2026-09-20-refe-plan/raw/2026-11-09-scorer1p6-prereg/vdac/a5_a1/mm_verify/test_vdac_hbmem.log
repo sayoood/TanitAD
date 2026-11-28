@@ -1,0 +1,14 @@
+F:\tanitad_scratch\mm_hbfix\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:2620: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  # RL-S1: [..., :sx0.shape[-1]] == [..., :6] for every 6-wide base (unchanged); a 7-wide NATIVE head (u400) compares all 7 columns
+export line deleted: HB-s0 preflight reads UNSET                                           RED       UNSET
+variable given to every arm: HA-s0 run reads it                                            RED       expandable_segments:True
+HB-s0 loses its ALLOC: reads UNSET (HB-SHUF still set)                                     RED       UNSET
+torch version of THIS (dev-box) env; the pod's 2.7.1 is INHERITED from the pins            INFO      2.11.0+cu128
+no release: the graph stays alive (the stale-graph mechanism)                              RED       alive
+live trunk-copy graphs at each fresh forward (original / patched)                          MEASURED  [0, 1, 1, 1] / [0, 0, 0, 0]
+release before G12 deleted: the stale graph is alive again [0, 1, 0]                       RED       [0, 1, 0]
+release before G21 deleted: the stale graph is alive again [0, 0, 1]                       RED       [0, 0, 1]
+MemGates replaced by a dict: no preflight_mem rows                                         RED       0 rows
+gpu_mem_gb keeps the whole-preflight peak (running max) only in the patched source         RED       text
+ZZTEST_PASS 83

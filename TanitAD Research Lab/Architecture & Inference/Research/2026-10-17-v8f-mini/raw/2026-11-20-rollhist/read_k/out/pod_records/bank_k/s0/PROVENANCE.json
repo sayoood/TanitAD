@@ -1,0 +1,82 @@
+{
+ "schema": "v8f-dagger-bank-v1",
+ "kind": "bank",
+ "created_unix": 1795286886.2453735,
+ "shard_provenance": [
+  "shard_000of004.provenance.json",
+  "shard_001of004.provenance.json",
+  "shard_002of004.provenance.json",
+  "shard_003of004.provenance.json"
+ ],
+ "n_records": 1970096,
+ "coverage": {
+  "n_windows": 985048,
+  "n_eligible": 783480,
+  "fraction": 0.7953724082481259,
+  "min": 0.5,
+  "blocked": false
+ },
+ "reasons_by_tick": {
+  "1": {
+   "ok": 833179,
+   "off_lat": 1842,
+   "off_head": 1533,
+   "end_edge": 148494,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 620020,
+   "off_lat": 92956,
+   "off_head": 10250,
+   "end_edge": 261822,
+   "nonfinite": 0
+  }
+ },
+ "partial": false,
+ "controls": {
+  "K-B4": {
+   "PASS": true,
+   "cases": {
+    "straight": true,
+    "stationary_tie": true,
+    "lateral_cut": true,
+    "heading_cut": true,
+    "end_edge": true,
+    "loop": true
+   },
+   "run_at": "generation (every shard) and at the merge",
+   "n_shards_checked": 4
+  },
+  "K-B5": {
+   "PASS": true,
+   "max_pose_now_err_m": 0.0,
+   "max_pose_now_yaw_err_rad": 0.0,
+   "max_reanchor_vs_pose_now_m": 0.0,
+   "max_rel_transform_err_m": 6.092798797565988e-05,
+   "max_rel_transform_yaw_err_rad": 9.527059154912365e-07,
+   "max_rel_transform_err_float64_m": 2.416166778027353e-13,
+   "tol_m": 0.0001,
+   "n_records": 1970096,
+   "n_skipped_nonfinite": 0,
+   "n_pairs": 503023984,
+   "sample": "all records with a finite own pose and a logged row at r' (reason != nonfinite); no sampling, no seed",
+   "n_shards": 4,
+   "measured_on": "the float32 tensors the swap emits (reanchor_rows, cast to float32), against the logged float64 poses",
+   "log_pose_sha256_by_shard": [
+    "0cd81db43e465926cc432bae24fcbfc0afc054ea5d454fbb8fd52782f84bd2e3",
+    "9e800043679437d82899466b12cfc8243eca022bc525007ce9a9b48d33928fb2",
+    "53338a911e8bca0c19ae60a29e591546719d112b65fa72e2530f8bdfa6b2ef20",
+    "0ad696e7df250f5fb2db3e3841d86c9d6c1879826b21d4bb93be932e7babb332"
+   ]
+  }
+ },
+ "generator": {
+  "acc_gain": 0.0,
+  "kappa_max": "0.2",
+  "path_exec": true,
+  "readout": "causal_g"
+ },
+ "warnings": [],
+ "bank_sha256": "128ebd6f14530bf5384fb82a6f784c9b56d3566a298e3dd793a3af52e4869b92",
+ "manifest": "bank.json"
+}

@@ -1,0 +1,48 @@
+*PIPELINE-VALIDATION · warmup_two_stage · `raw/summary_warmup_s1000.json`*
+
+| arm | device | S2-EPDMS-u | official two-stage EPDMS | stop frac | NC | DAC | DDC | TLC | EP | TTC | LK | HC | EC |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| R6_A1 | cpu fp32 | 0.3477 | UNAVAILABLE (stage-1 stand-in) | 0.010 | 0.679 | 0.627 | 0.738 | 0.941 | 0.850 | 0.662 | 0.578 | 0.995 | 0.627 |
+| R6_A1_s1 | cpu fp32 | 0.3628 | UNAVAILABLE (stage-1 stand-in) | 0.005 | 0.686 | 0.657 | 0.770 | 0.941 | 0.853 | 0.667 | 0.574 | 0.995 | 0.608 |
+| R6_A1NT | cpu fp32 | 0.3451 | UNAVAILABLE (stage-1 stand-in) | 0.010 | 0.689 | 0.627 | 0.740 | 0.941 | 0.850 | 0.676 | 0.574 | 0.995 | 0.637 |
+| R6_BLIND | cpu fp32 | 0.3208 | 0.1007 | 0.255 | 0.652 | 0.564 | 0.632 | 0.961 | 0.676 | 0.657 | 0.480 | 0.926 | 0.618 |
+| R6_NAVOFF | cpu fp32 | 0.3427 | UNAVAILABLE (stage-1 stand-in) | 0.005 | 0.694 | 0.618 | 0.725 | 0.941 | 0.847 | 0.667 | 0.569 | 0.995 | 0.637 |
+| R6_VMAXOFF | cpu fp32 | 0.3477 | UNAVAILABLE (stage-1 stand-in) | 0.010 | 0.679 | 0.627 | 0.738 | 0.941 | 0.850 | 0.662 | 0.578 | 0.995 | 0.627 |
+| CV_official | model-free (devkit scorer, CPU) | 0.3971 | 0.1854 | — | 0.681 | 0.716 | 0.811 | 0.946 | 0.718 | 0.681 | 0.564 | 0.995 | 0.588 |
+| STOP_zero | model-free (devkit scorer, CPU) | 0.5212 | 0.3009 | 1.000 | 0.926 | 0.926 | 0.983 | 0.980 | 0.359 | 0.926 | 0.593 | 0.662 | 0.255 |
+| ECHO_ha0_ext | model-free (devkit scorer, CPU) | 0.4287 | 0.2248 | — | 0.765 | 0.686 | 0.777 | 0.961 | 0.584 | 0.755 | 0.529 | 0.995 | 0.853 |
+
+| pair | ΔS2-EPDMS-u | Δ official | W/T/L | > seed floor | paired interval (logs) |
+|---|---|---|---|---|---|
+| R6_A1__minus__CV_official | -0.0494 | — | 69/98/37 | True | — |
+| R6_A1__minus__STOP_zero | -0.1735 | — | 71/33/100 | True | — |
+| R6_A1__minus__ECHO_ha0_ext | -0.0810 | — | 71/77/56 | True | — |
+| R6_A1__minus__R6_A1_s1 | -0.0151 | — | 38/125/41 | — | — |
+| R6_A1__minus__R6_BLIND | 0.0269 | — | 65/102/37 | True | — |
+| R6_A1__minus__R6_NAVOFF | 0.0050 | — | 47/131/26 | False | — |
+| R6_A1__minus__R6_VMAXOFF | 0.0000 | — | 0/204/0 | False | — |
+| R6_A1__minus__R6_A1NT | 0.0026 | — | 34/135/35 | False | — |
+| STOP_zero__minus__CV_official | 0.1241 | 0.1155 | 83/38/83 | — | — |
+
+seed floor |S2(R6_A1) − S2(R6_A1_s1)| = 0.0151
+
+*plan deltas vs R6_A1 · `raw/controls/plan_deltas_warmup_s1000.json` · seed floor (endpoint median) = 0.653 m*
+
+| arm | n | bit-identical plans | same anchor | 4 s endpoint abs Δ median / p90 / max (m) | > seed floor |
+|---|---|---|---|---|---|
+| R6_A1NT | 204 | 0.000 | 0.971 | 0.062 / 0.393 / 13.15 | False |
+| R6_A1_s1 | 204 | 0.000 | 0.676 | 0.653 / 2.797 / 13.39 | — |
+| R6_BLIND | 204 | 0.000 | 0.108 | 5.747 / 14.893 / 31.33 | True |
+| R6_NAVOFF | 204 | 0.000 | 0.897 | 0.166 / 1.418 / 8.41 | False |
+| R6_VMAXOFF | 204 | 1.000 | 1.000 | 0.000 / 0.000 / 0.00 | False |
+
+*SPEC §5 ladder · warmup_two_stage · R6_A1 · `raw/decomposition_warmup_s1000.json`*
+
+* stage_2: 118/204 scenes score 0 — unique/co-occurring zeros per multiplier: NC 18/64, DAC 33/76, DDC 1/43, TLC 7/12
+* stage_2 single-term ceilings (scene mean 0.331618): DAC +0.1236; NC +0.0527; EP +0.0327
+
+| stage_2 command | n | arm | STOP | Δ vs STOP | W/T/L vs STOP | NC0 | DAC0 |
+|---|---|---|---|---|---|---|---|
+| LEFT | 11 | 0.4734 | 0.6594 | -0.1860 | 5/1/5 | 0.000 | 0.364 |
+| STRAIGHT | 193 | 0.3235 | 0.4976 | -0.1741 | 66/32/95 | 0.332 | 0.373 |
+

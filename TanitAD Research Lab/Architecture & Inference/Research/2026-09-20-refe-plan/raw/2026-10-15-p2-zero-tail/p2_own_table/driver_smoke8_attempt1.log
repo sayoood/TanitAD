@@ -1,0 +1,10 @@
+[2026-10-15T21:57:56+0200] p2tab_driver start tag=smoke8 pid=30128
+[2026-10-15T21:57:56+0200] STATUS {'tag': 'smoke8', 'n_tokens': 8, 'pid': 30128, 'started': '2026-10-15T21:57:56+0200'}
+[2026-10-15T21:58:28+0200] STATUS {'preflight_ckpt_sha256': 'ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51', 'preflight_ckpt_ok': True}
+[2026-10-15T21:58:29+0200] STATUS {'stage': 'dump', 'state': 'running u400 seam+dump (attempt 1)', 'started': '2026-10-15T21:58:28+0200', 'gpu_used_mib_before': 2333}
+[2026-10-15T22:05:12+0200] STATUS {'stage': 'dump', 'state': 'seam rc=0 (attempt 1)', 'dump_seconds': 404}
+[2026-10-15T22:05:12+0200] STATUS {'result': 'stage dump done'}
+[2026-10-15T22:05:12+0200] STATUS {'tag': 'smoke8', 'n_tokens': 8, 'pid': 30128, 'started': '2026-10-15T21:58:28+0200'}
+[2026-10-15T22:05:13+0200] STATUS {'stage': 'gate', 'fidelity_pass': False, 'fidelity': {'n_tokens_asked': 8, 'n_rows': 8, 'proposals_shape': [8, 64, 8, 3], 'logits_shape': [8, 64, 6], 'rule_in_dump': 'navsim_v1', 'ckpt_in_dump': 'D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt', 'tolerance_m': 0.001, 'all_tokens_present': True, 'tokens_in_banked_seam': True, 'max_abs_pose_diff_m': 0.001361846923828125, 'n_identical': 0, 'n_diff_gt_1e_4': 8, 'n_diff_gt_tol': 1, 'fingerprints_equal': True, 'worst_tokens': [('6884907db45c5cad', 0.001361846923828125), ('6cc1bbadf8f25f7c', 0.0007610321044921875), ('a622ff338b425c28', 0.00072479248046875), ('2cbf505c735c5c34', 0.0004215240478515625), ('ca2552a32a0058bc', 0.0002658367156982422)], 'pick_index_distinct': 8, 'PASS': False}}
+[2026-10-15T22:05:13+0200] STATUS {'stage': 'gate', 'result': 'INSTRUMENT FAILURE: the fidelity gate failed -- no verdict (gate_fidelity.json)'}
+[2026-10-15T22:05:13+0200] FAILED: smoke8 stage gate rc=2 (gate_fidelity.json in _smoke8)

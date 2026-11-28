@@ -1,0 +1,25 @@
+{
+ "_what": "Are the 86 already-covered aug120 clips (produced on a POD before this fix) affected by the same dtype crash? NO - and they are the reference the re-run should look like.",
+ "_evidence_class": "MEASURED (far side, 24 batch_*/sam3/sam3.json read record-by-record)",
+ "n_batch_files": 24,
+ "n_clip_records": 93,
+ "note_on_93_vs_86": "93 records over 86 unique aug120 clips - the fusion run declares duplicate two-pass clips, merged content-identical modulo _calls (s2_lab_lib.load_v2_records policy).",
+ "n_det_total": 3283,
+ "mean_det_per_clip": 35.3,
+ "clips_with_zero_det": 4,
+ "error_census": {},
+ "per_concept_totals": {
+  "car": 1565,
+  "traffic sign": 850,
+  "traffic light": 528,
+  "pedestrian": 171,
+  "truck": 119,
+  "bus": 48,
+  "cyclist": 2
+ },
+ "records_carrying_a_liveness_control": 0,
+ "conclusions": [
+  "The C77 dtype crash is ENVIRONMENT-SPECIFIC (Colab torch 2.11.0+cu128 + sam3 @ HEAD, where vitdet.Mlp.forward routes through the perflib fused bf16 kernel). The pod-produced records predate that routing and are clean.",
+  "RESIDUAL WORK ITEM: 4 of the 93 pre-existing records have ZERO detections and NO liveness control, so for those four an empty scene and a dead engine are still indistinguishable. They need a re-run with the control before any zero of theirs is quoted."
+ ]
+}

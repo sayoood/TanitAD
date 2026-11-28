@@ -1,0 +1,25 @@
+........................................................................ [ 47%]
+........................................................................ [ 94%]
+........F                                                                [100%]
+================================== FAILURES ===================================
+_________ test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot _________
+
+    def test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot():
+        toy = _Toy()
+        main = G.run_arm(toy, "main", steps=1200, log_every=600, lr=1e-3)
+        zero = G.run_arm(toy, "memory_zeros", steps=1200, log_every=600, lr=1e-3)
+        m, z = main["rows"][-1], zero["rows"][-1]
+>       assert m["ap2m"] > 0.8 and m["rec"] > 0.8, m
+E       AssertionError: {'step': 1200, 'loss_mean_since_last': 5.505832123359045, 'ap2m': 0.651569903443288, 'prec': 0.8125, ...}
+E       assert (0.651569903443288 > 0.8)
+
+tests\test_g_box_overfit.py:486: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[gbo 17:19:59] main step 600: AP 0.265 P 0.500 R 0.500 conf 48 centre 1.969 pres 0.0008
+[gbo 17:20:14] main step 1200: AP 0.652 P 0.812 R 0.812 conf 48 centre 1.097 pres 0.0003
+[gbo 17:20:31] memory_zeros step 600: AP 0.008 P 0.062 R 0.062 conf 48 centre 7.515 pres 0.0007
+[gbo 17:20:50] memory_zeros step 1200: AP 0.013 P 0.083 R 0.083 conf 48 centre 7.237 pres 0.0003
+=========================== short test summary info ===========================
+FAILED tests/test_g_box_overfit.py::test_TOY_the_loop_memorises_and_the_memory_zeros_arm_cannot
+1 failed, 152 passed in 164.30s (0:02:44)
+PYTEST_EXIT=1

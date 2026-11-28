@@ -1,0 +1,535 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_T1KIN_CAUSALBUCKET.md (d2ed136d)",
+ "tier": "T1 (T1-kin: self-action OPEN loop; ego state = own executed motion; cameras logged; never 'closed loop')",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, on episodes; the two seeds are the training replicate",
+ "settings_primary": {
+  "m": 10,
+  "nav": "deadreckon",
+  "scene": "logged",
+  "limit": "causal",
+  "schedule": "periodic"
+ },
+ "F_m": 0.1207,
+ "two_F_m": 0.2415,
+ "controls": {
+  "C-L1": {
+   "logged": true,
+   "off": true,
+   "PASS": true
+  },
+  "C-L2": {
+   "suite_last_line": "35 passed in 37.11s",
+   "mutants_red": true,
+   "PASS": true
+  },
+  "C-L3": {
+   "n": 20,
+   "PASS": true
+  },
+  "reachability": {
+   "s0": {
+    "ticks": 7197,
+    "no_finite_past": 0,
+    "ticks_causal_ne_logged": 1527,
+    "max_abs_tick0_plan_causal_minus_logged_m": 12.538286209106445,
+    "PASS": true
+   },
+   "s1": {
+    "ticks": 7197,
+    "no_finite_past": 0,
+    "ticks_causal_ne_logged": 1536,
+    "max_abs_tick0_plan_causal_minus_logged_m": 11.521472930908203,
+    "PASS": true
+   },
+   "PASS": true
+  },
+  "floor_untouched": {
+   "s0": {
+    "max_abs_floor_causal_minus_t1kin_m": 0.0,
+    "PASS": true
+   },
+   "s1": {
+    "max_abs_floor_causal_minus_t1kin_m": 0.0,
+    "PASS": true
+   },
+   "PASS": true
+  }
+ },
+ "seeds": {
+  "s0": {
+   "PRIMARY_causal_minus_p10_ade6": {
+    "delta": -0.768,
+    "lo": -0.9177,
+    "hi": -0.6258,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "PASS": true
+   },
+   "beside": {
+    "rows_causal_minus_p10": {
+     "ade2_m": {
+      "delta": -0.0122,
+      "lo": -0.0164,
+      "hi": -0.0074,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ade6_m": {
+      "delta": -0.768,
+      "lo": -0.9177,
+      "hi": -0.6258,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "speed_mae_mps": {
+      "delta": -0.3623,
+      "lo": -0.4564,
+      "hi": -0.2683,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "along_mae_m": {
+      "delta": -0.4739,
+      "lo": -0.6182,
+      "hi": -0.3409,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "accel_mae_mps2": {
+      "delta": 0.0173,
+      "lo": -0.1468,
+      "hi": 0.1799,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "heading_mae_deg": {
+      "delta": -0.6323,
+      "lo": -1.3106,
+      "hi": 0.0256,
+      "separated": false,
+      "n_windows": 2373,
+      "n_episodes": 141
+     },
+     "yaw_rate_mae_degps": {
+      "delta": 2.8851,
+      "lo": 1.3126,
+      "hi": 4.5633,
+      "separated": true,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "curvature_mae_1pm": {
+      "delta": 0.0302,
+      "lo": 0.0188,
+      "hi": 0.0442,
+      "separated": true,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "cross_mae_m": {
+      "delta": -0.5572,
+      "lo": -0.6759,
+      "hi": -0.4474,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "rows_causal_minus_hacc_logged": {
+     "ade2_m": {
+      "delta": -0.001,
+      "lo": -0.0028,
+      "hi": 0.0005,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ade6_m": {
+      "delta": 0.0612,
+      "lo": 0.0031,
+      "hi": 0.1201,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "speed_mae_mps": {
+      "delta": 0.0245,
+      "lo": -0.0171,
+      "hi": 0.0695,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "along_mae_m": {
+      "delta": 0.062,
+      "lo": -0.0014,
+      "hi": 0.1273,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "accel_mae_mps2": {
+      "delta": -0.0278,
+      "lo": -0.0847,
+      "hi": 0.0259,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "heading_mae_deg": {
+      "delta": -0.2006,
+      "lo": -0.4472,
+      "hi": 0.0691,
+      "separated": false,
+      "n_windows": 2373,
+      "n_episodes": 141
+     },
+     "yaw_rate_mae_degps": {
+      "delta": -1.3197,
+      "lo": -2.3908,
+      "hi": -0.2669,
+      "separated": true,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "curvature_mae_1pm": {
+      "delta": -0.0098,
+      "lo": -0.022,
+      "hi": 0.0024,
+      "separated": false,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "cross_mae_m": {
+      "delta": 0.0149,
+      "lo": -0.0116,
+      "hi": 0.0435,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "dominance_rows_separated_worse": [
+     "yaw_rate_mae_degps",
+     "curvature_mae_1pm"
+    ],
+    "mean_ade6_m": {
+     "causal": 2.675308305904701,
+     "p10": 3.443279013457244,
+     "hacc_logged": 2.61415081223835
+    },
+    "bucket_stats_model_ticks": {
+     "ticks": 7197,
+     "confusion_logged_x_causal": [
+      [
+       1843,
+       526,
+       31,
+       0
+      ],
+      [
+       419,
+       1856,
+       227,
+       0
+      ],
+      [
+       2,
+       162,
+       1670,
+       104
+      ],
+      [
+       0,
+       0,
+       56,
+       301
+      ]
+     ]
+    },
+    "causal_all_minus_p10_ade6": {
+     "delta": -0.7304,
+     "lo": -0.8711,
+     "hi": -0.5979,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "causal_all_bucket_stats": {
+     "ticks": 7197,
+     "confusion_logged_x_causal": [
+      [
+       1382,
+       967,
+       51,
+       0
+      ],
+      [
+       297,
+       1787,
+       418,
+       0
+      ],
+      [
+       1,
+       108,
+       1683,
+       146
+      ],
+      [
+       0,
+       0,
+       56,
+       301
+      ]
+     ]
+    }
+   }
+  },
+  "s1": {
+   "PRIMARY_causal_minus_p10_ade6": {
+    "delta": -0.7336,
+    "lo": -0.8776,
+    "hi": -0.5984,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "PASS": true
+   },
+   "beside": {
+    "rows_causal_minus_p10": {
+     "ade2_m": {
+      "delta": -0.0107,
+      "lo": -0.0158,
+      "hi": -0.0046,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ade6_m": {
+      "delta": -0.7336,
+      "lo": -0.8776,
+      "hi": -0.5984,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "speed_mae_mps": {
+      "delta": -0.3876,
+      "lo": -0.4731,
+      "hi": -0.3038,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "along_mae_m": {
+      "delta": -0.5085,
+      "lo": -0.6266,
+      "hi": -0.3974,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "accel_mae_mps2": {
+      "delta": -0.2018,
+      "lo": -0.3638,
+      "hi": -0.0556,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "heading_mae_deg": {
+      "delta": -0.9251,
+      "lo": -1.5349,
+      "hi": -0.3448,
+      "separated": true,
+      "n_windows": 2373,
+      "n_episodes": 141
+     },
+     "yaw_rate_mae_degps": {
+      "delta": 1.1918,
+      "lo": -0.3093,
+      "hi": 2.6964,
+      "separated": false,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "curvature_mae_1pm": {
+      "delta": 0.013,
+      "lo": 0.0057,
+      "hi": 0.0217,
+      "separated": true,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "cross_mae_m": {
+      "delta": -0.4344,
+      "lo": -0.5677,
+      "hi": -0.3085,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "rows_causal_minus_hacc_logged": {
+     "ade2_m": {
+      "delta": -0.0013,
+      "lo": -0.0027,
+      "hi": -0.0001,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ade6_m": {
+      "delta": 0.0609,
+      "lo": 0.0185,
+      "hi": 0.103,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "speed_mae_mps": {
+      "delta": 0.043,
+      "lo": 0.0131,
+      "hi": 0.0739,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "along_mae_m": {
+      "delta": 0.0727,
+      "lo": 0.0299,
+      "hi": 0.1169,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "accel_mae_mps2": {
+      "delta": 0.027,
+      "lo": -0.0081,
+      "hi": 0.0696,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "heading_mae_deg": {
+      "delta": -0.1556,
+      "lo": -0.2933,
+      "hi": -0.016,
+      "separated": true,
+      "n_windows": 2373,
+      "n_episodes": 141
+     },
+     "yaw_rate_mae_degps": {
+      "delta": -0.3386,
+      "lo": -0.8379,
+      "hi": 0.178,
+      "separated": false,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "curvature_mae_1pm": {
+      "delta": -0.0025,
+      "lo": -0.0057,
+      "hi": 0.0006,
+      "separated": false,
+      "n_windows": 2366,
+      "n_episodes": 141
+     },
+     "cross_mae_m": {
+      "delta": -0.0019,
+      "lo": -0.0231,
+      "hi": 0.0183,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "dominance_rows_separated_worse": [
+     "curvature_mae_1pm"
+    ],
+    "mean_ade6_m": {
+     "causal": 2.709635998904177,
+     "p10": 3.443279013457244,
+     "hacc_logged": 2.648762000228867
+    },
+    "bucket_stats_model_ticks": {
+     "ticks": 7197,
+     "confusion_logged_x_causal": [
+      [
+       1835,
+       535,
+       30,
+       0
+      ],
+      [
+       414,
+       1862,
+       226,
+       0
+      ],
+      [
+       2,
+       164,
+       1664,
+       108
+      ],
+      [
+       0,
+       0,
+       57,
+       300
+      ]
+     ]
+    },
+    "causal_all_minus_p10_ade6": {
+     "delta": -0.6792,
+     "lo": -0.8221,
+     "hi": -0.5457,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "causal_all_bucket_stats": {
+     "ticks": 7197,
+     "confusion_logged_x_causal": [
+      [
+       1379,
+       971,
+       50,
+       0
+      ],
+      [
+       293,
+       1793,
+       416,
+       0
+      ],
+      [
+       1,
+       109,
+       1680,
+       148
+      ],
+      [
+       0,
+       0,
+       57,
+       300
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "OUTCOME": {
+  "outcome": "CAUSAL KEEPS THE MARGIN",
+  "refused_on": []
+ }
+}

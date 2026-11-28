@@ -1,0 +1,37 @@
+5d878f17f60b a9821fbf0981 a72fcd1cd2f3 0edb9b8ebb62 
+container free 44 GB
+generator output equals tok_probe_u.py: checked-by-the-tool-test
+test_dscale_precheck rc 0 :: 15 passed, 0 failed, 0 skipped in 2.6 s (stand-in runner, not pytest)
+test_dscale_lead_read rc 0 :: 24 passed, 0 failed, 0 skipped in 0.4 s (stand-in runner, not pytest)
+test_tok_probe_u rc 0 :: 12 passed, 0 failed, 0 skipped in 13.8 s (stand-in runner, not pytest)
+mutation runner rc 1
+before precheck GREEN 15 passed, 0 failed, 0 skipped in 2.3 s (stand-in runner, not pytest)
+before reader GREEN 24 passed, 0 failed, 0 skipped in 0.4 s (stand-in runner, not pytest)
+before tool GREEN 12 passed, 0 failed, 0 skipped in 14.3 s (stand-in runner, not pytest)
+clip_filter_dropped RED
+evaluation_clips_let_into_training RED
+closing_weight_not_zero RED
+gap_shuffle_shuffles_presence_too RED
+gap_shuffle_applied_to_nothing RED
+presence_only_form_dropped_from_check_log RED
+precheck_d2_compares_the_wrong_column RED
+precheck_d1_ignores_shared_ids RED
+precheck_d2_ignores_rows_in_one_file_only RED
+precheck_d2j_ignores_the_lead_flag RED
+precheck_d2_tolerance_loosened RED
+reader_seed_level_switched_off RED
+reader_pair_sign_swapped RED
+reader_interval_touching_zero_separates RED
+reader_three_of_four_clause_lowered RED
+reader_error_clause_dropped RED
+reader_d5_does_not_look_at_the_interval RED
+reader_new_clip_gap_labels_not_required RED
+precheck_d2n_samples_corpus_clips RED
+precheck_d2g_does_not_need_gap_labels RED
+reader_clock_control_does_not_need_the_new_clips RED
+reader_evalset_control_does_not_need_the_order RED
+after precheck GREEN 15 passed, 0 failed, 0 skipped in 2.3 s (stand-in runner, not pytest)
+after reader GREEN 24 passed, 0 failed, 0 skipped in 0.5 s (stand-in runner, not pytest)
+after tool RED 1 passed, 1 failed, 0 skipped in 5.7 s (stand-in runner, not pytest)
+ZZ MUTATIONS-U DONE 22 of 22 red; suites before {'precheck': {'green': True, 'last_line': '15 passed, 0 failed, 0 skipped in 2.3 s (stand-in runner, not pytest)'}, 'reader': {'green': True, 'last_line
+ZZ TESTS DONE /workspace/v8proof/dscale_lead/tests_193958 bad=0

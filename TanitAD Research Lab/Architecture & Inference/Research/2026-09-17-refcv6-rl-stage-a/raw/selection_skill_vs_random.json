@@ -1,0 +1,88 @@
+{
+ "_what": "Does the deployed selector beat PICKING AT RANDOM from its own fan? Zero-GPU, from the banked Stage A held-out rows.",
+ "_tier": "T0 (deployed sampler, recorded future, proxy reward)",
+ "_evidence_class": "MEASURED (ours)",
+ "_estimator": "taniteval.ci.paired_episode_cluster_bootstrap, n_boot 2000, seed 0",
+ "_controls": {
+  "no_information": "fan_pdms_mean -- the expected score of a uniformly drawn candidate; a selector that reads nothing scores here",
+  "ceiling": "fan_pdms_best -- the best candidate actually present in the fan"
+ },
+ "arms": {
+  "L1-RL-s0": {
+   "n_windows": 493,
+   "n_episode_clusters": 40,
+   "mean_sel_pdms": 0.871201,
+   "mean_random_pick_control": 0.699189,
+   "mean_oracle_ceiling": 0.994863,
+   "sel_minus_random": {
+    "delta": 0.172,
+    "lo": 0.1308,
+    "hi": 0.2136,
+    "ci95": 0.0414,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "sel_minus_oracle": {
+    "delta": -0.1237,
+    "lo": -0.1709,
+    "hi": -0.0835,
+    "ci95": 0.0437,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "normalised_skill_mean": 0.668,
+   "normalised_skill_median": 0.9475,
+   "n_windows_with_a_real_choice": 491,
+   "windows_selector_worse_than_random": 63,
+   "frac_worse_than_random": 0.1278
+  },
+  "L1-NORL-s0": {
+   "n_windows": 493,
+   "n_episode_clusters": 40,
+   "mean_sel_pdms": 0.916096,
+   "mean_random_pick_control": 0.662915,
+   "mean_oracle_ceiling": 0.993801,
+   "sel_minus_random": {
+    "delta": 0.2532,
+    "lo": 0.2119,
+    "hi": 0.2964,
+    "ci95": 0.0423,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "sel_minus_oracle": {
+    "delta": -0.0777,
+    "lo": -0.114,
+    "hi": -0.0454,
+    "ci95": 0.0343,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 493,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "normalised_skill_mean": 0.8156,
+   "normalised_skill_median": 1.0,
+   "n_windows_with_a_real_choice": 493,
+   "windows_selector_worse_than_random": 34,
+   "frac_worse_than_random": 0.069
+  }
+ }
+}

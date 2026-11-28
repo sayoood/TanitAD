@@ -1,0 +1,26 @@
+unmutated suite: 34 checks GREEN   (INFO {"fd_max_abs_err": 5.25e-12, "fd_max_abs_grad": 0.00761, "r8": "skipped (teacher rows or labels absent)", "corner_dev_f64": 1.42e-14, "corner_dev_f32": 1.43e-05, "poses_5hz_dev": 1.42e-14, "poses_navsim_dev": 1.42e-14, "n_coord_dev": 2.84e-14, "fwd_maxabs_f64_noise": 3.47e-13, "fwd_maxabs_f64_smooth": 5.33e-15, "fwd_maxabs_f32_noise": 0.000187, "fwd_maxabs_f32_smooth": 2.86e-06, "fwd_maxabs_f32_smooth_mean": 1.76e-07, "fwd_maxabs_f32_new_vs_truth": 3.62e-06, "fwd_maxabs_f32_old_vs_truth": 3.43e-06, "pt_grad_maxabs": 3.01e-12, "pt_grad_n": 200000.0, "loss_val_maxabs": 5.55e-17, "loss_grad_maxabs": 2.55e-18, "cuda": "CUDA_SKIPPED"})
+mutation                                     term       caught-by (failing checks)
+margin sign flipped                          margin      9 failing; outside the end-to-end reference (R*): H1, H2, H3
+x/y swapped in the gather index              grid       14 failing; outside the end-to-end reference (R*): H3, C1, D1, H5, N2, N3, N4, N5
+half-cell offset dropped (align_corners=True) grid       11 failing; outside the end-to-end reference (R*): H5, N2, N3, N4, N5
+upsampling dropped (5 Hz poses repeated)     upsample    7 failing; outside the end-to-end reference (R*): F2, F5
+loss on the best-matching proposal only      all-64     11 failing; outside the end-to-end reference (R*): H1, H2, H3, C2, D1
+int8 unit (0.1 m) forgotten                  unit       14 failing; outside the end-to-end reference (R*): H1, H2, H3, H5, N2, N3, N4, N5
+border clamp dropped (x)                     border     13 failing; outside the end-to-end reference (R*): H4, V1, V2, N2, N3, N4, N5, N6, N7
+border clamp dropped (y)                     border     11 failing; outside the end-to-end reference (R*): V1, V2, N2, N3, N4, N5, N6, N7
+x0 not capped at NX - 2                      cap        18 failing; outside the end-to-end reference (R*): H2, H4, C1, C2, E1, E2, V1, V2, N2, N3, N4, N5, N6, N7
+y0 not capped at NY - 2                      cap         3 failing; outside the end-to-end reference (R*): N2, N3, N4
+grid_sample re-introduced                    nogs        1 failing; outside the end-to-end reference (R*): N6
+hinge dropped (linear)                       hinge      11 failing; outside the end-to-end reference (R*): H1, H3, C1, C2, D1, E2
+out-of-extent mask dropped                   extent      9 failing; outside the end-to-end reference (R*): H2, E1, E2
+yaw wrap dropped                             wrap        4 failing; outside the end-to-end reference (R*): F2, F3, F5
+poses detached (no gradient path)            grad       10 failing; outside the end-to-end reference (R*): C1, C2, D1, G1, E1, E2, V1, N5, N6, N7
+valid mask ignored                           valid       1 failing; outside the end-to-end reference (R*): V1
+rear-axle offset sign (centre vs axle)       footprint   7 failing; outside the end-to-end reference (R*): F1
+interp switch ignored                        interp      1 failing; outside the end-to-end reference (R*): -- none (reference only)
+time base off by one (t = 0 ... 3.9)         steps       9 failing; outside the end-to-end reference (R*): H2, H3, E1
+lookup vs frozen grid_sample: fwd_maxabs_f32_new_vs_truth 3.624e-06, fwd_maxabs_f32_noise 1.869e-04, fwd_maxabs_f32_old_vs_truth 3.433e-06, fwd_maxabs_f32_smooth 2.861e-06, fwd_maxabs_f32_smooth_mean 1.760e-07, fwd_maxabs_f64_noise 3.473e-13, fwd_maxabs_f64_smooth 5.329e-15, loss_grad_maxabs 2.548e-18, loss_val_maxabs 5.551e-17, n_coord_dev 2.842e-14, pt_grad_maxabs 3.009e-12, pt_grad_n 2.000e+05
+CUDA_SKIPPED
+corner agreement vs navsim_dac.corners_global: max dev f64 1.42e-14 m, f32 1.43e-05 m
+up-sampling route (5hz vs navsim2hz) on 256 arcs v 5-18 m/s, |kappa| <= 0.05: corner deviation max 0.475 m, p99 0.362 m, mean 0.0777 m  (margin is 0.25 m)
+ZZTEST_PASS 54  (34 checks green on the unmutated module + 19 RED mutations + 1 coverage of the PI's six)

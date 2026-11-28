@@ -1,0 +1,195 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "FAIL",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 1,
+    "n_registered": 357,
+    "n_with_state_entry": 351,
+    "n_trained": 351,
+    "n_case_a_no_state": 6,
+    "n_case_b_zero_state": 0,
+    "step_max": 40284,
+    "ckpt_step": 40284
+  },
+  "alignment": {
+    "mode": "global-shape-dp",
+    "unique": true,
+    "n_alignments": 1.0,
+    "n_model_float_entries": 361,
+    "n_entries_excluded": 132,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 0,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [
+    {
+      "id": 274,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.offset_head.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 6144,
+      "numel_hi": 6144,
+      "allowed_by": null
+    },
+    {
+      "id": 275,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.offset_head.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 16,
+      "numel_hi": 16,
+      "allowed_by": null
+    },
+    {
+      "id": 347,
+      "case": "a_no_state",
+      "names": [
+        "tac_goal_tok_head.net.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 11264,
+      "numel_hi": 11264,
+      "allowed_by": null
+    },
+    {
+      "id": 348,
+      "case": "a_no_state",
+      "names": [
+        "tac_goal_tok_head.net.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 22,
+      "numel_hi": 22,
+      "allowed_by": null
+    },
+    {
+      "id": 355,
+      "case": "a_no_state",
+      "names": [
+        "scorer.goal_point.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 1024,
+      "numel_hi": 1024,
+      "allowed_by": null
+    },
+    {
+      "id": 356,
+      "case": "a_no_state",
+      "names": [
+        "scorer.goal_point.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 2,
+      "numel_hi": 2,
+      "allowed_by": null
+    }
+  ],
+  "allowed": [],
+  "unused_allow": [],
+  "untrained_numel": {
+    "offending_lo": 18472,
+    "offending_hi": 18472,
+    "allowed_lo": 0,
+    "allowed_hi": 0
+  },
+  "controls": [
+    {
+      "pattern": "str_goal_head\\..*",
+      "trained_matches": 2,
+      "example": [
+        "str_goal_head.weight",
+        "str_goal_head.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "scorer\\.[^g].*",
+      "trained_matches": 2,
+      "example": [
+        "scorer.cand_bias",
+        "scorer.log_tau"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "core\\.encoder\\..*",
+      "trained_matches": 198,
+      "example": [
+        "core.encoder.stem.0.weight",
+        "core.encoder.stem.1.weight",
+        "core.encoder.stem.1.bias"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "lat_head_tac\\..*",
+      "trained_matches": 2,
+      "example": [
+        "lat_head_tac.weight",
+        "lat_head_tac.bias"
+      ],
+      "ok": true
+    }
+  ],
+  "info": {
+    "partial_grad": [
+      {
+        "id": 343,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lat_head_tac.weight"
+        ]
+      },
+      {
+        "id": 344,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lat_head_tac.bias"
+        ]
+      },
+      {
+        "id": 345,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lon_head_tac.weight"
+        ]
+      },
+      {
+        "id": 346,
+        "step": 40134,
+        "fraction": 0.9963,
+        "names": [
+          "lon_head_tac.bias"
+        ]
+      }
+    ]
+  },
+  "ckpt": "D:/Projects/TanitAD-artifacts/refcv5v2_final/ckpt.pt",
+  "ckpt_size_bytes": 1299559201,
+  "load": {
+    "weights_only": true,
+    "mmap": true,
+    "earlier_load_failures": []
+  },
+  "ckpt_sha256": "a42d68af682521cd8f2f8ca2c4d5949a34e352ce1074351ebb16cc16e9dce57d"
+}

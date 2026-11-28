@@ -1,0 +1,25 @@
+--- a/stack/tests/test_v6_effective_weights.py
++++ b/stack/tests/test_v6_effective_weights.py
+@@ -108,11 +108,19 @@
+ def test_the_measured_zeroing_counts():
+     """MEASURED 2026-09-06. ⚠️ S-T zeroes TEN terms, not the nine an earlier
+     enumeration reported: `w_s1_multi` was missed. S-S was not enumerated at
+-    all and zeroes FOURTEEN."""
+-    assert len(V6.stage_zeroed_terms("S-W")) == 10
++    all and zeroes FOURTEEN.
++
++    ⭐ 2026-09-27 (R3, v7f_r3): `w_tac_label_all` joined the loss — zeroed in
++    S-W and S-S (layer_tac frozen there), in force in S-T/S-J — so S-W 10 -> 11
++    and S-S 14 -> 15; S-T and S-J are unchanged. A DELIBERATE count change,
++    named here, not a re-measurement."""
++    assert len(V6.stage_zeroed_terms("S-W")) == 11
+     assert len(V6.stage_zeroed_terms("S-T")) == 10
+     assert "w_s1_multi" in V6.stage_zeroed_terms("S-T")
+-    assert len(V6.stage_zeroed_terms("S-S")) == 14
++    assert "w_tac_label_all" not in V6.stage_zeroed_terms("S-T")
++    assert len(V6.stage_zeroed_terms("S-S")) == 15
++    assert {"w_tac_label_all"} <= (V6.stage_zeroed_terms("S-W")
++                                   & V6.stage_zeroed_terms("S-S"))
+     assert V6.stage_zeroed_terms("S-J") == frozenset()
+ 
+ 

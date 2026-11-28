@@ -1,0 +1,17 @@
+REF-C RL readiness RESUMED: RUNNABLE-WITH-FIXES — four defects fixed, STAGE 0 passes on the 4060, cost measured, H-RL-MIN-1 pre-registered, nothing launched
+
+PI: "can we run the rl experiments of refc to see the effect, the training fly wheel agent prepared this in the past."
+
+Predecessor (DeployFlyWheel, died at the API limit) left the driver rl_refcv3_min.py, the chain launch_refcv3_rl_min.sh, 8 RL-fit clips + lead block — all OFF-Drive, none in the repo, STAGE 0 never run. This commit banks them with the fixes STAGE 0 needed:
+
+1. taniteval/tools/refcv3_arm.py — load_model tolerates the ONE inert persistent buffer core.decoder.anchor_controls (refcv4-b, read only when v0_conditioned) and records it; the strict refusal of the published refcv3 @ 40,284 (md5 b1ed7075…) was a FALSE refusal that blocks every dev-box eval of the shipped weights. ⚠️ NAMED SWEEP: the worktree copy of this file also carries ~105 uncommitted lines from another agent (worktree blob 95c13cf8 vs HEAD 640d2321 before my patch); they compile and are taken as-is — recoverable because recorded here.
+2. stack/tanitad/rl/rewards.py — _collision gains a TIME-ALIGNED moving-lead branch (lead_path without obstacles); a static lead makes any follower with a time gap < horizon "collide" with the lead's t0 position. Pinning test added (stack/tests/test_rl_rewards.py). RL suite 149/149.
+3. stack/scripts/rl_refcv3_min.py (NEW) — --lead-mode track (default), R_ORACLE oracle-in-fan readout, --mode humanflag (the H-RL-THRESH-1 check before any arm), a verdict that reads paired_openloop.py's REAL schema (the predecessor's read `families_paired_deltas`, a key the tool never writes → structurally NULL), preflight writes its partial report on any gate failure, gate-5 tolerance 1e-8 m² (measured 9.06e-11 m² live-vs-frozen-copy with live-vs-live exactly 0).
+
+MEASURED on the dev-box 4060 (raw/preflight.json, raw/humanflag_fit8.json): trainable 9,206,032 / 107,032,901 (8.60 %), 4 selector tensors excluded; no-ego-future permutation test PASS; HACKABLE reward FLAGGED at the scored geometry; 0.862 s/step, peak 1.78 GB → rl 28.7 min + reg_echo 28.7 min + ctrl0 2.9 min, ≈2.5–3 h with the T1 evals. humanflag (318 lead windows / 4 eps): contact fires on the human 0.000, TTC veto 0.047 — but hold-v0 straight scores ≥ the human on 78.3 % of lead windows: the reward's improvement direction is the ha0 floor (0.2304 m worse than the model in the base's own eval). Committed prediction of H-RL-MIN-1: NULL or FAIL-GUARD.
+
+Register: D-RL-READY-1, D-RL-REWARD-FLOOR-1, H-RL-MIN-1 inserted (GOALS_AND_CLAIMS.md — the worktree copy may carry other agents' uncommitted rows; taken as-is). Also banks the predecessor's stranded RESULT_D_SAFE_CAL_2.md (+ analyzer + raw) into the 2026-08-29 RL bank.
+
+⛔ NOT LAUNCHED: launch_refcv3_rl_min.sh exits after STAGE 0 without LAUNCH_APPROVED=1. Training pod untouched; Thor idle-checked only.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

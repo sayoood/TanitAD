@@ -1,0 +1,76 @@
+{
+ "candidate_id": "ep_r1_planted",
+ "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+ "root": "D:/epadm1/it/cand_ep_r1"
+}
+PREPARE_OK
+{
+ "n_files": 69,
+ "manifest": "D:/epadm1/it/cand_ep_r1/work/bank/MANIFEST.sha256.json",
+ "manifest_sha256": "a503e9b5005b9b5d277460ea361d385179d9001a8ee53940f876b47b4e60b69c",
+ "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51"
+}
+The registration (EP-ADMISSION prereg) must NAME both sha256 values above BEFORE `ep_admission.py run`.
+{
+ "alignment": {
+  "keys_bijection": true,
+  "labels_bit_equal": true,
+  "ckpt_step_equal": true,
+  "n_sets": 15808
+ },
+ "n_sets": 15808,
+ "identity_controls": {
+  "fanpath_logit_max": 0.0,
+  "n_sets": 15808,
+  "setpath_logit_differs_from_fan_gt_1e-3": 15808
+ },
+ "bank_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "candidate_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "ckpt_matches": true,
+ "manifest_sha256": "a503e9b5005b9b5d277460ea361d385179d9001a8ee53940f876b47b4e60b69c",
+ "same_logits_as_p2_on_any_set": 0,
+ "PASS": true,
+ "note": "same_logits_as_p2_on_any_set > 0 would mean the candidate's scorer reproduced P2's logits bit for bit on a set: the dump was run on the wrong checkpoint"
+}
+{
+ "candidate_id": "p2_copy_planted",
+ "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+ "root": "D:/epadm1/it/cand_p2_copy"
+}
+PREPARE_OK
+{
+ "n_files": 69,
+ "manifest": "D:/epadm1/it/cand_p2_copy/work/bank/MANIFEST.sha256.json",
+ "manifest_sha256": "720864da99f1dc66c42014a357d102c1d953c070876d7d9f0a8e37c03a8a4378",
+ "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51"
+}
+The registration (EP-ADMISSION prereg) must NAME both sha256 values above BEFORE `ep_admission.py run`.
+{
+ "alignment": {
+  "keys_bijection": true,
+  "labels_bit_equal": true,
+  "ckpt_step_equal": true,
+  "n_sets": 15808
+ },
+ "n_sets": 15808,
+ "identity_controls": {
+  "fanpath_logit_max": 0.0,
+  "n_sets": 15808,
+  "setpath_logit_differs_from_fan_gt_1e-3": 15808
+ },
+ "bank_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "candidate_ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt",
+ "ckpt_matches": true,
+ "manifest_sha256": "720864da99f1dc66c42014a357d102c1d953c070876d7d9f0a8e37c03a8a4378",
+ "same_logits_as_p2_on_any_set": 15808,
+ "PASS": false,
+ "note": "same_logits_as_p2_on_any_set > 0 would mean the candidate's scorer reproduced P2's logits bit for bit on a set: the dump was run on the wrong checkpoint"
+}
+controls: C-ID (P2 as the candidate)
+candidate ep_r1_planted: analysis
+candidate ep_r1_planted: C-NULL / E-NULL
+candidate ep_r1_planted: B (pessimistic EP)
+ADMISSION REFUSE-A1 | A1 {'ep_r1_planted': 'FAIL-A1'} | A2 {'ep_r1_planted': 'ADMIT-A2'} | controls_ok True | authority NONE (unsealed run: control / smoke only) | -> D:/epadm1/it/admission_ep_r1.json
+DISK_REPLICATION pass=True label=REFUSE-A1 119.6 s -> D:\epadm1\run\integration_disk_replication_r1default.json

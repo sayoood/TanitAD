@@ -1,0 +1,48 @@
+[geom cart] cells 7014  pos_dim 21  test rows 2974 episodes 30
+[split] clips fit/val/test 84/25/30  rows 7842/2407/2974
+[base] test base rate 0.016106801 = 335982/20859636 scored cells -> an ALL-ZERO predictor would score 98.3893 % ACCURACY, which is why no headline number here is an accuracy
+[CONTROL] constant(0.37) AP 0.016106800713   base rate 0.016106800713   exact_match=True
+[CONTROL] allzero AP 0.016106800713  allone AP 0.016106800713  perfect AP 1.000000000000
+C:\Users\Admin\wpd-probe\code\b2_probe_wpd.py:299: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  print(f"    [{name}/{sign}] step {step:5d} loss {float(loss):.5f}", flush=True)
+    [__signcheck_prog/prog] step     0 loss 1.31369
+    [__signcheck_prog/prog] step   500 loss 1.28969
+    [__signcheck_prog/prog] step  1000 loss 0.72399
+    [__signcheck_prog/prog] step  1499 loss 0.92304
+    [__signcheck_wpa/wpa] step     0 loss 1.31365
+    [__signcheck_wpa/wpa] step   500 loss 1.30628
+    [__signcheck_wpa/wpa] step  1000 loss 0.91800
+    [__signcheck_wpa/wpa] step  1499 loss 1.01031
+[az-sign] pix val AP  prog 0.048265  wpa 0.031789  -> CHOSEN prog
+    [tok_D0/prog] step     0 loss 1.32269
+    [tok_D0/prog] step   500 loss 1.31108
+    [tok_D0/prog] step  1000 loss 0.82765
+    [tok_D0/prog] step  1499 loss 0.98097
+[tok_D0   ] AP_test 0.0548  AP_val 0.0401  F1 0.1239  IoU 0.0660  par 67.2k  n_scored 20859636  d_raw 112640  (38s)
+    [tok_D1/prog] step     0 loss 1.31434
+    [tok_D1/prog] step   500 loss 1.23310
+    [tok_D1/prog] step  1000 loss 0.77332
+    [tok_D1/prog] step  1499 loss 0.96975
+[tok_D1   ] AP_test 0.0565  AP_val 0.0497  F1 0.1193  IoU 0.0634  par 67.2k  n_scored 20859636  d_raw 112640  (39s)
+    [tok_D2/prog] step     0 loss 1.31571
+    [tok_D2/prog] step   500 loss 1.24666
+    [tok_D2/prog] step  1000 loss 0.85104
+    [tok_D2/prog] step  1499 loss 1.00594
+[tok_D2   ] AP_test 0.0602  AP_val 0.0513  F1 0.1249  IoU 0.0666  par 67.2k  n_scored 20859636  d_raw 112640  (39s)
+    [pix/prog] step     0 loss 1.31369
+    [pix/prog] step   500 loss 1.28969
+    [pix/prog] step  1000 loss 0.72399
+    [pix/prog] step  1499 loss 0.92304
+[pix      ] AP_test 0.0438  AP_val 0.0483  F1 0.0931  IoU 0.0488  par 56.1k  n_scored 20859636  d_raw 1440  (16s)
+    [pos_only/prog] step     0 loss 1.31414
+    [pos_only/prog] step   500 loss 1.39065
+    [pos_only/prog] step  1000 loss 1.12259
+    [pos_only/prog] step  1499 loss 1.34165
+[pos_only ] AP_test 0.0302  AP_val 0.0287  F1 0.0608  IoU 0.0313  par 67.2k  n_scored 20859636  d_raw 112640  (39s)
+    [shuf_D1/prog] step     0 loss 1.32176
+    [shuf_D1/prog] step   500 loss 1.76492
+    [shuf_D1/prog] step  1000 loss 1.45160
+    [shuf_D1/prog] step  1499 loss 0.98189
+[shuf_D1  ] AP_test 0.0289  AP_val 0.0282  F1 0.0554  IoU 0.0285  par 67.2k  n_scored 20859636  d_raw 112640  (39s)
+[boot] 400 draws over 30 test episodes, cell stride 2 -> 3507 cells/row

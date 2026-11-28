@@ -1,0 +1,30 @@
+108a109,115
+>     # FIRST-RUN FIX (MM, 2026-11-20 ~19:30Z; the first run stopped here): 'fl' is the FLOOR planner's executed path, and under T1-kin/hb0.2 the
+>     # floor is rolled through the bounded executor too, so it legitimately differs from the old-executor reference C0_s0 (fix/check_fl.json:
+>     # 324 / 2,399 windows).  hb0.2 dumps therefore check 'fl' against the hb0.2 floor (taken from N1D_s0 hb0.2) and every other SAME key against
+>     # C0_s0 as before; old-executor dumps keep N2.load_arm unchanged.  'fl' enters no cell (cells come from 'cl' only).
+>     fl_hb_path = hb("N1D_s0")
+>     fl_hb = OR.load_dump(fl_hb_path)["fl"] if os.path.isdir(fl_hb_path) else None
+>     n_fl_checked = 0
+111c118,126
+<             cells[name], _ = N2.load_arm(geom, dg, J, glat, glon, d, 141)
+---
+>             if d.startswith(a.hb + "/") and fl_hb is not None:
+>                 x = OR.load_dump(d)
+>                 for k in OR.SAME:
+>                     assert np.array_equal(x[k], fl_hb if k == "fl" else dg[k]), f"window or model-free array differs from the reference dump: {k} in {d} (hb0.2 floor reference for fl)"
+>                 A = geom.arm_arrays(x["cl"], dg["g"], J, dg["eid"])
+>                 cells[name] = OR.to_cells(A, glat, glon)
+>                 n_fl_checked += 1
+>             else:
+>                 cells[name], _ = N2.load_arm(geom, dg, J, glat, glon, d, 141)
+113a129,137
+>     if fl_hb is not None:
+>         dfl = np.abs(fl_hb.astype(np.float64) - dg["fl"].astype(np.float64)).reshape(len(fl_hb), -1).max(1)
+>         rep["controls"]["K-FL-HB"] = {"pass": bool(n_fl_checked == 8), "n_hb_dumps_fl_equal_to_hb_floor": n_fl_checked, "hb_floor_source": fl_hb_path,
+>                                       "windows_where_hb_floor_differs_from_old_floor": int((dfl > 0).sum()), "n_windows": int(len(dfl)),
+>                                       "note": "first-run fix: under hb0.2 the floor path is checked against the hb0.2 floor; eid, clip_index, ws, g, v0 still against C0_s0"}
+>         if n_fl_checked != 8:
+>             prob.append(f"K-FL-HB: {n_fl_checked} of 8 hb0.2 dumps checked")
+>     else:
+>         ny.append("K-FL-HB (hb0.2 N1D_s0 dump missing)")

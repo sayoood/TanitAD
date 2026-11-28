@@ -1,0 +1,250 @@
+{
+ "mutations": [
+  {
+   "id": "m1_drop_kinematic_term",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)",
+   "new": "resid = g_off - g_ref",
+   "expect": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m2_kinematic_term_sign_flipped",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)",
+   "new": "resid = g_off - g_ref - 0.5 * dr[None, :] * (T ** 2)",
+   "expect": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m3_horizon_not_squared",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)",
+   "new": "resid = g_off - g_ref + 0.5 * dr[None, :] * T",
+   "expect": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m4_reference_uses_offset_actions",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "ref, _, _ = st.roll_pairs(zr, st.act_embed(a), ROLL_K)",
+   "new": "ref, _, _ = st.roll_pairs(zr, st.act_embed(a + off), ROLL_K)",
+   "expect": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m5_lead_head_params_not_detached",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "params = {n: p.detach() for n, p in head.named_parameters()}",
+   "new": "params = {n: p for n, p in head.named_parameters()}",
+   "expect": [
+    "test_v8f_act_cons.py::test_gradient_reaches_predictor_and_action_embed_and_exactly_zero_elsewhere",
+    "test_v8f_act_cons.py::test_probe_passes_and_goes_red_without_the_detach"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_gradient_reaches_predictor_and_action_embed_and_exactly_zero_elsewhere",
+    "test_v8f_act_cons.py::test_gradient_zero_mutations_go_red",
+    "test_v8f_act_cons.py::test_probe_passes_and_goes_red_without_the_detach"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 7,
+   "err": ""
+  },
+  {
+   "id": "m6_start_state_adapt_not_detached",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "z = wm.z1(adapt.detach().float()).float()",
+   "new": "z = wm.z1(adapt.float()).float()",
+   "expect": [
+    "test_v8f_act_cons.py::test_gradient_reaches_predictor_and_action_embed_and_exactly_zero_elsewhere"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_gradient_zero_mutations_go_red"
+   ],
+   "observed": "RED",
+   "expected_all_red": false,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m7_speed_bound_removed_from_valid",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "& (sp >= float(max_off) * SPEED_MULT))",
+   "new": "& (sp >= 0.0))",
+   "expect": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m8_gap_range_upper_bound_widened",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "GAP_LO_M, GAP_HI_M = 0.0, 60.0",
+   "new": "GAP_LO_M, GAP_HI_M = 0.0, 6000.0",
+   "expect": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m9_offset_range_one_sided",
+   "file": "stack/tanitad/models/act_cons.py",
+   "old": "* 2.0 - 1.0) * float(max_off)",
+   "new": "* 2.0) * float(max_off)",
+   "expect": [
+    "test_v8f_act_cons.py::test_offsets_dedicated_generator_range_and_global_rng_untouched"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_offsets_dedicated_generator_range_and_global_rng_untouched"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m10_term_not_added_to_total",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "T[\"total\"] = tot_ac + a.w_act_cons * ac_r[\"term\"]",
+   "new": "T[\"total\"] = tot_ac + 0.0 * ac_r[\"term\"]",
+   "expect": [
+    "test_v8f_act_cons.py::test_total_moves_by_exactly_w_times_the_term"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_total_moves_by_exactly_w_times_the_term"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 5,
+   "err": ""
+  },
+  {
+   "id": "m11_weight_default_on",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "ap.add_argument(\"--w-act-cons\", dest=\"w_act_cons\", type=float, default=0.0,",
+   "new": "ap.add_argument(\"--w-act-cons\", dest=\"w_act_cons\", type=float, default=1.0,",
+   "expect": [
+    "test_v8f_act_cons.py::test_default_builds_nothing_and_keeps_the_key_sets"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_default_builds_nothing_and_keeps_the_key_sets",
+    "test_v8f_act_cons.py::test_default_off_is_a_lever_that_declares_nothing_when_max_is_changed",
+    "test_v8f_act_cons.py::test_gate_refusals",
+    "test_v8f_act_cons.py::test_probe_passes_and_goes_red_without_the_detach"
+   ],
+   "observed": "RED",
+   "expected_all_red": true,
+   "seconds": 6,
+   "err": ""
+  },
+  {
+   "id": "m12_gate_does_not_refuse_max_without_weight",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "old": "        if a.act_cons_max != AC.ACT_CONS_MAX_DEFAULT:",
+   "new": "        if False:",
+   "expect": [
+    "test_v8f_act_cons.py::test_default_off_is_a_lever_that_declares_nothing_when_max_is_changed",
+    "test_v8f_act_cons.py::test_gate_refusals"
+   ],
+   "rc": 0,
+   "n_tests": 14,
+   "failed": [
+    "test_v8f_act_cons.py::test_default_off_is_a_lever_that_declares_nothing_when_max_is_changed"
+   ],
+   "observed": "RED",
+   "expected_all_red": false,
+   "seconds": 6,
+   "err": ""
+  }
+ ],
+ "written_utc": "2026-11-19T07:17:42Z",
+ "control": {
+  "rc": 0,
+  "n_tests": 14,
+  "failed": [],
+  "green": true,
+  "seconds": 7,
+  "err": ""
+ },
+ "control_after": {
+  "rc": 0,
+  "n_tests": 14,
+  "failed": [],
+  "green": true,
+  "seconds": 6,
+  "err": ""
+ }
+}

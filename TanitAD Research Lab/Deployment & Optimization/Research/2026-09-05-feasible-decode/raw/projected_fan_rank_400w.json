@@ -1,0 +1,829 @@
+{
+ "_tool": "2026-09-05-feasible-decode/raw/projected_fan_rank.py",
+ "_tier": "T0 readout on a fan -- NOT a training result and NOT a driving claim",
+ "_evidence_class": "MEASURED (ours)",
+ "npz": "C:/Users/Admin/kingate/raw/kingate_bank_drawA_v1_selscore.npz",
+ "npz_md5": "9bda7715a6571186935243b242c2ab74",
+ "n_windows": 400,
+ "n_candidates": 128,
+ "n_episodes": 70,
+ "estimator": "episode_cluster_bootstrap over per-window Spearman rho",
+ "n_boot": 4000,
+ "seed": 11,
+ "arms": {
+  "emitted": {
+   "C_OBJECT": {
+    "re_derived_through": "fan_safety.score_paths (the CONSUMER)",
+    "envelope_rate": 0.8878710865974426,
+    "kamm_over_rate": 0.8407617211341858,
+    "infeasible_rate": 0.8916015625,
+    "peak_g_mean": 4.178901195526123,
+    "ex_s": 3.600163459777832
+   },
+   "controls": {
+    "ctrl_self": {
+     "mean": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "ctrl_const": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0",
+     "n_undefined_is_all_windows": true
+    },
+    "ctrl_rand": {
+     "mean": 0.0007,
+     "lo": -0.0088,
+     "hi": 0.0102,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": false
+    }
+   },
+   "panel": {
+    "rho__progress__peak_g": {
+     "mean": 0.313,
+     "lo": 0.1767,
+     "hi": 0.4422,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress__envelope": {
+     "mean": -0.0007,
+     "lo": -0.0629,
+     "hi": 0.0571,
+     "n_windows": 376,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 24,
+     "separated": false
+    },
+    "rho__progress__kamm_over": {
+     "mean": 0.0161,
+     "lo": -0.0584,
+     "hi": 0.0832,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": false
+    },
+    "rho__progress__infeasible": {
+     "mean": -0.009,
+     "lo": -0.0729,
+     "hi": 0.0494,
+     "n_windows": 376,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 24,
+     "separated": false
+    },
+    "rho__progress__off_reach": {
+     "mean": 0.102,
+     "lo": -0.0213,
+     "hi": 0.2172,
+     "n_windows": 322,
+     "n_episodes": 67,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 78,
+     "separated": false
+    },
+    "rho__progress__ttc_below": {
+     "mean": 0.4431,
+     "lo": 0.3,
+     "hi": 0.5506,
+     "n_windows": 105,
+     "n_episodes": 28,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 295,
+     "separated": true
+    },
+    "rho__progress__contact": {
+     "mean": 0.2944,
+     "lo": 0.2116,
+     "hi": 0.3505,
+     "n_windows": 52,
+     "n_episodes": 14,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 348,
+     "separated": true
+    },
+    "rho__progress_v2__peak_g": {
+     "mean": -0.5708,
+     "lo": -0.681,
+     "hi": -0.457,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress_v2__envelope": {
+     "mean": -0.5334,
+     "lo": -0.5588,
+     "hi": -0.5071,
+     "n_windows": 376,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 24,
+     "separated": true
+    },
+    "rho__progress_v2__kamm_over": {
+     "mean": -0.5598,
+     "lo": -0.6131,
+     "hi": -0.5025,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress_v2__infeasible": {
+     "mean": -0.5284,
+     "lo": -0.5532,
+     "hi": -0.5027,
+     "n_windows": 376,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 24,
+     "separated": true
+    },
+    "rho__progress_v2__off_reach": {
+     "mean": -0.2142,
+     "lo": -0.2828,
+     "hi": -0.1454,
+     "n_windows": 322,
+     "n_episodes": 67,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 78,
+     "separated": true
+    },
+    "rho__progress_v2__ttc_below": {
+     "mean": -0.1302,
+     "lo": -0.2293,
+     "hi": -0.0349,
+     "n_windows": 105,
+     "n_episodes": 28,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 295,
+     "separated": true
+    },
+    "rho__progress_v2__contact": {
+     "mean": 0.0335,
+     "lo": -0.0702,
+     "hi": 0.1018,
+     "n_windows": 52,
+     "n_episodes": 14,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 348,
+     "separated": false
+    },
+    "rho__DEFAULT__peak_g": {
+     "mean": -0.4558,
+     "lo": -0.5567,
+     "hi": -0.3506,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__DEFAULT__envelope": {
+     "mean": -0.5391,
+     "lo": -0.5642,
+     "hi": -0.5133,
+     "n_windows": 376,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 24,
+     "separated": true
+    },
+    "rho__DEFAULT__kamm_over": {
+     "mean": -0.5778,
+     "lo": -0.6206,
+     "hi": -0.5316,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__DEFAULT__infeasible": {
+     "mean": -0.5331,
+     "lo": -0.5575,
+     "hi": -0.5078,
+     "n_windows": 376,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 24,
+     "separated": true
+    },
+    "rho__DEFAULT__off_reach": {
+     "mean": -0.0757,
+     "lo": -0.1477,
+     "hi": -0.0053,
+     "n_windows": 322,
+     "n_episodes": 67,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 78,
+     "separated": true
+    },
+    "rho__DEFAULT__ttc_below": {
+     "mean": -0.3081,
+     "lo": -0.3683,
+     "hi": -0.2428,
+     "n_windows": 105,
+     "n_episodes": 28,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 295,
+     "separated": true
+    },
+    "rho__DEFAULT__contact": {
+     "mean": -0.6258,
+     "lo": -0.702,
+     "hi": -0.512,
+     "n_windows": 52,
+     "n_episodes": 14,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 348,
+     "separated": true
+    }
+   },
+   "ex_s": 3.600163459777832
+  },
+  "projected_mu0.70": {
+   "C_OBJECT": {
+    "re_derived_through": "fan_safety.score_paths (the CONSUMER)",
+    "envelope_rate": 0.0,
+    "kamm_over_rate": 0.0,
+    "infeasible_rate": 0.3405078053474426,
+    "peak_g_mean": 0.5964218974113464,
+    "ex_s": 1.0
+   },
+   "controls": {
+    "ctrl_self": {
+     "mean": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "ctrl_const": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0",
+     "n_undefined_is_all_windows": true
+    },
+    "ctrl_rand": {
+     "mean": -0.0045,
+     "lo": -0.0136,
+     "hi": 0.004,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": false
+    }
+   },
+   "panel": {
+    "rho__progress__peak_g": {
+     "mean": 0.319,
+     "lo": 0.2184,
+     "hi": 0.4068,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress__envelope": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress__kamm_over": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress__infeasible": {
+     "mean": 0.3737,
+     "lo": 0.2401,
+     "hi": 0.4922,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress__off_reach": {
+     "mean": 0.3737,
+     "lo": 0.2401,
+     "hi": 0.4922,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress__ttc_below": {
+     "mean": 0.409,
+     "lo": 0.2603,
+     "hi": 0.5598,
+     "n_windows": 89,
+     "n_episodes": 26,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 311,
+     "separated": true
+    },
+    "rho__progress__contact": {
+     "mean": 0.2405,
+     "lo": 0.1933,
+     "hi": 0.2765,
+     "n_windows": 58,
+     "n_episodes": 16,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 342,
+     "separated": true
+    },
+    "rho__progress_v2__peak_g": {
+     "mean": 0.1828,
+     "lo": 0.0928,
+     "hi": 0.2653,
+     "n_windows": 389,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 11,
+     "separated": true
+    },
+    "rho__progress_v2__envelope": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress_v2__kamm_over": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress_v2__infeasible": {
+     "mean": 0.0784,
+     "lo": -0.0227,
+     "hi": 0.1705,
+     "n_windows": 389,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 11,
+     "separated": false
+    },
+    "rho__progress_v2__off_reach": {
+     "mean": 0.0784,
+     "lo": -0.0227,
+     "hi": 0.1705,
+     "n_windows": 389,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 11,
+     "separated": false
+    },
+    "rho__progress_v2__ttc_below": {
+     "mean": 0.2294,
+     "lo": 0.1192,
+     "hi": 0.3446,
+     "n_windows": 81,
+     "n_episodes": 26,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 319,
+     "separated": true
+    },
+    "rho__progress_v2__contact": {
+     "mean": 0.1806,
+     "lo": 0.12,
+     "hi": 0.2382,
+     "n_windows": 51,
+     "n_episodes": 16,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 349,
+     "separated": true
+    },
+    "rho__DEFAULT__peak_g": {
+     "mean": -0.0663,
+     "lo": -0.1458,
+     "hi": 0.0137,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": false
+    },
+    "rho__DEFAULT__envelope": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__DEFAULT__kamm_over": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__DEFAULT__infeasible": {
+     "mean": 0.0522,
+     "lo": -0.0602,
+     "hi": 0.1682,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": false
+    },
+    "rho__DEFAULT__off_reach": {
+     "mean": 0.0522,
+     "lo": -0.0602,
+     "hi": 0.1682,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": false
+    },
+    "rho__DEFAULT__ttc_below": {
+     "mean": -0.356,
+     "lo": -0.4637,
+     "hi": -0.2462,
+     "n_windows": 89,
+     "n_episodes": 26,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 311,
+     "separated": true
+    },
+    "rho__DEFAULT__contact": {
+     "mean": -0.604,
+     "lo": -0.6798,
+     "hi": -0.5009,
+     "n_windows": 58,
+     "n_episodes": 16,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 342,
+     "separated": true
+    }
+   },
+   "ex_s": 1.0
+  },
+  "projected_mu0.70_entry": {
+   "C_OBJECT": {
+    "re_derived_through": "fan_safety.score_paths (the CONSUMER)",
+    "envelope_rate": 0.0,
+    "kamm_over_rate": 0.0,
+    "infeasible_rate": 0.0,
+    "peak_g_mean": 0.5743170380592346,
+    "ex_s": 1.0
+   },
+   "controls": {
+    "ctrl_self": {
+     "mean": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "ctrl_const": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0",
+     "n_undefined_is_all_windows": true
+    },
+    "ctrl_rand": {
+     "mean": -0.0106,
+     "lo": -0.0188,
+     "hi": -0.0023,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    }
+   },
+   "panel": {
+    "rho__progress__peak_g": {
+     "mean": 0.2787,
+     "lo": 0.1931,
+     "hi": 0.355,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__progress__envelope": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress__kamm_over": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress__infeasible": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress__off_reach": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress__ttc_below": {
+     "mean": 0.4793,
+     "lo": 0.3679,
+     "hi": 0.6023,
+     "n_windows": 36,
+     "n_episodes": 14,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 364,
+     "separated": true
+    },
+    "rho__progress__contact": {
+     "mean": 0.4355,
+     "lo": 0.3568,
+     "hi": 0.5211,
+     "n_windows": 16,
+     "n_episodes": 7,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 384,
+     "separated": true
+    },
+    "rho__progress_v2__peak_g": {
+     "mean": 0.1868,
+     "lo": 0.1042,
+     "hi": 0.2624,
+     "n_windows": 389,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 11,
+     "separated": true
+    },
+    "rho__progress_v2__envelope": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress_v2__kamm_over": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress_v2__infeasible": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress_v2__off_reach": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__progress_v2__ttc_below": {
+     "mean": 0.4938,
+     "lo": 0.4015,
+     "hi": 0.5526,
+     "n_windows": 35,
+     "n_episodes": 13,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 365,
+     "separated": true
+    },
+    "rho__progress_v2__contact": {
+     "mean": 0.2659,
+     "lo": 0.1545,
+     "hi": 0.4076,
+     "n_windows": 15,
+     "n_episodes": 7,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 385,
+     "separated": true
+    },
+    "rho__DEFAULT__peak_g": {
+     "mean": -0.1507,
+     "lo": -0.2199,
+     "hi": -0.0814,
+     "n_windows": 400,
+     "n_episodes": 70,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 0,
+     "separated": true
+    },
+    "rho__DEFAULT__envelope": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__DEFAULT__kamm_over": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__DEFAULT__infeasible": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__DEFAULT__off_reach": {
+     "mean": NaN,
+     "lo": NaN,
+     "hi": NaN,
+     "n_windows": 0,
+     "n_episodes": 0,
+     "n_undefined": 400,
+     "separated": false,
+     "estimator": "episode_cluster_bootstrap",
+     "note": "UNDEFINED on 400/400 windows -- reported, never averaged as 0"
+    },
+    "rho__DEFAULT__ttc_below": {
+     "mean": -0.0448,
+     "lo": -0.1897,
+     "hi": 0.0719,
+     "n_windows": 36,
+     "n_episodes": 14,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 364,
+     "separated": false
+    },
+    "rho__DEFAULT__contact": {
+     "mean": -0.6578,
+     "lo": -0.8095,
+     "hi": -0.4945,
+     "n_windows": 16,
+     "n_episodes": 7,
+     "estimator": "episode_cluster_bootstrap",
+     "n_undefined": 384,
+     "separated": true
+    }
+   },
+   "ex_s": 1.0
+  }
+ },
+ "P1c_C0": {
+  "criterion": "on the projected fan, rho vs `envelope` and `kamm_over` is UNDEFINED on 100% of windows (there is nothing to rank)",
+  "envelope_n_undefined": 400,
+  "kamm_n_undefined": 400,
+  "n_windows": 400,
+  "fan_envelope_rate": 0.0,
+  "fan_kamm_over_rate": 0.0,
+  "PASS": true
+ },
+ "P1c_C1": {
+  "criterion": "on the projected fan, rho(progress stock, peak_g) < +0.05",
+  "value": 0.319,
+  "ci": [
+   0.2184,
+   0.4068
+  ],
+  "emitted_reference": 0.313,
+  "PASS": false
+ },
+ "P1c_C3": {
+  "committed_prediction": "the projection does NOT touch the lead geometry, so rho vs ttc_below should be essentially unchanged; if it is not, something other than feasibility moved",
+  "emitted": 0.4431,
+  "projected": 0.409,
+  "abs_change": 0.03410000000000002
+ }
+}

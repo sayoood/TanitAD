@@ -1,0 +1,57 @@
+{
+ "tool": "D-NAVROUTE-1 g_str census + presence-vs-content",
+ "bank": "/home/nvidia/navpred/navflip_dump",
+ "n_episodes": 141,
+ "n_windows": 4823,
+ "tier": "T1 (self-action OPEN loop, 2026-09-02 ruling)",
+ "evidence_class": "MEASURED (ours)",
+ "DEGENERACY": {
+  "_claim": "g_str's lateral bearing component never points LEFT",
+  "statistic": "gstr_nav_true[:,1] (the sin/lateral component of the unit bearing); +y is LEFT (orientation control in CONTINGENCY.json PASSES)",
+  "n_windows": 4823,
+  "n_sin_gt_0_LEFT_pointing": 0,
+  "sin_min": -0.9711,
+  "sin_max": -0.1022,
+  "sin_median": -0.5308,
+  "sin_range_width": 0.8689,
+  "_reads": "the head VARIES but its SIGN never does: a direction class constant at RIGHT. A structural zero, not an estimate -- the same family as H-ECHO-4."
+ },
+ "GROUND_TRUTH_FOR_CONTRAST": {
+  "rule": "GT terminal lateral y, deadband tau_y = 1.0 m",
+  "n_LEFT": 1597,
+  "n_STRAIGHT": 981,
+  "n_RIGHT": 2245,
+  "_reads": "ground truth turns LEFT on these windows while g_str never once points that way"
+ },
+ "PRESENCE_VS_CONTENT_gstr": {
+  "_statistic": "MEAN over windows of relative L2 displacement of the g_str 3-vector vs nav_true",
+  "_warning": "normalisation-dependent: quote WITH this definition or not at all",
+  "nav_flipped": 0.0098,
+  "nav_shuffled": 0.0207,
+  "nav_zero": 0.4018,
+  "ratio_removal_over_value_change": 41.0,
+  "_reads": "the strategic head responds to nav's PRESENCE, not its CONTENT -- the presence-gating already measured at the planner, reproduced one level up"
+ },
+ "PLAN_DISPLACEMENT_full_bank": {
+  "_statistic": "plan TERMINAL displacement (m) vs nav_true, over the FULL banked dump (not the 29-episode panel subset)",
+  "nav_flipped": {
+   "mean_m": 1.1226,
+   "median_m": 0.0,
+   "max_m": 49.5113,
+   "frac_plan_UNCHANGED": 0.6386
+  },
+  "nav_shuffled": {
+   "mean_m": 1.5499,
+   "median_m": 0.0,
+   "max_m": 56.8158,
+   "frac_plan_UNCHANGED": 0.5011
+  },
+  "nav_zero": {
+   "mean_m": 1.8644,
+   "median_m": 0.4901,
+   "max_m": 61.1275,
+   "frac_plan_UNCHANGED": 0.0
+  },
+  "_reads": "inverting the commanded route changes the emitted plan by EXACTLY ZERO on most windows"
+ }
+}

@@ -1,0 +1,11 @@
+# Build note: the TanitAD-4B paper, version 8 (2026-11-18)
+
+Source: `paper/v7/tanitad_4b_paper.tex` (the v7 files are not edited). Edits: `patch_tex_v8.py` (15 edits, each asserted to match once) with the fragments `frag_*.tex`; change list in `CHANGES_V8.md`. Written by a teammate agent from the register rows; checked by the lead as stated below.
+
+Numbers: copied only from the register rows H-V8F-PROOF-56 to 83 (`rows.txt` holds the lines of rows 42 to 83 as banked; row 55 is the register row of paper version 7 itself, so nothing is doubled). Check by the lead: `make_numbers_v8.py` (the v7 script with the paths of v8) takes every numeric token on a line that v8 adds or changes against v7 and looks for it literally in a register row: 825 matched (`NUMBERS_V8.tsv`), 0 unmatched (`numbers_unmatched_v8.txt` is empty). The check matches tokens; it does not check that a number stands beside the right quantity.
+
+Engine: Tectonic 0.17.0, the command of version 7 (`tectonic.exe --keep-logs --outdir build tanitad_4b_paper.tex`, run in this folder). Result: rc 0, 29 pages (v7: 20), 0 overfull boxes, 0 undefined references. Pages 26 and 28 (the new tables) were rendered and read by the agent; no figure was added and no camera frame is in the paper.
+
+Every measured value is a T0 diagnostic on logged frames or a T1-kin read (kinematic rollout on the model's own actions, logged frames, a lead that does not react); none is driving performance. STRATEGIC family: rows dated up to 2026-11-15 keep their stamp as written; for rows 80 to 82 the entry is "not computed (n = 0)" with the reason of row 83.
+
+Rows added: 56 (token probe), 57 to 59 and 62 (distance rule: attribution, margin, calibrated quantile, no closing speed), 61, 63 to 66 (the rule in the target and on the model's own plan), 71, 74, 75 (the lead as an input), 60, 67, 72 (motion), 82 (future-token target), 70, 73 (token-level forecast), 68, 77, 78 (response of the imagined gap to the ego's action), 69, 76, 80 (the consistency term), 79, 81 (planning by imagination), 83 (the STRATEGIC entry). Missed bars and failed controls are stated as the rows state them. The status subsection names what was training at the time of the build (the new-seed confirmation and the dose ladder of card ADD37, the finer-grid pilot of card ADD41) and the 65 hours in which the pod had no job.

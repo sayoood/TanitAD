@@ -1,0 +1,144 @@
+{
+ "tier_note": {
+  "BAL_NULL_s0 / PARITY": "T1-kin STOPDEC npz (real dumps of DAG-OACC-family arms)",
+  "M2bp_s0 / s1": "REAL B-prime scores but from v8f_mini_eval (mini-eval, 2,399 windows), NOT T1-kin dumps: control use only; labels taken from PARITY (eid arrays equal, asserted)"
+ },
+ "paths": {
+  "BAL_NULL_s0": "E:\\Projects\\TanitAD-artifacts\\dagland\\motion_c\\theory/stopbal/read/out/stopdec/stopdec_BAL-NULL_s0.npz",
+  "PARITY_s0": "E:\\Projects\\TanitAD-artifacts\\dagland\\motion_c\\theory/stopdec/out/stopdec_PARITY_DAGOACC_s0.npz",
+  "M2bp_s0": "E:/Projects/TanitAD-artifacts/lorapod_eval/out/eval_M2bp_s0.npz",
+  "M2bp_s1": "E:/Projects/TanitAD-artifacts/lorapod_eval/out/eval_M2bp_s1.npz"
+ },
+ "controls": {
+  "counts_equal_STOPCUE_PARITY_s0": {
+   "pass": true,
+   "counts": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   },
+   "expected": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   }
+  },
+  "counts_equal_STOPCUE_BAL_NULL_s0": {
+   "pass": true,
+   "counts": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   },
+   "expected": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   }
+  },
+  "alignment_refusal": {
+   "pass": true
+  },
+  "self_BAL_NULL_s0_T1kin": {
+   "pass": true,
+   "dauc": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "gain": false,
+   "auroc": 0.8294436433467508,
+   "counts": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   },
+   "mutate": null
+  },
+  "self_Bprime_s0_mini_eval_scores": {
+   "pass": true,
+   "dauc": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "gain": false,
+   "auroc": 0.87480095949483,
+   "counts": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   },
+   "mutate": null
+  },
+  "shuffle_Bprime_s0_mini_eval_scores": {
+   "pass": true,
+   "auroc": 0.4840596745645028,
+   "lo": 0.43362790474137247,
+   "hi": 0.5352864751192923,
+   "shuffled": true
+  },
+  "shuffle_BAL_NULL_s0_T1kin": {
+   "pass": true,
+   "auroc": 0.47273230504281505,
+   "lo": 0.426792002250681,
+   "hi": 0.5190199020986106,
+   "shuffled": true
+  },
+  "planted_gain_and_below_floor": {
+   "pass": true,
+   "gain_dauc": 0.09211264330077429,
+   "gain_counts": true,
+   "small_dauc": 0.01282524829680698,
+   "small_counts": false,
+   "floor": 0.037
+  }
+ },
+ "mutants_must_be_RED": {
+  "self_inverted_copy": {
+   "pass": false,
+   "dauc": 0.6588872866935016,
+   "lo": 0.5539,
+   "hi": 0.7615,
+   "gain": true,
+   "auroc": 0.8294436433467508,
+   "counts": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   },
+   "mutate": "invert"
+  },
+  "shuffle_off_real_labels": {
+   "pass": false,
+   "auroc": 0.8294436433467508,
+   "lo": 0.7769380970014533,
+   "hi": 0.8807722299447518,
+   "shuffled": false
+  },
+  "counts_drop_one_positive": {
+   "pass": false,
+   "counts": {
+    "n_windows": 2364,
+    "n_pos": 130,
+    "n_episodes": 139
+   },
+   "expected": {
+    "n_windows": 2365,
+    "n_pos": 131,
+    "n_episodes": 139
+   }
+  },
+  "planted_floor_zero": {
+   "pass": false,
+   "gain_dauc": 0.09211264330077429,
+   "gain_counts": true,
+   "small_dauc": 0.01282524829680698,
+   "small_counts": true,
+   "floor": 0.0
+  }
+ },
+ "controls_all_pass": true,
+ "mutants_all_RED": true,
+ "descriptive_beside_Bprime_s0_vs_s1_mini_eval": {
+  "auroc_s0": 0.87480095949483,
+  "auroc_s1": 0.8726550807438135,
+  "note": "mini-eval tier, two training seeds, point values only; not T1-kin and not the card's floor"
+ }
+}

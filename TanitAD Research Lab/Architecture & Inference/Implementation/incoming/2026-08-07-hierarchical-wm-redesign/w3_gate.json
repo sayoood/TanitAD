@@ -1,0 +1,193 @@
+{
+ "probe": "W3 stage-A counterfactual action-response pack (WM_PHYSICS_PROOF.md P3+P6; V58F_FUSION.md W3)",
+ "tier": "T1-diagnostic \u2014 actions are COUNTERFACTUAL: this probes the WM roll under hypothetical actions (controllability), NOT driving performance; never quotable as a driving number (EVAL_DOCTRINE.md)",
+ "channels": {
+  "left": {
+   "n_grid": 881,
+   "n_admissible": 830,
+   "n_excluded_no_analytic_response": 51,
+   "admissibility_eps_m": 0.01,
+   "sign_rate": 0.9951807228915662,
+   "gain_median": 0.2713789052529889,
+   "gain_p25": 0.0380486569101961,
+   "gain_p75": 0.6576729599209437,
+   "kind": "steer",
+   "delta": "+0.02 1/m kappa (through the steer encoding)",
+   "sign_gate": {
+    "rule": "sign-correctness >= 0.95 of admissible windows",
+    "pass": true
+   },
+   "gain_gate": {
+    "rule": "median response gain in [0.5, 2.0] vs unicycle-analytic at 1 s",
+    "pass": false
+   }
+  },
+  "right": {
+   "n_grid": 881,
+   "n_admissible": 830,
+   "n_excluded_no_analytic_response": 51,
+   "admissibility_eps_m": 0.01,
+   "sign_rate": 0.9915662650602409,
+   "gain_median": 0.2334114525927031,
+   "gain_p25": 0.02622051586997069,
+   "gain_p75": 0.5798183206254065,
+   "kind": "steer",
+   "delta": "-0.02 1/m kappa (through the steer encoding)",
+   "sign_gate": {
+    "rule": "sign-correctness >= 0.95 of admissible windows",
+    "pass": true
+   },
+   "gain_gate": {
+    "rule": "median response gain in [0.5, 2.0] vs unicycle-analytic at 1 s",
+    "pass": false
+   }
+  },
+  "brake": {
+   "n_grid": 881,
+   "n_admissible": 862,
+   "n_excluded_no_analytic_response": 19,
+   "admissibility_eps_m": 0.01,
+   "sign_rate": 0.7447795823665894,
+   "gain_median": 0.34734272443480396,
+   "gain_p25": 0.14047802863388387,
+   "gain_p75": 0.5555546136565931,
+   "kind": "accel",
+   "delta": "-2.0 m/s^2 accel",
+   "sign_gate": {
+    "rule": "sign-correctness >= 0.95 of admissible windows",
+    "pass": false
+   },
+   "gain_gate": {
+    "rule": "median response gain in [0.5, 2.0] vs unicycle-analytic at 1 s",
+    "pass": false
+   }
+  },
+  "throttle": {
+   "n_grid": 881,
+   "n_admissible": 881,
+   "n_excluded_no_analytic_response": 0,
+   "admissibility_eps_m": 0.01,
+   "sign_rate": 0.7866061293984109,
+   "gain_median": 0.27797126698523905,
+   "gain_p25": 0.13891971353744373,
+   "gain_p75": 0.5040147369166982,
+   "kind": "accel",
+   "delta": "+2.0 m/s^2 accel",
+   "sign_gate": {
+    "rule": "sign-correctness >= 0.95 of admissible windows",
+    "pass": false
+   },
+   "gain_gate": {
+    "rule": "median response gain in [0.5, 2.0] vs unicycle-analytic at 1 s",
+    "pass": false
+   }
+  },
+  "hold": {
+   "n_grid": 881,
+   "endpoint_delta_median_m": 0.03737824037671089,
+   "endpoint_delta_p90_m": 0.17921984195709229,
+   "note": "no sign/gain gate \u2014 'repeat last action' has no signed expectation; diagnostic only"
+  }
+ },
+ "p6": {
+  "computable": true,
+  "n_rows": 4405,
+  "latent_dim": 2048,
+  "var_target": 0.8,
+  "dims_for_var_target": 3,
+  "energy_fraction_in_subspace_per_channel": {
+   "left": 0.940897116885734,
+   "right": 0.9136214522620465,
+   "brake": 0.7490753724148561,
+   "throttle": 0.7850478648722204,
+   "hold": 0.7459360844419668
+  },
+  "centering": "uncentered (deltas have a meaningful zero \u2014 stated design choice, module docstring)",
+  "spectrum_head_normalised": [
+   0.416039,
+   0.296824,
+   0.127787,
+   0.041666,
+   0.035345,
+   0.022032,
+   0.012095,
+   0.010192,
+   0.006288,
+   0.005713,
+   0.004137,
+   0.002485,
+   0.001937,
+   0.001862,
+   0.001617,
+   0.001316,
+   0.000957,
+   0.000902,
+   0.000756,
+   0.000689,
+   0.00058,
+   0.000511,
+   0.000462,
+   0.000399,
+   0.00032,
+   0.000314,
+   0.000296,
+   0.000255,
+   0.000228,
+   0.000201,
+   0.000174,
+   0.00017,
+   0.000159,
+   0.000151,
+   0.000138,
+   0.000135,
+   0.00013,
+   0.000122,
+   0.000115,
+   0.000106
+  ],
+  "k": 10,
+  "scene_invariance": {
+   "available": false,
+   "reason": "the P1-style lead-gap probe is not built yet \u2014 it lands with the P1/P2 probe harness (WM_PHYSICS_PROOF.md build order: P7 -> P1/P2 -> P3/P6). Emitting n/a rather than a fake invariance number."
+  },
+  "gate": {
+   "rule": "dims capturing 80 % of stacked counterfactual latent-delta variance <= 32",
+   "pass": true
+  }
+ },
+ "PASS": false,
+ "roll": {
+  "k": 10,
+  "seconds": 1.0,
+  "fn": "tanitad.models.metric_dynamics.rollout_transitions (metric_dynamics.py:247-266)",
+  "decode": "decode_transitions(grounding.step['op'], ...) (metric_dynamics.py:269-280) \u2014 pinned twin of the canary's rollout_decode (train_flagship_v4.py:584-586)",
+  "action_lift": "train_p8_occupancy.lift_actions3 \u2014 the canary 3-channel speed-append (train_flagship_v4.py:578-580); speed channel held at observed v0 under every arm (the trunk's rollout contract)"
+ },
+ "action_encoding": {
+  "channels": [
+   "steer_road_rad = atan(2.9 * kappa) (physicalai.py:621, legacy const2p9 regime physicalai.py:69/82)",
+   "accel m/s^2 (dataset ax, physicalai.py:604-606)"
+  ],
+  "wheelbase_m": 2.9,
+  "dkappa_1_per_m": 0.02,
+  "daccel_mps2": 2.0,
+  "perturbed": "last window action + all future actions (history untouched \u2014 module docstring)"
+ },
+ "analytic_reference": "train_v58f_unicycle_head.unicycle_rollout (IMPORTED \u2014 the W4 discretisation via accumulate_se2), controls a=accel channel, kappa=tan(steer)/2.9 per rolled step",
+ "grid": {
+  "episodes": 40,
+  "stride": 8,
+  "n_windows": 881,
+  "n_val_episodes": 600
+ },
+ "trunk_frozen_proof": {
+  "md5_before": "3c3fa33a57b808d9690fef7be3108135",
+  "md5_after": "3c3fa33a57b808d9690fef7be3108135",
+  "identical": true
+ },
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "wall_s": 234.8,
+ "_estimator_note": "point estimates over the corpus grid; per-window deltas + episode uids banked to w3_windows.npz \u2014 the DECISION-grade interval for any registry claim is the episode-cluster bootstrap (taniteval/ci.py) over the 40 val episodes; run it pod-side before publishing",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + w3_windows.npz)"
+}

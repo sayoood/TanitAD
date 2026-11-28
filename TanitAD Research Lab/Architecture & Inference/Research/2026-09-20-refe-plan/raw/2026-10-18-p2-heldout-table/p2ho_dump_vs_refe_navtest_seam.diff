@@ -1,0 +1,524 @@
+--- "tree/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/refe_navtest_seam.py"	2026-10-18 08:16:54.650684100 +0200
++++ code/p2ho_dump.py	2026-10-18 08:25:22.698450600 +0200
+@@ -1,370 +1,151 @@
+-"""REFe on NAVSIM v1.1 navtest: `planner.REFePlanner`'s own inference -> a W3 seam npz (SPEC_NAVTEST).
+-
+-Per navtest token (grouped by log): the nuPlan TEST-DB scenario at the token
+-(`navtrain_scenarios.build_scenarios_for_log`, the training code path) -> `REFePlanner.initialize`
+-(the route) -> `_image_for` + `infer` (the planner's own input construction AND selection -- one
+-implementation shared with the nuPlan closed-loop planner) -> the selected proposal's 20 poses at
+-0.2 s (ego frame, rear axle) -> linear interpolation to NAVSIM's 8 poses at 0.5 s -> seam row
+-{token, fingerprint (W3's export), poses}.
+-
+-⭐ FRAME/TIME CONTROL, same breath: the LOGGED future from the SAME scenario is put through the SAME
+-0.5 s grid and compared with W3's exported `human_future_poses` (the devkit's own
+-`Scene.get_future_trajectory`). They are two routes to one quantity, so they must agree to ~cm; if
+-they do not, the frame convention or the token -> scenario pairing is wrong and NO REFe number from
+-this seam is admissible -- the control, not the model, decides that.
+-
+-  python eval/refe_navtest_seam.py --ckpt <snap_epochNNN.pt | model_final.pt> \
+-      --frames D:/Projects/TanitAD/data/refe_navtest/frames --out <seam.npz> [--tokens <subset.json>]
+-  python eval/refe_navtest_seam.py --selftest        # the converter's analytic bars (SPEC E-1)
+-Prints ZZSEAM_OK <rows> <frame_control_max_m> only when every requested token has a finite row AND
+-the frame control passes.
+-"""
+-from __future__ import annotations
+-
+-import argparse
+-import gzip
+-import json
+-import math
+-import os
+-import sys
+-import time
+-
+-import numpy as np
+-
+-HERE = os.path.dirname(os.path.abspath(__file__))
+-REFE = os.path.join(os.path.dirname(HERE), "refe")
+-sys.path.insert(0, REFE)
+-
+-W3_EXPORT = "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+-TEST_DB_DIR = "D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test"
+-SRC_DT = 0.2                                    # REFe's pose grid (planner.TRAJ_DT_S)
+-NAVSIM_DT, NAVSIM_N = 0.5, 8                    # NAVSIM v1 TrajectorySampling
+-# ⭐ TWO DIFFERENT QUESTIONS, MEASURED APART (2026-09-24, E-2 first run):
+-#  * FRAME / TIME / PAIRING: the log's future sampled DIRECTLY on NAVSIM's 0.5 s grid (DB rows 10k,
+-#    exactly what OpenScene keeps) vs W3's `human_future_poses` -- MEASURED 0.0000 m on 25/25, so the
+-#    bar is 1 mm and any miss is a real frame or pairing defect.
+-#  * INTERPOLATION RESIDUAL: the same future on REFe's 0.2 s grid (rows 4i) put through `to_navsim`
+-#    -- up to 0.123 m MEASURED (3/25 tokens, the odd half-seconds), from uneven lidar-frame timing
+-#    between rows 8 and 12. It is inherent to converting REFe's output grid, so it is REPORTED with
+-#    its max / median, never gated. (The first version gated the residual at 5 cm and read a correct
+-#    frame as a failed one.)
+-FRAME_CONTROL_MAX_M = 0.001
+-
+-
+-def wrap(a):
+-    return (a + math.pi) % (2.0 * math.pi) - math.pi
+-
+-
+-def to_navsim(poses20: np.ndarray, dt: float = SRC_DT) -> np.ndarray:
+-    """[20, 3] (x, y, heading) at t = dt, 2dt, ... -> [8, 3] at t = 0.5, ..., 4.0 by linear
+-    interpolation of x, y and of the WRAPPED heading difference (never of the raw angle)."""
+-    p = np.asarray(poses20, dtype=np.float64)
+-    t_src = dt * np.arange(1, p.shape[0] + 1)
+-    out = np.zeros((NAVSIM_N, 3), dtype=np.float64)
+-    for k in range(NAVSIM_N):
+-        t = NAVSIM_DT * (k + 1)
+-        j = int(np.searchsorted(t_src, t - 1e-9))
+-        if j < p.shape[0] and abs(t_src[j] - t) < 1e-9:
+-            out[k] = p[j]
+-            continue
+-        if j == 0 or j >= p.shape[0]:
+-            raise ValueError(f"t={t} outside the source grid ({t_src[0]}..{t_src[-1]})")
+-        w = (t - t_src[j - 1]) / (t_src[j] - t_src[j - 1])
+-        out[k, :2] = (1 - w) * p[j - 1, :2] + w * p[j, :2]
+-        out[k, 2] = wrap(p[j - 1, 2] + w * wrap(p[j, 2] - p[j - 1, 2]))
+-    return out
+-
+-
+-def set_driving_command(planner, tok: str, rec: dict) -> bool:
+-    """Hand the planner NAVSIM's OWN `driving_command` for this token. Returns True when it set one.
+-
+-    P6 / D6 (PI ruling P6-N): in `nav_mode == "command"` the navigation command is an INPUT at training AND inference, and its source at inference is
+-    NAVSIM's `driving_command` -- the last `ego_statuses` entry of the agent input the W3 export carries (`rec`). It is never derived from the logged
+-    future, from the goal fix, or from any classifier. SPEC_NAVTEST Amendment 8 (`planner.sanitize_goal`) reads the same field, so it takes the same hop.
+-
+-    REFUSES (never defaults): a command-mode model with no `driving_command` for the token, or one that is not a finite 4-vector, raises here -- a
+-    command-mode model fed a missing command would be answering an unknown question (planner._command_for refuses the same way one hop later).
+-    A goal-mode planner with the Amendment-8 sanitisation OFF is untouched: it neither reads nor sets a command, so every goal-mode evaluation stays
+-    bit-identical. (Before 2026-10-11 only the sanitisation branch set the command, so a command-mode checkpoint crashed at its first `infer`.)
+-    """
+-    cmd_mode = getattr(planner.model.cfg, "nav_mode", "goal") == "command"
+-    if not (planner.sanitize_goal or cmd_mode):
+-        return False
+-    st = rec.get("ego_statuses") or []
+-    cmd = st[-1].get("driving_command") if st else None
+-    if cmd is None:                                    # Amendment 8 used to KeyError here; keep it loud
+-        raise RuntimeError(f"token {tok}: no driving_command in ego_statuses[-1] of the NAVSIM agent input")
+-    if cmd_mode:
+-        import nav_command as NC
+-        v = np.asarray(cmd, dtype=np.float64).reshape(-1)
+-        if v.size != NC.N_COMMANDS or not np.isfinite(v).all():
+-            raise RuntimeError(f"token {tok}: a command-mode checkpoint needs NAVSIM's driving_command as a finite {NC.N_COMMANDS}-vector; got {cmd!r}")
+-    planner.driving_command = cmd
+-    planner.goal_diag = None
+-    return True
+-
+-
+-def selftest() -> int:
+-    """SPEC E-1 (with AMENDMENT 1): straight line exact; arc within its chord sagitta."""
+-    ok = True
+-    t = SRC_DT * np.arange(1, 21)
+-    v = 12.0
+-    line = np.stack([v * t, np.zeros_like(t), np.zeros_like(t)], -1)
+-    got = to_navsim(line)
+-    want = np.stack([v * NAVSIM_DT * np.arange(1, 9), np.zeros(8), np.zeros(8)], -1)
+-    e_line = float(np.abs(got - want).max())
+-    print(f"  [{'PASS' if e_line < 1e-6 else 'FAIL'}] straight line 12 m/s: max |err| {e_line:.2e} m (< 1e-6)")
+-    ok &= e_line < 1e-6
+-    for R, vv in ((20.0, 10.0), (60.0, 15.0), (8.0, 4.0)):
+-        w_ = vv / R
+-        arc = np.stack([R * np.sin(w_ * t), R * (1 - np.cos(w_ * t)), wrap(w_ * t)], -1)
+-        tq = NAVSIM_DT * np.arange(1, 9)
+-        want = np.stack([R * np.sin(w_ * tq), R * (1 - np.cos(w_ * tq)), wrap(w_ * tq)], -1)
+-        got = to_navsim(arc)
+-        e_xy = float(np.linalg.norm(got[:, :2] - want[:, :2], axis=1).max())
+-        e_h = float(np.abs(wrap(got[:, 2] - want[:, 2])).max())
+-        bound = R * (1 - math.cos(w_ * SRC_DT / 2)) + 1e-9
+-        good = e_xy <= bound and e_h < 1e-9
+-        print(f"  [{'PASS' if good else 'FAIL'}] arc R={R} v={vv}: max |xy err| {e_xy:.3e} m <= sagitta "
+-              f"{bound:.3e}; heading err {e_h:.1e} rad")
+-        ok &= good
+-    # heading wrap across +-pi must not unwind through 0
+-    wrapped = np.stack([np.zeros(20), np.zeros(20), wrap(math.pi - 0.05 + 0.01 * np.arange(1, 21))], -1)
+-    got = to_navsim(wrapped)
+-    e_w = float(np.abs(wrap(got[:, 2] - wrap(math.pi - 0.05 + 0.01 * (NAVSIM_DT * np.arange(1, 9) / SRC_DT)))).max())
+-    print(f"  [{'PASS' if e_w < 1e-9 else 'FAIL'}] heading across +-pi: max err {e_w:.1e} rad")
+-    ok &= e_w < 1e-9
+-    print("ZZCONVERTER_" + ("EXACTZZ" if ok else "FAILZZ"))
+-    return 0 if ok else 1
+-
+-
+-def main() -> int:
+-    ap = argparse.ArgumentParser()
+-    ap.add_argument("--selftest", action="store_true")
+-    ap.add_argument("--ckpt", default=None)
+-    ap.add_argument("--frames", default="D:/Projects/TanitAD/data/refe_navtest/frames")
+-    ap.add_argument("--db-dir", default=TEST_DB_DIR)
+-    ap.add_argument("--export", default=W3_EXPORT)
+-    ap.add_argument("--tokens", default=None, help="W3-format subset json; default = all navtest")
+-    ap.add_argument("--out", default=None)
+-    ap.add_argument("--arm", default="REFe")
+-    ap.add_argument("--select", default="best")
+-    ap.add_argument("--rule", default=None, choices=("v2_shape", "navsim_v1", "navsim_v1_lane"),
+-                    help="the selection RULE for --select best (default: planner.py DEFAULT_RULE; SPEC Amendment 5); "
+-                         "navsim_v1_lane = SFT-4's rule, 7-output checkpoints only (eval/PREREG_SFT4.md)")
+-    ap.add_argument("--no-repair-last-heading", action="store_true",
+-                    help="reproduce an evaluation from before SPEC Amendment 7 (2026-09-27): execute the raw last-pose heading")
+-    ap.add_argument("--sanitize-goal", action="store_true",
+-                    help="SPEC Amendment 8 (registered 2026-09-28): the test-time goal sanitisation -- OFF by default")
+-    ap.add_argument("--record-inputs", default=None,
+-                    help="REPORT ONLY (Amendment 8 gate (e)): write each token's ego vector, goal, frame paths and "
+-                         "goal diagnostics to this .json. The seam itself is unchanged.")
+-    ap.add_argument("--goal-variant", default=None, choices=("clamp150", "straight"),
+-                    help="REPORT ONLY (Amendment 8, 'reported, not gating'): on a token whose ego lies > 20 m from its "
+-                         "route, the goal is replaced by the 150 m clamp along its own bearing (both points scaled by "
+-                         "min(1, 150 / |p2|)) or by the straight-route goal max(v0, 5) x 12 s along the ego heading. "
+-                         "Never together with --sanitize-goal.")
+-    ap.add_argument("--goal-fix", default=None, choices=("pdm_route", "navgoal_straight", "navgoal_arc", "off"),
+-                    help="the goal fix (planner.GOAL_FIXES). Default = planner.GOAL_FIX, which is 'pdm_route' since SPEC "
+-                         "Amendment 9's adoption (2026-10-04); 'off' reproduces every evaluation before it. "
+-                         "Never together with --sanitize-goal or --goal-variant.")
+-    ap.add_argument("--device", default="cuda")
+-    ap.add_argument("--backbone", default="vitl16")
+-    ap.add_argument("--dump-proposals", default=None,
+-                    help="REPORT ONLY (SPEC E-6): also write EVERY proposal on NAVSIM's grid and the "
+-                         "scorer's raw six logits per token to this .npz, for eval/proposal_table.py. "
+-                         "The seam itself is unchanged.")
+-    a = ap.parse_args()
+-    if a.selftest:
+-        return selftest()
+-    if not (a.ckpt and a.out):
+-        print("  --ckpt and --out are required"); return 2
+-    exp = json.load(gzip.open(a.export, "rt", encoding="utf-8"))["tokens"]
+-    toks = list(exp)
+-    if a.tokens:
+-        sub = json.load(open(a.tokens, encoding="utf-8"))
+-        want = set(sub["tokens"] if isinstance(sub, dict) else sub)
+-        toks = [t for t in toks if t in want]
+-    by_log: dict = {}
+-    for t in toks:
+-        by_log.setdefault(exp[t]["log_name"], []).append(t)
+-    print(f"  tokens: {len(toks):,} over {len(by_log)} logs; ckpt {a.ckpt}", flush=True)
+-
+-    import navtrain_scenarios as NS
+-    from planner import REFePlanner
+-    from nuplan.planning.simulation.planner.abstract_planner import PlannerInitialization
+-    planner = REFePlanner(checkpoint=a.ckpt, images_root=a.frames, db_dir=a.db_dir,
+-                          backbone=a.backbone, device=a.device, select=a.select, rule=a.rule,
+-                          repair_last_heading=(False if a.no_repair_last_heading else None),
+-                          sanitize_goal=(True if a.sanitize_goal else None),
+-                          # Amendment 8's report-only goal variants wrap the pre-adoption goal path: the default fix steps aside
+-                          goal_fix=(a.goal_fix or ("off" if a.goal_variant else None)))
+-    rec_inputs: dict = {}
+-    print(f"  planner: trained={planner.trained} per_sample_calib={planner.per_sample_calib} "
+-          f"device={planner.device} select={planner.select}", flush=True)
+-    if a.goal_variant:
+-        if a.sanitize_goal or a.goal_fix:
+-            print("  --goal-variant and --sanitize-goal are exclusive"); return 2
+-        import torch
+-        import planner as PLM
+-        _orig_goal = planner._goal_for
+-
+-        def _variant_goal(ego):                        # Amendment 8's reported-not-gating variants (report only)
+-            g = _orig_goal(ego)
+-            if planner._route_poly is None or PLM.ego_to_polyline_m(planner._route_poly) <= PLM.GOAL_SANITIZE_D_M:
+-                return g
+-            g2 = g.reshape(-1).clone()
+-            n = g2.numel() // 2
+-            if a.goal_variant == "clamp150":
+-                g2 = g2 * min(1.0, 150.0 / max(float(torch.linalg.norm(g2[2 * n - 2:2 * n])), 1e-9))
+-            else:
+-                v = ego.dynamic_car_state.rear_axle_velocity_2d
+-                s = max(math.hypot(float(v.x), float(v.y)), planner.min_speed_mps) * planner.horizon_s
+-                g2 = torch.tensor([c for k in range(1, n + 1) for c in (s * k / n, 0.0)], dtype=g2.dtype)
+-            return g2.reshape(1, -1)
+-        planner._goal_for = _variant_goal
+-    rows_tok, rows_fp, rows_pose, misses = [], [], [], []
+-    ctrl_err, n_ctrl, interp_err = [], 0, []
+-    prop_diag: list = []
+-    dump_props, dump_logits, dump_pick = [], [], []
+-    n_prop = 0
+-    n_cmd_set = 0
+-    t0 = time.time()
+-    for li, (log, lt) in enumerate(sorted(by_log.items())):
+-        db = os.path.join(a.db_dir, f"{log}.db")
+-        got = set()
+-        for sc in NS.build_scenarios_for_log(db, lt, history_rows=1, future_rows=80):
+-            tok = sc._initial_lidar_token
+-            got.add(tok)
+-            planner._scenario = sc
+-            planner.initialize(PlannerInitialization(
+-                route_roadblock_ids=sc.get_route_roadblock_ids(),
+-                mission_goal=sc.get_mission_goal(), map_api=sc.map_api))
+-            ego = sc.get_ego_state_at_iteration(0)
+-            img = planner._image_for(ego)
+-            if img is None:
+-                misses.append((tok, f"no frames: {planner.frames.miss_reason}"))
+-                continue
+-            # NAVSIM's own command (an agent input): Amendment 8's sanitisation AND every command-mode (P6) checkpoint need it; else a no-op
+-            n_cmd_set += int(set_driving_command(planner, tok, exp[tok]))
+-            traj, _score, k = planner.infer(ego, img)
+-            if a.record_inputs:
+-                ev, gl = planner.last_inputs
+-                rec_inputs[tok] = {"ego": [float(x) for x in ev.reshape(-1).tolist()],
+-                                   "goal": [float(x) for x in gl.reshape(-1).tolist()],
+-                                   "frames": list(planner.frames.resolve(planner._log_hint,
+-                                                                         int(ego.time_point.time_us)) or []),
+-                                   "goal_diag": planner.goal_diag, "pick": int(k)}
+-            # the EXECUTED plan -- with SPEC Amendment 7's last-pose heading repair when it is on (planner.executed)
+-            poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())
+-            if not np.isfinite(poses).all():
+-                misses.append((tok, "non-finite poses"))
+-                continue
+-            rows_tok.append(tok)
+-            rows_fp.append(exp[tok]["fingerprint"])
+-            rows_pose.append(poses.astype(np.float32))
+-            # ⭐ PROPOSAL DIAGNOSTICS (report only; the seam above is unchanged). While the scorer
+-            # bank does not exist the pick `k` is a placeholder argmax, so PDMS alone cannot say
+-            # whether the PROPOSALS are good. Every one of the M proposals is scored against the
+-            # human future on the same grid: selected / RANDOM (the mean over proposals -- a random
+-            # selector's expectation, the control an oracle gap needs) / ORACLE (best of M, a bound
+-            # no scorer exceeds); plus which proposals are ever best -- the WTA-collapse check the
+-            # trainer's 4-sample `winners` print cannot make. Open-loop, vs the logged human future.
+-            hum = np.asarray(exp[tok]["human_future_poses"], dtype=np.float64)[:, :2]
+-            allp = np.stack([to_navsim(traj[j].float().cpu().numpy())[:, :2]
+-                             for j in range(traj.shape[0])])
+-            ade = np.linalg.norm(allp - hum[None], axis=-1).mean(-1)          # [M]
+-            ends = allp[:, -1, :]
+-            prop_diag.append((float(ade[k]), float(ade.mean()), float(ade.min()),
+-                              int(ade.argmin()), int(k),
+-                              float(np.linalg.norm(ends - ends.mean(0), axis=-1).mean())))
+-            n_prop = int(traj.shape[0])
+-            if a.dump_proposals:
+-                # SPEC E-6: all M proposals in the SAME to_navsim conversion the seam row used, and
+-                # the scorer's raw logits from the SAME forward pass -- never a second model call
+-                # any proposal the planner executes gets Amendment 7's repair, so the E-6 table scores them that way
+-                dump_props.append(np.stack([to_navsim(planner.executed(traj, j).float().cpu().numpy())
+-                                            for j in range(traj.shape[0])]).astype(np.float32))
+-                dump_logits.append(_score.float().cpu().numpy().astype(np.float32))
+-                dump_pick.append(int(k))
+-            # the frame/time control: the log's own future through the SAME grid, in REFe's frame
+-            px, py, pyaw = ego.rear_axle.x, ego.rear_axle.y, ego.rear_axle.heading
+-            c, s = math.cos(-pyaw), math.sin(-pyaw)
+-
+-            def _loc(states):
+-                return np.array([[(f.rear_axle.x - px) * c - (f.rear_axle.y - py) * s,
+-                                  (f.rear_axle.x - px) * s + (f.rear_axle.y - py) * c,
+-                                  wrap(f.rear_axle.heading - pyaw)] for f in states])
+-            theirs = np.asarray(exp[tok]["human_future_poses"], dtype=np.float64)
+-            f8 = list(sc.get_ego_future_trajectory(0, 4.0, NAVSIM_N))[:NAVSIM_N]
+-            if len(f8) == NAVSIM_N:
+-                ctrl_err.append(float(np.linalg.norm(_loc(f8)[:, :2] - theirs[:, :2], axis=1).max()))
+-                n_ctrl += 1
+-            f20 = list(sc.get_ego_future_trajectory(0, 4.0, 20))[:20]
+-            if len(f20) == 20:
+-                interp_err.append(float(np.linalg.norm(to_navsim(_loc(f20))[:, :2] - theirs[:, :2],
+-                                                       axis=1).max()))
+-        for tok in set(lt) - got:
+-            misses.append((tok, "scenario builder skipped the token (margin guard)"))
+-        if (li + 1) % 5 == 0 or li + 1 == len(by_log):
+-            print(f"    [{li + 1}/{len(by_log)}] rows {len(rows_tok):,}  misses {len(misses)}  "
+-                  f"{time.time() - t0:.0f} s", flush=True)
+-    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
+-    np.savez(a.out, token=np.array(rows_tok), fingerprint=np.array(rows_fp),
+-             poses=np.stack(rows_pose) if rows_pose else np.zeros((0, NAVSIM_N, 3), np.float32),
+-             sampling=np.array([NAVSIM_N, NAVSIM_DT]), arm=np.array(a.arm))
+-    ce = np.array(ctrl_err) if ctrl_err else np.array([np.inf])
+-    rep = {"tokens_asked": len(toks), "rows": len(rows_tok), "misses": len(misses),
+-           "miss_examples": misses[:10], "ckpt": a.ckpt, "select": a.select, "rule": planner.rule,
+-           "repair_last_heading": planner.repair_last_heading,
+-           "sanitize_goal": planner.sanitize_goal, "goal_fix": planner.goal_fix,
+-           "nav_mode": getattr(planner.model.cfg, "nav_mode", "goal"),
+-           "driving_command_set": n_cmd_set,        # tokens that received NAVSIM's driving_command (0 for a goal-mode run without Amendment 8)
+-           "frame_control": {"n": n_ctrl, "max_m": float(ce.max()), "median_m": float(np.median(ce)),
+-                             "bar_m": FRAME_CONTROL_MAX_M,
+-                             "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"},
+-           "interpolation_residual": {"n": len(interp_err),
+-                                      "max_m": float(max(interp_err)) if interp_err else None,
+-                                      "median_m": float(np.median(interp_err)) if interp_err else None,
+-                                      "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; "
+-                                              "reported, not gated"},
+-           "seconds": round(time.time() - t0, 1)}
+-    if prop_diag:
+-        from collections import Counter
+-        pd_ = np.asarray(prop_diag, dtype=np.float64)
+-        orc = Counter(int(x) for x in pd_[:, 3])
+-        rep["proposals"] = {
+-            "n": int(len(pd_)), "M": n_prop,
+-            "ade_selected_m": round(float(pd_[:, 0].mean()), 4),
+-            "ade_random_m": round(float(pd_[:, 1].mean()), 4),
+-            "ade_oracle_m": round(float(pd_[:, 2].mean()), 4),
+-            "oracle_index_distinct": len(orc),
+-            "oracle_index_top5": orc.most_common(5),
+-            "selected_index_distinct": len(set(int(x) for x in pd_[:, 4])),
+-            "endpoint_spread_m": round(float(pd_[:, 5].mean()), 3),
+-            "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = "
+-                    "the planner's pick; random = mean over the M proposals (a random selector's "
+-                    "expectation); oracle = best of M; oracle_index_* = how many proposals are "
+-                    "ever best (WTA collapse if few); endpoint_spread = mean distance of the M "
+-                    "endpoints from their centroid"}
+-    if a.dump_proposals:
+-        # rows are appended at the same point as the seam's rows, so they align with rows_tok
+-        assert len(dump_pick) == len(rows_tok), (len(dump_pick), len(rows_tok))
+-        os.makedirs(os.path.dirname(os.path.abspath(a.dump_proposals)), exist_ok=True)
+-        np.savez(a.dump_proposals, token=np.array(rows_tok), fingerprint=np.array(rows_fp),
+-                 proposals=np.stack(dump_props), logits=np.stack(dump_logits),
+-                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select), rule=np.array(planner.rule),
+-                 repair_last_heading=np.array(planner.repair_last_heading),
+-                 ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
+-        rep["proposal_dump"] = os.path.abspath(a.dump_proposals)
+-    json.dump(rep, open(os.path.splitext(a.out)[0] + ".report.json", "w"), indent=1)
+-    if a.record_inputs:
+-        json.dump(rec_inputs, open(a.record_inputs, "w", encoding="utf-8"), indent=0)
+-    print(json.dumps({k: v for k, v in rep.items() if k != "miss_examples"}, indent=1))
+-    ok = (len(rows_tok) == len(toks) and n_ctrl > 0 and float(ce.max()) <= FRAME_CONTROL_MAX_M)
+-    print(f"ZZSEAM_{'OK' if ok else 'FAIL'} {len(rows_tok)} {float(ce.max()):.4f}")
+-    return 0 if ok else 1
+-
+-
+-if __name__ == "__main__":
+-    sys.exit(main())
++"""P2 forward on NAVTRAIN HELD-OUT tokens: every proposal + the scorer's six logits + the scorer head's INPUT (pre-head features), ONE forward per token.
++
++Derived from `eval/refe_navtest_seam.py` (landed; `p2ho_dump_vs_refe_navtest_seam.diff` is the full edit list).  What is the SAME as the landed dump:
++the planner (`planner.REFePlanner`, rule navsim_v1, A7 last-heading repair, goal fix pdm_route), the scenario builder call (`history_rows=1, future_rows=80`),
++the input construction (`planner._image_for`, `planner.infer`), the proposal conversion (`to_navsim(planner.executed(traj, j))`), the pick (`planner._pick` inside `infer`).
++What CHANGED, and why:
++  * TOKENS / LOGS / DBs / IMAGES come from the plan (`p2ho_audit.py`), not from W3's navtest export: a held-out navtrain token has no W3 export.  The DB of a log can sit in
++    splits/ or splits/trainval/ and the camera frames of different tokens in different roots, so `planner.frames` is switched PER TOKEN (db_dir = the log's DB folder,
++    images_root = the root that resolved this token in the audit).  `FrameResolver` itself is untouched.
++  * FINGERPRINT: no W3 fingerprint exists; the row's fingerprint is sha256(log | token | ego vector | goal | resolved frame names)[:16] of the inputs the planner actually used.
++  * NO frame/time control against W3's `human_future_poses` (there is none for navtrain): the dump's fidelity is established by the driver's DG-DUMP gate instead
++    (this same script, on NAVTEST tokens, must reproduce the landed `table_p2_full.npz` rows) and by the scoring-side fidelity gate against the banked held-out labels.
++  * NAVSIM `driving_command`: a command-mode checkpoint needs it and navtrain tokens carry none here -> REFUSED loudly (P2 is goal-mode; the report records nav_mode).
++  * PRE-HEAD FEATURES: a forward hook on `model.score_head` records its INPUT `s` [1, 64, dec_width] from the SAME forward (no second model call, no model code touched).
++    Exactly one hook call per `infer` is asserted.  Saved fp16 beside the dump.
++  * `proposals20` (the executed plans on REFe's own 20-pose 0.2 s grid, before `to_navsim`) is saved too: SR-TTC may need the native grid.
++Prints ZZP2HODUMP_OK <rows> only when every requested token has a finite row.
++
++    C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe p2ho_dump.py --ckpt <model_final.pt> --plan <plan.json> --out <dump.npz> --feat-out <feat.npz> --device cuda
++"""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import math
++import os
++import sys
++import time
++
++import numpy as np
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++TREE = os.environ.get("P2HO_TREE", "C:/Users/Admin/p2heldout/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
++sys.path.insert(0, os.path.join(TREE, "refe"))
++sys.path.insert(0, os.path.join(TREE, "eval"))
++NAVSIM_DT, NAVSIM_N = 0.5, 8
++SRC_DT = 0.2
++
++
++def wrap(a):
++    return (a + math.pi) % (2.0 * math.pi) - math.pi
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--ckpt", required=True)
++    ap.add_argument("--plan", required=True, help="{'tokens', 'token_log', 'token_root', 'db'} from p2ho_audit.py (or a smoke plan of the same shape)")
++    ap.add_argument("--out", required=True)
++    ap.add_argument("--feat-out", default=None)
++    ap.add_argument("--arm", default="REFe_p2heldout")
++    ap.add_argument("--select", default="best")
++    ap.add_argument("--rule", default="navsim_v1", choices=("v2_shape", "navsim_v1", "navsim_v1_lane"))
++    ap.add_argument("--device", default="cuda")
++    ap.add_argument("--backbone", default="vitl16")
++    a = ap.parse_args()
++    plan = json.load(open(a.plan, encoding="utf-8"))
++    toks = sorted(plan["tokens"])
++    by_log: dict = {}
++    for t in toks:
++        by_log.setdefault(plan["token_log"][t], []).append(t)
++    print(f"  tokens: {len(toks):,} over {len(by_log)} logs; ckpt {a.ckpt}", flush=True)
++
++    import navtrain_scenarios as NS
++    import planner as PLM
++    from refe_navtest_seam import to_navsim            # landed conversion, imported unchanged (its main() is guarded)
++    from planner import REFePlanner
++    from nuplan.planning.simulation.planner.abstract_planner import PlannerInitialization
++    first_db = next(iter(plan["db"].values()))
++    planner = REFePlanner(checkpoint=a.ckpt, images_root="", db_dir=os.path.dirname(first_db), backbone=a.backbone, device=a.device, select=a.select, rule=a.rule)
++    nav_mode = getattr(planner.model.cfg, "nav_mode", "goal")
++    if nav_mode == "command" or planner.sanitize_goal:
++        print("  REFUSED: a command-mode / sanitising planner needs NAVSIM's driving_command, which navtrain tokens do not carry here", flush=True)
++        return 2
++    print(f"  planner: trained={planner.trained} per_sample_calib={planner.per_sample_calib} device={planner.device} select={planner.select} rule={planner.rule} "
++          f"goal_fix={planner.goal_fix} repair_last_heading={planner.repair_last_heading} nav_mode={nav_mode}", flush=True)
++    # one FrameResolver per image root; switched per token (db_dir is per log).  The resolver class is the planner's own, unmodified.
++    frs = {r: PLM.FrameResolver(db_dir="", images_root=r) for r in sorted(set(plan["token_root"].values()))}
++    feat_box: list = []
++    hook = planner.model.score_head.register_forward_hook(lambda m, inp, out: feat_box.append((inp[0].detach().float().cpu().numpy().astype(np.float16), out.detach().float().cpu().numpy())))
++    rows_tok, rows_fp, rows_pose, misses = [], [], [], []
++    dump_props, dump_props20, dump_logits, dump_pick, dump_feat = [], [], [], [], []
++    t0 = time.time()
++    for li, (log, lt) in enumerate(sorted(by_log.items())):
++        db = plan["db"][log]
++        got = set()
++        for sc in NS.build_scenarios_for_log(db, lt, history_rows=1, future_rows=80):
++            tok = sc._initial_lidar_token
++            got.add(tok)
++            planner._scenario = sc
++            planner.initialize(PlannerInitialization(route_roadblock_ids=sc.get_route_roadblock_ids(), mission_goal=sc.get_mission_goal(), map_api=sc.map_api))
++            ego = sc.get_ego_state_at_iteration(0)
++            fr = frs[plan["token_root"][tok]]
++            fr.db_dir = os.path.dirname(db)
++            planner.frames = fr
++            img = planner._image_for(ego)
++            if img is None:
++                misses.append((tok, f"no frames: {planner.frames.miss_reason}"))
++                continue
++            feat_box.clear()
++            traj, _score, k = planner.infer(ego, img)
++            if len(feat_box) != 1:
++                raise RuntimeError(f"token {tok}: the score_head hook fired {len(feat_box)} times in one infer (want exactly 1: a second forward would have run)")
++            feat = feat_box[0][0][0]                                        # [64, dec_width] fp16
++            if not np.array_equal(feat_box[0][1][0], _score.float().cpu().numpy()):
++                raise RuntimeError(f"token {tok}: the hooked score_head output is not the logits infer() returned (the hook is on the wrong call)")
++            ev, gl = planner.last_inputs
++            paths = planner.frames.resolve(planner._log_hint, int(ego.time_point.time_us)) or []
++            fp = hashlib.sha256("|".join([log, tok, ev.detach().cpu().numpy().astype(np.float64).tobytes().hex(),
++                                          gl.detach().cpu().numpy().astype(np.float64).tobytes().hex(), *[os.path.basename(p.split("::")[-1]) for p in paths]]).encode()).hexdigest()[:16]
++            exe20 = [planner.executed(traj, j).float().cpu().numpy() for j in range(traj.shape[0])]
++            poses = to_navsim(planner.executed(traj, k).float().cpu().numpy())
++            props8 = np.stack([to_navsim(e) for e in exe20]).astype(np.float32)
++            if not (np.isfinite(poses).all() and np.isfinite(props8).all() and np.isfinite(_score.float().cpu().numpy()).all()):
++                misses.append((tok, "non-finite output"))
++                continue
++            assert np.array_equal(props8[k].astype(np.float32), poses.astype(np.float32)), "the picked proposal differs from the seam row (conversion path)"
++            rows_tok.append(tok)
++            rows_fp.append(fp)
++            rows_pose.append(poses.astype(np.float32))
++            dump_props.append(props8)
++            dump_props20.append(np.stack(exe20).astype(np.float32))
++            dump_logits.append(_score.float().cpu().numpy().astype(np.float32))
++            dump_pick.append(int(k))
++            dump_feat.append(feat)
++        for tok in set(lt) - got:
++            misses.append((tok, "scenario builder skipped the token (margin guard)"))
++        print(f"    [{li + 1}/{len(by_log)}] {log} rows {len(rows_tok):,} misses {len(misses)} {time.time() - t0:.0f} s", flush=True)
++    hook.remove()
++    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
++    np.savez(a.out, token=np.array(rows_tok), fingerprint=np.array(rows_fp), proposals=np.stack(dump_props) if dump_props else np.zeros((0, 64, NAVSIM_N, 3), np.float32),
++             proposals20=np.stack(dump_props20) if dump_props20 else np.zeros((0, 64, 20, 3), np.float32),
++             logits=np.stack(dump_logits) if dump_logits else np.zeros((0, 64, 6), np.float32), pick=np.array(dump_pick, dtype=np.int64),
++             log=np.array([plan["token_log"][t] for t in rows_tok]), select=np.array(a.select), rule=np.array(planner.rule),
++             repair_last_heading=np.array(planner.repair_last_heading), ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
++    if a.feat_out and dump_feat:
++        os.makedirs(os.path.dirname(os.path.abspath(a.feat_out)), exist_ok=True)
++        np.savez(a.feat_out, token=np.array(rows_tok), log=np.array([plan["token_log"][t] for t in rows_tok]), prehead_features=np.stack(dump_feat),
++                 what=np.array("input of model.score_head, [N, 64 proposals, dec_width], fp16, captured by a forward hook in the same forward as the logits"))
++    rep = {"tokens_asked": len(toks), "rows": len(rows_tok), "misses": len(misses), "miss_examples": misses[:10], "ckpt": a.ckpt, "rule": planner.rule,
++           "repair_last_heading": planner.repair_last_heading, "goal_fix": planner.goal_fix, "nav_mode": nav_mode, "sanitize_goal": planner.sanitize_goal,
++           "prehead_feature_shape": list(np.stack(dump_feat).shape) if dump_feat else None, "seconds": round(time.time() - t0, 1)}
++    json.dump(rep, open(os.path.splitext(a.out)[0] + ".report.json", "w"), indent=1)
++    print(json.dumps(rep, indent=1))
++    ok = len(rows_tok) == len(toks)
++    print(f"ZZP2HODUMP_{'OK' if ok else 'FAIL'} {len(rows_tok)}")
++    return 0 if ok else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())

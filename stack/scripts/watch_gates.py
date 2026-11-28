@@ -77,7 +77,7 @@ def _run(cmd: list, dry: bool):
     print(f"[pull{':dry-run' if dry else ''}] {' '.join(cmd)}", flush=True)
     if dry:
         return None
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
 
 
 def _ssh_mtime(host: str, remote: str, dry: bool):

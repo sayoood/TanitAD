@@ -1,0 +1,6 @@
+# the two 'does not stop the chain' mutations on the FIXED tree (C:/so/t4; build/repro_kill_stop_mutations.py): each must go RED at the KILL-STOP check
+R0d RED in 16.5 s; head: ('KILL-STOP: the chain went on to R1d', "mp39i0zj4a/al_so_r0d_kill/w/data/rls1/arms/R1d/scores)\n2026-10-17T09:34:29 arm R1d: kill monitor READY (ZZRLS1_MONITOR_READY rss_mb=50, after 1s)\n2026-10-17T09:34:31 arm R1d: trainer rc 0
+R0d must_fail_with -> 1
+R1d RED in 16.5 s; head: ('KILL-STOP: the chain went on to R1o', '17T09:35:00 arm R1d: preflight PASS, launch gate PASS (token verified)\n2026-10-17T09:35:01 arm R1d: trainer pid/pgid 70448, watcher 70463, monitor 70464 (control: C:/Users/Admin/AppData/Lo
+R1d must_fail_with -> 1
+helper refuses a wrong-reason RED: mutation 'demo' went RED for the WRONG reason (no 'KILL-STOP' in the failure): something e

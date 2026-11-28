@@ -1,0 +1,4784 @@
+{
+ "package": "C:/Users/Admin/zt5/raw/2026-10-17-tracking-execution (ZT5)",
+ "prereg": "PREREG_ZT5.md (sha256 in PREREG_ZT5.md.sha256)",
+ "tier": "T1 NAVSIM v1.1 pseudo-simulation (LQR + kinematic bicycle); dev = navtrain held-out, PDM re-implementation (DG1-verified)",
+ "estimator": "paired log-cluster bootstrap, 10,000 resamples, seed 20260927 (zero_tail.Boot); answers another draw of LOGS only",
+ "evidence": "MEASURED (ours) unless a field says ESTIMATED",
+ "navtest_mechanism": {
+  "gates": {
+   "AG1_all": true,
+   "NG1_all": true,
+   "n_TM": 144,
+   "n_CTRL_random_dac1": 529,
+   "n_excluded_nonrandom_ctrl_units": 113,
+   "TM_raw_dac1_all": true,
+   "TM_base_dac0_all": true
+  },
+  "n_logs_TM": 44,
+  "rescue_pct_TM": {
+   "H": {
+    "point": 56.9444,
+    "lo": 45.0817,
+    "hi": 65.9722,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "S": {
+    "point": 18.0556,
+    "lo": 12.0253,
+    "hi": 26.2774,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "V": {
+    "point": 7.6389,
+    "lo": 3.3333,
+    "hi": 13.2353,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "A": {
+    "point": 47.2222,
+    "lo": 38.4615,
+    "hi": 57.2519,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "P": {
+    "point": 61.1111,
+    "lo": 52.1277,
+    "hi": 70.6767,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "P_drawn_compliant": {
+    "point": 72.9167,
+    "lo": 59.8483,
+    "hi": 83.8929,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "controls_broken_pct_weighted": {
+   "H": {
+    "point": 1.7345,
+    "lo": 0.2153,
+    "hi": 3.8449,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "S": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "V": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "A": {
+    "point": 0.4455,
+    "lo": 0.0,
+    "hi": 1.1769,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "P": {
+    "point": 0.7035,
+    "lo": 0.0,
+    "hi": 1.6385,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "control_weighting": {
+   "cells_TM": {
+    "(0, 2)": 12,
+    "(0, 0)": 5,
+    "(1, 0)": 21,
+    "(0, 1)": 47,
+    "(2, 0)": 23,
+    "(2, 1)": 20,
+    "(1, 1)": 13,
+    "(1, 2)": 3
+   },
+   "TM_share_in_covered_cells": 1.0
+  },
+  "descriptors": {
+   "TM": {
+    "n": 144,
+    "hinc_deg_med": 3.7366,
+    "hinc_deg_p90": 11.9955,
+    "dv0_med": -0.0406,
+    "abs_dv0_med": 0.0826,
+    "abs_kappa0_med": 0.0045,
+    "delta_med": 0.5891,
+    "delta_p90": 1.3616,
+    "along_med": -0.07,
+    "share_along_lag": 0.6042,
+    "share_nonstraight_at_maxdev": 0.6042,
+    "share_inside_among_nonstraight": 0.1034,
+    "abs_cross_med": 0.5024,
+    "dev_t_med_s": 4.0
+   },
+   "CTRL_weighted": {
+    "n": 529,
+    "hinc_deg_med": 3.1312,
+    "hinc_deg_p90": 7.726,
+    "dv0_med": -0.0328,
+    "abs_dv0_med": 0.1067,
+    "abs_kappa0_med": 0.0033,
+    "delta_med": 0.6034,
+    "delta_p90": 1.0509,
+    "along_med": -0.0284,
+    "share_along_lag": 0.5053,
+    "share_nonstraight_at_maxdev": 0.6092,
+    "share_inside_among_nonstraight": 0.1194,
+    "abs_cross_med": 0.3662,
+    "dev_t_med_s": 4.0
+   },
+   "CTRL_unweighted": {
+    "n": 529,
+    "hinc_deg_med": 2.5436,
+    "hinc_deg_p90": 5.4967,
+    "dv0_med": -0.0242,
+    "abs_dv0_med": 0.119,
+    "abs_kappa0_med": 0.0022,
+    "delta_med": 0.4937,
+    "delta_p90": 0.8671,
+    "along_med": 0.05,
+    "share_along_lag": 0.4707,
+    "share_nonstraight_at_maxdev": 0.4839,
+    "share_inside_among_nonstraight": 0.1641,
+    "abs_cross_med": 0.161,
+    "dev_t_med_s": 4.0
+   }
+  },
+  "R_MECH": {
+   "dominant_single_factor": "H",
+   "reading": "DOMINANT H"
+  },
+  "reach_estimate_pdms": {
+   "H": {
+    "point": 0.6093,
+    "evidence": "ESTIMATED = navtest rescue share x ZT3 tracker-made PDMS-at-stake; ignores harm and EP/C/TTC"
+   },
+   "P": {
+    "point": 0.6539,
+    "evidence": "ESTIMATED = navtest rescue share x ZT3 tracker-made PDMS-at-stake; ignores harm and EP/C/TTC"
+   }
+  }
+ },
+ "dev": {
+  "gates": {
+   "n_sets": 2466,
+   "n_skipped": 0,
+   "AG1_all": true,
+   "DG1_max_abs": 0.0286,
+   "DG1_pass": false,
+   "DG2_agree_pct": 100.0,
+   "DG2_pass": true,
+   "n_logs": 13
+  },
+  "arms": [
+   "N-s0",
+   "N-s1",
+   "N-s2"
+  ],
+  "rho_grid": [
+   0.99,
+   0.97,
+   0.95,
+   0.9
+  ],
+  "rho_star_N-s0": {
+   "F_b": 0.99,
+   "F_bc": 0.95
+  },
+  "effects": {
+   "N-s0": {
+    "base_PDMS_x100": {
+     "point": 89.2766,
+     "lo": 85.5349,
+     "hi": 91.6145,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "base_zero_pct": {
+     "point": 4.0146,
+     "lo": 1.783,
+     "hi": 7.9049,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "base_tracker_made_zero_picks": 20,
+    "base_dac_zero_picks": 73,
+    "F_c": {
+     "dPDMS_x100": {
+      "point": -0.302,
+      "lo": -0.7176,
+      "hi": 0.0441,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dNC_x100": {
+      "point": 0.1622,
+      "lo": -0.0736,
+      "hi": 0.3731,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.5272,
+      "lo": -1.1236,
+      "hi": 0.0552,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.1571,
+      "lo": -0.544,
+      "hi": 0.1672,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.0406,
+      "lo": -0.8537,
+      "hi": 0.5717,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": -0.0406,
+      "lo": -0.1113,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dZERO_pp": {
+      "point": 0.365,
+      "lo": -0.0751,
+      "hi": 0.8491,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dac_zero_rescued": 19,
+     "dac_zero_broken": 32,
+     "drawn_fail_pp": {
+      "point": 0.9732,
+      "lo": 0.3614,
+      "hi": 1.7621,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "families": {
+      "LONGITUDINAL": {
+       "dEP_x100": {
+        "point": -0.1571,
+        "lo": -0.544,
+        "hi": 0.1672,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_speed_mae": {
+        "point": 0.0001,
+        "lo": -0.0,
+        "hi": 0.0003,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "LATERAL": {
+       "d_cross_mae": {
+        "point": -0.0128,
+        "lo": -0.0234,
+        "hi": -0.0037,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_heading_mae_deg": {
+        "point": -0.1586,
+        "lo": -0.239,
+        "hi": -0.0797,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_delta": {
+        "point": -0.0378,
+        "lo": -0.0754,
+        "hi": -0.011,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "TACTICAL": "1.0 by construction (same proposal)",
+      "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+     }
+    },
+    "F_a_ceiling": {
+     "dPDMS_x100": {
+      "point": -0.1939,
+      "lo": -0.7609,
+      "hi": 0.6256,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dNC_x100": {
+      "point": -0.0406,
+      "lo": -0.4853,
+      "hi": 0.3721,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.0406,
+      "lo": -0.362,
+      "hi": 0.4882,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.7387,
+      "lo": -1.4132,
+      "hi": 0.1079,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.4055,
+      "lo": -0.2115,
+      "hi": 1.0487,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dZERO_pp": {
+      "point": 0.0,
+      "lo": -0.6983,
+      "hi": 0.4259,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dac_zero_rescued": 13,
+     "dac_zero_broken": 14,
+     "drawn_fail_pp": {
+      "point": 11.0706,
+      "lo": 5.5445,
+      "hi": 17.9588,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "families": {
+      "LONGITUDINAL": {
+       "dEP_x100": {
+        "point": -0.7387,
+        "lo": -1.4132,
+        "hi": 0.1079,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_speed_mae": {
+        "point": -0.0445,
+        "lo": -0.0525,
+        "hi": -0.0359,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "LATERAL": {
+       "d_cross_mae": {
+        "point": -0.0592,
+        "lo": -0.0805,
+        "hi": -0.0358,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_heading_mae_deg": {
+        "point": -0.4566,
+        "lo": -0.6501,
+        "hi": -0.2211,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_delta": {
+        "point": -0.3527,
+        "lo": -0.3944,
+        "hi": -0.3111,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "TACTICAL": "1.0 by construction (same proposal)",
+      "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+     }
+    },
+    "F_b": {
+     "0.99": {
+      "dPDMS_x100": {
+       "point": -0.0256,
+       "lo": -0.1485,
+       "hi": 0.0708,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.0406,
+       "lo": -0.1598,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": -0.0047,
+       "lo": -0.1429,
+       "hi": 0.1161,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": 0.0,
+       "lo": -0.1094,
+       "hi": 0.1319,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.0406,
+       "lo": 0.0,
+       "hi": 0.1598,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 0,
+      "dac_zero_broken": 1,
+      "drawn_fail_pp": {
+       "point": -0.1217,
+       "lo": -0.4428,
+       "hi": 0.0776,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": -0.0047,
+         "lo": -0.1429,
+         "hi": 0.1161,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0027,
+         "lo": -0.0032,
+         "hi": -0.0022,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0022,
+         "lo": -0.0031,
+         "hi": -0.0014,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.1536,
+         "lo": -0.2686,
+         "hi": -0.0238,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0171,
+         "lo": -0.0201,
+         "hi": -0.0142,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.8783,
+         "lo": 99.7076,
+         "hi": 100.0,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 11.5166
+     },
+     "0.97": {
+      "dPDMS_x100": {
+       "point": -0.0114,
+       "lo": -0.285,
+       "hi": 0.2435,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0,
+       "lo": -0.1817,
+       "hi": 0.2584,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.0406,
+       "lo": -0.215,
+       "hi": 0.0804,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.2322,
+       "lo": -0.1245,
+       "hi": 0.6252,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.2028,
+       "lo": -0.5412,
+       "hi": 0.1288,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.0406,
+       "lo": -0.2257,
+       "hi": 0.294,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 1,
+      "dac_zero_broken": 2,
+      "drawn_fail_pp": {
+       "point": -0.2839,
+       "lo": -0.7717,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.2322,
+         "lo": -0.1245,
+         "hi": 0.6252,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0084,
+         "lo": -0.0102,
+         "hi": -0.0068,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0052,
+         "lo": -0.0066,
+         "hi": -0.0037,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.3898,
+         "lo": -0.8096,
+         "hi": -0.0789,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0471,
+         "lo": -0.0573,
+         "hi": -0.0393,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.6756,
+         "lo": 99.376,
+         "hi": 99.893,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 29.1565
+     },
+     "0.95": {
+      "dPDMS_x100": {
+       "point": 0.0906,
+       "lo": -0.2819,
+       "hi": 0.4387,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0608,
+       "lo": -0.219,
+       "hi": 0.375,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.0406,
+       "lo": -0.1034,
+       "hi": 0.157,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.6027,
+       "lo": 0.1469,
+       "hi": 1.0951,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.4055,
+       "lo": -1.0279,
+       "hi": 0.2036,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.0811,
+       "lo": -0.4016,
+       "hi": 0.2283,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 4,
+      "dac_zero_broken": 3,
+      "drawn_fail_pp": {
+       "point": -0.365,
+       "lo": -0.9674,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.6027,
+         "lo": 0.1469,
+         "hi": 1.0951,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.013,
+         "lo": -0.0156,
+         "hi": -0.0107,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0073,
+         "lo": -0.0091,
+         "hi": -0.0055,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.5285,
+         "lo": -1.0904,
+         "hi": -0.1529,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0683,
+         "lo": -0.0816,
+         "hi": -0.0584,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.4323,
+         "lo": 98.9305,
+         "hi": 99.7821,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 39.4972
+     },
+     "0.9": {
+      "dPDMS_x100": {
+       "point": -0.0888,
+       "lo": -0.689,
+       "hi": 0.6768,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": -0.1014,
+       "lo": -0.4882,
+       "hi": 0.2905,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.0406,
+       "lo": -0.2491,
+       "hi": 0.3279,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.7641,
+       "lo": -0.2848,
+       "hi": 1.8589,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.9327,
+       "lo": -1.7499,
+       "hi": 0.0373,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.0811,
+       "lo": -0.4227,
+       "hi": 0.5489,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 8,
+      "dac_zero_broken": 7,
+      "drawn_fail_pp": {
+       "point": -0.365,
+       "lo": -1.1472,
+       "hi": 0.1134,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.7641,
+         "lo": -0.2848,
+         "hi": 1.8589,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.022,
+         "lo": -0.0261,
+         "hi": -0.018,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0123,
+         "lo": -0.0149,
+         "hi": -0.0096,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.707,
+         "lo": -1.4488,
+         "hi": -0.2051,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1093,
+         "lo": -0.1287,
+         "hi": -0.094,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.2295,
+         "lo": 98.6188,
+         "hi": 99.6324,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 56.6504
+     }
+    },
+    "F_bc": {
+     "0.99": {
+      "dPDMS_x100": {
+       "point": -0.3129,
+       "lo": -0.7196,
+       "hi": 0.0478,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.2028,
+       "lo": -0.0456,
+       "hi": 0.4213,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.5677,
+       "lo": -1.1785,
+       "hi": 0.0456,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": -0.102,
+       "lo": -0.4429,
+       "hi": 0.2251,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": 0.0,
+       "lo": -0.8681,
+       "hi": 0.5384,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.365,
+       "lo": -0.083,
+       "hi": 0.8421,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 19,
+      "dac_zero_broken": 33,
+      "drawn_fail_pp": {
+       "point": 0.9327,
+       "lo": 0.2917,
+       "hi": 1.7403,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": -0.102,
+         "lo": -0.4429,
+         "hi": 0.2251,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0026,
+         "lo": -0.0035,
+         "hi": -0.002,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0139,
+         "lo": -0.0242,
+         "hi": -0.005,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.3084,
+         "lo": -0.4226,
+         "hi": -0.1655,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0518,
+         "lo": -0.0869,
+         "hi": -0.0259,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.9189,
+         "lo": 99.7903,
+         "hi": 100.0,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 9.9351
+     },
+     "0.97": {
+      "dPDMS_x100": {
+       "point": -0.3242,
+       "lo": -0.7169,
+       "hi": 0.0528,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1622,
+       "lo": -0.2387,
+       "hi": 0.5114,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.5677,
+       "lo": -1.1785,
+       "hi": 0.0456,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.0897,
+       "lo": -0.3539,
+       "hi": 0.5186,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.2028,
+       "lo": -1.1037,
+       "hi": 0.4275,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.4055,
+       "lo": -0.0383,
+       "hi": 0.8577,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 19,
+      "dac_zero_broken": 33,
+      "drawn_fail_pp": {
+       "point": 0.7705,
+       "lo": 0.0532,
+       "hi": 1.626,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.0897,
+         "lo": -0.3539,
+         "hi": 0.5186,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.009,
+         "lo": -0.0118,
+         "hi": -0.007,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0158,
+         "lo": -0.0255,
+         "hi": -0.0071,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.5332,
+         "lo": -0.9474,
+         "hi": -0.2355,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0809,
+         "lo": -0.1128,
+         "hi": -0.0541,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.635,
+         "lo": 99.2159,
+         "hi": 99.8729,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 27.4534
+     },
+     "0.95": {
+      "dPDMS_x100": {
+       "point": -0.1918,
+       "lo": -0.6807,
+       "hi": 0.2698,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.223,
+       "lo": -0.1715,
+       "hi": 0.5804,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.5272,
+       "lo": -1.1536,
+       "hi": 0.0862,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.3467,
+       "lo": -0.2552,
+       "hi": 0.9318,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.2433,
+       "lo": -1.1167,
+       "hi": 0.4233,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.3244,
+       "lo": -0.1788,
+       "hi": 0.8209,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 22,
+      "dac_zero_broken": 35,
+      "drawn_fail_pp": {
+       "point": 0.6488,
+       "lo": 0.0,
+       "hi": 1.4149,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.3467,
+         "lo": -0.2552,
+         "hi": 0.9318,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0137,
+         "lo": -0.0173,
+         "hi": -0.0109,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0173,
+         "lo": -0.0265,
+         "hi": -0.009,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.665,
+         "lo": -1.2244,
+         "hi": -0.2896,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1012,
+         "lo": -0.1321,
+         "hi": -0.0743,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.3512,
+         "lo": 98.6858,
+         "hi": 99.7512,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 37.4696
+     },
+     "0.9": {
+      "dPDMS_x100": {
+       "point": -0.2982,
+       "lo": -0.9436,
+       "hi": 0.3701,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0608,
+       "lo": -0.4067,
+       "hi": 0.4602,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.4866,
+       "lo": -1.017,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.5454,
+       "lo": -0.5515,
+       "hi": 1.5936,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.6894,
+       "lo": -1.809,
+       "hi": 0.2515,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.4461,
+       "lo": 0.0,
+       "hi": 0.8837,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 24,
+      "dac_zero_broken": 36,
+      "drawn_fail_pp": {
+       "point": 0.4866,
+       "lo": -0.0679,
+       "hi": 1.0671,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.5454,
+         "lo": -0.5515,
+         "hi": 1.5936,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0228,
+         "lo": -0.0275,
+         "hi": -0.0183,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0199,
+         "lo": -0.0288,
+         "hi": -0.012,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.8471,
+         "lo": -1.5779,
+         "hi": -0.3408,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1374,
+         "lo": -0.1676,
+         "hi": -0.1113,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 98.9862,
+         "lo": 98.4019,
+         "hi": 99.444,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 52.7575
+     }
+    }
+   },
+   "N-s1": {
+    "base_PDMS_x100": {
+     "point": 88.8808,
+     "lo": 85.0613,
+     "hi": 91.3692,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "base_zero_pct": {
+     "point": 4.3796,
+     "lo": 2.0843,
+     "hi": 8.2674,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "base_tracker_made_zero_picks": 23,
+    "base_dac_zero_picks": 80,
+    "F_c": {
+     "dPDMS_x100": {
+      "point": -0.452,
+      "lo": -1.1685,
+      "hi": 0.1975,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dNC_x100": {
+      "point": 0.0608,
+      "lo": -0.2166,
+      "hi": 0.2448,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.5677,
+      "lo": -1.4504,
+      "hi": 0.3214,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.1481,
+      "lo": -0.6986,
+      "hi": 0.3804,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": -0.3244,
+      "lo": -1.0286,
+      "hi": 0.1502,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dZERO_pp": {
+      "point": 0.4461,
+      "lo": -0.337,
+      "hi": 1.2836,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dac_zero_rescued": 23,
+     "dac_zero_broken": 37,
+     "drawn_fail_pp": {
+      "point": 1.0543,
+      "lo": 0.3472,
+      "hi": 1.9105,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "families": {
+      "LONGITUDINAL": {
+       "dEP_x100": {
+        "point": -0.1481,
+        "lo": -0.6986,
+        "hi": 0.3804,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_speed_mae": {
+        "point": 0.0002,
+        "lo": 0.0,
+        "hi": 0.0004,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "LATERAL": {
+       "d_cross_mae": {
+        "point": -0.0135,
+        "lo": -0.0234,
+        "hi": -0.0049,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_heading_mae_deg": {
+        "point": -0.1796,
+        "lo": -0.2715,
+        "hi": -0.0946,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_delta": {
+        "point": -0.0394,
+        "lo": -0.0762,
+        "hi": -0.0134,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "TACTICAL": "1.0 by construction (same proposal)",
+      "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+     }
+    },
+    "F_a_ceiling": {
+     "dPDMS_x100": {
+      "point": -0.2133,
+      "lo": -0.6872,
+      "hi": 0.4686,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dNC_x100": {
+      "point": 0.0203,
+      "lo": -0.3626,
+      "hi": 0.4345,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": 0.0406,
+      "lo": -0.2811,
+      "hi": 0.5152,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.6994,
+      "lo": -1.3352,
+      "hi": 0.1114,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.2433,
+      "lo": -0.2899,
+      "hi": 0.7961,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dZERO_pp": {
+      "point": -0.1217,
+      "lo": -0.8216,
+      "hi": 0.3217,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dac_zero_rescued": 15,
+     "dac_zero_broken": 14,
+     "drawn_fail_pp": {
+      "point": 10.4623,
+      "lo": 5.4196,
+      "hi": 16.3419,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "families": {
+      "LONGITUDINAL": {
+       "dEP_x100": {
+        "point": -0.6994,
+        "lo": -1.3352,
+        "hi": 0.1114,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_speed_mae": {
+        "point": -0.0451,
+        "lo": -0.0522,
+        "hi": -0.0374,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "LATERAL": {
+       "d_cross_mae": {
+        "point": -0.0593,
+        "lo": -0.0802,
+        "hi": -0.0357,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_heading_mae_deg": {
+        "point": -0.451,
+        "lo": -0.6407,
+        "hi": -0.2166,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_delta": {
+        "point": -0.3567,
+        "lo": -0.3943,
+        "hi": -0.3179,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "TACTICAL": "1.0 by construction (same proposal)",
+      "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+     }
+    },
+    "F_b": {
+     "0.99": {
+      "dPDMS_x100": {
+       "point": 0.0458,
+       "lo": -0.0957,
+       "hi": 0.1561,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0203,
+       "lo": -0.1124,
+       "hi": 0.1354,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.1221,
+       "lo": -0.0177,
+       "hi": 0.2548,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.0406,
+       "lo": -0.3348,
+       "hi": 0.2057,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.0,
+       "lo": -0.1151,
+       "hi": 0.1272,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 0,
+      "dac_zero_broken": 0,
+      "drawn_fail_pp": {
+       "point": -0.0811,
+       "lo": -0.2632,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.1221,
+         "lo": -0.0177,
+         "hi": 0.2548,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0027,
+         "lo": -0.0034,
+         "hi": -0.0021,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0018,
+         "lo": -0.0022,
+         "hi": -0.0013,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.1248,
+         "lo": -0.2303,
+         "hi": -0.0315,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0154,
+         "lo": -0.0182,
+         "hi": -0.0129,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 100.0,
+         "lo": 100.0,
+         "hi": 100.0,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 10.665
+     },
+     "0.97": {
+      "dPDMS_x100": {
+       "point": -0.0435,
+       "lo": -0.3578,
+       "hi": 0.2682,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0203,
+       "lo": -0.1839,
+       "hi": 0.2248,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.1217,
+       "lo": -0.2576,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.4431,
+       "lo": 0.0365,
+       "hi": 0.8465,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.4055,
+       "lo": -0.9327,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.1217,
+       "lo": -0.1056,
+       "hi": 0.3521,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 0,
+      "dac_zero_broken": 3,
+      "drawn_fail_pp": {
+       "point": -0.1622,
+       "lo": -0.5265,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.4431,
+         "lo": 0.0365,
+         "hi": 0.8465,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0092,
+         "lo": -0.011,
+         "hi": -0.0073,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0048,
+         "lo": -0.0058,
+         "hi": -0.0037,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.3316,
+         "lo": -0.6084,
+         "hi": -0.0893,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.048,
+         "lo": -0.0582,
+         "hi": -0.0388,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.6756,
+         "lo": 99.4184,
+         "hi": 99.89,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 29.3187
+     },
+     "0.95": {
+      "dPDMS_x100": {
+       "point": 0.0481,
+       "lo": -0.3338,
+       "hi": 0.4591,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0608,
+       "lo": -0.2581,
+       "hi": 0.4739,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.0811,
+       "lo": -0.1747,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.8332,
+       "lo": 0.2321,
+       "hi": 1.501,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.6488,
+       "lo": -1.3671,
+       "hi": -0.1211,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.0406,
+       "lo": -0.3871,
+       "hi": 0.3563,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 1,
+      "dac_zero_broken": 3,
+      "drawn_fail_pp": {
+       "point": -0.2839,
+       "lo": -0.7957,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.8332,
+         "lo": 0.2321,
+         "hi": 1.501,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0144,
+         "lo": -0.0174,
+         "hi": -0.0116,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0074,
+         "lo": -0.0092,
+         "hi": -0.0057,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.4276,
+         "lo": -0.8025,
+         "hi": -0.157,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0722,
+         "lo": -0.0876,
+         "hi": -0.0591,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.3106,
+         "lo": 98.8129,
+         "hi": 99.6757,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 40.4298
+     },
+     "0.9": {
+      "dPDMS_x100": {
+       "point": -0.2333,
+       "lo": -0.8523,
+       "hi": 0.4372,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0203,
+       "lo": -0.5309,
+       "hi": 0.5437,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.1622,
+       "lo": -0.3655,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.9365,
+       "lo": -0.2043,
+       "hi": 1.9965,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -1.2976,
+       "lo": -2.1565,
+       "hi": -0.2494,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.1622,
+       "lo": -0.3953,
+       "hi": 0.7206,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 4,
+      "dac_zero_broken": 8,
+      "drawn_fail_pp": {
+       "point": -0.2839,
+       "lo": -0.9256,
+       "hi": 0.1748,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.9365,
+         "lo": -0.2043,
+         "hi": 1.9965,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0232,
+         "lo": -0.0279,
+         "hi": -0.0185,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0119,
+         "lo": -0.0148,
+         "hi": -0.0092,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.6682,
+         "lo": -1.2951,
+         "hi": -0.2566,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1127,
+         "lo": -0.1354,
+         "hi": -0.0929,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 98.8646,
+         "lo": 98.0877,
+         "hi": 99.3725,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 55.9205
+     }
+    },
+    "F_bc": {
+     "0.99": {
+      "dPDMS_x100": {
+       "point": -0.4077,
+       "lo": -1.1819,
+       "hi": 0.2876,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0811,
+       "lo": -0.2422,
+       "hi": 0.3143,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.6083,
+       "lo": -1.5521,
+       "hi": 0.321,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": -0.0944,
+       "lo": -0.6945,
+       "hi": 0.4882,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.2839,
+       "lo": -1.0191,
+       "hi": 0.2108,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.4866,
+       "lo": -0.2971,
+       "hi": 1.318,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 23,
+      "dac_zero_broken": 38,
+      "drawn_fail_pp": {
+       "point": 1.0138,
+       "lo": 0.3268,
+       "hi": 1.8765,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": -0.0944,
+         "lo": -0.6945,
+         "hi": 0.4882,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0025,
+         "lo": -0.0036,
+         "hi": -0.0017,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0144,
+         "lo": -0.024,
+         "hi": -0.006,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.2931,
+         "lo": -0.403,
+         "hi": -0.1676,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0527,
+         "lo": -0.0877,
+         "hi": -0.0271,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 100.0,
+         "lo": 100.0,
+         "hi": 100.0,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 9.5702
+     },
+     "0.97": {
+      "dPDMS_x100": {
+       "point": -0.3036,
+       "lo": -1.1717,
+       "hi": 0.4939,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1014,
+       "lo": -0.3235,
+       "hi": 0.4601,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.6083,
+       "lo": -1.5521,
+       "hi": 0.321,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.3297,
+       "lo": -0.4219,
+       "hi": 1.1052,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.4866,
+       "lo": -1.4858,
+       "hi": 0.2283,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.4866,
+       "lo": -0.3317,
+       "hi": 1.3103,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 23,
+      "dac_zero_broken": 38,
+      "drawn_fail_pp": {
+       "point": 0.8921,
+       "lo": 0.252,
+       "hi": 1.7203,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.3297,
+         "lo": -0.4219,
+         "hi": 1.1052,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0093,
+         "lo": -0.0119,
+         "hi": -0.0071,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.016,
+         "lo": -0.0248,
+         "hi": -0.0079,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.4926,
+         "lo": -0.7554,
+         "hi": -0.2525,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0832,
+         "lo": -0.1134,
+         "hi": -0.0571,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.7972,
+         "lo": 99.558,
+         "hi": 99.9572,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 27.2101
+     },
+     "0.95": {
+      "dPDMS_x100": {
+       "point": -0.1627,
+       "lo": -1.0802,
+       "hi": 0.7849,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1825,
+       "lo": -0.2499,
+       "hi": 0.5959,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.6083,
+       "lo": -1.5978,
+       "hi": 0.4066,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.676,
+       "lo": -0.2476,
+       "hi": 1.6728,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.5272,
+       "lo": -1.6264,
+       "hi": 0.2799,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.4055,
+       "lo": -0.5437,
+       "hi": 1.2993,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 24,
+      "dac_zero_broken": 39,
+      "drawn_fail_pp": {
+       "point": 0.7299,
+       "lo": -0.0453,
+       "hi": 1.6202,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.676,
+         "lo": -0.2476,
+         "hi": 1.6728,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0147,
+         "lo": -0.0187,
+         "hi": -0.0114,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0175,
+         "lo": -0.026,
+         "hi": -0.0099,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.5737,
+         "lo": -0.9237,
+         "hi": -0.291,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1057,
+         "lo": -0.1349,
+         "hi": -0.0785,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.5945,
+         "lo": 99.1214,
+         "hi": 99.8924,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 37.8751
+     },
+     "0.9": {
+      "dPDMS_x100": {
+       "point": -0.2984,
+       "lo": -1.2666,
+       "hi": 0.7679,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1419,
+       "lo": -0.4232,
+       "hi": 0.6277,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.5677,
+       "lo": -1.371,
+       "hi": 0.2651,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.8774,
+       "lo": -0.5016,
+       "hi": 2.2469,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -1.0543,
+       "lo": -2.1206,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.4055,
+       "lo": -0.4886,
+       "hi": 1.2625,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 26,
+      "dac_zero_broken": 40,
+      "drawn_fail_pp": {
+       "point": 0.5677,
+       "lo": 0.121,
+       "hi": 1.0707,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.8774,
+         "lo": -0.5016,
+         "hi": 2.2469,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0239,
+         "lo": -0.0291,
+         "hi": -0.0187,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0204,
+         "lo": -0.0284,
+         "hi": -0.0135,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.8381,
+         "lo": -1.4549,
+         "hi": -0.4189,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1429,
+         "lo": -0.1715,
+         "hi": -0.1174,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 98.8646,
+         "lo": 98.0335,
+         "hi": 99.4324,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 52.3925
+     }
+    }
+   },
+   "N-s2": {
+    "base_PDMS_x100": {
+     "point": 89.3446,
+     "lo": 85.8269,
+     "hi": 91.5757,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "base_zero_pct": {
+     "point": 3.974,
+     "lo": 1.8072,
+     "hi": 7.5295,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "base_tracker_made_zero_picks": 24,
+    "base_dac_zero_picks": 77,
+    "F_c": {
+     "dPDMS_x100": {
+      "point": -0.0758,
+      "lo": -0.4692,
+      "hi": 0.3538,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dNC_x100": {
+      "point": 0.1419,
+      "lo": -0.1365,
+      "hi": 0.4305,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.2839,
+      "lo": -0.8637,
+      "hi": 0.3684,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.0735,
+      "lo": -0.3607,
+      "hi": 0.6349,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.0,
+      "lo": -0.6826,
+      "hi": 0.3891,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": -0.0406,
+      "lo": -0.1113,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dZERO_pp": {
+      "point": 0.1217,
+      "lo": -0.5554,
+      "hi": 0.7269,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dac_zero_rescued": 23,
+     "dac_zero_broken": 30,
+     "drawn_fail_pp": {
+      "point": 0.9327,
+      "lo": 0.2931,
+      "hi": 1.7008,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "families": {
+      "LONGITUDINAL": {
+       "dEP_x100": {
+        "point": 0.0735,
+        "lo": -0.3607,
+        "hi": 0.6349,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_speed_mae": {
+        "point": 0.0001,
+        "lo": 0.0,
+        "hi": 0.0003,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "LATERAL": {
+       "d_cross_mae": {
+        "point": -0.013,
+        "lo": -0.0233,
+        "hi": -0.0042,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_heading_mae_deg": {
+        "point": -0.1672,
+        "lo": -0.2444,
+        "hi": -0.0904,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_delta": {
+        "point": -0.0368,
+        "lo": -0.0722,
+        "hi": -0.0119,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "TACTICAL": "1.0 by construction (same proposal)",
+      "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+     }
+    },
+    "F_a_ceiling": {
+     "dPDMS_x100": {
+      "point": -0.1235,
+      "lo": -0.6903,
+      "hi": 0.6094,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dNC_x100": {
+      "point": -0.2636,
+      "lo": -0.7409,
+      "hi": 0.1075,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": 0.2028,
+      "lo": -0.0977,
+      "hi": 0.7305,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.7604,
+      "lo": -1.5883,
+      "hi": 0.2022,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.365,
+      "lo": -0.0424,
+      "hi": 0.8368,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dZERO_pp": {
+      "point": 0.0,
+      "lo": -0.6863,
+      "hi": 0.4676,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dac_zero_rescued": 17,
+     "dac_zero_broken": 12,
+     "drawn_fail_pp": {
+      "point": 11.0706,
+      "lo": 5.8163,
+      "hi": 17.2314,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "families": {
+      "LONGITUDINAL": {
+       "dEP_x100": {
+        "point": -0.7604,
+        "lo": -1.5883,
+        "hi": 0.2022,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_speed_mae": {
+        "point": -0.0442,
+        "lo": -0.052,
+        "hi": -0.0351,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "LATERAL": {
+       "d_cross_mae": {
+        "point": -0.0599,
+        "lo": -0.0812,
+        "hi": -0.0362,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_heading_mae_deg": {
+        "point": -0.4639,
+        "lo": -0.6567,
+        "hi": -0.2307,
+        "B": 10000,
+        "n_nan": 0
+       },
+       "d_delta": {
+        "point": -0.3526,
+        "lo": -0.3935,
+        "hi": -0.3104,
+        "B": 10000,
+        "n_nan": 0
+       }
+      },
+      "TACTICAL": "1.0 by construction (same proposal)",
+      "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+     }
+    },
+    "F_b": {
+     "0.99": {
+      "dPDMS_x100": {
+       "point": 0.0303,
+       "lo": -0.0499,
+       "hi": 0.1051,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.0406,
+       "lo": 0.0,
+       "hi": 0.1113,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.1377,
+       "lo": 0.0377,
+       "hi": 0.2622,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.1217,
+       "lo": -0.2818,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 1,
+      "dac_zero_broken": 0,
+      "drawn_fail_pp": {
+       "point": -0.1622,
+       "lo": -0.3494,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.1377,
+         "lo": 0.0377,
+         "hi": 0.2622,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0031,
+         "lo": -0.0042,
+         "hi": -0.0025,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0023,
+         "lo": -0.0032,
+         "hi": -0.0015,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.1466,
+         "lo": -0.239,
+         "hi": -0.0362,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0177,
+         "lo": -0.0232,
+         "hi": -0.0143,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.8783,
+         "lo": 99.7242,
+         "hi": 100.0,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 11.8005
+     },
+     "0.97": {
+      "dPDMS_x100": {
+       "point": 0.1712,
+       "lo": -0.1393,
+       "hi": 0.5147,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.0203,
+       "lo": -0.2149,
+       "hi": 0.3027,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.1622,
+       "lo": 0.0,
+       "hi": 0.388,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.4393,
+       "lo": 0.0445,
+       "hi": 0.9739,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.2433,
+       "lo": -0.5684,
+       "hi": 0.0543,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.1622,
+       "lo": -0.5609,
+       "hi": 0.1828,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 4,
+      "dac_zero_broken": 0,
+      "drawn_fail_pp": {
+       "point": -0.3244,
+       "lo": -0.5631,
+       "hi": -0.1009,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.4393,
+         "lo": 0.0445,
+         "hi": 0.9739,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0101,
+         "lo": -0.013,
+         "hi": -0.0079,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0058,
+         "lo": -0.0072,
+         "hi": -0.0043,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.3291,
+         "lo": -0.5392,
+         "hi": -0.0859,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0506,
+         "lo": -0.0638,
+         "hi": -0.0424,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.5134,
+         "lo": 99.0419,
+         "hi": 99.8001,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 30.738
+     },
+     "0.95": {
+      "dPDMS_x100": {
+       "point": 0.1412,
+       "lo": -0.2577,
+       "hi": 0.5564,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1825,
+       "lo": -0.0462,
+       "hi": 0.5531,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.0,
+       "lo": -0.331,
+       "hi": 0.3068,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.7323,
+       "lo": 0.1452,
+       "hi": 1.4275,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.4461,
+       "lo": -0.9014,
+       "hi": 0.0733,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.1622,
+       "lo": -0.6721,
+       "hi": 0.2948,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 4,
+      "dac_zero_broken": 4,
+      "drawn_fail_pp": {
+       "point": -0.365,
+       "lo": -0.805,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.7323,
+         "lo": 0.1452,
+         "hi": 1.4275,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0147,
+         "lo": -0.0178,
+         "hi": -0.0118,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0083,
+         "lo": -0.0101,
+         "hi": -0.0064,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.4678,
+         "lo": -0.7905,
+         "hi": -0.175,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0744,
+         "lo": -0.0906,
+         "hi": -0.0636,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.2701,
+         "lo": 98.7048,
+         "hi": 99.6562,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 42.4169
+     },
+     "0.9": {
+      "dPDMS_x100": {
+       "point": 0.0463,
+       "lo": -0.605,
+       "hi": 0.8222,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": -0.0203,
+       "lo": -0.4572,
+       "hi": 0.4173,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.1217,
+       "lo": -0.192,
+       "hi": 0.4045,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.8614,
+       "lo": -0.2515,
+       "hi": 1.9838,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.8516,
+       "lo": -1.6122,
+       "hi": 0.071,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.0811,
+       "lo": -0.6639,
+       "hi": 0.4966,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 8,
+      "dac_zero_broken": 5,
+      "drawn_fail_pp": {
+       "point": -0.4055,
+       "lo": -1.0403,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.8614,
+         "lo": -0.2515,
+         "hi": 1.9838,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0231,
+         "lo": -0.028,
+         "hi": -0.0179,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0126,
+         "lo": -0.0153,
+         "hi": -0.0095,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.5991,
+         "lo": -1.0166,
+         "hi": -0.248,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1144,
+         "lo": -0.1357,
+         "hi": -0.0982,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 98.7835,
+         "lo": 97.9661,
+         "hi": 99.3696,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 57.9886
+     }
+    },
+    "F_bc": {
+     "0.99": {
+      "dPDMS_x100": {
+       "point": -0.0069,
+       "lo": -0.4043,
+       "hi": 0.4643,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1419,
+       "lo": -0.1365,
+       "hi": 0.4305,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.2028,
+       "lo": -0.7501,
+       "hi": 0.42,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.2471,
+       "lo": -0.2226,
+       "hi": 0.8588,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.1217,
+       "lo": -0.778,
+       "hi": 0.2715,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.0406,
+       "lo": -0.6089,
+       "hi": 0.6187,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 24,
+      "dac_zero_broken": 29,
+      "drawn_fail_pp": {
+       "point": 0.7299,
+       "lo": 0.1873,
+       "hi": 1.4023,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.2471,
+         "lo": -0.2226,
+         "hi": 0.8588,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0031,
+         "lo": -0.0046,
+         "hi": -0.0024,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0142,
+         "lo": -0.0242,
+         "hi": -0.0057,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.3092,
+         "lo": -0.3926,
+         "hi": -0.1943,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0521,
+         "lo": -0.0859,
+         "hi": -0.027,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.8378,
+         "lo": 99.5935,
+         "hi": 100.0,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 10.6245
+     },
+     "0.97": {
+      "dPDMS_x100": {
+       "point": 0.0002,
+       "lo": -0.5549,
+       "hi": 0.7405,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1014,
+       "lo": -0.2638,
+       "hi": 0.5197,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.2433,
+       "lo": -0.8896,
+       "hi": 0.5041,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.4181,
+       "lo": -0.3487,
+       "hi": 1.4496,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.1622,
+       "lo": -0.8647,
+       "hi": 0.3101,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": 0.1217,
+       "lo": -0.7325,
+       "hi": 0.8044,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 24,
+      "dac_zero_broken": 30,
+      "drawn_fail_pp": {
+       "point": 0.4866,
+       "lo": 0.0851,
+       "hi": 0.9676,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.4181,
+         "lo": -0.3487,
+         "hi": 1.4496,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0102,
+         "lo": -0.0141,
+         "hi": -0.0078,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0163,
+         "lo": -0.0259,
+         "hi": -0.008,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.4835,
+         "lo": -0.6658,
+         "hi": -0.2772,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.0825,
+         "lo": -0.115,
+         "hi": -0.0556,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.4728,
+         "lo": 98.9642,
+         "hi": 99.7952,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 28.1022
+     },
+     "0.95": {
+      "dPDMS_x100": {
+       "point": 0.207,
+       "lo": -0.3931,
+       "hi": 1.0629,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1825,
+       "lo": -0.1999,
+       "hi": 0.6696,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": -0.1217,
+       "lo": -0.6796,
+       "hi": 0.5362,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 0.8334,
+       "lo": -0.0428,
+       "hi": 1.9849,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.2839,
+       "lo": -1.041,
+       "hi": 0.3407,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.0811,
+       "lo": -0.8971,
+       "hi": 0.5427,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 26,
+      "dac_zero_broken": 29,
+      "drawn_fail_pp": {
+       "point": 0.4866,
+       "lo": 0.0,
+       "hi": 1.0676,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 0.8334,
+         "lo": -0.0428,
+         "hi": 1.9849,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.0147,
+         "lo": -0.0185,
+         "hi": -0.0117,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.0176,
+         "lo": -0.0268,
+         "hi": -0.0097,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.6124,
+         "lo": -0.9274,
+         "hi": -0.3298,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1032,
+         "lo": -0.1326,
+         "hi": -0.0782,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 99.3106,
+         "lo": 98.6995,
+         "hi": 99.7322,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 38.4428
+     },
+     "0.9": {
+      "dPDMS_x100": {
+       "point": 0.2051,
+       "lo": -0.5915,
+       "hi": 1.3635,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dNC_x100": {
+       "point": 0.1419,
+       "lo": -0.3361,
+       "hi": 0.6591,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dDAC_x100": {
+       "point": 0.0,
+       "lo": -0.5047,
+       "hi": 0.6773,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dEP_x100": {
+       "point": 1.0396,
+       "lo": -0.2807,
+       "hi": 2.5954,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dTTC_x100": {
+       "point": -0.6894,
+       "lo": -1.6036,
+       "hi": 0.2882,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dC_x100": {
+       "point": -0.0406,
+       "lo": -0.1113,
+       "hi": 0.0,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dZERO_pp": {
+       "point": -0.1217,
+       "lo": -1.0268,
+       "hi": 0.5245,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "dac_zero_rescued": 27,
+      "dac_zero_broken": 27,
+      "drawn_fail_pp": {
+       "point": 0.2028,
+       "lo": -0.2879,
+       "hi": 0.7577,
+       "B": 10000,
+       "n_nan": 0
+      },
+      "families": {
+       "LONGITUDINAL": {
+        "dEP_x100": {
+         "point": 1.0396,
+         "lo": -0.2807,
+         "hi": 2.5954,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_speed_mae": {
+         "point": -0.024,
+         "lo": -0.0296,
+         "hi": -0.0184,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "LATERAL": {
+        "d_cross_mae": {
+         "point": -0.02,
+         "lo": -0.0283,
+         "hi": -0.013,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_heading_mae_deg": {
+         "point": -0.7427,
+         "lo": -1.1493,
+         "hi": -0.396,
+         "B": 10000,
+         "n_nan": 0
+        },
+        "d_delta": {
+         "point": -0.1397,
+         "lo": -0.1688,
+         "hi": -0.1176,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "TACTICAL": {
+        "manoeuvre_agreement_pct": {
+         "point": 98.9862,
+         "lo": 98.1459,
+         "hi": 99.5524,
+         "B": 10000,
+         "n_nan": 0
+        }
+       },
+       "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)"
+      },
+      "switched_pct": 53.2036
+     }
+    }
+   }
+  },
+  "eligibility": {
+   "F_c": {
+    "eligible": false,
+    "conditions": {
+     "admissible_real_driving": true,
+     "lo_gt_0_and_point_ge_0.05": false,
+     "replicates_point_gt_0": false,
+     "no_adverse_subscore": true,
+     "drawn_plan_check": false
+    },
+    "dPDMS_x100": {
+     "point": -0.302,
+     "lo": -0.7176,
+     "hi": 0.0441,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "F_b": {
+    "eligible": false,
+    "conditions": {
+     "admissible_real_driving": true,
+     "lo_gt_0_and_point_ge_0.05": false,
+     "replicates_point_gt_0": true,
+     "no_adverse_subscore": true,
+     "drawn_plan_check": true
+    },
+    "dPDMS_x100": {
+     "point": -0.0256,
+     "lo": -0.1485,
+     "hi": 0.0708,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "F_a_ceiling": {
+    "eligible": false,
+    "reason": "pre-compensation draws a path off the intended one (real-driving rule; PI decision (a) open)",
+    "dPDMS_x100": {
+     "point": -0.1939,
+     "lo": -0.7609,
+     "hi": 0.6256,
+     "B": 10000,
+     "n_nan": 0
+    }
+   },
+   "F_bc": {
+    "eligible": false,
+    "conditions": {
+     "admissible_real_driving": true,
+     "lo_gt_0_and_point_ge_0.05": false,
+     "replicates_point_gt_0": false,
+     "no_adverse_subscore": true,
+     "drawn_plan_check": false
+    },
+    "dPDMS_x100": {
+     "point": -0.1918,
+     "lo": -0.6807,
+     "hi": 0.2698,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "note": "competes only if F_b and F_c are each eligible (PREREG section 6)"
+   }
+  },
+  "chosen": null,
+  "mechanism_replication": {
+   "tracker_made_picks": {
+    "n": 37,
+    "n_logs": 6,
+    "rescue_pct": {
+     "H": {
+      "point": 62.1622,
+      "lo": 42.4242,
+      "hi": 80.6452,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "S": {
+      "point": 37.8378,
+      "lo": 14.6341,
+      "hi": 66.6667,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "V": {
+      "point": 2.7027,
+      "lo": 0.0,
+      "hi": 8.5714,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "A": {
+      "point": 54.0541,
+      "lo": 19.0476,
+      "hi": 80.8511,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "D": {
+      "point": 13.5135,
+      "lo": 2.381,
+      "hi": 33.3333,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "P": {
+      "point": 54.0541,
+      "lo": 23.0769,
+      "hi": 85.7143,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "descriptors": {
+     "n": 37,
+     "hinc_deg_med": 3.7002,
+     "hinc_deg_p90": 7.2493,
+     "dv0_med": -0.0833,
+     "abs_dv0_med": 0.1018,
+     "abs_kappa0_med": 0.0036,
+     "delta_med": 0.7567,
+     "delta_p90": 0.9253,
+     "along_med": 0.0063,
+     "share_along_lag": 0.4865,
+     "share_nonstraight_at_maxdev": 0.6486,
+     "share_inside_among_nonstraight": 0.2917,
+     "abs_cross_med": 0.7384,
+     "dev_t_med_s": 3.0
+    }
+   },
+   "fan_tracker_made": {
+    "n": 1172,
+    "n_logs": 12,
+    "rescue_pct": {
+     "H": {
+      "point": 53.8396,
+      "lo": 44.7801,
+      "hi": 69.7797,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "S": {
+      "point": 13.3959,
+      "lo": 8.9761,
+      "hi": 17.3045,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "V": {
+      "point": 2.1331,
+      "lo": 0.9704,
+      "hi": 4.3684,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "A": {
+      "point": 52.5597,
+      "lo": 36.8587,
+      "hi": 61.9927,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "D": {
+      "point": 18.7713,
+      "lo": 15.4103,
+      "hi": 24.7798,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "P": {
+      "point": 56.9966,
+      "lo": 41.2843,
+      "hi": 66.5769,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "descriptors": {
+     "n": 1172,
+     "hinc_deg_med": 2.826,
+     "hinc_deg_p90": 5.7191,
+     "dv0_med": 0.0159,
+     "abs_dv0_med": 0.0885,
+     "abs_kappa0_med": 0.0038,
+     "delta_med": 0.5899,
+     "delta_p90": 1.1089,
+     "along_med": -0.1431,
+     "share_along_lag": 0.6288,
+     "share_nonstraight_at_maxdev": 0.6254,
+     "share_inside_among_nonstraight": 0.2469,
+     "abs_cross_med": 0.4192,
+     "dev_t_med_s": 4.0
+    }
+   },
+   "fan_controls": {
+    "n": 1156,
+    "H_broken_pct": {
+     "point": 6.7474,
+     "lo": 3.2425,
+     "hi": 9.7827,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "descriptors": {
+     "n": 1156,
+     "hinc_deg_med": 2.708,
+     "hinc_deg_p90": 5.4901,
+     "dv0_med": 0.0149,
+     "abs_dv0_med": 0.0841,
+     "abs_kappa0_med": 0.0042,
+     "delta_med": 0.5609,
+     "delta_p90": 1.0567,
+     "along_med": -0.14,
+     "share_along_lag": 0.6202,
+     "share_nonstraight_at_maxdev": 0.6246,
+     "share_inside_among_nonstraight": 0.2548,
+     "abs_cross_med": 0.3977,
+     "dev_t_med_s": 4.0
+    }
+   }
+  }
+ },
+ "posthoc_knot_split": {
+  "amendment": "PREREG_ZT5 Amendment 2 -- REPORTED ONLY, decides nothing",
+  "navtest_144_POSTHOC": {
+   "n": 144,
+   "n_logs": 44,
+   "gate_base_matches": true,
+   "gate_Fc_matches_recorded_H": true,
+   "rescue_pct_Fc": {
+    "point": 56.94444444444444,
+    "lo": 45.081678596167166,
+    "hi": 65.97222222222221,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "rescue_pct_Fc8": {
+    "point": 38.19444444444444,
+    "lo": 29.10413839891452,
+    "hi": 47.059601618425134,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "rescue_pct_Fc17": {
+    "point": 50.69444444444444,
+    "lo": 41.2152225755167,
+    "hi": 59.50413223140496,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "dev_tracker_made_picks": {
+   "n": 37,
+   "n_logs": 6,
+   "gate_base_matches": true,
+   "gate_Fc_matches_recorded_H": true,
+   "rescue_pct_Fc": {
+    "point": 62.16216216216216,
+    "lo": 42.42424242424242,
+    "hi": 80.64516129032258,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "rescue_pct_Fc8": {
+    "point": 13.513513513513514,
+    "lo": 2.1739130434782608,
+    "hi": 34.61538461538461,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "rescue_pct_Fc17": {
+    "point": 59.45945945945946,
+    "lo": 40.0,
+    "hi": 77.77777777777779,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "dev_fan_tracker_made": {
+   "n": 1172,
+   "n_logs": 12,
+   "gate_base_matches": true,
+   "gate_Fc_matches_recorded_H": true,
+   "rescue_pct_Fc": {
+    "point": 53.839590443686006,
+    "lo": 44.78006195065128,
+    "hi": 69.77967348904873,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "rescue_pct_Fc8": {
+    "point": 20.477815699658702,
+    "lo": 13.528674111248069,
+    "hi": 31.828448969567763,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "rescue_pct_Fc17": {
+    "point": 49.232081911262796,
+    "lo": 41.924373831548465,
+    "hi": 61.70503489914819,
+    "B": 10000,
+    "n_nan": 0
+   }
+  },
+  "seconds": 203.8
+ },
+ "posthoc_tracker_saved": {
+  "evidence": "MEASURED, POST-HOC (not pre-registered; decides nothing): tracker-SAVED vs tracker-MADE. TM = plan own footprint passes DAC, simulated fails; TS = plan own footprint FAILS DAC, simulated passes.",
+  "dev": {
+   "N-s0": {
+    "n_sets": 2466,
+    "TM_picks": 20,
+    "TS_picks": 27,
+    "TS_minus_TM_pct": {
+     "point": 0.28386050283860503,
+     "lo": -0.8844416479667361,
+     "hi": 1.2424647860360838,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "sim_DAC0_picks": 73,
+    "raw_DAC0_picks": 80
+   },
+   "N-s1": {
+    "n_sets": 2466,
+    "TM_picks": 23,
+    "TS_picks": 30,
+    "TS_minus_TM_pct": {
+     "point": 0.28386050283860503,
+     "lo": -0.9628682730479542,
+     "hi": 1.2446662581477075,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "sim_DAC0_picks": 80,
+    "raw_DAC0_picks": 87
+   },
+   "N-s2": {
+    "n_sets": 2466,
+    "TM_picks": 24,
+    "TS_picks": 23,
+    "TS_minus_TM_pct": {
+     "point": -0.04055150040551501,
+     "lo": -1.1770764640323703,
+     "hi": 0.7682134743911356,
+     "B": 10000,
+     "n_nan": 0
+    },
+    "sim_DAC0_picks": 77,
+    "raw_DAC0_picks": 76
+   },
+   "all_64_proposals": {
+    "n": 157824,
+    "TM": 5105,
+    "TS": 2509,
+    "sim_DAC0": 17473,
+    "raw_DAC0": 14877
+   }
+  },
+  "navtest": {
+   "random_stratum_picks_sim_DAC1": 529,
+   "TS_among_them": 6,
+   "TS_share_pct": {
+    "point": 1.1342155009451798,
+    "lo": 0.37734072415876063,
+    "hi": 2.036669306781323,
+    "B": 10000,
+    "n_nan": 0
+   },
+   "TS_tokens_ESTIMATED": {
+    "point": 131.76181474480154,
+    "lo": 43.83567192552322,
+    "hi": 236.5998733687863,
+    "how": "share x 11,617 non-zeroed navtest tokens (ESTIMATED from the uniform random stratum)"
+   },
+   "TM_tokens_MEASURED": 144,
+   "TM_note": "ZT3: DAC-only SEL zeros only; TM picks among the other zero causes not counted"
+  }
+ },
+ "posthoc_signed_heading_navtest": {
+  "evidence": "MEASURED, POST-HOC descriptive (not pre-registered; decides nothing)",
+  "definition": "signed (psi_k - tau_k) x sign(final turn), turning picks |final heading|>=15 deg; negative = plan heading UNDER-rotated vs its own path tangent",
+  "navtest": {
+   "TM": {
+    "n_turning(|final|>=15deg)": 80,
+    "median_signed_all_deg": -0.41392889057727633,
+    "median_signed_knot8_deg": -2.0704613326409724,
+    "median_signed_knots1-7_deg": -0.005730029952299381,
+    "share_knot8_under_rotated": 0.7
+   },
+   "CTRL": {
+    "n_turning(|final|>=15deg)": 146,
+    "median_signed_all_deg": -0.190273345029481,
+    "median_signed_knot8_deg": -1.7503251798245218,
+    "median_signed_knots1-7_deg": 0.08393628224347345,
+    "share_knot8_under_rotated": 0.684931506849315
+   }
+  }
+ },
+ "next_arm_F_m_amendment3": {
+  "amendment": "PREREG_ZT5 Amendment 3 (F_m)",
+  "n_sets": 2466,
+  "n_logs": 13,
+  "arms": {
+   "N-s0": {
+    "0.99": {
+     "dPDMS_x100": {
+      "point": 0.002243309002433132,
+      "lo": -0.05681932610964277,
+      "hi": 0.05424601016688552,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 17.0316301703163,
+     "dac_zero_rescued": 0,
+     "dac_zero_broken": 0,
+     "zero_rescued": 0,
+     "zero_broken": 0,
+     "drawn_fail_pp": {
+      "point": -0.04055150040551501,
+      "lo": -0.16220600162206003,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.95944849959449,
+     "dNC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.0053791565287914945,
+      "lo": -0.06915945877230426,
+      "hi": 0.08212001270860067,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.04055150040551501,
+      "lo": -0.11154645297187475,
+      "hi": 0.18157677547146445,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.97": {
+     "dPDMS_x100": {
+      "point": -0.058032441200324456,
+      "lo": -0.35225045461116494,
+      "hi": 0.2151156549952648,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 31.95458231954582,
+     "dac_zero_rescued": 0,
+     "dac_zero_broken": 2,
+     "zero_rescued": 2,
+     "zero_broken": 6,
+     "drawn_fail_pp": {
+      "point": 0.08110300081103002,
+      "lo": 0.0,
+      "hi": 0.2024353039062999,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.83779399837795,
+     "dNC_x100": {
+      "point": -0.08110300081103002,
+      "lo": -0.2917892588189307,
+      "hi": 0.15426558341988722,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.08110300081103002,
+      "lo": -0.26324061714055796,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.033843065693430686,
+      "lo": -0.33808901017901016,
+      "hi": 0.30059359369567085,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.12165450121654502,
+      "lo": -0.09493858805135451,
+      "hi": 0.3939362154374489,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.95": {
+     "dPDMS_x100": {
+      "point": -0.008918491484184922,
+      "lo": -0.21086948306103157,
+      "hi": 0.29678334274708174,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 43.836171938361716,
+     "dac_zero_rescued": 1,
+     "dac_zero_broken": 4,
+     "zero_rescued": 5,
+     "zero_broken": 8,
+     "drawn_fail_pp": {
+      "point": 0.28386050283860503,
+      "lo": 0.0,
+      "hi": 0.6648204862649595,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.63503649635037,
+     "dNC_x100": {
+      "point": -0.020275750202757504,
+      "lo": -0.236079062580479,
+      "hi": 0.2968674168719071,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.12165450121654502,
+      "lo": -0.3243265162973192,
+      "hi": 0.07093848520385605,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.12376074614760739,
+      "lo": -0.21624392439427922,
+      "hi": 0.5455125383937401,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.08110300081103002,
+      "lo": -0.11055882890498973,
+      "hi": 0.3061302662024972,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.9": {
+     "dPDMS_x100": {
+      "point": -0.3123394160583941,
+      "lo": -0.9488743351039025,
+      "hi": 0.17694247336426014,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 61.84103811841039,
+     "dac_zero_rescued": 2,
+     "dac_zero_broken": 16,
+     "zero_rescued": 6,
+     "zero_broken": 21,
+     "drawn_fail_pp": {
+      "point": 0.4460665044606651,
+      "lo": -0.19149751053236308,
+      "hi": 1.192271775658836,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.51338199513383,
+     "dNC_x100": {
+      "point": -0.04055150040551501,
+      "lo": -0.33333951074870277,
+      "hi": 0.3287871165802438,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.5677210056772101,
+      "lo": -1.2314165217143946,
+      "hi": -0.11202285304254234,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": -0.060253041362530554,
+      "lo": -0.7634882848986696,
+      "hi": 0.6385810398281491,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.16220600162206003,
+      "lo": -0.21570784921191963,
+      "hi": 0.5502777849551364,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "N-s1": {
+    "0.99": {
+     "dPDMS_x100": {
+      "point": 0.11782076236820761,
+      "lo": 0.03355119621809416,
+      "hi": 0.24618097528835253,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 15.936739659367397,
+     "dac_zero_rescued": 0,
+     "dac_zero_broken": 0,
+     "zero_rescued": 2,
+     "zero_broken": 0,
+     "drawn_fail_pp": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.95944849959449,
+     "dNC_x100": {
+      "point": 0.1013787510137875,
+      "lo": 0.0,
+      "hi": 0.24630921270286427,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.10028061638280615,
+      "lo": 0.008016812868077207,
+      "hi": 0.23161383583102804,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.12165450121654502,
+      "lo": 0.0,
+      "hi": 0.2939454584889829,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.97": {
+     "dPDMS_x100": {
+      "point": 0.1327838605028386,
+      "lo": 0.033879360258856815,
+      "hi": 0.2783627556071933,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 33.495539334955396,
+     "dac_zero_rescued": 0,
+     "dac_zero_broken": 3,
+     "zero_rescued": 6,
+     "zero_broken": 4,
+     "drawn_fail_pp": {
+      "point": 0.08110300081103002,
+      "lo": 0.0,
+      "hi": 0.20965020673922335,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.83779399837795,
+     "dNC_x100": {
+      "point": 0.22303325223033255,
+      "lo": 0.10672301653782858,
+      "hi": 0.3783638951423311,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.12165450121654502,
+      "lo": -0.2964463511514812,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.29841200324412,
+      "lo": 0.08868278511374764,
+      "hi": 0.5225603500017373,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.08110300081103002,
+      "lo": -0.16247283918818065,
+      "hi": 0.36314529398644313,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.95": {
+     "dPDMS_x100": {
+      "point": 0.25283657745336574,
+      "lo": 0.06699735834272125,
+      "hi": 0.6003104352673448,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 45.53933495539335,
+     "dac_zero_rescued": 2,
+     "dac_zero_broken": 4,
+     "zero_rescued": 10,
+     "zero_broken": 7,
+     "drawn_fail_pp": {
+      "point": 0.0,
+      "lo": -0.27835013644580525,
+      "hi": 0.23475098238332806,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.59448499594485,
+     "dNC_x100": {
+      "point": 0.22303325223033255,
+      "lo": 0.0,
+      "hi": 0.5705237399684561,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.08110300081103002,
+      "lo": -0.31545741324921134,
+      "hi": 0.2361555192354282,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.5703179237631792,
+      "lo": 0.1909268601720412,
+      "hi": 1.1171673606281627,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.04055150040551501,
+      "lo": -0.10131883460998387,
+      "hi": 0.21124231973997637,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.9": {
+     "dPDMS_x100": {
+      "point": 0.316866585563666,
+      "lo": -0.20291394973845983,
+      "hi": 0.7510680371747102,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 63.625304136253035,
+     "dac_zero_rescued": 6,
+     "dac_zero_broken": 10,
+     "zero_rescued": 15,
+     "zero_broken": 15,
+     "drawn_fail_pp": {
+      "point": 0.12165450121654502,
+      "lo": -0.0661627335933295,
+      "hi": 0.30976235734029517,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.27007299270073,
+     "dNC_x100": {
+      "point": 0.18248175182481752,
+      "lo": -0.07194568669388812,
+      "hi": 0.551028495478136,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.16220600162206003,
+      "lo": -0.71772649247119,
+      "hi": 0.2210451573549875,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.8131978913219787,
+      "lo": 0.05089156235358964,
+      "hi": 1.5529267791370083,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.04055150040551501,
+      "lo": -0.25010551352828114,
+      "hi": 0.38627594761832634,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   },
+   "N-s2": {
+    "0.99": {
+     "dPDMS_x100": {
+      "point": 0.03608353609083542,
+      "lo": -0.05677273914650185,
+      "hi": 0.16602527532765393,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 17.477696674776965,
+     "dac_zero_rescued": 1,
+     "dac_zero_broken": 0,
+     "zero_rescued": 1,
+     "zero_broken": 1,
+     "drawn_fail_pp": {
+      "point": -0.04055150040551501,
+      "lo": -0.13162030857027898,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.95944849959449,
+     "dNC_x100": {
+      "point": -0.04055150040551501,
+      "lo": -0.13162030857027898,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": 0.04055150040551501,
+      "lo": 0.0,
+      "hi": 0.16220600162206003,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.005505677210056711,
+      "lo": -0.11156299697178611,
+      "hi": 0.15179668133975982,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.04055150040551501,
+      "lo": 0.0,
+      "hi": 0.11127725481710643,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.97": {
+     "dPDMS_x100": {
+      "point": 0.2510620437956204,
+      "lo": 0.07359761400330923,
+      "hi": 0.5278069177925567,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 34.103811841038116,
+     "dac_zero_rescued": 1,
+     "dac_zero_broken": 0,
+     "zero_rescued": 5,
+     "zero_broken": 1,
+     "drawn_fail_pp": {
+      "point": -0.04055150040551501,
+      "lo": -0.16220600162206003,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.7161394971614,
+     "dNC_x100": {
+      "point": 0.12165450121654502,
+      "lo": -0.06629101756711965,
+      "hi": 0.4000100100100099,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": 0.04055150040551501,
+      "lo": 0.0,
+      "hi": 0.16220600162206003,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.33492944038929445,
+      "lo": 0.06465307611494071,
+      "hi": 0.7835605619008166,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.16220600162206003,
+      "lo": 0.0,
+      "hi": 0.28432197840499446,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.95": {
+     "dPDMS_x100": {
+      "point": -0.0602664233576642,
+      "lo": -0.4849490878873491,
+      "hi": 0.5077007825668808,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 46.066504460665044,
+     "dac_zero_rescued": 2,
+     "dac_zero_broken": 7,
+     "zero_rescued": 6,
+     "zero_broken": 13,
+     "drawn_fail_pp": {
+      "point": -0.04055150040551501,
+      "lo": -0.4040455081384844,
+      "hi": 0.22698347597992966,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.51338199513383,
+     "dNC_x100": {
+      "point": -0.06082725060827251,
+      "lo": -0.37675020664626296,
+      "hi": 0.38872646004682065,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.202757502027575,
+      "lo": -0.5219248601923352,
+      "hi": 0.11919425424028654,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.0621901865369019,
+      "lo": -0.43593598891460467,
+      "hi": 0.8514315339420326,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.08110300081103002,
+      "lo": -0.16214354016630064,
+      "hi": 0.2949997820306027,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    },
+    "0.9": {
+     "dPDMS_x100": {
+      "point": 0.1440989456609894,
+      "lo": -0.31932975154288135,
+      "hi": 0.7261402391479024,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "switched_pct": 63.90916463909164,
+     "dac_zero_rescued": 6,
+     "dac_zero_broken": 9,
+     "zero_rescued": 10,
+     "zero_broken": 13,
+     "drawn_fail_pp": {
+      "point": 0.0,
+      "lo": -0.34267481154974017,
+      "hi": 0.25189313677407266,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "manoeuvre_agreement_pct": 99.14841849148418,
+     "dNC_x100": {
+      "point": 0.020275750202757504,
+      "lo": -0.2781654988048672,
+      "hi": 0.4290765091312364,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dDAC_x100": {
+      "point": -0.12165450121654502,
+      "lo": -0.4847149548973964,
+      "hi": 0.23612983294443562,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dEP_x100": {
+      "point": 0.44723114355231147,
+      "lo": -0.14395155403620027,
+      "hi": 1.3272602880849957,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dTTC_x100": {
+      "point": 0.12165450121654502,
+      "lo": -0.24855527664082241,
+      "hi": 0.5285939772675531,
+      "B": 10000,
+      "n_nan": 0
+     },
+     "dC_x100": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "B": 10000,
+      "n_nan": 0
+     }
+    }
+   }
+  },
+  "rho_star": 0.99,
+  "eligibility": {
+   "eligible": false,
+   "conditions": {
+    "lo_gt_0_and_point_ge_0.05": false,
+    "replicates_point_gt_0": true,
+    "no_adverse_subscore": true,
+    "drawn_plan_check": true
+   },
+   "dPDMS_x100": {
+    "point": 0.002243309002433132,
+    "lo": -0.05681932610964277,
+    "hi": 0.05424601016688552,
+    "B": 10000,
+    "n_nan": 0
+   }
+  }
+ },
+ "report": {
+  "headline": "Mechanism FOUND, fix NOT: the tracking-made DAC zeros are driven by the HEADING CHANNEL (heading:=path tangent rescues 56.9 % [45.1, 66.0] of the 144 navtest tracker-made zeros; dev replicates 53.8 % [44.8, 69.8] on 1,172 fan units) with actuator/steering lag second (47.2 % [38.5, 57.3]). But NO admissible fix clears the dev bar: F_c -0.30 [-0.72, +0.04] PDMS, F_b -0.03 [-0.15, +0.07], F_bc -0.19 [-0.68, +0.27], F_m +0.00 [-0.06, +0.05]; even the inadmissible pre-compensation ceiling reads -0.19 [-0.76, +0.63]. Why: at the PICK the tracker SAVES about as many plans as it breaks (dev N-s0 tracker-saved 27 vs tracker-made 20; navtest ~132 ESTIMATED vs 144), so ZT3's 1.07 PDMS was GROSS reach; net reach of execution-side levers is ~0. No navtest confirm is issued (PREREG section 6).",
+  "status_rule_zero": "Every remaining lever is BLOCKED or closed: execution side (F_c, F_a) and map-free selection (F_b, F_bc, F_m) measured ~0 or negative on dev; the zero tail is a boundary-MARGIN problem whose lever is the scorer's boundary representation = ZT3's committed next experiment ZT4 (P6 trunk DAC gradient), BLOCKED on the P6 checkpoint (queued, authorised; control arm already measured in ZT4_BASELINE.json). Training-side margin targets (P5 arm (i)/P5-C) need the PI's GPU go.",
+  "mechanism_navtest_DAC_level": {
+   "units": "144 tracker-made u400 picks (44 logs) + 529 random-stratum controls post-stratified on turn x v0; gates AG1 673/673, NG1 673/673",
+   "rescue_single_factor": {
+    "H": "56.9 % [45.1, 66.0]",
+    "A": "47.2 % [38.5, 57.3]",
+    "S": "18.1 % [12.0, 26.3]",
+    "V": "7.6 % [3.3, 13.2]",
+    "P": "61.1 % [52.1, 70.7]"
+   },
+   "controls_broken_weighted": {
+    "H": "1.7 % [0.2, 3.8]",
+    "A": "0.4 % [0.0, 1.2]",
+    "P": "0.7 % [0.0, 1.6]"
+   },
+   "overlap_of_144": "H only 53, A only 39, both 29, neither 23",
+   "form": "tracked car under-turns and runs WIDE late (only 10 % inside the turn at max deviation; 60 % along-track lag)",
+   "knot_split_POSTHOC": {
+    "navtest_Fc8_last_knot_only": "38.2 % [29.1, 47.1]",
+    "navtest_Fc17_knots_1_to_7": "50.7 % [41.2, 59.5]",
+    "dev_picks_Fc8": "13.5 % [2.2, 34.6]",
+    "dev_picks_Fc17": "59.5 % [40.0, 77.8]"
+   },
+   "reading": "R-MECH = DOMINANT H (heading channel); the interior knots carry most of it, not only A7's last pose",
+   "real_controller": "F_c moves no position; it makes the heading field consistent with the path (rear axle moving along its heading). Tracking fidelity improves on dev (delta -0.038 [-0.075, -0.011] m, heading MAE -0.16 [-0.24, -0.08] deg) but the footprint rotation breaks near-boundary plans. Pre-compensation draws a path off the intended one (drawn footprint fails +11.1 pp on dev): a real car with another controller would drive it."
+  },
+  "dev": {
+   "set": "2,466 navtrain held-out sets / 13 logs (navtest-disjoint), fan = model_final (= u400's generator); picks N-s0 (primary), N-s1, N-s2",
+   "gates": {
+    "n_sets": 2466,
+    "n_skipped": 0,
+    "AG1_all": true,
+    "DG1_max_abs": 0.0286,
+    "DG1_pass": false,
+    "DG2_agree_pct": 100.0,
+    "DG2_pass": true,
+    "n_logs": 13
+   },
+   "DG1_note": "DG1 strictly FAILED on 1 of 2,466 sets (EP only, 0.0286: the re-built PDM-Closed progress denominator); every arm of that set is scored with the same re-built parts, so the paired deltas are internally consistent; its weight in any mean is 1/2,466",
+   "baseline_N-s0_PDMS_x100": "+89.28 [+85.53, +91.61]",
+   "F_c": {
+    "dPDMS": "-0.30 [-0.72, +0.04]",
+    "dDAC": "-0.53 [-1.12, +0.06]",
+    "rescued": 19,
+    "broken": 32,
+    "drawn_fail_pp": "+0.97 [+0.36, +1.76]",
+    "replicates": {
+     "N-s1": "-0.45 [-1.17, +0.20]",
+     "N-s2": "-0.08 [-0.47, +0.35]"
+    }
+   },
+   "F_b": {
+    "rho_star": 0.99,
+    "dPDMS": "-0.03 [-0.15, +0.07]",
+    "switched_pct": 11.5166
+   },
+   "F_bc": {
+    "rho_star": 0.95,
+    "dPDMS": "-0.19 [-0.68, +0.27]"
+   },
+   "F_a_ceiling": {
+    "dPDMS": "-0.19 [-0.76, +0.63]",
+    "dEP": "-0.74 [-1.41, +0.11]",
+    "rescued": 13,
+    "broken": 14
+   },
+   "F_m_amendment3": {
+    "rho_star": 0.99,
+    "dPDMS": "+0.00 [-0.06, +0.05]",
+    "eligible": false
+   },
+   "eligibility": {
+    "F_c": false,
+    "F_b": false,
+    "F_a_ceiling": false,
+    "F_bc": false
+   },
+   "chosen": null,
+   "families": "LONGITUDINAL dEP / speed MAE, LATERAL cross MAE / heading MAE / delta, TACTICAL manoeuvre agreement (selection arms) are in dev.effects.*.families; STRATEGIC PAUSED (PI ruling 2026-09-19)"
+  },
+  "navtest_confirm": "NOT ISSUED: PREREG section 6 writes no confirm for an ineligible fix, and dev predicts F_c at -0.30 [-0.72, +0.04] PDMS. Tooling exists and is self-pair tested (exactly 0, NOT PROVEN, 136 logs) if the PI wants the read anyway: python code/zt5_seam_fix.py --seam D:/Projects/TanitAD/data/refe_navtest/seams/stage2_sft4_B_u400_navtest_full.npz --out <F_c seam> --expect-n 12146 ; python eval/score_navtest_refe.py --label refe_zt5_Fc_u400_navtest_full --seam <F_c seam> (no --tokens) ; python code/zt5_confirm_read.py --fixed <that csv> --base D:/Projects/TanitAD/data/refe_navtest/score/refe_stage2_sft4_B_u400_navtest_full/refe_stage2_sft4_B_u400_navtest_full.csv --tokens D:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json --out <json>. Bar: ADOPT iff lower > 0 and no NC/DAC/EP/TTC/C adverse; REFUTED iff upper < 0; else NOT PROVEN.",
+  "limitations": [
+   "dev picks are u400's 400-update siblings (u400's own held-out scores are not on the dev box)",
+   "dev = 13 logs (11 held-out log DBs absent: navtrain_dbs not retrieved) -> wide log-cluster intervals",
+   "intervals answer another draw of LOGS only; scorer-seed variance is read through N-s0/1/2",
+   "tracker-saved counts, the knot split and the signed-heading read are POST-HOC (decide nothing)",
+   "navtest exposure: DAC-level mechanism on the 144 + 529 controls only; no PDMS of any fix on navtest"
+  ],
+  "harness_note": "the subagent harness refused REPORT.md / MANIFEST.md; this block and MANIFEST.json replace them"
+ }
+}

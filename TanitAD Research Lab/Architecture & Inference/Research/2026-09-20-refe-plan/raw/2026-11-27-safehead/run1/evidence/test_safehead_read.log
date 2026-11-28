@@ -1,0 +1,16 @@
+ZZSH_READ NULL (provisional) s0 {'point': 0.0, 'lo': 0.0, 'hi': 0.0} s1 +0.0000 controls PASS
+ok 01 CTRL-ID through the read: logits bit-exact, picks n/n, per-token PDMS exact; an unchanged head reads Delta 0 [0, 0] -> NULL
+ZZSH_READ ADOPT (provisional) s0 {'point': 9.861429522020948, 'lo': 4.313295113819616, 'hi': 16.531705620043248} s1 +9.7995 controls PASS
+ok 02 a trained head: Delta +9.861 [+4.313, +16.532] == an independent p5c_read.Boot computation; seams = proposals[pick]
+ZZSH_READ INVALID (provisional) s0 {'point': 9.861429522020948, 'lo': 4.313295113819616, 'hi': 16.531705620043248} s1 +9.7995 controls FAIL ['CTRL-RED']
+ok 03 CTRL-RED: a degrading RED run PASSES, a RED run that does not degrade held-out selection FAILS -> INVALID
+ZZSH_READ INVALID (provisional) s0 {'point': 9.861429522020948, 'lo': 4.313295113819616, 'hi': 16.531705620043248} s1 +9.7995 controls FAIL ['CTRL-SHA']
+ZZSH_READ INVALID (provisional) s0 {'point': 9.861429522020948, 'lo': 4.313295113819616, 'hi': 16.531705620043248} s1 +9.8614 controls FAIL ['CTRL-LEAK']
+ZZSH_READ INVALID (provisional) s0 {'point': 9.861429522020948, 'lo': 4.313295113819616, 'hi': 16.531705620043248} s1 +9.7995 controls FAIL ['CTRL-DET-NT']
+ok 04 INVALID on a smoke head (CTRL-SHA), a navtrain log that is a navtest log (CTRL-LEAK), cached navtest logits 1e-3 off the banked dump (CTRL-DET-NT)
+ok 05 the committed reading: ADOPT / SEPARATED-SMALL (P2, R) / NULL / ADVERSE (PDMS, a judged sub-score; DDC not judged) / INVALID / NULL-HELDOUT
+ZZSH_VERDICT ADOPT
+ZZSH_VERDICT INCOMPLETE
+ZZSH_VERDICT INVALID
+ok 06 confirm: CTRL-T2 PASSES on harness rows equal to the table, FAILS (INVALID) on a 0.01 PDMS difference; a missing family -> INCOMPLETE
+ZZSHREAD_PASS 6

@@ -1,0 +1,26 @@
+[wpn] loaded banked tensors: 1360 windows
+
+[wpn] n=1360 windows - 34 episodes - K=128
+[wpn] roll-1 pairs a window with the SAME EPISODE in 97.5 % of rows
+      => WP-M's 'different window' control was mostly the SAME CLIP, usually the adjacent timestep
+
+arm (ADE, lower is better)            metres
+base (port zeroed)                    0.6636
+REAL prior                            0.6521
+roll-1 prior  [DIAGNOSTIC ONLY]       0.6534
+cross-episode prior  [the control]    0.6776
+norm-matched random prior             0.7474
+
+paired contrast (ADE, m)                     delta                      CI95
+real - base                                -0.0113   [-0.0416, +0.0175] overlaps 0
+cross-episode - base                       +0.0141   [-0.0097, +0.0363] overlaps 0
+real - cross-episode  [SCENE-SPECIFIC]     -0.0254   [-0.0425, -0.0093] SEPARATED
+real - roll-1  [WP-M's number]             -0.0012   [-0.0098, +0.0068] overlaps 0
+norm-matched - base                        +0.0838   [+0.0600, +0.1087] SEPARATED
+
+  generic share  = (cross-episode - base) / (real - base) = -121.7 %
+  ! a share is only meaningful if the DENOMINATOR is separated from 0; 'real - base' above says whether it is.
+
+  INF (real port): flip 0.2324  kl 0.187789
+
+-> wpn_port_contrasts.json

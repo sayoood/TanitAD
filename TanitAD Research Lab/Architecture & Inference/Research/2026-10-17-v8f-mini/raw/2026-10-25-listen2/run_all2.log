@@ -1,0 +1,98 @@
+2026-10-25T13:20:33 guard: commit_headroom_GB=7,34 C_free_GB=3,802
+2026-10-25T13:20:42 guard: commit_headroom_GB=6,77 C_free_GB=3,364
+UNMUTATED: rc=0 failed=[] | 28 passed in 6.48s
+N1 E1 injects the donor nav at T instead of S: RED (caught) rc=1 failed=['test_e1_arm_equals_listens_qnav_nav_at_S_arm_and_the_S_cell', 'test_e1_injects_the_donor_nav_at_S_only_and_the_change_flows_down', 'test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N2 E1 injects the donor nav at S AND T: RED (caught) rc=1 failed=['test_e1_arm_equals_listens_qnav_nav_at_S_arm_and_the_S_cell', 'test_e1_injects_the_donor_nav_at_S_only_and_the_change_flows_down', 'test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N3 E3 joint triple drops the T code: RED (caught) rc=1 failed=['test_e3_joint_triple_hands_O_one_donors_ego_ck_and_code_only', 'test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N4 the mean scene ignores the pad mask: RED (caught) rc=1 failed=['test_means_equal_an_independent_per_window_computation']
+N5 every layer's mean token is taken at O's (NOW) tick: RED (caught) rc=1 failed=['test_means_differ_across_layers_that_read_at_different_ticks', 'test_means_equal_an_independent_per_window_computation']
+N6 the mean-age replacement is zeros for a_t: RED (caught) rc=1 failed=['test_every_mean_cell_hands_the_reader_the_mean_and_nothing_else']
+N7 O's mean cell leaves T's code in place: RED (caught) rc=1 failed=['test_every_mean_cell_hands_the_reader_the_mean_and_nothing_else']
+N8 the mean scene is entirely padded: RED (caught) rc=1 failed=['test_every_mean_cell_hands_the_reader_the_mean_and_nothing_else']
+N9 the own-value control hands T the checkpoints in O's frame: RED (caught) rc=1 failed=['test_the_windows_own_value_through_the_mean_path_is_the_clean_pass_bit_for_bit']
+N10 the mean mode uses the window's own value: RED (caught) rc=1 failed=['test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N11 the mean divides by n + 1: RED (caught) rc=1 failed=['test_means_equal_an_independent_per_window_computation']
+N12 T's mean checkpoints are taken in O's frame: RED (caught) rc=1 failed=['test_means_equal_an_independent_per_window_computation']
+N13 the collector stores the CLEAN trajectory as the E1 arm: RED (caught) rc=1 failed=['test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N14 the collector stores a single swap as the E3 joint: RED (caught) rc=1 failed=['test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+ALL MUTATIONS CAUGHT AND THE UNMUTATED MODULE IS GREEN
+2026-10-25T13:22:42 guard: commit_headroom_GB=4,77 C_free_GB=3,799
+2026-10-25T13:23:42 guard: commit_headroom_GB=7,67 C_free_GB=3,803
+  [means s0] 64/9582 windows, 2s
+  [means s0] 1344/9582 windows, 8s
+  [means s0] 2624/9582 windows, 15s
+  [means s0] 3904/9582 windows, 22s
+  [means s0] 5184/9582 windows, 28s
+  [means s0] 6464/9582 windows, 36s
+  [means s0] 7744/9582 windows, 43s
+  [means s0] 9024/9582 windows, 50s
+MEANS s0 control pass: True {'n_windows': 9582, 'n_fit_windows_hblend': 9582, 'fit_clips_sha256': '458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1', 'ckpt_sha256': '601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8', 'native_tracks_sha256': '1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7', 'window_list_equal': {'ci': True, 't': True, 'a_t': True, 'a_s': True}, 'max_abs_traj30_vs_hblend_fit_windows_m': 2.6702880859375e-05, 'pass': True, 'pad_any_windows_per_layer': {'S': 697, 'T': 421, 'O': 282}, 'mean_ages_ticks': [0.9803798789396786, 2.8916718847839697], 'seconds': 53.0}
+PEAKMEM argv=means --seed s0 peak_private_commit_MB=2432 peak_working_set_MB=1681
+2026-10-25T13:24:39 guard: commit_headroom_GB=8,17 C_free_GB=3,800
+  [means s1] 64/9582 windows, 2s
+  [means s1] 1344/9582 windows, 8s
+  [means s1] 2624/9582 windows, 14s
+  [means s1] 3904/9582 windows, 20s
+  [means s1] 5184/9582 windows, 27s
+  [means s1] 6464/9582 windows, 34s
+  [means s1] 7744/9582 windows, 42s
+  [means s1] 9024/9582 windows, 48s
+MEANS s1 control pass: True {'n_windows': 9582, 'n_fit_windows_hblend': 9582, 'fit_clips_sha256': '458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1', 'ckpt_sha256': '6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6', 'native_tracks_sha256': '1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7', 'window_list_equal': {'ci': True, 't': True, 'a_t': True, 'a_s': True}, 'max_abs_traj30_vs_hblend_fit_windows_m': 3.814697265625e-05, 'pass': True, 'pad_any_windows_per_layer': {'S': 697, 'T': 421, 'O': 282}, 'mean_ages_ticks': [0.9803798789396786, 2.8916718847839697], 'seconds': 51.8}
+PEAKMEM argv=means --seed s1 peak_private_commit_MB=2431 peak_working_set_MB=1680
+2026-10-25T13:25:34 guard: commit_headroom_GB=9,59 C_free_GB=5,471
+  [s0_id.npz] 0/2399 windows, 2s
+  [s0_id.npz] 1088/2399 windows, 24s
+  [s0_id.npz] 2176/2399 windows, 44s
+wrote runs/s0_id.npz (47.2 s), E1 invariance asserted on 2399 windows
+PEAKMEM argv=collect --seed s0 --mode donor --identity --out runs/s0_id.npz peak_private_commit_MB=2544 peak_working_set_MB=1759
+2026-10-25T13:26:25 guard: commit_headroom_GB=7,51 C_free_GB=5,417
+  [s0_own.npz] 0/2399 windows, 2s
+  [s0_own.npz] 1280/2399 windows, 23s
+wrote runs/s0_own.npz (39.6 s), E1 invariance asserted on 0 windows
+PEAKMEM argv=collect --seed s0 --mode own --out runs/s0_own.npz peak_private_commit_MB=2177 peak_working_set_MB=1416
+2026-10-25T13:27:08 guard: commit_headroom_GB=6,78 C_free_GB=5,412
+  [s0_d0.npz] 0/2399 windows, 3s
+  [s0_d0.npz] 1152/2399 windows, 23s
+  [s0_d0.npz] 2368/2399 windows, 43s
+wrote runs/s0_d0.npz (43.1 s), E1 invariance asserted on 2399 windows
+PEAKMEM argv=collect --seed s0 --mode donor --donor-seed 0 --out runs/s0_d0.npz peak_private_commit_MB=2542 peak_working_set_MB=1762
+2026-10-25T13:27:55 guard: commit_headroom_GB=8,38 C_free_GB=6,028
+controls: complete False | all present pass True -> READ_controls.json
+PEAKMEM argv=analyze --controls-only peak_private_commit_MB=1126 peak_working_set_MB=526
+2026-10-25T13:28:01 guard: commit_headroom_GB=8,88 C_free_GB=6,082
+  [s1_d0.npz] 0/2399 windows, 2s
+  [s1_d0.npz] 1280/2399 windows, 23s
+wrote runs/s1_d0.npz (40.6 s), E1 invariance asserted on 2399 windows
+PEAKMEM argv=collect --seed s1 --mode donor --donor-seed 0 --out runs/s1_d0.npz peak_private_commit_MB=2543 peak_working_set_MB=1763
+2026-10-25T13:28:45 guard: commit_headroom_GB=8,27 C_free_GB=6,024
+  [s0_d1.npz] 0/2399 windows, 2s
+  [s0_d1.npz] 1280/2399 windows, 22s
+wrote runs/s0_d1.npz (41.7 s), E1 invariance asserted on 2399 windows
+PEAKMEM argv=collect --seed s0 --mode donor --donor-seed 1 --out runs/s0_d1.npz peak_private_commit_MB=2538 peak_working_set_MB=1758
+2026-10-25T13:29:30 guard: commit_headroom_GB=7,89 C_free_GB=6,022
+  [s1_id.npz] 0/2399 windows, 2s
+  [s1_id.npz] 1216/2399 windows, 24s
+wrote runs/s1_id.npz (41.7 s), E1 invariance asserted on 2399 windows
+PEAKMEM argv=collect --seed s1 --mode donor --identity --out runs/s1_id.npz peak_private_commit_MB=2546 peak_working_set_MB=1760
+2026-10-25T13:30:16 guard: commit_headroom_GB=7,55 C_free_GB=6,077
+  [s1_own.npz] 0/2399 windows, 2s
+  [s1_own.npz] 1280/2399 windows, 24s
+wrote runs/s1_own.npz (40.6 s), E1 invariance asserted on 0 windows
+PEAKMEM argv=collect --seed s1 --mode own --out runs/s1_own.npz peak_private_commit_MB=2178 peak_working_set_MB=1417
+2026-10-25T13:31:00 guard: commit_headroom_GB=8,41 C_free_GB=6,019
+  [s0_mean.npz] 0/2399 windows, 2s
+  [s0_mean.npz] 1344/2399 windows, 23s
+wrote runs/s0_mean.npz (38.9 s), E1 invariance asserted on 0 windows
+PEAKMEM argv=collect --seed s0 --mode mean --out runs/s0_mean.npz peak_private_commit_MB=2180 peak_working_set_MB=1418
+2026-10-25T13:31:43 guard: commit_headroom_GB=7,59 C_free_GB=6,015
+  [s1_mean.npz] 0/2399 windows, 2s
+  [s1_mean.npz] 1216/2399 windows, 23s
+wrote runs/s1_mean.npz (42.6 s), E1 invariance asserted on 0 windows
+PEAKMEM argv=collect --seed s1 --mode mean --out runs/s1_mean.npz peak_private_commit_MB=2183 peak_working_set_MB=1418
+2026-10-25T13:32:29 guard: commit_headroom_GB=7,28 C_free_GB=6,017
+controls: complete True | all present pass True -> READ_controls.json
+PEAKMEM argv=analyze --controls-only peak_private_commit_MB=1142 peak_working_set_MB=542
+2026-10-25T13:32:38 guard: commit_headroom_GB=7,04 C_free_GB=6,017
+E1: ROUTE FLOWS DOWN | E2: PARTLY ROBUST | E3: INCOHERENCE | controls all pass: True
+PEAKMEM argv=analyze peak_private_commit_MB=1142 peak_working_set_MB=542
+LISTEN2_RUNS_DONE

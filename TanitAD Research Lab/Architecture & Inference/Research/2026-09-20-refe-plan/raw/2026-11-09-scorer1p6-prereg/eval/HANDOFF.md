@@ -1,0 +1,21 @@
+# HANDOFF: SCORER1P6 read tool (CPU only; python = `C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe`, tests need `venvs/tanitad` for pytest)
+
+Files (all in this dir): `draw_e2.py`, `build_e2_table.py`, `read_scorer1p6.py`, `test_read_scorer1p6.py` (34 tests), this file. E2 list already drawn: `../e2/e2_tokens.json`, sha256 `bd368d91baaf599991524284b70c514d8d1101a2926eb617582925d4f5671a4e` (2,000 tokens, 131 logs, disjoint from C3, seed 20261108, no score read). Self-check output: `selfcheck/`.
+
+## Run order
+1. **E2 table (~2.5 h CPU, detached; waits while RAM < 6 GB; resumable, re-run the same command):**
+   `python build_e2_table.py --proposals F:/TanitAD_p6read_work/pass2/proposals_p6final.npz --tokens ../e2/e2_tokens.json --out ../e2 --work F:/TanitAD_p6eval/e2work --workers 3`
+   Launch via WMI `cmd /c ... < NUL` (a shell child dies). Exit 0 = table + G0-E2 PASS; 3 = proposals file absent; 4 = G0-E2 FAIL (table not trusted). The real harness path was smoke-tested on 4 C3 tokens (1 column reproduced `table_p6.npz` bit for bit). When done, delete `F:/TanitAD_p6eval/e2work` (seams, harness runs; not the only copy) and log path and size.
+2. **Arms deliver, per arm dir** (`C0`, `C0r`, `S1E`, optional `S1`): `e3_logits.npz` = `token [12146]`, `logits [12146,64,6] float32` (columns NC DAC EP TTC C DDC), `proposals [12146,64,8,3] float32` (the executed plans the arm's run saw; G0-E3 compares bytes with P6's); optional `e2_logits.npz` = `token [2000], logits [2000,64,6]` (else the E3 rows are used); optional `e3_changed_scores.csv` (harness csv of the arm's pick poses on tokens whose pick differs from P6's).
+3. **Missing scores:** `python read_scorer1p6.py emit-changed --p6-proposals ... --e2-tokens ../e2/e2_tokens.json --e2-table ../e2/e2_table_p6final.npz --arm C0=DIR --arm C0r=DIR --arm S1E=DIR [ENS3] --out OUT` writes `seam_<arm>.npz` + `tokens_<arm>.json` (W3 format) + `needs_scoring.json` for tokens whose picked proposal has no score yet (P6 csv, E2 table and every arm csv are pooled by (token, proposal index)). Score each with the harness (`score_e.py --label refe_p6s1_<arm> --seam .. --tokens .. --out ..`, cwd `eval/harness`), copy the csv to `<arm dir>/e3_changed_scores.csv`; for ENS3 pass `--ens3-csv`.
+4. **Read:** `python read_scorer1p6.py read --p6-proposals F:/TanitAD_p6read_work/pass2/proposals_p6final.npz --p6-csv E:/Projects/TanitAD/data/refe_navtest/score/refe_p6final/refe_p6final.csv --e2-tokens ../e2/e2_tokens.json --e2-table ../e2/e2_table_p6final.npz --arm C0=D0 --arm C0r=D0r --arm S1E=D1 [--arm S1=D2] [--c3-tokens E:/Projects/TanitAD-artifacts/refe_ego_probe_20261106/tokens_all.json] --out OUT` -> `scorer1p6_read.json` + `.md`. Exit 0 READ; 2 = READ STOPPED (a gate failed, no verdict) or INCOMPLETE (scores missing). The world (human future, v0, command, logs) comes from the navtest export `F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz`.
+5. `python read_scorer1p6.py selfcheck --out DIR` re-runs the P6-against-itself check (C3 stand-in).
+
+## Not verified
+- The full-size run: P6's 12,146-token proposals file and the E2 table did not exist when this was built. Everything was run on synthetic arms and on the 1,058 C3 tokens of `dump_p6.npz` (a STAND-IN for E2 and E3). Runtime on 12,146 tokens and the memory of `Pool` (12,146 x 64 x 7 floats) are untested; expect minutes.
+- `proposals_p6final.npz` key names are taken from `refe_navtest_seam.py` (`token, fingerprint, proposals, logits, pick`); the loader also accepts `props8`.
+- Ambiguity A1/A2: v4 and CRUISE use the 0.5 s grid. On C3 this gives CRUISE n = 155 against the registered 154, and M1 n per head 67/50/138 against the registered 66/49/138 (diagnostic only; not tuned).
+- Tactical components (decision accuracy, command adherence) need `stack/` on the sys.path (added by `command_adherence.labeller`); on failure they are reported UNAVAILABLE with the reason, never a pass. Distance-keeping is UNAVAILABLE at this tier.
+- No multiplicity correction on the family clause (card silent). 1e-9 slack on decimal bars (A12).
+- Mutation checks were done by hand (G1, G2, G3, 2F rule, tie ranks, reversed diff, G0-E3 compare, O6 adoption, family adversity): each turned a test RED. Not automated.
+- Closed-loop read (card section 6) and S1 training are out of scope.

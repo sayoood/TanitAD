@@ -1,0 +1,35 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/Projects/TanitAD-artifacts/refcv5v2_final/extrinsics141.json (141 clips, z 1.213-1.662 m, pitch -0.0461..+0.0426 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 perception: w_map=1 w_box3d=1; params {'lift': 131328, 'bev_encoder': 785280, 'map_head': 873, 'box_memory': 91136, 'box_decoder': 3643159, 'total': 4651776}
+[v3] ⛔ anchors: NO --anchors GIVEN — using the SYNTHETIC `default_anchors` fallback. Its oracle-in-vocabulary ADE was MEASURED at 0.9433 m, worse than a single straight line (0.6780 m) and 2.16x the data-driven vocabulary (0.4369 m). The model's ceiling is below the trivial floor. This is almost certainly NOT what you want.
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl: 139 providers (channels 9, 256x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] 139 lazy v2 providers from ['D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl'] (lru 4)
+[v3] ⚠️ --agent-join-verify off: the join's digest is NOT checked; config.json records that the operator turned it off.
+[v3] agent join loaded: 26394 records / 139 clips (filtered out 0) in 10.8 s
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 32
+[v3] SAM3 map GT: 23088/23772 windows covered (0.9712, floor 0.90, verdict PASS) over 139 clips; states {'ok': 23088, 'no_file': 684, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['flat_sha12']
+[v3] 3-D cuboid join: {'path': 'D:\\Projects\\TanitAD-artifacts\\b1-agent-join-3d-20260917\\b1eval_agents_3d.jsonl.xz', 'n_lines': 26394, 'n_agents': 905512, 'n_clips': 139}
+[v3] 139 episodes -> 23772 windows (window 8, max_horizon 20, image_hw (256, 1024), tac_vocab kin3)
+[v3] u8_batches=False: frames+future_frames = 0.528 GB per collated batch (float32), <= 1 in flight -> ~0.53 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] rig camera coverage: 139/139 episodes (1.0000) from a 141-clip bank
+[v3] EFFECTIVE WEIGHTS (this arm) -- default -> layer -> effective -> builds a graph?
+[v3] term                                                    flag               default  asked  effective  src   graph  status          layer/mask/missing                                                                                                                                            
+[v3] ------------------------------------------------------  -----------------  -------  -----  ---------  ----  -----  --------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v3] u0 control-space x0 loss (WP-4)                         --w-u0             0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--sampler none: `control_head` is built only for --sampler ddim, so `u0_hat` is absent from `out` and the term is skipped                             
+[v3] GT-supervised detection set loss (WP-6)                 --w-agent          0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3] WP-D BEV auxiliary loss                                 --w-bev-aux        0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)                                 
+[v3] D-TACGOAL 22-token tactical goal SET (multi-label BCE)  --w-tac-goal       0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-tac-goal needs `--tac-goal-tok-head` (no head => no `tac_goal_logits` in `out`) AND `--v7-labels` (no join => no `tac_goal_y`/`tac_goal_w` target)
+[v3] agent projection consistency                            --agent-w-project  0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                
+[v3] agent ground-plane prior                                --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                
+[v3] E15 geometric goal point (GP-2)                         --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT  missing=no --goal-point-inject: the head that predicts the point is never built                                                                               
+[v3] refcv6 SAM3 BEV map soft-CE (§2)                        --w-map            0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3] refcv6 3-D cuboid set loss (§6)                         --w-box3d          0        1      1          op    yes    TRAINS                                                                                                                                                                        
+[v3] 3/9 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3:hier] step 1 loss 168.1737 traj 15.5009
+[v3:hier] step 2 loss 255.2578 traj 26.6828
+[v3:hier] step 3 loss 341.7431 traj 30.9191
+[v3:hier] ckpt step 3 -> ckpt.pt
+[v3:hier] DONE at 3 — summary.json written

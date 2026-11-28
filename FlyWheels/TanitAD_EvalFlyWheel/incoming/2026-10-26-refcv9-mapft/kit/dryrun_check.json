@@ -1,0 +1,212 @@
+{
+ "tree": "F:\\refcv9_mapft_scratch\\tree",
+ "tanitad_file": "F:\\refcv9_mapft_scratch\\tree\\stack\\tanitad\\__init__.py",
+ "sample_budget": {
+  "rule": "N = min(10000, floor(0.85 * (21600 - smoke_wall_s - 1800) / s_step)); N < 1000 -> STOP",
+  "s_step": "3.0",
+  "smoke_wall_s": "600",
+  "available_s": "19200",
+  "n_raw_exact": 5440.0,
+  "n_floor_exact": 5440,
+  "n_floor_float": 5440,
+  "n_float_disagrees": false,
+  "N": 5440,
+  "capped": false,
+  "stop": false,
+  "steps": 5440,
+  "warmup": 200,
+  "lr": "1e-4",
+  "eval_every": 1360,
+  "ema_decay": 0.99816,
+  "projected_train_s": 16320.0,
+  "projected_total_s": 18720.0
+ },
+ "full_argv_sha256": "3570f3782606fba83cc44ec8bd3cf019e7e6c9f33a547647ce7f24e4311e91e3",
+ "smoke_argv_sha256": "ad8d7b8c9feee71ee4dce55bbde497d02c2658abcc8c7a57f5fcf2b86b6a57f2",
+ "real_ema_present_and_md5_ok": true,
+ "rows": [
+  {
+   "check": "P1 SMOKE argv parses with the landed parser",
+   "expect": "parses",
+   "got": "parses",
+   "ok": true,
+   "detail": "201 tokens"
+  },
+  {
+   "check": "P2 SMOKE argv accepted by map_only_ft.pin_args",
+   "expect": "accepted",
+   "got": "accepted",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "P1 FULL argv parses with the landed parser",
+   "expect": "parses",
+   "got": "parses",
+   "ok": true,
+   "detail": "201 tokens"
+  },
+  {
+   "check": "P2 FULL argv accepted by map_only_ft.pin_args",
+   "expect": "accepted",
+   "got": "accepted",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "P3 FULL argv: gate rules (profile refcv8-mapft)",
+   "expect": "accepted",
+   "got": "accepted",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "R1 keep --grad-share-every 250 [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --grad-share-every > 0: the instrument measures the trunk / bev025 / bev_pool groups, which are FROZEN -- it would read nothing (and its fp32 replay is a full extra forward)"
+  },
+  {
+   "check": "R1 keep --grad-share-every 250 [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--grad-share-every is passed, but it is the gradient-share instrument measures the trunk / bev025 / bev_pool groups, all FROZEN: it must be "
+  },
+  {
+   "check": "R2 keep --b1-guard-ref-ap2m [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --b1-guard-ref-ap2m: the B1 guard cuts the head LR on the EMA box3d AP -- the box head is FROZEN (its AP cannot move) and there is no head/encoder group to cut"
+  },
+  {
+   "check": "R2 keep --b1-guard-ref-ap2m [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--b1-guard-ref-ap2m is passed, but it is the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box hea"
+  },
+  {
+   "check": "R3 keep --b1-guard-step [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--b1-guard-step is passed, but it is the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box head is"
+  },
+  {
+   "check": "R4 --conflict-detector auto [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --conflict-detector is not `off`: it measures planner-vs-perception gradient conflicts on the trunk, which is FROZEN -- pass --conflict-detector off"
+  },
+  {
+   "check": "R4 --conflict-detector auto [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--conflict-detector off is REQUIRED for a refcv8-mapft launch (PI D-R9-MAPHEAD-PRECISION: no trunk gradient exists to measure) and the argv "
+  },
+  {
+   "check": "R5 keep --conflict-every 50 [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --conflict-every is set: the conflict detector is off under the flag, so the cadence would be stamped and read by nothing -- drop it"
+  },
+  {
+   "check": "R5 keep --conflict-every 50 [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--conflict-every is passed, but it is the conflict detector is off under the map-only fine-tune (a dead cadence): it must be OFF for a refcv"
+  },
+  {
+   "check": "R6 drop --init-from [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --init-from is not set: the fine-tune starts from the SHIPPED refcv8 EMA model (ckpt_ema_48852.pt), or the frozen planner is not the shipped planner"
+  },
+  {
+   "check": "R6 drop --init-from [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "profile refcv8-mapft requires --init-from in the launch argv (PI D-R9-MAPHEAD-PRECISION: the warm start IS the shipped refcv8 EMA model (md5 | --r8-train-only-map: --init-from is not passed -- the warm start must be the shipped EMA model (md5 b4364029b68f29a33eeb4aebbbbd002b)"
+  },
+  {
+   "check": "R7 drop --r8-train-only-map (flag absent) [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "profile refcv8-mapft requires --r8-train-only-map in the launch argv (PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + nea"
+  },
+  {
+   "check": "R8 add --r8-critic-drivable [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --r8-critic-drivable: the planner's selection would READ the map head, so the three modules would no longer be map-only and the planner could not stay bit-identical in function"
+  },
+  {
+   "check": "R8 add --r8-critic-drivable [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--r8-critic-drivable is passed, but it is the drivable critic makes the planner READ the map head: the three modules would stop being map-on"
+  },
+  {
+   "check": "R9 add --trunk-bn-recalib 1 [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --trunk-bn-recalib: it REWRITES the frozen trunk's BatchNorm statistics"
+  },
+  {
+   "check": "R9 add --trunk-bn-recalib 1 [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--trunk-bn-recalib is passed, but it is BN recalibration REWRITES the frozen trunk's statistics: it must be OFF for a refcv8-mapft launch (p"
+  },
+  {
+   "check": "R10 --w-map-hires 0 [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --w-map-hires is 0: the map-only modules would receive no gradient -- nothing would train"
+  },
+  {
+   "check": "R11 add --b1-guard-ref-ap2m + --b1-guard-step [trainer pin_args]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "[map-only] \u26d4 --r8-train-only-map refused: |   - --b1-guard-ref-ap2m: the B1 guard cuts the head LR on the EMA box3d AP -- the box head is FROZEN (its AP cannot move) and there is no head/encoder group to cut"
+  },
+  {
+   "check": "R11 add --b1-guard-ref-ap2m + --b1-guard-step [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--b1-guard-ref-ap2m is passed, but it is the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box hea"
+  },
+  {
+   "check": "R12 --init-from file with the WRONG md5 [gate rules]",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "ok": true,
+   "detail": "--r8-train-only-map: --init-from /home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt has md5 b036749818f0263a26603dad35613479, the profile pins b436402"
+  },
+  {
+   "check": "C1 control: unbroken FULL argv [trainer pin_args]",
+   "expect": "accepted",
+   "got": "accepted",
+   "ok": true,
+   "detail": "steps=5440 warmup=200 ema=0.99816 eval_every=1360"
+  }
+ ],
+ "all_ok": true
+}

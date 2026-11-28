@@ -1,0 +1,719 @@
+{
+ "what": "control extract of the QUARTER run of card ADD64 read under notes N4 and N5 of card ADD45; no outcome field of the run is copied here",
+ "source": "fracscale/quarter1/read_n5_RESULT_DSCALE_LEAD.json",
+ "source_sha256": "7f14b1ea283d1969d60fb27266eeb4794e4d1776d5130f50b8177f2caec3c5a9",
+ "controls_failed": [
+  "d3_corpus_arm_live|P16C_s0"
+ ],
+ "k2_tol_note_n4": 0.001,
+ "d4_note_n5": {
+  "short_frac": 0.5,
+  "short_share_max": 0.05,
+  "n_probes": 11,
+  "n_pass_as_frozen": 6,
+  "n_pass_under_note": 11
+ },
+ "controls": {
+  "a2_pack_counts": {
+   "pass": true
+  },
+  "d1_no_leak_precheck": {
+   "pass": true
+  },
+  "d2_labels_one_clock_precheck": {
+   "pass": true
+  },
+  "d2j_join_labels_precheck": {
+   "pass": true
+  },
+  "counts_precheck": {
+   "pass": true
+  },
+  "d2n_new_clips_join_matches_lead_file": {
+   "pass": true
+  },
+  "d2g_new_clips_carry_gap_labels": {
+   "pass": true
+  },
+  "d1_planted_shared_id_fails": {
+   "pass": true
+  },
+  "d2c_lead_rows_on_the_token_clock": {
+   "pass": true
+  },
+  "d2c_planted_shift_fails": {
+   "pass": true
+  },
+  "d2e_eval_set_is_the_study_set": {
+   "pass": true
+  },
+  "d2e_planted_swap_fails": {
+   "pass": true
+  },
+  "paired_self_reads_exactly_0": {
+   "pass": true
+  },
+  "paired_swap_reads_the_negative": {
+   "pass": true
+  },
+  "paired_planted_shift_read_back": {
+   "pass": true
+  },
+  "d7_planted_difference_two_level": {
+   "pass": true
+  },
+  "a1_records|P16C_s0": {
+   "pass": true
+  },
+  "a4_window_states|P16C_s0": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16C_s0": {
+   "pass": true
+  },
+  "k3_closing|P16C_s0": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16C_s0": {
+   "pass": false
+  },
+  "k3_slot_n1|P16C_s0": {
+   "pass": true
+  },
+  "k4_no_future_input|P16C_s0": {
+   "pass": true
+  },
+  "records_probe_form|P16C_s0": {
+   "pass": true
+  },
+  "d4_train_log|P16C_s0": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.39730711714364586,
+    "last_mean": 0.002363419073281832,
+    "min_n_gap_instantaneous": 0.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": false,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 675.0,
+     "short_below_n_pres": 337.5,
+     "n_records": 385,
+     "n_short": 1,
+     "short_share": 0.0025974025974025974,
+     "short_share_max": 0.05,
+     "short_steps": [
+      8950
+     ],
+     "n_short_without_gap_label": 1,
+     "min_n_gap_full_batches": 49.0
+    }
+   }
+  },
+  "a1_records|P16U_s0": {
+   "pass": true
+  },
+  "a4_window_states|P16U_s0": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16U_s0": {
+   "pass": true
+  },
+  "k3_closing|P16U_s0": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16U_s0": {
+   "pass": false
+  },
+  "k3_slot_n1|P16U_s0": {
+   "pass": true
+  },
+  "k4_no_future_input|P16U_s0": {
+   "pass": true
+  },
+  "records_probe_form|P16U_s0": {
+   "pass": true
+  },
+  "d4_train_log|P16U_s0": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.3892922048456967,
+    "last_mean": 0.2592169999455412,
+    "min_n_gap_instantaneous": 68.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": true,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 671.0,
+     "short_below_n_pres": 335.5,
+     "n_records": 385,
+     "n_short": 0,
+     "short_share": 0.0,
+     "short_share_max": 0.05,
+     "short_steps": [],
+     "n_short_without_gap_label": 0,
+     "min_n_gap_full_batches": 68.0
+    }
+   }
+  },
+  "a1_records|P16C_s1": {
+   "pass": true
+  },
+  "a4_window_states|P16C_s1": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16C_s1": {
+   "pass": true
+  },
+  "k3_closing|P16C_s1": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16C_s1": {
+   "pass": true
+  },
+  "k3_slot_n1|P16C_s1": {
+   "pass": true
+  },
+  "k4_no_future_input|P16C_s1": {
+   "pass": true
+  },
+  "records_probe_form|P16C_s1": {
+   "pass": true
+  },
+  "d4_train_log|P16C_s1": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.3851072169840336,
+    "last_mean": 0.0021027736587538605,
+    "min_n_gap_instantaneous": 0.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": false,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 675.0,
+     "short_below_n_pres": 337.5,
+     "n_records": 385,
+     "n_short": 1,
+     "short_share": 0.0025974025974025974,
+     "short_share_max": 0.05,
+     "short_steps": [
+      8950
+     ],
+     "n_short_without_gap_label": 1,
+     "min_n_gap_full_batches": 49.0
+    }
+   }
+  },
+  "a1_records|P16U_s1": {
+   "pass": true
+  },
+  "a4_window_states|P16U_s1": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16U_s1": {
+   "pass": true
+  },
+  "k3_closing|P16U_s1": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16U_s1": {
+   "pass": true
+  },
+  "k3_slot_n1|P16U_s1": {
+   "pass": true
+  },
+  "k4_no_future_input|P16U_s1": {
+   "pass": true
+  },
+  "records_probe_form|P16U_s1": {
+   "pass": true
+  },
+  "d4_train_log|P16U_s1": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.3928545068949461,
+    "last_mean": 0.2474151887886581,
+    "min_n_gap_instantaneous": 68.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": true,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 671.0,
+     "short_below_n_pres": 335.5,
+     "n_records": 385,
+     "n_short": 0,
+     "short_share": 0.0,
+     "short_share_max": 0.05,
+     "short_steps": [],
+     "n_short_without_gap_label": 0,
+     "min_n_gap_full_batches": 68.0
+    }
+   }
+  },
+  "a1_records|P16C_s2": {
+   "pass": true
+  },
+  "a4_window_states|P16C_s2": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16C_s2": {
+   "pass": true
+  },
+  "k3_closing|P16C_s2": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16C_s2": {
+   "pass": true
+  },
+  "k3_slot_n1|P16C_s2": {
+   "pass": true
+  },
+  "k4_no_future_input|P16C_s2": {
+   "pass": true
+  },
+  "records_probe_form|P16C_s2": {
+   "pass": true
+  },
+  "d4_train_log|P16C_s2": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.395783576508984,
+    "last_mean": 0.002257918108495817,
+    "min_n_gap_instantaneous": 0.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": false,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 675.0,
+     "short_below_n_pres": 337.5,
+     "n_records": 385,
+     "n_short": 1,
+     "short_share": 0.0025974025974025974,
+     "short_share_max": 0.05,
+     "short_steps": [
+      8950
+     ],
+     "n_short_without_gap_label": 1,
+     "min_n_gap_full_batches": 49.0
+    }
+   }
+  },
+  "a1_records|P16U_s2": {
+   "pass": true
+  },
+  "a4_window_states|P16U_s2": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16U_s2": {
+   "pass": true
+  },
+  "k3_closing|P16U_s2": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16U_s2": {
+   "pass": false
+  },
+  "k3_slot_n1|P16U_s2": {
+   "pass": true
+  },
+  "k4_no_future_input|P16U_s2": {
+   "pass": true
+  },
+  "records_probe_form|P16U_s2": {
+   "pass": true
+  },
+  "d4_train_log|P16U_s2": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.3880915679968894,
+    "last_mean": 0.24445242124299207,
+    "min_n_gap_instantaneous": 68.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": true,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 671.0,
+     "short_below_n_pres": 335.5,
+     "n_records": 385,
+     "n_short": 0,
+     "short_share": 0.0,
+     "short_share_max": 0.05,
+     "short_steps": [],
+     "n_short_without_gap_label": 0,
+     "min_n_gap_full_batches": 68.0
+    }
+   }
+  },
+  "a1_records|P16C_s3": {
+   "pass": true
+  },
+  "a4_window_states|P16C_s3": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16C_s3": {
+   "pass": true
+  },
+  "k3_closing|P16C_s3": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16C_s3": {
+   "pass": true
+  },
+  "k3_slot_n1|P16C_s3": {
+   "pass": true
+  },
+  "k4_no_future_input|P16C_s3": {
+   "pass": true
+  },
+  "records_probe_form|P16C_s3": {
+   "pass": true
+  },
+  "d4_train_log|P16C_s3": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.3883979697711766,
+    "last_mean": 0.0019589542436213897,
+    "min_n_gap_instantaneous": 0.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": false,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 675.0,
+     "short_below_n_pres": 337.5,
+     "n_records": 385,
+     "n_short": 1,
+     "short_share": 0.0025974025974025974,
+     "short_share_max": 0.05,
+     "short_steps": [
+      8950
+     ],
+     "n_short_without_gap_label": 1,
+     "min_n_gap_full_batches": 49.0
+    }
+   }
+  },
+  "a1_records|P16U_s3": {
+   "pass": true
+  },
+  "a4_window_states|P16U_s3": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16U_s3": {
+   "pass": true
+  },
+  "k3_closing|P16U_s3": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16U_s3": {
+   "pass": false
+  },
+  "k3_slot_n1|P16U_s3": {
+   "pass": true
+  },
+  "k4_no_future_input|P16U_s3": {
+   "pass": true
+  },
+  "records_probe_form|P16U_s3": {
+   "pass": true
+  },
+  "d4_train_log|P16U_s3": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.3989529423415661,
+    "last_mean": 0.252221597269887,
+    "min_n_gap_instantaneous": 68.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": true,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 671.0,
+     "short_below_n_pres": 335.5,
+     "n_records": 385,
+     "n_short": 0,
+     "short_share": 0.0,
+     "short_share_max": 0.05,
+     "short_steps": [],
+     "n_short_without_gap_label": 0,
+     "min_n_gap_full_batches": 68.0
+    }
+   }
+  },
+  "a1_records|P16U2_s0": {
+   "pass": true
+  },
+  "a4_window_states|P16U2_s0": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16U2_s0": {
+   "pass": true
+  },
+  "k3_closing|P16U2_s0": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16U2_s0": {
+   "pass": true
+  },
+  "k3_slot_n1|P16U2_s0": {
+   "pass": true
+  },
+  "k4_no_future_input|P16U2_s0": {
+   "pass": true
+  },
+  "records_probe_form|P16U2_s0": {
+   "pass": true
+  },
+  "d4_train_log|P16U2_s0": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence + gap parts (the closing part is exactly 0)",
+    "first_mean": 0.38924677059985696,
+    "last_mean": 0.08402166460152893,
+    "min_n_gap_instantaneous": 32.0,
+    "last_step": 38328,
+    "total": 38328,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": true,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 672.0,
+     "short_below_n_pres": 336.0,
+     "n_records": 768,
+     "n_short": 0,
+     "short_share": 0.0,
+     "short_share_max": 0.05,
+     "short_steps": [],
+     "n_short_without_gap_label": 0,
+     "min_n_gap_full_batches": 32.0
+    }
+   }
+  },
+  "a1_records|P16CSH_s0": {
+   "pass": true
+  },
+  "a4_window_states|P16CSH_s0": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16CSH_s0": {
+   "pass": true
+  },
+  "k3_closing|P16CSH_s0": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16CSH_s0": {
+   "pass": true
+  },
+  "k3_slot_n1|P16CSH_s0": {
+   "pass": true
+  },
+  "k4_no_future_input|P16CSH_s0": {
+   "pass": true
+  },
+  "records_probe_form|P16CSH_s0": {
+   "pass": true
+  },
+  "d4_train_log|P16CSH_s0": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence part only (permuted gap labels)",
+    "first_mean": 0.3819787010550499,
+    "last_mean": 0.0009647707310726954,
+    "min_n_gap_instantaneous": 0.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": false,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 675.0,
+     "short_below_n_pres": 337.5,
+     "n_records": 385,
+     "n_short": 1,
+     "short_share": 0.0025974025974025974,
+     "short_share_max": 0.05,
+     "short_steps": [
+      8950
+     ],
+     "n_short_without_gap_label": 1,
+     "min_n_gap_full_batches": 49.0
+    }
+   }
+  },
+  "a1_records|P16USH_s0": {
+   "pass": true
+  },
+  "a4_window_states|P16USH_s0": {
+   "pass": true
+  },
+  "k2_head_forward_eval|P16USH_s0": {
+   "pass": true
+  },
+  "k3_closing|P16USH_s0": {
+   "pass": true
+  },
+  "k3_card_form_slot|P16USH_s0": {
+   "pass": true
+  },
+  "k3_slot_n1|P16USH_s0": {
+   "pass": true
+  },
+  "k4_no_future_input|P16USH_s0": {
+   "pass": true
+  },
+  "records_probe_form|P16USH_s0": {
+   "pass": true
+  },
+  "d4_train_log|P16USH_s0": {
+   "pass": true,
+   "detail": {
+    "pass": true,
+    "form": "presence part only (permuted gap labels)",
+    "first_mean": 0.37829581946134566,
+    "last_mean": 0.25867299806504024,
+    "min_n_gap_instantaneous": 68.0,
+    "last_step": 19164,
+    "total": 19164,
+    "header_checks": {
+     "total_equals_expected": true,
+     "w_clos_is_0": true,
+     "shuffle_gap_recorded_iff_expected": true,
+     "eval_guard_recorded_no_shared": true,
+     "clip_list_as_expected": true
+    },
+    "pass_as_frozen": true,
+    "note_n5_other_clauses": true,
+    "note_n5_gap_clause": {
+     "pass": true,
+     "median_n_pres": 671.0,
+     "short_below_n_pres": 335.5,
+     "n_records": 385,
+     "n_short": 0,
+     "short_share": 0.0,
+     "short_share_max": 0.05,
+     "short_steps": [],
+     "n_short_without_gap_label": 0,
+     "min_n_gap_full_batches": 68.0
+    }
+   }
+  },
+  "d3_corpus_arm_live|P16C_s0": {
+   "pass": false,
+   "failed_on": {
+    "auroc": 0.8435043028275724,
+    "auroc_bar": 0.85
+   }
+  },
+  "d3_corpus_arm_live|P16C_s1": {
+   "pass": true
+  },
+  "d5_permuted_gap_dead|P16CSH_s0": {
+   "pass": true
+  },
+  "d5_permuted_gap_dead|P16USH_s0": {
+   "pass": true
+  }
+ }
+}

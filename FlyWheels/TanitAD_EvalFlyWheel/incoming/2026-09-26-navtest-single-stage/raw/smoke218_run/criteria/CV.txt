@@ -1,0 +1,72 @@
+rc=0
+=== CV.json ===
+tier: T1  (driving-performance tier)
+
+LONGITUDINAL  [3/4 present]
+   [  ok  ] target-speed accuracy
+   [  ok  ] along-track displacement error
+   [  ok  ] ego progress
+   [ WORK ] distance-keeping (headway / time-gap / TTC to the lead agent)
+            -> four_families.longitudinal.distance_keeping: no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inferen (n=0)
+
+LATERAL  [4/4 present]
+   [  ok  ] cross-track error
+   [  ok  ] heading error
+   [  ok  ] curvature error
+   [  ok  ] yaw-rate error
+
+TACTICAL  [3/3 present]
+   [  ok  ] manoeuvre-decision quality (selected vs executed)
+   [  ok  ] confusion over the manoeuvre classes
+   [  ok  ] tactical goal / anchor selection quality
+
+STRATEGIC  [0/5 present]
+   [ WORK ] strategic decision quality
+            -> four_families.strategic: PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and ob (n=218)
+   [ WORK ] strategic route / goal-setting quality
+            -> four_families.strategic: PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal — the dataset card says verbatim 'we do not include open maps data', and ob (n=218)
+   [ WORK ] nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)
+            -> CV consumes NO route / driving_command input, so 'behaviour follows the route command' is undefined for it; NavSim never scores the route.
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)
+            -> no route input exists to shuffle or withhold.
+   [ WORK ] nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)
+            -> no route input exists to shuffle or withhold.
+
+ARTIFACT HYGIENE
+   [  ok  ] tier stamp present
+   [ WORK ] estimator named
+            -> estimator.interval: W2 estimator verdict REFUSED: n_clusters=3 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 218 units are 3 independent draws — an interval here could not rule. ⛔ Not a pa (n=3)
+   [  ok  ] n printed (windows and episodes)
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [  ok  ] corpus identity recorded (parity key + skip-hash)
+   [  ok  ] headline metrics reported against their trivial control(s)
+   [ WORK ] stochastic planner: inference-seed replicate + the seed floor
+            -> the floor / reference arms are deterministic and the scoring path has no RNG (E1 C7); a sampling planner arm would need an inference-seed replicate.
+
+LEAK GUARDS
+   [  ok  ] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+   [  ok  ] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+   [MISSING] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+            -> no key present and not refused
+
+BENCHMARK GATES
+   [  ok  ] protocol tag is a registered one
+   [  ok  ] EPDMS/PDMS from the `score` column
+   [  ok  ] which variant + split named
+   [  ok  ] every sub-metric reported
+   [  ok  ] declared ego inputs (vision-only compliance)
+   [ WORK ] route_roadblock_ids provenance checked
+            -> benchmark.navsim.route_leak_check: this arm consumes no route / driving_command input, so a route-derived leak cannot enter it (n=218)
+   [ WORK ] GATE navsim.ego_enforcement
+            -> declared not applicable (no vision-only claim): arm is NOT vision-only and does not claim to be: none — ego-status only (ego_statuses[-1].ego_velocity)
+   [ WORK ] GATE navsim.estimator_unit
+            -> interval refused: W2 estimator verdict REFUSED: n_clusters=3 distinct log_names < the floor of 8 (RG-14). The bootstrap resamples LOGS, so 218 units are 3 independent draws — an  (n=3)
+   [  ok  ] GATE navsim.modality_label
+   [  ok  ] GATE navsim.cross_protocol
+
+VIOLATIONS (silently absent, required): 0
+WORK ITEMS (refused with a reason, or partial): 11
+
+wrote D:\Projects\TanitAD\taniteval\results\bench\_scratch\navsim_v2\navtest_single_stage\20260926T135821Z-navsim_v2-none-ce7ac0\raw\criteria_CV.json
+
+[stderr]

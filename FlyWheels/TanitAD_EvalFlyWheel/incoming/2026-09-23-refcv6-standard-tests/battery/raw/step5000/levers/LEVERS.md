@@ -1,0 +1,28 @@
+### A4 lever panel — 4754 windows / 139 episodes, S2 ADE 0–2 s, T1 (self-action open loop); every lever is a DIFFERENT planner from the registered arm
+
+Estimator: paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = clip. SPEC sha `a8095594d2d1…`.
+
+**L1 inference-seed average** (sign vs single seeds guaranteed; magnitude only)
+
+| cell | ADE m [CI] |
+|---|---|
+| os_avg − ha0_ext | +0.0831 [+0.0640, +0.1043] **sep** |
+| os_avg − os_s0 | -0.0054 [-0.0069, -0.0040] **sep** |
+| os_avg − os_s1 | -0.0054 [-0.0068, -0.0040] **sep** |
+| replicate floor os_s0 − os_s1 | +0.0000 [-0.0025, +0.0027] ns |
+
+|os_s0 − os_s1| per instant (0.5/1/1.5/2 s): mean [0.01850000023841858, 0.06629999727010727, 0.1282999962568283, 0.20559999346733093], p95 [0.03999999910593033, 0.1542000025510788, 0.33640000224113464, 0.6241000294685364] m
+
+**L2 causal-hold blend (base `ha`)**
+
+| seed | blend − ha0_ext | blend − base | blend − blend_shuf | blend_shuf − base | w (fold0→1 / fold1→0) | identity |
+|---|---|---|---|---|---|---|
+| seed0 | -0.0122 [-0.0200, -0.0042] **sep** | -0.0246 [-0.0338, -0.0151] **sep** | -0.0246 [-0.0338, -0.0151] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.2, 0.2, 0.3, 0.4] / [0.2, 0.25, 0.3, 0.4] | PASS |
+| seed1 | -0.0123 [-0.0200, -0.0045] **sep** | -0.0247 [-0.0339, -0.0153] **sep** | -0.0247 [-0.0339, -0.0153] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.2, 0.2, 0.3, 0.4] / [0.2, 0.25, 0.3, 0.4] | PASS |
+
+**L2e echo blend (base `ha0_ext`, DIAGNOSTIC ONLY)**
+
+| seed | blend − ha0_ext | blend − base | blend − blend_shuf | blend_shuf − base | w (fold0→1 / fold1→0) | identity |
+|---|---|---|---|---|---|---|
+| seed0 | -0.0202 [-0.0277, -0.0125] **sep** | -0.0202 [-0.0277, -0.0125] **sep** | -0.0202 [-0.0277, -0.0125] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.15, 0.2, 0.25, 0.35] / [0.2, 0.2, 0.25, 0.35] | PASS |
+| seed1 | -0.0203 [-0.0277, -0.0125] **sep** | -0.0203 [-0.0277, -0.0125] **sep** | -0.0203 [-0.0277, -0.0125] **sep** | +0.0000 [+0.0000, +0.0000] ns | [0.15, 0.2, 0.25, 0.35] / [0.15, 0.2, 0.25, 0.35] | PASS |

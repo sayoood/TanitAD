@@ -1,0 +1,69 @@
+{
+ "_what": "stratum-D sweep pack: where a FALSE-PASS would hide",
+ "_evidence_class": "MEASURED (ours; CPU, read-only)",
+ "seed": 20260921,
+ "sheets": 58,
+ "draw_rule": "BY CLIP FIRST \u2014 shuffle clips, one window per clip",
+ "stratum_D": {
+  "windows": 408,
+  "clips": 55,
+  "drawn": 55,
+  "cluster_count_equals_n": true
+ },
+ "mixed_in": {
+  "route 1 vertical-shock events": 2,
+  "route 2 widest margin": 1,
+  "note": "blind ids come from the same shuffle, so a labeller cannot tell these from the sweep windows"
+ },
+ "sheet_design": "unchanged, except panel A now states the overlay is NOT depth-tested",
+ "depth_note": "-- NOT DEPTH-TESTED: a ground point BEHIND a raised object is drawn OVER it",
+ "projection_controls": {
+  "C1 t0 footprint at the image bottom": {
+   "front_corner_rows": [
+    449.7,
+    455.2
+   ],
+   "image_height": 416,
+   "bar": "every front corner row >= 0.75 x H = 312",
+   "pass": true
+  },
+  "C2 far ground point on the horizon row": {
+   "rows_at_x_m": {
+    "10": 285.8,
+    "20": 244.8,
+    "30": 232.9,
+    "45": 225.3,
+    "60": 221.7,
+    "infinity": 211.2
+   },
+   "delta_60m_vs_infinity_px": 10.5,
+   "bar": "monotone from below and |row(60) - horizon| <= 20.0 px",
+   "pass": true
+  },
+  "C3 the declared 120 deg field reaches both edges": {
+   "col_at_minus_60deg": -0.5,
+   "col_at_plus_60deg": 1023.5,
+   "width": 1024,
+   "bar": "the declared 120 deg field puts +-60 deg within 1 px of columns 0 and W-1",
+   "pass": true
+  },
+  "C4 +y is LEFT, asymmetry within the mount's own bound": {
+   "col_y_plus_5": 419.7,
+   "col_y_minus_5": 591.3,
+   "centre_col": 511.5,
+   "asymmetry_px": 12.01,
+   "mount_yaw_deg": -0.585,
+   "mount_lateral_offset_m": -0.0596,
+   "bar": "+y LEFT of centre, and asymmetry <= the bound this mount's own yaw and lateral offset imply (13.0 px)",
+   "pass": true
+  },
+  "all_pass": true
+ },
+ "rubric": {
+  "on-surface": "every part of the car stayed on roadway a car may drive on \u2014 including paint, markings and crosswalks painted ON the roadway",
+  "over-boundary": "some part of the car crossed onto a surface that is not roadway \u2014 pavement, verge, traffic island, or past a raised kerb",
+  "cannot-tell": "the images do not show the surface under the relevant part of the car well enough to decide"
+ },
+ "key_sha256": "dfad9db861dd9302f98625f5083e8735f5a79bebe70a345bdc5b1dc82867dcbf",
+ "key_location": "OUTSIDE the repo, held until the labels are landed"
+}

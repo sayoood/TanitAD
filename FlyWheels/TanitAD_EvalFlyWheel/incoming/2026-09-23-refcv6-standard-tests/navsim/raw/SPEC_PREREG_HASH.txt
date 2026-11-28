@@ -1,0 +1,21 @@
+SPEC.md pre-registration record
+staged_utc=2026-09-23T22:08:44Z
+repo=D:/Projects/TanitAD (branch agent/arch-inf-20260803)
+path=FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/SPEC.md
+git_blob=ab7f769a6803ac6fafd50d9bdf9d24d7aac4fa48 (index == worktree, both 40 chars, verified)
+refcv6 NavSim scores existing at this moment: NONE (only model-free harness controls CV_official, STOP_zero in raw/harness_repro/, and trajectory-only smokes/tests)
+
+AMENDMENT A1 (SPEC §9) staged_utc=2026-09-23T23:04:33Z git_blob=e860bce8494f89355dcdbfe9cb959d256218c4bb (index == worktree, 40 chars, verified)
+refcv6 scores existing at this moment: warmup R6_A1 only (CSV 23:03:25Z; the amendment touches 0/220 warmup scenes); NO navhard, NO navtest refcv6 score
+
+AMENDMENT A2 (SPEC §10, loader units defect found by KL) staged_utc=2026-09-23T23:23:45Z git_blob=5bc831ac65637208806e33de340d950d890c68f3 (index == worktree, 40 chars, verified)
+refcv6 scores existing at this moment: only VOID ones (mis-built decoder, quarantined in raw/VOID_wrong_anchor_units/); the corrected step-1000 re-runs had produced no score yet
+
+AMENDMENT A3 (SPEC §11, device rule per SPLIT + control KP precision floor) staged_utc=2026-09-23T23:49:17Z git_blob=780f1c9b018f346e90a3f2de51055ad28bf34e3e (index == worktree, 40 chars, verified)
+refcv6 scores existing at this moment: NONE corrected (warmup step-1000 corrected bridge had trajectories only; navhard step-1000 138 corrected rows, no score); no milestone checkpoint exists (Thor step 2,621)
+
+AMENDMENT A4 (SPEC §12, max-speed oracle census + navtest diagnostic arms R6_VMAXOFF / R6_VMAXORACLE [PRIVILEGED]) staged_utc=2026-09-24T00:06:00Z git_blob=3787f627c113f53af0aebb9b8eec18333dc87c7f (index == worktree, 40 chars, verified)
+refcv6 scores existing at this moment: NONE corrected (warmup bridge on its last arm, nothing scored; navhard 138 rows unscored; navtest bank 6/32 shards, no navtest score)
+
+A4 ADDENDUM (census numbers + per-census-group reads) staged_utc=2026-09-24T00:11:55Z git_blob=5d7938d68b93b0cde2810d9fb0a9552892921e22 (index == worktree, verified by stage_to_repo)
+refcv6 scores existing at this moment: NONE corrected; no navtest refcv6 score

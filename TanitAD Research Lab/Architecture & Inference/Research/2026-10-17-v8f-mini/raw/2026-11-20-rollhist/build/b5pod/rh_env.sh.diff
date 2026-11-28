@@ -1,0 +1,13 @@
+--- ../b2/rh_env.sh	2026-11-20 18:46:03.494514600 +0100
++++ rh_env.sh	2026-11-21 01:00:14.665121800 +0100
+@@ -3,8 +3,8 @@
+ #   causal_g1x = C*      : bank flags `--readout causal_g --acc-gain 1 --path-exec`, trainer token `--dagger-bank-readout causal_g1x`   (recommended)
+ #   causal_g1  = ADD63   : bank flags `--readout causal_g --acc-gain 1` (no --path-exec),  trainer token `--dagger-bank-readout causal_g1`
+ # Both: heading bound `--kappa-max 0.2` / `--dagger-bank-kappa 0.2`. No default: an unset RH_READOUT is refused. The choice is written once to $R/RH_READOUT.chosen; a different value later is refused.
+-R=${RH_ROOT:-/root/rollhist}; TREE=$R/tree; PY=${RH_PY:-/root/venv/bin/python}; DS=/root/dscale10k; S1=/root/strat1
+-COMMIT=2bda9e1a382986cfdce3bb455822678b42a816e2
++R=${RH_ROOT:-/root/rollhist}; TREE=$R/tree_cdb; PY=${RH_PY:-/root/venv/bin/python}; DS=/root/dscale10k; S1=/root/strat1
++COMMIT=433192275ba50f11c67bfc5df2e110d9cf465df2
+ rh_fail() { echo "ZZ ROLLHIST FAIL ZZ $1"; exit 1; }
+ rh_readout_flags() {   # sets BANK_RO_FLAGS (bank generator flags) and DECL_TOKEN (the trainer's --dagger-bank-readout value)
+   case "${RH_READOUT:-}" in

@@ -1,0 +1,304 @@
+{
+ "_question": "what does DIR_YAW_RAD 0.15 -> 0.10 actually change, and with what interval under the MANDATED paired episode-cluster bootstrap?",
+ "_evidence_class": "MEASURED (ours) \u2014 banked artifacts only, 0 GPU",
+ "_gates": {
+  "published": 0.15,
+  "reread": 0.1,
+  "horizon_steps": 20,
+  "dt_s": 0.1
+ },
+ "_estimator_refused": "overlapping_holdout_se (biases the POINT estimate)",
+ "verify_head_deg_is_gt_net_magnitude": {
+  "all_counts_identical": true,
+  "rows": [
+   {
+    "panel": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v1-lf19.json",
+    "n_windows": 418,
+    "status": "NO DUMP WITH MATCHING n \u2014 not cross-checkable"
+   },
+   {
+    "panel": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v2corpus-lf19.json",
+    "n_windows": 418,
+    "status": "NO DUMP WITH MATCHING n \u2014 not cross-checkable"
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v1-lf19.json",
+    "n_windows": 418,
+    "status": "NO DUMP WITH MATCHING n \u2014 not cross-checkable"
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v2corpus-lf19.json",
+    "n_windows": 418,
+    "status": "NO DUMP WITH MATCHING n \u2014 not cross-checkable"
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-30k.json",
+    "n_windows": 881,
+    "published_turning_count": 191,
+    "from_head_deg_count": 191,
+    "counts_identical": true,
+    "frac_ulp_gap": 0.0
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-nospeed.json",
+    "n_windows": 881,
+    "published_turning_count": 191,
+    "from_head_deg_count": 191,
+    "counts_identical": true,
+    "frac_ulp_gap": 0.0
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-speed.json",
+    "n_windows": 881,
+    "published_turning_count": 191,
+    "from_head_deg_count": 191,
+    "counts_identical": true,
+    "frac_ulp_gap": 0.0
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dinov2.json",
+    "n_windows": 881,
+    "published_turning_count": 191,
+    "from_head_deg_count": 191,
+    "counts_identical": true,
+    "frac_ulp_gap": 0.0
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin-30k.json",
+    "n_windows": 881,
+    "published_turning_count": 191,
+    "from_head_deg_count": 191,
+    "counts_identical": true,
+    "frac_ulp_gap": 0.0
+   },
+   {
+    "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin.json",
+    "n_windows": 881,
+    "published_turning_count": 191,
+    "from_head_deg_count": 191,
+    "counts_identical": true,
+    "frac_ulp_gap": 0.0
+   }
+  ],
+  "_read": "identical COUNTS mean head_deg*pi/180 IS |gt_net|, so every magnitude-only gate quantity below is MEASURED, not modelled."
+ },
+ "per_corpus_operating_point": {
+  "19b71ce2287b": {
+   "n_arms_sharing_this_corpus": 2,
+   "arms": [
+    "refc-v12-smoke-reg",
+    "refc-v12-smoke-t0"
+   ],
+   "gt_head_deg_identical_across_arms": true,
+   "n_windows": 88,
+   "n_episodes": 4,
+   "frac_turning_at_0.15": {
+    "mean": 0.125,
+    "lo": 0.0227,
+    "hi": 0.2273,
+    "ci95": 0.1023,
+    "se": 0.0529,
+    "reducer": "mean",
+    "n_windows": 88,
+    "n_episodes": 4,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_turning_at_0.10": {
+    "mean": 0.1477,
+    "lo": 0.0227,
+    "hi": 0.2727,
+    "ci95": 0.125,
+    "se": 0.0635,
+    "reducer": "mean",
+    "n_windows": 88,
+    "n_episodes": 4,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "paired_delta_0.10_minus_0.15": {
+    "delta": 0.0227,
+    "lo": 0.0,
+    "hi": 0.0455,
+    "ci95": 0.0227,
+    "p_delta_gt0": 0.947,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 88,
+    "n_episodes": 4,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "band_mass_0.10_to_0.15": {
+    "mean": 0.0227,
+    "lo": 0.0,
+    "hi": 0.0455,
+    "ci95": 0.0227,
+    "se": 0.0111,
+    "reducer": "mean",
+    "n_windows": 88,
+    "n_episodes": 4,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "band_count_windows": 2,
+   "median_abs_net_yaw_rad": 0.023154,
+   "p90_abs_net_yaw_rad": 0.226247,
+   "p99_abs_net_yaw_rad": 1.064307,
+   "published_gate_over_median": 6.48,
+   "_estimator": "episode_cluster_bootstrap / paired_episode_cluster_bootstrap (taniteval/ci.py), 2000 draws, seed 0, resampling unit = EPISODE. overlapping_holdout_se REFUSED."
+  },
+  "3c7aba8ac67f": {
+   "n_arms_sharing_this_corpus": 3,
+   "arms": [
+    "flagship-v16-ab-ft",
+    "flagship-v4.1-10k",
+    "flagship-v4.2-step4000"
+   ],
+   "gt_head_deg_identical_across_arms": true,
+   "n_windows": 881,
+   "n_episodes": 40,
+   "frac_turning_at_0.15": {
+    "mean": 0.2168,
+    "lo": 0.1372,
+    "hi": 0.3054,
+    "ci95": 0.0841,
+    "se": 0.0421,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_turning_at_0.10": {
+    "mean": 0.2565,
+    "lo": 0.1725,
+    "hi": 0.3519,
+    "ci95": 0.0897,
+    "se": 0.0446,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "paired_delta_0.10_minus_0.15": {
+    "delta": 0.0397,
+    "lo": 0.0204,
+    "hi": 0.0693,
+    "ci95": 0.0245,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "band_mass_0.10_to_0.15": {
+    "mean": 0.0397,
+    "lo": 0.0204,
+    "hi": 0.0693,
+    "ci95": 0.0245,
+    "se": 0.013,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "band_count_windows": 35,
+   "median_abs_net_yaw_rad": 0.018077,
+   "p90_abs_net_yaw_rad": 0.461132,
+   "p99_abs_net_yaw_rad": 0.866717,
+   "published_gate_over_median": 8.3,
+   "_estimator": "episode_cluster_bootstrap / paired_episode_cluster_bootstrap (taniteval/ci.py), 2000 draws, seed 0, resampling unit = EPISODE. overlapping_holdout_se REFUSED."
+  },
+  "b698ed4c0271": {
+   "n_arms_sharing_this_corpus": 22,
+   "arms": [
+    "flagship-30k",
+    "flagship-nospeed",
+    "flagship-speed",
+    "flagship-v2-6k",
+    "flagship-v3enc-10k",
+    "overfit_refa-dynin-15k",
+    "overfit_refa-dynin-20k",
+    "overfit_refa-dynin-30k",
+    "overfit_refa-dynin-5k",
+    "refa-dinov2",
+    "refa-dynin-30k",
+    "refb",
+    "refb-10k",
+    "refb-v2-20k",
+    "refb-v2-30k",
+    "refc-base-30k",
+    "refc-v12",
+    "refc-v12-identity",
+    "refc-v12-k16reg",
+    "refc-xl",
+    "refc-xl-30k",
+    "refc-xl-live"
+   ],
+   "gt_head_deg_identical_across_arms": true,
+   "n_windows": 881,
+   "n_episodes": 40,
+   "frac_turning_at_0.15": {
+    "mean": 0.2168,
+    "lo": 0.1396,
+    "hi": 0.2997,
+    "ci95": 0.08,
+    "se": 0.0415,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_turning_at_0.10": {
+    "mean": 0.2565,
+    "lo": 0.1703,
+    "hi": 0.3443,
+    "ci95": 0.087,
+    "se": 0.0439,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "paired_delta_0.10_minus_0.15": {
+    "delta": 0.0397,
+    "lo": 0.0193,
+    "hi": 0.0682,
+    "ci95": 0.0244,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "band_mass_0.10_to_0.15": {
+    "mean": 0.0397,
+    "lo": 0.0193,
+    "hi": 0.0682,
+    "ci95": 0.0244,
+    "se": 0.013,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "band_count_windows": 35,
+   "median_abs_net_yaw_rad": 0.018077,
+   "p90_abs_net_yaw_rad": 0.461132,
+   "p99_abs_net_yaw_rad": 0.866717,
+   "published_gate_over_median": 8.3,
+   "_estimator": "episode_cluster_bootstrap / paired_episode_cluster_bootstrap (taniteval/ci.py), 2000 draws, seed 0, resampling unit = EPISODE. overlapping_holdout_se REFUSED."
+  }
+ },
+ "_n_dumps": 27
+}

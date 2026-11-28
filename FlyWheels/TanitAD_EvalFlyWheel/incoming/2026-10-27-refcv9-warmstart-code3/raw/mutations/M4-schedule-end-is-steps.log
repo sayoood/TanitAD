@@ -1,0 +1,36 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_________ test_GATE_R9W_SCHEDULE_the_end_step_is_floor_steps_over_two _________
+
+r9_launch = (['--arm', 'hier', '--size', 'small', '--trunk', 'timm', ...], {'trainer': 'stack/scripts/refc_v3_train.py', 'required...end-is-steps\\r9w0')], WindowsPath('F:/c_overflow_2026-10-26/tmp/mut_M4-schedule-end-is-steps/r9w0/ckpt_ema_48852.pt'))
+
+    def test_GATE_R9W_SCHEDULE_the_end_step_is_floor_steps_over_two(r9_launch):
+        a, prof, _opts, _pmap, _ = r9_launch
+>       assert LG.r9_schedule_reasons(prof, a) == ([], {"on": True, "rule": dict(R9W["alloc_force_rule"]),
+                                                        "value": "linear:1.0:0.0:0:1500", "want": "linear:1.0:0.0:0:1500",
+                                                        "end": 1500, "ok": True})
+E       assert (['R9W-SCHEDU...0:3000', ...}) == ([], {'on': T...0:1500', ...})
+E         
+E         At index 0 diff: ["R9W-SCHEDULE: --r9-alloc-force-schedule 'linear:1.0:0.0:0:1500' is not the rule's 'linear:1.0:0.0:0:3000' (p 1.0 -> 0.0 from step 0 to floor(--steps 3000 / 2) = 3000)"] != []
+E         Use -v to get more diff
+
+tests\test_r9_train_only.py:826: AssertionError
+_____________ test_GATE_the_warm_start_launch_argv_has_no_refusal _____________
+
+r9_launch = (['--arm', 'hier', '--size', 'small', '--trunk', 'timm', ...], {'trainer': 'stack/scripts/refc_v3_train.py', 'required...end-is-steps\\r9w0')], WindowsPath('F:/c_overflow_2026-10-26/tmp/mut_M4-schedule-end-is-steps/r9w0/ckpt_ema_48852.pt'))
+
+    def test_GATE_the_warm_start_launch_argv_has_no_refusal(r9_launch):
+        a, prof, opts, pmap, _ = r9_launch
+        refusals, pending = LG.profile_argv_rules(prof, a, opts, pmap)
+>       assert refusals == [] and pending == [], refusals
+E       AssertionError: ["R9W-SCHEDULE: --r9-alloc-force-schedule 'linear:1.0:0.0:0:1500' is not the rule's 'linear:1.0:0.0:0:3000' (p 1.0 -> 0.0 from step 0 to floor(--steps 3000 / 2) = 3000)"]
+E       assert (['R9W-SCHEDUL.../ 2) = 3000)'] == []
+E         
+E         Left contains one more item: "R9W-SCHEDULE: --r9-alloc-force-schedule 'linear:1.0:0.0:0:1500' is not the rule's 'linear:1.0:0.0:0:3000' (p 1.0 -> 0.0 from step 0 to floor(--steps 3000 / 2) = 3000)"
+E         Use -v to get more diff)
+
+tests\test_r9_train_only.py:778: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_GATE_R9W_SCHEDULE_the_end_step_is_floor_steps_over_two
+FAILED tests/test_r9_train_only.py::test_GATE_the_warm_start_launch_argv_has_no_refusal
+2 failed in 4.62s

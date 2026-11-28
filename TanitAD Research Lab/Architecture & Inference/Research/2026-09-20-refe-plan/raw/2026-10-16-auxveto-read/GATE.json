@@ -1,0 +1,57 @@
+{
+ "stage": "gate",
+ "prereg_sha256": "ef9f17fa26a9d81817a7a992d2577eebae4f382eda3ed549980f2c079d23a518",
+ "gate": {
+  "1_B_reproduces_pick": {
+   "ok": true,
+   "n_equal": 1058,
+   "of": 1058
+  },
+  "0_population_identity": {
+   "ok": true,
+   "Z": 529,
+   "N_sample": 529,
+   "Z_ncdac_all_zero": true,
+   "N_ncdac_all_pos": true
+  },
+  "2_vpred_mask_iou_identity": {
+   "ok": true,
+   "iou": 0.6752177377640464,
+   "target": 0.675218,
+   "tol": 1e-06,
+   "abs_diff": 2.6223595361862806e-07
+  },
+  "2b_head_quality_iou": {
+   "V-PRED-2k": {
+    "iou": 0.6348906684369943,
+    "banked_PRED_GEOMETRY": 0.6348906684369943,
+    "abs_diff": 0.0
+   },
+   "V-PRED-400": {
+    "iou": 0.42804719321080126,
+    "banked_PRED_GEOMETRY": 0.42804719321080126,
+    "abs_diff": 0.0
+   },
+   "V-PRED": {
+    "iou": 0.6752177377640464,
+    "banked_PRED_GEOMETRY": 0.6752177377640464
+   }
+  },
+  "3_zero_control": {
+   "ok": true,
+   "pred_grid_40x32": {
+    "ok": true,
+    "n_vetoed_proposals": 0,
+    "delta_pdms_x100": 0.0,
+    "picks_equal_B": true
+   },
+   "gt_grid_160x128": {
+    "ok": true,
+    "n_vetoed_proposals": 0,
+    "delta_pdms_x100": 0.0,
+    "picks_equal_B": true
+   }
+  },
+  "all_pass": true
+ }
+}

@@ -1,0 +1,41 @@
+   the values and pre-rolls of the card: 1.0, 2.0, 4.0 m/s; AGE pre-roll 30 grid 30, FRESH pre-roll 0 full grid; coverage bar 0.99; tolerance of k2 1e-6 True
+   h1 planted name rule (LOWER, HIGHER, opposite seeds, no effect) through the stand-in engine: [('lower', 'LOWER'), ('higher', 'HIGHER'), ('opposite_seeds', 'NOT-SEPARATED'), ('no_effect', 'NOT-SEPARATED')] True
+   verdict C20 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), C10 and C40 NOT-SUPPORTED, the single SUPPORTED is marked one of three, the F names are beside True
+   verdict NOT-SUPPORTED for each of the six failing conditions: ['AGE C not LOWER', 'AGE U HIGHER', 'AGE family WORSE', 'FRESH C HIGHER', 'FRESH U HIGHER', 'FRESH family WORSE'] True
+   verdict: all three SUPPORTED names three and no one-of-three mark                                                    True
+   verdict: two SUPPORTED, no one-of-three mark                                                                         True
+   verdict: a setting below the coverage bar gives no verdict of any value and says why                                 True
+   verdict: an unqualified setting writes no name that needs its C or U                                                 True
+   verdict: a failing family condition still decides without the missing words, F beside is not written and says why    True
+   E: NOT-SEPARATED on both measures counts as a match: NOT-BEYOND-A-CONSTANT for both estimators                       True
+   E: no value matches (C HIGHER at two values, F HIGHER at one): BEYOND-A-CONSTANT                                     True
+   E: one matching value is enough: NOT-BEYOND for N10 and BEYOND for L25                                               True
+   E: an unavailable word and no match writes no name and says why; an unavailable word beside a match still names      True
+   E: AGE below the coverage bar writes no E verdict                                                                    True
+   E: pairs not written (read of card ADD79 absent or not admitted): no E verdict, the reason is given                  True
+   estclose file: absent path / unreadable / other card / not all-pass are not admitted (no failed control); all-pass of card ADD79 is admitted True
+   names: pattern CONSTCLOSE10K-<PAIR>-<SETTING>-C-<word>, U, F and the four families per pair and setting (15 pairs x 2 settings) True
+   names: pair table of the card (A minus B) with and without the estimators                                            True
+   names: without the pairs of E no EST name and no E verdict is written and the reason is in the output                True
+   names: the names of a setting below the coverage bar are not written (FRESH), the others are; the output says why    True
+   names: with no qualified setting no C, U or F name is written and the output says why; the families are named        True
+   a failed control leaves no name and prints no name and no value                                                      True
+   assemble with all controls passed carries the payload                                                                True
+   k0 passes: files return c on [1,3] and [n,1,3], H 1, 5 frames, the run lines hold the file hashes                    True
+   k0 fails on a run line with another file hash, a missing line, a missing file                                        True
+   k0 fails on a file whose value is not c (planted 4.5 for C40)                                                        True
+   k2 passes when c_est equals c on the est_ok rows of both logs of all runs and is NaN elsewhere                       True
+   k2 fails on a planted 1e-4 difference, passes at 1e-7                                                                True
+   k2 fails on the value of another c (2.0 in the C10 run), a non-NaN estimate without a full history, a missing log, no first-tick row True
+   cov: gate True at 0.995 (logs) and 0.99 (run text 990 of 1000), the shares and the pre-roll share are reported       True
+   cov: gate False below 0.99 by the logs (0.98) or by the run text (980 of 1000), and False when a run line or log is missing True
+   x1 passes: closing equals c on present rows with a full history, 0.0 without, form RRe; RR feeds 0                   True
+   x1 fails on a closing of 1.9 for C20, a closing that is not 0 without a full history, another form, RR fed a closing, a missing log True
+   m1 passes on equal later-look row counts and fails on a different count or an empty log                              True
+   r1 passes at AGE and (pre-roll 0) FRESH and fails on a missing dump file, a pre-roll mismatch, another form or rule interval True
+   k3 (same function as a1): equal levels pass; 1e-6 off, a run missing from the file, an all-pass flag False each fail True
+   i1 holds on a triple that adds up and fails when off by 1e-6                                                         True
+   run names of the card: AGE and FRESH, C10 C20 C40 (and N10 L25 when admitted), the banked forms of row 137           True
+   register_runs enters the constant runs with form RRe, readout K, rule every 5, pre-roll of the setting               True
+   text of the tool holds none of the banned words                                                                      True
+ZZ SELFTEST-CONSTCLOSE10K ok: True (40 of 40) temporary folders /workspace/v8proof/podread/root/integ10k/tmp_cr_xpj2d3b1 /workspace/v8proof/podread/root/integ10k/tmp_cr_5q6h3zpi

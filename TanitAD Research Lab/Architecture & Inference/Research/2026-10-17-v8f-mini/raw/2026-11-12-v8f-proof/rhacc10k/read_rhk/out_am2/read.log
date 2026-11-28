@@ -1,0 +1,39 @@
+cells H_RLcK_s0 done
+cells H_RLcK_s1 done
+cells H_RLcK_s2 done
+cells H_RQ50K_s0 done
+cells H_RQ50K_s1 done
+cells H_RQ50K_s2 done
+cells U_RLcK_s0 done
+cells U_RLcK_s1 done
+cells U_RLcK_s2 done
+cells U_RQ50K_s0 done
+cells U_RQ50K_s1 done
+cells U_RQ50K_s2 done
+cells H_RLcK_P30_s0 done
+cells H_RLcK_P30_s1 done
+cells H_RLcK_P30_s2 done
+cells U_RLcK_P30_s0 done
+cells U_RLcK_P30_s1 done
+cells U_RLcK_P30_s2 done
+TIER: T1-kin/hb0.2 (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance
+== controls (q1 to q4 and the reader controls)
+   q1_complete PASS {"PASS": true}
+   q2_models PASS {"note": "hashes compared as recorded (INPUTS.json vs the queue table and the card prefixes); a checkpoint is not hashed here", "PASS": true}
+   q2_argv PASS {"PASS": true}
+   q3_partners PASS {"note": "sha256 of every listed file vs PARTNERS_ADD139_SHA.txt; extra files are reported, not failed", "PASS": true}
+   q4_identity PASS {"note": "i = H_RLcK against U_RLcK (every dump file hashed); k and l compared as sorted (clip, t0) lists", "PASS": true}
+   e_reader_controls PASS {"headway": true, "families": true, "route_goal": true, "r3_grid_engines_and_tick_controls": true, "headway_counts": {"n_windows_total": 2399, "n_lead_windows": 642, "PASS": true}, "PASS": true}
+== names
+   FRESH  RHK10K-FRESH-BETTER
+   AGED   RHK10K-AGED-BETTER
+== consequence: RH under K becomes the candidate of record in place of UE under K (specification section 1, model row)
+== R1: H_RLcK minus U_RLcK
+   U {'per_seed': [-0.0018, 0.0089, 0.0036], 'pooled': 0.0036, 'interval': [-0.0055, 0.0124]}  C {'per_seed': [0.0, 0.0, -0.0016], 'pooled': -0.0005, 'interval': [-0.0022, 0.0]}  F {'per_seed': [0.0249, -0.0187, 0.0031], 'pooled': 0.0031, 'interval': [-0.02, 0.0262]}
+   families {'LONGITUDINAL': 'MIXED', 'LATERAL': 'BETTER', 'TACTICAL': 'NOT-SEPARATED', 'STRATEGIC': 'BETTER'}
+== R2: H_RQ50K minus U_RQ50K
+   U {'per_seed': [0.0018, 0.0036, 0.0089], 'pooled': 0.0047, 'interval': [-0.0035, 0.0139]}  C {'per_seed': [0.0062, 0.0062, 0.0093], 'pooled': 0.0073, 'interval': [0.0022, 0.0143]}  F {'per_seed': [0.014, -0.0234, 0.0016], 'pooled': -0.0026, 'interval': [-0.0241, 0.017]}
+   families {'LONGITUDINAL': 'MIXED', 'LATERAL': 'BETTER', 'TACTICAL': 'NOT-SEPARATED', 'STRATEGIC': 'BETTER'}
+== R3: H_RLcK_P30 minus U_RLcK_P30
+   U {'per_seed': [-0.0071, 0.0071, -0.0036], 'pooled': -0.0012, 'interval': [-0.0145, 0.0133]}  C {'per_seed': [0.0, 0.0, -0.0062], 'pooled': -0.0021, 'interval': [-0.0086, 0.0]}  F {'per_seed': [0.0369, -0.0308, -0.0154], 'pooled': -0.0031, 'interval': [-0.0379, 0.0391]}
+   families {'LONGITUDINAL': 'NOT-SEPARATED', 'LATERAL': 'MIXED', 'TACTICAL': 'BETTER', 'STRATEGIC': 'BETTER'}

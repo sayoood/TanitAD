@@ -1,0 +1,1044 @@
+diff --git a/stack/scripts/v8f_mini_train.py b/stack/scripts/v8f_mini_train.py
+index a844c31..dd9f9ef 100644
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -121,12 +121,17 @@ FLAG_CHECKS = {
+     # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
+     # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
+     "wm_strides": "lever:wm_strides",
++    # PREREG_V8F_ACTSENS: `lever:wm_idm_gamma` = equals the gamma of the BUILT LevelConfigs the loss multiplies by (HJEPAStack.built_levers()[lv]["gamma"], never WMAux.gamma) -> bad_wm_idm_gamma
++    # -> `selfcheck.json levers.wm_idm_gamma_readback` (written when the argv NAMES the flag).
++    "wm_idm_gamma": "lever:wm_idm_gamma",
+     # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
+     # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
+     # AND the context the free run is handed; `data:wm_windows` = the kind, F, first t and pooled flag READ BACK from the BUILT dataset (data_info["wm_windows"]) -> bad_wm_ladder.
+     "wm_rollout_k": "lever:wm_rollout_k", "wm_rollout_stride": "lever:wm_rollout_stride", "wm_rollout_w": "lever:wm_rollout_w", "wm_ctx": "lever:wm_ctx",
+     "wm_windows": "data:wm_windows", "wm_win_stride": "data:wm_windows", "wm_pooled": "data:wm_windows", "wm_zcache": "data:wm_windows",
+-    "init_ckpt": "data:init_ckpt",           # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
++    # PREREG_V8F_DIVRS: `data:wm_sampler` = the BUILT sampler's record (info["wm_sampler"]: kind, the sampler's own bin edges, cap multiple, cell counts and weights) -> bad_wm_sampler; divrs adds wm_sampler_probe (control 1: realised cell shares over the first 2,000 batches).
++    "wm_sampler": "data:wm_sampler",
++    "init_ckpt": "data:init_ckpt",          # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
+     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
+     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
+@@ -319,7 +324,14 @@ def build_parser():
+                     help="PREREG_V8F_LFS: the world model's level steps, in states of the level below: S2 = L1 states per L2 step, S3 = L2 states per L3 step. Absent (default) = the arm config's (2, 2) = every earlier arm, bit for bit "
+                          "(0.2 / 0.4 / 0.8 s on the cache grid). (2, 3) = steps 0.2 / 0.4 / 1.2 s; (3, 3) = 0.2 / 0.6 / 1.8 s. Needs --wm a|b. A flag whose value leaves the strides unchanged must still be NAMED in an LFS argv "
+                          "(its selfcheck then records the BUILT strides). Every level must keep >= 2 training transitions at --hmax, else the gate refuses (NOT RUN, with the count)")
++    ap.add_argument("--wm-sampler", dest="wm_sampler", choices=("uniform", "divrs"), default="uniform",
++                    help="PREREG_V8F_DIVRS: which training windows are drawn. uniform (default) = every earlier arm, bit for bit (D.ChunkedSampler). divrs = the SAME windows drawn with probability proportional to 1 / (the count of their cell) in a 5 x 5 grid "
++                         "of mean |yaw rate| (0, .02, .05, .10, .20 rad/s) x mean longitudinal acceleration (-1, -.3, .3, 1 m/s^2) over the window's transitions, capped at 10 x the median window weight, empty cells no weight; same chunked clip order, "
++                         "ages and epoch length. Needs --kin-mode yaw and a world model (--wm a|b)")
+     # ---- PREREG_V8F_LADDER: the world-model ladder levers. Every flag defaults to the earlier behaviour and has its G-DVB entry in FLAG_CHECKS and its clause in bad_wm_ladder.
++    ap.add_argument("--wm-idm-gamma", dest="wm_idm_gamma", type=float, nargs=3, default=None, metavar=("G1", "G2", "G3"),
++                    help="PREREG_V8F_ACTSENS: the world model's IDM loss weight per level (gamma, levels 1 / 2 / 3). Absent (default) = the arm config's wm_gamma (100) at every level = every earlier arm, bit for bit. "
++                         "Needs --wm b; every G must be > 0. Read back from the BUILT LevelConfigs (HJEPAStack.built_levers), not from WMAux.gamma")
+     ap.add_argument("--wm-rollout-k", dest="wm_rollout_k", type=int, nargs=3, default=None, metavar=("K1", "K2", "K3"),
+                     help="PREREG_V8F_LADDER: free-run steps of the k-step loss per WM level (through HJEPAStack.rollout, on top of the teacher-forced one-step loss). Absent = (1, 1, 1) = every earlier arm, bit for bit. "
+                          "A level with k > 1 needs hmax >= k x (its cumulative stride) + 1 frames. Needs --wm a|b")
+@@ -377,6 +389,11 @@ def declared_levers(a) -> dict:
+ WM_STRIDES_DEFAULT = tuple(M.V8FMiniConfig.__dataclass_fields__["wm_strides"].default)       # PREREG_V8F_LFS: the arm config's strides, (2, 2): what an argv that does not name --wm-strides builds
+ 
+ 
++def declared_wm_idm_gamma(a) -> tuple:
++    """PREREG_V8F_ACTSENS: the per-level IDM weights the argv DECLARES: ``--wm-idm-gamma G1 G2 G3``, or () (= the config's wm_gamma at every level) when the flag is absent."""
++    return () if a.wm_idm_gamma is None else tuple(float(g) for g in a.wm_idm_gamma)
++
++
+ def declared_wm_strides(a) -> tuple:
+     """PREREG_V8F_LFS: the strides the argv DECLARES: ``--wm-strides S2 S3``, or the arm config's (2, 2) when the flag is absent."""
+     return WM_STRIDES_DEFAULT if a.wm_strides is None else tuple(int(s) for s in a.wm_strides)
+@@ -404,6 +421,7 @@ def make_config(a) -> M.V8FMiniConfig:
+     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
+     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+                            wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
++                           wm_gamma_levels=declared_wm_idm_gamma(a),                                      # PREREG_V8F_ACTSENS: the ONE line that applies --wm-idm-gamma (mutation M1 deletes it)
+                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
+@@ -899,6 +917,68 @@ def bad_wm_only(a, cfg, model, data_info) -> list:
+     return bad
+ 
+ 
++#: PREREG_V8F_DIVRS: the card's cell grid, as the GATE holds it (a second spelling of ``D.DIVRS_*``: the built sampler's own edges are compared with these, so a drifted constant in the data module is refused)
++DIVRS_CARD = {"yaw_edges": [0.02, 0.05, 0.10, 0.20], "acc_edges": [-1.0, -0.3, 0.3, 1.0], "cap_mult": 10.0, "n_cells": 25}
++
++
++def make_sampler(a, cfg, wins, store, J, info):
++    """The window sampler. ``--wm-sampler uniform`` (the default) is ``D.ChunkedSampler`` called exactly as it was before the flag existed (same arguments, so the epoch order is bit for bit the earlier one). ``divrs``
++    (PREREG_V8F_DIVRS) is ``D.DiversitySampler`` over the same windows, same chunking and ages, with the cell table of ``D.window_act_means`` (the ``yaw`` kin mode only: the card's bins are rad/s)."""
++    kw = dict(seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)), max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
++    if a.wm_sampler == "uniform":
++        return D.ChunkedSampler(wins, a.batch, **kw)
++    if a.kin_mode != "yaw":
++        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: --wm-sampler divrs needs --kin-mode yaw (its yaw-rate bins are in rad/s); --kin-mode is {a.kin_mode!r}")
++    return D.DiversitySampler(wins, a.batch, D.window_act_means(store, J, wins, cfg.hmax), **kw)
++
++
++def built_sampler_record(sampler) -> dict:
++    """What the BUILT sampler is: the diversity sampler reports its own edges, cap and cell table; any other sampler is the uniform one."""
++    f = getattr(sampler, "built_levers", None)
++    return f() if callable(f) else {"kind": "uniform", "class": type(sampler).__name__, "n_windows": len(sampler.windows)}
++
++
++def bad_wm_sampler(a, cfg, model, data_info) -> list:
++    """G-DVB for ``--wm-sampler`` (PREREG_V8F_DIVRS). Empty = pass. The declared kind is read back from the BUILT sampler's record (``built_sampler_record``); for ``divrs`` the sampler's own edges, cap multiple and cell count must
++    equal the card's (``DIVRS_CARD``), its cell table must account for every training window, its weights must obey the cap (no window above ``cap_mult`` x the median) and give empty cells nothing, and the world model must exist (the
++    lever resamples the windows the WM loss sees; with no WM it would only reshuffle the planner's, which the card does not test)."""
++    bad = []
++    rec = data_info.get("wm_sampler")
++    if rec is None:
++        return bad if a.wm_sampler == "uniform" else [f"lever wm_sampler: {a.wm_sampler} declared but no sampler record was built"]
++    if rec.get("kind") != a.wm_sampler:
++        bad.append(f"lever wm_sampler: declared {a.wm_sampler} but built {rec.get('kind')}")
++    if a.wm_sampler == "uniform":
++        return bad
++    if model.wm is None:
++        bad.append("lever wm_sampler divrs declared but no world model was built (--wm off): the lever resamples the windows the WM loss sees")
++    if a.kin_mode != "yaw":
++        bad.append(f"lever wm_sampler divrs: --kin-mode is {a.kin_mode!r}, the bins are in rad/s (yaw)")
++    for k in ("yaw_edges", "acc_edges", "cap_mult", "n_cells"):
++        if rec.get(k) != DIVRS_CARD[k]:
++            bad.append(f"lever wm_sampler divrs: built {k} {rec.get(k)} != the card's {DIVRS_CARD[k]}")
++    n_win = (data_info or {}).get("n_windows")
++    if rec.get("n_windows") != n_win or sum(rec.get("cell_counts", [])) != n_win:
++        bad.append(f"lever wm_sampler divrs: the cell table counts {sum(rec.get('cell_counts', []))} windows, the sampler holds {rec.get('n_windows')}, the training set has {n_win}")
++    cw, cnt = rec.get("cell_weight", []), rec.get("cell_counts", [])
++    if len(cw) != 25 or any((c == 0) != (w == 0.0) for c, w in zip(cnt, cw)):
++        bad.append("lever wm_sampler divrs: an empty cell has weight or a non-empty cell has none")
++    if rec.get("max_window_weight", 0.0) > rec.get("cap", 0.0) * (1.0 + 1e-12):
++        bad.append(f"lever wm_sampler divrs: a window weight {rec.get('max_window_weight')} exceeds the cap {rec.get('cap')}")
++    if abs(rec.get("cap", 0.0) - rec.get("cap_mult", 0.0) * rec.get("median_weight", 0.0)) > 1e-12:
++        bad.append("lever wm_sampler divrs: the cap is not cap_mult x the median window weight")
++    return bad
++
++
++def wm_sampler_probe(sampler, windows) -> dict:
++    """Card control 1 on the BUILT sampler (G-LIVE of the lever): ``D.check_cell_shares`` over the first 2,000 batches, the target computed from the cell table and the card's rule, not from the sampler. Any violation is a refusal."""
++    res = D.check_cell_shares(sampler.epoch, windows, sampler.feats)
++    if not res["pass"]:
++        bad = [r for r in res["cells"] if r["resolved"] and abs(r["rel_err"]) > res["tol"]]
++        raise AssertionError("wm-sampler control 1 failed: " + json.dumps({k: v for k, v in res.items() if k != "cells"}, default=str)[:600] + " worst cells " + json.dumps(bad[:4], default=str)[:600])
++    return {k: v for k, v in res.items() if k != "cells"} | {"cells": [r for r in res["cells"] if r["target_share"] > 0]}
++
++
+ LFS_MIN_TRANSITIONS = 2        # PREREG_V8F_LFS: a level with fewer than this many training transitions per window is NOT RUN (reported with the count), never run at a different hmax
+ 
+ 
+@@ -1411,6 +1491,33 @@ def bad_lead(a, model, data_info=None) -> list:
+     return bad
+ 
+ 
++def wm_idm_gamma_readback(a, cfg, model) -> dict:
++    """PREREG_V8F_ACTSENS: the record ``selfcheck.json`` carries (``levers.wm_idm_gamma_readback``): the weights the argv DECLARED and the gamma of the BUILT LevelConfigs the loss multiplies by (``HJEPAStack.built_levers``)."""
++    built = [float(r["gamma"]) for r in model.wm.stack.built_levers().values()] if model.wm is not None else []
++    return {"declared": list(declared_wm_idm_gamma(a)), "built": built, "wm_aux_gamma": None if model.wm is None else float(model.wm.gamma)}
++
++
++def bad_wm_idm_gamma(a, cfg, model) -> list:
++    """PREREG_V8F_ACTSENS, G-DVB for ``--wm-idm-gamma``: the weights the loss will multiply the IDM term by, read from the BUILT LevelConfigs (``HJEPAStack.built_levers()``), NEVER ``WMAux.gamma``
++    (MEASURED: a builder that ignores the config field leaves WMAux.gamma at 100 and passes the older check). Absent flag: every level must read cfg.wm_gamma (wm b) or 0 (wm a)."""
++    bad = []
++    lv = declared_levers(a)
++    if a.wm_idm_gamma is not None:
++        if lv["wm"] != "b":
++            bad.append(f"lever wm_idm_gamma: --wm-idm-gamma {list(a.wm_idm_gamma)} needs --wm b (got --wm {lv['wm']}): a lever that is declared and builds nothing")
++        if any(not (g > 0.0 and g == g and g != float("inf")) for g in a.wm_idm_gamma):
++            bad.append(f"lever wm_idm_gamma: every gamma must be a finite number > 0, got {list(a.wm_idm_gamma)}")
++    if lv["wm"] == "off" or model.wm is None:
++        return bad
++    decl = declared_wm_idm_gamma(a) or ((float(cfg.wm_gamma) if lv["wm"] == "b" else 0.0),) * 3
++    got = [float(r["gamma"]) for r in model.wm.stack.built_levers().values()]
++    if len(got) != 3 or any(abs(g - d) > 1e-9 * max(1.0, abs(d)) for g, d in zip(got, decl)):
++        bad.append(f"lever wm_idm_gamma: declared {list(decl)} but the BUILT LevelConfigs (the weights the loss multiplies by) hold {got}")
++    if tuple(float(g) for g in cfg.wm_gamma_levels) != declared_wm_idm_gamma(a):
++        bad.append(f"lever wm_idm_gamma: declared {list(declared_wm_idm_gamma(a))} but the built config holds {list(cfg.wm_gamma_levels)}")
++    return bad
++
++
+ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
+@@ -1421,6 +1528,8 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
+     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
+     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
+     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
++    bad += bad_wm_idm_gamma(a, cfg, model)                                                       # PREREG_V8F_ACTSENS: --wm-idm-gamma read back from the BUILT LevelConfigs (HJEPAStack.built_levers)
++    bad += bad_wm_sampler(a, cfg, model, data_info)                                              # PREREG_V8F_DIVRS: --wm-sampler read back from the BUILT sampler (edges, cap, cell table)
+     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
+     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
+@@ -3078,14 +3187,20 @@ def main(argv=None):
+     opt = torch.optim.AdamW(groups, lr=a.lr)
+     S = math.ceil(info["n_windows_all_clips"] / a.batch)
+     total = a.steps or S * a.steps_mult
+-    sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
+-                               max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
++    sampler = make_sampler(a, cfg, wins, store, J, info)             # PREREG_V8F_DIVRS: --wm-sampler uniform (default) = the line that stood here, argument for argument; divrs = the action-diverse sampler
++    info["wm_sampler"] = built_sampler_record(sampler)               # what was BUILT, read back by bad_wm_sampler (G-DVB) and recorded in selfcheck.json
+     # ---- the launch gate
+     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+     bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv, t2b)
+     bad += bad_perf_resume(a, argv)                                  # AMENDMENT_V8F_LORA_5: --resume-perf-levers read back (the named previous argv differs from this one in --accum / --enc-ckpt only)
+     if bad:
+         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
++    smp_probe = None
++    if a.wm_sampler == "divrs":                                      # PREREG_V8F_DIVRS control 1: the realised cell shares over the first 2,000 batches of the BUILT sampler (lever-ON launches only)
++        try:
++            smp_probe = wm_sampler_probe(sampler, wins)
++        except AssertionError as e:
++            raise SystemExit(f"ZZDVB-REFUSEDZZ wm-sampler: {e}")
+     chunk = enc_chunk(a, cfg)
+     ident = None
+     probe_wm = None
+@@ -3187,6 +3302,8 @@ def main(argv=None):
+     levers["recover_table"] = (info.get("recover") or {}).get("table")  # ... and the deviation table's build summary (n, content sha256, means, share of records with logged v in [3, 8]); None when the lever is off (the card's KR3 reads it)
+     levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
+     levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
++    if a.wm_sampler == "divrs":                                          # PREREG_V8F_DIVRS: lever-ON launches only: the BUILT sampler's edges, cap and cell table (counts, weights, target shares)
++        levers["wm_sampler"] = info["wm_sampler"]
+     levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
+     levers["launch_intent"] = {"launch_intent_w": cfg.launch_intent_w, "v0_max": M.LAUNCH_V0_MAX, "dv": M.LAUNCH_DV, "dt": M.LAUNCH_DT, "knots": [M.LAUNCH_KNOT_LO, M.LAUNCH_KNOT_HI], "axis": "along (x of the ego frame at NOW)",
+                                "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
+@@ -3194,6 +3311,8 @@ def main(argv=None):
+     levers["init_ckpt"] = info.get("init_ckpt")
+     if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
+         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
++    if a.wm_idm_gamma is not None:                                       # PREREG_V8F_ACTSENS: lever-NAMED launches only: declared vs the BUILT per-level IDM weights
++        levers["wm_idm_gamma_readback"] = wm_idm_gamma_readback(a, cfg, model)
+     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
+         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
+     if a.wm_only:                                                      # WM-only arms only (a flag-off run record keeps its key set)
+@@ -3215,6 +3334,8 @@ def main(argv=None):
+     sc["recover_probe"] = recp
+     sc["t2bank_probe"] = t2p
+     sc["launch_intent_probe"] = lip
++    if a.wm_sampler == "divrs":                                         # PREREG_V8F_DIVRS: lever-ON arms only: control 1 on the built sampler
++        sc["wm_sampler_probe"] = smp_probe
+     if a.wm_only:                                                       # WM-only arms only: a flag-off selfcheck.json keeps its key set
+         sc["planner_identity_probe"] = pid
+     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
+diff --git a/stack/tanitad/data/v8f_mini_data.py b/stack/tanitad/data/v8f_mini_data.py
+index 4b89f12..cb560a6 100644
+--- a/stack/tanitad/data/v8f_mini_data.py
++++ b/stack/tanitad/data/v8f_mini_data.py
+@@ -479,6 +479,33 @@ class ClipStore:
+         del o                                           # release the mapping (a held mapping blocks deleting the file on Windows)
+         return {"pose": pg, "kin3": kin3}
+ 
++    def get_act(self, clip: str) -> tuple:
++        """PREREG_V8F_DIVRS: ``(a [T], ch1 [T])`` of ``clip`` -- EXACTLY ``get(clip)["a"]`` and ``get(clip)["ch1"]`` (the two action channels the world model reads) and nothing else, in the ``yaw`` kin mode: the cache file is memory-mapped and
++        only ``a`` and ``pose_grid`` are touched (the feature grid, the bulk of the file, is never read: the sampler's cell table covers every train clip once at start-up), ``ch1`` is the native track's measured yaw rate with the
++        undefined step set to 0.0, the track is checked against the pose grid as ``get`` does. A clip already in the LRU is answered from it. (``stack/tests/test_v8f_divrs.py`` compares both arrays with ``get``'s.)"""
++        if clip in self._c:
++            d = self._c[clip]
++            return d["a"], d["ch1"]
++        if self.kin_mode != "yaw":
++            raise ValueError("get_act is the yaw-mode reader (the DIVRS bins are in rad/s)")
++        import torch
++        path = self.dir / f"{clip}.pt"
++        try:
++            o = torch.load(path, map_location="cpu", weights_only=True, mmap=True)
++        except (RuntimeError, TypeError):
++            self.kin_fallbacks += 1
++            o = torch.load(path, map_location="cpu", weights_only=True)
++        pg = o["pose_grid"].numpy().astype(np.float64)
++        a = np.array(o["a"].numpy())                    # a copy: the mapping is released below
++        del o
++        if clip not in self.tracks:
++            raise KeyError(f"{clip}: no native pose track in the sidecar")
++        check_track_matches_grid(self.tracks[clip], pg, clip)
++        _, omega = yaw_kin_from_track(self.tracks[clip])
++        ch1 = np.nan_to_num(omega, nan=0.0).astype(np.float32)
++        assert len(a) == len(ch1) == len(pg), f"{clip}: a {len(a)}, ch1 {len(ch1)}, pose {len(pg)}"
++        return a, ch1
++
+     def get(self, clip: str) -> dict:
+         if clip in self._c:
+             self._c[clip] = self._c.pop(clip)
+@@ -993,6 +1020,157 @@ class ChunkedSampler:
+         return math.ceil(len(self.windows) / self.batch)
+ 
+ 
++# ------------------------------------------------------------------------------------------------ PREREG_V8F_DIVRS: the action-diverse window sampler
++#: the card's cell grid: mean |yaw rate| over a window's transitions (rad/s) x mean longitudinal acceleration over them (m/s^2), 5 x 5. ``np.digitize`` puts a value on an edge into the UPPER bin.
++DIVRS_YAW_EDGES = (0.02, 0.05, 0.10, 0.20)        # bins [0, .02) [.02, .05) [.05, .10) [.10, .20) [.20, inf)
++DIVRS_ACC_EDGES = (-1.0, -0.3, 0.3, 1.0)          # bins (-inf, -1) [-1, -.3) [-.3, .3) [.3, 1) [1, inf)
++DIVRS_N_CELLS = (len(DIVRS_YAW_EDGES) + 1) * (len(DIVRS_ACC_EDGES) + 1)
++DIVRS_CAP_MULT = 10.0                              # a window's weight is capped at this x the median window weight
++DIVRS_CHECK_BATCHES = 2000                         # card control 1: the first 2,000 batches
++DIVRS_SHARE_TOL = 0.20                             # card control 1: realised share within +-20 % (relative) of the target share
++DIVRS_MIN_EXPECTED = 225                           # a cell is RESOLVED by control 1 when its expected draw count is >= this: at 225, three binomial standard deviations are 20 % of the target (3 sqrt((1-p)/(n p)) <= 0.20)
++
++
++def window_act_means(store: ClipStore, J: dict, windows, hmax: int) -> np.ndarray:
++    """``[n, 2]`` float64: for every window the mean |yaw rate| (``ch1``, rad/s, the ``yaw`` kin mode) and the mean longitudinal acceleration (``a``, m/s^2) over its TRANSITIONS, i.e. over ``act[:-1]`` of the ``hmax`` frames
++    ``t - hmax + 1 .. t`` the world model reads (indices clamped to the clip, ``a`` NaN set to 0 -- exactly what ``V8FMiniWindows.item`` returns, float32 values averaged in float64). Reads the two channels only
++    (``ClipStore.get_act``), clip by clip."""
++    clip_of = J["clip"]
++    out = np.zeros((len(windows), 2), np.float64)
++    by_clip: dict = {}
++    for i, w in enumerate(windows):
++        by_clip.setdefault(int(w[0]), []).append(i)
++    off = np.arange(-int(hmax) + 1, 0)
++    for ci, rows in by_clip.items():
++        a_c, ch_c = store.get_act(str(clip_of[ci]))
++        a32, c32 = np.nan_to_num(a_c).astype(np.float32), np.asarray(ch_c, np.float32)
++        T = len(a32)
++        t = np.array([windows[i][1] for i in rows], np.int64)
++        idc = np.clip(t[:, None] + off[None, :], 0, T - 1)
++        out[rows, 0] = np.abs(c32[idc].astype(np.float64)).mean(1)
++        out[rows, 1] = a32[idc].astype(np.float64).mean(1)
++    return out
++
++
++def divrs_cells(feats: np.ndarray, yaw_edges=DIVRS_YAW_EDGES, acc_edges=DIVRS_ACC_EDGES) -> np.ndarray:
++    """Cell id (0 .. 24) per window: ``yaw bin x 5 + acceleration bin``."""
++    feats = np.asarray(feats, np.float64)
++    return (np.digitize(feats[:, 0], yaw_edges) * (len(acc_edges) + 1) + np.digitize(feats[:, 1], acc_edges)).astype(np.int64)
++
++
++def divrs_weights(cells: np.ndarray, cap_mult: float = DIVRS_CAP_MULT) -> dict:
++    """The card's rule: a window's weight is 1 / (its cell's count over the training windows); an empty cell has no windows and so no weight; weights are capped at ``cap_mult`` x the MEDIAN window weight (the median over
++    all windows). ``target_share[c]`` = the cell's share of the total (capped) weight = the share of draws the sampler must realise."""
++    cells = np.asarray(cells, np.int64)
++    counts = np.bincount(cells, minlength=DIVRS_N_CELLS).astype(np.int64)
++    raw = np.zeros(DIVRS_N_CELLS, np.float64)
++    nz = counts > 0
++    raw[nz] = 1.0 / counts[nz]
++    med = float(np.median(raw[cells])) if len(cells) else 0.0
++    cap = float(cap_mult) * med
++    cell_w = np.minimum(raw, cap)
++    mass = counts * cell_w
++    return {"counts": counts, "weight": cell_w[cells], "cell_weight": cell_w, "raw_cell_weight": raw, "median_weight": med, "cap": cap,
++            "n_capped_cells": int(((raw > cap) & nz).sum()), "n_empty_cells": int((~nz).sum()), "target_share": mass / mass.sum()}
++
++
++class DiversitySampler(ChunkedSampler):
++    """``--wm-sampler divrs`` (PREREG_V8F_DIVRS): the SAME windows, the same chunked clip order (I/O locality: ``chunk`` clips at a time), the same age draws, the same epoch length (``len(windows)`` draws) -- only WHICH windows are
++    drawn changes. Every window is in one cell of the 5 x 5 grid (``window_act_means`` binned by ``divrs_cells``); a window is drawn with probability proportional to its capped weight (``divrs_weights``), with replacement.
++
++    Exactness: a chunk gets ``n_epoch x (its weight mass) / (total weight mass)`` draws, rounded SYSTEMATICALLY (one uniform per epoch; the draw counts sum to ``n_epoch`` exactly), and within a chunk the draw is proportional to the
++    GLOBAL weights. So over an epoch every window's expected draw count is ``n_epoch x w_i / sum(w)`` exactly, whatever the chunk composition -- a per-chunk renormalisation would give a rare cell that sits in few chunks far
++    more than its share. The stream is seeded by ``(seed, epoch, 0xD1D5)``: resumable, and domain-separated from the uniform sampler's ``(seed, epoch)``."""
++
++    kind = "divrs"
++
++    def __init__(self, windows, batch: int, feats: np.ndarray, seed: int = 0, chunk: int = 48, max_age_t: int = 2, max_age_s: int = 6, cap_mult: float | None = None):
++        super().__init__(windows, batch, seed, chunk, max_age_t, max_age_s)
++        self.feats = np.asarray(feats, np.float64)
++        if self.feats.shape != (len(self.windows), 2):
++            raise ValueError(f"feats must be [n_windows, 2] = {(len(self.windows), 2)}, got {self.feats.shape}")
++        self.yaw_edges, self.acc_edges, self.cap_mult = tuple(DIVRS_YAW_EDGES), tuple(DIVRS_ACC_EDGES), float(DIVRS_CAP_MULT if cap_mult is None else cap_mult)
++        self.cells = divrs_cells(self.feats, self.yaw_edges, self.acc_edges)
++        self.W = divrs_weights(self.cells, self.cap_mult)
++        self.p = self.W["weight"]
++
++    def epoch(self, ep: int):
++        rng = np.random.default_rng((self.seed, ep, 0xD1D5))
++        by_clip: dict = {}
++        for i, w in enumerate(self.windows):
++            by_clip.setdefault(w[0], []).append(i)
++        order = rng.permutation(sorted(by_clip))
++        chunks = [np.array([i for c in order[c0:c0 + self.chunk] for i in by_clip[int(c)]], np.int64) for c0 in range(0, len(order), self.chunk)]
++        mass = np.array([self.p[ch].sum() for ch in chunks], np.float64)
++        n_epoch = len(self.windows)
++        cum = np.cumsum(mass) / mass.sum() * n_epoch
++        cum[-1] = float(n_epoch)
++        u = float(rng.random())
++        n_draw = np.diff(np.floor(np.concatenate([[0.0], cum]) + u).astype(np.int64))
++        for ch, n_c, m_c in zip(chunks, n_draw, mass):
++            if n_c <= 0:
++                continue
++            pool = rng.choice(ch, size=int(n_c), replace=True, p=self.p[ch] / m_c)
++            for b0 in range(0, len(pool), self.batch):
++                batch = []
++                for i in pool[b0:b0 + self.batch]:
++                    ci, t, _, _ = self.windows[int(i)]
++                    a_t = int(rng.integers(0, self.max_age_t + 1))
++                    batch.append((ci, t, a_t, a_t + int(rng.integers(0, self.max_age_s - self.max_age_t + 1))))
++                yield batch
++
++    def built_levers(self) -> dict:
++        """What the BUILT sampler does (the G-DVB 'built' side for ``--wm-sampler``): the edges, cap and cell table it actually uses."""
++        W = self.W
++        return {"kind": self.kind, "n_cells": DIVRS_N_CELLS, "yaw_edges": list(self.yaw_edges), "acc_edges": list(self.acc_edges), "cap_mult": self.cap_mult, "n_windows": len(self.windows),
++                "cell_counts": W["counts"].tolist(), "cell_weight": W["cell_weight"].tolist(), "median_weight": W["median_weight"], "cap": W["cap"], "n_capped_cells": W["n_capped_cells"],
++                "n_empty_cells": W["n_empty_cells"], "target_share": W["target_share"].tolist(), "max_window_weight": float(self.p.max()) if len(self.p) else 0.0}
++
++
++def check_cell_shares(epoch_fn, windows, feats, *, n_batches: int = DIVRS_CHECK_BATCHES, tol: float = DIVRS_SHARE_TOL, min_expected: int = DIVRS_MIN_EXPECTED, yaw_edges=DIVRS_YAW_EDGES,
++                      acc_edges=DIVRS_ACC_EDGES, cap_mult: float = DIVRS_CAP_MULT) -> dict:
++    """PREREG_V8F_DIVRS control 1 (sampler read-back): over the first ``n_batches`` batches ``epoch_fn(0), epoch_fn(1), ..`` yield, the realised share of draws in each cell vs the card's TARGET share. The target is computed HERE, from the
++    cell table and the card's rule (``divrs_weights``), never read from the sampler under test -- a uniform draw therefore fails. ``feats`` is ``window_act_means`` of ``windows``.
++
++    A cell is RESOLVED when its expected draw count (target share x draws) is >= ``min_expected``; below that, binomial sampling alone moves its share by more than ``tol`` and no sampler could be held to the rule (those cells are
++    listed in ``unresolved`` with their expected counts, never dropped silently). ``pass``: every resolved cell within ``tol`` (relative), no draw in a cell whose target is 0, and at least one resolved cell."""
++    cells = divrs_cells(feats, yaw_edges, acc_edges)
++    tgt = divrs_weights(cells, cap_mult)["target_share"]
++    row = {(int(w[0]), int(w[1])): i for i, w in enumerate(windows)}
++    if len(row) != len(windows):
++        raise ValueError("windows are not unique on (clip, t)")
++    cnt = np.zeros(DIVRS_N_CELLS, np.int64)
++    seen, ep = 0, 0
++    while seen < n_batches:
++        got = 0
++        for batch in epoch_fn(ep):
++            for ci, t, _, _ in batch:
++                cnt[cells[row[(int(ci), int(t))]]] += 1
++            seen += 1
++            got += 1
++            if seen >= n_batches:
++                break
++        if got == 0:
++            raise ValueError("the sampler yielded no batch")
++        ep += 1
++    n_draws = int(cnt.sum())
++    rows, unresolved, worst = [], [], 0.0
++    for c in range(DIVRS_N_CELLS):
++        exp = float(tgt[c] * n_draws)
++        real = cnt[c] / n_draws
++        rel = None if tgt[c] == 0 else float(real / tgt[c] - 1.0)
++        resolved = tgt[c] > 0 and exp >= min_expected
++        rows.append({"cell": c, "target_share": float(tgt[c]), "realised_share": float(real), "rel_err": rel, "expected_draws": exp, "resolved": bool(resolved)})
++        if resolved:
++            worst = max(worst, abs(rel))
++        elif tgt[c] > 0:
++            unresolved.append({"cell": c, "expected_draws": exp, "rel_err": rel})
++    off_cell = int(sum(cnt[c] for c in range(DIVRS_N_CELLS) if tgt[c] == 0))
++    n_res = sum(r["resolved"] for r in rows)
++    return {"n_batches": seen, "n_draws": n_draws, "epochs_used": ep, "tol": tol, "min_expected": min_expected, "n_resolved": n_res, "worst_rel_err_resolved": worst, "draws_in_zero_target_cells": off_cell,
++            "unresolved": unresolved, "cells": rows, "pass": bool(n_res >= 1 and worst <= tol and off_cell == 0)}
++
++
+ def eval_context(grid: dict, kin_npz, J: dict, units: str | None = None, kin_mode: str = "steer") -> dict:
+     """Everything the evaluator needs per window of the trunk-probe grid, WITHOUT any image feature (so the floors,
+     the GT control and the nav-only baseline run before the cache exists). ``J`` is the eval join (cache order must be
+diff --git a/stack/tanitad/models/v8f_mini.py b/stack/tanitad/models/v8f_mini.py
+index 2a957e0..d76d5c8 100644
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -208,6 +208,7 @@ class V8FMiniConfig:
+     w_wm: float = 0.1
+     wm_beta: float = 0.08
+     wm_gamma: float = 100.0
++    wm_gamma_levels: tuple = ()        # PREREG_V8F_ACTSENS (`--wm-idm-gamma G1 G2 G3`): the IDM weight of each WM level. () = (wm_gamma,) x 3 = every earlier arm, bit for bit (changes the loss weight only, never a parameter shape)
+     p_gt_start: float = 1.0
+     p_gt_end: float = 0.2
+     max_age_t: int = 2
+@@ -277,6 +278,11 @@ class V8FMiniConfig:
+             raise ValueError(f"wm_k must be an int >= 1, got {self.wm_k!r}")
+         if self.wm_k > 1 and self.wm == "off":
+             raise ValueError("wm_k > 1 needs a world model (wm a or b): a lever that is declared and builds nothing")
++        wgl = self.wm_gamma_levels                                                # PREREG_V8F_ACTSENS: () or three finite floats > 0, and only with wm b
++        if not (isinstance(wgl, (tuple, list)) and (len(wgl) == 0 or (len(wgl) == 3 and all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x > 0.0 for x in wgl)))):
++            raise ValueError(f"wm_gamma_levels must be () or three finite numbers > 0 (levels 1, 2, 3), got {wgl!r}")
++        if len(wgl) > 0 and self.wm != "b":
++            raise ValueError("wm_gamma_levels needs wm b (the IDM runs only at b): a lever that is declared and builds nothing")
+         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
+             v = getattr(self, nm)
+             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
+@@ -685,13 +691,14 @@ class WMAux(nn.Module):
+         super().__init__()
+         from tanitad.models.hjepa import HJEPAStack, LevelConfig, LevelEncoder   # S3's module; absent => this arm cannot be built
+         gamma = cfg.wm_gamma if cfg.wm == "b" else 0.0
+-        mk = lambda **kw: LevelConfig(latent_dim=cfg.wm_dim, beta=cfg.wm_beta, gamma=gamma, pred_width=128,
+-                                      pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
++        gl = tuple(float(g) for g in cfg.wm_gamma_levels) if (cfg.wm == "b" and len(tuple(cfg.wm_gamma_levels)) > 0) else (gamma,) * 3     # PREREG_V8F_ACTSENS: per-level IDM weight; absent = the one gamma at every level
++        mk = lambda g, **kw: LevelConfig(latent_dim=cfg.wm_dim, beta=cfg.wm_beta, gamma=g, pred_width=128,
++                                         pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
+         K = int(cfg.wm_k)
+         up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
+         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
+-        lv = [mk(action_dim=2, act_embed_dim=32, **lad(0)),
+-              mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
++        lv = [mk(gl[0], action_dim=2, act_embed_dim=32, **lad(0)),
++              mk(gl[1], action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(gl[2], action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
+         self.stack = HJEPAStack(lv, sigreg_projections=256)
+         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
+         self.gamma = gamma
+diff --git a/stack/tests/test_v8f_actsens.py b/stack/tests/test_v8f_actsens.py
+new file mode 100644
+index 0000000..8117979
+--- /dev/null
++++ b/stack/tests/test_v8f_actsens.py
+@@ -0,0 +1,237 @@
++"""PREREG_V8F_ACTSENS: the IDM-weight lever ``--wm-idm-gamma G1 G2 G3`` (REACHABILITY_ACTSENS section 1).
++
++Controls (each has a deliberate-regression mutation run by ``mutate_actsens.py`` on the working tree, restoring it afterwards; the named test must go RED):
++1. Dose reach: the level-1 IDM-head gradient scales with the level-1 gamma (10.0x at 1000 vs 100), levels 2 / 3 stay bit-equal, the predictor gradient is bit-equal, ``--wm a`` reads EXACTLY 0.0 (``test_dose_*``).
++2. C3 identity: the level/L1 difference between gamma 1000 and 100 equals 900 x idm/L1, the unweighted terms are equal (``test_c3_*``).
++3. C1 default: a config with the field absent builds a state_dict bit-equal to ``wm_gamma_levels=(100, 100, 100)``, and the flag-absent argv declares () (``test_default_*``).
++4. G-DVB: the read-back reads the BUILT LevelConfigs, never ``WMAux.gamma`` (``test_gate_*``).
++"""
++from __future__ import annotations
++
++import dataclasses
++import json
++import sys
++from pathlib import Path
++
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++torch.set_num_threads(1)
++DOSE = (1000.0, 100.0, 100.0)
++BASE = ["--synthetic", "--batch", "16", "--d", "32", "--n-q", "2", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b", "--threads", "1", "--warmup", "2"]
++
++
++def cfg_of(**kw):
++    return M.V8FMiniConfig(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6, wm=kw.pop("wm", "b"), hmax=28, kin_mode="yaw", **kw)
++
++
++def build(cfg, seed=0):
++    torch.manual_seed(seed)
++    return M.WMAux(cfg)
++
++
++def batch(cfg):
++    g = torch.Generator().manual_seed(7)
++    return torch.randn(2, 28, cfg.wm_dim, generator=g), torch.randn(2, 27, 2, generator=g)
++
++
++def run(wm, cfg):
++    z, a = batch(cfg)
++    wm.zero_grad(set_to_none=True)
++    out = wm.stack.loss(z, a, generator=torch.Generator().manual_seed(11))
++    out["total"].backward()
++    gi = [float(sum(p.grad.abs().sum() for p in h.parameters() if p.grad is not None)) for h in wm.stack.idm_heads]
++    gi_raw = [torch.cat([p.grad.flatten() for p in h.parameters() if p.grad is not None]).clone() for h in wm.stack.idm_heads]
++    gp = [torch.cat([p.grad.flatten() for p in pr.parameters() if p.grad is not None]).clone() for pr in wm.stack.predictors]
++    return gi, gi_raw, gp, {k: float(v.detach()) for k, v in out.items()}
++
++
++# ------------------------------------------------------------------------------------------------ control 1: dose reach (gradient)
++def test_dose_level1_idm_gradient_is_ten_times_and_other_levels_are_bit_equal():
++    c0, c1 = cfg_of(), cfg_of(wm_gamma_levels=DOSE)
++    gi0, raw0, gp0, _ = run(build(c0), c0)
++    gi1, raw1, gp1, _ = run(build(c1), c1)
++    assert gi0[0] > 0.0 and abs(gi1[0] / gi0[0] - 10.0) < 1e-4, (gi0, gi1)
++    assert torch.equal(raw1[1], raw0[1]) and torch.equal(raw1[2], raw0[2])              # levels 2 / 3: the same weight, the same gradient, bit for bit
++    assert all(torch.equal(x, y) for x, y in zip(gp0, gp1))                                # the predictor's gradient never sees the IDM weight directly
++
++
++@pytest.mark.parametrize("lv", [0, 1, 2])
++def test_dose_each_level_scales_only_its_own_head(lv):
++    g = [100.0, 100.0, 100.0]
++    g[lv] = 300.0
++    c0, c1 = cfg_of(), cfg_of(wm_gamma_levels=tuple(g))
++    gi0, raw0, _, _ = run(build(c0), c0)
++    gi1, raw1, _, _ = run(build(c1), c1)
++    for i in range(3):
++        if i == lv:
++            assert abs(gi1[i] / gi0[i] - 3.0) < 1e-4
++        else:
++            assert torch.equal(raw1[i], raw0[i]), f"level {i + 1} moved when only level {lv + 1} was dosed"
++
++
++def test_dose_wm_a_reads_exactly_zero_control():
++    c = cfg_of(wm="a")
++    gi, _, _, out = run(build(c), c)
++    assert gi == [0.0, 0.0, 0.0], gi
++
++
++# ------------------------------------------------------------------------------------------------ control 2: C3 identity
++def test_c3_level_difference_is_900_times_idm_and_unweighted_terms_are_equal():
++    c0, c1 = cfg_of(), cfg_of(wm_gamma_levels=DOSE)
++    _, _, _, o0 = run(build(c0), c0)
++    _, _, _, o1 = run(build(c1), c1)
++    for k in ("pred/L1", "sigreg/L1", "idm/L1", "pred/L2", "sigreg/L2", "idm/L2", "pred/L3", "sigreg/L3", "idm/L3"):
++        assert o0[k] == o1[k], k
++    d = o1["level/L1"] - o0["level/L1"]
++    assert abs(d - 900.0 * o0["idm/L1"]) <= 1e-5 * abs(900.0 * o0["idm/L1"]), (d, 900.0 * o0["idm/L1"])
++    assert o1["level/L2"] == o0["level/L2"] and o1["level/L3"] == o0["level/L3"]
++
++
++# ------------------------------------------------------------------------------------------------ control 3: C1 default
++def test_default_absent_field_equals_the_explicit_record_and_the_flag_absent_argv_declares_nothing():
++    wa, wb = build(cfg_of()), build(cfg_of(wm_gamma_levels=(100.0, 100.0, 100.0)))
++    sa, sb = wa.state_dict(), wb.state_dict()
++    assert list(sa) == list(sb) and all(torch.equal(sa[k], sb[k]) for k in sa)
++    assert [r["gamma"] for r in wa.stack.built_levers().values()] == [100.0] * 3
++    a = TR.build_parser().parse_args(["--out", "x"])
++    assert a.wm_idm_gamma is None and TR.declared_wm_idm_gamma(a) == () and M.V8FMiniConfig.__dataclass_fields__["wm_gamma_levels"].default == ()
++    assert TR.FLAG_CHECKS["wm_idm_gamma"] == "lever:wm_idm_gamma"
++    assert {act.dest for act in TR.build_parser()._actions if act.dest != "help"} == set(TR.FLAG_CHECKS)
++
++
++def test_default_the_dose_changes_no_parameter_only_the_weight():
++    wa, wb = build(cfg_of()), build(cfg_of(wm_gamma_levels=DOSE))
++    sa, sb = wa.state_dict(), wb.state_dict()
++    assert list(sa) == list(sb) and all(torch.equal(sa[k], sb[k]) for k in sa)               # same seed, same init: the lever moves the loss weight only
++    assert [r["gamma"] for r in wb.stack.built_levers().values()] == list(DOSE)
++
++
++def test_config_refuses_a_malformed_or_declared_and_unbuilt_dose():
++    for bad in ((1000.0, 100.0), (1000.0, 0.0, 100.0), (1000.0, -1.0, 100.0), (float("nan"), 1.0, 1.0)):
++        with pytest.raises(ValueError):
++            cfg_of(wm_gamma_levels=bad)
++    with pytest.raises(ValueError):
++        cfg_of(wm="a", wm_gamma_levels=DOSE)                                                  # M6: named with --wm a
++    with pytest.raises(ValueError):
++        cfg_of(wm="off", wm_gamma_levels=DOSE)
++
++
++# ------------------------------------------------------------------------------------------------ control 4: the gate reads the BUILT levels
++@pytest.fixture(scope="module")
++def init(tmp_path_factory):
++    root = tmp_path_factory.mktemp("actsens")
++    assert TR.main(["--out", str(root / "m2b"), *BASE, "--log-every", "1", "--ckpt-every", "100", "--steps", "2"]) == 0
++    return {"root": root, "ck": root / "m2b" / "ckpt_last.pt"}
++
++
++WMB = ["--hmax", "28", "--wm", "b"]
++
++
++def gate(init, name, extra=(), args=WMB):
++    try:
++        rc = TR.main(["--out", str(init["root"] / name), *BASE, *args, *extra, "--selfcheck-only"])
++    except SystemExit as e:
++        rc = e.code
++    return rc
++
++
++def sc_of(init, name):
++    return json.loads((init["root"] / name / "selfcheck.json").read_text(encoding="utf-8"))
++
++
++def test_gate_passes_the_dose_and_reads_the_built_levels_back(init):
++    assert gate(init, "g_ok", ["--wm-idm-gamma", "1000", "100", "100"]) == 0
++    rb = sc_of(init, "g_ok")["levers"]["wm_idm_gamma_readback"]
++    assert rb["built"] == [1000.0, 100.0, 100.0] and rb["declared"] == [1000.0, 100.0, 100.0] and rb["wm_aux_gamma"] == 100.0
++
++
++def test_gate_flag_absent_keeps_the_key_set_and_built_is_the_record(init):
++    assert gate(init, "g_off") == 0
++    assert "wm_idm_gamma_readback" not in sc_of(init, "g_off")["levers"]
++    a = TR.build_parser().parse_args(["--out", "x", *BASE[1:], *WMB])
++    cfg = TR.make_config(a)
++    assert cfg.wm_gamma_levels == ()
++
++
++def test_gate_refuses_a_builder_that_ignores_the_config_field_while_the_old_check_stays_green(init, monkeypatch):
++    """M2: the config says 1000, the LevelConfigs the loss multiplies by keep 100, WMAux.gamma stays 100 (the old trainer check compares exactly that)."""
++    orig = M.WMAux.__init__
++
++    def ignoring(self, cfg):
++        orig(self, dataclasses.replace(cfg, wm_gamma_levels=()))
++    monkeypatch.setattr(M.WMAux, "__init__", ignoring)
++    rc = gate(init, "r_m2", ["--wm-idm-gamma", "1000", "100", "100"])
++    assert isinstance(rc, str) and "lever wm_idm_gamma" in rc and "BUILT LevelConfigs" in rc, rc
++    assert "wm b declared but built gamma" not in rc                                       # the older WMAux.gamma check did NOT see it
++
++
++def test_gate_refuses_when_the_declared_dose_is_not_in_the_built_config(init, monkeypatch):
++    """M1: the make_config line deleted."""
++    orig = TR.make_config
++    monkeypatch.setattr(TR, "make_config", lambda a: dataclasses.replace(orig(a), wm_gamma_levels=()))
++    rc = gate(init, "r_m1", ["--wm-idm-gamma", "1000", "100", "100"])
++    assert isinstance(rc, str) and "lever wm_idm_gamma" in rc, rc
++
++
++def test_gate_refuses_the_flag_with_wm_a_or_off_and_a_non_positive_gamma(init):
++    for args, extra in ((["--hmax", "28", "--wm", "a"], ["--wm-idm-gamma", "1000", "100", "100"]), (["--hmax", "28", "--wm", "off"], ["--wm-idm-gamma", "1000", "100", "100"]),
++                        (WMB, ["--wm-idm-gamma", "1000", "0", "100"])):
++        try:
++            rc = gate(init, "r_bad", extra, args=args)
++        except ValueError as e:                                                           # the config refuses at build time (wm a / off); the gate's own clause refuses the rest
++            rc = f"ValueError: {e}"
++        assert rc != 0 and isinstance(rc, str), (args, extra, rc)
++
++
++def test_gate_g_live_every_wm_group_still_gets_a_gradient_under_the_dose(init):
++    assert gate(init, "g_live", ["--wm-idm-gamma", "1000", "100", "100"]) == 0                # selfcheck-only runs G-LIVE inside the trainer
++    sc = sc_of(init, "g_live")
++    assert sc.get("live") is not None
++
++
++# ------------------------------------------------------------------------------------------------ both levers on the LADDER path (--wm-only --wm-windows wmonly), the path every ACTSENS arm takes
++LADDER = ["--hmax", "25", "--wm-only", "--wm-strides", "2", "3", "--wm-rollout-k", "4", "3", "2", "--wm-rollout-stride", "2", "2", "1", "--wm-rollout-w", "1.0", "--wm-ctx", "3", "3", "3", "--wm-windows", "wmonly"]
++
++
++def lgate(init, name, extra=()):
++    try:
++        rc = TR.main(["--out", str(init["root"] / name), *BASE, "--init-ckpt", str(init["ck"]), *LADDER, *extra, "--selfcheck-only"])
++    except SystemExit as e:
++        rc = e.code
++    return rc
++
++
++def test_ladder_path_gate_passes_both_levers_and_reads_both_back(init):
++    assert lgate(init, "l_both", ["--wm-idm-gamma", "1000", "100", "100", "--wm-sampler", "divrs"]) == 0
++    sc = sc_of(init, "l_both")
++    assert sc["levers"]["wm_idm_gamma_readback"]["built"] == [1000.0, 100.0, 100.0]
++    smp = sc["levers"]["wm_sampler"]
++    assert smp["kind"] == "divrs" and sc["wm_sampler_probe"]["pass"] is True
++    assert smp["n_windows"] == sc["info"]["n_windows"] == sc["info"]["wm_windows"]["n_windows"]                   # REACHABILITY (b): the key the ladder path updates
++    assert sc["declared_vs_built"] == "PASS"
++
++
++def test_ladder_path_flag_absent_arms_keep_their_key_set_and_record_a_uniform_sampler(init):
++    assert lgate(init, "l_none") == 0
++    sc = sc_of(init, "l_none")
++    assert "wm_idm_gamma_readback" not in sc["levers"] and "wm_sampler" not in sc["levers"] and "wm_sampler_probe" not in sc
++    assert sc["info"]["wm_sampler"]["kind"] == "uniform"
++
++
++def test_ladder_path_uniform_default_reproduces_the_chunked_epoch_order_bit_for_bit(init):
++    """C1 on the sampler: the flag-absent arm's sampler IS D.ChunkedSampler called with the baseline arguments (same epoch order), not a DiversitySampler."""
++    from tanitad.data import v8f_mini_data as D
++    a = TR.build_parser().parse_args(["--out", "x", *BASE[1:]])
++    wins = [(i % 5, 40 + (i % 7), 0, 0) for i in range(400)]
++    cfg = cfg_of()
++    got = TR.make_sampler(a, cfg, wins, None, None, {"lru": 10})
++    ref = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, 10 - 2)), max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
++    assert type(got) is D.ChunkedSampler and [list(b) for b in got.epoch(0)] == [list(b) for b in ref.epoch(0)]
+diff --git a/stack/tests/test_v8f_divrs.py b/stack/tests/test_v8f_divrs.py
+new file mode 100644
+index 0000000..1f577d4
+--- /dev/null
++++ b/stack/tests/test_v8f_divrs.py
+@@ -0,0 +1,336 @@
++"""PREREG_V8F_DIVRS: ``--wm-sampler {uniform,divrs}`` (default uniform). The data half (``window_act_means``, ``divrs_cells``, ``divrs_weights``, ``DiversitySampler``, ``check_cell_shares``, ``ClipStore.get_act``) and the trainer half
++(the REAL ``v8f_mini_train.main`` on its synthetic world with tiny dimensions).
++
++What this file pins, by the card's controls and the programme's "built, tested and unreachable" rule:
++
++* The CELL RULE of the card: 5 x 5 grid, mean |yaw rate| x mean longitudinal acceleration over a window's transitions (the ``hmax - 1`` transitions the world model reads, front clamp included), the card's bin edges (a value ON
++  an edge goes to the upper bin), weight 1 / count, cap 10 x the median window weight, empty cells no weight. ``window_act_means`` equals a brute-force mean over ``V8FMiniWindows.item``'s ``act[:-1]``; ``get_act`` equals ``get``.
++* The SAMPLER: ``len(windows)`` draws per epoch (sums exactly), valid windows, the uniform sampler's age draws, I/O locality (a run of batches touches ~one chunk of clips, not the whole set), a seeded resumable stream.
++  Its realised cell shares equal the card's targets whatever the chunk composition (the chunk allocation is by weight mass, systematic rounding).
++* CARD CONTROL 1: the realised share of each cell over the first 2,000 batches within +-20 % (relative) of its target, computed from the cell table and the card's rule -- NOT from the sampler. The DELIBERATE-REGRESSION ARM
++  (flag set, uniform draw) FAILS it; so does a sampler that allocates draws to chunks by chunk size, one without the weights, one without the cap.
++* G-DVB: the flag has a ``FLAG_CHECKS`` entry; the built sampler's own record (kind, edges, cap multiple, cell table) is read back and compared with the card's literals; the gate refuses a flag set whose sampler was built
++  uniform, a drifted bin edge, a missing world model, a non-yaw kin mode; G-LIVE: the control-1 probe on the BUILT sampler refuses a sampler whose record says divrs but whose draws are uniform.
++* Default off: ``--wm-sampler uniform`` named and the flag absent give bit-equal checkpoints (and the uniform path is ``ChunkedSampler`` called as before); divrs moves the world model; a whole WM-only run and a whole M2b run
++  reach the loss through the diversity sampler (spy on ``epoch``).
++"""
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++
++torch.set_num_threads(1)
++BASE = ["--synthetic", "--batch", "16", "--d", "32", "--n-q", "2", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b", "--threads", "1", "--warmup", "2"]
++WMO = ["--hmax", "28", "--wm-only"]
++CENTER_YAW = [0.01, 0.035, 0.075, 0.15, 0.30]       # a representative mean |yaw rate| inside each of the 5 yaw bins
++CENTER_ACC = [-2.0, -0.65, 0.0, 0.65, 2.0]          # ... and mean acceleration inside each of the 5 acceleration bins
++
++
++def feats_of_cells(cells) -> np.ndarray:
++    cells = np.asarray(cells)
++    return np.stack([np.array(CENTER_YAW)[cells // 5], np.array(CENTER_ACC)[cells % 5]], 1)
++
++
++def fake_table(n_clips=60, per=50, seed=0):
++    """3,000 windows over 60 clips, ~65 % in the straight, steady cell (12); every clip has a dominant cell, so chunks of clips differ a lot in composition (which is what a wrong chunk allocation gets wrong)."""
++    rng = np.random.default_rng(seed)
++    dom = np.where(rng.random(n_clips) < 0.7, 12, rng.integers(0, 25, n_clips))
++    cells = np.where(rng.random((n_clips, per)) < 0.85, dom[:, None], rng.integers(0, 25, (n_clips, per)))
++    windows = [(ci, 3 + j, 0, 0) for ci in range(n_clips) for j in range(per)]
++    return windows, feats_of_cells(cells.reshape(-1)), cells.reshape(-1)
++
++
++# ------------------------------------------------------------------------------------------------ the cell rule
++def test_bin_edges_put_a_value_on_an_edge_into_the_upper_bin_and_cover_25_cells():
++    yaw = [0.0, 0.0199, 0.02, 0.0499, 0.05, 0.0999, 0.10, 0.1999, 0.20, 9.0]
++    want_y = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
++    acc = [-9.0, -1.0001, -1.0, -0.3001, -0.3, 0.2999, 0.3, 0.9999, 1.0, 9.0]
++    want_a = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
++    got = D.divrs_cells(np.stack([yaw, acc], 1))
++    assert got.tolist() == [y * 5 + a for y, a in zip(want_y, want_a)]
++    assert D.DIVRS_N_CELLS == 25 and D.DIVRS_YAW_EDGES == (0.02, 0.05, 0.10, 0.20) and D.DIVRS_ACC_EDGES == (-1.0, -0.3, 0.3, 1.0) and D.DIVRS_CAP_MULT == 10.0
++    assert TR.DIVRS_CARD == {"yaw_edges": list(D.DIVRS_YAW_EDGES), "acc_edges": list(D.DIVRS_ACC_EDGES), "cap_mult": D.DIVRS_CAP_MULT, "n_cells": D.DIVRS_N_CELLS}
++    assert sorted(set(D.divrs_cells(feats_of_cells(np.arange(25))).tolist())) == list(range(25))
++
++
++def test_weights_follow_the_card_rule_by_hand():
++    """counts 100 / 50 / 8 / 1 -> raw weights .01 / .02 / .125 / 1; the median over the 159 windows is .01, so the cap is .1: the last two cells are capped; 21 cells are empty and carry nothing."""
++    cells = np.array([0] * 100 + [1] * 50 + [2] * 8 + [3] * 1)
++    W = D.divrs_weights(cells)
++    assert W["counts"][:4].tolist() == [100, 50, 8, 1] and W["n_empty_cells"] == 21 and W["n_capped_cells"] == 2
++    assert W["median_weight"] == pytest.approx(0.01) and W["cap"] == pytest.approx(0.1)
++    assert W["cell_weight"][:4] == pytest.approx([0.01, 0.02, 0.1, 0.1]) and not W["cell_weight"][4:].any()
++    assert W["target_share"][:4] == pytest.approx(np.array([1.0, 1.0, 0.8, 0.1]) / 2.9) and W["target_share"].sum() == pytest.approx(1.0)
++    assert W["weight"].max() <= W["cap"] * (1 + 1e-12) and W["weight"][:100] == pytest.approx(0.01)
++    # without the cap every non-empty cell has the same share (1/n_nonempty): the cap is what changes it
++    assert D.divrs_weights(cells, cap_mult=np.inf)["target_share"][:4] == pytest.approx([0.25] * 4)
++
++
++# ------------------------------------------------------------------------------------------------ the window table on the synthetic world
++@pytest.fixture(scope="module")
++def world(tmp_path_factory):
++    root = tmp_path_factory.mktemp("divrs_world")
++    w = D.make_synthetic_world(root, n_train=8, n_eval=2, T=120, seed=0)
++    J = D.load_join(Path(root) / "join_train.npz")
++    tracks = D.load_native_tracks(Path(root) / "native_tracks.pt")
++    store = D.ClipStore(root, "train", lru=8, kin_mode="yaw", tracks=tracks)
++    wins = D.train_windows(store, J, w["names"]["train"])
++    return {"root": root, "J": J, "tracks": tracks, "store": store, "wins": wins, "names": w["names"]["train"]}
++
++
++def test_get_act_equals_the_full_get(world):
++    fresh = D.ClipStore(world["root"], "train", lru=8, kin_mode="yaw", tracks=world["tracks"])
++    full = D.ClipStore(world["root"], "train", lru=8, kin_mode="yaw", tracks=world["tracks"])
++    for c in world["names"]:
++        a, ch = fresh.get_act(c)
++        d = full.get(c)
++        assert np.array_equal(a, d["a"]) and np.array_equal(ch, d["ch1"]) and ch.dtype == d["ch1"].dtype
++    with pytest.raises(ValueError, match="yaw-mode"):
++        D.ClipStore(world["root"], "train", lru=8).get_act(world["names"][0])
++
++
++def test_window_act_means_equal_the_brute_force_mean_over_the_transitions_the_wm_reads(world):
++    hmax = 28
++    ds = D.V8FMiniWindows(world["store"], world["J"], world["wins"], hmax=hmax)
++    fresh = D.ClipStore(world["root"], "train", lru=8, kin_mode="yaw", tracks=world["tracks"])
++    got = D.window_act_means(fresh, world["J"], world["wins"], hmax)
++    assert got.shape == (len(world["wins"]), 2) and np.isfinite(got).all()
++    pick = sorted(set(np.random.default_rng(1).choice(len(world["wins"]), 60, replace=False).tolist()) | {0, 1, 2, len(world["wins"]) - 1})   # includes the first windows of a clip (front clamp at t < hmax - 1)
++    assert min(world["wins"][i][1] for i in pick) < hmax - 1
++    for i in pick:
++        ci, t, _, _ = world["wins"][i]
++        act = ds.item(ci, t)["act"][:-1].astype(np.float64)                  # the hmax - 1 transitions the WM reads: act[:, :-1]
++        assert act.shape == (hmax - 1, 2)
++        assert got[i, 0] == pytest.approx(np.abs(act[:, 1]).mean(), abs=1e-12) and got[i, 1] == pytest.approx(act[:, 0].mean(), abs=1e-12)
++
++
++def test_the_diversity_sampler_over_the_synthetic_world_accounts_for_every_window(world):
++    feats = D.window_act_means(world["store"], world["J"], world["wins"], 28)
++    s = D.DiversitySampler(world["wins"], 16, feats, seed=3, chunk=4)
++    b = s.built_levers()
++    assert b["kind"] == "divrs" and sum(b["cell_counts"]) == b["n_windows"] == len(world["wins"]) and abs(sum(b["target_share"]) - 1.0) < 1e-12
++    assert b["yaw_edges"] == [0.02, 0.05, 0.10, 0.20] and b["acc_edges"] == [-1.0, -0.3, 0.3, 1.0] and b["cap_mult"] == 10.0 and b["max_window_weight"] <= b["cap"] * (1 + 1e-12)
++
++
++# ------------------------------------------------------------------------------------------------ the sampler
++@pytest.fixture(scope="module")
++def table():
++    return fake_table()
++
++
++def draws(sampler, ep):
++    return [w for batch in sampler.epoch(ep) for w in batch]
++
++
++def test_an_epoch_draws_exactly_n_windows_valid_ones_with_the_uniform_age_rule(table):
++    windows, feats, _ = table
++    s = D.DiversitySampler(windows, 16, feats, seed=1, chunk=8)
++    valid = {(w[0], w[1]) for w in windows}
++    for ep in range(6):
++        batches = list(s.epoch(ep))
++        flat = [w for b in batches for w in b]
++        assert len(flat) == len(windows) and all(len(b) <= 16 for b in batches)
++        assert all((ci, t) in valid for ci, t, _, _ in flat)
++        assert all(0 <= a_t <= s.max_age_t and 0 <= a_s - a_t <= s.max_age_s - s.max_age_t for _, _, a_t, a_s in flat)
++    assert draws(s, 2) == draws(s, 2) and draws(s, 2) != draws(s, 3)                                   # seeded by (seed, epoch): resumable
++    assert draws(s, 2) != draws(D.DiversitySampler(windows, 16, feats, seed=2, chunk=8), 2)
++    assert draws(s, 0) != draws(D.ChunkedSampler(windows, 16, seed=1, chunk=8), 0)                      # a different stream from the uniform sampler's
++
++
++def test_io_locality_is_kept_a_run_of_batches_touches_about_one_chunk_of_clips(table):
++    windows, feats, _ = table
++    s = D.DiversitySampler(windows, 16, feats, seed=1, chunk=8)
++    batches = list(s.epoch(0))
++    worst = max(len({w[0] for b in batches[i:i + 6] for w in b}) for i in range(0, len(batches) - 6))   # 6 consecutive batches = 96 draws
++    assert worst <= 3 * 8, worst                                                                       # a few chunks at most (a low-mass chunk gets few draws, so a run can cross two boundaries); a global draw touches ~47 of the 60 clips
++
++
++def test_the_chunk_allocation_makes_the_expected_draws_exact_whatever_the_chunk_composition(table):
++    windows, feats, cells = table
++    s = D.DiversitySampler(windows, 16, feats, seed=0, chunk=8)
++    row = {(w[0], w[1]): i for i, w in enumerate(windows)}
++    cnt = np.zeros(25)
++    n_ep = 40
++    for ep in range(n_ep):
++        for ci, t, _, _ in draws(s, ep):
++            cnt[cells[row[(ci, t)]]] += 1
++    share = cnt / cnt.sum()
++    tgt = D.divrs_weights(cells)["target_share"]
++    big = tgt > 0.02
++    assert big.sum() >= 3 and np.all(np.abs(share[big] / tgt[big] - 1) < 0.05), (share[big], tgt[big])
++    assert cnt[tgt == 0].sum() == 0
++
++
++# ------------------------------------------------------------------------------------------------ card control 1
++def test_control_1_realised_cell_shares_over_2000_batches_are_within_20_percent_of_the_target(table):
++    windows, feats, _ = table
++    s = D.DiversitySampler(windows, 16, feats, seed=0, chunk=8)
++    res = D.check_cell_shares(s.epoch, windows, feats)
++    assert res["pass"] and res["n_batches"] == 2000 and res["worst_rel_err_resolved"] <= 0.20 and res["n_resolved"] >= 5 and res["draws_in_zero_target_cells"] == 0
++    assert all(r["expected_draws"] < D.DIVRS_MIN_EXPECTED for r in res["cells"] if r["target_share"] > 0 and not r["resolved"])      # an unresolved cell is listed with its expected count, never dropped
++    assert {u["cell"] for u in res["unresolved"]} == {r["cell"] for r in res["cells"] if r["target_share"] > 0 and not r["resolved"]}
++
++
++def test_control_1_fails_for_the_uniform_draw_the_deliberate_regression_arm(table):
++    windows, feats, _ = table
++    uni = D.ChunkedSampler(windows, 16, seed=0, chunk=8)
++    res = D.check_cell_shares(uni.epoch, windows, feats)
++    assert not res["pass"] and res["worst_rel_err_resolved"] > 0.5
++    worst = max((r for r in res["cells"] if r["resolved"]), key=lambda r: abs(r["rel_err"]))
++    assert worst["cell"] == 12 and worst["rel_err"] > 0.5                                                   # the straight, steady cell is drawn far above its target
++
++
++def test_control_1_fails_for_a_chunk_allocation_by_size_and_for_a_draw_without_weights_or_cap(table, monkeypatch):
++    windows, feats, _ = table
++    # (a) every chunk gets draws in proportion to its SIZE (the per-chunk renormalisation): the straight-dominated chunks are over-drawn
++    class BySize(D.DiversitySampler):
++        def epoch(self, ep):
++            rng = np.random.default_rng((self.seed, ep, 0xD1D5))
++            by_clip = {}
++            for i, w in enumerate(self.windows):
++                by_clip.setdefault(w[0], []).append(i)
++            order = rng.permutation(sorted(by_clip))
++            for c0 in range(0, len(order), self.chunk):
++                ch = np.array([i for c in order[c0:c0 + self.chunk] for i in by_clip[int(c)]])
++                pool = rng.choice(ch, size=len(ch), replace=True, p=self.p[ch] / self.p[ch].sum())
++                for b0 in range(0, len(pool), self.batch):
++                    yield [(self.windows[int(i)][0], self.windows[int(i)][1], 0, 0) for i in pool[b0:b0 + self.batch]]
++    # (the distortion is a ratio bias that grows as chunks shrink; chunk = 2 clips makes it plain, and the mass-proportional allocation must still pass there)
++    assert D.check_cell_shares(D.DiversitySampler(windows, 16, feats, seed=0, chunk=2).epoch, windows, feats)["pass"]
++    assert not D.check_cell_shares(BySize(windows, 16, feats, seed=0, chunk=2).epoch, windows, feats)["pass"]
++    # (b) no cap: the target the check computes (capped) is not what an uncapped sampler draws
++    assert not D.check_cell_shares(D.DiversitySampler(windows, 16, feats, seed=0, chunk=8, cap_mult=np.inf).epoch, windows, feats)["pass"]
++    # (c) the weights not applied: the draw inside a chunk is uniform over its windows
++    s = D.DiversitySampler(windows, 16, feats, seed=0, chunk=8)
++    s.p = np.ones(len(windows))
++    assert not D.check_cell_shares(s.epoch, windows, feats)["pass"]
++
++
++# ------------------------------------------------------------------------------------------------ the trainer half
++@pytest.fixture(scope="module")
++def init(tmp_path_factory):
++    root = tmp_path_factory.mktemp("divrs_tr")
++    assert TR.main(["--out", str(root / "m2b"), *BASE, "--log-every", "1", "--ckpt-every", "100", "--steps", "2"]) == 0
++    ck = root / "m2b" / "ckpt_last.pt"
++    return {"root": root, "ck": ck, "blob": torch.load(ck, map_location="cpu", weights_only=False)}
++
++
++def gate(init, name, extra=(), ck=True, base=BASE):
++    try:
++        rc = TR.main(["--out", str(init["root"] / name), *base, *(["--init-ckpt", str(init["ck"])] if ck else []), *extra, "--selfcheck-only"])
++    except SystemExit as e:
++        rc = e.code
++    return rc
++
++
++def sc_of(init, name):
++    return json.loads((init["root"] / name / "selfcheck.json").read_text(encoding="utf-8"))
++
++
++def refused(init, name, extra, ck=True, base=BASE, key="ZZDVB-REFUSEDZZ"):
++    rc = gate(init, name, extra, ck, base)
++    assert isinstance(rc, str) and key in rc, (name, rc)
++    return rc
++
++
++def test_the_flag_has_a_declared_vs_built_entry_and_defaults_to_uniform():
++    dests = {act.dest for act in TR.build_parser()._actions if act.dest != "help"}
++    assert "wm_sampler" in dests and dests == set(TR.FLAG_CHECKS) and TR.FLAG_CHECKS["wm_sampler"] == "data:wm_sampler"
++    assert TR.build_parser().parse_args(["--out", "x"]).wm_sampler == "uniform"
++    assert TR.build_parser().parse_args(["--out", "x", "--wm-sampler", "divrs"]).wm_sampler == "divrs"
++    with pytest.raises(SystemExit):
++        TR.build_parser().parse_args(["--out", "x", "--wm-sampler", "balanced"])
++
++
++def test_the_gate_passes_with_divrs_reads_the_built_sampler_back_and_runs_control_1(init):
++    assert gate(init, "g_divrs", [*WMO, "--wm-sampler", "divrs"]) == 0
++    sc = sc_of(init, "g_divrs")
++    rec = sc["levers"]["wm_sampler"]
++    assert rec["kind"] == "divrs" and rec["yaw_edges"] == [0.02, 0.05, 0.10, 0.20] and rec["acc_edges"] == [-1.0, -0.3, 0.3, 1.0] and rec["cap_mult"] == 10.0
++    assert sum(rec["cell_counts"]) == rec["n_windows"] == sc["info"]["n_windows"] and abs(sum(rec["target_share"]) - 1.0) < 1e-9
++    pr = sc["wm_sampler_probe"]
++    assert pr["pass"] and pr["n_batches"] == 2000 and pr["worst_rel_err_resolved"] <= 0.20 and pr["n_resolved"] >= 1
++    assert sc["live"]["pass"] and sc["live"]["control_nonwm_grad_sum"] == 0.0
++
++
++def test_an_argv_without_the_flag_builds_the_uniform_sampler_and_keeps_the_selfcheck_key_set(init):
++    assert gate(init, "g_uni", WMO) == 0
++    sc = sc_of(init, "g_uni")
++    assert "wm_sampler" not in sc["levers"] and "wm_sampler_probe" not in sc and sc["info"]["wm_sampler"]["kind"] == "uniform" and sc["info"]["wm_sampler"]["class"] == "ChunkedSampler"
++
++
++def test_the_gate_refuses_every_lie(init, monkeypatch):
++    assert "yaw" in refused(init, "r_steer", [*WMO, "--wm-sampler", "divrs", "--kin-mode", "steer"])
++    assert "no world model" in refused(init, "r_wm_off", ["--wm", "off", "--wm-sampler", "divrs"], ck=False, base=[b for b in BASE if b not in ("--arm", "M2b")] + ["--arm", "M1"])
++    # the deliberate-regression arm: the flag is set, the sampler built is the uniform one
++    monkeypatch.setattr(TR, "make_sampler", lambda a, cfg, wins, store, J, info: D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)), max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s))
++    assert "declared divrs but built uniform" in refused(init, "r_uniform_built", [*WMO, "--wm-sampler", "divrs"])
++    monkeypatch.undo()
++    # a bin edge drifted in the data module: the sampler reports its own edges, the gate compares them with the card's
++    monkeypatch.setattr(D, "DIVRS_YAW_EDGES", (0.02, 0.05, 0.10, 0.25))
++    assert "yaw_edges" in refused(init, "r_edge", [*WMO, "--wm-sampler", "divrs"])
++    monkeypatch.undo()
++    monkeypatch.setattr(D, "DIVRS_CAP_MULT", 100.0)
++    assert "cap_mult" in refused(init, "r_cap", [*WMO, "--wm-sampler", "divrs"])
++
++
++def test_the_control_1_probe_refuses_a_sampler_whose_record_says_divrs_but_whose_draws_are_uniform(init, monkeypatch):
++    """G-LIVE of the lever: the record is right (the gate passes), the draw is the uniform one (the line that applies the weights is gone); on a skewed cell table control 1 must refuse the launch."""
++    skew = np.random.default_rng(0).random
++    def skewed(store, J, wins, hmax):
++        cells = np.where(skew(len(wins)) < 0.8, 12, np.arange(len(wins)) % 25)
++        return feats_of_cells(cells)
++    monkeypatch.setattr(D, "window_act_means", skewed)
++    assert gate(init, "g_skew_ok", [*WMO, "--wm-sampler", "divrs"]) == 0                                    # the real sampler passes on the skewed table
++    monkeypatch.setattr(D.DiversitySampler, "epoch", D.ChunkedSampler.epoch)                                 # ... and the echo (record says divrs, draw is uniform) is refused
++    rc = refused(init, "r_echo", [*WMO, "--wm-sampler", "divrs"], key="wm-sampler control 1 failed")
++    assert "ZZDVB-REFUSEDZZ" in rc
++
++
++def test_a_whole_wm_only_run_reaches_the_loss_through_the_diversity_sampler_and_uniform_named_equals_absent(init, monkeypatch):
++    seen = {"n": 0, "draws": 0}
++    real = D.DiversitySampler.epoch
++    def spy(self, ep):
++        seen["n"] += 1
++        for b in real(self, ep):
++            seen["draws"] += len(b)
++            yield b
++    monkeypatch.setattr(D.DiversitySampler, "epoch", spy)
++    common = [*BASE, *WMO, "--init-ckpt", str(init["ck"]), "--steps", "6", "--log-every", "2", "--ckpt-every", "100"]
++    outs = {}
++    for name, extra in (("absent", []), ("named_uniform", ["--wm-sampler", "uniform"]), ("divrs", ["--wm-sampler", "divrs"])):
++        out = init["root"] / f"run_{name}"
++        assert TR.main(["--out", str(out), *common, *extra]) == 0
++        outs[name] = torch.load(out / "ckpt_last.pt", map_location="cpu", weights_only=False)["model"]
++    # the spy ran for the divrs run only (the gate's probe draws 2,000 batches, the run draws 6 batches x 16)
++    assert seen["n"] >= 2 and seen["draws"] >= 6 * 16
++    a, n, d = outs["absent"], outs["named_uniform"], outs["divrs"]
++    assert all(torch.equal(a[k], n[k]) for k in a), "--wm-sampler uniform named must be the flag absent, bit for bit"             # default off = identical
++    assert any(not torch.equal(a[k], d[k]) for k in a if k.startswith("wm.")), "divrs did not move the world model"            # the lever reaches the WM loss
++    base = init["blob"]["model"]
++    rest = [k for k in base if not k.startswith("wm.")]
++    assert rest and all(torch.equal(base[k], d[k]) for k in rest), "a non-WM tensor moved under divrs"                           # the planner is untouched
++    log = [json.loads(ln) for ln in (init["root"] / "run_divrs" / "train_log.jsonl").read_text(encoding="utf-8").splitlines()]
++    assert log and all(np.isfinite(r["wm"]) for r in log)
++
++
++def test_the_flag_reaches_a_full_m2b_run_through_the_loss(init):
++    out = init["root"] / "full_divrs"
++    assert TR.main(["--out", str(out), *BASE, "--wm-sampler", "divrs", "--steps", "2", "--log-every", "1", "--ckpt-every", "100"]) == 0
++    sc = json.loads((out / "selfcheck.json").read_text(encoding="utf-8"))
++    assert sc["levers"]["wm_sampler"]["kind"] == "divrs" and sc["wm_sampler_probe"]["pass"]
++    s = json.loads((out / "summary.json").read_text(encoding="utf-8"))
++    assert s["done"] is True and s["levers"]["wm_sampler"]["kind"] == "divrs"

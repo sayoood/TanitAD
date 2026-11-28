@@ -1,0 +1,78 @@
+diff --git a/stack/scripts/refc_v3_train.py b/stack/scripts/refc_v3_train.py
+index 203b437..fd87429 100644
+--- a/stack/scripts/refc_v3_train.py
++++ b/stack/scripts/refc_v3_train.py
+@@ -4237,7 +4237,8 @@ def _bn_recalib_finish(model, loader, args, device, out_dir, run_config, step):
+              else " | ⛔ " + rec["staleness_error"]), flush=True)
+ 
+ 
+-def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict):
++def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
++                    with_metrics: bool = True):
+     """refcv7 NEW-2 + A6 (SPEC_REFCV7 §6.2, §11): the 10 cm map term, WEIGHTED, or None.
+ 
+     Returns ``None`` when the branch is not built (``--map-hires off``: nothing
+@@ -4299,7 +4300,10 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict):
+         class_weight=getattr(model, "_map_hires_class_weight", None),
+         lift_valid_025=lv,
+         # the DECLARED rule, read off the BUILT branch config (G-DVB checks it)
+-        decision_rule=str(br.cfg.decision_rule))
++        decision_rule=str(br.cfg.decision_rule),
++        # ⭐ refcv7 step-cost lever 2 (2026-09-28): the per-class 10 cm signal is PURE
++        # (no_grad, no RNG) and only a LOG row reads it -- compute it on logged steps only.
++        with_metrics=bool(with_metrics))
+     extra["map_hires"] = row["loss"]
+     for k, v in row.items():
+         if k != "loss":
+@@ -4349,7 +4353,8 @@ def _train_row_scalars(losses: dict, model) -> dict:
+ 
+ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+                       mode: str = "diffusion",
+-                      ablate_frames: bool = False) -> dict:
++                      ablate_frames: bool = False,
++                      log_metrics: bool = True) -> dict:
+     cfg = model.cfg
+     core = cfg.core
+     # --u8-batches: uint8 in flight -> float32 [0,1] HERE, on the device, by
+@@ -5093,7 +5098,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+             # G-LIVE-PRES (A10 §15.2): the fraction of slots with sigma >= 0.5, every row.
+             extra["agent_presence_frac_confident"] = _slot_presence.presence_sanity(
+                 slots_ag["presence_logit"])["frac_confident"]
+-            if vis_ag is not None:
++            if vis_ag is not None and (bool(log_metrics) or not model.training):
+                 # LOGGING_SPEC_BOX §1 (the cheap census) every row; in EVAL mode the pack
+                 # itself too, POOLED by the eval loop (never a mean of batch ratios).
+                 _pk_ag = _det_metrics.window_packs(
+@@ -5516,7 +5521,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+                     presence_loss=str(_br.cfg.presence_loss), vis1=bool(_br.cfg.vis1),
+                     vis=_vis3)
+                 loss = loss + _w_b3d * _brow["loss"]
+-                if _vis3 is not None:
++                if _vis3 is not None and (bool(log_metrics) or not model.training):
+                     # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in
+                     # EVAL mode (pooled by the eval loop). The Hungarian set is only needed there.
+                     _pk_b3 = _det_metrics.window_packs(
+@@ -5543,7 +5548,9 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
+     # ⛔ ABSENT from the graph when the branch is not built (`None` -> nothing is
+     # added, nothing logged); with it built every missing input REFUSES. Under A6
+     # there is no 0.5 m map term to sit beside it (`--w-map 0` is pinned).
+-    _mh_term = _map_hires_loss(model, out, batch, device, extra)
++    # ⭐ step-cost lever 2: per-class signal on LOGGED train steps (and always in eval)
++    _mh_term = _map_hires_loss(model, out, batch, device, extra,
++                               with_metrics=bool(log_metrics) or not model.training)
+     if _mh_term is not None:
+         loss = loss + _mh_term
+ 
+@@ -9410,8 +9417,11 @@ def train(args) -> dict:
+         _wb_active = step >= args.withheld_bank_warmup
+         model.core.decoder.anchor_withheld_bank = (
+             args.withheld_bank if _wb_active else "fixed")
++        # ⭐ step-cost lever 2: `_logged_after` is the SAME test the log block below uses (the
++        # post-increment step), so every row that is written still carries every key.
+         losses = compute_losses_v3(model, batch, device, mode=args.mode,
+-                                   ablate_frames=args.ablate_frames)
++                                   ablate_frames=args.ablate_frames,
++                                   log_metrics=_logged_after(step, args.log_every, args.steps))
+         losses["withheld_bank_active"] = float(_wb_active)
+         # ⛔⛔ WP-D: THE LOSS-SCALE PARITY GATE, AT THE FIRST SUPERVISED STEP.
+         # `E-DEC-18b` MEASURED the sibling PSG term sitting 10-30x above the

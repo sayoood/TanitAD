@@ -1,0 +1,28 @@
+{
+ "id": "R8-WISEFT-MOD2",
+ "filed": "2026-10-21 17:05 Europe/Berlin (clock read 17:05:36), BEFORE any MOD2 arm is built, rolled or scored; the theta_PLAN PhysicalAI battery is running and no theta_PLAN PhysicalAI number exists",
+ "status": "PRE-REGISTERED attribution + candidate generation; never a bar; changes no registered verdict; no navtest read",
+ "why": "R8-WISEFT-MOD (53fbd63) put the NavSim loss in refcv8's PLANNING stack (theta_PLAN 73.93 / 73.86, share 0.81 / 0.81). Inside it, refcv8's training barely moved core.decoder (drift 0.037 over 15.26 M params) and moved the tactical stack a lot (core.tactical_trunk 0.53, lon_head_tac 0.83, lat_head_tac 0.59, nav_to_tac 0.42, scorer 0.31, phi_tac 0.26, tac_decoder_v6 0.26). theta_0.5's only SHIP-R8 failure is E1 (short-horizon progress). If theta_PLAN also fails E1, the cheapest next candidates are a narrower blend (one sub-stack) or a lighter blend (PLAN at lambda 0.75); their navtrain reads are computed now on the idle Thor so the next PhysicalAI battery can start without delay.",
+ "arms": {
+  "DEC": "lambda 0.5 on the PLAN keys under core.decoder. (168 keys, 15.26 M); everything else EMA-48,852",
+  "TAC": "lambda 0.5 on every other PLAN key (122 keys, 9.35 M); everything else EMA-48,852",
+  "PLAN75": "lambda 0.75 on all 290 PLAN keys (0.25 refcv7 + 0.75 refcv8); everything else EMA-48,852",
+  "builder": "build_wiseft_mod2.py; controls: DEC and TAC are complements whose union is the banked theta_PLAN (md5 47c7fdac...) bit-exactly; PLAN75 exact; outside each set == theta8; readback bit-exact"
+ },
+ "read": "navtrain registered sample (2,089 tokens / 30 logs), R8_LEGAL seeds 0/1, Thor CUDA roll (r8ns_wisemod2_LAUNCH.sh = R8-WISEFT-MOD's roll() unchanged) + Thor CPU scorer (navtrain_cache_score.py, the selection run's driver), gated on PREREG_ACK_MOD2.txt = this registration's landing commit. Paired log-cluster bootstrap B 2000 (bars8 pair_record).",
+ "rule": {
+  "admissible": "X - EMA-48,852 positive (interval excluding 0 at log_name; 7 drives < 8) at BOTH seeds with margin min(d_s0, d_s1) > 2 x |d_s0 - d_s1| (the stage-1 rule)",
+  "share": "share_X = (PDMS(X) - PDMS(EMA-48,852)) / (PDMS(theta_PLAN) - PDMS(EMA-48,852)) per seed, X in {DEC, TAC}",
+  "sub_locus": "X is THE SUB-LOCUS iff share_X >= 0.75 at both seeds AND X admissible; both < 0.75 => DISTRIBUTED within PLAN; both >= 0.75 => REDUNDANT",
+  "PLAN75": "admissible or not; its share of theta_PLAN's gain printed",
+  "controls": "K1 self-pair exactly 0; K2 the banked theta_PLAN (73.9306 / 73.8614) and EMA-48,852 (63.3907 / 63.0232) reproduce from their banked score CSVs; K3 identical token sets"
+ },
+ "committed": {
+  "candidates": "every ADMISSIBLE MOD2 arm becomes a PhysicalAI candidate read under R8-WISEFT-PAI's rule unchanged (per-frame battery, SHIP-R8 AMENDMENT 3, registered RETIME table)",
+  "family_selection_extended": "the family selection registered at bda74c7 (among arms that PASS SHIP-R8, the highest mean navtrain PDMS) is EXTENDED NOW to include the admissible MOD2 arms",
+  "order": "after theta_PLAN and theta_0.75: descending mean navtrain PDMS; an arm is NOT run when an arm that already PASSED has a higher mean navtrain PDMS (it could not be selected)",
+  "refcv9": "the sub-locus (if any) names the module refcv9 must protect"
+ },
+ "navtest": "NO navtest read under this registration (D-R8-WISE-NAVTEST, 8fd262e, is the PI's)",
+ "tier": "NavSim v1 open-loop PDMS (T1-family), navtrain sample; Las Vegas only; one training seed"
+}

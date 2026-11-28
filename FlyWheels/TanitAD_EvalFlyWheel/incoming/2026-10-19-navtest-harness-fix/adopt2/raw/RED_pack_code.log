@@ -1,0 +1,91 @@
+FFF                                                                      [100%]
+================================== FAILURES ===================================
+________________ test_bundle_carries_run_v1_fix1_beside_run_v1 ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000015E62FF2C40>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5814/test_bundle_carries_run_v1_fix0')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000015E6304CC20>
+
+    def test_bundle_carries_run_v1_fix1_beside_run_v1(monkeypatch, tmp_path, capsys):
+        patches, ev, w3 = _fake_tree(tmp_path)
+        pc, out = _pack(monkeypatch, tmp_path, patches, ev)
+        assert pc.main() == 0
+        with tarfile.open(out) as tf:
+            names = tf.getnames()
+            assert "w3code/run_v1.py" in names
+>           assert "w3code/run_v1_fix1.py" in names, "the bundle ships run_v1.py WITHOUT run_v1_fix1.py"
+E           AssertionError: the bundle ships run_v1.py WITHOUT run_v1_fix1.py
+E           assert 'w3code/run_v1_fix1.py' in ['e1/navsim_win.py', 'freeze/driverl_eval_venv_freeze.txt', 'freeze/navsim_crun_venv_freeze.txt', 'manifests/db_manifest_sub200.json', 'manifests/maps_manifest.json', 'navtest/e6_linux.py', ...]
+
+colab\navtest\test_pack_code_fix1.py:97: AssertionError
+---------------------------- Captured stdout call -----------------------------
+ZZCODE_OK 25 files, 879 B
+__________________ test_missing_run_v1_fix1_stops_the_packer __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000015E62FF15B0>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5814/test_missing_run_v1_fix1_stops0')
+
+    def test_missing_run_v1_fix1_stops_the_packer(monkeypatch, tmp_path):
+        """A bundle must never be built without it (linux_run_v1.py would exit on the VM, after the upload)."""
+        patches, ev, _ = _fake_tree(tmp_path, with_fix1=False)
+        pc, out = _pack(monkeypatch, tmp_path, patches, ev)
+>       with pytest.raises(FileNotFoundError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE FileNotFoundError
+
+colab\navtest\test_pack_code_fix1.py:109: Failed
+---------------------------- Captured stdout call -----------------------------
+ZZCODE_OK 25 files, 879 B
+_________ test_chain_pack_extract_load_w3_reaches_the_patched_module __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000015E63016F90>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5814/test_chain_pack_extract_load_w0')
+
+    def test_chain_pack_extract_load_w3_reaches_the_patched_module(monkeypatch, tmp_path):
+        """pack (REAL W3 pair) -> extract w3code/ -> linux_run_v1.load_w3: the loader finds fix1 in the packed dir."""
+        if not (os.path.isfile(os.path.join(REAL_W3, "run_v1.py"))
+                and os.path.isfile(os.path.join(REAL_W3, "run_v1_fix1.py"))):
+            pytest.skip(f"real W3 pair not in this checkout: {REAL_W3}")
+        patches, ev, _ = _fake_tree(tmp_path)
+        patches["W3C"] = REAL_W3
+        pc, out = _pack(monkeypatch, tmp_path, patches, ev)
+        assert pc.main() == 0
+        dest = tmp_path / "vm"
+        with tarfile.open(out) as tf:
+            for m in tf.getmembers():
+                if m.name.startswith("w3code/"):      # what the VM unpacks: plain files only in this tar
+                    (dest / m.name).parent.mkdir(parents=True, exist_ok=True)
+                    (dest / m.name).write_bytes(tf.extractfile(m).read())
+        launcher = _load(LAUNCHER, "linux_run_v1_for_pack_chain")
+        a = argparse.Namespace(w3_code=str(dest / "w3code"), nv_py="NVPY", v11_tree="V11", exp=str(tmp_path / "exp"),
+                               openscene="OSC", maps="MAPS", e1_wrapper="E1.py", nuplan_tree="NUP",
+                               windowspath_shim=False, out=str(tmp_path / "out"))
+>       w3 = launcher.load_w3(a)
+             ^^^^^^^^^^^^^^^^^^^
+
+colab\navtest\test_pack_code_fix1.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a = Namespace(w3_code='C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-5814\\test_chain_pack_extract_load_...alse, out='C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-5814\\test_chain_pack_extract_load_w0\\out')
+
+    def load_w3(a):
+        # NT-FIX1 (2026-10-19): W3's run_v1.py is loaded THROUGH run_v1_fix1.load() (it sits beside run_v1.py in the
+        # bundle's w3code/), which byte-verifies run_v1.py against its pinned sha256 and adds three fixes measured on
+        # RL-1's V1 navtest: (A) a cross-drive os.path.relpath no longer crashes the report, (B) stale *.csv from an
+        # earlier attempt are moved to quarantine_* before scoring, (C) a count-mismatched CSV prints and stores NO
+        # summary. A missing run_v1_fix1.py is a hard stop, never a fallback to the unfixed module.
+        # FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-19-navtest-harness-fix/RESULT.md
+        fix1_path = os.path.join(a.w3_code, "run_v1_fix1.py")
+        if not os.path.isfile(fix1_path):
+>           sys.exit(f"{fix1_path} is missing: pack_code.py must ship run_v1_fix1.py beside run_v1.py in w3code/")
+E           SystemExit: C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-5814\test_chain_pack_extract_load_w0\vm\w3code\run_v1_fix1.py is missing: pack_code.py must ship run_v1_fix1.py beside run_v1.py in w3code/
+
+colab\navtest\linux_run_v1.py:42: SystemExit
+---------------------------- Captured stdout call -----------------------------
+ZZCODE_OK 25 files, 16,477 B
+=========================== short test summary info ===========================
+FAILED colab/navtest/test_pack_code_fix1.py::test_bundle_carries_run_v1_fix1_beside_run_v1
+FAILED colab/navtest/test_pack_code_fix1.py::test_missing_run_v1_fix1_stops_the_packer
+FAILED colab/navtest/test_pack_code_fix1.py::test_chain_pack_extract_load_w3_reaches_the_patched_module
+3 failed in 0.96s
+rc=1

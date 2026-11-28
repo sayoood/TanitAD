@@ -1,0 +1,60 @@
+{
+ "output": "/home/nvidia/gmo_early_0327/weights/map_hires_class_weights_train_100x30.json",
+ "output_sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+ "script": "/home/nvidia/gmo_early_0327/code/stack/scripts/compute_map_class_weights.py",
+ "script_git_blob": "8012922f1c6027421c2857eb9e43a6cae84294ef",
+ "argv": [
+  "--v2-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-train",
+  "--gt-root",
+  "/home/nvidia/data/sam3_gt_v3",
+  "--split",
+  "train",
+  "--out",
+  "/home/nvidia/gmo_early_0327/weights/map_hires_class_weights_train_100x30.json"
+ ],
+ "argv_defaults_in_effect": {
+  "x_max_m": 100.0,
+  "y_half_m": 30.0,
+  "definition": "sqrt_mf",
+  "clip_max": 25.0,
+  "frame_stride": 1,
+  "min_coverage": 0.9,
+  "weight_floor": 0.0
+ },
+ "code_tree": "b4a59b9 + NEW-2 candidate, shipped md5-verified (2,828 files)",
+ "python": "/home/nvidia/venvs/tanitad-train/bin/python",
+ "checks": {
+  "schema": "tanitad.map_hires_class_weights/1",
+  "dry_run": false,
+  "definition_id": "sqrt_mf",
+  "pre_registered": true,
+  "extent": {
+   "x_max_m": 100.0,
+   "y_half_m": 30.0
+  },
+  "split": "train",
+  "n_clips_used": 4369,
+  "weights": [
+   0.14101280705182365,
+   0.20596274047729562,
+   0.939417310793307,
+   1.0740514075923067,
+   2.957174122392341,
+   1.571183221356229,
+   2.152963655326075,
+   0.16493747629297098
+  ],
+  "classes": [
+   "seen, no map class",
+   "drivable",
+   "lane / road line",
+   "crosswalk",
+   "arrow / text",
+   "non-drivable edge",
+   "hatched area",
+   "sidewalk / verge"
+  ]
+ },
+ "valid_for_launch_form": true
+}

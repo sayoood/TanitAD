@@ -1,0 +1,41 @@
+FORWARD FINISHED Thu Sep 17 03:23:04     2026
+=== perception Thu Sep 17 03:23:04     2026 ===
+perception EXIT=1
+  File "C:\Users\Admin\tanitad-wt-e2e\stack\tanitad\models\box3d_head.py", line 259, in __init__
+    raise ValueError(
+    ...<3 lines>...
+        f"LATENT carries). Pass enforce_band=False for shape tests.")
+ValueError: Box3DSlotDecoder has 749,591 params -- outside the §6 pre-registered band (2000000, 4000000) (the AgentSlotDecoder rule, unchanged: a bigger head stops measuring what the LATENT carries). Pass enforce_band=False for shape tests.
+=== forensics Thu Sep 17 03:23:14     2026 ===
+forensics EXIT=0
+  "both_zero_as_shipped": false,
+  "verdict": "GATED_RECOVERABLE",
+  "gate_side": "goal_gate"
+ }
+}
+=== tactical Thu Sep 17 03:27:36     2026 ===
+tactical EXIT=1
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] ⛔ --agents head with --w-agent 0 builds a detector that is never supervised. Its tokens would be noise, the zero-init gate would have no reason to open, and the arm would read as 'agent tokens do not help' — a REFUTATION manufactured by a missing loss. Pass --w-agent > 0, or use --agents oracle (which needs no detector loss).
+=== identity Thu Sep 17 03:27:42     2026 ===
+identity EXIT=0
+  "fmap_s16"
+ ],
+ "bit_identical": false,
+ "max_abs_delta_overall": 0.0
+}
+=== cost Thu Sep 17 03:28:01     2026 ===
+cost EXIT=0
+  ],
+  "cpu_s_for_139_clips_measured_rate": 5470.815880775452,
+  "caveat": "COMPUTE ONLY. A real pod step is bounded by the PNG decode and the v2 LRU as often as by the GPU -- the epcache rule (CLAUDE.md: price what the CONSUMER reads)."
+ }
+}
+=== summarize Thu Sep 17 03:28:08     2026 ===
+summarize EXIT=0
+  "branch_tip",
+  "refs",
+  "verdict"
+ ]
+}
+ALL_ARMS_DONE Thu Sep 17 03:28:09     2026

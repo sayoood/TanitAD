@@ -1,0 +1,46 @@
+MUTATION PROOF  2026-10-28 00:22:30  tree=F:/TanitAD-scratch/compose_mut
+tests: stack/tests/test_v8f_ego_dagger_compose.py  sha256 fb69ef4f190bf676  (the unmutated trainer 6085d4b5c54d2c7e, data lib f1f54c36e969d665)
+CONTROL (no mutation) -k 'composition_overlap or overlap_guard or glive_a_composed or glive_deliberate or gdvb or ego_exclude or refused or exclusivity': rc=0  [19 passed, 7 deselected in 211.82s (0:03:31)]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'flag_off_reproduces': rc=0  [1 passed, 25 deselected in 82.37s (0:01:22)]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'glive_a_composed': rc=0  [1 passed, 25 deselected in 52.44s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'overlap_guard': rc=0  [1 passed, 25 deselected in 34.74s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'real_composed_run': rc=0  [1 passed, 25 deselected in 53.80s]   <- must be 0 (GREEN)
+M01_ego_apply_deleted_on_composed_path: RED (killed)  rule: delete the perturbation's apply on the composed path
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 64.48s (0:01:04)]
+M02_swap_deleted_on_composed_path: RED (killed)  rule: delete the swap's apply on the composed path
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 51.27s]
+M03a_exclusion_not_passed: RED (killed)  rule: the composed call does not pass the swap's mask to the perturbation
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 53.09s]
+M03b_exclusion_ignored_in_perturber: RED (killed)  rule: EgoPerturb.eligible_free ignores the mask (the overlap guard's other half)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 53.41s]
+M03c_overlap_guard_deleted: RED (killed)  rule: delete the overlap guard (the raise) -- the exclusion intact
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_overlap_guard_refuses_a_perturber_that_ignores_the_exclusion   [1 failed, 25 deselected in 17.44s]
+M03d_exclusion_and_guard_both_gone: RED (killed)  rule: the exclusion ignored AND the guard deleted: only the MEASURED overlap can see it
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 26.41s]
+M04_loop_call_deleted: RED (killed)  rule: delete `b = comp.apply(b, step)` in the loop
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 25 deselected in 25.66s]
+M05_loop_never_composes: RED (killed)  rule: the loop's `if comp.on:` is never true: a composed argv runs the two original lines
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 25 deselected in 25.58s]
+M06_compose_probe_not_run: RED (killed)  rule: the composed G-LIVE probe is not run
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 27.75s]
+M07_gdvb_clause_deleted: RED (killed)  rule: delete the G-DVB read-back (bad_ego_dagger)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_flag_with_either_lever_at_p_zero_is_refused_as_a_lever_declared_without_effect[<lambda>-msgs0]   [1 failed, 2 passed, 7 deselected in 20.19s]
+M08_exclusivity_not_lifted: RED (killed)  rule: the exclusivity is not lifted by the flag
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_gdvb_the_control_reads_clean_and_the_flag_is_read_back_from_the_built_stage   [1 failed, 6 passed, 7 deselected in 18.74s]
+M09_exclusivity_always_lifted: RED (killed)  rule: the exclusivity is lifted without the flag
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_without_the_flag_the_old_exclusivity_still_fires   [1 failed, 1 passed, 7 deselected in 20.50s]
+M10_ego_probe_on_composed_deleted: RED (killed)  rule: the existing ego_perturb_probe is not run on the composed batch
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 35.36s]
+M11_p0_control_is_p1: RED (killed)  rule: the probe's p = 0 control is really p = 1
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 48.59s]
+M12_ego_probe_exclusion_dropped: RED (killed)  rule: ego_perturb_probe ignores the exclusion mask (runs on the composed batch as if unmasked)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 7 deselected in 48.18s]
+M13_off_path_changed: RED (killed)  rule: the flag-off path draws differently (eligible set shrunk when exclude is None)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit   [1 failed, 25 deselected in 33.40s]
+M14_overlap_not_recorded: RED (killed)  rule: summary.json does not carry the overlap / the flag
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 25 deselected in 45.84s]
+M15_levers_flag_false: RED (killed)  rule: the selfcheck's levers.ego_perturb_with_dagger is not what was built
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 25 deselected in 34.88s]
+M16_checkpoint_loses_overlap_total: RED (killed)  rule: the composed checkpoint does not carry the overlap total (a resume would lose it)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 25 deselected in 39.55s]
+SUMMARY: 19/19 mutants killed; survivors: none

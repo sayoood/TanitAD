@@ -1,0 +1,190 @@
+{
+ "_what": "mutation proof that the --trunk-dedup-frames tests can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tests\\test_trunk_dedup_frames.py": "a382377db600bf309fcd88a61fca5fcb",
+  "stack\\tanitad\\models\\timm_trunk.py": "1384ff2ee165a4300428a1bf63f9bb09",
+  "stack\\tanitad\\refs\\refc.py": "af4af8869832a36293c8902f7ebb3f0b",
+  "stack\\scripts\\refc_v3_train.py": "0502d33e5a08b32b765b0a719edd786c"
+ },
+ "arms": [
+  {
+   "arm": "D1_overlap_check_always_same",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_SLOT_gets_the_features_the_plain_backbone_computes",
+    "test_forward_features_and_GRADIENTS_are_the_same_function",
+    "test_it_COMPUTES_only_the_distinct_frames_and_says_so",
+    "test_NO_overlap_computes_every_slot_and_still_matches",
+    "test_ONE_corrupted_overlapping_frame_is_NOT_reused",
+    "test_composes_with_chunked_checkpointing_bf16_nhwc_and_fold"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D2_overlap_check_wrong_frames",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_it_COMPUTES_only_the_distinct_frames_and_says_so",
+    "test_ONE_corrupted_overlapping_frame_is_NOT_reused",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D3_reused_slots_point_at_the_wrong_frames",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_SLOT_gets_the_features_the_plain_backbone_computes",
+    "test_forward_features_and_GRADIENTS_are_the_same_function",
+    "test_ONE_corrupted_overlapping_frame_is_NOT_reused",
+    "test_composes_with_chunked_checkpointing_bf16_nhwc_and_fold"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D4_newest_frame_never_computed",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_SLOT_gets_the_features_the_plain_backbone_computes",
+    "test_forward_features_and_GRADIENTS_are_the_same_function",
+    "test_it_COMPUTES_only_the_distinct_frames_and_says_so",
+    "test_ONE_corrupted_overlapping_frame_is_NOT_reused",
+    "test_composes_with_chunked_checkpointing_bf16_nhwc_and_fold",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D5_STAMPED_but_NOT_APPLIED",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_it_COMPUTES_only_the_distinct_frames_and_says_so",
+    "test_NO_overlap_computes_every_slot_and_still_matches",
+    "test_ONE_corrupted_overlapping_frame_is_NOT_reused",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D6_trunk_dedups_a_training_bn",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_lever_REFUSES_where_it_would_change_the_function"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D7_trainer_accepts_dedup_without_frozen",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D8_trainer_does_not_pin_the_flag",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D9_build_encoder_drops_the_flag",
+   "file": "stack\\tanitad\\refs\\refc.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D10_stamp_is_a_constant",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D11_log_counter_never_reset",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D12_log_reads_the_last_call_only",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D13_gather_order_reversed_within_a_row",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_SLOT_gets_the_features_the_plain_backbone_computes",
+    "test_forward_features_and_GRADIENTS_are_the_same_function",
+    "test_NO_overlap_computes_every_slot_and_still_matches",
+    "test_ONE_corrupted_overlapping_frame_is_NOT_reused",
+    "test_composes_with_chunked_checkpointing_bf16_nhwc_and_fold",
+    "test_a_real_train_LOGS_that_it_computed_fewer_frames_than_slots"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "D14_refc_refusal_ignores_dedup",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 14,
+ "arms_total": 14,
+ "_VERDICT": "MUTATION-PROVEN -- all 14/14 arms RED, including the dedup stamped but not applied and the slot map off by one; all files restored byte-identical and the final clean run is green."
+}

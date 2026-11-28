@@ -1,0 +1,16 @@
+UNMUTATED: rc=0 failed=[] | 28 passed in 6.48s
+N1 E1 injects the donor nav at T instead of S: RED (caught) rc=1 failed=['test_e1_arm_equals_listens_qnav_nav_at_S_arm_and_the_S_cell', 'test_e1_injects_the_donor_nav_at_S_only_and_the_change_flows_down', 'test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N2 E1 injects the donor nav at S AND T: RED (caught) rc=1 failed=['test_e1_arm_equals_listens_qnav_nav_at_S_arm_and_the_S_cell', 'test_e1_injects_the_donor_nav_at_S_only_and_the_change_flows_down', 'test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N3 E3 joint triple drops the T code: RED (caught) rc=1 failed=['test_e3_joint_triple_hands_O_one_donors_ego_ck_and_code_only', 'test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N4 the mean scene ignores the pad mask: RED (caught) rc=1 failed=['test_means_equal_an_independent_per_window_computation']
+N5 every layer's mean token is taken at O's (NOW) tick: RED (caught) rc=1 failed=['test_means_differ_across_layers_that_read_at_different_ticks', 'test_means_equal_an_independent_per_window_computation']
+N6 the mean-age replacement is zeros for a_t: RED (caught) rc=1 failed=['test_every_mean_cell_hands_the_reader_the_mean_and_nothing_else']
+N7 O's mean cell leaves T's code in place: RED (caught) rc=1 failed=['test_every_mean_cell_hands_the_reader_the_mean_and_nothing_else']
+N8 the mean scene is entirely padded: RED (caught) rc=1 failed=['test_every_mean_cell_hands_the_reader_the_mean_and_nothing_else']
+N9 the own-value control hands T the checkpoints in O's frame: RED (caught) rc=1 failed=['test_the_windows_own_value_through_the_mean_path_is_the_clean_pass_bit_for_bit']
+N10 the mean mode uses the window's own value: RED (caught) rc=1 failed=['test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N11 the mean divides by n + 1: RED (caught) rc=1 failed=['test_means_equal_an_independent_per_window_computation']
+N12 T's mean checkpoints are taken in O's frame: RED (caught) rc=1 failed=['test_means_equal_an_independent_per_window_computation']
+N13 the collector stores the CLEAN trajectory as the E1 arm: RED (caught) rc=1 failed=['test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+N14 the collector stores a single swap as the E3 joint: RED (caught) rc=1 failed=['test_pipeline_runs_and_the_identity_and_own_controls_read_exactly_zero']
+ALL MUTATIONS CAUGHT AND THE UNMUTATED MODULE IS GREEN

@@ -1,0 +1,69 @@
+--- a/refe/launch_gate.py
++++ b/refe/launch_gate.py
+@@ -462,6 +462,10 @@
+ SCORER1_RECIPE = {**{k: v for k, v in SFT4R_RECIPE.items() if k not in ("max_updates", "eval_every", "seed")}, "max_updates": SCORER1_UPDATES, "eval_every": 200}      # seed is per ARM
+ SCORER1_ARM_SEED = {"C0": 0, "C0r": 1, "S1": 0}
+ SCORER1_PAIR_DV, SCORER1_PAIR_HEADS = 0.15, "NC,DAC,TTC"
++# S1L (AMENDMENT_2 "The lane head" + AMENDMENT_3): C0 + lambda_p * L_pair over NC,DAC,TTC,lane, seed 0, 400 updates.  Its OWN profile `refe_scorer1l` (so refe_scorer1's fingerprint and its three-arm table do not move);
++# the argv is scorer1_argv("S1L"): S1's pin with --pair-heads NC,DAC,TTC,lane and --out .../s1l.
++SCORER1L_ARM_SEED = {"S1L": 0}
++SCORER1L_PAIR_HEADS = "NC,DAC,TTC,lane"
+ SCORER1_FORBIDDEN = tuple(f for f in SFT4R_FORBIDDEN if f != "--max-updates") + ("--pair-calibrate", "--dump-scores")
+ SCORER1_SUITE = ([{"script": "test_pair_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1_gate.py", "token": "ZZTEST_PASS"},
+                   {"script": "test_scorer1_mutation.py", "token": "ZZTEST_PASS"},
+@@ -475,9 +479,9 @@
+     --pair-calibrate): `pair_w` None builds the pin WITHOUT it; scorer1_refusals then demands a positive finite --pair-w."""
+     toks = SFT4R_ARGV.replace("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt", "--ckpt " + SCORER1_CKPT).split()
+     toks = toks[:toks.index("--out")]
+-    toks += ["--navtest-logs", SCORER1_NAVTEST_LOGS, "--navtest-tokens", SCORER1_NAVTEST_TOKENS, "--max-updates", str(SCORER1_UPDATES), "--eval-every", "200", "--seed", str(SCORER1_ARM_SEED[arm])]
+-    if arm == "S1":
+-        toks += ["--pair-heads", SCORER1_PAIR_HEADS, "--pair-dv", str(SCORER1_PAIR_DV)] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
++    toks += ["--navtest-logs", SCORER1_NAVTEST_LOGS, "--navtest-tokens", SCORER1_NAVTEST_TOKENS, "--max-updates", str(SCORER1_UPDATES), "--eval-every", "200", "--seed", str({**SCORER1_ARM_SEED, **SCORER1L_ARM_SEED}[arm])]
++    if arm in ("S1", "S1L"):
++        toks += ["--pair-heads", SCORER1L_PAIR_HEADS if arm == "S1L" else SCORER1_PAIR_HEADS, "--pair-dv", str(SCORER1_PAIR_DV)] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
+     return toks + ["--out", SCORER1_ROOT + "/" + arm.lower()]
+ 
+ 
+@@ -504,6 +508,7 @@
+                             "ckpt_sha256": SCORER1_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256,
+                             "clock_na": "SCORER1 has no label clock of its own: it trains on the SFT-4R PDM relabel of the on-policy bank (G-DVB asserts the coverage and 0 stale from the trainer's data event), "
+                                         "on a frozen generator"}
++PROFILES["refe_scorer1l"] = {**PROFILES["refe_scorer1"], "name": "refe_scorer1l", "scorer1_arm_seed": SCORER1L_ARM_SEED, "scorer1_pair_heads": SCORER1L_PAIR_HEADS, "scorer1_pair_arms": ("S1L",)}
+ 
+ # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+ # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+@@ -1063,12 +1068,14 @@
+     import gate_checks as C
+     name, out = prof["name"], []
+     outs = GT.flag_values(argv, "--out") or []
+-    arm = next((a for a in SCORER1_ARM_SEED if outs == [SCORER1_ROOT + "/" + a.lower()]), None)
++    arm_seed, pair_arms = prof.get("scorer1_arm_seed") or SCORER1_ARM_SEED, prof.get("scorer1_pair_arms") or ("S1",)          # refe_scorer1l overrides all three; refe_scorer1 reads the defaults
++    pheads = prof.get("scorer1_pair_heads") or SCORER1_PAIR_HEADS
++    arm = next((a for a in arm_seed if outs == [SCORER1_ROOT + "/" + a.lower()]), None)
+     if arm is None:
+-        return [f"{name}: --out {' '.join(outs)} is none of the three arm dirs {[SCORER1_ROOT + '/' + a.lower() for a in SCORER1_ARM_SEED]}"], ()
++        return [f"{name}: --out {' '.join(outs)} is none of the arm dirs {[SCORER1_ROOT + '/' + a.lower() for a in arm_seed]}"], ()
+     pw = GT.flag_values(argv, "--pair-w")
+     pin_argv = list(argv)
+-    if arm == "S1":
++    if arm in pair_arms:
+         try:
+             wv = float(pw[0]) if pw and len(pw) == 1 else None
+         except ValueError:
+@@ -1082,11 +1089,11 @@
+         return out, ()
+     rs, _ = sft4r_refusals(prof, argv, mod, parser)
+     out += rs
+-    if ns.seed != SCORER1_ARM_SEED[arm]:
+-        out.append(f"{name} ({arm}) requires --seed {SCORER1_ARM_SEED[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
+-    if arm == "S1":
+-        if ns.pair_calibrate or ns.pair_heads != SCORER1_PAIR_HEADS or not C._close(ns.pair_dv, SCORER1_PAIR_DV):
+-            out.append(f"{name} (S1) requires --pair-heads {SCORER1_PAIR_HEADS} --pair-dv {SCORER1_PAIR_DV} and no --pair-calibrate")
++    if ns.seed != arm_seed[arm]:
++        out.append(f"{name} ({arm}) requires --seed {arm_seed[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
++    if arm in pair_arms:
++        if ns.pair_calibrate or ns.pair_heads != pheads or not C._close(ns.pair_dv, SCORER1_PAIR_DV):
++            out.append(f"{name} ({arm}) requires --pair-heads {pheads} --pair-dv {SCORER1_PAIR_DV} and no --pair-calibrate")
+         out += [f"scorer_finetune refuses this argv: {m}" for m in mod.pair_refusals(ns)]
+     else:
+         named = [f for f in ("--pair-w", "--pair-dv", "--pair-heads", "--pair-calibrate") if f in argv]

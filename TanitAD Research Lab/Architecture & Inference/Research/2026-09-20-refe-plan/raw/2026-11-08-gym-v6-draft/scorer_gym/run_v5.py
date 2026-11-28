@@ -1,0 +1,95 @@
+"""REWARD-1 driver (PREREG_REWARD_1.md). Same as run_v4.do_state plus the q_free floor and a ladder-only command.
+usage: run_v5.py main|ttcoff|ladder --floor 0.20 --workers 4 --out DIR [--range lo:hi]
+  main   : states 0..19 (full-arm tier): fixes ON, 24 arms x {log, idm}, regression policies, constant-speed ladder.
+  ttcoff : states 0..19, diagnostic truth run for the ttc guard bar.
+  ladder : states lo..hi-1 of the fixed ordered list, only the six ladder rungs (log mode).
+--floor is REQUIRED (no default) so a launch names the lever it tests. Failed builds go to errors.jsonl and are counted, never replaced."""
+import argparse, gzip, json, multiprocessing as mp, os, sys, time, traceback
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import numpy as np
+import gym_env as g
+import reward1 as r1
+from run_v4 import slim, MODES
+
+
+def do_state(args):
+    idx, st, cmd, floor, curve_arc = args
+    try:
+        return _do_state(idx, st, cmd, floor, curve_arc)
+    except Exception as e:
+        return dict(idx=idx, error=repr(e), tb=traceback.format_exc()[-1500:], state=st)
+
+
+def _do_state(idx, st, cmd, floor, curve_arc=None):
+    t_all = time.perf_counter()
+    off = cmd == "ttcoff"
+    S = g.GymState(st, fixes="on", ttc_mode="off" if off else None, ttc_shadow=True, q_free_floor=floor, curve_min_seg_m=curve_arc)
+    ev = S.evaluator
+    assert ev.q_free_floor == floor
+    res = dict(idx=idx, state=st, limit=S.limit, floor=floor, v0=float(S.ego0.dynamic_car_state.rear_axle_velocity_2d.x),
+               n_obj0=len(S.obs0.tracked_objects.tracked_objects), build=dict(S.timer.t), arms={}, reg={}, ladder={},
+               pdm_best=int(np.argmax(S.pdm_scores)), pdm_scores=[float(x) for x in S.pdm_scores],
+               map=dict(slack=ev.map_slack_m, unreliable=bool(ev.map_unreliable), t0_overshoot=ev.t0_overshoot_m,
+                        centreline_overshoot=ev.centreline_overshoot_m, prescreen_flag=bool(ev.map_unreliable_prescreen)))
+    if cmd in ("main", "ttcoff"):
+        for mode in MODES:
+            for k in range(len(S.proposals)):
+                t0 = time.perf_counter()
+                logs = S.rollout(k, mode)
+                res["arms"][f"{mode}:{k}"] = dict(wall=time.perf_counter() - t0, ret=g.episode_return(logs), logs=slim(logs))
+        res["timer_main"] = dict(S.timer.t)
+    if cmd == "main":
+        for pol, modes in (("slowest", ("log",)), ("fastest", MODES), ("stop", ("log",))):
+            ft = S.first_traj_for(pol)
+            for mode in modes:
+                logs = S.rollout(-1, mode, policy=pol, first_traj=ft, timer=g.Timer())
+                res["reg"][f"{pol}:{mode}"] = dict(ret=g.episode_return(logs), logs=slim(logs))
+    if cmd in ("main", "ladder"):
+        t_l = time.perf_counter()
+        for name, vt in S.ladder_targets():
+            logs = S.ladder_rollout(vt, "log")
+            res["ladder"][name] = dict(vt=vt, ret=g.episode_return(logs), logs=slim(logs))
+        res["ladder_wall"] = time.perf_counter() - t_l
+    res["wall_task"] = time.perf_counter() - t_all
+    return res
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("cmd", choices=["main", "ttcoff", "ladder"])
+    ap.add_argument("--floor", type=float, required=True)
+    ap.add_argument("--curve-arc", type=float, default=None, help="v6: curve_speed min centreline segment in m (default None = v5 behaviour)")
+    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--range", type=str, default=None)
+    a = ap.parse_args()
+    assert a.workers <= 4
+    os.makedirs(a.out, exist_ok=True)
+    sts = r1.load_states_v5()
+    if a.cmd == "ladder":
+        lo, hi = [int(x) for x in a.range.split(":")]
+        assert r1.N_FULL <= lo < hi <= r1.CAP
+    else:
+        lo, hi = 0, r1.N_FULL
+    json.dump([sts[i] for i in range(lo, hi)], open(os.path.join(a.out, "states_used.json"), "w", encoding="utf-8"))
+    tasks = [(i, sts[i], a.cmd, a.floor, a.curve_arc) for i in range(lo, hi)]
+    t0 = time.perf_counter()
+    done = 0
+    nerr = 0
+    with mp.get_context("spawn").Pool(a.workers) as pool, gzip.open(os.path.join(a.out, "states.jsonl.gz"), "wt", encoding="utf-8") as fo, \
+            open(os.path.join(a.out, "errors.jsonl"), "w", encoding="utf-8") as fe:
+        for r in pool.imap_unordered(do_state, tasks):
+            if "error" in r:
+                fe.write(json.dumps(r) + "\n"); fe.flush(); nerr += 1
+                print(f"state {r['idx']} BUILD/RUN ERROR {r['error']}", flush=True)
+            else:
+                fo.write(json.dumps(r) + "\n"); fo.flush()
+            done += 1
+            print(f"state {r['idx']} done wall={r.get('wall_task', 0):.1f}s ({done}/{len(tasks)})", flush=True)
+    json.dump(dict(total_wall_s=time.perf_counter() - t0, workers=a.workers, n_states=len(tasks), n_errors=nerr, cmd=a.cmd, seed=r1.SEED_V5,
+                   floor=a.floor, curve_min_seg=a.curve_arc, range=[lo, hi]), open(os.path.join(a.out, "run_meta.json"), "w", encoding="utf-8"))
+    print("RUN_DONE", time.perf_counter() - t0, flush=True)
+
+
+if __name__ == "__main__":
+    main()

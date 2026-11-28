@@ -1,0 +1,1748 @@
+diff --git a/stack/scripts/launch_gate.py b/stack/scripts/launch_gate.py
+--- a/stack/scripts/launch_gate.py
++++ b/stack/scripts/launch_gate.py
+@@ -66,6 +66,20 @@
+          OPEN goes in `pi_pending_values` and makes the token PI-DECISION (empty for refcv7 today).
+   Every argv-only profile rule is re-derived INSIDE `finalize`: a stand-alone `finalize` cannot
+   mint a token that `run` would refuse.
++
++  v7f profile (`train_v6_staged.py`, PI R1-R6 2026-09-27; `…/2026-09-27-v7f-refav1-state/v7f_gate/
++  DESIGN.md`): a second trainer FAMILY (`family: "v6"`) -- the same seven checks over the v6 trainer's
++  own seams (`job_model_v6`, `job_smoke_v6`), the same token. G-DVB reads the registry
++  `tanitad.train.declared_vs_built_v6` (every trainer flag needs an entry) plus the gate's own stage
++  and behaviour probes; G-LIVE holds every `layer_str` parameter BIT-IDENTICAL over the smoke (R6,
++  decisive) and reports `.grad` population; G-CKPT compares a resume with an UNINTERRUPTED run (the
++  v6 checkpoint carries no data position). The dev-box stage is a REHEARSAL (tiny geometry, synthetic
++  corpus): it runs every instrument on the real trainer code on CPU, and `finalize` never counts its
++  evidence (arms: `v6_undeclared_attribute`, `v6_candidates_not_built`, `missing_dvb_v6_module`,
++  `v6_uncovered_flag`, `v6_nav_not_mapped`, `v6_nav_unbound_wm`, `v6_strategic_leaf_trainable`,
++  `v6_drop_term`, `v6_resume_drops_opt`, `v6_loader_drops_vocab_version`). The rehearsal keeps
++  `--nav-cond`: its data seam serves synthetic nav records to the REAL join / NavEmitter / batch splat
++  (a nav-less smoke cannot judge whether the nav path TRAINS -- MEASURED: it hid F7).
+ 
+ THE TOKEN. `PASS_<commit12>.json` is written ONLY if every required check PASSed on evidence bound
+ to the same (profile, commit, tree_sha256, argv_sha256), and every input each check READ has the
+@@ -408,6 +422,127 @@
+ #: BOTH lines
+ _THOR_ENV_FAILURES = ("stack/ops/launch_gate_thor_env_failures.json",
+                       "fc1214e5978383c694af7dbfc6c26f44758fcf8a93c4386700efb792072b4ed4")
++#: ⛔ the DECLARED rehearsal overlay (dev box, CPU): the model GEOMETRY is shrunk, every LEVER is kept.
++#: Each is a set_flag on the launch argv and is recorded as a departure in the evidence.
++#: ⚠️ The readout CELL grid is a lever (O3 masks cells in blocks) and is NOT shrunk: MEASURED
++#: 2026-09-27, a 2x2 grid let O3's 2x2 blocks mask EVERY cell (o3_mask_rate 1.0) and zeroed
++#: `masked_cells.inp`'s gradient -- a rehearsal artifact read as a dead module. 64x128 at patch 16
++#: is a 4x8 token grid, which tiles the default 4x4 cell grid exactly.
++V7F_TINY_OVERLAY: dict[str, list[str]] = {
++    "--frame-h": ["64"], "--frame-w": ["128"], "--patch": ["16"], "--enc-dim": ["32"],
++    "--enc-depth": ["1"], "--enc-heads": ["2"], "--pred-dim": ["32"], "--pred-depth": ["1"],
++    "--pred-heads": ["2"], "--readout-dim": ["8"], "--d-tac": ["32"],
++    "--d-str": ["16"], "--d-goal-embed": ["16"], "--adapter-hidden": ["32"],
++    "--f-hidden-tac": ["32"], "--f-hidden-str": ["32"], "--window": ["3"], "--batch": ["2"],
++    "--eps-per-batch": ["1"], "--device": ["cpu"]}
++#: flags whose PATHS the dev box does not have, dropped in rehearsal (each a recorded departure)
++V7F_REHEARSAL_DROP = ("--v2-cache", "--v2-val-cache", "--require-parity", "--no-require-parity",
++                      "--s2-labels", "--psg-labels", "--t3-scores", "--domain-strata",
++                      "--gate-probes", "--dump-seam-plan", "--init-encoder-from", "--enc-init-from",
++                      "--trunk-anchor-model", "--exclude-eval-clips", "--init-from", "--prev-gate",
++                      "--allow-inconclusive-gate", "--gate-off-reason",
++                      # the v7F merge's data inputs (R1 sidecar, R3 CoT sidecar)
++                      "--speed-max-sidecar-v6", "--cot-negative-sidecar")
++#: ⛔ the levers a CPU rehearsal SMOKE cannot exercise because they need data the dev box does not
++#: have joined to a synthetic corpus (R1: the per-clip max-speed sidecar; R3: the tactical labels).
++#: They are REMOVED from the rehearsal smoke only (a recorded departure); the BUILD checks (G-HYG,
++#: G-DVB, G-EVAL) keep them; their live terms are G-LIVE's on Thor.
++V7F_SMOKE_DATA_LEVERS = ("--max-speed-input-v6", "--plan-vmax-cap", "--speed-max-sidecar-v6",
++                         "--w-tac-label-all", "--s2-labels", "--tac-goal-negatives",
++                         "--cot-negative-sidecar")
++#: ⛔ OPEN ITEMS of the v7f launch definition (the gate agent 2026-09-27): while ANY is open the
++#: profile cannot mint a PASS -- `finalize` names each one. An item is closed by landing its flags /
++#: rulings (G-DVB entries + the rows below) and deleting it here, in a reviewed change.
++#: CLOSED 2026-09-27: `R2-NAV-NOT-BUILT` -- `--nav-cond` was REQUIRED by preflight and never mapped into
++#: V6Config by `build_stack_from_args` (MEASURED at c36b6ddd and on the first merge by this profile's
++#: G-DVB); the merge now maps it (`nav_cond=bool(getattr(a, "nav_cond", False))`, pinned through the
++#: real launch path by tests/test_v7f_r2_nav_fixes.py::test_REAL_LAUNCH_*). The G-DVB reader stays as
++#: the guard (arm `v6_nav_not_mapped` re-installs the unmapped build and must FAIL).
++_V7F_OPEN_ITEMS: tuple = ()
++_V7F = dict(
++    _REFC, name="v7f", family="v6",
++    trainer="stack/scripts/train_v6_staged.py",
++    required_checks=BASE_CHECKS,
++    #: dev box = a REHEARSAL (tiny geometry + synthetic corpus, CPU): it RUNS the instruments on the
++    #: real trainer code but its evidence never counts toward a token. Thor = the real thing.
++    stages={"devbox": ("G-HYG", "G-DVB", "G-EVAL", "G-LIVE", "G-CKPT"),
++            "thor": BASE_CHECKS, "all": BASE_CHECKS},
++    rehearsal_stages=("devbox",),
++    rehearsal_overlay=V7F_TINY_OVERLAY,
++    rehearsal_drop=V7F_REHEARSAL_DROP,
++    smoke_steps=4,
++    resume_extra_steps=2,
++    output_flags=("--out", "--dump-seam-plan"),
++    #: the inputs the BUILD path reads -- the model itself (anchor table, fallback calibration, the
++    #: predecessor, the encoder seed) AND the trainer's preflight (the eval-exclusion listing of
++    #: --v2-cache, --s2-labels/--gate-probes/--domain-strata existence). Everything else is a sentinel.
++    model_input_flags=("--anchor-table", "--fallback-calibration", "--init-from",
++                       "--init-encoder-from", "--prev-gate", "--gate-probes", "--v2-cache",
++                       "--s2-labels", "--nav-labels", "--domain-strata", "--exclude-eval-clips"),
++    required_flags=(),
++    suites=("stack", "taniteval", "tools"),
++    suite_mode="run",
++    suite_env_failures=None,
++    suite_pinned_skip_ok=(),
++    #: ⛔ NO clock reference is known for the v7F cache (…-w120-256x640cyl); the refcv6 q4c
++    #: reference was measured on another extraction. G-CLOCK (v6) is ERROR until one exists.
++    clock_reference=(),
++    eval_loader=None,
++    residual_prior_keys=(),
++    forbidden_levers=(), forbidden_prefixes=(), forbidden_built=(), dvb_forbid_kinds=(),
++    #: the R1 sidecar (sibling) is read by the same `read_speed_max_sidecar_v6`, which REFUSES without
++    #: its meta -- inert until the flag lands in this trainer
++    meta_required_flags=("--speed-max-sidecar-v6",),
++    nav_compliance={}, required_on=(), required_values={}, forbidden_values={},
++    #: R4's MODE is the PI's decision D1 (detached vs e2e; the R1/R4 builder recommends detached):
++    #: until the ruling lands as a required_values row the token is PI-DECISION, never PASS
++    pi_pending_values={"--tac-op-cond": "PI decision D1 (R4): detached (the plan loss trains the port "
++                                        "only) vs e2e (it also shapes the behaviours)"},
++    nav_tau_record_default=None, ceiling_filter_flag=None, map_hires=None,
++    map_overfit=None, box_overfit=None, live_pres=None, ga_groups={},
++    open_items=_V7F_OPEN_ITEMS,
++    # ---- the v7f argv rules (v6_profile_rules; re-derived inside finalize) ----------------------
++    stage_allowed=("S-W", "S-T"),
++    stage_allowed_why=("R6 (PI 2026-09-27): the strategic layer is OFF -- S-S trains only "
++                       "layer_str and S-J trains every group but interp (v6.py:4567), so neither may "
++                       "run; the first compliant run is S-W -> S-T"),
++    #: every v7F stage
++    required_on_v6={
++        "--nav-cond": "R2 (PI 2026-09-27; nav directive 2026-08-30): the nav command conditions the "
++                      "tactical AND operative layers",
++        "--strategic-off": "R6 (PI 2026-09-27): the strategic layer is OFF -- the tactical goal heads "
++                           "read a ZERO strategic conditioning (V6Config.strategic_off; the merge's "
++                           "D3 mechanism, recommended by the coordinator 2026-09-27)"},
++    #: the levers of ONE stage: R1/R3/R4 act where layer_tac + planner TRAIN, i.e. S-T -- the trainer
++    #: REFUSES them in S-W (_preflight_r1_r4; for_stage zeroes w_tac_label_all there)
++    required_on_v6_stage={"S-T": {
++        "--max-speed-input-v6": "R1a (PI 2026-09-27): the clip's max speed is a TACTICAL input",
++        "--plan-vmax-cap": "R1b (PI 2026-09-27): the emitted plan is capped at the max speed",
++        "--speed-max-sidecar-v6": "R1: the per-clip max-speed source both R1 levers read",
++        "--goal-multilabel": "R3: the tactical-label loss supervises the multilabel goal gates "
++                             "(declared_vs_built_v6._c_w_tac_label_all)",
++        "--tac-op-cond": "R4 (PI 2026-09-27): the tactical behaviours condition the operative plan"}},
++    required_positive_v6_stage={"S-T": {"--w-tac-label-all": "R3 (PI 2026-09-27): ALL tactical "
++                                                             "labels train the tactical layer"}},
++    forbidden_flags_v6={
++        "--i-know-this-arm-predates-nav": "R2: a v7F arm is not a pre-nav reproduction",
++        "--i-know-this-is-the-control-arm": "the isolation CONTROL arm is not v7F",
++        "--no-isolate-planner": "the X3 mis-wired control is not v7F",
++        "--no-isolate-uplink": "the X3 mis-wired control is not v7F",
++        "--no-isolate-interp": "the X3 mis-wired control is not v7F",
++        "--tac-goal-cond": "R6: the g_str -> P_T dynamics port is the other strategic -> tactical "
++                           "route; the merge refuses it with --strategic-off (the v6 chain's S-T "
++                           "command turns it ON: an R6 run must drop it)",
++        "--goal-factored": "R3: the tactical-label loss supervises the MIXED multilabel head; a "
++                           "factored stack builds e_g_tac from the factored pair (the merge refuses "
++                           "the combination)"},
++    forbidden_values_v6={"--selector": (("goal", "mlp"), "SEL-1 is REFUSED "
++                                                          "(v6_chain.py:501 assert_selector_admissible); "
++                                                          "S-T's first configuration is --selector none"),
++                         "--tac-op-cond": (("off",), "R4: the behaviours must reach the plan")},
++    forbidden_positive_v6={"--w-s1-multi": "R6: a strategic loss", "--w-s2-goal": "R6: a strategic "
++                                                                                    "loss"},
++)
+ PROFILES: dict[str, dict] = {
+     "refc": dict(_REFC, name="refc"),
+     #: the arm the PI stopped on 2026-09-26: kept so the gate can be run on its argv as evidence
+@@ -503,6 +638,8 @@
+         live_pres={"key_token": "presence_logit", "min_heads": 2, "gate": 0.5,
+                    "max_frac": 0.5},
+     ),
++    #: v7F (train_v6_staged.py) under the PI's R1-R6 directive, 2026-09-27: S-W -> S-T, strategic OFF
++    "v7f": _V7F,
+ }
+ 
+ 
+@@ -1589,6 +1726,9 @@
+     used by `run` (to say it early) AND by `finalize` itself, so no path to a token -- including
+     a stand-alone `finalize` -- can skip them."""
+     options = options or {}
++    if prof.get("family") == "v6":
++        # the v6 family's rules carry their own sources (R2/R6/SEL-1) -- never refc's citations
++        return v6_profile_rules(prof, argv), pi_pending_reasons(prof, argv)
+     refusals = required_flag_reasons(prof, argv)
+     refusals += forbidden_value_reasons(prof, argv)
+     refusals += forbidden_lever_reasons(prof, argv)[0]
+@@ -5398,8 +5538,1494 @@
+     return {"G-MAP-OVERFIT": ev}
+ 
+ 
++# --------------------------------------------------------------------------------------------- #
++# the v6 FAMILY -- `stack/scripts/train_v6_staged.py` (the v7f profile)                            #
++# --------------------------------------------------------------------------------------------- #
++# The refc checks are written against refc's hooks (RefCV3Model, compute_losses_v3, build_optimizer,
++# ResumableEpochSampler, _pin_trainer_cfg, refcv6_loader.py); none exist in the v6 trainer. The v6
++# family is therefore a PARALLEL set of job functions over the v6 trainer's OWN seams, dispatched by
++# the profile's `family`. Everything that binds a token (finalize, the data manifest, verify, exec,
++# G-SUITE) is shared -- ONE definition of the binding.
++_TRAINER_MOD_V6 = "train_v6_staged_gate"
++#: the flag `main()` adds AFTER build_parser() (train_v6_staged.py:11026) -- a parse with
++#: build_parser() alone would REFUSE a legal launch argv
++V6_MAIN_ONLY_FLAG = ("--i-know-this-is-the-control-arm", "control_arm_ack")
++#: ⛔ the stage table the gate holds the trainer's freeze to -- a LITERAL restatement of
++#: `v6.py:4567 STAGE_GROUPS` for the two stages v7F may run (R6: S-S / S-J are refused), never
++#: imported: a cross-check derived from the code it checks measures determinism, not correctness
++V6_STAGE_TRAINS = {"S-W": ("encoder", "readout", "predictor_op", "aux"),
++                   "S-T": ("layer_tac", "planner")}
++V6_STRATEGIC_GROUP = "layer_str"
++#: every term of the trainer's effective-weight registry (`W_TERM_FLAGS` + the `o10_psg` spec that
++#: `v6_weight_specs` appends, train_v6_staged.py:10128/10212) -> the key `v6_loss_step` returns for
++#: it (`terms[...]`, :4297-4715). ⛔ EXHAUSTIVE: a registry term this table does not name FAILS
++#: G-LIVE, so the next `--w-*` (e.g. the R3 tactical-label loss) cannot ship unchecked. `None` = a
++#: term added to the loss INSIDE train(), checked on the log row instead.
++V6_TERM_KEYS: dict[str, str | None] = {
++    "o1_ctrl": "o1", "o1_fact": "o1", "o1_scene": "o1", "o2_nearfield": "o2", "o3_masked": "o3",
++    "o5_rollout": "o5", "o6_sigreg": "o6", "o11_cf": "o11", "o13_ego": "o13", "o14_fut": "o14",
++    "t1_latent": "t1", "s1_latent": "s1", "lambda_plan": "plan", "seam_op": "seam",
++    "w_select": "select", "w_anchor": "anchor", "w_s2_goal": "s2", "w_t2_contrast": "t2",
++    "w_t5_consist": "t5", "w_s1_multi": "s1_multi", "o10_psg": None,
++    # the v7F merge (R3): ALL tactical labels -> the tactical layer
++    "w_tac_label_all": "tac_label_all"}
++#: the terms train() adds to L["loss"] AFTER v6_loss_step, keyed by their weight dest -> the log key
++#: that must be on the final train_log.jsonl row when the weight is > 0 (train_v6_staged.py:7458-7512)
++V6_TRAIN_ADDED_TERMS = {"w_o7_distill": "o7_distill", "w_o8_pixel": "o8_pixel", "w_o9_ema": "o9_ema",
++                        "w_o10_psg": "o10_w"}
++#: R6 at the LOSS level: a strategic term is never in force in any v7F stage
++V6_STRATEGIC_TERMS = ("s1", "s1_multi", "s2")
++#: the v6_loss_step ARGUMENTS the trainer passes at :7420-7450, with the LITERAL rule from argv. The
++#: gate binds every training call's arguments (signature defaults applied) and compares.
++V6_LOSS_KNOBS: dict[str, Callable] = {
++    "stage": lambda a: str(a.stage), "o1_k": lambda a: int(a.o1_k), "o5_k": lambda a: int(a.o5_k),
++    "o5_mode": lambda a: str(a.o5_mode), "o5_form": lambda a: str(getattr(a, "o5_form", "l1")),
++    "o6_innovation": lambda a: bool(getattr(a, "o6_innovation", False)),
++    "o6_innovation_shuffle": lambda a: bool(getattr(a, "o6_innovation_shuffle", False)),
++    "o11_k": lambda a: int(a.o11_k), "o11_tau": lambda a: float(a.o11_tau),
++    "o11_negs": lambda a: int(a.o11_negs), "o13_k": lambda a: int(a.o13_k),
++    "o13_seed": lambda a: int(a.o13_seed), "cond_param": lambda a: str(a.cond_param),
++    "o3_mode": lambda a: str(a.o3_mode), "o3_blocks": lambda a: int(a.o3_blocks),
++    "o3_block_hw": lambda a: (int(a.o3_block_h), int(a.o3_block_w)),
++    "o3_band_rows": lambda a: int(a.o3_band_rows), "o2_tau_s": lambda a: float(a.o2_tau_s),
++    "dkappa": lambda a: float(a.dkappa), "daccel": lambda a: float(a.daccel),
++    "rollout_grad_checkpoint": lambda a: (bool(getattr(a, "grad_checkpoint", False))
++                                          if getattr(a, "rollout_grad_checkpoint", "auto")
++                                          in (None, "auto")
++                                          else a.rollout_grad_checkpoint == "on"),
++    "bptt_truncate": lambda a: int(getattr(a, "bptt_truncate", 0)),
++    "anchor_objective": lambda a: str(getattr(a, "anchor_objective", "metric")),
++    "anchor_axis_w": lambda a: tuple(float(x) for x in getattr(a, "anchor_axis_w", (1.0, 1.0))),
++    "t2_positive": lambda a: str(getattr(a, "t2_positive", "photometric")),
++    "t2_negative": lambda a: str(getattr(a, "t2_negative", "lane_mirror")),
++    "t5_w_kappa": lambda a: float(getattr(a, "t5_w_kappa", 1.0))}
++#: EMA-teacher subtrees the trainer's own EMA step updates outside the optimizer (v6.py:5625,
++#: train_v6_staged.py:7618-7636): a frozen group's parameter here that MOVES is REPORTED with its
++#: mechanism -- except in `layer_str`, where R6 is literal (any movement FAILS)
++V6_EMA_SUBTREES = ("ema_o5_enc.", "ema_o5_ro.", "frozen_o5_enc.", "frozen_o5_ro.", "ema_adapter_tac.",
++                   "ema_adapter_str.")
++#: the S-T levers the trainer REFUSES in S-W (preflight :10332-10375) -- stripped to derive the
++#: rehearsal's tiny S-W PREDECESSOR (S-T may introduce their modules: STAGE_MAY_INTRODUCE["S-T"])
++V6_SW_REFUSED = ("--lambda-plan", "--selector", "--selector-tau-m", "--selector-mlp-hidden",
++                 "--w-select", "--tac-goal-cond", "--proposals", "--fallback-trigger",
++                 "--fallback-roll-k", "--fallback-calibration", "--agent-slots", "--w-t2-contrast",
++                 "--w-t5-consist", "--t5-pairs", "--t5-lag", "--mpc-refine", "--w-s1-multi",
++                 # the v7F merge: R1/R4 are refused in S-W (_preflight_r1_r4); R3's weight is zeroed
++                 # there by for_stage and an operator-supplied discarded weight is refused
++                 "--tac-op-cond", "--max-speed-input-v6", "--plan-vmax-cap", "--speed-max-sidecar-v6",
++                 "--w-tac-label-all", "--tac-goal-negatives", "--cot-negative-sidecar")
++
++
++def load_trainer_v6(ctx: Ctx):
++    if _TRAINER_MOD_V6 in sys.modules:
++        return sys.modules[_TRAINER_MOD_V6]
++    path = Path(ctx.tree) / ctx.prof["trainer"]
++    spec = importlib.util.spec_from_file_location(_TRAINER_MOD_V6, str(path))
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[_TRAINER_MOD_V6] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def v6_parser(T, *, arm: str | None = None) -> argparse.ArgumentParser:
++    """The parser `main()` actually uses: build_parser() + the control-arm flag it adds."""
++    ap = T.build_parser()
++    flag, dest = V6_MAIN_ONLY_FLAG
++    if not any(flag in x.option_strings for x in ap._actions):
++        ap.add_argument(flag, action="store_true", dest=dest, help=argparse.SUPPRESS)
++    if arm == "v6_uncovered_flag":
++        # the arm: a NEW trainer flag nobody registered (the siblings' situation)
++        ap.add_argument("--zz-gate-arm-unregistered-lever", type=float, default=0.0)
++    return ap
++
++
++#: the rehearsal's `--nav-labels`: a NAME the rehearsal data seam (`v6_corpus_seam`) answers with synthetic
++#: nav records through the REAL NavEmitter; no file of that name exists or is ever read
++V7F_REHEARSAL_NAV_LABELS = "__gate_rehearsal_synthetic_nav__/nav.jsonl.gz"
++#: the synthetic corpus size (the nav join is BY COUNT: one synthetic clip id per episode)
++V7F_REHEARSAL_N_EPS = 3
++
++
++def v6_rehearsal_argv(prof: dict, argv: list[str], work: Path | None = None
++                      ) -> tuple[list[str], dict]:
++    """The launch argv -> the dev-box REHEARSAL argv (tiny geometry, no host paths). Every change is a
++    recorded departure; levers (stage, candidates, proposals, selector, weights, ...) are KEPT --
++    `--nav-cond` included: `--nav-labels` becomes `V7F_REHEARSAL_NAV_LABELS`, which the rehearsal
++    data seam serves with synthetic nav records through the REAL join checks, the REAL NavEmitter and
++    the REAL batch splat (the merge's R2 fix #2)."""
++    out = list(argv)
++    dep: dict[str, Any] = {"overlay": {}, "dropped": {}}
++    for f, v in (prof.get("rehearsal_overlay") or {}).items():
++        old = flag_values(out, f)
++        out = set_flag(out, f, list(v))
++        dep["overlay"][f] = {"launch": old, "rehearsal": list(v)}
++    sub = flag_values(out, "--sigreg-subspaces")
++    if sub and sub[0].isdigit() and int(sub[0]) > 1:
++        # keeps the SUBSPACE class (> 1) at a width the tiny state can hold
++        out = set_flag(out, "--sigreg-subspaces", ["2"])
++        dep["overlay"]["--sigreg-subspaces"] = {"launch": sub, "rehearsal": ["2"]}
++    for f in prof.get("rehearsal_drop", ()):
++        if has_flag(out, f):
++            dep["dropped"][f] = flag_values(out, f)
++            out = set_flag(out, f, None)
++    if has_flag(out, "--w-trunk-anchor"):
++        # the trunk anchor REQUIRES the encoder seed, which the tiny encoder cannot load
++        dep["dropped"]["--w-trunk-anchor"] = flag_values(out, "--w-trunk-anchor")
++        out = set_flag(out, "--w-trunk-anchor", None)
++    if has_flag(out, "--nav-labels"):
++        # preflight needs the flag PRESENT with --nav-cond; the rehearsal data seam serves this NAME
++        # with synthetic nav records (v6_corpus_seam) -- the label SOURCE is the only thing replaced
++        dep["dropped"]["--nav-labels"] = flag_values(out, "--nav-labels")
++        out = set_flag(out, "--nav-labels", [V7F_REHEARSAL_NAV_LABELS])
++    if work is not None:
++        # the trainer's preflight REQUIRES --v2-cache (:10856) and its eval-exclusion LISTS it
++        # (:3141): an explicitly named EMPTY directory -> 0 cache clips, mode `clean` through the
++        # REAL resolution; the corpus itself comes from the synthetic seam
++        empty = Path(work) / "rehearsal_EMPTY_v2cache"
++        empty.mkdir(parents=True, exist_ok=True)
++        out = set_flag(out, "--v2-cache", [str(empty)])
++        dep["overlay"]["--v2-cache"] = {"launch": dep["dropped"].get("--v2-cache"),
++                                        "rehearsal": [str(empty)],
++                                        "why": "an EMPTY dir: the preflight requires the flag; the "
++                                               "corpus comes from the synthetic seam"}
++    dep["note"] = ("REHEARSAL: tiny geometry + synthetic corpus on a CPU host. Evidence produced "
++                   "under it NEVER counts toward a token (finalize refuses it by name).")
++    return out, dep
++
++
++def v6_smoke_data_departure(argv: list[str]) -> tuple[list[str], dict | None]:
++    """The rehearsal SMOKE removes the levers whose data the dev box cannot join to a synthetic corpus
++    (`V7F_SMOKE_DATA_LEVERS`: R1's sidecar-fed input + cap, R3's label loss). Recorded; the BUILD
++    checks keep them; their live terms are Thor's G-LIVE."""
++    hit = {f: flag_values(argv, f) for f in V7F_SMOKE_DATA_LEVERS if has_flag(argv, f)}
++    if not hit:
++        return argv, None
++    out = list(argv)
++    for f in hit:
++        out = set_flag(out, f, None)
++    return out, {"removed": hit, "why": "no labels / max-speed sidecar joinable to a synthetic "
++                                        "corpus on a CPU host: these terms are G-LIVE's on Thor"}
++
++
++def _v6_predecessor_argv(argv: list[str]) -> list[str]:
++    """A rehearsal S-T argv -> the tiny S-W argv that trains its predecessor (same geometry)."""
++    out = set_flag(argv, "--stage", ["S-W"])
++    for f in V6_SW_REFUSED:
++        out = set_flag(out, f, None)
++    return out
++
++
++def v6_synthetic_episodes(args, *, n_eps: int = V7F_REHEARSAL_N_EPS, seed: int = 20260927) -> list:
++    """Seeded ToyEpisodes with the trainer's episode contract (`tanitad/data/_contract.py`): uint8
++    frames [T, C, H, W] at the ENCODER's frame, a unicycle-consistent (x, y, yaw, v) pose track and
++    (steer, accel) actions. A DEDICATED generator: the run's global RNG stream is not touched."""
++    import torch
++    from tanitad.data.toy_driving import ToyEpisode
++    g = torch.Generator().manual_seed(int(seed))
++    c = int(args.in_channels)
++    h, w = int(args.frame_h), int(args.frame_w)
++    need = max(int(getattr(args, "plan_steps", 60) or 60), int(args.o1_k), int(args.o5_k),
++               int(getattr(args, "max_horizon", 0) or 0), 20,
++               int(getattr(args, "s1_multi_k", 2)) * 20)
++    n_t = int(args.window) + need + 24
++    dt = float(getattr(args, "dt", 0.1) or 0.1)
++    eps = []
++    for e in range(n_eps):
++        v = 6.0 + 4.0 * float(torch.rand((), generator=g))
++        yaw = x = y = 0.0
++        poses, acts = [], []
++        for t in range(n_t):
++            steer = 0.02 * math.sin(0.1 * t + e)
++            acc = 0.5 * math.cos(0.07 * t + 2 * e)
++            poses.append((x, y, yaw, v))
++            acts.append((steer, acc))
++            x += v * math.cos(yaw) * dt
++            y += v * math.sin(yaw) * dt
++            yaw += v * steer / 2.9 * dt
++            v = max(0.0, v + acc * dt)
++        frames = (torch.rand(n_t, c, h, w, generator=g) * 255).to(torch.uint8)
++        eps.append(ToyEpisode(frames=frames, actions=torch.tensor(acts, dtype=torch.float32),
++                              poses=torch.tensor(poses, dtype=torch.float32),
++                              episode_id=1_000_000 + e))
++    return eps
++
++
++def _v6_rehearsal_clip_ids(n: int = V7F_REHEARSAL_N_EPS) -> list[str]:
++    return [f"gate-rehearsal-clip-{i:04d}" for i in range(n)]
++
++
++@contextlib.contextmanager
++def v6_corpus_seam(ctx: Ctx, rec: dict):
++    """REHEARSAL only -- the DATA seam. Replaced, each scoped to the rehearsal's own names:
++      * the corpus: `train_v58f_unicycle_head.build_train_episodes` (train() imports it at call time)
++        returns the synthetic episodes (parity and the geometry binding are NOT exercised -- Thor);
++      * the nav LABEL SOURCE: `join_clip_ids` on the rehearsal's EMPTY cache returns one synthetic clip
++        id per episode, and `v7_labels.load_v7_labels(V7F_REHEARSAL_NAV_LABELS)` returns one synthetic
++        record per clip (a real `LabelManifest`, `allow_oracle_nav` stamped, a token of the real nav
++        vocabulary). Everything DOWNSTREAM is the trainer's own: the count check (`assert_cache_join`),
++        the missing-clip refusal, the REAL `NavEmitter` (and its `oracle_nav` gate), the batch-dict
++        splat (the merge's R2 fix #2), the conditioner in the forward. Any other path or cache
++        falls through to the originals."""
++    import types as _types
++    import train_v58f_unicycle_head as tv58
++    import tanitad.data.v7_labels as V7L
++    T = load_trainer_v6(ctx)
++    pat = _Patcher()
++    orig_join, orig_load = T.join_clip_ids, V7L.load_v7_labels
++
++    def synth(a, *, cache_frame, train_frame):
++        eps = v6_synthetic_episodes(a)
++        rec["synthetic_corpus"] = {"n_episodes": len(eps), "frames_per_episode":
++                                   int(eps[0].frames.shape[0]), "frame_chw": list(eps[0].frames.shape[1:]),
++                                   "parity_and_geometry_binding": "NOT exercised (rehearsal)"}
++        return eps, {"rehearsal": "synthetic corpus"}
++
++    def join(a, cache_dir, _o=orig_join):
++        if Path(cache_dir).name == "rehearsal_EMPTY_v2cache":
++            return _v6_rehearsal_clip_ids()
++        return _o(a, cache_dir)
++
++    def load(path, *aa, _o=orig_load, **kk):
++        if not str(path).replace("\\", "/").endswith(V7F_REHEARSAL_NAV_LABELS):
++            return _o(path, *aa, **kk)
++        toks = tuple(V7L.NAV_TOKENS)
++        recs = [_types.SimpleNamespace(clip_id=c, _oracle={"nav_command": {
++                    "token": toks[i % len(toks)],
++                    "args": {"distance_m": 40.0 + 15.0 * i, "time_s": 4.0 + 2.0 * i}}})
++                for i, c in enumerate(_v6_rehearsal_clip_ids())]
++        man = V7L.LabelManifest(path=str(path), md5="gate-rehearsal-synthetic", n_records=len(recs),
++                                schema_version="gate-rehearsal-synthetic", vocab="v7",
++                                allow_oracle_nav=bool(kk.get("allow_oracle_nav", False)))
++        rec["synthetic_nav"] = {"n_records": len(recs), "tokens": [r._oracle["nav_command"]["token"]
++                                                                   for r in recs],
++                                "downstream": "REAL assert_cache_join / NavEmitter / oracle_nav / "
++                                              "batch splat / conditioner"}
++        return recs, man
++    pat.set(tv58, "build_train_episodes", synth)
++    pat.set(T, "join_clip_ids", join)
++    pat.set(V7L, "load_v7_labels", load)
++    try:
++        yield
++    finally:
++        pat.restore()
++
++
++@contextlib.contextmanager
++def v6_capture(T, stop_at: str, *, on_freeze: Callable | None = None,
++               on_cfg: Callable | None = None, rehearsal: dict | None = None, ctx: Ctx | None = None):
++    """Run the REAL `main()` and capture what `train()` built. `stop_at`:
++      * "model" -- let the build COMPLETE (V6Stack, --init-from, encoder seed, the stage freeze, the
++        declared-freeze preflight, the frame lock) and stop at the corpus seam, before any data read;
++      * "none"  -- no stop (the smoke drives the whole run itself).
++    `on_freeze(stack)` runs right after the trainer's own `apply_stage_freeze` (an arm's hook);
++    `on_cfg(cfg)` right before `V6Stack.__init__` (G-HYG's arm). Refusals printed by the trainer are
++    recorded (`main` RETURNS 2 on a preflight refusal; it does not raise)."""
++    from tanitad.models import v6 as V6
++    cap: dict[str, Any] = {"refusals": []}
++    pat = _Patcher()
++    orig_init = V6.V6Stack.__init__
++    orig_train = T.train
++    orig_freeze = T.apply_stage_freeze
++    orig_refusal = T._print_refusal
++
++    def init_wrap(self, cfg, *a, **k):
++        if on_cfg is not None:
++            cap["on_cfg"] = on_cfg(cfg)
++        cap["cfg"] = cfg
++        orig_init(self, cfg, *a, **k)
++
++    def train_wrap(a):
++        cap["args"] = a
++        return orig_train(a)
++
++    def freeze_wrap(stack, stage):
++        rep = orig_freeze(stack, stage)
++        cap["stack"], cap["freeze"] = stack, rep
++        if on_freeze is not None:
++            cap["on_freeze"] = on_freeze(stack)
++        return rep
++
++    def refusal_wrap(problem):
++        cap["refusals"].append(str(problem))
++        return orig_refusal(problem)
++    pat.set(V6.V6Stack, "__init__", init_wrap)
++    pat.set(T, "train", train_wrap)
++    pat.set(T, "apply_stage_freeze", freeze_wrap)
++    pat.set(T, "_print_refusal", refusal_wrap)
++    if stop_at == "model":
++        import train_v58f_unicycle_head as tv58
++
++        def stop(*_a, **_k):
++            raise _Stop("model captured at the corpus seam")
++        pat.set(tv58, "build_train_episodes", stop)
++    try:
++        yield cap
++    finally:
++        pat.restore()
++
++
++def run_v6_until_model(ctx: Ctx, T, argv: list[str], **hooks) -> dict:
++    with v6_capture(T, "model", **hooks) as cap:
++        try:
++            cap["rc"] = T.main(list(argv))
++        except _Stop:
++            cap["rc"] = "stopped-at-corpus"
++    return cap
++
++
++def v6_group_digests(stack) -> dict[str, dict[str, str]]:
++    """{group: {param name: digest}} over EVERY named parameter (frozen ones included)."""
++    out: dict[str, dict[str, str]] = {}
++    for n, p in stack.named_parameters():
++        out.setdefault(stack.group_of(n), {})[n] = tensor_digest(p)
++    return out
++
++
++def v6_profile_rules(prof: dict, argv: list[str]) -> list[str]:
++    """The v7f profile's argv-only rules (R2, R6, SEL-1), each with its source. Re-derived in
++    `finalize` through `profile_argv_rules`."""
++    out: list[str] = []
++    name = prof["name"]
++    st = flag_values(argv, "--stage")
++    allowed = tuple(prof.get("stage_allowed", ()))
++    if not st:
++        out.append(f"--stage is required for a {name} launch")
++    elif allowed and st[0] not in allowed:
++        out.append(f"--stage {st[0]} is REFUSED for a {name} launch: {prof.get('stage_allowed_why')}")
++    stage = st[0] if st else None
++    req_on = {**(prof.get("required_on_v6") or {}),
++              **((prof.get("required_on_v6_stage") or {}).get(stage) or {})}
++    req_pos = {**(prof.get("required_positive_v6") or {}),
++               **((prof.get("required_positive_v6_stage") or {}).get(stage) or {})}
++    for f, why in req_on.items():
++        if not has_flag(argv, f):
++            out.append(f"{f} is REQUIRED ON for a {name} {stage} launch ({why}) and the argv does not "
++                       f"pass it")
++    for f, why in (prof.get("forbidden_flags_v6") or {}).items():
++        if has_flag(argv, f):
++            out.append(f"{f} is passed, but it is REFUSED for a {name} launch ({why})")
++    for f, (bad, why) in (prof.get("forbidden_values_v6") or {}).items():
++        v = flag_values(argv, f)
++        if v and v[0] in bad:
++            out.append(f"{f} {v[0]} is REFUSED for a {name} launch ({why})")
++    for f, why in req_pos.items():
++        v = flag_values(argv, f)
++        try:
++            ok = bool(v) and math.isfinite(float(v[0])) and float(v[0]) > 0.0
++        except ValueError:
++            ok = False
++        if not ok:
++            out.append(f"{f} must be passed with a value > 0 for a {name} launch ({why}); the argv "
++                       f"has {v}")
++    for f, why in (prof.get("forbidden_positive_v6") or {}).items():
++        v = flag_values(argv, f)
++        try:
++            pos = bool(v) and float(v[0]) > 0.0
++        except ValueError:
++            pos = True
++        if pos:
++            out.append(f"{f} {v} is REFUSED for a {name} launch ({why})")
++    return out
++
++
++# ---- G-DVB (v6): the gate's OWN behavioural probes, independent of the registry module ---------- #
++def v6_trainability_probe(stack, stage: str) -> tuple[list[str], dict]:
++    """After the trainer's freeze: the groups holding a trainable parameter must be EXACTLY the gate's
++    literal stage table (declared grad-unreachable subtrees excepted -- they are frozen by design)."""
++    from tanitad.models import v6 as V6
++    want = set(V6_STAGE_TRAINS.get(stage, ()))
++    unreach = V6.grad_unreachable_prefixes(stack) if hasattr(V6, "grad_unreachable_prefixes") else {}
++    per: dict[str, dict] = {}
++    for n, p in stack.named_parameters():
++        g = stack.group_of(n)
++        e = per.setdefault(g, {"trainable": 0, "frozen": 0})
++        e["trainable" if p.requires_grad else "frozen"] += int(p.numel())
++    got = {g for g, e in per.items() if e["trainable"] > 0}
++    det = {"stage": stage, "literal_table": sorted(want), "trainable_groups_built": sorted(got),
++           "per_group": per, "grad_unreachable_subtrees": sorted(unreach)}
++    reasons = []
++    if stage not in V6_STAGE_TRAINS:
++        reasons.append(f"stage {stage!r} has no row in the gate's literal table (R6: S-W/S-T only)")
++    if got - want:
++        reasons.append(f"the BUILT freeze leaves {sorted(got - want)} trainable in {stage}, which the "
++                       f"stage table freezes")
++    if want - got:
++        reasons.append(f"the BUILT freeze leaves NOTHING trainable in {sorted(want - got)}, which "
++                       f"{stage} is declared to train")
++    return reasons, det
++
++
++_NAV_KEYS = ("nav_token", "nav_args")
++
++
++def v6_behaviour_probe(stack, args) -> tuple[list[str], dict]:
++    """Two forwards on the trainer's own `synthetic_batch` (eval mode, forked RNG):
++      (1) the batch AS THE STACK MAKES IT (the merge draws nav keys when a conditioner is built): it must
++          RUN and emit a fan of exactly --n-candidates;
++      (2) the same batch WITHOUT nav keys: with --nav-cond it must RAISE `NavTokenMissing` (the channel
++          is mandatory once built -- `V6Stack.forward`), without it it must RUN."""
++    import torch
++    reasons: list[str] = []
++    det: dict[str, Any] = {}
++    nav = bool(getattr(args, "nav_cond", False))
++    was = stack.training
++    stack.eval()
++
++    def fwd(batch):
++        with torch.random.fork_rng(devices=[]), torch.no_grad():
++            torch.manual_seed(4321)
++            return stack(**batch)
++    try:
++        b = stack.synthetic_batch(1, seed=4321)
++        det["synthetic_batch_keys"] = sorted(b)
++        try:
++            out = fwd(b)
++            det["forward"] = "ran"
++            wp = (out.get("plan") or {}).get("waypoints") if isinstance(out, dict) else None
++            det["plan_waypoints_shape"] = list(wp.shape) if torch.is_tensor(wp) else None
++            if torch.is_tensor(wp) and wp.ndim == 4:
++                reasons += [] if int(wp.shape[1]) == int(args.n_candidates) else [
++                    f"--n-candidates {args.n_candidates} but the forward EMITS a fan of "
++                    f"{int(wp.shape[1])} (plan.waypoints {list(wp.shape)})"]
++            else:
++                reasons.append(f"the forward emitted no [B, N, S, 2] plan (got "
++                               f"{det['plan_waypoints_shape']}) -- the fan width is unreadable")
++        except Exception as e:                              # noqa: BLE001 -- judged here
++            det["forward"] = f"{type(e).__name__}: {str(e)[:160]}"
++            # ⛔ MEASURED 2026-09-27 (arm v6_candidates_not_built): a mis-built fan RAISES in the
++            # forward -- a silent probe would have passed it
++            reasons.append(f"the BUILT model's forward on the trainer's own synthetic_batch RAISED "
++                           f"{type(e).__name__}: {str(e)[:200]}")
++        b2 = {k: v for k, v in b.items() if k not in _NAV_KEYS}
++        try:
++            fwd(b2)
++            det["forward_without_nav_token"] = "ran"
++        except Exception as e:                              # noqa: BLE001 -- judged below
++            det["forward_without_nav_token"] = f"{type(e).__name__}: {str(e)[:160]}"
++        no_nav = str(det["forward_without_nav_token"])
++        if nav and no_nav == "ran":
++            reasons.append("--nav-cond is declared but a forward WITHOUT a nav token RAN: the BUILT "
++                           "model does not consume the nav command (the channel is mandatory once "
++                           "built -- V6Stack.forward raises NavTokenMissing)")
++        elif nav and not no_nav.startswith("NavTokenMissing"):
++            reasons.append(f"--nav-cond: a forward without a nav token raised {no_nav[:120]}, not "
++                           f"NavTokenMissing")
++        if not nav and no_nav.startswith("NavTokenMissing"):
++            reasons.append("no --nav-cond, yet the built model demands a nav token")
++    finally:
++        stack.train(was)
++    return reasons, det
++
++
++def v6_dvb_positive_control(D6, stack, args, parser, n_base: int, w_stage=None
++                             ) -> tuple[list[str], dict]:
++    """The registry must SEE a built change: rebuild `cand_queries` one row wider -- `check` must report
++    `--n-candidates` BUILT at exactly the new width (restored afterwards). ⚠️ Keyed on the VALUE, not
++    on a mismatch COUNT: MEASURED 2026-09-27, a count-based control read BLIND when the lever was
++    already mismatched (the count stays 1 whether the built width is 8 or 9)."""
++    import torch
++    cq = getattr(stack, "cand_queries", None)
++    if cq is None:
++        return [], {"control": "not applicable (no cand_queries)"}
++    width = int(cq.weight.shape[0]) + 1
++    try:
++        stack.cand_queries = torch.nn.Embedding(width, int(cq.weight.shape[1]))
++        ctl = D6.check_all(stack, args, weights_in_force=w_stage, parser=parser)
++    finally:
++        stack.cand_queries = cq
++    seen = [str(m)[:200] for m in ctl if getattr(m, "lever", None) == "--n-candidates"
++            and getattr(m, "built", None) == width]
++    det = {"control_widen_cand_queries_n_mismatches": len(ctl), "baseline": n_base,
++           "control_width": width, "control_seen": seen}
++    return ([] if seen else ["declared_vs_built_v6 is BLIND to a built lever: widening cand_queries "
++                             f"to {width} rows was not reported as --n-candidates BUILT {width} "
++                             "(control)"]), det
++
++
++def _v6_arm_candidates_not_built(stack) -> dict:
++    """Arm `v6_candidates_not_built`: the stack is BORN with an 8-wide fan while argv declares
++    another width (D-REFCV6-CONFIG-BUILD re-installed)."""
++    import torch
++    cq = getattr(stack, "cand_queries", None)
++    if cq is None:
++        return {"unbuilt": None, "why": "no cand_queries"}
++    n = 8 if int(cq.weight.shape[0]) != 8 else 7
++    stack.cand_queries = torch.nn.Embedding(n, int(cq.weight.shape[1]))
++    return {"cand_queries_rows_built": n, "declared": int(cq.weight.shape[0])}
++
++
++def _v6_arm_nav_not_mapped(cfg) -> dict:
++    """Arm `v6_nav_not_mapped`: the pre-fix build re-installed -- the config handed to `V6Stack` carries
++    `nav_cond=False` although argv declares `--nav-cond` (build_stack_from_args WITHOUT the mapping
++    line, as at c36b6ddd). G-DVB must name it; on an S-T argv the trainer's own strict init-from also
++    refuses (the S-W predecessor carries `nav.*`)."""
++    was = bool(getattr(cfg, "nav_cond", False))
++    object.__setattr__(cfg, "nav_cond", False)
++    return {"cfg.nav_cond": {"mapped_by_the_trainer": was, "handed_to_V6Stack": False}}
++
++
++def _v6_arm_undeclared(cfg) -> dict:
++    """Arm `v6_undeclared_attribute`: the historical pattern -- a lever set as an UNDECLARED attribute
++    during the build (it survives nothing that rebuilds through the dataclass fields)."""
++    enc = getattr(cfg, "encoder", cfg)
++    object.__setattr__(enc, "gate_arm_undeclared_lever", 43)
++    return {"set": "cfg.encoder.gate_arm_undeclared_lever = 43"}
++
++
++def _v6_sentinel_argv(ctx: Ctx, scratch: Path) -> tuple[list[str], dict]:
++    """The launch argv on THIS host for a BUILD: model inputs mapped, every other data path pointed at a
++    NON-EXISTENT sentinel (a build that reads it fails instead of passing); rehearsal applied."""
++    argv, rec = _sentinel_argv(ctx, ctx.prof["model_input_flags"], scratch)
++    if ctx.options.get("rehearsal"):
++        argv, dep = v6_rehearsal_argv(ctx.prof, argv, Path(ctx.out_dir))
++        rec["rehearsal"] = dep
++    return argv, rec
++
++
++def _v6_rehearsal_predecessor(ctx: Ctx, T, st_argv: list[str], scratch: Path) -> tuple[list[str], dict]:
++    """REHEARSAL, S-T: the ladder seam needs a predecessor (`--init-from` + `--prev-gate`,
++    `assert_stage_precondition`). The launch's are Thor paths; the rehearsal trains its OWN tiny S-W
++    predecessor (same geometry, 1 step, synthetic corpus) and points S-T at it, with the trainer's
++    recorded INCONCLUSIVE override. Cached per argv sha in the gate dir."""
++    key = sha12(json.dumps(st_argv))
++    pdir = Path(ctx.out_dir) / "rehearsal_predecessor" / key
++    ck, gate = pdir / "ckpt.pt", pdir / "stage_gate.json"
++    argv_rec = pdir / "gate_predecessor_argv.json"
++    rec: dict[str, Any] = {"dir": str(pdir)}
++    if ck.is_file() and gate.is_file() and argv_rec.is_file():
++        rec["sw_argv"] = json.loads(argv_rec.read_text(encoding="utf-8"))   # the cached one's argv
++        rec["cached"] = True
++    if not (ck.is_file() and gate.is_file()):
++        sw = set_flag(set_flag(set_flag(_v6_predecessor_argv(st_argv), "--steps", ["1"]),
++                               "--out", [str(pdir)]), "--save-every", ["1"])
++        # ⛔ `--nav-cond` is KEPT: nav's shared embedding trains in S-W (predictor_op) and S-T may not
++        # INTRODUCE `nav.*` (STAGE_MAY_INTRODUCE) -- a nav-less predecessor is refused by the ladder
++        # seam (MEASURED on the merge, coordinator 2026-09-27)
++        sw, _ = v6_smoke_data_departure(sw)
++        rec["sw_argv"] = sw
++        corpus: dict = {}
++        with v6_corpus_seam(ctx, corpus):
++            try:
++                rc = T.main(list(sw))
++            except SystemExit as e:
++                rc = f"SystemExit: {e}"
++        rec.update(rc=rc, corpus=corpus)
++        if not (ck.is_file() and gate.is_file()):
++            raise GateError(f"the rehearsal S-W predecessor did not produce ckpt.pt + stage_gate.json "
++                            f"(rc {rc}) -- the S-T rehearsal has no ladder seam to stand on")
++        argv_rec.write_text(json.dumps(sw), encoding="utf-8")
++    out = set_flag(set_flag(st_argv, "--init-from", [str(ck)]), "--prev-gate", [str(gate)])
++    out = set_flag(out, "--allow-inconclusive-gate", [])
++    out = set_flag(out, "--gate-off-reason", ["launch-gate REHEARSAL: synthetic tiny S-W predecessor"])
++    rec["st_seam"] = {"--init-from": str(ck), "--prev-gate": str(gate),
++                      "override": "--allow-inconclusive-gate (the predecessor's gate is INCONCLUSIVE "
++                                  "by construction: no battery)"}
++    return out, rec
++
++
++def _v6_stage(argv: list[str]) -> str | None:
++    v = flag_values(argv, "--stage")
++    return v[0] if v else None
++
++
++def job_model_v6(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
++    """G-HYG, G-DVB, G-EVAL on the model `train()` BUILDS for this argv (stopped at the corpus seam)."""
++    import torch
++    T = load_trainer_v6(ctx)
++    out_dir = Path(ctx.out_dir)
++    scratch = out_dir / "scratch"
++    scratch.mkdir(parents=True, exist_ok=True)
++    evs = {c: new_evidence(ctx, c) for c in checks}
++    reh = bool(ctx.options.get("rehearsal"))
++    argv, arec = _v6_sentinel_argv(ctx, scratch)
++    if reh and _v6_stage(argv) == "S-T":
++        argv, prec = _v6_rehearsal_predecessor(ctx, T, argv, scratch)
++        arec["rehearsal_predecessor"] = prec
++    parser = v6_parser(T, arm=ctx.arm)
++    for ev in evs.values():
++        if reh:
++            ev["rehearsal"] = arec.get("rehearsal") or {"note": "rehearsal"}
++            ev["inputs_read"]["gate:rehearsal"] = {"kind": "rehearsal",
++                                                   "why": "tiny config + synthetic corpus (CPU host)"}
++    t0 = time.time()
++    hooks: dict[str, Any] = {}
++    pat_pf = _Patcher()
++    if reh:
++        # the trainer's preflight demands host paths the rehearsal dropped (--speed-max-sidecar-v6,
++        # --s2-labels, ...): a problem that NAMES a dropped flag is EXPECTED here and recorded; every
++        # other problem is REAL and still refuses
++        dropped = sorted(set((arec.get("rehearsal") or {}).get("dropped") or {}))
++        orig_pf = T.preflight
++
++        def pf(a_, _o=orig_pf):
++            probs = list(_o(a_))
++            exp = [p for p in probs if any(f in p for f in dropped)]
++            arec["rehearsal_preflight_expected"] = [p[:300] for p in exp]
++            return [p for p in probs if p not in exp]
++        pat_pf.set(T, "preflight", pf)
++    if arm_is(ctx, "v6_candidates_not_built"):
++        hooks["on_freeze"] = _v6_arm_candidates_not_built
++    if arm_is(ctx, "v6_undeclared_attribute"):
++        hooks["on_cfg"] = _v6_arm_undeclared
++    if arm_is(ctx, "v6_nav_not_mapped"):
++        hooks["on_cfg"] = _v6_arm_nav_not_mapped
++    try:
++        cap = run_v6_until_model(ctx, T, argv, **hooks)
++        crash = None
++    except SystemExit as e:
++        cap, crash = {"refusals": []}, f"the trainer REFUSED this argv while building: {e}"
++    except BaseException as e:                              # noqa: BLE001 -- a crash IS the verdict
++        cap, crash = {"refusals": []}, (f"the trainer CRASHED building this argv: "
++                                        f"{type(e).__name__}: {str(e)[:600]}")
++        arec["traceback"] = traceback.format_exc()[-2500:]
++    pat_pf.restore()
++    build_s = round(time.time() - t0, 1)
++    rules = v6_profile_rules(ctx.prof, list(ctx.argv))
++    if crash is None and cap.get("rc") == 2:
++        crash = ("the trainer's PREFLIGHT refused this argv: "
++                 + " | ".join(r[:300] for r in cap.get("refusals", [])[:6]))
++    if crash is None and "stack" not in cap:
++        crash = f"train() returned (rc {cap.get('rc')}) without building a stack -- the capture missed"
++    if crash is not None:
++        for c, ev in evs.items():
++            ev["details"]["argv_local"] = arec
++            finish_evidence(ev, "FAIL", ([*rules] if c == "G-DVB" else []) + [crash])
++        return evs
++    cfg, stack, args = cap["cfg"], cap["stack"], cap["args"]
++    stage = str(args.stage)
++    common = {"argv_local": arec, "build_s": build_s, "stage": stage,
++              "model_params": int(sum(p.numel() for p in stack.parameters())),
++              "freeze": {k: cap["freeze"].get(k) for k in ("trainable_groups", "n_trainable",
++                                                          "n_frozen")}}
++    # ---- G-HYG --------------------------------------------------------------------------- #
++    if "G-HYG" in evs:
++        ev = evs["G-HYG"]
++        ev["details"].update(common)
++        H, why = import_optional(ctx, "tanitad.train.config_hygiene", "missing_hygiene_module")
++        if H is None:
++            reasons, det = [f"tanitad.train.config_hygiene is not importable ({why})"], {}
++        else:
++            reasons, det = judge_hygiene(H, cfg)
++        if "on_cfg" in cap:
++            det["arm"] = cap["on_cfg"]
++        try:
++            clo = import_closure(Path(ctx.tree), ctx.prof["trainer"])
++            ir, idet = judge_import_closure(clo, ban=_arm_import_ban(ctx))
++        except Exception as e:                            # noqa: BLE001
++            ir, idet = [f"G-HYG import closure crashed: {type(e).__name__}: {e}"], {}
++        det["import_closure"] = idet
++        reasons += ir
++        ev["details"].update(det)
++        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
++    # ---- G-EVAL -------------------------------------------------------------------------- #
++    if "G-EVAL" in evs:
++        ev = evs["G-EVAL"]
++        ev["details"].update(common)
++        try:
++            reasons, det = eval_identity_v6(ctx, T, stack, args, parser, scratch,
++                                            freeze=cap.get("freeze"))
++        except Exception as e:                            # noqa: BLE001
++            reasons, det = [f"G-EVAL crashed: {type(e).__name__}: {e}"], {
++                "traceback": traceback.format_exc()[-2500:]}
++        ev["details"].update(det)
++        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
++    # ---- G-DVB --------------------------------------------------------------------------- #
++    if "G-DVB" in evs:
++        ev = evs["G-DVB"]
++        ev["details"].update(common)
++        for f in ("--anchor-table", "--fallback-calibration", "--init-from", "--prev-gate"):
++            if f in ctx.prof["model_input_flags"]:
++                ev["inputs_read"].update({k: v for k, v in _inputs_read(ctx, (f,)).items()})
++        reasons: list[str] = list(rules)
++        det: dict[str, Any] = {"profile_rules": rules}
++        D6, why = import_optional(ctx, "tanitad.train.declared_vs_built_v6", "missing_dvb_v6_module")
++        if D6 is None:
++            reasons.append(f"tanitad.train.declared_vs_built_v6 is not importable -- the v6 G-DVB "
++                           f"registry is not in this tree => the gate FAILS ({why})")
++        else:
++            w_stage = T._weights_from_args(args).for_stage(stage)
++            if not callable(getattr(D6, "check_all", None)) or \
++                    not callable(getattr(D6, "uncovered_v6", None)):
++                reasons.append("declared_vs_built_v6 has no check_all / uncovered_v6 (the gate-time "
++                               "API) -- API drift")
++            else:
++                try:
++                    mism = D6.check_all(stack, args, weights_in_force=w_stage, parser=parser)
++                    det["mismatches"] = [str(m)[:300] for m in mism]
++                    det["coverage_uncovered"] = list(D6.uncovered_v6(parser))
++                    det["registry_size"] = len(getattr(D6, "REGISTRY_V6", {}) or {})
++                    if hasattr(D6, "kinds_census"):
++                        det["kinds_census"] = D6.kinds_census(parser)
++                    if mism:
++                        reasons.append(f"declared_vs_built_v6: {len(mism)} mismatch(es): "
++                                       + " | ".join(str(m)[:240] for m in mism[:10]))
++                    cr, cd = v6_dvb_positive_control(D6, stack, args, parser, len(mism), w_stage)
++                    det["positive_control"] = cd
++                    reasons += cr
++                except TypeError as e:
++                    reasons.append(f"declared_vs_built_v6.check_all(stack, args, weights_in_force=, "
++                                   f"parser=) -- API drift: {e}")
++        tr, td = v6_trainability_probe(stack, stage)
++        det["trainability_probe"] = td
++        reasons += [f"G-DVB stage probe: {r}" for r in tr]
++        br, bd = v6_behaviour_probe(stack, args)
++        det["behaviour_probe"] = bd
++        reasons += [f"G-DVB behaviour probe: {r}" for r in br]
++        if "on_freeze" in cap:
++            det["arm"] = cap["on_freeze"]
++        ev["details"].update(det)
++        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
++    del stack
++    return evs
++
++
++def latest_smoke_config_v6(ctx: "Ctx") -> Path | None:
++    """The config.json the trainer wrote in THIS gate dir's newest v6 smoke (run 1 of
++    `job_smoke_v6`: `<out>/smoke/<ts>/run/config.json`)."""
++    d = Path(ctx.out_dir) / "smoke"
++    runs = sorted(d.glob("*/run/config.json"), key=lambda q: q.stat().st_mtime) if d.is_dir() else []
++    return runs[-1] if runs else None
++
++
++def eval_identity_v6(ctx: Ctx, T, stack, args, parser, scratch: Path, *,
++                     freeze: dict | None = None) -> tuple[list[str], dict]:
++    """G-EVAL (v6): the eval loader `tanitad.eval.v6_probe_trunk.load_v6_from_ck` (rebuild from the
++    run's OWN config["args"] + STRICT load) applied to a checkpoint in the trainer's layout. The run
++    record is the TRAINER's: `_run_config(args, stack, freeze)` -- the very builder `train()` writes
++    config.json with -- for THIS argv, through a JSON round trip (the file). On a non-rehearsal host
++    the smoke's own config.json (when present) must carry the same built levers (a control that the
++    in-process record IS the file)."""
++    import torch
++    reasons: list[str] = []
++    det: dict[str, Any] = {}
++    with contextlib.redirect_stdout(io.StringIO()):
++        config = json.loads(json.dumps(T._run_config(args, stack, freeze or {}, None), default=str))
++    rec_args = dict(config.get("args") or {})
++    det["eval_stamps"] = {"source": "the trainer's own _run_config(args, stack, freeze) for THIS "
++                                    "argv, JSON round-tripped (what train() writes as config.json)",
++                          "sha256": sha256_bytes(canonical_json(config.get("args") or {}))}
++    smoke_cfg = latest_smoke_config_v6(ctx)
++    if smoke_cfg is not None and not ctx.options.get("rehearsal"):
++        file_args = dict(read_json(smoke_cfg).get("args") or {})
++        det["eval_stamps"]["smoke_config_json"] = str(smoke_cfg)
++        rec_args_file = file_args
++    # the record must be THIS argv's: every BUILT lever of the registry must agree
++    D6, _w = import_optional(ctx, "tanitad.train.declared_vs_built_v6", "missing_dvb_v6_module")
++    built_dests = sorted(d for d, lv in (getattr(D6, "REGISTRY_V6", {}) or {}).items()
++                         if lv.kind == "built") if D6 is not None else []
++    diff = [d for d in built_dests if d in rec_args and
++            json.loads(json.dumps(getattr(args, d, None), default=str)) != rec_args.get(d)]
++    if smoke_cfg is not None and not ctx.options.get("rehearsal"):
++        diff += [f"smoke-config:{d}" for d in built_dests if d in rec_args_file
++                 and rec_args_file.get(d) != rec_args.get(d)]
++    det["record_vs_argv_built_levers_differ"] = diff
++    if diff:
++        reasons.append(f"G-EVAL: the run record does not carry THIS argv's built levers ({diff[:8]}) "
++                       f"-- the eval rebuild would answer a different question")
++    ck_path = scratch / "g_eval_v6_trainer_layout.pt"
++    torch.save({"stack": stack.state_dict(), "opt": {}, "step": 0, "config": config}, ck_path)
++    from tanitad.eval import v6_probe_trunk as VPT
++    pat = _Patcher()
++    if arm_is(ctx, "v6_loader_drops_vocab_version"):
++        orig_ra = VPT._run_args
++
++        def ra(ck, ckpt_path=None, _o=orig_ra):
++            d = _o(ck, ckpt_path)
++            d.pop("tac_vocab_version", None)
++            return d
++        pat.set(VPT, "_run_args", ra)
++    try:
++        ck = torch.load(ck_path, map_location="cpu", weights_only=False)
++        trunk, _step = VPT.load_v6_from_ck(ck, "cpu", ckpt_path=str(ck_path), with_frame=True)
++        model_l = trunk.stack
++        det["loader"] = "tanitad.eval.v6_probe_trunk.load_v6_from_ck (strict=True)"
++    except (RuntimeError, SystemExit, KeyError) as e:
++        pat.restore()
++        return reasons + [f"the v6 eval loader FAILED to rebuild the trained model: "
++                          f"{type(e).__name__}: {str(e)[:500]}"], det
++    finally:
++        pat.restore()
++    dt, dl = state_digests(stack.state_dict()), state_digests(model_l.state_dict())
++    diff = sorted(k for k in set(dt) & set(dl) if dt[k] != dl[k])
++    det["state_dict"] = {"n_trainer": len(dt), "n_loader": len(dl), "n_differ": len(diff),
++                         "differ": diff[:12], "only_trainer": sorted(set(dt) - set(dl))[:12],
++                         "only_loader": sorted(set(dl) - set(dt))[:12]}
++    if set(dt) != set(dl) or diff:
++        reasons.append(f"state_dict: {len(diff)} tensor(s) differ, key sets "
++                       f"{'equal' if set(dt) == set(dl) else 'DIFFER'}")
++    cfg_t, cfg_l = stack.cfg.to_dict(), model_l.cfg.to_dict()
++    cdiff = sorted(k for k in set(cfg_t) | set(cfg_l) if cfg_t.get(k) != cfg_l.get(k))
++    det["v6_config_differ"] = cdiff[:20]
++    if cdiff:
++        reasons.append(f"the loader's V6Config differs from the trainer's on {cdiff[:8]} (a lever "
++                       f"that lives in the config, not in a tensor)")
++
++    def fwd(model):
++        was = model.training
++        model.eval()
++        try:
++            b = model.synthetic_batch(1, seed=1234)
++            with torch.random.fork_rng(devices=[]), torch.no_grad():
++                torch.manual_seed(1234)
++                return model(**b)
++        finally:
++            model.train(was)
++    t0 = time.time()
++    try:
++        o_t = output_digests(fwd(stack))
++        o_t2 = output_digests(fwd(stack))
++        o_l = output_digests(fwd(model_l))
++    except Exception as e:                                # noqa: BLE001
++        return reasons + [f"G-EVAL forward on the fixed batch raised {type(e).__name__}: {e}"], det
++    det["probe"] = {"batch": "V6Stack.synthetic_batch(1, seed=1234) -- the trainer's own forward "
++                             "contract (a real eval window is the Thor-stage upgrade)",
++                    "forward_s_each": round((time.time() - t0) / 3, 2)}
++    nd = sum(1 for k in o_t if o_t2.get(k) != o_t[k])
++    det["determinism_control_outputs_differing"] = nd
++    if nd:
++        reasons.append(f"control: the trainer model's own forward is NOT reproducible ({nd} outputs) "
++                       f"-- the trainer-vs-loader comparison is blind")
++    od = sorted(k for k in set(o_t) | set(o_l) if o_t.get(k) != o_l.get(k))
++    det["forward"] = {"n_outputs": len(o_t), "n_differ": len(od), "differ": od[:20]}
++    if od:
++        reasons.append(f"forward outputs differ on the fixed batch: {len(od)} of {len(o_t)} "
++                       f"(first: {od[:5]})")
++    if not any(not v.startswith(("py:", "type:")) for v in o_t.values()):
++        reasons.append("control: the forward produced no tensor outputs -- nothing was compared")
++    # ⚠️ NOT an emission weight: the emission's final layer is ZERO-initialised (the CV warm start,
++    # train_v58f_unicycle_head.py:205-206), so perturbing any weight UPSTREAM of it moves no output
++    # (MEASURED 2026-09-27: 0 of 52 outputs moved -- a blind control). The encoder's patch conv feeds
++    # every output.
++    p0 = next((p for n_, p in model_l.named_parameters() if n_ == "encoder.patch.weight"), None)
++    if p0 is None:
++        p0 = next(iter(model_l.parameters()))
++    with torch.no_grad():
++        saved = p0.detach().clone()
++        p0.add_(1e-2)
++    try:
++        o_p = output_digests(fwd(model_l))
++    finally:
++        with torch.no_grad():
++            p0.copy_(saved)
++    moved = sum(1 for k in o_l if o_p.get(k) != o_l[k])
++    det["negative_control_outputs_moved"] = moved
++    if moved == 0:
++        reasons.append("negative control: perturbing a planner parameter moved NO output -- the "
++                       "comparison is blind")
++    try:
++        ck_path.unlink()
++    except OSError:
++        pass
++    return reasons, det
++
++
++# ---- the smoke (G-LIVE run 1; G-CKPT runs 2 and 3) ------------------------------------------- #
++def run_smoke_v6(ctx: Ctx, T, argv: list[str], *, run_label: str, arms: bool = True) -> dict:
++    """Run the REAL `main(argv)` with OBSERVING hooks only (arms excepted, and only when `arms`):
++      * `build_trunk_optimizer` -- the trainable set, a digest of EVERY parameter at optimizer
++        construction (after --init-from and the freeze), and an `opt.step` wrapper that records, per
++        optimizer parameter, non-zero / non-finite gradients, and for `layer_str` whether `.grad` was
++        populated at all;
++      * `v6_loss_step` -- per TRAINING call: the returned term keys, finiteness, values, the bound
++        call arguments (signature defaults applied); at the FIRST call the per-term gradient reach
++        over the trainable set (`torch.autograd.grad`, retain_graph, under a forked RNG: no `.grad`
++        and no RNG side effect);
++      * `FlagshipWindowDataset.__getitem__` -- the (ep_idx, t_last) of every drawn window: the DATA
++        POSITION, per step;
++      * `load_resume` -- the post-load digests (G-CKPT)."""
++    import inspect
++    import torch
++    import train_flagship4b as TF4
++    rec: dict[str, Any] = {"label": run_label, "steps": [], "draws": [], "grads": {}, "exit": None,
++                           "layer_str_grad_populated": {}, "term_reach": None, "knobs": [],
++                           "post_load": None, "arm": None}
++    state: dict[str, Any] = {"stack": None, "opt": None, "trainable": [], "names": {},
++                             "pending": []}
++    pat = _Patcher()
++    orig_bto = T.build_trunk_optimizer
++    orig_loss = T.v6_loss_step
++    sig = inspect.signature(orig_loss)
++    orig_getitem = TF4.FlagshipWindowDataset.__getitem__
++    orig_resume = T.load_resume
++    orig_freeze = T.apply_stage_freeze
++
++    def freeze_wrap(stack, stage):
++        rep = orig_freeze(stack, stage)
++        if arms and arm_is(ctx, "v6_strategic_leaf_trainable"):
++            # the coordinator's arm: ONE layer_str leaf the S-T plan loss reaches (through
++            # goal_head_tac(cond=e_g_str), v6.py:5938) is made trainable AFTER the freeze
++            names = dict(stack.named_parameters())
++            leaf = next((n for n in ("vocab_str.table.weight",) if n in names), None) or next(
++                (n for n in names if stack.group_of(n) == V6_STRATEGIC_GROUP
++                 and n.startswith("goal_head_str")), None)
++            if leaf is not None:
++                names[leaf].requires_grad_(True)
++            rec["arm"] = {"v6_strategic_leaf_trainable": leaf}
++        return rep
++
++    def bto_wrap(a, stack, trainable, _o=orig_bto):
++        opt, report = _o(a, stack, trainable)
++        state["stack"], state["opt"] = stack, opt
++        names = {id(p): n for n, p in stack.named_parameters()}
++        in_opt = [p for g in opt.param_groups for p in g["params"]]
++        state["trainable"] = [(names.get(id(p), f"?{i}"), p) for i, p in enumerate(in_opt)
++                              if p.requires_grad]
++        rec["at_opt_build"] = v6_group_digests(stack)
++        rec["requires_grad_at_opt_build"] = {n: bool(p.requires_grad)
++                                             for n, p in stack.named_parameters()}
++        rec["n_trainable_tensors"] = len(state["trainable"])
++        for n_, p_ in state["trainable"]:
++            rec["grads"][n_] = {"numel": int(p_.numel()), "steps": 0, "nz_steps": 0,
++                                "nonfinite": False, "none_steps": 0,
++                                "group": stack.group_of(n_) if not n_.startswith("?") else "?"}
++        strat = [(n, p) for n, p in stack.named_parameters()
++                 if stack.group_of(n) == V6_STRATEGIC_GROUP]
++        orig_step = opt.step
++
++        def step_wrap(_self, *aa, **kk):
++            # a BOUND method: torch's LRScheduler re-wraps `opt.step.__func__` (MEASURED: a plain
++            # function attribute crashed build_lr_scheduler with "no attribute '__func__'")
++            with torch.no_grad():
++                for n_, p_ in state["trainable"]:
++                    r = rec["grads"][n_]
++                    r["steps"] += 1
++                    g = p_.grad
++                    if g is None:
++                        r["none_steps"] += 1
++                        continue
++                    if bool(torch.count_nonzero(g) > 0):
++                        r["nz_steps"] += 1
++                    if not bool(torch.isfinite(g).all()):
++                        r["nonfinite"] = True
++                for n_, p_ in strat:
++                    if p_.grad is not None:
++                        e = rec["layer_str_grad_populated"].setdefault(n_, {"steps": 0, "nz": 0})
++                        e["steps"] += 1
++                        e["nz"] += int(bool(torch.count_nonzero(p_.grad) > 0))
++            if state["pending"]:
++                rec["draws"].append(list(state["pending"]))
++                state["pending"] = []
++            return orig_step(*aa, **kk)
++        import types as _types
++        opt.step = _types.MethodType(step_wrap, opt)
++        return opt, report
++
++    def loss_wrap(stack, batch, *aa, **kk):
++        bound = sig.bind(stack, batch, *aa, **kk)
++        bound.apply_defaults()
++        if rec["post_load"] is None and state.get("resumed"):
++            rec["post_load"] = {"model": state_digests(stack.state_dict()),
++                                "opt": optimizer_digests(state["opt"].state_dict())
++                                if state["opt"] is not None else None}
++        L = orig_loss(stack, batch, *aa, **kk)
++        term_keys = [k for k in L if k not in ("loss", "log", "out")]
++        if arms and arm_is(ctx, "v6_drop_term") and term_keys:
++            # the F3-whitelist class: a term the registry declares in force silently leaves the loss
++            drop = "t1" if "t1" in term_keys else sorted(term_keys)[0]
++            L = dict(L)
++            L["loss"] = L["loss"] - L.pop(drop)
++            L["log"] = dict(L["log"], terms=sorted(k for k in term_keys if k != drop))
++            term_keys = [k for k in term_keys if k != drop]
++            rec["arm"] = {"v6_drop_term": drop}
++        vals, nonfin = {}, []
++        for k in term_keys + ["loss"]:
++            v = L[k]
++            f = float(v.detach()) if torch.is_tensor(v) else float(v)
++            vals[k] = f
++            if not math.isfinite(f):
++                nonfin.append(k)
++        rec["steps"].append({"keys": sorted(term_keys), "vals": vals, "nonfinite": sorted(nonfin)})
++        rec["knobs"].append({k: bound.arguments.get(k) for k in V6_LOSS_KNOBS})
++        if rec["term_reach"] is None and state["trainable"]:
++            rec["term_reach"] = _v6_term_reach(stack, L, term_keys, state["trainable"])
++        return L
++
++    def getitem_wrap(self, i, _o=orig_getitem):
++        item = _o(self, i)
++        try:
++            state["pending"].append((int(item["ep_idx"]), int(item["t_last"])))
++        except Exception:                                 # noqa: BLE001 -- recorded as absent
++            state["pending"].append((None, int(i)))
++        return item
++
++    def resume_wrap(stack, opt, ckpt_path, *, stage=None, _o=orig_resume):
++        if arms and arm_is(ctx, "v6_resume_drops_opt"):
++            rec["arm"] = {"v6_resume_drops_opt": "load_resume(..., opt=None)"}
++            n = _o(stack, None, ckpt_path, stage=stage)
++        else:
++            n = _o(stack, opt, ckpt_path, stage=stage)
++        state["resumed"] = True
++        rec["resumed_at"] = int(n)
++        return n
++    if arms and arm_is(ctx, "v6_nav_unbound_wm"):
++        # F7 re-introduced: the WM-loss helpers (stage_a_losses, both rollout_transitions) get the BARE
++        # operative predictor again, as before the merge's `_NavBoundPredictor` -- the operative nav
++        # path then receives no gradient in S-W (MEASURED before the fix)
++        if not hasattr(T, "_NavBoundPredictor"):
++            rec["exit"] = ("arm v6_nav_unbound_wm cannot be installed: this trainer has no "
++                           "_NavBoundPredictor (the F7 fix, the arm's premise, is absent)")
++            return rec
++        pat.set(T, "_NavBoundPredictor", lambda predictor, nav_cond: predictor)
++        rec["arm"] = {"v6_nav_unbound_wm": "train_v6_staged._NavBoundPredictor -> the bare predictor_op "
++                                           "(the pre-fix WM-loss call sites)"}
++    pat.set(T, "apply_stage_freeze", freeze_wrap)
++    pat.set(T, "build_trunk_optimizer", bto_wrap)
++    pat.set(T, "v6_loss_step", loss_wrap)
++    pat.set(T, "load_resume", resume_wrap)
++    pat.set(TF4.FlagshipWindowDataset, "__getitem__", getitem_wrap)
++    refusals: list[str] = []
++    orig_refusal = T._print_refusal
++    pat.set(T, "_print_refusal", lambda p: (refusals.append(str(p)), orig_refusal(p))[1])
++    t0 = time.time()
++    try:
++        rc = T.main(list(argv))
++        if rc not in (0, None):
++            rec["exit"] = f"main() returned {rc}: " + " | ".join(r[:300] for r in refusals[:4])
++    except SystemExit as e:
++        rec["exit"] = f"SystemExit: {str(e)[:800]}"
++    except BaseException as e:                            # noqa: BLE001 -- the verdict records it
++        rec["exit"] = f"{type(e).__name__}: {e}\n" + "".join(traceback.format_exc()[-2500:])
++    finally:
++        pat.restore()
++    rec["elapsed_s"] = round(time.time() - t0, 1)
++    if state["stack"] is not None:
++        rec["final"] = {"model": state_digests(state["stack"].state_dict()),
++                        "opt": optimizer_digests(state["opt"].state_dict()),
++                        "groups": v6_group_digests(state["stack"])}
++        rec["group_of"] = {n: state["stack"].group_of(n) for n, _ in state["stack"].named_parameters()}
++    return rec
++
++
++def _v6_term_reach(stack, L: dict, keys: list[str], trainable: list) -> dict:
++    """Per term: which trainable GROUPS its gradient reaches (autograd.grad, allow_unused; no `.grad`
++    write, forked RNG). A term that reaches nothing trainable is declared-but-inert."""
++    import torch
++    out: dict[str, Any] = {}
++    names = [n for n, _ in trainable]
++    ps = [p for _, p in trainable]
++    with torch.random.fork_rng(devices=[]):
++        for k in keys:
++            t = L[k]
++            if not (torch.is_tensor(t) and t.requires_grad):
++                out[k] = {"groups": [], "n_params": 0, "why": "no autograd graph"}
++                continue
++            gs = torch.autograd.grad(t, ps, retain_graph=True, allow_unused=True)
++            hit = [n for n, g in zip(names, gs) if g is not None and bool(torch.count_nonzero(g) > 0)]
++            out[k] = {"groups": sorted({stack.group_of(n) for n in hit}), "n_params": len(hit)}
++    return out
++
++
++def smoke_step_count_v6(T, base_argv: list[str], configured: int) -> tuple[int, int]:
++    """-> (steps, log_every). At least 2 x the LAUNCH's --log-every (a periodic row that is not the
++    final row must exist -- the refcv6 reach off-by-one), rounded UP to a multiple of it so the final
++    step writes a row (train_log.jsonl rows land at `step % log_every == 0`, :7699)."""
++    le = int(getattr(v6_parser(T).parse_args(list(base_argv)), "log_every", 1) or 1)
++    n = max(int(configured), 2 * le)
++    return int(math.ceil(n / le) * le), le
++
++
++def _v6_train_rows(run_dir: Path) -> list[dict]:
++    return [r for r in read_metrics(run_dir / "train_log.jsonl") if "loss" in r and "step" in r
++            and "run_start" not in r]
++
++
++def judge_live_v6(prof: dict, args, T, run1: dict, *, expect_steps: int, rows: list[dict],
++                  summary: dict | None, grad_reach_file: dict | None,
++                  ckpt: dict | None) -> tuple[list[str], dict]:
++    """The G-LIVE verdict for the v6 trainer (DESIGN.md §3 G-LIVE, items 1-8)."""
++    import torch
++    reasons: list[str] = []
++    det: dict[str, Any] = {"n_train_steps_seen": len(run1["steps"]), "expect_steps": expect_steps}
++    stage = str(args.stage)
++    if run1.get("exit"):
++        reasons.append(f"the smoke did not complete: {str(run1['exit'])[:600]}")
++    if not (summary and summary.get("done") is True and int(summary.get("steps", -1)) == expect_steps
++            and int(summary.get("resumed_from_step", -1)) == 0):
++        reasons.append(f"summary.json does not say done at {expect_steps} steps from step 0 (got "
++                       f"{ {k: (summary or {}).get(k) for k in ('done', 'steps', 'resumed_from_step')} })"
++                       f" -- the artifact, not an exit code, is the verdict")
++    steps = run1["steps"]
++    if len(steps) != expect_steps:
++        reasons.append(f"{len(steps)} training loss calls observed, expected {expect_steps}")
++    # (2) declared terms = the trainer's OWN effective-weight registry -------------------------
++    rows_ew, _src = T.effective_weight_rows(args)
++    decl = []
++    for r in rows_ew:
++        if r.term not in V6_TERM_KEYS:
++            reasons.append(f"the trainer's effective-weight registry has term `{r.term}` and G-LIVE "
++                           f"has no rule for it -- a new loss term cannot ship unchecked")
++            continue
++        key = V6_TERM_KEYS[r.term]
++        decl.append({"term": r.term, "key": key, "builds_graph": bool(r.builds_graph),
++                     "effective": float(r.effective), "status": r.status})
++    det["declared_terms"] = decl
++    n = max(len(steps), 1)
++    in_force = sorted({d["key"] for d in decl if d["builds_graph"] and d["key"]})
++    silent = sorted({d["key"] for d in decl if not d["builds_graph"] and d["key"]} - set(in_force))
++    per = []
++    for k in in_force:
++        present = sum(1 for s in steps if k in s["keys"])
++        bad = sum(1 for s in steps if k in s["nonfinite"])
++        per.append({"key": k, "present_steps": present, "nonfinite_steps": bad})
++        if present != len(steps) or not steps:
++            reasons.append(f"declared term `{k}` (the registry says it builds a graph at {stage}) is "
++                           f"present on only {present}/{len(steps)} training steps")
++        if bad:
++            reasons.append(f"declared term `{k}` was non-finite on {bad} step(s)")
++    for k in silent:
++        hits = sum(1 for s in steps if k in s["keys"])
++        if hits:
++            reasons.append(f"term `{k}` is in the loss on {hits} step(s) but the registry says it "
++                           f"builds NO graph at {stage} -- the declaration and the loss disagree")
++    extra = sorted({k for s in steps for k in s["keys"]} - set(in_force))
++    if extra:
++        reasons.append(f"the loss carries term(s) {extra} that no registry row declares in force")
++    det["terms"] = per
++    # the terms train() adds after v6_loss_step: their log keys on the final row
++    last_row = next((r for r in reversed(rows) if int(r.get("step", -1)) == expect_steps), None)
++    for dest, key in V6_TRAIN_ADDED_TERMS.items():
++        if float(getattr(args, dest, 0.0) or 0.0) > 0 and (last_row is None or key not in last_row):
++            reasons.append(f"--{dest.replace('_', '-')} > 0 but the final log row carries no `{key}`")
++    # (8) R6 at the loss level
++    strat = sorted({k for s in steps for k in s["keys"] if k in V6_STRATEGIC_TERMS})
++    det["strategic_terms_seen"] = strat
++    if strat:
++        reasons.append(f"R6: strategic term(s) {strat} are in the loss (the strategic layer is OFF "
++                       f"for v7F)")
++    # (3) per-term gradient reach at step 1 -------------------------------------------------------
++    tr = run1.get("term_reach") or {}
++    det["term_reach"] = tr
++    if not tr and steps:
++        reasons.append("the per-term gradient-reach probe never ran (no trainable set captured)")
++    for k, e in tr.items():
++        if not e.get("groups"):
++            reasons.append(f"term `{k}` is in force but its gradient reaches NO trainable parameter "
++                           f"at {stage} -- a term advertised in the launch line that trains nothing")
++    # (4) leaf gradients, the argv's own --allow-unreached honoured; control vs grad_reach.json ---
++    gr = run1.get("grads") or {}
++    allow = tuple(getattr(args, "allow_unreached", ()) or ())
++    leaves: dict[str, dict] = {}
++    for name, r in gr.items():
++        leaf = name.rsplit(".", 1)[0] if "." in name else name
++        e = leaves.setdefault(leaf, {"leaf": leaf, "group": r.get("group"), "params": 0, "nz": 0})
++        e["params"] += 1
++        e["nz"] += int(r["nz_steps"] > 0)
++    dead = sorted(e["leaf"] for e in leaves.values() if e["nz"] == 0)
++    ack = [d for d in dead if any(d == x or d.startswith(x + ".") for x in allow)]
++    det["grads"] = {"n_trainable_tensors": len(gr), "n_leaf_modules": len(leaves),
++                    # the top-level modules with at least one live leaf (e.g. `nav` once nav is fed)
++                    "live_top_modules": sorted({e["leaf"].split(".", 1)[0] for e in leaves.values()
++                                                if e["nz"]}),
++                    # per leaf module: [tensors with a non-zero gradient on >= 1 step, tensors]
++                    "leaf_live": {e["leaf"]: [e["nz"], e["params"]] for e in
++                                  sorted(leaves.values(), key=lambda x: x["leaf"])},
++                    "dead_leaves": dead[:40], "acknowledged_by_allow_unreached": ack,
++                    "nonfinite": sorted(n for n, r in gr.items() if r["nonfinite"])[:20]}
++    if not gr:
++        reasons.append("no trainable parameter was observed at opt.step -- the capture missed")
++    if sorted(set(dead) - set(ack)):
++        reasons.append(f"{len(set(dead) - set(ack))} declared-trainable leaf module(s) received ZERO "
++                       f"gradient over the whole smoke and are not on --allow-unreached: "
++                       f"{sorted(set(dead) - set(ack))[:10]}")
++    if det["grads"]["nonfinite"]:
++        reasons.append(f"non-finite gradients on {det['grads']['nonfinite'][:5]}")
++    if grad_reach_file is not None:
++        mine = sorted(n for n, r in gr.items() if r["none_steps"] == r["steps"] and r["steps"])
++        theirs = sorted(grad_reach_file.get("unreached_tensors") or [])
++        first_none = sorted(n for n, r in gr.items() if r.get("none_steps", 0) and r["steps"] and
++                            r["none_steps"] >= 1)
++        det["control_trainer_grad_reach"] = {"trainer_unreached": theirs[:20],
++                                             "gate_never_reached": mine[:20]}
++        if set(theirs) - set(first_none):
++            reasons.append(f"control: the trainer's grad_reach.json names unreached tensors the gate "
++                           f"saw a gradient on at step 1 ({sorted(set(theirs) - set(first_none))[:5]}) "
++                           f"-- the two instruments disagree about the same backward")
++    else:
++        reasons.append("the trainer wrote no grad_reach.json (its own P1 census) -- the control "
++                       "cannot be read")
++    # (5) R6 -- DECISIVE: every layer_str parameter bit-identical; (6) the other frozen groups -----
++    before = run1.get("at_opt_build") or {}
++    after = (run1.get("final") or {}).get("groups") or {}
++    trains = set(V6_STAGE_TRAINS.get(stage, ()))
++    extra_frozen = {g for g, f in (("encoder", "freeze_encoder"), ("readout", "freeze_readout"))
++                    if bool(getattr(args, f, False))}
++    moved_str = sorted(n for n, d in (before.get(V6_STRATEGIC_GROUP) or {}).items()
++                       if (after.get(V6_STRATEGIC_GROUP) or {}).get(n) != d)
++    ck_str_moved = []
++    if ckpt is not None and isinstance(ckpt.get("stack"), dict):
++        for n, d in (before.get(V6_STRATEGIC_GROUP) or {}).items():
++            t = ckpt["stack"].get(n)
++            if t is None or tensor_digest(t) != d:
++                ck_str_moved.append(n)
++    populated = run1.get("layer_str_grad_populated") or {}
++    det["r6"] = {"n_layer_str_tensors": len(before.get(V6_STRATEGIC_GROUP) or {}),
++                 "moved_in_memory": moved_str[:20], "differs_in_saved_ckpt": sorted(ck_str_moved)[:20],
++                 "grad_populated_tensors": len(populated),
++                 "grad_populated_nonzero": sum(1 for e in populated.values() if e["nz"]),
++                 "grad_populated_sample": sorted(populated)[:13],
++                 "_read": "(a) decisive: bit-identity at optimizer construction vs end of smoke and vs "
++                          "the smoke's own ckpt.pt; (b) reported: .grad populated (not gated)"}
++    if not before.get(V6_STRATEGIC_GROUP):
++        reasons.append("R6: no layer_str parameter was digested at optimizer construction -- the check "
++                       "read nothing")
++    if moved_str:
++        mech = ["EMA" if any(n.startswith(x) for x in V6_EMA_SUBTREES) else "optimizer"
++                for n in moved_str]
++        reasons.append(f"R6: {len(moved_str)} layer_str parameter(s) CHANGED over the smoke "
++                       f"({moved_str[:4]}; mechanism {sorted(set(mech))}) -- the strategic layer must "
++                       f"receive NO update in any v7F phase")
++    if ckpt is not None and ck_str_moved:
++        reasons.append(f"R6: the smoke's own ckpt.pt carries {len(ck_str_moved)} layer_str tensor(s) "
++                       f"different from their value at optimizer construction")
++    moved_frozen, ema_moved = [], []
++    for g, dig in before.items():
++        if g in trains and g not in extra_frozen or g == V6_STRATEGIC_GROUP:
++            continue
++        for n, d in dig.items():
++            if (after.get(g) or {}).get(n) != d:
++                (ema_moved if any(n.startswith(x) for x in V6_EMA_SUBTREES)
++                 else moved_frozen).append(f"{g}:{n}")
++    det["frozen_groups"] = {"moved": moved_frozen[:20], "ema_teacher_moved_reported": ema_moved[:20],
++                            "extra_frozen_by_flag": sorted(extra_frozen)}
++    if moved_frozen:
++        reasons.append(f"{len(moved_frozen)} parameter(s) of FROZEN groups changed over the smoke "
++                       f"({moved_frozen[:4]}) -- a frozen trunk quietly moved")
++    # (7) the loss is live and the run record agrees with the captured calls -------------------
++    losses = [s["vals"].get("loss") for s in steps if "loss" in s["vals"]]
++    det["loss_first_last"] = [losses[0], losses[-1]] if losses else None
++    if len(losses) >= 2 and len({round(float(x), 8) for x in losses}) < 2:
++        reasons.append("the total loss is CONSTANT across the smoke -- a disconnected graph")
++    det["final_row_present"] = last_row is not None
++    if last_row is None:
++        reasons.append(f"train_log.jsonl has no row at step {expect_steps}")
++    elif steps:
++        last = steps[-1]
++        if sorted(last_row.get("terms") or []) != last["keys"]:
++            reasons.append(f"the final log row's `terms` {last_row.get('terms')} != the terms the last "
++                           f"step computed {last['keys']} -- the run record would not show them")
++        a_, b_ = float(last_row.get("loss", float("nan"))), float(last["vals"].get("loss", float("nan")))
++        if not (math.isfinite(a_) and abs(a_ - b_) <= 1e-5 * max(1.0, abs(b_))):
++            reasons.append(f"control: train_log.jsonl loss {a_} vs captured {b_} -- the gate observed "
++                           f"different calls than the log")
++    # the loss-call ARGUMENTS as called vs argv (the dry-run-vs-train knob class) ----------------
++    kd = []
++    for i, kn in enumerate(run1.get("knobs") or []):
++        for k, fn in V6_LOSS_KNOBS.items():
++            want = fn(args)
++            got = kn.get(k)
++            if isinstance(got, list):
++                got = tuple(got)
++            if isinstance(want, float) or isinstance(got, float):
++                ok = got is not None and abs(float(got) - float(want)) <= 1e-12 * max(1.0, abs(float(want)))
++            else:
++                ok = got == want
++            if not ok:
++                kd.append(f"step {i + 1}: {k} called with {got!r}, argv says {want!r}")
++    det["loss_knobs_disagree"] = kd[:12]
++    if kd:
++        reasons.append(f"v6_loss_step was CALLED with arguments that differ from the argv: {kd[:3]}")
++    return reasons, det
++
++
++def judge_ckpt_v6(run1: dict, run2: dict | None, run3: dict | None, *, n: int, extra: int,
++                  ckpt: dict | None, run2_summary: dict | None, run2_config: dict | None
++                  ) -> tuple[list[str], dict]:
++    """G-CKPT (v6): save == in-memory; post-load == saved; the resumed data stream and final state ==
++    an UNINTERRUPTED run's (the data position, measured -- the v6 checkpoint carries none)."""
++    reasons: list[str] = []
++    det: dict[str, Any] = {}
++
++    def cmp(name, a, b):
++        ka, kb = set(a), set(b)
++        diff = sorted(k for k in ka & kb if a[k] != b[k])
++        det[name] = {"n": len(ka), "n_differ": len(diff), "differ": diff[:10],
++                     "only_first": sorted(ka - kb)[:10], "only_second": sorted(kb - ka)[:10]}
++        if ka != kb or diff:
++            reasons.append(f"{name}: key sets or tensors differ ({len(diff)} differ, "
++                           f"{len(ka - kb)}/{len(kb - ka)} one-sided)")
++    if ckpt is None:
++        return [f"the smoke wrote no ckpt.pt at step {n}"], det
++    det["ckpt_keys"] = sorted(ckpt)
++    miss = sorted({"stack", "opt", "step", "config"} - set(ckpt))
++    if miss:
++        reasons.append(f"ckpt.pt lacks {miss}")
++    if int(ckpt.get("step", -1)) != n:
++        reasons.append(f"ckpt.pt step {ckpt.get('step')} != {n}")
++    fin = run1.get("final")
++    if not fin:
++        return reasons + ["run 1 produced no in-memory final state"], det
++    cmp("save_model_vs_memory", fin["model"], state_digests(ckpt.get("stack") or {}))
++    ck_opt = optimizer_digests(ckpt.get("opt") or {})
++    cmp("save_opt_state_vs_memory", fin["opt"]["state"], ck_opt["state"])
++    if fin["opt"]["param_groups"] != ck_opt["param_groups"]:
++        reasons.append("save: optimizer param_groups differ from the in-memory optimizer")
++    rng_keys = sorted(k for k in ckpt if "rng" in k.lower() or "data_pos" in k.lower()
++                      or "sampler" in k.lower())
++    det["ckpt_rng_or_data_position_keys"] = rng_keys
++    if run2 is None:
++        return reasons + ["the resume run did not happen"], det
++    det["resume_exit"] = run2.get("exit")
++    if run2.get("exit"):
++        reasons.append(f"the resume run failed: {str(run2['exit'])[:400]}")
++    det["resumed_at"] = run2.get("resumed_at")
++    if run2.get("resumed_at") != n:
++        reasons.append(f"the resume run resumed at {run2.get('resumed_at')}, not at {n}")
++    pl = run2.get("post_load")
++    if not pl:
++        reasons.append("the resume run never reached a training step after load_resume")
++    else:
++        cmp("resume_model_vs_saved", fin["model"], pl["model"])
++        if pl.get("opt"):
++            cmp("resume_opt_state_vs_saved", fin["opt"]["state"], pl["opt"]["state"])
++            g1 = [{k: v for k, v in g.items() if k != "lr"} for g in fin["opt"]["param_groups"]]
++            g2 = [{k: v for k, v in g.items() if k != "lr"} for g in pl["opt"]["param_groups"]]
++            if g1 != g2:
++                reasons.append("resume: optimizer param_groups (lr excepted) differ from the saved")
++    if not (run2_summary and run2_summary.get("done") is True
++            and int(run2_summary.get("steps", -1)) == n + extra
++            and int(run2_summary.get("resumed_from_step", -1)) == n):
++        reasons.append(f"the resume run's summary.json is not done at {n + extra} resumed from {n}: "
++                       f"{ {k: (run2_summary or {}).get(k) for k in ('done', 'steps', 'resumed_from_step')} }")
++    lm = ((run2_config or {}).get("launch_mode") or {}).get("mode")
++    det["resume_config_launch_mode"] = lm
++    if lm != "resume":
++        reasons.append(f"the resume run's config.json launch_mode is {lm!r}, not 'resume'")
++    # ⭐ the data position and the continuation, MEASURED against an uninterrupted run
++    if run3 is None or run3.get("exit"):
++        reasons.append(f"the uninterrupted reference run failed: {(run3 or {}).get('exit')}")
++        return reasons, det
++    d2 = run2.get("draws") or []
++    d3 = (run3.get("draws") or [])[n:n + extra]
++    det["draws_resumed"] = d2[:extra]
++    det["draws_uninterrupted_same_steps"] = d3
++    det["draws_uninterrupted_first_steps"] = (run3.get("draws") or [])[:extra]
++    if len(d2) != extra or len(d3) != extra:
++        reasons.append(f"the draw capture read {len(d2)}/{len(d3)} steps, expected {extra} -- the "
++                       f"data-position check read nothing")
++    elif d2 != d3:
++        replay = d2 == (run3.get("draws") or [])[:extra]
++        reasons.append("resume: the batches drawn after the resume are NOT the ones an uninterrupted "
++                       "run draws at the same steps" + (
++                           " -- they are the uninterrupted run's FIRST batches: the sampler/RNG "
++                           "stream restarts at every launch (train() re-seeds torch, random and the "
++                           "sampler generator from --seed -- c36b6ddd:6475-6478 -- and _save_ckpt's "
++                           "payload is {stack, opt, step, config}: no RNG state, no data position)"
++                           if replay else ""))
++    f2, f3 = (run2.get("final") or {}).get("model"), (run3.get("final") or {}).get("model")
++    if f2 and f3:
++        cmp("resumed_final_vs_uninterrupted_final", f3, f2)
++    return reasons, det
++
++
++def job_smoke_v6(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
++    """G-LIVE (run 1) and G-CKPT (run 2 = resume, run 3 = uninterrupted reference)."""
++    import torch
++    T = load_trainer_v6(ctx)
++    evs = {c: new_evidence(ctx, c) for c in checks}
++    extra = int(ctx.prof["resume_extra_steps"])
++    root = Path(ctx.out_dir) / "smoke" / time.strftime("%Y%m%dT%H%M%S", time.gmtime())
++    run_dir = root / "run"
++    run_dir.parent.mkdir(parents=True, exist_ok=False)     # FRESH: an old ckpt.pt would resume
++    reh = bool(ctx.options.get("rehearsal"))
++    base = ctx.local_argv()
++    departures: dict[str, Any] = {"--steps": "set by the gate", "--out": "the smoke dir"}
++    if reh:
++        base, dep = v6_rehearsal_argv(ctx.prof, base, Path(ctx.out_dir))
++        departures["rehearsal"] = dep
++        base, dd = v6_smoke_data_departure(base)
++        if dd:
++            departures["rehearsal_data_levers"] = dd
++        if _v6_stage(base) == "S-T":
++            base, prec = _v6_rehearsal_predecessor(ctx, T, base, root)
++            departures["rehearsal_predecessor"] = prec
++    steps, log_every = smoke_step_count_v6(
++        T, base, int(ctx.options.get("smoke_steps") or ctx.prof["smoke_steps"]))
++    if flag_values(base, "--resume") == ["off"]:
++        base = set_flag(base, "--resume", ["auto"])
++        departures["--resume"] = "auto (the resume run needs it)"
++    args1 = v6_parser(T).parse_args(set_flag(base, "--steps", [str(steps)]))
++    all_inputs = _inputs_read(ctx, [f for f, _ in data_inputs(ctx.argv, ctx.prof)])
++    if reh:
++        all_inputs["gate:rehearsal"] = {"kind": "rehearsal",
++                                        "why": "tiny config + synthetic corpus (CPU host)"}
++    corpus: dict = {}
++
++    def one_run(argv_r: list[str], label: str, arms: bool = True) -> dict:
++        if reh:
++            with v6_corpus_seam(ctx, corpus):
++                return run_smoke_v6(ctx, T, argv_r, run_label=label, arms=arms)
++        return run_smoke_v6(ctx, T, argv_r, run_label=label, arms=arms)
++    argv1 = set_flag(set_flag(base, "--steps", [str(steps)]), "--out", [str(run_dir)])
++    _say(f"G-LIVE smoke (v6): {steps} steps, out {run_dir}")
++    run1 = one_run(argv1, "run1")
++    rows1 = _v6_train_rows(run_dir)
++    summ1 = read_json(run_dir / "summary.json") if (run_dir / "summary.json").is_file() else None
++    grf = read_json(run_dir / "grad_reach.json") if (run_dir / "grad_reach.json").is_file() else None
++    ckp = run_dir / "ckpt.pt"
++    ckpt = torch.load(ckp, map_location="cpu", weights_only=False) if ckp.is_file() else None
++    common = {"smoke_argv": argv1, "run_dir": str(run_dir), "departures_from_launch_argv": departures,
++              "synthetic_corpus": corpus or None, "elapsed_s": run1.get("elapsed_s")}
++    for ev in evs.values():
++        ev["inputs_read"] = dict(all_inputs)
++        if reh:
++            ev["rehearsal"] = departures.get("rehearsal") or {"note": "rehearsal"}
++    if "G-LIVE" in evs:
++        ev = evs["G-LIVE"]
++        try:
++            reasons, det = judge_live_v6(ctx.prof, args1, T, run1, expect_steps=steps, rows=rows1,
++                                         summary=summ1, grad_reach_file=grf, ckpt=ckpt)
++        except Exception as e:                            # noqa: BLE001
++            reasons, det = [f"G-LIVE (v6) judge crashed: {type(e).__name__}: {e}"], {
++                "traceback": traceback.format_exc()[-2500:]}
++        det.update(common)
++        det["arm"] = run1.get("arm")
++        det["cost"] = {**step_cost([], 0), "elapsed_s": run1.get("elapsed_s"), "steps": steps}
++        ev["details"].update(det)
++        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
++    if "G-CKPT" in evs:
++        ev = evs["G-CKPT"]
++        run2 = run3 = summ2 = cfg2 = None
++        if ckpt is not None and not run1.get("exit"):
++            (run_dir / "summary.json").unlink(missing_ok=True)   # run 1's marker, read above
++            argv2 = set_flag(argv1, "--steps", [str(steps + extra)])
++            run2 = one_run(argv2, "run2-resume")
++            summ2 = read_json(run_dir / "summary.json") if (run_dir / "summary.json").is_file() \
++                else None
++            cfg2 = read_json(run_dir / "config.json") if (run_dir / "config.json").is_file() else None
++            ref_dir = root / "reference"
++            argv3 = set_flag(set_flag(base, "--steps", [str(steps + extra)]), "--out", [str(ref_dir)])
++            run3 = one_run(argv3, "run3-uninterrupted", arms=False)
++        try:
++            reasons, det = judge_ckpt_v6(run1, run2, run3, n=steps, extra=extra, ckpt=ckpt,
++                                         run2_summary=summ2, run2_config=cfg2)
++        except Exception as e:                            # noqa: BLE001
++            reasons, det = [f"G-CKPT (v6) judge crashed: {type(e).__name__}: {e}"], {
++                "traceback": traceback.format_exc()[-2500:]}
++        det.update(common)
++        det["arm"] = (run2 or {}).get("arm")
++        ev["details"].update(det)
++        finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
++    return evs
++
++
++def job_clock_v6(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
++    """G-CLOCK (v6) -- NOT IMPLEMENTED for the v6 family yet (DESIGN.md §3 G-CLOCK: the trainer's own
++    label time `V72WindowSupervision._t_now_s` / `NavEmitter` against an independent measurement of
++    the v7F cache's clock, which does not exist yet). An unimplemented check is ERROR, never a PASS."""
++    ev = new_evidence(ctx, "G-CLOCK")
++    finish_evidence(ev, "ERROR", [
++        "G-CLOCK is not implemented for the v6 family: it needs (a) an INDEPENDENT clock reference "
++        "for the v7F cache (…-w120-256x640cyl; the refcv6 q4c reference was measured on another "
++        "extraction) and (b) the arithmetic over the trainer's own label time "
++        "(train_v6_staged.py:2563-2566 `_t_now_s`, v7_labels.py:1309 NavEmitter) -- DESIGN.md §3"])
++    return {"G-CLOCK": ev}
++
++
+ JOB_FUNCS = {"model": job_model, "smoke": job_smoke, "clock": job_clock, "suite": job_suite,
+              "pinned": job_suite_pinned, "record": job_record}
++#: the v6 family (v7f): its own model / smoke / clock jobs; G-SUITE and the record jobs are shared
++JOB_FUNCS_V6 = {"model": job_model_v6, "smoke": job_smoke_v6, "clock": job_clock_v6,
++                "suite": job_suite, "pinned": job_suite_pinned, "record": job_record}
+ 
+ 
+ def cmd_check(a) -> int:
+@@ -5412,7 +7038,8 @@
+     try:
+         info = child_bootstrap(ctx)
+         _say(f"{job}: tanitad from {info['tanitad']} (torch {info['torch']}, cuda {info['cuda']})")
+-        evs = JOB_FUNCS[job](ctx, checks)
++        funcs = JOB_FUNCS_V6 if ctx.prof.get("family") == "v6" else JOB_FUNCS
++        evs = funcs[job](ctx, checks)
+         for ev in evs.values():
+             ev.setdefault("details", {})["child"] = info
+     except BaseException as e:                            # noqa: BLE001 -- never a silent pass
+@@ -5612,7 +7239,14 @@
+     # caller -- so a stand-alone `finalize` cannot mint a token `run` would have refused
+     own_refusals, pi_pending = profile_argv_rules(ctx.prof, ctx.argv, ctx.options, pmap)
+     reasons = list(dict.fromkeys([*profile_refusals, *own_refusals]))
+-    reasons += data_manifest_problems(data)
++    rehearsal = bool((ctx.options or {}).get("rehearsal"))
++    rehearsal_notes: list[str] = []
++    if rehearsal:
++        # a REHEARSAL host is not the launch host: its missing data is a note, never a verdict --
++        # the rehearsal's own evidence can never count toward a token anyway (below)
++        rehearsal_notes += data_manifest_problems(data)
++    else:
++        reasons += data_manifest_problems(data)
+     if ctx.arm or os.environ.get(ARM_ENV):
+         reasons.append(f"a regression arm is active ({ctx.arm or os.environ.get(ARM_ENV)}) -- "
+                        f"an arm run can never PASS")
+@@ -5628,6 +7262,9 @@
+                 why.append("binding differs")
+             if ev.get("arm"):
+                 why.append(f"arm {ev['arm']}")
++            if ev.get("rehearsal"):
++                why.append("REHEARSAL evidence (tiny config + synthetic corpus on a CPU host) never "
++                           "counts toward a token")
+             for f, fp in (ev.get("inputs_read") or {}).items():
+                 mine = data.get(f)
+                 if mine is None or fp_key(mine) != fp_key(fp):
+@@ -5670,6 +7307,12 @@
+              "binding": binding, "checks": scrub(checks), "reasons": scrub(reasons),
+              "gate_sha256": _gate_self_sha(), "host": _host(), "created_utc": utc_now(),
+              "key_id": key_id(key)}
++    if rehearsal:
++        # what each instrument SAID on the rehearsal (never a verdict of this token)
++        token["rehearsal"] = scrub({
++            "notes": rehearsal_notes,
++            "checks": {c: {"status": ev.get("status"), "reasons": list(ev.get("reasons") or [])[:6]}
++                       for c, lst in found.items() for _p, ev in lst[-1:] if ev.get("rehearsal")}})
+     token["hmac_sha256"] = sign(token, key)
+     c12 = ctx.commit[:12]
+     path = out / f"{verdict}_{c12}.json"
+@@ -5714,7 +7357,8 @@
+         "ram_wait_s": int(a.ram_wait_s), "git_dir": a.git_dir, "baseline": a.baseline,
+         "suites": a.suites.split(",") if a.suites else None,
+         "suite_work": a.suite_work, "skip_mutation_audit": bool(a.skip_mutation_audit),
+-        "eval_loader": a.eval_loader or str(_resolve_repo_rel(tree, profile["eval_loader"])),
++        "eval_loader": a.eval_loader or (str(_resolve_repo_rel(tree, profile["eval_loader"]))
++                                         if profile.get("eval_loader") else None),
+         "eval_kit": a.eval_kit, "eval_stamps": a.eval_stamps,
+         "eval_remap_overrides": a.eval_remap_overrides,
+         "clock_reference": a.clock_reference or [str(_resolve_repo_rel(tree, r))
+@@ -5736,6 +7380,11 @@
+         "suite_verdict": (str(Path(a.suite_verdict).resolve()) if a.suite_verdict else None),
+         "abort_free_gb": float(a.abort_free_gb),
+     }
++    # a REHEARSAL (v7f dev box): tiny geometry + synthetic corpus; never a token's evidence
++    reh = getattr(a, "rehearsal", "auto")
++    if reh == "on" or (reh == "auto" and not a.checks
++                       and a.stage in profile.get("rehearsal_stages", ())):
++        options["rehearsal"] = True
+     if options["nav_tau_record"] is None and profile.get("nav_tau_record_default"):
+         dflt = _resolve_repo_rel(tree, profile["nav_tau_record_default"])
+         if dflt.is_file():
+@@ -6003,6 +7652,10 @@
+     r.add_argument("--key-file", default=None)
+     r.add_argument("--python", default=None)
+     r.add_argument("--arm", default=None, help="a regression arm (never PASSes)")
++    r.add_argument("--rehearsal", choices=("auto", "on", "off"), default="auto",
++                   help="a profile's REHEARSAL (v7f dev box: tiny geometry + synthetic corpus on CPU; "
++                        "its evidence never counts toward a token). auto = on for the profile's "
++                        "rehearsal_stages")
+     r.set_defaults(fn=cmd_run)
+     c = sub.add_parser("check", help="(internal) run one job's checks in this process")
+     c.add_argument("--ctx", required=True)

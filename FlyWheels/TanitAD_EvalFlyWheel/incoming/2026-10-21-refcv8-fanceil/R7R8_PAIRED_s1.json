@@ -1,0 +1,144 @@
+{
+ "label": "refcv8 EMA-48,852 pf s1 vs refcv7 50,400 s1",
+ "n_windows": 4754,
+ "control_gt_max_abs_diff_m": 0.0,
+ "control_gt_pass": true,
+ "per_model": {
+  "refcv7_50400": {
+   "n_candidates": 117,
+   "selected": 0.279,
+   "oracle_in_fan": 0.1145,
+   "random_expectation": 1.5501,
+   "skill_fraction": 0.8854,
+   "selected_rank": {
+    "mean": 7.789,
+    "median": 2.0,
+    "frac_rank0": 0.2875,
+    "frac_top5": 0.6662,
+    "frac_top10": 0.8153,
+    "rank_as_fraction_of_N_mean": 0.0671
+   },
+   "lon_lat": {
+    "selected_along": 0.2288,
+    "selected_cross": 0.1005,
+    "oracle_along": 0.0777,
+    "oracle_cross": 0.0645
+   }
+  },
+  "refcv8_ema48852": {
+   "n_candidates": 149,
+   "selected": 0.299,
+   "oracle_in_fan": 0.0841,
+   "random_expectation": 0.8318,
+   "skill_fraction": 0.7125,
+   "selected_rank": {
+    "mean": 22.485,
+    "median": 13.0,
+    "frac_rank0": 0.0894,
+    "frac_top5": 0.2653,
+    "frac_top10": 0.4266,
+    "rank_as_fraction_of_N_mean": 0.1519
+   },
+   "lon_lat": {
+    "selected_along": 0.254,
+    "selected_cross": 0.0995,
+    "oracle_along": 0.0603,
+    "oracle_cross": 0.044
+   }
+  }
+ },
+ "paired_r8_minus_r7": {
+  "selected": {
+   "delta": 0.02,
+   "lo": 0.0082,
+   "hi": 0.0318,
+   "ci95": 0.0118,
+   "p_delta_gt0": 0.999,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "metric": "refcv8 selected - refcv7 selected"
+  },
+  "oracle_in_fan": {
+   "delta": -0.0305,
+   "lo": -0.0333,
+   "hi": -0.028,
+   "ci95": 0.0026,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "metric": "refcv8 oracle - refcv7 oracle (T0)"
+  },
+  "random_expectation": {
+   "delta": -0.7183,
+   "lo": -0.7476,
+   "hi": -0.6887,
+   "ci95": 0.0295,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "metric": "refcv8 random - refcv7 random (T0)"
+  },
+  "sel_gap": {
+   "delta": 0.0505,
+   "lo": 0.0381,
+   "hi": 0.063,
+   "ci95": 0.0125,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "metric": "refcv8 (sel-oracle) - refcv7 (sel-oracle) (T0)"
+  }
+ },
+ "single": {
+  "refcv7_oracle": {
+   "mean": 0.1145,
+   "lo": 0.1057,
+   "hi": 0.1261,
+   "ci95": 0.0102,
+   "se": 0.0052,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "metric": "refcv7 oracle"
+  },
+  "refcv8_oracle": {
+   "mean": 0.0841,
+   "lo": 0.0755,
+   "hi": 0.096,
+   "ci95": 0.0102,
+   "se": 0.0052,
+   "reducer": "mean",
+   "n_windows": 4754,
+   "n_episodes": 139,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "metric": "refcv8 oracle"
+  }
+ },
+ "stamp": {
+  "tier": "T0 DIAGNOSTIC (oracle/random use GT)",
+  "estimator": "FULL-SET mean; paired episode-cluster bootstrap taniteval ci n_boot 2000 seed 0",
+  "ci_answers": "another draw of EPISODES only; one training seed per model; one inference seed per fan",
+  "r7_fan": "D:/refcv7_eval_kit/fanctl/s1/dump/fan_extras.npz",
+  "r8_fan": "runs/s1/dump/fan_extras.npz",
+  "script": "C:\\Users\\Admin\\refcv8_pf\\fanceil\\code\\compare_r7_r8_fan.py"
+ }
+}

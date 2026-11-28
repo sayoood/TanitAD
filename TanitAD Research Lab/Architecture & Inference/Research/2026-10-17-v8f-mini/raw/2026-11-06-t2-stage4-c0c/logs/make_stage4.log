@@ -1,0 +1,76 @@
+{
+ "tar": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage4/t2v8f_stage4_overlay.tar",
+ "tar_bytes": 204800,
+ "tar_sha256": "bbd4b8b04272d2d8da70909039c689b941ab17a76cf041bec24887bd337f3594",
+ "n_files": 6,
+ "members": [
+  "pkg/MANIFEST4.json",
+  "pkg/code/t2v8f_c0c.py",
+  "pkg/code/t2v8f_stage4.py",
+  "pkg/code/t2v8f_stage4_cell.py",
+  "pkg/jobs/stage4.cmd",
+  "pkg/refs/tool/v8f_t1_eval_ri.py"
+ ],
+ "manifest4_sha256": "b186fcffceaa05efec398ad69d0f4529e265e535b87112fa280cd1aea55cb3d2",
+ "n_scenes": 62,
+ "n_starts": 121,
+ "n_cells": {
+  "deciding": 124,
+  "beside": 124,
+  "total": 248
+ },
+ "footprint": {
+  "cells": {
+   "deciding": 124,
+   "beside": 124,
+   "total": 248
+  },
+  "pass_mib": {
+   "deciding": 1016,
+   "beside": 746
+  },
+  "cell_mib_measured_stage1": 6,
+  "floor_gib": 10.0,
+  "box2_C_new_writes_mib": 0,
+  "box2_D_overlay_mib": 7,
+  "box2_D_pull_deciding_mib": 1016,
+  "box2_D_pull_beside_mib": 746,
+  "box2_D_total_mib": 1769,
+  "D_free_gib_needed_to_run_both_passes": 11.73,
+  "D_free_gib_needed_for_deciding_pass_only": 11.0,
+  "note": "ESTIMATED from stage 1's MEASURED per-cell allocation (6 MiB on 1 MiB-cluster exFAT; a C0C record also carries plan_raw / plan_s, a few KB, inside the same cluster: the rehearsal asserts the stub cell still costs CELL_MIB). The driver checks the floor on the PULL drive (D:) at preflight and before each pass."
+ },
+ "driver_sha256": "588e764264cdbb4ec785184bae92c1c7d9a0d528abf9aeb000a312fb94744c87",
+ "cell_sha256": "7a5c863cf9a2cf126a73c0c8401ae3e4653ee51c72900cbac1e34ff55637c5fa",
+ "c0c_sha256": "1a78317951ae5086a8e30839ec3c827fe55ce0195b7eb8537a21e336268a62bc",
+ "ri_tool_sha256": "0417c838355a51f6f7084c17b5acada96c5b6cbd9eef54cc2602d377bf3c61e7",
+ "ri_tool_bytes": 76704,
+ "stage1_manifest_sha256": "7c30471a519f97c0691b817474f0dd7f060d76d2f772e40ba63800d66b1f0291",
+ "source_manifests": {
+  "stage2": {
+   "member": "pkg/MANIFEST2.json",
+   "sha256": "563b1d5753a8abba14944f560ad1630f0132d2b863f5914cc56fecdae28c9a9b",
+   "tar": "t2v8f_stage2_overlay2.tar"
+  },
+  "stage3": {
+   "member": "pkg/MANIFEST3.json",
+   "sha256": "be113ea9c3592dc42f34520f08cb94d95bbd123ac94296358148a904f5c3e3c0",
+   "tar": "t2v8f_stage3_overlay.tar"
+  }
+ },
+ "requires": {
+  "code/t2v8f_stage2.py": {
+   "size": 25484,
+   "sha256": "33b65b19a563b8fe275de5e46e0f569db6487bd7fdf40b7eab34e021094f4898"
+  },
+  "code/t2v8f_stage2_cell.py": {
+   "size": 2253,
+   "sha256": "cd5bda37519c50bd225cd63623d648a5a4ff67bc0bb7ca5a44e98bbae2022e92"
+  },
+  "code/t2v8f_exec_hold.py": {
+   "size": 4683,
+   "sha256": "c04ceb65f792707a435faee4472b51daf243e1f2885c5827ef708c74dbdc856d"
+  }
+ },
+ "seconds": 0.5
+}

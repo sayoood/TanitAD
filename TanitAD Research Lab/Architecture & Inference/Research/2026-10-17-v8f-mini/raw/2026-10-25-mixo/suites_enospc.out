@@ -1,0 +1,61 @@
+# PREREG_V8F_MIXO suites: CPU only (CUDA_VISIBLE_DEVICES=-1), tree = the delivered export tree, started 2026-10-25 08:32
+# cmd: pytest -q -p no:cacheprovider -rs stack/tests/test_v8f*.py stack/tests/test_launch_gate_v8f.py
+...................................ss................................... [  7%]
+........................................................................ [ 14%]
+........................................................................ [ 21%]
+........................................................................ [ 28%]
+........................................................................ [ 36%]
+........................................................................ [ 43%]
+....................................................FFsss..FF.F..Fs.FFF. [ 50%]
+.......FFFFF..sssF............................EFFEEEEEEEEEEEE........E.. [ 57%]
+........................................................................ [ 64%]
+................EEEE..FFFFF.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF [ 72%]
+FFFFFFFFFF.......FFFFFFFFFFFFFFFEEEEEEEEE.EFFFFFFFF......FF...F...FFF.EE [ 79%]
+EEEF.FFFFFFFFFFFF....F....FFFF....EEEEEEEEEEEEEE.EEEEEEFF...EF..EF.EE.FF [ 86%]
+F.............EEEEEEEEEEEEEEEEEEE..FEEEEEEEEEEEEEEEEEEEEEEEFFFFEEEEEEEEE [ 93%]
+EEEE......................................................FF....         [100%]Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+                     ~~~~~~~~~~~~~^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\_pytest\main.py", line 365, in wrap_session
+    config.hook.pytest_sessionfinish(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        session=session, exitstatus=session.exitstatus
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pluggy\_callers.py", line 167, in _multicall
+    raise exception
+object address  : 0000015521864CA0
+object refcount : 6
+object type     : 00007FFBFE79FE80
+object type name: OSError
+object repr     : 
+lost sys.stderr
+# finished 2026-10-25 08:44 rc=0
+# ANNOTATION (appended 08:47 by the author): C: ran out of space at about 08:40 (ENOSPC; a throwaway tree copy was being made). Everything above up to roughly the 43% mark (dots only) ran before that; from the first F/E (about 46%) on, the failures are DISK-FULL artefacts, not test results, and the run died in pytest's own session finish (OSError). THIS FILE IS NOT A VALID SUITE RESULT: rerun the suites (the mixo file alone passed 149/149 at 08:35, see the mutation baseline).

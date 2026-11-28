@@ -1,0 +1,167 @@
+{
+ "_what": "can VISION set the target speed? band top-1 over the 23 VTARGET tokens, leave-one-episode-out, REF-C-base frozen fan",
+ "_join_proof": {
+  "max_abs_v0_minus_pose_speed": 0.0
+ },
+ "_estimator": "paired_episode_cluster_bootstrap (taniteval.ci), unit = val episode, B=2000. NEVER overlapping_holdout_se",
+ "_frozen_trunk_caveat": "readout on a FROZEN trunk with no ego_dropout \u2014 optimistic; evidence for a GPU-day, not a substitute for one",
+ "n_windows": 971,
+ "n_windows_total": 1364,
+ "n_episodes": 39,
+ "n_bands_present": 20,
+ "band_top1": {
+  "identity_v0_band": 0.4078,
+  "majority": 0.1658,
+  "v0": 0.2348,
+  "past": 0.2626,
+  "img": 0.2379,
+  "img_v0": 0.2297
+ },
+ "paired_vs_identity_v0_band": {
+  "majority": {
+   "delta": -0.242,
+   "lo": -0.4027,
+   "hi": -0.0691,
+   "ci95": 0.1668,
+   "p_delta_gt0": 0.002,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 971,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "_reads": "delta > 0 => this arm beats the FREE baseline of repeating the current speed's band. A goal head that does not separate above 0 is a dead parameter."
+  },
+  "v0": {
+   "delta": -0.173,
+   "lo": -0.3155,
+   "hi": -0.0309,
+   "ci95": 0.1423,
+   "p_delta_gt0": 0.007,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 971,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "_reads": "delta > 0 => this arm beats the FREE baseline of repeating the current speed's band. A goal head that does not separate above 0 is a dead parameter."
+  },
+  "past": {
+   "delta": -0.1452,
+   "lo": -0.2884,
+   "hi": -0.0072,
+   "ci95": 0.1406,
+   "p_delta_gt0": 0.0195,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 971,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "_reads": "delta > 0 => this arm beats the FREE baseline of repeating the current speed's band. A goal head that does not separate above 0 is a dead parameter."
+  },
+  "img": {
+   "delta": -0.1699,
+   "lo": -0.2859,
+   "hi": -0.0614,
+   "ci95": 0.1122,
+   "p_delta_gt0": 0.001,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 971,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "_reads": "delta > 0 => this arm beats the FREE baseline of repeating the current speed's band. A goal head that does not separate above 0 is a dead parameter."
+  },
+  "img_v0": {
+   "delta": -0.1782,
+   "lo": -0.2942,
+   "hi": -0.0727,
+   "ci95": 0.1108,
+   "p_delta_gt0": 0.0005,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 971,
+   "n_episodes": 39,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "_reads": "delta > 0 => this arm beats the FREE baseline of repeating the current speed's band. A goal head that does not separate above 0 is a dead parameter."
+  }
+ },
+ "by_speed": {
+  "0-1": {
+   "n": 64,
+   "n_episodes": 8,
+   "band_top1": {
+    "identity_v0_band": 0.0781,
+    "majority": 0.1719,
+    "v0": 0.0312,
+    "past": 0.0781,
+    "img": 0.0156,
+    "img_v0": 0.0156
+   }
+  },
+  "1-3": {
+   "n": 58,
+   "n_episodes": 13,
+   "band_top1": {
+    "identity_v0_band": 0.2069,
+    "majority": 0.1552,
+    "v0": 0.1207,
+    "past": 0.1724,
+    "img": 0.0517,
+    "img_v0": 0.0345
+   }
+  },
+  "3-6": {
+   "n": 160,
+   "n_episodes": 16,
+   "band_top1": {
+    "identity_v0_band": 0.0688,
+    "majority": 0.0813,
+    "v0": 0.1313,
+    "past": 0.1938,
+    "img": 0.0875,
+    "img_v0": 0.0938
+   }
+  },
+  "6-10": {
+   "n": 208,
+   "n_episodes": 19,
+   "band_top1": {
+    "identity_v0_band": 0.1058,
+    "majority": 0.2788,
+    "v0": 0.2548,
+    "past": 0.3221,
+    "img": 0.226,
+    "img_v0": 0.2163
+   }
+  },
+  "10-15": {
+   "n": 201,
+   "n_episodes": 13,
+   "band_top1": {
+    "identity_v0_band": 0.5771,
+    "majority": 0.2935,
+    "v0": 0.2338,
+    "past": 0.2587,
+    "img": 0.3433,
+    "img_v0": 0.3284
+   }
+  },
+  "15-inf": {
+   "n": 280,
+   "n_episodes": 14,
+   "band_top1": {
+    "identity_v0_band": 0.8214,
+    "majority": 0.0393,
+    "v0": 0.35,
+    "past": 0.3214,
+    "img": 0.3464,
+    "img_v0": 0.3357
+   }
+  }
+ },
+ "_runtime_s": 158.0
+}

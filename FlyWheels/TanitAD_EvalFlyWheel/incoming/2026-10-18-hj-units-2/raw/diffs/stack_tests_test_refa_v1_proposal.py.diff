@@ -1,0 +1,11 @@
+--- a/stack/tests/test_refa_v1_proposal.py (40eb2413cb)
++++ b/stack/tests/test_refa_v1_proposal.py (c6573b7385)
+@@ -101,7 +101,7 @@
+     feats = torch.randn(1, m.cfg.op_window, m.cfg.n_tokens, m.cfg.d_enc)
+     pc = PlanConfig(horizon=m.cfg.plan_steps, dt=m.cfg.op_dt,
+                     n_samples=8, n_iters=2, n_elites=3, seed=0)
+-    res = m.plan(feats, v0=5.0, plan_cfg=pc)
++    res = m.plan(feats, v0=5.0, plan_cfg=pc, model_action_units="kappa")
+     assert res.controls.shape == (m.cfg.plan_steps, m.cfg.a_dim)
+     assert torch.isfinite(res.controls).all()
+ 

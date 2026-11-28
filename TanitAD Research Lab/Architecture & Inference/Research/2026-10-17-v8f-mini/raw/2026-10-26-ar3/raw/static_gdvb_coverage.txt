@@ -1,0 +1,14 @@
+parser dests: 66 | FLAG_CHECKS entries: 66
+flags WITHOUT a G-DVB entry: [] | entries with no flag: []
+  encoder      -> enc:encoder              default='cache'
+  lora_r       -> enc:lora_r               default=32
+  lora_alpha   -> enc:lora_alpha           default=32.0
+  lora_targets -> enc:lora_targets         default='q,v'
+  lora_lr      -> opt:lora_lr              default=None
+  frames_root  -> data:frames_missing      default=None
+  accum        -> enc:accum                default=1
+  enc_ckpt     -> enc:checkpointing        default=False
+  amp          -> run                      default=False
+LORA_PARSER_DEFAULTS: {'lora_r': 32, 'lora_alpha': 32.0, 'lora_targets': 'q,v', 'lora_lr': None, 'frames_root': None, 'accum': 1, 'enc_ckpt': False}
+bad_encoder mentions amp: False | mentions accum: True
+declared_vs_built source mentions 'amp': False

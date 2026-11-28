@@ -1,0 +1,51 @@
+==========================================================================
+P1 / P1c  MUTATION PROOF -- does the strategic path reach the plan?
+==========================================================================
+
+[ON__bypassed]  no_strategic=True
+  strategic tensors mutated : 18 (5710 elements)
+  plan keys compared        : ['anchor_logits', 'anchor_traj', 'bank_speed_pred', 'g_tac', 'g_tac_delta', 'goal_dist', 'goal_gate_value', 'goal_point_free', 'goal_point_tac', 'goal_score_absmean', 'lat_decision', 'lat_logits', 'lat_logits_tac', 'lon_decision', 'lon_logits', 'lon_logits_tac', 'maneuver_decision', 'maneuver_logits', 'offset', 'refined_logits', 'sel_idx', 'sel_idx_base', 'sel_score', 'sel_score_v3', 'traj', 'traj_base', 'wp_seq', 'z_tac']
+  keys CHANGED by mutation  : NONE (bit-identical)
+
+[OFF_today]  no_strategic=False
+  strategic tensors mutated : 18 (5710 elements)
+  plan keys compared        : ['anchor_logits', 'anchor_traj', 'bank_speed_pred', 'g_tac', 'g_tac_delta', 'goal_dist', 'goal_gate_value', 'goal_point_free', 'goal_point_tac', 'goal_score_absmean', 'lat_decision', 'lat_logits', 'lat_logits_tac', 'lon_decision', 'lon_logits', 'lon_logits_tac', 'maneuver_decision', 'maneuver_logits', 'offset', 'refined_logits', 'sel_idx', 'sel_idx_base', 'sel_score', 'sel_score_v3', 'traj', 'traj_base', 'wp_seq', 'z_tac']
+  keys CHANGED by mutation  : ['anchor_logits', 'anchor_traj', 'bank_speed_pred', 'g_tac', 'g_tac_delta', 'goal_dist', 'goal_point_tac', 'goal_score_absmean', 'lat_logits_tac', 'lon_logits_tac', 'offset', 'refined_logits', 'sel_idx', 'sel_idx_base', 'sel_score', 'sel_score_v3', 'traj', 'traj_base', 'wp_seq', 'z_tac']
+      anchor_logits      max|delta| = 13.564188003540039
+      anchor_traj        max|delta| = 29.451824188232422
+      bank_speed_pred    max|delta| = 60.06856918334961
+      g_tac              max|delta| = 128.85354614257812
+      g_tac_delta        max|delta| = 128.85354614257812
+      goal_dist          max|delta| = 92.73185729980469
+      goal_point_tac     max|delta| = 73.30260467529297
+      goal_score_absmean max|delta| = 26.09305191040039
+      lat_logits_tac     max|delta| = 67.73313903808594
+      lon_logits_tac     max|delta| = 64.4011001586914
+      offset             max|delta| = 29.451824188232422
+      refined_logits     max|delta| = 13.564188003540039
+      sel_idx            max|delta| = 6.0
+      sel_idx_base       max|delta| = 6.0
+      sel_score          max|delta| = 13.564188003540039
+      sel_score_v3       max|delta| = 13.564188003540039
+      traj               max|delta| = 44.50538635253906
+      traj_base          max|delta| = 44.50538635253906
+      wp_seq             max|delta| = 44.50538635253906
+      z_tac              max|delta| = 156.13511657714844
+
+P1   ON  bypasses (plan bit-identical under mutation) : PASS
+P1c  OFF control (same mutation MUST move the plan)   : PASS
+
+==========================================================================
+P2  under the bypass, does the NAV COMMAND still reach the planners?
+==========================================================================
+
+  nav_cmd 0 -> 2, at INIT
+  keys changed: ['anchor_logits', 'anchor_traj', 'goal_dist', 'goal_score_absmean', 'offset', 'refined_logits', 'sel_score', 'sel_score_v3', 'traj', 'traj_base', 'wp_seq']
+
+  same, after making E13 nav_to_tac non-zero (it is ZERO-INIT)
+  keys changed: ['anchor_logits', 'anchor_traj', 'bank_speed_pred', 'g_tac', 'g_tac_delta', 'goal_dist', 'goal_point_tac', 'goal_score_absmean', 'lat_logits_tac', 'lon_logits_tac', 'offset', 'refined_logits', 'sel_score', 'sel_score_v3', 'traj', 'traj_base', 'wp_seq', 'z_tac']
+
+P2a  nav -> OPERATIVE (measurement -> decoder cond), live at init : PASS
+P2b  nav -> TACTICAL (E13 nav_to_tac), pathway present            : PASS
+
+ALL: PASS

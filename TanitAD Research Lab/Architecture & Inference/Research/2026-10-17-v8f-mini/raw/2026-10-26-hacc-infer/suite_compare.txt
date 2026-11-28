@@ -1,0 +1,48 @@
+base : exit 1  |  27 failed, 1742 passed, 21 skipped, 6 warnings, 14 errors in 1497.53s (0:24:57)
+final: exit 1,1  |  17 failed, 1009 passed, 14 skipped, 1 warning in 726.11s (0:12:06) ;; 10 failed, 750 passed, 7 skipped, 6 warnings, 14 errors in 820.95s (0:13:40)
+failing on base : 41
+failing on final: 41
+REGRESSIONS (fail/error on FINAL only): 0
+failing on base only: 0
+failing on both (pre-existing): 41
+  FAILED tests/test_v8f_kindx_s1.py::test_s0_mode_reproduces_the_banked_deciding_block_exactly
+  FAILED tests/test_v8f_kscore.py::test_constants_are_the_prereg_text
+  FAILED tests/test_v8f_kscore.py::test_every_outcome_quotes_the_prereg_next_step
+  FAILED tests/test_v8f_lora.py::test_a_detached_encoder_output_turns_the_gradient_check_red
+  FAILED tests/test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0]
+  FAILED tests/test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype1]
+  FAILED tests/test_v8f_lora.py::test_checkpointing_changes_nothing_but_memory
+  FAILED tests/test_v8f_lora.py::test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone
+  FAILED tests/test_v8f_lora.py::test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught
+  FAILED tests/test_v8f_lora.py::test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term
+  FAILED tests/test_v8f_lora.py::test_launch_gate_refuses_every_lie_about_the_built_encoder
+  FAILED tests/test_v8f_lora.py::test_lora_run_resumes_as_the_same_run
+  FAILED tests/test_v8f_lora.py::test_reachability_flag_to_loss_to_backward_end_to_end
+  FAILED tests/test_v8f_lora.py::test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection
+  FAILED tests/test_v8f_lora.py::test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero
+  FAILED tests/test_v8f_lora.py::test_the_encoder_build_never_moves_the_heads_initialisation
+  FAILED tests/test_v8f_lora.py::test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not
+  FAILED tests/test_v8f_lora.py::test_unique_frames_and_the_frame_store_refusals
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_main_writes_its_json_even_on_a_refusal
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_manifest_only_asserts_the_rows_and_never_builds_a_model
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_MEAN0_0.485_to_0.486]
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_STD2_0.225_to_0.226]
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[PIXEL_SCALE_255_to_256]
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_caught_on_a_non_qualifying_device_proves_nothing
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_that_changes_nothing_is_not_caught
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_run_a_frame_subset_never_qualifies
+  FAILED tests/test_v8f_lora_ar2.py::test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_run_identity_passes_on_a_cache_the_builders_own_functions_made
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_run_on_cpu_is_refused_unless_labelled_and_then_never_qualifies
+  FAILED tests/test_v8f_lora_ar2.py::test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_run_refuses_a_stored_file_that_is_not_the_one_the_row_describes
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_run_refuses_frames_that_are_not_the_ones_the_cache_was_encoded_from
+  ERROR tests/test_v8f_lora_ar2.py::test_driver_run_with_fewer_than_two_and_two_clips_never_qualifies
+  ERROR tests/test_v8f_lora_ar2.py::test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device
+  FAILED tests/test_v8f_mini_full_report.py::test_the_default_ground_truth_is_the_eval141_grid
+  FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position
+  FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds
+  FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant
+  FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles
+  FAILED tests/test_v8f_oacc.py::test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim
+  FAILED tests/test_v8f_speedavg.py::test_the_tables_text_is_the_preregs_text

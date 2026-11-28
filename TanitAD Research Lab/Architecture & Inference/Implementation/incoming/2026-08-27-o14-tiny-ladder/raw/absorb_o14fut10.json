@@ -1,0 +1,54 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "prereg": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-26-residual-ceiling/SPEC.md (+AMENDMENT A1)",
+ "arm": "o14fut10",
+ "step": 2000,
+ "n_clips": 80,
+ "n_rows": 7280,
+ "k": 4,
+ "pca_band": [
+  0,
+  8
+ ],
+ "k_folds": 10,
+ "oracle_form": "tokens 4x10x128 + grey 32x80 + z_t (AMENDMENT A1 pooling; token d_model read from the bank, NOT assumed)",
+ "columns": {
+  "constant (A0)": {
+   "d": 1,
+   "r": 0.0,
+   "shuf": 0.0
+  },
+  "z_t (A1 DRIFT/POSITIVE CTRL)": {
+   "d": 2048,
+   "r": 0.4728,
+   "shuf": -0.0051
+  },
+  "z_t + pixels (A3 RAW FLOOR)": {
+   "d": 4608,
+   "r": 0.4686,
+   "shuf": -0.0036
+  }
+ },
+ "marginals_over_drift": {
+  "z_t + pixels (A3 RAW FLOOR)": {
+   "delta": -0.0042,
+   "t": -0.84,
+   "verdict": "INSIDE_NULL"
+  }
+ },
+ "rig_checks": {
+  "A0_constant_reads_zero": true,
+  "A1_drift_in_known_band": false,
+  "A1_banked_value": {
+   "expected_r": 0.6718,
+   "expected_t": 134.84,
+   "got_r": 0.4728,
+   "got_t": 47.15
+  },
+  "A6_deliberate_regression_failed_as_required": true,
+  "all_shuffle_controls_near_zero": true
+ },
+ "rig_valid": false,
+ "verdict": "RIG_INVALID"
+}

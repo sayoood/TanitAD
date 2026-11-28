@@ -1,0 +1,28 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ test_GATE_G_DVB_holds_the_built_declarations_to_the_profiles_literal_on_the_refcv8_rig _
+
+    def test_GATE_G_DVB_holds_the_built_declarations_to_the_profiles_literal_on_the_refcv8_rig():
+        argv = ["--r9-train-only", "planner,tactical"]
+        _cfg, m = _r8rig()
+        M.apply_train_only(m, ("planner", "tactical"))
+        r, det = LG.map_only_built_reasons(_r8rig_prof(R8RIG_DECLARED), argv, m)
+        assert _non_group(r) == [] and det["trainable_numel"] == 121_300
+        assert det["declared_frozen_built"] == list(R8RIG_DECLARED)
+        # MUTATION 1: the literal omits the declarations -> named, and the 4 declared tensors read as frozen trained ones
+        r, _ = LG.map_only_built_reasons(_r8rig_prof(()), argv, m)
+>       assert _non_group(r) == ["MAP-ONLY: the build's declared grad-unreachable subtrees inside the trained modules are "
+                                 "['core.decoder.control_head', 'core.decoder.offset_head']; the profile's literal is [] -- "
+                                 "a declaration would hide a trained group, or a dead one would be trained",
+                                 "MAP-ONLY: 4 map-only parameter(s) are frozen, e.g. ['core.decoder.offset_head.weight', "
+                                 "'core.decoder.offset_head.bias', 'core.decoder.control_head.weight']"]
+E       assert ["MAP-ONLY: 4...ead.weight']"] == ['MAP-ONLY: t...ead.weight']"]
+E         
+E         At index 0 diff: "MAP-ONLY: 4 map-only parameter(s) are frozen, e.g. ['core.decoder.offset_head.weight', 'core.decoder.offset_head.bias', 'core.decoder.control_head.weight']" != "MAP-ONLY: the build's declared grad-unreachable subtrees inside the trained modules are ['core.decoder.control_head', 'core.decoder.offset_head']; the profile's literal is [] -- a declaration would hide a trained group, or a dead one would be trained"
+E         Right contains one more item: "MAP-ONLY: 4 map-only parameter(s) are frozen, e.g. ['core.decoder.offset_head.weight', 'core.decoder.offset_head.bias', 'core.decoder.control_head.weight']"
+E         Use -v to get more diff
+
+tests\test_r9_train_only.py:903: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_GATE_G_DVB_holds_the_built_declarations_to_the_profiles_literal_on_the_refcv8_rig
+1 failed in 6.00s

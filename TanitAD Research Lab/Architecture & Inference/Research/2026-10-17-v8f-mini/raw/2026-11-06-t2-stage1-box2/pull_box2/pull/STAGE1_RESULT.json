@@ -1,0 +1,411 @@
+{
+ "stage": "stage1",
+ "tier": "T2 re-perception rollout (never pooled with T1-kin)",
+ "purpose": "PLUMBING ONLY: this rollout is never read for H1 or H2",
+ "started": "2026-11-06 13:06:30",
+ "stub": false,
+ "host": "DESKTOP-FP4OP26",
+ "manifest_sha256": "7c30471a519f97c0691b817474f0dd7f060d76d2f772e40ba63800d66b1f0291",
+ "steps": {
+  "preflight": {
+   "verdict": "PASS",
+   "failures": [],
+   "info": {
+    "python": "3.13.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "numpy": "2.5.1",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.15.0",
+    "PIL": "12.3.0",
+    "gsplat": "1.5.3",
+    "msgpack": "1.2.3",
+    "gpu": {
+     "name": "NVIDIA GeForce RTX 4060",
+     "free_gib": 6.94,
+     "total_gib": 8.0
+    },
+    "free_gib_pkg": 35.58,
+    "free_gib_pull": 35.58,
+    "free_gib_kit": 35.58,
+    "pkg_files_ok": 471,
+    "pkg_files": 471,
+    "kit_items_ok": 5,
+    "dinov3_snapshot": "D:/tanitad/hf/hub\\models--facebook--dinov3-vitl16-pretrain-lvd1689m\\snapshots\\ea8dc2863c51be0a264bab82070e3e8836b02d51",
+    "mp4_decoders_here": {
+     "av": "18.0.0"
+    }
+   },
+   "seconds": 145.7
+  },
+  "install": {
+   "verdict": "PASS",
+   "installed_or_identical": 6,
+   "failures": [],
+   "seconds": 5.2
+  },
+  "t5": {
+   "verdict": "PASS",
+   "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+   "f0": 22,
+   "arm": "C0_s0",
+   "n_frames": 40,
+   "frames_differing": 0,
+   "plans_bit_equal": true,
+   "max_abs_plan_diff_m": 0.0,
+   "executed_equal": true,
+   "rule": "bit-equal plans, executed track and every frame md5",
+   "seconds": 58.7
+  },
+  "gap": {
+   "verdict": "REPORTED",
+   "rule": "beside only: no threshold. Encoder-vs-cache floor (G2, one real frame): rel-L2 0.0264, cosine 0.99965",
+   "scenes": {
+    "00040136-e651-4abd-991d-0655ccda9430": {
+     "n_ticks": 199,
+     "rows": [
+      {
+       "tick": 18,
+       "cam_frame": 54,
+       "cosine": 0.7932185186185257,
+       "rel_l2": 0.6310542897564,
+       "grad_ncc_pixels": 0.2802165448665619
+      },
+      {
+       "tick": 35,
+       "cam_frame": 105,
+       "cosine": 0.8200198769185866,
+       "rel_l2": 0.5899883371994763,
+       "grad_ncc_pixels": 0.30613455176353455
+      },
+      {
+       "tick": 53,
+       "cam_frame": 159,
+       "cosine": 0.8074229485549534,
+       "rel_l2": 0.6082457694066278,
+       "grad_ncc_pixels": 0.25983086228370667
+      },
+      {
+       "tick": 60,
+       "cam_frame": 180,
+       "cosine": 0.8473450865033103,
+       "rel_l2": 0.5436714192973675,
+       "grad_ncc_pixels": 0.3264237940311432
+      },
+      {
+       "tick": 70,
+       "cam_frame": 210,
+       "cosine": 0.836640459240057,
+       "rel_l2": 0.561104959050449,
+       "grad_ncc_pixels": 0.36771199107170105
+      },
+      {
+       "tick": 87,
+       "cam_frame": 261,
+       "cosine": 0.8478568118301756,
+       "rel_l2": 0.5435463426036661,
+       "grad_ncc_pixels": 0.3306715190410614
+      },
+      {
+       "tick": 104,
+       "cam_frame": 312,
+       "cosine": 0.8575707990972584,
+       "rel_l2": 0.5199968171489421,
+       "grad_ncc_pixels": 0.34222185611724854
+      },
+      {
+       "tick": 122,
+       "cam_frame": 366,
+       "cosine": 0.8255870208025567,
+       "rel_l2": 0.5815183258409127,
+       "grad_ncc_pixels": 0.32637324929237366
+      },
+      {
+       "tick": 139,
+       "cam_frame": 417,
+       "cosine": 0.8581067339349101,
+       "rel_l2": 0.525112235248278,
+       "grad_ncc_pixels": 0.30926987528800964
+      }
+     ],
+     "cosine": {
+      "median": 0.836640459240057,
+      "min": 0.7932185186185257,
+      "max": 0.8581067339349101
+     },
+     "rel_l2": {
+      "median": 0.561104959050449,
+      "min": 0.5199968171489421,
+      "max": 0.6310542897564
+     }
+    },
+    "7c72937c-c620-4776-9555-d57222c0081f": {
+     "n_ticks": 199,
+     "rows": [
+      {
+       "tick": 18,
+       "cam_frame": 54,
+       "cosine": 0.7183514841871569,
+       "rel_l2": 0.7270763359360811,
+       "grad_ncc_pixels": 0.3646807372570038
+      },
+      {
+       "tick": 22,
+       "cam_frame": 66,
+       "cosine": 0.7133262868992298,
+       "rel_l2": 0.7351113831544548,
+       "grad_ncc_pixels": 0.36350107192993164
+      },
+      {
+       "tick": 35,
+       "cam_frame": 105,
+       "cosine": 0.7138638285466746,
+       "rel_l2": 0.73703736843588,
+       "grad_ncc_pixels": 0.29043108224868774
+      },
+      {
+       "tick": 53,
+       "cam_frame": 159,
+       "cosine": 0.7082393630729997,
+       "rel_l2": 0.7460480903075889,
+       "grad_ncc_pixels": 0.24760298430919647
+      },
+      {
+       "tick": 70,
+       "cam_frame": 210,
+       "cosine": 0.7793235573557276,
+       "rel_l2": 0.6559229110260819,
+       "grad_ncc_pixels": 0.247299462556839
+      },
+      {
+       "tick": 87,
+       "cam_frame": 261,
+       "cosine": 0.7404358159002863,
+       "rel_l2": 0.7096459175064627,
+       "grad_ncc_pixels": 0.19550618529319763
+      },
+      {
+       "tick": 104,
+       "cam_frame": 312,
+       "cosine": 0.7826454218629159,
+       "rel_l2": 0.6506613780039013,
+       "grad_ncc_pixels": 0.1262005865573883
+      },
+      {
+       "tick": 122,
+       "cam_frame": 366,
+       "cosine": 0.8114015786926074,
+       "rel_l2": 0.6030947864237346,
+       "grad_ncc_pixels": 0.17812122404575348
+      },
+      {
+       "tick": 139,
+       "cam_frame": 417,
+       "cosine": 0.823586983763449,
+       "rel_l2": 0.5839186118841203,
+       "grad_ncc_pixels": 0.27214914560317993
+      }
+     ],
+     "cosine": {
+      "median": 0.7404358159002863,
+      "min": 0.7082393630729997,
+      "max": 0.823586983763449
+     },
+     "rel_l2": {
+      "median": 0.7096459175064627,
+      "min": 0.5839186118841203,
+      "max": 0.7460480903075889
+     }
+    }
+   },
+   "seconds": 14.6
+  },
+  "actor": {
+   "verdict": "PASS",
+   "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+   "rows": [
+    {
+     "tick": 31,
+     "lead_xy_rig_m": [
+      9.152,
+      -0.111
+     ],
+     "roi": [
+      779,
+      753,
+      1145,
+      1052
+     ],
+     "roi_px": 110100,
+     "changed_on_vs_empty": 82279,
+     "changed_on_vs_off": 82279,
+     "changed_planted_empty_vs_off": 0,
+     "changed_disabled": 0,
+     "present": true,
+     "planted_absent": true,
+     "disabled_exact": true,
+     "beside_clock_past_end_changed": 0,
+     "beside_clock_past_end_absent": true
+    },
+    {
+     "tick": 44,
+     "lead_xy_rig_m": [
+      10.982,
+      -0.121
+     ],
+     "roi": [
+      827,
+      754,
+      1095,
+      977
+     ],
+     "roi_px": 60256,
+     "changed_on_vs_empty": 43960,
+     "changed_on_vs_off": 43960,
+     "changed_planted_empty_vs_off": 0,
+     "changed_disabled": 0,
+     "present": true,
+     "planted_absent": true,
+     "disabled_exact": true,
+     "beside_clock_past_end_changed": 0,
+     "beside_clock_past_end_absent": true
+    },
+    {
+     "tick": 58,
+     "lead_xy_rig_m": [
+      12.645,
+      -0.149
+     ],
+     "roi": [
+      855,
+      755,
+      1070,
+      935
+     ],
+     "roi_px": 39096,
+     "changed_on_vs_empty": 26490,
+     "changed_on_vs_off": 26490,
+     "changed_planted_empty_vs_off": 0,
+     "changed_disabled": 0,
+     "present": true,
+     "planted_absent": true,
+     "disabled_exact": true,
+     "beside_clock_past_end_changed": 0,
+     "beside_clock_past_end_absent": true
+    }
+   ],
+   "thresholds": {
+    "present_px": 200,
+    "present_frac": 0.01,
+    "absent_px": 5
+   },
+   "deciding_planted_read": "condition empty at the same pose and tick as the objects read; the 30 s clock read is beside and never decides",
+   "harness_falsifier": {
+    "n_tracks_json": 178,
+    "n_layer_tracks": 92,
+    "n_mapped": 92,
+    "n_mapped_strict_margin": 61,
+    "accept_reason_counts": {
+     "exact_zero_cost": 92
+    },
+    "falsifier": [
+     {
+      "frame": 0,
+      "grad_ncc_actors_off": 0.3491,
+      "grad_ncc_actors_on": 0.4763,
+      "grad_ncc_actors_on_WRONG_TIME": 0.3751,
+      "delta_on_minus_off": 0.1271,
+      "delta_on_minus_wrongtime": 0.1011,
+      "pixels_changed_by_actors": 635428,
+      "pass_placement": true,
+      "pass_strict": true,
+      "pass": true
+     },
+     {
+      "frame": 60,
+      "grad_ncc_actors_off": 0.3679,
+      "grad_ncc_actors_on": 0.5202,
+      "grad_ncc_actors_on_WRONG_TIME": 0.3916,
+      "delta_on_minus_off": 0.1523,
+      "delta_on_minus_wrongtime": 0.1287,
+      "pixels_changed_by_actors": 630012,
+      "pass_placement": true,
+      "pass_strict": true,
+      "pass": true
+     },
+     {
+      "frame": 120,
+      "grad_ncc_actors_off": 0.3216,
+      "grad_ncc_actors_on": 0.4302,
+      "grad_ncc_actors_on_WRONG_TIME": 0.3287,
+      "delta_on_minus_off": 0.1087,
+      "delta_on_minus_wrongtime": 0.1015,
+      "pixels_changed_by_actors": 572146,
+      "pass_placement": true,
+      "pass_strict": true,
+      "pass": true
+     }
+    ],
+    "falsifier_pass_frames": 3,
+    "falsifier_n_frames": 3,
+    "verdict": "ACCEPTED"
+   },
+   "nocv2": {
+    "replaced": [
+     "grad_ncc",
+     "read_ref_frame"
+    ],
+    "module": "D:\\t2a/box2_kit/tree/stack/experiments/alpasim-gsplat\\gsplat_renderer.py"
+   },
+   "seconds": 7.7
+  },
+  "plumbing": {
+   "verdict": "PASS",
+   "cells": {
+    "00040136|T2|C0_s0": "DONE",
+    "00040136|T2|C0_s1": "DONE",
+    "00040136|T2|DAGOACC_s0": "DONE",
+    "00040136|T2|DAGOACC_s1": "DONE",
+    "00040136|T2|P10": "DONE",
+    "00040136|T2|ZERO": "DONE",
+    "00040136|T2|BLIND": "DONE",
+    "00040136|RR|C0_s0": "DONE",
+    "00040136|RR|C0_s1": "DONE",
+    "00040136|RR|DAGOACC_s0": "DONE",
+    "00040136|RR|DAGOACC_s1": "DONE",
+    "00040136|RR|P10": "DONE",
+    "00040136|RR|ZERO": "DONE",
+    "00040136|RR|BLIND": "DONE",
+    "00040136|matrix_rc": 0,
+    "7c72937c|T2|C0_s0": "DONE",
+    "7c72937c|T2|C0_s1": "DONE",
+    "7c72937c|T2|DAGOACC_s0": "DONE",
+    "7c72937c|T2|DAGOACC_s1": "DONE",
+    "7c72937c|T2|P10": "DONE",
+    "7c72937c|T2|ZERO": "DONE",
+    "7c72937c|T2|BLIND": "DONE",
+    "7c72937c|RR|C0_s0": "DONE",
+    "7c72937c|RR|C0_s1": "DONE",
+    "7c72937c|RR|DAGOACC_s0": "DONE",
+    "7c72937c|RR|DAGOACC_s1": "DONE",
+    "7c72937c|RR|P10": "DONE",
+    "7c72937c|RR|ZERO": "DONE",
+    "7c72937c|RR|BLIND": "DONE",
+    "7c72937c|matrix_rc": 0
+   },
+   "failed": [],
+   "stamp": "PLUMBING ONLY: this rollout is never read for H1 or H2",
+   "score_on_dev_box": "t2v8f_run.py score --root <pull>/plumbing",
+   "seconds": 345.4
+  }
+ },
+ "gates": {
+  "preflight": "PASS",
+  "install": "PASS",
+  "t5": "PASS",
+  "gap": "REPORTED",
+  "actor": "PASS",
+  "plumbing": "PASS"
+ },
+ "finished": "2026-11-06 13:16:08",
+ "overall": "ALL_GATES_PASS"
+}

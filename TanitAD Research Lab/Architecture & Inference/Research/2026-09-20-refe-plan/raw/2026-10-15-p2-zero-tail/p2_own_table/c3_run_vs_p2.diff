@@ -1,0 +1,166 @@
+--- c3_run_ORIGINAL.py	2026-10-15 21:54:23.023035300 +0200
++++ c3_run_p2.py	2026-10-15 22:21:04.371696200 +0200
+@@ -1,5 +1,14 @@
+ #!/usr/bin/env python3
+-"""C3 selection-headroom test (eval/P6_GO_SIGNAL.md section 3 "C3") -- the measurement pipeline.
++"""P2 OWN 64-PROPOSAL TABLE -- c3_run.py (C3 selection-headroom pipeline) re-pointed at P2.  The ONLY edits are listed in c3_run_vs_p2.diff:
++ckpt (P2 model_final.pt), RULE navsim_v1, the banked seam/csv (P2 full navtest), the token file (the 509 P2 zero tokens), the label/path
++prefix (refe_p2tab_*, so no u400 C3 artefact is touched), PKG depth (this file sits one directory deeper), a ckpt sha256 preflight, and the
++last stage (c3_analyze is dropped: p2tab_driver.py runs the proof + the SEL/PROP analysis).  Everything else is c3_run.py byte for byte.
++
++(Also: the score root is on C:, see SCORE_ROOT.)
++
++ORIGINAL DOCSTRING FOLLOWS.
++
++C3 selection-headroom test (eval/P6_GO_SIGNAL.md section 3 "C3") -- the measurement pipeline.
+ 
+     dump   u400 re-run on tokens.json under the shared dev-box GPU lock, ALL 64 proposals + raw scorer logits
+            (refe_navtest_seam.py --dump-proposals, the exact stage-2 invocation: --rule navsim_v1_lane)
+@@ -26,19 +35,22 @@
+ import numpy as np
+ 
+ HERE = os.path.dirname(os.path.abspath(__file__))
+-PKG = os.path.abspath(os.path.join(HERE, "..", ".."))
++PKG = os.path.abspath(os.path.join(HERE, "..", "..", ".."))      # p2_own_table/ is one level deeper than the C3 dir
+ EVAL = os.path.join(PKG, "eval")
+ sys.path.insert(0, EVAL)
+ import eval_checkpoint as EC  # noqa: E402  (one source for the venv + env, as proposal_table.py)
+ 
+-CKPT = "D:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt"
+-CKPT_MD5_PREFIX = "8e382eeb"
+-RULE = "navsim_v1_lane"
++CKPT = "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt"
++CKPT_SHA256 = "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51"   # RESULT_P2.md header; verified by preflight()
++RULE = "navsim_v1"             # stage_2 p2_full seam report: rule navsim_v1, goal_fix pdm_route, repair_last_heading true
+ FRAMES = f"{EC.DATA}/frames"
+ DB_DIR = "D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test"
+-BANKED_SEAM = f"{EC.DATA}/seams/stage2_sft4_B_u400_navtest_full.npz"
+-BANKED_CSV = (f"{EC.DATA}/score/refe_stage2_sft4_B_u400_navtest_full/"
+-              "refe_stage2_sft4_B_u400_navtest_full.csv")
++BANKED_SEAM = f"{EC.DATA}/seams/stage2_p2_full.npz"                      # md5 49a1f6ec... (RESULT_P2.md section 6)
++BANKED_CSV = (f"{EC.DATA}/score/refe_stage2_p2_full/"
++              "refe_stage2_p2_full.csv")                                  # sha256 61073a61...
++# W3's cmd_score ends with os.path.relpath(<csv>, PKG), PKG = the parent of eval/. This package runs from a C: archive, so a score root on D: dies with
++# "ValueError: path is on mount 'D:', start on mount 'C:'" AFTER the scoring and csv copy (MEASURED 2026-10-15, _smoke8/logs/p01.log). The score root is therefore on C:.
++SCORE_ROOT = "C:/Users/Admin/AppData/Local/Temp/p2t/score_p2tab"
+ LOCK = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.lock"
+ MARK = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.chain_active"
+ FIDELITY_TOL_M = 1e-3
+@@ -58,11 +70,11 @@
+         self.tag = a.tag
+         self.wd = HERE if a.tag == "main" else os.path.join(HERE, f"_{a.tag}")
+         os.makedirs(os.path.join(self.wd, "logs"), exist_ok=True)
+-        self.tokens = a.tokens or os.path.join(HERE, "tokens.json")
++        self.tokens = a.tokens or os.path.join(HERE, "tokens_p2zero.json")
+         self.doc = json.load(open(self.tokens, encoding="utf-8"))
+         self.toks = list(self.doc["tokens"])
+         self.dump = os.path.join(self.wd, "proposals.npz")
+-        self.rerun_seam = f"{EC.DATA}/seams/c3/{self.tag}/refe_c3_u400_dumprun.npz"
++        self.rerun_seam = f"{EC.DATA}/seams/p2tab/{self.tag}/refe_p2tab_dumprun.npz"
+         self.M = a.m
+         self.status_p = os.path.join(self.wd, "STATUS.json")
+         self.status = json.load(open(self.status_p)) if os.path.exists(self.status_p) else {}
+@@ -73,13 +85,13 @@
+         print(f"[{now()}] STATUS {kw}", flush=True)
+ 
+     def label(self, k):
+-        return f"refe_c3_u400_{self.tag}_p{k:02d}"
++        return f"refe_p2tab_{self.tag}_p{k:02d}"
+ 
+     def seam_k(self, k):
+-        return f"{EC.DATA}/seams/c3/{self.tag}/{self.label(k)}.npz"
++        return f"{EC.DATA}/seams/p2tab/{self.tag}/{self.label(k)}.npz"
+ 
+     def csv_k(self, k):
+-        return f"{EC.DATA}/score/{self.label(k)}/{self.label(k)}.csv"
++        return f"{SCORE_ROOT}/{self.label(k)}/{self.label(k)}.csv"
+ 
+ 
+ # --------------------------------------------------------------------------------------- GPU lock
+@@ -143,6 +155,24 @@
+         return -1
+ 
+ 
++# ------------------------------------------------------------------------------------------ preflight
++def sha256_file(p):
++    import hashlib
++    h = hashlib.sha256()
++    with open(p, "rb") as f:
++        for b in iter(lambda: f.read(1 << 22), b""):
++            h.update(b)
++    return h.hexdigest()
++
++
++def preflight(ctx):
++    """The checkpoint on disk IS the P2 model_final (sha256 from RESULT_P2.md); a wrong file stops the run before any GPU time is spent."""
++    got = sha256_file(CKPT)
++    ok = got == CKPT_SHA256
++    ctx.set(preflight_ckpt_sha256=got, preflight_ckpt_ok=ok)
++    return ok
++
++
+ # --------------------------------------------------------------------------------------------- dump
+ def stage_dump(ctx):
+     a = ctx.a
+@@ -152,9 +182,9 @@
+         return True
+     os.makedirs(os.path.dirname(ctx.rerun_seam), exist_ok=True)
+     cmd = [EC.DRIVERL_PY, "refe_navtest_seam.py", "--ckpt", CKPT, "--frames", FRAMES, "--db-dir", DB_DIR,
+-           "--tokens", ctx.tokens, "--out", ctx.rerun_seam, "--arm", "REFe_c3_u400_dumprun", "--rule", RULE,
++           "--tokens", ctx.tokens, "--out", ctx.rerun_seam, "--arm", "REFe_p2tab_dumprun", "--rule", RULE,
+            "--dump-proposals", ctx.dump, "--device", a.device]
+-    me = json.dumps({"job": f"c3-selection-headroom-{ctx.tag}", "pid": os.getpid(), "host": os.environ.get("COMPUTERNAME", "?"),
++    me = json.dumps({"job": f"p2-own-table-{ctx.tag}", "pid": os.getpid(), "host": os.environ.get("COMPUTERNAME", "?"),
+                      "acquired": now()})
+     locked = a.device == "cuda"
+     for attempt in range(1, 6):
+@@ -231,7 +261,7 @@
+     for k in range(ctx.M):
+         if not os.path.exists(ctx.seam_k(k)):
+             np.savez(ctx.seam_k(k), token=D["token"], fingerprint=D["fingerprint"], poses=P[:, k].astype(np.float32),
+-                     sampling=D["sampling"], arm=np.array(f"REFe_c3_u400_{ctx.tag}_p{k:02d}"))
++                     sampling=D["sampling"], arm=np.array(f"REFe_p2tab_{ctx.tag}_p{k:02d}"))
+     ks = list(range(ctx.M)) if ctx.a.only is None else list(ctx.a.only)
+ 
+     def score_one(k):
+@@ -245,7 +275,7 @@
+             while free_mb() < 4000:          # the harness has a RAM guard; do not start into it
+                 time.sleep(30)
+             EC.run([EC.DRIVERL_PY, "score_navtest_refe.py", "--label", ctx.label(k), "--seam", ctx.seam_k(k),
+-                    "--tokens", ctx.tokens, "--out", f"{EC.DATA}/score"],
++                    "--tokens", ctx.tokens, "--out", SCORE_ROOT],
+                    EVAL, dict(os.environ, PYTHONIOENCODING="utf-8"), lp)
+             st = status_of(open(lp, encoding="utf-8", errors="replace").read())
+             if st and st.get("status") == "PASS" and st.get("csv_valid_rows") == N:
+@@ -323,7 +353,7 @@
+ # --------------------------------------------------------------------------------------------- main
+ def main():
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("stage", choices=("dump", "gate", "score", "table", "analyze", "all"))
++    ap.add_argument("stage", choices=("dump", "gate", "score", "table", "all"))
+     ap.add_argument("--tag", default="main")
+     ap.add_argument("--tokens", default=None)
+     ap.add_argument("--device", default="cuda")
+@@ -334,6 +364,9 @@
+     ctx = Ctx(a)
+     ctx.set(tag=a.tag, n_tokens=len(ctx.toks), pid=os.getpid(), started=ctx.status.get("started", now()))
+     st = a.stage
++    if st in ("dump", "all") and not preflight(ctx):
++        ctx.set(stage="preflight", result="FAILED: the checkpoint sha256 is not the P2 model_final")
++        return 1
+     if st in ("dump", "all") and not stage_dump(ctx):
+         ctx.set(stage="dump", result="FAILED: no proposals.npz (see logs/1_dump.log)")
+         return 1
+@@ -346,11 +379,7 @@
+     if st in ("table", "all") and not stage_table(ctx):
+         ctx.set(stage="table", result="INSTRUMENT FAILURE: table gates failed (gate_table.json)")
+         return 4
+-    if st in ("analyze", "all") and a.only is None:
+-        import c3_analyze
+-        rc = c3_analyze.main(["--dir", ctx.wd, "--tokens", ctx.tokens])
+-        ctx.set(stage="analyze", rc=rc, result="DONE -- see readout.json / RESULT draft")
+-        return rc
++    # (c3_analyze is dropped: p2tab_driver.py runs the same-pick proof and the SEL/PROP analysis on table.npz)
+     ctx.set(result=f"stage {st} done")
+     return 0
+ 

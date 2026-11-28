@@ -1,0 +1,93 @@
+{
+ "_what": "four-constraint verification of the recovered val40 clip UUIDs",
+ "_evidence_class": {
+  "S1": "INHERITED (Thor leadwork index, in-repo, rescued 2026-08-18)",
+  "S2": "INHERITED (deployed_val40_clip_digests.json, in-repo; itself cross-checked against val40_lead_index_ANON.json clip_sha8)",
+  "S3": "MEASURED (this run: .pt episode_id decoded + poses re-hashed vs the committed eval-pod manifest)",
+  "S4": "MEASURED (this run: NVIDIA chunk-zip member bytes sha256 vs S1)"
+ },
+ "n_failed": 0,
+ "failed": [],
+ "checks": {
+  "S1_keys_are_ep00000_39": {
+   "ok": true,
+   "n": 40,
+   "first": [
+    "ep_00000.pt"
+   ],
+   "last": [
+    "ep_00039.pt"
+   ]
+  },
+  "S1_40_distinct_uuids": {
+   "ok": true,
+   "n_distinct": 40
+  },
+  "S1_40_distinct_id4_prefixes": {
+   "ok": true,
+   "n_distinct": 40,
+   "note": "prefix->clip resolution is unambiguous inside this join"
+  },
+  "S1_internal_prefix_consistent": {
+   "ok": true
+  },
+  "S2_sha256_set_matches_deployed_digests": {
+   "ok": true,
+   "n": 40,
+   "corpus_key": "physicalai-val-0c5f7dac3b11"
+  },
+  "S2_digest_of_digests": {
+   "ok": true,
+   "digest_of_digests": "e15eeab3eb25fb04b86a7b48e165f7d8d8d4876f998398c4fc104afb94af466b",
+   "formula": "sha256('\\n'.join(sorted(digests)))"
+  },
+  "S2_clip_id_sha256_sorted": {
+   "ok": true,
+   "clip_id_sha256_sorted": "be2eedcec5e966fb7d8d160c24fd0ae506e27ce8918720d2fec3ed5d7c39f997",
+   "formula": "sha256('\\n'.join(sorted(clip_ids)))"
+  },
+  "S2_corpus_key": {
+   "ok": true,
+   "corpus_key": "physicalai-val-0c5f7dac3b11"
+  },
+  "S3_packed_id4_matches_uuid_prefix_all40": {
+   "ok": true,
+   "n_ok": 40
+  },
+  "S3_poses_sha256_matches_evalpod_manifest_all40": {
+   "ok": true,
+   "n_ok": 40
+  },
+  "S3_T_consistent_all40": {
+   "ok": true,
+   "n_ok": 40
+  },
+  "S4_egomotion_member_in_named_chunk_all40": {
+   "ok": true,
+   "n_ok": 40
+  },
+  "S4_egomotion_bytes_sha256_match_thor_index_all40": {
+   "ok": true,
+   "n_ok": 40
+  },
+  "S4_obstacle_member_in_named_chunk_39of39": {
+   "ok": true,
+   "n_ok": 39
+  },
+  "S4_obstacle_bytes_sha256_match_thor_index_39of39": {
+   "ok": true,
+   "n_ok": 39
+  },
+  "S4_single_obstacle_absent_is_ep_00037": {
+   "ok": true,
+   "absent": [
+    {
+     "file": "ep_00037.pt",
+     "clip_id": "0e0fedfc-35eb-4378-903d-3202d0126ca2",
+     "chunk": 768,
+     "absent_confirmed": true
+    }
+   ]
+  }
+ }
+}

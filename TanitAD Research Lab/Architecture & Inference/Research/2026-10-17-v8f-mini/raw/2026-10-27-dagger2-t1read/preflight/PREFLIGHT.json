@@ -1,0 +1,575 @@
+{
+ "preflight": true,
+ "state": {
+  "coverage_s0": {
+   "n_windows": 306566,
+   "n_eligible_windows": 236980,
+   "eligible_fraction": 0.7730146200165706,
+   "n_states_before_cuts": 613132,
+   "n_states_kept": 433301,
+   "cuts": {
+    "off_lat": 30285,
+    "off_head": 24556,
+    "end_edge": 124990,
+    "nonfinite": 0
+   },
+   "states_by_tick": {
+    "1": 306566,
+    "2": 306566
+   },
+   "stated_fraction": 0.7730146200165706
+  },
+  "coverage_s1": {
+   "n_windows": 306566,
+   "n_eligible_windows": 234317,
+   "eligible_fraction": 0.7643280729108903,
+   "n_states_before_cuts": 613132,
+   "n_states_kept": 424481,
+   "cuts": {
+    "off_lat": 29100,
+    "off_head": 40047,
+    "end_edge": 119504,
+    "nonfinite": 0
+   },
+   "states_by_tick": {
+    "1": 306566,
+    "2": 306566
+   },
+   "stated_fraction": 0.7643280729108903
+  },
+  "DAG0_s1": "not pulled"
+ },
+ "controls_PASS": {
+  "M2B-CKPT:s0": true,
+  "BANK-FILES:s0": true,
+  "BANK-CONFIG:s0": true,
+  "K-B0:s0": true,
+  "K-B1:s0": true,
+  "K-B2:s0": true,
+  "K-B3.1:s0": true,
+  "K-B3.3:s0": true,
+  "K-B4:s0": true,
+  "K-B5:s0": true,
+  "BANK-ACCOUNTING:s0": true,
+  "COVERAGE:s0": true,
+  "M2B-CKPT:s1": true,
+  "BANK-FILES:s1": true,
+  "BANK-CONFIG:s1": true,
+  "K-B0:s1": true,
+  "K-B1:s1": true,
+  "K-B2:s1": true,
+  "K-B3.1:s1": true,
+  "K-B3.3:s1": true,
+  "K-B4:s1": true,
+  "K-B5:s1": true,
+  "BANK-ACCOUNTING:s1": true,
+  "COVERAGE:s1": true,
+  "SUMMARY:DAG_s0": true,
+  "INIT-CKPT:DAG_s0": true,
+  "ARGV:DAG_s0": true,
+  "DAGGER-REACHED:DAG_s0": true,
+  "GATE-TOKEN:DAG_s0": true,
+  "BANK-DECLARED:DAG_s0": true,
+  "SUMMARY:DAG0_s0": true,
+  "INIT-CKPT:DAG0_s0": true,
+  "ARGV:DAG0_s0": true,
+  "DAGGER-REACHED:DAG0_s0": true,
+  "GATE-TOKEN:DAG0_s0": true,
+  "PAIR:s0": true,
+  "ORC0-SLOT-SELF:s0": true,
+  "K-B3.2:s0": true,
+  "TRAIN-LIST:s0": true,
+  "SUMMARY:DAG_s1": true,
+  "INIT-CKPT:DAG_s1": true,
+  "ARGV:DAG_s1": true,
+  "DAGGER-REACHED:DAG_s1": true,
+  "GATE-TOKEN:DAG_s1": true,
+  "BANK-DECLARED:DAG_s1": true
+ },
+ "controls": {
+  "M2B-CKPT:s0": {
+   "PASS": true,
+   "detail": {
+    "passed": "d186fd0bcfa7ee9f",
+    "DAG_s0": "d186fd0bcfa7ee9f"
+   }
+  },
+  "BANK-FILES:s0": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589",
+    "n_shards": 4,
+    "n_records": 613132,
+    "n_bank_clips": 4512
+   }
+  },
+  "BANK-CONFIG:s0": {
+   "PASS": true,
+   "detail": {
+    "rollout": {
+     "executor": "plan",
+     "limit": "causal",
+     "nav": "deadreckon",
+     "post_map": "none (PLAIN)",
+     "replan_steps": 10,
+     "scene": "logged",
+     "schedule": "periodic"
+    },
+    "thresholds_file_sha256": "438366d5e5ce4077564a70323f906c892fa112a804741fc1367b956a8d76504b",
+    "train": {
+     "exclude": "540:600",
+     "n_clips": 4512,
+     "n_excluded": 60,
+     "n_windows": 306566,
+     "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+    },
+    "hmax": 16
+   }
+  },
+  "K-B0:s0": {
+   "PASS": true,
+   "detail": {
+    "checked": 306566,
+    "n_windows": 306566,
+    "mismatch": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B1:s0": {
+   "PASS": true,
+   "detail": {
+    "chunks": 48,
+    "windows": 1536,
+    "required": 1532,
+    "mismatch_chunks": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B2:s0": {
+   "PASS": true,
+   "detail": {
+    "generator_ckpt_sha256": "d186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1",
+    "verified_by_reader": "common.ckpt_sha256 and every shard's inputs.ckpt.sha256 vs the CLI's M2b sha256"
+   }
+  },
+  "K-B3.1:s0": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_train_clips": 4512,
+    "n_train_clips_without_bank_records": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "clip names from the shard npz headers vs the TRAIN list"
+   }
+  },
+  "K-B3.3:s0": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_eval_clips": 141,
+    "overlap": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "ids and stable sids vs the eval-141 list"
+   }
+  },
+  "K-B4:s0": {
+   "PASS": true,
+   "detail": {
+    "cases": [
+     "straight",
+     "stationary_tie",
+     "lateral_cut",
+     "heading_cut",
+     "end_edge",
+     "loop"
+    ],
+    "verified_by_reader": false
+   }
+  },
+  "K-B5:s0": {
+   "PASS": true,
+   "detail": {
+    "max_pose_now_err_m": 0.0,
+    "max_rel_transform_err_m": 6.084483043917513e-05,
+    "verified_by_reader": false
+   }
+  },
+  "BANK-ACCOUNTING:s0": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 306566,
+    "n_eligible_windows": 236980,
+    "eligible_fraction": 0.7730146200165706,
+    "n_states_before_cuts": 613132,
+    "n_states_kept": 433301,
+    "cuts": {
+     "off_lat": 30285,
+     "off_head": 24556,
+     "end_edge": 124990,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 306566,
+     "2": 306566
+    }
+   }
+  },
+  "COVERAGE:s0": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 306566,
+    "n_eligible_windows": 236980,
+    "eligible_fraction": 0.7730146200165706,
+    "n_states_before_cuts": 613132,
+    "n_states_kept": 433301,
+    "cuts": {
+     "off_lat": 30285,
+     "off_head": 24556,
+     "end_edge": 124990,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 306566,
+     "2": 306566
+    },
+    "stated_fraction": 0.7730146200165706
+   }
+  },
+  "M2B-CKPT:s1": {
+   "PASS": true,
+   "detail": {
+    "passed": "1d12ec2eb825990d",
+    "DAG_s1": "1d12ec2eb825990d"
+   }
+  },
+  "BANK-FILES:s1": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "a06c8289b20854a6933264e95dca201ea7d9e2723fd0b2248872f56361ea689a",
+    "n_shards": 4,
+    "n_records": 613132,
+    "n_bank_clips": 4512
+   }
+  },
+  "BANK-CONFIG:s1": {
+   "PASS": true,
+   "detail": {
+    "rollout": {
+     "executor": "plan",
+     "limit": "causal",
+     "nav": "deadreckon",
+     "post_map": "none (PLAIN)",
+     "replan_steps": 10,
+     "scene": "logged",
+     "schedule": "periodic"
+    },
+    "thresholds_file_sha256": "438366d5e5ce4077564a70323f906c892fa112a804741fc1367b956a8d76504b",
+    "train": {
+     "exclude": "540:600",
+     "n_clips": 4512,
+     "n_excluded": 60,
+     "n_windows": 306566,
+     "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+    },
+    "hmax": 16
+   }
+  },
+  "K-B0:s1": {
+   "PASS": true,
+   "detail": {
+    "checked": 306566,
+    "n_windows": 306566,
+    "mismatch": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B1:s1": {
+   "PASS": true,
+   "detail": {
+    "chunks": 48,
+    "windows": 1536,
+    "required": 1532,
+    "mismatch_chunks": 0,
+    "verified_by_reader": false
+   }
+  },
+  "K-B2:s1": {
+   "PASS": true,
+   "detail": {
+    "generator_ckpt_sha256": "1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef",
+    "verified_by_reader": "common.ckpt_sha256 and every shard's inputs.ckpt.sha256 vs the CLI's M2b sha256"
+   }
+  },
+  "K-B3.1:s1": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_train_clips": 4512,
+    "n_train_clips_without_bank_records": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "clip names from the shard npz headers vs the TRAIN list"
+   }
+  },
+  "K-B3.3:s1": {
+   "PASS": true,
+   "detail": {
+    "n_bank_clips": 4512,
+    "n_eval_clips": 141,
+    "overlap": 0,
+    "deliberate_regression": "refused",
+    "verified_by_reader": "ids and stable sids vs the eval-141 list"
+   }
+  },
+  "K-B4:s1": {
+   "PASS": true,
+   "detail": {
+    "cases": [
+     "straight",
+     "stationary_tie",
+     "lateral_cut",
+     "heading_cut",
+     "end_edge",
+     "loop"
+    ],
+    "verified_by_reader": false
+   }
+  },
+  "K-B5:s1": {
+   "PASS": true,
+   "detail": {
+    "max_pose_now_err_m": 0.0,
+    "max_rel_transform_err_m": 6.062156583535184e-05,
+    "verified_by_reader": false
+   }
+  },
+  "BANK-ACCOUNTING:s1": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 306566,
+    "n_eligible_windows": 234317,
+    "eligible_fraction": 0.7643280729108903,
+    "n_states_before_cuts": 613132,
+    "n_states_kept": 424481,
+    "cuts": {
+     "off_lat": 29100,
+     "off_head": 40047,
+     "end_edge": 119504,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 306566,
+     "2": 306566
+    }
+   }
+  },
+  "COVERAGE:s1": {
+   "PASS": true,
+   "detail": {
+    "n_windows": 306566,
+    "n_eligible_windows": 234317,
+    "eligible_fraction": 0.7643280729108903,
+    "n_states_before_cuts": 613132,
+    "n_states_kept": 424481,
+    "cuts": {
+     "off_lat": 29100,
+     "off_head": 40047,
+     "end_edge": 119504,
+     "nonfinite": 0
+    },
+    "states_by_tick": {
+     "1": 306566,
+     "2": 306566
+    },
+    "stated_fraction": 0.7643280729108903
+   }
+  },
+  "SUMMARY:DAG_s0": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "a4a3e878c2ecf6d3",
+    "steps": 3000
+   }
+  },
+  "INIT-CKPT:DAG_s0": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "d186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:DAG_s0": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "DAGGER-REACHED:DAG_s0": {
+   "PASS": true,
+   "detail": {
+    "dagger_n": 14965,
+    "dagger_eligible": 148387,
+    "ratio": 0.10085115272901266
+   }
+  },
+  "GATE-TOKEN:DAG_s0": {
+   "PASS": true,
+   "detail": {
+    "commit": "1d4f4fbb11922f4dd62b51871d898c03e0c88635",
+    "argv_sha256": "8c50f07aae1e3b5f7b42b680c111f820e4436123eead30803b21eacf7e29d18a",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "BANK-DECLARED:DAG_s0": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589",
+    "built_records": [
+     "summary:levers.dagger_bank_sha256",
+     "selfcheck:levers.dagger_bank_sha256"
+    ],
+    "bank_manifest_hashed_here": true
+   }
+  },
+  "SUMMARY:DAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "126b68ca8d72abfb",
+    "steps": 3000
+   }
+  },
+  "INIT-CKPT:DAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "d186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:DAG0_s0": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "DAGGER-REACHED:DAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "dagger_n": 0
+   }
+  },
+  "GATE-TOKEN:DAG0_s0": {
+   "PASS": true,
+   "detail": {
+    "commit": "1d4f4fbb11922f4dd62b51871d898c03e0c88635",
+    "argv_sha256": "499d1a93a09a282f95116cf5c53b938787131b62b7f299a322c948b466c161b3",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "PAIR:s0": {
+   "PASS": true,
+   "detail": "same init, steps, data, seed; argv identical except --out, --dagger-p and the DAG-only flags"
+  },
+  "ORC0-SLOT-SELF:s0": {
+   "PASS": true,
+   "detail": "PREREG_V8F_DAGGER2 change 3: no replicate of DAG2-0 is trained; the ORC0 slot is DAG2-0's own entry (its RF row must read exactly 0.0) and RF is RF_FIXED"
+  },
+  "K-B3.2:s0": {
+   "PASS": true,
+   "detail": {
+    "window_list_sha256": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+    "trainer": {
+     "DAG": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+     "DAG-0": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168"
+    }
+   }
+  },
+  "TRAIN-LIST:s0": {
+   "PASS": true,
+   "detail": {
+    "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "trainer": {
+     "DAG": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+     "DAG-0": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+    }
+   }
+  },
+  "SUMMARY:DAG_s1": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "bad2e0d13d56cfae",
+    "steps": 3000
+   }
+  },
+  "INIT-CKPT:DAG_s1": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:DAG_s1": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "DAGGER-REACHED:DAG_s1": {
+   "PASS": true,
+   "detail": {
+    "dagger_n": 14719,
+    "dagger_eligible": 146288,
+    "ratio": 0.10061659192825112
+   }
+  },
+  "GATE-TOKEN:DAG_s1": {
+   "PASS": true,
+   "detail": {
+    "commit": "1d4f4fbb11922f4dd62b51871d898c03e0c88635",
+    "argv_sha256": "a1914e6bc13921965669c57bbd92b44ab0b6d5a00a6416ef2481b4515ba2a547",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "BANK-DECLARED:DAG_s1": {
+   "PASS": true,
+   "detail": {
+    "bank_sha256": "a06c8289b20854a6933264e95dca201ea7d9e2723fd0b2248872f56361ea689a",
+    "built_records": [
+     "summary:levers.dagger_bank_sha256",
+     "selfcheck:levers.dagger_bank_sha256"
+    ],
+    "bank_manifest_hashed_here": true
+   }
+  }
+ },
+ "provenance": {
+  "prereg": "Project Steering/PREREG_V8F_DAGGER2.md @ 1d4f4fbb",
+  "prereg_sha256": "87d6c77dc3362bfb65af1e8966c913b957143f88d9c04b3867576f4bba423e39",
+  "claim_row": "H-V8F-DAGGER2-1",
+  "reader_sha256": "57918441bb8dc7f6a911adf95cb8ab2f66be02129aae58c48edc9abde3c739d5",
+  "pins": {
+   "dag_read.py": "1cf56c7c30195ac47718bb07feef11531a6309cb01e0b28a34f926c6a696084c",
+   "reader_src/hmc_controls.py": "0bdba3f65c5df8b0efc66702d61f6d8a793d24c4295bc344ab7e40a4cc0bd6c2",
+   "reader_src/hmc_lib.py": "7792d7f001b66c9618b7fd40c933f8532e1a86b3ca2d50c0facc7d61275cc9b6",
+   "reader_src/lcdiag_common.py": "798089e8abfeb56dfe9e8f6a755448f416be8dfbec948df08638fa997c038a06",
+   "reader_src/t1k_read.py": "5610114d3e09501347ed0ac65e44790eb2954eb5d5b703af089a64e845dbf5e4",
+   "reader_src/t1kf_read_a1.py": "d16ddd607caf4e05d0bbb667b830299df1f5c1eb0923d995988667afc940e838",
+   "reader_src/t1klc_read.py": "9a5623e5f737677e6fe0cf6df41c3588b11282423e27008830a7914253f7a7ca",
+   "reader_src/v8f_flat_read.py": "d369639086b4a0b63331977eaeb3fa300229a18b66fd79cbb29cd897bfedc257",
+   "readA_code/rr_lib.py": "c3800878cae80bf3018284528e68ed5f88dcebbab7d1125749942735e6cebc99",
+   "readA_code/readA.py": "722913b785f20e0458daed322ecd486fbc2a33106b44b1294f6b59d08d936fa6",
+   "readA_code/build_report.py": "c4e94920487381bfb22d06acdff2d79cbb7d97ba52ebb0707003c3e0968e820a",
+   "banked/DAG_READ.json": "3393fdd56bd561fd5181a8219d2c75d700036b9373da6ec12a8bcba51decde3d",
+   "banked/READ_A.json": "1f2b24edcaea3df50b7e56756eb9d46311664a84843148dffb0518ab3afa428a",
+   "banked/T1KF_READ_A1_DAG.json": "deed4c7229c5689267ffe3c4301da184c0ede8656594bd375462d3ed6c002a7f",
+   "lead_block_k30.npz": "7a879baa2b6f4c140c2b64c9c098a38f84ecb04926da61fa8e96cfffc33073d9"
+  },
+  "manifest_sha256": "1e18deb0ad7c70c1299d5573f3ba57d1327417fbcb57d788777a8688d626b1c5",
+  "wall_s": 1.2400379180908203,
+  "evidence_class": "MEASURED (ours; artifact paths in the manifest)"
+ }
+}

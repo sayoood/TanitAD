@@ -1,0 +1,92 @@
+........FFF........F...F.FF......                                        [100%]
+================================== FAILURES ===================================
+__________ test_missing_expected_arm_reads_unavailable_never_a_value __________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_missing_expected_arm_read0')
+
+    def test_missing_expected_arm_reads_unavailable_never_a_value(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path, omit=("R8_BLIND",)))
+>       b = out["arms"]["R8_BLIND"]
+            ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'R8_BLIND'
+
+tests\test_parse8.py:243: KeyError
+___________ test_missing_floor_arm_reads_unavailable_never_a_value ____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_missing_floor_arm_reads_u0')
+
+    def test_missing_floor_arm_reads_unavailable_never_a_value(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path, omit=("STOP_zero",)))
+>       assert out["arms"]["STOP_zero"]["status"] == "UNAVAILABLE" and "S2_EPDMS_u" not in out["arms"]["STOP_zero"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'STOP_zero'
+
+tests\test_parse8.py:253: KeyError
+________ test_missing_seed_floor_arm_gives_a_null_floor_with_a_reason _________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_missing_seed_floor_arm_gi0')
+
+    def test_missing_seed_floor_arm_gives_a_null_floor_with_a_reason(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path, omit=("R8_LEGAL_s1",)))
+>       assert out["arms"]["R8_LEGAL_s1"]["status"] == "UNAVAILABLE"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'R8_LEGAL_s1'
+
+tests\test_parse8.py:259: KeyError
+____ test_warmup_seed1_mirror_reads_unavailable_when_the_s1_arm_is_absent _____
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_warmup_seed1_mirror_reads0')
+
+    def test_warmup_seed1_mirror_reads_unavailable_when_the_s1_arm_is_absent(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path, omit=("R8_LEGAL_s1",)))
+        for y in ("STOP_zero", "CV_official", "ECHO_ha0_ext"):
+>           r = out["pairs"][f"R8_LEGAL_s1__minus__{y}"]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'R8_LEGAL_s1__minus__STOP_zero'
+
+tests\test_parse8.py:332: KeyError
+__ test_navhard_seed1_mirror_rows_read_unavailable_when_the_s1_arm_is_absent __
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_navhard_seed1_mirror_rows1')
+
+    def test_navhard_seed1_mirror_rows_read_unavailable_when_the_s1_arm_is_absent(tmp_path):
+        out = P.build_summary(**build_navhard(tmp_path, omit=("R8_LEGAL_s1",)))
+        for y in ("STOP_zero", "CV_official", "ECHO_ha0_ext"):
+            for blk in ("pairs", "paired_intervals"):
+>               r = out[blk][f"R8_LEGAL_s1__minus__{y}"]
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               KeyError: 'R8_LEGAL_s1__minus__STOP_zero'
+
+tests\test_parse8.py:381: KeyError
+___ test_navhard_a_missing_floor_arm_makes_its_paired_interval_unavailable ____
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_navhard_a_missing_floor_a0')
+
+    def test_navhard_a_missing_floor_arm_makes_its_paired_interval_unavailable(tmp_path):
+        out = P.build_summary(**build_navhard(tmp_path, omit=("STOP_zero",)))
+>       assert out["arms"]["STOP_zero"]["status"] == "UNAVAILABLE"
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'STOP_zero'
+
+tests\test_parse8.py:397: KeyError
+__ test_navhard_a_missing_wrapper_frame_is_an_error_record_not_a_silent_skip __
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6253/test_navhard_a_missing_wrapper0')
+
+    def test_navhard_a_missing_wrapper_frame_is_an_error_record_not_a_silent_skip(tmp_path):
+        out = P.build_summary(**build_navhard(tmp_path, wrapper_omit=("R8_LEGAL",)))
+        assert out["intervals"]["R8_LEGAL"]["status"] == "ERROR"
+>       assert out["paired_intervals"]["R8_LEGAL__minus__STOP_zero"]["status"] == "UNAVAILABLE"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'R8_LEGAL__minus__STOP_zero'
+
+tests\test_parse8.py:407: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_parse8.py::test_missing_expected_arm_reads_unavailable_never_a_value
+FAILED tests/test_parse8.py::test_missing_floor_arm_reads_unavailable_never_a_value
+FAILED tests/test_parse8.py::test_missing_seed_floor_arm_gives_a_null_floor_with_a_reason
+FAILED tests/test_parse8.py::test_warmup_seed1_mirror_reads_unavailable_when_the_s1_arm_is_absent
+FAILED tests/test_parse8.py::test_navhard_seed1_mirror_rows_read_unavailable_when_the_s1_arm_is_absent
+FAILED tests/test_parse8.py::test_navhard_a_missing_floor_arm_makes_its_paired_interval_unavailable
+FAILED tests/test_parse8.py::test_navhard_a_missing_wrapper_frame_is_an_error_record_not_a_silent_skip
+7 failed, 26 passed, 7 deselected in 44.65s

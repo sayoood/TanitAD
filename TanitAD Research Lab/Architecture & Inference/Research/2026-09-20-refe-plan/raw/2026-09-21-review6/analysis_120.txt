@@ -1,0 +1,48 @@
+==============================================================================
+LOGS PROBED: 120   (corpus on disk: 1413 db files across 23 veh ids)
+==============================================================================
+
+[PROBE A] devkit get_ego_state_for_lidarpc_token_from_db -> car_footprint.vehicle_parameters
+  ok=120  failed=0
+   length                       distinct=1  ->  {5.176: 120}
+   width                        distinct=1  ->  {2.297: 120}
+   half_width                   distinct=1  ->  {1.1485: 120}
+   half_length                  distinct=1  ->  {2.588: 120}
+   front_length                 distinct=1  ->  {4.049: 120}
+   rear_length                  distinct=1  ->  {1.127: 120}
+   wheel_base                   distinct=1  ->  {3.089: 120}
+   rear_axle_to_center          distinct=1  ->  {1.461: 120}
+   cog_position_from_rear_axle  distinct=1  ->  {1.67: 120}
+   height                       distinct=1  ->  {1.777: 120}
+   vehicle_name                 distinct=1  ->  {'pacifica': 120}
+   vehicle_type                 distinct=1  ->  {'gen1': 120}
+
+[CONTROL V] pose/time MUST vary across logs (else we probed one file N times)
+   ctrl_rear_axle_x     distinct=119 / 120   (must be ~N)
+   ctrl_rear_axle_y     distinct=119 / 120   (must be ~N)
+   ctrl_time_us         distinct=119 / 120   (must be ~N)
+
+[PROBE B] raw sqlite3, devkit code NOT involved
+  ok=120 / 120
+  CONTROL C3 log.vehicle_name distinct=23 -> {'veh-08': 6, 'veh-12': 6, 'veh-14': 6, 'veh-16': 6, 'veh-17': 3, 'veh-25': 6, 'veh-26': 6, 'veh-27': 6, 'veh-28': 6, 'veh-30': 5, 'veh-35': 5, 'veh-38': 5, 'veh-39': 5, 'veh-40': 5, 'veh-42': 5, 'veh-45': 5, 'veh-47': 5, 'veh-48': 5, 'veh-49': 5, 'veh-50': 4, 'veh-51': 5, 'veh-52': 5, 'veh-53': 5}
+  log.location distinct=4 -> {'us-pa-pittsburgh-hazelwood': 16, 'las_vegas': 59, 'us-ma-boston': 21, 'sg-one-north': 24}
+  log table columns (distinct schemas=1): ('token', 'vehicle_name', 'date', 'timestamp', 'logfile', 'location', 'map_version')
+
+  ALL dimension-named columns found anywhere in the schema:
+      camera.height
+      camera.width
+      lidar_box.height
+      lidar_box.length
+      lidar_box.width
+      track.height
+      track.length
+      track.width
+  -> of those, belonging to an EGO table (ego_pose/log/scene/lidar_pc): 0 []
+  CONTROL C1 (scan CAN see dimension cols): lidar_box has w/l/h in 120/120 logs
+  CONTROL C1 sample OTHER-AGENT dims (per-object, real data): {'width': 1.8706231117248535, 'length': 4.834430694580078, 'height': 1.5378483533859253}
+  CONTROL C2 total columns per db: [95]
+  lidar_box row counts (non-zero proves tables are populated): min=5639 max=2823373
+
+[CROSS] vehicle ids covered by the probe: 23
+[CROSS] for every log, does devkit vp.vehicle_name == db log.vehicle_name?
+   MISMATCH in 120 / 120 logs  <-- devkit says 'pacifica', db says 'veh-NN'

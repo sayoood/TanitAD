@@ -1,0 +1,179 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "306f1312-5f37-42fc-9a65-12989b566471",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 6.95,
+   "v_now_kmh": 25.0,
+   "v_mean_ms": 6.83,
+   "v_min_ms": 6.05,
+   "v_max_ms": 7.59,
+   "accel_1s_ms2": -0.22,
+   "accel_3s_ms2": 0.23,
+   "yaw_rate_rad_s": 0.0,
+   "net_dyaw_rad": 0.015,
+   "dist_travelled_m": 55.0,
+   "motion": "steady",
+   "turning": "straight"
+  },
+  "speed_profile": {
+   "v_t0": 7.481413841247559,
+   "v_min_future": 5.5538177490234375,
+   "v_max_future": 9.48957633972168,
+   "net_dv": 2.008162498474121,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [],
+  "per_concept_hits": null,
+  "src": "sam3",
+  "absent": "AUG120_SAM3_STAGE_GAP"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 2,
+   "lane_ego": 0,
+   "conf": "high",
+   "road_type": "urban",
+   "weather": "clear",
+   "illumination": "day",
+   "domain": "urban"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "none",
+     "state": "red",
+     "applies_to_ego": true,
+     "kind": "light"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "turn_left",
+   "actions": [
+    {
+     "verb": "prepare_lane_change",
+     "direction": "left"
+    },
+    {
+     "verb": "reduce_to",
+     "direction": "none"
+    }
+   ],
+   "goal_evidence_sign": null,
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": {
+  "trajectory": "{\"figure_style\": \"blog_6cam_task_native\", \"clip_id\": \"306f1312-5f37-42fc-9a65-12989b566471\", \"t0_us\": 5100000, \"camera_tmin\": 4767905, \"camera_indices\": [0, 1, 2, 3, 5, 6], \"input_profile\": {\"source_camera_ids\": [0, 1, 2, 3, 4, 5, 6], \"source_camera_names\": [\"camera_cross_left_120fov\", \"camera_front_wide_120fov\", \"camera_cross_right_120fov\", \"camera_rear_left_70fov\", \"camera_rear_tele_30fov\", \"camera_rear_right_70fov\", \"camera_front_tele_30fov\"], \"camera_ids\": [0, 1, 2, 3, 5, 6], \"camera_names\": [\"camera_cross_left_120fov\", \"camera_front_wide_120fov\", \"camera_cross_right_120fov\", \"camera_rear_left_70fov\", \"camera_rear_right_70fov\", \"camera_front_tele_30fov\"], \"frame_indices\": [0, 1, 2, 3], \"num_cameras\": 6, \"num_frames_per_camera\": 4}, \"camera_grid_camera_ids\": [0, 1, 2, 3, 6, 5], \"camera_titles\": [\"cross left\", \"front wide\", \"cross right\", \"rear left\", \"front tele\", \"rear right\"], \"coc_label\": \"Predicted CoC\", \"model_id\": \"nvidia/Alpamayo2-Super\", \"seed\": 42, \"cot\": \"Nudge left to pass the bus ahead in the same lane\", \"cots\": [\"Nudge left to pass the bus ahead in the same lane\"], \"projection_available\": true, \"projected_camera_ids\": [0, 1, 6], \"camera_ribbon_width_m\": 2.0, \"camera_ribbon_semantics\": \"approximate vehicle-width corridor\", \"prediction_layer\": \"above_ground_truth\", \"trajectory_palette\": {\"prediction\": \"#76B900\", \"ground_truth\": \"#EE3377\", \"history\": \"#0077BB\", \"ego\": \"#EE7733\"}, \"num_trajectory_samples\": 1, \"pred_xyz_shape\": [1, 1, 1, 64, 3], \"image_frames_shape\": [6, 4, 3, 1080, 1920], \"absolute_timestamps_shape\": [6, 4], \"relative_timestamps_shape\": [6, 4], \"ego_history_xyz_shape\": [1, 1, 16, 3], \"ego_future_xyz_shape\": [1, 1, 64, 3], \"bev_legend_fontsize\": 18, \"ade_m\": [1.0942051410675049], \"fde_m\": [1.2431870698928833], \"min_ade_m\": 1.0942051410675049, \"min_fde_m\": 1.2431870698928833, \"fde_at_min_ade_m\": 1.2431870698928833, \"best_ade_sample_index\": 0, \"best_fde_sample_index\": 0}",
+  "meta_action": "{\"raw_outputs\": [\"Nudge left to pass the bus aheadLongitudinal: Gentle Deceleration.\\nLateral: Go Straight.\\nLane: Lane Keep.<|traj_future_start|><|endoftext|>\"], \"cot\": [\"Nudge left to pass the bus ahead\"], \"meta_action\": [\"Longitudinal: Gentle Deceleration.\\nLateral: Go Straight.\\nLane: Lane Keep.\"], \"answer\": [\"Nudge left to pass the bus ahead\"], \"box\": [\"\"], \"cot_auto_labeling\": [\"\"]}",
+  "auto_labeling": "{\"raw_outputs\": [\"{\\\"critical_components_analysis\\\": null, \\\"ego_vehicle_motion_analysis\\\": null, \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Nudge right to increase clearance to the car on the left\\\"}<|im_end|>\"], \"cot\": [\"{\\\"critical_components_analysis\\\": null, \\\"ego_vehicle_motion_analysis\\\": null, \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Nudge right to increase clearance to the car on the left\\\"}\"], \"meta_action\": [\"\"], \"answer\": [\"{\\\"critical_components_analysis\\\": null, \\\"ego_vehicle_motion_analysis\\\": null, \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Nudge right to increase clearance to the car on the left\\\"}\"], \"box\": [\"\"], \"cot_auto_labeling\": [\"{\\\"critical_components_analysis\\\": null, \\\"ego_vehicle_motion_analysis\\\": null, \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Nudge right to increase clearance to the car on the left\\\"}\"], \"cot_auto_labeling_json\": [{\"critical_components_analysis\": null, \"ego_vehicle_motion_analysis\": null, \"trajectory_analysis\": null, \"chain_of_causation\": \"Nudge right to increase clearance to the car on the left\"}]}",
+  "vqa": "{\"raw_outputs\": [\"No<|im_end|>\"], \"cot\": [\"No\"], \"meta_action\": [\"\"], \"answer\": [\"No\"], \"box\": [\"\"], \"cot_auto_labeling\": [\"\"]}",
+  "grounding_via_vqa": "{\"raw_outputs\": [\"[{\\\"bbox_2d\\\": [534, 582, 659, 822], \\\"label\\\": \\\"Bus\\\"}]<|im_end|>\"], \"cot\": [\"[{\\\"bbox_2d\\\": [534, 582, 659, 822], \\\"label\\\": \\\"Bus\\\"}]\"], \"meta_action\": [\"\"], \"answer\": [\"[{\\\"bbox_2d\\\": [534, 582, 659, 822], \\\"label\\\": \\\"Bus\\\"}]\"], \"box\": [\"[{\\\"bbox_2d\\\": [534, 582, 659, 822], \\\"label\\\": \\\"Bus\\\"}]\"], \"cot_auto_labeling\": [\"\"]}"
+ },
+ "corroboration": {
+  "red_light_vs_stop": {
+   "n_red": 1,
+   "ego_stopped": false,
+   "verdict": "conflict",
+   "src": [
+    "vlm",
+    "ego"
+   ]
+  },
+  "census_vs_scene": {
+   "verdict": "not_computable",
+   "reason": "sam3 absent for this clip",
+   "src": [
+    "vlm"
+   ]
+  }
+ },
+ "vocab": {
+  "g_str": {
+   "token": "TURN_LEFT",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_KEEP",
+   "voters": [
+    "ego",
+    "alpamayo"
+   ],
+   "votes": [
+    [
+     "ego",
+     "LANE_KEEP"
+    ],
+    [
+     "vlm",
+     "LANE_CHANGE_L"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "alpamayo",
+     "LANE_KEEP"
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": "CRUISE",
+   "voters": [
+    "ego"
+   ],
+   "votes": [
+    [
+     "ego",
+     "CRUISE"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "alpamayo",
+     "BRAKE_TO"
+    ]
+   ]
+  }
+ },
+ "scenario_description": "day, clear, urban 2-lane; ego 7.0 m/s steady/straight; no agents",
+ "_conflicts": [
+  {
+   "check": "red_light_vs_stop",
+   "n_red": 1
+  }
+ ],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}

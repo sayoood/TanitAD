@@ -1,0 +1,6728 @@
+[
+ {
+  "step": 2,
+  "tally": {
+   "fn:h2d_frames": {
+    "kernels": 6.0,
+    "bytes": 1395523600.0,
+    "op:_to_copy": 2.0,
+    "op:full": 2.0,
+    "op:div_": 2.0
+   },
+   "phase:fwd_loss": {
+    "views": 616.0,
+    "sync_tolist": 2.0,
+    "kernels": 3388.0,
+    "flops": 6912054.0,
+    "bytes": 479694953.0,
+    "op:mm": 2.0,
+    "op:eye": 1.0,
+    "op:sub": 40.0,
+    "op:abs": 10.0,
+    "op:max": 3.0,
+    "sync_item": 20.0,
+    "op:stack": 203.0,
+    "op:cat": 1.0,
+    "op:mul": 1365.0,
+    "op:add": 776.0,
+    "op:sqrt": 1.0,
+    "op:atan2": 1.0,
+    "op:clamp_min": 206.0,
+    "op:div": 25.0,
+    "op:gt": 5.0,
+    "op:ge": 8.0,
+    "op:bitwise_and": 14.0,
+    "op:le": 4.0,
+    "op:ne": 8.0,
+    "op:eq": 4.0,
+    "op:zeros_like": 11.0,
+    "op:where": 3.0,
+    "op:round": 2.0,
+    "op:_to_copy": 16.0,
+    "op:clamp": 5.0,
+    "op:index": 11.0,
+    "op:mean": 13.0,
+    "op:linalg_vector_norm": 4.0,
+    "op:reciprocal": 1.0,
+    "op:bitwise_not": 3.0,
+    "op:masked_fill": 3.0,
+    "op:argmax": 2.0,
+    "op:arange": 2.0,
+    "op:neg": 16.0,
+    "op:cos": 188.0,
+    "op:sin": 188.0,
+    "op:pow": 11.0,
+    "op:sum": 38.0,
+    "op:argmin": 2.0,
+    "op:scatter_": 4.0,
+    "op:sigmoid": 7.0,
+    "op:rsub": 12.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:floor": 2.0,
+    "op:full": 2.0,
+    "op:lt": 3.0,
+    "op:index_put_": 4.0,
+    "op:bitwise_or": 1.0,
+    "op:_log_softmax": 8.0,
+    "op:nll_loss_forward": 8.0,
+    "op:bincount": 2.0,
+    "op:log": 4.0,
+    "op:exp": 4.0,
+    "op:copy_": 5.0,
+    "op:zeros": 7.0,
+    "op:any": 2.0,
+    "op:mse_loss": 1.0,
+    "op:smooth_l1_loss": 1.0,
+    "op:new_zeros": 1.0,
+    "op:equal": 3.0,
+    "op:repeat_interleave": 3.0,
+    "op:index_select": 94.0,
+    "op:full_like": 2.0,
+    "op:nonzero": 6.0
+   },
+   "mod:core": {
+    "views": 95.0,
+    "kernels": 131.0,
+    "bytes": 761493158.0,
+    "op:arange": 1.0,
+    "op:mul": 3.0,
+    "op:add": 8.0,
+    "op:clone": 1.0,
+    "op:fill_": 1.0,
+    "op:sub": 16.0,
+    "op:div": 10.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:clamp_min": 2.0,
+    "op:tanh": 1.0,
+    "op:cat": 4.0,
+    "op:min": 2.0,
+    "sync_item": 11.0,
+    "op:max": 3.0,
+    "op:zeros": 5.0,
+    "op:scatter_": 2.0,
+    "op:_to_copy": 5.0,
+    "op:ones": 1.0,
+    "op:rand": 1.0,
+    "op:ge": 2.0,
+    "op:_log_softmax": 6.0,
+    "op:stack": 3.0,
+    "op:mean": 2.0,
+    "op:argmax": 3.0,
+    "op:index": 2.0,
+    "op:sum": 3.0,
+    "op:gt": 2.0,
+    "op:full_like": 1.0,
+    "op:where": 1.0,
+    "op:abs": 9.0,
+    "op:lt": 8.0,
+    "op:bitwise_or": 4.0,
+    "op:all": 4.0,
+    "op:sigmoid": 3.0,
+    "op:zeros_like": 4.0,
+    "op:copy_": 4.0,
+    "op:remainder": 2.0,
+    "op:clamp": 1.0
+   },
+   "fn:trunk_main": {
+    "views": 58.0,
+    "kernels": 24.0,
+    "bytes": 1582793427.0,
+    "op:eq": 1.0,
+    "op:all": 1.0,
+    "sync_tolist": 1.0,
+    "op:index": 2.0,
+    "op:clone": 7.0,
+    "op:cat": 4.0,
+    "op:index_select": 4.0,
+    "op:mean": 2.0,
+    "op:fill_": 1.0,
+    "op:sub": 1.0,
+    "op:div": 1.0
+   },
+   "mod:core.encoder.net.conv1": {
+    "kernels": 98.0,
+    "bytes": 454881280.0,
+    "op:add": 14.0,
+    "op:sqrt": 14.0,
+    "op:div": 14.0,
+    "views": 14.0,
+    "op:mul": 28.0,
+    "op:sub": 14.0,
+    "flops": 28053602304.0,
+    "op:convolution": 14.0
+   },
+   "mod:core.encoder.net.act1": {
+    "kernels": 14.0,
+    "bytes": 763363328.0,
+    "op:relu": 14.0
+   },
+   "mod:core.encoder.net.maxpool": {
+    "kernels": 14.0,
+    "bytes": 667942912.0,
+    "op:max_pool2d_with_indices": 14.0
+   },
+   "mod:core.encoder.net.layer1": {
+    "kernels": 1148.0,
+    "bytes": 10533211136.0,
+    "op:add": 140.0,
+    "op:sqrt": 140.0,
+    "op:div": 140.0,
+    "views": 140.0,
+    "op:mul": 280.0,
+    "op:sub": 140.0,
+    "flops": 158779572224.0,
+    "op:convolution": 140.0,
+    "op:relu": 126.0,
+    "op:add_": 42.0
+   },
+   "mod:core.encoder.net.layer2": {
+    "kernels": 1498.0,
+    "bytes": 8412852224.0,
+    "op:add": 182.0,
+    "op:sqrt": 182.0,
+    "op:div": 182.0,
+    "views": 182.0,
+    "op:mul": 364.0,
+    "op:sub": 182.0,
+    "flops": 244276264960.0,
+    "op:convolution": 182.0,
+    "op:relu": 168.0,
+    "op:add_": 56.0
+   },
+   "mod:core.encoder.net.layer3": {
+    "kernels": 7566.0,
+    "bytes": 23048529920.0,
+    "op:add": 910.0,
+    "op:sqrt": 910.0,
+    "op:div": 910.0,
+    "views": 910.0,
+    "op:mul": 1820.0,
+    "op:sub": 910.0,
+    "flops": 1142645850112.0,
+    "op:convolution": 910.0,
+    "op:relu": 897.0,
+    "op:add_": 299.0
+   },
+   "mod:core.encoder.net.layer4": {
+    "kernels": 1066.0,
+    "bytes": 3846049792.0,
+    "op:add": 130.0,
+    "op:sqrt": 130.0,
+    "op:div": 130.0,
+    "views": 130.0,
+    "op:mul": 260.0,
+    "op:sub": 130.0,
+    "flops": 178627018752.0,
+    "op:convolution": 130.0,
+    "op:relu": 117.0,
+    "op:add_": 39.0
+   },
+   "mod:core.encoder.fuse16": {
+    "views": 2.0
+   },
+   "mod:core.encoder.fuse16.proj": {
+    "kernels": 2.0,
+    "flops": 94220845056.0,
+    "bytes": 270540800.0,
+    "op:convolution": 2.0
+   },
+   "mod:core.encoder.fuse32": {
+    "views": 2.0
+   },
+   "mod:core.encoder.fuse32.proj": {
+    "kernels": 2.0,
+    "flops": 94220845056.0,
+    "bytes": 223363072.0,
+    "op:convolution": 2.0
+   },
+   "fn:trunk_s8_tap": {
+    "views": 5.0,
+    "kernels": 6.0,
+    "bytes": 202768424.0,
+    "op:min": 1.0,
+    "sync_item": 2.0,
+    "op:max": 1.0,
+    "op:index_select": 1.0,
+    "op:clone": 2.0,
+    "op:cat": 1.0
+   },
+   "mod:core.strategic.gru": {
+    "kernels": 125.0,
+    "bytes": 38760448.0,
+    "op:zeros": 1.0,
+    "views": 38.0,
+    "flops": 62914560.0,
+    "op:addmm": 9.0,
+    "op:unsafe_split": 16.0,
+    "op:add_": 24.0,
+    "op:sigmoid_": 16.0,
+    "op:clone": 16.0,
+    "op:mul_": 16.0,
+    "op:add": 8.0,
+    "op:tanh_": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:transpose_": 1.0
+   },
+   "mod:core.strategic": {
+    "views": 1.0
+   },
+   "mod:core.strategic.proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 262144.0,
+    "bytes": 528384.0,
+    "op:addmm": 1.0
+   },
+   "mod:_map_hires.lift": {
+    "views": 11.0,
+    "kernels": 14.0,
+    "bytes": 617892352.0,
+    "op:clone": 1.0,
+    "flops": 1744830464.0,
+    "op:convolution": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:grid_sampler_2d": 1.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0
+   },
+   "mod:_map_hires": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 480000.0,
+    "op:any": 1.0
+   },
+   "mod:_map_hires.encoder.stem.0": {
+    "kernels": 1.0,
+    "flops": 7077888000.0,
+    "bytes": 49299456.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.encoder.stem.1": {
+    "kernels": 1.0,
+    "bytes": 49152576.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.encoder.stem.2": {
+    "kernels": 1.0,
+    "bytes": 49152000.0,
+    "op:gelu": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.0": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.1": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.2": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.3": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.4": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "fn:map_near_geometry": {
+    "views": 23.0,
+    "kernels": 36.0,
+    "bytes": 50459840.0,
+    "op:_to_copy": 1.0,
+    "op:mul": 8.0,
+    "op:sub": 8.0,
+    "op:cat": 2.0,
+    "op:replication_pad2d": 1.0,
+    "op:arange": 2.0,
+    "op:add": 4.0,
+    "op:div": 2.0,
+    "op:stack": 1.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:rsub": 1.0,
+    "op:lt": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:_map_hires.near.lift": {
+    "views": 11.0,
+    "kernels": 14.0,
+    "bytes": 404273920.0,
+    "op:clone": 1.0,
+    "flops": 872415232.0,
+    "op:convolution": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:grid_sampler_2d": 1.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0
+   },
+   "mod:_map_hires.refine.inp.0": {
+    "kernels": 1.0,
+    "flops": 393216000.0,
+    "bytes": 36872192.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.inp.1": {
+    "kernels": 1.0,
+    "bytes": 24576320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine": {
+    "kernels": 3.0,
+    "bytes": 288768000.0,
+    "op:upsample_bilinear2d": 1.0,
+    "views": 2.0,
+    "op:add": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c1": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.near_refine.0.n1": {
+    "kernels": 1.0,
+    "bytes": 30720320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.near_refine.0": {
+    "kernels": 2.0,
+    "bytes": 76800000.0,
+    "op:gelu": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c2": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.conv1": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm1": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.act": {
+    "kernels": 2.0,
+    "bytes": 307200000.0,
+    "op:gelu": 2.0
+   },
+   "mod:_map_hires.refine.conv2": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm2": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.cls": {
+    "kernels": 1.0,
+    "flops": 307200000.0,
+    "bytes": 96001056.0,
+    "op:convolution": 1.0
+   },
+   "mod:_perception.bev_pool": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "bytes": 9830400.0,
+    "op:avg_pool2d": 1.0
+   },
+   "mod:_perception.bev_pool.proj.0": {
+    "kernels": 1.0,
+    "flops": 94371840.0,
+    "bytes": 4939776.0,
+    "op:convolution": 1.0
+   },
+   "mod:_perception.bev_pool.proj.1": {
+    "kernels": 1.0,
+    "bytes": 5899072.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:_perception": {
+    "kernels": 129.0,
+    "bytes": 134909040.0,
+    "op:_adaptive_avg_pool2d": 1.0,
+    "views": 312.0,
+    "op:clone": 4.0,
+    "op:add": 22.0,
+    "op:native_layer_norm": 9.0,
+    "flops": 3337617408.0,
+    "op:addmm": 27.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 6.0,
+    "op:gelu": 3.0,
+    "op:linalg_vector_norm": 3.0,
+    "op:clamp_min": 3.0,
+    "op:div": 3.0,
+    "op:mul": 18.0,
+    "op:softplus": 6.0,
+    "op:stack": 9.0,
+    "op:atan2": 3.0,
+    "op:cat": 6.0,
+    "op:tanh": 6.0
+   },
+   "mod:_perception.box_mem": {
+    "views": 6.0,
+    "kernels": 4.0,
+    "bytes": 11917312.0,
+    "op:add": 2.0,
+    "op:_adaptive_avg_pool2d": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:_perception.box_mem.img_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 872415232.0,
+    "bytes": 12977152.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_mem.bev_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 23592960.0,
+    "bytes": 1758208.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_refpts": {
+    "views": 2.0
+   },
+   "mod:_perception.box_qpos": {
+    "views": 2.0,
+    "kernels": 12.0,
+    "bytes": 1549024.0,
+    "op:div": 2.0,
+    "op:add": 1.0,
+    "op:mul": 4.0,
+    "op:sin": 2.0,
+    "op:cos": 2.0,
+    "op:cat": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.0": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 39321600.0,
+    "bytes": 877568.0,
+    "op:addmm": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.1": {
+    "kernels": 1.0,
+    "bytes": 614400.0,
+    "op:relu": 1.0,
+    "views": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.2": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 39321600.0,
+    "bytes": 877568.0,
+    "op:addmm": 1.0
+   },
+   "mod:_perception.box_dec.mem_proj": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 281018368.0,
+    "bytes": 4654080.0,
+    "op:addmm": 1.0
+   },
+   "mod:_perception.box_dec.norm": {
+    "kernels": 3.0,
+    "bytes": 1856544.0,
+    "op:native_layer_norm": 3.0
+   },
+   "mod:_perception.box_dec.head": {
+    "views": 9.0,
+    "kernels": 3.0,
+    "flops": 10598400.0,
+    "bytes": 1075332.0,
+    "op:addmm": 3.0
+   },
+   "mod:phi_tac.in_proj": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 8388608.0,
+    "bytes": 2171904.0,
+    "op:addmm": 1.0
+   },
+   "mod:phi_tac": {
+    "views": 2.0,
+    "kernels": 15.0,
+    "bytes": 299008.0,
+    "op:constant_pad_nd": 6.0,
+    "op:gelu": 6.0,
+    "op:add": 3.0
+   },
+   "mod:phi_tac.blocks.0.conv1": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 805888.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.blocks.0.conv2": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 805888.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.norms.0": {
+    "kernels": 1.0,
+    "bytes": 18440.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:phi_tac.blocks.1.conv1": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 807936.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.blocks.1.conv2": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 807936.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.norms.1": {
+    "kernels": 1.0,
+    "bytes": 18440.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:phi_tac.blocks.2.conv1": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 812032.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.blocks.2.conv2": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 812032.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.norms.2": {
+    "kernels": 1.0,
+    "bytes": 18440.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:phi_tac.out.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 262144.0,
+    "bytes": 529408.0,
+    "op:addmm": 1.0
+   },
+   "mod:phi_tac.out.1": {
+    "kernels": 1.0,
+    "bytes": 4096.0,
+    "op:gelu": 1.0
+   },
+   "mod:phi_tac.out.2": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 524288.0,
+    "bytes": 1054720.0,
+    "op:addmm": 1.0
+   },
+   "mod:nav_inj": {
+    "kernels": 1.0,
+    "bytes": 1288.0,
+    "op:embedding": 1.0
+   },
+   "mod:nav_to_tac": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 65536.0,
+    "bytes": 135424.0,
+    "op:addmm": 1.0
+   },
+   "mod:nav_to_str": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 32768.0,
+    "bytes": 67840.0,
+    "op:addmm": 1.0
+   },
+   "mod:str_goal_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1536.0,
+    "bytes": 4120.0,
+    "op:addmm": 1.0
+   },
+   "mod:lat_head_tac": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8192.0,
+    "bytes": 18496.0,
+    "op:addmm": 1.0
+   },
+   "mod:lon_head_tac": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8192.0,
+    "bytes": 18496.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_goal_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 12288.0,
+    "bytes": 26720.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_latent_proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 524288.0,
+    "bytes": 1054720.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.measurement.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1280.0,
+    "bytes": 3604.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.measurement.1": {
+    "kernels": 1.0,
+    "bytes": 1024.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.measurement.2": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 32768.0,
+    "bytes": 67072.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.measurement.3": {
+    "kernels": 1.0,
+    "bytes": 1024.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.route_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 12288.0,
+    "bytes": 32792.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.tactical_trunk.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1572864.0,
+    "bytes": 3156992.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.tactical_trunk.1": {
+    "kernels": 1.0,
+    "bytes": 3072.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.lat_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 2304.0,
+    "bytes": 6168.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.lon_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 2304.0,
+    "bytes": 6168.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.agent_head.mem_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 436207616.0,
+    "bytes": 6784000.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.agent_head": {
+    "kernels": 82.0,
+    "bytes": 76314000.0,
+    "op:add": 10.0,
+    "views": 247.0,
+    "op:native_layer_norm": 9.0,
+    "flops": 1978662912.0,
+    "op:addmm": 21.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 6.0,
+    "op:gelu": 3.0,
+    "op:linalg_vector_norm": 3.0,
+    "op:clamp_min": 3.0,
+    "op:div": 3.0,
+    "op:mul": 6.0,
+    "op:softplus": 3.0,
+    "op:stack": 3.0,
+    "op:atan2": 3.0,
+    "op:cat": 3.0
+   },
+   "mod:core.agent_head.norm": {
+    "kernels": 3.0,
+    "bytes": 1856544.0,
+    "op:native_layer_norm": 3.0
+   },
+   "mod:core.agent_head.head": {
+    "views": 9.0,
+    "kernels": 3.0,
+    "flops": 9676800.0,
+    "bytes": 1061964.0,
+    "op:addmm": 3.0
+   },
+   "mod:core.agent_embed": {
+    "kernels": 21.0,
+    "bytes": 1087500.0,
+    "op:sigmoid": 1.0,
+    "views": 14.0,
+    "op:_softmax": 1.0,
+    "op:mul": 4.0,
+    "op:add": 2.0,
+    "op:sqrt": 1.0,
+    "op:clamp_min": 1.0,
+    "op:div": 6.0,
+    "op:log1p": 1.0,
+    "op:reciprocal": 1.0,
+    "op:stack": 1.0,
+    "op:cat": 1.0,
+    "op:zeros": 1.0
+   },
+   "mod:core.agent_embed.geo.0": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 3840000.0,
+    "bytes": 363824.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.agent_embed.geo.1": {
+    "kernels": 1.0,
+    "bytes": 614400.0,
+    "op:gelu": 1.0
+   },
+   "mod:core.agent_embed.geo.2": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 58982400.0,
+    "bytes": 1162752.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.agent_embed.norm": {
+    "kernels": 1.0,
+    "bytes": 927072.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:max_speed_1h_v6": {
+    "views": 5.0,
+    "kernels": 18.0,
+    "bytes": 324.0,
+    "op:abs": 1.0,
+    "op:ne": 1.0,
+    "op:eq": 1.0,
+    "op:mul": 2.0,
+    "op:all": 1.0,
+    "sync_item": 3.0,
+    "op:add": 1.0,
+    "op:le": 1.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0,
+    "op:full_like": 1.0,
+    "op:_to_copy": 1.0,
+    "op:argmax": 1.0,
+    "op:where": 1.0,
+    "op:min": 1.0,
+    "op:max": 1.0,
+    "op:zeros": 1.0,
+    "op:scatter_": 1.0
+   },
+   "mod:tac_decoder_v6.agent_in": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 58982400.0,
+    "bytes": 1162240.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6": {
+    "views": 11.0,
+    "kernels": 7.0,
+    "bytes": 3201316.0,
+    "op:add": 2.0,
+    "op:zeros": 1.0,
+    "op:cat": 2.0,
+    "op:bitwise_not": 1.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_decoder_v6.bev_in": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 23592960.0,
+    "bytes": 775168.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.kv_norm": {
+    "kernels": 1.0,
+    "bytes": 1605728.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.film": {
+    "views": 4.0,
+    "kernels": 4.0,
+    "flops": 10240.0,
+    "bytes": 184360.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n1": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.self_attn": {
+    "views": 26.0,
+    "kernels": 4.0,
+    "flops": 19922944.0,
+    "bytes": 1676480.0,
+    "op:addmm": 2.0,
+    "op:clone": 1.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0": {
+    "kernels": 12.0,
+    "bytes": 669077.0,
+    "op:add": 3.0,
+    "op:all": 1.0,
+    "op:clone": 1.0,
+    "views": 3.0,
+    "op:index_put_": 1.0,
+    "op:bitwise_not": 2.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0
+   },
+   "mod:tac_decoder_v6.layers.0.n2": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.cross_attn": {
+    "kernels": 12.0,
+    "bytes": 13527112.0,
+    "op:zeros_like": 1.0,
+    "op:masked_fill_": 1.0,
+    "views": 33.0,
+    "flops": 244785152.0,
+    "op:addmm": 3.0,
+    "op:clone": 2.0,
+    "op:mul": 1.0,
+    "op:baddbmm": 1.0,
+    "op:_softmax": 1.0,
+    "op:bmm": 1.0,
+    "op:mean": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n3": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.ff": {
+    "views": 6.0,
+    "kernels": 3.0,
+    "flops": 39845888.0,
+    "bytes": 2802688.0,
+    "op:addmm": 2.0,
+    "op:gelu": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.film": {
+    "views": 4.0,
+    "kernels": 4.0,
+    "flops": 10240.0,
+    "bytes": 184360.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n1": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.self_attn": {
+    "views": 26.0,
+    "kernels": 4.0,
+    "flops": 19922944.0,
+    "bytes": 1676480.0,
+    "op:addmm": 2.0,
+    "op:clone": 1.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1": {
+    "kernels": 12.0,
+    "bytes": 669077.0,
+    "op:add": 3.0,
+    "op:all": 1.0,
+    "op:clone": 1.0,
+    "views": 3.0,
+    "op:index_put_": 1.0,
+    "op:bitwise_not": 2.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0
+   },
+   "mod:tac_decoder_v6.layers.1.n2": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.cross_attn": {
+    "kernels": 12.0,
+    "bytes": 13527112.0,
+    "op:zeros_like": 1.0,
+    "op:masked_fill_": 1.0,
+    "views": 33.0,
+    "flops": 244785152.0,
+    "op:addmm": 3.0,
+    "op:clone": 2.0,
+    "op:mul": 1.0,
+    "op:baddbmm": 1.0,
+    "op:_softmax": 1.0,
+    "op:bmm": 1.0,
+    "op:mean": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n3": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.ff": {
+    "views": 6.0,
+    "kernels": 3.0,
+    "flops": 39845888.0,
+    "bytes": 2802688.0,
+    "op:addmm": 2.0,
+    "op:gelu": 1.0
+   },
+   "mod:tac_decoder_v6.out_norm": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.validity_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 11264.0,
+    "bytes": 23644.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.conf_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 11264.0,
+    "bytes": 23644.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.lat_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 4096.0,
+    "bytes": 9252.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.lon_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 4096.0,
+    "bytes": 9252.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_behaviour_gate_v6": {
+    "kernels": 1.0,
+    "bytes": 264.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_behaviour_gate_v6.proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 5148.0,
+    "bytes": 10852.0,
+    "op:mm": 1.0
+   },
+   "mod:core.ego_hist": {
+    "views": 2.0
+   },
+   "mod:core.ego_hist.body": {
+    "kernels": 125.0,
+    "bytes": 513888.0,
+    "op:zeros": 1.0,
+    "views": 38.0,
+    "flops": 205824.0,
+    "op:addmm": 9.0,
+    "op:unsafe_split": 16.0,
+    "op:add_": 24.0,
+    "op:sigmoid_": 16.0,
+    "op:clone": 16.0,
+    "op:mul_": 16.0,
+    "op:add": 8.0,
+    "op:tanh_": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:transpose_": 1.0
+   },
+   "mod:core.ego_hist.out": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 4096.0,
+    "bytes": 8704.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder": {
+    "kernels": 3781.0,
+    "bytes": 7653673.0,
+    "op:abs": 2.0,
+    "op:sum": 1.0,
+    "sync_item": 6.0,
+    "views": 672.0,
+    "op:add": 993.0,
+    "op:full_like": 5.0,
+    "op:where": 8.0,
+    "op:zeros_like": 3.0,
+    "op:clamp_min": 249.0,
+    "op:pow": 8.0,
+    "op:div": 5.0,
+    "op:clamp": 5.0,
+    "op:stack": 254.0,
+    "op:repeat_interleave": 3.0,
+    "op:index_select": 7.0,
+    "op:zeros": 5.0,
+    "op:copy_": 4.0,
+    "op:cos": 240.0,
+    "op:mul": 1694.0,
+    "op:sin": 240.0,
+    "op:randint": 1.0,
+    "op:randn_like": 1.0,
+    "op:index": 3.0,
+    "op:sqrt": 2.0,
+    "op:_to_copy": 6.0,
+    "op:rsub": 2.0,
+    "flops": 6110208.0,
+    "op:addmm": 8.0,
+    "sync_cpu": 1.0,
+    "op:sub": 2.0,
+    "op:linalg_vector_norm": 2.0,
+    "op:atan2": 1.0,
+    "op:lt": 1.0,
+    "op:eq": 5.0,
+    "op:sign": 2.0,
+    "op:ge": 2.0,
+    "op:bitwise_and": 3.0,
+    "op:ne": 1.0,
+    "op:mean": 3.0,
+    "op:le": 1.0,
+    "op:bitwise_not": 3.0,
+    "op:bitwise_or": 2.0,
+    "op:any": 1.0,
+    "op:masked_fill": 1.0,
+    "op:argmax": 1.0,
+    "op:arange": 1.0
+   },
+   "mod:core.decoder.feat_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 654311424.0,
+    "bytes": 8472064.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.cond_proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 98304.0,
+    "bytes": 200192.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.ego_to_cond": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 24576.0,
+    "bytes": 52352.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tgt_proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 393216.0,
+    "bytes": 791552.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tgt_film.to_scale_shift": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 589824.0,
+    "bytes": 1187328.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tgt_film": {
+    "views": 1.0,
+    "kernels": 3.0,
+    "bytes": 12288.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.traj_proj": {
+    "views": 6.0,
+    "kernels": 2.0,
+    "flops": 2875392.0,
+    "bytes": 426624.0,
+    "op:addmm": 2.0
+   },
+   "mod:core.decoder.layers.0": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.layers.1": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.layers.2": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.layers.3": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.conf_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 89856.0,
+    "bytes": 181720.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.offset_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 1437696.0,
+    "bytes": 211840.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tac8_lat_to_anchor": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.tac8_lon_to_anchor": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.time_mlp.0": {
+    "kernels": 8.0,
+    "bytes": 13060.0,
+    "op:arange": 1.0,
+    "op:mul": 2.0,
+    "op:div": 1.0,
+    "op:exp": 1.0,
+    "views": 2.0,
+    "op:sin": 1.0,
+    "op:cos": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:core.decoder.time_mlp.1": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1179648.0,
+    "bytes": 2373120.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.time_mlp.2": {
+    "kernels": 1.0,
+    "bytes": 12288.0,
+    "op:mish": 1.0
+   },
+   "mod:core.decoder.time_mlp.3": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1179648.0,
+    "bytes": 2368512.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.adaln.0": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.adaln.1": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.adaln.2": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.adaln.3": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.law_head.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8454144.0,
+    "bytes": 16932928.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.law_head.1": {
+    "kernels": 1.0,
+    "bytes": 16384.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.law_head.2": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8388608.0,
+    "bytes": 16801792.0,
+    "op:addmm": 1.0
+   },
+   "mod:scorer.goal_point": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 2048.0,
+    "bytes": 6160.0,
+    "op:addmm": 1.0
+   },
+   "mod:scorer": {
+    "views": 5.0,
+    "kernels": 7.0,
+    "bytes": 6580.0,
+    "op:sub": 1.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:exp": 1.0,
+    "op:clamp_min": 1.0,
+    "op:neg": 1.0,
+    "op:div": 1.0,
+    "op:add": 1.0
+   },
+   "fn:refined_slot_losses": {
+    "kernels": 116.0,
+    "bytes": 109264.0,
+    "op:sum": 18.0,
+    "sync_item": 18.0,
+    "views": 4.0,
+    "op:abs": 6.0,
+    "op:atan2": 2.0,
+    "op:le": 6.0,
+    "op:bitwise_and": 30.0,
+    "op:ge": 6.0,
+    "op:_to_copy": 6.0,
+    "op:gt": 2.0,
+    "op:clamp_min": 2.0,
+    "op:div": 2.0,
+    "op:full_like": 2.0,
+    "op:where": 2.0,
+    "op:ne": 2.0,
+    "op:eq": 2.0,
+    "op:mul": 8.0,
+    "op:bitwise_not": 6.0,
+    "op:lt": 2.0,
+    "op:add": 12.0
+   },
+   "fn:match_slots": {
+    "views": 30.0,
+    "kernels": 6.0,
+    "bytes": 1404.0,
+    "op:nonzero": 6.0,
+    "sync_cpu": 6.0,
+    "sync_numpy": 6.0
+   },
+   "fn:match_cost_build": {
+    "views": 108.0,
+    "kernels": 234.0,
+    "bytes": 2844612.0,
+    "op:index": 18.0,
+    "op:sub": 18.0,
+    "op:abs": 12.0,
+    "op:sum": 12.0,
+    "op:_softmax": 6.0,
+    "op:clamp_min": 6.0,
+    "op:neg": 18.0,
+    "op:ge": 6.0,
+    "op:zeros_like": 6.0,
+    "op:where": 6.0,
+    "op:sigmoid": 6.0,
+    "op:rsub": 12.0,
+    "op:add": 30.0,
+    "op:log": 12.0,
+    "op:mul": 48.0,
+    "op:pow": 12.0,
+    "op:_to_copy": 6.0,
+    "sync_cpu": 6.0,
+    "sync_numpy": 6.0
+   },
+   "fn:slot_set_loss": {
+    "kernels": 261.0,
+    "bytes": 165702.0,
+    "op:zeros_like": 3.0,
+    "op:full_like": 3.0,
+    "views": 69.0,
+    "op:index_put_": 6.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:zeros": 3.0,
+    "op:clone": 18.0,
+    "op:index": 60.0,
+    "op:sub": 9.0,
+    "op:abs": 9.0,
+    "op:sum": 24.0,
+    "op:add": 39.0,
+    "op:new_zeros": 3.0,
+    "op:sin": 3.0,
+    "op:copy_": 6.0,
+    "op:cos": 3.0,
+    "op:mul": 24.0,
+    "op:rsub": 3.0,
+    "op:ge": 6.0,
+    "op:any": 9.0,
+    "sync_item": 18.0,
+    "op:_log_softmax": 3.0,
+    "op:nll_loss_forward": 3.0,
+    "op:div": 18.0
+   },
+   "fn:ignore_presence_weight": {
+    "kernels": 72.0,
+    "bytes": 5254664.0,
+    "op:ones": 8.0,
+    "op:any": 16.0,
+    "sync_item": 8.0,
+    "views": 72.0,
+    "op:clone": 16.0,
+    "op:_euclidean_dist": 8.0,
+    "op:le": 8.0,
+    "op:bitwise_and": 8.0,
+    "op:index_put_": 8.0
+   },
+   "fn:presence_term": {
+    "kernels": 174.0,
+    "bytes": 389694.0,
+    "op:zeros_like": 12.0,
+    "views": 36.0,
+    "op:index_put_": 18.0,
+    "op:sum": 18.0,
+    "sync_item": 12.0,
+    "op:clone": 6.0,
+    "op:eq": 6.0,
+    "op:bitwise_not": 6.0,
+    "op:bitwise_and": 6.0,
+    "op:sigmoid": 6.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:mul": 42.0,
+    "op:rsub": 24.0,
+    "op:add": 12.0,
+    "op:pow": 6.0,
+    "op:div": 6.0
+   },
+   "fn:det_window_packs": {
+    "views": 87.0,
+    "kernels": 130.0,
+    "bytes": 251816.0,
+    "op:abs": 7.0,
+    "op:atan2": 2.0,
+    "op:le": 6.0,
+    "op:bitwise_and": 33.0,
+    "op:ge": 6.0,
+    "op:_to_copy": 6.0,
+    "op:gt": 2.0,
+    "op:clamp_min": 4.0,
+    "op:div": 2.0,
+    "op:full_like": 2.0,
+    "op:where": 2.0,
+    "op:ne": 2.0,
+    "op:eq": 2.0,
+    "op:mul": 2.0,
+    "op:bitwise_not": 6.0,
+    "op:sum": 15.0,
+    "sync_item": 14.0,
+    "op:lt": 4.0,
+    "op:argmax": 4.0,
+    "op:log": 2.0,
+    "op:sub": 4.0,
+    "sync_tolist": 2.0,
+    "sync_cpu": 25.0,
+    "sync_numpy": 25.0,
+    "op:index": 14.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:zeros": 2.0
+   },
+   "fn:box3d_set_loss": {
+    "kernels": 348.0,
+    "bytes": 189342.0,
+    "op:sum": 39.0,
+    "sync_item": 30.0,
+    "op:zeros_like": 3.0,
+    "op:full_like": 3.0,
+    "views": 84.0,
+    "op:index_put_": 6.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:zeros": 3.0,
+    "op:clone": 18.0,
+    "op:index": 87.0,
+    "op:sub": 15.0,
+    "op:abs": 15.0,
+    "op:add": 51.0,
+    "op:new_zeros": 9.0,
+    "op:sin": 3.0,
+    "op:copy_": 6.0,
+    "op:cos": 3.0,
+    "op:mul": 30.0,
+    "op:rsub": 3.0,
+    "op:ge": 6.0,
+    "op:any": 12.0,
+    "op:_log_softmax": 3.0,
+    "op:nll_loss_forward": 3.0,
+    "op:div": 24.0
+   },
+   "fn:map_hires_loss_row": {
+    "views": 2.0,
+    "kernels": 3.0,
+    "bytes": 6264000.0,
+    "op:_to_copy": 1.0,
+    "op:_upsample_nearest_exact2d": 1.0,
+    "op:gt": 1.0
+   },
+   "fn:map_hires_ce": {
+    "kernels": 9.0,
+    "bytes": 100200056.0,
+    "op:_to_copy": 1.0,
+    "op:ne": 2.0,
+    "op:sum": 2.0,
+    "sync_item": 2.0,
+    "op:full_like": 1.0,
+    "op:where": 1.0,
+    "op:_log_softmax": 1.0,
+    "views": 1.0,
+    "op:nll_loss2d_forward": 1.0
+   },
+   "fn:map_per_class_signal": {
+    "views": 20.0,
+    "kernels": 112.0,
+    "bytes": 1929391582.0,
+    "op:_to_copy": 21.0,
+    "op:full_like": 2.0,
+    "op:where": 4.0,
+    "op:ne": 2.0,
+    "op:zeros_like": 1.0,
+    "op:clamp": 1.0,
+    "op:index": 1.0,
+    "op:mul": 16.0,
+    "op:sum": 12.0,
+    "op:_log_softmax": 1.0,
+    "op:gather": 1.0,
+    "op:neg": 1.0,
+    "op:min": 4.0,
+    "sync_item": 15.0,
+    "op:max": 4.0,
+    "op:zeros": 4.0,
+    "op:scatter_": 4.0,
+    "op:arange": 1.0,
+    "op:floor_divide": 1.0,
+    "op:exp": 1.0,
+    "op:sub": 2.0,
+    "op:div": 3.0,
+    "op:argmax": 2.0,
+    "op:abs": 1.0,
+    "op:eq": 1.0,
+    "op:all": 1.0,
+    "op:lt": 1.0,
+    "op:any": 1.0,
+    "op:gt": 3.0,
+    "op:ones_like": 1.0,
+    "op:log": 1.0,
+    "flops": 720000.0,
+    "op:mm": 9.0,
+    "op:sqrt": 2.0,
+    "op:add": 2.0
+   },
+   "fn:map_per_class_log_values": {
+    "kernels": 1.0,
+    "bytes": 5120.0,
+    "op:stack": 1.0,
+    "sync_cpu": 1.0,
+    "sync_tolist": 1.0
+   },
+   "<top>": {
+    "kernels": 7104.0,
+    "bytes": 8080880260.0,
+    "op:_record_function_enter_new": 2.0,
+    "op:_record_function_exit": 2.0,
+    "op:add_": 1576.0,
+    "op:mul_": 1576.0,
+    "op:lerp_": 788.0,
+    "op:addcmul_": 788.0,
+    "sync_item": 788.0,
+    "op:sqrt": 788.0,
+    "op:div": 788.0,
+    "op:addcdiv_": 788.0,
+    "views": 4.0,
+    "op:zeros_like": 8.0
+   },
+   "fn:conflict_terms": {
+    "kernels": 6.0,
+    "bytes": 56.0,
+    "op:mul": 4.0,
+    "op:add": 2.0
+   },
+   "<top>@recompute": {
+    "kernels": 1.0,
+    "bytes": 8.0,
+    "op:ones_like": 1.0
+   },
+   "phase:fwd_loss@bwd": {
+    "kernels": 5747.0,
+    "bytes": 48826413.0,
+    "op:mul": 2209.0,
+    "op:div": 22.0,
+    "views": 961.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 7.0,
+    "op:nll_loss_backward": 7.0,
+    "op:_log_softmax_backward_data": 7.0,
+    "op:add": 1963.0,
+    "op:pow": 4.0,
+    "op:neg": 184.0,
+    "op:sigmoid_backward": 4.0,
+    "op:sgn": 5.0,
+    "op:new_zeros": 11.0,
+    "op:index_put": 5.0,
+    "op:index_add": 6.0,
+    "op:slice_backward": 3.0,
+    "op:scalar_tensor": 185.0,
+    "op:ge": 185.0,
+    "op:where": 185.0,
+    "op:select_backward": 379.0,
+    "op:cos": 177.0,
+    "op:sin": 177.0,
+    "op:le": 3.0,
+    "op:logical_and_": 3.0,
+    "op:masked_fill": 1.0,
+    "op:zeros_like": 1.0,
+    "op:smooth_l1_loss_backward": 1.0,
+    "op:mse_loss_backward": 1.0,
+    "op:sum": 2.0,
+    "op:eq": 2.0,
+    "op:masked_fill_": 2.0
+   },
+   "fn:map_hires_ce@bwd": {
+    "kernels": 4.0,
+    "bytes": 196800048.0,
+    "op:nll_loss2d_backward": 1.0,
+    "views": 1.0,
+    "op:_log_softmax_backward_data": 1.0,
+    "op:new_zeros": 1.0,
+    "op:index_add": 1.0
+   },
+   "fn:refined_slot_losses@bwd": {
+    "kernels": 6.0,
+    "bytes": 48.0,
+    "op:mul": 6.0
+   },
+   "fn:presence_term@bwd": {
+    "kernels": 108.0,
+    "bytes": 331248.0,
+    "op:div": 6.0,
+    "views": 12.0,
+    "op:mul": 54.0,
+    "op:pow": 6.0,
+    "op:neg": 12.0,
+    "op:add": 12.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 6.0,
+    "op:sigmoid_backward": 6.0
+   },
+   "fn:box3d_set_loss@bwd": {
+    "kernels": 270.0,
+    "bytes": 887889.0,
+    "op:mul": 54.0,
+    "op:div": 24.0,
+    "views": 27.0,
+    "op:sgn": 15.0,
+    "op:new_zeros": 60.0,
+    "op:index_put": 36.0,
+    "op:select_backward": 21.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 6.0,
+    "op:nll_loss_backward": 3.0,
+    "op:_log_softmax_backward_data": 3.0,
+    "op:neg": 3.0,
+    "op:slice_backward": 6.0,
+    "op:add": 6.0,
+    "op:div_": 3.0,
+    "op:index_add": 24.0
+   },
+   "fn:slot_set_loss@bwd": {
+    "kernels": 204.0,
+    "bytes": 813351.0,
+    "op:mul": 42.0,
+    "op:div": 18.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 6.0,
+    "op:new_zeros": 42.0,
+    "op:index_put": 24.0,
+    "op:select_backward": 15.0,
+    "views": 21.0,
+    "op:sgn": 9.0,
+    "op:nll_loss_backward": 3.0,
+    "op:_log_softmax_backward_data": 3.0,
+    "op:neg": 3.0,
+    "op:slice_backward": 6.0,
+    "op:add": 6.0,
+    "op:div_": 3.0,
+    "op:index_add": 18.0
+   },
+   "<untagged>@bwd": {
+    "views": 786.0,
+    "kernels": 4.0,
+    "bytes": 13107200.0,
+    "op:new_empty_strided": 2.0,
+    "op:copy_": 2.0
+   },
+   "mod:scorer@bwd": {
+    "views": 5.0,
+    "kernels": 18.0,
+    "bytes": 46616.0,
+    "op:div": 4.0,
+    "op:neg": 2.0,
+    "op:mul": 3.0,
+    "op:sum": 1.0,
+    "op:scalar_tensor": 1.0,
+    "op:ge": 1.0,
+    "op:where": 1.0,
+    "op:eq": 1.0,
+    "op:masked_fill_": 1.0,
+    "op:select_backward": 1.0,
+    "op:slice_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.law_head.2@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 16777216.0,
+    "bytes": 33603584.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.law_head.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 24576.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.law_head.0@bwd": {
+    "views": 8.0,
+    "kernels": 3.0,
+    "flops": 16908288.0,
+    "bytes": 33865856.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder@bwd": {
+    "kernels": 1900.0,
+    "bytes": 21738384.0,
+    "op:new_zeros": 3.0,
+    "op:index_put": 1.0,
+    "op:add": 659.0,
+    "op:mul": 716.0,
+    "op:sum": 9.0,
+    "views": 376.0,
+    "op:index_add": 2.0,
+    "op:slice_backward": 1.0,
+    "op:scalar_tensor": 61.0,
+    "op:ge": 61.0,
+    "op:where": 61.0,
+    "op:select_backward": 130.0,
+    "op:cos": 59.0,
+    "op:sin": 59.0,
+    "op:neg": 59.0,
+    "op:le": 1.0,
+    "op:logical_and_": 1.0,
+    "op:div": 1.0,
+    "flops": 12220416.0,
+    "op:mm": 16.0
+   },
+   "mod:core.decoder.adaln.3@bwd": {
+    "kernels": 9.0,
+    "bytes": 3648000.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 7.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0
+   },
+   "mod:core.decoder.layers.3@bwd": {
+    "views": 242.0,
+    "kernels": 177.0,
+    "flops": 5753659392.0,
+    "bytes": 310806602.0,
+    "op:mm": 44.0,
+    "op:sum": 32.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:add": 43.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 8.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.adaln.2@bwd": {
+    "kernels": 10.0,
+    "bytes": 3652608.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 7.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.layers.2@bwd": {
+    "views": 242.0,
+    "kernels": 181.0,
+    "flops": 5753659392.0,
+    "bytes": 322957898.0,
+    "op:mm": 44.0,
+    "op:sum": 32.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:add": 47.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 8.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.adaln.1@bwd": {
+    "kernels": 10.0,
+    "bytes": 3652608.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 7.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.layers.1@bwd": {
+    "views": 242.0,
+    "kernels": 181.0,
+    "flops": 5753659392.0,
+    "bytes": 322957898.0,
+    "op:mm": 44.0,
+    "op:sum": 32.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:add": 47.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 8.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.adaln.0@bwd": {
+    "kernels": 10.0,
+    "bytes": 3652608.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 8.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.layers.0@bwd": {
+    "views": 245.0,
+    "kernels": 186.0,
+    "flops": 5753659392.0,
+    "bytes": 324049994.0,
+    "op:mm": 44.0,
+    "op:sum": 34.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:add": 49.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 9.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.time_mlp.3@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 2359296.0,
+    "bytes": 4737024.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.time_mlp.2@bwd": {
+    "kernels": 1.0,
+    "bytes": 18432.0,
+    "op:mish_backward": 1.0
+   },
+   "mod:core.decoder.time_mlp.1@bwd": {
+    "views": 4.0,
+    "kernels": 2.0,
+    "flops": 1179648.0,
+    "bytes": 2379264.0,
+    "op:mm": 1.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.traj_proj@bwd": {
+    "views": 10.0,
+    "kernels": 6.0,
+    "flops": 2875392.0,
+    "bytes": 864384.0,
+    "op:mm": 2.0,
+    "op:sum": 2.0,
+    "op:add": 2.0
+   },
+   "mod:core.decoder.tac8_lon_to_anchor@bwd": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.tac8_lat_to_anchor@bwd": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.conf_head@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 179712.0,
+    "bytes": 363904.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.tgt_film@bwd": {
+    "kernels": 3.0,
+    "bytes": 15360.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0
+   },
+   "mod:core.decoder.tgt_film.to_scale_shift@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 1179648.0,
+    "bytes": 2374656.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.tgt_proj@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 786432.0,
+    "bytes": 1583104.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.ego_to_cond@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 49152.0,
+    "bytes": 104704.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.cond_proj@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 196608.0,
+    "bytes": 400384.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.feat_proj@bwd": {
+    "kernels": 3.0,
+    "bytes": 15025664.0,
+    "op:sum": 1.0,
+    "views": 10.0,
+    "flops": 1308622848.0,
+    "op:mm": 2.0
+   },
+   "mod:core.ego_hist.out@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 8192.0,
+    "bytes": 17920.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:select_backward": 1.0
+   },
+   "mod:core.ego_hist.body@bwd": {
+    "views": 69.0,
+    "kernels": 135.0,
+    "bytes": 1924192.0,
+    "op:mul": 32.0,
+    "op:neg": 8.0,
+    "op:add": 29.0,
+    "op:tanh_backward": 8.0,
+    "op:sigmoid_backward": 16.0,
+    "op:cat": 16.0,
+    "flops": 377856.0,
+    "op:mm": 16.0,
+    "op:sum": 9.0,
+    "op:stack": 1.0
+   },
+   "mod:tac_behaviour_gate_v6.proj@bwd": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 5148.0,
+    "bytes": 10852.0,
+    "op:mm": 1.0
+   },
+   "mod:tac_decoder_v6@bwd": {
+    "views": 4.0
+   },
+   "mod:tac_decoder_v6.lon_head@bwd": {
+    "views": 7.0,
+    "kernels": 4.0,
+    "flops": 8192.0,
+    "bytes": 65636.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:slice_backward": 1.0
+   },
+   "mod:tac_decoder_v6.lat_head@bwd": {
+    "views": 7.0,
+    "kernels": 5.0,
+    "flops": 8192.0,
+    "bytes": 182372.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:slice_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.conf_head@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 22528.0,
+    "bytes": 47372.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_decoder_v6.validity_head@bwd": {
+    "views": 7.0,
+    "kernels": 6.0,
+    "flops": 22528.0,
+    "bytes": 293132.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:slice_backward": 1.0
+   },
+   "mod:tac_decoder_v6.out_norm@bwd": {
+    "kernels": 1.0,
+    "bytes": 121136.0,
+    "op:native_layer_norm_backward": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.ff@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "flops": 79691776.0,
+    "bytes": 5639168.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n3@bwd": {
+    "kernels": 3.0,
+    "bytes": 315700.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.cross_attn@bwd": {
+    "views": 41.0,
+    "kernels": 23.0,
+    "flops": 489570304.0,
+    "bytes": 34981632.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:bmm": 4.0,
+    "op:_softmax_backward_data": 1.0,
+    "op:mul": 1.0,
+    "op:clone": 3.0,
+    "op:select_backward": 2.0,
+    "op:add": 1.0,
+    "op:cat": 2.0
+   },
+   "mod:tac_decoder_v6.layers.1.n2@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.self_attn@bwd": {
+    "views": 31.0,
+    "kernels": 13.0,
+    "flops": 39845888.0,
+    "bytes": 4437184.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 1.0,
+    "op:select_backward": 3.0,
+    "op:add": 2.0,
+    "op:clone": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n1@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.film@bwd": {
+    "kernels": 7.0,
+    "bytes": 306216.0,
+    "op:sum": 3.0,
+    "views": 6.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "flops": 10240.0,
+    "op:mm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.ff@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "flops": 79691776.0,
+    "bytes": 5639168.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n3@bwd": {
+    "kernels": 3.0,
+    "bytes": 315700.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.cross_attn@bwd": {
+    "views": 41.0,
+    "kernels": 24.0,
+    "flops": 489570304.0,
+    "bytes": 37377792.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:bmm": 4.0,
+    "op:_softmax_backward_data": 1.0,
+    "op:mul": 1.0,
+    "op:clone": 3.0,
+    "op:select_backward": 2.0,
+    "op:add": 2.0,
+    "op:cat": 2.0
+   },
+   "mod:tac_decoder_v6.layers.0.n2@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.self_attn@bwd": {
+    "views": 31.0,
+    "kernels": 13.0,
+    "flops": 39845888.0,
+    "bytes": 4437184.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 1.0,
+    "op:select_backward": 3.0,
+    "op:add": 2.0,
+    "op:clone": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n1@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.film@bwd": {
+    "kernels": 7.0,
+    "bytes": 306216.0,
+    "op:sum": 3.0,
+    "views": 7.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "flops": 10240.0,
+    "op:mm": 1.0
+   },
+   "mod:tac_decoder_v6.kv_norm@bwd": {
+    "kernels": 6.0,
+    "bytes": 3219552.0,
+    "op:native_layer_norm_backward": 1.0,
+    "views": 4.0,
+    "op:sum": 2.0,
+    "op:select_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.bev_in@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 47185920.0,
+    "bytes": 2040832.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_decoder_v6.agent_in@bwd": {
+    "views": 7.0,
+    "kernels": 4.0,
+    "flops": 117964800.0,
+    "bytes": 4013056.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.agent_embed@bwd": {
+    "kernels": 3.0,
+    "bytes": 2767200.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "views": 1.0
+   },
+   "mod:core.agent_embed.norm@bwd": {
+    "kernels": 1.0,
+    "bytes": 1390944.0,
+    "op:native_layer_norm_backward": 1.0
+   },
+   "mod:core.agent_embed.geo.2@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 117964800.0,
+    "bytes": 2784768.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.agent_embed.geo.1@bwd": {
+    "kernels": 1.0,
+    "bytes": 921600.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:core.agent_embed.geo.0@bwd": {
+    "views": 28.0,
+    "kernels": 65.0,
+    "flops": 7680000.0,
+    "bytes": 1388432.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 23.0,
+    "op:select_backward": 9.0,
+    "op:mul": 10.0,
+    "op:neg": 3.0,
+    "op:div": 12.0,
+    "op:scalar_tensor": 1.0,
+    "op:ge": 1.0,
+    "op:where": 1.0,
+    "op:_softmax_backward_data": 1.0,
+    "op:sigmoid_backward": 1.0
+   },
+   "mod:core.agent_head@bwd": {
+    "views": 36.0,
+    "kernels": 117.0,
+    "bytes": 3142824.0,
+    "op:slice_backward": 30.0,
+    "op:add": 33.0,
+    "op:select_backward": 6.0,
+    "op:softplus_backward": 3.0,
+    "op:mul": 12.0,
+    "op:div": 12.0,
+    "op:neg": 3.0,
+    "op:sum": 3.0,
+    "op:scalar_tensor": 3.0,
+    "op:ge": 3.0,
+    "op:where": 3.0,
+    "op:eq": 3.0,
+    "op:masked_fill_": 3.0
+   },
+   "mod:core.agent_head.head@bwd": {
+    "views": 21.0,
+    "kernels": 13.0,
+    "flops": 19353600.0,
+    "bytes": 2328804.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:add": 4.0
+   },
+   "mod:core.agent_head.norm@bwd": {
+    "kernels": 137.0,
+    "bytes": 191923584.0,
+    "op:native_layer_norm_backward": 12.0,
+    "views": 252.0,
+    "flops": 3957325824.0,
+    "op:mm": 42.0,
+    "op:sum": 21.0,
+    "op:gelu_backward": 3.0,
+    "op:add": 26.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 6.0,
+    "op:select_backward": 15.0,
+    "op:clone": 6.0,
+    "op:cat": 6.0
+   },
+   "mod:core.agent_head.mem_proj@bwd": {
+    "kernels": 5.0,
+    "bytes": 53183488.0,
+    "op:sum": 1.0,
+    "views": 11.0,
+    "flops": 872415232.0,
+    "op:mm": 2.0,
+    "op:add": 1.0,
+    "op:select_backward": 1.0
+   },
+   "mod:core.lon_head@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 4608.0,
+    "bytes": 12336.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.lat_head@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 4608.0,
+    "bytes": 16944.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.tactical_trunk.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 4608.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.tactical_trunk.0@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 3145728.0,
+    "bytes": 6338560.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.measurement.3@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 1536.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.measurement.2@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 65536.0,
+    "bytes": 134144.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.measurement.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 1536.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.measurement.0@bwd": {
+    "views": 4.0,
+    "kernels": 2.0,
+    "flops": 1280.0,
+    "bytes": 4116.0,
+    "op:mm": 1.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_latent_proj@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 1048576.0,
+    "bytes": 2109440.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_goal_head@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 24576.0,
+    "bytes": 59584.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:lon_head_tac@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 16384.0,
+    "bytes": 43136.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:lat_head_tac@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 16384.0,
+    "bytes": 43136.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:nav_to_tac@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 131072.0,
+    "bytes": 270848.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:nav_inj@bwd": {
+    "kernels": 1.0,
+    "bytes": 1288.0,
+    "op:embedding_dense_backward": 1.0
+   },
+   "mod:phi_tac.out.2@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 1048576.0,
+    "bytes": 2109440.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:phi_tac.out.1@bwd": {
+    "kernels": 1.0,
+    "bytes": 6144.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.out.0@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 524288.0,
+    "bytes": 1068032.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:select_backward": 1.0
+   },
+   "mod:phi_tac.norms.2@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 52232.0,
+    "op:native_group_norm_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.2.conv2@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1664000.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.2.conv1@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1664000.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:add": 1.0
+   },
+   "mod:phi_tac.norms.1@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 52232.0,
+    "op:native_group_norm_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.1.conv2@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1651712.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.1.conv1@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1651712.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:add": 1.0
+   },
+   "mod:phi_tac.norms.0@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 52232.0,
+    "op:native_group_norm_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.0.conv2@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1645568.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.0.conv1@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1645568.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:add": 1.0,
+    "views": 1.0
+   },
+   "mod:phi_tac.in_proj@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 16777216.0,
+    "bytes": 4350976.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:_perception@bwd": {
+    "views": 68.0,
+    "kernels": 181.0,
+    "bytes": 19710744.0,
+    "op:slice_backward": 48.0,
+    "op:mul": 24.0,
+    "op:tanh_backward": 6.0,
+    "op:select_backward": 12.0,
+    "op:add": 51.0,
+    "op:softplus_backward": 6.0,
+    "op:div": 12.0,
+    "op:neg": 3.0,
+    "op:sum": 3.0,
+    "op:scalar_tensor": 3.0,
+    "op:ge": 3.0,
+    "op:where": 3.0,
+    "op:eq": 3.0,
+    "op:masked_fill_": 3.0,
+    "op:_adaptive_avg_pool2d_backward": 1.0
+   },
+   "mod:_perception.box_dec.head@bwd": {
+    "views": 21.0,
+    "kernels": 13.0,
+    "flops": 21196800.0,
+    "bytes": 2375052.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:add": 4.0
+   },
+   "mod:_perception.box_dec.norm@bwd": {
+    "kernels": 154.0,
+    "bytes": 336559488.0,
+    "op:native_layer_norm_backward": 12.0,
+    "views": 288.0,
+    "flops": 6675234816.0,
+    "op:mm": 54.0,
+    "op:sum": 27.0,
+    "op:gelu_backward": 3.0,
+    "op:add": 31.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 6.0,
+    "op:select_backward": 6.0,
+    "op:clone": 3.0,
+    "op:cat": 12.0
+   },
+   "mod:_perception.box_dec.mem_proj@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 562036736.0,
+    "bytes": 11502592.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.2@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 78643200.0,
+    "bytes": 2061312.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 921600.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.0@bwd": {
+    "views": 11.0,
+    "kernels": 29.0,
+    "flops": 78643200.0,
+    "bytes": 4865536.0,
+    "op:mm": 2.0,
+    "op:sum": 5.0,
+    "op:sin": 2.0,
+    "op:neg": 2.0,
+    "op:mul": 8.0,
+    "op:cos": 2.0,
+    "op:add": 4.0,
+    "op:div": 2.0,
+    "op:slice_backward": 2.0
+   },
+   "mod:_perception.box_refpts@bwd": {
+    "views": 1.0
+   },
+   "mod:_perception.box_mem@bwd": {
+    "views": 2.0,
+    "kernels": 5.0,
+    "bytes": 2209792.0,
+    "op:sum": 2.0,
+    "op:slice_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_mem.bev_proj@bwd": {
+    "kernels": 5.0,
+    "bytes": 16970752.0,
+    "op:sum": 1.0,
+    "views": 10.0,
+    "flops": 47185920.0,
+    "op:mm": 2.0,
+    "op:_adaptive_avg_pool2d_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_mem.img_proj@bwd": {
+    "kernels": 4.0,
+    "bytes": 82183168.0,
+    "op:sum": 1.0,
+    "views": 11.0,
+    "flops": 1744830464.0,
+    "op:mm": 2.0,
+    "op:select_backward": 1.0
+   },
+   "mod:_perception.bev_pool.proj.1@bwd": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "bytes": 8848576.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_perception.bev_pool.proj.0@bwd": {
+    "kernels": 4.0,
+    "flops": 188743680.0,
+    "bytes": 86556672.0,
+    "op:convolution_backward": 1.0,
+    "op:avg_pool2d_backward": 1.0,
+    "op:slice_backward": 2.0
+   },
+   "fn:map_near_geometry@recompute": {
+    "views": 23.0,
+    "kernels": 36.0,
+    "bytes": 50459840.0,
+    "op:_to_copy": 1.0,
+    "op:mul": 8.0,
+    "op:sub": 8.0,
+    "op:cat": 2.0,
+    "op:replication_pad2d": 1.0,
+    "op:arange": 2.0,
+    "op:add": 4.0,
+    "op:div": 2.0,
+    "op:stack": 1.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:rsub": 1.0,
+    "op:lt": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:_map_hires.near.lift@recompute": {
+    "views": 11.0,
+    "kernels": 14.0,
+    "bytes": 404273920.0,
+    "op:clone": 1.0,
+    "flops": 872415232.0,
+    "op:convolution": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:grid_sampler_2d": 1.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0
+   },
+   "mod:_map_hires.refine.cls@bwd": {
+    "views": 36.0,
+    "kernels": 1.0,
+    "flops": 614400000.0,
+    "bytes": 172802080.0,
+    "op:convolution_backward": 1.0
+   },
+   "mod:_map_hires.refine.inp.0@recompute": {
+    "kernels": 1.0,
+    "flops": 393216000.0,
+    "bytes": 36872192.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.inp.1@recompute": {
+    "kernels": 1.0,
+    "bytes": 24576320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine@recompute": {
+    "kernels": 3.0,
+    "bytes": 288768000.0,
+    "op:upsample_bilinear2d": 1.0,
+    "views": 2.0,
+    "op:add": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c1@recompute": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.near_refine.0.n1@recompute": {
+    "kernels": 1.0,
+    "bytes": 30720320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.near_refine.0@recompute": {
+    "kernels": 2.0,
+    "bytes": 76800000.0,
+    "op:gelu": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c2@recompute": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.conv1@recompute": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm1@recompute": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.act@recompute": {
+    "kernels": 2.0,
+    "bytes": 307200000.0,
+    "op:gelu": 2.0
+   },
+   "mod:_map_hires.refine.conv2@recompute": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm2@recompute": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.act@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 460800000.0,
+    "op:gelu_backward": 2.0
+   },
+   "mod:_map_hires.refine.norm2@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 230400448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.refine.conv2@bwd": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "flops": 22118400000.0,
+    "bytes": 230473728.0,
+    "op:convolution_backward": 1.0
+   },
+   "mod:_map_hires.refine.norm1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 230400448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.refine.conv1@bwd": {
+    "views": 4.0,
+    "kernels": 2.0,
+    "flops": 22118400000.0,
+    "bytes": 368713728.0,
+    "op:convolution_backward": 1.0,
+    "op:slice_backward": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c2@bwd": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 4423680000.0,
+    "bytes": 92233728.0,
+    "op:convolution_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:_map_hires.near_refine.0.n1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 46080448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c1@bwd": {
+    "views": 2.0,
+    "kernels": 5.0,
+    "flops": 4423680000.0,
+    "bytes": 503881728.0,
+    "op:convolution_backward": 1.0,
+    "op:add": 2.0,
+    "op:slice_backward": 1.0,
+    "op:upsample_bilinear2d_backward": 1.0
+   },
+   "mod:_map_hires.refine.inp.1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 36864448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.refine.inp.0@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "flops": 786432000.0,
+    "bytes": 135184384.0,
+    "op:convolution_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.near.lift@bwd": {
+    "kernels": 7.0,
+    "bytes": 294375424.0,
+    "op:mul": 2.0,
+    "op:sum": 2.0,
+    "views": 12.0,
+    "op:grid_sampler_2d_backward": 1.0,
+    "flops": 1744830464.0,
+    "op:convolution_backward": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.4@bwd": {
+    "views": 91.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.stem.0@recompute": {
+    "kernels": 1.0,
+    "flops": 7077888000.0,
+    "bytes": 49299456.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.encoder.stem.1@recompute": {
+    "kernels": 1.0,
+    "bytes": 49152576.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.encoder.stem.2@recompute": {
+    "kernels": 1.0,
+    "bytes": 49152000.0,
+    "op:gelu": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.0@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.1@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.2@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.3@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.4@recompute": {
+    "kernels": 6.0,
+    "flops": 14155776000.0,
+    "bytes": 319784064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.3@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.2@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.1@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.0@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.stem.2@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 73728000.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:_map_hires.encoder.stem.1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 73728832.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.encoder.stem.0@bwd": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "flops": 14155776000.0,
+    "bytes": 74022912.0,
+    "op:convolution_backward": 1.0
+   },
+   "mod:_map_hires.lift@bwd": {
+    "kernels": 8.0,
+    "bytes": 491982336.0,
+    "op:mul": 2.0,
+    "op:sum": 2.0,
+    "views": 9.0,
+    "op:grid_sampler_2d_backward": 1.0,
+    "flops": 3489660928.0,
+    "op:convolution_backward": 1.0,
+    "op:add": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:core.route_head@bwd": {
+    "kernels": 2.0,
+    "bytes": 270336.0,
+    "op:select_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.strategic.gru@bwd": {
+    "views": 1.0
+   },
+   "fn:trunk_s8_tap@bwd": {
+    "views": 1.0
+   },
+   "mod:core.encoder.net.conv1@recompute": {
+    "kernels": 77.0,
+    "bytes": 357406720.0,
+    "op:add": 11.0,
+    "op:sqrt": 11.0,
+    "op:div": 11.0,
+    "views": 11.0,
+    "op:mul": 22.0,
+    "op:sub": 11.0,
+    "flops": 22042116096.0,
+    "op:convolution": 11.0
+   },
+   "mod:core.encoder.net.layer2@bwd": {
+    "views": 965.0,
+    "kernels": 1710.0,
+    "bytes": 9946976256.0,
+    "op:threshold_backward": 132.0,
+    "flops": 383862702080.0,
+    "op:convolution_backward": 143.0,
+    "op:neg": 143.0,
+    "op:mul": 429.0,
+    "op:sum": 143.0,
+    "op:add": 577.0,
+    "op:div": 143.0
+   },
+   "mod:core.encoder.net.act1@recompute": {
+    "kernels": 11.0,
+    "bytes": 599785472.0,
+    "op:relu": 11.0
+   },
+   "mod:core.encoder.net.maxpool@recompute": {
+    "kernels": 11.0,
+    "bytes": 524812288.0,
+    "op:max_pool2d_with_indices": 11.0
+   },
+   "mod:core.encoder.net.layer1@recompute": {
+    "kernels": 902.0,
+    "bytes": 8276094464.0,
+    "op:add": 110.0,
+    "op:sqrt": 110.0,
+    "op:div": 110.0,
+    "views": 110.0,
+    "op:mul": 220.0,
+    "op:sub": 110.0,
+    "flops": 124755378176.0,
+    "op:convolution": 110.0,
+    "op:relu": 99.0,
+    "op:add_": 33.0
+   },
+   "mod:core.encoder.net.layer2@recompute": {
+    "kernels": 1177.0,
+    "bytes": 6610098176.0,
+    "op:add": 143.0,
+    "op:sqrt": 143.0,
+    "op:div": 143.0,
+    "views": 143.0,
+    "op:mul": 286.0,
+    "op:sub": 143.0,
+    "flops": 191931351040.0,
+    "op:convolution": 143.0,
+    "op:relu": 132.0,
+    "op:add_": 44.0
+   },
+   "mod:core.encoder.net.layer1@bwd": {
+    "views": 649.0,
+    "kernels": 1312.0,
+    "bytes": 10223117312.0,
+    "op:threshold_backward": 99.0,
+    "flops": 249510756352.0,
+    "op:convolution_backward": 110.0,
+    "op:neg": 110.0,
+    "op:mul": 330.0,
+    "op:sum": 110.0,
+    "op:add": 443.0,
+    "op:div": 110.0
+   },
+   "mod:core.encoder.net.maxpool@bwd": {
+    "views": 11.0,
+    "kernels": 11.0,
+    "bytes": 824705024.0,
+    "op:max_pool2d_with_indices_backward": 11.0
+   },
+   "mod:core.encoder.net.act1@bwd": {
+    "views": 11.0,
+    "kernels": 11.0,
+    "bytes": 899678208.0,
+    "op:threshold_backward": 11.0
+   },
+   "mod:core.encoder.net.conv1@bwd": {
+    "views": 44.0,
+    "kernels": 118.0,
+    "flops": 22042116096.0,
+    "bytes": 360617984.0,
+    "op:convolution_backward": 11.0,
+    "op:neg": 11.0,
+    "op:mul": 33.0,
+    "op:sum": 11.0,
+    "op:add": 41.0,
+    "op:div": 11.0
+   },
+   "fn:trunk_main@bwd": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "bytes": 136314880.0,
+    "op:div": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.encoder.fuse32.proj@bwd": {
+    "kernels": 3.0,
+    "flops": 167503724544.0,
+    "bytes": 557326528.0,
+    "op:convolution_backward": 1.0,
+    "views": 12.0,
+    "op:new_zeros": 1.0,
+    "op:index_add": 1.0
+   },
+   "mod:core.encoder.fuse16.proj@bwd": {
+    "kernels": 3.0,
+    "flops": 167503724544.0,
+    "bytes": 938479808.0,
+    "op:convolution_backward": 1.0,
+    "views": 12.0,
+    "op:new_zeros": 1.0,
+    "op:index_add": 1.0
+   },
+   "mod:core.encoder.net.layer4@bwd": {
+    "views": 5750.0,
+    "kernels": 1200.0,
+    "bytes": 8329453568.0,
+    "op:threshold_backward": 90.0,
+    "flops": 274810798080.0,
+    "op:convolution_backward": 100.0,
+    "op:neg": 100.0,
+    "op:mul": 300.0,
+    "op:sum": 100.0,
+    "op:add": 410.0,
+    "op:div": 100.0
+   },
+   "mod:core.encoder.net.layer3@recompute": {
+    "kernels": 5820.0,
+    "bytes": 17729638400.0,
+    "op:add": 700.0,
+    "op:sqrt": 700.0,
+    "op:div": 700.0,
+    "views": 700.0,
+    "op:mul": 1400.0,
+    "op:sub": 700.0,
+    "flops": 878958346240.0,
+    "op:convolution": 700.0,
+    "op:relu": 690.0,
+    "op:add_": 230.0
+   },
+   "mod:core.encoder.net.layer4@recompute": {
+    "kernels": 820.0,
+    "bytes": 2958499840.0,
+    "op:add": 100.0,
+    "op:sqrt": 100.0,
+    "op:div": 100.0,
+    "views": 100.0,
+    "op:mul": 200.0,
+    "op:sub": 100.0,
+    "flops": 137405399040.0,
+    "op:convolution": 100.0,
+    "op:relu": 90.0,
+    "op:add_": 30.0
+   },
+   "mod:core.encoder.net.layer3@bwd": {
+    "views": 4190.0,
+    "kernels": 8410.0,
+    "bytes": 30963560448.0,
+    "op:threshold_backward": 690.0,
+    "flops": 1757916692480.0,
+    "op:convolution_backward": 700.0,
+    "op:neg": 700.0,
+    "op:mul": 2100.0,
+    "op:sum": 700.0,
+    "op:add": 2820.0,
+    "op:div": 700.0
+   },
+   "fn:clip_grad": {
+    "kernels": 8.0,
+    "foreach_kernels": 2.0,
+    "bytes": 769607184.0,
+    "op:_foreach_norm": 1.0,
+    "op:stack": 1.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:add": 1.0,
+    "op:reciprocal": 1.0,
+    "op:mul": 1.0,
+    "op:clamp": 1.0,
+    "op:_foreach_mul_": 1.0
+   }
+  }
+ },
+ {
+  "step": 3,
+  "tally": {
+   "<top>": {
+    "kernels": 7212.0,
+    "bytes": 8807218045.0,
+    "op:_record_function_enter_new": 3.0,
+    "views": 1417.0,
+    "op:zeros": 3.0,
+    "op:cumsum": 3.0,
+    "op:cat": 5.0,
+    "sync_item": 858.0,
+    "op:stack": 46.0,
+    "op:clone": 9.0,
+    "op:sub": 10.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:sum": 3.0,
+    "op:add": 7.0,
+    "op:div": 790.0,
+    "op:floor": 3.0,
+    "op:mul": 7.0,
+    "op:ge": 1.0,
+    "op:clamp_min": 2.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:mean": 1.0,
+    "op:reflection_pad1d": 1.0,
+    "op:ones": 1.0,
+    "flops": 568.0,
+    "op:convolution": 1.0,
+    "op:abs": 3.0,
+    "op:argmax": 1.0,
+    "op:new_zeros": 1.0,
+    "op:searchsorted": 1.0,
+    "op:clamp": 3.0,
+    "op:index": 5.0,
+    "op:amax": 1.0,
+    "op:arange": 1.0,
+    "op:le": 2.0,
+    "op:neg": 2.0,
+    "op:cos": 1.0,
+    "op:sin": 1.0,
+    "op:full": 5.0,
+    "op:_to_copy": 3.0,
+    "op:copy_": 6.0,
+    "op:fill_": 1.0,
+    "op:bitwise_and": 1.0,
+    "sync_numpy": 2.0,
+    "op:_record_function_exit": 3.0,
+    "op:add_": 1568.0,
+    "op:mul_": 1568.0,
+    "op:lerp_": 784.0,
+    "op:addcmul_": 784.0,
+    "op:sqrt": 784.0,
+    "op:addcdiv_": 784.0
+   },
+   "fn:h2d_frames": {
+    "kernels": 6.0,
+    "bytes": 1395523600.0,
+    "op:_to_copy": 2.0,
+    "op:full": 2.0,
+    "op:div_": 2.0
+   },
+   "phase:fwd_loss": {
+    "views": 614.0,
+    "sync_tolist": 2.0,
+    "kernels": 3386.0,
+    "flops": 6912054.0,
+    "bytes": 479694737.0,
+    "op:mm": 2.0,
+    "op:eye": 1.0,
+    "op:sub": 40.0,
+    "op:abs": 10.0,
+    "op:max": 3.0,
+    "sync_item": 20.0,
+    "op:stack": 203.0,
+    "op:cat": 1.0,
+    "op:mul": 1365.0,
+    "op:add": 776.0,
+    "op:sqrt": 1.0,
+    "op:atan2": 1.0,
+    "op:clamp_min": 206.0,
+    "op:div": 25.0,
+    "op:gt": 5.0,
+    "op:ge": 8.0,
+    "op:bitwise_and": 14.0,
+    "op:le": 4.0,
+    "op:ne": 8.0,
+    "op:eq": 4.0,
+    "op:zeros_like": 11.0,
+    "op:where": 3.0,
+    "op:round": 2.0,
+    "op:_to_copy": 16.0,
+    "op:clamp": 5.0,
+    "op:index": 11.0,
+    "op:mean": 13.0,
+    "op:linalg_vector_norm": 4.0,
+    "op:reciprocal": 1.0,
+    "op:bitwise_not": 3.0,
+    "op:masked_fill": 3.0,
+    "op:argmax": 2.0,
+    "op:arange": 2.0,
+    "op:neg": 16.0,
+    "op:cos": 188.0,
+    "op:sin": 188.0,
+    "op:pow": 11.0,
+    "op:sum": 38.0,
+    "op:argmin": 2.0,
+    "op:scatter_": 4.0,
+    "op:sigmoid": 7.0,
+    "op:rsub": 12.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:floor": 2.0,
+    "op:full": 2.0,
+    "op:lt": 3.0,
+    "op:index_put_": 4.0,
+    "op:bitwise_or": 1.0,
+    "op:_log_softmax": 6.0,
+    "op:nll_loss_forward": 6.0,
+    "op:bincount": 2.0,
+    "op:log": 4.0,
+    "op:exp": 4.0,
+    "op:copy_": 5.0,
+    "op:zeros": 9.0,
+    "op:any": 2.0,
+    "op:mse_loss": 1.0,
+    "op:smooth_l1_loss": 1.0,
+    "op:new_zeros": 1.0,
+    "op:equal": 3.0,
+    "op:repeat_interleave": 3.0,
+    "op:index_select": 94.0,
+    "op:full_like": 2.0,
+    "op:nonzero": 6.0
+   },
+   "mod:core": {
+    "views": 95.0,
+    "kernels": 131.0,
+    "bytes": 761493158.0,
+    "op:arange": 1.0,
+    "op:mul": 3.0,
+    "op:add": 8.0,
+    "op:clone": 1.0,
+    "op:fill_": 1.0,
+    "op:sub": 16.0,
+    "op:div": 10.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:clamp_min": 2.0,
+    "op:tanh": 1.0,
+    "op:cat": 4.0,
+    "op:min": 2.0,
+    "sync_item": 11.0,
+    "op:max": 3.0,
+    "op:zeros": 5.0,
+    "op:scatter_": 2.0,
+    "op:_to_copy": 5.0,
+    "op:ones": 1.0,
+    "op:rand": 1.0,
+    "op:ge": 2.0,
+    "op:_log_softmax": 6.0,
+    "op:stack": 3.0,
+    "op:mean": 2.0,
+    "op:argmax": 3.0,
+    "op:index": 2.0,
+    "op:sum": 3.0,
+    "op:gt": 2.0,
+    "op:full_like": 1.0,
+    "op:where": 1.0,
+    "op:abs": 9.0,
+    "op:lt": 8.0,
+    "op:bitwise_or": 4.0,
+    "op:all": 4.0,
+    "op:sigmoid": 3.0,
+    "op:zeros_like": 4.0,
+    "op:copy_": 4.0,
+    "op:remainder": 2.0,
+    "op:clamp": 1.0
+   },
+   "fn:trunk_main": {
+    "views": 58.0,
+    "kernels": 24.0,
+    "bytes": 1582793427.0,
+    "op:eq": 1.0,
+    "op:all": 1.0,
+    "sync_tolist": 1.0,
+    "op:index": 2.0,
+    "op:clone": 7.0,
+    "op:cat": 4.0,
+    "op:index_select": 4.0,
+    "op:mean": 2.0,
+    "op:fill_": 1.0,
+    "op:sub": 1.0,
+    "op:div": 1.0
+   },
+   "mod:core.encoder.net.conv1": {
+    "kernels": 98.0,
+    "bytes": 454881280.0,
+    "op:add": 14.0,
+    "op:sqrt": 14.0,
+    "op:div": 14.0,
+    "views": 14.0,
+    "op:mul": 28.0,
+    "op:sub": 14.0,
+    "flops": 28053602304.0,
+    "op:convolution": 14.0
+   },
+   "mod:core.encoder.net.act1": {
+    "kernels": 14.0,
+    "bytes": 763363328.0,
+    "op:relu": 14.0
+   },
+   "mod:core.encoder.net.maxpool": {
+    "kernels": 14.0,
+    "bytes": 667942912.0,
+    "op:max_pool2d_with_indices": 14.0
+   },
+   "mod:core.encoder.net.layer1": {
+    "kernels": 1148.0,
+    "bytes": 10533211136.0,
+    "op:add": 140.0,
+    "op:sqrt": 140.0,
+    "op:div": 140.0,
+    "views": 140.0,
+    "op:mul": 280.0,
+    "op:sub": 140.0,
+    "flops": 158779572224.0,
+    "op:convolution": 140.0,
+    "op:relu": 126.0,
+    "op:add_": 42.0
+   },
+   "mod:core.encoder.net.layer2": {
+    "kernels": 1498.0,
+    "bytes": 8412852224.0,
+    "op:add": 182.0,
+    "op:sqrt": 182.0,
+    "op:div": 182.0,
+    "views": 182.0,
+    "op:mul": 364.0,
+    "op:sub": 182.0,
+    "flops": 244276264960.0,
+    "op:convolution": 182.0,
+    "op:relu": 168.0,
+    "op:add_": 56.0
+   },
+   "mod:core.encoder.net.layer3": {
+    "kernels": 7566.0,
+    "bytes": 23048529920.0,
+    "op:add": 910.0,
+    "op:sqrt": 910.0,
+    "op:div": 910.0,
+    "views": 910.0,
+    "op:mul": 1820.0,
+    "op:sub": 910.0,
+    "flops": 1142645850112.0,
+    "op:convolution": 910.0,
+    "op:relu": 897.0,
+    "op:add_": 299.0
+   },
+   "mod:core.encoder.net.layer4": {
+    "kernels": 1066.0,
+    "bytes": 3846049792.0,
+    "op:add": 130.0,
+    "op:sqrt": 130.0,
+    "op:div": 130.0,
+    "views": 130.0,
+    "op:mul": 260.0,
+    "op:sub": 130.0,
+    "flops": 178627018752.0,
+    "op:convolution": 130.0,
+    "op:relu": 117.0,
+    "op:add_": 39.0
+   },
+   "mod:core.encoder.fuse16": {
+    "views": 2.0
+   },
+   "mod:core.encoder.fuse16.proj": {
+    "kernels": 2.0,
+    "flops": 94220845056.0,
+    "bytes": 270540800.0,
+    "op:convolution": 2.0
+   },
+   "mod:core.encoder.fuse32": {
+    "views": 2.0
+   },
+   "mod:core.encoder.fuse32.proj": {
+    "kernels": 2.0,
+    "flops": 94220845056.0,
+    "bytes": 223363072.0,
+    "op:convolution": 2.0
+   },
+   "fn:trunk_s8_tap": {
+    "views": 5.0,
+    "kernels": 6.0,
+    "bytes": 202768424.0,
+    "op:min": 1.0,
+    "sync_item": 2.0,
+    "op:max": 1.0,
+    "op:index_select": 1.0,
+    "op:clone": 2.0,
+    "op:cat": 1.0
+   },
+   "mod:core.strategic.gru": {
+    "kernels": 125.0,
+    "bytes": 38760448.0,
+    "op:zeros": 1.0,
+    "views": 38.0,
+    "flops": 62914560.0,
+    "op:addmm": 9.0,
+    "op:unsafe_split": 16.0,
+    "op:add_": 24.0,
+    "op:sigmoid_": 16.0,
+    "op:clone": 16.0,
+    "op:mul_": 16.0,
+    "op:add": 8.0,
+    "op:tanh_": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:transpose_": 1.0
+   },
+   "mod:core.strategic": {
+    "views": 1.0
+   },
+   "mod:core.strategic.proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 262144.0,
+    "bytes": 528384.0,
+    "op:addmm": 1.0
+   },
+   "mod:_map_hires.lift": {
+    "views": 11.0,
+    "kernels": 14.0,
+    "bytes": 617892352.0,
+    "op:clone": 1.0,
+    "flops": 1744830464.0,
+    "op:convolution": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:grid_sampler_2d": 1.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0
+   },
+   "mod:_map_hires": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 480000.0,
+    "op:any": 1.0
+   },
+   "mod:_map_hires.encoder.stem.0": {
+    "kernels": 1.0,
+    "flops": 7077888000.0,
+    "bytes": 49299456.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.encoder.stem.1": {
+    "kernels": 1.0,
+    "bytes": 49152576.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.encoder.stem.2": {
+    "kernels": 1.0,
+    "bytes": 49152000.0,
+    "op:gelu": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.0": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.1": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.2": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.3": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.4": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "fn:map_near_geometry": {
+    "views": 23.0,
+    "kernels": 36.0,
+    "bytes": 50459840.0,
+    "op:_to_copy": 1.0,
+    "op:mul": 8.0,
+    "op:sub": 8.0,
+    "op:cat": 2.0,
+    "op:replication_pad2d": 1.0,
+    "op:arange": 2.0,
+    "op:add": 4.0,
+    "op:div": 2.0,
+    "op:stack": 1.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:rsub": 1.0,
+    "op:lt": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:_map_hires.near.lift": {
+    "views": 11.0,
+    "kernels": 14.0,
+    "bytes": 404273920.0,
+    "op:clone": 1.0,
+    "flops": 872415232.0,
+    "op:convolution": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:grid_sampler_2d": 1.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0
+   },
+   "mod:_map_hires.refine.inp.0": {
+    "kernels": 1.0,
+    "flops": 393216000.0,
+    "bytes": 36872192.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.inp.1": {
+    "kernels": 1.0,
+    "bytes": 24576320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine": {
+    "kernels": 3.0,
+    "bytes": 288768000.0,
+    "op:upsample_bilinear2d": 1.0,
+    "views": 2.0,
+    "op:add": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c1": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.near_refine.0.n1": {
+    "kernels": 1.0,
+    "bytes": 30720320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.near_refine.0": {
+    "kernels": 2.0,
+    "bytes": 76800000.0,
+    "op:gelu": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c2": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.conv1": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm1": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.act": {
+    "kernels": 2.0,
+    "bytes": 307200000.0,
+    "op:gelu": 2.0
+   },
+   "mod:_map_hires.refine.conv2": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm2": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.cls": {
+    "kernels": 1.0,
+    "flops": 307200000.0,
+    "bytes": 96001056.0,
+    "op:convolution": 1.0
+   },
+   "mod:_perception.bev_pool": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "bytes": 9830400.0,
+    "op:avg_pool2d": 1.0
+   },
+   "mod:_perception.bev_pool.proj.0": {
+    "kernels": 1.0,
+    "flops": 94371840.0,
+    "bytes": 4939776.0,
+    "op:convolution": 1.0
+   },
+   "mod:_perception.bev_pool.proj.1": {
+    "kernels": 1.0,
+    "bytes": 5899072.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:_perception": {
+    "kernels": 129.0,
+    "bytes": 134909040.0,
+    "op:_adaptive_avg_pool2d": 1.0,
+    "views": 312.0,
+    "op:clone": 4.0,
+    "op:add": 22.0,
+    "op:native_layer_norm": 9.0,
+    "flops": 3337617408.0,
+    "op:addmm": 27.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 6.0,
+    "op:gelu": 3.0,
+    "op:linalg_vector_norm": 3.0,
+    "op:clamp_min": 3.0,
+    "op:div": 3.0,
+    "op:mul": 18.0,
+    "op:softplus": 6.0,
+    "op:stack": 9.0,
+    "op:atan2": 3.0,
+    "op:cat": 6.0,
+    "op:tanh": 6.0
+   },
+   "mod:_perception.box_mem": {
+    "views": 6.0,
+    "kernels": 4.0,
+    "bytes": 11917312.0,
+    "op:add": 2.0,
+    "op:_adaptive_avg_pool2d": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:_perception.box_mem.img_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 872415232.0,
+    "bytes": 12977152.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_mem.bev_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 23592960.0,
+    "bytes": 1758208.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_refpts": {
+    "views": 2.0
+   },
+   "mod:_perception.box_qpos": {
+    "views": 2.0,
+    "kernels": 12.0,
+    "bytes": 1549024.0,
+    "op:div": 2.0,
+    "op:add": 1.0,
+    "op:mul": 4.0,
+    "op:sin": 2.0,
+    "op:cos": 2.0,
+    "op:cat": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.0": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 39321600.0,
+    "bytes": 877568.0,
+    "op:addmm": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.1": {
+    "kernels": 1.0,
+    "bytes": 614400.0,
+    "op:relu": 1.0,
+    "views": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.2": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 39321600.0,
+    "bytes": 877568.0,
+    "op:addmm": 1.0
+   },
+   "mod:_perception.box_dec.mem_proj": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 281018368.0,
+    "bytes": 4654080.0,
+    "op:addmm": 1.0
+   },
+   "mod:_perception.box_dec.norm": {
+    "kernels": 3.0,
+    "bytes": 1856544.0,
+    "op:native_layer_norm": 3.0
+   },
+   "mod:_perception.box_dec.head": {
+    "views": 9.0,
+    "kernels": 3.0,
+    "flops": 10598400.0,
+    "bytes": 1075332.0,
+    "op:addmm": 3.0
+   },
+   "mod:phi_tac.in_proj": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 8388608.0,
+    "bytes": 2171904.0,
+    "op:addmm": 1.0
+   },
+   "mod:phi_tac": {
+    "views": 2.0,
+    "kernels": 15.0,
+    "bytes": 299008.0,
+    "op:constant_pad_nd": 6.0,
+    "op:gelu": 6.0,
+    "op:add": 3.0
+   },
+   "mod:phi_tac.blocks.0.conv1": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 805888.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.blocks.0.conv2": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 805888.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.norms.0": {
+    "kernels": 1.0,
+    "bytes": 18440.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:phi_tac.blocks.1.conv1": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 807936.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.blocks.1.conv2": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 807936.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.norms.1": {
+    "kernels": 1.0,
+    "bytes": 18440.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:phi_tac.blocks.2.conv1": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 812032.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.blocks.2.conv2": {
+    "kernels": 1.0,
+    "flops": 3145728.0,
+    "bytes": 812032.0,
+    "op:convolution": 1.0
+   },
+   "mod:phi_tac.norms.2": {
+    "kernels": 1.0,
+    "bytes": 18440.0,
+    "op:native_group_norm": 1.0,
+    "views": 2.0
+   },
+   "mod:phi_tac.out.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 262144.0,
+    "bytes": 529408.0,
+    "op:addmm": 1.0
+   },
+   "mod:phi_tac.out.1": {
+    "kernels": 1.0,
+    "bytes": 4096.0,
+    "op:gelu": 1.0
+   },
+   "mod:phi_tac.out.2": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 524288.0,
+    "bytes": 1054720.0,
+    "op:addmm": 1.0
+   },
+   "mod:nav_inj": {
+    "kernels": 1.0,
+    "bytes": 1288.0,
+    "op:embedding": 1.0
+   },
+   "mod:nav_to_tac": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 65536.0,
+    "bytes": 135424.0,
+    "op:addmm": 1.0
+   },
+   "mod:nav_to_str": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 32768.0,
+    "bytes": 67840.0,
+    "op:addmm": 1.0
+   },
+   "mod:str_goal_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1536.0,
+    "bytes": 4120.0,
+    "op:addmm": 1.0
+   },
+   "mod:lat_head_tac": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8192.0,
+    "bytes": 18496.0,
+    "op:addmm": 1.0
+   },
+   "mod:lon_head_tac": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8192.0,
+    "bytes": 18496.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_goal_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 12288.0,
+    "bytes": 26720.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_latent_proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 524288.0,
+    "bytes": 1054720.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.measurement.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1280.0,
+    "bytes": 3604.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.measurement.1": {
+    "kernels": 1.0,
+    "bytes": 1024.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.measurement.2": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 32768.0,
+    "bytes": 67072.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.measurement.3": {
+    "kernels": 1.0,
+    "bytes": 1024.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.route_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 12288.0,
+    "bytes": 32792.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.tactical_trunk.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1572864.0,
+    "bytes": 3156992.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.tactical_trunk.1": {
+    "kernels": 1.0,
+    "bytes": 3072.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.lat_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 2304.0,
+    "bytes": 6168.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.lon_head": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 2304.0,
+    "bytes": 6168.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.agent_head.mem_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 436207616.0,
+    "bytes": 6784000.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.agent_head": {
+    "kernels": 82.0,
+    "bytes": 76314000.0,
+    "op:add": 10.0,
+    "views": 247.0,
+    "op:native_layer_norm": 9.0,
+    "flops": 1978662912.0,
+    "op:addmm": 21.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 6.0,
+    "op:gelu": 3.0,
+    "op:linalg_vector_norm": 3.0,
+    "op:clamp_min": 3.0,
+    "op:div": 3.0,
+    "op:mul": 6.0,
+    "op:softplus": 3.0,
+    "op:stack": 3.0,
+    "op:atan2": 3.0,
+    "op:cat": 3.0
+   },
+   "mod:core.agent_head.norm": {
+    "kernels": 3.0,
+    "bytes": 1856544.0,
+    "op:native_layer_norm": 3.0
+   },
+   "mod:core.agent_head.head": {
+    "views": 9.0,
+    "kernels": 3.0,
+    "flops": 9676800.0,
+    "bytes": 1061964.0,
+    "op:addmm": 3.0
+   },
+   "mod:core.agent_embed": {
+    "kernels": 21.0,
+    "bytes": 1087500.0,
+    "op:sigmoid": 1.0,
+    "views": 14.0,
+    "op:_softmax": 1.0,
+    "op:mul": 4.0,
+    "op:add": 2.0,
+    "op:sqrt": 1.0,
+    "op:clamp_min": 1.0,
+    "op:div": 6.0,
+    "op:log1p": 1.0,
+    "op:reciprocal": 1.0,
+    "op:stack": 1.0,
+    "op:cat": 1.0,
+    "op:zeros": 1.0
+   },
+   "mod:core.agent_embed.geo.0": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 3840000.0,
+    "bytes": 363824.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.agent_embed.geo.1": {
+    "kernels": 1.0,
+    "bytes": 614400.0,
+    "op:gelu": 1.0
+   },
+   "mod:core.agent_embed.geo.2": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 58982400.0,
+    "bytes": 1162752.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.agent_embed.norm": {
+    "kernels": 1.0,
+    "bytes": 927072.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:max_speed_1h_v6": {
+    "views": 5.0,
+    "kernels": 18.0,
+    "bytes": 324.0,
+    "op:abs": 1.0,
+    "op:ne": 1.0,
+    "op:eq": 1.0,
+    "op:mul": 2.0,
+    "op:all": 1.0,
+    "sync_item": 3.0,
+    "op:add": 1.0,
+    "op:le": 1.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0,
+    "op:full_like": 1.0,
+    "op:_to_copy": 1.0,
+    "op:argmax": 1.0,
+    "op:where": 1.0,
+    "op:min": 1.0,
+    "op:max": 1.0,
+    "op:zeros": 1.0,
+    "op:scatter_": 1.0
+   },
+   "mod:tac_decoder_v6.agent_in": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 58982400.0,
+    "bytes": 1162240.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6": {
+    "views": 11.0,
+    "kernels": 7.0,
+    "bytes": 3201316.0,
+    "op:add": 2.0,
+    "op:zeros": 1.0,
+    "op:cat": 2.0,
+    "op:bitwise_not": 1.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_decoder_v6.bev_in": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 23592960.0,
+    "bytes": 775168.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.kv_norm": {
+    "kernels": 1.0,
+    "bytes": 1605728.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.film": {
+    "views": 4.0,
+    "kernels": 4.0,
+    "flops": 10240.0,
+    "bytes": 184360.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n1": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.self_attn": {
+    "views": 26.0,
+    "kernels": 4.0,
+    "flops": 19922944.0,
+    "bytes": 1676480.0,
+    "op:addmm": 2.0,
+    "op:clone": 1.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0": {
+    "kernels": 12.0,
+    "bytes": 669077.0,
+    "op:add": 3.0,
+    "op:all": 1.0,
+    "op:clone": 1.0,
+    "views": 3.0,
+    "op:index_put_": 1.0,
+    "op:bitwise_not": 2.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0
+   },
+   "mod:tac_decoder_v6.layers.0.n2": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.cross_attn": {
+    "kernels": 12.0,
+    "bytes": 13527112.0,
+    "op:zeros_like": 1.0,
+    "op:masked_fill_": 1.0,
+    "views": 33.0,
+    "flops": 244785152.0,
+    "op:addmm": 3.0,
+    "op:clone": 2.0,
+    "op:mul": 1.0,
+    "op:baddbmm": 1.0,
+    "op:_softmax": 1.0,
+    "op:bmm": 1.0,
+    "op:mean": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n3": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.ff": {
+    "views": 6.0,
+    "kernels": 3.0,
+    "flops": 39845888.0,
+    "bytes": 2802688.0,
+    "op:addmm": 2.0,
+    "op:gelu": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.film": {
+    "views": 4.0,
+    "kernels": 4.0,
+    "flops": 10240.0,
+    "bytes": 184360.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n1": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.self_attn": {
+    "views": 26.0,
+    "kernels": 4.0,
+    "flops": 19922944.0,
+    "bytes": 1676480.0,
+    "op:addmm": 2.0,
+    "op:clone": 1.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1": {
+    "kernels": 12.0,
+    "bytes": 669077.0,
+    "op:add": 3.0,
+    "op:all": 1.0,
+    "op:clone": 1.0,
+    "views": 3.0,
+    "op:index_put_": 1.0,
+    "op:bitwise_not": 2.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0
+   },
+   "mod:tac_decoder_v6.layers.1.n2": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.cross_attn": {
+    "kernels": 12.0,
+    "bytes": 13527112.0,
+    "op:zeros_like": 1.0,
+    "op:masked_fill_": 1.0,
+    "views": 33.0,
+    "flops": 244785152.0,
+    "op:addmm": 3.0,
+    "op:clone": 2.0,
+    "op:mul": 1.0,
+    "op:baddbmm": 1.0,
+    "op:_softmax": 1.0,
+    "op:bmm": 1.0,
+    "op:mean": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n3": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.ff": {
+    "views": 6.0,
+    "kernels": 3.0,
+    "flops": 39845888.0,
+    "bytes": 2802688.0,
+    "op:addmm": 2.0,
+    "op:gelu": 1.0
+   },
+   "mod:tac_decoder_v6.out_norm": {
+    "kernels": 1.0,
+    "bytes": 80176.0,
+    "op:native_layer_norm": 1.0
+   },
+   "mod:tac_decoder_v6.validity_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 11264.0,
+    "bytes": 23644.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.conf_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 11264.0,
+    "bytes": 23644.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.lat_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 4096.0,
+    "bytes": 9252.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_decoder_v6.lon_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 4096.0,
+    "bytes": 9252.0,
+    "op:addmm": 1.0
+   },
+   "mod:tac_behaviour_gate_v6": {
+    "kernels": 1.0,
+    "bytes": 264.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_behaviour_gate_v6.proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 5148.0,
+    "bytes": 10852.0,
+    "op:mm": 1.0
+   },
+   "mod:core.ego_hist": {
+    "views": 2.0
+   },
+   "mod:core.ego_hist.body": {
+    "kernels": 125.0,
+    "bytes": 513888.0,
+    "op:zeros": 1.0,
+    "views": 38.0,
+    "flops": 205824.0,
+    "op:addmm": 9.0,
+    "op:unsafe_split": 16.0,
+    "op:add_": 24.0,
+    "op:sigmoid_": 16.0,
+    "op:clone": 16.0,
+    "op:mul_": 16.0,
+    "op:add": 8.0,
+    "op:tanh_": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:transpose_": 1.0
+   },
+   "mod:core.ego_hist.out": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 4096.0,
+    "bytes": 8704.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder": {
+    "kernels": 3781.0,
+    "bytes": 7653673.0,
+    "op:abs": 2.0,
+    "op:sum": 1.0,
+    "sync_item": 6.0,
+    "views": 672.0,
+    "op:add": 993.0,
+    "op:full_like": 5.0,
+    "op:where": 8.0,
+    "op:zeros_like": 3.0,
+    "op:clamp_min": 249.0,
+    "op:pow": 8.0,
+    "op:div": 5.0,
+    "op:clamp": 5.0,
+    "op:stack": 254.0,
+    "op:repeat_interleave": 3.0,
+    "op:index_select": 7.0,
+    "op:zeros": 5.0,
+    "op:copy_": 4.0,
+    "op:cos": 240.0,
+    "op:mul": 1694.0,
+    "op:sin": 240.0,
+    "op:randint": 1.0,
+    "op:randn_like": 1.0,
+    "op:index": 3.0,
+    "op:sqrt": 2.0,
+    "op:_to_copy": 6.0,
+    "op:rsub": 2.0,
+    "flops": 6110208.0,
+    "op:addmm": 8.0,
+    "sync_cpu": 1.0,
+    "op:sub": 2.0,
+    "op:linalg_vector_norm": 2.0,
+    "op:atan2": 1.0,
+    "op:lt": 1.0,
+    "op:eq": 5.0,
+    "op:sign": 2.0,
+    "op:ge": 2.0,
+    "op:bitwise_and": 3.0,
+    "op:ne": 1.0,
+    "op:mean": 3.0,
+    "op:le": 1.0,
+    "op:bitwise_not": 3.0,
+    "op:bitwise_or": 2.0,
+    "op:any": 1.0,
+    "op:masked_fill": 1.0,
+    "op:argmax": 1.0,
+    "op:arange": 1.0
+   },
+   "mod:core.decoder.feat_proj": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 654311424.0,
+    "bytes": 8472064.0,
+    "op:mm": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.cond_proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 98304.0,
+    "bytes": 200192.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.ego_to_cond": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 24576.0,
+    "bytes": 52352.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tgt_proj": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 393216.0,
+    "bytes": 791552.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tgt_film.to_scale_shift": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 589824.0,
+    "bytes": 1187328.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tgt_film": {
+    "views": 1.0,
+    "kernels": 3.0,
+    "bytes": 12288.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.traj_proj": {
+    "views": 6.0,
+    "kernels": 2.0,
+    "flops": 2875392.0,
+    "bytes": 426624.0,
+    "op:addmm": 2.0
+   },
+   "mod:core.decoder.layers.0": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.layers.1": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.layers.2": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.layers.3": {
+    "kernels": 106.0,
+    "bytes": 130509040.0,
+    "op:native_layer_norm": 6.0,
+    "views": 182.0,
+    "flops": 2876829696.0,
+    "op:addmm": 22.0,
+    "op:clone": 6.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu": 4.0,
+    "op:add": 18.0,
+    "op:all": 2.0,
+    "op:any": 2.0,
+    "sync_item": 2.0,
+    "op:zeros_like": 2.0,
+    "op:masked_fill_": 2.0,
+    "op:masked_fill": 2.0,
+    "op:mul": 12.0,
+    "op:div": 8.0,
+    "op:sub": 8.0,
+    "op:stack": 2.0,
+    "op:_softmax": 2.0,
+    "op:convolution": 2.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:sum": 2.0,
+    "op:gelu": 2.0
+   },
+   "mod:core.decoder.conf_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 89856.0,
+    "bytes": 181720.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.offset_head": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 1437696.0,
+    "bytes": 211840.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.tac8_lat_to_anchor": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.tac8_lon_to_anchor": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.time_mlp.0": {
+    "kernels": 8.0,
+    "bytes": 13060.0,
+    "op:arange": 1.0,
+    "op:mul": 2.0,
+    "op:div": 1.0,
+    "op:exp": 1.0,
+    "views": 2.0,
+    "op:sin": 1.0,
+    "op:cos": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:core.decoder.time_mlp.1": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1179648.0,
+    "bytes": 2373120.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.time_mlp.2": {
+    "kernels": 1.0,
+    "bytes": 12288.0,
+    "op:mish": 1.0
+   },
+   "mod:core.decoder.time_mlp.3": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 1179648.0,
+    "bytes": 2368512.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.decoder.adaln.0": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.adaln.1": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.adaln.2": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.decoder.adaln.3": {
+    "kernels": 5.0,
+    "bytes": 1915392.0,
+    "op:mish": 1.0,
+    "views": 4.0,
+    "flops": 589824.0,
+    "op:addmm": 1.0,
+    "op:add": 2.0,
+    "op:mul": 1.0
+   },
+   "mod:core.law_head.0": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8454144.0,
+    "bytes": 16932928.0,
+    "op:addmm": 1.0
+   },
+   "mod:core.law_head.1": {
+    "kernels": 1.0,
+    "bytes": 16384.0,
+    "op:relu_": 1.0,
+    "views": 1.0
+   },
+   "mod:core.law_head.2": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 8388608.0,
+    "bytes": 16801792.0,
+    "op:addmm": 1.0
+   },
+   "mod:scorer.goal_point": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "flops": 2048.0,
+    "bytes": 6160.0,
+    "op:addmm": 1.0
+   },
+   "mod:scorer": {
+    "views": 5.0,
+    "kernels": 7.0,
+    "bytes": 6580.0,
+    "op:sub": 1.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:exp": 1.0,
+    "op:clamp_min": 1.0,
+    "op:neg": 1.0,
+    "op:div": 1.0,
+    "op:add": 1.0
+   },
+   "fn:refined_slot_losses": {
+    "kernels": 116.0,
+    "bytes": 109264.0,
+    "op:sum": 18.0,
+    "sync_item": 18.0,
+    "views": 4.0,
+    "op:abs": 6.0,
+    "op:atan2": 2.0,
+    "op:le": 6.0,
+    "op:bitwise_and": 30.0,
+    "op:ge": 6.0,
+    "op:_to_copy": 6.0,
+    "op:gt": 2.0,
+    "op:clamp_min": 2.0,
+    "op:div": 2.0,
+    "op:full_like": 2.0,
+    "op:where": 2.0,
+    "op:ne": 2.0,
+    "op:eq": 2.0,
+    "op:mul": 8.0,
+    "op:bitwise_not": 6.0,
+    "op:lt": 2.0,
+    "op:add": 12.0
+   },
+   "fn:match_slots": {
+    "views": 30.0,
+    "kernels": 6.0,
+    "bytes": 1116.0,
+    "op:nonzero": 6.0,
+    "sync_cpu": 6.0,
+    "sync_numpy": 6.0
+   },
+   "fn:match_cost_build": {
+    "views": 108.0,
+    "kernels": 234.0,
+    "bytes": 854172.0,
+    "op:index": 18.0,
+    "op:sub": 18.0,
+    "op:abs": 12.0,
+    "op:sum": 12.0,
+    "op:_softmax": 6.0,
+    "op:clamp_min": 6.0,
+    "op:neg": 18.0,
+    "op:ge": 6.0,
+    "op:zeros_like": 6.0,
+    "op:where": 6.0,
+    "op:sigmoid": 6.0,
+    "op:rsub": 12.0,
+    "op:add": 30.0,
+    "op:log": 12.0,
+    "op:mul": 48.0,
+    "op:pow": 12.0,
+    "op:_to_copy": 6.0,
+    "sync_cpu": 6.0,
+    "sync_numpy": 6.0
+   },
+   "fn:slot_set_loss": {
+    "kernels": 261.0,
+    "bytes": 150240.0,
+    "op:zeros_like": 3.0,
+    "op:full_like": 3.0,
+    "views": 69.0,
+    "op:index_put_": 6.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:zeros": 3.0,
+    "op:clone": 18.0,
+    "op:index": 60.0,
+    "op:sub": 9.0,
+    "op:abs": 9.0,
+    "op:sum": 24.0,
+    "op:add": 39.0,
+    "op:new_zeros": 3.0,
+    "op:sin": 3.0,
+    "op:copy_": 6.0,
+    "op:cos": 3.0,
+    "op:mul": 24.0,
+    "op:rsub": 3.0,
+    "op:ge": 6.0,
+    "op:any": 9.0,
+    "sync_item": 18.0,
+    "op:_log_softmax": 3.0,
+    "op:nll_loss_forward": 3.0,
+    "op:div": 18.0
+   },
+   "fn:ignore_presence_weight": {
+    "kernels": 16.0,
+    "bytes": 11032.0,
+    "op:ones": 8.0,
+    "op:any": 8.0,
+    "sync_item": 8.0
+   },
+   "fn:presence_term": {
+    "kernels": 174.0,
+    "bytes": 389118.0,
+    "op:zeros_like": 12.0,
+    "views": 36.0,
+    "op:index_put_": 18.0,
+    "op:sum": 18.0,
+    "sync_item": 12.0,
+    "op:clone": 6.0,
+    "op:eq": 6.0,
+    "op:bitwise_not": 6.0,
+    "op:bitwise_and": 6.0,
+    "op:sigmoid": 6.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:mul": 42.0,
+    "op:rsub": 24.0,
+    "op:add": 12.0,
+    "op:pow": 6.0,
+    "op:div": 6.0
+   },
+   "fn:det_window_packs": {
+    "views": 87.0,
+    "kernels": 130.0,
+    "bytes": 246500.0,
+    "op:abs": 7.0,
+    "op:atan2": 2.0,
+    "op:le": 6.0,
+    "op:bitwise_and": 33.0,
+    "op:ge": 6.0,
+    "op:_to_copy": 6.0,
+    "op:gt": 2.0,
+    "op:clamp_min": 4.0,
+    "op:div": 2.0,
+    "op:full_like": 2.0,
+    "op:where": 2.0,
+    "op:ne": 2.0,
+    "op:eq": 2.0,
+    "op:mul": 2.0,
+    "op:bitwise_not": 6.0,
+    "op:sum": 15.0,
+    "sync_item": 14.0,
+    "op:lt": 4.0,
+    "op:argmax": 4.0,
+    "op:log": 2.0,
+    "op:sub": 4.0,
+    "sync_tolist": 2.0,
+    "sync_cpu": 25.0,
+    "sync_numpy": 25.0,
+    "op:index": 14.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:zeros": 2.0
+   },
+   "fn:box3d_set_loss": {
+    "kernels": 348.0,
+    "bytes": 171306.0,
+    "op:sum": 39.0,
+    "sync_item": 30.0,
+    "op:zeros_like": 3.0,
+    "op:full_like": 3.0,
+    "views": 84.0,
+    "op:index_put_": 6.0,
+    "op:binary_cross_entropy_with_logits": 6.0,
+    "op:zeros": 3.0,
+    "op:clone": 18.0,
+    "op:index": 87.0,
+    "op:sub": 15.0,
+    "op:abs": 15.0,
+    "op:add": 51.0,
+    "op:new_zeros": 9.0,
+    "op:sin": 3.0,
+    "op:copy_": 6.0,
+    "op:cos": 3.0,
+    "op:mul": 30.0,
+    "op:rsub": 3.0,
+    "op:ge": 6.0,
+    "op:any": 12.0,
+    "op:_log_softmax": 3.0,
+    "op:nll_loss_forward": 3.0,
+    "op:div": 24.0
+   },
+   "fn:map_hires_loss_row": {
+    "views": 2.0,
+    "kernels": 3.0,
+    "bytes": 6264000.0,
+    "op:_to_copy": 1.0,
+    "op:_upsample_nearest_exact2d": 1.0,
+    "op:gt": 1.0
+   },
+   "fn:map_hires_ce": {
+    "kernels": 9.0,
+    "bytes": 100200056.0,
+    "op:_to_copy": 1.0,
+    "op:ne": 2.0,
+    "op:sum": 2.0,
+    "sync_item": 2.0,
+    "op:full_like": 1.0,
+    "op:where": 1.0,
+    "op:_log_softmax": 1.0,
+    "views": 1.0,
+    "op:nll_loss2d_forward": 1.0
+   },
+   "fn:map_per_class_signal": {
+    "views": 20.0,
+    "kernels": 112.0,
+    "bytes": 1929391582.0,
+    "op:_to_copy": 21.0,
+    "op:full_like": 2.0,
+    "op:where": 4.0,
+    "op:ne": 2.0,
+    "op:zeros_like": 1.0,
+    "op:clamp": 1.0,
+    "op:index": 1.0,
+    "op:mul": 16.0,
+    "op:sum": 12.0,
+    "op:_log_softmax": 1.0,
+    "op:gather": 1.0,
+    "op:neg": 1.0,
+    "op:min": 4.0,
+    "sync_item": 15.0,
+    "op:max": 4.0,
+    "op:zeros": 4.0,
+    "op:scatter_": 4.0,
+    "op:arange": 1.0,
+    "op:floor_divide": 1.0,
+    "op:exp": 1.0,
+    "op:sub": 2.0,
+    "op:div": 3.0,
+    "op:argmax": 2.0,
+    "op:abs": 1.0,
+    "op:eq": 1.0,
+    "op:all": 1.0,
+    "op:lt": 1.0,
+    "op:any": 1.0,
+    "op:gt": 3.0,
+    "op:ones_like": 1.0,
+    "op:log": 1.0,
+    "flops": 720000.0,
+    "op:mm": 9.0,
+    "op:sqrt": 2.0,
+    "op:add": 2.0
+   },
+   "fn:map_per_class_log_values": {
+    "kernels": 1.0,
+    "bytes": 5120.0,
+    "op:stack": 1.0,
+    "sync_cpu": 1.0,
+    "sync_tolist": 1.0
+   },
+   "fn:conflict_terms": {
+    "kernels": 6.0,
+    "bytes": 56.0,
+    "op:mul": 4.0,
+    "op:add": 2.0
+   },
+   "<top>@recompute": {
+    "kernels": 1.0,
+    "bytes": 8.0,
+    "op:ones_like": 1.0
+   },
+   "phase:fwd_loss@bwd": {
+    "kernels": 5743.0,
+    "bytes": 48826061.0,
+    "op:mul": 2209.0,
+    "op:div": 22.0,
+    "views": 959.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 7.0,
+    "op:nll_loss_backward": 5.0,
+    "op:_log_softmax_backward_data": 5.0,
+    "op:add": 1963.0,
+    "op:pow": 4.0,
+    "op:neg": 184.0,
+    "op:sigmoid_backward": 4.0,
+    "op:sgn": 5.0,
+    "op:new_zeros": 11.0,
+    "op:index_put": 5.0,
+    "op:index_add": 6.0,
+    "op:slice_backward": 3.0,
+    "op:scalar_tensor": 185.0,
+    "op:ge": 185.0,
+    "op:where": 185.0,
+    "op:select_backward": 379.0,
+    "op:cos": 177.0,
+    "op:sin": 177.0,
+    "op:le": 3.0,
+    "op:logical_and_": 3.0,
+    "op:masked_fill": 1.0,
+    "op:zeros_like": 1.0,
+    "op:smooth_l1_loss_backward": 1.0,
+    "op:mse_loss_backward": 1.0,
+    "op:sum": 2.0,
+    "op:eq": 2.0,
+    "op:masked_fill_": 2.0
+   },
+   "fn:map_hires_ce@bwd": {
+    "kernels": 4.0,
+    "bytes": 196800048.0,
+    "op:nll_loss2d_backward": 1.0,
+    "views": 1.0,
+    "op:_log_softmax_backward_data": 1.0,
+    "op:new_zeros": 1.0,
+    "op:index_add": 1.0
+   },
+   "fn:refined_slot_losses@bwd": {
+    "kernels": 6.0,
+    "bytes": 48.0,
+    "op:mul": 6.0
+   },
+   "fn:presence_term@bwd": {
+    "kernels": 108.0,
+    "bytes": 331248.0,
+    "op:div": 6.0,
+    "views": 12.0,
+    "op:mul": 54.0,
+    "op:pow": 6.0,
+    "op:neg": 12.0,
+    "op:add": 12.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 6.0,
+    "op:sigmoid_backward": 6.0
+   },
+   "fn:box3d_set_loss@bwd": {
+    "kernels": 270.0,
+    "bytes": 868071.0,
+    "op:mul": 54.0,
+    "op:div": 24.0,
+    "views": 27.0,
+    "op:sgn": 15.0,
+    "op:new_zeros": 60.0,
+    "op:index_put": 36.0,
+    "op:select_backward": 21.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 6.0,
+    "op:nll_loss_backward": 3.0,
+    "op:_log_softmax_backward_data": 3.0,
+    "op:neg": 3.0,
+    "op:slice_backward": 6.0,
+    "op:add": 6.0,
+    "op:div_": 3.0,
+    "op:index_add": 24.0
+   },
+   "fn:slot_set_loss@bwd": {
+    "kernels": 204.0,
+    "bytes": 795585.0,
+    "op:mul": 42.0,
+    "op:div": 18.0,
+    "op:sigmoid": 6.0,
+    "op:sub": 6.0,
+    "op:new_zeros": 42.0,
+    "op:index_put": 24.0,
+    "op:select_backward": 15.0,
+    "views": 21.0,
+    "op:sgn": 9.0,
+    "op:nll_loss_backward": 3.0,
+    "op:_log_softmax_backward_data": 3.0,
+    "op:neg": 3.0,
+    "op:slice_backward": 6.0,
+    "op:add": 6.0,
+    "op:div_": 3.0,
+    "op:index_add": 18.0
+   },
+   "<untagged>@bwd": {
+    "views": 782.0,
+    "kernels": 4.0,
+    "bytes": 13107200.0,
+    "op:new_empty_strided": 2.0,
+    "op:copy_": 2.0
+   },
+   "mod:scorer@bwd": {
+    "views": 5.0,
+    "kernels": 18.0,
+    "bytes": 46616.0,
+    "op:div": 4.0,
+    "op:neg": 2.0,
+    "op:mul": 3.0,
+    "op:sum": 1.0,
+    "op:scalar_tensor": 1.0,
+    "op:ge": 1.0,
+    "op:where": 1.0,
+    "op:eq": 1.0,
+    "op:masked_fill_": 1.0,
+    "op:select_backward": 1.0,
+    "op:slice_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.law_head.2@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 16777216.0,
+    "bytes": 33603584.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.law_head.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 24576.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.law_head.0@bwd": {
+    "views": 8.0,
+    "kernels": 3.0,
+    "flops": 16908288.0,
+    "bytes": 33865856.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder@bwd": {
+    "kernels": 1900.0,
+    "bytes": 21738384.0,
+    "op:new_zeros": 3.0,
+    "op:index_put": 1.0,
+    "op:add": 659.0,
+    "op:mul": 716.0,
+    "op:sum": 9.0,
+    "views": 376.0,
+    "op:index_add": 2.0,
+    "op:slice_backward": 1.0,
+    "op:scalar_tensor": 61.0,
+    "op:ge": 61.0,
+    "op:where": 61.0,
+    "op:select_backward": 130.0,
+    "op:cos": 59.0,
+    "op:sin": 59.0,
+    "op:neg": 59.0,
+    "op:le": 1.0,
+    "op:logical_and_": 1.0,
+    "op:div": 1.0,
+    "flops": 12220416.0,
+    "op:mm": 16.0
+   },
+   "mod:core.decoder.adaln.3@bwd": {
+    "kernels": 9.0,
+    "bytes": 3648000.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 7.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0
+   },
+   "mod:core.decoder.layers.3@bwd": {
+    "views": 242.0,
+    "kernels": 177.0,
+    "flops": 5753659392.0,
+    "bytes": 310806602.0,
+    "op:mm": 44.0,
+    "op:sum": 32.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:add": 43.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 8.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.adaln.2@bwd": {
+    "kernels": 10.0,
+    "bytes": 3652608.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 7.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.layers.2@bwd": {
+    "views": 242.0,
+    "kernels": 181.0,
+    "flops": 5753659392.0,
+    "bytes": 322957898.0,
+    "op:mm": 44.0,
+    "op:sum": 32.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:add": 47.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 8.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.adaln.1@bwd": {
+    "kernels": 10.0,
+    "bytes": 3652608.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 7.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.layers.1@bwd": {
+    "views": 242.0,
+    "kernels": 181.0,
+    "flops": 5753659392.0,
+    "bytes": 322957898.0,
+    "op:mm": 44.0,
+    "op:sum": 32.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:add": 47.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 8.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.adaln.0@bwd": {
+    "kernels": 10.0,
+    "bytes": 3652608.0,
+    "op:sum": 3.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "views": 8.0,
+    "flops": 1179648.0,
+    "op:mm": 2.0,
+    "op:mish_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.decoder.layers.0@bwd": {
+    "views": 245.0,
+    "kernels": 186.0,
+    "flops": 5753659392.0,
+    "bytes": 324049994.0,
+    "op:mm": 44.0,
+    "op:sum": 34.0,
+    "op:gelu_backward": 2.0,
+    "op:mul": 16.0,
+    "op:cat": 10.0,
+    "op:add": 49.0,
+    "op:native_layer_norm_backward": 6.0,
+    "op:grid_sampler_2d_backward": 2.0,
+    "op:convolution_backward": 2.0,
+    "op:_softmax_backward_data": 2.0,
+    "op:masked_fill": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 4.0,
+    "op:select_backward": 9.0,
+    "op:clone": 4.0
+   },
+   "mod:core.decoder.time_mlp.3@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 2359296.0,
+    "bytes": 4737024.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.time_mlp.2@bwd": {
+    "kernels": 1.0,
+    "bytes": 18432.0,
+    "op:mish_backward": 1.0
+   },
+   "mod:core.decoder.time_mlp.1@bwd": {
+    "views": 4.0,
+    "kernels": 2.0,
+    "flops": 1179648.0,
+    "bytes": 2379264.0,
+    "op:mm": 1.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.traj_proj@bwd": {
+    "views": 10.0,
+    "kernels": 6.0,
+    "flops": 2875392.0,
+    "bytes": 864384.0,
+    "op:mm": 2.0,
+    "op:sum": 2.0,
+    "op:add": 2.0
+   },
+   "mod:core.decoder.tac8_lon_to_anchor@bwd": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.tac8_lat_to_anchor@bwd": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 1872.0,
+    "bytes": 4244.0,
+    "op:mm": 1.0
+   },
+   "mod:core.decoder.conf_head@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 179712.0,
+    "bytes": 363904.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.tgt_film@bwd": {
+    "kernels": 3.0,
+    "bytes": 15360.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0
+   },
+   "mod:core.decoder.tgt_film.to_scale_shift@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 1179648.0,
+    "bytes": 2374656.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.tgt_proj@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 786432.0,
+    "bytes": 1583104.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.ego_to_cond@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 49152.0,
+    "bytes": 104704.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.cond_proj@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 196608.0,
+    "bytes": 400384.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.decoder.feat_proj@bwd": {
+    "kernels": 3.0,
+    "bytes": 15025664.0,
+    "op:sum": 1.0,
+    "views": 10.0,
+    "flops": 1308622848.0,
+    "op:mm": 2.0
+   },
+   "mod:core.ego_hist.out@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 8192.0,
+    "bytes": 17920.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:select_backward": 1.0
+   },
+   "mod:core.ego_hist.body@bwd": {
+    "views": 69.0,
+    "kernels": 135.0,
+    "bytes": 1924192.0,
+    "op:mul": 32.0,
+    "op:neg": 8.0,
+    "op:add": 29.0,
+    "op:tanh_backward": 8.0,
+    "op:sigmoid_backward": 16.0,
+    "op:cat": 16.0,
+    "flops": 377856.0,
+    "op:mm": 16.0,
+    "op:sum": 9.0,
+    "op:stack": 1.0
+   },
+   "mod:tac_behaviour_gate_v6.proj@bwd": {
+    "views": 3.0,
+    "kernels": 1.0,
+    "flops": 5148.0,
+    "bytes": 10852.0,
+    "op:mm": 1.0
+   },
+   "mod:tac_decoder_v6@bwd": {
+    "views": 4.0
+   },
+   "mod:tac_decoder_v6.lon_head@bwd": {
+    "views": 7.0,
+    "kernels": 4.0,
+    "flops": 8192.0,
+    "bytes": 65636.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:slice_backward": 1.0
+   },
+   "mod:tac_decoder_v6.lat_head@bwd": {
+    "views": 7.0,
+    "kernels": 5.0,
+    "flops": 8192.0,
+    "bytes": 182372.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:slice_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.conf_head@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 22528.0,
+    "bytes": 47372.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_decoder_v6.validity_head@bwd": {
+    "views": 7.0,
+    "kernels": 6.0,
+    "flops": 22528.0,
+    "bytes": 293132.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:slice_backward": 1.0
+   },
+   "mod:tac_decoder_v6.out_norm@bwd": {
+    "kernels": 1.0,
+    "bytes": 121136.0,
+    "op:native_layer_norm_backward": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.ff@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "flops": 79691776.0,
+    "bytes": 5639168.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n3@bwd": {
+    "kernels": 3.0,
+    "bytes": 315700.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.cross_attn@bwd": {
+    "views": 41.0,
+    "kernels": 23.0,
+    "flops": 489570304.0,
+    "bytes": 34981632.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:bmm": 4.0,
+    "op:_softmax_backward_data": 1.0,
+    "op:mul": 1.0,
+    "op:clone": 3.0,
+    "op:select_backward": 2.0,
+    "op:add": 1.0,
+    "op:cat": 2.0
+   },
+   "mod:tac_decoder_v6.layers.1.n2@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.self_attn@bwd": {
+    "views": 31.0,
+    "kernels": 13.0,
+    "flops": 39845888.0,
+    "bytes": 4437184.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 1.0,
+    "op:select_backward": 3.0,
+    "op:add": 2.0,
+    "op:clone": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.n1@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.1.film@bwd": {
+    "kernels": 7.0,
+    "bytes": 306216.0,
+    "op:sum": 3.0,
+    "views": 6.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "flops": 10240.0,
+    "op:mm": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.ff@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "flops": 79691776.0,
+    "bytes": 5639168.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n3@bwd": {
+    "kernels": 3.0,
+    "bytes": 315700.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0,
+    "op:mul": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.cross_attn@bwd": {
+    "views": 41.0,
+    "kernels": 24.0,
+    "flops": 489570304.0,
+    "bytes": 37377792.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:bmm": 4.0,
+    "op:_softmax_backward_data": 1.0,
+    "op:mul": 1.0,
+    "op:clone": 3.0,
+    "op:select_backward": 2.0,
+    "op:add": 2.0,
+    "op:cat": 2.0
+   },
+   "mod:tac_decoder_v6.layers.0.n2@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.self_attn@bwd": {
+    "views": 31.0,
+    "kernels": 13.0,
+    "flops": 39845888.0,
+    "bytes": 4437184.0,
+    "op:mm": 4.0,
+    "op:sum": 2.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 1.0,
+    "op:select_backward": 3.0,
+    "op:add": 2.0,
+    "op:clone": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.n1@bwd": {
+    "kernels": 2.0,
+    "bytes": 237872.0,
+    "op:native_layer_norm_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.layers.0.film@bwd": {
+    "kernels": 7.0,
+    "bytes": 306216.0,
+    "op:sum": 3.0,
+    "views": 7.0,
+    "op:mul": 2.0,
+    "op:cat": 1.0,
+    "flops": 10240.0,
+    "op:mm": 1.0
+   },
+   "mod:tac_decoder_v6.kv_norm@bwd": {
+    "kernels": 6.0,
+    "bytes": 3219552.0,
+    "op:native_layer_norm_backward": 1.0,
+    "views": 4.0,
+    "op:sum": 2.0,
+    "op:select_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:tac_decoder_v6.bev_in@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 47185920.0,
+    "bytes": 2040832.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_decoder_v6.agent_in@bwd": {
+    "views": 7.0,
+    "kernels": 4.0,
+    "flops": 117964800.0,
+    "bytes": 4013056.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.agent_embed@bwd": {
+    "kernels": 3.0,
+    "bytes": 2767200.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "views": 1.0
+   },
+   "mod:core.agent_embed.norm@bwd": {
+    "kernels": 1.0,
+    "bytes": 1390944.0,
+    "op:native_layer_norm_backward": 1.0
+   },
+   "mod:core.agent_embed.geo.2@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 117964800.0,
+    "bytes": 2784768.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.agent_embed.geo.1@bwd": {
+    "kernels": 1.0,
+    "bytes": 921600.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:core.agent_embed.geo.0@bwd": {
+    "views": 28.0,
+    "kernels": 65.0,
+    "flops": 7680000.0,
+    "bytes": 1388432.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 23.0,
+    "op:select_backward": 9.0,
+    "op:mul": 10.0,
+    "op:neg": 3.0,
+    "op:div": 12.0,
+    "op:scalar_tensor": 1.0,
+    "op:ge": 1.0,
+    "op:where": 1.0,
+    "op:_softmax_backward_data": 1.0,
+    "op:sigmoid_backward": 1.0
+   },
+   "mod:core.agent_head@bwd": {
+    "views": 36.0,
+    "kernels": 117.0,
+    "bytes": 3142824.0,
+    "op:slice_backward": 30.0,
+    "op:add": 33.0,
+    "op:select_backward": 6.0,
+    "op:softplus_backward": 3.0,
+    "op:mul": 12.0,
+    "op:div": 12.0,
+    "op:neg": 3.0,
+    "op:sum": 3.0,
+    "op:scalar_tensor": 3.0,
+    "op:ge": 3.0,
+    "op:where": 3.0,
+    "op:eq": 3.0,
+    "op:masked_fill_": 3.0
+   },
+   "mod:core.agent_head.head@bwd": {
+    "views": 21.0,
+    "kernels": 13.0,
+    "flops": 19353600.0,
+    "bytes": 2328804.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:add": 4.0
+   },
+   "mod:core.agent_head.norm@bwd": {
+    "kernels": 137.0,
+    "bytes": 191923584.0,
+    "op:native_layer_norm_backward": 12.0,
+    "views": 252.0,
+    "flops": 3957325824.0,
+    "op:mm": 42.0,
+    "op:sum": 21.0,
+    "op:gelu_backward": 3.0,
+    "op:add": 26.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 6.0,
+    "op:select_backward": 15.0,
+    "op:clone": 6.0,
+    "op:cat": 6.0
+   },
+   "mod:core.agent_head.mem_proj@bwd": {
+    "kernels": 5.0,
+    "bytes": 53183488.0,
+    "op:sum": 1.0,
+    "views": 11.0,
+    "flops": 872415232.0,
+    "op:mm": 2.0,
+    "op:add": 1.0,
+    "op:select_backward": 1.0
+   },
+   "mod:core.lon_head@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 4608.0,
+    "bytes": 12336.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.lat_head@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 4608.0,
+    "bytes": 16944.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.tactical_trunk.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 4608.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.tactical_trunk.0@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 3145728.0,
+    "bytes": 6338560.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.measurement.3@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 1536.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.measurement.2@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 65536.0,
+    "bytes": 134144.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:core.measurement.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 1536.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:core.measurement.0@bwd": {
+    "views": 4.0,
+    "kernels": 2.0,
+    "flops": 1280.0,
+    "bytes": 4116.0,
+    "op:mm": 1.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_latent_proj@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 1048576.0,
+    "bytes": 2109440.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:tac_goal_head@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 24576.0,
+    "bytes": 59584.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:add": 1.0
+   },
+   "mod:nav_to_tac@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 131072.0,
+    "bytes": 270848.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:nav_inj@bwd": {
+    "kernels": 1.0,
+    "bytes": 1288.0,
+    "op:embedding_dense_backward": 1.0
+   },
+   "mod:phi_tac.out.2@bwd": {
+    "views": 5.0,
+    "kernels": 3.0,
+    "flops": 1048576.0,
+    "bytes": 2109440.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:phi_tac.out.1@bwd": {
+    "kernels": 1.0,
+    "bytes": 6144.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.out.0@bwd": {
+    "views": 5.0,
+    "kernels": 4.0,
+    "flops": 524288.0,
+    "bytes": 1068032.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0,
+    "op:select_backward": 1.0
+   },
+   "mod:phi_tac.norms.2@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 52232.0,
+    "op:native_group_norm_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.2.conv2@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1664000.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.2.conv1@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1664000.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:add": 1.0
+   },
+   "mod:phi_tac.norms.1@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 52232.0,
+    "op:native_group_norm_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.1.conv2@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1651712.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.1.conv1@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1651712.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:add": 1.0
+   },
+   "mod:phi_tac.norms.0@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 52232.0,
+    "op:native_group_norm_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.0.conv2@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1645568.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:phi_tac.blocks.0.conv1@bwd": {
+    "kernels": 3.0,
+    "flops": 6291456.0,
+    "bytes": 1645568.0,
+    "op:convolution_backward": 1.0,
+    "op:constant_pad_nd": 1.0,
+    "op:add": 1.0,
+    "views": 1.0
+   },
+   "mod:phi_tac.in_proj@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 16777216.0,
+    "bytes": 4350976.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:_perception@bwd": {
+    "views": 68.0,
+    "kernels": 181.0,
+    "bytes": 19710744.0,
+    "op:slice_backward": 48.0,
+    "op:mul": 24.0,
+    "op:tanh_backward": 6.0,
+    "op:select_backward": 12.0,
+    "op:add": 51.0,
+    "op:softplus_backward": 6.0,
+    "op:div": 12.0,
+    "op:neg": 3.0,
+    "op:sum": 3.0,
+    "op:scalar_tensor": 3.0,
+    "op:ge": 3.0,
+    "op:where": 3.0,
+    "op:eq": 3.0,
+    "op:masked_fill_": 3.0,
+    "op:_adaptive_avg_pool2d_backward": 1.0
+   },
+   "mod:_perception.box_dec.head@bwd": {
+    "views": 21.0,
+    "kernels": 13.0,
+    "flops": 21196800.0,
+    "bytes": 2375052.0,
+    "op:mm": 6.0,
+    "op:sum": 3.0,
+    "op:add": 4.0
+   },
+   "mod:_perception.box_dec.norm@bwd": {
+    "kernels": 154.0,
+    "bytes": 336559488.0,
+    "op:native_layer_norm_backward": 12.0,
+    "views": 288.0,
+    "flops": 6675234816.0,
+    "op:mm": 54.0,
+    "op:sum": 27.0,
+    "op:gelu_backward": 3.0,
+    "op:add": 31.0,
+    "op:_scaled_dot_product_flash_attention_for_cpu_backward": 6.0,
+    "op:select_backward": 6.0,
+    "op:clone": 3.0,
+    "op:cat": 12.0
+   },
+   "mod:_perception.box_dec.mem_proj@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 562036736.0,
+    "bytes": 11502592.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.2@bwd": {
+    "views": 7.0,
+    "kernels": 3.0,
+    "flops": 78643200.0,
+    "bytes": 2061312.0,
+    "op:mm": 2.0,
+    "op:sum": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.1@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 921600.0,
+    "op:threshold_backward": 1.0
+   },
+   "mod:_perception.box_qpos.mlp.0@bwd": {
+    "views": 11.0,
+    "kernels": 29.0,
+    "flops": 78643200.0,
+    "bytes": 4865536.0,
+    "op:mm": 2.0,
+    "op:sum": 5.0,
+    "op:sin": 2.0,
+    "op:neg": 2.0,
+    "op:mul": 8.0,
+    "op:cos": 2.0,
+    "op:add": 4.0,
+    "op:div": 2.0,
+    "op:slice_backward": 2.0
+   },
+   "mod:_perception.box_refpts@bwd": {
+    "views": 1.0
+   },
+   "mod:_perception.box_mem@bwd": {
+    "views": 2.0,
+    "kernels": 5.0,
+    "bytes": 2209792.0,
+    "op:sum": 2.0,
+    "op:slice_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_mem.bev_proj@bwd": {
+    "kernels": 5.0,
+    "bytes": 16970752.0,
+    "op:sum": 1.0,
+    "views": 10.0,
+    "flops": 47185920.0,
+    "op:mm": 2.0,
+    "op:_adaptive_avg_pool2d_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_perception.box_mem.img_proj@bwd": {
+    "kernels": 4.0,
+    "bytes": 82183168.0,
+    "op:sum": 1.0,
+    "views": 11.0,
+    "flops": 1744830464.0,
+    "op:mm": 2.0,
+    "op:select_backward": 1.0
+   },
+   "mod:_perception.bev_pool.proj.1@bwd": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "bytes": 8848576.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_perception.bev_pool.proj.0@bwd": {
+    "kernels": 4.0,
+    "flops": 188743680.0,
+    "bytes": 86556672.0,
+    "op:convolution_backward": 1.0,
+    "op:avg_pool2d_backward": 1.0,
+    "op:slice_backward": 2.0
+   },
+   "fn:map_near_geometry@recompute": {
+    "views": 23.0,
+    "kernels": 36.0,
+    "bytes": 50459840.0,
+    "op:_to_copy": 1.0,
+    "op:mul": 8.0,
+    "op:sub": 8.0,
+    "op:cat": 2.0,
+    "op:replication_pad2d": 1.0,
+    "op:arange": 2.0,
+    "op:add": 4.0,
+    "op:div": 2.0,
+    "op:stack": 1.0,
+    "op:grid_sampler_2d": 2.0,
+    "op:rsub": 1.0,
+    "op:lt": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:_map_hires.near.lift@recompute": {
+    "views": 11.0,
+    "kernels": 14.0,
+    "bytes": 404273920.0,
+    "op:clone": 1.0,
+    "flops": 872415232.0,
+    "op:convolution": 1.0,
+    "op:zeros_like": 1.0,
+    "op:where": 1.0,
+    "op:grid_sampler_2d": 1.0,
+    "op:_to_copy": 2.0,
+    "op:mul": 2.0,
+    "op:sum": 1.0,
+    "op:add": 2.0,
+    "op:any": 1.0,
+    "op:bitwise_not": 1.0
+   },
+   "mod:_map_hires.refine.cls@bwd": {
+    "views": 36.0,
+    "kernels": 1.0,
+    "flops": 614400000.0,
+    "bytes": 172802080.0,
+    "op:convolution_backward": 1.0
+   },
+   "mod:_map_hires.refine.inp.0@recompute": {
+    "kernels": 1.0,
+    "flops": 393216000.0,
+    "bytes": 36872192.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.inp.1@recompute": {
+    "kernels": 1.0,
+    "bytes": 24576320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine@recompute": {
+    "kernels": 3.0,
+    "bytes": 288768000.0,
+    "op:upsample_bilinear2d": 1.0,
+    "views": 2.0,
+    "op:add": 1.0,
+    "op:cat": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c1@recompute": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.near_refine.0.n1@recompute": {
+    "kernels": 1.0,
+    "bytes": 30720320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.near_refine.0@recompute": {
+    "kernels": 2.0,
+    "bytes": 76800000.0,
+    "op:gelu": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c2@recompute": {
+    "kernels": 1.0,
+    "flops": 2211840000.0,
+    "bytes": 30756864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.conv1@recompute": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm1@recompute": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.act@recompute": {
+    "kernels": 2.0,
+    "bytes": 307200000.0,
+    "op:gelu": 2.0
+   },
+   "mod:_map_hires.refine.conv2@recompute": {
+    "kernels": 1.0,
+    "flops": 11059200000.0,
+    "bytes": 153636864.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.refine.norm2@recompute": {
+    "kernels": 1.0,
+    "bytes": 153600320.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.refine.act@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "bytes": 460800000.0,
+    "op:gelu_backward": 2.0
+   },
+   "mod:_map_hires.refine.norm2@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 230400448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.refine.conv2@bwd": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "flops": 22118400000.0,
+    "bytes": 230473728.0,
+    "op:convolution_backward": 1.0
+   },
+   "mod:_map_hires.refine.norm1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 230400448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.refine.conv1@bwd": {
+    "views": 4.0,
+    "kernels": 2.0,
+    "flops": 22118400000.0,
+    "bytes": 368713728.0,
+    "op:convolution_backward": 1.0,
+    "op:slice_backward": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c2@bwd": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "flops": 4423680000.0,
+    "bytes": 92233728.0,
+    "op:convolution_backward": 1.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:_map_hires.near_refine.0.n1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 46080448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.near_refine.0.c1@bwd": {
+    "views": 2.0,
+    "kernels": 5.0,
+    "flops": 4423680000.0,
+    "bytes": 503881728.0,
+    "op:convolution_backward": 1.0,
+    "op:add": 2.0,
+    "op:slice_backward": 1.0,
+    "op:upsample_bilinear2d_backward": 1.0
+   },
+   "mod:_map_hires.refine.inp.1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 36864448.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.refine.inp.0@bwd": {
+    "views": 2.0,
+    "kernels": 2.0,
+    "flops": 786432000.0,
+    "bytes": 135184384.0,
+    "op:convolution_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.near.lift@bwd": {
+    "kernels": 7.0,
+    "bytes": 294375424.0,
+    "op:mul": 2.0,
+    "op:sum": 2.0,
+    "views": 12.0,
+    "op:grid_sampler_2d_backward": 1.0,
+    "flops": 1744830464.0,
+    "op:convolution_backward": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.4@bwd": {
+    "views": 91.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.stem.0@recompute": {
+    "kernels": 1.0,
+    "flops": 7077888000.0,
+    "bytes": 49299456.0,
+    "op:convolution": 1.0
+   },
+   "mod:_map_hires.encoder.stem.1@recompute": {
+    "kernels": 1.0,
+    "bytes": 49152576.0,
+    "op:native_group_norm": 1.0
+   },
+   "mod:_map_hires.encoder.stem.2@recompute": {
+    "kernels": 1.0,
+    "bytes": 49152000.0,
+    "op:gelu": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.0@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.1@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.2@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.3@recompute": {
+    "kernels": 7.0,
+    "flops": 14155776000.0,
+    "bytes": 368936064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.4@recompute": {
+    "kernels": 6.0,
+    "flops": 14155776000.0,
+    "bytes": 319784064.0,
+    "op:convolution": 2.0,
+    "op:native_group_norm": 2.0,
+    "op:gelu": 1.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.3@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.2@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.1@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.blocks.0@bwd": {
+    "views": 14.0,
+    "kernels": 7.0,
+    "bytes": 516687488.0,
+    "op:gelu_backward": 2.0,
+    "op:native_group_norm_backward": 2.0,
+    "flops": 28311552000.0,
+    "op:convolution_backward": 2.0,
+    "op:add": 1.0
+   },
+   "mod:_map_hires.encoder.stem.2@bwd": {
+    "views": 1.0,
+    "kernels": 1.0,
+    "bytes": 73728000.0,
+    "op:gelu_backward": 1.0
+   },
+   "mod:_map_hires.encoder.stem.1@bwd": {
+    "views": 4.0,
+    "kernels": 1.0,
+    "bytes": 73728832.0,
+    "op:native_group_norm_backward": 1.0
+   },
+   "mod:_map_hires.encoder.stem.0@bwd": {
+    "views": 2.0,
+    "kernels": 1.0,
+    "flops": 14155776000.0,
+    "bytes": 74022912.0,
+    "op:convolution_backward": 1.0
+   },
+   "mod:_map_hires.lift@bwd": {
+    "kernels": 8.0,
+    "bytes": 491982336.0,
+    "op:mul": 2.0,
+    "op:sum": 2.0,
+    "views": 9.0,
+    "op:grid_sampler_2d_backward": 1.0,
+    "flops": 3489660928.0,
+    "op:convolution_backward": 1.0,
+    "op:add": 1.0,
+    "op:clone": 1.0
+   },
+   "mod:core.route_head@bwd": {
+    "kernels": 2.0,
+    "bytes": 270336.0,
+    "op:select_backward": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.strategic.gru@bwd": {
+    "views": 1.0
+   },
+   "fn:trunk_s8_tap@bwd": {
+    "views": 1.0
+   },
+   "mod:core.encoder.net.conv1@recompute": {
+    "kernels": 77.0,
+    "bytes": 357406720.0,
+    "op:add": 11.0,
+    "op:sqrt": 11.0,
+    "op:div": 11.0,
+    "views": 11.0,
+    "op:mul": 22.0,
+    "op:sub": 11.0,
+    "flops": 22042116096.0,
+    "op:convolution": 11.0
+   },
+   "mod:core.encoder.net.layer2@bwd": {
+    "views": 965.0,
+    "kernels": 1710.0,
+    "bytes": 9946976256.0,
+    "op:threshold_backward": 132.0,
+    "flops": 383862702080.0,
+    "op:convolution_backward": 143.0,
+    "op:neg": 143.0,
+    "op:mul": 429.0,
+    "op:sum": 143.0,
+    "op:add": 577.0,
+    "op:div": 143.0
+   },
+   "mod:core.encoder.net.act1@recompute": {
+    "kernels": 11.0,
+    "bytes": 599785472.0,
+    "op:relu": 11.0
+   },
+   "mod:core.encoder.net.maxpool@recompute": {
+    "kernels": 11.0,
+    "bytes": 524812288.0,
+    "op:max_pool2d_with_indices": 11.0
+   },
+   "mod:core.encoder.net.layer1@recompute": {
+    "kernels": 902.0,
+    "bytes": 8276094464.0,
+    "op:add": 110.0,
+    "op:sqrt": 110.0,
+    "op:div": 110.0,
+    "views": 110.0,
+    "op:mul": 220.0,
+    "op:sub": 110.0,
+    "flops": 124755378176.0,
+    "op:convolution": 110.0,
+    "op:relu": 99.0,
+    "op:add_": 33.0
+   },
+   "mod:core.encoder.net.layer2@recompute": {
+    "kernels": 1177.0,
+    "bytes": 6610098176.0,
+    "op:add": 143.0,
+    "op:sqrt": 143.0,
+    "op:div": 143.0,
+    "views": 143.0,
+    "op:mul": 286.0,
+    "op:sub": 143.0,
+    "flops": 191931351040.0,
+    "op:convolution": 143.0,
+    "op:relu": 132.0,
+    "op:add_": 44.0
+   },
+   "mod:core.encoder.net.layer1@bwd": {
+    "views": 649.0,
+    "kernels": 1312.0,
+    "bytes": 10223117312.0,
+    "op:threshold_backward": 99.0,
+    "flops": 249510756352.0,
+    "op:convolution_backward": 110.0,
+    "op:neg": 110.0,
+    "op:mul": 330.0,
+    "op:sum": 110.0,
+    "op:add": 443.0,
+    "op:div": 110.0
+   },
+   "mod:core.encoder.net.maxpool@bwd": {
+    "views": 11.0,
+    "kernels": 11.0,
+    "bytes": 824705024.0,
+    "op:max_pool2d_with_indices_backward": 11.0
+   },
+   "mod:core.encoder.net.act1@bwd": {
+    "views": 11.0,
+    "kernels": 11.0,
+    "bytes": 899678208.0,
+    "op:threshold_backward": 11.0
+   },
+   "mod:core.encoder.net.conv1@bwd": {
+    "views": 44.0,
+    "kernels": 118.0,
+    "flops": 22042116096.0,
+    "bytes": 360617984.0,
+    "op:convolution_backward": 11.0,
+    "op:neg": 11.0,
+    "op:mul": 33.0,
+    "op:sum": 11.0,
+    "op:add": 41.0,
+    "op:div": 11.0
+   },
+   "fn:trunk_main@bwd": {
+    "views": 3.0,
+    "kernels": 2.0,
+    "bytes": 136314880.0,
+    "op:div": 1.0,
+    "op:add": 1.0
+   },
+   "mod:core.encoder.fuse32.proj@bwd": {
+    "kernels": 3.0,
+    "flops": 167503724544.0,
+    "bytes": 557326528.0,
+    "op:convolution_backward": 1.0,
+    "views": 12.0,
+    "op:new_zeros": 1.0,
+    "op:index_add": 1.0
+   },
+   "mod:core.encoder.fuse16.proj@bwd": {
+    "kernels": 3.0,
+    "flops": 167503724544.0,
+    "bytes": 938479808.0,
+    "op:convolution_backward": 1.0,
+    "views": 12.0,
+    "op:new_zeros": 1.0,
+    "op:index_add": 1.0
+   },
+   "mod:core.encoder.net.layer4@bwd": {
+    "views": 5750.0,
+    "kernels": 1200.0,
+    "bytes": 8329453568.0,
+    "op:threshold_backward": 90.0,
+    "flops": 274810798080.0,
+    "op:convolution_backward": 100.0,
+    "op:neg": 100.0,
+    "op:mul": 300.0,
+    "op:sum": 100.0,
+    "op:add": 410.0,
+    "op:div": 100.0
+   },
+   "mod:core.encoder.net.layer3@recompute": {
+    "kernels": 5820.0,
+    "bytes": 17729638400.0,
+    "op:add": 700.0,
+    "op:sqrt": 700.0,
+    "op:div": 700.0,
+    "views": 700.0,
+    "op:mul": 1400.0,
+    "op:sub": 700.0,
+    "flops": 878958346240.0,
+    "op:convolution": 700.0,
+    "op:relu": 690.0,
+    "op:add_": 230.0
+   },
+   "mod:core.encoder.net.layer4@recompute": {
+    "kernels": 820.0,
+    "bytes": 2958499840.0,
+    "op:add": 100.0,
+    "op:sqrt": 100.0,
+    "op:div": 100.0,
+    "views": 100.0,
+    "op:mul": 200.0,
+    "op:sub": 100.0,
+    "flops": 137405399040.0,
+    "op:convolution": 100.0,
+    "op:relu": 90.0,
+    "op:add_": 30.0
+   },
+   "mod:core.encoder.net.layer3@bwd": {
+    "views": 4190.0,
+    "kernels": 8410.0,
+    "bytes": 30963560448.0,
+    "op:threshold_backward": 690.0,
+    "flops": 1757916692480.0,
+    "op:convolution_backward": 700.0,
+    "op:neg": 700.0,
+    "op:mul": 2100.0,
+    "op:sum": 700.0,
+    "op:add": 2820.0,
+    "op:div": 700.0
+   },
+   "fn:grad_reach": {
+    "views": 602.0,
+    "kernels": 1204.0,
+    "bytes": 957384596.0,
+    "op:abs": 602.0,
+    "op:sum": 602.0,
+    "sync_item": 602.0
+   },
+   "fn:grad_reach_hires": {
+    "views": 93.0,
+    "kernels": 186.0,
+    "bytes": 22353108.0,
+    "op:abs": 93.0,
+    "op:sum": 93.0,
+    "sync_item": 93.0
+   },
+   "fn:clip_grad": {
+    "kernels": 8.0,
+    "foreach_kernels": 2.0,
+    "bytes": 769541456.0,
+    "op:_foreach_norm": 1.0,
+    "op:stack": 1.0,
+    "op:linalg_vector_norm": 1.0,
+    "op:add": 1.0,
+    "op:reciprocal": 1.0,
+    "op:mul": 1.0,
+    "op:clamp": 1.0,
+    "op:_foreach_mul_": 1.0
+   },
+   "fn:log_row": {
+    "views": 53.0,
+    "sync_item": 53.0
+   }
+  },
+  "note": "final step: includes the end-of-run save/log"
+ }
+]

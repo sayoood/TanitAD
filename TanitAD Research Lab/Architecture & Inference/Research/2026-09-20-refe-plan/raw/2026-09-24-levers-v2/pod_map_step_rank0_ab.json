@@ -1,0 +1,40 @@
+{
+ "arms": {
+  "REF": {
+   "rc": 0,
+   "rows": 6,
+   "wall_s": 34.1,
+   "s_per_tuple": 4.66,
+   "env": {
+    "REFE_MAP_STEP_FAST": "0"
+   }
+  },
+  "FAST": {
+   "rc": 0,
+   "rows": 6,
+   "wall_s": 34.1,
+   "s_per_tuple": 4.09,
+   "env": {
+    "REFE_MAP_STEP_FAST": "1"
+   },
+   "speedup_vs_ref": 1.139
+  },
+  "MUT": {
+   "rc": 0,
+   "rows": 6,
+   "wall_s": 34.1,
+   "s_per_tuple": 3.96,
+   "env": {
+    "REFE_MAP_STEP_FAST": "1",
+    "REFE_MAP_STEP_MUTATE": "segments_1mm"
+   },
+   "speedup_vs_ref": 1.177
+  }
+ },
+ "checks": {
+  "all_exit_0": true,
+  "ref_rows_nonempty": true,
+  "FAST_rows_eq_REF": true,
+  "MUT_rows_eq_REF": false
+ }
+}

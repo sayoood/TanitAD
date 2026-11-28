@@ -1,0 +1,239 @@
+{
+ "lever": "actcons",
+ "counts": {
+  "n_mutations": 12,
+  "n_red": 12,
+  "n_still_green": 0,
+  "n_other": 0,
+  "control_green": true,
+  "control_after_green": true
+ },
+ "counts_line": "n 12 | red 12 | still-green 0 | other 0 | control green yes | control after green yes",
+ "checks": [
+  "stack/tests/test_v8f_act_cons.py"
+ ],
+ "written_utc": "2026-11-19T07:17:42Z",
+ "control": {
+  "rc": 0,
+  "n_tests": 14,
+  "failed": [],
+  "green": true,
+  "seconds": 7,
+  "err": ""
+ },
+ "control_after": {
+  "rc": 0,
+  "n_tests": 14,
+  "failed": [],
+  "green": true,
+  "seconds": 6,
+  "err": ""
+ },
+ "mutations": [
+  {
+   "id": "m1_drop_kinematic_term",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)",
+   "mutated_line": "resid = g_off - g_ref",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m2_kinematic_term_sign_flipped",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)",
+   "mutated_line": "resid = g_off - g_ref - 0.5 * dr[None, :] * (T ** 2)",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m3_horizon_not_squared",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "resid = g_off - g_ref + 0.5 * dr[None, :] * (T ** 2)",
+   "mutated_line": "resid = g_off - g_ref + 0.5 * dr[None, :] * T",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m4_reference_uses_offset_actions",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "ref, _, _ = st.roll_pairs(zr, st.act_embed(a), ROLL_K)",
+   "mutated_line": "ref, _, _ = st.roll_pairs(zr, st.act_embed(a + off), ROLL_K)",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_term_equals_a_hand_computation",
+    "test_v8f_act_cons.py::test_planted_kinematic_predictor_reads_zero_and_the_two_mutations_read_red"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m5_lead_head_params_not_detached",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "params = {n: p.detach() for n, p in head.named_parameters()}",
+   "mutated_line": "params = {n: p for n, p in head.named_parameters()}",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_gradient_reaches_predictor_and_action_embed_and_exactly_zero_elsewhere",
+    "test_v8f_act_cons.py::test_probe_passes_and_goes_red_without_the_detach"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_gradient_reaches_predictor_and_action_embed_and_exactly_zero_elsewhere",
+    "test_v8f_act_cons.py::test_gradient_zero_mutations_go_red",
+    "test_v8f_act_cons.py::test_probe_passes_and_goes_red_without_the_detach"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m6_start_state_adapt_not_detached",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "z = wm.z1(adapt.detach().float()).float()",
+   "mutated_line": "z = wm.z1(adapt.float()).float()",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_gradient_reaches_predictor_and_action_embed_and_exactly_zero_elsewhere"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_gradient_zero_mutations_go_red"
+   ],
+   "expected_all_red": false,
+   "why": ""
+  },
+  {
+   "id": "m7_speed_bound_removed_from_valid",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "& (sp >= float(max_off) * SPEED_MULT))",
+   "mutated_line": "& (sp >= 0.0))",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m8_gap_range_upper_bound_widened",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "GAP_LO_M, GAP_HI_M = 0.0, 60.0",
+   "mutated_line": "GAP_LO_M, GAP_HI_M = 0.0, 6000.0",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_invalid_samples_give_exactly_zero_term_and_gradient_and_do_not_move_the_valid_ones"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m9_offset_range_one_sided",
+   "file": "stack/tanitad/models/act_cons.py",
+   "original_line": "* 2.0 - 1.0) * float(max_off)",
+   "mutated_line": "* 2.0) * float(max_off)",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_offsets_dedicated_generator_range_and_global_rng_untouched"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_offsets_dedicated_generator_range_and_global_rng_untouched"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m10_term_not_added_to_total",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "original_line": "T[\"total\"] = tot_ac + a.w_act_cons * ac_r[\"term\"]",
+   "mutated_line": "T[\"total\"] = tot_ac + 0.0 * ac_r[\"term\"]",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_total_moves_by_exactly_w_times_the_term"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_total_moves_by_exactly_w_times_the_term"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m11_weight_default_on",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "original_line": "ap.add_argument(\"--w-act-cons\", dest=\"w_act_cons\", type=float, default=0.0,",
+   "mutated_line": "ap.add_argument(\"--w-act-cons\", dest=\"w_act_cons\", type=float, default=1.0,",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_default_builds_nothing_and_keeps_the_key_sets"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_default_builds_nothing_and_keeps_the_key_sets",
+    "test_v8f_act_cons.py::test_default_off_is_a_lever_that_declares_nothing_when_max_is_changed",
+    "test_v8f_act_cons.py::test_gate_refusals",
+    "test_v8f_act_cons.py::test_probe_passes_and_goes_red_without_the_detach"
+   ],
+   "expected_all_red": true,
+   "why": ""
+  },
+  {
+   "id": "m12_gate_does_not_refuse_max_without_weight",
+   "file": "stack/scripts/v8f_mini_train.py",
+   "original_line": "        if a.act_cons_max != AC.ACT_CONS_MAX_DEFAULT:",
+   "mutated_line": "        if False:",
+   "expected_red": [
+    "test_v8f_act_cons.py::test_default_off_is_a_lever_that_declares_nothing_when_max_is_changed",
+    "test_v8f_act_cons.py::test_gate_refusals"
+   ],
+   "observed": "RED",
+   "rc": 0,
+   "failed": [
+    "test_v8f_act_cons.py::test_default_off_is_a_lever_that_declares_nothing_when_max_is_changed"
+   ],
+   "expected_all_red": false,
+   "why": ""
+  }
+ ]
+}

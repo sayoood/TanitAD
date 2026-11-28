@@ -1,0 +1,18 @@
+anchors OK: 16 mutants, every anchor occurs exactly once
+RED   v8f_mini_box2_queue.cmd: NAMED 2a: traindscale drops --data-frac 0.5 [-k queue] -> 1 failed, 2 passed, 101 deselected in 2.73s  [test_queue_dscale_runs_the_command_it_prints_static]
+RED   v8f_mini_train.py: the step budget is sized from the HALF's windows (S no longer counts all clips) [-k reach] -> 1 failed, 1 passed, 103 deselected in 2.24s  [test_reach_the_trainer_hands_the_flag_to_select_train_clips_and_sizes_the_budget_from_all_clips_static]
+RED   v8f_mini_train.py: the G-DVB entry for data_frac is removed [-k reach] -> 1 failed, 1 passed, 103 deselected in 2.49s  [test_reach_the_trainer_hands_the_flag_to_select_train_clips_and_sizes_the_budget_from_all_clips_static]
+RED   v8f_mini_data.py: select_train_clips ignores the sha12 order [-k reach] -> 1 failed, 103 deselected in 2.44s  [test_reach_the_flag_selects_the_first_half_of_the_clips_in_sha12_order_and_the_subsets_nest]
+RED   v8f_mini_box2_queue.cmd: traindscale runs --data-frac 0.25 [-k queue] -> 1 failed, 2 passed, 101 deselected in 2.31s  [test_queue_dscale_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: the gate line gains a second lever (--hist 10) [-k queue] -> 1 failed, 101 deselected in 2.35s  [test_queue_dscale_the_queue_is_crlf_and_the_stages_are_dispatched]
+RED   chain_v8f_dscale.sh: gate: the steps assertion is removed [-k chain] -> 1 failed, 3 passed, 103 deselected in 7.36s  [test_chain_dscale_gate_assertions_pass_the_q_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_dscale.sh: gate: the parameter count may differ from B's [-k chain] -> 1 failed, 3 passed, 103 deselected in 7.95s  [test_chain_dscale_gate_assertions_pass_the_q_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_dscale.sh: the predecessor is the GRID chain, not HIST's [-k chain] -> 1 failed, 103 deselected in 2.21s  [test_chain_dscale_static_ordering_the_wait_and_no_base_decision]
+RED   v8f_dscale_read.py: decide: DATA-LIMITED needs r > bar, not r >= bar [-k reader and not refuses_rc2] -> 1 failed, 92 deselected in 2.20s  [test_reader_decide_is_the_preregs_table_on_every_boundary]
+RED   v8f_dscale_read.py: decide: the sign agreement is dropped from DATA-LIMITED [-k reader and not refuses_rc2] -> 1 failed, 92 deselected in 2.14s  [test_reader_decide_is_the_preregs_table_on_every_boundary]
+RED   v8f_dscale_read.py: the training-loss window is the HEAD, not the last 10 % [-k reader and not refuses_rc2] -> 1 failed, 5 passed, 92 deselected in 11.69s  [test_reader_reports_the_beside_reads_and_the_training_loss_tail]
+RED   v8f_dscale_read.py: the manifest's half is the LAST half [-k reader and not refuses_rc2] -> 1 failed, 1 passed, 92 deselected in 2.44s  [test_reader_decision_table_plus_6_plus_1_minus_6_percent]
+RED   v8f_dscale_read.py: Q's clip count is not checked [-k refuses_rc2] -> 1 failed, 18 passed, 40 deselected in 8.43s  [test_reader_refuses_rc2_with_the_reason[q trained the whole list (4512 clips)]]
+RED   v8f_dscale_read.py: the loss weights are not compared (w_diff skipped) [-k refuses_rc2] -> 1 failed, 40 passed, 40 deselected in 13.94s  [test_reader_refuses_rc2_with_the_reason[q built another weight]]
+RED   v8f_dscale_read.py: Q's eval may score another checkpoint [-k refuses_rc2] -> 1 failed, 63 passed, 40 deselected in 25.39s  [test_reader_refuses_rc2_with_the_reason[q eval scored B's checkpoint]]
+16 / 16 mutations RED

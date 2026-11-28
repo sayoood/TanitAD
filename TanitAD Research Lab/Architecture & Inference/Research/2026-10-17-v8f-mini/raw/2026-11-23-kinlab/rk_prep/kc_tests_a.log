@@ -1,0 +1,81 @@
+commit free 11.60 GB >= 5.5 after 0 min
+tanitad from F:\TanitAD-scratch\kinlab\tree2\stack\tanitad\__init__.py cuda False
+...............F........                                                 [100%]
+================================== FAILURES ===================================
+_ test_the_write_is_atomic_a_writer_killed_half_way_leaves_the_old_cache_or_none _
+
+fx10 = <test_v8f_dagger.BankFix object at 0x000001EBCC491940>
+banks = {'natural': <tanitad.data.v8f_dagger.DaggerBank object at 0x000001EBCCA2FED0>, 'planted': <tanitad.data.v8f_dagger.DaggerBank object at 0x000001EBCCA2DA90>}
+cached = {'speed_v1': (WindowsPath('F:/TanitAD-scratch/kinlab/tmp/pt_kc_tests_a.log/kincache0/speed_v1.npz'), '04cde5b0d612ca2a...     False, False, False, False, False, False]), 'status_counts': {'kin_emitted': 302, 'refused_not_merged': 6}, ...})}
+tmp_path = WindowsPath('F:/TanitAD-scratch/kinlab/tmp/pt_kc_tests_a.log/test_the_write_is_atomic_a_wri0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001EBCE462C40>
+
+    def test_the_write_is_atomic_a_writer_killed_half_way_leaves_the_old_cache_or_none(fx10, banks, cached, tmp_path, monkeypatch):
+        ident = _ident(fx10, banks["planted"], "kin_v1")
+        res = cached["kin_v1"][2]
+        real = G._save_npz_det
+    
+        def dying(path, arrays):
+            real(path, arrays)
+            raw = Path(path).read_bytes()
+            Path(path).write_bytes(raw[: len(raw) // 2])                           # the process dies with half the bytes written
+            raise KeyboardInterrupt("killed mid-write")
+        good = tmp_path / "good.npz"
+        G.write_label_cache(good, ident, res)
+        before = good.read_bytes()
+        absent = tmp_path / "absent.npz"
+        monkeypatch.setattr(G, "_save_npz_det", dying)
+        with pytest.raises(KeyboardInterrupt):
+            G.write_label_cache(good, ident, res)                                  # over an existing cache: it must stay byte-identical
+        with pytest.raises(KeyboardInterrupt):
+            G.write_label_cache(absent, ident, res)                                # no cache: none must appear
+        monkeypatch.setattr(G, "_save_npz_det", real)
+        assert good.read_bytes() == before and not absent.exists()
+        assert Path(str(absent) + ".part").exists(), "the truncated half sits in <path>.part"
+        assert "[unreadable]" in _refused(Path(str(absent) + ".part"), ident), "and a truncated .part is unreadable even if it were read"
+>       G.write_label_cache(absent, ident, res)                                    # the next write replaces the stale .part by a complete file and leaves no .part
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_kincache.py:266: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'F:\\TanitAD-scratch\\kinlab\\tmp\\pt_kc_tests_a.log\\test_the_write_is_atomic_a_wri0\\absent.npz'
+ident = {'label_kind': 'kin_v1', 'bank_json_sha256': '9b3765806265858fd30192787747e94218179b7624e80e52bcccca071bc67889', 'labe...5bbc5ecb78a6267488225dd7440', 'dagger_sha256': '4a32f41a9f29e5621132c418f5da4f9794fa737f731019e2bd947833d3dce575', ...}
+res = {'slot': array([ 79,  80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,
+        92,  93,  94,  95,  96,  97, ...       False, False, False, False, False, False]), 'status_counts': {'kin_emitted': 302, 'refused_not_merged': 6}, ...}
+
+    def write_label_cache(path, ident: dict, res: dict) -> str:
+        """Write ``res`` (the labeller's return value) with header ``ident`` to ``path`` atomically; returns the file's sha256. A truncated ``<path>.part`` left by a killed writer is overwritten, never read."""
+        path = str(path)
+        kind = ident["label_kind"]
+        arrays = {"slot": np.asarray(res["slot"], np.int32), "label": np.asarray(res["label"], np.float64),
+                  "status_counts_json": np.frombuffer(json.dumps(res["status_counts"], separators=(",", ":")).encode("utf-8"), np.uint8),
+                  "census_json": np.frombuffer(json.dumps(res["census"], separators=(",", ":")).encode("utf-8"), np.uint8)}
+        if kind == "kin_v1":
+            arrays["is_kin"] = np.asarray(res["is_kin"], bool)
+        header = {**ident, "version": LABEL_CACHE_VERSION, "n_labelled": int(res["n_labelled"]), "arrays_sha256": _cache_arrays_sha256(arrays)}
+        out = {**arrays, "header_json": np.frombuffer(canon(header), np.uint8)}
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        part = path + ".part"
+        _save_npz_det(part, out)
+        with open(part, "rb+") as fh:
+            fh.flush()
+            os.fsync(fh.fileno())
+>       os.replace(part, path)
+E       PermissionError: [WinError 32] Der Prozess kann nicht auf die Datei zugreifen, da sie von einem anderen Prozess verwendet wird: 'F:\\TanitAD-scratch\\kinlab\\tmp\\pt_kc_tests_a.log\\test_the_write_is_atomic_a_wri0\\absent.npz.part' -> 'F:\\TanitAD-scratch\\kinlab\\tmp\\pt_kc_tests_a.log\\test_the_write_is_atomic_a_wri0\\absent.npz'
+
+stack\tanitad\data\v8f_dagger.py:873: PermissionError
+============================== warnings summary ===============================
+tests/test_v8f_kincache.py::test_reachability_trainer_argv_cache_written_then_read_gt_and_the_plan_loss_equal_the_no_cache_run_exactly[speed_v1]
+  F:\TanitAD-scratch\kinlab\tree2\stack\scripts\v8f_mini_train.py:3839: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_kincache.py::test_the_write_is_atomic_a_writer_killed_half_way_leaves_the_old_cache_or_none
+1 failed, 23 passed, 1 warning in 119.22s (0:01:59)
+RC 1
+241M	/f/TanitAD-scratch/kinlab/tmp/pt_kc_tests_a.log
+4.0K	/f/TanitAD-scratch/kinlab/tmp/tt_kc_tests_a.log
+DONE

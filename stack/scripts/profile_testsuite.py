@@ -124,7 +124,7 @@ def _run_pytest(stack_dir: Path, durations: int) -> tuple[str, float]:
     ]
     t0 = time.perf_counter()
     proc = subprocess.run(
-        cmd, cwd=str(stack_dir), capture_output=True, text=True
+        cmd, cwd=str(stack_dir), capture_output=True, text=True, encoding="utf-8"
     )
     wall = time.perf_counter() - t0
     return proc.stdout + proc.stderr, wall

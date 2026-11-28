@@ -1,0 +1,35 @@
+baseline check_draw: {'sha256': '34c35cfe33d3', 'n_starts': 40}
+baseline check_classes: {'n': 40}
+baseline check_refs_real: {'npz': 20}
+baseline check_real_guard: {'grad_ncc_on': [1.0, 1.0, 1.0]}
+baseline check_manifest: {'faults': 5}
+baseline check_pool: {'n_cells': 2, 'n_cells_stage2': 1, 'n_cells_stage3': 1, 'idx2': [3], 'idx3': [42]}
+baseline check_footprint: {'deciding': 1304, 'beside': 482}
+baseline check_artifact: {'scenes': 20}
+baseline check_missing_npz: {'rc': 1}
+baseline check_changed_byte: {'rc': 1}
+baseline check_stage2_manifest: {'rc': 1}
+baseline check_busy_file: {'rc': 1}
+baseline check_requires: {'rc': 1}
+baseline check_two_roots: {'A': ['DISK_LOW pull C:/Users/Admin/t2a_scratch/stage2_rehearsal/fx', 'DISK_WILL_RUN_LOW pass deciding needs 0.21 GiB, free 9.00 Gi'], 'B': 'PASS'}
+baseline check_resume: {'rerun': 1, 'skipped': 41}
+baseline check_sftp: {'batch': 'C:/Users/Admin/t2a_scratch/stage2_rehearsal/fx_20261106_170304/s3/batch_170458.sftp', 'put': 4, 'reput': 4, 'skipped_complete': 4}
+baseline check_positive: {'seconds': 86.5, 'cells': 42, 'records': 84}
+check_draw[seed2]: RED (AssertionError: the draw (seed 2) a2af102e9515 is not GUARD_STARTS.json's 34c35cfe33d3)
+check_classes[threshold]: RED (AssertionError: ('guard_1', 75, 30.1488, 'moving'))
+check_refs_real[bad_listing]: RED (AssertionError: 4611c801: the mp4 is not the listing's)
+check_real_guard[no_npz]: RED (AssertionError: falsify_actors(frame 0) failed: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\t2a_scratch\\stage2_rehearsal\\refs_guard_2)
+check_manifest[not_applied]: RED (AssertionError: NOT_A_STAGE3_MANIFEST was not named: [])
+check_pool[idx_reused]: RED (AssertionError: pool refused: POOL_CLASH scene idx in both roots: [3])
+check_footprint[off_by_one]: RED (AssertionError: {'deciding': 1304, 'beside': 482})
+check_artifact[extra]: RED (AssertionError: ['pkg/MANIFEST3.json', 'pkg/code/t2v8f_stage3.py', 'pkg/jobs/stage3.cmd'])
+check_missing_npz[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE3.done', 'STAGE3_RESULT.json']))
+check_changed_byte[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE3.done', 'STAGE3_RESULT.json']))
+check_stage2_manifest[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE3.done', 'STAGE3_RESULT.json']))
+check_busy_file[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE3.done', 'STAGE3_RESULT.json']))
+check_requires[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE3.done', 'STAGE3_RESULT.json']))
+check_two_roots[wrong_drive]: RED (AssertionError: (A) the pull drive is below the floor: REFUSED ['DISK_LOW pull C:/Users/Admin/t2a_scratch/stage2_rehearsal/fx_20261106_170304/s3/pull3_two_171221: 9.0)
+check_resume[none_removed]: RED (AssertionError: re-run 0, skipped 42)
+check_sftp[stage2_root]: RED (AssertionError: ['-mkdir /D:/t2v8f', '-mkdir /D:/t2v8f/scenes2'])
+check_positive[cell_dropped]: RED (AssertionError: 42)
+mutations RED: 17 of 17

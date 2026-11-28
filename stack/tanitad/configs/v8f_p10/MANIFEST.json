@@ -1,0 +1,26 @@
+{
+ "p10_prior.pt": {
+  "sha256": "af5a29ddadb4c7d98f1db0d8116bddd0634e83a7e687fc601989d3fda984d7b3",
+  "bytes": 74475,
+  "source": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/p10/p10_prior.pt",
+  "fit": "v8f_mini_fit_p10.py: first 600 train4572 clips by sha12, stride 8, 5,398 rows, steer unit, seed 0"
+ },
+ "p10_fixture.npz": {
+  "windows": 565,
+  "window_len": 8,
+  "source": "eval141_kin.npz + p10_eval_pred6.npy (every 4th window with a full 8-frame window)"
+ },
+ "p10_pose_prior.pt": {
+  "sha256": "e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d",
+  "bytes": 74604,
+  "units": "pose_kappa",
+  "source": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-v8f-rung-alpha/raw/p10_pose/p10_pose_prior.pt",
+  "fit": "code/fit_p10_pose.py: ALL 4,572 train clips (train4572 view, manifest md5 77dafb50af0aedd1b940cf12c12518ef) by sha12, stride 8, 41,139 rows, pose-only kinematics (v0, ONE-frame a0, pose kappa0), seed 0, selection wd 1e-4 / 59 epochs"
+ },
+ "p10_pose_fixture.npz": {
+  "windows": 565,
+  "window_len": 8,
+  "poses_dtype": "float64",
+  "source": "eval141_kin.npz + raw/p10_pose/p10_pose_eval_pred6.npy (the fit script's own numpy-float64 predictions; every 4th window with a full 8-frame window)"
+ }
+}

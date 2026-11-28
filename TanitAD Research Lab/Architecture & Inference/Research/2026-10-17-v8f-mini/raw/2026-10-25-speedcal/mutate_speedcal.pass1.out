@@ -1,0 +1,140 @@
+mutation check of 60 mutants (+ the end-to-end-only variants); copy under C:\Users\Admin\sc_mut; python 3.13.5
+BASELINE (unmutated): rc 0  59 passed  36.6 s
+M01 CRASHED        27.8 s  FIT ON EVAL INSTEAD OF TRAIN: the `cal` arm applies a map fitted on the EVAL GT (the identity eval's cells), not the training-window fit
+      caught by: None  [None]  red controls: []
+M02 KILLED          8.7 s  DROP THE MASK: windows without a v9 row at T's tick enter the fit
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_mask_drops_windows_without_a_v9_row_or_a_finite_gt  [None]  red controls: []
+M03 KILLED          7.1 s  WRONG CELL SET: four speed cells, not the PREREG's five
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_cells_are_the_preregs_five_and_the_modes_and_tags  [None]  red controls: []
+M04 CRASHED        25.5 s  SWAP SEEDS in the reader: seed s reads the OTHER seed's eval dumps
+      caught by: None  [None]  red controls: []
+M05 KILLED          8.7 s  IDENTITY NOT EXACT: the identity map moves every cell by 1e-5
+      caught by: stack\tests\test_v8f_speedcal.py::test_calibration_in_the_standardised_cell_is_the_preregs_affine_map_and_the_identity_is_exact  [None]  red controls: []
+M06 KILLED         36.3 s  PERM CONTROL NOT ENFORCED: control 4 is forced to PASS
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_4_a_permuted_map_that_is_separated_better_and_one_that_is_merely_worse  [None]  red controls: []
+M07 KILLED         30.4 s  SWAP OUTCOME ROWS: HEAD BIAS PAYS <-> MAP DOES NOT TRANSFER in `decide`
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p00-p10-c00-c10-sec0-HEAD BIAS PAYS]  [None]  red controls: []
+M08 KILLED         33.3 s  CEILING ROUTING INVERTED: the two "no" rows swapped
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p010-p110-c010-c110-sec10-MAP DOES NOT TRANSFER]  [None]  red controls: []
+M09 KILLED          9.4 s  the fit is not least squares (a ridge-like shrinkage of the slope)
+      caught by: stack\tests\test_v8f_speedcal.py::test_masked_fit_known_values_and_it_is_numpys_lstsq  [None]  red controls: []
+M10 KILLED          8.6 s  permute_targets permutes nothing: control 4's map IS the real fit
+      caught by: stack\tests\test_v8f_speedcal.py::test_permuted_targets_are_a_fixed_seed_permutation_of_the_masked_targets_and_collapse_the_slope  [None]  red controls: []
+M11 KILLED         31.4 s  the perm map is fitted on the REAL targets (control 4 is not a regression)
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M12 SURVIVED       38.9 s  the permutation seed moved off the committed one
+      caught by: None  [None]  red controls: []
+M13 KILLED          6.7 s  the hook recalibrates four of the five speed cells (the first is left)
+      caught by: stack\tests\test_v8f_speedcal.py::test_hook_modes_on_a_tiny_model  [As...]  red controls: []
+M14 KILLED          5.3 s  a and b swapped in the hook
+      caught by: stack\tests\test_v8f_speedcal.py::test_hook_modes_on_a_tiny_model  [As...]  red controls: []
+M15 KILLED          8.3 s  WRONG UNITS: the shift is not divided by the cell's sd (identity stays exact)
+      caught by: stack\tests\test_v8f_speedcal.py::test_calibration_in_the_standardised_cell_is_the_preregs_affine_map_and_the_identity_is_exact  [None]  red controls: []
+M16 KILLED          8.7 s  the (a - 1) * mu term dropped (identity stays exact)
+      caught by: stack\tests\test_v8f_speedcal.py::test_calibration_in_the_standardised_cell_is_the_preregs_affine_map_and_the_identity_is_exact  [None]  red controls: []
+M17 KILLED         10.1 s  the hook clobbers the 55 non-speed cells (zeros)
+      caught by: stack\tests\test_v8f_speedcal.py::test_hook_modes_on_a_tiny_model  [As...]  red controls: []
+M18 KILLED         24.3 s  the CEILING map is the TRAINING fit (not fitted on the eval GT)
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M19 SURVIVED       29.1 s  the fit's checkpoint sha256 is no longer checked against the evaluated checkpoint
+      caught by: None  [None]  red controls: []
+M20 KILLED         22.4 s  the modes may be given out of order (ceiling before identity)
+      caught by: stack\tests\test_v8f_speedcal.py::test_evals_are_resumable_idempotent_and_refuse_a_wrong_sha_or_a_wrong_order  [None]  red controls: []
+M21 KILLED          3.0 s  F moved after the fact (0.1207 -> 0.1)
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_cells_are_the_preregs_five_and_the_modes_and_tags  [None]  red controls: []
+M22 KILLED         27.9 s  DROP THE SEPARATION TEST from PRIMARY
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p09-p19-c09-c19-sec9-MIXED]  [None]  red controls: []
+M23 KILLED         22.2 s  PRIMARY boundary: exactly -F no longer meets it
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p01-p11-c01-c11-sec1-HEAD BIAS PAYS]  [None]  red controls: []
+M24 KILLED         18.6 s  PARTIAL BIAS row unreachable
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p03-p13-c03-c13-sec3-PARTIAL BIAS]  [None]  red controls: []
+M25 KILLED         18.7 s  INFORMATION-LIMITED needs only one seed to be unseparated
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_rows_are_a_partition_in_the_tables_order  [None]  red controls: []
+M26 KILLED         19.9 s  CEILING boundary: exactly -F no longer meets it
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p011-p111-c011-c111-sec11-MAP DOES NOT TRANSFER]  [None]  red controls: []
+M27 KILLED         18.9 s  CEILING requires a separated interval (the PREREG's test is on the unrounded point)
+      caught by: stack\tests\test_v8f_speedcal.py::test_predicates_and_constants  [Asse...]  red controls: []
+M28 KILLED         18.7 s  CEILING ROUTING INVERTED in `ceiling_le`
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p010-p110-c010-c110-sec10-MAP DOES NOT TRANSFER]  [None]  red controls: []
+M29 KILLED         18.7 s  HEAD BIAS PAYS ignores SECONDARY
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p07-p17-c07-c17-sec7-MIXED]  [None]  red controls: []
+M30 KILLED         18.8 s  MAP DOES NOT TRANSFER needs CEILING at ONE seed, not both
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p012-p112-c012-c112-sec12-INFORMATION-LIMITED]  [None]  red controls: []
+M31 KILLED         18.0 s  PARTIAL drops its separation test
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_outcome_table[p09-p19-c09-c19-sec9-MIXED]  [None]  red controls: []
+M32 KILLED         18.5 s  the tier stamp is the eval json's mislabelled T0 string
+      caught by: stack\tests\test_v8f_speedcal.py::test_build_result_block_and_output_text  [None]  red controls: []
+M33 KILLED         19.1 s  the committed next step of INFORMATION-LIMITED is edited
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_tables_text_is_the_preregs_text  [None]  red controls: []
+M34 KILLED         18.5 s  the MAP DOES NOT TRANSFER condition text edited (the committed table is not the PREREG's)
+      caught by: stack\tests\test_v8f_speedcal.py::test_the_tables_text_is_the_preregs_text  [None]  red controls: []
+M35 KILLED         17.2 s  control 3's per-window tolerance loosened 1e-4 m -> 1 m
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_3_a_gt_arm_that_is_not_kindxs_speed_oracle  [None]  red controls: []
+M36 KILLED         19.4 s  control 2's lstsq tolerance loosened 1e-9 -> 1e-2
+      caught by: stack\tests\test_v8f_speedcal.py::test_predicates_and_constants  [asse...]  red controls: []
+M37 KILLED         19.7 s  control 1 is no longer EXACTLY 0.0 per window (1e-3 m allowed)
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_1_an_identity_that_is_not_the_identity  [None]  red controls: []
+M38 KILLED         18.1 s  control 1 no longer requires a = 1 and b = 0
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_1_an_identity_that_is_not_the_identity  [None]  red controls: []
+M39 KILLED         15.8 s  the fit clips need not be disjoint from the eval clips
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_2_a_fitted_map_that_is_not_lstsq  [None]  red controls: []
+M40 KILLED         15.8 s  disjointness no longer gates control 2
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_2_a_fitted_map_that_is_not_lstsq  [None]  red controls: []
+M41 KILLED         16.2 s  the cal arm's applied map is not compared with the fit json
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_2_a_fitted_map_that_is_not_lstsq  [None]  red controls: []
+M42 KILLED         16.3 s  control 4 no longer gates the seed's PASS
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_4_a_permuted_map_that_is_separated_better_and_one_that_is_merely_worse  [None]  red controls: []
+M43 KILLED         17.7 s  control 3 no longer gates the seed's PASS
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_3_a_gt_arm_that_is_not_kindxs_speed_oracle  [None]  red controls: []
+M44 KILLED         15.9 s  control 3 no longer requires the driver's code to equal the eval's oracle code exactly
+      caught by: stack\tests\test_v8f_speedcal.py::test_arm_control_3_a_gt_arm_that_is_not_kindxs_speed_oracle  [None]  red controls: []
+M45 KILLED         16.3 s  control 4 reads 'separated' as 'separated-better' (a worse perm map fails it)
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M46 SURVIVED       22.6 s  a LIMITED (smoke) eval is no longer refused
+      caught by: None  [None]  red controls: []
+M47 KILLED         18.3 s  the eval's checkpoint sha256 check removed
+      caught by: stack\tests\test_v8f_speedcal.py::test_refusals_of_load_all  [Failed: ...]  red controls: []
+M48 KILLED         20.1 s  the mode / seed / tag / target check removed
+      caught by: stack\tests\test_v8f_speedcal.py::test_refusals_of_load_all  [Failed: ...]  red controls: []
+M49 SURVIVED       30.7 s  a LIMITED (smoke) FIT is no longer refused
+      caught by: None  [None]  red controls: []
+M50 KILLED         27.2 s  the fit's checkpoint sha256 check removed
+      caught by: stack\tests\test_v8f_speedcal.py::test_refusals_of_load_all  [Failed: ...]  red controls: []
+M51 KILLED         18.5 s  SWAP SEEDS: seed s is checked against the OTHER seed's fit
+      caught by: stack\tests\test_v8f_speedcal.py::test_fit_arrays_are_the_trainers_windows_and_what_the_controls_refit  [None]  red controls: []
+M52 KILLED         32.3 s  the STOP marker renamed
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_stops_with_the_marker_on_a_missing_input_and_still_banks_what_exists  [None]  red controls: []
+M53 KILLED         29.1 s  the free-space guard is off
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M54 KILLED         32.3 s  X_s0's committed sha256 edited
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M55 KILLED         35.8 s  the runner accepts X_s0 == X_s1 (no second seed)
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M56 KILLED         29.1 s  SWAP SEEDS in the runner: seed 0 runs on X_s1
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M57 CRASHED        26.2 s  a STOP no longer banks what exists
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_stops_with_the_marker_on_a_missing_input_and_still_banks_what_exists  [None]  red controls: []
+M58 KILLED         30.8 s  the substitute control reads the banked npz WITHOUT its banked json
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M59 KILLED         32.2 s  the stages run in the wrong order (evals before the fits)
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M60 KILLED         31.1 s  the paired tool's A and B swapped (own - cal, not cal - own)
+      caught by: stack\tests\test_v8f_speedcal.py::test_runner_syntax_dry_run_and_load_bearing_lines  [None]  red controls: []
+M01e CRASHED        16.8 s  FIT ON EVAL INSTEAD OF TRAIN: the `cal` arm applies a map fitted on the EVAL GT (the identity eval's cells), not the training-window fit  [END-TO-END TESTS ONLY]
+      caught by: None  [None]  red controls: []
+M05e UNATTRIBUTED   20.1 s  IDENTITY NOT EXACT: the identity map moves every cell by 1e-5  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M09e UNATTRIBUTED   19.1 s  the fit is not least squares (a ridge-like shrinkage of the slope)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M13e UNATTRIBUTED   17.6 s  the hook recalibrates four of the five speed cells (the first is left)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M14e UNATTRIBUTED   18.0 s  a and b swapped in the hook  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M15e UNATTRIBUTED   17.0 s  WRONG UNITS: the shift is not divided by the cell's sd (identity stays exact)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M17e UNATTRIBUTED   16.0 s  the hook clobbers the 55 non-speed cells (zeros)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+M18e UNATTRIBUTED   15.5 s  the CEILING map is the TRAINING fit (not fitted on the eval GT)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live  [None]  red controls: []
+BASELINE (restored): rc 0  59 passed  27.2 s
+SUMMARY {'KILLED': 53, 'CRASHED': 4, 'SURVIVED': 4, 'UNATTRIBUTED': 7, 'BAD': 0}  all killed and the restored tree green: False

@@ -1,0 +1,130 @@
+{
+ "class": "MEASURED",
+ "n_target": 86,
+ "host": "dev box local GPU (Colab T4 capacity was 503)",
+ "device": "NVIDIA GeForce RTX 4060",
+ "sm": "sm_89",
+ "torch": "2.11.0+cu128",
+ "extraction": {
+  "path": "code/f1_run86.py (UNCHANGED, host-agnostic via F86_* env)",
+  "md5": "4bf1f744f0d51723838e6248fb52b545"
+ },
+ "wall_s_total": 2612.0,
+ "peak_gb_max": 4.24,
+ "calls": [
+  {
+   "call": 0,
+   "requested": 1,
+   "wall_s": 32.0,
+   "rc": 0,
+   "peak_gb": 4.23,
+   "complete_after": 1,
+   "gained": 1
+  },
+  {
+   "call": 1,
+   "requested": 85,
+   "wall_s": 2579.5,
+   "rc": 0,
+   "peak_gb": 4.24,
+   "complete_after": 86,
+   "gained": 85
+  }
+ ],
+ "proof": {
+  "ran": true,
+  "clip_id": "01b24287-0026-4e07-89a5-8767cd2c1a7b",
+  "rc": 0,
+  "liveness_n_det": {
+   "road": 4,
+   "sky": 1
+  },
+  "n_det_total": 319,
+  "n_scene_det_total": 320,
+  "n_err_total": 0,
+  "per_concept_hits": {
+   "car": 99,
+   "truck": 16,
+   "bus": 7,
+   "pedestrian": 33,
+   "traffic light": 93,
+   "traffic sign": 71
+  },
+  "per_scene_hits": {
+   "lane marking": 136,
+   "road curb": 45,
+   "guardrail": 8,
+   "road marking": 131
+  },
+  "engine": {
+   "confidence_threshold": 0.25,
+   "confidence_threshold_set_via": "ctor kwarg",
+   "schema_version": 2,
+   "weights": "facebook/sam3 (load_from_HF=True)",
+   "dtype_fix_applied": true
+  },
+  "peak_gb": 4.23,
+  "wall_s": 32.0,
+  "PASS": true
+ },
+ "pushed_to_hf": false,
+ "completion_rule": "liveness control present AND zero errors AND schema>=2 AND engine.confidence_threshold==0.25 \u2014 never a file count (C77)",
+ "census": {
+  "n_records": 86,
+  "n_det_total": 7478,
+  "n_scene_det_total": 17618,
+  "n_complete": 86,
+  "per_concept_totals": {
+   "car": 3207,
+   "traffic sign": 2373,
+   "traffic light": 1033,
+   "pedestrian": 462,
+   "truck": 298,
+   "bus": 102,
+   "cyclist": 3
+  },
+  "per_scene_totals": {
+   "road marking": 7790,
+   "lane marking": 6741,
+   "road curb": 2188,
+   "guardrail": 899
+  },
+  "error_census": {},
+  "clips_with_zero_det": 2,
+  "liveness_live": 86,
+  "liveness_dead": 0,
+  "records_without_control": 0,
+  "require_schema": 2,
+  "require_conf": 0.25,
+  "wrong_schema": 0,
+  "wrong_conf": 0,
+  "coverage": "86/86",
+  "missing": [],
+  "extra": [],
+  "pass_": true
+ },
+ "zero_split": {
+  "empty_scene_control_live": 2,
+  "dead_control": 0,
+  "clips": [
+   {
+    "clip_id": "6149267e-41ed-46e8-8ae1-5bc177f641a9",
+    "liveness_live": true,
+    "liveness_n_det": {
+     "road": 1,
+     "sky": 1
+    }
+   },
+   {
+    "clip_id": "922bb1c8-cce5-495e-abf8-8b2dbfd5051b",
+    "liveness_live": true,
+    "liveness_n_det": {
+     "road": 4,
+     "sky": 1
+    }
+   }
+  ]
+ },
+ "residual": [],
+ "PASS": true
+}

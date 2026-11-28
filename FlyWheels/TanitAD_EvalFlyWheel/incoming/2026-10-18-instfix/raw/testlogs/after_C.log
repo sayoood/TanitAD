@@ -1,0 +1,139 @@
+=== stack/tests/test_run_gate_eval_metric.py  rc=0  1s
+..............                                                           [100%]
+14 passed in 0.34s
+=== taniteval/tests/test_benchreport_contract.py  rc=0  1s
+sssssssssss                                                              [100%]
+11 skipped in 0.11s
+=== taniteval/tests/test_benchreport_golden.py  rc=0  0s
+ssssssssss                                                               [100%]
+10 skipped in 0.11s
+=== taniteval/tests/test_benchreport_legacy_compat.py  rc=0  3s
+.....                                                                    [100%]
+5 passed in 1.98s
+=== taniteval/tests/test_benchreport_projection.py  rc=0  3s
+.........                                                                [100%]
+9 passed in 2.10s
+=== taniteval/tests/test_bench_navsim_navtest_single_stage.py  rc=1  6s
+
+tests\test_bench_navsim_navtest_single_stage.py:352: AssertionError
+---------------------------- Captured stdout call -----------------------------
+08:54:03 [bench] run 20261018T065403Z-navsim_v2-none-69cbc0 -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-5345\test_live_dry_run_on_the_full_0\navsim_v2\navtest_single_stage\20261018T065403Z-navsim_v2-none-69cbc0
+08:54:03 [navsim] CV added by rule (MANDATORY NavSim floor)
+08:54:03 [navsim] STOP added by rule (MANDATORY NavSim floor)
+08:54:04 ⛔ REFUSED: navtest_single_stage: no token -> log_name map at C:\Users\Admin\instfix\tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-estimator-and-route-leak\raw\cluster_maps\navtest.json
+08:54:04 [bench] report: SKIPPED
+08:54:04 [bench] REFUSED in 0.5 s -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-5345\test_live_dry_run_on_the_full_0\navsim_v2\navtest_single_stage\20261018T065403Z-navsim_v2-none-69cbc0
+BENCH_RUN_DIR=C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5345/test_live_dry_run_on_the_full_0/navsim_v2/navtest_single_stage/20261018T065403Z-navsim_v2-none-69cbc0
+BENCH_STATUS=REFUSED
+BENCH_RETRYABLE=0
+=========================== short test summary info ===========================
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_the_devkit_yaml_is_read_as_one_stage_with_the_literal_counts
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_export_agent_inputs_is_e2_plus_marked_additions
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_MUTATION_an_unmarked_edit_to_the_export_is_caught
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_offline_dry_run_dispatches_to_the_one_stage_path
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_live_dry_run_on_the_smoke_subset
+FAILED tests/test_bench_navsim_navtest_single_stage.py::test_live_dry_run_on_the_full_split
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_single_stage_run_completes_and_validates
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_headlines_are_the_banked_average_all_frames_literals
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_controls_formula_average_and_counts_pass
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_single_block_pairs_and_refused_interval
+ERROR tests/test_bench_navsim_navtest_single_stage.py::test_offline_four_families_reported_or_refused_per_family
+6 failed, 24 passed, 5 errors in 4.95s
+=== taniteval/tests/test_bench_navsim_reuse_floors.py  rc=0  1s
+......                                                                   [100%]
+6 passed in 0.64s
+=== taniteval/tests/test_bench_navsim_reuse_seams.py  rc=0  1s
+..........                                                               [100%]
+10 passed in 0.26s
+=== taniteval/tests/test_bench_suite_gpu_gap.py  rc=0  2s
+...................................                                      [100%]
+35 passed in 1.37s
+=== taniteval/tests/test_bench_suite_legacy_compat.py  rc=0  4s
+............                                                             [100%]
+12 passed in 2.52s
+=== taniteval/tests/test_bench_suite_navsim_offline.py  rc=1  2s
+        from taniteval.bench.navsim import artifacts as ART
+        from taniteval.bench.navsim import summarize as S
+        csv = E2 / "score_A1_ego_cmd.csv"
+>       assert csv.exists(), f"MISSING E2 fixture {csv}"
+E       AssertionError: MISSING E2 fixture C:\Users\Admin\instfix\tree\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\raw\score_A1_ego_cmd.csv
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/Users/Admin/instfix/tree/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/score_A1_ego_cmd.csv').exists
+
+tests\test_bench_suite_navsim_offline.py:214: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_bench_suite_navsim_offline.py::test_hybrid_arm_headline_is_refused_with_reason_and_n
+ERROR tests/test_bench_suite_navsim_offline.py::test_offline_run_completes_and_validates
+ERROR tests/test_bench_suite_navsim_offline.py::test_floor_arms_route_as_banked
+ERROR tests/test_bench_suite_navsim_offline.py::test_headlines_are_the_banked_literals
+ERROR tests/test_bench_suite_navsim_offline.py::test_reference_checks_fire - ...
+ERROR tests/test_bench_suite_navsim_offline.py::test_e2_statistics_reproduced
+ERROR tests/test_bench_suite_navsim_offline.py::test_controls_c4_c5_pass_on_banked
+ERROR tests/test_bench_suite_navsim_offline.py::test_no_interval_on_warmup - ...
+ERROR tests/test_bench_suite_navsim_offline.py::test_cv_families_reproduce_e1_artifact
+ERROR tests/test_bench_suite_navsim_offline.py::test_per_log_and_stage_blocks
+ERROR tests/test_bench_suite_navsim_offline.py::test_no_criteria_violations_on_any_arm
+ERROR tests/test_bench_suite_navsim_offline.py::test_stop_lateral_terms_are_refused_not_absent
+ERROR tests/test_bench_suite_navsim_offline.py::test_gallery_inputs_have_w5s_shape
+1 failed, 18 passed, 12 errors in 1.25s
+=== taniteval/tests/test_bench_suite_schema.py  rc=0  1s
+................................                                         [100%]
+32 passed in 0.10s
+=== taniteval/tests/test_bench_suite_submission.py  rc=1  1s
+E       AssertionError: no PI decision record could be read from HEAD — the gate must then refuse anyway
+E       assert {}
+
+tests\test_bench_suite_submission.py:40: AssertionError
+__________________ test_worktree_only_marker_does_not_count ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5352/test_worktree_only_marker_does0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F4062736F0>
+
+    def test_worktree_only_marker_does_not_count(tmp_path, monkeypatch):
+        """The records are read from HEAD (`git show HEAD:<file>`), so an agent's worktree edit cannot
+        manufacture an approval."""
+        import subprocess
+        out = subprocess.run(["git", "-c", "safe.directory=*", "-C", str(S.REPO), "show",
+                              "HEAD:Project Steering/PI_DECISION_QUEUE.md"], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace")
+>       assert out.returncode == 0 and "SUBMISSION-APPROVED" not in out.stdout
+E       AssertionError: assert (128 == 0)
+E        +  where 128 = CompletedProcess(args=['git', '-c', 'safe.directory=*', '-C', 'C:\\Users\\Admin\\instfix\\tree', 'show', 'HEAD:Project...QUEUE.md'], returncode=128, stdout='', stderr='fatal: not a git repository (or any of the parent directories): .git\n').returncode
+
+tests\test_bench_suite_submission.py:77: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_bench_suite_submission.py::test_no_approval_exists_in_the_real_committed_records
+FAILED tests/test_bench_suite_submission.py::test_worktree_only_marker_does_not_count
+2 failed, 7 passed in 0.23s
+=== taniteval/tests/test_estimator_closeout.py  rc=0  3s
+...........................                                              [100%]
+27 passed in 2.18s
+=== taniteval/tests/test_gpu_gap_limit_reachable.py  rc=0  1s
+...................                                                      [100%]
+19 passed in 0.27s
+=== taniteval/tests/test_runner_gate_print.py  rc=0  3s
+............                                                             [100%]
+12 passed in 1.83s
+=== taniteval/tests/test_leaderboard.py  rc=0  1s
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 94%]
+ssss                                                                     [100%]
+76 skipped in 0.21s
+=== taniteval/tests/test_nuscenes_planning.py  rc=1  15s
+..................................F.......................               [100%]
+================================== FAILURES ===================================
+_______________ test_devkit_val_split_is_the_pinned_devkit_list _______________
+
+    def test_devkit_val_split_is_the_pinned_devkit_list():
+>       src = open(os.path.join(PKG, "raw", "devkit_splits_b40adc4.py.txt"), encoding="utf-8").read()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\instfix\\tree\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-19-nuscenes-planning-harness\\raw\\devkit_splits_b40adc4.py.txt'
+
+tests\test_nuscenes_planning.py:426: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_nuscenes_planning.py::test_devkit_val_split_is_the_pinned_devkit_list
+1 failed, 57 passed in 13.64s
+=== stack/tests/test_refcv3_ablations.py  rc=0  42s
+.s...........................                                            [100%]
+28 passed, 1 skipped in 40.55s
+=== DONE total 87s

@@ -1,0 +1,1606 @@
+{
+ "schema": "taniteval.bench.summary/1",
+ "run_id": "20260926T140356Z-nuscenes_ol-none-0660f6",
+ "benchmark": "nuscenes_ol",
+ "protocol": "nuScenes_OL_L2_stp3",
+ "split": "val",
+ "claim_bearing": false,
+ "evidence_class": "MEASURED",
+ "stamps": {
+  "tier": "OPEN-LOOP-L2",
+  "loop": {
+   "planner": "OPEN"
+  },
+  "closed_loop": false
+ },
+ "headline_metric": {
+  "name": "L2 avg 1/2/3 s (stp3-temavg)",
+  "column": "L2_m",
+  "higher_is_better": false,
+  "statistic": "stp3-temavg reduction on vad@1688c4b"
+ },
+ "floors": [
+  "STOP",
+  "CV"
+ ],
+ "arms": {
+  "GT": {
+   "kind": "reference",
+   "status": "OK",
+   "declared_inputs": [
+    "logged_future_lidar_origin (REFERENCE - the instrument's own floor, not a plan)"
+   ],
+   "headline": {
+    "value": 0.0,
+    "column": "L2_m",
+    "n": 5119,
+    "statistic": "mean L2 over the 1/2/3 s columns, stp3-temavg reduction, vad@1688c4b pipeline"
+   },
+   "submetrics": {
+    "L2_m": {
+     "1s": 0.0,
+     "2s": 0.0,
+     "3s": 0.0,
+     "avg_1_2_3s": 0.0
+    },
+    "collision_box_pct": {
+     "1s": 0.0,
+     "2s": 0.0,
+     "3s": 0.0,
+     "avg_1_2_3s": 0.0
+    },
+    "collision_point_pct": {
+     "1s": 0.0,
+     "2s": 0.0,
+     "3s": 0.0,
+     "avg_1_2_3s": 0.0
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "no pre-registered cluster unit for nuScenes (scene vs log); the published rows carry none",
+    "n": 5119
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "along-track + speed error only; distance-keeping (headway/TTC to the lead agent) is not computed by this harness"
+    },
+    "lateral": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "cross-track + heading error only; curvature and yaw-rate error at 0.5 s waypoint spacing are not computed"
+    },
+    "tactical": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "manoeuvre decision = the +-2 m final-offset class of the plan vs the GT class (a LABEL, never an input); no goal-setting target"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "n": 5119,
+     "reason": "the nuScenes open-loop protocol has no route/goal target; a route could come from the map expansion + CAN 'route' - not implemented"
+    }
+   },
+   "files": {
+    "scores": "scores/GT.csv",
+    "artifact": "artifacts/GT.json",
+    "criteria": "criteria/GT.txt"
+   },
+   "statistics": {
+    "four_family_supplements": {
+     "longitudinal": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "metrics": {
+       "along_track_abs_m": {
+        "1s": 0.0,
+        "2s": 0.0,
+        "3s": 0.0
+       },
+       "along_track_signed_m": {
+        "1s": 0.0,
+        "2s": 0.0,
+        "3s": 0.0
+       },
+       "speed_abs_err_mps": {
+        "1s": 0.0,
+        "2s": 0.0,
+        "3s": 0.0
+       }
+      },
+      "not_part_of_published_protocol": true,
+      "reason": "along-track + speed error only; distance-keeping (headway/TTC to the lead agent) is not computed by this harness"
+     },
+     "lateral": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "metrics": {
+       "cross_track_abs_m": {
+        "1s": 0.0,
+        "2s": 0.0,
+        "3s": 0.0
+       },
+       "heading_abs_err_deg_moving": {
+        "1s": 0.0,
+        "2s": 0.0,
+        "3s": 0.0
+       },
+       "n_moving": {
+        "1s": 4138,
+        "2s": 4158,
+        "3s": 4166
+       }
+      },
+      "not_part_of_published_protocol": true,
+      "reason": "cross-track + heading error only; curvature and yaw-rate error at 0.5 s waypoint spacing are not computed"
+     },
+     "tactical": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "not_part_of_published_protocol": true,
+      "metrics": {
+       "manoeuvre_agreement": 1.0,
+       "classes": [
+        "LEFT",
+        "FORWARD",
+        "RIGHT"
+       ],
+       "confusion_gt_rows_pred_cols": [
+        [
+         286,
+         0,
+         0
+        ],
+        [
+         0,
+         4436,
+         0
+        ],
+        [
+         0,
+         0,
+         397
+        ]
+       ]
+      },
+      "reason": "manoeuvre decision = the +-2 m final-offset class of the plan vs the GT class (a LABEL, never an input); no goal-setting target"
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "n": 5119,
+      "not_part_of_published_protocol": true,
+      "reason": "the nuScenes open-loop protocol has no route/goal target; a route could come from the map expansion + CAN 'route' - not implemented"
+     }
+    },
+    "protocol_rows": [
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "0.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "3.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "3s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "avg_1_2_3s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "0.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "3.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "3s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "0.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "3.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "3s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "0.5s",
+      "value": 1.1134987302207462,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1.0s",
+      "value": 1.0353584684508692,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1.5s",
+      "value": 1.0028000260467538,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2.0s",
+      "value": 0.9865208048446961,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2.5s",
+      "value": 0.9611252197694862,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "3.0s",
+      "value": 0.937683141238523,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1s",
+      "value": 1.0353584684508692,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2s",
+      "value": 0.9865208048446961,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "3s",
+      "value": 0.937683141238523,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.986520804844696,
+      "n_samples": 5119
+     }
+    ]
+   },
+   "paired": {
+    "STOP": {
+     "status": "OK",
+     "headline_delta": -6.590993453736309,
+     "n_common": 5119,
+     "note": "mean paired difference of per-sample avg-L2 (arm - floor); no interval (UNAVAILABLE: cluster unit not pre-registered)"
+    },
+    "CV": {
+     "status": "OK",
+     "headline_delta": -0.8181846342993768,
+     "n_common": 5119,
+     "note": "mean paired difference of per-sample avg-L2 (arm - floor); no interval (UNAVAILABLE: cluster unit not pre-registered)"
+    }
+   }
+  },
+  "STOP": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [],
+   "headline": {
+    "value": 6.590993453736307,
+    "column": "L2_m",
+    "n": 5119,
+    "statistic": "mean L2 over the 1/2/3 s columns, stp3-temavg reduction, vad@1688c4b pipeline"
+   },
+   "submetrics": {
+    "L2_m": {
+     "1s": 3.945715462484515,
+     "2s": 6.588235707993876,
+     "3s": 9.239029190730534,
+     "avg_1_2_3s": 6.590993453736307
+    },
+    "collision_box_pct": {
+     "1s": 0.6934948232076578,
+     "2s": 3.6042195741355734,
+     "3s": 6.827505372142997,
+     "avg_1_2_3s": 3.708406589828743
+    },
+    "collision_point_pct": {
+     "1s": 0.0,
+     "2s": 0.02441883180308654,
+     "3s": 0.02930259816370385,
+     "avg_1_2_3s": 0.017907143322263463
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "no pre-registered cluster unit for nuScenes (scene vs log); the published rows carry none",
+    "n": 5119
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "along-track + speed error only; distance-keeping (headway/TTC to the lead agent) is not computed by this harness"
+    },
+    "lateral": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "cross-track + heading error only; curvature and yaw-rate error at 0.5 s waypoint spacing are not computed"
+    },
+    "tactical": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "manoeuvre decision = the +-2 m final-offset class of the plan vs the GT class (a LABEL, never an input); no goal-setting target"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "n": 5119,
+     "reason": "the nuScenes open-loop protocol has no route/goal target; a route could come from the map expansion + CAN 'route' - not implemented"
+    }
+   },
+   "files": {
+    "scores": "scores/STOP.csv",
+    "artifact": "artifacts/STOP.json",
+    "criteria": "criteria/STOP.txt"
+   },
+   "statistics": {
+    "four_family_supplements": {
+     "longitudinal": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "metrics": {
+       "along_track_abs_m": {
+        "1s": 5.259171109754384,
+        "2s": 10.525902007003241,
+        "3s": 15.804175046987778
+       },
+       "along_track_signed_m": {
+        "1s": -5.2579761024669835,
+        "2s": -10.510898288851012,
+        "3s": -15.758256058586587
+       },
+       "speed_abs_err_mps": {
+        "1s": 5.273900200613368,
+        "2s": 5.3113672944580665,
+        "3s": 5.347290505376425
+       }
+      },
+      "not_part_of_published_protocol": true,
+      "reason": "along-track + speed error only; distance-keeping (headway/TTC to the lead agent) is not computed by this harness"
+     },
+     "lateral": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "metrics": {
+       "cross_track_abs_m": {
+        "1s": 0.09383167958492522,
+        "2s": 0.34920195947375265,
+        "3s": 0.6347461371720317
+       },
+       "heading_abs_err_deg_moving": {
+        "1s": 2.7800481368484933,
+        "2s": 5.185011703188554,
+        "3s": 7.346719132693006
+       },
+       "n_moving": {
+        "1s": 4138,
+        "2s": 4158,
+        "3s": 4166
+       }
+      },
+      "not_part_of_published_protocol": true,
+      "reason": "cross-track + heading error only; curvature and yaw-rate error at 0.5 s waypoint spacing are not computed"
+     },
+     "tactical": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "not_part_of_published_protocol": true,
+      "metrics": {
+       "manoeuvre_agreement": 0.8665755030279352,
+       "classes": [
+        "LEFT",
+        "FORWARD",
+        "RIGHT"
+       ],
+       "confusion_gt_rows_pred_cols": [
+        [
+         0,
+         286,
+         0
+        ],
+        [
+         0,
+         4436,
+         0
+        ],
+        [
+         0,
+         397,
+         0
+        ]
+       ]
+      },
+      "reason": "manoeuvre decision = the +-2 m final-offset class of the plan vs the GT class (a LABEL, never an input); no goal-setting target"
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "n": 5119,
+      "not_part_of_published_protocol": true,
+      "reason": "the nuScenes open-loop protocol has no route/goal target; a route could come from the map expansion + CAN 'route' - not implemented"
+     }
+    },
+    "protocol_rows": [
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "0.5s",
+      "value": 2.6279711337678506,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1.0s",
+      "value": 3.945715462484515,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1.5s",
+      "value": 5.265839511606,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2.0s",
+      "value": 6.588235707993876,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2.5s",
+      "value": 7.912707548014542,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "3.0s",
+      "value": 9.239029190730534,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1s",
+      "value": 3.945715462484515,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2s",
+      "value": 6.588235707993876,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "3s",
+      "value": 9.239029190730534,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "avg_1_2_3s",
+      "value": 6.590993453736307,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "0.5s",
+      "value": 0.11721039265481539,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1.0s",
+      "value": 0.6934948232076578,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1.5s",
+      "value": 1.920948101842808,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2.0s",
+      "value": 3.6042195741355734,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2.5s",
+      "value": 5.247118577847236,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "3.0s",
+      "value": 6.827505372142997,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1s",
+      "value": 0.6934948232076578,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2s",
+      "value": 3.6042195741355734,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "3s",
+      "value": 6.827505372142997,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 3.708406589828743,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "0.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1.5s",
+      "value": 0.013023376961646155,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2.0s",
+      "value": 0.02441883180308654,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2.5s",
+      "value": 0.031256104707950774,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "3.0s",
+      "value": 0.02930259816370385,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2s",
+      "value": 0.02441883180308654,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "3s",
+      "value": 0.02930259816370385,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.017907143322263463,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "0.5s",
+      "value": 1.1134987302207462,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1.0s",
+      "value": 1.0353584684508692,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1.5s",
+      "value": 1.0028000260467538,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2.0s",
+      "value": 0.9865208048446961,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2.5s",
+      "value": 0.9611252197694862,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "3.0s",
+      "value": 0.937683141238523,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1s",
+      "value": 1.0353584684508692,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2s",
+      "value": 0.9865208048446961,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "3s",
+      "value": 0.937683141238523,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.986520804844696,
+      "n_samples": 5119
+     }
+    ]
+   },
+   "paired": {
+    "STOP": {
+     "status": "SELF"
+    },
+    "CV": {
+     "status": "OK",
+     "headline_delta": 5.772808819436932,
+     "n_common": 5119,
+     "note": "mean paired difference of per-sample avg-L2 (arm - floor); no interval (UNAVAILABLE: cluster unit not pre-registered)"
+    }
+   }
+  },
+  "CV": {
+   "kind": "floor",
+   "status": "OK",
+   "declared_inputs": [
+    "ego_pose(t<=t0) -> v0, heading (causal)"
+   ],
+   "headline": {
+    "value": 0.8181846342993767,
+    "column": "L2_m",
+    "n": 5119,
+    "statistic": "mean L2 over the 1/2/3 s columns, stp3-temavg reduction, vad@1688c4b pipeline"
+   },
+   "submetrics": {
+    "L2_m": {
+     "1s": 0.3669083570607627,
+     "2s": 0.7727993485667666,
+     "3s": 1.3148461972706011,
+     "avg_1_2_3s": 0.8181846342993767
+    },
+    "collision_box_pct": {
+     "1s": 0.07814026176987693,
+     "2s": 0.22465325258839616,
+     "3s": 0.7065182001693039,
+     "avg_1_2_3s": 0.33643723817585897
+    },
+    "collision_point_pct": {
+     "1s": 0.0,
+     "2s": 0.004883766360617308,
+     "3s": 0.013023376961646155,
+     "avg_1_2_3s": 0.005969047774087821
+    }
+   },
+   "interval": {
+    "status": "UNAVAILABLE",
+    "reason": "no pre-registered cluster unit for nuScenes (scene vs log); the published rows carry none",
+    "n": 5119
+   },
+   "families": {
+    "longitudinal": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "along-track + speed error only; distance-keeping (headway/TTC to the lead agent) is not computed by this harness"
+    },
+    "lateral": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "cross-track + heading error only; curvature and yaw-rate error at 0.5 s waypoint spacing are not computed"
+    },
+    "tactical": {
+     "status": "PARTIAL",
+     "n": 5119,
+     "reason": "manoeuvre decision = the +-2 m final-offset class of the plan vs the GT class (a LABEL, never an input); no goal-setting target"
+    },
+    "strategic": {
+     "status": "UNAVAILABLE",
+     "n": 5119,
+     "reason": "the nuScenes open-loop protocol has no route/goal target; a route could come from the map expansion + CAN 'route' - not implemented"
+    }
+   },
+   "files": {
+    "scores": "scores/CV.csv",
+    "artifact": "artifacts/CV.json",
+    "criteria": "criteria/CV.txt"
+   },
+   "statistics": {
+    "four_family_supplements": {
+     "longitudinal": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "metrics": {
+       "along_track_abs_m": {
+        "1s": 0.45217466826928837,
+        "2s": 1.2410511434873632,
+        "3s": 2.3643693284421294
+       },
+       "along_track_signed_m": {
+        "1s": -0.16971937925278682,
+        "2s": -0.45242255128531556,
+        "3s": -0.8569181021074284
+       },
+       "speed_abs_err_mps": {
+        "1s": 0.5665948905883794,
+        "2s": 0.9209050163637651,
+        "3s": 1.242987212625013
+       }
+      },
+      "not_part_of_published_protocol": true,
+      "reason": "along-track + speed error only; distance-keeping (headway/TTC to the lead agent) is not computed by this harness"
+     },
+     "lateral": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "metrics": {
+       "cross_track_abs_m": {
+        "1s": 0.13764326738040086,
+        "2s": 0.42494182779116635,
+        "3s": 0.849992060502342
+       },
+       "heading_abs_err_deg_moving": {
+        "1s": 2.769916159337647,
+        "2s": 5.179426008886823,
+        "3s": 7.341297025687939
+       },
+       "n_moving": {
+        "1s": 4138,
+        "2s": 4158,
+        "3s": 4166
+       }
+      },
+      "not_part_of_published_protocol": true,
+      "reason": "cross-track + heading error only; curvature and yaw-rate error at 0.5 s waypoint spacing are not computed"
+     },
+     "tactical": {
+      "status": "PARTIAL",
+      "n": 5119,
+      "not_part_of_published_protocol": true,
+      "metrics": {
+       "manoeuvre_agreement": 0.8665755030279352,
+       "classes": [
+        "LEFT",
+        "FORWARD",
+        "RIGHT"
+       ],
+       "confusion_gt_rows_pred_cols": [
+        [
+         0,
+         286,
+         0
+        ],
+        [
+         0,
+         4436,
+         0
+        ],
+        [
+         0,
+         397,
+         0
+        ]
+       ]
+      },
+      "reason": "manoeuvre decision = the +-2 m final-offset class of the plan vs the GT class (a LABEL, never an input); no goal-setting target"
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "n": 5119,
+      "not_part_of_published_protocol": true,
+      "reason": "the nuScenes open-loop protocol has no route/goal target; a route could come from the map expansion + CAN 'route' - not implemented"
+     }
+    },
+    "protocol_rows": [
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "0.5s",
+      "value": 0.21726986822281347,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1.0s",
+      "value": 0.3669083570607627,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1.5s",
+      "value": 0.5520427312439113,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2.0s",
+      "value": 0.7727993485667666,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2.5s",
+      "value": 1.0276179182701077,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "3.0s",
+      "value": 1.3148461972706011,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "1s",
+      "value": 0.3669083570607627,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "2s",
+      "value": 0.7727993485667666,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "3s",
+      "value": 1.3148461972706011,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "L2_m",
+      "horizon": "avg_1_2_3s",
+      "value": 0.8181846342993767,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "0.5s",
+      "value": 0.058605196327407696,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1.0s",
+      "value": 0.07814026176987693,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1.5s",
+      "value": 0.12372208113563847,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2.0s",
+      "value": 0.22465325258839616,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2.5s",
+      "value": 0.41805040046884157,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "3.0s",
+      "value": 0.7065182001693039,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "1s",
+      "value": 0.07814026176987693,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "2s",
+      "value": 0.22465325258839616,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "3s",
+      "value": 0.7065182001693039,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_box_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.33643723817585897,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "0.5s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1.0s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1.5s",
+      "value": 0.006511688480823077,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2.0s",
+      "value": 0.004883766360617308,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2.5s",
+      "value": 0.007814026176987694,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "3.0s",
+      "value": 0.013023376961646155,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "1s",
+      "value": 0.0,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "2s",
+      "value": 0.004883766360617308,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "3s",
+      "value": 0.013023376961646155,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "collision_point_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.005969047774087821,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "0.5s",
+      "value": 1.1134987302207462,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1.0s",
+      "value": 1.0353584684508692,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1.5s",
+      "value": 1.0028000260467538,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2.0s",
+      "value": 0.9865208048446961,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2.5s",
+      "value": 0.9611252197694862,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "3.0s",
+      "value": 0.937683141238523,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "1s",
+      "value": 1.0353584684508692,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "2s",
+      "value": 0.9865208048446961,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "3s",
+      "value": 0.937683141238523,
+      "n_samples": 5119
+     },
+     {
+      "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+      "protocol": "nuScenes_OL_L2_stp3",
+      "metric": "gt_collision_box_pct",
+      "horizon": "avg_1_2_3s",
+      "value": 0.986520804844696,
+      "n_samples": 5119
+     }
+    ]
+   },
+   "paired": {
+    "STOP": {
+     "status": "OK",
+     "headline_delta": -5.772808819436932,
+     "n_common": 5119,
+     "note": "mean paired difference of per-sample avg-L2 (arm - floor); no interval (UNAVAILABLE: cluster unit not pre-registered)"
+    },
+    "CV": {
+     "status": "SELF"
+    }
+   }
+  }
+ },
+ "controls": {
+  "gt_control": {
+   "status": "OK",
+   "n": 5119,
+   "protocol_tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+   "gt_collision_box_pct": {
+    "1s": 1.0353584684508692,
+    "2s": 0.9865208048446961,
+    "3s": 0.937683141238523,
+    "avg_1_2_3s": 0.986520804844696
+   },
+   "gt_collision_box_pct_columns": {
+    "0.5s": 1.1134987302207462,
+    "1.0s": 1.0353584684508692,
+    "1.5s": 1.0028000260467538,
+    "2.0s": 0.9865208048446961,
+    "2.5s": 0.9611252197694862,
+    "3.0s": 0.937683141238523
+   },
+   "gt_collision_denominator": "all scored samples, masked steps contribute 0 (reference compute())",
+   "gt_collision_box_pct_valid_steps_only": {
+    "1s": 1.0353584684508692,
+    "2s": 0.9865208048446961,
+    "3s": 0.937683141238523,
+    "avg_1_2_3s": 0.986520804844696
+   },
+   "note": "RAW box collision of the GT human trajectory under this protocol's own grid (PARA-Drive fn. 4). The references EXCLUDE GT-colliding steps from every arm's numerator, so in-protocol the GT arm scores 0 by construction; this raw rate is the false-positive floor. PARA-Drive Table 8: UniAD protocol 0.36 %, VAD protocol 0.96 %. Quote no arm's collision within ~2x of it."
+  },
+  "vad_category_audit": {
+   "selection": "by_name (vad_target_by_name; pre-registered 2026-09-26)",
+   "selected_pedestrians": [
+    "human.pedestrian.adult",
+    "human.pedestrian.child",
+    "human.pedestrian.construction_worker",
+    "human.pedestrian.police_officer"
+   ],
+   "selected_vehicles": [
+    "vehicle.bicycle",
+    "vehicle.bus.bendy",
+    "vehicle.bus.rigid",
+    "vehicle.car",
+    "vehicle.construction",
+    "vehicle.motorcycle",
+    "vehicle.trailer",
+    "vehicle.truck"
+   ],
+   "refusal_reason": null,
+   "index_order_ok": false,
+   "index_order_note": "VAD's INDEX-based selection would be WRONG here: its literal category indices ({2..8} pedestrian, {14..23} vehicle) assume the 32-entry lidarseg category.json ordering, but this one has 23 entries — indices [23] out of range for 23 categories; pedestrian indices select non-human {7: 'animal', 8: 'vehicle.car'}; vehicle indices select non-vehicle {18: 'movable_object.barrier', 19: 'movable_object.trafficcone', 20: 'movable_object.pushable_pullable', 21: 'movable_object.debris', 22: 'static_object.bicycle_rack'}; pedestrians MISSED ['human.pedestrian.adult', 'human.pedestrian.child']; vehicles MISSED ['vehicle.car', 'vehicle.motorcycle', 'vehicle.bicycle', 'vehicle.bus.bendy', 'vehicle.bus.rigid', 'vehicle.truck']. A grid built from them would hold the wrong objects; the harness selects by NAME instead (vad_target_by_name), so this is recorded, not refused.",
+   "n_categories": 23,
+   "indices_out_of_range": [
+    23
+   ]
+  }
+ },
+ "provenance": {
+  "protocol_tag": {
+   "tag": "nuscenes-planning/stp3-temavg+vad@1688c4b",
+   "reduction": "stp3-temavg",
+   "pipeline": "vad@1688c4b",
+   "protocol": "nuScenes_OL_L2_stp3",
+   "published_family": "stp3-temavg"
+  },
+  "pins": {
+   "stp3": {
+    "repo": "OpenDriveLab/ST-P3",
+    "commit": "69aabefd2610951d9e34238142776ed2228673be",
+    "kernel": "stp3/metrics.py:263-396",
+    "reduction": "evaluate.py:71-73,135-137,162-166",
+    "samples": "stp3/datas/NuscenesData.py:96-148",
+    "gt": "stp3/datas/NuscenesData.py:505-532"
+   },
+   "uniad": {
+    "repo": "OpenDriveLab/UniAD",
+    "commit": "609ee083ea51c3521c323f1279dfc4cee0e60467",
+    "kernel": "projects/mmdet3d_plugin/uniad/dense_heads/planning_head_plugin/planning_metrics.py:15-149",
+    "reduction": "projects/mmdet3d_plugin/datasets/nuscenes_e2e_dataset.py:1030-1050",
+    "first_public_commit": "4e91222da855fa83a8caa55f512536e82f9f9818 (nuscenes_e2e_dataset.py:1024-1036, at-t only)",
+    "stp3_option_added": "33cd8ecf7ad5ea4b7d779a2176841d3c1c4d4174 (2024-03-19)",
+    "samples_gt": "projects/mmdet3d_plugin/datasets/data_utils/trajectory_api.py:226-282",
+    "occupancy": "projects/mmdet3d_plugin/datasets/pipelines/occflow_label.py:11-160; base_e2e.py:560-561"
+   },
+   "vad": {
+    "repo": "hustvl/VAD",
+    "commit": "1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8",
+    "kernel": "projects/mmdet3d_plugin/VAD/planner/metric_stp3.py:75-308",
+    "per_sample": "projects/mmdet3d_plugin/VAD/VAD.py:593-641",
+    "reduction": "projects/mmdet3d_plugin/datasets/nuscenes_vad_dataset.py:1795-1813",
+    "samples_gt": "tools/data_converter/vad_nuscenes_converter.py:248-254,349-459",
+    "agent_filters": "nuscenes_vad_dataset.py:1226-1229; transform_3d.py:11-56; VAD_base_e2e.py:11,330-340"
+   },
+   "admlp": {
+    "repo": "E2E-AD/AD-MLP",
+    "commit": "4b93ba085ee47474152f282177865796ea577fc0",
+    "evaluator": "deps/stp3/evaluate_for_mlp.py:53-120 (ST-P3 reduction on filter_token.pkl)"
+   },
+   "devkit": {
+    "repo": "nutonomy/nuscenes-devkit",
+    "commit": "b40adc467b919192899405d9b77871afee8efa07",
+    "splits": "python-sdk/nuscenes/utils/splits.py:102-150"
+   },
+   "opencv_fillpoly": {
+    "repo": "opencv/opencv",
+    "tag": "4.5.4",
+    "source": "modules/imgproc/src/drawing.cpp:80-145,159-297,1258-1471,1984-2014; include/opencv2/imgproc.hpp:4832-4912"
+   },
+   "mmdet3d_names": {
+    "repo": "open-mmlab/mmdetection3d",
+    "tag": "v0.17.1",
+    "source": "mmdet3d/datasets/nuscenes_dataset.py:54-69,110-112"
+   }
+  },
+  "claim_bearing_reason": "H-EVAL-6 (SUPPORTED): nuScenes open-loop planning is inadmissible as a TanitAD criterion - no official protocol; the L2 averaging convention alone moves one VAD checkpoint 0.72 -> 1.22 m (+70 %) and flips the UniAD/VAD ranking; the GT human trajectory scores 0.36-0.96 % collision; the field's 'high-level command' is the GT future thresholded at +-2 m (our route-echo defect). D-BENCH-PORT (PI, 2026-08-29): SKIP claim-bearing. Usable ONLY as a cited external-comparability row.",
+  "split": {
+   "name": "val",
+   "n_scenes": 150,
+   "n_logs": 18,
+   "n_samples_total": 6019,
+   "n_scored": 5119,
+   "sample_rule": "fut_valid_flag: 6 future samples (VAD)"
+  }
+ }
+}

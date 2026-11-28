@@ -1,0 +1,54 @@
+{
+  "what": "SPEC 10.6 map-coverage closure. Identifiers are sha12 hashes, never raw clip ids.",
+  "gate_report_from_config": {
+    "n_windows": 23772,
+    "n_clips": 139,
+    "frac_ok": 0.9712266532054518,
+    "frac_ok_upper": 0.9712266532054518,
+    "verdict": "PASS",
+    "min_coverage": 0.9,
+    "states": {
+      "ok": 23088,
+      "no_file": 684,
+      "frame_out_of_range": 0,
+      "inconclusive": 0
+    },
+    "n_stack": 3,
+    "layouts": [
+      "flat_sha12"
+    ]
+  },
+  "gate_reasons_sha12": [
+    "570b47ad7408",
+    "693335b810c3",
+    "e902aba7fb9a",
+    "ff9d2a66d2a2"
+  ],
+  "independent_recount": {
+    "method": "cache manifest clip_sha12 vs a directory listing of the map root; no trainer involved",
+    "n_clips": 139,
+    "n_map_files": 135,
+    "missing_sha12": [
+      "570b47ad7408",
+      "693335b810c3",
+      "e902aba7fb9a",
+      "ff9d2a66d2a2"
+    ],
+    "n_orphan_map_files": 0
+  },
+  "agreement": {
+    "sets_identical": true,
+    "windows_per_clip_rule": "n_frames - 30",
+    "n_frames_of_the_four": [
+      201,
+      201,
+      201,
+      201
+    ],
+    "windows_of_the_four": 684,
+    "trainer_no_file": 684,
+    "reconciles": true
+  },
+  "mechanism": "refc_v3_train.py _map_item: a clip with no GT file emits map_label=False and an all-false map_seen, so map_soft_ce scores ZERO cells. The window is DRAWN and still trains the planner and 3-D box heads; only the map term abstains. Not 'skipped'.",
+  "uncovered_frac": 0.028773
+}

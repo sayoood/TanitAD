@@ -1,0 +1,10 @@
+turn-label windows by raw turn_t_start_s (s) x nav token (FOLLOW=route silent):
+t_start bin    nav FOLLOW n nav TURN n | turn-cell RMSE (s0):  FOLLOW    TURN | share of all turn-cell SSE:  FOLLOW    TURN
+[-9.0, 0.2)              73         58 |                         0.881   0.417 |                             0.239   0.043
+[ 0.2, 1.0)              11         14 |                         1.036   0.374 |                             0.050   0.008
+[ 1.0, 2.0)              20         33 |                         0.951   0.395 |                             0.076   0.022
+[ 2.0, 4.0)              31         67 |                         1.012   0.390 |                             0.134   0.043
+[ 4.0, 9.0)              65         94 |                         0.975   0.429 |                             0.260   0.073
+
+route-silent turn windows: lat_cls mix: {'none': 32, 'LANE_KEEP': 159, 'TURN_L': 1, 'TURN_R': 18} ; yaw-rate/curvature: GT |dpsi6| median 40.7 deg vs route-speaking 40.7
+nav_d (m, route distance to next turn) valid in route-silent turn windows: n/a (token FOLLOW carries args_valid only for TURN tokens by construction, v8f_mini_data.py:199-206)

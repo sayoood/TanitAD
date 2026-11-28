@@ -1,0 +1,65 @@
+{
+ "_what": "does the OpenScene test camera archive contain navhard's STAGE-1 frames? Tested per LOG (all-or-nothing), from a tar LISTING \u2014 no extraction.",
+ "utc": "2026-09-20T15:44:35Z",
+ "shard": "openscene_sensor_test_camera_6.tgz (6,213,453,844 B, sha256-verified in receipt_navtest_camera.json)",
+ "listing_jpg_entries": 30080,
+ "archive_layout_example": "openscene-v1.1/sensor_blobs/test/<log>/CAM_F0/<file>.jpg",
+ "stage_1": {
+  "n_logs_of_this_split_in_this_shard": 2,
+  "n_logs_COMPLETE": 2,
+  "n_logs_PARTIAL": 0,
+  "files_wanted": 120,
+  "files_found": 120,
+  "fraction": 1.0,
+  "per_log": [
+   {
+    "log": "2021.05.25.14.24.08_veh-25_03764_04034",
+    "wanted": 15,
+    "found": 15,
+    "complete": true,
+    "missing_examples": []
+   },
+   {
+    "log": "2021.09.16.19.49.00_veh-42_00990_01609",
+    "wanted": 105,
+    "found": 105,
+    "complete": true,
+    "missing_examples": []
+   }
+  ]
+ },
+ "stage_2_control": {
+  "n_logs_of_this_split_in_this_shard": 2,
+  "n_logs_COMPLETE": 0,
+  "n_logs_PARTIAL": 2,
+  "files_wanted": 1185,
+  "files_found": 0,
+  "fraction": 0.0,
+  "per_log": [
+   {
+    "log": "2021.05.25.14.24.08_veh-25_03764_04034",
+    "wanted": 195,
+    "found": 0,
+    "complete": false,
+    "missing_examples": [
+     "CAM_F0/06cf429a260287f0b.jpg",
+     "CAM_F0/14df9cd554860f19b.jpg",
+     "CAM_F0/15a4bb5e05e983a65.jpg"
+    ]
+   },
+   {
+    "log": "2021.09.16.19.49.00_veh-42_00990_01609",
+    "wanted": 990,
+    "found": 0,
+    "complete": false,
+    "missing_examples": [
+     "CAM_F0/001d3cf55f3eaba3e.jpg",
+     "CAM_F0/0307c240e3fd6a863.jpg",
+     "CAM_F0/03bdad19b5463967c.jpg"
+    ]
+   }
+  ],
+  "role": "navhard stage 2 uses the SYNTHETIC frames, which are NOT in this archive \u2014 this control is EXPECTED to be empty/low, and it is what shows the two stages index genuinely different corpora"
+ },
+ "verdict": "SUPPORTED: all 2 navhard log(s) present in this shard are COMPLETE for stage 1 (120/120 files) \u2014 consistent with 'the archives store whole logs'"
+}

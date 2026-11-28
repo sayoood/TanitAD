@@ -1,0 +1,322 @@
+{
+ "what": "F2: tracker-aware plan compensation (p4_tracker_comp.py, 3 iterations against NAVSIM's own vendored LQR + bicycle), paired with the uncompensated plans",
+ "csv": {
+  "teacher": "E:/Projects/TanitAD/data/refe_navtest/score/refe_p4_teacher_navtest/refe_p4_teacher_navtest.csv",
+  "teacher_trackcomp": "E:/Projects/TanitAD/data/refe_navtest/score/refe_p4_teacher_trackcomp/refe_p4_teacher_trackcomp.csv",
+  "student": "E:/Projects/TanitAD/data/refe_navtest/score/refe_navtest_final_routefix/refe_navtest_final_routefix.csv",
+  "student_trackcomp": "E:/Projects/TanitAD/data/refe_navtest/score/refe_p4_student_trackcomp/refe_p4_student_trackcomp.csv",
+  "human": "E:/Projects/TanitAD/data/refe_navtest/score/refe_p4_human_navtest/refe_p4_human_navtest.csv"
+ },
+ "estimator": "paired log-cluster bootstrap over logs (proxy_eval.boot), 10,000, 95 %, seed 20260927",
+ "teacher": {
+  "n": 12110,
+  "uncompensated": {
+   "PDMS": {
+    "mean": 89.806,
+    "ci95": [
+     88.5632,
+     90.9984
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "NC": {
+    "mean": 99.3683,
+    "ci95": [
+     99.1032,
+     99.6053
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DAC": {
+    "mean": 95.2271,
+    "ci95": [
+     94.2448,
+     96.1649
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "EP": {
+    "mean": 85.1812,
+    "ci95": [
+     83.7769,
+     86.5785
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "TTC": {
+    "mean": 97.1511,
+    "ci95": [
+     96.4934,
+     97.7906
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "C": {
+    "mean": 99.9174,
+    "ci95": [
+     99.8427,
+     99.9752
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DDC": {
+    "mean": 98.9678,
+    "ci95": [
+     98.6402,
+     99.2522
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "zero_rate_pct": {
+    "mean": 5.3427,
+    "ci95": [
+     4.2796,
+     6.4697
+    ],
+    "n": 12110,
+    "n_logs": 136
+   }
+  },
+  "compensated": {
+   "PDMS": {
+    "mean": 94.1041,
+    "ci95": [
+     93.5933,
+     94.5972
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "NC": {
+    "mean": 99.6821,
+    "ci95": [
+     99.525,
+     99.825
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DAC": {
+    "mean": 99.0091,
+    "ci95": [
+     98.5978,
+     99.3597
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "EP": {
+    "mean": 88.7593,
+    "ci95": [
+     88.0728,
+     89.4747
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "TTC": {
+    "mean": 98.7696,
+    "ci95": [
+     98.352,
+     99.1585
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "C": {
+    "mean": 99.8183,
+    "ci95": [
+     99.7008,
+     99.9184
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DDC": {
+    "mean": 99.0917,
+    "ci95": [
+     98.774,
+     99.3647
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "zero_rate_pct": {
+    "mean": 1.2717,
+    "ci95": [
+     0.8784,
+     1.7123
+    ],
+    "n": 12110,
+    "n_logs": 136
+   }
+  },
+  "compensated_minus_uncompensated": {
+   "PDMS": {
+    "mean": 4.2981,
+    "ci95": [
+     3.3341,
+     5.3192
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "NC": {
+    "mean": 0.3138,
+    "ci95": [
+     0.143,
+     0.5097
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DAC": {
+    "mean": 3.782,
+    "ci95": [
+     2.8501,
+     4.7591
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "EP": {
+    "mean": 3.5781,
+    "ci95": [
+     2.5929,
+     4.602
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "TTC": {
+    "mean": 1.6185,
+    "ci95": [
+     1.2356,
+     2.0325
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "C": {
+    "mean": -0.0991,
+    "ci95": [
+     -0.2172,
+     0.0093
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DDC": {
+    "mean": 0.1239,
+    "ci95": [
+     0.017,
+     0.2363
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "zero_rate_pct": {
+    "mean": -4.071,
+    "ci95": [
+     -5.1051,
+     -3.0848
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "better_worse_tied_PDMS": [
+    4895,
+    3285,
+    3930
+   ]
+  },
+  "compensated_minus_human": {
+   "PDMS": {
+    "mean": -0.4468,
+    "ci95": [
+     -1.2122,
+     0.3579
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "NC": {
+    "mean": -0.3179,
+    "ci95": [
+     -0.475,
+     -0.175
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DAC": {
+    "mean": -0.9909,
+    "ci95": [
+     -1.4022,
+     -0.6403
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "EP": {
+    "mean": 1.8206,
+    "ci95": [
+     0.478,
+     3.3418
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "TTC": {
+    "mean": -1.2304,
+    "ci95": [
+     -1.648,
+     -0.8415
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "C": {
+    "mean": -0.1404,
+    "ci95": [
+     -0.2683,
+     -0.0251
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "DDC": {
+    "mean": 0.2684,
+    "ci95": [
+     0.0174,
+     0.5216
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "zero_rate_pct": {
+    "mean": 1.2717,
+    "ci95": [
+     0.8784,
+     1.7123
+    ],
+    "n": 12110,
+    "n_logs": 136
+   },
+   "better_worse_tied_PDMS": [
+    5917,
+    3186,
+    3007
+   ]
+  }
+ },
+ "student": "MISSING CSV",
+ "teacher_read": "CAP IS MOSTLY THE PLAN<->TRACKER INTERFACE (compensated PDMS >= 94.0 AND DAC >= 99.0)"
+}

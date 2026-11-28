@@ -1,0 +1,156 @@
+# PART 1 (E_FIELD, E_POOLED): --out ../lora_work/idc/full/identity_control --work ../lora_work/idc/full/work --threads 14
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights:  73%|#######3  | 305/415 [00:00<00:00, 3029.47it/s]
+Loading weights: 100%|##########| 415/415 [00:00<00:00, 3120.57it/s]
+encoder torch.bfloat16 built in 5 s, trainable 3,145,728
+  E_FIELD dca157a0: 8/51 frames, 60 s
+  E_FIELD dca157a0: 16/51 frames, 128 s
+  E_FIELD dca157a0: 24/51 frames, 206 s
+  E_FIELD dca157a0: 32/51 frames, 276 s
+  E_FIELD dca157a0: 40/51 frames, 340 s
+  E_FIELD dca157a0: 48/51 frames, 408 s
+  E_FIELD dca157a0: 51/51 frames, 438 s
+  E_FIELD e6cb7cd4: 8/51 frames, 89 s
+  E_FIELD e6cb7cd4: 16/51 frames, 174 s
+  E_FIELD e6cb7cd4: 24/51 frames, 262 s
+  E_FIELD e6cb7cd4: 32/51 frames, 349 s
+  E_FIELD e6cb7cd4: 40/51 frames, 419 s
+  E_FIELD e6cb7cd4: 48/51 frames, 498 s
+  E_FIELD e6cb7cd4: 51/51 frames, 528 s
+  E_FIELD 998310a5: 8/51 frames, 85 s
+  E_FIELD 998310a5: 16/51 frames, 173 s
+  E_FIELD 998310a5: 24/51 frames, 261 s
+  E_FIELD 998310a5: 32/51 frames, 337 s
+  E_FIELD 998310a5: 40/51 frames, 399 s
+  E_FIELD 998310a5: 48/51 frames, 481 s
+  E_FIELD 998310a5: 51/51 frames, 510 s
+  E_FIELD d4729053: 8/51 frames, 81 s
+  E_FIELD d4729053: 16/51 frames, 163 s
+  E_FIELD d4729053: 24/51 frames, 247 s
+  E_FIELD d4729053: 32/51 frames, 340 s
+  E_FIELD d4729053: 40/51 frames, 433 s
+  E_FIELD d4729053: 48/51 frames, 522 s
+  E_FIELD d4729053: 51/51 frames, 553 s
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights:  18%|#7        | 74/415 [00:00<00:00, 724.12it/s]
+Loading weights:  35%|###5      | 147/415 [00:00<00:00, 412.53it/s]
+Loading weights:  47%|####7     | 196/415 [00:00<00:00, 377.14it/s]
+Loading weights:  57%|#####7    | 238/415 [00:00<00:00, 377.92it/s]
+Loading weights:  67%|######6   | 278/415 [00:00<00:00, 345.84it/s]
+Loading weights:  76%|#######5  | 314/415 [00:00<00:00, 328.08it/s]
+Loading weights:  85%|########4 | 351/415 [00:00<00:00, 336.90it/s]
+Loading weights:  93%|#########3| 386/415 [00:01<00:00, 340.24it/s]
+Loading weights: 100%|##########| 415/415 [00:01<00:00, 389.58it/s]
+encoder torch.float32 built in 1 s, trainable 3,145,728
+  E_POOLED fp32: 8/101 frames, 25 s
+  E_POOLED fp32: 16/101 frames, 49 s
+  E_POOLED fp32: 24/101 frames, 74 s
+  E_POOLED fp32: 32/101 frames, 99 s
+  E_POOLED fp32: 40/101 frames, 126 s
+  E_POOLED fp32: 48/101 frames, 150 s
+  E_POOLED fp32: 56/101 frames, 175 s
+  E_POOLED fp32: 64/101 frames, 199 s
+  E_POOLED fp32: 72/101 frames, 225 s
+  E_POOLED fp32: 80/101 frames, 250 s
+  E_POOLED fp32: 88/101 frames, 276 s
+  E_POOLED fp32: 96/101 frames, 297 s
+  E_POOLED fp32: 101/101 frames, 310 s
+Exception in thread Thread-2 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "<frozen codecs>", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0x97 in position 1437: invalid start byte
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\lora\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-lora\identity_control.py", line 341, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\lora\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-lora\identity_control.py", line 216, in main
+    raise SystemExit("build_v2ep failed: " + r.stderr[-1200:])
+                                             ~~~~~~~~^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+# PART 2 (T_POOLED, ROUTE, SAME_DEVICE): --out C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/lora_work/idc/part2/identity_control --work C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/lora_work/idc/full/work --threads 14 --only T_POOLED,ROUTE,SAME_DEVICE
+built 8f387977-4086-466d-bba4-b04f8cdc0743 (416) 19.9 MB in 28.7 s
+built bf5ec76e-e8b5-4f0d-a9cc-4fe1687d3d3a (416) 16.8 MB in 48.3 s
+
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights:  48%|####7     | 199/415 [00:00<00:00, 1965.13it/s]
+Loading weights:  95%|#########5| 396/415 [00:00<00:00, 421.94it/s] 
+Loading weights: 100%|##########| 415/415 [00:00<00:00, 472.71it/s]
+encoder torch.bfloat16 built in 13 s, trainable 3,145,728
+  T_POOLED 8f387977: 8/101 frames, 201 s
+  T_POOLED 8f387977: 16/101 frames, 339 s
+  T_POOLED 8f387977: 24/101 frames, 471 s
+  T_POOLED 8f387977: 32/101 frames, 603 s
+  T_POOLED 8f387977: 40/101 frames, 733 s
+  T_POOLED 8f387977: 48/101 frames, 860 s
+  T_POOLED 8f387977: 56/101 frames, 979 s
+  T_POOLED 8f387977: 64/101 frames, 1112 s
+  T_POOLED 8f387977: 72/101 frames, 1257 s
+  T_POOLED 8f387977: 80/101 frames, 1402 s
+  T_POOLED 8f387977: 88/101 frames, 1548 s
+  T_POOLED 8f387977: 96/101 frames, 1692 s
+  T_POOLED 8f387977: 101/101 frames, 1781 s
+  T_POOLED bf5ec76e: 8/101 frames, 144 s
+  T_POOLED bf5ec76e: 16/101 frames, 272 s
+  T_POOLED bf5ec76e: 24/101 frames, 399 s
+  T_POOLED bf5ec76e: 32/101 frames, 527 s
+  T_POOLED bf5ec76e: 40/101 frames, 653 s
+  T_POOLED bf5ec76e: 48/101 frames, 778 s
+  T_POOLED bf5ec76e: 56/101 frames, 899 s
+  T_POOLED bf5ec76e: 64/101 frames, 1022 s
+  T_POOLED bf5ec76e: 72/101 frames, 1142 s
+  T_POOLED bf5ec76e: 80/101 frames, 1261 s
+  T_POOLED bf5ec76e: 88/101 frames, 1381 s
+  T_POOLED bf5ec76e: 96/101 frames, 1501 s
+  T_POOLED bf5ec76e: 101/101 frames, 1572 s
+built 8f387977-4086-466d-bba4-b04f8cdc0743 (256) 37.8 MB in 12.7 s
+built bf5ec76e-e8b5-4f0d-a9cc-4fe1687d3d3a (256) 28.6 MB in 12.0 s
+
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 415/415 [00:00<00:00, 9178.83it/s]
+encoder torch.float32 built in 0 s, trainable 3,145,728
+  ROUTE eval_native_rebuild_vs_v8F_eva: 8/12 frames, 7 s
+  ROUTE eval_native_rebuild_vs_v8F_eva: 12/12 frames, 10 s
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights:  83%|########2 | 344/415 [00:00<00:00, 3439.49it/s]
+Loading weights: 100%|##########| 415/415 [00:00<00:00, 3408.58it/s]
+encoder torch.bfloat16 built in 0 s, trainable 3,145,728
+  ROUTE train_8f387977_native256_rebui: 8/12 frames, 52 s
+  ROUTE train_8f387977_native256_rebui: 12/12 frames, 79 s
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights:  84%|########3 | 348/415 [00:00<00:00, 3465.21it/s]
+Loading weights: 100%|##########| 415/415 [00:00<00:00, 3518.02it/s]
+encoder torch.bfloat16 built in 0 s, trainable 3,145,728
+  ROUTE train_bf5ec76e_native256_rebui: 8/12 frames, 56 s
+  ROUTE train_bf5ec76e_native256_rebui: 12/12 frames, 83 s
+
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]
+Loading weights:  89%|########8 | 369/415 [00:00<00:00, 3583.82it/s]
+Loading weights: 100%|##########| 415/415 [00:00<00:00, 3658.92it/s]
+encoder torch.bfloat16 built in 0 s, trainable 3,145,728
+SAME_DEVICE builder encode_episode on 8 frames: 59 s
+C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\lora\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-lora\identity_control.py:51: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return {"n_values": int(d.numel()), "max_abs": float(d.max()), "mean_abs": float(d.mean()), "p99_abs": float(torch.quantile(d.flatten()[::max(1, d.numel() // 2_000_000)], 0.99)),
+  mutant PIXEL_SCALE_255_to_256: vs builder rel_l2 2.113e-02, vs cache 3.538e-02
+  mutant IMAGE_MEAN0_0.485_to_0.486: vs builder rel_l2 2.319e-02, vs cache 3.591e-02
+  mutant IMAGE_MEAN0_0.485_to_0.5: vs builder rel_l2 3.364e-02, vs cache 4.224e-02
+  mutant IMAGE_STD2_0.225_to_0.226: vs builder rel_l2 2.070e-02, vs cache 3.446e-02
+  mutant IMAGE_STD0_0.229_to_0.25: vs builder rel_l2 4.114e-02, vs cache 4.926e-02
+DONE C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/lora_work/idc/part2/identity_control.json

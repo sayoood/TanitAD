@@ -1,0 +1,95 @@
+commit free 13.40 GB >= 5.5 after 0 min
+LINE: $PY $CHK post $kind --init $init --final $RUNS/$tag/train/ckpt_last.pt > $RUNS/post_$tag.log 2>&1 || fail "post check: $(tail -c 300 $RUNS/post_$tag.log)"
+rc=0  <- $PY $CHK post $kind
+LINE: PYTHONPATH=$TREE/stack:$TREE $PY $ZG --ckpt $RUNS/$tag/train/ckpt_last.pt --allow '.*' --control 'route_head\.weight' --control 'route_br\.0\.weight' --control 'route_br\.1\.weight' --control 'route_br\.2\.weight' --json-out $RUNS/$ta
+rc=0  <- $PY $ZG --ckpt
+LINE: $PY $N/kclip.py $RUNS/$tag/train/train_log.jsonl --json > $RUNS/$tag/kclip_$tag.json 2> $RUNS/kclip_$tag.err || fail "K-CLIP: $(tail -c 300 $RUNS/kclip_$tag.err)"
+rc=0  <- $PY $N/kclip.py
+--- post log:
+{"group_weight_l1": {"c0": 0.18484853208065033, "c1_6": 0.8885887861251831, "c7_12": 0.8337932825088501, "c13": 0.14696137607097626, "c14": 0.16985049843788147}}
+PASS
+--- zerograd:
+zerograd_gate v1  ckpt=F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/tiny/w/podruns/N1DM_s0/train/ckpt_last.pt
+  registered=258  with-state-entry=258  trained=258  case(a) no-state=0  case(b) zero-state=0  opt-step-max=4
+  naming: per-group-shape-dp  unique=False  n_alignments=45
+  WARN unused --allow pattern (matched no offender): '.*'
+  control 'route_head\\.weight'                    ok (1 trained matches)
+  control 'route_br\\.0\\.weight'                  ok (1 trained matches)
+  control 'route_br\\.1\\.weight'                  ok (1 trained matches)
+  control 'route_br\\.2\\.weight'                  ok (1 trained matches)
+  untrained numel (not allowed): 0..0   allowed: 0..0
+VERDICT: PASS
+--- zerograd json:
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "PASS",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 3,
+    "n_registered": 258,
+    "n_with_state_entry": 258,
+    "n_trained": 258,
+    "n_case_a_no_state": 0,
+    "n_case_b_zero_state": 0,
+    "step_max": 4,
+    "ckpt_step": 4
+  },
+  "alignment": {
+    "mode": "per-group-shape-dp",
+    "unique": false,
+    "n_alignments": 45.0,
+    "param_names_source": null,
+    "param_names_rejected": null,
+    "n_model_float_entries": 282,
+    "n_entries_excluded": 0,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 2,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [],
+  "allowed": [],
+  "unused_allow": [
+    ".*"
+  ],
+  "untrained_numel": {
+    "offending_lo": 0,
+    "offending_hi": 0,
+    "allowed_lo": 0,
+    "allowed_hi": 0
+  },
+  "controls": [
+    {
+      "pattern": "route_head\\.weight",
+      "trained_matches": 1,
+      "example": [
+        "route_head.weight"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "route_br\\.0\\.weight",
+      "trained_matches": 1,
+      "example": [
+        "route_br.0.weight"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "route_br\\.1\\.weight",
+      "trained_matches": 1,
+      "example": [
+        "route_br.1.weight"
+      ],
+      "ok": true
+    },
+    {
+      "pattern": "route_
+--- kclip:
+{"log": "F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/tiny/w/podruns/N1DM_s0/train/train_log.jsonl", "clip_grad": 1.0, "clip_grad_source": "parser default (--clip-grad 1.0)", "logged_steps": 4, "clipped_steps": 4, "share_clipped": 1.0, "non_finite_grad_norm_rows": 0, "grad_norm_median": 35.876197814941406, "grad_norm_max": 40.425750732421875, "first_step": 1, "last_step": 4}
+
+ZZ DRYPOST2 PASS ZZ

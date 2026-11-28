@@ -161,7 +161,25 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
     the command and the target come from the same derivation. Pair it with
     ``v2_route_from_vision`` (LEVER A), which is the only non-circular route
     gradient that exists.
+
+    ``u8_frames`` (class default False; set on the INSTANCE by
+    ``refc_v3_train.py --u8-batches`` -- the ``V3Dataset`` attribute idiom, so
+    no subclass ctor widens) emits ``frames`` / ``future_frames`` AS STORED --
+    uint8 [0,255] for every cache this repo trains on -- instead of the
+    contract's float32 [0,1]; the trainer applies the SAME ``/255`` on the
+    device (``refc_v3_train.frames_to_device``). WHY: the cast at
+    ``_contract.py:131/133`` runs INSIDE the DataLoader worker, so the fp32
+    tensors are what ``default_collate`` stacks into ``/dev/shm`` -- at batch
+    20 x (8 + 20 frames) x 9 x 256 x 640 that is 3.30 GB per in-flight batch,
+    19.8 GB for six workers: the unreclaimable share that pinned refcv3's
+    50 GB cgroup at its cap and got it OOM-killed at eval steps (MEASURED
+    2026-09-02). uint8 in flight is 4x smaller and the loss is bit-identical
+    (pinned by ``tests/test_refc_v3_u8_batches.py``). Every other key is
+    untouched; REF-B's own trainer never sets it.
     """
+
+    #: see the class docstring -- False = byte-identical to the base contract
+    u8_frames: bool = False
 
     def __init__(self, episodes: list, window: int, max_horizon: int,
                  channels: int | None = None, labels_v2: bool = False,
@@ -188,8 +206,33 @@ class FailLoudWindowDataset(EpisodeWindowDataset):
                                          for ep in episodes],
                                         window, max_horizon)
 
+    def _window_u8(self, i: int) -> dict:
+        """``EpisodeWindowDataset.__getitem__`` (``_contract.py:126-139``) with
+        its two ``to_float_frames`` calls REMOVED -- nothing else differs. The
+        frames leave the worker as the episode stores them (uint8; a
+        float-storing episode passes through exactly as ``to_float_frames``
+        would pass it). A 7-line twin of the shared base contract ON PURPOSE:
+        that class serves every adapter and its float output IS the contract
+        the rest of the programme consumes, so the switch lives here, in the
+        one subclass whose trainer converts on the device. Pinned key-for-key
+        against the base contract (after ``to_float_frames``) by
+        ``tests/test_refc_v3_u8_batches.py``."""
+        e_i, t = self.index[i]
+        ep = self.episodes[e_i]
+        w = self.window
+        return {
+            "frames": ep.frames[t:t + w],
+            "actions": ep.actions[t:t + w],
+            "future_frames": ep.frames[t + w:t + w + self.max_horizon],
+            "future_actions": ep.actions[t + w:t + w + self.max_horizon],
+            "future_poses": ep.poses[t + w:t + w + self.max_horizon],
+            "pose_last": ep.poses[t + w - 1],
+            "episode_id": ep.episode_id,
+        }
+
     def __getitem__(self, i: int):
-        item = super().__getitem__(i)
+        item = (self._window_u8(i) if self.u8_frames
+                else super().__getitem__(i))   # float32 [0,1]: unchanged path
         e_i, t = self.index[i]
         poses = self.episodes[e_i].poses
         t_last = t + self.window - 1

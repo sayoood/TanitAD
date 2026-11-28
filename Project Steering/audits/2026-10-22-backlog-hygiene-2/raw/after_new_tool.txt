@@ -1,0 +1,19 @@
+[backlog-drift] Project Steering/BACKLOG.md
+[backlog-drift] rows read     : 199 distinct ids over 215 occurrence(s), 41 section(s)
+[backlog-drift] last written  : ?  ?  (? commit(s) to the repo since)
+[backlog-drift] verdicts      : CLOSED=59  CLOSED-ELSEWHERE=14  DONE-BUT-OPEN=1  OPEN=125
+[backlog-drift] heading items : 2 (1 without a closure marker) - NOT id'd rows, a human adjudicates these
+                 L261  ?? BLOCKING INTEGRATION ITEM -- refcv5's model seams are NOT IN `HEAD` (raised 2026-09-06, Tanit
+
+STALE ROWS - each contradicts BACKLOG.md:8, 'Strike items through
+when done, with the commit'. A puller scanning for open work reads
+these as work, and spends the turn re-deriving that they are not:
+  DONE-BUT-OPEN  ZG-WIRE L612   | ZG-WIRE | **Wire the post-training zero-gradient gate into the chains** (landed 2026-10-18: `stack/scripts/z
+
+=> DONE-BUT-OPEN : strike the id (~~A11~~) and keep the evidence.
+=> CLOSED-LATER  : the row LEADS open (NEXT/BUILDING/...) but a dated span
+   later in it closes it. Strike the id and keep the evidence -- a puller
+   reads the lead, not the tail.
+=> STALE-BLOCKER : the blocker cleared and the row was not revisited;
+   re-state what is still open, or strike it. Do not leave it reading
+   as a live gap.

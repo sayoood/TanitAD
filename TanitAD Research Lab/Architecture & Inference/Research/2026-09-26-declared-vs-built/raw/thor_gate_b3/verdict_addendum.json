@@ -1,0 +1,13 @@
+{
+ "gate": "fixes batch 3, TIP b4a59b9 vs CAND b4a59b9 + 14 files",
+ "raw_verdict": "FAIL (1 regression)",
+ "regression": "tests.test_flagship_v4::test_graft_tau_to_zero_makes_the_class_posterior_one_hot",
+ "rerun_2026_09_27_0356_thor_gate_env": {
+  "TIP": ["FAIL 0.8313827514648438", "PASS", "PASS"],
+  "CAND": ["PASS", "PASS", "FAIL 0.8716388940811157"],
+  "gate_run": {"TIP": "PASS", "CAND": "FAIL 0.9999985694885254"}
+ },
+ "classification": "FLAKY, pre-existing and independent of batch 3: the test fails on BOTH trees, 1 run in 3 each (unseeded random init; the one-hot threshold 1 - 1e-6 sits on a knife-edge). MEASURED on Thor in the gate environment.",
+ "corrected_verdict": "PASS: 0 regressions attributable to the candidate; 0 new failures; 0 tests missing",
+ "follow_up": "pin as FLAKY in the G-SUITE list with this record, or seed the test (flagship v4, not refcv7 code)"
+}

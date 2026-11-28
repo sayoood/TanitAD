@@ -1,0 +1,3 @@
+@echo off
+rem r2c: the DAG-ORC r2 chain RELAUNCHED 2026-10-28 ~06:10 after A s1 was refused (the box-2 queue file was replaced mid-run by a self-test; cmd.exe re-ran the trainer). Code PINNED to 8c24823f via OAF_BR=agent/dagorc-r2-pin (the commit A s0 / REP s0 were gated and trained at). A s1 items aside as *_r2b_queue_edit_stop.
+"C:\Program Files\Git\bin\bash.exe" -lc "OAF_BR=agent/dagorc-r2-pin AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc.out bash /c/Users/Admin/box2_ship/chain_v8f_dagoaccorc_r2.sh < /dev/null > /c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc_r2.out 2>&1" < NUL

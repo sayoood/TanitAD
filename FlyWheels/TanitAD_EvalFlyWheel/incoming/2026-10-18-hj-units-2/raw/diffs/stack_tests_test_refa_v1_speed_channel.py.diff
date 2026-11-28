@@ -1,0 +1,11 @@
+--- a/stack/tests/test_refa_v1_speed_channel.py (2c6fdef020)
++++ b/stack/tests/test_refa_v1_speed_channel.py (ccf810fc5a)
+@@ -212,7 +212,7 @@
+     res = m.plan(torch.randn(1, c.op_window, c.n_tokens, c.d_enc), v0=v0,
+                  target_speed=10.0,
+                  plan_cfg=PlanConfig(n_samples=16, n_iters=2, n_elites=4,
+-                                     horizon=c.plan_steps, dt=c.op_dt, seed=0))
++                                     horizon=c.plan_steps, dt=c.op_dt, seed=0), model_action_units="kappa")
+     assert widths and set(widths) == {3}                 # every rollout saw v
+     assert all(torch.allclose(fv * SPEED_SCALE_MPS, torch.full_like(fv, v0))
+                for fv in firsts)                         # from the tick's v0

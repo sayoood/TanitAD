@@ -1,0 +1,268 @@
+{
+ "gates": {
+  "TB-0": {
+   "id": "TB-0",
+   "name": "cross-environment bit-identity",
+   "status": "PASS",
+   "bar": "max abs diff == 0.0 on every common row; every control-ok row present and ok in the table build",
+   "value": 0.0,
+   "n": 4393,
+   "evidence": "MEASURED",
+   "detail": {
+    "n_common_rows": 4393,
+    "n_control_logs": 30,
+    "n_control_ok_missing_in_table": 0,
+    "n_traj_sha_mismatch": 0
+   }
+  },
+  "TB-1": {
+   "id": "TB-1",
+   "name": "reproduction of p5s_cubic.npz",
+   "status": "PASS",
+   "bar": "bit_identical == n == 1018, max_abs_diff == 0.0, n_errors == 0",
+   "value": "1018/1018",
+   "n": 1018,
+   "evidence": "MEASURED",
+   "detail": {
+    "max_abs_diff": 0.0,
+    "n_errors": 0,
+    "seconds": 173.7,
+    "errors": []
+   }
+  },
+  "TB-2": {
+   "id": "TB-2",
+   "name": "knot exactness C2'",
+   "status": "PASS",
+   "bar": "knot deviation <= 1e-09 on every row (no row failed the driver's knot control)",
+   "value": null,
+   "n": 4393,
+   "evidence": "MEASURED-INDIRECT",
+   "detail": {
+    "n_knot_control_failures": 0,
+    "n_rows_with_knot_maxdev_field": 0,
+    "n_knot_maxdev_over_bar": 0,
+    "per_rank": {
+     "0": {
+      "n_tc20s": 2713,
+      "knot_fail": 0,
+      "knot_dev_bad": 0
+     },
+     "1": {
+      "n_tc20s": 1680,
+      "knot_fail": 0,
+      "knot_dev_bad": 0
+     }
+    },
+    "note": "the driver does not persist the per-row knot deviation; its control raises (=> error record => raw_fallback) when dev > 1e-9, so 'no knot-control failure among the ok rows' is the available evidence"
+   }
+  },
+  "TB-3": {
+   "id": "TB-3",
+   "name": "identity control",
+   "status": "PASS",
+   "bar": "ident == traj bit-for-bit on 100 % of rows",
+   "value": "4393/4393",
+   "n": 4393,
+   "evidence": "MEASURED",
+   "detail": {
+    "note": "the driver's own `ident` row (sign 0.0) is not persisted; this checks the identity TABLE (label := traj through the table's JSON encoding) against the bank bytes"
+   }
+  },
+  "TB-4": {
+   "id": "TB-4",
+   "name": "coverage",
+   "status": "PASS",
+   "bar": "table keys == bank keys (all of them, none extra, no duplicate); n_raw_fallback <= 1.0 % of rows",
+   "value": "4393/4393",
+   "n": 4393,
+   "evidence": "MEASURED",
+   "detail": {
+    "bank_rows": 4393,
+    "expected_rows": 4393,
+    "unique_bank_keys": 4393,
+    "table_keys": 4393,
+    "absent": 0,
+    "extra_label_records": 0,
+    "duplicate_label_records": 0,
+    "traj_sha_mismatch": 0,
+    "n_raw_fallback": 0,
+    "raw_fallback_frac": 0.0,
+    "fallback_causes": {},
+    "REFUSE_if_fallback_over_1pct": false
+   }
+  },
+  "TB-5": {
+   "id": "TB-5",
+   "name": "sanity",
+   "status": "PASS",
+   "bar": "every label finite; |dyaw vs traj| < pi; sim_hz == 10 on every row (100 %)",
+   "value": "4393/4393",
+   "n": 4393,
+   "evidence": "MEASURED",
+   "detail": {
+    "non_finite": 0,
+    "yaw_branch_ge_pi": 0,
+    "sim_hz_not_10": 0,
+    "max_abs_dyaw": 0.8631309078257352
+   }
+  },
+  "TB-6": {
+   "id": "TB-6",
+   "name": "learnability per rank",
+   "status": "FAIL",
+   "bar": "per rank: median per-row max|acc| and max|heading rate| of labels / same for traj <= 2x on both. Rank-0 FAIL => STOP (P5-R); rank-1 FAIL => rank-0 only",
+   "value": {
+    "rank0": [
+     1.7055962760194257,
+     2.017617040690712
+    ],
+    "rank1": [
+     1.6445854779102438,
+     1.7454185548442578
+    ]
+   },
+   "n": 4393,
+   "evidence": "MEASURED",
+   "detail": {
+    "rank0": {
+     "rank": 0,
+     "n": 2713,
+     "diag_median_of_row_ratios_acc": 1.613829620637022,
+     "diag_median_of_row_ratios_hr": 1.9044339359515037,
+     "median_max_acc_label": 2.554129939288136,
+     "median_max_acc_traj": 1.4974997161983987,
+     "ratio_acc": 1.7055962760194257,
+     "median_max_hr_label_deg_s": 7.971811265003737,
+     "median_max_hr_traj_deg_s": 3.9511022677894627,
+     "ratio_hr": 2.017617040690712,
+     "pass": false
+    },
+    "rank1": {
+     "rank": 1,
+     "n": 1680,
+     "diag_median_of_row_ratios_acc": 1.6125740746269717,
+     "diag_median_of_row_ratios_hr": 1.6652968830806438,
+     "median_max_acc_label": 2.6741247668977612,
+     "median_max_acc_traj": 1.6260174997384396,
+     "ratio_acc": 1.6445854779102438,
+     "median_max_hr_label_deg_s": 15.410563010302504,
+     "median_max_hr_traj_deg_s": 8.829150445050457,
+     "ratio_hr": 1.7454185548442578,
+     "pass": true
+    },
+    "rank0_fail_STOP_next_lever_P5R": true,
+    "rank1_fail_means_rank0_only": false,
+    "population": "rows whose label source is tc20s (raw_fallback rows are identity and excluded)"
+   }
+  },
+  "TB-7": {
+   "id": "TB-7",
+   "name": "n_differs recorded",
+   "status": "PASS",
+   "bar": "n_differs per rank recorded",
+   "value": {
+    "0": 2713,
+    "1": 1680
+   },
+   "n": 4393,
+   "evidence": "MEASURED",
+   "detail": {
+    "per_rank": {
+     "0": {
+      "n_rows": 2713,
+      "n_tc20s": 2713,
+      "n_raw_fallback": 0,
+      "n_differs": 2713
+     },
+     "1": {
+      "n_rows": 1680,
+      "n_tc20s": 1680,
+      "n_raw_fallback": 0,
+      "n_differs": 1680
+     }
+    },
+    "feeds": "G-LIVE (a): n_differs must be > 0 for the substitution to be non-trivial",
+    "warn_zero_differs": []
+   }
+  }
+ },
+ "rank_policy": {
+  "decision": "STOP",
+  "r0": {
+   "n": 300,
+   "n_logs": 190,
+   "point_pp": 3.0,
+   "lo_pp": 1.0380622837370241,
+   "hi_pp": 5.357142857142857,
+   "raw_fail": 11,
+   "tc_fail": 2,
+   "estimator": "paired log-cluster bootstrap, ratio, 10000 draws, seed 20260927, 95% percentile"
+  },
+  "r1": {
+   "n": 300,
+   "n_logs": 184,
+   "point_pp": 4.666666666666667,
+   "lo_pp": 2.3728813559322033,
+   "hi_pp": 7.29191468253968,
+   "raw_fail": 16,
+   "tc_fail": 2,
+   "estimator": "paired log-cluster bootstrap, ratio, 10000 draws, seed 20260927, 95% percentile"
+  },
+  "rk": {
+   "RK0_stop_rule_r0_hi_lt_0": false,
+   "RK1_n_ge_200_and_logs_ge_5": true,
+   "RK2_r1_lo_gt_0": true,
+   "RK3_r0_point_gt_0": true,
+   "RK4_TB6_passes_on_rank1": true,
+   "RK5_TB2_TB3_pass_on_every_rank1_row": true,
+   "RK6_guards": "not required: the repair json carries sim8 only (no DDC / comfort / lk10 / executed-vs-intended)"
+  },
+  "repair_reports_own_numbers_(seed 20261111, NOT the 4.3 estimator)": {
+   "rank0_report": {
+    "raw_minus_tc20s": 0.03,
+    "ci95_log_cluster_bootstrap": [
+     0.010637358093376438,
+     0.0528169014084507
+    ],
+    "n": 300,
+    "n_logs": 190
+   },
+   "rank1_report": {
+    "raw_minus_tc20s": 0.04666666666666667,
+    "ci95_log_cluster_bootstrap": [
+     0.023333333333333334,
+     0.07213114754098361
+    ],
+    "n": 300,
+    "n_logs": 184
+   }
+  },
+  "also_STOP_if_TB6_rank0_fails": true,
+  "disclosure": "section 17 item 9: the rule was written after the MM's one-line rank-1 summary; the estimator here is 4.3's (seed 20260927), recomputed from the per-row records",
+  "decision_from_4_3_rules_alone": "all"
+ },
+ "failing": [
+  "TB-6",
+  "TB-6-rank0-STOP"
+ ],
+ "merged_jsonl": {
+  "written": true,
+  "all": "F:/tanitad_scratch/p5c_gates_agent/subset_out\\merged_labels_all.jsonl",
+  "rank0only": "F:/tanitad_scratch/p5c_gates_agent/subset_out\\merged_labels_rank0only.jsonl"
+ },
+ "label_records": 4393,
+ "bank_files": [
+  "C:/Users/Admin/p5c_gate_scratch/subset_rows.jsonl.gz"
+ ],
+ "inputs": {
+  "labels": [
+   "F:/tanitad_scratch/p5c_gates_agent/test/labels_subset.jsonl"
+  ],
+  "control": [
+   "../labels/out/labels_s0of2.jsonl",
+   "../labels/out/labels_s1of2.jsonl"
+  ],
+  "tb1": "TB1_control_1018.json"
+ }
+}

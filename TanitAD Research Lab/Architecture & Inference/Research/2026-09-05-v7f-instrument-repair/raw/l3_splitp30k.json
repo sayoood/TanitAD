@@ -1,0 +1,1761 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU, GPU hidden)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-p2-probe-leak-audit/SPEC.md",
+ "_generated_local": "2026-09-05 23:50:12",
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "cuda_visible_devices": "-1",
+ "subcommand": "l3 (R4)",
+ "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+ "labels": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\sp2\\val130_agents.jsonl",
+ "labels_md5": "66efaa94fcc58b7fc4f57734545b103c",
+ "min_lead_frames": 20,
+ "K": [
+  1,
+  3,
+  6
+ ],
+ "rollouts": {
+  "GT": "envpred.py:184-190 \u2014 the TRUE FUTURE actions act[i+s:i+s+W] at every rollout step (the banked form)",
+  "HOLD": "the last OBSERVED action repeated (rollout_transitions with future_actions=None; the T1 hold-action convention)",
+  "SHUF": "actionshuf.py:156-164 \u2014 the action window drawn from a random other time in the same clip"
+ },
+ "estimators": {
+  "banked": "v7tiny_probe.probe wrapped by envpred.loeo (reproduced verbatim): pooled cross-clip R2 over a 12-clip second half; 24 overlapping scores; t as envpred.py:238-241",
+  "corrected": "true leave-one-clip-out; within-clip Pearson r per clip; paired clip-level t and clip bootstrap"
+ },
+ "arms": {
+  "splitp30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_splitp30k\\ckpt.pt",
+   "md5": "4348cad27dbf1895654c40681d92ea97",
+   "step": 30000,
+   "W": 6,
+   "k": {
+    "1": {
+     "n_agents": {
+      "n_clips": 24,
+      "n_rows": 2232,
+      "banked_form": {
+       "z_t": {
+        "r2": 0.2215,
+        "delta_vs_z_t": 0.0,
+        "t_as_envpred": 0.0,
+        "n_favouring": 0,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_GT": {
+        "r2": 0.2255,
+        "delta_vs_z_t": 0.0041,
+        "t_as_envpred": 0.37,
+        "n_favouring": 9,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_HOLD": {
+        "r2": 0.2255,
+        "delta_vs_z_t": 0.0041,
+        "t_as_envpred": 0.37,
+        "n_favouring": 9,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_SHUF": {
+        "r2": 0.2259,
+        "delta_vs_z_t": 0.0044,
+        "t_as_envpred": 0.4,
+        "n_favouring": 9,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "z_t+k_ceiling": {
+        "r2": 0.2214,
+        "delta_vs_z_t": -0.0001,
+        "t_as_envpred": -0.08,
+        "n_favouring": 12,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "pixels_t": {
+        "r2": 0.0287,
+        "delta_vs_z_t": -0.1928,
+        "t_as_envpred": -13.15,
+        "n_favouring": 1,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": -0.2215,
+        "t_as_envpred": -14.11,
+        "n_favouring": 0,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       }
+      },
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.0311,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 24
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.0155,
+        "delta_vs_z_t": -0.0155,
+        "t_paired_clips": -0.66,
+        "ci95_clip_boot": [
+         -0.059,
+         0.0308
+        ],
+        "n_favouring": 11,
+        "n": 24
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.0155,
+        "delta_vs_z_t": -0.0155,
+        "t_paired_clips": -0.66,
+        "ci95_clip_boot": [
+         -0.059,
+         0.0308
+        ],
+        "n_favouring": 11,
+        "n": 24
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.0156,
+        "delta_vs_z_t": -0.0155,
+        "t_paired_clips": -0.68,
+        "ci95_clip_boot": [
+         -0.0588,
+         0.0282
+        ],
+        "n_favouring": 11,
+        "n": 24
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.0153,
+        "delta_vs_z_t": -0.0158,
+        "t_paired_clips": -0.97,
+        "ci95_clip_boot": [
+         -0.0484,
+         0.0138
+        ],
+        "n_favouring": 11,
+        "n": 24
+       },
+       "pixels_t": {
+        "within_clip_r": -0.1136,
+        "delta_vs_z_t": -0.1447,
+        "t_paired_clips": -1.2,
+        "ci95_clip_boot": [
+         -0.3822,
+         0.0679
+        ],
+        "n_favouring": 10,
+        "n": 24
+       },
+       "constant": {
+        "within_clip_r": -0.0,
+        "delta_vs_z_t": -0.0311,
+        "t_paired_clips": -0.33,
+        "ci95_clip_boot": [
+         -0.2031,
+         0.139
+        ],
+        "n_favouring": 11,
+        "n": 24
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": 0.1555,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": 0.2801,
+        "delta_vs_z_t": 0.1246,
+        "ci95_clip_boot": [
+         0.0095,
+         0.3786
+        ],
+        "separated_from_z_t": true
+       },
+       "zhat_HOLD": {
+        "r2": 0.2801,
+        "delta_vs_z_t": 0.1246,
+        "ci95_clip_boot": [
+         0.0094,
+         0.3661
+        ],
+        "separated_from_z_t": true
+       },
+       "zhat_SHUF": {
+        "r2": 0.2828,
+        "delta_vs_z_t": 0.1273,
+        "ci95_clip_boot": [
+         0.0123,
+         0.3842
+        ],
+        "separated_from_z_t": true
+       },
+       "z_t+k_ceiling": {
+        "r2": 0.144,
+        "delta_vs_z_t": -0.0115,
+        "ci95_clip_boot": [
+         -0.043,
+         0.0071
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": 0.2527,
+        "delta_vs_z_t": 0.0972,
+        "ci95_clip_boot": [
+         -0.1374,
+         0.4387
+        ],
+        "separated_from_z_t": false
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": -0.1555,
+        "ci95_clip_boot": [
+         -0.427,
+         0.258
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": 0.0,
+        "t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring_GT": 0,
+        "n": 24
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0001,
+        "t": -0.05,
+        "ci95_clip_boot": [
+         -0.0031,
+         0.0034
+        ],
+        "n_favouring_GT": 12,
+        "n": 24
+       }
+      }
+     },
+     "lead_range_m": {
+      "n_clips": 23,
+      "n_rows": 1771,
+      "banked_form": {},
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.1391,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 23
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.1448,
+        "delta_vs_z_t": 0.0057,
+        "t_paired_clips": 1.08,
+        "ci95_clip_boot": [
+         -0.0045,
+         0.0152
+        ],
+        "n_favouring": 14,
+        "n": 23
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.1448,
+        "delta_vs_z_t": 0.0057,
+        "t_paired_clips": 1.08,
+        "ci95_clip_boot": [
+         -0.0045,
+         0.0152
+        ],
+        "n_favouring": 14,
+        "n": 23
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.1455,
+        "delta_vs_z_t": 0.0064,
+        "t_paired_clips": 1.22,
+        "ci95_clip_boot": [
+         -0.0038,
+         0.0157
+        ],
+        "n_favouring": 16,
+        "n": 23
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.1345,
+        "delta_vs_z_t": -0.0045,
+        "t_paired_clips": -0.32,
+        "ci95_clip_boot": [
+         -0.0328,
+         0.0224
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "pixels_t": {
+        "within_clip_r": 0.0128,
+        "delta_vs_z_t": -0.1263,
+        "t_paired_clips": -1.05,
+        "ci95_clip_boot": [
+         -0.3678,
+         0.0911
+        ],
+        "n_favouring": 10,
+        "n": 23
+       },
+       "constant": {
+        "within_clip_r": -0.0,
+        "delta_vs_z_t": -0.1391,
+        "t_paired_clips": -1.47,
+        "ci95_clip_boot": [
+         -0.3236,
+         0.0464
+        ],
+        "n_favouring": 10,
+        "n": 23
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": -0.3686,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": -0.3611,
+        "delta_vs_z_t": 0.0075,
+        "ci95_clip_boot": [
+         -0.0069,
+         0.0249
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": -0.3611,
+        "delta_vs_z_t": 0.0075,
+        "ci95_clip_boot": [
+         -0.0062,
+         0.025
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": -0.3613,
+        "delta_vs_z_t": 0.0073,
+        "ci95_clip_boot": [
+         -0.0075,
+         0.025
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": -0.3512,
+        "delta_vs_z_t": 0.0174,
+        "ci95_clip_boot": [
+         -0.0067,
+         0.0528
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": 0.0231,
+        "delta_vs_z_t": 0.3917,
+        "ci95_clip_boot": [
+         0.032,
+         1.0991
+        ],
+        "separated_from_z_t": true
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": 0.3686,
+        "ci95_clip_boot": [
+         -0.016,
+         1.0323
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": 0.0,
+        "t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring_GT": 0,
+        "n": 23
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0007,
+        "t": -1.05,
+        "ci95_clip_boot": [
+         -0.0019,
+         0.0005
+        ],
+        "n_favouring_GT": 8,
+        "n": 23
+       }
+      }
+     },
+     "lead_closing": {
+      "n_clips": 23,
+      "n_rows": 1743,
+      "banked_form": {},
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.2173,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 23
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.2132,
+        "delta_vs_z_t": -0.0041,
+        "t_paired_clips": -0.41,
+        "ci95_clip_boot": [
+         -0.0233,
+         0.0152
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.2132,
+        "delta_vs_z_t": -0.0041,
+        "t_paired_clips": -0.41,
+        "ci95_clip_boot": [
+         -0.0233,
+         0.0152
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.2123,
+        "delta_vs_z_t": -0.0051,
+        "t_paired_clips": -0.5,
+        "ci95_clip_boot": [
+         -0.0244,
+         0.014
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.2098,
+        "delta_vs_z_t": -0.0076,
+        "t_paired_clips": -0.49,
+        "ci95_clip_boot": [
+         -0.039,
+         0.0207
+        ],
+        "n_favouring": 12,
+        "n": 23
+       },
+       "pixels_t": {
+        "within_clip_r": -0.0711,
+        "delta_vs_z_t": -0.2884,
+        "t_paired_clips": -2.89,
+        "ci95_clip_boot": [
+         -0.4878,
+         -0.0981
+        ],
+        "n_favouring": 4,
+        "n": 23
+       },
+       "constant": {
+        "within_clip_r": 0.0,
+        "delta_vs_z_t": -0.2173,
+        "t_paired_clips": -3.4,
+        "ci95_clip_boot": [
+         -0.3392,
+         -0.1008
+        ],
+        "n_favouring": 4,
+        "n": 23
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": -0.0024,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": -0.0029,
+        "delta_vs_z_t": -0.0005,
+        "ci95_clip_boot": [
+         -0.0035,
+         0.0017
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": -0.0029,
+        "delta_vs_z_t": -0.0005,
+        "ci95_clip_boot": [
+         -0.0032,
+         0.0023
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": -0.0029,
+        "delta_vs_z_t": -0.0004,
+        "ci95_clip_boot": [
+         -0.004,
+         0.0021
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": -0.0049,
+        "delta_vs_z_t": -0.0024,
+        "ci95_clip_boot": [
+         -0.0172,
+         -0.0002
+        ],
+        "separated_from_z_t": true
+       },
+       "pixels_t": {
+        "r2": -0.0025,
+        "delta_vs_z_t": -0.0,
+        "ci95_clip_boot": [
+         -0.0122,
+         0.0237
+        ],
+        "separated_from_z_t": false
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": 0.0024,
+        "ci95_clip_boot": [
+         -0.0022,
+         0.0383
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": 0.0,
+        "t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring_GT": 0,
+        "n": 23
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": 0.0009,
+        "t": 1.31,
+        "ci95_clip_boot": [
+         -0.0003,
+         0.0023
+        ],
+        "n_favouring_GT": 14,
+        "n": 23
+       }
+      }
+     }
+    },
+    "3": {
+     "n_agents": {
+      "n_clips": 24,
+      "n_rows": 2184,
+      "banked_form": {
+       "z_t": {
+        "r2": 0.27,
+        "delta_vs_z_t": 0.0,
+        "t_as_envpred": 0.0,
+        "n_favouring": 0,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_GT": {
+        "r2": 0.292,
+        "delta_vs_z_t": 0.0219,
+        "t_as_envpred": 1.53,
+        "n_favouring": 22,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_HOLD": {
+        "r2": 0.2926,
+        "delta_vs_z_t": 0.0226,
+        "t_as_envpred": 1.58,
+        "n_favouring": 23,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_SHUF": {
+        "r2": 0.2929,
+        "delta_vs_z_t": 0.0229,
+        "t_as_envpred": 1.6,
+        "n_favouring": 23,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "z_t+k_ceiling": {
+        "r2": 0.2265,
+        "delta_vs_z_t": -0.0435,
+        "t_as_envpred": -4.44,
+        "n_favouring": 9,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "pixels_t": {
+        "r2": 0.027,
+        "delta_vs_z_t": -0.243,
+        "t_as_envpred": -13.01,
+        "n_favouring": 1,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": -0.27,
+        "t_as_envpred": -13.28,
+        "n_favouring": 0,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       }
+      },
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.0409,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 24
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.0248,
+        "delta_vs_z_t": -0.0161,
+        "t_paired_clips": -0.51,
+        "ci95_clip_boot": [
+         -0.0803,
+         0.0413
+        ],
+        "n_favouring": 13,
+        "n": 24
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.0248,
+        "delta_vs_z_t": -0.0161,
+        "t_paired_clips": -0.51,
+        "ci95_clip_boot": [
+         -0.0801,
+         0.0413
+        ],
+        "n_favouring": 13,
+        "n": 24
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.0283,
+        "delta_vs_z_t": -0.0126,
+        "t_paired_clips": -0.41,
+        "ci95_clip_boot": [
+         -0.0757,
+         0.0432
+        ],
+        "n_favouring": 13,
+        "n": 24
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": -0.014,
+        "delta_vs_z_t": -0.0549,
+        "t_paired_clips": -1.17,
+        "ci95_clip_boot": [
+         -0.1461,
+         0.0322
+        ],
+        "n_favouring": 11,
+        "n": 24
+       },
+       "pixels_t": {
+        "within_clip_r": -0.1283,
+        "delta_vs_z_t": -0.1692,
+        "t_paired_clips": -1.49,
+        "ci95_clip_boot": [
+         -0.3973,
+         0.034
+        ],
+        "n_favouring": 9,
+        "n": 24
+       },
+       "constant": {
+        "within_clip_r": -0.0,
+        "delta_vs_z_t": -0.0409,
+        "t_paired_clips": -0.45,
+        "ci95_clip_boot": [
+         -0.2034,
+         0.1325
+        ],
+        "n_favouring": 10,
+        "n": 24
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": 0.1823,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": 0.1983,
+        "delta_vs_z_t": 0.016,
+        "ci95_clip_boot": [
+         -0.0487,
+         0.0976
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": 0.1985,
+        "delta_vs_z_t": 0.0161,
+        "ci95_clip_boot": [
+         -0.0475,
+         0.0966
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": 0.2071,
+        "delta_vs_z_t": 0.0248,
+        "ci95_clip_boot": [
+         -0.0376,
+         0.1053
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": 0.1957,
+        "delta_vs_z_t": 0.0133,
+        "ci95_clip_boot": [
+         -0.0815,
+         0.1647
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": 0.2278,
+        "delta_vs_z_t": 0.0454,
+        "ci95_clip_boot": [
+         -0.1879,
+         0.383
+        ],
+        "separated_from_z_t": false
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": -0.1823,
+        "ci95_clip_boot": [
+         -0.4406,
+         0.2253
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": -0.0,
+        "t": -0.12,
+        "ci95_clip_boot": [
+         -0.0006,
+         0.0005
+        ],
+        "n_favouring_GT": 11,
+        "n": 24
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0035,
+        "t": -1.15,
+        "ci95_clip_boot": [
+         -0.0095,
+         0.0017
+        ],
+        "n_favouring_GT": 14,
+        "n": 24
+       }
+      }
+     },
+     "lead_range_m": {
+      "n_clips": 23,
+      "n_rows": 1737,
+      "banked_form": {},
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.1375,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 23
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.1332,
+        "delta_vs_z_t": -0.0043,
+        "t_paired_clips": -0.21,
+        "ci95_clip_boot": [
+         -0.0439,
+         0.0317
+        ],
+        "n_favouring": 14,
+        "n": 23
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.1331,
+        "delta_vs_z_t": -0.0043,
+        "t_paired_clips": -0.21,
+        "ci95_clip_boot": [
+         -0.044,
+         0.0315
+        ],
+        "n_favouring": 14,
+        "n": 23
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.1343,
+        "delta_vs_z_t": -0.0032,
+        "t_paired_clips": -0.15,
+        "ci95_clip_boot": [
+         -0.0435,
+         0.0332
+        ],
+        "n_favouring": 14,
+        "n": 23
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.131,
+        "delta_vs_z_t": -0.0065,
+        "t_paired_clips": -0.16,
+        "ci95_clip_boot": [
+         -0.0821,
+         0.0715
+        ],
+        "n_favouring": 12,
+        "n": 23
+       },
+       "pixels_t": {
+        "within_clip_r": 0.0201,
+        "delta_vs_z_t": -0.1174,
+        "t_paired_clips": -0.98,
+        "ci95_clip_boot": [
+         -0.3544,
+         0.0993
+        ],
+        "n_favouring": 10,
+        "n": 23
+       },
+       "constant": {
+        "within_clip_r": 0.0,
+        "delta_vs_z_t": -0.1375,
+        "t_paired_clips": -1.37,
+        "ci95_clip_boot": [
+         -0.3308,
+         0.0585
+        ],
+        "n_favouring": 11,
+        "n": 23
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": -0.425,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": -0.3864,
+        "delta_vs_z_t": 0.0385,
+        "ci95_clip_boot": [
+         0.0034,
+         0.1035
+        ],
+        "separated_from_z_t": true
+       },
+       "zhat_HOLD": {
+        "r2": -0.3864,
+        "delta_vs_z_t": 0.0386,
+        "ci95_clip_boot": [
+         0.0046,
+         0.1017
+        ],
+        "separated_from_z_t": true
+       },
+       "zhat_SHUF": {
+        "r2": -0.3865,
+        "delta_vs_z_t": 0.0384,
+        "ci95_clip_boot": [
+         0.0026,
+         0.1011
+        ],
+        "separated_from_z_t": true
+       },
+       "z_t+k_ceiling": {
+        "r2": -0.3565,
+        "delta_vs_z_t": 0.0684,
+        "ci95_clip_boot": [
+         0.0002,
+         0.1964
+        ],
+        "separated_from_z_t": true
+       },
+       "pixels_t": {
+        "r2": 0.0166,
+        "delta_vs_z_t": 0.4416,
+        "ci95_clip_boot": [
+         0.0576,
+         1.2101
+        ],
+        "separated_from_z_t": true
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": 0.425,
+        "ci95_clip_boot": [
+         0.0149,
+         1.1636
+        ],
+        "separated_from_z_t": true
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": 0.0,
+        "t": 0.15,
+        "ci95_clip_boot": [
+         -0.0002,
+         0.0002
+        ],
+        "n_favouring_GT": 11,
+        "n": 23
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0012,
+        "t": -0.69,
+        "ci95_clip_boot": [
+         -0.0044,
+         0.0023
+        ],
+        "n_favouring_GT": 11,
+        "n": 23
+       }
+      }
+     },
+     "lead_closing": {
+      "n_clips": 23,
+      "n_rows": 1709,
+      "banked_form": {},
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.1545,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 23
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.1626,
+        "delta_vs_z_t": 0.0081,
+        "t_paired_clips": 0.31,
+        "ci95_clip_boot": [
+         -0.0396,
+         0.0559
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.1626,
+        "delta_vs_z_t": 0.0081,
+        "t_paired_clips": 0.31,
+        "ci95_clip_boot": [
+         -0.0398,
+         0.056
+        ],
+        "n_favouring": 12,
+        "n": 23
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.1634,
+        "delta_vs_z_t": 0.0088,
+        "t_paired_clips": 0.34,
+        "ci95_clip_boot": [
+         -0.0391,
+         0.0559
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.2239,
+        "delta_vs_z_t": 0.0694,
+        "t_paired_clips": 1.29,
+        "ci95_clip_boot": [
+         -0.0276,
+         0.1758
+        ],
+        "n_favouring": 13,
+        "n": 23
+       },
+       "pixels_t": {
+        "within_clip_r": -0.0403,
+        "delta_vs_z_t": -0.1948,
+        "t_paired_clips": -2.16,
+        "ci95_clip_boot": [
+         -0.3833,
+         -0.0219
+        ],
+        "n_favouring": 7,
+        "n": 23
+       },
+       "constant": {
+        "within_clip_r": 0.0,
+        "delta_vs_z_t": -0.1545,
+        "t_paired_clips": -2.07,
+        "ci95_clip_boot": [
+         -0.2938,
+         -0.0136
+        ],
+        "n_favouring": 8,
+        "n": 23
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": -0.0019,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": -0.0027,
+        "delta_vs_z_t": -0.0007,
+        "ci95_clip_boot": [
+         -0.0026,
+         0.0095
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": -0.0026,
+        "delta_vs_z_t": -0.0007,
+        "ci95_clip_boot": [
+         -0.0024,
+         0.0149
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": -0.0027,
+        "delta_vs_z_t": -0.0008,
+        "ci95_clip_boot": [
+         -0.0024,
+         0.0105
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": -0.005,
+        "delta_vs_z_t": -0.0031,
+        "ci95_clip_boot": [
+         -0.0247,
+         0.003
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": -0.0027,
+        "delta_vs_z_t": -0.0008,
+        "ci95_clip_boot": [
+         -0.0146,
+         0.0194
+        ],
+        "separated_from_z_t": false
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": 0.0019,
+        "ci95_clip_boot": [
+         -0.0022,
+         0.0304
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": -0.0,
+        "t": -0.04,
+        "ci95_clip_boot": [
+         -0.0004,
+         0.0004
+        ],
+        "n_favouring_GT": 9,
+        "n": 23
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0008,
+        "t": -0.44,
+        "ci95_clip_boot": [
+         -0.0036,
+         0.0029
+        ],
+        "n_favouring_GT": 9,
+        "n": 23
+       }
+      }
+     }
+    },
+    "6": {
+     "n_agents": {
+      "n_clips": 24,
+      "n_rows": 2112,
+      "banked_form": {
+       "z_t": {
+        "r2": 0.2382,
+        "delta_vs_z_t": 0.0,
+        "t_as_envpred": 0.0,
+        "n_favouring": 0,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_GT": {
+        "r2": 0.2888,
+        "delta_vs_z_t": 0.0506,
+        "t_as_envpred": 19.31,
+        "n_favouring": 24,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_HOLD": {
+        "r2": 0.2899,
+        "delta_vs_z_t": 0.0517,
+        "t_as_envpred": 19.13,
+        "n_favouring": 24,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "zhat_SHUF": {
+        "r2": 0.2831,
+        "delta_vs_z_t": 0.0449,
+        "t_as_envpred": 19.84,
+        "n_favouring": 24,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "z_t+k_ceiling": {
+        "r2": 0.2662,
+        "delta_vs_z_t": 0.028,
+        "t_as_envpred": 2.3,
+        "n_favouring": 23,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "pixels_t": {
+        "r2": 0.0192,
+        "delta_vs_z_t": -0.2189,
+        "t_as_envpred": -23.16,
+        "n_favouring": 0,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": -0.2382,
+        "t_as_envpred": -16.09,
+        "n_favouring": 1,
+        "n": 24,
+        "note": "24 overlapping 12-clip pooled scores treated as independent (envpred.py:238-241)"
+       }
+      },
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.0051,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 24
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.0462,
+        "delta_vs_z_t": 0.0412,
+        "t_paired_clips": 0.74,
+        "ci95_clip_boot": [
+         -0.06,
+         0.1556
+        ],
+        "n_favouring": 14,
+        "n": 24
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.048,
+        "delta_vs_z_t": 0.0429,
+        "t_paired_clips": 0.77,
+        "ci95_clip_boot": [
+         -0.0578,
+         0.1564
+        ],
+        "n_favouring": 14,
+        "n": 24
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.0505,
+        "delta_vs_z_t": 0.0454,
+        "t_paired_clips": 0.8,
+        "ci95_clip_boot": [
+         -0.0569,
+         0.1595
+        ],
+        "n_favouring": 14,
+        "n": 24
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": -0.0469,
+        "delta_vs_z_t": -0.052,
+        "t_paired_clips": -0.68,
+        "ci95_clip_boot": [
+         -0.2003,
+         0.0853
+        ],
+        "n_favouring": 11,
+        "n": 24
+       },
+       "pixels_t": {
+        "within_clip_r": -0.1932,
+        "delta_vs_z_t": -0.1983,
+        "t_paired_clips": -1.94,
+        "ci95_clip_boot": [
+         -0.3917,
+         -0.0041
+        ],
+        "n_favouring": 10,
+        "n": 24
+       },
+       "constant": {
+        "within_clip_r": -0.0,
+        "delta_vs_z_t": -0.0051,
+        "t_paired_clips": -0.06,
+        "ci95_clip_boot": [
+         -0.1651,
+         0.1592
+        ],
+        "n_favouring": 12,
+        "n": 24
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": 0.1561,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": 0.186,
+        "delta_vs_z_t": 0.0299,
+        "ci95_clip_boot": [
+         -0.0452,
+         0.1326
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": 0.1881,
+        "delta_vs_z_t": 0.032,
+        "ci95_clip_boot": [
+         -0.045,
+         0.1303
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": 0.1985,
+        "delta_vs_z_t": 0.0424,
+        "ci95_clip_boot": [
+         -0.0265,
+         0.1316
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": 0.2292,
+        "delta_vs_z_t": 0.0731,
+        "ci95_clip_boot": [
+         -0.0478,
+         0.2426
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": 0.2525,
+        "delta_vs_z_t": 0.0964,
+        "ci95_clip_boot": [
+         -0.1721,
+         0.443
+        ],
+        "separated_from_z_t": false
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": -0.1561,
+        "ci95_clip_boot": [
+         -0.4262,
+         0.2893
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": -0.0017,
+        "t": -2.2,
+        "ci95_clip_boot": [
+         -0.0032,
+         -0.0003
+        ],
+        "n_favouring_GT": 7,
+        "n": 24
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0043,
+        "t": -1.18,
+        "ci95_clip_boot": [
+         -0.0115,
+         0.0018
+        ],
+        "n_favouring_GT": 12,
+        "n": 24
+       }
+      }
+     },
+     "lead_range_m": {
+      "n_clips": 23,
+      "n_rows": 1682,
+      "banked_form": {},
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.1322,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 23
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.0862,
+        "delta_vs_z_t": -0.046,
+        "t_paired_clips": -0.96,
+        "ci95_clip_boot": [
+         -0.1414,
+         0.0385
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.0858,
+        "delta_vs_z_t": -0.0464,
+        "t_paired_clips": -0.97,
+        "ci95_clip_boot": [
+         -0.1419,
+         0.0377
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.0901,
+        "delta_vs_z_t": -0.0421,
+        "t_paired_clips": -0.87,
+        "ci95_clip_boot": [
+         -0.1385,
+         0.0425
+        ],
+        "n_favouring": 12,
+        "n": 23
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.1466,
+        "delta_vs_z_t": 0.0144,
+        "t_paired_clips": 0.25,
+        "ci95_clip_boot": [
+         -0.0908,
+         0.1295
+        ],
+        "n_favouring": 13,
+        "n": 23
+       },
+       "pixels_t": {
+        "within_clip_r": 0.0308,
+        "delta_vs_z_t": -0.1014,
+        "t_paired_clips": -0.86,
+        "ci95_clip_boot": [
+         -0.3346,
+         0.1127
+        ],
+        "n_favouring": 10,
+        "n": 23
+       },
+       "constant": {
+        "within_clip_r": -0.0,
+        "delta_vs_z_t": -0.1322,
+        "t_paired_clips": -1.24,
+        "ci95_clip_boot": [
+         -0.3331,
+         0.0787
+        ],
+        "n_favouring": 12,
+        "n": 23
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": -0.4536,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": -0.4277,
+        "delta_vs_z_t": 0.0259,
+        "ci95_clip_boot": [
+         -0.0335,
+         0.0901
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": -0.4274,
+        "delta_vs_z_t": 0.0262,
+        "ci95_clip_boot": [
+         -0.035,
+         0.0954
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": -0.4268,
+        "delta_vs_z_t": 0.0268,
+        "ci95_clip_boot": [
+         -0.0365,
+         0.0915
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": -0.3518,
+        "delta_vs_z_t": 0.1017,
+        "ci95_clip_boot": [
+         -0.0087,
+         0.3065
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": 0.0136,
+        "delta_vs_z_t": 0.4672,
+        "ci95_clip_boot": [
+         0.074,
+         1.2806
+        ],
+        "separated_from_z_t": true
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": 0.4536,
+        "ci95_clip_boot": [
+         0.025,
+         1.2584
+        ],
+        "separated_from_z_t": true
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": 0.0004,
+        "t": 0.97,
+        "ci95_clip_boot": [
+         -0.0003,
+         0.0011
+        ],
+        "n_favouring_GT": 12,
+        "n": 23
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0039,
+        "t": -1.15,
+        "ci95_clip_boot": [
+         -0.0112,
+         0.0022
+        ],
+        "n_favouring_GT": 8,
+        "n": 23
+       }
+      }
+     },
+     "lead_closing": {
+      "n_clips": 23,
+      "n_rows": 1656,
+      "banked_form": {},
+      "corrected": {
+       "z_t": {
+        "within_clip_r": 0.117,
+        "delta_vs_z_t": 0.0,
+        "t_paired_clips": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "n_favouring": 0,
+        "n": 23
+       },
+       "zhat_GT": {
+        "within_clip_r": 0.1342,
+        "delta_vs_z_t": 0.0172,
+        "t_paired_clips": 0.5,
+        "ci95_clip_boot": [
+         -0.0501,
+         0.0823
+        ],
+        "n_favouring": 13,
+        "n": 23
+       },
+       "zhat_HOLD": {
+        "within_clip_r": 0.1347,
+        "delta_vs_z_t": 0.0177,
+        "t_paired_clips": 0.53,
+        "ci95_clip_boot": [
+         -0.048,
+         0.0819
+        ],
+        "n_favouring": 13,
+        "n": 23
+       },
+       "zhat_SHUF": {
+        "within_clip_r": 0.1366,
+        "delta_vs_z_t": 0.0196,
+        "t_paired_clips": 0.57,
+        "ci95_clip_boot": [
+         -0.047,
+         0.0848
+        ],
+        "n_favouring": 13,
+        "n": 23
+       },
+       "z_t+k_ceiling": {
+        "within_clip_r": 0.2247,
+        "delta_vs_z_t": 0.1077,
+        "t_paired_clips": 1.54,
+        "ci95_clip_boot": [
+         -0.0171,
+         0.2454
+        ],
+        "n_favouring": 15,
+        "n": 23
+       },
+       "pixels_t": {
+        "within_clip_r": -0.0445,
+        "delta_vs_z_t": -0.1615,
+        "t_paired_clips": -1.86,
+        "ci95_clip_boot": [
+         -0.3369,
+         -0.0082
+        ],
+        "n_favouring": 11,
+        "n": 23
+       },
+       "constant": {
+        "within_clip_r": 0.0,
+        "delta_vs_z_t": -0.117,
+        "t_paired_clips": -1.41,
+        "ci95_clip_boot": [
+         -0.2671,
+         0.0436
+        ],
+        "n_favouring": 8,
+        "n": 23
+       }
+      },
+      "pooled_crossclip_R2_true_loco": {
+       "z_t": {
+        "r2": -0.003,
+        "delta_vs_z_t": 0.0,
+        "ci95_clip_boot": [
+         0.0,
+         0.0
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_GT": {
+        "r2": -0.0038,
+        "delta_vs_z_t": -0.0008,
+        "ci95_clip_boot": [
+         -0.0036,
+         0.0075
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_HOLD": {
+        "r2": -0.0039,
+        "delta_vs_z_t": -0.0008,
+        "ci95_clip_boot": [
+         -0.0034,
+         0.0102
+        ],
+        "separated_from_z_t": false
+       },
+       "zhat_SHUF": {
+        "r2": -0.0036,
+        "delta_vs_z_t": -0.0006,
+        "ci95_clip_boot": [
+         -0.0033,
+         0.0085
+        ],
+        "separated_from_z_t": false
+       },
+       "z_t+k_ceiling": {
+        "r2": -0.0054,
+        "delta_vs_z_t": -0.0023,
+        "ci95_clip_boot": [
+         -0.0297,
+         0.0018
+        ],
+        "separated_from_z_t": false
+       },
+       "pixels_t": {
+        "r2": -0.0002,
+        "delta_vs_z_t": 0.0029,
+        "ci95_clip_boot": [
+         -0.0012,
+         0.0256
+        ],
+        "separated_from_z_t": false
+       },
+       "constant": {
+        "r2": 0.0,
+        "delta_vs_z_t": 0.003,
+        "ci95_clip_boot": [
+         -0.0012,
+         0.0238
+        ],
+        "separated_from_z_t": false
+       }
+      },
+      "R4_primary": {
+       "zhat_GT_minus_zhat_HOLD": {
+        "delta": -0.0005,
+        "t": -0.42,
+        "ci95_clip_boot": [
+         -0.0029,
+         0.0016
+        ],
+        "n_favouring_GT": 12,
+        "n": 23
+       },
+       "zhat_GT_minus_zhat_SHUF": {
+        "delta": -0.0024,
+        "t": -1.67,
+        "ci95_clip_boot": [
+         -0.0052,
+         0.0002
+        ],
+        "n_favouring_GT": 7,
+        "n": 23
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "clip_selection": {
+  "labelled": 124,
+  "lead_matched": 70,
+  "used": 24
+ },
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "_seconds": 2922.4
+}

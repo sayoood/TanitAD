@@ -1,0 +1,49 @@
+{
+ "item": "resume",
+ "pass": false,
+ "problems": [],
+ "record": {
+  "smoke": "U_s0.A argv, --max-clips 200 --steps 40 --ckpt-every 20, crash at step 30",
+  "crash_rc": 1,
+  "crash_hook_in_log": true,
+  "ckpt_step_at_crash": 20,
+  "resume_rc": 0,
+  "resume_final_step": 40,
+  "resume_logged": true,
+  "straight_rc": 0,
+  "straight_final_step": 40,
+  "n_tensors_differ_resumed_vs_straight": 241,
+  "resumed_equals_straight_bitwise": false,
+  "regression_compare_one_element_changed_n_differ": 241,
+  "wall_s": 78.5
+ },
+ "regression": [
+  {
+   "arm": "no_resume_final_step_20",
+   "red": true,
+   "problems": [
+    "the resumed run's final checkpoint is at step 20, expected 40"
+   ]
+  },
+  {
+   "arm": "no_checkpoint_at_crash",
+   "red": true,
+   "problems": [
+    "the checkpoint left at the crash is at step None, expected 20"
+   ]
+  },
+  {
+   "arm": "no_hook_in_log",
+   "red": true,
+   "problems": [
+    "the crash run did not die at the V8F_TRAIN_CRASH_AT hook"
+   ]
+  },
+  {
+   "arm": "one_element_changed_in_compared_state",
+   "red": false,
+   "problems": []
+  }
+ ],
+ "at": "2026-11-16T22:58:39Z"
+}

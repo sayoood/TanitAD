@@ -1,0 +1,43 @@
+{
+ "verdict": "WORKS-AS-WRITTEN-BUT-WRONG-OBJECTIVE (with a TARGET-MISMATCH between the term's target 1.0 and the mech criterion's 'gain must rise'). No wiring defect.",
+ "evidence_class": "MEASURED (banked logs and reads, no new compute)",
+ "definitions": {
+  "term": "hjepa.py @86da79cd:897-918 _response_loss_fixed_k. Two contrasts a+/-0.42 (rsp_delta[0], WM units) on accel channel only; 10-step rollout (RSP_K=10, ctx 1) from the DETACHED anchor state; g = ((z_K+ - z_K-) @ w)/(2*delta*s) (917); loss = mean (g - 1)^2 (918). w = frozen train-fit ridge RA on R35 (v8f_mini.py:707 load_rsp_probe, w = RA.W/RA.sd), s = s_cal 0.20076 / 0.20323 (constant, held-out train swap slope). Gradient reaches predictors[0] and act_embed only. Sign is correct: g is +, target +1.",
+  "eval_gain": "ia3pk_read.py:176-205 read_core: same contrasts and rollout, but the readout is a ridge REFIT on the 141 EVAL clips (cross-fitted by fold, lines 112-134), and s_swap is recomputed on eval real pairs (0.2280 / 0.2223, about 1.14x the term's s). gain = mean(read)/(2*delta*s_swap) (205). mech.json is built from this (ia3pk_read.py:278-296): MECH-MOVED needs gain(FTRSP) > gain(FTNULL).",
+  "same_quantity": "Same physical quantity (K=10 accel response), DIFFERENT readout and calibration. The term's own readout is also computed beside, on eval clips (ia3pk_read.py:208-213 target_read_cycle_gain_frozen_probe), which is the training term's quantity exactly."
+ },
+ "did_term_train": {
+  "yes": true,
+  "source": "C:/Users/Admin/t2v8f_pulls/optb_FTRSP_s*/train_log.jsonl keys wm/rsp/L1, wm/rsp_g_aa/L1 (step 50 -> 4000)",
+  "rsp_L1_first_last": {"s0": [0.02965, 0.00039], "s1": [0.02966, 0.00047], "s2": [0.02465, 0.00035], "s3": [0.02766, 0.00049]},
+  "g_aa_train_last": {"s0": 1.0014, "s1": 0.9908, "s2": 1.0050, "s3": 0.9960},
+  "note": "first logged row is step 50, not step 0; AMEND_1 draft predicts step-0 loss 0.94/0.99 with G_aa about 1.2 (amend1/AMENDMENT_1_BCAL_DRAFT.md:73,115)"
+ },
+ "the_direction_explained": {
+  "frozen_probe_gain_on_eval_clips (the term's own quantity)": {
+   "R35_baseline": [1.255, 1.246],
+   "FTNULL_s0..s5": [1.189, 1.234, 1.192, 1.412, 1.195, 1.318],
+   "FTRSP_s0..s3": [0.999, 0.983, 1.006, 1.004],
+   "src": "readchain/out/reads/ia3pk_*.json target_read_cycle_gain_frozen_probe.point"
+  },
+  "crossfit_gain_mech_json": {
+   "R35_baseline": [0.990, 0.891],
+   "FTNULL": [0.910, 0.862, 0.927, 1.011, 0.914, 0.949],
+   "FTRSP": [0.749, 0.635, 0.755, 0.652]
+  },
+  "reading": "The term hit its target: through its own frozen readout FTRSP reads 0.98-1.01 on EVAL clips (generalises), exactly 1.0. But R35 and FTNULL START at 1.2-1.4 on that readout (R35 1.244/1.202 per amend1 1.5, reproduced here as 1.255/1.246: this is the known-value control). Target 1.0 is BELOW the start, so minimising (g-1)^2 shrinks the response by about 20% (1.255->0.999 = x0.80 on the frozen readout; the eval crossfit gain 0.990->0.749 = x0.76 and FTNULL 0.910->0.749 = x0.82). The two readouts move proportionally, so the mech.json drop is the same shrink seen through the eval readout, not a different effect. The card's premise (response too small) was refuted by the amendment's own section 1.5 before the run; AMEND_OPTB section 3 nevertheless defined MECH-MOVED as gain RISING, which the term could not deliver by construction.",
+  "mechanisms_ruled_out": ["sign error (g is + and loss pulls toward +1)", "detached/self target (target is the constant 1.0)", "readout drift (proj frozen, wm.proj bit-equal check in ia3pk_read, frozen-probe eval gain lands on 1.0)", "term not trained"],
+  "not_ruled_out": "Why a 20% smaller accel response raises acc_mae (+0.19/+0.25 m/s^2) is not shown here; plausible (planner under-estimates authority) but UNTESTED. Also the term acts on a K=10 endpoint of the pooled latent only; it is an indirect proxy for planner behaviour."
+ },
+ "implication_for_lambda_0.3_four_runs": "Lambda 0.3 is a smaller dose of the same push (toward gain 1.0 from 1.25): expected to shrink the response by roughly 0.3x the 20%, and the harm, not to raise anything. It cannot meet MECH-MOVED. Not recommended as the next arm.",
+ "cheapest_arm_proposal (PROPOSAL ONLY, no code changed)": [
+  "A. 0 GPU, CPU first: test whether acc_mae tracks the response gain at all. Use the 10 banked arms: regress per-arm acc_mae (DECIDE_OPTB.json) on frozen-probe gain (FTNULL spans 1.19-1.41, FTRSP about 1.0; 10 points). If acc_mae falls with gain, the response should be raised, not lowered.",
+  "B. If A supports it: change the target at hjepa.py:918 from 1.0 to a value above the baseline, e.g. loss = (g - g_star)^2 with g_star about 1.5 (a new constant in LevelConfig, plumbed like rsp_delta at hjepa.py:472), with a G-DVB entry (launch-gate rule 3). Dose-controlled: g_star in {1.0 (done), 1.25 (= neutral, should read FTNULL), 1.5}. A neutral g_star=1.25 arm is the control that must read no effect.",
+  "C. Alternative lever: use the eval-side crossfit readout in the term so train and mech measure the same thing (readout/s mismatch is about 1.27x: frozen 1.255 vs crossfit 0.990 at R35), and set the MECH-MOVED criterion to the same readout the term trains on."
+ ],
+ "caveats": [
+  "no new CPU computation was run on checkpoints: banked reads already include the term's own quantity on eval clips, and the R35 value is the known-value control (matches amend1 1.244/1.202)",
+  "the answer to why acc_mae worsens is a hypothesis",
+  "per-seed FTNULL gains vary 1.19-1.41 (F_T), so a 20% shrink is large vs the lever-seed noise only at the pair level"
+ ]
+}

@@ -1,0 +1,62 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_s1b.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_s1b.py
+@@ -265,7 +265,8 @@
+     import test_rl_epo as TE                                             # the real-main() smoke harness (stubs only the GPU / checkpoint / corpus parts)
+     bad: list = []
+     M = load(sf_src, f"sf_s1b_{tag}", SF_PATH)
+-    seg = segments(sf_src)
++    import scorer1_layer as SL1                                          # SCORER1 (v2): main.train_losses gained `pair_w=None` + one arm-B block; the R0 pin hashes the PRE-SCORER1 trainer (the layer peels to the tip blob, test_scorer1_layer)
++    seg = segments(SL1.peel(sf_src))
+     # ---- P: the code R0 trained with, and the default that keeps refe_rls1 unchanged
+     for k, h in R0_SEGMENTS.items():
+         check(bad, f"P_pinned_{k}", lambda k=k, h=h: hashlib.sha256(undo_r0c(k, undo_safeobj(k, seg[k])).encode()).hexdigest() == h)
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py
+@@ -279,7 +279,7 @@
+ 
+ 
+ def a_ns(b_mode: str, lane: bool, **kw):
+-    d = dict(b_mode=b_mode, lane_head=lane, lane_weight=0.7, tau_t=0.1, tau_s=0.1, lam=0.3, epo=False)
++    d = dict(b_mode=b_mode, lane_head=lane, lane_weight=0.7, tau_t=0.1, tau_s=0.1, lam=0.3, epo=False, pair_w=0.0)
+     d.update(kw)
+     return types.SimpleNamespace(**d)
+ 
+@@ -858,13 +858,15 @@
+             v = n.value.left if isinstance(n, ast.Assign) and isinstance(n.value, ast.BinOp) else getattr(n, "value", None)          # SAFEOBJ: `bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)`
+             if isinstance(n, ast.Assign) and getattr(v, "func", None) is not None and getattr(v.func, "id", "") == "epo_refusals":
+                 nxt = C.main.body[i + 1]
++                if isinstance(nxt, ast.Assign) and ast.unparse(nxt).startswith("bad_cli = bad_cli + pair_refusals("):          # SCORER1 (v2): one more refusal source, appended before the same `if bad_cli ...: return 4`
++                    nxt = C.main.body[i + 2]
+                 return isinstance(nxt, ast.If) and any(isinstance(m, ast.Return) and getattr(m.value, "value", None) == 4 for m in ast.walk(nxt))
+         return False
+     t("p2/hop_main_refuses_on_epo_refusals", hop_refusals)
+ 
+     def hop_train_loop():
+         for n in ast.walk(C.main):
+-            if isinstance(n, ast.For) and ast.unparse(n.iter) == "dl":
++            if isinstance(n, ast.For) and ast.unparse(n.iter) == "dl" and ast.unparse(n.target) == "batch":          # SCORER1 (v2): `for batch_c in dl` (the --pair-calibrate pass) is a second loop over dl
+                 segs = [C.seg(s) for s in n.body]
+                 return (ast_eq(segs[0], "batch, rows = split_rows(batch, a.epo)") and ast_eq(segs[1], "_s0, sA, sB, tg = fwd(batch)")
+                         and ast_eq(segs[2], "lA, lB, ln, ep_t = train_losses(_s0, sA, sB, tg, rows, upd)")
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_hn_screen_wiring.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_hn_screen_wiring.py
+@@ -545,7 +545,9 @@
+         return r2
+ 
+     if "PIN" in groups:
+-        mod = load_mod(SF, "sft_wire_pin_new", SRC_PATH)
++        import scorer1_layer as SL1                       # SCORER1 (v2) sits ON TOP of P6-HN-S: the P6-HN-S pins compare the trainer WITHOUT the --pair-*/--navtest-* edits (peel to the tip blob, test_scorer1_layer)
++        SF_NO_S1 = SL1.peel(SF)
++        mod = load_mod(SF_NO_S1, "sft_wire_pin_new", SRC_PATH)
+         pre_mod = load_mod(PRE, "sft_wire_pin_pre", SRC_PATH)
+         import rls1_checks as RC
+         check(bad, "PIN_peel_equals_tip_blob", lambda: blob_sha1(HL.peel(SF)) == TIP_BLOB == HL.TIP_TRAINER_BLOB)
+@@ -563,7 +565,7 @@
+             def nest(src):
+                 m = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name == "main")
+                 return {n.name: ast.dump(n) for n in m.body if isinstance(n, ast.FunctionDef)}
+-            a_, b_ = nest(PRE), nest(SF)
++            a_, b_ = nest(PRE), nest(SF_NO_S1)
+             return set(a_) <= set(b_) and all(a_[k] == b_[k] for k in a_) and len(a_) >= 5
+         check(bad, "PIN_every_nested_function_of_main_is_AST_identical", nested_identical)
+         check(bad, "PIN_loop_rebinding_only_inside_if", lambda: SF.count("\n    def fwd(batch):") == 1 and SF.count("\n        def fwd(batch):") == 1)

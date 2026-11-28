@@ -1,0 +1,234 @@
+{
+ "_what": "INFERENCE-RUN noise floor for refcv5-v2's DDIM sampler",
+ "_ckpt": "ckpt_15000.pt",
+ "_ckpt_md5": "f2853e722afcd9eba60df2a3205517ab",
+ "_step": 15000,
+ "_of_steps": 40284,
+ "_MID_TRAINING": true,
+ "_LEVEL_IS_NOT_A_CAPABILITY_NUMBER": true,
+ "_design": "same checkpoint, same flags, ONE variable (--infer-seed 0/1/2)",
+ "_tier": "T1",
+ "_estimator": "episode_cluster_bootstrap",
+ "_n_windows": 4823,
+ "_n_episodes": 141,
+ "_n_boot": 2000,
+ "_gpu": "dev-box RTX 4060 only; 0 A40; 0 Thor",
+ "arm_ade_dense_m": {
+  "os": {
+   "seeds": [
+    0.4007,
+    0.4001,
+    0.3999
+   ],
+   "range": 0.0008000000000000229,
+   "sd": 0.0003399346342395251,
+   "model_free": false
+  },
+  "ha": {
+   "seeds": [
+    0.2996,
+    0.2996,
+    0.2996
+   ],
+   "range": 0.0,
+   "sd": 0.0,
+   "model_free": true
+  },
+  "ha0": {
+   "seeds": [
+    0.6723,
+    0.6723,
+    0.6723
+   ],
+   "range": 0.0,
+   "sd": 0.0,
+   "model_free": true
+  },
+  "ha0_ext": {
+   "seeds": [
+    0.2874,
+    0.2874,
+    0.2874
+   ],
+   "range": 0.0,
+   "sd": 0.0,
+   "model_free": true
+  },
+  "os_navshuf": {
+   "seeds": [
+    0.4007,
+    0.4024,
+    0.402
+   ],
+   "range": 0.0016999999999999793,
+   "sd": 0.0007257180352359046,
+   "model_free": false
+  },
+  "os_navzero": {
+   "seeds": [
+    0.4005,
+    0.4012,
+    0.4034
+   ],
+   "range": 0.002899999999999958,
+   "sd": 0.001235583532856693,
+   "model_free": false
+  },
+  "oracle_sel": {
+   "seeds": [
+    0.2938,
+    0.2942,
+    0.2953
+   ],
+   "range": 0.0015000000000000013,
+   "sd": 0.0006342099196813475,
+   "model_free": false
+  }
+ },
+ "paired_ade_m": {
+  "paired_os_minus_ha0": {
+   "seeds": [
+    -0.2716212343438001,
+    -0.27216729948117463,
+    -0.27234963913514454
+   ],
+   "mean": -0.2720460576533731,
+   "range": 0.0007284047913444502,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 373.4819716812202
+  },
+  "paired_os_minus_ha": {
+   "seeds": [
+    0.10117127563330541,
+    0.10062521049593093,
+    0.10044287084196102
+   ],
+   "mean": 0.10074645232373246,
+   "range": 0.0007284047913443947,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 138.31107856633915
+  },
+  "paired_os_minus_navshuf": {
+   "seeds": [
+    -1.0976689828022534e-05,
+    -0.0022413795166602644,
+    -0.002007849605885851
+   ],
+   "mean": -0.0014200686041247127,
+   "range": 0.002230402826832242,
+   "separated": [
+    false,
+    false,
+    false
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 0.6366870535855549
+  },
+  "paired_os_navzero_minus_ha0": {
+   "seeds": [
+    -0.2718721456308469,
+    -0.2711537562573988,
+    -0.26896202154253007
+   ],
+   "mean": -0.2706626411435919,
+   "range": 0.0029101240883168122,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 93.00725086954645
+  },
+  "paired_os_minus_navzero": {
+   "seeds": [
+    0.0002509112870467707,
+    -0.0010135432237758256,
+    -0.0033876175926144027
+   ],
+   "mean": -0.0013834165097811526,
+   "range": 0.0036385288796611736,
+   "separated": [
+    false,
+    false,
+    false
+   ],
+   "sign_flips": true,
+   "effect_over_floor": 0.380213145349551
+  },
+  "paired_ha_minus_ha0": {
+   "seeds": [
+    -0.3727925099771055,
+    -0.3727925099771055,
+    -0.3727925099771055
+   ],
+   "mean": -0.3727925099771055,
+   "range": 0.0,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": null
+  },
+  "paired_os_minus_ha0ext": {
+   "seeds": [
+    0.11342228560481815,
+    0.11287622046744364,
+    0.11269388081347376
+   ],
+   "mean": 0.11299746229524518,
+   "range": 0.0007284047913443947,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 155.13003708650677
+  },
+  "paired_os_navzero_minus_ha0ext": {
+   "seeds": [
+    0.11317137431777138,
+    0.11388976369121949,
+    0.11608149840608815
+   ],
+   "mean": 0.11438087880502634,
+   "range": 0.0029101240883167706,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 39.30446789682593
+  },
+  "paired_oraclesel_minus_os": {
+   "seeds": [
+    -0.10702481952783612,
+    -0.10604769216663838,
+    -0.10481453837272989
+   ],
+   "mean": -0.10596235002240147,
+   "range": 0.002210281155106228,
+   "separated": [
+    true,
+    true,
+    true
+   ],
+   "sign_flips": false,
+   "effect_over_floor": 47.94066572825159
+  }
+ }
+}

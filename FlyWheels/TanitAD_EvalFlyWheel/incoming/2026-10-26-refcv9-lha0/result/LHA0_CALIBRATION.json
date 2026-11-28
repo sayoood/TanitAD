@@ -1,0 +1,105 @@
+{
+ "tool": "lha0_derive.py",
+ "prereg": "PREREG_LHA0_DIAG.md s1.2",
+ "n_windows": 10456,
+ "window_W": 8,
+ "ws_rule": "ws = t + W - 1 (== dump extras ws, asserted)",
+ "pose_columns": [
+  "x_east_m",
+  "y_north_m",
+  "yaw_rad",
+  "v_mps"
+ ],
+ "pose_coordinate": "_scan_meta poses = cache poses[n_stack-1:]",
+ "anchor_rule_search": {
+  "k=ws-3": {
+   "max_abs_diff": 1.5659675598144531,
+   "out_of_range_windows": 0
+  },
+  "k=ws-2": {
+   "max_abs_diff": 1.0445423126220703,
+   "out_of_range_windows": 0
+  },
+  "k=ws-1": {
+   "max_abs_diff": 0.5143890380859375,
+   "out_of_range_windows": 0
+  },
+  "k=ws+0": {
+   "max_abs_diff": 0.0,
+   "out_of_range_windows": 0
+  },
+  "k=ws+1": {
+   "max_abs_diff": 0.4882850646972656,
+   "out_of_range_windows": 0
+  },
+  "k=ws+2": {
+   "max_abs_diff": 0.9817142486572266,
+   "out_of_range_windows": 0
+  },
+  "k=ws+3": {
+   "max_abs_diff": 1.5031394958496094,
+   "out_of_range_windows": 0
+  }
+ },
+ "tol_match": 4e-06,
+ "tol_other_min": 0.001,
+ "matching_deltas": [
+  0
+ ],
+ "decisions_ep_poses_equal_cache_poses_all_300": true,
+ "bank_e_i_equals_dump_clip_index": true,
+ "anchor_rule": "k = ws + (0) ; bank v0_in == poses[k,3] for all 10456 windows",
+ "anchor_rule_max_abs_diff": 0.0,
+ "dt_rule": "per-clip dt_s of clock_sidecar.jsonl (the cache's own clock); nominal 0.1 only as the B-nominal-dt sensitivity arm",
+ "dt_s_min_med_max": [
+  0.1004999998950542,
+  0.10066662471558223,
+  0.10100502062703198
+ ],
+ "drops": {
+  "a0_k-1": 0,
+  "a0_05_k-5": 0,
+  "a0_fwd_k+1": 0
+ },
+ "n_rows_finite_a0_psi_fwd": 10456,
+ "mutation_forward_vs_backward_a0": {
+  "frac_rows_differ_gt_1e-6": 0.9534238714613619,
+  "majority_required": 0.5,
+  "pass": true
+ },
+ "corr_a0_bwd_fwd": 0.9744156453709112,
+ "summary": {
+  "a0": {
+   "mean": 0.0033926304268487696,
+   "sd": 0.8178685652282249,
+   "min": -5.109833169102985,
+   "max": 4.269795151925557
+  },
+  "a0_05": {
+   "mean": 0.002334669885003573,
+   "sd": 0.8012195508709379,
+   "min": -5.061627696301704,
+   "max": 4.183342943411314
+  },
+  "a0_fwd": {
+   "mean": 0.0033090883360815558,
+   "sd": 0.8205945244685386,
+   "min": -4.850521754607926,
+   "max": 4.148400547745941
+  },
+  "psi_dot0": {
+   "mean": -0.0006105792560889532,
+   "sd": 0.10017253343640309,
+   "min": -0.77690847229763,
+   "max": 0.7940343000793831
+  },
+  "v_k": {
+   "mean": 11.958516638807607,
+   "sd": 8.627304363331678,
+   "min": 0.0,
+   "max": 37.498046875
+  }
+ },
+ "verdict": "CALIBRATED",
+ "wall_s": 40.8
+}

@@ -1,0 +1,19 @@
+........................................................................ [ 86%]
+......F....                                                              [100%]
+================================== FAILURES ===================================
+_________ test_mutation_turns_a_check_red[post_drop_h_branch_clause] __________
+
+mname = 'post_drop_h_branch_clause'
+tmp_path = WindowsPath('F:/TanitAD-scratch/n1dc/build/n1dm_b1/tmp/rg/test_strat1_n1dm_check/bt/test_mutation_turns_a_check_re15')
+
+    @pytest.mark.parametrize("mname", sorted(EXPECT_RED))
+    def test_mutation_turns_a_check_red(mname, tmp_path):
+        m = _mutant(tmp_path, mname, *MUTATIONS[mname])
+>       with pytest.raises(AssertionError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+tests\test_strat1_n1dm_check.py:231: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_strat1_n1dm_check.py::test_mutation_turns_a_check_red[post_drop_h_branch_clause]
+1 failed, 82 passed in 10.25s

@@ -1,0 +1,14 @@
+# S11 (b16, fold + dedup + --trunk-compile, BEFORE the donated-buffer fix) -- smoke.stderr.log, last 12 lines
+# Thor, 2026-09-23 ~19:12 Europe/Berlin (17:12Z); rows written: 0
+    return CompiledFunction._bwd_fn(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/venvs/tanitad-train/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/subclass_codegen.py:codegen(compiled_function_backward)", line 21, in _compiled_backward
+  File "/home/nvidia/venvs/tanitad-train/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/subclass_codegen.py:codegen(compiled_function_backward)", line 14, in impl_fn
+  File "/home/nvidia/venvs/tanitad-train/lib/python3.12/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 3539, in _backward_impl
+    torch._check(
+  File "/home/nvidia/venvs/tanitad-train/lib/python3.12/site-packages/torch/__init__.py", line 1768, in _check
+    _check_with(RuntimeError, cond, message)  # pyrefly: ignore [bad-argument-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/venvs/tanitad-train/lib/python3.12/site-packages/torch/__init__.py", line 1750, in _check_with
+    raise error_type(message_evaluated)
+RuntimeError: This backward function was compiled with non-empty donated buffers which requires create_graph=False and retain_graph=False. Please keep backward(create_graph=False, retain_graph=False) across all backward() function calls, or set torch._functorch.config.donated_buffer=False to disable donated buffer.

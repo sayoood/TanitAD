@@ -1,0 +1,6 @@
+bank bank rank files ['targets_rank0.jsonl', 'targets_rank1.jsonl'] digest e8957e80797ef400
+1. registered bank          -> {'G-CLOCK': 'PASS'} | bank_content: {'registered': 'e8957e80797ef400', 'registration': "bank 'bank' per ", 'targets_sha256': 'e8957e80797ef400'} | reasons: []
+   swapped two rows of targets_rank0.jsonl - digest now 0c90f1638783858f
+2. same-count tampered bank -> {'G-CLOCK': 'FAIL'} | reasons: ["the bank's CONTENT is not the registered one: targets_sha256 0c90f1638783858f... != registered e8957e80797ef400... (bank 'bank' per targets_sha256_by_"] | trainer's built count: None
+3. count-only profile, same tampered bank -> {'G-CLOCK': 'PASS'}
+RESULT: REACHABLE

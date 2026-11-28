@@ -1,0 +1,63 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU, GPU hidden)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-p2-probe-leak-audit/SPEC.md",
+ "_generated_local": "2026-09-03 01:11:05",
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "cuda_visible_devices": "-1",
+ "subcommand": "data (R5)",
+ "corpus_heldout": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+ "corpus_actdiv": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val-w120-256x640cyl",
+ "heldout": {
+  "n_frames": 12255,
+  "n_clips": 129,
+  "F": 100,
+  "K": 4,
+  "r_steer_vs_measured_yawrate": 0.6384,
+  "r_closedform_v_tan_steer_over_L_vs_measured_yawrate": 0.9664,
+  "r_accel_vs_dv_1tick": 0.7883,
+  "r_accel_vs_dv_4tick": 0.771,
+  "r_speed_vs_dv_4tick": -0.0734,
+  "r_omega_first_tick_vs_dyaw_4tick": 0.9937,
+  "share_of_dyaw4_variance_explained_by_first_tick_omega_R2": 0.9874,
+  "note": "latentmotion.py:158 builds omega from yaw[i+1]-yaw[i], the first tick of the K=4 transition it scores (class (i), favours the ALTERNATIVE); accel is the dataset's own ax (physicalai.py:604-632), not a finite difference of v (echo test)"
+ },
+ "actdiv_corpus_first60": {
+  "n_frames": 1440,
+  "n_clips": 24,
+  "steer_rad": {
+   "min": -0.3817,
+   "mean": -0.0065,
+   "max": 0.1818,
+   "sd": 0.0562
+  },
+  "accel_mps2": {
+   "min": -3.1404,
+   "mean": -0.1425,
+   "max": 2.93,
+   "sd": 0.8633
+  },
+  "speed_mps": {
+   "min": 0.0,
+   "mean": 11.2377,
+   "max": 35.7156,
+   "sd": 9.1209
+  },
+  "speed_over_10_trained_scale": {
+   "min": 0.0,
+   "mean": 1.1238,
+   "max": 3.5716,
+   "sd": 0.9121
+  },
+  "speed_over_30_probe_scale": {
+   "min": 0.0,
+   "mean": 0.3746,
+   "max": 1.1905,
+   "sd": 0.304
+  },
+  "frac_abs_steer_below_0p02": 0.7271
+ },
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "_seconds": 3.0
+}

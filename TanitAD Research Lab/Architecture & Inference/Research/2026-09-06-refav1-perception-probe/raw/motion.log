@@ -1,0 +1,31 @@
+clips: 193
+arm field_t      raw_d=5120    -> d=128
+arm field_diff   raw_d=5120    -> d=128
+arm field_pair   raw_d=10240   -> d=128
+arm pix_diff     raw_d=7680    -> d=128
+
+=== lead_closing_mps_cap30 ===
+  constant               R2=+0.000000  (control)
+  pix_diff               R2=+0.0000  CI[-0.0000,+0.0000]  n=1491 d=128 clusters=41
+  field_t                R2=+0.0061  CI[-0.0406,+0.0513]  n=1491 d=128 clusters=41
+  field_diff             R2=+0.0052  CI[-0.0161,+0.0252]  n=1491 d=128 clusters=41
+  field_pair             R2=+0.0145  CI[-0.0257,+0.0552]  n=1491 d=128 clusters=41
+  shuffle_within_clip    R2=+0.0003  (clip-identity control)
+  PAIRED field_diff - field_t         d=-0.0009 CI[-0.0485,+0.0533] spans 0
+  PAIRED field_pair - field_t         d=+0.0083 CI[-0.0015,+0.0203] spans 0
+  PAIRED field_diff - pix_diff        d=+0.0052 CI[-0.0162,+0.0252] spans 0
+  PAIRED field_pair - pix_diff        d=+0.0145 CI[-0.0257,+0.0552] spans 0
+
+=== lead_gap_m_cap30 ===
+  constant               R2=+0.000000  (control)
+  pix_diff               R2=-0.0000  CI[-0.0000,+0.0000]  n=1573 d=128 clusters=42
+  field_t                R2=+0.3647  CI[+0.2107,+0.5093]  n=1573 d=128 clusters=42
+  field_diff             R2=+0.0004  CI[-0.0026,+0.0028]  n=1573 d=128 clusters=42
+  field_pair             R2=+0.3357  CI[+0.1703,+0.4875]  n=1573 d=128 clusters=42
+  shuffle_within_clip    R2=+0.0504  (clip-identity control)
+  PAIRED field_diff - field_t         d=-0.3644 CI[-0.5083,-0.2115] EXCLUDES 0
+  PAIRED field_pair - field_t         d=-0.0291 CI[-0.0520,-0.0084] EXCLUDES 0
+  PAIRED field_diff - pix_diff        d=+0.0004 CI[-0.0026,+0.0028] spans 0
+  PAIRED field_pair - pix_diff        d=+0.3357 CI[+0.1703,+0.4875] EXCLUDES 0
+
+wrote /home/nvidia/percprobe/raw/motion_probe.json

@@ -1,0 +1,450 @@
+{
+ "tool_files": {
+  "closeread_fit.py": "F:\\TanitAD-scratch\\v8proof\\closeread\\closeread_fit.py",
+  "closeread_dump.py": "F:\\TanitAD-scratch\\v8proof\\closeread\\closeread_dump.py"
+ },
+ "control_before": {
+  "rc": 0,
+  "failed_tests": [],
+  "summary": "24 passed",
+  "seconds": 22.6,
+  "tail": [
+   "........................                                                 [100%]",
+   "24 passed in 21.58s"
+  ]
+ },
+ "mutations": {
+  "m1_heldout_rule_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_heldout_rule_equals_the_readers_rule"
+   ],
+   "summary": "1 failed",
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_closeread.py::test_heldout_rule_equals_the_readers_rule - assert ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.31s"
+   ],
+   "what": "the held-out rule accepts every clip (the card's listed mutation: the rule dropped)",
+   "file": "fit",
+   "red": true
+  },
+  "m2_evaluation_clips_let_into_the_fit": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_score_rows_never_enter_the_fit"
+   ],
+   "summary": "1 failed 8 passed",
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_closeread.py::test_score_rows_never_enter_the_fit - assert False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 8 passed in 0.40s"
+   ],
+   "what": "the score rows are appended to the fit rows after the guard (the card's listed mutation)",
+   "file": "fit",
+   "red": true
+  },
+  "m3_ridge_weight_chosen_on_the_score_set": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_ridge_weight_is_chosen_on_the_fit_set_by_clip"
+   ],
+   "summary": "1 failed 6 passed",
+   "seconds": 0.8,
+   "tail": [
+    "FAILED test_closeread.py::test_ridge_weight_is_chosen_on_the_fit_set_by_clip",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 0.28s"
+   ],
+   "what": "the ridge weight is chosen on the score rows (the card's listed mutation)",
+   "file": "fit",
+   "red": true
+  },
+  "m4_label_of_another_frame_as_target": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_build_rows_window_and_target"
+   ],
+   "summary": "1 failed 3 passed",
+   "seconds": 0.7,
+   "tail": [
+    "FAILED test_closeread.py::test_build_rows_window_and_target - assert np.float...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.29s"
+   ],
+   "what": "the target is the label three frames before the last frame (the card's listed mutation)",
+   "file": "fit",
+   "red": true
+  },
+  "m5_sign_of_the_target_turned": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_build_rows_window_and_target"
+   ],
+   "summary": "1 failed 3 passed",
+   "seconds": 0.8,
+   "tail": [
+    "FAILED test_closeread.py::test_build_rows_window_and_target - assert np.float...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.29s"
+   ],
+   "what": "the target is minus the label closing speed (the card's listed mutation)",
+   "file": "fit",
+   "red": true
+  },
+  "m6_leak_guard_removed": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_leak_guard_refuses"
+   ],
+   "summary": "1 failed 10 passed",
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_closeread.py::test_leak_guard_refuses - Failed: DID NOT RAISE Sys...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 10 passed in 0.35s"
+   ],
+   "what": "the hard refusal of shared or non-held-out fit clips is replaced by nothing",
+   "file": "fit",
+   "red": true
+  },
+  "m7_validation_split_by_row": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_ridge_weight_is_chosen_on_the_fit_set_by_clip"
+   ],
+   "summary": "1 failed 6 passed",
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_closeread.py::test_ridge_weight_is_chosen_on_the_fit_set_by_clip",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 0.36s"
+   ],
+   "what": "the validation split of the fit set is by row, not by clip",
+   "file": "fit",
+   "red": true
+  },
+  "m8_per_seed_bar_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_name_rule"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 4.5,
+   "tail": [
+    "FAILED test_closeread.py::test_name_rule - AssertionError: assert 'CLOSEREAD-...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 3.47s"
+   ],
+   "what": "the name rule does not ask r >= 0.30 in every reader seed",
+   "file": "fit",
+   "red": true
+  },
+  "m9_paired_difference_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_name_rule"
+   ],
+   "summary": "1 failed 14 passed",
+   "seconds": 5.0,
+   "tail": [
+    "FAILED test_closeread.py::test_name_rule - AssertionError: assert False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed in 3.91s"
+   ],
+   "what": "the name rule does not ask the paired absolute-error difference below 0",
+   "file": "fit",
+   "red": true
+  },
+  "m10_window_validity_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_build_rows_window_and_target"
+   ],
+   "summary": "1 failed 3 passed",
+   "seconds": 1.0,
+   "tail": [
+    "FAILED test_closeread.py::test_build_rows_window_and_target - assert 78 == (3...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 3 passed in 0.37s"
+   ],
+   "what": "windows with frames that carry no read are used",
+   "file": "fit",
+   "red": true
+  },
+  "m11_c3_gap_not_compared": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_c3_equality_and_planted_difference"
+   ],
+   "summary": "1 failed 17 passed",
+   "seconds": 4.9,
+   "tail": [
+    "FAILED test_closeread.py::test_c3_equality_and_planted_difference - assert no...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 17 passed in 3.77s"
+   ],
+   "what": "control c3 compares presence only",
+   "file": "fit",
+   "red": true
+  },
+  "m12_c3_map_not_applied": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_c3_equality_and_planted_difference"
+   ],
+   "summary": "1 failed 17 passed",
+   "seconds": 4.9,
+   "tail": [
+    "FAILED test_closeread.py::test_c3_equality_and_planted_difference - assert False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 17 passed in 3.91s"
+   ],
+   "what": "control c3 compares the gap read without the map of the run",
+   "file": "fit",
+   "red": true
+  },
+  "m13_bootstrap_one_level": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_bootstrap_resamples_reader_seeds_too"
+   ],
+   "summary": "1 failed 13 passed",
+   "seconds": 4.3,
+   "tail": [
+    "FAILED test_closeread.py::test_bootstrap_resamples_reader_seeds_too - assert ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 13 passed in 3.30s"
+   ],
+   "what": "the bootstrap resamples episodes only, the reader seeds are fixed",
+   "file": "fit",
+   "red": true
+  },
+  "m14_permutation_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_permuted_labels_change_the_fit"
+   ],
+   "summary": "1 failed 9 passed",
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_closeread.py::test_permuted_labels_change_the_fit - assert (not T...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 9 passed in 0.41s"
+   ],
+   "what": "the negative control fits on the unpermuted labels",
+   "file": "fit",
+   "red": true
+  },
+  "m15_episode_map_ignored": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_episode_map"
+   ],
+   "summary": "1 failed 5 passed",
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_closeread.py::test_episode_map - AssertionError: assert ({'a', 'b...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 5 passed in 0.36s"
+   ],
+   "what": "every clip is its own episode whatever the map says",
+   "file": "fit",
+   "red": true
+  },
+  "m16_gap_two_point_wrong_span": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_beside_rows"
+   ],
+   "summary": "1 failed 15 passed",
+   "seconds": 4.8,
+   "tail": [
+    "FAILED test_closeread.py::test_beside_rows - assert False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 15 passed in 3.75s"
+   ],
+   "what": "the two-point change divides by H frames instead of H - 1 intervals",
+   "file": "fit",
+   "red": true
+  },
+  "m17_c2_sign_turned": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_c2_known_value_and_planted_clock"
+   ],
+   "summary": "1 failed 16 passed",
+   "seconds": 4.8,
+   "tail": [
+    "FAILED test_closeread.py::test_c2_known_value_and_planted_clock - assert False",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 16 passed in 3.71s"
+   ],
+   "what": "control c2 turns the sign of the label two-point change",
+   "file": "fit",
+   "red": true
+  },
+  "m18_c7_thresholds_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_c6_and_c7"
+   ],
+   "summary": "1 failed 18 passed",
+   "seconds": 4.8,
+   "tail": [
+    "FAILED test_closeread.py::test_c6_and_c7 - assert (True and not True)",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 18 passed in 3.82s"
+   ],
+   "what": "control c7 passes whatever the counts",
+   "file": "fit",
+   "red": true
+  },
+  "d1_label_run_min_two": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_label_clip_matches_the_label_source"
+   ],
+   "summary": "1 failed 21 passed",
+   "seconds": 21.1,
+   "tail": [
+    "FAILED test_closeread.py::test_label_clip_matches_the_label_source - Assertio...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 21 passed in 20.19s"
+   ],
+   "what": "a label closing speed is read from a run of two frames",
+   "file": "dump",
+   "red": true
+  },
+  "d2_window_valid_one_frame_early": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_torch_reader_equals_the_numpy_reader_and_scales"
+   ],
+   "summary": "1 failed 22 passed",
+   "seconds": 18.1,
+   "tail": [
+    "FAILED test_closeread.py::test_torch_reader_equals_the_numpy_reader_and_scales",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 22 passed in 17.28s"
+   ],
+   "what": "the window is marked valid one frame before the fifth frame exists",
+   "file": "dump",
+   "red": true
+  },
+  "d3_closing_scale_one": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_torch_reader_equals_the_numpy_reader_and_scales"
+   ],
+   "summary": "1 failed 22 passed",
+   "seconds": 45.0,
+   "tail": [
+    "FAILED test_closeread.py::test_torch_reader_equals_the_numpy_reader_and_scales",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 22 passed in 44.08s"
+   ],
+   "what": "the closing output is scaled by 1 instead of 10 m/s",
+   "file": "dump",
+   "red": true
+  },
+  "d4_gap_scale_five": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_torch_reader_equals_the_numpy_reader_and_scales"
+   ],
+   "summary": "1 failed 22 passed",
+   "seconds": 20.0,
+   "tail": [
+    "FAILED test_closeread.py::test_torch_reader_equals_the_numpy_reader_and_scales",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 22 passed in 19.03s"
+   ],
+   "what": "the gap read is scaled by 5 instead of 50 m",
+   "file": "dump",
+   "red": true
+  },
+  "d5_heldout_rule_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_heldout_rule_equals_the_readers_rule"
+   ],
+   "summary": "1 failed",
+   "seconds": 0.6,
+   "tail": [
+    "FAILED test_closeread.py::test_heldout_rule_equals_the_readers_rule - assert ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 0.24s"
+   ],
+   "what": "the dump tool's held-out rule accepts every clip",
+   "file": "dump",
+   "red": true
+  },
+  "d6_exclusion_ignored": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_reader_lists_recompute_and_refusals"
+   ],
+   "summary": "1 failed 1 passed",
+   "seconds": 0.7,
+   "tail": [
+    "FAILED test_closeread.py::test_reader_lists_recompute_and_refusals - SystemEx...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 0.24s"
+   ],
+   "what": "the trainer's --exclude slice is not applied to the manifest",
+   "file": "dump",
+   "red": true
+  },
+  "d7_label_closing_sign": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_label_clip_matches_the_label_source"
+   ],
+   "summary": "1 failed 21 passed",
+   "seconds": 21.0,
+   "tail": [
+    "FAILED test_closeread.py::test_label_clip_matches_the_label_source - Assertio...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 21 passed in 20.13s"
+   ],
+   "what": "the label closing speed has the opposite sign",
+   "file": "dump",
+   "red": true
+  },
+  "d8_label_step_bound_dropped": {
+   "rc": 1,
+   "failed_tests": [
+    "test_closeread.py::test_label_clip_matches_the_label_source"
+   ],
+   "summary": "1 failed 21 passed",
+   "seconds": 19.9,
+   "tail": [
+    "FAILED test_closeread.py::test_label_clip_matches_the_label_source - Assertio...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 21 passed in 19.01s"
+   ],
+   "what": "the label run ignores the 3 m step bound",
+   "file": "dump",
+   "red": true
+  }
+ },
+ "control_after": {
+  "rc": 0,
+  "failed_tests": [],
+  "summary": "24 passed",
+  "seconds": 21.3,
+  "tail": [
+   "........................                                                 [100%]",
+   "24 passed in 20.44s"
+  ]
+ },
+ "counts": {
+  "red": 26,
+  "total": 26,
+  "control_before_green": true,
+  "control_after_green": true
+ }
+}

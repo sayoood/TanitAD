@@ -1,0 +1,292 @@
+{
+ "spec": "E-DEPLOY-1",
+ "controls": {
+  "memory_probe_moves": {
+   "expect": ">=256 MiB rise for a known 256 MiB allocation",
+   "measured_mb": 256.0,
+   "pass": true
+  },
+  "timer_resolves_matmul": {
+   "expect": "fp32 4096^2 matmul in (0.1ms,1000ms) AND fp16 strictly faster",
+   "fp32": {
+    "n": 20,
+    "median_ms": 25.323491543531418,
+    "p90_ms": 25.350729003548622,
+    "min_ms": 25.289172888733447,
+    "max_ms": 25.357024045661092
+   },
+   "fp16": {
+    "n": 20,
+    "median_ms": 1.170806004665792,
+    "p90_ms": 1.3138760114088655,
+    "min_ms": 0.8951149648055434,
+    "max_ms": 1.348959980532527
+   },
+   "speedup_fp16": 21.629,
+   "pass": true
+  },
+  "param_count_matches_run": {
+   "expect": 19337289,
+   "measured": 19337289,
+   "pass": true
+  },
+  "state_dict_loads_clean": {
+   "expect": "0 missing, 0 unexpected",
+   "missing": [],
+   "n_missing": 0,
+   "unexpected": [],
+   "n_unexpected": 0,
+   "ckpt_step": 30000,
+   "pass": true
+  },
+  "fp32_deterministic": {
+   "expect": "same seed, same arm -> bit-identical plan",
+   "measured": true,
+   "pass": true
+  }
+ },
+ "arms": [
+  {
+   "batch": 1,
+   "dtype": "fp32",
+   "n": 50,
+   "median_ms": 12.528502498753369,
+   "p90_ms": 12.569905957207084,
+   "min_ms": 12.435506912879646,
+   "max_ms": 12.581915012560785,
+   "windows_per_s": 79.81799900662539,
+   "peak_alloc_mb": 171.56,
+   "waypoints_shape": [
+    1,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 56.13212203979492,
+   "probe": "torch.cuda.max_memory_allocated",
+   "determinism_bit_identical": true
+  },
+  {
+   "batch": 1,
+   "dtype": "fp16",
+   "n": 50,
+   "median_ms": 15.213700011372566,
+   "p90_ms": 15.258130966685712,
+   "min_ms": 15.116379945538938,
+   "max_ms": 15.373343019746244,
+   "windows_per_s": 65.73022994093998,
+   "peak_alloc_mb": 183.19,
+   "waypoints_shape": [
+    1,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 56.21875,
+   "probe": "torch.cuda.max_memory_allocated",
+   "dev_vs_fp32": {
+    "max_abs_m": 0.08662796020507812,
+    "mean_abs_m": 0.016809575259685516,
+    "max_rel": 0.0015432867221534252,
+    "screening_threshold_max_abs_m": 0.01,
+    "passes_screen": false
+   }
+  },
+  {
+   "batch": 1,
+   "dtype": "bf16",
+   "n": 50,
+   "median_ms": 15.25685703381896,
+   "p90_ms": 15.31696505844593,
+   "min_ms": 15.158638008870184,
+   "max_ms": 15.62577101867646,
+   "windows_per_s": 65.5442990508045,
+   "peak_alloc_mb": 183.13,
+   "waypoints_shape": [
+    1,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 58.75,
+   "probe": "torch.cuda.max_memory_allocated",
+   "dev_vs_fp32": {
+    "max_abs_m": 2.617877960205078,
+    "mean_abs_m": 0.45694345235824585,
+    "max_rel": 0.04663778841495514,
+    "screening_threshold_max_abs_m": 0.01,
+    "passes_screen": false
+   }
+  },
+  {
+   "batch": 4,
+   "dtype": "fp32",
+   "n": 50,
+   "median_ms": 27.581807924434543,
+   "p90_ms": 27.648579911328852,
+   "min_ms": 27.441738988272846,
+   "max_ms": 27.701554005034268,
+   "windows_per_s": 145.02312578489193,
+   "peak_alloc_mb": 386.76,
+   "waypoints_shape": [
+    4,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 120.7675552368164,
+   "probe": "torch.cuda.max_memory_allocated",
+   "determinism_bit_identical": true
+  },
+  {
+   "batch": 4,
+   "dtype": "fp16",
+   "n": 50,
+   "median_ms": 19.856542989145964,
+   "p90_ms": 19.93825298268348,
+   "min_ms": 19.745455938391387,
+   "max_ms": 20.03091899678111,
+   "windows_per_s": 201.4449344070864,
+   "peak_alloc_mb": 432.33,
+   "waypoints_shape": [
+    4,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 120.25,
+   "probe": "torch.cuda.max_memory_allocated",
+   "dev_vs_fp32": {
+    "max_abs_m": 0.5519485473632812,
+    "mean_abs_m": 0.057048287242650986,
+    "max_rel": 0.005003978032618761,
+    "screening_threshold_max_abs_m": 0.01,
+    "passes_screen": false
+   }
+  },
+  {
+   "batch": 4,
+   "dtype": "bf16",
+   "n": 50,
+   "median_ms": 19.75874649360776,
+   "p90_ms": 19.8623159667477,
+   "min_ms": 19.674555980600417,
+   "max_ms": 19.96576995588839,
+   "windows_per_s": 202.44199202080242,
+   "peak_alloc_mb": 432.12,
+   "waypoints_shape": [
+    4,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 120.5,
+   "probe": "torch.cuda.max_memory_allocated",
+   "dev_vs_fp32": {
+    "max_abs_m": 2.6980514526367188,
+    "mean_abs_m": 0.27925822138786316,
+    "max_rel": 0.02958928421139717,
+    "screening_threshold_max_abs_m": 0.01,
+    "passes_screen": false
+   }
+  },
+  {
+   "batch": 8,
+   "dtype": "fp32",
+   "n": 50,
+   "median_ms": 47.8444829932414,
+   "p90_ms": 47.948325984179974,
+   "min_ms": 47.645592014305294,
+   "max_ms": 47.99098300281912,
+   "windows_per_s": 167.20841149292167,
+   "peak_alloc_mb": 671.99,
+   "waypoints_shape": [
+    8,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 119.75323486328125,
+   "probe": "torch.cuda.max_memory_allocated",
+   "determinism_bit_identical": true
+  },
+  {
+   "batch": 8,
+   "dtype": "fp16",
+   "n": 50,
+   "median_ms": 32.88927499670535,
+   "p90_ms": 32.96692797448486,
+   "min_ms": 32.777760992757976,
+   "max_ms": 33.02158694714308,
+   "windows_per_s": 243.24038765832907,
+   "peak_alloc_mb": 762.43,
+   "waypoints_shape": [
+    8,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 119.9375,
+   "probe": "torch.cuda.max_memory_allocated",
+   "dev_vs_fp32": {
+    "max_abs_m": 0.345458984375,
+    "mean_abs_m": 0.02969789132475853,
+    "max_rel": 0.0056080580689013,
+    "screening_threshold_max_abs_m": 0.01,
+    "passes_screen": false
+   }
+  },
+  {
+   "batch": 8,
+   "dtype": "bf16",
+   "n": 50,
+   "median_ms": 32.99165400676429,
+   "p90_ms": 33.06915995199233,
+   "min_ms": 32.91804005857557,
+   "max_ms": 33.150734030641615,
+   "windows_per_s": 242.48556917939783,
+   "peak_alloc_mb": 762.01,
+   "waypoints_shape": [
+    8,
+    8,
+    60,
+    2
+   ],
+   "waypoints_finite": true,
+   "waypoints_absmax": 120.0,
+   "probe": "torch.cuda.max_memory_allocated",
+   "dev_vs_fp32": {
+    "max_abs_m": 4.9362335205078125,
+    "mean_abs_m": 0.2919674813747406,
+    "max_rel": 0.05900800973176956,
+    "screening_threshold_max_abs_m": 0.01,
+    "passes_screen": false
+   }
+  }
+ ],
+ "voided": false,
+ "void_reason": null,
+ "env": {
+  "python": "3.12.3",
+  "executable": "/home/nvidia/venvs/tanitad-edge/bin/python",
+  "torch": "2.13.0+cu130",
+  "torch_cuda": "13.0",
+  "device": "NVIDIA Thor",
+  "capability": [
+   11,
+   0
+  ],
+  "warmup": 20,
+  "iters": 50
+ },
+ "all_controls_pass": true,
+ "_evidence_class": "MEASURED (ours; Thor, in-process probes only)"
+}

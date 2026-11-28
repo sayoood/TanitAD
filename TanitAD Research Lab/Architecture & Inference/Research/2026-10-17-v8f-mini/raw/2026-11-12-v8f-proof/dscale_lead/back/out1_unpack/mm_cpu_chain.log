@@ -1,0 +1,28 @@
+2026-11-19T19:50:55Z stage precheck start
+[2026-11-19T19:50:55Z] dscale_lead: pins ok: 9 files
+[2026-11-19T19:50:55Z] dscale_lead: training cache folder: /root/data/cache_union_dscale
+[2026-11-19T19:50:55Z] dscale_lead: container memory free: 61 GB (need >= 20)
+[2026-11-19T19:50:56Z] dscale_lead: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_precheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --lead-corpus /root/strat1/inputs/data/v9/lead_train4572.npz --eval-manifest /root/data/cache_pod/eval/manifest.jsonl --join-union /root/dscale10k/merged/join_union.npz --expect-union 14512 --expect-corpus 4512 --hash v9_union=/root/dscale10k/merged/v9_labels_union.npz --hash speed_union=/root/dscale10k/merged/speed_union.jsonl --hash join_union=/root/dscale10k/merged/join_union.npz --out /root/dscale_lead/out1/precheck/PRECHECK.json
+precheck: pass True -> /root/dscale_lead/out1/precheck/PRECHECK.json {'counts': True, 'd1_no_leak': True, 'd2_labels_one_clock': True, 'd2j_join_matches_lead_file': True, 'd2n_join_matches_lead_file_new_clips': True, 'd2g_join_labels_per_group': True}
+[2026-11-19T19:50:59Z] dscale_lead: precheck rc=0
+[2026-11-19T19:50:59Z] dscale_lead: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_precheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --lead-corpus /root/strat1/inputs/data/v9/lead_train4572.npz --eval-manifest /root/data/cache_pod/eval/manifest.jsonl --join-union /root/dscale10k/merged/join_union.npz --expect-union 14512 --expect-corpus 4512 --hash v9_union=/root/dscale10k/merged/v9_labels_union.npz --hash speed_union=/root/dscale10k/merged/speed_union.jsonl --hash join_union=/root/dscale10k/merged/join_union.npz --plant --out /root/dscale_lead/out1/precheck/PRECHECK_PLANTED.json
+precheck: pass False -> /root/dscale_lead/out1/precheck/PRECHECK_PLANTED.json {'counts': True, 'd1_no_leak': False, 'd2_labels_one_clock': True, 'd2j_join_matches_lead_file': True, 'd2n_join_matches_lead_file_new_clips': True, 'd2g_join_labels_per_group': True}
+[2026-11-19T19:51:03Z] dscale_lead: planted precheck rc=2 (must be 2)
+[2026-11-19T19:51:03Z] dscale_lead: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_clockcheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --out /root/dscale_lead/out1/precheck/CLOCK.json
+clockcheck: pass True (plant 0) -> /root/dscale_lead/out1/precheck/CLOCK.json
+   corpus {"pass": true, "argmin_shift": 0, "ratio_shift0_to_nearest": 0.039127533693132516, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.496212, "-2": 0.202066, "-1": 0.102547, "0": 0.004012, "1": 0.103363, "2": 0.20325, "5": 0.498338}, "clips_read": 200, "clips_without_rows": 0, "pool": 4369}
+   new {"pass": true, "argmin_shift": 0, "ratio_shift0_to_nearest": 0.038448988631390006, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.52293, "-2": 0.212527, "-1": 0.107878, "0": 0.00413, "1": 0.107403, "2": 0.211684, "5": 0.521067}, "clips_read": 200, "clips_without_rows": 0, "pool": 9559}
+[2026-11-19T19:51:09Z] dscale_lead: clock check rc=0
+[2026-11-19T19:51:09Z] dscale_lead: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_clockcheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --plant-shift 1 --out /root/dscale_lead/out1/precheck/CLOCK_PLANTED.json
+clockcheck: pass False (plant 1) -> /root/dscale_lead/out1/precheck/CLOCK_PLANTED.json
+   corpus {"pass": false, "argmin_shift": -1, "ratio_shift0_to_nearest": 25.760932739836154, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.399156, "-2": 0.102547, "-1": 0.004012, "0": 0.103363, "1": 0.20325, "2": 0.30237, "5": 0.594325}, "clips_read": 200, "clips_without_rows": 0, "pool": 4369}
+   new {"pass": false, "argmin_shift": -1, "ratio_shift0_to_nearest": 26.00848645427291, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.420363, "-2": 0.107878, "-1": 0.00413, "0": 0.107403, "1": 0.211684, "2": 0.315566, "5": 0.622118}, "clips_read": 200, "clips_without_rows": 0, "pool": 9559}
+[2026-11-19T19:51:14Z] dscale_lead: planted clock check rc=2 (must be 2)
+[2026-11-19T19:51:14Z] dscale_lead: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_tokens_same.py --eval-cache /root/data/cache_pod --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --study-eval-tsv /root/dscale_lead/kit/STUDY_EVAL_MD5.tsv --study-train-tsv /root/dscale_lead/kit/STUDY_TRAIN_MD5.tsv --out /root/dscale_lead/out1/precheck/EVALSET.json
+evalset: pass False -> /root/dscale_lead/out1/precheck/EVALSET.json
+   d2e {"pass": false, "n_here": 141, "n_study": 141, "same_ids_same_order": false, "same_id_set": true, "sha256_ids_here": "cd3d8efe7d05cabec14eb1846e603d405abed29aa86d64c09d389484bc242874", "sha256_ids_study": "4173cf10bbb513475fc668d40cf8cb8ce7a28decc9610ab80aabe41f7ad46fde", "planted_swap": false}
+   d3t {"gates": false, "eval_clips_same_content_md5": 0, "eval_clips": 141, "corpus_ids": 4512, "corpus_ids_in_the_study_manifest": 4512, "corpus_ids_in_the_union_manifest": 4512, "corpus_clips_with_md5_on_both_sides": 4512, "corpus_clips_same_content_md5": 0}
+[2026-11-19T19:51:14Z] dscale_lead: evaluation-set check rc=2
+[2026-11-19T19:51:14Z] dscale_lead: STOP: the evaluation cache does not hold the study evaluation set in its order (d2e, rc 2): read /root/dscale_lead/out1/precheck/EVALSET.json
+2026-11-19T19:51:14Z stage precheck rc=1
+ZZ ADD45CPU FAIL ZZ precheck rc=1

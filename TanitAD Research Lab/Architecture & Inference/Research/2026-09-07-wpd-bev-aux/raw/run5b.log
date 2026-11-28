@@ -1,0 +1,109 @@
+[5b] === DUMP wpdD0 2026-09-08T18:26:56Z ===
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+[ego] ego_state_inject build: feeding the MEASURED ego block (v0, a_long, yaw_rate, curvature, keep=1) at t0 to every forward — refc_v3.ego_state_from_batch, the trainer's own entry
+[v3] nav_from_v7: follow 29 / left 1 / right 10, missing 0 (of 40 clips; md5=aa12c948f062181c3297265b51526ec5)
+[model] C:\Users\Admin\wpd-probe\ckpt\ckpt_D0.pt step=4000 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[roll] 3422 windows / 40 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'os_navshuf', 'os_navzero'] · fed conditionings=['nav_true', 'nav_shuffled'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 1382/3422
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (2 fed row(s) + 1 nav-null call, 3 rows total) took 0.80 s -> ESTIMATED 0.76 h for 3422 windows (forward only; IO/analysis extra)
+  [1/40] 01be5919-6e6 86 windows 40s
+  [2/40] 060531e1-993 85 windows 75s
+  [3/40] 0fa2b231-435 86 windows 110s
+  [4/40] 10804db8-d07 85 windows 145s
+  [5/40] 11e40da1-3d9 86 windows 179s
+  [6/40] 126b3a97-087 85 windows 214s
+  [7/40] 13c95b6a-5d1 86 windows 249s
+  [8/40] 14157960-84d 85 windows 284s
+  [9/40] 142a3a72-6cd 86 windows 319s
+  [10/40] 14bc9fcf-c04 85 windows 354s
+  [11/40] 16d89725-2f3 86 windows 391s
+  [12/40] 17775e74-2d8 86 windows 428s
+  [13/40] 18b72291-84f 85 windows 463s
+  [14/40] 1bd040a8-182 86 windows 498s
+  [15/40] 1c3a2c7c-7e8 84 windows 534s
+  [16/40] 204b15b4-bd0 86 windows 569s
+  [17/40] 2172a5a3-8a1 85 windows 603s
+  [18/40] 24fee8a5-9cc 86 windows 638s
+  [19/40] 2602baaa-436 85 windows 672s
+  [20/40] 262b900f-2cf 86 windows 710s
+  [21/40] 269478eb-2da 88 windows 749s
+  [22/40] 27f44280-3e5 86 windows 788s
+  [23/40] 2cd0f4e4-dce 85 windows 825s
+  [24/40] 2e8a2df2-3f7 86 windows 863s
+  [25/40] 316f3c56-914 85 windows 899s
+  [26/40] 31d0adc4-4e8 86 windows 937s
+  [27/40] 32f9b6b2-edc 85 windows 973s
+  [28/40] 330b4626-96d 86 windows 1011s
+  [29/40] 34a1e12e-95c 85 windows 1048s
+  [30/40] 37e61793-36e 86 windows 1085s
+  [31/40] 38fe80c1-caf 85 windows 1122s
+  [32/40] 3971a8c6-0c5 86 windows 1159s
+  [33/40] 39bf584e-5bb 85 windows 1194s
+  [34/40] 3ef3dcc8-7fd 85 windows 1229s
+  [35/40] 3ff11411-fa2 86 windows 1265s
+  [36/40] 42745b48-a01 85 windows 1301s
+  [37/40] 45358841-692 86 windows 1349s
+  [38/40] 45a9f7ec-991 85 windows 1399s
+  [39/40] 45aea78c-776 86 windows 1456s
+  [40/40] 47241da8-c00 85 windows 1507s
+[dump] 3422 windows over 40 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=4000 eps=40 windows=3422 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] C:\Users\Admin\wpd-probe\dumps\wpdD0; analyse later with --analyze-only
+[5b] dump wpdD0 rc=0 files=40
+[5b] === DUMP wpdD1 2026-09-08T18:52:06Z ===
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+[v3] WP-D BEV aux ON: kind=col grid=8x20 target=24x20 w=0.1 occlusion=mask detach=False pos_weight=30.34
+[refcv3_arm] ⛔ NON-STRICT LOAD: missing ['core.bev_aux_head.tok.weight', 'core.bev_aux_head.tok.bias', 'core.bev_aux_head.ray.0.weight', 'core.bev_aux_head.ray.0.bias', 'core.bev_aux_head.ray.2.weight', 'core.bev_aux_head.ray.2.bias'] unexpected [] — the checkpoint and the rebuilt model disagree. Pass --allow-nonstrict only for a deliberate diagnostic, and say so.
+[5b] dump wpdD1 rc=1 files=0
+[5b] === ANALYZE wpdD0 2026-09-08T18:52:09Z ===
+[trivial-profile] 3422 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=3422 straight=0.0126 const_speed=0.0108 CONSTANT-VELOCITY=0.0108  identical_to: ha=39/3422, ha0=37/3422, ha0_ext=39/3422, os_navshuf=43/3422, os_navzero=43/3422
+  ha             n=3422 straight=0.0172 const_speed=0.0117 CONSTANT-VELOCITY=0.0111  identical_to: ha0=38/3422, ha0_ext=59/3422, os=39/3422, os_navshuf=40/3422, os_navzero=40/3422
+  ha0            n=3422 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: ha=38/3422, ha0_ext=38/3422, os=37/3422, os_navshuf=38/3422, os_navzero=38/3422
+  ha0_ext        n=3422 straight=0.0184 const_speed=0.0117 CONSTANT-VELOCITY=0.0111  identical_to: ha=59/3422, ha0=38/3422, os=39/3422, os_navshuf=40/3422, os_navzero=40/3422
+  os_navshuf     n=3422 straight=0.0140 const_speed=0.0111 CONSTANT-VELOCITY=0.0111  identical_to: ha=40/3422, ha0=38/3422, ha0_ext=40/3422, os=43/3422, os_navzero=46/3422
+  os_navzero     n=3422 straight=0.0149 const_speed=0.0111 CONSTANT-VELOCITY=0.0111  identical_to: ha=40/3422, ha0=38/3422, ha0_ext=40/3422, os=43/3422, os_navshuf=46/3422
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+  ha0_ext ≡ ha0 on 38/3422 windows (1.11%) — on those the echo control adds nothing beyond the constant-velocity floor, and 'beat BOTH' collapses to 'beat ha0'.
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+[selection-profile] 3422 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  23  modal=#67 (0.6937)  entropy=1.3486/4.7622 nats (ratio 0.2832)  agrees_with_oracle=0.4667
+[lead] b1_eval_lead_block.npz: 3422 windows / 40 eps · OK eps 40 · LEAD 1021 NO_LEAD 811 NOT_STRAIGHT 1392 NO_LABEL 198 · speed-check max 2.7e-05 m/s · PRESENT
+[out] C:\Users\Admin\wpd-probe\raw\wpdD0.json
+  os           tier=T1*  ADE=0.4778 [0.4042, 0.5589]  families_unavailable=['strategic']  distance_keeping=OK
+  ha           tier=T1   ADE=0.2967 [0.261, 0.3343]  families_unavailable=['strategic']  distance_keeping=OK
+  ha0          tier=T1   ADE=0.6566 [0.5557, 0.767]  families_unavailable=['strategic']  distance_keeping=OK
+  ha0_ext      tier=T1   ADE=0.285 [0.2513, 0.3198]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navshuf   tier=T1*  ADE=0.4895 [0.4148, 0.5704]  families_unavailable=['strategic']  distance_keeping=OK
+  os_navzero   tier=T1*  ADE=0.4912 [0.4195, 0.5702]  families_unavailable=['strategic']  distance_keeping=OK
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=-0.1788 [-0.2202, -0.138] separated=True n_win=3422 n_ep=40
+  paired_os_minus_ha           ADE delta=0.181 [0.1301, 0.2413] separated=True n_win=3422 n_ep=40
+  paired_os_minus_navshuf      ADE delta=-0.0117 [-0.0188, -0.0049] separated=True n_win=3422 n_ep=40
+  paired_os_navzero_minus_ha0  ADE delta=-0.1654 [-0.2126, -0.1168] separated=True n_win=3422 n_ep=40
+  paired_os_minus_navzero      ADE delta=-0.0134 [-0.0297, 0.0023] separated=False n_win=3422 n_ep=40
+  paired_ha_minus_ha0          ADE delta=-0.3598 [-0.4449, -0.2798] separated=True n_win=3422 n_ep=40
+  paired_os_minus_ha0ext       ADE delta=0.1928 [0.1403, 0.255] separated=True n_win=3422 n_ep=40
+  paired_os_navzero_minus_ha0ext ADE delta=0.2062 [0.1524, 0.2681] separated=True n_win=3422 n_ep=40
+  nav controls: os_navshuf (pairing broken, marginal preserved) AND os_navzero (signal removed; E13 tactical+strategic OFF, core collapsed to 'follow') — BACKLOG R39 binds both; the nav-zero margin over ha0 is the DEPLOYMENT-relevant number
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=2898 changed_subset_n=1102
+  tactical anchor_acc=0.4559 (chance 0.008547) n_distinct_selected=23
+[5b] analyze wpdD0 rc=0 json=1
+[5b] === ANALYZE wpdD1 2026-09-08T18:53:03Z ===
+Traceback (most recent call last):
+  File "C:\Users\Admin\wpd-run\taniteval\tools\refcv3_arm.py", line 3587, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Admin\wpd-run\taniteval\tools\refcv3_arm.py", line 3529, in main
+    rec = analyze_refcv3(dump_dir, n_boot=a.n_boot, seed=a.seed,
+                         tiers=t1._parse_tiers(a.tiers), lead_block=lead_path,
+                         labels=a.labels)
+  File "C:\Users\Admin\wpd-run\taniteval\tools\refcv3_arm.py", line 2812, in analyze_refcv3
+    raise ValueError(f"no ep*.npz under {dump_dir}")
+ValueError: no ep*.npz under C:\Users\Admin\wpd-probe\dumps\wpdD1
+[5b] analyze wpdD1 rc=1 json=0
+[5b] CHAIN COMPLETE 2026-09-08T18:53:05Z

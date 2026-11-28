@@ -1,0 +1,51 @@
+{
+ "spec": "E-DEPLOY-2",
+ "controls": {
+  "state_dict_loads_clean": {
+   "expect": "0 missing / 0 unexpected",
+   "n_missing": 0,
+   "n_unexpected": 0,
+   "pass": true
+  },
+  "eager_fp32_deterministic": {
+   "expect": "bit-identical repeat",
+   "measured": true,
+   "pass": true
+  }
+ },
+ "arms": [
+  {
+   "arm": "eager_fp32",
+   "n": 40,
+   "median_ms": 12.50049751251936,
+   "p90_ms": 12.676303973421454,
+   "deviation_m": 0.0,
+   "compile_warmup_s": null
+  },
+  {
+   "arm": "compile_default",
+   "error": "InductorError('CalledProcessError: Command \\'[\\'/usr/bin/gcc\\', \\'/tmp/tmprgzurgw8/cuda_utils.c\\', \\'-O3\\', \\'-shared\\', \\'-fPIC\\', \\'-Wno-psabi\\', \\'-o\\', \\'/tmp/tmprgzurgw8/cuda_utils.cpython-312-aarch64-linux-gnu.so\\', \\'-l:libcuda.so.1\\', \\'-L/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/triton/backends/nvidia/lib\\', \\'-L/usr/lib/aarch64-linux-gnu/nvidia\\', \\'-I/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/triton/backends/nvidia/include\\', \\'-I/tmp/tmprgzurgw8\\', \\'-I/usr/include/python3.12\\']\\' returned non-zero exit status 1.\\n\\nSet TORCHDYNAMO_VERBOSE=1 for"
+  },
+  {
+   "arm": "compile_reduce_overhead",
+   "error": "InductorError('CalledProcessError: Command \\'[\\'/usr/bin/gcc\\', \\'/tmp/tmpn0_scdit/cuda_utils.c\\', \\'-O3\\', \\'-shared\\', \\'-fPIC\\', \\'-Wno-psabi\\', \\'-o\\', \\'/tmp/tmpn0_scdit/cuda_utils.cpython-312-aarch64-linux-gnu.so\\', \\'-l:libcuda.so.1\\', \\'-L/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/triton/backends/nvidia/lib\\', \\'-L/usr/lib/aarch64-linux-gnu/nvidia\\', \\'-I/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/triton/backends/nvidia/include\\', \\'-I/tmp/tmpn0_scdit\\', \\'-I/usr/include/python3.12\\']\\' returned non-zero exit status 1.\\n\\nSet TORCHDYNAMO_VERBOSE=1 for"
+  },
+  {
+   "arm": "compile_default_fp16",
+   "error": "InductorError('CalledProcessError: Command \\'[\\'/usr/bin/gcc\\', \\'/tmp/tmpi5qesuxk/cuda_utils.c\\', \\'-O3\\', \\'-shared\\', \\'-fPIC\\', \\'-Wno-psabi\\', \\'-o\\', \\'/tmp/tmpi5qesuxk/cuda_utils.cpython-312-aarch64-linux-gnu.so\\', \\'-l:libcuda.so.1\\', \\'-L/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/triton/backends/nvidia/lib\\', \\'-L/usr/lib/aarch64-linux-gnu/nvidia\\', \\'-I/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/triton/backends/nvidia/include\\', \\'-I/tmp/tmpi5qesuxk\\', \\'-I/usr/include/python3.12\\']\\' returned non-zero exit status 1.\\n\\nSet TORCHDYNAMO_VERBOSE=1 for"
+  }
+ ],
+ "env": {
+  "torch": "2.13.0+cu130",
+  "device": "NVIDIA Thor",
+  "capability": [
+   11,
+   0
+  ],
+  "triton": "3.7.1"
+ },
+ "cuda_graph_reference_ms": 7.84,
+ "fp16_deviation_bar_m": 0.08663,
+ "verdict": "H-DEPLOY-5 REFUTED \u2014 every torch.compile arm failed on Thor; manual CUDA graphs remain the lever",
+ "_evidence_class": "MEASURED (ours; Thor, in-process probes only)"
+}

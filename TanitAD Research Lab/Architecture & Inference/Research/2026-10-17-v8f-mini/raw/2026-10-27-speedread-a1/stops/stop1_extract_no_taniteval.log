@@ -1,0 +1,19 @@
+[extract] parity {'n_clips': 4512, 'n_windows': 306566, 'excluded_sha256': 'f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9'} -> OK
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\scripts\v8f_mini_eval_speedread.py", line 785, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\scripts\v8f_mini_eval_speedread.py", line 781, in main
+    return {"extract": cmd_extract, "fit": cmd_fit, "evals": cmd_evals, "read": cmd_read}[a.cmd](a)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\scripts\v8f_mini_eval_speedread.py", line 606, in cmd_extract
+    items.append(ds.item(c_i, t, a_t, a_t + (i // 3) % 5))
+                 ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\tanitad\data\v8f_mini_data.py", line 496, in item
+    d = self.store.get(clip)
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\tanitad\data\v8f_mini_data.py", line 419, in get
+    p10[1:] = _fk().kin_features(kin3[1:]).astype(np.float32)
+              ~~~^^
+  File "F:\TanitAD-scratch\speedread\tree_f3971165\stack\tanitad\data\v8f_mini_data.py", line 81, in _fk
+    from taniteval import floors_kin
+ModuleNotFoundError: No module named 'taniteval'

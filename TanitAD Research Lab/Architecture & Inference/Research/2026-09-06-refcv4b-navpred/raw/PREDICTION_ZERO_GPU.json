@@ -1,0 +1,85 @@
+{
+  "_is": "PRE-REGISTERED zero-GPU prediction for the os_navpred roll, computed from the BANKED refcv4b landing dump BEFORE the roll finished.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 inputs (banked dump)",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "source_dump": "pod:/workspace/eval/refcv4b_t1_dump (pulled 2026-09-06)",
+  "route_to_nav_map_SOURCE": {
+    "file": "stack/scripts/refb_labels.py:483-484",
+    "map": {
+      "0": 1,
+      "1": 0,
+      "2": 2
+    },
+    "NAV_COMMANDS": [
+      "follow",
+      "left",
+      "right",
+      "straight"
+    ],
+    "ROUTE_CLASSES": [
+      "route_left",
+      "route_straight",
+      "route_right"
+    ],
+    "note": "NAV_COMMANDS is FOUR-wide, ROUTE_CLASSES THREE; the map is NOT the identity."
+  },
+  "predicted_nav_distribution": {
+    "follow": 3465,
+    "left": 614,
+    "right": 744,
+    "straight": 0
+  },
+  "true_nav_distribution": {
+    "follow": 3080,
+    "left": 445,
+    "right": 1298,
+    "straight": 0
+  },
+  "route_argmax_distribution": {
+    "route_left": 614,
+    "route_straight": 3465,
+    "route_right": 744
+  },
+  "n_navpred_differs_from_navcmd": 1917,
+  "n_navpred_equals_navcmd": 2906,
+  "frac_differs": 0.3975,
+  "route_head_conditioning_identity": {
+    "route_pred_nav_true == route_pred_nav_zero": "4822/4823",
+    "route_pred_nav_true == route_pred_nav_shuffled": "4823/4823",
+    "note": "the landing read called this an IDENTITY. It is exact for the shuffle (same call, different row) and 4822/4823 for the zero, whose single deviation is a CROSS-CALL float32 batching artefact -- os_navzero is its own 1-row forward and the documented batching floor on this model is ~6e-7 m (D-REFCV3-NAVZERO). It is not a nav effect."
+  },
+  "ECHO_INDEX_CORRECTION": {
+    "n_scored_route_labelled_and_nav_valid": 3622,
+    "published_landing_value_RAW_INDEX": 0.1621,
+    "CORRECTED_value_through_ROUTE_TO_NAV": 0.6405,
+    "defect": "refcv3_arm.py computed nav_echo_index as route_pred == nav_cmd on the stated claim that 'NAV_COMMANDS and ROUTE_CLASSES are both 3-wide and index-aligned in refb'. refb.py:64 and :68 refute it. The published 0.1621 is a type error; 0.6405 is the echo index. NEITHER changes the anti-echo verdict, which rests on the conditioning identity above, not on this index."
+  },
+  "confusion_route_argmax_x_nav_cmd": {
+    "route_left": {
+      "follow": 318,
+      "left": 113,
+      "right": 183,
+      "straight": 0
+    },
+    "route_straight": {
+      "follow": 2439,
+      "left": 265,
+      "right": 761,
+      "straight": 0
+    },
+    "route_right": {
+      "follow": 323,
+      "left": 67,
+      "right": 354,
+      "straight": 0
+    }
+  },
+  "COMMITTED_predictions_the_roll_must_reproduce": [
+    "nav_pred distribution (follow/left/right) = 3465 / 614 / 744",
+    "n windows where nav_pred != nav_cmd = 1917 (39.75%)",
+    "n windows where nav_pred == nav_cmd = 2906 (60.25%)",
+    "on the 2906 equal windows os_navpred's path must equal os's to < 1e-4 m"
+  ]
+}

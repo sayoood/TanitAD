@@ -1,0 +1,22 @@
+{
+ "id": "R8-WISEFT-GATE-PAI",
+ "filed": "2026-10-21 16:25 Europe/Berlin (clock read 16:24:44), BEFORE any gate composite is computed on a PhysicalAI dump (for either model) and before the theta_0.5 battery has finished (its seed-1 surfaces do not exist yet)",
+ "status": "PRE-REGISTERED diagnostic read; never a bar; changes no registered verdict (SHIP-R8 of 48,852 stands; R8-WISEFT-PAI's rule on theta_0.5 is unchanged)",
+ "question": "What does the arc gate cost on the PhysicalAI eval refcv8 ships on? Is the gated planner at least as good as the SHIPPED refcv8 (EMA-48,852) per metric family?",
+ "surface": "the refcv8 per-frame battery's S6 dumps (s6_s{0,1}/ep*.npz): T1 self-action OPEN LOOP on logged eval139 frames (the SHIP-R8 tier), 139 episodes / 3,668 windows, waypoints at 1, 2, 3, 4, 5, 6 s (dt 1.0 s). MEASURED before filing: the 48,852 and theta_0.5 trees hold identical ws / clip_index per episode and identical g and ha0_ext arrays (139 / 139).",
+ "arms": {
+  "GW_ARC": "per window: ha0_ext where |ln(arc4(os_theta05) / max(arc4(ha0_ext), 0.05))| > 0.1368, else os_theta05 (seed s: the seed-s dump)",
+  "G_ARC48852": "the same gate on the shipped plan: ha0_ext where |ln(arc4(os_48852) / max(arc4(ha0_ext), 0.05))| > 0.1368, else os_48852 -- the PhysicalAI cost of the gate that already WORKS on navtest (R8-GATE-NAVTEST 65.52)",
+  "arc4": "cumulative chord length through the origin and the 1, 2, 3, 4 s waypoints (4 chords; NavSim's arc4 uses 8 chords at 0.5 s -- the threshold 0.1368 is transferred as a FIXED constant, not re-fit)",
+  "ha0_ext": "the battery's own causal prior (constant a0 and constant curvature from the past window: the SHIP-R8 echo-control reference)"
+ },
+ "instrument": "per-window components = taniteval/tools/refav1_arm.py::_components (four_families geometry + factor_from_kinematics labeller) at dt 1.0 + pair-masked yaw rate + curvature MAE (as families/code/paired_families_navsim.py); interval = refav1_arm._paired_families -> taniteval.ci.paired_episode_cluster_bootstrap B 2000, cluster = episode (139). Controls: self-pair exactly 0; g-as-prediction 0 / 1 literal; never-fires gate == plan and always-fires gate == ha0_ext exactly; theta and 48,852 trees aligned (re-asserted per run).",
+ "rule": "for each gated arm X and each component: X - os_48852 at the SAME inference seed. X is PARITY-OR-BETTER iff NO component is separated-WORSE (higher error, or lower agreement) at BOTH seeds; otherwise WORSE, listing every component separated-worse at both seeds.",
+ "beside_never_bars": ["X - os_theta05", "X - ha0_ext", "X - b_refcv7_50400 (same seed)", "os_theta05 - os_48852 (the blend's own PhysicalAI cost, per family -- complements R8-WISEFT-PAI)", "fallback fraction"],
+ "committed": {
+  "GW_ARC PARITY-OR-BETTER and R8-WISEFT-GATE stage B WORKS": "evidence package for a PI decision on a gated deliverable (it does not by itself pass SHIP-R8: a gated planner's SHIP-R8 read needs its own registered design, filed then)",
+  "GW_ARC WORSE": "the gate's cost is named per family; the gated arm is NavSim-only and the next lever is training-side",
+  "G_ARC48852": "read the same way; it answers whether the navtest-working gate on the SHIPPED model is free on PhysicalAI"
+ },
+ "caveats": ["open loop on logged frames (the SHIP-R8 tier), not closed loop", "one training seed", "the arc test runs on 1 s chords instead of NavSim's 0.5 s chords", "the S2 (2 s) surface carries no 4 s waypoint and is not read here"]
+}

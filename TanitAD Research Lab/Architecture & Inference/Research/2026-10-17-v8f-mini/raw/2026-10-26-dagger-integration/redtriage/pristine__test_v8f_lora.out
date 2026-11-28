@@ -1,0 +1,133 @@
+....................F.........F.........                                 [100%]
+================================== FAILURES ===================================
+_ test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught _
+
+lworld = {'root': WindowsPath('E:/Projects/TanitAD-artifacts/redtriage/bt_pristine/lw0/w'), 'names': ['syn-train-000', 'syn-tra...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/redtriage/bt_pristine/test_end_to_end_identity_the_o0')
+
+    def test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught(lworld, tmp_path):
+        """The cache is made BY THE ENCODER (tiny, fixed weights) from the same frames; the windows -> frames -> encoder -> gather path must then return the cache's
+        `feats` bit for bit, in order, with the same frame_ok. Shift the frames by one cache step and the identity probe must go non-zero."""
+        enc = make_encoder(1024, 2, r=4, seed=0, bb_seed=3)
+        names = lworld["names"]
+        root = tmp_path / "w"
+        D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
+        for i, c in enumerate(names):                                   # overwrite the random cache tokens with the encoder's OWN pooled fp8 tokens
+            p = root / "train" / "clips" / f"{c}.pt"
+            o = torch.load(p, map_location="cpu", weights_only=True)
+            with torch.no_grad():
+                o["pool4x10"] = enc.pooled(smooth_frames(60, TINY_HW, seed=i), quantize=True).to(torch.float8_e4m3fn)
+            torch.save(o, p)
+        J = D.load_join(root / "join_train.npz")
+        store = D.ClipStore(root, "train", lru=8)
+        wins = D.train_windows(store, J, names)
+        ds = D.V8FMiniFrameWindows(store, J, wins, hmax=16, keep_cached=True)
+        sel = [wins[i] for i in (0, 7, 40, 41, 42, 100, 150)]
+        items = [ds.item(ci, t, 1, 3) for ci, t, _, _ in sel]
+        probe = D.collate_frames(items, D.FrameStore(make_frames_root(tmp_path / "f_ok", names)))
+        ident = TR.identity_probe(enc, probe, "cpu", 16)
+>       assert ident["max_abs"] == 0.0 and ident["frac_bitwise_equal"] == 1.0 and ident["rel_l2"] == 0.0
+E       assert (0.015625 == 0.0)
+
+stack\tests\test_v8f_lora.py:590: AssertionError
+_________ test_the_encoder_build_never_moves_the_heads_initialisation _________
+
+tiny_trainer = <module 'v8f_mini_train' from 'E:\\Projects\\TanitAD-artifacts\\redtriage\\pristine\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/redtriage/bt_pristine/test_the_encoder_build_never_m0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000024EA579F460>
+
+    def test_the_encoder_build_never_moves_the_heads_initialisation(tiny_trainer, tmp_path, monkeypatch):
+        """B's heads and L's heads must start from the same bits and the same RNG stream: the trainer seeds, builds the heads, THEN the encoder; the encoder build (which here draws
+        from the global RNG, as HF's loader may) is wrapped in a save / restore. The control: without the restore the stream that follows is NOT B's."""
+        seen = {}
+        orig = TR.declared_vs_built
+    
+        def spy(a, cfg, model, opt, info, enc=None):
+            seen[a.encoder] = ({k: v.clone() for k, v in model.state_dict().items()}, torch.get_rng_state().clone())
+            return orig(a, cfg, model, opt, info, enc)
+        monkeypatch.setattr(TR, "declared_vs_built", spy)
+        cache_argv = ["--synthetic", "--batch", "4", "--d", "32", "--n-q", "2", "--steps", "2", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M1",
+                      "--selfcheck-only", "--out"]
+>       assert TR.main([*cache_argv, str(tmp_path / "c")]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_lora.py:695: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+argv = ['--synthetic', '--batch', '4', '--d', '32', '--n-q', ...]
+
+    def main(argv=None):
+        argv = list(sys.argv[1:] if argv is None else argv)
+        a = build_parser().parse_args(argv)
+        if a.p10 is None:
+            a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
+        if a.threads:
+            torch.set_num_threads(a.threads)
+        os.makedirs(a.out, exist_ok=True)
+        cfg = make_config(a)
+        ego = make_ego_perturb(a)                                        # O-RECOVER (PREREG_V8F_HACC_MC section 7): off by default; the object the loop applies, G-DVB reads back and the probes exercise
+        dev = torch.device("cuda" if (a.device == "auto" and torch.cuda.is_available()) else ("cpu" if a.device == "auto" else a.device))
+        torch.manual_seed(a.seed)
+        np.random.seed(a.seed)
+        store, J, wins, clips, info = build_data(a, cfg)
+        info["p10_units"] = None if a.synthetic else M.p10_meta(a.p10).get("units", "steer")
+        if not a.synthetic:
+            try:
+                M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
+            except ValueError as e:
+                raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
+        fstore = None
+        if a.encoder == "lora":
+            if not a.frames_root:
+                raise SystemExit("ZZDVB-REFUSEDZZ --encoder lora needs --frames-root")
+            fstore = D.FrameStore(a.frames_root, lru=info["lru"])
+            info["frames_missing"] = len(fstore.missing(clips))
+        if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
+            ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                       window_start=cfg.window_start)
+        else:
+            ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                  window_start=cfg.window_start)
+        info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+        prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
+        mu, sd = M.cons_stats(J)
+        model = M.V8FMini(cfg, prior, mu, sd).to(dev)
+        if a.init_ckpt:                                                  # O-RECOVER's start state: the MODEL weights of an earlier checkpoint (before the optimiser, the probes and the gate); a resume of THIS run wins
+            try:
+                info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
+            except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+                raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+        enc = None
+        if a.encoder == "lora":
+            enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
+            enc.set_checkpointing(a.enc_ckpt)
+        decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2]
+        nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2]
+        groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
+        if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
+            groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
+        opt = torch.optim.AdamW(groups, lr=a.lr)
+        S = math.ceil(info["n_windows_all_clips"] / a.batch)
+        total = a.steps or S * a.steps_mult
+        sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
+                                   max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+        # ---- the launch gate
+        lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+>       bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: test_the_encoder_build_never_moves_the_heads_initialisation.<locals>.spy() takes from 5 to 6 positional arguments but 8 were given
+
+stack\scripts\v8f_mini_train.py:1185: TypeError
+============================== warnings summary ===============================
+tests/test_v8f_lora.py::test_fused_qkv_adapts_only_the_q_and_v_slices
+  E:\Projects\TanitAD-artifacts\redtriage\pristine\stack\tests\test_v8f_lora.py:209: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(d[:16].abs().sum()) > 0 and float(d[32:].abs().sum()) > 0 and float(d[16:32].abs().sum()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_lora.py::test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught
+FAILED stack\tests\test_v8f_lora.py::test_the_encoder_build_never_moves_the_heads_initialisation
+2 failed, 38 passed, 1 warning in 277.70s (0:04:37)

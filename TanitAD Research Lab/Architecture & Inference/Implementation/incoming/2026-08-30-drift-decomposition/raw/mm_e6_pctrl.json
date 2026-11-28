@@ -1,0 +1,132 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "postrain30k",
+ "step": 30000,
+ "scene_rank": 96,
+ "n_scored_clips": 80,
+ "n_rows": 7680,
+ "input": "frozen DINOv3 4x8x1024 -> PCA rank R (basis fit on FIT clips)",
+ "estimator": "clip-disjoint 10-fold RFF+ridge, within-clip Pearson r, TIME-SHUFFLED null through the identical path",
+ "targets": {
+  "speed  \u2b50POSITIVE CONTROL (DINOv3 banked +0.4081)": {
+   "r": 0.1522,
+   "r_time_shuffled": -0.005,
+   "r_minus_shuffled": 0.1572,
+   "t": 2.73
+  },
+  "omega (yaw rate)": {
+   "r": 0.1023,
+   "r_time_shuffled": -0.0205,
+   "r_minus_shuffled": 0.1228,
+   "t": 2.51
+  },
+  "z_pca0   (latent content)": {
+   "r": 0.0266,
+   "r_time_shuffled": 0.0008,
+   "r_minus_shuffled": 0.0258,
+   "t": 1.07
+  },
+  "z_pca1   (latent content)": {
+   "r": 0.022,
+   "r_time_shuffled": -0.0134,
+   "r_minus_shuffled": 0.0354,
+   "t": 1.7
+  },
+  "z_pca2   (latent content)": {
+   "r": 0.0105,
+   "r_time_shuffled": -0.0093,
+   "r_minus_shuffled": 0.0198,
+   "t": 0.93
+  },
+  "z_pca3   (latent content)": {
+   "r": 0.0432,
+   "r_time_shuffled": 0.0195,
+   "r_minus_shuffled": 0.0237,
+   "t": 1.22
+  },
+  "z_pca4   (latent content)": {
+   "r": 0.0667,
+   "r_time_shuffled": 0.0166,
+   "r_minus_shuffled": 0.0501,
+   "t": 2.52
+  },
+  "z_pca5   (latent content)": {
+   "r": 0.0354,
+   "r_time_shuffled": 0.0071,
+   "r_minus_shuffled": 0.0283,
+   "t": 1.25
+  },
+  "z_pca6   (latent content)": {
+   "r": 0.015,
+   "r_time_shuffled": 0.0015,
+   "r_minus_shuffled": 0.0135,
+   "t": 0.75
+  },
+  "z_pca7   (latent content)": {
+   "r": 0.0802,
+   "r_time_shuffled": 0.0113,
+   "r_minus_shuffled": 0.0689,
+   "t": 3.46
+  },
+  "dz_pca0  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.0385,
+   "r_time_shuffled": 0.0135,
+   "r_minus_shuffled": 0.025,
+   "t": 1.54
+  },
+  "dz_pca1  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.0602,
+   "r_time_shuffled": -0.0055,
+   "r_minus_shuffled": 0.0657,
+   "t": 4.31
+  },
+  "dz_pca2  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.0521,
+   "r_time_shuffled": -0.0115,
+   "r_minus_shuffled": 0.0636,
+   "t": 3.94
+  },
+  "dz_pca3  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.023,
+   "r_time_shuffled": -0.0156,
+   "r_minus_shuffled": 0.0386,
+   "t": 2.42
+  },
+  "dz_pca4  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.0389,
+   "r_time_shuffled": -0.0115,
+   "r_minus_shuffled": 0.0504,
+   "t": 3.28
+  },
+  "dz_pca5  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.0324,
+   "r_time_shuffled": 0.0098,
+   "r_minus_shuffled": 0.0227,
+   "t": 1.39
+  },
+  "dz_pca6  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.027,
+   "r_time_shuffled": 0.0129,
+   "r_minus_shuffled": 0.0141,
+   "t": 0.89
+  },
+  "dz_pca7  \u2b50\u2b50DRIFT FROM SCENE": {
+   "r": 0.0414,
+   "r_time_shuffled": 0.0231,
+   "r_minus_shuffled": 0.0184,
+   "t": 1.13
+  },
+  "constant (ctrl)": {
+   "r": 0.0,
+   "r_time_shuffled": 0.0,
+   "r_minus_shuffled": 0.0,
+   "t": 0.0
+  }
+ },
+ "summary": {
+  "z_pca_mean_r_minus_shuffled": 0.0332,
+  "dz_pca_mean_r_minus_shuffled": 0.0373,
+  "speed_r_minus_shuffled": 0.1572
+ }
+}

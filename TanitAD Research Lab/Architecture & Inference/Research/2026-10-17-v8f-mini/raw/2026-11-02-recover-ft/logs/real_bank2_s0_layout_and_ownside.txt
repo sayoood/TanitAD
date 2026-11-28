@@ -1,0 +1,24 @@
+sha 90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589 n 613132 hmax 16 partial False
+header keys ['cfg', 'ckpt_sha256', 'clips', 'constants', 'constants_sha256', 'eval', 'inputs_sha256', 'limit_clips', 'partial', 'rollout', 'schema', 'thresholds_file_sha256', 'train', 'window_list_sha256']
+n clips in header 4512 first [('0', '8f387977-4086-466d-bba4-b04f8cdc0743'), ('100', 'a8649d43-0d0b-4760-93a5-9bbbe00e4082')]
+ci       int32    (613132,)        finite 1.0000 min 0 max 4571
+t0       int32    (613132,)        finite 1.0000 min 3 max 74
+tick     int8     (613132,)        finite 1.0000 min 1 max 2
+j        int32    (613132,)        finite 1.0000 min 13 max 94
+p10f     float32  (613132, 16, 8)  finite 0.9959 min -17564.244140625 max 10020.2548828125
+pose     float64  (613132, 16, 3)  finite 0.9986 min -235.89140324519974 max 679.5960262830168
+arc      float64  (613132, 16)     finite 0.9986 min 0.0 max 130.64677473381553
+kin3     float64  (613132, 3)      finite 1.0000 min -192.48719831558964 max 214.26170359031877
+r        int32    (613132,)        finite 1.0000 min 3 max 103
+e_lat    float64  (613132,)        finite 1.0000 min 1.1410657689909615e-06 max 58.03137004606759
+dpsi     float64  (613132,)        finite 1.0000 min 1.2797989207252759e-06 max 179.9504541266935
+reason   int8     (613132,)        finite 1.0000 min 0 max 3
+ok 433301 reason counts {'ok': 433301, 'off_lat': 30285, 'off_head': 24556, 'end_edge': 124990, 'nonfinite': 0}
+rec j 13 t0 3 tick 1 r 13
+pose last 3 rows [[11.47601348710133, -0.7326590405911154, -0.1568669051769786], [12.10797020531491, -0.8131330434258544, -0.16427858883569257], [12.642229598413644, -0.9259856456824915, -0.1955196462599402]]
+kin3 [2.6928263882788603, 0.08424931586752837, 0.10361765142861375]
+NaN rows in pose history (first col) for ok recs: share of recs with any NaN in last 2 rows: 0.0
+j range 13 90  j>=2 share 1.0
+own v quantiles [0.142, 1.655, 5.193, 9.1, 13.633, 26.819, 32.832] own v in [3,8] share 0.3164913074283235
+bank field e_lat (unsigned distance to the logged polyline, m; a proxy, NOT the card's signed same-clock-row dy) quantiles [0.012, 0.232, 1.825, 2.632]
+bank field dpsi (|heading error| at the MATCHED route row, DEGREES, unsigned; a proxy, NOT the card's signed same-clock-row dpsi in rad) quantiles [0.0188, 0.0926, 1.3918, 15.1535, 26.0928]

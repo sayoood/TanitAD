@@ -1,0 +1,10 @@
+Source-level mutations, each applied to a COPY of the tool (F:/tanitad_scratch/vdac_build1_scratch/mut, deleted at the end), the full test file re-run. Every one must go RED.
+vdac_stage0.py
+ M1  decide(): threshold '>=' -> '>'                      RED: test_decide_reads_both_sides_of_0p85 (1 failure of 22)
+ M2  draw_list(): the H48 / SFT exclusion removed          RED: 3 failures + 1 error (draw rule, ineligible rows, CLI end to end, include_h48 verifier)
+ M3  draw_list(): the step==0 / rank==0 filter removed     RED: the draw REFUSES (duplicate (log, token) rows) and the tests error out
+ M4  C0-FLIP forced to ok                                  RED: test_flip_blind_instrument_is_invalid
+s1_read_v2.py
+ M5  paired delta: the reference's resamples rolled by one (an unpaired delta)   RED: test_mutation_unpaired_delta_goes_red, test_paired_delta_point_ci_and_lift (2 failures of 36)
+Built-in regression arms (switched on by the tests, never by a real run): s1_read_v2 mutate='unpaired_delta' + the frozen reader's 'no_reweight' / 'frame_resample' (ported v1 test, still RED);
+vdac_stage0 mutate='include_h48' / 'flip_threshold' / 'no_reweight'.

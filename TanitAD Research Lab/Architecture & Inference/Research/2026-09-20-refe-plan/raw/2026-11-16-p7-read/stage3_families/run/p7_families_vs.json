@@ -1,0 +1,107 @@
+{
+ "what": "stage3 families_vs for P7 (R2: vs P6; R2b: vs P2), recomputed 2026-11-17 after the families6 MemoryError",
+ "note": "REPORTED, NOT GATING (amendment section 5); unpaired interval non-overlap, a conservative reading",
+ "inputs": {
+  "arm": [
+   "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p7_next/fam6lowmem/run/p7_full_families.json",
+   "7ebcb3f539bb173ef294fa4affec45f5"
+  ],
+  "base_p6": [
+   "F:/TanitAD_p6read_work/stage3_p6_full/p6_full_families.json",
+   "b9dcbf62dd2ddf93bda26c89970c0797"
+  ],
+  "also_p2": [
+   "F:/TanitAD_p7read_tip/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2/p2_full/p2_full_families.json",
+   "2bedac304a3be6801afc03b8d81b4c10"
+  ]
+ },
+ "base_p6_md5_pin_prefix": "b9dcbf62",
+ "R2_families_vs_base_p6": {
+  "adverse": [],
+  "components_compared": 21,
+  "tactical_no_interval": {
+   "lateral_decision": {
+    "W": {
+     "accuracy": 0.9131,
+     "kappa": 0.8419
+    },
+    "P": {
+     "accuracy": 0.9133,
+     "kappa": 0.8416
+    }
+   },
+   "longitudinal_decision": {
+    "W": {
+     "accuracy": 0.6481,
+     "kappa": 0.4727
+    },
+    "P": {
+     "accuracy": 0.6543,
+     "kappa": 0.4818
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "W": {
+     "accuracy": 0.7537,
+     "kappa": 0.6864
+    },
+    "P": {
+     "accuracy": 0.7583,
+     "kappa": 0.6915
+    }
+   }
+  },
+  "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)"
+ },
+ "R2b_families_vs_also_p2": {
+  "adverse": [
+   {
+    "family": "longitudinal",
+    "metric": "ego_progress.progress_ratio_mean",
+    "direction": "closer_to_1",
+    "W_ci": [
+     1.0055,
+     1.0418
+    ],
+    "P_ci": [
+     1.0658,
+     1.1007
+    ]
+   }
+  ],
+  "components_compared": 21,
+  "tactical_no_interval": {
+   "lateral_decision": {
+    "W": {
+     "accuracy": 0.9237,
+     "kappa": 0.8604
+    },
+    "P": {
+     "accuracy": 0.9133,
+     "kappa": 0.8416
+    }
+   },
+   "longitudinal_decision": {
+    "W": {
+     "accuracy": 0.6748,
+     "kappa": 0.5101
+    },
+    "P": {
+     "accuracy": 0.6543,
+     "kappa": 0.4818
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "W": {
+     "accuracy": 0.7794,
+     "kappa": 0.7145
+    },
+    "P": {
+     "accuracy": 0.7583,
+     "kappa": 0.6915
+    }
+   }
+  },
+  "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)"
+ }
+}

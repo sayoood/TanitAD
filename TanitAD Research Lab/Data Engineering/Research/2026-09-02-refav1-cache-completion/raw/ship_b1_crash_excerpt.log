@@ -1,0 +1,44 @@
+[b1] 416/4665  318 eps/h  eta 13.3 h
+Exception in thread Thread-213 (_push_verify):
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\tanitad-wt\stack\scripts\dinov3_fp8_encode_ship.py", line 104, in _push_verify
+    scp([*(str(WORK / o) for o in outs), f"{THOR}:{dst}/"])
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\tanitad-wt\stack\scripts\dinov3_fp8_encode_ship.py", line 58, in scp
+    subprocess.run(["scp", "-o", "ConnectTimeout=25", *args],
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   check=True, capture_output=True)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['scp', '-o', 'ConnectTimeout=25', 'C:\\Users\\Admin\\refav1_probe\\ship\\1697c853-4967-4455-a22c-2036c90b46a9.pt', 'C:\\Users\\Admin\\refav1_probe\\ship\\16a1404a-cfdd-4b07-bdbf-5a1522c96697.pt', 'C:\\Users\\Admin\\refav1_probe\\ship\\16af18af-277f-4028-813e-01baaca3e552.pt', 'C:\\Users\\Admin\\refav1_probe\\ship\\16b445a5-2ba7-4238-9099-f61af5e71eb1.pt', 'C:\\Users\\Admin\\refav1_probe\\ship\\16c90947-70ee-4e6f-8acf-bffa32eeff62.pt', 'C:\\Users\\Admin\\refav1_probe\\ship\\16d325e9-dbfe-439c-a0ed-4ff8850ad2e2.pt', 'C:\\Users\\Admin\\refav1_probe\\ship\\
+Exception in thread Thread-214 (_pull):
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\tanitad-wt\stack\scripts\dinov3_fp8_encode_ship.py", line 101, in _pull
+    scp([*(f"{THOR}:{src}/{e}.v2ep.pt" for e in batch), str(WORK)])
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\tanitad-wt\stack\scripts\dinov3_fp8_encode_ship.py", line 58, in scp
+    subprocess.run(["scp", "-o", "ConnectTimeout=25", *args],
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                   check=True, capture_output=True)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['scp', '-o', 'ConnectTimeout=25', 'tanitad-thor-wifi:/home/nvidia/data/physicalai-b1-w120-256x640cyl/1850ed54-ed02-49db-abab-ca1800aebf60.v2ep.pt', 'tanitad-thor-wifi:/home/nvidia/data/physicalai-b1-w120-256x640cyl/189906ac-da2a-4c31-a64c-5b3c1799a51c.v2ep.pt', 'tanitad-thor-wifi:/home/nvidia/data/physicalai-b1-w120-256x640cyl/189c7df7-642a-4383-96bc-49799970d74f.v2ep.pt', 'tanitad-thor-wifi:/home/nvidia/data/physicalai-b1-w120-256x640cyl/189e5bf8-c574-494b-97fb-97280ba1a797.v2ep.pt', 'tanitad-thor-wifi:/home/nvidia/data/physicalai-b1-w120-256x640cyl/18
+[b1] 432/4665  328 eps/h  eta 12.9 h
+Traceback (most recent call last):
+[excerpt of C:/Users/Admin/refav1_probe/ship_b1.log lines 28-70, columns cut at 600; the original run's push+pull threads died together at episode ~432 of 4665; scp() then had no retry and _push_verify no exception box]

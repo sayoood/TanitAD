@@ -1,0 +1,392 @@
+{
+ "tool": "zerograd_allow_from_gate",
+ "profile": "refcv8-nt",
+ "argv_file": "F:/c_overflow_2026-10-26/tmp/config.json",
+ "allow": [
+  {
+   "pattern": "core\\.strategic\\.gru(\\..+)?",
+   "group": "core.strategic.gru",
+   "flag": "--no-strategic",
+   "why": "the strategic context encoder; --no-strategic (PI 2026-09-06) bypasses the layer, never deletes it",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.strategic\\.proj(\\..+)?",
+   "group": "core.strategic.proj",
+   "flag": "--no-strategic",
+   "why": "the strategic context projection; bypassed with the layer",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "nav_to_str(\\..+)?",
+   "group": "nav_to_str",
+   "flag": "--no-strategic",
+   "why": "nav -> strategic ctx; the nav command still reaches tactical (nav_to_tac) and operative (meas_in)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "str_goal_head(\\..+)?",
+   "group": "str_goal_head",
+   "flag": "--no-strategic",
+   "why": "the strategic goal head; its hindsight loss is off with the layer",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "gstr_embed(\\..+)?",
+   "group": "gstr_embed",
+   "flag": "--no-strategic",
+   "why": "S-BYPASS-2: the strategic goal's FiLM on the tactical latent is skipped",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "gstr_film(\\..+)?",
+   "group": "gstr_film",
+   "flag": "--no-strategic",
+   "why": "S-BYPASS-2: the strategic goal's FiLM on the tactical latent is skipped",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.decoder\\.ctx_to_cond(\\..+)?",
+   "group": "core.decoder.ctx_to_cond",
+   "flag": "--no-strategic",
+   "why": "S-BYPASS-1: the strategic ctx is not handed to the operative decoder",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.route_head(\\..+)?",
+   "group": "core.route_head",
+   "flag": "--no-strategic",
+   "why": "the strategic route read-out; route_loss_applied is False under --no-strategic",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.decoder\\.lat_to_anchor(\\..+)?",
+   "group": "core.decoder.lat_to_anchor",
+   "flag": "--graft-tac8-prior",
+   "why": "refcv6 4: the tactical 8x8 posterior REPLACES the image-only lat3 prior (refc.py refuses both)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.decoder\\.lon_to_anchor(\\..+)?",
+   "group": "core.decoder.lon_to_anchor",
+   "flag": "--graft-tac8-prior",
+   "why": "refcv6 4: the tactical 8x8 posterior REPLACES the image-only lon3 prior (refc.py refuses both)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.decoder\\.r8_rc_to_cond(\\..+)?",
+   "group": "core.decoder.r8_rc_to_cond",
+   "flag": "--r8-no-rc",
+   "why": "the route-checkpoint -> cond projection; PI 2026-10-11 (Q-A): NO route checkpoint, so `r8['rc']` is None and refc.py never applies it",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.cls(\\..+)?",
+   "group": "_map_hires.refine.cls",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.conv1(\\..+)?",
+   "group": "_map_hires.refine.conv1",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.conv2(\\..+)?",
+   "group": "_map_hires.refine.conv2",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.inp\\.0(\\..+)?",
+   "group": "_map_hires.refine.inp.0",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.inp\\.1(\\..+)?",
+   "group": "_map_hires.refine.inp.1",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.norm1(\\..+)?",
+   "group": "_map_hires.refine.norm1",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.refine\\.norm2(\\..+)?",
+   "group": "_map_hires.refine.norm2",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.near\\.lift(\\..+)?",
+   "group": "_map_hires.near.lift",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.near\\.lift\\.proj(\\..+)?",
+   "group": "_map_hires.near.lift.proj",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.near_refine\\.0\\.c1(\\..+)?",
+   "group": "_map_hires.near_refine.0.c1",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.near_refine\\.0\\.c2(\\..+)?",
+   "group": "_map_hires.near_refine.0.c2",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "_map_hires\\.near_refine\\.0\\.n1(\\..+)?",
+   "group": "_map_hires.near_refine.0.n1",
+   "flag": "--map-min-coverage",
+   "why": "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE and the loss is logits.sum() * 0 (exactly zero gradient by construction)",
+   "source": "pre-registered"
+  },
+  {
+   "pattern": "core\\.decoder\\.r8_rc_gate",
+   "group": null,
+   "flag": null,
+   "why": "same rc-is-None guard (refc.py:3887-3891)",
+   "source": "extra (NOT pre-registered)"
+  }
+ ],
+ "check": {
+  "n_offenders": 21,
+  "n_exempted": 21,
+  "not_exempted": [],
+  "rows": [
+   {
+    "names": [
+     "core.decoder.r8_rc_gate"
+    ],
+    "case": "a_no_state",
+    "numel": 1,
+    "allowed_by": [
+     "core\\.decoder\\.r8_rc_gate"
+    ]
+   },
+   {
+    "names": [
+     "core.decoder.r8_rc_to_cond.weight"
+    ],
+    "case": "a_no_state",
+    "numel": 1536,
+    "allowed_by": [
+     "core\\.decoder\\.r8_rc_to_cond(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "core.decoder.r8_rc_to_cond.bias"
+    ],
+    "case": "a_no_state",
+    "numel": 384,
+    "allowed_by": [
+     "core\\.decoder\\.r8_rc_to_cond(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.inp.0.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 2048,
+    "allowed_by": [
+     "_map_hires\\.refine\\.inp\\.0(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.inp.1.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.refine\\.inp\\.1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.inp.1.bias"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.refine\\.inp\\.1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.conv1.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 9216,
+    "allowed_by": [
+     "_map_hires\\.refine\\.conv1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.norm1.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.refine\\.norm1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.norm1.bias"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.refine\\.norm1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.conv2.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 9216,
+    "allowed_by": [
+     "_map_hires\\.refine\\.conv2(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.norm2.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.refine\\.norm2(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.norm2.bias"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.refine\\.norm2(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.cls.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 256,
+    "allowed_by": [
+     "_map_hires\\.refine\\.cls(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.refine.cls.bias"
+    ],
+    "case": "b_zero_state",
+    "numel": 8,
+    "allowed_by": [
+     "_map_hires\\.refine\\.cls(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near.lift.unobserved"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.near\\.lift(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near.lift.proj.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 65536,
+    "allowed_by": [
+     "_map_hires\\.near\\.lift(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near.lift.proj.bias"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.near\\.lift(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near_refine.0.c1.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 9216,
+    "allowed_by": [
+     "_map_hires\\.near_refine\\.0\\.c1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near_refine.0.n1.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.near_refine\\.0\\.n1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near_refine.0.n1.bias"
+    ],
+    "case": "b_zero_state",
+    "numel": 32,
+    "allowed_by": [
+     "_map_hires\\.near_refine\\.0\\.n1(\\..+)?"
+    ]
+   },
+   {
+    "names": [
+     "_map_hires.near_refine.0.c2.weight"
+    ],
+    "case": "b_zero_state",
+    "numel": 9216,
+    "allowed_by": [
+     "_map_hires\\.near_refine\\.0\\.c2(\\..+)?"
+    ]
+   }
+  ]
+ }
+}

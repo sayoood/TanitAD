@@ -1,0 +1,168 @@
+[
+ {
+  "tag": "off_fp32",
+  "flags": {
+   "cublas": "",
+   "late_cublas": false,
+   "fp32": true,
+   "sdpa": "",
+   "det": "off"
+  },
+  "X1==X2": false,
+  "X1==Y(head)": false,
+  "max_abs_diff_X1_X2": 1.0677613317966461e-06,
+  "params_differ_X1_X2": 66,
+  "raised": null,
+  "warning": []
+ },
+ {
+  "tag": "off_math_sdpa",
+  "flags": {
+   "cublas": "",
+   "late_cublas": false,
+   "fp32": false,
+   "sdpa": "math",
+   "det": "off"
+  },
+  "X1==X2": true,
+  "X1==Y(head)": true,
+  "max_abs_diff_X1_X2": 0.0,
+  "params_differ_X1_X2": 0,
+  "raised": null,
+  "warning": []
+ },
+ {
+  "tag": "off_nodet",
+  "flags": {
+   "cublas": "",
+   "late_cublas": false,
+   "fp32": false,
+   "sdpa": "",
+   "det": "off"
+  },
+  "X1==X2": false,
+  "X1==Y(head)": false,
+  "max_abs_diff_X1_X2": 0.00011853988689836115,
+  "params_differ_X1_X2": 78,
+  "raised": null,
+  "warning": []
+ },
+ {
+  "tag": "strict_cublas_early",
+  "flags": {
+   "cublas": ":4096:8",
+   "late_cublas": false,
+   "fp32": false,
+   "sdpa": "",
+   "det": "strict"
+  },
+  "X1==X2": true,
+  "X1==Y(head)": true,
+  "max_abs_diff_X1_X2": 0.0,
+  "params_differ_X1_X2": 0,
+  "raised": null,
+  "warning": []
+ },
+ {
+  "tag": "strict_latecublas",
+  "flags": {
+   "cublas": "",
+   "late_cublas": true,
+   "fp32": false,
+   "sdpa": "",
+   "det": "strict"
+  },
+  "X1==X2": true,
+  "X1==Y(head)": true,
+  "max_abs_diff_X1_X2": 0.0,
+  "params_differ_X1_X2": 0,
+  "raised": null,
+  "warning": []
+ },
+ {
+  "tag": "strict_noenv",
+  "flags": {
+   "cublas": "",
+   "late_cublas": false,
+   "fp32": false,
+   "sdpa": "",
+   "det": "strict"
+  },
+  "X1==X2": true,
+  "X1==Y(head)": true,
+  "max_abs_diff_X1_X2": 0.0,
+  "params_differ_X1_X2": 0,
+  "raised": null,
+  "warning": []
+ },
+ {
+  "tag": "trainer_as_is",
+  "flags": {
+   "cublas": "",
+   "late_cublas": true,
+   "fp32": false,
+   "sdpa": "",
+   "det": "warn"
+  },
+  "X1==X2": false,
+  "X1==Y(head)": false,
+  "max_abs_diff_X1_X2": 0.00011880835518240929,
+  "params_differ_X1_X2": 78,
+  "raised": null,
+  "warning": [
+   "Memory Efficient attention defaults to a non-deterministic a"
+  ]
+ },
+ {
+  "tag": "warn_cublas_early",
+  "flags": {
+   "cublas": ":4096:8",
+   "late_cublas": false,
+   "fp32": false,
+   "sdpa": "",
+   "det": "warn"
+  },
+  "X1==X2": false,
+  "X1==Y(head)": false,
+  "max_abs_diff_X1_X2": 0.00011745552183128893,
+  "params_differ_X1_X2": 78,
+  "raised": null,
+  "warning": [
+   "Memory Efficient attention defaults to a non-deterministic a"
+  ]
+ },
+ {
+  "tag": "warn_fp32",
+  "flags": {
+   "cublas": "",
+   "late_cublas": false,
+   "fp32": true,
+   "sdpa": "",
+   "det": "warn"
+  },
+  "X1==X2": false,
+  "X1==Y(head)": false,
+  "max_abs_diff_X1_X2": 1.1562369763851166e-06,
+  "params_differ_X1_X2": 65,
+  "raised": null,
+  "warning": [
+   "Memory Efficient attention defaults to a non-deterministic a"
+  ]
+ },
+ {
+  "tag": "warn_math_sdpa",
+  "flags": {
+   "cublas": "",
+   "late_cublas": false,
+   "fp32": false,
+   "sdpa": "math",
+   "det": "warn"
+  },
+  "X1==X2": true,
+  "X1==Y(head)": true,
+  "max_abs_diff_X1_X2": 0.0,
+  "params_differ_X1_X2": 0,
+  "raised": null,
+  "warning": []
+ }
+]

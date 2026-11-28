@@ -368,9 +368,12 @@ def mintability_report() -> dict:
             "strategic_scalars": list(STRAT_SCALAR_NAMES),
         },
         "not_mintable_needs_data": {
-            "LONMODE follow_lead/close_gap/open_gap": "lead_state is a None stub "
-                "-> these windows fall to free_cruise/coast; the lead modes are "
-                "never emitted (LON = 'what the ego does', not 'why')",
+            "LONMODE follow_lead/close_gap/open_gap": "this minter consumes no "
+                "lead input -> these windows fall to free_cruise/coast; the "
+                "lead modes are never emitted (LON = 'what the ego does', not "
+                "'why'). STALE-ABSENCE NOTE 2026-08-18: the lead state EXISTS "
+                "program-wide (obstacle.offline join + taniteval.lead_source); "
+                "wiring it in would let a rebuild mint these modes",
             "LATMANEUVER merge_in/yield_merge": "need another agent's track",
             "ROUTE straight": "asserts a junction exists = a MAP fact; never minted",
             "ROUTE exit/merge/roundabout (*)": "minted only on a confirmed "

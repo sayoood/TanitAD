@@ -1,0 +1,40 @@
+[2026-10-15T23:21:35+0200] p2full_driver start tag=smoke pid=13788 workers=5 device=cpu
+[2026-10-15T23:21:35+0200] STATUS {"tag": "smoke", "n_tokens": 8, "n_chunks": 2, "pid": 13788, "workers": 5, "started": "2026-10-15T23:21:35+0200", "resumed_at": "2026-10-15T23:21:35+0200", "result": null}
+[2026-10-15T23:22:05+0200] STATUS {"preflight_ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51", "preflight_ckpt_ok": true, "ckpt_stat": [1288484600, 1791898168000000000]}
+[2026-10-15T23:22:05+0200] STATUS {"stage": "dump", "state": "chunk 0/1: dumping 4 tokens (attempt 1)", "chunk_started": "2026-10-15T23:22:05+0200"}
+[2026-10-15T23:25:03+0200] STATUS {"stage": "dump", "state": "chunk 0: seam rc=0 (attempt 1)", "last_dump_seconds": 178}
+[2026-10-15T23:25:04+0200] STATUS {"stage": "gate", "gate_c00": {"PASS": true, "max_abs_pose_diff_m": 0.001361846923828125, "n_identical": 0, "n_diff_gt_tol": 0, "fingerprints_equal": true}}
+[2026-10-15T23:25:04+0200] STATUS {"stage": "dump", "state": "chunk 1/1: dumping 4 tokens (attempt 1)", "chunk_started": "2026-10-15T23:25:04+0200"}
+[2026-10-15T23:27:53+0200] STATUS {"stage": "dump", "state": "chunk 1: seam rc=0 (attempt 1)", "last_dump_seconds": 170}
+[2026-10-15T23:27:53+0200] STATUS {"stage": "gate", "gate_c01": {"PASS": true, "max_abs_pose_diff_m": 0.0007610321044921875, "n_identical": 0, "n_diff_gt_tol": 0, "fingerprints_equal": true}}
+[2026-10-15T23:32:24+0200] STATUS {"stage": "score", "pipeline_rc": 0, "abort_reason": null, "score_all_pass": true}
+[2026-10-15T23:32:24+0200] STATUS {"stage": "table", "table_gates": {"G3_all_valid": true, "G3_finite": true, "n_tokens": 8, "n_columns": 64, "G2_banked_csv": "D:/Projects/TanitAD/data/refe_navtest/score/refe_stage2_p2_full/refe_stage2_p2_full.csv", "G2_tokens_identical_poses": 8, "G2_max_abs_score_diff_identical_poses": 0.0, "G2_ma
+[2026-10-15T23:32:24+0200] STATUS {"stage": "proof", "same_pick_proof": {"PASS": true, "n_tokens": 8, "reading": "P2's own pick is REPRODUCED on every token: the table belongs to P2"}}
+{
+ "PASS": true,
+ "pose": {
+  "max_abs_m": 0.001361846923828125,
+  "n_bit_identical": 0,
+  "n_gt_1e-4": 8,
+  "n_gt_tol": 0,
+  "tol_m": 0.005
+ },
+ "pdms_at_pick_vs_banked_csv": {
+  "max_abs": 0.0,
+  "n_exact": 8,
+  "n_gt_tol": 0,
+  "tol": 1e-09,
+  "n_banked_csv_exactly_0": 8,
+  "n_table_pdms_at_pick_exactly_0": 8,
+  "mean_x100_table_at_pick": 0.0,
+  "mean_x100_banked_csv": 0.0
+ },
+ "subscores_at_pick_vs_banked_csv": {
+  "max_abs": 0.0,
+  "n_exact": 8,
+  "n_gt_tol": 0
+ }
+}
+[2026-10-15T23:32:24+0200] STATUS {"stage": "analysis", "secondary": {"anatomy": "written", "crosscheck_509": null, "zero_subset_vs_landed": "skipped (smoke)"}, "secondary_errors": null}
+[2026-10-15T23:32:24+0200] STATUS {"result": "P2FULL_DONE"}
+[2026-10-15T23:32:24+0200] P2FULL_DONE

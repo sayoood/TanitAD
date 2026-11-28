@@ -1,0 +1,43 @@
+{
+ "tree": "F:/TanitAD-scratch/stopbal_read/tree",
+ "eval": "F:/TanitAD-scratch/q5_416/run/assembled/eval_416.npz",
+ "eval416": "F:/TanitAD-scratch/q5_416/run/assembled/eval_416.npz",
+ "eval256p": "F:/TanitAD-scratch/q5_416/run/assembled/eval_256p.npz",
+ "sidecar_limit_eval": "F:/TanitAD-scratch/q5_416/run/c0/sidecar_limit_eval.npy",
+ "out": "F:/TanitAD-scratch/q5_416/run/RESULT_Q5.json",
+ "samples": {
+  "S1": {
+   "work416": "F:/TanitAD-scratch/q5_416/run/work/S1_416",
+   "work256p": "F:/TanitAD-scratch/q5_416/run/work/S1_256p",
+   "train416": "F:/TanitAD-scratch/q5_416/run/assembled/S1_416",
+   "train256p": "F:/TanitAD-scratch/q5_416/run/assembled/S1_256p",
+   "work256b": "F:/TanitAD-scratch/q5_416/run/banked256b/S1"
+  },
+  "S2": {
+   "work416": "F:/TanitAD-scratch/q5_416/run/work/S2_416",
+   "work256p": "F:/TanitAD-scratch/q5_416/run/work/S2_256p",
+   "train416": "F:/TanitAD-scratch/q5_416/run/assembled/S2_416",
+   "train256p": "F:/TanitAD-scratch/q5_416/run/assembled/S2_256p",
+   "work256b": "F:/TanitAD-scratch/q5_416/run/banked256b/S2"
+  }
+ },
+ "controls": {
+  "c0_differing_bytes": 0,
+  "c2_auroc": 1.0,
+  "c2_outcome": "RES416-ADDS-40",
+  "c4_E_bitwise_equal_C0": true,
+  "c6a_max_abs_diff": 1,
+  "c6b_mae_255": 0.8205640204856801,
+  "c6c_bitwise": true,
+  "c7_ok": true,
+  "c8_bitwise": true,
+  "c9_counts": {
+   "eval_n": 2365,
+   "eval_pos": 131,
+   "eval_episodes": 139,
+   "train_n": 16000,
+   "train_pos": 4000
+  }
+ },
+ "_note": "controls left null REFUSE the read (fail closed): fill them from the controls ledger (C0, C2 planted fits, C4, C6 from the pod ledger / hashes, C7, C8 from test_q5 and smoke_c8.json, C9 from the sample + eval_windows.json). C1, C3a/b/c/d/e and C5 are computed by q5_read from the dirs. work256b / work416pb / work416tok are the beside arms' inputs; an absent dir is reported BLOCKED, never invented."
+}

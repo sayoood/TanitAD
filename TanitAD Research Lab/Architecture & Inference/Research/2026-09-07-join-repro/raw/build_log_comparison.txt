@@ -1,0 +1,30 @@
+# Build-log comparison: original (2026-09-06) vs re-execution (2026-09-07)
+# original lines: 4603   repro lines: 4604
+# md5 original=d075982e0e86b21a8b04c53b1b7770bd  repro=f86c2ca7c3ea4e52a56a5871ad4c812e
+# differing content lines: 3 (see below). All 4,602 preceding lines are byte-identical.
+
+===== diff original -> repro =====
+4603c4603,4604
+< B1_JOIN_DONE {"out": "C:\\Users\\Admin\\tanitad-caches\\b1-train-join-20260906\\b1train_agents.jsonl.xz", "meta": "C:\\Users\\Admin\\tanitad-caches\\b1-train-join-20260906\\b1train_agents.jsonl.xz.meta.json", "md5": "1c985e6d6ad34e605c4ebd30cb353558", "n_clips": 4427, "n_lines": 849263, "n_agent_boxes": 28053187, "visible_frac": 0.4018, "alignment_passed": true, "wall_s": 1806.1}
+---
+> [b1join] digest_scope declared: md5(compressed of b1train_agents.jsonl.xz) = 1c985e6d6ad34e605c4ebd30cb353558
+> B1_JOIN_DONE {"out": "C:\\Users\\Admin\\tanitad-caches\\join-repro-20260907\\out\\b1train_agents.jsonl.xz", "meta": "C:\\Users\\Admin\\tanitad-caches\\join-repro-20260907\\out\\b1train_agents.jsonl.xz.meta.json", "md5": "1c985e6d6ad34e605c4ebd30cb353558", "n_clips": 4427, "n_lines": 849263, "n_agent_boxes": 28053187, "visible_frac": 0.4018, "alignment_passed": true, "wall_s": 1868.9}
+
+===== last 8 lines of the RE-EXECUTION log =====
+  [4571/4572] ffd66d72 n_raw=201 labelled=66 boxes=66 vis=0.379  dt=2.26e-04 mis=1.01e-01
+  [4572/4572] fff5ac66 n_raw=199 labelled=199 boxes=3647 vis=0.417  dt=6.85e-04 mis=1.00e-01
+[b1join] ALIGNMENT GATE frames (KEPT clips) true_max=0.1872 (allowed <= 0.25)  misjoin+1 min=0.8193 (required >= 0.75, expected ~1.0)  sep=4.4x  -> PASS
+[b1join] per-clip gate EXCLUDED 7 of 4434 probed clips (0.1579%, bound 0.50%)
+[b1join] reported-only: speed true_max_dv=1.115e-02 m/s  misjoin+1 min=0.000e+00 m/s (NOT gated in reconstruct mode)
+[b1join] reported-only: time true_max_dt=1.891e-02 s  misjoin+1=1.199e-01 s (instrument worst 2.6e-02 s)
+[b1join] digest_scope declared: md5(compressed of b1train_agents.jsonl.xz) = 1c985e6d6ad34e605c4ebd30cb353558
+B1_JOIN_DONE {"out": "C:\\Users\\Admin\\tanitad-caches\\join-repro-20260907\\out\\b1train_agents.jsonl.xz", "meta": "C:\\Users\\Admin\\tanitad-caches\\join-repro-20260907\\out\\b1train_agents.jsonl.xz.meta.json", "md5": "1c985e6d6ad34e605c4ebd30cb353558", "n_clips": 4427, "n_lines": 849263, "n_agent_boxes": 28053187, "visible_frac": 0.4018, "alignment_passed": true, "wall_s": 1868.9}
+
+===== the 7 clips excluded by the per-clip frame gate (IDENTICAL on both sides) =====
+  [142/4572] 065482b3 EXCLUDED by the frame gate (true 1.0506 frames, misjoin+1 0.0017)
+  [744/4572] 27173eb8 EXCLUDED by the frame gate (true 0.7404 frames, misjoin+1 0.9749)
+  [1463/4572] 4d09c5c1 EXCLUDED by the frame gate (true 0.2506 frames, misjoin+1 0.9993)
+  [1977/4572] 66a2f11a EXCLUDED by the frame gate (true 0.5765 frames, misjoin+1 0.9799)
+  [3662/4572] c6b6eb9b EXCLUDED by the frame gate (true 0.4964 frames, misjoin+1 0.9932)
+  [4119/4572] e3639a77 EXCLUDED by the frame gate (true 0.9381 frames, misjoin+1 0.9708)
+  [4183/4572] e8047d08 EXCLUDED by the frame gate (true 0.7125 frames, misjoin+1 0.9581)

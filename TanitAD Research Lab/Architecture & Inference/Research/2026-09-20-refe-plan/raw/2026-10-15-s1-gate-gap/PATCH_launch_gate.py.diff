@@ -1,0 +1,54 @@
+--- a/refe/launch_gate.py
++++ b/refe/launch_gate.py
+@@ -30,6 +30,7 @@
+ import math
+ import os
+ import sys
++import time
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
+@@ -502,6 +503,12 @@
+     return GT.write_json(out_dir / f"evidence_{ev['check']}.json", ev)
+ 
+ 
++def _log_manifest_timing(where: str, t_tree: float, t_data: float, per_input: dict) -> None:
++    """One line in the gate's log: where the manifest time went (evidence only -- no verdict reads it).  The slowest inputs first."""
++    top = ", ".join(f"{k} {v:.1f}s" for k, v in sorted(per_input.items(), key=lambda kv: -kv[1])[:4])
++    print(f"  [timing] {where}: tree_manifest {t_tree:.1f}s, data_manifest {t_data:.1f}s ({top})", flush=True)
++
++
+ def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None) -> dict:
+     return {k: v for k, v in (("gate:p2_gate_json", p2_gate_json), ("gate:lab_json", lab_json), ("gate:mem_metrics", mem_metrics),
+                               ("gate:egr_json", egr_json), ("gate:preflight_json", preflight_json)) if v}
+@@ -513,10 +520,14 @@
+     import gate_checks as C
+     out_dir.mkdir(parents=True, exist_ok=True)
+     work = out_dir / "work"
++    t0 = time.perf_counter()
+     tree = GT.tree_manifest(pkg)
++    t_tree = time.perf_counter() - t0
+     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
+     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
+-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs)
++    dtim: dict = {}
++    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim)
++    _log_manifest_timing("run", t_tree, time.perf_counter() - t0 - t_tree, dtim)
+     rehearsal = bool(prof.get("rehearsal"))
+     want = [c for c in (prof["checks"] + tuple(prof.get("na_ok", ()))) if (only is None or c in only)]
+     status: dict = {}
+@@ -689,9 +700,13 @@
+ def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None,
+              egr_json=None, preflight_json=None):
+     """Mint the token from the evidence ON DISK.  Every required check must have usable PASS evidence bound to this launch."""
++    t0 = time.perf_counter()
+     tree = GT.tree_manifest(pkg)
++    t_tree = time.perf_counter() - t0
+     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
+-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs)
++    dtim: dict = {}
++    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim)
++    _log_manifest_timing("finalize", t_tree, time.perf_counter() - t0 - t_tree, dtim)
+     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
+     reasons = profile_refusals(prof, argv) + GT.data_problems(data)
+     manifest = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None

@@ -1,0 +1,15 @@
+--- a/refe/scorer_finetune.py
++++ b/refe/scorer_finetune.py
+@@ -899,6 +899,12 @@
+         if n != len(rows):
+             raise RuntimeError(f"aux eval: {n} head outputs for {len(rows)} held-out sets -- the row alignment with evaluate() is broken")
+         lg_all, sd_all = torch.cat([x[0] for x in buf]), torch.cat([x[1] for x in buf])
++        if a.dump_scores:        # OBSERVATIONAL, same switch as the score dump: the per-frame head outputs eval/aux_s1_readout.py reads (P1 / P2 / P3, H2 vs H1 head fit)
++            _safe = "".join(ch if (ch.isalnum() or ch in "._-") else "_" for ch in str(tag))
++            os.makedirs(a.dump_scores, exist_ok=True)
++            np.savez(os.path.join(a.dump_scores, f"head_pred_{_safe}.npz"), log=np.asarray([r.get("log_name", "") for r in rows]),
++                     token=np.asarray([r.get("token", "") for r in rows]), step=np.asarray([int(r.get("step", 0)) for r in rows], np.int64),
++                     logit=lg_all.numpy().astype(np.float32), sdf_m=sd_all.numpy().astype(np.float32))
+         per_log: dict = {}
+         for s in range(0, n, 64):
+             ks = rows[s:s + 64]

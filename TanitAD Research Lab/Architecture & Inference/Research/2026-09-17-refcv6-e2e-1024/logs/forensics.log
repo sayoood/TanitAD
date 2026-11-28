@@ -1,0 +1,52 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[parity] ⚠ NON-PARITY v2 corpus for e2e-1024: ['D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl: 139 providers (channels 9, 256x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[forensics] control loss=29.5322 (41s)
+[forensics] MUT core.ego_hist.out.weight                   loss=29.7135 (37s)
+[forensics] MUT core.decoder.ego_to_cond.weight            loss=26.9013 (37s)
+[forensics] MUT tac_latent_proj.weight                     loss=26.8225 (37s)
+[forensics] MUT core.decoder.tgt_film.to_scale_shift.weight loss=29.7453 (36s)
+[forensics] MUT scorer                                     loss=29.6226 (30s)
+[forensics] MUT goal_gate                                  loss=29.3795 (38s)
+{
+ "ego_history": {
+  "sides": [
+   "core.ego_hist.out.weight",
+   "core.decoder.ego_to_cond.weight"
+  ],
+  "grad_a_as_shipped": 0.0,
+  "grad_b_as_shipped": 0.0,
+  "grad_a_when_b_broken": 5.2654242515563965,
+  "grad_b_when_a_broken": 11.136418342590332,
+  "both_zero_as_shipped": true,
+  "verdict": "DEAD_ZERO_PRODUCT",
+  "gate_side": null
+ },
+ "target_latent": {
+  "sides": [
+   "tac_latent_proj.weight",
+   "core.decoder.tgt_film.to_scale_shift.weight"
+  ],
+  "grad_a_as_shipped": 0.0,
+  "grad_b_as_shipped": 47.69892883300781,
+  "grad_a_when_b_broken": 116.93356323242188,
+  "grad_b_when_a_broken": 102.69304656982422,
+  "both_zero_as_shipped": false,
+  "verdict": "GATED_RECOVERABLE",
+  "gate_side": "core.decoder.tgt_film.to_scale_shift.weight"
+ },
+ "goal_scorer": {
+  "sides": [
+   "scorer",
+   "goal_gate"
+  ],
+  "grad_a_as_shipped": 0.0,
+  "grad_b_as_shipped": 3.808323860168457,
+  "grad_a_when_b_broken": 0.1488742008805275,
+  "grad_b_when_a_broken": 3.7426390647888184,
+  "both_zero_as_shipped": false,
+  "verdict": "GATED_RECOVERABLE",
+  "gate_side": "goal_gate"
+ }
+}

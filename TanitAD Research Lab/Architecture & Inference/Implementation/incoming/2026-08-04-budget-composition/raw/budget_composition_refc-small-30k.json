@@ -1,0 +1,2183 @@
+{
+ "bank_tag": "PRIMARY",
+ "arm": "refc-small-30k",
+ "bank": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-22-refc-small-30k\\fan_refc-small-30k.pt",
+ "bank_bytes": 2125317,
+ "n_windows": 881,
+ "n_anchors": 64,
+ "n_episodes": 40,
+ "ckpt_step": 29999,
+ "denoise_steps": 2,
+ "anchor_source": "nested FPS prefix of refc-xl-30k (identity ASSERTED, not assumed)",
+ "generated_utc": "2026-08-04T07:54:47Z",
+ "estimator": {
+  "paired": "paired_episode_cluster_bootstrap",
+  "unit": "episode",
+  "n_boot": 2000,
+  "seed": 0,
+  "⛔": "overlapping_holdout_se is NEVER called"
+ },
+ "operator": {
+  "lambdas": [
+   0.92,
+   0.96,
+   1.0,
+   1.04,
+   1.08
+  ],
+  "deltas_deg": [
+   -6.0,
+   -3.0,
+   0.0,
+   3.0,
+   6.0
+  ],
+  "source": "HAD arXiv 2604.03581, verbatim from E-EXP-1's code"
+ },
+ "band": "refc_select.reachability_mask, accel_max=2.5, horizon_s=2.0 — NOT tuned here",
+ "N_suff": 23,
+ "N_suff_rederived": 23,
+ "decode_ledger": {
+  "unit_note": "DECODES are decoder forward passes over candidates. REFINE-EVALS are closed-form geometric transforms of an ALREADY-DECODED (4,2) array (scale and/or rotate). They are NOT the same currency and this ledger never converts between them.",
+  "latency_note": "LATENCY IS NOT THE WIN. INHERITED (fan-width, MEASURED on Thor): 2.78x fewer decodes is worth 6.5 % end-to-end on XL / 3.3 % on base, because the decoder is only 28.2 % of the frame and is fixed-cost dominated. This ledger is BUDGET REALLOCATION, not speed.",
+  "rows": [
+   {
+    "arm": "A0_full (incumbent)",
+    "n_decodes": 64,
+    "n_refine_evals": 0,
+    "n_trajectories_scored": 64,
+    "total_vs_incumbent_decodes": "64 / 64"
+   },
+   {
+    "arm": "A1_band (B alone)",
+    "n_decodes": 23,
+    "n_refine_evals": 0,
+    "n_trajectories_scored": 23,
+    "total_vs_incumbent_decodes": "23 / 64"
+   },
+   {
+    "arm": "A2_band_plus_L (COMPOSED)",
+    "n_decodes": 23,
+    "n_refine_evals": 5,
+    "n_trajectories_scored": 23,
+    "n_offfan_points_needing_a_score": 4,
+    "total_vs_incumbent_decodes": "23 / 64"
+   },
+   {
+    "arm": "A5_band_plus_LA (COMPOSED, full HAD grid)",
+    "n_decodes": 23,
+    "n_refine_evals": 25,
+    "n_trajectories_scored": 23,
+    "n_offfan_points_needing_a_score": 24,
+    "total_vs_incumbent_decodes": "23 / 64"
+   },
+   {
+    "arm": "A3_full_plus_L (A alone)",
+    "n_decodes": 64,
+    "n_refine_evals": 5,
+    "n_trajectories_scored": 64,
+    "total_vs_incumbent_decodes": "64 / 64"
+   }
+  ],
+  "variable_width_mean_decodes": 17.28,
+  "variable_width_max_decodes": 25,
+  "freed_decodes_fixed_Nsuff": 41,
+  "freed_decodes_variable": 46.72,
+  "refine_cost_in_freed_decodes_pct": 12.195,
+  "⭐ CURRENCY MISMATCH (prereg outcome O-E)": {
+   "shipped_score_shape": [
+    881,
+    64
+   ],
+   "shipped_score_is_anchor_indexed": true,
+   "consequence": "the shipped selector emits ONE logit PER ANCHOR. It is a function of the anchor index, not of a trajectory, so it CANNOT score a point that is not in the fan. Freed DECODES therefore cannot be spent on the off-fan operator without a TRAJECTORY-CONDITIONED scorer, which no amount of freed decode budget provides."
+  }
+ },
+ "point_ade_0_2s": {
+  "A0_full": 0.5260716609202084,
+  "A1_band": 0.5260716609202084,
+  "A2_band_plus_L": 0.350467327135765,
+  "A3_full_plus_L": 0.350467327135765,
+  "A4_band_plus_L_inband": 0.350467327135765,
+  "A5_band_plus_LA": 0.3292541333496835,
+  "C_lat_band_plus_A": 0.5105160954360762,
+  "A6_refine_all_survivors_UPPER_BOUND": 0.17507712602762268,
+  "oracle_in_fan": 0.22129734576734128,
+  "oracle_whole_fan_x_lambda": 0.17507712602762268
+ },
+ "paired_deltas": {
+  "A1_minus_A2  (the operator, ON the cut fan)": {
+   "delta": 0.1756,
+   "lo": 0.1329,
+   "hi": 0.2195,
+   "ci95": 0.0433,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A0_minus_A3  (the operator, on the FULL fan = A's own number)": {
+   "delta": 0.1756,
+   "lo": 0.1329,
+   "hi": 0.2195,
+   "ci95": 0.0433,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A1_minus_A4  (band-ADMISSIBLE operator only)": {
+   "delta": 0.1756,
+   "lo": 0.1329,
+   "hi": 0.2195,
+   "ci95": 0.0433,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A2_minus_A4  (what the band admissibility COSTS the ceiling)": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A1_minus_C_lat  (matched-DoF LATERAL control)": {
+   "delta": 0.0156,
+   "lo": 0.0074,
+   "hi": 0.0256,
+   "ci95": 0.0091,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A2_minus_A5  (adding the angular axis to the composition)": {
+   "delta": 0.0212,
+   "lo": 0.0107,
+   "hi": 0.0341,
+   "ci95": 0.0117,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A0_minus_A1  (B alone — identity, expected exactly 0)": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "A2_minus_A6  (headroom IF an off-fan scorer existed; trivially monotone)": {
+   "delta": 0.1754,
+   "lo": 0.1308,
+   "hi": 0.222,
+   "ci95": 0.0456,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "ratios_and_prereg_verdicts": {
+  "longitudinal_over_lateral_matched_DoF": 11.256,
+  "band_admissible_share_of_the_ceiling": 1.0,
+  "share_of_this_arms_own_oracle_gap": 0.5762,
+  "prereg_O-B_threshold": 0.5,
+  "prereg_O-B_verdict": "O-B′ NOT materially double-counted (>= 50 % survives the band)",
+  "prereg_O-A_threshold_m": 0.1,
+  "prereg_O-A_verdict": "O-A FIRES"
+ },
+ "controls": {
+  "C-identity": {
+   "predicate": "lambda=1.00, delta=0 reproduces the selected trajectory BIT-identically",
+   "bit_identical": true,
+   "maxabs": 0.0,
+   "verdict": "PASS"
+  },
+  "C-sel-identity": {
+   "predicate": "B's N_suff prefix reproduces the full-fan SELECTION INDEX on 881/881",
+   "n_suff_used": 23,
+   "n_suff_rederived_here": 23,
+   "n_suff_matches_B": true,
+   "selection_identical_frac": 1.0,
+   "n_windows_differing": 0,
+   "pred_bit_identical": true,
+   "verdict": "PASS"
+  },
+  "C-composition-exact": {
+   "predicate": "A2 (composed) per-window realised ADE == A3 (A alone) EXACTLY",
+   "array_equal": true,
+   "maxabs": 0.0,
+   "n_windows_differing": 0,
+   "verdict": "PASS — B's bit-exactness SURVIVES A's operator"
+  },
+  "C-upper-bound": {
+   "predicate": "every oracle arm must be <= its own base on EVERY one of the 881 windows — n_windows_worse == 0, exactly. One oracle in this programme fired under the null.",
+   "A2_vs_A1_n_worse": 0,
+   "A3_vs_A0_n_worse": 0,
+   "A4_vs_A1_n_worse": 0,
+   "A5_vs_A2_n_worse": 0,
+   "Clat_vs_A1_n_worse": 0,
+   "A6_vs_A2_n_worse": 0,
+   "A6_finite_everywhere": true,
+   "A4_finite_everywhere": true,
+   "verdict": "PASS"
+  },
+  "C-band-admissibility": {
+   "predicate": "a refined point outside the reachability band is NOT admissible under B's own guarantee. Reported with its DIRECTION.",
+   "lambda_admissible_frac_per_lambda": {
+    "0.92": 1.0,
+    "0.96": 1.0,
+    "1.00": 1.0,
+    "1.04": 1.0,
+    "1.08": 1.0
+   },
+   "identity_lambda_always_admissible": true,
+   "oracle_lambda_star_INADMISSIBLE_frac": 0.0,
+   "n_windows_oracle_lambda_inadmissible": 0,
+   "direction_of_inadmissible_lambda_star": {
+    "n_accelerating_lambda_gt_1": 0,
+    "n_decelerating_lambda_lt_1": 0
+   },
+   "lambda_star_histogram": {
+    "0.92": 151,
+    "0.96": 116,
+    "1.00": 402,
+    "1.04": 98,
+    "1.08": 114
+   },
+   "lambda_star_histogram_BAND_ADMISSIBLE_arm": {
+    "0.92": 151,
+    "0.96": 116,
+    "1.00": 402,
+    "1.04": 98,
+    "1.08": 114
+   }
+  },
+  "C-rotation-is-band-neutral": {
+   "predicate": "delta rotation preserves ||wp_last|| hence candidate_mean_speed hence band membership — asserted numerically, not argued",
+   "all_rotations_match_identity_membership": true,
+   "max_abs_norm_change_m": 2.842170943040401e-14,
+   "verdict": "PASS"
+  },
+  "C-shuffled": {
+   "status": "DELIBERATELY NOT USED",
+   "reason": "permute-then-argmax over a candidate axis is a uniform random pick and is VACUOUS by construction here — the same reason the fan-width pass refused it (FAN_WIDTH §3.3)"
+  }
+ },
+ "lead_block_alignment": {
+  "npz_rows": 881,
+  "bank_rows": 881,
+  "eid_agrees_as_a_partition": true,
+  "n_LEAD": 270,
+  "n_NO_LEAD": 551,
+  "n_NO_LABEL": 60,
+  "ts_rel_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "wp_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "status": "OK"
+ },
+ "P2_four_families": {
+  "_dt_s": 0.5,
+  "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+  "A0_full": {
+   "n_decodes": 64,
+   "ade_0_2s": 0.526072,
+   "LONGITUDINAL": {
+    "speed_abs_err_mps": {
+     "value": 0.506335,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "speed_signed_err_mps": {
+     "value": 0.054042,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "along_abs_err_m": {
+     "value": 0.465196,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "along_signed_err_m": {
+     "value": 0.052486,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "distance_keeping": {
+     "status": "OK",
+     "n_with_lead": 238,
+     "n_windows": 881,
+     "mean_headway_min_m": 28.9624,
+     "mean_time_gap_min_s": 3.1209,
+     "n_time_gap": 217,
+     "mean_min_ttc_s": 24.1934,
+     "n_closing": 96,
+     "censoring_note": "142 of 238 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote n_closing beside it, never the mean alone.",
+     "paired_vs_A0_full": {
+      "_what": "paired A0_full - A0_full distance-keeping deltas",
+      "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+      "arms": [
+       "A0_full",
+       "A0_full"
+      ],
+      "metrics": {
+       "headway_min_m": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "time_gap_min_s": {
+        "n_used": 217,
+        "n_windows": 217,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "min_ttc_s": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       }
+      }
+     },
+     "by_speed_band": {
+      "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+      "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+      "bands_mps": [
+       "0-1",
+       "1-3",
+       "3-6",
+       "6-10",
+       "10-15",
+       "15+"
+      ],
+      "min_stratum_n": 30,
+      "estimator": "episode_cluster_bootstrap (taniteval.ci) — NEVER overlapping_holdout_se",
+      "n_windows_total": 881,
+      "strata": {
+       "0-1": {
+        "speed_mps": [
+         0.0,
+         1.0
+        ],
+        "n_windows": 50,
+        "window_states": {
+         "LEAD": 32,
+         "NO_LEAD": 18
+        },
+        "n_with_lead": 24,
+        "lead_rate": 0.48,
+        "status": "UNPOWERED",
+        "reason": "24 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "1-3": {
+        "speed_mps": [
+         1.0,
+         3.0
+        ],
+        "n_windows": 52,
+        "window_states": {
+         "LEAD": 13,
+         "NO_LEAD": 39
+        },
+        "n_with_lead": 12,
+        "lead_rate": 0.2308,
+        "status": "UNPOWERED",
+        "reason": "12 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "3-6": {
+        "speed_mps": [
+         3.0,
+         6.0
+        ],
+        "n_windows": 127,
+        "window_states": {
+         "LEAD": 51,
+         "NO_LEAD": 76
+        },
+        "n_with_lead": 44,
+        "lead_rate": 0.3465,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 14.7496,
+         "lo": 11.1103,
+         "hi": 25.1598,
+         "ci95": 7.0248,
+         "se": 3.694,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "time_gap_min_s": {
+         "mean": 3.1251,
+         "lo": 2.4455,
+         "hi": 5.1868,
+         "ci95": 1.3707,
+         "se": 0.7361,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "min_ttc_s": {
+         "mean": 20.884,
+         "lo": 15.4437,
+         "hi": 26.7478,
+         "ci95": 5.6521,
+         "se": 2.7912,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        }
+       },
+       "6-10": {
+        "speed_mps": [
+         6.0,
+         10.0
+        ],
+        "n_windows": 203,
+        "window_states": {
+         "LEAD": 74,
+         "NO_LABEL": 19,
+         "NO_LEAD": 110
+        },
+        "n_with_lead": 66,
+        "lead_rate": 0.3251,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 27.7401,
+         "lo": 21.4195,
+         "hi": 35.1276,
+         "ci95": 6.854,
+         "se": 3.4887,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "time_gap_min_s": {
+         "mean": 3.5967,
+         "lo": 2.8711,
+         "hi": 4.623,
+         "ci95": 0.8759,
+         "se": 0.4416,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "min_ttc_s": {
+         "mean": 22.3959,
+         "lo": 16.9442,
+         "hi": 25.7435,
+         "ci95": 4.3997,
+         "se": 2.2799,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        }
+       },
+       "10-15": {
+        "speed_mps": [
+         10.0,
+         15.0
+        ],
+        "n_windows": 179,
+        "window_states": {
+         "LEAD": 12,
+         "NO_LABEL": 12,
+         "NO_LEAD": 155
+        },
+        "n_with_lead": 8,
+        "lead_rate": 0.0447,
+        "status": "UNPOWERED",
+        "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "15+": {
+        "speed_mps": [
+         15.0,
+         null
+        ],
+        "n_windows": 270,
+        "window_states": {
+         "LEAD": 88,
+         "NO_LABEL": 29,
+         "NO_LEAD": 153
+        },
+        "n_with_lead": 84,
+        "lead_rate": 0.3111,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 43.8352,
+         "lo": 30.2575,
+         "hi": 61.0883,
+         "ci95": 15.4154,
+         "se": 8.1907,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "time_gap_min_s": {
+         "mean": 1.833,
+         "lo": 1.3537,
+         "hi": 2.3324,
+         "ci95": 0.4893,
+         "se": 0.2584,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "min_ttc_s": {
+         "mean": 26.9824,
+         "lo": 18.6062,
+         "hi": 29.9553,
+         "ci95": 5.6746,
+         "se": 3.1142,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        }
+       }
+      },
+      "window_states_total": {
+       "LEAD": 270,
+       "NO_LABEL": 60,
+       "NO_LEAD": 551
+      }
+     }
+    }
+   },
+   "LATERAL": {
+    "cross_abs_err_m": {
+     "value": 0.149258,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "heading_abs_err_deg": {
+     "value": 1.177521,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "curvature_abs_err_1pm": {
+     "value": 0.008004,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "yaw_rate_abs_err_degps": {
+     "value": 1.928454,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    }
+   }
+  },
+  "A1_band": {
+   "n_decodes": 23,
+   "ade_0_2s": 0.526072,
+   "LONGITUDINAL": {
+    "speed_abs_err_mps": {
+     "value": 0.506335,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "speed_signed_err_mps": {
+     "value": 0.054042,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "along_abs_err_m": {
+     "value": 0.465196,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "along_signed_err_m": {
+     "value": 0.052486,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "distance_keeping": {
+     "status": "OK",
+     "n_with_lead": 238,
+     "n_windows": 881,
+     "mean_headway_min_m": 28.9624,
+     "mean_time_gap_min_s": 3.1209,
+     "n_time_gap": 217,
+     "mean_min_ttc_s": 24.1934,
+     "n_closing": 96,
+     "censoring_note": "142 of 238 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote n_closing beside it, never the mean alone.",
+     "paired_vs_A0_full": {
+      "_what": "paired A1_band - A0_full distance-keeping deltas",
+      "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+      "arms": [
+       "A1_band",
+       "A0_full"
+      ],
+      "metrics": {
+       "headway_min_m": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "time_gap_min_s": {
+        "n_used": 217,
+        "n_windows": 217,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "min_ttc_s": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       }
+      }
+     },
+     "by_speed_band": {
+      "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+      "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+      "bands_mps": [
+       "0-1",
+       "1-3",
+       "3-6",
+       "6-10",
+       "10-15",
+       "15+"
+      ],
+      "min_stratum_n": 30,
+      "estimator": "episode_cluster_bootstrap (taniteval.ci) — NEVER overlapping_holdout_se",
+      "n_windows_total": 881,
+      "strata": {
+       "0-1": {
+        "speed_mps": [
+         0.0,
+         1.0
+        ],
+        "n_windows": 50,
+        "window_states": {
+         "LEAD": 32,
+         "NO_LEAD": 18
+        },
+        "n_with_lead": 24,
+        "lead_rate": 0.48,
+        "status": "UNPOWERED",
+        "reason": "24 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "1-3": {
+        "speed_mps": [
+         1.0,
+         3.0
+        ],
+        "n_windows": 52,
+        "window_states": {
+         "LEAD": 13,
+         "NO_LEAD": 39
+        },
+        "n_with_lead": 12,
+        "lead_rate": 0.2308,
+        "status": "UNPOWERED",
+        "reason": "12 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "3-6": {
+        "speed_mps": [
+         3.0,
+         6.0
+        ],
+        "n_windows": 127,
+        "window_states": {
+         "LEAD": 51,
+         "NO_LEAD": 76
+        },
+        "n_with_lead": 44,
+        "lead_rate": 0.3465,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 14.7496,
+         "lo": 11.1103,
+         "hi": 25.1598,
+         "ci95": 7.0248,
+         "se": 3.694,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "time_gap_min_s": {
+         "mean": 3.1251,
+         "lo": 2.4455,
+         "hi": 5.1868,
+         "ci95": 1.3707,
+         "se": 0.7361,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "min_ttc_s": {
+         "mean": 20.884,
+         "lo": 15.4437,
+         "hi": 26.7478,
+         "ci95": 5.6521,
+         "se": 2.7912,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        }
+       },
+       "6-10": {
+        "speed_mps": [
+         6.0,
+         10.0
+        ],
+        "n_windows": 203,
+        "window_states": {
+         "LEAD": 74,
+         "NO_LABEL": 19,
+         "NO_LEAD": 110
+        },
+        "n_with_lead": 66,
+        "lead_rate": 0.3251,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 27.7401,
+         "lo": 21.4195,
+         "hi": 35.1276,
+         "ci95": 6.854,
+         "se": 3.4887,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "time_gap_min_s": {
+         "mean": 3.5967,
+         "lo": 2.8711,
+         "hi": 4.623,
+         "ci95": 0.8759,
+         "se": 0.4416,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "min_ttc_s": {
+         "mean": 22.3959,
+         "lo": 16.9442,
+         "hi": 25.7435,
+         "ci95": 4.3997,
+         "se": 2.2799,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        }
+       },
+       "10-15": {
+        "speed_mps": [
+         10.0,
+         15.0
+        ],
+        "n_windows": 179,
+        "window_states": {
+         "LEAD": 12,
+         "NO_LABEL": 12,
+         "NO_LEAD": 155
+        },
+        "n_with_lead": 8,
+        "lead_rate": 0.0447,
+        "status": "UNPOWERED",
+        "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "15+": {
+        "speed_mps": [
+         15.0,
+         null
+        ],
+        "n_windows": 270,
+        "window_states": {
+         "LEAD": 88,
+         "NO_LABEL": 29,
+         "NO_LEAD": 153
+        },
+        "n_with_lead": 84,
+        "lead_rate": 0.3111,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 43.8352,
+         "lo": 30.2575,
+         "hi": 61.0883,
+         "ci95": 15.4154,
+         "se": 8.1907,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "time_gap_min_s": {
+         "mean": 1.833,
+         "lo": 1.3537,
+         "hi": 2.3324,
+         "ci95": 0.4893,
+         "se": 0.2584,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "min_ttc_s": {
+         "mean": 26.9824,
+         "lo": 18.6062,
+         "hi": 29.9553,
+         "ci95": 5.6746,
+         "se": 3.1142,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        }
+       }
+      },
+      "window_states_total": {
+       "LEAD": 270,
+       "NO_LABEL": 60,
+       "NO_LEAD": 551
+      }
+     }
+    }
+   },
+   "LATERAL": {
+    "cross_abs_err_m": {
+     "value": 0.149258,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "heading_abs_err_deg": {
+     "value": 1.177521,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "curvature_abs_err_1pm": {
+     "value": 0.008004,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "yaw_rate_abs_err_degps": {
+     "value": 1.928454,
+     "paired_vs_A0_full": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    }
+   }
+  },
+  "A2_band_plus_L": {
+   "n_decodes": 23,
+   "ade_0_2s": 0.350467,
+   "LONGITUDINAL": {
+    "speed_abs_err_mps": {
+     "value": 0.362335,
+     "paired_vs_A0_full": {
+      "delta": -0.144,
+      "lo": -0.1791,
+      "hi": -0.1099,
+      "ci95": 0.0346,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "speed_signed_err_mps": {
+     "value": 0.02108,
+     "paired_vs_A0_full": {
+      "delta": -0.033,
+      "lo": -0.0836,
+      "hi": 0.0171,
+      "ci95": 0.0503,
+      "p_delta_gt0": 0.103,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "along_abs_err_m": {
+     "value": 0.273931,
+     "paired_vs_A0_full": {
+      "delta": -0.1913,
+      "lo": -0.2391,
+      "hi": -0.1442,
+      "ci95": 0.0475,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "along_signed_err_m": {
+     "value": 0.013613,
+     "paired_vs_A0_full": {
+      "delta": -0.0389,
+      "lo": -0.1014,
+      "hi": 0.0231,
+      "ci95": 0.0622,
+      "p_delta_gt0": 0.1145,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "distance_keeping": {
+     "status": "OK",
+     "n_with_lead": 238,
+     "n_windows": 881,
+     "mean_headway_min_m": 29.0079,
+     "mean_time_gap_min_s": 3.1333,
+     "n_time_gap": 217,
+     "mean_min_ttc_s": 24.5494,
+     "n_closing": 96,
+     "censoring_note": "142 of 238 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote n_closing beside it, never the mean alone.",
+     "paired_vs_A0_full": {
+      "_what": "paired A2_band_plus_L - A0_full distance-keeping deltas",
+      "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+      "arms": [
+       "A2_band_plus_L",
+       "A0_full"
+      ],
+      "metrics": {
+       "headway_min_m": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0455,
+        "lo": -0.0361,
+        "hi": 0.1324,
+        "ci95": 0.0843,
+        "p_delta_gt0": 0.849,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "time_gap_min_s": {
+        "n_used": 217,
+        "n_windows": 217,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0124,
+        "lo": -0.0024,
+        "hi": 0.0307,
+        "ci95": 0.0165,
+        "p_delta_gt0": 0.938,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "min_ttc_s": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.356,
+        "lo": -0.0348,
+        "hi": 0.8464,
+        "ci95": 0.4406,
+        "p_delta_gt0": 0.9505,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       }
+      }
+     },
+     "by_speed_band": {
+      "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+      "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+      "bands_mps": [
+       "0-1",
+       "1-3",
+       "3-6",
+       "6-10",
+       "10-15",
+       "15+"
+      ],
+      "min_stratum_n": 30,
+      "estimator": "episode_cluster_bootstrap (taniteval.ci) — NEVER overlapping_holdout_se",
+      "n_windows_total": 881,
+      "strata": {
+       "0-1": {
+        "speed_mps": [
+         0.0,
+         1.0
+        ],
+        "n_windows": 50,
+        "window_states": {
+         "LEAD": 32,
+         "NO_LEAD": 18
+        },
+        "n_with_lead": 24,
+        "lead_rate": 0.48,
+        "status": "UNPOWERED",
+        "reason": "24 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "1-3": {
+        "speed_mps": [
+         1.0,
+         3.0
+        ],
+        "n_windows": 52,
+        "window_states": {
+         "LEAD": 13,
+         "NO_LEAD": 39
+        },
+        "n_with_lead": 12,
+        "lead_rate": 0.2308,
+        "status": "UNPOWERED",
+        "reason": "12 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "3-6": {
+        "speed_mps": [
+         3.0,
+         6.0
+        ],
+        "n_windows": 127,
+        "window_states": {
+         "LEAD": 51,
+         "NO_LEAD": 76
+        },
+        "n_with_lead": 44,
+        "lead_rate": 0.3465,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 14.9947,
+         "lo": 11.3005,
+         "hi": 25.2936,
+         "ci95": 6.9965,
+         "se": 3.6926,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "time_gap_min_s": {
+         "mean": 3.1694,
+         "lo": 2.5017,
+         "hi": 5.2434,
+         "ci95": 1.3708,
+         "se": 0.7338,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "min_ttc_s": {
+         "mean": 21.9927,
+         "lo": 16.5458,
+         "hi": 27.4984,
+         "ci95": 5.4763,
+         "se": 2.6394,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        }
+       },
+       "6-10": {
+        "speed_mps": [
+         6.0,
+         10.0
+        ],
+        "n_windows": 203,
+        "window_states": {
+         "LEAD": 74,
+         "NO_LABEL": 19,
+         "NO_LEAD": 110
+        },
+        "n_with_lead": 66,
+        "lead_rate": 0.3251,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 27.7415,
+         "lo": 21.5079,
+         "hi": 35.0078,
+         "ci95": 6.75,
+         "se": 3.4417,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "time_gap_min_s": {
+         "mean": 3.5987,
+         "lo": 2.8816,
+         "hi": 4.625,
+         "ci95": 0.8717,
+         "se": 0.437,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "min_ttc_s": {
+         "mean": 22.8661,
+         "lo": 17.3292,
+         "hi": 26.1801,
+         "ci95": 4.4255,
+         "se": 2.2893,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        }
+       },
+       "10-15": {
+        "speed_mps": [
+         10.0,
+         15.0
+        ],
+        "n_windows": 179,
+        "window_states": {
+         "LEAD": 12,
+         "NO_LABEL": 12,
+         "NO_LEAD": 155
+        },
+        "n_with_lead": 8,
+        "lead_rate": 0.0447,
+        "status": "UNPOWERED",
+        "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "15+": {
+        "speed_mps": [
+         15.0,
+         null
+        ],
+        "n_windows": 270,
+        "window_states": {
+         "LEAD": 88,
+         "NO_LABEL": 29,
+         "NO_LEAD": 153
+        },
+        "n_with_lead": 84,
+        "lead_rate": 0.3111,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 43.8132,
+         "lo": 30.2184,
+         "hi": 61.0883,
+         "ci95": 15.435,
+         "se": 8.2005,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "time_gap_min_s": {
+         "mean": 1.8319,
+         "lo": 1.3526,
+         "hi": 2.3324,
+         "ci95": 0.4899,
+         "se": 0.2589,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "min_ttc_s": {
+         "mean": 26.9824,
+         "lo": 18.6062,
+         "hi": 29.9553,
+         "ci95": 5.6746,
+         "se": 3.1142,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        }
+       }
+      },
+      "window_states_total": {
+       "LEAD": 270,
+       "NO_LABEL": 60,
+       "NO_LEAD": 551
+      }
+     }
+    }
+   },
+   "LATERAL": {
+    "cross_abs_err_m": {
+     "value": 0.143657,
+     "paired_vs_A0_full": {
+      "delta": -0.0056,
+      "lo": -0.0116,
+      "hi": -0.0005,
+      "ci95": 0.0056,
+      "p_delta_gt0": 0.0165,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "heading_abs_err_deg": {
+     "value": 1.175857,
+     "paired_vs_A0_full": {
+      "delta": -0.0017,
+      "lo": -0.005,
+      "hi": 0.0,
+      "ci95": 0.0025,
+      "p_delta_gt0": 0.042,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "curvature_abs_err_1pm": {
+     "value": 0.007794,
+     "paired_vs_A0_full": {
+      "delta": -0.0002,
+      "lo": -0.0004,
+      "hi": -0.0001,
+      "ci95": 0.0002,
+      "p_delta_gt0": 0.0005,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "yaw_rate_abs_err_degps": {
+     "value": 1.924531,
+     "paired_vs_A0_full": {
+      "delta": -0.00392383,
+      "lo": -0.01178468,
+      "hi": -1e-08,
+      "ci95": 0.00589233,
+      "p_delta_gt0": 0.013,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "display_dp": 8,
+      "display_note": "rendered at 8 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision — the estimator and the separation test are unchanged."
+     },
+     "verdict": "better"
+    }
+   }
+  },
+  "A4_band_plus_L_inband": {
+   "n_decodes": 23,
+   "ade_0_2s": 0.350467,
+   "LONGITUDINAL": {
+    "speed_abs_err_mps": {
+     "value": 0.362335,
+     "paired_vs_A0_full": {
+      "delta": -0.144,
+      "lo": -0.1791,
+      "hi": -0.1099,
+      "ci95": 0.0346,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "speed_signed_err_mps": {
+     "value": 0.02108,
+     "paired_vs_A0_full": {
+      "delta": -0.033,
+      "lo": -0.0836,
+      "hi": 0.0171,
+      "ci95": 0.0503,
+      "p_delta_gt0": 0.103,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "along_abs_err_m": {
+     "value": 0.273931,
+     "paired_vs_A0_full": {
+      "delta": -0.1913,
+      "lo": -0.2391,
+      "hi": -0.1442,
+      "ci95": 0.0475,
+      "p_delta_gt0": 0.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "along_signed_err_m": {
+     "value": 0.013613,
+     "paired_vs_A0_full": {
+      "delta": -0.0389,
+      "lo": -0.1014,
+      "hi": 0.0231,
+      "ci95": 0.0622,
+      "p_delta_gt0": 0.1145,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "n/a — SIGNED bias; the sign is a DIRECTION, not a quality verdict. Read it beside the |abs| row."
+    },
+    "distance_keeping": {
+     "status": "OK",
+     "n_with_lead": 238,
+     "n_windows": 881,
+     "mean_headway_min_m": 29.0079,
+     "mean_time_gap_min_s": 3.1333,
+     "n_time_gap": 217,
+     "mean_min_ttc_s": 24.5494,
+     "n_closing": 96,
+     "censoring_note": "142 of 238 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data — quote n_closing beside it, never the mean alone.",
+     "paired_vs_A0_full": {
+      "_what": "paired A4_band_plus_L_inband - A0_full distance-keeping deltas",
+      "estimator": "paired_episode_cluster_bootstrap (taniteval.ci)",
+      "arms": [
+       "A4_band_plus_L_inband",
+       "A0_full"
+      ],
+      "metrics": {
+       "headway_min_m": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0455,
+        "lo": -0.0361,
+        "hi": 0.1324,
+        "ci95": 0.0843,
+        "p_delta_gt0": 0.849,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "time_gap_min_s": {
+        "n_used": 217,
+        "n_windows": 217,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.0124,
+        "lo": -0.0024,
+        "hi": 0.0307,
+        "ci95": 0.0165,
+        "p_delta_gt0": 0.938,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       },
+       "min_ttc_s": {
+        "n_used": 238,
+        "n_windows": 238,
+        "n_a_only": 0,
+        "n_b_only": 0,
+        "delta": 0.356,
+        "lo": -0.0348,
+        "hi": 0.8464,
+        "ci95": 0.4406,
+        "p_delta_gt0": 0.9505,
+        "separated": false,
+        "reducer": "mean",
+        "n_episodes": 19,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap",
+        "status": "OK"
+       }
+      }
+     },
+     "by_speed_band": {
+      "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+      "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+      "bands_mps": [
+       "0-1",
+       "1-3",
+       "3-6",
+       "6-10",
+       "10-15",
+       "15+"
+      ],
+      "min_stratum_n": 30,
+      "estimator": "episode_cluster_bootstrap (taniteval.ci) — NEVER overlapping_holdout_se",
+      "n_windows_total": 881,
+      "strata": {
+       "0-1": {
+        "speed_mps": [
+         0.0,
+         1.0
+        ],
+        "n_windows": 50,
+        "window_states": {
+         "LEAD": 32,
+         "NO_LEAD": 18
+        },
+        "n_with_lead": 24,
+        "lead_rate": 0.48,
+        "status": "UNPOWERED",
+        "reason": "24 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "1-3": {
+        "speed_mps": [
+         1.0,
+         3.0
+        ],
+        "n_windows": 52,
+        "window_states": {
+         "LEAD": 13,
+         "NO_LEAD": 39
+        },
+        "n_with_lead": 12,
+        "lead_rate": 0.2308,
+        "status": "UNPOWERED",
+        "reason": "12 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "3-6": {
+        "speed_mps": [
+         3.0,
+         6.0
+        ],
+        "n_windows": 127,
+        "window_states": {
+         "LEAD": 51,
+         "NO_LEAD": 76
+        },
+        "n_with_lead": 44,
+        "lead_rate": 0.3465,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 14.9947,
+         "lo": 11.3005,
+         "hi": 25.2936,
+         "ci95": 6.9965,
+         "se": 3.6926,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "time_gap_min_s": {
+         "mean": 3.1694,
+         "lo": 2.5017,
+         "hi": 5.2434,
+         "ci95": 1.3708,
+         "se": 0.7338,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        },
+        "min_ttc_s": {
+         "mean": 21.9927,
+         "lo": 16.5458,
+         "hi": 27.4984,
+         "ci95": 5.4763,
+         "se": 2.6394,
+         "reducer": "mean",
+         "n_windows": 44,
+         "n_episodes": 9,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 44,
+         "n_total": 127
+        }
+       },
+       "6-10": {
+        "speed_mps": [
+         6.0,
+         10.0
+        ],
+        "n_windows": 203,
+        "window_states": {
+         "LEAD": 74,
+         "NO_LABEL": 19,
+         "NO_LEAD": 110
+        },
+        "n_with_lead": 66,
+        "lead_rate": 0.3251,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 27.7415,
+         "lo": 21.5079,
+         "hi": 35.0078,
+         "ci95": 6.75,
+         "se": 3.4417,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "time_gap_min_s": {
+         "mean": 3.5987,
+         "lo": 2.8816,
+         "hi": 4.625,
+         "ci95": 0.8717,
+         "se": 0.437,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        },
+        "min_ttc_s": {
+         "mean": 22.8661,
+         "lo": 17.3292,
+         "hi": 26.1801,
+         "ci95": 4.4255,
+         "se": 2.2893,
+         "reducer": "mean",
+         "n_windows": 66,
+         "n_episodes": 12,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 66,
+         "n_total": 203
+        }
+       },
+       "10-15": {
+        "speed_mps": [
+         10.0,
+         15.0
+        ],
+        "n_windows": 179,
+        "window_states": {
+         "LEAD": 12,
+         "NO_LABEL": 12,
+         "NO_LEAD": 155
+        },
+        "n_with_lead": 8,
+        "lead_rate": 0.0447,
+        "status": "UNPOWERED",
+        "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+       },
+       "15+": {
+        "speed_mps": [
+         15.0,
+         null
+        ],
+        "n_windows": 270,
+        "window_states": {
+         "LEAD": 88,
+         "NO_LABEL": 29,
+         "NO_LEAD": 153
+        },
+        "n_with_lead": 84,
+        "lead_rate": 0.3111,
+        "status": "OK",
+        "headway_min_m": {
+         "mean": 43.8132,
+         "lo": 30.2184,
+         "hi": 61.0883,
+         "ci95": 15.435,
+         "se": 8.2005,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "time_gap_min_s": {
+         "mean": 1.8319,
+         "lo": 1.3526,
+         "hi": 2.3324,
+         "ci95": 0.4899,
+         "se": 0.2589,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        },
+        "min_ttc_s": {
+         "mean": 26.9824,
+         "lo": 18.6062,
+         "hi": 29.9553,
+         "ci95": 5.6746,
+         "se": 3.1142,
+         "reducer": "mean",
+         "n_windows": 84,
+         "n_episodes": 6,
+         "n_boot": 2000,
+         "estimator": "episode_cluster_bootstrap",
+         "n": 84,
+         "n_total": 270
+        }
+       }
+      },
+      "window_states_total": {
+       "LEAD": 270,
+       "NO_LABEL": 60,
+       "NO_LEAD": 551
+      }
+     }
+    }
+   },
+   "LATERAL": {
+    "cross_abs_err_m": {
+     "value": 0.143657,
+     "paired_vs_A0_full": {
+      "delta": -0.0056,
+      "lo": -0.0116,
+      "hi": -0.0005,
+      "ci95": 0.0056,
+      "p_delta_gt0": 0.0165,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "heading_abs_err_deg": {
+     "value": 1.175857,
+     "paired_vs_A0_full": {
+      "delta": -0.0017,
+      "lo": -0.005,
+      "hi": 0.0,
+      "ci95": 0.0025,
+      "p_delta_gt0": 0.042,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    "curvature_abs_err_1pm": {
+     "value": 0.007794,
+     "paired_vs_A0_full": {
+      "delta": -0.0002,
+      "lo": -0.0004,
+      "hi": -0.0001,
+      "ci95": 0.0002,
+      "p_delta_gt0": 0.0005,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "better"
+    },
+    "yaw_rate_abs_err_degps": {
+     "value": 1.924531,
+     "paired_vs_A0_full": {
+      "delta": -0.00392383,
+      "lo": -0.01178468,
+      "hi": -1e-08,
+      "ci95": 0.00589233,
+      "p_delta_gt0": 0.013,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "display_dp": 8,
+      "display_note": "rendered at 8 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision — the estimator and the separation test are unchanged."
+     },
+     "verdict": "better"
+    }
+   }
+  }
+ },
+ "TACTICAL": {
+  "A0_full": {
+   "goal_anchor_selection_rank_acc": 0.363224,
+   "sel_gap_m": 0.304774,
+   "frac_sel_2x_worse_than_best_in_fan": 0.38252,
+   "n_decodes": 64
+  },
+  "A1_band": {
+   "goal_anchor_selection_rank_acc": 0.363224,
+   "sel_gap_m": 0.304774,
+   "frac_sel_2x_worse_than_best_in_fan": 0.38252,
+   "n_decodes": 23
+  },
+  "A2_band_plus_L / A4": {
+   "status": "NOT-APPLICABLE",
+   "n": 0,
+   "reason": "the refinement does not choose an anchor — it moves the already-chosen trajectory off the fan. There is no goal/anchor selection to score and no candidate set the refined point belongs to."
+  },
+  "manoeuvre_decision_half": {
+   "status": "UNAVAILABLE",
+   "n": 0,
+   "reason": "refc_rerank.dump stores no decoded manoeuvre logits — selected-vs-executed and the 5-way confusion cannot be computed from a fan bank. A WORK ITEM, not a pass."
+  }
+ },
+ "STRATEGIC": {
+  "status": "UNAVAILABLE",
+  "n": 0,
+  "of_windows": 881,
+  "reason": "no route/goal label in a fan bank and the decode ran nav_mode='follow_constant', so the route input was never exercised. A WORK ITEM, not a pass."
+ },
+ "wall_s": 13.4,
+ "prereg": {
+  "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-04-budget-composition/PREREG_BUDGET_COMPOSITION.md",
+  "blob_at_write_time": "5fef562bbfbdc6e3357da9992ca7e2ff27b4a5b0",
+  "staged_blob": "<not staged>",
+  "worktree_blob": "5fef562bbfbdc6e3357da9992ca7e2ff27b4a5b0"
+ }
+}

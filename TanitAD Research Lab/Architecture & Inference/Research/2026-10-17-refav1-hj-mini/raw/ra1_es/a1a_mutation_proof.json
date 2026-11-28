@@ -1,0 +1,66 @@
+{
+ "schema": "ra1-a1a-mutation-proof-v1",
+ "file": "stack/tanitad/models/ra1_hjepa.py",
+ "tests": "test_ra1_hjepa.py -k 'a1a or A1a'",
+ "control_before": {
+  "rc": 0,
+  "failed": [],
+  "summary": "10 passed, 55 deselected in 10.22s"
+ },
+ "mutations": [
+  {
+   "rc": 1,
+   "failed": [
+    "test_a1a_gate_rows_g_hyg_g_dvb_g_live",
+    "test_a1a_hands_every_window_another_windows_actions_and_leaves_frames_and_readout_untouched",
+    "test_a1a_mutation_deleting_the_permutation_line_turns_g_live_red",
+    "test_a1a_mutation_unsetting_the_built_flag_turns_g_dvb_and_g_live_red",
+    "test_a1a_trains_and_evals_end_to_end_with_every_control_green",
+    "test_every_arm_trains_three_steps_on_cpu_and_passes_its_gate[A1a]"
+   ],
+   "summary": "6 failed, 4 passed, 55 deselected in 13.03s",
+   "name": "M1 the permutation is drawn but never APPLIED",
+   "red": true
+  },
+  {
+   "rc": 1,
+   "failed": [
+    "test_a1a_mutation_deleting_the_permutation_line_turns_g_live_red",
+    "test_a1a_mutation_unsetting_the_built_flag_turns_g_dvb_and_g_live_red"
+   ],
+   "summary": "2 failed, 8 passed, 55 deselected in 29.00s",
+   "name": "M2 G-LIVE no longer gates on the A1a check",
+   "red": true
+  },
+  {
+   "rc": 1,
+   "failed": [
+    "test_a1a_gate_rows_g_hyg_g_dvb_g_live",
+    "test_a1a_mutation_unsetting_the_built_flag_turns_g_dvb_and_g_live_red"
+   ],
+   "summary": "2 failed, 8 passed, 55 deselected in 31.73s",
+   "name": "M3 the G-DVB shuffle_act row is deleted",
+   "red": true
+  },
+  {
+   "rc": 1,
+   "failed": [
+    "test_a1a_gate_rows_g_hyg_g_dvb_g_live",
+    "test_a1a_hands_every_window_another_windows_actions_and_leaves_frames_and_readout_untouched",
+    "test_a1a_mutation_deleting_the_permutation_line_turns_g_live_red",
+    "test_a1a_mutation_unsetting_the_built_flag_turns_g_dvb_and_g_live_red",
+    "test_a1a_trains_and_evals_end_to_end_with_every_control_green",
+    "test_every_arm_trains_three_steps_on_cpu_and_passes_its_gate[A1a]"
+   ],
+   "summary": "6 failed, 4 passed, 55 deselected in 14.29s",
+   "name": "M4 the arm is built WITHOUT its flag",
+   "red": true
+  }
+ ],
+ "control_after": {
+  "rc": 0,
+  "failed": [],
+  "summary": "10 passed, 55 deselected in 14.23s"
+ },
+ "ok": true
+}

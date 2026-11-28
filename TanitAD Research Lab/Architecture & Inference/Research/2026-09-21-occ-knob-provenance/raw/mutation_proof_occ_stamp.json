@@ -1,0 +1,81 @@
+{
+ "_what": "mutation proof that test_occ_knob_is_stamped.py can actually FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tanitad\\refs\\refc_agents.py": "6128a772ac5e5972eaf95c32084cb6e4",
+  "stack\\tanitad\\models\\refcv6_perception_branch.py": "cb28c2a49fee06b685d8f6a925c422a8"
+ },
+ "arms": [
+  {
+   "arm": "S1_agent_stamp_entry_dropped",
+   "file": "stack\\tanitad\\refs\\refc_agents.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_agent_seam_stamp_key_set_is_exactly_the_frozen_literal",
+    "test_the_stamp_reports_the_value_that_was_actually_set[False]",
+    "test_the_stamp_reports_the_value_that_was_actually_set[True]"
+   ],
+   "empty_output": false,
+   "tail": null
+  },
+  {
+   "arm": "S2_perception_stamp_entry_dropped",
+   "file": "stack\\tanitad\\models\\refcv6_perception_branch.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_perception_stamp_key_set_is_exactly_the_frozen_literal",
+    "test_the_config_field_ACTUALLY_REACHES_the_built_box3d_head[False]",
+    "test_the_config_field_ACTUALLY_REACHES_the_built_box3d_head[True]"
+   ],
+   "empty_output": false,
+   "tail": null
+  },
+  {
+   "arm": "S3_agent_stamp_hardcodes_the_default",
+   "file": "stack\\tanitad\\refs\\refc_agents.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_stamp_reports_the_value_that_was_actually_set[True]"
+   ],
+   "empty_output": false,
+   "tail": null
+  },
+  {
+   "arm": "S4_agent_builder_stops_plumbing_it",
+   "file": "stack\\tanitad\\refs\\refc_agents.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_config_field_ACTUALLY_REACHES_the_built_agent_head[True]"
+   ],
+   "empty_output": false,
+   "tail": null
+  },
+  {
+   "arm": "S5_perception_stops_plumbing_it",
+   "file": "stack\\tanitad\\models\\refcv6_perception_branch.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_config_field_ACTUALLY_REACHES_the_built_box3d_head[True]"
+   ],
+   "empty_output": false,
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 5,
+ "arms_total": 5,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 5/5 provenance defects turn the suite RED, including both 'declared but never plumbed' arms, and both files are restored byte-identical."
+}

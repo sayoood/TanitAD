@@ -1,0 +1,35 @@
+### units (-k test_j or test_k or test_l or test_m)
+.....F.s....s.............                                               [100%]
+================================== FAILURES ===================================
+_ test_j6_actdiv_a_hand_built_namespace_cannot_slip_a_missing_unit_past_the_library _
+
+actdiv = <module '_instfix_actdiv_live' from 'C:\\Users\\Admin\\instfix\\mutA\\actdiv_apply_none_guard_deleted\\taniteval\\tools\\actdiv_anchored.py'>
+
+    def test_j6_actdiv_a_hand_built_namespace_cannot_slip_a_missing_unit_past_the_library(actdiv):
+        """The CLI gate is not the only door: ``apply_action_units`` itself refuses None (naming both values)."""
+        cands = actdiv.candidate_grid_abs((0.02, 0.1), (0.5,), actdiv.REFAV1_CHANNELS)
+        with pytest.raises(ValueError) as ei:
+            actdiv.apply_action_units(cands, None)
+>       assert "kappa" in str(ei.value) and "steer" in str(ei.value) and "R46" in str(ei.value), str(ei.value)
+E       AssertionError: --action-units must be one of ('kappa', 'steer'), got None
+E       assert ('kappa' in "--action-units must be one of ('kappa', 'steer'), got None" and 'steer' in "--action-units must be one of ('kappa', 'steer'), got None" and 'R46' in "--action-units must be one of ('kappa', 'steer'), got None")
+E        +  where "--action-units must be one of ('kappa', 'steer'), got None" = str(ValueError("--action-units must be one of ('kappa', 'steer'), got None"))
+E        +    where ValueError("--action-units must be one of ('kappa', 'steer'), got None") = <ExceptionInfo ValueError("--action-units must be one of ('kappa', 'steer'), got None") tblen=2>.value
+E        +  and   "--action-units must be one of ('kappa', 'steer'), got None" = str(ValueError("--action-units must be one of ('kappa', 'steer'), got None"))
+E        +    where ValueError("--action-units must be one of ('kappa', 'steer'), got None") = <ExceptionInfo ValueError("--action-units must be one of ('kappa', 'steer'), got None") tblen=2>.value
+E        +  and   "--action-units must be one of ('kappa', 'steer'), got None" = str(ValueError("--action-units must be one of ('kappa', 'steer'), got None"))
+E        +    where ValueError("--action-units must be one of ('kappa', 'steer'), got None") = <ExceptionInfo ValueError("--action-units must be one of ('kappa', 'steer'), got None") tblen=2>.value
+
+tests\test_refav1_units_required.py:1169: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_j6_actdiv_a_hand_built_namespace_cannot_slip_a_missing_unit_past_the_library
+1 failed, 23 passed, 2 skipped, 121 deselected in 15.25s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 1.71s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 1.15s
+

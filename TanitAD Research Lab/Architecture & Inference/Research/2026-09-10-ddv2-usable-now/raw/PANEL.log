@@ -1,0 +1,59 @@
+### E-DDA-2b ARM PANEL — 2026-09-10T08:57:41Z UTC
+### rig: synthetic analytic arc fan (T0 rig; NO capability claim)
+### the eval fan is NATIVE for every arm (--eval-aug off) so the arms are comparable
+
+[e2b] ANALYTIC CROSS-CHECK — curvature built vs recovered
+[e2b]   kappa_max_abs_err: 0.0014748871326446533
+[e2b]   kappa_mean_abs_err: 0.00052400934509933
+[e2b]   kappa_rel_err_max: 0.0372864305973053
+[e2b]   straight_arm_present: True
+[e2b]   straight_arm_kappa_max: 0.0
+[e2b]   sign_agreement: 1.0
+[e2b]   rank_agreement_monotone: True
+[e2b]   kappa_ds_rad: 0.3024999932385981
+[e2b]   min_end_speed_mps: 4.248721599578857
+[e2b]   n_candidates: 36
+[e2b]   _note: statements 1 and 2 are exact; kappa_max_abs_err carries the chord discretisation at kappa_ds_rad and is not a defect
+
+---- const : --arm const
+[e2b] arm=const  n_scored_candidates=432  d=0
+[e2b] rank_auc=0.500000  (no-information = 0.5)
+[e2b] AP(tie-group)=0.946759  base_rate=0.946759  AP(naive)=0.940207
+[e2b] pick_regret_composite=0.117783
+
+---- raw_floor : --arm raw_floor
+[e2b] arm=raw_floor  n_scored_candidates=432  d=25
+[e2b] rank_auc=0.875663  (no-information = 0.5)
+[e2b] AP(tie-group)=0.981269  base_rate=0.946759  AP(naive)=0.978630
+[e2b] pick_regret_composite=0.037359
+
+---- selector : --arm selector --steps 200
+[e2b] arm=selector  n_scored_candidates=432  d=64
+[e2b] rank_auc=0.932254  (no-information = 0.5)
+[e2b] AP(tie-group)=0.993711  base_rate=0.946759  AP(naive)=0.994795
+[e2b] pick_regret_composite=0.008381
+
+---- selector_noselfattn : --arm selector --steps 200 --self-attn off
+[e2b] arm=selector  n_scored_candidates=432  d=64
+[e2b] rank_auc=0.934227  (no-information = 0.5)
+[e2b] AP(tie-group)=0.995529  base_rate=0.946759  AP(naive)=0.996670
+[e2b] pick_regret_composite=0.001707
+
+---- selector_aug2 : --arm selector --steps 200 --n-aug 2
+[e2b] arm=selector  n_scored_candidates=432  d=64
+[e2b] rank_auc=0.893960  (no-information = 0.5)
+[e2b] AP(tie-group)=0.995396  base_rate=0.946759  AP(naive)=0.996620
+[e2b] pick_regret_composite=0.069303
+
+---- selector_aug2_foreign1pct : --arm selector --steps 200 --n-aug 2 --foreign-frac 0.01
+[e2b] arm=selector  n_scored_candidates=432  d=64
+[e2b] rank_auc=0.893008  (no-information = 0.5)
+[e2b] AP(tie-group)=0.995888  base_rate=0.946759  AP(naive)=0.997094
+[e2b] pick_regret_composite=0.062430
+
+---- progress_only : --arm progress_only --steps 200
+[e2b] arm=progress_only  n_scored_candidates=432  d=64
+[e2b] rank_auc=0.568086  (no-information = 0.5)
+[e2b] AP(tie-group)=0.910917  base_rate=0.946759  AP(naive)=0.910550
+[e2b] pick_regret_composite=0.270472
+

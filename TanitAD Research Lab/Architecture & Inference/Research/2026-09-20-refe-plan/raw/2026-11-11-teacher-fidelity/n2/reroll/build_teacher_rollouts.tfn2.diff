@@ -1,0 +1,62 @@
+--- F:/tanitad_scratch/tfn2_reroll/w/refe/build_teacher_rollouts.py.orig	2026-11-12 14:03:36.264783800 +0100
++++ F:/tanitad_scratch/tfn2_reroll/w/refe/build_teacher_rollouts.py	2026-11-12 14:03:36.463661000 +0100
+@@ -123,6 +123,38 @@
+ TEACHER_DEVICE = "cuda"
+ 
+ 
++# ⭐ TF-N2 re-roll protocol knobs (reroll/TFN2_REROLL_HANDOFF.md). EMPTY BY DEFAULT => build_planner is bit-identical to
++# the registered teacher protocol. Keys (all optional): route_goal_min_speed_mps, route_goal_horizon_s, policy_interval_s,
++# positive_jerk_limit_when_nonnegative_acc. Set by eval/tfn2_reroll_roll.py from explicit CLI flags, never by default.
++TEACHER_OVERRIDES: dict = {}
++_PLANNER_CFG_KEYS = ("route_goal_horizon_s", "route_goal_min_speed_mps", "policy_interval_s")
++
++
++def effective_knobs(planner) -> dict:
++    """The knob values the BUILT planner will hand the engine (read from the object, not from the request)."""
++    c = planner.config
++    return {"route_goal_min_speed_mps": float(planner._feature_builder.config.route_goal_min_speed_mps),
++            "route_goal_horizon_s": float(planner._feature_builder.config.route_goal_horizon_s),
++            "policy_interval_s": float(c.policy_interval_s),
++            "positive_jerk_limit_when_nonnegative_acc": float(c.positive_jerk_limit_when_nonnegative_acc),
++            "max_jerk_long": float(c.max_jerk_long)}
++
++
++def _install_post_init_overrides(planner, ov: dict) -> None:
++    """`DriveRLNuPlanPlanner.initialize` OVERWRITES `config.positive_jerk_limit_when_nonnegative_acc` (and max_jerk_long) from the
++    release yaml on its first call (planner.py:136-147), so a build-time set is silently lost. Re-apply AFTER every initialize.
++    The controller reads the value from the trajectory's `engine_action_config` (controller.py:236-243), i.e. from this config."""
++    key = "positive_jerk_limit_when_nonnegative_acc"
++    if key not in ov:
++        return
++    orig = planner.initialize
++
++    def initialize(initialization):
++        orig(initialization)
++        setattr(planner.config, key, float(ov[key]))
++    planner.initialize = initialize
++
++
+ def build_planner(device: str = "cuda"):
+     """Instantiate the teacher EXACTLY as their runner does, from their own yaml.
+ 
+@@ -144,6 +176,9 @@
+     cfg.route_goal_min_speed_mps = 5.0
+     cfg.route_goal_pair_mode = "legacy"
+     cfg.tts_enabled = False
++    for _k in _PLANNER_CFG_KEYS:                                   # TF-N2 knobs; no-op while TEACHER_OVERRIDES is empty
++        if _k in TEACHER_OVERRIDES:
++            cfg[_k] = float(TEACHER_OVERRIDES[_k])
+     # ⭐ exact memoisation of the teacher's STATIC map geometry (~90 % of a rollout, MEASURED) --
+     # refe/map_feature_cache.py; REFE_MAP_CACHE=0 is the uncached reference arm
+     if os.environ.get("REFE_MAP_CACHE", "1") != "0":
+@@ -174,7 +209,9 @@
+         import map_step_speedups
+         map_step_speedups.install()
+         print("  map-step fast path: ON (exact; REFE_MAP_STEP_FAST=0 disables)")
+-    return instantiate(cfg)
++    planner = instantiate(cfg)
++    _install_post_init_overrides(planner, TEACHER_OVERRIDES)
++    return planner
+ 
+ 
+ def build_controller(scenario, device: str = "cuda"):

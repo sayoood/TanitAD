@@ -1,0 +1,29 @@
+
+=== coll200: GUARDS ===
+  G1 ctrl_null actual null : True  {"s1/ctrl_null": {"veto_rate_mean": 0.0, "final_loss": 0.00945369154214859, "weights_changed": true, "steps": 200, "n_separated_fan_metrics": 25}}
+  G2 BEFORE bitwise ident. : True  max|diff|=0.000e+00 over 120w x 65 metrics
+
+=== coll200: LEVER vs BASE, READ AGAINST THE SEED-REPLICATE FLOOR ===
+  metric                          base       d_s0       d_s1    seedfl nulldrift  vs_null_s0 verdict   (* = contrast separated)
+  fan_peak_g_mean              4.18090   +0.02530   +0.04068   0.01538  +0.01406   +0.01125  WORSENED
+  top32_infeasible             0.63385   +0.00086   +0.01279   0.01193  +0.00376   -0.00290  null  [UNDER-NULL]
+  sel_infeasible               0.13333   +0.00633   +0.00000   0.00633  -0.01266   +0.01899  null
+  fan_infeasible               0.89453   +0.00221   +0.00249   0.00028  +0.00025   +0.00196  WORSENED
+  top8_kamm_over               0.14271   +0.00079   +0.00765   0.00686  +0.00053   +0.00026  null
+  fan_kamm_over                0.84310   +0.00303   +0.00130   0.00173  +0.00064   +0.00239* null
+  top32_envelope               0.63073   -0.00053   +0.01239   0.01292  +0.00336   -0.00389  null
+  top32_kamm_over              0.49141   +0.00640   +0.01299   0.00659  +0.00659   -0.00020  WITHIN-NOISE (separated but under the seed-replicate floor)  [UNDER-NULL]
+  fan_envelope                 0.89023   +0.00020   +0.00227   0.00208  +0.00048   -0.00028  null  [UNDER-NULL]
+  sel_envelope                 0.13333   +0.00633   +0.00000   0.00633  -0.01266   +0.01899  null
+  sel_ttc_below                0.02778   +0.00000   +0.00000   0.00000  +0.00000   +0.00000  null
+  sel_peak_g                   0.19465   +0.02396   +0.00852   0.01544  +0.00121   +0.02275* null
+  fan_off_reach                0.11094   -0.00310   +0.00077   0.00387  +0.00069   -0.00379* null
+  top8_infeasible              0.27500   +0.01213   +0.00580   0.00633  +0.00053   +0.01160  null
+  mass_rank_infeasible         0.17887   +0.00501   +0.00673   0.00173  -0.00364   +0.00865  null
+  mass_conf_infeasible         0.17888   +0.00501   +0.00673   0.00172  -0.00364   +0.00865  null
+  fan_contact                  0.13411   -0.00169   -0.00169   0.00000  +0.00104   -0.00273* null
+  top32_contact                0.03299   -0.00104   +0.00000   0.00104  +0.00000   -0.00104  null
+  mass_rank_contact            0.00003   +0.00000   +0.00000   0.00000  +0.00000   +0.00000  UNDETECTABLE-DOWNWARD
+
+  PRIMARY (pending T1): PRIMARY-FAIL  improved+quotable=[]
+[veto] -> C:/Users/Admin/tanitad-rlgen/raw/coll_verdict_coll200.json

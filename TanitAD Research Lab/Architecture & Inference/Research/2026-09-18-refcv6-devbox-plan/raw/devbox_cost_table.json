@@ -1,0 +1,145 @@
+{
+ "evidence": {
+  "s_per_step": {
+   "value_measured": 29.1967,
+   "value_probe": 28.3,
+   "class": "MEASURED (ours)",
+   "config": "resnet34.a1_in1k, 416x1024, batch 2, every head live, RTX 4060 8 GiB",
+   "artifact": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-occupancy-floor/raw/maphead_1k.json"
+  },
+  "eval_s_per_window": {
+   "value": 6.39,
+   "class": "ESTIMATED (basis MEASURED)",
+   "basis": "cover_evalA 3221.9 s / 500 windows; cover_evalB 2534.3 s / 400 windows",
+   "caveat": "each pass also ran 1 train step -> this is an UPPER bound",
+   "artifact": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-pipeline-validation/RESULT.md"
+  }
+ },
+ "devbox_budget": {
+  "seven_days_s": 604800.0,
+  "steps_in_seven_days_fast": 21371,
+  "steps_in_seven_days_slow": 20714,
+  "note": "SEQUENTIAL -- this box runs ONE GPU job at a time."
+ },
+ "unit_costs": {
+  "40": {
+   "steps": 40,
+   "hours_fast": 0.31,
+   "hours_slow": 0.32,
+   "days_fast": 0.013,
+   "days_slow": 0.014
+  },
+  "100": {
+   "steps": 100,
+   "hours_fast": 0.79,
+   "hours_slow": 0.81,
+   "days_fast": 0.033,
+   "days_slow": 0.034
+  },
+  "200": {
+   "steps": 200,
+   "hours_fast": 1.57,
+   "hours_slow": 1.62,
+   "days_fast": 0.066,
+   "days_slow": 0.068
+  },
+  "500": {
+   "steps": 500,
+   "hours_fast": 3.93,
+   "hours_slow": 4.06,
+   "days_fast": 0.164,
+   "days_slow": 0.169
+  },
+  "1000": {
+   "steps": 1000,
+   "hours_fast": 7.86,
+   "hours_slow": 8.11,
+   "days_fast": 0.328,
+   "days_slow": 0.338
+  },
+  "2000": {
+   "steps": 2000,
+   "hours_fast": 15.72,
+   "hours_slow": 16.22,
+   "days_fast": 0.655,
+   "days_slow": 0.676
+  },
+  "5000": {
+   "steps": 5000,
+   "hours_fast": 39.31,
+   "hours_slow": 40.55,
+   "days_fast": 1.638,
+   "days_slow": 1.69
+  },
+  "12000": {
+   "steps": 12000,
+   "hours_fast": 94.33,
+   "hours_slow": 97.32,
+   "days_fast": 3.931,
+   "days_slow": 4.055
+  },
+  "40284": {
+   "steps": 40284,
+   "hours_fast": 316.68,
+   "hours_slow": 326.71,
+   "days_fast": 13.195,
+   "days_slow": 13.613
+  }
+ },
+ "corpus": {
+  "windows_per_clip_measured_mean": 171.02,
+  "clips_usable_clean_and_mapped": 124,
+  "windows_clean_estimated": 21207,
+  "windows_per_disjoint_half_estimated": 10603,
+  "steps_for_ONE_EPOCH_on_a_half_batch2": 5302,
+  "one_epoch_hours_slow": 43.0,
+  "class": "MEASURED clip count (clean_split.json) x MEASURED window mean -> ESTIMATED windows"
+ },
+ "full_arm": {
+  "step_matched": {
+   "steps": 40284,
+   "hours_fast": 316.68,
+   "hours_slow": 326.71,
+   "days_fast": 13.195,
+   "days_slow": 13.613
+  },
+  "step_matched_note": "same STEP count as refcv5-v2 but at batch 2, i.e. ONE TENTH the samples",
+  "sample_matched_steps": 402840,
+  "sample_matched": {
+   "steps": 402840,
+   "hours_fast": 3166.77,
+   "hours_slow": 3267.11,
+   "days_fast": 131.949,
+   "days_slow": 136.13
+  },
+  "cut_budget": {
+   "steps": 12000,
+   "hours_fast": 94.33,
+   "hours_slow": 97.32,
+   "days_fast": 3.931,
+   "days_slow": 4.055
+  },
+  "arms_in_prereg_refcv6": 10,
+  "ten_arms_step_matched_days_slow": 136.1,
+  "ten_arms_sample_matched_days_slow": 1361.3,
+  "ten_arms_CUT_days_slow": 40.6
+ },
+ "eval_costs": {
+  "windows_1000_hours": 1.77,
+  "full_held_out_half_hours": 18.8
+ },
+ "resnet101": {
+  "mac_ratio_vs_resnet34": 2.2257,
+  "cpu_s_per_step_measured": 76.58,
+  "cpu_artifact": "GOALS_AND_CLAIMS.md D-REFCV6-R101: {'done': true, 'step': 5, 'wallclock_s': 382.9} at 416x1024 batch 1, every head live",
+  "hypothetical_gpu_s_per_step_if_it_fitted": 65.0,
+  "hypothetical_class": "ESTIMATED -- trunk-MAC scaling only; the heads do not scale with the trunk, so treat as an ORDER, not a rate",
+  "measured_status": "OOM at 256x1024 batch 2 AND at 416x1024 batch 1 on the 8 GiB card"
+ },
+ "tactical_floor": {
+  "n_floor": 200,
+  "windows_per_half": 10603,
+  "min_prevalence_to_clear_floor_on_one_half": 0.01886,
+  "note": "SPEC \u00a74: 10 of 22 tokens already sit under the n=200 floor on the FULL corpus, so they are structurally unreachable on a 62-clip half."
+ }
+}

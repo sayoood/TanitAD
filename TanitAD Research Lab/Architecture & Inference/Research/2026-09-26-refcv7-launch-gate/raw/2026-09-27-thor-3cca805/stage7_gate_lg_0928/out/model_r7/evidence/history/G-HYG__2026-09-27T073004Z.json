@@ -1,0 +1,170 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-HYG",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refcv7",
+  "commit": "0000000000000000000000000000000000000000",
+  "tree_sha256": "c8ff26fede7464986d78c69568f536b9b89171b3a9b3603ff3d0a1eb148cd210",
+  "argv_sha256": "4e576b44d4276663920d2f69158a8530cf72b17dbd9ea69ea3edb6b216cbb6fe"
+ },
+ "inputs_read": {
+  "--anchors": {
+   "kind": "file",
+   "bytes": 13477,
+   "sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "8a059346cc2a45ec8d744a6bdd833bdc6be9af28d50c75d32ea26e54c8af0aa4",
+ "started_utc": "2026-09-27T07:29:59Z",
+ "details": {
+  "argv_local": {
+   "kept": {
+    "--anchors": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+    "--agent-rig-extrinsics": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+    "--nav-compliance-tau-file": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+    "--map-hires-class-weights": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json"
+   },
+   "sentinel": {
+    "--v2-cache": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/v2-cache",
+    "--v7-labels": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/v7-labels",
+    "--eval-cache": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/eval-cache",
+    "--eval-labels": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/eval-labels",
+    "--speed-max-sidecar-v6-eval": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/speed-max-sidecar-v6-eval",
+    "--speed-max-sidecar-v6": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/speed-max-sidecar-v6",
+    "--agent-join": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/agent-join",
+    "--map-gt-root": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/map-gt-root",
+    "--join3d": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/join3d",
+    "--clip-clock-sidecar": "/home/nvidia/gate_lg_0928/out/model_r7/scratch/__gate_unread__/clip-clock-sidecar"
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on the CPU host; torch.compile wraps the backbone CALL only (module tree and state_dict unchanged) -- the eval loader drops it too"
+   }
+  },
+  "build_s": 3.3,
+  "model_params": 100150307,
+  "undeclared_attributes": [],
+  "n_config_dataclass_instances": 20,
+  "config_classes": [
+   "tanitad.data.bev_raster.BEVGrid",
+   "tanitad.models.ego_history.EgoHistoryConfig",
+   "tanitad.models.refc_bev_coupling.BEVCouplingConfig",
+   "tanitad.models.refcv6_diffusion.DiffusionFlags",
+   "tanitad.refs.goal_point.GoalPointConfig",
+   "tanitad.refs.max_speed_input.MaxSpeedConfig",
+   "tanitad.refs.refc.AnchorConfig",
+   "tanitad.refs.refc.CNNEncoderConfig",
+   "tanitad.refs.refc.DecoderConfig",
+   "tanitad.refs.refc.ImaginationConfig",
+   "tanitad.refs.refc.LanConfig",
+   "tanitad.refs.refc.LawConfig",
+   "tanitad.refs.refc.MeasurementConfig",
+   "tanitad.refs.refc.RefCConfig",
+   "tanitad.refs.refc.StrategicCtxConfig",
+   "tanitad.refs.refc.TrajectoryConfig",
+   "tanitad.refs.refc_agents.AgentSeamConfig",
+   "tanitad.refs.refc_v3.RefCV3Config",
+   "tanitad.refs.refcv6_tactical.TacticalDecoderConfig",
+   "tanitad.refs.refcv7_heads.Refcv7HeadConfig"
+  ],
+  "not_strict": [],
+  "probe_assignments_accepted": [],
+  "probe_assignments_tried": 20,
+  "import_closure": {
+   "venv": "/home/nvidia/venvs/tanitad-train/bin/python",
+   "n_files": 164,
+   "third_party": [
+    "av",
+    "diffusers",
+    "huggingface_hub",
+    "metadrive",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "refa_plus",
+    "timm",
+    "torch",
+    "torchvision",
+    "transformers",
+    "truststore"
+   ],
+   "strict": [
+    "scipy"
+   ],
+   "missing_fail": {},
+   "missing_lazy_only": {
+    "metadrive": [
+     {
+      "file": "stack/tanitad/data/metadrive_env.py",
+      "line": 142,
+      "guarded": false,
+      "function_level": true
+     },
+     {
+      "file": "stack/tanitad/data/metadrive_env.py",
+      "line": 143,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "refa_plus": [
+     {
+      "file": "taniteval/taniteval/loaders.py",
+      "line": 118,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "transformers": [
+     {
+      "file": "taniteval/taniteval/data.py",
+      "line": 171,
+      "guarded": false,
+      "function_level": true
+     },
+     {
+      "file": "stack/scripts/train_v6_staged.py",
+      "line": 992,
+      "guarded": false,
+      "function_level": true
+     }
+    ],
+    "truststore": [
+     {
+      "file": "stack/scripts/train_v6_staged.py",
+      "line": 990,
+      "guarded": false,
+      "function_level": true
+     }
+    ]
+   },
+   "missing_guarded_only": {
+    "diffusers": [
+     {
+      "file": "stack/tanitad/refs/refc_sampler.py",
+      "line": 234,
+      "guarded": true,
+      "function_level": true
+     }
+    ]
+   }
+  },
+  "child": {
+   "tanitad": "/home/nvidia/gate_lg_0928/cab/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-09-27T07:30:04Z"
+}

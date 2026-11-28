@@ -1,0 +1,161 @@
+# E-only lines of TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/RESULT.md  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 49a0655; E mtime 2026-10-05 05:21; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+359: ## 7. The registered probes — execution log (updated as results land)
+360: 
+361: Registration: `PREREG_WPD_PROBES.md` (Master Mind, sha256 c054190b…, 2026-10-04T12:31:35Z) and amendment
+362: `PREREG_WPD_A1.md` (sha256 eb6de12b…, 12:52:16Z, under the Master Mind's ruling). Hashes and code md5 at registration:
+363: `raw/SPEC_SHA256.txt`. Thor working dir `/home/nvidia/refcv8_wpd/` (every GPU job under the shared lock, ≤ 40 min).
+364: 
+365: ### 7.1 Disclosures (in time order; none moved a bar)
+366: 
+367: 1. **P-GRAD try 1 crashed before any number.** The eval loader returns a model with `requires_grad` False everywhere,
+368:    so the census found zero parameters. Fixed (only the measured groups are switched on; a gradient reaches them
+369:    through the activations regardless of the heads). `logs/pgrad_try1_crash.log` (Thor).
+370: 2. **P-GRAD try 2 is VOID.** It ran with cuDNN's default TF32 convolutions; the registered linearity control read
+371:    **6.2e-4 > 1e-4** (per group 7e-5 … 6e-4, larger in the early stages): a 10-bit-mantissa precision floor, not a
+372:    property of the gradients. Kept as `raw`-side `pgrad_try2_tf32_VOID.json` on Thor; its numbers are NOT results.
+373: 3. **P-GRAD try 3** (TF32 off) read linearity **6.6e-6** on its first batch, but one batch took **778 s**; 8 batches
+374:    cannot fit one 40-min hold. Stopped by PID; re-run as **4 parts × 2 batches** of the SAME seeded 64-window draw,
+375:    merged on CPU (`code/pgrad_merge.py`; code change after registration, disclosed).
+376: 4. **P-BOX capture:** the TRAIN capture (3,000 windows) is split into 3 contiguous parts (`--part/--nparts`; code change
+377:    after A1, disclosed); the EVAL capture's window-set sha256 `92e36a1a74b8…` equals the diagnostics' EVAL-DIAG.
+378:    Chain v1 was stopped by PID while its EVAL capture ran, so the TRAIN capture could be split.
+379: 5. **P-MAP smoke** (not a result; PM4, 6 steps, 16 eval windows): end-to-end PASS; control **C-s8** (this probe's
+380:    stride-8 input == the trunk's own `s8_from_normalised`) read **0.0** max abs difference.
+381: 6. **P-BOX A1 controls (binding) — all PASS** (`out/pbox/controls.json` on Thor, pulled to the package at the end):
+382:    C-fwd max |Δ| **0.0** (presence and box); C-loss rel. err **1.0e-7**; **C-cache AP@2 m 0.24818 vs 0.2483 ± 0.003**.
+383:    Informative: the int8 cache moves individual presence logits by up to 0.236 (64 windows) without moving AP.
+384: 7. **The first PB0 job died after the controls** on an empty optimizer (the decoder modules were saved off the eval
+385:    loader's model with `requires_grad` False). Fixed.
+386: 8. ⛔ **The next PB0 job TRAINED NOTHING: the training loop had no `optimizer.step()`** (the same omission was in
+387:    `pmap_arms.py`). It ran 4,000 steps, logged losses and clipped gradient norms, and banked an arm whose EVAL AP@2 m
+388:    equalled the step-0 control to 7 decimals (0.24818405 vs 0.24818411) — which is how it was caught, before any
+389:    comparison was made. VOID; moved to `out/pbox_VOID_nostep/` on Thor. Fixed in both probes, plus a new control
+390:    **C-step**: an arm whose decoder (branch) parameters did not change refuses to bank. Class: *an instrument that
+391:    reports every symptom of training while training nothing* — the controls C-fwd / C-loss / C-cache all test the
+392:    forward and the loss, none tested that the update happens.
+393: 9. **The VOID PB0 was read once more, at the ANALYSIS end, under the name of the control.** The dev-box pull directory
+394:    still held the no-step PB0 copy (pulled before the fixed PB0 ran). A descriptive read "refcv7's decoder at step 0
+395:    vs PB0" returned a difference of **exactly 0.0000 on every key with a zero-width CI** — which is how it was caught;
+396:    no result was written from it. The copy is moved aside (`C:/Users/Admin/r8_wpd/pbox_out_VOID_nostep_PB0/`), and
+397:    `pbox_analyze.py` now **refuses any arm whose `record.json` lacks a positive `C_step_rel_param_change`** — the
+398:    training control enforced where the arm is CONSUMED, not only where it is produced. Mutation-tested: the VOID copy
+399:    refuses (exit 1, no output written). Two smaller code-test fixes in the analysers before any result: a band-key
+400:    parse (`"0_20"` contains the separator) in `pbox_analyze.py`, and a vacuous `all([])` in `pmap_analyze.py`'s
+401:    R-s4shuf must-fail (an unreadable key would have let it "fail as required").
+402: 10. **A wrong blocker was reported to the Master Mind and retracted within minutes (no number in this package came
+403:     from it).** I read the Thor GPU-lock holder from `/proc/*/fd` and reported that the WP-RL trainer had "held the
+404:     lock 4h38m". `/proc/*/fd` lists every process with the lock file OPEN — blocked waiters included — and 4h38m was
+405:     that process's AGE. `/proc/locks` on the file's inode (the line without `->` is the holder) named this probe's
+406:     R-pres0z job (PID 386855) as the holder, and the RL trainer as a queued waiter that yields every 10 steps. Class:
+407:     a probe that answers a different question from the one asked (an open fd is not a held lock).
+408: 11. **P-MAP code made portable before its first arm (at the Master Mind's request; no arm's computation changed).**
+409:     `pmap_arms.py` 007a3e6d → 5c17c58d adds three things. Unset, the env vars give the same paths, and the Thor
+410:     chain runs the new file:
+411:     - a `--timing-steps` path that never writes arm state;
+412:     - `cuda_max_mem_gb` in the logs and the record;
+413:     - env-overridable data paths.
+414:     The P-MAP TIMING run (not an arm, `raw/pmap_timing.json`): PM4 1.515 s/step at 10.33 GB, PM0 1.083 s/step at
+415:     9.65 GB, batch 8, on Thor. The bundle and its recipe are in `BUNDLE_PMAP.md`.
+416: 12. **The analysis's TRAIN P = R gate had a degenerate-start bug, caught on PB4 in an interim read; no verdict
+417:     depended on it.**
+418:     - The bug: when an arm's top-scored TRAIN-DIAG slot is an FP, precision = recall = 0 at row 0, and the crossing
+419:       test `prec − rec ≤ 0` fired there, returning the TOP score as the gate.
+420:     - Effect on PB4: gate 0.413, the max score, so conf_ratio read 0.0006 and boxes per object a meaningless 1.00.
+421:     - Fix: the crossing is taken among rows with ≥ 1 TP. Gates are unchanged for every other arm. PB4's is 0.2363.
+422:     - Independent cross-check: on the step-0 decoder the fixed `pr_gate` returns **0.2567, exactly the diagnostics'
+423:       independently fitted box3d TRAIN gate** (`refcv7_post/diag`).
+424:     - Only the gate-dependent metrics move (boxes per object, conf_ratio, the localisation split). The AP bars do
+425:       not use the gate.
+426: 
+427: ### 7.2 P-GRAD — who trains the trunk, per term (RESULT; controls PASS)
+428: 
+429: `raw/pgrad.json` (md5 `7c8aab3f…`; 4 parts × 2 batches of ONE seeded 64-window TRAIN-DIAG draw, sha256 `760c043a…`,
+430: merged by `code/pgrad_merge.py`; refcv7-50,400 in train mode, fp32 trunk, TF32 off, cuDNN deterministic; ~27 min of
+431: Thor GPU per part). **Controls:** L linearity max rel. err **6.6e-6** ≤ 1e-4 **PASS**; Z weight-0 term **exactly 0**
+432: **PASS**; K (not pre-registered) the in-run detector's aux share reproduced, **0.9956** vs 0.992–0.995 in-run.
+433: Tier: open-loop gradient census (no plan scored; the four families N/A). Estimator: none needed for the census (it
+434: is a measurement on fixed windows); the shares below are the 64-window summed gradient.
+435: 
+436: **Share of the per-term gradient norms** (each term at its loss weight; all weights 1.0, TRAJ_WEIGHT 1.0):
+437: 
+438: | group (params) | traj | box3d | agent | map_hires | tac_v6 | rest (planner aux) |
+439: |---|---|---|---|---|---|---|
+440: | stem (9,536) | 0.0012 | 0.3237 | **0.4983** | 0.0046 | 0.0025 | 0.1697 |
+441: | layer1 (215,808) | 0.0014 | 0.3292 | **0.4434** | 0.0050 | 0.0028 | 0.2183 |
+442: | layer2 (1,219,584) | 0.0015 | 0.3260 | **0.4081** | **0.0049** | 0.0020 | 0.2574 |
+443: | layer3 (26,090,496) | 0.0016 | 0.3381 | **0.4098** | 0 | 0.0012 | 0.2493 |
+444: | layer4 (14,964,736) | 0.0028 | 0 | **0.5619** | 0 | 0.0019 | 0.4334 |
+445: | temporal fuse (15,731,712) | 0.0026 | **0.4481** | 0.3494 | 0 | 0.0009 | 0.1990 |
+446: | **shared 0.25 m BEV encoder** (538,112; the MAP's encoder, also read by the planner pool and the box memory) | 0.0063 | **0.7607** | 0 | **0.0507** | 0.0232 | 0.1591 |
+447: | planner BEV pool (6,336) | 0.0120 | 0.7323 | 0 | 0 | 0.0378 | 0.2179 |
+448: 
+449: **Projection share on the total gradient (what each term actually "pays for" in the update; sums to 1):** whole
+450: trunk — agent **0.501**, box3d **0.357**, rest 0.142, traj **0.0002**, map_hires **0.0001**, tac_v6 −0.0005. In the
+451: shared 0.25 m BEV encoder — box3d **0.973**, rest 0.031, map_hires **−0.004**. Cosines (whole trunk): box3d·agent
+452: +0.229, box3d·map −0.131, agent·tac −0.297; in the shared BEV encoder box3d·map **−0.137**.
+453: 
+454: **Reading (MEASURED):**
+455: 1. **The 10 cm map does not train the trunk and barely trains its OWN encoder.** Its share of the trunk gradient norm
+456:    is ~0.5 % on the only stages it reaches (stem–layer2) and its projection on the update is 0.0001; in the shared
+457:    0.25 m encoder it is 5 % of the norm and pulls slightly AGAINST the update (box3d's gradient dominates it at 76 % /
+458:    97 %, with cosine −0.14 to the map's). ⇒ the map's plateau (RESULT §1.3) is not only image-bound: **the map has
+459:    almost no say over the features it decodes.** This adds a lever to the design: the map loss weight (or a map-only
+460:    encoder) — sized from this table, and tested in P-MAP's frame (the frozen-trunk probe cannot test it).
+461: 2. **The planner's agent head is the single largest trunk driver (50 % of the update)**, and the in-run conflict
+462:    detector does not count it (`CONFLICT_PERCEPTION_TERMS` lists box3d, map_hires, tac_v6; the agent loss is in
+463:    neither side). A monitoring blind spot on the term that moves the trunk most.
+464: 3. **The trajectory loss moves 0.02 % of the trunk update; the tactical decoder −0.05 %.** Consistent with RESULT
+465:    §1.4 (aux 99.4 %): anything WP-B wants the trunk to learn for planning (R8-4) currently has no gradient budget;
+466:    the box / agent / planner-aux terms set the trunk.
+467: 
+468: ### 7.3 P-BOX — decoder levers on cached frozen memory (IN PROGRESS: the control is banked, the arms are running)
+469: 
+470: Rig (registered + A1): refcv7-50,400's box3d decoder (3,990,383 params) trained alone on the **int8 cache of its own
+471: frozen memory** (2,144 tokens × 256 per window, `raw/pbox_controls.json`: C-fwd 0.0, C-loss 1.0e-7, C-cache AP@2 m
+472: 0.24818 vs 0.2483 ± 0.003 — all PASS), TRAIN 2,889 windows (600 clips, `default_rng(0)`), 4,000 steps × batch 16
+473: (≈ 22 epochs), AdamW 1e-4 constant then cosine over the last 400. EVAL-DIAG 1,061 windows / 137 episodes. Tier: T0
+474: OPEN-LOOP PERCEPTION diagnostic (no plan is scored; the four driving families are N/A — this measures a head, not a
+475: car). Estimator: paired episode-cluster bootstrap over the 137 EVAL episodes, B = 1,000 ("another draw of
+476: EPISODES"); the training-run question is answered by the replicate floor |PB0r − PB0| (H-ESTIM-SEED-1).
+477: 
+478: **The control PB0 (MEASURED, `out/pbox/PB0/record.json`, C-step 0.177 relative parameter change):** continuing the
+479: decoder ALONE on its own frozen memory makes it **WORSE**, not better. Descriptive read, NOT pre-registered
+480: (`raw/pbox_step0_vs_PB0_descriptive.json`; step-0 = refcv7's decoder unchanged, its TRAIN-DIAG gate from the VOID
+481: no-step run, whose decoder is the step-0 decoder by construction):
+482: 
+483: | metric (EVAL-DIAG) | refcv7 step 0 | PB0 (4,000 steps) | step 0 − PB0, paired 95 % CI |
+484: |---|---|---|---|
+485: | AP@2 m, NMS r 2 m | 0.3382 | 0.3082 | **+0.0301 [+0.0190, +0.0412]** |
+486: | AP@2 m raw | 0.2482 | 0.2286 | +0.0196 [+0.0103, +0.0277] |
+487: | AP@1 m raw | 0.1295 | 0.1133 | +0.0163 [+0.0078, +0.0237] |
+488: | AP@2 m NMS, 0–20 / 20–40 / 40–60 m | 0.561 / 0.218 / 0.086 | 0.515 / 0.203 / 0.070 | +0.046 [+0.023, +0.067] / +0.015 [−0.000, +0.030] / +0.016 [+0.005, +0.027] |
+489: | boxes per detected object (TRAIN P = R gate) | 1.97 | 1.95 | +0.02 [−0.04, +0.09] |
+490: | presence ECE | 0.059 | 0.057 | — |
+491: 
+492: The TRAIN loss fell (13.1 → ~11, noisy) while EVAL **and** TRAIN-DIAG AP fell (quick AP@2 m 0.256 → 0.246 on
+493: TRAIN-DIAG): the decoder fits the 2,889 cached windows and loses generality. ⇒ **(a)** consistent with
+494: `PERCEPTION_DESIGN.md`'s B1 falsifier reading — refcv7's decoder is AT its frozen-memory optimum, so the late AP gain
+495: of the run (RESULT §1.2) is a trunk/memory gain, not an under-trained head; **(b)** a READING CAVEAT for every lever
+496: below, fixed now, before any arm is read: an arm that "beats PB0" may do so by **overfitting less** (more
+497: supervision per window — CDN, Group-DETR — or fewer free parameters) rather than through its mechanism; the
+498: comparison that separates the two is the arm vs **step 0**, reported beside the registered arm vs PB0 for every
+499: lever. The registered bars are against PB0 and are read as written.
+500: 
+501: **Interim read, 2026-10-04 ~20:10 UTC: the replicate and the A1 must-fail are banked** (`pbox_analyze.py`, B = 1,000;
+502: the full table replaces this block when the 13 arms are in).
+503: * **PB0r** is PB0's flags with seed 1, and its C-step is 0.1765. It reproduces PB0: AP@2 m NMS 0.3024 vs 0.3082,
+504:   a paired difference of −0.0058 [−0.0167, +0.0040], not separated. **The replicate floor |PB0r − PB0| is**
+505:   AP@2 m NMS **0.0058**, AP@1 m raw 0.0019, AP@2 m raw 0.0003, per band 0.0043 / 0.0036 / 0.0028, and boxes per
+506:   object 0.014. ⚠️ This is ONE replicate pair, so the floor is a single draw of the run-to-run noise, not its scale.
+507:   The 0.0003 on AP@2 m raw is a lucky coincidence, not a precision claim. The registered bars still need the CI AND
+508:   the ≥ 0.02 effect, and both are far wider than this floor.
+509: * PB0's degradation versus refcv7's own decoder **replicates across seeds**. STEP0 − PB0r reads AP@2 m NMS +0.0358
+510:   [+0.0241, +0.0454] and AP@2 m raw +0.0199 [+0.0122, +0.0265]. So the §7.3 reading (the head is at its
+511:   frozen-memory optimum) holds on two training runs, not one.
+512: * **R-pres0z (A1, governs) FAILED AS REQUIRED.** Resetting the presence row (weight row 0, bias logit(0.01),
+513:   presence weight 0) took EVAL AP@2 m raw to **0.0119**, below the bar of ≤ 0.5 × PB0 = 0.1143. AP@2 m NMS fell to
+514:   0.0179. At the TRAIN P = R gate the arm reads 3.88 boxes per object and conf_ratio 93. ⇒ The rig sees a broken
+515:   presence head: **a presence lever's effect is measurable here**, which is what A1 was registered to establish.
+516:   Not VOID.
+517: 

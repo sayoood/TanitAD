@@ -1,0 +1,33 @@
+[2026-11-12T08:20:28] guards PASS: prereg a5dd339eb4bf, ledger key present, 27 pins
+[2026-11-12T08:20:29] start job 0 (free virt 23206 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\n1\tf_n1_build.py derive --w C:\Users\Admin\n1_run\w\pk --tf2-score C:\Users\Admin\n1_run\w\tf2_score.py --split navtrain --p5s C:\Users\Admin\n1_run\inputs\p5s_cubic.npz --check-dam --out C:\Users\Admin\n1_run\cderiv\derive_s0
+[2026-11-12T08:20:50] start job 1 (free virt 23274 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\n1\tf_n1_build.py derive --w C:\Users\Admin\n1_run\w\pk --tf2-score C:\Users\Admin\n1_run\w\tf2_score.py --split navtrain --p5s C:\Users\Admin\n1_run\inputs\p5s_cubic.npz --check-dam --out C:\Users\Admin\n1_run\cderiv\derive_s1
+[2026-11-12T08:31:25] job 1 rc 0
+[2026-11-12T08:32:10] job 0 rc 0
+[2026-11-12T08:32:25] cderiv attempt 1: 1018/1018 tokens ok, 0 error lines
+[2026-11-12T08:32:26] STAGE cderiv DONE {"tokens": 1018, "merge_rc": 0, "controls": {"C-BUILD-COV": {"pass": true, "missing": 0, "extra": 0, "missing_examples": []}, "C-BUILD-T-IS-BANKED": {"pass": true}, "C-DERIV": {"pass": true, "n": 1018, "tc20s_maxdev_m": 1.291216022991648e-10, "tw_maxdev_m": 2.460751602484379e-10, "bar_m": 1e-09}, "C-DAM (validation only)": {"n": 1018, "pass": true, "M_identical": 1018, "union_equal": 1018, "ego_id
+[2026-11-12T08:32:26] start job 0 (free virt 21010 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\n1\tf_n1_build.py derive --w C:\Users\Admin\n1_run\w\pk --tf2-score C:\Users\Admin\n1_run\w\tf2_score.py --split navtest --rollouts C:\Users\Admin\n1_run\inputs\rollouts\rows_s0of4.jsonl.xz C:\Users\Admin\n1_run\inputs\rollouts
+[2026-11-12T08:32:47] start job 1 (free virt 20674 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\n1\tf_n1_build.py derive --w C:\Users\Admin\n1_run\w\pk --tf2-score C:\Users\Admin\n1_run\w\tf2_score.py --split navtest --rollouts C:\Users\Admin\n1_run\inputs\rollouts\rows_s0of4.jsonl.xz C:\Users\Admin\n1_run\inputs\rollouts
+[2026-11-12T09:02:38] job 1 rc 0
+[2026-11-12T09:03:08] job 0 rc 0
+[2026-11-12T09:03:24] build attempt 1: 12146/12146 tokens ok, 0 error lines
+[2026-11-12T09:03:30] STAGE build DONE {"tokens": 12146, "merge_rc": 0, "controls": {"C-BUILD-COV": true, "C-BUILD-T-IS-BANKED": true, "C-SEAM": true}, "files": {"n1_plans_T.npz": "687910a03834346d6bd4ac605acfcad685d34a51738977a3f3c1840b22797eb6", "n1_plans_Tc20s.npz": "237112695ce7a9dcf03670b285a186332a3f0ac3dd7e6bd1f2204b566c0de294", "refe_tfn1_tc20s.npz": "d9fa8d04f24529cd4942c33ff5543d56493fbab4da12f7e0bae29f60ddc20fd2", "n1_plans_
+[2026-11-12T09:03:30] start job 0 (free virt 23002 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\transp_score.py --refe C:\Users\Admin\n1_run\w\pk\refe --split navtest --token-log F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --plans N1T=C:\Users\Admin\n1_run\build\out\n1_
+[2026-11-12T09:03:51] start job 1 (free virt 22791 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\transp_score.py --refe C:\Users\Admin\n1_run\w\pk\refe --split navtest --token-log F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz --plans N1T=C:\Users\Admin\n1_run\build\out\n1_
+[2026-11-12T11:13:01] job 1 rc 0
+[2026-11-12T11:17:17] job 0 rc 0
+[2026-11-12T11:17:33] score attempt 1: 12146/12146 tokens ok, 0 error lines
+[2026-11-12T11:17:33] STAGE score DONE {"tokens": 12146}
+[2026-11-12T11:17:40] STAGE cert DONE {"rc": 0}
+[2026-11-12T11:17:40] start job 0 (free virt 26194 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\families_run.py --rows C:\Users\Admin\n1_run\score\rows_cert_primary.jsonl --arm N1C --label TF-N1 N1C --out C:\Users\Admin\n1_run\fam\fam_N1C.json --n-boot 10000 --tanitad-repo C:\Users\Admin\n1_run\repo
+[2026-11-12T11:18:01] start job 1 (free virt 25404 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\families_run.py --rows C:\Users\Admin\n1_run\score\rows_cert_primary.jsonl --arm N1T --label TF-N1 N1T --out C:\Users\Admin\n1_run\fam\fam_N1T.json --n-boot 10000 --tanitad-repo C:\Users\Admin\n1_run\repo
+[2026-11-12T11:20:21] job 0 rc 0
+[2026-11-12T11:20:36] start job 2 (free virt 26265 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\families_run.py --rows C:\Users\Admin\n1_run\score\rows_cert_primary.jsonl --arm N1W --label TF-N1 N1W --out C:\Users\Admin\n1_run\fam\fam_N1W.json --n-boot 10000 --tanitad-repo C:\Users\Admin\n1_run\repo
+[2026-11-12T11:20:56] job 1 rc 0
+[2026-11-12T11:21:12] start job 3 (free virt 25520 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\families_run.py --rows C:\Users\Admin\n1_run\score\rows_cert_primary.jsonl --arm CERT --label TF-N1 CERT --out C:\Users\Admin\n1_run\fam\fam_CERT.json --n-boot 10000 --tanitad-repo C:\Users\Admin\n1_run\re
+[2026-11-12T11:23:02] job 2 rc 0
+[2026-11-12T11:23:17] start job 4 (free virt 23587 MB): C:/Users/Admin/navsim-crun/venv/Scripts/python.exe C:\Users\Admin\n1_run\w\pk\eval\instruments\families_run.py --rows C:\Users\Admin\n1_run\score\rows_cert_primary.jsonl --arm human --label TF-N1 human --out C:\Users\Admin\n1_run\fam\fam_human.json --n-boot 10000 --tanitad-repo C:\Users\Admin\n1_run
+[2026-11-12T11:24:07] job 3 rc 0
+[2026-11-12T11:25:52] job 4 rc 0
+[2026-11-12T11:26:07] STAGE families DONE {"rcs": [0, 0, 0, 0, 0]}
+[2026-11-12T11:26:12] STAGE read FAIL {"rc": 1, "log": "C:\\Users\\Admin\\n1_run\\out\\read.log"}
+[2026-11-12T11:26:12] ZZN1_CHAIN STOP

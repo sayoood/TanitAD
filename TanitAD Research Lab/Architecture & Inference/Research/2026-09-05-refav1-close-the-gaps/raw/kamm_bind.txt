@@ -1,0 +1,20 @@
+================================================================================================
+M40 DISCHARGE -- did the Kamm friction-circle CONSTRAINT actually FIRE?
+  cap = mu*g/v^2 clipped at kappa_max;  mu=0.70  kappa_max=0.20  v_floor=2.0 m/s
+================================================================================================
+  goal          n   v0 mean  identical     max|dctl|  cap mean  |k| emit
+  LANE_KEEP    18     8.136    11/18       1.067e+00    0.1196    0.0620
+  TURN_L        9     2.851     8/9        7.700e-01    0.1844    0.0933
+  TURN_R       13     2.782    13/13       0.000e+00    0.1976    0.0800
+
+  ⛔ SAME-BREATH CONTROL on the SAME TURN_R windows -- ccos vs wk15 MUST differ:
+     identical 9/13   max|dctl| 2.506e-01
+
+  TURN_R windows where the cap is BELOW the emitted curvature (i.e. it COULD bind): 0/13
+  ⇒ VERDICT: the TURN_R zero is a NON-FIRING, not a preservation.
+     At v0 ~ 2.78 m/s the cap is 0.1976 1/m while the planner emits 0.0800 --
+     the constraint is INACTIVE there. It would bind at highway speed:
+       v0=10 m/s -> cap 0.0686 1/m (BELOW the 0.08 command)
+       v0=15 m/s -> cap 0.0305 1/m (BELOW the 0.08 command)
+       v0=20 m/s -> cap 0.0172 1/m (BELOW the 0.08 command)
+       v0=30 m/s -> cap 0.0076 1/m (BELOW the 0.08 command)

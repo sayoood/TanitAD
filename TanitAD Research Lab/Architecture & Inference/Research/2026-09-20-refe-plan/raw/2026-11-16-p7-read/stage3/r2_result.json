@@ -1,0 +1,548 @@
+{
+ "name": "p7_full",
+ "read": "R2 (+R2b)",
+ "dry_run": false,
+ "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927 (proxy_eval.boot, the estimator of RESULT_SFT4.md). It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "tier": "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)",
+ "strategic_family": "PAUSED by the PI (2026-09-19, PI_DECISION_QUEUE item 25) and UNAVAILABLE in NAVSIM (no strategic decision is scored); reported as such, never as a pass",
+ "script": "eval/stage3_full.py",
+ "stage2_sft_md5": "3147254ba8128c5dde1b33dbd6cb2b81",
+ "stage2_sft_md5_expected": "3147254ba8128c5dde1b33dbd6cb2b81",
+ "when_utc": "2026-11-16T17:07:39Z",
+ "stage2_sft_unmodified": true,
+ "arm": {
+  "name": "p7_full",
+  "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_p7_full\\refe_stage2_p7_full.csv",
+  "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p7_full.npz",
+  "csv_md5": "df5480056bdb93fc57a98cc4c7bcf99f",
+  "seam_md5": "2fff731ce43e6f9f3c4f03b65e5e9682",
+  "stage2_run": {
+   "ckpt": "F:/TanitAD_p7read/run/model_final.pt",
+   "rule": "navsim_v1",
+   "tokens": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+   "n_tokens": 12146,
+   "scored_as": "the whole navtest filter (no --tokens)",
+   "exploratory": false,
+   "verdict": "NOT PROVEN",
+   "WARNING": "that verdict is R1/R2b-style (arm vs DEPLOYED). It is NOT the P6 verdict; the P6 GO / NO-GO is this file's R2 block only"
+  }
+ },
+ "checkpoint": {
+  "path": "F:/TanitAD_p7read/run/model_final.pt",
+  "bytes": 1298292047,
+  "sha256": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe",
+  "seam_report_ckpt": "F:/TanitAD_p7read/run/model_final.pt",
+  "seam_ckpt_path_matches": true,
+  "sha256_matches_expected": true,
+  "ok": true
+ },
+ "gates": {
+  "tokens": {
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_tokens.json",
+   "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+   "n": 12146,
+   "n_logs": 136,
+   "all_in_export": true,
+   "unique": true,
+   "token_log_matches_export": true,
+   "pinned": {
+    "md5": "3a8b3653fd70891e50a230a37eb76ae8",
+    "n": 12146,
+    "logs": 136
+   },
+   "md5_ok": true,
+   "n_ok": true,
+   "logs_ok": true,
+   "ok": true
+  },
+  "tokens_minus_c1": {
+   "path": "E:\\Projects\\TanitAD\\data\\refe_navtest\\navtest_full_minus_c1_tokens.json",
+   "md5": "bc813be8300b69f9795e190238806329",
+   "n": 12110,
+   "n_logs": 136,
+   "all_in_export": true,
+   "unique": true,
+   "token_log_matches_export": true,
+   "pinned": {
+    "md5": "bc813be8300b69f9795e190238806329",
+    "n": 12110,
+    "logs": 136
+   },
+   "md5_ok": true,
+   "n_ok": true,
+   "logs_ok": true,
+   "ok": true
+  },
+  "base_pinned": {
+   "ok": true,
+   "base": "p6",
+   "csv_md5": "2b8f7701ab35ac90380a272a8e48e39b",
+   "pinned": [
+    "2b8f7701ab35ac90380a272a8e48e39b",
+    "9b1a6c38f95319849fa526b5f6ae0f35"
+   ],
+   "seam_md5": "4733c3f843aba0cc9313d19b2c6426b3",
+   "pinned_seam": "4733c3f843aba0cc9313d19b2c6426b3"
+  },
+  "also_pinned": {
+   "ok": true,
+   "also": "p2",
+   "csv_md5": "bed5687fb75e884d45cf991c2ff391c9",
+   "seam_md5": "49a1f6ecf28c5ebdaac4c68c2997c5f0"
+  },
+  "harness_status": {
+   "ok": true,
+   "status": "PASS",
+   "log_successful": 12146,
+   "log_failed": 0,
+   "csv_valid_rows": 12146,
+   "C1_max_abs_delta": 0.0,
+   "summary_x100_4dp": {
+    "NC": 98.8721,
+    "DAC": 97.8594,
+    "EP": 86.6816,
+    "TTC": 95.2906,
+    "C": 99.9918,
+    "DDC": 96.5009,
+    "PDMS": 91.0724
+   }
+  },
+  "seam_report": {
+   "rule": "navsim_v1",
+   "ckpt": "F:/TanitAD_p7read/run/model_final.pt",
+   "rows": 12146,
+   "misses": 0,
+   "tokens_asked": 12146,
+   "seconds": 15976.6,
+   "repair_last_heading": true,
+   "sanitize_goal": false,
+   "goal_fix": "pdm_route",
+   "select": "best",
+   "frame_control": {
+    "n": 12146,
+    "max_m": 6.18063877792441,
+    "median_m": 9.155133597044475e-16,
+    "bar_m": 0.001,
+    "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+   },
+   "rule_ok": true,
+   "expected_rule": "navsim_v1",
+   "seam_settings_equal_to_base": true,
+   "seam_setting_diffs": [],
+   "frame_control_equal_to_base": true,
+   "frame_control_gate_ok": true,
+   "ok": true
+  },
+  "checkpoint": {
+   "path": "F:/TanitAD_p7read/run/model_final.pt",
+   "bytes": 1298292047,
+   "sha256": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe",
+   "seam_report_ckpt": "F:/TanitAD_p7read/run/model_final.pt",
+   "seam_ckpt_path_matches": true,
+   "sha256_matches_expected": true,
+   "ok": true
+  },
+  "rows": {
+   "ok": true,
+   "scored": 12146,
+   "asked": 12146,
+   "arm_rows": 12146,
+   "base_rows": 12146
+  },
+  "consistency_vs_base": {
+   "ok": true,
+   "same_pose_tokens": 0,
+   "same_pose_different_score": 0,
+   "same_pose_any_column_differs": 0,
+   "seam_rows_arm": 12146,
+   "seam_rows_base": 12146
+  }
+ },
+ "gates_ok": true,
+ "csv_vs_harness_summary": {
+  "harness": {
+   "NC": 98.8721,
+   "DAC": 97.8594,
+   "EP": 86.6816,
+   "TTC": 95.2906,
+   "C": 99.9918,
+   "DDC": 96.5009,
+   "PDMS": 91.0724
+  },
+  "csv_means": {
+   "PDMS": 91.0724,
+   "NC": 98.8721,
+   "DAC": 97.8594,
+   "EP": 86.6816,
+   "TTC": 95.2906,
+   "C": 99.9918,
+   "DDC": 96.5009
+  },
+  "equal_4dp": true
+ },
+ "R2": {
+  "vs": "C1 of SPEC_P7 = P6 (refe_p6final, rule navsim_v1, A7 ON, command mode)",
+  "primary": {
+   "mean": -0.12405211045285663,
+   "ci95": [
+    -0.5139335529961379,
+    0.2786477183284454
+   ],
+   "base_mean_x100": 91.19647788427798,
+   "arm_mean_x100": 91.07242577382513,
+   "better": 3530,
+   "worse": 4560,
+   "tied": 4056,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 384,
+   "zero_arm": 393
+  },
+  "subscores": {
+   "NC": {
+    "mean": 0.02469948954388276,
+    "ci95": [
+     -0.23772429711045515,
+     0.2918476155784576
+    ],
+    "base_mean_x100": 98.8473571546188,
+    "arm_mean_x100": 98.87205664416268,
+    "better": 77,
+    "worse": 73,
+    "tied": 11996,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": -0.09056479499423678,
+    "ci95": [
+     -0.3939752519099501,
+     0.18766486312682595
+    ],
+    "base_mean_x100": 97.94994236785773,
+    "arm_mean_x100": 97.8593775728635,
+    "better": 119,
+    "worse": 130,
+    "tied": 11897,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "EP": {
+    "mean": -0.35278827130260754,
+    "ci95": [
+     -0.7539212381600092,
+     0.01661781753178547
+    ],
+    "base_mean_x100": 87.03441689794842,
+    "arm_mean_x100": 86.68162862664583,
+    "better": 3422,
+    "worse": 4508,
+    "tied": 4216,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": 0.20582907953235632,
+    "ci95": [
+     -0.3111325785989471,
+     0.7419755366145115
+    ],
+    "base_mean_x100": 95.08480158076733,
+    "arm_mean_x100": 95.29063066029968,
+    "better": 267,
+    "worse": 242,
+    "tied": 11637,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "C": {
+    "mean": -0.008233163181294254,
+    "ci95": [
+     -0.02794786359672253,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 99.99176683681871,
+    "better": 0,
+    "worse": 1,
+    "tied": 12145,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": 0.016466326362588508,
+    "ci95": [
+     -0.24939730775611274,
+     0.2794487489027911
+    ],
+    "base_mean_x100": 96.48443932158736,
+    "arm_mean_x100": 96.50090564794995,
+    "better": 222,
+    "worse": 216,
+    "tied": 11708,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [],
+  "n_rows": 12146,
+  "families_vs_base": {
+   "missing": true,
+   "note": "a families JSON is absent: NOT COMPUTED (never a pass)"
+  },
+  "outcome": "NO-GO (NOT PROVEN)",
+  "p6": "NO-GO",
+  "why": "interval contains 0",
+  "next": "SFT-4R (scorer-only on COMPLETE labels, PREREG_SFT4R.md), then a training-seed replicate of the better arm"
+ },
+ "R2_minus_C1": {
+  "note": "reported, not gated (RESULT_SFT4.md Deviation 1)",
+  "tokens_md5": "bc813be8300b69f9795e190238806329",
+  "primary": {
+   "mean": -0.12147745664416625,
+   "ci95": [
+    -0.5146647039658715,
+    0.28200684210620325
+   ],
+   "base_mean_x100": 91.17493111192034,
+   "arm_mean_x100": 91.05345365527616,
+   "better": 3520,
+   "worse": 4553,
+   "tied": 4037,
+   "n": 12110,
+   "n_logs": 136,
+   "zero_base": 384,
+   "zero_arm": 393
+  },
+  "subscores": {
+   "NC": {
+    "mean": 0.02477291494632535,
+    "ci95": [
+     -0.23855767502136618,
+     0.29263499432518497
+    ],
+    "base_mean_x100": 98.84393063583815,
+    "arm_mean_x100": 98.86870355078447,
+    "better": 77,
+    "worse": 73,
+    "tied": 11960,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": -0.09083402146985962,
+    "ci95": [
+     -0.3950470392206367,
+     0.18790828498903137
+    ],
+    "base_mean_x100": 97.943848059455,
+    "arm_mean_x100": 97.85301403798513,
+    "better": 119,
+    "worse": 130,
+    "tied": 11861,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "EP": {
+    "mean": -0.35503042961210307,
+    "ci95": [
+     -0.7567367051095206,
+     0.015217836487148764
+    ],
+    "base_mean_x100": 87.0069708143251,
+    "arm_mean_x100": 86.65194038471301,
+    "better": 3411,
+    "worse": 4502,
+    "tied": 4197,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": 0.21469859620148637,
+    "ci95": [
+     -0.30305332964907433,
+     0.7568499626249748
+    ],
+    "base_mean_x100": 95.07018992568125,
+    "arm_mean_x100": 95.28488852188273,
+    "better": 267,
+    "worse": 241,
+    "tied": 11602,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "C": {
+    "mean": -0.008257638315441783,
+    "ci95": [
+     -0.028051081503134612,
+     0.0
+    ],
+    "base_mean_x100": 100.0,
+    "arm_mean_x100": 99.99174236168456,
+    "better": 0,
+    "worse": 1,
+    "tied": 12109,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": 0.016515276630883566,
+    "ci95": [
+     -0.2500863649651987,
+     0.28020668047551694
+    ],
+    "base_mean_x100": 96.47398843930635,
+    "arm_mean_x100": 96.49050371593724,
+    "better": 222,
+    "worse": 216,
+    "tied": 11672,
+    "n": 12110,
+    "n_logs": 136,
+    "adverse": false
+   }
+  },
+  "adverse_subscores": [],
+  "n_rows": 12110
+ },
+ "R2b": {
+  "vs": "C2 = P2 (rule navsim_v1, goal fix pdm_route, A7 ON)",
+  "status": "C2 of PREREG_P6: the P6 rule (ADOPT / REFUTED / NOT PROVEN) is applied to this comparator SEPARATELY from C1; the GO / NO-GO words of this file are P2's, read the numbers (eval/RUNBOOK_P6_READ.md)",
+  "primary": {
+   "mean": 2.254016884095833,
+   "ci95": [
+    1.6462332556600854,
+    2.8725593910143803
+   ],
+   "base_mean_x100": 88.81840888972928,
+   "arm_mean_x100": 91.07242577382513,
+   "better": 6238,
+   "worse": 2631,
+   "tied": 3277,
+   "n": 12146,
+   "n_logs": 136,
+   "zero_base": 509,
+   "zero_arm": 393
+  },
+  "subscores": {
+   "NC": {
+    "mean": 0.05763214226905977,
+    "ci95": [
+     -0.22938054869067476,
+     0.34127165317762886
+    ],
+    "base_mean_x100": 98.81442450189363,
+    "arm_mean_x100": 98.87205664416268,
+    "better": 109,
+    "worse": 95,
+    "tied": 11942,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DAC": {
+    "mean": 0.9879795817553104,
+    "ci95": [
+     0.4587103382422843,
+     1.5249651961973603
+    ],
+    "base_mean_x100": 96.87139799110818,
+    "arm_mean_x100": 97.8593775728635,
+    "better": 273,
+    "worse": 153,
+    "tied": 11720,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "EP": {
+    "mean": 4.342077007936518,
+    "ci95": [
+     3.721241272774815,
+     4.978507051456487
+    ],
+    "base_mean_x100": 82.3395516187093,
+    "arm_mean_x100": 86.68162862664583,
+    "better": 6266,
+    "worse": 2444,
+    "tied": 3436,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "TTC": {
+    "mean": -0.02469948954388276,
+    "ci95": [
+     -0.7239812944845583,
+     0.6829470772233507
+    ],
+    "base_mean_x100": 95.31533014984358,
+    "arm_mean_x100": 95.29063066029968,
+    "better": 342,
+    "worse": 345,
+    "tied": 11459,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "C": {
+    "mean": 0.016466326362588508,
+    "ci95": [
+     0.0,
+     0.042463115543522244
+    ],
+    "base_mean_x100": 99.97530051045612,
+    "arm_mean_x100": 99.99176683681871,
+    "better": 2,
+    "worse": 0,
+    "tied": 12144,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": false
+   },
+   "DDC": {
+    "mean": -1.004445908117899,
+    "ci95": [
+     -1.458853616459894,
+     -0.5672767177896172
+    ],
+    "base_mean_x100": 97.50535155606784,
+    "arm_mean_x100": 96.50090564794995,
+    "better": 200,
+    "worse": 384,
+    "tied": 11562,
+    "n": 12146,
+    "n_logs": 136,
+    "adverse": true
+   }
+  },
+  "adverse_subscores": [
+   "DDC"
+  ],
+  "n_rows": 12146,
+  "families_vs_also": {
+   "missing": true,
+   "note": "a families JSON is absent: NOT COMPUTED (never a pass)"
+  },
+  "consistency_vs_also": {
+   "ok": true,
+   "same_pose_tokens": 0,
+   "same_pose_different_score": 0,
+   "same_pose_any_column_differs": 0,
+   "seam_rows_arm": 12146,
+   "seam_rows_base": 12146
+  }
+ },
+ "tactical_vs_base": null,
+ "seconds": 96.9
+}

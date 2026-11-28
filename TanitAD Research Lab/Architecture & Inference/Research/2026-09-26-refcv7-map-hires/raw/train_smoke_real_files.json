@@ -1,0 +1,82 @@
+{
+ "what": "refcv7 NEW-2: the REAL train() of the b4a59b9 + NEW-2 candidate on REAL files -- a PLUMBING smoke, not a training run (2 steps, CPU, --smoke model, eval-139 view with --allow-eval-clips-in-train BY NAME, uniform scratch weights, checkpoint deleted)",
+ "script": "code/smoke_train_real.py",
+ "measured": "2026-09-27 ~04:12 Berlin, dev box",
+ "census_line": [
+  "[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 24328 windows over 139 clips (verdict PASS)"
+ ],
+ "step_lines": [
+  "[v3:hier] step 1 loss 75.2901 traj 18.3960",
+  "[v3:hier] step 2 loss 83.1367 traj 17.5376"
+ ],
+ "grad_reach_logging": {
+  "declared": true,
+  "keys": [
+   "ga_bev_pool",
+   "ga_bev_pool_n",
+   "ga_mh_encoder",
+   "ga_mh_encoder_n",
+   "ga_mh_lift",
+   "ga_mh_lift_n",
+   "ga_mh_refine",
+   "ga_mh_refine_n",
+   "ga_mh_trunk_s8_stage",
+   "ga_mh_trunk_s8_stage_n",
+   "ga_planner",
+   "ga_planner_n",
+   "ga_trunk",
+   "ga_trunk_n"
+  ],
+  "cadence": "every metrics row: step % log_every == 0 or step == steps",
+  "log_every": 1,
+  "source": "refcv6_perception_branch.grad_reach_report + map_head_hires.grad_reach_report_hires, read off the BUILT model"
+ },
+ "rows": [
+  {
+   "step": 1,
+   "map_hires": 2.0979576110839844,
+   "sum_lc": 2.0979574647790287,
+   "n_map_hires_keys": 443,
+   "n_map_hires_cells_seen": 362381.0,
+   "ga": {
+    "ga_trunk": 3940.6842924952507,
+    "ga_trunk_n": 11963456,
+    "ga_planner": 6240.899485396454,
+    "ga_planner_n": 51899,
+    "ga_bev_pool": 0.0,
+    "ga_bev_pool_n": 6336,
+    "ga_mh_lift": 500.7715940475464,
+    "ga_mh_lift_n": 32896,
+    "ga_mh_encoder": 4422.326790809631,
+    "ga_mh_encoder_n": 406912,
+    "ga_mh_refine": 466.2893896102905,
+    "ga_mh_refine_n": 20936,
+    "ga_mh_trunk_s8_stage": 109.32626116275787,
+    "ga_mh_trunk_s8_stage_n": 525568
+   }
+  },
+  {
+   "step": 2,
+   "map_hires": 2.1149871349334717,
+   "sum_lc": 2.1149870225344785,
+   "n_map_hires_keys": 443,
+   "n_map_hires_cells_seen": 299333.0,
+   "ga": {
+    "ga_trunk": 3588.5603543869893,
+    "ga_trunk_n": 11963456,
+    "ga_planner": 6297.913921251583,
+    "ga_planner_n": 51899,
+    "ga_bev_pool": 1.2236860058578714e-05,
+    "ga_bev_pool_n": 6336,
+    "ga_mh_lift": 929.4279551506042,
+    "ga_mh_lift_n": 32896,
+    "ga_mh_encoder": 5830.857346445322,
+    "ga_mh_encoder_n": 406912,
+    "ga_mh_refine": 443.47393679618835,
+    "ga_mh_refine_n": 20936,
+    "ga_mh_trunk_s8_stage": 118.00735545079479,
+    "ga_mh_trunk_s8_stage_n": 525568
+   }
+  }
+ ]
+}

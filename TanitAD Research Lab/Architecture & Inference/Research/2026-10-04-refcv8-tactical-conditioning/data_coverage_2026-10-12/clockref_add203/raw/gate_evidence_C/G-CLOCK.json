@@ -1,0 +1,280 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "evidence",
+ "check": "G-CLOCK",
+ "status": "PASS",
+ "reasons": [],
+ "binding": {
+  "profile": "refcv7",
+  "commit": "fa43d9c5cec21c14c6b799045dc2d874124725ba",
+  "tree_sha256": "n/a (clockref203 manual ctx; the tree is the verified fa43d9c checkout)",
+  "argv_sha256": "dd22531967a82fedf671929e853cc529c66d8ba8a68a8396c4b9011fbe35a519"
+ },
+ "inputs_read": {
+  "--v2-cache": {
+   "kind": "dir",
+   "n_files": 4371,
+   "bytes": 364238435467,
+   "listing_sha256": "802d62b070e805641c7ba532bfb483260bfa9eea44b3f6dea0070e4a7808539e",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+  },
+  "--v7-labels": {
+   "kind": "file",
+   "bytes": 2686219,
+   "sha256": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371",
+   "method": "sha256-v1"
+  },
+  "--eval-cache": {
+   "kind": "dir",
+   "n_files": 140,
+   "bytes": 11942313647,
+   "listing_sha256": "632599626aa8889a631c1373d9a71d9c0b443758da0301a15bf2cb9cf565a378",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)"
+  },
+  "--eval-labels": {
+   "kind": "file",
+   "bytes": 89276,
+   "sha256": "2c6abfe3370fcad5217f6f3c0e5b869cf9db20bf23d169b4dae471c1e0810e38",
+   "method": "sha256-v1"
+  },
+  "--clip-clock-sidecar": {
+   "kind": "file",
+   "bytes": 864382,
+   "sha256": "de4d7602898f93458270ce2dca83bdcb86dd36b9c56fe8f4ef98774c5c48c5da",
+   "method": "sha256-v1"
+  },
+  "gate:clock-reference[0]": {
+   "kind": "file",
+   "bytes": 2105483,
+   "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+   "method": "sha256-v1"
+  }
+ },
+ "host": {
+  "node": "thor6",
+  "platform": "Linux-6.8.12-tegra-aarch64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.13.0+cu130",
+  "cuda": false
+ },
+ "arm": null,
+ "gate_sha256": "79c7189bb0181842c4339162d0eeb2ad2120ae4339acb73a00accb8c6d84d036",
+ "started_utc": "2026-10-11T23:39:29Z",
+ "details": {
+  "reference": {
+   "files": [
+    {
+     "path": "/home/nvidia/clockref203/work/q4c_grid_vs_egolog_ALLTRAIN.json",
+     "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+     "n_clips": 4486,
+     "controls": {
+      "K2_known_linspace": {
+       "dt_known_s": 0.1,
+       "dt_recovered_s": 0.1000000000666481,
+       "rel_err": 6.664808704925917e-10,
+       "start_known_s": 0.037,
+       "start_recovered_s": 0.03699998800447528,
+       "start_err_ms": -1.1995524719365935e-05,
+       "resid_rms_ms": 0.0002086648262701215
+      }
+     }
+    }
+   ],
+   "n_reference_clips": 4486
+  },
+  "tolerance_s": 0.05,
+  "window": 8,
+  "unverified_cap": {
+   "cap": 0.01,
+   "profile_cap": 0.01,
+   "trainer_constant": 0.01
+  },
+  "rule_checked": "MEASURED-clock clips: |V3Dataset._now_s(ep, t) - (g0_ref + (t + w - 1 + n_stack - 1) * dt_ref)| <= tol on EVERY window of every labelled clip (ref = an independent measurement, not the sidecar the trainer reads); fallback-clock or unreferenced clips are UNVERIFIED and admitted up to the cap",
+  "train": {
+   "mode": "cap",
+   "trainer_g3": {
+    "g3": "PASS",
+    "split": "train",
+    "tol_s": 0.05,
+    "n_clips": 4369,
+    "n_reads_checked": 13041,
+    "worst_abs_err_s": 0.0,
+    "n_unverified_clips": 22,
+    "max_unverified_frac": 0.01,
+    "max_unverified_frac_source": "operator (--label-clock-max-unverified)",
+    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"
+   },
+   "tactical_excluded_sids": [],
+   "fallback_sids": [
+    451308054824969195,
+    461407642213031246,
+    687978890230980925,
+    806847835490490557,
+    1247202229679660409,
+    1396702037056171749,
+    1773703750403770016,
+    1963494155820985436,
+    3010019875343814210,
+    3442630771704160938,
+    3921359068519313955,
+    3929287440554526531,
+    4157048028546507238,
+    4469796366480744130,
+    4623268854093048372,
+    4753803989624282096,
+    4808376517407485922,
+    5184498819309779067,
+    6221921430953156891,
+    8060015054358900153,
+    8724194973103877472,
+    8797097051283943076
+   ],
+   "n_windows": 746946,
+   "n_clips": 4369,
+   "n_violations": 0,
+   "worst_abs_s": 0.0,
+   "n_violating_clips": 0,
+   "violating_clips": [],
+   "n_unverified_clips": 22,
+   "unverified_frac": 0.005035,
+   "cap": 0.01,
+   "cap_ok": true,
+   "n_fallback_clock_clips": 22,
+   "n_measured_but_unreferenced": 0,
+   "fallback_worst_abs_s_vs_reference": 0.136206,
+   "n_fallback_clips_with_reference": 3,
+   "unverified_clips": [
+    "09652ec7433a",
+    "10d91d2b5300",
+    "13da7cbf9967",
+    "1ac0369693e8",
+    "2219eb78cc64",
+    "24cab18ce767",
+    "2e00bbb5f3a3",
+    "3dceea1861d0",
+    "3e2958b3138f",
+    "50d5161b141b",
+    "551bac5d9c34",
+    "5a5911e34e1c",
+    "612c9dd979e8",
+    "644360bbcab6",
+    "8cadbcef15e6",
+    "a5cca888d491",
+    "b94d06b2c531",
+    "bb1ce63d59d0",
+    "bf30ec658d3a",
+    "bf4f1912a4f6",
+    "fedd99a417be",
+    "ff4143830da3"
+   ],
+   "legacy_control_violations": 743591,
+   "source": {
+    "mode": "cache dir",
+    "cache": "/home/nvidia/data/refcv6-b1-416x1024-train"
+   },
+   "label_clock_report": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+    "sidecar_rows": 4483,
+    "n_clips": 4369,
+    "n_from_sidecar": 4347,
+    "n_pose_dt_grid_start_0": 13,
+    "n_nominal_dt_grid_start_0": 9,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066664539623066,
+    "dt_s_min": 0.0990669219820389,
+    "dt_s_max": 0.10100502072653018
+   },
+   "labels_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_episodes": 4369,
+   "n_labelled_clips": 4369
+  },
+  "eval": {
+   "mode": "E2(b): eval TACTICAL on verified clips only",
+   "trainer_g3": {
+    "g3": "PASS",
+    "split": "eval",
+    "tol_s": 0.05,
+    "n_clips": 139,
+    "n_reads_checked": 408,
+    "worst_abs_err_s": 0.0,
+    "n_unverified_clips": 3,
+    "tactical_scored_on_clips": 136,
+    "tactical_excluded_clips": 3,
+    "tactical_excluded_sids": [
+     1131054092343061790,
+     6479814750558219472,
+     8549884407071846968
+    ],
+    "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+    "families_on_all_clips": [
+     "longitudinal",
+     "lateral",
+     "strategic"
+    ],
+    "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"
+   },
+   "tactical_excluded_sids": [
+    1131054092343061790,
+    6479814750558219472,
+    8549884407071846968
+   ],
+   "fallback_sids": [
+    1131054092343061790,
+    6479814750558219472,
+    8549884407071846968
+   ],
+   "n_windows": 23772,
+   "n_clips": 139,
+   "n_violations": 0,
+   "worst_abs_s": 0.0,
+   "n_violating_clips": 0,
+   "violating_clips": [],
+   "n_unverified_clips": 3,
+   "unverified_frac": 0.021583,
+   "cap": 0.01,
+   "cap_ok": false,
+   "n_fallback_clock_clips": 3,
+   "n_measured_but_unreferenced": 0,
+   "fallback_worst_abs_s_vs_reference": null,
+   "n_fallback_clips_with_reference": 0,
+   "unverified_clips": [
+    "081b986f8888",
+    "2aa810802777",
+    "3db625a5f941"
+   ],
+   "legacy_control_violations": 23260,
+   "source": {
+    "mode": "cache dir",
+    "cache": "/home/nvidia/data/refcv6-b1-416x1024-eval139"
+   },
+   "label_clock_report": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+    "sidecar_rows": 4483,
+    "n_clips": 139,
+    "n_from_sidecar": 136,
+    "n_pose_dt_grid_start_0": 0,
+    "n_nominal_dt_grid_start_0": 3,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066662995966351,
+    "dt_s_min": 0.1,
+    "dt_s_max": 0.10100496421012953
+   },
+   "labels_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_episodes": 139,
+   "n_labelled_clips": 139
+  },
+  "child": {
+   "tanitad": "/home/nvidia/refcv6_run/fa43d9c5ce/stack/tanitad/__init__.py",
+   "torch": "2.13.0+cu130",
+   "cuda": false
+  }
+ },
+ "finished_utc": "2026-10-11T23:39:35Z"
+}

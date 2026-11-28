@@ -1,0 +1,45 @@
+--- a/refe/test_rl_s1b.py
++++ b/refe/test_rl_s1b.py
+@@ -54,6 +54,22 @@
+     "main.sel_score": "554302540d0df41262d40786c662a5f8eb35ca59a294665d1472edb716994d4e",
+     "main.lane_bce": "06aad73427000b603ee067f211c0e8214d4cb75475c1e50a10fbaeaef008c9a3",
+ }
++# R0c (raw/2026-10-15-r0c-build/NOTES.md): TWO pinned segments gained one reversible edit each (the `--epo-ref` lever).  The pins above are STILL R0's bytes: P_pinned_* hashes the segment
++# with that edit REVERSED, so any other change to it still breaks the pin.  refe/test_rl_r0c.py proves the edits are the whole diff (the reversed file is the d257647 blob) and that
++# `--epo-ref base` (the default) trains bit-identically to the pre-edit trainer through the real main().
++R0C_REVERSALS = {
++    "epo_refusals": (('    if a.epo_ref not in EPO_REFS:\n        bad.append(f"--epo-ref {a.epo_ref!r} is not one of {EPO_REFS}")\n', ""),),
++    "main.train_losses": (("ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)", "ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)"),),
++}
++
++
++def undo_r0c(name: str, text: str) -> str:
++    for new, old in R0C_REVERSALS.get(name, ()):
++        assert text.count(new) == 1, f"R0c edit of {name} not found exactly once"
++        text = text.replace(new, old)
++    return text
++
++
+ R0_REWARD_GIT_BLOB = "cd5c51445ad4ce38153d72ceab0aa01226aa7372"          # refe/rl_reward.py at the R0 launch commit (and today)
+ BASE = ("--ckpt /w/model_sft4_B_u400.pt --backbone vitl16 --targets /w/train --images /w/pix --calib /w/calib.json --onpolicy /w/onp --heldout /w/onh "
+         "--heldout-logs /w/hl.txt --out /w/rl --lane-head --teacher-lane-train /w/tl --teacher-lane-heldout /w/tlh --pdm-labels-train /w/pdm "
+@@ -101,7 +117,7 @@
+     seg = segments(sf_src)
+     # ---- P: the code R0 trained with, and the default that keeps refe_rls1 unchanged
+     for k, h in R0_SEGMENTS.items():
+-        check(bad, f"P_pinned_{k}", lambda k=k, h=h: hashlib.sha256(seg[k].encode()).hexdigest() == h)
++        check(bad, f"P_pinned_{k}", lambda k=k, h=h: hashlib.sha256(undo_r0c(k, seg[k]).encode()).hexdigest() == h)
+     check(bad, "P_reward_is_R0s", lambda: git_blob(rr_bytes) == R0_REWARD_GIT_BLOB)
+     check(bad, "P_parser_default_lam_1", lambda: M.build_parser().get_default("epo_lam") == 1.0)
+     # ---- D: the dose identity on the REAL epo_loss (fresh forward per call; a tiny linear scorer, 7 outputs, the base's rule incl. the lane output)
+@@ -218,8 +234,8 @@
+     ("sf_epo_loss_drops_lam", "SF", SF_PATH, "return lam_pg * (-J + beta * kl).mean()", "return (lam_pg != 0.0) * (-J + beta * kl).mean()"),
+     # (test_rl_epo's `epo_leaks_into_arm_A` -- ep added to lA too -- does NOT touch arm A here: one backward runs on lA + lB and ep's graph is arm B's, so it DOUBLES
+     # B's dose instead; the pin catches that.  This mutation is the behavioural one: arm A gets its OWN dosed EPO term, so the control would move with the dose.)
+-    ("sf_dose_reaches_control", "SF", SF_PATH, "            ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)\n",
+-     "            ep = epo_term(sx0, sxB, tg, rows, upd, lam_pg)\n            lA = lA + epo_term(sx0, sxA, tg, rows, upd, lam_pg)\n"),
++    ("sf_dose_reaches_control", "SF", SF_PATH, "            ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)\n",
++     "            ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)\n            lA = lA + epo_term(sx0, sxA, tg, rows, upd, lam_pg)\n"),      # R0c: the call's first argument is now the selected reference
+     ("sf_data_event_lam_not_built_value", "SF", SF_PATH, '"ramp": a.epo_ramp, "lam": a.epo_lam,', '"ramp": a.epo_ramp, "lam": 1.0,'),
+     ("sf_parser_default_moved", "SF", SF_PATH, 'ap.add_argument("--epo-lam", type=float, default=1.0,', 'ap.add_argument("--epo-lam", type=float, default=0.25,'),
+     ("rr_reward_edited", "SF", RR_PATH, "lam_d: float = 0.15", "lam_d: float = 0.15 "),

@@ -1,0 +1,93 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU, GPU hidden)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-v7f-instrument-repair/SPEC.md",
+ "_generated_local": "2026-09-05 23:44:52",
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "cuda_visible_devices": "-1",
+ "subcommand": "L1 participation (corpus-matched)",
+ "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val-w120-256x640cyl",
+ "corpus_selection": "sorted(glob('*.v2ep.pt'))[:12]",
+ "clip_ids": [
+  "0002ad3a-5",
+  "0084596e-4",
+  "00ba3704-6",
+  "00ee8da5-f",
+  "010dbd68-0",
+  "014ee1b8-b",
+  "0192cb35-7",
+  "01acc9de-8",
+  "0207d830-b",
+  "0250cddb-7",
+  "026ef99a-2",
+  "028eff14-2"
+ ],
+ "frames_per_clip": 120,
+ "instrument": "tanitad.models.v6.spectrum_report -> participation_ratio (centred covariance, p prop sigma^2)",
+ "representation": "z_op via world.encode_window (n_stack 3) -- the READOUT, d 2048.  NB the DINOv3 bars are ENCODER readings at d 1024; see RESULT.md for that residual scope caveat.",
+ "bars": {
+  "corpus_matched_5.756": 5.756,
+  "code_floor_8.56": 8.56,
+  "lead130_20.23": 20.23,
+  "e_trunk3_cells_40.77": 40.77
+ },
+ "admissible_bar": "corpus_matched_5.756",
+ "admissible_bar_reason": "floor_valclips.py measured it on THIS corpus, THIS selection, THIS n, THIS instrument.  The other three were measured on different clip samples or a different pooling and are inadmissible as a bar for these arms.",
+ "rank_necessary_not_sufficient": "C131 -- flagship v1-era holds the programme's highest participation and had no environment interpretation.  Never pass an arm on rank alone.",
+ "arms": {
+  "rdw8p30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_rdw8p30k\\ckpt.pt",
+   "md5": "6e382ebe721ba4b7df97e8305f695767",
+   "step": 30000,
+   "n": 1440,
+   "d": 2048,
+   "participation_ratio": 25.582,
+   "top8_share": 0.4311,
+   "rank_ceiling": 1439,
+   "effective_rank_NOT_THE_CRITERION": 43.982,
+   "feature_abs_mean": 0.2771,
+   "verdict_vs_bars": {
+    "corpus_matched_5.756": "PASS",
+    "code_floor_8.56": "PASS",
+    "lead130_20.23": "PASS",
+    "e_trunk3_cells_40.77": "FAIL"
+   },
+   "ratio_to_admissible_bar": 4.444,
+   "seconds": 121.2
+  },
+  "splitp30k": {
+   "ckpt": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\v7tiny_splitp30k\\ckpt.pt",
+   "md5": "4348cad27dbf1895654c40681d92ea97",
+   "step": 30000,
+   "n": 1440,
+   "d": 2048,
+   "participation_ratio": 6.384,
+   "top8_share": 0.8545,
+   "rank_ceiling": 1439,
+   "effective_rank_NOT_THE_CRITERION": 59.175,
+   "feature_abs_mean": 0.6128,
+   "verdict_vs_bars": {
+    "corpus_matched_5.756": "PASS",
+    "code_floor_8.56": "FAIL",
+    "lead130_20.23": "FAIL",
+    "e_trunk3_cells_40.77": "FAIL"
+   },
+   "ratio_to_admissible_bar": 1.109,
+   "seconds": 130.8
+  }
+ },
+ "arms_missing": [],
+ "controls": {
+  "rdw8p30k": {
+   "expected": 25.583,
+   "expected_source": "gateb_panel.json participation_val",
+   "got": 25.582,
+   "rel_err": 0.0,
+   "tol": 0.02,
+   "status": "REPRODUCED",
+   "meaning": "the local cache IS the cache full_panel.py read; the panel is corpus-matched and admissible"
+  }
+ },
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py"
+}

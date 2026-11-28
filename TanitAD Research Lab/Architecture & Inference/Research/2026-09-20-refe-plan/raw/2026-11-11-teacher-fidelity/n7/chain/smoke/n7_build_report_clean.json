@@ -1,0 +1,1229 @@
+{
+ "n_tokens": 20,
+ "n_rows": 20,
+ "n_error_lines": 0,
+ "n_duplicate_lines": 0,
+ "controls": {
+  "C-COVB": {
+   "pass": true,
+   "missing": 0,
+   "extra": 0,
+   "error_lines": 0,
+   "duplicate_lines": 0
+  },
+  "C-DACMAP6": {
+   "pass": true,
+   "tokens": 20,
+   "mismatches": 0,
+   "examples": [],
+   "what": "builder tracked DAC of the banked N5-A plan == harness DAC of N5-A, all tokens",
+   "reference": "n5a_harness.csv"
+  },
+  "C-DERIV": {
+   "pass": true,
+   "n": 20,
+   "expected_n": 20,
+   "max_dev_m": 0.0,
+   "bar_m": 1e-09
+  },
+  "C-LABELEGO": {
+   "pass": true,
+   "label_rows": 20,
+   "db": 20,
+   "not_db": 0,
+   "examples": [],
+   "what": "every row that built labels (C-DERIV tokens + residual tokens x every lever iterate) used the nuPlan-DB ego"
+  },
+  "C-SET": {
+   "pass": true,
+   "builder_residual": 20,
+   "expected": 20,
+   "residual_flag_disagrees_with_builder_dac": [],
+   "harness_n5a_zero_dac": 20,
+   "expected_source": "--expect-residual-json (smoke)",
+   "missing_from_builder": [],
+   "extra_in_builder": [],
+   "what": "builder tracked N5-A DAC-0 set == the banked TF-N5 A1 residual (and, on navtest, == the harness N5-A zero-DAC set)"
+  },
+  "C-REPLAY": {
+   "pass": true,
+   "residual": 20,
+   "violations": [],
+   "what": "the live TF-N6 re-run reproduces the banked repair results (REPAIR-D and L1 return the same applied / not applied as TF-N4 A1 / TF-N5 A1 on every residual token) and iterate 0 of the generator is the banked plan"
+  },
+  "C-DET": {
+   "pass": true,
+   "checked": 20,
+   "equal": 20,
+   "what": "the whole generator (every lever of every tier, every iterate / grid point and its builder score) run twice on every residual token gives bit-identical plans and scores"
+  },
+  "C-SELECT": {
+   "pass": true,
+   "tokens": 20,
+   "violations": 0,
+   "examples": [],
+   "dev_cascade_disagrees": [],
+   "card_tables_readback_ok": true,
+   "card_tables_bad": [],
+   "flag_audit": [],
+   "levers": 25,
+   "tiers": [
+    "T0_N6",
+    "T1_L2",
+    "T2_STR",
+    "T3_OFF",
+    "T4_DEEP"
+   ],
+   "floor": 0.5,
+   "what": "the card selector run in the merge on the stored candidates picks exactly what the derive recorded, per arm and token; the n7_select.cascade of the development agrees; n7_lib.LEVERS / n7_select.TIERS read back equal the card's tables; no flag has a disabling default"
+  },
+  "C-CERT-B7": {
+   "pass": true,
+   "violations": {
+    "N7T3": 0,
+    "N7T": 0,
+    "N7X": 0
+   },
+   "examples": {
+    "N7T3": [],
+    "N7T": [],
+    "N7X": []
+   },
+   "certificate_equals_card6_n6t": true,
+   "what": "every applied plan, re-scored by a separate scorer call, reproduces its score and passes the arm's CARD certificate against the N5-A builder score (DAC; NC and DDC not worse; builder PDMS strictly better; TTC and C free); the certificate equals CARD6 N6T and n7_lib.CERT_TOL"
+  },
+  "C-ORDER": {
+   "pass": true,
+   "violations": [],
+   "what": "tier order and tie rule: the choice is the first certified tier's maximum-builder-PDMS, earliest-generated candidate (independent re-derivation); N7-T == N7-T3 wherever N7-T3 applies; N7-T takes a T4 candidate only where N7-T3 took none"
+  },
+  "C-X0": {
+   "pass": true,
+   "n7x_applied": 0,
+   "what": "the deliberate-regression arm (certificate inverted: DAC = 0 required) changes 0 tokens, so its seam is bit-identical to N5-A (a DAC-0 plan has builder PDMS 0)"
+  },
+  "C-N6SAME": {
+   "pass": true,
+   "violations": [],
+   "n_violations": 0,
+   "live_checked_tokens": 20,
+   "banked_report_checked": false,
+   "banked_plans_checked": false,
+   "n6t_tokens": null,
+   "what": "the tokens N6-T certified keep the TF-N6 plan bit for bit in N7-T3 and N7-T (T0 == N6): the live N6 selection equals the T0 choice on every residual token, and the banked N6 report (choices and scores) and the banked N6-T plan file agree"
+  },
+  "C-SEAMFN": {
+   "pass": true,
+   "tokens": 20,
+   "mismatches": 0,
+   "examples": [],
+   "what": "ND.to_navsim reproduces the banked N5-A seam poses bit for bit on every token, so the changed rows are made by the function that made the banked ones"
+  },
+  "C-UNCH": {
+   "pass": true,
+   "arms": {
+    "N7T3": {
+     "changed_plan20": 16,
+     "changed_seam": 16,
+     "applied": 16,
+     "tokens": 20,
+     "seam_tokens": 20,
+     "unflagged_changed": [],
+     "flagged_unchanged": [],
+     "pass": true
+    },
+    "N7T": {
+     "changed_plan20": 19,
+     "changed_seam": 19,
+     "applied": 19,
+     "tokens": 20,
+     "seam_tokens": 20,
+     "unflagged_changed": [],
+     "flagged_unchanged": [],
+     "pass": true
+    },
+    "N7X": {
+     "changed_plan20": 0,
+     "changed_seam": 0,
+     "applied": 0,
+     "tokens": 20,
+     "seam_tokens": 20,
+     "unflagged_changed": [],
+     "flagged_unchanged": [],
+     "bit_identical_to_n5a": true,
+     "pass": true
+    }
+   },
+   "n_residual": 20,
+   "n_expected": 20,
+   "residual_count_ok": true
+  },
+  "C-REACH": {
+   "pass": true,
+   "arms_ok": {
+    "REPAIR-D at A1 settings (live TF-N6 re-run)": true,
+    "L1 at the TF-N5 frozen parameters (live TF-N6 re-run)": true,
+    "selector N7T3": true,
+    "selector N7T": true,
+    "selector N7X": true,
+    "card tables read back (LEVERS, TIERS, certificate, grids, flag audit)": true
+   },
+   "tiers_executed": [
+    "T0_N6",
+    "T1_L2",
+    "T2_STR",
+    "T3_OFF",
+    "T4_DEEP"
+   ],
+   "real": {
+    "T0_N6": true,
+    "T1_L2": true,
+    "T2_STR": true,
+    "T3_OFF": true,
+    "T4_DEEP": true
+   }
+  }
+ },
+ "diagnostics": {
+  "builder_vs_harness_max_abs_all_tokens": {
+   "nc": 0.0,
+   "ddc": 0.0,
+   "ttc": 0.0,
+   "c": 0.0,
+   "pdms": 0.0
+  }
+ },
+ "files": {
+  "n7_plans_N7T3.npz": "7a4f68e32f5def6f0cbbc647063dad80466b03fd4dabb05ebf2b3b87350f7842",
+  "n7_plans_N7T.npz": "3d6ce19b1fb0c6a188bf9930102bec1e51c0a1cb5ded998e6a5dd946796e70f7",
+  "n7_plans_N7X.npz": "6c9ef459b1c09dd550e2982d6af3657b3298ed185996c168c7afe8441487c142",
+  "refe_tfn7_n7t3.npz": "ff7dc62127f4ea9e1229b4e413a3addcf700d392fbb1e4d46793c16bd098138b",
+  "refe_tfn7_n7t.npz": "6444489e74b6355ac761b28703497f5d27e53ca239bf27e46c58425ebcfd1908",
+  "refe_tfn7_n7x.npz": "5ff6f53afd3091c0ce9ece221b9a53fd90f04bf6227664768ec5476955813cc5"
+ },
+ "residual": [
+  "03ab084510af550e",
+  "0cc59130bd945c39",
+  "0e8ccba41b17541e",
+  "0edf786bcfbd5820",
+  "1628652c6dcb5150",
+  "1dc616ca2c5353f8",
+  "229a59137a705430",
+  "24bcf45bcc6f5dfb",
+  "36c4507970805f49",
+  "437e7aa96ae951c9",
+  "69b54b1998f05c13",
+  "7d4286e68aee5c8b",
+  "85e35e87946d502d",
+  "8f0f005a5f6b58e6",
+  "c582b4959ae65d55",
+  "e8a4675c22a354b4",
+  "ed589b058ca85557",
+  "faf94859c4095b79",
+  "fc61cadc28715436",
+  "ff81f481d2ad5270"
+ ],
+ "repaired": {
+  "N7T3": [
+   "03ab084510af550e",
+   "0cc59130bd945c39",
+   "0e8ccba41b17541e",
+   "0edf786bcfbd5820",
+   "1628652c6dcb5150",
+   "1dc616ca2c5353f8",
+   "24bcf45bcc6f5dfb",
+   "36c4507970805f49",
+   "437e7aa96ae951c9",
+   "69b54b1998f05c13",
+   "7d4286e68aee5c8b",
+   "85e35e87946d502d",
+   "c582b4959ae65d55",
+   "e8a4675c22a354b4",
+   "faf94859c4095b79",
+   "fc61cadc28715436"
+  ],
+  "N7T": [
+   "03ab084510af550e",
+   "0cc59130bd945c39",
+   "0e8ccba41b17541e",
+   "0edf786bcfbd5820",
+   "1628652c6dcb5150",
+   "1dc616ca2c5353f8",
+   "24bcf45bcc6f5dfb",
+   "36c4507970805f49",
+   "437e7aa96ae951c9",
+   "69b54b1998f05c13",
+   "7d4286e68aee5c8b",
+   "85e35e87946d502d",
+   "8f0f005a5f6b58e6",
+   "c582b4959ae65d55",
+   "e8a4675c22a354b4",
+   "ed589b058ca85557",
+   "faf94859c4095b79",
+   "fc61cadc28715436",
+   "ff81f481d2ad5270"
+  ],
+  "N7X": []
+ },
+ "tier_of": {
+  "N7T3": {
+   "03ab084510af550e": "T0_N6",
+   "0cc59130bd945c39": "T0_N6",
+   "0e8ccba41b17541e": "T1_L2",
+   "0edf786bcfbd5820": "T1_L2",
+   "1628652c6dcb5150": "T0_N6",
+   "1dc616ca2c5353f8": "T1_L2",
+   "24bcf45bcc6f5dfb": "T3_OFF",
+   "36c4507970805f49": "T2_STR",
+   "437e7aa96ae951c9": "T1_L2",
+   "69b54b1998f05c13": "T0_N6",
+   "7d4286e68aee5c8b": "T1_L2",
+   "85e35e87946d502d": "T3_OFF",
+   "c582b4959ae65d55": "T1_L2",
+   "e8a4675c22a354b4": "T0_N6",
+   "faf94859c4095b79": "T1_L2",
+   "fc61cadc28715436": "T2_STR"
+  },
+  "N7T": {
+   "03ab084510af550e": "T0_N6",
+   "0cc59130bd945c39": "T0_N6",
+   "0e8ccba41b17541e": "T1_L2",
+   "0edf786bcfbd5820": "T1_L2",
+   "1628652c6dcb5150": "T0_N6",
+   "1dc616ca2c5353f8": "T1_L2",
+   "24bcf45bcc6f5dfb": "T3_OFF",
+   "36c4507970805f49": "T2_STR",
+   "437e7aa96ae951c9": "T1_L2",
+   "69b54b1998f05c13": "T0_N6",
+   "7d4286e68aee5c8b": "T1_L2",
+   "85e35e87946d502d": "T3_OFF",
+   "8f0f005a5f6b58e6": "T4_DEEP",
+   "c582b4959ae65d55": "T1_L2",
+   "e8a4675c22a354b4": "T0_N6",
+   "ed589b058ca85557": "T4_DEEP",
+   "faf94859c4095b79": "T1_L2",
+   "fc61cadc28715436": "T2_STR",
+   "ff81f481d2ad5270": "T4_DEEP"
+  },
+  "N7X": {}
+ },
+ "counts": {
+  "N7T3": {
+   "n_teacher_tol": 16,
+   "by_tier": {
+    "T0_N6": 5,
+    "T1_L2": 7,
+    "T2_STR": 2,
+    "T3_OFF": 2,
+    "T4_DEEP": 0
+   }
+  },
+  "N7T": {
+   "n_teacher_tol": 19,
+   "by_tier": {
+    "T0_N6": 5,
+    "T1_L2": 7,
+    "T2_STR": 2,
+    "T3_OFF": 2,
+    "T4_DEEP": 3
+   }
+  },
+  "N7X": {
+   "n_teacher_tol": 0,
+   "by_tier": {
+    "T0_N6": 0,
+    "T1_L2": 0,
+    "T2_STR": 0,
+    "T3_OFF": 0,
+    "T4_DEEP": 0
+   }
+  }
+ },
+ "residual_table": {
+  "03ab084510af550e": {
+   "resolved_by": [
+    "T0_N6",
+    "D_c20_m05",
+    1,
+    {
+     "iterate": 1
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T0_N6",
+    "D_c20_m05",
+    1
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 4,
+     "n_dac1": 2,
+     "n_certified": 2
+    },
+    "T1_L2": {
+     "n_candidates": 12,
+     "n_dac1": 6,
+     "n_certified": 6
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 8,
+     "n_certified": 8
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 94,
+     "n_certified": 94
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "0cc59130bd945c39": {
+   "resolved_by": [
+    "T0_N6",
+    "D_c20_m05",
+    1,
+    {
+     "iterate": 1
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T0_N6",
+    "D_c20_m05",
+    1
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 4,
+     "n_dac1": 2,
+     "n_certified": 2
+    },
+    "T1_L2": {
+     "n_candidates": 12,
+     "n_dac1": 6,
+     "n_certified": 6
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 8,
+     "n_certified": 8
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 75,
+     "n_certified": 75
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "0e8ccba41b17541e": {
+   "resolved_by": [
+    "T1_L2",
+    "D_c20_m20",
+    8,
+    {
+     "iterate": 8
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "D_c20_m20",
+    8
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 84,
+     "n_dac1": 4,
+     "n_certified": 1
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 36,
+     "n_certified": 34
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 5,
+     "n_certified": 2
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "0edf786bcfbd5820": {
+   "resolved_by": [
+    "T1_L2",
+    "L1_c20_m05",
+    8,
+    {
+     "iterate": 8
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "L1_c20_m05",
+    8
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 73,
+     "n_dac1": 4,
+     "n_certified": 4
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 60,
+     "n_certified": 51
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "1628652c6dcb5150": {
+   "resolved_by": [
+    "T0_N6",
+    "D_c20_m05",
+    4,
+    {
+     "iterate": 4
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T0_N6",
+    "D_c20_m05",
+    4
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 7,
+     "n_dac1": 2,
+     "n_certified": 2
+    },
+    "T1_L2": {
+     "n_candidates": 20,
+     "n_dac1": 6,
+     "n_certified": 6
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 2,
+     "n_certified": 2
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 38,
+     "n_certified": 38
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "1dc616ca2c5353f8": {
+   "resolved_by": [
+    "T1_L2",
+    "D_c20_m20",
+    3,
+    {
+     "iterate": 3
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "D_c20_m20",
+    3
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 104,
+     "n_dac1": 2,
+     "n_certified": 1
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 25,
+     "n_certified": 25
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 2,
+     "n_certified": 0
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "229a59137a705430": {
+   "resolved_by": null,
+   "resolved_by_n7t3": null,
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 126,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 0,
+     "n_certified": 0
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": "no candidate in any tier reaches DAC = 1",
+   "blocking_class_n7t3": "no candidate in tiers T0-T3 reaches DAC = 1"
+  },
+  "24bcf45bcc6f5dfb": {
+   "resolved_by": [
+    "T3_OFF",
+    "OFF_label",
+    25,
+    {
+     "dy_m": 0.5,
+     "ramp_s": 1.0
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T3_OFF",
+    "OFF_label",
+    25
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 63,
+     "n_dac1": 4,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 38,
+     "n_certified": 35
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "36c4507970805f49": {
+   "resolved_by": [
+    "T2_STR",
+    "STR_label",
+    2,
+    {
+     "s": 0.85
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T2_STR",
+    "STR_label",
+    2
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 126,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 3,
+     "n_certified": 3
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 76,
+     "n_certified": 76
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "437e7aa96ae951c9": {
+   "resolved_by": [
+    "T1_L2",
+    "D_c20_m05",
+    7,
+    {
+     "iterate": 7
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "D_c20_m05",
+    7
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 85,
+     "n_dac1": 4,
+     "n_certified": 2
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 1,
+     "n_certified": 1
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 5,
+     "n_certified": 2
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "69b54b1998f05c13": {
+   "resolved_by": [
+    "T0_N6",
+    "L1_c20_m05",
+    1,
+    {
+     "iterate": 1
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T0_N6",
+    "L1_c20_m05",
+    1
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 8,
+     "n_dac1": 1,
+     "n_certified": 1
+    },
+    "T1_L2": {
+     "n_candidates": 24,
+     "n_dac1": 6,
+     "n_certified": 6
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 4,
+     "n_certified": 4
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 40,
+     "n_certified": 40
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "7d4286e68aee5c8b": {
+   "resolved_by": [
+    "T1_L2",
+    "D_c20_m20",
+    2,
+    {
+     "iterate": 2
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "D_c20_m20",
+    2
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 108,
+     "n_dac1": 1,
+     "n_certified": 1
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 6,
+     "n_certified": 6
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 68,
+     "n_certified": 68
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "85e35e87946d502d": {
+   "resolved_by": [
+    "T3_OFF",
+    "OFF_label",
+    40,
+    {
+     "dy_m": -1.0,
+     "ramp_s": 1.0
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T3_OFF",
+    "OFF_label",
+    40
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 126,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 1,
+     "n_certified": 1
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 2,
+     "n_certified": 0
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "8f0f005a5f6b58e6": {
+   "resolved_by": [
+    "T4_DEEP",
+    "STR_deep",
+    1,
+    {
+     "s": 0.6
+    }
+   ],
+   "resolved_by_n7t3": null,
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 85,
+     "n_dac1": 5,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 5,
+     "n_certified": 2
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": "DAC-1 candidates exist in T0-T3 but fail: T1_L2: ['nc,pdms']"
+  },
+  "c582b4959ae65d55": {
+   "resolved_by": [
+    "T1_L2",
+    "L1_c20_m10",
+    3,
+    {
+     "iterate": 3
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "L1_c20_m10",
+    3
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 9,
+     "n_dac1": 1,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 72,
+     "n_dac1": 3,
+     "n_certified": 1
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 24,
+     "n_certified": 18
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 2,
+     "n_certified": 0
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "e8a4675c22a354b4": {
+   "resolved_by": [
+    "T0_N6",
+    "L1_c20_m05",
+    5,
+    {
+     "iterate": 5
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T0_N6",
+    "L1_c20_m05",
+    5
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 1,
+     "n_certified": 1
+    },
+    "T1_L2": {
+     "n_candidates": 43,
+     "n_dac1": 5,
+     "n_certified": 5
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 46,
+     "n_certified": 39
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "ed589b058ca85557": {
+   "resolved_by": [
+    "T4_DEEP",
+    "STR_deep",
+    1,
+    {
+     "s": 0.6
+    }
+   ],
+   "resolved_by_n7t3": null,
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 105,
+     "n_dac1": 3,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 1,
+     "n_certified": 0
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 4,
+     "n_certified": 1
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": "DAC-1 candidates exist in T0-T3 but fail: T1_L2: ['ddc']; T3_OFF: ['ddc']"
+  },
+  "faf94859c4095b79": {
+   "resolved_by": [
+    "T1_L2",
+    "D_c20_m10",
+    15,
+    {
+     "iterate": 15
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T1_L2",
+    "D_c20_m10",
+    15
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 11,
+     "n_dac1": 1,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 52,
+     "n_dac1": 5,
+     "n_certified": 2
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 28,
+     "n_certified": 27
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 3,
+     "n_certified": 0
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "fc61cadc28715436": {
+   "resolved_by": [
+    "T2_STR",
+    "STR_label",
+    1,
+    {
+     "s": 0.9
+    }
+   ],
+   "resolved_by_n7t3": [
+    "T2_STR",
+    "STR_label",
+    1
+   ],
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 9,
+     "n_dac1": 1,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 70,
+     "n_dac1": 3,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 7,
+     "n_certified": 7
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 58,
+     "n_certified": 58
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 6,
+     "n_certified": 3
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": null
+  },
+  "ff81f481d2ad5270": {
+   "resolved_by": [
+    "T4_DEEP",
+    "STR_deep",
+    2,
+    {
+     "s": 0.5
+    }
+   ],
+   "resolved_by_n7t3": null,
+   "tiers": {
+    "T0_N6": {
+     "n_candidates": 12,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T1_L2": {
+     "n_candidates": 122,
+     "n_dac1": 1,
+     "n_certified": 0
+    },
+    "T2_STR": {
+     "n_candidates": 8,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T3_OFF": {
+     "n_candidates": 126,
+     "n_dac1": 0,
+     "n_certified": 0
+    },
+    "T4_DEEP": {
+     "n_candidates": 6,
+     "n_dac1": 4,
+     "n_certified": 1
+    }
+   },
+   "ref_pdms": 0.0,
+   "blocking_class": null,
+   "blocking_class_n7t3": "DAC-1 candidates exist in T0-T3 but fail: T1_L2: ['ddc']"
+  }
+ },
+ "timing": {
+  "n": 20,
+  "t_s_mean": 102.39194999999998,
+  "cpu_h_sum": 0.5688441666666666
+ },
+ "verdict": "PASS"
+}

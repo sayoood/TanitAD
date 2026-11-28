@@ -1,0 +1,81 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "n_episodes": 12,
+ "estimator": "LOEO PAIRED, rdw8 vs DINOv3 on the SAME held-out episode",
+ "targets": {
+  "speed": {
+   "r2": {
+    "lewm": 0.0374,
+    "rdw8": 0.283,
+    "dino": 0.4081,
+    "constant": 0.0
+   },
+   "rdw8-dino": {
+    "mean_delta": -0.1251,
+    "se": 0.046,
+    "t": -2.72,
+    "n_favouring_first": 1,
+    "n": 12
+   },
+   "rdw8-lewm": {
+    "mean_delta": 0.2456,
+    "se": 0.0475,
+    "t": 5.17,
+    "n_favouring_first": 12,
+    "n": 12
+   },
+   "dino-lewm": {
+    "mean_delta": 0.3707,
+    "se": 0.0205,
+    "t": 18.08,
+    "n_favouring_first": 12,
+    "n": 12
+   },
+   "rdw8-rdw8": {
+    "mean_delta": 0.0,
+    "se": 0.0,
+    "t": 0.0,
+    "n_favouring_first": 0,
+    "n": 12
+   }
+  },
+  "d_ego": {
+   "r2": {
+    "lewm": 0.1532,
+    "rdw8": 0.3601,
+    "dino": 0.3238,
+    "constant": 0.0
+   },
+   "rdw8-dino": {
+    "mean_delta": 0.0363,
+    "se": 0.0569,
+    "t": 0.64,
+    "n_favouring_first": 8,
+    "n": 12
+   },
+   "rdw8-lewm": {
+    "mean_delta": 0.2069,
+    "se": 0.0338,
+    "t": 6.12,
+    "n_favouring_first": 12,
+    "n": 12
+   },
+   "dino-lewm": {
+    "mean_delta": 0.1707,
+    "se": 0.0613,
+    "t": 2.79,
+    "n_favouring_first": 6,
+    "n": 12
+   },
+   "rdw8-rdw8": {
+    "mean_delta": 0.0,
+    "se": 0.0,
+    "t": 0.0,
+    "n_favouring_first": 0,
+    "n": 12
+   }
+  }
+ },
+ "verdict": "rdw8 beats DINOv3 on NO target; loses on ['speed']; not separable elsewhere. \u21d2 the earlier 'beats DINOv3' claim was an UNPAIRED point-estimate comparison and is NOT SUPPORTED."
+}

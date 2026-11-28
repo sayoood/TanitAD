@@ -1,0 +1,177 @@
+ZZL7CSTARTZZ 2026-10-22T06:52:28+02:00 seed 1 mode train139 pid 1563204
+ZZL7CMD5OKZZ ckpt config code windows remap labels agentjoin
+precheck smi_rc=0 compute_apps=0 other_python=0 (other_python is informational)
+ZZL7CA6OKZZ ids_missing=0 files_present=139 size_equal=139 md5_probe_bad=0 links=139
+[train_pf] nav_feed=perframe_full overlay=98293dd741127016 patched_refcv3_arm=64e6ffbb1d0434d1
+[lead] no lead block (banked default absent: /home/nvidia/r8ns/fanceil/tree/TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz); distance-keeping will be REFUSED with its reason — a WORK ITEM, not a pass
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] /home/nvidia/r8ns/l7cap/a6cache: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 90 / left 24 / right 25, missing 0 (of 139 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_train.jsonl): 23751/23751 windows fed, per-step windows {'30': 7864, '50': 8718, '100': 5984, '120': 1185}, per-clip rows {'30': 1741, '50': 1593, '100': 1014, '120': 224}
+[v3] agent join: 139/139 episodes (stable-63bit), 22946/23751 windows labelled (96.6 %), 763600 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 23751 windows over 139 clips (verdict PASS)
+[model] /home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt step=48852 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-feed] perframe_full: nav_true = the v9 PER-FRAME token on 4855 windows; it differs from the clip token on 979; r8_nav args known on 2809 (FED)
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 4855 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 1706/4855
+[cost] first forward (1 fed row(s), 1 rows total) took 0.94 s -> ESTIMATED 1.27 h for 4855 windows (forward only; IO/analysis extra)
+  [1/139] clip-sha12-07b61be0acf7 35 windows 76s
+  [2/139] clip-sha12-03dc6c78adb9 35 windows 86s
+  [3/139] clip-sha12-0252e8fcd0a4 35 windows 96s
+  [4/139] clip-sha12-059b96507a37 35 windows 106s
+  [5/139] clip-sha12-02b239dd8a35 35 windows 116s
+  [6/139] clip-sha12-03a7f1fdd7ca 35 windows 126s
+  [7/139] clip-sha12-0545e84987bb 35 windows 136s
+  [8/139] clip-sha12-035cc36de712 35 windows 146s
+  [9/139] clip-sha12-071ede2f8c8d 35 windows 156s
+  [10/139] clip-sha12-036578a19f38 35 windows 166s
+  [11/139] clip-sha12-00407448d806 35 windows 176s
+  [12/139] clip-sha12-04922c4ff16d 35 windows 185s
+  [13/139] clip-sha12-029a585e015e 35 windows 195s
+  [14/139] clip-sha12-0775378976b8 35 windows 205s
+  [15/139] clip-sha12-069ea0e95edb 35 windows 215s
+  [16/139] clip-sha12-014e4dd092be 35 windows 225s
+  [17/139] clip-sha12-069fe5a48991 35 windows 235s
+  [18/139] clip-sha12-029f313f841a 35 windows 244s
+  [19/139] clip-sha12-004ec4b2780d 35 windows 254s
+  [20/139] clip-sha12-086812263073 35 windows 264s
+  [21/139] clip-sha12-036682d50bf7 35 windows 274s
+  [22/139] clip-sha12-03038b162025 35 windows 284s
+  [23/139] clip-sha12-037d9e68df6f 35 windows 294s
+  [24/139] clip-sha12-0498bf3ff1b0 35 windows 304s
+  [25/139] clip-sha12-0783de21a057 35 windows 314s
+  [26/139] clip-sha12-04c95c9103a9 35 windows 323s
+  [27/139] clip-sha12-077bf5cc1244 35 windows 333s
+  [28/139] clip-sha12-00a7249b9758 35 windows 343s
+  [29/139] clip-sha12-021be01a117d 35 windows 353s
+  [30/139] clip-sha12-04e9094ada2b 35 windows 363s
+  [31/139] clip-sha12-042826a6faf9 35 windows 373s
+  [32/139] clip-sha12-07e14b7dd6c5 35 windows 382s
+  [33/139] clip-sha12-00e879180df8 35 windows 392s
+  [34/139] clip-sha12-01156c9ce069 35 windows 402s
+  [35/139] clip-sha12-0376ab382692 35 windows 412s
+  [36/139] clip-sha12-074aac717706 35 windows 422s
+  [37/139] clip-sha12-02607661a547 35 windows 432s
+  [38/139] clip-sha12-0710811e8c77 35 windows 442s
+  [39/139] clip-sha12-047c28976246 35 windows 452s
+  [40/139] clip-sha12-06286e9cd123 35 windows 462s
+  [41/139] clip-sha12-037758fd2a58 33 windows 471s
+  [42/139] clip-sha12-0690cc9e2d6a 35 windows 481s
+  [43/139] clip-sha12-04406a6c5417 35 windows 491s
+  [44/139] clip-sha12-080368c0874b 35 windows 501s
+  [45/139] clip-sha12-051e7d2ff48a 35 windows 511s
+  [46/139] clip-sha12-005f95c23c6c 35 windows 520s
+  [47/139] clip-sha12-084d8550a1f4 35 windows 530s
+  [48/139] clip-sha12-00719cc697cc 35 windows 540s
+  [49/139] clip-sha12-035b59b5b801 35 windows 550s
+  [50/139] clip-sha12-0593d0a0d60c 35 windows 561s
+  [51/139] clip-sha12-01fe3cfed9f0 35 windows 571s
+  [52/139] clip-sha12-0710f411498c 35 windows 580s
+  [53/139] clip-sha12-04b3621a7b46 35 windows 590s
+  [54/139] clip-sha12-00a9f72ef853 35 windows 600s
+  [55/139] clip-sha12-03f0be20346c 35 windows 610s
+  [56/139] clip-sha12-0184f64720f4 35 windows 620s
+  [57/139] clip-sha12-06f7fe68c3ca 35 windows 630s
+  [58/139] clip-sha12-0683cdee76fa 35 windows 640s
+  [59/139] clip-sha12-02094073847f 35 windows 649s
+  [60/139] clip-sha12-0119f6cd59a5 34 windows 659s
+  [61/139] clip-sha12-04ea6bda95b4 35 windows 669s
+  [62/139] clip-sha12-01cb74650aff 35 windows 679s
+  [63/139] clip-sha12-0198206e0111 35 windows 689s
+  [64/139] clip-sha12-046846d02831 35 windows 699s
+  [65/139] clip-sha12-02dcd655883e 35 windows 708s
+  [66/139] clip-sha12-0275ce06ddfd 34 windows 718s
+  [67/139] clip-sha12-07d19c1514d7 35 windows 728s
+  [68/139] clip-sha12-04b32d12ac9f 35 windows 738s
+  [69/139] clip-sha12-04f89dcd1e58 35 windows 748s
+  [70/139] clip-sha12-05c575ed45be 35 windows 758s
+  [71/139] clip-sha12-023f9679d5f6 35 windows 767s
+  [72/139] clip-sha12-00d3108ba31a 35 windows 777s
+  [73/139] clip-sha12-0384547594c4 35 windows 787s
+  [74/139] clip-sha12-00bbd5035b2c 35 windows 797s
+  [75/139] clip-sha12-037cfbe80493 35 windows 807s
+  [76/139] clip-sha12-05fb34da0770 35 windows 817s
+  [77/139] clip-sha12-054327c6bd81 35 windows 827s
+  [78/139] clip-sha12-04a1e4982766 35 windows 837s
+  [79/139] clip-sha12-034334ad956e 35 windows 846s
+  [80/139] clip-sha12-0045221d060c 35 windows 856s
+  [81/139] clip-sha12-03952195f146 35 windows 866s
+  [82/139] clip-sha12-014a1bcdc965 34 windows 876s
+  [83/139] clip-sha12-02f7878099fa 34 windows 885s
+  [84/139] clip-sha12-028f78772fda 35 windows 895s
+  [85/139] clip-sha12-02bffd58099a 35 windows 905s
+  [86/139] clip-sha12-006fd1b65c1b 35 windows 915s
+  [87/139] clip-sha12-036c18fd3e43 34 windows 925s
+  [88/139] clip-sha12-054120f27048 34 windows 934s
+  [89/139] clip-sha12-056698c1d76b 35 windows 944s
+  [90/139] clip-sha12-001e7d520dd0 35 windows 954s
+  [91/139] clip-sha12-01fbe016688e 35 windows 964s
+  [92/139] clip-sha12-075e230dacec 35 windows 974s
+  [93/139] clip-sha12-038351da7f32 35 windows 984s
+  [94/139] clip-sha12-0858c2406c24 35 windows 994s
+  [95/139] clip-sha12-03df23057f5a 35 windows 1004s
+  [96/139] clip-sha12-0538720ebf05 35 windows 1014s
+  [97/139] clip-sha12-00b751945401 35 windows 1024s
+  [98/139] clip-sha12-02dba36f981f 35 windows 1033s
+  [99/139] clip-sha12-03a02abb8f1d 35 windows 1043s
+  [100/139] clip-sha12-0622a7903174 35 windows 1053s
+  [101/139] clip-sha12-0587cfbcd0c6 35 windows 1063s
+  [102/139] clip-sha12-086830066c20 35 windows 1073s
+  [103/139] clip-sha12-055107ecbc4f 35 windows 1083s
+  [104/139] clip-sha12-06e92f4a4413 35 windows 1093s
+  [105/139] clip-sha12-01ebf2a80bbd 35 windows 1103s
+  [106/139] clip-sha12-03d33eec7ae0 35 windows 1113s
+  [107/139] clip-sha12-07f23c306783 35 windows 1123s
+  [108/139] clip-sha12-082fe957ec14 35 windows 1133s
+  [109/139] clip-sha12-038a50273027 35 windows 1143s
+  [110/139] clip-sha12-04e941edb256 35 windows 1153s
+  [111/139] clip-sha12-003b733271dd 35 windows 1163s
+  [112/139] clip-sha12-03ef04f0d748 35 windows 1173s
+  [113/139] clip-sha12-074f3464855b 34 windows 1182s
+  [114/139] clip-sha12-0749625285f4 35 windows 1192s
+  [115/139] clip-sha12-0501aaf9d954 35 windows 1202s
+  [116/139] clip-sha12-04e59df09d92 35 windows 1212s
+  [117/139] clip-sha12-0825f5ac9c7e 35 windows 1222s
+  [118/139] clip-sha12-046c8d9a8cc0 35 windows 1232s
+  [119/139] clip-sha12-032f081d34f1 35 windows 1242s
+  [120/139] clip-sha12-0189e6128422 35 windows 1252s
+  [121/139] clip-sha12-086bb25ad2fd 35 windows 1262s
+  [122/139] clip-sha12-070985985c35 35 windows 1272s
+  [123/139] clip-sha12-072b6ef6a1a0 35 windows 1282s
+  [124/139] clip-sha12-03f43c1ed521 35 windows 1292s
+  [125/139] clip-sha12-05d89c5418a3 34 windows 1302s
+  [126/139] clip-sha12-00ed1965cf1d 35 windows 1312s
+  [127/139] clip-sha12-0257e4426c97 35 windows 1322s
+  [128/139] clip-sha12-059da4abab9b 35 windows 1332s
+  [129/139] clip-sha12-055824e58835 35 windows 1342s
+  [130/139] clip-sha12-07659d289daf 35 windows 1352s
+  [131/139] clip-sha12-078ef6858bc6 35 windows 1362s
+  [132/139] clip-sha12-01aab543e9a4 35 windows 1372s
+  [133/139] clip-sha12-0096d5aae681 35 windows 1382s
+  [134/139] clip-sha12-02360db99599 35 windows 1392s
+  [135/139] clip-sha12-035e022d854b 35 windows 1402s
+  [136/139] clip-sha12-00ab8f697a09 35 windows 1411s
+  [137/139] clip-sha12-00877c7351bf 35 windows 1421s
+  [138/139] clip-sha12-04a26c244584 35 windows 1432s
+  [139/139] clip-sha12-00cac5692bdc 35 windows 1442s
+[dump] 4855 windows over 139 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=48852 eps=139 windows=4855 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] /home/nvidia/r8ns/l7cap/out/train139_s1/dump; analyse later with --analyze-only
+[roll_seed_r8_train] seed 1: 4855 windows / 139 eps -> /home/nvidia/r8ns/l7cap/out/train139_s1/roll_s1.json  ZZRTTRAINROLLOKZZ
+[train_pf] pf.ok=True windows=4855 args_known=2809 token_differs_from_clip=979 ZZTRAINPFROLLOKZZ
+[l7cap] 4855 windows fan (4855, 149, 8, 2) K3a 0 K3b True K4 1.000 scene {'r7_agent_pad': [4855, 300], 'r7_agent_tokens': [4855, 300, 384], 'r7_bev_tokens': [4855, 480, 96]} labels(agent 4855 map 4855) reg True rc=0 -> /home/nvidia/r8ns/l7cap/out/train139_s1/fan_roll_s1.json ZZL7CROLLOKZZ
+ZZL7CROLLENDZZ rc=0 2026-10-22T07:17:31+02:00
+{"ids_learned": 139, "tokens_rewritten": 278, "files_rewritten": 2, "text_files_scanned": 6, "npz_scanned": 282, "n_residual": 0, "CLEAN": true} ZZL7CSCRUBOKZZ
+ZZL7COUTZZ fan=1 scene=1 labels=1 meta=1 scrub=1
+ZZL7CENDZZ rc=0 2026-10-22T07:17:45+02:00

@@ -1,0 +1,131 @@
+FFFF..F                                                                  [100%]
+================================== FAILURES ===================================
+__________ test_control_warmup_reproduces_the_banked_refcv7_numbers ___________
+
+    def test_control_warmup_reproduces_the_banked_refcv7_numbers():
+        kw, _ = _control_paths("warmup")
+        out = P.build_summary(**kw)
+        for arm, v in WARMUP_U.items():
+>           assert out["arms"][arm]["S2_EPDMS_u"]["value"] == approx(v), arm
+E           AssertionError: R8_LEGAL
+E           assert 0.5292943037372295 == 0.5223666823715276 ± 1.0e-12
+E             
+E             comparison failed
+E             Obtained: 0.5292943037372295
+E             Expected: 0.5223666823715276 ± 1.0e-12
+
+tests\test_parse8.py:532: AssertionError
+__________ test_control_navhard_reproduces_the_banked_refcv7_numbers __________
+
+    def test_control_navhard_reproduces_the_banked_refcv7_numbers():
+        kw, _ = _control_paths("navhard")
+        out = P.build_summary(**kw)
+        for arm, v in NAVHARD_OFFICIAL.items():
+>           assert out["arms"][arm]["official_two_stage_EPDMS"] == approx(v), arm
+E           AssertionError: R8_LEGAL
+E           assert 0.2232962025910765 == 0.2269259218512275 ± 1.0e-12
+E             
+E             comparison failed
+E             Obtained: 0.2232962025910765
+E             Expected: 0.2269259218512275 ± 1.0e-12
+
+tests\test_parse8.py:554: AssertionError
+_ test_control_whole_summary_equals_the_banked_one_apart_from_labels[warmup] __
+
+sp = 'warmup'
+
+    @pytest.mark.parametrize("sp", ["warmup", "navhard"])
+    def test_control_whole_summary_equals_the_banked_one_apart_from_labels(sp):
+        """Everything the bars layer could read -- arms, pairs, intervals, paired intervals, estimator -- equals parse7's banked
+        output after the R7->R8 rename.  Only free-text labels (``what``, ``_label``, ``model_as_trained``) and parse8's additive
+        provenance are excluded; the R7-recipe-only arms (VMAXOFF, FILTOFF, CEILDECL_d) have no R8 counterpart."""
+        kw, banked_path = _control_paths(sp)
+        new = P.build_summary(**kw)
+        banked = json.load(open(banked_path, encoding="utf-8"))
+        drop = {"R7_VMAXOFF", "R7_FILTOFF", "R7_CEILDECL_d"}
+        b = {}
+        for k, v in banked.items():
+            if k in ("arms", "pairs", "intervals", "paired_intervals"):
+                b[k] = {_r7_to_r8(kk): vv for kk, vv in v.items() if not any(p in drop for p in kk.split("__minus__"))}
+            elif k not in ("_label", "model_as_trained", "arms_refused"):
+                b[k] = v
+        n = {k: v for k, v in new.items() if k in b}
+        for blk in ("pairs", "paired_intervals"):
+            if blk in n:        # parse8 ADDS the seed-1 mirror rows (AMENDMENT 3); parse7's banked output has no such key
+                n[blk] = {k: v for k, v in n[blk].items() if k in b[blk]}
+        assert all(f"R8_LEGAL_s1__minus__{y}" in new["pairs"] for y in ("STOP_zero", "CV_official", "ECHO_ha0_ext"))
+        for blk in ("pairs",):
+            for rec in list(n.get(blk, {}).values()) + list(b.get(blk, {}).values()):
+                rec.pop("what", None)
+        if "estimator" in n and "module" in n["estimator"]:
+            n["estimator"] = {k: v for k, v in n["estimator"].items() if k not in ("module", "module_sha256")}
+            b["estimator"] = {k: v for k, v in b["estimator"].items() if k not in ("module", "module_sha256")}
+>       assert _diff(n, b) == []
+E       AssertionError: assert [('/arms/R8_L...549019)), ...] == []
+E         
+E         Left contains 117 more items, first extra item: ('/arms/R8_LEGAL/S2_EPDMS_u/value', (0.5292943037372295, 0.5223666823715276))
+E         Use -v to get more diff
+
+tests\test_parse8.py:617: AssertionError
+_ test_control_whole_summary_equals_the_banked_one_apart_from_labels[navhard] _
+
+sp = 'navhard'
+
+    @pytest.mark.parametrize("sp", ["warmup", "navhard"])
+    def test_control_whole_summary_equals_the_banked_one_apart_from_labels(sp):
+        """Everything the bars layer could read -- arms, pairs, intervals, paired intervals, estimator -- equals parse7's banked
+        output after the R7->R8 rename.  Only free-text labels (``what``, ``_label``, ``model_as_trained``) and parse8's additive
+        provenance are excluded; the R7-recipe-only arms (VMAXOFF, FILTOFF, CEILDECL_d) have no R8 counterpart."""
+        kw, banked_path = _control_paths(sp)
+        new = P.build_summary(**kw)
+        banked = json.load(open(banked_path, encoding="utf-8"))
+        drop = {"R7_VMAXOFF", "R7_FILTOFF", "R7_CEILDECL_d"}
+        b = {}
+        for k, v in banked.items():
+            if k in ("arms", "pairs", "intervals", "paired_intervals"):
+                b[k] = {_r7_to_r8(kk): vv for kk, vv in v.items() if not any(p in drop for p in kk.split("__minus__"))}
+            elif k not in ("_label", "model_as_trained", "arms_refused"):
+                b[k] = v
+        n = {k: v for k, v in new.items() if k in b}
+        for blk in ("pairs", "paired_intervals"):
+            if blk in n:        # parse8 ADDS the seed-1 mirror rows (AMENDMENT 3); parse7's banked output has no such key
+                n[blk] = {k: v for k, v in n[blk].items() if k in b[blk]}
+        assert all(f"R8_LEGAL_s1__minus__{y}" in new["pairs"] for y in ("STOP_zero", "CV_official", "ECHO_ha0_ext"))
+        for blk in ("pairs",):
+            for rec in list(n.get(blk, {}).values()) + list(b.get(blk, {}).values()):
+                rec.pop("what", None)
+        if "estimator" in n and "module" in n["estimator"]:
+            n["estimator"] = {k: v for k, v in n["estimator"].items() if k not in ("module", "module_sha256")}
+            b["estimator"] = {k: v for k, v in b["estimator"].items() if k not in ("module", "module_sha256")}
+>       assert _diff(n, b) == []
+E       AssertionError: assert [('/arms/R8_L...527227)), ...] == []
+E         
+E         Left contains 173 more items, first extra item: ('/arms/R8_LEGAL/S1_scene_mean', (0.5304140518300716, 0.527739043894105))
+E         Use -v to get more diff
+
+tests\test_parse8.py:617: AssertionError
+________ test_e2e_control_bars_accept_the_summaries_and_give_a_verdict ________
+
+    def test_e2e_control_bars_accept_the_summaries_and_give_a_verdict():
+        B = _bars()
+        nh = P.build_summary(**_control_paths("navhard")[0])
+        wu = P.build_summary(**_control_paths("warmup")[0])
+        n2 = B.navhard_bar(nh, ELIGIBLE, B.DEFAULT_CFG)
+        # refcv7-step-30000 numbers under R8 names: LEGAL .2269 < STOP .2985 -> margin < 0 -> FAILED (an honest FAILED, not UNAVAILABLE)
+>       assert n2["verdict"] == "FAILED" and n2["margin"] == approx(0.2269259218512275 - 0.2985321254269824)
+E       AssertionError: assert ('FAILED' == 'FAILED'
+E         
+E           FAILED and -0.07523592283590588 == -0.07160620357575487 ± 1.0e-12
+E         
+E         comparison failed
+E         Obtained: -0.07523592283590588
+E         Expected: -0.07160620357575487 ± 1.0e-12)
+
+tests\test_parse8.py:667: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_parse8.py::test_control_warmup_reproduces_the_banked_refcv7_numbers
+FAILED tests/test_parse8.py::test_control_navhard_reproduces_the_banked_refcv7_numbers
+FAILED tests/test_parse8.py::test_control_whole_summary_equals_the_banked_one_apart_from_labels[warmup]
+FAILED tests/test_parse8.py::test_control_whole_summary_equals_the_banked_one_apart_from_labels[navhard]
+FAILED tests/test_parse8.py::test_e2e_control_bars_accept_the_summaries_and_give_a_verdict
+5 failed, 2 passed, 33 deselected in 46.99s

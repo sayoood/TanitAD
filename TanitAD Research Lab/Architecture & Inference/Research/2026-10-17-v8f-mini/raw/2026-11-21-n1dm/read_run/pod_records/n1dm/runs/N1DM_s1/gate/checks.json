@@ -1,0 +1,63 @@
+{
+ "G-SUITE": {
+  "pass": true,
+  "result_sha256": "b249427a79c6eddbfcbc409c280d537490fa0bbbd75dde41e9ff0d4ec4540e0c"
+ },
+ "frozen_argvs_sha256": {
+  "pass": true,
+  "sha256": "346a48ed7b070fffacd22bf280e72c42831126fb906c231a7ac24301e624a424"
+ },
+ "G-HYG": {
+  "pass": true,
+  "problems": []
+ },
+ "G-CLOCK": {
+  "pass": true,
+  "nav_report_sha256": "e6877342a629b12dc26481a4dfe29544829b8d1c89b16ae8b9701212a1074dd4",
+  "note": "G-CLOCK-NAV read from the builder report (train + eval PASS, regression arm FAILS); ctx label alignment asserts run inside the trainer's selfcheck; G-CLOCK-RB read from the nav_rb builder report (train + eval PASS, regression arm FAILS)",
+  "nav_rb_report_sha256": "00cf93d3c1ca49dd3c1e3625cfaed85ecb8e419f0dacc4dae15f300855617ae7"
+ },
+ "G-DVB": {
+  "pass": true,
+  "declared_vs_built": "PASS",
+  "problems": []
+ },
+ "G-LIVE": {
+  "pass": true,
+  "problems": [],
+  "groups_grad": {
+   "adapter": 9457.094313144684,
+   "S": 1427.1041567251086,
+   "T": 645.6784117929637,
+   "O": 49131.21978536993,
+   "head_s": 468.79618283361197,
+   "head_o": 16803.925428181887,
+   "wm": 7048.860930849682,
+   "NAVRB": 101.6972427368164,
+   "ROUTE": 140739.91612336785
+  }
+ },
+ "G-EVAL": {
+  "pass": true,
+  "problems": [],
+  "built_levers": {
+   "aux_route": "modes",
+   "w_aux_route": 0.5,
+   "nav_rb_feat": "exitdist",
+   "nav_rb": "on"
+  },
+  "regression_arm_nav_rb_refused": true,
+  "regression_arm_nav_rb_feat_refused": true,
+  "regression_arm_aux_route_refused": true,
+  "scope": "strict load through the evaluators' build path, built levers == selfcheck levers, regression arm (cfg drops ctx_heads) refused; the 8-window forward_infer parity is NOT run here"
+ },
+ "G-CKPT": {
+  "pass": true,
+  "crash_rc": 1,
+  "resume_rc": 0,
+  "step_at_crash_ckpt": 2,
+  "final_step": 4,
+  "roundtrip_bit_equal": true,
+  "moved_identity_problems": []
+ }
+}

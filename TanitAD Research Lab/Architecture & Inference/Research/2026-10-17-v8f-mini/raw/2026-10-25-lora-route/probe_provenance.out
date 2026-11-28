@@ -1,0 +1,147 @@
+{
+ "production_manifest": {
+  "train": {
+   "file": "C:\\Users\\Admin\\box2_ship\\logs\\v8f_dscale\\manifest_train.jsonl",
+   "n": 4572,
+   "n_distinct_clips": 4572,
+   "census(source,enc_dtype,device,pipeline,grids)": [
+    [
+     [
+      "local256",
+      "bf16",
+      "cuda",
+      "ra1a-pooled-v1",
+      [
+       "4x10",
+       "8x20"
+      ]
+     ],
+     4572
+    ]
+   ]
+  },
+  "eval": {
+   "file": "C:\\Users\\Admin\\box2_ship\\logs\\v8f_grid\\manifest_eval.jsonl",
+   "n": 141,
+   "census(source,enc_dtype,device,pipeline,grids)": [
+    [
+     [
+      "local256",
+      "bf16",
+      "cuda",
+      "ra1a-pooled-v1",
+      [
+       "4x10",
+       "8x20"
+      ]
+     ],
+     141
+    ]
+   ]
+  },
+  "any_thor416_row": 0
+ },
+ "test_cache_vs_production_manifest": {
+  "8f387977": {
+   "production": {
+    "md5": "de1ebbedb376cfe3b8b817ff53e48303",
+    "content_md5": "a0bcc28c388645fde3ec95569c6f67bd",
+    "source": "local256",
+    "enc_dtype": "bf16",
+    "device": "cuda"
+   },
+   "test_runscript(thor416,cuda,bf16)": {
+    "md5": "1a30846a7050078eafc3e95b8cca76e9",
+    "content_md5": "31356852e5086f0a32c3cd8340e2bedc",
+    "source": "thor416-resize",
+    "enc_dtype": "bf16",
+    "device": "cuda",
+    "md5_equals_production": false,
+    "content_md5_equals_production": false
+   },
+   "test_cpu_fp32(thor416,cpu,fp32)": {
+    "md5": "d3117ce2a4e370b0c3338ff53231b442",
+    "content_md5": "23fcb0f9ada9ddf71cc7f6b714bc7558",
+    "source": "thor416-resize",
+    "enc_dtype": "fp32",
+    "device": "cpu",
+    "md5_equals_production": false,
+    "content_md5_equals_production": false
+   }
+  },
+  "bf5ec76e": {
+   "production": {
+    "md5": "a480b79c6c6083dcb0c0012acad10385",
+    "content_md5": "a033a5ed0882a971aff4425b248301b9",
+    "source": "local256",
+    "enc_dtype": "bf16",
+    "device": "cuda"
+   },
+   "test_runscript(thor416,cuda,bf16)": {
+    "md5": "23609a6947bb06f6acd7c24e8c576a2a",
+    "content_md5": "2cc46c740de0ebb473f51f62711bce08",
+    "source": "thor416-resize",
+    "enc_dtype": "bf16",
+    "device": "cuda",
+    "md5_equals_production": false,
+    "content_md5_equals_production": false
+   },
+   "test_cpu_fp32(thor416,cpu,fp32)": {
+    "md5": "7a5f117e0b094351483863ebf525edb8",
+    "content_md5": "565d26db0bf20c1ca36e80c8dfc121d9",
+    "source": "thor416-resize",
+    "enc_dtype": "fp32",
+    "device": "cpu",
+    "md5_equals_production": false,
+    "content_md5_equals_production": false
+   }
+  }
+ },
+ "s4b_v2ep_vs_box2_control": {
+  "8f387977": {
+   "path": "C:\\Users\\Admin\\tanitad-data\\refav1-train600-256\\8f387977-4086-466d-bba4-b04f8cdc0743.v2ep.pt",
+   "sha256": "4d229504a8abe80ca8559a17bb68006a717927b9775021f208ecb328ac168d3c",
+   "box2_ctl_expected": "4d229504a8abe80ca8559a17bb68006a717927b9775021f208ecb328ac168d3c",
+   "box2_ctl_got": "4d229504a8abe80ca8559a17bb68006a717927b9775021f208ecb328ac168d3c",
+   "box2_ctl_verdict": "IDENTICAL",
+   "local_equals_box2": true
+  },
+  "bf5ec76e": {
+   "path": "C:\\Users\\Admin\\tanitad-data\\refav1-train600-256\\bf5ec76e-e8b5-4f0d-a9cc-4fe1687d3d3a.v2ep.pt",
+   "sha256": "28ca420fab214d56f3d8a45cfe13a9e81d9291a0779d7124050b7cf66588b57d",
+   "box2_ctl_expected": "28ca420fab214d56f3d8a45cfe13a9e81d9291a0779d7124050b7cf66588b57d",
+   "box2_ctl_got": "28ca420fab214d56f3d8a45cfe13a9e81d9291a0779d7124050b7cf66588b57d",
+   "box2_ctl_verdict": "IDENTICAL",
+   "local_equals_box2": true
+  }
+ },
+ "device_only_floor_same_frames": {
+  "what": "test_cpu_fp32 (CPU fp32) vs test_runscript (dev-box GPU bf16), both source=thor416-resize, same clips, pool4x10 fp8, every frame",
+  "clips": {
+   "8f387977": {
+    "n_values": 4136960,
+    "rel_l2": 0.029728669673204422,
+    "max_abs": 0.25,
+    "mean_abs": 0.0027837662491947412,
+    "ref_mean_abs": 0.16741029918193817,
+    "frac_bitwise_equal": 0.6867671012878418,
+    "n_frames": 101
+   },
+   "bf5ec76e": {
+    "n_values": 4136960,
+    "rel_l2": 0.03535015136003494,
+    "max_abs": 0.25,
+    "mean_abs": 0.0038037970662117004,
+    "ref_mean_abs": 0.17126788198947906,
+    "frac_bitwise_equal": 0.6254317164421082,
+    "n_frames": 101
+   }
+  }
+ },
+ "eval_products": {
+  "clip": "dca157a0-20a9-464b-a74c-084b678e7be1",
+  "aug30_eps_sha256": "7914223d1693e56bb89363a92201e4711800ef53104455460a45c734773a0268",
+  "s4c_rebuild_sha256": "9c49fb21c24350a189378b44614cc9e76196d2c25d2a7cc5b94ddf8d6117de28",
+  "byte_identical": false
+ }
+}

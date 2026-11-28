@@ -1,0 +1,152 @@
+{
+ "tool": "rbjk.py (copy of rbjoint.py HGB half; target changed only)",
+ "card": "PREREG_V8F_NAVRBD.md sha256 881d7f3d, row RBJK, sec 7",
+ "evidence_class": "MEASURED (ours; cached features table, HGB tree, 5-fold clip-grouped CV, CPU, zero model training)",
+ "tier": "T0 decodability (NOT driving performance)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap on per-window correctness, B=2000, seed 0, episodes = train clips; answers 'another draw of EPISODES' only",
+ "target": "3-class kinematic lat label (read_otband.labels via obd_geom) of D.gt_future(train cache pose_grid)[t], the 6 s GT track",
+ "margin": 0.0383,
+ "population": {
+  "all_windows_t_ge3": 24207,
+  "strided_windows": 12201,
+  "strided_gt_ok": 9236,
+  "strided_dropped_no_6s_future": 2965,
+  "all_gt_ok": 18282
+ },
+ "n_windows": 9236,
+ "n_episodes": 395,
+ "class_shares": {
+  "lane_keep": 0.4075357297531399,
+  "turn_left": 0.29428323949761803,
+  "turn_right": 0.29818103074924207
+ },
+ "majority_class": "lane_keep",
+ "majority_rate": 0.4075357297531399,
+ "arms": {
+  "S": {
+   "accuracy": {
+    "point": 0.4075357297531399,
+    "lo": 0.3682,
+    "hi": 0.4472,
+    "n_windows": 9236,
+    "n_episodes": 395
+   },
+   "pred_counts": [
+    9236,
+    0,
+    0
+   ]
+  },
+  "ED": {
+   "accuracy": {
+    "point": 0.6406453009961022,
+    "lo": 0.6122,
+    "hi": 0.6696,
+    "n_windows": 9236,
+    "n_episodes": 395
+   },
+   "pred_counts": [
+    3734,
+    2634,
+    2868
+   ]
+  },
+  "SHUF_ED": {
+   "accuracy": {
+    "point": 0.34333044608055435,
+    "lo": 0.321,
+    "hi": 0.3646,
+    "n_windows": 9236,
+    "n_episodes": 395
+   },
+   "pred_counts": [
+    6785,
+    1149,
+    1302
+   ]
+  }
+ },
+ "paired": {
+  "ED-S": {
+   "delta": 0.23310957124296228,
+   "lo": 0.1906,
+   "hi": 0.2748,
+   "separated": true,
+   "n_windows": 9236,
+   "n_episodes": 395
+  },
+  "SHUF_ED-S": {
+   "delta": -0.06420528367258554,
+   "lo": -0.0896,
+   "hi": -0.0409,
+   "separated": true,
+   "n_windows": 9236,
+   "n_episodes": 395
+  }
+ },
+ "reading": "RBJK-CARRIES",
+ "control_SHUF_ED_minus_S_below_margin": "PASS",
+ "folds": [
+  {
+   "fold": 0,
+   "train_majority": 0,
+   "S_pred_unique": [
+    0
+   ],
+   "n_fit": 14992,
+   "n_test": 1664
+  },
+  {
+   "fold": 1,
+   "train_majority": 0,
+   "S_pred_unique": [
+    0
+   ],
+   "n_fit": 14170,
+   "n_test": 2075
+  },
+  {
+   "fold": 2,
+   "train_majority": 0,
+   "S_pred_unique": [
+    0
+   ],
+   "n_fit": 14228,
+   "n_test": 2046
+  },
+  {
+   "fold": 3,
+   "train_majority": 0,
+   "S_pred_unique": [
+    0
+   ],
+   "n_fit": 15330,
+   "n_test": 1493
+  },
+  {
+   "fold": 4,
+   "train_majority": 0,
+   "S_pred_unique": [
+    0
+   ],
+   "n_fit": 14408,
+   "n_test": 1958
+  }
+ ],
+ "rbjoint_lat_cls_reference": {
+  "ED-S": {
+   "delta": 0.05810999098434555,
+   "lo": 0.0287,
+   "hi": 0.0857,
+   "separated": true,
+   "n_windows": 12201,
+   "n_episodes": 426
+  },
+  "S_acc": 0.657487091222031,
+  "ED_acc": 0.7155970822063765,
+  "SHUF_ED-S_delta": -0.0027866568314072193,
+  "majority_share_5way": 0.657487091222031,
+  "n_windows": 12201
+ },
+ "elapsed_s": 96.6
+}

@@ -1,0 +1,514 @@
+{
+ "status": "P1, P2, P3 evaluated; P1' NOT EVALUATED (see HANDOFF_WSP2.md)",
+ "frozen": {
+  "THEORY_CRAWL.md": "6e83451c",
+  "THEORY_CRAWL_AMEND_1.md": "9d39ac53"
+ },
+ "P1": {
+  "verdict_as_written": "FAILS (leg A)",
+  "evidence_class": "MEASURED, T2 rollouts, 93 starts, previous agent",
+  "artifacts": [
+   "P1_RESULT.json",
+   "P1B_RESULT.json",
+   "P1C_RESULT.json",
+   "SPEC_P1_AMEND_1.md",
+   "P1_FILES.sha256"
+  ],
+  "C0C_band_3_8_mean_g_minus_v": {
+   "s0": {
+    "point": 0.428,
+    "ci95": [
+     0.112,
+     0.805
+    ],
+    "n": 50
+   },
+   "s1": {
+    "point": 1.059,
+    "ci95": [
+     0.405,
+     1.967
+    ],
+    "n": 51
+   }
+  }
+ },
+ "P1_prime": {
+  "verdict_as_written": "NOT EVALUATED",
+  "reason": "banked OOF posteriors cover the probe's 12,000 training windows, not eval-141; refit-and-score on the probe's own code not yet run",
+  "artifacts": [],
+  "evidence_class": "n/a"
+ },
+ "P2": {
+  "evidence_class": "MEASURED (CPU, eval-141 tick 0, C0 s0 and s1, one training run per seed)",
+  "artifacts": [
+   "CLAIMS_P2.md",
+   "CLAIMS_P2.sha256",
+   "P2A_WEIGHTS.json",
+   "P2B_RESULT.json",
+   "P2B_s1_RESULT.json",
+   "P2B_PERWINDOW.npz",
+   "P2B_s1_PERWINDOW.npz"
+  ],
+  "s0": {
+   "verdict_as_written": "HOLDS",
+   "R_tot_z": {
+    "point": 14.53646292270946,
+    "ci95": [
+     12.626387482221197,
+     16.74080093231105
+    ],
+    "n_windows": 586,
+    "n_episodes": 70
+   },
+   "R_tot_raw_units": {
+    "point": 5.6580938276691075,
+    "ci95": [
+     4.8649744763886575,
+     6.486316284746446
+    ],
+    "n_windows": 586,
+    "n_episodes": 70
+   },
+   "ablation_rms_ratio_ego_over_vision": {
+    "zero": 9.864964927700244,
+    "shuffle_band": 3.288798484588465,
+    "shuffle_global": 8.59842114432122
+   },
+   "W1": {
+    "claim": "median |d s_net/d v0| <= 0.15 and median d s_net/d a0 in [-2.0,-0.6]; median d(base+net)/d a0 in [0,1.3]",
+    "measured": {
+     "median_abs_dv0": 0.06680104490790675,
+     "median_da0": -0.41676492757853895,
+     "median_prior_da0": 1.4769534909065163
+    },
+    "holds": false
+   },
+   "W2": {
+    "measured_O_level": {
+     "point": 14.552745782901487,
+     "ci95": [
+      13.042647366946204,
+      16.25987709384098
+     ],
+     "n_windows": 586,
+     "n_episodes": 70
+    },
+    "measured_total": {
+     "point": 3.3895373937505133,
+     "ci95": [
+      2.8859381771763215,
+      3.965845895703844
+     ],
+     "n_windows": 586,
+     "n_episodes": 70
+    },
+    "holds_O_level": false,
+    "below_2_O_level": false
+   },
+   "W3": {
+    "measured": {
+     "point": 0.7728821016846575,
+     "ci95": [
+      0.6990326794735173,
+      0.8503204217880035
+     ],
+     "n_windows": 586,
+     "n_episodes": 70
+    },
+    "holds": true
+   },
+   "gains_median": {
+    "median_d_s_tot_d_v0": 0.805521440676491,
+    "median_d_s_tot_d_a0": 1.2649671297767333,
+    "median_d_s_base_d_v0": 0.9997129440307617,
+    "median_d_s_base_d_a0": 1.8993467092514038,
+    "median_d_s_net_d_v0": -0.06246736378296629,
+    "median_d_s_net_d_a0": -0.41676492757853895,
+    "median_d_s_res_d_v0": -0.11091889367357502,
+    "median_d_s_res_d_a0": -0.16808463785526923
+   },
+   "components": {
+    "mean_v0": 5.678959859516026,
+    "mean_s_tot": 5.157290649902292,
+    "mean_s_base": 5.44656099628263,
+    "mean_s_net": 0.07115076833210708,
+    "mean_s_res": -0.36042111833919943,
+    "rms_s_res": 0.6766048806563125,
+    "rms_s_net": 0.475287970529583,
+    "std_s_tot": 1.880244719208597,
+    "std_s_res": 0.5726174831273175,
+    "std_prior": 1.8844451284720545,
+    "var_share_residual": 0.09274712417893709,
+    "var_share_prior": 1.004472929521872,
+    "cov_share_residual": 0.04421253906755604,
+    "rms_s_tot_minus_v0": 1.6486884301839821,
+    "rms_base_minus_v0": 1.8331682210065026,
+    "rms_prior_minus_v0": 1.4988376873088867,
+    "rms_res": 0.6766048806563125,
+    "corr_stot_v0": 0.5730031811573724,
+    "corr_sres_stot_minus_v0": 0.3089745619549888,
+    "R2_of_stot_on_prior": 0.8705084288770857,
+    "R2_of_stot_minus_v0_on_prior_minus_v0": 0.8128423306869965
+   },
+   "n_windows": 586,
+   "n_episodes": 70
+  },
+  "s1": {
+   "verdict_as_written": "HOLDS",
+   "R_tot_z": {
+    "point": 11.221091523913216,
+    "ci95": [
+     10.039054328658962,
+     12.548551383902792
+    ],
+    "n_windows": 586,
+    "n_episodes": 70
+   },
+   "R_tot_raw_units": {
+    "point": 5.418378785953852,
+    "ci95": [
+     4.749106922408922,
+     6.188185637940024
+    ],
+    "n_windows": 586,
+    "n_episodes": 70
+   },
+   "ablation_rms_ratio_ego_over_vision": {
+    "zero": 6.49488738457096,
+    "shuffle_band": 2.5291990625299157,
+    "shuffle_global": 6.7589185982313245
+   },
+   "W1": {
+    "claim": "median |d s_net/d v0| <= 0.15 and median d s_net/d a0 in [-2.0,-0.6]; median d(base+net)/d a0 in [0,1.3]",
+    "measured": {
+     "median_abs_dv0": 0.06680104490790675,
+     "median_da0": -0.41676492757853895,
+     "median_prior_da0": 1.476953490906516
+    },
+    "holds": false
+   },
+   "W2": {
+    "measured_O_level": {
+     "point": 20.560706065779065,
+     "ci95": [
+      16.2421126107185,
+      26.526656042231245
+     ],
+     "n_windows": 586,
+     "n_episodes": 70
+    },
+    "measured_total": {
+     "point": 3.2037374175020723,
+     "ci95": [
+      2.842888775417514,
+      3.6108865058368833
+     ],
+     "n_windows": 586,
+     "n_episodes": 70
+    },
+    "holds_O_level": false,
+    "below_2_O_level": false
+   },
+   "W3": {
+    "measured": {
+     "point": 0.9480145121227811,
+     "ci95": [
+      0.8512649751297607,
+      1.060434561022075
+     ],
+     "n_windows": 586,
+     "n_episodes": 70
+    },
+    "holds": true
+   },
+   "gains_median": {
+    "median_d_s_tot_d_v0": 0.7633532322372059,
+    "median_d_s_tot_d_a0": 1.1115013626015022,
+    "median_d_s_base_d_v0": 0.9997129440307617,
+    "median_d_s_base_d_a0": 1.8993467092514038,
+    "median_d_s_net_d_v0": -0.06246736378296629,
+    "median_d_s_net_d_a0": -0.41676492757853895,
+    "median_d_s_res_d_v0": -0.14761872201475773,
+    "median_d_s_res_d_a0": -0.3470718201080778
+   },
+   "components": {
+    "mean_v0": 5.678959859516026,
+    "mean_s_tot": 5.183467793383289,
+    "mean_s_base": 5.44656099628263,
+    "mean_s_net": 0.07115076528067475,
+    "mean_s_res": -0.33424398080690576,
+    "rms_s_res": 0.7934551273752685,
+    "rms_s_net": 0.47528801391644254,
+    "std_s_tot": 1.8585120571791922,
+    "std_s_res": 0.7196193441344225,
+    "std_prior": 1.8844451171115104,
+    "var_share_residual": 0.14992528820528764,
+    "var_share_prior": 1.0281020405368875,
+    "cov_share_residual": 0.061015734093368496,
+    "rms_s_tot_minus_v0": 1.5884893579174357,
+    "rms_base_minus_v0": 1.8331682210065026,
+    "rms_prior_minus_v0": 1.4988376911197412,
+    "rms_res": 0.7934551273752685,
+    "corr_stot_v0": 0.5971082782993139,
+    "corr_sres_stot_minus_v0": 0.2647723768545091,
+    "R2_of_stot_on_prior": 0.8177304993849356,
+    "R2_of_stot_minus_v0_on_prior_minus_v0": 0.7236039448869203
+   },
+   "n_windows": 586,
+   "n_episodes": 70
+  },
+  "weight_claims_matched": "2 of 4 at both seeds (W1a, W3 held; W1b, W2 failed)"
+ },
+ "P3": {
+  "evidence_class": "MEASURED (reader JSONs, paired episode-cluster bootstrap B 2000)",
+  "verdict_as_written": "FAILS",
+  "artifacts": [
+   "P3_RESULT.json",
+   "P3_FRONTIER_ADE6.png",
+   "P3_FRONTIER_COUNT.png",
+   "p3_frontier.py"
+  ],
+  "all_levers_strict_pairs_at_both_seeds": 26,
+  "all_dominators_are_ceiling_arms": true,
+  "non_ceiling_strict_pairs_at_both_seeds": 0,
+  "non_ceiling_strict_pairs_by_seed_total": 4,
+  "spearman_closure_vs_ade6": {
+   "all.s0": {
+    "n": 25,
+    "rho_closure_ade6": 0.5276923076923077,
+    "rho_closure_nworse": 0.08461538461538462
+   },
+   "C0-based.s0": {
+    "n": 11,
+    "rho_closure_ade6": 0.5727272727272729,
+    "rho_closure_nworse": 0.5545454545454546
+   },
+   "admissible.s0": {
+    "n": 5,
+    "rho_closure_ade6": 0.9999999999999999,
+    "rho_closure_nworse": 0.8999999999999998
+   },
+   "decode.s0": {
+    "n": 14,
+    "rho_closure_ade6": 0.7362637362637363,
+    "rho_closure_nworse": 0.43736263736263736
+   },
+   "non-ceiling.s0": {
+    "n": 19,
+    "rho_closure_ade6": 0.8736842105263157,
+    "rho_closure_nworse": 0.23157894736842102
+   },
+   "all.s1": {
+    "n": 25,
+    "rho_closure_ade6": 0.36153846153846153,
+    "rho_closure_nworse": -0.057692307692307696
+   },
+   "C0-based.s1": {
+    "n": 11,
+    "rho_closure_ade6": 0.5636363636363637,
+    "rho_closure_nworse": 0.5363636363636364
+   },
+   "admissible.s1": {
+    "n": 5,
+    "rho_closure_ade6": 0.9999999999999999,
+    "rho_closure_nworse": 0.8999999999999998
+   },
+   "decode.s1": {
+    "n": 14,
+    "rho_closure_ade6": 0.3626373626373627,
+    "rho_closure_nworse": 0.22637362637362637
+   },
+   "non-ceiling.s1": {
+    "n": 19,
+    "rho_closure_ade6": 0.6596491228070176,
+    "rho_closure_nworse": -0.010526315789473684
+   }
+  },
+  "unplaced": [
+   [
+    "DAG-OACC / SOUP (as levers)",
+    "-",
+    "-",
+    "they are the BASES of the decode levers (Y of X - Y), not downstream levers; their own point is closure 0, guard 0 by construction"
+   ],
+   [
+    "A5/A6 'C' composites (S -> F -> kbox)",
+    "-",
+    "-",
+    "composites add the curvature box; read beside, not placed (the bare arm is the deciding contrast in every reader)"
+   ]
+  ],
+  "n_points": 50
+ },
+ "where_the_longitudinal_speed_comes_from": "level from the non-learned kd_x base (d s/d v0 1.00, d s/d a0 1.90); frozen P10 net and the learned residual shrink the gains (total 0.81/1.27 at s0, 0.76/1.11 at s1) and the residual shifts plan speed by about -0.35 m/s; prior explains R^2 0.87 / 0.82 of plan-speed variance; vision reaches the plan mainly through S and T (code, checkpoints), not O's scene attention (norm 0.40-0.52 via S/T vs 0.06-0.09 direct)",
+ "P1_prime_eval141_read": {
+  "update_date": "2026-11-07",
+  "verdict_as_written": "NOT EVALUABLE",
+  "evidence_class": "MEASURED (dev-box CPU, zero training); episode-cluster bootstrap, episodes only",
+  "spec_sha256": "73640c6730d66c84afb071a446e74688840bc2a9d9cd4253e8ae3ac5b4e40a97",
+  "n_windows": 168,
+  "n_episodes": 45,
+  "n_confident": 24,
+  "n_unsure": 75,
+  "floor": 30,
+  "descriptive_delta": {
+   "s0": {
+    "delta": 0.36488054221075006,
+    "ci95": [
+     0.21293842213852876,
+     0.5344182802381019
+    ]
+   },
+   "s1": {
+    "delta": 0.43681379754925187,
+    "ci95": [
+     0.2403789001820171,
+     0.5851315969752803
+    ]
+   }
+  },
+  "probe_auc_pmove": {
+   "auc": 0.7503509811874084,
+   "lo": 0.6733914892541837,
+   "hi": 0.8253017474564353,
+   "n": 507
+  },
+  "probe_auc_band_3_6": {
+   "auc": 0.7821893063583815,
+   "lo": 0.7028900368059172,
+   "hi": 0.852727222012011,
+   "n": 333
+  },
+  "S4_go24": {
+   "verdict_logic_returns": "HOLDS",
+   "n_confident": 49,
+   "n_unsure": 41,
+   "promoted": false
+  },
+  "artifacts": [
+   "SPEC_P1P.md",
+   "SPEC_P1P.sha256",
+   "SPEC_P1P_AMEND_1.md",
+   "p1p_read.py",
+   "p1p_probe_refit.py",
+   "p1p_finalize.py",
+   "P1P_PROBE_MODELS.npz",
+   "P1P_PERWINDOW.npz",
+   "P1P_RESULT.json",
+   "P1P_RESULT.md",
+   "P1P_FILES.sha256"
+  ]
+ },
+ "P1_prime_b_holdout_read": {
+  "update_date": "2026-11-07",
+  "verdict_as_written": "FAILS",
+  "written_consequence": "AMEND_1 \u00a74: the under-acceleration is not a mean over unresolved intent, and T1\u2032 is wrong too.",
+  "verdict_reason": "Both groups clear the floor of 30 at both seeds (CONFIDENT 42, UNSURE 125). \u0394 is positive at both seeds, and is separated at s1; at s0 the lower end of the 95 % interval is -0.028. The criterion (AMEND_1 \u00a74): \"P1\u2032 fails if the difference is not separated at either seed, or is negative.\"",
+  "evidence_class": "MEASURED (dev-box CPU, zero training, no weight edit); tick-0 plan-level read; episode-cluster bootstrap over holdout clips, episodes only",
+  "frozen": {
+   "THEORY_CRAWL_AMEND_2.md": "0427c325",
+   "SPEC_P1PB.md": "f2cc7efb",
+   "holdout_clips_sha256": "f6a1dee0"
+  },
+  "admissible": true,
+  "n_windows": 291,
+  "n_episodes": 23,
+  "n_confident": 42,
+  "n_unsure": 125,
+  "n_episodes_confident": 11,
+  "n_episodes_unsure": 21,
+  "floor": 30,
+  "delta": {
+   "s0": {
+    "delta": 0.24529493452485773,
+    "ci95": [
+     -0.028069797082196465,
+     0.4068266380512028
+    ],
+    "separated": false,
+    "median_rho_confident": 0.7399473514785668,
+    "median_rho_unsure": 0.4946524169537091
+   },
+   "s1": {
+    "delta": 0.31248961660777,
+    "ci95": [
+     0.06836316962087112,
+     0.4634853317505319
+    ],
+    "separated": true,
+    "median_rho_confident": 0.7023033462084702,
+    "median_rho_unsure": 0.3898137296007002
+   }
+  },
+  "probe_auc_pmove": {
+   "auc": 0.7408451213940296,
+   "lo": 0.5936779758632382,
+   "hi": 0.8641763544954301,
+   "n": 942
+  },
+  "probe_auc_band_3_6": {
+   "auc": 0.7477547696603071,
+   "lo": 0.6277175354810491,
+   "hi": 0.8494285878996946,
+   "n": 587
+  },
+  "pooled_beside_decides_nothing": {
+   "verdict_logic_returns": "HOLDS",
+   "n_clips": 68,
+   "delta": {
+    "s0": {
+     "delta": 0.3006525541854087,
+     "ci95": [
+      0.14017341903677252,
+      0.4336843102598573
+     ]
+    },
+    "s1": {
+     "delta": 0.32947017719028027,
+     "ci95": [
+      0.16850557426519286,
+      0.509675181995409
+     ]
+    }
+   }
+  },
+  "sensitivities_not_the_verdict": {
+   "G4_grid_stride4_t3mod4": "NOT EVALUABLE",
+   "S1_in_domain_v0_3_6": "FAILS",
+   "S2_raw_plan": "HOLDS",
+   "S3_all_train_probe": "FAILS",
+   "S4_go24_label": "FAILS",
+   "S5_include_clips_without_v9_rows": "FAILS"
+  },
+  "controls": {
+   "C4": true,
+   "FW": true,
+   "F1": true,
+   "F2": true,
+   "N1": true,
+   "N2": true,
+   "N3": true,
+   "probe_artifacts_unchanged": true
+  },
+  "artifacts": [
+   "SPEC_P1PB.md",
+   "SPEC_P1PB.sha256",
+   "P1PB_ADMISSIBILITY.json",
+   "P1PB_HOLDOUT_60.json",
+   "p1pb_admissibility.py",
+   "p1pb_forward.py",
+   "p1pb_read.py",
+   "p1pb_finalize.py",
+   "P1PB_TICK0_s0.npz",
+   "P1PB_TICK0_s1.npz",
+   "P1PB_FW_CONTROL.json",
+   "P1PB_F1_CONTROL.json",
+   "P1PB_PERWINDOW.npz",
+   "P1PB_RESULT.json",
+   "P1PB_RESULT.md",
+   "HANDOFF_P1PB.md",
+   "P1PB_FILES.sha256"
+  ]
+ }
+}

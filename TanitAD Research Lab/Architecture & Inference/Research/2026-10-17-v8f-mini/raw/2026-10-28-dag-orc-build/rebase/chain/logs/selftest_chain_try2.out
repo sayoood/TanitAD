@@ -1,0 +1,221 @@
+== A: gate asserter, worlds
+ok   A1 dagoaccorc s0: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A1 dagoaccorc s1: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A1 dagoaccorcrep s0: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A1 dagoaccorcrep s1: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A2 token: written only after the checks pass, bound to the commit, the TRAINING argv sha256, the data sha256
+ok   A3 token records the arm, ego p 0.3, the composition flag, w_acc, the bank sha, dagger_p, the amendment
+ok   A4 token: NOT written when a check fails (declared_vs_built FAIL)
+ok   A5 seeds other than 0 / 1 are refused
+== A-mut: deliberate regressions of the gate (each must be REFUSED, and by the check built for it)
+killed   MA01 dagoaccorc s0: ego probe reads off on A (the apply was deleted)
+killed   MA02 dagoaccorc s0: ego probe pass False
+killed   MA03 dagoaccorc s0: ego probe: the perturbed batch moves no gradient
+killed   MA04 dagoaccorc s0: ego probe: control_p0_grad_diff != 0
+killed   MA05 dagoaccorc s0: ego probe: control_p0_loss_diff != 0
+killed   MA06 dagoaccorc s0: ego probe: control_prior_grad_diff != 0
+killed   MA07 dagoaccorc s0: ego probe: control_repeat_grad_diff != 0
+killed   MA08 dagoaccorc s0: ego probe: p = 0 is not the identity object
+killed   MA09 dagoaccorc s0: ego probe: the WM auxiliary's gradient moved
+killed   MA10 dagoaccorc s0: ego probe: G-LIVE on the perturbed batch failed
+killed   MA11 dagoaccorc s0: ego probe: the frozen prior moved on the perturbed batch
+killed   MA12 dagoaccorc s0: ego probe: no eligible window
+killed   MA13 dagoaccorc s0: ego probe: declared p 0.1
+killed   MA14 dagoaccorc s0: composed probe batch has an overlap
+killed   MA15 dagoaccorc s0: built ego p 0.1
+killed   MA16 dagoaccorc s0: built vscale changed
+killed   MA17 dagoaccorc s1: built ego seed != S
+killed   MA18 dagoaccorc s0: built yaw-rate std 0
+killed   MA19 dagoaccorc s0: composition flag not built on A (False)
+killed   MA20 dagoaccorc s0: composition flag absent from the built levers on A
+killed   MA21 dagoaccorcrep s0: REP builds the composition flag
+killed   MA22 dagoaccorcrep s0: REP built ego p 0.3
+killed   MA23 dagoaccorcrep s1: REP: the ego probe is ON
+killed   MA24 dagoaccorc s1: swap probe fails
+killed   MA25 dagoaccorcrep s0: swap probe: no gradient
+killed   MA26 dagoaccorc s0: swap probe: control_p0_loss_diff != 0
+killed   MA27 dagoaccorc s0: swap probe: p = 0 not the identity
+killed   MA28 dagoaccorcrep s1: swap probe: G-LIVE on the swapped batch failed
+killed   MA29 dagoaccorc s0: swap probe: frame-change error 1e-3
+killed   MA30 dagoaccorc s0: built dagger_p 0.2
+killed   MA31 dagoaccorcrep s0: built bank sha256 differs
+killed   MA32 dagoaccorc s0: K-B2: the bank was made by another checkpoint
+killed   MA33 dagoaccorc s0: COVERAGE blocked
+killed   MA34 dagoaccorc s0: K-B3: overlap with eval-141
+killed   MA35 dagoaccorcrep s1: K-B3: another TRAIN window list
+killed   MA36 dagoaccorc s0: acc_probe missing
+killed   MA37 dagoaccorc s1: acc_probe: read_o_grad_diff 0 on a TRAINED head
+killed   MA38 dagoaccorcrep s0: acc_probe: control_prior_grad_diff != 0
+killed   MA39 dagoaccorc s0: built w_acc 40
+killed   MA40 dagoaccorc s0: declared_vs_built FAIL
+killed   MA41 dagoaccorcrep s1: G-LIVE: the prior moved
+killed   MA42 dagoaccorc s1: G-LIVE: a dead parameter group
+killed   MA43 dagoaccorc s0: K-INIT: init checkpoint is another file
+killed   MA44 dagoaccorcrep s0: K-INIT: init not applied
+killed   MA45 dagoaccorc s0: K-INIT: init path is the other seed's
+killed   MA46 dagoaccorc s0: steps 2000
+killed   MA47 dagoaccorcrep s1: lr schedule 3e-4
+killed   MA48 dagoaccorc s0: p_gt 1.0 -> 0.2
+killed   MA49 dagoaccorc s0: n_clips 4000
+killed   MA50 dagoaccorcrep s0: holdout is another set
+killed   MA51 dagoaccorc s0: TRAIN list differs from DAG-OACC's
+killed   MA52 dagoaccorc s0: w_cons moved (a second lever)
+killed   MA53 dagoaccorc s0: parameter groups differ from DAG-OACC's
+killed   MA54 dagoaccorc s0: window set differs
+killed   MA55 dagoaccorc s0: lru not recorded
+killed   MA56 dagoaccorc s0: o_interface cut
+killed   MA57 dagoaccorc s0: code_mix moved
+killed   MA58 dagoaccorc s0: A line lacks --ego-perturb-with-dagger
+killed   MA59 dagoaccorc s0: A line names the flag twice
+killed   MA60 dagoaccorc s1: A line has the flag BEFORE --w-acc (not the last token)
+killed   MA61 dagoaccorc s0: A line: vscale 0.5 0.9
+killed   MA62 dagoaccorc s1: A line: ego seed != S
+killed   MA63 dagoaccorc s0: A line: p 0.1 (the dose fallback B, not queued)
+killed   MA64 dagoaccorc s0: A line: --dagger-p 0.2
+killed   MA65 dagoaccorc s1: A line: --dagger-p 0 (the swap is off)
+killed   MA66 dagoaccorc s0: A line: another bank sha256
+killed   MA67 dagoaccorc s0: A line: --w-acc 50
+killed   MA68 dagoaccorc s1: A line: --dagger-seed other
+killed   MA69 dagoaccorc s0: A line: a second lever (--hist 10)
+killed   MA70 dagoaccorc s0: A line: steps 6000
+killed   MA71 dagoaccorc s0: A line: init is the other seed's M2b
+killed   MA72 dagoaccorcrep s0: REP line: --seed 0 (not 10)
+killed   MA73 dagoaccorcrep s0: REP line: --seed 11 for s0
+killed   MA74 dagoaccorcrep s0: REP line names the composition flag
+killed   MA75 dagoaccorcrep s1: REP line names a law flag at p 0
+killed   MA76 dagoaccorcrep s0: REP line: --ego-perturb-p 0.3
+killed   MA77 dagoaccorc s0: the pin is not the planned training line
+killed   MA78 dagoaccorcrep s0: the gate line lacks --selfcheck-only
+killed   MA79 dagoaccorc s0: the gate argv differs from the training argv (--batch 32)
+killed   MA80 dagoaccorc s1: the selfcheck's argv_sha is another line's
+== K: run record, K-REACH, one-lever
+ok   K1 dagoaccorc s0: a run record built from DAG-OACC's REAL summary / selfcheck passes
+ok   K1 dagoaccorc s1: a run record built from DAG-OACC's REAL summary / selfcheck passes
+ok   K1 dagoaccorcrep s0: a run record built from DAG-OACC's REAL summary / selfcheck passes
+ok   K1 dagoaccorcrep s1: a run record built from DAG-OACC's REAL summary / selfcheck passes
+killed   MK01 run-record dagoaccorc s0: argv.json is not the planned argv
+killed   MK02 run-record dagoaccorcrep s1: summary argv_sha differs
+killed   MK03 run-record dagoaccorc s0: run not done
+killed   MK04 run-record dagoaccorc s1: steps 2999
+killed   MK05 run-record dagoaccorcrep s0: REP trained with seed 0 (not 10)
+killed   MK06 run-record dagoaccorc s0: run's own selfcheck not a PASS
+killed   MK07 run-record dagoaccorc s0: K-INIT: init checkpoint is another file
+killed   MK08 run-record dagoaccorcrep s1: init not applied
+killed   MK09 run-record dagoaccorc s0: built ego p 0.1 on A
+killed   MK10 run-record dagoaccorc s1: built ego seed wrong
+killed   MK11 run-record dagoaccorc s0: composition flag not built on A
+killed   MK12 run-record dagoaccorcrep s0: composition flag built on REP
+killed   MK13 run-record dagoaccorc s0: built dagger_p 0
+killed   MK14 run-record dagoaccorcrep s0: another bank built
+killed   MK15 run-record dagoaccorc s1: w_acc 0 built
+ok   K2 K-REACH REP passes on DAG-OACC's REAL banked summary (swap 14688/145037 = 0.101, ego_perturb_n exactly 0, flag absent)
+ok   K3 K-REACH A passes: swap 0.1, ego 0.3 of the non-swapped eligible, overlap exactly 0, flag True
+killed   MR01 K-REACH dagoaccorc: A: swap fraction 0.2
+killed   MR02 K-REACH dagoaccorc: A: swap fraction 0 (the swap never ran)
+killed   MR03 K-REACH dagoaccorc: A: ego fraction 0.5
+killed   MR04 K-REACH dagoaccorc: A: ego_perturb_n 0 (the perturbation never ran)
+killed   MR05 K-REACH dagoaccorc: A: ego fraction 0.33 (outside 0.3 +- 0.02)
+killed   MR06 K-REACH dagoaccorc: A: overlap 1 (a sample both swapped and perturbed)
+killed   MR07 K-REACH dagoaccorc: A: overlap absent
+killed   MR08 K-REACH dagoaccorc: A: composition flag False
+killed   MR09 K-REACH dagoaccorc: A: composition flag absent
+killed   MR10 K-REACH dagoaccorc: A: eligible 0
+killed   MR11 K-REACH dagoaccorcrep: REP: ego_perturb_n 5 (a perturbation leaked into the replicate)
+killed   MR12 K-REACH dagoaccorcrep: REP: swap fraction 0.3
+killed   MR13 K-REACH dagoaccorcrep: REP: swap never ran
+killed   MR14 K-REACH dagoaccorcrep: REP: composition flag True
+killed   MR15 K-REACH dagoaccorcrep: REP: ego eligible 0
+ok   K4 one-lever dagoaccorc s0: ONE-LEVER on the registered line
+ok   K4 one-lever dagoaccorc s1: ONE-LEVER on the registered line
+ok   K4 one-lever dagoaccorcrep s0: ONE-LEVER on the registered line
+ok   K4 one-lever dagoaccorcrep s1: ONE-LEVER on the registered line
+killed   MK-OL01 one-lever dagoaccorc s0: A line lacks --ego-perturb-with-dagger
+killed   MK-OL02 one-lever dagoaccorc s0: A line names the flag twice
+killed   MK-OL03 one-lever dagoaccorc s1: A line has the flag BEFORE --w-acc (not the last token)
+killed   MK-OL04 one-lever dagoaccorc s0: A line: vscale 0.5 0.9
+killed   MK-OL05 one-lever dagoaccorc s1: A line: ego seed != S
+killed   MK-OL06 one-lever dagoaccorc s0: A line: p 0.1 (the dose fallback B, not queued)
+killed   MK-OL07 one-lever dagoaccorc s0: A line: --dagger-p 0.2
+killed   MK-OL08 one-lever dagoaccorc s1: A line: --dagger-p 0 (the swap is off)
+killed   MK-OL09 one-lever dagoaccorc s0: A line: another bank sha256
+killed   MK-OL10 one-lever dagoaccorc s0: A line: --w-acc 50
+killed   MK-OL11 one-lever dagoaccorc s1: A line: --dagger-seed other
+killed   MK-OL12 one-lever dagoaccorc s0: A line: a second lever (--hist 10)
+killed   MK-OL13 one-lever dagoaccorc s0: A line: steps 6000
+killed   MK-OL14 one-lever dagoaccorc s0: A line: init is the other seed's M2b
+killed   MK-OL15 one-lever dagoaccorcrep s0: REP line: --seed 0 (not 10)
+killed   MK-OL16 one-lever dagoaccorcrep s0: REP line: --seed 11 for s0
+killed   MK-OL17 one-lever dagoaccorcrep s0: REP line names the composition flag
+killed   MK-OL18 one-lever dagoaccorcrep s1: REP line names a law flag at p 0
+killed   MK-OL19 one-lever dagoaccorcrep s0: REP line: --ego-perturb-p 0.3
+== Q: the queue patch
+ok   Q1 the staged queue == a fresh rebuild from the pinned tip queue (deterministic)
+ok   Q2 queue.diff removes NO line (insertion only)
+ok   Q3 the staged queue keeps the tip's CRLF on every line
+ok   Q4 18 existing stage invocations print byte-identical output on the tip queue and the patched queue
+ok   Q5 the queue's own DAG-OACC s0 train line == DAG-OACC's banked argv.json (only --out may differ): the base of the one-lever rule is the real recipe
+ok   Q5 the queue's own DAG-OACC s1 train line == DAG-OACC's banked argv.json (only --out may differ): the base of the one-lever rule is the real recipe
+ok   Q6 gatedag dagoaccorc 0: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q6 traindag dagoaccorc 0: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q7 evaldag dagoaccorc 0: the standard eval of its own run / tag
+ok   Q6 gatedag dagoaccorc 1: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q6 traindag dagoaccorc 1: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q7 evaldag dagoaccorc 1: the standard eval of its own run / tag
+ok   Q6 gatedag dagoaccorcrep 0: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q6 traindag dagoaccorcrep 0: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q7 evaldag dagoaccorcrep 0: the standard eval of its own run / tag
+ok   Q6 gatedag dagoaccorcrep 1: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q6 traindag dagoaccorcrep 1: the printed line == DAG-OACC's banked argv + the registered change (token for token)
+ok   Q7 evaldag dagoaccorcrep 1: the standard eval of its own run / tag
+ok   Q8 REFUSED (rc 2, no trainer line): gatedag dagoaccorc 0 0.1
+ok   Q8 REFUSED (rc 2, no trainer line): traindag dagoaccorcrep 1 0.3
+ok   Q8 REFUSED (rc 2, no trainer line): gatedag dagoaccorc 2
+ok   Q8 REFUSED (rc 2, no trainer line): gatedag dagoaccorc
+== Q-mut: deliberate regressions of the queue stage (each must break the registered line)
+killed   MQ the composition flag is not set on A: breaks ['dagoaccorc']
+killed   MQ the REP's trainer seed is not 1<S>: breaks ['dagoaccorcrep']
+killed   MQ A's ego seed is a constant 0: breaks ['dagoaccorc']
+killed   MQ A's ego p is 0.1: breaks ['dagoaccorc']
+killed   MQ A is missing its law flags: breaks ['dagoaccorc']
+killed   MQ w_acc is a constant 50: breaks ['dagoaccorc', 'dagoaccorcrep']
+killed   MQ the swap p is 0 (DAGP not taken from :dagoaccarm): breaks ['dagoaccorc', 'dagoaccorcrep']
+killed   MQ the init is DAG's checkpoint, not M2b's: breaks ['dagoaccorc', 'dagoaccorcrep']
+killed   MQ the P refusal deleted: 'gatedag dagoaccorc 0 0.2' prints a trainer line again -> the Q8 refusal test would go RED
+killed   MQ the :dagarm hand-off is deleted for dagoaccorcrep: breaks ['dagoaccorcrep']
+killed   MQ the :dagname acceptance of dagoaccorc is deleted: breaks ['dagoaccorc']
+== R: the queue's real (non-dry) gate / train path on a fake box
+ok   R1 gatedag dagoaccorc 0 (real run): rc 0 and the gate ran
+ok   R2 the training argv is PINNED with the perturbation, the composition flag LAST, the swap and w_acc 49.6969, and without --selfcheck-only
+ok   R3 the gate ran the trainer with --selfcheck-only and the pinned argv (stub saw it)
+ok   R4 a second gate with an unchanged argv is accepted (idempotent pin)
+ok   R5 a re-gate against a pin that names another argv is REFUSED
+ok   R6 traindag against a tampered pin is REFUSED
+ok   R7 traindag before its gate is REFUSED (no pinned training argv)
+ok   R8 gate then train REP s1: the trainer ran with --seed 11, --dagger-seed 1, no ego law flag, no composition flag
+ok   R9 evaldag before the training finished is REFUSED
+killed   MR-R w_acc.txt absent on the box: the gate is REFUSED (no w_acc for DAG-OACC), never run with a guessed weight
+killed   MR-R the iteration-1 bank absent on the box: the gate is REFUSED (no merged bank)
+== C: the chain script (check-tree, dry-run, pins, waiter)
+ok   C1 --dry-run on the patched queue: rc 0, 4 SAME, 4 ONE-LEVER, 4 runs in the registered order
+ok   C2 --check-tree on the CURRENT tip (no flag, no queue stage): REFUSED, naming the missing flag
+ok   C3 --check-tree on a tree patched with the flag stub + the patched queue: PASS (every pattern present)
+killed   MC01 the tree lacks add_argument("--ego-perturb-with-dagger" but has the literals: REFUSED
+killed   MC02 the tree has the flag but the UNPATCHED queue: REFUSED (no :dagoaccorcarm)
+killed   MC03 the tree has the flag but no ego_dagger_overlap_n record (K-REACH could not be read): REFUSED
+killed   MC gate_dagoaccorc_assert.py tampered: the chain STOPs before touching anything (reviewed asserter)
+killed   MC v8f_dagoaccorc_chain_checks.py tampered: the chain STOPs before touching anything (reviewed checks)
+killed   MC oaf_lib.sh tampered: the chain STOPs before touching anything (proven file)
+killed   MC v8f_oaf_chain_checks.py tampered: the chain STOPs before touching anything (proven file)
+killed   MC chain mutant: w_acc pinned as 50: the dry run STOPs (not the one-lever argv)
+killed   MC chain mutant: seed-0 bank pinned wrong: the dry run STOPs (not the one-lever argv)
+killed   MC chain mutant: runs in another order: the dry run prints the wrong order (the registered one is absent)
+ok   C4 a real run with AFTER_OUT unset STOPs (no default predecessor)
+ok   C5 --wait-only: GO after the predecessor's ZZV8FMINI-DONE with no BOX2_BUSY
+killed   MC BOX2_BUSY held after the predecessor's DONE: the wait does NOT GO (HALT)
+== W: the waiter launcher
+killed   MW the waiter does NOT start the chain while the SPEEDREAD pull has not ended (no marker): it STOPs after its wait
+killed   MW the waiter does NOT start the chain while BOX2_BUSY.txt is present (the pull has ended)
+ok   W1 the waiter starts the chain once the pull has ended AND BOX2_BUSY is absent, with AFTER_OUT = the DAG-OACC r2 log and no SKIP_B variable
+ok   W2 a ZZSPEEDREAD-PULL-STOP also releases the waiter
+
+SELFTEST: 56/56 tests pass; MUTATION: 155/155 mutants killed, 0 survivors

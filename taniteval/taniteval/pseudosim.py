@@ -683,7 +683,7 @@ LATERAL_REFUSAL = (
     "SIGN-INVERTED above it, and 50 % of the frame at pitch 0 is above the "
     "horizon where the ground plane has no preimage. At |dlat| = 2.0 m only "
     "28.3 % of in-frame points meet the pre-registered rel_err < 0.25 bar "
-    "(required: 95 %). Artifact: TanitAD Research Hub/Benchmarks & Eval/"
+    "(required: 95 %). Artifact: TanitAD Research Lab/Benchmarks & Evals/"
     "Implementation/incoming/2026-07-27-pseudo-simulation/artifacts/"
     "lat_warp_fidelity.json (outcome L-BAD). The YAW axis passes the identical "
     "test at max error 0.0 px, so the test is not vacuous.")

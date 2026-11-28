@@ -1,0 +1,4350 @@
+{
+ "instrument": "scorerft_read.py",
+ "card": "PREREG_SCORER_FT.md (FROZEN 2026-11-20)",
+ "card_sha256": "adc1b2ae8d3cc9b3dfed00a20a3c39197428cda8492be34af3bb9ed24010ec91",
+ "evidence": "MEASURED on the rows supplied; T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)",
+ "tier": "T1 (NAVSIM v1 PDMS, open-loop pseudo-simulation of the executed LQR-tracked plan; not closed loop, not T0)",
+ "estimator": {
+  "kind": "paired log-cluster bootstrap",
+  "draws": 10000,
+  "seed": 20260927,
+  "interval": "95 % percentile",
+  "statistic": "ratio of sums over drawn logs (rates, shares and subset statistics too)",
+  "shared": "ONE draw matrix for every arm and contrast",
+  "answers": "another draw of LOGS only; another TRAINING run = the seed pair (Ts - Cs, F = |Cs - C|; H-ESTIM-SEED-1); another INFERENCE run = none (deterministic argmax, CTRL-DET)"
+ },
+ "ledger": "look 1 of H-SCORERFT-1 (Stage 1: T, C)",
+ "multiplicity": "multiplicity across cards is not corrected",
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "units": "PDMS, sub-scores x 100",
+ "arms": {
+  "T": "T",
+  "C": "C"
+ },
+ "self_read": false,
+ "stage": 1,
+ "controls": [
+  {
+   "control": "CTRL-SET",
+   "pass": true,
+   "n": 12146,
+   "unequal": {},
+   "population_problems": [],
+   "arms": [
+    "rows:T",
+    "rows:C",
+    "dump:T",
+    "dump:C"
+   ]
+  },
+  {
+   "control": "CTRL-T",
+   "arm": "T",
+   "pass": true,
+   "fails": [],
+   "n_tokens": 12146,
+   "n_over_bar": 0,
+   "bar": 1e-09,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 4.729439062600704e-12,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.970645868709653e-12
+   },
+   "table_pick_equals_dump_pick": true,
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_scorerft_t\\refe_stage2_scorerft_t.csv",
+   "csv_sha256": "0eaa1d296bf23e1ff54de7e48b1c6f96a52ca717c81690b876b89d859b83f01c"
+  },
+  {
+   "control": "CTRL-T",
+   "arm": "C",
+   "pass": true,
+   "fails": [],
+   "n_tokens": 12146,
+   "n_over_bar": 0,
+   "bar": 1e-09,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.4933055620124378e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.0388911952929902e-11
+   },
+   "table_pick_equals_dump_pick": true,
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_scorerft_c\\refe_stage2_scorerft_c.csv",
+   "csv_sha256": "2df7f856b46b9dc7f3540c056b15ffd2fc42a7ba39c94e0aad37d4f907f3c81f"
+  },
+  {
+   "arm": "T",
+   "bar": 1e-09,
+   "n_expected": 12146,
+   "n_scored": 12146,
+   "n_missing": 0,
+   "n_error_rows": 0,
+   "n_not_in_csv": 0,
+   "n_over_bar": 0,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 4.729439062600704e-12,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.970645868709653e-12
+   },
+   "over_first10": [],
+   "missing_first5": [],
+   "pass": true,
+   "verdict": "PASS",
+   "control": "CTRL-CSV",
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_scorerft_t\\refe_stage2_scorerft_t.csv",
+   "csv_sha256": "0eaa1d296bf23e1ff54de7e48b1c6f96a52ca717c81690b876b89d859b83f01c",
+   "arm_name": "T"
+  },
+  {
+   "arm": "C",
+   "bar": 1e-09,
+   "n_expected": 12146,
+   "n_scored": 12146,
+   "n_missing": 0,
+   "n_error_rows": 0,
+   "n_not_in_csv": 0,
+   "n_over_bar": 0,
+   "max_abs_diff": {
+    "nc": 0.0,
+    "dac": 0.0,
+    "ddc": 0.0,
+    "ep": 2.4933055620124378e-11,
+    "ttc": 0.0,
+    "c": 0.0,
+    "pdms": 1.0388911952929902e-11
+   },
+   "over_first10": [],
+   "missing_first5": [],
+   "pass": true,
+   "verdict": "PASS",
+   "control": "CTRL-CSV",
+   "csv": "E:\\Projects\\TanitAD\\data\\refe_navtest\\score\\refe_stage2_scorerft_c\\refe_stage2_scorerft_c.csv",
+   "csv_sha256": "2df7f856b46b9dc7f3540c056b15ffd2fc42a7ba39c94e0aad37d4f907f3c81f",
+   "arm_name": "C"
+  },
+  {
+   "control": "CTRL-SEAM",
+   "pass": true,
+   "fails": [],
+   "arms": {
+    "T": {
+     "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_scorerft_t.npz",
+     "seam_sha256": "d42d79113ca34c3031c03f514766c441f473b86e5b593ff224db4b79ac277884",
+     "dump": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_scorerft_t.proposals.npz",
+     "dump_sha256": "ea44c91633e87f4ca78dd7b6b500cde2c2d14deb4cff79ed72e3f57aa9a09a6c"
+    },
+    "C": {
+     "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_scorerft_c.npz",
+     "seam_sha256": "914bdd0aab4459a4ebb61d9fb0d82c537c3b1ec86ebc427882066ddee279b94f",
+     "dump": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_scorerft_c.proposals.npz",
+     "dump_sha256": "848e6561987b2971bd63f4cdcf9f17c3e4ec76d3aa19da405f7d7d5788492e56"
+    }
+   },
+   "ledger": "recorded now (first sight)",
+   "convert_report": "checked"
+  },
+  {
+   "control": "CTRL-ARGV",
+   "pass": true,
+   "fails": [],
+   "detail": {
+    "T_minus_C_flags": [
+     "--out",
+     "--rank-ep-gap",
+     "--rank-gate-topk",
+     "--rank-heads",
+     "--rank-w"
+    ]
+   },
+   "rule": "card section 3, exactly (no extra flag, no missing flag)"
+  },
+  {
+   "control": "CTRL-W0",
+   "pass": true,
+   "fails": [],
+   "c_digest": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4",
+   "c1_digest": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4",
+   "others": {},
+   "note": "the step-0 artifact format is not registered: the first 64-hex string in the supplied file is read (card question Q-S2)"
+  },
+  {
+   "control": "CTRL-DET",
+   "pass": true,
+   "fails": [],
+   "n_tokens": 12146,
+   "n_bar": 200,
+   "tokens_not_bit_identical": 0,
+   "max_abs_pose_diff": 0.0,
+   "seam_full": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_scorerft_t.npz",
+   "seam_rerun": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_scorerft_t_rep.npz",
+   "seam_full_sha256": "d42d79113ca34c3031c03f514766c441f473b86e5b593ff224db4b79ac277884",
+   "seam_rerun_sha256": "92cc4161c96ee4a4f66255e9e3e9b5d76e51daf4af98c247f7425b15d4a48128"
+  },
+  {
+   "control": "CTRL-ID",
+   "arm": "T",
+   "pass": true,
+   "nonzero_deltas": [],
+   "verdict": "O4",
+   "P1": false
+  },
+  {
+   "control": "CTRL-ID",
+   "arm": "C",
+   "pass": true,
+   "nonzero_deltas": [],
+   "verdict": "O4",
+   "P1": false
+  }
+ ],
+ "controls_all_pass": true,
+ "controls_not_available": [],
+ "levels": {
+  "T": {
+   "nc": {
+    "tracked": {
+     "point": 98.12283879466491,
+     "lo": 97.64626633436431,
+     "hi": 98.56812945261142
+    },
+    "transparent": {
+     "point": 97.87172731763543,
+     "lo": 97.34332236907007,
+     "hi": 98.37326141436128
+    },
+    "TD": {
+     "point": 0.25111147702948244,
+     "lo": 0.04649335057465649,
+     "hi": 0.45067392896693537
+    }
+   },
+   "dac": {
+    "tracked": {
+     "point": 97.68648114605631,
+     "lo": 97.05728160452976,
+     "hi": 98.24188950504067
+    },
+    "transparent": {
+     "point": 96.29507656841758,
+     "lo": 95.4914835238398,
+     "hi": 97.00373238117879
+    },
+    "TD": {
+     "point": 1.391404577638724,
+     "lo": 0.9468257464613646,
+     "hi": 1.8769406704145843
+    }
+   },
+   "ddc": {
+    "tracked": {
+     "point": 95.47999341346946,
+     "lo": 94.40091209999983,
+     "hi": 96.51961609345965
+    },
+    "transparent": {
+     "point": 95.0559855096328,
+     "lo": 93.84664176615753,
+     "hi": 96.21367501328204
+    },
+    "TD": {
+     "point": 0.4240079038366531,
+     "lo": 0.15272842580626608,
+     "hi": 0.6919364578765147
+    }
+   },
+   "ttc": {
+    "tracked": {
+     "point": 93.18294088588836,
+     "lo": 92.07919295330893,
+     "hi": 94.26329906206698
+    },
+    "transparent": {
+     "point": 93.50403424995883,
+     "lo": 92.43107889545152,
+     "hi": 94.56718655517908
+    },
+    "TD": {
+     "point": -0.32109336407047806,
+     "lo": -0.7730630258227243,
+     "hi": 0.11999477693124357
+    }
+   },
+   "ep": {
+    "tracked": {
+     "point": 90.87311630867423,
+     "lo": 90.03965250328997,
+     "hi": 91.65620045468202
+    },
+    "transparent": {
+     "point": 89.32005941225631,
+     "lo": 88.36560422995106,
+     "hi": 90.22501022353492
+    },
+    "TD": {
+     "point": 1.553056896417914,
+     "lo": 1.1226846905215162,
+     "hi": 2.0140793007339117
+    }
+   },
+   "c": {
+    "tracked": {
+     "point": 99.98353367363741,
+     "lo": 99.95549621717846,
+     "hi": 100.0
+    },
+    "transparent": {
+     "point": 23.19282068170591,
+     "lo": 20.47223275619423,
+     "hi": 26.04827381851404
+    },
+    "TD": {
+     "point": 76.7907129919315,
+     "lo": 73.93368899493798,
+     "hi": 79.50750483798518
+    }
+   },
+   "pdms": {
+    "tracked": {
+     "point": 91.76997230001415,
+     "lo": 90.9473469235821,
+     "hi": 92.56362991834224
+    },
+    "transparent": {
+     "point": 78.51364098779725,
+     "lo": 77.46361230728796,
+     "hi": 79.59599691753918
+    },
+    "TD": {
+     "point": 13.2563313122169,
+     "lo": 12.614998578705576,
+     "hi": 13.901270017986619
+    }
+   }
+  },
+  "C": {
+   "nc": {
+    "tracked": {
+     "point": 98.89263955211592,
+     "lo": 98.55413042950852,
+     "hi": 99.2133781075681
+    },
+    "transparent": {
+     "point": 98.53861353532027,
+     "lo": 98.12513960349241,
+     "hi": 98.92962294829931
+    },
+    "TD": {
+     "point": 0.3540260167956575,
+     "lo": 0.16196716863900562,
+     "hi": 0.5497377077849974
+    }
+   },
+   "dac": {
+    "tracked": {
+     "point": 98.24633624238433,
+     "lo": 97.73498801517256,
+     "hi": 98.69990513405698
+    },
+    "transparent": {
+     "point": 96.51737197431252,
+     "lo": 95.84762435674867,
+     "hi": 97.14936639707251
+    },
+    "TD": {
+     "point": 1.728964268071806,
+     "lo": 1.199100602171243,
+     "hi": 2.284089676060853
+    }
+   },
+   "ddc": {
+    "tracked": {
+     "point": 96.40622427136506,
+     "lo": 95.54844139991964,
+     "hi": 97.21776133641117
+    },
+    "transparent": {
+     "point": 95.90811789889676,
+     "lo": 94.9669390104174,
+     "hi": 96.81913567902481
+    },
+    "TD": {
+     "point": 0.4981063724682997,
+     "lo": 0.2587709008492759,
+     "hi": 0.7602123767774421
+    }
+   },
+   "ttc": {
+    "tracked": {
+     "point": 95.29063066029968,
+     "lo": 94.35040715123326,
+     "hi": 96.17473768965002
+    },
+    "transparent": {
+     "point": 94.8378066853285,
+     "lo": 93.89726495319917,
+     "hi": 95.73915461751002
+    },
+    "TD": {
+     "point": 0.45282397497118154,
+     "lo": 0.027243016359597052,
+     "hi": 0.8511011559114408
+    }
+   },
+   "ep": {
+    "tracked": {
+     "point": 89.93446712000622,
+     "lo": 89.04244470609238,
+     "hi": 90.77635194096175
+    },
+    "transparent": {
+     "point": 87.87279561172647,
+     "lo": 86.91578600266256,
+     "hi": 88.79651267761162
+    },
+    "TD": {
+     "point": 2.061671508279744,
+     "lo": 1.555175471121841,
+     "hi": 2.5955755386788173
+    }
+   },
+   "c": {
+    "tracked": {
+     "point": 99.99176683681871,
+     "lo": 99.97233448501346,
+     "hi": 100.0
+    },
+    "transparent": {
+     "point": 21.883747735880124,
+     "lo": 19.445521805506534,
+     "hi": 24.425464166366844
+    },
+    "TD": {
+     "point": 78.10801910093859,
+     "lo": 75.56293255885453,
+     "hi": 80.54284780678896
+    }
+   },
+   "pdms": {
+    "tracked": {
+     "point": 92.67148473777777,
+     "lo": 91.90438348797055,
+     "hi": 93.40012609697389
+    },
+    "transparent": {
+     "point": 78.34580717429003,
+     "lo": 77.38677294469515,
+     "hi": 79.34083981033943
+    },
+    "TD": {
+     "point": 14.325677563487744,
+     "lo": 13.685630747868183,
+     "hi": 14.963518332995687
+    }
+   }
+  }
+ },
+ "goal": {
+  "T": {
+   "goal": 94.55,
+   "level_tracked": {
+    "point": 91.76997230001415,
+    "lo": 90.9473469235821,
+    "hi": 92.56362991834224
+   },
+   "status": "BELOW GOAL",
+   "ci_hi_below_goal": true
+  },
+  "C": {
+   "goal": 94.55,
+   "level_tracked": {
+    "point": 92.67148473777777,
+    "lo": 91.90438348797055,
+    "hi": 93.40012609697389
+   },
+   "status": "BELOW GOAL",
+   "ci_hi_below_goal": true
+  }
+ },
+ "T_minus_C": {
+  "nc": {
+   "tracked": {
+    "point": -0.7698007574510127,
+    "lo": -1.0051839328280192,
+    "hi": -0.5416590831602138
+   },
+   "transparent": {
+    "point": -0.6668862176848345,
+    "lo": -0.9549569302667152,
+    "hi": -0.3886854315835268
+   },
+   "TD": {
+    "point": -0.10291453976617826,
+    "lo": -0.2917971535651111,
+    "hi": 0.08332733495501281
+   }
+  },
+  "dac": {
+   "tracked": {
+    "point": -0.5598550963280092,
+    "lo": -0.8100954791770115,
+    "hi": -0.3119472711809651
+   },
+   "transparent": {
+    "point": -0.22229540589494484,
+    "lo": -0.6112195615501448,
+    "hi": 0.14060385468669262
+   },
+   "TD": {
+    "point": -0.3375596904330644,
+    "lo": -0.638894131295513,
+    "hi": -0.009212875421097423
+   }
+  },
+  "ddc": {
+   "tracked": {
+    "point": -0.9262308578956034,
+    "lo": -1.2792209680193773,
+    "hi": -0.5909771170713829
+   },
+   "transparent": {
+    "point": -0.8521323892639552,
+    "lo": -1.2111006642738968,
+    "hi": -0.5060925461604815
+   },
+   "TD": {
+    "point": -0.07409846863164826,
+    "lo": -0.26301338031839055,
+    "hi": 0.1081094484501895
+   }
+  },
+  "ttc": {
+   "tracked": {
+    "point": -2.107689774411329,
+    "lo": -2.5977268522835213,
+    "hi": -1.617901670609852
+   },
+   "transparent": {
+    "point": -1.333772435369669,
+    "lo": -1.773294564563323,
+    "hi": -0.9172706125784176
+   },
+   "TD": {
+    "point": -0.77391733904166,
+    "lo": -1.2147363548681724,
+    "hi": -0.3121827361697638
+   }
+  },
+  "ep": {
+   "tracked": {
+    "point": 0.9386491886680198,
+    "lo": 0.604025970761248,
+    "hi": 1.2840875490186934
+   },
+   "transparent": {
+    "point": 1.4472638005298404,
+    "lo": 1.0330381507182105,
+    "hi": 1.849047005383236
+   },
+   "TD": {
+    "point": -0.5086146118618206,
+    "lo": -0.8157508871458823,
+    "hi": -0.18724532185776996
+   }
+  },
+  "c": {
+   "tracked": {
+    "point": -0.008233163181294254,
+    "lo": -0.02788901108531618,
+    "hi": 0.0
+   },
+   "transparent": {
+    "point": 1.3090729458257864,
+    "lo": 0.24163595463844748,
+    "hi": 2.3553943928753
+   },
+   "TD": {
+    "point": -1.3173061090070806,
+    "lo": -2.3605154883131556,
+    "hi": -0.24873301639008202
+   }
+  },
+  "pdms": {
+   "tracked": {
+    "point": -0.9015124377636577,
+    "lo": -1.2021315523804585,
+    "hi": -0.5874460514780274
+   },
+   "transparent": {
+    "point": 0.16783381350722198,
+    "lo": -0.23976288183657257,
+    "hi": 0.546386809662888
+   },
+   "TD": {
+    "point": -1.0693462512708798,
+    "lo": -1.4421327363359118,
+    "hi": -0.6839520576095183
+   }
+  }
+ },
+ "mechanism": {
+  "M1_ep_spearman": {
+   "delta": {
+    "point": 0.3533755852187972,
+    "lo": 0.333999282897781,
+    "hi": 0.37477710478158793,
+    "n_tokens": 10438
+   },
+   "moved": true,
+   "rule": "delta >= +0.1 and CI-lo > 0 (tokens with >= 3 safe proposals in BOTH arms)"
+  },
+  "M2_boundary": {
+   "zeroed_pick_rate_pp": {
+    "point": 1.2596739667380208,
+    "lo": 0.9669889175689697,
+    "hi": 1.5495680085605212,
+    "n_tokens": 12146
+   },
+   "zeroed_by_dac": {
+    "point": 0.5598550963280092,
+    "lo": 0.31194727118096466,
+    "hi": 0.8100954791770114,
+    "n_tokens": 12146
+   },
+   "zeroed_by_nc": {
+    "point": 0.7409846863164828,
+    "lo": 0.5154628286708566,
+    "hi": 0.9698038460127276,
+    "n_tokens": 12146
+   },
+   "confidently_wrong_dac_share": {
+    "point": -8.784738577484688,
+    "lo": -15.879330974369138,
+    "hi": -2.0978710344381946,
+    "n_a": 264,
+    "n_b": 193
+   },
+   "confidently_wrong_nc_share": {
+    "point": -19.56365207373272,
+    "lo": -27.035381214224007,
+    "hi": -11.55758673693457,
+    "n_a": 217,
+    "n_b": 128
+   },
+   "reported_only": true
+  },
+  "M3_regret": {
+   "oracle_minus_pick": {
+    "point": 0.9319530826555344,
+    "lo": 0.6090667149989655,
+    "hi": 1.2408281598481163,
+    "n_tokens": 12146
+   },
+   "gate": {
+    "point": 1.270825869836879,
+    "lo": 0.975470330229324,
+    "hi": 1.567103829313071,
+    "n_tokens": 12146
+   },
+   "ep": {
+    "point": -0.9106972849936364,
+    "lo": -1.0028066658269232,
+    "hi": -0.8220717590679014,
+    "n_tokens": 12146
+   },
+   "ttc": {
+    "point": 0.5214336681486361,
+    "lo": 0.33295455090356674,
+    "hi": 0.7162986370357143,
+    "n_tokens": 12146
+   },
+   "c": {
+    "point": 0.001372193863549042,
+    "lo": 0.0,
+    "hi": 0.004648168514219362,
+    "n_tokens": 12146
+   },
+   "other": {
+    "point": 0.04901863580010688,
+    "lo": 0.017212788101168507,
+    "hi": 0.08945430114248933,
+    "n_tokens": 12146
+   },
+   "moved": false,
+   "rule": "CI-hi < 0 of T - C regret (oracle - pick)"
+  },
+  "M4_generation_guard": {
+   "oracle_of_64": {
+    "point": 0.03044064489187671,
+    "lo": -0.031052620105312744,
+    "hi": 0.09012313258198747,
+    "n_tokens": 12146
+   },
+   "damaged": false,
+   "rule": "CI-hi < 0 of T - C oracle-of-64"
+  },
+  "mechanism_moved": true,
+  "m4_damaged": false
+ },
+ "mechanism_Ts_minus_Cs": null,
+ "replicate": {
+  "status": "PENDING (Stage 2)",
+  "note": "Cs, Ts not supplied: P2 and P3 print PENDING; ADOPT is not reachable"
+ },
+ "comfort_transparent": {
+  "rule": "descriptive; enters NO clause (G1's C is NAVSIM's tracked comfort sub-score); C1's own transparent-comfort GUARD-FAIL stays open on the lineage",
+  "forms": {
+   "transparent_20_pose_plan": "table tp20_pick.c (the 20-pose pick scored without the tracker; the P5-C pass-1 transparent row)",
+   "transparent_8_submitted_poses": "table tp.c[pick] (the 8 submitted poses executed as given)"
+  },
+  "level_x100": {
+   "transparent_20_pose_plan": {
+    "T": {
+     "point": 23.19282068170591,
+     "lo": 20.47223275619423,
+     "hi": 26.04827381851404
+    },
+    "C": {
+     "point": 21.883747735880124,
+     "lo": 19.445521805506534,
+     "hi": 24.425464166366844
+    }
+   },
+   "transparent_8_submitted_poses": {
+    "T": {
+     "point": 95.1342005598551,
+     "lo": 94.03420329017912,
+     "hi": 96.19324934637396
+    },
+    "C": {
+     "point": 94.22031944673144,
+     "lo": 92.93412251835412,
+     "hi": 95.49532259807802
+    }
+   }
+  },
+  "delta_T_minus_C": {
+   "transparent_20_pose_plan": {
+    "point": 1.3090729458257864,
+    "lo": 0.24163595463844748,
+    "hi": 2.3553943928753
+   },
+   "transparent_8_submitted_poses": {
+    "point": 0.9138811131236622,
+    "lo": 0.37167580059736927,
+    "hi": 1.52122369261488
+   }
+  },
+  "rows_transparent_c_equals_20_pose": {
+   "T": 0.0,
+   "C": 0.0
+  }
+ },
+ "families": {
+  "pooled": false,
+  "rule": "each family stands alone; no composite; a separated adverse cell is a verdict QUALIFIER, only G1 blocks ADOPT (card section 6)",
+  "LONGITUDINAL": {
+   "headway_min_m": {
+    "status": "OK",
+    "n_tokens": 6192,
+    "T": {
+     "point": 16.779685531420863,
+     "lo": 15.85870884201436,
+     "hi": 17.77404682790618
+    },
+    "C": {
+     "point": 16.8829339978687,
+     "lo": 15.965480689476994,
+     "hi": 17.86578206085065
+    },
+    "diff_T_minus_C": {
+     "point": -0.10324846644783718,
+     "lo": -0.18067471107098595,
+     "hi": -0.021381760821130687
+    },
+    "adverse": true
+   },
+   "time_gap_min_s": {
+    "status": "OK",
+    "n_tokens": 5660,
+    "T": {
+     "point": 4.895846943976527,
+     "lo": 4.411573180650419,
+     "hi": 5.5105522880536535
+    },
+    "C": {
+     "point": 4.9380640124090815,
+     "lo": 4.456976227117766,
+     "hi": 5.550554365746974
+    },
+    "diff_T_minus_C": {
+     "point": -0.042217068432554634,
+     "lo": -0.062118956027622484,
+     "hi": -0.022929692639072855
+    },
+    "adverse": true
+   },
+   "min_ttc_s": {
+    "status": "OK",
+    "n_tokens": 6192,
+    "T": {
+     "point": 13.49935500371066,
+     "lo": 12.99621594323552,
+     "hi": 14.02937335681859
+    },
+    "C": {
+     "point": 13.997234016015204,
+     "lo": 13.487364527099274,
+     "hi": 14.533451389537147
+    },
+    "diff_T_minus_C": {
+     "point": -0.4978790123045466,
+     "lo": -0.6174010124348381,
+     "hi": -0.3797630005883815
+    },
+    "adverse": true
+   },
+   "lead_viol": {
+    "status": "OK",
+    "n_tokens": 6435,
+    "T": {
+     "point": 0.03076923076923077,
+     "lo": 0.02347781732406038,
+     "hi": 0.03826812778100519
+    },
+    "C": {
+     "point": 0.01989121989121989,
+     "lo": 0.014606243158294929,
+     "hi": 0.025440834933574373
+    },
+    "diff_T_minus_C": {
+     "point": 0.010878010878010878,
+     "lo": 0.006171701669274444,
+     "hi": 0.015406441150736182
+    },
+    "adverse": true
+   },
+   "lead_at_risk": {
+    "status": "OK",
+    "n_tokens": 6435,
+    "T": {
+     "point": 0.8374514374514375,
+     "lo": 0.8176872599152498,
+     "hi": 0.8561392063296414
+    },
+    "C": {
+     "point": 0.8374514374514375,
+     "lo": 0.8176872599152498,
+     "hi": 0.8561392063296414
+    },
+    "diff_T_minus_C": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "adverse": false
+   },
+   "lead_progress_ratio": {
+    "status": "OK",
+    "n_tokens": 5331,
+    "T": {
+     "point": 1.2343929005340206,
+     "lo": 1.2126592628005,
+     "hi": 1.2574595777333488
+    },
+    "C": {
+     "point": 1.1586879080612131,
+     "lo": 1.1358024263183917,
+     "hi": 1.1819629297472674
+    },
+    "diff_T_minus_C": {
+     "point": 0.07570499247280768,
+     "lo": 0.0670304243332579,
+     "hi": 0.08583546737487914
+    },
+    "adverse": true
+   },
+   "speed_mae_mps": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.9885069874242419,
+     "lo": 0.9038214599076343,
+     "hi": 1.080488855556843
+    },
+    "C": {
+     "point": 0.9561366688286974,
+     "lo": 0.8787296687242755,
+     "hi": 1.0404322156934636
+    },
+    "diff_T_minus_C": {
+     "point": 0.03237031859554451,
+     "lo": 0.01682238726520168,
+     "hi": 0.04847014925047853
+    },
+    "adverse": true
+   },
+   "speed_bias_mps": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.6941882799867656,
+     "lo": 0.5764157360011272,
+     "hi": 0.8194050604845297
+    },
+    "C": {
+     "point": 0.4990644863706486,
+     "lo": 0.3769614881596688,
+     "hi": 0.6275319669179769
+    },
+    "diff_T_minus_C": {
+     "point": 0.19512379361611698,
+     "lo": 0.17024774698676917,
+     "hi": 0.2224990953861146
+    },
+    "adverse": false
+   },
+   "speed_rmse_mps": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 1.410056085743759,
+     "lo": 1.2987664431896466,
+     "hi": 1.5232019961272456
+    },
+    "C": {
+     "point": 1.3934004448300035,
+     "lo": 1.2872723271589832,
+     "hi": 1.5043840379415219
+    },
+    "diff_T_minus_C": {
+     "point": 0.016655640913755487,
+     "lo": -0.003998355612152537,
+     "hi": 0.03709631461395487
+    },
+    "adverse": false
+   },
+   "target_speed_acc.within_0.5_mps": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.43537996048081673,
+     "lo": 0.4078678525024151,
+     "hi": 0.4621056286036756
+    },
+    "C": {
+     "point": 0.4597398320434711,
+     "lo": 0.4346943381417766,
+     "hi": 0.4842198830468599
+    },
+    "diff_T_minus_C": {
+     "point": -0.024359871562654345,
+     "lo": -0.030882946254168455,
+     "hi": -0.017591739371225396
+    },
+    "adverse": true
+   },
+   "target_speed_acc.within_1.0_mps": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.6482792688951095,
+     "lo": 0.6133222065591055,
+     "hi": 0.6811660947947308
+    },
+    "C": {
+     "point": 0.6640869422031944,
+     "lo": 0.6332155482423617,
+     "hi": 0.6930169034750063
+    },
+    "diff_T_minus_C": {
+     "point": -0.01580767330808497,
+     "lo": -0.022780253228675197,
+     "hi": -0.00854198344993604
+    },
+    "adverse": true
+   },
+   "target_speed_acc.within_2.0_mps": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.8457825621603821,
+     "lo": 0.8160666472649737,
+     "hi": 0.872866562137892
+    },
+    "C": {
+     "point": 0.8534599868269389,
+     "lo": 0.8275652581184098,
+     "hi": 0.8772412516808327
+    },
+    "diff_T_minus_C": {
+     "point": -0.0076774246665568535,
+     "lo": -0.013937183051510201,
+     "hi": -0.0018053450580980375
+    },
+    "adverse": true
+   },
+   "along_mae_m": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 1.463156170985713,
+     "lo": 1.347507398453448,
+     "hi": 1.587914198342057
+    },
+    "C": {
+     "point": 1.4053520313659633,
+     "lo": 1.2961521265782165,
+     "hi": 1.5253197403402725
+    },
+    "diff_T_minus_C": {
+     "point": 0.05780413961974973,
+     "lo": 0.03785670034793216,
+     "hi": 0.07746206275441367
+    },
+    "adverse": true
+   },
+   "along_bias_m": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 1.0581769841313227,
+     "lo": 0.8934375158389123,
+     "hi": 1.230608951460949
+    },
+    "C": {
+     "point": 0.7874102138233043,
+     "lo": 0.6133685214408677,
+     "hi": 0.9689877272778622
+    },
+    "diff_T_minus_C": {
+     "point": 0.2707667703080183,
+     "lo": 0.23260533254042948,
+     "hi": 0.31410310951523646
+    },
+    "adverse": false
+   },
+   "along_final_bias_m": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 2.485020879867706,
+     "lo": 2.0668060241554778,
+     "hi": 2.9243040699162512
+    },
+    "C": {
+     "point": 1.8340428327967053,
+     "lo": 1.3845325368770336,
+     "hi": 2.303925702214036
+    },
+    "diff_T_minus_C": {
+     "point": 0.6509780470710005,
+     "lo": 0.5588019276022088,
+     "hi": 0.7565588962775635
+    },
+    "adverse": false
+   },
+   "accel_mae_mps2": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.5397489527686657,
+     "lo": 0.500923140745738,
+     "hi": 0.5818229624945015
+    },
+    "C": {
+     "point": 0.5408543590270688,
+     "lo": 0.5061988586801652,
+     "hi": 0.5785189023910032
+    },
+    "diff_T_minus_C": {
+     "point": -0.0011054062584030522,
+     "lo": -0.009045621203566214,
+     "hi": 0.007092265306710339
+    },
+    "adverse": false
+   },
+   "ego_progress.progress_ratio_mean": {
+    "status": "OK",
+    "n_tokens": 12053,
+    "T": {
+     "point": 1.2126452588958205,
+     "lo": 1.1891939744066944,
+     "hi": 1.2365929262637847
+    },
+    "C": {
+     "point": 1.163873778462223,
+     "lo": 1.1398857412670202,
+     "hi": 1.1891084117223096
+    },
+    "diff_T_minus_C": {
+     "point": 0.04877148043359747,
+     "lo": 0.04242500968889158,
+     "hi": 0.055599716508983286
+    },
+    "adverse": true
+   },
+   "ego_progress.progress_ratio_median": {
+    "status": "OK",
+    "n_tokens": 12053,
+    "T": {
+     "point": 1.1461889454001142,
+     "lo": 1.1253682608405362,
+     "hi": 1.1737441279947463
+    },
+    "C": {
+     "point": 1.1139724271346048,
+     "lo": 1.0905214505619627,
+     "hi": 1.1396913948583554
+    },
+    "diff_T_minus_C": {
+     "point": 0.03221651826550942,
+     "lo": 0.02729251564898269,
+     "hi": 0.03879624648955635
+    },
+    "adverse": false
+   },
+   "ego_progress.progress_error_mean": {
+    "status": "OK",
+    "n_tokens": 12053,
+    "T": {
+     "point": 0.2777176596328205,
+     "lo": 0.258913815959967,
+     "hi": 0.2969234498334615
+    },
+    "C": {
+     "point": 0.2579588433135146,
+     "lo": 0.23993815247996608,
+     "hi": 0.2764905004501031
+    },
+    "diff_T_minus_C": {
+     "point": 0.019758816319305927,
+     "lo": 0.015723695577896,
+     "hi": 0.024038328806271242
+    },
+    "adverse": true
+   },
+   "ego_progress.under_progress_rate": {
+    "status": "OK",
+    "n_tokens": 12053,
+    "T": {
+     "point": 0.2100721811997013,
+     "lo": 0.1801252969457861,
+     "hi": 0.24062516926575667
+    },
+    "C": {
+     "point": 0.30050609806687134,
+     "lo": 0.26587757897107306,
+     "hi": 0.33485798045590875
+    },
+    "diff_T_minus_C": {
+     "point": -0.09043391686717003,
+     "lo": -0.10469284322192374,
+     "hi": -0.07772862797391622
+    },
+    "adverse": false
+   },
+   "ego_progress.gt_progress_mean_m": {
+    "status": "HUMAN-ONLY",
+    "n_tokens": null,
+    "T": null,
+    "C": null,
+    "diff_T_minus_C": null,
+    "adverse": null
+   },
+   "ego_progress.t0_axis_gt_self_ratio": {
+    "status": "HUMAN-ONLY",
+    "n_tokens": null,
+    "T": null,
+    "C": null,
+    "diff_T_minus_C": null,
+    "adverse": null
+   }
+  },
+  "LATERAL": {
+   "heading_mae_deg": {
+    "status": "OK",
+    "n_tokens": 12102,
+    "T": {
+     "point": 3.0092762633557477,
+     "lo": 2.779705361139856,
+     "hi": 3.236008462114493
+    },
+    "C": {
+     "point": 2.868343018462298,
+     "lo": 2.631366507415435,
+     "hi": 3.104712864569608
+    },
+    "diff_T_minus_C": {
+     "point": 0.1409332448934495,
+     "lo": 0.08630754414739601,
+     "hi": 0.19608973622209971
+    },
+    "adverse": true
+   },
+   "yaw_rate_mae_degps": {
+    "status": "OK",
+    "n_tokens": 11958,
+    "T": {
+     "point": 2.8919001112683835,
+     "lo": 2.684294825603853,
+     "hi": 3.1032716229521604
+    },
+    "C": {
+     "point": 2.807059174714808,
+     "lo": 2.5958834329618323,
+     "hi": 3.0221753616168443
+    },
+    "diff_T_minus_C": {
+     "point": 0.08484093655357539,
+     "lo": 0.054659538169289326,
+     "hi": 0.11617858694104587
+    },
+    "adverse": true
+   },
+   "curvature_mae_1pm": {
+    "status": "OK",
+    "n_tokens": 11958,
+    "T": {
+     "point": 0.01233709749853732,
+     "lo": 0.011517753952068712,
+     "hi": 0.013147379401722949
+    },
+    "C": {
+     "point": 0.012367818897019088,
+     "lo": 0.011478665459296608,
+     "hi": 0.013260058701829457
+    },
+    "diff_T_minus_C": {
+     "point": -3.0721398481767595e-05,
+     "lo": -0.00021375688317471628,
+     "hi": 0.0001477369819565562
+    },
+    "adverse": false
+   },
+   "curvature_bias_1pm": {
+    "status": "OK",
+    "n_tokens": 11958,
+    "T": {
+     "point": 0.0006037341925544307,
+     "lo": 6.39172454082006e-05,
+     "hi": 0.0011251687941508512
+    },
+    "C": {
+     "point": 0.0007931935064219509,
+     "lo": 0.00019186492313977643,
+     "hi": 0.0013523053024991284
+    },
+    "diff_T_minus_C": {
+     "point": -0.0001894593138675202,
+     "lo": -0.0003759990770583921,
+     "hi": -9.851060714628149e-06
+    },
+    "adverse": false
+   },
+   "cross_mae_m": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 0.49975272086593314,
+     "lo": 0.454573733527022,
+     "hi": 0.5475199214813201
+    },
+    "C": {
+     "point": 0.4603663585787282,
+     "lo": 0.4193078444217087,
+     "hi": 0.500999415484617
+    },
+    "diff_T_minus_C": {
+     "point": 0.039386362287204935,
+     "lo": 0.027840945832693493,
+     "hi": 0.05232913371899746
+    },
+    "adverse": true
+   },
+   "cross_bias_m": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": -0.04629589475005881,
+     "lo": -0.08813680537758171,
+     "hi": -0.00440676881941987
+    },
+    "C": {
+     "point": -0.04995756270646435,
+     "lo": -0.08354327218099226,
+     "hi": -0.01480550960398024
+    },
+    "diff_T_minus_C": {
+     "point": 0.0036616679564055385,
+     "lo": -0.014340776296706749,
+     "hi": 0.02101400236507696
+    },
+    "adverse": false
+   },
+   "cross_final_mae_m": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 1.3094523541651013,
+     "lo": 1.1539260201826238,
+     "hi": 1.477813756588865
+    },
+    "C": {
+     "point": 1.1702616988102357,
+     "lo": 1.0364603686829448,
+     "hi": 1.3088245054926408
+    },
+    "diff_T_minus_C": {
+     "point": 0.13919065535486563,
+     "lo": 0.10367532788881692,
+     "hi": 0.18027577117854018
+    },
+    "adverse": true
+   },
+   "last_pose_heading_err_deg": {
+    "status": "OK",
+    "n_tokens": 12146,
+    "T": {
+     "point": 4.835883307547892,
+     "lo": 4.29632898550591,
+     "hi": 5.388387986882186
+    },
+    "C": {
+     "point": 4.585857960934961,
+     "lo": 4.044746930566031,
+     "hi": 5.137143720234153
+    },
+    "diff_T_minus_C": {
+     "point": 0.2500253466129312,
+     "lo": 0.1401226460787295,
+     "hi": 0.3627114885560616
+    },
+    "adverse": true
+   }
+  },
+  "lead_agent_components": {
+   "components": {
+    "headway_min_m": {
+     "status": "OK",
+     "n_tokens": 6192,
+     "T": {
+      "point": 16.779685531420863,
+      "lo": 15.85870884201436,
+      "hi": 17.77404682790618
+     },
+     "C": {
+      "point": 16.8829339978687,
+      "lo": 15.965480689476994,
+      "hi": 17.86578206085065
+     },
+     "diff_T_minus_C": {
+      "point": -0.10324846644783718,
+      "lo": -0.18067471107098595,
+      "hi": -0.021381760821130687
+     },
+     "adverse": true
+    },
+    "time_gap_min_s": {
+     "status": "OK",
+     "n_tokens": 5660,
+     "T": {
+      "point": 4.895846943976527,
+      "lo": 4.411573180650419,
+      "hi": 5.5105522880536535
+     },
+     "C": {
+      "point": 4.9380640124090815,
+      "lo": 4.456976227117766,
+      "hi": 5.550554365746974
+     },
+     "diff_T_minus_C": {
+      "point": -0.042217068432554634,
+      "lo": -0.062118956027622484,
+      "hi": -0.022929692639072855
+     },
+     "adverse": true
+    },
+    "min_ttc_s": {
+     "status": "OK",
+     "n_tokens": 6192,
+     "T": {
+      "point": 13.49935500371066,
+      "lo": 12.99621594323552,
+      "hi": 14.02937335681859
+     },
+     "C": {
+      "point": 13.997234016015204,
+      "lo": 13.487364527099274,
+      "hi": 14.533451389537147
+     },
+     "diff_T_minus_C": {
+      "point": -0.4978790123045466,
+      "lo": -0.6174010124348381,
+      "hi": -0.3797630005883815
+     },
+     "adverse": true
+    },
+    "lead_viol": {
+     "status": "OK",
+     "n_tokens": 6435,
+     "T": {
+      "point": 0.03076923076923077,
+      "lo": 0.02347781732406038,
+      "hi": 0.03826812778100519
+     },
+     "C": {
+      "point": 0.01989121989121989,
+      "lo": 0.014606243158294929,
+      "hi": 0.025440834933574373
+     },
+     "diff_T_minus_C": {
+      "point": 0.010878010878010878,
+      "lo": 0.006171701669274444,
+      "hi": 0.015406441150736182
+     },
+     "adverse": true
+    },
+    "lead_at_risk": {
+     "status": "OK",
+     "n_tokens": 6435,
+     "T": {
+      "point": 0.8374514374514375,
+      "lo": 0.8176872599152498,
+      "hi": 0.8561392063296414
+     },
+     "C": {
+      "point": 0.8374514374514375,
+      "lo": 0.8176872599152498,
+      "hi": 0.8561392063296414
+     },
+     "diff_T_minus_C": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0
+     },
+     "adverse": false
+    },
+    "lead_progress_ratio": {
+     "status": "OK",
+     "n_tokens": 5331,
+     "T": {
+      "point": 1.2343929005340206,
+      "lo": 1.2126592628005,
+      "hi": 1.2574595777333488
+     },
+     "C": {
+      "point": 1.1586879080612131,
+      "lo": 1.1358024263183917,
+      "hi": 1.1819629297472674
+     },
+     "diff_T_minus_C": {
+      "point": 0.07570499247280768,
+      "lo": 0.0670304243332579,
+      "hi": 0.08583546737487914
+     },
+     "adverse": true
+    }
+   },
+   "rule": "computed where a lead exists with its n, refused with the reason where none does (families_run.py); never silently dropped"
+  },
+  "TACTICAL": {
+   "(a)_manoeuvre_decision_command_adherence": {
+    "kind": "P5C_TACTICAL",
+    "card": "PREREG_P5C.md section 8.2 (TACTICAL row)",
+    "evidence": "MEASURED on the seams supplied (T1: the plan against the command, no tracker in these numbers)",
+    "pooled": false,
+    "families_never_pooled": "each block below stands alone; there is no composite",
+    "command_adherence": {
+     "status": "COMPUTED",
+     "invalid": [],
+     "n_tokens": 12146,
+     "n_logs": 136,
+     "command_counts": {
+      "LEFT": 2501,
+      "STRAIGHT": 8070,
+      "RIGHT": 1575,
+      "UNKNOWN": 0
+     },
+     "n_turn_active": 4076,
+     "registered_read": true,
+     "headline": "turn-active accuracy (LEFT u RIGHT commands)",
+     "arms": {
+      "T": {
+       "turn_active": {
+        "n": 4076,
+        "accuracy": {
+         "point": 0.8844455348380765,
+         "ci95": [
+          0.8606262911572481,
+          0.9058939144874856
+         ]
+        },
+        "kappa": {
+         "point": 0.7804168428570301,
+         "ci95": [
+          0.7397535952119557,
+          0.8178988261289857
+         ],
+         "n_undefined_resamples": 0
+        },
+        "confusion_command_rows_plan_cols": [
+         [
+          2271.0,
+          203.0,
+          27.0
+         ],
+         [
+          0.0,
+          0.0,
+          0.0
+         ],
+         [
+          19.0,
+          222.0,
+          1334.0
+         ]
+        ],
+        "rows": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "cols": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "per_command_recall": {
+         "LEFT": 0.9080367852858856,
+         "STRAIGHT": null,
+         "RIGHT": 0.846984126984127
+        },
+        "per_command_n": {
+         "LEFT": 2501.0,
+         "STRAIGHT": 0.0,
+         "RIGHT": 1575.0
+        }
+       },
+       "all_tokens": {
+        "n": 12146,
+        "accuracy": {
+         "point": 0.8424995883418409,
+         "ci95": [
+          0.8193383822681757,
+          0.8643467095604649
+         ]
+        },
+        "kappa": {
+         "point": 0.7086982806448393,
+         "ci95": [
+          0.6730217596729373,
+          0.7428736192536427
+         ],
+         "n_undefined_resamples": 0
+        },
+        "confusion_command_rows_plan_cols": [
+         [
+          2271.0,
+          203.0,
+          27.0
+         ],
+         [
+          758.0,
+          6628.0,
+          684.0
+         ],
+         [
+          19.0,
+          222.0,
+          1334.0
+         ]
+        ],
+        "rows": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "cols": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "per_command_recall": {
+         "LEFT": 0.9080367852858856,
+         "STRAIGHT": 0.8213135068153655,
+         "RIGHT": 0.846984126984127
+        },
+        "per_command_n": {
+         "LEFT": 2501.0,
+         "STRAIGHT": 8070.0,
+         "RIGHT": 1575.0
+        }
+       }
+      },
+      "C": {
+       "turn_active": {
+        "n": 4076,
+        "accuracy": {
+         "point": 0.8746319921491659,
+         "ci95": [
+          0.8472531444483471,
+          0.8990787615032043
+         ]
+        },
+        "kappa": {
+         "point": 0.7640857449904767,
+         "ci95": [
+          0.7188556281427114,
+          0.8059970605769041
+         ],
+         "n_undefined_resamples": 0
+        },
+        "confusion_command_rows_plan_cols": [
+         [
+          2250.0,
+          223.0,
+          28.0
+         ],
+         [
+          0.0,
+          0.0,
+          0.0
+         ],
+         [
+          17.0,
+          243.0,
+          1315.0
+         ]
+        ],
+        "rows": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "cols": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "per_command_recall": {
+         "LEFT": 0.899640143942423,
+         "STRAIGHT": null,
+         "RIGHT": 0.834920634920635
+        },
+        "per_command_n": {
+         "LEFT": 2501.0,
+         "STRAIGHT": 0.0,
+         "RIGHT": 1575.0
+        }
+       },
+       "all_tokens": {
+        "n": 12146,
+        "accuracy": {
+         "point": 0.8448048740326033,
+         "ci95": [
+          0.8213891604963377,
+          0.8676907477892148
+         ]
+        },
+        "kappa": {
+         "point": 0.7106897215085252,
+         "ci95": [
+          0.6744022817211432,
+          0.7467823307950903
+         ],
+         "n_undefined_resamples": 0
+        },
+        "confusion_command_rows_plan_cols": [
+         [
+          2250.0,
+          223.0,
+          28.0
+         ],
+         [
+          693.0,
+          6696.0,
+          681.0
+         ],
+         [
+          17.0,
+          243.0,
+          1315.0
+         ]
+        ],
+        "rows": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "cols": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "per_command_recall": {
+         "LEFT": 0.899640143942423,
+         "STRAIGHT": 0.8297397769516729,
+         "RIGHT": 0.834920634920635
+        },
+        "per_command_n": {
+         "LEFT": 2501.0,
+         "STRAIGHT": 8070.0,
+         "RIGHT": 1575.0
+        }
+       }
+      },
+      "base": {
+       "turn_active": {
+        "n": 4076,
+        "accuracy": {
+         "point": 0.876594700686948,
+         "ci95": [
+          0.8487127661250434,
+          0.9011704550319083
+         ]
+        },
+        "kappa": {
+         "point": 0.7669968806056588,
+         "ci95": [
+          0.7212263263985756,
+          0.8087274322872146
+         ],
+         "n_undefined_resamples": 0
+        },
+        "confusion_command_rows_plan_cols": [
+         [
+          2261.0,
+          214.0,
+          26.0
+         ],
+         [
+          0.0,
+          0.0,
+          0.0
+         ],
+         [
+          21.0,
+          242.0,
+          1312.0
+         ]
+        ],
+        "rows": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "cols": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "per_command_recall": {
+         "LEFT": 0.9040383846461415,
+         "STRAIGHT": null,
+         "RIGHT": 0.833015873015873
+        },
+        "per_command_n": {
+         "LEFT": 2501.0,
+         "STRAIGHT": 0.0,
+         "RIGHT": 1575.0
+        }
+       },
+       "all_tokens": {
+        "n": 12146,
+        "accuracy": {
+         "point": 0.8461221801416104,
+         "ci95": [
+          0.8229791093840505,
+          0.8687163171975301
+         ]
+        },
+        "kappa": {
+         "point": 0.7131052156853874,
+         "ci95": [
+          0.6767351815329415,
+          0.7486605729885017
+         ],
+         "n_undefined_resamples": 0
+        },
+        "confusion_command_rows_plan_cols": [
+         [
+          2261.0,
+          214.0,
+          26.0
+         ],
+         [
+          704.0,
+          6704.0,
+          662.0
+         ],
+         [
+          21.0,
+          242.0,
+          1312.0
+         ]
+        ],
+        "rows": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "cols": [
+         "LEFT",
+         "STRAIGHT",
+         "RIGHT"
+        ],
+        "per_command_recall": {
+         "LEFT": 0.9040383846461415,
+         "STRAIGHT": 0.8307311028500619,
+         "RIGHT": 0.833015873015873
+        },
+        "per_command_n": {
+         "LEFT": 2501.0,
+         "STRAIGHT": 8070.0,
+         "RIGHT": 1575.0
+        }
+       }
+      }
+     },
+     "paired_T_minus_x": {
+      "T-C0": {
+       "turn_active": {
+        "n": 4076.0,
+        "n_logs": 113,
+        "accuracy_delta": {
+         "point": 0.009813542688910697,
+         "ci95": [
+          0.0033865322611336952,
+          0.016645056949920797
+         ],
+         "separated": true
+        },
+        "kappa_delta": {
+         "point": 0.0163310978665534,
+         "ci95": [
+          0.005658284138438829,
+          0.02716229223366294
+         ],
+         "separated": true,
+         "n_undefined_resamples": 0
+        }
+       },
+       "all_tokens": {
+        "n": 12146.0,
+        "n_logs": 136,
+        "accuracy_delta": {
+         "point": -0.002305285690762391,
+         "ci95": [
+          -0.0063494043308157735,
+          0.001594447982541889
+         ],
+         "separated": false
+        },
+        "kappa_delta": {
+         "point": -0.001991440863685856,
+         "ci95": [
+          -0.009111188082786175,
+          0.00490921719726656
+         ],
+         "separated": false,
+         "n_undefined_resamples": 0
+        }
+       }
+      },
+      "T-base": {
+       "turn_active": {
+        "n": 4076.0,
+        "n_logs": 113,
+        "accuracy_delta": {
+         "point": 0.007850834151128557,
+         "ci95": [
+          0.0019137256282756995,
+          0.01475324087103356
+         ],
+         "separated": true
+        },
+        "kappa_delta": {
+         "point": 0.013419962251371209,
+         "ci95": [
+          0.0032583805823563463,
+          0.024297226017924552
+         ],
+         "separated": true,
+         "n_undefined_resamples": 0
+        }
+       },
+       "all_tokens": {
+        "n": 12146.0,
+        "n_logs": 136,
+        "accuracy_delta": {
+         "point": -0.0036225917997694712,
+         "ci95": [
+          -0.007994997309757395,
+          0.0006564655144330724
+         ],
+         "separated": false
+        },
+        "kappa_delta": {
+         "point": -0.004406935040548121,
+         "ci95": [
+          -0.01201790221628551,
+          0.002987743222860754
+         ],
+         "separated": false,
+         "n_undefined_resamples": 0
+        }
+       }
+      },
+      "C-base": {
+       "turn_active": {
+        "n": 4076.0,
+        "n_logs": 113,
+        "accuracy_delta": {
+         "point": -0.001962708537782139,
+         "ci95": [
+          -0.006175946025769823,
+          0.0024264519663261853
+         ],
+         "separated": false
+        },
+        "kappa_delta": {
+         "point": -0.002911135615182192,
+         "ci95": [
+          -0.01001770657306025,
+          0.0045187589459993955
+         ],
+         "separated": false,
+         "n_undefined_resamples": 0
+        }
+       },
+       "all_tokens": {
+        "n": 12146.0,
+        "n_logs": 136,
+        "accuracy_delta": {
+         "point": -0.0013173061090070806,
+         "ci95": [
+          -0.004926127043786095,
+          0.0025256635802302875
+         ],
+         "separated": false
+        },
+        "kappa_delta": {
+         "point": -0.002415494176862265,
+         "ci95": [
+          -0.008599694947000719,
+          0.0040696386385191494
+         ],
+         "separated": false,
+         "n_undefined_resamples": 0
+        }
+       }
+      }
+     },
+     "random_proposal_floor": {
+      "definition": "mean over the 64 proposals' per-token adherence (the exact expectation of a skill-free selector); kappa is the kappa of the EXPECTED confusion matrix",
+      "dump": "E:/Projects/TanitAD/data/refe_navtest/seams/stage2_scorerft_t.proposals.npz",
+      "turn_active": {
+       "floor_accuracy": {
+        "point": 0.8978241535819431,
+        "ci95": [
+         0.881149666636156,
+         0.9136933934714986
+        ]
+       },
+       "floor_kappa": {
+        "point": 0.8047473078357781,
+        "ci95": [
+         0.7728725093360335,
+         0.8343042645740519
+        ],
+        "n_undefined_resamples": 0
+       },
+       "actual_minus_floor": {
+        "n": 4076.0,
+        "n_logs": 113,
+        "accuracy_delta": {
+         "point": -0.013378618743866536,
+         "ci95": [
+          -0.026403311004567335,
+          -0.0014057105798852036
+         ],
+         "separated": true
+        },
+        "kappa_delta": {
+         "point": -0.024330464978748023,
+         "ci95": [
+          -0.045198744790874726,
+          -0.004043243992175637
+         ],
+         "separated": true,
+         "n_undefined_resamples": 0
+        }
+       },
+       "floor_ge_actual_point": true
+      },
+      "all_tokens": {
+       "floor_accuracy": {
+        "point": 0.8324281141939733,
+        "ci95": [
+         0.8168206021083672,
+         0.8476174976100552
+        ]
+       },
+       "actual_minus_floor": {
+        "n": 12146.0,
+        "n_logs": 136,
+        "accuracy_delta": {
+         "point": 0.010071474147867611,
+         "ci95": [
+          -0.0004324654528783977,
+          0.019895593381295096
+         ],
+         "separated": false
+        },
+        "kappa_delta": {
+         "point": 0.013182315233545072,
+         "ci95": [
+          -0.0045493241553580584,
+          0.030441627754272643
+         ],
+         "separated": false,
+         "n_undefined_resamples": 0
+        }
+       }
+      },
+      "arm": "C1"
+     },
+     "gates": {
+      "G_FORMAT": {
+       "ok": true
+      },
+      "G_COUNTS": {
+       "ok": true
+      },
+      "G_LABELLER": {
+       "ok": true
+      },
+      "G_KAPPA_PROGRAMME": {
+       "ok": true
+      },
+      "G_DUMP_PICK": {
+       "ok": true
+      },
+      "G_KAPPA_ZERO_ID": {
+       "ok": true
+      },
+      "G_PE_BOOT_EQUAL": {
+       "ok": true
+      },
+      "G_FORMAT[C0 vs base]": {
+       "ok": true
+      },
+      "G_COUNTS[C0 vs base]": {
+       "ok": true
+      },
+      "G_LABELLER[C0 vs base]": {
+       "ok": true
+      },
+      "G_KAPPA_PROGRAMME[C0 vs base]": {
+       "ok": true
+      },
+      "G_KAPPA_ZERO_ID[C0 vs base]": {
+       "ok": true
+      },
+      "G_PE_BOOT_EQUAL[C0 vs base]": {
+       "ok": true
+      }
+     },
+     "controls": {
+      "swap_LR_commands_drops": true,
+      "constant_straight_kappa_is_zero": true
+     },
+     "incomplete": [],
+     "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927: the resample stream of proxy_eval.boot (proxy_eval.py:313; called by stage3_full.py:216), applied to per-log confusion matrices so Cohen's kappa shares it. It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+     "tier": "T1 = NAVSIM v1.1 PDMS-side plan, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop); the command is an INPUT of the agent",
+     "authority": "NONE. TACTICAL is a reported family; it carries no decision authority over PREREG_P6's rule (PDMS vs C1/C2 and the goal bar). Quote it only with the estimator and n above.",
+     "human_future_reference": "DESCRIPTIVE REFERENCE, not part of the definition: the same labeller on the logged human future vs the same command"
+    },
+    "selection_quality": {
+     "T": {
+      "status": "NOT COMPUTED",
+      "reason": "per-proposal PDMS needs the harness: 64 single-proposal seams scored per arm (~4 to 6.4 h CPU on the full navtest, P6 read gaps G2), built from the arm's --dump-proposals; no table was supplied",
+      "n": 12146
+     },
+     "C": {
+      "status": "NOT COMPUTED",
+      "reason": "per-proposal PDMS needs the harness: 64 single-proposal seams scored per arm (~4 to 6.4 h CPU on the full navtest, P6 read gaps G2), built from the arm's --dump-proposals; no table was supplied",
+      "n": 12146
+     },
+     "base": {
+      "status": "NOT COMPUTED",
+      "reason": "per-proposal PDMS needs the harness: 64 single-proposal seams scored per arm (~4 to 6.4 h CPU on the full navtest, P6 read gaps G2), built from the arm's --dump-proposals; no table was supplied",
+      "n": 12146
+     }
+    },
+    "goal_setting": {
+     "status": "NOT COMPUTABLE",
+     "reason": "REFe has no tactical goal head, and NAVSIM carries no manoeuvre label beyond the driving command (card 8.2); the command is an INPUT of the agent, so adherence to it is the tactical row, not goal-setting",
+     "n": 12146
+    },
+    "rehearsal": false,
+    "n_tokens": 12146,
+    "labelling": "arm names relabelled by scorerft_read.relabel_tactical: C1 -> T, C0 -> C (p5c_tactical.py hard-codes C1/C0); its STRATEGIC stub dropped (STRATEGIC is reported in full)"
+   },
+   "(a2)_fam_ci_tactical_components": {
+    "lateral_decision.accuracy": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 0.8978264449201383,
+      "lo": 0.8865008352493822,
+      "hi": 0.9088463134416105
+     },
+     "C": {
+      "point": 0.9055656183105549,
+      "lo": 0.8942193265983678,
+      "hi": 0.9166326679691271
+     },
+     "diff_T_minus_C": {
+      "point": -0.0077391733904166315,
+      "lo": -0.012592480364468537,
+      "hi": -0.0035105094018756814
+     },
+     "adverse": true
+    },
+    "lateral_decision.kappa": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 0.8161369013613422,
+      "lo": 0.7966795337934187,
+      "hi": 0.8338411925953645
+     },
+     "C": {
+      "point": 0.8277780119707063,
+      "lo": 0.8083272611837169,
+      "hi": 0.8457753429020558
+     },
+     "diff_T_minus_C": {
+      "point": -0.011641110609364125,
+      "lo": -0.020420414113274266,
+      "hi": -0.0040876939537275525
+     },
+     "adverse": true
+    },
+    "lateral_decision.per_class.lane_keep.recall": {
+     "status": "OK",
+     "n_tokens": 7516,
+     "T": {
+      "point": 0.8912985630654604,
+      "lo": 0.8707229924948284,
+      "hi": 0.9096160782728698
+     },
+     "C": {
+      "point": 0.9105907397551889,
+      "lo": 0.8905588439157482,
+      "hi": 0.9284183997220115
+     },
+     "diff_T_minus_C": {
+      "point": -0.01929217668972849,
+      "lo": -0.02544577146557302,
+      "hi": -0.013762635845421721
+     },
+     "adverse": null
+    },
+    "lateral_decision.per_class.lane_keep.precision": {
+     "status": "OK",
+     "n_tokens": 7447,
+     "T": {
+      "point": 0.9439199661828942,
+      "lo": 0.9318420958082855,
+      "hi": 0.954821029981266
+     },
+     "C": {
+      "point": 0.9370208105147865,
+      "lo": 0.9234126082563486,
+      "hi": 0.9494111694084258
+     },
+     "diff_T_minus_C": {
+      "point": 0.006899155668107726,
+      "lo": 0.0027052172229839492,
+      "hi": 0.010864919517397991
+     },
+     "adverse": null
+    },
+    "lateral_decision.per_class.turn_left.recall": {
+     "status": "OK",
+     "n_tokens": 2811,
+     "T": {
+      "point": 0.9224475275702597,
+      "lo": 0.9035871037679652,
+      "hi": 0.938747702006337
+     },
+     "C": {
+      "point": 0.9149768765563856,
+      "lo": 0.8946800256413849,
+      "hi": 0.9325688451843792
+     },
+     "diff_T_minus_C": {
+      "point": 0.007470651013874119,
+      "lo": 0.0008371092185873925,
+      "hi": 0.014334981391725819
+     },
+     "adverse": null
+    },
+    "lateral_decision.per_class.turn_left.precision": {
+     "status": "OK",
+     "n_tokens": 3127,
+     "T": {
+      "point": 0.8518396846254928,
+      "lo": 0.8219326049606925,
+      "hi": 0.8768021610436454
+     },
+     "C": {
+      "point": 0.8712737127371274,
+      "lo": 0.8451976081791003,
+      "hi": 0.8941493120402214
+     },
+     "diff_T_minus_C": {
+      "point": -0.019434028111634638,
+      "lo": -0.031599142432257504,
+      "hi": -0.009280101378335417
+     },
+     "adverse": null
+    },
+    "lateral_decision.per_class.turn_right.recall": {
+     "status": "OK",
+     "n_tokens": 1819,
+     "T": {
+      "point": 0.8867509620670698,
+      "lo": 0.8535408646654603,
+      "hi": 0.9158544973457683
+     },
+     "C": {
+      "point": 0.8702583837273227,
+      "lo": 0.8334317585301837,
+      "hi": 0.903103472950004
+     },
+     "diff_T_minus_C": {
+      "point": 0.016492578339747155,
+      "lo": 0.002913724624889605,
+      "hi": 0.03092124059316764
+     },
+     "adverse": null
+    },
+    "lateral_decision.per_class.turn_right.precision": {
+     "status": "OK",
+     "n_tokens": 2072,
+     "T": {
+      "point": 0.8044887780548629,
+      "lo": 0.7616578782459841,
+      "hi": 0.8420421892480716
+     },
+     "C": {
+      "point": 0.8375661375661375,
+      "lo": 0.793023325908403,
+      "hi": 0.8767001557548354
+     },
+     "diff_T_minus_C": {
+      "point": -0.03307735951127466,
+      "lo": -0.05084521687809197,
+      "hi": -0.01874903378604156
+     },
+     "adverse": null
+    },
+    "longitudinal_decision.accuracy": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 0.6365881771776717,
+      "lo": 0.5943328817582473,
+      "hi": 0.6753858735847982
+     },
+     "C": {
+      "point": 0.6468796311542895,
+      "lo": 0.6074440039800048,
+      "hi": 0.6827685861390459
+     },
+     "diff_T_minus_C": {
+      "point": -0.010291453976617793,
+      "lo": -0.019578828948778423,
+      "hi": -0.00015435543665499494
+     },
+     "adverse": true
+    },
+    "longitudinal_decision.kappa": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 0.4569066568224808,
+      "lo": 0.40067335618173733,
+      "hi": 0.5094644223156881
+     },
+     "C": {
+      "point": 0.4710630188488053,
+      "lo": 0.4191181658449287,
+      "hi": 0.518522437201878
+     },
+     "diff_T_minus_C": {
+      "point": -0.014156362026324532,
+      "lo": -0.028402798916056904,
+      "hi": 0.0016205896315332588
+     },
+     "adverse": false
+    },
+    "longitudinal_decision.per_class.brake_stop.recall": {
+     "status": "OK",
+     "n_tokens": 4285,
+     "T": {
+      "point": 0.7068844807467911,
+      "lo": 0.6670052930738251,
+      "hi": 0.7430611956973602
+     },
+     "C": {
+      "point": 0.7750291715285881,
+      "lo": 0.7407876041130904,
+      "hi": 0.8064941538190751
+     },
+     "diff_T_minus_C": {
+      "point": -0.06814469078179697,
+      "lo": -0.08205813656701048,
+      "hi": -0.05494424314911884
+     },
+     "adverse": null
+    },
+    "longitudinal_decision.per_class.brake_stop.precision": {
+     "status": "OK",
+     "n_tokens": 4556,
+     "T": {
+      "point": 0.7898305084745763,
+      "lo": 0.7510251190935942,
+      "hi": 0.8316935769141262
+     },
+     "C": {
+      "point": 0.753744893327281,
+      "lo": 0.7191159784083169,
+      "hi": 0.790601754433908
+     },
+     "diff_T_minus_C": {
+      "point": 0.03608561514729525,
+      "lo": 0.019435017118916917,
+      "hi": 0.05674843238293351
+     },
+     "adverse": null
+    },
+    "longitudinal_decision.per_class.steady.recall": {
+     "status": "OK",
+     "n_tokens": 4000,
+     "T": {
+      "point": 0.272,
+      "lo": 0.21285092612976825,
+      "hi": 0.338129899610851
+     },
+     "C": {
+      "point": 0.26475,
+      "lo": 0.21784261601714294,
+      "hi": 0.3165869825823284
+     },
+     "diff_T_minus_C": {
+      "point": 0.007250000000000034,
+      "lo": -0.01599207243442257,
+      "hi": 0.03497585240877721
+     },
+     "adverse": null
+    },
+    "longitudinal_decision.per_class.steady.precision": {
+     "status": "OK",
+     "n_tokens": 2676,
+     "T": {
+      "point": 0.5273873000484731,
+      "lo": 0.4788522437630339,
+      "hi": 0.5773567524833003
+     },
+     "C": {
+      "point": 0.5392057026476579,
+      "lo": 0.49428998122546514,
+      "hi": 0.5855228763933964
+     },
+     "diff_T_minus_C": {
+      "point": -0.011818402599184763,
+      "lo": -0.03737375504906425,
+      "hi": 0.014385572757777144
+     },
+     "adverse": null
+    },
+    "longitudinal_decision.per_class.accelerate.recall": {
+     "status": "OK",
+     "n_tokens": 3861,
+     "T": {
+      "point": 0.9362859362859363,
+      "lo": 0.9177156892846178,
+      "hi": 0.9519233503981797
+     },
+     "C": {
+      "point": 0.9005439005439005,
+      "lo": 0.8797879119830184,
+      "hi": 0.9190152284319778
+     },
+     "diff_T_minus_C": {
+      "point": 0.035742035742035716,
+      "lo": 0.025372887872394948,
+      "hi": 0.04674257330985375
+     },
+     "adverse": null
+    },
+    "longitudinal_decision.per_class.accelerate.precision": {
+     "status": "OK",
+     "n_tokens": 6366,
+     "T": {
+      "point": 0.5785851472471191,
+      "lo": 0.5193884872935498,
+      "hi": 0.6386185002486244
+     },
+     "C": {
+      "point": 0.6019736842105263,
+      "lo": 0.5413165503142098,
+      "hi": 0.6635990842398718
+     },
+     "diff_T_minus_C": {
+      "point": -0.023388536963407258,
+      "lo": -0.031199137317797495,
+      "hi": -0.016139027943037877
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.accuracy": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 0.739173390416598,
+      "lo": 0.7195466731682412,
+      "hi": 0.7576435800408674
+     },
+     "C": {
+      "point": 0.7484768648114606,
+      "lo": 0.728050446084995,
+      "hi": 0.7679055916738112
+     },
+     "diff_T_minus_C": {
+      "point": -0.009303474394862565,
+      "lo": -0.016221002315080252,
+      "hi": -0.0025625138290308073
+     },
+     "adverse": true
+    },
+    "maneuver_5way_collapsed.kappa": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 0.6696346679890715,
+      "lo": 0.6458757744705889,
+      "hi": 0.6913944576809139
+     },
+     "C": {
+      "point": 0.679246133417526,
+      "lo": 0.6545879471876147,
+      "hi": 0.7021366658405312
+     },
+     "diff_T_minus_C": {
+      "point": -0.00961146542845459,
+      "lo": -0.018404757933136628,
+      "hi": -0.0010124767978593357
+     },
+     "adverse": true
+    },
+    "maneuver_5way_collapsed.per_class.lane_keep.recall": {
+     "status": "OK",
+     "n_tokens": 2040,
+     "T": {
+      "point": 0.3122549019607843,
+      "lo": 0.25896404286941077,
+      "hi": 0.3710344817152029
+     },
+     "C": {
+      "point": 0.2857843137254902,
+      "lo": 0.24087546754832076,
+      "hi": 0.3338799171280715
+     },
+     "diff_T_minus_C": {
+      "point": 0.026470588235294135,
+      "lo": -0.0004637980282070268,
+      "hi": 0.0551951559002687
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.lane_keep.precision": {
+     "status": "OK",
+     "n_tokens": 1489,
+     "T": {
+      "point": 0.5234182415776499,
+      "lo": 0.47146029667169664,
+      "hi": 0.5784805789203169
+     },
+     "C": {
+      "point": 0.5373271889400921,
+      "lo": 0.48724242848966914,
+      "hi": 0.5907310586873146
+     },
+     "diff_T_minus_C": {
+      "point": -0.013908947362442192,
+      "lo": -0.04201364323048787,
+      "hi": 0.012895256970720033
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.turn_left.recall": {
+     "status": "OK",
+     "n_tokens": 2811,
+     "T": {
+      "point": 0.9224475275702597,
+      "lo": 0.9035871037679652,
+      "hi": 0.938747702006337
+     },
+     "C": {
+      "point": 0.9149768765563856,
+      "lo": 0.8946800256413849,
+      "hi": 0.9325688451843792
+     },
+     "diff_T_minus_C": {
+      "point": 0.007470651013874119,
+      "lo": 0.0008371092185873925,
+      "hi": 0.014334981391725819
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.turn_left.precision": {
+     "status": "OK",
+     "n_tokens": 3127,
+     "T": {
+      "point": 0.8518396846254928,
+      "lo": 0.8219326049606925,
+      "hi": 0.8768021610436454
+     },
+     "C": {
+      "point": 0.8712737127371274,
+      "lo": 0.8451976081791003,
+      "hi": 0.8941493120402214
+     },
+     "diff_T_minus_C": {
+      "point": -0.019434028111634638,
+      "lo": -0.031599142432257504,
+      "hi": -0.009280101378335417
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.turn_right.recall": {
+     "status": "OK",
+     "n_tokens": 1819,
+     "T": {
+      "point": 0.8867509620670698,
+      "lo": 0.8535408646654603,
+      "hi": 0.9158544973457683
+     },
+     "C": {
+      "point": 0.8702583837273227,
+      "lo": 0.8334317585301837,
+      "hi": 0.903103472950004
+     },
+     "diff_T_minus_C": {
+      "point": 0.016492578339747155,
+      "lo": 0.002913724624889605,
+      "hi": 0.03092124059316764
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.turn_right.precision": {
+     "status": "OK",
+     "n_tokens": 2072,
+     "T": {
+      "point": 0.8044887780548629,
+      "lo": 0.7616578782459841,
+      "hi": 0.8420421892480716
+     },
+     "C": {
+      "point": 0.8375661375661375,
+      "lo": 0.793023325908403,
+      "hi": 0.8767001557548354
+     },
+     "diff_T_minus_C": {
+      "point": -0.03307735951127466,
+      "lo": -0.05084521687809197,
+      "hi": -0.01874903378604156
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.accelerate.recall": {
+     "status": "OK",
+     "n_tokens": 1750,
+     "T": {
+      "point": 0.8662857142857143,
+      "lo": 0.843011807307199,
+      "hi": 0.8892360039093569
+     },
+     "C": {
+      "point": 0.8462857142857143,
+      "lo": 0.8180430287682298,
+      "hi": 0.8746356942514129
+     },
+     "diff_T_minus_C": {
+      "point": 0.020000000000000018,
+      "lo": 0.005461082253439831,
+      "hi": 0.034325490393139126
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.accelerate.precision": {
+     "status": "OK",
+     "n_tokens": 2955,
+     "T": {
+      "point": 0.5404634581105169,
+      "lo": 0.49094773072011044,
+      "hi": 0.5918078460124536
+     },
+     "C": {
+      "point": 0.5542664670658682,
+      "lo": 0.5024786658906684,
+      "hi": 0.6088120660330554
+     },
+     "diff_T_minus_C": {
+      "point": -0.013803008955351359,
+      "lo": -0.027228076871171902,
+      "hi": -0.0008449807233987298
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.brake_stop.recall": {
+     "status": "OK",
+     "n_tokens": 3726,
+     "T": {
+      "point": 0.7028985507246377,
+      "lo": 0.6641735876365871,
+      "hi": 0.7396657992055883
+     },
+     "C": {
+      "point": 0.7707997852925389,
+      "lo": 0.7340461978337578,
+      "hi": 0.8053102706334797
+     },
+     "diff_T_minus_C": {
+      "point": -0.0679012345679012,
+      "lo": -0.07987569188626509,
+      "hi": -0.05598285292465745
+     },
+     "adverse": null
+    },
+    "maneuver_5way_collapsed.per_class.brake_stop.precision": {
+     "status": "OK",
+     "n_tokens": 3664,
+     "T": {
+      "point": 0.8517073170731707,
+      "lo": 0.8252287287999779,
+      "hi": 0.8767402119767271
+     },
+     "C": {
+      "point": 0.8096983366224979,
+      "lo": 0.7807955080044179,
+      "hi": 0.8376319781606225
+     },
+     "diff_T_minus_C": {
+      "point": 0.042008980450672806,
+      "lo": 0.028315756826839834,
+      "hi": 0.05660398397978872
+     },
+     "adverse": null
+    },
+    "goal_setting.goal_point_error_m": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 3.9658029995422597,
+      "lo": 3.6259457647959676,
+      "hi": 4.330668028553444
+     },
+     "C": {
+      "point": 3.822492382559025,
+      "lo": 3.508074611705378,
+      "hi": 4.160552686188605
+     },
+     "diff_T_minus_C": {
+      "point": 0.14331061698323477,
+      "lo": 0.08414050404951401,
+      "hi": 0.20549912034153822
+     },
+     "adverse": null
+    },
+    "goal_setting.goal_long_bias_m": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": 2.485020879618864,
+      "lo": 2.0668060243858335,
+      "hi": 2.924304069750424
+     },
+     "C": {
+      "point": 1.834042832899199,
+      "lo": 1.3845325370588146,
+      "hi": 2.303925702383643
+     },
+     "diff_T_minus_C": {
+      "point": 0.6509780467196651,
+      "lo": 0.558801926921711,
+      "hi": 0.7565588957882494
+     },
+     "adverse": null
+    },
+    "goal_setting.goal_lat_bias_m": {
+     "status": "OK",
+     "n_tokens": 12146,
+     "T": {
+      "point": -0.031775255237878684,
+      "lo": -0.16302211077907242,
+      "hi": 0.09851387692314623
+     },
+     "C": {
+      "point": -0.022991766880431128,
+      "lo": -0.12535616803816196,
+      "hi": 0.0824237989602043
+     },
+     "diff_T_minus_C": {
+      "point": -0.008783488357447557,
+      "lo": -0.05843433602398695,
+      "hi": 0.03968509003176265
+     },
+     "adverse": null
+    },
+    "goal_setting.goal_bearing_mae_deg": {
+     "status": "OK",
+     "n_tokens": 12053,
+     "T": {
+      "point": 2.8215853017666115,
+      "lo": 2.559884750084469,
+      "hi": 3.0862032977658744
+     },
+     "C": {
+      "point": 2.5874348612580826,
+      "lo": 2.343806027173074,
+      "hi": 2.8310180898982473
+     },
+     "diff_T_minus_C": {
+      "point": 0.23415044050852885,
+      "lo": 0.15662135266645064,
+      "hi": 0.3194243112612049
+     },
+     "adverse": null
+    },
+    "goal_setting.goal_range_ratio": {
+     "status": "OK",
+     "n_tokens": 12053,
+     "T": {
+      "point": 1.2172324664886383,
+      "lo": 1.193202389912268,
+      "hi": 1.2419257010759492
+     },
+     "C": {
+      "point": 1.1676182703512565,
+      "lo": 1.143141688307465,
+      "hi": 1.19325293311779
+     },
+     "diff_T_minus_C": {
+      "point": 0.049614196137381716,
+      "lo": 0.0432855467113913,
+      "hi": 0.05639261980058619
+     },
+     "adverse": null
+    },
+    "goal_setting.goal_bearing_bias_deg": {
+     "status": "NO-PER-TOKEN-DATA",
+     "n_tokens": null,
+     "T": null,
+     "C": null,
+     "diff_T_minus_C": null,
+     "adverse": null
+    }
+   },
+   "(b)_selection_quality": {
+    "definition": "from each arm's 64-proposal table (p5c_prop_score.py) and proposals dump; tracked PDMS x100; never pooled with another family",
+    "levels": {
+     "T": {
+      "oracle": {
+       "point": 99.37514710740005,
+       "lo": 99.22372428781561,
+       "hi": 99.50763464231014,
+       "n_tokens": 12146
+      },
+      "pick": {
+       "point": 91.76997230001415,
+       "lo": 90.9473469235821,
+       "hi": 92.56362991834224,
+       "n_tokens": 12146
+      },
+      "regret": {
+       "point": 7.605174807385936,
+       "lo": 6.875743823393317,
+       "hi": 8.356335086857566,
+       "n_tokens": 12146
+      },
+      "regret_gate": {
+       "point": 3.846228852348029,
+       "lo": 3.289319109770366,
+       "hi": 4.436648285935995,
+       "n_tokens": 12146
+      },
+      "regret_ep": {
+       "point": 1.6973064693989608,
+       "lo": 1.5378783738202615,
+       "hi": 1.8764468768314178,
+       "n_tokens": 12146
+      },
+      "regret_ttc": {
+       "point": 1.9588067402162581,
+       "lo": 1.6434901552805463,
+       "hi": 2.2815517437132304,
+       "n_tokens": 12146
+      },
+      "regret_c": {
+       "point": 0.002744387727098084,
+       "lo": 0.0,
+       "hi": 0.007417297136923303,
+       "n_tokens": 12146
+      },
+      "regret_other": {
+       "point": 0.1000883576955894,
+       "lo": 0.04502257958101374,
+       "hi": 0.1644105860045016,
+       "n_tokens": 12146
+      },
+      "top1": {
+       "point": 49.62950765684176,
+       "lo": 46.959757986045574,
+       "hi": 52.1991829988121,
+       "n_tokens": 12146
+      },
+      "zeroed": {
+       "point": 4.067182611559361,
+       "lo": 3.467524155804793,
+       "hi": 4.702499087866863,
+       "n_tokens": 12146
+      },
+      "ttc0_alt": {
+       "point": 4.832866787419727,
+       "lo": 4.043369936653809,
+       "hi": 5.628484345125117,
+       "n_tokens": 12146
+      },
+      "random": {
+       "point": 68.61502556163677,
+       "lo": 67.1985972137221,
+       "hi": 70.02505913257808,
+       "n_tokens": 12146
+      },
+      "zeroed_by_dac": {
+       "point": 2.3135188539436853,
+       "lo": 1.7581104949593336,
+       "hi": 2.94271839547024,
+       "n_tokens": 12146
+      },
+      "zeroed_by_nc": {
+       "point": 1.8112958998847357,
+       "lo": 1.3821207238934818,
+       "hi": 2.2693602343774497,
+       "n_tokens": 12146
+      },
+      "auc_nc": {
+       "point": 0.9289955150173889,
+       "lo": 0.9226138396180071,
+       "hi": 0.9354447656868584,
+       "n_tokens": 6603
+      },
+      "auc_dac": {
+       "point": 0.9632653133992354,
+       "lo": 0.9559260944771671,
+       "hi": 0.9700271525135195,
+       "n_tokens": 7509
+      },
+      "auc_ttc": {
+       "point": 0.8989945324734695,
+       "lo": 0.8890330697513699,
+       "hi": 0.9090922346897563,
+       "n_tokens": 8044
+      },
+      "ep_spearman": {
+       "point": 0.7535713333622674,
+       "lo": 0.7385358173363012,
+       "hi": 0.7685870768581662,
+       "n_tokens": 10478
+      },
+      "conf_wrong_nc": {
+       "point": 38.24884792626728,
+       "lo": 30.15066139521135,
+       "hi": 47.5,
+       "n_tokens": 217
+      },
+      "conf_wrong_dac": {
+       "point": 59.09090909090909,
+       "lo": 47.36842105263158,
+       "hi": 69.2029298931849,
+       "n_tokens": 264
+      }
+     },
+     "C": {
+      "oracle": {
+       "point": 99.34470646250819,
+       "lo": 99.19274184372765,
+       "hi": 99.47766348719593,
+       "n_tokens": 12146
+      },
+      "pick": {
+       "point": 92.67148473777777,
+       "lo": 91.90438348797055,
+       "hi": 93.40012609697389,
+       "n_tokens": 12146
+      },
+      "regret": {
+       "point": 6.673221724730401,
+       "lo": 6.018989023308168,
+       "hi": 7.366701021765009,
+       "n_tokens": 12146
+      },
+      "regret_gate": {
+       "point": 2.57540298251115,
+       "lo": 2.1145139030223317,
+       "hi": 3.0816686900622017,
+       "n_tokens": 12146
+      },
+      "regret_ep": {
+       "point": 2.6080037543925974,
+       "lo": 2.399673264451152,
+       "hi": 2.8384517900387123,
+       "n_tokens": 12146
+      },
+      "regret_ttc": {
+       "point": 1.4373730720676219,
+       "lo": 1.172753950863208,
+       "hi": 1.7153665592136647,
+       "n_tokens": 12146
+      },
+      "regret_c": {
+       "point": 0.001372193863549042,
+       "lo": 0.0,
+       "hi": 0.0046109191644252475,
+       "n_tokens": 12146
+      },
+      "regret_other": {
+       "point": 0.05106972189548249,
+       "lo": 0.013360455146953273,
+       "hi": 0.1012891495281278,
+       "n_tokens": 12146
+      },
+      "top1": {
+       "point": 48.03227399967067,
+       "lo": 45.37936584439211,
+       "hi": 50.60765792569362,
+       "n_tokens": 12146
+      },
+      "zeroed": {
+       "point": 2.80750864482134,
+       "lo": 2.30968958825536,
+       "hi": 3.347462976229344,
+       "n_tokens": 12146
+      },
+      "ttc0_alt": {
+       "point": 3.5155606784126463,
+       "lo": 2.861692256535795,
+       "hi": 4.205906110789651,
+       "n_tokens": 12146
+      },
+      "random": {
+       "point": 68.05159865851678,
+       "lo": 66.6507429771719,
+       "hi": 69.43628099328834,
+       "n_tokens": 12146
+      },
+      "zeroed_by_dac": {
+       "point": 1.753663757615676,
+       "lo": 1.300094865943022,
+       "hi": 2.265011984827429,
+       "n_tokens": 12146
+      },
+      "zeroed_by_nc": {
+       "point": 1.0703112135682529,
+       "lo": 0.7578719994333395,
+       "hi": 1.3977453301067941,
+       "n_tokens": 12146
+      },
+      "auc_nc": {
+       "point": 0.9282806199855101,
+       "lo": 0.921892667337694,
+       "hi": 0.9345616613294779,
+       "n_tokens": 6622
+      },
+      "auc_dac": {
+       "point": 0.9616776508899355,
+       "lo": 0.9541252313473668,
+       "hi": 0.9686377494416566,
+       "n_tokens": 7395
+      },
+      "auc_ttc": {
+       "point": 0.8981364107508749,
+       "lo": 0.8882815422968963,
+       "hi": 0.9081529712604997,
+       "n_tokens": 8018
+      },
+      "ep_spearman": {
+       "point": 0.4009274822568797,
+       "lo": 0.37624529934682654,
+       "hi": 0.42281377493690875,
+       "n_tokens": 10469
+      },
+      "conf_wrong_nc": {
+       "point": 57.8125,
+       "lo": 49.056603773584904,
+       "hi": 66.92307692307692,
+       "n_tokens": 128
+      },
+      "conf_wrong_dac": {
+       "point": 67.87564766839378,
+       "lo": 54.821833146921335,
+       "hi": 79.89982664413772,
+       "n_tokens": 193
+      }
+     }
+    },
+    "T_minus_C": {
+     "oracle": {
+      "point": 0.03044064489187671,
+      "lo": -0.031052620105312744,
+      "hi": 0.09012313258198747,
+      "n_tokens": 12146
+     },
+     "pick": {
+      "point": -0.9015124377636577,
+      "lo": -1.2021315523804585,
+      "hi": -0.5874460514780274,
+      "n_tokens": 12146
+     },
+     "regret": {
+      "point": 0.9319530826555344,
+      "lo": 0.6090667149989655,
+      "hi": 1.2408281598481163,
+      "n_tokens": 12146
+     },
+     "regret_gate": {
+      "point": 1.270825869836879,
+      "lo": 0.975470330229324,
+      "hi": 1.567103829313071,
+      "n_tokens": 12146
+     },
+     "regret_ep": {
+      "point": -0.9106972849936364,
+      "lo": -1.0028066658269232,
+      "hi": -0.8220717590679014,
+      "n_tokens": 12146
+     },
+     "regret_ttc": {
+      "point": 0.5214336681486361,
+      "lo": 0.33295455090356674,
+      "hi": 0.7162986370357143,
+      "n_tokens": 12146
+     },
+     "regret_c": {
+      "point": 0.001372193863549042,
+      "lo": 0.0,
+      "hi": 0.004648168514219362,
+      "n_tokens": 12146
+     },
+     "regret_other": {
+      "point": 0.04901863580010688,
+      "lo": 0.017212788101168507,
+      "hi": 0.08945430114248933,
+      "n_tokens": 12146
+     },
+     "top1": {
+      "point": 1.5972336571710852,
+      "lo": 0.43915546915656795,
+      "hi": 2.800812601386574,
+      "n_tokens": 12146
+     },
+     "zeroed": {
+      "point": 1.2596739667380208,
+      "lo": 0.9669889175689697,
+      "hi": 1.5495680085605212,
+      "n_tokens": 12146
+     },
+     "ttc0_alt": {
+      "point": 1.3173061090070806,
+      "lo": 0.8612472078552138,
+      "hi": 1.7901560654759427,
+      "n_tokens": 12146
+     },
+     "random": {
+      "point": 0.5634269031199948,
+      "lo": 0.26123053461010154,
+      "hi": 0.8434012689118887,
+      "n_tokens": 12146
+     },
+     "zeroed_by_dac": {
+      "point": 0.5598550963280092,
+      "lo": 0.31194727118096466,
+      "hi": 0.8100954791770114,
+      "n_tokens": 12146
+     },
+     "zeroed_by_nc": {
+      "point": 0.7409846863164828,
+      "lo": 0.5154628286708566,
+      "hi": 0.9698038460127276,
+      "n_tokens": 12146
+     },
+     "ep_spearman_both_defined": {
+      "point": 0.3533755852187972,
+      "lo": 0.333999282897781,
+      "hi": 0.37477710478158793,
+      "n_tokens": 10438
+     },
+     "auc_nc": {
+      "point": 0.0007148950318787151,
+      "lo": -0.0014131523202827207,
+      "hi": 0.0029230466694940807,
+      "n_a": 6603,
+      "n_b": 6622
+     },
+     "auc_dac": {
+      "point": 0.0015876625092998697,
+      "lo": 0.0001203078309986062,
+      "hi": 0.003065307459051422,
+      "n_a": 7509,
+      "n_b": 7395
+     },
+     "auc_ttc": {
+      "point": 0.0008581217225945847,
+      "lo": -0.0012991140159351682,
+      "hi": 0.0031079820234856223,
+      "n_a": 8044,
+      "n_b": 8018
+     },
+     "ep_spearman": {
+      "point": 0.35264385110538776,
+      "lo": 0.3328934711386053,
+      "hi": 0.374338663635958,
+      "n_a": 10478,
+      "n_b": 10469
+     },
+     "conf_wrong_nc": {
+      "point": -19.56365207373272,
+      "lo": -27.035381214224007,
+      "hi": -11.55758673693457,
+      "n_a": 217,
+      "n_b": 128
+     },
+     "conf_wrong_dac": {
+      "point": -8.784738577484688,
+      "lo": -15.879330974369138,
+      "hi": -2.0978710344381946,
+      "n_a": 264,
+      "n_b": 193
+     }
+    },
+    "separated_adverse": [
+     "TACTICAL.selection.regret",
+     "TACTICAL.selection.zeroed",
+     "TACTICAL.selection.pick"
+    ]
+   },
+   "(c)_goal_setting": {
+    "status": "NOT COMPUTABLE",
+    "reason": "REFe has no tactical goal head, and NAVSIM carries no manoeuvre label beyond the driving command (card 8.2); the command is an INPUT of the agent, so adherence to it is the tactical row, not goal-setting",
+    "n": 12146
+   }
+  },
+  "STRATEGIC": {
+   "status": "REPORTED IN FULL (no bar; PI ruling 2026-11-16)",
+   "instrument": "eval/instruments/strategic_family.py (STRAT-FAM)",
+   "arms": {
+    "T": {
+     "S_DEC": {
+      "all_tokens": {
+       "n": 12146,
+       "n_logs": 136,
+       "accuracy": {
+        "point": 0.8424995883418409,
+        "ci95": [
+         0.8193383822681757,
+         0.8643467095604649
+        ]
+       },
+       "kappa": {
+        "point": 0.7086982806448393,
+        "ci95": [
+         0.6730217596729373,
+         0.7428736192536427
+        ],
+        "n_undefined_resamples": 0
+       },
+       "confusion_command_rows_plan_cols": [
+        [
+         2271.0,
+         203.0,
+         27.0
+        ],
+        [
+         758.0,
+         6628.0,
+         684.0
+        ],
+        [
+         19.0,
+         222.0,
+         1334.0
+        ]
+       ],
+       "rows": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "cols": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "per_command_recall": {
+        "LEFT": 0.9080367852858856,
+        "STRAIGHT": 0.8213135068153655,
+        "RIGHT": 0.846984126984127
+       },
+       "per_command_n": {
+        "LEFT": 2501.0,
+        "STRAIGHT": 8070.0,
+        "RIGHT": 1575.0
+       },
+       "_what": "T: all tokens"
+      },
+      "turn_active": {
+       "n": 4076,
+       "n_logs": 113,
+       "accuracy": {
+        "point": 0.8844455348380765,
+        "ci95": [
+         0.8606262911572481,
+         0.9058939144874856
+        ]
+       },
+       "kappa": {
+        "point": 0.7804168428570301,
+        "ci95": [
+         0.7397535952119557,
+         0.8178988261289857
+        ],
+        "n_undefined_resamples": 0
+       },
+       "confusion_command_rows_plan_cols": [
+        [
+         2271.0,
+         203.0,
+         27.0
+        ],
+        [
+         0.0,
+         0.0,
+         0.0
+        ],
+        [
+         19.0,
+         222.0,
+         1334.0
+        ]
+       ],
+       "rows": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "cols": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "per_command_recall": {
+        "LEFT": 0.9080367852858856,
+        "STRAIGHT": null,
+        "RIGHT": 0.846984126984127
+       },
+       "per_command_n": {
+        "LEFT": 2501.0,
+        "STRAIGHT": 0.0,
+        "RIGHT": 1575.0
+       },
+       "_what": "T: turn-active (LEFT u RIGHT commands) = HEADLINE"
+      },
+      "per_class": {
+       "LEFT": {
+        "n": 2501,
+        "n_logs": 96,
+        "adherence": {
+         "point": 0.9080367852858856,
+         "ci95": [
+          0.8836892504571533,
+          0.9316126091601635
+         ]
+        },
+        "executed_direction_counts": [
+         2271.0,
+         203.0,
+         27.0
+        ]
+       },
+       "STRAIGHT": {
+        "n": 8070,
+        "n_logs": 134,
+        "adherence": {
+         "point": 0.8213135068153655,
+         "ci95": [
+          0.7827017119617273,
+          0.8547827713852217
+         ]
+        },
+        "executed_direction_counts": [
+         758.0,
+         6628.0,
+         684.0
+        ]
+       },
+       "RIGHT": {
+        "n": 1575,
+        "n_logs": 93,
+        "adherence": {
+         "point": 0.846984126984127,
+         "ci95": [
+          0.8064516129032258,
+          0.8820117884665841
+         ]
+        },
+        "executed_direction_counts": [
+         19.0,
+         222.0,
+         1334.0
+        ]
+       }
+      }
+     },
+     "S_GOAL": {
+      "LEFT": {
+       "n": 2501,
+       "n_logs": 96,
+       "endpoint_error_m": {
+        "point": 4.624633166977541,
+        "ci95": [
+         4.160966597576102,
+         5.084689298931626
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.13782570036115857,
+        "ci95": [
+         0.12113135250034215,
+         0.1558023702307994
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.117211213693335,
+        "ci95": [
+         1.0650962364827385,
+         1.1739580001672418
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.9566217653878317,
+        "ci95": [
+         0.518686867332718,
+         1.4128893002299625
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 2.350301821708851,
+        "ci95": [
+         2.079334375006972,
+         2.6117818150109784
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.1646860363111295,
+        "n_defined": 2485,
+        "n_excluded_gt_arc_below_min": 16,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      },
+      "STRAIGHT": {
+       "n": 8070,
+       "n_logs": 134,
+       "endpoint_error_m": {
+        "point": 3.829952652587652,
+        "ci95": [
+         3.472648088261393,
+         4.231229784376419
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.04597804794327905,
+        "ci95": [
+         0.04234695632408838,
+         0.04998939212663465
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.1401492371726296,
+        "ci95": [
+         1.1200232414319722,
+         1.1617817346172168
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.054272690170767475,
+        "ci95": [
+         -0.046159649918072664,
+         0.14669724516209612
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 0.7629029846601997,
+        "ci95": [
+         0.6798137156842697,
+         0.857653124935977
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.2001345390328741,
+        "n_defined": 7902,
+        "n_excluded_gt_arc_below_min": 168,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      },
+      "RIGHT": {
+       "n": 1575,
+       "n_logs": 93,
+       "endpoint_error_m": {
+        "point": 5.046198972189507,
+        "ci95": [
+         4.498874175795455,
+         5.563318145579493
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.1710157212073308,
+        "ci95": [
+         0.15202884675804354,
+         0.1880643706333595
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.215398052789579,
+        "ci95": [
+         1.1606756213186373,
+         1.2658916012833492
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 1.995772540031794,
+        "ci95": [
+         1.5001202246776106,
+         2.4856280496001975
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 2.814105487654621,
+        "ci95": [
+         2.423438763137746,
+         3.2086463035438224
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.2910318664489198,
+        "n_defined": 1559,
+        "n_excluded_gt_arc_below_min": 16,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      },
+      "TURN_ACTIVE": {
+       "n": 4076,
+       "n_logs": 113,
+       "endpoint_error_m": {
+        "point": 4.787529669236827,
+        "ci95": [
+         4.35304727896858,
+         5.208714677147259
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.15065059801393615,
+        "ci95": [
+         0.1365581667738216,
+         0.164810206863525
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.1521871325008393,
+        "ci95": [
+         1.101781434815462,
+         1.2021131478592577
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 1.358158190820668,
+        "ci95": [
+         0.9511608147942182,
+         1.7750411229908982
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 2.5295193815382397,
+        "ci95": [
+         2.2760850048513634,
+         2.779767215526131
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.213393541055149,
+        "n_defined": 4044,
+        "n_excluded_gt_arc_below_min": 32,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      }
+     },
+     "labeller_provenance": {
+      "n": 12146,
+      "n_heading_held_from_last_moving_step": 459,
+      "n_never_moved": 48,
+      "dt_s": 0.5,
+      "n_poses": 8
+     }
+    },
+    "C": {
+     "S_DEC": {
+      "all_tokens": {
+       "n": 12146,
+       "n_logs": 136,
+       "accuracy": {
+        "point": 0.8448048740326033,
+        "ci95": [
+         0.8213891604963377,
+         0.8676907477892148
+        ]
+       },
+       "kappa": {
+        "point": 0.7106897215085252,
+        "ci95": [
+         0.6744022817211432,
+         0.7467823307950903
+        ],
+        "n_undefined_resamples": 0
+       },
+       "confusion_command_rows_plan_cols": [
+        [
+         2250.0,
+         223.0,
+         28.0
+        ],
+        [
+         693.0,
+         6696.0,
+         681.0
+        ],
+        [
+         17.0,
+         243.0,
+         1315.0
+        ]
+       ],
+       "rows": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "cols": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "per_command_recall": {
+        "LEFT": 0.899640143942423,
+        "STRAIGHT": 0.8297397769516729,
+        "RIGHT": 0.834920634920635
+       },
+       "per_command_n": {
+        "LEFT": 2501.0,
+        "STRAIGHT": 8070.0,
+        "RIGHT": 1575.0
+       },
+       "_what": "C: all tokens"
+      },
+      "turn_active": {
+       "n": 4076,
+       "n_logs": 113,
+       "accuracy": {
+        "point": 0.8746319921491659,
+        "ci95": [
+         0.8472531444483471,
+         0.8990787615032043
+        ]
+       },
+       "kappa": {
+        "point": 0.7640857449904767,
+        "ci95": [
+         0.7188556281427114,
+         0.8059970605769041
+        ],
+        "n_undefined_resamples": 0
+       },
+       "confusion_command_rows_plan_cols": [
+        [
+         2250.0,
+         223.0,
+         28.0
+        ],
+        [
+         0.0,
+         0.0,
+         0.0
+        ],
+        [
+         17.0,
+         243.0,
+         1315.0
+        ]
+       ],
+       "rows": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "cols": [
+        "LEFT",
+        "STRAIGHT",
+        "RIGHT"
+       ],
+       "per_command_recall": {
+        "LEFT": 0.899640143942423,
+        "STRAIGHT": null,
+        "RIGHT": 0.834920634920635
+       },
+       "per_command_n": {
+        "LEFT": 2501.0,
+        "STRAIGHT": 0.0,
+        "RIGHT": 1575.0
+       },
+       "_what": "C: turn-active (LEFT u RIGHT commands) = HEADLINE"
+      },
+      "per_class": {
+       "LEFT": {
+        "n": 2501,
+        "n_logs": 96,
+        "adherence": {
+         "point": 0.899640143942423,
+         "ci95": [
+          0.8733621837201472,
+          0.9243784676975161
+         ]
+        },
+        "executed_direction_counts": [
+         2250.0,
+         223.0,
+         28.0
+        ]
+       },
+       "STRAIGHT": {
+        "n": 8070,
+        "n_logs": 134,
+        "adherence": {
+         "point": 0.8297397769516729,
+         "ci95": [
+          0.790582060232329,
+          0.8636378299120234
+         ]
+        },
+        "executed_direction_counts": [
+         693.0,
+         6696.0,
+         681.0
+        ]
+       },
+       "RIGHT": {
+        "n": 1575,
+        "n_logs": 93,
+        "adherence": {
+         "point": 0.834920634920635,
+         "ci95": [
+          0.7913097784686727,
+          0.8736664303596282
+         ]
+        },
+        "executed_direction_counts": [
+         17.0,
+         243.0,
+         1315.0
+        ]
+       }
+      }
+     },
+     "S_GOAL": {
+      "LEFT": {
+       "n": 2501,
+       "n_logs": 96,
+       "endpoint_error_m": {
+        "point": 4.590424830484792,
+        "ci95": [
+         4.16892731031781,
+         5.0087873616493015
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.138844169913949,
+        "ci95": [
+         0.12255180877223155,
+         0.15743186240806709
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.087664948461147,
+        "ci95": [
+         1.040545210038981,
+         1.141239252158562
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.5226574918466429,
+        "ci95": [
+         0.10452719926117376,
+         0.9634977288417158
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 2.3119317016092746,
+        "ci95": [
+         2.0631685126963752,
+         2.5533847147293174
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.1309468570320331,
+        "n_defined": 2485,
+        "n_excluded_gt_arc_below_min": 16,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      },
+      "STRAIGHT": {
+       "n": 8070,
+       "n_logs": 134,
+       "endpoint_error_m": {
+        "point": 3.7975404444749663,
+        "ci95": [
+         3.4442570669877037,
+         4.193973401108758
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.042570113994308476,
+        "ci95": [
+         0.039122662970755735,
+         0.04631945505699296
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.0996591986676805,
+        "ci95": [
+         1.075380333287466,
+         1.1256416131636757
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.034307833782025364,
+        "ci95": [
+         -0.05864201372095291,
+         0.11920249629379769
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 0.669889234773089,
+        "ci95": [
+         0.5872488405786694,
+         0.7645997217537097
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.152903930466038,
+        "n_defined": 7902,
+        "n_excluded_gt_arc_below_min": 168,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      },
+      "RIGHT": {
+       "n": 1575,
+       "n_logs": 93,
+       "endpoint_error_m": {
+        "point": 4.290355721344633,
+        "ci95": [
+         3.857439027495397,
+         4.7187314684581265
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.16350170210212517,
+        "ci95": [
+         0.1443254616516239,
+         0.1830776570119775
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.1472647309593604,
+        "ci95": [
+         1.0999145108961403,
+         1.1928768427571297
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 1.141938212568911,
+        "ci95": [
+         0.6856358943191876,
+         1.5771076099431682
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 2.2327485295911784,
+        "ci95": [
+         1.954138501440575,
+         2.508558883378732
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.204566560839618,
+        "n_defined": 1559,
+        "n_excluded_gt_arc_below_min": 16,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      },
+      "TURN_ACTIVE": {
+       "n": 4076,
+       "n_logs": 113,
+       "endpoint_error_m": {
+        "point": 4.474475653130584,
+        "ci95": [
+         4.106409581855797,
+         4.8210271007359875
+        ],
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.14837204361276582,
+        "ci95": [
+         0.13361969599851806,
+         0.1648275202172871
+        ],
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 1.1088954633935921,
+        "ci95": [
+         1.0650793998071557,
+         1.1531822497422939
+        ],
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.7619526672974701,
+        "ci95": [
+         0.38786488940270347,
+         1.139953290029537
+        ],
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 2.2813346712048332,
+        "ci95": [
+         2.0844663053568864,
+         2.459919691387582
+        ],
+        "n_undefined_resamples": 0
+       },
+       "descriptive_mean_token_ratio": {
+        "mean_per_token_ratio": 1.1593279446274893,
+        "n_defined": 4044,
+        "n_excluded_gt_arc_below_min": 32,
+        "min_gt_arc_m": 1.0,
+        "descriptive_only": true
+       }
+      }
+     },
+     "labeller_provenance": {
+      "n": 12146,
+      "n_heading_held_from_last_moving_step": 531,
+      "n_never_moved": 51,
+      "dt_s": 0.5,
+      "n_poses": 8
+     }
+    }
+   },
+   "paired_vs_base": {
+    "T_minus_C": {
+     "S_DEC": {
+      "all_tokens": {
+       "n": 12146.0,
+       "n_logs": 136,
+       "accuracy_delta": {
+        "point": -0.002305285690762391,
+        "ci95": [
+         -0.0063494043308157735,
+         0.001594447982541889
+        ],
+        "separated": false
+       },
+       "kappa_delta": {
+        "point": -0.001991440863685856,
+        "ci95": [
+         -0.009111188082786175,
+         0.00490921719726656
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       }
+      },
+      "turn_active": {
+       "n": 4076.0,
+       "n_logs": 113,
+       "accuracy_delta": {
+        "point": 0.009813542688910697,
+        "ci95": [
+         0.0033865322611336952,
+         0.016645056949920797
+        ],
+        "separated": true
+       },
+       "kappa_delta": {
+        "point": 0.0163310978665534,
+        "ci95": [
+         0.005658284138438829,
+         0.02716229223366294
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       }
+      },
+      "per_class": {
+       "LEFT": {
+        "point": 0.008396641343462616,
+        "ci95": [
+         0.00046812135951480237,
+         0.017341082939991096
+        ],
+        "separated": true
+       },
+       "STRAIGHT": {
+        "point": -0.00842627013630731,
+        "ci95": [
+         -0.014054019966590931,
+         -0.003245118544465031
+        ],
+        "separated": true
+       },
+       "RIGHT": {
+        "point": 0.012063492063492064,
+        "ci95": [
+         -0.002531645569620253,
+         0.025827938375930233
+        ],
+        "separated": false
+       }
+      }
+     },
+     "S_GOAL": {
+      "LEFT": {
+       "n": 2501,
+       "n_logs": 96,
+       "endpoint_error_m": {
+        "point": 0.03420833649274968,
+        "ci95": [
+         -0.08836269908913337,
+         0.15157656966487765
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": -0.0010184695527904186,
+        "ci95": [
+         -0.004627616098046601,
+         0.0028217006684582526
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 0.029546265232188063,
+        "ci95": [
+         0.017652879798811954,
+         0.04196580689531433
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.4339642735411888,
+        "ci95": [
+         0.282021828490587,
+         0.6064263804564509
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 0.03837012009957652,
+        "ci95": [
+         -0.03698029675383167,
+         0.1116588274283378
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       }
+      },
+      "STRAIGHT": {
+       "n": 8070,
+       "n_logs": 134,
+       "endpoint_error_m": {
+        "point": 0.032412208112685637,
+        "ci95": [
+         -0.03632309095007394,
+         0.10059097094963292
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.0034079339489705776,
+        "ci95": [
+         0.0023207800887397817,
+         0.004571863290472052
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 0.040490038504949144,
+        "ci95": [
+         0.034591417908574555,
+         0.046786812395837374
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.01996485638874211,
+        "ci95": [
+         -0.0035341681666304766,
+         0.044438021729698636
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 0.09301374988711064,
+        "ci95": [
+         0.07446212981653788,
+         0.11265088636748972
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       }
+      },
+      "RIGHT": {
+       "n": 1575,
+       "n_logs": 93,
+       "endpoint_error_m": {
+        "point": 0.7558432508448742,
+        "ci95": [
+         0.5840127805956395,
+         0.911779670568328
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.007514019105205633,
+        "ci95": [
+         -0.004355070843046697,
+         0.018858483838360345
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 0.06813332183021847,
+        "ci95": [
+         0.05440150197380051,
+         0.08136814508424411
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.853834327462883,
+        "ci95": [
+         0.6852775235362616,
+         1.0104676901359153
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 0.5813569580634428,
+        "ci95": [
+         0.4302912851758747,
+         0.739283969347547
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       }
+      },
+      "TURN_ACTIVE": {
+       "n": 4076,
+       "n_logs": 113,
+       "endpoint_error_m": {
+        "point": 0.3130540161062427,
+        "ci95": [
+         0.19426634991286928,
+         0.43532525778097
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "endpoint_heading_err_rad": {
+        "point": 0.002278554401170335,
+        "ci95": [
+         -0.0032711989742732566,
+         0.007469533375567986
+        ],
+        "separated": false,
+        "n_undefined_resamples": 0
+       },
+       "route_progress_ratio": {
+        "point": 0.04329166910724713,
+        "ci95": [
+         0.031467122253588865,
+         0.05510205693925312
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "lateral_offset_m": {
+        "point": 0.5962055235231978,
+        "ci95": [
+         0.45832918689622504,
+         0.7359825508621692
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       },
+       "abs_lateral_offset_m": {
+        "point": 0.2481847103334065,
+        "ci95": [
+         0.15131468996227643,
+         0.3553348807983923
+        ],
+        "separated": true,
+        "n_undefined_resamples": 0
+       }
+      }
+     }
+    }
+   },
+   "gates": {
+    "G_COUNTS": {
+     "ok": true,
+     "observed": {
+      "LEFT": 2501,
+      "STRAIGHT": 8070,
+      "RIGHT": 1575,
+      "UNKNOWN": 0
+     },
+     "n_tokens": 12146,
+     "n_logs": 136
+    }
+   },
+   "controls": {
+    "logged_future_as_arm": {
+     "ok": true,
+     "violations": [],
+     "expected": "endpoint error 0, heading error 0, lateral offset 0, route-progress ratio 1, CI degenerate at the same value"
+    },
+    "mirror_T": {
+     "ok": true,
+     "turn_active_adherence_real": 0.8844455348380765,
+     "turn_active_adherence_mirrored": 0.011285574092247301,
+     "max_abs_change_by_mirror": 43.085575103759766,
+     "expected": "mirrored turn-active adherence strictly below the real one, and the mirror must actually change the plan"
+    },
+    "mirror_C": {
+     "ok": true,
+     "turn_active_adherence_real": 0.8746319921491659,
+     "turn_active_adherence_mirrored": 0.011040235525024533,
+     "max_abs_change_by_mirror": 44.918174743652344,
+     "expected": "mirrored turn-active adherence strictly below the real one, and the mirror must actually change the plan"
+    },
+    "self_vs_self_T": {
+     "ok": true,
+     "violations": [],
+     "expected": "delta 0.0, CI [0.0, 0.0] on every cell"
+    }
+   },
+   "estimator": "paired log-cluster bootstrap over the navtest logs, 10,000 resamples, 95 %, seed 20260927: the resample stream of proxy_eval.boot (command_adherence.resample_weights), arm and base on identical tokens and identical resamples; per-token means = resampled sum / resampled count, route-progress = resampled sum of plan arc / resampled sum of logged arc. It answers 'another draw of LOGS'; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic. A separated interval is necessary, not sufficient, for a lever claim.",
+   "tier": "T1 = NAVSIM v1.1 PDMS-side plan, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop); the command is an INPUT of the agent",
+   "evidence_class": "MEASURED (ours) on the named seams; the logged future is the navtest export's human_future_poses",
+   "file_sha256": "3bba354bb612425b06b62e065a6dfe55f9284549a44d9d585bd3953537a235fc",
+   "tokens": {
+    "n": 12146,
+    "n_logs": 136,
+    "command_counts": {
+     "LEFT": 2501,
+     "STRAIGHT": 8070,
+     "RIGHT": 1575,
+     "UNKNOWN": 0
+    },
+    "turn_active_n": 4076
+   }
+  },
+  "separated_adverse_qualifiers": [
+   "LONGITUDINAL.headway_min_m",
+   "LONGITUDINAL.time_gap_min_s",
+   "LONGITUDINAL.min_ttc_s",
+   "LONGITUDINAL.lead_viol",
+   "LONGITUDINAL.lead_progress_ratio",
+   "LONGITUDINAL.speed_mae_mps",
+   "LONGITUDINAL.target_speed_acc.within_0.5_mps",
+   "LONGITUDINAL.target_speed_acc.within_1.0_mps",
+   "LONGITUDINAL.target_speed_acc.within_2.0_mps",
+   "LONGITUDINAL.along_mae_m",
+   "LONGITUDINAL.ego_progress.progress_ratio_mean",
+   "LONGITUDINAL.ego_progress.progress_error_mean",
+   "LATERAL.heading_mae_deg",
+   "LATERAL.yaw_rate_mae_degps",
+   "LATERAL.cross_mae_m",
+   "LATERAL.cross_final_mae_m",
+   "LATERAL.last_pose_heading_err_deg",
+   "TACTICAL.lateral_decision.accuracy",
+   "TACTICAL.lateral_decision.kappa",
+   "TACTICAL.longitudinal_decision.accuracy",
+   "TACTICAL.maneuver_5way_collapsed.accuracy",
+   "TACTICAL.maneuver_5way_collapsed.kappa",
+   "TACTICAL.selection.regret",
+   "TACTICAL.selection.zeroed",
+   "TACTICAL.selection.pick"
+  ],
+  "Ts_minus_Cs_fam_ci": null
+ },
+ "verdict": {
+  "verdict": "O3",
+  "outcome": "O3",
+  "wording": "O3: FAIL: the heads rank, the pick does not. one seed per arm: training variance was NOT measured for this arm (a Stage-1 outcome is accepted on one seed, decided before data)",
+  "clauses": {
+   "P1_lo_gt_0": false,
+   "P1_delta": {
+    "point": -0.9015124377636577,
+    "lo": -1.2021315523804585,
+    "hi": -0.5874460514780274
+   },
+   "G1": "FAIL",
+   "G1_adverse": [
+    "nc",
+    "dac",
+    "ttc"
+   ],
+   "P2": "PENDING (Stage 2)",
+   "P3": "PENDING (Stage 2)"
+  },
+  "next_arm": "decision-level term: pick-anchored pairwise on the `navsim_v1` aggregate (every j with PDMS_j > PDMS_pick vs the current pick, weight PDMS_j - PDMS_pick), a new head key `pick` in the same `rank_loss.py`; C reused, ~14.2 L40-h"
+ },
+ "ddc": {
+  "T_minus_C": {
+   "tracked": {
+    "point": -0.9262308578956034,
+    "lo": -1.2792209680193773,
+    "hi": -0.5909771170713829
+   },
+   "transparent": {
+    "point": -0.8521323892639552,
+    "lo": -1.2111006642738968,
+    "hi": -0.5060925461604815
+   },
+   "TD": {
+    "point": -0.07409846863164826,
+    "lo": -0.26301338031839055,
+    "hi": 0.1081094484501895
+   }
+  },
+  "note": "DDC is reported, not a guard (navsim_v1 ignores it)"
+ },
+ "adopt_caveat": "ADOPT would not clear C1's own GUARD-FAIL (TM+C: transparent comfort, the longitudinal speed bias); those stay open on the lineage",
+ "snooping": "the lever, heads and sizes were chosen from C1's navtest diagnostics (SNOOPED); the arms train on navtrain only; this read tests trained models, not a rule fit on navtest",
+ "card_questions": [
+  "Q-S1 outcome for a CONTROL-INVALID read is INVALID, no outcome; Stage 1 with P1 and G1 prints STAGE-2-TRIGGERED, never ADOPT, with P2 / P3 PENDING (Stage 2), as the brief states.",
+  "Q-S2 the step-0 digest artifact format is not registered: CTRL-W0 reads the FIRST 64-hex string in the supplied file and compares it to the C1 reference (SCORERFT_BASE_SHA256).",
+  "Q-S3 CTRL-DET: the re-run seam must hold >= 200 tokens, all in T's full seam, with poses bit-identical (the card says 'T's seam re-run on 200 tokens is identical').",
+  "Q-S4 s_p is not defined by the card: reported beside P3 as |d0 - d1| / sqrt(2) (n = 2), decides nothing; P6's 0.179 is another rig and is not imported.",
+  "Q-S5 O5 names no head for a separated adverse C sub-score; the read says so rather than choosing.",
+  "Q-S6 M2 'DAC / NC boundary share on rescuable zeroed picks' is read as head_auc.py's share of rescuable zeroed picks whose pick has a head output above the passing median (the 70.2 % of the card), plus the zeroed-by-DAC / by-NC rates; UNVERIFIED reading.",
+  "Q-S7 M1 is the paired T - C difference on the tokens with >= 3 safe proposals in BOTH arms (the safe set differs per arm); each arm's own level (own defined set) is beside it.",
+  "Q-S8 BELOW GOAL: the arm's tracked PDMS POINT < 94.55 (the brief's 'under 94.55'); whether the CI-hi also lies below is printed.",
+  "Q-S9 P3 uses a strict '>' and F as the point |mean(Cs) - mean(C)| (as the field card's Q-F5).",
+  "Q-S11 POLARITY DEFECT found in the inherited rule: p5c_read.fam_direction (vendored from proxy_eval) has no entry for min_ttc_s / headway_min_m / time_gap_min_s and defaults to 'lower is better'; on C1 vs C0 it read a RISE of min_ttc_s (+0.297 [0.157, 0.436], safer) as separated adverse. This read takes the corrected rule from field_read.entry_adverse_pol (the ONE shared definition; descriptive qualifiers only); P5-C's G2 list is NOT re-derived here and its min_ttc_s entry should be re-read.",
+  "Q-S10 a separated adverse cell of TACTICAL fam_ci components is read for accuracy / kappa only (polarity-safe); per-class recall / precision and goal-setting components are descriptive."
+ ]
+}

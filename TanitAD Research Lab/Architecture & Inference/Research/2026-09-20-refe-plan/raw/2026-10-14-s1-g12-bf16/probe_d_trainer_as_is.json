@@ -1,0 +1,43 @@
+{
+ "tag": "trainer_as_is",
+ "torch": "2.11.0+cu128",
+ "gpu": "NVIDIA GeForce RTX 4060",
+ "flags": {
+  "cublas": "",
+  "late_cublas": true,
+  "fp32": false,
+  "sdpa": "",
+  "det": "warn",
+  "tag": "trainer_as_is",
+  "ctx": 7680,
+  "batch": 2
+ },
+ "env_CUBLAS_WORKSPACE_CONFIG_at_start": null,
+ "x1_vs_x2": {
+  "params": 78,
+  "params_differ": 78,
+  "max_abs_diff": 0.00011880835518240929,
+  "first_differing": [
+   "score_dec.0.n1.weight",
+   "score_dec.0.n1.bias",
+   "score_dec.0.n2.weight",
+   "score_dec.0.n2.bias"
+  ]
+ },
+ "x1_vs_y": {
+  "params": 78,
+  "params_differ": 78,
+  "max_abs_diff": 0.00011751599959097803,
+  "first_differing": [
+   "score_dec.0.n1.weight",
+   "score_dec.0.n1.bias",
+   "score_dec.0.n2.weight",
+   "score_dec.0.n2.bias"
+  ]
+ },
+ "x1_eq_x2": false,
+ "x1_eq_y": false,
+ "warnings": [
+  "Memory Efficient attention defaults to a non-deterministic algorithm. To explicitly enable determinism call torch.use_deterministic_algorithms(True, warn_only=False). (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorc"
+ ]
+}

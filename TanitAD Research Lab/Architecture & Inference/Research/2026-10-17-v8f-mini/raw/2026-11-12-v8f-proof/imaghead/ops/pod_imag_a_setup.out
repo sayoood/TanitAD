@@ -1,0 +1,10 @@
+arms_imag_a.txt sha256 44a050cb7360f54c6027afdd025ba91b47a8370781013abd0f52f80c4b28fe64 ; PIN lines 6 ; ARM lines 2
+PIN lines equal those of arms_leadsup_a.txt
+RL_s0|/workspace/v8proof/tree_leadsup|HIER|0|540:600
+RL_s1|/workspace/v8proof/tree_leadsup|HIER|1|540:600
+--wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --wm-l1-residual on --wm-l1-roll-k 10 --w-wm-roll 1.0 --wm-l1-diag on
+levers.wm_state=grid levers.wm_z1_width=640 levers.wm_cell_dim=16 levers.wm_l1_pred=flat levers.wm_l1_pred_width=256 levers.wm_l1_act=acc_yaw levers.wm_l1_futtok_k=0 levers.w_wm_futtok=0 levers.lead_sup=on levers.w_lead_sup=1 levers.lead_hist=5 levers.lead_sup_detach=off levers.wm_l1_residual=on levers.wm_l1_roll_k=10 levers.w_wm_roll=1 levers.wm_l1_diag=on info.n_clips=4512
+TRAIN lines: LS_s0 1 RL_s0 1 RL_s1 1
+argv of RL_s0 equals that of LS_s0 plus the four added flags
+argv of RL_s1 equals that of RL_s0 apart from name, seed and out folder
+--seed 1

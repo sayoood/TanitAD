@@ -1,0 +1,83 @@
+
+=== A1-lr-constructor === tanitad/models/timm_trunk.py
+  baseline : GREEN        40 passed in 23.20s
+  mutated  : RED          1 failed, 39 passed in 23.59s
+  -> CAUGHT   (expected RED)   line 914 crlf=True  49s
+
+=== A2-lr-consumer-ZEROED === scripts/refc_v3_train.py
+  baseline : GREEN        176 passed, 1 skipped, 1 warning in 88.48s (0:01:28)
+  mutated  : GREEN        176 passed, 1 skipped, 1 warning in 95.37s (0:01:35)
+  -> NOT_CAUGHT   (expected RED)   line 7439 crlf=True  187s
+
+=== A3-lr-consumer-NO-DECAY === scripts/refc_v3_train.py
+  baseline : GREEN        92 passed in 77.18s (0:01:17)
+  mutated  : GREEN        92 passed in 68.34s (0:01:08)
+  -> NOT_CAUGHT   (expected RED)   line 7439 crlf=True  151s
+
+=== A4-weight-decay-torch-default === scripts/refc_v3_train.py
+  baseline : GREEN        60 passed in 24.25s
+  mutated  : GREEN        60 passed in 27.72s
+  -> NOT_CAUGHT   (expected RED)   line 8754 crlf=True  57s
+
+=== A5-encoder-lr-mult-default === scripts/refc_v3_train.py
+  baseline : GREEN        60 passed in 25.67s
+  mutated  : GREEN        60 passed in 29.32s
+  -> NOT_CAUGHT   (expected RED)   line 8757 crlf=True  59s
+
+=== A6-il-grad-clip === scripts/refc_v3_train.py
+  baseline : GREEN        111 passed in 34.51s
+  mutated  : GREEN        111 passed in 32.21s
+  -> NOT_CAUGHT   (expected RED)   line 7549 crlf=True  72s
+
+=== A7-knob-derivation-M18 === scripts/refc_v3_train.py
+  baseline : GREEN        107 passed, 1 skipped in 7.23s
+  mutated  : RED          2 failed, 105 passed, 1 skipped in 7.03s
+  -> CAUGHT   (expected RED)   line 5018 crlf=True  17s
+
+=== A7b-knob-derivation-M18-valid === scripts/refc_v3_train.py
+  baseline : GREEN        85 passed, 1 skipped in 6.78s
+  mutated  : GREEN        85 passed, 1 skipped in 7.18s
+  -> NOT_CAUGHT   (expected RED)   line 5019 crlf=True  17s
+
+=== A8-knob-stamp-EMPTIED === scripts/refc_v3_train.py
+  baseline : GREEN        85 passed, 1 skipped in 6.66s
+  mutated  : RED          2 failed, 83 passed, 1 skipped in 6.80s
+  -> CAUGHT   (expected RED)   line 4941 crlf=True  17s
+
+=== A9-maneuver-budget-doubled === scripts/refc_v3_train.py
+  baseline : GREEN        105 passed, 1 warning in 87.64s (0:01:27)
+  mutated  : GREEN        105 passed, 1 warning in 59.43s
+  -> NOT_CAUGHT   (expected RED)   line 3634 crlf=True  150s
+
+=== A10-rl-grad-clip-off === tanitad/rl/config.py
+  baseline : GREEN        70 passed, 2 skipped in 2.77s
+  mutated  : GREEN        70 passed, 2 skipped in 2.74s
+  -> NOT_CAUGHT   (expected RED)   line 225 crlf=True  11s
+
+=== A11-f6-w-u0-default === scripts/refc_v3_train.py
+  baseline : GREEN        123 passed, 1 skipped, 1 warning in 15.47s
+  mutated  : RED          7 failed, 116 passed, 1 skipped, 1 warning in 16.05s
+  -> CAUGHT   (expected RED)   line 146 crlf=True  38s
+
+=== A12-warmup-default-zero === scripts/refc_v3_train.py
+  baseline : GREEN        92 passed in 59.55s
+  mutated  : GREEN        92 passed in 59.19s
+  -> NOT_CAUGHT   (expected RED)   line 8423 crlf=True  127s
+
+================ SUMMARY ================
+  CAUGHT             A1-lr-constructor            tanitad/models/timm_trunk.py
+  NOT_CAUGHT         A2-lr-consumer-ZEROED        scripts/refc_v3_train.py
+  NOT_CAUGHT         A3-lr-consumer-NO-DECAY      scripts/refc_v3_train.py
+  NOT_CAUGHT         A4-weight-decay-torch-default scripts/refc_v3_train.py
+  NOT_CAUGHT         A5-encoder-lr-mult-default   scripts/refc_v3_train.py
+  NOT_CAUGHT         A6-il-grad-clip              scripts/refc_v3_train.py
+  CAUGHT             A7-knob-derivation-M18       scripts/refc_v3_train.py
+  NOT_CAUGHT         A7b-knob-derivation-M18-valid scripts/refc_v3_train.py
+  CAUGHT             A8-knob-stamp-EMPTIED        scripts/refc_v3_train.py
+  NOT_CAUGHT         A9-maneuver-budget-doubled   scripts/refc_v3_train.py
+  NOT_CAUGHT         A10-rl-grad-clip-off         tanitad/rl/config.py
+  CAUGHT             A11-f6-w-u0-default          scripts/refc_v3_train.py
+  NOT_CAUGHT         A12-warmup-default-zero      scripts/refc_v3_train.py
+
+  arms: 13   NOT_CAUGHT (the finding): 9
+[artifact] raw/mutation_results.json

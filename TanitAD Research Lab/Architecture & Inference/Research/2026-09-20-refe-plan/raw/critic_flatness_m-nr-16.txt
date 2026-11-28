@@ -1,0 +1,13 @@
+run C:/dzo/m-nr-16   TTS steps 1193   scenarios 8   switch margin 0.03   (candidate_sources[0]=='argmax' verified on 1193 steps)
+
+     ego speed      n  mean adv   max adv  >margin  switched  action spread
+  0.0-  0.5 m/s    190   0.00156   0.02189     0.0%      0.0%          4.466
+  0.5-  1.0 m/s     30   0.00333   0.01538     0.0%      0.0%          3.749
+  1.0-  2.0 m/s     30   0.00367   0.01817     0.0%      0.0%          2.949
+  2.0-  5.0 m/s    321   0.00551   0.40630     1.6%      1.6%          4.403
+  5.0- 10.0 m/s    320   0.00800   0.04872     3.8%      3.8%          4.175
+ 10.0- 99.0 m/s    302   0.00899   0.13036     5.0%      5.0%          4.225
+
+LOW SPEED (<1 m/s): n=220  max advantage 0.02189  margin 0.03  -> NEVER clears the bar
+HIGH SPEED (>=5 m/s): n=622  max advantage 0.13036  ratio of max advantages high/low = 6.0x
+action spread low vs high: 4.369 vs 4.200  (a COLLAPSED policy would show a small spread at low speed; it does not)

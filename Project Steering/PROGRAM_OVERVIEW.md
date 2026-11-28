@@ -61,7 +61,7 @@ architecture, comma val, 30 eps).
 ## 3. Hypothesis ledger
 
 > **⛔ This section no longer carries a status table.** The single quotable source for hypothesis
-> status is **[`TanitAD Research Hub/HYPOTHESIS_LEDGER.md`](../TanitAD%20Research%20Hub/HYPOTHESIS_LEDGER.md)**.
+> status is **[`TanitAD Research Lab/HYPOTHESIS_LEDGER.md`](../TanitAD%20Research%20Hub/HYPOTHESIS_LEDGER.md)**.
 >
 > **Why:** two ledgers had diverged — that file's table was frozen at **2026-07-05** while this one
 > was live, and H4 / H25–H28 existed only here while H20–H24 and IMP-1…IMP-8 existed in neither.
@@ -125,29 +125,55 @@ a map + reactive agents, i.e. a renderer, and every renderer we have sits at ~3.
 > §§5.1–5.4 below are the **2026-07-25 snapshot**, kept for their provenance tables. Where they and
 > this section disagree, **this section is newer**. §5.0.5 is the do-not-re-quote list.
 
-#### 5.0.1 ⭐⭐ Closed-loop on a neural reconstruction, on the edge device — and **ADE saw nothing**
+#### 5.0.1 ⭐⭐ Closed-loop on a neural reconstruction, on the edge device
+
+> ⛔⛔ **THIS SECTION CONTRADICTED ITSELF UNTIL 2026-09-03.** Its heading read *"and ADE saw nothing"* and its table showed `ade_0_2s` **+0.7885 [−0.8653, +2.7282] ❌ not separated** — while **line 45 of this same document** already carried the retraction (R-2026-08-03-C) saying ADE *does* separate. The table below was the **pre-retraction** panel (`metrics_empty.json`); it is now replaced by the current one, re-read from the raw JSON. ⚠️ **The quotable artifact is `results/closedloop-hq-render/`, NOT `metrics_empty.json` and NOT this section's prose.**
 
 `MEASURED` — run dir **`stack/experiments/alpasim-gsplat/results/`**
 (`metrics_empty.json`, `metrics_objects.json`, `contract_test.json`, `actor_map.json`); code
 `stack/experiments/alpasim-gsplat/`; videos
-`TanitAD Research Hub/Evaluation/Videos/alpasim-closedloop/` (4 × 18.0 s, 1800×850, each verified by
+`TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/` ⚠️ *(the path this section used to cite, `…/Evaluation/Videos/alpasim-closedloop/`, has **0 tracked files** — Research-Hub→Research-Lab rename drift)* (4 × 18.0 s, 1800×850, each verified by
 **decoding it back** and md5-matched to Thor).
 
 **9 rollout starts × 50 ticks in a NuRec reconstruction rendered ON THE JETSON THOR**, paired over
 **437 shared windows**, episode-cluster bootstrap. Paired Δ = flagship v1 − REF-C base (positive =
 flagship worse), empty-road:
 
+**CURRENT panel** — `results/closedloop-hq-render/HQ_flagship_vs_refc_empty.json`,
+`paired_A_minus_B`. MEASURED (re-read from the raw JSON 2026-09-03). Paired Δ = flagship v1
+− REF-C base (positive = flagship WORSE), empty-road, **n = 437 windows / 9 episodes**,
+paired episode-cluster bootstrap, 2000 resamples.
+
 | family | metric | paired Δ [CI95] | sep |
 |---|---|---|:--:|
-| **ADE** | `ade_0_2s` | **+0.7885 [−0.8653, +2.7282]** | ❌ |
-| **LONGITUDINAL** | `abs_target_speed_err_ms` | +1.1242 [−0.1008, +2.5657] | ❌ |
-| **LONGITUDINAL** | `along_track_ade_m` | +0.6498 [−1.0166, +2.5903] | ❌ |
-| **LATERAL** | `cross_track_abs_m` (= `dist_to_gt_traj_m`) | **+1.1705 [+0.0296, +2.2438]** | ✅ |
-| **LATERAL** | `heading_err_rad` | **+0.0838 [+0.0278, +0.1750]** | ✅ |
-| **LATERAL** | `curvature_err_1pm` | **+0.0050 [+0.0008, +0.0130]** | ✅ |
-| **LATERAL** | `yawrate_err_rads` | **+0.0378 [+0.0201, +0.0565]** | ✅ |
-| **TACTICAL** | `manoeuvre_plan_eq_logged` | +0.0709 [−0.1241, +0.2600] | ❌ |
-| **STRATEGIC** | `route_corridor_departure_rate` | +0.2037 [−0.0023, +0.3982] | ❌ |
+| **ADE** | `ade_0_2s` | **+7.1642 [+5.2654, +8.9661]** | ✅ |
+| **LONGITUDINAL** | `along_track_ade_m` | **+7.1528 [+5.2402, +8.9528]** | ✅ |
+| **LONGITUDINAL** | `abs_target_speed_err_ms` | **+6.3971 [+4.9996, +7.8014]** | ✅ |
+| **LONGITUDINAL** | `abs_executed_speed_err_ms` | **+3.1996 [+2.0777, +4.3144]** | ✅ |
+| **LATERAL** | `cross_track_abs_m` (= `dist_to_gt_traj_m`) | **+4.5033 [+2.0194, +7.3718]** | ✅ |
+| **LATERAL** | `lateral_ade_m` | **+0.4751 [+0.3203, +0.6569]** | ✅ |
+| **LATERAL** | `heading_err_rad` | **+0.1700 [+0.1303, +0.2119]** | ✅ |
+| **LATERAL** | `yawrate_err_rads` | **+0.1066 [+0.0774, +0.1393]** | ✅ |
+| **LATERAL** | `curvature_err_1pm` | **+0.0166 [+0.0125, +0.0213]** | ✅ |
+| **TACTICAL** | `manoeuvre_plan_eq_logged` | −0.0618 [−0.2165, +0.0801] | ❌ |
+
+⛔ **Reported per family with its reason, never silently dropped:** the four
+`synth_lead_*` metrics read **n = 0, "no jointly finite windows"** — no synthetic lead was
+jointly in frame for both arms. The four `real_lead_*` metrics run on a reduced
+**n = 102** (TTC on **n = 79**) and **none separates**. So the LONGITUDINAL family's
+*distance-keeping* half is **NOT measured here**; only its speed half is.
+
+⚠️ **`route_corridor_departure_rate` is not in this file's paired block** and is therefore
+omitted rather than quoted from prose. Note what it measures where it does exist: it is
+`int(abs(cross_track) > CORRIDOR_M)` against the **LOGGED path** (`cl_metrics.py:386`) — a
+deviation measure, **not an off-road rate**. There is no map in this harness.
+
+⭐ **What the corrected table says:** the separation is no longer "entirely lateral". ADE,
+both longitudinal metrics and every lateral metric separate, all in the same direction —
+flagship v1 is worse — and the effect is **an order of magnitude larger** than the
+superseded panel showed (ADE +7.16 vs +0.79). The mechanism recorded at line 45 is that
+flagship v1's driven path moves **9.05 m** mean under the render change while REF-C's moves
+**0.43 m** (21×).
 
 ⭐ **REF-C base beats flagship v1 closed-loop and the whole separation is LATERAL. An ADE-only table
 would have reported NO DIFFERENCE** on a comparison where four lateral measures separate cleanly and
@@ -193,8 +219,8 @@ so the doctrine is not an artifact of one harness.
 
 #### 5.0.2 ⭐ The Thor planning tick is UNDER budget — measured end-to-end on real weights
 
-`MEASURED` — artifact **`TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-08-03-thor-batch9-engine/thor_d6_tick_intent_K20.json`**;
-engines at `thor:~/trt_deploy/`; runbook `TanitAD Research Hub/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md`.
+`MEASURED` — artifact **`TanitAD Research Lab/Production & Optimization/Implementation/incoming/2026-08-03-thor-batch9-engine/thor_d6_tick_intent_K20.json`**;
+engines at `thor:~/trt_deploy/`; runbook `TanitAD Research Lab/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md`.
 
 First tick measured **end-to-end** (encoder + strategic head + tactical head + 9-candidate fan +
 `step_readout` decode + SE(2) + scoring) rather than composed arithmetically. **60 real held-out
@@ -244,7 +270,7 @@ numerics — *argued, not measured*).
 
 #### 5.0.4 REF-C's route pathway is LIVE — the defect is the ARCHITECTURE, not the label
 
-`MEASURED` — run dir **`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-lan-refc-e0/`**
+`MEASURED` — run dir **`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-03-lan-refc-e0/`**
 (REF-C-base 104.192 M, **859 windows / 39 val episodes**, **256 px square raster asserted before any
 forward pass**, paired episode-cluster bootstrap n_boot 2000). Pre-registration:
 `PREREG_lan_refc.md`.
@@ -279,7 +305,7 @@ Full entries and root-cause classes in [`RETRACTION_LOG.md`](RETRACTION_LOG.md).
 | **The ego-only `sitclf` swap** — **and, since 2026-08-03 12:39, score-level image+ego fusion as well** | **The ego-only swap was REJECTED by the PI ("no ego heads") and must not be proposed again.** ⛔ **Then a THIRD PI position superseded BOTH candidates: `LABELS MAY USE EGO; INFERENCE IS VISION-ONLY`** (CLAUDE.md, binding) — verbatim *"for ground truth data of scenario classification you can use both ego and other label, for inference only vision."* **`late_fuse_scores` is therefore ALSO out**, because score-level fusion is still ego-at-inference. **The deployable arm is `head_img` (image-only).** ⚠️ **And the anomaly that started this is now itself suspect:** the situation labels are derived from **ego dynamics** (`stack/tanitad/data/situations.py`), so a classifier *given* ego at inference is partly reading **the label's own source** — the banked ranking `head_ego` 0.0697 > `head_img_ego` 0.0525 > `head_img` 0.0376 may be **LEAK MAGNITUDE, not capability**, and it makes `situations.py:19`'s *"vision adds nothing over ego state"* unfalsifiable as stated. **Flagged to verify from source (two probes, file:line), not assumed.** The `sc_train.py:143` scale bug is real but is no longer the fix. **Guardrail: "vision scores worse" is NEVER a reason to reopen ego at inference.** |
 | **"REF-C's route pathway is INERT"** | **REFUTED** by §5.0.4. Every premise was individually MEASURED; the *conclusion* was an **inference** that travelled through six documents wearing its premises' evidence class. **A chain of MEASURED links does not make the conclusion MEASURED.** |
 | **Every four-family ABSOLUTE RATE published before 2026-08-03** | Wrong by **5×–25×** — `four_families.py` hard-coded `DT_S = 0.1` while its inputs are the sparse 4-waypoint **0.5 s** grid. `speed_*` **/5.00**, `accel_*` **/25.00**, `yaw_rate_*` /6.48, `curvature_*` **/8.36**, `heading_*` /1.90 (the last two via the `MIN_DS` mask alone — dt-invariant and *still* wrong). Ground truth: ego speed 12.4565 m/s vs the instrument's 62.9789. ✅ **Every cross-arm comparison, rank and paired delta SURVIVES** (common factor). **FIXED + tested** (`infer_dt`, `prefer_dense`, `MIN_DS_MPS`, a `_grid` provenance block, 12 tests). |
-| **`overlapping_holdout_se`** (the block once labelled *"8-split episode-disjoint jackknife"*) | Neither a jackknife nor a valid SE, **and it biases the point estimate** (−6.67 % to +11.69 %, bidirectional, 27 arms). It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. |
+| **`overlapping_holdout_se`** (the block once labelled *"8-split episode-disjoint jackknife"*) | Neither a jackknife nor a valid SE, **and it biases the point estimate** (−6.67 % to +11.69 %, bidirectional, 27 dumps = 25 distinct arms — C126). It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. |
 | **`flagship4b-phase0-30k` as "the deployed v1"** | It is the **no-speed ablation control** (2.918 m). The deployed v1 is **`flagship4b-speedjerk-30k`**. |
 
 ⚠️ **Also standing:** REF-A I-JEPA's val number is **unusable** (~80 % val leakage); **no
@@ -303,11 +329,12 @@ produced a published `speed_mae` of 3.06 m/s for an arm whose registry ADE@2s is
 ### 5.1 The open-loop bake-off (2026-07-25 snapshot) — settled, and the top is a three-way tie
 All numbers: TanitEval, physicalai val (`physicalai-val-0c5f7dac3b11`), **881 windows / 40 episodes**.
 ⚠️ The `±` column is the **deprecated** `overlapping_holdout_se`. Updated 2026-07-26: it is
-**1.107–3.100× too narrow, median 1.499×** over 27 arms (the old "1.28–2.06×" was under-sampled at 10),
+**1.107–3.100× too narrow, median 1.499×** over 27 dumps = 25 distinct arms (the old "1.28–2.06×" was under-sampled at 10),
 **and its `mean` is a split-mean that shifts the point estimate −6.67 % to +11.69 %, bidirectionally.**
 Read the `full-set / bootstrap` column; the `±` column is retained only for traceability. Provenance:
 [`MODEL_REGISTRY.md §6`](MODEL_REGISTRY.md) (re-emitted 2026-07-26 — **the ranking moves in 10 of 27
-positions**, and the two REF-C rows below are swapped relative to the legacy order for that reason).
+positions** (dump-level; 27 dumps = 25 distinct arms, C126), and the two REF-C rows below are swapped
+relative to the legacy order for that reason).
 
 | Arm | Step | Params | full-set mean · [episode-cluster bootstrap] | `legacy_split_mean ±` (DEPRECATED) | Beats CV (full-set 0.8377)? |
 |---|---:|---:|---|---:|:--:|
@@ -320,7 +347,7 @@ positions**, and the two REF-C rows below are swapped relative to the legacy ord
 | Flagship v1, 19 k relay | 19 000 | 263.4 M | 0.6152 · [0.5422, 0.6951] | *0.6277 ± 0.0551* | ✅ |
 | REF-B speed | 10 000 | 262.8 M | 0.8372 · [0.6753, 1.0218] | *0.8255 ± 0.0992* | ⚠️ **TIE** (was ✗ — flipped under the correction, paired test not separated) |
 | **Constant velocity (the floor)** | — | 0 | **0.8377** | *0.8248* | — |
-| P2 CEM planner over frozen v1 | n/a | 0 trained | 🟥 not recomputable (no raw JSON, no windows dump) | *0.893 ± 0.114* | ✗ |
+| P2 CEM planner over frozen v1 | n/a | 0 trained | ⚠️ **no decision-grade point estimate — the open-loop CEM arm was never dumped per-window.** ⛔ *"not recomputable (no raw JSON, no windows dump)"* stood here and is **REFUTED**: both are in-repo at depth 6–8 and the recompute is **CPU-only** (that stale absence claim is why the gate sat un-re-decided for 21 days — classes **C69**/**C70**). ✅ Both gates **re-decided 2026-08-16, NEITHER FLIPS**; ~400 s GPU closes the last arm | *0.893 ± 0.114* | ⚠️ **undecided** — the `✗` here was `planner_beats_cv`, itself an un-re-decided banned verdict whose flip **is** reachable (registry §5) |
 | Flagship **v3enc** 10 k (RESTART) | 10 000 | 272.9 M | 1.9654 · [1.6556, 2.2859] | *2.1072 ± 0.2020* | ✗ |
 | REF-A DINOv2 4B (frozen encoder) | 29 999 | — | 2.1675 · [1.9081, 2.4212] | *2.1322 ± 0.1821* | ✗ |
 | Flagship **no-speed** (ablation control) | ~22 000 | 263.4 M | 3.0175 · [2.5450, 3.5444] | *2.9176 ± 0.3558* | ✗ |
@@ -443,8 +470,13 @@ to the parity decode path. **Breaks parity by design** — the running arm finis
 **(g) Standing findings that still carry the program** — the **speed fix** (v0 as a 3rd action channel:
 REF-A fwd-ADE 3.73 → 0.83, no-speed 2.918 vs speed 0.452 causally, +2.21 m [2.04, 2.39]); **H4 closed
 negative** on a monotone 5 k→30 k curve (3.755 → 2.920, best is last — a capability ceiling, not
-overfitting); and **P2**, the training-free CEM planner over frozen v1 that beats the tactical head by
-+2.257 ± 0.329 m open-loop and drifts 38 % less closed-loop.
+overfitting); and **P2**, the training-free CEM planner over frozen v1 that beats the tactical head
+open-loop and drifts **42.9 % less closed-loop** — the latter now in a **paired** form,
+**−0.7375 m [−0.9362, −0.5295], p(δ>0) = 0.0000**, `n = 221 win / 20 ep`, which is *strictly stronger*
+than the two-interval claim it replaces. ⛔ **The open-loop margin previously printed here
+(*+2.257 ± 0.329 m*) was the BANNED `overlapping_holdout_se` estimator** and is **not** re-quotable:
+its sign and separation are confirmed, but its magnitude waits on the one arm never dumped per-window
+(registry §5). ✅ **Neither gate flips.**
 
 ### 5.3 What was running on 2026-07-25 — ⛔ **SUPERSEDED by §5.0.6, do not read as current**
 | Pod | Run | State |
@@ -526,6 +558,28 @@ absence, the cheapest metric-or-power check *before* declaring closure.
   renderer; we do **not** have `alpasim_runtime`, so there is **no collision / offroad / scene
   score**. That is bounded work (`cargo` present), not a blocker — but nothing safety-grade may be
   claimed until it lands.
+
+  > ⚠️ **RE-CONFIRMED-WITH-A-CORRECTION 2026-08-16 — the bullet is TRUE ONLY FOR THOR, and as written
+  > it is a C2 single-host absence-claim.** Probed two hosts, not one.
+  > **STILL TRUE on Thor (aarch64):** `alpasim_runtime`, `alpasim_controller`, `alpasim_physics` and
+  > `utils_rs` do not import there and `uv` is absent — §5.0.3 above, which *is* correctly
+  > host-stamped. The Thor closed-loop panels therefore genuinely carry no AlpaSim safety score.
+  > ⏹ **BUT "we do not have `alpasim_runtime`" is FALSE program-wide, and AlpaSim safety scores
+  > ALREADY EXIST in this repo (MEASURED).** On the **x86 A40 eval pod**, 2026-07-22, all of
+  > `alpasim_runtime`, `alpasim_controller`, `alpasim_physics` imported and a full bare topology ran
+  > (renderer :6011 · physics :6006 · controller-MPC :6007 · driver :6789 · runtime) —
+  > `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`.
+  > The banked result summaries in that same directory carry **`scene_score_enabled: true`** and real
+  > safety fields: `M2_results-summary.json` → `collision_any 0.0`, `collision_at_fault 0.0`,
+  > `offroad 0.0`, `offroad_or_collision 0.0`, `min_distance_to_obstacle_m 1.4279`,
+  > `img_is_black 0.0` (real frames), `dist_traveled_m 39.17` of `gt_dist_traveled_m 73.77`, scene
+  > `score_criteria = {collision_at_fault == 0, offroad == 0, progress_score …}`; likewise
+  > `REFC_base_results-summary.json` and `Flagship_v1_results-summary.json`.
+  > ⇒ **The honest statement is: the safety half is missing ON THE CURRENT FLEET** (Thor + dev box)
+  > **because the host that had `alpasim_runtime` — the eval pod — is terminated**, not because the
+  > program never had it. ⚠️ Those banked scores are **n=1 scene, DIRECTIONAL only**; they do not
+  > license a safety-grade claim, which is the bullet's actual point and it stands.
+  > Swept by the 2026-08-16 stale-blocker sweep.
 - ⛔ **New binding doctrine (PI, 2026-08-03): LABELS MAY USE EGO; INFERENCE IS VISION-ONLY.** Label
   derivation may use ego state, other agents, maps, future poses — anything, offline. **Inference may
   use vision only.** It supersedes both sitclf candidates (ego-only swap *and* score-level fusion)

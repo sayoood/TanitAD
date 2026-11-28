@@ -1,0 +1,267 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD42_N3 (dose step of card section 8 for the LS type: head fitted on all 4,572 training clips; arms LSQF)",
+ "reading_rule": "PREREG_V8F_PROOF_ADD42_N2 section 2 (h5 gates per arm type)",
+ "tier": "T1-kin (kinematic rollout on the model's own actions, logged frames; a diagnostic, never driving performance)",
+ "family_line": "STRATEGIC: NOT COMPUTED (n = 0; the arms of this study carry no strategic layer and the reader has no strategic instrument)",
+ "controls": {
+  "h1_control_rollout_equals_head_fed_dump": {
+   "PASS": true,
+   "cmp": [
+    "141",
+    "0"
+   ],
+   "tool_sha256_recorded_in_first_run": [
+    "21cf7ac38d344fd7"
+   ],
+   "tool_sha256_now_prefix": "21cf7ac38d344fd7",
+   "tool_unchanged": true,
+   "why": null
+  },
+  "h2_no_plan_moved_ahead": {
+   "PASS": true,
+   "per_arm": {
+    "LSQF_s0": {
+     "PASS": true,
+     "lift_sum": 0,
+     "n_rows": 7197
+    },
+    "LSQF_s1": {
+     "PASS": true,
+     "lift_sum": 0,
+     "n_rows": 7197
+    },
+    "LSQHI_s0": {
+     "PASS": true,
+     "lift_sum": 0,
+     "n_rows": 7197
+    }
+   }
+  },
+  "h3_gap_used_equals_min_recomputed": {
+   "PASS": true,
+   "per_arm": {
+    "LSQF_s0": {
+     "PASS": true,
+     "a": true,
+     "b": true,
+     "b_counts": true,
+     "why": null
+    },
+    "LSQF_s1": {
+     "PASS": true,
+     "a": true,
+     "b": true,
+     "b_counts": true,
+     "why": null
+    }
+   }
+  },
+  "h4_train_files_only": {
+   "PASS": true,
+   "per_base": {
+    "LS_s0": {
+     "PASS": true
+    },
+    "LS_s1": {
+     "PASS": true
+    }
+   }
+  },
+  "h5_check_coverage_in_0.15_0.25": {
+   "PASS": true,
+   "rule": "per arm type: a type is read only if both of its checkpoints are inside the band (note N1 section 4, note N2 section 2)",
+   "per_base": {
+    "LS_s0": {
+     "PASS": true,
+     "coverage_check": 0.1909393396467878,
+     "n_check_rows": 19535
+    },
+    "LS_s1": {
+     "PASS": true,
+     "coverage_check": 0.16457640133094445,
+     "n_check_rows": 19535
+    }
+   },
+   "types_read": [
+    "LS"
+   ],
+   "types_not_named": {}
+  },
+  "h8_check_clips_used_by_no_fit_and_no_selection": {
+   "PASS": true,
+   "per_base": {
+    "LS_s0": {
+     "PASS": true,
+     "ordered_disjoint": true,
+     "uses_inside_their_sets": true,
+     "no_check_row_in_any_use": true
+    },
+    "LS_s1": {
+     "PASS": true,
+     "ordered_disjoint": true,
+     "uses_inside_their_sets": true,
+     "no_check_row_in_any_use": true
+    }
+   }
+  },
+  "h6_fit_reaches_parameters_and_learns_a_quantile": {
+   "PASS": true,
+   "n_mutations": 7,
+   "why": null
+  },
+  "h7_reader_controls": {
+   "PASS": true,
+   "headway_ALL_PASS": true,
+   "family_ALL_PASS": true,
+   "g5_planted_regression_read_as_worse": true
+  },
+  "d1_label_pack_equals_banked_pack": {
+   "PASS": true,
+   "why": null
+  },
+  "d2_new_states_equal_banked_states": {
+   "PASS": true,
+   "per_base": {
+    "LS_s0": {
+     "PASS": true,
+     "pass": true,
+     "planted_shift_fails": true
+    },
+    "LS_s1": {
+     "PASS": true,
+     "pass": true,
+     "planted_shift_fails": true
+    }
+   }
+  }
+ },
+ "controls_all_pass": true,
+ "names": {
+  "LS": {
+   "reaches_oracle": "QHEAD-REACHES-ORACLE-QF",
+   "U_against_map": "QHEAD-CUTS-MORE-QF",
+   "cost_against_map": "QHEAD-COST-EQUAL-QF",
+   "cost_against_no_rule": "QHEAD-COSTS-QF",
+   "cost_against_no_rule_cells": {
+    "name": "COST-LONGITUDINAL COST-TACTICAL",
+    "cost_families": [
+     "LONGITUDINAL",
+     "TACTICAL"
+    ],
+    "gain_families": []
+   }
+  }
+ },
+ "beside": {
+  "LS": {
+   "share_of_label_fed_fall_reached_per_base": [
+    0.976190476190476,
+    0.9148936170212766
+   ],
+   "U_qh_minus_none": {
+    "per_base": [
+     -0.073,
+     -0.0765
+    ],
+    "pooled": -0.0747,
+    "interval": [
+     -0.1128,
+     -0.0393
+    ],
+    "excludes_0": true
+   },
+   "U_qh_minus_map": {
+    "per_base": [
+     -0.0142,
+     -0.016
+    ],
+    "pooled": -0.0151,
+    "interval": [
+     -0.0297,
+     -0.0006
+    ],
+    "excludes_0": true
+   },
+   "ade6_all_qh_minus_map_m": {
+    "per_base": [
+     0.1199,
+     -0.1663
+    ],
+    "pooled": -0.0232,
+    "interval": [
+     -0.2455,
+     0.1962
+    ],
+    "excludes_0": false
+   },
+   "U_qh_minus_label_fed": {
+    "per_base": [
+     0.0018,
+     0.0071
+    ],
+    "pooled": 0.0044,
+    "interval": [
+     -0.0133,
+     0.0252
+    ],
+    "excludes_0": false
+   },
+   "U_qh_minus_fixed_margin": {
+    "per_base": [
+     -0.0142,
+     0.0071
+    ],
+    "pooled": -0.0036,
+    "interval": [
+     -0.0246,
+     0.0195
+    ],
+    "excludes_0": false
+   },
+   "U_qh_minus_head_fed": {
+    "per_base": [
+     -0.032,
+     -0.0374
+    ],
+    "pooled": -0.0347,
+    "interval": [
+     -0.0523,
+     -0.0189
+    ],
+    "excludes_0": true
+   },
+   "contact_qh_minus_label_fed": {
+    "per_base": [
+     0.0047,
+     0.0187
+    ],
+    "pooled": 0.0117,
+    "interval": [
+     0.0021,
+     0.0293
+    ],
+    "excludes_0": true
+   },
+   "contact_qh_minus_fixed_margin": {
+    "per_base": [
+     0.0016,
+     0.0078
+    ],
+    "pooled": 0.0047,
+    "interval": [
+     -0.0025,
+     0.0167
+    ],
+    "excludes_0": false
+   },
+   "first_tick_mean_amount_taken_off_read_m": [
+    6.567986798116609,
+    6.876741252068816
+   ],
+   "coverage_on_evaluation_windows": [
+    0.09567901234567901,
+    0.12202852614896989
+   ]
+  }
+ }
+}

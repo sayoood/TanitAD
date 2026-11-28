@@ -1,0 +1,60 @@
+F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_a2_wiring.py:52: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  return gB, gA, float(lB)
+PASS G-BEH-LIVE: B grad on weight[7:12] non-zero
+PASS G-BEH-LIVE: A grad on weight[7:12] EXACTLY 0.0
+PASS G-BEH-LIVE: explicit w=0.0 control (graph live) EXACTLY 0.0
+PASS listwise product alone: grad on weight[7:12] non-zero (selfac reaches the head)
+PASS q_stall default EXCLUDED from the listwise columns, flag adds col 3
+PASS G-BEH-ID: loss B bit-identical to pre-A2 (all bact False)
+PASS G-BEH-ID: d lossB / d sxB[:, :, :6] bit-identical
+PASS MUTATION delete `lB = lB + w * beh_bce(...)` -> G-BEH-LIVE RED (B grad == 0)
+PASS MUTATION delete `sc = sc * selfac` -> listwise-only grad on weight[7:12] == 0 (RED)
+PASS listwise value depends on bq (rfac reaches the loss)
+PASS MUTATION delete `r = r * rfac` -> value no longer depends on bq (RED)
+PASS LEAK: no bq/bact/beh_ name in model.py, planner.py or eval/ ([])
+PASS OFF: extend_beh_head is called once, under `if a.beh_heads:`; defaults are OFF
+PASS extend_beh_head: same state_dict KEYS, 12 rows, rows 0-6 verbatim, rows 7-11 zero weight
+PASS BEH_ORDER == behaviour_terms.ORDER
+PASS REAL closure: G-BEH-LIVE B grad on weight[7:12] > 0, A exactly 0.0, explicit w=0 control exactly 0.0
+PASS REAL closure: listwise product alone (w=0) reaches weight[7:12] through losses6 -> expected_reward_loss
+PASS REAL closure: G-BEH-ID (all bact False + listwise) loss and d/dsxB[..., :6] bit-identical to the stock assembly
+PASS REAL closure MUTATION losses6 stops passing rfac/selfac -> listwise-only grad == 0 (RED)
+PASS REAL closure MUTATION losses6 passes selfac=None -> listwise-only grad == 0 (RED)
+PASS main(): the rebinding `fwd, train_losses = make_beh_wrappers(...)` is under `if a.beh_heads:` and precedes every preflight / loop call of train_losses
+PASS G17 GOOD: every raw field as required and g17_ok True
+PASS G17 REGRESSION REFE_BEH_MUTATE_DROP_LOSS (term dropped) -> g17_ok False
+PASS G17 REGRESSION REFE_BEH_MUTATE_LEAK_A (arm A trains the heads) -> g17_ok False
+PASS G17 REGRESSION REFE_BEH_MUTATE_ID (act ignored in the listwise product) -> g17_ok False
+PASS G17 listwise-only declaration (w=0): live through the product, g17_ok True
+PASS G17 REGRESSION losses6 stops passing selfac (listwise-only declaration) -> g17_ok False
+PASS judge_g17: the real probe output of the good build is accepted (no reason)
+PASS judge_g17 REGRESSION 'B not live (grad_B_declared 0)' -> reasons non-empty
+PASS judge_g17 REGRESSION 'bce term absent' -> reasons non-empty
+PASS judge_g17 REGRESSION 'listwise does not reach the head' -> reasons non-empty
+PASS judge_g17 REGRESSION 'arm A leaks' -> reasons non-empty
+PASS judge_g17 REGRESSION 'w=0 control not exactly 0' -> reasons non-empty
+PASS judge_g17 REGRESSION 'control absent' -> reasons non-empty
+PASS judge_g17 REGRESSION 'identity broken' -> reasons non-empty
+PASS judge_g17 REGRESSION 'identity grad broken' -> reasons non-empty
+PASS judge_g17 REGRESSION 'a term has no active label in the probe' -> reasons non-empty
+PASS judge_g17 REGRESSION '7-row head' -> reasons non-empty
+PASS judge_g17 REGRESSION 'bias not at init' -> reasons non-empty
+PASS judge_g17 REGRESSION 'regression arm' -> reasons non-empty
+PASS judge_g17 REGRESSION 'probe ran with another w' -> reasons non-empty
+PASS judge_g17 REGRESSION 'NaN grad' -> reasons non-empty
+PASS scorer_required_gates: G17 iff --beh-heads
+PASS G-DVB: the `beh` rows are all ok on a faithful data event
+PASS G-DVB REGRESSION 'lever ignored (no beh block)' -> a row is not ok
+PASS G-DVB REGRESSION 'built w differs' -> a row is not ok
+PASS G-DVB REGRESSION 'built without listwise' -> a row is not ok
+PASS G-DVB REGRESSION 'stall in the product though not declared' -> a row is not ok
+PASS G-DVB REGRESSION '7-row head built' -> a row is not ok
+PASS G-DVB REGRESSION 'train labels join no set' -> a row is not ok
+PASS G-DVB REGRESSION 'heldout labels join no set' -> a row is not ok
+PASS G-DVB REGRESSION 'profile does not bind the label dirs' -> a row is not ok
+PASS G-DVB REGRESSION 'block present though --beh-heads is off' -> a row is not ok
+PASS G-DVB: with --beh-heads off and no block, NO beh row exists (every stock profile's rows unchanged)
+PASS G-DVB registry: the six dests are all registered, and the trainer parser has exactly them (+ nothing unregistered)
+PASS REACH: launch_gate's preflight consumer calls C.judge_g17 on the G17 gate; the trainer's preflight calls g17_probe under `if a.beh_heads:` before G5
+ZZTEST_PASS 0

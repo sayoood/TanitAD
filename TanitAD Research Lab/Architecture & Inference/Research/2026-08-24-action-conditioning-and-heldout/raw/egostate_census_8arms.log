@@ -1,0 +1,301 @@
+
+  E-DEC-50 - DOES OUR LATENT CARRY EGO STATE AT ALL?
+  levels (speed, yaw-rate) vs changes (dv, dyaw), z_t vs zhat
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === rdw8p30k (step 30000) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.1714  +0.0159  +0.1555   3.10
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.0934  +0.0430  +0.0504   0.78
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             +0.1109  -0.0146  +0.1255   2.07
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      +0.0653  -0.0044  +0.0697   0.94
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             +0.1045  -0.0131  +0.1176   2.76
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.1089  -0.0325  +0.1414   2.50
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             +0.0087  +0.0163  -0.0077  -0.13
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      +0.0081  +0.0527  -0.0445  -0.72
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             +0.1181  +0.0545  +0.0636   0.98
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.1008  +0.0338  +0.0670   1.06
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => LEVELS YES, CHANGES NO - the latent knows the ego's STATE but not its DYNAMICS. The fix is a dynamics objective on an ego subspace THAT ALREADY EXISTS, and action-conditioning has something real to act on.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === splitp30k (step 30000) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.0863  -0.0001  +0.0864   1.12
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      -0.0260  -0.0184  -0.0076  -0.08
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             +0.0039  -0.0607  +0.0646   0.65
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      +0.1062  +0.0066  +0.0996   0.74
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             +0.1596  -0.0201  +0.1797   1.78
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.1112  -0.0174  +0.1286   1.24
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             +0.1554  +0.0060  +0.1494   2.05
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      +0.0046  +0.0333  -0.0287  -0.28
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             +0.1571  +0.0015  +0.1556   1.83
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.1348  +0.0010  +0.1338   1.37
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 25.65 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.02, 'predictor_op': 12.3, 'layer_tac': 5.93, 'layer_str': 3.56, 'planner': 1.21, 'aux': 1.65, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === ro128p30k (step 30000) - 20 clips, 1800 rows, d(z)=4096 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.1301  -0.0190  +0.1491   2.43
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.0868  -0.0185  +0.1053   1.50
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             -0.0450  -0.0207  -0.0243  -0.49
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      -0.0276  -0.0138  -0.0138  -0.30
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             +0.0834  -0.0117  +0.0951   1.99
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.1012  -0.0076  +0.1088   1.79
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             -0.0051  -0.0157  +0.0105   0.12
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      +0.0074  -0.0204  +0.0278   0.35
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             +0.0970  -0.0074  +0.1043   2.21
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.1053  +0.0054  +0.0999   1.60
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 24 rows/call -> ceiling 1031 >= 1024
+[v6] params 19.34 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.02, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.65, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === champ30k (step 30000) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.0751  +0.0433  +0.0318   0.47
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.0380  +0.0427  -0.0047  -0.07
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             +0.0108  -0.0247  +0.0355   0.70
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      -0.0260  -0.0528  +0.0268   0.46
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             -0.0513  -0.0048  -0.0465  -0.74
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.0307  -0.0096  +0.0403   0.53
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             -0.0456  +0.0049  -0.0506  -0.68
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      +0.0317  +0.0309  +0.0008   0.01
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             -0.0503  +0.0015  -0.0518  -0.80
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.0256  +0.0224  +0.0032   0.05
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === rdw8s30k (step 30000) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.0560  +0.0140  +0.0420   0.81
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.0761  +0.0063  +0.0698   1.36
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             +0.0125  +0.0045  +0.0080   0.10
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      +0.0864  +0.0189  +0.0676   0.93
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             -0.0530  +0.0465  -0.0995  -2.64
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.0261  +0.0011  +0.0250   0.51
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             -0.0537  +0.0049  -0.0586  -1.23
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      -0.0621  -0.0048  -0.0573  -1.09
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             -0.0444  +0.0259  -0.0704  -1.33
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.0219  -0.0018  +0.0237   0.46
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === o11p30k (step 7500) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.0972  -0.0056  +0.1027   1.42
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.0866  +0.0030  +0.0836   1.48
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             -0.1273  -0.0310  -0.0963  -1.78
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      -0.0236  -0.0167  -0.0069  -0.10
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             +0.0991  +0.0085  +0.0906   1.72
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      -0.0318  +0.0094  -0.0412  -0.74
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             -0.0105  +0.0575  -0.0680  -1.10
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      -0.0530  +0.0375  -0.0905  -1.36
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             +0.0949  +0.0092  +0.0857   1.56
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      -0.0242  -0.0102  -0.0140  -0.24
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 24 rows/call -> ceiling 1031 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === postrain10k (step 10000) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             +0.0148  +0.0001  +0.0147   0.16
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.1374  -0.0114  +0.1488   2.09
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             +0.2773  +0.0129  +0.2644   3.15
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      +0.1057  +0.0053  +0.1004   1.32
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             +0.1236  +0.0229  +0.1007   1.16
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.1856  -0.0257  +0.2113   3.96
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             +0.0379  -0.0029  +0.0408   0.51
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      +0.0479  -0.0196  +0.0675   1.07
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             +0.1117  +0.0068  +0.1050   1.14
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.1656  -0.0290  +0.1946   3.00
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => LEVELS YES, CHANGES NO - the latent knows the ego's STATE but not its DYNAMICS. The fix is a dynamics objective on an ego subspace THAT ALREADY EXISTS, and action-conditioning has something real to act on.
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 24 rows/call -> ceiling 1031 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === splitfrz10k (step 10000) - 20 clips, 1800 rows, d(z)=2048 ===
+  target                column                          r     shuf   t-shuf      t
+  ----------------------------------------------------------------------------------
+  IDENTITY accel_t      z_t (ENCODED)             -0.1010  -0.0222  -0.0788  -0.86
+  IDENTITY accel_t      zhat_t+k (PREDICTED)      +0.1968  +0.0188  +0.1780   1.88
+  IDENTITY accel_t      action_t                  +0.9555  +0.0217  +0.9337  23.74  <== MUST BE ~1.0
+  IDENTITY accel_t      constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  speed_t (LEVEL)       z_t (ENCODED)             -0.0995  -0.0393  -0.0602  -0.47
+  speed_t (LEVEL)       zhat_t+k (PREDICTED)      +0.1383  +0.0059  +0.1324   1.05
+  speed_t (LEVEL)       action_t                  +0.1354  -0.0150  +0.1504   1.30
+  speed_t (LEVEL)       constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  yawrate_t (LEVEL)     z_t (ENCODED)             +0.1563  +0.0160  +0.1402   1.55
+  yawrate_t (LEVEL)     zhat_t+k (PREDICTED)      +0.0267  +0.0278  -0.0011  -0.01
+  yawrate_t (LEVEL)     action_t                  +0.5769  -0.0004  +0.5773   5.09
+  yawrate_t (LEVEL)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dv_4tick (CHANGE)     z_t (ENCODED)             -0.0771  +0.0566  -0.1338  -1.94
+  dv_4tick (CHANGE)     zhat_t+k (PREDICTED)      +0.0565  +0.0194  +0.0372   0.43
+  dv_4tick (CHANGE)     action_t                  +0.3445  +0.0273  +0.3171   2.56
+  dv_4tick (CHANGE)     constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  dyaw_4tick (CHANGE)   z_t (ENCODED)             +0.1670  -0.0001  +0.1671   1.80
+  dyaw_4tick (CHANGE)   zhat_t+k (PREDICTED)      +0.0173  -0.0054  +0.0227   0.27
+  dyaw_4tick (CHANGE)   action_t                  +0.5490  -0.0148  +0.5638   4.57
+  dyaw_4tick (CHANGE)   constant (control)        +0.0000  +0.0000  +0.0000   0.00
+
+  IDENTITY control r = 0.9555
+  => NEITHER - the latent is a pure SCENE-APPEARANCE representation with NO ego state. Conditioning it on an action asks a variable that does not encode ego motion to move in response to an ego command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\egostate_census.json

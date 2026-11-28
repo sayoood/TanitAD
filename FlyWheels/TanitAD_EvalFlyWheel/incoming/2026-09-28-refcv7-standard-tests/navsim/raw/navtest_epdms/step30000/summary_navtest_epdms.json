@@ -1,0 +1,5674 @@
+{
+ "schema": "navtest-epdms7/1",
+ "status": "COMPLETE",
+ "step": 30000,
+ "written_utc": "2026-10-05T12:11:53Z",
+ "label": "RESULT (secondary read; no bar)",
+ "protocol": "EPDMS_v2_navtest_single_stage",
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "refusals": [],
+ "addendum": {
+  "current": "43aa6ac7537263b55433a858d9dad4a9b4defdc3775d88a68e0bd10ef6f8dea3",
+  "recorded": [
+   "52fa812cf64f715a046a82ae562f24369c5e86414c06a78afea49e73773049dd",
+   "a6c81b8ea919d6e179f8583e2a1b264f5f8aed101acfa3753dd75a4e8e9d7348",
+   "c6a57112cc06652ea9f212cfa8ea4545c30d633b126c937f47529c037c467047",
+   "43aa6ac7537263b55433a858d9dad4a9b4defdc3775d88a68e0bd10ef6f8dea3"
+  ],
+  "last_recorded": "43aa6ac7537263b55433a858d9dad4a9b4defdc3775d88a68e0bd10ef6f8dea3",
+  "ok": true
+ },
+ "cache": {
+  "tokens_sha256": "8d42fef68542f095d0e03894fdaf38babfdc89f3fd7cdc26080c3a6009cb4108",
+  "manifest_sha256": "b02d1a833f205035421e5ce5b180a8d41657bd7d234dd5866e2aa3df6ca04706",
+  "metadata_csv_sha256": "c6b9c4bf6807da78e1770f564fb469d0eef3dfab5b77f5553a01acc07f1bf840",
+  "token_set": "FULL_SPLIT",
+  "n_cached": 12146,
+  "ok": true,
+  "mismatches": []
+ },
+ "devkit": {
+  "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "note": "autonomousvision/navsim@0a380a9 = post-#151; runner run_pdm_score_one_stage; traffic_agents=non_reactive"
+ },
+ "stamps": {
+  "tier": "NavSim open-loop benchmark (zero-shot, never closed loop)",
+  "launch_tree": "the speed ceiling does not reach the emitted plan (SPEC_REFCV7 26.1; SPEC A1)",
+  "evidence_class": "MEASURED (ours + artifact paths in arms[*].csv)",
+  "estimator": "navsim_log_cluster_bootstrap / paired_navsim_log_cluster_bootstrap",
+  "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+ },
+ "headline_column": "score (average_all_frames); pdm_score is forbidden",
+ "arms": {
+  "STOP": {
+   "status": "OK",
+   "epdms": 0.5892382274885627,
+   "epdms_x100": 58.9238,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.579,
+    "hi": 0.6004,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.5892,
+     "mean": 0.5892,
+     "lo": 0.579,
+     "hi": 0.6004,
+     "ci95": 0.0107,
+     "se": 0.0054,
+     "bootstrap_mean": 0.5896,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.5892382274885627,
+      "point": 0.5892382274885627,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.5765,
+      "hi": 0.6037,
+      "se": 0.007
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 0.9739832043471102,
+    "DAC": 0.9652560513749383,
+    "DDC": 0.99930018112959,
+    "TLC": 0.9979417092046764,
+    "EP": 0.34485005987281286,
+    "TTC": 0.9702782809155277,
+    "LK": 0.9245018936275317,
+    "HC": 0.5503046270377079,
+    "EC": 0.1454183266932271
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.025769800757451014,
+    "DAC": 0.03474394862506175,
+    "DDC": 0.0,
+    "TLC": 0.0020582907953235635
+   },
+   "any_multiplier_zero_rate": 0.06199571875514573,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/floors/STOP/STOP.devkit.csv",
+   "csv_sha256": "ed9314730f46c0a35f331b7e935e1c37e5a257015655bce29a82a95867f277fd",
+   "wall_s": 3008.5,
+   "resources": {
+    "wall_s": 3006.29,
+    "peak_rss_mb": 2717.6,
+    "peak_process_tree_rss_mb": 2717.6,
+    "min_system_available_mb": 3833.4,
+    "n_samples": 1378,
+    "n_samples_below_floor": 7,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.6,
+      13421.2
+     ],
+     [
+      20.3,
+      533.7,
+      13486.6
+     ],
+     [
+      40.5,
+      1043.6,
+      13584.9
+     ],
+     [
+      61.0,
+      2211.4,
+      12390.7
+     ],
+     [
+      81.6,
+      2233.5,
+      11603.1
+     ],
+     [
+      101.8,
+      2233.1,
+      10637.6
+     ],
+     [
+      123.4,
+      2238.9,
+      10756.2
+     ],
+     [
+      145.5,
+      2245.4,
+      11247.3
+     ],
+     [
+      166.2,
+      2250.4,
+      11343.8
+     ],
+     [
+      188.2,
+      2254.3,
+      10824.6
+     ],
+     [
+      208.7,
+      2254.4,
+      10813.1
+     ],
+     [
+      229.7,
+      2260.0,
+      9390.9
+     ],
+     [
+      250.5,
+      2266.4,
+      10463.3
+     ],
+     [
+      273.3,
+      2266.8,
+      10394.9
+     ],
+     [
+      293.4,
+      2277.8,
+      10005.7
+     ],
+     [
+      314.9,
+      2279.2,
+      11556.6
+     ],
+     [
+      336.5,
+      2278.9,
+      10900.6
+     ],
+     [
+      359.0,
+      2283.6,
+      10605.1
+     ],
+     [
+      380.3,
+      2289.2,
+      10556.3
+     ],
+     [
+      403.7,
+      2290.9,
+      10491.2
+     ],
+     [
+      424.2,
+      2292.7,
+      9340.7
+     ],
+     [
+      446.5,
+      2302.5,
+      10119.3
+     ],
+     [
+      468.2,
+      2299.9,
+      9842.0
+     ],
+     [
+      490.1,
+      2306.7,
+      10284.3
+     ],
+     [
+      510.8,
+      2309.0,
+      9809.7
+     ],
+     [
+      531.0,
+      2312.1,
+      10395.9
+     ],
+     [
+      553.8,
+      2314.1,
+      9781.5
+     ],
+     [
+      575.9,
+      2323.0,
+      9818.7
+     ],
+     [
+      598.5,
+      2330.7,
+      10102.7
+     ],
+     [
+      620.3,
+      2334.8,
+      10283.6
+     ],
+     [
+      642.5,
+      2336.0,
+      8657.4
+     ],
+     [
+      664.7,
+      2354.2,
+      10483.1
+     ],
+     [
+      686.8,
+      2351.8,
+      10466.1
+     ],
+     [
+      707.1,
+      2352.8,
+      10299.5
+     ],
+     [
+      727.9,
+      2356.3,
+      9856.3
+     ],
+     [
+      749.1,
+      2359.8,
+      10022.4
+     ],
+     [
+      770.5,
+      2365.0,
+      10114.7
+     ],
+     [
+      791.8,
+      2369.0,
+      10236.0
+     ],
+     [
+      813.5,
+      2372.8,
+      10178.4
+     ],
+     [
+      834.2,
+      2374.6,
+      10211.2
+     ],
+     [
+      856.0,
+      2379.0,
+      10194.9
+     ],
+     [
+      877.6,
+      2384.0,
+      10204.0
+     ],
+     [
+      898.4,
+      2390.8,
+      10161.1
+     ],
+     [
+      920.5,
+      2390.5,
+      10139.7
+     ],
+     [
+      941.4,
+      2394.0,
+      10278.2
+     ],
+     [
+      963.7,
+      2396.5,
+      10294.1
+     ],
+     [
+      985.5,
+      2401.3,
+      10243.3
+     ],
+     [
+      1006.7,
+      2407.7,
+      10246.3
+     ],
+     [
+      1028.3,
+      2408.8,
+      10188.7
+     ],
+     [
+      1049.3,
+      2409.3,
+      10297.6
+     ],
+     [
+      1071.5,
+      2421.1,
+      10423.2
+     ],
+     [
+      1092.6,
+      2423.2,
+      10349.7
+     ],
+     [
+      1114.1,
+      2427.0,
+      10129.4
+     ],
+     [
+      1135.0,
+      2428.5,
+      9864.2
+     ],
+     [
+      1156.0,
+      2434.5,
+      9909.8
+     ],
+     [
+      1177.7,
+      2438.2,
+      9773.3
+     ],
+     [
+      1200.2,
+      2450.0,
+      9856.2
+     ],
+     [
+      1221.6,
+      2448.8,
+      10326.4
+     ],
+     [
+      1242.9,
+      2450.9,
+      10460.8
+     ],
+     [
+      1263.2,
+      2458.6,
+      10304.5
+     ],
+     [
+      1284.2,
+      2460.8,
+      10356.3
+     ],
+     [
+      1305.2,
+      2465.2,
+      10389.1
+     ],
+     [
+      1326.7,
+      2466.0,
+      10411.4
+     ],
+     [
+      1347.7,
+      2465.9,
+      10347.5
+     ],
+     [
+      1368.6,
+      2466.6,
+      10323.0
+     ],
+     [
+      1389.1,
+      2470.7,
+      10313.2
+     ],
+     [
+      1409.8,
+      2472.7,
+      10189.6
+     ],
+     [
+      1430.0,
+      2478.4,
+      9639.7
+     ],
+     [
+      1451.4,
+      2489.2,
+      10115.6
+     ],
+     [
+      1473.6,
+      2490.1,
+      9549.3
+     ],
+     [
+      1495.8,
+      2498.1,
+      10679.4
+     ],
+     [
+      1517.3,
+      2498.3,
+      10455.6
+     ],
+     [
+      1539.6,
+      2510.8,
+      10354.0
+     ],
+     [
+      1562.3,
+      2511.3,
+      9598.1
+     ],
+     [
+      1583.0,
+      2519.7,
+      9173.4
+     ],
+     [
+      1606.3,
+      2522.3,
+      9251.0
+     ],
+     [
+      1627.4,
+      2526.0,
+      9108.8
+     ],
+     [
+      1648.4,
+      2530.3,
+      9088.3
+     ],
+     [
+      1670.5,
+      2536.5,
+      9227.2
+     ],
+     [
+      1692.1,
+      2563.7,
+      8512.7
+     ],
+     [
+      1713.3,
+      2546.2,
+      10206.4
+     ],
+     [
+      1734.9,
+      2548.1,
+      10112.7
+     ],
+     [
+      1756.4,
+      2554.5,
+      10271.5
+     ],
+     [
+      1778.9,
+      2564.4,
+      10178.7
+     ],
+     [
+      1800.7,
+      2568.0,
+      10575.6
+     ],
+     [
+      1822.2,
+      2569.8,
+      10594.3
+     ],
+     [
+      1844.1,
+      2573.8,
+      10747.4
+     ],
+     [
+      1865.9,
+      2582.6,
+      10656.7
+     ],
+     [
+      1887.8,
+      2582.6,
+      10643.8
+     ],
+     [
+      1909.7,
+      2589.1,
+      10068.6
+     ],
+     [
+      1930.7,
+      2596.3,
+      10010.7
+     ],
+     [
+      1951.6,
+      2599.6,
+      10014.8
+     ],
+     [
+      1972.8,
+      2611.7,
+      9458.7
+     ],
+     [
+      1994.5,
+      2611.5,
+      9437.5
+     ],
+     [
+      2016.2,
+      2615.7,
+      9803.2
+     ],
+     [
+      2038.1,
+      2619.7,
+      9855.2
+     ],
+     [
+      2058.7,
+      2623.6,
+      9776.7
+     ],
+     [
+      2079.8,
+      2631.8,
+      9815.7
+     ],
+     [
+      2100.8,
+      2639.8,
+      9756.9
+     ],
+     [
+      2121.2,
+      2643.2,
+      9753.0
+     ],
+     [
+      2142.5,
+      2651.5,
+      9451.4
+     ],
+     [
+      2164.1,
+      2654.0,
+      9603.6
+     ],
+     [
+      2184.9,
+      2657.0,
+      9432.5
+     ],
+     [
+      2207.8,
+      2662.6,
+      9078.8
+     ],
+     [
+      2230.1,
+      2669.7,
+      8903.8
+     ],
+     [
+      2252.4,
+      2678.6,
+      8577.8
+     ],
+     [
+      2275.6,
+      2679.8,
+      8610.6
+     ],
+     [
+      2298.4,
+      2681.6,
+      8615.4
+     ],
+     [
+      2322.6,
+      2687.2,
+      8403.0
+     ],
+     [
+      2345.0,
+      2692.4,
+      8461.5
+     ],
+     [
+      2368.1,
+      2692.5,
+      8391.7
+     ],
+     [
+      2391.6,
+      2698.7,
+      8378.3
+     ],
+     [
+      2413.0,
+      2687.4,
+      8553.3
+     ],
+     [
+      2435.3,
+      2685.3,
+      8599.0
+     ],
+     [
+      2457.0,
+      2688.3,
+      8102.6
+     ],
+     [
+      2479.1,
+      2695.9,
+      8148.0
+     ],
+     [
+      2502.5,
+      2696.6,
+      7934.1
+     ],
+     [
+      2523.3,
+      2700.4,
+      8595.2
+     ],
+     [
+      2544.1,
+      2705.4,
+      9089.4
+     ],
+     [
+      2565.8,
+      2717.6,
+      7372.2
+     ],
+     [
+      2588.2,
+      2696.1,
+      4889.8
+     ],
+     [
+      2608.6,
+      2695.1,
+      4837.0
+     ],
+     [
+      2632.9,
+      2705.2,
+      4152.6
+     ],
+     [
+      2658.1,
+      2705.2,
+      4586.2
+     ],
+     [
+      2682.8,
+      2710.4,
+      4557.2
+     ],
+     [
+      2707.0,
+      2190.2,
+      5036.1
+     ],
+     [
+      2732.8,
+      2199.2,
+      5104.2
+     ],
+     [
+      2756.6,
+      2202.6,
+      4951.9
+     ],
+     [
+      2779.9,
+      2210.7,
+      4630.2
+     ],
+     [
+      2801.9,
+      2229.2,
+      4499.7
+     ],
+     [
+      2828.0,
+      2176.0,
+      4105.7
+     ],
+     [
+      2852.2,
+      2155.7,
+      4577.5
+     ],
+     [
+      2875.3,
+      2161.4,
+      4561.9
+     ],
+     [
+      2899.2,
+      2165.5,
+      4499.5
+     ],
+     [
+      2923.9,
+      1699.2,
+      4595.5
+     ],
+     [
+      2944.8,
+      1719.8,
+      4407.5
+     ],
+     [
+      2968.4,
+      1726.9,
+      3910.6
+     ],
+     [
+      2989.4,
+      1727.0,
+      4531.6
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.5892382274885626,
+     "devkit_average_all_frames": 0.5892382274885627,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "OK",
+     "smoke": "raw/navtest_epdms/smoke/ke2/STOP/STOP.devkit.csv",
+     "n_tokens": 218,
+     "tokens_missing_in_full": 0,
+     "max_abs": 0.0,
+     "pass": true
+    }
+   },
+   "stop_fraction_4s_endpoint_lt_1m": 1.0
+  },
+  "CV": {
+   "status": "OK",
+   "epdms": 0.2588123741948191,
+   "epdms_x100": 25.8812,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.2408,
+    "hi": 0.2774,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.2588,
+     "mean": 0.2588,
+     "lo": 0.2408,
+     "hi": 0.2774,
+     "ci95": 0.0183,
+     "se": 0.0092,
+     "bootstrap_mean": 0.2592,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.2588123741948191,
+      "point": 0.2588123741948191,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.2398,
+      "hi": 0.2809,
+      "se": 0.0106
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 0.680635600197596,
+    "DAC": 0.5783797134859213,
+    "DDC": 0.8423349250782151,
+    "TLC": 0.9809813930512102,
+    "EP": 0.7774805740015044,
+    "TTC": 0.6688621768483451,
+    "LK": 0.8266919150337559,
+    "HC": 0.9786761073604479,
+    "EC": 0.5533864541832669
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.2927712827268236,
+    "DAC": 0.42162028651407873,
+    "DDC": 0.10036225917997695,
+    "TLC": 0.019018606948789724
+   },
+   "any_multiplier_zero_rate": 0.6738020747571217,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/floors/CV/CV.devkit.csv",
+   "csv_sha256": "aa8635072e757b0550456d4a9dde90858730e1e35448872b6cf7b5c4311f2c3b",
+   "wall_s": 2144.4,
+   "resources": {
+    "wall_s": 2142.67,
+    "peak_rss_mb": 2778.5,
+    "peak_process_tree_rss_mb": 2778.5,
+    "min_system_available_mb": 7816.9,
+    "n_samples": 976,
+    "n_samples_below_floor": 0,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.7,
+      13183.4
+     ],
+     [
+      20.9,
+      2187.8,
+      10973.7
+     ],
+     [
+      42.2,
+      2206.1,
+      10990.3
+     ],
+     [
+      62.5,
+      2213.1,
+      10933.0
+     ],
+     [
+      84.5,
+      2224.4,
+      10934.6
+     ],
+     [
+      105.8,
+      2226.6,
+      10949.7
+     ],
+     [
+      126.9,
+      2243.1,
+      10915.6
+     ],
+     [
+      148.3,
+      2241.8,
+      10885.6
+     ],
+     [
+      170.1,
+      2253.1,
+      10853.4
+     ],
+     [
+      192.0,
+      2253.1,
+      10850.4
+     ],
+     [
+      213.7,
+      2263.3,
+      10839.7
+     ],
+     [
+      235.5,
+      2267.5,
+      10736.2
+     ],
+     [
+      256.4,
+      2269.2,
+      10688.6
+     ],
+     [
+      277.7,
+      2273.6,
+      10784.8
+     ],
+     [
+      299.4,
+      2280.4,
+      10734.2
+     ],
+     [
+      320.2,
+      2286.9,
+      10844.0
+     ],
+     [
+      341.5,
+      2289.3,
+      10770.0
+     ],
+     [
+      362.6,
+      2297.6,
+      10779.1
+     ],
+     [
+      383.4,
+      2303.3,
+      10787.8
+     ],
+     [
+      404.5,
+      2318.1,
+      10766.4
+     ],
+     [
+      425.7,
+      2319.9,
+      10746.5
+     ],
+     [
+      446.7,
+      2328.6,
+      10788.8
+     ],
+     [
+      467.2,
+      2332.4,
+      10752.3
+     ],
+     [
+      488.4,
+      2342.3,
+      10771.5
+     ],
+     [
+      509.2,
+      2339.4,
+      10765.4
+     ],
+     [
+      529.9,
+      2351.8,
+      10745.2
+     ],
+     [
+      550.1,
+      2356.1,
+      10747.7
+     ],
+     [
+      570.9,
+      2358.7,
+      10737.5
+     ],
+     [
+      591.2,
+      2363.5,
+      10735.1
+     ],
+     [
+      611.4,
+      2371.3,
+      10713.3
+     ],
+     [
+      631.6,
+      2377.4,
+      10732.6
+     ],
+     [
+      653.3,
+      2377.7,
+      10719.6
+     ],
+     [
+      675.2,
+      2411.8,
+      10598.8
+     ],
+     [
+      696.4,
+      2394.0,
+      10665.2
+     ],
+     [
+      718.8,
+      2398.6,
+      10654.3
+     ],
+     [
+      741.2,
+      2404.1,
+      10656.5
+     ],
+     [
+      763.3,
+      2415.2,
+      10339.4
+     ],
+     [
+      784.0,
+      2421.8,
+      10380.5
+     ],
+     [
+      808.0,
+      2428.9,
+      10436.2
+     ],
+     [
+      831.4,
+      2435.4,
+      10413.1
+     ],
+     [
+      854.7,
+      2436.4,
+      10399.6
+     ],
+     [
+      878.0,
+      2436.1,
+      10379.1
+     ],
+     [
+      901.5,
+      2442.6,
+      10387.2
+     ],
+     [
+      926.8,
+      2458.1,
+      10300.2
+     ],
+     [
+      951.5,
+      2459.9,
+      10319.1
+     ],
+     [
+      975.5,
+      2467.0,
+      10233.3
+     ],
+     [
+      998.2,
+      2478.4,
+      10172.2
+     ],
+     [
+      1023.4,
+      2482.2,
+      10154.7
+     ],
+     [
+      1046.2,
+      2493.6,
+      10161.3
+     ],
+     [
+      1070.1,
+      2496.0,
+      10081.8
+     ],
+     [
+      1092.7,
+      2501.3,
+      10102.3
+     ],
+     [
+      1118.5,
+      2518.1,
+      10173.1
+     ],
+     [
+      1141.7,
+      2517.2,
+      10191.6
+     ],
+     [
+      1163.2,
+      2522.5,
+      10131.6
+     ],
+     [
+      1185.5,
+      2530.6,
+      10107.0
+     ],
+     [
+      1207.4,
+      2536.8,
+      10077.1
+     ],
+     [
+      1229.3,
+      2541.9,
+      10073.6
+     ],
+     [
+      1250.5,
+      2552.6,
+      10102.7
+     ],
+     [
+      1272.6,
+      2559.3,
+      10077.8
+     ],
+     [
+      1294.5,
+      2564.4,
+      10070.0
+     ],
+     [
+      1316.3,
+      2569.9,
+      10039.5
+     ],
+     [
+      1338.7,
+      2578.7,
+      10016.5
+     ],
+     [
+      1361.3,
+      2586.5,
+      9987.5
+     ],
+     [
+      1382.4,
+      2593.8,
+      10063.9
+     ],
+     [
+      1404.1,
+      2601.0,
+      10006.4
+     ],
+     [
+      1428.4,
+      2611.0,
+      10050.7
+     ],
+     [
+      1451.0,
+      2621.1,
+      9951.5
+     ],
+     [
+      1472.3,
+      2625.5,
+      9944.0
+     ],
+     [
+      1494.0,
+      2630.8,
+      9944.8
+     ],
+     [
+      1516.1,
+      2635.8,
+      9897.6
+     ],
+     [
+      1538.5,
+      2639.4,
+      9958.7
+     ],
+     [
+      1561.1,
+      2650.1,
+      9913.9
+     ],
+     [
+      1583.9,
+      2654.5,
+      9899.0
+     ],
+     [
+      1606.0,
+      2656.5,
+      9923.7
+     ],
+     [
+      1627.9,
+      2671.4,
+      9857.2
+     ],
+     [
+      1649.6,
+      2668.2,
+      9300.4
+     ],
+     [
+      1671.0,
+      2674.2,
+      9809.2
+     ],
+     [
+      1693.2,
+      2680.0,
+      9743.9
+     ],
+     [
+      1717.1,
+      2685.8,
+      9680.6
+     ],
+     [
+      1739.5,
+      2689.3,
+      9827.8
+     ],
+     [
+      1760.4,
+      2694.8,
+      9729.1
+     ],
+     [
+      1782.2,
+      2694.7,
+      10364.2
+     ],
+     [
+      1805.1,
+      2705.8,
+      10399.6
+     ],
+     [
+      1826.4,
+      2721.7,
+      10330.1
+     ],
+     [
+      1850.1,
+      2719.7,
+      10107.9
+     ],
+     [
+      1871.9,
+      2733.2,
+      10306.1
+     ],
+     [
+      1892.8,
+      2729.5,
+      9820.3
+     ],
+     [
+      1912.9,
+      2733.3,
+      9737.3
+     ],
+     [
+      1933.5,
+      2740.5,
+      9552.3
+     ],
+     [
+      1955.1,
+      2738.0,
+      9464.4
+     ],
+     [
+      1976.8,
+      2750.3,
+      9299.4
+     ],
+     [
+      1997.5,
+      2758.2,
+      9275.9
+     ],
+     [
+      2019.2,
+      2766.6,
+      8840.9
+     ],
+     [
+      2040.6,
+      2767.2,
+      8168.5
+     ],
+     [
+      2063.8,
+      2772.8,
+      8629.3
+     ],
+     [
+      2087.2,
+      2062.1,
+      9349.5
+     ],
+     [
+      2108.7,
+      2067.0,
+      9594.1
+     ],
+     [
+      2131.1,
+      2090.6,
+      9457.5
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.2588123741948191,
+     "devkit_average_all_frames": 0.2588123741948191,
+     "abs_diff": 0.0,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "OK",
+     "smoke": "raw/navtest_epdms/smoke/ke5_CV/CV/CV.devkit.csv",
+     "n_tokens": 43,
+     "tokens_missing_in_full": 0,
+     "max_abs": 0.0,
+     "pass": true
+    }
+   }
+  },
+  "HUMAN": {
+   "status": "OK",
+   "epdms": 0.945143433880174,
+   "epdms_x100": 94.5143,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.9393,
+    "hi": 0.9509,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.9451,
+     "mean": 0.9451,
+     "lo": 0.9393,
+     "hi": 0.9509,
+     "ci95": 0.0058,
+     "se": 0.003,
+     "bootstrap_mean": 0.9453,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.945143433880174,
+      "point": 0.945143433880174,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.9355,
+      "hi": 0.9543,
+      "se": 0.005
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 1.0,
+    "DAC": 1.0,
+    "DDC": 0.9981887041001153,
+    "TLC": 1.0,
+    "EP": 0.8742440652374426,
+    "TTC": 1.0,
+    "LK": 1.0,
+    "HC": 0.9806520665239585,
+    "EC": 0.900796812749004
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.0,
+    "DAC": 0.0,
+    "DDC": 0.0,
+    "TLC": 0.0
+   },
+   "any_multiplier_zero_rate": 0.0,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/floors/HUMAN/HUMAN.devkit.csv",
+   "csv_sha256": "4becb27204ea4a03a164e304c5e0807204e5b8ba67c50dec51e2909a75f2246e",
+   "wall_s": 2016.4,
+   "resources": {
+    "wall_s": 2014.97,
+    "peak_rss_mb": 2798.7,
+    "peak_process_tree_rss_mb": 2798.7,
+    "min_system_available_mb": 12162.2,
+    "n_samples": 916,
+    "n_samples_below_floor": 0,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.6,
+      15373.2
+     ],
+     [
+      20.4,
+      1366.8,
+      13991.2
+     ],
+     [
+      42.1,
+      2228.6,
+      13147.1
+     ],
+     [
+      64.3,
+      2231.2,
+      13177.0
+     ],
+     [
+      86.9,
+      2245.1,
+      13176.7
+     ],
+     [
+      108.4,
+      2248.8,
+      13157.6
+     ],
+     [
+      129.2,
+      2255.3,
+      13150.1
+     ],
+     [
+      150.0,
+      2263.5,
+      13137.6
+     ],
+     [
+      171.4,
+      2273.9,
+      13113.9
+     ],
+     [
+      193.0,
+      2273.3,
+      13137.6
+     ],
+     [
+      214.7,
+      2289.5,
+      13167.6
+     ],
+     [
+      236.3,
+      2284.2,
+      13117.9
+     ],
+     [
+      257.9,
+      2286.2,
+      13130.1
+     ],
+     [
+      278.9,
+      2292.9,
+      13105.8
+     ],
+     [
+      300.4,
+      2302.9,
+      12930.7
+     ],
+     [
+      321.7,
+      2306.1,
+      12910.6
+     ],
+     [
+      343.6,
+      2321.4,
+      12910.8
+     ],
+     [
+      364.2,
+      2326.2,
+      12859.3
+     ],
+     [
+      384.8,
+      2329.5,
+      12804.5
+     ],
+     [
+      406.0,
+      2345.9,
+      12758.2
+     ],
+     [
+      427.2,
+      2347.4,
+      12781.5
+     ],
+     [
+      448.4,
+      2354.7,
+      12793.6
+     ],
+     [
+      469.6,
+      2364.6,
+      12756.0
+     ],
+     [
+      490.3,
+      2365.7,
+      12761.0
+     ],
+     [
+      511.0,
+      2369.3,
+      12770.6
+     ],
+     [
+      531.6,
+      2378.4,
+      12743.8
+     ],
+     [
+      552.8,
+      2384.9,
+      12731.5
+     ],
+     [
+      573.0,
+      2387.1,
+      12725.0
+     ],
+     [
+      593.5,
+      2392.0,
+      12712.0
+     ],
+     [
+      614.5,
+      2406.0,
+      12704.6
+     ],
+     [
+      635.0,
+      2405.7,
+      12753.5
+     ],
+     [
+      655.9,
+      2407.5,
+      12727.0
+     ],
+     [
+      676.8,
+      2419.3,
+      12693.6
+     ],
+     [
+      697.9,
+      2422.8,
+      12720.0
+     ],
+     [
+      718.6,
+      2428.7,
+      12699.3
+     ],
+     [
+      740.3,
+      2434.6,
+      12661.7
+     ],
+     [
+      762.1,
+      2444.2,
+      12663.8
+     ],
+     [
+      784.7,
+      2453.4,
+      12660.7
+     ],
+     [
+      807.5,
+      2457.6,
+      12652.3
+     ],
+     [
+      830.2,
+      2462.2,
+      12649.7
+     ],
+     [
+      852.3,
+      2462.0,
+      12633.6
+     ],
+     [
+      876.9,
+      2468.2,
+      12620.4
+     ],
+     [
+      901.7,
+      2481.2,
+      12592.7
+     ],
+     [
+      926.3,
+      2484.8,
+      12596.6
+     ],
+     [
+      949.6,
+      2492.7,
+      12558.5
+     ],
+     [
+      973.3,
+      2506.2,
+      12570.1
+     ],
+     [
+      998.1,
+      2507.5,
+      12557.7
+     ],
+     [
+      1019.9,
+      2518.8,
+      12511.6
+     ],
+     [
+      1045.8,
+      2520.7,
+      12537.7
+     ],
+     [
+      1072.0,
+      2530.7,
+      12513.3
+     ],
+     [
+      1098.3,
+      2541.4,
+      12517.2
+     ],
+     [
+      1122.4,
+      2552.7,
+      12510.6
+     ],
+     [
+      1146.8,
+      2551.6,
+      12545.4
+     ],
+     [
+      1171.6,
+      2562.7,
+      12470.3
+     ],
+     [
+      1193.9,
+      2574.2,
+      12445.2
+     ],
+     [
+      1216.9,
+      2575.0,
+      12459.4
+     ],
+     [
+      1238.5,
+      2576.8,
+      12466.3
+     ],
+     [
+      1259.8,
+      2582.5,
+      12446.7
+     ],
+     [
+      1282.0,
+      2590.0,
+      12438.8
+     ],
+     [
+      1306.3,
+      2606.6,
+      12365.3
+     ],
+     [
+      1327.7,
+      2605.2,
+      12365.4
+     ],
+     [
+      1350.6,
+      2611.6,
+      12373.5
+     ],
+     [
+      1371.5,
+      2618.6,
+      12318.1
+     ],
+     [
+      1394.5,
+      2634.9,
+      12282.3
+     ],
+     [
+      1416.7,
+      2640.2,
+      12314.8
+     ],
+     [
+      1437.5,
+      2645.0,
+      12308.0
+     ],
+     [
+      1459.6,
+      2649.2,
+      12299.0
+     ],
+     [
+      1482.8,
+      2658.5,
+      12393.4
+     ],
+     [
+      1503.6,
+      2671.8,
+      12428.4
+     ],
+     [
+      1525.1,
+      2679.4,
+      12428.7
+     ],
+     [
+      1546.9,
+      2678.4,
+      12417.5
+     ],
+     [
+      1569.1,
+      2685.3,
+      12400.2
+     ],
+     [
+      1590.8,
+      2688.1,
+      12400.9
+     ],
+     [
+      1612.9,
+      2694.8,
+      12364.1
+     ],
+     [
+      1635.3,
+      2698.9,
+      12334.5
+     ],
+     [
+      1657.2,
+      2708.9,
+      12344.6
+     ],
+     [
+      1678.8,
+      2709.6,
+      12353.9
+     ],
+     [
+      1701.6,
+      2714.2,
+      12324.1
+     ],
+     [
+      1723.6,
+      2717.4,
+      12348.5
+     ],
+     [
+      1745.7,
+      2728.6,
+      12297.5
+     ],
+     [
+      1767.6,
+      2737.8,
+      12300.0
+     ],
+     [
+      1789.9,
+      2747.6,
+      12283.1
+     ],
+     [
+      1811.2,
+      2748.2,
+      12288.2
+     ],
+     [
+      1833.4,
+      2751.4,
+      12285.6
+     ],
+     [
+      1853.6,
+      2756.8,
+      12272.9
+     ],
+     [
+      1874.7,
+      2766.5,
+      12273.5
+     ],
+     [
+      1897.6,
+      2782.0,
+      12259.4
+     ],
+     [
+      1919.9,
+      2789.3,
+      12233.0
+     ],
+     [
+      1940.7,
+      2790.0,
+      12173.2
+     ],
+     [
+      1960.9,
+      2794.6,
+      12181.4
+     ],
+     [
+      1982.2,
+      2135.6,
+      12804.8
+     ],
+     [
+      2003.3,
+      2162.6,
+      12707.8
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.945143433880174,
+     "devkit_average_all_frames": 0.945143433880174,
+     "abs_diff": 0.0,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "OK",
+     "smoke": "raw/navtest_epdms/smoke/ke5_HUMAN/HUMAN/HUMAN.devkit.csv",
+     "n_tokens": 43,
+     "tokens_missing_in_full": 0,
+     "max_abs": 0.0,
+     "pass": true
+    },
+    "KE5_human_analytic": {
+     "n": 12146,
+     "exceptions": 0,
+     "pass": true
+    }
+   }
+  },
+  "R7_A1": {
+   "status": "OK",
+   "epdms": 0.7271929495287047,
+   "epdms_x100": 72.7193,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.7115,
+    "hi": 0.7454,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.7272,
+     "mean": 0.7272,
+     "lo": 0.7115,
+     "hi": 0.7454,
+     "ci95": 0.0169,
+     "se": 0.0087,
+     "bootstrap_mean": 0.7275,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.7271929495287047,
+      "point": 0.7271929495287046,
+      "abs_diff": 1.1102230246251565e-16,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.7079,
+      "hi": 0.749,
+      "se": 0.0104
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 0.9129754651737197,
+    "DAC": 0.8797958175531039,
+    "DDC": 0.9752593446402108,
+    "TLC": 0.9925078215050223,
+    "EP": 0.880999792134607,
+    "TTC": 0.9002140622427136,
+    "LK": 0.9342993578132719,
+    "HC": 0.9793347604149514,
+    "EC": 0.7893426294820717
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.08299028486744607,
+    "DAC": 0.1202041824468961,
+    "DDC": 0.012843734562819035,
+    "TLC": 0.00749217849497777
+   },
+   "any_multiplier_zero_rate": 0.20805203359130578,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/step30000/R7_A1/R7_A1.devkit.csv",
+   "csv_sha256": "30af7dda738dd2be83d757bfc9756879690322da90c9817baedc1c1e266f92da",
+   "wall_s": 2010.9,
+   "resources": {
+    "wall_s": 2009.49,
+    "peak_rss_mb": 2807.4,
+    "peak_process_tree_rss_mb": 2807.4,
+    "min_system_available_mb": 11752.8,
+    "n_samples": 918,
+    "n_samples_below_floor": 0,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.7,
+      14901.8
+     ],
+     [
+      20.8,
+      2219.6,
+      12707.4
+     ],
+     [
+      42.0,
+      2231.6,
+      12691.4
+     ],
+     [
+      62.8,
+      2241.9,
+      12661.8
+     ],
+     [
+      84.7,
+      2253.5,
+      12650.6
+     ],
+     [
+      105.4,
+      2255.2,
+      12648.2
+     ],
+     [
+      126.9,
+      2265.7,
+      12610.8
+     ],
+     [
+      147.8,
+      2274.0,
+      12617.2
+     ],
+     [
+      169.0,
+      2280.2,
+      12621.6
+     ],
+     [
+      190.5,
+      2282.7,
+      12603.4
+     ],
+     [
+      211.7,
+      2291.2,
+      12613.5
+     ],
+     [
+      232.6,
+      2291.6,
+      12613.6
+     ],
+     [
+      253.7,
+      2299.3,
+      12562.9
+     ],
+     [
+      274.7,
+      2300.8,
+      12554.6
+     ],
+     [
+      296.0,
+      2310.0,
+      12534.5
+     ],
+     [
+      316.9,
+      2315.4,
+      12514.2
+     ],
+     [
+      338.4,
+      2332.3,
+      12491.1
+     ],
+     [
+      359.6,
+      2334.1,
+      12472.1
+     ],
+     [
+      380.7,
+      2340.9,
+      12486.0
+     ],
+     [
+      401.9,
+      2352.1,
+      12488.6
+     ],
+     [
+      422.9,
+      2357.7,
+      12502.0
+     ],
+     [
+      444.0,
+      2364.4,
+      12466.3
+     ],
+     [
+      465.6,
+      2369.3,
+      12474.6
+     ],
+     [
+      486.4,
+      2371.7,
+      12455.3
+     ],
+     [
+      507.1,
+      2384.2,
+      12407.4
+     ],
+     [
+      528.4,
+      2388.7,
+      12395.1
+     ],
+     [
+      548.6,
+      2391.6,
+      12397.3
+     ],
+     [
+      569.8,
+      2395.3,
+      12391.3
+     ],
+     [
+      590.5,
+      2403.8,
+      12377.7
+     ],
+     [
+      610.7,
+      2407.7,
+      12346.1
+     ],
+     [
+      631.2,
+      2408.7,
+      12359.4
+     ],
+     [
+      652.4,
+      2418.9,
+      12355.1
+     ],
+     [
+      673.2,
+      2426.5,
+      12315.3
+     ],
+     [
+      694.5,
+      2461.0,
+      12322.0
+     ],
+     [
+      716.2,
+      2436.8,
+      12338.7
+     ],
+     [
+      736.9,
+      2455.8,
+      12324.3
+     ],
+     [
+      759.7,
+      2451.4,
+      12333.2
+     ],
+     [
+      782.2,
+      2460.5,
+      12287.2
+     ],
+     [
+      804.8,
+      2468.1,
+      12301.7
+     ],
+     [
+      828.0,
+      2468.4,
+      12312.2
+     ],
+     [
+      852.5,
+      2470.7,
+      12295.1
+     ],
+     [
+      877.2,
+      2481.6,
+      12276.0
+     ],
+     [
+      901.7,
+      2490.9,
+      12253.4
+     ],
+     [
+      924.6,
+      2501.8,
+      12249.2
+     ],
+     [
+      947.6,
+      2499.0,
+      12281.3
+     ],
+     [
+      973.8,
+      2514.3,
+      12221.1
+     ],
+     [
+      996.2,
+      2520.9,
+      12123.1
+     ],
+     [
+      1019.7,
+      2523.6,
+      12111.6
+     ],
+     [
+      1043.4,
+      2530.4,
+      12115.8
+     ],
+     [
+      1069.6,
+      2540.1,
+      12119.8
+     ],
+     [
+      1091.5,
+      2546.8,
+      12086.6
+     ],
+     [
+      1113.2,
+      2552.8,
+      12088.2
+     ],
+     [
+      1136.7,
+      2561.0,
+      12109.0
+     ],
+     [
+      1161.4,
+      2568.1,
+      12063.9
+     ],
+     [
+      1184.7,
+      2573.1,
+      12075.1
+     ],
+     [
+      1209.0,
+      2581.5,
+      12054.2
+     ],
+     [
+      1231.6,
+      2585.9,
+      12053.4
+     ],
+     [
+      1253.3,
+      2594.9,
+      12060.4
+     ],
+     [
+      1273.8,
+      2598.9,
+      12048.4
+     ],
+     [
+      1297.8,
+      2612.6,
+      12045.0
+     ],
+     [
+      1319.5,
+      2612.6,
+      11992.8
+     ],
+     [
+      1342.5,
+      2619.7,
+      11996.8
+     ],
+     [
+      1365.0,
+      2625.1,
+      11998.7
+     ],
+     [
+      1387.0,
+      2638.1,
+      12004.3
+     ],
+     [
+      1409.9,
+      2642.3,
+      12012.0
+     ],
+     [
+      1431.7,
+      2649.3,
+      11999.4
+     ],
+     [
+      1453.6,
+      2659.7,
+      11965.3
+     ],
+     [
+      1476.9,
+      2664.7,
+      11974.1
+     ],
+     [
+      1498.8,
+      2680.1,
+      11918.1
+     ],
+     [
+      1519.5,
+      2679.3,
+      11924.7
+     ],
+     [
+      1542.2,
+      2683.1,
+      11936.5
+     ],
+     [
+      1564.6,
+      2691.7,
+      11889.7
+     ],
+     [
+      1585.6,
+      2692.7,
+      11895.1
+     ],
+     [
+      1608.6,
+      2700.7,
+      11906.4
+     ],
+     [
+      1630.4,
+      2705.3,
+      11885.9
+     ],
+     [
+      1652.9,
+      2715.5,
+      11881.7
+     ],
+     [
+      1674.0,
+      2717.9,
+      11882.3
+     ],
+     [
+      1695.4,
+      2721.2,
+      11846.1
+     ],
+     [
+      1717.2,
+      2733.2,
+      11846.0
+     ],
+     [
+      1737.9,
+      2734.9,
+      11837.7
+     ],
+     [
+      1760.1,
+      2744.7,
+      11837.1
+     ],
+     [
+      1781.2,
+      2755.7,
+      11843.2
+     ],
+     [
+      1802.0,
+      2755.0,
+      11758.1
+     ],
+     [
+      1823.4,
+      2758.9,
+      11798.0
+     ],
+     [
+      1844.7,
+      2764.7,
+      11904.0
+     ],
+     [
+      1864.9,
+      2767.6,
+      11941.9
+     ],
+     [
+      1886.9,
+      2779.0,
+      11936.1
+     ],
+     [
+      1909.0,
+      2794.9,
+      11904.1
+     ],
+     [
+      1930.2,
+      2794.7,
+      11853.5
+     ],
+     [
+      1950.7,
+      2800.7,
+      11860.2
+     ],
+     [
+      1971.7,
+      2109.4,
+      12536.6
+     ],
+     [
+      1993.5,
+      2138.3,
+      12144.7
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.7271929495287046,
+     "devkit_average_all_frames": 0.7271929495287047,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "UNAVAILABLE",
+     "reason": "no whole-log smoke for this arm/step"
+    }
+   },
+   "device": "cpu",
+   "precision": "fp32",
+   "stop_fraction_4s_endpoint_lt_1m": 0.029145397661781657
+  },
+  "R7_A1_s1": {
+   "status": "OK",
+   "epdms": 0.722761285882736,
+   "epdms_x100": 72.2761,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.7067,
+    "hi": 0.7414,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.7228,
+     "mean": 0.7228,
+     "lo": 0.7067,
+     "hi": 0.7414,
+     "ci95": 0.0173,
+     "se": 0.0089,
+     "bootstrap_mean": 0.7231,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.722761285882736,
+      "point": 0.722761285882736,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.7026,
+      "hi": 0.745,
+      "se": 0.0107
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 0.9094763708216697,
+    "DAC": 0.878313848180471,
+    "DDC": 0.9745595257698008,
+    "TLC": 0.992754816400461,
+    "EP": 0.8810840802524783,
+    "TTC": 0.8972501234974477,
+    "LK": 0.9357813271859048,
+    "HC": 0.9791700971513255,
+    "EC": 0.7854581673306773
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.08620121850815084,
+    "DAC": 0.12168615181952906,
+    "DDC": 0.01366705088094846,
+    "TLC": 0.0072451835995389425
+   },
+   "any_multiplier_zero_rate": 0.21233327844557878,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/step30000/R7_A1_s1/R7_A1_s1.devkit.csv",
+   "csv_sha256": "aba5d605781a6db1bb8454ab27a77fdc061ca205a2133aef05fdf81a14ad2abd",
+   "wall_s": 2010.3,
+   "resources": {
+    "wall_s": 2008.83,
+    "peak_rss_mb": 2804.7,
+    "peak_process_tree_rss_mb": 2804.7,
+    "min_system_available_mb": 10662.3,
+    "n_samples": 922,
+    "n_samples_below_floor": 0,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.7,
+      14558.1
+     ],
+     [
+      21.0,
+      2219.1,
+      12332.0
+     ],
+     [
+      42.2,
+      2232.0,
+      12278.8
+     ],
+     [
+      64.2,
+      2241.6,
+      12284.7
+     ],
+     [
+      85.8,
+      2253.5,
+      12268.4
+     ],
+     [
+      106.6,
+      2255.4,
+      12260.6
+     ],
+     [
+      127.6,
+      2265.6,
+      12251.6
+     ],
+     [
+      148.9,
+      2275.4,
+      12196.9
+     ],
+     [
+      169.8,
+      2281.2,
+      12192.7
+     ],
+     [
+      190.6,
+      2282.0,
+      12172.5
+     ],
+     [
+      212.0,
+      2290.7,
+      12159.0
+     ],
+     [
+      232.9,
+      2293.1,
+      12179.4
+     ],
+     [
+      253.5,
+      2297.6,
+      12184.6
+     ],
+     [
+      274.8,
+      2302.0,
+      12158.9
+     ],
+     [
+      296.4,
+      2308.4,
+      12174.4
+     ],
+     [
+      317.9,
+      2314.3,
+      12188.8
+     ],
+     [
+      340.0,
+      2329.3,
+      12163.5
+     ],
+     [
+      361.5,
+      2337.2,
+      12160.0
+     ],
+     [
+      382.6,
+      2349.9,
+      12132.3
+     ],
+     [
+      403.2,
+      2354.0,
+      12167.2
+     ],
+     [
+      424.2,
+      2356.8,
+      12166.2
+     ],
+     [
+      445.5,
+      2364.8,
+      12155.4
+     ],
+     [
+      466.6,
+      2370.3,
+      12144.8
+     ],
+     [
+      487.4,
+      2373.6,
+      12142.7
+     ],
+     [
+      508.3,
+      2385.0,
+      12111.9
+     ],
+     [
+      528.9,
+      2389.6,
+      12093.1
+     ],
+     [
+      549.6,
+      2391.1,
+      12111.9
+     ],
+     [
+      569.8,
+      2397.3,
+      12078.8
+     ],
+     [
+      590.6,
+      2401.5,
+      12064.2
+     ],
+     [
+      610.9,
+      2408.8,
+      12079.6
+     ],
+     [
+      631.4,
+      2409.3,
+      12064.4
+     ],
+     [
+      652.4,
+      2418.9,
+      12056.8
+     ],
+     [
+      673.0,
+      2432.5,
+      11779.6
+     ],
+     [
+      694.4,
+      2432.9,
+      11789.5
+     ],
+     [
+      715.7,
+      2437.1,
+      11809.9
+     ],
+     [
+      736.3,
+      2450.2,
+      11792.3
+     ],
+     [
+      759.3,
+      2452.4,
+      11827.1
+     ],
+     [
+      781.7,
+      2461.0,
+      11826.3
+     ],
+     [
+      803.9,
+      2468.8,
+      11801.1
+     ],
+     [
+      825.3,
+      2469.1,
+      11813.6
+     ],
+     [
+      848.8,
+      2471.7,
+      11818.5
+     ],
+     [
+      873.5,
+      2481.6,
+      11794.8
+     ],
+     [
+      898.1,
+      2491.2,
+      11918.9
+     ],
+     [
+      921.5,
+      2499.9,
+      11900.1
+     ],
+     [
+      944.8,
+      2499.7,
+      11826.9
+     ],
+     [
+      970.4,
+      2513.3,
+      11813.9
+     ],
+     [
+      992.8,
+      2521.6,
+      11814.7
+     ],
+     [
+      1016.8,
+      2522.9,
+      11795.4
+     ],
+     [
+      1041.1,
+      2530.0,
+      11794.8
+     ],
+     [
+      1066.5,
+      2542.4,
+      11772.0
+     ],
+     [
+      1090.5,
+      2545.7,
+      11779.8
+     ],
+     [
+      1115.2,
+      2554.9,
+      11832.1
+     ],
+     [
+      1137.4,
+      2560.8,
+      11820.9
+     ],
+     [
+      1163.0,
+      2569.4,
+      11813.6
+     ],
+     [
+      1186.1,
+      2574.0,
+      11810.6
+     ],
+     [
+      1210.0,
+      2582.6,
+      11815.2
+     ],
+     [
+      1231.7,
+      2583.4,
+      11795.3
+     ],
+     [
+      1252.2,
+      2595.4,
+      11705.9
+     ],
+     [
+      1274.6,
+      2601.4,
+      11713.4
+     ],
+     [
+      1298.7,
+      2613.4,
+      11680.5
+     ],
+     [
+      1320.1,
+      2612.4,
+      11688.6
+     ],
+     [
+      1342.0,
+      2620.7,
+      11670.0
+     ],
+     [
+      1363.5,
+      2623.7,
+      11681.5
+     ],
+     [
+      1385.3,
+      2639.8,
+      11648.8
+     ],
+     [
+      1406.4,
+      2643.8,
+      11610.3
+     ],
+     [
+      1427.4,
+      2651.6,
+      11612.7
+     ],
+     [
+      1449.2,
+      2659.4,
+      11609.3
+     ],
+     [
+      1471.9,
+      2663.6,
+      11614.4
+     ],
+     [
+      1494.1,
+      2676.8,
+      11597.3
+     ],
+     [
+      1514.8,
+      2679.9,
+      11610.9
+     ],
+     [
+      1536.5,
+      2682.9,
+      11584.8
+     ],
+     [
+      1559.2,
+      2691.9,
+      11578.8
+     ],
+     [
+      1580.7,
+      2695.2,
+      11588.8
+     ],
+     [
+      1603.2,
+      2704.2,
+      11635.4
+     ],
+     [
+      1625.8,
+      2706.6,
+      11632.7
+     ],
+     [
+      1647.9,
+      2714.9,
+      11621.9
+     ],
+     [
+      1669.0,
+      2715.7,
+      11637.2
+     ],
+     [
+      1691.3,
+      2718.8,
+      11632.6
+     ],
+     [
+      1712.1,
+      2724.0,
+      11579.2
+     ],
+     [
+      1733.1,
+      2734.5,
+      11324.7
+     ],
+     [
+      1753.3,
+      2743.5,
+      11113.2
+     ],
+     [
+      1774.2,
+      2750.4,
+      10666.2
+     ],
+     [
+      1794.3,
+      2754.7,
+      10871.6
+     ],
+     [
+      1815.4,
+      2754.7,
+      10873.8
+     ],
+     [
+      1836.6,
+      2758.0,
+      10807.4
+     ],
+     [
+      1857.1,
+      2764.5,
+      10817.9
+     ],
+     [
+      1878.9,
+      2778.8,
+      10866.8
+     ],
+     [
+      1900.3,
+      2792.7,
+      10904.8
+     ],
+     [
+      1921.1,
+      2794.5,
+      10983.6
+     ],
+     [
+      1942.7,
+      2798.9,
+      11072.2
+     ],
+     [
+      1962.9,
+      2804.5,
+      11140.1
+     ],
+     [
+      1984.5,
+      2137.4,
+      11789.0
+     ],
+     [
+      2005.4,
+      2159.1,
+      11793.5
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.7227612858827361,
+     "devkit_average_all_frames": 0.722761285882736,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "UNAVAILABLE",
+     "reason": "no whole-log smoke for this arm/step"
+    }
+   },
+   "device": "cpu",
+   "precision": "fp32",
+   "stop_fraction_4s_endpoint_lt_1m": 0.029145397661781657
+  },
+  "PRIOR_ha0p": {
+   "status": "OK",
+   "epdms": 0.6021547840960555,
+   "epdms_x100": 60.2155,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.5737,
+    "hi": 0.6333,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.6022,
+     "mean": 0.6022,
+     "lo": 0.5737,
+     "hi": 0.6333,
+     "ci95": 0.0298,
+     "se": 0.0154,
+     "bootstrap_mean": 0.6027,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.6021547840960555,
+      "point": 0.6021547840960555,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.5643,
+      "hi": 0.6448,
+      "se": 0.0208
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 0.885312036884571,
+    "DAC": 0.7404906965256052,
+    "DDC": 0.8748559196443273,
+    "TLC": 0.9940721225094682,
+    "EP": 0.8175034119679037,
+    "TTC": 0.8732916186398815,
+    "LK": 0.899637740820023,
+    "HC": 0.9810637246830232,
+    "EC": 0.8381474103585658
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.10044459081178989,
+    "DAC": 0.2595093034743949,
+    "DDC": 0.09048246336242384,
+    "TLC": 0.005927877490531862
+   },
+   "any_multiplier_zero_rate": 0.3364070475876832,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/step30000/PRIOR_ha0p/PRIOR_ha0p.devkit.csv",
+   "csv_sha256": "0e31f32a0a251553d947d726ef2f8d363b1d6aea172b1c6504ffb1998df67f34",
+   "wall_s": 1998.6,
+   "resources": {
+    "wall_s": 1997.22,
+    "peak_rss_mb": 2803.6,
+    "peak_process_tree_rss_mb": 2803.6,
+    "min_system_available_mb": 10967.3,
+    "n_samples": 908,
+    "n_samples_below_floor": 0,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.6,
+      13909.1
+     ],
+     [
+      20.9,
+      2219.3,
+      11753.4
+     ],
+     [
+      41.9,
+      2233.2,
+      11794.9
+     ],
+     [
+      63.9,
+      2239.7,
+      11775.9
+     ],
+     [
+      85.3,
+      2253.8,
+      11792.1
+     ],
+     [
+      106.6,
+      2257.2,
+      11797.9
+     ],
+     [
+      128.8,
+      2265.9,
+      11773.4
+     ],
+     [
+      150.2,
+      2272.6,
+      11782.6
+     ],
+     [
+      171.6,
+      2280.9,
+      11753.5
+     ],
+     [
+      192.8,
+      2282.1,
+      11751.4
+     ],
+     [
+      214.7,
+      2290.2,
+      11751.4
+     ],
+     [
+      235.6,
+      2292.5,
+      11683.0
+     ],
+     [
+      256.5,
+      2300.0,
+      11675.2
+     ],
+     [
+      277.8,
+      2303.9,
+      11675.6
+     ],
+     [
+      298.9,
+      2310.0,
+      11689.1
+     ],
+     [
+      320.8,
+      2315.2,
+      11677.8
+     ],
+     [
+      342.1,
+      2330.6,
+      11673.6
+     ],
+     [
+      363.3,
+      2335.1,
+      11656.2
+     ],
+     [
+      384.4,
+      2353.5,
+      11653.8
+     ],
+     [
+      405.2,
+      2352.9,
+      11665.6
+     ],
+     [
+      426.7,
+      2362.9,
+      11634.6
+     ],
+     [
+      447.9,
+      2363.5,
+      11614.4
+     ],
+     [
+      469.0,
+      2370.4,
+      11596.5
+     ],
+     [
+      489.7,
+      2370.3,
+      11594.8
+     ],
+     [
+      510.9,
+      2384.2,
+      11578.9
+     ],
+     [
+      532.3,
+      2391.4,
+      11569.7
+     ],
+     [
+      552.6,
+      2391.7,
+      11561.5
+     ],
+     [
+      573.7,
+      2397.7,
+      11693.8
+     ],
+     [
+      593.9,
+      2402.6,
+      11646.3
+     ],
+     [
+      614.1,
+      2410.0,
+      11646.1
+     ],
+     [
+      634.8,
+      2410.6,
+      11662.8
+     ],
+     [
+      655.7,
+      2418.4,
+      11672.4
+     ],
+     [
+      676.4,
+      2427.6,
+      11661.2
+     ],
+     [
+      697.5,
+      2431.9,
+      11666.3
+     ],
+     [
+      718.9,
+      2440.2,
+      11653.3
+     ],
+     [
+      740.4,
+      2449.4,
+      11659.3
+     ],
+     [
+      763.0,
+      2450.2,
+      11658.5
+     ],
+     [
+      786.1,
+      2459.6,
+      11622.4
+     ],
+     [
+      808.4,
+      2464.8,
+      11617.0
+     ],
+     [
+      832.0,
+      2470.4,
+      11571.5
+     ],
+     [
+      856.0,
+      2473.6,
+      11590.0
+     ],
+     [
+      880.0,
+      2482.0,
+      11580.6
+     ],
+     [
+      904.8,
+      2490.4,
+      11581.1
+     ],
+     [
+      928.1,
+      2497.8,
+      11534.7
+     ],
+     [
+      951.0,
+      2505.5,
+      11485.3
+     ],
+     [
+      972.1,
+      2513.3,
+      11490.7
+     ],
+     [
+      994.2,
+      2520.5,
+      11497.4
+     ],
+     [
+      1018.5,
+      2527.7,
+      11473.0
+     ],
+     [
+      1042.4,
+      2530.9,
+      11493.5
+     ],
+     [
+      1068.5,
+      2543.6,
+      11451.5
+     ],
+     [
+      1090.5,
+      2546.8,
+      11471.4
+     ],
+     [
+      1114.4,
+      2553.8,
+      11470.3
+     ],
+     [
+      1136.1,
+      2562.9,
+      11405.7
+     ],
+     [
+      1163.3,
+      2568.9,
+      11413.5
+     ],
+     [
+      1185.9,
+      2572.9,
+      11423.2
+     ],
+     [
+      1210.6,
+      2581.2,
+      11419.0
+     ],
+     [
+      1234.2,
+      2589.3,
+      11406.7
+     ],
+     [
+      1255.4,
+      2595.3,
+      11392.1
+     ],
+     [
+      1279.0,
+      2604.6,
+      11366.8
+     ],
+     [
+      1302.1,
+      2611.1,
+      11349.3
+     ],
+     [
+      1325.3,
+      2618.0,
+      11339.5
+     ],
+     [
+      1345.8,
+      2623.5,
+      11340.0
+     ],
+     [
+      1368.6,
+      2634.1,
+      11346.3
+     ],
+     [
+      1390.4,
+      2645.0,
+      11327.9
+     ],
+     [
+      1413.5,
+      2651.4,
+      11326.2
+     ],
+     [
+      1435.5,
+      2654.8,
+      11265.9
+     ],
+     [
+      1457.4,
+      2662.2,
+      11230.8
+     ],
+     [
+      1480.0,
+      2669.0,
+      11220.9
+     ],
+     [
+      1501.9,
+      2677.8,
+      11207.7
+     ],
+     [
+      1523.2,
+      2681.5,
+      11234.2
+     ],
+     [
+      1545.7,
+      2687.8,
+      11220.2
+     ],
+     [
+      1567.4,
+      2692.7,
+      11208.8
+     ],
+     [
+      1589.7,
+      2698.6,
+      11216.0
+     ],
+     [
+      1612.0,
+      2704.3,
+      11172.6
+     ],
+     [
+      1633.9,
+      2709.8,
+      11171.7
+     ],
+     [
+      1655.6,
+      2713.4,
+      11178.0
+     ],
+     [
+      1677.6,
+      2718.4,
+      11179.1
+     ],
+     [
+      1699.2,
+      2723.0,
+      11194.1
+     ],
+     [
+      1721.0,
+      2735.8,
+      11211.9
+     ],
+     [
+      1743.3,
+      2743.7,
+      11199.1
+     ],
+     [
+      1764.2,
+      2750.4,
+      11228.3
+     ],
+     [
+      1786.5,
+      2754.1,
+      11227.0
+     ],
+     [
+      1807.8,
+      2760.6,
+      11199.9
+     ],
+     [
+      1829.1,
+      2765.6,
+      11185.7
+     ],
+     [
+      1850.5,
+      2764.1,
+      11158.6
+     ],
+     [
+      1872.5,
+      2777.9,
+      11160.4
+     ],
+     [
+      1894.9,
+      2790.7,
+      11146.3
+     ],
+     [
+      1917.1,
+      2795.9,
+      11137.6
+     ],
+     [
+      1938.9,
+      2799.6,
+      11111.0
+     ],
+     [
+      1960.5,
+      2140.2,
+      11755.4
+     ],
+     [
+      1981.7,
+      2165.8,
+      11445.6
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.6021547840960555,
+     "devkit_average_all_frames": 0.6021547840960555,
+     "abs_diff": 0.0,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "UNAVAILABLE",
+     "reason": "no whole-log smoke for this arm/step"
+    }
+   },
+   "device": "model-free",
+   "precision": "fp32 (kinematic_prior, CPU)",
+   "stop_fraction_4s_endpoint_lt_1m": 0.060431417750699816
+  },
+  "R7_CEILDECL_d": {
+   "status": "OK",
+   "epdms": 0.726962256031897,
+   "epdms_x100": 72.6962,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "estimator": "navsim_log_cluster_bootstrap",
+    "cluster_unit": "log_name",
+    "lo": 0.7111,
+    "hi": 0.745,
+    "n_clusters": 136,
+    "detail": {
+     "status": "OK",
+     "estimator": "navsim_log_cluster_bootstrap",
+     "cluster_unit": "log_name",
+     "resample_unit": "log_name",
+     "aggregation": "single_stage_token_mean",
+     "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+     "point": 0.727,
+     "mean": 0.727,
+     "lo": 0.7111,
+     "hi": 0.745,
+     "ci95": 0.0169,
+     "se": 0.0087,
+     "bootstrap_mean": 0.7273,
+     "n_clusters": 136,
+     "n_units": 12146,
+     "n_units_nan": 0,
+     "min_clusters": 8,
+     "n_boot": 2000,
+     "seed": 0,
+     "alpha": 0.05,
+     "reproduces_official": {
+      "status": "OK",
+      "official_value": 0.726962256031897,
+      "point": 0.726962256031897,
+      "abs_diff": 0.0,
+      "tol": 1e-09
+     },
+     "sensitivity_nuplan_drive": {
+      "status": "OK",
+      "unit": "nuplan_drive",
+      "n_clusters": 44,
+      "lo": 0.7078,
+      "hi": 0.7488,
+      "se": 0.0103
+     },
+     "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+     "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+     "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+     "_machine": "taniteval.ci.episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna) \u2014 the SAME draws, cross-checked",
+     "_forbidden": "\u26d4 scene-token resampling (overlapping units), the episode-cluster bootstrap under any other unit, and overlapping_holdout_se (biases the point estimate) are NOT admissible for NavSim.",
+     "protocol": "EPDMS_v2_navtest_single_stage"
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor."
+   },
+   "components": {
+    "NC": 0.9129342993578132,
+    "DAC": 0.879713485921291,
+    "DDC": 0.9753416762720237,
+    "TLC": 0.9925078215050223,
+    "EP": 0.8805217718911301,
+    "TTC": 0.9002140622427136,
+    "LK": 0.9339700312860201,
+    "HC": 0.9794170920467644,
+    "EC": 0.7898406374501992
+   },
+   "multiplier_zero_rate": {
+    "NC": 0.08307261649925901,
+    "DAC": 0.12028651407870904,
+    "DDC": 0.01267907129919315,
+    "TLC": 0.00749217849497777
+   },
+   "any_multiplier_zero_rate": 0.20821669685493166,
+   "n_ec_nan_dropped_to_14": 2106,
+   "csv": "raw/navtest_epdms/step30000/R7_CEILDECL_d/R7_CEILDECL_d.devkit.csv",
+   "csv_sha256": "6b8976313976bb05c026c672dc17c7e66e0a9daa6146a29c51449779effb6853",
+   "wall_s": 2002.6,
+   "resources": {
+    "wall_s": 2001.23,
+    "peak_rss_mb": 2804.1,
+    "peak_process_tree_rss_mb": 2804.1,
+    "min_system_available_mb": 10530.2,
+    "n_samples": 917,
+    "n_samples_below_floor": 0,
+    "sample_interval_s": 2.0,
+    "ram_floor_mb": 4000.0,
+    "abort_policy": "available<4000MB for 60 consecutive samples, or <2000MB once",
+    "trace_every_10th_sample__t_rss_avail": [
+     [
+      0.0,
+      20.7,
+      13849.6
+     ],
+     [
+      20.8,
+      2219.1,
+      11616.7
+     ],
+     [
+      42.0,
+      2232.0,
+      11589.8
+     ],
+     [
+      62.7,
+      2241.2,
+      11608.4
+     ],
+     [
+      84.5,
+      2253.2,
+      11596.0
+     ],
+     [
+      105.2,
+      2254.6,
+      11570.8
+     ],
+     [
+      126.3,
+      2265.2,
+      11564.9
+     ],
+     [
+      147.5,
+      2295.2,
+      11521.4
+     ],
+     [
+      168.6,
+      2278.3,
+      11548.9
+     ],
+     [
+      189.7,
+      2280.7,
+      11554.3
+     ],
+     [
+      211.4,
+      2290.8,
+      11539.2
+     ],
+     [
+      232.5,
+      2290.9,
+      11529.3
+     ],
+     [
+      254.0,
+      2301.8,
+      11509.2
+     ],
+     [
+      275.1,
+      2302.3,
+      11493.9
+     ],
+     [
+      296.6,
+      2307.6,
+      11496.7
+     ],
+     [
+      317.8,
+      2312.9,
+      11495.4
+     ],
+     [
+      339.6,
+      2329.5,
+      11443.3
+     ],
+     [
+      360.8,
+      2334.0,
+      11406.8
+     ],
+     [
+      381.8,
+      2345.0,
+      11440.8
+     ],
+     [
+      402.6,
+      2351.9,
+      11266.1
+     ],
+     [
+      423.6,
+      2354.6,
+      11264.3
+     ],
+     [
+      444.4,
+      2362.5,
+      11260.6
+     ],
+     [
+      465.4,
+      2367.4,
+      11226.4
+     ],
+     [
+      486.1,
+      2370.2,
+      11237.4
+     ],
+     [
+      506.8,
+      2385.6,
+      11200.5
+     ],
+     [
+      527.6,
+      2396.1,
+      11196.7
+     ],
+     [
+      548.4,
+      2390.0,
+      11205.6
+     ],
+     [
+      569.1,
+      2393.9,
+      11180.7
+     ],
+     [
+      590.2,
+      2402.6,
+      11177.2
+     ],
+     [
+      611.0,
+      2410.4,
+      11182.5
+     ],
+     [
+      632.0,
+      2409.2,
+      11181.9
+     ],
+     [
+      653.1,
+      2418.5,
+      11178.5
+     ],
+     [
+      673.6,
+      2426.4,
+      11170.3
+     ],
+     [
+      694.8,
+      2433.0,
+      11137.0
+     ],
+     [
+      716.5,
+      2438.8,
+      11118.3
+     ],
+     [
+      737.8,
+      2450.6,
+      11240.6
+     ],
+     [
+      760.7,
+      2452.8,
+      11208.1
+     ],
+     [
+      783.6,
+      2458.6,
+      11211.9
+     ],
+     [
+      806.1,
+      2465.6,
+      11185.9
+     ],
+     [
+      830.0,
+      2467.2,
+      11263.5
+     ],
+     [
+      852.5,
+      2470.3,
+      11263.7
+     ],
+     [
+      876.0,
+      2479.4,
+      11245.1
+     ],
+     [
+      900.4,
+      2490.0,
+      11237.9
+     ],
+     [
+      922.8,
+      2497.7,
+      11239.5
+     ],
+     [
+      946.4,
+      2497.5,
+      11044.1
+     ],
+     [
+      969.7,
+      2512.1,
+      11060.3
+     ],
+     [
+      992.6,
+      2521.4,
+      11036.7
+     ],
+     [
+      1016.5,
+      2530.8,
+      11054.4
+     ],
+     [
+      1039.5,
+      2529.6,
+      11051.2
+     ],
+     [
+      1063.9,
+      2540.7,
+      11016.4
+     ],
+     [
+      1087.2,
+      2544.2,
+      10996.6
+     ],
+     [
+      1109.0,
+      2551.9,
+      10922.2
+     ],
+     [
+      1131.2,
+      2555.4,
+      10758.2
+     ],
+     [
+      1155.4,
+      2569.0,
+      10771.0
+     ],
+     [
+      1178.1,
+      2569.1,
+      10706.8
+     ],
+     [
+      1200.0,
+      2577.0,
+      10701.1
+     ],
+     [
+      1223.9,
+      2582.0,
+      10720.1
+     ],
+     [
+      1245.0,
+      2588.7,
+      10708.2
+     ],
+     [
+      1266.9,
+      2594.7,
+      10710.1
+     ],
+     [
+      1290.8,
+      2612.0,
+      10684.9
+     ],
+     [
+      1312.9,
+      2611.0,
+      10717.8
+     ],
+     [
+      1336.0,
+      2618.2,
+      10695.6
+     ],
+     [
+      1357.1,
+      2623.0,
+      10703.2
+     ],
+     [
+      1379.3,
+      2637.3,
+      10678.9
+     ],
+     [
+      1399.8,
+      2643.0,
+      10695.0
+     ],
+     [
+      1421.4,
+      2649.0,
+      10658.4
+     ],
+     [
+      1443.2,
+      2653.0,
+      10675.0
+     ],
+     [
+      1465.0,
+      2663.5,
+      10666.4
+     ],
+     [
+      1488.5,
+      2672.9,
+      10632.6
+     ],
+     [
+      1511.5,
+      2677.2,
+      10657.4
+     ],
+     [
+      1533.4,
+      2681.1,
+      10627.0
+     ],
+     [
+      1555.5,
+      2687.7,
+      10626.8
+     ],
+     [
+      1578.6,
+      2693.2,
+      10643.9
+     ],
+     [
+      1600.8,
+      2700.0,
+      10598.0
+     ],
+     [
+      1623.0,
+      2704.0,
+      10610.5
+     ],
+     [
+      1645.7,
+      2714.7,
+      10593.8
+     ],
+     [
+      1666.9,
+      2715.4,
+      10595.8
+     ],
+     [
+      1689.8,
+      2719.9,
+      10596.9
+     ],
+     [
+      1710.6,
+      2723.8,
+      10559.3
+     ],
+     [
+      1732.5,
+      2734.6,
+      10561.6
+     ],
+     [
+      1755.8,
+      2744.4,
+      10561.5
+     ],
+     [
+      1776.7,
+      2752.2,
+      10592.2
+     ],
+     [
+      1797.8,
+      2753.1,
+      10609.3
+     ],
+     [
+      1819.0,
+      2758.3,
+      10616.4
+     ],
+     [
+      1840.3,
+      2763.7,
+      10737.3
+     ],
+     [
+      1861.2,
+      2771.1,
+      10727.1
+     ],
+     [
+      1883.1,
+      2783.2,
+      10710.1
+     ],
+     [
+      1904.2,
+      2793.8,
+      10560.9
+     ],
+     [
+      1924.4,
+      2795.1,
+      10580.7
+     ],
+     [
+      1945.9,
+      2799.6,
+      10567.9
+     ],
+     [
+      1967.2,
+      2140.1,
+      11197.2
+     ],
+     [
+      1988.0,
+      2163.7,
+      10883.5
+     ]
+    ]
+   },
+   "controls": {
+    "KE1_max_abs_gap": 0.0,
+    "C_AVG": {
+     "recomputed_mean": 0.726962256031897,
+     "devkit_average_all_frames": 0.726962256031897,
+     "abs_diff": 0.0,
+     "tol": 1e-12,
+     "n": 12146,
+     "pass": true
+    },
+    "KE7_dac_v2_vs_v1": {
+     "n_common": 12146,
+     "equal": 12146,
+     "v2_gt_v1": 0,
+     "v2_lt_v1": 0,
+     "expected_v2_lt_v1": 0
+    },
+    "KE4_subset_vs_full": {
+     "status": "UNAVAILABLE",
+     "reason": "no whole-log smoke for this arm/step"
+    }
+   },
+   "device": "cpu",
+   "precision": "fp32",
+   "stop_fraction_4s_endpoint_lt_1m": 0.02931006092540754
+  }
+ },
+ "pairs": {
+  "R7_A1__minus__STOP": {
+   "status": "OK",
+   "headline_delta": 0.13795472204014203,
+   "n_common": 12146,
+   "token_mean_delta": 0.1379547220401421,
+   "wins": 8933,
+   "ties": 704,
+   "losses": 2509,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": -0.06100773917339042,
+    "DAC": -0.08546023382183435,
+    "DDC": -0.02404083648937922,
+    "TLC": -0.005433887699654207,
+    "EP": 0.5361497322617942,
+    "TTC": -0.0700642186728141,
+    "LK": 0.009797464185740162,
+    "HC": 0.42903013337724355,
+    "EC": 0.6439243027888446
+   },
+   "interval": {
+    "delta": 0.138,
+    "lo": 0.1204,
+    "hi": 0.1551,
+    "ci95": 0.0173,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.1208,
+     "hi": 0.1553,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7271929495287047,
+     "point": 0.7271929495287046,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5892382274885627,
+     "point": 0.5892382274885627,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R7_A1__minus__CV": {
+   "status": "OK",
+   "headline_delta": 0.4683805753338856,
+   "n_common": 12146,
+   "token_mean_delta": 0.46838057533388566,
+   "wins": 8372,
+   "ties": 2692,
+   "losses": 1082,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": 0.23233986497612383,
+    "DAC": 0.3014161040671826,
+    "DDC": 0.13292441956199572,
+    "TLC": 0.011526428453811955,
+    "EP": 0.10351921813310272,
+    "TTC": 0.23135188539436852,
+    "LK": 0.1076074427795159,
+    "HC": 0.0006586530545035403,
+    "EC": 0.23595617529880478
+   },
+   "interval": {
+    "delta": 0.4684,
+    "lo": 0.4467,
+    "hi": 0.4893,
+    "ci95": 0.0213,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.4481,
+     "hi": 0.4843,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7271929495287047,
+     "point": 0.7271929495287046,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.2588123741948191,
+     "point": 0.2588123741948191,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R7_A1__minus__HUMAN": {
+   "status": "OK",
+   "headline_delta": -0.21795048435146924,
+   "n_common": 12146,
+   "token_mean_delta": -0.21795048435146916,
+   "wins": 3935,
+   "ties": 2290,
+   "losses": 5921,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": -0.08702453482628025,
+    "DAC": -0.1202041824468961,
+    "DDC": -0.022929359459904496,
+    "TLC": -0.00749217849497777,
+    "EP": 0.006755726897164495,
+    "TTC": -0.09978593775728635,
+    "LK": -0.06570064218672814,
+    "HC": -0.0013173061090070806,
+    "EC": -0.11145418326693227
+   },
+   "interval": {
+    "delta": -0.218,
+    "lo": -0.2326,
+    "hi": -0.2021,
+    "ci95": 0.0152,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": -0.2349,
+     "hi": -0.2008,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7271929495287047,
+     "point": 0.7271929495287046,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.945143433880174,
+     "point": 0.945143433880174,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R7_A1__minus__PRIOR_ha0p": {
+   "status": "OK",
+   "headline_delta": 0.12503816543264923,
+   "n_common": 12146,
+   "token_mean_delta": 0.12503816543264923,
+   "wins": 5521,
+   "ties": 3439,
+   "losses": 3186,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": 0.02766342828914869,
+    "DAC": 0.13930512102749876,
+    "DDC": 0.10040342499588342,
+    "TLC": -0.0015643010044459082,
+    "EP": 0.0634963801667034,
+    "TTC": 0.02692244360283221,
+    "LK": 0.03466161699324881,
+    "HC": -0.0017289642680717932,
+    "EC": -0.04880478087649402
+   },
+   "interval": {
+    "delta": 0.125,
+    "lo": 0.1053,
+    "hi": 0.1441,
+    "ci95": 0.0194,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.0979,
+     "hi": 0.1478,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7271929495287047,
+     "point": 0.7271929495287046,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.6021547840960555,
+     "point": 0.6021547840960555,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R7_A1__minus__R7_A1_s1": {
+   "status": "OK",
+   "headline_delta": 0.0044316636459686976,
+   "n_common": 12146,
+   "token_mean_delta": 0.004431663645968725,
+   "wins": 3287,
+   "ties": 5595,
+   "losses": 3264,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": 0.003499094352050058,
+    "DAC": 0.0014819693726329656,
+    "DDC": 0.0006998188704100115,
+    "TLC": -0.0002469948954388276,
+    "EP": -8.428811787133155e-05,
+    "TTC": 0.002963938745265931,
+    "LK": -0.0014819693726329656,
+    "HC": 0.00016466326362588507,
+    "EC": 0.003884462151394422
+   },
+   "interval": {
+    "delta": 0.0044,
+    "lo": 0.0006,
+    "hi": 0.0082,
+    "ci95": 0.0038,
+    "p_delta_gt0": 0.985,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.0003,
+     "hi": 0.0081,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7271929495287047,
+     "point": 0.7271929495287046,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.722761285882736,
+     "point": 0.722761285882736,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R7_A1__minus__R7_CEILDECL_d": {
+   "status": "OK",
+   "headline_delta": 0.00023069349680771012,
+   "n_common": 12146,
+   "token_mean_delta": 0.00023069349680774552,
+   "wins": 51,
+   "ties": 12073,
+   "losses": 22,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": 4.116581590647127e-05,
+    "DAC": 8.233163181294254e-05,
+    "DDC": -8.233163181294254e-05,
+    "TLC": 0.0,
+    "EP": 0.0004780202434768243,
+    "TTC": 0.0,
+    "LK": 0.00032932652725177014,
+    "HC": -8.233163181294254e-05,
+    "EC": -0.00049800796812749
+   },
+   "interval": {
+    "delta": 0.0002,
+    "lo": -0.0002,
+    "hi": 0.0007,
+    "ci95": 0.0005,
+    "p_delta_gt0": 0.8395,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": -0.0001,
+     "hi": 0.0007,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.7271929495287047,
+     "point": 0.7271929495287046,
+     "abs_diff": 1.1102230246251565e-16,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.726962256031897,
+     "point": 0.726962256031897,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "PRIOR_ha0p__minus__STOP": {
+   "status": "OK",
+   "headline_delta": 0.012916556607492802,
+   "n_common": 12146,
+   "token_mean_delta": 0.01291655660749288,
+   "wins": 7366,
+   "ties": 844,
+   "losses": 3936,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": -0.08867116746253911,
+    "DAC": -0.2247653548493331,
+    "DDC": -0.12444426148526264,
+    "TLC": -0.003869586695208299,
+    "EP": 0.47265335209509074,
+    "TTC": -0.0969866622756463,
+    "LK": -0.024864152807508644,
+    "HC": 0.43075909764531534,
+    "EC": 0.6927290836653387
+   },
+   "interval": {
+    "delta": 0.0129,
+    "lo": -0.0132,
+    "hi": 0.0406,
+    "ci95": 0.0269,
+    "p_delta_gt0": 0.827,
+    "separated": false,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": -0.0172,
+     "hi": 0.0474,
+     "separated": false
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.6021547840960555,
+     "point": 0.6021547840960555,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5892382274885627,
+     "point": 0.5892382274885627,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "R7_A1_s1__minus__STOP": {
+   "status": "OK",
+   "headline_delta": 0.13352305839417333,
+   "n_common": 12146,
+   "token_mean_delta": 0.1335230583941734,
+   "wins": 8882,
+   "ties": 711,
+   "losses": 2553,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": -0.06450683352544047,
+    "DAC": -0.08694220319446731,
+    "DDC": -0.02474065535978923,
+    "TLC": -0.005186892804215379,
+    "EP": 0.5362340203796655,
+    "TTC": -0.07302815741808003,
+    "LK": 0.011279433558373127,
+    "HC": 0.42886547011361764,
+    "EC": 0.6400398406374502
+   },
+   "interval": {
+    "delta": 0.1335,
+    "lo": 0.116,
+    "hi": 0.1511,
+    "ci95": 0.0175,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.1169,
+     "hi": 0.1508,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.722761285882736,
+     "point": 0.722761285882736,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.5892382274885627,
+     "point": 0.5892382274885627,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  },
+  "STOP__minus__CV": {
+   "status": "OK",
+   "headline_delta": 0.3304258532937436,
+   "n_common": 12146,
+   "token_mean_delta": 0.33042585329374347,
+   "wins": 8161,
+   "ties": 864,
+   "losses": 3121,
+   "_wtl_scope": "per-token wins/ties/losses on the common tokens (tie band 1e-12)",
+   "submetric_mean_deltas": {
+    "NC": 0.2933476041495142,
+    "DAC": 0.386876337889017,
+    "DDC": 0.15696525605137493,
+    "TLC": 0.016960316153466163,
+    "EP": -0.4326305141286914,
+    "TTC": 0.3014161040671826,
+    "LK": 0.09780997859377573,
+    "HC": -0.42837148032274,
+    "EC": -0.40796812749003986
+   },
+   "interval": {
+    "delta": 0.3304,
+    "lo": 0.3156,
+    "hi": 0.3449,
+    "ci95": 0.0147,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "nanmean_official_skipna",
+    "n_boot": 2000,
+    "estimator": "paired_navsim_log_cluster_bootstrap",
+    "separated_log_name": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)",
+    "sensitivity_nuplan_drive": {
+     "status": "OK",
+     "unit": "nuplan_drive",
+     "n_clusters": 44,
+     "lo": 0.3153,
+     "hi": 0.3432,
+     "separated": true
+    },
+    "status": "OK",
+    "cluster_unit": "log_name",
+    "resample_unit": "log_name",
+    "aggregation": "single_stage_token_mean",
+    "aggregation_source": "run_pdm_score_one_stage.py L293 @0a380a9 \u2014 pdm_score_df[score_cols].mean(skipna=True) over tokens",
+    "n_clusters": 136,
+    "n_units": 12146,
+    "n_units_nan": 0,
+    "min_clusters": 8,
+    "seed": 0,
+    "alpha": 0.05,
+    "reproduces_official_a": {
+     "status": "OK",
+     "official_value": 0.5892382274885627,
+     "point": 0.5892382274885627,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "reproduces_official_b": {
+     "status": "OK",
+     "official_value": 0.2588123741948191,
+     "point": 0.2588123741948191,
+     "abs_diff": 0.0,
+     "tol": 1e-09
+    },
+    "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+    "spec": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-estimator-and-route-leak/SPEC.md",
+    "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+    "_machine": "taniteval.ci.paired_episode_cluster_bootstrap(eid=log_name, reduce=nanmean_official_skipna)"
+   }
+  }
+ },
+ "seed_floor_x100": 0.4432,
+ "classification": {
+  "R7_A1__minus__STOP": {
+   "word": "SEPARATED",
+   "delta_x100": 13.7955,
+   "interval_x100": [
+    12.04,
+    15.51
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": true,
+   "separated_log_AND_drive_conjunction": true,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "R7_A1__minus__CV": {
+   "word": "SEPARATED",
+   "delta_x100": 46.8381,
+   "interval_x100": [
+    44.67,
+    48.93
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": true,
+   "separated_log_AND_drive_conjunction": true,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "R7_A1__minus__HUMAN": "CONTEXT (privileged reference; no classification word)",
+  "R7_A1__minus__PRIOR_ha0p": {
+   "word": "SEPARATED",
+   "delta_x100": 12.5038,
+   "interval_x100": [
+    10.53,
+    14.41
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": true,
+   "separated_log_AND_drive_conjunction": true,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "R7_A1__minus__R7_A1_s1": {
+   "word": "NOT PROVEN",
+   "delta_x100": 0.4432,
+   "interval_x100": [
+    0.06,
+    0.82
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": true,
+   "separated_log_AND_drive_conjunction": true,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "R7_A1__minus__R7_CEILDECL_d": {
+   "word": "NOT SEPARATED",
+   "delta_x100": 0.0231,
+   "interval_x100": [
+    -0.02,
+    0.07
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": false,
+   "separated_log_AND_drive_conjunction": false,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "PRIOR_ha0p__minus__STOP": {
+   "word": "NOT SEPARATED",
+   "delta_x100": 1.2917,
+   "interval_x100": [
+    -1.32,
+    4.06
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": false,
+   "separated_log_AND_drive_conjunction": false,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "R7_A1_s1__minus__STOP": {
+   "word": "SEPARATED",
+   "delta_x100": 13.3523,
+   "interval_x100": [
+    11.6,
+    15.11
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": true,
+   "separated_log_AND_drive_conjunction": true,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  },
+  "STOP__minus__CV": {
+   "word": "SEPARATED",
+   "delta_x100": 33.0426,
+   "interval_x100": [
+    31.56,
+    34.49
+   ],
+   "two_x_seed_floor_x100": 0.8864,
+   "separated_log_name": true,
+   "separated_log_AND_drive_conjunction": true,
+   "training_variance": "UNTESTED (H-ESTIM-SEED-1)"
+  }
+ },
+ "decomposition": {
+  "CV": {
+   "by_command": {
+    "LEFT": {
+     "n": 2501,
+     "epdms_x100": 20.5061,
+     "STOP_x100": 55.3904,
+     "delta_vs_STOP_x100": -34.8843,
+     "wtl_vs_STOP": [
+      535,
+      290,
+      1676
+     ]
+    },
+    "RIGHT": {
+     "n": 1575,
+     "epdms_x100": 23.0843,
+     "STOP_x100": 57.8736,
+     "delta_vs_STOP_x100": -34.7893,
+     "wtl_vs_STOP": [
+      396,
+      154,
+      1025
+     ]
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "epdms_x100": 28.0929,
+     "STOP_x100": 60.2239,
+     "delta_vs_STOP_x100": -32.1309,
+     "wtl_vs_STOP": [
+      2190,
+      420,
+      5460
+     ]
+    }
+   },
+   "by_speed_band": {
+    "0-2 m/s": {
+     "n": 2539,
+     "epdms_x100": 53.9291,
+     "STOP_x100": 68.7954,
+     "delta_vs_STOP_x100": -14.8662,
+     "wtl_vs_STOP": [
+      1277,
+      304,
+      958
+     ]
+    },
+    "2-5 m/s": {
+     "n": 3458,
+     "epdms_x100": 19.7111,
+     "STOP_x100": 64.7322,
+     "delta_vs_STOP_x100": -45.0211,
+     "wtl_vs_STOP": [
+      722,
+      177,
+      2559
+     ]
+    },
+    "5-8 m/s": {
+     "n": 3560,
+     "epdms_x100": 15.844,
+     "STOP_x100": 53.9079,
+     "delta_vs_STOP_x100": -38.0638,
+     "wtl_vs_STOP": [
+      580,
+      227,
+      2753
+     ]
+    },
+    "8-12 m/s": {
+     "n": 2282,
+     "epdms_x100": 19.3454,
+     "STOP_x100": 48.4564,
+     "delta_vs_STOP_x100": -29.111,
+     "wtl_vs_STOP": [
+      449,
+      151,
+      1682
+     ]
+    },
+    ">=12 m/s": {
+     "n": 307,
+     "epdms_x100": 28.3888,
+     "STOP_x100": 47.8291,
+     "delta_vs_STOP_x100": -19.4403,
+     "wtl_vs_STOP": [
+      93,
+      5,
+      209
+     ]
+    }
+   }
+  },
+  "HUMAN": {
+   "by_command": {
+    "LEFT": {
+     "n": 2501,
+     "epdms_x100": 92.1043,
+     "STOP_x100": 55.3904,
+     "delta_vs_STOP_x100": 36.7139,
+     "wtl_vs_STOP": [
+      2419,
+      70,
+      12
+     ]
+    },
+    "RIGHT": {
+     "n": 1575,
+     "epdms_x100": 91.8844,
+     "STOP_x100": 57.8736,
+     "delta_vs_STOP_x100": 34.0108,
+     "wtl_vs_STOP": [
+      1505,
+      67,
+      3
+     ]
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "epdms_x100": 95.7745,
+     "STOP_x100": 60.2239,
+     "delta_vs_STOP_x100": 35.5507,
+     "wtl_vs_STOP": [
+      7648,
+      410,
+      12
+     ]
+    }
+   },
+   "by_speed_band": {
+    "0-2 m/s": {
+     "n": 2539,
+     "epdms_x100": 96.0832,
+     "STOP_x100": 68.7954,
+     "delta_vs_STOP_x100": 27.2878,
+     "wtl_vs_STOP": [
+      2091,
+      445,
+      3
+     ]
+    },
+    "2-5 m/s": {
+     "n": 3458,
+     "epdms_x100": 93.2794,
+     "STOP_x100": 64.7322,
+     "delta_vs_STOP_x100": 28.5471,
+     "wtl_vs_STOP": [
+      3361,
+      80,
+      17
+     ]
+    },
+    "5-8 m/s": {
+     "n": 3560,
+     "epdms_x100": 93.7658,
+     "STOP_x100": 53.9079,
+     "delta_vs_STOP_x100": 39.858,
+     "wtl_vs_STOP": [
+      3531,
+      22,
+      7
+     ]
+    },
+    "8-12 m/s": {
+     "n": 2282,
+     "epdms_x100": 95.2293,
+     "STOP_x100": 48.4564,
+     "delta_vs_STOP_x100": 46.7728,
+     "wtl_vs_STOP": [
+      2282,
+      0,
+      0
+     ]
+    },
+    ">=12 m/s": {
+     "n": 307,
+     "epdms_x100": 98.8157,
+     "STOP_x100": 47.8291,
+     "delta_vs_STOP_x100": 50.9866,
+     "wtl_vs_STOP": [
+      307,
+      0,
+      0
+     ]
+    }
+   }
+  },
+  "R7_A1": {
+   "by_command": {
+    "LEFT": {
+     "n": 2501,
+     "epdms_x100": 63.0527,
+     "STOP_x100": 55.3904,
+     "delta_vs_STOP_x100": 7.6623,
+     "wtl_vs_STOP": [
+      1690,
+      160,
+      651
+     ]
+    },
+    "RIGHT": {
+     "n": 1575,
+     "epdms_x100": 61.2561,
+     "STOP_x100": 57.8736,
+     "delta_vs_STOP_x100": 3.3826,
+     "wtl_vs_STOP": [
+      1029,
+      103,
+      443
+     ]
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "epdms_x100": 77.9523,
+     "STOP_x100": 60.2239,
+     "delta_vs_STOP_x100": 17.7285,
+     "wtl_vs_STOP": [
+      6214,
+      441,
+      1415
+     ]
+    }
+   },
+   "by_speed_band": {
+    "0-2 m/s": {
+     "n": 2539,
+     "epdms_x100": 78.8256,
+     "STOP_x100": 68.7954,
+     "delta_vs_STOP_x100": 10.0302,
+     "wtl_vs_STOP": [
+      1799,
+      359,
+      381
+     ]
+    },
+    "2-5 m/s": {
+     "n": 3458,
+     "epdms_x100": 67.2538,
+     "STOP_x100": 64.7322,
+     "delta_vs_STOP_x100": 2.5216,
+     "wtl_vs_STOP": [
+      2401,
+      146,
+      911
+     ]
+    },
+    "5-8 m/s": {
+     "n": 3560,
+     "epdms_x100": 70.1075,
+     "STOP_x100": 53.9079,
+     "delta_vs_STOP_x100": 16.1996,
+     "wtl_vs_STOP": [
+      2643,
+      127,
+      790
+     ]
+    },
+    "8-12 m/s": {
+     "n": 2282,
+     "epdms_x100": 75.8382,
+     "STOP_x100": 48.4564,
+     "delta_vs_STOP_x100": 27.3817,
+     "wtl_vs_STOP": [
+      1808,
+      72,
+      402
+     ]
+    },
+    ">=12 m/s": {
+     "n": 307,
+     "epdms_x100": 90.8845,
+     "STOP_x100": 47.8291,
+     "delta_vs_STOP_x100": 43.0554,
+     "wtl_vs_STOP": [
+      282,
+      0,
+      25
+     ]
+    }
+   }
+  },
+  "R7_A1_s1": {
+   "by_command": {
+    "LEFT": {
+     "n": 2501,
+     "epdms_x100": 62.3066,
+     "STOP_x100": 55.3904,
+     "delta_vs_STOP_x100": 6.9162,
+     "wtl_vs_STOP": [
+      1675,
+      156,
+      670
+     ]
+    },
+    "RIGHT": {
+     "n": 1575,
+     "epdms_x100": 60.6993,
+     "STOP_x100": 57.8736,
+     "delta_vs_STOP_x100": 2.8257,
+     "wtl_vs_STOP": [
+      1015,
+      108,
+      452
+     ]
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "epdms_x100": 77.6252,
+     "STOP_x100": 60.2239,
+     "delta_vs_STOP_x100": 17.4014,
+     "wtl_vs_STOP": [
+      6192,
+      447,
+      1431
+     ]
+    }
+   },
+   "by_speed_band": {
+    "0-2 m/s": {
+     "n": 2539,
+     "epdms_x100": 78.1817,
+     "STOP_x100": 68.7954,
+     "delta_vs_STOP_x100": 9.3863,
+     "wtl_vs_STOP": [
+      1786,
+      363,
+      390
+     ]
+    },
+    "2-5 m/s": {
+     "n": 3458,
+     "epdms_x100": 66.6888,
+     "STOP_x100": 64.7322,
+     "delta_vs_STOP_x100": 1.9566,
+     "wtl_vs_STOP": [
+      2389,
+      145,
+      924
+     ]
+    },
+    "5-8 m/s": {
+     "n": 3560,
+     "epdms_x100": 69.6851,
+     "STOP_x100": 53.9079,
+     "delta_vs_STOP_x100": 15.7772,
+     "wtl_vs_STOP": [
+      2623,
+      131,
+      806
+     ]
+    },
+    "8-12 m/s": {
+     "n": 2282,
+     "epdms_x100": 75.7818,
+     "STOP_x100": 48.4564,
+     "delta_vs_STOP_x100": 27.3254,
+     "wtl_vs_STOP": [
+      1804,
+      72,
+      406
+     ]
+    },
+    ">=12 m/s": {
+     "n": 307,
+     "epdms_x100": 90.3569,
+     "STOP_x100": 47.8291,
+     "delta_vs_STOP_x100": 42.5278,
+     "wtl_vs_STOP": [
+      280,
+      0,
+      27
+     ]
+    }
+   }
+  },
+  "PRIOR_ha0p": {
+   "by_command": {
+    "LEFT": {
+     "n": 2501,
+     "epdms_x100": 50.3801,
+     "STOP_x100": 55.3904,
+     "delta_vs_STOP_x100": -5.0103,
+     "wtl_vs_STOP": [
+      1341,
+      203,
+      957
+     ]
+    },
+    "RIGHT": {
+     "n": 1575,
+     "epdms_x100": 41.6747,
+     "STOP_x100": 57.8736,
+     "delta_vs_STOP_x100": -16.1989,
+     "wtl_vs_STOP": [
+      694,
+      134,
+      747
+     ]
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "epdms_x100": 66.8821,
+     "STOP_x100": 60.2239,
+     "delta_vs_STOP_x100": 6.6583,
+     "wtl_vs_STOP": [
+      5331,
+      507,
+      2232
+     ]
+    }
+   },
+   "by_speed_band": {
+    "0-2 m/s": {
+     "n": 2539,
+     "epdms_x100": 75.9097,
+     "STOP_x100": 68.7954,
+     "delta_vs_STOP_x100": 7.1143,
+     "wtl_vs_STOP": [
+      1799,
+      452,
+      288
+     ]
+    },
+    "2-5 m/s": {
+     "n": 3458,
+     "epdms_x100": 60.4501,
+     "STOP_x100": 64.7322,
+     "delta_vs_STOP_x100": -4.2821,
+     "wtl_vs_STOP": [
+      2160,
+      124,
+      1174
+     ]
+    },
+    "5-8 m/s": {
+     "n": 3560,
+     "epdms_x100": 51.2692,
+     "STOP_x100": 53.9079,
+     "delta_vs_STOP_x100": -2.6387,
+     "wtl_vs_STOP": [
+      1889,
+      170,
+      1501
+     ]
+    },
+    "8-12 m/s": {
+     "n": 2282,
+     "epdms_x100": 55.3758,
+     "STOP_x100": 48.4564,
+     "delta_vs_STOP_x100": 6.9194,
+     "wtl_vs_STOP": [
+      1307,
+      94,
+      881
+     ]
+    },
+    ">=12 m/s": {
+     "n": 307,
+     "epdms_x100": 67.4921,
+     "STOP_x100": 47.8291,
+     "delta_vs_STOP_x100": 19.663,
+     "wtl_vs_STOP": [
+      211,
+      4,
+      92
+     ]
+    }
+   }
+  },
+  "R7_CEILDECL_d": {
+   "by_command": {
+    "LEFT": {
+     "n": 2501,
+     "epdms_x100": 63.0392,
+     "STOP_x100": 55.3904,
+     "delta_vs_STOP_x100": 7.6488,
+     "wtl_vs_STOP": [
+      1690,
+      160,
+      651
+     ]
+    },
+    "RIGHT": {
+     "n": 1575,
+     "epdms_x100": 61.2062,
+     "STOP_x100": 57.8736,
+     "delta_vs_STOP_x100": 3.3326,
+     "wtl_vs_STOP": [
+      1028,
+      103,
+      444
+     ]
+    },
+    "STRAIGHT": {
+     "n": 8070,
+     "epdms_x100": 77.9316,
+     "STOP_x100": 60.2239,
+     "delta_vs_STOP_x100": 17.7077,
+     "wtl_vs_STOP": [
+      6213,
+      441,
+      1416
+     ]
+    }
+   },
+   "by_speed_band": {
+    "0-2 m/s": {
+     "n": 2539,
+     "epdms_x100": 78.8744,
+     "STOP_x100": 68.7954,
+     "delta_vs_STOP_x100": 10.0791,
+     "wtl_vs_STOP": [
+      1800,
+      360,
+      379
+     ]
+    },
+    "2-5 m/s": {
+     "n": 3458,
+     "epdms_x100": 67.2266,
+     "STOP_x100": 64.7322,
+     "delta_vs_STOP_x100": 2.4943,
+     "wtl_vs_STOP": [
+      2400,
+      146,
+      912
+     ]
+    },
+    "5-8 m/s": {
+     "n": 3560,
+     "epdms_x100": 70.0488,
+     "STOP_x100": 53.9079,
+     "delta_vs_STOP_x100": 16.1409,
+     "wtl_vs_STOP": [
+      2641,
+      127,
+      792
+     ]
+    },
+    "8-12 m/s": {
+     "n": 2282,
+     "epdms_x100": 75.9179,
+     "STOP_x100": 48.4564,
+     "delta_vs_STOP_x100": 27.4614,
+     "wtl_vs_STOP": [
+      1810,
+      71,
+      401
+     ]
+    },
+    ">=12 m/s": {
+     "n": 307,
+     "epdms_x100": 89.9616,
+     "STOP_x100": 47.8291,
+     "delta_vs_STOP_x100": 42.1325,
+     "wtl_vs_STOP": [
+      280,
+      0,
+      27
+     ]
+    }
+   }
+  }
+ },
+ "P1": {
+  "statement": "sign(EPDMS(R7_A1)-EPDMS(STOP)) == sign(PDMS(R7_A1)-PDMS(STOP))",
+  "pdms_delta_x100": 10.0647,
+  "pdms_source": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/milestones/step30000/summary_navtest.json",
+  "epdms_delta_x100": 13.7955,
+  "holds": true
+ }
+}

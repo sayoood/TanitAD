@@ -1,0 +1,35 @@
+{
+ "builder": "scripts/build_pose_sync_sidecar.py",
+ "clock_sidecar": "refcv6_clip_clock_sidecar.jsonl",
+ "delta_ms": {
+  "max": 35.426,
+  "mean": 16.499716469196144,
+  "min": 0.0,
+  "p95": 31.387
+ },
+ "inputs_md5": {
+  "_v2manifest.pt": "3443323229279a18253691ff36ebffd3",
+  "train_v2manifest.pt": "3c9f8bc8583938ff60c57d4d97fcd8c0"
+ },
+ "k1_self_test": {
+  "analytic_maxabs_us": 0.3333333339558542,
+  "delta0_us": 0.0,
+  "delta_max_ms": 33.16582914572954,
+  "dt_s": 0.10050251256281406,
+  "n_target": 200,
+  "ok": true
+ },
+ "k4_checked": 4483,
+ "k4_worst_abs_dt_s": 6.2185311899831675e-09,
+ "n_rows": 4508,
+ "n_rows_written": 4508,
+ "n_total_clips": 4508,
+ "rule": "delta_us[k] = t_image[k] - t_pose[k]; t_pose = linspace(t_first, t_last, int(span*10))[k]; t_image = first camera frame >= t_pose (v2_compressed.py:119-121). Indexed by RAW grid row k (provider row r = k - (n_stack - 1)).",
+ "schema": "tanitad.pose_sync/1",
+ "skipped": {
+  "grid_rows_mismatch": 0,
+  "k4_dt_mismatch": 0,
+  "no_camera_ts": 0,
+  "sid_mismatch": 0
+ }
+}

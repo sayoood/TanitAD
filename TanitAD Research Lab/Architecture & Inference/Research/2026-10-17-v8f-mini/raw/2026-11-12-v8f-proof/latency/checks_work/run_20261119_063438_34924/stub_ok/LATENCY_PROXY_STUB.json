@@ -1,0 +1,312 @@
+{
+ "first_line": "Latency proxy on the pod GPU (not Thor, not a product latency; the image encoder is not included). Tier: none (a cost measurement, not a driving metric).",
+ "family_line": "LONGITUDINAL, LATERAL, TACTICAL, STRATEGIC: not applicable (a cost measurement)",
+ "tier": "none (a cost measurement, not a driving metric)",
+ "generated_utc": "2026-11-19T06:34:49Z",
+ "tool": "F:/TanitAD-scratch/v8proof/latency/latency_proxy.py",
+ "tool_sha256": "d1a5a743de1c3071661cfceff95e77f9d5b30ce96d875ef829526ed447150239",
+ "argv": [
+  "--stub",
+  "--out-dir",
+  "F:/TanitAD-scratch/v8proof/latency/checks_work\\run_20261119_063438_34924\\stub_ok",
+  "--n",
+  "8",
+  "--warmup",
+  "2",
+  "--k-list",
+  "1,4",
+  "--extra-horizons",
+  "20"
+ ],
+ "args": {
+  "n": 8,
+  "warmup": 2,
+  "k_list": [
+   1,
+   4
+  ],
+  "horizon_steps": 10,
+  "horizons_timed": [
+   10,
+   20
+  ],
+  "device": "cuda",
+  "n_windows": 80,
+  "variants": [
+   "eager",
+   "fp16",
+   "compile"
+  ]
+ },
+ "planner_horizon_steps": 10,
+ "planner_horizon_source": "stub",
+ "ckpt_sha256": "stub",
+ "info": {
+  "subject": "stub",
+  "note": "no model: a pure-python recurrence; the numbers are NOT a measurement of the model"
+ },
+ "checks": [
+  {
+   "id": "s1",
+   "name": "timer measures a known 50 ms sleep",
+   "pass": true,
+   "value_p50_ms": 50.2627499809023,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s1a",
+   "name": "timer waits for an asynchronous device (50 ms of async work)",
+   "pass": true,
+   "value_p50_ms": 50.27849998441525,
+   "bar": "|p50 - 50| <= 5.0 ms"
+  },
+  {
+   "id": "s2",
+   "name": "batched and sequential rollouts give the same states",
+   "pass": true,
+   "value_max_abs_diff": 0.0,
+   "max_abs_state": 0.7781371319973295,
+   "K": 4,
+   "H": 10,
+   "bar": "max abs diff <= 0.0001 and states not all zero"
+  },
+  {
+   "id": "s3",
+   "name": "a doubled horizon takes between 1.6 and 2.4 times as long",
+   "pass": true,
+   "value_ratio": 2.0121361214262157,
+   "p50_ms_H": 15.346749976743013,
+   "p50_ms_2H": 30.879749974701554,
+   "K": 1,
+   "H": 10,
+   "bar": "1.6 <= ratio <= 2.4"
+  },
+  {
+   "id": "s4",
+   "name": "counted predictor calls per tick",
+   "pass": true,
+   "value": [
+    10,
+    10
+   ],
+   "input_index": 0,
+   "bar": "calls > 0 and equal on two ticks of one input"
+  },
+  {
+   "id": "s5",
+   "name": "statistics of two known lists (1..100 ms; 1,1,1,1,100 ms)",
+   "pass": true,
+   "value": {
+    "p50": 50.5,
+    "p95": 95.05,
+    "mean": 50.5,
+    "n": 100
+   },
+   "value_skewed": {
+    "p50": 1.0,
+    "p95": 80.19999999999999,
+    "mean": 20.8,
+    "max": 100.0
+   },
+   "bar": "p50 50.5, p95 95.05, mean 50.5, n 100; skewed list p50 1, p95 80.2, mean 20.8, max 100"
+  }
+ ],
+ "variants": {
+  "eager": {
+   "a_predictor_step_batch1": {
+    "p50": 1.524249993963167,
+    "p95": 1.5714900015154853,
+    "mean": 1.4989375049481168,
+    "min": 1.3764000032097101,
+    "max": 1.589899999089539,
+    "n": 8,
+    "first_call_ms": 1.5290000010281801
+   },
+   "b_rollout": {
+    "H10_K1": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 1,
+     "batch": {
+      "p50": 15.315950004151091,
+      "p95": 15.56729998847004,
+      "mean": 15.26408750214614,
+      "min": 14.939900022000074,
+      "max": 15.619799960404634,
+      "n": 8,
+      "first_call_ms": 15.135199995711446
+     },
+     "seq_total": {
+      "p50": 15.41900000302121,
+      "p95": 15.573239972582087,
+      "mean": 15.412674991239328,
+      "min": 15.255199978128076,
+      "max": 15.621399972587824,
+      "n": 8,
+      "first_call_ms": 15.92880004318431
+     },
+     "seq_mean_per_rollout_ms": 15.412674991239328,
+     "rtf_batch_p50": 130.58282375288107,
+     "rtf_seq_p50": 129.71009790570844,
+     "seq_over_batch_p50": 1.0067282799200956,
+     "is_planner_horizon": true
+    },
+    "H10_K4": {
+     "H_steps": 10,
+     "horizon_s": 2.0,
+     "K": 4,
+     "batch": {
+      "p50": 15.484500007005408,
+      "p95": 15.919334976933897,
+      "mean": 15.5031499962206,
+      "min": 15.185199968982488,
+      "max": 16.094999969936907,
+      "n": 8,
+      "first_call_ms": 15.662999998312443
+     },
+     "seq_total": {
+      "p50": 60.885049984790385,
+      "p95": 61.80297501559835,
+      "mean": 60.96880000404781,
+      "min": 60.174599988386035,
+      "max": 62.0352000114508,
+      "n": 8,
+      "first_call_ms": 61.118199955672026
+     },
+     "seq_mean_per_rollout_ms": 15.242200001011952,
+     "rtf_batch_p50": 129.16141942556567,
+     "rtf_seq_p50": 32.84878636873284,
+     "seq_over_batch_p50": 3.9319997389160206,
+     "is_planner_horizon": true
+    },
+    "H20_K1": {
+     "H_steps": 20,
+     "horizon_s": 4.0,
+     "K": 1,
+     "batch": {
+      "p50": 30.99155001109466,
+      "p95": 31.630099963513203,
+      "mean": 30.991762490884867,
+      "min": 29.949399991892278,
+      "max": 31.680499960202724,
+      "n": 8,
+      "first_call_ms": 31.491300032939762
+     },
+     "seq_total": {
+      "p50": 30.69804998813197,
+      "p95": 31.113020007614978,
+      "mean": 30.692275002365932,
+      "min": 29.8291000071913,
+      "max": 31.1195999966003,
+      "n": 8,
+      "first_call_ms": 30.934699985664338
+     },
+     "seq_mean_per_rollout_ms": 30.692275002365932,
+     "rtf_batch_p50": 129.06743930419876,
+     "rtf_seq_p50": 130.30143613507767,
+     "seq_over_batch_p50": 0.9905296759001205,
+     "is_planner_horizon": false
+    },
+    "H20_K4": {
+     "H_steps": 20,
+     "horizon_s": 4.0,
+     "K": 4,
+     "batch": {
+      "p50": 30.220249987905845,
+      "p95": 30.78060499683488,
+      "mean": 30.224974994780496,
+      "min": 29.54729995690286,
+      "max": 30.942199984565377,
+      "n": 8,
+      "first_call_ms": 29.54889996908605
+     },
+     "seq_total": {
+      "p50": 122.86889998358674,
+      "p95": 123.40827001316939,
+      "mean": 122.47149999893736,
+      "min": 120.12550001963973,
+      "max": 123.42780001927167,
+      "n": 8,
+      "first_call_ms": 120.80580001929775
+     },
+     "seq_mean_per_rollout_ms": 30.61787499973434,
+     "rtf_batch_p50": 132.3615787957016,
+     "rtf_seq_p50": 32.55502409913602,
+     "seq_over_batch_p50": 4.065780396679674,
+     "is_planner_horizon": false
+    }
+   },
+   "c_heads": {
+    "c1_lead_head_one_state": {
+     "p50": 1.0379999876022339,
+     "p95": 1.1279700236627832,
+     "mean": 1.0546124976826832,
+     "min": 1.0269999620504677,
+     "max": 1.160800049547106,
+     "n": 8,
+     "first_call_ms": 1.0272000217810273
+    },
+    "c4_forward_infer_b1": {
+     "p50": 2.538999979151413,
+     "p95": 2.7260750415734947,
+     "mean": 2.581100008683279,
+     "min": 2.5248999590985477,
+     "max": 2.742700045928359,
+     "n": 8,
+     "first_call_ms": 2.5367000489495695
+    }
+   },
+   "d_planning_tick": {
+    "stub-tick": {
+     "n_inputs": 4,
+     "n_candidates": 3,
+     "n_inputs_with_rollout": 2,
+     "fraction_with_rollout": 0.5,
+     "predictor_calls_per_tick_values": [
+      0,
+      10
+     ],
+     "predictor_calls_per_tick_counted": {
+      "0": 2,
+      "10": 2
+     },
+     "rollout_calls_per_tick_values": [
+      0
+     ],
+     "head_calls_per_tick_values": [
+      0
+     ],
+     "predictor_rows_per_call_on_a_rolling_tick": [],
+     "count_method": "wrapper on the predictor's forward, on stack.rollout and on the lead head's forward, installed only for an untimed pass (never during the timed pass)",
+     "tick_all_inputs": {
+      "p50": 10.352300014346838,
+      "p95": 18.43195998808369,
+      "mean": 10.414537500764709,
+      "min": 2.5349000352434814,
+      "max": 18.530100001953542,
+      "n": 8,
+      "first_call_ms": 18.235099967569113
+     },
+     "tick_inputs_with_rollout": {
+      "p50": 18.202700011897832,
+      "p95": 18.429124972317368,
+      "mean": 18.1192874952103,
+      "min": 17.4313000170514,
+      "max": 18.436299986205995,
+      "n": 8,
+      "first_call_ms": 18.29510001698509
+     }
+    }
+   }
+  },
+  "fp16": {
+   "status": "NOT RUN",
+   "error": "fp16: no such variant for the stub"
+  },
+  "compile": {
+   "status": "NOT RUN",
+   "error": "compile: no such variant for the stub"
+  }
+ },
+ "seconds_total": 7.7
+}

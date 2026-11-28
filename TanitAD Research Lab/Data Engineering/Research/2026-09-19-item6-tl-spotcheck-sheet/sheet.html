@@ -1,0 +1,896 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traffic-light colour spot-check</title>
+<style>
+:root{--ink:#1d2327;--mute:#5b6770;--line:#d9dee2;--bg:#f7f8f9;--card:#fff;--accent:#1f5f8b}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
+header,footer{max-width:1180px;margin:0 auto;padding:20px 24px}
+h1{font-size:22px;margin:0 0 8px} p{margin:6px 0;max-width:75ch}
+.lead{color:var(--mute)} code{font:13px ui-monospace,Consolas,monospace}
+table{width:min(1180px,100%);margin:0 auto;border-collapse:collapse;background:var(--card)}
+td{border-top:1px solid var(--line);vertical-align:top;padding:12px}
+td.n{width:40px;color:var(--mute);font-variant-numeric:tabular-nums}
+td.img img{width:640px;max-width:100%;height:auto;display:block;border-radius:4px}
+td.meta{min-width:260px} .chip{display:inline-block;color:#fff;font-weight:600;padding:2px 10px;border-radius:12px;margin-bottom:6px}
+.k{color:var(--mute);font-size:13px} .reason{font-style:italic;color:#37424a;font-size:14px}
+label{display:block;margin-top:8px;font-size:13px;color:var(--mute)} select,input{display:block;width:100%;margin-top:2px;font:inherit;padding:4px}
+select:focus,input:focus,button:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;padding:8px 14px;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:4px;cursor:pointer}
+textarea{width:100%;height:180px;font:13px ui-monospace,Consolas,monospace;margin-top:8px}
+.count{font-variant-numeric:tabular-nums;color:var(--mute)}
+</style></head><body>
+<header>
+<h1>Traffic-light colour spot-check — 50 frames, about 15 minutes</h1>
+<p>Each row is one clip. The label beside the image is the traffic-light colour the Alpamayo reasoning text assigned to it — an <b>Alpamayo-derived teacher signal</b>, not ground truth. The question for every row: <b>does the lamp the car is responding to show that colour?</b></p>
+<p class="lead">The top image is the last frame Alpamayo saw (5.1 s into the clip). The bottom image is the band inside the yellow box at full resolution, placed on each clip's own horizon, where lamps usually sit. Click an image to open it full size. Some labels describe a change (“the light turns green”); judge the colour that fits the reason text, or choose “can't tell”.</p>
+<p class="lead">Sample: RED 14, GREEN 14, YELLOW 12, colourless 10 (fixed seed 20260919; drawn from RED 384, GREEN 378, YELLOW 25, colourless 18). Clips are named by sha12.</p>
+</header>
+<table><tbody>
+<tr data-n="1" data-sha="cd8c62c4eff1" data-label="RED">
+  <td class="n">1</td>
+  <td class="img"><a href="media/01_cd8c62c4eff1.jpg" target="_blank" rel="noopener"><img src="media/01_cd8c62c4eff1.jpg" alt="frame 1" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>cd8c62c4eff1</code> · rig B · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Change lanes left due to the rightmost lane becoming a right-turn-only pocket ahead and to position in a through lane while approaching queued traffic at the signal.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="2" data-sha="1ffcfbc5548a" data-label="RED">
+  <td class="n">2</td>
+  <td class="img"><a href="media/02_1ffcfbc5548a.jpg" target="_blank" rel="noopener"><img src="media/02_1ffcfbc5548a.jpg" alt="frame 2" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>1ffcfbc5548a</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop at the stop line because the straight traffic light is red.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="3" data-sha="723fa46ff260" data-label="RED">
+  <td class="n">3</td>
+  <td class="img"><a href="media/03_723fa46ff260.jpg" target="_blank" rel="noopener"><img src="media/03_723fa46ff260.jpg" alt="frame 3" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>723fa46ff260</code> · rig A · 5.11 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Decelerate to maintain a safe distance to the lead vehicle”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="4" data-sha="283b651ba9f6" data-label="RED">
+  <td class="n">4</td>
+  <td class="img"><a href="media/04_283b651ba9f6.jpg" target="_blank" rel="noopener"><img src="media/04_283b651ba9f6.jpg" alt="frame 4" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>283b651ba9f6</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Accelerate to proceed through the intersection since the straight traffic light turns green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="5" data-sha="dbfa8e5aa5f1" data-label="RED">
+  <td class="n">5</td>
+  <td class="img"><a href="media/05_dbfa8e5aa5f1.jpg" target="_blank" rel="noopener"><img src="media/05_dbfa8e5aa5f1.jpg" alt="frame 5" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>dbfa8e5aa5f1</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Adapt speed for the red traffic light.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="6" data-sha="fff7827257d3" data-label="RED">
+  <td class="n">6</td>
+  <td class="img"><a href="media/06_fff7827257d3.jpg" target="_blank" rel="noopener"><img src="media/06_fff7827257d3.jpg" alt="frame 6" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>fff7827257d3</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop due to the red traffic light”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="7" data-sha="6e175d54b62d" data-label="RED">
+  <td class="n">7</td>
+  <td class="img"><a href="media/07_6e175d54b62d.jpg" target="_blank" rel="noopener"><img src="media/07_6e175d54b62d.jpg" alt="frame 7" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>6e175d54b62d</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop at the stop line because the traffic light is red”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="8" data-sha="843e83e0c0a3" data-label="RED">
+  <td class="n">8</td>
+  <td class="img"><a href="media/08_843e83e0c0a3.jpg" target="_blank" rel="noopener"><img src="media/08_843e83e0c0a3.jpg" alt="frame 8" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>843e83e0c0a3</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep lane to continue driving because no critical component requires action.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="9" data-sha="f330298f534a" data-label="RED">
+  <td class="n">9</td>
+  <td class="img"><a href="media/09_f330298f534a.jpg" target="_blank" rel="noopener"><img src="media/09_f330298f534a.jpg" alt="frame 9" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>f330298f534a</code> · rig B · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Accelerate to proceed through the intersection since the straight traffic light turns green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="10" data-sha="b99cdd1b1cd9" data-label="RED">
+  <td class="n">10</td>
+  <td class="img"><a href="media/10_b99cdd1b1cd9.jpg" target="_blank" rel="noopener"><img src="media/10_b99cdd1b1cd9.jpg" alt="frame 10" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>b99cdd1b1cd9</code> · rig B · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop due to the red traffic light”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="11" data-sha="59cf98e81d6a" data-label="RED">
+  <td class="n">11</td>
+  <td class="img"><a href="media/11_59cf98e81d6a.jpg" target="_blank" rel="noopener"><img src="media/11_59cf98e81d6a.jpg" alt="frame 11" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>59cf98e81d6a</code> · rig B · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop because the straight traffic light is red”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="12" data-sha="10a6c3d9c587" data-label="RED">
+  <td class="n">12</td>
+  <td class="img"><a href="media/12_10a6c3d9c587.jpg" target="_blank" rel="noopener"><img src="media/12_10a6c3d9c587.jpg" alt="frame 12" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>10a6c3d9c587</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep lane to continue driving since no critical component affects the path.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="13" data-sha="118ebd6a38b4" data-label="RED">
+  <td class="n">13</td>
+  <td class="img"><a href="media/13_118ebd6a38b4.jpg" target="_blank" rel="noopener"><img src="media/13_118ebd6a38b4.jpg" alt="frame 13" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>118ebd6a38b4</code> · rig B · 5.09 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Stop at the intersection because the traffic light is red.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="14" data-sha="8def76f55401" data-label="RED">
+  <td class="n">14</td>
+  <td class="img"><a href="media/14_8def76f55401.jpg" target="_blank" rel="noopener"><img src="media/14_8def76f55401.jpg" alt="frame 14" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#c62828">RED</div>
+    <div class="k">clip <code>8def76f55401</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop to keep distance to the lead vehicle”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="15" data-sha="26f9c5b76d94" data-label="GREEN">
+  <td class="n">15</td>
+  <td class="img"><a href="media/15_26f9c5b76d94.jpg" target="_blank" rel="noopener"><img src="media/15_26f9c5b76d94.jpg" alt="frame 15" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>26f9c5b76d94</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Accelerate through the intersection because the traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="16" data-sha="b7f4ed5ce947" data-label="GREEN">
+  <td class="n">16</td>
+  <td class="img"><a href="media/16_b7f4ed5ce947.jpg" target="_blank" rel="noopener"><img src="media/16_b7f4ed5ce947.jpg" alt="frame 16" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>b7f4ed5ce947</code> · rig A · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep lane because the road ahead is clear”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="17" data-sha="0aad3d25eebb" data-label="GREEN">
+  <td class="n">17</td>
+  <td class="img"><a href="media/17_0aad3d25eebb.jpg" target="_blank" rel="noopener"><img src="media/17_0aad3d25eebb.jpg" alt="frame 17" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>0aad3d25eebb</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Turn left at the intersection because the left-turn traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="18" data-sha="72e38c74520a" data-label="GREEN">
+  <td class="n">18</td>
+  <td class="img"><a href="media/18_72e38c74520a.jpg" target="_blank" rel="noopener"><img src="media/18_72e38c74520a.jpg" alt="frame 18" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>72e38c74520a</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Accelerate due to green traffic light”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="19" data-sha="c4f498037469" data-label="GREEN">
+  <td class="n">19</td>
+  <td class="img"><a href="media/19_c4f498037469.jpg" target="_blank" rel="noopener"><img src="media/19_c4f498037469.jpg" alt="frame 19" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>c4f498037469</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep speed through the intersection since the traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="20" data-sha="e7fab6fd4685" data-label="GREEN">
+  <td class="n">20</td>
+  <td class="img"><a href="media/20_e7fab6fd4685.jpg" target="_blank" rel="noopener"><img src="media/20_e7fab6fd4685.jpg" alt="frame 20" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>e7fab6fd4685</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep lane to continue driving since no critical component affects the path”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="21" data-sha="0b0b4d51fcae" data-label="GREEN">
+  <td class="n">21</td>
+  <td class="img"><a href="media/21_0b0b4d51fcae.jpg" target="_blank" rel="noopener"><img src="media/21_0b0b4d51fcae.jpg" alt="frame 21" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>0b0b4d51fcae</code> · rig B · 5.08 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Turn left at the intersection because the left-turn traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="22" data-sha="85d40f2e4398" data-label="GREEN">
+  <td class="n">22</td>
+  <td class="img"><a href="media/22_85d40f2e4398.jpg" target="_blank" rel="noopener"><img src="media/22_85d40f2e4398.jpg" alt="frame 22" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>85d40f2e4398</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Adapt speed to maintain a safe distance from the lead vehicle.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="23" data-sha="0184f64720f4" data-label="GREEN">
+  <td class="n">23</td>
+  <td class="img"><a href="media/23_0184f64720f4.jpg" target="_blank" rel="noopener"><img src="media/23_0184f64720f4.jpg" alt="frame 23" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>0184f64720f4</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Turn right at the intersection since the traffic light is green”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="24" data-sha="0f76ac66a466" data-label="GREEN">
+  <td class="n">24</td>
+  <td class="img"><a href="media/24_0f76ac66a466.jpg" target="_blank" rel="noopener"><img src="media/24_0f76ac66a466.jpg" alt="frame 24" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>0f76ac66a466</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Accelerate to proceed through the intersection since the traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="25" data-sha="e5e1fd5f42cc" data-label="GREEN">
+  <td class="n">25</td>
+  <td class="img"><a href="media/25_e5e1fd5f42cc.jpg" target="_blank" rel="noopener"><img src="media/25_e5e1fd5f42cc.jpg" alt="frame 25" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>e5e1fd5f42cc</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep distance to the lead vehicle because it is directly ahead and moving slowly.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="26" data-sha="e01bd05b8e43" data-label="GREEN">
+  <td class="n">26</td>
+  <td class="img"><a href="media/26_e01bd05b8e43.jpg" target="_blank" rel="noopener"><img src="media/26_e01bd05b8e43.jpg" alt="frame 26" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>e01bd05b8e43</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep distance to the lead vehicle because it is directly ahead in the same lane”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="27" data-sha="ae48ced00a72" data-label="GREEN">
+  <td class="n">27</td>
+  <td class="img"><a href="media/27_ae48ced00a72.jpg" target="_blank" rel="noopener"><img src="media/27_ae48ced00a72.jpg" alt="frame 27" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>ae48ced00a72</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Turn left at the intersection since the left-turn traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="28" data-sha="d1c824dff571" data-label="GREEN">
+  <td class="n">28</td>
+  <td class="img"><a href="media/28_d1c824dff571.jpg" target="_blank" rel="noopener"><img src="media/28_d1c824dff571.jpg" alt="frame 28" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#2e7d32">GREEN</div>
+    <div class="k">clip <code>d1c824dff571</code> · rig A · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Accelerate due to green traffic light”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="29" data-sha="6a93c13298c9" data-label="YELLOW">
+  <td class="n">29</td>
+  <td class="img"><a href="media/29_6a93c13298c9.jpg" target="_blank" rel="noopener"><img src="media/29_6a93c13298c9.jpg" alt="frame 29" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>6a93c13298c9</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Slow down because of yellow traffic light ahead.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="30" data-sha="b5d9b91e6637" data-label="YELLOW">
+  <td class="n">30</td>
+  <td class="img"><a href="media/30_b5d9b91e6637.jpg" target="_blank" rel="noopener"><img src="media/30_b5d9b91e6637.jpg" alt="frame 30" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>b5d9b91e6637</code> · rig B · 5.11 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Stop at the yield line because of the yield sign.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="31" data-sha="1ffc5924f26b" data-label="YELLOW">
+  <td class="n">31</td>
+  <td class="img"><a href="media/31_1ffc5924f26b.jpg" target="_blank" rel="noopener"><img src="media/31_1ffc5924f26b.jpg" alt="frame 31" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>1ffc5924f26b</code> · rig A · 5.10 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Slow down because of yellow traffic light ahead.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="32" data-sha="6ad168dc58db" data-label="YELLOW">
+  <td class="n">32</td>
+  <td class="img"><a href="media/32_6ad168dc58db.jpg" target="_blank" rel="noopener"><img src="media/32_6ad168dc58db.jpg" alt="frame 32" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>6ad168dc58db</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Slow down because of yellow traffic light ahead.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="33" data-sha="ecab43e9072b" data-label="YELLOW">
+  <td class="n">33</td>
+  <td class="img"><a href="media/33_ecab43e9072b.jpg" target="_blank" rel="noopener"><img src="media/33_ecab43e9072b.jpg" alt="frame 33" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>ecab43e9072b</code> · rig B · 5.10 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Accelerate to proceed through the intersection since the straight traffic light is green.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="34" data-sha="c8ff44d63612" data-label="YELLOW">
+  <td class="n">34</td>
+  <td class="img"><a href="media/34_c8ff44d63612.jpg" target="_blank" rel="noopener"><img src="media/34_c8ff44d63612.jpg" alt="frame 34" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>c8ff44d63612</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Slow down due to the traffic light ahead turning yellow”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="35" data-sha="48489d1b08d6" data-label="YELLOW">
+  <td class="n">35</td>
+  <td class="img"><a href="media/35_48489d1b08d6.jpg" target="_blank" rel="noopener"><img src="media/35_48489d1b08d6.jpg" alt="frame 35" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>48489d1b08d6</code> · rig A · 5.09 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Slow down because of yellow traffic light ahead.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="36" data-sha="43ac3253c6a3" data-label="YELLOW">
+  <td class="n">36</td>
+  <td class="img"><a href="media/36_43ac3253c6a3.jpg" target="_blank" rel="noopener"><img src="media/36_43ac3253c6a3.jpg" alt="frame 36" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>43ac3253c6a3</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Turn right at the roundabout because the lane curves right”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="37" data-sha="73399b7a9773" data-label="YELLOW">
+  <td class="n">37</td>
+  <td class="img"><a href="media/37_73399b7a9773.jpg" target="_blank" rel="noopener"><img src="media/37_73399b7a9773.jpg" alt="frame 37" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>73399b7a9773</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Brake to stop because of yellow traffic light.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="38" data-sha="a44ec68b6157" data-label="YELLOW">
+  <td class="n">38</td>
+  <td class="img"><a href="media/38_a44ec68b6157.jpg" target="_blank" rel="noopener"><img src="media/38_a44ec68b6157.jpg" alt="frame 38" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>a44ec68b6157</code> · rig B · 5.11 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Nudge right to increase clearance to the oncoming truck”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="39" data-sha="244f78ab9f83" data-label="YELLOW">
+  <td class="n">39</td>
+  <td class="img"><a href="media/39_244f78ab9f83.jpg" target="_blank" rel="noopener"><img src="media/39_244f78ab9f83.jpg" alt="frame 39" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>244f78ab9f83</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Brake to stop because of yellow traffic light”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="40" data-sha="8ed3abbba1f7" data-label="YELLOW">
+  <td class="n">40</td>
+  <td class="img"><a href="media/40_8ed3abbba1f7.jpg" target="_blank" rel="noopener"><img src="media/40_8ed3abbba1f7.jpg" alt="frame 40" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#f9a825">YELLOW</div>
+    <div class="k">clip <code>8ed3abbba1f7</code> · rig A · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Brake to stop because of the yellow traffic light.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="41" data-sha="2174ca4e268a" data-label="colourless">
+  <td class="n">41</td>
+  <td class="img"><a href="media/41_2174ca4e268a.jpg" target="_blank" rel="noopener"><img src="media/41_2174ca4e268a.jpg" alt="frame 41" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>2174ca4e268a</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop due to the stop sign at the intersection”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="42" data-sha="1aa0712d89e5" data-label="colourless">
+  <td class="n">42</td>
+  <td class="img"><a href="media/42_1aa0712d89e5.jpg" target="_blank" rel="noopener"><img src="media/42_1aa0712d89e5.jpg" alt="frame 42" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>1aa0712d89e5</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Change lanes to the right to align with the right-turn lane and approach the upcoming crosswalk cautiously due to the lane split and pedestrian crossing ahead.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="43" data-sha="02094073847f" data-label="colourless">
+  <td class="n">43</td>
+  <td class="img"><a href="media/43_02094073847f.jpg" target="_blank" rel="noopener"><img src="media/43_02094073847f.jpg" alt="frame 43" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>02094073847f</code> · rig B · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Change lanes to the left due to the crossing vehicle clearing the intersection and the need to align left around the central island for the intended route.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="44" data-sha="d23edd3d2498" data-label="colourless">
+  <td class="n">44</td>
+  <td class="img"><a href="media/44_d23edd3d2498.jpg" target="_blank" rel="noopener"><img src="media/44_d23edd3d2498.jpg" alt="frame 44" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>d23edd3d2498</code> · rig A · 5.11 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop to keep distance to the lead vehicle.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="45" data-sha="f33569756edd" data-label="colourless">
+  <td class="n">45</td>
+  <td class="img"><a href="media/45_f33569756edd.jpg" target="_blank" rel="noopener"><img src="media/45_f33569756edd.jpg" alt="frame 45" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>f33569756edd</code> · rig A · 5.09 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Stop due to the stop sign”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="46" data-sha="423a862141a6" data-label="colourless">
+  <td class="n">46</td>
+  <td class="img"><a href="media/46_423a862141a6.jpg" target="_blank" rel="noopener"><img src="media/46_423a862141a6.jpg" alt="frame 46" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>423a862141a6</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Change lanes to the left because cross traffic clears and the left lane ahead is open while cyclists/pedestrians remain on the right-side crossing area, allowing the ego to proceed and then accelerate.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="47" data-sha="f2741dfafb92" data-label="colourless">
+  <td class="n">47</td>
+  <td class="img"><a href="media/47_f2741dfafb92.jpg" target="_blank" rel="noopener"><img src="media/47_f2741dfafb92.jpg" alt="frame 47" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>f2741dfafb92</code> · rig B · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Stop due to the stop sign.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="48" data-sha="0384547594c4" data-label="colourless">
+  <td class="n">48</td>
+  <td class="img"><a href="media/48_0384547594c4.jpg" target="_blank" rel="noopener"><img src="media/48_0384547594c4.jpg" alt="frame 48" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>0384547594c4</code> · rig A · 5.10 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Change lanes left and slow due to the upcoming intersection split where the right lane becomes a right-turn lane and the lead vehicle slows near the crosswalk.”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="49" data-sha="66f04d5f5aee" data-label="colourless">
+  <td class="n">49</td>
+  <td class="img"><a href="media/49_66f04d5f5aee.jpg" target="_blank" rel="noopener"><img src="media/49_66f04d5f5aee.jpg" alt="frame 49" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>66f04d5f5aee</code> · rig B · 5.09 s</div>
+    <div class="k">not box-grounded</div>
+    <p class="reason">“Keep lane because no immediate obstacle affects the path”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr>
+<tr data-n="50" data-sha="45df633636d9" data-label="colourless">
+  <td class="n">50</td>
+  <td class="img"><a href="media/50_45df633636d9.jpg" target="_blank" rel="noopener"><img src="media/50_45df633636d9.jpg" alt="frame 50" loading="lazy"></a></td>
+  <td class="meta">
+    <div class="chip" style="background:#607d8b">colourless (no colour stated)</div>
+    <div class="k">clip <code>45df633636d9</code> · rig B · 5.11 s</div>
+    <div class="k">box-grounded</div>
+    <p class="reason">“Keep at the center of the lane to continue driving because no pedestrian is crossing”</p>
+    <label>Verdict
+      <select class="v"><option value=""></option>
+        <option value="match">✓ lamp shows this colour</option>
+        <option value="wrong">✗ lamp shows a different colour</option>
+        <option value="nolamp">no relevant lamp visible</option>
+        <option value="unclear">can't tell</option></select></label>
+    <label>Notes <input class="note" type="text"></label>
+  </td>
+</tr></tbody></table>
+<footer>
+<p><button id="go">Show results as CSV</button> <span class="count" id="count"></span></p>
+<textarea id="csv" readonly placeholder="Choose verdicts, then press the button. Copy this text back."></textarea>
+</footer>
+<script>
+const K='tl-spotcheck-2026-09-19';
+const rows=[...document.querySelectorAll('tr[data-n]')];
+function save(){try{localStorage.setItem(K,JSON.stringify(rows.map(r=>[r.querySelector('.v').value,r.querySelector('.note').value])))}catch(e){}}
+function count(){const n=rows.filter(r=>r.querySelector('.v').value).length;document.getElementById('count').textContent=n+' of '+rows.length+' judged';}
+try{const s=JSON.parse(localStorage.getItem(K)||'null');if(s)rows.forEach((r,i)=>{if(s[i]){r.querySelector('.v').value=s[i][0];r.querySelector('.note').value=s[i][1];}})}catch(e){}
+rows.forEach(r=>{r.querySelector('.v').addEventListener('change',()=>{save();count();});r.querySelector('.note').addEventListener('input',save);});
+count();
+document.getElementById('go').addEventListener('click',()=>{
+  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const lines=['n,sha12,label,verdict,notes'].concat(rows.map(r=>[r.dataset.n,r.dataset.sha,r.dataset.label,r.querySelector('.v').value,q(r.querySelector('.note').value)].join(',')));
+  document.getElementById('csv').value=lines.join('\n');
+});
+</script></body></html>

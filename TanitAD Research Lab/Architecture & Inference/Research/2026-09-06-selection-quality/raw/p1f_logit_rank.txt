@@ -1,0 +1,65 @@
+[p1f] forward hooks attached to lat_head_tac / lon_head_tac
+[ego] ego_state_inject build: feeding the MEASURED ego block (v0, a_long, yaw_rate, curvature, keep=1) at t0 to every forward — refc_v3.ego_state_from_batch, the trainer's own entry
+[v3] nav_from_v7: follow 4 / left 0 / right 1, missing 0 (of 5 clips; md5=aa12c948f062181c3297265b51526ec5)
+[model] C:/Users/Admin/refcv4b_final/ckpt_40284_FINAL.pt step=40284 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 855 windows / 5 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext'] · fed conditionings=['nav_true'] · nav_shuffle changed 260/855
+[cost] first forward (1 fed row(s), 1 rows total) took 0.40 s -> ESTIMATED 0.10 h for 855 windows (forward only; IO/analysis extra)
+  [1/5] 01be5919-6e6 171 windows 31s
+  [2/5] 060531e1-993 171 windows 56s
+  [3/5] 0fa2b231-435 171 windows 79s
+  [4/5] 10804db8-d07 171 windows 102s
+  [5/5] 11e40da1-3d9 171 windows 124s
+[dump] 855 windows over 5 episodes (0 skipped: none)
+REFCV3_DUMP_DONE
+[trivial-profile] 855 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n= 855 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha             n= 855 straight=0.0164 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: ha0_ext=11/855
+  ha0            n= 855 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n= 855 straight=0.0152 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: ha=11/855
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[selection-profile] 855 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  16  modal=#67 (0.6784)  entropy=1.2280/4.7622 nats (ratio 0.2579)  agrees_with_oracle=0.0129
+[out] C:/Users/Admin/tanitad-selq-20260906/out/logitrank.json
+  os           tier=T1*  ADE=0.2183 [0.1671, 0.2861]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha           tier=T1   ADE=0.2153 [0.1782, 0.2807]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0          tier=T1   ADE=0.3902 [0.181, 0.5753]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0_ext      tier=T1   ADE=0.209 [0.1751, 0.2634]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=-0.1718 [-0.3137, 0.0241] separated=False n_win=855 n_ep=5
+  paired_os_minus_ha           ADE delta=0.003 [-0.0301, 0.0563] separated=False n_win=855 n_ep=5
+  paired_ha_minus_ha0          ADE delta=-0.1748 [-0.2974, 0.002] separated=False n_win=855 n_ep=5
+  paired_os_minus_ha0ext       ADE delta=0.0093 [-0.0273, 0.0596] separated=False n_win=855 n_ep=5
+  ⚠️ nav-zero arm ABSENT: --no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm) — ⛔ BACKLOG R39 requires it beside the shuffle for any nav-conditioned claim
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=763 changed_subset_n=None
+  tactical anchor_acc=0.0129 (chance 0.008547) n_distinct_selected=16
+
+=== LATERAL logits, n = 855 forward rows, 8 classes ===
+  class               mean logit  argmax n  mean rank  best rank  mean margin
+  LANE_KEEP               1.6489       805       1.06          1       0.0416
+  LANE_CHANGE_L         -31.5622         0       7.59          6      33.2526  <== 0 POSITIVES IN THE CORPUS
+  LANE_CHANGE_R         -31.3805         0       6.81          6      33.0710  <== 0 POSITIVES IN THE CORPUS
+  ABORT_LC              -31.3355         0       6.60          6      33.0260  <== 0 POSITIVES IN THE CORPUS
+  NUDGE_L                -1.0014         1       3.09          1       2.6919
+  NUDGE_R                 0.0390        13       2.32          1       1.6515
+  TURN_L                 -5.1831         0       4.57          3       6.8736
+  TURN_R                 -4.6781        36       3.96          1       6.3685
+  [read-control] classes that are argmax at least once: 4 / 8
+
+=== LONGITUDINAL logits, n = 855 forward rows, 8 classes ===
+  class               mean logit  argmax n  mean rank  best rank  mean margin
+  FOLLOW                 -0.0072         0       4.85          3       2.7014
+  CRUISE                  1.5763       357       2.51          1       1.1180
+  YIELD_MERGE           -30.8959         0       8.00          8      33.5902  <== 0 POSITIVES IN THE CORPUS
+  BRAKE_TO                1.5533       124       2.42          1       1.1410
+  CREEP                  -4.0887        12       5.25          1       6.7830
+  HOLD                   -8.9024        11       6.66          1      11.5967
+  ADAPT_SPEED_FOR_CURVE      0.4690        82       3.92          1       2.2253
+  ACCELERATE              1.7056       269       2.39          1       0.9887
+  [read-control] classes that are argmax at least once: 6 / 8
+
+wrote out_p1f_logit_rank.json

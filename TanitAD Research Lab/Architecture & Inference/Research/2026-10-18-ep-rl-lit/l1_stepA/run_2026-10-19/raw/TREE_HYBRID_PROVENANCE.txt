@@ -1,0 +1,9 @@
+tree_hybrid = C:/Users/Admin/p2heldout/tree/<refe-plan>/{refe,eval} copied byte for byte (the code that produced the banked P2 fan; __pycache__ removed)
+              + refe/ctx_cache.py from git blob origin/agent/arch-inf-20260803:<refe-plan>/refe/ctx_cache.py (sha256 4838740eb8676686..., LF). The p2heldout tree has NO ctx_cache.py.
+Why: make_stepA_bundle.py imports ctx_cache (VisualCtxTap); with the default L1_TREE it fails with ModuleNotFoundError before the GPU lock is used.
+Identity checks (sha256 prefixes, MEASURED): planner.py 91437cd09362ff87, model.py e6011cd83c846dfb, navtrain_scenarios.py c1c073b20036e767 are identical in the tip, the p2heldout tree and the l1prep checkout.
+The tip differs from the p2heldout tree in 28 refe + 4 eval files, among them train.py, online_labeller.py and aux_navtest_forward.py, which planner.py's import closure names; that is why the tip tree was NOT used.
+Used as: L1_TREE (step 3, make_stepA_bundle.py) and L1_REFE_DIR=<tree_hybrid>/refe (step 6, real_scorer.py needs refe/model.py).
+UPDATE 2026-10-19 06:45: + code/ = C:/Users/Admin/p2heldout/tree/<refe-plan>/code copied byte for byte (59 files, sha256 lists compared IDENTICAL; __pycache__ excluded).
+Why: step 3 attempt 1 took the GPU lock and died at the first goal -- planner._goal_for imports augment_routes from <tree>/code/ (planner.py ~line 631), which the hybrid tree lacked (ModuleNotFoundError, rc=1, nothing produced, nothing read). augment_routes.py sha256 b4a7b78a99d2f286... = the tip blob. All 7 lazy imports of planner.py + make_stepA_bundle.py now resolve (checked). Manifest regenerated (now incl. code/).
+Manifest scope changed 2026-10-19 06:45: it now lists ALL files of tree_hybrid (650: refe 188, eval 403, code 59); the 06:20 version listed the 258 .py files of refe+eval only.

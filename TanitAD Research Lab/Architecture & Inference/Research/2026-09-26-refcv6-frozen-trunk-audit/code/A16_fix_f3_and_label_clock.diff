@@ -1,0 +1,62 @@
+--- a/stack/tanitad/refs/refc.py	2026-09-26 10:28:48.000000000 +0200
++++ b/stack/tanitad/refs/refc.py	2026-09-26 11:53:47.611853800 +0200
+@@ -4524,7 +4524,10 @@
+             out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
+         if "cons_score" in dec:
+             out["cons_score"] = dec["cons_score"]
+-        for _k in ("prefinal_logits", "reach_keep"):
++        # ⛔ A16 2026-09-26: `layer_u0_hat` / `layer_logits` (refcv6 F3) MUST pass through --
++        # the trainer's per-stage loss reads them from THIS dict, and a whitelist that omitted
++        # them skipped F3's loss on the whole of refcv6-r101-s0 without a word.
++        for _k in ("prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits"):
+             # S1b's in-forward control and S1c's CE support, passed through
+             # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
+             # both. Re-deriving either outside the decoder is how two
+--- a/stack/scripts/refc_v3_train.py	2026-09-26 10:28:48.000000000 +0200
++++ b/stack/scripts/refc_v3_train.py	2026-09-26 11:53:47.633119300 +0200
+@@ -2970,6 +2970,13 @@
+             "n_clips": int(getattr(join3d, "n_clips", 0))}
+         return self.join3d_stats
+ 
++    @staticmethod
++    def _raw_offset(ep) -> int:
++        """Provider row -> RAW clip row: the provider drops the first n_stack-1 frames
++        (v2_dataset.py:36, poses[n_stack-1:]) and v7/v8 labels live on the RAW timeline --
++        the SAME conversion s2_labels.py:738-740 applies. (A16 2026-09-26.)"""
++        return max(int(ep.frames.shape[1]) // 3 - 1, 0)
++
+     def __getitem__(self, i: int):
+         item = super().__getitem__(i)
+         e_i, t = self.index[i]
+@@ -3007,7 +3014,7 @@
+                 lat_v7 = lon_v7 = v7l.IGNORE_ID       # clip has no record
+             else:
+                 lat_v7, lon_v7 = v7l.tactical_class_ids(
+-                    lab, (t + w - 1) * self.v7_dt)
++                    lab, (t + w - 1 + self._raw_offset(ep)) * self.v7_dt)
+             item["lat_v7"] = torch.tensor(lat_v7, dtype=torch.long)
+             item["lon_v7"] = torch.tensor(lon_v7, dtype=torch.long)
+             # ---- --w-tac-goal: the 22-token goal SET target ---------------
+@@ -3027,7 +3034,7 @@
+                     _tg_w = (v7l.IGNORE_W,) * _n_tg
+                 else:
+                     _tg_y, _tg_w = v7l.tactical_goal_targets(
+-                        lab, (t + w - 1) * self.v7_dt,
++                        lab, (t + w - 1 + self._raw_offset(ep)) * self.v7_dt,
+                         negatives=self.tac_goal_negatives,
+                         sidecar=self.cot_negative_sidecar)
+                 item["tac_goal_y"] = torch.tensor(_tg_y, dtype=torch.float32)
+@@ -3961,6 +3968,13 @@
+     # supervised by `loss_traj` + `loss_cls` above; adding it again would
+     # double-weight it and the "per-layer loss" arm would be partly a
+     # loss-weight arm. Only stages 0..L-2 are new terms.
++    if _rv6f.f3_per_layer and "layer_u0_hat" not in out:
++        # ⛔ A16 2026-09-26: REFUSE, DO NOT SKIP. The silent `and ... in out` form skipped
++        # F3's per-stage loss on the entire refcv6-r101-s0 run (0/668 rows carried `cascade`).
++        raise SystemExit(
++            "[v3] ⛔ --f3-per-layer is built but the forward carries no `layer_u0_hat`: "
++            "the per-stage loss would be SILENTLY SKIPPED while config.json stamps F3. "
++            "Pass the decoder's per-stage outputs through RefCModel.forward.")
+     if _rv6f.f3_per_layer and "layer_u0_hat" in out:
+         stages = out["layer_u0_hat"][:-1]
+         stage_logits = out["layer_logits"][:-1]

@@ -1,0 +1,676 @@
+% TanitAD-4B: hierarchical latent world models with typed abstraction interfaces
+% Self-contained LaTeX source (pdfLaTeX). Figures are TikZ / pgfplots, drawn in the source.
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[a4paper,margin=18mm,columnsep=7mm,top=20mm,bottom=22mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,tabularx,multirow,array}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric,decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.2em}
+\usepackage[colorlinks=true,linkcolor=navy,citecolor=navy,urlcolor=navy]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+% ---------------------------------------------------------------- colours of the hierarchy levels
+\definecolor{navy}{HTML}{1B2A41}
+\definecolor{levS}{HTML}{B04A86}
+\definecolor{levT}{HTML}{1F6FB2}
+\definecolor{levO}{HTML}{C98500}
+\definecolor{levF}{HTML}{3A7D5C}
+\definecolor{enc}{HTML}{56636F}
+\definecolor{soft}{HTML}{F3F5F8}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Rset}{\mathbb{R}}
+\newcommand{\ADE}{\mathrm{ADE}}
+\newcommand{\tier}[1]{\textsc{\small #1}}
+
+\tikzset{
+  box/.style={draw=#1,very thick,rounded corners=2pt,fill=#1!8,minimum height=7mm,align=center,font=\footnotesize},
+  plain/.style={draw=enc,thick,rounded corners=2pt,fill=soft,minimum height=7mm,align=center,font=\footnotesize},
+  arr/.style={-{Stealth[length=2.2mm]},thick},
+  goal/.style={-{Stealth[length=2.2mm]},very thick},
+  lat/.style={-{Stealth[length=2.2mm]},thick,dashed},
+  lbl/.style={font=\scriptsize,align=center,text=navy},
+}
+
+\title{\vspace{-6mm}\textbf{TanitAD-4B: Hierarchical Latent World Models with Typed Abstraction Interfaces\\for Data-Efficient Autonomous Driving}}
+\author{Dr.-Ing.\ Sayed Bouzouraa\\[1mm]\normalsize TanitAD Research}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+% =====================================================================================================================
+\begin{abstract}
+End-to-end driving models have won the architecture argument, yet they remain data-hungry, opaque, unaware of their own limits and
+expensive at inference time. We present \emph{TanitAD-4B}, a programme that attacks all four weaknesses with one design principle:
+\emph{drive at every level of abstraction, and make every level accountable}. The 4B architecture factorises driving into four
+brains (operative, tactical, strategic and fallback), each with its own clock, horizon, state space and predictor. Goals condition
+strictly downward and latents flow upward through stop-gradient barriers. We describe the self-supervised world-model objective
+behind the programme (residual multi-horizon latent prediction, provable anti-collapse via sliced Epps--Pulley regularisation,
+inverse dynamics and calibrated imagination of unobserved areas) and its current reference implementation, \emph{v8F-mini}.
+v8F-mini makes the hierarchy \emph{typed}: route checkpoints, a 60-dimensional tactical code of goals, manoeuvres and continuous
+constraints, and a trajectory that is an exact residual on a frozen learned kinematic prior. With only 7.2\,M trainable parameters,
+trained in four hours on one 8\,GB consumer GPU, it reduces 6\,s displacement error against its learned kinematic floor by
+0.31/0.43\,m at two training seeds in open loop. A zero-training post-map makes it better than that floor on \emph{every} row of a
+pre-registered metric set. Driving on its own executed motion, the adopted model lowers 6\,s error by 1.26/1.19\,m and improves at
+least one row in each of the four metric families: longitudinal, lateral, tactical and strategic. All of it rests on an evaluation
+doctrine built for decisions rather than leaderboards: pre-registered bars with both outcomes committed, episode-cluster bootstrap
+intervals, explicit seed variance and four metric families on every evaluation. We close with the remaining frontier (assertive
+launch from standstill), the re-rendered simulation tier in preparation to address it, and a research roadmap toward a 300\,M-parameter
+4B driver deployable within 100\,ms on an edge computer.
+\end{abstract}
+
+% =====================================================================================================================
+\section{Introduction}
+Driving is a hierarchy of decisions on separated time scales. A route is chosen over tens of seconds, a manoeuvre with its
+parameters over seconds, a control profile over tenths of a second. Monolithic end-to-end planners collapse this structure into one
+mapping from pixels to waypoints. That buys simplicity and gives up four things a production driver needs:
+\begin{itemize}
+  \item \textbf{data efficiency}, because every situation must be learned jointly at every scale;
+  \item \textbf{inspectability}, because no intermediate decision is exposed;
+  \item \textbf{self-knowledge}, because nothing in the model says when it is outside its competence;
+  \item \textbf{efficient inference}, because the full network runs at the control rate.
+\end{itemize}
+
+TanitAD is a research programme built on the opposite bet. A driver should \emph{imagine} the consequences of its options in a
+learned latent world model, at the level of abstraction where each decision lives, and expose each level's decision as a typed,
+measurable interface. We call the architecture \emph{4B}, for its four brains:
+\begin{itemize}
+  \item an \textbf{operative} brain for continuous control;
+  \item a \textbf{tactical} brain for manoeuvre selection;
+  \item a \textbf{strategic} brain for routing;
+  \item a \textbf{fallback} brain that monitors the others and owns the minimal-risk manoeuvre.
+\end{itemize}
+
+\paragraph{Contributions.}
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{The 4B formalism} (\cref{sec:4b}): per-level predictors in shrinking state spaces at slowing clocks, downward goal
+        conditioning, and a gradient-isolation matrix that is \emph{checked} rather than assumed.
+  \item \textbf{v8F-mini} (\cref{sec:v8f}), a typed three-level instantiation over frozen foundation features:
+        \begin{itemize}
+          \item a tactical code with 22 goals, 12 manoeuvre classes and 26 continuous constraints;
+          \item a trajectory parameterisation in which a zero residual reproduces a learned kinematic prior \emph{exactly}, so every
+                learned metre is measured against the floor.
+        \end{itemize}
+  \item \textbf{Mathematical analysis} (\cref{sec:math}): a Lipschitz decomposition of plan error into an oracle term and propagated
+        interface errors, the convex response of the operative layer to tactical accuracy, why whole-code teacher forcing leaves
+        partial codes unsupported, and a three-variance account of evaluation intervals.
+  \item \textbf{Results under a decision-grade doctrine} (\cref{sec:eval,sec:results}): improvements over the kinematic floor in open
+        loop and on the model's own executed motion, with at least one improved row in each of the four metric families.
+  \item \textbf{A roadmap} (\cref{sec:frontier,sec:outlook}): re-rendered simulation on neural reconstructions, perception adaptation,
+        and scaling toward the 300\,M-parameter 4B budget.
+\end{enumerate}
+
+% =====================================================================================================================
+\section{Related work}
+\textbf{Hierarchical latent world models.}
+\begin{itemize}
+  \item H-JEPA~\cite{hjepa} stacks action-conditioned joint-embedding predictive models that predict further ahead in coarser latents,
+        with top-down sub-goal planning.
+  \item Hierarchical planning with latent world models~\cite{hplwm} reports large gains of two-level sub-goals over flat planners at
+        matched capacity.
+  \item In driving, Orbis~2~\cite{orbis2}, Drive-HWM~\cite{drivehwm} and S2Planner~\cite{s2planner} apply hierarchical or multi-scale
+        world models on NAVSIM~\cite{navsim}.
+\end{itemize}
+TanitAD differs in making the hierarchy a \emph{supervised typed interface} whose usage is measured by intervention.
+
+\textbf{Self-supervised representations.}
+\begin{itemize}
+  \item DINOv3~\cite{dinov3} supplies frozen visual features.
+  \item V-JEPA~2~\cite{vjepa2} and LeJEPA~\cite{lejepa} motivate latent prediction with isotropic-Gaussian regularisation.
+  \item LoRA~\cite{lora} is the adaptation route of our perception outlook.
+\end{itemize}
+
+\textbf{Why modularity can help.} Shalev-Shwartz and Shashua~\cite{ssshashua} show a sample-complexity separation in favour of
+semantic-abstraction training, under an assumption of approximately independent module failures, which our interface analysis
+addresses directly.
+
+\textbf{Exposure bias and on-policy data.} Scheduled sampling~\cite{schedsamp}, DAgger~\cite{dagger}, DART~\cite{dart}, causal
+confusion~\cite{causalconf} and the limits of behaviour cloning~\cite{bclimits} frame the mismatch between a consumer trained on
+ground truth and one fed its predecessor's output.
+
+\textbf{End-to-end planners.}
+\begin{itemize}
+  \item Representative designs: conditional imitation~\cite{cil}, ChauffeurNet~\cite{chauffeurnet}, TransFuser~\cite{transfuser},
+        VAD~\cite{vad}, Hydra-MDP~\cite{hydramdp}, DiffusionDrive~\cite{diffusiondrive} and residual planners~\cite{resad}.
+  \item They are evaluated on nuPlan~\cite{nuplan} and NAVSIM~\cite{navsim}.
+\end{itemize}
+
+% =====================================================================================================================
+\section{The 4B architecture}\label{sec:4b}
+
+\begin{figure*}[t]
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=4mm and 6mm]
+  % sensors and encoder
+  \node[plain,minimum width=30mm] (cam) {cameras $x_t$\\(front-wide, 10\,Hz)};
+  \node[plain,minimum width=30mm,below=3mm of cam] (ego) {measured ego motion\\$(v,a,\dot\psi)$, nav};
+  \node[box=enc,minimum width=28mm,minimum height=18mm,right=10mm of $(cam)!0.5!(ego)$] (enc) {encoder $f_\theta$\\spatial grid\\readout $r(\cdot)$};
+  \draw[arr] (cam.east) -- (enc.west|-cam.east);
+  \draw[arr] (ego.east) -- (enc.west|-ego.east);
+  % the three predictive brains
+  \node[box=levO,minimum width=62mm,minimum height=12mm,right=14mm of enc] (O) {\textbf{Operative brain} \; $\hat z_O(t{+}j)=P_O\big(z_O,(a,\kappa)\,\big|\,g_{\mathrm{tac}}\big)$\\[0.5mm] continuous control $\cdot$ 0.1--2\,s};
+  \node[box=levT,minimum width=62mm,minimum height=12mm,above=9mm of O] (T) {\textbf{Tactical brain} \; $\hat z_T(t{+}k)=P_T\big(z_T,a_T\,\big|\,g_{\mathrm{str}}\big)$\\[0.5mm] imagine-and-select manoeuvres $\cdot$ 2--6\,s};
+  \node[box=levS,minimum width=62mm,minimum height=12mm,above=9mm of T] (S) {\textbf{Strategic brain} \; $\hat z_S(t{+}K)=P_S\big(z_S,a_S\big)$\\[0.5mm] routing over a latent transition graph $\cdot$ 6--30\,s};
+  \draw[arr] (enc.east) -- node[lbl,above]{$z_O$} (O.west);
+  % clocks
+  \node[lbl,right=3mm of S] (cS) {$\le$0.5\,Hz\\$d_S\!\approx\!256$};
+  \node[lbl,right=3mm of T] (cT) {1--2\,Hz\\$d_T\!\approx\!512$};
+  \node[lbl,right=3mm of O] (cO) {10--20\,Hz\\$d_O\!=\!2048$};
+  % goals down (solid), latents up (dashed, stop-gradient)
+  \draw[goal,levS] ([xshift=-14mm]S.south) -- node[lbl,left]{goal $g_{\mathrm{str}}$} ([xshift=-14mm]T.north);
+  \draw[goal,levT] ([xshift=-14mm]T.south) -- node[lbl,left]{goal $g_{\mathrm{tac}}$} ([xshift=-14mm]O.north);
+  \draw[lat] ([xshift=14mm]O.north) -- node[lbl,right]{$z_T{=}\phi_T(\mathrm{sg}[z_O])$} ([xshift=14mm]T.south);
+  \draw[lat] ([xshift=14mm]T.north) -- node[lbl,right]{$z_S{=}\phi_S(\mathrm{sg}[z_T])$} ([xshift=14mm]S.south);
+  % fallback brain
+  \node[box=levF,minimum width=24mm,minimum height=54mm,right=16mm of T,yshift=0mm] (F) {\textbf{Fallback}\\\textbf{brain}\\[1mm]imagination\\error $\|\hat z-z\|$\\[1mm]drift monitors\\[1mm]minimal-risk\\manoeuvre};
+  \draw[arr,levF] (S.east -| cS.east) ++(1mm,0) -- (F.west|-S.east);
+  \draw[arr,levF] (T.east -| cT.east) ++(1mm,0) -- (F.west|-T.east);
+  \draw[arr,levF] (O.east -| cO.east) ++(1mm,0) -- (F.west|-O.east);
+  % output
+  \node[plain,below=6mm of O,minimum width=62mm] (plan) {6\,s trajectory $\cdot$ controls $\cdot$ decisions exposed per level};
+  \draw[arr] (O.south) -- (plan.north);
+  % legend
+  \node[lbl,below=1mm of plan,align=left] {\textcolor{navy}{solid: goals condition downward}\quad \textcolor{navy}{dashed: latents upward through stop-gradient $\mathrm{sg}[\cdot]$}\quad \textcolor{levF}{green: out-of-gradient monitoring}};
+\end{tikzpicture}}
+\caption{\textbf{The 4B architecture.} Four brains at separated clocks and horizons. Each predictive level owns its own predictor in
+its own latent space, and the state shrinks while the clock slows going up ($d_S<d_T<d_O$, $\tau_S>\tau_T>\tau_O$), so upper levels
+are forced to abstract. Goals condition strictly downward. Latents pass upward only through stop-gradient adapters, and the
+gradient-isolation matrix of \cref{eq:gmatrix} is tested on every build. The fallback brain consumes every level's imagination error
+and owns the minimal-risk manoeuvre.}
+\label{fig:4b}
+\end{figure*}
+
+\subsection{Levels, clocks and predictors}
+Let $\ell\in\{O,T,S\}$ index the operative, tactical and strategic levels. Each level owns:
+\begin{itemize}
+  \item a state $z_\ell\in\Rset^{d_\ell}$;
+  \item a clock $\tau_\ell$ and a horizon;
+  \item an action space $a_\ell$;
+  \item a predictor $P_\ell$ in its own space.
+\end{itemize}
+The operative state is a spatial-grid readout of the encoder, $z_O=r(f_\theta(x))$ (never a global pool). Upper states are adapters over
+\emph{stopped} lower latents, $z_T=\phi_T(\mathrm{sg}[z_O])$ and $z_S=\phi_S(\mathrm{sg}[z_T])$. The dynamics are conditioned strictly
+downward:
+\begin{equation}
+\begin{aligned}
+\hat z_S(t{+}K) &= P_S\big(z_S(t),a_S(t)\big),\\
+\hat z_T(t{+}k) &= P_T\big(z_T(t),a_T(t)\,\big|\,g_{\mathrm{str}}\big),\\
+\hat z_O(t{+}j) &= P_O\big(z_O(t),(a,\kappa)_t\,\big|\,g_{\mathrm{tac}}\big).
+\end{aligned}
+\end{equation}
+Two structural properties follow by construction and are then verified.
+
+\textbf{(1) Abstraction by down-sampling under a shrinking state.} With $d_S<d_T<d_O$ and $\tau_S>\tau_T>\tau_O$, an upper level cannot
+represent lower-level detail even if its objective would reward it. A 15\,s strategic roll is three steps of a 256-dimensional model,
+so only the operative path runs at the full rate.
+
+\textbf{(2) The gradient-isolation matrix.} Let $G[u,v]=1$ iff a gradient path from module $u$ into module $v$ is permitted. With
+$\mathcal P$ the planner and goal heads and $\mathcal E$ the encoder,
+\begin{equation}\label{eq:gmatrix}
+G[\mathcal P,\mathcal E]=0,\qquad G[\ell',\ell]=0\ \ (\ell'\text{ above }\ell),\qquad G[\ell,\ell]=1 .
+\end{equation}
+Every build checks it by asserting zero gradient on forbidden paths, with a deliberate-regression arm that must fail.
+
+\subsection{Self-supervised world-model objective}
+The programme's world model is trained without perception labels, without HD maps and without reward. Its objective is
+\begin{equation}
+\mathcal L=\mathcal L_{\mathrm{pred}}+\lambda_{\mathrm{tac}}\mathcal L_{\mathrm{tac}}+\lambda_{\mathrm{sig}}\big(\mathcal S(Z)+\mathcal S(\hat Z)\big)+\lambda_{\mathrm{inv}}\mathcal L_{\mathrm{inv}}+\lambda_{\mathrm{im}}\mathcal L_{\mathrm{imag}} .
+\end{equation}
+\textbf{Residual multi-horizon prediction.} $\hat z_{t+k}=z_t+\Delta_k(z_{t-W+1:t},a_{t-W+1:t})$, scored by a \emph{change-weighted}
+error with per-dimension weights $w\propto|z_{t+k}-z_{t+k-1}|$ normalised to unit mean. On driving data only 5--11\,\% of a frame
+changes per step, so the weighting puts the gradient where the consequences are.
+
+\textbf{Provable anti-collapse.} $\mathcal S(\cdot)$ is the sliced Epps--Pulley statistic of LeJEPA~\cite{lejepa}. Embeddings are
+projected onto $M$ fresh unit directions, and each projection $Y$ (a sample of size $n$) is tested against $\mathcal N(0,1)$:
+\begin{equation}
+T_{n,\beta}=\tfrac1n\!\sum_{j,k}e^{-\frac{\beta^2(Y_j-Y_k)^2}{2}}-\tfrac{2}{\sqrt{1+\beta^2}}\sum_j e^{-\frac{\beta^2Y_j^2}{2(1+\beta^2)}}+\tfrac{n}{\sqrt{1+2\beta^2}} .
+\end{equation}
+By the Cram\'er--Wold theorem, normal one-dimensional projections in all directions imply a joint isotropic Gaussian, the embedding
+law LeJEPA shows to be optimal, and the gradients stay uniformly bounded.
+
+\textbf{Inverse dynamics.} $\mathcal L_{\mathrm{inv}}=\|g(z_t,z_{t+1})-a_t\|^2$ uses proprioception as free supervision and forces
+controllable state into the latent.
+
+\textbf{Imagination of unobserved areas.} Masked sectors evolve by semi-Lagrangian advection under a learned flow,
+$\hat z_{t+1}(u)=z_t(u-v_\theta(u)\Delta t)$, refined by attention, with a per-cell log-variance $s(u)$:
+\begin{equation}
+\mathcal L_{\mathrm{imag}}=\sum_u w(u)\Big[e^{-s(u)}\tfrac{\|\hat z(u)-z(u)\|^2}{2}+\tfrac{s(u)}{2}\Big],
+\end{equation}
+with $w=1$ on hidden cells and 0.1 on visible ones. The model must know \emph{where it cannot know}. The variance field is the
+world-model-native trigger for sensor steering and for the fallback brain.
+
+\subsection{Why a hierarchy is data-efficient}
+Two arguments support the factorisation~\cite{hplwm,ssshashua}.
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Horizon.} Planning regret in learned models grows with the horizon, so splitting one long horizon into per-level short
+        horizons gives a smaller bound at each level.
+  \item \textbf{Recombination.} If a driving situation is a combination of a place $p\in\mathcal P$, a manoeuvre $m\in\mathcal M$ and a
+        control profile, a flat learner must cover $|\mathcal P|\cdot|\mathcal M|$ combinations. A hierarchy that learns each level
+        separately covers roughly $|\mathcal P|+|\mathcal M|$.
+\end{enumerate}
+
+\subsection{Fallback and self-knowledge}
+The relative imagination error $\|\hat z_t-z_t\|$ is a free, always-on familiarity signal. Layered monitors arm a deterministic
+minimal-risk manoeuvre:
+\begin{itemize}
+  \item imagination error at 10\,Hz;
+  \item routing statistics at 1\,Hz;
+  \item Mahalanobis drift at 0.1\,Hz.
+\end{itemize}
+Their logs are the substrate for the ISMR/DSSAD incident-reporting requirements: self-monitoring \emph{is} the evidence trail.
+
+The programme's 263\,M-parameter 4B flagship was its first arm to beat the kinematic floor in open loop: ADE@2\,s 0.452\,m against
+0.500\,m for the best of three kinematic models and 0.523\,m for CTRV. On windows where kinematics diverge from the realised future, it
+beat CTRV by 0.80\,m, and the whole of that advantage came from vision.
+
+% =====================================================================================================================
+\section{v8F-mini: a typed reference implementation}\label{sec:v8f}
+
+\begin{figure*}[t]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[node distance=5mm and 7mm]
+  % inputs
+  \node[plain,minimum width=27mm] (img) {front-wide camera\\256$\times$640, 4 frames};
+  \node[box=enc,minimum width=27mm,below=3mm of img] (dino) {frozen DINOv3-L/16\\pooled $4{\times}10$ tokens};
+  \node[box=enc,minimum width=27mm,below=3mm of dino] (adp) {shared adapter\\(trainable)};
+  \node[plain,minimum width=27mm,below=6mm of adp] (ego) {ego $f_t\in\Rset^8$ (yaw rate)\\nav $n_t$ $\cdot$ limit $\ell$};
+  \draw[arr] (img) -- (dino); \draw[arr] (dino) -- (adp);
+  % readers
+  \node[box=levS,minimum width=30mm,minimum height=15mm,right=16mm of img] (S) {\textbf{S}: Reader (depth 1)\\route checkpoints\\$\hat k\in\Rset^{3\times3}$ at 30/50/80\,m};
+  \node[box=levT,minimum width=30mm,minimum height=15mm,right=8mm of S,yshift=-12mm] (T) {\textbf{T}: Reader (depth 1)\\typed tactical code\\$\hat c\in\Rset^{60}$};
+  \node[box=levO,minimum width=30mm,minimum height=15mm,right=8mm of T,yshift=-12mm] (O) {\textbf{O}: Reader (depth 2)\\residual coefficients\\$c_{\mathrm{res}}\in\Rset^{12\times2}$};
+  \coordinate (bus) at ($(adp.east)+(6mm,0)$);
+  \draw[thick,enc] (adp.east) -- (bus);
+  \draw[arr,enc] (bus) |- (S.west);
+  \draw[arr,enc] (bus) |- ([yshift=-3mm]T.west);
+  \draw[arr,enc] (bus) |- ([yshift=-3mm]O.west);
+  \draw[arr,enc] (ego.east) -| ([xshift=3mm]bus);
+  % held outputs flow down the hierarchy
+  \draw[goal,levS] (S.east) -| node[lbl,above,pos=0.25]{held $\hat k$ (age $a_S$)} ([xshift=-6mm]T.north);
+  \draw[goal,levT] (T.east) -| node[lbl,above,pos=0.25]{held $\hat c$ (age $a_T$)} ([xshift=-6mm]O.north);
+  \draw[goal,levS] ([yshift=3mm]S.east) -| ([xshift=6mm]O.north);
+  % prior and sum
+  \node[plain,minimum width=30mm,below=9mm of O] (P10) {frozen learned prior\\$P_{10}(f_t,b)$ (kinematic)};
+  \node[circle,draw=navy,very thick,inner sep=1.2pt,right=10mm of O] (sum) {\Large$+$};
+  \node[plain,right=7mm of sum,minimum width=22mm] (tau) {plan $\hat\tau\in\Rset^{60\times2}$\\6\,s @ 10\,Hz};
+  \draw[arr] (O.east) -- node[lbl,above]{$B\,c_{\mathrm{res}}$} (sum.west);
+  \draw[arr] (P10.east) -| node[lbl,right,pos=0.7]{$\mathrm{up}(P_{10})$} (sum.south);
+  \draw[arr] (sum.east) -- (tau.west);
+  % training-only components
+  \node[plain,dashed,minimum width=30mm,above=7mm of S] (lab) {labels $k^\ast,c^\ast$ (offline, ego log)\\\scriptsize training only};
+  \draw[lat,levT] (lab.east) -| node[lbl,right,pos=0.8]{\scriptsize $\xi\!\sim\!\mathrm{Bern}(p(s))$} ([xshift=6mm]T.north);
+  \node[plain,dashed,minimum width=27mm,below=6mm of ego] (wm) {H-JEPA auxiliary\\\scriptsize training only};
+  \draw[lat,enc] (wm.north) -- (ego.south);
+  % guard
+  \node[lbl,below=1mm of tau,align=center] (guard) {\textcolor{navy}{inference reads a 14-key allow-list}\\\textcolor{navy}{(key guard; no label, no classifier output)}};
+\end{tikzpicture}}
+\caption{\textbf{v8F-mini.} Three learned readers over frozen DINOv3 features and a shared trainable adapter. S emits route checkpoints,
+T a typed 60-dimensional tactical code, and O the coefficients of a ramped cosine basis added to a \emph{frozen} learned kinematic
+prior. Upper outputs are \emph{held} with quantised ages and re-expressed in the current frame by odometry. Labels enter only through
+scheduled teacher forcing in training. Inference reads a fixed allow-list of inputs, enforced by a key guard.}
+\label{fig:v8f}
+\end{figure*}
+
+\subsection{Inputs and notation}
+Time runs on a 0.2\,s grid. For a window ending at $t$, the model reads:
+\begin{itemize}
+  \item \textbf{scene tokens} $z_{t'}\in\Rset^{40\times1024}$, frozen DINOv3-L/16 features of the cylindrical front-wide frame, pooled to a
+        $4\times10$ grid, four frames per layer;
+  \item \textbf{ego features} $f_t=(v,a,\kappa,v^2,va,v\kappa,v^2\kappa,a\kappa)$, with curvature $\kappa$ from the \emph{measured yaw rate}
+        (never a steering angle);
+  \item \textbf{a navigation command} $n_t$;
+  \item \textbf{a speed bucket} $\ell$;
+  \item \textbf{measured odometry} between frames.
+\end{itemize}
+The output is a 6\,s plan $\tau\in\Rset^{60\times2}$ in the ego frame, scored on its 30 knots at 0.2\,s.
+
+\subsection{The S/T/O decomposition}
+S ticks at about 1\,Hz, T at about 2\,Hz and O at 10\,Hz. On the cache grid the model uses sample-and-hold with quantised ages:
+\begin{itemize}
+  \item T last ticked $a_T\in\{0,1,2\}$ steps ago;
+  \item S ticked $u\le4$ steps before T, so $a_S=a_T+u$.
+\end{itemize}
+With $t_T=t-a_T$ and $t_S=t-a_S$,
+\begin{equation}
+\begin{aligned}
+\hat k&=f_S\big(z_{t_S},f_{t_S},n_{t_S},\ell\big),\\
+\hat c&=f_T\big(z_{t_T},f_{t_T},n_{t_T},\ell,\Pi_{t_S\to t_T}\hat k\big),\\
+\hat\tau&=f_O\big(z_t,f_t,n_t,\ell,\Pi_{t_S\to t}\hat k,\hat c,(a_T,a_S)\big),
+\end{aligned}
+\end{equation}
+where $\Pi_{a\to b}$ re-expresses held checkpoints from frame $a$ to frame $b$ by odometry. The conditioning sets are strictly nested,
+$\mathrm{in}(S)\subset\mathrm{in}(T)\subset\mathrm{in}(O)$. Information flows between levels only through \emph{held outputs}, never
+through shared hidden state. Each $f_\ell$ is a \emph{Reader}: four learned queries cross-attend to the conditioning and scene tokens
+through a pre-norm transformer decoder, followed by an MLP head.
+
+\subsection{The tactical code as a typed interface}
+\begin{equation}
+c=\big[\,\underbrace{\sigma(g)}_{22\text{ goals}}\;\big|\;\underbrace{\mathrm{softmax}(\lambda_{\mathrm{lat}})}_{5}\;\big|\;\underbrace{\mathrm{softmax}(\lambda_{\mathrm{lon}})}_{7}\;\big|\;\underbrace{(\gamma-\mu)/\sigma_{\mathrm{cons}}}_{26\text{ constraints}}\,\big]\in\Rset^{60}.
+\end{equation}
+The 26 constraint cells cover turn timing and geometry, longitudinal target speeds and reach times, the stop point, the lead gap and
+time gap, and the speed band.
+
+\textbf{An information-theoretic reading.} Ground-truth codes $C^\ast=g(Y)$ are deterministic functions of the human future $Y$, so the
+data-processing inequality gives $I(C;Y)\ge I(C;C^\ast)$. Supervised agreement with $C^\ast$ is therefore a lower-bound proxy for
+informativeness about the future. O also reads the scene, so the code is a \emph{typed side channel}, not a strict bottleneck, and its
+usage is measurable by intervention (\cref{sec:results}).
+
+\subsection{Trajectory as an exact residual on a kinematic prior}
+Let $P=P_{10}(f_t,b)\in\Rset^{30\times2}$ be a \emph{frozen} learned prior: a damped base path re-timed by constant acceleration, plus an
+eight-feature MLP fitted once. Let $\mathrm{up}$ interpolate it to 0.1\,s. The plan is
+\begin{equation}\label{eq:traj}
+\boxed{\;\tau=\mathrm{up}\big(P_{10}(f_t,b)\big)+B\,c_{\mathrm{res}},\qquad B_{ik}=\tfrac{i+1}{N}\cos\!\Big(\tfrac{k\pi(i+\frac12)}{N}\Big),\;}
+\end{equation}
+with $N=60$, $k=0,\dots,11$, $c_{\mathrm{res}}=s\cdot\mathrm{MLP}(h_O)$, $s=2$\,m, and the last layer zero-initialised.
+
+\begin{proposition}[Floor identity, ramp and band limit]
+\begin{enumerate}[label=(\alph*)]
+  \item \textbf{Floor identity.} $c_{\mathrm{res}}=0$ implies $\tau=\mathrm{up}(P_{10})$ exactly, so the untrained model \emph{is} the prior.
+  \item \textbf{Ramp.} $|B_{ik}|\le(i+1)/N$, so the residual vanishes linearly as $t\to0$ and the plan starts at the prior's origin.
+  \item \textbf{Band limit.} With $k\le11$ the residual contains at most eleven half-cycles over 6\,s, below 1\,Hz: a smooth adjustment,
+        while the prior carries the kinematics.
+\end{enumerate}
+\end{proposition}
+Every learned metre is thus measured against the floor it must beat. Each property is pinned by a unit test with a mutation check.
+
+\subsection{Losses and scheduled teacher forcing}
+The training loss is
+\begin{multline}
+\mathcal L=w_{ck}\mathcal L_{ck}+w_{tac}\big(\mathcal L_{goal}+\tfrac12(\mathcal L_{lat}+\mathcal L_{lon})+w_{cons}\mathcal L_{cons}\big)\\
++w_{traj}\big(\tfrac13\mathcal L_{\ADE}+\tfrac1{12}\mathcal L_{\mathrm{FDE}}\big)+w_{pen}\textstyle\sum_r\rho_r+w_{wm}\mathcal L_{wm}.
+\end{multline}
+Its terms:
+\begin{itemize}
+  \item 	extbf{partial-label cross-entropies} $-\log\sum_{c\in\mathcal A}p_c$ handle the sets of allowed manoeuvres;
+  \item 	extbf{constraint cells} use a masked Huber loss;
+  \item 	extbf{rule penalties} $\rho_r$ (speed, stop, turn, lead) are differentiable hinges that are positive \emph{iff} a frozen rule reports a
+        violation;
+  \item 	extbf{the world-model auxiliary} $\mathcal L_{wm}$ is an H-JEPA objective on the shared adapter~\cite{hjepa}.
+\end{itemize}
+During training, O and T read a mixture of predicted and ground-truth upper outputs,
+\begin{equation}
+\tilde c=\xi_c\,c^\ast+(1-\xi_c)\,\hat c,\qquad \xi_c\sim\mathrm{Bernoulli}\big(p(s)\big),\qquad p(s)=1-0.8\min(s/S,1),
+\end{equation}
+which anneals the share of ground truth from 1.0 to 0.2~\cite{schedsamp}. At inference $\xi\equiv0$, and labels are never read.
+
+\subsection{Admissibility by construction}
+\begin{itemize}
+  \item Inference reads a fixed allow-list of 14 keys. A key guard records every access during the forward pass, and a test proves
+        that a deliberately peeking model is caught.
+  \item The goal path may not contain the output of any situation classifier.
+  \item Labels may use the ego future, but inference may not.
+\end{itemize}
+
+% =====================================================================================================================
+\section{Mathematical background}\label{sec:math}
+
+\subsection{Plug-in composition and propagated interface error}
+By the chain rule, $p(y\mid x)=\sum_{k,c}p(k\mid x)\,p(c\mid x,k)\,p(y\mid x,k,c)$. Factorisation alone is an identity; its value lies in
+\emph{supervision structure}. Each factor is fitted against its own offline target, and inference is a plug-in composition
+$\hat y=\mu_O(x,\hat k,\hat c)$.
+\begin{proposition}[Error decomposition]\label{prop:lip}
+If $\mu_O$ is $L_k$- and $L_c$-Lipschitz in its code arguments, then
+\begin{equation}
+\|\hat y-y\|\le\underbrace{\|\mu_O(x,k^\ast,c^\ast)-y\|}_{\text{oracle term}}+L_c\|\hat c-c^\ast\|+L_k\|\hat k-k^\ast\|.
+\end{equation}
+\end{proposition}
+\noindent The oracle term is measurable by substituting ground-truth codes. The gap between the model's own code and the oracle is
+the propagated interface error, and it is the headroom the hierarchy offers (\cref{sec:results}).
+
+\subsection{Convex response to tactical accuracy}
+Define the partial substitution $\hat c_\alpha=\hat c+\alpha(c^\ast-\hat c)$ on the 26 constraint cells, and the recovered fraction
+\begin{equation}
+r(\alpha)=\frac{\ADE(\hat c)-\ADE(\hat c_\alpha)}{\ADE(\hat c)-\ADE(\hat c_1)} .
+\end{equation}
+Linear response gives $r(\alpha)=\alpha$. We measure $r(0.25)=0.08$--$0.16$, $r(0.5)=0.20$--$0.36$ and $r(0.75)=0.48$--$0.73$. The
+response is \emph{convex}: O is flat near its own code and steep near the truth. The value of tactical accuracy therefore compounds,
+and the last metres of tactical precision buy the most driving.
+
+\subsection{Interface support and exposure bias}
+Whole-code teacher forcing trains O on the two-point mixture $p\,\delta_{c^\ast(x)}+(1-p)\,\delta_{\hat c(x)}$. A partial code
+$c_u=(c^\ast_u,\hat c_{\bar u})$ lies off that support, so its response is unconstrained by the training loss. The remedy is to widen
+the support: draw an independent $\xi_u$ per unit of the code at the same marginal $p(s)$,
+\begin{equation}
+\tilde c_u=\xi_u c^\ast_u+(1-\xi_u)\hat c_u,\qquad \xi_u\stackrel{\mathrm{iid}}{\sim}\mathrm{Bern}\big(p(s)\big).
+\end{equation}
+This keeps each cell's marginal unchanged while covering $2^7$ corners per window instead of 2.
+
+The same logic applies along time. A policy trained only on expert states incurs compounding error of order $\varepsilon T^2$, while
+on-policy aggregation (DAgger~\cite{dagger}) reduces it to order $\varepsilon T$. v8F-mini realises this by replacing 10\,\% of the
+training samples with the model's \emph{own rolled-out states}, labelled from the human future.
+
+\subsection{Estimator theory: three variances, one interval}
+Windows are grouped into $M=141$ episodes. For arms $a,b$ the point estimate is the full-set mean difference
+$\hat\Delta=\frac1N\sum_w[d_a(w)-d_b(w)]$. The paired episode-cluster bootstrap resamples episodes with replacement, using the same
+draw for both arms, and reports percentile intervals. By the law of total variance, with training randomness $\theta$, inference
+randomness $\omega$ and the episode draw $E$,
+\begin{equation}
+\mathrm{Var}(\hat\Delta)=\underbrace{\mathrm{Var}_\theta\,\mathbb E[\hat\Delta\mid\theta]}_{\text{training seeds}}+\underbrace{\mathbb E_\theta\mathrm{Var}_\omega\,\mathbb E_E[\hat\Delta\mid\theta,\omega]}_{\text{inference}}+\underbrace{\mathbb E_{\theta,\omega}\mathrm{Var}_E[\hat\Delta\mid\theta,\omega]}_{\text{episodes}} .
+\end{equation}
+The bootstrap estimates the episode term only. TanitAD therefore reports the seed term separately, through two training seeds and a
+pre-registered floor $F=|\Delta_{s_0}-\Delta_{s_1}|$ with bar $2F$. For a deterministic forward pass the inference term is exactly zero,
+and the programme verifies that on re-evaluation (maximum per-window deviation 0.0\,m).
+
+% =====================================================================================================================
+\section{Evaluation doctrine}\label{sec:eval}
+\textbf{Tiers.} Every number carries its tier.
+\begin{itemize}
+  \item \tier{T0}: teacher-forced or oracle-conditioned. A diagnostic, never driving performance.
+  \item \tier{Open loop}: the model's own held outputs, with logged ego data.
+  \item \tier{T1-kin}: the model's \emph{own executed motion} rebuilds the ego state at every 2\,s replan (three replans of 10 executed
+        knots per window) while the cameras stay logged.
+  \item \tier{T2}: cameras re-rendered at the car's own pose and time. In preparation, \cref{sec:frontier}.
+\end{itemize}
+
+\textbf{Four metric families, never one score.} Every evaluation reports:
+\begin{itemize}
+  \item \emph{longitudinal}: speed, along-track, acceleration and distance keeping;
+  \item \emph{lateral}: heading, yaw rate, curvature and cross-track;
+  \item \emph{tactical}: manoeuvre-decision agreement;
+  \item \emph{strategic}: route-checkpoint error.
+\end{itemize}
+The families are reported per family and never pooled.
+
+\textbf{Pre-registration.} Each arm has a card committed before its data. The card fixes the primary bar, the mechanism read, the
+refusals and \emph{both} outcomes with their next steps. Every training run is bound by a launch gate to its commit, argv and data
+hashes, and every check carries a deliberate-regression arm that must fail.
+
+\textbf{Data.} Training uses 4,512 PhysicalAI-AV clips (306,566 windows). Evaluation uses 141 held-out episodes (2,399 windows),
+disjoint by clip and by recording session.
+
+% =====================================================================================================================
+\section{Results}\label{sec:results}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar, width=0.98\columnwidth, height=62mm, bar width=2.6mm,
+  xmin=0, xmax=1.45, xlabel={6\,s ADE reduction against the kinematic floor P10 (m)},
+  xlabel style={font=\footnotesize}, ticklabel style={font=\scriptsize},
+  symbolic y coords={K1,HACCo,HACCt,HACCc,DAG,DAGO},
+  ytick=data, yticklabels={{K-1, M2b (open loop)},{HACC (open loop)},{HACC (T1-kin)},{HACC, past-only bucket (T1-kin)},{DAgger base (T1-kin)},{DAG-OACC base (T1-kin)}},
+  y dir=reverse, enlarge y limits=0.12,
+  legend style={font=\scriptsize,at={(0.98,0.03)},anchor=south east,draw=none,fill=none},
+  nodes near coords, nodes near coords style={font=\tiny}, every node near coord/.append style={xshift=1pt},
+  point meta=explicit symbolic,
+]
+\addplot[fill=levT!75,draw=levT] coordinates {(0.312,K1)[0.31] (0.50,HACCo)[0.50] (0.83,HACCt)[0.83] (0.77,HACCc)[0.77] (1.17,DAG)[1.17] (1.2556,DAGO)[1.26]};
+\addplot[fill=levO!75,draw=levO] coordinates {(0.432,K1)[0.43] (0.47,HACCo)[0.47] (0.79,HACCt)[0.79] (0.73,HACCc)[0.73] (0.99,DAG)[0.99] (1.1903,DAGO)[1.19]};
+\legend{training seed 0, training seed 1}
+\end{axis}
+\end{tikzpicture}
+\caption{\textbf{Six-second error reduction against the learned kinematic floor}, at two training seeds. Every bar is a paired
+episode-cluster bootstrap contrast on 141 held-out episodes, and every one is separated from zero. The tier is given per bar.}
+\label{fig:bars}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Headline results} (MEASURED; paired episode-cluster bootstrap, $B=2000$, 141 episodes; values at seed 0 / seed 1).}
+\label{tab:headline}
+\small
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}Xl@{}}
+\toprule
+Result & Tier \\
+\midrule
+6\,s ADE $-0.312$\,/\,$-0.432$\,m vs P10, beyond the pre-registered $2F=0.2415$\,m (12.5--17.4\,\% lower error) & open loop \\
+HACC post-map: better than P10 on \emph{every} row of the pre-registered set (ADE2, ADE6, accel., curvature, speed, heading, yaw rate, decisions, consistency) & open loop \\
+6\,s ADE $-0.83$\,/\,$-0.79$\,m vs P10 on own executed motion; $-0.77$\,/\,$-0.73$\,m with a past-only speed bucket & T1-kin \\
+Route checkpoints beat a kinematic arc by 1.2/3.3/7.8\,m and 1.3/3.5/8.8\,m at 30/50/80\,m & T1-kin \\
+DAgger: tactical macro-F1 $+0.108$/$+0.118$ (lateral), $+0.055$/$+0.081$ (longitudinal); 6\,s ADE $-0.54$/$-0.40$\,m vs its control & T1-kin \\
+Adopted base: 6\,s ADE $-1.26$\,/\,$-1.19$\,m vs P10; every family has a separated-better row & T1-kin \\
+Ground-truth tactical code: 6\,s ADE from $\approx$2.1 to $\approx$1.0\,m (interface headroom) & T0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{The hierarchy beats its floor.} Against the learned kinematic floor P10, which is exactly the model's own output at a zero
+residual by \cref{eq:traj}, v8F-mini (M2b) lowers 6\,s error by 0.312/0.432\,m at two seeds, beyond a pre-registered bar of twice the
+seed floor (\cref{fig:bars}, \cref{tab:headline}). A zero-training post-map (HACC) blends O's plan with its own prior through
+per-step weights fitted on training windows with an acceleration term. With it, the model is separated-better than P10 on every row of
+a pre-registered set, including 2\,s error ($-0.011$/$-0.008$\,m), 6\,s error ($-0.50$/$-0.47$\,m) and acceleration
+($-0.022$/$-0.040$\,m/s$^2$), and separated-worse on none.
+
+\textbf{The margin survives the model's own motion.} On T1-kin, where the ego state is rebuilt from the model's own executed motion at
+each replan, the HACC model beats P10 by 0.83/0.79\,m. Two stress versions keep most of the margin:
+\begin{itemize}
+  \item a speed bucket rebuilt from the last 4\,s of measured speed alone keeps 0.77/0.73\,m;
+  \item freezing the camera at the first frame for 6\,s as well keeps 0.73/0.64\,m.
+\end{itemize}
+The margin therefore rests on the model's reading of the scene and of its own state, not on future information.
+
+\textbf{On-policy data makes the tactical brain robust.} Replacing 10\,\% of training samples by the model's own rolled-out states
+(DAgger, $p=0.1$) raises the tactical brain's lateral macro-F1 by 0.108/0.118 and its longitudinal macro-F1 by 0.055/0.081 on the
+model's own motion. It also lowers executed 6\,s error by 0.54/0.40\,m. It is the first training lever to clear a T1 bar on both
+heads. The adopted base built on it (DAG-OACC) lowers 6\,s error against P10 by 1.26/1.19\,m on its own motion. At least one row
+improves in each of the four families (longitudinal, lateral, tactical and strategic).
+
+\textbf{Every level contributes.} The strategic brain's route checkpoints beat a kinematic arc at every horizon, by up to 8.8\,m at
+80\,m. The tactical interface is used, as substituting the ground-truth code cuts 6\,s error from about 2.1 to about 1.0\,m.
+\Cref{prop:lip} reads this as roughly 1.1\,m of headroom available through better tactical predictions. Because the response is
+convex, that headroom concentrates in the final gains in tactical precision.
+
+% =====================================================================================================================
+\section{The frontier: assertive launch, and re-rendered simulation}\label{sec:frontier}
+With the feasibility post-step, the adopted composite meets every row of the 19-row pre-registered set but one: the \emph{launch-crawl}
+share. These are situations where the human pulls away from near-standstill above 5.2\,m/s and the model starts more cautiously.
+Every zero-training lever available on CPU has been measured against this row:
+\begin{itemize}
+  \item decode levers;
+  \item a level-from-image head;
+  \item four doses of an external progress floor.
+\end{itemize}
+Even with the exact human speed supplied as a ceiling diagnostic, a bounded floor closes about half of the gap.
+
+The analysis points to a property of the tier rather than of the planner. Logged cameras cannot show a lagging car its own
+consequences: the lead vehicle never pulls away on screen, and the scene never moves at the car's own pace.
+
+\textbf{T2 re-perception (in preparation).} We are building a re-rendered evaluation tier on neural reconstructions of real drives:
+\begin{itemize}
+  \item 62 scenes (42 launch, 20 guard), selected by a rule frozen \emph{before} any log was read, and staged (35.7\,GB);
+  \item a harness that reproduces the T1-kin plans bit for bit from cached features, with an in-loop encoder that reproduces the
+        cached tokens to 2.6\,\% relative $L_2$ (cosine 0.99965).
+\end{itemize}
+The pre-registered design runs two conditions with the same renderer: cameras rendered at the car's \emph{own} pose and time, and at
+the \emph{logged} pose re-indexed by the car's progress. Their contrast measures the camera-clock effect directly, free of the
+render domain gap, and both outcomes and their next levers are committed in advance.
+
+% =====================================================================================================================
+\section{Outlook and research roadmap}\label{sec:outlook}
+\begin{table}[t]
+\centering
+\caption{\textbf{Roadmap} (\emph{outlook}: not yet implemented unless marked).}
+\label{tab:roadmap}
+\small
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{24mm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Item & What it delivers \\
+\midrule
+T2 re-perception \textit{(in preparation)} & a decision-grade read of the launch row on re-rendered scenes; the longitudinal tier for every later arm \\
+Perception adaptation & LoRA on the visual encoder for motion cues; about 100 GPU-h per seed on an A40-class GPU (estimate) \\
+Scale data & from 4,512 clips toward the full corpus; on-policy DAgger data from T2 rollouts \\
+Scale size & from 7\,M toward the 300\,M 4B budget, with each level's predictor in its own latent \\
+Strategic topology & routing over a latent transition graph, with map structure from simulation or an external corpus \\
+Fallback brain & imagination-error monitoring, the minimal-risk manoeuvre and ISMR/DSSAD logging \\
+Occlusion imagination & multi-step, calibrated belief roll-out of hidden sectors \\
+Edge deployment & Jetson Thor, at most 100\,ms end to end on 4 cameras \\
+Benchmarks & NAVSIM navtest and pre-registered T2 reads \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The roadmap (\cref{tab:roadmap}) follows from the measurements. The architecture is validated at small scale on a consumer GPU,
+every level carries measurable value, and the remaining behaviour sits where logged-camera evaluation cannot see. Three investments
+turn the validated design into a driver:
+\begin{itemize}
+  \item a \textbf{re-rendered simulation tier}, already in preparation;
+  \item \textbf{perception adaptation} for motion cues;
+  \item \textbf{scale in data and model size} toward the 4B budget.
+\end{itemize}
+Because the floor identity holds at every scale, and every lever is pre-registered with deliberate-regression controls, each
+investment yields a measured answer rather than an anecdote.
+
+% =====================================================================================================================
+\section{Conclusion}
+TanitAD-4B drives at every level of abstraction and holds every level accountable. Its reference implementation shows that a typed
+hierarchy over frozen foundation features clears a learned kinematic floor:
+\begin{itemize}
+  \item in open loop, by 0.31--0.43\,m of 6\,s error;
+  \item on every row of a pre-registered set, with a zero-training post-map;
+  \item on its own executed motion, by more than a metre, with at least one improved row in each of the four metric families.
+\end{itemize}
+It does so with 7.2\,M trainable parameters and four GPU-hours. The mathematics explains where the remaining headroom sits: in
+tactical precision, with convex returns, and in the evaluation tier. The roadmap names the investments that will convert the
+architecture into a deployable, self-aware driver.
+
+\paragraph{Acknowledgements.} Experiments, instruments and reports were produced with the TanitAD autonomous research system under
+the author's direction.
+
+% =====================================================================================================================
+\begin{thebibliography}{99}\small
+\bibitem{hjepa} H-JEPA: Hierarchical joint-embedding predictive world models. arXiv:2610.06805, 2026.
+\bibitem{hplwm} Hierarchical planning with latent world models. arXiv:2604.03208, 2026.
+\bibitem{orbis2} Orbis 2. arXiv:2607.15898, 2026.
+\bibitem{drivehwm} Drive-HWM: slow and fast world models for driving. arXiv:2609.03572, 2026.
+\bibitem{s2planner} S2Planner: a multi-scale semantic planner. arXiv:2609.29813, 2026.
+\bibitem{dinov3} O.~Sim\'eoni et al. DINOv3. arXiv:2508.10104, 2025.
+\bibitem{vjepa2} M.~Assran et al. V-JEPA~2: Self-supervised video models enable understanding, prediction and planning. arXiv:2506.09985, 2025.
+\bibitem{lejepa} R.~Balestriero and Y.~LeCun. LeJEPA: Provable and scalable self-supervised learning without the heuristics. arXiv:2511.08544, 2025.
+\bibitem{lora} E.~J.~Hu et al. LoRA: Low-rank adaptation of large language models. arXiv:2106.09685, 2021.
+\bibitem{ssshashua} S.~Shalev-Shwartz and A.~Shashua. On the sample complexity of end-to-end training vs.\ semantic abstraction training. arXiv:1604.06915, 2016.
+\bibitem{schedsamp} S.~Bengio, O.~Vinyals, N.~Jaitly and N.~Shazeer. Scheduled sampling for sequence prediction with recurrent neural networks. arXiv:1506.03099, 2015.
+\bibitem{dagger} S.~Ross, G.~Gordon and J.~A.~Bagnell. A reduction of imitation learning and structured prediction to no-regret online learning. arXiv:1011.0686, 2011.
+\bibitem{dart} M.~Laskey et al. DART: Noise injection for robust imitation learning. arXiv:1703.09327, 2017.
+\bibitem{causalconf} P.~de~Haan, D.~Jayaraman and S.~Levine. Causal confusion in imitation learning. arXiv:1905.11979, 2019.
+\bibitem{bclimits} F.~Codevilla et al. Exploring the limitations of behavior cloning for autonomous driving. arXiv:1904.08980, 2019.
+\bibitem{cil} F.~Codevilla et al. End-to-end driving via conditional imitation learning. arXiv:1710.02410, 2018.
+\bibitem{chauffeurnet} M.~Bansal, A.~Krizhevsky and A.~Ogale. ChauffeurNet: Learning to drive by imitating the best and synthesizing the worst. arXiv:1812.03079, 2018.
+\bibitem{transfuser} K.~Chitta et al. TransFuser: Imitation with transformer-based sensor fusion for autonomous driving. arXiv:2205.15997, 2022.
+\bibitem{vad} B.~Jiang et al. VAD: Vectorized scene representation for efficient autonomous driving. arXiv:2303.12077, 2023.
+\bibitem{hydramdp} Z.~Li et al. Hydra-MDP: End-to-end multimodal planning with multi-target hydra-distillation. arXiv:2406.06978, 2024.
+\bibitem{diffusiondrive} B.~Liao et al. DiffusionDrive: Truncated diffusion model for end-to-end autonomous driving. arXiv:2411.15139, 2024.
+\bibitem{resad} ResAD: normalised residual trajectory modelling for end-to-end driving. arXiv:2510.08562, 2025.
+\bibitem{navsim} D.~Dauner et al. NAVSIM: Data-driven non-reactive autonomous vehicle simulation and benchmarking. arXiv:2406.15349, 2024.
+\bibitem{nuplan} N.~Karnchanachari et al. Towards learning-based planning: The nuPlan benchmark for real-world autonomous driving. arXiv:2403.04133, 2024.
+\end{thebibliography}
+
+\end{document}

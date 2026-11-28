@@ -1,0 +1,475 @@
+{
+ "label": "r7thor_s50400_R7_A1_s1",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=navtest",
+  "metric_cache_path=/dev/shm/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_r7thor_s50400_R7_A1_s1",
+  "output_dir=/dev/shm/navsim/exp/w3_navtest_v1/runs/r7thor_s50400_R7_A1_s1",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=/dev/shm/navsim/seams/step50400/seam_R7_A1_s1__navtest.npz",
+  "+agent.call_log=/dev/shm/navsim/thor_scores/navtest/r7thor_s50400_R7_A1_s1/r7thor_s50400_R7_A1_s1.calls.jsonl"
+ ],
+ "argv": [
+  "/home/nvidia/navsim-thor/code/thor/navsim_v1_thor.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "r7thor_s50400_R7_A1_s1",
+  "--out-dir",
+  "/dev/shm/navsim/thor_scores/navtest/r7thor_s50400_R7_A1_s1",
+  "--patch-loader",
+  "--record-poses",
+  "--",
+  "train_test_split=navtest",
+  "metric_cache_path=/dev/shm/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_r7thor_s50400_R7_A1_s1",
+  "output_dir=/dev/shm/navsim/exp/w3_navtest_v1/runs/r7thor_s50400_R7_A1_s1",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=/dev/shm/navsim/seams/step50400/seam_R7_A1_s1__navtest.npz",
+  "+agent.call_log=/dev/shm/navsim/thor_scores/navtest/r7thor_s50400_R7_A1_s1/r7thor_s50400_R7_A1_s1.calls.jsonl"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:59:33) \n[Clang 21.1.4 ]",
+ "executable": "/home/nvidia/venvs/navsim-cpu/bin/python",
+ "cwd": "/dev/shm/navsim/exp/w3_navtest_v1",
+ "PYTHONPATH": "/home/nvidia/navsim-thor/src/navsim-v11:/home/nvidia/navsim-thor/code/w3:/home/nvidia/navsim-thor/code/stubs",
+ "PYTHONHASHSEED": "1",
+ "priority": "unchanged (AttributeError(\"module 'psutil' has no attribute 'BELOW_NORMAL_PRIORITY_CLASS'\"))",
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "/dev/shm/navsim/data/maps",
+  "NAVSIM_EXP_ROOT": "/dev/shm/navsim/exp/w3_navtest_v1",
+  "NAVSIM_DEVKIT_ROOT": "/home/nvidia/navsim-thor/src/navsim-v11",
+  "OPENSCENE_DATA_ROOT": "/dev/shm/navsim/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_v11_tree": "/home/nvidia/navsim-thor/src/navsim-v11",
+ "navsim_v11_sha": "3e8291bfa89ff247231e0227778840cd0a036896",
+ "nuplan_tree": "/home/nvidia/navsim-thor/src/nuplan-devkit",
+ "nuplan_sha_expected": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_sha_measured": null,
+ "nuplan_source_checkout": "/home/nvidia/navsim-thor/src/nuplan-devkit",
+ "nuplan_source_sha_measured": null,
+ "nuplan_copy_verification": "E1 raw/devkit_copy_verify.json: repos.nuplan-devkit n_blobs 1324, n_match 1321, 3 diffs explained (setup.py packaging, docs/make.bat eol, nuboard html)",
+ "e1_wrapper": "/home/nvidia/navsim-thor/code/thor/navsim_thor.py",
+ "imported_from": {
+  "navsim": "/home/nvidia/navsim-thor/src/navsim-v11/navsim/__init__.py",
+  "nuplan": "/home/nvidia/navsim-thor/src/nuplan-devkit/nuplan/__init__.py",
+  "script": "/home/nvidia/navsim-thor/src/navsim-v11/navsim/planning/script/run_pdm_score.py",
+  "fcntl": null
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:170-181 (v1.1 @ 3e8291b)",
+   "replacement": "/home/nvidia/navsim-thor/code/thor/navsim_thor.py::_load_metric_cache_paths_patched (E1, imported)",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "bd205bd28ea36e70",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows (control C7)"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)"
+ ],
+ "started_local": "2026-10-05 03:21:51",
+ "rows_jsonl": "/dev/shm/navsim/thor_scores/navtest/r7thor_s50400_R7_A1_s1/r7thor_s50400_R7_A1_s1_rows.jsonl",
+ "thor_compat": {
+  "thor_compat": "installed",
+  "patches": [
+   "pathlib.WindowsPath -> PureWindowsPath subclass (unpickle only)",
+   "nuplan map_factory.get_maps_api/get_maps_db: Windows map_root -> $NUPLAN_MAPS_ROOT"
+  ],
+  "NUPLAN_MAPS_ROOT": "/dev/shm/navsim/data/maps",
+  "remaps_so_far": {
+   "windows_path_unpickled": 0,
+   "windows_map_root": {}
+  }
+ },
+ "status": "OK",
+ "ended_local": "2026-10-05 03:48:27",
+ "resources": {
+  "wall_s": 1595.78,
+  "peak_rss_mb": 2260.4,
+  "peak_process_tree_rss_mb": 2260.4,
+  "min_system_available_mb": 34287.0,
+  "n_samples": 705,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.1,
+    19.4,
+    52264.9
+   ],
+   [
+    24.3,
+    2238.3,
+    50206.5
+   ],
+   [
+    45.2,
+    2238.3,
+    50174.8
+   ],
+   [
+    67.1,
+    2238.3,
+    48099.5
+   ],
+   [
+    88.3,
+    2238.3,
+    48106.2
+   ],
+   [
+    109.4,
+    2238.3,
+    45998.1
+   ],
+   [
+    132.7,
+    2238.3,
+    52282.1
+   ],
+   [
+    154.8,
+    2238.3,
+    52796.6
+   ],
+   [
+    177.7,
+    2238.3,
+    54644.4
+   ],
+   [
+    200.1,
+    2238.3,
+    54152.0
+   ],
+   [
+    222.1,
+    2238.3,
+    54414.1
+   ],
+   [
+    244.4,
+    2238.3,
+    53936.5
+   ],
+   [
+    266.2,
+    2238.3,
+    54120.1
+   ],
+   [
+    289.0,
+    2238.3,
+    54596.9
+   ],
+   [
+    312.0,
+    2238.3,
+    54110.5
+   ],
+   [
+    334.9,
+    2238.3,
+    53927.2
+   ],
+   [
+    357.1,
+    2238.3,
+    54330.5
+   ],
+   [
+    380.5,
+    2238.3,
+    54167.8
+   ],
+   [
+    403.1,
+    2238.3,
+    54105.1
+   ],
+   [
+    424.9,
+    2238.3,
+    54381.5
+   ],
+   [
+    447.6,
+    2238.3,
+    45066.9
+   ],
+   [
+    469.3,
+    2238.3,
+    45054.5
+   ],
+   [
+    491.2,
+    2238.3,
+    45258.4
+   ],
+   [
+    514.1,
+    2238.3,
+    45260.5
+   ],
+   [
+    536.1,
+    2238.3,
+    45261.0
+   ],
+   [
+    558.1,
+    2238.3,
+    45262.1
+   ],
+   [
+    580.8,
+    2238.3,
+    45263.5
+   ],
+   [
+    603.0,
+    2238.3,
+    45266.0
+   ],
+   [
+    625.1,
+    2238.3,
+    45268.4
+   ],
+   [
+    648.3,
+    2238.3,
+    45271.5
+   ],
+   [
+    670.5,
+    2238.3,
+    45273.6
+   ],
+   [
+    692.7,
+    2238.3,
+    45275.8
+   ],
+   [
+    715.5,
+    2238.3,
+    45268.9
+   ],
+   [
+    738.2,
+    2238.3,
+    45226.5
+   ],
+   [
+    760.6,
+    2238.3,
+    45251.4
+   ],
+   [
+    783.9,
+    2238.3,
+    45247.3
+   ],
+   [
+    806.7,
+    2238.3,
+    45252.7
+   ],
+   [
+    829.8,
+    2238.5,
+    45243.2
+   ],
+   [
+    853.9,
+    2238.5,
+    45235.0
+   ],
+   [
+    876.3,
+    2240.7,
+    45234.2
+   ],
+   [
+    898.6,
+    2240.7,
+    45231.0
+   ],
+   [
+    921.8,
+    2240.7,
+    45225.1
+   ],
+   [
+    944.3,
+    2241.4,
+    45229.9
+   ],
+   [
+    966.8,
+    2242.2,
+    45225.6
+   ],
+   [
+    990.0,
+    2243.1,
+    45224.6
+   ],
+   [
+    1012.4,
+    2243.1,
+    45214.4
+   ],
+   [
+    1035.4,
+    2243.9,
+    45206.4
+   ],
+   [
+    1058.7,
+    2245.5,
+    45212.1
+   ],
+   [
+    1081.4,
+    2246.0,
+    45208.1
+   ],
+   [
+    1104.2,
+    2246.0,
+    45209.6
+   ],
+   [
+    1127.6,
+    2247.3,
+    45213.2
+   ],
+   [
+    1149.6,
+    2247.9,
+    45207.1
+   ],
+   [
+    1173.7,
+    2247.9,
+    45207.4
+   ],
+   [
+    1196.5,
+    2248.9,
+    45199.5
+   ],
+   [
+    1219.0,
+    2250.6,
+    45201.9
+   ],
+   [
+    1241.9,
+    2251.0,
+    45196.8
+   ],
+   [
+    1265.2,
+    2251.5,
+    45192.4
+   ],
+   [
+    1289.0,
+    2251.8,
+    45181.7
+   ],
+   [
+    1312.3,
+    2252.0,
+    45178.6
+   ],
+   [
+    1335.4,
+    2252.9,
+    45123.0
+   ],
+   [
+    1358.0,
+    2252.9,
+    45162.6
+   ],
+   [
+    1381.1,
+    2253.3,
+    45170.5
+   ],
+   [
+    1404.2,
+    2254.1,
+    45165.2
+   ],
+   [
+    1427.2,
+    2255.7,
+    45164.8
+   ],
+   [
+    1450.4,
+    2256.5,
+    45172.8
+   ],
+   [
+    1473.8,
+    2256.5,
+    45170.4
+   ],
+   [
+    1496.0,
+    2257.1,
+    45161.1
+   ],
+   [
+    1517.9,
+    2257.1,
+    45163.2
+   ],
+   [
+    1540.7,
+    2260.1,
+    45160.8
+   ],
+   [
+    1562.7,
+    2259.7,
+    47239.4
+   ],
+   [
+    1586.0,
+    2260.2,
+    47246.4
+   ]
+  ]
+ },
+ "thor_compat_final": {
+  "thor_compat": "installed",
+  "patches": [
+   "pathlib.WindowsPath -> PureWindowsPath subclass (unpickle only)",
+   "nuplan map_factory.get_maps_api/get_maps_db: Windows map_root -> $NUPLAN_MAPS_ROOT"
+  ],
+  "NUPLAN_MAPS_ROOT": "/dev/shm/navsim/data/maps",
+  "remaps_so_far": {
+   "windows_path_unpickled": 12146,
+   "windows_map_root": {}
+  }
+ }
+}

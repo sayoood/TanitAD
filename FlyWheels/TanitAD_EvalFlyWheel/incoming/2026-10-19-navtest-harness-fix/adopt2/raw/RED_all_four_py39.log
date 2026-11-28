@@ -1,0 +1,288 @@
+FFFFF.FFFFFFFFFFF                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_caller_scores_through_fix1 _______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_caller_scores_through_fix0')
+
+    def test_caller_scores_through_fix1(tmp_path):
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        rc = mod.main(["--label", "r6_nt_fix1_probe", "--seam", str(seam), "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1", f"caller scored through {who['who']}, not run_v1_fix1.load()"
+E       AssertionError: caller scored through UNFIXED, not run_v1_fix1.load()
+E       assert 'UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:73: AssertionError
+_____________ test_official_control_path_also_scores_through_fix1 _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_official_control_path_als0')
+
+    def test_official_control_path_also_scores_through_fix1(tmp_path):
+        """KH-navtest's ``--official STOP`` path (no seam) goes through the same loader."""
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        rc = mod.main(["--label", "r6_nt_fix1_probe", "--official", "STOP", "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1" and who["arm"] == "STOP"
+E       AssertionError: assert ('UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED)
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:84: AssertionError
+_______________ test_missing_fix1_is_loud_not_a_silent_fallback _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_missing_fix1_is_loud_not_0')
+
+    def test_missing_fix1_is_loud_not_a_silent_fallback(tmp_path):
+        mod = _caller(_w3(tmp_path, with_fix1=False))
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        with pytest.raises(SystemExit) as e:
+>           mod.main(["--label", "r6_nt_fix1_probe", "--seam", str(seam), "--out", str(tmp_path / "out")])
+E           Failed: DID NOT RAISE <class 'SystemExit'>
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:92: Failed
+________ test_caller_source_names_fix1_once_and_no_direct_run_v1_exec _________
+
+    def test_caller_source_names_fix1_once_and_no_direct_run_v1_exec():
+        src = open(CALLER, encoding="utf-8").read()
+>       assert src.count('"run_v1_fix1.py"') == 1
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x000002A4B8C63FE0>('"run_v1_fix1.py"')
+E        +    where <built-in method count of str object at 0x000002A4B8C63FE0> = '#!/usr/bin/env python3\n"""Score ONE refcv6 seam on NAVSIM v1.1 ``navtest`` with W3\'s harness, IMPORTED (any python)...rd_poses=True, patch_loader=True)\n    return w3.cmd_score(ns)\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\tests\test_score_navtest6_fix1.py:99: AssertionError
+_______________________ test_caller_scores_through_fix1 _______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_caller_scores_through_fix1')
+fake_governor = {'already_scored': 1, 'governed': 1, 'joblock': 1}
+
+    def test_caller_scores_through_fix1(tmp_path, fake_governor):
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        rc = mod.main(["--label", "r7_nt_fix1_probe", "--seam", str(seam), "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1", f"caller scored through {who['who']}, not run_v1_fix1.load()"
+E       AssertionError: caller scored through UNFIXED, not run_v1_fix1.load()
+E       assert 'UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:110: AssertionError
+_____________ test_official_control_path_also_scores_through_fix1 _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_official_control_path_als1')
+fake_governor = {'already_scored': 0, 'governed': 1, 'joblock': 0}
+
+    def test_official_control_path_also_scores_through_fix1(tmp_path, fake_governor):
+        """KH-navtest's ``--official STOP`` path (no seam, so no per-job lock) goes through the same loader."""
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        rc = mod.main(["--label", "r7_nt_fix1_probe", "--official", "STOP", "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1" and who["arm"] == "STOP"
+E       AssertionError: assert ('UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED)
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:130: AssertionError
+_______________ test_missing_fix1_is_loud_not_a_silent_fallback _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_missing_fix1_is_loud_not_1')
+fake_governor = {'already_scored': 1, 'governed': 1, 'joblock': 1}
+
+    def test_missing_fix1_is_loud_not_a_silent_fallback(tmp_path, fake_governor):
+        mod = _caller(_w3(tmp_path, with_fix1=False))
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        with pytest.raises(SystemExit) as e:
+>           mod.main(["--label", "r7_nt_fix1_probe", "--seam", str(seam), "--out", str(tmp_path / "out")])
+E           Failed: DID NOT RAISE <class 'SystemExit'>
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:139: Failed
+________ test_caller_source_names_fix1_once_and_no_direct_run_v1_exec _________
+
+    def test_caller_source_names_fix1_once_and_no_direct_run_v1_exec():
+        src = open(CALLER, encoding="utf-8").read()
+>       assert src.count('"run_v1_fix1.py"') == 1
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x000002A4BA675D80>('"run_v1_fix1.py"')
+E        +    where <built-in method count of str object at 0x000002A4BA675D80> = '#!/usr/bin/env python3\n# PORTED from the refcv6 NavSim suite: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-ref...h, indent=1)\n    except OSError:\n        pass\n    return rc\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:147: AssertionError
+________________________ test_score_runs_through_fix1 _________________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_score_runs_through_fix10')
+
+    def test_score_runs_through_fix1(tmp_path):
+        mod = _caller()
+        out, seam = tmp_path / "out", tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        assert mod.main(_argv(_w3(tmp_path), out, "score", seam)) == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1", f"launcher scored through {who['who']}, not run_v1_fix1.load()"
+E       AssertionError: launcher scored through UNFIXED, not run_v1_fix1.load()
+E       assert 'UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED
+
+colab\navtest\test_linux_run_v1_fix1.py:90: AssertionError
+_________________ test_cache_runs_through_the_fix1_module_too _________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_cache_runs_through_the_fi0')
+
+    def test_cache_runs_through_the_fix1_module_too(tmp_path):
+        mod = _caller()
+        out = tmp_path / "out"
+        assert mod.main(_argv(_w3(tmp_path), out, "cache")) == 0
+>       assert json.load(open(out / "WHO.json", encoding="utf-8"))["who"] == "FIX1_CACHE"
+E       AssertionError: assert 'UNFIXED_CACHE' == 'FIX1_CACHE'
+E         
+E         - FIX1_CACHE
+E         ?    ^
+E         + UNFIXED_CACHE
+E         ? ++   ^^
+
+colab\navtest\test_linux_run_v1_fix1.py:98: AssertionError
+_______________ test_missing_fix1_is_loud_not_a_silent_fallback _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_missing_fix1_is_loud_not_2')
+
+    def test_missing_fix1_is_loud_not_a_silent_fallback(tmp_path):
+        mod = _caller()
+        out, seam = tmp_path / "out", tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        with pytest.raises(SystemExit) as e:
+>           mod.main(_argv(_w3(tmp_path, with_fix1=False), out, "score", seam))
+E           Failed: DID NOT RAISE <class 'SystemExit'>
+
+colab\navtest\test_linux_run_v1_fix1.py:106: Failed
+_______ test_launcher_source_names_fix1_once_and_no_direct_run_v1_exec ________
+
+    def test_launcher_source_names_fix1_once_and_no_direct_run_v1_exec():
+        src = open(CALLER, encoding="utf-8").read()
+>       assert src.count('"run_v1_fix1.py"') == 1
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x000002A4B8C62850>('"run_v1_fix1.py"')
+E        +    where <built-in method count of str object at 0x000002A4B8C62850> = '#!/usr/bin/env python3\n"""Linux launcher for W3\'s NAVSIM v1.1 harness (`run_v1.py`), for Colab/any Linux VM: `score...                     log_tries=1)\n    return w3.cmd_cache(ns)\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+colab\navtest\test_linux_run_v1_fix1.py:113: AssertionError
+_________________ test_real_w3_pair_loads_pinned_and_patched __________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_real_w3_pair_loads_pinned0')
+
+    def test_real_w3_pair_loads_pinned_and_patched(tmp_path):
+        if not (os.path.isfile(os.path.join(REAL_W3, "run_v1.py"))
+                and os.path.isfile(os.path.join(REAL_W3, "run_v1_fix1.py"))):
+            pytest.skip(f"real W3 pair not in this checkout: {REAL_W3}")
+        mod = _caller()
+        a = argparse.Namespace(w3_code=REAL_W3, nv_py="NVPY", v11_tree="V11", exp=str(tmp_path / "exp"), openscene="OSC",
+                               maps="MAPS", e1_wrapper="E1.py", nuplan_tree="NUP", windowspath_shim=False,
+                               out=str(tmp_path / "out"))
+        w3 = mod.load_w3(a)
+>       assert w3.FIX1["version"] == 1 and w3.FIX1["original"]["matches_pinned"] is True
+E       AttributeError: module 'w3_run_v1' has no attribute 'FIX1'
+
+colab\navtest\test_linux_run_v1_fix1.py:126: AttributeError
+________________ test_bundle_carries_run_v1_fix1_beside_run_v1 ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A4BD676D00>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_bundle_carries_run_v1_fix0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000002A4BD676F70>
+
+    def test_bundle_carries_run_v1_fix1_beside_run_v1(monkeypatch, tmp_path, capsys):
+        patches, ev, w3 = _fake_tree(tmp_path)
+        pc, out = _pack(monkeypatch, tmp_path, patches, ev)
+        assert pc.main() == 0
+        with tarfile.open(out) as tf:
+            names = tf.getnames()
+            assert "w3code/run_v1.py" in names
+>           assert "w3code/run_v1_fix1.py" in names, "the bundle ships run_v1.py WITHOUT run_v1_fix1.py"
+E           AssertionError: the bundle ships run_v1.py WITHOUT run_v1_fix1.py
+E           assert 'w3code/run_v1_fix1.py' in ['e1/navsim_win.py', 'freeze/driverl_eval_venv_freeze.txt', 'freeze/navsim_crun_venv_freeze.txt', 'manifests/db_manifest_sub200.json', 'manifests/maps_manifest.json', 'navtest/e6_linux.py', ...]
+
+colab\navtest\test_pack_code_fix1.py:97: AssertionError
+---------------------------- Captured stdout call -----------------------------
+ZZCODE_OK 25 files, 880 B
+__________________ test_missing_run_v1_fix1_stops_the_packer __________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A4BD676550>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_missing_run_v1_fix1_stops0')
+
+    def test_missing_run_v1_fix1_stops_the_packer(monkeypatch, tmp_path):
+        """A bundle must never be built without it (linux_run_v1.py would exit on the VM, after the upload)."""
+        patches, ev, _ = _fake_tree(tmp_path, with_fix1=False)
+        pc, out = _pack(monkeypatch, tmp_path, patches, ev)
+        with pytest.raises(FileNotFoundError):
+>           pc.main()
+E           Failed: DID NOT RAISE <class 'FileNotFoundError'>
+
+colab\navtest\test_pack_code_fix1.py:110: Failed
+---------------------------- Captured stdout call -----------------------------
+ZZCODE_OK 25 files, 880 B
+_________ test_chain_pack_extract_load_w3_reaches_the_patched_module __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002A4BD676100>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5816/test_chain_pack_extract_load_w0')
+
+    def test_chain_pack_extract_load_w3_reaches_the_patched_module(monkeypatch, tmp_path):
+        """pack (REAL W3 pair) -> extract w3code/ -> linux_run_v1.load_w3: the loader finds fix1 in the packed dir."""
+        if not (os.path.isfile(os.path.join(REAL_W3, "run_v1.py"))
+                and os.path.isfile(os.path.join(REAL_W3, "run_v1_fix1.py"))):
+            pytest.skip(f"real W3 pair not in this checkout: {REAL_W3}")
+        patches, ev, _ = _fake_tree(tmp_path)
+        patches["W3C"] = REAL_W3
+        pc, out = _pack(monkeypatch, tmp_path, patches, ev)
+        assert pc.main() == 0
+        dest = tmp_path / "vm"
+        with tarfile.open(out) as tf:
+            for m in tf.getmembers():
+                if m.name.startswith("w3code/"):      # what the VM unpacks: plain files only in this tar
+                    (dest / m.name).parent.mkdir(parents=True, exist_ok=True)
+                    (dest / m.name).write_bytes(tf.extractfile(m).read())
+        launcher = _load(LAUNCHER, "linux_run_v1_for_pack_chain")
+        a = argparse.Namespace(w3_code=str(dest / "w3code"), nv_py="NVPY", v11_tree="V11", exp=str(tmp_path / "exp"),
+                               openscene="OSC", maps="MAPS", e1_wrapper="E1.py", nuplan_tree="NUP",
+                               windowspath_shim=False, out=str(tmp_path / "out"))
+        w3 = launcher.load_w3(a)
+>       assert w3.FIX1["original"]["matches_pinned"] is True
+E       AttributeError: module 'w3_run_v1' has no attribute 'FIX1'
+
+colab\navtest\test_pack_code_fix1.py:133: AttributeError
+---------------------------- Captured stdout call -----------------------------
+ZZCODE_OK 25 files, 16,477 B
+=========================== short test summary info ===========================
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_caller_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_official_control_path_also_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_missing_fix1_is_loud_not_a_silent_fallback
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/tests/test_score_navtest6_fix1.py::test_caller_source_names_fix1_once_and_no_direct_run_v1_exec
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_caller_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_official_control_path_also_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_missing_fix1_is_loud_not_a_silent_fallback
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_caller_source_names_fix1_once_and_no_direct_run_v1_exec
+FAILED colab/navtest/test_linux_run_v1_fix1.py::test_score_runs_through_fix1
+FAILED colab/navtest/test_linux_run_v1_fix1.py::test_cache_runs_through_the_fix1_module_too
+FAILED colab/navtest/test_linux_run_v1_fix1.py::test_missing_fix1_is_loud_not_a_silent_fallback
+FAILED colab/navtest/test_linux_run_v1_fix1.py::test_launcher_source_names_fix1_once_and_no_direct_run_v1_exec
+FAILED colab/navtest/test_linux_run_v1_fix1.py::test_real_w3_pair_loads_pinned_and_patched
+FAILED colab/navtest/test_pack_code_fix1.py::test_bundle_carries_run_v1_fix1_beside_run_v1
+FAILED colab/navtest/test_pack_code_fix1.py::test_missing_run_v1_fix1_stops_the_packer
+FAILED colab/navtest/test_pack_code_fix1.py::test_chain_pack_extract_load_w3_reaches_the_patched_module
+16 failed, 1 passed in 1.36s
+rc=1

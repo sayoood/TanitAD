@@ -1,0 +1,52 @@
+# F5 evidence - the full stack/tests suite, 2026-09-18
+
+## RUN 1 - venv default imports (NO PYTHONPATH)
+# the editable tanitad install resolves to the G: mount; this run is NOT admissible
+# about the D: clone and is kept only to show WHY the pin is required.
+
+=================================== ERRORS ====================================
+_________ ERROR collecting tests/test_rl_gt_bar_reaches_the_caller.py _________
+ImportError while importing test module 'D:\Projects\TanitAD\stack\tests\test_rl_gt_bar_reaches_the_caller.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_rl_gt_bar_reaches_the_caller.py:48: in <module>
+    from tanitad.rl.posttrain import rl_objective, run_posttrain, score_gt_bar
+E   ImportError: cannot import name 'score_gt_bar' from 'tanitad.rl.posttrain' (G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\rl\posttrain.py)
+=========================== short test summary info ===========================
+ERROR stack\tests\test_rl_gt_bar_reaches_the_caller.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 72.33s (0:01:12)
+PYTEST_RC=2
+
+## RUN 2 - PYTHONPATH=D:/Projects/TanitAD/stack (the admissible one)
+
+=================================== ERRORS ====================================
+____________ ERROR collecting tests/test_metric_decode_refusal.py _____________
+ImportError while importing test module 'D:\Projects\TanitAD\stack\tests\test_metric_decode_refusal.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_metric_decode_refusal.py:34: in <module>
+    from tanitad.models.v6 import (UntrainedMetricReadout,
+E   ImportError: cannot import name 'UntrainedMetricReadout' from 'tanitad.models.v6' (D:\Projects\TanitAD\stack\tanitad\models\v6.py)
+_______________ ERROR collecting tests/test_refa_v1_dk_hook.py ________________
+ImportError while importing test module 'D:\Projects\TanitAD\stack\tests\test_refa_v1_dk_hook.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stack\tests\test_refa_v1_dk_hook.py:26: in <module>
+    from tanitad.refs.refa_v1 import (DistanceKeepingSpec, RefAV1, RefAV1Config,
+E   ImportError: cannot import name 'DistanceKeepingSpec' from 'tanitad.refs.refa_v1' (D:\Projects\TanitAD\stack\tanitad\refs\refa_v1.py)
+=========================== short test summary info ===========================
+ERROR stack\tests\test_metric_decode_refusal.py
+ERROR stack\tests\test_refa_v1_dk_hook.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!
+2 errors in 160.06s (0:02:40)
+PYTEST_RC=2

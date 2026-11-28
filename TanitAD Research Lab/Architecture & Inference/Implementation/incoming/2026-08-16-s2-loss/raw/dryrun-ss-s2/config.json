@@ -1,0 +1,429 @@
+{
+ "run": "v6-staged-S-S",
+ "stage": "S-S",
+ "trainable_groups": [
+  "layer_str"
+ ],
+ "module_groups": [
+  "encoder",
+  "readout",
+  "predictor_op",
+  "layer_tac",
+  "layer_str",
+  "planner",
+  "aux"
+ ],
+ "v6_config": {
+  "d_tac": 32,
+  "d_str": 16,
+  "hz_op": 10.0,
+  "hz_tac": 2.0,
+  "hz_str": 0.5,
+  "shared_encoder": true,
+  "vit5_encoder": false,
+  "n_registers": 4,
+  "adapter_hidden": 32,
+  "plan_steps": 60,
+  "dt": 0.1,
+  "op_band_s": [
+   0.0,
+   2.0
+  ],
+  "tac_band_s": [
+   2.0,
+   6.0
+  ],
+  "n_candidates": 3,
+  "a_max": 4.0,
+  "kappa_max": 0.2,
+  "emission_hidden": 256,
+  "emission_squash": "squash",
+  "d_plan_feat": 256,
+  "selector": "none",
+  "selector_tau_m": 1.0,
+  "selector_mlp_hidden": 256,
+  "plan_wta_eps": 0.0,
+  "goal_factored": false,
+  "goal_multilabel": false,
+  "goal_cat_args": false,
+  "anchor_goal": "none",
+  "n_anchors": 256,
+  "n_lat_bins": 16,
+  "n_agent_slots": 8,
+  "tac_goal_cond": false,
+  "proposals": "query",
+  "diffusion_steps": 4,
+  "diffusion_noise_rho": 0.9,
+  "diffusion_hidden": 256,
+  "diffusion_sigma_a": 2.0,
+  "diffusion_sigma_k": 0.1,
+  "mpc_refine": false,
+  "mpc_topk": 2,
+  "mpc_steps": 3,
+  "mpc_lr": 0.05,
+  "mpc_roll_k": 0,
+  "mpc_w_goal": 1.0,
+  "mpc_w_kin": 0.1,
+  "mpc_w_consist": 0.0,
+  "fallback_trigger": false,
+  "fallback_roll_k": 10,
+  "d_goal_embed": 16,
+  "isolate_planner_from_encoder": true,
+  "isolate_uplink": true,
+  "uplink": "stopgrad",
+  "ema_decay": 0.996,
+  "encoder": {
+   "in_channels": 3,
+   "image_size": 32,
+   "patch_size": 16,
+   "d_model": 32,
+   "depth": 1,
+   "n_heads": 2,
+   "grad_checkpoint": false,
+   "image_width": 32
+  },
+  "readout": {
+   "grid": 4,
+   "d_readout": 8,
+   "grid_w": null
+  },
+  "predictor": {
+   "d_model": 32,
+   "depth": 1,
+   "n_heads": 2,
+   "window": 4,
+   "horizons": [
+    1,
+    2
+   ],
+   "action_dim": 3,
+   "residual": true,
+   "change_weighted": true,
+   "modern": false
+  },
+  "f_hidden_tac": 512,
+  "f_hidden_str": 512,
+  "f_blocks": 3,
+  "aux_hidden": 256,
+  "sigreg_slices": 8,
+  "sigreg_beta": 1.0,
+  "sigreg_free_dims": 0,
+  "param_budget": 300000000,
+  "_derived": {
+   "d_op": 128,
+   "horizon_s": 6.0,
+   "grid_shape": [
+    4,
+    4
+   ],
+   "n_cells": 16,
+   "stride_tac": 5,
+   "stride_str": 20,
+   "op_band_steps": [
+    0,
+    20
+   ],
+   "tac_band_steps": [
+    20,
+    60
+   ]
+  }
+ },
+ "loss_weights": {
+  "o1_ctrl": 1.0,
+  "o1_fact": 1.0,
+  "o1_scene": 0.3,
+  "o2_nearfield": 1.0,
+  "o3_masked": 1.0,
+  "o5_rollout": 1.0,
+  "o6_sigreg": 0.1,
+  "t1_latent": 1.0,
+  "s1_latent": 1.0,
+  "lambda_plan": 0.0,
+  "seam_op": 1.0,
+  "w_select": 0.0,
+  "w_anchor": 0.0,
+  "w_s2_goal": 1.0
+ },
+ "loss_weights_in_force": {
+  "o1_ctrl": 0.0,
+  "o1_fact": 0.0,
+  "o1_scene": 0.0,
+  "o2_nearfield": 0.0,
+  "o3_masked": 0.0,
+  "o5_rollout": 0.0,
+  "o6_sigreg": 0.0,
+  "t1_latent": 0.0,
+  "s1_latent": 1.0,
+  "lambda_plan": 0.0,
+  "seam_op": 0.0,
+  "w_select": 0.0,
+  "w_anchor": 0.0,
+  "w_s2_goal": 1.0
+ },
+ "freeze": {
+  "stage": "S-S",
+  "trainable_groups": [
+   "layer_str"
+  ],
+  "per_group": {
+   "encoder": {
+    "trainable": 0,
+    "frozen": 37504
+   },
+   "readout": {
+    "trainable": 0,
+    "frozen": 264
+   },
+   "predictor_op": {
+    "trainable": 0,
+    "frozen": 166531
+   },
+   "layer_tac": {
+    "trainable": 0,
+    "frozen": 3447597
+   },
+   "layer_str": {
+    "trainable": 3329521,
+    "frozen": 0
+   },
+   "planner": {
+    "trainable": 0,
+    "frozen": 135320
+   },
+   "aux": {
+    "trainable": 0,
+    "frozen": 1588232
+   }
+  },
+  "n_trainable": 3329521,
+  "n_frozen": 5375448,
+  "shared_goal_tables": {
+   "vocab_tac": {
+    "table": "vocab_tac.table.weight",
+    "emitted_by": "goal_head_tac (layer_tac)",
+    "consumed_by": "cond_op (planner)",
+    "group": "layer_tac"
+   },
+   "vocab_str": {
+    "table": "vocab_str.table.weight",
+    "emitted_by": "goal_head_str (layer_str)",
+    "consumed_by": "cond_tac (layer_tac)",
+    "group": "layer_str"
+   }
+  },
+  "_note": "a shared goal table moves whenever EITHER of its two views is trainable (HIERARCHY_VOCABULARY \u00a75)"
+ },
+ "param_report": {
+  "total": 8704969,
+  "budget": 300000000,
+  "within_budget": true,
+  "headroom": 291295031,
+  "per_group": {
+   "encoder": 37504,
+   "readout": 264,
+   "predictor_op": 166531,
+   "layer_tac": 3447597,
+   "layer_str": 3329521,
+   "planner": 135320,
+   "aux": 1588232
+  },
+  "trainable": 3329521,
+  "arm": "shared-encoder+adapters",
+  "d_op": 128,
+  "d_tac": 32,
+  "d_str": 16,
+  "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths",
+  "_evidence_class": "MEASURED (ours; count at instantiation)"
+ },
+ "args": {
+  "stage": "S-S",
+  "out": "../TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-16-s2-loss/raw/dryrun-ss-s2",
+  "prev_gate": null,
+  "allow_inconclusive_gate": false,
+  "gate_off_reason": "",
+  "resume": "auto",
+  "force_rerun": false,
+  "init_from": null,
+  "gate_probes": null,
+  "in_channels": 3,
+  "frame_h": 32,
+  "frame_w": 32,
+  "patch": 16,
+  "enc_dim": 32,
+  "enc_depth": 1,
+  "enc_heads": 2,
+  "grad_checkpoint": false,
+  "enc_grad_checkpoint": "auto",
+  "rollout_grad_checkpoint": "auto",
+  "readout_grid": 4,
+  "readout_grid_w": null,
+  "readout_dim": 8,
+  "pred_modern": false,
+  "pred_dim": 32,
+  "pred_depth": 1,
+  "pred_heads": 2,
+  "window": 4,
+  "horizons": [
+   1,
+   2
+  ],
+  "d_tac": 32,
+  "d_str": 16,
+  "d_goal_embed": 16,
+  "adapter_hidden": 32,
+  "n_candidates": 3,
+  "param_budget": 300000000,
+  "selector": "none",
+  "selector_tau_m": 1.0,
+  "selector_mlp_hidden": 256,
+  "plan_wta_eps": 0.0,
+  "proposals": "query",
+  "diffusion_steps": 4,
+  "diffusion_noise_rho": 0.9,
+  "diffusion_hidden": 256,
+  "diffusion_sigma_a": 2.0,
+  "diffusion_sigma_k": 0.1,
+  "mpc_refine": false,
+  "mpc_topk": 2,
+  "mpc_steps": 3,
+  "mpc_lr": 0.05,
+  "mpc_roll_k": 0,
+  "mpc_w_goal": 1.0,
+  "mpc_w_kin": 0.1,
+  "mpc_w_consist": 0.0,
+  "fallback_trigger": false,
+  "fallback_roll_k": 10,
+  "fallback_calibration": null,
+  "goal_factored": false,
+  "goal_multilabel": false,
+  "goal_cat_args": false,
+  "tac_goal_cond": false,
+  "anchor_goal": "none",
+  "anchor_table": null,
+  "n_anchors": 256,
+  "n_lat_bins": 16,
+  "n_agent_slots": 8,
+  "w_anchor": 0.0,
+  "anchor_objective": "metric",
+  "anchor_axis_w": [
+   1.0,
+   1.0
+  ],
+  "w_select": 0.0,
+  "f_hidden_tac": 512,
+  "f_hidden_str": 512,
+  "f_blocks": 3,
+  "vit5_encoder": false,
+  "n_registers": 4,
+  "per_layer_encoders": false,
+  "plan_steps": 60,
+  "dt": 0.1,
+  "a_max": 4.0,
+  "kappa_max": 0.2,
+  "no_isolate_planner": false,
+  "no_isolate_uplink": false,
+  "uplink": "stopgrad",
+  "ema_decay": 0.996,
+  "o1_k": 10,
+  "w_o1_ctrl": 1.0,
+  "w_o1_fact": 1.0,
+  "w_o1_scene": 0.3,
+  "dkappa": 0.02,
+  "daccel": 2.0,
+  "rand_dkappa_max": 0.05,
+  "rand_daccel_max": 3.0,
+  "w_o2": 1.0,
+  "o2_tau_s": 2.0,
+  "w_o3": 1.0,
+  "o3_mode": "action",
+  "o3_blocks": 2,
+  "o3_block_h": 2,
+  "o3_block_w": 2,
+  "o3_band_rows": 0,
+  "o4_alpha": 1.0,
+  "o4_floor": 0.25,
+  "w_o5": 1.0,
+  "o5_k": 20,
+  "o5_mode": "uniform",
+  "w_o6": 0.1,
+  "sigreg_slices": 8,
+  "sigreg_free_dims": 0,
+  "spectrum_every": 200,
+  "spectrum_accum": 1,
+  "spectrum_ci_reps": 0,
+  "x4_spectrum_layers": "tac,str",
+  "w_t1": 1.0,
+  "w_s1": 1.0,
+  "w_s2_goal": 1.0,
+  "s2_labels": "../TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-s2-v1-labels/labels",
+  "lambda_plan": null,
+  "v2_cache": [],
+  "v2_val_cache": [],
+  "v2_lru": 64,
+  "v2_subframe": null,
+  "frame_hfov": 120.0,
+  "projection": "cylindrical",
+  "require_parity": true,
+  "eps_per_batch": 4,
+  "max_horizon": null,
+  "steps": 30000,
+  "batch": 16,
+  "lr": 0.0001,
+  "wd": 0.05,
+  "clip": 1.0,
+  "log_every": 50,
+  "save_every": 1000,
+  "device": "cuda",
+  "no_amp": false,
+  "seed": 0,
+  "dry_run": true,
+  "dry_steps": 2,
+  "dry_batch": 3,
+  "dry_k": 12,
+  "print_launch": false,
+  "control_arm_ack": false
+ },
+ "horizon_spec": {
+  "plan_steps": 60,
+  "dt": 0.1,
+  "horizon_s": 6.0,
+  "op_band_s": [
+   0.0,
+   2.0
+  ],
+  "tac_band_s": [
+   2.0,
+   6.0
+  ],
+  "_binding": "HIERARCHY_VOCABULARY.md \u00a74b \u2014 ONE 60-step (a, \u03ba)@10 Hz unicycle rollout 0\u21926 s; bands are SLICES of it"
+ },
+ "gate_spec": {
+  "required": [
+   "STRATEGIC_family",
+   "sel_gap_revalidated",
+   "TACTICAL_revalidated"
+  ],
+  "reported": [
+   "S1_ade_8_30s",
+   "X2_seam",
+   "goal_provenance"
+  ],
+  "owners": {
+   "STRATEGIC_family": "taniteval/tools/eval_four_families.py",
+   "S1_ade_8_30s": "taniteval/tools/t1_eval.py",
+   "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)",
+   "goal_provenance": "config-audit over the S-S run config + S2 label artifacts (instrument to build \u2014 see DIAGRAM_CONFORMANCE.md, 2026-08-16)",
+   "sel_gap_revalidated": "tanitad.models.tactical.sel_gap_tac (RE-RUN under the post-S-S g_tac)",
+   "TACTICAL_revalidated": "taniteval/tools/eval_four_families.py (RE-RUN under the post-S-S g_tac)"
+  },
+  "criteria": {
+   "STRATEGIC_family": "computable at all (measured vs n/a today)",
+   "S1_ade_8_30s": "beats CV/corridor baselines at T1",
+   "sel_gap_revalidated": "still <= 0.5x the fan oracle AFTER S-S moved e_g_tac \u2014 the same bar S-T passed, re-measured on the new input distribution. PAIRED bootstrap vs the S-T reading.",
+   "TACTICAL_revalidated": "TACTICAL family does not regress vs its S-T reading (paired episode-cluster bootstrap, same windows)"
+  }
+ },
+ "tier": "training-side config; capability claims are T1 only (EVAL_DOCTRINE.md)",
+ "_evidence_class": "MEASURED (ours; this run's own configuration)"
+}

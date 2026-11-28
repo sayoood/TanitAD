@@ -1,0 +1,13 @@
+  RED  the gate looks at S alone (the old gate)  ->  12 case(s) flip: PASS_with_inputs_not_an_object, fail_edited_to_PASS, forged_stamp_no_inputs, hand_written_S_PASS, input_missing_rlval, input_missing_scores, input_modified_after_read, reader_not_on_disk, record_copie
+  RED  `tool` is not compared  ->  1 case(s) flip: tool_changed_stamp_recomputed
+  RED  record_sha256 is not recomputed  ->  1 case(s) flip: fail_edited_to_PASS
+  RED  the listed input sha256s are not compared  ->  4 case(s) flip: input_modified_after_read, record_copied_into_another_arms_dir, scores_modified_after_read, verification_raises
+  RED  a missing input file is tolerated  ->  2 case(s) flip: input_missing_rlval, input_missing_scores
+  RED  the inputs every PASS read has are not demanded  ->  1 case(s) flip: forged_stamp_no_inputs
+  RED  an exception while verifying opens the gate  ->  1 case(s) flip: verification_raises
+  RED  a reader that cannot be loaded opens the gate  ->  1 case(s) flip: reader_not_on_disk
+  RED  S is judged by `== FAIL` instead of `!= PASS`  ->  2 case(s) flip: PASS_with_a_trailing_space, genuine_NOT_READ_record
+  RED  the gate keeps its OWN canonicalisation and it has drifted (default separators)  ->  2 case(s) flip: genuine_pass, genuine_pass_both_arms
+  RED  the READER's canonicalisation changes (the gate follows it: one definition)  ->  2 case(s) flip: genuine_pass, genuine_pass_both_arms
+  RED  the reader no longer names its REQUIRED_INPUTS  ->  1 case(s) flip: forged_stamp_no_inputs
+ZZTEST_PASS 70  (22 cases x (in-process + CLI) on the real gate, 4 end-to-end checks, 12 mutations of the gate / reader that must flip exactly their cases, 7 fixture/pin checks)

@@ -1,0 +1,22 @@
+{
+ "id": "R8-WISEFT-GATEP",
+ "filed": "2026-10-21 16:35 Europe/Berlin (clock read 16:33:55), BEFORE any path-preserving composite is built or scored on any split and before the theta_0.5 navtest PDMS verdict exists",
+ "status": "PRE-REGISTERED lever test; never a bar; changes no registered verdict",
+ "why": "R8-WISEFT-GATE-PAI (53074560) read WORSE: the arc gate costs LATERAL skill on PhysicalAI because it swaps the model's path for a constant-curvature prior on ~23 % of windows. Rule Zero's next arm: keep theta_0.5's PATH and take only the prior's PROGRESS where the gate fires.",
+ "arms": {
+  "GP_PRIORPROG": "where the arc gate fires (|ln(arc4(theta_0.5 plan) / max(arc4(PRIOR), 0.05))| > 0.1368, the fixed constant of R8-GATE-NAVTEST): theta_0.5's PATH driven at the PRIOR's progress s' = M; else theta_0.5's plan unchanged",
+  "GP_MINPROG": "where the gate fires: theta_0.5's PATH driven at s' = min(L, M) (never faster than the prior); else theta_0.5's plan unchanged",
+  "geometry": "retime_stage.py's own polyline_geometry / eval_polyline / prior_arc (the shipped re-timing stage; R8PATH_PRIORPROG / R8PATH_MINPROG of build_lever_seams.py are the same constructions applied to EVERY token). NavSim: in model-knot space (8 knots at 0.5..6 s) from the bridge rows' emitted knots and emitted prior, then knots_to_navsim (E2's verbatim port) to the 8 NavSim poses; the gate decision on the NavSim poses as r8_gate_eval.py. PhysicalAI S6: on the dump's 1..6 s points (the decision on the 4 s arc, as R8-WISEFT-GATE-PAI).",
+  "seeds": "seed 1 uses theta_0.5 R8_LEGAL_s1 (and the same prior)"
+ },
+ "stage_A_navtrain_selection": "arm X admissible iff GP_X - theta_0.5 > 0 with the paired log-cluster interval excluding 0 (log_name; 7 drives < 8) at BOTH seeds and margin > 2 x |d_s0 - d_s1| (navtrain sample 2,089 tokens, scored on Thor CPU by navtrain_cache_score.py, the selection run's scorer).",
+ "stage_P_physicalai_cost": "on the per-frame battery's S6 dumps of theta_0.5 vs the SHIPPED EMA-48,852 (139 episodes / 3,668 windows): per family component GP_X - os_48852 at the same seed (paired episode-cluster bootstrap); PARITY-OR-BETTER iff no component is separated-worse at BOTH seeds (the R8-WISEFT-GATE-PAI rule unchanged).",
+ "selection": "X* = the arm that is BOTH stage-A admissible AND stage-P PARITY-OR-BETTER, highest mean navtrain PDMS. None ⇒ stated; no navtest read; the next lever is training-side.",
+ "stage_B_navtest_once": "GP_X* built from theta_0.5's navtest bridge rows (R8-WISEFT stage 2's roll; no new roll) and scored on Thor CPU once. WORKS iff GP_X* - theta_0.5 > 0 AND GP_X* - PRIOR > 0, each with the interval excluding 0 at log_name AND nuplan_drive, at BOTH seeds, margin > 2 x floor; FAILED if either point <= 0 at either seed; else NOT PROVEN. Beside: vs GW_ARC(theta_0.5) (R8-WISEFT-GATE stage B), G_ARC(EMA-48,852) 65.52, STOP 61.82, refcv7 70.20; the four families paired.",
+ "controls": ["knots_to_navsim(theta_0.5 knots) reproduces the banked theta_0.5 seam poses", "prior knots -> poses reproduce the banked PRIOR seam poses", "a never-firing gate returns theta_0.5's plan bit-exact", "an always-firing GP_PRIORPROG equals R8PATH_PRIORPROG's formula (retime_positions(geo, M, g=0)) bit-exact", "PhysicalAI: trees aligned, self-pair 0, GT-as-prediction 0 / 1"],
+ "committed": {
+  "WORKS_and_PARITY": "GP_X* is a candidate SINGLE planner for both benchmarks: a NavSim gain over theta_0.5 and the prior with no measured PhysicalAI family cost vs the shipped refcv8. It still needs its own registered SHIP-R8 read before it can replace the deliverable (design filed then), and the PI decides.",
+  "otherwise": "the path-preserving gate does not deliver both; the next lever is training-side (R8-WISEFT-MOD names what to protect)"
+ },
+ "caveats": ["NavSim v1 open loop; PhysicalAI open loop on logged frames", "one training seed", "the arc threshold is a transferred constant", "the PhysicalAI composite is built on 1 s points, the NavSim one on model knots"]
+}

@@ -1,0 +1,176 @@
+{
+ "tool": "refe/test_s1c.py reachability",
+ "checks_passed": 241,
+ "evidence": {
+  "positive_runs": {
+   "u10k": {
+    "requested": {
+     "max_updates": 50,
+     "batch": 2,
+     "accum": 1,
+     "eval_every": 25
+    },
+    "start_event": {
+     "updates": 50,
+     "micro_per_update": 1,
+     "batch": 2,
+     "train_sets": 100
+    },
+    "done_updates": 50,
+    "last_train_row": {
+     "update": 50,
+     "of": 50,
+     "lr": 0.0,
+     "aux_lr": 2.141076761396521e-07,
+     "aux_bce": 0.23703669607639313
+    },
+    "first_train_row_aux_bce": 0.3067146104574203,
+    "head_adam_steps": [
+     50
+    ],
+    "head_tensors": 43,
+    "head_tensors_with_adam_state": 43,
+    "eval_tags": [
+     "step0",
+     "update25",
+     "update50"
+    ],
+    "aux_eval_tags": [
+     "step0",
+     "update25",
+     "update50"
+    ],
+    "G12_per_group_grad_abs_declared": {
+     "q": 1.8964568376541138,
+     "pos_mlp": 7.5217427015304565,
+     "blocks.0": 480.8834427134316,
+     "blocks.1": 484.5634496003995,
+     "norm": 1.0076887607574463,
+     "out": 16.020914256572723
+    },
+    "G12_per_group_grad_abs_weight0_control": {
+     "q": 0.0,
+     "pos_mlp": 0.0,
+     "blocks.0": 0.0,
+     "blocks.1": 0.0,
+     "norm": 0.0,
+     "out": 0.0
+    },
+    "G12_adam_head_params_with_state": [
+     43,
+     43
+    ]
+   },
+   "u2k": {
+    "requested": {
+     "max_updates": 50,
+     "batch": 2,
+     "accum": 2,
+     "eval_every": 25
+    },
+    "start_event": {
+     "updates": 50,
+     "micro_per_update": 2,
+     "batch": 2,
+     "train_sets": 100
+    },
+    "done_updates": 50,
+    "last_train_row": {
+     "update": 50,
+     "of": 50,
+     "lr": 0.0,
+     "aux_lr": 2.141076761396521e-07,
+     "aux_bce": 0.21911667108535768
+    },
+    "first_train_row_aux_bce": 0.3041315656900406,
+    "head_adam_steps": [
+     50
+    ],
+    "head_tensors": 43,
+    "head_tensors_with_adam_state": 43,
+    "eval_tags": [
+     "step0",
+     "update25",
+     "update50"
+    ],
+    "aux_eval_tags": [
+     "step0",
+     "update25",
+     "update50"
+    ],
+    "G12_per_group_grad_abs_declared": {
+     "q": 1.8964568376541138,
+     "pos_mlp": 7.5217427015304565,
+     "blocks.0": 480.8834427134316,
+     "blocks.1": 484.5634496003995,
+     "norm": 1.0076887607574463,
+     "out": 16.020914256572723
+    },
+    "G12_per_group_grad_abs_weight0_control": {
+     "q": 0.0,
+     "pos_mlp": 0.0,
+     "blocks.0": 0.0,
+     "blocks.1": 0.0,
+     "norm": 0.0,
+     "out": 0.0
+    },
+    "G12_adam_head_params_with_state": [
+     43,
+     43
+    ]
+   }
+  },
+  "mutants": {
+   "control_unmutated": [],
+   "max_updates_not_honoured": [
+    "start event [(50, 1, 2)] != (25, 1, 2)",
+    "done event [50] != 25",
+    "last train row (50, 50) != (25, 25)",
+    "aux_drv.pt saved at update 50 != 25",
+    "head Adam: steps [50] on 43 of 43 parameters, want {25} on all"
+   ],
+   "epochs_too_small_TL1": [
+    "start event [(10, 1, 2)] != (25, 1, 2)",
+    "done event [10] != 25",
+    "last train row None != (25, 25)",
+    "eval tags ['step0', 'update10'] lack ['update25']",
+    "aux_eval tags lack ['update25']",
+    "aux_drv.pt saved at update 10 != 25",
+    "head Adam: steps [10] on 43 of 43 parameters, want {25} on all"
+   ],
+   "schedule_does_not_end_at_N": [
+    "the schedule did not END at update 25: lr 0.0005327015646150717 aux_lr 0.0001130526192220052"
+   ],
+   "head_optimiser_never_steps": [
+    "head Adam: steps [] on 0 of 43 parameters, want {25} on all",
+    "43 head tensors never moved: ['q', 'pos_mlp.weight', 'pos_mlp.bias', 'blocks.0.n1.weight']"
+   ],
+   "REFE_AUX_MUTATE_DROP_LOSS": {
+    "preflight_rc": 3,
+    "PREFLIGHT_PASS_written": false,
+    "G12_ok": false,
+    "G12_per_group_declared": {
+     "q": 0.0,
+     "pos_mlp": 0.0,
+     "blocks.0": 0.0,
+     "blocks.1": 0.0,
+     "norm": 0.0,
+     "out": 0.0
+    }
+   },
+   "REFE_AUX_MUTATE_DETACH_HEAD": {
+    "preflight_rc": 3,
+    "PREFLIGHT_PASS_written": false,
+    "G12_ok": false,
+    "G12_per_group_declared": {
+     "q": 0.0,
+     "pos_mlp": 0.0,
+     "blocks.0": 0.0,
+     "blocks.1": 0.0,
+     "norm": 0.0,
+     "out": 0.0
+    }
+   }
+  }
+ }
+}

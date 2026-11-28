@@ -1,0 +1,100 @@
+{
+ "arm": "UE_s1",
+ "stage": "A",
+ "token": "/root/dscale10k/gate/tokens/UE_s1.A/gate_token.json",
+ "problems": [],
+ "body_sha256": "7aa9f31c873bab681d1872ff089bcebb5526ca96722bac1ae8d0095e591883cd",
+ "bound_data": [
+  "--join-train",
+  "--lead-train",
+  "--p10",
+  "--speed-train",
+  "--tracks",
+  "--union-release",
+  "--v9-train",
+  "cache/train/manifest.jsonl",
+  "dry_record",
+  "evidence",
+  "merge_record",
+  "tenk_v9"
+ ],
+ "required_checks": [
+  "C-ARGV",
+  "C-CHUNK",
+  "C-DISJ",
+  "C-HOLD",
+  "C-JOIN-EQ",
+  "C-MASK",
+  "C-MD5",
+  "C-MERGE",
+  "C-NCLIPS",
+  "C-STEPS",
+  "C-TRAIN-SHA",
+  "G-CKPT",
+  "G-CLOCK",
+  "G-EVAL",
+  "G-HYG",
+  "G-LIVE",
+  "G-SUITE"
+ ],
+ "checks_pass": {
+  "C-ARGV": true,
+  "C-CHUNK": true,
+  "C-DISJ": true,
+  "C-HOLD": true,
+  "C-INIT": true,
+  "C-JOIN-EQ": true,
+  "C-MASK": true,
+  "C-MD5": true,
+  "C-MERGE": true,
+  "C-NCLIPS": true,
+  "C-STEPS": true,
+  "C-TRAIN-SHA": true,
+  "G-CKPT": true,
+  "G-CLOCK": true,
+  "G-EVAL": true,
+  "G-HYG": true,
+  "G-LIVE": true,
+  "G-SUITE": true
+ },
+ "regression": [
+  {
+   "arm": "token_body_edited",
+   "red": true,
+   "problems": [
+    "token body was edited (body_sha256)",
+    "token checks not PASS: ['G-LIVE']"
+   ]
+  },
+  {
+   "arm": "argv_one_flag_added",
+   "red": true,
+   "problems": [
+    "token argv_sha256 differs from the current argv_sha256"
+   ]
+  },
+  {
+   "arm": "argv_seed_changed_to_0",
+   "red": true,
+   "problems": [
+    "token argv_sha256 differs from the current argv_sha256"
+   ]
+  },
+  {
+   "arm": "other_commit",
+   "red": true,
+   "problems": [
+    "token commit differs from the current commit"
+   ]
+  },
+  {
+   "arm": "runner_without_the_bound_extra_files",
+   "red": true,
+   "problems": [
+    "token data --union-release differs from the current file",
+    "token data dry_record differs from the current file"
+   ]
+  }
+ ],
+ "pass": true
+}

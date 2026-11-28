@@ -1,0 +1,237 @@
+{
+ "arm_family": "v7-tiny (mm-e19-assets-20260901)",
+ "stage": "S-W",
+ "lr": 0.0001,
+ "wd": 0.05,
+ "steps": 30000,
+ "n": 25,
+ "A_stage_freeze": 20,
+ "B_objective_guarded_off": 5,
+ "rows": [
+  {
+   "name": "vocab_str.norm.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "vocab_tac.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "vocab_a_str.norm.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "vocab_a_lat.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "vocab_a_lon.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "step_readout_op.net.0.weight",
+   "group": "predictor_op",
+   "requires_grad": true,
+   "in_optimizer": true,
+   "grad_is_None": true,
+   "mechanism": "B_OBJECTIVE_GUARDED_OFF",
+   "evidence": "measured"
+  },
+  {
+   "name": "cond_op.vocab.norm.weight",
+   "group": "planner",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "adapter_tac.3.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "predictor_tac.blocks.0.0.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "predictor_tac.blocks.1.0.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "predictor_tac.blocks.2.0.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "cond_tac.vocab.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "goal_head_tac.vocab.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "act_head_lat.vocab.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "act_head_lon.vocab.norm.weight",
+   "group": "layer_tac",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "adapter_str.3.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "predictor_str.blocks.0.0.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "predictor_str.blocks.1.0.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "predictor_str.blocks.2.0.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "measured"
+  },
+  {
+   "name": "goal_head_str.vocab.norm.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "act_head_str.vocab.norm.weight",
+   "group": "layer_str",
+   "requires_grad": false,
+   "in_optimizer": false,
+   "grad_is_None": true,
+   "mechanism": "A_STAGE_FREEZE",
+   "evidence": "group_of+stage funnel"
+  },
+  {
+   "name": "masked_cells.blocks.layers.0.norm1.weight",
+   "group": "aux",
+   "requires_grad": true,
+   "in_optimizer": true,
+   "grad_is_None": true,
+   "mechanism": "B_OBJECTIVE_GUARDED_OFF",
+   "evidence": "measured"
+  },
+  {
+   "name": "masked_cells.blocks.layers.0.norm2.weight",
+   "group": "aux",
+   "requires_grad": true,
+   "in_optimizer": true,
+   "grad_is_None": true,
+   "mechanism": "B_OBJECTIVE_GUARDED_OFF",
+   "evidence": "measured"
+  },
+  {
+   "name": "masked_cells.blocks.layers.1.norm1.weight",
+   "group": "aux",
+   "requires_grad": true,
+   "in_optimizer": true,
+   "grad_is_None": true,
+   "mechanism": "B_OBJECTIVE_GUARDED_OFF",
+   "evidence": "measured"
+  },
+  {
+   "name": "masked_cells.blocks.layers.1.norm2.weight",
+   "group": "aux",
+   "requires_grad": true,
+   "in_optimizer": true,
+   "grad_is_None": true,
+   "mechanism": "B_OBJECTIVE_GUARDED_OFF",
+   "evidence": "measured"
+  }
+ ]
+}

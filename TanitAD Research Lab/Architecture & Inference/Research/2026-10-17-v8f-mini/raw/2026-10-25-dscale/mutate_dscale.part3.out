@@ -1,0 +1,18 @@
+anchors OK: 16 mutants, every anchor occurs exactly once
+RED   v8f_mini_box2_queue.cmd: NAMED 2b: gatedscale drops --data-frac 0.5 [-k queue] -> 1 failed, 2 passed, 102 deselected in 8.58s  [test_queue_dscale_runs_the_command_it_prints_static]
+RED   v8f_mini_train.py: the budget's window list is built from the kept clips [-k reach] -> 1 failed, 1 passed, 104 deselected in 4.78s  [test_reach_the_trainer_hands_the_flag_to_select_train_clips_and_sizes_the_budget_from_all_clips_static]
+RED   v8f_mini_train.py: the summary does not record the data fraction [-k reach] -> 1 failed, 2 passed, 104 deselected, 1 warning in 18.06s  [test_reach_the_half_run_trains_on_the_half_and_every_batch_item_belongs_to_it]
+RED   v8f_mini_data.py: select_train_clips truncates instead of rounding [-k reach] -> 1 failed, 104 deselected in 2.34s  [test_reach_the_flag_selects_the_first_half_of_the_clips_in_sha12_order_and_the_subsets_nest]
+RED   v8f_mini_box2_queue.cmd: evaldscale evaluates B's run dir, not Q's [-k queue] -> 1 failed, 2 passed, 102 deselected in 2.24s  [test_queue_dscale_runs_the_command_it_prints_static]
+RED   v8f_mini_box2_queue.cmd: the E3 oracle loses its all-latcons flag [-k queue] -> 1 failed, 2 passed, 102 deselected in 2.25s  [test_queue_dscale_runs_the_command_it_prints_static]
+RED   chain_v8f_dscale.sh: gate: the built-fraction check is removed [-k chain] -> 1 failed, 3 passed, 104 deselected in 4.17s  [test_chain_dscale_gate_assertions_pass_the_q_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_dscale.sh: gate: the budget may be sized from another window set [-k chain] -> 1 failed, 3 passed, 104 deselected in 7.08s  [test_chain_dscale_gate_assertions_pass_the_q_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_dscale.sh: a seed-1 stage is added [-k chain] -> 1 failed, 104 deselected in 2.58s  [test_chain_dscale_static_ordering_the_wait_and_no_base_decision]
+RED   v8f_dscale_read.py: decide: EPOCH-LIMITED fires for r >= -bar [-k reader and not refuses] -> 1 failed, 94 deselected in 2.40s  [test_reader_decide_is_the_preregs_table_on_every_boundary]
+RED   v8f_dscale_read.py: D-T: r is computed the wrong way round [-k reader and not refuses] -> 1 failed, 1 passed, 94 deselected in 2.22s  [test_reader_dt_block_decides_on_the_slot_pooled_rmse_and_reports_the_window_weighted_one_beside_it]
+RED   v8f_dscale_read.py: the identity control no longer checks D-T [-k reader and not refuses] -> 1 failed, 12 passed, 94 deselected in 17.12s  [test_reader_check_inputs_stops_when_d_t_itself_does_not_read_exactly_zero_on_b_against_b]
+RED   v8f_dscale_read.py: the manifest is not checked against B's recorded list [-k reader and refuses] -> 1 failed, 70 passed, 39 deselected in 21.56s  [test_reader_refuses_a_manifest_that_is_not_b_s_list]
+RED   v8f_dscale_read.py: Q's clips are not compared with the half [-k reader and refuses] -> 1 failed, 24 passed, 39 deselected in 11.26s  [test_reader_refuses_rc2_with_the_reason[q clips are another list]]
+RED   v8f_dscale_read.py: the parameter groups are not compared [-k reader and refuses] -> 1 failed, 46 passed, 39 deselected in 16.11s  [test_reader_refuses_rc2_with_the_reason[q adapter group differs]]
+RED   v8f_dscale_read.py: Q's built hist is not checked [-k reader and refuses] -> 1 failed, 48 passed, 39 deselected in 16.25s  [test_reader_refuses_rc2_with_the_reason[q built hist 10]]
+16 / 16 mutations RED

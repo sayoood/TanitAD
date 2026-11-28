@@ -466,7 +466,7 @@ def assert_reference_aligned(r, refs, frames, ref_offset: int, k: int = 3,
 def git_sha(repo: Path) -> str:
     try:
         return subprocess.run(["git", "-C", str(repo), "rev-parse", "--short", "HEAD"],
-                              capture_output=True, text=True, timeout=20).stdout.strip()
+                              capture_output=True, text=True, encoding="utf-8", timeout=20).stdout.strip()
     except Exception:  # noqa: BLE001
         return "unknown"
 

@@ -1,0 +1,42 @@
+/home/nvidia/sam3vendor/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+model ready 11.3s; 2 clips to do, 0 already in the ledger, 0 given up
+Traceback (most recent call last):
+  File "/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: '<bogus-clip-id>'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/nvidia/sam3map/eval/sam3map_prod.py", line 305, in main
+    info = fut.result(); t_seq = time.time() - tc
+           ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/sam3map/eval/sam3map_prod.py", line 107, in build_sequence
+    c8 = clip[:8]; sha = sha12(clip); chunk = int(IDX.loc[clip, "chunk"])
+                                                  ~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/pandas/core/indexing.py", line 1199, in __getitem__
+    return self.obj._get_value(*key, takeable=self._takeable)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/pandas/core/frame.py", line 4495, in _get_value
+    row = self.index.get_loc(index)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nvidia/venvs/tanitad-edge/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: '<bogus-clip-id>'
+[1/2] 12b9377cbe7e None frames extract Nones  elapsed 11s
+[2/2] 41257700ce38 96 frames extract 160.4s  elapsed 180s
+ZZPROD-DONE 2 clips 241s

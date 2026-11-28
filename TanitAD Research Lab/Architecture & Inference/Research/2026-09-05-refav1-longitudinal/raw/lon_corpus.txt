@@ -1,0 +1,18 @@
+# dump: C:/Users/Admin/refav1_margin/p4out/dump_wk15   windows n=40  episodes=8
+# lat_names from manifest: None
+# lon_names from manifest: None
+
+== TABLE D. The corpus's own longitudinal demand over the 2.0 s plan window ==
+  v0 (m/s)               n= 40  min  +0.000  p10  +0.188  p25  +1.106  med  +4.856  p75  +7.773  p90 +10.711  max +14.967  mean|.|  5.207
+  a0 measured (m/s2)     n= 40  min  -2.310  p10  -1.408  p25  -0.572  med  -0.101  p75  +0.317  p90  +1.120  max  +1.870  mean|.|  0.722
+  GT dv over 2 s (m/s)   n= 40  min  -4.408  p10  -2.158  p25  -1.008  med  -0.158  p75  +1.054  p90  +2.342  max  +3.092  mean|.|  1.419
+  GT mean accel (m/s2)   n= 40  min  -2.383  p10  -1.135  p25  -0.537  med  -0.114  p75  +0.604  p90  +1.293  max  +1.590  mean|.|  0.765
+  ha0_ext dv over 2 s    n= 40  min  -4.621  p10  -2.816  p25  -1.145  med  -0.202  p75  +0.634  p90  +2.240  max  +3.741  mean|.|  1.443
+
+== TABLE E. v0 stratification - does ADAPT_SPEED_FOR_CURVE really mean a==0? ==
+# `ADAPT_SPEED_FOR_CURVE` -> v_t = min(v0, GOAL_CURVE_VMAX_MPS=8.0), so it is
+# a==0 ONLY while v0 <= 8.0 m/s. Above that it is a SUSTAINED BRAKE to 8 m/s.
+  windows with v0 <= 8.0 : 30 / 40  (75.0 %)
+  windows with v0 >  8.0 : 10 / 40  (25.0 %)
+
+# banked arrays -> lon_corpus_dump_wk15.npz

@@ -1,0 +1,47 @@
+gates {"n_frames": 64, "col4_init_abs_sum": 0.0, "G4_identity_yaw0": true, "G4_identity_yaw_nonzero": true, "G4_table_has_nonzero_yaw": true, "G5_gradabs_table": 2.1352570056915283, "G5_gradabs_zero_control": 0.0, "G4_pass": true, "G5_pass": true, "pass": true}
+ZZYAWFT_GATES_OK
+PASS G4 identity (zero-init column: yaw0 AND yaw!=0 decode == original u400, torch.equal)  [rc 0]
+PASS G5 reach (grad col4 > 0 with table; EXACTLY 0.0 with yaw=0)  [table 2.135 control 0.0]
+gates {"n_frames": 64, "col4_init_abs_sum": 19.210506439208984, "G4_identity_yaw0": true, "G4_identity_yaw_nonzero": false, "G4_table_has_nonzero_yaw": true, "G5_gradabs_table": 1.901220440864563, "G5_gradabs_zero_control": 0.0, "G4_pass": false, "G5_pass": true, "pass": false}
+ZZYAWFT_GATE_RED
+PASS RED-AS-REQUIRED G4: default random column left in place  [rc 3 identity_yaw_nonzero False]
+gates {"n_frames": 64, "col4_init_abs_sum": 0.0, "G4_identity_yaw0": true, "G4_identity_yaw_nonzero": true, "G4_table_has_nonzero_yaw": false, "G5_gradabs_table": 0.0, "G5_gradabs_zero_control": 0.0, "G4_pass": true, "G5_pass": false, "pass": false}
+ZZYAWFT_GATE_RED
+PASS RED-AS-REQUIRED G5: table loaded but not applied  [rc 3 grad_table 0.0]
+PASS RED-AS-REQUIRED G9: 2% of tokens missing from the table -> TableRefused  [TableRefused]
+gates {"n_frames": 64, "col4_init_abs_sum": 0.0, "G4_identity_yaw0": true, "G4_identity_yaw_nonzero": true, "G4_table_has_nonzero_yaw": true, "G5_gradabs_table": 2.1352570056915283, "G5_gradabs_zero_control": 0.0, "G4_pass": true, "G5_pass": true, "pass": true}
+step    1 loss 1.0505 |col4| 0.465 val 1.5079 (yaw0 1.5693) 0s
+step   11 loss 0.8264 |col4| 3.128 val 1.1729 (yaw0 1.5693) 2s
+step   21 loss 0.7499 |col4| 3.867 val 1.0551 (yaw0 1.5693) 4s
+step   24 loss 0.7808 |col4| 3.880 val 1.0536 (yaw0 1.5693) 4s
+ZZYAWFT_OK
+gates {"n_frames": 64, "col4_init_abs_sum": 0.0, "G4_identity_yaw0": true, "G4_identity_yaw_nonzero": true, "G4_table_has_nonzero_yaw": true, "G5_gradabs_table": 2.1352570056915283, "G5_gradabs_zero_control": 0.0, "G4_pass": true, "G5_pass": true, "pass": true}
+step    1 loss 1.0505 |col4| 0.000 val 1.5693 (yaw0 1.5693) 0s
+step   11 loss 1.1575 |col4| 0.000 val 1.5693 (yaw0 1.5693) 2s
+step   21 loss 1.1117 |col4| 0.000 val 1.5693 (yaw0 1.5693) 4s
+step   24 loss 1.1600 |col4| 0.000 val 1.5693 (yaw0 1.5693) 4s
+ZZYAWFT_OK
+PASS B trains (rc 0), col4 moved off zero  [|col4| 3.880]
+PASS C (yaw=0, same code/argv/seed/steps): col4 stays EXACTLY 0 and no tensor differs from u400  [changed []]
+PASS B changes only ego_enc.0.weight (R1)  [['ego_enc.0.weight']]
+PASS B differs from u400 ONLY in column 4 of ego_enc.0.weight
+PASS B uses the yaw: VAL loss with yaw < VAL loss with yaw zeroed (mechanism reaches the loss)  [1.0536 < 1.5693]
+PASS C is indifferent to yaw (VAL loss identical with/without)
+gates {"n_frames": 64, "col4_init_abs_sum": 0.0, "G4_identity_yaw0": true, "G4_identity_yaw_nonzero": true, "G4_table_has_nonzero_yaw": true, "G5_gradabs_table": 2.1352570056915283, "G5_gradabs_zero_control": 0.0, "G4_pass": true, "G5_pass": true, "pass": true}
+step    1 loss 1.0505 |col4| 0.465 val 1.5079 (yaw0 1.5693) 0s
+step   11 loss 0.8264 |col4| 3.128 val 1.1729 (yaw0 1.5693) 2s
+step   21 loss 0.7499 |col4| 3.867 val 1.0551 (yaw0 1.5693) 4s
+step   24 loss 0.7808 |col4| 3.880 val 1.0536 (yaw0 1.5693) 4s
+ZZYAWFT_OK
+PASS G8 determinism: B rerun (same seed) col4 torch.equal on CPU
+PASS B ckpt meta: ego_yaw/ego_yaw_scale/slot/table sha set
+PASS C ckpt meta carries NO ego_yaw keys; state_dict torch.equal to u400 (C == A0 bit for bit)
+PASS G-CKPT: trainer decode == decode of the composed checkpoint's own ego_enc (torch.equal)
+PASS RED-AS-REQUIRED K2: a tampered extra tensor (queries) in an R1 arm is detected  [['queries', 'ego_enc.0.weight']]
+PASS G7 YT shim: ego[4] == float32(meta scale 10 * table) exactly, the SAME arithmetic as yaw_ft.make_batch, other slots untouched
+PASS RED-AS-REQUIRED G7 YT shim REFUSES: token not in table
+PASS RED-AS-REQUIRED G7 YT shim REFUSES: non-zero incoming ego[4]
+
+19/19 checks as required
+ZZYF2_TESTS_OK
+rc=0

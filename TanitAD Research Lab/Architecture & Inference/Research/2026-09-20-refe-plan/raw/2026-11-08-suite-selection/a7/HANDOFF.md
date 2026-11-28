@@ -1,0 +1,11 @@
+# HANDOFF A7-IMPL (2026-11-08): AMENDMENT_7 NOT CONFIRMED. Nothing changed (no scorer, selector, pin or a6/ edit). CPU only, nothing staged or committed.
+
+## Measurement (MEASURE_090d6a17.json; script measure_a7.py; box-centre 10 Hz path, 171 ticks, same arrays the selector/scorer build)
+090d6a17: first v<0.5 tick = 77 (arc up to it 31.701 m); A = 0.203 m, N = 0.052 m, **A-N = 0.151 m < 0.5 m => NOT CONFIRMED**. Whole-path arc 31.904 m (2 Hz subsample 31.873, = the sim's "ours 31.87"). All 93 steps after the stop are < 0.2 m; max v there 0.44.
+The other TL-S entries (ranks 1-8) all have A-N in 0.08-0.16 m. TL-G: the committed test is meaningless where the human is still moving after the first v<0.5 tick (f9df9235, 0324b2d1, f68aaf95 start below 0.5 at tick 0, daaa1858, e44b9b86 have later motion); the A-N values there are path curvature, not jitter. So jitter adds roughly 0.15 m per standstill, not 3.76 m.
+
+## Source of the 3.76 m (probes: probe_3p76.py, probe2.py, probe3.py, probe4.py)
+Our 090d6a17 path is internally consistent: dt 0.0999-0.1001 s, no jumps (max step 0.77 m), rear-axle and box-centre lengths equal. The sim's 28.01 m / 28.11 m is reproduced by our path only if it STARTS at tick 5 (t0-1.5 s): arc 27.935 to the stop tick, 28.138 to the last pose (arc tick0->5 = 3.766 m). But that start-offset does not generalise: ours-sim line station is 3.82 / 1.90 / 0.07 / 0.10 on 090d6a17 / 15715849 / 7a7ff4cc / b7c35b12, while the arc of the first 0.5 s is 3.77 / 3.05 / 4.65 / 4.05 m. For 15715849 the 1.90 m equals the arc of the first 3-4 ticks (0.3-0.4 s), a different offset. Conclusion: the discrepancy is a path-HEAD (start-of-window) or sim-side difference on these two tokens, not standstill jitter. Needed from the sim: first sample time and xy of its human path for 090d6a17 and 15715849 (stopline_check.json). `MAP_FIELDS_A6` stays held for these two tokens, as the amendment says.
+
+## Consequences
+No candidate list changes (no code change). Image bundle: no add/drop from A7 (A6's own add 7c150adbe5225f20 / drop f1992f61c13e5998 stand). Rulings 1-5 not applied; AMENDMENT_7 should be closed as NOT CONFIRMED with A=0.203, N=0.052. Scratch: none created (probes live in this folder as evidence).

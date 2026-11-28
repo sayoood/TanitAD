@@ -1,0 +1,142 @@
+{
+ "gate": "G-LIVE",
+ "recipe_source": "D:/Projects/TanitAD-artifacts/l2_offprop/recipe_chosen.json",
+ "recipe": {
+  "lr": 0.001,
+  "epochs": 15,
+  "batch": 256,
+  "lam_bce": 10.0,
+  "betas": [
+   0.9,
+   0.999
+  ],
+  "eps": 1e-08,
+  "planted_amp": 10.0,
+  "prox": 0.3
+ },
+ "glive": {
+  "batches": [
+   {
+    "mutated": false,
+    "pair_loss": 0.6545270681381226,
+    "bce_loss": 0.40059733390808105,
+    "finite": true,
+    "ep_W_grad_abs_sum": 75.3874740600586,
+    "ep_b_grad_abs": 0.10228011012077332,
+    "frozen_W_grad_abs_max": 0.0,
+    "frozen_b_grad_abs_max": 0.0
+   },
+   {
+    "mutated": true,
+    "pair_loss": 0.6545270681381226,
+    "bce_loss": 0.40059733390808105,
+    "finite": true,
+    "ep_W_grad_abs_sum": 75.3874740600586,
+    "ep_b_grad_abs": 0.10228011012077332,
+    "frozen_W_grad_abs_max": 2.3942933082580566,
+    "frozen_b_grad_abs_max": 0.5712428092956543
+   },
+   {
+    "mutated": false,
+    "pair_loss": 0.6464980244636536,
+    "bce_loss": 0.43328866362571716,
+    "finite": true,
+    "ep_W_grad_abs_sum": 117.17218017578125,
+    "ep_b_grad_abs": 0.3943192958831787,
+    "frozen_W_grad_abs_max": 0.0,
+    "frozen_b_grad_abs_max": 0.0
+   },
+   {
+    "mutated": true,
+    "pair_loss": 0.6464980244636536,
+    "bce_loss": 0.43328866362571716,
+    "finite": true,
+    "ep_W_grad_abs_sum": 117.17218017578125,
+    "ep_b_grad_abs": 0.3943192958831787,
+    "frozen_W_grad_abs_max": 2.3082969188690186,
+    "frozen_b_grad_abs_max": 0.5750395655632019
+   },
+   {
+    "mutated": false,
+    "pair_loss": 0.6295621395111084,
+    "bce_loss": 0.3964127004146576,
+    "finite": true,
+    "ep_W_grad_abs_sum": 47.538185119628906,
+    "ep_b_grad_abs": 0.08478625118732452,
+    "frozen_W_grad_abs_max": 0.0,
+    "frozen_b_grad_abs_max": 0.0
+   },
+   {
+    "mutated": true,
+    "pair_loss": 0.6295621395111084,
+    "bce_loss": 0.3964127004146576,
+    "finite": true,
+    "ep_W_grad_abs_sum": 47.538185119628906,
+    "ep_b_grad_abs": 0.08478625118732452,
+    "frozen_W_grad_abs_max": 2.4218409061431885,
+    "frozen_b_grad_abs_max": 0.583929717540741
+   }
+  ],
+  "frozen_rows": [
+   0,
+   1,
+   3,
+   4,
+   5
+  ],
+  "ep_row": 2,
+  "h0": [
+   {
+    "w_pair0_grad_equals_bce_only_bitwise": true,
+    "w_pair1_grad_differs_from_w_pair0": true,
+    "w_pair0_frozen_grad_max": 0.0
+   },
+   {
+    "w_pair0_grad_equals_bce_only_bitwise": true,
+    "w_pair1_grad_differs_from_w_pair0": true,
+    "w_pair0_frozen_grad_max": 0.0
+   },
+   {
+    "w_pair0_grad_equals_bce_only_bitwise": true,
+    "w_pair1_grad_differs_from_w_pair0": true,
+    "w_pair0_frozen_grad_max": 0.0
+   }
+  ],
+  "prox": [
+   {
+    "zero_at_init": true,
+    "reaches_ep_row_off_init": true,
+    "frozen_grad_max_with_prox": 0.0
+   },
+   {
+    "zero_at_init": true,
+    "reaches_ep_row_off_init": true,
+    "frozen_grad_max_with_prox": 0.0
+   },
+   {
+    "zero_at_init": true,
+    "reaches_ep_row_off_init": true,
+    "frozen_grad_max_with_prox": 0.0
+   }
+  ],
+  "pass": true,
+  "control_mutation_reads_nonzero_on_frozen": true,
+  "h0_lever_reaches": true,
+  "prox_lever_reaches": true
+ },
+ "training_segment_world": "REAL tokens + SYNTHETIC labels (semi-synthetic, beta 0.5, alpha 0.25, seed 21): no real label trains a head here",
+ "training_segment_steps": 40,
+ "training_segment_min_ep_grad_abs_sum": 4.82659387588501,
+ "h0_training_segment_steps": 40,
+ "h_and_h0_trained_heads_differ": true,
+ "mutation_leak_other_row_goes_RED": true,
+ "n_pairs_fold0_train_real": 7836,
+ "n_fan_rows": 19648,
+ "pass": true,
+ "recipe_sha256": "c7f5b75b0a8f25f96c00dcc379ac583fa9c80622ce5600ad4af8387159119263",
+ "code_sha256": {
+  "l2lib.py": "942033d373868a3028686a564ee99cc476dc8d82b22fc19544afc0052e898b4b",
+  "gates.py": "9f74763b309700bd2daebbb44a7d2d20e471151392b2252fb7492e2a1a285bc1",
+  "synthetic.py": "a02e032ac747fa9c1b6dd139c3a52010ad09dc7030e7051d67ed910e019e0f85"
+ }
+}

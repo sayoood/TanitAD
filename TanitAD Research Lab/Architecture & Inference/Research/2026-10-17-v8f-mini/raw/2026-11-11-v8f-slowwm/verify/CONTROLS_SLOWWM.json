@@ -1,0 +1,202 @@
+{
+ "card_sha256": "7c2775e39f9b1271342a0c588780d3da8b4d63dfb56d06de9fef4c50bc8594ca",
+ "base_commit": "1faa1a068f9f46dcb9d230c6b05efc20dce2fc1c",
+ "control1_off_identity": {
+  "pass": true,
+  "n_arrays": 722,
+  "n_unequal": 0,
+  "unequal_first": [],
+  "what": "init state dict, the WM-only terms, every wm.* gradient and every parameter after one AdamW step, patched tree (default argv: --wm-basis absent) vs base 1faa1a06, bit for bit (np.array_equal)",
+  "batch": "PLANTED seeded random zmean [2, 91, 256] and action [2, 91, 2] (the real windows live on box 2); argv = R35H s0's banked argv"
+ },
+ "mutations": {
+  "M1_default_slow": {
+   "mutation": "control 1: the default of --wm-basis flips to slow",
+   "must_fail": [
+    "test_off_default_is_adapter_everywhere"
+   ],
+   "failed": [
+    "test_off_default_is_adapter_everywhere"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M1b_cfg_default_slow": {
+   "mutation": "control 1: the config default flips to slow",
+   "must_fail": [
+    "test_off_default_is_adapter_everywhere"
+   ],
+   "failed": [
+    "test_off_default_is_adapter_everywhere"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M2_make_config_line_deleted": {
+   "mutation": "control 2: the ONE line that applies --wm-basis is deleted",
+   "must_fail": [
+    "test_reach_argparse_to_namespace_to_config_to_model",
+    "test_gate_passes_and_reads_the_built_lever_back"
+   ],
+   "failed": [
+    "test_gate_passes_and_reads_the_built_lever_back",
+    "test_reach_argparse_to_namespace_to_config_to_model"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M3_loss_ignores_zbasis": {
+   "mutation": "control 2: the loss no longer reads the cached zbasis batch key",
+   "must_fail": [
+    "test_reach_z1_to_loss_and_a_nonzero_gradient_on_proj_with_exact_zero_on_the_frozen_adapter",
+    "test_reach_the_zbasis_key_is_what_the_loss_reads_not_zmean"
+   ],
+   "failed": [
+    "test_reach_the_zbasis_key_is_what_the_loss_reads_not_zmean",
+    "test_reach_z1_to_loss_and_a_nonzero_gradient_on_proj_with_exact_zero_on_the_frozen_adapter"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M4_proj_detached": {
+   "mutation": "control 2: z1 is detached from proj (no gradient reaches wm.proj)",
+   "must_fail": [
+    "test_reach_z1_to_loss_and_a_nonzero_gradient_on_proj_with_exact_zero_on_the_frozen_adapter"
+   ],
+   "failed": [
+    "test_reach_z1_to_loss_and_a_nonzero_gradient_on_proj_with_exact_zero_on_the_frozen_adapter"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M5_kind_mismatch_accepted": {
+   "mutation": "control 2: the cache kind is no longer checked (the adapter / wrong-kind cache is accepted under --wm-basis slow)",
+   "must_fail": [
+    "test_refuses_a_cache_of_the_wrong_kind_missing_manifest_wrong_dim_or_wrong_sha",
+    "test_trainer_refuses_before_any_build"
+   ],
+   "failed": [
+    "test_refuses_a_cache_of_the_wrong_kind_missing_manifest_wrong_dim_or_wrong_sha",
+    "test_trainer_refuses_before_any_build"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M6_trainer_refusal_removed": {
+   "mutation": "control 2: the trainer's static refusal returns no problem",
+   "must_fail": [
+    "test_trainer_refuses_before_any_build"
+   ],
+   "failed": [
+    "test_trainer_refuses_before_any_build"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  },
+  "M7_mean_path_not_refused": {
+   "mutation": "control 2: a basis model reads a token mean silently (the adapter arm under a basis flag)",
+   "must_fail": [
+    "test_off_adapter_model_refuses_a_basis_batch_and_a_basis_model_refuses_the_adapter_paths",
+    "test_gate_passes_and_reads_the_built_lever_back"
+   ],
+   "failed": [
+    "test_gate_passes_and_reads_the_built_lever_back",
+    "test_off_adapter_model_refuses_a_basis_batch_and_a_basis_model_refuses_the_adapter_paths"
+   ],
+   "errors_not_failures": [],
+   "red": true,
+   "pytest_rc": 1
+  }
+ },
+ "control2_reachability": {
+  "hops": {
+   "argparse --wm-basis": "stack/scripts/v8f_mini_train.py:318",
+   "FLAG_CHECKS entry": "stack/scripts/v8f_mini_train.py:123",
+   "namespace -> config (the one line)": "stack/scripts/v8f_mini_train.py:418",
+   "static refusal before any build": "stack/scripts/v8f_mini_train.py:3085",
+   "config field": "stack/tanitad/models/v8f_mini.py:203",
+   "config validation": "stack/tanitad/models/v8f_mini.py:283",
+   "model attribute": "stack/tanitad/models/v8f_mini.py:704",
+   "dataset gets the kind": "stack/scripts/v8f_mini_train.py:3115",
+   "dataset reads zbasis + manifest check": "stack/tanitad/data/v8f_wm_windows.py:110",
+   "collate": "stack/tanitad/data/v8f_wm_windows.py:175",
+   "batch -> loss": "stack/tanitad/models/v8f_mini.py:1231",
+   "forward_basis -> z1_from_basis -> _z1_post (proj, enc1) -> stack.loss": "stack/tanitad/models/v8f_mini.py:787",
+   "G-DVB read-back": "stack/scripts/v8f_mini_train.py:1054",
+   "selfcheck levers.wm_basis_readback": "stack/scripts/v8f_mini_train.py:3284"
+  },
+  "live": {
+   "slow": {
+    "argparse_namespace": "slow",
+    "config": "slow",
+    "model.wm.wm_basis": "slow",
+    "built_basis": {
+     "mode": "slow",
+     "in_dim": 256,
+     "mean_path_refused": true,
+     "token_path_refused": true,
+     "basis_path_refused": false,
+     "basis_path_is_proj_tail": true
+    },
+    "grad_abs_sum_wm.proj": 33.21689987182617,
+    "grad_abs_sum_wm_total": 700.9303588867188,
+    "control_grad_abs_sum_outside_wm_must_be_exactly_0.0": 0.0,
+    "wm_params_with_zero_grad": [],
+    "loss_wm": 508.0452575683594,
+    "pass": true
+   },
+   "pca": {
+    "argparse_namespace": "pca",
+    "config": "pca",
+    "model.wm.wm_basis": "pca",
+    "built_basis": {
+     "mode": "pca",
+     "in_dim": 256,
+     "mean_path_refused": true,
+     "token_path_refused": true,
+     "basis_path_refused": false,
+     "basis_path_is_proj_tail": true
+    },
+    "grad_abs_sum_wm.proj": 33.21689987182617,
+    "grad_abs_sum_wm_total": 700.9303588867188,
+    "control_grad_abs_sum_outside_wm_must_be_exactly_0.0": 0.0,
+    "wm_params_with_zero_grad": [],
+    "loss_wm": 508.0452575683594,
+    "pass": true
+   }
+  },
+  "pass": true
+ },
+ "control4_echo_hash_audit": {
+  "basis_sha256": {
+   "real": {
+    "slow": "cebd3591c512a2864cbb7f30632a3079fda8178e3ceb47a192302bd2502c6d63",
+    "pca": "b4559672675c0e3658b73e171ac2764474816abf4bdae8f1055a056952584691"
+   },
+   "values_perturbed": {
+    "slow": "cebd3591c512a2864cbb7f30632a3079fda8178e3ceb47a192302bd2502c6d63",
+    "pca": "b4559672675c0e3658b73e171ac2764474816abf4bdae8f1055a056952584691"
+   },
+   "pattern_changed": {
+    "slow": "3cf1f11bf778128260eceb7d992683e438e6dddd426281ee6de79427c59c9937",
+    "pca": "d5f7870756e2425abaf8dd427a4986892f280c1d3f6ed2dfb789e7d18fe96e23"
+   }
+  },
+  "n_fit_frames": {
+   "real": 7173,
+   "values_perturbed": 7173,
+   "pattern_changed": 7102
+  },
+  "values_perturbed_same_sha": true,
+  "pattern_changed_differs": true,
+  "pass": true,
+  "note": "SMOKE inputs; the grep half is test_builder_reads_no_ego_action_or_label_array in test_slow_basis.py"
+ }
+}

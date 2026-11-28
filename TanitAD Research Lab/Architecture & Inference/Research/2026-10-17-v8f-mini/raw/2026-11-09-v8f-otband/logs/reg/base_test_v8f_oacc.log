@@ -1,0 +1,73 @@
+...ss...F.............................s..Fssssssssssssssssssssssssssssss [ 54%]
+sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss            [100%]
+================================== FAILURES ===================================
+____________ test_a_model_that_does_not_log_the_term_fails_g_live _____________
+
+world = {'root': 'F:\\TanitAD-scratch\\hwm_bands\\b\\regress_tmp\\bt_base_test_v8f_oacc\\syn0', 'joins': {'train': {'clip': ar...n-001', 'syn-train-002', 'syn-train-003', 'syn-train-004', 'syn-train-005'], 'eval': ['syn-eval-000', 'syn-eval-001']}}
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_oacc/test_a_model_that_does_not_log0')
+
+    def test_a_model_that_does_not_log_the_term_fails_g_live(world, tmp_path):
+        J, b = _J(world), _batch(world)
+        m = _mk(M, J, w_acc=0.7)
+        assert "acc" in TR.live_check(m, b, m.cfg)["terms"]
+>       mut = _mutant_model(tmp_path, [('        T["acc"] = accel_term(out["traj30"], gt, gok)', '        T["acc_other"] = accel_term(out["traj30"], gt, gok)'), (LINE, "pass")], name="v8f_mini_mut_oacc4")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:381: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_oacc/test_a_model_that_does_not_log0')
+edits = [('        T["acc"] = accel_term(out["traj30"], gt, gok)', '        T["acc_other"] = accel_term(out["traj30"], gt, gok)'), ('total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total', 'pass')]
+name = 'v8f_mini_mut_oacc4'
+
+    def _mutant_model(tmp_path, edits, name="v8f_mini_mut_oacc"):
+        """A copy of the model module with each (anchor, replacement) applied exactly once. The anchor must occur exactly once in the ORIGINAL source."""
+        s = MODEL_P.read_text(encoding="utf-8")
+        for a, b in edits:
+>           assert s.count(a) == 1, (a, s.count(a))
+E           AssertionError: ('        T["acc"] = accel_term(out["traj30"], gt, gok)', 0)
+E           assert 0 == 1
+E            +  where 0 = <built-in method count of str object at 0x000001F64BE1D4E0>('        T["acc"] = accel_term(out["traj30"], gt, gok)')
+E            +    where <built-in method count of str object at 0x000001F64BE1D4E0> = '"""v8F-mini -- the PI\'s three-layer v8F (S -> T -> O) on CACHED frozen DINOv3-L features (track M, 8 GB GPU).\n\nSpe...adapt, last), LEAD_ALLOWED_KEYS | LEVEL_ALLOWED_KEYS, "aux token input")\n    return {**rec, "source_problems": src}\n'.count
+
+tests\test_v8f_oacc.py:171: AssertionError
+_ test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs __
+
+fitworld = {'ckpt': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_oacc/oacc_fit0/b/ckpt_last.pt'), 'ro...t_clips.json'), 'base': WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_oacc/oacc_fit0'), ...}
+tmp_path = WindowsPath('F:/TanitAD-scratch/hwm_bands/b/regress_tmp/bt_base_test_v8f_oacc/test_the_hx_fit_is_hblends_own0')
+
+    def test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs(fitworld, tmp_path):
+        fw = fitworld
+        out, npz = tmp_path / "hx.json", tmp_path / "hx.npz"
+>       assert _no_crash(OE.main, ["hx", *_model_route_args(fw, out, ["--tag", "M2b-oacc_s0", "--fit-windows-out", str(npz)])]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:879: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fn = <function main at 0x000001F647A50D60>
+a = (['hx', '--ckpt', 'F:\\TanitAD-scratch\\hwm_bands\\b\\regress_tmp\\bt_base_test_v8f_oacc\\oacc_fit0\\b\\ckpt_last.pt',...:\\TanitAD-scratch\\hwm_bands\\b\\regress_tmp\\bt_base_test_v8f_oacc\\oacc_fit0\\fit_clips.json', '--cache-dir', ...],)
+k = {}
+
+    def _no_crash(fn, *a, **k):
+        """Call ``fn``; an exception out of the instrument under test is a FAILED assertion (it crashed on an input it must judge), never an error. SystemExit (a refusal) passes through."""
+        try:
+            return fn(*a, **k)
+        except Exception as e:                                                             # noqa: BLE001
+            err = f"{getattr(fn, '__name__', fn)} raised {type(e).__name__}: {str(e)[:300]}"
+>       pytest.fail(err)                                     # outside the except: no chained context, so the first E line of the report is this Failed, not the instrument's own traceback
+        ^^^^^^^^^^^^^^^^
+E       Failed: main raised FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\ladder_tree\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-25-hblend\\v8f_hblend.py'
+
+tests\test_v8f_oacc.py:82: Failed
+============================== warnings summary ===============================
+tests/test_v8f_oacc.py::test_traj_terms_is_the_losses_own_spelling_of_ade_and_fde
+  F:\TanitAD-scratch\ladder_tree\stack\tests\test_v8f_oacc.py:238: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(ade) == pytest.approx(d.mean(1)[ok].mean(), rel=1e-5) and float(fde) == pytest.approx(d[:, -1][ok].mean(), rel=1e-5)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_oacc.py::test_a_model_that_does_not_log_the_term_fails_g_live
+FAILED tests/test_v8f_oacc.py::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs
+2 failed, 37 passed, 94 skipped, 1 warning in 43.98s

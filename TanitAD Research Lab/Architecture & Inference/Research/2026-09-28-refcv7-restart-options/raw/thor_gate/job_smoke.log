@@ -1,0 +1,139 @@
+
+==== 2026-09-27T21:19:11Z /home/nvidia/venvs/tanitad-train/bin/python /home/nvidia/refcv7_run/fec3a0dccf/stack/scripts/launch_gate.py check --ctx /home/nvidia/refcv7_gate_fec3a0dccf/ctx.json --checks G-LIVE,G-CKPT
+[gate] smoke: tanitad from /home/nvidia/refcv7_run/fec3a0dccf/stack/tanitad/__init__.py (torch 2.13.0+cu130, cuda True)
+[gate] G-LIVE smoke: 100 steps, out /home/nvidia/refcv7_gate_fec3a0dccf/smoke/20260927T211913
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] tensor sharing = file_system (workers=6; /dev/shm 24 GB vs ~34 MB/clip payloads)
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] agent cls weight: b1 on corpus line v7-b1-physicalai-b1-w120-256x640cyl, population in_field_and_decode_box (derived-from-join (agrees with the weight key)) (10 classes, imbalance 1298.6:1, digest c9dbc340acf7d27e)
+[v3] refcv7 map-hires: w=1, extent 100 m x +-30 m -> [1000, 600] at 0.1 m, grad_ckpt True, near-lift 20 m, near-refine 1, tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 512, 's8_hw': [52, 128], 's8_frame': 'newest', 's8_temporal_fusion': None}, params {'lift': 131200, 'encoder': 406912, 'refine': 20936, 'near': 65600, 'near_refine': 18496, 'total': 643144}, class weights sha256 d70dec8087ed
+[v3] refcv6 perception: w_map=0 w_box3d=1 bev_source=map_hires_pool; params {'lift': 0, 'bev_encoder': 0, 'map_head': 0, 'box_memory': 287744, 'box_decoder': 3858199, 'bev_pool': 6336, 'box_qpos': 131584, 'box_refpts': 600, 'total': 4284463}
+[v3] anchors: loaded (117, 8, 2) from /home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['/home/nvidia/data/refcv6-b1-416x1024-train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] 4369 lazy v2 providers from ['/home/nvidia/data/refcv6-b1-416x1024-train'] (lru 6)
+[v3] v7.2 labels: 4572 records, joined 4369/4369 episodes = 100.0 % (release ?)
+[v3] tac_goal: 17/22 classes trainable (negatives=measured), w_tac_goal=0.0 w_tac_v6=1.0 | 3 ON the pos_weight cap 50 (the CAP, not the data, sets their weight), 10 under the n=200 scoreability floor -- report PER CLASS, never pooled
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 746946/746946 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] nav_from_v7: follow 2752 / left 779 / right 838, missing 0 (of 4369 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] agent join verified: md5(compressed of b1_train_plus_eval_agents.jsonl.xz) = 0c31a3a63d7205e9fa50e8ac4204ef46
+[v3] agent join loaded: 838130 records / 4369 clips (filtered out 37527) in 116.4 s
+[v3] agent join: 4369/4369 episodes (stable-63bit), 719739/746946 windows labelled (96.4 %), 23779188 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 746946 windows over 4369 clips (verdict PASS)
+[v3] 3-D cuboid join: {'path': '/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz', 'n_lines': 838130, 'n_agents': 27600074, 'n_clips': 4369, 'frame_key': 'RAW v2ep (= episode index + n_stack - 1)', 'n_stack': 3}
+[v3] VIS-1 sidecar: vis1_sidecar_refcv6b1_train4369_eval139.npz sha256 278443b3356bca05 (4508 clips, 859497 frames, 4862788 rows)
+[v3] P0 calibration set: 256 of 256 TRAIN windows found
+[v3] 4369 episodes -> 746946 windows (window 8, max_horizon 20, image_hw (416, 1024), tac_vocab v7.0)
+[v2] /home/nvidia/data/refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[v3] held-out eval: 139 episodes -> 23772 windows, 8 fixed batches every 500 steps
+[v3] loader: workers=6 prefetch=1 -> <=6 batches in flight
+[v3] u8_batches=True: frames+future_frames = 1.718 GB per collated batch (uint8), <= 6 in flight -> ~10.31 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (316 tensors) head_lr=1.000e-04 (492 tensors)
+[v3] rig camera coverage: 4369/4369 episodes (1.0000) from a 4508-clip bank
+[v3] EFFECTIVE WEIGHTS (this arm) -- default -> layer -> effective -> builds a graph?
+[v3] term                                                                                               flag               default  asked  effective  src   graph  status           layer/mask/missing                                                                                                                                            
+[v3] -------------------------------------------------------------------------------------------------  -----------------  -------  -----  ---------  ----  -----  ---------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v3] u0 control-space x0 loss (WP-4)                                                                    --w-u0             0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                 
+[v3] GT-supervised detection set loss (WP-6)                                                            --w-agent          0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] WP-D BEV auxiliary loss                                                                            --w-bev-aux        0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)                                 
+[v3] D-TACGOAL 22-token tactical goal SET (multi-label BCE)                                             --w-tac-goal       0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-tac-goal needs `--tac-goal-tok-head` (no head => no `tac_goal_logits` in `out`) AND `--v7-labels` (no join => no `tac_goal_y`/`tac_goal_w` target)
+[v3] agent projection consistency                                                                       --agent-w-project  0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                 
+[v3] agent ground-plane prior                                                                           --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                 
+[v3] E15 geometric goal point (GP-2)                                                                    --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT   missing=no --goal-point-inject: the head that predicts the point is never built                                                                               
+[v3] refcv6 SAM3 BEV map soft-CE (§2)                                                                   --w-map            0        0      0          op    no     OFF_BY_OPERATOR                                                                                                                                                                
+[v3] refcv6 3-D cuboid set loss (§6)                                                                    --w-box3d          0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] refcv7 NEW-2 SAM3 map CE at 10 cm                                                                  --w-map-hires      0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] refcv6 §4 tactical behaviour decoder (22-token BCE + lat/lon CE + confidence)                      --w-tac-v6         0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] refcv7 WTA proposal decoder (winner-takes-all L1, 64 queries)                                      --w-r7-wta         0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-r7-wta needs --refcv7 (no decoder => no `r7_wta`)                                                                                                 
+[v3] refcv7 disentangled scorer vs the PhysicalAI oracle (7 sub-score BCE: nc dac ttc ep comf spd nav)  --w-r7-scorer      0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-r7-scorer needs --refcv7, --agent-join (NC/TTC oracle), the SAM3 map with --w-map > 0 (DAC oracle) and --r7-nav-tau-rad > 0 (nav oracle)          
+[v3] 4/13 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3] conflict detector ON (probe, plan side=traj, every=10): theta_trunk = 316 tensors / 58231872 params in 6 groups (fuse, stage_layer1, stage_layer2, stage_layer3, stage_layer4, stem); aux terms = box3d, map_hires, tac_v6
+[v3] ⚠️ conflict detector MEASURED overhead (dev-box CPU, batch 2, 77k-6.9M trunks): probe +72..104%, subtract +26..62% of step time, rising with trunk size. Divide by --conflict-every (10) to amortise; the GPU figure is UNVERIFIED.
+[v3] conflict controls OK: cos(g,g)=1.0 cos(g,-g)=-1.0 detached cos=nan conflict=0.0 |g_aux|=0.0
+[v3:hier] step 50 loss 157.6762 traj 2.4038
+[v3:hier] step 100 loss 118.0175 traj 1.2864
+[v3:hier] ckpt step 100 -> ckpt.pt
+[v3:eval] ALARM box3d conf_ratio 0.0 outside [0.5, 1.5] (A10 §15.3, a Watch alarm, not a stop)
+[v3:eval] ALARM agent conf_ratio 0.0 outside [0.5, 1.5] (A10 §15.3, a Watch alarm, not a stop)
+[v3:eval] step 100 loss 144.5430 traj 0.7874 lat_tac 2.0040
+[v3:hier] DONE at 100 — summary.json written
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] tensor sharing = file_system (workers=6; /dev/shm 24 GB vs ~34 MB/clip payloads)
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] agent cls weight: b1 on corpus line v7-b1-physicalai-b1-w120-256x640cyl, population in_field_and_decode_box (derived-from-join (agrees with the weight key)) (10 classes, imbalance 1298.6:1, digest c9dbc340acf7d27e)
+[v3] refcv7 map-hires: w=1, extent 100 m x +-30 m -> [1000, 600] at 0.1 m, grad_ckpt True, near-lift 20 m, near-refine 1, tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 512, 's8_hw': [52, 128], 's8_frame': 'newest', 's8_temporal_fusion': None}, params {'lift': 131200, 'encoder': 406912, 'refine': 20936, 'near': 65600, 'near_refine': 18496, 'total': 643144}, class weights sha256 d70dec8087ed
+[v3] refcv6 perception: w_map=0 w_box3d=1 bev_source=map_hires_pool; params {'lift': 0, 'bev_encoder': 0, 'map_head': 0, 'box_memory': 287744, 'box_decoder': 3858199, 'bev_pool': 6336, 'box_qpos': 131584, 'box_refpts': 600, 'total': 4284463}
+[v3] anchors: loaded (117, 8, 2) from /home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['/home/nvidia/data/refcv6-b1-416x1024-train'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] 4369 lazy v2 providers from ['/home/nvidia/data/refcv6-b1-416x1024-train'] (lru 6)
+[v3] v7.2 labels: 4572 records, joined 4369/4369 episodes = 100.0 % (release ?)
+[v3] tac_goal: 17/22 classes trainable (negatives=measured), w_tac_goal=0.0 w_tac_v6=1.0 | 3 ON the pos_weight cap 50 (the CAP, not the data, sets their weight), 10 under the n=200 scoreability floor -- report PER CLASS, never pooled
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 746946/746946 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] nav_from_v7: follow 2752 / left 779 / right 838, missing 0 (of 4369 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] agent join verified: md5(compressed of b1_train_plus_eval_agents.jsonl.xz) = 0c31a3a63d7205e9fa50e8ac4204ef46
+[v3] agent join loaded: 838130 records / 4369 clips (filtered out 37527) in 120.7 s
+[v3] agent join: 4369/4369 episodes (stable-63bit), 719739/746946 windows labelled (96.4 %), 23779188 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 746946 windows over 4369 clips (verdict PASS)
+[v3] 3-D cuboid join: {'path': '/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz', 'n_lines': 838130, 'n_agents': 27600074, 'n_clips': 4369, 'frame_key': 'RAW v2ep (= episode index + n_stack - 1)', 'n_stack': 3}
+[v3] VIS-1 sidecar: vis1_sidecar_refcv6b1_train4369_eval139.npz sha256 278443b3356bca05 (4508 clips, 859497 frames, 4862788 rows)
+[v3] P0 calibration set: 256 of 256 TRAIN windows found
+[v3] 4369 episodes -> 746946 windows (window 8, max_horizon 20, image_hw (416, 1024), tac_vocab v7.0)
+[v2] /home/nvidia/data/refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[v3] held-out eval: 139 episodes -> 23772 windows, 8 fixed batches every 500 steps
+[v3] loader: workers=6 prefetch=1 -> <=6 batches in flight
+[v3] u8_batches=True: frames+future_frames = 1.718 GB per collated batch (uint8), <= 6 in flight -> ~10.31 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (316 tensors) head_lr=1.000e-04 (492 tensors)
+[v3] resumed hier at step 100
+[v3] resumed data order: epoch 0, 100 batches in
+[v3] rig camera coverage: 4369/4369 episodes (1.0000) from a 4508-clip bank
+[v3] EFFECTIVE WEIGHTS (this arm) -- default -> layer -> effective -> builds a graph?
+[v3] term                                                                                               flag               default  asked  effective  src   graph  status           layer/mask/missing                                                                                                                                            
+[v3] -------------------------------------------------------------------------------------------------  -----------------  -------  -----  ---------  ----  -----  ---------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------
+[v3] u0 control-space x0 loss (WP-4)                                                                    --w-u0             0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                 
+[v3] GT-supervised detection set loss (WP-6)                                                            --w-agent          0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] WP-D BEV auxiliary loss                                                                            --w-bev-aux        0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)                                 
+[v3] D-TACGOAL 22-token tactical goal SET (multi-label BCE)                                             --w-tac-goal       0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-tac-goal needs `--tac-goal-tok-head` (no head => no `tac_goal_logits` in `out`) AND `--v7-labels` (no join => no `tac_goal_y`/`tac_goal_w` target)
+[v3] agent projection consistency                                                                       --agent-w-project  0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                 
+[v3] agent ground-plane prior                                                                           --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                                                                 
+[v3] E15 geometric goal point (GP-2)                                                                    --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT   missing=no --goal-point-inject: the head that predicts the point is never built                                                                               
+[v3] refcv6 SAM3 BEV map soft-CE (§2)                                                                   --w-map            0        0      0          op    no     OFF_BY_OPERATOR                                                                                                                                                                
+[v3] refcv6 3-D cuboid set loss (§6)                                                                    --w-box3d          0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] refcv7 NEW-2 SAM3 map CE at 10 cm                                                                  --w-map-hires      0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] refcv6 §4 tactical behaviour decoder (22-token BCE + lat/lon CE + confidence)                      --w-tac-v6         0        1      1          op    yes    TRAINS                                                                                                                                                                         
+[v3] refcv7 WTA proposal decoder (winner-takes-all L1, 64 queries)                                      --w-r7-wta         0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-r7-wta needs --refcv7 (no decoder => no `r7_wta`)                                                                                                 
+[v3] refcv7 disentangled scorer vs the PhysicalAI oracle (7 sub-score BCE: nc dac ttc ep comf spd nav)  --w-r7-scorer      0        0      0          dflt  no     OFF_BY_DEFAULT   missing=--w-r7-scorer needs --refcv7, --agent-join (NC/TTC oracle), the SAM3 map with --w-map > 0 (DAC oracle) and --r7-nav-tau-rad > 0 (nav oracle)          
+[v3] 4/13 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3] conflict detector ON (probe, plan side=traj, every=10): theta_trunk = 316 tensors / 58231872 params in 6 groups (fuse, stage_layer1, stage_layer2, stage_layer3, stage_layer4, stem); aux terms = box3d, map_hires, tac_v6
+[v3] ⚠️ conflict detector MEASURED overhead (dev-box CPU, batch 2, 77k-6.9M trunks): probe +72..104%, subtract +26..62% of step time, rising with trunk size. Divide by --conflict-every (10) to amortise; the GPU figure is UNVERIFIED.
+[v3] conflict controls OK: cos(g,g)=1.0 cos(g,-g)=-1.0 detached cos=nan conflict=0.0 |g_aux|=0.0
+[v3:hier] step 102 loss 121.5299 traj 2.2290
+[v3:hier] ckpt step 102 -> ckpt.pt
+[v3:eval] ALARM box3d conf_ratio 0.0 outside [0.5, 1.5] (A10 §15.3, a Watch alarm, not a stop)
+[v3:eval] ALARM agent conf_ratio 0.0 outside [0.5, 1.5] (A10 §15.3, a Watch alarm, not a stop)
+[v3:eval] step 102 loss 143.6754 traj 0.7922 lat_tac 2.0026
+[v3:hier] DONE at 102 — summary.json written
+[gate] G-LIVE: PASS (0 reason(s))
+[gate] G-CKPT: PASS (0 reason(s))

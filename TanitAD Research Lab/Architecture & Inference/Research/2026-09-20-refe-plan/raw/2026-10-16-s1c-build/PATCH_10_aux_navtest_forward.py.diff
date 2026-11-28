@@ -1,0 +1,20 @@
+--- a/eval/aux_navtest_forward.py
++++ b/eval/aux_navtest_forward.py
+@@ -67,7 +67,7 @@
+ OWNER = "aux_navtest_forward"
+ NCX, NCY = 40, 32
+ HEAD_FORMAT = "aux_drv/1"
+-ARM_RE = re.compile(r"^(H1|H2)-s(\d+)$")
++ARM_RE = re.compile(r"^(H1|H2|H1u10k|H1u2k)-s(\d+)$")                    # H1u10k / H1u2k: the S1c head arms (raw/2026-10-16-s1c-build)
+ 
+ 
+ class HeadRefused(RuntimeError):
+@@ -218,7 +218,7 @@
+ def parse_arm(name: str) -> tuple:
+     m = ARM_RE.match(name)
+     if not m:
+-        raise HeadRefused(f"arm {name!r}: expected H1-s<k> or H2-s<k> (an N arm has no head)")
++        raise HeadRefused(f"arm {name!r}: expected H1-s<k>, H2-s<k>, H1u10k-s<k> or H1u2k-s<k> (an N arm has no head)")
+     return m.group(1), int(m.group(2))
+ 
+ 

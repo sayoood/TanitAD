@@ -1,0 +1,79 @@
+{
+ "control": "C10' (AMEND_OPTB section 4)",
+ "label": "C10' PASS",
+ "tier": "T0",
+ "evidence": "MEASURED (artifacts above)",
+ "rule": "PASS iff the s_swap CI on the acceleration channel is wholly above 0 at both chassis, read on the 141 EVAL clips with IA-3's folds (lr_lib.fold_of, 2 folds)",
+ "estimator": "episode-cluster bootstrap over the 141 eval clips, B 2000, seed 0; answers another draw of episodes with R35's weights and the cross-fitted probe FORM held fixed (not another training run)",
+ "readout": "RA's form (ridge on z_{t+10} - z_t, lambda on inner clip-grouped folds) cross-fitted by IA-3's folds on the eval clips; s_swap on real pairs (same-clip partner >= 5 frames away, RandomState(0))",
+ "chassis": {
+  "R35_s0": {
+   "artifact": "F:/TanitAD-scratch/actrsp/optb/read/step0/ia3pk_R35_s0.json",
+   "n_anchors": 12827,
+   "n_clips": 141,
+   "s_swap": {
+    "point": 0.22802536912595758,
+    "ci95": [
+     0.2019627078948956,
+     0.25199114855030824
+    ]
+   },
+   "ci_wholly_above_0": true,
+   "ra_crossfit_r2_heldout": 0.24292716876502096,
+   "step0_ia3pk_gain": {
+    "point": 0.9902162846760744,
+    "ci95": [
+     0.8755841919349959,
+     1.128888544911905
+    ]
+   },
+   "step0_target_read_cycle_gain_frozen_probe": {
+    "point": 1.255101812872658,
+    "ci95": [
+     1.1338299870451105,
+     1.3738226952188533
+    ],
+    "s_a_frozen": 0.20075513255151825,
+    "note": "beside, no bar: the term's own cycle gain G_aa on the EVAL clips through the train-fit frozen RA"
+   },
+   "train_clip_reference_amend1": {
+    "s_swap": 0.201,
+    "G_aa": 1.244
+   }
+  },
+  "R35_s1": {
+   "artifact": "F:/TanitAD-scratch/actrsp/optb/read/step0/ia3pk_R35_s1.json",
+   "n_anchors": 12827,
+   "n_clips": 141,
+   "s_swap": {
+    "point": 0.22225745611602685,
+    "ci95": [
+     0.19517718204826318,
+     0.24730693287038608
+    ]
+   },
+   "ci_wholly_above_0": true,
+   "ra_crossfit_r2_heldout": 0.2336099295705084,
+   "step0_ia3pk_gain": {
+    "point": 0.8909584313581838,
+    "ci95": [
+     0.784651010755355,
+     1.014091192648578
+    ]
+   },
+   "step0_target_read_cycle_gain_frozen_probe": {
+    "point": 1.2460060429859436,
+    "ci95": [
+     1.1252666632104489,
+     1.3663611539240943
+    ],
+    "s_a_frozen": 0.2032336668600536,
+    "note": "beside, no bar: the term's own cycle gain G_aa on the EVAL clips through the train-fit frozen RA"
+   },
+   "train_clip_reference_amend1": {
+    "s_swap": 0.203,
+    "G_aa": 1.202
+   }
+  }
+ }
+}

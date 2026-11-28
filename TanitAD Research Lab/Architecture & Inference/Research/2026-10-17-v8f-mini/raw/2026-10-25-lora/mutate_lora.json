@@ -1,0 +1,171 @@
+[
+ {
+  "mutant": "UNMUTATED",
+  "result": "GREEN",
+  "pytest": "38 passed, 2 deselected in 300.08s (0:05:00)",
+  "failed_tests": [],
+  "seconds": 304.765132188797
+ },
+ {
+  "mutant": "A1_detach_encoder_output",
+  "result": "RED",
+  "pytest": "1 failed, 36 deselected in 24.94s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero"
+  ],
+  "seconds": 28.325467109680176
+ },
+ {
+  "mutant": "A2_lora_r_not_reaching_the_build",
+  "result": "RED",
+  "pytest": "1 failed, 1 passed, 38 deselected in 51.04s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_real_loader_never_moves_the_global_rng_and_builds_what_argv_declares"
+  ],
+  "seconds": 54.44457983970642
+ },
+ {
+  "mutant": "A2b_lora_r_dropped_in_the_test_stand_in",
+  "result": "RED",
+  "pytest": "1 failed, 38 deselected in 24.45s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_launch_gate_refuses_every_lie_about_the_built_encoder"
+  ],
+  "seconds": 28.88398504257202
+ },
+ {
+  "mutant": "A3_preprocessing_constant_255_to_256",
+  "result": "RED",
+  "pytest": "1 failed, 2 passed, 35 deselected in 28.15s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_the_lora_encoder_at_zero_is_the_cache_builders_encode_episode_bit_for_bit[dtype0]"
+  ],
+  "seconds": 29.873421669006348
+ },
+ {
+  "mutant": "A3b_preprocessing_std_constant",
+  "result": "RED",
+  "pytest": "1 failed, 37 deselected in 27.37s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_the_lora_encoder_at_zero_is_the_cache_builders_encode_episode_bit_for_bit[dtype0]"
+  ],
+  "seconds": 31.15010094642639
+ },
+ {
+  "mutant": "A4_B_init_nonzero",
+  "result": "RED",
+  "pytest": "1 failed, 35 deselected in 22.46s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0]"
+  ],
+  "seconds": 27.037079095840454
+ },
+ {
+  "mutant": "B1_no_rng_restore",
+  "result": "RED",
+  "pytest": "1 failed, 38 deselected in 36.29s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_the_encoder_build_never_moves_the_heads_initialisation"
+  ],
+  "seconds": 38.15959548950195
+ },
+ {
+  "mutant": "B2_encoder_may_enter_train_mode",
+  "result": "RED",
+  "pytest": "1 failed, 38 deselected in 22.46s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_dinov3_train_mode_randomises_rope_and_our_encoder_is_immune_to_it"
+  ],
+  "seconds": 27.00863814353943
+ },
+ {
+  "mutant": "B3_ste_blocks_the_gradient",
+  "result": "RED",
+  "pytest": "1 failed, 36 deselected in 25.08s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_fp8_ste_is_the_caches_quantiser_and_passes_the_gradient_through"
+  ],
+  "seconds": 29.329801321029663
+ },
+ {
+  "mutant": "B4_off_by_one_frame_index",
+  "result": "RED",
+  "pytest": "1 failed, 38 deselected in 25.43s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_frame_windows_carry_the_same_indices_the_cached_feats_were_gathered_with"
+  ],
+  "seconds": 28.281763315200806
+ },
+ {
+  "mutant": "B5_encoder_defaults_to_lora",
+  "result": "RED",
+  "pytest": "1 failed, 30 deselected in 23.70s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_every_new_flag_has_a_declared_vs_built_entry_and_a_default_that_builds_nothing"
+  ],
+  "seconds": 26.480578422546387
+ },
+ {
+  "mutant": "B6_backbone_not_frozen",
+  "result": "RED",
+  "pytest": "1 failed, 36 deselected in 25.06s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_trainable_count_is_the_preregistered_number_on_the_real_architecture"
+  ],
+  "seconds": 28.545936346054077
+ },
+ {
+  "mutant": "B7_A_init_from_global_rng",
+  "result": "RED",
+  "pytest": "1 failed, 39 deselected in 23.54s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_building_the_encoder_never_touches_the_global_rng_and_a_is_seeded_privately"
+  ],
+  "seconds": 27.3781578540802
+ },
+ {
+  "mutant": "B8_merge_sign_flipped",
+  "result": "RED",
+  "pytest": "1 failed, 37 deselected in 24.76s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_merge_equals_unmerged_and_has_exactly_the_frozen_encoders_parameter_count"
+  ],
+  "seconds": 27.378302812576294
+ },
+ {
+  "mutant": "B9_unique_frames_forgets_the_clip",
+  "result": "RED",
+  "pytest": "1 failed, 37 deselected in 25.34s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone"
+  ],
+  "seconds": 28.179641723632812
+ },
+ {
+  "mutant": "B10_plain_microbatch_accumulation",
+  "result": "RED",
+  "pytest": "1 failed, 38 deselected in 25.28s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not"
+  ],
+  "seconds": 29.174389600753784
+ },
+ {
+  "mutant": "B11_smoke_repo_root_off_by_one",
+  "result": "RED",
+  "pytest": "1 failed, 39 deselected in 21.54s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection"
+  ],
+  "seconds": 23.26698327064514
+ },
+ {
+  "mutant": "B12_eval_route_repo_root_off_by_one",
+  "result": "RED",
+  "pytest": "1 failed, 38 deselected in 21.32s",
+  "failed_tests": [
+   "stack\\tests\\test_v8f_lora.py::test_eval_route_reproduces_the_builders_cache_at_zero_lora_and_the_merged_encode_otherwise[True]"
+  ],
+  "seconds": 23.847550868988037
+ }
+]

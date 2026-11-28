@@ -1,0 +1,90 @@
+{
+ "_what": "E-WC2 precondition verification, measured on the REAL dumps",
+ "perax_unit_check": {
+  "sigma_star_m": 0.8,
+  "sel_ade": 0.4714,
+  "oracle_ade": 0.1639,
+  "sigma_over_ade": 1.6971,
+  "sigma_over_oracle": 4.881,
+  "published_ratio_vs_ade": 1.7,
+  "published_ratio_vs_oracle": 4.9,
+  "reproduces_published": true,
+  "radial_misreading": {
+   "sigma_radial_rms_m": 1.1314,
+   "sigma_over_ade_if_radial": 2.4,
+   "sigma_over_oracle_if_radial": 6.9028,
+   "inflation_x": 1.4142,
+   "_why": "a radial-RMS reading inflates \u03c3 by 1.414 and does NOT reproduce \u00a73.1's published 1.70 \u2014 that is what pins the unit"
+  }
+ },
+ "dumps": {
+  "latents_refc-xl-30k-ep.pt": {
+   "loeo": {
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_folds": 40,
+    "episodes_per_fold_max": 1,
+    "episodes_per_fold_min": 1,
+    "one_episode_per_fold": true,
+    "episodes_straddling_folds": {},
+    "episode_disjoint": true,
+    "windows_per_fold_min": 22,
+    "windows_per_fold_max": 23
+   },
+   "leak_control_2s": {
+    "horizon_index": 0,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "sigma_perax_LOEO_m": 4.710377,
+    "sigma_perax_window_disjoint_m": 2.290272,
+    "understatement_x": 2.0567,
+    "leaky_scheme_understates": true,
+    "_why": "window-disjoint folds put a window's stride-8 NEIGHBOURS in train; the \u03c3 they report is a memorisation artefact and is biased DOWN on exactly the number E-WC2 exists to produce"
+   },
+   "leak_control_6s": {
+    "horizon_index": 1,
+    "n_windows": 681,
+    "n_episodes": 40,
+    "sigma_perax_LOEO_m": 18.351855,
+    "sigma_perax_window_disjoint_m": 9.513329,
+    "understatement_x": 1.9291,
+    "leaky_scheme_understates": true,
+    "_why": "window-disjoint folds put a window's stride-8 NEIGHBOURS in train; the \u03c3 they report is a memorisation artefact and is biased DOWN on exactly the number E-WC2 exists to produce"
+   }
+  },
+  "latents_refc-base-30k-ep.pt": {
+   "loeo": {
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_folds": 40,
+    "episodes_per_fold_max": 1,
+    "episodes_per_fold_min": 1,
+    "one_episode_per_fold": true,
+    "episodes_straddling_folds": {},
+    "episode_disjoint": true,
+    "windows_per_fold_min": 22,
+    "windows_per_fold_max": 23
+   },
+   "leak_control_2s": {
+    "horizon_index": 0,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "sigma_perax_LOEO_m": 4.554538,
+    "sigma_perax_window_disjoint_m": 2.230052,
+    "understatement_x": 2.0423,
+    "leaky_scheme_understates": true,
+    "_why": "window-disjoint folds put a window's stride-8 NEIGHBOURS in train; the \u03c3 they report is a memorisation artefact and is biased DOWN on exactly the number E-WC2 exists to produce"
+   },
+   "leak_control_6s": {
+    "horizon_index": 1,
+    "n_windows": 681,
+    "n_episodes": 40,
+    "sigma_perax_LOEO_m": 16.147298,
+    "sigma_perax_window_disjoint_m": 8.951101,
+    "understatement_x": 1.8039,
+    "leaky_scheme_understates": true,
+    "_why": "window-disjoint folds put a window's stride-8 NEIGHBOURS in train; the \u03c3 they report is a memorisation artefact and is biased DOWN on exactly the number E-WC2 exists to produce"
+   }
+  }
+ }
+}

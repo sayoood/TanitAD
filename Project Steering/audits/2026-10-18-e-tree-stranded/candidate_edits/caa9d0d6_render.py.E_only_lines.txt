@@ -1,0 +1,121 @@
+# E-only lines of taniteval/taniteval/leaderboard/render.py  (E lines absent from the tip blob; CR-normalised; E line numbers)
+# tip blob last changed in 24d5ce2; E mtime 2026-09-26 22:48; verdict: NEW-DRAFT-vs-TIP (no E-HEAD base; E has lines the tip lacks)
+17: import hashlib
+319:                 cells, n, masked = [], None, []
+327:                     elif m.get("unmasked"):
+328:                         # a corrected cell: the corrected value, bold, then what it read before — both from the record
+329:                         lib = not m["higher_is_better"]
+330:                         u = m["unmasked"]
+331:                         cells.append(f"**{sgn(m['delta'], 4)} {ci(m['lo'], m['hi'], 4)} → {verdict(m, lower_is_better=lib)}** "
+332:                                      f"(masked cell, n {m['n']:,}; unmasked it read {sgn(u['delta'], 4)} "
+333:                                      f"{ci(u['lo'], u['hi'], 4)} → {verdict(u, lower_is_better=lib)})")
+334:                         masked.append(m)
+338:                 if masked:
+339:                     by_retr = sorted({m["masked_by"] for m in masked if m.get("masked_by")})
+340:                     ncol = (f"{masked[0]['n_total']:,} windows; " + " / ".join(f"{m['n']:,}" for m in masked)
+341:                             + " with a valid pair" + "".join(f" · `{r}`" for r in by_retr))
+342:                 else:
+343:                     ncol = f"{n:,}" if isinstance(n, int) else (n or "—")
+344:                 L.append(row([k[0], f"`{k[1]}`"] + cells + [ncol]))
+731: def _our_single_stage_note(a: dict) -> str:
+732:     bits = [f"interval {_iv(a)}"]
+733:     if a.get("fix151_basis"):
+734:         bits.append(f"#151 side per the artifact: {a['fix151_basis']}")
+735:     if a.get("caveats"):
+736:         bits.append("caveats " + ", ".join(f"`{c}`" for c in a["caveats"]))
+737:     return " · ".join(bits)
+738: 
+739: 
+741:     """Published rows grouped by their #151 side — and OUR runs, placed by their artifact's own
+742:     ``provenance.harness.fix151``, never by assumption.
+743: 
+744:     ⛔ Until 2026-09-26 our runs on this protocol were read, validated, counted in the inputs line and rendered
+745:     NOWHERE: the protocol HAS a table, so ``orphan_runs_block`` did not list them, while this table printed the
+746:     published rows and a "TanitAD — pending" placeholder — the "built, tested, unreachable from its caller" class
+747:     in leaderboard costume. The placeholder also sat after whichever group came LAST, which on this protocol is
+748:     the one "out of comparison"; it now sits in the post-#151 group, where a TanitAD number is comparable, and it
+749:     stays until a MODEL arm exists — harness floors (checkpoint none) are printed as "our floor", never as TanitAD."""
+753:     ours = [a for a in model["navsim"] if a["protocol"] == proto]
+754:     if ours:
+755:         assert_one_protocol(proto, ours)
+758:     sides = {side for side, _ in groups}
+759:     present = [(side, title) for side, title in groups
+760:                if any(r["harness"]["fix151"] == side for r in rows) or any(a.get("fix151") == side for a in ours)]
+761:     home = "post" if any(side == "post" for side, _ in present) else (present[-1][0] if present else None)
+762:     kind_order = {"floor": 0, "control": 1, "reference": 1, "model": 2, "ablation": 3}
+763:     # the placeholder speaks for TanitAD MODELS: harness floors (CV / STOP / HUMAN, checkpoint none) do not answer it
+764:     has_model = any(a["kind"] == "model" for a in ours)
+765: 
+766:     def _who(a):
+767:         return f"**TanitAD — {a['label']}**" if a["kind"] == "model" else f"**our {a['kind']} — {a['label']}**"
+768:     for side, title in present:
+770:         mine = [a for a in ours if a.get("fix151") == side]
+776:         for a in sorted(mine, key=lambda a: (a["run_id"], kind_order.get(a["kind"], 9), a["key"])):
+777:             L.append(row([_who(a), _headline_cell(a), a["kind"], cmd_mark(a["declared"]),
+778:                           f"run `{a['run_id']}` · `{a['source']}`", _our_single_stage_note(a)]))
+779:         if not has_model and side == home:
+782:     unplaced = [a for a in ours if a.get("fix151") not in sides]
+783:     if unplaced:
+784:         L += ["*Our runs whose artifact states NO usable #151 side — ⛔ out of comparison (the side is read from "
+785:               "`provenance.harness.fix151`, never assumed):*", ""]
+786:         L += header(["system", "EPDMS", "role", "declared inputs", "source", "`provenance.harness.fix151`"])
+787:         for a in sorted(unplaced, key=lambda a: (a["run_id"], a["key"])):
+788:             L.append(row([_who(a), _headline_cell(a), a["kind"], cmd_mark(a["declared"]),
+789:                           f"run `{a['run_id']}` · `{a['source']}`", f"`{a.get('fix151')!r}`"]))
+790:         L.append("")
+791:     if ours:
+792:         L += ["*Our rows sit in the group their artifact's own `provenance.harness.fix151` names. ⚠️ "
+793:               "`FIX151_POST_ONLY_COMPARABLE`: a post-#151 number is comparable ONLY to the post-#151 rows, and even "
+794:               "those only if their authors scored non-reactive traffic, which no banked primary states "
+795:               "(W8 RESULT §6 E1). A pre-#151 row is never a target for it.*", ""]
+1008: def orphan_runs_block(model: dict, order: list, rendered: str | None = None) -> list:
+1009:     """W1 runs that were read and validated but that NO table on this page shows.
+1013:     unread. They are listed with their checkpoint identity so the omission is visible and countable.
+1014: 
+1015:     ⛔ The test is whether the run IS ON THE PAGE (``rendered``, the text of every table above), not whether its
+1016:     protocol HAS a table. MEASURED 2026-09-26: the old protocol test passed six nuScenes runs and would have passed
+1017:     tonight's navtest single-stage run — their protocols have tables that print only published rows."""
+1018:     if rendered is None:                                        # the legacy call: protocol-level test only
+1019:         known = (set(order) & set(model["published"]["protocols"])) | {INTERNAL_T1}
+1020:         rows = [r for r in model["navsim"] if r["protocol"] not in known]
+1021:     else:
+1022:         rows = [r for r in model["navsim"] if r.get("run_id") and r["run_id"] not in rendered]
+1025:     L = ["### 0E.x Runs read from disk that no table on this page shows *(generated)*", "",
+1026:          "*These W1 runs were read and validated, and no table above renders them (their protocol has no column yet, or "
+1027:          "its table prints published rows only) — listed rather than dropped, because a result the page silently "
+1028:          "ignores is worse than one it says it cannot place.*", ""]
+1032:     return L + [""]
+1033: 
+1034: 
+1035: def withdrawn_runs_block(model: dict) -> list:
+1036:     """Runs WITHDRAWN by a ``TOMBSTONE.json`` — never a result, never silently gone. One line per run: what superseded
+1037:     it and why, in the tombstone's own words. Their ``summary.json`` stays on disk as the record."""
+1038:     runs = {}
+1039:     for r in model.get("withdrawn") or []:
+1040:         runs.setdefault(r["run_id"], r)
+1041:     if not runs:
+1042:         return []
+1043:     L = ["### 0E.y Withdrawn runs — kept as the record, never a result *(generated)*", "",
+1044:          "*A withdrawn run keeps its `summary.json` (`results/bench/**` is append-only) and gains a `TOMBSTONE.json`; "
+1045:          "no table above reads it.*", ""]
+1046:     L += header(["protocol", "withdrawn run", "superseded by", "why (the tombstone's words)", "removed (UTC)"])
+1047:     for rid, r in sorted(runs.items(), key=lambda kv: (kv[1]["protocol"], kv[0])):
+1048:         t = r["tombstone"]
+1049:         why = str(t.get("why") or "—").replace("\n", " ")
+1050:         L.append(row([f"`{r['protocol']}`", f"`{rid}`", f"`{t.get('superseded_by') or '—'}`",
+1051:                       why if len(why) <= 200 else why[:197] + "…", t.get("removed_utc") or "—"]))
+1091:     L += orphan_runs_block(model, list(cfg["protocol_order"]) + [INTERNAL_T1], rendered="\n".join(L))
+1092:     L += withdrawn_runs_block(model)
+1100:     # ⛔ the section's own fingerprint, so the NEXT build can tell a hand edit from its own output (build.py)
+1101:     L.append(f"{FP_PREFIX}{section_fingerprint(chr(10).join(L))} -->")
+1104: 
+1105: 
+1106: #: a generated section records the sha256 of everything above this line (from the BEGIN marker, LF newlines).
+1107: #: ⛔ WHY (2026-09-26): the RETR-2026-09-26-YAWMASK correction was typed INTO the generated section on the tip
+1108: #: (`da5760e2` changed LEADERBOARD.md and no input), and its data-model digest stayed the same — so the next build
+1109: #: would have printed the retracted value again, silently. The fingerprint makes that visible.
+1110: FP_PREFIX = "<!-- BENCH:SECTION-SHA256 "
+1111: 
+1112: 
+1113: def section_fingerprint(body: str) -> str:
+1114:     return hashlib.sha256(body.replace("\r\n", "\n").encode("utf-8")).hexdigest()

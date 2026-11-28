@@ -1,0 +1,145 @@
+"""n1dm_klim_run.py -- runner of the K-LIM control of PREREG_V8F_N1DM (MM review item 1; stack/scripts/n1dm_klim.py of the-N1DM-commit, imported unedited) on a REAL probe batch, dev-box CPU, zero training.
+
+K-LIM: the route head reads O's plan feature h, and h reads e_lim(limit).  In TRAINING `limit` is the clip's LOGGED speed bucket (built from the ego's realised speed over [t0+2 s, t0+6 s]: future information that
+correlates with a turn); at T1-kin inference it is CAUSAL.  K-LIM reads the head's argmax accuracy with limit = logged, = causal (the ONE-ROW form from the speed at NOW; n1dm_klim.causal_limit), = off.  REPORT ONLY.
+
+The probe batch is built by the pinned evaluator itself: n1dm_t0route_lib.run_tick0 with `--limit logged` (the training format of the bucket), ONE tick, and the batch handed to forward_infer is captured (a class-level wrapper,
+output unchanged).  Labels = D1-HO's kinematic TAC-LAT of the windows' GT track (the card's label; K-LABEL pins the trainer's route_stage to it), all rows labelled.  The batch is run through n1dm_klim.klim() per chunk and the
+chunk results are merged with exact weights (accuracy by labelled rows).
+Controls (its own): K-SELF (klim's 'logged' accuracy equals the accuracy of the captured tool logits, and a fresh forward_infer on the captured batch reproduces the captured logits bit for bit), K-PERM (labels permuted across
+rows: the 'logged' accuracy must read the chance level), K-ZERO (the logged variant's plan L1 to itself is exactly 0.0), K-ALIGN (captured plans equal the dump's `ol`).  A model without a route head is a REFUSAL.
+Usage:  python -I n1dm_klim_run.py --tree TREE --ckpt CKPT --profile ho|e141 --max-windows 256 --out OUT.json [--work DIR]
+Caveat: the 'causal' variant here is the one-row bucket (speed at NOW), <= the evaluator's 4 s max, so it can only move a row DOWN a bucket; the K-LIM note says so; a near-zero gap does not clear the 4 s form."""
+import argparse
+import json
+import os
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
+sys.path.insert(0, HERE)
+import n1dm_t0route_lib as TL  # noqa: E402
+
+
+def merge(chunks):
+    """exact merge of per-chunk klim() records: accuracy and mean_max_posterior weighted by the labelled rows; plan L1 weighted by rows; counts summed"""
+    n = [c["n_labelled_rows"] for c in chunks]
+    tot = sum(n)
+    out = {}
+    for v in ("logged", "causal", "off"):
+        w = lambda key: sum(c[v][key] * k for c, k in zip(chunks, n)) / tot      # noqa: E731
+        out[v] = {"acc": w("acc"), "mean_max_posterior": w("mean_max_posterior"), "plan_l1_to_logged": w("plan_l1_to_logged"),
+                  "argmax_class_counts": [sum(c[v]["argmax_class_counts"][i] for c in chunks) for i in range(3)]}
+    out["n_labelled_rows"] = tot
+    out["majority_share"] = sum(c["majority_share"] * k for c, k in zip(chunks, n)) / tot
+    out["gap_logged_minus_causal"] = out["logged"]["acc"] - out["causal"]["acc"]
+    out["gap_logged_minus_off"] = out["logged"]["acc"] - out["off"]["acc"]
+    out["note"] = chunks[0]["note"]
+    return out
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tree", required=True)
+    ap.add_argument("--ckpt", required=True)
+    ap.add_argument("--profile", choices=["ho", "e141"], default="ho")
+    ap.add_argument("--max-windows", type=int, default=256, help="the probe batch: an evenly spaced subset of the grid (the tool's own --max-windows rule)")
+    ap.add_argument("--batch", type=int, default=0, help="chunk size of the tool (default: the whole probe in one batch)")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--work", default=HERE + "/klim_work")
+    ap.add_argument("--hb-dir", default=None, help="folder holding v8f_t1_eval_hb.py (sha256 74fd8445) when it is not in TREE/stack/scripts")
+    for k in ("tracks", "cache", "grid", "join", "navtext", "rb"):
+        ap.add_argument("--ho-" + k, default=None)
+    a = ap.parse_args(argv)
+    tree = TL.setup_paths(a.tree, a.hb_dir)
+    import numpy as np
+    import torch
+    import n1dm_ho_read as R
+    import argparse as _ap
+    R.setup(_ap.Namespace(tree=tree, inp=HERE + "/in", cmp_in=HERE + "/in"))
+    import n1dm_klim as K                                                  # stack/scripts/n1dm_klim.py of the tree, unedited
+    t0 = time.time()
+    res = {"tool": "n1dm_klim_run.py", "card": "PREREG_V8F_N1DM.md sha256 N1DM-DRAFT, MM review item 1 (K-LIM); code of record the-N1DM-commit", "profile": a.profile, "klim_module": K.__file__, "ckpt": a.ckpt,
+           "evidence_class": "MEASURED (ours; checkpoint forward, zero training)" if a.profile == "ho" else "SMOKE on eval-141 inputs: machinery only, NOT a D1-HO number", "max_windows": a.max_windows,
+           "report_only": True, "controls": {}}
+    batch_sz = a.batch or a.max_windows
+    cap, dd = TL.run_tick0(tree, a.profile, a.ckpt, f"{a.work}/probe", "KLIM-probe", limit="logged", max_windows=a.max_windows, batch=batch_sz, a=a, keep_batches=True)
+    if cap.n_no_head or not cap.calls:
+        res["status"] = f"REFUSED: the checkpoint's model has no route head ({cap.n_no_head} forward calls without route_logits)"
+        json.dump(res, open(a.out, "w"), indent=1)
+        print(res["status"])
+        return 1
+    dump = TL.load_dump(dd)
+    perm, kal = TL.align(cap, dump)
+    res["controls"]["K-ALIGN"] = kal
+    if perm is None or not kal["pass_"]:
+        res["status"] = "INVALID (K-ALIGN failed)"
+        json.dump(res, open(a.out, "w"), indent=1)
+        return 1
+    glat, _ = TL.kin_labels(dump["g"])
+    n = len(glat)
+    y_rec = np.empty(n, np.int64)
+    y_rec[perm] = glat                                                       # dump row j <-> recorded row perm[j]
+    model = K.load_model(a.ckpt)
+    model.eval()
+    # per chunk: the klim() record on the captured batch (route_y / route_ok attached)
+    chunks, off, self_ok, max_logit_diff, plan_l1_logged = [], 0, True, 0.0, 0.0
+    for b, c in zip(cap.batches, cap.calls):
+        k = c["route_logits"].shape[0]
+        bb = dict(b)
+        bb["route_y"], bb["route_ok"] = torch.as_tensor(y_rec[off:off + k]), torch.ones(k, dtype=torch.bool)
+        chunks.append(K.klim(model, bb))
+        with torch.no_grad():                                                # K-SELF: a fresh forward on the captured batch reproduces the tool's logits
+            fresh = model.forward_infer(b)["route_logits"].float().numpy()
+        d = float(np.abs(fresh - c["route_logits"]).max())
+        max_logit_diff = max(max_logit_diff, d)
+        self_ok &= bool(d == 0.0)
+        off += k
+    out = merge(chunks)
+    res["klim"] = out
+    # the evaluator's OWN causal rule (speed_max_bin of the max measured speed over the last 4 s, v8f_t1_eval.causal_bucket) at tick 0: a second tool run, same windows, --limit causal
+    cap2, _ = TL.run_tick0(tree, a.profile, a.ckpt, f"{a.work}/probe_causal", "KLIM-probe-causal", limit="causal", max_windows=a.max_windows, batch=batch_sz, a=a, keep_batches=True)
+    same_windows = bool(len(cap2.calls) == len(cap.calls) and all(np.array_equal(x["kin0"], y["kin0"]) for x, y in zip(cap.calls, cap2.calls)))
+    c4_ok, c4_n, off2 = 0, 0, 0
+    for b, b2, c in zip(cap.batches, cap2.batches, cap.calls):
+        k = c["route_logits"].shape[0]
+        bb = dict(b)
+        bb["limit"], bb["limit_ok"] = b2["limit"], b2["limit_ok"]
+        with torch.no_grad():
+            pr = model.forward_infer(bb)["route_logits"].float().argmax(-1).numpy()
+        c4_ok += int((pr == y_rec[off2:off2 + k]).sum())
+        c4_n += k
+        off2 += k
+    lg4 = np.concatenate([np.asarray(b["limit"]).argmax(-1) for b in cap.batches])
+    cz4 = np.concatenate([np.asarray(b["limit"]).argmax(-1) for b in cap2.batches])
+    out["causal_4s_evaluator_rule"] = {"acc": c4_ok / c4_n, "gap_logged_minus_causal_4s": out["logged"]["acc"] - c4_ok / c4_n, "bucket_share_equal_logged_vs_causal_4s": float((lg4 == cz4).mean()), "same_windows_as_logged_run": same_windows,
+                                       "note": "the evaluator's own 4 s rule at tick 0 (the limit the T1-kin dumps carry); this is the number the card's K-LIM is about, the one-row form in 'causal' is its lower-bound sibling"}
+    if not same_windows:
+        res["controls"]["K-SAME-WINDOWS"] = {"pass": False}
+    # causal vs logged bucket agreement (how much the two variants can differ at all)
+    lg = np.concatenate([np.asarray(b["limit"]).argmax(-1) for b in cap.batches])
+    cz = np.concatenate([K.causal_limit(b)[0].numpy().argmax(-1) for b in cap.batches])
+    res["bucket_agreement_logged_vs_causal_onerow"] = {"share_equal": float((lg == cz).mean()), "n": int(len(lg))}
+    tool_acc = float((np.concatenate([c["route_logits"] for c in cap.calls]).argmax(-1) == y_rec).mean())
+    res["controls"]["K-SELF"] = {"klim_logged_acc": out["logged"]["acc"], "tool_logits_acc": tool_acc, "acc_abs_diff": abs(out["logged"]["acc"] - tool_acc), "acc_equal": bool(abs(out["logged"]["acc"] - tool_acc) <= 1e-6), "fresh_forward_max_abs_logit_diff": max_logit_diff,
+                                 "pass": bool(abs(out["logged"]["acc"] - tool_acc) <= 1e-6 and self_ok), "note": "the 'logged' variant of klim() is the tool's own forward: same accuracy (to 1e-6: klim() averages in float32), logits bit-equal"}
+    res["controls"]["K-ZERO"] = {"logged_plan_l1_to_logged": out["logged"]["plan_l1_to_logged"], "pass": bool(out["logged"]["plan_l1_to_logged"] == 0.0)}
+    # K-PERM: the same chunks scored against labels permuted across rows must read the chance level (deliberate regression)
+    rs = np.random.RandomState(0)
+    yp = y_rec[rs.permutation(n)]
+    pred = np.concatenate([c["route_logits"] for c in cap.calls]).argmax(-1)
+    chance = float(sum((pred == q).mean() * (y_rec == q).mean() for q in range(3)))
+    pacc = float((pred == yp).mean())
+    res["controls"]["K-PERM"] = {"permuted_label_acc": pacc, "chance_expected": chance, "abs_diff": abs(pacc - chance), "pass": bool(abs(pacc - chance) <= 0.05), "n": n,
+                                 "note": "tolerance 0.05 (a small probe batch); labels permuted across rows must read the chance level"}
+    bad = [k for k, v in res["controls"].items() if not v.get("pass", v.get("pass_"))]
+    res["status"] = "VALID" if not bad else "INVALID (controls failed: " + ", ".join(bad) + ")"
+    res["wall_s"] = round(time.time() - t0, 1)
+    json.dump(res, open(a.out, "w"), indent=1, default=float)
+    print(json.dumps({"n": out["n_labelled_rows"], "majority_share": round(out["majority_share"], 4), "logged": round(out["logged"]["acc"], 4), "causal": round(out["causal"]["acc"], 4), "off": round(out["off"]["acc"], 4),
+                      "gap_logged_minus_causal": round(out["gap_logged_minus_causal"], 4), "gap_logged_minus_off": round(out["gap_logged_minus_off"], 4), "status": res["status"][:60]}))
+    return 0 if not bad else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

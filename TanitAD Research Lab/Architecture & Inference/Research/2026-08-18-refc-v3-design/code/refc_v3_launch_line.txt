@@ -1,0 +1,65 @@
+# REF-C v3 dominance experiment (E-V3DOM-1) — LAUNCH LINES + PREFLIGHT
+# ⛔ NOT TO BE RUN NOW: Thor is training (~4.7 d at writing); this targets an
+#    IDLE pod A40 (never a training pod, never Thor). PREREG_REFC_V3.md governs.
+# Written 2026-08-18. Every step below was designed against the traps in
+# CLAUDE.md; the numbered preflight is EXECUTED IN ORDER and any FAIL stops.
+
+# ---------------------------------------------------------------- PREFLIGHT --
+# P1. Dev box, BEFORE touching a pod (all four ran green 2026-08-18):
+#       cd <stack> && PYTHONUTF8=1 PYTHONPATH=<stack> python -m pytest tests/test_refc_v3.py -q          # 16 passed
+#       PYTHONUTF8=1 PYTHONPATH=<stack> python -m pytest tests/test_refc.py tests/test_refc_tactical.py tests/test_refc_select.py -q   # 15+28+22 passed
+#       PYTHONUTF8=1 PYTHONPATH=<stack> python scripts/refc_v3_train.py --arm hier --preflight --out /tmp/v3pf
+#         -> pins the config delta to the REGISTERED lever set (C122 gate),
+#            runs the C115 freeze-history gate (PASS 2026-08-18: pooled 0.0,
+#            history grads nonzero at all 8 slots), the E11 v0-vs-frames
+#            intervention audit, and one finite full-size loss step.
+#       PYTHONUTF8=1 PYTHONPATH=<stack> python scripts/refc_v3_train.py --arm flat --preflight --out /tmp/v3pf
+#     ⚠️ PYTHONPATH is REQUIRED even on the dev box — the venv resolves
+#        `tanitad` from the G: install otherwise (measured 2026-08-18; the pod
+#        ModuleNotFound trap in a dev-box costume).
+# P2. Full intervention audit (tanitad.eval.goal_provenance.audit_arm) over the
+#     built H arm with roles from RefCV3Model.provenance_roles(); verdict JSON
+#     is banked next to the run's config.json. UNPOWERED or DIRECT_PATH from a
+#     situation node -> STOP (there is no situation node in-graph; the audit
+#     MEASURES that rather than trusting it).
+# P3. Pod state (each has cost hours before):
+#       - disk by REAL WRITE, never df:   dd if=/dev/zero of=/workspace/.dd_probe bs=1M count=500 oflag=direct && rm /workspace/.dd_probe
+#       - code by CONTENT, never git log: grep -c "hierarchy_hook" /workspace/TanitAD/stack/tanitad/refs/refc.py   (>=2 or the pod is stale — ship files, never git-sync a pod)
+#       - import probe: PYTHONPATH=/workspace/TanitAD/stack python3 -c "from tanitad.refs import refc_v3; print(refc_v3.V3_HORIZONS)"
+#       - GPU idle + no training process on this pod (invariant: never add load to a training pod)
+#       - OMP_NUM_THREADS=6 exported (torch spawns ~113 threads/proc otherwise)
+# P4. Parity: the run must print the canonical episode/window counts at start;
+#     skip-hash f09e44db corpus only. ⛔ max_horizon stays 20 in the dataset
+#     (window enumeration) — grep the running process env/args, not the manifest.
+# P5. 6 s anchor vocabulary (once, on the pod, before arm 1):
+#       cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack python3 scripts/build_refc_anchors.py \
+#         --out /workspace/experiments/refc_v3_anchors_6s_128.pt \
+#         --data-root /workspace/pai_epcache --n-anchors 128 \
+#         --horizons 5,10,15,20,30,40,50,60 --pool-cap 200000 --seed 0
+#     Report (not gate): compare anchors[:, :4] geometry vs the trained-arm 2 s
+#     anchors on the shared slots.
+
+# ------------------------------------------------------------- LAUNCH LINES --
+# Sequential on ONE idle A40. Seed-0 pair FIRST; seeds 1-2 only after the 5 k
+# sanity gates (PREREG §6.4). ~7-9 h per 30 k run (ESTIMATED from small's
+# measured 7 h 10 m). `< /dev/null` guards the nested-ssh stdin trap.
+
+mkdir -p /workspace/experiments/refc-v3-hier-s0-30k && cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True nohup python3 scripts/refc_v3_train.py --arm hier --seed 0 --data-root /workspace/pai_epcache --out /workspace/experiments/refc-v3-hier-s0-30k --steps 30000 --mode diffusion --batch 20 --workers 6 --goal-str --anchors /workspace/experiments/refc_v3_anchors_6s_128.pt > /workspace/experiments/refc-v3-hier-s0-30k/train.out 2>&1 < /dev/null &
+
+mkdir -p /workspace/experiments/refc-v3-flat-s0-30k && cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True nohup python3 scripts/refc_v3_train.py --arm flat --seed 0 --data-root /workspace/pai_epcache --out /workspace/experiments/refc-v3-flat-s0-30k --steps 30000 --mode diffusion --batch 20 --workers 6 --anchors /workspace/experiments/refc_v3_anchors_6s_128.pt > /workspace/experiments/refc-v3-flat-s0-30k/train.out 2>&1 < /dev/null &
+
+# Seeds 1-2 (after the 5 k gates): same lines with --seed N and -sN- out dirs.
+# ⚠️ --goal-str is on the HIER arm only BY CONSTRUCTION (the strategic-goal
+#    LABEL path; the flat arm has no goal heads — passing it there is refused
+#    by the loss wiring, which only reads it under cfg.hier).
+# ⚠️ Kill only by explicit PID (pgrep -f self-matches the ssh command).
+# ⚠️ At 5 k: run PREREG §6.4 sanity gates BEFORE seeds 1-2; freeze-history and
+#    the intervention audit re-run on the pod build.
+# ⚠️ On completion the trainer writes summary.json {"done": true} itself (the
+#    v5f supervisor-resurrection lesson); verify it exists before any eval.
+
+# --------------------------------------------------------------- AFTER 30 k --
+# Eval per PREREG §4 (taniteval.refc_eval + four families + val40 lead block;
+# paired episode-cluster bootstrap; edge-free LEAD/NO_LEAD strata). Selection
+# deltas are READ only under the σ ≤ 0.8 m @ 2 s admission (PREREG §5), with
+# the goal-echo control beside every number.

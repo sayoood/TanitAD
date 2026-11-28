@@ -1,0 +1,33 @@
+### units (-k test_j or test_k or test_l or test_m)
+.......s....sF............                                               [100%]
+================================== FAILURES ===================================
+_ test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked _
+
+openloop = <module '_instfix_openloop_live' from 'C:\\Users\\Admin\\instfix\\mutB\\openloop_gate_deleted\\taniteval\\tools\\openloop_suite.py'>
+capsys = <_pytest.capture.CaptureFixture object at 0x0000020725403950>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000020725395F40>
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5364/test_k6_openloop_rollout_witho0')
+
+    def test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked(openloop, capsys, monkeypatch, tmp_path):
+        sent = {"acquire_record": _stop}
+>       assert _gate(openloop, _ol_argv(tmp_path, "--ckpt", "c.pt", "--episodes", "x"), monkeypatch, sent) == 2
+E       AssertionError: assert 'REACHED' == 2
+E        +  where 'REACHED' = _gate(<module '_instfix_openloop_live' from 'C:\\Users\\Admin\\instfix\\mutB\\openloop_gate_deleted\\taniteval\\tools\\openloop_suite.py'>, ['--out-dir', 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-5364\\test_k6_openloop_rollout_witho0\\out', '--tag', 't', '--ckpt', 'c.pt', ...], <_pytest.monkeypatch.MonkeyPatch object at 0x0000020725395F40>, {'acquire_record': <function _stop at 0x000002072543A520>})
+E        +    where ['--out-dir', 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-5364\\test_k6_openloop_rollout_witho0\\out', '--tag', 't', '--ckpt', 'c.pt', ...] = _ol_argv(WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5364/test_k6_openloop_rollout_witho0'), '--ckpt', 'c.pt', '--episodes', 'x')
+
+tests\test_refav1_units_required.py:1261: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[suite] taniteval/tools/openloop_suite.py
+[suite] regime: OPEN LOOP (PI ruling 2026-09-02) — every arm
+=========================== short test summary info ===========================
+FAILED tests/test_refav1_units_required.py::test_k6_openloop_rollout_without_units_is_refused_the_other_sources_are_not_asked
+1 failed, 23 passed, 2 skipped, 121 deselected in 14.65s
+
+### internal_t1 (full)
+.....s...                                                                [100%]
+8 passed, 1 skipped in 0.69s
+
+### chain_controls (full)
+..................................                                       [100%]
+34 passed in 2.02s
+

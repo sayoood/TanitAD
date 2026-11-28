@@ -1,0 +1,181 @@
+{
+ "tier": "T0",
+ "d_outcome_logic": {
+  "planted": {
+   "SLOW-PLANS": {
+    "expected": [
+     "SLOW-PLANS"
+    ],
+    "got": [
+     "SLOW-PLANS"
+    ],
+    "ok": true
+   },
+   "BASIS-ONLY": {
+    "expected": [
+     "BASIS-ONLY"
+    ],
+    "got": [
+     "BASIS-ONLY"
+    ],
+    "ok": true
+   },
+   "NO-EFFECT": {
+    "expected": [
+     "NO-EFFECT"
+    ],
+    "got": [
+     "NO-EFFECT"
+    ],
+    "ok": true
+   },
+   "SLOW-COSTS": {
+    "expected": [
+     "SLOW-COSTS"
+    ],
+    "got": [
+     "SLOW-COSTS"
+    ],
+    "ok": true
+   },
+   "one-seed-only": {
+    "expected": [
+     "NO-EFFECT"
+    ],
+    "got": [
+     "NO-EFFECT"
+    ],
+    "ok": true
+   },
+   "not-plannable": {
+    "expected": [],
+    "got": [],
+    "ok": true
+   }
+  },
+  "incomplete_when_a_margin_is_missing": true,
+  "combine_and_unusable": {
+   "ok": true,
+   "unusable_text": "UNUSABLE: controls FAIL",
+   "disagree": "CELLS-DISAGREE"
+  },
+  "red_arms": {
+   "seeds_0_only": {
+    "changes_planted_outcomes": [
+     "one-seed-only"
+    ],
+    "red": true
+   },
+   "floor_ignored": {
+    "changes_planted_outcomes": [
+     "BASIS-ONLY",
+     "NO-EFFECT"
+    ],
+    "red": true
+   },
+   "sign_flipped": {
+    "changes_planted_outcomes": [
+     "SLOW-PLANS",
+     "BASIS-ONLY"
+    ],
+    "red": true
+   }
+  },
+  "note": "SLOW-COSTS planted with PCA-B beating R35H so that it stands alone; with PCA-B not beating R35H both NO-EFFECT and SLOW-COSTS hold (the card gives SLOW-COSTS NO-EFFECT's next step)",
+  "pass": true
+ },
+ "all_pass": true,
+ "b_basis_route": {
+  "z1_vs_independent_float64_max_abs": 5.245208740234375e-06,
+  "window0_ctx_vs_independent_max_abs": 2.384185791015625e-06,
+  "nm_of_route_vs_float64_max_abs": 2.1606683731079102e-07,
+  "tolerance": 0.0001,
+  "basis_tag_on_ctx": true,
+  "planted_basis_plan_8_windows_finite": true,
+  "red_arm_other_basis_z1_max_abs": 12.11767864227295,
+  "red_arm_other_basis_flagged": true,
+  "wall_s": 13.6,
+  "pass": true
+ },
+ "c_mismatch": {
+  "refusals": {
+   "wrong_sha": {
+    "refused": true,
+    "text": "BasisMismatch: the arm trained on slow 1bb01e1d408b, the reader's basis is slow 4b35dfec6921"
+   },
+   "wrong_kind_readback": {
+    "refused": true,
+    "text": "BasisMismatch: the arm trained on pca 1bb01e1d408b, the reader's basis is slow 1bb01e1d408b"
+   },
+   "no_readback": {
+    "refused": true,
+    "text": "BasisMismatch: F:/TanitAD-scratch/slowwm_read_build\\run_norb\\selfcheck.json has no levers.wm_basis_readback: not a --wm-basis arm"
+   },
+   "cache_problems": {
+    "refused": true,
+    "text": "BasisMismatch: the arm's readback lists cache problems: ['x']"
+   },
+   "ubasis_of_other_basis": {
+    "refused": true,
+    "text": "BasisMismatch: F:/TanitAD-scratch/slowwm_read_build\\planted_ubasis_2.npz was built with slow 4b35dfec6921, the basis is slow 1bb01e1d408b"
+   },
+   "ubasis_kind_mismatch": {
+    "refused": true,
+    "text": "BasisMismatch: F:/TanitAD-scratch/slowwm_read_build\\planted_ubasis_kind.npz was built with pca 4b35dfec6921, the basis is slow 1bb01e1d408b"
+   },
+   "argv_declares_basis_model_has_none": {
+    "refused": true,
+    "text": "LadderMismatch: BUILT wm_basis adapter vs argv slow; basis arm: mean/token path not refused or basis path not the proj tail: {'mode': 'adapter', 'in_dim': 256, 'mean_path_refused': False, 'token_path_refused': False,"
+   },
+   "model_has_basis_argv_says_adapter": {
+    "refused": true,
+    "text": "LadderMismatch: BUILT wm_basis slow vs argv adapter; adapter arm: mean/token/basis refusals read {'mode': 'slow', 'in_dim': 256, 'mean_path_refused': True, 'token_path_refused': True, 'basis_path_refused': False, 'ba"
+   },
+   "name_kind_mismatch": {
+    "refused": true,
+    "text": "LadderMismatch: BUILT wm_basis slow vs argv pca; argv --wm-basis slow vs the arm name PCA-B_s0 (pca)"
+   }
+  },
+  "matching_dir_accepted": true,
+  "red_arm": "the matching planted dir is accepted (b); every row above must read refused: True",
+  "wall_s": 20.7,
+  "pass": true
+ },
+ "a_adapter_identity": {
+  "a1_ctx_arrays_equal_lp_prepare_arm": {
+   "z_now": true,
+   "z_fut": true,
+   "Zw": true,
+   "z_hist": true,
+   "a_hist": true,
+   "A": true,
+   "v0": true,
+   "hist_ok": true,
+   "tune_idx": true,
+   "score_idx": true,
+   "donor": true,
+   "std_raw": true
+  },
+  "a2_unit3_8_windows_vs_lp_lib": {
+   "windows": 8,
+   "plan_raw_bit_equal": true,
+   "cost1_bit_equal": true
+  },
+  "a3_banked_first_batch": {
+   "windows": 64,
+   "same_window_idx": true,
+   "bit_equal": true,
+   "max_abs_diff": 0.0
+  },
+  "banked_file": "F:/TanitAD-scratch/ladder_plantest/runs/p1_R35H_s0_c1_flat1_true.npz",
+  "threads": 1,
+  "red_arms": {
+   "perturbed_ctx_flagged": true,
+   "other_lambda_flagged": true,
+   "adapter_model_down_basis_branch_raises": true,
+   "raise_text": "BasisMismatch: a --wm-basis model reads the basis frames: attach_basis_frames(fr, B, ubasis_npz)"
+  },
+  "wall_s": 57.9,
+  "pass": true
+ }
+}

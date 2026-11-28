@@ -1,0 +1,22 @@
+.............................F..........                                 [100%]
+================================== FAILURES ===================================
+_____________ test_param_groups_carry_the_INTENDED_learning_rates _____________
+
+    def test_param_groups_carry_the_INTENDED_learning_rates():
+        """\u26d4 CONTROL THAT MUST READ A KNOWN VALUE. DD's `cfg_lr_mult` is 0.5 on
+        the image encoder (`rl_config.py:124-131`) and `weight_decay` is 1e-4
+        (`:120`) � NOT torch AdamW's 1e-2 default."""
+        m = _Toy()
+        g = tt.param_groups_dd(m, lr=6e-4)
+        assert [x["name"] for x in g] == ["encoder", "head"]
+>       assert g[0]["lr"] == pytest.approx(3e-4)
+E       assert 0.0006 == 0.0003 � 3.0e-10
+E         
+E         comparison failed
+E         Obtained: 0.0006
+E         Expected: 0.0003 � 3.0e-10
+
+tests\test_refcv6_trunk.py:378: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refcv6_trunk.py::test_param_groups_carry_the_INTENDED_learning_rates
+1 failed, 39 passed in 23.59s

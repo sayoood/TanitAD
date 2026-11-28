@@ -1,0 +1,1383 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060 / CPU ridge)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "question": "decodability of ENVIRONMENT properties, NOT dynamics predictability (that is E-TRUNK-1)",
+ "run_stamp": "v6F-SW-30k@20000",
+ "n_frames": 5617,
+ "n_episodes": 130,
+ "n_folds": 5,
+ "excluded_targets": {
+  "lead_present": "degenerate base rate"
+ },
+ "arms": {
+  "C-MEAN": {
+   "dims": 0,
+   "note": "constant predictor; R2=0 and AUC=0.5 BY CONSTRUCTION \u2014 the absolute floor"
+  },
+  "C-EGO": {
+   "dims": 5,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.334,
+     "ci95": [
+      0.2543,
+      0.4182
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      0.001,
+      0.001,
+      0.1,
+      0.001,
+      0.0001
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.1194,
+     "ci95": [
+      0.0211,
+      0.193
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001
+     ],
+     "lambda_at_grid_edge": 5
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.1601,
+     "ci95": [
+      0.0663,
+      0.2343
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1000.0,
+      1000.0,
+      1000.0,
+      0.001,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0081,
+     "ci95": [
+      -0.0354,
+      -0.0021
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      100000000.0
+     ],
+     "lambda_at_grid_edge": 5
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001
+     ],
+     "lambda_at_grid_edge": 5
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.9845,
+     "ci95": [
+      0.9785,
+      0.9892
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001
+     ],
+     "lambda_at_grid_edge": 5
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 1.0,
+     "ci95": [
+      1.0,
+      1.0
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001,
+      0.0001
+     ],
+     "lambda_at_grid_edge": 5
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5009,
+     "ci95": [
+      0.4379,
+      0.5649
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      0.001,
+      10.0
+     ],
+     "lambda_at_grid_edge": 3
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5307,
+     "ci95": [
+      0.4534,
+      0.6046
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1000.0,
+      10.0,
+      100.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5612,
+     "ci95": [
+      0.4916,
+      0.6314
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.01,
+      1.0,
+      0.01,
+      1000.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "C-PIXEL": {
+   "dims": 640,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.002,
+     "ci95": [
+      -0.0174,
+      0.0156
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 4
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0227,
+     "ci95": [
+      -0.0396,
+      0.0742
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      100000000.0,
+      1000.0,
+      1.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0661,
+     "ci95": [
+      -0.0553,
+      0.1742
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100.0,
+      10000.0,
+      100.0,
+      10.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0082,
+     "ci95": [
+      -0.0454,
+      0.0128
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100.0,
+      100000000.0,
+      10.0,
+      1000.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.051,
+     "ci95": [
+      -0.1232,
+      -0.0109
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      1.0,
+      100000000.0,
+      100000000.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 3
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0546,
+     "ci95": [
+      -0.1391,
+      -0.0051
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      0.1
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0141,
+     "ci95": [
+      -0.0376,
+      0.0015
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1000.0,
+      10.0,
+      10.0,
+      100000000.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.4672,
+     "ci95": [
+      0.3957,
+      0.5404
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1000.0,
+      1000.0,
+      100000000.0,
+      100.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.4703,
+     "ci95": [
+      0.3989,
+      0.5457
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100.0,
+      100000000.0,
+      100.0,
+      10.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5967,
+     "ci95": [
+      0.5155,
+      0.6791
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100.0,
+      100.0,
+      10.0,
+      100.0,
+      1000.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "v6_cells": {
+   "dims": 2048,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0176,
+     "ci95": [
+      -0.0455,
+      0.0001
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      0.1
+     ],
+     "lambda_at_grid_edge": 4
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0371,
+     "ci95": [
+      -0.0531,
+      0.1105
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      100000000.0,
+      10.0,
+      1.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.17,
+     "ci95": [
+      -0.0252,
+      0.327
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      0.1,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0031,
+     "ci95": [
+      -0.0542,
+      0.0491
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      100.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0049,
+     "ci95": [
+      -0.1397,
+      0.1092
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      100000000.0,
+      0.1,
+      100000000.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 2
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0125,
+     "ci95": [
+      -0.0377,
+      0.0045
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      10.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0339,
+     "ci95": [
+      -0.0735,
+      -0.0018
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      100.0,
+      0.1,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5321,
+     "ci95": [
+      0.458,
+      0.6068
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100.0,
+      100.0,
+      100.0,
+      1.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.589,
+     "ci95": [
+      0.5145,
+      0.6648
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1.0,
+      10.0,
+      1.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5728,
+     "ci95": [
+      0.4865,
+      0.6582
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "v6_tokens_pooled": {
+   "dims": 12288,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0151,
+     "ci95": [
+      -0.0392,
+      -0.0001
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      100000000.0,
+      0.001
+     ],
+     "lambda_at_grid_edge": 4
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.026,
+     "ci95": [
+      -0.0552,
+      0.0954
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      100000000.0,
+      10.0,
+      0.01,
+      1.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.075,
+     "ci95": [
+      -0.0787,
+      0.2147
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      100000000.0,
+      0.1,
+      0.001,
+      1.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0008,
+     "ci95": [
+      -0.0385,
+      0.0289
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      100000000.0,
+      1.0,
+      10.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0677,
+     "ci95": [
+      -0.1512,
+      -0.0085
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      0.01,
+      100000000.0,
+      100000000.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 3
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0077,
+     "ci95": [
+      -0.0368,
+      0.0112
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      0.01,
+      0.1,
+      100000000.0,
+      0.01
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0446,
+     "ci95": [
+      -0.0947,
+      -0.0065
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      10.0,
+      0.001,
+      0.001,
+      100000000.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.4982,
+     "ci95": [
+      0.4248,
+      0.5739
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      10.0,
+      10.0,
+      0.1,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5447,
+     "ci95": [
+      0.47,
+      0.6246
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      0.001,
+      1.0,
+      1.0,
+      0.001
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5699,
+     "ci95": [
+      0.4848,
+      0.6554
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1.0,
+      10.0,
+      1.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "v6_tokens": {
+   "dims": 491520,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.013,
+     "ci95": [
+      -0.0539,
+      0.067
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      0.01,
+      0.01,
+      100000000.0,
+      0.01,
+      0.1
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0399,
+     "ci95": [
+      -0.0352,
+      0.1104
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      100000000.0,
+      10.0,
+      0.1,
+      1.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0821,
+     "ci95": [
+      -0.1183,
+      0.257
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      0.01,
+      0.01,
+      0.001,
+      0.1
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0035,
+     "ci95": [
+      -0.066,
+      0.0552
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      0.1,
+      0.1,
+      10.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.034,
+     "ci95": [
+      -0.1921,
+      0.0809
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      0.01,
+      0.01,
+      0.01,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0285,
+     "ci95": [
+      -0.0866,
+      0.0065
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      0.1,
+      0.1,
+      1.0,
+      0.01
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.027,
+     "ci95": [
+      -0.0582,
+      -0.0047
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      100.0,
+      0.1,
+      0.1,
+      100000000.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.4971,
+     "ci95": [
+      0.4207,
+      0.5718
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      10.0,
+      10.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.515,
+     "ci95": [
+      0.4401,
+      0.5951
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.1,
+      10.0,
+      1.0,
+      1.0,
+      0.1
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5722,
+     "ci95": [
+      0.4903,
+      0.6537
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      0.1,
+      1.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "dino_pooled": {
+   "dims": 16384,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.3792,
+     "ci95": [
+      0.3146,
+      0.4504
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.3465,
+     "ci95": [
+      0.2438,
+      0.428
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      10.0,
+      10.0,
+      10.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5766,
+     "ci95": [
+      0.4162,
+      0.6778
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      0.01,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0299,
+     "ci95": [
+      -0.1077,
+      0.1382
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      0.1,
+      1.0,
+      100000000.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.6957,
+     "ci95": [
+      0.6166,
+      0.7557
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      0.1,
+      0.1,
+      0.1,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0084,
+     "ci95": [
+      -0.3114,
+      0.1997
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.01,
+      0.01,
+      0.1,
+      0.01,
+      0.1
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0031,
+     "ci95": [
+      -0.0256,
+      0.0146
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      100000000.0,
+      10.0,
+      100.0,
+      10.0,
+      1000.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.8312,
+     "ci95": [
+      0.7917,
+      0.8658
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.8236,
+     "ci95": [
+      0.7748,
+      0.8656
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1.0,
+      10.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.7095,
+     "ci95": [
+      0.622,
+      0.7903
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1.0,
+      1.0,
+      100.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  },
+  "dino_tokens": {
+   "dims": 655360,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.4531,
+     "ci95": [
+      0.3826,
+      0.5273
+     ],
+     "n": 5394,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.3464,
+     "ci95": [
+      0.2232,
+      0.431
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.5646,
+     "ci95": [
+      0.4068,
+      0.6663
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      0.0001,
+      1.0,
+      0.1,
+      1.0
+     ],
+     "lambda_at_grid_edge": 1
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.1091,
+     "ci95": [
+      -0.0248,
+      0.2104
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      0.001,
+      0.1,
+      0.1
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.6872,
+     "ci95": [
+      0.6096,
+      0.7519
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      0.1,
+      0.1,
+      0.1,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.0436,
+     "ci95": [
+      -0.177,
+      0.2037
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      0.0001,
+      0.0001,
+      0.0001,
+      1.0,
+      0.001
+     ],
+     "lambda_at_grid_edge": 3
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": -0.0276,
+     "ci95": [
+      -0.0796,
+      0.0139
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      10.0,
+      10.0,
+      1.0,
+      100.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.8488,
+     "ci95": [
+      0.8148,
+      0.8791
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.848,
+     "ci95": [
+      0.8046,
+      0.8855
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "estimator": "episode-cluster bootstrap of the pooled statistic",
+     "point": 0.6993,
+     "ci95": [
+      0.6082,
+      0.7818
+     ],
+     "n": 5617,
+     "n_episodes": 130,
+     "lambdas": [
+      10.0,
+      0.1,
+      10.0,
+      100.0,
+      10.0
+     ],
+     "lambda_at_grid_edge": 0
+    }
+   }
+  }
+ }
+}

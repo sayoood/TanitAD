@@ -1,0 +1,185 @@
+{
+ "amendment": "SPEC_NAVTEST Amendment 8 (registered 2026-09-28 06:32, SPEC blob 8ace80cc)",
+ "tier": "NAVSIM v1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents (W3's stamp)",
+ "n_fresh_registered": 422,
+ "arms_present": [
+  "off",
+  "on",
+  "clamp150",
+  "straight"
+ ],
+ "gates": {
+  "a": {
+   "ok": true,
+   "rows_on": 422,
+   "triggered": 422,
+   "max_abs_diff_vs_census_m": 0.0
+  },
+  "b": {
+   "ok": true,
+   "failed": [],
+   "mutations": {
+    "M1": true,
+    "M2": true,
+    "M3": true,
+    "M4": true
+   },
+   "landed_planner_sha256": "522a87ae2d57acc04442effec131e5085dc8d3595e5683c9b68554af2663a94f"
+  },
+  "c": {
+   "ok": true,
+   "executed_pose_equals_dumped_pick": "422/422",
+   "pick_equals_rule_argmax": "422/422",
+   "recorded_pick_equals_dump": "422/422",
+   "rule": "navsim_v1",
+   "repair_last_heading": true,
+   "harness_C1_max_abs_delta": 0.0
+  },
+  "d": {
+   "ok": true,
+   "off": {
+    "status": "PASS",
+    "csv_valid_rows": 422,
+    "seam_rows": 422
+   },
+   "on": {
+    "status": "PASS",
+    "csv_valid_rows": 422,
+    "seam_rows": 422
+   }
+  },
+  "e": {
+   "ok": true,
+   "tokens": 422,
+   "ego_identical": 422,
+   "frames_identical": 422,
+   "goal_differs_on_triggered": "422/422"
+  }
+ },
+ "reads": {
+  "PRIMARY": {
+   "n_tokens": 422,
+   "n_logs": 32,
+   "D_mean": 34.4439865319229,
+   "ci95": [
+    24.904203124144928,
+    43.745425366220466
+   ],
+   "pdms_off": 47.54803289528029,
+   "pdms_on": 81.99201942720319
+  },
+  "FRESH-LOG": {
+   "n_tokens": 279,
+   "n_logs": 26,
+   "D_mean": 35.259005156452,
+   "ci95": [
+    23.379095867041812,
+    44.71116952015788
+   ],
+   "pdms_off": 45.64293223117851,
+   "pdms_on": 80.90193738763051
+  },
+  "estimator": "paired log-cluster bootstrap, 10,000 resamples, percentile 95 %, seed 20260927"
+ },
+ "families_adverse_on_vs_off": {
+  "adverse": [],
+  "components_compared": 21,
+  "tactical_no_interval": {
+   "lateral_decision": {
+    "W": {
+     "accuracy": 0.628,
+     "kappa": 0.423
+    },
+    "P": {
+     "accuracy": 0.7725,
+     "kappa": 0.5949
+    }
+   },
+   "longitudinal_decision": {
+    "W": {
+     "accuracy": 0.5308,
+     "kappa": 0.3099
+    },
+    "P": {
+     "accuracy": 0.5853,
+     "kappa": 0.3802
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "W": {
+     "accuracy": 0.4787,
+     "kappa": 0.3444
+    },
+    "P": {
+     "accuracy": 0.6256,
+     "kappa": 0.5112
+    }
+   }
+  },
+  "strategic": "UNAVAILABLE in NAVSIM (no strategic decision scored; the arm has no strategic layer)"
+ },
+ "verdict": "ADOPT",
+ "verdict_reason": [
+  "both lower bounds > 0 and no longitudinal / lateral component separates adversely"
+ ],
+ "reported_not_gating": {
+  "clamp150": {
+   "n": 422,
+   "pdms": 49.92179844366076,
+   "D_vs_off": 2.3737655483804785,
+   "ci95": [
+    -2.084428218453042,
+    7.083900508465182
+   ],
+   "status": "PASS"
+  },
+  "straight": {
+   "n": 422,
+   "pdms": 71.4141624919943,
+   "D_vs_off": 23.866129596714018,
+   "ci95": [
+    8.760469355549013,
+    37.57316015370546
+   ],
+   "status": "PASS"
+  },
+  "subscore_deltas_on_minus_off_x100": {
+   "no_at_fault_collisions": 15.04739336492891,
+   "drivable_area_compliance": 24.881516587677723,
+   "ego_progress": 31.11310693875442,
+   "time_to_collision_within_bound": 21.09004739336493,
+   "comfort": 12.322274881516588,
+   "driving_direction_compliance": 12.322274881516588
+  },
+  "fallback_kinds_on": {
+   "lane": 422
+  },
+  "goal_p2_m_median": {
+   "off": 151.00751621598505,
+   "on": 60.035085976071045,
+   "clamp150": 149.99998408379128,
+   "straight": 66.21856689453125
+  },
+  "selection53": {
+   "what": "EXPLORATORY (selection tokens): the sanitised goal on the 1,123's triggered tokens, CPU decode of the fp32 eval cache; OFF = M6's refe_m6_base_on (same snapshot, same repair)",
+   "n": 53,
+   "control_picks_equal_gpu_dump": "53/53",
+   "control_goal_equals_eval_cache_goal": true,
+   "harness": {
+    "status": "PASS",
+    "rows": 53
+   },
+   "pdms_off_base_on": 35.522794679550955,
+   "pdms_on": 81.60690057966369,
+   "D_on_minus_off": 46.08410590011273,
+   "ci95": [
+    12.565753279025575,
+    59.66387441978474
+   ],
+   "n_scored": 53,
+   "n_logs": 9,
+   "estimator": "paired log-cluster bootstrap, 10,000 resamples, 95 %, seed 20260927"
+  }
+ },
+ "at_local": "2026-09-28T13:42:24"
+}

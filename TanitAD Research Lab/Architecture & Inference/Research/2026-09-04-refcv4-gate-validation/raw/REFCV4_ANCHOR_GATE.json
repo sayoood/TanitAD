@@ -1,0 +1,74 @@
+{
+ "artifact_kind": "tanitad.refcv4_anchor_gate_recompute",
+ "generated_utc": "2026-09-04",
+ "evidence_class": "MEASURED (ours)",
+ "tier": "T0 \u2014 a vocabulary/geometry property, not a driving number",
+ "surface": {
+  "source": "taniteval/results/refcv3-40284-openloop-dump.tar.gz",
+  "windows": 4823,
+  "episodes": 141,
+  "instants_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "frame": "ego at t0",
+  "units": "m",
+  "window_stride": 5
+ },
+ "estimator": "paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = episode",
+ "controls": {
+  "panel_reproduced_from_dump": {
+   "ha": 0.2996180350369543,
+   "ha0": 0.6722860525116638,
+   "os": 0.44193511589939266,
+   "oracle_sel": 0.36678857479415883
+  },
+  "panel_published": {
+   "ha": 0.2996,
+   "ha0": 0.6723,
+   "os": 0.4419,
+   "oracle_sel": 0.3668
+  },
+  "zero_path_no_information_ade_m": 14.248286140361058,
+  "ha0_equals_constant_velocity_max_abs_err_m": 2.288818359375e-05
+ },
+ "gate_as_issued": {
+  "threshold_m": 0.2996,
+  "quantity": "oracle-in-vocabulary (raw min-over-anchors ADE, no model)"
+ },
+ "arms": {
+  "refcv3_synthetic": {
+   "oracle_in_vocab_ade_m": 1.0838187820230478,
+   "along_mae_m": 0.9090177169995506,
+   "lat_mae_m": 0.40888636354547847,
+   "distinct_anchors_used": 59,
+   "vs_ha_delta_m": 0.7842007469860934,
+   "vs_ha_ci95": [
+    0.7277504551966943,
+    0.8627913695044623
+   ],
+   "beats_ha": false
+  },
+  "refcv4_new": {
+   "oracle_in_vocab_ade_m": 0.3772982419923887,
+   "along_mae_m": 0.30407700736572096,
+   "lat_mae_m": 0.15027206328290665,
+   "distinct_anchors_used": 122,
+   "vs_ha_delta_m": 0.07768020695543443,
+   "vs_ha_ci95": [
+    0.05284163744024195,
+    0.104443295091884
+   ],
+   "beats_ha": false
+  }
+ },
+ "why_the_threshold_is_mis_scoped": {
+  "refcv3_raw_oracle_in_vocab_m": 1.0838187820230478,
+  "refcv3_refined_oracle_sel_m": 0.36678857479415883,
+  "refinement_gain_m": 0.717030207228889,
+  "mechanism": "refc.py:1400 `x = anchors[None] + offset`; offset is a free-form linear head (refc.py `_decode`: `self.offset_head(q).reshape(b, n, n_steps, 2)`), unclamped and unscaled. The emitted fan `anchor_traj` is the REFINED fan, so the raw vocabulary is an INITIALISATION, not a ceiling.",
+  "consequence": "the 0.2996 bar was justified by `oracle_sel` (0.3668), a MODEL-INCLUSIVE quantity, and applied to the raw MODEL-FREE quantity. Applied that way it would also have aborted refcv3, whose raw vocabulary reads 1.0838 and whose refined oracle nonetheless reads 0.3668."
+ }
+}

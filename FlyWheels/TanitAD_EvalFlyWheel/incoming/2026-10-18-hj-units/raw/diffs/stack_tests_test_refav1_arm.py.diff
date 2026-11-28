@@ -1,0 +1,43 @@
+diff --git a/a/stack/tests/test_refav1_arm.py b/b/stack/tests/test_refav1_arm.py
+index 933e0d1..6d3300f 100644
+--- a/a/stack/tests/test_refav1_arm.py
++++ b/b/stack/tests/test_refav1_arm.py
+@@ -151,5 +151,8 @@ def _args(root: Path, ckpt: Path, cache: Path, eps: Path, lp: Path | None, **ove
+                 plan_seed=0, nav_shuffle_seed=0, no_navshuf=False,
+                 with_nonav_arm=False, with_oracle_goal_arm=False,
+-                allow_nonstrict=False, dump_dir=str(root / "dump"))
++                allow_nonstrict=False, dump_dir=str(root / "dump"),
++                # HJ-UNITS: run_dump has no default unit for a programmatic caller. "kappa" is the
++                # LEGACY reading these tests were written against; it is stated, not inherited.
++                action_units="kappa")
+     base.update(over)
+     return argparse.Namespace(**base)
+@@ -521,2 +524,28 @@ def test_horizon_beyond_the_plan_is_refused(tmp_path):
+     with pytest.raises(SystemExit, match="exceeds the plan horizon"):
+         ra.run_dump(a)
++
++
++def test_run_dump_has_no_default_action_units_for_a_programmatic_caller(tmp_path):
++    """BACKLOG HJ-UNITS / RETRACTION_LOG R46 (2026-10-18). ``run_dump`` read
++    ``getattr(a, "action_units", "kappa")``: a hand-built Namespace that forgot the unit
++    silently integrated the RECORDED road-wheel angle (``ol`` / ``ha`` / ``ha0_ext``) as a
++    curvature -- the R46 defect one level out from ``paths_from_controls``. The CLI flag keeps
++    its legacy default (pinned by test_steer_curvature_interface B4); a programmatic caller
++    must now STATE the unit, and a missing or unknown one is refused by name.
++
++    MUTATION (recorded in the HJ-UNITS package): restoring ``getattr(a, "action_units",
++    "kappa")`` makes the first ``raises`` below read DID NOT RAISE (the dump then runs to
++    completion on the legacy reading)."""
++    ck = _ckpt(tmp_path)
++    cache, eps, lp = _fixture(tmp_path)
++    a = _args(tmp_path, ck, cache, eps, lp)
++    del a.action_units                       # the Namespace that forgot the unit
++    with pytest.raises(SystemExit) as ei:
++        ra.run_dump(a)
++    msg = str(ei.value)
++    assert "kappa|steer" in msg and "got None" in msg, msg
++    for bad in ("Kappa", "curvature", ""):
++        b = _args(tmp_path, ck, cache, eps, lp, action_units=bad)
++        with pytest.raises(SystemExit) as ei:
++            ra.run_dump(b)
++        assert "kappa|steer" in str(ei.value) and repr(bad) in str(ei.value), str(ei.value)

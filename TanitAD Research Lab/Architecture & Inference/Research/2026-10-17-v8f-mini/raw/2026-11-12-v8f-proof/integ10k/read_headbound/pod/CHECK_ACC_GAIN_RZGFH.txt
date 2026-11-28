@@ -1,0 +1,12 @@
+steady 10                                  executed acceleration at the tick +0.000 m/s2 | with --path-exec: g -0.25 a0 +0.0000 (exp -0.0000) holds | g +0.00 a0 +0.0000 (exp +0.0000) holds | g +0.50 a0 +0.0000 (exp +0.0000) holds | g +1.00 a0 +0.0000 (exp +0.0000) holds
+executed flat, the plan's next step +1.0   executed acceleration at the tick +0.000 m/s2 | with --path-exec: g -0.25 a0 +0.0000 (exp -0.0000) holds | g +0.00 a0 +0.0000 (exp +0.0000) holds | g +0.50 a0 +0.0000 (exp +0.0000) holds | g +1.00 a0 +0.0000 (exp +0.0000) holds
+last executed step +1.0                    executed acceleration at the tick +5.000 m/s2 | with --path-exec: g -0.25 a0 -1.2500 (exp -1.2500) holds | g +0.00 a0 +0.0000 (exp +0.0000) holds | g +0.50 a0 +2.5000 (exp +2.5000) holds | g +1.00 a0 +5.0000 (exp +5.0000) holds
+executed ramp +0.5 per step                executed acceleration at the tick +2.500 m/s2 | with --path-exec: g -0.25 a0 -0.6250 (exp -0.6250) holds | g +0.00 a0 +0.0000 (exp +0.0000) holds | g +0.50 a0 +1.2500 (exp +1.2500) holds | g +1.00 a0 +2.5000 (exp +2.5000) holds
+executed sawtooth                          executed acceleration at the tick +0.250 m/s2 | with --path-exec: g -0.25 a0 -0.0625 (exp -0.0625) holds | g +0.00 a0 +0.0000 (exp +0.0000) holds | g +0.50 a0 +0.1250 (exp +0.1250) holds | g +1.00 a0 +0.2500 (exp +0.2500) holds
+1 acceleration read = gain x executed at every executed step (gains [-0.25, 0.0, 0.5, 1.0], with and without --path-exec): True
+2 --path-exec: positions and headings equal the backward readout bit for bit, speed column equal to that of the same gain without it: True | pinned against backward on this plan: max position difference 0.006289 m, max heading difference 0.000867 rad, comparison not vacuous: True
+3 planted fault (a) gain ignored is caught: True | planted fault (b) path taken from the pinned call is caught: True
+4 general formula against the formula of causal (gain 1) and causal_z (gain 0): largest difference 0.000e+00 and 0.000e+00 (at most 1e-12: True) | gains 1 and 0 routed through the parent formulas equal causal and causal_z bit for bit: True | the five readouts of the parent through this wrapper bit for bit: True
+5 log field max_abs_acceleration_minus_gain_executed present and at most 1e-6 (largest 8.882e-15): True | defaults gain None, path_exec False, readout pinned: True
+pinned tool v8f_t1_eval.py | wrapper rzgfh sha256 373ffe72f2655c35d8c5033867cc5b37268ece2eb21a41d5d865fb8dcbb517b9
+ZZ CHECK-ACC-GAIN all hold: True

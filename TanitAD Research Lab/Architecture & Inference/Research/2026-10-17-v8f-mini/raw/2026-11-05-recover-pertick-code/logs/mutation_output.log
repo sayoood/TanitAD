@@ -1,0 +1,35 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: C:\Users\Admin\rr_scratch\pertick_work\new\stack
+configfile: pyproject.toml
+plugins: anyio-4.14.1
+collecting ... collected 32 items / 29 deselected / 3 selected
+
+tests/test_v8f_recover_pertick.py::test_g_MUTATION_replacing_the_profile_by_its_NOW_column_turns_the_per_row_check_RED CONTROL (unmutated): 32 rows match the independent numpy computation, worst abs err 1.846e-06
+MUTANT RED: row 0: v differs from the independent numpy computation by 1.1054765511063458
+assert 1.1054765511063458 < 0.0002
+PASSED
+tests/test_v8f_recover_pertick.py::test_g_MUTATION_the_same_NOW_column_mutant_is_caught_by_the_launch_gate_probe [1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.105 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 0.5367143154144287}
+[200/342 windows] 7s
+[342/342 windows] 12s
+wrote C:\Users\Admin\rr_scratch\pertick_work\pt_tmp_new\g\dagt0\bank\shard_000of001.npz  records 684  coverage 0.6462  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote C:\Users\Admin\rr_scratch\pertick_work\pt_tmp_new\g\dagt0\bank\bank.json  bank sha256 929eaba7fbab2050550fd62c819a0b7c88ea78d3c573e3952dde43e8c656a765  records 684  coverage 0.6462  K-B4 True  K-B5 True
+GATE PROBE RED ON THE MUTANT: recover probe: the history speeds of the selected rows differ from max(v + dv_t, 0) of the drawn per-tick profile by 2.6677016450516513 (> 1e-4): the profile did not reach the batch
+PASSED
+tests/test_v8f_recover_pertick.py::test_g_the_mutation_anchor_exists_exactly_once PASSED
+
+============================== warnings summary ===============================
+tests/test_v8f_recover_pertick.py::test_g_MUTATION_the_same_NOW_column_mutant_is_caught_by_the_launch_gate_probe
+  C:\Users\Admin\rr_scratch\pertick_work\new\stack\scripts\v8f_mini_train.py:2311: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/test_v8f_recover_pertick.py::test_g_MUTATION_replacing_the_profile_by_its_NOW_column_turns_the_per_row_check_RED
+PASSED tests/test_v8f_recover_pertick.py::test_g_MUTATION_the_same_NOW_column_mutant_is_caught_by_the_launch_gate_probe
+PASSED tests/test_v8f_recover_pertick.py::test_g_the_mutation_anchor_exists_exactly_once
+================ 3 passed, 29 deselected, 1 warning in 23.39s =================

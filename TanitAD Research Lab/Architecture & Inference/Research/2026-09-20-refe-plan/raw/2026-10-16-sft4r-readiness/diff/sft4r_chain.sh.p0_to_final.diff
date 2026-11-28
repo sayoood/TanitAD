@@ -1,0 +1,13 @@
+diff --git a/sft4r_chain.sh b/sft4r_chain.sh
+index 3aa4435..b2c902e 100644
+--- a/sft4r_chain.sh
++++ b/sft4r_chain.sh
+@@ -135,7 +135,7 @@ PY_C="${DRIVERL_EVAL_PYTHON:-}"
+ [ -n "$PY_C" ] && [ -x "$PY_C" ] || refuse "teacher_env.sh did not set a runnable DRIVERL_EVAL_PYTHON"
+ HPY=${HF_PY:-$PY_C}
+ for f in refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/onpolicy_relabel_pdm.py \
+-         refe/sft4r_pod.sh refe/sft4r_chain.sh refe/test_sft4r_chain.py refe/test_sft4r_gate.py refe/test_launch_gate.py refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py \
++         refe/sft4r_pod.sh refe/sft4r_chain.sh refe/test_sft4r_chain.py refe/test_sft4r_gate.py refe/test_suite_nesting.py refe/test_launch_gate.py refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py \
+          raw/2026-10-04-sft4-smoke/r2_smoke2.log raw/2026-10-04-sft4-smoke/r2_smoke2_g3mut.log splits/navtrain.yaml SHIP_MANIFEST.json; do
+   [ -f "$PKG/$f" ] || refuse "$PKG/$f is missing from the shipped package"
+ done

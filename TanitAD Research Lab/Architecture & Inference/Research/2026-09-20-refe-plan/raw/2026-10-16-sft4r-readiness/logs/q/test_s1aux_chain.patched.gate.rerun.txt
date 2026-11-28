@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 1284, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 1272, in main
+    sandbox_runs(text, _mk(tmp, "s"))
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 850, in sandbox_runs
+    rc, out, lg = sb.run(fresh=True, env_extra={"S1AUX_STOP_AFTER": "data"}); ok(rc == 1, out); refused(out, lg, "data", "navtest list")
+                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 801, in refused
+    ok(f"ZZS1AUX_REFUSED stage={stage}:" in lg and frag in lg, (stage, frag, lg[-700:]))
+  File "C:\s4r\p\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_s1aux_chain.py", line 54, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: ('data', 'navtest list', '-s1 H2-s1 N-s2 H2-s2 H1-s1 H1-s2)\n2026-10-16T21:35:15 ZZS1AUX_PRECHECK_OK (tree ZZS1AUX_TREE_OK 39 files, commit None, tree 1df1604711be; upstream: over; the CPU stages run now, the GPU wait comes before the first arm)\n2026-10-16T21:35:15 ZZS1AUX_ENV_OK (cgroup cores 24, label workers 2)\n2026-10-16T21:35:15 u400 is not on the pod (or does not verify): fetching Sayood/tanitad-refe-rls1 base/model_sft4_B_u400.pt\n2026-10-16T21:35:15 ZZS1AUX_FETCH_OK u400 168 bytes md5 561c7eeb609d\n2026-10-16T21:35:15 ZZS1AUX_REFUSED stage=data: cannot restore heldout_lane from C:/Users/Admin/AppData/Local/Temp/tmpuc7fuqeh/s/work/refe-plan-s1aux/raw/2026-10-04-lane-discipline/heldout_navsim_lane_labels.jsonl.xz\n')
+
+ZZBOUNDED rc=1 peak_children=6 secs=37.1 killed=none survivors=0

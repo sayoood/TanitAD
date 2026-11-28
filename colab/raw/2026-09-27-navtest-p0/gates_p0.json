@@ -1,0 +1,423 @@
+{
+ "G-ENV": {
+  "navtest-p0-cpu": {
+   "relay_pull_all_md5_ok": true,
+   "relay_pull": {
+    "p0_harness_sub200.tar": {
+     "bytes": 54528000,
+     "seconds": 2.9,
+     "mb_s": 18.8,
+     "host": "us.aws.cdn.hf.co",
+     "ok": true
+    }
+   }
+  },
+  "navtest-p0-l4": {
+   "relay_pull_all_md5_ok": true,
+   "relay_pull": {
+    "p0_harness_sub200.tar": {
+     "bytes": 54528000,
+     "seconds": 5.5,
+     "mb_s": 10.0,
+     "host": "us.aws.cdn.hf.co",
+     "ok": true
+    },
+    "p0_frames_sub200.tar": {
+     "bytes": 166174720,
+     "seconds": 8.6,
+     "mb_s": 19.2,
+     "host": "us.aws.cdn.hf.co",
+     "ok": true
+    },
+    "snap_epoch016.pt": {
+     "bytes": 76052289,
+     "seconds": 3.9,
+     "mb_s": 19.3,
+     "host": "us.aws.cdn.hf.co",
+     "ok": true
+    }
+   },
+   "selftest": true,
+   "jpeg_equal": "4/4",
+   "params": [
+    322070854,
+    18991426,
+    "navsim_v1",
+    true
+   ],
+   "cuda": {
+    "torch": "2.7.1+cu128",
+    "cuda": "12.8",
+    "cudnn": 90701,
+    "device": "NVIDIA L4",
+    "cap": [
+     8,
+     9
+    ],
+    "conv_ok": true,
+    "tf32_cudnn": true,
+    "tf32_matmul": false
+   },
+   "pass": true
+  }
+ },
+ "G-H": [
+  {
+   "csv": "colab/raw/2026-09-27-navtest-p0/navtest-p0-cpu/results\\out/gh/refe_sub200_ep016/refe_sub200_ep016.csv",
+   "vs_devbox": {
+    "n": 200,
+    "missing": 0,
+    "max_abs_diff": 6.900036098045348e-13,
+    "tokens_with_any_diff": 1,
+    "cells_textually_equal": 1398,
+    "cells": 1400,
+    "valid_a": 200,
+    "mean_a_x100": 76.5243,
+    "mean_b_x100": 76.5243
+   },
+   "counts": {
+    "status": "PASS",
+    "log_successful": 200,
+    "log_failed": 0,
+    "csv_valid_rows": 200,
+    "C1_max_abs_delta": 0.0,
+    "C3_missing": 0,
+    "C3_unexpected": 0,
+    "summary_x100_4dp": {
+     "NC": 94.25,
+     "DAC": 90.5,
+     "EP": 66.3137,
+     "TTC": 90.5,
+     "C": 100.0,
+     "DDC": 94.25,
+     "PDMS": 76.5243
+    },
+    "wall_s": 61.4,
+    "failures": [],
+    "imported_from": {
+     "navsim": "/content/p0/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/__init__.py",
+     "nuplan": "/content/p0/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/__init__.py",
+     "script": "/content/p0/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py",
+     "fcntl": null
+    },
+    "patches": [
+     "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]"
+    ],
+    "agent_calls": {
+     "seam": 200
+    }
+   },
+   "C8_navsim_from_v11_tree": true,
+   "C8_nuplan_from_ce3c323": true,
+   "pdms_x100": 76.5243,
+   "pass": false
+  },
+  {
+   "csv": "colab/raw/2026-09-27-navtest-p0/navtest-p0-l4/results\\out/gh/refe_sub200_ep016/refe_sub200_ep016.csv",
+   "vs_devbox": {
+    "n": 200,
+    "missing": 0,
+    "max_abs_diff": 3.0686564400639327e-13,
+    "tokens_with_any_diff": 1,
+    "cells_textually_equal": 1398,
+    "cells": 1400,
+    "valid_a": 200,
+    "mean_a_x100": 76.5243,
+    "mean_b_x100": 76.5243
+   },
+   "counts": {
+    "status": "PASS",
+    "log_successful": 200,
+    "log_failed": 0,
+    "csv_valid_rows": 200,
+    "C1_max_abs_delta": 0.0,
+    "C3_missing": 0,
+    "C3_unexpected": 0,
+    "summary_x100_4dp": {
+     "NC": 94.25,
+     "DAC": 90.5,
+     "EP": 66.3137,
+     "TTC": 90.5,
+     "C": 100.0,
+     "DDC": 94.25,
+     "PDMS": 76.5243
+    },
+    "wall_s": 56.2,
+    "failures": [],
+    "imported_from": {
+     "navsim": "/content/p0/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/__init__.py",
+     "nuplan": "/content/p0/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/__init__.py",
+     "script": "/content/p0/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py",
+     "fcntl": null
+    },
+    "patches": [
+     "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]"
+    ],
+    "agent_calls": {
+     "seam": 200
+    }
+   },
+   "C8_navsim_from_v11_tree": true,
+   "C8_nuplan_from_ce3c323": true,
+   "pdms_x100": 76.5243,
+   "pass": false
+  }
+ ],
+ "G-H'": [
+  {
+   "cache_counts": {
+    "status": "PASS",
+    "log_successful": null,
+    "log_failed": null,
+    "csv_valid_rows": null,
+    "C1_max_abs_delta": null,
+    "C3_missing": null,
+    "C3_unexpected": null,
+    "summary_x100_4dp": null,
+    "wall_s": 327.7,
+    "failures": [],
+    "imported_from": null,
+    "patches": null,
+    "agent_calls": null
+   },
+   "seam_vs_devbox": {
+    "n": 200,
+    "missing": 0,
+    "max_abs_diff": 1.0927394544779645e-09,
+    "tokens_with_any_diff": 120,
+    "cells_textually_equal": 1161,
+    "cells": 1400,
+    "valid_a": 200,
+    "mean_a_x100": 76.5243,
+    "mean_b_x100": 76.5243
+   },
+   "seam_vs_GH": {
+    "n": 200,
+    "missing": 0,
+    "max_abs_diff": 1.0927394544779645e-09,
+    "tokens_with_any_diff": 120,
+    "cells_textually_equal": 1161,
+    "cells": 1400,
+    "valid_a": 200,
+    "mean_a_x100": 76.5243,
+    "mean_b_x100": 76.5243
+   },
+   "floors_vs_W3_banked_rows_on_sub200": {
+    "CV": {
+     "n": 200,
+     "missing": 0,
+     "max_abs_diff": 1.503955848747296e-10,
+     "tokens_with_any_diff": 49,
+     "cells_textually_equal": 1302,
+     "cells": 1400,
+     "valid_a": 200,
+     "mean_a_x100": 21.8222,
+     "mean_b_x100": 21.8222
+    },
+    "STOP": {
+     "n": 200,
+     "missing": 0,
+     "max_abs_diff": 5.905341438072753e-09,
+     "tokens_with_any_diff": 171,
+     "cells_textually_equal": 1059,
+     "cells": 1400,
+     "valid_a": 200,
+     "mean_a_x100": 62.5812,
+     "mean_b_x100": 62.5812
+    },
+    "HUMAN": {
+     "n": 200,
+     "missing": 0,
+     "max_abs_diff": 1.0892928781203182e-09,
+     "tokens_with_any_diff": 134,
+     "cells_textually_equal": 1132,
+     "cells": 1400,
+     "valid_a": 200,
+     "mean_a_x100": 94.1195,
+     "mean_b_x100": 94.1195
+    }
+   },
+   "pass_sub200": false,
+   "scope_note": "section f defines G-H' on ALL 12,146 navtest tokens (final only); this is its sub200 form -- the VM cache rebuilt for the 200 tokens, the seam CSV and the three floors' per-token rows compared on those 200. The full-set half stays with P2."
+  }
+ ],
+ "G-E6": [
+  {
+   "table": "colab/raw/2026-09-27-navtest-p0/navtest-p0-cpu/results\\out/ge6/table.npz",
+   "tokens_equal": true,
+   "shape": [
+    200,
+    64
+   ],
+   "pdms_max_abs_diff": 1.2323364551036775e-11,
+   "sub_max_abs_diff": 2.957578626450186e-11,
+   "nan_cells_vm": 0,
+   "valid_all": true,
+   "pick_equal": true,
+   "vm_gates": {
+    "G1": {
+     "landed_seam": "/content/p0/bundle/ref/refe_sub200_ep016.npz",
+     "max_abs_pose_diff": 0.0,
+     "tokens_identical": 200,
+     "pass": true
+    },
+    "G3": {
+     "runs": 64,
+     "pass": 64,
+     "failed": [],
+     "ok": true
+    },
+    "G2": {
+     "landed_csv": "/content/p0/bundle/ref/refe_sub200_ep016.csv",
+     "tokens_compared": 200,
+     "max_abs_score_diff_identical_poses": 2.8754776337791554e-13,
+     "pass": true
+    }
+   },
+   "vm_seconds": 2596.1,
+   "per_run_seconds": {
+    "min": 77.8,
+    "median": 80.8,
+    "max": 88.6
+   },
+   "pass": false
+  }
+ ],
+ "G-S": [
+  {
+   "seam": "colab/raw/2026-09-27-navtest-p0/navtest-p0-l4/results\\out/seam/refe_sub200_ep016_vm.npz",
+   "rows": 200,
+   "tokens_equal_order": true,
+   "frame_control_max_m": 1.687538997430238e-14,
+   "misses": 0,
+   "device_seconds": 239.9,
+   "n_tokens_margin_ge_1e-3": 160,
+   "flips_total": 0,
+   "flips_at_margin_ge_1e-3": 0,
+   "flipped_tokens": [],
+   "same_pick_max_abs_pose_xy_m": 1.52587890625e-05,
+   "same_pick_max_abs_pose_heading_rad": 1.6689300537109375e-06,
+   "same_pick_max_abs_aggregate_all_proposals": 1.8477439880371094e-06,
+   "same_pick_max_abs_pose_all_proposals": 1.9073486328125e-05,
+   "max_abs_logit": 1.5497207641601562e-05,
+   "bitwise_equal_poses": false,
+   "tokens_bitwise_equal_executed": 0,
+   "pass": true,
+   "bar_reading": "pose bar on the EXECUTED rows (the seam; the plan's 0.53 mm scale -> 1 mm = ~2x), aggregate bar over ALL 64 proposals (the plan's 1.1e-4 scale -> 1e-3 = ~9x); the all-proposal pose max is reported, not gated"
+  }
+ ],
+ "G-P": [
+  {
+   "csv": "colab/raw/2026-09-27-navtest-p0/navtest-p0-l4/results\\out/gp/refe_sub200_ep016_vm/refe_sub200_ep016_vm.csv",
+   "counts": {
+    "status": "PASS",
+    "log_successful": 200,
+    "log_failed": 0,
+    "csv_valid_rows": 200,
+    "C1_max_abs_delta": 0.0,
+    "C3_missing": 0,
+    "C3_unexpected": 0,
+    "summary_x100_4dp": {
+     "NC": 94.25,
+     "DAC": 90.5,
+     "EP": 66.3137,
+     "TTC": 90.5,
+     "C": 100.0,
+     "DDC": 94.25,
+     "PDMS": 76.5243
+    },
+    "wall_s": 48.8,
+    "failures": [],
+    "imported_from": {
+     "navsim": "/content/p0/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/__init__.py",
+     "nuplan": "/content/p0/src/nuplan-devkit-ce3c323af01c0d7ec5672f7832ef53f9c679aab0/nuplan/__init__.py",
+     "script": "/content/p0/src/navsim-3e8291bfa89ff247231e0227778840cd0a036896/navsim/planning/script/run_pdm_score.py",
+     "fcntl": null
+    },
+    "patches": [
+     "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]"
+    ],
+    "agent_calls": {
+     "seam": 200
+    }
+   },
+   "pdms_x100": 76.5243,
+   "delta_pdms_x100": 0.0,
+   "nonflip_discrete_equal": true,
+   "nonflip_max_abs_score_diff": 1.5114469664734287e-07,
+   "flip_contribution_x100": 0.0,
+   "nonflip_contribution_x100": -0.0,
+   "pass": true
+  }
+ ],
+ "G-REP": [
+  {
+   "shards_ok": true,
+   "compare": {
+    "tokens_equal": true,
+    "poses_bitwise": true,
+    "poses_max_abs": 0.0,
+    "props_bitwise": true,
+    "logits_bitwise": true,
+    "pick_equal": true
+   },
+   "devbox_recheck": {
+    "file": "refe_sub200_ep016_k3.npz",
+    "tokens_equal": true,
+    "poses_bitwise": true,
+    "proposals_bitwise": true,
+    "logits_bitwise": true,
+    "pick_equal": true
+   },
+   "pass": true
+  }
+ ],
+ "hybrid_devbox_harness_on_vm_seam": {
+  "csv": "colab/raw/2026-09-27-navtest-p0/devbox_harness_on_vm_seam/refe_colabp0_l4seam_ep016/refe_colabp0_l4seam_ep016.csv",
+  "counts": {
+   "status": "PASS",
+   "log_successful": 200,
+   "log_failed": 0,
+   "csv_valid_rows": 200,
+   "C1_max_abs_delta": 0.0,
+   "C3_missing": 0,
+   "C3_unexpected": 0,
+   "summary_x100_4dp": {
+    "NC": 94.25,
+    "DAC": 90.5,
+    "EP": 66.3137,
+    "TTC": 90.5,
+    "C": 100.0,
+    "DDC": 94.25,
+    "PDMS": 76.5243
+   },
+   "wall_s": 60.5,
+   "failures": [],
+   "imported_from": {
+    "navsim": "D:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\__init__.py",
+    "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+    "script": "D:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\planning\\script\\run_pdm_score.py",
+    "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+   },
+   "patches": [
+    "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]"
+   ],
+   "agent_calls": {
+    "seam": 200
+   }
+  },
+  "vs_devbox": {
+   "n": 200,
+   "missing": 0,
+   "max_abs_diff": 3.627472721090541e-07,
+   "tokens_with_any_diff": 118,
+   "cells_textually_equal": 1164,
+   "cells": 1400,
+   "valid_a": 200,
+   "mean_a_x100": 76.5243,
+   "mean_b_x100": 76.5243
+  },
+  "discrete_equal_all_tokens": true,
+  "note": "an ADDITIONAL readout, not a section-f gate: the Windows harness that produced every banked point, applied to the Colab L4 seam"
+ }
+}

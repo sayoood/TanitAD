@@ -1,0 +1,373 @@
+{
+ "summary": "SELFTEST: 2/2 tests pass; MUTATION: 89/89 mutants killed, 0 survivors  (1106 s, layer=sh)",
+ "tests": [
+  [
+   "tripwire: the self-test created or changed NO launchintent file in the REAL installed ship dir or its logs (the incident's stray files predate this run and are in the baseline)",
+   true
+  ],
+  [
+   "tripwire: the tripwire flags a new launchintent file (positive control)",
+   true
+  ]
+ ],
+ "mutants": [
+  [
+   "GM1 the guard no longer exports the stub dir first on PATH (every step is refused)  [arm `good world (positive control)`: registered ran, now refused]",
+   true
+  ],
+  [
+   "GM2 the guard no longer checks that ssh AND scp are the stubs (the old PATH-only harness runs)  [arm `old harness: stub only on the env PATH, not exported inside `: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM3 the guard no longer checks that ssh is the stub  [arm `world without an ssh stub`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM4 the guard no longer checks that scp is the stub  [arm `world without an scp stub`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM5 the guard no longer checks that $HOME is the scratch HOME  [arm `$HOME is not the scratch HOME`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM6 the guard no longer checks that the scratch $HOME is empty  [arm `the scratch $HOME is not empty`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM7 the guard no longer prints the alias with ssh -G  [arm `a $HOME whose ssh config resolves the box-2 alias (HOME-empt`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM8 the guard no longer resolves the write paths (the installed ship dir is accepted)  [arm `OAF_SHIP_DIR is the installed C:/Users/Admin/box2_ship`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM9 the guard no longer resolves the write paths (a path outside the scratch world is accepted)  [arm `TMPDIR outside the scratch world`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM11 the guard no longer collapses `..` before testing a write path (a path that climbs out of the scratch world passes)  [arm `a write path that climbs out of the scratch world with ..`: registered refused, now ran]",
+   true
+  ],
+  [
+   "GM10 the guard no longer requires the step's variables to be set  [arm `OAF_SHIP_DIR unset for a step that needs it (the chain would`: registered refused, now ran]",
+   true
+  ],
+  [
+   "H01 lib_check no longer verifies oaf_lib.sh  [by p_tamper_oaf_lib.sh: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not run here: the T1]",
+   true
+  ],
+  [
+   "H02 lib_check no longer verifies v8f_oaf_chain_checks.py  [by p_tamper_v8f_oaf_chain_checks.py: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not run]",
+   true
+  ],
+  [
+   "H03 lib_check no longer verifies gate_launchintent_assert.py  [by p_tamper_gate_launchintent_assert.py: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not]",
+   true
+  ],
+  [
+   "H04 lib_check no longer verifies v8f_launchintent_chain_checks.py  [by p_tamper_v8f_launchintent_chain_checks.py: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n=]",
+   true
+  ],
+  [
+   "H05 lib_check no longer verifies oaf_launchintent_lib.sh  [by p_tamper_oaf_launchintent_lib.sh: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not run]",
+   true
+  ],
+  [
+   "H06 lib_check no longer verifies v8f_guard_launchintent.sh  [by p_tamper_v8f_guard_launchintent.sh: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not r]",
+   true
+  ],
+  [
+   "H07 the trainer's sha256 is not compared with LAUNCH_TRAINER_SHA  [by p_ct_sha: \"r's and the model's sha256 = LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA, hold in /f/TanitAD-scratch/launch_intent_]",
+   true
+  ],
+  [
+   "H08 a placeholder pin is accepted as a value  [by p_ct_placeholder: ': sha256 of the landed stack/scripts/v8f_mini_train.py blob (LAUNCH.txt)>> (the landed trainer is not]",
+   true
+  ],
+  [
+   "H09 the early pin refusal is removed  [by p_r_pin_notrainer: ' as reviewed (the greps, the LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA checks and the LAUNCH_COMMIT ance]",
+   true
+  ],
+  [
+   "H10 the REP licence is not enforced  [by p_r_rep_bad: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue stage]",
+   true
+  ],
+  [
+   "H12 the tip's lever / queue / sha check is skipped  [by p_r_tip_noflag: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue st]",
+   true
+  ],
+  [
+   "H13 the queue-stage loop is skipped  [by p_r_tip_nolabel: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue s]",
+   true
+  ],
+  [
+   "H14 the export-existence loop is skipped  [by p_r_tip_noexport: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue ]",
+   true
+  ],
+  [
+   "H20 the AFTER_OUT requirement is removed  [by p_r_noafter: \"t convert empty path\\ncygpath: can't convert empty path\\ncygpath: can't convert empty path\\n\\nZZHARNESS-TI]",
+   true
+  ],
+  [
+   "H21 the dry-run's ONE-LEVER / SAME verdict is ignored  [by p_dry_first: '+ exactly --launch-intent-w 1.58926 (only --out differing): NOT-ONE-LEVER\\n== not run here: the T1-kin rol]",
+   true
+  ],
+  [
+   "H22 the dry-run does not print the K-SHARE / K-MASK bands  [by p_dry_pass: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not run here: the T1-kin roll]",
+   true
+  ],
+  [
+   "H23 the dry-run ignores a queue that prints no plan  [by p_dry_tip: 'endswith(\"v8f_mini_train.py\")) + 1:]\\n             ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^]",
+   true
+  ],
+  [
+   "H27 the box is claimed and probed BEFORE the tip is read  [by p_r_tip_noflag: ' as reviewed (the greps, the LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA checks and the LAUNCH_COMMIT ancestr]",
+   true
+  ],
+  [
+   "H29 BOX2_BUSY is never claimed (box 2 would be probed without the lock)  [by p_r_ok: 'itad-box2 powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString(\\\\\\'y]",
+   true
+  ],
+  [
+   "H30 only the two A runs are planned (A_rep,0 and A_rep,1 dropped)  [by p_dry_pass: 'rgv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER\\n== not run here: the T1-kin roll]",
+   true
+  ],
+  [
+   "H31 A_rep's pair control is DAG-OACC (the REP directory is never used)  [by p_ctrl_funcs: 'c|REP_s0|rc0|ra0|rs0\\nA_rep,1|M2b_s1_launchintentrep|M2b-launchintentrep_s1|gate_M2b-launchintentrep_s1|/]",
+   true
+  ],
+  [
+   "H32 the dry run checks every line as arm A (the one-lever call lacks the run's arm)  [by p_dry_pass: \"ntent s0), it has '0' and '10'\\nZZV8FMINI-STOP the planned lines are not the one-lever LAUNCH-INTENT argv (]",
+   true
+  ],
+  [
+   "H33 the PREREG pin is not required by a real run  [by p_r_pin_noprereg: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue ]",
+   true
+  ],
+  [
+   "H34 the reader pin is not required by a real run  [by p_r_pin_noreader: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue ]",
+   true
+  ],
+  [
+   "H35 the LAUNCH_COMMIT pin is not required by a real run  [by p_r_pin_nocommit: ' as reviewed (the greps, the LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA checks and the LAUNCH_COMMIT ances]",
+   true
+  ],
+  [
+   "H36 the LAUNCH_MODEL_SHA pin is not required by a real run  [by p_r_pin_nomodel: ' as reviewed (the greps, the LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA checks and the LAUNCH_COMMIT ancest]",
+   true
+  ],
+  [
+   "H37 the model's sha256 is not compared with LAUNCH_MODEL_SHA  [by p_ct_msha: \"'s and the model's sha256 = LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA, hold in /f/TanitAD-scratch/launch_intent_]",
+   true
+  ],
+  [
+   "H38 the tip need not descend from the landed commit  [by p_r_tip_orphan: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue st]",
+   true
+  ],
+  [
+   "H39 the ancestry test is reversed (the landed commit would have to descend from the tip)  [by p_r_ok: 'e greps, the LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA checks and the LAUNCH_COMMIT ancestry above): land the queue]",
+   true
+  ],
+  [
+   "H40 the replicate arm's trainer-seed line is not in the lever greps  [by p_ct_norepseed: \"d the model's sha256 = LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA, hold in /f/TanitAD-scratch/launch_intent_]",
+   true
+  ],
+  [
+   "H41 the replicate arm's whitelist entry is not in the lever greps  [by p_ct_repwhitelist: \"he model's sha256 = LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA, hold in /f/TanitAD-scratch/launch_intent_]",
+   true
+  ],
+  [
+   "H42 the gate asserter is given DAG-OACC's summary and argv for every run  [by p_static_wiring: '[\\'--b-summary \"$(cygpath -m $cd/summary.json)\" --ref-argv-json \"$(cygpath -m $cd/argv.json)\"\\']']",
+   true
+  ],
+  [
+   "H43 the run record is checked without the run's arm  [by p_static_wiring: \"['--seed $s --arm $arm --banked-init-sha']\"]",
+   true
+  ],
+  [
+   "H44 the gate token is written without the PREREG / reader pins  [by p_static_wiring: '[\\'--prereg-sha \"$PREREG_SHA\" --reader-sha \"$READER_SHA\"\\']']",
+   true
+  ],
+  [
+   "H45 the dev-box control check covers DAG-OACC only  [by p_static_wiring: \"['for arm in launchintent launchintentrep; do']\"]",
+   true
+  ],
+  [
+   "H46 only the first two runs are gated  [by p_static_wiring: '[\\'for run in \"${RUNS[@]}\"; do set -- $run; gate_one $1 $2; done\\']']",
+   true
+  ],
+  [
+   "H47 K-SHARE is not asked for the run's arm and seed  [by p_static_wiring: '[\\'kshare --summary \"$(cygpath -m $ART/$g/summary.json)\" --window-sha $WINDOW_SHA --arm $arm --seed $s]",
+   true
+  ],
+  [
+   "H48 the lbl helper mislabels the replicate runs  [by p_ctrl_funcs: 's0|rc0|ra0|rs0\\nA_rep,1|M2b_s1_launchintentrep|M2b-launchintentrep_s1|gate_M2b-launchintentrep_s1|/r/M2b_]",
+   true
+  ],
+  [
+   "H49 the run name helper drops the arm  [by p_ctrl_funcs: 'EP_s0|rc0|ra0|rs0\\nA_rep,1|M2b_s1_launchintent|M2b-launchintentrep_s1|gate_M2b-launchintentrep_s1|/r/M2b_]",
+   true
+  ],
+  [
+   "H11 the REP licence is checked at seed 0 only  [by p_r_rep_s1bad: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue sta]",
+   true
+  ],
+  [
+   "H15 claim_box2 is not atomic (no noclobber)  [by p_claim_atomic: 'winners=10']",
+   true
+  ],
+  [
+   "H16 claim_box2 removes a foreign lock when it cannot take it  [by p_claim_foreign: \"ZZV8FMINI-STOP busy marker present: another chain's lock\\nrc=1 busy_taken=0\\n\"]",
+   true
+  ],
+  [
+   "H17 a HALT verdict lets the chain go  [by p_r_predstop: 'viewed model (sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721) and the queue stag]",
+   true
+  ],
+  [
+   "H18 a held BOX2_BUSY lets the chain go after the re-checks  [by p_r_busy_held: 'OX2_BUSY_lets_the_chain_go_a_ok/logs/chain_v8f_dagoaccorc_r2.out: GO only when it ENDED in its DONE mark]",
+   true
+  ],
+  [
+   "H19 a WAIT verdict lets the chain go  [by p_r_wait_wait: 'IT_verdict_lets_the_chain_go_ok/logs/chain_v8f_dagoaccorc_r2.out: GO only when it ENDED in its DONE mark]",
+   true
+  ],
+  [
+   "W1 the waker ignores its guard  [by p_w_guard: 'rc=0 WAKER TIMEOUT\\n10-28 x\\n']",
+   true
+  ],
+  [
+   "W2 the waker reads a SIBLING chain's guard output  [by p_w_guard: 'rc=0 WAKER TIMEOUT\\n10-28 x\\n']",
+   true
+  ],
+  [
+   "W3 the gates threshold is 3 tokens  [by p_w_gates_partial: 'for M2b_s0_launchintent commit a\\ngate token written for M2b_s1_launchintent commit a\\ngate token wr]",
+   true
+  ],
+  [
+   "W3b the gates threshold is 5 tokens  [by p_w_gates: ' M2b_s1_launchintent commit a\\ngate token written for M2b_s0_launchintentrep commit a\\ngate token written fo]",
+   true
+  ],
+  [
+   "W4 the waker re-fires on gates already passed when it started  [by p_w_gates_late: ' M2b_s1_launchintent commit a\\ngate token written for M2b_s0_launchintentrep commit a\\ngate token writt]",
+   true
+  ],
+  [
+   "W5 the waker ignores ZZLAUNCHINTENT-CONTROL-FAIL  [by p_w_named: 'WAKER TIMEOUT\\n10-28 x\\nZZLAUNCHINTENT-CONTROL-FAIL M2b_s0_launchintentrep: x\\n']",
+   true
+  ],
+  [
+   "W6 any pull (not only a new one) wakes the waker  [by p_w_pull_none: ':00 M2b_s0_launchintent pulled to /e/x (checkpoint sha256 ab)\\n10-28 x\\n10-28 08:00 M2b_s0_launchintent ]",
+   true
+  ],
+  [
+   "W7 the waker reads a SIBLING chain's log  [by p_w_end: \"launch_intent_chain/selftest/waker/W7_the_waker_reads_a_SIBLING_c_s_end/chain_v8f_dagoaccorc_r2.out' for readi]",
+   true
+  ],
+  [
+   "W8 the waker gates on a SIBLING chain's marker file  [by p_w_gates_decoy: ' M2b_s1_launchintent commit a\\ngate token written for M2b_s0_launchintentrep commit a\\ngate token writ]",
+   true
+  ],
+  [
+   "W9 the waker's end test is not anchored  [by p_w_echo: 'CHAIN END\\n10-28 09:00 waiting for ^ZZV8FMINI-STOP or ZZV8FMINI-DONE (a dated echo is not an end marker)\\n']",
+   true
+  ],
+  [
+   "GD1 the guard writes the sibling guard's scratch file names  [by p_static_names: \"['v8f_guard_launchintent.sh: v8f_guard_tail.jsonl']\"]",
+   true
+  ],
+  [
+   "GD2 the guard's end test is not anchored  [by p_guard_echo: 'armed (USB >= 4/20 samples >= 61 C or one >= 63 C; projected run > 10 h after 1,000 steps)\\n10-28 13:27 c]",
+   true
+  ],
+  [
+   "S1 the chain's current-run file is the sibling's  [by p_static_names: \"['chain_v8f_launchintent.sh: v8fdagoaccorc', 'chain lacks its own name CUR=$L/v8flaunchintent_current.t]",
+   true
+  ],
+  [
+   "S2 the chain's evidence directory is the sibling's  [by p_static_names: \"['chain lacks its own name E=$L/v8f_launchintent']\"]",
+   true
+  ],
+  [
+   "S3 the lib names the sibling's aside marker  [by p_static_names: \"['oaf_launchintent_lib.sh: r2_aside_done']\"]",
+   true
+  ],
+  [
+   "S4 the launcher redirects into the predecessor's log  [by p_static_names: '[\"runner: its log must be its own and the sibling\\'s log appears ONLY as AFTER_OUT\"]']",
+   true
+  ],
+  [
+   "S5 the code archive has the sibling's name  [by p_static_names: \"_v8f_launchintent.sh: v8fdagoaccorc', 'chain_v8f_launchintent.sh: repo_v8fdagoacc', 'chain lacks its ow]",
+   true
+  ],
+  [
+   "Q-tip: a staged queue mutated as `tip` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-w: a staged queue mutated as `w` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-wB: a staged queue mutated as `wB` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-extra: a staged queue mutated as `extra` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-egoP: a staged queue mutated as `egoP` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-first: a staged queue mutated as `first` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-twice: a staged queue mutated as `twice` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-nocall: a staged queue mutated as `nocall` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-nodispatch: a staged queue mutated as `nodispatch` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-nowhitelist: a staged queue mutated as `nowhitelist` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-p03: a staged queue mutated as `p03` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-norepseed: a staged queue mutated as `norepseed` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-repseed2: a staged queue mutated as `repseed2` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-repseed_all: a staged queue mutated as `repseed_all` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-repdispatch: a staged queue mutated as `repdispatch` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ],
+  [
+   "Q-repwhitelist: a staged queue mutated as `repwhitelist` is REFUSED by the dry run (the queue stage cannot drift into the chain unseen)",
+   true
+  ]
+ ],
+ "failed": [],
+ "survivors": []
+}

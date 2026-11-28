@@ -1,0 +1,84 @@
+ZZ Q5AFTER FAIL ZZ main fits rc=124 2026-11-16 07:01:32
+MAIN FITS DONE 2026-11-16 11:16:10
+E:\Projects/TanitAD-artifacts/dagland/motion_c/theory/stopperc/s0p\s0p_lib.py:90: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+  return torch.from_numpy(np.ascontiguousarray(u8)).view(torch.float8_e4m3fn).to(torch.float32).numpy()
+planted F:/TanitAD-scratch/q5_416/run\c2\assembled\S1_416: {'touched_windows': 4000, 'n_windows': 16000, 'n_positive': 4000, 'plant_on': 'pos', 'v40_sha256': '3c686b5bce5947fa1ab4383a626f5721df64c0fdcae7b682003ac6ee27f7d6ee'}
+planted F:/TanitAD-scratch/q5_416/run\c2\assembled\S2_416: {'touched_windows': 4000, 'n_windows': 16000, 'n_positive': 4000, 'plant_on': 'pos', 'v40_sha256': '938866fb28cf0bdf187b7e1ef67fff6a7faefaf8dd23e5a77ecbe9bbacce6c0c'}
+planted eval F:/TanitAD-scratch/q5_416/run\c2\assembled\eval_416.npz: {'touched_windows': 131, 'n_windows': 2365, 'n_positive': 131, 'plant_on': 'pos', 'npz_sha256': '350fa7973ad254f087c57b03c4c5d31440682cd6025d1b8a824cb53470923886'}
+E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\stopperc\s0p\s0p_lib.py:90: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+  return torch.from_numpy(np.ascontiguousarray(u8)).view(torch.float8_e4m3fn).to(torch.float32).numpy()
+  pca v40: 640000 tokens
+  pca v40: 640000 tokens
+    cv V40+E/linear {'dim': 16, 'C': 0.001} mean 1.0000
+    cv V40+E/linear {'dim': 16, 'C': 0.01} mean 1.0000
+    cv V40+E/linear {'dim': 16, 'C': 0.1} mean 1.0000
+    cv V40+E/linear {'dim': 16, 'C': 1.0} mean 1.0000
+    cv V40+E/linear {'dim': 32, 'C': 0.001} mean 1.0000
+    cv V40+E/linear {'dim': 32, 'C': 0.01} mean 1.0000
+    cv V40+E/linear {'dim': 32, 'C': 0.1} mean 1.0000
+    cv V40+E/linear {'dim': 32, 'C': 1.0} mean 1.0000
+    cv V40+E/linear {'dim': 64, 'C': 0.001} mean 1.0000
+    cv V40+E/linear {'dim': 64, 'C': 0.01} mean 1.0000
+    cv V40+E/linear {'dim': 64, 'C': 0.1} mean 1.0000
+    cv V40+E/linear {'dim': 64, 'C': 1.0} mean 1.0000
+  fit V40+E_linear: best {'dim': 16, 'C': 0.001}, eval AUROC 1.0000 (31.0 s)
+    cv V40+E/mlp {'dim': 16, 'hidden': 64, 'alpha': 0.01} mean 1.0000
+    cv V40+E/mlp {'dim': 16, 'hidden': 64, 'alpha': 0.0001} mean 1.0000
+    cv V40+E/mlp {'dim': 16, 'hidden': 256, 'alpha': 0.01} mean 1.0000
+    cv V40+E/mlp {'dim': 16, 'hidden': 256, 'alpha': 0.0001} mean 1.0000
+    cv V40+E/mlp {'dim': 32, 'hidden': 64, 'alpha': 0.01} mean 1.0000
+    cv V40+E/mlp {'dim': 32, 'hidden': 64, 'alpha': 0.0001} mean 1.0000
+    cv V40+E/mlp {'dim': 32, 'hidden': 256, 'alpha': 0.01} mean 1.0000
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\stopperc\s0p\s0p_fit.py", line 446, in <module>
+    main()
+    ~~~~^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\stopperc\s0p\s0p_fit.py", line 437, in main
+    fit_one(a.arm, a.model, a.work, tr, ev)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\stopperc\s0p\s0p_fit.py", line 263, in fit_one
+    best, table = cv_select(arm, model, Xtr, y, clip, log)
+                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\stopperc\s0p\s0p_fit.py", line 240, in cv_select
+    m = _make_model(model, cfg).fit(X[tr], y[tr])
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\base.py", line 1403, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\pipeline.py", line 649, in fit
+    self._final_estimator.fit(Xt, y, **last_step_params["fit"])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\base.py", line 1403, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\neural_network\_multilayer_perceptron.py", line 853, in fit
+    return self._fit(X, y, sample_weight=sample_weight, incremental=False)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\neural_network\_multilayer_perceptron.py", line 512, in _fit
+    self._fit_stochastic(
+    ~~~~~~~~~~~~~~~~~~~~^
+        X,
+        ^^
+    ...<7 lines>...
+        incremental,
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\neural_network\_multilayer_perceptron.py", line 740, in _fit_stochastic
+    self._optimizer.update_params(params, grads)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\neural_network\_stochastic_optimizers.py", line 41, in update_params
+    updates = self._get_updates(grads)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\sklearn\neural_network\_stochastic_optimizers.py", line 275, in _get_updates
+    self.beta_2 * v + (1 - self.beta_2) * (grad**2)
+                      ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+numpy._core._exceptions._ArrayMemoryError: Unable to allocate 1.27 MiB for an array with shape (1298, 256) and data type float32
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\q5_416\build\c2\q5_c2_planted.py", line 285, in <module>
+    main()
+    ~~~~^^
+  File "F:\TanitAD-scratch\q5_416\build\c2\q5_c2_planted.py", line 278, in main
+    cmd_fit(a.base, a.sample, a.model, a.python)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\q5_416\build\c2\q5_c2_planted.py", line 212, in cmd_fit
+    raise RuntimeError(f"s0p_fit fit {s} {model} rc {r.returncode}")
+RuntimeError: s0p_fit fit S1 mlp rc 1
+ZZ C2 FAIL ZZ C:/Users/Admin/venvs/tanitad/Scripts/python.exe q5_c2_planted.py fit --base F:/TanitAD-scratch/q5_416/run --sample S1 --model mlp
+ZZ Q5AFTER FAIL ZZ C2 run 2026-11-16 11:37:46

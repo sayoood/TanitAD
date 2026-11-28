@@ -1,0 +1,21 @@
+{
+ "a_s": 0.01783575978120385,
+ "b_s": 0.0030226248620852394,
+ "t_bld_s": 0.18197983800000275,
+ "t_scr_fixed_s": 0.029435177000000055,
+ "Kbar_lam1": 9.89,
+ "t_row1_s": 0.6186553592382614,
+ "t_row9_s_bound_Kmax": 1.538092801962134,
+ "controls_s": 177.9,
+ "N_t": 250,
+ "N_e": 1200,
+ "projected_cpu_h": 0.7754819701591623,
+ "status": "OK",
+ "bank_scale": {
+  "N": 150603,
+  "cpu_h": 25.88093140759997,
+  "pod_wall_h_128c_eta0.8_rho1": 0.25274347077734344,
+  "note": "P5-R only; P5-C's pod build adds iterate20 (the warm start) on top"
+ },
+ "formula": "t_row(G) = t_bld + t_sim(25) + sum_k t_sim(3 G_k) + t_scr; t_sim(n) = a + b n (card \u00a72.3); t_row1 adds one S3 solo call; t_row9 bounds K by K_MAX"
+}

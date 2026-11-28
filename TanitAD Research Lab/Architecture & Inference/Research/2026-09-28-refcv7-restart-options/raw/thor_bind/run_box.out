@@ -1,0 +1,41 @@
+/home/nvidia/refcv7_bind/run_box/audit/raw/PREREG_G_BOX_OVERFIT.md: OK
+/home/nvidia/refcv7_bind/run_box/audit/raw/visibility/gbo_frameset.json: OK
+/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz: OK
+canonical argv box tokens: OK
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 1.0000 of 2737 windows over 16 clips (verdict PASS)
+[gbo 18:42:25] C3 PASS: totals [113, 77] vs [113, 77]
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] opt=dd AdamW wd=0.0001 encoder_lr=5.000e-05 (316 tensors) head_lr=1.000e-04 (498 tensors)
+[gbo 18:46:43] main step 100: AP 0.079 P nan R 0.000 conf 0 centre 0.846 pres 0.4563
+[gbo 18:50:47] main step 200: AP 0.147 P nan R 0.000 conf 0 centre 0.780 pres 0.3653
+[gbo 18:54:51] main step 300: AP 0.414 P 0.833 R 0.044 conf 6 centre 0.451 pres 0.2823
+[gbo 18:58:59] main step 400: AP 0.742 P 1.000 R 0.274 conf 31 centre 0.329 pres 0.1797
+[gbo 19:03:05] main step 500: AP 0.895 P 0.962 R 0.451 conf 53 centre 0.351 pres 0.1136
+[gbo 19:07:19] main step 600: AP 0.971 P 0.964 R 0.708 conf 83 centre 0.198 pres 0.0603
+[gbo 19:11:28] main step 700: AP 0.998 P 1.000 R 0.938 conf 106 centre 0.277 pres 0.0231
+[gbo 19:15:34] main step 800: AP 1.000 P 1.000 R 0.938 conf 106 centre 0.238 pres 0.0124
+[gbo 19:19:40] main step 900: AP 1.000 P 1.000 R 0.991 conf 112 centre 0.273 pres 0.0059
+[gbo 19:23:47] main step 1000: AP 1.000 P 1.000 R 0.991 conf 112 centre 0.237 pres 0.0054
+[gbo 19:27:55] main step 1100: AP 1.000 P 1.000 R 0.965 conf 109 centre 0.170 pres 0.0052
+[gbo 19:32:01] main step 1200: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.162 pres 0.0046
+[gbo 19:36:09] main step 1300: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.200 pres 0.0031
+[gbo 19:40:11] main step 1400: AP 0.993 P 1.000 R 0.956 conf 108 centre 0.178 pres 0.0200
+[gbo 19:44:11] main step 1500: AP 1.000 P 1.000 R 0.991 conf 112 centre 0.222 pres 0.0045
+[gbo 19:48:12] main step 1600: AP 1.000 P 1.000 R 0.991 conf 112 centre 0.095 pres 0.0035
+[gbo 19:52:12] main step 1700: AP 1.000 P 1.000 R 0.973 conf 110 centre 0.207 pres 0.0062
+[gbo 19:56:12] main step 1800: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.146 pres 0.0029
+[gbo 20:00:12] main step 1900: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.075 pres 0.0021
+[gbo 20:04:13] main step 2000: AP 1.000 P 1.000 R 1.000 conf 113 centre 0.010 pres 0.0019
+[gbo 20:04:15] arm main: PASS (4905.8 s, 2.4485810252428055 s/step)
+[gbo 20:04:15] RESULT FAIL (binding=True)
+[closure_run] 108 modules, 0 probed, 60 absent names, 46 data files, exit 0 -> /home/nvidia/refcv7_bind/run_box/gbo_closure.json

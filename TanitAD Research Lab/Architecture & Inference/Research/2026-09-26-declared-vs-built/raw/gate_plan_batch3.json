@@ -1,0 +1,174 @@
+{
+ "what": "batch-3 gate (declared-vs-built): the refcv7 launch blockers -- (a) the three zero-gradient modules FROZEN and DECLARED + G-DVB check/probe; (b) strict_fields on the six open config classes; (c) check_refcv7_required: residual prior ha0_ext_pose (argv AND built) and --ego-history",
+ "base_commit": "b4a59b982dbc3f9f0e63451c1afc796e97eaa356",
+ "tip_overlay_batch2": null,
+ "tree_build": "git -c core.autocrlf=false archive <base_commit> stack taniteval tools, then tip_overlay_batch2 (TIP3), then `overlay` on top (FIX3); md5-verify every copy",
+ "env": {
+  "PYTHONPATH": "<tree>/stack:<tree>/stack/scripts:<tree>/taniteval",
+  "OMP_NUM_THREADS": "4",
+  "PYTHONIOENCODING": "utf-8",
+  "HF_HUB_OFFLINE": "1",
+  "CUDA_VISIBLE_DEVICES": "",
+  "assert": "tanitad.__file__ and taniteval.nav_compliance.__file__ resolve inside <tree>"
+ },
+ "pytest": "python -m pytest -q -p no:cacheprovider -rfE --junitxml=<one xml per file> <file>",
+ "stages": {
+  "TIPRED3": {
+   "tree": "TIP3 + ONLY the three test files below (no code change)",
+   "stack_cwd_files": [
+    "tests/test_grad_unreachable_declared.py",
+    "tests/test_declared_vs_built.py",
+    "tests/test_config_hygiene.py"
+   ]
+  },
+  "FIX3": {
+   "tree": "TIP3 + EVERY file of `overlay`",
+   "files": "the FULL suite"
+  },
+  "TIP3": {
+   "tree": "TIP3",
+   "files": "the FULL suite"
+  }
+ },
+ "regression_rule": "a test that FAILS or ERRORS on FIX3 and PASSES on TIP3 (per junit testcase)",
+ "overlay": [
+  {
+   "source": "code/fix3/stack/scripts/refc_v3_train.py",
+   "target": "stack/scripts/refc_v3_train.py",
+   "md5": "e6451cafb5369d8d4c381674afb189ec",
+   "blob": "507b5579a60605e8238ade00239eb217330de2ac",
+   "base_blob": "f1a9c83ebccd040bf934281db970dc25326f6d1f",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/models/ego_history.py",
+   "target": "stack/tanitad/models/ego_history.py",
+   "md5": "7a69d3dd2b6b0d03813d2e9277c7c666",
+   "blob": "1b8b1114fdceb7b776b17c6cf0812003df64f310",
+   "base_blob": "f57adc9624b11bcac125e6ab855bcc1f18fec364",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/models/refcv6_diffusion.py",
+   "target": "stack/tanitad/models/refcv6_diffusion.py",
+   "md5": "275c4d2c5030ed68fdb502dfd0bbd90e",
+   "blob": "48fed0c1bf2edcea8b7a94a48822c770ece19860",
+   "base_blob": "c1b8816a2a90fb064b75716257cbda3ca992bf62",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/refs/max_speed_input.py",
+   "target": "stack/tanitad/refs/max_speed_input.py",
+   "md5": "b0b0e86d25db71784854b3594cc42195",
+   "blob": "f3ab9fab1c271907666e977c9b167a5ad264b961",
+   "base_blob": "0c32644a0d08ae243acc8692ba9dc3dd59d3fdce",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/refs/refc.py",
+   "target": "stack/tanitad/refs/refc.py",
+   "md5": "edf3a2fbe041a7fc1f1fef12a818842f",
+   "blob": "ac7ab9d37843531f345cf1413513e1fb90f850eb",
+   "base_blob": "6638d443533fb87e228f6bce7acf3e765ff93bed",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/refs/refc_agents.py",
+   "target": "stack/tanitad/refs/refc_agents.py",
+   "md5": "ff8c01d0042fe2290615525c05932613",
+   "blob": "ce8ac3f43dccf7dfa6f3533e3339ce1d6a12b4d2",
+   "base_blob": "e647eace00b7a49da7e599b9393d84e190dbc38d",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/refs/refc_v3.py",
+   "target": "stack/tanitad/refs/refc_v3.py",
+   "md5": "9ef4bf7f87667dfaf61dfae1bc241e80",
+   "blob": "a357a1b5540c4a55d994df23b1750892768aec8f",
+   "base_blob": "0b855f5334d0adcc36111e0872a8d261940d0098",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/refs/refcv6_tactical.py",
+   "target": "stack/tanitad/refs/refcv6_tactical.py",
+   "md5": "046930230e9456afc39c6f6b1a685d48",
+   "blob": "7499fba08c7c12ef0acfa2413e564714cbf9f231",
+   "base_blob": "afe1d5a59b122987502bca5b5f94ca69eaba773c",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/refs/refcv7_heads.py",
+   "target": "stack/tanitad/refs/refcv7_heads.py",
+   "md5": "ee93411819871b979c133312973e3bfc",
+   "blob": "5eeeb67d29300d6908e9b45bb0e652b9d087939c",
+   "base_blob": "a0206ea2f87d270ea3667148aa16c958ea88214c",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/train/config_hygiene.py",
+   "target": "stack/tanitad/train/config_hygiene.py",
+   "md5": "f3bd3701db8ba87e532a6a058c4bfc69",
+   "blob": "00c33e550118ea7124e2cc8b5377319b2004075f",
+   "base_blob": "e6559a60874f4049b8c40a083ba68b762c83ac22",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tanitad/train/declared_vs_built.py",
+   "target": "stack/tanitad/train/declared_vs_built.py",
+   "md5": "88b4469072e81d988d96e659c7d1a78f",
+   "blob": "e10575048fd3aa60c59879b77a652865eb9e96ea",
+   "base_blob": "a5fdddc36864abf7ebdd84dd74949be87b2a6388",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tests/test_config_hygiene.py",
+   "target": "stack/tests/test_config_hygiene.py",
+   "md5": "56ad5ddf5ebe1ec84762fadc67d69da3",
+   "blob": "af2452d525aae5f1d0b56e849867a277f245aa75",
+   "base_blob": "8022e9777b581b69c5f98224190a04cc225232ae",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tests/test_declared_vs_built.py",
+   "target": "stack/tests/test_declared_vs_built.py",
+   "md5": "7ffab329a08e10842b56f50b73ff76a4",
+   "blob": "45b6b327e70d19bbf8b0cd90544c9ae2d7bad8ec",
+   "base_blob": "2e9c620ec54295c3adb428afad6e7afffee35039",
+   "base_is": "base commit b4a59b9"
+  },
+  {
+   "source": "code/fix3/stack/tests/test_grad_unreachable_declared.py",
+   "target": "stack/tests/test_grad_unreachable_declared.py",
+   "md5": "cdce81ecb620b443c6f8d5770a51bae7",
+   "blob": "9fa5084162292b8656eec573765f193e28ae5617",
+   "base_blob": "NEW",
+   "base_is": "new file"
+  }
+ ],
+ "expected_FIX3_new_tests": {
+  "stack/tests/test_grad_unreachable_declared.py": {
+   "passed": 12
+  },
+  "stack/tests/test_declared_vs_built.py": {
+   "passed": 40,
+   "note": "32 before batch 3 (+8)"
+  },
+  "stack/tests/test_config_hygiene.py": {
+   "passed": 35,
+   "note": "26 before batch 3 (+9)"
+  },
+  "total": 87
+ },
+ "expected_TIPRED3": {
+  "stack/tests/test_grad_unreachable_declared.py": {
+   "failed": 12
+  },
+  "_note": "PREDICTED from source: on TIP3 no module is declared and G-DVB has no check/probe_grad_unreachable, GRAD_UNREACHABLE_RULES or REFCV7_RESIDUAL_PRIOR; the six classes are not strict and config_hygiene has no config_dataclass_instances -- so every batch-3 test that reads those goes RED. Tests of unchanged mechanics inside the two EXTENDED files stay GREEN, and so may `test_REFCV7_all_three_on_and_built_PASSES` (the old check ignores the prior). The BEHAVIOURAL red arms run on FIX3 and must PASS there."
+ },
+ "environment_bound": "as batch 1 (raw/gate_plan.json); test_residual_prior's literal off-mode digest is recorded on win32 / torch 2.11 and SKIPS on Thor",
+ "invariants_to_watch": [
+  "test_residual_prior.py::test_c_off_is_BIT_IDENTICAL... (dev box only): the freeze adds no gradient and removes none -- the three tensors took `p.grad is None` before and after",
+  "test_built_heads_receive_gradient.py: its census is per top-level child; no verdict moves",
+  "test_u0_control_head_reachability.py: a sampler decoder WITHOUT F3 -- control_head stays trainable; offset_head is frozen there and its `out['offset']` control still reads 0"
+ ]
+}

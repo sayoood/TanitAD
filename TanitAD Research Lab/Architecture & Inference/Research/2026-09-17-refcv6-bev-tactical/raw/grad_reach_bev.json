@@ -1,0 +1,339 @@
+{
+  "arms": [
+    {
+      "arm": "agent_only",
+      "loss_terms": [
+        "tacv6_goal_logits",
+        "tacv6_lat_logits",
+        "tacv6_lon_logits",
+        "tacv6_goal_conf"
+      ],
+      "loss": 0.7104916572570801,
+      "perception_keys": [
+        "bev",
+        "bev_feats",
+        "bev_tokens_fed",
+        "map_logits"
+      ],
+      "bev_tokens_shape": null,
+      "bev_token_dim": 96,
+      "n_scene": [
+        100,
+        100
+      ],
+      "decoder_sources": [
+        "agent"
+      ],
+      "bev_detached": false,
+      "bev_tokens_fed": false,
+      "per_behaviour_dlogit_dbev_abs": {
+        "_status": "NO-BEV-TOKENS-FED (agent-only)"
+      },
+      "grad": {
+        "trunk": {
+          "grad_abs_sum": 78146.45375198498,
+          "n_params": 58231872,
+          "n_params_with_grad": 55085120
+        },
+        "planner": {
+          "grad_abs_sum": 0.0,
+          "n_params": 12011789,
+          "n_params_with_grad": 0
+        },
+        "tac_decoder": {
+          "grad_abs_sum": 41441.710691412445,
+          "n_params": 2228996,
+          "n_params_with_grad": 2228996
+        },
+        "lift": {
+          "grad_abs_sum": 0.0,
+          "n_params": 524544,
+          "n_params_with_grad": 0
+        },
+        "bev_encoder": {
+          "grad_abs_sum": 0.0,
+          "n_params": 785280,
+          "n_params_with_grad": 0
+        },
+        "map_head": {
+          "grad_abs_sum": 0.0,
+          "n_params": 873,
+          "n_params_with_grad": 0
+        }
+      }
+    },
+    {
+      "arm": "bev",
+      "loss_terms": [
+        "tacv6_goal_logits",
+        "tacv6_lat_logits",
+        "tacv6_lon_logits",
+        "tacv6_goal_conf"
+      ],
+      "loss": 0.30618101358413696,
+      "perception_keys": [
+        "bev",
+        "bev_feats",
+        "bev_tokens",
+        "bev_tokens_fed",
+        "map_logits"
+      ],
+      "bev_tokens_shape": [
+        2,
+        480,
+        96
+      ],
+      "bev_token_dim": 96,
+      "n_scene": [
+        580,
+        580
+      ],
+      "decoder_sources": [
+        "agent",
+        "bev"
+      ],
+      "bev_detached": false,
+      "bev_tokens_fed": true,
+      "per_behaviour_dlogit_dbev_abs": {
+        "FOLLOW_LANE": 10.787970542907715,
+        "TURN_L": 10.966733932495117,
+        "TURN_R": 10.64197063446045,
+        "YIELD_FOR_TURN_L": 10.613364219665527,
+        "YIELD_FOR_TURN_R": 10.61079216003418,
+        "YIELD": 10.630657196044922,
+        "STOP_POINT": 10.79608154296875,
+        "SPEED_BAND": 10.738697052001953,
+        "CORRIDOR_OFFSET": 10.643739700317383,
+        "EVADE_IN_CORRIDOR": 10.679841995239258,
+        "OVERTAKE_VEHICLE": 10.687836647033691,
+        "MERGE": 10.68852424621582,
+        "GAP_TARGET": 10.790632247924805,
+        "REACT_ON_ONCOMING": 10.73773193359375,
+        "TAKE_EXIT_L": 10.913806915283203,
+        "TAKE_EXIT_R": 10.720129013061523,
+        "TRAFFIC_LIGHT_REACT": 10.689797401428223,
+        "TRAFFIC_LIGHT_REACT_RED": 10.528976440429688,
+        "TRAFFIC_LIGHT_REACT_YELLOW": 10.869132995605469,
+        "TRAFFIC_LIGHT_REACT_GREEN": 10.822261810302734,
+        "LANE_CHANGE_L": 10.75309944152832,
+        "LANE_CHANGE_R": 10.61005973815918
+      },
+      "grad": {
+        "trunk": {
+          "grad_abs_sum": 34211.147283962,
+          "n_params": 58231872,
+          "n_params_with_grad": 58231872
+        },
+        "planner": {
+          "grad_abs_sum": 0.0,
+          "n_params": 12011789,
+          "n_params_with_grad": 0
+        },
+        "tac_decoder": {
+          "grad_abs_sum": 30340.951778516173,
+          "n_params": 2253828,
+          "n_params_with_grad": 2253828
+        },
+        "lift": {
+          "grad_abs_sum": 859.0177001953125,
+          "n_params": 524544,
+          "n_params_with_grad": 524544
+        },
+        "bev_encoder": {
+          "grad_abs_sum": 30282.347299695015,
+          "n_params": 785280,
+          "n_params_with_grad": 785280
+        },
+        "map_head": {
+          "grad_abs_sum": 0.0,
+          "n_params": 873,
+          "n_params_with_grad": 0
+        }
+      }
+    },
+    {
+      "arm": "bev_detached",
+      "loss_terms": [
+        "tacv6_goal_logits",
+        "tacv6_lat_logits",
+        "tacv6_lon_logits",
+        "tacv6_goal_conf"
+      ],
+      "loss": 0.30618101358413696,
+      "perception_keys": [
+        "bev",
+        "bev_feats",
+        "bev_tokens",
+        "bev_tokens_fed",
+        "map_logits"
+      ],
+      "bev_tokens_shape": [
+        2,
+        480,
+        96
+      ],
+      "bev_token_dim": 96,
+      "n_scene": [
+        580,
+        580
+      ],
+      "decoder_sources": [
+        "agent",
+        "bev"
+      ],
+      "bev_detached": true,
+      "bev_tokens_fed": true,
+      "per_behaviour_dlogit_dbev_abs": {
+        "_status": "BEV-TOKENS-DETACHED (R3 ablation): no gradient path from any behaviour logit to the map"
+      },
+      "grad": {
+        "trunk": {
+          "grad_abs_sum": 33542.232506160624,
+          "n_params": 58231872,
+          "n_params_with_grad": 55085120
+        },
+        "planner": {
+          "grad_abs_sum": 0.0,
+          "n_params": 12011789,
+          "n_params_with_grad": 0
+        },
+        "tac_decoder": {
+          "grad_abs_sum": 30340.951778516173,
+          "n_params": 2253828,
+          "n_params_with_grad": 2253828
+        },
+        "lift": {
+          "grad_abs_sum": 0.0,
+          "n_params": 524544,
+          "n_params_with_grad": 0
+        },
+        "bev_encoder": {
+          "grad_abs_sum": 0.0,
+          "n_params": 785280,
+          "n_params_with_grad": 0
+        },
+        "map_head": {
+          "grad_abs_sum": 0.0,
+          "n_params": 873,
+          "n_params_with_grad": 0
+        }
+      }
+    },
+    {
+      "arm": "bev_PLANNER_LOSS_CONTROL",
+      "loss_terms": [
+        "traj"
+      ],
+      "loss": 795.224609375,
+      "perception_keys": [
+        "bev",
+        "bev_feats",
+        "bev_tokens",
+        "bev_tokens_fed",
+        "map_logits"
+      ],
+      "bev_tokens_shape": [
+        2,
+        480,
+        96
+      ],
+      "bev_token_dim": 96,
+      "n_scene": [
+        580,
+        580
+      ],
+      "decoder_sources": [
+        "agent",
+        "bev"
+      ],
+      "bev_detached": false,
+      "bev_tokens_fed": true,
+      "per_behaviour_dlogit_dbev_abs": null,
+      "grad": {
+        "trunk": {
+          "grad_abs_sum": 449597.6434762478,
+          "n_params": 58231872,
+          "n_params_with_grad": 55085120
+        },
+        "planner": {
+          "grad_abs_sum": 785253.0842929482,
+          "n_params": 12011789,
+          "n_params_with_grad": 12010764
+        },
+        "tac_decoder": {
+          "grad_abs_sum": 0.0,
+          "n_params": 2253828,
+          "n_params_with_grad": 0
+        },
+        "lift": {
+          "grad_abs_sum": 0.0,
+          "n_params": 524544,
+          "n_params_with_grad": 0
+        },
+        "bev_encoder": {
+          "grad_abs_sum": 0.0,
+          "n_params": 785280,
+          "n_params_with_grad": 0
+        },
+        "map_head": {
+          "grad_abs_sum": 0.0,
+          "n_params": 873,
+          "n_params_with_grad": 0
+        }
+      }
+    }
+  ],
+  "verdict": {
+    "tactical_loss_reaches_bev_branch": true,
+    "tactical_loss_reaches_trunk_on_bev_arm": true,
+    "agent_only_bev_grad_is_exactly_zero": true,
+    "detached_bev_grad_is_exactly_zero": true,
+    "planner_loss_moves_trunk": true,
+    "planner_loss_leaves_bev_branch_at_zero": true,
+    "n_scene_rises_with_bev": true,
+    "trunk_params_with_grad": {
+      "agent_only": 55085120,
+      "bev": 58231872,
+      "bev_detached": 55085120,
+      "bev_PLANNER_LOSS_CONTROL": 55085120
+    },
+    "trunk_params_opened_by_bev_path": 3146752,
+    "map_head_is_zero_under_tactical_loss_on_every_arm": true,
+    "n_behaviours_with_a_map_gradient": 22,
+    "map_derived_behaviours_reachable": {
+      "FOLLOW_LANE": 10.787970542907715,
+      "CORRIDOR_OFFSET": 10.643739700317383,
+      "EVADE_IN_CORRIDOR": 10.679841995239258
+    },
+    "heads_at_exactly_zero": {
+      "agent_only": [
+        "bev_encoder",
+        "lift",
+        "map_head",
+        "planner"
+      ],
+      "bev": [
+        "map_head",
+        "planner"
+      ],
+      "bev_detached": [
+        "bev_encoder",
+        "lift",
+        "map_head",
+        "planner"
+      ],
+      "bev_PLANNER_LOSS_CONTROL": [
+        "bev_encoder",
+        "lift",
+        "map_head",
+        "tac_decoder"
+      ]
+    }
+  },
+  "image_hw": [
+    "256",
+    "1024"
+  ],
+  "device": "cpu",
+  "torch": "2.11.0+cu128"
+}

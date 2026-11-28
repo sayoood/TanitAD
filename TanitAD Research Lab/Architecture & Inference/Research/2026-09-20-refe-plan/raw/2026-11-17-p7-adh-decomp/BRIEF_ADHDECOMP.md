@@ -1,0 +1,27 @@
+# BRIEF: why P7's picked plan follows the command no better than a random proposal, and whether a command-consistent re-rank fixes it (0 GPU). Agent: Sonnet. MM, 2026-11-17
+
+Read `Project Steering/AGENT_OPERATING_STANDARD.md` first (from the mirror below). **Binding:** stage nothing in git, never commit or push; end with a manifest of every file and where it lives.
+- **Hold (deliverables):** `E:/Projects/TanitAD-artifacts/scorer_gym_20261107/adh_decomp/`. **Scratch:** `F:/tanitad_scratch/adhdecomp/` (delete it yourself at the end, by literal path, once the deliverables are in the hold).
+- **Code:** read it from the mirror `C:/Users/Admin/tanitad-push` (`git fetch -q origin agent/arch-inf-20260803`, then `git show FETCH_HEAD:<path>`; core.autocrlf=true, so export with `git -c core.autocrlf=false show`). `PK` = `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan`.
+- **Python:** `C:/Users/Admin/venvs/tanitad/Scripts/python.exe`, `CUDA_VISIBLE_DEVICES=-1`, PYTHONPATH joined with `;`. CPU only, ONE process at a time, TMP inside your scratch; before each heavy step wait while free commit memory < 6 GB (`powershell -NoProfile -Command "[int][math]::Floor((Get-CimInstance Win32_OperatingSystem).FreeVirtualMemory/1MB)"`); another CPU sweep is running on this box.
+
+## The fact you start from (MEASURED, `E:/Projects/TanitAD-artifacts/p7_full_read/command_adherence_p7_full.json`)
+P7's turn-active command adherence (LEFT u RIGHT commands, 4,076 tokens, 113 logs) is **0.8805 [0.8555, 0.9025]**. Its **floor** (the instrument's own definition: mean adherence of the 64 proposals per token, from the `--dump-proposals` dump) is **0.8841**. The picked plan is not above a random proposal from its own fan. The STRATEGIC read (`PK/raw/2026-11-16-p7-read/strategic/STRATFAM_P6_P7.md`) adds: P7 RIGHT recall 0.8292, -0.0203 [-0.0375, -0.0021] vs P6; confusion STRAIGHT->LEFT 617, STRAIGHT->RIGHT 569, RIGHT->STRAIGHT 249.
+
+## Inputs (all on this box)
+- Proposal dump: `E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p7_full.proposals.npz` (`token` [12146], `proposals` [12146,64,8,3], `logits` [12146,64,6], `pick`, `pick20`, scalars `select`, `rule`, `repair_last_heading`, ...).
+- Seam (the executed plan, A7-repaired): `E:/Projects/TanitAD/data/refe_navtest/seams/stage2_p7_full.npz`. PDMS per token: `E:/Projects/TanitAD/data/refe_navtest/score/refe_stage2_p7_full/refe_stage2_p7_full.csv`.
+- Instruments (pinned: IMPORT them, never edit or copy-modify): `PK/eval/command_adherence.py` (the classing and the floor), `PK/eval/instruments/strategic_family.py` (find in `strat_family_P6_P7.json` under `PK/raw/2026-11-16-p7-read/strategic/` the source of the logged human future poses it used).
+
+## Questions, in priority order (bank each answer in the hold as you go; a killed run must still leave the earlier ones)
+1. **Reproduce** the pick adherence 0.8805 and the floor 0.8841 exactly from the instrument. A mismatch is the first finding; explain it before going on.
+2. **Ceiling and label noise:** the adherence of the LOGGED HUMAN future under the same classing (all tokens and turn-active, per command class, 3x3 confusion). If humans read e.g. 0.93, the command/classing pair is noisy, and that bounds every lever below.
+3. **Decomposition per token:** the share of the 64 proposals that adhere; best-of-64 (any adherent proposal exists?); the scorer's pick. Tabulate per command class: tokens where an adherent proposal exists but the pick does not adhere (a SELECTION miss) vs. tokens with no adherent proposal (a GENERATION miss). This says whether the lever is selection or the fan.
+4. **The re-rank (the lever):** among the proposals that adhere to the command, take the one the scorer ranks highest (use the same score the pipeline uses for `pick`; read `select`/`rule` in the dump and the stage-2 code to replicate `pick` EXACTLY first, as a control: the replicated pick must equal `pick` on every token); if none adheres, keep `pick`. Report adherence (turn-active headline, all tokens, per class) with a paired log-cluster bootstrap vs the current pick (`proxy_eval.boot` stream: B 10,000, seed 20260927, cluster = log), how many tokens change, and the PDMS of the CHANGED tokens' current picks (from the csv: are we replacing good or bad plans?). Write the re-ranked executed plans as a seam npz with the SAME schema as `stage2_p7_full.npz` (token, poses [N,8,3], any other keys copied), so the MM can PDMS-score it. ⚠️ The executed plan includes the A7 repair (`repair_last_heading`): apply the same repair to a re-ranked proposal, or state exactly why not. Control: re-rank with the command randomly permuted across tokens (seed 20261117) must NOT raise adherence above the pick; a re-rank that "improves" under a permuted command is broken.
+5. **Admissibility statement** (one paragraph): the re-rank reads only the navigation command (an inference INPUT by the PI's ruling) and the planner's own proposals and scores; no ego-derived label, no situation-classifier output, no logged future. Say it, and say what in your code proves it.
+
+## Deliverables (hold)
+`ADH_DECOMP_P7.md` (every number with evidence class, estimator, n, artifact path), `adh_decomp_p7.json`, `rerank_p7_seam.npz` (+ its sha256), your scripts under `scripts/`, `HANDOFF.md` (<= 2k tokens).
+
+## Do not
+Edit any repo or pinned file; commit or push; use the GPU, the pod or box 2; run two heavy processes at once; print secrets; delete outside your scratch; exceed ~150k context. Report back in <= 300 words plus the manifest.

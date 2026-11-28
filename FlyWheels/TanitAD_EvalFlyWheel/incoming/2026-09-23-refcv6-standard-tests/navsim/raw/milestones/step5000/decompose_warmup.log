@@ -1,0 +1,59 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\decompose6.py --split warmup_two_stage --scores C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\milestones\step5000\scores_warmup --floors C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\floors\warmup_two_stage --bridge C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\milestones\step5000\bridge_warmup --inputs C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\..\..\2026-09-19-navsim-refcv4b-bridge\raw\navsim_agent_inputs.json --label RESULT --out C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\milestones\step5000\decomposition_warmup.json
+Traceback (most recent call last):
+  File "C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\decompose6.py", line 196, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\decompose6.py", line 170, in main
+    w7.main(["--run", tmp, "--arm", a.arm, "--vs", ",".join(n for n in names[1:] if n in srcs),
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             "--inputs", a.inputs, "--out", w7_out])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-refcv4b/code/decompose.py", line 107, in main
+    A, apath = load(a.run, a.arm)
+               ~~~~^^^^^^^^^^^^^^
+  File "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-refcv4b/code/decompose.py", line 52, in load
+    d = pd.read_csv(p, index_col=0)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pandas\io\parsers\readers.py", line 873, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pandas\io\parsers\readers.py", line 300, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pandas\io\parsers\readers.py", line 1645, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pandas\io\parsers\readers.py", line 1904, in _make_engine
+    self.handles = get_handle(
+                   ~~~~~~~~~~^
+        f,
+        ^^
+    ...<6 lines>...
+        storage_options=self.options.get("storage_options", None),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\pandas\io\common.py", line 930, in get_handle
+    handle = open(
+        handle,
+    ...<3 lines>...
+        newline="",
+    )
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\decomp6_0ezxupzz\\scores\\R6_A1.csv'
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\decompose6.py --split warmup_two_stage --scores C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000\scores_warmup --floors C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\floors\warmup_two_stage --bridge C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000\bridge_warmup --inputs C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\..\..\2026-09-19-navsim-refcv4b-bridge\raw\navsim_agent_inputs.json --label RESULT --out C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000\decomposition_warmup.json
+{
+ "arm": "R6_A1",
+ "zero_attribution": {
+  "stage_1": {
+   "n_zero_score": 8,
+   "n": 16
+  },
+  "stage_2": {
+   "n_zero_score": 102,
+   "n": 204
+  }
+ },
+ "vs": {
+  "STOP_zero": -0.139245,
+  "CV_official": -0.008514,
+  "ECHO_ha0_ext": -0.047451
+ }
+}
+[decompose6] warmup_two_stage R6_A1 -> C:/Users/Admin/ev6/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/raw/milestones/step5000\decomposition_warmup.json

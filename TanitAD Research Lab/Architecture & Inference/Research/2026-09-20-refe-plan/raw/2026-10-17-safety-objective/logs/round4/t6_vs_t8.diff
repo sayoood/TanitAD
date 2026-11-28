@@ -1,0 +1,647 @@
+--- a/eval/safeobj_read.py
++++ b/eval/safeobj_read.py
+@@ -5,7 +5,8 @@
+ 
+ For every arm directory it writes `<arm-dir>/safeobj_S.json` -- the file `rls1_checks.py safeobj-gate` (and so `rls1_pod.sh` before R1o) reads -- and prints
+ `ZZSAFEOBJ_S <arm> <PASS|FAIL|NOT_READ> <why>`.  That file is written by THIS tool and by nothing else, and the gate checks that it was: `rls1_checks.safeobj_gate` refuses a record whose `tool` is not TOOL, whose `record_sha256` does not
+-recompute (`record_digest` below -- the ONE canonicalisation, imported by the gate, never copied), or whose listed input sha256s no longer match the files in the arm directory.
++recompute (`record_digest` below -- the ONE canonicalisation, imported by the gate, never copied), whose listed input sha256s no longer match the files in the arm directory, or which a fresh read of the arm directory does not reproduce
++(`differing_fields` below: the gate runs `read_arm` again on the directory as it is NOW and the two records must be equal).
+ 
+ BAR S, as registered (PREREG_SAFEOBJ.md section 5, quoted): "The TTC and NC point deltas are both >= -0.5 at EVERY check (u250, u500, u750, u1000).  g3 holds at every check: pick / fan-mean
+ path >= 0.894 and shortest-bin share <= 0.55 ...  K3 still kills on two consecutive breaches.  A single non-consecutive breach does not kill, but it fails S."   Deltas are B minus the arm's OWN A
+@@ -46,6 +47,8 @@
+ G_TOL = 1e-9
+ OUT_NAME = "safeobj_S.json"
+ REQUIRED_INPUTS = ("kill_replay.json", "rlval_vs_A0.json")       # a PASS record always lists these two (the reader fails closed without either); the gate refuses a record that lists fewer
++VOLATILE_FIELDS = ()                             # the record fields a fresh read may legitimately change: NONE.  The record is a pure function of the arm directory's files (no clock, no path, no host name), so a
++                                                 # fresh read of an unchanged directory reproduces it EXACTLY.  A field that ever carries a time or a host must be named HERE, or every genuine record turns "stale".
+ 
+ 
+ def sha256_file(path):
+@@ -63,6 +66,19 @@
+     return hashlib.sha256(body.encode("utf-8")).hexdigest()
+ 
+ 
++def comparable(rec):
++    """the part of a record that a fresh read of the same directory must reproduce: every field except the stamp (it is derived from the rest, and the gate checks it on its own) and VOLATILE_FIELDS (none)."""
++    return {k: v for k, v in rec.items() if k != "record_sha256" and k not in VOLATILE_FIELDS}
++
++
++def differing_fields(stored, fresh):
++    """-> the sorted names of the fields in which `stored` differs from `fresh` (empty = `fresh`, a read of the directory as it is now, reproduces `stored`).  Each field is compared as its canonical JSON, i.e.
++    as the file holds it (a tuple is a list, a float is its repr), and a field present in one record only differs.  `rls1_checks.safeobj_gate` calls this with the stored record and `read_arm(<dir>)`."""
++    a, b = comparable(stored), comparable(fresh)
++    dump = lambda v: json.dumps(v, sort_keys=True)                   # noqa: E731
++    return sorted(k for k in set(a) | set(b) if k not in a or k not in b or dump(a[k]) != dump(b[k]))
++
++
+ def _num(x):
+     return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+ 
+--- a/refe/rls1_checks.py
++++ b/refe/rls1_checks.py
+@@ -576,7 +576,8 @@
+ 
+ def _safeobj_reader():
+     """eval/safeobj_read.py of THIS checkout, loaded by path (never through sys.path or sys.modules, so a gate loaded from one tree cannot use another tree's reader): the one place that says what a
+-    genuine bar-S record is -- TOOL (its identity), record_digest (the canonicalisation of record_sha256), sha256_file, REQUIRED_INPUTS.  The gate calls them and keeps no copy of any."""
++    genuine bar-S record is -- TOOL (its identity), record_digest (the canonicalisation of record_sha256), sha256_file, REQUIRED_INPUTS, and read_arm / differing_fields (the reader's own judgement, re-run).  The gate calls them and keeps
++    no copy of any."""
+     import importlib.util
+     spec = importlib.util.spec_from_file_location("safeobj_read_of_the_gate", str(EVAL_DIR / "safeobj_read.py"))
+     mod = importlib.util.module_from_spec(spec)
+@@ -587,8 +588,11 @@
+ def safeobj_not_genuine(d, rec):
+     """-> "" when `rec` (the parsed <d>/safeobj_S.json) is a genuine, unmodified output of eval/safeobj_read.py, else the reasons joined by "; ".  Fail closed: anything unexpected is a reason.
+     (a) `tool` is the reader's identity; (b) `record_sha256` recomputes over the record by the reader's own `record_digest`; (c) the record lists the inputs every PASS read has (REQUIRED_INPUTS)
+-    and every input it lists still has the listed sha256 in <d>.  A CHECKSUM, not a signature: it refuses a hand-written or edited record and a record whose inputs changed after the read; it
+-    cannot refuse someone who re-implements the reader's canonicalisation and hashes the files himself (BUILD.md section 8 says what would)."""
++    and every input it lists still has the listed sha256 in <d>; (d) -- only for a record that (a)-(c) found nothing wrong with -- the reader's OWN judgement, re-run in-process on <d> as it is NOW
++    (`SO.read_arm`), reproduces the stored record (`SO.differing_fields`: every field but the stamp and the reader's VOLATILE_FIELDS, which is empty).  (a)-(c) give the specific reasons; (d) is the
++    sufficient check: a record equal to a fresh read IS what the reader writes for this directory now, so it refuses a forger who re-implements the canonicalisation and hashes the inputs himself, and a
++    KILLED.json / kill_checks.jsonl / scores/ that appeared after the read.  Read-only: it writes nothing.  Still trusted, and said so in BUILD.md section 8.12: the reader's and the gate's own source, and
++    the producers' files in <d> (a producer file edited BEFORE the reader ran is read as it stands)."""
+     try:
+         SO = _safeobj_reader()
+     except Exception as e:                                                                                                   # noqa: BLE001
+@@ -612,6 +616,10 @@
+                 why.append(f"input {name!r} is missing")
+             elif SO.sha256_file(fp) != want:
+                 why.append(f"input {name!r} changed since the read (sha256 differs)")
++        if not why:                  # (d) the re-read: the stored record must be what the reader writes for <d> NOW (a forger's PASS, or an input that appeared after the read, is not)
++            diff = SO.differing_fields(rec, SO.read_arm(d))
++            if diff:
++                why.append("record is stale or not the reader's output (a fresh read of the directory differs in: " + ", ".join(diff) + ")")
+         return "; ".join(why)
+     except Exception as e:                                                                                                   # noqa: BLE001
+         return f"cannot verify the record ({type(e).__name__}: {str(e)[:120]})"
+@@ -619,7 +627,7 @@
+ 
+ def safeobj_gate(dirs):
+     """SAFEOBJ (PREREG_SAFEOBJ.md section 4 / outcome table): R1o runs only if EVERY constrained arm read bar S = PASS.  Each <dir>/safeobj_S.json must exist, parse, carry "S": "PASS", AND be a
+-    genuine, unmodified output of eval/safeobj_read.py (safeobj_not_genuine: its tool, its record_sha256, its inputs' sha256s) -- a gate input is never hand-written.  -> (ok, why); a missing,
++    genuine, unmodified output of eval/safeobj_read.py (safeobj_not_genuine: its tool, its record_sha256, its inputs' sha256s, and a fresh read of the directory reproducing it) -- a gate input is never hand-written.  -> (ok, why); a missing,
+     unparsable, non-PASS or non-genuine file is a refusal, and the reason is named."""
+     bad = []
+     for d in dirs:
+@@ -637,7 +645,7 @@
+             why = safeobj_not_genuine(d, rec)
+             if why:
+                 bad.append(f"{p}: not a genuine reader record: {why}")
+-    return (not bad), (f"S = PASS on {len(dirs)} constrained arm(s), each a genuine reader record with its inputs unchanged" if not bad else "; ".join(bad))
++    return (not bad), (f"S = PASS on {len(dirs)} constrained arm(s), each a genuine reader record: its inputs unchanged and a fresh read of the arm directory reproducing it" if not bad else "; ".join(bad))
+ 
+ 
+ # ------------------------------------------------------------------------------------------------------------- CLI
+--- a/refe/rls1_pod.sh
++++ b/refe/rls1_pod.sh
+@@ -45,7 +45,10 @@
+ # R0c (2026-10-15, from eval/rls1c_arms.json): R0 + --epo-ref armA, gate profile refe_rls1c, read against its own arm A (arm loop, "RL-S1c").  Run as  RLS1_ARMS="R0c".
+ # SAFEOBJ (2026-10-17, from eval/rls1d_arms.json; PREREG_SAFEOBJ.md): R0d / R1d = R0 / R1's argv + the constrained-EPO levers --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0; R1o = seed 1 with --epo-con off NAMED.
+ # Gate profile refe_rls1d; each is read against its OWN arm A (the K3 / K4 monitor, the replay, rlval_vs_A0.json), the seed-matched C<n> is the SECOND control (read when its dumps are there, announced when not).
+-# Run as  RLS1_ARMS="R0d R1d R1o"  (a K3 kill of R0d or R1d STOPS the chain; R1o refuses unless R0d and R1d both read S = PASS: rls1_checks.py safeobj-gate; R1o's monitor and replay are --observe-only).
++# Run in TWO STEPS, never as the one list "R0d R1d R1o":  (1) RLS1_ARMS="R0d R1d"  (a K3 kill of R0d or R1d STOPS the chain);  (2) the operator runs the reader  python eval/safeobj_read.py --arm-dir $R/arms/R0d
++# --arm-dir $R/arms/R1d  (this chain never runs it: a bar-S record is the READER's output, never hand-written, and it can exist only once both arms have finished -- the chain itself rewrites an arm's kill_replay.json,
++# rlval_vs_A0.json and scores/, so a record made earlier would be refused as stale);  (3) RLS1_ARMS="R1o".  R1o refuses (before any GPU work) unless R0d and R1d both carry a GENUINE safeobj_S.json reading S = PASS, every input unchanged since the read and a fresh
++# read of the directory reproducing the record: rls1_checks.py safeobj-gate.  The one list trains R0d and R1d and then R1o's gate refuses (nothing of R1o is created).  R1o's monitor and replay are --observe-only.
+ REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"
+ SETS_TR=$R/sets_train; SETS_VA=$R/sets_val; PDM_TR=$R/pdm_train; PDM_VA=$R/pdm_val; TERMS_TR=$R/terms_train; TERMS_VA=$R/terms_val
+ TLANE_TR=$R/tlane_train; TLANE_VA=$R/tlane_heldout; VALLOGS=$R/rl_val_logs.txt
+@@ -241,7 +244,7 @@
+          refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_rl_epo.py refe/test_rl_reward.py refe/test_rl_s1b.py refe/test_rl_r0c.py refe/test_rl_safeobj.py \
+          refe/rl_tlane_label.py refe/test_rl_tlane_label.py refe/onpolicy_relabel_teacher_lane.py refe/onpolicy_label.py refe/planner.py refe/scorer_gate.py \
+          refe/score_proposals.py refe/route_rank.py refe/map_feature_cache.py refe/query_cache.py refe/navtrain_scenarios.py refe/build_scorer_targets.py code/augment_routes.py \
+-         eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py SHIP_MANIFEST.json \
++         eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py eval/safeobj_read.py eval/test_safeobj_read.py eval/test_safeobj_gate.py SHIP_MANIFEST.json \
+          code/pod_teacher_env.sh code/pod_dataprep.sh splits/navtrain.yaml splits/sft_heldout_logs.txt \
+          splits/rl_fancmp_keys.tsv \
+          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000.manifest.json \
+--- a/refe/test_rl_safeobj.py
++++ b/refe/test_rl_safeobj.py
+@@ -1006,6 +1006,8 @@
+     check(bad, "CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work", lambda: gate_i > 0 and pod_src.count("safeobj-gate --dirs") == 1
+           and '|| refuse "R1o runs only if R0d and R1d both read bar S = PASS' in pod_src and gate_i < pod_src.find('mkdir -p "$ARMDIR" "$LG"') and gate_i < pod_src.find("scorer_finetune.py $ARGS --preflight"))
+     check(bad, "CH_the_precheck_ships_test_rl_safeobj_the_refe_rls1d_suite_runs_it_on_the_pod", lambda: "refe/test_rl_r0c.py refe/test_rl_safeobj.py \\\n" in pod_src)
++    check(bad, "CH_the_precheck_ships_the_S_reader_and_the_two_tests_that_pin_the_S_gate_a_missing_one_is_refused_before_the_queue",
++          lambda: " eval/safeobj_read.py eval/test_safeobj_read.py eval/test_safeobj_gate.py SHIP_MANIFEST.json \\\n" in pod_src)
+     check(bad, "CH_a_missing_second_control_is_ANNOUNCED_not_refused", lambda: re.search(r'elif \[ "\$ARM" = R0d \] \|\| \[ "\$ARM" = R1d \] \|\| \[ "\$ARM" = R1o \]; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL', pod_src) is not None)
+     check(bad, "CH_a_killed_arm_still_stops_the_chain_no_exemption_for_R0d_R1d_R1o", lambda: pod_src.count('\n  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED') == 1
+           and pod_src.count('\n  [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse') == 1 and not re.search(r'"\$ARM" != R(0d|1d|1o)', pod_src))
+@@ -1098,6 +1100,12 @@
+         check(bad, "CH_safeobj_gate_passes_only_when_every_constrained_arm_reads_S_PASS", lambda: RC.safeobj_gate([d_pass, d_pass2])[0] is True)
+         check(bad, "CH_safeobj_gate_refuses_a_FAIL_a_NOT_READ_a_missing_file_junk_and_an_almost_PASS", lambda: all(RC.safeobj_gate([d_pass, x])[0] is False for x in (d_fail, d_nr, d_none, d_junk, d_weak))
+               and all(RC.safeobj_gate([x, d_pass])[0] is False for x in (d_fail, d_nr, d_none, d_junk, d_weak)))
++        d_forged = rewrite(own("fg", "FAIL", "R1d"), lambda r: restamp({**r, "S": "PASS", "breaches": []}))          # a forger who re-implements the canonicalisation: tool, stamp and inputs are right, the verdict is a lie
++        d_late = own("late", "PASS", "R1d")                                                                           # a genuine PASS read, and then a K3 marker appears in the arm directory
++        with open(os.path.join(d_late, "KILLED.json"), "w", encoding="utf-8") as f_:
++            json.dump({"arm": "R1d", "code": "K3", "why": "two consecutive breaches (this marker appeared after the read)"}, f_)
++        check(bad, "CH_safeobj_gate_refuses_a_forger_who_recomputes_the_stamp_and_a_KILLED_marker_that_appears_after_the_read_each_as_stale", lambda: all(
++            RC.safeobj_gate([d_pass, x])[0] is False and RC.safeobj_gate([x, d_pass])[0] is False and "record is stale or not the reader's output" in RC.safeobj_gate([d_pass, x])[1] for x in (d_forged, d_late)))
+         check(bad, "CH_safeobj_gate_refuses_a_hand_written_PASS_an_edited_record_and_a_record_whose_input_changed_each_for_its_reason", lambda: all(
+             RC.safeobj_gate([d_pass, x])[0] is False and RC.safeobj_gate([x, d_pass])[0] is False and why in RC.safeobj_gate([d_pass, x])[1] for x, why in (
+                 (d_hand, "tool is"), (d_edit, "record_sha256 does not recompute"), (d_stale, "input 'kill_replay.json' changed since the read"))))
+@@ -1125,6 +1133,8 @@
+                                                           '    R0d) seed=0; epo="--epo --epo-terms-train $TERMS_TR --epo-terms-heldout $TERMS_VA --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10" ;;')], None),
+     ("CH14 the pod precheck does not ship test_rl_safeobj.py", "CH", [(POD_PATH, "refe/test_rl_r0c.py refe/test_rl_safeobj.py \\\n", "refe/test_rl_r0c.py \\\n")], None),
+     ("CH15 safeobj_gate does not verify the record's genuineness", "CH", [(RC_PATH, "            why = safeobj_not_genuine(d, rec)\n", '            why = ""\n')], None),
++    ("CH16 safeobj_gate does not re-read the arm directory", "CH", [(RC_PATH, "            diff = SO.differing_fields(rec, SO.read_arm(d))\n", "            diff = []\n")], None),
++    ("CH17 the pod precheck does not ship the S-reader and its two tests", "CH", [(POD_PATH, " eval/safeobj_read.py eval/test_safeobj_read.py eval/test_safeobj_gate.py SHIP_MANIFEST.json \\\n", " SHIP_MANIFEST.json \\\n")], None),
+ ]
+ CH_EXPECT = {
+     "M9 R1o's K3 monitor without --observe-only": ["CH_M9_the_monitor_line_carries_OBS_so_R1o_s_K3_is_observe_only"],
+@@ -1143,6 +1153,8 @@
+     "CH13 R0d's argv loses --epo-con-lam0": ["CH_argv_R0d_equals_eval_rls1d_arms_json_token_for_token_and_its_sha256"],
+     "CH14 the pod precheck does not ship test_rl_safeobj.py": ["CH_the_precheck_ships_test_rl_safeobj_the_refe_rls1d_suite_runs_it_on_the_pod"],
+     "CH15 safeobj_gate does not verify the record's genuineness": ["CH_safeobj_gate_refuses_a_hand_written_PASS_an_edited_record_and_a_record_whose_input_changed_each_for_its_reason"],
++    "CH16 safeobj_gate does not re-read the arm directory": ["CH_safeobj_gate_refuses_a_forger_who_recomputes_the_stamp_and_a_KILLED_marker_that_appears_after_the_read_each_as_stale"],
++    "CH17 the pod precheck does not ship the S-reader and its two tests": ["CH_the_precheck_ships_the_S_reader_and_the_two_tests_that_pin_the_S_gate_a_missing_one_is_refused_before_the_queue"],
+ }
+ 
+ 
+--- a/refe/test_rls1_chain.py
++++ b/refe/test_rls1_chain.py
+@@ -174,6 +174,7 @@
+ R0C_ARGV_SHA256 = "f588a6cbdf8319bc30e8da12407f5eeb65a5e0a82d392320f2676ca3f94ed534"      # R0's argv with /arms/R0 -> /arms/R0c plus `--epo-ref armA` (raw/2026-10-15-r0c-build/R0c_ARGV.txt)
+ R0C_EPO_TOKENS = {"--epo", "--epo-terms-train", "$TERMS_TR", "--epo-terms-heldout", "$TERMS_VA", "--epo-ref", "armA"}      # R0c = R0 + --epo-ref armA: no other lever may appear in its line
+ R0C_SUITE_FILES = ("refe/test_rl_s1b.py", "refe/test_rl_r0c.py")                          # the suite the refe_rls1c gate runs on the pod (launch_gate.RLS1C_SUITE): absent = a refusal AFTER the queue wait and the preflight
++SAFEOBJ_FILES = ("eval/safeobj_read.py", "eval/test_safeobj_read.py", "eval/test_safeobj_gate.py")      # the gate loads the first BY PATH (rls1_checks._safeobj_reader), the launch gate's suite runs the other two: absent = a refusal AFTER the queue wait
+ KILL_HEAD_RX = re.compile(r'^\s*\[ -f "\$S/arm_\$\{ARM\}_killed" \](?: && stage_done "egress_\$ARM")?\s*$')           # a kill rule keyed on the arm VARIABLE, never on an arm's name
+ 
+ 
+@@ -536,6 +537,9 @@
+                 v.append("REQUIRED_FILE_ABSENT:" + f)
+         if "SHIP_MANIFEST.json" not in fl.group(1).split():
+             v.append("SHIP_MANIFEST_NOT_REQUIRED")
++        v += ["SAFEOBJ_FILE_NOT_REQUIRED:" + f for f in SAFEOBJ_FILES if f not in fl.group(1).split()]
++        gate_loads = sorted(set(re.findall(r'EVAL_DIR / "([A-Za-z0-9_]+\.py)"', (HERE / "rls1_checks.py").read_text(encoding="utf-8"))))          # every file the chain's helper loads from eval/ BY PATH
++        v += ["GATE_LOADS_A_FILE_THE_PRECHECK_DOES_NOT_REQUIRE:eval/" + f for f in gate_loads if "eval/" + f not in fl.group(1).split()]
+     v += check_fancmp(text)
+     v += check_queue(text)
+     v += check_rls1c(text)
+@@ -627,6 +631,10 @@
+         ("the gate child keeps fd 200", sw('> "$ARMDIR/launch_gate.log" 2>&1 200>&-', '> "$ARMDIR/launch_gate.log" 2>&1'), "FD200"),
+         ("the trainer is not its own process group", sw("set -m\n", ""), "TRAINER_NOT_OWN_PROCESS_GROUP"),
+         ("the manifest is not required", sw(" SHIP_MANIFEST.json \\", " \\"), "SHIP_MANIFEST_NOT_REQUIRED"),
++        ("the S-reader is not required by the precheck", sw(" eval/safeobj_read.py", ""), "SAFEOBJ_FILE_NOT_REQUIRED:eval/safeobj_read.py"),
++        ("the S-reader's own test is not required by the precheck", sw(" eval/test_safeobj_read.py", ""), "SAFEOBJ_FILE_NOT_REQUIRED:eval/test_safeobj_read.py"),
++        ("the S-gate's test is not required by the precheck", sw(" eval/test_safeobj_gate.py", ""), "SAFEOBJ_FILE_NOT_REQUIRED:eval/test_safeobj_gate.py"),
++        ("the helper loads eval/safeobj_read.py by path and the precheck does not require it", sw(" eval/safeobj_read.py", ""), "GATE_LOADS_A_FILE_THE_PRECHECK_DOES_NOT_REQUIRE:eval/safeobj_read.py"),
+         ("the key lives in the shipped tree", sw('export TANITAD_GATE_KEY_FILE="$R/launch_gate.key"', 'export TANITAD_GATE_KEY_FILE="$PKG/launch_gate.key"'), "KEY_NOT_OUTSIDE_TREE"),
+         ("echo the token", sw('log "env ok', 'log "env ok token=$HF_TOKEN'), "HF_TOKEN_USE"),
+         ("xtrace on", sw("set -u\n", "set -ux\n", ), "XTRACE"),
+@@ -1249,6 +1257,18 @@
+         rc, out = run({"RLS1_ARMS": bad_arm}); assert rc == 1 and re.search(r"REFUSED: unknown arm '(R0C|r0c|R0cc|R1c)' in RLS1_ARMS \(registered: " + re.escape(reg) + r"\)", out), (bad_arm, out); n += 1
+     rc, out = run({"RLS1_ARMS": "R0c"}); assert rc == 1 and "REFUSED:" in out and "unknown arm" not in out and "missing: ship" in out, out; n += 1   # R0c passes the arm check; the (empty) package is what stops it
+     rc, out = run(); assert rc == 1 and "REFUSED:" in out and "missing: ship" in out, out; n += 1                                 # past the P2 check: the package is empty
++    # the S-reader and the two tests that pin the S gate are REQUIRED by the precheck (SAFEOBJ round 4): with every other listed file present, a package lacking any ONE of them is refused by the chain
++    # itself, in seconds, naming it -- before the queue, the disk test and the GPU
++    listed = re.search(r'for f in (.*?); do\n  \[ -f', text, re.S).group(1).replace("\\\n", " ").split()
++    for skip in SAFEOBJ_FILES:
++        assert skip in listed, skip; n += 1
++        for f in listed:
++            if f != skip:
++                (pk / f).parent.mkdir(parents=True, exist_ok=True)
++                (pk / f).write_text("")
++        if (pk / skip).exists():
++            (pk / skip).unlink()
++        rc, out = run(); assert rc == 1 and f"/{skip} missing: ship" in out and "ZZRLS1_QUEUE_CLEAR" not in out, (skip, out); n += 1
+     # a package with every required file, then the env stage, then model_final: absent -> refused; a wrong file -> refused
+     for f in re.search(r'for f in (.*?); do\n  \[ -f', text, re.S).group(1).replace("\\\n", " ").split():
+         (pk / f).parent.mkdir(parents=True, exist_ok=True)
+--- a/refe/test_rls1_queue.py
++++ b/refe/test_rls1_queue.py
+@@ -698,9 +698,19 @@
+             p_ = R / "arms" / "R1d" / "safeobj_S.json"
+             assert '"S": "FAIL"' in p_.read_text(encoding="utf-8")
+             p_.write_text(p_.read_text(encoding="utf-8").replace('"S": "FAIL"', '"S": "PASS"'), encoding="utf-8")
++        def forged(R):                                                                                      # a forger who re-implements the canonicalisation: tool, stamp and inputs are right, the verdict is a lie
++            s_files(("R0d", "PASS"), ("R1d", "FAIL"))(R)
++            rec_ = TG.jload(R / "arms" / "R1d" / "safeobj_S.json")
++            assert rec_["S"] == "FAIL" and rec_["breaches"]
++            TG.jsave(R / "arms" / "R1d", TG.restamp({**rec_, "S": "PASS", "breaches": []}))
++
++        def late_kill(R):                                                                                   # a genuine PASS read, and a K3 marker appears in the arm directory afterwards
++            s_files(("R0d", "PASS"), ("R1d", "PASS"))(R)
++            (R / "arms" / "R1d" / "KILLED.json").write_text('{"arm": "R1d", "code": "K3", "why": "this marker appeared after the read"}', encoding="utf-8")
+         for nm, prep, why in (("none", None, "FileNotFoundError"), ("one", s_files(("R0d", "PASS")), "FileNotFoundError"), ("fail", s_files(("R0d", "PASS"), ("R1d", "FAIL")), "S='FAIL'"),
+                               ("junk", s_files(("R0d", "PASS"), ("R1d", "{nope")), "JSONDecodeError"), ("hand_written", hand, "tool is"), ("edited", edited, "record_sha256 does not recompute"),
+-                              ("stale_input", stale, "changed since the read")):
++                              ("stale_input", stale, "changed since the read"), ("forged_verdict", forged, "record is stale or not the reader's output"),
++                              ("kill_marker_after_the_read", late_kill, "record is stale or not the reader's output")):
+             r = armloop_run(text, tmp, f"al_so_noS_{nm}", "R1o", prepare=prep)
+             assert r["rc"] == 1 and "REFUSED: R1o runs only if R0d and R1d both read bar S = PASS" in r["log"] and why in r["log"], (nm, why, r["rc"], r["log"][-800:])
+             assert "scorer_finetune.py" not in r["calls"] and "launch_gate.py" not in r["calls"] and "R1o" not in r["arms_dirs"] and "ZZRLS1_ARM_DONE" not in r["log"], (nm, r["calls"], r["arms_dirs"]); n += 4
+--- a/eval/test_safeobj_read.py
++++ b/eval/test_safeobj_read.py
+@@ -409,7 +409,7 @@
+     ("the replay of another arm is accepted", 'if rep.get("arm") != arm:', 'if False:', {"scenario:wrong_arm_dir"}),
+     ("an observe-only replay is accepted", 'if any(isinstance(r, dict) and r.get("observe_only") for r in recs):', 'if False:', {"scenario:observe_only"}),
+     ("a NOT_READ arm is written as PASS (fail open)", 'out["S"] = "FAIL" if out["breaches"] else ("NOT_READ" if out["problems"] else "PASS")', 'out["S"] = "FAIL" if out["breaches"] else "PASS"',
+-     {"scenario:missing_u750", "scenario:no_replay", "e2e:cli_missing_u750_real_gate_refuses"}),
++     {"scenario:missing_u750", "scenario:no_replay", "e2e:cli_missing_u750_rc_2"}),     # round 4: the real gate is no longer a third catcher here -- it re-reads the directory with the REAL reader and refuses the mutant PASS as stale
+     ("a KILLED.json of the wrong shape is not a problem", 'if not isinstance(killed, dict):\n            problems.append("KILLED.json is not an object")', 'if False:\n            problems.append("KILLED.json is not an object")', {"scenario:garbage_files"}),
+     ("an rlval_vs_A0.json of the wrong shape is not a problem", 'if rl is not None and not isinstance(rl, dict):', 'if False:', {"scenario:garbage_files"}),
+     ("an unexpected shape raises instead of reading NOT_READ", '    try:\n        return _read_arm(arm_dir)\n    except Exception as e:', '    try:\n        return _read_arm(arm_dir)\n    except ZeroDivisionError as e:', {"scenario:garbage_unhashable_tag"}),
+--- a/eval/test_safeobj_gate.py
++++ b/eval/test_safeobj_gate.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-"""Self-test of the GENUINENESS check of `rls1_checks.safeobj_gate` (SAFEOBJ round 3).  Run: python eval/test_safeobj_gate.py -> ZZTEST_PASS <n>.   No pod, no GPU, no network.
++"""Self-test of the GENUINENESS check and the RE-READ of `rls1_checks.safeobj_gate` (SAFEOBJ rounds 3 and 4).  Run: python eval/test_safeobj_gate.py -> ZZTEST_PASS <n>.   No pod, no GPU, no network.
+ 
+ THE RULE UNDER TEST.  A gate input is never hand-written or hand-edited.  `safeobj_gate` (which R1o's launch hangs on) used to open on ANY file that said `"S": "PASS"`.  It now opens only on a record that is
+ a genuine, unmodified output of `eval/safeobj_read.py`:  (a) `tool` is the reader's identity;  (b) `record_sha256` recomputes by the reader's OWN `record_digest` (one shared canonicalisation, no copy);
+@@ -10,12 +10,21 @@
+ change an input after the read, remove an input.  Each such case is a RED-BY-DESIGN scenario in the package's `must_fail_with` style: the gate must refuse AND the refusal must carry the reason that case
+ exists for (the EXACT set of reason classes -- a case that is refused for a different or an extra reason fails).
+ 
+-THEN THE GATE ITSELF IS MUTATED.  Each barrier is removed in a copy of the gate's source (a mutant tree: `refe/rls1_checks.py` + `eval/safeobj_read.py` side by side, as on the pod) and the cases that
+-exist for that barrier -- and ONLY those -- must flip from refused to open (or, for the drift mutations, from open to refused).  A mutation that flips nothing, or something else, fails the test.
++ROUND 4: (d) THE RE-READ.  (a)-(c) cannot refuse a forger who re-implements the canonicalisation, hashes the real inputs himself and writes a record whose verdict contradicts them, nor an input
++(KILLED.json, kill_checks.jsonl, scores/) that did not exist at the read and appeared later.  So, when (a)-(c) found nothing wrong, the gate re-runs the reader's OWN judgement in-process on the arm
++directory as it is NOW (`safeobj_read.read_arm`) and requires the stored record to equal the fresh one (`safeobj_read.differing_fields`: every field except the stamp and `VOLATILE_FIELDS`, which is EMPTY:
++the record is a pure function of the directory's files -- no clock, no path, no host).  Refusal: "record is stale or not the reader's output (a fresh read of the directory differs in: <fields>)".
++The cases of the brief: (a) a forger whose PASS contradicts what the reader judges (FAIL) while tool, stamp and inputs are all right; (b) a KILLED.json / kill_checks.jsonl / scores/ that appears after the
++read; (c) a genuine PASS that stays open (in-process and through the CLI; the gate writes nothing).  Every one is built from the REAL producers and the REAL reader.
+ 
+-WHAT THIS DOES NOT PROVE (stated, not hidden).  `record_sha256` is a checksum, not a signature.  Someone who re-implements the canonicalisation, hashes the real inputs himself and writes a record
+-whose verdict contradicts them passes (a)-(c); an input that did not exist at the read and appears later is not noticed either.  Closing both is one more check (the gate re-reads the directory and compares
+-the fresh record's digest); BUILD.md section 8 states it as an open decision.
++THEN THE GATE ITSELF IS MUTATED.  Each barrier is removed in a copy of the gate's source (a mutant tree: `refe/rls1_checks.py` + `eval/safeobj_read.py` side by side, as on the pod) and the cases that
++exist for that barrier -- and ONLY those -- must flip.  A flip is a change of VERDICT (refused -> open, or open -> refused) or, for the barriers that (d) now backs up, a change of the REASON the case is
++refused for (the re-read refuses what a removed specific check used to refuse, so the verdict alone would not move).  A mutation that flips nothing, or something else, fails the test.  One more check shows
++what (d) buys: with every specific layer of (a)-(c) removed, the re-read ALONE still refuses every case (the verdict does not move; every reason becomes "stale").
++
++WHAT THIS DOES NOT PROVE (stated, not hidden).  The stamp is still a checksum, not a signature: it is the RE-READ that makes the record trustworthy, and the re-read trusts (1) the reader's and the gate's own
++source files, and (2) the producers' files in the arm directory (kill_replay.json, rlval_vs_A0.json, the score dumps): a producer file edited BEFORE the reader runs is read as it stands (the reader's own
++cross-checks -- the monitor's rows against the replay, the score dumps' sha256 against rl_val_eval's -- are the only defence there).  BUILD.md section 8.12 states both.
+ """
+ from __future__ import annotations
+ 
+@@ -45,7 +54,9 @@
+ # the reason classes of a refusal (substrings of the gate's messages; each class is one barrier)
+ R_TOOL, R_HASH, R_INS, R_NOIN = "tool is", "record_sha256 does not recompute", "inputs_sha256 is missing or not an object", "lists no input"
+ R_CHG, R_MISS, R_LOAD, R_CRASH = "changed since the read", "' is missing", "cannot be loaded", "cannot verify the record"
+-CLASSES = (R_TOOL, R_HASH, R_INS, R_NOIN, R_CHG, R_MISS, R_LOAD, R_CRASH)
++R_STALE = "record is stale or not the reader's output"           # round 4: the re-read
++CLASSES = (R_TOOL, R_HASH, R_INS, R_NOIN, R_CHG, R_MISS, R_LOAD, R_CRASH, R_STALE)
++SPECIFIC = {R_TOOL, R_HASH, R_INS, R_NOIN, R_CHG, R_MISS}         # the reasons of the layers (a)-(c): what the re-read backs up
+ 
+ 
+ # ---------------------------------------------------------------------------------------------------------------------------------------------- genuine arm directories (also used by other tests)
+@@ -84,6 +95,39 @@
+     return dst
+ 
+ 
++VARIANTS = {"live": dict(variants=TS.ALL, live=True),                          # the real monitor ran too: kill_checks.jsonl is an input of the record
++            "edge": dict(variants=dict.fromkeys(TS.TAGS, "edge"))}              # every g3 number sits ON its bound (floats at the edge must survive the file round trip)
++
++
++def genuine_variant(name, arm=TS.ARM):
++    """a genuine PASS arm directory of a variant shape (VARIANTS), cached; READ-ONLY for the caller (copy it)."""
++    genuine("PASS", arm)                                                        # initialises the cache (root + the producers' fixture)
++    if (name, arm) not in _CACHE:
++        v = VARIANTS[name]
++        d = TS.build_arm(_CACHE["fx"], _CACHE["root"] / "arms", f"{name}_{arm}", v["variants"], arm=arm, live=v.get("live", False))
++        rec = SO.read_arm(str(d))
++        SO.write_record(str(d), rec)
++        assert rec["S"] == "PASS", (name, rec["S"], rec["breaches"], rec["problems"])
++        _CACHE[(name, arm)] = d
++    return _CACHE[(name, arm)]
++
++
++def copy_variant(name, arm, parent):
++    """a private copy of the genuine variant (name, arm) at <parent>/<arm>."""
++    dst = Path(parent) / arm
++    shutil.copytree(genuine_variant(name, arm), dst)
++    return dst
++
++
++def tree_digest(d):
++    """sha256 over every file under d (relative path + bytes), in sorted order: the gate must leave an arm directory exactly as it found it."""
++    h = hashlib.sha256()
++    for p in sorted(Path(d).rglob("*")):
++        if p.is_file():
++            h.update(p.relative_to(d).as_posix().encode("utf-8") + b"\0" + p.read_bytes() + b"\0")
++    return h.hexdigest()
++
++
+ # ---------------------------------------------------------------------------------------------------------------------------------------------- helpers
+ def oracle_digest(rec):
+     """an INDEPENDENT statement of the record's stamp (compact, key-sorted JSON without the field): the test's own, so a change of the reader's canonicalisation cannot go unseen."""
+@@ -105,6 +149,21 @@
+     return rec
+ 
+ 
++def oracle_diff(stored, fresh):
++    """an INDEPENDENT statement of 'the fields in which a stored record differs from a fresh read' (the test's own, not the reader's differing_fields): all fields but the stamp, compared as canonical JSON."""
++    a = {k: v for k, v in stored.items() if k != "record_sha256"}
++    b = {k: v for k, v in fresh.items() if k != "record_sha256"}
++    dump = lambda v: json.dumps(v, sort_keys=True)                      # noqa: E731
++    return sorted(k for k in set(a) | set(b) if k not in a or k not in b or dump(a[k]) != dump(b[k]))
++
++
++def stale_says(d):
++    """the sentence a stale refusal of the record in d must carry: the fields (by the test's own oracle) in which the stored record differs from a fresh read of d."""
++    names = oracle_diff(jload(Path(d) / "safeobj_S.json"), SO.read_arm(str(d)))
++    assert names, f"{d}: the stored record equals a fresh read: this is not a stale record"
++    return f"differs in: {', '.join(names)})"
++
++
+ def classes_of(why):
+     return {c for c in CLASSES if c in why}
+ 
+@@ -122,7 +181,7 @@
+ 
+ def build_tree(root, name, gate_edits=(), reader_edits=(), reader="real"):
+     """<root>/<name>/refe/rls1_checks.py (+ eval/safeobj_read.py unless reader == "missing"): the gate and the reader side by side, as on the pod, from the real sources plus the given edits.
+-    reader = real | missing (no eval/safeobj_read.py) | poisoned (sha256_file raises).  Every edit anchor must occur exactly once."""
++    reader = real | missing (no eval/safeobj_read.py) | poisoned (sha256_file raises) | reread_raises (read_arm raises: the re-read blows up, every earlier check is fine).  Every edit anchor must occur exactly once."""
+     t = Path(root) / name
+     (t / "refe").mkdir(parents=True)
+     (t / "eval").mkdir()
+@@ -137,6 +196,10 @@
+         old = "def sha256_file(path):\n    h = hashlib.sha256()\n"
+         assert r.count(old) == 1
+         r = r.replace(old, 'def sha256_file(path):\n    raise RuntimeError("the reader is poisoned for this test")\n    h = hashlib.sha256()\n')
++    if reader == "reread_raises":
++        old = "def read_arm(arm_dir):\n"
++        assert r.count(old) == 1
++        r = r.replace(old, 'def read_arm(arm_dir):\n    raise RuntimeError("the re-read is poisoned for this test")\n')
+     (t / "refe" / "rls1_checks.py").write_text(g, encoding="utf-8", newline="\n")
+     if reader != "missing":
+         (t / "eval" / "safeobj_read.py").write_text(r, encoding="utf-8", newline="\n")
+@@ -255,6 +318,63 @@
+     # ---- the reader the gate depends on is not there / blows up: fail closed
+     add("reader_not_on_disk", [arm("no_reader")], False, {R_LOAD}, reader="missing")
+     add("verification_raises", [arm("poisoned")], False, {R_CRASH}, reader="poisoned")
++    add("reader_reread_raises", [arm("reread_raises")], False, {R_CRASH}, reader="reread_raises")      # (a)-(c) fine, the re-read itself blows up: fail closed
++
++    # ---- ROUND 4 (a): a forger who re-implements the canonicalisation.  Tool, stamp and inputs are all RIGHT; only the verdict is a lie, so (a)-(c) pass and ONLY the re-read can refuse.
++    d = arm("forger_verdict", "FAIL", "R1d")                                          # an arm the reader judges FAIL ...
++    assert SO.read_arm(str(d))["S"] == "FAIL" and SO.read_arm(str(d))["breaches"]
++    jsave(d, restamp({**jload(d / "safeobj_S.json"), "S": "PASS", "breaches": []}))    # ... and a record that says PASS, stamped as the canonicalisation says
++    assert oracle_diff(jload(d / "safeobj_S.json"), SO.read_arm(str(d))) == ["S", "breaches"]
++    add("forger_PASS_for_an_arm_the_reader_judges_FAIL", [d], False, {R_STALE}, ("not a genuine reader record", stale_says(d)))
++    d = arm("forger_whole", "FAIL", "R1d")
++    pr = jload(genuine("PASS", "R1d") / "safeobj_S.json")                              # the PASS record of another directory ...
++    hashes = {n: hashlib.sha256((d / Path(*n.split("/"))).read_bytes()).hexdigest() for n in pr["inputs_sha256"]}      # ... with THIS directory's input hashes, computed by the forger himself
++    jsave(d, restamp({**pr, "arm": d.name, "inputs_sha256": hashes}))
++    assert SO.read_arm(str(d))["S"] == "FAIL"
++    add("forger_rewrites_the_whole_record_and_hashes_the_inputs", [d], False, {R_STALE}, ("not a genuine reader record", stale_says(d)))
++    d = arm("forger_notes", "PASS", "R0d")                                            # any other edit of a stamped record is stale too: the caveat the reader noted is dropped
++    rec = jload(d / "safeobj_S.json")
++    assert rec["notes"], "the genuine PASS record of a directory without monitor rows carries the 'absent' note"
++    jsave(d, restamp({**rec, "notes": []}))
++    assert oracle_diff(jload(d / "safeobj_S.json"), SO.read_arm(str(d))) == ["notes"]
++    add("forger_edits_only_the_notes", [d], False, {R_STALE}, (stale_says(d),))
++    d = arm("forger_bar", "PASS", "R0d")                                              # ... and so is a record that claims a weaker registered bar
++    rec = jload(d / "safeobj_S.json")
++    jsave(d, restamp({**rec, "bar": {**rec["bar"], "g5_bound": 5.0}}))
++    assert oracle_diff(jload(d / "safeobj_S.json"), SO.read_arm(str(d))) == ["bar"]
++    add("forger_edits_only_the_registered_bar", [d], False, {R_STALE}, (stale_says(d),))
++
++    # ---- ROUND 4 (b): something the reader reads APPEARS after the read.  The record lists the inputs that existed then, so (c) cannot see it; the re-read does.
++    d = arm("late_k3", "PASS", "R0d")
++    jsave(d, {"arm": "R0d", "code": "K3", "why": "two consecutive breaches (this marker appeared after the read)"}, "KILLED.json")
++    assert SO.read_arm(str(d))["S"] == "FAIL"
++    add("KILLED_K3_appears_after_the_read", [d], False, {R_STALE}, ("not a genuine reader record", stale_says(d)))
++    d = arm("late_k2", "PASS", "R0d")
++    jsave(d, {"arm": "R0d", "code": "K2", "why": "a non-K3 kill (this marker appeared after the read)"}, "KILLED.json")
++    assert SO.read_arm(str(d))["S"] == "NOT_READ"
++    add("KILLED_K2_appears_after_the_read", [d], False, {R_STALE}, (stale_says(d),))
++    d = arm("late_rows", "PASS", "R0d")
++    shutil.copyfile(genuine_variant("live", "R0d") / "kill_checks.jsonl", d / "kill_checks.jsonl")
++    assert SO.read_arm(str(d))["S"] == "PASS"                                         # the monitor's rows AGREE with the replay: the verdict does not move, the record does
++    add("monitor_rows_appear_after_the_read", [d], False, {R_STALE}, (stale_says(d),))
++    d = arm("late_scores", "PASS", "R0d")
++    shutil.rmtree(d / "scores")
++    rec0 = SO.read_arm(str(d))
++    assert rec0["S"] == "PASS" and any("scores/" in x for x in rec0["notes"])
++    SO.write_record(str(d), rec0)                                                      # a genuine PASS read WITHOUT the score dumps (the reader notes it) ...
++    shutil.copytree(genuine("PASS", "R0d") / "scores", d / "scores")                   # ... and the dumps appear afterwards
++    assert SO.read_arm(str(d))["S"] == "PASS"
++    add("scores_appear_after_the_read", [d], False, {R_STALE}, (stale_says(d),))
++
++    # ---- ROUND 4 (c): a genuine PASS stays open -- also in the shapes a real run has (monitor rows, a g3 number on its bound, no score dumps), each reproduced EXACTLY by a fresh read
++    add("genuine_pass_with_the_monitors_rows", [copy_variant("live", "R0d", new_dir("gp_live"))], True)
++    add("genuine_pass_with_every_g3_number_on_its_bound", [copy_variant("edge", "R0d", new_dir("gp_edge"))], True)
++    d = arm("gp_noscores", "PASS", "R0d")
++    shutil.rmtree(d / "scores")
++    rec0 = SO.read_arm(str(d))
++    assert rec0["S"] == "PASS"
++    SO.write_record(str(d), rec0)
++    add("genuine_pass_read_without_the_score_dumps", [d], True)
+     return cases
+ 
+ 
+@@ -272,28 +392,84 @@
+ 
+ # ---------------------------------------------------------------------------------------------------------------------------------------------- the mutations of the gate / reader
+ G_TOOL, G_HASH = '        if rec.get("tool") != SO.TOOL:\n', '        if rec.get("record_sha256") != SO.record_digest(rec):\n'
+-MUTATIONS = [   # (name, gate edits, reader edits, the cases that must FLIP (verdict) and nothing else, exact?)
+-    ("the gate looks at S alone (the old gate)", [("            why = safeobj_not_genuine(d, rec)\n", '            why = ""\n')], [],
+-     {"hand_written_S_PASS", "forged_stamp_no_inputs", "fail_edited_to_PASS", "tool_changed_stamp_recomputed", "input_modified_after_read", "scores_modified_after_read", "input_missing_rlval",
+-      "input_missing_scores", "record_copied_into_another_arms_dir", "PASS_with_inputs_not_an_object", "reader_not_on_disk", "verification_raises"}),
+-    ("`tool` is not compared", [(G_TOOL, "        if False:\n")], [], {"tool_changed_stamp_recomputed"}),
+-    ("record_sha256 is not recomputed", [(G_HASH, "        if False:\n")], [], {"fail_edited_to_PASS"}),
+-    ("the listed input sha256s are not compared", [("            elif SO.sha256_file(fp) != want:\n", "            elif False:\n")], [],
++G_SHA, G_MISSING = "            elif SO.sha256_file(fp) != want:\n", '                why.append(f"input {name!r} is missing")\n'
++G_REQ, G_INS = "            if name not in ins:\n", '            why.append("inputs_sha256 is missing or not an object")\n'
++G_REREAD = "            diff = SO.differing_fields(rec, SO.read_arm(d))\n"
++R_STAMP = '    out["record_sha256"] = record_digest(out)                                # stamped last; the gate recomputes it with the same function\n'
++R_VOL = "VOLATILE_FIELDS = ()"
++OPEN, GENUINENESS, STALE = "<every case the real gate opens>", "<every case refused in the genuineness layer>", "<every case refused as stale>"      # markers, resolved against the cases
++MUTATIONS = [   # (name, gate edits, reader edits, mode, the cases that must FLIP and nothing else)
++    # mode "verdict": a flip is a change of the gate's verdict.  mode "outcome": a flip is a change of the verdict OR of the reason class(es) -- for the barriers the re-read now backs up (the re-read refuses
++    # what the removed specific check used to refuse, so the verdict alone does not move, but the REASON does: it becomes "stale")
++    ("the gate looks at S alone (the old gate)", [("            why = safeobj_not_genuine(d, rec)\n", '            why = ""\n')], [], "verdict", GENUINENESS),
++    ("`tool` is not compared", [(G_TOOL, "        if False:\n")], [], "outcome", {"tool_changed_stamp_recomputed", "hand_written_S_PASS"}),
++    ("record_sha256 is not recomputed", [(G_HASH, "        if False:\n")], [], "outcome", {"fail_edited_to_PASS", "hand_written_S_PASS"}),
++    ("the listed input sha256s are not compared", [(G_SHA, "            elif False:\n")], [], "outcome",
+      {"input_modified_after_read", "scores_modified_after_read", "record_copied_into_another_arms_dir",
+-      "verification_raises"}),            # the last one only because its poison IS sha256_file: with the call gone there is nothing left to raise
+-    ("a missing input file is tolerated", [("                why.append(f\"input {name!r} is missing\")\n", "                pass\n")], [], {"input_missing_rlval", "input_missing_scores"}),
+-    ("the inputs every PASS read has are not demanded", [("            if name not in ins:\n", "            if False:\n")], [], {"forged_stamp_no_inputs"}),
+-    ("an exception while verifying opens the gate", [("        return f\"cannot verify the record ({type(e).__name__}: {str(e)[:120]})\"\n", '        return ""\n')], [], {"verification_raises"}),
+-    ("a reader that cannot be loaded opens the gate", [("        return f\"the reader eval/safeobj_read.py cannot be loaded ({type(e).__name__}: {str(e)[:120]})\"\n", '        return ""\n')], [], {"reader_not_on_disk"}),
+-    ("S is judged by `== FAIL` instead of `!= PASS`", [('        if s != "PASS":\n', '        if s == "FAIL":\n')], [], {"genuine_NOT_READ_record", "PASS_with_a_trailing_space"}),
++      "verification_raises"}),            # the last one only because its poison IS sha256_file: with the call gone there is nothing left to raise there (the re-read then refuses it as stale)
++    ("a missing input file is tolerated", [(G_MISSING, "                pass\n")], [], "outcome", {"input_missing_rlval", "input_missing_scores"}),
++    ("the inputs every PASS read has are not demanded", [(G_REQ, "            if False:\n")], [], "outcome", {"hand_written_S_PASS", "forged_stamp_no_inputs", "PASS_with_inputs_not_an_object"}),
++    ("an exception while verifying opens the gate", [("        return f\"cannot verify the record ({type(e).__name__}: {str(e)[:120]})\"\n", '        return ""\n')], [], "verdict",
++     {"verification_raises", "reader_reread_raises"}),
++    ("a reader that cannot be loaded opens the gate", [("        return f\"the reader eval/safeobj_read.py cannot be loaded ({type(e).__name__}: {str(e)[:120]})\"\n", '        return ""\n')], [], "verdict", {"reader_not_on_disk"}),
++    ("S is judged by `== FAIL` instead of `!= PASS`", [('        if s != "PASS":\n', '        if s == "FAIL":\n')], [], "outcome",
++     {"genuine_NOT_READ_record", "PASS_with_a_trailing_space"}),            # the NOT_READ record is genuine and opens; the stamped "PASS " no longer stops at the S layer and is refused by the re-read instead
+     ("the gate keeps its OWN canonicalisation and it has drifted (default separators)",
+      [(G_HASH, '        if rec.get("record_sha256") != __import__("hashlib").sha256(json.dumps({k: v for k, v in rec.items() if k != "record_sha256"}, sort_keys=True).encode("utf-8")).hexdigest():\n')],
+-     [], {"genuine_pass", "genuine_pass_both_arms"}),
++     [], "verdict", OPEN),
+     ("the READER's canonicalisation changes (the gate follows it: one definition)",
+      [], [('    body = json.dumps({k: v for k, v in rec.items() if k != "record_sha256"}, sort_keys=True, separators=(",", ":"))\n',
+-           '    body = json.dumps({k: v for k, v in rec.items() if k != "record_sha256"}, sort_keys=True, separators=(", ", ": "))\n')], {"genuine_pass", "genuine_pass_both_arms"}),
+-    ("the reader no longer names its REQUIRED_INPUTS", [], [('REQUIRED_INPUTS = ("kill_replay.json", "rlval_vs_A0.json")', "REQUIRED_INPUTS = ()")], {"forged_stamp_no_inputs"}),
++           '    body = json.dumps({k: v for k, v in rec.items() if k != "record_sha256"}, sort_keys=True, separators=(", ", ": "))\n')], "verdict", OPEN),
++    ("the reader no longer names its REQUIRED_INPUTS", [], [('REQUIRED_INPUTS = ("kill_replay.json", "rlval_vs_A0.json")', "REQUIRED_INPUTS = ()")], "outcome",
++     {"hand_written_S_PASS", "forged_stamp_no_inputs", "PASS_with_inputs_not_an_object"}),
++    # ---- round 4: the re-read
++    ("the gate does not re-read the directory (rounds 1-3 only)", [(G_REREAD, "            diff = []\n")], [], "verdict", {STALE, "reader_reread_raises"}),
++    ("the re-read compares only S", [(G_REREAD, '            diff = ["S"] if rec.get("S") != SO.read_arm(d).get("S") else []\n')], [], "verdict",
++     {"forger_edits_only_the_notes", "forger_edits_only_the_registered_bar", "monitor_rows_appear_after_the_read", "scores_appear_after_the_read"}),
++    ("the re-read compares only inputs_sha256", [(G_REREAD, '            diff = ["inputs_sha256"] if rec.get("inputs_sha256") != SO.read_arm(d).get("inputs_sha256") else []\n')], [], "verdict",
++     {"forger_PASS_for_an_arm_the_reader_judges_FAIL", "forger_rewrites_the_whole_record_and_hashes_the_inputs", "forger_edits_only_the_notes", "forger_edits_only_the_registered_bar"}),
++    ("VOLATILE_FIELDS is widened to the verdict fields", [], [(R_VOL, 'VOLATILE_FIELDS = ("S", "breaches", "problems", "notes", "bar")')], "verdict",
++     {"forger_PASS_for_an_arm_the_reader_judges_FAIL", "forger_edits_only_the_notes", "forger_edits_only_the_registered_bar"}),
++    ("the reader stamps a clock field that VOLATILE_FIELDS does not name", [], [(R_STAMP, '    out["read_at"] = 1.0\n' + R_STAMP)], "verdict", OPEN),
+ ]
++# every specific layer of (a)-(c) removed: the re-read ALONE
++LAYERS_OFF = [(G_TOOL, "        if False:\n"), (G_HASH, "        if False:\n"), (G_SHA, "            elif False:\n"), (G_MISSING, "                pass\n"), (G_REQ, "            if False:\n"),
++              (G_INS, "            pass\n")]
++
++
++def resolve(flips, cases):
++    """the set of case names a mutation must flip: the markers expand against the cases (and every explicit name must be a case, so a typo cannot hide a missing flip)."""
++    names = {c.name for c in cases}
++    out = set()
++    for f in ({flips} if isinstance(flips, str) else flips):
++        if f == OPEN:
++            out |= {c.name for c in cases if c.want}
++        elif f == GENUINENESS:
++            out |= {c.name for c in cases if c.need}
++        elif f == STALE:
++            out |= {c.name for c in cases if c.need == {R_STALE}}
++        else:
++            assert f in names, f"unknown case {f!r} in a mutation's expected flips"
++            out.add(f)
++    return out
++
++
++def flipped(case, ok, why, mode):
++    if ok is not case.want:
++        return True
++    return mode == "outcome" and not ok and classes_of(why) != case.need
++
++
++def keys_of(o):
++    """every dict key anywhere in a JSON value"""
++    if isinstance(o, dict):
++        return set(o) | set().union(*(keys_of(v) for v in o.values())) if o else set()
++    if isinstance(o, list):
++        return set().union(*(keys_of(v) for v in o)) if o else set()
++    return set()
++
++
++CLOCKISH = {"read_at", "time", "timestamp", "utc", "date", "host", "hostname", "pid", "cwd", "path", "dir", "argv", "at", "now"}
+ 
+ 
+ def main() -> int:
+@@ -323,12 +499,28 @@
+         gsrc = inspect.getsource(gate_module(PKGROOT).safeobj_not_genuine)
+         check("pin_gate_keeps_no_copy_of_the_canonicalisation_or_the_tool_name", all(x in gsrc for x in ("SO.record_digest(", "SO.TOOL", "SO.sha256_file(", "SO.REQUIRED_INPUTS"))
+               and not any(x in gsrc for x in ("json.dumps", "separators", "sha256(", "safeobj_read/1")))
++        check("pin_gate_re_reads_through_the_readers_own_functions_and_keeps_no_comparison_of_its_own", all(x in gsrc for x in ("SO.read_arm(", "SO.differing_fields(")) and "SO.VOLATILE_FIELDS" not in gsrc and "SO.comparable" not in gsrc)
++        # ---- round 4: the record is a pure function of the directory, so a fresh read reproduces it EXACTLY (no volatile field exists), in every shape a run has
++        check("pin_VOLATILE_FIELDS_is_empty", SO.VOLATILE_FIELDS == ())
++        shapes = [(f"{k}", genuine(k)) for k in KINDS] + [(f"{v}_variant", genuine_variant(v)) for v in VARIANTS]
++        for label, dd in shapes:
++            rec = jload(dd / "safeobj_S.json")
++            fresh = SO.read_arm(str(dd))
++            text = json.dumps(rec)
++            check(f"pin_a_fresh_read_reproduces_the_{label}_record_exactly", fresh == rec and SO.read_arm(str(dd)) == fresh and SO.differing_fields(rec, fresh) == [] and oracle_diff(rec, fresh) == [])
++            check(f"pin_the_{label}_record_has_no_clock_host_or_path", not (keys_of(rec) & CLOCKISH) and str(dd) not in text and dd.as_posix() not in text and str(dd.parent) not in text)
++        # the reader's own helpers: the stamp is excluded, a missing field differs, a changed one differs
++        a = jload(genuine("PASS") / "safeobj_S.json")
++        check("pin_differing_fields_names_exactly_the_changed_fields",
++              SO.differing_fields(a, {**a, "S": "FAIL"}) == ["S"] and SO.differing_fields(a, {k: v for k, v in a.items() if k != "notes"}) == ["notes"] and SO.differing_fields(a, {**a, "extra": 1}) == ["extra"]
++              and SO.differing_fields(a, {**a, "record_sha256": "0" * 64}) == [] and SO.differing_fields(a, dict(a)) == [])
+ 
+         n_fix = n
+         cases = make_cases(tmp)
+         real = PKGROOT
+         pod = build_tree(tmp / "trees", "base", reader="real")                                  # the gate and the reader side by side in a tree of their own (the shape the mutants have)
+-        trees = {"real": real, "missing": build_tree(tmp / "trees", "base_noreader", reader="missing"), "poisoned": build_tree(tmp / "trees", "base_poisoned", reader="poisoned")}
++        trees = {"real": real, "missing": build_tree(tmp / "trees", "base_noreader", reader="missing"), "poisoned": build_tree(tmp / "trees", "base_poisoned", reader="poisoned"),
++                 "reread_raises": build_tree(tmp / "trees", "base_reread_raises", reader="reread_raises")}
+ 
+         # ---- 1. the REAL gate (the deliverable's own files), in-process AND through its CLI, on every case: opens on a genuine PASS, refuses the rest for the right reason
+         for c in cases:
+@@ -342,6 +534,14 @@
+         # the tree built from the real sources behaves exactly as the files in place (the mutants below start from it)
+         for c in cases[:3]:
+             check(f"copy_of_the_sources_behaves_like_the_files_in_place:{c.name}", run_inproc(pod, c.dirs)[0] is c.want)
++        n_cases = n - n_fix
++        # the gate writes NOTHING: an arm directory is byte-identical after the gate looked at it (in-process and CLI), and a second look gives the same verdict
++        for c in cases:
++            before = [tree_digest(x) for x in c.dirs]
++            ok1, _ = run_inproc(trees[c.reader], c.dirs)
++            run_cli(trees[c.reader], c.dirs)
++            ok2, _ = run_inproc(trees[c.reader], c.dirs)
++            check(f"read_only_and_repeatable:{c.name}", [tree_digest(x) for x in c.dirs] == before and ok1 is ok2 is c.want)
+ 
+         n_e2e = n
+         # ---- 2. end to end from nothing: the reader's CLI writes the record, then the gate opens (in-process and CLI); the same directory with one input touched afterwards is refused
+@@ -355,22 +555,56 @@
+             f.write(b"\n")
+         ok, why = run_inproc(real, [str(d)])
+         check("e2e_the_same_directory_is_refused_once_an_input_is_touched", ok is False and classes_of(why) == {R_CHG}, why[:200])
++        # round 4: a K3 marker appears after the read.  The gate refuses it as STALE (in-process and through the CLI); the operator re-runs the reader, which now writes the FAIL the marker means,
++        # and the gate refuses THAT as S = FAIL -- the reader's verdict, not a stale record.
++        d2 = copy_arm("PASS", "R1d", tmp / "e2e2")
++        os.remove(d2 / "safeobj_S.json")
++        r = subprocess.run([sys.executable, "-X", "utf8", str(READER_SRC), "--arm-dir", str(d2)], capture_output=True, text=True, timeout=120)
++        check("e2e2_reader_cli_writes_a_PASS_record", r.returncode == 0 and "ZZSAFEOBJ_S R1d PASS" in r.stdout, r.stdout[-200:] + r.stderr[-200:])
++        check("e2e2_gate_opens_in_process_and_through_its_cli", run_inproc(real, [str(d2)])[0] is True and run_cli(real, [str(d2)])[2] == 0)
++        jsave(d2, {"arm": "R1d", "code": "K3", "why": "two consecutive breaches (this marker appeared after the read)"}, "KILLED.json")
++        ok, why = run_inproc(real, [str(d2)])
++        check("e2e2_a_KILLED_marker_after_the_read_is_refused_as_stale_in_process", ok is False and classes_of(why) == {R_STALE} and stale_says(d2) in why, why[:300])
++        cok, cwhy, rc, line = run_cli(real, [str(d2)])
++        check("e2e2_a_KILLED_marker_after_the_read_is_refused_as_stale_through_the_cli", cok is False and rc == 1 and classes_of(cwhy) == {R_STALE} and line.startswith("ZZRLS1_SAFEOBJ_S_REFUSED"), line[:300])
++        r = subprocess.run([sys.executable, "-X", "utf8", str(READER_SRC), "--arm-dir", str(d2)], capture_output=True, text=True, timeout=120)
++        check("e2e2_the_reader_run_again_writes_the_FAIL_the_marker_means", r.returncode == 1 and "ZZSAFEOBJ_S R1d FAIL" in r.stdout, r.stdout[-200:])
++        ok, why = run_inproc(real, [str(d2)])
++        check("e2e2_and_the_gate_refuses_that_record_as_S_FAIL", ok is False and "S='FAIL'" in why and not classes_of(why), why[:200])
+ 
+         n_e2e = n - n_e2e
+         # ---- 3. the barriers: remove each in a copy of the source; exactly the cases that exist for it flip
+-        for i, (name, gedits, redits, flips) in enumerate(MUTATIONS):
+-            mt = {k: build_tree(tmp / "trees", f"m{i}_{k}", gedits, redits, reader=("real" if k == "real" else k)) for k in ("real", "missing", "poisoned")}
++        n_mut = n
++        for i, (name, gedits, redits, mode, flips) in enumerate(MUTATIONS):
++            mt = {k: build_tree(tmp / "trees", f"m{i}_{k}", gedits, redits, reader=k) for k in trees}
+             got = set()
+             for c in cases:
+                 ok, why = run_inproc(mt[c.reader], c.dirs)
+-                if ok is not c.want:
++                if flipped(c, ok, why, mode):
+                     got.add(c.name)
+-            check(f"mutation:{name}", got == flips, f"flipped {sorted(got)}, expected exactly {sorted(flips)}")
+-            print(f"  RED  {name}  ->  {len(got)} case(s) flip: {', '.join(sorted(got))[:200]}", flush=True)
++            want = resolve(flips, cases)
++            check(f"mutation:{name}", got == want, f"flipped {sorted(got)}, expected exactly {sorted(want)}")
++            print(f"  RED  {name}  ->  {len(got)} case(s) flip ({mode}): {', '.join(sorted(got))[:200]}", flush=True)
++        n_mut = n - n_mut
++        # ---- 4. what (d) buys: with EVERY specific layer of (a)-(c) removed, the re-read alone still refuses every case the specific layers refused (no verdict moves), each as "stale"
++        off = {k: build_tree(tmp / "trees", f"off_{k}", LAYERS_OFF, [], reader=k) for k in trees}
++        moved, not_stale = [], []
++        for c in cases:
++            ok, why = run_inproc(off[c.reader], c.dirs)
++            if ok is not c.want:
++                moved.append(c.name)
++            elif not ok and (c.need & SPECIFIC) and classes_of(why) != {R_STALE}:
++                not_stale.append((c.name, sorted(classes_of(why))))
++        check("the_re_read_alone_refuses_everything_the_specific_layers_refuse", moved == [] and not_stale == [], f"verdicts moved: {moved}; refused for another reason than stale: {not_stale}")
++        check("the_cases_that_exercise_that_are_not_few", sum(1 for c in cases if c.need & SPECIFIC) >= 10, str(sum(1 for c in cases if c.need & SPECIFIC)))
++        # ---- 5. a field the reader DOES name volatile is ignored by the compare (the mechanism works), while an unnamed one makes every genuine record stale (the last mutation above)
++        vol = build_tree(tmp / "trees", "volatile_named", [], [(R_VOL, 'VOLATILE_FIELDS = ("read_at",)'), (R_STAMP, '    out["read_at"] = 1.0\n' + R_STAMP)], reader="real")
++        check("a_field_named_in_VOLATILE_FIELDS_is_ignored_by_the_compare", all(run_inproc(vol, c.dirs)[0] is True for c in cases if c.want) and any(c.want for c in cases))
+ 
+     if bad:
+         raise AssertionError(f"{len(bad)} of {n} checks FAILED:\n  " + "\n  ".join(bad))
+-    print(f"ZZTEST_PASS {n}  ({len(cases)} cases x (in-process + CLI) on the real gate, {n_e2e} end-to-end checks, {len(MUTATIONS)} mutations of the gate / reader that must flip exactly their cases, {n_fix} fixture/pin checks)")
++    print(f"ZZTEST_PASS {n}  ({len(cases)} cases x (in-process + CLI) on the real gate + {len(cases)} read-only checks, {n_e2e} end-to-end checks, {len(MUTATIONS)} mutations of the gate / reader that must flip exactly their cases, "
++          f"the re-read-alone check, the volatile-field check, {n_fix} fixture/pin checks)")
+     return 0
+ 
+ 

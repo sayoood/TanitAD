@@ -1,0 +1,42 @@
+{
+ "arms": {
+  "real": {
+   "ade_m": 0.36121,
+   "net_yaw_err_rad": 0.03281
+  },
+  "mean": {
+   "ade_m": 1.6158,
+   "net_yaw_err_rad": 0.49225
+  },
+  "shuffled": {
+   "ade_m": 0.5651,
+   "net_yaw_err_rad": 0.0864
+  },
+  "frozen": {
+   "ade_m": 0.50176,
+   "net_yaw_err_rad": 0.0426
+  },
+  "cv": {
+   "ade_m": 0.50513,
+   "net_yaw_err_rad": 0.07452,
+   "_what": "constant velocity from the TRUE v0 \u2014 the analytic floor, and exactly what a zero-initialised unicycle head emits before any training"
+  }
+ },
+ "verdict": {
+  "total_gain_over_cv_m": 0.14392,
+  "gain_without_latent_content_m": -1.11067,
+  "shortcut_fraction": -7.7173,
+  "wm_reliance": 8.7173,
+  "_above_one_means": "wm_reliance > 1 is NOT clipped and is not a bug: it means the latent-free arm is WORSE than constant velocity, i.e. the shortcut pathway actively hurts without the latents to steer it. That is STRONGER evidence of reliance than 1.0, and clipping would erase the distinction between 'fully reliant' and 'cannot function at all without the WM'.",
+  "_read": "wm_reliance = 1 - (CV->mean gain) / (CV->real gain). It answers: of everything the decoder adds over a constant-velocity baseline, what fraction REQUIRES the world model's per-window content? Near 0 means the decoder is a driving-dynamics predictor that happens to sit downstream of a world model.",
+  "_not_the_test": "'real beats CV' is NOT evidence of WM reliance \u2014 a head using only v and its own feedback beats CV comfortably. hierarchy.py:846 names this confound: a frozen trunk lets a head co-adapt to always HAVING an input without using its per-window CONTENT. real-vs-MEAN is the strict test.",
+  "_estimator": "point estimates over the supplied batch, NO interval. For a decision-grade read, resample with the episode-cluster bootstrap (taniteval/ci.py) over the paired per-episode deltas."
+ },
+ "gate": {
+  "status": "PASS",
+  "wm_reliance": 8.7173,
+  "min_reliance": 0.5,
+  "_action_on_fail": "the decoder is bypassing the world model. Raise shortcut_dropout, confirm detach_feedback is on, and re-check; if it still fails, the latents do not carry the information and the defect is upstream in the predictor, not in the decoder."
+ },
+ "_what": "WM reliance of the ORIGINAL trained StepDisplacementReadout on the IDENTICAL 128-window val batch (seed 123) the unicycle trainer used. The discriminating control: if THIS is also low, the frozen latents carry little per-window 2s content and the defect is upstream in the predictor, not in the new head."
+}

@@ -1,0 +1,54 @@
+source /home/nvidia/refcv7_run/runs/refcv7-r101-s0/metrics.jsonl (last row carrying map_hires) step 50400
+eval_map_hires_iou_arrow_0_20 0.10353493047411627
+eval_map_hires_iou_arrow_20_40 0.0
+eval_map_hires_iou_arrow_40_60 0.0
+eval_map_hires_iou_arrow_60_80 0.0
+eval_map_hires_iou_arrow_80_100 0.0
+eval_map_hires_iou_crosswalk_0_20 0.1238997555012225
+eval_map_hires_iou_crosswalk_20_40 0.0
+eval_map_hires_iou_crosswalk_40_60 0.0
+eval_map_hires_iou_crosswalk_60_80 0.0
+eval_map_hires_iou_crosswalk_80_100 0.0
+eval_map_hires_iou_drivable_0_20 0.7353165463999982
+eval_map_hires_iou_drivable_20_40 0.596780063638784
+eval_map_hires_iou_drivable_40_60 0.5451452032999864
+eval_map_hires_iou_drivable_60_80 0.5206804984076224
+eval_map_hires_iou_drivable_80_100 0.5092050903104267
+eval_map_hires_iou_edge_0_20 0.0008588244209250044
+eval_map_hires_iou_edge_20_40 0.0
+eval_map_hires_iou_edge_40_60 0.0
+eval_map_hires_iou_edge_60_80 0.0
+eval_map_hires_iou_edge_80_100 0.0
+eval_map_hires_iou_hatched_0_20 0.0
+eval_map_hires_iou_hatched_20_40 0.0
+eval_map_hires_iou_hatched_40_60 0.0
+eval_map_hires_iou_hatched_60_80 0.0
+eval_map_hires_iou_hatched_80_100 0.0
+eval_map_hires_iou_lane_0_20 0.23715501875981737
+eval_map_hires_iou_lane_20_40 0.04843289826521805
+eval_map_hires_iou_lane_40_60 0.009239206371384659
+eval_map_hires_iou_lane_60_80 0.0
+eval_map_hires_iou_lane_80_100 0.0
+eval_map_hires_iou_nocls_0_20 0.6196753422190202
+eval_map_hires_iou_nocls_20_40 0.6096098688691282
+eval_map_hires_iou_nocls_40_60 0.5601182947494975
+eval_map_hires_iou_nocls_60_80 0.5329288406880479
+eval_map_hires_iou_nocls_80_100 0.5024348692976713
+eval_map_hires_iou_sidewalk_0_20 0.5955887842559503
+eval_map_hires_iou_sidewalk_20_40 0.5125023843684948
+eval_map_hires_iou_sidewalk_40_60 0.4411482144295958
+eval_map_hires_iou_sidewalk_60_80 0.42330589386273293
+eval_map_hires_iou_sidewalk_80_100 0.40706351258583034
+
+source /home/nvidia/refcv8_smoke/run/config.json
+image_hw [416, 1024]
+horizons [5, 10, 15, 20, 30, 40, 50, 60]
+seams.trunk_frames 3
+seams.trunk_fuse "concat1x1"
+seams.trunk_dedup_frames true
+seams.no_strategic true
+seams.ego_history {"enable": true, "steps": 8, "channels": 3, "hidden": 64, "out_dim": 32, "kind": "gru", "dt": 0.1, "zero_init_out": false}
+seams.agent_rig_camera {"source": "extrinsics", "mount_pose": "from-sensor_extrinsics", "mount_pose_scope": "PER-CLIP", "extrinsics_path": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json", "n_clips": 4508, "key": "stable_episode_id(clip_id)", "height_m_min": 1.2031489610671997, "height_m_max": 1.6871625185012817, "height_m_median": 1.3118689060211182, "optical_axis_pitch_rad_min": -0.0755354301422919, "optical_axis_pitch_rad_max": 0.06831051518379166, "frame": {"height": 416, "width": 1024, "f_ref": 488.92398517830253, "projection": "cylindrical"}, "image_hw": [416, 1024], "w_project": 0.0, "w_ground": 0.0, "coverage": {"n": 4369, "n_covered": 4369, "frac": 1.0, "n_missing": 0, "missing_sample": [], "has_d
+refcv6_perception.fmap_s16_hw [26, 64] bev_tokens_hw [30, 16]
+map_hires.trunk_tap {'s8_tap': True, 's8_module': 'layer2', 's8_dim': 512, 's8_hw': [52, 128], 's8_frame': 'newest', 's8_temporal_fusion': None}
+pose_sync.train {"n_clips": 4369, "n_covered": 4369, "rule": "window re-sampled at t_pose + delta[NOW raw row]; rows, label clock and (sid,k) joins unchanged", "fields_shifted": ["pose_last", "future_poses", "future_poses_ext", "pose_hist", "goal_tac", "actions", "future_actions"]} {"max": 35.426, "mean": 16.499716469196144, "min": 0.0, "p95": 31.387} {"analytic_maxabs_us": 0.3333333339558542, "delta0_us": 0.0, "delta_max_ms": 33.16582914572954, "dt_s": 0.10050251256281406, "n_target": 200, "ok": true}

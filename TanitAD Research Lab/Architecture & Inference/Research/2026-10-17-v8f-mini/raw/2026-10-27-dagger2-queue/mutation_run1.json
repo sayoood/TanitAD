@@ -1,0 +1,629 @@
+{
+ "control_green": true,
+ "n_mutants": 44,
+ "killed": 43,
+ "survived": 1,
+ "anchor_errors": 0,
+ "results": [
+  {
+   "id": "Q1",
+   "kind": "Q",
+   "desc": "bank generator = M2b (not DAG): --ckpt / --m2b-argv read M2b_s<S>",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 9.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 bankdag2: the generator is DAG_s0's: --ckpt = M2b_s0_dag\\ckpt_last.pt, --m2b-argv = M2b_s0_dag\\argv.json, --out-dir = dagger_bank_dag2\\s0   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp",
+    "FAIL  s0 bankdag2 == bankdag in everything else: same token count, and the ONLY differing tokens are the three paths (--out-dir, --ckpt, --m2b-argv); same shards 4, cache, tracks, join, eval grid, batch, threads, device ",
+    "FAIL  s1 bankdag2: the generator is DAG_s1's: --ckpt = M2b_s1_dag\\ckpt_last.pt, --m2b-argv = M2b_s1_dag\\argv.json, --out-dir = dagger_bank_dag2\\s1   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp"
+   ],
+   "n_red": 7
+  },
+  {
+   "id": "Q2",
+   "kind": "Q",
+   "desc": "init = M2b: dag2 / dag20 --init-ckpt is M2b_s<S>\\ckpt_last.pt",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 22.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 DAG2: --init-ckpt = DAG_s0's checkpoint (M2b_s0_dag\\ckpt_last.pt), NOT M2b's; --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --seed 0   [{'--init-ckpt': [['D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\",
+    "FAIL  s0 DAG2-0: --init-ckpt = DAG_s0's checkpoint; names --dagger-p 0 once and NONE of the three DAG-only flags; --ego-perturb-p 0; no ego law flag   [['--arm', '--batch', '--cache-dir', '--dagger-p', '--device', '--ego",
+    "FAIL  s1 DAG2: --init-ckpt = DAG_s1's checkpoint (M2b_s1_dag\\ckpt_last.pt), NOT M2b's; --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --seed 1   [{'--init-ckpt': [['D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\"
+   ],
+   "n_red": 9
+  },
+  {
+   "id": "Q3",
+   "kind": "Q",
+   "desc": "P != 0.1 accepted for dag2 (0.3 passes the check)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 23.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) `gatedag dag2 0 0.3` (dag2 with P = 0.3 (iteration 1's other value)) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line   [rc 0 ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\ta",
+    "FAIL  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)",
+    "MISSED (deliberate regression) gatedag dag2 with P 0.3 REFUSES on the fake box too, and runs no trainer   [['REFUSED: C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\E--Projects-TanitAD\\\\bfe78918-15e8-439b-8566-593ca3297"
+   ],
+   "n_red": 3
+  },
+  {
+   "id": "Q4",
+   "kind": "Q",
+   "desc": "dag20 carries a bank (--dagger-bank appended to its argv)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 23.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 DAG2-0: --init-ckpt = DAG_s0's checkpoint; names --dagger-p 0 once and NONE of the three DAG-only flags; --ego-perturb-p 0; no ego law flag   [['--arm', '--batch', '--cache-dir', '--dagger-bank', '--dagger-p', '",
+    "FAIL  s0 'every other flag exactly as DAG-0's': DAG2-0 == DAG-0 once --out and --init-ckpt are removed   [48 vs 46 tokens]",
+    "FAIL  s0 PAIR RULE: DAG2 and DAG2-0 are identical once --out, --dagger-p and the three DAG-only flags are removed; they differ in exactly {--out, --dagger-p} on the shared flags, and DAG2 names exactly the three extra fl"
+   ],
+   "n_red": 9
+  },
+  {
+   "id": "Q5",
+   "kind": "Q",
+   "desc": "dag2 uses the ITERATION-1 bank directory (dagger_bank\\s<S>)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 12.5,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 DAG2: --dagger-p 0.1 once; bank = RUNSM\\dagger_bank_dag2\\s0 (NOT the iteration-1 dagger_bank); sha = the stage's; --dagger-seed 0; --ego-perturb-p 0   [{'--dagger-p': [['0.1']], '--dagger-bank': [['D:\\\\tanitad\\\\",
+    "FAIL  s0 bankdag2: the generator is DAG_s0's: --ckpt = M2b_s0_dag\\ckpt_last.pt, --m2b-argv = M2b_s0_dag\\argv.json, --out-dir = dagger_bank_dag2\\s0   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp",
+    "FAIL  s0 bankdag2 == bankdag in everything else: same token count, and the ONLY differing tokens are the three paths (--out-dir, --ckpt, --m2b-argv); same shards 4, cache, tracks, join, eval grid, batch, threads, device "
+   ],
+   "n_red": 11
+  },
+  {
+   "id": "Q6a",
+   "kind": "Q",
+   "desc": "seeds swapped in the bank generator: every seed's bank is generated from DAG_s0",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 21.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s1 bankdag2: the generator is DAG_s1's: --ckpt = M2b_s1_dag\\ckpt_last.pt, --m2b-argv = M2b_s1_dag\\argv.json, --out-dir = dagger_bank_dag2\\s1   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp",
+    "FAIL  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)",
+    "FAIL  bankdag2 1: the generators RECEIVED --ckpt = M2b_s1_dag\\ckpt_last.pt and --m2b-argv = M2b_s1_dag\\argv.json (and 4 distinct shards)   [['gen', '--ckpt', 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\E--Projects-T"
+   ],
+   "n_red": 3
+  },
+  {
+   "id": "Q6b",
+   "kind": "Q",
+   "desc": "seeds swapped in --dagger-seed: always 0",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 22.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s1 DAG2: --dagger-p 0.1 once; bank = RUNSM\\dagger_bank_dag2\\s1 (NOT the iteration-1 dagger_bank); sha = the stage's; --dagger-seed 1; --ego-perturb-p 0   [{'--dagger-p': [['0.1']], '--dagger-bank': [['D:\\\\tanitad\\\\",
+    "FAIL  s1 'every other flag exactly as DAG's argv': DAG2 == DAG once --out, --init-ckpt and --dagger-bank are removed (same sha, same --dagger-seed, same schedule, same data flags)   [50 vs 50 tokens]",
+    "FAIL  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)"
+   ],
+   "n_red": 3
+  },
+  {
+   "id": "Q6c",
+   "kind": "Q",
+   "desc": "seeds swapped in --init-ckpt: every seed starts from DAG_s0",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 21.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s1 DAG2: --init-ckpt = DAG_s1's checkpoint (M2b_s1_dag\\ckpt_last.pt), NOT M2b's; --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --seed 1   [{'--init-ckpt': [['D:\\\\tanitad\\\\runs\\\\v8f_mini_full\\\\",
+    "FAIL  s1 DAG2-0: --init-ckpt = DAG_s1's checkpoint; names --dagger-p 0 once and NONE of the three DAG-only flags; --ego-perturb-p 0; no ego law flag   [['--arm', '--batch', '--cache-dir', '--dagger-p', '--device', '--ego",
+    "FAIL  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)"
+   ],
+   "n_red": 5
+  },
+  {
+   "id": "Q7",
+   "kind": "Q",
+   "desc": "an EXISTING stage line changed: DAG's own fine-tune lr 1e-4 -> 2e-4 (the iteration-1 DAGF0)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 22.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 'every other flag exactly as DAG's argv': DAG2 == DAG once --out, --init-ckpt and --dagger-bank are removed (same sha, same --dagger-seed, same schedule, same data flags)   [50 vs 50 tokens]",
+    "FAIL  s0 'every other flag exactly as DAG-0's': DAG2-0 == DAG-0 once --out and --init-ckpt are removed   [46 vs 46 tokens]",
+    "FAIL  s1 'every other flag exactly as DAG's argv': DAG2 == DAG once --out, --init-ckpt and --dagger-bank are removed (same sha, same --dagger-seed, same schedule, same data flags)   [50 vs 50 tokens]"
+   ],
+   "n_red": 7
+  },
+  {
+   "id": "Q8",
+   "kind": "Q",
+   "desc": "dag2 is not an accepted arm any more (the :dagname insertion removed)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 0.2,
+   "rc": 1,
+   "red_by": [
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "Q9",
+   "kind": "Q",
+   "desc": "dag20 silently accepts a P (the refusal removed)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 21.8,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) `gatedag dag20 0 0.1` (dag20 with a P) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line   [rc 0 ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scripts\\\\v",
+    "MISSED (deliberate regression) `gatedag dag20 0 0` (dag20 with a P of 0 (a lever declared and inert)) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line   [rc 0 ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\",
+    "MISSED (deliberate regression) `traindag dag20 1 0.1` (train dag20 with a P) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line   [rc 0 ['\"D:\\\\tanitad\\\\venv\\\\Scripts\\\\python.exe\" \"D:\\\\tanitad\\\\repo\\\\stack\\\\scr"
+   ],
+   "n_red": 4
+  },
+  {
+   "id": "Q10",
+   "kind": "Q",
+   "desc": "bankdag2 accepts a half-trained DAG (the summary.json guard removed)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 21.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)",
+    "MISSED (deliberate regression) bankdag2 REFUSES while DAG_s0 has no summary.json (a half-trained DAG is a different generator): rc 2, no bank directory, no generator ran   [['[27.10.2026  9:55:51,29] bank dag2 s0', '[ok]"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "Q11",
+   "kind": "Q",
+   "desc": "--ego-perturb-p 0 dropped from the dag2 / dag20 argv",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 22.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 DAG2: --dagger-p 0.1 once; bank = RUNSM\\dagger_bank_dag2\\s0 (NOT the iteration-1 dagger_bank); sha = the stage's; --dagger-seed 0; --ego-perturb-p 0   [{'--dagger-p': [['0.1']], '--dagger-bank': [['D:\\\\tanitad\\\\",
+    "FAIL  s0 DAG2-0: --init-ckpt = DAG_s0's checkpoint; names --dagger-p 0 once and NONE of the three DAG-only flags; --ego-perturb-p 0; no ego law flag   [['--arm', '--batch', '--cache-dir', '--dagger-p', '--device', '--exc",
+    "FAIL  s0 'every other flag exactly as DAG's argv': DAG2 == DAG once --out, --init-ckpt and --dagger-bank are removed (same sha, same --dagger-seed, same schedule, same data flags)   [48 vs 50 tokens]"
+   ],
+   "n_red": 17
+  },
+  {
+   "id": "Q14",
+   "kind": "Q",
+   "desc": "bankdag2 writes into the ITERATION-1 bank directory",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 12.2,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 bankdag2: the generator is DAG_s0's: --ckpt = M2b_s0_dag\\ckpt_last.pt, --m2b-argv = M2b_s0_dag\\argv.json, --out-dir = dagger_bank_dag2\\s0   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp",
+    "FAIL  s0 bankdag2 == bankdag in everything else: same token count, and the ONLY differing tokens are the three paths (--out-dir, --ckpt, --m2b-argv); same shards 4, cache, tracks, join, eval grid, batch, threads, device ",
+    "FAIL  s0 bankdag2: no ampersand reaches an argument; the iteration-1 bank directory '\\dagger_bank\\s' appears nowhere in the line"
+   ],
+   "n_red": 9
+  },
+  {
+   "id": "Q16",
+   "kind": "Q",
+   "desc": "bankdag2 rebuilds the TRAIN list from M2b's argv.json instead of DAG's",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 21.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  s0 bankdag2: the generator is DAG_s0's: --ckpt = M2b_s0_dag\\ckpt_last.pt, --m2b-argv = M2b_s0_dag\\argv.json, --out-dir = dagger_bank_dag2\\s0   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp",
+    "FAIL  s0 bankdag2 == bankdag in everything else: same token count, and the ONLY differing tokens are the three paths (--out-dir, --ckpt, --m2b-argv); same shards 4, cache, tracks, join, eval grid, batch, threads, device ",
+    "FAIL  s1 bankdag2: the generator is DAG_s1's: --ckpt = M2b_s1_dag\\ckpt_last.pt, --m2b-argv = M2b_s1_dag\\argv.json, --out-dir = dagger_bank_dag2\\s1   [['--batch', '--cache-dir', '--ckpt', '--device', '--eval-grid', '--exp"
+   ],
+   "n_red": 7
+  },
+  {
+   "id": "Q17",
+   "kind": "Q",
+   "desc": "an EXISTING stage nobody listed changed (evalpgt's tag): only the all-stage sweep can see it",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 40.1,
+   "rc": 1,
+   "red_by": [
+    "FAIL  TEXT: the new queue is the tip queue with lines INSERTED only (every tip line, in order, is in the new file; 0 removed, 0 changed)   [matched 387/1201, inserted 874]",
+    "FAIL  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)",
+    "FAIL  SWEEP: all 47 dispatched stage names x 4 argument shapes (188 invocations, scratch paths): rc and output identical between the tip queue and the new queue   [[('evalpgt 0', 0, 0, ['\"C:\\\\Users\\\\Admin\\\\AppData\\\\Local"
+   ],
+   "n_red": 3
+  },
+  {
+   "id": "Q18",
+   "kind": "Q",
+   "desc": "the :dagarm hand-off for dag20 removed (dag20 falls into the iteration-1 path)",
+   "status": "KILLED",
+   "sections": "A,S,B",
+   "seconds": 0.4,
+   "rc": 1,
+   "red_by": [
+    "Traceback (most recent call last):"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "K1",
+   "kind": "K",
+   "desc": "dag-predicate does not pin the file's sha256",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) a re-serialised copy of the REAL read (same content, different bytes) is NOT the pinned file: rc 2, 'not the pinned DAG read'   [ROBUST ee6e2136f30156108889cf8291da0d1580f647336d49feaaf9f28"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "K2",
+   "kind": "K",
+   "desc": "dag-predicate does not require ROBUST",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) a (self-pinned) read with outcome PARTIAL: rc 4, STOP, names the outcome   [PARTIAL 316f8c096e03c81ce745da2db90e1b877be485129f72a350a73c8887cc394327]",
+    "MISSED (deliberate regression) a (self-pinned) read with outcome DOMINANT: rc 4, STOP, names the outcome   [DOMINANT 6014ed68b25ff1405ae0dd4235a060a77cbadfad68946c4a61c6fa6fc908841c]",
+    "MISSED (deliberate regression) a (self-pinned) read with outcome REFUSED: rc 4, STOP, names the outcome   [REFUSED cd9ca2a64d7dbdeacf75e34f044648f1659fc77c2cdd63be8500121f3e30be5a]"
+   ],
+   "n_red": 5
+  },
+  {
+   "id": "K3",
+   "kind": "K",
+   "desc": "judge: K-B2 compares nothing (the bank's generator is not checked against DAG's checkpoint)",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) the REAL iteration-1 banks are REFUSED as DAG2's evidence (generator = M2b, expected = DAG): rc 2, exactly the two K-B2 failures, every other control passes",
+    "MISSED (deliberate regression) judge: generator checkpoint = M2b at s1 (the iteration-1 bank re-used) -> rc 2 (REFUSED), names 'K-B2'   [(0, [])]"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "K4",
+   "kind": "K",
+   "desc": "judge: K-B4 not gated",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) judge: K-B4 record missing at s1 -> rc 2 (REFUSED), names 'K-B4'   [(0, [])]",
+    "MISSED (deliberate regression) judge: K-B4 case `loop` False at s0 -> rc 2 (REFUSED), names 'K-B4'   [(0, [])]"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "K5",
+   "kind": "K",
+   "desc": "judge: COVERAGE exactly 0.5 blocks (< becomes <=)",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "FAIL  judge BOUNDARY: coverage exactly 0.5 at s1 passes (inclusive)   [(3, {'n_windows': 306566, 'n_eligible': 153283, 'fraction': 0.5, 'min': 0.5, 'blocked': True})]"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "K6",
+   "kind": "K",
+   "desc": "dag-predicate accepts another PREREG's claim row",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) ROBUST under another PREREG's claim row (ORC's): rc 2   [ROBUST 90fac9444a1dd5ec372bbc2ee1024434660b513f749d84bdc2ed5b97d0ae2400]"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "K7",
+   "kind": "K",
+   "desc": "dag-predicate tolerates a failed control",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) ROBUST with one failed control: rc 2 (a read with a failed control is not an outcome)   [ROBUST a5592cc61723438e6960e8214236c6191a3faa8c1554131bc1d8c6c0586c0194]",
+    "MISSED (deliberate regression) an EMPTY controls_PASS (nothing was checked): rc 2   [ROBUST 6f3f09b7734ea891f6a3306f85c7ca67cecd8ca99f29065008a6a3b9694e3995]"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "K8",
+   "kind": "K",
+   "desc": "judge: K-B5 tolerance 1e-3",
+   "status": "KILLED",
+   "sections": "C",
+   "seconds": 1.0,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) judge: K-B5 error 2e-4 at s1 -> rc 2 (REFUSED), names 'K-B5'   [(0, [])]"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "G1",
+   "kind": "G",
+   "desc": "asserter: the init tail is M2b's, not DAG's",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 0.5,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) with the DAG2 defaults (init tail ..._dag\\ckpt_last.pt, bank dir dagger_bank_dag2) the REAL iteration-1 DAG gate is REFUSED: the init path and the bank path are not DAG2's   [DAG2 gate: [\"b"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "G2",
+   "kind": "G",
+   "desc": "asserter: the bank directory tail is the iteration-1 one",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 0.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) with the DAG2 defaults (init tail ..._dag\\ckpt_last.pt, bank dir dagger_bank_dag2) the REAL iteration-1 DAG gate is REFUSED: the init path and the bank path are not DAG2's   [\\\\\\ckpt_last.p"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "G3",
+   "kind": "G",
+   "desc": "asserter: K-B2 (bank's checkpoint == init == the expected one) not checked",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 0.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) asserter: K-B2: the bank's checkpoint differs from the init -> REFUSED (names 'K-B2')   [DAG2 gate: PASS | dag2 s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "G4",
+   "kind": "G",
+   "desc": "asserter: the pin need not equal the planned training argv",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 0.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) asserter: a pin that is not the planned training argv -> REFUSED   [DAG2 gate: [\"the pin line does not carry --steps 3000 exactly once (it has [['3001']])\"] | dag2 s0 | p 0.1 | clips 4512 s"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "G5",
+   "kind": "G",
+   "desc": "asserter: the init checkpoint's sha256 is not compared with the expected one",
+   "status": "KILLED",
+   "sections": "E",
+   "seconds": 0.4,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) asserter: init sha256 is not the expected generator's -> REFUSED (names 'does not start from')   [DAG2 gate: ['info.init_ckpt and levers.init_ckpt disagree'] | dag2 s0 | p 0.1 | clips 4512 ",
+    "MISSED (deliberate regression) asserter: the expected init is DAG_s0's sha but the gate started from M2b (the iteration-1 run offered as DAG2's gate) -> REFUSED   [DAG2 gate: [\"K-B2: bank's checkpoint 601cb4352673 / init"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "C1",
+   "kind": "C",
+   "desc": "the real entry ignores the DAG-read predicate",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 28.1,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) the REAL entry with a pinned-but-failed control read stops at once (rc 1, ZZV8FMINI-STOP, before AFTER_OUT / the busy marker / any box-2 call)   [dicate (rc 2): REFUSED: the DAG read has fa"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "C2",
+   "kind": "C",
+   "desc": "the BLOCKED / REFUSED stop after the judge is disabled",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 27.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain source order: banks -> judge -> `if [ $jr != 0 ]` stop -> PUBLISH the banks -> DAG-read re-check -> ALL gates -> trains"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "C3",
+   "kind": "C",
+   "desc": "the bank is fetched from the ITERATION-1 directory on box 2",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 24.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  the chain's bank/publish paths are the iteration-2 directory only (no `dagger_bank/s`), its logs / markers / job names are its own (no `v8fdag_`, `chain_v8f_dag.`, `ZZDAG-`, `v8f_guard_dag.sh`)",
+    "FAIL  --publish-only on a stand-in box with the banks in dagger_bank_dag2\\s<S>: rc 0, ZZDAG2-PUBLISH-ONLY-DONE, 11 files + SHA256SUMS.txt per seed in <ART>/bank_s<S>   [(1, \"ZZV8FMINI-STOP pull D:/tanitad/runs/v8f_mini_f"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "C4",
+   "kind": "C",
+   "desc": "one hex digit of DAG_s0's checkpoint sha256 changed in the chain",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 22.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain --judge-only (pinned ROBUST read, both banks fine): rc 0, prints ZZDAG2-JUDGE-PASS and no stop marker   [, \"log_pose_sha256_by_shard\": [\"94ba6afb27717fa457735eead2231e75ffecc67299d1b936465ddb405b31876a\", \"6b9",
+    "MISSED (deliberate regression) chain --judge-only with coverage 0.49 at s1: rc 3, ZZDAG2-BLOCKED and `ZZV8FMINI-STOP BLOCKED`, 'no gate was queued', never the all-gates line   [ \"n_shards_checked\": 4, \"run_at\": \"generati",
+    "FAIL  the three sha arrays in the chain are exactly SHA256SUMS.txt's values (DAG_s0, DAG_s1), and the checkpoint values are the brief's"
+   ],
+   "n_red": 13
+  },
+  {
+   "id": "C5",
+   "kind": "C",
+   "desc": "box-2 assertion skips DAG's argv.json",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 27.3,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) box-2 assertion: DAG_s0's argv.json on box 2 differs -> STOP naming M2b_s0_dag/argv.json   [",
+    "MISSED (deliberate regression) box-2 assertion: DAG_s1's argv.json on box 2 differs -> STOP naming M2b_s1_dag/argv.json   [",
+    "MISSED (deliberate regression) box-2 assertion: box 2 cannot be hashed for one file (no answer) -> STOP 'cannot hash'   ["
+   ],
+   "n_red": 3
+  },
+  {
+   "id": "C6",
+   "kind": "C",
+   "desc": "the export list drops raw/eval141_kin.npz (the eval's default --eval-kin)",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 27.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  EXPORT list: exactly the closure (56 python files of the four entry scripts) + the 7 repo data files they open; 62 paths, no duplicates   [(62, ['TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8",
+    "FAIL  export tar: it contains the queue, the eval grid, eval141_kin / join_eval141, the thresholds file, the P10 prior, the trainer / eval / bank / tool; and NOTHING from taniteval/results, B1 or the 986 MB v8f-mini pack"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "C7",
+   "kind": "C",
+   "desc": "the export size cap raised to 3 GB",
+   "status": "SURVIVED",
+   "sections": "D,F",
+   "seconds": 27.8,
+   "rc": 0,
+   "red_by": [],
+   "n_red": 0
+  },
+  {
+   "id": "C8",
+   "kind": "C",
+   "desc": "RUNS in the wrong order (seed 1 first)",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 27.3,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain --dry-run: the four runs in PREREG_V8F_DAGGER2's order after bank s0 and bank s1: DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1   [['M2b_s1_dag2', 'M2b_s1_dag20', 'M2b_s0_dag2', 'M2b_s0_dag20']]",
+    "FAIL  chain --dry-run: the four planned token argv_sha256 values equal an independent sha256 of the queue's printed training argv   [(['ac612edcdd5bbf1c9d1e6bbeef99190b905a0fe2a6525490607445a457a51e50'], ['ecbfde34085c23"
+   ],
+   "n_red": 2
+  },
+  {
+   "id": "C9",
+   "kind": "C",
+   "desc": "PVAL 0.3",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 25.2,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain --dry-run: rc 0, DAG read ROBUST (pinned), arm DAG2 at p 0.1, predecessor = the DAG chain's log   [== the DAG-read predicate (reads /e/Projects/TanitAD-artifacts/v8f-dagger-t1/read/DAG_READ.json, pinned sha25",
+    "FAIL  chain --dry-run: the four runs in PREREG_V8F_DAGGER2's order after bank s0 and bank s1: DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1",
+    "FAIL  chain --dry-run: every gate line is 'SAME' as its training line (4 of 4), prints the bank line `bankdag2` twice and never the iteration-1 `bankdag`/`dagger_bank\\s`"
+   ],
+   "n_red": 5
+  },
+  {
+   "id": "C10",
+   "kind": "C",
+   "desc": "plan() hands P to dag20 as well",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 26.2,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain --dry-run: rc 0, DAG read ROBUST (pinned), arm DAG2 at p 0.1, predecessor = the DAG chain's log   [== the DAG-read predicate (reads /e/Projects/TanitAD-artifacts/v8f-dagger-t1/read/DAG_READ.json, pinned sha25",
+    "FAIL  chain --dry-run: the four runs in PREREG_V8F_DAGGER2's order after bank s0 and bank s1: DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1   [['M2b_s0_dag2']]",
+    "FAIL  chain --dry-run: every gate line is 'SAME' as its training line (4 of 4), prints the bank line `bankdag2` twice and never the iteration-1 `bankdag`/`dagger_bank\\s`   [1]"
+   ],
+   "n_red": 4
+  },
+  {
+   "id": "C11",
+   "kind": "C",
+   "desc": "the lever check no longer looks for the :bankdag2 stage on the tip",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 28.7,
+   "rc": 1,
+   "red_by": [
+    "MISSED (deliberate regression) chain --check-tree on the tip's queue (DAG stages only): rc 1, every DAG2 queue insertion is reported MISSING (and nothing of the trainer lever is)   [(1, 8)]"
+   ],
+   "n_red": 1
+  },
+  {
+   "id": "C12",
+   "kind": "C",
+   "desc": "the pinned DAG-read sha256 changed by one digit",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 23.7,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain --dry-run: rc 0, DAG read ROBUST (pinned), arm DAG2 at p 0.1, predecessor = the DAG chain's log   [== the DAG-read predicate (reads /e/Projects/TanitAD-artifacts/v8f-dagger-t1/read/DAG_READ.json, pinned sha25",
+    "FAIL  chain --dry-run: the four runs in PREREG_V8F_DAGGER2's order after bank s0 and bank s1: DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1",
+    "FAIL  chain --dry-run: every gate line is 'SAME' as its training line (4 of 4), prints the bank line `bankdag2` twice and never the iteration-1 `bankdag`/`dagger_bank\\s`"
+   ],
+   "n_red": 9
+  },
+  {
+   "id": "C13",
+   "kind": "C",
+   "desc": "seeds swapped in the judge's expected generator",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 26.9,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain --judge-only (pinned ROBUST read, both banks fine): rc 0, prints ZZDAG2-JUDGE-PASS and no stop marker   [, \"log_pose_sha256_by_shard\": [\"94ba6afb27717fa457735eead2231e75f",
+    "MISSED (deliberate regression) chain --judge-only with coverage 0.49 at s1: rc 3, ZZDAG2-BLOCKED and `ZZV8FMINI-STOP BLOCKED`, 'no gate was queued', never the all-gates line   [ \"n_shards_checked\": 4, \"run_at\": \"generati",
+    "FAIL  --publish-only on a stand-in box with the banks in dagger_bank_dag2\\s<S>: rc 0, ZZDAG2-PUBLISH-ONLY-DONE, 11 files + SHA256SUMS.txt per seed in <ART>/bank_s<S>   [(1, 'd DAG run\\'s (M2b_s<seed>_dag): d186fd0bcfa7 !"
+   ],
+   "n_red": 3
+  },
+  {
+   "id": "C14",
+   "kind": "C",
+   "desc": "the DAG-read re-check before the gates removed",
+   "status": "KILLED",
+   "sections": "D,F",
+   "seconds": 29.6,
+   "rc": 1,
+   "red_by": [
+    "FAIL  chain source order: banks -> judge -> `if [ $jr != 0 ]` stop -> PUBLISH the banks -> DAG-read re-check -> ALL gates -> trains"
+   ],
+   "n_red": 1
+  }
+ ]
+}

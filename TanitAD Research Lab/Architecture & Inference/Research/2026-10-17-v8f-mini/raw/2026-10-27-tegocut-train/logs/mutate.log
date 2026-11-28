@@ -1,0 +1,188 @@
+BEFORE 0505668b6153e7b66bd0a0d95b519a197ef7112714397453a7b5bb4f0bd4fa97 stack/tanitad/models/v8f_mini.py
+BEFORE f85766bdd10f97451e001aa72cb017b0b799728816ea1911eb914b829e8ec4ef stack/scripts/v8f_mini_train.py
+BEFORE 5bae1c971ca7fbd22ed463c853bfd75b79125b155efaf366074161a7672bf29d stack/tests/test_v8f_tegocut.py
+BEFORE 8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-27-tegocut-train/pre_tegocut_v8f_mini.py.ref
+BEFORE 38e0a15773986c202cc64c1f101238462371a107ef06751667216774b17bf1bd TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-27-tegocut-train/pre_tegocut_v8f_mini_train.py.ref
+BEFORE 9910d185cb1eaaf763a43c5688c4f4234e6d02197b31047a9e96abbf2ec53e84 TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-27-tegocut-train/mutate_tegocut.py
+BEFORE 02d1871d49258890045d44ebaf7b2f55120a327fe9b76e4efd762ec7bf4ef3c7 stack/tests/test_v8f_flat.py
+BEFORE ece50ce129bbdf7032d0a3b846e5ea77f3276a93bae52d66549a6c49c0d328f4 stack/tests/test_v8f_mixo.py
+BEFORE ce6ad86ebbf5bf9edc94ce0389082ccf8adaf45a85eb1ab1dcbf19feaa345c4e stack/tests/test_v8f_oacc.py
+BEFORE e3c275422551c2b122912201fa42fa72f1a3116163ac8ab8b959e94bc31e856a stack/tests/test_v8f_window_start.py
+55 mutants, each anchor found exactly once in its region, each mutated text compiles
+== group model: baseline (unmutated copy) on  -k "test_the_flag_exists or test_the_default_model_is_the_saved or test_const_gives or test_only_ts_ego_slot or test_e_ego_g..."
+    rc=0 16 passed, 40 deselected, 1 warning in 48.52s  [50s]
+  M01_swap_line_deleted: T's ego slot is the buffer (the ONE line in run_t); deleted, T reads the live token
+    rc=1 1 failed, 52 deselected in 5.78s  [7s]
+    KILLED M01_swap_line_deleted
+  M04_c_is_trainable: c is a frozen BUFFER, never a Parameter
+    rc=1 1 failed, 51 deselected in 3.78s  [5s]
+    KILLED M04_c_is_trainable
+  M06_constant_in_run_s_not_run_t: the constant replaces T's slot, not S's
+    rc=1 1 failed, 53 deselected in 4.63s  [5s]
+    KILLED M06_constant_in_run_s_not_run_t
+  M07_extra_rng_draw: the const branch adds no RNG draw (K-STREAM)
+    rc=1 1 failed, 54 deselected in 7.51s  [8s]
+    KILLED M07_extra_rng_draw
+  M08_buffer_not_persistent: t_ego_c is saved in the state dict
+    rc=1 1 failed, 53 deselected in 3.82s  [5s]
+    KILLED M08_buffer_not_persistent
+  M09_full_model_accepts_the_constant: a FULL model refuses a state dict that carries t_ego_c (a checkpoint whose config lost t_ego is never evaluated with the live token)
+    rc=1 1 failed, 54 deselected in 3.67s  [5s]
+    KILLED M09_full_model_accepts_the_constant
+  M10_missing_buffer_not_refused: a const model without the buffer REFUSES at the forward
+    rc=1 1 failed, 54 deselected in 4.85s  [6s]
+    KILLED M10_missing_buffer_not_refused
+  M11_nonfinite_constant_accepted: the constant must be finite
+    rc=1 1 failed, 54 deselected in 3.89s  [5s]
+    KILLED M11_nonfinite_constant_accepted
+  M12_wrong_shape_accepted: the constant must be [d]
+    rc=1 1 failed, 54 deselected in 3.89s  [5s]
+    KILLED M12_wrong_shape_accepted
+  M13_set_on_a_full_model_allowed: only a model built const takes a constant
+    rc=1 1 failed, 55 deselected in 3.79s  [5s]
+    KILLED M13_set_on_a_full_model_allowed
+  M14_lever_does_not_report_t_ego: built_levers reports what T's ego slot IS
+    rc=1 1 failed, 51 deselected in 3.90s  [5s]
+    KILLED M14_lever_does_not_report_t_ego
+  M15_lever_does_not_report_the_sha: built_levers reports the constant's sha256
+    rc=1 1 failed, 51 deselected in 3.83s  [5s]
+    KILLED M15_lever_does_not_report_the_sha
+  M16_config_accepts_any_mode: t_ego is validated in __post_init__
+    rc=1 1 failed, 55 deselected in 2.10s  [3s]
+    KILLED M16_config_accepts_any_mode
+  M17_sha_over_other_bytes: the sha256 is over the float32 bytes
+    rc=1 1 failed, 55 deselected in 3.78s  [5s]
+    KILLED M17_sha_over_other_bytes
+== group gdvb: baseline (unmutated copy) on  -k "test_the_flag_exists or test_a_flag_without_an_entry or test_g_dvb or test_the_gate_does_not_move or test_read_init_t_eg..."
+    rc=0 21 passed, 35 deselected, 1 warning in 48.43s  [50s]
+  G01_flag_has_no_entry: every flag has a FLAG_CHECKS entry (t_ego)
+    rc=1 1 failed, 54 deselected in 2.31s  [3s]
+    KILLED G01_flag_has_no_entry
+  G02_gate_not_called: declared_vs_built calls bad_t_ego
+    rc=1 1 failed, 44 deselected in 5.73s  [7s]
+    KILLED G02_gate_not_called
+  G03_declared_not_compared_to_built: G-DVB: the declared --t-ego is the built one (config AND levers)
+    rc=1 1 failed, 52 deselected in 5.50s  [7s]
+    KILLED G03_declared_not_compared_to_built
+  G04_const_without_init_accepted: const needs --init-ckpt (M7)
+    rc=1 1 failed, 53 deselected in 5.62s  [7s]
+    KILLED G04_const_without_init_accepted
+  G05_exclusivity_dropped: const is never combined with --ego-perturb-p / --dagger-p
+    rc=1 1 failed, 52 deselected in 6.96s  [8s]
+    KILLED G05_exclusivity_dropped
+  G06_absent_buffer_accepted: const with no buffer built is refused
+    rc=1 1 failed, 52 deselected in 8.54s  [12s]
+    KILLED G06_absent_buffer_accepted
+  G07_buffer_form_not_checked: the buffer is a finite float32 [d]
+    rc=1 1 failed, 55 deselected in 6.60s  [8s]
+    KILLED G07_buffer_form_not_checked
+  G08_trainable_not_checked: c is not trainable and not in parameters()
+    rc=1 1 failed, 55 deselected in 9.26s  [10s]
+    KILLED G08_trainable_not_checked
+  G09_record_sha_not_compared: the built constant's sha256 equals the init record's
+    rc=1 1 failed, 55 deselected in 9.84s  [14s]
+    KILLED G09_record_sha_not_compared
+  G10_record_missing_accepted: the init record must carry the sha256
+    rc=1 1 failed, 3 passed, 52 deselected in 10.59s  [12s]
+    KILLED G10_record_missing_accepted
+  G11_file_not_reread: the gate re-reads the init FILE and compares bit for bit
+    rc=1 1 failed, 55 deselected in 6.11s  [7s]
+    KILLED G11_file_not_reread
+  G12_twin_check_dropped: the flag adds no Parameter (twin built full)
+    rc=1 1 failed, 55 deselected in 9.33s  [11s]
+    KILLED G12_twin_check_dropped
+  G13_full_with_buffer_accepted: a full arm carries no buffer
+    rc=1 1 failed, 55 deselected in 5.45s  [7s]
+    KILLED G13_full_with_buffer_accepted
+  G14_gate_moves_the_rng: the twin is built inside a forked RNG
+    rc=1 1 failed, 55 deselected in 6.81s  [8s]
+    KILLED G14_gate_moves_the_rng
+  G15_init_record_has_no_sha: load_init_ckpt records the file's e_ego.bias sha256 (const)
+    rc=1 1 failed, 55 deselected, 1 warning in 15.34s  [16s]
+    KILLED G15_init_record_has_no_sha
+  G16_init_without_bias_accepted: an init checkpoint without e_ego.bias is refused with const
+    rc=1 1 failed, 55 deselected, 1 warning in 16.70s  [18s]
+    KILLED G16_init_without_bias_accepted
+  G17_config_drops_t_ego: argv --t-ego becomes cfg.t_ego (make_config)
+    rc=1 1 failed, 54 deselected in 2.26s  [3s]
+    KILLED G17_config_drops_t_ego
+  G18_constant_never_set: main() sets c from the init file
+    rc=1 1 failed, 54 deselected, 1 warning in 13.79s  [15s]
+    KILLED G18_constant_never_set
+== group probe: baseline (unmutated copy) on  -k "test_the_probe or test_the_gate_refuses_a_model_whose_t_slot or test_a_default_run..."
+    rc=0 16 passed, 40 deselected, 1 warning in 77.47s (0:01:17)  [79s]
+  P01_probe_not_run: the in-process gate runs t_ego_probe
+    rc=1 1 failed, 54 deselected, 1 warning in 21.63s  [23s]
+    KILLED P01_probe_not_run
+  P02_probe_not_recorded: selfcheck.json carries the probe's record
+    rc=1 1 failed, 53 deselected, 1 warning in 84.14s (0:01:24)  [86s]
+    KILLED P02_probe_not_recorded
+  P03_token_clause_dropped: (a) the ego slot read_t receives is c on every row (const)
+    rc=1 1 failed, 54 deselected in 14.22s  [19s]
+    KILLED P03_token_clause_dropped
+  P04_token_control_dropped: (a) the full branch reads T's own token (the control)
+    rc=1 1 failed, 55 deselected in 12.17s  [13s]
+    KILLED P04_token_control_dropped
+  P05_invariance_clause_dropped: (b) every T output moves by EXACTLY 0.0 under a donor p10f (const)
+    rc=1 1 failed, 55 deselected in 11.30s  [13s]
+    KILLED P05_invariance_clause_dropped
+  P06_invariance_control_dropped: (b) the full branch moves (the control)
+    rc=1 1 failed, 55 deselected in 19.94s  [21s]
+    KILLED P06_invariance_control_dropped
+  P07_gradient_clause_dropped: (c) the gradient of T's terms w.r.t. e_ego is EXACTLY 0.0 (const)
+    rc=1 1 failed, 55 deselected in 9.69s  [11s]
+    KILLED P07_gradient_clause_dropped
+  P08_gradient_control_dropped: (c) the full branch has a gradient (the control)
+    rc=1 1 failed, 55 deselected in 10.02s  [11s]
+    KILLED P08_gradient_control_dropped
+  P09_dead_group_accepted: (d) every T group and e_ego still trains
+    rc=1 1 failed, 55 deselected in 7.41s  [9s]
+    KILLED P09_dead_group_accepted
+  P10_s_o_token_clause_dropped: (h) S's and O's ego tokens are their own
+    rc=1 1 failed, 55 deselected in 13.98s  [16s]
+    KILLED P10_s_o_token_clause_dropped
+  P11_determinism_dropped: (g) the probe is deterministic
+    rc=1 1 failed, 55 deselected in 11.98s  [14s]
+    KILLED P11_determinism_dropped
+  P12_buffer_clause_dropped: (e) c is a buffer, not a Parameter
+    rc=1 1 failed, 55 deselected in 12.17s  [14s]
+    KILLED P12_buffer_clause_dropped
+  P13_frozen_bytes_dropped: (e) c's bytes do not move under three optimiser steps
+    rc=1 1 failed, 55 deselected in 9.82s  [11s]
+    KILLED P13_frozen_bytes_dropped
+  P14_keys_clause_dropped: admissibility: the same keys under both branches, inside INFERENCE_INPUT_KEYS
+    rc=1 1 failed, 55 deselected in 10.24s  [12s]
+    KILLED P14_keys_clause_dropped
+  P15_blind_const_probe_accepted: a const launch whose probe is blind is refused
+    rc=1 1 failed, 55 deselected in 11.46s  [13s]
+    KILLED P15_blind_const_probe_accepted
+  P16_single_window_const_accepted: a const launch with a single-window probe batch is refused
+    rc=1 1 failed, 55 deselected in 4.63s  [6s]
+    KILLED P16_single_window_const_accepted
+  P17_const_branch_not_flipped: the probe's branches flip cfg.t_ego (both run in every gate)
+    rc=1 1 failed, 55 deselected in 11.76s  [13s]
+    KILLED P17_const_branch_not_flipped
+== group e2e: baseline (unmutated copy) on  -k "test_a_default_run or test_flag_to_config or test_the_loss_the_trainer or test_the_gate_refuses_a_model or test_a_refuse..."
+    rc=0 10 passed, 46 deselected, 1 warning in 329.64s (0:05:29)  [332s]
+  M05_c_from_the_live_model: c is read from the init FILE, not the live model (on a resume the live model is random)
+    rc=1 1 failed, 55 deselected, 1 warning in 52.13s  [54s]
+    KILLED M05_c_from_the_live_model
+  W01_saved_config_drops_t_ego: the checkpoint carries cfg.t_ego (M5: a dropped key makes the strict load refuse the buffer)
+    rc=1 1 failed, 53 deselected, 1 warning in 50.83s  [52s]
+    KILLED W01_saved_config_drops_t_ego
+  W02_resume_loses_c_check: a resumed run holds the file's constant (the gate re-reads the file)
+    rc=1 1 failed, 54 deselected in 11.54s  [13s]
+    KILLED W02_resume_loses_c_check
+== group ident: baseline (unmutated copy) on  -k "test_defaults_reproduce or test_the_saved_references or test_the_single_applying_lines or test_the_default_model_is_the_..."
+    rc=0 4 passed, 52 deselected in 49.30s  [51s]
+  M02_flag_defaults_on: --t-ego defaults to full (off = every earlier arm, bit for bit); defaulted ON
+    rc=1 1 failed, 54 deselected in 3.86s  [5s]
+    KILLED M02_flag_defaults_on
+  M02b_config_defaults_on: the config default is full too
+    rc=1 1 failed, 53 deselected in 3.78s  [5s]
+    KILLED M02b_config_defaults_on
+  M03_default_model_carries_a_buffer: a default model has no t_ego_c (a None buffer: not in the state dict)
+    rc=1 1 failed, 53 deselected in 9.19s  [10s]
+    KILLED M03_default_model_carries_a_buffer
+delivered files changed during the run: none
+55 of 55 mutants killed

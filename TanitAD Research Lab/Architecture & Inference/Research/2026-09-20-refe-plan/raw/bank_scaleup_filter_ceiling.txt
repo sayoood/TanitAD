@@ -1,0 +1,33 @@
+THE BANK SCALE-UP HIT A FILTER CEILING, NOT A DATA CEILING. MEASURED 2026-09-20.
+
+WHAT HAPPENED: I raised DRIVERL_EVAL_LIMIT_TOTAL_SCENARIOS from 8 to 64 expecting ~64 rollouts.
+The run reported "Building simulations from 10 scenarios" and scored 96.85 on 10.
+
+WHY: `one_of_each_scenario_type` takes AT MOST ONE scenario per type, so a bigger limit cannot
+exceed the number of types the filter resolves. limit 8 -> 8; limit 64 -> 10. The filter's pool on
+mini is ten.
+
+!! THE DATA IS NOT THE CONSTRAINT. Scanning all 64 mini DBs directly:
+      distinct scenario types present : 67
+      total tagged scenarios          : 892,204
+   The mini split holds nearly a million tagged scenarios across 67 types. The ten-scenario result
+   is a property of the FILTER I chose, and I chose it in Stage 0 for a different purpose -- to get
+   broad type coverage cheaply, which is exactly what it does.
+
+=> A bank of thousands needs a DIFFERENT FILTER, not a bigger limit. Their own `driverl_val14`
+   filter carries `num_scenarios_per_type: 100`, which on mini's 67 types would admit up to ~6,700
+   scenarios. That is the correct lever.
+
+CONSEQUENCE FOR POD_HANDOFF ARM B: its "~14 K tuples from 64 mini logs" is NOT reachable with
+`one_of_each_scenario_type`. With a per-type filter it is reachable and then some. Arm B's cost
+estimate stands (it was priced per sample, not per scenario); only the recipe for producing the
+bank changes.
+
+SECOND DEFECT, MINE: the run id does not encode the limit. `run_mini_teacher.sh` builds
+`m-${PROTO}-n` for rank 0 regardless of how many scenarios were requested, so this 10-scenario run
+wrote into the SAME output root as the Stage-0 8-scenario baseline. The timestamped parquets do not
+overwrite each other, but any analysis that globs and takes [-1] now silently reads the 10-scenario
+run where it used to read the 8-scenario one.
+  - I shortened those ids for MAX_PATH and was over-cautious: the measured prefix budget is 28
+    chars, `C:/dzo/` costs 7, so an id may be up to 21 -- not the 7 I limited myself to.
+  - FIX: encode the limit, e.g. `m-nr-n-l64`, so distinct experiments cannot share an output root.

@@ -1,0 +1,64 @@
+============================================================================================
+CONTROL, unmutated
+  GREEN  87 passed in 1.66s
+
+TEMPORAL PROBE against the LIVE per-batch code:
+  BATCH 1 (v0 present): PASSED, fan (1, 2, 4, 4, 2), forward got v0=7.5
+  BATCH 2 (v0 DROPPED): REFUSED -> checkpoint was trained WITH ['v0'] (its own config says so) but the batch supplies None. ⛔ REFUSED ON BATCH #2 of this rollout — a LATER batch, which a once-onl
+  forward call count = 1 (the bad batch never reached it)
+============================================================================================
+M1  THE DEFECT RESTORED, faithfully: the pre-change body verbatim
+  expected RED  got RED   9 failed, 78 passed in 1.68s
+
+  TEMPORAL PROBE against M1 (once-only restored):
+  BATCH 1 (v0 present): PASSED, fan (1, 2, 4, 4, 2), forward got v0=7.5
+  BATCH 2 (v0 DROPPED): NO REFUSAL. fan (1, 2, 4, 4, 2) logp (1, 2, 4) all-finite=True
+  the forward was handed v0=None -> refc.py:3097 v_ms=None -> refc.py:1722 every anchor rolled at the 10 m/s reference
+  forward call count = 2 (the defective batch WAS sampled from)
+  => A WELL-FORMED FAN FROM A POLICY THAT NEVER EXISTED, SILENTLY.
+============================================================================================
+M1b  ONCE-ONLY SEMANTICS ALONE: every other line identical
+  expected RED  got RED   7 failed, 80 passed in 1.65s
+
+  TEMPORAL PROBE against M1b (once-only restored):
+  BATCH 1 (v0 present): PASSED, fan (1, 2, 4, 4, 2), forward got v0=7.5
+  BATCH 2 (v0 DROPPED): NO REFUSAL. fan (1, 2, 4, 4, 2) logp (1, 2, 4) all-finite=True
+  the forward was handed v0=None -> refc.py:3097 v_ms=None -> refc.py:1722 every anchor rolled at the 10 m/s reference
+  forward call count = 2 (the defective batch WAS sampled from)
+  => A WELL-FORMED FAN FROM A POLICY THAT NEVER EXISTED, SILENTLY.
+============================================================================================
+M2  the guard becomes a latch in disguise: batches 2..N skip the check
+  expected RED  got RED   5 failed, 82 passed in 1.64s
+============================================================================================
+M3  OVER-assertion: every declared channel required regardless of the config
+  expected RED  got RED   10 failed, 77 passed in 1.72s
+============================================================================================
+M4  the cache swallows a declaration bug: cfg recorded BEFORE the resolve
+  expected RED  got RED   1 failed, 86 passed in 1.63s
+============================================================================================
+M5  the escape hatch is broken: strict_conditioning=False still asserts
+  expected RED  got RED   4 failed, 83 passed in 1.68s
+============================================================================================
+M6  VACUITY: the check refuses every batch
+  expected RED  got RED   10 failed, 77 passed in 1.72s
+============================================================================================
+M7  the VALUE is not checked, only the KEY's presence is
+  expected RED  got RED   1 failed, 86 passed in 1.63s
+============================================================================================
+CONTROL, after restore
+  GREEN  87 passed in 1.63s
+
+============================================================================================
+#     want   got    ok   mutation
+-     GREEN  GREEN  YES  CONTROL, unmutated  [87 passed in 1.66s]
+M1    RED    RED    YES  THE DEFECT RESTORED, faithfully: the pre-change body verbatim  [9 failed, 78 passed in 1.68s]
+M1b   RED    RED    YES  ONCE-ONLY SEMANTICS ALONE: every other line identical  [7 failed, 80 passed in 1.65s]
+M2    RED    RED    YES  the guard becomes a latch in disguise: batches 2..N skip the check  [5 failed, 82 passed in 1.64s]
+M3    RED    RED    YES  OVER-assertion: every declared channel required regardless of the config  [10 failed, 77 passed in 1.72s]
+M4    RED    RED    YES  the cache swallows a declaration bug: cfg recorded BEFORE the resolve  [1 failed, 86 passed in 1.63s]
+M5    RED    RED    YES  the escape hatch is broken: strict_conditioning=False still asserts  [4 failed, 83 passed in 1.68s]
+M6    RED    RED    YES  VACUITY: the check refuses every batch  [10 failed, 77 passed in 1.72s]
+M7    RED    RED    YES  the VALUE is not checked, only the KEY's presence is  [1 failed, 86 passed in 1.63s]
+-     GREEN  GREEN  YES  CONTROL, after restore  [87 passed in 1.63s]
+
+10/10 expectations met

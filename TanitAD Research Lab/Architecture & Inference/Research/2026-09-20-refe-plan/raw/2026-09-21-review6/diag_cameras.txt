@@ -1,0 +1,19 @@
+device cuda   (peak memory is only meaningful on cuda)
+
+  cams batch  tokens  regs    trainable        total  peak GB     sec
+     1     1    1920    16   18,942,274  322,021,702     3.55    1.19
+     1     2    1920    16   18,942,274  322,021,702     5.82    1.63
+     4     1    7680    64   18,991,426  322,070,854    10.09   23.56
+     4     2    7680    64   18,991,426  322,070,854    18.89   90.43
+
+  4 cameras vs 1, at batch 1:
+    tokens     x4.00
+    peak mem   x2.85  (3.55 -> 10.09 GB)
+    time       x19.78
+    trainable  +49,152 (registers only -- the frozen trunk is SHARED, not replicated)
+
+  paper Table A12, FOUR cameras: 338,460,000 total / 18,580,000 trainable (5.49 %)
+  REFe         FOUR cameras: 322,070,854 total / 18,991,426 trainable (5.90 %)
+    -> trainable +2.2 %, total -4.8 % against the published figures
+
+CAMERA_COST_MEASURED

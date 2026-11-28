@@ -1,0 +1,5 @@
+# HANDOFF_RECLAB2 (build agent; nothing staged/committed/pushed; no GPU; pod read-only)
+DONE: speed_v1 label in tree97 (base 97fe0a56) replacing recovery_v1; tests + 11 mutants RED; real-shard census (REAL_SHARD_CENSUS.json); RL checker patched/tested/5 mutants; rl_argv/rl_arm/DRY_MINT_PLAN -> speed_v1; read ext RH_AKIND=RL (dry_check PASS RL + default). Docs: FACTS_RECLAB_2.md, CHANGED_FILES.txt (sha256).
+FOR THE MM: (1) 1 test failing: compose `test_flag_off_...` = PRE-EXISTING on 97fe0a56 (control log). (2) Real refusal share 28 % of ok (51 % tick 2) mostly real accel violations: decide before the card. (3) foreign bank sha is refused by C-RH-BANKGEN/binding, not C-ARGV. (4) RL needs a new commit + pins + G-SUITE + selfcheck on GPU (DRY_MINT_PLAN 0, B).
+Read-ext tree (rollhist/read/tree) re-exported then deleted; re-create with git archive 43319227 stack taniteval before running the read chain.
+DELETED (logged in DELETIONS.log): pulled shard/tracks/join, tmp/pt*, ctl, mutants/tree, research, read/tree.

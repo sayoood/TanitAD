@@ -1,0 +1,59 @@
+{
+ "method": "every blob of 'git ls-tree -r <SHA>' in the SOURCE checkout (D:/Archive/devbox-C/navsim/...) hashed in the C: copy with 'git hash-object --stdin-paths' (raw bytes, no eol filter)",
+ "repos": {
+  "devkit": {
+   "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+   "n_blobs": 199,
+   "n_hashed": 199,
+   "n_match": 198,
+   "diffs": [
+    {
+     "path": "navsim/common/dataclasses.py",
+     "head_blob": "a358d07752cd38accd1e4d203b4bdf39224d7256",
+     "copy_blob": "596cb7d6bd5744093b4409f9cbb70d9fcf8535e7"
+    }
+   ],
+   "diff_explained": {
+    "navsim/common/dataclasses.py": "copy blob 596cb7d = the pre-existing patched WORKTREE blob (PosixPath unpickler, 2026-08-28) - faithful"
+   }
+  },
+  "nuplan-devkit": {
+   "sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+   "n_blobs": 1324,
+   "n_hashed": 1324,
+   "n_match": 1321,
+   "diffs": [
+    {
+     "path": "docs/make.bat",
+     "head_blob": "32bb24529f92346af26219baed295b7488b77534",
+     "copy_blob": "954237b9b9f2b248bb1397a15c055c0af1cad03e"
+    },
+    {
+     "path": "nuplan/planning/nuboard/templates/tabs/cloud.html",
+     "head_blob": "3cdbd196a7a67a7fec733420a9b08a6d7d2d2588",
+     "copy_blob": "17953a7c68ea9273b008879d3e83dbe822cce59c"
+    },
+    {
+     "path": "setup.py",
+     "head_blob": "f6ddafcdcb6f563d0023cc61e6559578bd806660",
+     "copy_blob": "3ad18c61b0aa1228a0306a3c17f00f6286fb4b62"
+    }
+   ],
+   "diff_explained": {
+    "setup.py": "copy blob 3ad18c6 = the pre-existing patched worktree blob (find_packages excludes docs) - faithful",
+    "docs/make.bat": "copy sha256 == D: worktree sha256 (bca6b3244f115b8f...); git status clean => differs from HEAD only by git eol normalisation; not runtime",
+    "nuplan/planning/nuboard/templates/tabs/cloud.html": "copy sha256 == D: worktree sha256 (76bbf0affa1cc710...); git status clean; nuBoard UI template, not runtime"
+   }
+  }
+ },
+ "fcntl_shim": {
+  "source": "D:/Archive/devbox-C/navsim/venv/Lib/site-packages/fcntl.py",
+  "copy": "C:/Users/Admin/navsim-crun/venv/Lib/site-packages/fcntl.py",
+  "sha256": "75184a48a3e824ad9f3c79dcefce0ca307871a05f544cfd6e7411e173233e458",
+  "note": "pre-existing (2026-08-28) flock-only msvcrt shim; nuplan gpkg_mapsdb.py imports fcntl at module scope"
+ },
+ "venv": {
+  "how": "uv 0.12.5 'uv pip install --offline' from C:/Users/Admin/AppData/Local/uv/cache with the 200 pins of 'uv pip freeze' of the D: venv (raw/navsim_venv_freeze.txt); devkits installed -e --no-deps from the C: copies",
+  "python": "3.9.25 (uv-managed cpython-3.9-windows-x86_64-none)"
+ }
+}

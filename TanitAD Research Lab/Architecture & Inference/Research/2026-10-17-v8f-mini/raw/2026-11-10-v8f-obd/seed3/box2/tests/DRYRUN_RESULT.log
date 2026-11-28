@@ -1,0 +1,12 @@
+== 1 normal flow: wait check, ship (tree absent: fallback ship, then proof), four runs, banks, cleanups; GPU at 2400 MiB passes the default idle threshold
+   (scenario 1 took 59 s)
+== 2 the tree is already on the box (shipped by an earlier chain): SHIPCHECK proves it, ship is skipped, the tree stays byte-identical
+== 2b the shipcheck is not fooled: a changed tree file, a wrong TIP, a missing manifest -> NOT proven, the fallback re-ships (and the changed file is put back, the old one copied aside)
+== 2c a commit that is not the box tree's: the shipcheck refuses and the fallback cannot make it so
+== 3 the STOPBAL wait (DONE proceeds; a busy stop keeps waiting; a non-busy stop proceeds; a held busy marker keeps waiting)
+== 4 one arm refused at its gate (a BUILT lever planted wrong): the chain goes on, ends STOP (never DONE), the other three are banked
+== 5 a pull whose sha256 differs from box 2's stops the chain (rc 7); nothing after it starts and the box keeps the data (no cleanup before the bank is proven)
+== 6 failures after the gate stop the chain (no next arm); disk, GPU and python gates
+== 7 commit, tag and package refusals; the transport variables fail closed
+== 8 hygiene
+DRYRUN ok=102 failed=0

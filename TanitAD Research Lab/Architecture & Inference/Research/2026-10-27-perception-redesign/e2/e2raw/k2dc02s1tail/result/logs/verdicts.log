@@ -1,0 +1,31 @@
+2026-11-22T23:50:58Z START (pid 994354) mode REAL tip 20179573828b
+2026-11-22T23:50:59Z code /f/refcv9_e3/k2dc02s1tail/code_20179573828b: 20179573828bfd78b7c28ba64cbba52fe26fea74 2165 files blob-verified
+2026-11-22T23:51:00Z lead block sha256 == Thor's: distkeep rows will be recomputed
+2026-11-22T23:51:01Z validity: item 1 (seed 1 + HSG in config.json): enforced by the Thor build guard; BUILD_STATUS passed it: 1 START line(s)
+2026-11-22T23:51:01Z validity: item 3 identity control A1: IDCTL-PASS-TENSOR present
+2026-11-22T23:51:02Z validity: item 3 deliberate regression: REGRESSION-RED present (the guard refused a model_ema.pt header)
+2026-11-22T23:51:02Z validity: item 3 tail guard: the K2DC02s1t dump records step 6000 and the tail file's md5 28544db4ac1f7036c68fca2cada976b7
+2026-11-22T23:51:02Z validity: item 4 pinned comparators: 2026-11-22T21:51:16Z pinned comparators pulled: 2643 files sha256-equal to the pin manifest (3d367ad922e4b250c1782b6204dad7b56ce9c0d83eae5955fe1959c5512f311c)
+2026-11-22T23:51:03Z commit free 11418 MB >= 5632 (repro)
+2026-11-22T23:51:13Z ZZK2DC02s1T-VERD-STEP-families_pinned_s0 rc 0
+2026-11-22T23:51:18Z ZZK2DC02s1T-VERD-STEP-distkeep_pinned_s0 rc 0
+2026-11-22T23:51:25Z ZZK2DC02s1T-VERD-STEP-families_reroll_s0 rc 0
+2026-11-22T23:51:29Z ZZK2DC02s1T-VERD-STEP-distkeep_reroll_s0 rc 0
+2026-11-22T23:51:29Z ZZK2DC02s1T-VERD-STEP-repro_check rc 0
+K2DC02S1TAIL-REPRO REPRO-PASS
+PREREG_K2DC02S1 sec. 2 item 6: LATERAL.LAT_cross_mae_m, pinned K2DCt - re-rolled K0t vs pinned K2DCt - K0t, within +-1 mm at inference seed 0, else REPRO-VOID
+
+  GATE seed 0: LAT_cross_mae_m pinned 0.0126 re-roll 0.0126 diff 0.0 -> OK (within the +-1 mm band)
+2026-11-22T23:51:30Z commit free 9821 MB >= 5632 (dose)
+2026-11-22T23:51:45Z ZZK2DC02s1T-VERD-STEP-dose rc 3
+[r9-e2-dose-verdict] DOSE-VOID -> F:\refcv9_e3\k2dc02s1tail\verdicts\dose\DOSE_VERDICT.json
+2026-11-22T23:52:00Z ZZK2DC02s1T-VERD-STEP-floor rc 3
+2026-11-22T23:52:00Z ZZK2DC02s1T-VERD-STEP-combined rc 5
+[k2dc02s1-combined] tail reading VOID (no dose claim is made: DOSE-VOID) -> F:\refcv9_e3\k2dc02s1tail\verdicts\combined\COMBINED_READING.json
+2026-11-22T23:52:00Z ZZK2DC02s1T-VERD-STEP-fam_table rc 0
+2026-11-22T23:52:01Z commit free 9674 MB >= 5632 (strategic)
+2026-11-22T23:52:44Z ZZK2DC02s1T-VERD-STEP-strategic rc 0
+[strategic] wrote F:\refcv9_e3\k2dc02s1tail\verdicts\strategic/STRATEGIC_NAVCOMP.json/.md; control PASS: REF - REF reads exactly 0.0 on every readout and seed
+2026-11-22T23:52:44Z ZZK2DC02s1T-VERD-STEP-sanitize rc 0
+2026-11-22T23:52:45Z SUMMARY tailvoid=0 reprovoid=0 dose=DOSE-VOID(rc 3) reading=VOID e2_verdict_K2DC02s1t_vs_K0t=NO-GO [{'id': 'd', 'name': 'no four-family row separated worse (paired, episodes)', 'status': 'FAIL', 'seeds': ['0', '1'], 'next_lever': 'the separated-worse row(s) named in the clause: diagnose that family before the 214 h are spent'}] steps_failed=0 out=/f/refcv9_e3/k2dc02s1tail/verdicts
+2026-11-22T23:52:45Z ZZK2DC02s1T-VERD-DONE-VOIDZZ

@@ -1,0 +1,513 @@
+{
+ "instrument": "clip_probe.py",
+ "card": "PREREG_SCORERFT_PICK.md section 3.2",
+ "k": 8,
+ "max_norm": 1.0,
+ "forms": {
+  "C": {
+   "argv": [
+    "--backbone",
+    "vitl16",
+    "--targets",
+    "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7",
+    "--images",
+    "/workspace/data/navtrain_pixels",
+    "--calib",
+    "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+    "--metric-cache",
+    "/workspace/data/refe_navtrain/metric_cache",
+    "--scorer-sees-trunk",
+    "--yaw-wrap",
+    "off",
+    "--nav-mode",
+    "command",
+    "--labeller",
+    "online",
+    "--label-workers",
+    "13",
+    "--label-chunks",
+    "2",
+    "--init-from",
+    "/workspace/data/refe_runs/p5c_c1/model_final.pt",
+    "--epochs",
+    "0",
+    "--steps",
+    "1000",
+    "--epoch-unit",
+    "scenes",
+    "--batch",
+    "4",
+    "--accum",
+    "64",
+    "--lr",
+    "5e-5",
+    "--weight-decay",
+    "0.01",
+    "--amp",
+    "bf16",
+    "--score-w",
+    "0.1",
+    "--w-field",
+    "0.0",
+    "--rank-w",
+    "0.0",
+    "--ego-yaw-table",
+    "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+    "--traj-label-table",
+    "/workspace/data/p5c_label_a33/P5C_label_table_p5r-rj5_rank0.json.gz",
+    "--seed",
+    "0",
+    "--tf32",
+    "--compile",
+    "--workers",
+    "2",
+    "--log-every",
+    "1",
+    "--ckpt-every-min",
+    "20",
+    "--out",
+    "/workspace/data/refe_p5c/scorerft/clip_work/scratch/run_c",
+    "--resume"
+   ],
+   "argv_sha256": "5bd05701cb2e7b471d70f008a8f6eb438c5eae38492221eeb827efd0d78d7a84",
+   "rank_w": 0.0,
+   "k": 8,
+   "stopped_before_step_k": true,
+   "rc": null,
+   "norms": [
+    3.312929630279541,
+    17.066139221191406,
+    13.110830307006836,
+    10.480634689331055,
+    11.158868789672852,
+    8.96024227142334,
+    8.63987922668457,
+    9.843475341796875
+   ],
+   "coefs": [
+    0.30184754729270935,
+    0.058595553040504456,
+    0.07627281546592712,
+    0.09541405737400055,
+    0.08961480855941772,
+    0.11160411685705185,
+    0.11574234813451767,
+    0.1015901267528534
+   ],
+   "binding": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "logged_norm": [
+    3.312929630279541,
+    17.066139221191406,
+    13.110830307006836,
+    10.480634689331055,
+    11.158868789672852,
+    8.96024227142334,
+    8.63987922668457,
+    9.843475341796875
+   ],
+   "logged_coef": [
+    0.30184754729270935,
+    0.058595553040504456,
+    0.07627281546592712,
+    0.09541405737400055,
+    0.08961480855941772,
+    0.11160411685705185,
+    0.11574234813451767,
+    0.1015901267528534
+   ],
+   "order": {
+    "0": {
+     "epoch": 0,
+     "pos": 256,
+     "samples": 256,
+     "batch": 4,
+     "lr": 4.999987663004646e-05
+    },
+    "1": {
+     "epoch": 0,
+     "pos": 512,
+     "samples": 512,
+     "batch": 4,
+     "lr": 4.999950652140343e-05
+    },
+    "2": {
+     "epoch": 0,
+     "pos": 768,
+     "samples": 768,
+     "batch": 4,
+     "lr": 4.999888967772375e-05
+    },
+    "3": {
+     "epoch": 0,
+     "pos": 1024,
+     "samples": 1024,
+     "batch": 4,
+     "lr": 4.999802610509541e-05
+    },
+    "4": {
+     "epoch": 0,
+     "pos": 1280,
+     "samples": 1280,
+     "batch": 4,
+     "lr": 4.9996915812041525e-05
+    },
+    "5": {
+     "epoch": 0,
+     "pos": 1536,
+     "samples": 1536,
+     "batch": 4,
+     "lr": 4.9995558809520234e-05
+    },
+    "6": {
+     "epoch": 0,
+     "pos": 1792,
+     "samples": 1792,
+     "batch": 4,
+     "lr": 4.9993955110924615e-05
+    },
+    "7": {
+     "epoch": 0,
+     "pos": 2048,
+     "samples": 2048,
+     "batch": 4,
+     "lr": 4.999210473208251e-05
+    }
+   },
+   "n_train_rows": 8,
+   "resume_events": 0,
+   "checkpoints_written": [],
+   "metrics_path": "/workspace/data/refe_p5c/scorerft/clip_work/scratch/run_c/metrics.jsonl",
+   "onpolicy_step0": {
+    "step": 0,
+    "event": "onpolicy",
+    "sets": 256,
+    "pick": 0.950812254101038,
+    "random": 0.71178158512339,
+    "best": 0.9921515826135874,
+    "skill": 0.852554378561869,
+    "drift_m": 0.0,
+    "lag_steps": 0.0,
+    "cov_norm": 64.0
+   }
+  },
+  "P": {
+   "argv": [
+    "--backbone",
+    "vitl16",
+    "--targets",
+    "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7",
+    "--images",
+    "/workspace/data/navtrain_pixels",
+    "--calib",
+    "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+    "--metric-cache",
+    "/workspace/data/refe_navtrain/metric_cache",
+    "--scorer-sees-trunk",
+    "--yaw-wrap",
+    "off",
+    "--nav-mode",
+    "command",
+    "--labeller",
+    "online",
+    "--label-workers",
+    "13",
+    "--label-chunks",
+    "2",
+    "--init-from",
+    "/workspace/data/refe_runs/p5c_c1/model_final.pt",
+    "--epochs",
+    "0",
+    "--steps",
+    "1000",
+    "--epoch-unit",
+    "scenes",
+    "--batch",
+    "4",
+    "--accum",
+    "64",
+    "--lr",
+    "5e-5",
+    "--weight-decay",
+    "0.01",
+    "--amp",
+    "bf16",
+    "--score-w",
+    "0.1",
+    "--w-field",
+    "0.0",
+    "--rank-w",
+    "0.125",
+    "--rank-heads",
+    "pick",
+    "--ego-yaw-table",
+    "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+    "--traj-label-table",
+    "/workspace/data/p5c_label_a33/P5C_label_table_p5r-rj5_rank0.json.gz",
+    "--seed",
+    "0",
+    "--tf32",
+    "--compile",
+    "--workers",
+    "2",
+    "--log-every",
+    "1",
+    "--ckpt-every-min",
+    "20",
+    "--out",
+    "/workspace/data/refe_p5c/scorerft/clip_work/scratch/run_p",
+    "--resume"
+   ],
+   "argv_sha256": "cac60bcb0677477e0af647f2045e8e904ed96b1c1578814f086c3e04e9f6863c",
+   "rank_w": 0.125,
+   "k": 8,
+   "stopped_before_step_k": true,
+   "rc": null,
+   "norms": [
+    3.321038007736206,
+    17.06918716430664,
+    12.976471900939941,
+    10.627875328063965,
+    11.280486106872559,
+    8.972524642944336,
+    9.399928092956543,
+    10.337987899780273
+   ],
+   "coefs": [
+    0.3011105954647064,
+    0.058585092425346375,
+    0.07706253975629807,
+    0.09409217536449432,
+    0.08864865452051163,
+    0.11145134270191193,
+    0.10638377815485,
+    0.09673061221837997
+   ],
+   "binding": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "logged_norm": [
+    3.321038007736206,
+    17.06918716430664,
+    12.976471900939941,
+    10.627875328063965,
+    11.280486106872559,
+    8.972524642944336,
+    9.399928092956543,
+    10.337987899780273
+   ],
+   "logged_coef": [
+    0.3011105954647064,
+    0.058585092425346375,
+    0.07706253975629807,
+    0.09409217536449432,
+    0.08864865452051163,
+    0.11145134270191193,
+    0.10638377815485,
+    0.09673061221837997
+   ],
+   "order": {
+    "0": {
+     "epoch": 0,
+     "pos": 256,
+     "samples": 256,
+     "batch": 4,
+     "lr": 4.999987663004646e-05
+    },
+    "1": {
+     "epoch": 0,
+     "pos": 512,
+     "samples": 512,
+     "batch": 4,
+     "lr": 4.999950652140343e-05
+    },
+    "2": {
+     "epoch": 0,
+     "pos": 768,
+     "samples": 768,
+     "batch": 4,
+     "lr": 4.999888967772375e-05
+    },
+    "3": {
+     "epoch": 0,
+     "pos": 1024,
+     "samples": 1024,
+     "batch": 4,
+     "lr": 4.999802610509541e-05
+    },
+    "4": {
+     "epoch": 0,
+     "pos": 1280,
+     "samples": 1280,
+     "batch": 4,
+     "lr": 4.9996915812041525e-05
+    },
+    "5": {
+     "epoch": 0,
+     "pos": 1536,
+     "samples": 1536,
+     "batch": 4,
+     "lr": 4.9995558809520234e-05
+    },
+    "6": {
+     "epoch": 0,
+     "pos": 1792,
+     "samples": 1792,
+     "batch": 4,
+     "lr": 4.9993955110924615e-05
+    },
+    "7": {
+     "epoch": 0,
+     "pos": 2048,
+     "samples": 2048,
+     "batch": 4,
+     "lr": 4.999210473208251e-05
+    }
+   },
+   "n_train_rows": 8,
+   "resume_events": 0,
+   "checkpoints_written": [],
+   "metrics_path": "/workspace/data/refe_p5c/scorerft/clip_work/scratch/run_p/metrics.jsonl",
+   "onpolicy_step0": {
+    "step": 0,
+    "event": "onpolicy",
+    "sets": 256,
+    "pick": 0.950812254101038,
+    "random": 0.71178158512339,
+    "best": 0.9921515826135874,
+    "skill": 0.852554378561869,
+    "drift_m": 0.0,
+    "lag_steps": 0.0,
+    "cov_norm": 64.0,
+    "pick_v1": 0.9557181410491467,
+    "random_v1": 0.7248456990346313,
+    "best_v1": 0.9959386195987463,
+    "skill_v1": 0.8516358211571694
+   }
+  }
+ },
+ "validity": {
+  "V1": {
+   "id": "V1",
+   "pass": true,
+   "fails": [],
+   "detail": {
+    "norm_2.0": {
+     "recorded_norm": 2.0,
+     "binding": true,
+     "expected_binding": true,
+     "grads_bit_identical": true,
+     "return_identical": true,
+     "ok": true
+    },
+    "norm_0.5": {
+     "recorded_norm": 0.5,
+     "binding": false,
+     "expected_binding": false,
+     "grads_bit_identical": true,
+     "return_identical": true,
+     "ok": true
+    }
+   }
+  },
+  "V2": {
+   "id": "V2",
+   "pass": true,
+   "fails": [],
+   "detail": {
+    "C": {
+     "pass": true,
+     "fails": [],
+     "n_keys_compared": {
+      "training": 19,
+      "onpolicy": 10
+     },
+     "p_only_keys": {
+      "training": [
+       "clip_coef",
+       "grad_norm_pre"
+      ],
+      "onpolicy": []
+     }
+    },
+    "P": {
+     "pass": true,
+     "fails": [],
+     "n_keys_compared": {
+      "training": 19,
+      "onpolicy": 10
+     },
+     "p_only_keys": {
+      "training": [
+       "clip_coef",
+       "grad_norm_pre",
+       "rank_L",
+       "rank_pairs_pick",
+       "rank_sets_pick",
+       "rank_w"
+      ],
+      "onpolicy": [
+       "best_v1",
+       "pick_v1",
+       "random_v1",
+       "skill_v1"
+      ]
+     }
+    }
+   }
+  },
+  "V3": {
+   "id": "V3",
+   "pass": true,
+   "fails": [],
+   "detail": {
+    "C": {
+     "steps_differing": []
+    },
+    "P": {
+     "steps_differing": []
+    }
+   }
+  },
+  "V4": {
+   "id": "V4",
+   "pass": true,
+   "fails": [],
+   "detail": {
+    "C": {
+     "fails": []
+    },
+    "P": {
+     "fails": []
+    }
+   }
+  }
+ },
+ "valid": true,
+ "state": "CLIP-SAME occ=8/8",
+ "n_on": 0,
+ "n_off": 0,
+ "occ_P": 8,
+ "occ_C": 8,
+ "cmin_P": 0.058585092425346375,
+ "cmin_C": 0.058595553040504456,
+ "N0_P": 3.321038007736206,
+ "N0_C": 3.312929630279541,
+ "scope": "steps 0-7 only; P's full-run clip path is UNMEASURED",
+ "pl": null
+}

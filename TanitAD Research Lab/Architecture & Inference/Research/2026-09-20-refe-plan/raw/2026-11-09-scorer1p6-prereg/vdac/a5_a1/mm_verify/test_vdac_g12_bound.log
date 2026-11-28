@@ -1,0 +1,9 @@
+mutation / check                                                                 result  how
+cell 1.0, 4.5 GB                                                                 RED     names value and bound: ['G12: the head retains 4.5 GB for backward (> 4 GB, the bound at the declared 1 m cell
+cell 2.0, 1.5 GB (test_launch_gate.py:1602, fragment '> 1 GB')                   RED     ['G12: the head retains 1.5 GB for backward (> 1 GB, the bound at the declared 2 m cell)']
+trainer bound 1.0 at declared cell 1.0 (hard-coded in the trainer)               RED     ["G12: the trainer's own head_retained_bound_gb 1.0 != the bound 4 GB of the declared --aux-drv-cell 1"]
+trainer bound 4.0 at declared cell 2.0 (a loosened bound cannot hide)            RED     ["G12: the trainer's own head_retained_bound_gb 4.0 != the bound 1 GB of the declared --aux-drv-cell 2", 'G12:
+gate_checks bound hard-coded back to 1.0: (1.231, cell 1.0) goes RED             RED     ['G12: the head retains 1.231 GB for backward (> 1 GB, the bound at the declared 1 m cell)']
+trainer: `<= 1.0` hard-coded again                                               RED     text check
+trainer: bound read from argv instead of the built cell                          RED     text check
+ZZTEST_PASS 15

@@ -1,0 +1,241 @@
+{
+ "tool": "2026-09-26-yaw-rate-mask/code/run_regression_arms.py",
+ "utc": "2026-09-26T11:43:14Z",
+ "python": "3.13.5",
+ "cpu_only": true,
+ "tree": {
+  "tip": "121892142a5c6b1ad1890543d11537b281b844c1",
+  "n_files_extracted": 2027,
+  "excluded": {
+   "pathspec": ":(exclude)taniteval/results",
+   "n_files_excluded": 683,
+   "why": "banked result data only; keeps the tree small"
+  },
+  "tip_blob_refav1_arm": "c7013107ab1353c5102fd806d29cd967216b7a3a",
+  "fixed_blob_refav1_arm": "963d98e6c3f1a00df8599c9ea8f39cb538e26e23",
+  "package_blob_refav1_arm": "963d98e6c3f1a00df8599c9ea8f39cb538e26e23",
+  "test_blob": "10d4d68381d90509c8f4456bc64932cb5bf6d678",
+  "package_test_blob": "10d4d68381d90509c8f4456bc64932cb5bf6d678"
+ },
+ "import_probe": {
+  "resolved": {
+   "tanitad": "C:\\Users\\Admin\\ym26\\tree\\stack\\tanitad\\__init__.py",
+   "four_families": "C:\\Users\\Admin\\ym26\\tree\\taniteval\\taniteval\\four_families.py",
+   "ci": "C:\\Users\\Admin\\ym26\\tree\\taniteval\\taniteval\\ci.py"
+  },
+  "all_under_tree": true
+ },
+ "arms": {
+  "FIXED": {
+   "what": "the package's fixed refav1_arm.py",
+   "tag": "arm_FIXED",
+   "rc": 0,
+   "wall_s": 2.5,
+   "stdout_tail": "...........                                                              [100%]\n11 passed in 1.72s\n",
+   "counts": {
+    "passed": 11,
+    "failure": 0,
+    "error": 0,
+    "skipped": 0
+   },
+   "cases": {
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_exact_plan_reads_zero": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_constant_turn_reads_its_analytic_yaw_rate": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_heading_cell_is_unchanged_on_the_partial_window": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_the_component_keys_are_unchanged": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask": "passed"
+   },
+   "not_passed": []
+  },
+  "M0_TIP_VERBATIM": {
+   "what": "the branch-tip blob of refav1_arm.py, byte for byte: the real historical defect (unmasked cell, no yaw_rate_cell stamp)",
+   "applied": {
+    "tip_blob_written": "c7013107ab1353c5102fd806d29cd967216b7a3a"
+   },
+   "tag": "arm_M0_TIP_VERBATIM",
+   "rc": 1,
+   "wall_s": 2.4,
+   "stdout_tail": "t_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent():\n        # pairs 1 and 2 are valid and exact (0.0); pair 0 straddles the standstill step.\n        # Unmasked, or masked on the pair's second step only: (pi + 0 + 0) / 3 = 1.0472.\n        v = _yaw([STRAIGHT], [GT_START])\n>       assert v[0] == 0.0, f\"expected exactly 0.0 on the two valid pairs, got {v[0]!r}\"\nE       AssertionError: expected exactly 0.0 on the two valid pairs, got np.float64(1.0471975803375244)\nE       assert np.float64(1.0471975803375244) == 0.0\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:148: AssertionError\n________ test_standstill_jitter_is_not_a_separated_yaw_rate_difference ________\n\n    def test_standstill_jitter_is_not_a_separated_yaw_rate_difference():\n        cell = _paired_block()[\"families\"][\"lateral\"][KEY]\n        # the defect read delta pi/2 = 1.5708 rad/s, separated, from the jitter alone\n>       assert cell[\"delta\"] == 0.0 and cell[\"lo\"] == 0.0 and cell[\"hi\"] == 0.0, cell\nE       AssertionError: {'delta': 1.5708, 'lo': 1.5708, 'hi': 1.5708, 'ci95': 0.0, ...}\nE       assert (1.5708 == 0.0)\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:184: AssertionError\n_________________ test_every_paired_block_names_its_yaw_mask __________________\n\n    def test_every_paired_block_names_its_yaw_mask():\n        blk = _paired_block()\n>       assert \"pred.pair_valid AND gt.pair_valid\" in blk[\"yaw_rate_cell\"]\n                                                      ^^^^^^^^^^^^^^^^^^^^\nE       KeyError: 'yaw_rate_cell'\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:192: KeyError\n=========================== short test summary info ===========================\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_stopped_window_is_not_scored\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_pred_stopped_window_is_not_scored_even_when_gt_drives\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_jitter_window_is_not_scored_even_when_pred_drives\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_partial_window_averages_only_its_valid_pairs\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_standstill_jitter_is_not_a_separated_yaw_rate_difference\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_every_paired_block_names_its_yaw_mask\n7 failed, 4 passed in 1.71s\n",
+   "counts": {
+    "passed": 4,
+    "failure": 7,
+    "error": 0,
+    "skipped": 0
+   },
+   "cases": {
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_exact_plan_reads_zero": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_constant_turn_reads_its_analytic_yaw_rate": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_heading_cell_is_unchanged_on_the_partial_window": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_the_component_keys_are_unchanged": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask": "failure"
+   },
+   "not_passed": [
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference"
+   ]
+  },
+  "M0_YAW_LINE_ONLY": {
+   "what": "the FIXED file with only the emitted yaw line reverted to the tip's unmasked mean",
+   "applied": {
+    "\"LAT_yaw_rate_mae_radps\": yaw,": "\"LAT_yaw_rate_mae_radps\": (Pg[\"yaw_rate\"] - Gg[\"yaw_rate\"]).abs().mean(1).numpy("
+   },
+   "tag": "arm_M0_YAW_LINE_ONLY",
+   "rc": 1,
+   "wall_s": 2.4,
+   "stdout_tail": "IAL])\n>       assert abs(v[0] - 0.2) < 1e-5, f\"expected 0.2 rad/s on the one valid pair, got {v[0]!r}\"\nE       AssertionError: expected 0.2 rad/s on the one valid pair, got np.float64(2.1610615253448486)\nE       assert np.float64(1.9610615253448487) < 1e-05\nE        +  where np.float64(1.9610615253448487) = abs((np.float64(2.1610615253448486) - 0.2))\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:140: AssertionError\n___ test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent ____\n\n    def test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent():\n        # pairs 1 and 2 are valid and exact (0.0); pair 0 straddles the standstill step.\n        # Unmasked, or masked on the pair's second step only: (pi + 0 + 0) / 3 = 1.0472.\n        v = _yaw([STRAIGHT], [GT_START])\n>       assert v[0] == 0.0, f\"expected exactly 0.0 on the two valid pairs, got {v[0]!r}\"\nE       AssertionError: expected exactly 0.0 on the two valid pairs, got np.float64(1.0471975803375244)\nE       assert np.float64(1.0471975803375244) == 0.0\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:148: AssertionError\n________ test_standstill_jitter_is_not_a_separated_yaw_rate_difference ________\n\n    def test_standstill_jitter_is_not_a_separated_yaw_rate_difference():\n        cell = _paired_block()[\"families\"][\"lateral\"][KEY]\n        # the defect read delta pi/2 = 1.5708 rad/s, separated, from the jitter alone\n>       assert cell[\"delta\"] == 0.0 and cell[\"lo\"] == 0.0 and cell[\"hi\"] == 0.0, cell\nE       AssertionError: {'delta': 1.5708, 'lo': 1.5708, 'hi': 1.5708, 'ci95': 0.0, ...}\nE       assert (1.5708 == 0.0)\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:184: AssertionError\n=========================== short test summary info ===========================\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_stopped_window_is_not_scored\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_pred_stopped_window_is_not_scored_even_when_gt_drives\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_jitter_window_is_not_scored_even_when_pred_drives\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_partial_window_averages_only_its_valid_pairs\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_standstill_jitter_is_not_a_separated_yaw_rate_difference\n6 failed, 5 passed in 1.63s\n",
+   "counts": {
+    "passed": 5,
+    "failure": 6,
+    "error": 0,
+    "skipped": 0
+   },
+   "cases": {
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_exact_plan_reads_zero": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_constant_turn_reads_its_analytic_yaw_rate": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_heading_cell_is_unchanged_on_the_partial_window": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_the_component_keys_are_unchanged": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask": "passed"
+   },
+   "not_passed": [
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference"
+   ]
+  },
+  "M1_GT_ONLY_MASK": {
+   "what": "mask = gt.pair_valid only",
+   "applied": {
+    "both_pair = Pg[\"pair_valid\"] & Gg[\"pair_valid\"]": "both_pair = Gg[\"pair_valid\"]"
+   },
+   "tag": "arm_M1_GT_ONLY_MASK",
+   "rc": 1,
+   "wall_s": 2.3,
+   "stdout_tail": ".F.........                                                              [100%]\n================================== FAILURES ===================================\n_________ test_pred_stopped_window_is_not_scored_even_when_gt_drives __________\n\n    def test_pred_stopped_window_is_not_scored_even_when_gt_drives():\n        # the discriminator for a GT-ONLY mask: GT is valid on every pair here.\n        v = _yaw([JITTER], [STRAIGHT])\n>       assert math.isnan(v[0]), (\n            \"prediction jittering at standstill against a driving GT: the PREDICTION has no \"\n            \"tangent, so no pair is scored. A GT-only mask scores pi rad/s here.\")\nE       AssertionError: prediction jittering at standstill against a driving GT: the PREDICTION has no tangent, so no pair is scored. A GT-only mask scores pi rad/s here.\nE       assert False\nE        +  where False = <built-in function isnan>(np.float64(3.1415927410125732))\nE        +    where <built-in function isnan> = math.isnan\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:106: AssertionError\n=========================== short test summary info ===========================\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_pred_stopped_window_is_not_scored_even_when_gt_drives\n1 failed, 10 passed in 1.60s\n",
+   "counts": {
+    "passed": 10,
+    "failure": 1,
+    "error": 0,
+    "skipped": 0
+   },
+   "cases": {
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_exact_plan_reads_zero": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_constant_turn_reads_its_analytic_yaw_rate": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_heading_cell_is_unchanged_on_the_partial_window": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_the_component_keys_are_unchanged": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask": "passed"
+   },
+   "not_passed": [
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives"
+   ]
+  },
+  "M2_PRED_ONLY_MASK": {
+   "what": "mask = pred.pair_valid only",
+   "applied": {
+    "both_pair = Pg[\"pair_valid\"] & Gg[\"pair_valid\"]": "both_pair = Pg[\"pair_valid\"]"
+   },
+   "tag": "arm_M2_PRED_ONLY_MASK",
+   "rc": 1,
+   "wall_s": 2.3,
+   "stdout_tail": "(v[0]), (\n            \"GT jittering at standstill against a driving prediction: the GT has no tangent, \"\n            \"so no pair is scored. A pred-only mask scores pi rad/s here.\")\nE       AssertionError: GT jittering at standstill against a driving prediction: the GT has no tangent, so no pair is scored. A pred-only mask scores pi rad/s here.\nE       assert False\nE        +  where False = <built-in function isnan>(np.float64(3.1415927410125732))\nE        +    where <built-in function isnan> = math.isnan\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:114: AssertionError\n______________ test_partial_window_averages_only_its_valid_pairs ______________\n\n    def test_partial_window_averages_only_its_valid_pairs():\n        # valid pair 0 only: |0.2 - 0| = 0.2. The unmasked mean of the same three pairs is\n        # (0.2 + |0.2 - pi| + |0.2 + pi|) / 3 = 2.16106 rad/s.\n        v = _yaw([TURN], [GT_PARTIAL])\n>       assert abs(v[0] - 0.2) < 1e-5, f\"expected 0.2 rad/s on the one valid pair, got {v[0]!r}\"\nE       AssertionError: expected 0.2 rad/s on the one valid pair, got np.float64(2.1610615253448486)\nE       assert np.float64(1.9610615253448487) < 1e-05\nE        +  where np.float64(1.9610615253448487) = abs((np.float64(2.1610615253448486) - 0.2))\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:140: AssertionError\n___ test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent ____\n\n    def test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent():\n        # pairs 1 and 2 are valid and exact (0.0); pair 0 straddles the standstill step.\n        # Unmasked, or masked on the pair's second step only: (pi + 0 + 0) / 3 = 1.0472.\n        v = _yaw([STRAIGHT], [GT_START])\n>       assert v[0] == 0.0, f\"expected exactly 0.0 on the two valid pairs, got {v[0]!r}\"\nE       AssertionError: expected exactly 0.0 on the two valid pairs, got np.float64(1.0471975803375244)\nE       assert np.float64(1.0471975803375244) == 0.0\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:148: AssertionError\n=========================== short test summary info ===========================\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_jitter_window_is_not_scored_even_when_pred_drives\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_partial_window_averages_only_its_valid_pairs\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent\n3 failed, 8 passed in 1.66s\n",
+   "counts": {
+    "passed": 8,
+    "failure": 3,
+    "error": 0,
+    "skipped": 0
+   },
+   "cases": {
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_exact_plan_reads_zero": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_constant_turn_reads_its_analytic_yaw_rate": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_heading_cell_is_unchanged_on_the_partial_window": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_the_component_keys_are_unchanged": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask": "passed"
+   },
+   "not_passed": [
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs"
+   ]
+  },
+  "M3_SECOND_STEP_ONLY": {
+   "what": "mask = step validity of the pair's SECOND step only",
+   "applied": {
+    "both_pair = Pg[\"pair_valid\"] & Gg[\"pair_valid\"]": "both_pair = (Pg[\"valid\"] & Gg[\"valid\"])[:, 1:]"
+   },
+   "tag": "arm_M3_SECOND_STEP_ONLY",
+   "rc": 1,
+   "wall_s": 2.3,
+   "stdout_tail": "......F....                                                              [100%]\n================================== FAILURES ===================================\n___ test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent ____\n\n    def test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent():\n        # pairs 1 and 2 are valid and exact (0.0); pair 0 straddles the standstill step.\n        # Unmasked, or masked on the pair's second step only: (pi + 0 + 0) / 3 = 1.0472.\n        v = _yaw([STRAIGHT], [GT_START])\n>       assert v[0] == 0.0, f\"expected exactly 0.0 on the two valid pairs, got {v[0]!r}\"\nE       AssertionError: expected exactly 0.0 on the two valid pairs, got np.float64(1.0471975803375244)\nE       assert np.float64(1.0471975803375244) == 0.0\n\ntaniteval\\tests\\test_refav1_components_yaw_mask.py:148: AssertionError\n=========================== short test summary info ===========================\nFAILED taniteval/tests/test_refav1_components_yaw_mask.py::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent\n1 failed, 10 passed in 1.59s\n",
+   "counts": {
+    "passed": 10,
+    "failure": 1,
+    "error": 0,
+    "skipped": 0
+   },
+   "cases": {
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_stopped_window_is_not_scored": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_pred_stopped_window_is_not_scored_even_when_gt_drives": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_jitter_window_is_not_scored_even_when_pred_drives": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_exact_plan_reads_zero": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_constant_turn_reads_its_analytic_yaw_rate": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_partial_window_averages_only_its_valid_pairs": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent": "failure",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_heading_cell_is_unchanged_on_the_partial_window": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_the_component_keys_are_unchanged": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_standstill_jitter_is_not_a_separated_yaw_rate_difference": "passed",
+    "taniteval.tests.test_refav1_components_yaw_mask::test_every_paired_block_names_its_yaw_mask": "passed"
+   },
+   "not_passed": [
+    "taniteval.tests.test_refav1_components_yaw_mask::test_gt_pulling_away_scores_only_pairs_whose_both_steps_have_a_tangent"
+   ]
+  }
+ },
+ "verdict": {
+  "FIXED_green": true,
+  "each_mutant_red": {
+   "M0_TIP_VERBATIM": true,
+   "M0_YAW_LINE_ONLY": true,
+   "M1_GT_ONLY_MASK": true,
+   "M2_PRED_ONLY_MASK": true,
+   "M3_SECOND_STEP_ONLY": true
+  },
+  "PASS": true
+ }
+}

@@ -1,0 +1,415 @@
+{
+  "gate": "zerograd_gate",
+  "gate_version": "1",
+  "verdict": "FAIL",
+  "model_key": "model",
+  "optimizer_key": "opt",
+  "optimizer": {
+    "n_groups": 2,
+    "n_registered": 822,
+    "n_with_state_entry": 819,
+    "n_trained": 801,
+    "n_case_a_no_state": 3,
+    "n_case_b_zero_state": 18,
+    "step_max": 12478,
+    "ckpt_step": 12478
+  },
+  "alignment": {
+    "mode": "param_names",
+    "unique": true,
+    "n_alignments": 1.0,
+    "param_names_source": "ckpt",
+    "param_names_rejected": null,
+    "n_model_float_entries": 853,
+    "n_entries_excluded": 208,
+    "exclude_entries": [
+      "(.*\\.)?(running_mean|running_var|num_batches_tracked)"
+    ],
+    "note": "",
+    "n_ids_name_ambiguous": 0,
+    "n_ids_unnamed": 0
+  },
+  "offenders": [
+    {
+      "id": 328,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.r8_rc_gate"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 1,
+      "numel_hi": 1,
+      "allowed_by": null
+    }
+  ],
+  "allowed": [
+    {
+      "id": 498,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.r8_rc_to_cond.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 1536,
+      "numel_hi": 1536,
+      "allowed_by": [
+        "core\\.decoder\\.r8_rc_to_cond(\\..+)?"
+      ]
+    },
+    {
+      "id": 499,
+      "case": "a_no_state",
+      "names": [
+        "core.decoder.r8_rc_to_cond.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": null,
+      "numel_lo": 384,
+      "numel_hi": 384,
+      "allowed_by": [
+        "core\\.decoder\\.r8_rc_to_cond(\\..+)?"
+      ]
+    },
+    {
+      "id": 729,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.inp.0.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32,
+        64,
+        1,
+        1
+      ],
+      "numel_lo": 2048,
+      "numel_hi": 2048,
+      "allowed_by": [
+        "_map_hires\\.refine\\.inp\\.0(\\..+)?"
+      ]
+    },
+    {
+      "id": 730,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.inp.1.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.refine\\.inp\\.1(\\..+)?"
+      ]
+    },
+    {
+      "id": 731,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.inp.1.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.refine\\.inp\\.1(\\..+)?"
+      ]
+    },
+    {
+      "id": 732,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.conv1.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "numel_lo": 9216,
+      "numel_hi": 9216,
+      "allowed_by": [
+        "_map_hires\\.refine\\.conv1(\\..+)?"
+      ]
+    },
+    {
+      "id": 733,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.norm1.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.refine\\.norm1(\\..+)?"
+      ]
+    },
+    {
+      "id": 734,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.norm1.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.refine\\.norm1(\\..+)?"
+      ]
+    },
+    {
+      "id": 735,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.conv2.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "numel_lo": 9216,
+      "numel_hi": 9216,
+      "allowed_by": [
+        "_map_hires\\.refine\\.conv2(\\..+)?"
+      ]
+    },
+    {
+      "id": 736,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.norm2.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.refine\\.norm2(\\..+)?"
+      ]
+    },
+    {
+      "id": 737,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.norm2.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.refine\\.norm2(\\..+)?"
+      ]
+    },
+    {
+      "id": 738,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.cls.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        8,
+        32,
+        1,
+        1
+      ],
+      "numel_lo": 256,
+      "numel_hi": 256,
+      "allowed_by": [
+        "_map_hires\\.refine\\.cls(\\..+)?"
+      ]
+    },
+    {
+      "id": 739,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.refine.cls.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        8
+      ],
+      "numel_lo": 8,
+      "numel_hi": 8,
+      "allowed_by": [
+        "_map_hires\\.refine\\.cls(\\..+)?"
+      ]
+    },
+    {
+      "id": 740,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near.lift.unobserved"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.near\\.lift(\\..+)?"
+      ]
+    },
+    {
+      "id": 741,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near.lift.proj.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32,
+        2048,
+        1,
+        1
+      ],
+      "numel_lo": 65536,
+      "numel_hi": 65536,
+      "allowed_by": [
+        "_map_hires\\.near\\.lift(\\..+)?"
+      ]
+    },
+    {
+      "id": 742,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near.lift.proj.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.near\\.lift(\\..+)?"
+      ]
+    },
+    {
+      "id": 743,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near_refine.0.c1.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "numel_lo": 9216,
+      "numel_hi": 9216,
+      "allowed_by": [
+        "_map_hires\\.near_refine\\.0\\.c1(\\..+)?"
+      ]
+    },
+    {
+      "id": 744,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near_refine.0.n1.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.near_refine\\.0\\.n1(\\..+)?"
+      ]
+    },
+    {
+      "id": 745,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near_refine.0.n1.bias"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32
+      ],
+      "numel_lo": 32,
+      "numel_hi": 32,
+      "allowed_by": [
+        "_map_hires\\.near_refine\\.0\\.n1(\\..+)?"
+      ]
+    },
+    {
+      "id": 746,
+      "case": "b_zero_state",
+      "names": [
+        "_map_hires.near_refine.0.c2.weight"
+      ],
+      "ambiguous": false,
+      "state_shape": [
+        32,
+        32,
+        3,
+        3
+      ],
+      "numel_lo": 9216,
+      "numel_hi": 9216,
+      "allowed_by": [
+        "_map_hires\\.near_refine\\.0\\.c2(\\..+)?"
+      ]
+    }
+  ],
+  "unused_allow": [
+    "core\\.strategic\\.gru(\\..+)?",
+    "core\\.strategic\\.proj(\\..+)?",
+    "nav_to_str(\\..+)?",
+    "str_goal_head(\\..+)?",
+    "gstr_embed(\\..+)?",
+    "gstr_film(\\..+)?",
+    "core\\.decoder\\.ctx_to_cond(\\..+)?",
+    "core\\.route_head(\\..+)?",
+    "core\\.decoder\\.lat_to_anchor(\\..+)?",
+    "core\\.decoder\\.lon_to_anchor(\\..+)?",
+    "_map_hires\\.near\\.lift\\.proj(\\..+)?"
+  ],
+  "untrained_numel": {
+    "offending_lo": 1,
+    "offending_hi": 1,
+    "allowed_lo": 106952,
+    "allowed_hi": 106952
+  },
+  "controls": [],
+  "info": {
+    "partial_grad": []
+  },
+  "ckpt": "/home/nvidia/r8ns/nt/runs/nt-a1-s0/ckpt.pt",
+  "ckpt_size_bytes": 1560442521,
+  "load": {
+    "weights_only": true,
+    "mmap": true,
+    "earlier_load_failures": []
+  }
+}

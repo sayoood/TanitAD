@@ -1,0 +1,11 @@
+--- ../b2/rh_pilot_check.py	2026-11-20 18:46:03.773541900 +0100
++++ rh_pilot_check.py	2026-11-21 01:00:25.529069200 +0100
+@@ -20,7 +20,7 @@
+ import sys
+ 
+ R = os.environ.get("RH_ROOT", "/root/rollhist")
+-TREE = os.environ.get("RH_TREE", R + "/tree")
++TREE = os.environ.get("RH_TREE", R + "/tree_cdb")
+ for p in (TREE + "/stack", TREE + "/stack/scripts"):
+     if p not in sys.path:
+         sys.path.insert(0, p)

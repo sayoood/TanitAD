@@ -1,0 +1,24 @@
+
+STDERR
+Traceback (most recent call last):
+  File "C:\Users\Admin\v8proof_c\leadsup\tree_patch\stack\scripts\v8f_mini_train.py", line 3183, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\v8proof_c\leadsup\tree_patch\stack\scripts\v8f_mini_train.py", line 2798, in main
+    cfg = make_config(a)
+  File "C:\Users\Admin\v8proof_c\leadsup\tree_patch\stack\scripts\v8f_mini_train.py", line 367, in make_config
+    return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                           consistency=lv["consistency"], wm=lv["wm"], wm_state=a.wm_state, wm_cell_dim=a.wm_cell_dim, wm_l1_pred=a.wm_l1_pred, wm_l1_residual=a.wm_l1_residual, wm_l1_roll_k=a.wm_l1_roll_k, w_wm_roll=a.w_wm_roll, wm_l1_diag=a.wm_l1_diag, wm_l1_act=a.wm_l1_act, wm_l1_futtok_k=a.wm_l1_futtok_k, w_wm_futtok=a.w_wm_futtok, lead_sup=a.lead_sup, w_lead_sup=a.w_lead_sup, lead_hist=a.lead_hist, lead_sup_detach=a.lead_sup_detach, wm_dim=a.wm_dim, n_tok=40 if a.grid == "pool4x10" else 160,
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                           lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                           stop_aux=a.stop_aux, w_stop_aux=a.w_stop_aux)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 65, in __init__
+  File "C:\Users\Admin\v8proof_c\leadsup\tree_patch\stack\tanitad\models\v8f_mini.py", line 362, in __post_init__
+    raise ValueError("lead_sup on needs the world-model auxiliary with wm_state grid: the head reads the level-1 grid states")
+ValueError: lead_sup on needs the world-model auxiliary with wm_state grid: the head reads the level-1 grid states
+
+RC 1

@@ -1,0 +1,268 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms_missing": [],
+ "arms": {
+  "o5k4": {
+   "participation_val": 3.477,
+   "participation_heldout24": 4.871,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1234,
+     "z": 6.61,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0011,
+     "z": 0.46,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0009,
+     "z": 0.31,
+     "n": 108
+    }
+   }
+  },
+  "o9nb4": {
+   "participation_val": 2.034,
+   "participation_heldout24": 2.505,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0907,
+     "z": 4.44,
+     "n": 108
+    },
+    "2": {
+     "cos": -0.0012,
+     "z": -0.69,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0011,
+     "z": 0.6,
+     "n": 108
+    }
+   }
+  },
+  "o5k16": {
+   "participation_val": 4.265,
+   "participation_heldout24": 4.208,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1327,
+     "z": 6.93,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0028,
+     "z": 1.19,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0056,
+     "z": 2.54,
+     "n": 108
+    }
+   }
+  }
+ },
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op o5k4": {
+     "r2": 0.3062,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o9nb4": {
+     "r2": -0.1268,
+     "delta_vs_base": -0.4331,
+     "t": -8.22,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o5k16": {
+     "r2": -0.2377,
+     "delta_vs_base": -0.5439,
+     "t": -4.13,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_base": -0.1906,
+     "t": -3.06,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.4081,
+     "delta_vs_base": 0.1018,
+     "t": 2.04,
+     "n_favouring": 11,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.3062,
+     "t": -5.88,
+     "n_favouring": 1,
+     "n": 12
+    }
+   },
+   "d_ego": {
+    "z_op o5k4": {
+     "r2": 0.2157,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o9nb4": {
+     "r2": -0.1162,
+     "delta_vs_base": -0.332,
+     "t": -4.78,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "z_op o5k16": {
+     "r2": -0.4543,
+     "delta_vs_base": -0.67,
+     "t": -5.48,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_base": -0.2938,
+     "t": -3.28,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.3238,
+     "delta_vs_base": 0.1081,
+     "t": 1.36,
+     "n_favouring": 5,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.2157,
+     "t": -3.02,
+     "n_favouring": 2,
+     "n": 12
+    }
+   }
+  },
+  "ENV (in-sample)": {
+   "lead_gap_m": {
+    "z_op o5k4": {
+     "r2": -0.3495,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op o9nb4": {
+     "r2": -0.5307,
+     "delta_vs_base": -0.1811,
+     "t": -4.33,
+     "n_favouring": 7,
+     "n": 24
+    },
+    "z_op o5k16": {
+     "r2": -0.2062,
+     "delta_vs_base": 0.1434,
+     "t": 2.12,
+     "n_favouring": 16,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": 0.0064,
+     "delta_vs_base": 0.356,
+     "t": 7.36,
+     "n_favouring": 22,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.0294,
+     "delta_vs_base": 0.379,
+     "t": 8.84,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.3495,
+     "t": 7.25,
+     "n_favouring": 22,
+     "n": 24
+    }
+   },
+   "n_agents": {
+    "z_op o5k4": {
+     "r2": -0.4434,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op o9nb4": {
+     "r2": -2.9681,
+     "delta_vs_base": -2.5248,
+     "t": -7.16,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op o5k16": {
+     "r2": -0.5241,
+     "delta_vs_base": -0.0807,
+     "t": -0.41,
+     "n_favouring": 17,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": -0.2156,
+     "delta_vs_base": 0.2277,
+     "t": 3.1,
+     "n_favouring": 22,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.2754,
+     "delta_vs_base": 0.7188,
+     "t": 9.14,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.4434,
+     "t": 5.45,
+     "n_favouring": 24,
+     "n": 24
+    }
+   }
+  }
+ },
+ "kill_gate": {
+  "o9nb4": {
+   "REJECTED_by_kill_gate": true,
+   "reason": "rank fell on BOTH held-out sets",
+   "predicts_beyond_h1": false
+  },
+  "o5k16": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "predicts_beyond_h1": false
+  }
+ },
+ "verdict": "o9nb4: REJECTED \u2014 rank fell on BOTH held-out sets \u00b7 still identity at h>=2; o5k16: passes gate \u00b7 still identity at h>=2"
+}

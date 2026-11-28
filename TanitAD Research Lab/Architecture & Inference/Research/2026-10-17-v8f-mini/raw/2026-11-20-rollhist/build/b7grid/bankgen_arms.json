@@ -1,0 +1,109 @@
+{
+ "kind": "rollhist-amendment5-bankgen-arms",
+ "evidence": "MEASURED (pod)",
+ "check_file_sha256": "69ff1a0f962123fd74c66cf6a1f3cb0e016799146ca75665c58fcb3e71e8cfc6",
+ "old_check_file_sha256": "94e6e1473aa5d3e0867b816a9b1d602ecacf3785d6d5e2345c63e53374e6fc8f",
+ "bank_json_sha256": "e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf",
+ "declared_sha256": "e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf",
+ "token": "causal_g1x",
+ "kappa": "0.2",
+ "rows": {
+  "K0_new_real_bank": {
+   "problems": [],
+   "want": "PASS",
+   "as_expected": true
+  },
+  "K0_old_real_bank_reproduces_refusal": {
+   "problems": [
+    "the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'",
+    "the bank's generator record reads kappa 'none', the argv declares '0.2'",
+    "shard 0: its provenance generator record differs from bank.json's",
+    "shard 1: its provenance generator record differs from bank.json's",
+    "shard 2: its provenance generator record differs from bank.json's",
+    "shard 3: its provenance generator record differs from bank.json's"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R1_common_generator_absent": {
+   "problems": [
+    "the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'",
+    "the bank's generator record reads kappa 'none', the argv declares '0.2'",
+    "shard 0: its provenance generator record differs from bank.json's",
+    "shard 1: its provenance generator record differs from bank.json's",
+    "shard 2: its provenance generator record differs from bank.json's",
+    "shard 3: its provenance generator record differs from bank.json's"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R2_common_kappa_none": {
+   "problems": [
+    "the bank's generator record reads kappa 'none', the argv declares '0.2'",
+    "shard 0: its provenance generator record differs from bank.json's",
+    "shard 1: its provenance generator record differs from bank.json's",
+    "shard 2: its provenance generator record differs from bank.json's",
+    "shard 3: its provenance generator record differs from bank.json's"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R3_common_readout_pinned": {
+   "problems": [
+    "the bank's generator record reads readout '<unreadable generator record: readout pinned takes no gain and no path-exec>', the argv declares 'causal_g1x'",
+    "shard 0: its provenance generator record differs from bank.json's",
+    "shard 1: its provenance generator record differs from bank.json's",
+    "shard 2: its provenance generator record differs from bank.json's",
+    "shard 3: its provenance generator record differs from bank.json's"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R4_one_shard_differs": {
+   "problems": [
+    "shard 1: its provenance generator record differs from bank.json's"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R5_toplevel_only_trainer_reads_pinned": {
+   "problems": [
+    "the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'",
+    "the bank's generator record reads kappa 'none', the argv declares '0.2'",
+    "shard 0: its provenance generator record differs from bank.json's",
+    "shard 1: its provenance generator record differs from bank.json's",
+    "shard 2: its provenance generator record differs from bank.json's",
+    "shard 3: its provenance generator record differs from bank.json's",
+    "bank.json carries a top-level generator record that differs from common.generator (the trainer reads only common)"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R6_toplevel_disagrees_with_common": {
+   "problems": [
+    "bank.json carries a top-level generator record that differs from common.generator (the trainer reads only common)"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R7_wrong_declared_sha": {
+   "problems": [
+    "bank.json sha256 e5e44c0156eb != --dagger-bank-sha256 000000000000"
+   ],
+   "want": "REFUSE",
+   "as_expected": true
+  },
+  "R8_toplevel_equal_copy_passes": {
+   "problems": [],
+   "want": "PASS",
+   "as_expected": true
+  },
+  "trainer_header_generator": {
+   "acc_gain": 1.0,
+   "kappa_max": "0.2",
+   "path_exec": true,
+   "readout": "causal_g"
+  }
+ },
+ "ALL_AS_EXPECTED": true
+}

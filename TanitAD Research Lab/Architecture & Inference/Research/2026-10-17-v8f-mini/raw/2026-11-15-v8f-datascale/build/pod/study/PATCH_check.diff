@@ -1,0 +1,17 @@
+353c353
+< def join_eq_problems(Ju: dict, Jc: dict) -> list:
+---
+> def join_eq_problems(Ju: dict, Jc: dict, skip=()) -> list:
+358c358,359
+<     miss = [str(c) for c in Jc["clip"] if str(c) not in iu]
+---
+>     skip = {str(x) for x in skip}                       # pod-side patch 2026-11-16: the 60 holdout clips are in the corpus join and absent from the union BY DESIGN (card 2.2)
+>     miss = [str(c) for c in Jc["clip"] if str(c) not in iu and str(c) not in skip]
+369a371,372
+>             if str(c) in skip:
+>                 continue
+726c729,730
+<                 put("C-JOIN-EQ", join_eq_problems(dict(np.load(a.union_join, allow_pickle=True)), dict(np.load(a.corpus_join, allow_pickle=True))))
+---
+>                 put("C-JOIN-EQ", join_eq_problems(dict(np.load(a.union_join, allow_pickle=True)), dict(np.load(a.corpus_join, allow_pickle=True)),
+>                                                   skip=M.holdout_ids(a.holdout_manifest, *a.holdout) if a.holdout_manifest else ()))

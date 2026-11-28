@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+"""VDAC A5 HB memory levers (HB_MEMORY.md): the allocator env, the per-gate memory instrument, the preflight hygiene.  CPU only.  Every lever is shown NUMERICALLY NEUTRAL and every check has a mutation that goes RED.
+
+  L1 ALLOCATOR   vdac_pod.sh exports PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True into the trainer's process for HB-s0 / HB-SHUF only (a fake python prints its own environment); MODE=argv of all 7 arms
+                 equals launch_gate.vdac_argv token for token.  Mutations: the export line deleted (HB reads UNSET), the variable given to every arm (HA reads it).
+  L2 INSTRUMENT  aux_hb.MemGates writes one `preflight_mem` row per gate (peak allocated / reserved, reset between gates; None on CPU), keeps the running maximum for `gpu_mem_gb`, and an unhandled
+                 exception appends a `preflight_mem_fail` row naming the last finished gate and the frames.  The REAL preflight (HB stub) writes one row per gate.  Mutation: MemGates -> a plain dict.
+  L3 HYGIENE     aux_hb.release_aux_graph drops cap['aux'] / cap['aux_ctx'], the stale trunk-copy graph.  MEASURED on CPU through the real preflight: with the original source the copy's autograd graph from the
+                 FIRST forward is still alive when G12 (and G21) build their own (live graphs at entry 1); with the patched source it is 0.  Every gate dict of the patched preflight equals the original's.
+                 Mutations: the release before G12 deleted / before G21 deleted -> the live count reads 1 again.
+The ORIGINAL source is reconstructed from the patched one by reversing the five edits, each of which must occur exactly once."""
+from __future__ import annotations
+
+import gc
+import json
+import os
+import stat
+import subprocess
+import sys
+import tempfile
+import weakref
+from pathlib import Path
+
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+TMPROOT = os.environ.get("TMP") or tempfile.gettempdir()
+
+import torch  # noqa: E402
+
+import aux_hb as HB  # noqa: E402
+import launch_gate as LG  # noqa: E402
+import test_aux_s1_wiring as W  # noqa: E402
+import test_vdac_hb as T  # noqa: E402
+
+N = [0]
+TABLE: list = []
+
+
+def ok(cond, msg):
+    N[0] += 1
+    assert cond, msg
+
+
+def red(cond_caught, what, how):
+    N[0] += 1
+    assert cond_caught, f"MUTATION NOT CAUGHT: {what}"
+    TABLE.append((what, "RED", how))
+
+
+ARMS = ("HA-s0", "HA-s1", "HA-SHUF", "HB-s0", "HB-SHUF", "HC-s0", "HC-SHUF")
+HB_ARMS = ("HB-s0", "HB-SHUF")
+WANT = "expandable_segments:True"
+POD = (HERE / "vdac_pod.sh").read_bytes().decode("utf-8")
+bash = None
+for cand in ("C:/Program Files/Git/bin/bash.exe", "C:/Program Files/Git/usr/bin/bash.exe"):
+    if os.path.exists(cand):
+        bash = cand
+        break
+if bash is None:
+    import shutil
+    bash = shutil.which("bash")
+assert bash, "no bash"
+
+
+def sh(script, env_extra, cwd):
+    e = {k: v for k, v in os.environ.items() if k != "PYTORCH_CUDA_ALLOC_CONF"}
+    e.update(env_extra)
+    return subprocess.run([bash, script], capture_output=True, text=True, encoding="utf-8", errors="replace", env=e, cwd=cwd)
+
+
+def pod_env(script_text, arm, mode):
+    """run a (possibly mutated) copy of vdac_pod.sh with a FAKE python: it prints what the trainer's process environment would hold.  -> the value or 'UNSET'"""
+    with tempfile.TemporaryDirectory(prefix="hbmem_", dir=TMPROOT) as td:
+        td = Path(td)
+        pkg = td / "pkg"
+        pkg.mkdir()
+        (pkg / "vdac_pod.sh").write_bytes(script_text.encode("utf-8"))
+        (pkg / "scorer1p6_pod.sh").write_bytes((HERE / "scorer1p6_pod.sh").read_bytes())
+        ws = td / "ws"
+        ws.mkdir()
+        fake = td / "fakepy.sh"
+        fake.write_bytes(b'#!/bin/bash\necho "ALLOC=${PYTORCH_CUDA_ALLOC_CONF-UNSET}"\n')
+        fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
+        (ws / "teacher_env.sh").write_bytes(f'DRIVERL_EVAL_PYTHON="{fake.as_posix()}"\n'.encode())
+        r = sh((pkg / "vdac_pod.sh").as_posix(), {"ARM": arm, "MODE": mode, "VDAC_WS": ws.as_posix()}, pkg.as_posix())
+        log = {"preflight": "preflight.log", "run": "sft.log", "mutate": "mutate_exclude.log", "mutate_ego": "mutate_ego.log"}[mode]
+        p = ws / "data" / "refe_vdac" / arm.lower() / log
+        txt = p.read_text(encoding="utf-8") if p.exists() else ""
+        vals = [x[6:].strip() for x in txt.splitlines() if x.startswith("ALLOC=")]
+        return (vals[0] if vals else f"NOLOG rc={r.returncode} {r.stderr[:200]}")
+
+
+# ------------------------------------------------------------------------------------------------ L1 the allocator
+def l1():
+    for a in ARMS:                                                                    # argv == the gate's own builder, all 7 arms (the env is not argv)
+        r = sh((HERE / "vdac_pod.sh").as_posix(), {"ARM": a, "MODE": "argv", "VDAC_WS": "/workspace"}, HERE.as_posix())
+        ok(r.returncode == 0 and r.stdout.split() == LG.vdac_argv(a), f"{a}: MODE=argv equals launch_gate.vdac_argv")
+    for mode in ("preflight", "run", "mutate", "mutate_ego"):
+        for a in ARMS:
+            v = pod_env(POD, a, mode)
+            ok(v == (WANT if a in HB_ARMS else "UNSET"), f"{a} MODE={mode}: PYTORCH_CUDA_ALLOC_CONF in the trainer process = {v!r}")
+    m1 = POD.replace('if [ -n "$ALLOC" ]; then export PYTORCH_CUDA_ALLOC_CONF="$ALLOC"; fi\n', "")
+    ok(m1 != POD, "mutation 1 applies")
+    red(pod_env(m1, "HB-s0", "preflight") == "UNSET", "export line deleted: HB-s0 preflight reads UNSET", "UNSET")
+    m2 = POD.replace('ALLOC=""                  # HB', 'ALLOC="expandable_segments:True"  # HB', 1)
+    ok(m2 != POD, "mutation 2 applies")
+    red(pod_env(m2, "HA-s0", "run") == WANT, "variable given to every arm: HA-s0 run reads it", WANT)
+    m3 = POD.replace('; ALLOC="expandable_segments:True" ;;', " ;;", 1)
+    red(pod_env(m3, "HB-s0", "preflight") == "UNSET" and pod_env(m3, "HB-SHUF", "preflight") == WANT, "HB-s0 loses its ALLOC: reads UNSET (HB-SHUF still set)", "UNSET")
+    ok(torch.__version__ and True, "torch present")
+    TABLE.append(("torch version of THIS (dev-box) env; the pod's 2.7.1 is INHERITED from the pins", "INFO", torch.__version__))
+
+
+# ------------------------------------------------------------------------------------------------ L2 the instrument
+class FakeCuda:
+    """the torch.cuda counters as a scripted GPU: `peak` is what max_memory_allocated reports until reset_peak_memory_stats."""
+
+    def __init__(self):
+        self.peak, self.res, self.resets, self.script = 0, 0, 0, []
+
+    def install(self):
+        self.old = {k: getattr(torch.cuda, k) for k in ("is_available", "max_memory_allocated", "max_memory_reserved", "memory_reserved", "memory_allocated", "reset_peak_memory_stats")}
+        torch.cuda.is_available = lambda: True
+        torch.cuda.max_memory_allocated = lambda *a, **k: self.peak
+        torch.cuda.max_memory_reserved = lambda *a, **k: self.peak + 7
+        torch.cuda.memory_reserved = lambda *a, **k: self.res
+        torch.cuda.memory_allocated = lambda *a, **k: 1
+        torch.cuda.reset_peak_memory_stats = self._reset
+        return self
+
+    def _reset(self, *a, **k):
+        self.resets += 1
+        self.peak = 0
+
+    def uninstall(self):
+        for k, v in self.old.items():
+            setattr(torch.cuda, k, v)
+
+
+def l2():
+    rows: list = []
+    g = HB.MemGates(rows.append)
+    g["G1"] = {"ok": True}
+    ok(len(rows) == 1 and rows[0]["event"] == "preflight_mem" and rows[0]["after_gate"] == "G1", "one preflight_mem row per assigned gate")
+    ok(all(rows[0][k] is None for k in ("max_allocated_bytes", "max_reserved_bytes", "reserved_bytes", "allocated_bytes")), "on CPU every memory value is None (null), never 0")
+    ok(all(v["ok"] for v in g.values()) and json.loads(json.dumps({"gates": g}, default=str))["gates"] == {"G1": {"ok": True}}, "behaves as a plain dict for all(...) / json")
+    ok(g.peak_allocated == 0, "CPU: the running peak is 0, as the old torch.cuda.max_memory_allocated() read on CPU")
+    fc = FakeCuda().install()
+    try:
+        rows2: list = []
+        g2 = HB.MemGates(rows2.append)
+        base = fc.resets
+        fc.peak = 5 * 2 ** 30
+        g2["G3"] = {"ok": True}
+        fc.peak = 2 * 2 ** 30                                                      # the next gate's OWN peak (reset happened in between)
+        g2["G12"] = {"ok": True}
+        ok(fc.resets == base + 2, "the peak is reset after each gate")
+        ok([r["after_gate"] for r in rows2] == ["G3", "G12"] and [r["max_allocated_bytes"] for r in rows2] == [5 * 2 ** 30, 2 * 2 ** 30], f"each row holds its own gate's peak: {rows2}")
+        ok(rows2[0]["max_reserved_bytes"] == 5 * 2 ** 30 + 7 and "reserved_bytes" in rows2[0], "peak reserved and reserved-now are recorded")
+        ok(g2.peak_allocated == 5 * 2 ** 30, "the running maximum survives the resets (gpu_mem_gb stays the whole-preflight peak)")
+        try:
+            raise RuntimeError("CUDA out of memory (synthetic)")
+        except RuntimeError as e:
+            fr = g2.fail_row(type(e), e, e.__traceback__)
+        ok(fr["event"] == "preflight_mem_fail" and fr["after_gate"] == "G12" and "out of memory" in fr["error"] and any("l2" in f for f in fr["frames"]), f"fail row names the last gate, the error and the frames: {fr}")
+    finally:
+        fc.uninstall()
+    # the excepthook, in a real interpreter: the failure row is written AND the original traceback still prints
+    code = chr(10).join(["import sys, json", "sys.path.insert(0, %r)" % str(HERE), "import aux_hb as HB",
+                         "g = HB.MemGates(lambda r: print('ROW ' + json.dumps(r), file=sys.stderr))", "g['G2'] = {'ok': True}", "g.install_fail_hook()",
+                         "def boom():", "    raise MemoryError('synthetic oom')", "boom()"])
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    ok(r.returncode != 0 and "MemoryError: synthetic oom" in r.stderr and '"event": "preflight_mem_fail"' in r.stderr and '"after_gate": "G2"' in r.stderr and "boom" in r.stderr,
+       f"excepthook: fail row + the original traceback: rc {r.returncode} {r.stderr[-400:]}")
+    prev = sys.excepthook
+    g3 = HB.MemGates(lambda r: None)
+    p = g3.install_fail_hook()
+    ok(p is prev, "install_fail_hook returns the previous hook")
+    sys.excepthook = p
+    return True
+
+
+# ------------------------------------------------------------------------------------------------ L3 the hygiene
+class _Sentinel:
+    pass
+
+
+class _Hold(torch.autograd.Function):
+    """an op whose autograd node keeps a sentinel alive exactly as long as the GRAPH is alive"""
+    @staticmethod
+    def forward(ctx, x, box):
+        s = _Sentinel()
+        ctx.s = s
+        box.append(weakref.ref(s))
+        return x.view_as(x)                                   # same storage: G12's tap row compares data_ptr
+
+    @staticmethod
+    def backward(ctx, g):
+        return g, None
+
+
+def hygiene_unit():
+    box: list = []
+    w = torch.zeros(3, requires_grad=True)
+    out = _Hold.apply(w * 2, box)
+    cap = {"aux": (out, out), "aux_ctx": out, "sctx": torch.zeros(1)}
+    del out
+    gc.collect()
+    ok(box[0]() is not None, "control: the graph is alive while cap holds it")
+    n = HB.release_aux_graph(cap)
+    ok(n == 2 and cap["aux"] is None and cap["aux_ctx"] is None and box[0]() is None and cap["sctx"] is not None, "release_aux_graph drops exactly aux / aux_ctx and the graph dies; sctx untouched")
+    ok(HB.release_aux_graph({"sctx": 1}) == 0 and HB.release_aux_graph({"aux": None}) == 0, "release on an empty cap is a no-op")
+    # mutation: a release that does not drop the references leaves the graph alive
+    box2: list = []
+    o2 = _Hold.apply(w * 2, box2)
+    cap2 = {"aux": (o2, o2), "aux_ctx": o2}
+    del o2
+    gc.collect()
+    red(box2[0]() is not None, "no release: the graph stays alive (the stale-graph mechanism)", "alive")
+
+
+EDITS = [   # (patched text, original text): each occurs exactly once in the patched source
+    ("        gates = HB.MemGates(log)                             # a dict that appends one `preflight_mem` row (that gate's peak allocated / reserved bytes) to preflight.jsonl when each gate is assigned; None values on CPU\n"
+     "        _prev_excepthook = gates.install_fail_hook()          # an unhandled exception (an OOM) appends a `preflight_mem_fail` row: the last finished gate, the peak since, the innermost frames\n",
+     "        gates = {}\n"),
+    ("            if hb is not None:\n                HB.release_aux_graph(cap)                    # HB: the first forward's trunk-copy graph is dead weight now; drop it BEFORE G12 builds its own (HB_MEMORY.md)\n"
+     "            gates[\"G12_aux_drv_live_and_identity\"] = g12_probe(batch, aux_lv)\n",
+     "            gates[\"G12_aux_drv_live_and_identity\"] = g12_probe(batch, aux_lv)\n"),
+    ("            HB.release_aux_graph(cap)                        # G12's retained trunk-copy graph is dead weight now; G21 builds its own\n", ""),
+    ("                HB.release_aux_graph(cap)                    # G21's own retained graph is read for the last time before step_probe runs (the two-update probe and step0_equal do their own forwards)\n", ""),
+    ("round(max(gates.peak_allocated, torch.cuda.max_memory_allocated()) / 1e9, 2)", "round(torch.cuda.max_memory_allocated() / 1e9, 2)"),
+    ("        sys.excepthook = _prev_excepthook\n", ""),
+]
+SRC = T.SRC
+
+
+def original_src(src=SRC):
+    import vdac_a5_layer as A5L
+    assert tuple(A5L.REVERSALS[:len(EDITS)]) == tuple(EDITS), "vdac_a5_layer.REVERSALS must start with this table (one source of truth for the peel)"
+    for new, old in EDITS:
+        assert src.count(new) == 1, f"edit not found exactly once: {new[:80]!r}"
+        src = src.replace(new, old)
+    return src
+
+
+class LiveGraphs:
+    """wrap HBTrunk.ctx so its output carries a sentinel tied to the graph; record how many earlier ones are still alive at each entry"""
+
+    def __init__(self):
+        self.refs, self.entry = [], []
+
+    def __enter__(self):
+        self.old = HB.HBTrunk.ctx
+        me = self
+
+        def ctx(hb, model, img, calib=None, ego_term=None):
+            gc.collect()
+            me.entry.append(sum(1 for r in me.refs if r() is not None))
+            out = me.old(hb, model, img, calib, ego_term)
+            return _Hold.apply(out, me.refs) if out.requires_grad else out
+        HB.HBTrunk.ctx = ctx
+        return self
+
+    def __exit__(self, *a):
+        HB.HBTrunk.ctx = self.old
+
+
+def pre(src, tag, **kw):
+    with LiveGraphs() as lg:
+        r = W.smoke_aux(src, tempfile.mkdtemp(prefix="hbm_" + tag, dir=TMPROOT), tag=tag, extra=T.HB_ARGS, refe_cls=T.StubHBREFe, targets_cls=T.StubHBTargets, run=False, **kw)
+    gt = [x for x in r["rows"]["preflight.jsonl"] if x.get("event") == "preflight"]
+    return r, (gt[-1] if gt else None), lg
+
+
+VOLATILE = ("s_per_microbatch", "est_hours_per_epoch", "at")
+
+
+def norm_gate(row):
+    return json.loads(json.dumps({k: v for k, v in row["gates"].items()}, default=str, sort_keys=True))
+
+
+def l3():
+    hygiene_unit()
+    ok(SRC.count("HB.release_aux_graph(cap)") == 3, "three release call sites in the trainer (before G12, before G21, inside the G21 state probe)")
+    orig = original_src()
+    r0, row0, lg0 = pre(orig, "orig")
+    r1, row1, lg1 = pre(SRC, "patched")
+    ok(row0 is not None and row1 is not None and row0["verdict"] == "PASS" and row1["verdict"] == "PASS" and r0["rc_pre"] == 0 and r1["rc_pre"] == 0, f"both preflights PASS: {r0['rc_pre']} {r1['rc_pre']}")
+    g0, g1 = norm_gate(row0), norm_gate(row1)
+    ok(sorted(g0) == sorted(g1) and "G12_aux_drv_live_and_identity" in g1 and "G21_vdac_hb_copy_isolation" in g1, f"the same gates: {sorted(g0)} vs {sorted(g1)}")
+    for k in g0:
+        ok(g0[k] == g1[k], f"gate {k}: the recorded dict is identical before vs after the levers")
+    ok(g0 == g1, "the FULL gates dict is identical (every verdict and every recorded value)")
+    ok({k: v for k, v in row0.items() if k not in VOLATILE + ("gates",)} == {k: v for k, v in row1.items() if k not in VOLATILE + ("gates",)}, "the rest of the preflight row (verdict, gpu_mem_gb) is identical")
+    ok(r0["pass_json"] is not None and r1["pass_json"] is not None, "PREFLIGHT_PASS.json written by both")
+    # the doubling, MEASURED on CPU: live trunk-copy graphs when each fresh forward starts (calls: 1 = the first fwd, 2 = G12, 3 = G21)
+    ok(lg0.entry[:3] == [0, 1, 1], f"ORIGINAL: the stale graph of the previous forward is alive when G12 and G21 forward: {lg0.entry}")
+    ok(lg1.entry[:3] == [0, 0, 0], f"PATCHED: no stale graph at G12's or G21's forward: {lg1.entry}")
+    TABLE.append(("live trunk-copy graphs at each fresh forward (original / patched)", "MEASURED", f"{lg0.entry[:4]} / {lg1.entry[:4]}"))
+    # the instrument through the REAL preflight
+    rows = r1["rows"]["preflight.jsonl"]
+    mem = [x for x in rows if x.get("event") == "preflight_mem"]
+    ok([m["after_gate"] for m in mem] == list(row1["gates"]), f"one preflight_mem row per gate, in order: {[m['after_gate'] for m in mem]}")
+    ok(all(m[k] is None for m in mem for k in ("max_allocated_bytes", "max_reserved_bytes", "reserved_bytes")), "CPU rows carry null")
+    ok(not [x for x in r0["rows"]["preflight.jsonl"] if x.get("event") == "preflight_mem"], "the original writes no memory rows")
+    # mutations
+    for what, old, new in (
+        ("release before G12 deleted", "            if hb is not None:\n                HB.release_aux_graph(cap)                    # HB: the first forward's", "            if False:\n                HB.release_aux_graph(cap)                    # HB: the first forward's"),
+        ("release before G21 deleted", "            HB.release_aux_graph(cap)                        # G12's retained", "            pass                                             # G12's retained"),
+    ):
+        ok(SRC.count(old) == 1, what + ": snippet once")
+        _, _, lgm = pre(SRC.replace(old, new), "mut")
+        red(lgm.entry[:3] != [0, 0, 0], f"{what}: the stale graph is alive again {lgm.entry[:3]}", str(lgm.entry[:3]))
+    mi = "        gates = HB.MemGates(log) "
+    ok(SRC.count(mi) == 1, "MemGates line once")
+    rm, _, _ = pre(SRC.replace("HB.MemGates(log)", "dict()").replace("        _prev_excepthook = gates.install_fail_hook()", "        _prev_excepthook = sys.excepthook"), "nomem")
+    red(not [x for x in rm["rows"]["preflight.jsonl"] if x.get("event") == "preflight_mem"], "MemGates replaced by a dict: no preflight_mem rows", "0 rows")
+    red("max(gates.peak_allocated" in SRC and "max(gates.peak_allocated" not in original_src(), "gpu_mem_gb keeps the whole-preflight peak (running max) only in the patched source", "text")
+
+
+def main() -> int:
+    l1()
+    l2()
+    l3()
+    for what, res, how in TABLE:
+        print(f"{what[:90]:90s} {res:9s} {how}")
+    print(f"ZZTEST_PASS {N[0]}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

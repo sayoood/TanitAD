@@ -1,0 +1,20 @@
+# MEASURED 2026-09-05 (Rung A1, Benchmarks & Eval FlyWheel) -- CPU, zero GPU
+# The two ha0_ext kinematics in the programme, on identical (v0, a0, k0):
+#   A = tanitad.eval.echo_gate.ha0_ext -> refc_v3.kinematic_goal_extrapolation  (CLOSED FORM)
+#   B = refav1_arm.paths_from_controls -> refa_v1_plan.unicycle_paths            (DISCRETE 0.1 s)
+# B is what ha, ha0 and refav1 ha0_ext are integrated through, so B is what the
+# REF-C arm must use for cross-harness comparability.
+# torch 2.11.0+cu128; dt=0.1; horizon 6.0 s (n=60 ticks); action_units=kappa
+
+  v0_mps  a0_mps2   k0_1pm |   max_dxy_m   dxy@2s_m   dxy@6s_m
+    10.0     0.00    0.000 |    0.000000   0.000000   0.000000
+    10.0     0.50    0.010 |    0.460776   0.125153   0.460776
+     8.0    -0.40    0.030 |    0.338136   0.168056   0.338136
+    15.0     1.00   -0.020 |    1.862923   0.540642   1.862923
+     5.0     0.00    0.050 |    0.340827   0.123703   0.340827
+
+READ: exact agreement (0.000000) on the degenerate straight/constant-speed case;
+up to 1.862923 m divergence over 6 s otherwise, and 0.540642 m already at 2 s --
+the same order as the whole model margin (refcv3 os ADE ~ 0.44 m @2 s).
+=> the choice of integrator is LOAD-BEARING, not cosmetic. Pinned by
+stack/tests/test_refcv3_ha0_ext_shared.py::test_the_two_shared_kinematics_disagree_by_metres_so_the_choice_is_material

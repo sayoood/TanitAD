@@ -1,0 +1,85 @@
+{
+ "_what": "blinded adjudication pack for H-DAC-DEF-1 \u00a75",
+ "_evidence_class": "MEASURED (ours; CPU, read-only)",
+ "seed": 20260920,
+ "draw": "random.Random(SEED).sample over each stratum, sorted pool",
+ "strata_requested": {
+  "A V0 fires, P1 does not": 20,
+  "B P1 fires, P2 does not": 20,
+  "C all three fire": 10,
+  "D none fires": 10
+ },
+ "strata_available": {
+  "A V0 fires, P1 does not": 264,
+  "B P1 fires, P2 does not": 31,
+  "C all three fire": 33,
+  "D none fires": 408
+ },
+ "sheets": 60,
+ "rubric": {
+  "on-surface": "every part of the car stayed on roadway a car may drive on \u2014 including paint, markings and crosswalks painted ON the roadway",
+  "over-boundary": "some part of the car crossed onto a surface that is not roadway \u2014 pavement, verge, traffic island, or past a raised kerb",
+  "cannot-tell": "the images do not show the surface under the relevant part of the car well enough to decide"
+ },
+ "map_is_not_shown": "the class panel would BE the verdict (brown = P2 fires, yellow/blue = V0 fires and P1 does not) and judging the instrument from its own input is circular",
+ "projection_controls": {
+  "C1 t0 footprint at the image bottom": {
+   "front_corner_rows": [
+    449.7,
+    455.2
+   ],
+   "image_height": 416,
+   "bar": "every front corner row >= 0.75 x H = 312",
+   "pass": true
+  },
+  "C2 far ground point on the horizon row": {
+   "rows_at_x_m": {
+    "10": 285.8,
+    "20": 244.8,
+    "30": 232.9,
+    "45": 225.3,
+    "60": 221.7,
+    "infinity": 211.2
+   },
+   "delta_60m_vs_infinity_px": 10.5,
+   "bar": "monotone from below and |row(60) - horizon| <= 20.0 px",
+   "pass": true
+  },
+  "C3 the declared 120 deg field reaches both edges": {
+   "col_at_minus_60deg": -0.5,
+   "col_at_plus_60deg": 1023.5,
+   "width": 1024,
+   "bar": "the declared 120 deg field puts +-60 deg within 1 px of columns 0 and W-1",
+   "pass": true
+  },
+  "C4 +y is LEFT, asymmetry within the mount's own bound": {
+   "col_y_plus_5": 419.7,
+   "col_y_minus_5": 591.3,
+   "centre_col": 511.5,
+   "asymmetry_px": 12.01,
+   "mount_yaw_deg": -0.585,
+   "mount_lateral_offset_m": -0.0596,
+   "bar": "+y LEFT of centre, and asymmetry <= the bound this mount's own yaw and lateral offset imply (13.0 px)",
+   "pass": true
+  },
+  "all_pass": true
+ },
+ "tick0_control_with_amendment_B": {
+  "windows_failing_tick0_V0": 63,
+  "under_P1": 24,
+  "under_P2": 12,
+  "excluded_by_amendment_B (t0 cell carries NO road class)": 12,
+  "excluded_share_of_736": 0.0163,
+  "cap": 0.05,
+  "within_cap": true,
+  "remainder_after_exclusion": 51
+ },
+ "map_absent_control": {
+  "bar": "with no map the term must not score at all (the multiplier defaults to 1)",
+  "reads": null,
+  "pass": true
+ },
+ "key_sha256": "3ed0f10add9aaf1a76d4f4c4b45c15645979b3f5c54030e585d8ebe83e06d44a",
+ "key_location": "OUTSIDE the repo, held by the DataFlyWheel until the labels are landed",
+ "key_is_reproducible": "re-running this script with the same seed rebuilds it exactly"
+}

@@ -1,0 +1,26 @@
+R1 RED: the reach bar 0.01 becomes 0.0 | tests -k 'reach_control_one_percent' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.14s
+R2 RED: an unreached dose still reads its rules | tests -k 'unreached_reads_no_rule' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.20s
+R3 RED: LEAK-BORNE does not override the label | tests -k 'leak_borne_overrides' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+R4 RED: the ADE6 / speed / along-track branch is skipped | tests -k 'outcome_labels_every_branch' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+R5 RED: the headline omits a dominant dose | tests -k 'headline_names_the_dose' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+R6 RED: the bare arm copies --smooth off | tests -k 'flags_copy_the_banked_base' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+R7 RED: the M1 bind rate counts all ticks | tests -k 'instruments_known_values' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+R8 RED: M1's pair threshold 5.2 becomes 3.0 | tests -k 'm1_tick_definition or instruments_known' | clean rc 0, mutated rc 1 | 1 failed, 11 deselected in 0.11s
+R9 RED: reach needs only one seed | tests -k 'reach_control_one_percent' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+R10 RED: the contrast pairs RILF against C0 | tests -k 'ka_null_runs_green' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 1.75s
+R11 RED: P is read from the logged scene | tests -k 'ka_llr_runs_green' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 1.82s
+R12 RED: the tool sha control is skipped | tests -k 'production_controls_pass' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 8.39s
+R13 RED: the cap tick control is skipped | tests -k 'tick_controls_catch' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.12s
+R14 RED: the kappa bound tick control is skipped | tests -k 'tick_controls_catch' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.12s
+R15 RED: ka-llr feeds the logged arrays as the reindexed role | tests -k 'ka_llr_runs_green' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 1.83s
+R16 RED: the two-dose disclosure is dropped | tests -k 'headline_names_the_dose' | clean rc 0, mutated rc 1 | 1 failed, 12 deselected in 0.11s
+P1 RED: the kappa control is skipped | tests -k 'rollout_check_refuses' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.13s
+P2 RED: the LLR sha control is skipped | tests -k 'rollout_check_refuses' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.14s
+P3 RED: the banked checkpoint sha is not compared | tests -k 'sha_mismatch_fails' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.14s
+P4 RED: an absent checkpoint is not recorded | tests -k 'absent_checkpoint' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.13s
+P5 RED: the nested floor layout is ignored | tests -k 'floor_info_layouts' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.13s
+C1 RED: the 075 rows carry kappa 0.5 | tests -k 'dry_run_lists' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.90s
+C2 RED: the tree tool is not compared with the pin | tests -k 'differs_from_the_pinned' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 2.10s
+C3 RED: an absent build pins file is tolerated | tests -k 'refuses_without_the_patched' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 0.68s
+C4 RED: a missing patched_tool key is tolerated | tests -k 'refuses_without_the_patched' | clean rc 0, mutated rc 1 | 1 failed, 7 deselected in 1.37s
+MUTATIONS ALL RED: 25 of 25

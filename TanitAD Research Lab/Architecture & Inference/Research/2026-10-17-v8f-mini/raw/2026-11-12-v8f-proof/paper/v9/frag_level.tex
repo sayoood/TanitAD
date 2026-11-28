@@ -1,0 +1,22 @@
+\subsection{A level term inside the consistency loss}\label{sec:level}
+The dose ladder of \cref{sec:dose} leaves a gap: the weight that answers the ego's action at the kinematic size (0.001) loses the level of the rollout read. Note ADD37\_N6, frozen before the term was built and before any of its arms, anchors the reference rollout of the consistency term to the label (a level term, training only, weight \texttt{--w-act-level}); arms RLVa (consistency 0.001, level 0.001), RLVb (0.001 and 0.01) and a third dose point of the consistency weight alone, RLAh (0.0003, no level term), at bases 0 and 1. The register row for this read is in preparation (register row 92); the numbers below are read from the three name files of the level study (\texttt{actlevel/read/NAMES\_RLVa.json}, \texttt{NAMES\_RLVb.json}, \texttt{NAMES\_RLAh.json}) and are \tier{T0} (imagination diagnostics on logged frames; never driving performance), two bases, one training run per base and arm, controls c1 to c5 passing on every dump. The family and headway reads of these arms are not part of this version.
+
+\begin{table*}[!tp]
+\centering
+\caption{\textbf{The level term and the third dose point} (\tier{T0}; bases 0 and 1, two-level interval; response = slope at 2.0\,s, 1 is the kinematic size; level ratio = rollout MAE over that of the control RLFT at base 0 / base 1, bar 1.15; H1 diff = level H1 of the arm minus that of RLFT).}
+\label{tab:level}
+\scriptsize
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{9mm}>{\raggedright\arraybackslash}p{11mm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{15mm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Arm & Weights (cons., level) & Response & Ratio & Name \\
+\midrule
+RLVa & 0.001, 0.001 & $+0.9034$ $[+0.8554,+0.9535]$ & 1.1060 / 1.1977 & LEVEL-TERM-LOSES-LEVEL-0.001 \\
+RLVb & 0.001, 0.01 & $-0.4032$ $[-0.5492,-0.2681]$ & 1.0395 / 1.0525 & LEVEL-TERM-LOSES-RESPONSE-0.01 \\
+RLAh & 0.0003, none & $+0.9199$ $[+0.8819,+0.9602]$ & 1.2365 / 1.2701 & DOSE-BREAKS-AT-0.0003 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\paragraph{What was read.} At level weight 0.001 the response is kept and the level bar is missed at base 1 (ratio 1.1977 against 1.15; base 0 passes at 1.1060); the pair reads RL-RESPONDS-BETTER against both the control and the low weight, H1 difference $-0.0322$ $[-0.0948,+0.0237]$, and the same consistency weight without the level term read ratios of 1.710 and 1.252 (row 86). At level weight 0.01 the level is held (ratios 1.0395 and 1.0525, H1 difference $-0.0101$ $[-0.0627,+0.0583]$) and the response is gone (the reader names IMAG-DEAF); the pair against the low weight names nothing. Both weights lose, by the rule of the note, one the level and one the response (LEVEL-TERM-LOSES-LEVEL-0.001, LEVEL-TERM-LOSES-RESPONSE-0.01), and the response is lost somewhere inside one decade of the level weight. The third dose point of the consistency weight alone responds ($+0.9199$) and breaks the level at both bases (ratios 1.2365 and 1.2701, H1 difference $-0.0513$ $[-0.0931,-0.0121]$; DOSE-BREAKS-AT-0.0003), so the usable range of that weight alone is below 0.0003.
+
+\paragraph{What follows, and what is not known.} Note ADD37\_N7 was frozen after these early reads were seen, and says so: two interior level weights (0.002 and 0.004, consistency weight 0.001, bases 0 and 1) are a post-hoc choice, each arm is a candidate if it responds, keeps the level and beats the low weight in the pair, and is stated as a result only after the same arm reads the same name at the bases of seeds 2 and 3 with no bar moved. These two arms are in training; no number of them exists in this version. If neither works, the next levers are named in order: a level calibration outside the predictor fitted on training clips, then a change of the action path (an architecture change, a card for the PI). The low consistency weight stays the arm of record.

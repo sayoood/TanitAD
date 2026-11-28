@@ -1,0 +1,283 @@
+diff --git a/../tree_before/tools/backlog_drift.py b/../code/tools/backlog_drift.py
+index 0ecd467..e3fde41 100644
+--- a/../tree_before/tools/backlog_drift.py
++++ b/../code/tools/backlog_drift.py
+@@ -35,6 +35,31 @@ not an opinion about whether a row *feels* finished.
+                   while the row id is not, and the row does not declare done.
+                   => the operating standard's named stale-blocker class: a blocker
+                   note that is not revisited when the thing it blocks on lands.
++  CLOSED-LATER    (BACKLOG-HYGIENE-2, 2026-10-22) the row LEADS with an open-type
++                  status (`**NEXT ...**`, `**QUEUED**`, `**ACTIVE**`, `**BUILDING**`)
++                  and LATER, in the same row, a DATED bold span closes it
++                  (`**DONE 2026-10-19: ...**`, `**CLOSED 2026-10-20 ...**`,
++                  `**UPDATE 2026-10-19: superseded by X**`). A puller scans the
++                  LEAD, so the row reads as live work while its own tail says the
++                  work is finished -- the same contradiction as DONE-BUT-OPEN, in
++                  the position where it is hardest to see. MEASURED 2026-10-22 on
++                  tip 1664143b: 25 live rows (20 dated DONE/CLOSED/CANCELLED, 2
++                  `UPDATE <date>: superseded`, 2 BLOCKER rows closed by a dated
++                  RESOLVED, 1 qualified `READ 1 DONE`). See `later_closure` for
++                  the exact grammar, and for the shapes it deliberately REFUSES
++                  (undated words, `UPDATE <date>: SEALED`, a qualified DONE that
++                  something follows).
++
++THE ROW FAMILY THE TOOL COULD NOT SEE (BACKLOG-HYGIENE-2, MEASURED 2026-10-22)
++===============================================================================
++`TABLE_ROW` reads ids shaped `A11` / `R4`. The ~80 rows added from 2026-10-17
++(`| EP-R1UB | ... |`, `| L2-FRESH-STEPA | ... |`, `| P7.2-ENSEMBLE | ... |`) were not
++parsed AT ALL: the tool never classified them, so it could neither read them OPEN
++nor catch their closure -- and the `UNPARSED` guard covered bullets only. Of the 91
++rows it reported OPEN at that tip, none came from this family. `NAMED_TABLE_ROW`
++reads them, but only inside an ITEM table (header `| # |` or `| id |`), because an
++indented measurement table elsewhere in the file has first cells like `G-LIVE`; and
++an item-table row that NO id regex reads is now counted and printed as UNPARSED.
+   CLOSED-ELSEWHERE (INFO, never fails) an id closed by a LATER separate line
+                   (`- **R8 -- STRUCK 2026-09-03**`) rather than a struck id. The
+                   bullet sections use this convention deliberately and it does
+@@ -139,6 +164,29 @@ TABLE_ROW = re.compile(
+     r"(?P<id>[A-Z]\d+[a-z]?)"
+     r"\s*(?P<s3>~~)?\s*(?:\*\*)?\s*(?P<s4>~~)?\s*\|")
+ 
++#: ⛔ THE NAMED-ID TABLE FAMILY -- `| EP-R1UB | **NEXT, CPU ...** ... |`.
++#: MEASURED 2026-10-22 (BACKLOG-HYGIENE-2): `TABLE_ROW` above takes only a
++#: letter-plus-digits id (`A11`, `R4`), so the ~80 rows the Master Mind added from
++#: 2026-10-17 on -- ids like `EP-R1UB`, `L2-FRESH-STEPA`, `P7.2-ENSEMBLE`,
++#: `SO-A16` -- were NOT PARSED AT ALL. The tool did not read them as open and
++#: miss their closure; it never saw them. Of the 91 rows it called OPEN, none were
++#: from this family. ⭐ That is why a row could say `**DONE 2026-10-19**` in its
++#: own text for days: the one check that exists for exactly that was blind to the
++#: file's newest and fastest-growing section.
++#: Gated on `in_item_table` (a `| # | item |` / `| id | item |` header seen, no
++#: blank line since) because indented measurement tables elsewhere in the file
++#: have first cells like `G-LIVE` and `**G-SUITE**`, which are NOT backlog items.
++NAMED_TABLE_ROW = re.compile(
++    r"^\|\s*(?P<s1>~~)?\s*(?:\*\*)?\s*(?P<s2>~~)?\s*"
++    r"(?P<id>[A-Z][A-Z0-9]*(?:[-.][A-Za-z0-9]+)+)"
++    r"\s*(?P<s3>~~)?\s*(?:\*\*)?\s*(?P<s4>~~)?\s*\|")
++
++#: First cell of a header row that opens an ITEM table.
++ITEM_TABLE_HEADERS = ("#", "id")
++
++#: A separator row `|---|---|` / `|:--|--:|`.
++TABLE_SEPARATOR = re.compile(r"^\|[\s:|\-]+\|?\s*$")
++
+ #: A bullet item row: `- **R26 -- ...`, and `- **R12, R22 -- STRUCK**: ...`
+ #: (two ids in one bullet -- real, and a parser that takes only the first
+ #: silently drops half the closures).
+@@ -217,6 +265,113 @@ def declares_done(body: str, bold_src: str | None = None) -> bool:
+                for s in BOLD.findall(bold_src if bold_src is not None else body))
+ 
+ 
++#: ---------------------------------------------------------------------------
++#: CLOSED-LATER grammar (BACKLOG-HYGIENE-2, 2026-10-22)
++#: ---------------------------------------------------------------------------
++#: A row that LEADS with one of these is still presenting itself as pending work.
++#: ⚠️ Deliberately a LABEL selector, not a firing condition: firing needs a LATER
++#: DATED closure span (below), so a wide lead set cannot create a false alarm. It
++#: only chooses between `CLOSED-LATER` ("the lead lies") and `DONE-BUT-OPEN` ("the
++#: row is honest but its id is not struck").
++OPEN_LEAD_WORDS = ("next", "fix", "queued", "active", "open", "scheduled", "building",
++                   "running", "proposed", "registered", "launch", "draft",
++                   "conditional", "blocked", "blocker", "planned", "pending")
++
++#: First words that CLOSE a row when they open a DATED bold span. The Master Mind's
++#: list (DONE CLOSED SUPERSEDED STRUCK DISCHARGED WITHDRAWN) plus the three
++#: `DONE_WORDS` already treated as closures (completed, cleared, retracted) and
++#: `cancelled`, which a live row uses (`NAVTEST-HEADBANK`). ⛔ NOT `resolved` /
++#: `unblocked`: those end a BLOCKER, not a row (`HNSCREEN-TOKEN-NAMES` is
++#: `UNBLOCKED` and still has a fix to land), and `D-STEER-INTERFACE-RESOLVED` is a
++#: decision id that already tripped the substring matcher once.
++CLOSURE_HEAD_WORDS = DONE_WORDS + ("withdrawn", "cancelled", "canceled")
++
++_CLOSE_ALT = "|".join(sorted(CLOSURE_HEAD_WORDS, key=len, reverse=True))
++_DATE = r"\d{4}-\d{2}-\d{2}"
++
++#: (1) `**DONE 2026-10-19: ...**`, `**CLOSED 2026-10-20, NOT BUILT.**`. The closure
++#: word must be the span's FIRST word and a full date must follow within 24
++#: characters. ⛔ The date is what separates a verdict from prose such as
++#: `**DONE-marker discipline**` (live row F2's phrase); the `(?![-_][a-z])`
++#: refuses the compound outright, so the date is a second lock, not the only one.
++_DATED_CLOSURE = re.compile(
++    r"(?:%s)\b(?![-_][a-z])[^0-9]{0,24}?%s" % (_CLOSE_ALT, _DATE))
++
++#: (2) `**UPDATE 2026-10-19: superseded by PRIVGEOM-SAFE**` -- the row's own update
++#: note retiring it. A date AND a closure word right after the colon: an update
++#: such as `**UPDATE 2026-10-19: SEALED**` records progress, not closure.
++_UPDATE_CLOSURE = re.compile(
++    r"update\s+%s(?:\s+[\d:~z]+)?\s*[:\-]\s*(?:%s)\b(?![-_][a-z])"
++    % (_DATE, _CLOSE_ALT))
++
++#: (3) A QUALIFIED done: `**READ 1 DONE 2026-10-19 20:12: O3**`, `**STEP 1 DONE ...**`,
++#: `**S1b DONE ...**`. ⛔ THIS SHAPE IS A PARTIAL-PROGRESS MARKER, NOT A CLOSURE, in
++#: every multi-step live row (`SEL-RANK` STEP 1, `UNSEEN-STRATUM-DATA` S1/S1b,
++#: `P6-HN` Step 0, `R0E-PICK` B3/B6/B7, `PAPER-720` C3/C4/C11). Counting it
++#: unconditionally would close five live rows that have work left.
++#: It is accepted ONLY as the row's LAST bold span of a row that LEADS open-type:
++#: the rows are append-only, so a qualified DONE that nothing emphasised follows,
++#: under a lead that still says NEXT, is the row's final word -- `L2-FRESH-STEPA`
++#: (`NEXT` ... `READ 1 DONE ... O3`; its successor `UNSEEN-STRATUM-DATA` is a row
++#: of its own). A qualified DONE with a later open marker stays OPEN.
++_QUALIFIED_DONE = re.compile(r"[a-z]{1,12}\s*\d+[a-z]?\s+(?:done|closed)\b\s+%s" % _DATE)
++
++#: (4) A BLOCKER row's own resolution: `**BLOCKER (needs the PI ...)**` ... later
++#: `**RESOLVED 2026-10-19 19:15:**` (`D-SPACE`, `L2-STEPB-GATE`). `resolved` is a
++#: closure word ONLY under a `blocker` / `blocked` lead: the row IS the blocker,
++#: so its resolution closes the row. ⛔ Anywhere else it is a decision id
++#: (`D-STEER-INTERFACE-RESOLVED`) or the end of a sub-blocker on a row with work
++#: left, so it is deliberately NOT in `CLOSURE_HEAD_WORDS`.
++BLOCKER_LEADS = ("blocker", "blocked")
++_DATED_RESOLVED = re.compile(r"resolved\b(?![-_][a-z])[^0-9]{0,24}?%s" % _DATE)
++
++
++#: Like `LEAD_NOISE` but KEEPS `*`: the opening `**` is the thing being tested.
++_LEAD_KEEP_STARS = re.compile(r"^[^0-9A-Za-z*]+")
++
++
++def lead_status(body: str) -> str:
++    """The first word of the status span the row OPENS with, lower-cased, or "".
++
++    Only a row whose item cell BEGINS with an emphasised span has a lead status:
++    `| X | **NEXT, CPU** ...` -> "next". A struck or plain title
++    (`~~Rescue ...~~ **DONE ...**`, `Re-verify ...`) has none, and stays on the
++    `DONE-BUT-OPEN` path it always had.
++    """
++    t = _LEAD_KEEP_STARS.sub("", body.strip())
++    if not t.startswith("**"):
++        return ""
++    m = BOLD.match(t)
++    if not m:
++        return ""
++    span = LEAD_NOISE.sub("", _norm(m.group(1)))
++    return re.split(r"[^0-9a-z]+", span, maxsplit=1)[0] if span else ""
++
++
++def later_closure(body: str) -> str | None:
++    """Does a row that LEADS open-type later close itself in a DATED bold span?
++
++    Returns the shape that fired (`dated`, `update`, `qualified`, `resolved`) or
++    None.
++    Never fires on a row whose lead is not open-type, and never on the lead span.
++    """
++    if lead_status(body) not in OPEN_LEAD_WORDS:
++        return None
++    t = _LEAD_KEEP_STARS.sub("", body.strip())
++    spans = [LEAD_NOISE.sub("", _norm(s)) for s in BOLD.findall(t)]
++    blocker = lead_status(body) in BLOCKER_LEADS
++    for i, sp in enumerate(spans[1:], 1):           # spans[0] IS the lead
++        if _DATED_CLOSURE.match(sp):
++            return "dated"
++        if blocker and _DATED_RESOLVED.match(sp):
++            return "resolved"
++        if _UPDATE_CLOSURE.match(sp):
++            return "update"
++        if i == len(spans) - 1 and _QUALIFIED_DONE.match(sp):
++            return "qualified"
++    return None
++
++
+ def has_struck_blocker(cells: list[str]) -> bool:
+     """A struck-through blocker in a cell that is neither the id nor the item.
+ 
+@@ -233,10 +388,10 @@ def has_struck_blocker(cells: list[str]) -> bool:
+ 
+ class Row:
+     __slots__ = ("rid", "line_no", "kind", "section", "text", "id_struck",
+-                 "body_done", "blocker_struck")
++                 "body_done", "blocker_struck", "closed_later")
+ 
+     def __init__(self, rid, line_no, kind, section, text, id_struck,
+-                 body_done, blocker_struck):
++                 body_done, blocker_struck, closed_later=None):
+         self.rid = rid
+         self.line_no = line_no
+         self.kind = kind
+@@ -245,6 +400,8 @@ class Row:
+         self.id_struck = id_struck
+         self.body_done = body_done
+         self.blocker_struck = blocker_struck
++        #: None, or the shape of the later dated closure (`later_closure`).
++        self.closed_later = closed_later
+ 
+ 
+ #: A heading that is itself an ITEM rather than a container -- the live file
+@@ -269,8 +426,11 @@ def parse(text: str) -> tuple[list[Row], list[str], list[dict], list[int]]:
+     blocks: list[dict] = []
+     missed: list[int] = []
+     section = "(preamble)"
++    in_item_table = False
+     for n, line in enumerate(text.splitlines(), 1):
+         s = line.strip()
++        if not s.startswith("|"):
++            in_item_table = False               # a blank/prose line ends a table
+         if s.startswith("#"):
+             raw = s.lstrip("#").strip()
+             section = ascii_only(raw)
+@@ -280,13 +440,30 @@ def parse(text: str) -> tuple[list[Row], list[str], list[dict], list[int]]:
+                 blocks.append({"line": n, "title": section[:120],
+                                "closed": bool(HEADING_CLOSED.search(raw))})
+             continue
++        if s.startswith("|"):
++            first = (s.split("|") + ["", ""])[1].strip().lower()
++            if first in ITEM_TABLE_HEADERS:
++                in_item_table = True            # `| # | item |` / `| id | item |`
++                continue
+         m = TABLE_ROW.match(s)
++        named = False
++        if not m and in_item_table:
++            m = NAMED_TABLE_ROW.match(s)
++            named = bool(m)
+         if m:
+             cells = [c for c in s.split("|")]
+             struck = any(m.group(g) for g in ("s1", "s2", "s3", "s4"))
+             body = "|".join(cells[2:])
+-            rows.append(Row(m.group("id"), n, "table", section, s, bool(struck),
+-                            declares_done(body), has_struck_blocker(cells)))
++            rows.append(Row(m.group("id"), n, "named" if named else "table",
++                            section, s, bool(struck), declares_done(body),
++                            has_struck_blocker(cells), later_closure(body)))
++            continue
++        if in_item_table and s.startswith("|") and not TABLE_SEPARATOR.match(s):
++            # ⛔ A ROW OF AN ITEM TABLE THAT NO ID REGEX READS. Counted and printed,
++            # never swallowed -- the same anti-silent-miss guard the bullet family
++            # has, which the table family LACKED and which is how ~80 named rows
++            # went unread for five days.
++            missed.append(n)
+             continue
+         m = BULLET_ROW.match(s)
+         if m:
+@@ -331,6 +508,8 @@ def classify(rows: list[Row]) -> list[dict]:
+             verdict = "CLOSED"
+         elif closed_elsewhere:
+             verdict = "CLOSED-ELSEWHERE"
++        elif first.closed_later:
++            verdict = "CLOSED-LATER"
+         elif self_done:
+             verdict = "DONE-BUT-OPEN"
+         elif blocker_struck:
+@@ -345,6 +524,7 @@ def classify(rows: list[Row]) -> list[dict]:
+             "section": first.section,
+             "verdict": verdict,
+             "occurrences": [o.line_no for o in occ],
++            "closed_later_shape": first.closed_later,
+             "excerpt": ascii_only(first.text)[:200],
+         })
+     return out
+@@ -453,7 +633,7 @@ def main(argv=None) -> int:
+     # ---- report ------------------------------------------------------------
+     ctx = git_context(repo, a.backlog)
+     drift = [v for v in verdicts
+-             if v["verdict"] in ("DONE-BUT-OPEN", "STALE-BLOCKER")]
++             if v["verdict"] in ("DONE-BUT-OPEN", "STALE-BLOCKER", "CLOSED-LATER")]
+ 
+     if a.json:
+         print(json.dumps({"backlog": a.backlog, "rows": n, "counts": counts,
+@@ -507,6 +687,9 @@ def main(argv=None) -> int:
+         print("  ... and %d more" % (len(drift) - a.max))
+     print()
+     print("=> DONE-BUT-OPEN : strike the id (~~A11~~) and keep the evidence.")
++    print("=> CLOSED-LATER  : the row LEADS open (NEXT/BUILDING/...) but a dated span")
++    print("   later in it closes it. Strike the id and keep the evidence -- a puller")
++    print("   reads the lead, not the tail.")
+     print("=> STALE-BLOCKER : the blocker cleared and the row was not revisited;")
+     print("   re-state what is still open, or strike it. Do not leave it reading")
+     print("   as a live gap.")

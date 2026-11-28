@@ -1,0 +1,158 @@
+{
+ "what": "G0 summary: overlap of the L1 fit universe with the two manifests of what P2-s0 trained on (MEASURED, ours)",
+ "fit_universe": {
+  "tokens": 1705,
+  "logs": 24,
+  "heldout_logs_listed": 24,
+  "universe_logs_equal_heldout_logs": true,
+  "label_sets_of_older_fan": 3137,
+  "label_set_tokens_subset_of_universe": true
+ },
+ "sample400": {
+  "n": 400,
+  "seed": 20260927,
+  "rule": "stepA.sample_stratified (proportional, largest remainder, rng=default_rng(seed))",
+  "tokens_sha256": "211e26406f5b4eb083ae38b1c73839826d560042cd75ccf9ff6656262e7c0ffd",
+  "logs": 24
+ },
+ "manifest_A_pdm_finetune(P2's PDM-label supervision)": {
+  "served_train_sets": 174912,
+  "train_tokens": 99495,
+  "train_logs": 1167,
+  "tokens_without_table_log": 0,
+  "served_sets_in_heldout_logs_(carved_out)": 2924,
+  "heldout_log_sets_first_labelled_before_main_run_last_reload": 2412,
+  "overlap_universe": {
+   "passed": true,
+   "logs_overlap": 0,
+   "tokens_overlap": 0,
+   "n_fit_tokens": 1705,
+   "n_fit_logs": 24,
+   "overlap_log_examples": [],
+   "overlap_token_examples": []
+  },
+  "overlap_sample400": {
+   "passed": true,
+   "logs_overlap": 0,
+   "tokens_overlap": 0,
+   "n_fit_tokens": 400,
+   "n_fit_logs": 24,
+   "overlap_log_examples": [],
+   "overlap_token_examples": []
+  }
+ },
+ "manifest_B_final_run_bank(P2's trajectory loss + the warm-start base's scorer targets)": {
+  "tokens": 103037,
+  "logs": 1191,
+  "per_member": {
+   "train_grow/targets_rank0.jsonl": {
+    "rows": 103037,
+    "rows_without_token_or_log": 0,
+    "bytes": 350447321,
+    "heldout_rows": 1705,
+    "heldout_tokens": 1705
+   },
+   "train_grow/targets_rank1.jsonl": {
+    "rows": 86851,
+    "rows_without_token_or_log": 0,
+    "bytes": 301842199,
+    "heldout_rows": 1432,
+    "heldout_tokens": 1432
+   },
+   "train_grow/scorer_targets.jsonl": {
+    "rows": 1133242,
+    "rows_without_token_or_log": 0,
+    "bytes": 3046663455,
+    "heldout_rows": 18755,
+    "heldout_tokens": 1705
+   },
+   "train_grow/scorer_targets_rank1.jsonl": {
+    "rows": 955196,
+    "rows_without_token_or_log": 0,
+    "bytes": 2629595739,
+    "heldout_rows": 15752,
+    "heldout_tokens": 1432
+   }
+  },
+  "overlap_universe": {
+   "passed": false,
+   "logs_overlap": 24,
+   "tokens_overlap": 1705,
+   "n_fit_tokens": 1705,
+   "n_fit_logs": 24,
+   "overlap_log_examples": [
+    "2021.06.09.14.50.36_veh-26_00832_00905",
+    "2021.06.09.18.23.43_veh-35_03110_03179",
+    "2021.06.14.14.03.45_veh-38_01624_01811"
+   ],
+   "overlap_token_examples": [
+    "0010ad0f3e78523a",
+    "003ee00ce34d5541",
+    "006134f98f3d5506"
+   ]
+  },
+  "overlap_sample400": {
+   "passed": false,
+   "logs_overlap": 24,
+   "tokens_overlap": 400,
+   "n_fit_tokens": 400,
+   "n_fit_logs": 24,
+   "overlap_log_examples": [
+    "2021.06.09.14.50.36_veh-26_00832_00905",
+    "2021.06.09.18.23.43_veh-35_03110_03179",
+    "2021.06.14.14.03.45_veh-38_01624_01811"
+   ],
+   "overlap_token_examples": [
+    "0010ad0f3e78523a",
+    "01138e6be45a5008",
+    "01d7b6f5e109504e"
+   ]
+  }
+ },
+ "control_deliberate_overlap": {
+  "passed": false,
+  "logs_overlap": 1,
+  "tokens_overlap": 1,
+  "n_fit_tokens": 400,
+  "n_fit_logs": 24,
+  "overlap_log_examples": [
+   "2021.06.14.17.26.26_veh-38_05455_05749"
+  ],
+  "overlap_token_examples": [
+   "0010ad0f3e78523a"
+  ]
+ },
+ "inputs": {
+  "heldout-logs": {
+   "path": "C:/Users/Admin/par18/l1prep/work/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/splits/sft_heldout_logs.txt",
+   "sha256": "efc32a60bb4c8770a5c44eddd9e1c7683f77b85d23bacf9aaf2901e2b69f097c"
+  },
+  "heldout-index": {
+   "path": "D:/Projects/TanitAD-artifacts/p2_heldout_table_full_2026-10-18/heldout_sets_index.npz",
+   "sha256": "a40278fbe65146f7d0fa34e21eebd85b9f881769ba7fd7b860f1dae477031dd3"
+  },
+  "served": {
+   "path": "C:/Users/Admin/par18/l1prep/work/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/rl_pool/served_keys.tsv.gz",
+   "sha256": "a9cbdf29a7cd12dab2afae2ab0c65ce09524d98e16e2c689aa5ea9372c962afc"
+  },
+  "token-table": {
+   "path": "C:/Users/Admin/par18/l1prep/work/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/rl_pool/navtrain_token_table.tsv.gz",
+   "sha256": "c7456c882b3d297c5ba202947d82b850e640a5b08648a3f4dea3c7c3dd176cd1"
+  },
+  "scan": {
+   "path": "raw/g0_traingrow_scan2.json",
+   "sha256": "b41f262f971946a55f0af643b2cd9b625d81a2c0476fcd603c394dd7752fec67"
+  },
+  "table": {
+   "path": "D:/Projects/TanitAD-artifacts/p2_heldout_table_full_2026-10-18/table_p2_heldout.npz",
+   "sha256": "8eacc19b35b12aee9b0ab047716c901399a711d22ddd3c25cd890ecf2f02004b"
+  }
+ },
+ "scan_source": {
+  "path": "D:/Projects/TanitAD-artifacts/refe-onpolicy-2026-10-01/refe_train_grow.tar.zst",
+  "md5": "e07c7d6a5c0156f31a5de3af0843c325 (equals rl_pool_by_base.json 'grow' md5)",
+  "size": 1043549966
+ },
+ "scan_json_sha256": "b41f262f971946a55f0af643b2cd9b625d81a2c0476fcd603c394dd7752fec67",
+ "scan_code": "scripts/g0_scan_traingrow.py (Python 3.14 stdlib compression.zstd, streaming, read-only)"
+}

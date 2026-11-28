@@ -1,0 +1,2636 @@
+{
+ "tool": "render_refav1_arms_video.py",
+ "banked_by": "bank.py",
+ "cut": "2026-09-06 re-cut: the STRAIGHT floor (M74/M75/M77/M79)",
+ "supersedes": "taniteval/results/videos/refav1_arms_step21109/",
+ "step": 21109,
+ "fps": 10,
+ "n_frames": 2313,
+ "duration_s": 231.3,
+ "ckpt": "C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt",
+ "arms": [
+  "ccos_argmax",
+  "wk15",
+  "best"
+ ],
+ "arm_geometry": {
+  "ccos_argmax": "ccos W_KAPPA 0",
+  "wk15": "ccos W_KAPPA 15.1125",
+  "best": "ccos W_KAPPA 15.1125 + Kamm cap mu=0.7"
+ },
+ "arm_colours": {
+  "ccos_argmax": [
+   244,
+   114,
+   182
+  ],
+  "wk15": [
+   249,
+   115,
+   22
+  ],
+  "best": [
+   167,
+   139,
+   250
+  ]
+ },
+ "floors_drawn": [
+  "ha0",
+  "ha0_ext"
+ ],
+ "arms_dir": "C:\\Users\\Admin\\tanitad-caches\\refav1_reel_src\\arms",
+ "shared_verification": {
+  "shared_keys_checked": [
+   "ws",
+   "v0",
+   "g",
+   "ha0",
+   "ha0_ext",
+   "wm_mse_model",
+   "wm_mse_const",
+   "wm_mse_zero",
+   "wm_tgt_std",
+   "lat_label",
+   "lon_label",
+   "route_label",
+   "nav_cmd",
+   "nav_valid",
+   "lat_pred_nav_true",
+   "lon_pred_nav_true",
+   "route_pred_nav_true",
+   "ha0_ext_controls"
+  ],
+  "arms_differing_on_cl": 2,
+  "n_windows": 40
+ },
+ "curvature_panel": {
+  "ccos_argmax": {
+   "pooled": 0.05536893755197525,
+   "n_steps": 289,
+   "n_windows": 40
+  },
+  "wk15": {
+   "pooled": 0.03098227083683014,
+   "n_steps": 271,
+   "n_windows": 40
+  },
+  "best": {
+   "pooled": 0.03128111734986305,
+   "n_steps": 271,
+   "n_windows": 40
+  },
+  "ha0": {
+   "pooled": 0.04008276015520096,
+   "n_steps": 289,
+   "n_windows": 40
+  },
+  "ha0_ext": {
+   "pooled": 0.07729833573102951,
+   "n_steps": 300,
+   "n_windows": 40
+  }
+ },
+ "curvature_control": {
+  "expected": {
+   "ha0": 0.040083,
+   "wk15": 0.030982,
+   "ccos_argmax": 0.055369,
+   "best": 0.031281,
+   "ha0_ext": 0.077298
+  },
+  "got": {
+   "ha0": 0.04008276015520096,
+   "wk15": 0.03098227083683014,
+   "ccos_argmax": 0.05536893755197525,
+   "best": 0.03128111734986305,
+   "ha0_ext": 0.07729833573102951
+  },
+  "tol": 1.5e-06,
+  "checked": 5,
+  "pass": true
+ },
+ "curvature_footer": "PANEL, n=40 windows / 8 episodes, curvature MAE 1/m pooled over valid steps (taniteval.four_families): wk15 0.030982  <  best 0.031281  <  ha0 0.040083  <  ccos_argmax 0.055369  <  ha0_ext 0.077298   ->   an arm ABOVE ha0 tracks the road WORSE THAN A PLAN THAT NEVER STEERS.",
+ "turn_windows": [
+  {
+   "episode": "18b72291-84f4-45e0-a736-908fc303020e",
+   "window": 2,
+   "token": "TURN_R"
+  },
+  {
+   "episode": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "window": 2,
+   "token": "TURN_L"
+  },
+  {
+   "episode": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "window": 2,
+   "token": "TURN_R"
+  },
+  {
+   "episode": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "window": 2,
+   "token": "TURN_L"
+  }
+ ],
+ "stats": {
+  "frames": 2025,
+  "clips": 8,
+  "scored": 40,
+  "slowed": 2025,
+  "skipped_stale": 0,
+  "cam_on": 8,
+  "cam_off": 0,
+  "lum_n": 600,
+  "lum_min": 35.948609718508614,
+  "lum_max": 45.78965110665478,
+  "decoded": 600,
+  "cam_stub": 204,
+  "turn_windows": 4,
+  "turn_frames": 540,
+  "lum_mean": 39.56889025286565
+ },
+ "gt_control": {
+  "n_windows": 40,
+  "v_min_mps": 2.0,
+  "n_admissible": 27,
+  "n_excluded": 13,
+  "steer_ade_mean_m": 0.1552,
+  "steer_ade_median_m": 0.1512,
+  "steer_ade_max_m": 0.2981,
+  "kappa_ade_mean_m": 0.8727,
+  "separation_x": 5.624,
+  "median_tolerance_m": 0.25,
+  "min_separation_x": 2.0,
+  "pass_deviation": true,
+  "pass_separation": true,
+  "pass": true,
+  "drawn_window": {
+   "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "t_cache": 51,
+   "v0_mps": 5.266
+  },
+  "png": "C:\\Users\\Admin\\refav1_reel_v2\\out\\refav1_arms_curvature_step21109_GT_CONTROL.png"
+ },
+ "gt_control_per_window": [
+  {
+   "clip": "18b72291-84f4-45e0-a736-908fc303020e",
+   "t_cache": 3,
+   "v0_mps": 5.652,
+   "gt_lat_extent_m": 3.335,
+   "ade_steer_m": 0.1793,
+   "max_steer_m": 0.2978,
+   "ade_kappa_m": 2.0856,
+   "max_kappa_m": 5.6266,
+   "admissible": true
+  },
+  {
+   "clip": "18b72291-84f4-45e0-a736-908fc303020e",
+   "t_cache": 19,
+   "v0_mps": 7.509,
+   "gt_lat_extent_m": 0.151,
+   "ade_steer_m": 0.1185,
+   "max_steer_m": 0.2133,
+   "ade_kappa_m": 0.15,
+   "max_kappa_m": 0.3151,
+   "admissible": true
+  },
+  {
+   "clip": "18b72291-84f4-45e0-a736-908fc303020e",
+   "t_cache": 35,
+   "v0_mps": 8.564,
+   "gt_lat_extent_m": 0.01,
+   "ade_steer_m": 0.0308,
+   "max_steer_m": 0.0441,
+   "ade_kappa_m": 0.056,
+   "max_kappa_m": 0.0969,
+   "admissible": true
+  },
+  {
+   "clip": "18b72291-84f4-45e0-a736-908fc303020e",
+   "t_cache": 51,
+   "v0_mps": 6.378,
+   "gt_lat_extent_m": 2.222,
+   "ade_steer_m": 0.1801,
+   "max_steer_m": 0.3926,
+   "ade_kappa_m": 1.0005,
+   "max_kappa_m": 3.0331,
+   "admissible": true
+  },
+  {
+   "clip": "18b72291-84f4-45e0-a736-908fc303020e",
+   "t_cache": 67,
+   "v0_mps": 5.484,
+   "gt_lat_extent_m": 4.893,
+   "ade_steer_m": 0.2513,
+   "max_steer_m": 0.4205,
+   "ade_kappa_m": 2.9339,
+   "max_kappa_m": 8.0157,
+   "admissible": true
+  },
+  {
+   "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "t_cache": 3,
+   "v0_mps": 10.707,
+   "gt_lat_extent_m": 0.488,
+   "ade_steer_m": 0.1949,
+   "max_steer_m": 0.3869,
+   "ade_kappa_m": 0.3705,
+   "max_kappa_m": 0.8518,
+   "admissible": true
+  },
+  {
+   "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "t_cache": 19,
+   "v0_mps": 4.82,
+   "gt_lat_extent_m": 0.005,
+   "ade_steer_m": 0.2382,
+   "max_steer_m": 0.4351,
+   "ade_kappa_m": 0.2388,
+   "max_kappa_m": 0.4361,
+   "admissible": true
+  },
+  {
+   "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "t_cache": 35,
+   "v0_mps": 0.0,
+   "gt_lat_extent_m": 0.034,
+   "ade_steer_m": 0.0709,
+   "max_steer_m": 0.2705,
+   "ade_kappa_m": 0.0709,
+   "max_kappa_m": 0.2704,
+   "admissible": false
+  },
+  {
+   "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "t_cache": 51,
+   "v0_mps": 5.266,
+   "gt_lat_extent_m": 5.716,
+   "ade_steer_m": 0.2252,
+   "max_steer_m": 0.5018,
+   "ade_kappa_m": 3.5381,
+   "max_kappa_m": 10.0574,
+   "admissible": true
+  },
+  {
+   "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "t_cache": 67,
+   "v0_mps": 10.545,
+   "gt_lat_extent_m": 0.039,
+   "ade_steer_m": 0.2981,
+   "max_steer_m": 0.5052,
+   "ade_kappa_m": 0.3687,
+   "max_kappa_m": 0.6763,
+   "admissible": true
+  },
+  {
+   "clip": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "t_cache": 3,
+   "v0_mps": 0.548,
+   "gt_lat_extent_m": 0.117,
+   "ade_steer_m": 1.1885,
+   "max_steer_m": 2.0281,
+   "ade_kappa_m": 1.1752,
+   "max_kappa_m": 1.9876,
+   "admissible": false
+  },
+  {
+   "clip": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "t_cache": 19,
+   "v0_mps": 0.028,
+   "gt_lat_extent_m": 0.0,
+   "ade_steer_m": 0.0093,
+   "max_steer_m": 0.0145,
+   "ade_kappa_m": 0.0093,
+   "max_kappa_m": 0.0145,
+   "admissible": false
+  },
+  {
+   "clip": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "t_cache": 35,
+   "v0_mps": 0.427,
+   "gt_lat_extent_m": 0.113,
+   "ade_steer_m": 0.0508,
+   "max_steer_m": 0.0907,
+   "ade_kappa_m": 0.0717,
+   "max_kappa_m": 0.1795,
+   "admissible": false
+  },
+  {
+   "clip": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "t_cache": 51,
+   "v0_mps": 1.12,
+   "gt_lat_extent_m": 0.181,
+   "ade_steer_m": 0.0348,
+   "max_steer_m": 0.0633,
+   "ade_kappa_m": 0.1174,
+   "max_kappa_m": 0.2775,
+   "admissible": false
+  },
+  {
+   "clip": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "t_cache": 67,
+   "v0_mps": 0.104,
+   "gt_lat_extent_m": 0.0,
+   "ade_steer_m": 0.0146,
+   "max_steer_m": 0.0178,
+   "ade_kappa_m": 0.0146,
+   "max_kappa_m": 0.0178,
+   "admissible": false
+  },
+  {
+   "clip": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "t_cache": 3,
+   "v0_mps": 14.967,
+   "gt_lat_extent_m": 0.22,
+   "ade_steer_m": 0.146,
+   "max_steer_m": 0.268,
+   "ade_kappa_m": 0.2426,
+   "max_kappa_m": 0.542,
+   "admissible": true
+  },
+  {
+   "clip": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "t_cache": 19,
+   "v0_mps": 14.716,
+   "gt_lat_extent_m": 0.584,
+   "ade_steer_m": 0.1525,
+   "max_steer_m": 0.2842,
+   "ade_kappa_m": 0.2179,
+   "max_kappa_m": 0.7222,
+   "admissible": true
+  },
+  {
+   "clip": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "t_cache": 35,
+   "v0_mps": 13.851,
+   "gt_lat_extent_m": 0.159,
+   "ade_steer_m": 0.104,
+   "max_steer_m": 0.152,
+   "ade_kappa_m": 0.2813,
+   "max_kappa_m": 0.5501,
+   "admissible": true
+  },
+  {
+   "clip": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "t_cache": 51,
+   "v0_mps": 10.151,
+   "gt_lat_extent_m": 0.608,
+   "ade_steer_m": 0.1471,
+   "max_steer_m": 0.2651,
+   "ade_kappa_m": 0.2627,
+   "max_kappa_m": 0.8543,
+   "admissible": true
+  },
+  {
+   "clip": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "t_cache": 67,
+   "v0_mps": 5.811,
+   "gt_lat_extent_m": 4.898,
+   "ade_steer_m": 0.1571,
+   "max_steer_m": 0.2849,
+   "ade_kappa_m": 3.0482,
+   "max_kappa_m": 8.4103,
+   "admissible": true
+  },
+  {
+   "clip": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "t_cache": 3,
+   "v0_mps": 10.743,
+   "gt_lat_extent_m": 0.037,
+   "ade_steer_m": 0.0808,
+   "max_steer_m": 0.1451,
+   "ade_kappa_m": 0.1161,
+   "max_kappa_m": 0.2948,
+   "admissible": true
+  },
+  {
+   "clip": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "t_cache": 19,
+   "v0_mps": 10.482,
+   "gt_lat_extent_m": 0.153,
+   "ade_steer_m": 0.0775,
+   "max_steer_m": 0.1555,
+   "ade_kappa_m": 0.0774,
+   "max_kappa_m": 0.1212,
+   "admissible": true
+  },
+  {
+   "clip": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "t_cache": 35,
+   "v0_mps": 9.328,
+   "gt_lat_extent_m": 0.018,
+   "ade_steer_m": 0.0742,
+   "max_steer_m": 0.1344,
+   "ade_kappa_m": 0.0964,
+   "max_kappa_m": 0.2216,
+   "admissible": true
+  },
+  {
+   "clip": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "t_cache": 51,
+   "v0_mps": 5.372,
+   "gt_lat_extent_m": 3.253,
+   "ade_steer_m": 0.2132,
+   "max_steer_m": 0.4086,
+   "ade_kappa_m": 1.7254,
+   "max_kappa_m": 4.7388,
+   "admissible": true
+  },
+  {
+   "clip": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "t_cache": 67,
+   "v0_mps": 4.891,
+   "gt_lat_extent_m": 2.016,
+   "ade_steer_m": 0.1093,
+   "max_steer_m": 0.156,
+   "ade_kappa_m": 1.4051,
+   "max_kappa_m": 3.5625,
+   "admissible": true
+  },
+  {
+   "clip": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "t_cache": 3,
+   "v0_mps": 3.773,
+   "gt_lat_extent_m": 0.129,
+   "ade_steer_m": 0.1185,
+   "max_steer_m": 0.2448,
+   "ade_kappa_m": 0.1329,
+   "max_kappa_m": 0.3113,
+   "admissible": true
+  },
+  {
+   "clip": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "t_cache": 19,
+   "v0_mps": 6.342,
+   "gt_lat_extent_m": 2.803,
+   "ade_steer_m": 0.2152,
+   "max_steer_m": 0.4195,
+   "ade_kappa_m": 1.4639,
+   "max_kappa_m": 4.0508,
+   "admissible": true
+  },
+  {
+   "clip": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "t_cache": 35,
+   "v0_mps": 3.263,
+   "gt_lat_extent_m": 0.828,
+   "ade_steer_m": 0.1512,
+   "max_steer_m": 0.2495,
+   "ade_kappa_m": 0.4661,
+   "max_kappa_m": 1.1079,
+   "admissible": true
+  },
+  {
+   "clip": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "t_cache": 51,
+   "v0_mps": 0.288,
+   "gt_lat_extent_m": 0.002,
+   "ade_steer_m": 0.038,
+   "max_steer_m": 0.1259,
+   "ade_kappa_m": 0.038,
+   "max_kappa_m": 0.1259,
+   "admissible": false
+  },
+  {
+   "clip": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "t_cache": 67,
+   "v0_mps": 4.211,
+   "gt_lat_extent_m": 0.021,
+   "ade_steer_m": 0.2351,
+   "max_steer_m": 0.4147,
+   "ade_kappa_m": 0.2351,
+   "max_kappa_m": 0.4145,
+   "admissible": true
+  },
+  {
+   "clip": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "t_cache": 3,
+   "v0_mps": 0.196,
+   "gt_lat_extent_m": 0.003,
+   "ade_steer_m": 1.7241,
+   "max_steer_m": 3.8786,
+   "ade_kappa_m": 1.7241,
+   "max_kappa_m": 3.8786,
+   "admissible": false
+  },
+  {
+   "clip": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "t_cache": 19,
+   "v0_mps": 1.401,
+   "gt_lat_extent_m": 0.003,
+   "ade_steer_m": 3.0028,
+   "max_steer_m": 5.3535,
+   "ade_kappa_m": 3.0028,
+   "max_kappa_m": 5.3535,
+   "admissible": false
+  },
+  {
+   "clip": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "t_cache": 35,
+   "v0_mps": 1.063,
+   "gt_lat_extent_m": 0.0,
+   "ade_steer_m": 1.9989,
+   "max_steer_m": 3.0731,
+   "ade_kappa_m": 1.9989,
+   "max_kappa_m": 3.0731,
+   "admissible": false
+  },
+  {
+   "clip": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "t_cache": 51,
+   "v0_mps": 0.712,
+   "gt_lat_extent_m": 0.459,
+   "ade_steer_m": 0.0956,
+   "max_steer_m": 0.1465,
+   "ade_kappa_m": 0.2031,
+   "max_kappa_m": 0.6078,
+   "admissible": false
+  },
+  {
+   "clip": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "t_cache": 67,
+   "v0_mps": 1.497,
+   "gt_lat_extent_m": 0.222,
+   "ade_steer_m": 0.0662,
+   "max_steer_m": 0.0945,
+   "ade_kappa_m": 0.18,
+   "max_kappa_m": 0.3725,
+   "admissible": false
+  },
+  {
+   "clip": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "t_cache": 3,
+   "v0_mps": 3.839,
+   "gt_lat_extent_m": 0.365,
+   "ade_steer_m": 0.0597,
+   "max_steer_m": 0.0848,
+   "ade_kappa_m": 0.2788,
+   "max_kappa_m": 0.6644,
+   "admissible": true
+  },
+  {
+   "clip": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "t_cache": 19,
+   "v0_mps": 3.627,
+   "gt_lat_extent_m": 3.604,
+   "ade_steer_m": 0.2268,
+   "max_steer_m": 0.4178,
+   "ade_kappa_m": 2.135,
+   "max_kappa_m": 6.3429,
+   "admissible": true
+  },
+  {
+   "clip": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "t_cache": 35,
+   "v0_mps": 7.018,
+   "gt_lat_extent_m": 0.323,
+   "ade_steer_m": 0.0584,
+   "max_steer_m": 0.1463,
+   "ade_kappa_m": 0.4346,
+   "max_kappa_m": 1.0307,
+   "admissible": true
+  },
+  {
+   "clip": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "t_cache": 51,
+   "v0_mps": 3.471,
+   "gt_lat_extent_m": 0.295,
+   "ade_steer_m": 0.1472,
+   "max_steer_m": 0.2381,
+   "ade_kappa_m": 0.2022,
+   "max_kappa_m": 0.4461,
+   "admissible": true
+  },
+  {
+   "clip": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "t_cache": 67,
+   "v0_mps": 0.115,
+   "gt_lat_extent_m": 0.028,
+   "ade_steer_m": 0.0381,
+   "max_steer_m": 0.1275,
+   "ade_kappa_m": 0.0381,
+   "max_kappa_m": 0.1272,
+   "admissible": false
+  }
+ ],
+ "scored_windows": [
+  {
+   "kind": "clip",
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "clip_order": 0,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 3.335,
+   "v0_mps": 5.652,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 3.0306,
+     "curv_mae_1pm": 0.116685,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.7177,
+     "curv_mae_1pm": 0.051183,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.6902,
+     "curv_mae_1pm": 0.053564,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.3705,
+     "curv_mae_1pm": 0.036685,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 2.5843,
+     "curv_mae_1pm": 0.123632,
+     "is_floor": true,
+     "kamm_over": true
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "clip_order": 0,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.151,
+   "v0_mps": 7.509,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.4626,
+     "curv_mae_1pm": 0.001498,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.4626,
+     "curv_mae_1pm": 0.001498,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.4626,
+     "curv_mae_1pm": 0.001498,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.4626,
+     "curv_mae_1pm": 0.001498,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.2301,
+     "curv_mae_1pm": 0.002295,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "clip_order": 0,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "TURN_R",
+   "slowmo": 9,
+   "slowmo_by_label": true,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.01,
+   "v0_mps": 8.564,
+   "turn_window": {
+    "rank": 1,
+    "of": 4,
+    "token": "TURN_R"
+   },
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.9292,
+     "curv_mae_1pm": 0.044151,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 0.0378,
+     "curv_mae_1pm": 0.000347,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.0378,
+     "curv_mae_1pm": 0.000347,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.1517,
+     "curv_mae_1pm": 0.000347,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1104,
+     "curv_mae_1pm": 0.002333,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "clip_order": 0,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 2.222,
+   "v0_mps": 6.378,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.3018,
+     "curv_mae_1pm": 0.029176,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.3018,
+     "curv_mae_1pm": 0.029176,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.3018,
+     "curv_mae_1pm": 0.029176,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.1246,
+     "curv_mae_1pm": 0.051138,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.3565,
+     "curv_mae_1pm": 0.017373,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "clip_order": 0,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 4.893,
+   "v0_mps": 5.484,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.6207,
+     "curv_mae_1pm": 0.026248,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.5208,
+     "curv_mae_1pm": 0.043958,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.6301,
+     "curv_mae_1pm": 0.043709,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.9357,
+     "curv_mae_1pm": 0.055115,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 3.1819,
+     "curv_mae_1pm": 0.180293,
+     "is_floor": true,
+     "kamm_over": true
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "clip_order": 1,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.488,
+   "v0_mps": 10.707,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 2.9967,
+     "curv_mae_1pm": 0.085654,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 1.2792,
+     "curv_mae_1pm": 0.006448,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.3309,
+     "curv_mae_1pm": 0.00626,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.6479,
+     "curv_mae_1pm": 0.003239,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.6145,
+     "curv_mae_1pm": 0.006632,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "clip_order": 1,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.005,
+   "v0_mps": 4.82,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.8592,
+     "curv_mae_1pm": 0.079526,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.089,
+     "curv_mae_1pm": 0.00994,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.089,
+     "curv_mae_1pm": 0.00994,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.6557,
+     "curv_mae_1pm": 0.001587,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.8227,
+     "curv_mae_1pm": 0.002027,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "clip_order": 1,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "TURN_L",
+   "slowmo": 9,
+   "slowmo_by_label": true,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.034,
+   "v0_mps": 0.0,
+   "turn_window": {
+    "rank": 2,
+    "of": 4,
+    "token": "TURN_L"
+   },
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.2476,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.2473,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.2473,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.2476,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.2476,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "clip_order": 1,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 5.716,
+   "v0_mps": 5.266,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.9617,
+     "curv_mae_1pm": 0.011317,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 2.2659,
+     "curv_mae_1pm": 0.063684,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 2.2659,
+     "curv_mae_1pm": 0.063687,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 2.1146,
+     "curv_mae_1pm": 0.068683,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 3.7658,
+     "curv_mae_1pm": 0.177408,
+     "is_floor": true,
+     "kamm_over": true
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "clip_order": 1,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.039,
+   "v0_mps": 10.545,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 2.7329,
+     "curv_mae_1pm": 0.063242,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 2.3312,
+     "curv_mae_1pm": 0.000485,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.9765,
+     "curv_mae_1pm": 0.003145,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.5141,
+     "curv_mae_1pm": 0.000485,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.6939,
+     "curv_mae_1pm": 0.006021,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "clip_order": 2,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.117,
+   "v0_mps": 0.548,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.1984,
+     "curv_mae_1pm": 0.14578,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.1984,
+     "curv_mae_1pm": 0.14578,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.1984,
+     "curv_mae_1pm": 0.14578,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.1978,
+     "curv_mae_1pm": 0.22578,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 1.221,
+     "curv_mae_1pm": 0.821761,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "clip_order": 2,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.0,
+   "v0_mps": 0.028,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.0128,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.0128,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.0128,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.0128,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.018,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "clip_order": 2,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "LANE_KEEP",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.113,
+   "v0_mps": 0.427,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.311,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.311,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.311,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.3119,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1395,
+     "curv_mae_1pm": 0.172926,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "clip_order": 2,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.181,
+   "v0_mps": 1.12,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.2628,
+     "curv_mae_1pm": 0.088621,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.2628,
+     "curv_mae_1pm": 0.088621,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.2628,
+     "curv_mae_1pm": 0.088621,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.2773,
+     "curv_mae_1pm": 0.168621,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1228,
+     "curv_mae_1pm": 0.213643,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "clip_order": 2,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.0,
+   "v0_mps": 0.104,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.0891,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.0891,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.0891,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.0891,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.0081,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "clip_order": 3,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.22,
+   "v0_mps": 14.967,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 9.1127,
+     "curv_mae_1pm": 0.070986,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 0.3937,
+     "curv_mae_1pm": 0.000519,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.1395,
+     "curv_mae_1pm": 0.002228,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.1068,
+     "curv_mae_1pm": 0.000519,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1893,
+     "curv_mae_1pm": 0.001034,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "clip_order": 3,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.584,
+   "v0_mps": 14.716,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 3.284,
+     "curv_mae_1pm": 0.0502,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 0.3811,
+     "curv_mae_1pm": 0.002914,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.3811,
+     "curv_mae_1pm": 0.002914,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.1816,
+     "curv_mae_1pm": 0.002914,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1412,
+     "curv_mae_1pm": 0.002685,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "clip_order": 3,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "NUDGE_R",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.159,
+   "v0_mps": 13.851,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.192,
+     "curv_mae_1pm": 0.000959,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.192,
+     "curv_mae_1pm": 0.000959,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.192,
+     "curv_mae_1pm": 0.000959,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.192,
+     "curv_mae_1pm": 0.000959,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.458,
+     "curv_mae_1pm": 0.003639,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "clip_order": 3,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.608,
+   "v0_mps": 10.151,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 2.768,
+     "curv_mae_1pm": 0.054734,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 1.9539,
+     "curv_mae_1pm": 0.012759,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.9539,
+     "curv_mae_1pm": 0.012759,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.5472,
+     "curv_mae_1pm": 0.012759,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.371,
+     "curv_mae_1pm": 0.014648,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "clip_order": 3,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 4.898,
+   "v0_mps": 5.811,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.8574,
+     "curv_mae_1pm": 0.06668,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.8574,
+     "curv_mae_1pm": 0.06668,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.8574,
+     "curv_mae_1pm": 0.06668,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.8574,
+     "curv_mae_1pm": 0.06668,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 2.7589,
+     "curv_mae_1pm": 0.150363,
+     "is_floor": true,
+     "kamm_over": true
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "clip_order": 4,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.037,
+   "v0_mps": 10.743,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.0386,
+     "curv_mae_1pm": 0.000751,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.0386,
+     "curv_mae_1pm": 0.000751,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.0386,
+     "curv_mae_1pm": 0.000751,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.0386,
+     "curv_mae_1pm": 0.000751,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.0837,
+     "curv_mae_1pm": 0.00089,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "clip_order": 4,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.153,
+   "v0_mps": 10.482,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.0935,
+     "curv_mae_1pm": 0.000904,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.0935,
+     "curv_mae_1pm": 0.000904,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.0935,
+     "curv_mae_1pm": 0.000904,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.0935,
+     "curv_mae_1pm": 0.000904,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.0926,
+     "curv_mae_1pm": 0.001173,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "clip_order": 4,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "TURN_R",
+   "slowmo": 9,
+   "slowmo_by_label": true,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.018,
+   "v0_mps": 9.328,
+   "turn_window": {
+    "rank": 3,
+    "of": 4,
+    "token": "TURN_R"
+   },
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.6953,
+     "curv_mae_1pm": 0.079301,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 0.0435,
+     "curv_mae_1pm": 0.000595,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.5127,
+     "curv_mae_1pm": 0.002431,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.856,
+     "curv_mae_1pm": 0.000595,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.5262,
+     "curv_mae_1pm": 0.000635,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "clip_order": 4,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 3.253,
+   "v0_mps": 5.372,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.4321,
+     "curv_mae_1pm": 0.006102,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.4321,
+     "curv_mae_1pm": 0.006102,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.4321,
+     "curv_mae_1pm": 0.006102,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.4347,
+     "curv_mae_1pm": 0.078911,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 1.1243,
+     "curv_mae_1pm": 0.088328,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "clip_order": 4,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 2.016,
+   "v0_mps": 4.891,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.8355,
+     "curv_mae_1pm": 0.08995,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.3171,
+     "curv_mae_1pm": 0.026425,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.3171,
+     "curv_mae_1pm": 0.026425,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.8823,
+     "curv_mae_1pm": 0.026425,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 1.9404,
+     "curv_mae_1pm": 0.13914,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "clip_order": 5,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.129,
+   "v0_mps": 3.773,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.5384,
+     "curv_mae_1pm": 0.002965,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.5384,
+     "curv_mae_1pm": 0.002965,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.5384,
+     "curv_mae_1pm": 0.002965,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.5384,
+     "curv_mae_1pm": 0.002965,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.345,
+     "curv_mae_1pm": 0.003708,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "clip_order": 5,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 2.803,
+   "v0_mps": 6.342,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.1668,
+     "curv_mae_1pm": 0.045442,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.1668,
+     "curv_mae_1pm": 0.045442,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.1668,
+     "curv_mae_1pm": 0.045442,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.1668,
+     "curv_mae_1pm": 0.045442,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 1.1633,
+     "curv_mae_1pm": 0.034464,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "clip_order": 5,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "NUDGE_L",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.828,
+   "v0_mps": 3.263,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.1256,
+     "curv_mae_1pm": 0.138927,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.1256,
+     "curv_mae_1pm": 0.138927,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.1256,
+     "curv_mae_1pm": 0.138927,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.1256,
+     "curv_mae_1pm": 0.138927,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.2724,
+     "curv_mae_1pm": 0.052004,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "clip_order": 5,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.002,
+   "v0_mps": 0.288,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.1709,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.1709,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.1709,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.1709,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.0812,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "clip_order": 5,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.021,
+   "v0_mps": 4.211,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.3716,
+     "curv_mae_1pm": 0.000591,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.3716,
+     "curv_mae_1pm": 0.000591,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.3716,
+     "curv_mae_1pm": 0.000591,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.3716,
+     "curv_mae_1pm": 0.000591,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1373,
+     "curv_mae_1pm": 0.0005,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "clip_order": 6,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.003,
+   "v0_mps": 0.196,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.1253,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.9624,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.9624,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.1253,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 1.7719,
+     "curv_mae_1pm": 0.006754,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "clip_order": 6,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.003,
+   "v0_mps": 1.401,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 3.0392,
+     "curv_mae_1pm": 0.08064,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 2.4239,
+     "curv_mae_1pm": 0.003326,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 2.4239,
+     "curv_mae_1pm": 0.003326,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 3.043,
+     "curv_mae_1pm": 0.00064,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 3.0372,
+     "curv_mae_1pm": 0.001125,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "clip_order": 6,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "TURN_L",
+   "slowmo": 9,
+   "slowmo_by_label": true,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.0,
+   "v0_mps": 1.063,
+   "turn_window": {
+    "rank": 4,
+    "of": 4,
+    "token": "TURN_L"
+   },
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 2.1514,
+     "curv_mae_1pm": 0.080122,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.5694,
+     "curv_mae_1pm": 0.011612,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.5694,
+     "curv_mae_1pm": 0.011612,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 2.1529,
+     "curv_mae_1pm": 0.000285,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 2.0937,
+     "curv_mae_1pm": 0.000232,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "clip_order": 6,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.459,
+   "v0_mps": 0.712,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.6239,
+     "curv_mae_1pm": 0.04935,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.0719,
+     "curv_mae_1pm": 0.071051,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.0719,
+     "curv_mae_1pm": 0.071051,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.6289,
+     "curv_mae_1pm": 0.126969,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.1687,
+     "curv_mae_1pm": 0.037894,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "clip_order": 6,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.222,
+   "v0_mps": 1.497,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.5333,
+     "curv_mae_1pm": 0.041558,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.2769,
+     "curv_mae_1pm": 0.119336,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.2769,
+     "curv_mae_1pm": 0.119336,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.551,
+     "curv_mae_1pm": 0.121558,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.3122,
+     "curv_mae_1pm": 0.379897,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "clip_order": 7,
+   "raw_frame": 6,
+   "t_cache": 3,
+   "t_s": 0.6,
+   "plan_age_s": 0.0,
+   "window": 0,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.365,
+   "v0_mps": 3.839,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.7634,
+     "curv_mae_1pm": 0.066613,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.6494,
+     "curv_mae_1pm": 0.017159,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.6494,
+     "curv_mae_1pm": 0.017159,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.6002,
+     "curv_mae_1pm": 0.014509,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.3309,
+     "curv_mae_1pm": 0.056433,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "clip_order": 7,
+   "raw_frame": 38,
+   "t_cache": 19,
+   "t_s": 3.8,
+   "plan_age_s": 0.0,
+   "window": 1,
+   "gt_lat_token": "-100",
+   "slowmo": 5,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": true,
+   "camera": true,
+   "gt_lat_extent_m": 3.604,
+   "v0_mps": 3.627,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 2.2337,
+     "curv_mae_1pm": 0.144509,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.74,
+     "curv_mae_1pm": 0.08048,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.74,
+     "curv_mae_1pm": 0.08048,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.6039,
+     "curv_mae_1pm": 0.064509,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 2.3162,
+     "curv_mae_1pm": 0.173069,
+     "is_floor": true,
+     "kamm_over": true
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "clip_order": 7,
+   "raw_frame": 70,
+   "t_cache": 35,
+   "t_s": 7.0,
+   "plan_age_s": 0.0,
+   "window": 2,
+   "gt_lat_token": "LANE_KEEP",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.323,
+   "v0_mps": 7.018,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.6109,
+     "curv_mae_1pm": 0.082618,
+     "is_floor": false,
+     "kamm_over": true
+    },
+    "wk15": {
+     "ade_m": 0.5322,
+     "curv_mae_1pm": 0.002991,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.1537,
+     "curv_mae_1pm": 0.003838,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.3374,
+     "curv_mae_1pm": 0.002991,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.7779,
+     "curv_mae_1pm": 0.025179,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "clip_order": 7,
+   "raw_frame": 102,
+   "t_cache": 51,
+   "t_s": 10.2,
+   "plan_age_s": 0.0,
+   "window": 3,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.295,
+   "v0_mps": 3.471,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 1.1969,
+     "curv_mae_1pm": 0.026141,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 1.1969,
+     "curv_mae_1pm": 0.026141,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 1.1969,
+     "curv_mae_1pm": 0.026141,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 1.1758,
+     "curv_mae_1pm": 0.057387,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.3741,
+     "curv_mae_1pm": 0.021548,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  },
+  {
+   "kind": "clip",
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "clip_order": 7,
+   "raw_frame": 134,
+   "t_cache": 67,
+   "t_s": 13.4,
+   "plan_age_s": 0.0,
+   "window": 4,
+   "gt_lat_token": "-100",
+   "slowmo": 2,
+   "slowmo_by_label": false,
+   "slowmo_by_geometry": false,
+   "camera": true,
+   "gt_lat_extent_m": 0.028,
+   "v0_mps": 0.115,
+   "turn_window": null,
+   "arms": {
+    "ccos_argmax": {
+     "ade_m": 0.1099,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "wk15": {
+     "ade_m": 0.1099,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "best": {
+     "ade_m": 0.1099,
+     "curv_mae_1pm": null,
+     "is_floor": false,
+     "kamm_over": false
+    },
+    "ha0": {
+     "ade_m": 0.11,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    },
+    "ha0_ext": {
+     "ade_m": 0.104,
+     "curv_mae_1pm": null,
+     "is_floor": true,
+     "kamm_over": false
+    }
+   }
+  }
+ ],
+ "note": "one row per SCORED WINDOW (the plan-age-0 frame). The full 2,313-row frame index is banked beside this as frame_index_full.json; most of its rows are slow-motion duplicates of these."
+}

@@ -77,13 +77,34 @@ a **text overlay of the decoded tactical maneuver + strategic route/goal**, and
 | 1. Camera projection (GT + pred paths on the road) | per-arm **camera canvas** + trajectory fan (GT white-dashed, arm-colored fan) |
 | 2. Metric BEV inset (calibration-independent) | shared **BEV master panel** — all arms + GT, metre grid, scale bar, legend |
 | 3a. Decoded **tactical maneuver** text (`maneuver_logits` argmax) | camera **HUD** `tactical: <maneuver>` (argmax of each arm's `maneuver_probs`) + the head-readout maneuver-distribution bar chart (GT marked) + the shared kinematic **maneuver band** |
-| 3b. **Strategic route/goal** text (`route_logits` argmax) | camera **HUD** `strategic: route <goal>` from `nav_cmd` via `meta.nav_commands` |
+| 3b. **Strategic route/goal** text (`route_logits` argmax) | camera **HUD** `route (model): <class>` from `route_pred` via `meta.route_classes`, **or** `unavailable — <reason>` when the arm has no route head. The ground-truth-derived navigator command is a **separate row**, `route (logged input): <cmd>  GIVEN · GT-DERIVED` |
 | 3c. Per-frame **ADE** + **v0** | camera **HUD** `ADE … · v … m/s`, plus the column header, the error strip, and the scrubber |
 | **BEV-only fallback** (uncalibrated, e.g. cosmos f-theta) | pass corpora to `export_bundle(..., uncalibrated_corpora=…)`: image-plane paths are `null`, the camera shows the raw frame + a *"camera overlay disabled — see BEV"* note, and the BEV carries the comparison |
 
+⛔ **Row 3b used to read** *"camera HUD `strategic: route <goal>` from `nav_cmd`
+via `meta.nav_commands`"* — **and that was false.** `nav_cmd` is derived from the
+episode's OWN FUTURE POSES (`replay/arms.py`, `RefBArm.run_batch` →
+`refb_labels.nav_command`) and **fed to the model**; it is an INPUT, not
+`route_logits`. Rendering it in the strategic slot showed a value the model was
+*given* where a viewer reads a value the model *decided* — the nav-echo defect
+(flagship v1's route head was an exact bijection of the nav we fed it, 369/369,
+and scored 1.0000). The two are now separate fields with separate vocabularies
+(`meta.route_classes`, 3 model classes vs `meta.nav_commands`, 4 input commands),
+and the SPA may read the input in exactly one accessor — pinned by
+`tests/test_resim.py::test_spa_reads_the_gt_derived_input_only_in_its_declared_accessor`.
+
+**Every element is declared, never merely drawn.** Each arm's step carries five
+`viz` records (`tanitad.viz_standard`: `camera` / `bev` / `tactical` /
+`strategic` / `ade`, plus `strategic_input` when a given route exists). A record
+is either `present` with a mandatory `source` + `kind`, or `unavailable` with a
+mandatory `reason` **that the HUD draws**. `check_frame` refuses to export a step
+whose element is silently missing, and refuses outright to put a `given_input` /
+`gt_label` value into the `tactical` or `strategic` prediction slots. An arm with
+no policy brains therefore reads `tactical: unavailable — arm 'main' emits no
+maneuver_probs …`, never a blank.
+
 The decoded intent is arm-specific: it reads each arm's own `maneuver_probs` /
-`nav_cmd` heads. An arm with no policy brains simply shows `ADE · v` (the fan and
-BEV still render). TanitResim's multi-arm design differs from the single-arm
+`route_pred` heads. TanitResim's multi-arm design differs from the single-arm
 `corpus_overlay` only in laying the BEV out as a shared master panel rather than
 an in-frame inset — every camera pairs with the same metric BEV in one view.
 

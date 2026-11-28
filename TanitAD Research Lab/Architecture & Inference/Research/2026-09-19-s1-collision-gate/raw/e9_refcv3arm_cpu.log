@@ -1,0 +1,35 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/Projects/TanitAD-artifacts/refcv5v2_final/extrinsics141.json (141 clips, z 1.213-1.662 m, pitch -0.0461..+0.0426 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[model] C:/Users/Admin/tanitad-caches/a8-occupancy-5k-20260919/run/ckpt_5000.pt step=5000 arm=hier anchors=128 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] nav source 'none': the true-nav forward ALREADY passes nav_cmd=None, so `os` IS the nav-zero arm — os_navshuf and os_navzero would be bit-identical to it and are NOT emitted; the STRATEGIC family will be REFUSED with that reason
+[roll] 7 windows / 1 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext'] · fed conditionings=['nav_true'] · nav_shuffle changed 0/7
+[cost] first forward (1 fed row(s), 1 rows total) took 5.50 s -> ESTIMATED 0.01 h for 7 windows (forward only; IO/analysis extra)
+  [1/1] 01be5919-6e6 7 windows 42s
+[dump] 7 windows over 1 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_SMOKE_CORPUS - ckpt=TRAINED corpus=SMOKE step=5000 eps=1 windows=7 anchors=128
+REFCV3_DUMP_DONE
+[trivial-profile] 7 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=   7 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha             n=   7 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha0            n=   7 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n=   7 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[selection-profile] 7 windows over 128 anchors — the model's OWN choice, before any family row
+  n_distinct=   4  modal=#10 (0.4286)  entropy=1.2770/4.8520 nats (ratio 0.2632)  agrees_with_oracle=0.2857
+[lead] b1_eval_lead_block.npz: 7 windows / 1 eps · OK eps 1 · LEAD 0 NO_LEAD 0 NOT_STRAIGHT 7 NO_LABEL 0 · speed-check max 6e-06 m/s · REFUSED
+[out] C:/Users/Admin/tanitad-caches/s1-gate-20260919/e9_refcv3arm_cpu.json
+  os           tier=T1*  ADE=2.4501 [2.4501, 2.4501]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha           tier=T1   ADE=0.3224 [0.3224, 0.3224]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0          tier=T1   ADE=0.7512 [0.7512, 0.7512]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0_ext      tier=T1   ADE=0.3041 [0.3041, 0.3041]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=1.6989 [1.6989, 1.6989] separated=True n_win=7 n_ep=1
+  paired_os_minus_ha           ADE delta=2.1277 [2.1277, 2.1277] separated=True n_win=7 n_ep=1
+  paired_ha_minus_ha0          ADE delta=-0.4288 [-0.4288, -0.4288] separated=True n_win=7 n_ep=1
+  paired_os_minus_ha0ext       ADE delta=2.1461 [2.1461, 2.1461] separated=True n_win=7 n_ep=1
+  ⚠️ nav-zero arm ABSENT: --no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm) — ⛔ BACKLOG R39 requires it beside the shuffle for any nav-conditioned claim
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=0.0 n_labeled=7 changed_subset_n=None
+  tactical anchor_acc=0.2857 (chance 0.007812) n_distinct_selected=4

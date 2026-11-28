@@ -1,0 +1,40 @@
+# A2_PREREG_NOTES: what the A2 pre-registration must fix (stream A2-LABELS, 2026-11-08)
+
+A2 = the one-step rung that adds behaviour-term heads (q_free, q_gap, q_osc, q_stall, q_comf) and a listwise loss on the multiplicative reward to A1 (`SCORER_GYM_DESIGN.md` 2.6). This file is the checklist for its own `PREREG_A2.md`. It is NOT that pre-registration. No training was launched; A2's pod fine-tune needs the pre-registration, a PI go and a launch-gate PASS.
+Evidence classes: MEASURED = ours, artifact in `measure/` (numbers in `RESULT_A2_ACTIVATION.md`); DESIGN = from `SCORER_GYM_DESIGN.md`; OPEN = must be decided in the pre-registration.
+
+## 1. Constants that the pre-registration must FREEZE (all are candidates today; none tuned on anything)
+`behaviour_terms.C`, version `behaviour/1`, hashed into the PREREG. Names and the two that differ from the design text:
+* corridor half-width 1.5 m; lead range `max(2.5 v, 20 m)`; mover = speed >= 0.3 m/s; lead = in corridor, ahead, static or moving along the ego heading (cos > 0.5); other movers inside the corridor are blockers; a mover entering the corridor within 4 s is a conflict.
+* q_free: 1 above 0.9 v*, linear to 0.3 at 0.5 v*; needs >= 5 of 9 sampled steps (every 0.5 s) free; `vstar_min` 1.0 m/s.
+* q_gap: pilot piecewise (0.2 below tg 0.8, 0.5 at 1.0, 1.0 over [1.5, 2.5], 0.5 at 3.5 and beyond); v < 1 m/s: 1 if gap >= 1 m else 0.2; averaged over the lead steps.
+* q_osc: smoothed a_lon (Savitzky-Golay 0.9 s window, order 2, from speed); > 2 sign changes among samples with |a_lon| > 0.5: 0.8. **DEVIATION from reading the design literally:** NAVSIM's own acceleration filter uses a 41-sample window with a quadratic, which cannot change sign more than twice, so q_osc could never fire; the short window is the only way the term exists on a 4 s horizon.
+* q_stall: v < 0.5 m/s for > 2.0 s (>= 22 consecutive 0.1 s samples) with the corridor clear at every sampled step inside the run: 0.5.
+* q_comf: `0.7 ** (violated channels)` with the six channels evaluated by NAVSIM's own filtered functions (`pdm_comfort_metrics._compute_*`).
+* Not in A2: q_yield, q_lane, q_cons (design 2.5 lists them; the brief names only free/gap/osc/stall, and comfort is already the `c` label).
+
+## 2. Decisions the data forces (OPEN, with the measurement that forces each)
+1. **q_free needs the speed limit, or must be declared exploratory.** The cached parts carry no map, so v* cannot be `min(limit, curve speed)`. The labeller falls back to `ref_mean` (PDM-Closed's own mean speed on the same free-road steps), under which the term reads "slower than PDM-Closed on a free road". MEASURED (`measure/RESULT_A2_ACTIVATION.md`, 62 trainval states): applicable in 22/62 scenes for the logged human, and it FIRES on the logged human in 17 of those 22 (PDM-Closed 0/23 by construction of `ref_mean`): a human drive reads as phantom braking relative to PDM-Closed, which is more aggressive than people. Options: (a) bump the D9 parts format to add `speed_limit_mps` (needs `build_metric_cache.py` and a rebuild of the cache on the pod, label_version bump), (b) keep `ref_mean` and treat q_free as a non-gating readout, (c) drop q_free from A2. Recommendation: (a) for the gated claim; run `ref_mean` only as a labelled exploratory arm.
+2. **q_gap bands vs human driving.** MEASURED: with a lead present the logged human row fires q_gap in 12 of 28 scenes and PDM-Closed's own row in 17 of 28. The bands [1.5, 2.5] s are stricter than ordinary urban following. This does not break a listwise selector (all proposals of a scene face the same lead, so only the within-scene order matters), but it does make the absolute q_gap level a poor "multiplicative reward" factor: it would cap the achievable reward in dense traffic. The pre-registration must say whether the reward uses q_gap at the design bands or at human-calibrated bands (calibrate on the navtrain logged-human row, never on navtest).
+3. **q_stall at stop signs.** No stop-sign data in the parts, so a legal stop with a clear corridor reads as a stall (MEASURED: PDM-Closed and the logged human each fire q_stall in 4/62 scenes, the same floor for both). The pre-registration must choose: mask the term when the logged human also stalls (labels may use the future, admissible for labels), or accept the false-positive floor.
+4. **Term sparsity.** MEASURED on the synthetic fan: q varies across the 64 proposals in only 24/62 scenes for q_free, 22/62 for q_gap, 31/62 q_osc, **3/62 q_stall**, 38/62 q_comf (q_stall is near-dead in a listwise loss: it fires on whole scenes where the log itself waits, so it does not rank proposals; REFe's own fan may differ). Report per-term `discriminating` (scenes where q varies across the 64): a term with a low value gives the listwise loss almost nothing (`D-RL-COLL-SPARSE-1`). Pre-register a bar on it, measured on REFe's own fan (see section 4), and drop terms below it BEFORE GPU time.
+5. **Which reward the listwise loss uses**: `agg_v1(tg) * prod q^act` (WIRING_PLAN item 5). Pre-register the exact form, and keep arm A1's pure-agg_v1 listwise as the matched control.
+
+## 3. Arms (minimum honest design)
+* **A1** (control, from `PREREG_DRAFT_SCORER1.md`): the speed-balanced pairwise arm. Not re-run here.
+* **A2-labels** (BCE on the five behaviour heads only, `--w-beh > 0`, no listwise change): isolates what the heads learn.
+* **A2-full** (heads + listwise on the multiplicative reward).
+* **A2-shuffle** (M-SHUF in WIRING_PLAN section 4): same as A2-full with the behaviour labels permuted across tokens. Must fall back to base.
+* **A2-replicate**: A2-full's flags again with a different seed (`H-ESTIM-SEED-1`: a separated paired interval from one seed is necessary, not sufficient; the SCORER1 pre-registration's replicate floor applies). If the planner path samples (iCEM), also an inference-seed replicate.
+* Every arm reports the four metric families (CLAUDE.md), the tier stamp T0/T1, and the g5 guard (TTC, NC >= -0.5 vs the control) stays registered (`R0: +1.16 PDMS bought with TTC -1.00`).
+
+## 4. Bars to commit before any run (placeholders are NOT values)
+* Label-quality gate (CPU, before any GPU): on REFe's own 64-proposal fan over >= 500 navtrain sets, (i) per-term applicable and fired rates, (ii) `discriminating` share, (iii) the logged-human false-positive floor, (iv) within-set rank correlation of q_prod with `agg_v1(tg)` per term (drop a term with |rho| > 0.95). All must be reported per term with n and the estimator (cluster bootstrap over LOGS).
+* Primary readout: selected-plan behaviour factors (the labeller's q of the argmax pick) and PDMS, paired against A1 on the same sets, log-cluster bootstrap; PASS = the committed behaviour-factor gain with PDMS not worse than the committed margin and the g5 guard intact. The numeric margins are OPEN and must be set from the replicate floor, not from this file.
+* Mutation: M-SHUF falls back to base (WIRING_PLAN section 4). Deliberate-regression arm: the do-nothing and always-brake selectors must score LOW on the progress-multiplied reward (CaRL's never-move minimum).
+* Data: navtrain only; navtest quarantine by the gate in `behaviour_gate.py` on both keys; the 325/1349 local DBs were not used (trainval DBs were); split identity of the labelled sets with the RL-val partition (3,000 sets / 75 logs) must be re-proved on the pod.
+
+## 5. What was NOT done and why
+* No REFe-fan measurement and no navtrain-filtered measurement: the on-policy sets, the metric cache and the images live on the pod; the navtrain scene filter is not on this box. The dev-box numbers use trainval states and a synthetic fan, and say so. The pod check is specified in section 4 (label-quality gate), about 500 sets x 0.6 s = minutes of CPU.
+* The trainer wiring (`WIRING_PLAN.md`) is not edited in; `scorer_finetune.py` belongs to SCORER1-IMPL until the Master Mind confirms it landed.
+* The offline side-file writer `behaviour_label.py` (the supply path for the static-label fine-tune) is specified (WIRING_PLAN section 1), not written.

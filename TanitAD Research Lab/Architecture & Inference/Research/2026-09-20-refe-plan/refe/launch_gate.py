@@ -1,0 +1,2738 @@
+#!/usr/bin/env python3
+"""THE REFe LAUNCH GATE: no training step runs until this mints a PASS token for the EXACT (commit, code tree, argv, data) being launched.
+CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: eval/REFE_LAUNCH_GATE.md.
+
+    # DEV BOX -- ship the exact landed bytes (writes SHIP_MANIFEST.json; refuses a file that is not its blob at the commit)
+    python refe/launch_gate.py ship-manifest --pkg <package root> --commit <40-hex> --out <package root>/SHIP_MANIFEST.json
+    # POD -- run every check on the REAL argv and REAL data, then mint (the chain does this; a token is never hand-written)
+    python launch_gate.py run --profile refe_p2 --pkg /workspace/refe-plan --args "$ARGS" --out-dir <dir> --gate-sets <d> --gate-pdm <d> \
+        --gate-bank <d> --p2-gate-json <gate.json>
+    # POD -- the chain, before every train.py launch:  exits 0 (ZZGATE-MATCHZZ) or 5 (ZZGATE-REFUSEDZZ)
+    python launch_gate.py verify --token <PASS_*.json> --args "$ARGS" --pkg /workspace/refe-plan --profile refe_p2
+    # POD, P6 -- refe/p6_pod.sh: --gate-bank carves the smoke bank from rows whose D9 parts exist (gate_fixture.carve_p6_gate_bank), plus the three pod-run inputs
+    python launch_gate.py run --profile refe_p6 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-bank <d> --gate-lab-json <lab.json>         --gate-mem-metrics <metrics.jsonl> --gate-egr-json <g_egr_result.json>
+    # anywhere, instant -- what a profile refuses before a single check runs
+    python launch_gate.py refusals --profile refe_p6 --args "<the P6 argv>"
+    # RL-S1 (trained by scorer_finetune.py, not train.py): the arm is NAMED (C0 C1 R0 R1 R2); the preflight is the trainer's own `--preflight` log, parsed
+    python launch_gate.py run --profile refe_rls1 --arm-name R0 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl>
+    # RL-S1c / R0c (DRAFT; needs a PI decision): R0's argv + `--epo-ref armA`, profile refe_rls1c; the argv must NAME the flag, every other arm refuses it
+    python launch_gate.py run --profile refe_rls1c --arm-name R0c --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl>
+    # R0e-pick (PREREG_R0E_PICK, FROZEN): R0d's argv + `--epo-con-temp <T>` and nothing else, token for token; profile refe_rls1e, arms R0e-id (T 0.1) R0e-pick (0.01) R1e-pick (0.01, seed 1) R1o (no --epo-con-temp)
+    python launch_gate.py refusals --profile refe_rls1e --arm-name R0e-pick --args "$ARGS"        # instant, no pod: ZZGATE-CLEANZZ for the registered argv, ZZGATE-REFUSEDZZ for R0d's (it lacks the lever)
+    # P2-s1, the P2 training-seed replicate (refe/p2rep_pod.sh): P2's gates on P2's argv PLUS exactly two changes (--out, --seed 1), PINNED token for token
+    python launch_gate.py run --profile refe_p2rep --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-sets <d> --gate-pdm <d> --gate-bank <d> --p2-gate-json <gate.json>
+
+    # SFT-4R (refe/sft4r_chain.sh; trained by scorer_finetune.py): the SFT-4 recipe on the deployed model_final.pt over the COMPLETE PDM labels.  The argv is PINNED token for token, the preflight is the trainer's own,
+    # and the egress gate (hf_egress.py gate) is a required check, so the token covers 'the run can leave the pod'.  See eval/PREREG_SFT4R.md Amendment 3.
+    python launch_gate.py run --profile refe_sft4r --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl> --gate-egr-json <g_egr_result.json>
+
+    # OPTIONAL, to take G-SUITE's CPU-only minutes OFF the GPU's idle clock: run the suite beforehand (the chain's WAIT stage), then hand the signed result to `run`.
+    # `run` re-measures EVERY binding (signature, commit, profile, tree digest, suite entries, gate code, environment, age <= 12 h, PASS with 0 skips) and otherwise runs the suite LIVE, exactly as without the flag
+    python launch_gate.py suite-prerun --profile refe_p2rep --pkg <pkg> --out <suite_prerun.json>            # exits 0 + ZZSUITE-PRERUN-PASSZZ, or 1 + ZZSUITE-PRERUN-FAILZZ (a FAIL evidence is written too)
+    python launch_gate.py run --profile refe_p2rep ... --suite-evidence <suite_prerun.json>                  # raw/2026-10-16-gate-suite-prerun/WIRING.md; tests: refe/test_gate_suite_prerun.py
+
+Token: schema `tanitad.launch_gate/1` (gate_token.py), HMAC-SHA256 with a pod-local key; PASS only if every required check has usable PASS
+evidence bound to the same (profile, commit, tree_sha256, argv_sha256) whose `inputs_read` fingerprints equal the launch data manifest.
+REHEARSAL evidence (tiny config, synthetic images, CPU) never counts toward a token.
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import importlib
+import json
+import math
+import os
+import re
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import gate_token as GT  # noqa: E402
+
+CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR", "G-PREFLIGHT", "G-RESERVE")
+SUITE = [{"script": "test_p2r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+FORBIDDEN = ("--synthetic", "--overfit", "--overfit-n", "--overfit-thresh", "--spread", "--break-optimizer", "--halt-after-steps",
+             "--declare-change", "--preflight", "--cpu", "--n-cameras", "--no-undistort", "--no-cosine", "--weights")
+P2_DATA = ("--targets", "--scorer-targets", "--images", "--calib", "--init-from", "--onpolicy-targets", "--pdm-labels")
+P6_TERMS = ("traj_L1", "score", "pos_L1", "yaw_L1", "bce_nc", "bce_dac", "bce_ep", "bce_ttc", "bce_c", "bce_ddc")
+# RL-S1 (eval/PREREG_RL_S1.md, DRAFT: section 1 "Lever" + "Recipe", section 3 arms).  ⛔ Every value below is the DRAFT's, so an amendment of the prereg is a
+# one-line change HERE (and nowhere else).  Trained by scorer_finetune.py, which is not train.py: the profile names its parser, its source and its own checks.
+RLS1_ARM_SEEDS = {"C0": 0, "C1": 1, "R0": 0, "R1": 1, "R2": 0}                       # arm -> its registered seed (naming an arm asserts the seed)
+RLS1_ARM_CLASS = {"C0": "C", "C1": "C", "R0": "R", "R1": "R", "R2": "R2"}            # C: BCE-only control; R: BCE + EPO, core reward; R2: R + K + L (D3, PI 2026-10-12)
+RLS1_EPO_REGISTERED = {"epo_temp": 0.1, "epo_beta": 0.1, "epo_ramp": 200, "epo_lam": 1.0, "epo_lam_d": 0.15, "epo_w_prog": 0.5, "epo_ref": "base"}   # effective value (named OR default)
+RLS1_R2_REGISTERED = {"epo_lam_k": 0.05, "epo_lam_l": 0.05}
+RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 1000,   # the SFT-4 optimiser, 1,000 updates; EVERY arm, so R vs C differ by EPO alone
+               "epochs": 4.0}   # TL-1 (PI 2026-10-12, 16,000 scenes): --epochs 2 SILENTLY ends at 500 updates (batch 8 x accum 8); 4 reaches the 1,000
+# named-but-inert levers (a flag whose effect is switched off by another registered value is a declared lever the run does not use): the SFT-2 NAVSIM labels would
+# mix label sources with the PDM labels; --b-compw / --tau-s belong to other b-modes; --tau-t scales a ListNet term that --lam 0 multiplies by zero.
+AUX_HEAD_FLAGS = ("--aux-drv", "--w-aux-drv", "--aux-drv-tap", "--aux-drv-depth", "--aux-drv-feed", "--aux-drv-labels", "--aux-drv-shuffle-seed", "--aux-drv-lr")
+HNSCREEN_FLAGS = ("--hn-bank", "--ctx-cache")                                           # P6-HN-S (PREREG_P6HN_SCREEN 4.2): the bank and the frozen-trunk context cache; ONLY refe_hnscreen accepts them
+HNSCREEN_CONTENT_FLAGS = ("--ctx-cache",)                                               # HNSCREEN-CACHE-CONTENT-FP: of those, the DIRECTORY whose bytes the gate binds by a per-file sha256 manifest (gate_token.content_fingerprint), not by a size listing
+RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t") + AUX_HEAD_FLAGS + HNSCREEN_FLAGS      # RL-S1 is not the head's experiment, nor the hard-negative screen's
+RLS1_EPO_TERMS = ("epo", "epo_J", "epo_kl", "epo_lam_pg")                              # the trainer's metric rows must emit these on an --epo arm
+RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--lane-labels-train", "--lane-labels-heldout",
+             "--pdm-labels-train", "--pdm-labels-heldout", "--teacher-lane-train", "--teacher-lane-heldout", "--epo-terms-train", "--epo-terms-heldout", "--aux-drv-labels", "--epo-carve-logs")
+RLS1_DATA = RLS1_DATA + ("--hn-bank", "--ctx-cache")                                  # P6-HN-S: the hard-negative bank and the context cache are DATA inputs (G-DVB hashes them)
+RLS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
+              {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# RL-S1b (eval/PREREG_RL_S1.md section 10, 2026-10-14; raw/2026-10-14-rls1b-attribution/attribution.json + dose.json).  R0 was KILLED by K3/g5; the attribution found the TTC loss is NOT
+# the reward's preference (58/59 TTC-worsening pick changes are DISPREFERRED by R0's own reward) but the scorer's generalisation of the EPO shift, and the dose read
+# (logit interpolation C0 -> R0) put half the PDMS gain at a quarter of the shift with no TTC loss.  ONE lever moves: the EPO dose, --epo-lam 1.0 -> 0.25 (NAMED in
+# the argv; the parser default stays 1.0, so refe_rls1 is untouched).  Same trainer, reward, recipe, data, kills and bar.  C1 is RL-S1's C1 exactly (same class, seed and
+# argv).  R2b (lane change at 0.25) is NOT an arm here: it would be a 4th A40 arm beyond the three authorised, so it is a PI decision (section 10).
+RLS1B_ARM_SEEDS = {"C1": 1, "R0b": 0, "R1b": 1}
+RLS1B_ARM_CLASS = {"C1": "C", "R0b": "R", "R1b": "R"}
+RLS1B_EPO_LAM = 0.25                                                                  # a power of two: lam_pg * x is EXACT in binary floating point (test_rl_s1b.py)
+RLS1B_EPO_REGISTERED = {**RLS1_EPO_REGISTERED, "epo_lam": RLS1B_EPO_LAM}
+RLS1B_NEEDS_PI = {"R2b": "R2b (R0b + --epo-k --epo-l, the lane-change arm at --epo-lam 0.25) is a 4th A40 arm beyond RL-S1's remaining three: it needs a PI decision "
+                         "(eval/PREREG_RL_S1.md section 10) before it can be registered"}
+RLS1B_SUITE = RLS1_SUITE + [{"script": "test_rl_s1b.py", "token": "ZZTEST_PASS"}]
+# RL-S1c / R0c (raw/2026-10-15-rls1-adam-dose/PREREG_R0C_DRAFT.md; DRAFT, needs a PI decision before any launch).  ONE lever moves against R0: the EPO term's KL anchor points at ARM A's
+# detached policy instead of the frozen base, `--epo-ref armA`.  The argv is R0's banked argv (sha256 24451b62...) plus that flag and nothing else; R0 and R0b..R2 register `epo_ref base`
+# (RLS1_EPO_REGISTERED), so `armA` is refused on every arm but R0c, and R0c requires it NAMED (the parser default is `base`, which would silently reproduce R0).  There is no C arm here:
+# R0c is read against its own arm A (the same-pass control) and C0 (banked).
+RLS1C_ARM_SEEDS = {"R0c": 0}
+RLS1C_ARM_CLASS = {"R0c": "R"}
+RLS1C_EPO_REF = "armA"
+RLS1C_EPO_REGISTERED = {**RLS1_EPO_REGISTERED, "epo_ref": RLS1C_EPO_REF}
+RLS1C_MUST_NAME = ("--epo-ref",)                                                        # flags whose parser default would reproduce the old arm: the argv must CARRY them
+RLS1C_SUITE = RLS1B_SUITE + [{"script": "test_rl_r0c.py", "token": "ZZTEST_PASS"}]
+# RL-S1d / SAFEOBJ (raw/2026-10-17-safety-objective/PREREG_SAFEOBJ.md + SPEC_SAFEOBJ.md; needs the PI's budget decision before any launch).  ONE lever moves against R0: constrained EPO,
+# `--epo-con g5` (L_con = sum_k lambda_k (c^k_A - eps - c^k_B) on TTC and NC, lambda by dual ascent).  The argv is R0's banked argv (sha256 24451b62...) plus the five --epo-con* flags.
+# The switch's parser default is `off`, which would silently reproduce R0: so R0d / R1d NAME all five flags and R1o (the matched lever-off control on the SAME trainer bytes) NAMES `--epo-con off`;
+# every older profile registers `--epo-con off` and so refuses any other value.  Order R0d, R1d, R1o (a K3 kill stops the chain; R1o's K3 is OBSERVE-ONLY, rls1_checks.py).
+RLS1D_ARM_SEEDS = {"R0d": 0, "R1d": 1, "R1o": 1}
+RLS1D_ARM_CLASS = {"R0d": "R", "R1d": "R", "R1o": "R"}
+RLS1D_CON_ON = {"epo_con": "g5", "epo_con_eps": 0.0, "epo_con_lr": 4.0, "epo_con_max": 10.0, "epo_con_lam0": 0.0}          # PREREG_SAFEOBJ 2: eps 0, eta 4, lambda_max 10, lambda0 0
+RLS1D_CON_OFF = {"epo_con": "off"}
+RLS1D_ARM_EPO_REGISTERED = {"R0d": RLS1D_CON_ON, "R1d": RLS1D_CON_ON, "R1o": RLS1D_CON_OFF}
+RLS1D_CON_FLAGS = ("--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0")
+RLS1D_ARM_MUST_NAME = {"R0d": RLS1D_CON_FLAGS, "R1d": RLS1D_CON_FLAGS, "R1o": ("--epo-con",)}
+RLS1D_CON_TERMS = ("con", "con_lam_ttc", "con_lam_nc", "con_g_ttc", "con_g_nc")                # the trainer's metric rows must emit these on a constrained arm (R1o: none, and their presence there is a FAIL)
+RLS1D_ARM_CON_TERMS = {"R0d": RLS1D_CON_TERMS, "R1d": RLS1D_CON_TERMS, "R1o": ()}
+RLS1D_SUITE = RLS1C_SUITE + [{"script": "test_rl_safeobj.py", "token": "ZZTEST_PASS"}]
+# R0e-pick (raw/2026-10-18-r0e-pick/PREREG_R0E_PICK.md, FROZEN 2026-10-18, sha256 1be7a030...; PI decisions 1a-1f; launch blockers B2 + B5, raw/2026-10-19-r0e-b2b5/).  ONE lever moves against R0d: `--epo-con-temp`, the
+# temperature T of the CONSTRAINT's softmax.  Its parser default is None = INHERIT --epo-temp (0.1), which silently REPRODUCES R0d, so every e arm NAMES it (`arm_must_name`) and the profile registers its value per
+# arm (`arm_epo_registered`): R0e-id 0.1 (the identity control, run to u1000: PI 1c), R0e-pick 0.01, R1e-pick 0.01 (seed 1, Stage 2, only on outcome O1).  R1o is SAFEOBJ's registered R1o (`--epo-con off`) and must
+# NOT carry `--epo-con-temp` (`arm_forbid_flags`; the trainer refuses it too, scorer_finetune.epo_con_refusals).  `lineage` pins each argv TOKEN FOR TOKEN to R0d's registered argv (eval/rls1d_arms.json, arms.R0d.argv):
+# with the lever pair removed, the own paths swapped back to /arms/R0d and the seed read as R0d's, the argv IS R0d's -- so a second lever (--epo-con-feed carve, --workers 4, --max-updates 250: the cosine schedule runs
+# over min(total, max_updates), so 250 is NOT an identity argv) cannot ride along.  The expected argv is a CONSTANT here because the token binds THIS file and eval/ is outside the tree digest; test_launch_gate.py
+# diffs it against eval/rls1d_arms.json and eval/rls1e_arms.json (built by raw/2026-10-19-r0e-b2b5/build/make_rls1e_arms_json.py), so a copy that drifts is RED.
+RLS1E_ROOT = "/workspace/data/rls1"
+RLS1E_BASE_ARM = "R0d"
+RLS1E_BASE_ARGV = ("--ckpt /workspace/data/rls1/base/model_sft4_B_u400.pt --backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --images "
+                   "/workspace/data/navtrain_pixels --calib /workspace/data/refe_navtrain/train_grow/calib_table.json --onpolicy /workspace/data/rls1/sets_train --heldout "
+                   "/workspace/data/rls1/sets_val --heldout-logs /workspace/data/rls1/rl_val_logs.txt --out /workspace/data/rls1/arms/R0d --pdm-labels-train "
+                   "/workspace/data/rls1/pdm_train --pdm-labels-heldout /workspace/data/rls1/pdm_val --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 "
+                   "--workers 3 --seed 0 --eval-every 250 --dump-scores /workspace/data/rls1/arms/R0d/scores --lane-head --teacher-lane-train /workspace/data/rls1/tlane_train "
+                   "--teacher-lane-heldout /workspace/data/rls1/tlane_heldout --epo --epo-terms-train /workspace/data/rls1/terms_train --epo-terms-heldout "
+                   "/workspace/data/rls1/terms_val --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0").split()
+RLS1E_ARM_SEEDS = {"R0e-id": 0, "R0e-pick": 0, "R1e-pick": 1, "R1o": 1}
+RLS1E_ARM_CLASS = {a: "R" for a in RLS1E_ARM_SEEDS}
+RLS1E_CON_TEMP = {"R0e-id": 0.1, "R0e-pick": 0.01, "R1e-pick": 0.01}                    # PREREG_R0E_PICK 2.1: the registered constraint T per arm (R0e-id names the inherited default on purpose)
+RLS1E_LEVER = "--epo-con-temp"
+RLS1E_ARM_EPO_REGISTERED = {**{a: {**RLS1D_CON_ON, "epo_con_temp": t} for a, t in RLS1E_CON_TEMP.items()}, "R1o": RLS1D_CON_OFF}
+RLS1E_ARM_MUST_NAME = {**{a: RLS1D_CON_FLAGS + (RLS1E_LEVER,) for a in RLS1E_CON_TEMP}, "R1o": RLS1D_ARM_MUST_NAME["R1o"]}
+RLS1E_ARM_FORBID = {"R1o": (RLS1E_LEVER,)}                                                # R1o is `--epo-con off`: a constraint T belongs to a term that is OFF
+RLS1E_ARM_CON_TERMS = {**{a: RLS1D_CON_TERMS for a in RLS1E_CON_TEMP}, "R1o": ()}
+RLS1E_SUITE = RLS1D_SUITE + [{"script": "test_rl_pickcon.py", "token": "ZZTEST_PASS"}]    # PREREG 5, K0: RLS1D_SUITE + test_rl_pickcon.py (ZZTEST_PASS 20: G13 temp_reach included)
+# Auxiliary drivable-area head, S1 (WIRING_PLAN.md; eval/PREREG_AUX_DRIVABLE_DRAFT.md "Hosts": S1 = the SFT-4 recipe on the dev box, trunk frozen).  ⛔ PROPOSED values: they are
+# raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md's, and the Master Mind's approval of that file is what makes them registered -- an amendment is a one-line change HERE.
+# Arms: N = the no-head replicate, H1 = head with the feed off (perception proof; the scorer is bit-identical to N, G12), H2 = head + feed.  One seed per arm name.
+AUXS1_SEEDS = (0, 1, 2)
+AUXS1_ARM_CLASS = {f"{c}-s{k}": c for c in ("N", "H1", "H2") for k in AUXS1_SEEDS}
+AUXS1_ARM_SEED = {f"{c}-s{k}": k for c in ("N", "H1", "H2") for k in AUXS1_SEEDS}
+AUXS1_HEAD_REGISTERED = {"w_aux_drv": 0.1, "aux_drv_lr": 2e-4, "aux_drv_tap": "visual", "aux_drv_depth": 2}      # effective value (named OR default), head arms
+# the optimiser and loss of EVERY arm (N included), inherited from the SFT-4 run that produced u400 (refe/sft4_pod.sh COMMON); --max-updates 400 is the S1 budget
+AUXS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 400, "eval_every": 400, "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
+AUXS1_EPO_FLAGS = ("--epo", "--epo-temp", "--epo-beta", "--epo-ramp", "--epo-lam", "--epo-lam-d", "--epo-w-prog", "--epo-k", "--epo-lam-k", "--epo-l", "--epo-lam-l", "--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0", "--epo-con-temp",          # --epo-con-temp: PICKCON (the constraint's own T); a non-EPO arm never carries it
+                   "--epo-terms-train", "--epo-terms-heldout", "--epo-ref",
+                   "--epo-con-feed", "--epo-carve-logs", "--epo-carve-sha256", "--epo-carve-micro")          # B8: the carve feed of the dual; a non-EPO arm never carries it
+# --aux-drv-shuffle-seed is the label-shuffled CONTROL's lever: a non-control arm never carries it (a dated prereg amendment adds the control arm and relaxes this)
+AUXS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed") + AUXS1_EPO_FLAGS + HNSCREEN_FLAGS
+AUXS1_HEAD_TERMS = ("aux_bce", "aux_huber")                                           # the trainer's metric rows must emit these on a head arm
+AUXS1_SUITE = [{"script": "test_rl_reward.py", "token": "ZZTEST_PASS"}, {"script": "test_rl_epo.py", "token": "ZZTEST_PASS"},
+               {"script": "test_aux_drivable_head.py", "token": "ZZTEST_PASS"}, {"script": "test_aux_s1_wiring.py", "token": "ZZTEST_PASS"},
+               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# S1c (raw/2026-10-16-s1c-build/S1C_DESIGN.md; PI 2026-10-16 "run S1c before P6"): S1's H1 head (frozen trunk, feed off, natural sampling, the registered head levers) with ONE thing moved: the TRAINING
+# BUDGET.  The budget is a CLASS of arm (like N / H1 / H2), each with its own (max_updates, batch, accum, eval_every); every other recipe value is S1's (AUXS1_RECIPE).  The budget flags are NAMED in the
+# argv (a default would hide the lever) and the schedule must REACH max_updates (profile key `schedule_reach`: a --epochs that is too small stops a run SILENTLY early, TL-1 / refe_rls1's --epochs 4).
+#   u10k  RECOMMENDED: 10,000 updates x 8 rows (accum 1) = 80,000 rows, 0.46 of an epoch: the (updates, batch) of the dev-box probe that read 0.675 (raw/2026-10-16-scene-tap-a2/); ~4.3 A40-h (4.1-5.4: COST_MODEL.json)
+#   u2k   S1's own update (8 x 8 = 64 rows) x 2,000 = 128,000 rows, 0.73 of an epoch; ~6.2 A40-h (COST_MODEL.json)
+# ONE seed (0) is registered: the replicate (seed 1) is a follow-up PI decision, and registering it is a one-line change here.
+AUXS1C_BUDGETS = {"u10k": {"max_updates": 10000, "batch": 8, "accum": 1, "eval_every": 5000},
+                  "u2k": {"max_updates": 2000, "batch": 8, "accum": 8, "eval_every": 1000}}
+AUXS1C_SEEDS = (0,)
+AUXS1C_ARM_CLASS = {f"H1{b}-s{k}": f"H1{b}" for b in AUXS1C_BUDGETS for k in AUXS1C_SEEDS}
+AUXS1C_ARM_SEED = {f"H1{b}-s{k}": k for b in AUXS1C_BUDGETS for k in AUXS1C_SEEDS}
+AUXS1C_ARM_RECIPE = {f"H1{b}": {**AUXS1_RECIPE, **bud} for b, bud in AUXS1C_BUDGETS.items()}      # class -> the full registered recipe (S1's, with the budget moved)
+AUXS1C_MUST_NAME = ("--max-updates", "--batch", "--accum", "--eval-every")                          # the budget the arm tests is NAMED, never a parser default
+AUXS1C_SUITE = AUXS1_SUITE + [{"script": "test_s1c.py", "token": "ZZTEST_PASS", "args": ["--no-e2e"]}]   # --no-e2e: the end-to-end chain sandbox is dev-box-only (it needs the repo checkout), DECLARED out of the pod run rather than skipped (a skip fails G-SUITE); 2026-10-16 pod pre-run, raw/2026-10-16-s1c-build/POD_GSUITE_FIX.md
+# P2-s1, the P2 TRAINING-SEED REPLICATE (eval/PREREG_P2_REPLICATE.md; chain refe/p2rep_pod.sh).  The arm is P2's argv CHARACTER FOR CHARACTER with exactly two changes: `--out` is the
+# replicate's own run directory and `--seed 1` is added (P2 ran the parser default, seed 0).  `refe_p2` binds NEITHER (its `required_flags` names 8 of its 20 flags; a missing `--seed 1`, P2's
+# own `--out`, or any other lever that moved would still mint), so the replicate has a profile of its own that PINS the whole argv (`pinned_argv`, token for token).
+# P2_ARGV is `ARGS` of refe/p2r_pod.sh as it EXPANDS on the pod (DATA=/workspace/data, RUN=$DATA/refe_runs/p2_joint_pdm); test_p2rep_chain.py diffs the three copies (p2r_pod.sh, p2rep_pod.sh, this).
+# ====================================================================================================================================================================================
+# P6-HN-S (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md 4.1 / 4.2 / 4.4): the offset hard-negative SCREEN.  refe_hnscreen = refe_rls1 (same runner, checks, required / forbidden flags, recipe, G-DVB,
+# G-PREFLIGHT) with ITS arm table and the base argv PINNED.  A "pass" s trains A_s and B_s in ONE run (scorer_finetune trains both arms in a single process), so the arm is the pass: S0 S1 S2 (seeds 0 1 2);
+# the extension passes S3 S4 are PI/rule-E arms (PREREG 7 rule E), not mintable until it fires.  The base argv is RL-S1's C1 argv token for token (eval/rls1b_arms.json); the ONLY allowed differences are
+# --seed, --out, --dump-scores, the data paths re-rooted to the run box (their CONTENT fingerprints must equal C1's / C0's: `fingerprints_expected`), plus --hn-bank and --ctx-cache each exactly once.
+HNSCREEN_ARM_SEEDS = {"S0": 0, "S1": 1, "S2": 2}
+HNSCREEN_ARM_CLASS = {"S0": "C", "S1": "C", "S2": "C"}                                   # class C = no EPO lever: A_s and B_s differ by the hard-negative term alone
+HNSCREEN_NEEDS_PI = {"S3": "S3 (seed 3) is an extension pass: it runs only under PREREG_P6HN_SCREEN section 7 rule E, which has not fired",
+                     "S4": "S4 (seed 4) is an extension pass: it runs only under PREREG_P6HN_SCREEN section 7 rule E, which has not fired"}
+HNSCREEN_PIN = {"--backbone": ("vitl16",), "--require-pdm": (), "--b-mode": ("listnet",), "--lam": ("0",), "--lr": ("1e-4",), "--max-updates": ("1000",), "--epochs": ("4",), "--workers": ("3",),
+                "--eval-every": ("250",), "--lane-head": ()}      # C1's non-path tokens, value for value
+HNSCREEN_PATHS = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--out", "--pdm-labels-train", "--pdm-labels-heldout", "--dump-scores",
+                  "--teacher-lane-train", "--teacher-lane-heldout") + HNSCREEN_FLAGS      # tokens whose VALUE may move (a re-rooted path) but which must be carried exactly once
+HNSCREEN_TERMS = ("hn_rows", "hn_rows_expected", "hn_loss")                              # the trainer's train rows must emit these (D1: the rows that entered the term vs the rows the bank holds)
+HNSCREEN_SUITE = RLS1_SUITE + [{"script": "test_hn_bank.py", "token": "ZZTEST_PASS"}, {"script": "test_ctx_cache.py", "token": "ZZTEST_PASS"},
+                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_content_fp.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_ctx_anchor.py", "token": "ZZTEST_PASS", "args": ["--no-mutants"]}]      # --no-mutants: G-SUITE runs the 38 arms; the 34-mutant matrix (a tree copy per mutant) is run at landing and in the sibling suite, DECLARED not skipped
+
+
+P2_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm"
+P2REP_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm_s1"
+P2REP_SEED = 1
+P2_ARGV = ("--backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --scorer-targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels "
+           "--calib /workspace/data/refe_navtrain/train_grow/calib_table.json --init-from /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --scorer-mode onpolicy "
+           "--onpolicy-targets /workspace/data/refe_navtrain/onpolicy/sets --pdm-labels /workspace/data/refe_sft2/train_pdm --pdm-only --scorer-sees-trunk --epochs 3 --epoch-unit scenes "
+           "--batch 4 --accum 64 --lr 5e-5 --amp bf16 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out " + P2_RUN_DIR + " --resume")
+
+
+def p2rep_argv(p2_argv: str = P2_ARGV) -> list:
+    """P2's argv with EXACTLY the replicate's two changes: `--out` -> the replicate's run dir, and `--seed 1` inserted before it.  Anything else is P2's."""
+    toks = p2_argv.split()
+    i = toks.index("--out")
+    toks[i + 1] = P2REP_RUN_DIR
+    toks[i:i] = ["--seed", str(P2REP_SEED)]
+    return toks
+
+
+P2REP_ARGV = p2rep_argv()
+# SFT-4R (eval/PREREG_SFT4R.md + Amendment 3; chain refe/sft4r_chain.sh; pod script refe/sft4r_pod.sh): the SFT-4 recipe on the DEPLOYED model_final.pt, ONE pass over the COMPLETE PDM labels, scorer only
+# (score_q_mlp / score_dec / score_head), arms A and B in one pass.  It is ONE argv, so the profile PINS it token for token (`pinned_argv`, like refe_p2rep), and asserts what a pin cannot:
+#   * the EFFECTIVE recipe (`sft4r_refusals`): a parser DEFAULT can move under a pinned argv (--epochs, --warmup, --batch, --accum, --eval-every and --seed are NOT named in it);
+#   * from the trainer's OWN `data` event (`data_expect`, G-DVB), that the labels are COMPLETE: SFT-4 launched on 146,185 of 174,912 because "complete" was never a computed fact (PREREG_SFT4 Amendment 4).
+#     `train_sets` is the number of served sets that have a PDM label under --require-pdm, so it IS the label coverage as the trainer sees it; the schedule is re-derived from it (2,733 updates).
+# The values are MEASURED on the pod: the S1 chain's preflight `data` event for the very same inputs (raw/2026-10-16-sft4r-readiness/evidence/s1_n_s0_data_event.json, written 2026-10-14).
+SFT4R_RUN_DIR = "/workspace/data/refe_sft4r"
+SFT4R_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "epochs": 1.0, "max_updates": 0, "eval_every": 400, "seed": 0,       # PREREG_SFT4 "Settings" (AdamW, 50-update warm-up, cosine to 0, 8 x 8, 1 epoch, seed 0)
+                "b_mode": "expreward", "lam": 1.0, "tau_s": 0.1, "lane_weight": 1.0}
+SFT4R_UPDATES = 2733                                                                    # ceil(174,912 / 8 / 8) = scorer_finetune.py:1363; PREREG_SFT4R's "2,335" is the lost run's 146,185-label epoch
+SFT4R_DATA_EXPECT = {"train_sets": 174912, "train_sets_in_bank": 174912, "heldout_sets": 3137, "heldout_in_bank": 3137, "heldout_logs": 24, "train_rows_in_heldout_logs": 0,
+                     "lane_labels.pdm_train": 174912, "lane_labels.pdm_train_stale": 0, "lane_labels.pdm_train_superseded": 0, "lane_labels.pdm_heldout": 3137,
+                     "lane_labels.heldout_sets": 3137, "lane_labels.heldout_stale": 0, "lane_labels.teacher_lane_heldout": 3137}
+SFT4R_DATA_MIN = {"lane_labels.teacher_lane_train": 2109}                              # PREREG_SFT4R "Changed 2": the lost run's count is the FLOOR (the seeded 15,000-set subset, the rows written by launch)
+SFT4R_FORBIDDEN = ("--preflight", "--lane-labels-train", "--b-compw", "--tau-t", "--aux-drv-shuffle-seed", "--max-updates") + AUX_HEAD_FLAGS + AUXS1_EPO_FLAGS
+SFT4R_SUITE = [{"script": "test_sft4r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_sft4r_gate.py", "token": "ZZTEST_PASS"},
+               {"script": "test_suite_nesting.py", "token": "ZZTEST_PASS"},                                   # G-SUITE refuses to nest (gate_checks.check_suite); mutation-proven, process-bounded
+               {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
+# SFT4R_ARGV is the pod script's argv as it EXPANDS on the pod (WS=/workspace): `MODE=argv bash refe/sft4r_pod.sh`; test_sft4r_gate.py diffs the two copies.
+SFT4R_ARGV = ("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt --targets /workspace/data/refe_navtrain/train_grow --images /workspace/data/navtrain_pixels "
+              "--calib /workspace/data/refe_navtrain/train_grow/calib_table.json --onpolicy /workspace/data/refe_navtrain/onpolicy/sets --heldout /workspace/data/refe_heldout/sets "
+              "--heldout-logs /workspace/data/refe_heldout/heldout_logs.txt --workers 3 --lr 1e-4 --b-mode expreward --lam 1.0 --tau-s 0.1 --lane-head --lane-weight 1.0 "
+              "--teacher-lane-train /workspace/data/refe_sft2/train_teacher_lane --teacher-lane-heldout /workspace/data/refe_sft2/heldout_teacher_lane "
+              "--lane-labels-heldout /workspace/data/refe_sft2/heldout_lane --pdm-labels-heldout /workspace/data/refe_sft2/heldout_pdm "
+              "--pdm-labels-train /workspace/data/refe_sft2/train_pdm --require-pdm --out " + SFT4R_RUN_DIR)
+# L_field, the proposal-level drivable-area field loss (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md; PI decision D-AUX-4).  A host is a `refe/train.py` run (P2's recipe).  The registered values below
+# are the draft's: an amendment of the prereg is a one-line change HERE.  --w-field is NOT registered here: it is set once by the committed gradient-norm rule (refe/weight_rule.py) and
+# lands in the prereg's blanks, so the F profile requires it NAMED and POSITIVE and the C profile requires it NAMED and EXACTLY 0.0 (a flag whose default disables the term must be named,
+# or the arm did not test it).  F and C differ by --w-field alone.  --field-shuffle-seed (the label-shuffled control) is forbidden until a dated amendment adds that arm.
+FIELD_REGISTERED = {"--field-margin": "0.25", "--field-interp": "5hz"}
+FIELD_SUITE_EXTRA = [{"script": "test_field_loss.py", "token": "ZZTEST_PASS"}]
+_BASE = dict(trainer="refe/train.py", parser_module="train", trainer_src="train.py", live_terms=("traj_L1", "score"), ckpt_steps=4, smoke_steps=2, smoke_accum=2,
+             suite=SUITE, forbidden_flags=FORBIDDEN, output_flags=("--out",), mintable=True, require_commit=True, rehearsal=False,
+             checks=("G-HYG", "G-DVB", "G-LIVE", "G-EVAL", "G-CKPT", "G-SUITE"), na_ok=("G-CLOCK",),
+             clock_na="P2 has no label clock: its labels are the PDM relabel of a banked on-policy bank, stamped by the relabeller's ckpt_step")
+
+# G-CLOCK's step-0 bank size for P6, ONE ENTRY PER BANK, keyed by the directory name of `--targets` (the trainer's `bank` event n_tuples = the rows of targets_rank*.jsonl).
+# A bank's tuple count is a DERIVED constant of that bank (TRAPS: a derived constant silently changes the experiment when its input changes): a new bank gets its OWN entry,
+# registered in its pre-registration BEFORE any training data exists, and an existing entry is never edited.  A --targets bank with no entry FAILS G-CLOCK.
+P6_BANK_TUPLES = {
+    # SPEC_P6_PAPER_FAITHFUL.md section 0.2 (l.63) and D8 (l.149): 103,037 rank-0 + 86,851 rank-1 rows, MEASURED (the final run's `bank` events, epochs 4-27)
+    "train_grow_cmd": 189888,
+    # raw/2026-10-17-twin-bank-3c/PREREG_3C.addendum6.md: 103,037 rank-0 rows (byte-identical, sha256 daa23b96...) + 64,263 rank-1 rows (86,851 - 22,588 dropped
+    # lane-rank twins; out sha256 2a63acc2...), = merge_report.json and the trainer's own bank event on the pod (2026-10-18)
+    "train_grow_cmd_3c": 167300,
+}
+
+PROFILES = {
+    # PREREG_P2 / eval/PREREG_P2_AMENDMENT_1.md: the joint fine-tune p2r_pod.sh launches.  required_flags are its design, asserted not trusted.
+    "refe_p2": {**_BASE, "name": "refe_p2", "data_flags": P2_DATA, "checks": _BASE["checks"] + ("G-P2GATE",),
+                "required_flags": {"--scorer-mode": "onpolicy", "--pdm-only": None, "--scorer-sees-trunk": None, "--epochs": "3",
+                                   "--epoch-unit": "scenes", "--batch": "4", "--accum": "64", "--lr": "5e-5", "--amp": "bf16"},
+                "provisional_flags": ()},
+    # SPEC_P6_PAPER_FAITHFUL.md section 5.  ⛔ REFUSES TODAY: --yaw-wrap / --nav-mode / --labeller are D5 / D6 / D1 and are NOT built, and the
+    # trainer's metrics carry no pos / yaw / per-component BCE terms.  Flag and term NAMES are PROVISIONAL until the implementer lands them.
+    "refe_p6": {**_BASE, "name": "refe_p6", "data_flags": ("--targets", "--images", "--calib", "--metric-cache"),
+                "suite": SUITE + [{"script": "test_p6_levers.py", "args": ["--fast"], "token": "ZZP6_PASS"},
+                                  {"script": "test_p6_chain.py", "token": "ZZP6CHAIN_PASS"}],
+                # G-LIVE-LAB / G-LIVE-MEM / G-EGR are POD-RUN: the gate consumes their instruments' output (--gate-lab-json / --gate-mem-metrics / --gate-egr-json)
+                "checks": ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR"), "na_ok": (),
+                "live_terms": P6_TERMS,
+                # R44: G-CKPT's round trip at micro-batch 2 x accum 4 (the smoke's effective 8): batch 4 under deterministic kernels needs >= 43.70 GiB of 44.43
+                "ckpt_micro_batch": 2,
+                "forbidden_flags": FORBIDDEN + ("--grow", "--grow-scenes", "--onpolicy-targets", "--init-from", "--pdm-labels", "--pdm-only",
+                                                "--scorer-mode", "--label-backend"),
+                # --yaw-wrap must be NAMED in the argv AND carry the PI's ruling P6-Y (2026-10-11): "off" = unwrapped yaw L1, the paper's literal reading (on = the wrapped
+                # error of P2 / SFT-4). The gate asserts the ruling, not just the presence: `--yaw-wrap on` is refused as a value mismatch.
+                "required_flags": {"--scorer-sees-trunk": None, "--yaw-wrap": "off", "--nav-mode": "command", "--labeller": "online",
+                                   "--epochs": "25", "--batch": "4", "--accum": "64", "--lr": "2e-4", "--weight-decay": "0.01", "--amp": "bf16",
+                                   "--score-w": "0.1", "--label-chunks": "2"},
+                # --label-chunks 2 (2026-10-18, raw/2026-10-18-p6-gate-diagnosis/): each 64-proposal set is scored as 2 jobs of 32 (SPEC_P6 3.1's latency split; labels are per
+                # proposal, re-proved bit for bit by G-LIVE-LAB's identity check AT this value).  MEASURED on the 8.5-CPU pod, trainer clock: 1 job per set stalls 2.3-3.8 %
+                # at 4-8 workers (the a5a4ee8 dry run read 10.3 % in one window), 2 jobs 0.41 % at the chain's 6 workers (0.05-0.15 % at 8).  A one-line change here re-registers it.
+                "provisional_flags": (),
+                # SPEC_P6 section 0.2 wrote 10,063 steps (= ceil(25 x 103,037 / 256)); the trainer's own definition (train.py: epochs x ceil(epoch_len / (batch x
+                # accum)), re-derived independently by G-DVB) gives 25 x 403 = 10,075 -- the final run's measured step count. The profile registers the TRAINER's.
+                # The step-0 bank size is registered PER BANK (P6_BANK_TUPLES): epochs / steps / epoch_len are scene counts, which both banks share.
+                "expect_schedule": {"epochs": 25, "steps": 10075, "epoch_len": 103037, "n_tuples_by_bank": P6_BANK_TUPLES}},
+    # L_field arm F (w_field > 0) and its control C (--w-field 0.0, same init / bank / steps / seed): P2's recipe plus the term.  Cloned from refe_p2, so every P2 lever is asserted too.
+    "refe_field": {**_BASE, "name": "refe_field", "data_flags": P2_DATA + ("--field-labels",), "checks": _BASE["checks"] + ("G-P2GATE",), "field_arm": "F",
+                   "suite": SUITE + FIELD_SUITE_EXTRA, "live_terms": ("traj_L1", "score", "field_L"), "field_min_coverage": 0.999,
+                   "forbidden_flags": FORBIDDEN + ("--field-shuffle-seed",),
+                   "required_flags": {"--scorer-mode": "onpolicy", "--pdm-only": None, "--scorer-sees-trunk": None, "--epochs": "3", "--epoch-unit": "scenes",
+                                      "--batch": "4", "--accum": "64", "--lr": "5e-5", "--amp": "bf16",
+                                      "--w-field": None, "--field-labels": None, **FIELD_REGISTERED},
+                   "provisional_flags": ()},
+    "refe_field_ctrl": {**_BASE, "name": "refe_field_ctrl", "data_flags": P2_DATA + ("--field-labels",), "checks": _BASE["checks"] + ("G-P2GATE",), "field_arm": "C",
+                        "suite": SUITE + FIELD_SUITE_EXTRA, "field_min_coverage": 0.999, "forbidden_flags": FORBIDDEN + ("--field-shuffle-seed",),
+                        "required_flags": {"--scorer-mode": "onpolicy", "--pdm-only": None, "--scorer-sees-trunk": None, "--epochs": "3", "--epoch-unit": "scenes",
+                                           "--batch": "4", "--accum": "64", "--lr": "5e-5", "--amp": "bf16",
+                                           "--w-field": "0.0", "--field-labels": None, **FIELD_REGISTERED},
+                        "provisional_flags": ()},
+    # the dev-box rehearsal: P2's levers on the tiny bank.  Exercises every instrument; its evidence is REHEARSAL and can never mint.
+    "refe_rehearsal": {**_BASE, "name": "refe_rehearsal", "data_flags": ("--targets", "--scorer-targets", "--init-from", "--onpolicy-targets",
+                                                                          "--pdm-labels"),
+                       "forbidden_flags": tuple(f for f in FORBIDDEN if f not in ("--synthetic", "--cpu", "--n-cameras")), "mintable": False,
+                       "require_commit": False, "rehearsal": True, "required_flags": {"--scorer-mode": "onpolicy", "--scorer-sees-trunk": None},
+                       "provisional_flags": (), "eval_cfg_allowed": ("n_cameras", "cameras")},
+    # RL-S1 (eval/PREREG_RL_S1.md, eval/HANDOFF_RL_S1.md finding 5): scorer_finetune.py's EPO arms.  The arm is a CLASS the argv must satisfy (rls1_refusals): C = BCE-only
+    # control (no --epo), R = R0/R1 (--epo, core reward), R2 = R + --epo-k + --epo-l.  There is no BUILD/SMOKE instrumentation (that is train.py's): the trainer's own
+    # `--preflight` (G1-G11) is CONSUMED, parsed, and its file sha256 is bound into the token; G-DVB is static + the preflight's `data` event.
+    "refe_rls1": {**_BASE, "name": "refe_rls1", "runner": "scorer", "arm_rules": "rls1", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
+                  "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe", "aux_s1_refusals"), "data_flags": RLS1_DATA,
+                  "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE"), "na_ok": ("G-CLOCK",), "suite": RLS1_SUITE, "live_terms": ("bceA", "lossB"),
+                  "clock_na": "RL-S1 has no label clock of its own: its labels are the PDM relabel of an on-policy bank, stamped by the relabeller's ckpt_step; "
+                              "the preflight's G9 bounds the stale share (<= 5 %) and rl_terms count only for the set and ckpt_step they were computed on",
+                  "forbidden_flags": RLS1_FORBIDDEN, "output_flags": ("--out",),
+                  "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--b-mode": "listnet", "--lam": "0"},
+                  "provisional_flags": ()},
+    # Auxiliary drivable-area head, S1 (see AUXS1_* above): scorer_finetune.py with --aux-drv.  Same runner as refe_rls1 (static checks + the trainer's own --preflight, now with G12);
+    # the arm is NAMED (N-s0 .. H2-s2) and is a CLASS the argv must satisfy (auxs1_refusals).  NOT an RL profile: every EPO lever is forbidden.
+    "refe_aux_s1": {**_BASE, "name": "refe_aux_s1", "runner": "scorer", "arm_rules": "auxs1", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
+                    "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe", "aux_s1_refusals"), "data_flags": RLS1_DATA,
+                    "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE"), "na_ok": ("G-CLOCK",), "suite": AUXS1_SUITE, "live_terms": ("bceA", "lossB"),
+                    "clock_na": "aux S1 has no label clock of its own: its scorer labels are the PDM relabel of an on-policy bank (the preflight's G9 bounds the stale share) and the head's "
+                                "labels are keyed by (log_name, token) in a pinned store (G12 + G-DVB bind its sha256 and frame count)",
+                    "forbidden_flags": AUXS1_FORBIDDEN, "output_flags": ("--out",),
+                    "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--lane-head": None, "--teacher-lane-train": None,
+                                       "--teacher-lane-heldout": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--max-updates": "400", "--lr": "1e-4"},
+                    "provisional_flags": ()},
+}
+
+
+# ============================================================================================ P7 (SPEC_P7.md sections 1 and 2): refe_p6 + the training-only drivable-area head + the session reserve
+# `refe_p7` is CLONED from `refe_p6` (the P6 dict above is not edited: its ARGS sha and every test_p6_* anchor stay what they were) and adds, each with a check that can fail:
+#   * the head's levers are REQUIRED in the argv with their registered values (`--w-aux-drv` DEFAULTS to 0.0, so an arm that omits it would train head-less and read as clean: SPEC_P7 1);
+#     `--w-field 0.0` is NAMED (the field loss is its own arm, D-AUX-4); `--aux-drv-shuffle-seed` (the label-shuffled control) is FORBIDDEN in a launch;
+#   * `--aux-drv-labels` is a DATA flag: the PASS token fingerprints the label store, and G-DVB compares the store's manifest sha256 + key count with the profile's registered pins;
+#   * G-RESERVE (SPEC_P7 2): the reserve file's sha256 is the registered draw's AND `session_reserve.audit_inputs` finds it disjoint from all five training inputs;
+#   * the schedule: 25 epochs x ceil(92,896 / 256) = 9,075 steps (P6: 10,075), a step-0 bank registered PER BANK.
+# ⭐ THE THREE PINS BELOW WERE REGISTERED BY P7-PINS (2026-10-22) FROM `p7_pins.py`'s OUTPUT on the real rebuilt 3-C bank (`ZZP7PINS_OK tuples=150603 scenes=92896 store_keys=92993 store_sha256=df2ddd1ba2aa16a2 targets_sha256=92af8d663ecdd04a`); an unregistered or malformed pin still makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK), never default to something else:
+#   P7_AUX_STORE_PINS  the P7 TRAINING store's manifest `store_sha256` + `counts.stored_keys`: they exist only after the chain's block 5a (`p6_pod.sh`, `P7_RESERVE` + `P7_LABEL_STORE`) has moved the reserve's shards
+#                      out and RE-FINALISED the store (`aux_label_store.py finalize`) -- SPEC_P7 2, "registered before step 0"
+#   P7_BANK_TUPLES     the `train_grow_cmd_3c_p7` bank's tuple count: 92,896 rank-0 rows + the filter's rank-1 count (MEASURED 2026-10-22: 57,707 = 64,263 - 6,556 excluded; the earlier ~150.8k was an ESTIMATE and was never registered)
+#   P7_TARGETS_SHA256  the bank's CONTENT: the trainer's own `targets_sha256` (sha256 over basename + bytes of each `targets_rank*.jsonl`, sorted) of that same bank directory.  A tuple count cannot tell two same-size banks
+#                      apart; this can.  Keyed by the bank's directory name like the count; G-CLOCK recomputes it from the `--targets` files at launch and FAILS on any other bank (P7-WIRE-INTEGRATE-2)
+#   P7_RESERVE_SHA256  filled below (R-A, MEASURED: the sha256 of raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json, re-measured 2026-10-22; SESSION_RESERVE.md header table) == session_reserve.RESERVE_FILE_SHA256
+# ⭐ HOW THE TWO PINS ARE PRODUCED, exactly: `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` -- `measure_rank1_3c.sh` (the filter on the rebuilt 3-C bank) then `p7_pins.py` (reads both numbers off the
+# OUTPUTS, refuses unless the bank and the store audit clean, and prints the two registrations).  Nothing here is typed from an estimate.
+# ⭐ DESIGN (P7-WIRE-INTEGRATE, 2026-10-22): the reserve is removed INSIDE THE DATA CHAIN (`p6_pod.sh` block 5a + `p6_prep.py reserve-*`, run under `P7_RESERVE`), and G-RESERVE audits the chain's OUTPUTS -- the five inputs the
+# LAUNCH argv names -- with the real `session_reserve.audit_inputs`.  There is NO trainer-side `--reserve-manifest` flag and NO `filter_reserve.py`: the head side assumed both, the reserve side built neither, and the
+# smaller correct design is to build neither (a flag whose default is "off" is the 'built, tested, unreachable from its caller' class; the bank the gate audits IS the bank the trainer loads -- the same
+# `targets_rank*.jsonl` glob, pinned by test_p7_integration.py -- and every other input is read only by a bank row's key).  The residual and the exact design of the optional (b) are in RESULT.md of the integrate package.
+P7_SCENES = 92896                                                       # SPEC_P7 section 2: the reserve-free bank's rank-0 scenes (103,037 - 10,141 reserved)
+P7_EPOCHS = 25
+P7_STEPS = P7_EPOCHS * -(-P7_SCENES // 256)                             # the trainer's own definition: epochs x ceil(epoch_len / (batch x accum)) = 25 x 363
+P7_BANK_TUPLES: dict = {"train_grow_cmd_3c_p7": 150603}          # REGISTERED (P7-PINS, MEASURED): 92,896 rank-0 + 57,707 rank-1 rows == p7_pins.py n_tuples; a --targets bank with another name FAILS G-CLOCK (clock_bank_tuples)
+P7_AUX_STORE_PINS = {"sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997", "keys": 92993}  # REGISTERED (P7-PINS, MEASURED): the re-finalised TRAINING store (1,076 logs); aux_dvb_rows compares the trainer's `aux` event with these
+P7_TARGETS_SHA256: dict = {"train_grow_cmd_3c_p7": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"}  # REGISTERED (P7-PINS, MEASURED): the trainer's own targets_sha256 of train_grow_cmd_3c_p7; G-CLOCK recomputes it from the --targets files at launch
+P7_RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"
+P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "visual", "--aux-drv-depth": "2", "--aux-drv-feed": "off", "--aux-drv-labels": None, "--w-field": "0.0"}
+# ⭐ AMENDMENT YAW (SPEC_P7 section 7, MM 2026-11-07; PI go 2026-11-06 "do 1 and 2"): ego[4] (yaw_rate) is 0.0 in every sample of P2 / SFT-4 / P6 (D-REFE-DEADSLOTS-1); P7 trains with the MEASURED one.  `--ego-yaw-table`
+# DEFAULTS to None (= the old, dead slot), so an arm that omits it would train yaw-less and read as clean: it is REQUIRED (named in the argv) exactly as `--w-aux-drv` is.  The table's sha256 is NOT registered here:
+# it exists only after the pod's chain builds it from $DATA/navtrain_dbs (p7_pod.sh stage 5b, `ego_yaw_table.py build` + `check-bank` at 100 %), so it is bound the way every pod-built input is -- a DATA flag, whose file
+# sha256 the PASS token fingerprints and `verify` re-measures before every launch -- and the trainer writes it into the checkpoint meta (`ego_yaw_table_sha256`) and the run identity.  G-DVB carries the flag
+# (gate_checks.DVB_KINDS["ego_yaw_table"]), G-LIVE asserts a non-zero gradient on ego_enc.0.weight[:, 4] (control: exactly 0.0 without the flag), and the arms yaw_override_removed / yaw_table_not_passed must FAIL.
+P7_YAW_REQUIRED = {"--ego-yaw-table": None}
+# the pod runs the STATIC block of the head test (no dev-box data); --full / --mutations are the dev box's.  `test_session_reserve.py` is the reserve's own suite (ZZSESSRES_PASS 43: its optional real-data checks list
+# themselves ABSENT on a pod, never skip); `test_p7_integration.py` runs the gate's G-RESERVE against the REAL module on a synthetic P7 tree (clean PASS, planted leaks FAIL) and the pin procedure.
+P7_SUITE_EXTRA = [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"},
+                  {"script": "test_session_reserve.py", "token": "ZZSESSRES_PASS"},
+                  {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"},
+                  {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"},      # the chain's own test, as refe_p6 carries test_p6_chain.py (2026-11-06, P7-LAUNCH-READY)
+                  {"script": "test_ego_yaw.py", "args": ["--fast"], "token": "ZZEGOYAW_PASS"}]      # AMENDMENT YAW: the table, the trainer flag, the gate entries and the deploy shim; --fast = no dev-box DBs / tables / git mirror (the SLOW block is local-only)
+PROFILES["refe_p7"] = {**PROFILES["refe_p6"], "name": "refe_p7", "p7_rules": True,
+                       "data_flags": PROFILES["refe_p6"]["data_flags"] + ("--aux-drv-labels", "--ego-yaw-table"),
+                       "suite": PROFILES["refe_p6"]["suite"] + P7_SUITE_EXTRA,
+                       "checks": PROFILES["refe_p6"]["checks"] + ("G-RESERVE",),
+                       "live_terms": P6_TERMS + ("aux_bce", "aux_huber"),
+                       "forbidden_flags": PROFILES["refe_p6"]["forbidden_flags"] + ("--aux-drv-shuffle-seed",),
+                       "required_flags": {**PROFILES["refe_p6"]["required_flags"], **P7_AUX_REQUIRED, **P7_YAW_REQUIRED},
+                       "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES,
+                                           "targets_sha256_by_bank": P7_TARGETS_SHA256},
+                       "aux_store_pins": P7_AUX_STORE_PINS, "reserve_sha256": P7_RESERVE_SHA256}
+
+
+def p7_refusals(prof: dict, argv: list) -> list:
+    """The P7 pins that must be REGISTERED before the gate spends a minute: an unregistered pin is a refusal here (cheap, before BUILD) and independently a FAIL in the check that consumes it
+    (G-DVB's store row, G-CLOCK's bank row, G-RESERVE's sha row), so neither can be the only line of defence."""
+    out = []
+    pins = prof.get("aux_store_pins") or {}
+    if pins.get("sha256") is None or pins.get("keys") is None:
+        out.append(f"{prof['name']}: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after the chain's reserve stage "
+                   f"re-finalises it (PROCEDURE_P7_PINS.md); an unregistered store is never vouched for by another store's number")
+    elif not (isinstance(pins["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", pins["sha256"]) and type(pins["keys"]) is int and pins["keys"] > 0):
+        out.append(f"{prof['name']}: P7_AUX_STORE_PINS is not a registration (sha256 must be 64 lowercase hex digits and keys a positive int; got {pins!r}): paste what p7_pins.py printed, never a typed value")
+    exp = prof.get("expect_schedule") or {}
+    reg = exp.get("n_tuples_by_bank") or {}
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    name = Path(str(tg).rstrip("/\\")).name if tg else None
+    if name not in reg:
+        out.append(f"{prof['name']}: --targets {tg!r} names bank {name!r}, which has no registered tuple count (P7_BANK_TUPLES holds {sorted(reg)}): register it in the pre-registration before any training data exists")
+    for bank_name, n_t in sorted(reg.items()):
+        if type(n_t) is not int or n_t <= 0:
+            out.append(f"{prof['name']}: the registered tuple count of bank {bank_name!r} is {n_t!r}, not a positive int (P7_BANK_TUPLES): paste what p7_pins.py printed")
+    # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A count cannot tell two same-size banks apart, so the digest is registered beside it, per bank, and a profile WITHOUT the key is itself a refusal
+    # (G-CLOCK only checks the digest when the key exists: a key that can be absent is a default that disables the check).
+    dig = exp.get("targets_sha256_by_bank")
+    if not isinstance(dig, dict):
+        out.append(f"{prof['name']}: the profile carries no targets_sha256_by_bank (P7_TARGETS_SHA256 in expect_schedule): a bank's tuple count cannot tell two same-size banks apart, so its CONTENT digest must be registered")
+    else:
+        if name not in dig:
+            out.append(f"{prof['name']}: --targets {tg!r} names bank {name!r}, which has no registered targets_sha256 (P7_TARGETS_SHA256 holds {sorted(dig)}): paste what p7_pins.py printed, "
+                       f"never a typed value -- the digest exists only once the reserve filter has produced the bank")
+        for bank_name, h in sorted(dig.items()):
+            if not (isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h)):
+                out.append(f"{prof['name']}: the registered targets_sha256 of bank {bank_name!r} is {h!r}, not a sha256 (64 lowercase hex digits; P7_TARGETS_SHA256): paste what p7_pins.py printed")
+        if reg and dig and set(reg) != set(dig):
+            out.append(f"{prof['name']}: P7_BANK_TUPLES {sorted(reg)} and P7_TARGETS_SHA256 {sorted(dig)} register DIFFERENT banks: a bank is pinned by its count AND its content, or not at all")
+    if not prof.get("reserve_sha256"):
+        out.append(f"{prof['name']}: no reserve sha256 is registered (P7_RESERVE_SHA256)")
+    if not (exp.get("steps") == P7_STEPS == 9075 and exp.get("epoch_len") == P7_SCENES and exp.get("epochs") == P7_EPOCHS):
+        out.append(f"{prof['name']}: the registered schedule {exp.get('epochs')} x {exp.get('epoch_len')} -> {exp.get('steps')} steps is not SPEC_P7's 25 x 92,896 -> 9,075")
+    return out
+
+
+# ============================================================================================ P5-C (PREREG_P5C 10.1; PREREG_P5C_A1 Point 5): the REFe student fine-tuned on a tracker-aware label table
+# THREE profiles, one per ARM, cloned from refe_p6 / refe_p7 (neither is edited): `refe_p5c` = C1 (the label table), `refe_p5c_c0` = C0 (the matched raw-label fine-tune: the table FORBIDDEN),
+# `refe_p5c_c0r` = C0r (C0 with --seed 1: the card's CONDITIONAL replicate, PI approval needed before it is minted), and `refe_p5c_c1r` = C1r (C1 with --seed 1: the C1 seed replicate, PI go 2026-11-20 "Follow your recommendations":
+# P5-C's C1-vs-C0 delta is one training seed and the episode bootstrap cannot see training variance, H-ESTIM-SEED-1; C1r carries C1's table, so P5C_TABLE_ARMS = {C1, C1r} is the one set every table special case tests).  The arm is the PROFILE, so an arm cannot be launched as another by omitting a flag
+# (the table flag's default is OFF: a C1 argv that dropped it would read as a clean C0 -- the rls1 `--arm-name` lesson, here by construction).  What `p5c_refusals` asserts that a required-flag list cannot:
+#   * the argv's flag SET and every non-path lever equal the arm's template `p5c_argv(arm)`: argv(C1) - argv(C0) = {--traj-label-table, --out}; argv(C0r) - argv(C0) = {--seed, --out} (card 2, 10.1); argv(C1r) - argv(C1) = {--seed, --out} (PI go 2026-11-20);
+#   * the PINS are REGISTERED before a minute is spent: the base checkpoint (`init_from_sha256`), and on C1 the label table (`traj_label_sha256`) and its rank policy (`traj_label_rank_policy`).
+#     They are FILLED BY THE MM once the real objects exist and are None here: a profile with an unfilled pin REFUSES (a pin that can be absent is a check that is silently off);
+#   * the schedule 2,000 steps (epochs 0), on the P7 bank registered by count AND content (P7_BANK_TUPLES / P7_TARGETS_SHA256, shared with refe_p7);
+#   * a fresh start: `--out` holds no ckpt_last.pt at MINT time (card 10.1 `resume`: a pre-seeded checkpoint would resume an old optimiser instead of the fresh one the card's symmetry argument needs).
+# NOT carried over from refe_p7, deliberately: the aux head and its store (card 3: OFF; AUX_HEAD_FLAGS forbidden) and G-RESERVE (it audits the five inputs INCLUDING the head's label store, which P5-C has not:
+# the bank is P7's reserve-free bank, pinned by content).  The G-DVB rows are gate_checks.traj_label_dvb_rows (table file sha256 + declared rank policy) and p5c_init_rows (base sha256); the substitution itself
+# is proved by test_traj_label_table.py (G-SUITE).  B-P6 (card 2.1) is `p5c_profile(arm, base="p6")`: the same arm without --ego-yaw-table (forbidden); it is NOT registered in PROFILES until the P7 verdict says so.
+P5C_STEPS = 2000
+P5C_BASE_SHA256 = "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe"                    # FILLED BY THE MM: sha256 of the base model_final.pt (P7's final run/model_final.pt under B-P7)
+P5C_P6_BASE_SHA256 = "968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1"       # MEASURED (SG/p6base/PREREG_REP_P6.md section 0): P6's model_final.pt, the B-P6 base
+P5C_LABEL_TABLE_SHA256 = "3b198314721fc7e75e6bd0ca9b569b5b0a56ba25178e4fb63a94b215995637a2"             # FILLED BY THE MM: the sha256 the pod runner prints (P5C_LABEL_TABLE_SHA256=...), of the SELECTED label's table
+P5C_RANK_POLICY = "rank0"                    # FILLED BY THE MM: "all" | "rank0", the table's meta.rank_policy as the gate set decided it (PREREG_P5C 4.3)
+P5C_ARM_SEED = {"C1": 0, "C0": 0, "C0r": 1, "C1r": 1}
+P5C_PROFILE_NAME = {"C1": "refe_p5c", "C0": "refe_p5c_c0", "C0r": "refe_p5c_c0r", "C1r": "refe_p5c_c1r"}
+P5C_TABLE_ARMS = frozenset({"C1", "C1r"})          # the arms that carry the label table (C1 and its seed-1 replicate C1r): every C1 special case below tests membership here, never `== "C1"`
+P5C_PATH_FLAGS = ("--targets", "--images", "--calib", "--metric-cache", "--init-from", "--ego-yaw-table", "--traj-label-table", "--out", "--label-workers")      # presence only: a path or the pod's own derivation
+P5C_DEFAULT_PATHS = {"targets": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7", "images": "/workspace/data/navtrain_pixels",
+                     "calib": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json", "metric_cache": "/workspace/data/refe_navtrain/metric_cache",
+                     "init_from": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt", "ego_yaw_table": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+                     "traj_label_table": "/workspace/data/p5c_label/P5C_label_table.json.gz", "out_root": "/workspace/data/refe_runs", "label_workers": "13"}       # TEMPLATE paths: p7_pod.sh's; the real argv is diffed against P7's config.json at freeze (RUNBOOK_P5C.md)
+
+
+def p5c_argv(arm: str, base: str = "p7", paths: dict | None = None) -> list:
+    """The arm's launch argv TEMPLATE: P7's ARGS (p7_pod.sh:346) with the card's edits (3): no head, --init-from, 2,000 steps at lr 5e-5, --seed named, and C1 alone carries --traj-label-table.
+    B-P6 (`base="p6"`) drops --ego-yaw-table.  The paths are placeholders unless `paths` overrides them; the gate compares FLAGS and LEVERS, never these paths."""
+    if arm not in P5C_ARM_SEED or base not in ("p7", "p6"):
+        raise ValueError(f"arm {arm!r} / base {base!r}")
+    P = dict(P5C_DEFAULT_PATHS, **(paths or {}))
+    a = ["--backbone", "vitl16", "--targets", P["targets"], "--images", P["images"], "--calib", P["calib"], "--metric-cache", P["metric_cache"], "--scorer-sees-trunk",
+         "--yaw-wrap", "off", "--nav-mode", "command", "--labeller", "online", "--label-workers", P["label_workers"], "--label-chunks", "2",
+         "--init-from", P["init_from"], "--epochs", "0", "--steps", str(P5C_STEPS), "--epoch-unit", "scenes", "--batch", "4", "--accum", "64", "--lr", "5e-5", "--weight-decay", "0.01",
+         "--amp", "bf16", "--score-w", "0.1", "--w-field", "0.0"]
+    if base == "p7":
+        a += ["--ego-yaw-table", P["ego_yaw_table"]]
+    if arm in P5C_TABLE_ARMS:
+        a += ["--traj-label-table", P["traj_label_table"]]
+    a += ["--seed", str(P5C_ARM_SEED[arm]), "--tf32", "--compile", "--workers", "2", "--log-every", "1", "--ckpt-every-min", "20", "--out", f"{P['out_root']}/p5c_{arm.lower()}", "--resume"]
+    return a
+
+
+def p5c_profile(arm: str, base: str = "p7") -> dict:
+    """The arm's profile (see the block comment).  `base="p6"` is the card's fallback (no yaw table); it is NOT registered below."""
+    p6, p7 = PROFILES["refe_p6"], PROFILES["refe_p7"]
+    req = {k: v for k, v in p6["required_flags"].items() if k not in ("--epochs", "--lr")}
+    req.update({"--epochs": "0", "--steps": str(P5C_STEPS), "--lr": "5e-5", "--init-from": None, "--seed": str(P5C_ARM_SEED[arm]), "--w-field": "0.0"})
+    if base == "p7":
+        req.update(P7_YAW_REQUIRED)
+    if arm in P5C_TABLE_ARMS:
+        req["--traj-label-table"] = None
+    forb = tuple(f for f in p6["forbidden_flags"] if f != "--init-from") + AUX_HEAD_FLAGS
+    if arm not in P5C_TABLE_ARMS:
+        forb += ("--traj-label-table",)
+    if base == "p6":
+        forb += ("--ego-yaw-table",)
+    data = ("--targets", "--images", "--calib", "--metric-cache", "--init-from") + (("--ego-yaw-table",) if base == "p7" else ()) + (("--traj-label-table",) if arm in P5C_TABLE_ARMS else ())
+    suite = p6["suite"] + [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"},
+                           {"script": "test_ego_yaw.py", "args": ["--fast"], "token": "ZZEGOYAW_PASS"},
+                           {"script": "test_traj_label_table.py", "args": ["--fast"], "token": "ZZTRAJLABEL_PASS"},
+                           {"script": "test_p5c_profile.py", "args": ["--fast"], "token": "ZZP5CPROF_PASS"},
+                           {"script": "test_p5c_live.py", "args": ["--fast"], "token": "ZZP5CLIVE_PASS"},          # G-LIVE (f) warm-start identity + (h) lever isolation on the real model
+                           {"script": "test_p5c_postgate.py", "args": ["--fast"], "token": "ZZP5CPOST_PASS"},      # the post-training G-ADAM gate's tests
+                           {"script": "test_p5c_chain.py", "args": [], "token": "ZZP5CCHAIN_PASS"}]               # the pod chain's stub-sandbox tests
+    prof = {**p6, "name": P5C_PROFILE_NAME[arm] + ("" if base == "p7" else "_b6"), "p5c_rules": True, "p5c_arm": arm, "p5c_base": base, "data_flags": data, "suite": suite,
+            "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS,
+            "expect_schedule": {"epochs": 0, "steps": P5C_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": dict(P7_BANK_TUPLES), "targets_sha256_by_bank": dict(P7_TARGETS_SHA256)},
+            "init_from_sha256": (P5C_BASE_SHA256 if base == "p7" else P5C_P6_BASE_SHA256)}
+    if arm in P5C_TABLE_ARMS:
+        prof["traj_label_sha256"] = P5C_LABEL_TABLE_SHA256
+        prof["traj_label_rank_policy"] = P5C_RANK_POLICY
+    return prof
+
+
+for _arm in ("C1", "C0", "C0r", "C1r"):
+    PROFILES[P5C_PROFILE_NAME[_arm]] = p5c_profile(_arm)
+
+
+def _p5c_hex64(x) -> bool:
+    return isinstance(x, str) and re.fullmatch(r"[0-9a-f]{64}", x) is not None
+
+
+def p5c_refusals(prof: dict, argv: list) -> list:
+    """What `required_flags` cannot say for a P5-C arm (see the block comment above): registered pins, the arm's flag set and levers, the schedule and bank, a fresh `--out`."""
+    out, name, arm, base = [], prof["name"], prof.get("p5c_arm"), prof.get("p5c_base", "p7")
+    if arm not in P5C_ARM_SEED:
+        return [f"{name}: p5c_rules without a known arm ({arm!r})"]
+    if not _p5c_hex64(prof.get("init_from_sha256")):
+        out.append(f"{name}: the base checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; P5C_BASE_SHA256): the MM fills it from the sealed P7 final model_final.pt; an unpinned base is never launched from")
+    if arm in P5C_TABLE_ARMS:
+        if not _p5c_hex64(prof.get("traj_label_sha256")):
+            out.append(f"{name}: the label table's sha256 is not REGISTERED (traj_label_sha256 = {prof.get('traj_label_sha256')!r}; P5C_LABEL_TABLE_SHA256): the MM fills it from the pod runner's output")
+        if prof.get("traj_label_rank_policy") not in ("all", "rank0"):
+            out.append(f"{name}: the table's rank policy is not REGISTERED (traj_label_rank_policy = {prof.get('traj_label_rank_policy')!r}; P5C_RANK_POLICY): 'all' or 'rank0', as the gate set decided it (PREREG_P5C 4.3)")
+    elif prof.get("traj_label_sha256") or prof.get("traj_label_rank_policy"):
+        out.append(f"{name}: a table pin on a profile that must carry NO table")
+    exp = prof.get("expect_schedule") or {}
+    if not (exp.get("epochs") == 0 and exp.get("steps") == P5C_STEPS and exp.get("epoch_len") == P7_SCENES):
+        out.append(f"{name}: the registered schedule {exp.get('epochs')} epochs / {exp.get('steps')} steps / epoch_len {exp.get('epoch_len')} is not the card's 2,000 steps over {P7_SCENES} scenes")
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    bank = Path(str(tg).rstrip("/\\")).name if tg else None
+    for key, what in (("n_tuples_by_bank", "tuple count"), ("targets_sha256_by_bank", "content sha256")):
+        reg = exp.get(key)
+        if not isinstance(reg, dict) or bank not in reg:
+            out.append(f"{name}: --targets {tg!r} names bank {bank!r}, which has no registered {what} ({key}): the P7 bank is pinned by count AND content")
+    if exp.get("targets_sha256_by_bank") and not all(_p5c_hex64(h) for h in exp["targets_sha256_by_bank"].values()):
+        out.append(f"{name}: a registered targets_sha256 is not 64 lowercase hex digits")
+    # the arm's flag SET and every non-path lever == the template: argv(C1) - argv(C0) = {--traj-label-table, --out}; argv(C0r) - argv(C0) = {--seed, --out}
+    want = {f: v for f, v in GT.flag_pairs(p5c_argv(arm, base))}
+    got: dict = {}
+    for f, v in GT.flag_pairs(argv):
+        got.setdefault(f, []).append(v)
+    for f in sorted(set(want) - set(got) - {"--resume"}):
+        out.append(f"{name}: the argv does not carry {f}, which arm {arm}'s argv carries (the arm's lever set is exactly the card's: nothing dropped)")
+    for f in sorted(set(got) - set(want) - {"--resume"}):
+        out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arm differs from its pair by the card's lever alone)")
+    for f, vs in sorted(got.items()):
+        if len(vs) > 1:
+            out.append(f"{name}: {f} is carried {len(vs)} times")
+        elif f in want and f not in P5C_PATH_FLAGS and f != "--resume":
+            w, g = want[f], vs[0]
+            same = len(w) == len(g) and all((float(a) == float(b)) if re.fullmatch(r"-?[0-9.eE+-]+", a) and re.fullmatch(r"-?[0-9.eE+-]+", b) else a == b for a, b in zip(w, g))
+            if not same:
+                out.append(f"{name}: arm {arm} fixes {f} {' '.join(w)}; the argv has {f} {' '.join(g)}")
+    if arm in P5C_TABLE_ARMS:
+        tbl = (GT.flag_values(argv, "--traj-label-table") or [None])[0]
+        if not tbl:
+            out.append(f"{name}: C1 needs --traj-label-table <the pinned table>")
+    ow = (GT.flag_values(argv, "--out") or [None])[0]
+    if ow and (Path(str(ow)) / "ckpt_last.pt").exists():
+        out.append(f"{name}: --out {ow} already holds ckpt_last.pt: a P5-C arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser; card 10.1 `resume`)")
+    return out
+
+
+# ============================================================================================ P7-graft field-loss arms F and C (PREREG_AUX_FIELD_LOSS_P7_DRAFT; gaps G1, G2, G6 of LAUNCH_GATE_GAPS_FIELDP7.md)
+# TWO profiles, cloned from `refe_p5c_c0` (the P5-C machinery; no profile above is edited): `refe_field_p7` = F (`--w-field` EXACTLY FIELD_P7_W) and `refe_field_p7_ctrl` = C (`--w-field` EXACTLY 0.0), the P7 graft
+# at the P5-C recipe (P7 base, 2,000 steps, lr 5e-5, no head, no label table) plus the field flags.  C is F's OWN control, NOT P5-C's C0 (C0 carries no --field-labels).  The template is `p7field_argv(arm)`:
+#   argv(F) - argv(C0) = {--w-field (0.0 -> 2.0), --field-labels, --field-margin, --field-interp, --out}; argv(C) - argv(C0) = {--field-labels, --field-margin, --field-interp, --out}  (C0 already names --w-field 0.0).
+# The profiles do NOT set `p5c_rules` (that hook would run `p5c_refusals`, which refuses the field flags as strangers, and `test_p5c_profile.chk_untouched` pins `p5c_rules` to the three P5-C profiles); they set
+# `p7field_rules`, which `profile_refusals` routes to `p7field_refusals`.  What it asserts that `required_flags` cannot: the argv's flag SET and every non-path lever equal the template; the PINS are registered
+# (base checkpoint, field label store sha256 + keys, refe/field_loss.py sha256, w) and match the shipped bytes / the loader's own pin; the 2,000-step schedule on the P7 bank by count AND content; a fresh --out.
+# NOT done here (outside G1/G2/G6): G3 the store on the pod (the MM ships it), G4 replicates, G5 the pod chain + post-gate, G7 the real-bank reach re-run.  G5's gate-RUN side IS wired (MM 2026-11-17): gate_checks.check_live routes
+# `p7field_rules` to p5c_live_rows ((f) warm-start identity, (h) no table), run_checks builds the capture for G-LIVE (need_b), G-CLOCK requires the bank content pin; chk_live_wiring pins all three.
+FIELD_P7_W = 2.0                                  # --w-field of arm F: MM-ratified pre-data 2026-11-17, PI "Approve F+C" 2026-11-17; frozen, the launch gate may only veto it (field_p7/WEIGHT_FIELDP7.md, raw/weight_rule_p7_cpu.json)
+FIELD_P7_STORE_SHA256 = "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a"      # the FULL aux label store (103,139 keys): aux_drivable_head.PINNED_STORE_SHA256, which train.py:664 hard-pins for --field-labels
+FIELD_P7_STORE_KEYS = 103139
+FIELD_P7_LOSS_SHA256 = "da7b43030cbc89b43da74c3c9ce48b12450d3080c702374dc2e62dea929563b3"       # refe/field_loss.py (LF bytes), re-hashed 2026-11-19 after the deterministic (gather, no grid_sample) lookup; test_field_loss.py ZZTEST_PASS 54 at this hash
+FIELD_P7_ARM_NAME = {"F": "refe_field_p7", "C": "refe_field_p7_ctrl"}
+FIELD_P7_ARM_W = {"F": FIELD_P7_W, "C": 0.0}
+# the two REPLICATES (PI "I approve your recommendation" 2026-11-17, PREREG_AUX_FIELD_LOSS_P7 Amendment A): Cs = C and Fs = F at `--seed 1`, everything else identical, own `--out`.  Mirrors P5-C's C0r.
+# F's and C's entries (names, weights, seed 0, argv, profiles) are NOT touched: their PASS tokens bind them (test_field_p7_profile.chk_unchanged proves it against the e9ecd885 values).
+FIELD_P7_ARM_SEED = {"F": 0, "C": 0, "Cs": 1, "Fs": 1}
+FIELD_P7_REP_BASE = {"Cs": "C", "Fs": "F"}          # replicate arm -> the seed-0 twin whose argv/profile it copies
+FIELD_P7_ARM_NAME.update({"Cs": "refe_field_p7_ctrl_s1", "Fs": "refe_field_p7_s1"})
+FIELD_P7_ARM_W.update({"Cs": FIELD_P7_ARM_W["C"], "Fs": FIELD_P7_ARM_W["F"]})
+FIELD_P7_LABELS_DEFAULT = "/workspace/data/refe_navtrain/aux_label_store_full"       # the pod path of the full store beside P7's own (G3: shipped by the MM)
+FIELD_P7_PATH_FLAGS = P5C_PATH_FLAGS + ("--field-labels",)
+
+
+def p7field_argv(arm: str, paths: dict | None = None) -> list:
+    """The arm's launch argv TEMPLATE: `p5c_argv("C0")` (P7's ARGS + the card's edits, no head, no table, `--w-field 0.0`) with the field flags added after `--w-field`, `--w-field` = the arm's weight and its own `--out`."""
+    if arm not in FIELD_P7_ARM_NAME:
+        raise ValueError(f"arm {arm!r}")
+    P = dict(P5C_DEFAULT_PATHS, **{k: v for k, v in (paths or {}).items() if k != "field_labels"})
+    a = p5c_argv("C0", paths=P)
+    i = a.index("--w-field")
+    a[i + 1] = repr(float(FIELD_P7_ARM_W[arm]))
+    a[i + 2:i + 2] = ["--field-labels", (paths or {}).get("field_labels", FIELD_P7_LABELS_DEFAULT), "--field-margin", FIELD_REGISTERED["--field-margin"], "--field-interp", FIELD_REGISTERED["--field-interp"]]
+    j = a.index("--out")
+    a[j + 1] = f"{P['out_root']}/p7field_{arm.lower()}"
+    k = a.index("--seed")
+    a[k + 1] = str(FIELD_P7_ARM_SEED[arm])
+    return a
+
+
+def p7field_profile(arm: str) -> dict:
+    """The arm's profile (see the block comment): `refe_p5c_c0` with the table-free P5-C recipe, plus the field term."""
+    c0 = PROFILES["refe_p5c_c0"]
+    req = dict(c0["required_flags"])
+    req.update({"--w-field": repr(float(FIELD_P7_ARM_W[arm])), "--field-labels": None, **FIELD_REGISTERED})
+    req["--seed"] = str(FIELD_P7_ARM_SEED[arm])
+    forb = tuple(c0["forbidden_flags"]) + (("--field-shuffle-seed",) if "--field-shuffle-seed" not in c0["forbidden_flags"] else ())
+    prof = {k: v for k, v in c0.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
+    prof.update({"name": FIELD_P7_ARM_NAME[arm], "p7field_rules": True, "p7field_arm": arm, "field_arm": FIELD_P7_REP_BASE.get(arm, arm), "data_flags": tuple(c0["data_flags"]) + ("--field-labels",),
+                 "suite": list(c0["suite"]) + FIELD_SUITE_EXTRA + [{"script": "test_field_p7_profile.py", "args": ["--fast"], "token": "ZZFIELDP7PROF_PASS"}],
+                 "forbidden_flags": forb, "required_flags": req, "live_terms": P6_TERMS + (("field_L",) if FIELD_P7_ARM_W[arm] > 0.0 else ()), "field_min_coverage": 0.999,
+                 # field_L is a declared live term ONLY where the arm trains it: train.py computes and logs it only when --w-field > 0, so a
+                 # control at 0.0 that declared it FAILED G-LIVE on the pod ("field_L ABSENT from the trainer's metrics", C, 2026-11-19 06:15Z).
+                 "field_w": FIELD_P7_ARM_W[arm], "field_store_sha256": FIELD_P7_STORE_SHA256, "field_store_keys": FIELD_P7_STORE_KEYS, "field_loss_sha256": FIELD_P7_LOSS_SHA256})
+    return prof
+
+
+for _farm in ("F", "C"):                          # NOT `_arm`: that module name (the P5-C loop variable above) must keep its value
+    PROFILES[FIELD_P7_ARM_NAME[_farm]] = p7field_profile(_farm)
+for _farm in ("Cs", "Fs"):                        # the replicates (seed 1), built from the same function
+    PROFILES[FIELD_P7_ARM_NAME[_farm]] = p7field_profile(_farm)
+
+
+def p7field_refusals(prof: dict, argv: list) -> list:
+    """What `required_flags` cannot say for a P7-graft field arm: registered pins (and their match to the shipped bytes / the loader's pin), the arm's flag set and levers == `p7field_argv(arm)`, the schedule and bank, a fresh `--out`."""
+    import hashlib
+    out, name, arm = [], prof["name"], prof.get("p7field_arm")
+    if arm not in FIELD_P7_ARM_NAME or FIELD_P7_ARM_NAME[arm] != name:
+        return [f"{name}: p7field_rules without a known arm ({arm!r})"]
+    if not _p5c_hex64(prof.get("init_from_sha256")):    # p7field: the P7 graft base pin (same check as P5-C; text kept distinct for the P5-C mutation harness)
+        out.append(f"{name}: the base checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; P5C_BASE_SHA256): an unpinned base is never launched from")
+    if prof.get("field_w") != FIELD_P7_ARM_W[arm] or type(prof.get("field_w")) is not float:
+        out.append(f"{name}: the registered weight field_w = {prof.get('field_w')!r}, arm {arm} registers {FIELD_P7_ARM_W[arm]!r} (FIELD_P7_W = 2.0 is the MM-ratified, PI-approved value; the gate may only veto it)")
+    if not _p5c_hex64(prof.get("field_store_sha256")):
+        out.append(f"{name}: the field label store's sha256 is not REGISTERED (field_store_sha256 = {prof.get('field_store_sha256')!r}; FIELD_P7_STORE_SHA256)")
+    if type(prof.get("field_store_keys")) is not int or prof.get("field_store_keys") <= 0:
+        out.append(f"{name}: the field label store's key count is not REGISTERED (field_store_keys = {prof.get('field_store_keys')!r}; FIELD_P7_STORE_KEYS)")
+    if not _p5c_hex64(prof.get("field_loss_sha256")):
+        out.append(f"{name}: refe/field_loss.py's sha256 is not REGISTERED (field_loss_sha256 = {prof.get('field_loss_sha256')!r}; FIELD_P7_LOSS_SHA256)")
+    else:                                                                       # the token binds SHIPPED bytes: re-hash the module beside this gate (LF-normalised, so a CRLF checkout cannot flip it)
+        try:
+            got = hashlib.sha256((HERE / "field_loss.py").read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        except OSError as e:
+            got = f"unreadable: {e}"
+        if got != prof["field_loss_sha256"]:
+            out.append(f"{name}: refe/field_loss.py hashes to {got}, the profile registers {prof['field_loss_sha256']} (the shipped L_field is not the one this arm was registered with)")
+    if _p5c_hex64(prof.get("field_store_sha256")):                              # the loader's OWN pin (train.py:664 -> AuxLabelSource) must equal the registered one: else --field-labels would be refused on the pod
+        try:
+            AUXH = importlib.import_module("aux_drivable_head")
+            if (AUXH.PINNED_STORE_SHA256, AUXH.PINNED_STORE_KEYS) != (prof["field_store_sha256"], prof.get("field_store_keys")):
+                out.append(f"{name}: the loader pins store {AUXH.PINNED_STORE_SHA256} / {AUXH.PINNED_STORE_KEYS} keys, the profile registers {prof['field_store_sha256']} / {prof.get('field_store_keys')}")
+        except Exception as e:                                                  # noqa: BLE001
+            out.append(f"{name}: the loader's store pin could not be read ({type(e).__name__}: {e}); the registered store pin is unverified")
+    exp = prof.get("expect_schedule") or {}
+    if not (exp.get("epochs") == 0 and exp.get("steps") == P5C_STEPS and exp.get("epoch_len") == P7_SCENES):
+        out.append(f"{name}: the registered schedule {exp.get('epochs')} epochs / {exp.get('steps')} steps / epoch_len {exp.get('epoch_len')} is not the recipe's 2,000 steps over {P7_SCENES} scenes")
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    bank = Path(str(tg).rstrip("/\\")).name if tg else None
+    for key, what in (("n_tuples_by_bank", "tuple count"), ("targets_sha256_by_bank", "content sha256")):
+        reg = exp.get(key)
+        if not isinstance(reg, dict) or bank not in reg:
+            out.append(f"{name}: --targets {tg!r} names bank {bank!r}, which has no registered {what} ({key}): the P7 bank is pinned by count AND content")
+    if exp.get("targets_sha256_by_bank") and not all(_p5c_hex64(h) for h in exp["targets_sha256_by_bank"].values()):
+        out.append(f"{name}: a registered targets_sha256 is not 64 lowercase hex digits")
+    want = {f: v for f, v in GT.flag_pairs(p7field_argv(arm))}
+    got_: dict = {}
+    for f, v in GT.flag_pairs(argv):
+        got_.setdefault(f, []).append(v)
+    for f in sorted(set(want) - set(got_) - {"--resume"}):
+        out.append(f"{name}: the argv does not carry {f}, which arm {arm}'s argv carries (the arm's lever set is exactly the recipe's: nothing dropped)")
+    for f in sorted(set(got_) - set(want) - {"--resume"}):
+        out.append(f"{name}: the argv carries {f} {' '.join(got_[f][0])}, which arm {arm}'s argv does not (F and C differ from P5-C's C0 by the field flags alone)")
+    for f, vs in sorted(got_.items()):
+        if len(vs) > 1:
+            out.append(f"{name}: {f} is carried {len(vs)} times")
+        elif f in want and f not in FIELD_P7_PATH_FLAGS and f != "--resume":
+            w, g = want[f], vs[0]
+            same = len(w) == len(g) and all((float(a) == float(b)) if re.fullmatch(r"-?[0-9.eE+-]+", a) and re.fullmatch(r"-?[0-9.eE+-]+", b) else a == b for a, b in zip(w, g))
+            if not same:
+                out.append(f"{name}: arm {arm} fixes {f} {' '.join(w)}; the argv has {f} {' '.join(g)}")
+    lab = (GT.flag_values(argv, "--field-labels") or [None])[0]
+    if not lab:
+        out.append(f"{name}: arm {arm} needs --field-labels <the full pinned store>")
+    ow = (GT.flag_values(argv, "--out") or [None])[0]
+    if ow and (Path(str(ow)) / "ckpt_last.pt").exists():    # p7field: a fresh --out (same check as P5-C; text kept distinct for the P5-C mutation harness)
+        out.append(f"{name}: --out {ow} already holds ckpt_last.pt: a field arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser)")
+    return out
+
+
+# ============================================================================================ SCORER-FT arms T, C (+ seed-1 replicates Ts, Cs)  (DESIGN_SCORER_FT section 3; PI go 2026-11-20, base C1, 1,000 steps)
+# FOUR profiles, built by `scorerft_profile(arm)` from `refe_p5c` (C1) WITHOUT editing any existing profile dict: `refe_scorerft_t` (T: the within-token ranking term L_rank on heads ep+gate), `refe_scorerft_c` (C: its own control,
+# `--rank-w 0.0` NAMED), and the seed-1 replicates `refe_scorerft_t_s1` (Ts) / `refe_scorerft_c_s1` (Cs).  Every arm fine-tunes FROM C1's final checkpoint (`--init-from`, pinned by sha256) on C1's own recipe, label table
+# (`--traj-label-table`, pinned) and bank, at SCORERFT_STEPS steps.  Template `scorerft_argv(arm)`:
+#   argv(T) - argv(C) = {--rank-w (value), --rank-heads, --rank-ep-gap, --rank-gate-topk, --out};   argv(Ts) - argv(T) = {--seed, --out};   argv(Cs) - argv(C) = {--seed, --out}.
+# The profiles do NOT set `p5c_rules` (`test_p5c_profile.chk_untouched` pins that key to the three P5-C profiles) nor `p7field_rules`; they set `scorerft_rules`, which `profile_refusals` routes to `scorerft_refusals`.
+# `traj_label_required: True` makes G-LIVE (h) key on the PROFILE (all four arms carry C1's table) and not on the arm name "C1".  `live_terms` carries `rank_L` on T / Ts ONLY (a control that declared its term FAILED
+# G-LIVE: field_L ABSENT, C, 2026-11-19).  `forbidden_env`: REFE_RANK_MUTATE (the deliberate-regression arms' environment switch) refuses a launch environment that sets it.
+# PINS THE MM FILLS (None = REFUSE, never launched from): SCORERFT_BASE_SHA256 (C1's final model_final.pt, banked first) and SCORERFT_RANK_W (the output of weight_rule_rank.py, SCORER-FT design 2.5).
+SCORERFT_STEPS = 1000
+SCORERFT_BASE_SHA256 = "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"   # FILLED BY THE MM 2026-11-20: sha256 of C1's final model_final.pt (/workspace/data/refe_runs/p5c_c1/); MEASURED: the pod sha file == the verified HF pull (Sayood/tanitad-refe-p5c) == the s2_c1 read preflight
+SCORERFT_RANK_W = 0.03125                       # FILLED BY THE MM: --rank-w of T / Ts = the committed weight rule's output (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_RANK_CENSUS = {"path": "/workspace/data/refe_p5c/scorerft/weight_rule_rank.json",
+                        "sha256": "a9f13c78e987440c8255bff4910e2814c46bc85c0459caa7825cf99d745dc401",
+                        "rank_loss_sha256": "c0e027d28291b55e5f76618084d084ebba59061e5b700e11b8ca5bd7b6227af7"}   # FILLED BY THE MM 2026-11-23: the weight rule's own JSON (real navtrain, same rule / init / rank_loss.py as the arm), a census for G-LIVE L2 ONLY (a head the smoke leaves at zero pairs passes iff this pinned census proves pairs > 0 under the declared rule); rank_loss_sha256 = rank_loss.py with CR stripped
+SCORERFT_RANK_HEADS = "ep,gate"
+SCORERFT_RANK_EP_GAP = 0.02
+SCORERFT_RANK_GATE_TOPK = 8
+SCORERFT_ARM_NAME = {"T": "refe_scorerft_t", "C": "refe_scorerft_c", "Ts": "refe_scorerft_t_s1", "Cs": "refe_scorerft_c_s1", "P": "refe_scorerft_p", "Ps": "refe_scorerft_p_s1"}
+SCORERFT_ARM_SEED = {"T": 0, "C": 0, "Ts": 1, "Cs": 1, "P": 0, "Ps": 1}
+SCORERFT_ARM_RANK = {"T": True, "C": False, "Ts": True, "Cs": False, "P": True, "Ps": True}          # does the arm train the term?
+# ARM P (O3 of PREREG_SCORER_FT section 9: "the heads rank, the pick does not"): the DECISION-LEVEL term, head `pick` ALONE (every proposal the harness PDMS ranks above the scorer's own navsim_v1 pick is paired against that
+# pick, weight = the PDMS gap).  P reuses C (same init, seed, steps): argv(P) - argv(C) = {--rank-w (value), --rank-heads pick, --out}; no gap / top-k is named (the trainer refuses them without `ep` / `gate`).  Ps = P with --seed 1
+# (argv(Ps) - argv(P) = {--seed, --out}), run only if the card says so.  PINS THE MM FILLS (None = REFUSE): SCORERFT_P_RANK_W, the output of weight_rule_rank.py on P's own argv (the pod).  No census pin: `pick` forms a pair on
+# (almost) every real set -- WRONG on a 7-set smoke (2026-11-25 pod gate): see SCORERFT_P_RANK_CENSUS below, the registered census that is now P's L2 evidence.
+SCORERFT_P_ARMS = ("P", "Ps")
+SCORERFT_P_RANK_W = 0.125                                      # FILLED BY THE MM: --rank-w of P / Ps = weight_rule_rank.py's rule output on P's own argv (smallest w with r(w) >= 1.0); the gate may only veto it
+SCORERFT_P_RANK_HEADS = "pick"
+# P's registered census (MM 2026-11-25, the pod gate FAIL of ecac87ed98de): `pick` is a SPARSE head in the smoke's eyes (the trainer logs `rank_pairs_pick` of the LAST rank call of each step only, so the smoke's logged sum reads 0 on most
+# smokes), and the gate's designed evidence for a sparse head is a pinned census, not the smoke.  This is weight_rule_rank.py's own JSON on P's argv (real navtrain, init C1, w* 0.125, heads ['pick'], 212 pairs on 13 of 32 labelled sets).
+# rank_loss_sha256 = the CURRENT rank_loss.py (pick form, b0264acb) with CR stripped: T's pin above is the pre-pick file and is a different hash.  A new census (other w / init / rank_loss.py) needs a new pin; the gate compares all of them.
+SCORERFT_P_RANK_CENSUS = {"path": "/workspace/data/refe_p5c/scorerft/weight_rule_rank_p.json",
+                          "sha256": "ef1c36bf4071f8a667432a2198e531c1611c9cd29f9eaa0706a6af166f8a4e1f",
+                          "rank_loss_sha256": "d3f0ad40f2ddb51a5b22ef16c90b47f20e7de912686ef4d6f65b841549710291"}
+SCORERFT_ARM_HEADS = {"T": SCORERFT_RANK_HEADS, "Ts": SCORERFT_RANK_HEADS, "P": SCORERFT_P_RANK_HEADS, "Ps": SCORERFT_P_RANK_HEADS}      # the registered heads of each ranking arm
+
+
+def _scorerft_w(arm: str):
+    """The registered --rank-w pin of a ranking arm: SCORERFT_P_RANK_W for P / Ps, SCORERFT_RANK_W for T / Ts (None = unfilled)."""
+    return SCORERFT_P_RANK_W if arm in SCORERFT_P_ARMS else SCORERFT_RANK_W
+SCORERFT_ENV_FORBIDDEN = ("REFE_RANK_MUTATE",)
+SCORERFT_DEFAULT_INIT = "/workspace/data/refe_runs/p5c_c1/model_final.pt"
+SCORERFT_SUITE_EXTRA = [{"script": "test_rank_loss.py", "args": ["--fast"], "token": "ZZRANK_PASS"},
+                        {"script": "test_scorerft_profile.py", "args": ["--fast"], "token": "ZZSCORERFTPROF_PASS"}]
+# ARM P / Ps ONLY (O3d, MM 2026-11-24): the CTRL-CLIP probe's own test (clip_probe.py V1-V4 + RED arms, the wrapper on the real CPU trainer, bit-identical params with and without the clip logging, the S0 allow-list).
+# T / C / Ts / Cs do not carry it: their profiles (and every other profile's fingerprint) are unchanged.  Whole file (no --fast form), ~80 s CPU.
+SCORERFT_P_SUITE_EXTRA = [{"script": "test_clip_probe.py", "token": "ZZCLIPPROBE_PASS"}]
+
+
+def scorerft_argv(arm: str, paths: dict | None = None, rank_w=None) -> list:
+    """The arm's launch argv TEMPLATE: `p5c_argv("C1")` (C1's recipe, ITS label table) with `--init-from` = C1's final checkpoint, `--steps` SCORERFT_STEPS, the arm's `--seed`, its own `--out`, and the rank flags after
+    `--w-field 0.0`: T / Ts name all four (rank_w, heads, gap, top-k), C / Cs name `--rank-w 0.0` ALONE (a default-off lever named in the arm's argv; naming heads at weight 0 is refused by the trainer).
+    `rank_w` (default SCORERFT_RANK_W) is the weight of a ranking arm: None raises (an unfilled pin has no template)."""
+    if arm not in SCORERFT_ARM_NAME:
+        raise ValueError(f"arm {arm!r}")
+    P = dict(P5C_DEFAULT_PATHS, init_from=SCORERFT_DEFAULT_INIT, **(paths or {}))
+    a = p5c_argv("C1", paths=P)
+    a[a.index("--steps") + 1] = str(SCORERFT_STEPS)
+    a[a.index("--seed") + 1] = str(SCORERFT_ARM_SEED[arm])
+    a[a.index("--out") + 1] = f"{P['out_root']}/scorerft_{arm.lower()}"
+    if SCORERFT_ARM_RANK[arm]:
+        w = _scorerft_w(arm) if rank_w is None else rank_w
+        if w is None:
+            raise ValueError("SCORERFT_RANK_W / SCORERFT_P_RANK_W is unfilled: the ranking arms have no template until the MM registers the weight rule's output")
+        if arm in SCORERFT_P_ARMS:
+            rk = ["--rank-w", repr(float(w)), "--rank-heads", SCORERFT_P_RANK_HEADS]
+        else:
+            rk = ["--rank-w", repr(float(w)), "--rank-heads", SCORERFT_RANK_HEADS, "--rank-ep-gap", repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk", str(SCORERFT_RANK_GATE_TOPK)]
+    else:
+        rk = ["--rank-w", "0.0"]
+    i = a.index("--w-field")
+    a[i + 2:i + 2] = rk
+    return a
+
+
+def scorerft_profile(arm: str) -> dict:
+    """The arm's profile (see the block comment): `refe_p5c` (C1) with the steps, seed and rank levers of the arm, and the SCORER-FT rules."""
+    if arm not in SCORERFT_ARM_NAME:
+        raise ValueError(f"arm {arm!r}")
+    c1 = PROFILES["refe_p5c"]
+    ranking = SCORERFT_ARM_RANK[arm]
+    req = dict(c1["required_flags"])
+    req.update({"--steps": str(SCORERFT_STEPS), "--seed": str(SCORERFT_ARM_SEED[arm]),
+                "--rank-w": (repr(float(_scorerft_w(arm))) if _scorerft_w(arm) is not None else None) if ranking else "0.0"})
+    if ranking and arm in SCORERFT_P_ARMS:
+        req.update({"--rank-heads": SCORERFT_P_RANK_HEADS})
+    elif ranking:
+        req.update({"--rank-heads": SCORERFT_RANK_HEADS, "--rank-ep-gap": repr(float(SCORERFT_RANK_EP_GAP)), "--rank-gate-topk": str(SCORERFT_RANK_GATE_TOPK)})
+    prof = {k: v for k, v in c1.items() if k not in ("p5c_rules", "p5c_arm", "p5c_base")}
+    exp = dict(c1["expect_schedule"])
+    exp["steps"] = SCORERFT_STEPS
+    prof.update({"name": SCORERFT_ARM_NAME[arm], "scorerft_rules": True, "scorerft_arm": arm, "traj_label_required": True,
+                 "suite": list(c1["suite"]) + SCORERFT_SUITE_EXTRA + (SCORERFT_P_SUITE_EXTRA if arm in SCORERFT_P_ARMS else []), "required_flags": req, "expect_schedule": exp,
+                 "live_terms": P6_TERMS + (("rank_L",) if ranking else ()), "forbidden_env": SCORERFT_ENV_FORBIDDEN,
+                 "init_from_sha256": SCORERFT_BASE_SHA256, "traj_label_sha256": P5C_LABEL_TABLE_SHA256, "traj_label_rank_policy": P5C_RANK_POLICY,
+                 "rank_w": (float(_scorerft_w(arm)) if _scorerft_w(arm) is not None else None) if ranking else 0.0,
+                 "rank_heads": SCORERFT_ARM_HEADS[arm] if ranking else "", "rank_ep_gap": SCORERFT_RANK_EP_GAP, "rank_gate_topk": SCORERFT_RANK_GATE_TOPK})
+    if ranking:
+        prof["rank_census"] = dict(SCORERFT_P_RANK_CENSUS if arm in SCORERFT_P_ARMS else SCORERFT_RANK_CENSUS)        # G-LIVE L2's registered census (control arms: no ranking term, so no census)
+    return prof
+
+
+for _sarm in SCORERFT_ARM_NAME:                   # NOT `_arm` / `_farm`: those module names keep their values
+    PROFILES[SCORERFT_ARM_NAME[_sarm]] = scorerft_profile(_sarm)
+
+
+def scorerft_refusals(prof: dict, argv: list) -> list:
+    """What `required_flags` cannot say for a SCORER-FT arm: registered pins (C1's final checkpoint, C1's label table, the weight), the arm's flag SET and every non-path lever == `scorerft_argv(arm)`, the 1,000-step schedule on
+    the P7 bank by count AND content, a fresh `--out`, and a launch environment free of REFE_RANK_MUTATE."""
+    out, name, arm = [], prof["name"], prof.get("scorerft_arm")
+    if arm not in SCORERFT_ARM_NAME or SCORERFT_ARM_NAME[arm] != name:
+        return [f"{name}: scorerft_rules without a known arm ({arm!r})"]
+    ranking = SCORERFT_ARM_RANK[arm]
+    for ev in tuple(prof.get("forbidden_env", ())) + SCORERFT_ENV_FORBIDDEN:
+        if os.environ.get(ev):
+            out.append(f"{name}: the launch environment sets {ev}={os.environ[ev]!r}, a deliberate-regression switch of the ranking term: it can never be part of a launch")
+    if not _p5c_hex64(prof.get("init_from_sha256")):
+        out.append(f"{name}: C1's final checkpoint's sha256 is not REGISTERED (init_from_sha256 = {prof.get('init_from_sha256')!r}; SCORERFT_BASE_SHA256): the MM measures and banks it first; an unpinned base is never launched from")
+    if not _p5c_hex64(prof.get("traj_label_sha256")):
+        out.append(f"{name}: C1's label table's sha256 is not REGISTERED (traj_label_sha256 = {prof.get('traj_label_sha256')!r}): all four SCORER-FT arms carry the table")
+    elif prof["traj_label_sha256"] != P5C_LABEL_TABLE_SHA256:
+        out.append(f"{name}: the registered table sha256 {prof['traj_label_sha256']} is not C1's ({P5C_LABEL_TABLE_SHA256})")
+    if prof.get("traj_label_rank_policy") != P5C_RANK_POLICY:
+        out.append(f"{name}: the table's rank policy is {prof.get('traj_label_rank_policy')!r}; C1's is {P5C_RANK_POLICY!r}")
+    rw = prof.get("rank_w")
+    if type(rw) is not float or not math.isfinite(rw):
+        out.append(f"{name}: the registered weight rank_w = {rw!r} is not a finite float (SCORERFT_RANK_W / SCORERFT_P_RANK_W: the weight rule's output, filled by the MM)")
+    elif ranking and not rw > 0.0:
+        out.append(f"{name}: arm {arm} trains the ranking term and registers rank_w = {rw!r} (must be > 0)")
+    elif not ranking and rw != 0.0:
+        out.append(f"{name}: control arm {arm} registers rank_w = {rw!r} (must be EXACTLY 0.0)")
+    if ranking and (prof.get("rank_heads"), prof.get("rank_ep_gap"), prof.get("rank_gate_topk")) != (SCORERFT_ARM_HEADS[arm], SCORERFT_RANK_EP_GAP, SCORERFT_RANK_GATE_TOPK):
+        out.append(f"{name}: the registered rule {prof.get('rank_heads')!r} / gap {prof.get('rank_ep_gap')!r} / top-k {prof.get('rank_gate_topk')!r} is not the card's ({SCORERFT_ARM_HEADS[arm]!r} / {SCORERFT_RANK_EP_GAP} / {SCORERFT_RANK_GATE_TOPK})")
+    if not ranking and prof.get("rank_heads"):
+        out.append(f"{name}: control arm {arm} registers rank_heads {prof.get('rank_heads')!r}: it must train no ranking head")
+    terms = tuple(prof.get("live_terms", ()))
+    if ranking and "rank_L" not in terms:
+        out.append(f"{name}: arm {arm} trains the ranking term but its live_terms omit rank_L (the term would never be required in the log)")
+    if not ranking and "rank_L" in terms:
+        out.append(f"{name}: control arm {arm} declares rank_L live: a control that declares a term it does not train FAILS G-LIVE (field_L ABSENT, C, 2026-11-19)")
+    if prof.get("traj_label_required") is not True:
+        out.append(f"{name}: traj_label_required is not True: G-LIVE (h) would judge the arms' label table by their NAME, and every SCORER-FT arm carries C1's table")
+    exp = prof.get("expect_schedule") or {}
+    if not (exp.get("epochs") == 0 and exp.get("steps") == SCORERFT_STEPS and exp.get("epoch_len") == P7_SCENES):
+        out.append(f"{name}: the registered schedule {exp.get('epochs')} epochs / {exp.get('steps')} steps / epoch_len {exp.get('epoch_len')} is not the card's {SCORERFT_STEPS} steps over {P7_SCENES} scenes")
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    bank = Path(str(tg).rstrip("/\\")).name if tg else None
+    for key, what in (("n_tuples_by_bank", "tuple count"), ("targets_sha256_by_bank", "content sha256")):
+        reg = exp.get(key)
+        if not isinstance(reg, dict) or bank not in reg:
+            out.append(f"{name}: --targets {tg!r} names bank {bank!r}, which has no registered {what} ({key}): the P7 bank is pinned by count AND content")
+    if exp.get("targets_sha256_by_bank") and not all(_p5c_hex64(h) for h in exp["targets_sha256_by_bank"].values()):
+        out.append(f"{name}: a registered targets_sha256 is not 64 lowercase hex digits")
+    if rw is not None and type(rw) is float and math.isfinite(rw):
+        want = {f: v for f, v in GT.flag_pairs(scorerft_argv(arm, rank_w=rw if ranking else None))}
+    else:
+        want = {f: v for f, v in GT.flag_pairs(scorerft_argv(arm, rank_w=1.0 if ranking else None))}          # the weight is already refused above: the flag SET is still judged
+    got: dict = {}
+    for f, v in GT.flag_pairs(argv):
+        got.setdefault(f, []).append(v)
+    for f in sorted(set(want) - set(got) - {"--resume"}):
+        out.append(f"{name}: the argv does not carry {f}, which arm {arm}'s argv carries (the arm's lever set is exactly the card's: nothing dropped)")
+    for f in sorted(set(got) - set(want) - {"--resume"}):
+        out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which arm {arm}'s argv does not (the arms differ by the card's levers alone)")
+    for f, vs in sorted(got.items()):
+        if len(vs) > 1:
+            out.append(f"{name}: {f} is carried {len(vs)} times")
+        elif f in want and f not in P5C_PATH_FLAGS and f != "--resume":
+            w, g = want[f], vs[0]
+            same = len(w) == len(g) and all((float(a) == float(b)) if re.fullmatch(r"-?[0-9.eE+-]+", a) and re.fullmatch(r"-?[0-9.eE+-]+", b) else a == b for a, b in zip(w, g))
+            if not same and not (f == "--rank-w" and ranking and not (type(rw) is float and math.isfinite(rw))):
+                out.append(f"{name}: arm {arm} fixes {f} {' '.join(w)}; the argv has {f} {' '.join(g)}")
+    if not (GT.flag_values(argv, "--traj-label-table") or [None])[0]:
+        out.append(f"{name}: arm {arm} needs --traj-label-table <C1's pinned table>")
+    ow = (GT.flag_values(argv, "--out") or [None])[0]
+    if ow and (Path(str(ow)) / "ckpt_last.pt").exists():
+        out.append(f"{name}: --out {ow} already holds ckpt_last.pt: a SCORER-FT arm starts FRESH (fresh AdamW; a seeded checkpoint would resume an old optimiser)")
+    return out
+
+
+# the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
+PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
+                          "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
+# SFT-4R: scorer_finetune.py's runner (static checks + the trainer's own --preflight, like refe_rls1 / refe_aux_s1) with NO arm table (one arm: A and B share a pass), the whole argv PINNED, the registered recipe
+# asserted on the EFFECTIVE values (`recipe_rules` = sft4r), the labels' completeness asserted from the trainer's `data` event (`data_expect` / `data_expect_min` / `data_expect_updates`, G-DVB) and the
+# egress gate a REQUIRED check (G-EGR, PREREG_SFT4R "Changed 3": the run must be able to leave the pod before its first step; no checkpoint is pushed, so `egr_require_ckpt` is False).
+PROFILES["refe_sft4r"] = {**_BASE, "name": "refe_sft4r", "runner": "scorer", "recipe_rules": "sft4r", "trainer": "refe/scorer_finetune.py", "parser_module": "scorer_finetune",
+                          "trainer_src": "scorer_finetune.py", "namespace_funcs": ("main", "epo_refusals", "_g_probe", "aux_s1_refusals"), "data_flags": RLS1_DATA,
+                          "checks": ("G-HYG", "G-DVB", "G-PREFLIGHT", "G-SUITE", "G-EGR"), "na_ok": ("G-CLOCK",), "suite": SFT4R_SUITE, "live_terms": ("bceA", "lossB"),
+                          "clock_na": "SFT-4R has no label clock of its own: its labels are the PDM relabel of an on-policy bank, stamped by the relabeller's ckpt_step; the preflight's G9 bounds the stale "
+                                      "share and G-DVB asserts the coverage (train_sets == 174,912, pdm_train_stale == 0) from the trainer's own data event",
+                          "forbidden_flags": SFT4R_FORBIDDEN, "output_flags": ("--out",),
+                          "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--lane-head": None, "--teacher-lane-train": None,
+                                             "--teacher-lane-heldout": None, "--lane-labels-heldout": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4"},
+                          "provisional_flags": (), "pinned_argv": tuple(SFT4R_ARGV.split()), "data_expect": SFT4R_DATA_EXPECT, "data_expect_min": SFT4R_DATA_MIN,
+                          "data_expect_updates": SFT4R_UPDATES, "egr_require_ckpt": False}
+# ============================================================================================ SCORER1 (PREREG_SCORER1 + AMENDMENT 1; chain refe/scorer1_chain.sh; pod script refe/scorer1_pod.sh)
+# Three arms from u400, ONE pinned argv each (`scorer1_argv`): C0 (same recipe, 400 more updates, seed 0), C0r (seed 1: the training-variance floor), S1 (C0 + lambda_p * L_pair on NC,DAC,TTC).  They share
+# the SFT-4R input layout and differ by --out, --seed and the --pair-* levers alone.  What the profile asserts beyond the pin (`scorer1_refusals`):
+#   * --max-updates 400 is ALLOWED (and required): Amendment 1 item 6.  --pair-calibrate is FORBIDDEN in a launch (a measuring mode: its value goes into S1's --pair-w through the chain).
+#   * the checkpoint is bound by sha256 (`SCORER1_CKPT_SHA256`, Amendment 1 item 7: the dev-box file and the HF/pod file are the SAME bytes -- md5 8e382eeb... of the registry IS sha256 8b4dba48... of the card).
+#   * NAVTEST IS NEVER TRAINING DATA (PREREG_SCORER1 section 2): (i) no data path of the argv may name navtest; (ii) the registered navtest log list (136 logs) and token list (12,146) are bound by sha256 and passed
+#     to the trainer (--navtest-logs / --navtest-tokens), whose own `data` event counts training sets and bank sets on them; G-DVB asserts every count == 0 and the list sizes == the registered ones (an empty list cannot pass).
+#   * S1 names --pair-w > 0, --pair-heads NC,DAC,TTC, --pair-dv 0.15; C0 and C0r name no --pair-* flag at all (a control with the lever named is not C0).
+SCORER1_ROOT = "/workspace/data/refe_scorer1"
+SCORER1_CKPT = SCORER1_ROOT + "/base/model_sft4_B_u400.pt"
+SCORER1_CKPT_SHA256 = "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d"      # MEASURED 2026-11-08, dev box file 1,288,489,838 B; the registry's 8e382eeb... is its md5
+SCORER1_NAVTEST_LOGS, SCORER1_NAVTEST_TOKENS = SCORER1_ROOT + "/navtest_ids/navtest_logs.json", SCORER1_ROOT + "/navtest_ids/navtest_tokens.txt.gz"
+SCORER1_NAVTEST_SHA256 = {"--navtest-logs": "79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0", "--navtest-tokens": "e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a"}   # raw/2026-10-22-p7-session-reserve/raw/src
+SCORER1_NAVTEST_EXPECT = {"navtest.logs": 136, "navtest.tokens": 12146, "navtest.train_rows_in_navtest_logs": 0, "navtest.train_rows_in_navtest_tokens": 0,
+                          "navtest.bank_sets_in_navtest_logs": 0, "navtest.bank_sets_in_navtest_tokens": 0}
+SCORER1_UPDATES = 400
+SCORER1_RECIPE = {**{k: v for k, v in SFT4R_RECIPE.items() if k not in ("max_updates", "eval_every", "seed")}, "max_updates": SCORER1_UPDATES, "eval_every": 200}      # seed is per ARM
+SCORER1_ARM_SEED = {"C0": 0, "C0r": 1, "S1": 0}
+SCORER1_PAIR_DV, SCORER1_PAIR_HEADS = 0.15, "NC,DAC,TTC"
+SCORER1_FORBIDDEN = tuple(f for f in SFT4R_FORBIDDEN if f != "--max-updates") + ("--pair-calibrate", "--dump-scores")
+SCORER1_SUITE = ([{"script": "test_pair_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1_gate.py", "token": "ZZTEST_PASS"},
+                  {"script": "test_scorer1_mutation.py", "token": "ZZTEST_PASS"},
+                  {"script": "test_scorer1_layer.py", "token": "ZZTEST_PASS"}]
+                 + [x for x in SFT4R_SUITE if x["script"] not in ("test_sft4r_chain.py", "test_sft4r_gate.py")])
+SCORER1_DATA = RLS1_DATA + ("--navtest-logs", "--navtest-tokens")
+
+
+def scorer1_argv(arm: str, pair_w=None) -> list:
+    """The pod script's argv for one arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/scorer1_pod.sh`; test_scorer1_gate.py diffs the two copies).  S1's lambda_p is NOT in the pin (it is measured by
+    --pair-calibrate): `pair_w` None builds the pin WITHOUT it; scorer1_refusals then demands a positive finite --pair-w."""
+    toks = SFT4R_ARGV.replace("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt", "--ckpt " + SCORER1_CKPT).split()
+    toks = toks[:toks.index("--out")]
+    toks += ["--navtest-logs", SCORER1_NAVTEST_LOGS, "--navtest-tokens", SCORER1_NAVTEST_TOKENS, "--max-updates", str(SCORER1_UPDATES), "--eval-every", "200", "--seed", str(SCORER1_ARM_SEED[arm])]
+    if arm == "S1":
+        toks += ["--pair-heads", SCORER1_PAIR_HEADS, "--pair-dv", str(SCORER1_PAIR_DV)] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
+    return toks + ["--out", SCORER1_ROOT + "/" + arm.lower()]
+
+
+_SHA_MEMO: dict = {}
+
+
+def sha256_of_file(path: str) -> str:
+    """streamed sha256, memoised per (path, size, mtime_ns) so the several `verify` calls of one chain hash a 1.3 GB checkpoint once"""
+    import hashlib
+    st = os.stat(path)
+    k = (str(path), st.st_size, st.st_mtime_ns)
+    if k not in _SHA_MEMO:
+        h = hashlib.sha256()
+        with open(path, "rb") as fh:
+            for blk in iter(lambda: fh.read(1 << 22), b""):
+                h.update(blk)
+        _SHA_MEMO[k] = h.hexdigest()
+    return _SHA_MEMO[k]
+
+
+PROFILES["refe_scorer1"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1", "recipe_rules": None, "scorer1_rules": True, "recipe": SCORER1_RECIPE, "forbidden_flags": SCORER1_FORBIDDEN, "suite": SCORER1_SUITE,
+                            "data_flags": SCORER1_DATA, "pinned_argv": (), "data_expect": {**SFT4R_DATA_EXPECT, **SCORER1_NAVTEST_EXPECT}, "data_expect_updates": SCORER1_UPDATES,
+                            "required_flags": {**PROFILES["refe_sft4r"]["required_flags"], "--navtest-logs": None, "--navtest-tokens": None, "--max-updates": str(SCORER1_UPDATES)},
+                            "ckpt_sha256": SCORER1_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256,
+                            "clock_na": "SCORER1 has no label clock of its own: it trains on the SFT-4R PDM relabel of the on-policy bank (G-DVB asserts the coverage and 0 stale from the trainer's data event), "
+                                        "on a frozen generator"}
+
+# ============================================================================================ SCORER1 on P6 (PREREG_SCORER1P6, frozen 2026-11-09; chain refe/scorer1p6_chain.sh; pod script refe/scorer1p6_pod.sh)
+# A NEW profile `refe_scorer1p6` built as a NEW dict: PROFILES["refe_scorer1"] and every shared constant above are untouched (test_scorer1p6_gate.py proves the existing fingerprints unmoved).
+# Arms from P6's model_final.pt (sha256 below), scorer only, 400 updates, NO lane head / lane label / lane manifest: C0 (seed 0), C0r (seed 1: the training-variance floor), S1E (C0 + lambda_p * L_pair on NC,DAC,EP,TTC,
+# seed 0) and the conditional S1 (S1E without the EP head; runs only under O3).  L_pair for the P6 card: EP takes NO balancing, NO speed-contrast filter and a label gap >= 0.05; NC, DAC, TTC stay as in PREREG_SCORER1;
+# the loss is the mean per head, then over the heads with >= 1 kept pair (--pair-mean head).  Its own pod dir (gate_token.TREE_ROOTS = refe, code, splits: re-shipping refe/ over a dir that holds a token voids it).
+SCORER1P6_ROOT = "/workspace/data/refe_scorer1p6"
+SCORER1P6_PKG = "/workspace/refe-plan-scorer1p6"
+SCORER1P6_CKPT = "/workspace/data/refe_runs/p6_paper_faithful/model_final.pt"          # measured on the pod by the coordinator 2026-11-09
+SCORER1P6_CKPT_SHA256 = "968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1"      # PREREG_SCORER1P6 section 2: P6's model_final.pt
+SCORER1P6_CARD_SHA256 = "adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed"      # PREREG_SCORER1P6.md as frozen 2026-11-09 (the chain refuses a card with other bytes)
+SCORER1P6_DATA = "/workspace/data"
+SCORER1P6_DUMP = "/workspace/data/p6base_labels"          # Jobs A + B output (p6base/labels/p6_labels_chain.sh $OUT; labels_manifest.json beside it); layout from its HANDOFF.md.  Changed here AND in scorer1p6_pod.sh (test_scorer1p6_gate diffs the two)
+SCORER1P6_TARGETS = SCORER1P6_DATA + "/refe_navtrain/train_grow_cmd_3c_p7"                      # coordinator, measured on the pod: P7's reserve step moved the original bank's images / metric cache; these 92,896 rank-0 rows are byte-for-byte P6's
+SCORER1P6_CALIB = SCORER1P6_DATA + "/refe_navtrain/train_grow/calib_table.json"                  # P6's own calibration
+SCORER1P6_ARM_SEED = {"C0": 0, "C0r": 1, "S1E": 0, "S1": 0}
+SCORER1P6_PAIR_SPEC = {      # arm -> the L_pair levers it must carry, as the argv spells them; an arm not listed is a control and names no --pair-* flag
+    "S1E": {"heads": "NC,DAC,EP,TTC", "dv": 0.15, "nobalance": "EP", "nospeed": "EP", "gap": "EP=0.05", "mean": "head"},
+    "S1": {"heads": "NC,DAC,TTC", "dv": 0.15, "nobalance": "", "nospeed": "", "gap": "", "mean": "head"}}
+SCORER1P6_UPDATES = 400
+# THE DATA PIN, TO FILL IN ONCE THE P6 LABELS EXIST (Jobs A + B; `pdm_label_complete.py --expect N` and the trainer's own data event).  While it is None the gate REFUSES every arm
+# (scorer1_refusals): the profile cannot assert label completeness from a count nobody has.  Shape: {"train_sets": <served train sets with a PDM label>, "heldout_sets": <held-out sets>}.
+SCORER1P6_DATA_PIN = {"train_sets": 60000, "heldout_sets": 1705}
+SCORER1P6_RECIPE = {k: v for k, v in SCORER1_RECIPE.items() if k != "lane_weight"}              # the SFT-4 recipe without its lane term (the generator, the trunk and the lane are not trained)
+SCORER1P6_FORBIDDEN = SCORER1_FORBIDDEN + ("--lane-head", "--lane-weight", "--teacher-lane-train", "--teacher-lane-heldout", "--lane-labels-heldout")      # no lane flag, no lane manifest
+SCORER1P6_SUITE = SCORER1_SUITE + [{"script": "test_pair_loss_p6.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1p6_gate.py", "token": "ZZTEST_PASS"},
+                                   {"script": "test_scorer1p6_preflight.py", "token": "ZZTEST_PASS"}]
+
+
+def scorer1p6_data_expect(pin) -> dict:
+    """the registered G-DVB counts from the data pin (the navtest guard, the held-out log count and the BUILT navigation mode of the command checkpoint only, while the pin is unset: scorer1_refusals refuses then)"""
+    out = {**SCORER1_NAVTEST_EXPECT, "nav_mode": "command", "heldout_logs": 24, "train_rows_in_heldout_logs": 0}
+    if pin:
+        n, h = int(pin["train_sets"]), int(pin["heldout_sets"])
+        out.update({"train_sets": n, "train_sets_in_bank": n, "heldout_sets": h, "heldout_in_bank": h, "lane_labels.pdm_train": n, "lane_labels.pdm_train_stale": 0,
+                    "lane_labels.pdm_train_superseded": 0, "lane_labels.pdm_heldout": h, "lane_labels.heldout_stale": 0})
+    return out
+
+
+def scorer1p6_argv(arm: str, pair_w=None) -> list:
+    """The pod script's argv for one arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/scorer1p6_pod.sh`; test_scorer1p6_gate.py diffs the two copies).  The P6 input layout without
+    any lane flag.  lambda_p is NOT in the pin (it is measured by --pair-calibrate): `pair_w` None builds the pin WITHOUT it; scorer1_refusals then demands a positive finite --pair-w."""
+    R, D, T = SCORER1P6_ROOT, SCORER1P6_DUMP, SCORER1P6_TARGETS
+    toks = ["--ckpt", SCORER1P6_CKPT, "--targets", T, "--images", SCORER1P6_DATA + "/navtrain_pixels", "--calib", SCORER1P6_CALIB, "--onpolicy", D + "/train_sets",
+            "--heldout", D + "/heldout_sets", "--heldout-logs", D + "/logs/heldout_logs.txt", "--workers", "3", "--lr", "1e-4", "--b-mode", "expreward", "--lam", "1.0", "--tau-s", "0.1",
+            "--pdm-labels-heldout", D + "/heldout_pdm", "--pdm-labels-train", D + "/train_pdm", "--require-pdm",
+            "--navtest-logs", R + "/navtest_ids/navtest_logs.json", "--navtest-tokens", R + "/navtest_ids/navtest_tokens.txt.gz",
+            "--max-updates", str(SCORER1P6_UPDATES), "--eval-every", "200", "--seed", str(SCORER1P6_ARM_SEED[arm])]
+    sp = SCORER1P6_PAIR_SPEC.get(arm)
+    if sp:
+        toks += ["--pair-heads", sp["heads"], "--pair-dv", str(sp["dv"])]
+        for flag, key in (("--pair-nobalance-heads", "nobalance"), ("--pair-nospeed-heads", "nospeed"), ("--pair-gap-heads", "gap")):
+            if sp[key]:
+                toks += [flag, sp[key]]
+        toks += ["--pair-mean", sp["mean"]] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
+    return toks + ["--out", R + "/" + arm.lower()]
+
+
+PROFILES["refe_scorer1p6"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1p6", "recipe_rules": None, "scorer1_rules": True, "scorer1_kind": "p6", "recipe": SCORER1P6_RECIPE,
+                              "forbidden_flags": SCORER1P6_FORBIDDEN, "suite": SCORER1P6_SUITE, "data_flags": SCORER1_DATA, "pinned_argv": (),
+                              "data_expect": scorer1p6_data_expect(SCORER1P6_DATA_PIN), "data_expect_min": {}, "data_expect_updates": SCORER1P6_UPDATES, "data_pin": SCORER1P6_DATA_PIN,
+                              "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4",
+                                                 "--navtest-logs": None, "--navtest-tokens": None, "--max-updates": str(SCORER1P6_UPDATES)},
+                              "ckpt_sha256": SCORER1P6_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256, "root": SCORER1P6_ROOT, "arm_seed": SCORER1P6_ARM_SEED, "pair_spec": SCORER1P6_PAIR_SPEC,
+                              "clock_na": "SCORER1P6 has no label clock of its own: it trains on the PDM labels of P6's own proposals (Jobs A + B, keyed to the proposals' ckpt_step; G-DVB asserts the coverage and 0 stale "
+                                          "from the trainer's data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
+
+# ============================================================================================ S1Z (PREREG_S1Z_P6, frozen 2026-11-09; chain refe/s1z_chain.sh; pod script refe/s1z_pod.sh)
+# ONE arm from P6's model_final.pt: C0's recipe exactly (SCORER1P6_RECIPE, 400 updates, seed 0, the same 60,000 train sets) plus L_twin on arm B's NC, DAC and TTC logits (radius 1.0 m, top-K 8, no EP, no
+# speed filter, no balancing).  A NEW profile `refe_s1z_p6` built as a NEW dict beside refe_scorer1p6: that profile, every other profile and every shared constant above are untouched (test_scorer1p6_gate.py
+# pins the 17 older fingerprints; test_s1z_gate.py pins refe_scorer1p6's own).  It reuses the SCORER1P6 data pin (SCORER1P6_DATA_PIN, via scorer1p6_data_expect), the P6 label layout and the navtest lists; its
+# own pod dirs (a re-ship of refe/ over a dir that holds a token voids it).  lambda_z is MEASURED (--pair-calibrate with --twin-heads) and is the one value that is not in the pin.
+S1Z_ROOT = "/workspace/data/refe_s1z"
+S1Z_PKG = "/workspace/refe-plan-s1z"
+S1Z_CARD_SHA256 = "8c7b6b697b94ccf1a4781a727ed28c10ed8b11878c33eeb2d016a507b36efa69"      # PREREG_S1Z_P6.md as frozen 2026-11-09 (the chain refuses a card with other bytes)
+S1Z_ARM_SEED = {"S1Z": 0}
+S1Z_TWIN_SPEC = {"heads": "NC,DAC,TTC", "ade": 1.0, "topk": 8}                      # PREREG_S1Z_P6 section 1: fixed there, not searched
+S1Z_UPDATES = SCORER1P6_UPDATES
+S1Z_SUITE = SCORER1P6_SUITE + [{"script": "test_s1z_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_s1z_gate.py", "token": "ZZTEST_PASS"},
+                               {"script": "test_s1z_preflight.py", "token": "ZZTEST_PASS"}, {"script": "test_s1z_layer.py", "token": "ZZTEST_PASS"}]
+
+
+def s1z_argv(arm: str = "S1Z", twin_w=None) -> list:
+    """The pod script's argv for the arm as it expands on the pod (`MODE=argv bash refe/s1z_pod.sh`; test_s1z_gate.py diffs the two copies).  The P6 input layout of scorer1p6_argv, S1Z's own root, and
+    the four --twin-* levers NAMED (the weight's default 0.0 is OFF, so an argv without it is not the arm).  lambda_z is NOT in the pin: `twin_w` None builds the pin WITHOUT it; the profile then demands
+    a positive finite --twin-w."""
+    R, D, T = S1Z_ROOT, SCORER1P6_DUMP, SCORER1P6_TARGETS
+    toks = ["--ckpt", SCORER1P6_CKPT, "--targets", T, "--images", SCORER1P6_DATA + "/navtrain_pixels", "--calib", SCORER1P6_CALIB, "--onpolicy", D + "/train_sets",
+            "--heldout", D + "/heldout_sets", "--heldout-logs", D + "/logs/heldout_logs.txt", "--workers", "3", "--lr", "1e-4", "--b-mode", "expreward", "--lam", "1.0", "--tau-s", "0.1",
+            "--pdm-labels-heldout", D + "/heldout_pdm", "--pdm-labels-train", D + "/train_pdm", "--require-pdm",
+            "--navtest-logs", R + "/navtest_ids/navtest_logs.json", "--navtest-tokens", R + "/navtest_ids/navtest_tokens.txt.gz",
+            "--max-updates", str(S1Z_UPDATES), "--eval-every", "200", "--seed", str(S1Z_ARM_SEED[arm]),
+            "--twin-heads", S1Z_TWIN_SPEC["heads"], "--twin-ade", str(S1Z_TWIN_SPEC["ade"]), "--twin-topk", str(S1Z_TWIN_SPEC["topk"])]
+    if twin_w is not None:
+        toks += ["--twin-w", str(twin_w)]
+    return toks + ["--out", R + "/" + arm.lower()]
+
+
+def s1z_twin_refusals(prof: dict, argv: list, mod, parser) -> list:
+    """S1Z's own rules on top of scorer1_refusals: --twin-w named ONCE with a finite value > 0, every --twin-* lever NAMED (a default that disables or moves the term must be in the argv), the registered
+    heads / radius / top-K, no --pair-calibrate, and the trainer's own twin_refusals."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    sp = prof["twin_spec"]
+    tw = GT.flag_values(argv, "--twin-w")
+    try:
+        wv = float(tw[0]) if tw and len(tw) == 1 else None
+    except ValueError:
+        wv = None
+    if wv is None or not math.isfinite(wv) or not wv > 0.0:
+        out.append(f"{name} requires --twin-w named, ONE finite value > 0 (lambda_z, measured by --pair-calibrate with --twin-heads); the argv has --twin-w {' '.join(tw or [])}")
+    for f in ("--twin-heads", "--twin-ade", "--twin-topk"):
+        if f not in argv:
+            out.append(f"{name} requires {f} NAMED: a lever whose default disables or moves the term must be in the argv, or the arm did not test it")
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        return out
+    if ns.pair_calibrate or ns.twin_heads != sp["heads"] or not C._close(ns.twin_ade, sp["ade"]) or ns.twin_topk != sp["topk"]:
+        out.append(f"{name} requires --twin-heads {sp['heads']} --twin-ade {sp['ade']} --twin-topk {sp['topk']} and no --pair-calibrate (PREREG_S1Z_P6 section 1)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.twin_refusals(ns)]
+    return out
+
+
+PROFILES["refe_s1z_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_s1z_p6", "argv_kind": "s1z", "twin_spec": dict(S1Z_TWIN_SPEC), "suite": S1Z_SUITE, "root": S1Z_ROOT,
+                           "arm_seed": dict(S1Z_ARM_SEED), "pair_spec": {}, "recipe": dict(SCORER1P6_RECIPE), "forbidden_flags": tuple(SCORER1P6_FORBIDDEN),
+                           "data_expect": scorer1p6_data_expect(SCORER1P6_DATA_PIN), "data_pin": SCORER1P6_DATA_PIN,
+                           "required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--twin-w": None, "--twin-heads": None, "--twin-ade": "1.0", "--twin-topk": "8"},
+                           "clock_na": "S1Z has no label clock of its own: it trains on the PDM labels of P6's own proposals (the SCORER1P6 label set, the same pin; G-DVB asserts the coverage and 0 stale from the trainer's "
+                                       "data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
+
+# ============================================================================================ S1ZSM (PREREG_S1ZSM_P6, frozen 2026-11-10; chain refe/s1zsm_chain.sh; pod script refe/s1zsm_pod.sh)
+# S1Z's twin loss with SPEED-NEUTRAL pairs: S1Z's recipe exactly (the same argv layout, 400 updates, seed 0, the same 60,000 train sets, heads NC,DAC,TTC, radius 1.0 m, top-K 8) plus ONE lever, the
+# default-OFF trainer flag --twin-speed-neutral (|v4_i - v4_j| / max(v0, 1) < 0.15 and F/S balancing, seed 20261107).  A NEW profile `refe_s1zsm_p6` built as a DEEP COPY of refe_s1z_p6 with its own root, arm table,
+# suite and required flag: every existing profile and every shared constant above is untouched (test_scorer1p6_gate.py / test_s1z_gate.py / test_rep_gate.py pin their digests; test_s1zsm_gate.py pins them again
+# next to this one).  lambda_z is MEASURED again, by `--pair-calibrate --twin-heads NC,DAC,TTC --twin-speed-neutral` (S1Z's 0.026321 was measured for another loss and is never reused: the pod script and the chain
+# refuse a pair_weight.json that does not say speed_neutral true).  The flag is NAMED in the argv (it is in the pin and in required_flags): an argv that leaves the default-off flag out is S1Z, and is refused.
+S1ZSM_ROOT = "/workspace/data/refe_s1zsm"
+S1ZSM_PKG = "/workspace/refe-plan-s1zsm"
+S1ZSM_CARD_SHA256 = "ac75b2891e794de800102a6d5a0f0353e8092e5f976f31b543ac7700811ad6b8"      # PREREG_S1ZSM_P6.md as frozen 2026-11-10 (the chain refuses a card with other bytes)
+S1ZSM_ARM_SEED = {"S1ZSM": 0}
+S1ZSM_SN_SPEC = {"dv": 0.15, "seed": 20261107}                                   # PREREG_S1ZSM_P6 section 1: fixed there, not searched (scorer_finetune.TWIN_SN_DV / TWIN_SN_SEED, gate_checks.G18_SN_*)
+S1ZSM_UPDATES = SCORER1P6_UPDATES
+S1ZSM_SUITE = S1Z_SUITE + [{"script": "test_s1zsm_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_s1zsm_gate.py", "token": "ZZTEST_PASS"},
+                           {"script": "test_s1zsm_preflight.py", "token": "ZZTEST_PASS"}, {"script": "test_s1zsm_layer.py", "token": "ZZTEST_PASS"}]
+
+
+def s1zsm_argv(arm: str = "S1ZSM", twin_w=None) -> list:
+    """The pod script's argv for the arm as it expands on the pod (`MODE=argv bash refe/s1zsm_pod.sh`; test_s1zsm_gate.py diffs the two copies): S1Z's argv (s1z_argv) with S1ZSM's root and seed table, and the
+    default-off --twin-speed-neutral NAMED (an argv without it is S1Z).  lambda_z is NOT in the pin: `twin_w` None builds the pin WITHOUT it; the profile then demands a positive finite --twin-w."""
+    R, D, T = S1ZSM_ROOT, SCORER1P6_DUMP, SCORER1P6_TARGETS
+    toks = ["--ckpt", SCORER1P6_CKPT, "--targets", T, "--images", SCORER1P6_DATA + "/navtrain_pixels", "--calib", SCORER1P6_CALIB, "--onpolicy", D + "/train_sets",
+            "--heldout", D + "/heldout_sets", "--heldout-logs", D + "/logs/heldout_logs.txt", "--workers", "3", "--lr", "1e-4", "--b-mode", "expreward", "--lam", "1.0", "--tau-s", "0.1",
+            "--pdm-labels-heldout", D + "/heldout_pdm", "--pdm-labels-train", D + "/train_pdm", "--require-pdm",
+            "--navtest-logs", R + "/navtest_ids/navtest_logs.json", "--navtest-tokens", R + "/navtest_ids/navtest_tokens.txt.gz",
+            "--max-updates", str(S1ZSM_UPDATES), "--eval-every", "200", "--seed", str(S1ZSM_ARM_SEED[arm]),
+            "--twin-heads", S1Z_TWIN_SPEC["heads"], "--twin-ade", str(S1Z_TWIN_SPEC["ade"]), "--twin-topk", str(S1Z_TWIN_SPEC["topk"]), "--twin-speed-neutral"]
+    if twin_w is not None:
+        toks += ["--twin-w", str(twin_w)]
+    return toks + ["--out", R + "/" + arm.lower()]
+
+
+def s1zsm_twin_refusals(prof: dict, argv: list, mod, parser) -> list:
+    """S1ZSM's own rules on top of s1z_twin_refusals: --twin-speed-neutral NAMED (a default that disables the lever must be in the argv, or the arm did not test it) and parsed ON."""
+    import gate_checks as C
+    name = prof["name"]
+    out = s1z_twin_refusals(prof, argv, mod, parser)
+    if "--twin-speed-neutral" not in argv:
+        out.append(f"{name} requires --twin-speed-neutral NAMED: its default is OFF, and an argv without it is S1Z, not this arm")
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if not err and not getattr(ns, "twin_speed_neutral", False):
+        out.append(f"{name}: the parsed argv has twin_speed_neutral False (PREREG_S1ZSM_P6 section 1)")
+    return out
+
+
+PROFILES["refe_s1zsm_p6"] = {**copy.deepcopy(PROFILES["refe_s1z_p6"]), "name": "refe_s1zsm_p6", "argv_kind": "s1zsm", "sn_spec": dict(S1ZSM_SN_SPEC), "suite": S1ZSM_SUITE, "root": S1ZSM_ROOT,
+                             "arm_seed": dict(S1ZSM_ARM_SEED), "required_flags": {**PROFILES["refe_s1z_p6"]["required_flags"], "--twin-speed-neutral": None}}
+
+
+# ============================================================================================ SEED REPLICATES of the P6 scorer arms (PREREG_SCORER1P6 O5, PREREG_S1Z_P6 Z1 / Z5; chain refe/rep_chain.sh; pod script refe/rep_pod.sh)
+# A replicate is its PARENT arm's argv with the data-order seed and the --out dir swapped and NOTHING else (the trainer is deterministic at a fixed seed: a replicate that changes nothing reads a floor of 0.0).
+# rep_argv derives the argv FROM the parent's builder, so "differs in the seed only" is true by construction and test_rep_gate.py proves it by a token diff.  lambda_p / lambda_z are the PARENT's measured values
+# (read from the parent's calibrate dir by rep_pod.sh), never re-measured: a re-measured lambda would move a second lever.  Navtest lists, data pin, checkpoint = the parent's.  Two NEW profiles beside the
+# 19 existing ones (a pair/control family and the twin family differ in the rules the profile carries); no existing profile or shared constant is edited.
+REP_ROOT = "/workspace/data/refe_rep"
+REP_PKG = "/workspace/refe-plan-rep"
+REP_ARMS = {      # replicate arm -> its parent arm, the parent's family and the replicate's data-order seed (it must differ from the parent's)
+    "C0r2": {"parent": "C0", "family": "p6", "seed": 2},
+    "S1E1": {"parent": "S1E", "family": "p6", "seed": 1},
+    "S1Z1": {"parent": "S1Z", "family": "s1z", "seed": 1},
+    "S1ZSM1": {"parent": "S1ZSM", "family": "s1zsm", "seed": 1}}          # PREREG_S1ZSM_P6 SM1 / SM2 / SM3 name "seed 1" as the next arm
+REP_PARENT_SEEDS = {"p6": SCORER1P6_ARM_SEED, "s1z": S1Z_ARM_SEED, "s1zsm": S1ZSM_ARM_SEED}
+
+
+def rep_arm_refusals(table: dict) -> list:
+    """Refusals of a replicate table {arm: {parent, family, seed}}: an unknown family or parent, an arm that is its own parent or another registered arm, and a seed EQUAL to the parent's (or not an int)."""
+    out = []
+    for arm, sp in table.items():
+        fam, parent, seed = sp.get("family"), sp.get("parent"), sp.get("seed")
+        seeds = REP_PARENT_SEEDS.get(fam)
+        if seeds is None or parent not in seeds:
+            out.append(f"replicate {arm}: parent {parent!r} is not an arm of family {fam!r}")
+            continue
+        if arm == parent or any(arm in s for s in REP_PARENT_SEEDS.values()):
+            out.append(f"replicate {arm}: the name is a registered parent arm")
+        if not isinstance(seed, int) or isinstance(seed, bool):
+            out.append(f"replicate {arm}: seed {seed!r} is not an int")
+        elif seed == seeds[parent]:
+            out.append(f"replicate {arm}: seed {seed} equals its parent {parent}'s seed: the trainer is deterministic at a fixed seed, so this arm would change nothing and read a floor of 0.0")
+    return out
+
+
+def rep_argv(arm: str, w=None) -> list:
+    """The argv of a replicate arm: the PARENT's argv (scorer1p6_argv / s1z_argv) with --seed and --out swapped, nothing else.  `w` is the parent's measured lambda (--pair-w / --twin-w) or None for the pin without it."""
+    if arm not in REP_ARMS:
+        raise KeyError(f"{arm!r} is not a replicate arm (one of {sorted(REP_ARMS)})")
+    sp = REP_ARMS[arm]
+    bad = rep_arm_refusals({arm: sp})
+    if bad:
+        raise ValueError("; ".join(bad))
+    toks = list(scorer1p6_argv(sp["parent"], w) if sp["family"] == "p6" else s1zsm_argv(sp["parent"], twin_w=w) if sp["family"] == "s1zsm" else s1z_argv(sp["parent"], twin_w=w))
+    toks[toks.index("--seed") + 1] = str(sp["seed"])
+    toks[toks.index("--out") + 1] = REP_ROOT + "/" + arm.lower()
+    return toks
+
+
+REP_SUITE_EXTRA = [{"script": "test_rep_gate.py", "token": "ZZTEST_PASS"}]
+PROFILES["refe_rep_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_rep_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": SCORER1P6_SUITE + REP_SUITE_EXTRA,
+                           "rep_arms": {a: dict(REP_ARMS[a]) for a in ("C0r2", "S1E1")}, "arm_seed": {"C0r2": REP_ARMS["C0r2"]["seed"], "S1E1": REP_ARMS["S1E1"]["seed"]},
+                           "pair_spec": {"S1E1": dict(SCORER1P6_PAIR_SPEC["S1E"])}}
+PROFILES["refe_rep_s1z_p6"] = {**PROFILES["refe_s1z_p6"], "name": "refe_rep_s1z_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1Z_SUITE + REP_SUITE_EXTRA,
+                               "rep_arms": {"S1Z1": dict(REP_ARMS["S1Z1"])}, "arm_seed": {"S1Z1": REP_ARMS["S1Z1"]["seed"]}}
+# S1ZSM1 = a THIRD replicate profile: the twin rules (and the speed-neutral rules, `sn_spec`) are profile-wide, so the S1ZSM family cannot ride on refe_rep_s1z_p6 (it would lose --twin-speed-neutral from the pin).
+# A deep copy of refe_s1zsm_p6 with the replicate root, the replicate table and the replicate suite; refe_s1zsm_p6 and every other profile are untouched (test_rep_gate.py R3 / test_s1zsm_gate.py G3 pin the digests).
+PROFILES["refe_rep_s1zsm_p6"] = {**copy.deepcopy(PROFILES["refe_s1zsm_p6"]), "name": "refe_rep_s1zsm_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1ZSM_SUITE + REP_SUITE_EXTRA,
+                                 "rep_arms": {"S1ZSM1": dict(REP_ARMS["S1ZSM1"])}, "arm_seed": {"S1ZSM1": REP_ARMS["S1ZSM1"]["seed"]}}
+
+# ============================================================================================ DOSE of S1Z (PREREG_DOSE_P6, frozen 2026-11-10; chain refe/dose_chain.sh; pod script refe/dose_pod.sh)
+# S1ZD = S1Z's argv with EXACTLY THREE values moved (card amendment A1, PREREG_DOSE_P6_A1.md sha256 1aa0e702...): --max-updates 400 -> 1600, --out, and --epochs 2.0 (added right after the --max-updates value).  dose_argv derives the argv FROM s1z_argv (the parent's builder), so "two values" is true by construction and
+# test_dose_gate.py proves it by a token diff.  lambda_z is S1Z's measured value, READ by dose_pod.sh from refe_s1z/calibrate_s1z, never re-measured.  A NEW profile `refe_dose_s1z_p6`; no existing profile or constant is edited.
+# THE CARD'S ARGV CANNOT REACH 1,600 UPDATES (arithmetic on scorer_finetune.py:2786-2788): total = min(ceil(60,000 sets / batch 8 x epochs 1.0 / accum 8), --max-updates) = min(938, 1600) = 938.
+# So with the card's two tokens the run ends at update 938 (a 938-update cosine schedule, not 1,600) and G-DVB's schedule row (data_expect_updates 1600 against the re-derived 938) is RED.  `dose_reach_refusals`
+# REFUSES such an argv before any pod time.  DOSE_EPOCHS is the ONE switch that makes the dose reachable: the THIRD moved value, --epochs 2.0, is named by amendment A1 (PREREG_DOSE_P6_A1.md, sha256 1aa0e702...; the original card PREREG_DOSE_P6.md names no --epochs and stays frozen).
+# The shipped state is A1 (2.0); None would be the card's original two-value argv, which dose_reach_refusals refuses.  dose_pod.sh carries the same constant (test_dose_gate.py compares the two).
+DOSE_ROOT = "/workspace/data/refe_dose"
+DOSE_PKG = "/workspace/refe-plan-dose"
+DOSE_ARMS = {"S1ZD": {"parent": "S1Z", "family": "s1z", "max_updates": 1600}}      # dose arm -> its parent (S1Z, seed 0), the dose's --max-updates; the seed is the parent's
+DOSE_PARENT = {"S1Z": {"seed": S1Z_ARM_SEED["S1Z"], "max_updates": S1Z_UPDATES}}
+DOSE_EPOCHS = 2.0                                                                  # A1 (PREREG_DOSE_P6_A1.md, 1aa0e702): 2.0 reaches 1,600 updates exactly on 60,000 sets
+DOSE_SUITE_EXTRA = [{"script": "test_dose_gate.py", "token": "ZZTEST_PASS"}]
+
+
+def dose_arm_refusals(table: dict) -> list:
+    """Refusals of a dose table {arm: {parent, family, max_updates}}: an unknown parent, an arm name that is a registered arm, a --max-updates that is not an int above the parent's."""
+    out = []
+    for arm, sp in table.items():
+        par = DOSE_PARENT.get(sp.get("parent"))
+        if par is None or sp.get("family") != "s1z":
+            out.append(f"dose {arm}: parent {sp.get('parent')!r} is not the S1Z arm of family 's1z'")
+            continue
+        if arm == sp["parent"] or arm in S1Z_ARM_SEED or any(arm in s for s in REP_PARENT_SEEDS.values()) or arm in REP_ARMS:
+            out.append(f"dose {arm}: the name is a registered arm")
+        mu = sp.get("max_updates")
+        if not isinstance(mu, int) or isinstance(mu, bool) or mu <= par["max_updates"]:
+            out.append(f"dose {arm}: --max-updates {mu!r} is not an int above the parent's {par['max_updates']}: a dose that moves nothing is not a dose")
+    return out
+
+
+def dose_reach_total(train_sets: int, epochs: float, max_updates: int, batch: int = 8, accum: int = 8) -> int:
+    """The updates the trainer ends at (scorer_finetune.py:2786-2788): min(ceil(train_sets / batch x epochs / accum), max_updates)."""
+    return min(int(math.ceil(train_sets / batch * epochs / accum)), max_updates)
+
+
+def dose_reach_refusals(max_updates: int, epochs: float, train_sets: int = None) -> list:
+    """Refuse a dose whose schedule cannot reach its --max-updates on the pinned 60,000 train sets (the trainer stops at ceil(sets / batch x epochs / accum), silently)."""
+    n = SCORER1P6_DATA_PIN["train_sets"] if train_sets is None else train_sets
+    got = dose_reach_total(n, epochs, max_updates)
+    if got != max_updates:
+        return [f"the dose cannot reach --max-updates {max_updates}: with --epochs {epochs} on {n} train sets the trainer ends at update {got} (scorer_finetune.py:2786-2788), so the LR schedule and the run are not "
+                "the card's 1,600-update dose; the frozen card names no --epochs; amendment A1 (PREREG_DOSE_P6_A1.md, 1aa0e702) adds --epochs 2.0"]
+    return []
+
+
+def dose_argv(arm: str, w=None) -> list:
+    """The argv of a dose arm: S1Z's argv (s1z_argv) with --max-updates and --out swapped, nothing else (and, because DOSE_EPOCHS is set (A1), `--epochs <DOSE_EPOCHS>` right after the --max-updates value).
+    `w` is S1Z's measured lambda_z (--twin-w) or None for the pin without it."""
+    if arm not in DOSE_ARMS:
+        raise KeyError(f"{arm!r} is not a dose arm (one of {sorted(DOSE_ARMS)})")
+    sp = DOSE_ARMS[arm]
+    bad = dose_arm_refusals({arm: sp})
+    if bad:
+        raise ValueError("; ".join(bad))
+    toks = list(s1z_argv(sp["parent"], twin_w=w))
+    i = toks.index("--max-updates")
+    toks[i + 1] = str(sp["max_updates"])
+    if DOSE_EPOCHS is not None:
+        toks[i + 2:i + 2] = ["--epochs", str(DOSE_EPOCHS)]
+    toks[toks.index("--out") + 1] = DOSE_ROOT + "/" + arm.lower()
+    return toks
+
+
+PROFILES["refe_dose_s1z_p6"] = {**copy.deepcopy(PROFILES["refe_s1z_p6"]), "name": "refe_dose_s1z_p6", "argv_kind": "dose", "root": DOSE_ROOT, "suite": S1Z_SUITE + DOSE_SUITE_EXTRA,
+                                "dose_arms": {a: dict(DOSE_ARMS[a]) for a in DOSE_ARMS}, "arm_seed": {"S1ZD": S1Z_ARM_SEED["S1Z"]}, "data_expect_updates": DOSE_ARMS["S1ZD"]["max_updates"],
+                                "recipe": {**SCORER1P6_RECIPE, "max_updates": DOSE_ARMS["S1ZD"]["max_updates"], **({"epochs": DOSE_EPOCHS} if DOSE_EPOCHS is not None else {})},
+                                "required_flags": {**PROFILES["refe_s1z_p6"]["required_flags"], "--max-updates": str(DOSE_ARMS["S1ZD"]["max_updates"]), **({"--epochs": str(DOSE_EPOCHS)} if DOSE_EPOCHS is not None else {})}}
+
+# ============================================================================================ DIV: data-diverse ensemble members DV0 / DV1 (PREREG_DIV_P6, frozen 2026-11-10, sha256 e5fb2f8e...; chain refe/div_chain.sh; pod script refe/div_pod.sh)
+# DV0 = C0's argv + `--split-half 0`; DV1 = C0r's argv (seed 1) + `--split-half 1` (the data-order seed is the PARENT's, so DV1 differs from C0 by the seed too).  The ONLY moved levers against the parent are the split flag and --out.
+# div_argv derives the argv FROM scorer1p6_argv (the parent's builder), so "the parent's argv + the split flag" is true by construction and test_div_gate.py proves it by a token diff.  A NEW profile `refe_div_p6`; no existing
+# profile or constant is edited (test_div_gate.py pins the 24 older digests).  The training index is the half's, so the registered `train_sets` count (60,000, the whole bank) does NOT apply: G-DVB asserts the `split` block of the
+# trainer's data event instead (half, rule, filter built, 0 off-half rows, sets == train_sets, both halves >= 25,000) and a registered FLOOR on train_sets.  The run ends at min(400, ceil(sets / 64)) updates: a half of fewer than 25,600 sets
+# stops at its epoch (the card says so); the chain's run check derives that number, G-DVB's schedule row is not registered (data_expect_updates None).
+DIV_ROOT = "/workspace/data/refe_div"
+DIV_PKG = "/workspace/refe-plan-div"
+DIV_MIN_SETS = 25000
+DIV_ARMS = {"DV0": {"parent": "C0", "family": "p6", "half": 0}, "DV1": {"parent": "C0r", "family": "p6", "half": 1}}          # div arm -> its parent (C0 / C0r: the seed is the parent's) and the half it trains on
+DIV_SUITE_EXTRA = [{"script": "test_div_gate.py", "token": "ZZTEST_PASS"}]
+
+
+def div_arm_refusals(table: dict) -> list:
+    """Refusals of a DIV table {arm: {parent, family, half}}: a parent that is not a C0 arm of family 'p6', a name that is a registered arm, a half that is not 0 or 1, two arms on one half."""
+    out, halves = [], []
+    for arm, sp in table.items():
+        if sp.get("family") != "p6" or sp.get("parent") not in ("C0", "C0r"):
+            out.append(f"div {arm}: parent {sp.get('parent')!r} is not a C0 arm of family 'p6'")
+        if any(arm in s for s in (SCORER1P6_ARM_SEED, S1Z_ARM_SEED, S1ZSM_ARM_SEED, DOSE_ARMS)) or arm in REP_ARMS:
+            out.append(f"div {arm}: the name is a registered arm")
+        h = sp.get("half")
+        if h not in (0, 1) or isinstance(h, bool):
+            out.append(f"div {arm}: half {h!r} is not 0 or 1")
+        halves.append(h)
+    if len(set(halves)) != len(halves):
+        out.append(f"div: two arms train on the same half ({halves})")
+    return out
+
+
+def div_argv(arm: str) -> list:
+    """The argv of a DIV arm: the parent's (scorer1p6_argv of C0 / C0r) with `--split-half <h>` added right after the --seed value and --out swapped; nothing else."""
+    if arm not in DIV_ARMS:
+        raise KeyError(f"{arm!r} is not a DIV arm (one of {sorted(DIV_ARMS)})")
+    sp = DIV_ARMS[arm]
+    bad = div_arm_refusals({arm: sp})
+    if bad:
+        raise ValueError("; ".join(bad))
+    toks = list(scorer1p6_argv(sp["parent"]))
+    i = toks.index("--seed")
+    toks[i + 2:i + 2] = ["--split-half", str(sp["half"])]
+    toks[toks.index("--out") + 1] = DIV_ROOT + "/" + arm.lower()
+    return toks
+
+
+PROFILES["refe_div_p6"] = {**copy.deepcopy(PROFILES["refe_scorer1p6"]), "name": "refe_div_p6", "argv_kind": "div", "root": DIV_ROOT, "suite": SCORER1P6_SUITE + DIV_SUITE_EXTRA,
+                           "div_arms": {a: dict(DIV_ARMS[a]) for a in DIV_ARMS}, "arm_seed": {"DV0": SCORER1P6_ARM_SEED["C0"], "DV1": SCORER1P6_ARM_SEED["C0r"]}, "pair_spec": {},
+                           "data_expect": {k: v for k, v in PROFILES["refe_scorer1p6"]["data_expect"].items() if k != "train_sets"}, "data_expect_min": {"train_sets": DIV_MIN_SETS}, "data_expect_updates": None,
+                           "required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--split-half": None}}
+
+
+# RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+# rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
+                          "epo_registered": RLS1B_EPO_REGISTERED, "arms_need_pi": RLS1B_NEEDS_PI}
+# RL-S1c = refe_rls1 with ITS arm table (R0c only), `epo_ref armA` registered AND required to be named.  Everything else (checks, data flags, forbidden / required flags, recipe, G-DVB) is refe_rls1's.
+PROFILES["refe_rls1c"] = {**PROFILES["refe_rls1"], "name": "refe_rls1c", "suite": RLS1C_SUITE, "arm_class": RLS1C_ARM_CLASS, "arm_seeds": RLS1C_ARM_SEEDS,
+                          "epo_registered": RLS1C_EPO_REGISTERED, "must_name": RLS1C_MUST_NAME}
+# RL-S1d = refe_rls1 with ITS arm table (R0d, R1d, R1o), the registered --epo-con values PER ARM (arm_epo_registered), the flags each arm must NAME (arm_must_name) and the extra metric columns a
+# constrained arm must emit (arm_con_terms).  `epo_con_block`: the data event MUST carry the `epo_con` block (G-DVB cannot read a legacy absence as "off" here: R1o's OFF is itself observed).
+PROFILES["refe_rls1d"] = {**PROFILES["refe_rls1"], "name": "refe_rls1d", "suite": RLS1D_SUITE, "arm_class": RLS1D_ARM_CLASS, "arm_seeds": RLS1D_ARM_SEEDS,
+                          "arm_epo_registered": RLS1D_ARM_EPO_REGISTERED, "arm_must_name": RLS1D_ARM_MUST_NAME, "arm_con_terms": RLS1D_ARM_CON_TERMS, "epo_con_block": True}
+# R0e-pick = refe_rls1d's checks, data flags, forbidden / required flags and recipe with ITS arm table (R0e-id, R0e-pick, R1e-pick, R1o): the registered --epo-con values AND the constraint T PER ARM
+# (arm_epo_registered), the flags each arm must NAME (arm_must_name: the five --epo-con* and --epo-con-temp), the flags an arm must NOT carry (arm_forbid_flags: R1o), and `lineage` (rls1e_lineage_refusals: the argv
+# is R0d's registered argv plus the lever, token for token).  A G-DVB `epo_con_temp` row compares each arm's T with the T the trainer BUILT, so a trainer that ignored the flag is refused too.
+PROFILES["refe_rls1e"] = {**PROFILES["refe_rls1"], "name": "refe_rls1e", "suite": RLS1E_SUITE, "arm_class": RLS1E_ARM_CLASS, "arm_seeds": RLS1E_ARM_SEEDS, "arm_epo_registered": RLS1E_ARM_EPO_REGISTERED,
+                         "arm_must_name": RLS1E_ARM_MUST_NAME, "arm_forbid_flags": RLS1E_ARM_FORBID, "arm_con_terms": RLS1E_ARM_CON_TERMS, "epo_con_block": True, "lineage": "rls1e"}
+# P6-HN-S = refe_rls1 with ITS arm table (S0 S1 S2), the screen's own forbidden flags (the RL-S1 set minus --hn-bank / --ctx-cache, which it REQUIRES), `hn_rules` (hnscreen_refusals: the argv pin, G14 / G15
+# are required by the argv, the trainer's own hn_refusals) and `schedule_reach` (G-DVB re-derives ceil(train_sets / batch x epochs / accum) against --max-updates 1000: PREREG 4.4's G-CLOCK).
+PROFILES["refe_hnscreen"] = {**PROFILES["refe_rls1"], "name": "refe_hnscreen", "suite": HNSCREEN_SUITE, "arm_class": HNSCREEN_ARM_CLASS, "arm_seeds": HNSCREEN_ARM_SEEDS, "arms_need_pi": HNSCREEN_NEEDS_PI,
+                             "forbidden_flags": tuple(f for f in RLS1_FORBIDDEN if f not in HNSCREEN_FLAGS), "hn_rules": True, "schedule_reach": True, "fingerprints_expected": {}}
+# S1c = refe_aux_s1 (same runner, checks, data flags, forbidden flags, head levers, recipe except the budget) with ITS arm table and per-class budget.  `--max-updates` is no longer a pinned value of
+# the PROFILE (400) but of the ARM CLASS (auxs1_refusals reads `arm_recipe`); it must still be NAMED.  `schedule_reach` adds G-DVB rows that re-derive the schedule the trainer will build.
+PROFILES["refe_aux_s1c"] = {**PROFILES["refe_aux_s1"], "name": "refe_aux_s1c", "suite": AUXS1C_SUITE, "arm_class": AUXS1C_ARM_CLASS, "arm_seeds": AUXS1C_ARM_SEED,
+                            "arm_recipe": AUXS1C_ARM_RECIPE, "must_name_flags": AUXS1C_MUST_NAME, "schedule_reach": True,
+                            "required_flags": {**PROFILES["refe_aux_s1"]["required_flags"], "--max-updates": None}}
+
+# VDAC (PREREG_VDAC_P6, frozen 2026-11-11, sha256 5594c2ae...; A1 8f121bdf...; A2 c3d56358...; the H48 list = A3, sha256 below): the vision-built drivable-area heads on P6's trunk.  S1c's head recipe (frozen trunk, visual tap, depth 2, feed off, 10,000 updates x batch 8 x
+# accum 1) with --ckpt = P6's model_final.pt (sha256 968a469d...) and P6's own label layout (the SCORER1P6 argv, no lane flag), plus the head's label EXCLUSION of the 48 held-out logs of H48 (--aux-drv-exclude-logs / --aux-drv-exclude-sha256).  A NEW profile built as a
+# DEEP COPY of refe_aux_s1c: every existing profile and shared constant above is untouched (test_vdac_gate.py pins the older digests).  Arms: HA-s0 (seed 0), HA-s1 (seed 1), HA-SHUF (seed 0, --aux-drv-shuffle-seed 0 = the key map is a derangement of ALL store keys, 2,000 updates).
+# The argv of each arm is PINNED token for token (vdac_argv, built FROM scorer1p6_argv("C0"): the parent's data paths, the navtest guard, no lane flag).  ONE flag the S1c recipe did not need is NAMED: --epochs 2.  P6's training bank holds 60,000 sets, so 10,000 updates x 8 = 80,000 draws
+# is 1.33 epochs and the parser default (--epochs 1.0) would end the run at 7,500 updates (scorer_finetune: total = min(ceil(sets / batch x epochs / accum), max_updates)); the profile's `schedule_reach` G-DVB row re-derives it.
+VDAC_ROOT = "/workspace/data/refe_vdac"
+VDAC_PKG = "/workspace/refe-plan-vdac"
+VDAC_CARD_SHA256 = "5594c2ae777a53ed4a8a873ca374c12943eadc74385cb07671c2ac90a3292ae4"          # PREREG_VDAC_P6.md as frozen 2026-11-11 (the chain refuses a card with other bytes)
+VDAC_A1_SHA256 = "8f121bdf9d6f19acec8927f12c50d3f7be2832c70c7f1fe40140d5eb8cc4ed70"
+VDAC_A2_SHA256 = "c3d563586be6479ea11455f92d7a5295c9e1658e2d7ba1cc77b27e87e5c8b417"
+VDAC_H48_PATH = VDAC_ROOT + "/h48_logs.txt"          # shipped from the package (splits/h48_logs.txt); the chain copies it here and re-hashes it
+VDAC_H48_SHA256 = "2ae13935a3ead7f30b015f33b0bebc7a35e70eb2a4194161f8cbb66ac89b8da8"          # h48_logs.txt: 48 logs, LF, sorted (build_h48.py); written into amendment A3 before S1 trains
+VDAC_LABELS = "/workspace/data/aux_drivable/label_store"
+VDAC_ARMS = {"HA-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1ha"},
+             "HA-s1": {"seed": 1, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1ha"},
+             "HA-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1shuf"},
+             # HB-FALLBACK (PREREG_VDAC_P6_A5 line 31 / section 9.2; MEASURED 2026-11-12, L40 44.39 GiB: HB-s0's preflight at batch 8 raised torch.OutOfMemoryError, 37.78 GiB allocated, 44.36 GiB in use, no HB step trained): HB arms ONLY run --batch 4 --accum 2 (effective batch 8 unchanged); an arm without "batch"/"accum" keeps 8 / 1.
+             # VDAC A5 (PREREG_VDAC_P6_A5_DRAFT section 6; DRAFT, not frozen): HB = the head reads a LoRA copy of P6's trunk (HB-SHUF: its label-shuffled control); HC = 1 m cells + the boundary-weighted Huber on the frozen trunk (registered only on S0-WEAK)
+             "HB-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1hb", "extra": "hb", "batch": 4, "accum": 2},
+             "HB-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hbshuf", "extra": "hb", "batch": 4, "accum": 2},
+             "HC-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1hc", "extra": "hc"},
+             "HC-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hcshuf", "extra": "hc"},
+             # VDAC A6 (PREREG_VDAC_P6_A6_HBC_DRAFT; DRAFT, not frozen): HBC = HB's LoRA trunk copy + HC's 1 m cells and boundary-weighted Huber, in ONE arm (the committed successor of the A5 row X-BOUND).  It runs the HB memory fallback (--batch 4 --accum 2, effective batch 8) from the first step: HB-s0 at batch 8 OOMed on the L40, and HBC's head holds 4x the queries of HB's.
+             "HBC-s0": {"seed": 0, "updates": 10000, "eval_every": 5000, "shuffle": None, "class": "H1hbc", "extra": "hbc", "batch": 4, "accum": 2},
+             "HBC-SHUF": {"seed": 0, "updates": 2000, "eval_every": 1000, "shuffle": 0, "class": "H1hbcshuf", "extra": "hbc", "batch": 4, "accum": 2}}
+VDAC_HB_LORA_LR = "0.0002"          # P6's OWN LoRA lr: train.py puts the model's trainable parameters (LoRA included) in ONE AdamW group at --lr, and P6 ran --lr 2e-4 (p6_pod.sh:487, train.py:1462, 1469); the draft's 5e-5 was a HYPOTHESIS
+VDAC_HB_LORA_PARAMS = 3145728          # 24 blocks x {q, v} x 32 x (1,024 + 1,024): the registered built count of the copy's trainable tensors (G-DVB aux_drv_trunk_lora, G21)
+VDAC_HC_FLAGS = ["--aux-drv-cell", "1.0", "--aux-drv-bw", "3.0", "--aux-drv-bw-band-m", "3.0"]          # HC: 1 m cells, boundary band 3 m, weight 3 (HYPOTHESIS, fixed, not tuned)
+VDAC_ARM_CLASS = {a: sp["class"] for a, sp in VDAC_ARMS.items()}
+VDAC_ARM_SEED = {a: sp["seed"] for a, sp in VDAC_ARMS.items()}
+VDAC_ARM_RECIPE = {c: {**AUXS1_RECIPE, "max_updates": next(sp["updates"] for sp in VDAC_ARMS.values() if sp["class"] == c), "batch": next(sp.get("batch", 8) for sp in VDAC_ARMS.values() if sp["class"] == c), "accum": next(sp.get("accum", 1) for sp in VDAC_ARMS.values() if sp["class"] == c),
+                       "eval_every": next(sp["eval_every"] for sp in VDAC_ARMS.values() if sp["class"] == c)} for c in ("H1ha", "H1shuf", "H1hb", "H1hbshuf", "H1hc", "H1hcshuf", "H1hbc", "H1hbcshuf")}
+VDAC_EPOCHS = 2
+VDAC_FORBIDDEN = tuple(f for f in AUXS1_FORBIDDEN if f != "--aux-drv-shuffle-seed") + ("--lane-head", "--lane-weight", "--teacher-lane-train", "--teacher-lane-heldout", "--lane-labels-heldout", "--pair-w", "--pair-heads",
+                                                                                      "--pair-calibrate", "--twin-w", "--split-half", "--aux-drv-feed")
+VDAC_DATA = tuple(dict.fromkeys(SCORER1_DATA + ("--aux-drv-labels", "--aux-drv-exclude-logs")))
+VDAC_SUITE = AUXS1C_SUITE + [{"script": "test_vdac_gate.py", "token": "ZZTEST_PASS"}]
+VDAC_DROP_FLAGS = ("--max-updates", "--eval-every", "--seed", "--out")          # the parent's (C0) flags this arm replaces
+
+
+def vdac_argv(arm: str) -> list:
+    """The pod script's argv for a VDAC arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/vdac_pod.sh`; test_vdac_gate.py diffs the two copies): C0's argv (scorer1p6_argv) with its budget / seed / --out replaced by the arm's, then the head."""
+    if arm not in VDAC_ARMS:
+        raise KeyError(f"{arm!r} is not a VDAC arm (one of {sorted(VDAC_ARMS)})")
+    sp = VDAC_ARMS[arm]
+    out = VDAC_ROOT + "/" + arm.lower()
+    toks = [t for f, v in GT.flag_pairs(list(scorer1p6_argv("C0"))) if f not in VDAC_DROP_FLAGS for t in [f] + list(v)]
+    toks += ["--max-updates", str(sp["updates"]), "--batch", str(sp.get("batch", 8)), "--accum", str(sp.get("accum", 1)), "--epochs", str(VDAC_EPOCHS), "--eval-every", str(sp["eval_every"]), "--seed", str(sp["seed"]),
+             "--aux-drv", "--w-aux-drv", "0.1", "--aux-drv-lr", "0.0002", "--aux-drv-tap", "visual", "--aux-drv-depth", "2", "--aux-drv-labels", VDAC_LABELS,
+             "--aux-drv-exclude-logs", VDAC_H48_PATH, "--aux-drv-exclude-sha256", VDAC_H48_SHA256]
+    if sp.get("extra") in ("hb", "hbc"):                                   # HB: BOTH levers NAMED (the defaults `off` / None disable them: a flag whose default disables the mechanism must be in the argv)
+        toks += ["--aux-drv-trunk-lora", "on", "--aux-drv-lora-lr", VDAC_HB_LORA_LR]
+    if sp.get("extra") in ("hc", "hbc"):                                   # HC: the cell and the boundary weight NAMED (the default bw 0.0 disables the weighting).  HBC names BOTH sets, HB's first
+        toks += list(VDAC_HC_FLAGS)
+    if sp["shuffle"] is not None:
+        toks += ["--aux-drv-shuffle-seed", str(sp["shuffle"])]
+    return toks + ["--dump-scores", out + "/scores", "--out", out]
+
+
+def vdac_arm_refusals(prof: dict, argv: list) -> list:
+    """PREREG_VDAC_P6 section 7: the argv IS the declared arm's pin (every flag once, no other flag); the checkpoint, the navtest lists and the H48 list are bound by sha256 of their BYTES; no data path names navtest."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    arms = prof["vdac_arms"]
+    arm = prof.get("declared_arm")
+    if arm is None:
+        outs = GT.flag_values(argv, "--out") or []
+        arm = next((a for a in arms if outs == [VDAC_ROOT + "/" + a.lower()]), None)
+    if arm not in arms:
+        return [f"{name}: the arm is not named and --out is none of {[VDAC_ROOT + '/' + a.lower() for a in arms]}"]
+    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(vdac_argv(arm))}, argv)
+    sp = arms[arm]
+    sd = GT.flag_values(argv, "--seed") or []
+    if sd != [str(sp["seed"])]:
+        out.append(f"{name} ({arm}) requires --seed {sp['seed']}; the argv has --seed {' '.join(sd)}")
+    if (sp["shuffle"] is None) != ("--aux-drv-shuffle-seed" not in argv):
+        why_ = "is the control arm's lever and is missing" if sp["shuffle"] is not None else "belongs to HA-SHUF only"
+        out.append(f"{name} ({arm}): --aux-drv-shuffle-seed {why_}")
+    pins = [("--ckpt", prof["ckpt_sha256"], "P6's model_final.pt"), ("--aux-drv-exclude-logs", VDAC_H48_SHA256, "the H48 list (amendment A3)")] + [(f, w, "the registered navtest list") for f, w in prof["navtest_sha256"].items()]
+    for f, want, what in pins:
+        v = GT.flag_values(argv, f) or []
+        if len(v) != 1:
+            out.append(f"{name} requires {f} named once ({what})")
+            continue
+        try:
+            got = sha256_of_file(v[0])
+        except OSError as e:
+            out.append(f"{name}: cannot bind {f} {v[0]} by sha256 ({type(e).__name__}): {what} would be unverified")
+            continue
+        if got != want:
+            out.append(f"{name}: {f} {v[0]} has sha256 {got[:16]}..., {what} is {want[:16]}...")
+    for f in prof.get("data_flags", ()):
+        if f in ("--navtest-logs", "--navtest-tokens"):
+            continue
+        for v in GT.flag_values(argv, f) or []:
+            if "navtest" in str(v).lower():
+                out.append(f"{name}: NAVTEST IS NEVER TRAINING DATA: {f} {v} names navtest")
+    ns, err = C.parse_scorer_argv(__import__("scorer_finetune").build_parser(), argv)
+    if not err and (ns.aux_drv_exclude_sha256 != VDAC_H48_SHA256 or ns.epochs != VDAC_EPOCHS):
+        out.append(f"{name} ({arm}): the argv resolves to --aux-drv-exclude-sha256 {ns.aux_drv_exclude_sha256[:16]}... / --epochs {ns.epochs}")
+    return out
+
+
+PROFILES["refe_vdac_p6"] = {**copy.deepcopy(PROFILES["refe_aux_s1c"]), "name": "refe_vdac_p6", "suite": VDAC_SUITE, "arm_class": VDAC_ARM_CLASS, "arm_seeds": VDAC_ARM_SEED, "arm_recipe": VDAC_ARM_RECIPE, "vdac_arms": copy.deepcopy(VDAC_ARMS),
+                            "forbidden_flags": VDAC_FORBIDDEN, "data_flags": VDAC_DATA, "root": VDAC_ROOT, "ckpt_sha256": SCORER1P6_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256, "hb_lora_params": VDAC_HB_LORA_PARAMS,
+                            "data_expect": dict(PROFILES["refe_scorer1p6"]["data_expect"]), "data_expect_min": {}, "data_expect_updates": None,
+                            "required_flags": {**{k: v for k, v in PROFILES["refe_aux_s1c"]["required_flags"].items() if k not in ("--lane-head", "--teacher-lane-train", "--teacher-lane-heldout")},
+                                               "--aux-drv-exclude-logs": None, "--aux-drv-exclude-sha256": VDAC_H48_SHA256, "--epochs": str(VDAC_EPOCHS), "--ckpt": None, "--navtest-logs": None, "--navtest-tokens": None}}
+
+
+# L2 SAFE-HEAD (PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md): the HEAD-ONLY trainer refe/safehead_train.py.  Its three arm profiles (refe_safehead_s0 / _s1 / _red),
+# rules and checks live in refe/safehead_gate.py (runner "safehead").  They are NEW dicts: no existing profile's fingerprint moves (test_safehead.py pins all 40).
+import safehead_gate as SHG  # noqa: E402
+PROFILES.update(SHG.profiles())
+
+
+def parse_args_string(s: str) -> list:
+    return GT.argv_from_string(s)
+
+
+def flag_present(argv, flag):
+    return flag in argv
+
+
+def pinned_argv_refusals(prof: dict, argv: list) -> list:
+    """A profile with `pinned_argv` accepts ONE argv: the same (flag, values) groups, each exactly once, in any order (argparse is order-blind).  A lever that moved, a flag added, a flag dropped,
+    a flag twice, or a token before the first flag is a refusal -- the generic `required_flags` rules name only the levers a profile ASSERTS and let every other flag through."""
+    pin = prof.get("pinned_argv")
+    if not pin:
+        return []
+    name, out = prof["name"], []
+    want, got = {}, {}
+    for d, toks in ((want, list(pin)), (got, list(argv))):
+        for f, v in GT.flag_pairs(toks):
+            d.setdefault(f, []).append(tuple(v))
+    if argv and not str(argv[0]).startswith("--"):
+        out.append(f"{name}: the argv starts with {argv[0]!r}, which belongs to no flag")
+    for f in sorted(want):
+        if f not in got:
+            out.append(f"{name} PINS {f} {' '.join(want[f][0])}; the argv does not carry it")
+        elif len(got[f]) > 1:
+            out.append(f"{name}: {f} is carried {len(got[f])} times (it is pinned once)")
+        elif got[f][0] != want[f][0]:
+            out.append(f"{name} PINS {f} {' '.join(want[f][0])}; the argv has {f} {' '.join(got[f][0])}")
+    for f in sorted(set(got) - set(want)):
+        out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which the profile does not pin (the replicate is P2's argv plus --out and --seed {P2REP_SEED}, and nothing else)")
+    return out
+
+
+def content_flags_of(prof: dict) -> tuple:
+    """The data flags the profile fingerprints by CONTENT (every byte of a directory re-hashed against its build-time manifest) instead of by size listing: HNSCREEN_CONTENT_FLAGS under `hn_rules`, nothing for any
+    other profile (their fingerprints are exactly what they always were).  Derived from `hn_rules`, never from a profile key of its own: a key that can be absent is a default that disables the check
+    (HNSCREEN-FP-REQUIRED's class).  The ONE function `run_checks`, `finalize` and `cmd_verify` all take their `content_flags` from."""
+    return HNSCREEN_CONTENT_FLAGS if prof.get("hn_rules") else ()
+
+
+def profile_refusals(prof: dict, argv: list) -> list:
+    """Reasons the profile refuses this argv BEFORE any check runs.  (a) a forbidden flag; (b) a required lever missing or different;
+    (c) a lever the profile DECLARES that the trainer does not BUILD (flag absent from the parser) -- a launch blocker, never a footnote;
+    (d) a declared loss term the trainer never emits.  The trainer is the profile's `parser_module` / `trainer_src` (default train / train.py); a profile with
+    `arm_rules` adds its arm rules (refe_rls1: `rls1_refusals`)."""
+    import importlib
+    import re
+    T = importlib.import_module(prof.get("parser_module", "train"))
+    out = []
+    parser = T.build_parser()
+    known = {o for a in parser._actions for o in a.option_strings}
+    for f in prof.get("forbidden_flags", ()):
+        if f in argv:
+            out.append(f"argv carries {f}, which {prof['name']} FORBIDS in a launch")
+    for f, want in prof.get("required_flags", {}).items():
+        if f not in argv:
+            out.append(f"{prof['name']} requires {f}{'' if want is None else ' ' + want}; the argv does not carry it")
+            continue
+        got = GT.flag_values(argv, f)
+        if want is not None:
+            try:
+                same = got and float(got[0]) == float(want)
+            except ValueError:
+                same = got and got[0] == want
+            if not same:
+                out.append(f"{prof['name']} requires {f} {want}; the argv has {f} {' '.join(got or [])}")
+    for f in sorted(set(prof.get("provisional_flags", ())) | {f for f in prof.get("required_flags", {}) if f not in known}):
+        if f not in known:
+            out.append(f"DECLARED, NOT BUILT: {prof['name']} declares {f} but the trainer's parser has no such flag "
+                       f"(a config that declares a lever the model does not build is a launch blocker)")
+    out += pinned_argv_refusals(prof, argv)
+    if prof.get("p7_rules"):
+        out += p7_refusals(prof, argv)
+    if prof.get("p5c_rules"):
+        out += p5c_refusals(prof, argv)
+    if prof.get("p7field_rules"):
+        out += p7field_refusals(prof, argv)
+    if prof.get("scorerft_rules"):
+        out += scorerft_refusals(prof, argv)
+    if prof.get("safehead_rules"):                       # L2 SAFE-HEAD: the exact flag set, G-DVB coverage of every parser dest, a fresh --out
+        out += SHG.refusals(prof, argv)
+    if prof.get("field_arm"):
+        got = GT.flag_values(argv, "--w-field")
+        try:
+            wv = float(got[0]) if got else None
+        except ValueError:
+            wv = None
+        if "--w-field" in argv and (wv is None or not math.isfinite(wv)):
+            out.append(f"{prof['name']}: --w-field {' '.join(got or [])} is not a finite number")
+        elif "--w-field" in argv and prof["field_arm"] == "F" and not wv > 0.0:
+            out.append(f"{prof['name']} (arm F) requires --w-field > 0; the argv has --w-field {got[0]} (that is the control C: profile refe_field_ctrl)")
+        elif "--w-field" in argv and prof["field_arm"] == "C" and wv != 0.0:
+            out.append(f"{prof['name']} (the control C) requires --w-field EXACTLY 0.0; the argv has --w-field {got[0]} (that is arm F: profile refe_field)")
+    trainer_src = prof.get("trainer_src", "train.py")
+    src = (HERE / trainer_src).read_text(encoding="utf-8")
+    terms = tuple(prof.get("live_terms", ()))
+    if prof.get("arm_rules") == "rls1":
+        rs, extra = rls1_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    elif prof.get("arm_rules") == "auxs1":
+        rs, extra = auxs1_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    if prof.get("vdac_arms"):                                                  # PREREG_VDAC_P6: the argv is the arm's pin, the checkpoint / navtest lists / H48 list are bound by sha256
+        out += vdac_arm_refusals(prof, argv)
+    if prof.get("hn_rules"):                                                # P6-HN-S: the screen's argv pin on top of the RL-S1 rules above
+        rs, extra = hnscreen_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    if prof.get("recipe_rules") == "sft4r":
+        rs, extra = sft4r_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    if prof.get("scorer1_rules"):
+        rs, extra = scorer1_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    for t in terms:
+        if not re.search(r'["\']' + re.escape(t) + r'["\']', src):
+            out.append(f"DECLARED, NOT BUILT: {prof['name']} requires the loss term {t!r}; {trainer_src} never emits it")
+    return out
+
+
+# ============================================================================================ RL-S1 arm rules (refe_rls1)
+def rls1_arm_class(argv: list) -> str:
+    """The arm class an argv DECLARES by what it carries.  No --epo = C (the BCE-only control); --epo alone = R (R0/R1, the core reward); --epo with BOTH
+    --epo-k and --epo-l = R2; --epo with exactly one of them = R? (no arm is that)."""
+    k, l = "--epo-k" in argv, "--epo-l" in argv
+    if "--epo" not in argv:
+        return "C"
+    return "R2" if (k and l) else ("R?" if (k or l) else "R")
+
+
+def rls1_control_argv(argv: list) -> list:
+    """The matched control of an R argv: the SAME argv minus every EPO lever (flag and value), so R vs C differ by the EPO term alone.  (--out is the
+    caller's to change: two arms never share an output directory.)"""
+    out, skip = [], False
+    for t in argv:
+        if t.startswith("--"):
+            skip = t == "--epo" or t.startswith("--epo-")
+        if not skip:
+            out.append(t)
+    return out
+
+
+def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the RL-S1 arm rules.  The arm is DECLARED (`prof['declared_arm']`, the CLI's --arm-name) or, undeclared, read off the
+    argv by `rls1_arm_class`; a declared arm is what catches an OMITTED flag (an `--epo` left out of R0 would otherwise read as a clean control).  Beyond
+    the generic required/forbidden flags: the arm's own flags, the registered lever values, the recipe, the lane-head pairing, scorer_finetune's OWN refusals,
+    and exact flag spelling (argparse accepts unique prefixes; the gate's presence tests are exact tokens)."""
+    import gate_checks as C
+    out = []
+    name = prof["name"]
+    arm_class = prof.get("arm_class", RLS1_ARM_CLASS)                    # refe_rls1b carries its own table (RL-S1b); refe_rls1 keeps the module constants
+    arm_seeds = prof.get("arm_seeds", RLS1_ARM_SEEDS)
+    declared = prof.get("declared_arm")
+    if declared is not None and declared not in arm_class:
+        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(arm_class)})")
+        declared = None
+    cls = arm_class[declared] if declared else rls1_arm_class(argv)
+    who = declared or f"the {cls} arm class"
+    if cls != "R?" and cls not in set(arm_class.values()):
+        out.append(f"{name}: the argv is an {cls}-class arm, which {name} does not register (its arms: {sorted(arm_class)})"
+                   + (f"; {'; '.join(prof.get('arms_need_pi', {}).values())}" if prof.get("arms_need_pi") else ""))
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        out.append(f"{name}: the trainer's parser rejects this argv ({err})")
+        return out, ()
+    known = {o for x in parser._actions for o in x.option_strings}
+    for t in argv:
+        if t.startswith("--") and t not in known:
+            out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser) + mod.epo_con_refusals(ns, parser)]          # SAFEOBJ: epo_con_refusals beside epo_refusals
+
+    def how(flag):
+        return "named" if flag in argv else "the parser DEFAULT"
+    epo_opts = sorted(o for o in known if o == "--epo" or o.startswith("--epo-"))
+    named = [o for o in epo_opts if o in argv]
+    if cls == "C":
+        if named:
+            out.append(f"{name}: {who} must NOT carry {named} -- the control is the BCE-only arm, and R vs C must differ by the EPO term alone")
+    else:
+        for f in ("--epo", "--epo-terms-train"):
+            if f not in argv:
+                out.append(f"{name} requires {f} for {who}; the argv does not carry it")
+        for f in prof.get("must_name", ()):                                   # R0c: --epo-ref armA must be CARRIED -- the parser default `base` reproduces R0 and would pass unnoticed
+            if f not in argv:
+                out.append(f"{name} requires {f} NAMED for {who} (a flag whose default reproduces the old arm must be named, or the arm did not test the lever); the argv does not carry it")
+        for f in prof.get("arm_must_name", {}).get(declared, ()):                  # SAFEOBJ: the flags THIS arm must CARRY (R0d / R1d: the five --epo-con*; R1o: --epo-con off, whose default would hide the control)
+            if f not in argv:
+                out.append(f"{name} requires {f} NAMED for {who} (a flag whose default reproduces the old arm must be named, or the arm did not test the lever); the argv does not carry it")
+        for f in prof.get("arm_forbid_flags", {}).get(declared, ()):              # R0e-pick: R1o is `--epo-con off` and must NOT carry --epo-con-temp (a constraint T would belong to a term that is OFF)
+            if f in argv:
+                out.append(f"{name}: {who} must NOT carry {f} (its registered argv is R0d's base with `--epo-con off`; a constraint temperature would belong to a term that is OFF -- scorer_finetune refuses it too)")
+        if cls == "R?":
+            out.append(f"{name}: exactly one of --epo-k / --epo-l: R0/R1 carry neither (the core reward), R2 carries both")
+        if cls == "R":
+            for f in ("--epo-k", "--epo-l", "--epo-lam-k", "--epo-lam-l"):
+                if f in argv:
+                    out.append(f"{name}: {who} (R0/R1) is the CORE reward (PDMS - 0.15 D + guard); {f} belongs to R2 only")
+        if cls == "R2":
+            for f in ("--epo-k", "--epo-l"):
+                if f not in argv:
+                    out.append(f"{name} requires {f} for {who}; the argv does not carry it")
+        for lam_f, on_f in (("--epo-lam-k", "--epo-k"), ("--epo-lam-l", "--epo-l")):
+            if lam_f in argv and on_f not in argv:
+                out.append(f"{name}: {lam_f} is named without {on_f}: a weight for a term that is OFF (scorer_finetune would ignore it silently)")
+        reg = dict(prof.get("epo_registered", RLS1_EPO_REGISTERED))
+        if cls == "R2":
+            reg.update(RLS1_R2_REGISTERED)
+        reg = {"epo_con": "off", **reg, **prof.get("arm_epo_registered", {}).get(declared, {})}          # SAFEOBJ: every profile registers --epo-con off unless its arm table says otherwise
+        reg = {"epo_con_temp": reg["epo_temp"], **reg}          # PICKCON: ... and a constraint T equal to the registered --epo-temp (= the inherited default) unless the arm table registers another, which that arm must then NAME (arm_must_name)
+        for dest, want in reg.items():
+            f = "--" + dest.replace("_", "-")
+            if not C._close(C.scorer_effective(ns, dest), want):
+                out.append(f"{name} requires {f} {want} (PREREG_RL_S1 lever); the argv resolves to {C.scorer_effective(ns, dest)} ({how(f)})")
+    for dest, want in RLS1_RECIPE.items():
+        f = "--" + dest.replace("_", "-")
+        if not C._close(getattr(ns, dest), want):
+            out.append(f"{name} requires {f} {want} (PREREG_RL_S1 recipe, every arm); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    if declared and ns.seed != arm_seeds[declared]:
+        out.append(f"{name}: arm {declared} is registered with --seed {arm_seeds[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
+    if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
+        out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
+    if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
+        out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
+    if prof.get("lineage") == "rls1e":                                          # R0e-pick: the argv is R0d's registered argv plus the lever, token for token
+        out += rls1e_lineage_refusals(name, argv, declared)
+    con_terms = tuple(prof.get("arm_con_terms", {}).get(declared, ())) if cls != "C" else ()          # SAFEOBJ: a constrained arm's rows must also emit the con* columns
+    return out, ((RLS1_EPO_TERMS + con_terms) if cls != "C" else ())
+
+
+# ============================================================================================ R0e-pick arm rules (refe_rls1e)
+def rls1e_expected_argv(arm: str) -> list:
+    """The argv PREREG_R0E_PICK 2.1 registers for `arm`, DERIVED from R0d's registered argv (RLS1E_BASE_ARGV) and nothing else: the arm's own --out / --dump-scores, its registered seed, and the lever
+    `--epo-con-temp <T>` appended (R0e-id, R0e-pick, R1e-pick); R1o is the same base with the five `--epo-con*` levers replaced by `--epo-con off` (SAFEOBJ's registered R1o, eval/rls1d_arms.json)."""
+    if arm not in RLS1E_ARM_SEEDS:
+        raise KeyError(f"{arm!r} is not an arm of refe_rls1e (one of {sorted(RLS1E_ARM_SEEDS)})")
+    r0d, own = f"{RLS1E_ROOT}/arms/{RLS1E_BASE_ARM}", f"{RLS1E_ROOT}/arms/{arm}"
+    toks = [(own + t[len(r0d):] if t in (r0d, r0d + "/scores") else t) for t in RLS1E_BASE_ARGV]
+    toks[toks.index("--seed") + 1] = str(RLS1E_ARM_SEEDS[arm])
+    if arm == "R1o":
+        i = toks.index("--epo-con")
+        toks[i:i + 2 * len(RLS1D_CON_FLAGS)] = ["--epo-con", "off"]
+    else:
+        toks += [RLS1E_LEVER, repr(RLS1E_CON_TEMP[arm])]
+    return toks
+
+
+def _strip_lever(toks: list) -> tuple:
+    """(the tokens without every `--epo-con-temp <value>` pair, the number of such pairs): the lever is compared on its own, the rest token for token"""
+    out, n, i = [], 0, 0
+    while i < len(toks):
+        if toks[i] == RLS1E_LEVER:
+            n += 1
+            i += 2 if i + 1 < len(toks) and not toks[i + 1].startswith("--") else 1
+            continue
+        out.append(toks[i])
+        i += 1
+    return out, n
+
+
+def rls1e_lineage_refusals(name: str, argv: list, arm) -> list:
+    """PREREG_R0E_PICK 2.1, ENFORCED at launch: the argv of R0e-id / R0e-pick / R1e-pick is R0d's registered argv + `--epo-con-temp <T>` and NOTHING ELSE, token for token (R1o: SAFEOBJ's registered R1o).
+    With the lever pair removed from both sides, every difference is named: a flag the argv ADDS (a second lever), a flag it DROPS, a value that MOVED, or the same tokens in another order.  The lever's
+    own VALUE is the registered-value rule's (`arm_epo_registered`), and its presence the must-name rule's; here it is only counted (exactly once)."""
+    if arm not in RLS1E_ARM_SEEDS:
+        return []                                                               # an undeclared or unknown arm: the class rules already speak
+    want, _ = _strip_lever(rls1e_expected_argv(arm))
+    got, n = _strip_lever(list(argv))
+    out = []
+    if arm != "R1o" and n > 1:
+        out.append(f"{name}: arm {arm} carries {RLS1E_LEVER} {n} times (the lever is named exactly once, with its registered value)")
+    if got == want:
+        return out
+    why = f"{name}: arm {arm} is R0d's registered argv + the lever and NOTHING ELSE, token for token (PREREG_R0E_PICK 2.1)" if arm != "R1o" else f"{name}: arm R1o is SAFEOBJ's registered R1o argv, token for token"
+    if got and not str(got[0]).startswith("--"):
+        out.append(f"{why}; the argv starts with {got[0]!r}, which belongs to no flag")
+    gg, gw = {}, {}
+    for d, toks in ((gg, got), (gw, want)):
+        for f, v in GT.flag_pairs(toks):
+            d.setdefault(f, []).append(tuple(v))
+    diffs = []
+    for f in sorted(set(gw) | set(gg)):
+        a, b = gg.get(f, []), gw.get(f, [])
+        if a == b:
+            continue
+        if not a:
+            diffs.append(f"it DROPS {f} {' '.join(b[0])}")
+        elif not b:
+            diffs.append(f"it ADDS {f} {' '.join(a[0])} (a second lever)")
+        elif len(a) != len(b):
+            diffs.append(f"it carries {f} {len(a)} times (once)")
+        else:
+            diffs.append(f"{f} MOVED to {' '.join(a[0]) or '(no value)'} (registered {' '.join(b[0]) or '(no value)'})")
+    out.append(f"{why}; " + ("; ".join(diffs) if diffs else "the same flags and values, in another order than R0d's"))
+    return out
+
+
+def rls1e_regression_argv(argv: list, kind: str) -> list:
+    """The deliberate-regression arms of refe_rls1e that act on the ARGV (PREREG_R0E_PICK 2.1); each must be REFUSED by profile_refusals: `omit_temp` (the lever dropped: its None default silently reproduces R0d),
+    `wrong_temp` (0.02, A2R2's T*: the O2 / O3 next lever, a plausible slip), `extra_lever` (--lane-weight 0.5, a real lever that no other rule asserts), `moved_lever` (--workers 4), `carve_feed` (the dual's feed
+    moved: the NEXT arm's lever), `short_schedule` (--max-updates 250: not an identity argv),
+    `r1o_with_temp` (R1o carrying the constraint T), `dup_temp` (the lever named twice)."""
+    argv = list(argv)
+    if kind == "omit_temp":
+        return _strip_lever(argv)[0]
+    if kind == "wrong_temp":
+        return [(("0.01" if t == "0.02" else "0.02") if i and argv[i - 1] == RLS1E_LEVER else t) for i, t in enumerate(argv)]        # 0.02 = A2R2's T*, the O2 / O3 next lever: a plausible slip
+    if kind == "extra_lever":
+        return argv + ["--lane-weight", "0.5"]
+    if kind == "moved_lever":
+        return [("4" if i and argv[i - 1] == "--workers" else t) for i, t in enumerate(argv)]
+    if kind == "carve_feed":
+        return argv + ["--epo-con-feed", "carve"]
+    if kind == "short_schedule":
+        return [("250" if i and argv[i - 1] == "--max-updates" else t) for i, t in enumerate(argv)]
+    if kind == "r1o_with_temp":
+        return argv + [RLS1E_LEVER, "0.1"]
+    if kind == "dup_temp":
+        return argv + [RLS1E_LEVER, "0.01"]
+    raise KeyError(kind)
+
+
+# ============================================================================================ P6-HN-S arm rules (refe_hnscreen)
+def _same_vals(a, b) -> bool:
+    """two flag-value tuples are the same value: numerically when both parse as numbers ('1e-4' == '0.0001'), else as text"""
+    if len(a) != len(b):
+        return False
+    for x, y in zip(a, b):
+        try:
+            if float(x) != float(y):
+                return False
+        except ValueError:
+            if x != y:
+                return False
+    return True
+
+
+def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the screen's rules, ON TOP of rls1_refusals (class C, the recipe, the registered seed, the lane-head pairing, scorer_finetune's own epo refusals).  PREREG_P6HN_SCREEN 4.2 / 4.4:
+    the argv is RL-S1's C1 argv plus --hn-bank and --ctx-cache, each exactly once -- ANY moved, added, dropped or doubled token is a refusal; --seed is named (the pass); path values may move (re-rooted) but their
+    CONTENT fingerprints must equal the registered ones: `fingerprints_expected` MUST cover --hn-bank and --ctx-cache (an unfilled profile REFUSES, HNSCREEN-FP-REQUIRED), and --ctx-cache's is a per-file sha256 CONTENT
+    fingerprint (`dirc:`; HNSCREEN-CACHE-CONTENT-FP: a missing manifest, or an extra / missing / renamed / resized / byte-changed file, REFUSES; a size-listing `dir:` pin REFUSES); the trainer's own `hn_refusals` (--hn-bank with --epo / --lam != 0 / --b-mode != listnet / --aux-drv,
+    --ctx-cache with --aux-drv) are surfaced, not re-derived."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    got: dict = {}
+    for f, v in GT.flag_pairs(list(argv)):
+        got.setdefault(f, []).append(tuple(v))
+    if argv and not str(argv[0]).startswith("--"):
+        out.append(f"{name}: the argv starts with {argv[0]!r}, which belongs to no flag")
+    allowed = set(HNSCREEN_PIN) | set(HNSCREEN_PATHS) | {"--seed"}
+    for f in sorted(allowed):
+        n = len(got.get(f, ()))
+        if n == 0:
+            out.append(f"{name}: {f} is DROPPED -- the screen's argv is RL-S1's C1 argv plus --hn-bank and --ctx-cache (PREREG_P6HN_SCREEN 4.2); every token is required")
+        elif n > 1:
+            out.append(f"{name}: {f} is carried {n} times (each token exactly once)")
+    for f, want in HNSCREEN_PIN.items():
+        if len(got.get(f, ())) == 1 and not _same_vals(got[f][0], want):
+            out.append(f"{name}: {f} MOVED to {' '.join(got[f][0]) or '(no value)'}; the screen pins {f} {' '.join(want)} (RL-S1 C1's value)")
+    for f in HNSCREEN_PATHS + ("--seed",):
+        if len(got.get(f, ())) == 1 and len(got[f][0]) != 1:
+            out.append(f"{name}: {f} needs exactly one value, the argv has {len(got[f][0])}")
+    for f in sorted(set(got) - allowed):
+        out.append(f"{name}: the argv ADDS {f} {' '.join(got[f][0])}, which the screen does not allow (allowed differences from C1: --seed, --out, --dump-scores, re-rooted data paths, and --hn-bank / --ctx-cache)")
+    fp_exp = prof.get("fingerprints_expected")                                       # HNSCREEN-FP-REQUIRED (MM ruling 6): an UNFILLED profile can never PASS -- a default that disables the check is a launch blocker
+    fp_exp = fp_exp if isinstance(fp_exp, dict) else {}
+    fp_unfilled = [f for f in HNSCREEN_FLAGS if f not in fp_exp]
+    if fp_unfilled:
+        out.append(f"{name}: fingerprints_expected not filled: the content check cannot run (no expected fingerprint for {' '.join(fp_unfilled)}); fill it from the bank/cache builder (hn_fingerprints.py), never by hand")
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        return out + [f"{name}: the trainer's parser rejects this argv ({err})"], ()
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.hn_refusals(ns, parser)]
+    for f, want in sorted(fp_exp.items()):      # content fingerprints of the re-rooted data (UNVERIFIED offline: the registered values live on the run box)
+        vals = got.get(f)
+        if not vals or len(vals) != 1 or len(vals[0]) != 1:
+            out.append(f"{name}: {f} is in fingerprints_expected but the argv does not carry it exactly once with one value ({len(vals or ())} found): the content check cannot run")
+            continue
+        by_content = f in HNSCREEN_CONTENT_FLAGS
+        if by_content and not (isinstance(want, str) and want.startswith("dirc:")):       # a stale fill: the old size-listing key (`dir:`) can never be equal to a content key -- say so, and do not hash 70 GB to say it
+            out.append(f"{name}: the content fingerprint of {f} cannot be checked: the registered value {str(want)[:24]!r} is not a content fingerprint (dirc:...); refill it with hn_fingerprints.py from the SEALED cache (a size listing cannot see a same-size byte flip)")
+            continue
+        anc = prof.get("ctx_anchor") if by_content else None                                # HNSCREEN-FP-COST: an ANCHOR-BOUND call stat-compares with the chain's start anchor (no byte read); None = the content check in full
+        try:
+            fp = (GT.anchor_fingerprint(vals[0][0], anc) if anc is not None else GT.content_fingerprint(vals[0][0])) if by_content else GT.fingerprint(vals[0][0])
+            fk = GT.fp_key(fp)
+        except (OSError, ValueError, KeyError) as e:
+            out.append(f"{name}: cannot fingerprint {f} {vals[0][0]} ({e})")
+            continue
+        if by_content and fp.get("n_problems"):
+            out.append(f"{name}: the {'anchor-bound' if anc is not None else 'content'} fingerprint of {f} cannot be taken: {fp['n_problems']} problem(s): " + "; ".join(str(x) for x in fp.get("problems", [])[:3]))
+            continue
+        if fk != want:
+            out.append(f"{name}: the content fingerprint of {f} is not the registered one (RL-S1 C1 / C0's token fingerprint)")
+    return out, HNSCREEN_TERMS
+
+
+def hnscreen_regression_argv(argv: list, arm: str) -> list:
+    """The deliberate-regression arms of refe_hnscreen that act on the ARGV (PREREG_P6HN_SCREEN 4.4): `moved_lever` (a pinned token changed: --lr 2e-4) and `epo_with_hn` (an EPO lever beside the bank).
+    Every other arm acts on the evidence (gate_checks.apply_hn_arm; check_dvb_scorer's arms) and returns the argv unchanged.  Each must be REFUSED by profile_refusals."""
+    argv = list(argv)
+    if arm == "moved_lever":
+        return [("2e-4" if argv[i - 1] == "--lr" else t) for i, t in enumerate(argv)]
+    if arm == "epo_with_hn":
+        return argv + ["--epo", "--epo-terms-train", "/w/terms"]
+    return argv
+
+
+# ============================================================================================ aux S1 arm rules (refe_aux_s1)
+def auxs1_arm_class(argv: list) -> str:
+    """The arm class an argv DECLARES by what it carries: no --aux-drv = N (the no-head replicate); --aux-drv with `--aux-drv-feed on` = H2; otherwise H1."""
+    if "--aux-drv" not in argv:
+        return "N"
+    return "H2" if (GT.flag_values(argv, "--aux-drv-feed") or ["off"])[0] == "on" else "H1"
+
+
+def auxs1_kind(arm_cls: str) -> str:
+    """N / H1 / H2 of a registered arm class: the S1c classes (H1u10k, H1u2k) are H1 arms with a budget, so `H1u10k` -> `H1`."""
+    return "N" if arm_cls == "N" else arm_cls[:2]
+
+
+def auxs1_control_argv(argv: list) -> list:
+    """The matched no-head argv of a head arm: the SAME argv minus every head lever (flag and value), so a head arm and N differ by the head alone.  (--out and --seed are the
+    caller's: two arms never share an output directory.)"""
+    out, skip = [], False
+    for t in argv:
+        if t.startswith("--"):
+            skip = t in AUX_HEAD_FLAGS
+        if not skip:
+            out.append(t)
+    return out
+
+
+def auxs1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the aux S1 arm rules.  The arm is DECLARED (`prof['declared_arm']`) or, undeclared, read off the argv.  A head arm must NAME every flag whose
+    default disables it (--aux-drv, --w-aux-drv, --aux-drv-lr, --aux-drv-labels; --aux-drv-feed on for H2), carry the registered values, and resolve to the declared class and seed;
+    N must carry no head lever at all.  Every arm carries the SFT-4 recipe.  scorer_finetune's OWN refusals (epo + aux) are surfaced, and flags are matched as exact tokens."""
+    import gate_checks as C
+    out = []
+    name = prof["name"]
+    arm_class = prof.get("arm_class", AUXS1_ARM_CLASS)                    # refe_aux_s1c carries its own arm table, seeds and per-class recipe; refe_aux_s1 keeps the module constants
+    arm_seeds = prof.get("arm_seeds", AUXS1_ARM_SEED)
+    recipes = prof.get("arm_recipe")
+    declared = prof.get("declared_arm")
+    if declared is not None and declared not in arm_class:
+        out.append(f"{name}: unknown arm {declared!r} (one of {sorted(arm_class)})")
+        declared = None
+    if recipes is not None and declared is None:
+        out.append(f"{name}: the budget is a property of the ARM CLASS ({'|'.join(sorted(recipes))}); the arm must be NAMED (--arm-name), an argv alone cannot say which budget it tests")
+    argv_cls = auxs1_arm_class(argv)
+    cls = auxs1_kind(arm_class[declared]) if declared else argv_cls
+    recipe = recipes.get(arm_class[declared], AUXS1_RECIPE) if (recipes is not None and declared) else AUXS1_RECIPE
+    who = declared or f"the {cls} arm class"
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        out.append(f"{name}: the trainer's parser rejects this argv ({err})")
+        return out, ()
+    known = {o for x in parser._actions for o in x.option_strings}
+    for t in argv:
+        if t.startswith("--") and t not in known:
+            out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser) + mod.AUX.aux_refusals(ns) + mod.aux_s1_refusals(ns)]
+
+    def how(flag):
+        return "named" if flag in argv else "the parser DEFAULT"
+    if declared and argv_cls != cls:
+        out.append(f"{name}: arm {declared} is the {cls} class; the argv resolves to the {argv_cls} class "
+                   f"({'--aux-drv is absent' if argv_cls == 'N' else '--aux-drv-feed ' + ('on' if argv_cls == 'H2' else 'is not on')})")
+    named = [o for o in AUX_HEAD_FLAGS if o in argv]
+    if cls == "N":
+        if named:
+            out.append(f"{name}: {who} must NOT carry {named} -- the no-head replicate differs from the head arms by the head alone")
+    else:
+        for f in ("--aux-drv", "--w-aux-drv", "--aux-drv-lr", "--aux-drv-labels"):
+            if f not in argv:
+                out.append(f"{name} requires {f} for {who}; the argv does not carry it (a flag whose default disables the head must be NAMED, or the arm did not test it)")
+        if cls == "H2" and (GT.flag_values(argv, "--aux-drv-feed") or ["off"])[0] != "on":
+            out.append(f"{name} requires --aux-drv-feed on for {who}; the argv does not carry it")
+        for dest, want in AUXS1_HEAD_REGISTERED.items():
+            f = "--" + dest.replace("_", "-")
+            if not C._close(getattr(ns, dest), want):
+                out.append(f"{name} requires {f} {want} (the registered head lever); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    why_recipe = (f"the S1c budget of {arm_class[declared]}, S1's recipe otherwise" if (recipes is not None and declared) else "the SFT-4 recipe, every arm")
+    for dest, want in recipe.items():
+        f = "--" + dest.replace("_", "-")
+        if not C._close(getattr(ns, dest), want):
+            out.append(f"{name} requires {f} {want} ({why_recipe}); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    for f in prof.get("must_name_flags", ()):                              # S1c: the budget the arm tests is NAMED (a flag whose default equals the registered value would hide the lever)
+        if f not in argv:
+            out.append(f"{name} requires {f} to be NAMED in the argv for {who} (the budget is the lever under test; the parser default is not a statement)")
+    if declared and ns.seed != arm_seeds[declared]:
+        out.append(f"{name}: arm {declared} is registered with --seed {arm_seeds[declared]}; the argv resolves to {ns.seed} ({how('--seed')})")
+    if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
+        out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
+    return out, (AUXS1_HEAD_TERMS if cls != "N" else ())
+
+
+# ============================================================================================ SFT-4R recipe rules (refe_sft4r)
+def sft4r_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the SFT-4R recipe rules.  The argv is PINNED (`pinned_argv`), so this asserts what a pin cannot: the EFFECTIVE recipe (a parser default moving under an argv that
+    does not name it), exact flag spelling (argparse accepts a unique prefix; the gate's flag tests are on exact tokens), scorer_finetune's OWN refusals (epo + aux), and that the arm is the
+    plain scorer fine-tune: no EPO term, no auxiliary head, the full epoch (no --max-updates), the lane head with both of its label sets."""
+    import gate_checks as C
+    out = []
+    name = prof["name"]
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        out.append(f"{name}: the trainer's parser rejects this argv ({err})")
+        return out, ()
+    known = {o for x in parser._actions for o in x.option_strings}
+    for t in argv:
+        if t.startswith("--") and t not in known:
+            out.append(f"{name}: {t} is not an exact option of the trainer (argparse accepts an abbreviation; the gate's flag tests are on exact tokens)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.epo_refusals(ns, parser) + mod.AUX.aux_refusals(ns) + mod.aux_s1_refusals(ns)]
+
+    def how(flag):
+        return "named" if flag in argv else "the parser DEFAULT"
+    for dest, want in prof.get("recipe", SFT4R_RECIPE).items():            # SCORER1 supplies its own recipe (400 updates, eval every 200); every other profile reads SFT4R_RECIPE exactly as before
+        f = "--" + dest.replace("_", "-")
+        if not C._close(getattr(ns, dest), want):
+            out.append(f"{name} requires {f} {want} (PREREG_SFT4 'Settings', the SFT-4R recipe); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+    if ns.epo or ns.aux_drv:
+        out.append(f"{name}: --epo / --aux-drv are on; SFT-4R is the plain scorer fine-tune (the lever is the COMPLETE labels, nothing else)")
+    if ns.lane_head and not (ns.teacher_lane_train and ns.teacher_lane_heldout):
+        out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
+    if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
+        out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
+    return out, ()
+
+
+# ============================================================================================ SCORER1 rules (refe_scorer1)
+def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the SCORER1 rules: the arm is read from the argv's --out, that arm's argv is PINNED (S1 minus the measured --pair-w), the effective recipe is asserted through
+    `sft4r_refusals` with SCORER1_RECIPE, the pair levers are asserted per arm, the checkpoint and the navtest lists are bound by sha256, and no data path may name navtest."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
+    arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
+    pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
+    argv_of = div_argv if prof.get("argv_kind") == "div" else dose_argv if prof.get("argv_kind") == "dose" else rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
+    if p6 and prof.get("data_pin") is None:
+        out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
+                   "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
+    outs = GT.flag_values(argv, "--out") or []
+    arm = next((a for a in arm_seed if outs == [root + "/" + a.lower()]), None)
+    if arm is None:
+        return out + [f"{name}: --out {' '.join(outs)} is none of the arm dirs {[root + '/' + a.lower() for a in arm_seed]}"], ()
+    pw = GT.flag_values(argv, "--pair-w")
+    pin_argv = list(argv)
+    if prof.get("twin_spec"):                                    # S1Z: lambda_z is MEASURED, not pinned: left out of the pin and judged by s1z_twin_refusals
+        pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--twin-w" for t in [f] + list(v)]
+        out += (s1zsm_twin_refusals if prof.get("sn_spec") else s1z_twin_refusals)(prof, argv, mod, parser)          # S1ZSM: the speed-neutral rules on top of S1Z's
+    if arm in pair_spec:
+        try:
+            wv = float(pw[0]) if pw and len(pw) == 1 else None
+        except ValueError:
+            wv = None
+        if wv is None or not math.isfinite(wv) or not wv > 0.0:
+            out.append(f"{name} ({arm}) requires --pair-w named, ONE finite value > 0 (lambda_p, measured by --pair-calibrate); the argv has --pair-w {' '.join(pw or [])}")
+        pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--pair-w" for t in [f] + list(v)]
+    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(argv_of(arm))}, pin_argv)
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        return out, ()
+    rs, _ = sft4r_refusals(prof, argv, mod, parser)
+    out += rs
+    if ns.seed != arm_seed[arm]:
+        out.append(f"{name} ({arm}) requires --seed {arm_seed[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
+    if prof.get("rep_arms"):                                     # a seed replicate: its table is valid and the argv's seed is NOT the parent's (a replicate that changes nothing is refused)
+        out += rep_arm_refusals({arm: prof["rep_arms"][arm]})
+        rp = prof["rep_arms"][arm]
+        if ns.seed == REP_PARENT_SEEDS[rp["family"]][rp["parent"]]:
+            out.append(f"{name} ({arm}) resolves to --seed {ns.seed}, its parent {rp['parent']}'s seed: a replicate must move the data-order seed")
+    if prof.get("div_arms"):                                     # a DIV arm (PREREG_DIV_P6): its table is valid, the seed is the parent's (pinned above) and --split-half is the arm's half, named
+        out += div_arm_refusals({arm: prof["div_arms"][arm]})
+        if "--split-half" not in argv or ns.split_half != prof["div_arms"][arm]["half"]:
+            out.append(f"{name} ({arm}) requires --split-half {prof['div_arms'][arm]['half']} named (the half of PREREG_DIV_P6 section 2); the argv resolves to {ns.split_half} ({'named' if '--split-half' in argv else 'the parser DEFAULT, OFF'})")
+    if prof.get("dose_arms"):                                    # a dose of S1Z (PREREG_DOSE_P6): its table is valid, the seed is the parent's (pinned above), --max-updates is the dose's AND the schedule can reach it
+        out += dose_arm_refusals({arm: prof["dose_arms"][arm]})
+        out += dose_reach_refusals(prof["dose_arms"][arm]["max_updates"], ns.epochs)
+        if ns.max_updates != prof["dose_arms"][arm]["max_updates"]:
+            out.append(f"{name} ({arm}) requires --max-updates {prof['dose_arms'][arm]['max_updates']}; the argv resolves to {ns.max_updates}")
+    if arm in pair_spec:
+        sp = pair_spec[arm]
+        if (ns.pair_calibrate or ns.pair_heads != sp["heads"] or not C._close(ns.pair_dv, sp["dv"]) or ns.pair_nobalance_heads != sp["nobalance"] or ns.pair_nospeed_heads != sp["nospeed"]
+                or ns.pair_gap_heads != sp["gap"] or ns.pair_mean != sp["mean"]):
+            out.append(f"{name} ({arm}) requires --pair-heads {sp['heads']} --pair-dv {sp['dv']} --pair-nobalance-heads '{sp['nobalance']}' --pair-nospeed-heads '{sp['nospeed']}' --pair-gap-heads '{sp['gap']}' "
+                       f"--pair-mean {sp['mean']} and no --pair-calibrate")
+        out += [f"scorer_finetune refuses this argv: {m}" for m in mod.pair_refusals(ns)]
+    else:
+        named = [f for f in ("--pair-w", "--pair-dv", "--pair-heads", "--pair-calibrate", "--pair-nobalance-heads", "--pair-nospeed-heads", "--pair-gap-heads", "--pair-mean") if f in argv]
+        if named or ns.pair_w != 0.0 or ns.pair_heads:
+            out.append(f"{name} ({arm}) is a control: it names no --pair-* flag (the argv carries {named}); a control with the lever on is not C0")
+    # the checkpoint: sha256 of the bytes (Amendment 1 item 7)
+    ck = GT.flag_values(argv, "--ckpt") or []
+    if len(ck) == 1:
+        try:
+            got = sha256_of_file(ck[0])
+        except OSError as e:
+            out.append(f"{name}: cannot bind the checkpoint {ck[0]} by sha256 ({type(e).__name__}); the arm may not start from an unverified file")
+        else:
+            if got != prof["ckpt_sha256"]:
+                out.append(f"{name}: --ckpt {ck[0]} has sha256 {got[:16]}..., the registered {'P6 checkpoint' if p6 else 'u400'} is {prof['ckpt_sha256'][:16]}... (Amendment 1 item 7)")
+    # the navtest lists: bound by sha256, and NO data path names navtest
+    for f, want in prof["navtest_sha256"].items():
+        v = GT.flag_values(argv, f) or []
+        if len(v) != 1:
+            out.append(f"{name} requires {f} named once (the registered navtest list the trainer audits the training data against)")
+            continue
+        try:
+            got = sha256_of_file(v[0])
+        except OSError as e:
+            out.append(f"{name}: cannot bind {f} {v[0]} by sha256 ({type(e).__name__}): the navtest guard would be unverifiable")
+            continue
+        if got != want:
+            out.append(f"{name}: {f} {v[0]} has sha256 {got[:16]}..., the registered list is {want[:16]}...")
+    for f in prof.get("data_flags", ()):
+        if f in ("--navtest-logs", "--navtest-tokens"):
+            continue
+        for v in GT.flag_values(argv, f) or []:
+            if "navtest" in str(v).lower():
+                out.append(f"{name}: NAVTEST IS NEVER TRAINING DATA (PREREG_SCORER1 section 2): {f} {v} names navtest")
+    return out, ()
+
+# ============================================================================================ orchestration
+def derived_argvs(prof: dict, argv: list, work: Path, gate_sets=None, gate_pdm=None, gate_bank=None) -> tuple:
+    """(build_argv, smoke_argv).  BUILD keeps every launch lever (the schedule is observed) and points the on-policy side at the gate's small
+    sets; SMOKE additionally swaps the bank for the carved gate bank, cuts the schedule to `smoke_steps`, and zeroes the workers."""
+    from gate_checks import _drop, _set
+    b = list(argv)
+    b = _drop(b, "--resume")
+    if gate_sets:
+        b = _set(b, "--onpolicy-targets", gate_sets)
+    if gate_pdm:
+        b = _set(b, "--pdm-labels", gate_pdm)
+    b = _set(b, "--out", str(work / "build_run"))
+    s = list(b)
+    if gate_bank:
+        s = _set(s, "--targets", gate_bank)
+        if (GT.flag_values(s, "--labeller") or ["bank"])[0] != "online":         # the online labeller reads no scorer-targets file
+            s = _set(s, "--scorer-targets", gate_bank)
+    for flag in ("--epochs", "--grow-scenes"):
+        if flag in s:
+            i = s.index(flag)
+            del s[i:i + 2]
+    s = _set(s, "--steps", str(prof["smoke_steps"]))
+    s = _set(s, "--accum", str(min(int((GT.flag_values(s, "--accum") or ["1"])[0]), prof["smoke_accum"])))
+    s = _set(s, "--workers", "0")
+    s = _set(s, "--log-every", "1")
+    s = _set(s, "--ckpt-every-min", "999")
+    if prof.get("rehearsal"):
+        s = _drop(s, "--compile")
+    s = _set(s, "--out", str(work / "smoke_run"))
+    return b, s
+
+
+def write_evidence(out_dir: Path, ev: dict, binding: dict, data: dict) -> Path:
+    ev = dict(ev)
+    ev["binding"] = binding
+    ev["inputs_read"] = {k: v for k, v in data.items()}
+    return GT.write_json(out_dir / f"evidence_{ev['check']}.json", ev)
+
+
+def _log_manifest_timing(where: str, t_tree: float, t_data: float, per_input: dict) -> None:
+    """One line in the gate's log: where the manifest time went (evidence only -- no verdict reads it).  The slowest inputs first."""
+    top = ", ".join(f"{k} {v:.1f}s" for k, v in sorted(per_input.items(), key=lambda kv: -kv[1])[:4])
+    print(f"  [timing] {where}: tree_manifest {t_tree:.1f}s, data_manifest {t_data:.1f}s ({top})", flush=True)
+
+
+def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None, reserve_json=None) -> dict:
+    return {k: v for k, v in (("gate:p2_gate_json", p2_gate_json), ("gate:lab_json", lab_json), ("gate:mem_metrics", mem_metrics),
+                              ("gate:egr_json", egr_json), ("gate:preflight_json", preflight_json), ("gate:reserve_json", reserve_json)) if v}
+
+
+def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, arm=None, gate_sets=None, gate_pdm=None, gate_bank=None,
+               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None, suite_evidence=None, key=None, reserve_json=None) -> dict:
+    """Run every check of the profile (or `only`), writing evidence files.  Returns {check: status}.  `suite_evidence` (+ the gate `key` that verifies it) is the OPTIONAL pre-run of G-SUITE
+    (`suite-prerun`): see `suite_check`.  Without it every check is exactly as it has always been."""
+    import gate_checks as C
+    out_dir.mkdir(parents=True, exist_ok=True)
+    work = out_dir / "work"
+    t0 = time.perf_counter()
+    tree = GT.tree_manifest(pkg)
+    t_tree = time.perf_counter() - t0
+    binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json, reserve_json)
+    dtim: dict = {}
+    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
+    _log_manifest_timing("run", t_tree, time.perf_counter() - t0 - t_tree, dtim)
+    rehearsal = bool(prof.get("rehearsal"))
+    want = [c for c in (prof["checks"] + tuple(prof.get("na_ok", ()))) if (only is None or c in only)]
+    status: dict = {}
+    refusals = profile_refusals(prof, argv)
+
+    def emit(ev):
+        write_evidence(out_dir, ev, binding, data)
+        status[ev["check"]] = ev["status"]
+        print(f"  {ev['check']:9s} {ev['status']:5s} {('; '.join(ev['reasons']))[:200]}", flush=True)
+    if refusals:
+        for c in want:
+            emit(C.evidence(c, "FAIL", ["profile refusal: " + r for r in refusals], {"refusals": refusals}, arm=arm, rehearsal=rehearsal))
+        return status
+    if prof.get("runner") == "scorer":                      # scorer_finetune.py: no BUILD/SMOKE capture (that is train.py's) -- static checks + the trainer's own preflight
+        pf = C.load_scorer_preflight(preflight_json) if preflight_json else None
+        if "G-HYG" in want:
+            emit(C.check_hyg(arm=arm, rehearsal=rehearsal, profile=prof))
+        if "G-DVB" in want:
+            emit(C.check_dvb_scorer(argv, pf, prof, arm=arm, rehearsal=rehearsal))
+        if "G-PREFLIGHT" in want:
+            emit(consume_scorer_preflight(preflight_json, argv, prof, arm=arm, rehearsal=rehearsal))
+        if "G-SUITE" in want:
+            emit(suite_check(prof, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
+        if "G-EGR" in want:                                  # refe_sft4r: hf_egress.py gate's own result, bound into the token (`gate:egr_json`); this arm pushes no checkpoint
+            emit(C.check_egr(egr_json, arm=arm, rehearsal=rehearsal, require_ckpt=bool(prof.get("egr_require_ckpt", True))))
+        if "G-CLOCK" in want:
+            emit(C.evidence("G-CLOCK", "NA", [prof.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal))
+        return status
+    if prof.get("runner") == "safehead":                 # refe/safehead_train.py (L2 SAFE-HEAD): its own BUILD / SMOKE runs and checks, refe/safehead_gate.py
+        SHG.run_checks(prof, argv, pkg, out_dir, want=want, emit=emit, arm=arm, rehearsal=rehearsal, data=data,
+                       suite=lambda: suite_check(prof, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
+        return status
+    b_argv, s_argv = derived_argvs(prof, argv, work, gate_sets, gate_pdm, gate_bank)
+    prof2 = dict(prof)
+    # G-CKPT runs FIRST (R43, MEASURED 2026-10-16, P6 pod): its round trip runs two real trainings in SUBPROCESSES, and the CUDA context this
+    # process opens for the build/smoke (394-474 MiB, which no free can release) is taken from them.  P6's compile-free smoke needs > 43.6 GiB
+    # ALLOCATED of the A40's 44.43: U and H1 died OOM with the smoke freed (0.00-0.14 GiB reserved), with and without expandable_segments.
+    # check_ckpt reads only s_argv + the profile, never the build or the smoke capture, so running it before them changes none of its inputs.
+    ckpt_ev = None
+    if "G-CKPT" in want:
+        _log_gpu_reserved("before G-CKPT")
+        ckpt_ev = C.check_ckpt(s_argv, work / "ckpt", prof2, arm=arm, rehearsal=rehearsal)
+    need_b = any(c in want for c in ("G-DVB", "G-CLOCK")) or bool("G-LIVE" in want and prof.get("p5c_rules"))        # P5-C: G-LIVE (f) reads the build capture's step-0 digest
+    need_b = need_b or bool("G-LIVE" in want and prof.get("p7field_rules"))      # the P7 field arms: G-LIVE (f) reads the same step-0 digest (G5)
+    need_b = need_b or bool("G-LIVE" in want and prof.get("scorerft_rules"))   # the SCORER-FT arms: G-LIVE (f) reads the same step-0 digest
+    need_s = any(c in want for c in ("G-LIVE", "G-EVAL", "G-DVB", "G-LIVE-LAB"))
+    b = C.instrumented_run(b_argv, mode="build", work=work / "build", arm=arm) if need_b else None
+    if b is not None:
+        _free(b)                      # the BUILD model is not needed again (a second ViT-L would sit on the pod's GPU through the smoke)
+    s = C.instrumented_run(s_argv, mode="smoke", work=work / "smoke", arm=arm) if need_s else None
+    if "G-HYG" in want:
+        emit(C.check_hyg(arm=arm, rehearsal=rehearsal))
+    if "G-DVB" in want:
+        emit(C.check_dvb(b_argv, b, s, prof2, arm=arm, rehearsal=rehearsal))
+    if "G-LIVE" in want:
+        emit(C.check_live(s_argv, s, prof2, arm=arm, rehearsal=rehearsal, build_cap=b))
+    if "G-CLOCK" in want:
+        emit(C.check_clock(b_argv, b, prof2, arm=arm, rehearsal=rehearsal))
+    if "G-EVAL" in want:
+        emit(C.check_eval(s_argv, s, prof2, arm=arm, rehearsal=rehearsal))
+    if "G-CKPT" in want:
+        # computed FIRST, above (R43; the 2026-10-12 P2 fix, a deep free of the smoke before check_ckpt, left the context behind)
+        emit(ckpt_ev)
+    if "G-SUITE" in want:
+        emit(suite_check(prof2, pkg, evidence=suite_evidence, key=key, commit=commit, arm=arm, rehearsal=rehearsal))
+    if "G-P2GATE" in want:
+        emit(consume_p2_gate(p2_gate_json, arm=arm, rehearsal=rehearsal))
+    if "G-LIVE-LAB" in want:
+        emit(C.check_live_lab(lab_json, s, argv, arm=arm, rehearsal=rehearsal, mem_metrics=mem_metrics))     # the L1 stall: on the launch-accum run (R42)
+    if "G-LIVE-MEM" in want:
+        emit(C.check_live_mem(mem_metrics, arm=arm, rehearsal=rehearsal))
+    if "G-EGR" in want:
+        emit(C.check_egr(egr_json, arm=arm, rehearsal=rehearsal))
+    if "G-RESERVE" in want:
+        emit(C.check_reserve(argv, prof2, reserve_json, arm=arm, rehearsal=rehearsal))      # P7: the registered draw is disjoint from all five training inputs (a SLOT: session_reserve.audit_inputs)
+    return status
+
+
+def _free(cap, deep: bool = False) -> None:
+    import gc
+    cap.model = None
+    cap.first_batch = None
+    cap.bank_objs = []
+    if deep:            # everything else that can pin the model's parameters or its CUDA blocks; the metrics stay (G-LIVE-LAB reads them)
+        cap.opt = cap.sched = None
+        cap.loaders, cap.samplers = [], []
+    gc.collect()
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:                                                        # noqa: BLE001 -- best effort
+        pass
+
+
+def _log_gpu_reserved(when: str) -> None:
+    try:
+        import torch
+        if torch.cuda.is_available():
+            init = torch.cuda.is_initialized()
+            res = torch.cuda.memory_reserved() / 2 ** 30 if init else 0.0
+            print(f"  GPU reserved by the gate process {when}: {res:.2f} GiB (CUDA initialised in this process: {init})", flush=True)
+    except Exception:                                                        # noqa: BLE001 -- evidence only
+        pass
+
+
+def consume_p2_gate(path, arm=None, rehearsal=False) -> dict:
+    """p2_gate.py's own output (G1 warm start == the planner's load; G2 the analytic pair, incl. the detached arm that must read EXACTLY 0.0;
+    G3 pdm-only; G4 the real trainer smoke) is a SUB-CHECK, not duplicated: parsed, never grepped, all four present and ok.  Its file's sha256 is
+    bound into the token (`gate:p2_gate_json`)."""
+    import gate_checks as C
+    if not path or not Path(path).is_file():
+        return C.evidence("G-P2GATE", "FAIL", [f"p2_gate.py output missing: {path}"], {}, arm=arm, rehearsal=rehearsal)
+    d = json.loads(Path(path).read_text(encoding="utf-8"))
+    g = d.get("gates", {})
+    bad = [p for p in ("G1", "G2", "G3", "G4") if not any(k.startswith(p + "_") and v.get("ok") is True for k, v in g.items())]
+    reasons = []
+    if d.get("verdict") != "PASS" or bad:
+        reasons.append(f"p2_gate.py is not PASS: verdict={d.get('verdict')} missing_or_not_ok={bad}")
+    return C.verdict("G-P2GATE", reasons, {"gates": {k: v.get("ok") for k, v in g.items()}, "file_sha256": GT.sha256_file(path)}, arm=arm, rehearsal=rehearsal)
+
+
+def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dict:
+    """`scorer_finetune.py --preflight`'s own gates (G1 trainable == exactly the scorer; G2 live gradients; G3/G4 the identities; G5 the planner-loader
+    round trip; G7 held-out disjoint; G9 PDM targets; G10 the lane head's label; G11 the EPO term live with its zero controls) are a SUB-CHECK, not
+    duplicated: PARSED, never grepped; every gate the ARGV obliges must be present and ok, every gate present must be ok, and a gate the argv does NOT
+    oblige (G11 on a control) means the preflight ran ANOTHER configuration.  G11 is re-judged from its own fields, not trusted on its `ok`.  The file's
+    sha256 is bound into the token (`gate:preflight_json`).  (There is no G6: the trainer numbers 1-5 and 7-11.)"""
+    import gate_checks as C
+    import math
+    pf = C.load_scorer_preflight(path)
+    if pf["error"]:
+        return C.evidence("G-PREFLIGHT", "FAIL", [pf["error"]], {}, arm=arm, rehearsal=rehearsal)
+    mod = importlib.import_module(prof.get("parser_module", "scorer_finetune"))
+    ns, err = C.parse_scorer_argv(mod.build_parser(), argv)
+    if err:
+        return C.evidence("G-PREFLIGHT", "FAIL", [f"the trainer's parser rejects the argv: {err}"], {"file_sha256": pf["sha256"]}, arm=arm, rehearsal=rehearsal)
+    row = pf["preflight"]
+    if row is None:
+        return C.evidence("G-PREFLIGHT", "FAIL", ["the file carries no event=preflight row (not a scorer_finetune --preflight log)"],
+                          {"file_sha256": pf["sha256"]}, arm=arm, rehearsal=rehearsal)
+    gates = row.get("gates") if isinstance(row.get("gates"), dict) else {}
+    reasons = []
+    if row.get("verdict") != "PASS":
+        reasons.append(f"the preflight verdict is {row.get('verdict')!r}, not PASS")
+    req = C.scorer_required_gates(ns)
+    prefix = {k: k.split("_", 1)[0] for k in gates}
+    missing = [p for p in req if p not in prefix.values()]
+    if missing:
+        reasons.append(f"required preflight gate(s) ABSENT: {missing}" + (" -- G11 is the EPO term's live/identity gate; an --epo arm without it has not been proved live"
+                                                                           if "G11" in missing else ""))
+    stray = sorted(k for k, p in prefix.items() if p in C.SCORER_GATES and p not in req)
+    if stray:
+        reasons.append(f"gate(s) {stray} are present but this argv does not oblige them: the preflight ran a DIFFERENT configuration")
+    unknown = sorted(k for k, p in prefix.items() if p not in C.SCORER_GATES)
+    if unknown:
+        reasons.append(f"gate(s) {unknown} are not known to the gate: the consumer must be updated before it can judge them")
+    bad = sorted(k for k, v in gates.items() if not (isinstance(v, dict) and v.get("ok") is True))
+    if bad:
+        reasons.append(f"preflight gate(s) not ok: {bad}")
+    g11 = next((v for k, v in gates.items() if prefix[k] == "G11"), None)
+    if isinstance(g11, dict):
+        mods = set(C.SCORER_GROUPS)
+        on, lam0, off = (g11.get(k) or {} for k in ("per_module_on", "per_module_lam0", "per_module_off"))
+        if set(on) != mods or not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0.0 for x in on.values()):
+            reasons.append(f"G11: the EPO-only backward is not finite and non-zero on every scorer module {sorted(mods)}: {on}")
+        if g11.get("controls_exactly_zero") is not True or any(x != 0.0 for d in (lam0, off) for x in d.values()) or not (lam0 and off):
+            reasons.append("G11: the zero controls (lam 0 / --epo off) do not read EXACTLY 0.0 -- the probe is not proved able to read zero")
+        if g11.get("kl_ok") is not True:
+            reasons.append(f"G11: KL(pi_SFT || pi) at step 0 is {g11.get('kl_step0')} (tol {g11.get('kl_tol')}): arm B did not start AT the base")
+        if g11.get("mutate_detach"):
+            reasons.append("G11 was produced under REFE_RL_MUTATE_EPO_DETACH=1 (a regression arm): it can never count")
+    g13 = next((v for k, v in gates.items() if prefix[k] == "G13"), None)
+    if g13 is not None:                                      # G13 (--epo-con): re-judged from its raw fields too (SAFEOBJ)
+        reasons += C.judge_g13(g13, ns)
+    g7 = next((v for k, v in gates.items() if prefix[k] == "G7"), None)
+    if g7 is not None:                                       # G7's carve fields (B8) are re-judged from their raw values too
+        reasons += C.judge_g7_carve(g7, ns)
+    g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
+    if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
+        reasons += C.judge_g12(g12, ns)
+    g21 = next((v for k, v in gates.items() if prefix[k] == "G21"), None)
+    if g21 is not None:                                      # VDAC A5 (HB): G21 re-judged from its raw fields; the registered LoRA count comes from the PROFILE, never from the fields
+        import vdac_probes as VP21
+        reasons += VP21.judge_g21(g21, expected_lora=prof.get("hb_lora_params"), w_aux=ns.w_aux_drv)
+    for gx_, judge_ in (("G19", "judge_g19"), ("G20", "judge_g20")):
+        gv_ = next((v for k, v in gates.items() if prefix[k] == gx_), None)
+        if gv_ is not None:                                  # VDAC launch blockers (card section 7): re-judged from the raw fields (refe/vdac_probes.py), never from the gate's own `ok`
+            import vdac_probes as VP
+            reasons += getattr(VP, judge_)(gv_)
+    g16 = next((v for k, v in gates.items() if prefix[k] == "G16"), None)
+    if g16 is not None:                                      # G16 (--pair-w): SCORER1, re-judged from its raw fields
+        reasons += C.judge_g16(g16, ns)
+    g18 = next((v for k, v in gates.items() if prefix[k] == "G18"), None)
+    if g18 is not None:                                      # G18 (--twin-w): S1Z, re-judged from its raw fields
+        reasons += C.judge_g18(g18, ns)
+    g14 = next((v for k, v in gates.items() if prefix[k] == "G14"), None)
+    g15 = next((v for k, v in gates.items() if prefix[k] == "G15"), None)
+    if arm in C.HN_ARMS:                                     # P6-HN-S deliberate-regression arms: the same preflight, with the raw fields of the defect (each must turn a judge RED)
+        g14, g15 = C.apply_hn_arm(g14, g15, arm)
+    if g14 is not None:                                      # G14 (--hn-bank): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold -- from the raw fields
+        reasons += C.judge_g14(g14, ns)
+    if g15 is not None:                                      # G15 (--ctx-cache): the cache IS the live trunk forward, bit for bit -- from the raw fields, and bound to the data event's built block
+        reasons += C.judge_g15(g15, ns)
+        ccb = (pf["data"] or {}).get("ctx_cache") if isinstance(pf.get("data"), dict) else None
+        if isinstance(ccb, dict) and ccb.get("trunk_fingerprint") != g15.get("trunk_fingerprint_checkpoint"):
+            reasons.append("G15: the data event's ctx_cache.trunk_fingerprint is not the checkpoint fingerprint G15 measured (the cache the trainer built is not the one the identity was proved on)")
+        if isinstance(ccb, dict) and ccb.get("manifest_sha256") != g15.get("manifest_sha256"):
+            reasons.append("G15: the data event's ctx_cache.manifest_sha256 is not the manifest G15 measured")
+    det = {"gates": {k: (v.get("ok") if isinstance(v, dict) else None) for k, v in gates.items()}, "required": req, "verdict": row.get("verdict"),
+           "file_sha256": pf["sha256"], "n_preflight_rows": pf["n_preflight"], "has_data_event": pf["data"] is not None,
+           "s_per_microbatch": row.get("s_per_microbatch"), "gpu_mem_gb": row.get("gpu_mem_gb")}
+    return C.verdict("G-PREFLIGHT", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-SUITE pre-run (suite-prerun / run --suite-evidence)
+def suite_check(prof: dict, pkg, *, evidence=None, key=None, commit=None, arm=None, rehearsal=False) -> dict:
+    """G-SUITE's evidence for `run_checks`.  WITHOUT `evidence` it is `C.check_suite` and nothing else -- byte for byte the check every profile has always run.  WITH `evidence` (a
+    `suite-prerun` file) it ACCEPTS the pre-run's result only if `GT.verify_suite_evidence` finds every binding equal when re-measured NOW (signature, profile, commit, tree digest recomputed,
+    suite entries, gate code, environment, age <= 12 h, no regression arm, PASS with 0 skips); otherwise it RUNS THE SUITE LIVE and records why the evidence was rejected.  A bad evidence file never
+    makes the gate weaker, it only costs time.  `details.suite_source` names the path taken; finalize copies it into the token."""
+    import gate_checks as C
+    if not evidence:
+        return C.check_suite(prof, arm=arm, rehearsal=rehearsal)
+    t0 = time.perf_counter()
+    try:
+        ok, why, info = GT.verify_suite_evidence(evidence, profile_name=prof["name"], commit=commit, pkg=pkg, suite=prof.get("suite", ()), suite_dir=C.HERE, key=key, arm=arm)
+    except Exception as e:                                                   # noqa: BLE001 -- cannot judge = not accepted, never accepted
+        ok, why, info = False, [f"cannot judge the suite evidence: {type(e).__name__}: {str(e)[:200]}"], {"path": str(evidence)}
+    dt = time.perf_counter() - t0
+    if ok:
+        pre = info["evidence"]
+        scripts = pre["suite"]["details"]["scripts"]
+        src = {"path": "accepted", "evidence_sha256": info["evidence_sha256"], "evidence_created_utc": pre.get("created_utc"), "age_s": info.get("age_s"), "verify_seconds": round(dt, 1)}
+        print(f"  [timing] G-SUITE: ACCEPTED the pre-run evidence {str(info['evidence_sha256'])[:12]} (age {info.get('age_s')} s, every binding re-measured equal in {dt:.1f}s); "
+              f"the pre-run's suite took {sum(float(r.get('seconds') or 0) for r in scripts):.0f}s", flush=True)
+        return C.evidence("G-SUITE", "PASS", [], {"scripts": scripts, "suite_source": src}, arm=arm, rehearsal=rehearsal)
+    print(f"  [timing] G-SUITE: pre-run evidence REJECTED ({len(why)} reason(s): {'; '.join(w[:120] for w in why[:3])}) -> running the suite LIVE", flush=True)
+    ev = C.check_suite(prof, arm=arm, rehearsal=rehearsal)
+    ev["details"]["suite_source"] = {"path": "live", "evidence_sha256": info.get("evidence_sha256"), "rejected": [w[:300] for w in why[:8]]}
+    return ev
+
+
+def _commit_of(pkg: Path, flag_commit):
+    """The commit a run / pre-run is bound to: the SHIP_MANIFEST's, else `--commit`.  ONE definition for `run` and `suite-prerun`, so their bindings cannot drift apart."""
+    man = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
+    return man.get("commit") if man else flag_commit
+
+
+def collect(out_dir: Path, check: str):
+    p = out_dir / f"evidence_{check}.json"
+    return GT.read_json(p) if p.is_file() else None
+
+
+def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None,
+             egr_json=None, preflight_json=None, reserve_json=None):
+    """Mint the token from the evidence ON DISK.  Every required check must have usable PASS evidence bound to this launch."""
+    t0 = time.perf_counter()
+    tree = GT.tree_manifest(pkg)
+    t_tree = time.perf_counter() - t0
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json, reserve_json)
+    dtim: dict = {}
+    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
+    _log_manifest_timing("finalize", t_tree, time.perf_counter() - t0 - t_tree, dtim)
+    binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
+    reasons = profile_refusals(prof, argv) + GT.data_problems(data)
+    manifest = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
+    if manifest is not None:
+        commit = manifest.get("commit")
+        binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
+        if manifest.get("files") != tree:
+            reasons.append(f"the pod's code tree is not the shipped tree: {GT.tree_diff(manifest.get('files') or {}, tree)}")
+    if prof.get("require_commit") and not commit:
+        reasons.append("no commit is bound: ship SHIP_MANIFEST.json (launch_gate.py ship-manifest --commit <landed 40-hex>) with the package")
+    if not prof.get("mintable", True):
+        reasons.append(f"profile {prof['name']} is a REHEARSAL profile: it can never mint a token")
+    if os.environ.get("TANITAD_GATE_ARM"):
+        reasons.append(f"a regression arm is active ({os.environ['TANITAD_GATE_ARM']}): an arm run can never PASS")
+    checks: dict = {}
+    for c in prof["checks"] + tuple(prof.get("na_ok", ())):
+        ev = collect(out_dir, c)
+        if ev is None:
+            checks[c] = {"status": "MISSING"}
+            if c in prof["checks"]:
+                reasons.append(f"{c}: no evidence file")
+            continue
+        why = []
+        if ev.get("binding") != binding:
+            why.append("binding differs")
+        if ev.get("arm"):
+            why.append(f"produced under regression arm {ev['arm']}")
+        if ev.get("rehearsal"):
+            why.append("REHEARSAL evidence never counts toward a token")
+        for f, fp in (ev.get("inputs_read") or {}).items():
+            mine = data.get(f)
+            if mine is None or GT.fp_key(mine) != GT.fp_key(fp):
+                why.append(f"input {f} was read with a different fingerprint")
+        ok_status = ("PASS",) if c in prof["checks"] else ("PASS", "NA")
+        status = ev.get("status") if not why else "REJECTED"
+        checks[c] = {"status": status if status in ok_status or status == "REJECTED" else status, "evidence_sha256": GT.sha256_file(out_dir / f"evidence_{c}.json"),
+                     "finished_utc": ev.get("finished_utc"), "reasons": (ev.get("reasons") or [])[:6] + why}
+        src = (ev.get("details") or {}).get("suite_source") if c == "G-SUITE" else None
+        if src:                                                # only when `run --suite-evidence` was given: the token names the path G-SUITE took (accepted + the pre-run's sha256, or live + why)
+            checks[c]["suite_source"] = src
+        if status not in ok_status:
+            reasons.append(f"{c} {status}: " + " | ".join((ev.get("reasons") or [])[:2] + why))
+        if c in prof.get("na_ok", ()) and ev.get("status") == "NA":
+            checks[c]["status"] = "PASS"
+            checks[c]["na_reason"] = (ev.get("reasons") or [""])[0]
+    return GT.mint(profile=prof["name"], commit=commit, tree_man=tree, argv=argv, trainer=prof["trainer"], data=data, checks=checks,
+                   reasons=reasons, key=key, out_dir=out_dir, gate_inputs=gate_inputs, gate_self_sha=GT.sha256_file(HERE / "launch_gate.py"))
+
+
+# ============================================================================================ CLI
+def _argv_of(a) -> list:
+    if getattr(a, "args_file", None):
+        return GT.read_json(a.args_file)
+    if getattr(a, "args", None) is not None:
+        return parse_args_string(a.args)
+    raise SystemExit("--args or --args-file is required")
+
+
+def _profile_for(a, minting: bool) -> dict:
+    """The profile, with the DECLARED arm folded in (rls1_refusals reads `declared_arm`).  A profile with arm rules must be MINTED for one named arm: an arm read
+    off the argv cannot notice an omitted flag (an `--epo` left out of R0 reads as a clean control)."""
+    prof = PROFILES[a.profile]
+    arm_name = getattr(a, "arm_name", None)
+    arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}.get(prof.get("arm_rules"), {})
+    if arm_name:
+        if not prof.get("arm_rules"):
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_rls1e, refe_aux_s1, refe_aux_s1c, refe_vdac_p6, refe_hnscreen), not {a.profile}")
+        if arm_name in prof.get("arms_need_pi", {}):
+            raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
+        if arm_name not in arms:
+            raise SystemExit(f"REFUSED: {arm_name!r} is not an arm of {a.profile} (one of {'|'.join(sorted(arms))})")
+        prof = {**prof, "declared_arm": arm_name}
+    elif prof.get("arm_rules") and minting:
+        raise SystemExit(f"REFUSED: {a.profile} mints for ONE named arm: pass --arm-name {'|'.join(sorted(arms))}")
+    return prof
+
+
+# ============================================================================================ the CTX ANCHOR commands (HNSCREEN-FP-COST, MM ruling (b'))
+def _with_ctx_anchor(a, prof: dict, argv: list, key=None) -> dict:
+    """The profile with THIS call's anchor folded in (the way `declared_arm` is) when `--ctx-mode anchor-bound`; the profile itself, untouched, in `content` mode (the default: every intermediate call re-reads the
+    cache in full, exactly as before).  An anchor named under `content`, an anchor-bound call without its anchor / chain id / chain start, a profile with no content-bound --ctx-cache, an anchor that is unsigned,
+    for ANOTHER cache directory, for another chain, or OLDER than the chain: GateError (the caller refuses)."""
+    mode = getattr(a, "ctx_mode", None) or GT.CTX_MODE_CONTENT
+    named = [n for n in ("anchor", "chain_id", "chain_start_ns") if getattr(a, n, None) not in (None, "")]
+    if mode == GT.CTX_MODE_CONTENT:
+        if named:
+            raise GT.GateError("--" + " --".join(n.replace("_", "-") for n in named) + " given with --ctx-mode content: an anchor is only used in anchor-bound mode (refused, never silently ignored)")
+        return prof
+    if mode != GT.CTX_MODE_ANCHOR:
+        raise GT.GateError(f"unknown --ctx-mode {mode!r}")
+    if not prof.get("hn_rules"):
+        raise GT.GateError(f"--ctx-mode anchor-bound is defined only for a profile with a content-bound --ctx-cache (the HN screen's); {prof.get('name')} refuses it")
+    if len(named) != 3:
+        raise GT.GateError("--ctx-mode anchor-bound needs --anchor, --chain-id and --chain-start-ns")
+    vals = GT.flag_values(argv, "--ctx-cache")
+    if not vals or len(vals) != 1:
+        raise GT.GateError("--ctx-mode anchor-bound: the argv does not carry --ctx-cache with exactly one value")
+    if key is None:
+        key = GT.load_key(getattr(a, "key_file", None), create=False, forbid_under=[a.pkg] if getattr(a, "pkg", None) else [])
+    doc, reasons, sha = GT.load_anchor(a.anchor, key)
+    if doc is not None:
+        reasons = reasons + GT.anchor_binding_refusals(doc, cache_dir=vals[0], chain_id=a.chain_id, chain_start_ns=int(a.chain_start_ns))
+    if reasons:
+        raise GT.GateError("anchor refused: " + "; ".join(reasons))
+    return {**prof, "ctx_anchor": {"doc": doc, "sha256": sha}}
+
+
+def cmd_anchor(a) -> int:
+    """THE START OF THE CHAIN: one full content fingerprint of --ctx-cache, compared with the profile's REGISTERED pin (never a CLI value), then the HMAC-signed anchor.  rc 0 + ZZGATE-ANCHOR-OKZZ, or rc 5."""
+    prof = PROFILES[a.profile]
+    try:
+        if not prof.get("hn_rules"):
+            raise GT.GateError(f"{a.profile} has no content-bound --ctx-cache: there is nothing to anchor")
+        key = GT.load_key(a.key_file, create=True, forbid_under=[a.pkg])
+        doc = GT.mint_anchor(a.ctx_cache, chain_id=a.chain_id, key=key, pin=(prof.get("fingerprints_expected") or {}).get("--ctx-cache"), out_path=a.out)
+    except GT.GateError as e:
+        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
+        print("ZZGATE-ANCHOR-REFUSEDZZ", flush=True)
+        return 5
+    print(f"anchor {a.out}: {doc['stat']['n_files']} files, content {doc['content']['key'][:48]}, chain {doc['chain_id'][:12]}", flush=True)
+    print("ZZGATE-ANCHOR-OKZZ", flush=True)
+    return 0
+
+
+def cmd_end_verify(a) -> int:
+    """THE END OF THE CHAIN: a second full content fingerprint vs the START anchor + a final stat compare.  Writes the signed END_VERIFY_OK / VOID record.  rc 0 + ZZGATE-END_VERIFY_OKZZ, or rc 5 (VOID or refused)."""
+    prof = PROFILES[a.profile]
+    try:
+        if not prof.get("hn_rules"):
+            raise GT.GateError(f"{a.profile} has no content-bound --ctx-cache: there is no chain to end-verify")
+        key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
+        doc, reasons, sha = GT.load_anchor(a.anchor, key)
+        if doc is not None:
+            reasons = reasons + GT.anchor_binding_refusals(doc, cache_dir=a.ctx_cache, chain_id=a.chain_id, chain_start_ns=int(a.chain_start_ns))
+        if reasons:
+            raise GT.GateError("anchor refused: " + "; ".join(reasons))
+        rec = GT.end_verify(a.ctx_cache, {"doc": doc, "sha256": sha}, key, a.out, seeds=[int(s) for s in a.seeds.split(",") if s.strip() != ""])
+    except (GT.GateError, ValueError) as e:
+        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
+        print("ZZGATE-END_VERIFY-REFUSEDZZ", flush=True)
+        return 5
+    for p in rec["problems"][:8]:
+        print("PROBLEM:", p[:300], file=sys.stderr, flush=True)
+    print(f"end verify {rec['status']}: content_equal {rec['content_equal']}, stat_equal {rec['stat_equal']}, chain {rec['chain_id'][:12]} -> {a.out}", flush=True)
+    print(f"ZZGATE-{rec['status']}ZZ", flush=True)
+    return 0 if rec["status"] == GT.END_OK else 5
+
+
+def cmd_run(a) -> int:
+    prof = _profile_for(a, minting=True)
+    argv = _argv_of(a)
+    pkg, out = Path(a.pkg), Path(a.out_dir)
+    key = GT.load_key(a.key_file, create=True, forbid_under=[pkg])
+    try:
+        prof = _with_ctx_anchor(a, prof, argv, key)                           # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched
+    except GT.GateError as e:
+        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
+        print("ZZGATE-REFUSEDZZ", flush=True)
+        return 5
+    man = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
+    commit = man.get("commit") if man else a.commit
+    arm = os.environ.get("TANITAD_GATE_ARM")
+    if a.gate_bank and not Path(a.gate_bank).exists():
+        import gate_fixture as F
+        src = (GT.flag_values(argv, "--targets") or [None])[0]
+        if (GT.flag_values(argv, "--labeller") or ["bank"])[0] == "online":        # P6: rows whose D9 parts exist (no on-policy sets in this profile)
+            mc = (GT.flag_values(argv, "--metric-cache") or [None])[0]
+            print("  carved the P6 smoke bank:", F.carve_p6_gate_bank(src, mc, a.gate_bank, a.gate_bank_n), flush=True)
+        elif a.gate_sets:
+            print("  carved the smoke bank:", F.carve_gate_bank(src, a.gate_sets, a.gate_bank), flush=True)
+    run_checks(prof, argv, pkg, out, only=set(a.only.split(",")) if a.only else None, arm=arm, gate_sets=a.gate_sets, gate_pdm=a.gate_pdm,
+               gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json, mem_metrics=a.gate_mem_metrics,
+               egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json,
+               suite_evidence=a.suite_evidence, key=key, reserve_json=a.gate_reserve_json)
+    verdict, path, tok = finalize(prof, argv, pkg, out, key, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json,
+                                  mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json, reserve_json=a.gate_reserve_json)
+    for r in tok["reasons"][:8]:
+        print("  REASON:", r[:300])
+    print(f"verdict {verdict} -> {path}", flush=True)
+    print(f"ZZGATE-{verdict}-{(tok['binding']['commit'] or tok['binding']['tree_sha256'])[:12]}ZZ", flush=True)
+    return 0 if verdict == "PASS" else 1
+
+
+def cmd_suite_prerun(a) -> int:
+    """Run EXACTLY `check_suite(PROFILES[profile])` in THIS environment and write the result as SIGNED evidence bound to the commit, the tree digest, the profile, the suite entries, the gate's own code,
+    the environment and the time (gate_token.make_suite_evidence), for `run --suite-evidence`.  CPU only: it never asks for CUDA.  The binding is measured BEFORE the suite and again AFTER it; if the
+    tree, the gate code or the environment moved while the suite ran, the verdict is FAIL (the result belongs to neither state).  Exit 0 = PASS evidence written, 1 = a FAIL evidence written."""
+    import gate_checks as C
+    prof = PROFILES[a.profile]
+    pkg = Path(a.pkg)
+    key = GT.load_key(a.key_file, create=True, forbid_under=[pkg])
+    commit = _commit_of(pkg, a.commit)
+    arm = os.environ.get("TANITAD_GATE_ARM")
+    kw = dict(profile_name=prof["name"], commit=commit, pkg=pkg, suite=prof.get("suite", ()), suite_dir=C.HERE)
+    binding, env = GT.suite_evidence_binding(**kw)
+    t0 = time.perf_counter()
+    res = C.check_suite(prof, arm=arm, rehearsal=bool(prof.get("rehearsal")))
+    secs = time.perf_counter() - t0
+    after, _ = GT.suite_evidence_binding(**kw)
+    moved = sorted(k for k in binding if binding[k] != after[k])
+    extra = [f"{moved} changed WHILE the suite ran: its result belongs to neither state"] if moved else []
+    ev = GT.make_suite_evidence(binding=binding, env=env, suite_result=res, key=key, arm=arm, extra_reasons=extra)
+    GT.write_json(a.out, ev)
+    for r in res["details"]["scripts"]:
+        print(f"  {str(r['script'])[-48:]:48s} rc {r['rc']} token {'seen' if r['token_seen'] else 'NOT seen'} skips {len(r['skips'])} {r['seconds']}s", flush=True)
+    for r in (list(res["reasons"]) + ev["reasons"])[:8]:
+        print("  REASON:", r[:300])
+    print(f"suite-prerun {ev['verdict']} in {secs:.0f}s -> {a.out} (profile {prof['name']}, tree {binding['tree_sha256'][:12]}, commit {str(commit)[:12]})", flush=True)
+    print(f"ZZSUITE-PRERUN-{ev['verdict']}ZZ", flush=True)
+    return 0 if ev["verdict"] == "PASS" else 1
+
+
+def cmd_verify(a) -> int:
+    prof = PROFILES.get(a.profile) if a.profile else None
+    try:
+        key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
+        argv_v = _argv_of(a)
+        pa = _with_ctx_anchor(a, prof if prof else {"name": a.profile}, argv_v, key)         # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched
+        ok, reasons, info = GT.verify_token(a.token, argv_v, a.pkg, key=key, profile=a.profile, data_flags=prof["data_flags"] if prof else (),
+                                            commit=a.commit, content_flags=content_flags_of(prof) if prof else (), ctx_anchor=pa.get("ctx_anchor"))
+    except Exception as e:                                                   # noqa: BLE001 -- refuse, never pass
+        ok, reasons, info = False, [f"{type(e).__name__}: {e}"], {}
+    for r in reasons:
+        print("REFUSED:", r[:400], file=sys.stderr, flush=True)
+    if a.json:
+        GT.write_json(a.json, {"verdict": "MATCH" if ok else "REFUSED", "reasons": reasons, "info": info, "utc": GT.utc_now()})
+    print(f"ZZGATE-{'MATCH' if ok else 'REFUSED'}ZZ", flush=True)
+    return 0 if ok else 5
+
+
+def cmd_ship(a) -> int:
+    man = GT.ship_manifest(a.pkg, commit=a.commit, git_dir=a.git_dir, repo_prefix=a.repo_prefix)
+    GT.write_json(a.out, man)
+    print(f"ZZSHIP_OK {len(man['files'])} files tree {man['tree_sha256'][:16]} commit {a.commit and a.commit[:12]}", flush=True)
+    return 0
+
+
+def cmd_refusals(a) -> int:
+    prof = _profile_for(a, minting=False)
+    argv = _argv_of(a)
+    try:
+        prof = _with_ctx_anchor(a, prof, argv)
+    except GT.GateError as e:
+        print("REFUSED:", str(e)[:600])
+        print("ZZGATE-REFUSEDZZ")
+        return 5
+    rs = profile_refusals(prof, argv)
+    for r in rs:
+        print("REFUSED:", r)
+    print(f"ZZGATE-{'REFUSED' if rs else 'CLEAN'}ZZ")
+    return 5 if rs else 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    for name in ("run", "verify", "refusals"):
+        p = sub.add_parser(name)
+        p.add_argument("--profile", required=(name != "verify"), choices=sorted(PROFILES))
+        p.add_argument("--args")
+        p.add_argument("--args-file")
+        p.add_argument("--key-file")
+        p.add_argument("--pkg", required=(name != "refusals"))
+        p.add_argument("--ctx-mode", choices=GT.CTX_MODES, default=GT.CTX_MODE_CONTENT,
+                       help="HNSCREEN-FP-COST: how this call binds the HN screen's --ctx-cache.  `content` (DEFAULT, today's behaviour): every byte re-read.  `anchor-bound`: a stat compare with the chain's START anchor (no byte read); "
+                            "needs --anchor, --chain-id, --chain-start-ns; only the HN screen chain's intermediate calls use it, and its END verify (`end-verify`) closes the residual")
+        p.add_argument("--anchor", help="the chain's start anchor (`anchor` writes it); anchor-bound mode only")
+        p.add_argument("--chain-id", help="the chain id the anchor must belong to; anchor-bound mode only")
+        p.add_argument("--chain-start-ns", type=int, help="time.time_ns() the chain began at: an anchor minted before it is refused; anchor-bound mode only")
+        if name in ("run", "refusals"):
+            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(VDAC_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)) + sorted(set(RLS1E_ARM_CLASS) - set(RLS1D_ARM_CLASS)),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_rls1e: R0e-id R0e-pick R1e-pick R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_vdac_p6: HA-s0 | HA-s1 | HA-SHUF; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
+                                "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
+        if name == "run":
+            p.add_argument("--out-dir", required=True)
+            p.add_argument("--only")
+            p.add_argument("--commit")
+            p.add_argument("--gate-sets")
+            p.add_argument("--gate-pdm")
+            p.add_argument("--gate-bank")
+            p.add_argument("--gate-bank-n", type=int, default=64, help="refe_p6: rows per targets_rank*.jsonl of the carved smoke bank (rows whose D9 parts exist)")
+            p.add_argument("--p2-gate-json")
+            p.add_argument("--gate-lab-json", help="refe_p6: diag_p6_labeller_identity.py --out (G-LIVE-LAB)")
+            p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")
+            p.add_argument("--gate-egr-json", help="refe_p6, refe_sft4r: hf_egress.py gate's g_egr_result.json (G-EGR)")
+            p.add_argument("--gate-preflight-json", help="refe_rls1: scorer_finetune.py --preflight's preflight.jsonl (G-PREFLIGHT; also G-DVB's built side)")
+            p.add_argument("--gate-reserve-json", help="refe_p7: the registered session reserve (reserve_sessions.json); its sha256 must equal the profile's pin and session_reserve.audit_inputs must pass (G-RESERVE)")
+            p.add_argument("--suite-evidence", help="OPTIONAL: a `suite-prerun` JSON.  G-SUITE ACCEPTS it in place of the live run only if its signature verifies and the commit, profile, tree digest, suite entries, "
+                                                    "gate code and environment all re-measure equal now, it is <= 12 h old and it is PASS with 0 skips; otherwise the suite runs LIVE and the token says why. Absent = today's gate")
+        if name == "verify":
+            p.add_argument("--token", required=True)
+            p.add_argument("--commit")
+            p.add_argument("--json")
+    p = sub.add_parser("suite-prerun", help="run G-SUITE's scripts NOW (CPU only) and write SIGNED, BOUND evidence for `run --suite-evidence`")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--key-file")
+    p.add_argument("--commit")
+    p = sub.add_parser("anchor", help="HNSCREEN-FP-COST: the START of an HN screen chain -- one full content fingerprint of --ctx-cache vs the registered pin, then a signed anchor")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    p.add_argument("--ctx-cache", required=True)
+    p.add_argument("--chain-id", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--key-file")
+    p = sub.add_parser("end-verify", help="HNSCREEN-FP-COST: the END of an HN screen chain -- a second full content fingerprint vs the anchor + a final stat compare; writes END_VERIFY_OK or VOID")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    p.add_argument("--ctx-cache", required=True)
+    p.add_argument("--anchor", required=True)
+    p.add_argument("--chain-id", required=True)
+    p.add_argument("--chain-start-ns", type=int, required=True)
+    p.add_argument("--seeds", default="")
+    p.add_argument("--out", required=True)
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--key-file")
+    p = sub.add_parser("ship-manifest")
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--commit")
+    p.add_argument("--git-dir")
+    p.add_argument("--repo-prefix", default="")
+    p.add_argument("--out", required=True)
+    a = ap.parse_args(argv)
+    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship, "suite-prerun": cmd_suite_prerun, "anchor": cmd_anchor, "end-verify": cmd_end_verify}[a.cmd](a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,584 @@
+...............................................F........................ [  4%]
+..............................................x......................... [  8%]
+........................................................................ [ 13%]
+........................................................................ [ 17%]
+........................................................................ [ 22%]
+s.....sss.......................................................sss.s..s [ 26%]
+ss...................................................................... [ 31%]
+........................................................................ [ 35%]
+........................................................................ [ 40%]
+........................................................................ [ 44%]
+....................................................................ss.. [ 49%]
+........................................................................ [ 53%]
+s..........................................FFFFF...EEEEEEEEEEEEEF..F.... [ 58%]
+........................................................................ [ 62%]
+........................................................................ [ 66%]
+...........................s............................................ [ 71%]
+....ss.................................................................. [ 75%]
+........................................................................ [ 80%]
+.............................sFFFFFFFFF................................. [ 84%]
+...ssssss............................................................... [ 89%]
+........................................................................ [ 93%]
+........................................................................ [ 98%]
+.............................                                            [100%]
+=================================== ERRORS ====================================
+_______ ERROR at setup of test_every_navsim_run_row_carries_both_floors _______
+
+    
+    @pytest.fixture(scope="module")
+>   def model():
+               ^^
+E   AttributeError: 'function' object has no attribute 'load_model'
+
+tests\test_leaderboard.py:31: AttributeError
+___ ERROR at setup of test_published_rows_carry_library_key_table_and_page ____
+
+    
+    @pytest.fixture(scope="module")
+>   def model():
+               ^^
+E   AttributeError: 'function' object has no attribute 'load_model'
+
+tests\test_leaderboard.py:31: AttributeError
+______ ERROR at setup of test_protocol_tags_join_with_the_w1_closed_set _______
+
+    
+    @pytest.fixture(scope="module")
+>   def model():
+               ^^
+E   AttributeError: 'function' object has no attribute 'load_model'
+
+tests\test_leaderboard.py:31: AttributeError
+_______ ERROR at setup of test_navhard_comparison_rows_are_all_post_fix _______
+
+    
+    @pytest.fixture(scope="module")
+>   def model():
+               ^^
+E   AttributeError: 'function' object has no attribute 'load_model'
+
+tests\test_leaderboard.py:31: AttributeError
+_ ERROR at setup of test_pre_fix_values_never_share_the_navhard_comparison_table _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_ ERROR at setup of test_margins_are_the_raw_json_values[+0.1423 [+0.1187, +0.1658]] _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_ ERROR at setup of test_margins_are_the_raw_json_values[\u22120.2304 [\u22120.2881, \u22120.1781]] _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_ ERROR at setup of test_margins_are_the_raw_json_values[+0.0158 [+0.0007, +0.0315]] _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_ ERROR at setup of test_margins_are_the_raw_json_values[+0.0205 [+0.0043, +0.0390]] _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_ ERROR at setup of test_margins_are_the_raw_json_values[+0.0091 [\u22120.0055, +0.0254]] _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_ ERROR at setup of test_margins_are_the_raw_json_values[+7.0745 [+5.1151, +9.0440]] _
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+_________ ERROR at setup of test_accel_mae_is_read_as_lower_is_better _________
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+___________ ERROR at setup of test_warmup_floors_and_hybrid_refusal ___________
+
+    
+    @pytest.fixture(scope="module")
+>   def section():
+               ^^^^
+E   AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:36: AttributeError
+================================== FAILURES ===================================
+________________ test_watchdog_backs_off_when_training_appears ________________
+
+    def test_watchdog_backs_off_when_training_appears():
+        g = _launcher([([], 10.0), ([21724], 600.0)], interval_s=0.001)
+        assert g.acquire() == "cuda"
+        for _ in range(2000):
+            if g.should_back_off():
+                break
+>       assert g.should_back_off() is True
+E       assert False is True
+E        +  where False = should_back_off()
+E        +    where should_back_off = <taniteval.bench.gpu_gap.GpuGapLauncher object at 0x000002B301C77D10>.should_back_off
+
+tests\test_bench_suite_gpu_gap.py:97: AssertionError
+____ test_delete_the_section_and_build_returns_it_byte_identical[content] _____
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_delete_the_section_and_bu0')
+mode = 'content'
+
+    # --------------------------------------------------------------------- acceptance: regeneration
+    @pytest.mark.parametrize("mode", ["content", "markers"])
+    def test_delete_the_section_and_build_returns_it_byte_identical(tmp_path, mode):
+        host = tmp_path / "LEADERBOARD.md"
+>       host.write_bytes(PAGE.read_bytes())
+        ^^^^^^^
+E       AttributeError: 'function' object has no attribute 'build'
+
+tests\test_leaderboard.py:54: AttributeError
+____ test_delete_the_section_and_build_returns_it_byte_identical[markers] _____
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_delete_the_section_and_bu1')
+mode = 'markers'
+
+    # --------------------------------------------------------------------- acceptance: regeneration
+    @pytest.mark.parametrize("mode", ["content", "markers"])
+    def test_delete_the_section_and_build_returns_it_byte_identical(tmp_path, mode):
+        host = tmp_path / "LEADERBOARD.md"
+>       host.write_bytes(PAGE.read_bytes())
+        ^^^^^^^
+E       AttributeError: 'function' object has no attribute 'build'
+
+tests\test_leaderboard.py:54: AttributeError
+_______________ test_build_is_idempotent_and_reports_no_change ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_build_is_idempotent_and_r0')
+
+    
+    def test_build_is_idempotent_and_reports_no_change(tmp_path):
+        host = tmp_path / "LEADERBOARD.md"
+>       host.write_bytes(PAGE.read_bytes())
+        ^^^^^^^
+E       AttributeError: 'function' object has no attribute 'build'
+
+tests\test_leaderboard.py:65: AttributeError
+__________ test_hand_written_bytes_outside_the_markers_are_untouched __________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_hand_written_bytes_outsid0')
+
+    
+    def test_hand_written_bytes_outside_the_markers_are_untouched(tmp_path):
+        host = tmp_path / 'LEADERBOARD.md'
+        original = PAGE.read_bytes().decode('utf-8')
+>       host.write_bytes(original.encode('utf-8'))
+        ^^^^^^^
+E       AttributeError: 'function' object has no attribute 'build'
+
+tests\test_leaderboard.py:75: AttributeError
+___________________________ test_crlf_is_preserved ____________________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_crlf_is_preserved0')
+
+    
+    
+    def test_crlf_is_preserved(tmp_path):
+>       host = tmp_path / "LEADERBOARD.md"
+        ^^^^^^^
+E       AttributeError: 'function' object has no attribute 'build'
+
+tests\test_leaderboard.py:88: AttributeError
+__________ test_the_generator_reads_the_raw_json_and_does_not_cache ___________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_the_generator_reads_the_r0')
+
+    
+    
+    def test_the_generator_reads_the_raw_json_and_does_not_cache(tmp_path):
+        """Mutation: change a value in a COPY of a raw artifact, point the config at it, and the rendered
+        section must change accordingly."""
+        src = REPO / "taniteval/results/refcv3-40284-openloop.ARM.json"
+        doc = json.loads(src.read_text(encoding="utf-8"))
+        doc["paired_decision_grade"]["paired_os_minus_ha"]["ade_m"]["delta"] = 9.8765
+        doc["refcv3"]["families_paired"]["paired_os_minus_ha"]["families"]["ADE"]["ade_m"]["delta"] = 9.8765
+        mutated = tmp_path / "mutated.json"
+        mutated.write_text(json.dumps(doc), encoding="utf-8")
+        cfg = copy.deepcopy(CFG)
+>       for row in cfg["internal"]:
+              ^^^^^^^^^^^^^^^^
+E       AttributeError: 'function' object has no attribute 'render_section'
+
+tests\test_leaderboard.py:204: AttributeError
+________________ test_html_uses_w5_components_when_importable _________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_html_uses_w5_components_w0')
+
+        assert any(isinstance(n, str) and "superseded" in n for n in notes)
+    
+    
+    def test_html_uses_w5_components_when_importable(tmp_path):
+>       pytest.importorskip("taniteval.benchreport.charts")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_leaderboard.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2685/test_html_uses_w5_components_w0/x.html')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\pytest-of-Admin\\pytest-2685\\test_html_uses_w5_components_w0\\x.html'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_______________________ test_the_tool_exists_and_parses _______________________
+
+    def test_the_tool_exists_and_parses():
+        assert TOOL.exists()
+>       ast.parse(_src())
+                  ^^^^^^
+
+tests\test_render_openloop_video.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F03C5040>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_________ test_every_frame_carries_the_fidelity_and_open_loop_labels __________
+
+    def test_every_frame_carries_the_fidelity_and_open_loop_labels():
+        """⛔ The banner is drawn per frame, so a clip cut out of the reel keeps the
+        caveat. A README beside the mp4 does not travel with the mp4."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F0637250>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_______ test_the_selection_is_named_in_the_banner_not_only_the_sidecar ________
+
+    def test_the_selection_is_named_in_the_banner_not_only_the_sidecar():
+        """A cherry-picked reel must not be quotable as a representative one."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F0661D60>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_________________ test_there_is_no_silent_selection_fallback __________________
+
+    def test_there_is_no_silent_selection_fallback():
+        """An earlier version offered --select worst/best and silently rendered
+        'spread' for both — a reel labelled 'worst' that was nothing of the kind."""
+>       tree = ast.parse(_src())
+                         ^^^^^^
+
+tests\test_render_openloop_video.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F0661C70>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+_________________ test_explicit_episode_list_is_range_checked _________________
+
+    def test_explicit_episode_list_is_range_checked():
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F04231B0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+__________ test_the_encoder_is_resolved_before_any_frame_is_rendered __________
+
+    def test_the_encoder_is_resolved_before_any_frame_is_rendered():
+        """MEASURED on pod4: ffmpeg is absent and apt has no package lists. Finding
+        that at the encode step throws away every rendered frame."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F06623F0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+______________ test_the_bev_is_declared_calibration_independent _______________
+
+    def test_the_bev_is_declared_calibration_independent():
+        """The camera panel depends on a projection model; the BEV does not. That is
+        why it is a full panel here and not a 152 px inset — if they disagree, the
+        projection is wrong and the BEV is the one to believe."""
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F03237F0>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+___________ test_out_refuses_a_directory_before_the_expensive_work ____________
+
+    def test_out_refuses_a_directory_before_the_expensive_work():
+>       s = _src()
+            ^^^^^^
+
+tests\test_render_openloop_video.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F068E940>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+__________ test_frames_come_from_RawEp_feats_not_a_frames_attribute ___________
+
+    def test_frames_come_from_RawEp_feats_not_a_frames_attribute():
+        """``data.RawEp`` exposes the stack as ``.feats``; ``.frames`` raises. Caught
+        at runtime once — pinned so it is caught at test time next."""
+        from taniteval.data import RawEp
+        assert hasattr(RawEp, "__init__")
+>       assert "ep.feats[t, -3:]" in _src()
+                                     ^^^^^^
+
+tests\test_render_openloop_video.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_render_openloop_video.py:25: in _src
+    return TOOL.read_text()
+           ^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:633: in read_text
+    return f.read()
+           ^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.cp1252.IncrementalDecoder object at 0x000002B3F068C410>
+input = b'#!/usr/bin/env python3\r\n"""LONG open-loop videos: camera + GT/pred trajectory overlays + a large metric BEV.\r\n\r...dered_m\']:.4f} m")\r\n    _p(f"[video] sidecar {a.out}.json")\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+final = True
+
+    def decode(self, input, final=False):
+>       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 734: character maps to <undefined>
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+============================== warnings summary ===============================
+tests/test_clhorizon.py::TestArmAIsNotFaked::test_arm_A_is_NOT_MEASURED_rather_than_zero_filled
+  D:\Projects\TanitAD\taniteval\taniteval\ci.py:171: RuntimeWarning: Mean of empty slice
+    return float(np.nanmean(v))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_clhorizon.py:89: could not import 'v4_corridor_cl': No module named 'v4_corridor_cl'
+SKIPPED [1] tests\test_clhorizon.py:165: committed per-window tensors absent
+SKIPPED [1] tests\test_clhorizon.py:183: committed per-window tensors absent
+SKIPPED [1] tests\test_clhorizon.py:197: committed per-window tensors absent
+SKIPPED [1] tests\test_corridor.py:102: E1a committed artifact not present at D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-07-25-closedloop-horizon-and-shift\e1a_horizon_heldout44_K185.json
+SKIPPED [1] tests\test_corridor.py:122: E1a committed artifact not present at D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-07-25-closedloop-horizon-and-shift\e1a_horizon_heldout44_K185.json
+SKIPPED [1] tests\test_corridor.py:143: E1a committed artifact not present at D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-07-25-closedloop-horizon-and-shift\e1a_horizon_heldout44_K185.json
+SKIPPED [1] tests\test_corridor.py:174: E1a committed artifact not present at D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-07-25-closedloop-horizon-and-shift\e1a_horizon_heldout44_K185.json
+SKIPPED [1] tests\test_corridor.py:215: E1a committed artifact not present at D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-07-25-closedloop-horizon-and-shift\e1a_horizon_heldout44_K185.json
+SKIPPED [1] tests\test_corridor.py:233: E1a committed artifact not present at D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-07-25-closedloop-horizon-and-shift\e1a_horizon_heldout44_K185.json
+SKIPPED [1] tests\test_corridor.py:242: heldout44 artifact absent
+SKIPPED [1] tests\test_k1_degeneracy_guard.py:322: producer not present: D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-08-17-latent-linear-ladder\code\ll1_ladder.py
+SKIPPED [1] tests\test_k1_degeneracy_guard.py:322: producer not present: D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-08-17-probe-positive-control\code\pc6_linear_readout.py
+SKIPPED [1] tests\test_lead_source.py:43: val40 manifest not present
+SKIPPED [1] tests\test_nuscenes_planning.py:401: NOT RUN: OpenCV not installed in this venv
+SKIPPED [1] tests\test_ood_guard.py:245: E1a artifact absent
+SKIPPED [1] tests\test_ood_guard.py:260: 30 k corridor artifact absent
+SKIPPED [1] tests\test_refcv6_perception_rebuild.py:129: branch build needs a full model; contract covered above
+SKIPPED [5] tests\test_ridge_intercept_penalty.py:38: module not present: D:\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-08-17-probe-positive-control\code\pc6_linear_readout.py
+SKIPPED [1] tests\test_ridge_intercept_penalty.py:114: module not present
+17 failed, 1558 passed, 24 skipped, 1 xfailed, 1 warning, 13 errors in 392.34s (0:06:32)
+TE_EXIT=1

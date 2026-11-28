@@ -1,0 +1,79 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 8.4 s; strict missing=0 unexpected=0 step=40000; param_breakdown equal=True
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[r8_repoint] pose-sync attached to the eval dataset: 139/139 clips shifted (0 unshifted); sidecar E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl
+[g0] eval dataset: 139 episodes -> 23772 windows (257s); subset 128; batches 8
+[g0] collated 8 batches in 378.6 s (disk cache C:\Users\Admin\refcv8_eval_archive\g0cache\step40000)
+[g0] requires_grad control: 42 of 471 terms differ between trained and loader flags (dev box)
+Traceback (most recent call last):
+  File "C:\Users\Admin\qland\hold_r8batt\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-15-refcv8-milestone-battery\code\g0_refcv8.py", line 63, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\Admin\qland\hold_r8batt\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-15-refcv8-milestone-battery\code\g0_refcv8.py", line 44, in main
+    G.main()
+    ~~~~~~^^
+  File "C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\battery\code\g0_refcv7.py", line 1084, in main
+    erow, pb, npk = run_eval(tr, model, batches, device, mode, abl, s, B,
+                    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                             packs_out=(packs_s0 if s == 0 else None))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\battery\code\g0_refcv7.py", line 907, in run_eval
+    el = tr.compute_losses_v3(model, eb, device, mode=mode, ablate_frames=abl)
+  File "C:\lgs\Lfb47a58376\stack\scripts\refc_v3_train.py", line 5430, in compute_losses_v3
+    out = _fwd(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+                ego_state=ego_state, nav_args=nav_args,
+                v_max_ms=v_max_ms, v_max_valid=v_max_valid,
+                agent_gt=agent_gt,
+                perception_grid=_pgrid, perception_valid=_pvalid)
+  File "C:\lgs\Lfb47a58376\stack\scripts\refc_v3_train.py", line 5429, in <lambda>
+    _fwd = model if _r8_prep is None else (lambda *_a, **_k: model(*_a, **{**_k, **_r8_prep["fwd"]}))
+                                                             ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\battery\code\microbatch.py", line 99, in _forward
+    parts.append(self._orig(frames[sl], **sub))
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\lgs\Lfb47a58376\stack\tanitad\refs\refc_v3.py", line 2533, in forward
+    out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
+                    nav_known=nav_known, ego_keep=ego_keep,
+    ...<7 lines>...
+                    ego_actions=ego_actions,
+                    **_core_kw)
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\lgs\Lfb47a58376\stack\tanitad\refs\refc.py", line 4719, in forward
+    self.encoder.forward_features_s8(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        frames.reshape(b * w, *frames.shape[2:]),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        torch.arange(b, device=frames.device) * w + (w - 1))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\lgs\Lfb47a58376\stack\tanitad\models\timm_trunk.py", line 819, in forward_features_s8
+    s16, s32, pooled = self.forward_features(x, already_normalised=True)
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\lgs\Lfb47a58376\stack\tanitad\models\timm_trunk.py", line 935, in forward_features
+    f16, f32 = self._backbone_dedup(
+               ~~~~~~~~~~~~~~~~~~~~^
+        x.reshape(b, self.k, 3, *x.shape[2:]))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\lgs\Lfb47a58376\stack\tanitad\models\timm_trunk.py", line 906, in _backbone_dedup
+    return f16u.index_select(0, flat), f32u.index_select(0, flat)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 312.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.25 GiB is free. Of the allocated memory 3.18 GiB is allocated by PyTorch, and 641.49 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)

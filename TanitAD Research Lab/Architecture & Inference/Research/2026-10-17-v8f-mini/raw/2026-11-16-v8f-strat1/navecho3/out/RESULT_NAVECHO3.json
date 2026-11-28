@@ -1,0 +1,1891 @@
+{
+ "tool": "navecho3.py",
+ "question": "D-STRAT1-TACLAT-F1: cue missing or cue present on labelled turns",
+ "evidence_class": "MEASURED (ours; banked T1-kin dumps, zero training, CPU)",
+ "tier": "T1-kin tick 0 (lateral head argmax at the window's first tick under the T1 feed: dead-reckoned nav, logged scene) vs the v9 label lat_cls (5-way); the flexible nav-only classifier sees only the 5 nav_in channels at that tick",
+ "estimator": "episode-cluster bootstrap (taniteval.ci stat / paired stat), B=2000, seed 0, over the episodes holding the labelled turn windows; 'another draw of EPISODES' only (training-run and inference variance are not in it)",
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "n_labelled": 2107,
+ "n_turn_windows": 197,
+ "n_turn_episodes": 30,
+ "turn_support": {
+  "TURN_L": 47,
+  "TURN_R": 150
+ },
+ "Q1_Q2_by_side": {
+  "TURN_L": {
+   "n": 47,
+   "n_episodes": 9,
+   "table_text_x_v9": {
+    "text names the correct turn | v9 names the correct turn": 24,
+    "text names the correct turn | v9 names the other side": 0,
+    "text names the correct turn | v9 names no turn (FOLLOW or no row)": 0,
+    "text names the other side | v9 names the correct turn": 0,
+    "text names the other side | v9 names the other side": 0,
+    "text names the other side | v9 names no turn (FOLLOW or no row)": 0,
+    "text names no turn (FOLLOW or no row) | v9 names the correct turn": 22,
+    "text names no turn (FOLLOW or no row) | v9 names the other side": 0,
+    "text names no turn (FOLLOW or no row) | v9 names no turn (FOLLOW or no row)": 1
+   },
+   "text_correct": {
+    "n_num": 24,
+    "n_den": 47,
+    "point": 0.5106382978723404,
+    "lo": 0.14538961038961037,
+    "hi": 0.8461538461538461
+   },
+   "v9_correct": {
+    "n_num": 46,
+    "n_den": 47,
+    "point": 0.9787234042553191,
+    "lo": 0.9411764705882353,
+    "hi": 1.0
+   },
+   "v9_minus_text_correct_paired": {
+    "a": 0.9787,
+    "b": 0.5106,
+    "delta": 0.4681,
+    "lo": 0.1455,
+    "hi": 0.8158,
+    "separated": true
+   },
+   "both_name_correct_turn": {
+    "n_windows": 24,
+    "n_episodes": 5,
+    "distance_m": {
+     "text_median": 10.629863664507866,
+     "text_iqr": [
+      4.107125289738178,
+      19.406811147928238
+     ],
+     "v9_median": 4.4884126633405685,
+     "v9_iqr": [
+      0.6401887396350503,
+      11.94461639970541
+     ],
+     "diff_text_minus_v9_median": 7.16281458735466,
+     "diff_iqr": [
+      3.080693748779595,
+      8.821064420044422
+     ],
+     "n_distance_pairs": 24,
+     "n_text_longer": 24,
+     "n_text_shorter": 0,
+     "n_equal": 0,
+     "mean_diff_text_minus_v9": {
+      "a": 14.1077,
+      "b": 8.1818,
+      "delta": 5.926,
+      "lo": 3.3348,
+      "hi": 8.6077,
+      "separated": true
+     }
+    },
+    "ego_speed_mps_median": 4.7554097175598145,
+    "time_to_turn_s_text": {
+     "median": 2.8704527384101226,
+     "iqr": [
+      1.8810032769266947,
+      4.40124876564202
+     ],
+     "n": 21,
+     "share_below_2s": 0.2857142857142857,
+     "share_in_2_to_8s": 0.7142857142857143,
+     "share_above_8s": 0.0
+    },
+    "time_to_turn_s_v9": {
+     "median": 1.3230215588482803,
+     "iqr": [
+      0.4615368345458039,
+      2.7078911592823776
+     ],
+     "n": 21,
+     "share_below_2s": 0.6190476190476191,
+     "share_in_2_to_8s": 0.38095238095238093,
+     "share_above_8s": 0.0
+    },
+    "time_to_turn_diff_text_minus_v9_median_s": 1.424467449885353
+   },
+   "text_correct_windows_time_to_turn": {
+    "n": 24,
+    "n_with_time": 21,
+    "median_s": 2.8704527384101226,
+    "iqr_s": [
+     1.8810032769266947,
+     4.40124876564202
+    ],
+    "share_in_2_to_8s": 0.7142857142857143,
+    "distance_median_m": 10.629863664507866,
+    "distance_at_300_clip": 0
+   },
+   "v9_correct_windows_time_to_turn": {
+    "n": 46,
+    "n_with_time": 38,
+    "median_s": 1.6025645101637385,
+    "iqr_s": [
+     0.6386440298352981,
+     3.277727150766409
+    ],
+    "share_in_2_to_8s": 0.3684210526315789,
+    "distance_median_m": 7.639064639806747,
+    "distance_at_300_clip": 0
+   }
+  },
+  "TURN_R": {
+   "n": 150,
+   "n_episodes": 22,
+   "table_text_x_v9": {
+    "text names the correct turn | v9 names the correct turn": 79,
+    "text names the correct turn | v9 names the other side": 0,
+    "text names the correct turn | v9 names no turn (FOLLOW or no row)": 9,
+    "text names the other side | v9 names the correct turn": 0,
+    "text names the other side | v9 names the other side": 0,
+    "text names the other side | v9 names no turn (FOLLOW or no row)": 0,
+    "text names no turn (FOLLOW or no row) | v9 names the correct turn": 53,
+    "text names no turn (FOLLOW or no row) | v9 names the other side": 0,
+    "text names no turn (FOLLOW or no row) | v9 names no turn (FOLLOW or no row)": 9
+   },
+   "text_correct": {
+    "n_num": 88,
+    "n_den": 150,
+    "point": 0.5866666666666667,
+    "lo": 0.3832321338631149,
+    "hi": 0.7584001184366364
+   },
+   "v9_correct": {
+    "n_num": 132,
+    "n_den": 150,
+    "point": 0.88,
+    "lo": 0.7116323262723309,
+    "hi": 1.0
+   },
+   "v9_minus_text_correct_paired": {
+    "a": 0.88,
+    "b": 0.5867,
+    "delta": 0.2933,
+    "lo": 0.0653,
+    "hi": 0.5355,
+    "separated": true
+   },
+   "both_name_correct_turn": {
+    "n_windows": 79,
+    "n_episodes": 12,
+    "distance_m": {
+     "text_median": 20.66410630941391,
+     "text_iqr": [
+      11.777644976973534,
+      33.62119197845459
+     ],
+     "v9_median": 13.23825716972351,
+     "v9_iqr": [
+      3.5146860405802727,
+      23.77217635512352
+     ],
+     "diff_text_minus_v9_median": 10.551087465137243,
+     "diff_iqr": [
+      4.34352345764637,
+      12.46100664138794
+     ],
+     "n_distance_pairs": 79,
+     "n_text_longer": 74,
+     "n_text_shorter": 5,
+     "n_equal": 0,
+     "mean_diff_text_minus_v9": {
+      "a": 23.5449,
+      "b": 15.1935,
+      "delta": 8.3514,
+      "lo": 3.782,
+      "hi": 11.8442,
+      "separated": true
+     }
+    },
+    "ego_speed_mps_median": 7.048135280609131,
+    "time_to_turn_s_text": {
+     "median": 3.1384028031664215,
+     "iqr": [
+      2.2742678751506604,
+      4.259887751352187
+     ],
+     "n": 78,
+     "share_below_2s": 0.1794871794871795,
+     "share_in_2_to_8s": 0.8205128205128205,
+     "share_above_8s": 0.0
+    },
+    "time_to_turn_s_v9": {
+     "median": 2.055090829418357,
+     "iqr": [
+      0.7845109752424524,
+      3.1266438376542856
+     ],
+     "n": 78,
+     "share_below_2s": 0.5,
+     "share_in_2_to_8s": 0.5,
+     "share_above_8s": 0.0
+    },
+    "time_to_turn_diff_text_minus_v9_median_s": 1.4081511402297688
+   },
+   "text_correct_windows_time_to_turn": {
+    "n": 88,
+    "n_with_time": 87,
+    "median_s": 3.1334794636470087,
+    "iqr_s": [
+     2.2051411588488614,
+     4.257508350979059
+    ],
+    "share_in_2_to_8s": 0.8045977011494253,
+    "distance_median_m": 20.833376795053482,
+    "distance_at_300_clip": 0
+   },
+   "v9_correct_windows_time_to_turn": {
+    "n": 132,
+    "n_with_time": 128,
+    "median_s": 2.312014336142597,
+    "iqr_s": [
+     0.9133249533408494,
+     3.7623659486561802
+    ],
+    "share_in_2_to_8s": 0.5703125,
+    "distance_median_m": 16.742366552352905,
+    "distance_at_300_clip": 0
+   }
+  },
+  "BOTH_SIDES": {
+   "n": 197,
+   "n_episodes": 30,
+   "table_text_x_v9": {
+    "text names the correct turn | v9 names the correct turn": 103,
+    "text names the correct turn | v9 names the other side": 0,
+    "text names the correct turn | v9 names no turn (FOLLOW or no row)": 9,
+    "text names the other side | v9 names the correct turn": 0,
+    "text names the other side | v9 names the other side": 0,
+    "text names the other side | v9 names no turn (FOLLOW or no row)": 0,
+    "text names no turn (FOLLOW or no row) | v9 names the correct turn": 75,
+    "text names no turn (FOLLOW or no row) | v9 names the other side": 0,
+    "text names no turn (FOLLOW or no row) | v9 names no turn (FOLLOW or no row)": 10
+   },
+   "text_correct": {
+    "n_num": 112,
+    "n_den": 197,
+    "point": 0.5685279187817259,
+    "lo": 0.3932570633795135,
+    "hi": 0.7247228167171987
+   },
+   "v9_correct": {
+    "n_num": 178,
+    "n_den": 197,
+    "point": 0.9035532994923858,
+    "lo": 0.7772263775290573,
+    "hi": 0.9950738916256158
+   },
+   "v9_minus_text_correct_paired": {
+    "a": 0.9036,
+    "b": 0.5685,
+    "delta": 0.335,
+    "lo": 0.1371,
+    "hi": 0.5328,
+    "separated": true
+   },
+   "both_name_correct_turn": {
+    "n_windows": 103,
+    "n_episodes": 17,
+    "distance_m": {
+     "text_median": 18.272395431995392,
+     "text_iqr": [
+      8.923973888158798,
+      32.21539556980133
+     ],
+     "v9_median": 11.178983002901077,
+     "v9_iqr": [
+      1.738604949787259,
+      20.95417156815529
+     ],
+     "diff_text_minus_v9_median": 8.905866742134094,
+     "diff_iqr": [
+      4.063458740711212,
+      12.386465072631836
+     ],
+     "n_distance_pairs": 103,
+     "n_text_longer": 98,
+     "n_text_shorter": 5,
+     "n_equal": 0,
+     "mean_diff_text_minus_v9": {
+      "a": 21.3459,
+      "b": 13.5597,
+      "delta": 7.7862,
+      "lo": 4.0839,
+      "hi": 10.634,
+      "separated": true
+     }
+    },
+    "ego_speed_mps_median": 6.259418487548828,
+    "time_to_turn_s_text": {
+     "median": 3.1334794636470087,
+     "iqr": [
+      2.1118297857596615,
+      4.366395854981098
+     ],
+     "n": 99,
+     "share_below_2s": 0.20202020202020202,
+     "share_in_2_to_8s": 0.797979797979798,
+     "share_above_8s": 0.0
+    },
+    "time_to_turn_s_v9": {
+     "median": 1.771760530419508,
+     "iqr": [
+      0.7155988551442581,
+      3.104918997250887
+     ],
+     "n": 99,
+     "share_below_2s": 0.5252525252525253,
+     "share_in_2_to_8s": 0.47474747474747475,
+     "share_above_8s": 0.0
+    },
+    "time_to_turn_diff_text_minus_v9_median_s": 1.4113586439178754
+   },
+   "text_correct_windows_time_to_turn": {
+    "n": 112,
+    "n_with_time": 108,
+    "median_s": 3.058618623358293,
+    "iqr_s": [
+     2.073252373838056,
+     4.348969399650638
+    ],
+    "share_in_2_to_8s": 0.7870370370370371,
+    "distance_median_m": 18.982311338186264,
+    "distance_at_300_clip": 0
+   },
+   "v9_correct_windows_time_to_turn": {
+    "n": 178,
+    "n_with_time": 166,
+    "median_s": 2.200786760240895,
+    "iqr_s": [
+     0.8762233232142436,
+     3.682395816346125
+    ],
+    "share_in_2_to_8s": 0.5240963855421686,
+    "distance_median_m": 13.26383575797081,
+    "distance_at_300_clip": 0
+   }
+  }
+ },
+ "Q3_missed_turns_by_arm": {
+  "S1_s0": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 87,
+   "head_recall_on_turns": 0.5583756345177665,
+   "missed_by_text_state": {
+    "names the correct turn": 11,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 76
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 73,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 14
+   },
+   "share_cue_missing": {
+    "n_num": 66,
+    "n_den": 87,
+    "point": 0.7586206896551724,
+    "lo": 0.5510160843998616,
+    "hi": 0.9102678571428571
+   },
+   "share_cue_present": {
+    "n_num": 11,
+    "n_den": 87,
+    "point": 0.12643678160919541,
+    "lo": 0.03702854230377166,
+    "hi": 0.2584477736163128
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 87,
+    "point": 0.11494252873563218,
+    "lo": 0.011494252873563218,
+    "hi": 0.2941365007541477
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 11,
+    "n_den": 87,
+    "point": 0.12643678160919541,
+    "lo": 0.03702854230377166,
+    "hi": 0.2584477736163128
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 101,
+    "n_den": 112,
+    "point": 0.9017857142857143,
+    "lo": 0.8255794443577338,
+    "hi": 0.9636363636363636
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 9,
+    "n_den": 85,
+    "point": 0.10588235294117647,
+    "lo": 0.0384493670886076,
+    "hi": 0.1836793338024865
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 73,
+    "TURN_L": 13,
+    "TURN_R": 1,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1_s1": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 79,
+   "head_recall_on_turns": 0.5989847715736041,
+   "missed_by_text_state": {
+    "names the correct turn": 7,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 72
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 68,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 11
+   },
+   "share_cue_missing": {
+    "n_num": 62,
+    "n_den": 79,
+    "point": 0.7848101265822784,
+    "lo": 0.5788179465056084,
+    "hi": 0.9285924369747899
+   },
+   "share_cue_present": {
+    "n_num": 7,
+    "n_den": 79,
+    "point": 0.08860759493670886,
+    "lo": 0.020827963917525772,
+    "hi": 0.18922136422136407
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 79,
+    "point": 0.12658227848101267,
+    "lo": 0.012496141975308643,
+    "hi": 0.31917021276595736
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 7,
+    "n_den": 79,
+    "point": 0.08860759493670886,
+    "lo": 0.020827963917525772,
+    "hi": 0.18922136422136407
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 105,
+    "n_den": 112,
+    "point": 0.9375,
+    "lo": 0.882341361741547,
+    "hi": 0.9821428571428571
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 13,
+    "n_den": 85,
+    "point": 0.15294117647058825,
+    "lo": 0.05454545454545454,
+    "hi": 0.24706791995148572
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 70,
+    "TURN_L": 7,
+    "TURN_R": 2,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "N1_s0": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 90,
+   "head_recall_on_turns": 0.5431472081218274,
+   "missed_by_text_state": {
+    "names the correct turn": 14,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 76
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 76,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 14
+   },
+   "share_cue_missing": {
+    "n_num": 66,
+    "n_den": 90,
+    "point": 0.7333333333333333,
+    "lo": 0.5277146464646465,
+    "hi": 0.8863743567753001
+   },
+   "share_cue_present": {
+    "n_num": 14,
+    "n_den": 90,
+    "point": 0.15555555555555556,
+    "lo": 0.057454937304075235,
+    "hi": 0.29487704918032787
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 90,
+    "point": 0.1111111111111111,
+    "lo": 0.011360444330949949,
+    "hi": 0.2808988764044944
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 14,
+    "n_den": 90,
+    "point": 0.15555555555555556,
+    "lo": 0.057454937304075235,
+    "hi": 0.29487704918032787
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 98,
+    "n_den": 112,
+    "point": 0.875,
+    "lo": 0.7978723404255319,
+    "hi": 0.9430917405764967
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 9,
+    "n_den": 85,
+    "point": 0.10588235294117647,
+    "lo": 0.04080943188086045,
+    "hi": 0.16666666666666666
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 75,
+    "TURN_L": 10,
+    "TURN_R": 5,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "N1_s1": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 80,
+   "head_recall_on_turns": 0.5939086294416244,
+   "missed_by_text_state": {
+    "names the correct turn": 7,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 73
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 69,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 11
+   },
+   "share_cue_missing": {
+    "n_num": 63,
+    "n_den": 80,
+    "point": 0.7875,
+    "lo": 0.5882223942208462,
+    "hi": 0.9220815295815296
+   },
+   "share_cue_present": {
+    "n_num": 7,
+    "n_den": 80,
+    "point": 0.0875,
+    "lo": 0.02586206896551724,
+    "hi": 0.17391304347826086
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 80,
+    "point": 0.125,
+    "lo": 0.012496141975308643,
+    "hi": 0.3137590652699434
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 7,
+    "n_den": 80,
+    "point": 0.0875,
+    "lo": 0.02586206896551724,
+    "hi": 0.17391304347826086
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 105,
+    "n_den": 112,
+    "point": 0.9375,
+    "lo": 0.8932038834951457,
+    "hi": 0.978494623655914
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 12,
+    "n_den": 85,
+    "point": 0.1411764705882353,
+    "lo": 0.047619047619047616,
+    "hi": 0.22892193775100397
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 72,
+    "TURN_L": 6,
+    "TURN_R": 2,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1d_s0": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 88,
+   "head_recall_on_turns": 0.5532994923857868,
+   "missed_by_text_state": {
+    "names the correct turn": 12,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 76
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 74,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 14
+   },
+   "share_cue_missing": {
+    "n_num": 66,
+    "n_den": 88,
+    "point": 0.75,
+    "lo": 0.5427725563909774,
+    "hi": 0.9012646793134597
+   },
+   "share_cue_present": {
+    "n_num": 12,
+    "n_den": 88,
+    "point": 0.13636363636363635,
+    "lo": 0.04493629614767255,
+    "hi": 0.2698660714285713
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 88,
+    "point": 0.11363636363636363,
+    "lo": 0.011490987460815047,
+    "hi": 0.2857589285714283
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 12,
+    "n_den": 88,
+    "point": 0.13636363636363635,
+    "lo": 0.04493629614767255,
+    "hi": 0.2698660714285713
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 100,
+    "n_den": 112,
+    "point": 0.8928571428571429,
+    "lo": 0.8181675242995998,
+    "hi": 0.9565403195837978
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 9,
+    "n_den": 85,
+    "point": 0.10588235294117647,
+    "lo": 0.04080943188086045,
+    "hi": 0.16666666666666666
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 76,
+    "TURN_L": 10,
+    "TURN_R": 2,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1d_s1": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 80,
+   "head_recall_on_turns": 0.5939086294416244,
+   "missed_by_text_state": {
+    "names the correct turn": 7,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 73
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 69,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 11
+   },
+   "share_cue_missing": {
+    "n_num": 64,
+    "n_den": 80,
+    "point": 0.8,
+    "lo": 0.6128403854210306,
+    "hi": 0.9318181818181818
+   },
+   "share_cue_present": {
+    "n_num": 7,
+    "n_den": 80,
+    "point": 0.0875,
+    "lo": 0.021052631578947368,
+    "hi": 0.18336165048543673
+   },
+   "share_neither": {
+    "n_num": 9,
+    "n_den": 80,
+    "point": 0.1125,
+    "lo": 0.012345679012345678,
+    "hi": 0.28206521739130425
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 7,
+    "n_den": 80,
+    "point": 0.0875,
+    "lo": 0.021052631578947368,
+    "hi": 0.18336165048543673
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 105,
+    "n_den": 112,
+    "point": 0.9375,
+    "lo": 0.8878504672897196,
+    "hi": 0.9831932773109243
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 12,
+    "n_den": 85,
+    "point": 0.1411764705882353,
+    "lo": 0.04901362984218077,
+    "hi": 0.21797619047619032
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 71,
+    "TURN_L": 7,
+    "TURN_R": 2,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1_s10": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 77,
+   "head_recall_on_turns": 0.6091370558375635,
+   "missed_by_text_state": {
+    "names the correct turn": 8,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 69
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 65,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 12
+   },
+   "share_cue_missing": {
+    "n_num": 59,
+    "n_den": 77,
+    "point": 0.7662337662337663,
+    "lo": 0.555530303030303,
+    "hi": 0.9166666666666666
+   },
+   "share_cue_present": {
+    "n_num": 8,
+    "n_den": 77,
+    "point": 0.1038961038961039,
+    "lo": 0.03225806451612903,
+    "hi": 0.21314402810304434
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 77,
+    "point": 0.12987012987012986,
+    "lo": 0.013333333333333334,
+    "hi": 0.32009859154929526
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 8,
+    "n_den": 77,
+    "point": 0.1038961038961039,
+    "lo": 0.03225806451612903,
+    "hi": 0.21314402810304434
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 104,
+    "n_den": 112,
+    "point": 0.9285714285714286,
+    "lo": 0.875,
+    "hi": 0.9734571495109454
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 16,
+    "n_den": 85,
+    "point": 0.18823529411764706,
+    "lo": 0.06895370807746812,
+    "hi": 0.3100086206896551
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 72,
+    "TURN_L": 1,
+    "TURN_R": 4,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1_s11": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 82,
+   "head_recall_on_turns": 0.583756345177665,
+   "missed_by_text_state": {
+    "names the correct turn": 8,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 74
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 69,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 13
+   },
+   "share_cue_missing": {
+    "n_num": 64,
+    "n_den": 82,
+    "point": 0.7804878048780488,
+    "lo": 0.5678928928928929,
+    "hi": 0.9294117647058824
+   },
+   "share_cue_present": {
+    "n_num": 8,
+    "n_den": 82,
+    "point": 0.0975609756097561,
+    "lo": 0.026070375829034636,
+    "hi": 0.20835755813953477
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 82,
+    "point": 0.12195121951219512,
+    "lo": 0.011624565624164663,
+    "hi": 0.31461828536247494
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 8,
+    "n_den": 82,
+    "point": 0.0975609756097561,
+    "lo": 0.026070375829034636,
+    "hi": 0.20835755813953477
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 104,
+    "n_den": 112,
+    "point": 0.9285714285714286,
+    "lo": 0.8666666666666667,
+    "hi": 0.9770180250783699
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 11,
+    "n_den": 85,
+    "point": 0.12941176470588237,
+    "lo": 0.05063291139240506,
+    "hi": 0.21740206629358583
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 75,
+    "TURN_L": 6,
+    "TURN_R": 1,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "N1_s10": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 79,
+   "head_recall_on_turns": 0.5989847715736041,
+   "missed_by_text_state": {
+    "names the correct turn": 6,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 73
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 67,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 12
+   },
+   "share_cue_missing": {
+    "n_num": 63,
+    "n_den": 79,
+    "point": 0.7974683544303798,
+    "lo": 0.5945734797297297,
+    "hi": 0.9375
+   },
+   "share_cue_present": {
+    "n_num": 6,
+    "n_den": 79,
+    "point": 0.0759493670886076,
+    "lo": 0.019230769230769232,
+    "hi": 0.16176470588235295
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 79,
+    "point": 0.12658227848101267,
+    "lo": 0.01282051282051282,
+    "hi": 0.31580612924716844
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 6,
+    "n_den": 79,
+    "point": 0.0759493670886076,
+    "lo": 0.019230769230769232,
+    "hi": 0.16176470588235295
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 106,
+    "n_den": 112,
+    "point": 0.9464285714285714,
+    "lo": 0.9065280773224699,
+    "hi": 0.9834905967332596
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 12,
+    "n_den": 85,
+    "point": 0.1411764705882353,
+    "lo": 0.03571428571428571,
+    "hi": 0.24221389358108095
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 73,
+    "TURN_L": 1,
+    "TURN_R": 5,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "N1_s11": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 79,
+   "head_recall_on_turns": 0.5989847715736041,
+   "missed_by_text_state": {
+    "names the correct turn": 7,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 72
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 67,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 12
+   },
+   "share_cue_missing": {
+    "n_num": 62,
+    "n_den": 79,
+    "point": 0.7848101265822784,
+    "lo": 0.5806176686217009,
+    "hi": 0.927710843373494
+   },
+   "share_cue_present": {
+    "n_num": 7,
+    "n_den": 79,
+    "point": 0.08860759493670886,
+    "lo": 0.026652173913043482,
+    "hi": 0.18181818181818182
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 79,
+    "point": 0.12658227848101267,
+    "lo": 0.012195121951219513,
+    "hi": 0.3195138888888885
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 7,
+    "n_den": 79,
+    "point": 0.08860759493670886,
+    "lo": 0.026652173913043482,
+    "hi": 0.18181818181818182
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 105,
+    "n_den": 112,
+    "point": 0.9375,
+    "lo": 0.8913043478260869,
+    "hi": 0.9777838827838827
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 13,
+    "n_den": 85,
+    "point": 0.15294117647058825,
+    "lo": 0.05194245409762652,
+    "hi": 0.2530200803212851
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 73,
+    "TURN_L": 5,
+    "TURN_R": 1,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1d_s10": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 81,
+   "head_recall_on_turns": 0.5888324873096447,
+   "missed_by_text_state": {
+    "names the correct turn": 8,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 73
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 69,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 12
+   },
+   "share_cue_missing": {
+    "n_num": 63,
+    "n_den": 81,
+    "point": 0.7777777777777778,
+    "lo": 0.5757386363636364,
+    "hi": 0.918918918918919
+   },
+   "share_cue_present": {
+    "n_num": 8,
+    "n_den": 81,
+    "point": 0.09876543209876543,
+    "lo": 0.030927835051546393,
+    "hi": 0.2
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 81,
+    "point": 0.12345679012345678,
+    "lo": 0.0125,
+    "hi": 0.3067319587628862
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 8,
+    "n_den": 81,
+    "point": 0.09876543209876543,
+    "lo": 0.030927835051546393,
+    "hi": 0.2
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 104,
+    "n_den": 112,
+    "point": 0.9285714285714286,
+    "lo": 0.8809484389782403,
+    "hi": 0.9724802061078296
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 12,
+    "n_den": 85,
+    "point": 0.1411764705882353,
+    "lo": 0.03613382099827883,
+    "hi": 0.24676088617265082
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 75,
+    "TURN_L": 1,
+    "TURN_R": 5,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "S1d_s11": {
+   "feed": "text",
+   "n_turn_windows": 197,
+   "n_missed": 78,
+   "head_recall_on_turns": 0.6040609137055837,
+   "missed_by_text_state": {
+    "names the correct turn": 8,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 70
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 65,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 13
+   },
+   "share_cue_missing": {
+    "n_num": 60,
+    "n_den": 78,
+    "point": 0.7692307692307693,
+    "lo": 0.5666304347826087,
+    "hi": 0.922077922077922
+   },
+   "share_cue_present": {
+    "n_num": 8,
+    "n_den": 78,
+    "point": 0.10256410256410256,
+    "lo": 0.028298564974754185,
+    "hi": 0.2162455934195063
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 78,
+    "point": 0.1282051282051282,
+    "lo": 0.012987012987012988,
+    "hi": 0.3192257683215126
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 8,
+    "n_den": 78,
+    "point": 0.10256410256410256,
+    "lo": 0.028298564974754185,
+    "hi": 0.2162455934195063
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 104,
+    "n_den": 112,
+    "point": 0.9285714285714286,
+    "lo": 0.8666666666666667,
+    "hi": 0.9770180250783699
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 15,
+    "n_den": 85,
+    "point": 0.17647058823529413,
+    "lo": 0.03795124238162213,
+    "hi": 0.32143481518481515
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 74,
+    "TURN_L": 3,
+    "TURN_R": 1,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "C0_s0": {
+   "feed": "v9",
+   "n_turn_windows": 197,
+   "n_missed": 43,
+   "head_recall_on_turns": 0.7817258883248731,
+   "missed_by_text_state": {
+    "names the correct turn": 21,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 22
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 24,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 19
+   },
+   "share_cue_missing": {
+    "n_num": 12,
+    "n_den": 43,
+    "point": 0.27906976744186046,
+    "lo": 0.1041599025974026,
+    "hi": 0.5610137195121949
+   },
+   "share_cue_present": {
+    "n_num": 21,
+    "n_den": 43,
+    "point": 0.4883720930232558,
+    "lo": 0.17857142857142858,
+    "hi": 0.75
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 43,
+    "point": 0.23255813953488372,
+    "lo": 0.027777777777777776,
+    "hi": 0.5161568409343713
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 24,
+    "n_den": 43,
+    "point": 0.5581395348837209,
+    "lo": 0.29267354596622885,
+    "hi": 0.9666666666666667
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 154,
+    "n_den": 178,
+    "point": 0.8651685393258427,
+    "lo": 0.7908298125880187,
+    "hi": 0.9193656201483525
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 0,
+    "n_den": 19,
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 43,
+    "TURN_L": 0,
+    "TURN_R": 0,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "C0_s1": {
+   "feed": "v9",
+   "n_turn_windows": 197,
+   "n_missed": 32,
+   "head_recall_on_turns": 0.8375634517766497,
+   "missed_by_text_state": {
+    "names the correct turn": 13,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 19
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 13,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 19
+   },
+   "share_cue_missing": {
+    "n_num": 9,
+    "n_den": 32,
+    "point": 0.28125,
+    "lo": 0.06519985974754558,
+    "hi": 0.6924999999999989
+   },
+   "share_cue_present": {
+    "n_num": 13,
+    "n_den": 32,
+    "point": 0.40625,
+    "lo": 0.06446572580645162,
+    "hi": 0.7241379310344828
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 32,
+    "point": 0.3125,
+    "lo": 0.043478260869565216,
+    "hi": 0.6666666666666666
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 13,
+    "n_den": 32,
+    "point": 0.40625,
+    "lo": 0.15554597701149425,
+    "hi": 0.9444444444444444
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 165,
+    "n_den": 178,
+    "point": 0.9269662921348315,
+    "lo": 0.8792262425834063,
+    "hi": 0.9681528662420382
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 0,
+    "n_den": 19,
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 32,
+    "TURN_L": 0,
+    "TURN_R": 0,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "C0_s10": {
+   "feed": "v9",
+   "n_turn_windows": 197,
+   "n_missed": 31,
+   "head_recall_on_turns": 0.8426395939086294,
+   "missed_by_text_state": {
+    "names the correct turn": 17,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 14
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 13,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 18
+   },
+   "share_cue_missing": {
+    "n_num": 5,
+    "n_den": 31,
+    "point": 0.16129032258064516,
+    "lo": 0.0,
+    "hi": 0.47619047619047616
+   },
+   "share_cue_present": {
+    "n_num": 17,
+    "n_den": 31,
+    "point": 0.5483870967741935,
+    "lo": 0.14285714285714285,
+    "hi": 0.8571428571428571
+   },
+   "share_neither": {
+    "n_num": 9,
+    "n_den": 31,
+    "point": 0.2903225806451613,
+    "lo": 0.043478260869565216,
+    "hi": 0.6511880687563194
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 13,
+    "n_den": 31,
+    "point": 0.41935483870967744,
+    "lo": 0.15785361842105264,
+    "hi": 0.9412581699346401
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 165,
+    "n_den": 178,
+    "point": 0.9269662921348315,
+    "lo": 0.8650098462470651,
+    "hi": 0.9717583264193433
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 1,
+    "n_den": 19,
+    "point": 0.05263157894736842,
+    "lo": 0.0,
+    "hi": 0.14285714285714285
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 31,
+    "TURN_L": 0,
+    "TURN_R": 0,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  },
+  "C0_s11": {
+   "feed": "v9",
+   "n_turn_windows": 197,
+   "n_missed": 40,
+   "head_recall_on_turns": 0.7969543147208122,
+   "missed_by_text_state": {
+    "names the correct turn": 20,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 20
+   },
+   "missed_by_v9_state": {
+    "names the correct turn": 21,
+    "names the other side": 0,
+    "names no turn (FOLLOW or no row)": 19
+   },
+   "share_cue_missing": {
+    "n_num": 10,
+    "n_den": 40,
+    "point": 0.25,
+    "lo": 0.07142857142857142,
+    "hi": 0.5555555555555556
+   },
+   "share_cue_present": {
+    "n_num": 20,
+    "n_den": 40,
+    "point": 0.5,
+    "lo": 0.18514739229024943,
+    "hi": 0.7818379446640316
+   },
+   "share_neither": {
+    "n_num": 10,
+    "n_den": 40,
+    "point": 0.25,
+    "lo": 0.030303030303030304,
+    "hi": 0.551819923371647
+   },
+   "own_feed_cue_present_share_of_missed": {
+    "n_num": 21,
+    "n_den": 40,
+    "point": 0.525,
+    "lo": 0.25,
+    "hi": 0.9642857142857143
+   },
+   "recall_when_own_cue_correct": {
+    "n_num": 157,
+    "n_den": 178,
+    "point": 0.8820224719101124,
+    "lo": 0.8140957446808511,
+    "hi": 0.9375
+   },
+   "recall_when_own_cue_not_correct": {
+    "n_num": 0,
+    "n_den": 19,
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0
+   },
+   "head_pred_counts_on_missed": {
+    "LANE_KEEP": 40,
+    "TURN_L": 0,
+    "TURN_R": 0,
+    "LANE_CHANGE_L": 0,
+    "LANE_CHANGE_R": 0
+   }
+  }
+ },
+ "reading": {
+  "rule": "CUE-MISSING: share of missed turns with no correct text turn at NOW while v9 names it >= 0.5 in every cell of S1 / N1 x s0 / s1; CUE-PRESENT-MODEL: share with the correct text turn at NOW >= 0.5 in every cell; else MIXED",
+  "cells": {
+   "S1_s0": {
+    "share_cue_missing": 0.7586206896551724,
+    "share_cue_present": 0.12643678160919541
+   },
+   "S1_s1": {
+    "share_cue_missing": 0.7848101265822784,
+    "share_cue_present": 0.08860759493670886
+   },
+   "N1_s0": {
+    "share_cue_missing": 0.7333333333333333,
+    "share_cue_present": 0.15555555555555556
+   },
+   "N1_s1": {
+    "share_cue_missing": 0.7875,
+    "share_cue_present": 0.0875
+   }
+  },
+  "verdict": "CUE-MISSING"
+ },
+ "permutation_importance": {
+  "v9": {
+   "ALL": {
+    "base_macro_f1": 0.7051927291282842,
+    "n_repeats": 20,
+    "groups": {
+     "ch0_FOLLOW": {
+      "importance_mean": 0.1060007282224994,
+      "importance_min": 0.08641357823575968,
+      "importance_max": 0.12434753086578965,
+      "permuted_macro_f1_mean": 0.5991920009057848,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.5965,
+       "delta": 0.1087,
+       "lo": 0.0631,
+       "hi": 0.1594,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch1_TURN_L": {
+      "importance_mean": 0.06928526358150688,
+      "importance_min": 0.04818981282554213,
+      "importance_max": 0.08248516657109761,
+      "permuted_macro_f1_mean": 0.6359074655467774,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.6536,
+       "delta": 0.0516,
+       "lo": -0.0036,
+       "hi": 0.1048,
+       "p_delta_gt0": 0.968,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch2_TURN_R": {
+      "importance_mean": 0.1771278180048972,
+      "importance_min": 0.16320353555889333,
+      "importance_max": 0.195501936101241,
+      "permuted_macro_f1_mean": 0.528064911123387,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.5405,
+       "delta": 0.1646,
+       "lo": 0.1161,
+       "hi": 0.2147,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch3_distance": {
+      "importance_mean": 0.029949364162520253,
+      "importance_min": -0.008875137330389471,
+      "importance_max": 0.06369906058764474,
+      "permuted_macro_f1_mean": 0.675243364965764,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.6543,
+       "delta": 0.0509,
+       "lo": 0.0034,
+       "hi": 0.0924,
+       "p_delta_gt0": 0.9835,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch4_distance_valid": {
+      "importance_mean": 0.03087747019804632,
+      "importance_min": -0.008767641996407671,
+      "importance_max": 0.055802095258214,
+      "permuted_macro_f1_mean": 0.6743152589302379,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.6735,
+       "delta": 0.0317,
+       "lo": -0.0005,
+       "hi": 0.0713,
+       "p_delta_gt0": 0.9725,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "token_group_ch0-2": {
+      "importance_mean": 0.3241447491886155,
+      "importance_min": 0.2886081642678573,
+      "importance_max": 0.3712342691506642,
+      "permuted_macro_f1_mean": 0.3810479799396687,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.4166,
+       "delta": 0.2886,
+       "lo": 0.214,
+       "hi": 0.348,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "distance_group_ch3-4": {
+      "importance_mean": 0.21274338463464482,
+      "importance_min": 0.16418667132390152,
+      "importance_max": 0.2450318365246838,
+      "permuted_macro_f1_mean": 0.4924493444936394,
+      "paired_drop_repeat0": {
+       "a": 0.7052,
+       "b": 0.541,
+       "delta": 0.1642,
+       "lo": 0.088,
+       "hi": 0.2303,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     }
+    }
+   },
+   "INF_ANY": {
+    "base_macro_f1": 0.5340471676512341,
+    "n_repeats": 20,
+    "groups": {
+     "ch0_FOLLOW": {
+      "importance_mean": -0.0273113403962314,
+      "importance_min": -0.05581660590610993,
+      "importance_max": -0.004428107518707369,
+      "permuted_macro_f1_mean": 0.5613585080474655
+     },
+     "ch1_TURN_L": {
+      "importance_mean": 0.015917814972421285,
+      "importance_min": -0.018716993568809515,
+      "importance_max": 0.03456622975970014,
+      "permuted_macro_f1_mean": 0.5181293526788128
+     },
+     "ch2_TURN_R": {
+      "importance_mean": 0.09211833873907377,
+      "importance_min": 0.07377061277573144,
+      "importance_max": 0.11457333736946967,
+      "permuted_macro_f1_mean": 0.4419288289121603
+     },
+     "ch3_distance": {
+      "importance_mean": 0.0005242215370838688,
+      "importance_min": -0.05101928555120938,
+      "importance_max": 0.05268447848106511,
+      "permuted_macro_f1_mean": 0.5335229461141502
+     },
+     "ch4_distance_valid": {
+      "importance_mean": -0.02819137350685408,
+      "importance_min": -0.08135344728817628,
+      "importance_max": 0.023750257574127187,
+      "permuted_macro_f1_mean": 0.5622385411580881
+     },
+     "token_group_ch0-2": {
+      "importance_mean": 0.23151364230124494,
+      "importance_min": 0.174218766995686,
+      "importance_max": 0.2967127063885574,
+      "permuted_macro_f1_mean": 0.3025335253499891
+     },
+     "distance_group_ch3-4": {
+      "importance_mean": 0.13143284254216714,
+      "importance_min": 0.07759597462715101,
+      "importance_max": 0.17394558751579386,
+      "permuted_macro_f1_mean": 0.4026143251090669
+     }
+    }
+   }
+  },
+  "text": {
+   "ALL": {
+    "base_macro_f1": 0.5939319673473191,
+    "n_repeats": 20,
+    "groups": {
+     "ch0_FOLLOW": {
+      "importance_mean": 0.09481108259219939,
+      "importance_min": 0.08325156403034673,
+      "importance_max": 0.10702579240225224,
+      "permuted_macro_f1_mean": 0.49912088475511973,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.5072,
+       "delta": 0.0868,
+       "lo": 0.0187,
+       "hi": 0.1458,
+       "p_delta_gt0": 0.9955,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch1_TURN_L": {
+      "importance_mean": 0.001322428017034638,
+      "importance_min": -0.00079078064645699,
+      "importance_max": 0.006705991592449445,
+      "permuted_macro_f1_mean": 0.5926095393302845,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.5941,
+       "delta": -0.0002,
+       "lo": -0.0137,
+       "hi": 0.0133,
+       "p_delta_gt0": 0.502,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch2_TURN_R": {
+      "importance_mean": 0.16714215354030337,
+      "importance_min": 0.15361774417305646,
+      "importance_max": 0.17808250226798572,
+      "permuted_macro_f1_mean": 0.42678981380701575,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.4283,
+       "delta": 0.1656,
+       "lo": 0.1038,
+       "hi": 0.2184,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch3_distance": {
+      "importance_mean": 0.1549325437253179,
+      "importance_min": 0.13687673218891527,
+      "importance_max": 0.17953736488745298,
+      "permuted_macro_f1_mean": 0.43899942362200123,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.4289,
+       "delta": 0.165,
+       "lo": 0.0715,
+       "hi": 0.2515,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "ch4_distance_valid": {
+      "importance_mean": 0.0024051488550600464,
+      "importance_min": 0.0005321331968147769,
+      "importance_max": 0.007298527901028362,
+      "permuted_macro_f1_mean": 0.5915268184922591,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.59,
+       "delta": 0.004,
+       "lo": -0.0054,
+       "hi": 0.0149,
+       "p_delta_gt0": 0.7935,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "token_group_ch0-2": {
+      "importance_mean": 0.2167432647528239,
+      "importance_min": 0.1974811082842966,
+      "importance_max": 0.23777504104640218,
+      "permuted_macro_f1_mean": 0.3771887025944952,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.375,
+       "delta": 0.2189,
+       "lo": 0.1198,
+       "hi": 0.2979,
+       "p_delta_gt0": 1.0,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     },
+     "distance_group_ch3-4": {
+      "importance_mean": 0.11107357394484951,
+      "importance_min": 0.08432853500817805,
+      "importance_max": 0.1367639446302873,
+      "permuted_macro_f1_mean": 0.4828583934024696,
+      "paired_drop_repeat0": {
+       "a": 0.5939,
+       "b": 0.4958,
+       "delta": 0.0981,
+       "lo": 0.0324,
+       "hi": 0.1605,
+       "p_delta_gt0": 0.9995,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "n_nonfinite_draws": 0,
+       "estimator": "paired_episode_cluster_bootstrap_stat",
+       "floor": null,
+       "above_floor": null
+      }
+     }
+    }
+   },
+   "INF_ANY": {
+    "base_macro_f1": 0.5541252831042,
+    "n_repeats": 20,
+    "groups": {
+     "ch0_FOLLOW": {
+      "importance_mean": 0.06328656916923509,
+      "importance_min": 0.03102425355873384,
+      "importance_max": 0.09509414361163288,
+      "permuted_macro_f1_mean": 0.49083871393496487
+     },
+     "ch1_TURN_L": {
+      "importance_mean": -0.003930669873985937,
+      "importance_min": -0.009809801073322633,
+      "importance_max": 0.005855293459492983,
+      "permuted_macro_f1_mean": 0.5580559529781859
+     },
+     "ch2_TURN_R": {
+      "importance_mean": 0.16869084731389827,
+      "importance_min": 0.14988656144048196,
+      "importance_max": 0.19014680229629677,
+      "permuted_macro_f1_mean": 0.3854344357903017
+     },
+     "ch3_distance": {
+      "importance_mean": 0.1458894027620934,
+      "importance_min": 0.11019462496673665,
+      "importance_max": 0.18249703211173213,
+      "permuted_macro_f1_mean": 0.40823588034210656
+     },
+     "ch4_distance_valid": {
+      "importance_mean": 0.014307592257636448,
+      "importance_min": 0.008372395894576723,
+      "importance_max": 0.022389625878346697,
+      "permuted_macro_f1_mean": 0.5398176908465635
+     },
+     "token_group_ch0-2": {
+      "importance_mean": 0.23065394885878926,
+      "importance_min": 0.19579481247555003,
+      "importance_max": 0.27033832248579204,
+      "permuted_macro_f1_mean": 0.3234713342454107
+     },
+     "distance_group_ch3-4": {
+      "importance_mean": 0.10096412012935446,
+      "importance_min": 0.04996407339871767,
+      "importance_max": 0.13485357347815963,
+      "permuted_macro_f1_mean": 0.4531611629748455
+     }
+    }
+   }
+  }
+ },
+ "shuffle_unweighted_beside": {
+  "majority_baseline_macro_f1": 0.3169861422288607,
+  "by_feed": {
+   "v9": {
+    "n_permutations": 10,
+    "mean": 0.31830745626395385,
+    "min": 0.31602596105841235,
+    "max": 0.3301370545726389
+   },
+   "text": {
+    "n_permutations": 10,
+    "mean": 0.31648737189681075,
+    "min": 0.316113468097496,
+    "max": 0.31689907038512616
+   }
+  },
+  "navecho2_weighted_K_SHUFFLE_for_reference": {
+   "v9": 0.23,
+   "text": 0.145
+  }
+ },
+ "controls": {
+  "K-SELF": {
+   "self_pair_delta": 0.0,
+   "pass": true
+  },
+  "K-REACH": {
+   "label_as_token_all_correct": true,
+   "reading": "a token equal to the label reads CORRECT on every turn window"
+  },
+  "K-FEED/K-LANDED/K-BASE problems": []
+ },
+ "elapsed_s": 468.4
+}

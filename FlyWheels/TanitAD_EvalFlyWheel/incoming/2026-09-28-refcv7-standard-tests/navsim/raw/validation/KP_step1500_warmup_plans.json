@@ -1,0 +1,30 @@
+{
+ "control": "KP precision floor (plans): same checkpoint, same per-scene seeds",
+ "arm": "R7_A1",
+ "a": {
+  "dir": "raw/validation/step1500/bridge_warmup",
+  "device": [
+   "cpu"
+  ],
+  "precision": [
+   "fp32"
+  ]
+ },
+ "b": {
+  "dir": "raw/validation/step1500_cuda/bridge_warmup",
+  "device": [
+   "cuda"
+  ],
+  "precision": [
+   "as_trained"
+  ]
+ },
+ "n": 204,
+ "frac_same_selection": 0.8823529411764706,
+ "frac_bit_identical": 0.0196078431372549,
+ "endpoint_4s_m": {
+  "median": 0.3984441174483229,
+  "p90": 2.8767221790396666,
+  "max": 15.50580428896058
+ }
+}

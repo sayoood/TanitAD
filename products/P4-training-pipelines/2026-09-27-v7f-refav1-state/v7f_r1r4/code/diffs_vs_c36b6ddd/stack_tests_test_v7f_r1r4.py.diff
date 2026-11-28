@@ -1,0 +1,957 @@
+# stack/tests/test_v7f_r1r4.py -- vs origin tip c36b6ddd (LF blobs) -- R1/R4 2026-09-27; apply from the repo root with: git apply <this file>
+--- /dev/null
++++ b/stack/tests/test_v7f_r1r4.py
+@@ -0,0 +1,953 @@
++"""v7F under the PI's 2026-09-27 directive -- R1 (max speed: input + hard cap) and R4 (the
++tactical layer's behaviours and goals condition the operative plan).
++
++PI, verbatim: *"both of them should get the max speed, which it must not be exceeded ...
++All our tactical labels must be used to train the tactical layer to estimate and choose the
++right tactical behaviors and goals which MUST condition the operative planning."*
++
++WHAT IS UNDER TEST (all DEFAULT OFF; the default build/forward is pinned per tensor against
++the PRE-CHANGE ``v6.py`` -- content-anchored, never HEAD, the C75 rule):
++
++* R4  ``--tac-op-cond {off,detached,e2e}`` -> ``V6Stack.tac_op_port``: a ZERO-INIT
++  ``Linear(2*d_goal_embed -> d_goal_embed)`` projecting the LAT x LON behaviour posteriors
++  ``e_a_tac`` and ADDING them to ``e_g_tac`` before ``emit``. MEASURED at the tip
++  (``AUDIT_R4.md``): the goal reached the plan, the behaviours did NOT (the negative control
++  below re-executes that fact).
++* R1a ``--max-speed-input-v6`` -> ``V6Stack.vmax_tac``: the refcv6 4-bin one-hot through a
++  ZERO-INIT ``Linear(4 -> d_tac)`` ADDED to the planner-side tactical latent ``z_tac_p``.
++* R1b ``--plan-vmax-cap`` + ``emit(v_max=...)`` -> ``plan_speed_cap``: refav1's
++  ``_cap_speed`` semantics on EVERY candidate, before selection; every expectation below is a
++  hand-computed LITERAL, and the end-to-end case carries a DISCRIMINATING control (the same
++  emission WITHOUT the cap must exceed the limit, or the test proves nothing).
++
++The pre-change module: ``$TANITAD_V6_PRE_R1R4`` (a file path) when set, else the newest git
++revision of ``stack/tanitad/models/v6.py`` that does not carry ``tac_op_cond``; neither ->
++the byte-identity tests SKIP (a skipped test is honest, a self-comparison is not).
++"""
++from __future__ import annotations
++
++import copy
++import importlib.util
++import json
++import os
++import subprocess
++import sys
++import tempfile
++from pathlib import Path
++
++import pytest
++
++torch = pytest.importorskip("torch")
++
++_STACK = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(_STACK))
++sys.path.insert(0, str(_STACK / "scripts"))
++
++from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
++from tanitad.models.plan_speed_cap import (  # noqa: E402
++    PlanSpeedLimitMissing, SpeedMaxInputMissing, cap_fan, cap_speed_profile,
++    closing_speeds, plan_limit_from_vhi)
++from tanitad.models.v6 import (  # noqa: E402
++    STAGE_GROUPS, V6Config, V6Stack, apply_stage_freeze)
++
++DT = 0.1
++A_MAX = 4.0
++
++
++# =========================================================================== #
++# fixtures
++# =========================================================================== #
++
++def _cfg(**kw) -> V6Config:
++    """The test_v6_staged tiny geometry (plan_steps stays 60: §4b is part of the object)."""
++    base = dict(
++        encoder=EncoderConfig(in_channels=3, image_size=32, image_width=32,
++                              patch_size=16, d_model=32, depth=1, n_heads=2),
++        readout=ReadoutConfig(grid=4, d_readout=8),
++        predictor=PredictorConfig(d_model=32, depth=1, n_heads=2, window=4,
++                                  horizons=(1,), action_dim=3),
++        d_tac=32, d_str=16, d_goal_embed=16, adapter_hidden=32,
++        f_hidden_tac=32, f_hidden_str=32, d_plan_feat=16, emission_hidden=16,
++        n_candidates=4, aux_hidden=16, sigreg_slices=8)
++    base.update(kw)
++    return V6Config(**base)
++
++
++def _build(cfg: V6Config, seed: int = 0) -> V6Stack:
++    torch.manual_seed(seed)
++    return V6Stack(copy.deepcopy(cfg))
++
++
++def _wake(p: torch.nn.Parameter, std: float = 0.5, seed: int = 7) -> None:
++    g = torch.Generator().manual_seed(seed)
++    with torch.no_grad():
++        p.copy_(torch.randn(p.shape, generator=g) * std)
++
++
++def _wake_emission(s: V6Stack, seed: int = 3) -> None:
++    """Take the emission off its CV zero-init (train_v58f_unicycle_head.py:205-206): at init
++    NOTHING upstream of it can move the plan, so every liveness check needs this surrogate."""
++    _wake(s.emission.net[-1].weight, 0.5, seed)
++    _wake(s.emission.net[-1].bias, 0.5, seed + 1)
++
++
++def _force_token(head, tok: int, big: float = 40.0) -> None:
++    """A counterfactual DECISION: make the head emit token ``tok`` (one-hot posterior)."""
++    with torch.no_grad():
++        head.type_head.bias.zero_()
++        head.type_head.bias[tok] = big
++
++
++def _plan_wta(out: dict, seed: int = 5) -> torch.Tensor:
++    """The planner loss v6_loss_step uses (WTA ADE against a target)."""
++    fan = out["plan"]["waypoints"].float()
++    tgt = torch.randn(fan.shape[0], fan.shape[2], 2,
++                      generator=torch.Generator().manual_seed(seed))
++    err = (fan - tgt[:, None]).norm(dim=-1).mean(dim=-1)
++    return err[torch.arange(fan.shape[0]), err.argmin(dim=1)].mean()
++
++
++def _live(stack: V6Stack, loss: torch.Tensor) -> set:
++    names = [n for n, _ in stack.named_parameters()]
++    grads = torch.autograd.grad(loss, [p for _, p in stack.named_parameters()],
++                                allow_unused=True)
++    return {n for n, g in zip(names, grads) if g is not None and float(g.abs().max()) > 0}
++
++
++def _all_grad(stack: V6Stack) -> None:
++    for p in stack.parameters():
++        p.requires_grad_(True)
++
++
++def _same(x, y, path="out") -> list[str]:
++    """Recursive EXACT comparison -> the paths that differ."""
++    bad: list[str] = []
++    if isinstance(x, dict):
++        if set(x) != set(y):
++            return [f"{path}: keys {sorted(set(x) ^ set(y))}"]
++        for k in x:
++            bad += _same(x[k], y[k], f"{path}.{k}")
++    elif isinstance(x, (list, tuple)):
++        if len(x) != len(y):
++            return [f"{path}: len {len(x)} != {len(y)}"]
++        for i, (a, b) in enumerate(zip(x, y)):
++            bad += _same(a, b, f"{path}[{i}]")
++    elif torch.is_tensor(x):
++        if not (torch.is_tensor(y) and x.shape == y.shape and torch.equal(x, y)):
++            bad.append(path)
++    elif x != y:
++        bad.append(path)
++    return bad
++
++
++# =========================================================================== #
++# 0. the pre-change module (content-anchored, never HEAD)
++# =========================================================================== #
++_MARKER = b"tac_op_cond"
++_V6_REL = "stack/tanitad/models/v6.py"
++
++
++def _pre_change_module():
++    src, ref = None, None
++    env = os.environ.get("TANITAD_V6_PRE_R1R4")
++    if env and os.path.isfile(env):
++        src, ref = Path(env).read_bytes(), f"file:{env}"
++    else:
++        root = _STACK.parent
++        try:
++            log = subprocess.run(["git", "log", "--format=%H", "--", _V6_REL], cwd=root,
++                                 capture_output=True, timeout=180)
++            if log.returncode == 0:
++                for sha in log.stdout.decode().split():
++                    r = subprocess.run(["git", "show", f"{sha}:{_V6_REL}"], cwd=root,
++                                       capture_output=True, timeout=120)
++                    if r.returncode == 0 and r.stdout and _MARKER not in r.stdout:
++                        src, ref = r.stdout, sha
++                        break
++        except Exception:                                           # noqa: BLE001
++            src = None
++    if src is None or _MARKER in src:
++        return None
++    tmp = Path(tempfile.mkdtemp()) / "_v6_pre_r1r4.py"
++    tmp.write_bytes(src)
++    name = "tanitad.models._v6_pre_r1r4"          # parent package -> `.vocab_v7` resolves
++    spec = importlib.util.spec_from_file_location(name, tmp)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    mod._ref = ref
++    return mod
++
++
++@pytest.fixture(scope="module")
++def pre():
++    m = _pre_change_module()
++    if m is None:
++        pytest.skip("no pre-change v6.py (set TANITAD_V6_PRE_R1R4 or run inside the repo)")
++    return m
++
++
++def _old_cfg(pre, **kw):
++    base = dict(
++        encoder=EncoderConfig(in_channels=3, image_size=32, image_width=32,
++                              patch_size=16, d_model=32, depth=1, n_heads=2),
++        readout=ReadoutConfig(grid=4, d_readout=8),
++        predictor=PredictorConfig(d_model=32, depth=1, n_heads=2, window=4,
++                                  horizons=(1,), action_dim=3),
++        d_tac=32, d_str=16, d_goal_embed=16, adapter_hidden=32,
++        f_hidden_tac=32, f_hidden_str=32, d_plan_feat=16, emission_hidden=16,
++        n_candidates=4, aux_hidden=16, sigreg_slices=8)
++    base.update(kw)
++    return pre.V6Config(**base)
++
++
++# =========================================================================== #
++# 1. ⛔ DEFAULT OFF == THE TIP, per tensor, per output, per RNG draw
++# =========================================================================== #
++
++def test_the_three_levers_default_OFF_and_build_nothing():
++    c = V6Config()
++    assert (c.tac_op_cond, c.max_speed_input_v6, c.plan_vmax_cap) == ("off", False, False)
++    s = _build(_cfg())
++    assert s.tac_op_port is None and s.vmax_tac is None
++    assert not [k for k in s.state_dict() if k.startswith(("tac_op_port.", "vmax_tac."))]
++
++
++@pytest.mark.parametrize("vv", ["v6.0", "v7.0"])
++def test_default_BUILD_is_byte_identical_to_the_pre_change_module(pre, vv):
++    torch.manual_seed(0)
++    old = pre.V6Stack(_old_cfg(pre, tac_vocab_version=vv))
++    rng_old = torch.random.get_rng_state()
++    torch.manual_seed(0)
++    new = V6Stack(_cfg(tac_vocab_version=vv))
++    rng_new = torch.random.get_rng_state()
++    so, sn = old.state_dict(), new.state_dict()
++    assert list(so) == list(sn), f"keys moved against {pre._ref}"
++    for k in so:
++        assert torch.equal(so[k], sn[k]), f"{k} MOVED against {pre._ref}"
++    assert torch.equal(rng_old, rng_new), "the default build drew a different number of RNG draws"
++
++
++@pytest.mark.parametrize("vv", ["v6.0", "v7.0"])
++def test_default_FORWARD_is_bit_identical_every_output_and_key(pre, vv):
++    """Every tensor the forward returns -- plan, goals, latents, the declared surfaces --
++    torch.equal to the pre-change forward on the same weights and batch; same key set."""
++    torch.manual_seed(0)
++    old = pre.V6Stack(_old_cfg(pre, tac_vocab_version=vv))
++    torch.manual_seed(0)
++    new = V6Stack(_cfg(tac_vocab_version=vv))
++    _wake_emission(old)
++    _wake_emission(new)                  # identical wake: a zero plan would compare vacuously
++    b = new.synthetic_batch(2, seed=1)
++    assert set(b) == {"frames", "actions", "v0"}, "the default synthetic batch grew a key"
++    with torch.no_grad():
++        o_old, o_new = old.forward(**b), new.forward(**b)
++    assert not _same(o_old, o_new), _same(o_old, o_new)[:8]
++    assert float(o_new["plan"]["a"].abs().max()) > 0, "the comparison must not be of zero plans"
++
++
++def test_default_EMIT_is_bit_identical(pre):
++    torch.manual_seed(0)
++    old = pre.V6Stack(_old_cfg(pre))
++    torch.manual_seed(0)
++    new = V6Stack(_cfg())
++    _wake_emission(old)
++    _wake_emission(new)
++    z = torch.randn(3, new.cfg.d_op)
++    e = torch.randn(3, new.cfg.d_goal_embed)
++    v0 = torch.tensor([3.0, 10.0, 25.0])
++    with torch.no_grad():
++        assert not _same(old.emit(z, e, v0), new.emit(z, e, v0))
++
++
++# =========================================================================== #
++# 2. R4 -- the tactical-decision -> plan port
++# =========================================================================== #
++
++def test_R4_port_is_zero_init_planner_grouped_and_introduced_at_S_T():
++    s = _build(_cfg(tac_op_cond="e2e"))
++    p = s.tac_op_port
++    assert (p.in_features, p.out_features) == (2 * 16, 16)
++    assert float(p.weight.abs().sum()) == 0.0 and float(p.bias.abs().sum()) == 0.0
++    assert s.group_of("tac_op_port.weight") == "planner"
++    for stage, trains in (("S-W", False), ("S-T", True), ("S-S", False), ("S-J", True)):
++        apply_stage_freeze(s, stage)
++        assert p.weight.requires_grad is trains, stage
++        assert ("planner" in STAGE_GROUPS[stage]) is trains
++
++
++def test_R4_turning_it_on_perturbs_no_pre_existing_tensor_and_costs_the_literal():
++    """d_goal_embed 128 (production): Linear(256 -> 128) = 256*128 + 128 = 32,896 params."""
++    kw = dict(d_goal_embed=128)
++    off, on = _build(_cfg(**kw)), _build(_cfg(tac_op_cond="detached", **kw))
++    so, sn = off.state_dict(), on.state_dict()
++    assert set(sn) - set(so) == {"tac_op_port.weight", "tac_op_port.bias"}
++    for k in so:
++        assert torch.equal(so[k], sn[k]), f"{k} moved when the port flipped on"
++    n = lambda m: sum(p.numel() for p in m.parameters())           # noqa: E731
++    assert n(on) - n(off) == 32_896
++
++
++def test_R4_is_an_EXACT_noop_at_zero_init():
++    off, on = _build(_cfg()), _build(_cfg(tac_op_cond="e2e"))
++    _wake_emission(off)
++    _wake_emission(on)
++    b = off.synthetic_batch(2, seed=2)
++    with torch.no_grad():
++        o_off, o_on = off.forward(**b), on.forward(**b)
++    assert torch.equal(o_off["plan"]["waypoints"], o_on["plan"]["waypoints"])
++    assert torch.equal(o_on["e_plan"], o_on["e_g_tac"]), "zero port adds exactly nothing"
++    assert set(o_on) - set(o_off) == {"e_plan"}, "ON adds exactly one output key"
++
++
++def _behaviour_counterfactual(s: V6Stack) -> tuple[float, float, float]:
++    """(max|dplan| for a LAT behaviour swap, for a LON swap, max|d a_lat probs|)."""
++    b = s.synthetic_batch(2, seed=1)
++    with torch.no_grad():
++        _force_token(s.act_head_lat, 0)
++        p0 = s.forward(**b)
++        _force_token(s.act_head_lat, 1)
++        p1 = s.forward(**b)
++        _force_token(s.act_head_lon, 0)
++        q0 = s.forward(**b)
++        _force_token(s.act_head_lon, 7)
++        q1 = s.forward(**b)
++    return (float((p0["plan"]["waypoints"] - p1["plan"]["waypoints"]).abs().max()),
++            float((q0["plan"]["waypoints"] - q1["plan"]["waypoints"]).abs().max()),
++            float((p0["a_lat"]["probs"] - p1["a_lat"]["probs"]).abs().max()))
++
++
++@pytest.mark.parametrize("mode", ["detached", "e2e"])
++def test_R4_ON_changing_the_tactical_BEHAVIOUR_moves_the_operative_plan(mode):
++    """⭐ THE POINT OF R4, through the REAL forward: a different LAT (resp. LON) behaviour
++    decision -> a different emitted 6 s plan."""
++    s = _build(_cfg(tac_op_cond=mode))
++    _wake_emission(s)
++    _wake(s.tac_op_port.weight, 0.5, 11)
++    d_lat, d_lon, d_dec = _behaviour_counterfactual(s)
++    assert d_dec == pytest.approx(1.0, abs=1e-6), "the lever must move the decision itself"
++    assert d_lat > 1e-3 and d_lon > 1e-3, (d_lat, d_lon)
++
++
++def test_R4_NEGATIVE_CONTROL_OFF_the_plan_is_BLIND_to_the_behaviour():
++    """⛔ The tip's MEASURED defect, re-executed: with the port OFF the same behaviour swap moves
++    the decision by 1.0 and the emitted plan by EXACTLY 0 -- so the detector above can fail."""
++    s = _build(_cfg())
++    _wake_emission(s)
++    d_lat, d_lon, d_dec = _behaviour_counterfactual(s)
++    assert d_dec == pytest.approx(1.0, abs=1e-6)
++    assert d_lat == 0.0 and d_lon == 0.0
++
++
++@pytest.mark.parametrize("mode", ["off", "detached", "e2e"])
++def test_the_tactical_GOAL_moves_the_plan_in_every_mode(mode):
++    """The goal half of R4 was already present at the tip and must stay so."""
++    s = _build(_cfg(tac_op_cond=mode))
++    _wake_emission(s)
++    b = s.synthetic_batch(2, seed=1)
++    with torch.no_grad():
++        _force_token(s.goal_head_tac, 0)
++        w0 = s.forward(**b)["plan"]["waypoints"]
++        _force_token(s.goal_head_tac, 7)
++        w1 = s.forward(**b)["plan"]["waypoints"]
++    assert float((w0 - w1).abs().max()) > 1e-3
++
++
++def test_R4_gradient_from_the_OPERATIVE_loss_reaches_the_port_even_at_zero_init():
++    """The introduction dynamics: the port's OWN weights receive plan-loss gradient at zero init
++    (the input is non-zero), while nothing reaches THROUGH it until it has moved."""
++    s = _build(_cfg(tac_op_cond="e2e"), seed=1)
++    _wake_emission(s)
++    _all_grad(s)
++    live = _live(s, _plan_wta(s.forward(**s.synthetic_batch(2, seed=2))))
++    assert "tac_op_port.weight" in live
++    assert not {n for n in live if n.startswith(("act_head_lat.", "act_head_lon."))}
++
++
++def test_R4_e2e_the_operative_loss_trains_the_BEHAVIOUR_heads():
++    s = _build(_cfg(tac_op_cond="e2e"), seed=1)
++    _wake_emission(s)
++    _wake(s.tac_op_port.weight, 0.5, 11)
++    _all_grad(s)
++    live = _live(s, _plan_wta(s.forward(**s.synthetic_batch(2, seed=2))))
++    assert {"tac_op_port.weight", "act_head_lat.type_head.weight",
++            "act_head_lon.type_head.weight", "vocab_a_lat.table.weight"} <= live
++    assert not {n for n in live if s.group_of(n) in ("encoder", "readout")}
++
++
++def test_R4_detached_the_operative_loss_trains_the_port_and_NEVER_the_behaviour_heads():
++    """The F-1 downward-port rule: goals/behaviours flow down, gradient reaches the port only."""
++    s = _build(_cfg(tac_op_cond="detached"), seed=1)
++    _wake_emission(s)
++    _wake(s.tac_op_port.weight, 0.5, 11)
++    _all_grad(s)
++    live = _live(s, _plan_wta(s.forward(**s.synthetic_batch(2, seed=2))))
++    assert "tac_op_port.weight" in live
++    assert not {n for n in live
++                if n.startswith(("act_head_lat.", "act_head_lon.", "vocab_a_lat.",
++                                 "vocab_a_lon."))}
++    assert any(n.startswith("goal_head_tac.") for n in live), "the goal path is unchanged"
++
++
++def test_R4_OFF_the_operative_loss_never_reaches_the_behaviour_heads():
++    """The tip fact the build closes, as a discriminating control for the e2e test."""
++    s = _build(_cfg(), seed=1)
++    _wake_emission(s)
++    _all_grad(s)
++    live = _live(s, _plan_wta(s.forward(**s.synthetic_batch(2, seed=2))))
++    assert not {n for n in live if n.startswith(("act_head_lat.", "act_head_lon."))}
++    assert any(n.startswith("goal_head_tac.") for n in live)
++
++
++@pytest.mark.parametrize("flags", [
++    dict(tac_op_cond="detached"), dict(tac_op_cond="e2e"),
++    dict(tac_op_cond="e2e", selector="goal"), dict(tac_op_cond="e2e", selector="mlp"),
++    dict(tac_op_cond="e2e", goal_factored=True, goal_cat_args=True, selector="goal"),
++    dict(tac_op_cond="e2e", max_speed_input_v6=True, plan_vmax_cap=True),
++    dict(max_speed_input_v6=True, tac_goal_cond=True, nav_cond=False),
++])
++def test_X3_isolation_holds_with_the_new_levers_on(flags):
++    iso = _build(_cfg(**flags)).assert_isolation(batch_size=2, strict=True)
++    assert iso["pass"] and all(v == 0 for v in iso["n_violations"].values()), iso
++
++
++@pytest.mark.parametrize("mode", ["detached", "e2e"])
++def test_the_declared_planner_surface_stays_TOTAL_with_the_port(mode):
++    s = _build(_cfg(tac_op_cond=mode, selector="goal"))
++    _wake_emission(s)
++    with torch.no_grad():
++        for blk in s.predictor_op.blocks:
++            blk.film.to_scale_shift.weight.normal_(0.0, 0.1)
++    out = s.forward(**s.synthetic_batch(2))
++    planner = list(s.group_parameters("planner"))
++    live = V6Stack._live_edges(V6Stack._probe_scalar(out["planner_side"]), planner)
++    assert "tac_op_port.weight" in live
++    assert not {n for n, _ in planner} - set(live)
++
++
++def test_R4_the_REAL_loss_step_makes_the_port_live_from_zero():
++    """⭐ Not a hand-woken surrogate: S-T's own objective (v6_loss_step, 4 Adam steps from a
++    zero emission and a zero port) moves the port off zero, and afterwards a behaviour swap
++    moves the emitted plan. Liveness ACQUIRED BY TRAINING."""
++    from train_v6_staged import V6LossWeights, synthetic_train_batch, v6_loss_step
++    s = _build(_cfg(tac_op_cond="e2e"), seed=4)
++    apply_stage_freeze(s, "S-T")
++    opt = torch.optim.Adam([p for p in s.parameters() if p.requires_grad], lr=1e-2)
++    for step in range(4):
++        b = synthetic_train_batch(s, batch=2, k=12, seed=10 + step)
++        L = v6_loss_step(s, b, stage="S-T", weights=V6LossWeights(lambda_plan=1.0),
++                         o1_k=10, o5_k=12)
++        opt.zero_grad(set_to_none=True)
++        L["loss"].backward()
++        opt.step()
++    assert float(s.tac_op_port.weight.abs().sum()) > 0.0
++    d_lat, d_lon, _ = _behaviour_counterfactual(s)
++    assert max(d_lat, d_lon) > 0.0, (d_lat, d_lon)
++
++
++# =========================================================================== #
++# 3. R1a -- the max speed as a TACTICAL input
++# =========================================================================== #
++
++def test_R1a_port_zero_init_layer_tac_4_bins_and_the_literal_cost():
++    s = _build(_cfg(max_speed_input_v6=True))
++    p = s.vmax_tac
++    assert (p.in_features, p.out_features) == (4, 32)
++    assert float(p.weight.abs().sum()) == 0.0 and float(p.bias.abs().sum()) == 0.0
++    assert s.group_of("vmax_tac.weight") == "layer_tac"
++    n = lambda m: sum(q.numel() for q in m.parameters())           # noqa: E731
++    assert n(s) - n(_build(_cfg())) == 4 * 32 + 32                  # 160 at d_tac 32
++    # production d_tac 512: Linear(4 -> 512) = 2,560 params
++    assert 4 * 512 + 512 == 2_560
++
++
++def test_R1a_missing_input_RAISES_first_and_names_the_fix():
++    s = _build(_cfg(max_speed_input_v6=True))
++    b = s.synthetic_batch(2)
++    b.pop("v_max_ms")
++    with pytest.raises(SpeedMaxInputMissing, match="speed-max-sidecar-v6"):
++        s.forward(**b)
++
++
++def test_R1a_is_an_EXACT_noop_at_zero_init():
++    off, on = _build(_cfg()), _build(_cfg(max_speed_input_v6=True))
++    _wake_emission(off)
++    _wake_emission(on)
++    b = on.synthetic_batch(2, seed=3)
++    b_off = {k: v for k, v in b.items() if not k.startswith("v_max")}
++    with torch.no_grad():
++        o_off, o_on = off.forward(**b_off), on.forward(**b)
++    assert not _same(o_off, o_on), _same(o_off, o_on)[:6]
++
++
++def test_R1a_the_limit_moves_the_tactical_DECISIONS_and_not_the_WM_latent():
++    """Awake port: 30 km/h vs 100 km/h on the SAME window -> different goal and behaviour
++    logits (and a different plan); the WM-side z_tac and its target are untouched."""
++    s = _build(_cfg(max_speed_input_v6=True))
++    _wake_emission(s)
++    _wake(s.vmax_tac.weight, 0.5, 13)
++    b = s.synthetic_batch(2, seed=4)
++    ok = torch.ones(2)
++    with torch.no_grad():
++        o30 = s.forward(**(b | {"v_max_ms": torch.tensor([8.0, 8.0]), "v_max_valid": ok}))
++        o100 = s.forward(**(b | {"v_max_ms": torch.tensor([25.0, 25.0]), "v_max_valid": ok}))
++    assert torch.equal(o30["z_tac"], o100["z_tac"])
++    assert torch.equal(o30["z_tac_target"], o100["z_tac_target"])
++    assert not torch.equal(o30["g_tac"]["logits"], o100["g_tac"]["logits"])
++    assert not torch.equal(o30["a_lat"]["logits"], o100["a_lat"]["logits"])
++    assert float((o30["plan"]["waypoints"] - o100["plan"]["waypoints"]).abs().max()) > 1e-4
++
++
++def test_R1a_an_INVALID_row_is_all_zero_not_30_kmh():
++    """X15: "no limit known" != "30 km/h". With only the port's WEIGHT awake (bias zero), an
++    invalid row reads exactly what the port-less build reads; a 30 km/h row does not."""
++    off, on = _build(_cfg()), _build(_cfg(max_speed_input_v6=True))
++    _wake(on.vmax_tac.weight, 0.5, 13)
++    b = on.synthetic_batch(2, seed=5)
++    b_on = b | {"v_max_ms": torch.tensor([8.0, 8.0]), "v_max_valid": torch.tensor([1.0, 0.0])}
++    b_off = {k: v for k, v in b.items() if not k.startswith("v_max")}
++    with torch.no_grad():
++        g_on = on.forward(**b_on)["g_tac"]["logits"]
++        g_off = off.forward(**b_off)["g_tac"]["logits"]
++    assert torch.equal(g_on[1], g_off[1]), "the invalid row must be the no-input row"
++    assert not torch.equal(g_on[0], g_off[0]), "the valid 30 km/h row must differ"
++
++
++def test_R1a_the_ladder_is_the_refcv6_one_LITERALS():
++    """{30, 50, 100, 120} km/h containing-window; > 120 clamps; exactly-30 stays 30."""
++    from tanitad.refs.refcv6_max_speed import speed_max_bin_tensor
++    v = torch.tensor([8.0, 30 / 3.6, 8.4, 13.9, 27.7, 33.3, 40.0])
++    idx, over = speed_max_bin_tensor(v)
++    assert idx.tolist() == [0, 0, 1, 2, 2, 3, 3]
++    assert over.tolist() == [False, False, False, False, False, False, True]
++
++
++def test_R1a_gradient_reaches_the_port_from_the_plan_and_t1_losses_and_never_the_encoder():
++    s = _build(_cfg(max_speed_input_v6=True), seed=2)
++    _wake_emission(s)
++    _all_grad(s)
++    out = s.forward(**s.synthetic_batch(2, seed=6))
++    live_plan = _live(s, _plan_wta(out))
++    assert "vmax_tac.weight" in live_plan
++    assert not {n for n in live_plan if s.group_of(n) in ("encoder", "readout")}
++    out = s.forward(**s.synthetic_batch(2, seed=6))
++    live_t1 = _live(s, out["zhat_tac"].float().pow(2).mean())
++    assert "vmax_tac.weight" in live_t1, "t1 reaches it through the behaviour -> P_T path"
++
++
++# =========================================================================== #
++# 4. R1b -- the HARD CAP (literals + a discriminating control)
++# =========================================================================== #
++
++def test_cap_OFF_by_default_and_plan_keys_unchanged():
++    s = _build(_cfg())
++    out = s.forward(**s.synthetic_batch(2))
++    assert not [k for k in out["plan"] if k.startswith("vmax_")]
++
++
++def test_a_NON_BINDING_cap_is_BIT_IDENTICAL():
++    g = torch.Generator().manual_seed(0)
++    a = torch.randn(8, 4, 60, generator=g) * 3.0
++    v0 = torch.rand(8, generator=g) * 20.0
++    for lim in (torch.full((8,), float("inf")), torch.full((8,), 1.0e9)):
++        assert torch.equal(cap_speed_profile(a, v0, lim, dt=DT, a_max=A_MAX), a)
++    # ...and through the real emission: v_max=+inf -> the same tensors as no cap
++    s = _build(_cfg())
++    _wake_emission(s)
++    z, e = torch.randn(3, s.cfg.d_op), torch.randn(3, s.cfg.d_goal_embed)
++    v = torch.tensor([3.0, 10.0, 25.0])
++    with torch.no_grad():
++        p0 = s.emit(z, e, v)
++        p1 = s.emit(z, e, v, v_max=torch.full((3,), float("inf")))
++    for k in ("a", "kappa", "controls", "waypoints", "feat"):
++        assert torch.equal(p0[k], p1[k]), k
++    assert not bool(p1["vmax_binding"].any())
++
++
++def test_cap_LITERAL_accelerating_into_the_limit():
++    # v0 10, a +4 x10, v_max 11, dt 0.1: lim 10 -> 4 (10.4); 6 -> 4 (10.8); 2 -> 2 (11.0); 0 ...
++    got = cap_speed_profile(torch.full((1, 10), 4.0), torch.tensor([10.0]),
++                            torch.tensor([11.0]), dt=DT, a_max=A_MAX)[0]
++    want = torch.tensor([4.0, 4.0, 2.0, 0, 0, 0, 0, 0, 0, 0])
++    assert torch.allclose(got, want, atol=1e-4)
++    assert float(closing_speeds(got[None, None], torch.tensor([10.0]), dt=DT).max()) \
++        == pytest.approx(11.0, abs=1e-4)
++
++
++def test_cap_LITERAL_v0_ABOVE_the_limit_brakes_at_a_max_until_under_it():
++    # v0 15, v_max 11, a 0: (15 - 11) / (4 * 0.1) = 10 steps at -4, then hold.
++    got = cap_speed_profile(torch.zeros(1, 12), torch.tensor([15.0]), torch.tensor([11.0]),
++                            dt=DT, a_max=A_MAX)[0]
++    want = torch.tensor([-4.0] * 10 + [0.0, 0.0])
++    assert torch.allclose(got, want, atol=1e-4)
++
++
++def _refav1_cap_unfloored(a, v0, v_max, dt, a_max):
++    """refav1's `_cap_speed`, VERBATIM in its arithmetic: the speed is tracked WITHOUT v6's
++    floor at 0. Used only as the discriminating control below."""
++    out = a.clone()
++    v = torch.full(a.shape[:-1], float(v0))
++    for t in range(a.shape[-1]):
++        lim = ((float(v_max) - v) / float(dt)).clamp(min=-float(a_max))
++        out[..., t] = torch.minimum(out[..., t], lim)
++        v = v + out[..., t] * float(dt)
++    return out
++
++
++def test_cap_LITERAL_tracks_the_v6_integrators_FLOOR_at_zero():
++    """⛔ The ONE deliberate difference from refav1, pinned with its control. v0 1.0, limit 1.2,
++    brake -4 x5 (the ego STOPS: 0.6, 0.2, 0, 0, 0) then +4 x6.
++      floored (this module): [-4]*5 + [4, 4, 4, 0, 0, 0] -> peak 1.2 m/s (legal)
++      refav1 unfloored     : [-4]*5 + [4, 4, 4, 4, 4, 2] -> peak 2.2 m/s through the v6
++                             integrator -- 1.0 m/s OVER the limit."""
++    a = torch.tensor([[-4.0] * 5 + [4.0] * 6])
++    v0, lim = torch.tensor([1.0]), torch.tensor([1.2])
++    got = cap_speed_profile(a, v0, lim, dt=DT, a_max=A_MAX)[0]
++    assert torch.allclose(got, torch.tensor([-4.0] * 5 + [4.0, 4.0, 4.0, 0.0, 0.0, 0.0]),
++                          atol=1e-4)
++    peak = float(closing_speeds(got[None, None], v0, dt=DT).max())
++    assert peak == pytest.approx(1.2, abs=1e-4)
++    ctl = _refav1_cap_unfloored(a, 1.0, 1.2, DT, A_MAX)[0]
++    assert torch.allclose(ctl, torch.tensor([-4.0] * 5 + [4.0] * 5 + [2.0]), atol=1e-4)
++    peak_ctl = float(closing_speeds(ctl[None, None], v0, dt=DT).max())
++    assert peak_ctl == pytest.approx(2.2, abs=1e-4)          # the control DOES exceed
++
++
++def _accelerating_stack(**kw) -> V6Stack:
++    """Every candidate commands a = +3 m/s^2 for all 60 steps, kappa 0 (the emission's raw
++    output is its final bias; `_squash` is the identity inside +-a_max)."""
++    s = _build(_cfg(**kw))
++    with torch.no_grad():
++        s.emission.net[-1].weight.zero_()
++        bias = torch.zeros_like(s.emission.net[-1].bias)
++        bias[0::2] = 3.0
++        s.emission.net[-1].bias.copy_(bias)
++    return s
++
++
++def test_cap_END_TO_END_the_uncapped_plan_exceeds_and_the_capped_plan_never_does():
++    """⭐ The discriminating control on the REAL forward (eval mode, as inference runs it):
++    v0 10 m/s, v_hi 12 m/s -> the 50 km/h bin -> limit 13.8889 m/s. Uncapped, +3 m/s^2 for
++    6 s reaches 28 m/s; capped, no candidate's speed ever exceeds 13.8889."""
++    s = _accelerating_stack(plan_vmax_cap=True)
++    s.eval()
++    b = s.synthetic_batch(2, seed=7)
++    b["v0"] = torch.tensor([10.0, 10.0])
++    lim = plan_limit_from_vhi(torch.tensor([12.0, 12.0]))
++    assert torch.allclose(lim, torch.full((2,), 50 / 3.6))
++    with torch.no_grad():
++        p = s.forward(**(b | {"plan_v_max_ms": lim}))["plan"]
++    unc = p["vmax_plan_max_speed_uncapped"]
++    assert float(unc.min()) > float(lim[0]) + 0.1, "the control must exceed or this is vacuous"
++    assert float(unc.max()) == pytest.approx(10.0 + 3.0 * 6.0, abs=1e-3)
++    vc = closing_speeds(p["a"], b["v0"], dt=DT)
++    assert float(vc.max()) <= float(lim[0]) + 1e-4
++    assert not bool(p["vmax_v0_over_limit"].any())
++    assert bool(p["vmax_binding"].all())
++    assert float(p["vmax_plan_excess_ms"].max()) <= 1e-4
++    # the emitted waypoints ARE the integration of the emitted (capped) controls
++    from train_v58f_unicycle_head import unicycle_rollout
++    wp, _ = unicycle_rollout(p["a"], p["kappa"], b["v0"], dt=DT)
++    assert torch.equal(wp, p["waypoints"])
++    assert torch.equal(p["controls"][..., 0], p["a"])
++
++
++def test_cap_binds_BEFORE_selection():
++    """refav1: the cap "binds EVERY candidate ... so the emitted plan cannot exceed the limit
++    whichever candidate wins" -- the selector must score the CAPPED fan."""
++    s = _accelerating_stack(selector="goal")
++    s.eval()
++    z, e = torch.randn(2, s.cfg.d_op), torch.randn(2, s.cfg.d_goal_embed)
++    v0 = torch.tensor([10.0, 10.0])
++    lim = torch.full((2,), 50 / 3.6)
++    with torch.no_grad():
++        pc = s.emit(z, e, v0, v_max=lim)
++        pu = s.emit(z, e, v0)
++        rescored = s.cand_score(pc["waypoints"], e)["score"]
++        unscored = s.cand_score(pu["waypoints"], e)["score"]
++    assert torch.equal(pc["sel_score"], rescored)
++    assert not torch.equal(pc["sel_score"], unscored)
++
++
++def test_cap_applies_to_the_diffusion_live_fan_AND_its_query_reference():
++    s = _build(_cfg(proposals="diffusion"))
++    _wake_emission(s)
++    z, e = torch.randn(2, s.cfg.d_op), torch.randn(2, s.cfg.d_goal_embed)
++    v0 = torch.tensor([12.0, 30.0])
++    lim = torch.tensor([50 / 3.6, 30 / 3.6])
++    with torch.no_grad():
++        pu = s.emit(z, e, v0, generator=torch.Generator().manual_seed(1))
++        pc = s.emit(z, e, v0, generator=torch.Generator().manual_seed(1), v_max=lim)
++    assert torch.equal(pc["a"], cap_speed_profile(pu["a"], v0, lim, dt=DT, a_max=A_MAX))
++    assert torch.equal(pc["qfan_a"], cap_speed_profile(pu["qfan_a"], v0, lim, dt=DT,
++                                                       a_max=A_MAX))
++    assert bool(pc["vmax_v0_over_limit"][1])          # 30 m/s under a 30 km/h limit: input
++
++
++def test_the_cap_is_MANDATORY_at_inference_and_absent_in_training():
++    s = _build(_cfg(plan_vmax_cap=True))
++    b = {k: v for k, v in s.synthetic_batch(2).items() if k != "plan_v_max_ms"}
++    s.eval()
++    with pytest.raises(PlanSpeedLimitMissing, match="MANDATORY"):
++        s.forward(**b)
++    s.train()
++    out = s.forward(**b)                               # the training forward: uncapped
++    assert not [k for k in out["plan"] if k.startswith("vmax_")]
++
++
++def test_the_limit_ladder_LITERALS():
++    v_hi = torch.tensor([8.0, 30 / 3.6, 8.4, 13.9, 27.7, 33.3, 40.0, 5.0])
++    ok = torch.tensor([1, 1, 1, 1, 1, 1, 1, 0])
++    got = plan_limit_from_vhi(v_hi, ok)
++    want = torch.tensor([30, 30, 50, 100, 100, 120, 120, 0]) / 3.6
++    assert torch.allclose(got[:7], want[:7].float(), atol=1e-5)
++    assert got[7] == float("inf")
++    # a NaN on an INVALID row is never binned; on a VALID row it is refused
++    assert plan_limit_from_vhi(torch.tensor([float("nan")]), torch.tensor([0]))[0] \
++        == float("inf")
++    with pytest.raises(ValueError, match="non-finite"):
++        plan_limit_from_vhi(torch.tensor([float("nan")]), torch.tensor([1]))
++
++
++def test_a_non_positive_or_NaN_limit_is_REFUSED():
++    for bad in (0.0, -3.0, float("nan")):
++        with pytest.raises(ValueError, match="limit"):
++            cap_speed_profile(torch.zeros(1, 3), torch.tensor([5.0]), torch.tensor([bad]),
++                              dt=DT, a_max=A_MAX)
++
++
++def test_cap_fan_keeps_a_non_binding_candidates_ORIGINAL_waypoints_object_values():
++    s = _accelerating_stack()
++    z, e = torch.randn(2, s.cfg.d_op), torch.randn(2, s.cfg.d_goal_embed)
++    v0 = torch.tensor([10.0, 10.0])
++    with torch.no_grad():
++        pu = s.emit(z, e, v0)
++        lim = torch.tensor([50 / 3.6, float("inf")])     # row 0 binds, row 1 has no limit
++        a_c, wp_c, diag = cap_fan(pu["a"], pu["kappa"], pu["waypoints"], v0, lim,
++                                  dt=DT, a_max=A_MAX)
++    assert bool(diag["vmax_binding"][0].all()) and not bool(diag["vmax_binding"][1].any())
++    assert torch.equal(wp_c[1], pu["waypoints"][1]) and torch.equal(a_c[1], pu["a"][1])
++
++
++# =========================================================================== #
++# 5. the trainer surface
++# =========================================================================== #
++
++def _tiny_args(tmp_path, stage="S-T", *extra):
++    from train_v6_staged import build_parser
++    import argparse
++    ap = build_parser()
++    ap.add_argument("--i-know-this-is-the-control-arm", action="store_true",
++                    dest="control_arm_ack", help=argparse.SUPPRESS)
++    argv = ["--stage", stage, "--out", str(tmp_path), "--dry-run",
++            "--in-channels", "3", "--frame-h", "32", "--frame-w", "32",
++            "--patch", "16", "--enc-dim", "32", "--enc-depth", "1",
++            "--enc-heads", "2", "--readout-grid", "4", "--readout-dim", "8",
++            "--pred-dim", "32", "--pred-depth", "1", "--pred-heads", "2",
++            "--window", "4", "--horizons", "1", "--d-tac", "32",
++            "--d-str", "16", "--d-goal-embed", "16", "--adapter-hidden", "32",
++            "--n-candidates", "3", "--sigreg-slices", "8",
++            "--dry-steps", "2", "--dry-batch", "2", "--dry-k", "12", *extra]
++    return ap.parse_args(argv)
++
++
++def test_the_four_flags_exist_with_OFF_defaults():
++    from train_v6_staged import build_parser
++    a = build_parser().parse_args(["--stage", "S-T", "--out", "x"])
++    assert (a.tac_op_cond, a.max_speed_input_v6, a.plan_vmax_cap,
++            a.speed_max_sidecar_v6) == ("off", False, False, None)
++
++
++def test_build_stack_from_args_wires_all_three_levers(tmp_path):
++    from train_v6_staged import build_stack_from_args
++    a = _tiny_args(tmp_path, "S-T", "--tac-op-cond", "detached", "--max-speed-input-v6",
++                   "--plan-vmax-cap")
++    s = build_stack_from_args(a)
++    assert s.cfg.tac_op_cond == "detached" and s.tac_op_port is not None
++    assert s.cfg.max_speed_input_v6 and s.vmax_tac is not None
++    assert s.cfg.plan_vmax_cap
++
++
++def test_a_RECORDED_namespace_without_the_keys_rebuilds_the_default(tmp_path):
++    """The eval loader rebuilds from the RECORDED args (v6_probe_trunk.load_v6_from_ck); an
++    older run's namespace has none of the new keys and must build exactly what it trained."""
++    from argparse import Namespace
++    from train_v6_staged import build_stack_from_args
++    d = vars(_tiny_args(tmp_path, "S-T"))
++    for k in ("tac_op_cond", "max_speed_input_v6", "plan_vmax_cap", "speed_max_sidecar_v6"):
++        d.pop(k)
++    s = build_stack_from_args(Namespace(**d))
++    assert s.tac_op_port is None and s.vmax_tac is None and not s.cfg.plan_vmax_cap
++
++
++def _problems(a) -> list[str]:
++    from train_v6_staged import preflight
++    return preflight(a)
++
++
++def test_preflight_REFUSES_each_lever_in_S_W(tmp_path):
++    for flag in (("--tac-op-cond", "e2e"), ("--max-speed-input-v6",), ("--plan-vmax-cap",)):
++        probs = _problems(_tiny_args(tmp_path, "S-W", *flag))
++        assert any(flag[0] in p and "S-W" in p for p in probs), flag
++
++
++def test_preflight_REFUSES_a_lever_without_its_source_and_a_source_without_a_lever(tmp_path):
++    real = ["--stage", "S-T", "--out", str(tmp_path), "--init-from", "x", "--nav-cond",
++            "--nav-labels", "y"]
++    from train_v6_staged import build_parser, preflight
++    for flag in ("--max-speed-input-v6", "--plan-vmax-cap"):
++        probs = preflight(build_parser().parse_args(real + [flag]))
++        assert any("--speed-max-sidecar-v6" in p for p in probs), flag
++    side = tmp_path / "side.jsonl"
++    side.write_text("")
++    probs = preflight(build_parser().parse_args(real + ["--speed-max-sidecar-v6", str(side)]))
++    assert any("read by nothing" in p for p in probs)
++    probs = preflight(build_parser().parse_args(
++        real + ["--max-speed-input-v6", "--speed-max-sidecar-v6", str(tmp_path / "nope")]))
++    assert any("does not exist" in p for p in probs)
++
++
++def test_preflight_REFUSES_an_inert_R4_port_without_the_ack(tmp_path):
++    a = _tiny_args(tmp_path, "S-T", "--tac-op-cond", "e2e", "--lambda-plan", "0")
++    assert any("--tac-op-cond" in p and "never" in p for p in _problems(a))
++    a = _tiny_args(tmp_path, "S-T", "--tac-op-cond", "e2e", "--lambda-plan", "0",
++                   "--i-know-this-is-the-control-arm")
++    assert not any("--tac-op-cond" in p for p in _problems(a))
++    a = _tiny_args(tmp_path, "S-T", "--tac-op-cond", "e2e")          # λ_plan 1.0 in S-T
++    assert not any("tac-op-cond" in p for p in _problems(a))
++
++
++def test_S_T_may_INTRODUCE_both_ports_over_an_S_W_checkpoint(tmp_path):
++    from train_v6_staged import STAGE_MAY_INTRODUCE, load_stage_init
++    assert {"tac_op_port.", "vmax_tac."} <= set(STAGE_MAY_INTRODUCE["S-T"])
++    p = tmp_path / "sw.pt"
++    torch.save({"stack": _build(_cfg()).state_dict(), "step": 1,
++                "config": {"stage": "S-W"}}, p)
++    rep = load_stage_init(_build(_cfg(tac_op_cond="e2e", max_speed_input_v6=True)), p,
++                          stage="S-T")
++    assert rep["missing_keys"] == [] and rep["unexpected_keys"] == []
++    assert sorted(rep["introduced_keys"]) == ["tac_op_port.bias", "tac_op_port.weight",
++                                              "vmax_tac.bias", "vmax_tac.weight"]
++
++
++def test_synthetic_train_batch_carries_v_max_ONLY_when_the_port_is_built():
++    from train_v6_staged import synthetic_train_batch
++    assert "v_max_ms" not in synthetic_train_batch(_build(_cfg()), batch=2, k=4)
++    b = synthetic_train_batch(_build(_cfg(max_speed_input_v6=True)), batch=3, k=4)
++    assert b["v_max_ms"].shape == (3,) and b["v_max_valid"].tolist() == [1.0, 1.0, 0.0]
++
++
++def test_the_R1_record_is_REFUSED_in_both_directions(tmp_path):
++    """Mutation, not inspection: drop the stamp -> refused; stamp a control -> refused; the cap
++    block likewise."""
++    from tanitad.refs.refcv6_max_speed import SpeedMaxStampError
++    from train_v6_staged import assert_r1r4_record, r1r4_config_block
++    s = _build(_cfg(max_speed_input_v6=True, plan_vmax_cap=True))
++    a = _tiny_args(tmp_path, "S-T", "--max-speed-input-v6", "--plan-vmax-cap")
++    blk = r1r4_config_block(a, s)
++    assert_r1r4_record(dict(blk), a)                                  # clean
++    with pytest.raises(SpeedMaxStampError):
++        assert_r1r4_record({k: v for k, v in blk.items()
++                            if k != "speed_max_derivation_v6"}, a)
++    with pytest.raises(SystemExit, match="limit source"):
++        assert_r1r4_record({k: v for k, v in blk.items() if k != "plan_vmax_cap"}, a)
++    off = _tiny_args(tmp_path, "S-T")
++    with pytest.raises(SpeedMaxStampError):
++        assert_r1r4_record({"speed_max_derivation_v6": blk["speed_max_derivation_v6"]}, off)
++    with pytest.raises(SystemExit, match="control stamped as capped"):
++        assert_r1r4_record({"plan_vmax_cap": blk["plan_vmax_cap"]}, off)
++    assert r1r4_config_block(off, _build(_cfg())) == {}, "the default record is untouched"
++
++
++class _Ep:
++    def __init__(self, sid):
++        self.episode_id = sid
++
++
++def _write_sidecar(tmp_path, rows, *, md5="abc"):
++    p = tmp_path / "vmax.jsonl"
++    p.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
++    (tmp_path / "vmax.jsonl.meta.json").write_text(json.dumps({"source_md5": md5}))
++    return p
++
++
++def test_the_sidecar_JOIN_is_per_episode_by_stable_id_and_refuses_zero_coverage(tmp_path):
++    from train_v6_staged import build_vmax_join, vmax_batch
++    p = _write_sidecar(tmp_path, [{"sid": 11, "v_hi_ms": 12.5, "valid": 1, "bin": 1},
++                                  {"sid": 22, "v_hi_ms": None, "valid": 0},
++                                  {"sid": 33, "v_hi_ms": 30.0, "valid": 1, "bin": 3}])
++    eps = [_Ep(33), _Ep(11), _Ep(99), _Ep(22)]
++    index = [(0, 0), (1, 5), (2, 0), (3, 1), (1, 9)]
++    j = build_vmax_join(p, eps, index, label_md5="abc")
++    assert j["v"].tolist() == [30.0, 12.5, 0.0, 0.0]
++    assert j["ok"].tolist() == [1.0, 1.0, 0.0, 0.0]
++    assert j["report"]["n_windows_fed"] == 3 and j["report"]["n_windows"] == 5
++    bt = vmax_batch(j, [4, 2, 0], index, "cpu")
++    assert bt["v_max_ms"].tolist() == [12.5, 0.0, 30.0]
++    assert bt["v_max_valid"].tolist() == [1.0, 0.0, 1.0]
++    with pytest.raises(SystemExit, match="NOT ONE"):
++        build_vmax_join(p, [_Ep(99)], [(0, 0)], label_md5="abc")
++    from tanitad.refs.refcv6_max_speed import SpeedMaxStampError
++    with pytest.raises(SpeedMaxStampError, match="md5"):
++        build_vmax_join(p, eps, index, label_md5="a-different-blob")
++
++
++def test_the_DRY_RUN_exercises_all_three_levers_and_the_cap_never_exceeds(tmp_path):
++    from train_v6_staged import dry_run
++    out = tmp_path / "dry"
++    a = _tiny_args(out, "S-T", "--tac-op-cond", "e2e", "--max-speed-input-v6",
++                   "--plan-vmax-cap")
++    res = dry_run(a)
++    smoke = res["r1_r4"]["vmax_cap_smoke"]
++    assert smoke["n_plan_over_limit"] == 0
++    assert smoke["n_v0_over_limit"] >= 1, "the smoke's braking regime must be present"
++    cfg = json.loads((out / "config.json").read_text())
++    assert "speed_max_derivation_v6" in cfg and cfg["plan_vmax_cap"]["limit_source"]
++    assert cfg["v6_config"]["tac_op_cond"] == "e2e"
++    assert cfg["tac_op_cond"]["built"] and cfg["max_speed_input_v6"]["built"]
++
++
++def test_the_default_DRY_RUN_record_carries_no_R1_R4_key(tmp_path):
++    from train_v6_staged import dry_run
++    out = tmp_path / "dry0"
++    res = dry_run(_tiny_args(out, "S-T"))
++    assert "r1_r4" not in res
++    cfg = json.loads((out / "config.json").read_text())
++    assert not {"tac_op_cond", "speed_max_derivation_v6", "max_speed_input_v6",
++                "plan_vmax_cap"} & set(cfg)
++
++
++# =========================================================================== #
++# 6. G-DVB for the new levers (the refcv7-style PROPOSAL registry)
++# =========================================================================== #
++
++def test_every_new_trainer_flag_has_a_G_DVB_v6_entry():
++    from tanitad.train import declared_vs_built_v6 as dvb6
++    from train_v6_staged import build_parser
++    dests = {x.dest for x in build_parser()._actions}
++    assert set(dvb6.R1R4_DESTS) <= dests
++    assert dvb6.coverage(dvb6.R1R4_DESTS) == []
++
++
++def test_G_DVB_v6_is_clean_on_a_correct_build(tmp_path):
++    from tanitad.train import declared_vs_built_v6 as dvb6
++    from train_v6_staged import build_stack_from_args
++    for extra in ((), ("--tac-op-cond", "e2e", "--max-speed-input-v6", "--plan-vmax-cap"),
++                  ("--tac-op-cond", "detached")):
++        a = _tiny_args(tmp_path, "S-T", *extra)
++        assert dvb6.check(build_stack_from_args(a), a) == []
++
++
++def test_G_DVB_v6_CATCHES_a_lever_declared_but_not_built(tmp_path):
++    """The regression arm: argv declares every lever, the stack was built WITHOUT them."""
++    from tanitad.train import declared_vs_built_v6 as dvb6
++    a = _tiny_args(tmp_path, "S-T", "--tac-op-cond", "e2e", "--max-speed-input-v6",
++                   "--plan-vmax-cap")
++    bad = dvb6.check(_build(_cfg()), a)
++    names = {m.lever for m in bad}
++    assert {"--tac-op-cond", "--max-speed-input-v6", "--plan-vmax-cap"} <= names
++    with pytest.raises(SystemExit, match="G-DVB-v6"):
++        dvb6.refuse_on_mismatch(_build(_cfg()), a)
++    # ...and the MIRROR: built, not declared
++    bad = dvb6.check(_build(_cfg(tac_op_cond="e2e")), _tiny_args(tmp_path, "S-T"))
++    assert {m.lever for m in bad} == {"--tac-op-cond"}

@@ -1,0 +1,75 @@
+  tokens: 71 over 31 logs; ckpt /content/relay/snap_epoch016.pt
+  planner: trained=True per_sample_calib=True device=cuda select=best
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [5/31] rows 7  misses 0  26 s
+    [10/31] rows 17  misses 0  60 s
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [15/31] rows 26  misses 0  86 s
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [20/31] rows 33  misses 0  108 s
+    [25/31] rows 44  misses 0  144 s
+/content/p0/src/DriveZero-24959547edac549d64c34b2aab62d5c52599d078/DriveRL/nuplan-devkit/nuplan/common/maps/nuplan_map/utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+    [30/31] rows 68  misses 0  215 s
+    [31/31] rows 71  misses 0  219 s
+{
+ "tokens_asked": 71,
+ "rows": 71,
+ "misses": 0,
+ "ckpt": "/content/relay/snap_epoch016.pt",
+ "select": "best",
+ "rule": "navsim_v1",
+ "repair_last_heading": true,
+ "frame_control": {
+  "n": 71,
+  "max_m": 1.1234667099445444e-14,
+  "median_m": 1.7848070697599497e-15,
+  "bar_m": 0.001,
+  "what": "log future on NAVSIM's 0.5 s grid vs W3 human_future_poses"
+ },
+ "interpolation_residual": {
+  "n": 71,
+  "max_m": 0.025421114663850747,
+  "median_m": 0.0066057988927210026,
+  "what": "log future on REFe's 0.2 s grid -> to_navsim, vs W3; reported, not gated"
+ },
+ "seconds": 219.1,
+ "proposals": {
+  "n": 71,
+  "M": 64,
+  "ade_selected_m": 1.7143,
+  "ade_random_m": 1.884,
+  "ade_oracle_m": 0.3074,
+  "oracle_index_distinct": 34,
+  "oracle_index_top5": [
+   [
+    4,
+    7
+   ],
+   [
+    36,
+    5
+   ],
+   [
+    20,
+    4
+   ],
+   [
+    56,
+    4
+   ],
+   [
+    15,
+    3
+   ]
+  ],
+  "selected_index_distinct": 29,
+  "endpoint_spread_m": 2.919,
+  "what": "open-loop ADE over NAVSIM's 8 poses (0.5 s) vs W3's human future: selected = the planner's pick; random = mean over the M proposals (a random selector's expectation); oracle = best of M; oracle_index_* = how many proposals are ever best (WTA collapse if few); endpoint_spread = mean distance of the M endpoints from their centroid"
+ },
+ "proposal_dump": "/content/p0/out/rep/shard0_props.npz"
+}
+ZZSEAM_OK 71 0.0000

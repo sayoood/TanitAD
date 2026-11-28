@@ -1,0 +1,16 @@
+MUT unmutated: G1 PASS; G1t PASS; G1h PASS; G3 PASS; G4 PASS; 
+MUT G1 m1: NOW one cache step too old: RED  AssertionError: G1 window (2, 27): key 'pose_now' differs (max |d| 2.71)
+MUT G1 m2: the NOW frame's tokens are the previous step's: RED  AssertionError: G1 window (2, 27): key 'feats' differs (max |d| 0.375)
+MUT G1 m3: the curvature/yaw-rate feature zeroed: RED  AssertionError: G1 window (2, 27): key 'p10f' differs (max |d| 0.0014)
+MUT G1 m4: the causal speed bucket dropped: RED  AssertionError: G1 window (2, 27): key 'limit_ok' differs (max |d| 1)
+MUT G1 m5: nav held at t0 instead of dead-reckoned: RED  AssertionError: G1 tick 1 window (2, 27): key 'nav' differs (max |d| 0.275)
+MUT G1 m6: the HACC post-map has no effect: RED  AssertionError: HACC post-map did not move the plan
+MUT G3 m1: the P10 arm returns the model plan: RED  AssertionError: G3: the P10 arm is not the prior (max |d| 0.772)
+MUT G3 m2: the P10 arm is off by 1e-6: RED  AssertionError: G3: the P10 arm is not the prior (max |d| 1e-06)
+MUT G4 m1: the key guard removed: RED  AssertionError: G4: the peeking variants were caught 0/2 times
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  82%|########1 | 339/415 [00:00<00:00, 3340.76it/s]Loading weights: 100%|##########| 415/415 [00:00<00:00, 3271.93it/s]
+MUT G2 wrong_norm: RED  AssertionError: G2 RED: rel-L2 0.1844, cosine 0.9829
+MUT G2 n_special_1: RED  AssertionError: token grid (644, 1024): a wrong special-token count shifts it
+MUT G2 neighbour_frame: RED  AssertionError: G2 RED: rel-L2 0.1996, cosine 0.9800
+MUT G2 transposed_grid: RED  AssertionError: G2 RED: rel-L2 0.8607, cosine 0.5608
+MUTATIONS ALL RED

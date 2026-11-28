@@ -1,0 +1,68 @@
+unmutated: 157 checks green
+mutation                             class    caught-by (failing checks)
+wrong_checkpoint_loaded              ckpt     3  dump: proposal m, step t of the record IS the model's output m, t (ord
+manifest_hashes_other_file           ckpt     2  manifest: records the sha256 of the FILE --ckpt named, and its step
+shard_overlap                        shard    10  shards 2: exhaustive (union = all 36 scenes)
+shard_not_exhaustive                 shard    19  shard_of == rl_terms_label.shard_of (dump shard i and label shard i se
+shard_splits_a_log                   shard    1  shard_of == rl_terms_label.shard_of (dump shard i and label shard i se
+dropped_proposal_rank                fan      5  record
+proposal_order_reversed              fan      1  dump: proposal m, step t of the record IS the model's output m, t (ord
+fan_size_guard_removed               fan      2  record: a fan with a dropped proposal is REFUSED
+yaw_rounded_to_3dp                   fan      2  record: yaw is the dump's 5 dp value (hand-derived)
+targets_placeholder_missing          format   3  record: M empty-dict target placeholders + marked lean
+label_version_3                      format   3  record: kind / ckpt_step / label_version 0 (never supersedes a teacher
+ckpt_step_zero                       format   53  record: kind / ckpt_step / label_version 0 (never supersedes a teacher
+manifest_sha_not_checked             keys     1  manifest: a changed list is REFUSED
+manifest_verify_not_checked          keys     1  manifest: verify != clean is REFUSED
+resume_rewrites_done                 resume   2  resume: 10 sets, a torn line, then the rest -> exactly one record per 
+torn_line_not_terminated             resume   2  resume: 10 sets, a torn line, then the rest -> exactly one record per 
+mixed_ckpt_step_resume_allowed       resume   1  resume: a file holding another ckpt_step is REFUSED
+ckpt_step_disagreement_ignored       ckpt     1  --ckpt-step that disagrees with the file is REFUSED (exit 4)
+expected_sha_ignored                 ckpt     1  --expect-ckpt-sha256 mismatch is REFUSED (exit 4)
+compare_nothing_passes               gate     1  compare-sets: matching NOTHING is refused (exit 4), not passed
+compare_ignores_yaw                  gate     12  compare-sets: ONE yaw value off by 1e-5 -> exit 5, 1 not identical, 19
+compare_other_ckpt_step              gate     1  compare-sets: identical sets -> exit 0, 20 matched, 20 bit-identical
+log_mismatch_not_refused             keys     1  a key list that belongs to another bank (token under a different log) 
+missing_scenes_exit_0                keys     1  a scene with no bank row -> exit 3, listed in unavailable_scenes_*.tsv
+plan_only_missing_exit_0             keys     1  --plan-only with a scene that has no bank row -> exit 3 (the pod prefl
+dup_token_across_files_allowed       keys     1  a token listed in two key files (train and val overlap) -> exit 4
+atol_flag_ignored_by_the_gate        atol     14  atol: the offender is named (first_beyond_atol) and the FAIL marker is
+atol_never_fails                     atol     14  atol 0.5: sets off by 0.25 (x) and 0.001 (yaw) are WITHIN, the one off
+atol_beyond_not_exit_5               atol     11  atol 0.5: sets off by 0.25 (x) and 0.001 (yaw) are WITHIN, the one off
+atol_compared_with_ge                atol     2  atol == the set's delta exactly -> WITHIN (the test is <=, not <)
+atol_doubled                         atol     2  atol 0.2: monotone -- now the 0.25 offset is beyond too (2 beyond, exi
+atol_default_path_tolerant           atol     3  compare-sets: ONE yaw value off by 1e-5 -> exit 5, 1 not identical, 19
+atol_default_not_none                atol     11  e2e
+atol_shape_mismatch_reads_zero       atol     3  set_delta_strict: a dropped proposal is inf (zip would truncate it to 
+atol_nan_xy_passes                   atol     2  set_delta_strict: a NaN in x/y is inf (max(0.0, nan) would read 0.0 = 
+atol_nan_yaw_passes                  atol     3  set_delta_strict: a NaN in yaw is inf
+atol_without_compare_sets_ignored    atol     2  --compare-atol without --compare-sets is REFUSED (exit 4), not silentl
+atol_negative_allowed                atol     3  --compare-atol -0.1 (negative) is REFUSED (exit 4)
+atol_min_matched_ignored             atol     2  --compare-min-matched 21 with 20 matched keys is REFUSED (exit 4)
+atol_min_matched_zero_allowed        atol     1  --compare-min-matched 0 is REFUSED (a floor of zero is no floor)
+atol_quantile_floor_rank             atol     4  quantile_nearest_rank [1..10]: p50 = 5, p90 = 9, p99 = 10, p100 = 10 (
+atol_identical_sets_not_counted_within atol     7  atol 0.5: sets off by 0.25 (x) and 0.001 (yaw) are WITHIN, the one off
+mean_bound_ignored                   mean     12  per arm: worst m, p50 / p90 / p99, sets above M and sets within M all 
+mean_compared_with_ge                mean     3  mean == the set's m exactly -> WITHIN (the test is m > M, not >=)
+mean_doubled                         mean     7  per arm: worst m, p50 / p90 / p99, sets above M and sets within M all 
+mean_includes_yaw                    mean     21  set_mean_abs_xy_strict: the MEAN, not the max -- (0.5 + 0.25) / 8 = 0.
+mean_x_only                          mean     13  set_mean_abs_xy_strict: the MEAN, not the max -- (0.5 + 0.25) / 8 = 0.
+mean_is_max                          mean     15  set_mean_abs_xy_strict: the MEAN, not the max -- (0.5 + 0.25) / 8 = 0.
+mean_denominator_off_by_one          mean     14  set_mean_abs_xy_strict: the MEAN, not the max -- (0.5 + 0.25) / 8 = 0.
+mean_proposal_mismatch_reads_zero    mean     2  set_mean_abs_xy_strict: a dropped proposal is inf (zip would truncate 
+mean_step_mismatch_reads_zero        mean     1  set_mean_abs_xy_strict: a dropped horizon step is inf
+mean_coordinate_mismatch_reads_zero  mean     1  set_mean_abs_xy_strict: a dropped coordinate is inf
+mean_nan_passes                      mean     2  set_mean_abs_xy_strict: a NaN in x / y is inf (a NaN sum makes `m > M`
+mean_within_miscounted               mean     4  per arm: worst m, p50 / p90 / p99, sets above M and sets within M all 
+mean_report_reads_the_max_delta      mean     6  per arm: worst m, p50 / p90 / p99, sets above M and sets within M all 
+mean_keys_without_the_flag           mean     3  compare_sets without mean_atol adds NONE of the mean keys
+mean_not_given_to_compare_sets       mean     1  mean
+mean_flag_ignored_by_the_gate        mean     11  mean: PASS marker `ZZRLFAN_MEAN_ATOL_PASS <matched> <max_m> <bound>` (
+mean_never_fails                     mean     9  m 0.0375 (three values 0.3 off) and m 0.05 (every value 0.05 off) are 
+mean_beyond_not_exit_5               mean     10  m 0.0375 (three values 0.3 off) and m 0.05 (every value 0.05 off) are 
+mean_disagreement_not_tripping       mean     1  reference lines of one key that disagree with each other: exit 5 and B
+mean_marker_shows_the_catastrophe_bound mean     1  mean: PASS marker `ZZRLFAN_MEAN_ATOL_PASS <matched> <max_m> <bound>` (
+mean_default_not_none                mean     11  e2e
+mean_without_atol_allowed            mean     2  --compare-mean-atol WITHOUT --compare-atol is REFUSED (exit 4): the ma
+mean_negative_allowed                mean     3  --compare-mean-atol -0.1 (negative) is REFUSED (exit 4)
+ZZTEST_PASS 67  (1 unmutated suite of 157 checks + 65 RED mutations + coverage)

@@ -1,0 +1,113 @@
+{
+ "ckpt": "/workspace/v8proof/runs/leadsup_a/LS_s1/ckpt_last.pt",
+ "ckpt_sha256": "055e57bda3def2ca823056178307c9b53b60639fd811c241706fc580a02cdc93",
+ "argv": [
+  "--ckpt",
+  "/workspace/v8proof/runs/leadsup_a/LS_s1/ckpt_last.pt",
+  "--tree",
+  "/workspace/v8proof/tree_leadsup",
+  "--windows",
+  "/workspace/v8proof/probe/imag_in/LATENTS_CTX_G_s0_R1.npz",
+  "--pack",
+  "/workspace/v8proof/probe/imag_in/eval_pack.npz",
+  "--states",
+  "/workspace/v8proof/probe/states/LS_s1_eval.npz",
+  "--out",
+  "/workspace/v8proof/runs/imag_z/dump/DUMP_LS_s1.npz",
+  "--device",
+  "cpu",
+  "--threads",
+  "4"
+ ],
+ "tree": "/workspace/v8proof/tree_leadsup",
+ "tanitad_file": "/workspace/v8proof/tree_leadsup/stack/tanitad/__init__.py",
+ "cfg_lead": {
+  "lead_sup": "on",
+  "w_lead_sup": 1.0,
+  "lead_hist": 5,
+  "lead_sup_detach": "off"
+ },
+ "cfg_wm": {
+  "wm_state": "grid",
+  "wm_l1_residual": "off",
+  "wm_l1_roll_k": "0",
+  "wm_l1_act": "acc_yaw",
+  "wm_l1_pred": "flat"
+ },
+ "n_windows_total": 1948,
+ "n_windows_dumped": 534,
+ "predictor_context": 3,
+ "wm_acc_scale": 2.0,
+ "lead_gap_scale_m": 50.0,
+ "lead_clos_scale_ms": 10.0,
+ "offsets_m_s2": [
+  0.0,
+  -2.0,
+  -1.0,
+  1.0
+ ],
+ "offset_rule": "d [m/s2] added to the acceleration channel of the SCALED level-1 action as d / WM_ACC_SCALE at every step; yaw channel unchanged",
+ "inputs": {
+  "windows": "/workspace/v8proof/probe/imag_in/LATENTS_CTX_G_s0_R1.npz",
+  "windows_sha256": "a3c11b7d6c05845174efd466617d87b595d41bccdde059ec92429d3a4a9bf16c",
+  "pack": "/workspace/v8proof/probe/imag_in/eval_pack.npz",
+  "pack_sha256": "6f5aa3c1575e4cf6eb9b25446eb46bc0fd6b8e08d071befac9f83e02c718c1a6",
+  "states": "/workspace/v8proof/probe/states/LS_s1_eval.npz",
+  "states_sha256": "e4c88cfe071cf649e34b79f9639f80ba5940f253bd1980ae4406c8845eb204d4"
+ },
+ "facts": {
+  "wm_acc_scale": {
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "line": 201,
+   "text": "WM_ACC_SCALE = 2.0",
+   "ok": true
+  },
+  "scale_actions_acc": {
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "line": 947,
+   "text": "two = torch.stack([act[..., 0] / WM_ACC_SCALE, act[..., 1] / self.ch1_scale], -1)",
+   "ok": true
+  },
+  "lead_head": {
+   "file": "stack/tanitad/models/v8f_mini.py",
+   "line": 814,
+   "text": "class LeadSupHead(nn.Module):",
+   "ok": true
+  },
+  "rollout": {
+   "file": "stack/tanitad/models/hjepa.py",
+   "line": 919,
+   "text": "def rollout(self, level: int, z0: Tensor, actions: Tensor, *, context: int = 1) -> Tensor:",
+   "ok": true
+  },
+  "act_embed": {
+   "file": "stack/tanitad/models/hjepa.py",
+   "line": 650,
+   "text": "self.act_embed = nn.Sequential(nn.Linear(c1.action_dim, c1.act_embed_dim), nn.GELU(),",
+   "ok": true
+  },
+  "roll_pairs": {
+   "file": "stack/tanitad/models/hjepa.py",
+   "line": 956,
+   "text": "def roll_pairs(self, z: Tensor, a: Tensor, k: int):",
+   "ok": true
+  }
+ },
+ "controls_at_dump": {
+  "c1_offset0_max_abs_response": 0.0,
+  "c2": {
+   "rollout_vs_roll_pairs_max_abs": 0.0,
+   "head_vs_sequence_max_abs": 9.5367431640625e-07,
+   "head_vs_sequence_max_abs_physical_units": 7.62939453125e-06,
+   "tol": 1e-05,
+   "n_windows": 48,
+   "pass": true
+  },
+  "c4": {
+   "max_abs_response_zero_model": 0.0,
+   "max_abs_response_real_model_nonzero_offsets": 6.708866119384766
+  }
+ },
+ "device": "cpu",
+ "seconds": 5.1
+}

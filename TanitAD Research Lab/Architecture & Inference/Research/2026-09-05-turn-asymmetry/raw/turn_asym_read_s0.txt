@@ -1,0 +1,49 @@
+====================================================================================================
+PANEL: n = 75 windows / 8 episodes | GT lane_keep 15, turn_left 30 (6 eps), turn_right 30 (6 eps)
+POWER TARGETS (SPEC section 1): n >= 27 per direction, >= 5 clusters, granularity 1/n <= 0.0375
+  turn_left   n=30  MET        clusters=6  MET        1/n=0.0333 resolvable
+  turn_right  n=30  MET        clusters=6  MET        1/n=0.0333 resolvable
+
+====================================================================================================
+1. PER-DIRECTION TURN RECALL, episode-cluster bootstrap
+====================================================================================================
+  arm            | recall LEFT  [95% CI]      | recall RIGHT [95% CI]      | R - L  [95% CI]  sep?
+  ta_wk15_s0     | 0.0000 [0.0000, 0.0000] | 0.4333 [0.1934, 0.6552] | +0.4333 [+0.1667, +0.6539] YES
+  GOAL_HEAD      | 0.3000 [0.0000, 0.6333] | 0.6667 [0.3125, 0.9375] | +0.3667 [-0.3297, +0.8377] no   <-- BASELINE: the decoded goal, an INPUT (SPEC 3.16)
+  ha0_ext        | 0.7333 [0.5667, 0.8667] | 0.7000 [0.4996, 0.8571] | -0.0333 [-0.2286, +0.1333] no  (FLOOR, no planner)
+  ha             | 0.7000 [0.5667, 0.8333] | 0.6667 [0.4231, 0.8571] | -0.0333 [-0.2508, +0.1333] no  (FLOOR, no planner)
+  ol             | 0.8333 [0.6333, 1.0000] | 0.9333 [0.7388, 1.0000] | +0.1000 [-0.0387, +0.2631] no  (FLOOR, no planner)
+
+  ⭐ THE INCREMENT OVER THE GOAL HEAD (SPEC 3.16) — the only part of a
+     plan-recall gap that is attributable to the COST:
+     ta_wk15_s0     plan gap +0.4333  -  head gap +0.3667  =  INCREMENT +0.0667
+     (a plan gap no larger than the head's is INHERITED, not caused by
+      W_KAPPA; the head is identical across arms and across plan seeds.)
+  CONTROL (must read exactly +0.0000): an arm's LEFT recall against itself = +0.0000
+
+====================================================================================================
+1b. ⭐ WITHIN-EPISODE CONTRAST (SPEC 3.13) — the PRIMARY attribution statistic
+====================================================================================================
+  episodes carrying BOTH GT directions: [0, 2, 6, 7]  (20 left + 18 right windows inside them)
+  ta_wk15_s0     within-episode (R - L) = +0.4250 [+0.1250, +0.7000] SEPARATED over 4 episodes
+  ha0_ext        within-episode (R - L) = -0.1917 [-0.4000, +0.0500] not sep over 4 episodes (FLOOR)
+  ol             within-episode (R - L) = +0.0000 [-0.3000, +0.3000] not sep over 4 episodes (FLOOR)
+  CONTROL, a stratum against ITSELF (must be exactly +0.0000): +0.0000 [+0.0000, +0.0000]
+
+====================================================================================================
+2. GOAL-CONDITIONED CURVATURE RETENTION (SPEC section 1.1)
+====================================================================================================
+  decoded goal: TURN_L n=13 (2 eps), TURN_R n=35 (4 eps)
+  arm            | retain|goal=TURN_L         | retain|goal=TURN_R         | R - L  [95% CI]  sep?
+  ta_wk15_s0     | 0.0000 [0.0000, 0.0000] | 0.8000 [0.5882, 1.0000] | +0.8000 [+0.5833, +1.0000] YES
+  CONTROL: the SIGN is correct on every retained plan -- 28/28 retained plans curve the way their goal asked
+
+====================================================================================================
+3. THE PANEL'S OWN INFERENCE-SEED FLOOR (paired, same windows)
+====================================================================================================
+  ** no seed pair in this arm set -- the floor CANNOT be measured **
+
+====================================================================================================
+4. THE VERDICT, against SPEC section 1's three conditions
+====================================================================================================
+  INCONCLUSIVE -- fewer than two seeds of the same arm

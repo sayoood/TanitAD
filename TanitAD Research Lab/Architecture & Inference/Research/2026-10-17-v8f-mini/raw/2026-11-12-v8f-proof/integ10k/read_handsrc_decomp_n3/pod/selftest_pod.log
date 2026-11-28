@@ -1,0 +1,28 @@
+   name rule: no state part -> NO-STATE-COST                                                                        True
+   name rule: Q above 0 -> CARRIES                                                                                  True
+   name rule: removed above 0, Q not -> PART                                                                        True
+   name rule: removed below 0 -> WORSE                                                                              True
+   name rule: removed interval holds 0 -> NOT-SEPARATED                                                             True
+   h1 planted cases through the stand-in engine: removes_0.8=CARRIES, removes_0.2=PART, removes_0=NOT-SEPARATED, adds_one_half=WORSE, no_state_part=NO-STATE-COST True
+   q1 holds on tracks with different windows without a value (common windows [353, 353])                            True
+   q1 fails when removed is off by 1e-6                                                                             True
+   c1 passes on equal offsets and fails on a difference of 1e-9                                                     True
+   c0 passes below the tolerance and fails above it or with a seed missing                                          True
+   c2 passes when every log names its mode and its groups                                                           True
+   c2 fails when the speed mode also moved a position                                                               True
+   c2 fails when a log names another mode                                                                           True
+   b5 in the form of the split tool fails on a run that was handed another speed, and passes in the form of note N3 True
+   b5 in the form of note N3 fails when the handed speed is missing or the first point is 9 m off                   True
+   p2 passes on an equal part 2 and fails on a cell that differs by 1e-6                                            True
+   first-segment error of a track against itself is 0 and of a track 3 m aside is 3                                 True
+   part 1: a failed control leaves no name                                                                          True
+   part 2: a failed control leaves no family name and says what is missing per family                               True
+   part 2: with every control passed the names are written                                                          True
+   family names have the form of the card                                                                           True
+   configure(60): run names, card and prefix of card ADD74                                                          True
+   P = 60 bank of the own split passes on equal parts and fails on 1e-6                                             True
+   a1 at P = 60 reads the pair AGE-K@P60 of the banked result                                                       True
+   configure(30) restores the names of card ADD73                                                                   True
+   a1 passes on equal values, fails on 1e-6 and on a result that is not admitted                                    True
+   text of the tool holds none of the banned words                                                                  True
+ZZ SELFTEST-HANDSRC-DECOMP ok: True (27 of 27)

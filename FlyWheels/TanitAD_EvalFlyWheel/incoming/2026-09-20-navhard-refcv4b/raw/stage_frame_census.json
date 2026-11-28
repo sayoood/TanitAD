@@ -1,0 +1,74 @@
+{
+ "_what": "per-stage camera-frame census: for EVERY scorer token, EVERY history frame, EVERY camera, does the source jpg EXIST on disk under each root",
+ "inputs": "C:/Users/Admin/navsim-crun/exp/tanitad_bench/exports/navhard_two_stage/navsim_agent_inputs.json",
+ "roots": [
+  "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/sensor_blobs",
+  "C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/sensor_blobs",
+  "C:/Users/Admin/navsim-crun/data/openscene/sensor_blobs/test",
+  "C:/Users/Admin/navsim/data/openscene/navhard_two_stage/sensor_blobs",
+  "C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs",
+  "C:/Users/Admin/navsim/data/openscene/sensor_blobs/test",
+  "C:/Users/Admin/navsim/data/openscene/openscene-v1.1/sensor_blobs",
+  "D:/Archive/devbox-C/navsim/sensor_blobs"
+ ],
+ "root_exists": {
+  "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/sensor_blobs": true,
+  "C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/sensor_blobs": false,
+  "C:/Users/Admin/navsim-crun/data/openscene/sensor_blobs/test": false,
+  "C:/Users/Admin/navsim/data/openscene/navhard_two_stage/sensor_blobs": false,
+  "C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs": true,
+  "C:/Users/Admin/navsim/data/openscene/sensor_blobs/test": false,
+  "C:/Users/Admin/navsim/data/openscene/openscene-v1.1/sensor_blobs": false,
+  "D:/Archive/devbox-C/navsim/sensor_blobs": false
+ },
+ "utc": "2026-09-20T13:57:37Z",
+ "stages": {
+  "stage_1": {
+   "n_tokens": 450,
+   "cam_files_expected": 5400,
+   "cam_files_present_per_root": {
+    "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/sensor_blobs": 0,
+    "C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/sensor_blobs": 0,
+    "C:/Users/Admin/navsim-crun/data/openscene/sensor_blobs/test": 0,
+    "C:/Users/Admin/navsim/data/openscene/navhard_two_stage/sensor_blobs": 0,
+    "C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs": 0,
+    "C:/Users/Admin/navsim/data/openscene/sensor_blobs/test": 0,
+    "C:/Users/Admin/navsim/data/openscene/openscene-v1.1/sensor_blobs": 0,
+    "D:/Archive/devbox-C/navsim/sensor_blobs": 0
+   },
+   "cam_files_present_any_root": 0,
+   "fraction_present": 0.0,
+   "example_missing": "C:\\Users\\Admin\\navsim-crun\\data\\openscene\\navhard_two_stage\\sensor_blobs\\2021.09.29.14.44.26_veh-28_00337_00504\\CAM_L0\\5cc4107701ef52b2.jpg",
+   "example_present": null,
+   "byte_read_control": {
+    "tried": 0,
+    "jpeg_ok": 0,
+    "failures": []
+   }
+  },
+  "stage_2": {
+   "n_tokens": 5462,
+   "cam_files_expected": 65544,
+   "cam_files_present_per_root": {
+    "C:/Users/Admin/navsim-crun/data/openscene/navhard_two_stage/sensor_blobs": 65544,
+    "C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/sensor_blobs": 0,
+    "C:/Users/Admin/navsim-crun/data/openscene/sensor_blobs/test": 0,
+    "C:/Users/Admin/navsim/data/openscene/navhard_two_stage/sensor_blobs": 0,
+    "C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs": 2448,
+    "C:/Users/Admin/navsim/data/openscene/sensor_blobs/test": 0,
+    "C:/Users/Admin/navsim/data/openscene/openscene-v1.1/sensor_blobs": 0,
+    "D:/Archive/devbox-C/navsim/sensor_blobs": 0
+   },
+   "cam_files_present_any_root": 65544,
+   "fraction_present": 1.0,
+   "example_missing": "C:\\Users\\Admin\\navsim-crun\\data\\openscene\\warmup_two_stage\\sensor_blobs\\2021.08.30.14.54.34_veh-40_00439_00835\\CAM_L0\\150b8ce573f0dadfe.jpg",
+   "example_present": "C:\\Users\\Admin\\navsim-crun\\data\\openscene\\navhard_two_stage\\sensor_blobs\\2021.08.30.14.54.34_veh-40_00439_00835\\CAM_L0\\150b8ce573f0dadfe.jpg",
+   "byte_read_control": {
+    "tried": 8,
+    "jpeg_ok": 8,
+    "failures": []
+   }
+  }
+ },
+ "verdict": "STAGE_1_CAMERA_FRAMES_ABSENT (discriminating control PASSED: stage 2 read 65544/65544 in the same pass, so the probe can see files) => a CAMERA arm's stage 1 can only be a DECLARED stand-in and its official two-stage EPDMS is UNDEFINED"
+}

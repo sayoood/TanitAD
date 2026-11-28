@@ -1,0 +1,63 @@
+{
+ "what": "the two FIX-5 tests Thor skipped (resnet34.a1_in1k not cached there), on the dev box",
+ "host": "FREEDOM2035",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "python": "3.13.5",
+ "evidence_class": "MEASURED (FREEDOM2035, Windows, CPU only)",
+ "tree": "C:/Users/Admin/dvb_tip_ab436ee_0926i",
+ "base_commit": "ab436eefa89f34eee139e092c595839e785eab7c",
+ "tests": {
+  "test_G2_GREEN_the_real_checkpoint_passes_and_fingerprints_as_measured": {
+   "status": "passed",
+   "message": "",
+   "time_s": 0.513
+  },
+  "test_G2_R3_stem_intact_layer4_RANDOM_now_goes_RED": {
+   "status": "passed",
+   "message": "",
+   "time_s": 0.311
+  }
+ },
+ "gates": {
+  "boxes_done_marker": "C:\\Users\\Admin\\qland\\work\\mapvid\\BOXES_DONE",
+  "boxes_done_seen": "2026-09-26 23:01:06",
+  "ram_floor_passed": "2026-09-27 00:43:06",
+  "start_samples_gib": [
+   7.82,
+   7.7,
+   7.56
+  ],
+  "floor": "start >= 7.5 GiB x3 (30 s apart), kill < 6.5 GiB"
+ },
+ "started": "2026-09-26 22:47:04",
+ "checkpoint": {
+  "repo": "timm/resnet34.a1_in1k",
+  "revision": "0e8757122c4c09b15fb9300c0fd09b3fe89e28bf",
+  "path": "C:\\Users\\Admin\\.cache\\huggingface\\hub\\models--timm--resnet34.a1_in1k\\snapshots\\0e8757122c4c09b15fb9300c0fd09b3fe89e28bf\\model.safetensors",
+  "size": 87278522,
+  "sha256": "829a220f9529d2b1ffdc8719d3273463001e0daf411eaf1916865d9db62c0ed2"
+ },
+ "tanitad_file": "C:\\Users\\Admin\\dvb_tip_ab436ee_0926i\\stack\\tanitad\\__init__.py",
+ "timm_trunk_file": "C:\\Users\\Admin\\dvb_tip_ab436ee_0926i\\stack\\tanitad\\models\\timm_trunk.py",
+ "pytest_cmd": [
+  "C:/Users/Admin/venvs/tanitad/Scripts/python.exe",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "-rfEs",
+  "--junitxml=D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-26-declared-vs-built\\raw\\gate_r34_ab436ee\\r34_fix5.junit.xml",
+  "tests/test_guard_blind_spots_fix5.py::test_G2_GREEN_the_real_checkpoint_passes_and_fingerprints_as_measured",
+  "tests/test_guard_blind_spots_fix5.py::test_G2_R3_stem_intact_layer4_RANDOM_now_goes_RED"
+ ],
+ "child_pid": 46916,
+ "pytest": {
+  "rc": 0,
+  "seconds": 12.9,
+  "min_free_gib": 7.02,
+  "status": "EXITED"
+ },
+ "verdict": "PASS: both passed",
+ "finished": "2026-09-27 00:43:19"
+}

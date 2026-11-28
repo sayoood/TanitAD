@@ -1,0 +1,96 @@
+--- PK/refe/proxy_cache.py
++++ YF2/proxy_cache_yf2.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python3
+-"""The SHARED dev-box proxy cache: ONE snapshot's frozen encoder side, run ONCE per frame, stored as raw bits.
++"""[YF2 COPY of PK/refe/proxy_cache.py with FOUR edits, see proxy_cache_yf2.diff; PK is not touched]
++The SHARED dev-box proxy cache: ONE snapshot's frozen encoder side, run ONCE per frame, stored as raw bits.
+ Consumers: the decoder-side proxy (M3 / M4a / M4b / M6 A/Bs) and the scorer-only fine-tune (measure 5).
+ 
+ WHAT IS FROZEN IN THE PROXY (and therefore cached): everything up to the two decoders' contexts -- the DINOv3 trunk,
+@@ -42,7 +43,9 @@
+ 
+ HERE = Path(__file__).resolve().parent
+ sys.path.insert(0, str(HERE))
+-BANK = Path("D:/Projects/TanitAD/data/refe_navtrain10")
++import yaw_common as YC  # noqa: E402  (YF2)
++sys.path.insert(0, str(YC.REFE_DIR))                       # EDIT 2: model.py / train.py / ckpt_io.py come from PK (read-only)
++BANK = Path(os.environ.get("YF2_BANK", str(YC.BANK)))      # EDIT 2: was D:/Projects/TanitAD/data/refe_navtrain10 (D: is absent)
+ SCENE_TOKENS, VISUAL_TOKENS, WIDTH = 64, 7680, 256
+ 
+ 
+@@ -106,6 +109,20 @@
+             if k in want and rk in want[k]:
+                 out[(k, rk)] = r
+     return out
++
++
++def decode_traj(model, cfg, scene_ctx, ego, goal):
++    """EDIT 3: REFe.forward after scene_proj, trajectory side, for BOTH nav modes (goal: u400; command: P6 final -- `goal` carries the one-hot, model.py:763-771)."""
++    import torch
++    if cfg.nav_mode == "goal":
++        g = goal.unsqueeze(-1) * model.goal_freqs
++        nav = torch.cat([goal, g.sin().flatten(1), g.cos().flatten(1)], -1)
++    else:
++        nav = model.cmd_embed(goal.to(ego.dtype))
++    q = model.queries.expand(scene_ctx.shape[0], -1, -1) + model.ego_enc(torch.cat([ego, nav], -1)).unsqueeze(1)
++    for blk in model.dec:
++        q = blk(q, scene_ctx)
++    return model.traj_head(q).view(scene_ctx.shape[0], cfg.n_proposals, cfg.horizon_steps, cfg.traj_dim)
+ 
+ 
+ def build(a) -> int:
+@@ -131,7 +148,9 @@
+                 if r_ == rk:
+                     f.write(json.dumps(r) + "\n")
+     dev = "cuda" if (a.device == "cuda" and torch.cuda.is_available()) else "cpu"
+-    cfg = REFeConfig.for_backbone(a.backbone)
++    cfg = ckpt_io.config_for_checkpoint(REFeConfig.for_backbone(a.backbone), a.snapshot)      # EDIT 1: n_score_components / nav_mode from the checkpoint's meta
++    if a.expect_snapshot_sha256 and sha256_file(a.snapshot)[:len(a.expect_snapshot_sha256)] != a.expect_snapshot_sha256:
++        raise SystemExit(f"REFUSED: snapshot sha256 {sha256_file(a.snapshot)[:12]} != expected {a.expect_snapshot_sha256}")
+     model = REFe(cfg).to(dev).eval()
+     meta: dict = {}
+     fmt = ckpt_io.load_for_inference(model, a.snapshot, map_location=dev, backbone=a.backbone, meta_out=meta)
+@@ -151,12 +170,7 @@
+     c1_worst, n_new, stopped = 0.0, 0, None
+ 
+     def decode(scene_ctx, ego, goal):
+-        g = goal.unsqueeze(-1) * model.goal_freqs
+-        gf = torch.cat([goal, g.sin().flatten(1), g.cos().flatten(1)], -1)
+-        q = model.queries.expand(scene_ctx.shape[0], -1, -1) + model.ego_enc(torch.cat([ego, gf], -1)).unsqueeze(1)
+-        for blk in model.dec:
+-            q = blk(q, scene_ctx)
+-        return model.traj_head(q).view(scene_ctx.shape[0], cfg.n_proposals, cfg.horizon_steps, cfg.traj_dim)
++        return decode_traj(model, cfg, scene_ctx, ego, goal)
+ 
+     def flush():
+         nonlocal shard, buf_s, buf_v, lines
+@@ -193,6 +207,8 @@
+                                  calib=cal[None] if cal.numel() else None)
+             dt = decode(cap["scene"], ego[None].to(dev), goal[None].to(dev))
+         c1_worst = max(c1_worst, float((dt.float() - traj.float()).abs().max()))
++        if c1_worst != 0.0:
++            raise SystemExit(f"C1 FAILED on frame {k}: max|decode - forward| = {c1_worst:.3g} -- stopping at once (EDIT 4)")
+         sbits = to_bits(cap["scene"][0])
+         buf_s.append(sbits)
+         # --visual-for sets: the scorer's context is stored only for a frame that carries an on-policy set at ANY rank
+@@ -217,6 +233,7 @@
+     shards = sorted(out.glob("shard_*.scene.bin"))
+     mf = {"version": 1, "snapshot": str(a.snapshot), "snapshot_sha256": sha256_file(a.snapshot), "format": fmt,
+           "frozen_in_proxy_sha256": fp, "backbone": a.backbone, "dtype": dtype, "amp": a.amp, "device": dev,
++          "yf2_snapshot_meta": json.loads(json.dumps(meta, default=str)), "yf2_code_sha256": YC.code_hashes(), "yf2_nav_mode": cfg.nav_mode, "yf2_n_score_components": cfg.n_score_components,
+           "input_path": "train.TargetBank.__getitem__" + (" (SYNTHETIC images)" if a.synthetic else ""),
+           "images": a.images, "calib": a.calib, "manifest": str(a.manifest), "manifest_status": man.get("status"),
+           "shapes": {"scene": [SCENE_TOKENS, WIDTH], "visual": [VISUAL_TOKENS, WIDTH]},
+@@ -273,8 +290,9 @@
+     ap = argparse.ArgumentParser()
+     ap.add_argument("cmd", choices=("build", "verify"))
+     ap.add_argument("--manifest")
+-    ap.add_argument("--images")
+-    ap.add_argument("--calib")
++    ap.add_argument("--images", default=str(YC.PIXELS))
++    ap.add_argument("--calib", default=str(YC.CALIB))
++    ap.add_argument("--expect-snapshot-sha256", default=None, help="YF2: refuse unless the snapshot file's sha256 starts with this")
+     ap.add_argument("--snapshot")
+     ap.add_argument("--out", required=True)
+     ap.add_argument("--backbone", default="vitl16")

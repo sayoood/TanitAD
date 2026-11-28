@@ -1,0 +1,99 @@
+{
+ "strategic_identity_control": {
+  "B_FTNULL_s0_equal": true,
+  "HOLD_equal": true,
+  "logged_path_equal": true,
+  "text_rows_equal": true,
+  "A_differs_as_expected": true,
+  "A_amend2_FTRSP_s0": {
+   "tier": "T1-kin",
+   "s_adh": {
+    "n_windows": 4,
+    "n_episodes": 2,
+    "mean": 0.0
+   },
+   "s_false": {
+    "n_windows": 858,
+    "n_episodes": 70,
+    "mean": 0.08741258741258741
+   }
+  },
+  "A_optb3_FTT15_s0": {
+   "tier": "T1-kin",
+   "s_adh": {
+    "n_windows": 3,
+    "n_episodes": 1,
+    "mean": 0.0
+   },
+   "s_false": {
+    "n_windows": 859,
+    "n_episodes": 70,
+    "mean": 0.10477299185098952
+   }
+  },
+  "pass": true
+ },
+ "floors": {
+  "chassis0_acc_mae": {
+   "amend2": {
+    "F_T": 0.034062785342088286,
+    "F_I": 0.013970924131569973,
+    "F_I_n_arms": 12,
+    "Floor": 0.034062785342088286
+   },
+   "optb3": {
+    "F_T": 0.034062785342088286,
+    "F_I": 0.015143860579853285,
+    "F_I_n_arms": 16,
+    "Floor": 0.034062785342088286
+   },
+   "Floor_equal": true
+  },
+  "chassis0_yaw_mae": {
+   "amend2": {
+    "F_T": 0.006680060613643041,
+    "F_I": 0.00198371436275227,
+    "F_I_n_arms": 12,
+    "Floor": 0.006680060613643041
+   },
+   "optb3": {
+    "F_T": 0.006680060613643041,
+    "F_I": 0.00198371436275227,
+    "F_I_n_arms": 16,
+    "Floor": 0.006680060613643041
+   },
+   "Floor_equal": true
+  },
+  "chassis1_acc_mae": {
+   "amend2": {
+    "F_T": 0.062146549624982894,
+    "F_I": 0.013970924131569973,
+    "F_I_n_arms": 12,
+    "Floor": 0.062146549624982894
+   },
+   "optb3": {
+    "F_T": 0.062146549624982894,
+    "F_I": 0.015143860579853285,
+    "F_I_n_arms": 16,
+    "Floor": 0.062146549624982894
+   },
+   "Floor_equal": true
+  },
+  "chassis1_yaw_mae": {
+   "amend2": {
+    "F_T": 0.011990406132661655,
+    "F_I": 0.00198371436275227,
+    "F_I_n_arms": 12,
+    "Floor": 0.011990406132661655
+   },
+   "optb3": {
+    "F_T": 0.011990406132661655,
+    "F_I": 0.00198371436275227,
+    "F_I_n_arms": 16,
+    "Floor": 0.011990406132661655
+   },
+   "Floor_equal": true
+  }
+ },
+ "note": "F_I takes the max over every arm with both inference seeds, so adding the four FTT arms can only raise it; Floor_k = max(F_T,k, F_I) and F_T dominates at both chassis"
+}

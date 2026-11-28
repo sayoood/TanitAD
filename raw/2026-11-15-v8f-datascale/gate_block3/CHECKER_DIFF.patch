@@ -1,0 +1,56 @@
+--- study_orig/dscale10k_check.py	2026-11-17 21:11:11.740264600 +0100
++++ study/dscale10k_check.py	2026-11-17 21:11:47.949231900 +0100
+@@ -209,20 +209,26 @@
+     return int(rec["S"]) * int((a.get("--steps-mult") or ["1"])[0])
+ 
+ 
+-def steps_problems(arm: str, toks, rec, ue_steps: int | None = None, stage: str = "A") -> list:
+-    """C-STEPS. Stage A: 19,164 on B / U / R / X; UE and BL run 4 x S_U (and the same number). Stage B: 3,000."""
++def steps_problems(arm: str, toks, rec, ue_steps: int | None = None, stage: str = "A", u_rec=None) -> list:
++    """C-STEPS. Stage A: 19,164 on B / U / R / X; UE and BL run 4 x S_U (and the same number). Stage B: 3,000.
++    MM ruling 2026-11-17 (block 3, MM_RULING_BLOCK3_STEPS.md; card lines 75, 87, 195): UE_s0 = 4 x S_U of ITS OWN (union) record; BL_s0 = UE_s0's total, read from the UNION dry record ``u_rec``
++    (U_s0's), never from the B record ``rec``. BL without ``u_rec`` is refused. When ``ue_steps`` is given (the evidence's value) it must equal that target."""
+     spec, bad = ARMS[arm], []
+     t = total_steps(toks, rec)
+     if stage == "B":
+         return [] if t == STAGE_B_STEPS else [f"stage B runs {t} steps, the card says {STAGE_B_STEPS}"]
+     if spec["steps"] == "ue":
+-        s_u = rec.get("S_U")
++        src = rec if spec["set"] == "U" else u_rec
++        s_u = None if src is None else src.get("S_U")
+         if s_u is None:
+-            return ["UE / BL: the union S_U is not recorded (dry build of a union arm)"]
+-        if t != 4 * int(s_u):
+-            bad.append(f"{arm} runs {t} steps, 4 x S_U = {4 * int(s_u)}")
+-        if ue_steps is not None and t != int(ue_steps):
+-            bad.append(f"{arm} runs {t} steps, the UE / BL pair must match ({ue_steps})")
++            return [f"{arm}: the union S_U is not recorded (UE: the dry build of the union arm; BL: the union dry record u_rec, U_s0's, is required: the B record's S_U is the B set's)"]
++        if spec["set"] != "U" and src.get("n_clips") != NCLIPS["U"]:
++            return [f"{arm}: the record the target is read from has n_clips {src.get('n_clips')}, not the union's {NCLIPS['U']} (a target from the B record)"]
++        target = 4 * int(s_u)
++        if t != target:
++            bad.append(f"{arm} runs {t} steps, 4 x S_U of the union record = {target}")
++        if ue_steps is not None and int(ue_steps) != target:
++            bad.append(f"{arm}: the pair's step count {ue_steps} is not 4 x S_U of the union record ({target})")
+     elif t != RUN_STEPS_A:
+         bad.append(f"{arm} stage A runs {t} steps, the card says {RUN_STEPS_A}")
+     return bad
+@@ -790,7 +796,8 @@
+         for c in ("C-STEPS", "C-NCLIPS", "C-CHUNK", "C-TRAIN-SHA", "C-DISJ", "C-HOLD"):
+             put(c, ["no --dry record: the dry build_data has not run (pod-side)"])
+     else:
+-        put("C-STEPS", steps_problems(arm, toks, dry, ue, stage))
++        ue_rec = json.load(open(a.ue_dry, encoding="utf-8")) if getattr(a, "ue_dry", "") else None
++        put("C-STEPS", steps_problems(arm, toks, dry, ue, stage, ue_rec), ue_dry_sha256=sha_file(a.ue_dry) if getattr(a, "ue_dry", "") else None)
+         put("C-NCLIPS", nclips_problems(arm, dry))
+         put("C-CHUNK", chunk_problems(dry))
+         put("C-TRAIN-SHA", train_sha_problems(arm, dry), train_sha256=dry.get("train_sha256"))
+@@ -892,7 +899,7 @@
+             p.add_argument("--base-argv", required=True); p.add_argument("--evidence", default=""); p.add_argument("--dry", default="")
+             p.add_argument("--merge-record", default=""); p.add_argument("--union-release", default=""); p.add_argument("--tenk-v9", default=""); p.add_argument("--r-release", default="")
+             p.add_argument("--corpus-join", default=""); p.add_argument("--union-join", default=""); p.add_argument("--eval-ids", default=""); p.add_argument("--digest-json", nargs="*")
+-            p.add_argument("--selfcheck", default=""); p.add_argument("--holdout-manifest", default=""); p.add_argument("--holdout", type=lambda s: tuple(int(x) for x in s.split(":")), default=(M.HOLD_LO, M.HOLD_HI))
++            p.add_argument("--ue-dry", default=""); p.add_argument("--selfcheck", default=""); p.add_argument("--holdout-manifest", default=""); p.add_argument("--holdout", type=lambda s: tuple(int(x) for x in s.split(":")), default=(M.HOLD_LO, M.HOLD_HI))
+     a = ap.parse_args(argv)
+     if a.cmd == "diff":
+         ld = lambda p: (lambda o: o["argv"] if isinstance(o, dict) else o)(json.load(open(p, encoding="utf-8")))

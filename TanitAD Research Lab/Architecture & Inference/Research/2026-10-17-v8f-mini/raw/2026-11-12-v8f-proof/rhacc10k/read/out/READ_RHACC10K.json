@@ -1,0 +1,1837 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD139 (+ AM1, AM2)",
+ "tier": "TIER: T1-kin/hb0.2 (kinematic rollout on the model's own actions; logged camera frames; the lead does not react); never driving performance",
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "spread_arm": "U_RLcK",
+ "spread_arm_c5": "H_RLcA_P0",
+ "spread_arm_note": "STATED CHOICE: the convention = the line model under readout K on eval-141 (U_RLcK); on the C5 grid the arm H_RLcA_P0",
+ "c2_reader_note": "rows d and f of model seed 2 use the reader TK16_s0 and the map QMAP_LR16_s0_q50 (AM2): they share their reader with model seed 0",
+ "k5_finding": {
+  "reader_reads_model_latent": false,
+  "input": "batch['feats'] = the logged eval-cache encoder tokens of cache steps j-4..j; the token reader reads them and no model weight (the argument `model` is not read)",
+  "evidence": [
+   "integ10k/v8f_t1_eval_reader_rule_rzgfh.py:73 (module text: the reader reads batch[\"feats\"][:, -5:], the cached encoder tokens ..., no model weight is read)",
+   "integ10k/v8f_t1_eval_reader_rule_rzgfh.py:188-192 (head_values_reader: `Takes tokens only; model is not read`; f = feats[:, -rd.hist:]; p, g = rd.read(f))",
+   "integ10k/v8f_t1_eval_reader_rule_rzgfh.py:171 and :476 (later looks: toks.append(s.d[\"feats\"][e - rd.hist + 1:e + 1]); rd.read at :173 and :479)",
+   "rhacc10k/tree/stack/scripts/v8f_t1_eval.py:12 and :166 (feats / frame_ok stay shared and logged camera input) and :244-245"
+  ],
+  "wrapper_sha256_prefix": "373ffe72f2655c35",
+  "status": "determined from source by the reader's builder; the file at --wrapper must carry the sha256 prefix above or k5 fails"
+ },
+ "controls": {
+  "k1_complete": {
+   "per_run": {
+    "H_R0K_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": null,
+     "PASS": true,
+     "why": []
+    },
+    "H_R0A_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": null,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RQ50A_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "U_RLcK_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "U_RQ50K_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_P30_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_P0_s0": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_R0K_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": null,
+     "PASS": true,
+     "why": []
+    },
+    "H_R0A_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": null,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RQ50A_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "U_RLcK_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "U_RQ50K_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_P30_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_P0_s1": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_R0K_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": null,
+     "PASS": true,
+     "why": []
+    },
+    "H_R0A_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": null,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RQ50A_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "U_RLcK_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "U_RQ50K_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_P30_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    },
+    "H_RLcA_P0_s2": {
+     "done": true,
+     "dump_files": 141,
+     "expected": 141,
+     "files_with_nonfinite_plan": 0,
+     "rule_log": true,
+     "PASS": true,
+     "why": []
+    }
+   },
+   "PASS": true
+  },
+  "k2_models": {
+   "per_run": {
+    "H_R0K_s0": {
+     "ckpt_key_in_argv": "RH_s0",
+     "expected_key": "RH_s0",
+     "recorded_sha256_prefix": "351bb5f26ed0e156",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_R0A_s0": {
+     "ckpt_key_in_argv": "RH_s0",
+     "expected_key": "RH_s0",
+     "recorded_sha256_prefix": "351bb5f26ed0e156",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_s0": {
+     "ckpt_key_in_argv": "RH_s0",
+     "expected_key": "RH_s0",
+     "recorded_sha256_prefix": "351bb5f26ed0e156",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RQ50A_s0": {
+     "ckpt_key_in_argv": "RH_s0",
+     "expected_key": "RH_s0",
+     "recorded_sha256_prefix": "351bb5f26ed0e156",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "U_RLcK_s0": {
+     "ckpt_key_in_argv": "UE_s0",
+     "expected_key": "UE_s0",
+     "recorded_sha256_prefix": "2fd4b747532f55b2",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "U_RQ50K_s0": {
+     "ckpt_key_in_argv": "UE_s0",
+     "expected_key": "UE_s0",
+     "recorded_sha256_prefix": "2fd4b747532f55b2",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_P30_s0": {
+     "ckpt_key_in_argv": "RH_s0",
+     "expected_key": "RH_s0",
+     "recorded_sha256_prefix": "351bb5f26ed0e156",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_P0_s0": {
+     "ckpt_key_in_argv": "RH_s0",
+     "expected_key": "RH_s0",
+     "recorded_sha256_prefix": "351bb5f26ed0e156",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_R0K_s1": {
+     "ckpt_key_in_argv": "RH_s1",
+     "expected_key": "RH_s1",
+     "recorded_sha256_prefix": "c387f4ce363ebb8c",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_R0A_s1": {
+     "ckpt_key_in_argv": "RH_s1",
+     "expected_key": "RH_s1",
+     "recorded_sha256_prefix": "c387f4ce363ebb8c",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_s1": {
+     "ckpt_key_in_argv": "RH_s1",
+     "expected_key": "RH_s1",
+     "recorded_sha256_prefix": "c387f4ce363ebb8c",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RQ50A_s1": {
+     "ckpt_key_in_argv": "RH_s1",
+     "expected_key": "RH_s1",
+     "recorded_sha256_prefix": "c387f4ce363ebb8c",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "U_RLcK_s1": {
+     "ckpt_key_in_argv": "UE_s1",
+     "expected_key": "UE_s1",
+     "recorded_sha256_prefix": "f13df8ce026eed31",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "U_RQ50K_s1": {
+     "ckpt_key_in_argv": "UE_s1",
+     "expected_key": "UE_s1",
+     "recorded_sha256_prefix": "f13df8ce026eed31",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_P30_s1": {
+     "ckpt_key_in_argv": "RH_s1",
+     "expected_key": "RH_s1",
+     "recorded_sha256_prefix": "c387f4ce363ebb8c",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_P0_s1": {
+     "ckpt_key_in_argv": "RH_s1",
+     "expected_key": "RH_s1",
+     "recorded_sha256_prefix": "c387f4ce363ebb8c",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_R0K_s2": {
+     "ckpt_key_in_argv": "RH_s2",
+     "expected_key": "RH_s2",
+     "recorded_sha256_prefix": "0ba5d78e766b6fd1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_R0A_s2": {
+     "ckpt_key_in_argv": "RH_s2",
+     "expected_key": "RH_s2",
+     "recorded_sha256_prefix": "0ba5d78e766b6fd1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_s2": {
+     "ckpt_key_in_argv": "RH_s2",
+     "expected_key": "RH_s2",
+     "recorded_sha256_prefix": "0ba5d78e766b6fd1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RQ50A_s2": {
+     "ckpt_key_in_argv": "RH_s2",
+     "expected_key": "RH_s2",
+     "recorded_sha256_prefix": "0ba5d78e766b6fd1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "U_RLcK_s2": {
+     "ckpt_key_in_argv": "UE_s2",
+     "expected_key": "UE_s2",
+     "recorded_sha256_prefix": "6d4345258e07dee1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "U_RQ50K_s2": {
+     "ckpt_key_in_argv": "UE_s2",
+     "expected_key": "UE_s2",
+     "recorded_sha256_prefix": "6d4345258e07dee1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_P30_s2": {
+     "ckpt_key_in_argv": "RH_s2",
+     "expected_key": "RH_s2",
+     "recorded_sha256_prefix": "0ba5d78e766b6fd1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    },
+    "H_RLcA_P0_s2": {
+     "ckpt_key_in_argv": "RH_s2",
+     "expected_key": "RH_s2",
+     "recorded_sha256_prefix": "0ba5d78e766b6fd1",
+     "run_record_sha_checked": false,
+     "PASS": true
+    }
+   },
+   "note": "hashes compared as recorded (INPUTS.json vs the queue table and the card prefixes); a checkpoint is not hashed here",
+   "PASS": true
+  },
+  "k3_argv": {
+   "per_run": {
+    "H_R0K_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_R0A_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RQ50A_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "U_RLcK_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "U_RQ50K_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_P30_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_P0_s0": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_R0K_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_R0A_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RQ50A_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "U_RLcK_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "U_RQ50K_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_P30_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_P0_s1": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_R0K_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_R0A_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RQ50A_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "U_RLcK_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "U_RQ50K_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfh.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_P30_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+     "wrapper_ok": true,
+     "PASS": true
+    },
+    "H_RLcA_P0_s2": {
+     "recorded": true,
+     "row_in_queue": true,
+     "wrapper_in_argv": "D:/tanitad/rhacc10k/build/v8f_t1_eval_reader_rule_rzgfhq.py",
+     "wrapper_ok": true,
+     "PASS": true
+    }
+   },
+   "PASS": true
+  },
+  "k4_environment": {
+   "U_seed0": 0.0391,
+   "C_seed0": 0.0,
+   "banked_U": 0.0391,
+   "banked_C": 0.0,
+   "tolerance": 0.01,
+   "PASS": true
+  },
+  "k5_reader_input": {
+   "reader_reads_model_latent": false,
+   "input": "batch['feats'] = the logged eval-cache encoder tokens of cache steps j-4..j; the token reader reads them and no model weight (the argument `model` is not read)",
+   "evidence": [
+    "integ10k/v8f_t1_eval_reader_rule_rzgfh.py:73 (module text: the reader reads batch[\"feats\"][:, -5:], the cached encoder tokens ..., no model weight is read)",
+    "integ10k/v8f_t1_eval_reader_rule_rzgfh.py:188-192 (head_values_reader: `Takes tokens only; model is not read`; f = feats[:, -rd.hist:]; p, g = rd.read(f))",
+    "integ10k/v8f_t1_eval_reader_rule_rzgfh.py:171 and :476 (later looks: toks.append(s.d[\"feats\"][e - rd.hist + 1:e + 1]); rd.read at :173 and :479)",
+    "rhacc10k/tree/stack/scripts/v8f_t1_eval.py:12 and :166 (feats / frame_ok stay shared and logged camera input) and :244-245"
+   ],
+   "wrapper_sha256_prefix": "373ffe72f2655c35",
+   "status": "determined from source by the reader's builder; the file at --wrapper must carry the sha256 prefix above or k5 fails",
+   "wrapper_file": "v8f_t1_eval_reader_rule_rzgfh.py",
+   "wrapper_sha256": "373ffe72f2655c35",
+   "reader_input_is_eval_cache_tokens": true,
+   "wrapper_pre_sha256": "92a8034cc0f7b0d2",
+   "PASS": true
+  },
+  "k6_identity": {
+   "per_seed": {
+    "s0": {
+     "ckpt_sha_differ": true,
+     "dump_files_a_e": [
+      141,
+      141
+     ],
+     "dumps_byte_identical": false,
+     "PASS": true
+    },
+    "s1": {
+     "ckpt_sha_differ": true,
+     "dump_files_a_e": [
+      141,
+      141
+     ],
+     "dumps_byte_identical": false,
+     "PASS": true
+    },
+    "s2": {
+     "ckpt_sha_differ": true,
+     "dump_files_a_e": [
+      141,
+      141
+     ],
+     "dumps_byte_identical": false,
+     "PASS": true
+    }
+   },
+   "note": "run a = H_R0K, run e = U_RLcK; every episode dump file hashed",
+   "PASS": true
+  },
+  "e_reader_controls": {
+   "headway": true,
+   "families": true,
+   "route_goal": true,
+   "c5_grid_engines_and_tick_controls": true,
+   "headway_counts": {
+    "n_windows_total": 2399,
+    "n_lead_windows": 642,
+    "PASS": true
+   },
+   "PASS": true
+  }
+ },
+ "controls_all_pass": true,
+ "names": {
+  "C1": "RHACC10K-C1-FAIL",
+  "C2_LABEL": "RHACC10K-C2-LABEL-FAIL",
+  "C2_READER": "RHACC10K-C2-READER-FAIL",
+  "C3": "RHACC10K-C3-FAIL",
+  "C5": "RHACC10K-C5-FAIL",
+  "OVERALL": "RHACC10K-NOT-YET"
+ },
+ "checks": {
+  "C1": {
+   "families_WORSE": [
+    "LONGITUDINAL",
+    "LATERAL",
+    "TACTICAL"
+   ],
+   "F_higher": true,
+   "PASS": false
+  },
+  "C2_LABEL": {
+   "families_WORSE": [
+    "LONGITUDINAL",
+    "TACTICAL"
+   ],
+   "U_higher": false,
+   "PASS": false
+  },
+  "C2_READER": {
+   "families_WORSE": [
+    "LONGITUDINAL",
+    "TACTICAL"
+   ],
+   "U_higher": false,
+   "PASS": false
+  },
+  "C3": {
+   "route_goal_reading_30_50_80m_third_tick": "NOT-SEPARATED",
+   "arcs": [
+    [
+     30.0,
+     "NOT-SEPARATED"
+    ],
+    [
+     50.0,
+     "NOT-SEPARATED"
+    ],
+    [
+     80.0,
+     "NOT-SEPARATED"
+    ]
+   ],
+   "PASS": false,
+   "rule": "BETTER, or NOT-SEPARATED with C1 and C2 (label form) passed"
+  },
+  "C5": {
+   "families": {
+    "LONGITUDINAL": "WORSE",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "WORSE"
+   },
+   "families_not_better_or_not_separated": [
+    "LONGITUDINAL",
+    "LATERAL",
+    "TACTICAL",
+    "STRATEGIC"
+   ],
+   "U": "NOT-SEPARATED",
+   "PASS": false
+  },
+  "OVERALL": {
+   "name": "RHACC10K-NOT-YET",
+   "failed_checks": [
+    "C1",
+    "C2_LABEL",
+    "C3",
+    "C5",
+    "C2_READER"
+   ],
+   "next_lever": "per Rule Zero the lead writes the next lever for each failed check (C1, C2_LABEL, C3, C5, C2_READER) from the per-family cells; this reader does not invent one"
+  }
+ },
+ "pairs": {
+  "C1": {
+   "A": "H_R0A",
+   "B": "H_R0K",
+   "headway": {
+    "U": {
+     "per_seed": [
+      -0.0409,
+      -0.0552,
+      -0.0391
+     ],
+     "pooled": -0.0451,
+     "interval": [
+      -0.0666,
+      -0.0252
+     ]
+    },
+    "C": {
+     "per_seed": [
+      -0.0218,
+      -0.028,
+      -0.0171
+     ],
+     "pooled": -0.0223,
+     "interval": [
+      -0.0368,
+      -0.0111
+     ]
+    },
+    "F": {
+     "per_seed": [
+      0.0935,
+      0.1215,
+      0.0794
+     ],
+     "pooled": 0.0981,
+     "interval": [
+      0.0681,
+      0.1307
+     ]
+    }
+   },
+   "family_cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.2008,
+     "interval": [
+      0.1534,
+      0.2481
+     ],
+     "per_seed": [
+      0.21,
+      0.2354,
+      0.1569
+     ],
+     "verdict": "WORSE"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.27,
+     "interval": [
+      0.1982,
+      0.3414
+     ],
+     "per_seed": [
+      0.3082,
+      0.3005,
+      0.2013
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:cross_mae_m": {
+     "D": 0.0034,
+     "interval": [
+      -0.0056,
+      0.012
+     ],
+     "per_seed": [
+      0.0006,
+      0.0064,
+      0.0032
+     ],
+     "verdict": "OPEN"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.9467,
+     "interval": [
+      0.6007,
+      1.4451
+     ],
+     "per_seed": [
+      0.6883,
+      1.4563,
+      0.6957
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.0938,
+     "interval": [
+      0.0732,
+      0.117
+     ],
+     "per_seed": [
+      0.0922,
+      0.1055,
+      0.0839
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 8.8696,
+     "interval": [
+      7.08,
+      10.9218
+     ],
+     "per_seed": [
+      8.5999,
+      10.6197,
+      7.3891
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.123,
+     "interval": [
+      0.0876,
+      0.1646
+     ],
+     "per_seed": [
+      0.1088,
+      0.1601,
+      0.1
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.0246,
+     "interval": [
+      0.0126,
+      0.0388
+     ],
+     "per_seed": [
+      0.0179,
+      0.0367,
+      0.0192
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.1184,
+     "interval": [
+      0.0842,
+      0.1598
+     ],
+     "per_seed": [
+      0.1021,
+      0.1555,
+      0.0975
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.3674,
+     "interval": [
+      0.2673,
+      0.4659
+     ],
+     "per_seed": [
+      0.4135,
+      0.4168,
+      0.2719
+     ],
+     "verdict": "WORSE"
+    }
+   },
+   "strategic": {
+    "pos_30_50_80m_third_tick": [
+     {
+      "arc_m": 30.0,
+      "mean": 0.18479300735116602,
+      "lo": 0.07535411462783008,
+      "hi": 0.3113304564037566,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2312,
+       2313,
+       2313
+      ],
+      "per_seed": [
+       -0.056957413724077206,
+       0.48415399436846684,
+       0.1270779232849946
+      ]
+     },
+     {
+      "arc_m": 50.0,
+      "mean": 0.4337073071010516,
+      "lo": 0.19152809786608754,
+      "hi": 0.7107966426082079,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2298,
+       2299,
+       2299
+      ],
+      "per_seed": [
+       -0.050986740453564154,
+       1.031906654992601,
+       0.3199911785572651
+      ]
+     },
+     {
+      "arc_m": 80.0,
+      "mean": 0.9463212275749832,
+      "lo": 0.39338381595737953,
+      "hi": 1.5541315110501868,
+      "verdict": "WORSE",
+      "n_per_seed": [
+       2275,
+       2275,
+       2275
+      ],
+      "per_seed": [
+       0.01436788213189612,
+       1.9017597990146704,
+       0.9228360015783831
+      ]
+     }
+    ],
+    "reading": "MIXED"
+   },
+   "families": {
+    "LONGITUDINAL": "WORSE",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "MIXED"
+   }
+  },
+  "C2_LABEL": {
+   "A": "H_RLcA",
+   "B": "U_RLcK",
+   "headway": {
+    "U": {
+     "per_seed": [
+      -0.0071,
+      -0.016,
+      -0.016
+     ],
+     "pooled": -0.013,
+     "interval": [
+      -0.0277,
+      0.0005
+     ]
+    },
+    "C": {
+     "per_seed": [
+      0.0,
+      0.0,
+      -0.0016
+     ],
+     "pooled": -0.0005,
+     "interval": [
+      -0.0022,
+      0.0
+     ]
+    },
+    "F": {
+     "per_seed": [
+      0.0981,
+      0.0794,
+      0.0639
+     ],
+     "pooled": 0.0805,
+     "interval": [
+      0.0491,
+      0.1104
+     ]
+    }
+   },
+   "family_cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.1558,
+     "interval": [
+      0.1065,
+      0.2038
+     ],
+     "per_seed": [
+      0.1893,
+      0.1645,
+      0.1135
+     ],
+     "verdict": "WORSE"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.2818,
+     "interval": [
+      0.1716,
+      0.3946
+     ],
+     "per_seed": [
+      0.3765,
+      0.2817,
+      0.1871
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:cross_mae_m": {
+     "D": -0.0447,
+     "interval": [
+      -0.0761,
+      -0.013
+     ],
+     "per_seed": [
+      -0.0206,
+      -0.0613,
+      -0.0523
+     ],
+     "verdict": "BETTER"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.3751,
+     "interval": [
+      -0.0654,
+      0.8736
+     ],
+     "per_seed": [
+      0.3261,
+      0.8911,
+      -0.092
+     ],
+     "verdict": "OPEN"
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.0713,
+     "interval": [
+      0.0438,
+      0.0977
+     ],
+     "per_seed": [
+      0.0843,
+      0.085,
+      0.0446
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 7.766,
+     "interval": [
+      5.7349,
+      9.7698
+     ],
+     "per_seed": [
+      8.1512,
+      9.399,
+      5.7479
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.1041,
+     "interval": [
+      0.071,
+      0.1405
+     ],
+     "per_seed": [
+      0.1,
+      0.1326,
+      0.0796
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.0089,
+     "interval": [
+      -0.0079,
+      0.0253
+     ],
+     "per_seed": [
+      0.0129,
+      0.0217,
+      -0.0079
+     ],
+     "verdict": "OPEN"
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.0942,
+     "interval": [
+      0.0581,
+      0.1366
+     ],
+     "per_seed": [
+      0.0855,
+      0.1313,
+      0.0659
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.3465,
+     "interval": [
+      0.1826,
+      0.522
+     ],
+     "per_seed": [
+      0.5005,
+      0.3302,
+      0.209
+     ],
+     "verdict": "WORSE"
+    }
+   },
+   "strategic": {
+    "pos_30_50_80m_third_tick": [
+     {
+      "arc_m": 30.0,
+      "mean": -0.39505665476456026,
+      "lo": -0.6553389442494976,
+      "hi": -0.1674665390898925,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2312,
+       2313,
+       2313
+      ],
+      "per_seed": [
+       -0.4434337496754816,
+       0.026533719553792787,
+       -0.7682908494745906
+      ]
+     },
+     {
+      "arc_m": 50.0,
+      "mean": -0.4549734527199043,
+      "lo": -0.9337812609594793,
+      "hi": -0.0262237042492366,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2299,
+       2301,
+       2300
+      ],
+      "per_seed": [
+       -0.6200882508656498,
+       0.34155076333742734,
+       -1.0868009745507088
+      ]
+     },
+     {
+      "arc_m": 80.0,
+      "mean": -0.21975812835547254,
+      "lo": -1.0230708331757423,
+      "hi": 0.5557116453424701,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2275,
+       2275,
+       2275
+      ],
+      "per_seed": [
+       -0.39606947623217603,
+       0.8664061506385472,
+       -1.1296110594727884
+      ]
+     }
+    ],
+    "reading": "NOT-SEPARATED"
+   },
+   "families": {
+    "LONGITUDINAL": "WORSE",
+    "LATERAL": "MIXED",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   }
+  },
+  "C2_READER": {
+   "A": "H_RQ50A",
+   "B": "U_RQ50K",
+   "headway": {
+    "U": {
+     "per_seed": [
+      -0.0267,
+      -0.032,
+      -0.0125
+     ],
+     "pooled": -0.0237,
+     "interval": [
+      -0.0425,
+      -0.0089
+     ]
+    },
+    "C": {
+     "per_seed": [
+      -0.0093,
+      -0.0187,
+      0.0031
+     ],
+     "pooled": -0.0083,
+     "interval": [
+      -0.0229,
+      0.0041
+     ]
+    },
+    "F": {
+     "per_seed": [
+      0.067,
+      0.0623,
+      0.0483
+     ],
+     "pooled": 0.0592,
+     "interval": [
+      0.0287,
+      0.0889
+     ]
+    }
+   },
+   "family_cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 0.1636,
+     "interval": [
+      0.1167,
+      0.2075
+     ],
+     "per_seed": [
+      0.1881,
+      0.1777,
+      0.1251
+     ],
+     "verdict": "WORSE"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 0.2761,
+     "interval": [
+      0.1735,
+      0.3743
+     ],
+     "per_seed": [
+      0.353,
+      0.281,
+      0.1942
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:cross_mae_m": {
+     "D": -0.0395,
+     "interval": [
+      -0.0725,
+      -0.005
+     ],
+     "per_seed": [
+      -0.012,
+      -0.0607,
+      -0.0457
+     ],
+     "verdict": "BETTER"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 0.3371,
+     "interval": [
+      -0.116,
+      0.8383
+     ],
+     "per_seed": [
+      0.3117,
+      0.8554,
+      -0.1558
+     ],
+     "verdict": "OPEN"
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.0651,
+     "interval": [
+      0.0363,
+      0.0919
+     ],
+     "per_seed": [
+      0.0748,
+      0.0837,
+      0.0366
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 7.6288,
+     "interval": [
+      5.5238,
+      9.7826
+     ],
+     "per_seed": [
+      7.8752,
+      9.4579,
+      5.5534
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.1117,
+     "interval": [
+      0.0803,
+      0.1461
+     ],
+     "per_seed": [
+      0.1059,
+      0.1388,
+      0.0905
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.0083,
+     "interval": [
+      -0.0071,
+      0.0246
+     ],
+     "per_seed": [
+      0.0113,
+      0.0213,
+      -0.0075
+     ],
+     "verdict": "OPEN"
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.1012,
+     "interval": [
+      0.0667,
+      0.1418
+     ],
+     "per_seed": [
+      0.0892,
+      0.1367,
+      0.0775
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 0.3453,
+     "interval": [
+      0.1963,
+      0.5028
+     ],
+     "per_seed": [
+      0.4762,
+      0.3307,
+      0.2291
+     ],
+     "verdict": "WORSE"
+    }
+   },
+   "strategic": {
+    "pos_30_50_80m_third_tick": [
+     {
+      "arc_m": 30.0,
+      "mean": -0.34439641006887195,
+      "lo": -0.6057199625281784,
+      "hi": -0.11314896440398156,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2312,
+       2313,
+       2313
+      ],
+      "per_seed": [
+       -0.3598350515861742,
+       0.07511149811511686,
+       -0.7484723514616792
+      ]
+     },
+     {
+      "arc_m": 50.0,
+      "mean": -0.36144223308396617,
+      "lo": -0.8440552340986003,
+      "hi": 0.07211599817901039,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2299,
+       2299,
+       2299
+      ],
+      "per_seed": [
+       -0.469681942741251,
+       0.4474058517657376,
+       -1.0620506082763852
+      ]
+     },
+     {
+      "arc_m": 80.0,
+      "mean": -0.09860145583943276,
+      "lo": -0.8911640440763804,
+      "hi": 0.684670710073998,
+      "verdict": "NOT-SEPARATED",
+      "n_per_seed": [
+       2275,
+       2275,
+       2275
+      ],
+      "per_seed": [
+       -0.18699910964010216,
+       1.0442979176982283,
+       -1.1531031755764247
+      ]
+     }
+    ],
+    "reading": "NOT-SEPARATED"
+   },
+   "families": {
+    "LONGITUDINAL": "WORSE",
+    "LATERAL": "MIXED",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   }
+  }
+ },
+ "levels": {
+  "H_R0A": {
+   "U": [
+    0.0587,
+    0.0356,
+    0.0552
+   ],
+   "C": [
+    0.0405,
+    0.0312,
+    0.0498
+   ],
+   "F": [
+    0.2072,
+    0.2196,
+    0.1667
+   ]
+  },
+  "H_R0K": {
+   "U": [
+    0.0996,
+    0.0907,
+    0.0943
+   ],
+   "C": [
+    0.0623,
+    0.0592,
+    0.067
+   ],
+   "F": [
+    0.1137,
+    0.0981,
+    0.0872
+   ]
+  },
+  "H_RLcA": {
+   "U": [
+    0.032,
+    0.0178,
+    0.0231
+   ],
+   "C": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "F": [
+    0.2383,
+    0.2492,
+    0.1978
+   ]
+  },
+  "H_RQ50A": {
+   "U": [
+    0.048,
+    0.0409,
+    0.0498
+   ],
+   "C": [
+    0.0218,
+    0.0093,
+    0.0312
+   ],
+   "F": [
+    0.2414,
+    0.2243,
+    0.2103
+   ]
+  },
+  "U_RLcK": {
+   "U": [
+    0.0391,
+    0.0338,
+    0.0391
+   ],
+   "C": [
+    0.0,
+    0.0,
+    0.0016
+   ],
+   "F": [
+    0.1402,
+    0.1698,
+    0.134
+   ]
+  },
+  "U_RQ50K": {
+   "U": [
+    0.0747,
+    0.073,
+    0.0623
+   ],
+   "C": [
+    0.0312,
+    0.028,
+    0.028
+   ],
+   "F": [
+    0.1745,
+    0.162,
+    0.162
+   ]
+  }
+ },
+ "c5": {
+  "pair": {
+   "A": "H_RLcA_P30",
+   "B": "H_RLcA_P0",
+   "headway": {
+    "U": {
+     "per_seed": [
+      -0.0143,
+      0.0,
+      0.0179
+     ],
+     "pooled": 0.0012,
+     "interval": [
+      -0.0253,
+      0.0269
+     ]
+    },
+    "C": {
+     "per_seed": [
+      0.0,
+      0.0,
+      0.0031
+     ],
+     "pooled": 0.001,
+     "interval": [
+      0.0,
+      0.0044
+     ]
+    },
+    "F": {
+     "per_seed": [
+      0.3046,
+      0.3908,
+      0.3785
+     ],
+     "pooled": 0.3579,
+     "interval": [
+      0.2756,
+      0.4377
+     ]
+    }
+   },
+   "family_cells": {
+    "LONGITUDINAL:speed_mae_mps": {
+     "D": 2.1692,
+     "interval": [
+      1.9955,
+      2.3518
+     ],
+     "per_seed": [
+      2.1483,
+      2.1849,
+      2.1744
+     ],
+     "verdict": "WORSE"
+    },
+    "LONGITUDINAL:along_mae_m": {
+     "D": 12.3852,
+     "interval": [
+      11.4834,
+      13.3031
+     ],
+     "per_seed": [
+      12.7088,
+      12.7866,
+      11.6602
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:cross_mae_m": {
+     "D": 4.4866,
+     "interval": [
+      3.933,
+      5.0978
+     ],
+     "per_seed": [
+      4.6634,
+      4.3978,
+      4.3987
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:heading_mae_deg": {
+     "D": 9.389,
+     "interval": [
+      8.0114,
+      10.7534
+     ],
+     "per_seed": [
+      9.7357,
+      10.1437,
+      8.2875
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:curvature_mae_1pm": {
+     "D": 0.1434,
+     "interval": [
+      0.0986,
+      0.1922
+     ],
+     "per_seed": [
+      0.1147,
+      0.1672,
+      0.1483
+     ],
+     "verdict": "WORSE"
+    },
+    "LATERAL:yaw_rate_mae_degps": {
+     "D": 19.0219,
+     "interval": [
+      14.9923,
+      23.4567
+     ],
+     "per_seed": [
+      17.1347,
+      22.2783,
+      17.6528
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:lon_err_rate": {
+     "D": 0.0501,
+     "interval": [
+      0.0068,
+      0.0913
+     ],
+     "per_seed": [
+      0.0118,
+      0.0566,
+      0.0818
+     ],
+     "verdict": "INSIDE-SPREAD"
+    },
+    "TACTICAL:lat_err_rate": {
+     "D": 0.1469,
+     "interval": [
+      0.121,
+      0.1741
+     ],
+     "per_seed": [
+      0.1581,
+      0.1534,
+      0.129
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:joint_err_rate": {
+     "D": 0.1199,
+     "interval": [
+      0.0893,
+      0.1504
+     ],
+     "per_seed": [
+      0.0968,
+      0.1298,
+      0.133
+     ],
+     "verdict": "WORSE"
+    },
+    "TACTICAL:ade_tac_m": {
+     "D": 16.6112,
+     "interval": [
+      15.4643,
+      17.8253
+     ],
+     "per_seed": [
+      17.0669,
+      16.9907,
+      15.7761
+     ],
+     "verdict": "WORSE"
+    }
+   },
+   "strategic": {
+    "pos_30_50_80m_third_tick": [
+     {
+      "arc_m": 30.0,
+      "mean": 8.734771992557757,
+      "lo": 7.1829875991296275,
+      "hi": 10.442084615237519,
+      "verdict": "WORSE",
+      "n_per_seed": [
+       1221,
+       1221,
+       1220
+      ],
+      "per_seed": [
+       8.93996753689761,
+       8.769283243794328,
+       8.494868716001351
+      ]
+     },
+     {
+      "arc_m": 50.0,
+      "mean": 11.507611290811363,
+      "lo": 9.312746600134094,
+      "hi": 14.004782342443118,
+      "verdict": "WORSE",
+      "n_per_seed": [
+       1209,
+       1211,
+       1209
+      ],
+      "per_seed": [
+       11.899026525059787,
+       11.672812936461485,
+       10.950721124484941
+      ]
+     },
+     {
+      "arc_m": 80.0,
+      "mean": 15.644020780520977,
+      "lo": 12.136828803605054,
+      "hi": 19.274021633492396,
+      "verdict": "WORSE",
+      "n_per_seed": [
+       1195,
+       1195,
+       1194
+      ],
+      "per_seed": [
+       16.39695261641356,
+       16.08738376289974,
+       14.44672404029128
+      ]
+     }
+    ],
+    "reading": "WORSE"
+   },
+   "families": {
+    "LONGITUDINAL": "WORSE",
+    "LATERAL": "WORSE",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "WORSE"
+   }
+  },
+  "windows": 1271,
+  "levels": {
+   "H_RLcA_P30": {
+    "U": [
+     0.04285714285714286,
+     0.03214285714285714,
+     0.05714285714285714
+    ],
+    "C": [
+     0.0,
+     0.0,
+     0.003076923076923077
+    ],
+    "F": [
+     0.6061538461538462,
+     0.7046153846153846,
+     0.6215384615384615
+    ]
+   },
+   "H_RLcA_P0": {
+    "U": [
+     0.05714285714285714,
+     0.03214285714285714,
+     0.039285714285714285
+    ],
+    "C": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "F": [
+     0.30153846153846153,
+     0.31384615384615383,
+     0.24307692307692308
+    ]
+   }
+  }
+ },
+ "line_model_reference": "not supplied to the reader (section 5 of CANDIDATE_SPEC_V8F_10K_2026-11-20.md); the lead puts the line-model cells beside the C5 cells"
+}

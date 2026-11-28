@@ -1,0 +1,40 @@
+{
+ "frames": 6,
+ "arms": {
+  "REF": {
+   "rc": 0,
+   "rows": 6,
+   "searched": 6,
+   "wall_s": 28.8,
+   "env": {
+    "REFE_MAP_STEP_FAST": "0"
+   }
+  },
+  "FAST": {
+   "rc": 0,
+   "rows": 6,
+   "searched": 6,
+   "wall_s": 28.8,
+   "env": {
+    "REFE_MAP_STEP_FAST": "1"
+   },
+   "speedup_vs_ref_wall": 1.0
+  },
+  "MUT": {
+   "rc": 0,
+   "rows": 6,
+   "searched": 6,
+   "wall_s": 28.8,
+   "env": {
+    "REFE_MAP_STEP_FAST": "1",
+    "REFE_MAP_STEP_MUTATE": "route_1mm"
+   }
+  }
+ },
+ "checks": {
+  "all_exit_0": true,
+  "ref_accepted_rows": true,
+  "FAST_rows_and_stats_eq_REF": true,
+  "MUT_differs_from_REF": true
+ }
+}

@@ -1,0 +1,285 @@
+--- a/stack/tanitad/data/refav1_loader.py (c36b6ddd)
++++ b/stack/tanitad/data/refav1_loader.py (R1-R6)
+@@ -129,6 +129,34 @@
+   episodes labeled, 2026-09-01), so the loader reports loudly (count and
+   names in ``join_report``) and marks the rows instead of dying. A trainer
+   wanting v6-strictness asserts ``join_report['nav']['n_missing'] == 0``.
++
++⭐ PI DIRECTIVE 2026-09-27 (R1 / R3 / R5) — FOUR NEW EMISSIONS, EACH DEFAULT OFF.
++With every option off ``batch()`` returns exactly the pre-directive dict (same
++keys, same tensors, same order of RNG-free reads), so no existing caller moves.
++* ``goal_targets`` (R3): ``goal_y`` / ``goal_w`` [B, 22] -- the v7.2 tactical
++  goal SET projected per window by the ONE implementation,
++  `v7_labels.tactical_goal_targets` (the band rule, the provenance / entailment
++  negative policy, or the PI's 2026-09-16 cot-absence ruling with its sidecar).
++  Unlabelled clips and out-of-band windows carry ``w = 0`` everywhere.
++* ``speed_band`` (R3): ``speed_band`` [B, 2] = the record's
++  ``SPEED_BAND.(v_lo_ms, v_hi_ms)`` + ``speed_band_mask`` [B] -- in-band windows
++  of labelled clips only, the SAME band rule as ``lat_label``.
++* ``speed_max`` (R1): ``speed_max_ms`` [B] = the clip's RAW
++  ``SPEED_BAND.v_hi_ms`` on EVERY window of a labelled clip (a set speed is a
++  property of the clip, not of the band) + ``speed_max_valid``. ⛔ RAW, never
++  binned: the refcv6 ladder is applied ONCE, on the model side (E16). ⛔ An
++  ORACLE input (ego-future provenance, PI-authorised 2026-09-16 as a declared
++  input): refused unless the label manifest carries the oracle stamp.
++* ``traj_steps`` K > 0 (R5): ``traj_gt`` [B, K, 2] = the recorded future ego
++  path at cache steps t+1..t+K (raw frames 2(t+j), ego frame at frame 2t,
++  `metric_dynamics.gt_ego_waypoints` -- the arm's `gt_waypoints`), ``traj_mask``
++  [B, K] (False where the frame does not exist or is non-finite), and the t0
++  kinematics exactly as `refav1_arm.hold_ext_controls` measures them:
++  ``a0 = (v[2t] - v[2t-2]) / 0.2`` (a backward difference of past speeds) and
++  ``kappa0 = actions[2t, 0]`` (the recorded curvature channel AT t0) -- or, with
++  ``traj_kappa_source="pose_past"``, refcv7's ``ha0_ext_pose`` curvature from the
++  two PAST poses 2t-2 and 2t (`kinematic_prior.prior_controls`), because
++  SPEC_REFCV7 §10 records the steer channel at t0 as "unruled at inference".
+ """
+ from __future__ import annotations
+ 
+@@ -182,10 +210,52 @@
+                  lru: int = 32, seed: int = 0,
+                  labels_path: str | Path | None = None,
+                  nav_path: str | Path | None = None,
+-                 labels_expected_records: int | None = None):
++                 labels_expected_records: int | None = None,
++                 goal_targets: bool = False,
++                 goal_negatives: str = "measured",
++                 cot_negative_sidecar: str | Path | None = None,
++                 speed_band: bool = False,
++                 speed_max: bool = False,
++                 traj_steps: int = 0,
++                 traj_kappa_source: str = "steer_t0"):
+         self.cache_dir = Path(cache_dir)
+         self.episode_dir = Path(episode_dir)
+         self.W, self.K, self.dt = int(op_window), int(op_steps), float(op_dt)
++        # ---- PI 2026-09-27 options (module docstring); all OFF by default --
++        self._goal_on = bool(goal_targets)
++        self._goal_neg = str(goal_negatives)
++        self._goal_sidecar_path = cot_negative_sidecar
++        self._goal_sidecar = None
++        self._sb_on = bool(speed_band)
++        self._vmax_on = bool(speed_max)
++        self._traj_k = int(traj_steps)
++        if self._traj_k < 0:
++            raise ValueError("traj_steps must be >= 0 (0 = off)")
++        if traj_kappa_source not in ("steer_t0", "pose_past"):
++            raise ValueError(f"traj_kappa_source {traj_kappa_source!r} must be "
++                             "'steer_t0' or 'pose_past'")
++        if traj_kappa_source != "steer_t0" and not self._traj_k:
++            raise ValueError("traj_kappa_source without traj_steps > 0 would be "
++                             "stamped and unused")
++        self._kappa_src = str(traj_kappa_source)
++        if (self._goal_on or self._sb_on or self._vmax_on) and labels_path is None:
++            raise ValueError(
++                "goal_targets / speed_band / speed_max are label fields: they "
++                "need labels_path (the v7.2 s2 blob)")
++        if self._traj_k and int(op_window) < 2:
++            raise ValueError("traj_steps > 0 needs op_window >= 2: a0 is the "
++                             "backward difference v[2t] - v[2t-2]")
++        if cot_negative_sidecar is not None and goal_negatives != "cot-absence-negative":
++            raise ValueError("a cot-absence sidecar with goal_negatives="
++                             f"{goal_negatives!r} would be ignored -- refused")
++        #: episode name -> poses [T_ep, 4] (only when traj_steps > 0), evicted
++        #: in step with the feature LRU
++        self._poses: dict[str, Tensor] = {}
++        #: clip_id -> V7Label (only when the goal / speed band / speed max join
++        #: is on)
++        self._v7rec: dict = {}
++        self.v7_labels: list = []
++        self.v7_manifest = None
+         self.str_dt, self.k_ext = float(str_dt), int(str_ext_steps)
+         if abs(self.dt - 0.2) > 1e-9:
+             raise ValueError(f"op_dt {op_dt}: this loader's grid mapping "
+@@ -271,9 +341,15 @@
+             o = torch.load(self.episode_dir / f"{nm}.v2ep.pt",
+                            map_location="cpu", weights_only=False)
+             hit = (feats, o["poses"][:, 3].float(), o["actions"][:, 0].float())
++            if self._traj_k:
++                # R5: the (x, y, yaw, v) poses for the recorded future path,
++                # read from the SAME load (no second pass over the v2ep file)
++                self._poses[nm] = o["poses"].float()
+         self._lru[nm] = hit                          # re-insert as most recent
+         while len(self._lru) > self._lru_n:
+-            self._lru.pop(next(iter(self._lru)))
++            gone = next(iter(self._lru))
++            self._lru.pop(gone)
++            self._poses.pop(gone, None)
+         return hit
+ 
+     def _kin_actions(self, v: Tensor, kap: Tensor, j0: int, n: int) -> Tensor:
+@@ -372,6 +448,8 @@
+                     _tok_id(x.tac_lon, lon_vocab, "a_tac.lon", x.clip_id),
+                     route,
+                     x.t0_s - tol, x.t0_s + tol)
++                if self._goal_on or self._sb_on or self._vmax_on:
++                    self._v7rec[x.clip_id] = x         # PI 2026-09-27 options
+             missing = sorted(nm for nm in self.names
+                              if self.clip_id[nm] not in by_clip)
+             if len(missing) == len(self.names):
+@@ -391,6 +469,8 @@
+                 "band_tol_s": sorted(tols),
+                 "tac_vocab_version": TAC_VOCAB_VERSION,
+                 **man.to_dict()}
++            if self._goal_on or self._sb_on or self._vmax_on:
++                rep.update(self._init_r1r3(labels, man))
+         if self._nav_on:
+             labels, man = _load(nav_path)
+             by_clip = {x.clip_id: x for x in labels}
+@@ -436,6 +516,121 @@
+                          f"allow_oracle_nav={N['allow_oracle_nav']}")
+         print("[refav1-labels] v7.2 join: " + " | ".join(parts), flush=True)
+ 
++    def _init_r1r3(self, labels, man) -> dict:
++        """PI 2026-09-27: the goal-set / SPEED_BAND / max-speed joins (module
++        docstring). Returns the ``join_report`` additions."""
++        from tanitad.data import v7_labels as v7l
++        rep: dict = {}
++        if self._vmax_on and not man.allow_oracle_nav:
++            # the same permission `oracle_max_speed` checks: SPEED_BAND.v_hi_ms
++            # is ego-future-derived, so as an INPUT it is an oracle channel
++            raise v7l.OracleNavRefused(
++                "[refav1-labels] speed_max (R1) reads SPEED_BAND.v_hi_ms, an "
++                "ego-future ORACLE input: the label manifest must carry the "
++                "oracle stamp (allow_oracle_nav=True)")
++        if self._goal_on:
++            if self._goal_neg not in ("measured", "geometry", "all",
++                                      "cot-absence-negative"):
++                raise ValueError(f"goal_negatives {self._goal_neg!r} unknown")
++            if self._goal_neg == "cot-absence-negative":
++                if self._goal_sidecar_path is None:
++                    raise v7l.CotAbsenceNegativeRefused(
++                        "[refav1-labels] goal_negatives='cot-absence-negative' "
++                        "needs cot_negative_sidecar (the PI 2026-09-16 ruling "
++                        "travels as a file built over THIS blob)")
++                sc, man = v7l.load_cot_negative_sidecar(self._goal_sidecar_path,
++                                                        man)
++                v7l.assert_sidecar_matches_presence(labels, sc)
++                self._goal_sidecar = sc
++        joined = [self._v7rec[c] for c in sorted(self._v7rec)]
++        self.v7_labels = joined
++        self.v7_manifest = man
++        if self._goal_on:
++            rep["goal"] = {"negatives": self._goal_neg,
++                           "n_clips": len(joined),
++                           "cot_absence_negative": (self._goal_sidecar.to_dict()
++                                                    if self._goal_sidecar else None),
++                           "rule": "v7_labels.tactical_goal_targets(rec, t*0.2 s)"}
++        if self._sb_on or self._vmax_on:
++            n_sb = sum(1 for x in joined
++                       if self._speed_band_of(x) is not None)
++            rep["speed_band"] = {"n_clips": len(joined), "n_with_band": n_sb,
++                                 "source": "g_tac.goals.SPEED_BAND.(v_lo_ms, "
++                                           "v_hi_ms)"}
++        return rep
++
++    @staticmethod
++    def _speed_band_of(rec) -> tuple[float, float] | None:
++        """``(v_lo_ms, v_hi_ms)`` of a record's SPEED_BAND, or None when the
++        record carries none (or a non-finite one)."""
++        sb = (rec.tac_goal_meta or {}).get("SPEED_BAND") if rec is not None else None
++        if not isinstance(sb, dict):
++            return None
++        lo, hi = sb.get("v_lo_ms"), sb.get("v_hi_ms")
++        if lo is None or hi is None:
++            return None
++        lo, hi = float(lo), float(hi)
++        if not (math.isfinite(lo) and math.isfinite(hi)):
++            return None
++        return lo, hi
++
++    def _traj_window(self, nm: str, v: Tensor, kap: Tensor, t: int):
++        """R5, one window: ``(gt [K, 2], mask [K] bool, a0, kappa0)``."""
++        from tanitad.models.metric_dynamics import gt_ego_waypoints
++        P = self._poses[nm]
++        k = self._traj_k
++        f0 = 2 * t
++        if f0 < 2:
++            raise ValueError(f"{nm}: window t={t} has no closed step before t0 "
++                             "(a0 is the backward difference v[2t] - v[2t-2])")
++        fut = P[f0 + 2: f0 + 2 * k + 1: 2]
++        if fut.shape[0] < k:                       # the recording ends: mask
++            pad = torch.full((k - fut.shape[0], P.shape[1]), float("nan"),
++                             dtype=P.dtype)
++            fut = torch.cat([fut, pad], dim=0)
++        gt = gt_ego_waypoints(P[f0][None], fut[None], list(range(1, k + 1)))[0]
++        mask = torch.isfinite(gt).all(dim=-1)
++        # ⭐ EXACTLY `refav1_arm.hold_ext_controls`: every index <= 2t
++        a0 = (v[f0] - v[f0 - 2]) / self.dt
++        if self._kappa_src == "pose_past":
++            # refcv7's `ha0_ext_pose` curvature, through ITS function (one
++            # derivation): the two past poses 2t-2 and 2t at 0.2 s spacing
++            from tanitad.models.kinematic_prior import prior_controls
++            _a, k0 = prior_controls("ha0_ext_pose", P[f0 - 2: f0 + 1: 2][None],
++                                    n_past=2, dt=self.dt)
++            return gt, mask, a0, k0[0]
++        return gt, mask, a0, kap[f0]
++
++    def _r1r3_window(self, nm, t, v, kap, g_y, g_w, sb, sb_m, vm, vm_ok,
++                     tr_gt, tr_m, a0s, k0s) -> None:
++        """Append one window's PI 2026-09-27 emissions (no-op when all off)."""
++        if not (self._goal_on or self._sb_on or self._vmax_on or self._traj_k):
++            return
++        rec = self._v7rec.get(self.clip_id.get(nm)) if self._v7rec else None
++        if self._goal_on:
++            from tanitad.data.v7_labels import TAC_GOAL_TOKENS, tactical_goal_targets
++            if rec is None:                          # unlabelled clip: no evidence
++                n = len(TAC_GOAL_TOKENS)
++                y, w = (0.0,) * n, (0.0,) * n
++            else:
++                y, w = tactical_goal_targets(rec, t * self.dt,
++                                             negatives=self._goal_neg,
++                                             sidecar=self._goal_sidecar)
++            g_y.append(y), g_w.append(w)
++        band = self._speed_band_of(rec)
++        if self._sb_on:
++            row = self._lab.get(self.clip_id.get(nm)) if rec is not None else None
++            ok = (band is not None and row is not None
++                  and row[3] <= t * self.dt <= row[4])      # the lat/lon band rule
++            sb.append(band if ok else (0.0, 0.0)), sb_m.append(bool(ok))
++        if self._vmax_on:
++            # the clip's set speed: EVERY window of a labelled clip, RAW v_hi
++            vm.append(band[1] if band is not None else 0.0)
++            vm_ok.append(band is not None)
++        if self._traj_k:
++            gt, m, a0, k0 = self._traj_window(nm, v, kap, t)
++            tr_gt.append(gt), tr_m.append(m), a0s.append(a0), k0s.append(k0)
++
+     # ------------------------------------------------------------------ api
+     def __len__(self) -> int:
+         return len(self.windows)
+@@ -444,11 +639,16 @@
+         feats, fut, act, ext_t, ext_a, v0s = [], [], [], [], [], []
+         lat, lon, route = [], [], []
+         nav, nav_ok = [], []
++        # PI 2026-09-27 emissions (each list stays empty when its option is off)
++        g_y, g_w, sb, sb_m, vm, vm_ok = [], [], [], [], [], []
++        tr_gt, tr_m, a0s, k0s = [], [], [], []
+         for _ in range(bs):
+             ei, t = self.windows[self._order[self._cursor]]
+             self._cursor = (self._cursor + 1) % len(self._order)
+             nm = self.names[ei]
+             F, v, kap = self._episode(nm)
++            self._r1r3_window(nm, t, v, kap, g_y, g_w, sb, sb_m, vm, vm_ok,
++                              tr_gt, tr_m, a0s, k0s)
+             feats.append(F[t - self.W + 1:t + 1].float())
+             fut.append(F[t + 1:t + 1 + self.K].float())
+             act.append(self._kin_actions(v, kap, t, self.K))
+@@ -492,4 +692,19 @@
+         if self.k_ext:
+             out["str_ext_targets"] = torch.stack(ext_t)
+             out["str_ext_actions"] = torch.stack(ext_a)
++        # ---- PI 2026-09-27 (module docstring): keys exist ONLY when asked for
++        if self._goal_on:
++            out["goal_y"] = torch.tensor(g_y, dtype=torch.float32)
++            out["goal_w"] = torch.tensor(g_w, dtype=torch.float32)
++        if self._sb_on:
++            out["speed_band"] = torch.tensor(sb, dtype=torch.float32)
++            out["speed_band_mask"] = torch.tensor(sb_m, dtype=torch.bool)
++        if self._vmax_on:
++            out["speed_max_ms"] = torch.tensor(vm, dtype=torch.float32)
++            out["speed_max_valid"] = torch.tensor(vm_ok, dtype=torch.bool)
++        if self._traj_k:
++            out["traj_gt"] = torch.stack(tr_gt)
++            out["traj_mask"] = torch.stack(tr_m)
++            out["a0"] = torch.stack(a0s)
++            out["kappa0"] = torch.stack(k0s)
+         return out

@@ -1,0 +1,52 @@
+====================================================================================================
+THE 22 TURN-GOAL WINDOWS, sorted by v0 -- retained (R) or crushed (.)
+====================================================================================================
+   win goal    GT          v0  goal_cost     basecv  k(wk15) keep
+     7 TURN_L  LK        0.00    0.00001    1.03594  +0.0180  .
+    11 TURN_R  LK        0.03    0.00003    0.96706  -0.0800  R
+    14 TURN_R  LK        0.10    0.00007    0.93880  -0.0800  R
+    39 TURN_R  LK        0.11    0.00001    1.00733  -0.0800  R
+    30 TURN_L  TL        0.20    0.00001    0.98186  +0.0207  .
+    12 TURN_R  LK        0.43    0.00004    1.07157  -0.0800  R
+    10 TURN_R  TL        0.55    0.00002    0.99353  -0.0800  R
+    33 TURN_L  TL        0.71    0.00001    1.12128  +0.0306  .
+    32 TURN_L  TL        1.06    0.00001    1.06257  +0.0247  .
+    13 TURN_R  TR        1.12    0.00005    0.97970  -0.0800  R
+    31 TURN_L  TL        1.40    0.00001    1.01147  +0.0282  .
+    34 TURN_L  TL        1.50    0.00001    0.95491  +0.0338  .
+    38 TURN_R  TR        3.47    0.00001    1.05268  -0.0800  R
+    36 TURN_R  TL        3.63    0.00001    0.95872  -0.0444  .
+    35 TURN_R  LK        3.84    0.00001    0.92690  -0.0530  .
+     6 TURN_L  LK        4.82    0.00001    0.90839  +0.0140  .
+     8 TURN_L  TL        5.27    0.00001    0.92687  +0.0120  .
+    23 TURN_R  TR        5.37    0.00013    0.95290  -0.0800  R
+     4 TURN_R  TR        5.48    0.00001    0.94346  -0.0489  .
+     0 TURN_R  TL        5.65    0.00001    1.00139  -0.0327  .
+     3 TURN_R  TR        6.38    0.00001    1.01616  -0.0800  R
+     5 TURN_L  LK       10.71    0.00013    0.97708  +0.0115  .
+
+====================================================================================================
+CAN ANY SINGLE VARIABLE SEPARATE retained FROM crushed AS WELL AS DIRECTION DOES?
+====================================================================================================
+  direction itself: TURN_L kept 0/9, TURN_R kept 9/13
+  v0 (m/s)               best threshold < 0.6303 m/s -> accuracy 0.7273  (16/22)
+  goal cost at full k    best threshold > 0.0000 -> accuracy 0.8636  (19/22)
+  basecost_cv            best threshold > 0.9629 -> accuracy 0.5909  (13/22)
+  episode id             best threshold > 1.5000 -> accuracy 0.6364  (14/22)
+  GT |dyaw|              best threshold < 0.0004 rad -> accuracy 0.6818  (15/22)
+  DIRECTION (goal token)                            -> accuracy 0.8182  (18/22)
+
+  ==> 'goal cost at full k' separates at least as well as direction (0.8636 vs 0.8182) -- a CONFOUND candidate, not a left/right effect.
+
+====================================================================================================
+CONTROL: the same split on the W_KAPPA = 0 arm must be UNDEFINED (everything retained)
+====================================================================================================
+  W_KAPPA=0: TURN_L kept 9/9, TURN_R kept 13/13 -- no variable can separate a constant
+
+====================================================================================================
+EPISODE CONFOUND: which episodes carry each goal token?
+====================================================================================================
+  TURN_L  n= 9 over 2 episodes: {1: 4, 6: 5}
+  TURN_R  n=13 over 4 episodes: {0: 3, 2: 5, 4: 1, 7: 4}
+  ⛔ if the two goal tokens live in DISJOINT episodes, direction and episode are the same variable on this panel and neither can be attributed -- which is exactly what the wider panel is for.
+  episodes carrying BOTH goal tokens: NONE

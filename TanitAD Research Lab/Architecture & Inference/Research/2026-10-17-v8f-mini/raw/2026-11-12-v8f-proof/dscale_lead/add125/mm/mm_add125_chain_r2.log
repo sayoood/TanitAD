@@ -1,0 +1,227 @@
+2026-11-23T07:10:55Z start (token ADD125-3881498-1795417855); waiting for the ROLLHIST-RK chain's last line in /root/rollhist/rh_rk_chain.log
+2026-11-23T07:10:55Z marker set (/root/N1DW_READY) with own token
+2026-11-23T07:10:55Z ROLLHIST-RK ended: ZZ ROLLHIST-RK DONE ZZ
+2026-11-23T07:10:55Z stage precheck start
+[2026-11-23T07:10:55Z] dscale_2x: pins ok: 11 files
+[2026-11-23T07:10:55Z] dscale_2x: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 107, written now True -> /root/dscale_lead/out_eqp/eval_view/EVALVIEW.precheck.json
+[2026-11-23T07:10:55Z] dscale_2x: training cache folder: /root/data/cache_union_dscale
+[2026-11-23T07:10:55Z] dscale_2x: container memory free: 64 GB (need >= 20)
+[2026-11-23T07:10:55Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_precheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --lead-corpus /root/strat1/inputs/data/v9/lead_train4572.npz --eval-manifest /root/dscale_lead/out_eqp/eval_view/eval/manifest.jsonl --join-union /root/dscale10k/merged/join_union.npz --expect-union 14512 --expect-corpus 4512 --hash v9_union=/root/dscale10k/merged/v9_labels_union.npz --hash speed_union=/root/dscale10k/merged/speed_union.jsonl --hash join_union=/root/dscale10k/merged/join_union.npz --out /root/dscale_lead/out_eqp/precheck/PRECHECK.json
+precheck: pass True -> /root/dscale_lead/out_eqp/precheck/PRECHECK.json {'counts': True, 'd1_no_leak': True, 'd2_labels_one_clock': True, 'd2j_join_matches_lead_file': True, 'd2n_join_matches_lead_file_new_clips': True, 'd2g_join_labels_per_group': True}
+[2026-11-23T07:10:59Z] dscale_2x: precheck rc=0
+[2026-11-23T07:10:59Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_precheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --lead-corpus /root/strat1/inputs/data/v9/lead_train4572.npz --eval-manifest /root/dscale_lead/out_eqp/eval_view/eval/manifest.jsonl --join-union /root/dscale10k/merged/join_union.npz --expect-union 14512 --expect-corpus 4512 --hash v9_union=/root/dscale10k/merged/v9_labels_union.npz --hash speed_union=/root/dscale10k/merged/speed_union.jsonl --hash join_union=/root/dscale10k/merged/join_union.npz --plant --out /root/dscale_lead/out_eqp/precheck/PRECHECK_PLANTED.json
+precheck: pass False -> /root/dscale_lead/out_eqp/precheck/PRECHECK_PLANTED.json {'counts': True, 'd1_no_leak': False, 'd2_labels_one_clock': True, 'd2j_join_matches_lead_file': True, 'd2n_join_matches_lead_file_new_clips': True, 'd2g_join_labels_per_group': True}
+[2026-11-23T07:11:02Z] dscale_2x: planted precheck rc=2 (must be 2)
+[2026-11-23T07:11:02Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_clockcheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --out /root/dscale_lead/out_eqp/precheck/CLOCK.json
+clockcheck: pass True (plant 0) -> /root/dscale_lead/out_eqp/precheck/CLOCK.json
+   corpus {"pass": true, "argmin_shift": 0, "ratio_shift0_to_nearest": 0.039127533693132516, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.496212, "-2": 0.202066, "-1": 0.102547, "0": 0.004012, "1": 0.103363, "2": 0.20325, "5": 0.498338}, "clips_read": 200, "clips_without_rows": 0, "pool": 4369}
+   new {"pass": true, "argmin_shift": 0, "ratio_shift0_to_nearest": 0.038448988631390006, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.52293, "-2": 0.212527, "-1": 0.107878, "0": 0.00413, "1": 0.107403, "2": 0.211684, "5": 0.521067}, "clips_read": 200, "clips_without_rows": 0, "pool": 9559}
+[2026-11-23T07:11:07Z] dscale_2x: clock check rc=0
+[2026-11-23T07:11:07Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_clockcheck.py --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --lead-union /root/dscale10k/merged/lead_union.npz --plant-shift 1 --out /root/dscale_lead/out_eqp/precheck/CLOCK_PLANTED.json
+clockcheck: pass False (plant 1) -> /root/dscale_lead/out_eqp/precheck/CLOCK_PLANTED.json
+   corpus {"pass": false, "argmin_shift": -1, "ratio_shift0_to_nearest": 25.760932739836154, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.399156, "-2": 0.102547, "-1": 0.004012, "0": 0.103363, "1": 0.20325, "2": 0.30237, "5": 0.594325}, "clips_read": 200, "clips_without_rows": 0, "pool": 4369}
+   new {"pass": false, "argmin_shift": -1, "ratio_shift0_to_nearest": 26.00848645427291, "ratio_bar": 0.5, "mean_abs_diff_mps": {"-5": 0.420363, "-2": 0.107878, "-1": 0.00413, "0": 0.107403, "1": 0.211684, "2": 0.315566, "5": 0.622118}, "clips_read": 200, "clips_without_rows": 0, "pool": 9559}
+[2026-11-23T07:11:11Z] dscale_2x: planted clock check rc=2 (must be 2)
+[2026-11-23T07:11:11Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_tokens_same.py --eval-cache /root/dscale_lead/out_eqp/eval_view --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --study-eval-tsv /root/dscale_lead/kit/STUDY_EVAL_MD5.tsv --study-train-tsv /root/dscale_lead/kit/STUDY_TRAIN_MD5.tsv --out /root/dscale_lead/out_eqp/precheck/EVALSET.json
+evalset: pass True -> /root/dscale_lead/out_eqp/precheck/EVALSET.json
+   d2e {"pass": true, "n_here": 141, "n_study": 141, "same_ids_same_order": true, "same_id_set": true, "sha256_ids_here": "4173cf10bbb513475fc668d40cf8cb8ce7a28decc9610ab80aabe41f7ad46fde", "sha256_ids_study": "4173cf10bbb513475fc668d40cf8cb8ce7a28decc9610ab80aabe41f7ad46fde", "planted_swap": false}
+   d3t {"gates": false, "eval_clips_same_content_md5": 0, "eval_clips": 141, "corpus_ids": 4512, "corpus_ids_in_the_study_manifest": 4512, "corpus_ids_in_the_union_manifest": 4512, "corpus_clips_with_md5_on_both_sides": 4512, "corpus_clips_same_content_md5": 0}
+[2026-11-23T07:11:11Z] dscale_2x: evaluation-set check rc=0
+[2026-11-23T07:11:11Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/dscale_tokens_same.py --eval-cache /root/dscale_lead/out_eqp/eval_view --union-cache /root/data/cache_union_dscale --bset-list /root/dscale10k/mix/bset_clips.txt --study-eval-tsv /root/dscale_lead/kit/STUDY_EVAL_MD5.tsv --study-train-tsv /root/dscale_lead/kit/STUDY_TRAIN_MD5.tsv --plant-swap --out /root/dscale_lead/out_eqp/precheck/EVALSET_PLANTED.json
+evalset: pass False -> /root/dscale_lead/out_eqp/precheck/EVALSET_PLANTED.json
+   d2e {"pass": false, "n_here": 141, "n_study": 141, "same_ids_same_order": false, "same_id_set": true, "sha256_ids_here": "d52f59bee254eb94460cebe27f39c12ad0b1af78604f8a5c17dbb801bde06e91", "sha256_ids_study": "4173cf10bbb513475fc668d40cf8cb8ce7a28decc9610ab80aabe41f7ad46fde", "planted_swap": true}
+   d3t {"gates": false, "eval_clips_same_content_md5": 0, "eval_clips": 141, "corpus_ids": 4512, "corpus_ids_in_the_study_manifest": 4512, "corpus_ids_in_the_union_manifest": 4512, "corpus_clips_with_md5_on_both_sides": 4512, "corpus_clips_same_content_md5": 0}
+[2026-11-23T07:11:11Z] dscale_2x: planted evaluation-set check rc=2 (must be 2)
+2026-11-23T07:11:11Z stage precheck rc=0
+2026-11-23T07:11:11Z stage cpucheck start
+[2026-11-23T07:11:12Z] dscale_2x: pins ok: 11 files
+[2026-11-23T07:11:12Z] dscale_2x: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 107, written now False -> /root/dscale_lead/out_eqp/eval_view/EVALVIEW.cpucheck.json
+[2026-11-23T07:11:12Z] dscale_2x: training cache folder: /root/data/cache_union_dscale
+[2026-11-23T07:11:12Z] dscale_2x: container memory free: 63 GB (need >= 20)
+[2026-11-23T07:11:12Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py train --grid pool4x10 --input-norm ln --tree /root/dscale_lead/kit/tree --out /root/dscale_lead/out_eqp/cpucheck_U --arms TK16_s0 --steps 2 --w-clos 0.0 --eval-guard /root/dscale_lead/out_eqp/eval_ids_guard.txt --trainer-argv --arm M2b --seed 0 --grid pool4x10 --wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --lead-sup-detach on --out X --cache-dir /root/data/cache_union_dscale --v9-train /root/dscale10k/merged/v9_labels_union.npz --v9-train-md5 9881b170a889f743c5b0894f9ad13f1d --lead-train /root/dscale10k/merged/lead_union.npz --speed-train /root/dscale10k/merged/speed_union.jsonl --join-train /root/dscale10k/merged/join_union.npz --p10 /root/dscale_lead/kit/p10_prior.pt --kin-mode yaw --tracks /root/dscale10k/merged/native_tracks_union.pt --batch 64 --steps-mult 4 --device cuda --device cpu --threads 4 --expect-steps 2
+TRAIN_DONE {"steps": 2, "p5_all_pass": false, "seconds": 3}
+[2026-11-23T07:11:21Z] dscale_2x: cpucheck U ok (rc 2; 2 = the train-log check is not met at two steps, as expected)
+[2026-11-23T07:11:21Z] dscale_2x: run: /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py train --grid pool4x10 --input-norm ln --tree /root/dscale_lead/kit/tree --out /root/dscale_lead/out_eqp/cpucheck_C --arms TK16_s0 --steps 2 --w-clos 0.0 --eval-guard /root/dscale_lead/out_eqp/eval_ids_guard.txt --trainer-argv --arm M2b --seed 0 --grid pool4x10 --wm-state grid --wm-cell-dim 16 --lead-sup on --w-lead-sup 1.0 --lead-sup-detach on --out X --cache-dir /root/data/cache_union_dscale --v9-train /root/dscale10k/merged/v9_labels_union.npz --v9-train-md5 9881b170a889f743c5b0894f9ad13f1d --lead-train /root/dscale10k/merged/lead_union.npz --speed-train /root/dscale10k/merged/speed_union.jsonl --join-train /root/dscale10k/merged/join_union.npz --p10 /root/dscale_lead/kit/p10_prior.pt --kin-mode yaw --tracks /root/dscale10k/merged/native_tracks_union.pt --batch 64 --steps-mult 4 --device cuda --device cpu --threads 4 --expect-steps 2 --clip-list /root/dscale10k/mix/bset_clips.txt
+TRAIN_DONE {"steps": 2, "p5_all_pass": false, "seconds": 2}
+[2026-11-23T07:11:29Z] dscale_2x: cpucheck C ok (rc 2; 2 = the train-log check is not met at two steps, as expected)
+2026-11-23T07:11:29Z stage cpucheck rc=0
+2026-11-23T07:11:29Z stage smoke start
+[2026-11-23T07:11:29Z] dscale_2x: pins ok: 11 files
+[2026-11-23T07:11:29Z] dscale_2x: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 107, written now False -> /root/dscale_lead/out_eqp/eval_view/EVALVIEW.smoke.json
+[2026-11-23T07:11:29Z] dscale_2x: training cache folder: /root/data/cache_union_dscale
+[2026-11-23T07:11:29Z] dscale_2x: container memory free: 64 GB (need >= 20)
+[2026-11-23T07:11:29Z] dscale_2x: run under flock (smoke): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py train --grid pool4x10 --input-norm ln --tree /root/dscale_lead/kit/tree --out /root/dscale_lead/out_eqp/smoke --arms TK16_s0\,TK16_s1\,TK16_s2\,TK16_s3 --steps 200 --w-clos 0.0 --eval-guard /root/dscale_lead/out_eqp/eval_ids_guard.txt --trainer-argv --arm\ M2b\ --seed\ 0\ --grid\ pool4x10\ --wm-state\ grid\ --wm-cell-dim\ 16\ --lead-sup\ on\ --w-lead-sup\ 1.0\ --lead-sup-detach\ on\ --out\ X\ --cache-dir\ /root/data/cache_union_dscale\ --v9-train\ /root/dscale10k/merged/v9_labels_union.npz\ --v9-train-md5\ 9881b170a889f743c5b0894f9ad13f1d\ --lead-train\ /root/dscale10k/merged/lead_union.npz\ --speed-train\ /root/dscale10k/merged/speed_union.jsonl\ --join-train\ /root/dscale10k/merged/join_union.npz\ --p10\ /root/dscale_lead/kit/p10_prior.pt\ --kin-mode\ yaw\ --tracks\ /root/dscale10k/merged/native_tracks_union.pt\ --batch\ 64\ --steps-mult\ 4\ --device\ cuda --device cuda --threads 4 
+TRAIN_DONE {"steps": 200, "p5_all_pass": false, "seconds": 14}
+[2026-11-23T07:18:32Z] dscale_2x: smoke: 13.95956015586853 s for 200 steps of 4 arms (wall 423 s incl. data build); projected GPU hours of the ONE training process of 61568 steps (four arms): 1.19 h (data build and extracts not included)
+2026-11-23T07:18:32Z stage smoke rc=0
+2026-11-23T07:18:32Z stage run start
+[2026-11-23T07:18:32Z] dscale_2x: pins ok: 11 files
+[2026-11-23T07:18:32Z] dscale_2x: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 107, written now False -> /root/dscale_lead/out_eqp/eval_view/EVALVIEW.run.json
+[2026-11-23T07:18:32Z] dscale_2x: training cache folder: /root/data/cache_union_dscale
+[2026-11-23T07:18:32Z] dscale_2x: container memory free: 66 GB (need >= 20)
+[2026-11-23T07:18:32Z] dscale_2x: run under flock (train runQ): timeout 6600 /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u_ck.py train --grid pool4x10 --input-norm ln --tree /root/dscale_lead/kit/tree --out /root/dscale_lead/out_eqp/runQ --arms TK16_s0\,TK16_s1\,TK16_s2\,TK16_s3 --steps 61568 --w-clos 0.0 --eval-guard /root/dscale_lead/out_eqp/eval_ids_guard.txt --trainer-argv --arm\ M2b\ --seed\ 0\ --grid\ pool4x10\ --wm-state\ grid\ --wm-cell-dim\ 16\ --lead-sup\ on\ --w-lead-sup\ 1.0\ --lead-sup-detach\ on\ --out\ X\ --cache-dir\ /root/data/cache_union_dscale\ --v9-train\ /root/dscale10k/merged/v9_labels_union.npz\ --v9-train-md5\ 9881b170a889f743c5b0894f9ad13f1d\ --lead-train\ /root/dscale10k/merged/lead_union.npz\ --speed-train\ /root/dscale10k/merged/speed_union.jsonl\ --join-train\ /root/dscale10k/merged/join_union.npz\ --p10\ /root/dscale_lead/kit/p10_prior.pt\ --kin-mode\ yaw\ --tracks\ /root/dscale10k/merged/native_tracks_union.pt\ --batch\ 64\ --steps-mult\ 4\ --device\ cuda --device cuda --threads 4 --expect-steps 61568 --ck-steps 19164\,28746 
+[tok_probe 500/61568] 32s
+[tok_probe 1000/61568] 64s
+[tok_probe 1500/61568] 95s
+[tok_probe 2000/61568] 127s
+[tok_probe 2500/61568] 159s
+[tok_probe 3000/61568] 191s
+[tok_probe 3500/61568] 223s
+[tok_probe 4000/61568] 254s
+[tok_probe 4500/61568] 287s
+[tok_probe 5000/61568] 319s
+[tok_probe 5500/61568] 352s
+[tok_probe 6000/61568] 384s
+[tok_probe 6500/61568] 416s
+[tok_probe 7000/61568] 447s
+[tok_probe 7500/61568] 479s
+[tok_probe 8000/61568] 510s
+[tok_probe 8500/61568] 542s
+[tok_probe 9000/61568] 574s
+[tok_probe 9500/61568] 606s
+[tok_probe 10000/61568] 638s
+[tok_probe 10500/61568] 670s
+[tok_probe 11000/61568] 704s
+[tok_probe 11500/61568] 737s
+[tok_probe 12000/61568] 771s
+[tok_probe 12500/61568] 803s
+[tok_probe 13000/61568] 836s
+[tok_probe 13500/61568] 869s
+[tok_probe 14000/61568] 903s
+[tok_probe 14500/61568] 938s
+[tok_probe 15000/61568] 973s
+[tok_probe 15500/61568] 1010s
+[tok_probe 16000/61568] 1046s
+[tok_probe 16500/61568] 1081s
+[tok_probe 17000/61568] 1115s
+[tok_probe 17500/61568] 1152s
+[tok_probe 18000/61568] 1188s
+[tok_probe 18500/61568] 1223s
+[tok_probe 19000/61568] 1259s
+[tok_probe 19500/61568] 1293s
+[tok_probe 20000/61568] 1328s
+[tok_probe 20500/61568] 1362s
+[tok_probe 21000/61568] 1398s
+[tok_probe 21500/61568] 1434s
+[tok_probe 22000/61568] 1470s
+[tok_probe 22500/61568] 1506s
+[tok_probe 23000/61568] 1542s
+[tok_probe 23500/61568] 1577s
+[tok_probe 24000/61568] 1613s
+[tok_probe 24500/61568] 1648s
+[tok_probe 25000/61568] 1681s
+[tok_probe 25500/61568] 1715s
+[tok_probe 26000/61568] 1747s
+[tok_probe 26500/61568] 1779s
+[tok_probe 27000/61568] 1812s
+[tok_probe 27500/61568] 1845s
+[tok_probe 28000/61568] 1877s
+[tok_probe 28500/61568] 1910s
+[tok_probe 29000/61568] 1945s
+[tok_probe 29500/61568] 1979s
+[tok_probe 30000/61568] 2012s
+[tok_probe 30500/61568] 2044s
+[tok_probe 31000/61568] 2076s
+[tok_probe 31500/61568] 2108s
+[tok_probe 32000/61568] 2139s
+[tok_probe 32500/61568] 2172s
+[tok_probe 33000/61568] 2204s
+[tok_probe 33500/61568] 2235s
+[tok_probe 34000/61568] 2267s
+[tok_probe 34500/61568] 2300s
+[tok_probe 35000/61568] 2331s
+[tok_probe 35500/61568] 2364s
+[tok_probe 36000/61568] 2395s
+[tok_probe 36500/61568] 2426s
+[tok_probe 37000/61568] 2459s
+[tok_probe 37500/61568] 2492s
+[tok_probe 38000/61568] 2525s
+[tok_probe 38500/61568] 2558s
+[tok_probe 39000/61568] 2590s
+[tok_probe 39500/61568] 2622s
+[tok_probe 40000/61568] 2654s
+[tok_probe 40500/61568] 2685s
+[tok_probe 41000/61568] 2717s
+[tok_probe 41500/61568] 2748s
+[tok_probe 42000/61568] 2780s
+[tok_probe 42500/61568] 2812s
+[tok_probe 43000/61568] 2844s
+[tok_probe 43500/61568] 2876s
+[tok_probe 44000/61568] 2907s
+[tok_probe 44500/61568] 2941s
+[tok_probe 45000/61568] 2975s
+[tok_probe 45500/61568] 3009s
+[tok_probe 46000/61568] 3042s
+[tok_probe 46500/61568] 3075s
+[tok_probe 47000/61568] 3106s
+[tok_probe 47500/61568] 3137s
+[tok_probe 48000/61568] 3168s
+[tok_probe 48500/61568] 3199s
+[tok_probe 49000/61568] 3232s
+[tok_probe 49500/61568] 3264s
+[tok_probe 50000/61568] 3297s
+[tok_probe 50500/61568] 3328s
+[tok_probe 51000/61568] 3361s
+[tok_probe 51500/61568] 3394s
+[tok_probe 52000/61568] 3425s
+[tok_probe 52500/61568] 3457s
+[tok_probe 53000/61568] 3489s
+[tok_probe 53500/61568] 3521s
+[tok_probe 54000/61568] 3553s
+[tok_probe 54500/61568] 3585s
+[tok_probe 55000/61568] 3617s
+[tok_probe 55500/61568] 3648s
+[tok_probe 56000/61568] 3681s
+[tok_probe 56500/61568] 3714s
+[tok_probe 57000/61568] 3747s
+[tok_probe 57500/61568] 3779s
+[tok_probe 58000/61568] 3811s
+[tok_probe 58500/61568] 3843s
+[tok_probe 59000/61568] 3875s
+[tok_probe 59500/61568] 3907s
+[tok_probe 60000/61568] 3940s
+[tok_probe 60500/61568] 3972s
+[tok_probe 61000/61568] 4005s
+[tok_probe 61500/61568] 4037s
+TRAIN_DONE {"steps": 61568, "p5_all_pass": false, "seconds": 4043}
+[2026-11-23T08:26:02Z] dscale_2x: train runQ done rc=2 (0 = p5 met on every arm, 2 = not; the reader applies p5)
+2026-11-23T08:26:02Z stage run rc=0
+2026-11-23T08:26:02Z stage extract start
+[2026-11-23T08:26:02Z] dscale_2x: pins ok: 11 files
+[2026-11-23T08:26:02Z] dscale_2x: evaluation view rc=0: evalview: rc 0 pass True source in study order False, positions that differ 107, written now False -> /root/dscale_lead/out_eqp/eval_view/EVALVIEW.extract.json
+[2026-11-23T08:26:02Z] dscale_2x: training cache folder: /root/data/cache_union_dscale
+[2026-11-23T08:26:02Z] dscale_2x: container memory free: 66 GB (need >= 20)
+[2026-11-23T08:26:02Z] dscale_2x: run under flock (extract runQ TK16_s0 last): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --run-dir /root/dscale_lead/out_eqp/runQ --arm TK16_s0 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s0 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:10Z] dscale_2x: run under flock (extract runQ TK16_s0 s19164): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s0/ckpt_step19164.pt --arm TK16_s0 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s19164 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s0 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:17Z] dscale_2x: run under flock (extract runQ TK16_s0 s28746): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s0/ckpt_step28746.pt --arm TK16_s0 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s28746 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s0 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:23Z] dscale_2x: run under flock (extract runQ TK16_s1 last): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --run-dir /root/dscale_lead/out_eqp/runQ --arm TK16_s1 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s1 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:30Z] dscale_2x: run under flock (extract runQ TK16_s1 s19164): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s1/ckpt_step19164.pt --arm TK16_s1 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s19164 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s1 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:36Z] dscale_2x: run under flock (extract runQ TK16_s1 s28746): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s1/ckpt_step28746.pt --arm TK16_s1 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s28746 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s1 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:43Z] dscale_2x: run under flock (extract runQ TK16_s2 last): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --run-dir /root/dscale_lead/out_eqp/runQ --arm TK16_s2 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s2 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:49Z] dscale_2x: run under flock (extract runQ TK16_s2 s19164): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s2/ckpt_step19164.pt --arm TK16_s2 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s19164 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s2 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:26:56Z] dscale_2x: run under flock (extract runQ TK16_s2 s28746): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s2/ckpt_step28746.pt --arm TK16_s2 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s28746 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s2 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:27:02Z] dscale_2x: run under flock (extract runQ TK16_s3 last): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --run-dir /root/dscale_lead/out_eqp/runQ --arm TK16_s3 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s3 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:27:09Z] dscale_2x: run under flock (extract runQ TK16_s3 s19164): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s3/ckpt_step19164.pt --arm TK16_s3 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s19164 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s3 eval: 14237 rows, 13673 with a 5-frame history
+[2026-11-23T08:27:16Z] dscale_2x: run under flock (extract runQ TK16_s3 s28746): /root/venv/bin/python /root/dscale_lead/kit/tok_probe_u.py extract --grid pool4x10 --tree /root/dscale_lead/kit/tree --ckpt /root/dscale_lead/out_eqp/runQ/TK16_s3/ckpt_step28746.pt --arm TK16_s3 --cache /root/dscale_lead/out_eqp/eval_view --states-dir /root/dscale_lead/out_eqp/states/runQ_s28746 --splits eval --eval-range 0:141 --device cuda --threads 4 
+extract TK16_s3 eval: 14237 rows, 13673 with a 5-frame history
+2026-11-23T08:27:23Z stage extract rc=0
+2026-11-23T08:27:23Z stage checklog start
+[2026-11-23T08:27:23Z] dscale_2x: pins ok: 11 files
+[2026-11-23T08:27:25Z] dscale_2x: check-log runQ rc=2 (2 = p5 not met on an arm; the reader applies it)
+[2026-11-23T08:27:25Z] dscale_2x: DONE: /root/dscale_lead/out_eqp/DSCALE_2X_DONE.txt
+2026-11-23T08:27:25Z stage checklog rc=0
+2026-11-23T08:27:25Z KIT_SHA.txt: a01c5ca8cb43a2c5 5888527b5c37003b ad681c67505bfed3 
+2026-11-23T08:27:25Z marker removed (own token)
+2026-11-23T08:27:34Z tar fcafcbb8bea5fa6e7b643118049c706c6cc84c328e7acd28f58ccac1fc0853c8  out_eqp_nockpt.tar.gz
+ZZ ADD125 DONE ZZ

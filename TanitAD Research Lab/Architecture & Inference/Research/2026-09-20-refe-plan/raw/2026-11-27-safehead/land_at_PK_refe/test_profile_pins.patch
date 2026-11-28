@@ -1,0 +1,92 @@
+# 7 REFe tests pin the post-tip profile SET / COUNT; add the 3 SAFE-HEAD profiles (40 -> 43; test_rep_gate 19 -> 22). Base: tip 1df04b58. Apply inside PK/refe: patch -p1 < test_profile_pins.patch
+diff --git a/test_div_gate.py b/test_div_gate.py
+index 7544014..62c5214 100644
+--- a/test_div_gate.py
++++ b/test_div_gate.py
+@@ -367,7 +367,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4", "refe_dose_s1z_p6": "9085f9e5cf59c016"}      # MEASURED at the tip ee1ba225 (the 24 profiles before DIV)
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r"} and len(L.PROFILES) == 40          # + refe_vdac_p6 (PREREG_VDAC_P6); + the P7 field arms F/C (PI 2026-11-17)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r", "refe_safehead_s0", "refe_safehead_s1", "refe_safehead_red"} and len(L.PROFILES) == 43          # + refe_vdac_p6 (PREREG_VDAC_P6); + the P7 field arms F/C (PI 2026-11-17)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+ r = repr(sorted(PD.items()))
+ assert fp("refe_div_p6") == fp("refe_div_p6") and "function" not in r and "0x" not in r and fp("refe_div_p6") != fp("refe_scorer1p6")
+ base = L.PROFILES["refe_scorer1p6"]
+diff --git a/test_dose_gate.py b/test_dose_gate.py
+index 191a4e2..0732028 100644
+--- a/test_dose_gate.py
++++ b/test_dose_gate.py
+@@ -172,7 +172,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_aux_s1c": "dcdf2dbd2a674f1c", "refe_s1zsm_p6": "86380fbb786daa75", "refe_rep_s1zsm_p6": "27fe236a2fd68ca4"}          # MEASURED at the tip e5437f6c (the 23 profiles that exist before the dose)
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r"} and len(L.PROFILES) == 40          # + refe_div_p6 (PREREG_DIV_P6); + the P7 field arms F/C (PI 2026-11-17)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r", "refe_safehead_s0", "refe_safehead_s1", "refe_safehead_red"} and len(L.PROFILES) == 43          # + refe_div_p6 (PREREG_DIV_P6); + the P7 field arms F/C (PI 2026-11-17)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+ r = repr(sorted(PD.items()))
+ assert fp("refe_dose_s1z_p6") == fp("refe_dose_s1z_p6") and "function" not in r and "0x" not in r, "the new digest must be stable"
+ assert fp("refe_dose_s1z_p6") != fp("refe_s1z_p6")
+diff --git a/test_field_p7_profile.py b/test_field_p7_profile.py
+index a71f946..389c60e 100644
+--- a/test_field_p7_profile.py
++++ b/test_field_p7_profile.py
+@@ -107,7 +107,7 @@ def chk_registry():
+     for nm in ALL_NAMES.values():
+         pr = L.PROFILES[nm]
+         ok((pr["field_store_sha256"], pr["field_store_keys"], pr["field_loss_sha256"]) == (L.FIELD_P7_STORE_SHA256, L.FIELD_P7_STORE_KEYS, L.FIELD_P7_LOSS_SHA256))
+-    ok(L.FIELD_P7_ARM_SEED == {"F": 0, "C": 0, "Cs": 1, "Fs": 1} and L.FIELD_P7_REP_BASE == {"Cs": "C", "Fs": "F"} and len(L.PROFILES) == 40)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++    ok(L.FIELD_P7_ARM_SEED == {"F": 0, "C": 0, "Cs": 1, "Fs": 1} and L.FIELD_P7_REP_BASE == {"Cs": "C", "Fs": "F"} and len(L.PROFILES) == 43)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+     ok(L.FIELD_P7_LOSS_SHA256 == hashlib.sha256((HERE / "field_loss.py").read_bytes().replace(b"\r\n", b"\n")).hexdigest(), "the registered field_loss.py hash is the shipped file's")
+ 
+ 
+diff --git a/test_rep_gate.py b/test_rep_gate.py
+index 10eb6f9..11c51c3 100644
+--- a/test_rep_gate.py
++++ b/test_rep_gate.py
+@@ -161,7 +161,7 @@ for n in ("refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6"):
+     r = repr(sorted(L.PROFILES[n].items()))
+     assert fp(n) == fp(n) and "function" not in r and "0x" not in r, n
+ assert len({fp(n) for n in ("refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_s1zsm_p6")}) == 4 and fp("refe_rep_p6") != fp("refe_rep_s1z_p6") != fp("refe_s1z_p6") and fp("refe_rep_p6") != fp("refe_scorer1p6")
+-assert len(L.PROFILES) == 40 and len(set(L.PROFILES) - {"refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r"}) == 19, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++assert len(L.PROFILES) == 43 and len(set(L.PROFILES) - {"refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r", "refe_safehead_s0", "refe_safehead_s1", "refe_safehead_red"}) == 22, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+ assert PC["suite"][-1] == {"script": "test_rep_gate.py", "token": "ZZTEST_PASS"} and PZ["suite"][-1] == PC["suite"][-1] == PM["suite"][-1] and PC["suite"][:-1] == L.SCORER1P6_SUITE and PZ["suite"][:-1] == L.S1Z_SUITE and PM["suite"][:-1] == L.S1ZSM_SUITE
+ for k in ("data_pin", "data_expect", "ckpt_sha256", "navtest_sha256", "required_flags", "recipe", "forbidden_flags"):
+     assert PC[k] == L.PROFILES["refe_scorer1p6"][k] and PZ[k] == L.PROFILES["refe_s1z_p6"][k], k
+diff --git a/test_s1zsm_gate.py b/test_s1zsm_gate.py
+index f8b0c64..e82b8ec 100644
+--- a/test_s1zsm_gate.py
++++ b/test_s1zsm_gate.py
+@@ -138,7 +138,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_aux_s1c": "dcdf2dbd2a674f1c"}          # MEASURED at the tip 0c19b8fd (sha256 of repr(sorted(profile.items())), first 16 hex): the 21 profiles that exist before S1ZSM
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r", "refe_safehead_s0", "refe_safehead_s1", "refe_safehead_red"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+ assert fp("refe_s1zsm_p6") == fp("refe_s1zsm_p6") and "function" not in repr(sorted(PROF.items())) and "0x" not in repr(sorted(PROF.items())), "the digest of the new profile must be stable"
+ base = L.PROFILES["refe_s1z_p6"]
+ assert PROF is not base and PROF["recipe"] is not base["recipe"] and PROF["required_flags"] is not base["required_flags"] and PROF["arm_seed"] is not base["arm_seed"] and PROF["twin_spec"] is not base["twin_spec"]
+diff --git a/test_scorer1p6_gate.py b/test_scorer1p6_gate.py
+index 1639eab..33ef0b0 100644
+--- a/test_scorer1p6_gate.py
++++ b/test_scorer1p6_gate.py
+@@ -151,7 +151,7 @@ def fp(n):
+ 
+ moved = [n for n, want in PINNED_FP.items() if fp(n) != want]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6", "refe_div_p6", "refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r", "refe_safehead_s0", "refe_safehead_s1", "refe_safehead_red"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+ assert PROF is not L.PROFILES["refe_scorer1"] and PROF["recipe"] is not L.PROFILES["refe_scorer1"]["recipe"] and "lane_weight" not in PROF["recipe"] and "lane_weight" in L.PROFILES["refe_scorer1"]["recipe"]
+ assert "--lane-head" not in PROF["required_flags"] and "--lane-head" in L.PROFILES["refe_scorer1"]["required_flags"]
+ print(f"T4 ok ({len(PINNED_FP)} existing fingerprints unmoved; refe_scorer1p6 = {fp('refe_scorer1p6')[:16]}...)")
+diff --git a/test_vdac_gate.py b/test_vdac_gate.py
+index 336519a..f4e32ce 100644
+--- a/test_vdac_gate.py
++++ b/test_vdac_gate.py
+@@ -491,7 +491,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
+           "refe_div_p6": "e51f9374a8f29816"}      # the 24 pinned at ee1ba225 (test_div_gate) + refe_div_p6 as landed with DIV: MEASURED with this edit applied
+ moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
+ assert not moved, f"existing profile fingerprints moved: {moved}"
+-assert set(L.PROFILES) - set(TIP_FP) == {"refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r"} and len(L.PROFILES) == 40  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)
++assert set(L.PROFILES) - set(TIP_FP) == {"refe_vdac_p6", "refe_p5c", "refe_p5c_c0", "refe_p5c_c0r", "refe_field_p7", "refe_field_p7_ctrl", "refe_field_p7_ctrl_s1", "refe_field_p7_s1", "refe_scorerft_t", "refe_scorerft_c", "refe_scorerft_t_s1", "refe_scorerft_c_s1", "refe_scorerft_p", "refe_scorerft_p_s1", "refe_p5c_c1r", "refe_safehead_s0", "refe_safehead_s1", "refe_safehead_red"} and len(L.PROFILES) == 43  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)
+ r = repr(sorted(PV.items()))
+ assert fp("refe_vdac_p6") == fp("refe_vdac_p6") and "function" not in r and "0x" not in r and fp("refe_vdac_p6") != fp("refe_aux_s1c")
+ base = L.PROFILES["refe_aux_s1c"]

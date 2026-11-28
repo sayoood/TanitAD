@@ -1,0 +1,15 @@
+{
+ "measured_utc": "2026-10-17T06:05Z-06:10Z",
+ "question": "does the pod hold D7 twin parts (token__lane_rank_K.pkl.xz) for ALL 44,409 production lane-rank twins, so that f(t) can be computed?",
+ "answer": "NO. Only the 74 mini-bank twins have FIXED-tree parts. The 44,409 production twin parts that exist are the PRE-FIX ones and are unusable for f(t).",
+ "production_twins": {"total": 44409, "K1": 32929, "K2": 8090, "K3": 3390, "goal_horizon_rows": 42442},
+ "mc_final (/workspace/ops/d7fix/mc_final)": {"files": 148, "meaning": "74 twin parts + 74 logged parts = the D7 mini bank only (0.17 % of the twins)"},
+ "logged_parts (/workspace/data/refe_navtrain/metric_cache)": {"files": 103037, "twin_frames_with_logged_part": "44409/44409"},
+ "metric_cache_twins_rejected (/workspace/data/refe_navtrain/metric_cache_twins_rejected)": {
+   "twin_files": 44409, "size": "18 GB",
+   "compared_on_the_74_mini_twins": {"twin_centreline_equals_LOGGED_centreline": "74/74", "twin_centreline_equals_fixed_mc_final_centreline": "6/74 (the 6 = twins whose fixed route also equals the logged one)"},
+   "why": "built by the pre-fix D7 stage: PDM-Closed never called DriveRL's patched _choose_route_edge (0 calls during metric_cache_parts), so every twin part is the logged route (ZZD7_DISTINCT_BAD differ=0, /workspace/data/refe_p6/lanes_distinct_1.out); quarantined to this dir by p6_prep.py quarantine",
+   "consequence": "f = d_logged / (d_logged + d_twin) = 0.5 on every twin: unusable for the commit filter"},
+ "prerequisite": "fixed-tree D7 build (build_metric_cache.py build --lane-rank K, Pool initializer pdm_route_rank.ensure(K)) for all 44,409 twins -> code/build_twin_parts_3c.sh",
+ "scripts": ["raw/scripts/cmp_parts.py", "raw/scripts/chk1.py", "raw/scripts/chk2.py"]
+}

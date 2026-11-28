@@ -1,0 +1,66 @@
+MUTATION RED as required 06:29:38
+RUN EXIT ZZEXIT 137 14:50:43
+===
+{
+ "event": "preflight",
+ "verdict": "PASS",
+ "gates": {
+  "G1_trainable_is_exactly_the_scorer": {
+   "ok": true,
+   "n_trainable": 78,
+   "n_scorer": 78,
+   "extra": [],
+   "missing": []
+  },
+  "G7_heldout_disjoint": {
+   "ok": true,
+   "heldout_sets": 3137,
+   "train_rows_in_heldout_logs": 0
+  },
+  "G3_copies_equal_model_at_step0": {
+   "ok": true,
+   "max_base_vs_A": 0.0,
+   "max_B_vs_A": 0.0
+  },
+  "G4_listnet_identity_and_live": {
+   "ok": true,
+   "bceA": 0.2393426150083542,
+   "lossB_lam0": 0.2393426150083542,
+   "lossB": 1.4548416137695312,
+   "listnet": 4.051663398742676
+  },
+  "G2_live": {
+   "ok": true,
+   "per_module": {
+    "score_q_mlp": {
+     "A_nonzero": true,
+     "B_nonzero": true
+    },
+    "score_dec": {
+     "A_nonzero": true,
+     "B_nonzero": true
+    },
+    "score_head": {
+     "A_nonzero": true,
+     "B_nonzero": true
+    }
+   },
+   "frozen_params_with_grad": 0,
+   "base_params_with_grad": 0
+  },
+  "G5_ckpt_roundtrip_planner_loader": {
+   "ok": true,
+   "max_abs_reload_vs_saved": 0.0,
+   "max_abs_saved_vs_base": 12.0
+  }
+ },
+ "s_per_microbatch": 1.82,
+ "est_hours_per_epoch": 11.04,
+ "gpu_mem_gb": 5.0,
+ "at": "2026-10-04T06:22:45"
+}
+===
+{"event": "train", "update": 2525, "of": 2733, "lr": 4.4268875284737e-07, "bceA": 0.20953015588223933, "lossB": 1.360934509038925, "listnet": 3.8126685309410093, "s_per_update": 11.407686441062701, "at": "2026-10-04T14:42:35"}
+{"event": "train", "update": 2550, "of": 2733, "lr": 3.4305161199891857e-07, "bceA": 0.20531204957515, "lossB": 1.353437413573265, "listnet": 3.8029308950901033, "s_per_update": 11.408785416004704, "at": "2026-10-04T14:47:23"}
+ZZEXIT 137
+f9a2fd7876d747b4f58193b2490d9ebd  /workspace/data/refe_sft1/scorer_states_last.pt

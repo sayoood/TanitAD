@@ -1,0 +1,113 @@
+.....F.F.......F.......                                                  [100%]
+================================== FAILURES ===================================
+__________ test_off_by_weight_heads_are_wired_when_their_flag_is_on ___________
+
+    def test_off_by_weight_heads_are_wired_when_their_flag_is_on() -> None:
+        """⛔ THE OBLIGATION THAT `KNOWN_UNWIRED` NEVER CARRIED.
+    
+        For every ``OFF_BY_WEIGHT`` entry: turn the named flag on and the module
+        MUST read ``GRADIENT_REACHES``. An entry that cannot be flipped is a broken
+        head parked behind a weight, which is the very thing this file exists to
+        make impossible.
+        """
+        for name, flag in OFF_BY_WEIGHT.items():
+            _model, census, losses = _build_and_backward([flag, "1.0"])
+            assert name in census, f"{name!r} is not a built child of the model"
+            row = census[name]
+>           assert row["verdict"] == "GRADIENT_REACHES", (
+                f"\n  ⛔ {name!r} reads {row['verdict']} with {flag} 1.0 -- the "
+                f"weight is declared and STILL no gradient lands.\n"
+                f"  Census row: {row}\n"
+                f"  This is D-TACGOAL-TRAINER-SEAM-OPEN re-opened: a head that is "
+                f"built, stamped, given a weight, and supervised by nothing.\n")
+E           AssertionError: 
+E               ⛔ 'tac_goal_tok_head' reads NOT_WIRED with --w-tac-goal 1.0 -- the weight is declared and STILL no gradient lands.
+E               Census row: {'n_tensors': 2, 'n_params': 726, 'n_grad_none': 2, 'grad_abs_sum': 0, 'verdict': 'NOT_WIRED'}
+E               This is D-TACGOAL-TRAINER-SEAM-OPEN re-opened: a head that is built, stamped, given a weight, and supervised by nothing.
+E             
+E           assert 'NOT_WIRED' == 'GRADIENT_REACHES'
+E             
+E             - GRADIENT_REACHES
+E             + NOT_WIRED
+
+tests\test_built_heads_receive_gradient.py:331: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+__________ test_the_supervised_cell_count_is_reported_with_the_term ___________
+
+    def test_the_supervised_cell_count_is_reported_with_the_term() -> None:
+        """⛔ A bare 0.0 in a metrics row reads as 'supervised, and perfect'.
+    
+        The literal is 3: the injected target supervises cells (0, 0), (0, 1) and
+        (0, 2) and nothing else. ⭐ Written as a LITERAL, never as an expression
+        over the target tensor -- re-deriving the producer's own arithmetic would
+        measure determinism, not correctness.
+        """
+        _model, _census, losses = _build_and_backward(["--w-tac-goal", "1.0"])
+>       assert "tac_goal_n_supervised" in losses, (
+            "the tac_goal term shipped without its `n`. `tac_goal_loss` returns "
+            "n_supervised precisely so a zero can be read as 'nothing was in "
+            "band' rather than 'the head is broken'.")
+E       AssertionError: the tac_goal term shipped without its `n`. `tac_goal_loss` returns n_supervised precisely so a zero can be read as 'nothing was in band' rather than 'the head is broken'.
+E       assert 'tac_goal_n_supervised' in {'loss': tensor(19.0204, grad_fn=<AddBackward0>), 'traj': tensor(0.4665, grad_fn=<DivBackward0>), 'cls': tensor(4.7497, grad_fn=<NllLossBackward0>), 'law': tensor(2.8867, grad_fn=<MseLossBackward0>), ...}
+
+tests\test_built_heads_receive_gradient.py:375: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+____ test_D_TACGOAL_TRAINER_SEAM_IS_CLOSED_the_trainer_calls_the_goal_loss ____
+
+    def test_D_TACGOAL_TRAINER_SEAM_IS_CLOSED_the_trainer_calls_the_goal_loss(
+    ) -> None:
+        """⭐⭐ THE HEADLINE, INVERTED 2026-09-09. This test used to assert the seam
+        was OPEN -- ``assert "tac_goal_loss" not in trainer`` -- and it was RIGHT
+        for three days: the head, the loss and the emitter all existed and the
+        trainer called none of them, so refcv5-v2 trained 11,286 parameters for
+        40,284 steps at ``grad_abs_sum`` exactly 0.
+    
+        It now asserts the OPPOSITE, and it is still two-sided: if the call is ever
+        removed again, this goes RED and names what to re-derive.
+    
+        ⭐ Every half is a POSITIVE assertion with a same-breath control, because an
+        absence found through a channel that could not read is not an absence
+        (``rg`` under-reports on the G: mount and still exits 0). ⛔ The control
+        matters MORE in this direction: a file that failed to read yields ``sym not
+        in trainer`` = True for every symbol, so the OLD form of this test would
+        have passed on an unreadable file. The new form fails on one.
+        """
+        trainer = _read("stack/scripts/refc_v3_train.py")
+        # -- the same-breath control: this file WAS read
+        assert "def compute_losses_v3(" in trainer, _msg(
+            "the control marker is missing from refc_v3_train.py — the read is "
+            "not trustworthy, so the assertions below prove nothing")
+        # -- the CALL, the FLAG and the TARGET, each named explicitly
+        for sym, what in (
+                ("_tac_goal_head.tac_goal_loss(", "the loss CALL"),
+                ('ap.add_argument("--w-tac-goal"', "the weight FLAG"),
+                ('"flag": "--w-tac-goal"', "the effective-weight GATE row"),
+                ('item["tac_goal_y"]', "the dataset TARGET"),
+                ("tac_goal_logits", "the head's logits"),
+        ):
+>           assert sym in trainer, _msg(
+                f"⛔ refc_v3_train.py no longer contains {what} ({sym!r}) — "
+                f"D-TACGOAL-TRAINER-SEAM-OPEN HAS RE-OPENED. The 22 tactical "
+                f"goal tokens would fall back from TRAINING_SIGNAL to "
+                f"AUDIT_OR_METRIC_ONLY. Re-run the census "
+                f"(stack/scripts/v7_vocab_reach_census.py) and update the claim "
+                f"register and RESULT.md.")
+E           AssertionError: 
+E               ⛔ refc_v3_train.py no longer contains the loss CALL ('_tac_goal_head.tac_goal_loss(') — D-TACGOAL-TRAINER-SEAM-OPEN HAS RE-OPENED. The 22 tactical goal tokens would fall back from TRAINING_SIGNAL to AUDIT_OR_METRIC_ONLY. Re-run the census (stack/scripts/v7_vocab_reach_census.py) and update the claim register and RESULT.md.
+E               If this is a DELIBERATE change, update BOTH this test and the
+E               documents below in the SAME commit:
+E                   - Project Steering/GOALS_AND_CLAIMS.md  (D-TLIGHT-1, D-TACGOAL-1)
+E                   - Project Steering/GOALS_AND_CLAIMS.md  (D-TACGOAL-TRAINER-SEAM-OPEN — the row this file measures)
+E                   - stack/tests/test_tactical_label_reach.py  (its docstring says 'GAP CLOSED 2026-09-06' — true of the HEAD, false of the TRAINER)
+E                   - TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-v7-vocab-reach-census/RESULT.md
+E             
+E           assert '_tac_goal_head.tac_goal_loss(' in '"""REF-C v3 trainer — the goal-mediated hierarchy on the supervised arm.\n\nDesign: ``TanitAD Research Lab/Architectu...s.preflight:\n        raise SystemExit(preflight(args))\n    train(args)\n\n\nif __name__ == "__main__":\n    main()\n'
+
+tests\test_v7_vocab_reach_census.py:229: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_built_heads_receive_gradient.py::test_off_by_weight_heads_are_wired_when_their_flag_is_on
+FAILED tests/test_built_heads_receive_gradient.py::test_the_supervised_cell_count_is_reported_with_the_term
+FAILED tests/test_v7_vocab_reach_census.py::test_D_TACGOAL_TRAINER_SEAM_IS_CLOSED_the_trainer_calls_the_goal_loss
+3 failed, 20 passed in 3.62s

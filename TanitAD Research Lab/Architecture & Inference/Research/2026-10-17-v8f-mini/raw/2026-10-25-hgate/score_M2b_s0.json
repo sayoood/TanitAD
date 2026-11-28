@@ -1,0 +1,4138 @@
+{
+ "seed": "M2b_s0",
+ "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "tier": "T1-class open loop (own held outputs; not closed loop)",
+ "estimator": "episode-cluster bootstrap, B=2000, 141 episodes, seed 0; deltas PAIRED (same resampled episodes). Answers 'another draw of EPISODES' ONLY; training-seed variance only via the two seeds side by side and F = |ADE6(s0)-ADE6(s1)|; inference is deterministic (no inference-seed floor).",
+ "identity_controls": {
+  "seed": "M2b_s0",
+  "i_closed_vs_B_maxabs_m": 0.0,
+  "i_closed_ade6_perwindow_maxabs_vs_banked": 0.0,
+  "i_closed_full_block_vs_banked_json": {
+   "n_mismatches": 0,
+   "mismatches": [],
+   "compared_keys": [
+    "consistency_a",
+    "estimator",
+    "families",
+    "self_consistency_b",
+    "strata_ade6",
+    "tactical",
+    "tier",
+    "traj"
+   ]
+  },
+  "ii_open_banked_w_vs_H_saved_maxabs_m": 0.0,
+  "ii_P_recomputed_vs_hblend_saved_P_maxabs_m": 0.0,
+  "ii_open_full_block_vs_hblend_saved_H_block": {
+   "n_mismatches": 0,
+   "mismatches": []
+  },
+  "iii_fit_all_windows": {
+   "maxabs_vs_banked_weights": 0.0,
+   "bar": 1e-12,
+   "pass": true,
+   "n_windows": 9582
+  },
+  "R1_open_with_wG_instead_of_banked_vs_H_maxabs_m": 4.113043157058939,
+  "R1_must_be_gt_0_and_is": true,
+  "R2_real_gate_vs_B_n_windows_differ": 945,
+  "R2_must_be_gt_0_and_is": true,
+  "banked_pred_eq_traj30": true,
+  "model_prior_vs_P10_4512_file_maxabs_m": 1.52587890625e-05,
+  "wG_in_range_and_monotone": true,
+  "prereg_literals_equal_source_constants": true,
+  "all_pass": true
+ },
+ "weights_G_sha256": "407f45144a6c19f3f98ea1b03c3d6ccfe4eea8cb1cde9e9816cb990891cbddfa",
+ "weights_banked_sha256": "dd260b4eaf114454bdc2f0a55c9eb601fd62de4e4c13ec0dad590b4b30eeff9d",
+ "inputs_sha256": {
+  "banked_npz": "8ddcd42c119f7ca9cc6a434103f40d017d61f809161c517310f2fb778df20501",
+  "banked_json": "e23c1cbde760860dfae1d3482931319704de2df9e36c356a185fbc0836fcff2c",
+  "p10_4512_pred": "9657c0fdce187ecbc33174759fcc337b034e59b80bbc9057bd547b10f7d7a336",
+  "ckpt": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+  "train_activity": "5b40f83f92a65e30493643d0fc9f69a338ee2270e04e57a08841860fa24429a6"
+ },
+ "arms_defined": {
+  "B": "B's banked plan `pred`",
+  "H": "HBLEND's H (saved array)",
+  "HG": "THE ARM: tau_B where a trigger fires, else up(P10) + w^G (.) (tau - up(P10))",
+  "P10": "P10-yaw-4512 plan file"
+ },
+ "gate": {
+  "interpretation": "OPEN = tau_G used; CLOSED = tau_B used (a trigger fired). PREREG identity controls fix the wording.",
+  "open_share": {
+   "mean": 0.3939,
+   "lo": 0.3442,
+   "hi": 0.4456,
+   "n_windows": 2399
+  },
+  "closed_share": {
+   "mean": 0.6061,
+   "lo": 0.5544,
+   "hi": 0.6558,
+   "n_windows": 2399
+  },
+  "fires_share": {
+   "T1_follow": {
+    "mean": 0.2272,
+    "lo": 0.1708,
+    "hi": 0.2838,
+    "n_windows": 2399
+   },
+   "T2_stop": {
+    "mean": 0.0383,
+    "lo": 0.0229,
+    "hi": 0.0546,
+    "n_windows": 2399
+   },
+   "T3_turn": {
+    "mean": 0.0842,
+    "lo": 0.0546,
+    "hi": 0.1184,
+    "n_windows": 2399
+   },
+   "T4_vhi": {
+    "mean": 0.4081,
+    "lo": 0.356,
+    "hi": 0.4612,
+    "n_windows": 2399
+   }
+  },
+  "fires_n": {
+   "T1_follow": 545,
+   "T2_stop": 92,
+   "T3_turn": 202,
+   "T4_vhi": 979
+  },
+  "closed_by_T1T2T3_share": {
+   "mean": 0.3443,
+   "lo": 0.2873,
+   "hi": 0.4022,
+   "n_windows": 2399
+  },
+  "exclusive_n": {
+   "T1_follow": 304,
+   "T2_stop": 25,
+   "T3_turn": 142,
+   "T4_vhi": 628
+  },
+  "n_open": 945,
+  "n_closed": 1454,
+  "n_windows_plan_differs_from_B": 945,
+  "predicted_v_hi_ms": {
+   "n_nonpositive": 20,
+   "median": 10.978113174438477,
+   "min": -3.2446718215942383
+  },
+  "crosstab_vs_GT_activity": {
+   "T1_follow_vs_GT_LEAD_active": {
+    "fired_and_active": 438,
+    "fired_not_active": 107,
+    "not_fired_active": 589,
+    "not_fired_not_active": 1265,
+    "precision": 0.8036697247706422,
+    "recall": 0.42648490749756574,
+    "n_active": 1027,
+    "n_fired": 545
+   },
+   "T2_stop_vs_GT_STOP_active": {
+    "fired_and_active": 30,
+    "fired_not_active": 62,
+    "not_fired_active": 51,
+    "not_fired_not_active": 2256,
+    "precision": 0.32608695652173914,
+    "recall": 0.37037037037037035,
+    "n_active": 81,
+    "n_fired": 92
+   },
+   "T3_turn_vs_GT_TURN_active": {
+    "fired_and_active": 123,
+    "fired_not_active": 79,
+    "not_fired_active": 35,
+    "not_fired_not_active": 2162,
+    "precision": 0.6089108910891089,
+    "recall": 0.7784810126582279,
+    "n_active": 158,
+    "n_fired": 202
+   },
+   "T1T2T3_any_vs_GT_any_of_STOP_TURN_LEAD_active": {
+    "fired_and_active": 671,
+    "fired_not_active": 155,
+    "not_fired_active": 490,
+    "not_fired_not_active": 1083,
+    "precision": 0.8123486682808717,
+    "recall": 0.5779500430663221,
+    "n_active": 1161,
+    "n_fired": 826
+   },
+   "gate_closed_vs_GT_any_of_STOP_TURN_LEAD_active": {
+    "fired_and_active": 849,
+    "fired_not_active": 605,
+    "not_fired_active": 312,
+    "not_fired_not_active": 633,
+    "precision": 0.5839064649243466,
+    "recall": 0.7312661498708011,
+    "n_active": 1161,
+    "n_fired": 1454
+   },
+   "GT_active_counts_eval141": {
+    "SPEED": 2399,
+    "STOP": 81,
+    "TURN": 158,
+    "LEAD": 1027
+   },
+   "T4_vhi_vs_H_SPEED_violated": {
+    "fired_and_active": 230,
+    "fired_not_active": 749,
+    "not_fired_active": 239,
+    "not_fired_not_active": 1181,
+    "precision": 0.23493360572012256,
+    "recall": 0.4904051172707889,
+    "n_active": 469,
+    "n_fired": 979
+   },
+   "T4_vhi_vs_B_SPEED_violated": {
+    "fired_and_active": 59,
+    "fired_not_active": 920,
+    "not_fired_active": 170,
+    "not_fired_not_active": 1250,
+    "precision": 0.0602655771195097,
+    "recall": 0.2576419213973799,
+    "n_active": 229,
+    "n_fired": 979
+   }
+  }
+ },
+ "single": {
+  "B": {
+   "ade1": {
+    "mean": 0.0819,
+    "lo": 0.0714,
+    "hi": 0.0953,
+    "n_windows": 2399
+   },
+   "fde1": {
+    "mean": 0.122,
+    "lo": 0.1066,
+    "hi": 0.1443,
+    "n_windows": 2399
+   },
+   "ade2": {
+    "mean": 0.3155,
+    "lo": 0.2765,
+    "hi": 0.3621,
+    "n_windows": 2399
+   },
+   "fde2": {
+    "mean": 0.7022,
+    "lo": 0.6156,
+    "hi": 0.8066,
+    "n_windows": 2399
+   },
+   "ade3": {
+    "mean": 0.5772,
+    "lo": 0.5254,
+    "hi": 0.6401,
+    "n_windows": 2399
+   },
+   "fde3": {
+    "mean": 1.4754,
+    "lo": 1.3587,
+    "hi": 1.6069,
+    "n_windows": 2399
+   },
+   "ade4": {
+    "mean": 0.9838,
+    "lo": 0.9078,
+    "hi": 1.0702,
+    "n_windows": 2399
+   },
+   "fde4": {
+    "mean": 2.7303,
+    "lo": 2.5108,
+    "hi": 2.9629,
+    "n_windows": 2399
+   },
+   "ade5": {
+    "mean": 1.5179,
+    "lo": 1.4027,
+    "hi": 1.647,
+    "n_windows": 2399
+   },
+   "fde5": {
+    "mean": 4.3146,
+    "lo": 3.9548,
+    "hi": 4.69,
+    "n_windows": 2399
+   },
+   "ade6": {
+    "mean": 2.1753,
+    "lo": 2.0071,
+    "hi": 2.3568,
+    "n_windows": 2399
+   },
+   "fde6": {
+    "mean": 6.281,
+    "lo": 5.7498,
+    "hi": 6.8269,
+    "n_windows": 2399
+   },
+   "fw_lon_speed_mae": {
+    "mean": 1.0674,
+    "lo": 0.9771,
+    "hi": 1.1638,
+    "n_windows": 2399
+   },
+   "fw_lon_accel_mae": {
+    "mean": 1.2058,
+    "lo": 1.0809,
+    "hi": 1.341,
+    "n_windows": 2399
+   },
+   "fw_lon_along_mae": {
+    "mean": 1.8097,
+    "lo": 1.6612,
+    "hi": 1.9689,
+    "n_windows": 2399
+   },
+   "fw_lat_cross_mae": {
+    "mean": 0.7662,
+    "lo": 0.6489,
+    "hi": 0.8992,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": 1.9374,
+    "lo": 1.4921,
+    "hi": 2.5619,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_n": {
+    "mean": 27.91,
+    "lo": 27.045,
+    "hi": 28.6541,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": 4.7804,
+    "lo": 3.438,
+    "hi": 6.5561,
+    "n_windows": 2343
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": 2.8879,
+    "lo": 2.4773,
+    "hi": 3.3395,
+    "n_windows": 2399
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": 1.1914,
+    "lo": 0.9113,
+    "hi": 1.5009,
+    "n_windows": 2399
+   },
+   "fw_lat_pair_n": {
+    "mean": 26.8591,
+    "lo": 25.9895,
+    "hi": 27.6008,
+    "n_windows": 2399
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": 8.1167,
+    "lo": 6.4451,
+    "hi": 9.9735,
+    "n_windows": 2328
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": 0.0815,
+    "lo": 0.0528,
+    "hi": 0.1207,
+    "n_windows": 2328
+   },
+   "fw_tac_lat_acc": {
+    "mean": 0.8458,
+    "lo": 0.8173,
+    "hi": 0.8745,
+    "n_windows": 2399
+   },
+   "fw_tac_lon_acc": {
+    "mean": 0.579,
+    "lo": 0.5385,
+    "hi": 0.6175,
+    "n_windows": 2399
+   }
+  },
+  "H": {
+   "ade1": {
+    "mean": 0.0598,
+    "lo": 0.0511,
+    "hi": 0.0728,
+    "n_windows": 2399
+   },
+   "fde1": {
+    "mean": 0.1209,
+    "lo": 0.1054,
+    "hi": 0.1429,
+    "n_windows": 2399
+   },
+   "ade2": {
+    "mean": 0.2123,
+    "lo": 0.1916,
+    "hi": 0.2392,
+    "n_windows": 2399
+   },
+   "fde2": {
+    "mean": 0.5603,
+    "lo": 0.5105,
+    "hi": 0.6173,
+    "n_windows": 2399
+   },
+   "ade3": {
+    "mean": 0.4734,
+    "lo": 0.4324,
+    "hi": 0.5198,
+    "n_windows": 2399
+   },
+   "fde3": {
+    "mean": 1.3354,
+    "lo": 1.2289,
+    "hi": 1.4543,
+    "n_windows": 2399
+   },
+   "ade4": {
+    "mean": 0.8541,
+    "lo": 0.7859,
+    "hi": 0.9292,
+    "n_windows": 2399
+   },
+   "fde4": {
+    "mean": 2.483,
+    "lo": 2.2813,
+    "hi": 2.6914,
+    "n_windows": 2399
+   },
+   "ade5": {
+    "mean": 1.353,
+    "lo": 1.2458,
+    "hi": 1.4681,
+    "n_windows": 2399
+   },
+   "fde5": {
+    "mean": 3.9699,
+    "lo": 3.6405,
+    "hi": 4.3013,
+    "n_windows": 2399
+   },
+   "ade6": {
+    "mean": 1.9685,
+    "lo": 1.8106,
+    "hi": 2.1306,
+    "n_windows": 2399
+   },
+   "fde6": {
+    "mean": 5.8185,
+    "lo": 5.3261,
+    "hi": 6.3198,
+    "n_windows": 2399
+   },
+   "fw_lon_speed_mae": {
+    "mean": 0.8709,
+    "lo": 0.8032,
+    "hi": 0.9384,
+    "n_windows": 2399
+   },
+   "fw_lon_accel_mae": {
+    "mean": 0.7414,
+    "lo": 0.6869,
+    "hi": 0.8011,
+    "n_windows": 2399
+   },
+   "fw_lon_along_mae": {
+    "mean": 1.5925,
+    "lo": 1.4682,
+    "hi": 1.7183,
+    "n_windows": 2399
+   },
+   "fw_lat_cross_mae": {
+    "mean": 0.7557,
+    "lo": 0.6404,
+    "hi": 0.888,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": 1.8193,
+    "lo": 1.3777,
+    "hi": 2.4401,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_n": {
+    "mean": 28.3777,
+    "lo": 27.6772,
+    "hi": 28.9796,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": 4.0259,
+    "lo": 2.9626,
+    "hi": 5.5127,
+    "n_windows": 2373
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": 2.4724,
+    "lo": 2.1129,
+    "hi": 2.8721,
+    "n_windows": 2399
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": 0.8715,
+    "lo": 0.6505,
+    "hi": 1.1256,
+    "n_windows": 2399
+   },
+   "fw_lat_pair_n": {
+    "mean": 27.3497,
+    "lo": 26.6426,
+    "hi": 27.9538,
+    "n_windows": 2399
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": 6.4244,
+    "lo": 5.248,
+    "hi": 7.7118,
+    "n_windows": 2367
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": 0.0536,
+    "lo": 0.0363,
+    "hi": 0.0734,
+    "n_windows": 2367
+   },
+   "fw_tac_lat_acc": {
+    "mean": 0.8629,
+    "lo": 0.8371,
+    "hi": 0.8883,
+    "n_windows": 2399
+   },
+   "fw_tac_lon_acc": {
+    "mean": 0.5969,
+    "lo": 0.5581,
+    "hi": 0.6331,
+    "n_windows": 2399
+   }
+  },
+  "HG": {
+   "ade1": {
+    "mean": 0.078,
+    "lo": 0.0676,
+    "hi": 0.0916,
+    "n_windows": 2399
+   },
+   "fde1": {
+    "mean": 0.1229,
+    "lo": 0.1072,
+    "hi": 0.1456,
+    "n_windows": 2399
+   },
+   "ade2": {
+    "mean": 0.2958,
+    "lo": 0.2573,
+    "hi": 0.3427,
+    "n_windows": 2399
+   },
+   "fde2": {
+    "mean": 0.6819,
+    "lo": 0.5978,
+    "hi": 0.787,
+    "n_windows": 2399
+   },
+   "ade3": {
+    "mean": 0.5587,
+    "lo": 0.507,
+    "hi": 0.6223,
+    "n_windows": 2399
+   },
+   "fde3": {
+    "mean": 1.4484,
+    "lo": 1.3309,
+    "hi": 1.5813,
+    "n_windows": 2399
+   },
+   "ade4": {
+    "mean": 0.9596,
+    "lo": 0.8826,
+    "hi": 1.0473,
+    "n_windows": 2399
+   },
+   "fde4": {
+    "mean": 2.6819,
+    "lo": 2.4639,
+    "hi": 2.9138,
+    "n_windows": 2399
+   },
+   "ade5": {
+    "mean": 1.4874,
+    "lo": 1.372,
+    "hi": 1.6151,
+    "n_windows": 2399
+   },
+   "fde5": {
+    "mean": 4.2538,
+    "lo": 3.9012,
+    "hi": 4.6131,
+    "n_windows": 2399
+   },
+   "ade6": {
+    "mean": 2.1381,
+    "lo": 1.9685,
+    "hi": 2.3199,
+    "n_windows": 2399
+   },
+   "fde6": {
+    "mean": 6.2075,
+    "lo": 5.6687,
+    "hi": 6.7392,
+    "n_windows": 2399
+   },
+   "fw_lon_speed_mae": {
+    "mean": 1.0334,
+    "lo": 0.9445,
+    "hi": 1.1266,
+    "n_windows": 2399
+   },
+   "fw_lon_accel_mae": {
+    "mean": 1.1085,
+    "lo": 0.9883,
+    "hi": 1.2437,
+    "n_windows": 2399
+   },
+   "fw_lon_along_mae": {
+    "mean": 1.7659,
+    "lo": 1.62,
+    "hi": 1.9151,
+    "n_windows": 2399
+   },
+   "fw_lat_cross_mae": {
+    "mean": 0.768,
+    "lo": 0.6508,
+    "hi": 0.9047,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": 1.9457,
+    "lo": 1.4971,
+    "hi": 2.5778,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_n": {
+    "mean": 28.1688,
+    "lo": 27.4088,
+    "hi": 28.8276,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": 4.576,
+    "lo": 3.316,
+    "hi": 6.182,
+    "n_windows": 2370
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": 2.8444,
+    "lo": 2.4252,
+    "hi": 3.2967,
+    "n_windows": 2399
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": 1.1564,
+    "lo": 0.8749,
+    "hi": 1.4713,
+    "n_windows": 2399
+   },
+   "fw_lat_pair_n": {
+    "mean": 27.1117,
+    "lo": 26.3435,
+    "hi": 27.7816,
+    "n_windows": 2399
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": 7.7085,
+    "lo": 6.1316,
+    "hi": 9.4559,
+    "n_windows": 2362
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": 0.0755,
+    "lo": 0.0482,
+    "hi": 0.1131,
+    "n_windows": 2362
+   },
+   "fw_tac_lat_acc": {
+    "mean": 0.8449,
+    "lo": 0.8159,
+    "hi": 0.8732,
+    "n_windows": 2399
+   },
+   "fw_tac_lon_acc": {
+    "mean": 0.5761,
+    "lo": 0.5359,
+    "hi": 0.6139,
+    "n_windows": 2399
+   }
+  },
+  "P10": {
+   "ade1": {
+    "mean": 0.0633,
+    "lo": 0.0545,
+    "hi": 0.0764,
+    "n_windows": 2399
+   },
+   "fde1": {
+    "mean": 0.1288,
+    "lo": 0.1129,
+    "hi": 0.1509,
+    "n_windows": 2399
+   },
+   "ade2": {
+    "mean": 0.2221,
+    "lo": 0.2008,
+    "hi": 0.2491,
+    "n_windows": 2399
+   },
+   "fde2": {
+    "mean": 0.6089,
+    "lo": 0.5556,
+    "hi": 0.6695,
+    "n_windows": 2399
+   },
+   "ade3": {
+    "mean": 0.5337,
+    "lo": 0.4865,
+    "hi": 0.5871,
+    "n_windows": 2399
+   },
+   "fde3": {
+    "mean": 1.5911,
+    "lo": 1.4524,
+    "hi": 1.7375,
+    "n_windows": 2399
+   },
+   "ade4": {
+    "mean": 1.0129,
+    "lo": 0.9246,
+    "hi": 1.1071,
+    "n_windows": 2399
+   },
+   "fde4": {
+    "mean": 3.0894,
+    "lo": 2.8142,
+    "hi": 3.3663,
+    "n_windows": 2399
+   },
+   "ade5": {
+    "mean": 1.6628,
+    "lo": 1.5163,
+    "hi": 1.8107,
+    "n_windows": 2399
+   },
+   "fde5": {
+    "mean": 5.1174,
+    "lo": 4.6429,
+    "hi": 5.5918,
+    "n_windows": 2399
+   },
+   "ade6": {
+    "mean": 2.487,
+    "lo": 2.2606,
+    "hi": 2.7135,
+    "n_windows": 2399
+   },
+   "fde6": {
+    "mean": 7.6673,
+    "lo": 6.9298,
+    "hi": 8.4116,
+    "n_windows": 2399
+   },
+   "fw_lon_speed_mae": {
+    "mean": 0.9802,
+    "lo": 0.8992,
+    "hi": 1.0602,
+    "n_windows": 2399
+   },
+   "fw_lon_accel_mae": {
+    "mean": 0.6376,
+    "lo": 0.5888,
+    "hi": 0.6897,
+    "n_windows": 2399
+   },
+   "fw_lon_along_mae": {
+    "mean": 1.8217,
+    "lo": 1.6691,
+    "hi": 1.9729,
+    "n_windows": 2399
+   },
+   "fw_lat_cross_mae": {
+    "mean": 1.1858,
+    "lo": 0.997,
+    "hi": 1.3895,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": 2.722,
+    "lo": 2.1439,
+    "hi": 3.4255,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_n": {
+    "mean": 28.4869,
+    "lo": 27.8206,
+    "hi": 29.0563,
+    "n_windows": 2399
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": 5.7302,
+    "lo": 4.4953,
+    "hi": 7.3391,
+    "n_windows": 2373
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": 2.5081,
+    "lo": 2.1361,
+    "hi": 2.9196,
+    "n_windows": 2399
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": 0.7696,
+    "lo": 0.5877,
+    "hi": 0.9766,
+    "n_windows": 2399
+   },
+   "fw_lat_pair_n": {
+    "mean": 27.4744,
+    "lo": 26.8078,
+    "hi": 28.045,
+    "n_windows": 2399
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": 6.3299,
+    "lo": 5.2371,
+    "hi": 7.5358,
+    "n_windows": 2367
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": 0.0462,
+    "lo": 0.032,
+    "hi": 0.063,
+    "n_windows": 2367
+   },
+   "fw_tac_lat_acc": {
+    "mean": 0.7728,
+    "lo": 0.7326,
+    "hi": 0.8098,
+    "n_windows": 2399
+   },
+   "fw_tac_lon_acc": {
+    "mean": 0.5336,
+    "lo": 0.4987,
+    "hi": 0.5683,
+    "n_windows": 2399
+   }
+  }
+ },
+ "paired": {
+  "HG_minus_B": {
+   "ade1": {
+    "mean": -0.0039,
+    "lo": -0.0057,
+    "hi": -0.0023,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde1": {
+    "mean": 0.001,
+    "lo": -0.0003,
+    "hi": 0.0022,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade2": {
+    "mean": -0.0197,
+    "lo": -0.0297,
+    "hi": -0.0116,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde2": {
+    "mean": -0.0203,
+    "lo": -0.0387,
+    "hi": -0.0049,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade3": {
+    "mean": -0.0186,
+    "lo": -0.028,
+    "hi": -0.0101,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde3": {
+    "mean": -0.027,
+    "lo": -0.0469,
+    "hi": -0.0089,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade4": {
+    "mean": -0.0242,
+    "lo": -0.038,
+    "hi": -0.0116,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde4": {
+    "mean": -0.0484,
+    "lo": -0.0885,
+    "hi": -0.0121,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade5": {
+    "mean": -0.0305,
+    "lo": -0.0516,
+    "hi": -0.0109,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde5": {
+    "mean": -0.0607,
+    "lo": -0.1239,
+    "hi": 0.0009,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade6": {
+    "mean": -0.0372,
+    "lo": -0.0681,
+    "hi": -0.0085,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde6": {
+    "mean": -0.0735,
+    "lo": -0.1675,
+    "hi": 0.0162,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_speed_mae": {
+    "mean": -0.034,
+    "lo": -0.0538,
+    "hi": -0.0158,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_accel_mae": {
+    "mean": -0.0973,
+    "lo": -0.1375,
+    "hi": -0.0645,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_along_mae": {
+    "mean": -0.0438,
+    "lo": -0.0729,
+    "hi": -0.0165,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_cross_mae": {
+    "mean": 0.0018,
+    "lo": -0.0122,
+    "hi": 0.0148,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": 0.0082,
+    "lo": -0.021,
+    "hi": 0.0361,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_n": {
+    "mean": 0.2589,
+    "lo": 0.1328,
+    "hi": 0.4143,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": -0.1748,
+    "lo": -0.3902,
+    "hi": -0.0066,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2343,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": -0.0436,
+    "lo": -0.1082,
+    "hi": 0.0161,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": -0.0349,
+    "lo": -0.1081,
+    "hi": 0.0315,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_pair_n": {
+    "mean": 0.2526,
+    "lo": 0.1318,
+    "hi": 0.3979,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": -0.4211,
+    "lo": -0.6217,
+    "hi": -0.2554,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2328,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": -0.0082,
+    "lo": -0.0128,
+    "hi": -0.0044,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2328,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lat_acc": {
+    "mean": -0.0008,
+    "lo": -0.0071,
+    "hi": 0.0054,
+    "separated": false,
+    "lower_is_better": false,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lon_acc": {
+    "mean": -0.0029,
+    "lo": -0.0096,
+    "hi": 0.0046,
+    "separated": false,
+    "lower_is_better": false,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "HG_minus_H": {
+   "ade1": {
+    "mean": 0.0182,
+    "lo": 0.014,
+    "hi": 0.0231,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde1": {
+    "mean": 0.002,
+    "lo": -0.0009,
+    "hi": 0.0051,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade2": {
+    "mean": 0.0836,
+    "lo": 0.0558,
+    "hi": 0.1216,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde2": {
+    "mean": 0.1216,
+    "lo": 0.0592,
+    "hi": 0.2133,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade3": {
+    "mean": 0.0853,
+    "lo": 0.0567,
+    "hi": 0.125,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde3": {
+    "mean": 0.113,
+    "lo": 0.0712,
+    "hi": 0.1594,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade4": {
+    "mean": 0.1055,
+    "lo": 0.0735,
+    "hi": 0.1432,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde4": {
+    "mean": 0.1989,
+    "lo": 0.1229,
+    "hi": 0.2796,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade5": {
+    "mean": 0.1344,
+    "lo": 0.0927,
+    "hi": 0.1808,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde5": {
+    "mean": 0.284,
+    "lo": 0.172,
+    "hi": 0.4009,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade6": {
+    "mean": 0.1695,
+    "lo": 0.1135,
+    "hi": 0.2292,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde6": {
+    "mean": 0.3889,
+    "lo": 0.2369,
+    "hi": 0.5438,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_speed_mae": {
+    "mean": 0.1625,
+    "lo": 0.1224,
+    "hi": 0.2098,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_accel_mae": {
+    "mean": 0.3672,
+    "lo": 0.2893,
+    "hi": 0.456,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_along_mae": {
+    "mean": 0.1735,
+    "lo": 0.1155,
+    "hi": 0.2361,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_cross_mae": {
+    "mean": 0.0123,
+    "lo": 0.0038,
+    "hi": 0.0218,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": 0.1263,
+    "lo": 0.0756,
+    "hi": 0.1859,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_n": {
+    "mean": -0.2088,
+    "lo": -0.3128,
+    "hi": -0.1183,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": 0.5471,
+    "lo": 0.2515,
+    "hi": 0.9819,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2370,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": 0.3719,
+    "lo": 0.2616,
+    "hi": 0.4946,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": 0.285,
+    "lo": 0.1804,
+    "hi": 0.407,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_pair_n": {
+    "mean": -0.238,
+    "lo": -0.354,
+    "hi": -0.1384,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": 1.3237,
+    "lo": 0.8207,
+    "hi": 2.0753,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2362,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": 0.0233,
+    "lo": 0.0106,
+    "hi": 0.0436,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2362,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lat_acc": {
+    "mean": -0.0179,
+    "lo": -0.03,
+    "hi": -0.0067,
+    "separated": true,
+    "lower_is_better": false,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lon_acc": {
+    "mean": -0.0208,
+    "lo": -0.0363,
+    "hi": -0.0067,
+    "separated": true,
+    "lower_is_better": false,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "HG_minus_P10": {
+   "ade1": {
+    "mean": 0.0146,
+    "lo": 0.0104,
+    "hi": 0.0196,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde1": {
+    "mean": -0.0058,
+    "lo": -0.0093,
+    "hi": -0.0025,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade2": {
+    "mean": 0.0738,
+    "lo": 0.0427,
+    "hi": 0.1159,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde2": {
+    "mean": 0.073,
+    "lo": 0.0053,
+    "hi": 0.1728,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade3": {
+    "mean": 0.025,
+    "lo": -0.0116,
+    "hi": 0.0748,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde3": {
+    "mean": -0.1427,
+    "lo": -0.2216,
+    "hi": -0.0617,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade4": {
+    "mean": -0.0533,
+    "lo": -0.1062,
+    "hi": 0.0052,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde4": {
+    "mean": -0.4075,
+    "lo": -0.5744,
+    "hi": -0.2395,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade5": {
+    "mean": -0.1754,
+    "lo": -0.2642,
+    "hi": -0.089,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde5": {
+    "mean": -0.8636,
+    "lo": -1.1666,
+    "hi": -0.5748,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade6": {
+    "mean": -0.3489,
+    "lo": -0.4928,
+    "hi": -0.2149,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde6": {
+    "mean": -1.4598,
+    "lo": -1.9537,
+    "hi": -0.9703,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_speed_mae": {
+    "mean": 0.0532,
+    "lo": -0.0247,
+    "hi": 0.1381,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_accel_mae": {
+    "mean": 0.4709,
+    "lo": 0.3748,
+    "hi": 0.5814,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_along_mae": {
+    "mean": -0.0558,
+    "lo": -0.1767,
+    "hi": 0.0727,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_cross_mae": {
+    "mean": -0.4177,
+    "lo": -0.5117,
+    "hi": -0.3276,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": -0.7763,
+    "lo": -1.0014,
+    "hi": -0.5665,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_n": {
+    "mean": -0.318,
+    "lo": -0.4648,
+    "hi": -0.1885,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": -1.1572,
+    "lo": -1.6941,
+    "hi": -0.5501,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2370,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": 0.3363,
+    "lo": 0.1941,
+    "hi": 0.4952,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": 0.3868,
+    "lo": 0.2378,
+    "hi": 0.5504,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_pair_n": {
+    "mean": -0.3627,
+    "lo": -0.5265,
+    "hi": -0.2193,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": 1.4314,
+    "lo": 0.7807,
+    "hi": 2.3611,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2362,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": 0.0308,
+    "lo": 0.015,
+    "hi": 0.0551,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2362,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lat_acc": {
+    "mean": 0.0721,
+    "lo": 0.0471,
+    "hi": 0.0976,
+    "separated": true,
+    "lower_is_better": false,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lon_acc": {
+    "mean": 0.0425,
+    "lo": -0.0008,
+    "hi": 0.0825,
+    "separated": false,
+    "lower_is_better": false,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "H_minus_B": {
+   "ade1": {
+    "mean": -0.0221,
+    "lo": -0.027,
+    "hi": -0.0174,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde1": {
+    "mean": -0.0011,
+    "lo": -0.0047,
+    "hi": 0.0022,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade2": {
+    "mean": -0.1033,
+    "lo": -0.1407,
+    "hi": -0.0754,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde2": {
+    "mean": -0.1419,
+    "lo": -0.2317,
+    "hi": -0.0792,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade3": {
+    "mean": -0.1039,
+    "lo": -0.1433,
+    "hi": -0.0747,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde3": {
+    "mean": -0.1399,
+    "lo": -0.1918,
+    "hi": -0.0949,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade4": {
+    "mean": -0.1297,
+    "lo": -0.1696,
+    "hi": -0.0959,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde4": {
+    "mean": -0.2473,
+    "lo": -0.3432,
+    "hi": -0.1588,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade5": {
+    "mean": -0.1649,
+    "lo": -0.2181,
+    "hi": -0.1176,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde5": {
+    "mean": -0.3447,
+    "lo": -0.4902,
+    "hi": -0.213,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "ade6": {
+    "mean": -0.2068,
+    "lo": -0.2771,
+    "hi": -0.1423,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fde6": {
+    "mean": -0.4624,
+    "lo": -0.6569,
+    "hi": -0.2849,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_speed_mae": {
+    "mean": -0.1965,
+    "lo": -0.2466,
+    "hi": -0.1506,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_accel_mae": {
+    "mean": -0.4644,
+    "lo": -0.5542,
+    "hi": -0.3796,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lon_along_mae": {
+    "mean": -0.2173,
+    "lo": -0.2899,
+    "hi": -0.1495,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_cross_mae": {
+    "mean": -0.0105,
+    "lo": -0.0235,
+    "hi": 0.001,
+    "separated": false,
+    "lower_is_better": true,
+    "better": false,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_sum_rad": {
+    "mean": -0.1181,
+    "lo": -0.1837,
+    "hi": -0.0605,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_n": {
+    "mean": 0.4677,
+    "lo": 0.2898,
+    "hi": 0.6872,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_heading_mae_deg": {
+    "mean": -0.7302,
+    "lo": -1.2215,
+    "hi": -0.3694,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2343,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_sum_rps": {
+    "mean": -0.4155,
+    "lo": -0.5507,
+    "hi": -0.295,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_sum_1pm": {
+    "mean": -0.3199,
+    "lo": -0.4588,
+    "hi": -0.2024,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_pair_n": {
+    "mean": 0.4906,
+    "lo": 0.311,
+    "hi": 0.7095,
+    "separated": true,
+    "lower_is_better": true,
+    "better": false,
+    "worse": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_yaw_rate_mae_degps": {
+    "mean": -1.7768,
+    "lo": -2.552,
+    "hi": -1.1835,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2328,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_lat_curvature_mae_1pm": {
+    "mean": -0.0322,
+    "lo": -0.0542,
+    "hi": -0.0178,
+    "separated": true,
+    "lower_is_better": true,
+    "better": true,
+    "worse": false,
+    "n_windows": 2328,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lat_acc": {
+    "mean": 0.0171,
+    "lo": 0.005,
+    "hi": 0.0304,
+    "separated": true,
+    "lower_is_better": false,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   },
+   "fw_tac_lon_acc": {
+    "mean": 0.0179,
+    "lo": 0.0017,
+    "hi": 0.0346,
+    "separated": true,
+    "lower_is_better": false,
+    "better": true,
+    "worse": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "blocks": {
+  "HG": {
+   "tier": "T0-open-loop-own-held-outputs (trunk-probe grid)",
+   "estimator": "episode-cluster bootstrap, B=2000",
+   "traj": {
+    "n": 2399,
+    "ade6_m": {
+     "mean": 2.1381,
+     "lo": 1.9685,
+     "hi": 2.3199,
+     "ci95": 0.1757,
+     "se": 0.0904,
+     "reducer": "mean",
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "fde6_m": {
+     "mean": 6.2075,
+     "lo": 5.6687,
+     "hi": 6.7392,
+     "ci95": 0.5352,
+     "se": 0.2787,
+     "reducer": "mean",
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "ade2_m": {
+     "mean": 0.2958,
+     "lo": 0.2573,
+     "hi": 0.3427,
+     "ci95": 0.0427,
+     "se": 0.0218,
+     "reducer": "mean",
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "acts": {
+     "mean_abs_a_mps2": 1.0153962918094221,
+     "zero_accel_frac": 0.0016961090109384657,
+     "zero_tol_mps2": 0.001,
+     "n_windows": 2399,
+     "n_steps": 29
+    }
+   },
+   "consistency_a": {
+    "n_windows": 2399,
+    "rules": {
+     "dt_s": 0.2,
+     "horizon_s": 6.0,
+     "band_start_s": 2.0,
+     "speed_tol_ms": 0.5,
+     "stop_speed_ms": 1.0,
+     "stop_pass_m": 2.0,
+     "turn_deadband_deg": 1.0,
+     "turn_min_overlap_s": 1.0,
+     "lead_tg_tol_s": 0.2,
+     "lead_v_floor_ms": 1.0,
+     "nav_baseline_radius_m": 12.0,
+     "nav_baseline_turn_deg": 90.0,
+     "ckpt_arcs_m": [
+      30.0,
+      50.0,
+      80.0
+     ]
+    },
+    "any": {
+     "rate_all": 0.17924135056273446,
+     "n_violated": 430,
+     "n_active": 2399,
+     "rate_over_active": 0.17924135056273446,
+     "ci": {
+      "mean": 0.1792,
+      "lo": 0.1501,
+      "hi": 0.2124,
+      "ci95": 0.0312,
+      "se": 0.0156,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "SPEED": {
+     "rate_all": 0.11004585243851604,
+     "n_violated": 264,
+     "n_active": 2399,
+     "rate_over_active": 0.11004585243851604
+    },
+    "STOP": {
+     "rate_all": 0.0212588578574406,
+     "n_violated": 51,
+     "n_active": 81,
+     "rate_over_active": 0.6296296296296297
+    },
+    "TURN": {
+     "rate_all": 0.004168403501458941,
+     "n_violated": 10,
+     "n_active": 158,
+     "rate_over_active": 0.06329113924050633
+    },
+    "LEAD": {
+     "rate_all": 0.08128386827844936,
+     "n_violated": 195,
+     "n_active": 1027,
+     "rate_over_active": 0.189873417721519
+    }
+   },
+   "strata_ade6": {
+    "turn": {
+     "n": 158,
+     "ade6_m": 2.929388036748339
+    },
+    "stop": {
+     "n": 81,
+     "ade6_m": 2.4847423761507086
+    },
+    "lead_brake": {
+     "n": 319,
+     "ade6_m": 2.5586384063396386
+    }
+   },
+   "tactical": {
+    "lat": {
+     "macro_f1": 0.8156957183062286,
+     "per_class_f1": [
+      0.97527972937809,
+      0.7209302325581395,
+      0.7508771929824561,
+      NaN,
+      NaN
+     ],
+     "confusion": [
+      [
+       1874,
+       8,
+       28,
+       0,
+       0
+      ],
+      [
+       16,
+       31,
+       0,
+       0,
+       0
+      ],
+      [
+       43,
+       0,
+       107,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     ],
+     "n": 2107,
+     "support": [
+      1910,
+      47,
+      150,
+      0,
+      0
+     ]
+    },
+    "lon": {
+     "macro_f1": 0.49915533884637825,
+     "per_class_f1": [
+      0.2857142857142857,
+      0.29411764705882354,
+      0.3745019920318725,
+      0.6779303062302007,
+      0.6151960784313726,
+      0.6008403361344538,
+      0.6457867263236391
+     ],
+     "confusion": [
+      [
+       15,
+       2,
+       1,
+       0,
+       0,
+       6,
+       0
+      ],
+      [
+       10,
+       10,
+       6,
+       2,
+       0,
+       12,
+       4
+      ],
+      [
+       2,
+       2,
+       47,
+       24,
+       23,
+       24,
+       9
+      ],
+      [
+       5,
+       4,
+       34,
+       321,
+       18,
+       23,
+       29
+      ],
+      [
+       0,
+       0,
+       12,
+       30,
+       251,
+       28,
+       74
+      ],
+      [
+       45,
+       4,
+       12,
+       54,
+       19,
+       286,
+       55
+      ],
+      [
+       4,
+       2,
+       8,
+       82,
+       110,
+       98,
+       433
+      ]
+     ],
+     "n": 2240,
+     "support": [
+      24,
+      44,
+      131,
+      434,
+      395,
+      475,
+      737
+     ]
+    },
+    "lat_majority": {
+     "macro_f1": 0.3169861422288607,
+     "per_class_f1": [
+      0.950958426686582,
+      0.0,
+      0.0,
+      NaN,
+      NaN
+     ],
+     "confusion": [
+      [
+       1910,
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       47,
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       150,
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     ],
+     "n": 2107,
+     "support": [
+      1910,
+      47,
+      150,
+      0,
+      0
+     ],
+     "majority_class": 0
+    },
+    "lon_majority": {
+     "macro_f1": 0.07073276068909257,
+     "per_class_f1": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.49512932482364796
+     ],
+     "confusion": [
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       24
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       44
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       131
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       434
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       395
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       475
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       737
+      ]
+     ],
+     "n": 2240,
+     "support": [
+      24,
+      44,
+      131,
+      434,
+      395,
+      475,
+      737
+     ],
+     "majority_class": 6
+    },
+    "goal_f1_per_token": {
+     "FOLLOW_LANE": 0.9752152361074876,
+     "TURN_L": 0.7045454545454546,
+     "TURN_R": 0.7619047619047619,
+     "YIELD_FOR_TURN_L": 0.6363636363636364,
+     "YIELD_FOR_TURN_R": 0.0,
+     "YIELD": 0.10101010101010101,
+     "STOP_POINT": 0.34977578475336324,
+     "SPEED_BAND": null,
+     "CORRIDOR_OFFSET": 0.2331288343558282,
+     "EVADE_IN_CORRIDOR": 0.46987951807228917,
+     "OVERTAKE_VEHICLE": 0.09523809523809523,
+     "MERGE": 0.0,
+     "GAP_TARGET": 0.0,
+     "REACT_ON_ONCOMING": 0.038461538461538464,
+     "TAKE_EXIT_L": null,
+     "TAKE_EXIT_R": 0.05555555555555555,
+     "TRAFFIC_LIGHT_REACT": null,
+     "TRAFFIC_LIGHT_REACT_RED": 0.5272727272727272,
+     "TRAFFIC_LIGHT_REACT_YELLOW": 0.0,
+     "TRAFFIC_LIGHT_REACT_GREEN": 0.025,
+     "LANE_CHANGE_L": 0.0,
+     "LANE_CHANGE_R": 0.0
+    },
+    "goal_macro_f1": 0.26175532861267575,
+    "goal_majority_macro_f1": 0.0
+   },
+   "self_consistency_b": {
+    "violation": {
+     "n_windows": 2399,
+     "rules": {
+      "dt_s": 0.2,
+      "horizon_s": 6.0,
+      "band_start_s": 2.0,
+      "speed_tol_ms": 0.5,
+      "stop_speed_ms": 1.0,
+      "stop_pass_m": 2.0,
+      "turn_deadband_deg": 1.0,
+      "turn_min_overlap_s": 1.0,
+      "lead_tg_tol_s": 0.2,
+      "lead_v_floor_ms": 1.0,
+      "nav_baseline_radius_m": 12.0,
+      "nav_baseline_turn_deg": 90.0,
+      "ckpt_arcs_m": [
+       30.0,
+       50.0,
+       80.0
+      ]
+     },
+     "any": {
+      "rate_all": 0.23718215923301375,
+      "n_violated": 569,
+      "n_active": 2399,
+      "rate_over_active": 0.23718215923301375,
+      "ci": {
+       "mean": 0.2372,
+       "lo": 0.1906,
+       "hi": 0.2855,
+       "ci95": 0.0475,
+       "se": 0.0237,
+       "reducer": "mean",
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     },
+     "SPEED": {
+      "rate_all": 0.1704877032096707,
+      "n_violated": 409,
+      "n_active": 2399,
+      "rate_over_active": 0.1704877032096707
+     },
+     "STOP": {
+      "rate_all": 0.008753647353063776,
+      "n_violated": 21,
+      "n_active": 57,
+      "rate_over_active": 0.3684210526315789
+     },
+     "TURN": {
+      "rate_all": 0.003751563151313047,
+      "n_violated": 9,
+      "n_active": 184,
+      "rate_over_active": 0.04891304347826087
+     },
+     "LEAD": {
+      "rate_all": 0.08003334722801167,
+      "n_violated": 192,
+      "n_active": 438,
+      "rate_over_active": 0.4383561643835616
+     }
+    },
+    "self_consistency": 0.7628178407669862
+   },
+   "families": {
+    "longitudinal": {
+     "speed_mae_mps": 1.0334,
+     "speed_bias_mps": -0.4103,
+     "speed_rmse_mps": 1.6216,
+     "target_speed_acc": {
+      "within_0.5_mps": 0.4605,
+      "within_1.0_mps": 0.6614,
+      "within_2.0_mps": 0.84
+     },
+     "target_speed_acc_note": "fraction of the 71970 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+     "along_mae_m": 1.7659,
+     "along_bias_m": -0.5885,
+     "along_final_bias_m": -2.2324,
+     "accel_mae_mps2": 1.1085,
+     "ego_progress": {
+      "status": "OK",
+      "convention": "human_dir",
+      "progress_ratio_mean": 0.9455,
+      "progress_ratio_median": 0.9733,
+      "progress_error_mean": 0.1697,
+      "under_progress_rate": 0.6844,
+      "gt_progress_mean_m": 68.7558,
+      "n": 2367,
+      "n_windows": 2399,
+      "n_excluded_low_gt_progress": 32,
+      "min_progress_m": 0.5,
+      "t0_axis_gt_self_ratio": 0.9694,
+      "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+      "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+      "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+     },
+     "dt_s": 0.2,
+     "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0
+     },
+     "anti_echo": {
+      "status": "UNAVAILABLE",
+      "reason": "no ego speed at t0 in the window dict. Tried, in order: v0; speed; lead.speeds (each must be a finite [n=2399] array). \u26d4 v0 is NOT imputed from gt/pred \u2014 the first GT step is a FUTURE displacement and deriving v0 from it would make the anti-echo controls unfalsifiable. Supply win['v0'] (rollout.collect already publishes win['speed']). Not supplying it is a WORK ITEM, not a pass.",
+      "n": 0,
+      "n_windows_available": 2399,
+      "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.md \u00a71.4.",
+      "block": "taniteval.v0_antiecho",
+      "version": "1.0.0",
+      "\u26d4_consequence": "the PI's 2026-08-16 anti-echo condition is UNDISCHARGED on this block. Every LONGITUDINAL number beside it must be read as UNVERIFIED against a hold-v0 copy \u2014 it may not be presented as a longitudinal capability result."
+     },
+     "n_windows": 2399,
+     "ci": {
+      "estimator": "episode_cluster_bootstrap",
+      "point_estimate": "full_set (the block's own printed value, recomputed by the same arithmetic \u2014 never a second implementation)",
+      "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_windows": 2399,
+      "components": {
+       "speed_mae_mps": {
+        "mean": 1.0334,
+        "lo": 0.9445,
+        "hi": 1.1266,
+        "ci95": 0.091,
+        "se": 0.0473,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "speed_bias_mps": {
+        "mean": -0.4103,
+        "lo": -0.5101,
+        "hi": -0.3187,
+        "ci95": 0.0957,
+        "se": 0.0497,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "speed_rmse_mps": {
+        "mean": 1.6216,
+        "lo": 1.4978,
+        "hi": 1.7509,
+        "ci95": 0.1266,
+        "se": 0.0663,
+        "reducer": "rms",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "target_speed_acc.within_0.5_mps": {
+        "mean": 0.4605,
+        "lo": 0.4309,
+        "hi": 0.491,
+        "ci95": 0.0301,
+        "se": 0.0154,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "target_speed_acc.within_1.0_mps": {
+        "mean": 0.6614,
+        "lo": 0.6282,
+        "hi": 0.6937,
+        "ci95": 0.0327,
+        "se": 0.0166,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "target_speed_acc.within_2.0_mps": {
+        "mean": 0.84,
+        "lo": 0.815,
+        "hi": 0.8637,
+        "ci95": 0.0244,
+        "se": 0.0127,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "along_mae_m": {
+        "mean": 1.7659,
+        "lo": 1.62,
+        "hi": 1.9151,
+        "ci95": 0.1475,
+        "se": 0.0764,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "along_bias_m": {
+        "mean": -0.5885,
+        "lo": -0.7912,
+        "hi": -0.3886,
+        "ci95": 0.2013,
+        "se": 0.1038,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "along_final_bias_m": {
+        "mean": -2.2324,
+        "lo": -2.8881,
+        "hi": -1.6101,
+        "ci95": 0.639,
+        "se": 0.3215,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "accel_mae_mps2": {
+        "mean": 1.1085,
+        "lo": 0.9883,
+        "hi": 1.2437,
+        "ci95": 0.1277,
+        "se": 0.0642,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "ego_progress.progress_ratio_mean": {
+        "mean": 0.9455,
+        "lo": 0.9201,
+        "hi": 0.9695,
+        "ci95": 0.0247,
+        "se": 0.0124,
+        "reducer": "mean",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_excluded_low_gt_progress": 32
+       },
+       "ego_progress.progress_ratio_median": {
+        "mean": 0.9733,
+        "lo": 0.963,
+        "hi": 0.9811,
+        "ci95": 0.009,
+        "se": 0.0044,
+        "reducer": "median",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_excluded_low_gt_progress": 32
+       },
+       "ego_progress.progress_error_mean": {
+        "mean": 0.1697,
+        "lo": 0.1317,
+        "hi": 0.2138,
+        "ci95": 0.0411,
+        "se": 0.0212,
+        "reducer": "mean",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_excluded_low_gt_progress": 32
+       },
+       "ego_progress.under_progress_rate": {
+        "mean": 0.6844,
+        "lo": 0.6471,
+        "hi": 0.7202,
+        "ci95": 0.0365,
+        "se": 0.0189,
+        "reducer": "mean",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_excluded_low_gt_progress": 32
+       },
+       "ego_progress.gt_progress_mean_m": {
+        "mean": 68.7558,
+        "lo": 61.6989,
+        "hi": 75.901,
+        "ci95": 7.101,
+        "se": 3.6855,
+        "reducer": "mean",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_excluded_low_gt_progress": 32
+       },
+       "ego_progress.t0_axis_gt_self_ratio": {
+        "mean": 0.9694,
+        "lo": 0.9538,
+        "hi": 0.9812,
+        "ci95": 0.0137,
+        "se": 0.0072,
+        "reducer": "mean",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "_what": "a property of the GROUND TRUTH's own geometry (the curvature confound in pseudosim's published reading), not of the arm \u2014 its interval is corpus dispersion"
+       }
+      },
+      "unavailable": {
+       "distance_keeping.mean_headway_min_m": {
+        "status": "UNAVAILABLE",
+        "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+        "n": 0
+       },
+       "distance_keeping.mean_time_gap_min_s": {
+        "status": "UNAVAILABLE",
+        "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+        "n": 0
+       },
+       "distance_keeping.mean_min_ttc_s": {
+        "status": "UNAVAILABLE",
+        "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+        "n": 0
+       }
+      },
+      "n_components": 19,
+      "n_with_interval": 16,
+      "n_unavailable": 3,
+      "complete": false,
+      "\u26d4_rule": "every component this family REPORTS carries an episode-cluster-bootstrap interval, or an explicit {status,reason,n}. A bare point estimate is neither."
+     }
+    },
+    "lateral": {
+     "heading_mae_deg": 3.9575,
+     "yaw_rate_mae_degps": 6.0111,
+     "curvature_mae_1pm": 0.042654,
+     "curvature_bias_1pm": 0.000126,
+     "cross_mae_m": 0.768,
+     "cross_bias_m": -0.087,
+     "cross_final_mae_m": 2.3051,
+     "_cross_is": "lateral OFFSET at matched time index (mean |y_pred - y_gt| in the window's ego frame), NOT a distance to the GT path: no projection, no arc-length matching. Read it WITH _along_mae_m_for_context and with the LONGITUDINAL family; a large along-track error makes it uninterpretable as a lateral error (two arms with y == 0 score identically however differently they drive).",
+     "_along_mae_m_for_context": 1.7659,
+     "_projection_based_alternative": "taniteval/taniteval/lateral.py::frenet_dense decomposes pred-gt in the GT PATH's own frame (along^2 + cross^2 == ||pred-gt||^2); driving.py publishes it as headline.pathgeom_crosstrack_m.",
+     "n_steps_heading": 67577,
+     "n_steps_curvature": 65041,
+     "n_steps_yaw_rate": 65041,
+     "excluded_below_min_ds": 4393,
+     "min_ds_m": 0.1,
+     "min_ds_mps": 0.5,
+     "dt_s": 0.2,
+     "dt_invariant": [
+      "heading_mae_deg",
+      "curvature_*",
+      "cross_*"
+     ],
+     "n_windows": 2399,
+     "ci": {
+      "estimator": "episode_cluster_bootstrap",
+      "point_estimate": "full_set (the block's own printed value, recomputed by the same arithmetic \u2014 never a second implementation)",
+      "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+      "n_windows": 2399,
+      "components": {
+       "heading_mae_deg": {
+        "mean": 3.9575,
+        "lo": 3.0313,
+        "hi": 5.2689,
+        "ci95": 1.1188,
+        "se": 0.5846,
+        "reducer": "heading_mae_deg=sum(err)/sum(valid_steps)",
+        "n_windows": 2370,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_steps": 67577,
+        "n_windows_dropped_no_valid_step": 29,
+        "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) \u2014 identical to the masked mean the block prints, NOT a mean of per-window means"
+       },
+       "yaw_rate_mae_degps": {
+        "mean": 6.0111,
+        "lo": 5.0599,
+        "hi": 7.0318,
+        "ci95": 0.9859,
+        "se": 0.5081,
+        "reducer": "yaw_rate_mae_degps=sum(err)/sum(valid_steps)",
+        "n_windows": 2362,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_steps": 65041,
+        "n_windows_dropped_no_valid_step": 37,
+        "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) \u2014 identical to the masked mean the block prints, NOT a mean of per-window means"
+       },
+       "curvature_mae_1pm": {
+        "mean": 0.042654,
+        "lo": 0.03191,
+        "hi": 0.055153,
+        "ci95": 0.011622,
+        "se": 0.006001,
+        "reducer": "curvature_mae_1pm=sum(err)/sum(valid_steps)",
+        "n_windows": 2362,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "display_dp": 6,
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_steps": 65041,
+        "n_windows_dropped_no_valid_step": 37,
+        "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) \u2014 identical to the masked mean the block prints, NOT a mean of per-window means"
+       },
+       "curvature_bias_1pm": {
+        "mean": 0.000126,
+        "lo": -0.002016,
+        "hi": 0.002582,
+        "ci95": 0.002299,
+        "se": 0.001161,
+        "reducer": "curvature_bias_1pm=sum(err)/sum(valid_steps)",
+        "n_windows": 2362,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "display_dp": 6,
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit",
+        "n_steps": 65041,
+        "n_windows_dropped_no_valid_step": 37,
+        "_reduction": "MICRO mean = sum(per-window error sums) / sum(per-window valid-step counts) \u2014 identical to the masked mean the block prints, NOT a mean of per-window means"
+       },
+       "cross_mae_m": {
+        "mean": 0.768,
+        "lo": 0.6508,
+        "hi": 0.9047,
+        "ci95": 0.127,
+        "se": 0.0645,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "cross_bias_m": {
+        "mean": -0.087,
+        "lo": -0.194,
+        "hi": 0.022,
+        "ci95": 0.108,
+        "se": 0.0544,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       },
+       "cross_final_mae_m": {
+        "mean": 2.3051,
+        "lo": 1.922,
+        "hi": 2.7458,
+        "ci95": 0.4119,
+        "se": 0.2093,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "resampling_unit": "EPISODE (win['eid']) \u2014 consecutive windows of one clip are not independent, so the episode is the cluster unit"
+       }
+      },
+      "unavailable": {},
+      "n_components": 7,
+      "n_with_interval": 7,
+      "n_unavailable": 0,
+      "complete": true,
+      "\u26d4_rule": "every component this family REPORTS carries an episode-cluster-bootstrap interval, or an explicit {status,reason,n}. A bare point estimate is neither."
+     }
+    },
+    "tactical_from_trajectory": {
+     "status": "OK",
+     "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+     "n": 2399,
+     "n_windows": 2399,
+     "labeller": "tanitad.refs.refc_tactical.factor_from_kinematics \u2014 the programme's OWN canonical gate (v1 branch, kappa=None); no thresholds are defined in this module",
+     "lateral_decision": {
+      "status": "OK",
+      "n": 2399,
+      "n_windows": 2399,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 1692,
+        "n_pred": 1689,
+        "recall": 0.8966,
+        "precision": 0.8982
+       },
+       "turn_left": {
+        "n_true": 245,
+        "n_pred": 244,
+        "recall": 0.6694,
+        "precision": 0.6721
+       },
+       "turn_right": {
+        "n_true": 462,
+        "n_pred": 466,
+        "recall": 0.7489,
+        "precision": 0.7425
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        1517,
+        69,
+        106
+       ],
+       [
+        67,
+        164,
+        14
+       ],
+       [
+        105,
+        11,
+        346
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.8449,
+      "kappa": 0.6597,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.8449,
+        "lo": 0.8159,
+        "hi": 0.8732,
+        "ci95": 0.0286,
+        "se": 0.0146,
+        "reducer": "_acc",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.6597,
+        "lo": 0.6002,
+        "hi": 0.7135,
+        "ci95": 0.0566,
+        "se": 0.0284,
+        "reducer": "_kap",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "longitudinal_decision": {
+      "status": "OK",
+      "n": 2399,
+      "n_windows": 2399,
+      "classes": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "per_class": {
+       "brake_stop": {
+        "n_true": 703,
+        "n_pred": 1087,
+        "recall": 0.8165,
+        "precision": 0.5281
+       },
+       "steady": {
+        "n_true": 988,
+        "n_pred": 1058,
+        "recall": 0.5962,
+        "precision": 0.5567
+       },
+       "accelerate": {
+        "n_true": 708,
+        "n_pred": 254,
+        "recall": 0.3093,
+        "precision": 0.8622
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        574,
+        121,
+        8
+       ],
+       [
+        372,
+        589,
+        27
+       ],
+       [
+        141,
+        348,
+        219
+       ]
+      ],
+      "class_order": [
+       "brake_stop",
+       "steady",
+       "accelerate"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.5761,
+      "kappa": 0.3521,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.5761,
+        "lo": 0.5359,
+        "hi": 0.6139,
+        "ci95": 0.039,
+        "se": 0.02,
+        "reducer": "_acc",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.3521,
+        "lo": 0.2966,
+        "hi": 0.4043,
+        "ci95": 0.0538,
+        "se": 0.0275,
+        "reducer": "_kap",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "maneuver_5way_collapsed": {
+      "status": "OK",
+      "n": 2399,
+      "n_windows": 2399,
+      "classes": [
+       "lane_keep",
+       "turn_left",
+       "turn_right",
+       "accelerate",
+       "brake_stop"
+      ],
+      "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+      "per_class": {
+       "lane_keep": {
+        "n_true": 779,
+        "n_pred": 836,
+        "recall": 0.6162,
+        "precision": 0.5742
+       },
+       "turn_left": {
+        "n_true": 245,
+        "n_pred": 244,
+        "recall": 0.6694,
+        "precision": 0.6721
+       },
+       "turn_right": {
+        "n_true": 462,
+        "n_pred": 466,
+        "recall": 0.7489,
+        "precision": 0.7425
+       },
+       "accelerate": {
+        "n_true": 475,
+        "n_pred": 165,
+        "recall": 0.2716,
+        "precision": 0.7818
+       },
+       "brake_stop": {
+        "n_true": 438,
+        "n_pred": 688,
+        "recall": 0.6073,
+        "precision": 0.3866
+       }
+      },
+      "confusion_gt_rows_pred_cols": [
+       [
+        480,
+        18,
+        23,
+        16,
+        242
+       ],
+       [
+        21,
+        164,
+        14,
+        5,
+        41
+       ],
+       [
+        24,
+        11,
+        346,
+        12,
+        69
+       ],
+       [
+        229,
+        28,
+        19,
+        129,
+        70
+       ],
+       [
+        82,
+        23,
+        64,
+        3,
+        266
+       ]
+      ],
+      "class_order": [
+       "lane_keep",
+       "turn_left",
+       "turn_right",
+       "accelerate",
+       "brake_stop"
+      ],
+      "never_predicted": [],
+      "accuracy": 0.5773,
+      "kappa": 0.4532,
+      "kappa_undefined_reason": null,
+      "ci": {
+       "accuracy": {
+        "mean": 0.5773,
+        "lo": 0.5361,
+        "hi": 0.6172,
+        "ci95": 0.0406,
+        "se": 0.0202,
+        "reducer": "_acc",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "kappa": {
+        "mean": 0.4532,
+        "lo": 0.399,
+        "hi": 0.5019,
+        "ci95": 0.0515,
+        "se": 0.0258,
+        "reducer": "_kap",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "goal_setting": {
+      "status": "OK",
+      "n": 2399,
+      "n_windows": 2399,
+      "goal_point_error_m": 6.2075,
+      "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+      "goal_bearing_mae_deg": 3.4996,
+      "goal_bearing_bias_deg": -0.887,
+      "n_bearing": 2367,
+      "n_excluded_goal_below_0.5m": 32,
+      "goal_range_ratio": 0.9721,
+      "goal_long_bias_m": -2.2324,
+      "goal_lat_bias_m": -0.1725,
+      "sign_conventions": {
+       "goal_long_bias_m": "+ = commits FURTHER ahead than the human",
+       "goal_lat_bias_m": "+ = commits LEFT of the human",
+       "goal_range_ratio": "1.0 = correct reach; <1 under-commits"
+      },
+      "anchor_selection": {
+       "status": "UNAVAILABLE",
+       "reason": "this dump's arm commits to ONE path per window, so there is no candidate fan and no selection to score. Closing it needs a fan+selector surface (<arm>_fan_err / <arm>_sel_idx), which taniteval.selgap then scores. A WORK ITEM, not a pass.",
+       "n": 2399
+      },
+      "ci": {
+       "goal_point_error_m": {
+        "mean": 6.2075,
+        "lo": 5.6687,
+        "hi": 6.7392,
+        "ci95": 0.5352,
+        "se": 0.2787,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "goal_long_bias_m": {
+        "mean": -2.2324,
+        "lo": -2.8881,
+        "hi": -1.6101,
+        "ci95": 0.639,
+        "se": 0.3215,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "goal_lat_bias_m": {
+        "mean": -0.1725,
+        "lo": -0.5414,
+        "hi": 0.204,
+        "ci95": 0.3727,
+        "se": 0.187,
+        "reducer": "mean",
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "goal_bearing_mae_deg": {
+        "mean": 3.4996,
+        "lo": 2.4144,
+        "hi": 4.9395,
+        "ci95": 1.2625,
+        "se": 0.6754,
+        "reducer": "mean",
+        "n_windows": 2367,
+        "n_episodes": 141,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       }
+      }
+     },
+     "kinematics_provenance": {
+      "pred": {
+       "n_windows": 2399,
+       "n_heading_held_from_last_moving_step": 43,
+       "n_never_moved": 9,
+       "min_ds_m": 0.1,
+       "dt_s": 0.2,
+       "caveats": [
+        "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+        "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+        "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+       ]
+      },
+      "gt": {
+       "n_windows": 2399,
+       "n_heading_held_from_last_moving_step": 115,
+       "n_never_moved": 26,
+       "min_ds_m": 0.1,
+       "dt_s": 0.2,
+       "caveats": [
+        "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+        "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+        "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+       ]
+      }
+     },
+     "_factored_before_collapsed": "\u2b50 Read LAT and LON first. CLAUDE.md names the 5-way softmax that MIXES lateral and longitudinal decisions as the programme's single largest known architectural defect; the collapsed row cannot show it, and a turn absorbs the longitudinal decision entirely (refc_tactical.COLLAPSE_TABLE).",
+     "_is_not": "\u26d4 NOT 'selected vs executed'. Both label streams are EXECUTED manoeuvres \u2014 the arm's own and the human's. Scoring a DECLARED decision against the driven path needs a tactical head (hierarchy.run's maneuver_vs_trajectory kappa) and stays unavailable on a trajectory dump.",
+     "_estimator": "full_set point estimate; episode-cluster bootstrap intervals (taniteval.ci). \u26d4 overlapping_holdout_se is NOT used \u2014 it biases the POINT ESTIMATE."
+    },
+    "strategic": {
+     "status": "see H-MINI-STRAT-1 (checkpoint error)",
+     "paused": false
+    }
+   }
+  }
+ },
+ "consistency": {
+  "label": "CONSISTENCY(a) violation rate of the PLAN vs the GT-derived constraints (lower is better); (b) = violation of the model's OWN predicted constraints",
+  "rate": {
+   "B": {
+    "viol_any": 0.15964985410587745,
+    "viol_SPEED": 0.09545644018340975,
+    "viol_STOP": 0.018757815756565235,
+    "viol_TURN": 0.004168403501458941,
+    "viol_LEAD": 0.07253022092538558,
+    "self_viol_any": 0.22967903293038766
+   },
+   "H": {
+    "viol_any": 0.2601083784910379,
+    "viol_SPEED": 0.19549812421842436,
+    "viol_STOP": 0.02917882451021259,
+    "viol_TURN": 0.0070862859524802,
+    "viol_LEAD": 0.10421008753647353,
+    "self_viol_any": 0.3697373905794081
+   },
+   "HG": {
+    "viol_any": 0.17924135056273446,
+    "viol_SPEED": 0.11004585243851604,
+    "viol_STOP": 0.0212588578574406,
+    "viol_TURN": 0.004168403501458941,
+    "viol_LEAD": 0.08128386827844936,
+    "self_viol_any": 0.23718215923301375
+   },
+   "P10": {
+    "viol_any": 0.310962901208837,
+    "viol_SPEED": 0.24176740308461858,
+    "viol_STOP": 0.033764068361817424,
+    "viol_TURN": 0.03418090871196332,
+    "viol_LEAD": 0.13839099624843684
+   }
+  },
+  "counts_a": {
+   "B": {
+    "n_windows": 2399,
+    "rules": {
+     "dt_s": 0.2,
+     "horizon_s": 6.0,
+     "band_start_s": 2.0,
+     "speed_tol_ms": 0.5,
+     "stop_speed_ms": 1.0,
+     "stop_pass_m": 2.0,
+     "turn_deadband_deg": 1.0,
+     "turn_min_overlap_s": 1.0,
+     "lead_tg_tol_s": 0.2,
+     "lead_v_floor_ms": 1.0,
+     "nav_baseline_radius_m": 12.0,
+     "nav_baseline_turn_deg": 90.0,
+     "ckpt_arcs_m": [
+      30.0,
+      50.0,
+      80.0
+     ]
+    },
+    "any": {
+     "rate_all": 0.15964985410587745,
+     "n_violated": 383,
+     "n_active": 2399,
+     "rate_over_active": 0.15964985410587745,
+     "ci": {
+      "mean": 0.1596,
+      "lo": 0.1312,
+      "hi": 0.1913,
+      "ci95": 0.03,
+      "se": 0.015,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "SPEED": {
+     "rate_all": 0.09545644018340975,
+     "n_violated": 229,
+     "n_active": 2399,
+     "rate_over_active": 0.09545644018340975
+    },
+    "STOP": {
+     "rate_all": 0.018757815756565235,
+     "n_violated": 45,
+     "n_active": 81,
+     "rate_over_active": 0.5555555555555556
+    },
+    "TURN": {
+     "rate_all": 0.004168403501458941,
+     "n_violated": 10,
+     "n_active": 158,
+     "rate_over_active": 0.06329113924050633
+    },
+    "LEAD": {
+     "rate_all": 0.07253022092538558,
+     "n_violated": 174,
+     "n_active": 1027,
+     "rate_over_active": 0.1694255111976631
+    }
+   },
+   "HG": {
+    "n_windows": 2399,
+    "rules": {
+     "dt_s": 0.2,
+     "horizon_s": 6.0,
+     "band_start_s": 2.0,
+     "speed_tol_ms": 0.5,
+     "stop_speed_ms": 1.0,
+     "stop_pass_m": 2.0,
+     "turn_deadband_deg": 1.0,
+     "turn_min_overlap_s": 1.0,
+     "lead_tg_tol_s": 0.2,
+     "lead_v_floor_ms": 1.0,
+     "nav_baseline_radius_m": 12.0,
+     "nav_baseline_turn_deg": 90.0,
+     "ckpt_arcs_m": [
+      30.0,
+      50.0,
+      80.0
+     ]
+    },
+    "any": {
+     "rate_all": 0.17924135056273446,
+     "n_violated": 430,
+     "n_active": 2399,
+     "rate_over_active": 0.17924135056273446,
+     "ci": {
+      "mean": 0.1792,
+      "lo": 0.1501,
+      "hi": 0.2124,
+      "ci95": 0.0312,
+      "se": 0.0156,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "SPEED": {
+     "rate_all": 0.11004585243851604,
+     "n_violated": 264,
+     "n_active": 2399,
+     "rate_over_active": 0.11004585243851604
+    },
+    "STOP": {
+     "rate_all": 0.0212588578574406,
+     "n_violated": 51,
+     "n_active": 81,
+     "rate_over_active": 0.6296296296296297
+    },
+    "TURN": {
+     "rate_all": 0.004168403501458941,
+     "n_violated": 10,
+     "n_active": 158,
+     "rate_over_active": 0.06329113924050633
+    },
+    "LEAD": {
+     "rate_all": 0.08128386827844936,
+     "n_violated": 195,
+     "n_active": 1027,
+     "rate_over_active": 0.189873417721519
+    }
+   }
+  },
+  "paired": {
+   "HG_minus_B": {
+    "viol_any": {
+     "mean": 0.0196,
+     "lo": 0.0075,
+     "hi": 0.0338,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_SPEED": {
+     "mean": 0.0146,
+     "lo": 0.0042,
+     "hi": 0.0275,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_STOP": {
+     "mean": 0.0025,
+     "lo": 0.0004,
+     "hi": 0.005,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_TURN": {
+     "mean": 0.0,
+     "lo": -0.0013,
+     "hi": 0.0013,
+     "separated": false,
+     "lower_is_better": true,
+     "better": false,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_LEAD": {
+     "mean": 0.0088,
+     "lo": 0.0025,
+     "hi": 0.0159,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "self_viol_any": {
+     "mean": 0.0075,
+     "lo": 0.0008,
+     "hi": 0.0163,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "HG_minus_H": {
+    "viol_any": {
+     "mean": -0.0809,
+     "lo": -0.1088,
+     "hi": -0.0551,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_SPEED": {
+     "mean": -0.0855,
+     "lo": -0.1122,
+     "hi": -0.0605,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_STOP": {
+     "mean": -0.0079,
+     "lo": -0.0133,
+     "hi": -0.0033,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_TURN": {
+     "mean": -0.0029,
+     "lo": -0.0063,
+     "hi": -0.0004,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_LEAD": {
+     "mean": -0.0229,
+     "lo": -0.0363,
+     "hi": -0.0117,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "self_viol_any": {
+     "mean": -0.1326,
+     "lo": -0.1617,
+     "hi": -0.1047,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "HG_minus_P10": {
+    "viol_any": {
+     "mean": -0.1317,
+     "lo": -0.1755,
+     "hi": -0.0905,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_SPEED": {
+     "mean": -0.1317,
+     "lo": -0.1726,
+     "hi": -0.09,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_STOP": {
+     "mean": -0.0125,
+     "lo": -0.02,
+     "hi": -0.0058,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_TURN": {
+     "mean": -0.03,
+     "lo": -0.0434,
+     "hi": -0.0179,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_LEAD": {
+     "mean": -0.0571,
+     "lo": -0.0821,
+     "hi": -0.0342,
+     "separated": true,
+     "lower_is_better": true,
+     "better": true,
+     "worse": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "H_minus_B": {
+    "viol_any": {
+     "mean": 0.1005,
+     "lo": 0.0708,
+     "hi": 0.1325,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_SPEED": {
+     "mean": 0.1,
+     "lo": 0.0717,
+     "hi": 0.1277,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_STOP": {
+     "mean": 0.0104,
+     "lo": 0.005,
+     "hi": 0.0167,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_TURN": {
+     "mean": 0.0029,
+     "lo": 0.0004,
+     "hi": 0.0067,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "viol_LEAD": {
+     "mean": 0.0317,
+     "lo": 0.0183,
+     "hi": 0.0471,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "self_viol_any": {
+     "mean": 0.1401,
+     "lo": 0.1113,
+     "hi": 0.17,
+     "separated": true,
+     "lower_is_better": true,
+     "better": false,
+     "worse": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "transitions": {
+   "HG_vs_B": {
+    "viol_any": {
+     "a_viol_b_ok": 66,
+     "a_ok_b_viol": 19,
+     "both_viol": 364,
+     "both_ok": 1950
+    },
+    "viol_SPEED": {
+     "a_viol_b_ok": 49,
+     "a_ok_b_viol": 14,
+     "both_viol": 215,
+     "both_ok": 2121
+    },
+    "viol_STOP": {
+     "a_viol_b_ok": 6,
+     "a_ok_b_viol": 0,
+     "both_viol": 45,
+     "both_ok": 2348
+    },
+    "viol_TURN": {
+     "a_viol_b_ok": 1,
+     "a_ok_b_viol": 1,
+     "both_viol": 9,
+     "both_ok": 2388
+    },
+    "viol_LEAD": {
+     "a_viol_b_ok": 25,
+     "a_ok_b_viol": 4,
+     "both_viol": 170,
+     "both_ok": 2200
+    },
+    "self_viol_any": {
+     "a_viol_b_ok": 19,
+     "a_ok_b_viol": 1,
+     "both_viol": 550,
+     "both_ok": 1829
+    }
+   },
+   "HG_vs_H": {
+    "viol_any": {
+     "a_viol_b_ok": 15,
+     "a_ok_b_viol": 209,
+     "both_viol": 415,
+     "both_ok": 1760
+    },
+    "viol_SPEED": {
+     "a_viol_b_ok": 8,
+     "a_ok_b_viol": 213,
+     "both_viol": 256,
+     "both_ok": 1922
+    },
+    "viol_STOP": {
+     "a_viol_b_ok": 0,
+     "a_ok_b_viol": 19,
+     "both_viol": 51,
+     "both_ok": 2329
+    },
+    "viol_TURN": {
+     "a_viol_b_ok": 2,
+     "a_ok_b_viol": 9,
+     "both_viol": 8,
+     "both_ok": 2380
+    },
+    "viol_LEAD": {
+     "a_viol_b_ok": 9,
+     "a_ok_b_viol": 64,
+     "both_viol": 186,
+     "both_ok": 2140
+    },
+    "self_viol_any": {
+     "a_viol_b_ok": 14,
+     "a_ok_b_viol": 332,
+     "both_viol": 555,
+     "both_ok": 1498
+    }
+   },
+   "H_vs_B": {
+    "viol_any": {
+     "a_viol_b_ok": 272,
+     "a_ok_b_viol": 31,
+     "both_viol": 352,
+     "both_ok": 1744
+    },
+    "viol_SPEED": {
+     "a_viol_b_ok": 260,
+     "a_ok_b_viol": 20,
+     "both_viol": 209,
+     "both_ok": 1910
+    },
+    "viol_STOP": {
+     "a_viol_b_ok": 25,
+     "a_ok_b_viol": 0,
+     "both_viol": 45,
+     "both_ok": 2329
+    },
+    "viol_TURN": {
+     "a_viol_b_ok": 9,
+     "a_ok_b_viol": 2,
+     "both_viol": 8,
+     "both_ok": 2380
+    },
+    "viol_LEAD": {
+     "a_viol_b_ok": 89,
+     "a_ok_b_viol": 13,
+     "both_viol": 161,
+     "both_ok": 2136
+    },
+    "self_viol_any": {
+     "a_viol_b_ok": 351,
+     "a_ok_b_viol": 15,
+     "both_viol": 536,
+     "both_ok": 1497
+    }
+   }
+  },
+  "by_gate_state": {
+   "open": {
+    "viol_any": 0.2455026455026455,
+    "viol_SPEED": 0.1724867724867725,
+    "viol_STOP": 0.022222222222222223,
+    "viol_TURN": 0.006349206349206349,
+    "viol_LEAD": 0.09312169312169312,
+    "self_viol_any": 0.022222222222222223
+   },
+   "closed": {
+    "viol_any": 0.1361760660247593,
+    "viol_SPEED": 0.06946354883081156,
+    "viol_STOP": 0.02063273727647868,
+    "viol_TURN": 0.002751031636863824,
+    "viol_LEAD": 0.07359009628610728,
+    "self_viol_any": 0.3768913342503439
+   }
+  },
+  "B_by_gate_state": {
+   "open": {
+    "viol_any": 0.19576719576719576,
+    "viol_SPEED": 0.13544973544973546,
+    "viol_STOP": 0.015873015873015872,
+    "viol_TURN": 0.006349206349206349,
+    "viol_LEAD": 0.07089947089947089,
+    "self_viol_any": 0.0031746031746031746
+   },
+   "closed": {
+    "viol_any": 0.1361760660247593,
+    "viol_SPEED": 0.06946354883081156,
+    "viol_STOP": 0.02063273727647868,
+    "viol_TURN": 0.002751031636863824,
+    "viol_LEAD": 0.07359009628610728,
+    "self_viol_any": 0.3768913342503439
+   }
+  }
+ },
+ "structural_identity": {
+  "tactical_block_T_heads_HG_equals_banked_B": true,
+  "strategic": "PAUSED per PI ruling PI_DECISION_QUEUE ITEM 25 (2026-09-19); S is untouched, banked ck_pos_err carried unchanged; NOT a pass",
+  "banked_B_strategic_block": {
+   "n_valid": [
+    2322,
+    2319,
+    2294
+   ],
+   "pos_err_m@30": {
+    "mean": 7.0231,
+    "lo": 6.4063,
+    "hi": 7.7107,
+    "ci95": 0.6522,
+    "se": 0.3365,
+    "reducer": "mean",
+    "n_windows": 2322,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "head_err_deg@30": {
+    "mean": 4.2002,
+    "lo": 3.1335,
+    "hi": 5.5686,
+    "ci95": 1.2176,
+    "se": 0.6366,
+    "reducer": "mean",
+    "n_windows": 2322,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "pos_err_m@50": {
+    "mean": 8.0122,
+    "lo": 7.3116,
+    "hi": 8.7866,
+    "ci95": 0.7375,
+    "se": 0.3747,
+    "reducer": "mean",
+    "n_windows": 2319,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "head_err_deg@50": {
+    "mean": 6.6864,
+    "lo": 5.0692,
+    "hi": 8.4948,
+    "ci95": 1.7128,
+    "se": 0.8735,
+    "reducer": "mean",
+    "n_windows": 2319,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "pos_err_m@80": {
+    "mean": 11.2059,
+    "lo": 10.0432,
+    "hi": 12.5054,
+    "ci95": 1.2311,
+    "se": 0.6361,
+    "reducer": "mean",
+    "n_windows": 2294,
+    "n_episodes": 136,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "head_err_deg@80": {
+    "mean": 13.054,
+    "lo": 9.9683,
+    "hi": 16.6572,
+    "ci95": 3.3444,
+    "se": 1.686,
+    "reducer": "mean",
+    "n_windows": 2294,
+    "n_episodes": 136,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  }
+ },
+ "seconds": 71.66038393974304
+}

@@ -1,0 +1,98 @@
+{
+ "tolerance_m": 0.0001,
+ "seeds": {
+  "s0": {
+   "control_1_self_average_is_identity": {
+    "ade6_max_abs_dev_m": 0.0,
+    "pred_equal": true,
+    "paired_delta": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "bar": "exactly 0.0 per window (PREREG: delta = 0.0)",
+    "PASS": true
+   },
+   "control_2_gt_equals_kindx_speed_oracle": {
+    "ade6_max_abs_dev_m": 4.969708530033756e-06,
+    "pred_max_abs_dev_m": 2.193450927734375e-05,
+    "driver_code_max_abs_dev": 0.0,
+    "bar": "ade6 <= 0.0001 m per window AND the driver's code == the eval's oracle code exactly (0.0)",
+    "PASS": true
+   },
+   "control_3_own_equals_banked": {
+    "ade6_max_abs_dev_m": {
+     "kindx_own": 6.336359307468342e-06,
+     "banked_standard_eval": 2.014756061541334e-06
+    },
+    "bar": "<= 0.0001 m per window against each reference",
+    "PASS": true
+   },
+   "guards": {
+    "hook_leaves_nonspeed_cells_alone": true,
+    "tactical_and_strategic_equal_to_X_s": true,
+    "avg_cells_are_the_mean_of_the_two_seeds_cells": true,
+    "self_cells_equal_own_cells": true,
+    "gt_falls_back_to_own_where_no_v9_row": true,
+    "avg_is_live_it_moves_the_plan": true,
+    "window_counts": {
+     "n_windows": 300,
+     "n_episodes": 18
+    },
+    "n_windows_without_v9_row": 17
+   },
+   "guards_PASS": true,
+   "PASS": true
+  },
+  "s1": {
+   "control_1_self_average_is_identity": {
+    "ade6_max_abs_dev_m": 0.0,
+    "pred_equal": true,
+    "paired_delta": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "bar": "exactly 0.0 per window (PREREG: delta = 0.0)",
+    "PASS": true
+   },
+   "control_2_gt_equals_kindx_speed_oracle": {
+    "status": "NOT RUN: no banked speed-only oracle eval for this checkpoint on this machine (SMOKE)",
+    "driver_code_max_abs_dev": 0.0,
+    "PASS": true
+   },
+   "control_3_own_equals_banked": {
+    "ade6_max_abs_dev_m": {
+     "kindx_own": 5.543999156087942e-06,
+     "banked_standard_eval": 1.6434902074813351e-06
+    },
+    "bar": "<= 0.0001 m per window against each reference",
+    "PASS": true
+   },
+   "guards": {
+    "hook_leaves_nonspeed_cells_alone": true,
+    "tactical_and_strategic_equal_to_X_s": true,
+    "avg_cells_are_the_mean_of_the_two_seeds_cells": true,
+    "self_cells_equal_own_cells": true,
+    "gt_falls_back_to_own_where_no_v9_row": true,
+    "avg_is_live_it_moves_the_plan": true,
+    "window_counts": {
+     "n_windows": 300,
+     "n_episodes": 18
+    },
+    "n_windows_without_v9_row": 17
+   },
+   "guards_PASS": true,
+   "PASS": true
+  }
+ },
+ "cross_seed_same_pair": {
+  "used_std_max_abs_dev": 0.0,
+  "partner_s0_vs_own_s1": 0.0,
+  "partner_s1_vs_own_s0": 0.0,
+  "x0_differs_from_x1": true,
+  "bar": "<= 1e-05 (the same model run in two processes)",
+  "PASS": true
+ },
+ "PASS": true
+}

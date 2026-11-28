@@ -1,0 +1,83 @@
+[v3] rig camera = PER-CLIP EXTRINSICS from /home/nvidia/data/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v2] /home/nvidia/data/refcv6-b1-416x1024-train: 4369 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4246 distinct for 4369 clips]
+[v2] 4369 providers, 4369 distinct episode ids
+[v3] nav_from_v7: follow 11 / left 3 / right 2, missing 0 (of 16 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] max_speed_input_v6 (4-way one-hot): 4572/4572 sidecar rows carry a ceiling, 2737/2737 windows fed (100.0 %), 86 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 16/16 episodes (stable-63bit), 2737/2737 windows labelled (100.0 %), 112229 prefilter target boxes, pad 400
+[v3] SAM3 map GT: 2737/2737 windows covered (1.0000, floor 0.90, verdict PASS) over 16 clips; states {'ok': 2737, 'no_file': 0, 'frame_out_of_range': 0, 'inconclusive': 0}; layouts ['canonical']
+[gbo 04:03:44] C3 PASS: totals [113, 77] vs [113, 77]
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[gbo 04:07:24] main step 100: AP 0.004 P nan R 0.000 conf 0 centre 2.100 pres 0.5236
+[gbo 04:10:49] main step 200: AP 0.005 P nan R 0.000 conf 0 centre 5.601 pres 0.3842
+[gbo 04:14:15] main step 300: AP 0.043 P nan R 0.000 conf 0 centre 1.452 pres 0.4580
+[gbo 04:20:06] main step 400: AP 0.014 P nan R 0.000 conf 0 centre 2.086 pres 0.4381
+[gbo 04:33:06] main step 500: AP 0.022 P nan R 0.000 conf 0 centre 1.928 pres 0.4443
+[gbo 04:47:36] main step 600: AP 0.014 P nan R 0.000 conf 0 centre 1.418 pres 0.4619
+[gbo 05:02:00] main step 700: AP 0.019 P nan R 0.000 conf 0 centre 1.808 pres 0.4351
+[gbo 05:16:20] main step 800: AP 0.011 P nan R 0.000 conf 0 centre 2.263 pres 0.4485
+[gbo 05:30:43] main step 900: AP 0.021 P nan R 0.000 conf 0 centre 2.239 pres 0.3897
+[gbo 05:39:23] main step 1000: AP 0.010 P nan R 0.000 conf 0 centre 2.128 pres 0.4796
+[gbo 05:46:23] main step 1100: AP 0.008 P nan R 0.000 conf 0 centre 3.036 pres 0.4480
+[gbo 05:53:19] main step 1200: AP 0.042 P nan R 0.000 conf 0 centre 2.980 pres 0.4301
+[gbo 06:00:12] main step 1300: AP 0.019 P nan R 0.000 conf 0 centre 2.865 pres 0.4304
+[gbo 06:07:10] main step 1400: AP 0.000 P nan R 0.000 conf 0 centre 9.035 pres 0.5221
+[gbo 06:14:08] main step 1500: AP 0.001 P nan R 0.000 conf 0 centre 5.985 pres 0.4766
+[gbo 06:21:07] main step 1600: AP 0.002 P nan R 0.000 conf 0 centre 3.810 pres 0.4780
+[gbo 06:28:09] main step 1700: AP 0.001 P nan R 0.000 conf 0 centre 5.259 pres 0.4477
+[gbo 06:35:12] main step 1800: AP 0.003 P nan R 0.000 conf 0 centre 3.692 pres 0.4687
+[gbo 06:42:12] main step 1900: AP 0.020 P nan R 0.000 conf 0 centre 3.254 pres 0.4383
+[gbo 06:49:17] main step 2000: AP 0.013 P nan R 0.000 conf 0 centre 2.989 pres 0.4447
+[gbo 06:49:19] arm main: FAIL (9930.4 s, 4.961409875869751 s/step)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[gbo 06:53:45] memory_zeros step 100: AP 0.005 P nan R 0.000 conf 0 centre 3.601 pres 0.4417
+[gbo 06:57:59] memory_zeros step 200: AP 0.007 P nan R 0.000 conf 0 centre 1.875 pres 0.4480
+[gbo 07:02:09] memory_zeros step 300: AP 0.012 P nan R 0.000 conf 0 centre 1.454 pres 0.4625
+[gbo 07:06:21] memory_zeros step 400: AP 0.011 P nan R 0.000 conf 0 centre 1.411 pres 0.4813
+[gbo 07:10:36] memory_zeros step 500: AP 0.018 P nan R 0.000 conf 0 centre 1.897 pres 0.4245
+[gbo 07:14:46] memory_zeros step 600: AP 0.009 P nan R 0.000 conf 0 centre 1.606 pres 0.4536
+[gbo 07:18:59] memory_zeros step 700: AP 0.043 P nan R 0.000 conf 0 centre 2.172 pres 0.4007
+[gbo 07:23:11] memory_zeros step 800: AP 0.028 P nan R 0.000 conf 0 centre 1.299 pres 0.4382
+[gbo 07:25:40] memory_zeros step 900: AP 0.030 P nan R 0.000 conf 0 centre 1.165 pres 0.4624
+[gbo 07:27:16] memory_zeros step 1000: AP 0.045 P nan R 0.000 conf 0 centre 1.117 pres 0.4473
+[gbo 07:28:53] memory_zeros step 1100: AP 0.038 P nan R 0.000 conf 0 centre 1.214 pres 0.4364
+[gbo 07:30:30] memory_zeros step 1200: AP 0.048 P nan R 0.000 conf 0 centre 1.330 pres 0.4212
+[gbo 07:32:07] memory_zeros step 1300: AP 0.028 P nan R 0.000 conf 0 centre 0.896 pres 0.4523
+[gbo 07:33:44] memory_zeros step 1400: AP 0.032 P nan R 0.000 conf 0 centre 1.491 pres 0.4339
+[gbo 07:35:21] memory_zeros step 1500: AP 0.066 P nan R 0.000 conf 0 centre 1.327 pres 0.4302
+[gbo 07:36:58] memory_zeros step 1600: AP 0.018 P nan R 0.000 conf 0 centre 1.181 pres 0.4595
+[gbo 07:38:36] memory_zeros step 1700: AP 0.035 P nan R 0.000 conf 0 centre 1.375 pres 0.4270
+[gbo 07:40:13] memory_zeros step 1800: AP 0.051 P nan R 0.000 conf 0 centre 1.166 pres 0.4307
+[gbo 07:41:50] memory_zeros step 1900: AP 0.040 P nan R 0.000 conf 0 centre 1.084 pres 0.4477
+[gbo 07:43:28] memory_zeros step 2000: AP 0.037 P nan R 0.000 conf 0 centre 1.048 pres 0.4494
+[gbo 07:43:28] arm memory_zeros: failed as required (3247.1 s, 1.6170465219020844 s/step)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[gbo 07:46:55] presence_w0 step 100: AP 0.007 P nan R 0.000 conf 0 centre 5.343 pres 1.1486
+[gbo 07:50:14] presence_w0 step 200: AP 0.009 P nan R 0.000 conf 0 centre 1.544 pres 1.2133
+[gbo 07:53:33] presence_w0 step 300: AP 0.005 P nan R 0.000 conf 0 centre 1.792 pres 1.2141
+[gbo 07:56:51] presence_w0 step 400: AP 0.001 P nan R 0.000 conf 0 centre 3.254 pres 1.2182
+[gbo 08:00:10] presence_w0 step 500: AP 0.007 P nan R 0.000 conf 0 centre 4.478 pres 1.2160
+[gbo 08:03:29] presence_w0 step 600: AP 0.006 P nan R 0.000 conf 0 centre 2.027 pres 1.2031
+[gbo 08:06:47] presence_w0 step 700: AP 0.008 P nan R 0.000 conf 0 centre 2.199 pres 1.2246
+[gbo 08:10:06] presence_w0 step 800: AP 0.009 P nan R 0.000 conf 0 centre 1.977 pres 1.1793
+[gbo 08:13:25] presence_w0 step 900: AP 0.007 P nan R 0.000 conf 0 centre 1.648 pres 1.2209
+[gbo 08:16:44] presence_w0 step 1000: AP 0.017 P nan R 0.000 conf 0 centre 1.729 pres 1.1932
+[gbo 08:20:03] presence_w0 step 1100: AP 0.007 P nan R 0.000 conf 0 centre 2.221 pres 1.1872
+[gbo 08:23:22] presence_w0 step 1200: AP 0.009 P nan R 0.000 conf 0 centre 2.865 pres 1.1635
+[gbo 08:26:40] presence_w0 step 1300: AP 0.002 P nan R 0.000 conf 0 centre 2.804 pres 1.1561
+[gbo 08:29:59] presence_w0 step 1400: AP 0.004 P nan R 0.000 conf 0 centre 2.455 pres 1.1648
+[gbo 08:33:18] presence_w0 step 1500: AP 0.006 P nan R 0.000 conf 0 centre 4.179 pres 1.1196
+[gbo 08:36:37] presence_w0 step 1600: AP 0.007 P nan R 0.000 conf 0 centre 4.044 pres 1.1907
+[gbo 08:39:56] presence_w0 step 1700: AP 0.001 P nan R 0.000 conf 0 centre 4.312 pres 1.1585
+[gbo 08:43:14] presence_w0 step 1800: AP 0.001 P nan R 0.000 conf 0 centre 5.642 pres 1.1460
+[gbo 08:46:33] presence_w0 step 1900: AP 0.009 P nan R 0.000 conf 0 centre 5.570 pres 1.1784
+[gbo 08:49:51] presence_w0 step 2000: AP 0.001 P nan R 0.000 conf 0 centre 4.346 pres 1.1638
+[gbo 08:49:51] arm presence_w0: failed as required (3981.9 s, 1.9878393778800965 s/step)
+[gbo 08:49:51] RESULT FAIL (binding=False)

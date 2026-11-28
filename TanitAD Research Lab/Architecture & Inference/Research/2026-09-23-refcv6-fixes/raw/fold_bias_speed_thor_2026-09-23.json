@@ -1,0 +1,18 @@
+{
+ "_what": "Thor: does arm C (the fold with its bias added in fp32 after a bias-free conv -- MEASURED more",
+ "_evidence_class": "MEASURED (ours), Thor",
+ "torch": "2.13.0+cu130",
+ "A_unfolded": {
+  "s_fwd_bwd_8img": 0.283,
+  "max_mem_gib": 4.88
+ },
+ "B_folded_shipped": {
+  "s_fwd_bwd_8img": 0.1887,
+  "max_mem_gib": 2.81
+ },
+ "C_folded_fp32_bias": {
+  "s_fwd_bwd_8img": 0.3182,
+  "max_mem_gib": 2.91
+ },
+ "C_within_5pct_of_B": false
+}

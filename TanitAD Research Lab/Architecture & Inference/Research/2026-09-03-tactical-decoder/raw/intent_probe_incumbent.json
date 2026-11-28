@@ -1,0 +1,403 @@
+{
+ "meta": {
+  "ckpt": "C:/Users/Admin/refav1_eval_slice/ckpt/ckpt.pt",
+  "step": 1000,
+  "config_source": "C:/Users/Admin/refav1_eval_slice/ckpt/ckpt.pt['cfg']",
+  "lat_names": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "lon_names": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD",
+   "ADAPT_SPEED_FOR_CURVE",
+   "ACCELERATE"
+  ],
+  "w_tac_label": 0.1,
+  "w_str_label": 0.1,
+  "w_feat_op": 1.0,
+  "w_feat_tac": 0.5,
+  "w_feat_str": 0.25,
+  "nav_inject": true,
+  "d_intent": 256,
+  "wallclock_s": 182.7
+ },
+ "head_geometry": {
+  "lat": {
+   "bias": [
+    -0.049164872616529465,
+    -0.042694129049777985,
+    -0.027788328006863594,
+    -0.06586581468582153,
+    -0.01223798468708992,
+    0.036395661532878876,
+    -0.05414453521370888,
+    -0.017448320984840393
+   ],
+   "row_norms": [
+    0.5228464007377625,
+    0.7459220886230469,
+    0.7423970103263855,
+    0.7223700881004333,
+    0.5608862638473511,
+    0.5424067974090576,
+    0.6125096678733826,
+    0.6071754693984985
+   ],
+   "argmax_bias_only": "NUDGE_R",
+   "W_fro": 1.8042640686035156
+  },
+  "lon": {
+   "bias": [
+    0.04582435265183449,
+    0.01988847553730011,
+    0.01076705101877451,
+    -0.05759311094880104,
+    -0.03814161196351051,
+    -0.035913411527872086,
+    0.0010034891311079264,
+    0.05873425677418709
+   ],
+   "row_norms": [
+    0.5475631952285767,
+    0.5154339671134949,
+    0.7230519652366638,
+    0.5197041630744934,
+    0.5405133366584778,
+    0.5414014458656311,
+    0.5440418720245361,
+    0.5408431887626648
+   ],
+   "argmax_bias_only": "ACCELERATE",
+   "W_fro": 1.5912753343582153
+  }
+ },
+ "n_windows": 140,
+ "n_in_band": 40,
+ "d_intent": 256,
+ "underpowered_note": "in-band n=40 vs d_intent=256: n << d BY CONSTRUCTION. The powered panel is the geometric stratum (n=140, n_pos=27).",
+ "loss_share": {
+  "nav_true": {
+   "ce_lat_nats": 0.866459,
+   "ce_lon_nats": 1.396152,
+   "w_tac_label": 0.1,
+   "weighted_tactical_label_term": 0.11313055,
+   "weighted_feature_terms_sum": 0.71917911,
+   "components": {
+    "w_feat_op*loss_feat_op": 0.4797023,
+    "w_feat_tac*loss_feat_tac": 0.22581766,
+    "w_feat_str*loss_feat_str": 0.01365915
+   },
+   "tactical_label_share_of_those_terms_pct": 13.5924,
+   "n_in_band_rows_scored": 40,
+   "caveat": "the trainer logs NO loss_lat_label/loss_lon_label key (refa_v1_train.py:699-733), so no run's telemetry carries this; feature terms are the mean over THESE windows, not the training stream"
+  },
+  "nav_zero": {
+   "ce_lat_nats": 1.338954,
+   "ce_lon_nats": 1.586002,
+   "w_tac_label": 0.1,
+   "weighted_tactical_label_term": 0.14624781,
+   "weighted_feature_terms_sum": 0.71917911,
+   "components": {
+    "w_feat_op*loss_feat_op": 0.4797023,
+    "w_feat_tac*loss_feat_tac": 0.22581766,
+    "w_feat_str*loss_feat_str": 0.01365915
+   },
+   "tactical_label_share_of_those_terms_pct": 16.8989,
+   "n_in_band_rows_scored": 40,
+   "caveat": "the trainer logs NO loss_lat_label/loss_lon_label key (refa_v1_train.py:699-733), so no run's telemetry carries this; feature terms are the mean over THESE windows, not the training stream"
+  }
+ },
+ "label_entropy_nats_in_band": {
+  "lat": 1.094409,
+  "lon": 1.304662,
+  "note": "the CE a head that outputs the MARGINAL and nothing else would attain; CE at or above this = no information used"
+ },
+ "rank_vs_argmax": {
+  "nav_true": {
+   "argmax_histogram": {
+    "LANE_KEEP": 140
+   },
+   "max_softmax_median": 0.76827,
+   "P_LANE_KEEP_median": 0.76827,
+   "P_TURN_sum_median": 0.01418316,
+   "auc_P_TURN_vs_geometric_turn": {
+    "auc": 0.606359,
+    "lo": 0.41878,
+    "hi": 0.834136,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_geometric_turn": {
+    "auc": 0.681088,
+    "lo": 0.524132,
+    "hi": 0.825045,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_P_TURN_vs_label_TURN_in_band": {
+    "auc": 0.872549,
+    "lo": 0.686275,
+    "hi": 1.0,
+    "n": 40,
+    "n_pos": 6,
+    "n_episodes": 20,
+    "n_boot_kept": 9594,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_label_nonLANE_KEEP_in_band": {
+    "auc": 0.601648,
+    "lo": 0.303544,
+    "hi": 0.875,
+    "n": 40,
+    "n_pos": 14,
+    "n_episodes": 20,
+    "n_boot_kept": 9999,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   }
+  },
+  "nav_zero": {
+   "argmax_histogram": {
+    "LANE_KEEP": 140
+   },
+   "max_softmax_median": 0.769117,
+   "P_LANE_KEEP_median": 0.769117,
+   "P_TURN_sum_median": 0.01416215,
+   "auc_P_TURN_vs_geometric_turn": {
+    "auc": 0.430023,
+    "lo": 0.251121,
+    "hi": 0.648507,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_geometric_turn": {
+    "auc": 0.552278,
+    "lo": 0.360987,
+    "hi": 0.723518,
+    "n": 140,
+    "n_pos": 27,
+    "n_episodes": 20,
+    "n_boot_kept": 10000,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_P_TURN_vs_label_TURN_in_band": {
+    "auc": 0.519608,
+    "lo": 0.0,
+    "hi": 1.0,
+    "n": 40,
+    "n_pos": 6,
+    "n_episodes": 20,
+    "n_boot_kept": 9594,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   },
+   "auc_1minusP_LANE_KEEP_vs_label_nonLANE_KEEP_in_band": {
+    "auc": 0.582418,
+    "lo": 0.291667,
+    "hi": 0.854167,
+    "n": 40,
+    "n_pos": 14,
+    "n_episodes": 20,
+    "n_boot_kept": 9999,
+    "no_information_value": 0.5,
+    "estimator": "episode-cluster bootstrap (percentile, full-set point)"
+   }
+  }
+ },
+ "intent_linear_probe": {
+  "nav_true": {
+   "geometric_turn_binary": {
+    "n": 140,
+    "d_in": 256,
+    "n_pca": 8,
+    "l2": 1.0,
+    "n_scored": 140,
+    "n_episodes_folds": 20,
+    "accuracy": 0.785714,
+    "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+    "auc": 0.512291,
+    "recall_by_class": {
+     "0": 0.955752,
+     "1": 0.074074
+    },
+    "support_by_class": {
+     "0": 113,
+     "1": 27
+    },
+    "constant_only_base_rate": 0.192857,
+    "constant_only_accuracy": 0.807143,
+    "shuffled_label_accuracy_5draws": [
+     0.807143,
+     0.771429,
+     0.771429,
+     0.771429,
+     0.771429
+    ]
+   },
+   "v72_lat_label_multiclass": {
+    "n": 40,
+    "d_in": 256,
+    "n_pca": 8,
+    "l2": 1.0,
+    "n_scored": 40,
+    "n_episodes_folds": 20,
+    "accuracy": 0.55,
+    "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+    "recall_by_class": {
+     "0": 0.846154,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.0,
+     "7": 0.0
+    },
+    "support_by_class": {
+     "0": 26,
+     "4": 6,
+     "5": 2,
+     "6": 2,
+     "7": 4
+    },
+    "constant_only_base_rate": 0.65,
+    "classes": {
+     "0": "LANE_KEEP",
+     "4": "NUDGE_L",
+     "5": "NUDGE_R",
+     "6": "TURN_L",
+     "7": "TURN_R"
+    }
+   }
+  },
+  "nav_zero": {
+   "geometric_turn_binary": {
+    "n": 140,
+    "d_in": 256,
+    "n_pca": 8,
+    "l2": 1.0,
+    "n_scored": 140,
+    "n_episodes_folds": 20,
+    "accuracy": 0.771429,
+    "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+    "auc": 0.367748,
+    "recall_by_class": {
+     "0": 0.938053,
+     "1": 0.074074
+    },
+    "support_by_class": {
+     "0": 113,
+     "1": 27
+    },
+    "constant_only_base_rate": 0.192857,
+    "constant_only_accuracy": 0.807143,
+    "shuffled_label_accuracy_5draws": [
+     0.807143,
+     0.807143,
+     0.807143,
+     0.807143,
+     0.792857
+    ]
+   },
+   "v72_lat_label_multiclass": {
+    "n": 40,
+    "d_in": 256,
+    "n_pca": 8,
+    "l2": 1.0,
+    "n_scored": 40,
+    "n_episodes_folds": 20,
+    "accuracy": 0.475,
+    "note": "leave-one-EPISODE-out; PCA + standardiser fit on the FIT fold only; n_pca <= n_fit-1",
+    "recall_by_class": {
+     "0": 0.730769,
+     "4": 0.0,
+     "5": 0.0,
+     "6": 0.0,
+     "7": 0.0
+    },
+    "support_by_class": {
+     "0": 26,
+     "4": 6,
+     "5": 2,
+     "6": 2,
+     "7": 4
+    },
+    "constant_only_base_rate": 0.65,
+    "classes": {
+     "0": "LANE_KEEP",
+     "4": "NUDGE_L",
+     "5": "NUDGE_R",
+     "6": "TURN_L",
+     "7": "TURN_R"
+    }
+   }
+  }
+ },
+ "nav_only_ceiling": {
+  "per_nav_label_table_in_band": {
+   "0": {
+    "n": 28,
+    "lat_label_hist": {
+     "LANE_KEEP": 20,
+     "NUDGE_L": 6,
+     "NUDGE_R": 2
+    },
+    "majority": "LANE_KEEP"
+   },
+   "1": {
+    "n": 2,
+    "lat_label_hist": {
+     "TURN_L": 2
+    },
+    "majority": "TURN_L"
+   },
+   "2": {
+    "n": 10,
+    "lat_label_hist": {
+     "LANE_KEEP": 6,
+     "TURN_R": 4
+    },
+    "majority": "LANE_KEEP"
+   }
+  },
+  "leave_one_episode_out_accuracy": 0.684211,
+  "n_scored": 38,
+  "note": "nav is an ORACLE (ego-future) input. This is the accuracy a predictor that reads NOTHING BUT nav attains on the same rows \u2014 the ceiling any nav-echo can reach."
+ },
+ "tool": "intent_logit_probe.py",
+ "tier": "T0",
+ "evidence_class": "MEASURED",
+ "arm": "incumbent",
+ "written_utc": "2026-09-03T06:31:29Z",
+ "inputs": {
+  "ckpt": "C:/Users/Admin/refav1_eval_slice/ckpt/ckpt.pt",
+  "config": null,
+  "cache": "C:/Users/Admin/refav1_eval_slice/fp8",
+  "labels": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_eval.jsonl.gz",
+  "nav": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_eval.jsonl.gz",
+  "episodes_n": 20,
+  "window_stride": 10
+ }
+}

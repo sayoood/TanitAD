@@ -1,0 +1,43 @@
+{
+ "schema": "r9e2-box-paired-v1",
+ "metric": "boxes.ap2m_all",
+ "better": "higher",
+ "arm": "K2 - K0 (a = K2, b = K0)",
+ "delta": -0.0039,
+ "lo": -0.0114,
+ "hi": 0.0036,
+ "separated": false,
+ "a": 0.3116,
+ "b": 0.3155,
+ "n_windows": 70,
+ "n_episodes": 70,
+ "n_boot": 2000,
+ "p_delta_gt0": 0.169,
+ "estimator": "paired_episode_cluster_bootstrap_stat",
+ "n_nonfinite_draws": 0,
+ "alignment": {
+  "n_common": 2308,
+  "n_only_a": 0,
+  "n_only_b": 0
+ },
+ "serves_seeds": [
+  "0",
+  "1"
+ ],
+ "note": "perception is deterministic at inference: this ONE paired record serves BOTH inference seeds; the interval answers another draw of EPISODES, not another TRAINING run (H-ESTIM-SEED-1)",
+ "gate": {
+  "source": "--gates-json",
+  "sha256": "f4cb9a94f1dc3208599438e6748d19dfd12a0261dd7e476a8934b7ae53b94611",
+  "value": 0.26599645614624023
+ },
+ "split": "dev",
+ "sha256": {
+  "packs_k2": "6a1b06e6bc15a2c3ad39e34d994781dd5d85d920dc445e43f98d5559079850fd",
+  "packs_k0": "4c575810beeacaa0aca57358629ee7598a7dc04bb6118e98a236911a9a01a43d",
+  "windows": "ca5af0203320aba4f89e09be81a6bf079d9d4d77708ccb8a3ca2a0ea57e8db0a"
+ },
+ "point_check": {
+  "eval_k2_point": 0.31163996606422567,
+  "eval_k0_point": 0.31552910718572585
+ }
+}

@@ -1,0 +1,254 @@
+{
+ "mode": "dry-run",
+ "device": "cpu",
+ "steps": [
+  {
+   "stage": "S-S",
+   "s1_latent": 0.7981626987457275,
+   "s2_n_valid": 2,
+   "s2_n_windows": 3,
+   "s2_g_ce": 2.4230613708496094,
+   "s2_g_acc": 0.0,
+   "s2_g_arg_l1": 0.7418743968009949,
+   "s2_g_arg_slots": 2,
+   "s2_g_tok_counts": {
+    "EXIT_LEFT": 2
+   },
+   "s2_a_ce": 1.7696642875671387,
+   "s2_a_acc": 0.5,
+   "s2_a_arg_l1": 0.48643913865089417,
+   "s2_a_arg_slots": 3,
+   "s2_a_tok_counts": {
+    "PREPARE_EXIT": 1,
+    "PREPARE_LANE_CHANGE": 1
+   },
+   "s2_loss": 5.42103910446167,
+   "loss": 6.219202041625977,
+   "terms": [
+    "s1",
+    "s2"
+   ],
+   "step": 1,
+   "gnorm": 4.8527
+  },
+  {
+   "stage": "S-S",
+   "s1_latent": 0.9010190367698669,
+   "s2_n_valid": 3,
+   "s2_n_windows": 3,
+   "s2_g_ce": 2.42659854888916,
+   "s2_g_acc": 0.0,
+   "s2_g_arg_l1": 1.01539146900177,
+   "s2_g_arg_slots": 6,
+   "s2_g_tok_counts": {
+    "FOLLOW_MAIN_ROAD": 1,
+    "NONE_ABSTAIN": 1,
+    "TURN_LEFT": 1
+   },
+   "s2_a_ce": 1.775364875793457,
+   "s2_a_acc": 0.3333333432674408,
+   "s2_a_arg_l1": 0.32228997349739075,
+   "s2_a_arg_slots": 4,
+   "s2_a_tok_counts": {
+    "HOLD_CORRIDOR": 1,
+    "PREPARE_STOP": 1,
+    "REDUCE_TO": 1
+   },
+   "s2_loss": 5.539644718170166,
+   "loss": 6.440663814544678,
+   "terms": [
+    "s1",
+    "s2"
+   ],
+   "step": 2,
+   "gnorm": 3.7767
+  }
+ ],
+ "elapsed_s": 0.16,
+ "freeze": {
+  "stage": "S-S",
+  "trainable_groups": [
+   "layer_str"
+  ],
+  "per_group": {
+   "encoder": {
+    "trainable": 0,
+    "frozen": 37504
+   },
+   "readout": {
+    "trainable": 0,
+    "frozen": 264
+   },
+   "predictor_op": {
+    "trainable": 0,
+    "frozen": 166531
+   },
+   "layer_tac": {
+    "trainable": 0,
+    "frozen": 3447597
+   },
+   "layer_str": {
+    "trainable": 3329521,
+    "frozen": 0
+   },
+   "planner": {
+    "trainable": 0,
+    "frozen": 135320
+   },
+   "aux": {
+    "trainable": 0,
+    "frozen": 1588232
+   }
+  },
+  "n_trainable": 3329521,
+  "n_frozen": 5375448,
+  "shared_goal_tables": {
+   "vocab_tac": {
+    "table": "vocab_tac.table.weight",
+    "emitted_by": "goal_head_tac (layer_tac)",
+    "consumed_by": "cond_op (planner)",
+    "group": "layer_tac"
+   },
+   "vocab_str": {
+    "table": "vocab_str.table.weight",
+    "emitted_by": "goal_head_str (layer_str)",
+    "consumed_by": "cond_tac (layer_tac)",
+    "group": "layer_str"
+   }
+  },
+  "_note": "a shared goal table moves whenever EITHER of its two views is trainable (HIERARCHY_VOCABULARY \u00a75)"
+ },
+ "isolation": {
+  "matrix": {
+   "predictor_op": [
+    "encoder",
+    "readout",
+    "predictor_op"
+   ],
+   "aux": [
+    "encoder",
+    "readout",
+    "aux"
+   ],
+   "layer_tac": [
+    "layer_tac"
+   ],
+   "layer_str": [
+    "layer_str"
+   ],
+   "planner": [
+    "planner"
+   ]
+  },
+  "config": {
+   "isolate_planner_from_encoder": true,
+   "isolate_uplink": true,
+   "uplink": "stopgrad",
+   "shared_encoder": true
+  },
+  "violations": {},
+  "n_violations": {
+   "planner_to_encoder": 0,
+   "tactical_to_below": 0,
+   "strategic_to_below": 0
+  },
+  "n_probed": {
+   "planner_to_encoder": 19,
+   "tactical_to_below": 54,
+   "strategic_to_below": 121
+  },
+  "pass": true,
+  "_evidence_class": "MEASURED (ours; autograd probe on this graph)"
+ },
+ "spectrum_smoke": {
+  "n": 64,
+  "d": 64,
+  "top_k": 8,
+  "participation_ratio": 31.95381247785638,
+  "effective_rank": 50.87223017971946,
+  "top_k_share": 0.37307251469549474,
+  "rank_ceiling": 63,
+  "effective_rank_frac": 0.8074957171384041,
+  "rank_admissible": false,
+  "ceiling_note": "a centred covariance from n=64 rows has rank <= 63; effective_rank is bounded by that, NOT by d=64"
+ },
+ "param_report": {
+  "total": 8704969,
+  "budget": 300000000,
+  "within_budget": true,
+  "headroom": 291295031,
+  "per_group": {
+   "encoder": 37504,
+   "readout": 264,
+   "predictor_op": 166531,
+   "layer_tac": 3447597,
+   "layer_str": 3329521,
+   "planner": 135320,
+   "aux": 1588232
+  },
+  "trainable": 3329521,
+  "arm": "shared-encoder+adapters",
+  "d_op": 128,
+  "d_tac": 32,
+  "d_str": 16,
+  "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths",
+  "_evidence_class": "MEASURED (ours; count at instantiation)"
+ },
+ "n_trainable_tensors": 54,
+ "precondition": {
+  "exercised": false,
+  "_read": "--prev-gate was NOT supplied, so the X5 precondition was NOT exercised by this dry-run."
+ },
+ "init": {
+  "exercised": false,
+  "_read": "--init-from was NOT supplied, so this dry-run stepped RANDOM weights. It proves the launch assembles; it proves nothing about the lineage."
+ },
+ "s2_labels": {
+  "schema_version": "s2-strategic-v1",
+  "n_records": 797,
+  "t0_s": 8.0,
+  "valid_window_s": [
+   -2.0,
+   2.0
+  ],
+  "token_census_records": {
+   "g_str": {
+    "FOLLOW_MAIN_ROAD": 395,
+    "LANE_TARGET": 80,
+    "NONE_ABSTAIN": 13,
+    "STOP_AT": 59,
+    "TURN_LEFT": 137,
+    "TURN_RIGHT": 113
+   },
+   "a_str": {
+    "HOLD_CORRIDOR": 526,
+    "PREPARE_LANE_CHANGE": 80,
+    "PREPARE_STOP": 88,
+    "REDUCE_TO": 85,
+    "RESUME_CRUISE": 18
+   }
+  },
+  "provenance_census_records": {
+   "g_str": {
+    "path": 797
+   },
+   "a_str": {
+    "path": 797
+   }
+  },
+  "join": "NOT exercised (dry-run has no corpus) \u2014 load + validation only",
+  "disjointness": "payload-only scan PASSED on every consumed record + per-record stamp asserted False",
+  "labels_files": [
+   "..\\TanitAD Research Hub\\Data Engineering\\Implementation\\incoming\\2026-08-16-s2-v1-labels\\labels\\s2_labels_aug120.jsonl",
+   "..\\TanitAD Research Hub\\Data Engineering\\Implementation\\incoming\\2026-08-16-s2-v1-labels\\labels\\s2_labels_w120val.jsonl"
+  ],
+  "clip_index": "..\\TanitAD Research Hub\\Data Engineering\\Implementation\\incoming\\2026-08-16-s2-v1-labels\\labels\\clip_index.json",
+  "n_index_clips": 801,
+  "n_index_excluded": 4,
+  "_evidence_class": "MEASURED (ours; this load)",
+  "exercised": true
+ },
+ "gate_verdict": "INCONCLUSIVE",
+ "_read": "synthetic tensors \u2014 NO corpus. This proves the launch assembles and steps, and (when --prev-gate/--init-from were supplied) that the ladder seams adjudicate and load; it proves NOTHING about driving. No number here is quotable.",
+ "_evidence_class": "MEASURED (ours; synthetic smoke)"
+}

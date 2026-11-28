@@ -1,0 +1,284 @@
+{
+ "argv_sha256": "679617ada3338eed8316d1bc726dfa7220902921c321aa0905d5916fad397eae",
+ "arm": "UM_s0",
+ "at": "2026-11-18T12:23:09Z",
+ "body_sha256": "35865615e54722368fbd49a92a5fedcf48ebecff95ddd7f8d9296589de1c13e2",
+ "card_sha256_prefix": "48a74901",
+ "checker_sha256": "839bfbccc5fbdf1fd618b234bd53013537cbcd6e157a7dc86112f37bf729a916",
+ "checks": {
+  "C-ARGV": {
+   "pass": true,
+   "problems": []
+  },
+  "C-ARGV-MIX": {
+   "pass": true,
+   "problems": [],
+   "regression": [
+    {
+     "arm": "G-RM0_control_unmutated",
+     "expect": "clean",
+     "problems": [],
+     "red": true
+    },
+    {
+     "arm": "G-RM1_steps_61569",
+     "expect": "refused",
+     "problems": [
+      "flag --steps reads ['61569'], the card pins ['61568'] for UM_s0",
+      "flag --steps: ['61569'] differs from UE_s0's ['61568']"
+     ],
+     "red": true
+    },
+    {
+     "arm": "G-RM2_seed_1",
+     "expect": "refused",
+     "problems": [
+      "flag --seed reads ['1'], the card pins ['0'] for UM_s0",
+      "flag --seed: ['1'] differs from UE_s0's ['0']"
+     ],
+     "red": true
+    },
+    {
+     "arm": "G-RM3_w_0.5",
+     "expect": "refused",
+     "problems": [
+      "flag --tac-src-w reads ['0.5'], the card pins ['0.0'] for UM_s0",
+      "--tac-src-w reads ['0.5'], the card pins ['0.0']"
+     ],
+     "red": true
+    },
+    {
+     "arm": "G-RM4_list_one_clip_removed",
+     "expect": "refused",
+     "problems": [
+      "G-RM4: the list file hashes e458255ddb7c, declared 37f4f9ee468e",
+      "the list hashes e458255ddb7c, the card's 37f4f9ee468e"
+     ],
+     "red": true
+    },
+    {
+     "arm": "G-RM5_w0_without_list",
+     "expect": "refused",
+     "problems": [
+      "UM_s0 argv has no --tac-src-clips",
+      "UM_s0 argv has no --tac-src-clips-sha256"
+     ],
+     "red": true
+    },
+    {
+     "arm": "G-RM6_w1_with_list",
+     "expect": "refused",
+     "problems": [
+      "flag --tac-src-w reads ['1.0'], the card pins ['0.0'] for UM_s0",
+      "--tac-src-w reads ['1.0'], the card pins ['0.0']"
+     ],
+     "red": true
+    },
+    {
+     "arm": "G-RM7_exclude_540_600",
+     "expect": "refused",
+     "problems": [
+      "C-EXCL / G-R3: --exclude ['540:600'] on a U-set argv (the 60 holdout clips are removed from the union files by id)",
+      "flags added to UE_s0's argv: ['--exclude', '--tac-src-clips', '--tac-src-clips-sha256', '--tac-src-w'], expected exactly ['--tac-src-clips', '--tac-src-clips-sha256', '--tac-src-w']"
+     ],
+     "red": true
+    }
+   ],
+   "ue_argv_sha256": "03565c558216a4b9dcbeb724a93fd5a3eeec8b71b6495f919e49105901df2b5c"
+  },
+  "C-CHUNK": {
+   "pass": true,
+   "problems": []
+  },
+  "C-DISJ": {
+   "pass": true,
+   "problems": []
+  },
+  "C-HOLD": {
+   "pass": true,
+   "problems": []
+  },
+  "C-INIT": {
+   "pass": true,
+   "report": {
+    "UM_s0_buffers_equal_UE_s0": true,
+    "UM_s0_cfg_equal_UE_s0": true,
+    "UM_s0_params_equal_UE_s0": true,
+    "UM_s0_state_equals_UE_s0": true,
+    "UM_s0_state_equals_U_s0": true,
+    "reading": "card 5.5 C-INIT: UM_s0's step-0 state-dict sha256 equals UE_s0's and U_s0's (the new stage draws no random number); G-HYG: cfg equal to UE_s0's, 7,214,495 trainable",
+    "state_sha256": "5700eacd2cfae23153eef186bd6a294e991cee2a270c0f07f797692eb7a78a60",
+    "u_state_sha256": "5700eacd2cfae23153eef186bd6a294e991cee2a270c0f07f797692eb7a78a60",
+    "ue_state_sha256": "5700eacd2cfae23153eef186bd6a294e991cee2a270c0f07f797692eb7a78a60"
+   }
+  },
+  "C-JOIN-EQ": {
+   "pass": true,
+   "problems": []
+  },
+  "C-MASK": {
+   "pass": true,
+   "problems": []
+  },
+  "C-MD5": {
+   "accepted_roles": [
+    "corpus",
+    "tenk",
+    "union"
+   ],
+   "pass": true,
+   "problems": [],
+   "union_md5": "9881b170a889f743c5b0894f9ad13f1d"
+  },
+  "C-MERGE": {
+   "merge_record_sha256": "ba56af0c1d52245c4aa83e75962a7549472d3d1185b3a11dfc1402edeea4f62f",
+   "pass": true,
+   "problems": [],
+   "union_md5": "9881b170a889f743c5b0894f9ad13f1d"
+  },
+  "C-NCLIPS": {
+   "pass": true,
+   "problems": []
+  },
+  "C-STEPS": {
+   "pass": true,
+   "problems": [],
+   "ue_dry_sha256": "537b9e5ccdb17c26dcc10de9386ebe1ab9395c06a63ffc457547f44f9030e7d2"
+  },
+  "C-TACSRC-LIST": {
+   "b_dry_sha256": "cd0fc647992e2654c1d2e0af938e38520d0d0a6589d11c309182347a29be4864",
+   "list_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+   "pass": true,
+   "problems": []
+  },
+  "C-TRAIN-SHA": {
+   "pass": true,
+   "problems": [],
+   "train_sha256": "9844151fcb15504fe9e729fdc6235aebd3e31bfd363cb362994852931ada60f4"
+  },
+  "G-CKPT": {
+   "pass": true,
+   "problems": [],
+   "record_sha256": "c67394602cc08bccb78ffa8ccf571e5d4db32357f88fbf41ee953d193145b708"
+  },
+  "G-CLOCK": {
+   "pass": true,
+   "problems": []
+  },
+  "G-EVAL": {
+   "pass": true,
+   "problems": [],
+   "record_sha256": "fa97df2c813b315c51bc2a9981615f8102e63db0f2a790c9ed2a63b3332e18a6"
+  },
+  "G-HYG": {
+   "pass": true,
+   "problems": []
+  },
+  "G-LIVE": {
+   "pass": true,
+   "problems": []
+  },
+  "G-SUITE": {
+   "pass": true,
+   "problems": [],
+   "record_sha256": "8d7829fe9290943831f69229399489d8bcb6b43664a2cf7591d288c05c6c7531"
+  }
+ },
+ "commit": "648d4ca3cab588d738f153872473bd3cb6f5e40e",
+ "data": {
+  "--join-train": {
+   "md5": "dc85c11d56b249ea66a554b740ef5ea7",
+   "path": "/root/dscale10k/merged/join_union.npz",
+   "sha256": "7d2be0e6379de435fe93d23ca74a2b33fd038b86b4ed467834c4926d90e913c0",
+   "size": 107394606
+  },
+  "--lead-train": {
+   "md5": "73693175c2853edeedf604e2d1d61c4c",
+   "path": "/root/dscale10k/merged/lead_union.npz",
+   "sha256": "e96c2d5e315cb76e5eaf87fb303ba9de17e3ebabf873f6dbd15451c29d25bdb3",
+   "size": 277242630
+  },
+  "--p10": {
+   "md5": "47ca897c2e29d157e599d35d6ac5ed2e",
+   "path": "/root/strat1/inputs/p10/p10_prior.pt",
+   "sha256": "14a062a91078266a1b3226af91bf52b23b5238d84fe7e633323d0b0bea2703bf",
+   "size": 74539
+  },
+  "--speed-train": {
+   "md5": "29090e2d0b4f2af4b6575caa69f0132d",
+   "path": "/root/dscale10k/merged/speed_union.jsonl",
+   "sha256": "fd808a26c3e87ee1d7e65ea6183d6b4112476c1002fa6b1fdbfbf3aeb9cfaf9c",
+   "size": 2794831
+  },
+  "--tac-src-clips": {
+   "md5": "c8bff8b1d6f68c4795aec752fde867fd",
+   "path": "/root/dscale10k/mix/bset_clips.txt",
+   "sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+   "size": 166943
+  },
+  "--tracks": {
+   "md5": "1b7a865f3c8c2b6e891a434e62d91595",
+   "path": "/root/dscale10k/merged/native_tracks_union.pt",
+   "sha256": "9022952497659c897ccdbf5565e50046597550ed17a996da2cf8a271330c0926",
+   "size": 51494151
+  },
+  "--union-release": {
+   "md5": "9881b170a889f743c5b0894f9ad13f1d",
+   "path": "/root/dscale10k/merged/v9_labels_union.npz",
+   "sha256": "c630dab018ce3b968b4c60a9ee7e1422a6cf6db3598a390e5c4a184c85314874"
+  },
+  "--v9-train": {
+   "md5": "9881b170a889f743c5b0894f9ad13f1d",
+   "path": "/root/dscale10k/merged/v9_labels_union.npz",
+   "sha256": "c630dab018ce3b968b4c60a9ee7e1422a6cf6db3598a390e5c4a184c85314874",
+   "size": 2042576298
+  },
+  "b_dry": {
+   "md5": "baf7fbd608d65627a976ef4d3cdb022a",
+   "path": "/root/dscale10k/dry/B_s0.A.dry.json",
+   "sha256": "cd0fc647992e2654c1d2e0af938e38520d0d0a6589d11c309182347a29be4864"
+  },
+  "cache/train/manifest.jsonl": {
+   "md5": "140b404c64571b76fb1c7744b49fdfd1",
+   "path": "/root/data/cache_union_dscale/train/manifest.jsonl",
+   "sha256": "4d2d447970d732c50550f4257adf98eec46f735627b6dcb3ce05ce82fbee5ae3",
+   "size": 9677662
+  },
+  "dry_record": {
+   "md5": "c1ac199e87bb7e4ec8f7c30e032a36e2",
+   "path": "/root/dscale10k/dry/UM_s0.A.dry.json",
+   "sha256": "54be361e46f7007818d0a772eb783161256b8040d9d8783e49a3452eb956b07e"
+  },
+  "evidence": {
+   "md5": "0adceba2dbc51c967eb75273484fd5bb",
+   "path": "/root/dscale10k/gate/evidence_UM_s0.json",
+   "sha256": "30c562723fcd6dbafb9bdf5157973f05bbfe8e5afe49b545e99bdbd561dc3341"
+  },
+  "merge_record": {
+   "md5": "b22a549552ef31d4945563c65e87d99b",
+   "path": "/root/dscale10k/merged/merge_record.json",
+   "sha256": "ba56af0c1d52245c4aa83e75962a7549472d3d1185b3a11dfc1402edeea4f62f"
+  },
+  "tacsrc_list": {
+   "md5": "c8bff8b1d6f68c4795aec752fde867fd",
+   "path": "/root/dscale10k/mix/bset_clips.txt",
+   "sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1"
+  },
+  "tenk_v9": {
+   "md5": "395221440e3a3c20f17dd381297af4f0",
+   "path": "/root/dscale10k/in/labels/v9_labels_datascale10k.npz",
+   "sha256": "74648b91aa789623c3eaab4cf12a477c4ebc4847125b6503e0fb8c926f22ee0c"
+  },
+  "ue_argv": {
+   "md5": "b1e145cf65adeb380ca267cb30a8f647",
+   "path": "/root/dscale10k/argv/UE_s0.A.json",
+   "sha256": "1f358372493b011bfc98b77773f0dc3e11b45e3a5cc9462aa47156ac3220228f"
+  }
+ },
+ "merge_tool_sha256": "89d4039966cda0e091eab1f598e398a6bffbe4eddadcbcaf9f7d85d5640640aa",
+ "schema": "dscale10k-gate-token-v1",
+ "stage": "A",
+ "trainer_sha256": "016cd146aa1945fbf2afbe25be2548ae9e5125097b0d82ea604f220a1dd893af",
+ "tree_manifest_sha256": "ee8414a2ce971ee8c76e7283149baab4fea24fb1508ba7ef00a3f31ca9a535ac",
+ "written_by": "dscale10k_check.py mint"
+}

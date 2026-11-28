@@ -1,0 +1,59 @@
+READ_N1DM_D1HO (MEASURED; T1-kin; D1-HO 5,736 windows / 497 held-out episodes; dev box CPU; B 2,000 seed 0 paired episode-cluster bootstrap = 'another draw of EPISODES' only)
+card PREREG_V8F_N1DM.md sha256 N1DM-DRAFT; executor of record T1-kin/hb0.2, T1-kin/old beside; eval-141 guard and STRATEGIC NOT here: every label that needs them is PENDING-GUARD
+STATUS: VALID
+
+=== executor hb ===
+  K-RE PASS (RESULT_N1DW_D1HO_HB.json D1_HO_each_acc); K1 PASS; K-CONST 0.338215 PASS; K-T0 (N1D re-derived) PASS
+  accuracy N1R_s0 0.6102, N1R_s1 0.6348, N1D_s0 0.6346, N1D_s1 0.6515, N1DM_s0 0.6109, N1DM_s0V 0.6002, N1DM_s1 0.6611, N1DM_s1V 0.6478, N1DH_s0 0.6316, N1DH_s1 0.6665
+  T0 level N1R_s0 0.6102 [0.5885,0.6308], N1R_s1 0.6194 [0.5984,0.6393], N1D_s0 0.6266 [0.6055,0.6468], N1D_s1 0.6349 [0.6141,0.6544], N1DM_s0 0.6083 [0.5868,0.6292], N1DM_s0V 0.5969 [0.5752,0.6178], N1DM_s1 0.6362 [0.6162,0.6553], N1DM_s1V 0.6430 [0.6227,0.6623], N1DH_s0 0.6177 [0.5967,0.6381], N1DH_s1 0.6440 [0.6239,0.6631]
+  bar 0.050209 = max(0.0383, F_HO 0.0424, |N1D draw| 0.0169, |N1DM draw| 0.0502)
+  DECIDING N1DM - N1D N1DM_s0: -0.0237 [-0.0358,-0.0129] sep True gain False cost False
+  DECIDING N1DM - N1D N1DM_s1: +0.0096 [-0.0031,+0.0220] sep False gain False cost False
+  beside   N1DM - N1R N1DM_s0: +0.0007 [-0.0149,+0.0151] sep False (no bar)
+  beside   N1DM - N1R N1DM_s1: +0.0263 [+0.0107,+0.0413] sep True (no bar)
+  beside   N1DM - N1DH N1DM_s0: -0.0207 [-0.0323,-0.0093] sep True (no bar)
+  beside   N1DM - N1DH N1DM_s1: -0.0054 [-0.0163,+0.0052] sep False (no bar)
+  Z-POST N1DM_s0 route head T0 0.6832 (vs 0.685 -0.0018, vs CEIL 0.73 -0.0468); decoded plan T0 0.6083; N1DM_s1 route head T0 0.7109 (vs 0.685 +0.0259, vs CEIL 0.73 -0.0191); decoded plan T0 0.6362
+  T0 TAC-LAT s0: N1DM 0.6083 vs N1D 0.6266; N1DM - N1D -0.0183 [-0.0256,-0.0112]; T1 0.6109
+  T0 TAC-LAT s1: N1DM 0.6362 vs N1D 0.6349; N1DM - N1D +0.0012 [-0.0119,+0.0132]; T1 0.6611
+  Z-USE (branches zeroed) N1DM_s0: +0.0230 [+0.0100,+0.0370]
+  Z-USE (branches zeroed) N1DM_s1: +0.0239 [+0.0115,+0.0375]
+  Z-UNIF (p uniform 1/3) N1DM_s0: +0.0106 [+0.0019,+0.0195]
+  Z-UNIF (p uniform 1/3) N1DM_s1: +0.0132 [+0.0026,+0.0240]
+  D-channel zero twin N1DM_s0: +0.0220 [+0.0082,+0.0357]
+  D-channel zero twin N1DM_s1: +0.0270 [+0.0114,+0.0421]
+  D-channel zero twin N1D_s0: +0.0377 [+0.0239,+0.0508]
+  D-channel zero twin N1D_s1: +0.0190 [+0.0054,+0.0316]
+  R1 cells on D1-HO (no bar; dk cells NOT-COMPUTABLE n=0) are in the JSON: R1_LON_LAT_HO_beside_no_bar
+
+=== executor old ===
+  K-RE PASS (RESULT_NAVRBD.json D1_HO_each_acc (+ N1D-N1R deltas)); K1 PASS; K-CONST 0.338215 PASS; K-T0 (N1D re-derived) PASS
+  accuracy N1R_s0 0.5905, N1R_s1 0.6328, N1D_s0 0.6196, N1D_s1 0.6499, N1DM_s0 0.5900, N1DM_s1 0.6508, N1DH_s0 0.6111, N1DH_s1 0.6579
+  T0 level N1R_s0 0.6102 [0.5885,0.6308], N1R_s1 0.6194 [0.5984,0.6393], N1D_s0 0.6266 [0.6055,0.6468], N1D_s1 0.6349 [0.6141,0.6544], N1DM_s0 0.6083 [0.5868,0.6292], N1DM_s1 0.6362 [0.6162,0.6553], N1DH_s0 0.6177 [0.5967,0.6381], N1DH_s1 0.6440 [0.6239,0.6631]
+  bar 0.060844 = max(0.0383, F_HO 0.0424, |N1D draw| 0.0303, |N1DM draw| 0.0608)
+  DECIDING N1DM - N1D N1DM_s0: -0.0296 [-0.0407,-0.0190] sep True gain False cost False
+  DECIDING N1DM - N1D N1DM_s1: +0.0009 [-0.0107,+0.0120] sep False gain False cost False
+  beside   N1DM - N1R N1DM_s0: -0.0005 [-0.0140,+0.0120] sep False (no bar)
+  beside   N1DM - N1R N1DM_s1: +0.0180 [+0.0040,+0.0319] sep True (no bar)
+  beside   N1DM - N1DH N1DM_s0: -0.0211 [-0.0314,-0.0105] sep True (no bar)
+  beside   N1DM - N1DH N1DM_s1: -0.0071 [-0.0176,+0.0030] sep False (no bar)
+  Z-POST N1DM_s0 route head T0 0.6832 (vs 0.685 -0.0018, vs CEIL 0.73 -0.0468); decoded plan T0 0.6083; N1DM_s1 route head T0 0.7109 (vs 0.685 +0.0259, vs CEIL 0.73 -0.0191); decoded plan T0 0.6362
+  T0 TAC-LAT s0: N1DM 0.6083 vs N1D 0.6266; N1DM - N1D -0.0183 [-0.0256,-0.0112]; T1 0.5900
+  T0 TAC-LAT s1: N1DM 0.6362 vs N1D 0.6349; N1DM - N1D +0.0012 [-0.0119,+0.0132]; T1 0.6508
+  Z-USE (branches zeroed) N1DM_s0: NOT-YET (no zuse dump)
+  Z-USE (branches zeroed) N1DM_s1: NOT-YET (no zuse dump)
+  Z-UNIF (p uniform 1/3) N1DM_s0: NOT-YET (no unif dump)
+  Z-UNIF (p uniform 1/3) N1DM_s1: NOT-YET (no unif dump)
+  D-channel zero twin N1D_s0: +0.0464 [+0.0334,+0.0592]
+  D-channel zero twin N1D_s1: +0.0202 [+0.0064,+0.0331]
+  R1 cells on D1-HO (no bar; dk cells NOT-COMPUTABLE n=0) are in the JSON: R1_LON_LAT_HO_beside_no_bar
+
+OUTCOME (card section 4, D1-HO under hb0.2 alone)
+  N1DM-GAIN (D1-HO gain above the bar at BOTH seeds, guard holds at both): not fired
+  N1DM-ONE-SEED (gain at one seed, guard holds at both): not fired
+  N1DM-GAIN-COST (gain at one or both seeds, guard cost at one seed): not fired
+  N1DM-COST (guard cost at both seeds, or D1-HO a cost at both): PENDING-GUARD (D1-HO shows no cost at both seeds; the guard part needs eval-141)
+  N1DM-POST-WEAK (no gain AND route-head T0 accuracy below 0.685 at a seed): FIRED on the D1-HO + Z-POST part (no gain, head below 0.685 at seed [0]); COST still overrides if the guard cost at both seeds
+  N1DM-NO-GAIN (otherwise: head >= 0.685, decoded plan still about 0.63; not the decoder output geometry): not fired
+problems: none
+notes: none

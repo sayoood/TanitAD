@@ -1,0 +1,49 @@
+# PUBLISHED-CODE extract - hustvl/VAD @ 1688c4b1c3a9e2e7873ca9700ff8058170c0e3c8
+# path: projects/mmdet3d_plugin/datasets/nuscenes_vad_dataset.py
+# git blob sha1 of the fetched file: 9f73a76f2effd98be3590033bcf16b70124a40bf (85074 B); verified against the repo tree listing at the pinned commit: MATCH
+# fetched 2026-09-19T13:46:02Z from raw.githubusercontent.com (read-only source text; excerpts only, attribution retained)
+
+## lines 1210-1230: agents: num_lidar_pts > 0
+ 1210      def get_ann_info(self, index):
+ 1211          """Get annotation info according to the given index.
+ 1212  
+ 1213          Args:
+ 1214              index (int): Index of the annotation data to get.
+ 1215  
+ 1216          Returns:
+ 1217              dict: Annotation information consists of the following keys:
+ 1218  
+ 1219                  - gt_bboxes_3d (:obj:`LiDARInstance3DBoxes`): \
+ 1220                      3D ground truth bboxes
+ 1221                  - gt_labels_3d (np.ndarray): Labels of ground truths.
+ 1222                  - gt_names (list[str]): Class names of ground truths.
+ 1223          """
+ 1224          info = self.data_infos[index]
+ 1225          # filter out bbox containing no points
+ 1226          if self.use_valid_flag:
+ 1227              mask = info['valid_flag']
+ 1228          else:
+ 1229              mask = info['num_lidar_pts'] > 0
+ 1230          gt_bboxes_3d = info['gt_boxes'][mask]
+
+## lines 1795-1813: dataset mean over fut_valid samples
+ 1795          # NOTE: print planning metric
+ 1796          print('\n')
+ 1797          print('-------------- Planning --------------')
+ 1798          metric_dict = None
+ 1799          num_valid = 0
+ 1800          for res in results:
+ 1801              if res['metric_results']['fut_valid_flag']:
+ 1802                  num_valid += 1
+ 1803              else:
+ 1804                  continue
+ 1805              if metric_dict is None:
+ 1806                  metric_dict = copy.deepcopy(res['metric_results'])
+ 1807              else:
+ 1808                  for k in res['metric_results'].keys():
+ 1809                      metric_dict[k] += res['metric_results'][k]
+ 1810          
+ 1811          for k in metric_dict:
+ 1812              metric_dict[k] = metric_dict[k] / num_valid
+ 1813              print("{}:{}".format(k, metric_dict[k]))
+

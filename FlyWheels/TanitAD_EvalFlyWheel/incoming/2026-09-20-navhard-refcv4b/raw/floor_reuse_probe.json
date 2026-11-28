@@ -1,0 +1,47 @@
+{
+ "src": "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\navhard_two_stage\\20260920T082848Z-navsim_v2-none-06e257",
+ "devkit": {
+  "sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+  "matches_pin": true,
+  "source": "D:\\Archive\\devbox-C\\navsim\\devkit"
+ },
+ "n_patches": 6,
+ "export_sha256": "ad677f8bd6f4c451b41a9160def5e81d47a3ef6a0ac5f90900accedc2d0afcb1",
+ "cases": {
+  "POSITIVE_CV": {
+   "verdict": "ADOPTED",
+   "csv_sha256": "3d32254a6ae1fda40e327355b81278f12a3ddc0020bbe7815692057b2f6ea262",
+   "byte_identical_to_source_scores_csv": true
+  },
+  "POSITIVE_STOP": {
+   "verdict": "ADOPTED",
+   "csv_sha256": "137ad745d9da88fa5de61eeab41091660a01eefa90318694e85a17db297a14c7",
+   "byte_identical_to_source_scores_csv": true
+  },
+  "M1_wrong_devkit_sha": {
+   "verdict": "REFUSED",
+   "why": "--reuse-floors REFUSED for CV: devkit sha: source 0a380a9063d7162ec93d0f51e9990ebac585f720 != this run ffffffffffffffffffffffffffffffffffffffff"
+  },
+  "M2_token_dropped": {
+   "verdict": "REFUSED",
+   "why": "--reuse-floors REFUSED for CV: token set differs: 5912 vs 5911; missing []; extra ['0005b7348b80106e2']; stage flipped []"
+  },
+  "M3_stage_flipped": {
+   "verdict": "REFUSED",
+   "why": "--reuse-floors REFUSED for CV: token set differs: 5912 vs 5912; missing []; extra []; stage flipped ['0005b7348b80106e2']"
+  },
+  "M4_patch_removed": {
+   "verdict": "REFUSED",
+   "why": "--reuse-floors REFUSED for CV: patch set differs: only in source [('C: copy navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py: IDM degenerate-path assert (a fully consumed baseline)', 'b95bcc7f62246017ea9ab5dca92383c6b50d234b')]; only in this run []"
+  },
+  "M5_other_export": {
+   "verdict": "REFUSED",
+   "why": "--reuse-floors REFUSED for CV: agent-input export sha256: source ad677f8bd6f4c451b41a9160def5e81d47a3ef6a0ac5f90900accedc2d0afcb1 != this run 0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "M6_stop_seam_one_pose_perturbed": {
+   "verdict": "REFUSED",
+   "why": "--reuse-floors REFUSED for STOP: STOP seam differs from the source run's (tokens or poses) \u2014 the arm itself changed"
+  }
+ },
+ "verdict": "PASS: both floors adopt byte-identically AND all 6 mutations are REFUSED"
+}

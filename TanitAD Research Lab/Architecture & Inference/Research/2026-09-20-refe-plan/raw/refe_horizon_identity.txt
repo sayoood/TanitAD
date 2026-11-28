@@ -1,0 +1,13 @@
+EXACT control: a target's path length must equal the INTEGRAL of speed over the same window.
+The earlier '12 % failure' was MY CONTROL being wrong -- it compared a 4 s mean against the
+INSTANTANEOUS speed at t, which must differ whenever the ego accelerates, and this sample is
+full of scenarios starting from rest. Fixing the control, not the threshold:
+
+  STRIDE 1  horizon  2.0 s   n= 130   |path - integral| / integral :  median  0.39 %   p90  2.52 %
+  STRIDE 2  horizon  4.0 s   n= 115   |path - integral| / integral :  median  0.41 %   p90  2.25 %
+  STRIDE 4  horizon  8.0 s   n=  73   |path - integral| / integral :  median  0.39 %   p90  1.30 %
+
+  The identity holds at every stride (a 20-chord polyline slightly under-measures a curve),
+  so it confirms the GEOMETRY is right -- it cannot by itself pick the stride.
+  The stride is pinned by a different MEASURED fact: history is 10 Hz and their head is
+  20 steps @ 5 Hz = 4.0 s  =>  STRIDE 2. The 2x speed discrepancy was that bug's symptom.

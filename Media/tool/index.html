@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TanitAD Media</title>
+<style>
+  :root {
+    --bg: #0b0e14; --bg2: #11151f; --panel: #161b28; --panel2: #1b2233;
+    --line: #232b3d; --ink: #e8ecf4; --ink2: #9aa4b8; --ink3: #66718a;
+    --accent: #4da3ff; --accent2: #7ee0c0;
+    --t0: #e6b455; --t1: #58d68d; --tnone: #8892a8;
+    --shadow: 0 10px 30px rgba(0,0,0,.45);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  ::selection { background: rgba(77,163,255,.35); }
+
+  header { position: sticky; top: 0; z-index: 50; background: rgba(11,14,20,.92);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 12px 20px 10px; }
+  .brand-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .brand { font-size: 18px; font-weight: 700; letter-spacing: .4px; white-space: nowrap; }
+  .brand b { color: var(--accent); }
+  .brand small { color: var(--ink3); font-weight: 400; margin-left: 8px; }
+  #q { flex: 1 1 260px; min-width: 200px; background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none; }
+  #q:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77,163,255,.15); }
+  #status { color: var(--ink2); font-size: 12.5px; white-space: nowrap; }
+
+  .filters { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { background: var(--panel); color: var(--ink2); border: 0; padding: 6px 11px;
+    cursor: pointer; font-size: 12.5px; border-right: 1px solid var(--line); }
+  .seg button:last-child { border-right: 0; }
+  .seg button.on { background: var(--panel2); color: var(--ink); font-weight: 600; }
+  .seg button.t0.on { color: var(--t0); } .seg button.t1.on { color: var(--t1); }
+  select { background: var(--panel); color: var(--ink2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 8px; font-size: 12.5px; max-width: 230px; }
+  select:focus { outline: none; border-color: var(--accent); }
+  #reset { background: none; border: 1px solid var(--line); color: var(--ink3); border-radius: 8px;
+    padding: 6px 10px; cursor: pointer; font-size: 12.5px; }
+  #reset:hover { color: var(--ink); border-color: var(--ink3); }
+  .hint { color: var(--ink3); font-size: 11.5px; margin-left: auto; }
+  kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 4px; padding: 0 5px; font-size: 11px; color: var(--ink2); }
+
+  main { padding: 18px 20px 60px; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; cursor: pointer; transition: transform .12s ease, border-color .12s ease; outline: none; }
+  .card:hover, .card.sel { transform: translateY(-2px); border-color: var(--accent); }
+  .card.sel { box-shadow: 0 0 0 3px rgba(77,163,255,.22); }
+  .thumb { position: relative; aspect-ratio: 16/9; background:
+    radial-gradient(80% 90% at 30% 10%, #1a2133 0%, #0e1220 100%); overflow: hidden; }
+  .thumb img, .thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb .ph { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: var(--ink3); font-size: 26px; }
+  .badges { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; gap: 6px; }
+  .badge { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; padding: 2px 7px;
+    border-radius: 20px; background: rgba(10,13,20,.78); border: 1px solid rgba(255,255,255,.12); }
+  .badge.T0 { color: var(--t0); } .badge.T1 { color: var(--t1); } .badge.none { color: var(--tnone); }
+  .badge.vid { color: var(--accent); } .badge.img { color: var(--accent2); }
+  .badge.miss { color: #ff7b72; margin-left: auto; }
+  .dur { position: absolute; right: 8px; bottom: 8px; font-size: 10.5px; color: var(--ink);
+    background: rgba(10,13,20,.78); padding: 1px 6px; border-radius: 4px; }
+  .cbody { padding: 10px 12px 12px; }
+  .ctitle { font-size: 13.5px; font-weight: 600; line-height: 1.35; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cmeta { margin-top: 5px; font-size: 11.5px; color: var(--ink3); display: flex; gap: 8px; flex-wrap: wrap; }
+  .cmeta .arm { color: var(--accent2); }
+  #empty { color: var(--ink3); text-align: center; padding: 60px 0; font-size: 15px; display: none; }
+
+  /* detail modal */
+  #ovl { position: fixed; inset: 0; z-index: 100; background: rgba(5,7,12,.78);
+    backdrop-filter: blur(4px); display: none; }
+  #ovl.open { display: flex; align-items: center; justify-content: center; padding: 26px; }
+  #modal { background: var(--bg2); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); width: min(1240px, 100%); max-height: 92vh; display: flex;
+    flex-direction: column; overflow: hidden; }
+  #mhead { display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-bottom: 1px solid var(--line); }
+  #mtitle { font-size: 15.5px; font-weight: 700; flex: 1; }
+  .navbtn, #mclose { background: var(--panel); border: 1px solid var(--line); color: var(--ink2);
+    border-radius: 8px; padding: 5px 11px; cursor: pointer; font-size: 13px; }
+  .navbtn:hover, #mclose:hover { color: var(--ink); border-color: var(--ink3); }
+  #mbody { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+    gap: 0; overflow: auto; }
+  @media (max-width: 900px) { #mbody { grid-template-columns: 1fr; } }
+  #mmedia { background: #05070c; display: flex; align-items: center; justify-content: center; min-height: 260px; }
+  #mmedia video, #mmedia img { max-width: 100%; max-height: 72vh; display: block; }
+  #minfo { padding: 14px 16px 18px; overflow: auto; border-left: 1px solid var(--line); }
+  #mcap { font-size: 13.5px; color: var(--ink); line-height: 1.55; margin-bottom: 12px; }
+  table.meta { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.meta td { padding: 5px 0; vertical-align: top; border-top: 1px solid var(--line); }
+  table.meta td:first-child { color: var(--ink3); width: 88px; padding-right: 10px; white-space: nowrap; }
+  .pathrow { display: flex; gap: 8px; align-items: flex-start; }
+  .path { font-family: Consolas, monospace; font-size: 11.5px; color: var(--ink2); word-break: break-all; flex: 1; }
+  #copyp { background: var(--panel2); border: 1px solid var(--line); color: var(--accent);
+    border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 11.5px; white-space: nowrap; }
+  #copyp:hover { border-color: var(--accent); }
+  .tag { display: inline-block; background: var(--panel2); border: 1px solid var(--line);
+    color: var(--ink2); border-radius: 20px; padding: 1px 9px; font-size: 11px; margin: 2px 3px 2px 0; cursor: pointer; }
+  .tag:hover { color: var(--accent); border-color: var(--accent); }
+  .tierline { border-left: 3px solid var(--tnone); padding: 6px 10px; margin: 10px 0 0;
+    background: var(--panel); border-radius: 0 8px 8px 0; font-size: 11.5px; color: var(--ink2); }
+  .tierline.T0 { border-color: var(--t0); } .tierline.T1 { border-color: var(--t1); }
+
+  footer { border-top: 1px solid var(--line); color: var(--ink3); font-size: 11.5px;
+    padding: 12px 20px 20px; line-height: 1.6; }
+  footer b.t0 { color: var(--t0); } footer b.t1 { color: var(--t1); } footer b.tn { color: var(--tnone); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand-row">
+    <div class="brand">Tanit<b>AD</b> Media<small id="subtitle"></small></div>
+    <input id="q" type="search" placeholder="Search titles, captions, tags, paths, arms&hellip;  ( / )" autocomplete="off">
+    <div id="status"></div>
+  </div>
+  <div class="filters">
+    <div class="seg" id="ftype">
+      <button data-v="" class="on">All</button><button data-v="video">Videos</button><button data-v="image">Images</button>
+    </div>
+    <div class="seg" id="ftier">
+      <button data-v="" class="on">All tiers</button><button data-v="T0" class="t0">T0</button><button data-v="T1" class="t1">T1</button><button data-v="none">none</button>
+    </div>
+    <select id="ftopic"><option value="">All topics</option></select>
+    <select id="farm"><option value="">All model arms</option></select>
+    <select id="ftag"><option value="">All tags</option></select>
+    <select id="fsort">
+      <option value="date-desc">Newest first</option>
+      <option value="date-asc">Oldest first</option>
+      <option value="title">Title A&rarr;Z</option>
+      <option value="size-desc">Largest first</option>
+    </select>
+    <button id="reset">Reset</button>
+    <span class="hint"><kbd>/</kbd> search &middot; <kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &middot; <kbd>Enter</kbd> open &middot; <kbd>Esc</kbd> close</span>
+  </div>
+</header>
+
+<main>
+  <div id="grid"></div>
+  <div id="empty">No assets match. <a href="#" id="emptyreset" style="color:var(--accent)">Reset filters</a>.</div>
+</main>
+
+<div id="ovl">
+  <div id="modal" role="dialog" aria-modal="true">
+    <div id="mhead">
+      <button class="navbtn" id="mprev" title="Previous (&larr;)">&larr;</button>
+      <button class="navbtn" id="mnext" title="Next (&rarr;)">&rarr;</button>
+      <div id="mtitle"></div>
+      <button id="mclose" title="Close (Esc)">&times; Close</button>
+    </div>
+    <div id="mbody">
+      <div id="mmedia"></div>
+      <div id="minfo">
+        <div id="mcap"></div>
+        <div class="pathrow"><div class="path" id="mpath"></div><button id="copyp">Copy path</button></div>
+        <table class="meta" id="mtable"></table>
+        <div id="mtags"></div>
+        <div class="tierline" id="mtier"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <b>Tier legend (binding, EVAL_DOCTRINE.md — marketing never strips it):</b>
+  <b class="t0">T0</b> = teacher-forced / true-future-conditioned — a <i>world-model diagnostic</i>, never “driving performance”. &nbsp;
+  <b class="t1">T1</b> = action-closed loop — the model conditioned on its <i>own</i> actions (AlpaSim T1 numbers are within-sim relative). &nbsp;
+  <b class="tn">none</b> = not model behavior (labels / calibration / render QA / diagrams / external models) or a mixed-tier figure — the caption says which.
+  <br>Index: <span class="path" style="font-size:11px">Media/media_index.json</span> — a DERIVED view of <span class="path" style="font-size:11px">Media/MEDIA_MANIFEST.json</span> (videos, keyed by sha256) plus the repo's result images. Regenerate the JS with <span class="path" style="font-size:11px">python Media/tool/build_index_js.py</span>; verify video bytes with <span class="path" style="font-size:11px">python tools/media_verify.py</span>. Flags: assets tagged <i>unverified-provenance</i> / <i>unclassified</i> must not be quoted as results.
+</footer>
+
+<script src="../media_index.js"></script>
+<script>
+(function () {
+  "use strict";
+  var IDX = window.MEDIA_INDEX;
+  if (!IDX || !IDX.assets) {
+    document.getElementById("grid").innerHTML =
+      "<p style='color:#ff7b72'>media_index.js not found or invalid — run <code>python Media/tool/build_index_js.py</code>.</p>";
+    return;
+  }
+  var ALL = IDX.assets.slice();
+  document.getElementById("subtitle").textContent =
+    " " + ALL.length + " assets · generated " + (IDX.generated || "");
+
+  // ---------- state
+  var S = { q: "", type: "", tier: "", topic: "", arm: "", tag: "", sort: "date-desc" };
+  var shown = [];          // filtered records
+  var selIdx = -1;         // grid keyboard selection
+  var openIdx = -1;        // modal index within shown
+
+  // ---------- helpers
+  function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+  function mb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+  function assetUrl(p) { return "../../" + p.split("/").map(encodeURIComponent).join("/"); }
+  function hay(r) {
+    return (r._hay || (r._hay = [r.title, r.caption, r.path, r.id, r.topic, r.model_arm || "",
+      r.eval_tier, (r.tags || []).join(" "), r.source_run || "", r.date,
+      r.campaign || "", r.shows || "", (r.aliases || []).join(" "),
+      (r.original_paths || []).join(" ")].join(" ").toLowerCase()));
+  }
+
+  // ---------- facet options
+  function fillSelect(id, values, current) {
+    var sel = document.getElementById(id);
+    while (sel.options.length > 1) sel.remove(1);
+    values.forEach(function (v) {
+      var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+    sel.value = current || "";
+  }
+  var topics = Array.from(new Set(ALL.map(function (r) { return r.topic; }))).sort();
+  var arms = Array.from(new Set(ALL.map(function (r) { return r.model_arm; }).filter(Boolean))).sort();
+  var tagCount = {};
+  ALL.forEach(function (r) { (r.tags || []).forEach(function (t) { tagCount[t] = (tagCount[t] || 0) + 1; }); });
+  var tags = Object.keys(tagCount).sort(function (a, b) { return tagCount[b] - tagCount[a] || a.localeCompare(b); });
+  fillSelect("ftopic", topics); fillSelect("farm", arms); fillSelect("ftag", tags);
+
+  // ---------- filtering
+  function apply() {
+    var terms = S.q.toLowerCase().split(/\s+/).filter(Boolean);
+    shown = ALL.filter(function (r) {
+      if (S.type && r.type !== S.type) return false;
+      if (S.tier && r.eval_tier !== S.tier) return false;
+      if (S.topic && r.topic !== S.topic) return false;
+      if (S.arm && r.model_arm !== S.arm) return false;
+      if (S.tag && (r.tags || []).indexOf(S.tag) < 0) return false;
+      if (terms.length) { var h = hay(r); for (var i = 0; i < terms.length; i++) if (h.indexOf(terms[i]) < 0) return false; }
+      return true;
+    });
+    var s = S.sort;
+    shown.sort(function (a, b) {
+      if (s === "date-asc") return a.date < b.date ? -1 : a.date > b.date ? 1 : a.title.localeCompare(b.title);
+      if (s === "title") return a.title.localeCompare(b.title);
+      if (s === "size-desc") return (b.size_bytes || 0) - (a.size_bytes || 0);
+      return a.date < b.date ? 1 : a.date > b.date ? -1 : a.title.localeCompare(b.title); // date-desc
+    });
+    selIdx = -1;
+    render();
+  }
+
+  // ---------- grid rendering (lazy media)
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      var el = en.target; io.unobserve(el);
+      var r = shown[+el.dataset.i]; if (!r) return;
+      var t = el.querySelector(".thumb");
+      var url = assetUrl(r.path);
+      var m;
+      if (r.type === "video") {
+        m = document.createElement("video");
+        m.muted = true; m.preload = "metadata"; m.src = url + "#t=0.5";
+        m.addEventListener("loadeddata", function () { var p = t.querySelector(".ph"); if (p) p.remove(); });
+      } else {
+        m = document.createElement("img");
+        m.loading = "lazy"; m.alt = r.title; m.src = url;
+        m.addEventListener("load", function () { var p = t.querySelector(".ph"); if (p) p.remove(); });
+      }
+      m.addEventListener("error", function () {
+        // One delayed retry first: the G: mount (and Range-less dev servers) throw
+        // transient read errors that are NOT absence - never report those as missing.
+        if (!m.dataset.retried) {
+          m.dataset.retried = "1";
+          var src = m.src;
+          setTimeout(function () { m.src = ""; m.src = src; try { m.load && m.load(); } catch (e) {} }, 1500);
+          return;
+        }
+        var b = document.createElement("span"); b.className = "badge miss";
+        b.textContent = r.type === "video" ? "load err" : "missing?";
+        b.title = "Read failed twice - could be a flaky mount rather than a missing file. Verify with: python tools/media_verify.py";
+        el.querySelector(".badges").appendChild(b);
+      });
+      t.insertBefore(m, t.firstChild);
+    });
+  }, { rootMargin: "500px" });
+
+  function render() {
+    io.disconnect();
+    var grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    var frag = document.createDocumentFragment();
+    shown.forEach(function (r, i) {
+      var c = document.createElement("div");
+      c.className = "card"; c.dataset.i = i; c.tabIndex = 0;
+      c.innerHTML =
+        '<div class="thumb"><div class="ph">' + (r.type === "video" ? "▶" : "🖼") + '</div>' +
+        '<div class="badges"><span class="badge ' + (r.type === "video" ? "vid" : "img") + '">' +
+        (r.type === "video" ? "VIDEO" : "IMAGE") + '</span>' +
+        '<span class="badge ' + r.eval_tier + '">' + (r.eval_tier === "none" ? "no tier" : r.eval_tier) + '</span></div>' +
+        '<span class="dur">' + mb(r.size_bytes || 0) + '</span></div>' +
+        '<div class="cbody"><div class="ctitle">' + esc(r.title) + '</div>' +
+        '<div class="cmeta"><span>' + esc(r.date) + '</span><span>' + esc(r.topic) + '</span>' +
+        (r.model_arm ? '<span class="arm">' + esc(r.model_arm) + '</span>' : "") + '</div></div>';
+      c.addEventListener("click", function () { openModal(i); });
+      c.addEventListener("keydown", function (e) { if (e.key === "Enter") openModal(i); });
+      frag.appendChild(c);
+      io.observe(c);
+    });
+    grid.appendChild(frag);
+    document.getElementById("empty").style.display = shown.length ? "none" : "block";
+    var bytes = shown.reduce(function (a, r) { return a + (r.size_bytes || 0); }, 0);
+    var nv = shown.filter(function (r) { return r.type === "video"; }).length;
+    document.getElementById("status").textContent =
+      shown.length + " / " + ALL.length + " assets · " + nv + " videos · " + (bytes / 1048576).toFixed(0) + " MB";
+  }
+
+  function setSel(i) {
+    var cards = document.querySelectorAll(".card");
+    if (selIdx >= 0 && cards[selIdx]) cards[selIdx].classList.remove("sel");
+    selIdx = Math.max(0, Math.min(i, shown.length - 1));
+    var el = cards[selIdx];
+    if (el) { el.classList.add("sel"); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); el.focus({ preventScroll: true }); }
+  }
+
+  // ---------- modal
+  var ovl = document.getElementById("ovl");
+  function openModal(i) {
+    openIdx = i;
+    var r = shown[i]; if (!r) return;
+    document.getElementById("mtitle").textContent = r.title;
+    var mm = document.getElementById("mmedia");
+    mm.innerHTML = "";
+    var url = assetUrl(r.path);
+    if (r.type === "video") {
+      var v = document.createElement("video");
+      v.controls = true; v.preload = "metadata"; v.src = url; mm.appendChild(v);
+    } else {
+      var im = document.createElement("img"); im.alt = r.title; im.src = url; mm.appendChild(im);
+    }
+    document.getElementById("mcap").textContent = r.caption;
+    document.getElementById("mpath").textContent = r.path;
+    var rows = [
+      ["id", r.id], ["type", r.type], ["date", r.date], ["topic", r.topic],
+      ["model arm", r.model_arm || "—"], ["eval tier", r.eval_tier],
+      ["size", mb(r.size_bytes || 0)], ["source / run", r.source_run || "—"]
+    ];
+    if (r.in_manifest) {
+      rows.push(["campaign", r.campaign || "—"]);
+      if (r.shows) rows.push(["shows", r.shows]);
+      rows.push(["manifest id", (r.manifest_sha256 || "").slice(0, 16) + "… (sha256)"]);
+      rows.push(["off-device copy", r.off_device_copy ? "yes — survives the G: mount" : "⚠ NO"]);
+      rows.push(["tracked in git", r.tracked_in_git ? "yes" : "no (gitignored *.mp4 — manifest is the durable record)"]);
+      if (r.aliases && r.aliases.length) rows.push(["aliases", r.aliases.join(", ")]);
+      if (r.original_paths && r.original_paths.length) rows.push(["also at", r.original_paths.join("  ·  ")]);
+    } else {
+      rows.push(["in manifest", "no — image (MEDIA_MANIFEST.json records video assets only)"]);
+    }
+    document.getElementById("mtable").innerHTML = rows.map(function (kv) {
+      return "<tr><td>" + esc(kv[0]) + "</td><td>" + esc(kv[1]) + "</td></tr>";
+    }).join("");
+    document.getElementById("mtags").innerHTML = (r.tags || []).map(function (t) {
+      return '<span class="tag" data-t="' + esc(t) + '">' + esc(t) + "</span>";
+    }).join("");
+    Array.prototype.forEach.call(document.querySelectorAll("#mtags .tag"), function (el) {
+      el.addEventListener("click", function () {
+        S.tag = el.dataset.t; document.getElementById("ftag").value = S.tag;
+        closeModal(); apply();
+      });
+    });
+    var tl = document.getElementById("mtier");
+    tl.className = "tierline " + r.eval_tier;
+    tl.textContent = r.eval_tier === "T0"
+      ? "T0 — teacher-forced world-model diagnostic. This is fidelity, NOT driving performance."
+      : r.eval_tier === "T1"
+        ? "T1 — action-closed loop: the model drives on its own actions. AlpaSim T1 results are within-sim relative."
+        : "No single tier — not model behavior, or a mixed-tier figure (see caption).";
+    ovl.classList.add("open");
+  }
+  function closeModal() {
+    ovl.classList.remove("open");
+    var v = document.querySelector("#mmedia video"); if (v) v.pause();
+    document.getElementById("mmedia").innerHTML = "";
+    openIdx = -1;
+  }
+  function step(d) {
+    if (openIdx < 0) return;
+    var n = openIdx + d;
+    if (n >= 0 && n < shown.length) openModal(n);
+  }
+  document.getElementById("mclose").addEventListener("click", closeModal);
+  document.getElementById("mprev").addEventListener("click", function () { step(-1); });
+  document.getElementById("mnext").addEventListener("click", function () { step(1); });
+  ovl.addEventListener("click", function (e) { if (e.target === ovl) closeModal(); });
+
+  document.getElementById("copyp").addEventListener("click", function () {
+    var r = shown[openIdx]; if (!r) return;
+    var btn = this;
+    function done() { btn.textContent = "Copied ✓"; setTimeout(function () { btn.textContent = "Copy path"; }, 1200); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(r.path).then(done, function () { fallback(); });
+    } else { fallback(); }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = r.path; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { alert(r.path); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  // ---------- filter wiring
+  function segWire(id, key) {
+    var seg = document.getElementById(id);
+    Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b) {
+      b.addEventListener("click", function () {
+        Array.prototype.forEach.call(seg.querySelectorAll("button"), function (x) { x.classList.remove("on"); });
+        b.classList.add("on"); S[key] = b.dataset.v; apply();
+      });
+    });
+  }
+  segWire("ftype", "type"); segWire("ftier", "tier");
+  ["ftopic", "farm", "ftag", "fsort"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", function () {
+      S[{ ftopic: "topic", farm: "arm", ftag: "tag", fsort: "sort" }[id]] = this.value; apply();
+    });
+  });
+  var qTimer;
+  document.getElementById("q").addEventListener("input", function () {
+    clearTimeout(qTimer); var v = this.value;
+    qTimer = setTimeout(function () { S.q = v; apply(); }, 120);
+  });
+  function resetAll() {
+    S = { q: "", type: "", tier: "", topic: "", arm: "", tag: "", sort: "date-desc" };
+    document.getElementById("q").value = "";
+    ["ftopic", "farm", "ftag"].forEach(function (id) { document.getElementById(id).value = ""; });
+    document.getElementById("fsort").value = "date-desc";
+    ["ftype", "ftier"].forEach(function (id) {
+      var seg = document.getElementById(id);
+      Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b, i) { b.classList.toggle("on", i === 0); });
+    });
+    apply();
+  }
+  document.getElementById("reset").addEventListener("click", resetAll);
+  document.getElementById("emptyreset").addEventListener("click", function (e) { e.preventDefault(); resetAll(); });
+
+  // ---------- keyboard
+  document.addEventListener("keydown", function (e) {
+    var inInput = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+    if (ovl.classList.contains("open")) {
+      if (e.key === "Escape") closeModal();
+      else if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowRight") step(1);
+      return;
+    }
+    if (e.key === "/" && !inInput) { e.preventDefault(); document.getElementById("q").focus(); return; }
+    if (e.key === "Escape" && inInput) { document.activeElement.blur(); return; }
+    if (inInput) return;
+    var cols = Math.max(1, Math.floor(document.getElementById("grid").clientWidth / 262));
+    if (e.key === "ArrowRight") { e.preventDefault(); setSel(selIdx + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); setSel(selIdx - 1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); setSel(selIdx + cols); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSel(selIdx - cols); }
+    else if (e.key === "Enter" && selIdx >= 0) openModal(selIdx);
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

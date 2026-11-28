@@ -1,0 +1,53 @@
+{
+ "tool": "obd_read.py",
+ "card": "theory/obd/PREREG_V8F_OBD.md (FROZEN 2026-11-10)",
+ "card_sha256": "2d42cd51bb1913f32341f224900fcb3a367befe96114144138388e1db4d02dd4",
+ "code_of_record": "cdbff971fa6dad4d20b937fe8abda6cb9f622adb",
+ "tier": "T1-kin (self-action open loop; m = 10, causal bucket, dead-reckoned nav, logged scene; deterministic planner)",
+ "evidence_class": "MEASURED (ours; dumps, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0; ci.py from F:/TanitAD-scratch/otband_read/tree/taniteval/taniteval/ci.py. It answers 'another draw of EPISODES'; 'another TRAINING run' is the floors F (OBD-NULL_rep vs OBD-NULL_s0) and G (OBD-BAND_rep vs OBD-BAND_s0)",
+ "smoke": false,
+ "reading_choices": "(the card is silent), written before any OBD number exists:\n  (o1) The point value of a cell and of a floor is the UNROUNDED difference of means over the windows finite in both arms; the interval and `separated` are the estimator's.\n       (The OTBAND read compared the estimator's rounded `delta`; the two differ in the 4th decimal and decide nothing except exactly at a floor.)\n  (o2) A cell with an applicable Delta but no floor (a floor arm has no finite window there) is never a gain or a cost and is named in `cells_without_floor`; if EVERY cell\n       lacks a floor (a floor arm absent) the question is NOT-YET and decides nothing.\n  (o3) The DETACH reference at a seed is chosen by the parity state: holds -> DAG-OACC; fails -> OBD-NULL of that seed (s1 needs OBD-NULL_s1, else that seed is NOT-YET).\n  (o4) DK-VIOL counts, the code-drift row (NULL minus DAG-OACC), the DAG-ORC pair floor (seed plus trainer version, labelled) and CTL/BAND against DAG-OACC are BESIDE rows: no bar.\n  (o5) Controls that fail make the outcome INVALID (fail closed): window identity per load, floor arms present, bank sha256 (done file vs BANK_MANIFEST), DAgger bank identity\n       (selfcheck levers.dagger_bank_sha256 prefix 197a68bb / 36c7aea9), identity control (an arm minus itself reads 0 [0, 0]).  The chain's G-SUITE (control 5 of the card's\n       controls list is the per-run token / purity / bank; the suite is the chain's) is NOT checked here and is printed as such.  `--smoke` skips the bank checks.",
+ "committed_rules": "(the card's, verbatim in force; nothing here is a reading choice that changes them)\n  Bar cells: per seed 24 = 11 metric rows per band (ADE, FDE, speed MAE, acceleration MAE, along-track MAE, distance keeping: headway abs error and time-gap abs error,\n  heading MAE, curvature MAE, yaw-rate MAE, cross-track MAE) x operative knots 1-10 and tactical knots 11-30, plus TAC-LAT and TAC-LON accuracy.  Lower is better for every\n  error row, higher for accuracy.  Delta = arm minus reference, paired 95 % interval.\n  COST  on a cell at a seed: Delta separated on the worse side AND |Delta| above that cell's floor.   GAIN: separated on the better side AND |Delta| above the floor.\n  FLOORS (read at seed 0, applied to both seeds; for an accuracy cell the floor is the pair's |Delta| on that accuracy):\n     F = |OBD-NULL_rep - OBD-NULL_s0|  for the detach question,   G = |OBD-BAND_rep - OBD-BAND_s0|  for the band question.\n  DETACH question: OBD-CTL against DAG-OACC (same seed; against OBD-NULL of the same seed if NULL parity FAILED), floor F.\n     DETACH-KEEPS = no cost on any of the 24 cells;  DETACH-COSTS = at least one cost, every costing cell named with Delta, CI and floor.\n  BAND question: OBD-BAND against OBD-CTL (same seed), floor G.\n     BAND-ADDS = operative ADE is a gain AND no cell is a cost;  BAND-NEUTRAL = no cost and operative ADE is not a gain;  BAND-COSTS = at least one cost.\n  A seed's label is read per seed; an outcome needs both seeds to agree, else SEEDS-DISAGREE (reported per seed; the read is repeated with a third training seed per init,\n  --seed 10 / 11, for the arms concerned before any outcome is quoted).\n  NULL parity (card, Controls 1): not INVALID when it fails; the fallback applies (OBD-NULL_s1 is trained, every row \"against DAG-OACC\" reads against OBD-NULL of the same\n  seed, NULL minus DAG-OACC is a code-drift row).  An absent NULL_PARITY.json means the detach question cannot be read at all (NOT-YET); the band question does not use it.",
+ "STRATEGIC": {
+  "status": "PAUSED",
+  "ruling": "PI item 25 (PI_DECISION_QUEUE.md ITEM 25, 2026-09-19): reported as PAUSED, never as a pass, never omitted."
+ },
+ "families": {
+  "PRIMARY": "ADE, FDE",
+  "LONGITUDINAL": "speed, acceleration, along-track, distance keeping (headway / time-gap abs error; DK-VIOL beside)",
+  "LATERAL": "heading, curvature, yaw rate, cross-track",
+  "TACTICAL": "TAC-LAT / TAC-LON accuracy (bar); T's own decisions via beside_obd.py heads (no bar)",
+  "STRATEGIC": "PAUSED"
+ },
+ "controls": {
+  "problems": [],
+  "notes": {
+   "suite_control": "the chain's G-SUITE / token / purity gate is NOT checked here; only its read-back in selfcheck.json",
+   "parity": {
+    "state": "fails",
+    "file": "C:/Users/Admin/obd_state/NULL_PARITY.json",
+    "basis": "tensors",
+    "file_sha_equal": false,
+    "tensor_equal": false,
+    "append_obd_null_s1": true
+   }
+  }
+ },
+ "parity_state": "fails",
+ "arms_ready": {
+  "OBD-NULL_s0": true,
+  "OBD-NULL_s1": false,
+  "OBD-NULL_rep": true,
+  "OBD-CTL_s0": true,
+  "OBD-CTL_s1": false,
+  "OBD-BAND_s0": false,
+  "OBD-BAND_s1": false,
+  "OBD-BAND_rep": false,
+  "DAGOACC_s0": true,
+  "DAGOACC_s1": true,
+  "DAGORC_s0": true
+ },
+ "outcome": "NOT-YET",
+ "reason": "no seed has OBD-CTL, OBD-BAND and the same-environment DAG-OACC dump"
+}

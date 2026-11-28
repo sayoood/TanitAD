@@ -1,0 +1,52 @@
+REFERENCE values re-read from raw JSON vs the numbers PREREG_GRID5 s4 quotes (F / ALLQ)
+  BEST s0: raw F 0.8460 ALLQ 0.8424 | prereg 0.846/0.842 | match True
+  BEST s1: raw F 0.5624 ALLQ 0.5969 | prereg 0.562/0.597 | match True
+  base s0: raw F 0.6529 ALLQ 0.7153 | prereg 0.653/0.715 | match True
+  base s1: raw F 0.6092 ALLQ 0.6791 | prereg 0.609/0.679 | match True
+  cos s0: raw F 0.6109 ALLQ 0.6978 | prereg 0.611/0.698 | match True
+  cos s1: raw F 0.5230 ALLQ 0.6136 | prereg 0.523/0.614 | match True
+
+C1_BEST_120ep_c15_vs_W60_BEST  (grid5 BEST_120ep c15 vs the earlier banked cell; floor 0.03 was measured on ALLQ, applied to F as an extension)
+  s0: grid5 F 0.908 ALLQ 0.924 R2 0.941 | ref F 0.846 ALLQ 0.842 R2 0.868 | dF +0.062 (BEYOND) dALLQ +0.081 (BEYOND)
+  s1: grid5 F 0.538 ALLQ 0.600 R2 0.593 | ref F 0.562 ALLQ 0.597 R2 0.690 | dF -0.024 (within) dALLQ +0.003 (within)
+
+C2_base_k8o8_120ep_c15_vs_W60_base  (grid5 base_k8o8_120ep c15 vs the earlier banked cell; floor 0.03 was measured on ALLQ, applied to F as an extension)
+  s0: grid5 F 0.587 ALLQ 0.692 R2 0.778 | ref F 0.653 ALLQ 0.715 R2 0.765 | dF -0.066 (BEYOND) dALLQ -0.023 (within)
+  s1: grid5 F 0.630 ALLQ 0.711 R2 0.830 | ref F 0.609 ALLQ 0.679 R2 0.823 | dF +0.020 (within) dALLQ +0.031 (BEYOND)
+
+C3_cos16_k8o8_120ep_c3_vs_grid3  (grid5 cos16_k8o8_120ep c3 vs the earlier banked cell; floor 0.03 was measured on ALLQ, applied to F as an extension)
+  s0: grid5 F 0.582 ALLQ 0.669 R2 0.543 | ref F 0.611 ALLQ 0.698 R2 0.571 | dF -0.029 (within) dALLQ -0.029 (within)
+  s1: grid5 F 0.522 ALLQ 0.646 R2 0.512 | ref F 0.523 ALLQ 0.614 R2 0.667 | dF -0.001 (within) dALLQ +0.032 (BEYOND)
+
+C1 prereg rule: s0 c15 F < 0.75 => 'W60 s0 transition NOT reproducible'. grid5 s0 c15 F = 0.908 => NOT_reproducible = False
+
+C4 BEST_lr3e-3_rep vs W12 / BEST_fp32 vs rep: UNAVAILABLE (F12 never evaluated; work/diag5f has no json)
+
+WD ATTRIBUTION: cos16_k8o8_wd1_120ep minus cos16_k8o8_120ep, same seed, floor 0.030
+  s0 c30: dF +0.190 dALLQ +0.209 dR2 +0.286
+  s1 c30: dF +0.375 dALLQ +0.339 dR2 +0.257
+  s2 c12 (PARTIAL run, crashed after c12): dF -0.039 dALLQ -0.032 dR2 -0.060
+  context, wd1 minus plain at c12 on every seed:
+    s0 c12: wd1 F 0.796 ALLQ 0.826 | plain F 0.582 ALLQ 0.635 | dF +0.214
+    s1 c12: wd1 F 0.743 ALLQ 0.757 | plain F 0.599 ALLQ 0.653 | dF +0.144
+    s2 c12: wd1 F 0.538 ALLQ 0.610 | plain F 0.576 ALLQ 0.642 | dF -0.039
+
+G3 SENSITIVITY (drops the plant-mass>=0.8 condition): heads with beta_eff>=16 AND top1>=0.5
+  cos16_k8o8_120ep: s0 c30 [] (evals []) | s1 c30 [] (evals []) | both seeds: c30 False, any eval False
+  cos16_k8o8_wd1_120ep: s0 c30 [] (evals []) | s1 c30 [(0, 0)] (evals [15, 18, 21, 24, 27, 30]) | both seeds: c30 False, any eval False
+  BEST_120ep: s0 c30 [(1, 1)] (evals [15, 18, 21, 24, 27, 30]) | s1 c30 [] (evals []) | both seeds: c30 False, any eval False
+  base_k8o8_120ep: s0 c30 [] (evals []) | s1 c30 [] (evals []) | both seeds: c30 False, any eval False
+
+STABILITY of the two single-seed passes across the last six eval cycles (prereg rule = final cycle only; this is context)
+  BEST_120ep s0: (cycle, F, ALLQ, R2, clears the three level bars) (15, 0.908, 0.924, 0.941, False) (18, 0.924, 0.937, 0.967, False) (21, 0.936, 0.952, 0.971, False) (24, 0.952, 0.966, 0.974, False) (27, 0.962, 0.976, 0.979, False) (30, 0.971, 0.979, 0.976, True)
+  cos16_k8o8_wd1_120ep s1: (cycle, F, ALLQ, R2, clears the three level bars) (15, 0.977, 0.979, 0.96, True) (18, 0.97, 0.981, 0.971, True) (21, 0.99, 0.992, 0.981, True) (24, 0.99, 0.99, 0.98, True) (27, 0.786, 0.84, 0.903, False) (30, 0.993, 0.992, 0.972, True)
+
+PROBE 5b (CPU fp32; 48 TRAIN tokens, first 24 fold-0 tokens): train F, train F under each ablation, fold-0 (24 tok) F, attn_reproduces
+  G5_s0 cos16_k8o8_120ep: train F 0.989 (bce 0.095) | zero_clear 0.990 shuffle_clear 0.989 no_plant 0.981 | f0(24tok) F 0.583 no_plant 0.618 | reproduces True
+  G5_s0 cos16_k8o8_wd1_120ep: train F 0.927 (bce 0.162) | zero_clear 0.802 shuffle_clear 0.744 no_plant 0.644 | f0(24tok) F 0.909 no_plant 0.573 | reproduces True
+  G5_s0 BEST_120ep: train F 0.996 (bce 0.031) | zero_clear 0.762 shuffle_clear 0.694 no_plant 0.580 | f0(24tok) F 0.855 no_plant 0.624 | reproduces True
+  G5_s0 base_k8o8_120ep: train F 0.970 (bce 0.141) | zero_clear 0.969 shuffle_clear 0.972 no_plant 0.952 | f0(24tok) F 0.544 no_plant 0.578 | reproduces True
+  G5_s1 cos16_k8o8_120ep: train F 0.994 (bce 0.057) | zero_clear 0.994 shuffle_clear 0.994 no_plant 0.979 | f0(24tok) F 0.633 no_plant 0.600 | reproduces True
+  G5_s1 cos16_k8o8_wd1_120ep: train F 0.997 (bce 0.054) | zero_clear 0.409 shuffle_clear 0.539 no_plant 0.412 | f0(24tok) F 0.995 no_plant 0.497 | reproduces True
+  G5_s1 BEST_120ep: train F 0.990 (bce 0.103) | zero_clear 0.990 shuffle_clear 0.991 no_plant 0.980 | f0(24tok) F 0.351 no_plant 0.375 | reproduces True
+  G5_s1 base_k8o8_120ep: train F 0.977 (bce 0.091) | zero_clear 0.977 shuffle_clear 0.976 no_plant 0.959 | f0(24tok) F 0.464 no_plant 0.635 | reproduces True

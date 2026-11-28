@@ -1,0 +1,53 @@
+The exact invocation that produced every file in this directory
+==============================================================
+2026-09-06 · refav1 step 21,109 · tier T1 (self-action open loop)
+
+    python taniteval/tools/render_refav1_arms_video.py \
+        --arms-dir  <.../2026-09-05-refav1-cost-geometry/raw/arms> \
+        --arms ccos_argmax,wk15,best \
+        --arm-colours ccos_argmax=magenta,wk15=orange,best=violet \
+        --episodes  <dir of *.v2ep.pt> \
+        --extrinsics <.../raw/reel/extrinsics8.json> \
+        --cards cards.json --notes notes.json \
+        --expect-curv-mae ha0=0.040083,wk15=0.030982,ccos_argmax=0.055369,\
+best=0.031281,ha0_ext=0.077298 \
+        --out refav1_arms_curvature_step21109.mp4 \
+        --expect-step 21109 --gt-control \
+        --fps 10 --base-hold 2 --slowmo 5 --slowmo-turn 9 --slowmo-lat-m 1.0 \
+        --max-plan-age 1.4 --title-frames 16 --card-frames 80 --crf 21 \
+        --keep-frames
+
+    python taniteval/tools/verify_mp4.py \
+        refav1_arms_curvature_step21109.mp4 \
+        refav1_arms_curvature_step21109_small.mp4
+
+WHAT THE RUN ASSERTED BEFORE IT DREW A FRAME
+--------------------------------------------
+* 3 arms share 18 arrays BIT-IDENTICALLY over 40 windows, and 2 of 2 differ
+  from `ccos_argmax` on the plan (equality alone would mean one arm under
+  three names).
+* CURVATURE CONTROL, 5 of 5 MATCH against `raw/four_family_all.txt`:
+  ha0 0.040083 (n_steps 289) · wk15 0.030982 (271) · ccos_argmax 0.055369 (289)
+  best 0.031281 (271) · ha0_ext 0.077298 (300).
+* GT INTEGRATOR CONTROL, both halves: STEER ADE mean 0.1552 m (median 0.1512,
+  max 0.2981) over the 27 admissible windows at v0 >= 2 m/s, against the legacy
+  KAPPA reading's 0.8727 m — a 5.62x separation. PASS. (`GT_CONTROL.png`.)
+* Per frame: canvas 1920x1122 asserted on EVERY written frame, a plausible
+  non-zero mean luminance, and every overlaid path finite and under 500 m.
+
+WHAT WAS VERIFIED AFTER
+-----------------------
+* `verify_mp4.py`: 2,313 frames DECODED clean, 1920x1122, 10.000 fps,
+  231.30 s, 27.36 MiB (under the 30 MiB delivery gate); the small copy
+  1280x748, 5.49 MiB, same frame count and duration.
+* Decoded-pixel check: 7 sampled frames decode to exactly 1920x1122 and
+  correlate with their source PNGs at >= 0.999572, while the same probe against
+  a deliberately 3.9 %-stretched copy reads 0.1438 — so the probe can tell a
+  stretch from an original.
+
+TWO GUARDS PROVED BY MUTATION, END TO END
+-----------------------------------------
+* the curvature reduction changed to a mean-of-window-means: REFUSED
+  ("per-window recombines to 0.059374997, pooled 0.059934746"), exit 1, no mp4;
+* an `--expect-curv-mae` value moved by 1.8e-5: REFUSED
+  ("misses the banked panel on ['wk15']"), exit 1, no mp4.

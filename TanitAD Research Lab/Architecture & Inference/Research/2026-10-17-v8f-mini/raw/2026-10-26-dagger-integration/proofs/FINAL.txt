@@ -1,0 +1,62 @@
+DAgger integration proofs on the FINAL bytes -- tip 2a78f059cd4dcd29c279467ccca84581123d73b5 -- written 2026-10-27 00:36:04
+
+== proof 2 (trainer) and proof 1 (data): the suites
+OK   trainer suite test_v8f_dagger_train.py: 97 passed, 1 warning in 569.48s (0:09:29)
+OK   data suite test_v8f_dagger.py: 57 passed in 71.50s (0:01:11)
+
+== proof 3: the other v8f suites that import the trainer or the data module, plus test_v8f_window_start.py
+OK   test_v8f_window_start: 77 passed, 1 warning in 361.45s (0:06:01)
+OK   test_v8f_mini: 29 passed, 1 warning in 137.45s (0:02:17)
+OK   test_v8f_ego_perturb: 82 passed, 1 warning in 550.15s (0:09:10)
+OK   test_v8f_hist: 133 passed, 1 skipped, 1 warning in 470.05s (0:07:50)
+OK   test_v8f_grid: 137 passed, 1 warning in 410.69s (0:06:50)
+FAIL test_v8f_oacc: 5 failed, 128 passed, 6 warnings in 728.64s (0:12:08)
+OK   test_v8f_mixo: 165 passed, 1 skipped, 1 warning in 449.00s (0:07:29)
+OK   test_v8f_flat: 260 passed, 3 skipped, 1 warning in 502.36s (0:08:22)
+FAIL test_v8f_lora: 15 failed, 18 passed, 7 skipped, 1 warning in 56.34s
+FAIL test_v8f_lora_ar2: 2 failed, 48 passed, 14 errors in 23.30s
+OK   test_v8f_lora_device: 3 passed in 0.67s
+OK   test_v8f_tac: 14 passed, 1 warning in 50.45s
+OK   test_v8f_pgt: 29 passed, 1 warning in 169.93s (0:02:49)
+FAIL test_v8f_speedavg: 1 failed, 52 passed, 1 warning in 52.50s
+OK   test_v8f_speedcal: 59 passed, 1 skipped, 1 warning in 39.52s
+OK   test_v8f_dscale: 110 passed, 1 skipped, 1 warning in 300.83s (0:05:00)
+FAIL test_v8f_kindx_s1: 41 failed, 142 passed, 2 skipped, 3 errors in 171.36s (0:02:51)
+FAIL test_v8f_kscore: 2 failed, 121 passed in 382.89s (0:06:22)
+OK   test_v8f_orc_chain: 45 passed, 1 warning in 203.89s (0:03:23)
+
+== proof 1: mutate_dagger.py (data side)
+OK   kill count: 86 of 86 mutants killed
+OK   restored: RESTORED byte-identical: True
+
+== proof 2: mutate_dagger_train.py (trainer side)
+OK   kill count: 105 of 105 mutants killed
+OK   delivered files: delivered files changed during the run: none
+
+== R77: sha256 of every deliverable, BEFORE the proofs / AFTER (tree = di/tree)
+  a4df4b8f44d9a322  a4df4b8f44d9a322  same  Project Steering/PREREG_V8F_DAGGER.md
+  85be6f6c9564071c  85be6f6c9564071c  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/NOTES.md
+  82b64f1c5dda00d5  82b64f1c5dda00d5  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/diff_vs_probe.py
+  b856a48d212f12bd  b856a48d212f12bd  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/mutate_dagger.py
+  72a3ebd184fe1c66  72a3ebd184fe1c66  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_check.py
+  6c780d62261a5325  6c780d62261a5325  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_kb45/PROVENANCE.json
+  c23c35b560736040  c23c35b560736040  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_kb45/bank.json
+  8250fe281e88ff39  8250fe281e88ff39  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_kb45/shard_000of001.npz
+  d9915ee1d69f4d28  d9915ee1d69f4d28  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_kb45/shard_000of001.provenance.json
+  14970d09f5fada63  14970d09f5fada63  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_kb45/smoke_run.log
+  94a577a697cfe9f6  94a577a697cfe9f6  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-integration/NOTES.md
+  e16baec3a31b01e8  e16baec3a31b01e8  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/NOTES.md
+  ca33aae849b8e1ac  ca33aae849b8e1ac  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/PATCH_v8f_dagger_bank_window_start.diff
+  d330f071726e0465  d330f071726e0465  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/mutate_dagger_train.py
+  65ea1e3a5c051178  65ea1e3a5c051178  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/pre_dagger_v8f_mini_train.py.ref
+  f2fe7e1613d80cf5  f2fe7e1613d80cf5  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/smoke/smoke.sh
+  7763d99a681df540  7763d99a681df540  same  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/smoke/tame_ckpt.py
+  893dd6547b361c34  893dd6547b361c34  same  stack/scripts/v8f_dagger_bank.py
+  38e0a15773986c20  38e0a15773986c20  same  stack/scripts/v8f_mini_train.py
+  b20cc058b17e1029  b20cc058b17e1029  same  stack/tanitad/data/v8f_dagger.py
+  e8bdcd9e17ea6929  e8bdcd9e17ea6929  same  stack/tests/test_v8f_dagger.py
+  85b6206dcb825191  85b6206dcb825191  same  stack/tests/test_v8f_dagger_train.py
+OK   no deliverable changed (before == after, every file above): True
+OK   no file of di/tree was added, removed, resized or touched by the proofs (path, size, mtime of every file): 0 added/changed, 0 removed/changed []
+
+NOT ALL OK: read the FAIL rows above and the logs in di/out/

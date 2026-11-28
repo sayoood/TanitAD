@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\v8proof\imaghead\imag_read.py", line 482, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\TanitAD-scratch\v8proof\imaghead\imag_read.py", line 478, in main
+    return cmd_pair(a)
+  File "F:\TanitAD-scratch\v8proof\imaghead\imag_read.py", line 417, in cmd_pair
+    A, Bq = np.load(os.path.join(a.a_dir, "SUFF_IMAG_%s.npz" % a.a_arm)), np.load(os.path.join(a.b_dir, "SUFF_IMAG_%s.npz" % a.b_arm))
+            ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\lib\_npyio_impl.py", line 454, in load
+    fid = stack.enter_context(open(os.fspath(file), "rb"))
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'F:/TanitAD-scratch/v8proof/actcons/read/LFTb\\SUFF_IMAG_RL.npz'

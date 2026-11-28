@@ -1,0 +1,94 @@
+{
+ "gates": {
+  "G1_split_is_the_EF_split": {
+   "pass": true,
+   "detail": {
+    "n_train": 8730,
+    "n_val": 980,
+    "ep_train": 125,
+    "ep_val": 14
+   }
+  },
+  "G2_scene_join_and_independent_reads": {
+   "pass": true,
+   "detail": {
+    "identical_order": [
+     true,
+     true
+    ],
+    "dims": {
+     "bev": 96,
+     "agent": 384
+    },
+    "bank0_bev_tokens_vs_memmap_24_random_rows": true,
+    "bank0_agent_tokens_vs_memmap_24_random_rows": true,
+    "bank0_bev_tokens_vs_zip_stream_first64": true,
+    "bank0_agent_tokens_vs_zip_stream_first64": true,
+    "bank1_bev_tokens_vs_memmap_24_random_rows": true,
+    "bank1_agent_tokens_vs_memmap_24_random_rows": true,
+    "bank1_bev_tokens_vs_zip_stream_first64": true,
+    "bank1_agent_tokens_vs_zip_stream_first64": true
+   }
+  },
+  "G3_loss_and_outputs_finite": {
+   "pass": true,
+   "detail": {
+    "losses": [
+     6.4104,
+     6.5604,
+     6.564,
+     6.3847,
+     6.3269,
+     6.2976,
+     6.4047,
+     6.4429
+    ]
+   }
+  },
+  "G4_every_parameter_gets_a_finite_gradient": {
+   "pass": true,
+   "detail": {
+    "n_param_tensors": 54,
+    "no_grad_at_all": [],
+    "scene_branch_tensors": 16,
+    "scene_zero_grad": [],
+    "param_tensors_with_all_zero_grad": []
+   }
+  },
+  "G5_zero_updates": {
+   "pass": true,
+   "detail": {
+    "state_dict_sha256_before_eq_after": true
+   }
+  },
+  "G6_scene_shuffle_map_is_cross_episode_and_changes_the_read": {
+   "pass": true,
+   "detail": {
+    "val_rows_mapped_to_the_same_episode": 0,
+    "untrained_model_pick_true_vs_shuffled_first128_val": [
+     8.43013,
+     8.12292
+    ]
+   }
+  }
+ },
+ "batches": 8,
+ "setup_s": 3.11,
+ "params": 480904,
+ "timing": {
+  "threads": "4",
+  "cuda_visible": "",
+  "gather_s_per_batch32_median": 0.0115,
+  "fwd_loss_s_per_batch32_median": 0.1198,
+  "bwd_s_per_batch32_median": 0.2425,
+  "per_batch_total_s": 0.3738,
+  "eval_s_per_window": 0.0042,
+  "n_batches_per_epoch": 273,
+  "est_s_per_epoch_train_x1.15": 117.4,
+  "est_s_per_epoch_eval": 10.4,
+  "est_s_per_epoch": 127.7,
+  "est_min_30_epochs": 63.9,
+  "est_min_2_runs_S_ts0_ts1": 127.7
+ },
+ "verdict": "PASS"
+}

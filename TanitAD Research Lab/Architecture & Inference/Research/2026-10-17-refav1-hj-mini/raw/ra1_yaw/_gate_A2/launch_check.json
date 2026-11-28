@@ -1,0 +1,252 @@
+{
+ "cfg": {
+  "arm": "A2",
+  "d_feat": 1024,
+  "n_tok": 40,
+  "grid": "4x10",
+  "d_tok": 64,
+  "adapter_hidden": 512,
+  "d1": 128,
+  "d_up": 128,
+  "macro_dim": 16,
+  "enc_hidden": 384,
+  "macro_hidden": 64,
+  "pred_width": 192,
+  "pred_depth": 4,
+  "pred_heads": 6,
+  "context": 3,
+  "stride": 3,
+  "t1": 19,
+  "readout_hidden": 256,
+  "sigreg_proj": 1024,
+  "beta": 0.08,
+  "gamma": 100.0,
+  "beta_up": 0.16,
+  "gamma_up": 50.0,
+  "act_sigreg": 0.005,
+  "w_traj": 10.0,
+  "hist_drop": 0.0,
+  "kin_mode": "yaw"
+ },
+ "cfg_sha12": "ef10b894a15f",
+ "args_hash": "dac831dba285f58f",
+ "G_DVB": [
+  {
+   "lever": "act_channels",
+   "declared": [
+    "a",
+    "yaw_rate",
+    "v"
+   ],
+   "built": [
+    "a",
+    "yaw_rate",
+    "v"
+   ],
+   "ok": true
+  },
+  {
+   "lever": "act_dim",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "d1",
+   "declared": 128,
+   "built": 128,
+   "ok": true
+  },
+  {
+   "lever": "n_tok*d_tok",
+   "declared": 2560,
+   "built": 2560,
+   "ok": true
+  },
+  {
+   "lever": "w_traj",
+   "declared": 10.0,
+   "built": 10.0,
+   "ok": true
+  },
+  {
+   "lever": "n_wm_levels",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "beta_L1",
+   "declared": 0.08,
+   "built": 0.08,
+   "ok": true
+  },
+  {
+   "lever": "gamma_L1",
+   "declared": 100.0,
+   "built": 100.0,
+   "ok": true
+  },
+  {
+   "lever": "idm_live_L1",
+   "declared": true,
+   "built": true,
+   "ok": true
+  },
+  {
+   "lever": "context_L1",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "beta_L2",
+   "declared": 0.16,
+   "built": 0.16,
+   "ok": true
+  },
+  {
+   "lever": "gamma_L2",
+   "declared": 50.0,
+   "built": 50.0,
+   "ok": true
+  },
+  {
+   "lever": "idm_live_L2",
+   "declared": true,
+   "built": true,
+   "ok": true
+  },
+  {
+   "lever": "context_L2",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "stride_L2",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "act_sigreg_L2",
+   "declared": 0.005,
+   "built": 0.005,
+   "ok": true
+  },
+  {
+   "lever": "beta_L3",
+   "declared": 0.16,
+   "built": 0.16,
+   "ok": true
+  },
+  {
+   "lever": "gamma_L3",
+   "declared": 50.0,
+   "built": 50.0,
+   "ok": true
+  },
+  {
+   "lever": "idm_live_L3",
+   "declared": true,
+   "built": true,
+   "ok": true
+  },
+  {
+   "lever": "context_L3",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "stride_L3",
+   "declared": 3,
+   "built": 3,
+   "ok": true
+  },
+  {
+   "lever": "act_sigreg_L3",
+   "declared": 0.005,
+   "built": 0.005,
+   "ok": true
+  },
+  {
+   "lever": "hist_drop_wrapped_levels",
+   "declared": 0,
+   "built": 0,
+   "ok": true
+  },
+  {
+   "lever": "readout_in",
+   "declared": 384,
+   "built": 384,
+   "ok": true
+  },
+  {
+   "lever": "kin_mode_bank",
+   "declared": "yaw",
+   "built": "yaw",
+   "ok": true
+  },
+  {
+   "lever": "p10_units",
+   "declared": "pose_kappa",
+   "built": "pose_kappa",
+   "ok": true
+  },
+  {
+   "lever": "act_ch1_name",
+   "declared": "yaw_rate",
+   "built": "yaw_rate",
+   "ok": true
+  }
+ ],
+ "G_LIVE": {
+  "ok": true,
+  "shuffle_nonidentity_frac": null,
+  "shuffle_ok": true,
+  "missing": [],
+  "nonfinite": [],
+  "unexpected_dead": [],
+  "expected_dead": [],
+  "idm_term_grad_into_adapter": 5188.171868300065,
+  "idm_ok": true,
+  "terms": {
+   "traj": 3.205315589904785,
+   "ade_m": 3.205315589904785,
+   "pred/L1": 0.04472833126783371,
+   "sigreg/L1": 12.893339157104492,
+   "idm/L1": 1.7233121395111084,
+   "level/L1": 173.40740966796875,
+   "pred/L2": 0.07311618328094482,
+   "sigreg/L2": 12.899109840393066,
+   "idm/L2": 0.986581027507782,
+   "act_sigreg/L2": 10.442327499389648,
+   "level/L2": 51.51823806762695,
+   "pred/L3": 0.04939448460936546,
+   "sigreg/L3": 12.900588035583496,
+   "idm/L3": 1.0056644678115845,
+   "act_sigreg/L3": 11.646354675292969,
+   "level/L3": 52.45494079589844,
+   "idm_term/L1": 172.33120727539062,
+   "sigreg_term/L1": 1.031467080116272,
+   "idm_term/L2": 49.32905197143555,
+   "sigreg_term/L2": 2.0638575553894043,
+   "idm_term/L3": 50.28322219848633,
+   "sigreg_term/L3": 2.064094066619873,
+   "wm_total": 277.3805847167969,
+   "total": 309.4337463378906
+  }
+ },
+ "vram_estimate": {
+  "params": 8001151,
+  "params_gb": 0.11922644078731537,
+  "activations_gb": 0.7341575995087624,
+  "token_buffers_gb": 0.556640625,
+  "slack": 1.25,
+  "estimate_gb": 1.7625308316200972,
+  "kind": "ESTIMATE"
+ },
+ "ok": true
+}

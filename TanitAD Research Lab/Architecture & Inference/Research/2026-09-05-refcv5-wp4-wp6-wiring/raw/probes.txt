@@ -1,0 +1,103 @@
+# refcv5 WP-4/WP-6 wiring -- RAW PROBE OUTPUT
+# Re-run 2026-09-05T23:45:33Z UTC on the FINAL code state.
+# torch 2.11.0+cu128 cuda True | python 3.13.5
+# tanitad imported from: C:\Users\Admin\tanitad-wt\stack\tanitad\__init__.py
+# diffusers 0.40.0
+# ===============================================================
+
+##### ===== bitid.py =====
+=== THE LOAD-BEARING IDENTITY: roll_controls(constant) == roll_bank ===
+  units=alat  shape=(5, 117, 8, 2) n_elem=9360 BIT_IDENTICAL=True max|diff|=0.000e+00 differing_bit_patterns=0
+  units=kappa shape=(5, 117, 8, 2) n_elem=9360 BIT_IDENTICAL=True max|diff|=0.000e+00 differing_bit_patterns=0
+
+=== the sampler MOVES its own output (refcv3 read 201/201 UNCHANGED) ===
+  windows whose RANKING moved when the denoiser opened: 0/4
+  max |fan delta| (m): 99.1765
+  u0_hat present: True  shape (4, 32, 8, 2)
+  sel_tele: {k: a['sel_tele'][k] for k in ('sampler','sampler_space','sampler_ladder')}
+  -> {'sampler': 'ddim', 'sampler_space': 'control', 'sampler_ladder': [10, 0]}
+
+=== diffusers cross-check available? ===
+  diffusers 0.40.0
+  assert_matches_diffusers -> True
+
+##### ===== loop.py =====
+=== A. ZERO-INIT head: u0_hat must be EXACTLY the noised anchor ===
+  |u0_hat - anchor|/norm : mean 0.02526 max 0.12189
+  schedule says sigma(8)=0.03159  sqrt_abar(8)=0.99950  -> deviation IS the anchored Gaussian
+
+=== B. OPEN the denoiser: does the LOOP move the state? (refcv3: 201/201 UNCHANGED) ===
+  ladder [10, 0]
+  step t=10-> 0: |du| mean 1.12508 | state moved 0.80710 | rows changed 128/4
+  step t= 0-> 0: |du| mean 0.92549 | state moved 0.00000 | rows changed 117/4
+
+=== C. ranking on the SAMPLER's own surface (sel.refined) ===
+  SelectionConfig().refined default = False
+
+##### ===== steps.py =====
+=== does adding a DDIM rung change the OUTPUT? (refcv3's loop did not) ===
+  steps 1 vs 2: ladder [9] vs [10, 0]
+     mean|d u0_hat| 1.25775   mean|d fan| 2.08986 m   rows changed 128/128
+  steps 2 vs 3: ladder [10, 0] vs [11, 6, 0]
+     mean|d u0_hat| 0.22433   mean|d fan| 0.21092 m   rows changed 128/128
+
+##### ===== metre.py =====
+=== THE DELIBERATE REGRESSION: can the metre arm FAIL the flyability gate? ===
+   (zero-init control_head, so this is the SAMPLER's noise alone)
+  control : implied |a_lat| mean  0.5312  max   1.7395 m/s^2  (  0.18 g)  | frac over mu=0.7 (6.87): 0.0000
+            tele: control
+  metre   : implied |a_lat| mean  5.2941  max  16.1573 m/s^2  (  1.65 g)  | frac over mu=0.7 (6.87): 0.3333
+            tele: metre
+
+  DD's published per-waypoint sigma is 0.90 m / 0.73 m; over a 0.5 s slot a
+  0.73 m lateral excursion implies ~5.8 m/s^2 (0.6 g). The metre arm must
+  land in that neighbourhood, and the control arm must not.
+
+##### ===== mutate.py =====
+=== CONTROL: a HONEST default run must PASS (or the guard is vacuous) ===
+  PASS  sampler='none' cross_agent=False agents=None
+
+=== CONTROL 2: an HONEST ddim run must PASS ===
+  PASS  sampler='ddim' control_head=Linear
+
+=== MUTATION 1: THE EXACT PRE-FIX DEFECT -- stamp 'ddim' on a model with no denoiser ===
+  REJECTED:
+    [v3] ⛔⛔ THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:
+      - stamp says sampler='ddim' but decoder.control_head is None -- the record would claim a denoiser the weights do not contain
+      - stamp says sampler='ddim' but decoder.time_mlp is None -- the record would claim a denoiser the weights do not contain
+      - stamp says sampler='ddim' but decoder.sched is None -- the record would claim a denoiser the weights do not contain
+      - stamp says w_u0=0.5 but there is no control_head for that loss to supervi
+
+=== MUTATION 2: a LIVE sampler absent from the record (the other direction) ===
+  REJECTED: - stamp says sampler='none' but decoder.control_head WAS BUILT -- a live sampler absent from the run record
+
+=== MUTATION 3: agents stamped, no head built ===
+  REJECTED with 3 findings
+    - stamp says cross_agent=True but decoder layers [0, 1, 2, 3] have no agent attention -- the tokens would reach nothing
+    - stamp carries an `agents` block but core.agent_head is None -- the record would claim a detector that was never built
+    - stamp carries an `agents` block but core.agent_embed is None -- the record would claim a detector that was never built
+
+=== MUTATION 4: w_u0 > 0 with no control_head (loss silently skipped) ===
+  REJECTED: - stamp says w_u0=1.0 but there is no control_head for that loss to supervise: the term would be silently skipped while the weight is stamped
+
+##### ===== agents.py =====
+  print("  agent_gate init (must be 0.0):", [float(l.agent_gate) for l in m.core.decoder.layers])
+=== WP-6 ORACLE: does the seam BUILD and RUN end to end? ===
+  agent_head : OracleAgentEmbed
+  agent_embed: AgentTokenEmbed
+  layers with cross_agent: 4 / 4
+  agent_gate init (must be 0.0): [0.0, 0.0, 0.0, 0.0]
+  forward OK. agent_slots keys: ['box', 'cls_logits', 'occ_logit', 'presence_logit', 'rates', 'valid'] ...
+  traj (2, 8, 2) finite: True
+
+=== THE EMPTY-SCENE CASE: every slot invalid (an empty road) ===
+  traj finite: True | any NaN anywhere: False
+
+=== ZERO-INIT PARITY: at agent_gate=0 the planner output must be UNCHANGED ===
+  shared tensors copied: 293
+  traj IDENTICAL: True | max|d| = 0.0
+  anchor_logits IDENTICAL: True
+
+=== the gate is GATED, not DEAD: gradient must reach agent_gate ===
+  |d loss / d agent_gate| per layer: ['6.358e+00', '7.537e+00', '1.356e+00', '1.135e+00']
+  all non-zero: True

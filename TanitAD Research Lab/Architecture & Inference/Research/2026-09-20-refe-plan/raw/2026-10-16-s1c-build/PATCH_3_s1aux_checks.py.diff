@@ -1,0 +1,102 @@
+--- a/refe/s1aux_checks.py
++++ b/refe/s1aux_checks.py
+@@ -6,7 +6,8 @@
+   tree           the shipped code tree (refe/ code/ splits/ under --pkg) equals SHIP_MANIFEST.json, file for file (the launch gate re-measures the same tree: a drift is caught HERE, not after hours)
+   store          the aux label store verifies by its OWN sha check: AuxLabelSource (pinned store_sha256 + key count) + verify_all (every shard's sha256), mismatch must be 0
+   data-check     the `data` event of a --preflight / run log: the S1 data is the audited data (train sets, held-out sets and logs, no train row in a held-out log, teacher-lane floor)
+-  run-check      a FINISHED arm: the `start` and `done` events read updates == 400, the evals/dumps exist, a head arm carries its head files and an N arm carries none
++  run-check      a FINISHED arm: the `start` and `done` events read the arm's registered update count (S1: 400; S1c: its budget, S1C_BUDGETS), the evals/dumps exist at EVERY eval tag,
++                 a head arm carries its head files and an N arm carries none
+   manifest-row   append one row (token id, argv sha256, commit, key id) to the arms manifest; the chain writes it BEFORE the arm's first training step (PREREG_AUX_DRIVABLE_S1 section 2)
+   remote-verify  the pushed files, by the REMOTE listing: LFS sha256 (or the git blob id of a small file) equals the local file's; never the push's return code
+   extract        a .tar / .tar.zst into a directory, every member validated BEFORE it is written (p2r_sync.safe_extract: no absolute path, no '..', files and dirs only, no chown)
+@@ -31,6 +32,10 @@
+ sys.path.insert(0, str(HERE))
+ 
+ UPDATES = 400                      # PREREG_AUX_DRIVABLE_S1 section 4 rule 1: "a run whose start event does not read updates == 400 is not an S1 arm"
++# S1c (raw/2026-10-16-s1c-build/S1C_DESIGN.md): the head arm classes with their own training budget.  MUST equal launch_gate.AUXS1C_BUDGETS (refe/test_s1c.py asserts it): the gate refuses an argv whose
++# budget differs, this table refuses a finished run whose start / done events do.  `updates` = --max-updates, `eval_every` = --eval-every.
++S1C_BUDGETS = {"H1u10k": {"updates": 10000, "batch": 8, "accum": 1, "eval_every": 5000},
++               "H1u2k": {"updates": 2000, "batch": 8, "accum": 8, "eval_every": 1000}}
+ TRAIN_SETS = 174912                # tr_idx: bank rows whose key is in op.by, log not held out, PDM-labelled (audit section 1)
+ HELDOUT_SETS = 3137
+ HELDOUT_LOGS = 24
+@@ -136,10 +141,24 @@
+     return arm.split("-")[0]
+ 
+ 
++def arm_budget(arm):
++    """{updates, batch, accum, eval_every} an arm must have run: its S1c class's budget, else S1's (400 updates, evaluated once at the end)."""
++    return S1C_BUDGETS.get(arm_class(arm)) or {"updates": UPDATES, "batch": 8, "accum": 8, "eval_every": UPDATES}
++
++
++def eval_tags(b):
++    """The held-out evaluation tags a run of budget `b` writes: scorer_finetune.py logs `step0`, then `update<u>` whenever u % eval_every == 0 or u == total."""
++    n, e = b["updates"], b["eval_every"]
++    return ["step0"] + [f"update{u}" for u in range(e, n + 1, e)] + ([f"update{n}"] if n % e else [])
++
++
+ def run_problems(d, arm):
+     """Problems of a FINISHED arm directory `d` (sft.jsonl, model_sft_B.pt, dump/, aux_drv.pt).  [] = a valid S1 arm."""
+     d = Path(d)
+     cls = arm_class(arm)
++    b = arm_budget(arm)
++    UPDATES = b["updates"]                                  # shadows the S1 constant: the arm's REGISTERED update count (S1 arms: 400)
++    tags_want = eval_tags(b)
+     bad = []
+     lp = d / "sft.jsonl"
+     if not lp.is_file():
+@@ -154,14 +173,18 @@
+     if len(dn) != 1 or dn[0].get("updates") != UPDATES:
+         bad.append(f"done events {[x.get('updates') for x in dn]}, want exactly one reading updates == {UPDATES}")
+     tags = {r.get("tag") for r in by.get("eval", [])}
+-    if not {"step0", f"update{UPDATES}"} <= tags:
+-        bad.append(f"eval tags {sorted(map(str, tags))} lack step0 / update{UPDATES}")
++    if not set(tags_want) <= tags:
++        bad.append(f"eval tags {sorted(map(str, tags))} lack step0 / update{UPDATES}" + ("" if tags_want == ["step0", f"update{UPDATES}"] else f" (want every one of {tags_want})"))
++    if cls in S1C_BUDGETS and st:
++        for k, w in (("batch", b["batch"]), ("micro_per_update", b["accum"])):            # S1c: the budget's batch x accum, as the trainer's own start event states it
++            if st[0].get(k) != w:
++                bad.append(f"start event {k} {st[0].get(k)} != {w} (the registered budget of {cls})")
+     bad += [f"data: {p}" for p in data_problems((by.get("data") or [None])[0])]
+     m = d / "model_sft_B.pt"
+     if not m.is_file() or m.stat().st_size < MODEL_B_MIN_BYTES:
+         bad.append(f"model_sft_B.pt missing or smaller than {MODEL_B_MIN_BYTES} B")
+     dump = d / "dump"
+-    for tag in ("step0", f"update{UPDATES}"):
++    for tag in tags_want:
+         if not glob.glob(str(dump / f"scores_{tag}_*.npz")):
+             bad.append(f"dump/scores_{tag}_*.npz missing (the paired bootstrap's per-set logits)")
+     head_files = glob.glob(str(dump / "head_pred_*.npz"))
+@@ -173,14 +196,18 @@
+         if not (d / "aux_drv.pt").is_file():
+             bad.append("aux_drv.pt missing on a head arm")
+         atags = {r.get("tag") for r in by.get("aux_eval", [])}
+-        if not {"step0", f"update{UPDATES}"} <= atags:
+-            bad.append(f"aux_eval tags {sorted(map(str, atags))} lack step0 / update{UPDATES}")
+-        for tag in ("step0", f"update{UPDATES}"):
+-            if not any(tag in os.path.basename(h) for h in head_files):
++        if not set(tags_want) <= atags:
++            bad.append(f"aux_eval tags {sorted(map(str, atags))} lack step0 / update{UPDATES}" + ("" if tags_want == ["step0", f"update{UPDATES}"] else f" (want every one of {tags_want})"))
++        for tag in tags_want:
++            if not any(os.path.basename(h) == f"head_pred_{tag}.npz" for h in head_files):
+                 bad.append(f"dump/head_pred_*{tag}*.npz missing (the P1 / P2 / P3 readout's input)")
+         ab = [r.get("aux_bce") for r in train_rows if "aux_bce" in r]
+         if not ab or not all(isinstance(x, (int, float)) and math.isfinite(x) for x in ab):
+             bad.append(f"aux_bce on train rows: {len(ab)} rows, finite={all(isinstance(x, (int, float)) and math.isfinite(x) for x in ab)}")
++    if cls in S1C_BUDGETS and train_rows:                  # S1c: the schedule ENDED where it was registered to end (cosine to 0 at update N): the last logged row is update N of N at lr exactly 0
++        last = max(train_rows, key=lambda r: r.get("update", 0))
++        if last.get("update") != UPDATES or last.get("of") != UPDATES or not (isinstance(last.get("lr"), (int, float)) and abs(last["lr"]) <= 1e-12):
++            bad.append(f"last train row is update {last.get('update')} of {last.get('of')} at lr {last.get('lr')}, want update {UPDATES} of {UPDATES} at lr 0.0 (the schedule did not run to its registered end)")
+     for r in train_rows:
+         for k in ("bceA", "lossB"):
+             if k in r and not (isinstance(r[k], (int, float)) and math.isfinite(r[k])):
+@@ -193,7 +220,7 @@
+     bad = run_problems(d, arm)
+     if out_json:
+         Path(out_json).write_text(json.dumps({"arm": arm, "dir": str(d), "problems": bad, "ok": not bad, "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, indent=1), encoding="utf-8")
+-    return (not bad), ("; ".join(bad)[:700] if bad else f"{arm}: updates {UPDATES}, evals + dumps present" + (", head files present" if arm_class(arm) != "N" else ", no head artifact"))
++    return (not bad), ("; ".join(bad)[:700] if bad else f"{arm}: updates {arm_budget(arm)['updates']}, evals + dumps present" + (", head files present" if arm_class(arm) != "N" else ", no head artifact"))
+ 
+ 
+ # ------------------------------------------------------------------------------------------------------------- manifest row

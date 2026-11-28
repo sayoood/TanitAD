@@ -1,0 +1,542 @@
+# NUMBERS_AUDIT: report v31 (v30 + section 7.22 FLAT-DAG, 7.23 DAG-OACC)
+
+Method (mechanical, `audit.py`): the v31 md was diffed against the v30 md on the tip (`569a9d9b`); every added or changed line was tokenised
+for numbers (sign kept, the Unicode minus read as `-`, thousands commas removed); each distinct signed token was looked up line by line in the
+source files below. `v31:N` are line numbers in `V8F_SCIENTIFIC_REPORT.md` (v31). Sources are the files exported from `569a9d9b`.
+
+| source | role |
+|---|---|
+| `RESULT_V8F_FLATDAG.md` | the FLAT-DAG result (primary source for 7.22, abstract, 8.1, 8.2, row 1u) |
+| `RESULT_V8F_DAG_OACC.md` | the DAG-OACC result (primary source for 7.23, abstract, 8.1, 8.3, row 1v) |
+| `PREREG_V8F_FLATDAG.md` | the bar and 'at both seeds' wording only (not a RESULT; read from the tip) |
+| `PREREG_V8F_DAG_OACC.md` | bar wording only (read from the tip) |
+| `PREREG_V8F_DAG_ORC.md`, `PREREG_V8F_SPEEDREAD.md` | identifiers and wording only; no numeric result of either is reported |
+
+**Totals.** 201 added or changed lines; 478 distinct signed numeric tokens (single digits 0-9 excluded as enumerations);
+460 found with the same sign in a source line; 7 found only with a different or absent sign (listed in section B, each reviewed by hand); 9 found only in the v30 report (section C); 2 found nowhere (section D).
+
+## A. Tokens found with the same sign in a source (token -> v31 lines -> source:lines)
+
+| token | v31 lines | source lines |
+|---|---|---|
+| `2026` | 3,763,766,767,850,858... | RESULT_V8F_FLATDAG.md:4,4,5...; RESULT_V8F_DAG_OACC.md:3,4,5...; PREREG_V8F_FLATDAG.md:3,3,14...; PREREG_V8F_DAG_OACC.md:3,15,75...; PREREG_V8F_DAG_ORC.md:3,3,37...; PREREG_V8F_SPEEDREAD.md:3,4,16... |
+| `10` | 3,3,755,763,766,767... | RESULT_V8F_FLATDAG.md:4,4,5...; RESULT_V8F_DAG_OACC.md:3,4,5...; PREREG_V8F_FLATDAG.md:3,3,14...; PREREG_V8F_DAG_OACC.md:3,15,36...; PREREG_V8F_DAG_ORC.md:3,3,37...; PREREG_V8F_SPEEDREAD.md:3,4,16... |
+| `27` | 3,766,767,850,858,859... | RESULT_V8F_FLATDAG.md:4,4,5; RESULT_V8F_DAG_OACC.md:3,4,5...; PREREG_V8F_FLATDAG.md:3,3,14...; PREREG_V8F_DAG_OACC.md:3,15,75...; PREREG_V8F_DAG_ORC.md:3,3,224...; PREREG_V8F_SPEEDREAD.md:3,4,40... |
+| `2000` | 38,757,855 | RESULT_V8F_FLATDAG.md:10; RESULT_V8F_DAG_OACC.md:11; PREREG_V8F_FLATDAG.md:37; PREREG_V8F_DAG_OACC.md:37; PREREG_V8F_DAG_ORC.md:22,100,290; PREREG_V8F_SPEEDREAD.md:131,228 |
+| `141` | 38,757,809,855 | RESULT_V8F_FLATDAG.md:10,63; RESULT_V8F_DAG_OACC.md:11; PREREG_V8F_DAG_OACC.md:26,36; PREREG_V8F_DAG_ORC.md:96,98,100; PREREG_V8F_SPEEDREAD.md:32,44,44... |
+| `-0.2415` | 38,771,999 | RESULT_V8F_FLATDAG.md:25; PREREG_V8F_FLATDAG.md:41 |
+| `-0.152` | 38,817,945,999 | RESULT_V8F_FLATDAG.md:73 |
+| `-0.191` | 38,817,945,999 | RESULT_V8F_FLATDAG.md:73 |
+| `49.6969` | 39,851,1000 | RESULT_V8F_DAG_OACC.md:14; PREREG_V8F_DAG_OACC.md:89; PREREG_V8F_DAG_ORC.md:359 |
+| `56` | 39,903,946 | RESULT_V8F_DAG_OACC.md:64 |
+| `58` | 39,815,903,945,946 | RESULT_V8F_FLATDAG.md:71; RESULT_V8F_DAG_OACC.md:64; PREREG_V8F_DAG_ORC.md:272 |
+| `2.90` | 39,903 | RESULT_V8F_DAG_OACC.md:64 |
+| `1.27` | 39,903 | RESULT_V8F_DAG_OACC.md:64 |
+| `3.53` | 39,903 | RESULT_V8F_DAG_OACC.md:64 |
+| `1.49` | 39,903 | RESULT_V8F_DAG_OACC.md:64 |
+| `-1.6243` | 39,863,884,1000 | RESULT_V8F_DAG_OACC.md:22,43 |
+| `-1.9766` | 39,863,1000 | RESULT_V8F_DAG_OACC.md:22 |
+| `-1.3236` | 39,863,1000 | RESULT_V8F_DAG_OACC.md:22 |
+| `-2.0450` | 39,863,884,1000 | RESULT_V8F_DAG_OACC.md:22,43 |
+| `-2.5628` | 39,863,1000 | RESULT_V8F_DAG_OACC.md:22 |
+| `-1.6227` | 39,863,1000 | RESULT_V8F_DAG_OACC.md:22 |
+| `-0.0356` | 39,864,881,1000 | RESULT_V8F_DAG_OACC.md:23,40 |
+| `-0.1258` | 39,864 | RESULT_V8F_DAG_OACC.md:23 |
+| `+0.0423` | 39,864 | RESULT_V8F_DAG_OACC.md:23 |
+| `-0.1363` | 39,864,881,1000 | RESULT_V8F_DAG_OACC.md:23,40 |
+| `-0.2057` | 39,864 | RESULT_V8F_DAG_OACC.md:23 |
+| `-0.0731` | 39,864 | RESULT_V8F_DAG_OACC.md:23 |
+| `+0.0604` | 39,810,864,869,897,1000 | RESULT_V8F_FLATDAG.md:64; RESULT_V8F_DAG_OACC.md:23,28,56; PREREG_V8F_DAG_OACC.md:42; PREREG_V8F_DAG_ORC.md:26,29 |
+| `-1.2012` | 39,866,881 | RESULT_V8F_DAG_OACC.md:25,40 |
+| `-1.1231` | 39,866,881 | RESULT_V8F_DAG_OACC.md:25,40 |
+| `2399` | 757,782,809,855 | RESULT_V8F_FLATDAG.md:10,36,63; RESULT_V8F_DAG_OACC.md:11; PREREG_V8F_DAG_ORC.md:100; PREREG_V8F_SPEEDREAD.md:131,228 |
+| `3000` | 760,843,999 | RESULT_V8F_FLATDAG.md:14,105; PREREG_V8F_FLATDAG.md:22; PREREG_V8F_DAG_OACC.md:20; PREREG_V8F_DAG_ORC.md:59,66,175...; PREREG_V8F_SPEEDREAD.md:206,225 |
+| `0.1` | 761,999 | RESULT_V8F_FLATDAG.md:14; PREREG_V8F_FLATDAG.md:24,32; PREREG_V8F_DAG_OACC.md:21; PREREG_V8F_DAG_ORC.md:49,51,52...; PREREG_V8F_SPEEDREAD.md:108,110 |
+| `613132` | 761 | RESULT_V8F_FLATDAG.md:15 |
+| `4512` | 762 | RESULT_V8F_FLATDAG.md:15; PREREG_V8F_FLATDAG.md:29; PREREG_V8F_SPEEDREAD.md:64,65,71... |
+| `0.751` | 762,762 | RESULT_V8F_FLATDAG.md:15,15 |
+| `0.1011` | 762 | RESULT_V8F_FLATDAG.md:16 |
+| `0.1005` | 762 | RESULT_V8F_FLATDAG.md:16 |
+| `26` | 763 | RESULT_V8F_FLATDAG.md:17; PREREG_V8F_FLATDAG.md:31; PREREG_V8F_DAG_ORC.md:37; PREREG_V8F_SPEEDREAD.md:46 |
+| `91` | 766,779,999,999 | RESULT_V8F_FLATDAG.md:5,34 |
+| `-0.3451` | 771,789,945,951,999 | RESULT_V8F_FLATDAG.md:25,43 |
+| `-0.4421` | 771,951,999 | RESULT_V8F_FLATDAG.md:25 |
+| `-0.2506` | 771,951,999 | RESULT_V8F_FLATDAG.md:25 |
+| `-0.0544` | 771,789,945,951,999 | RESULT_V8F_FLATDAG.md:25,43 |
+| `-0.1605` | 771,951,999 | RESULT_V8F_FLATDAG.md:25 |
+| `+0.0547` | 771,951,999 | RESULT_V8F_FLATDAG.md:25 |
+| `+0.0734` | 773,795,999 | RESULT_V8F_FLATDAG.md:27,49 |
+| `+0.013` | 773,793,795,801 | RESULT_V8F_FLATDAG.md:27,47,49... |
+| `+0.150` | 773,795 | RESULT_V8F_FLATDAG.md:27,49 |
+| `+0.0370` | 773,793,999 | RESULT_V8F_FLATDAG.md:27,47 |
+| `+0.015` | 773,793,894,973 | RESULT_V8F_FLATDAG.md:27,47; RESULT_V8F_DAG_OACC.md:53 |
+| `+0.062` | 773,793,804 | RESULT_V8F_FLATDAG.md:27,47,58 |
+| `+0.8252` | 773,792,999 | RESULT_V8F_FLATDAG.md:27,46 |
+| `+0.521` | 773,792 | RESULT_V8F_FLATDAG.md:27,46 |
+| `+1.165` | 773,792 | RESULT_V8F_FLATDAG.md:27,46 |
+| `0.0` | 783,784,784 | RESULT_V8F_FLATDAG.md:36,36,37; PREREG_V8F_DAG_ORC.md:219,382; PREREG_V8F_SPEEDREAD.md:141,142,145... |
+| `19` | 784 | RESULT_V8F_FLATDAG.md:37; PREREG_V8F_DAG_ORC.md:324; PREREG_V8F_SPEEDREAD.md:293,350,350 |
+| `-0.5957` | 784 | RESULT_V8F_FLATDAG.md:37 |
+| `-0.3505` | 784 | RESULT_V8F_FLATDAG.md:37 |
+| `95` | 785,877 | RESULT_V8F_FLATDAG.md:39; RESULT_V8F_DAG_OACC.md:36 |
+| `-0.442` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.251` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.161` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `+0.055` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.1522` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.218` | 789,794 | RESULT_V8F_FLATDAG.md:43,48 |
+| `-0.088` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.1905` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.277` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.120` | 789 | RESULT_V8F_FLATDAG.md:43 |
+| `-0.3241` | 790 | RESULT_V8F_FLATDAG.md:44 |
+| `-0.443` | 790 | RESULT_V8F_FLATDAG.md:44 |
+| `-0.213` | 790 | RESULT_V8F_FLATDAG.md:44 |
+| `+0.0451` | 790 | RESULT_V8F_FLATDAG.md:44 |
+| `-0.066` | 790,791 | RESULT_V8F_FLATDAG.md:44,45 |
+| `+0.151` | 790,894 | RESULT_V8F_FLATDAG.md:44; RESULT_V8F_DAG_OACC.md:53 |
+| `+0.0737` | 790 | RESULT_V8F_FLATDAG.md:44 |
+| `+0.0600` | 790,802 | RESULT_V8F_FLATDAG.md:44,56 |
+| `-0.1621` | 791 | RESULT_V8F_FLATDAG.md:45 |
+| `-0.258` | 791 | RESULT_V8F_FLATDAG.md:45 |
+| `+0.0107` | 791,805 | RESULT_V8F_FLATDAG.md:45,59 |
+| `-0.094` | 791 | RESULT_V8F_FLATDAG.md:45 |
+| `+0.126` | 791,998 | RESULT_V8F_FLATDAG.md:45 |
+| `-0.0427` | 791 | RESULT_V8F_FLATDAG.md:45 |
+| `-0.0893` | 791 | RESULT_V8F_FLATDAG.md:45 |
+| `-0.1192` | 792 | RESULT_V8F_FLATDAG.md:46 |
+| `-0.454` | 792 | RESULT_V8F_FLATDAG.md:46 |
+| `+0.213` | 792 | RESULT_V8F_FLATDAG.md:46 |
+| `+0.3842` | 792 | RESULT_V8F_FLATDAG.md:46 |
+| `+0.2798` | 792 | RESULT_V8F_FLATDAG.md:46 |
+| `-0.0084` | 793,885 | RESULT_V8F_FLATDAG.md:47; RESULT_V8F_DAG_OACC.md:44 |
+| `-0.033` | 793 | RESULT_V8F_FLATDAG.md:47 |
+| `+0.0168` | 793 | RESULT_V8F_FLATDAG.md:47 |
+| `+0.0319` | 793 | RESULT_V8F_FLATDAG.md:47 |
+| `+0.0320` | 794 | RESULT_V8F_FLATDAG.md:48 |
+| `-0.265` | 794 | RESULT_V8F_FLATDAG.md:48 |
+| `+0.265` | 794 | RESULT_V8F_FLATDAG.md:48 |
+| `+0.0028` | 794 | RESULT_V8F_FLATDAG.md:48 |
+| `+0.223` | 794 | RESULT_V8F_FLATDAG.md:48 |
+| `+0.1371` | 794,895 | RESULT_V8F_FLATDAG.md:48; RESULT_V8F_DAG_OACC.md:54 |
+| `-0.1032` | 794 | RESULT_V8F_FLATDAG.md:48 |
+| `+0.0005` | 795 | RESULT_V8F_FLATDAG.md:49 |
+| `-0.032` | 795 | RESULT_V8F_FLATDAG.md:49 |
+| `+0.031` | 795,973 | RESULT_V8F_FLATDAG.md:49 |
+| `-0.0074` | 795 | RESULT_V8F_FLATDAG.md:49 |
+| `-0.0103` | 795 | RESULT_V8F_FLATDAG.md:49 |
+| `-3.1694` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-4.257` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-2.257` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-1.3925` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-2.036` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-0.869` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-1.4594` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-1.8141` | 796 | RESULT_V8F_FLATDAG.md:50 |
+| `-11.6272` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `-16.844` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `-7.298` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `-0.6107` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `-3.019` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `+2.104` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `+0.4058` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `-2.0253` | 797 | RESULT_V8F_FLATDAG.md:51 |
+| `-0.0461` | 798 | RESULT_V8F_FLATDAG.md:52 |
+| `-0.070` | 798,801 | RESULT_V8F_FLATDAG.md:52,55 |
+| `-0.025` | 798,801 | RESULT_V8F_FLATDAG.md:52,55 |
+| `-0.0037` | 798 | RESULT_V8F_FLATDAG.md:52 |
+| `-0.019` | 798,894 | RESULT_V8F_FLATDAG.md:52; RESULT_V8F_DAG_OACC.md:53 |
+| `+0.012` | 798 | RESULT_V8F_FLATDAG.md:52 |
+| `-0.0088` | 798 | RESULT_V8F_FLATDAG.md:52 |
+| `-0.0393` | 798,801 | RESULT_V8F_FLATDAG.md:52,55 |
+| `-0.2989` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-0.372` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-0.231` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-0.0791` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-0.147` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-0.015` | 799,801,891 | RESULT_V8F_FLATDAG.md:53,55; RESULT_V8F_DAG_OACC.md:50 |
+| `-0.1897` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-0.1998` | 799 | RESULT_V8F_FLATDAG.md:53 |
+| `-2.6848` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `-3.923` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `-1.625` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `-0.1380` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `-0.682` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `+0.419` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `+0.5423` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `+0.0526` | 800 | RESULT_V8F_FLATDAG.md:54 |
+| `5.2` | 801,893 | RESULT_V8F_FLATDAG.md:55; RESULT_V8F_DAG_OACC.md:52; PREREG_V8F_DAG_ORC.md:26 |
+| `-0.0068` | 801 | RESULT_V8F_FLATDAG.md:55 |
+| `+0.0040` | 801 | RESULT_V8F_FLATDAG.md:55 |
+| `-0.0110` | 801 | RESULT_V8F_FLATDAG.md:55 |
+| `+0.033` | 802,805,894 | RESULT_V8F_FLATDAG.md:56,59; RESULT_V8F_DAG_OACC.md:53 |
+| `+0.088` | 802,803 | RESULT_V8F_FLATDAG.md:56,57 |
+| `+0.0167` | 802 | RESULT_V8F_FLATDAG.md:56 |
+| `-0.005` | 802 | RESULT_V8F_FLATDAG.md:56 |
+| `+0.040` | 802 | RESULT_V8F_FLATDAG.md:56 |
+| `+0.1263` | 802 | RESULT_V8F_FLATDAG.md:56 |
+| `+0.0863` | 802 | RESULT_V8F_FLATDAG.md:56 |
+| `+0.0554` | 803 | RESULT_V8F_FLATDAG.md:57 |
+| `+0.025` | 803 | RESULT_V8F_FLATDAG.md:57 |
+| `+0.0088` | 803 | RESULT_V8F_FLATDAG.md:57 |
+| `-0.030` | 803,825,885,893 | RESULT_V8F_FLATDAG.md:57,80; RESULT_V8F_DAG_OACC.md:44,52 |
+| `+0.047` | 803 | RESULT_V8F_FLATDAG.md:57 |
+| `+0.0092` | 803 | RESULT_V8F_FLATDAG.md:57 |
+| `+0.0042` | 803 | RESULT_V8F_FLATDAG.md:57 |
+| `-0.0304` | 804 | RESULT_V8F_FLATDAG.md:58 |
+| `-0.092` | 804 | RESULT_V8F_FLATDAG.md:58 |
+| `+0.028` | 804,893 | RESULT_V8F_FLATDAG.md:58; RESULT_V8F_DAG_OACC.md:52; PREREG_V8F_DAG_ORC.md:52 |
+| `+0.0070` | 804 | RESULT_V8F_FLATDAG.md:58 |
+| `-0.041` | 804,886 | RESULT_V8F_FLATDAG.md:58; RESULT_V8F_DAG_OACC.md:45 |
+| `+0.1104` | 804 | RESULT_V8F_FLATDAG.md:58 |
+| `+0.0957` | 804 | RESULT_V8F_FLATDAG.md:58 |
+| `-0.020` | 805,887 | RESULT_V8F_FLATDAG.md:59; RESULT_V8F_DAG_OACC.md:46 |
+| `+0.041` | 805,893 | RESULT_V8F_FLATDAG.md:59; RESULT_V8F_DAG_OACC.md:52 |
+| `-0.0078` | 805 | RESULT_V8F_FLATDAG.md:59 |
+| `-0.046` | 805,973 | RESULT_V8F_FLATDAG.md:59 |
+| `+0.0340` | 805 | RESULT_V8F_FLATDAG.md:59 |
+| `+0.0691` | 805 | RESULT_V8F_FLATDAG.md:59 |
+| `30` | 806,896,961 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55; PREREG_V8F_DAG_ORC.md:115,194,277; PREREG_V8F_SPEEDREAD.md:77,236,263... |
+| `50` | 806,896,961 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55; PREREG_V8F_DAG_ORC.md:39,115,194; PREREG_V8F_SPEEDREAD.md:236 |
+| `80` | 806,896,961 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55; PREREG_V8F_DAG_ORC.md:115,194; PREREG_V8F_SPEEDREAD.md:77,236 |
+| `-1.72` | 806,896 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55 |
+| `-4.48` | 806,896 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55 |
+| `-9.69` | 806,896 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55 |
+| `-1.65` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-4.67` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-9.83` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-1.87` | 806,896 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55 |
+| `-4.90` | 806,896 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55 |
+| `-10.33` | 806,896 | RESULT_V8F_FLATDAG.md:60; RESULT_V8F_DAG_OACC.md:55 |
+| `-1.63` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-4.62` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-10.29` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-1.04` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-3.58` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-7.87` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `+0.21` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-1.11` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-5.03` | 806 | RESULT_V8F_FLATDAG.md:60 |
+| `-0.0115` | 807 | RESULT_V8F_FLATDAG.md:61 |
+| `-0.022` | 807,973 | RESULT_V8F_FLATDAG.md:61 |
+| `-0.001` | 807,893 | RESULT_V8F_FLATDAG.md:61; RESULT_V8F_DAG_OACC.md:52 |
+| `-0.0133` | 807 | RESULT_V8F_FLATDAG.md:61 |
+| `-0.023` | 807,885 | RESULT_V8F_FLATDAG.md:61; RESULT_V8F_DAG_OACC.md:44 |
+| `-0.004` | 807,895 | RESULT_V8F_FLATDAG.md:61; RESULT_V8F_DAG_OACC.md:54 |
+| `-0.0082` | 807 | RESULT_V8F_FLATDAG.md:61 |
+| `-0.0058` | 807 | RESULT_V8F_FLATDAG.md:61 |
+| `2.2777` | 809 | RESULT_V8F_FLATDAG.md:63 |
+| `2.4565` | 809 | RESULT_V8F_FLATDAG.md:63 |
+| `2.6228` | 809 | RESULT_V8F_FLATDAG.md:63 |
+| `2.5109` | 809 | RESULT_V8F_FLATDAG.md:63 |
+| `2.7750` | 809 | RESULT_V8F_FLATDAG.md:63 |
+| `2.7014` | 809 | RESULT_V8F_FLATDAG.md:63 |
+| `+0.0254` | 810 | RESULT_V8F_FLATDAG.md:64 |
+| `-0.0039` | 810 | RESULT_V8F_FLATDAG.md:64 |
+| `+0.0575` | 810 | RESULT_V8F_FLATDAG.md:64 |
+| `+0.0082` | 810 | RESULT_V8F_FLATDAG.md:64 |
+| `-0.0205` | 810 | RESULT_V8F_FLATDAG.md:64 |
+| `+0.0357` | 810 | RESULT_V8F_FLATDAG.md:64 |
+| `-0.596` | 814 | RESULT_V8F_FLATDAG.md:70; PREREG_V8F_FLATDAG.md:8 |
+| `-0.351` | 814 | RESULT_V8F_FLATDAG.md:70; PREREG_V8F_FLATDAG.md:8 |
+| `-0.345` | 815 | RESULT_V8F_FLATDAG.md:71 |
+| `-0.054` | 815 | RESULT_V8F_FLATDAG.md:71 |
+| `15` | 815,945 | RESULT_V8F_FLATDAG.md:19,71,104; PREREG_V8F_DAG_ORC.md:246 |
+| `+0.110` | 817 | RESULT_V8F_FLATDAG.md:73 |
+| `+0.096` | 817 | RESULT_V8F_FLATDAG.md:73 |
+| `+0.034` | 818 | RESULT_V8F_FLATDAG.md:74 |
+| `+0.069` | 818 | RESULT_V8F_FLATDAG.md:74 |
+| `+0.384` | 820 | RESULT_V8F_FLATDAG.md:75 |
+| `+0.280` | 820 | RESULT_V8F_FLATDAG.md:75 |
+| `+0.58` | 821 | RESULT_V8F_FLATDAG.md:76 |
+| `+0.60` | 821 | RESULT_V8F_FLATDAG.md:76 |
+| `+0.825` | 821 | RESULT_V8F_FLATDAG.md:76 |
+| `+0.81` | 822,904 | RESULT_V8F_FLATDAG.md:77; RESULT_V8F_DAG_OACC.md:65 |
+| `+1.44` | 822,904 | RESULT_V8F_FLATDAG.md:77; RESULT_V8F_DAG_OACC.md:65 |
+| `-3.17` | 823 | RESULT_V8F_FLATDAG.md:78 |
+| `-1.39` | 823 | RESULT_V8F_FLATDAG.md:78 |
+| `-0.30` | 824 | RESULT_V8F_FLATDAG.md:79 |
+| `-0.08` | 824 | RESULT_V8F_FLATDAG.md:79 |
+| `-0.012` | 824,885,887 | RESULT_V8F_FLATDAG.md:79; RESULT_V8F_DAG_OACC.md:44,46 |
+| `-0.013` | 824 | RESULT_V8F_FLATDAG.md:79 |
+| `+0.007` | 825 | RESULT_V8F_FLATDAG.md:80 |
+| `+0.011` | 825,890 | RESULT_V8F_FLATDAG.md:80; RESULT_V8F_DAG_OACC.md:49 |
+| `-0.008` | 825 | RESULT_V8F_FLATDAG.md:80 |
+| `+0.073` | 826 | RESULT_V8F_FLATDAG.md:81 |
+| `+0.037` | 826 | RESULT_V8F_FLATDAG.md:82; PREREG_V8F_DAG_ORC.md:52 |
+| `0.29` | 827,842 | RESULT_V8F_FLATDAG.md:83,100 |
+| `0.18` | 827 | RESULT_V8F_FLATDAG.md:83 |
+| `0.11` | 828 | RESULT_V8F_FLATDAG.md:84 |
+| `+0.716` | 831 | RESULT_V8F_FLATDAG.md:90 |
+| `+0.668` | 832 | RESULT_V8F_FLATDAG.md:90 |
+| `0.71` | 832 | RESULT_V8F_FLATDAG.md:90; PREREG_V8F_SPEEDREAD.md:15 |
+| `0.85` | 832 | RESULT_V8F_FLATDAG.md:90; PREREG_V8F_SPEEDREAD.md:15 |
+| `1.92` | 833 | RESULT_V8F_FLATDAG.md:91; PREREG_V8F_SPEEDREAD.md:16 |
+| `1.33` | 833 | RESULT_V8F_FLATDAG.md:91; PREREG_V8F_SPEEDREAD.md:16 |
+| `0.72` | 834 | RESULT_V8F_FLATDAG.md:92 |
+| `0.67` | 834 | RESULT_V8F_FLATDAG.md:92 |
+| `470` | 834 | RESULT_V8F_FLATDAG.md:92 |
+| `494` | 834 | RESULT_V8F_FLATDAG.md:92; PREREG_V8F_SPEEDREAD.md:19,249 |
+| `37.6` | 843 | RESULT_V8F_FLATDAG.md:105 |
+| `258` | 844 | RESULT_V8F_FLATDAG.md:106; PREREG_V8F_SPEEDREAD.md:188 |
+| `261` | 844 | RESULT_V8F_FLATDAG.md:106; PREREG_V8F_SPEEDREAD.md:188 |
+| `0.1013` | 852 | RESULT_V8F_DAG_OACC.md:15 |
+| `0.1008` | 852 | RESULT_V8F_DAG_OACC.md:15 |
+| `0.1207` | 856 | RESULT_V8F_DAG_OACC.md:13; PREREG_V8F_FLATDAG.md:37; PREREG_V8F_DAG_OACC.md:37; PREREG_V8F_DAG_ORC.md:125; PREREG_V8F_SPEEDREAD.md:32,38 |
+| `60` | 859,1000,1000 | RESULT_V8F_DAG_OACC.md:5; PREREG_V8F_DAG_ORC.md:351,351; PREREG_V8F_SPEEDREAD.md:77,273 |
+| `1.2727` | 863 | RESULT_V8F_DAG_OACC.md:22 |
+| `2.8970` | 863 | RESULT_V8F_DAG_OACC.md:22 |
+| `1.4885` | 863 | RESULT_V8F_DAG_OACC.md:22 |
+| `3.5335` | 863 | RESULT_V8F_DAG_OACC.md:22 |
+| `+0.0568` | 869,897 | RESULT_V8F_DAG_OACC.md:28,56 |
+| `+0.038` | 869,897 | RESULT_V8F_DAG_OACC.md:28,56 |
+| `+0.080` | 869,897 | RESULT_V8F_DAG_OACC.md:28,56 |
+| `+0.039` | 869,890,895,897 | RESULT_V8F_DAG_OACC.md:28,49,54... |
+| `+0.086` | 869,887,897 | RESULT_V8F_DAG_OACC.md:28,46,56 |
+| `-0.0100` | 870 | RESULT_V8F_DAG_OACC.md:29 |
+| `-0.0329` | 870 | RESULT_V8F_DAG_OACC.md:29 |
+| `+0.0130` | 870 | RESULT_V8F_DAG_OACC.md:29 |
+| `-0.0214` | 870 | RESULT_V8F_DAG_OACC.md:29 |
+| `-0.0536` | 870 | RESULT_V8F_DAG_OACC.md:29 |
+| `+0.0077` | 870 | RESULT_V8F_DAG_OACC.md:29 |
+| `-1.395` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-1.019` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-1.330` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-0.916` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-0.126` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `+0.042` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-0.206` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-0.073` | 881 | RESULT_V8F_DAG_OACC.md:40 |
+| `-0.7761` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.981` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.600` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.7030` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.909` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.523` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.1996` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.281` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.124` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.4010` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.530` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.295` | 882 | RESULT_V8F_DAG_OACC.md:41 |
+| `-0.6809` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.844` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.521` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.5876` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.770` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.412` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.0527` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.153` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `+0.030` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.1304` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.254` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.044` | 883 | RESULT_V8F_DAG_OACC.md:42 |
+| `-0.8172` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-1.177` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-0.500` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-0.6014` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-0.906` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-0.335` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-1.977` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-1.324` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-2.563` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `-1.623` | 884 | RESULT_V8F_DAG_OACC.md:43 |
+| `+0.0017` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `+0.027` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `-0.0034` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `-0.024` | 885,886 | RESULT_V8F_DAG_OACC.md:44,45 |
+| `+0.018` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `-0.0336` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `-0.059` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `+0.009` | 885 | RESULT_V8F_DAG_OACC.md:44 |
+| `-0.3318` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.694` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.4466` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.820` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.169` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.2475` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.458` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.2080` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `-0.439` | 886 | RESULT_V8F_DAG_OACC.md:45 |
+| `+0.016` | 886,887 | RESULT_V8F_DAG_OACC.md:45,46 |
+| `-0.0568` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-0.123` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-0.0724` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-0.138` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-0.009` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-0.0725` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-0.145` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `+0.0210` | 887 | RESULT_V8F_DAG_OACC.md:46 |
+| `-2.5920` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-3.239` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-1.975` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-2.0539` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-2.709` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-1.371` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `+0.7674` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `+0.348` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `+1.265` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-0.4548` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `-1.093` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `+0.101` | 888 | RESULT_V8F_DAG_OACC.md:47 |
+| `+3.4726` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+0.660` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+6.331` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+8.6844` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+5.169` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+12.574` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+3.5126` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+1.429` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+5.878` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+0.0292` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `-1.762` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+1.879` | 889 | RESULT_V8F_DAG_OACC.md:48 |
+| `+0.0854` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.058` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.117` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.1352` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.089` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.192` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.0241` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.0218` | 890 | RESULT_V8F_DAG_OACC.md:49; PREREG_V8F_DAG_ORC.md:24 |
+| `-0.003` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `+0.053` | 890 | RESULT_V8F_DAG_OACC.md:49 |
+| `-0.9620` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-1.108` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-0.832` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-0.9742` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-1.115` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-0.841` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `+0.0173` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `+0.051` | 891,895 | RESULT_V8F_DAG_OACC.md:50,54 |
+| `-0.0473` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-0.095` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `+0.020` | 891 | RESULT_V8F_DAG_OACC.md:50 |
+| `-2.4618` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-3.810` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-1.292` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-1.8473` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-2.962` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-0.850` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-0.0296` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-0.308` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `+0.258` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-0.7120` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-1.204` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `-0.234` | 892 | RESULT_V8F_DAG_OACC.md:51 |
+| `+0.0443` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `+0.023` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `+0.074` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `+0.0529` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `+0.085` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `+0.0158` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `-0.0075` | 893 | RESULT_V8F_DAG_OACC.md:52; PREREG_V8F_SPEEDREAD.md:16 |
+| `+0.014` | 893 | RESULT_V8F_DAG_OACC.md:52 |
+| `+0.1905` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `+0.232` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `+0.1972` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `+0.160` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `+0.236` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `-0.0021` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `+0.0121` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `-0.010` | 894 | RESULT_V8F_DAG_OACC.md:53 |
+| `+0.1396` | 895 | RESULT_V8F_DAG_OACC.md:54 |
+| `+0.077` | 895 | RESULT_V8F_DAG_OACC.md:54 |
+| `+0.200` | 895,895 | RESULT_V8F_DAG_OACC.md:54,54 |
+| `+0.075` | 895 | RESULT_V8F_DAG_OACC.md:54 |
+| `+0.0108` | 895 | RESULT_V8F_DAG_OACC.md:54 |
+| `-0.017` | 895 | RESULT_V8F_DAG_OACC.md:54 |
+| `+0.0229` | 895 | RESULT_V8F_DAG_OACC.md:54 |
+| `-1.74` | 896 | RESULT_V8F_DAG_OACC.md:55 |
+| `-4.53` | 896 | RESULT_V8F_DAG_OACC.md:55 |
+| `-9.56` | 896 | RESULT_V8F_DAG_OACC.md:55 |
+| `-1.83` | 896 | RESULT_V8F_DAG_OACC.md:55 |
+| `-4.61` | 896 | RESULT_V8F_DAG_OACC.md:55 |
+| `-9.92` | 896 | RESULT_V8F_DAG_OACC.md:55 |
+| `+0.0102` | 897 | RESULT_V8F_DAG_OACC.md:56 |
+| `+0.003` | 897 | RESULT_V8F_DAG_OACC.md:56 |
+| `+0.017` | 897 | RESULT_V8F_DAG_OACC.md:56 |
+| `-0.0011` | 897 | RESULT_V8F_DAG_OACC.md:56 |
+| `-0.007` | 897 | RESULT_V8F_DAG_OACC.md:56 |
+| `+0.005` | 897 | RESULT_V8F_DAG_OACC.md:56 |
+| `-0.82` | 904 | RESULT_V8F_DAG_OACC.md:66 |
+| `-0.60` | 905 | RESULT_V8F_DAG_OACC.md:66 |
+| `-0.136` | 905 | RESULT_V8F_DAG_OACC.md:66 |
+| `2.6` | 905 | RESULT_V8F_DAG_OACC.md:66 |
+| `3.2` | 905 | RESULT_V8F_DAG_OACC.md:66; PREREG_V8F_DAG_ORC.md:31; PREREG_V8F_SPEEDREAD.md:225 |
+| `0.63` | 906 | RESULT_V8F_DAG_OACC.md:67 |
+| `-0.20` | 908 | RESULT_V8F_DAG_OACC.md:69 |
+| `-0.40` | 908 | RESULT_V8F_DAG_OACC.md:69 |
+| `+0.77` | 911 | RESULT_V8F_DAG_OACC.md:72 |
+| `+3.51` | 911 | RESULT_V8F_DAG_OACC.md:72 |
+| `+0.024` | 911 | RESULT_V8F_DAG_OACC.md:72 |
+| `+0.010` | 911 | RESULT_V8F_DAG_OACC.md:72 |
+| `20` | 924 | RESULT_V8F_FLATDAG.md:4,19,97...; RESULT_V8F_DAG_OACC.md:90; PREREG_V8F_SPEEDREAD.md:77,263,264... |
+| `21` | 924,924 | RESULT_V8F_FLATDAG.md:97; RESULT_V8F_DAG_OACC.md:90,90; PREREG_V8F_DAG_OACC.md:82 |
+| `51` | 924 | RESULT_V8F_DAG_OACC.md:90; PREREG_V8F_DAG_OACC.md:82; PREREG_V8F_DAG_ORC.md:321 |
+| `41` | 924 | RESULT_V8F_DAG_OACC.md:91; PREREG_V8F_DAG_ORC.md:318,426 |
+| `42` | 924 | RESULT_V8F_DAG_OACC.md:91; PREREG_V8F_DAG_ORC.md:426 |
+| `287` | 926,926 | RESULT_V8F_DAG_OACC.md:94,94 |
+| `127` | 926,926 | RESULT_V8F_DAG_OACC.md:94,94 |
+| `11` | 946 | PREREG_V8F_DAG_ORC.md:60,207,252... |
+
+## B. Found only with a different sign or none (sign is a property of the sentence, reviewed by hand below)
+
+| token | v31 lines | source lines (unsigned) |
+|---|---|---|
+| `0.596` | 38 | RESULT_V8F_FLATDAG.md:70; PREREG_V8F_FLATDAG.md:8 |
+| `0.351` | 38 | RESULT_V8F_FLATDAG.md:70; PREREG_V8F_FLATDAG.md:8 |
+| `0.345` | 38 | RESULT_V8F_FLATDAG.md:71 |
+| `0.054` | 38 | RESULT_V8F_FLATDAG.md:71 |
+| `-0.040` | 973 | RESULT_V8F_FLATDAG.md:56 |
+| `-0.075` | 973 | RESULT_V8F_DAG_OACC.md:54 |
+| `0.08` | 973 | RESULT_V8F_FLATDAG.md:79 |
+
+## C. Found only in the v30 report (carried context, not a v31 source claim)
+
+* `20260803` at v31:3
+* `8.3` at v31:3
+* `7.20` at v31:38
+* `7.12` at v31:973
+* `1.1` at v31:973
+* `0.43` at v31:973
+* `0.8` at v31:973
+* `7.15` at v31:973
+* `7.21` at v31:998
+
+## D. Found nowhere (must be structural: section numbers, dates, identifiers)
+
+* `7.22` at v31:38,752,945,951,966,999
+* `7.23` at v31:39,822,839,840,848,946
+
+## E. Hand review of sections B, C and D
+
+* **B (sign differs or absent).**
+  * `0.596`, `0.351`, `0.345`, `0.054` at v31:38 (abstract): the digits are `RESULT_V8F_FLATDAG.md:70-72` (section 3.1), where the contrasts are written
+    DAG − FLAT = `−0.596 / −0.351` and DAG − FLAT-DAG = `−0.345 / −0.054`. The abstract sentence says the margin *falls from* those values, so the magnitudes
+    carry the sign in words; the signed forms are in the table and in 8.1 item 10 and 8.2.
+  * `0.040`, `0.075`, `0.08` at v31:971 and the other v30 tokens in sections B and C: that line is the v30 section 8.3 paragraph that v31 keeps. Its
+    wording was re-tensed in one place (the sentence beginning "At v30, the levers"); its numbers are v30's and were not touched.
+* **C (v30 only).** `20260803` is the branch name in the status line; `8.3`, `7.12`, `7.15`, `7.21` are section references; `1.1`, `0.43`, `0.8` are v30
+  numbers in the carried 8.3 paragraph.
+* **D (nowhere).** `7.22` and `7.23` are the two new section numbers.
+
+## F. Claims taken from a PREREG, not from a RESULT (wording only, no result numbers)
+
+| claim in the report | source |
+|---|---|
+| PRIMARY bar is "at both seeds" (abstract, row 1u, 7.22 table caption); HIERARCHY BEATS FLAT also needs "no family row separated-worse"; the outcome order REFUSED, BLOCKED, FLAT BETTER, HIERARCHY BEATS FLAT, NOT ESTABLISHED | `PREREG_V8F_FLATDAG.md:41,57,64,65` (read from the tip; the RESULT file states the bar without "at both seeds") |
+| PRIMARY-ACC, KEEP (`+0.0604 m` = F/2), LON-CLEAR definitions; DOMINANT also needs the crawl rows under Amendment 1 | `PREREG_V8F_DAG_OACC.md:41-43,91-106`; the bar value is also `RESULT_V8F_DAG_OACC.md:23` |
+| DAG-ORC re-based: COMPOSE form, A / CTRL / REP, default-off composition flag, launch blocker, the target rows | `RESULT_V8F_DAG_OACC.md:80-85` and `PREREG_V8F_DAG_ORC.md:338-386` (Amendment 1 `6cd741b6`) |
+| SPEEDREAD question, the 5 GT speed cells, "no training of the driving model", dev-box CPU, decision table INFO IN INPUT / PARTIAL / NOT IN INPUT / MIXED, claim row `H-V8F-SPEEDREAD-1`, Amendment 1 `A1-2026-10-27` before any SPEEDREAD number, commissioned by FLATDAG section 4 (a) | `PREREG_V8F_SPEEDREAD.md:3-6,29-33,80,161-164` and its Amendment 1 header (line 308); `RESULT_V8F_FLATDAG.md:96-98` |
+| "DAgger iteration 2 read HARMS" (**[I]**, not re-read) | `PREREG_V8F_DAG_ORC.md:7` ("`RESULT_V8F_DAGGER2` read **HARMS**") |
+| "DAG2 − DAG2-0 was +0.58 / +0.60" (**[I]**) | `RESULT_V8F_FLATDAG.md:76` |
+
+No number of DAG-ORC or SPEEDREAD (bars, hours, effect sizes) is written anywhere in v31; the only digits attached to them are the hashes and amendment ids
+(`6cd741b6`, `A1-2026-10-27`) and the count of speed cells (5).
+
+## G. Mechanical checks run
+
+* Every one of the 56 table lines inside sections 7.22 and 7.23 is a line of the RESULT file, byte for byte (the generator copies them by line range:
+  `RESULT_V8F_FLATDAG.md:23-28,41-61`, `RESULT_V8F_DAG_OACC.md:20-29,38-56`).
+* No added or changed line carries any of: void, superseded, retracted, formerly, no longer, correction, withdrawn (see `checks.txt`).

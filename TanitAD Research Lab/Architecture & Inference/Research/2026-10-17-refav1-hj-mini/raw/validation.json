@@ -1,0 +1,193 @@
+{
+ "tests": {
+  "V0a_real_sets_pass": {
+   "pass": true,
+   "eval_eps_eq_eval_cache": true,
+   "n_eval": 141,
+   "eval_subset_of_listing": true,
+   "eval_subset_of_eval_labels": true,
+   "train_all_eq_train_labels": true,
+   "train_and_eval_eps_empty": true,
+   "train_and_eval_cache_empty": true,
+   "train_and_eval_labels_empty": true,
+   "train_labels_and_eval_labels_empty": true,
+   "n_listing": 4713,
+   "n_train_all": 4572,
+   "n_train_labels": 4572,
+   "n_eval_labels": 147,
+   "n_eval_labels_not_in_listing": 6
+  },
+  "V0_N1_train_clip_in_eval_dir_must_be_refused": {
+   "pass": true
+  },
+  "V0_N2_eval_clip_missing_from_listing_must_be_refused": {
+   "pass": true
+  },
+  "V0_N3_train_labels_incomplete_must_be_refused": {
+   "pass": true
+  },
+  "V0_N4_train_clip_in_eval_labels_must_be_refused": {
+   "pass": true
+  },
+  "V4a_kin3_bit_exact_vs_banked_probe_kin": {
+   "pass": true,
+   "n_episodes": 141,
+   "n_windows": 2399,
+   "max_abs_diff": 0.0
+  },
+  "V4b_p10_equals_probe_kin_feats": {
+   "pass": true,
+   "max_abs_diff_after_f32_cast": 0.0,
+   "max_rel_diff_vs_f64": 5.947769648095819e-08,
+   "note": "probe.py kin_feats on the banked kin, float64, cast to float32"
+  },
+  "V4c_a_and_steer_equal_loader_kin_actions": {
+   "pass": true,
+   "max_abs_a": 0.0,
+   "max_abs_steer": 0.0,
+   "note": "RefAV1Windows._kin_actions called on the same arrays"
+  },
+  "V4d_units_yaw_rate_vs_bicycle_model": {
+   "pass": true,
+   "n": 1200,
+   "corr": 0.9962343303959165,
+   "slope": 0.958013199588569,
+   "note": "yaw_rate [rad/s] ~ v*tan(steer)/2.9 => steer is a road-wheel ANGLE [rad], L_enc = 2.9 m (12 clips, informational units check)"
+  },
+  "V2_reencode_bit_identical": {
+   "pass": true,
+   "field_max_abs_diff": 0.0,
+   "content_md5": "780f08d14402b4d7712ecdcd3019e7a4",
+   "device": "cpu bf16",
+   "n_frames": 6
+  },
+  "V1_pooled_equals_manual_avg_pool_within_fp8_bound": {
+   "pass": true,
+   "tolerance": "|q-m| <= 2^-4|m| + 2^-10",
+   "per_grid": {
+    "4x10": {
+     "fp32_pool_vs_avg_pool2d_max_abs": 7.450580596923828e-09,
+     "fp8_max_abs_err": 0.12451171875,
+     "fp8_err_over_bound_max": 0.9411764740943909,
+     "n_bound_violations": 0,
+     "hand_cell_max_abs": 0.0,
+     "pooled_absmax": 3.115234375,
+     "shape": [
+      6,
+      40,
+      1024
+     ]
+    },
+    "8x20": {
+     "fp32_pool_vs_avg_pool2d_max_abs": 3.725290298461914e-09,
+     "fp8_max_abs_err": 0.125,
+     "fp8_err_over_bound_max": 0.9411764740943909,
+     "n_bound_violations": 0,
+     "hand_cell_max_abs": null,
+     "pooled_absmax": 3.51171875,
+     "shape": [
+      6,
+      160,
+      1024
+     ]
+    }
+   },
+   "patch_mean_vs_mean_of_cells_max_abs": 0.00037539005279541016
+  },
+  "V3_full_field_matches_refav1_eval_cache": {
+   "pass": true,
+   "frames": [
+    0,
+    19,
+    38,
+    57,
+    76,
+    100
+   ],
+   "vs_cache": {
+    "cos_mean": 0.9994478821754456,
+    "cos_min": 0.9993330836296082,
+    "rel_l2": 0.034548841416835785,
+    "max_abs_diff": 0.392578125,
+    "ref_absmax": 3.75,
+    "mean_abs_diff": 0.006802169606089592
+   },
+   "fp8_code_equal_fraction": 0.6407691836357117,
+   "control_shifted_one_grid_frame": {
+    "cos_mean": 0.929762065410614,
+    "cos_min": 0.9068101048469543,
+    "rel_l2": 0.37601321935653687,
+    "max_abs_diff": 2.3359375,
+    "ref_absmax": 3.5,
+    "mean_abs_diff": 0.07420974224805832
+   },
+   "control_other_clip": {
+    "cos_mean": 0.5364606976509094,
+    "cos_min": 0.5167766213417053,
+    "rel_l2": 0.9573498368263245,
+    "max_abs_diff": 3.359375,
+    "ref_absmax": 3.5,
+    "mean_abs_diff": 0.20408576726913452
+   },
+   "pooled4x10_vs_pool_of_cache": {
+    "cos_mean": 0.9995477795600891,
+    "cos_min": 0.9995214939117432,
+    "rel_l2": 0.0301673486828804,
+    "max_abs_diff": 0.15625,
+    "ref_absmax": 3.140625,
+    "mean_abs_diff": 0.004782357718795538
+   },
+   "note": "CPU-bf16 vs the cache's CUDA-bf16: same weights/dtype/pixels, different GEMM kernels"
+  },
+  "V3b_thor416_resize_route_vs_refav1_eval_cache": {
+   "pass": true,
+   "poses_actions_identical_to_256_v2ep": true,
+   "vs_cache": {
+    "cos_mean": 0.9965725541114807,
+    "cos_min": 0.9953491687774658,
+    "rel_l2": 0.08334952592849731,
+    "max_abs_diff": 0.859375,
+    "ref_absmax": 3.75,
+    "mean_abs_diff": 0.016153156757354736
+   },
+   "vs_native256_cpu_bf16": {
+    "cos_mean": 0.9968436360359192,
+    "cos_min": 0.9956287741661072,
+    "rel_l2": 0.07884547114372253,
+    "max_abs_diff": 0.869140625,
+    "ref_absmax": 3.609375,
+    "mean_abs_diff": 0.015000609681010246
+   },
+   "pooled4x10_vs_pool_of_cache": {
+    "cos_mean": 0.9989549517631531,
+    "cos_min": 0.9986161589622498,
+    "rel_l2": 0.04580964893102646,
+    "max_abs_diff": 0.11089324951171875,
+    "ref_absmax": 3.140625,
+    "mean_abs_diff": 0.007989988662302494
+   },
+   "bar": "cos_min > 0.95 (informational: the route is a documented fallback, not the refav1 pipeline)"
+  }
+ },
+ "clip_sha12": "00213e99adca",
+ "secs_bf16_cpu_per_frame": 30.0,
+ "fp32_control_vs_cache": {
+  "cos_mean": 0.9994251132011414,
+  "cos_min": 0.9993570446968079,
+  "rel_l2": 0.03598807007074356,
+  "max_abs_diff": 0.2421572357416153,
+  "ref_absmax": 3.75,
+  "mean_abs_diff": 0.007163777481764555
+ },
+ "bf16_vs_fp32_cpu": {
+  "cos_mean": 0.9997003674507141,
+  "cos_min": 0.9996025562286377,
+  "rel_l2": 0.023807592689990997,
+  "max_abs_diff": 0.5760688781738281,
+  "ref_absmax": 3.5745673179626465,
+  "mean_abs_diff": 0.004726523067802191
+ },
+ "ok": true,
+ "failed": [],
+ "wall_s": 523
+}

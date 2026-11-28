@@ -1,0 +1,105 @@
+{
+ "tool": "vdac_stage0_forward/1",
+ "utc": "2026-11-12T20:24:20Z",
+ "status": "OK",
+ "tool_sha256": "e6f4911c1484a88e9013837f4e07016de7d5fbc44ece8455e70541a3a9666bba",
+ "consumer_sha256": "04a3d5f4dde23dd669167c18a6090cb16a37c3a680ee3351729b4fd8b51dc2b7",
+ "plan": {
+  "tool": "vdac_stage0_forward/1",
+  "mode": "both",
+  "run_dir": "/workspace/data/refe_vdac/ha-s0",
+  "aux_sha256": "281320071fea4e2e44eca0878dc8803681a2a38d29e39055d1b8ae70b4681d8b",
+  "p6_sha256": "968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1",
+  "seed": 0,
+  "outputs": [
+   "preds_insample.npz",
+   "preds_repro256.npz",
+   "head_init0_rebuilt_a.npz",
+   "head_init0_b.npz"
+  ],
+  "frames": {
+   "insample": 2048,
+   "repro": 256,
+   "pod_step0": 1705,
+   "pod_h48x": 1502
+  },
+  "head_load": {
+   "tensors_identical_to_init": 0,
+   "tensors": 43
+  },
+  "device": "cuda",
+  "autocast": "bf16",
+  "argv_vs_recorded_namespace": "identical (all keys except out, dump_scores)",
+  "event_file": "sft.jsonl"
+ },
+ "outputs": {
+  "preds_insample.npz": {
+   "sha256": "c8609b1e426b169303b0ac6a94ebf5ece67edb018fb5cf308599d3d45b7fc9f0",
+   "frames": 2048
+  },
+  "preds_repro256.npz": {
+   "sha256": "6492a78810e635df29dc649abef1e62afb65514a1aa1d4dfb9d1c1822c623559",
+   "frames": 256
+  },
+  "head_init0_rebuilt_a.npz": {
+   "sha256": "2ebe4b540b163e2638532a71d0a006a35e7ce9e44ee0c0cb1bce8fd10903f94a",
+   "frames": 1705
+  },
+  "head_init0_b.npz": {
+   "sha256": "8b556eb23c842732ec91837781f7181c1f90406f3a1aa2316e2e9493bb542ed4",
+   "frames": 1502
+  }
+ },
+ "reproduction": [
+  {
+   "check": "C0-ID (256 frames vs the banked head_pred_update10000.npz)",
+   "frames": 256,
+   "sign_agreement": 1.0,
+   "bar": 0.999,
+   "max_abs_logit_diff": 0.0,
+   "ok": true
+  },
+  {
+   "check": "S1-F init (rebuilt seed-0 head vs the pod's head_pred_step0.npz)",
+   "frames": 1705,
+   "sign_agreement": 1.0,
+   "bar": 0.999,
+   "max_abs_logit_diff": 0.0,
+   "ok": true
+  }
+ ],
+ "head_load": {
+  "tensors_identical_to_init": 0,
+  "tensors": 43,
+  "facts": {
+   "depth": 2,
+   "cell": 2.0,
+   "nx": 40,
+   "ny": 32,
+   "n_params": 2440450,
+   "ctx_dim": 256,
+   "head_built": true,
+   "feed_built": false
+  }
+ },
+ "inputs": {
+  "argv_file_sha256": "76f424b6c65c4a3579515b7256288546dded8cf9bfcca959f8463f9a55856f43",
+  "insample_list_sha256": "1d353309a1d81a78cc04197ac39bd4e7ef467853ff59f5f7d3e97fde538eda45",
+  "repro_list_sha256": "26cd3a1168d15cef041c81772bc64d9014b4177cc7e8a39a1d877924cd2770df",
+  "pod_step0_sha256": "2ebe4b540b163e2638532a71d0a006a35e7ce9e44ee0c0cb1bce8fd10903f94a",
+  "pod_h48x_sha256": "64d2f71be45154bd36d71d3955a9151023d6f10365f9bac5376c6e3ce02aac3b",
+  "banked_sha256": "6b9ac2bc1bc5989e7904e1c1b1d12eb6e4c2356fe7ad5658cc6fecc5196c03eb"
+ },
+ "env": {
+  "torch": "2.7.1+cu128",
+  "device": "cuda",
+  "cuda_device": "NVIDIA L40",
+  "autocast": "bf16",
+  "batch": 16
+ },
+ "gpu_apps_seen_before_forward": [],
+ "wall_s": {
+  "forward": 675.2,
+  "total": 798.0
+ }
+}

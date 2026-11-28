@@ -1,0 +1,141 @@
+{
+ "G-HYG": {
+  "pass": true,
+  "regression_arm": {
+   "read": "FAIL",
+   "must_read": "FAIL",
+   "pass": true
+  }
+ },
+ "G-CLOCK": {
+  "pass": true,
+  "n_rows_checked": 100,
+  "row_index_equals_off_plus_t": true,
+  "regression_arm": {
+   "read": "FAIL",
+   "must_read": "FAIL",
+   "pass": true
+  }
+ },
+ "G-CKPT": {
+  "pass": true,
+  "n_tensors": 335,
+  "regression_arm": {
+   "read": "FAIL",
+   "must_read": "FAIL",
+   "pass": true
+  }
+ },
+ "G-SUITE": {
+  "pass": true,
+  "scope": "subset",
+  "n_regressions": 0,
+  "regression_arm": {
+   "read": "FAIL",
+   "must_read": "FAIL",
+   "pass": true
+  },
+  "result_sha256": "d7600149659d89eee40fbd359474b360a94fd35262a67815d2f3904bf9a7b0ab"
+ },
+ "G-EVAL": {
+  "pass": true,
+  "T0": {
+   "rc": 0,
+   "max_abs_diff": 1.3113021850585938e-06,
+   "n_windows": 2399,
+   "pass": true
+  },
+  "T1": {
+   "rc": 0,
+   "max_abs_diff": 0.0,
+   "n_windows": 4,
+   "pass": true
+  },
+  "regression_arm": {
+   "what": "fit-side logits of a window shifted by one frame",
+   "max_abs_diff": 0.14048004150390625,
+   "must_read": "FAIL (diff > 1e-5)",
+   "read": "FAIL",
+   "pass": true
+  },
+  "geval_sha256": "2a4a0c71f530bab0ba17685216770ecb89591b7401805e1f201ffee2157dba28"
+ },
+ "G-DVB": {
+  "pass": true,
+  "problems": [],
+  "declared": {
+   "ctx_pool": "on",
+   "init_ckpt_sha256": "6c2af4755f82e69d0b76b8b4a62281a5e1ba019dd69f2686402973c07e3049eb",
+   "adapter": "s1",
+   "adapter_seed": 0,
+   "fit_seed": 0,
+   "labels": "real",
+   "e_grid": [
+    4,
+    8,
+    16
+   ],
+   "label_table_sha256": "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff",
+   "train_manifest_sha256": "661f5d4578a462a0d7d071b96365d3b93f57911dfb85a0a99203efa0eadbfe12"
+  },
+  "built": {
+   "ctx_pool": "on",
+   "init_ckpt_sha256": "6c2af4755f82e69d0b76b8b4a62281a5e1ba019dd69f2686402973c07e3049eb",
+   "adapter": "s1",
+   "adapter_seed": 0,
+   "fit_seed": 0,
+   "labels": "real",
+   "e_grid": [
+    4,
+    8,
+    16
+   ],
+   "label_table_sha256": "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff",
+   "train_manifest_sha256": "661f5d4578a462a0d7d071b96365d3b93f57911dfb85a0a99203efa0eadbfe12"
+  },
+  "regression_arm": {
+   "read": "FAIL",
+   "must_read": "FAIL",
+   "pass": true
+  }
+ },
+ "G-LIVE": {
+  "pass": true,
+  "live": {
+   "pass": true,
+   "subhead_grad_abs_sum": {
+    "country": 1067.692445486784,
+    "weather": 2474.296082496643,
+    "surface": 1677.722019791603,
+    "illumination": 1463.1938019394875,
+    "period_of_day": 1273.7210918962955
+   },
+   "other_grad_abs_sum": 0.0
+  },
+  "census": {
+   "pass": true,
+   "n_registered": 315,
+   "n_with_state": 55,
+   "n_expected": 55,
+   "missing": [],
+   "extra": []
+  },
+  "regression_arm": {
+   "read": "FAIL",
+   "must_read": "FAIL",
+   "pass": true,
+   "detail": {
+    "m1_fit_loss_line_deleted": {
+     "live_pass": false,
+     "must_read": false
+    },
+    "m2_no_grad_dropped": {
+     "live_pass": false,
+     "other_grad_abs_sum": 2187.097529411316,
+     "census_pass": false,
+     "must_read": false
+    }
+   }
+  }
+ }
+}

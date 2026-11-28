@@ -1,0 +1,49 @@
+=== MUTANT M1_delete_T_lat_logits_line :: sed '/r\["t_lat_logits"\]\.append(hd\["lat_logits"\]\[b\])/d'
+371d370
+<                 r["t_lat_logits"].append(hd["lat_logits"][b])
+--- (diff rc=1; 1 = differs, as intended)
+FAILED tests/test_v8f_t1_heads.py::test_c_on_the_flags_change_no_trajectory_dump_and_no_json_value
+FAILED tests/test_v8f_t1_heads.py::test_schema_ticks_alone_is_the_carried_one_and_heads_add_exactly_the_head_columns
+FAILED tests/test_v8f_t1_heads.py::test_tick0_head_rows_equal_a_direct_forward_infer_call
+FAILED tests/test_v8f_t1_heads.py::test_every_tick_head_rows_equal_a_direct_forward_infer_on_that_ticks_batch
+4 failed, 10 passed in 84.00s (0:01:24)
+=== END M1_delete_T_lat_logits_line
+=== MUTANT M2_delete_S_ckpt_line :: sed '/r\["s_ckpt"\]\.append(hd\["ckpt"\]\[b\])/d'
+368d367
+<                 r["s_ckpt"].append(hd["ckpt"][b])
+--- (diff rc=1; 1 = differs, as intended)
+FAILED tests/test_v8f_t1_heads.py::test_schema_ticks_alone_is_the_carried_one_and_heads_add_exactly_the_head_columns
+FAILED tests/test_v8f_t1_heads.py::test_tick0_head_rows_equal_a_direct_forward_infer_call
+FAILED tests/test_v8f_t1_heads.py::test_every_tick_head_rows_equal_a_direct_forward_infer_on_that_ticks_batch
+FAILED tests/test_v8f_t1_heads.py::test_ckpt_frames_denote_the_same_world_points
+4 failed, 10 passed in 95.84s (0:01:35)
+=== END M2_delete_S_ckpt_line
+=== MUTANT M3_w0_frame_uses_the_now_pose :: sed 's/w0 = torch.as_tensor(out\["pose_w0"\].astype(np.float32))/w0 = now/'
+383c383
+<         w0 = torch.as_tensor(out["pose_w0"].astype(np.float32))
+---
+>         w0 = now
+--- (diff rc=1; 1 = differs, as intended)
+FAILED tests/test_v8f_t1_heads.py::test_ckpt_frames_denote_the_same_world_points
+1 failed, 13 passed in 90.07s (0:01:30)
+=== END M3_w0_frame_uses_the_now_pose
+=== MUTANT M4_delete_the_dump_heads_guard :: sed 's/raise SystemExit("REFUSED: --dump-heads adds/pass  # raise SystemExit("REFUSED: --dump-heads adds/'
+504c504
+<         raise SystemExit("REFUSED: --dump-heads adds columns to the --dump-ticks file; it needs --dump-ticks DIR (a flag that silently writes nothing is worse than none)")
+---
+>         pass  # raise SystemExit("REFUSED: --dump-heads adds columns to the --dump-ticks file; it needs --dump-ticks DIR (a flag that silently writes nothing is worse than none)")
+--- (diff rc=1; 1 = differs, as intended)
+FAILED tests/test_v8f_t1_heads.py::test_dump_heads_without_dump_ticks_is_refused
+1 failed, 13 passed in 93.49s (0:01:33)
+=== END M4_delete_the_dump_heads_guard
+=== MUTANT M5_flag_off_leaks_a_header_key :: sed 's/^        header\["ticks_heads"\] = bool(a.dump_heads)/    header["ticks_heads"] = bool(a.dump_heads)/'
+574c574
+<         header["ticks_heads"] = bool(a.dump_heads)
+---
+>     header["ticks_heads"] = bool(a.dump_heads)
+--- (diff rc=1; 1 = differs, as intended)
+FAILED tests/test_v8f_t1_heads.py::test_c_off_flags_absent_is_byte_identical_to_the_tip_tool
+FAILED tests/test_v8f_t1_heads.py::test_c_off_flags_absent_leaves_no_tick_machinery_in_the_output
+FAILED tests/test_v8f_t1_heads.py::test_c_on_the_flags_change_no_trajectory_dump_and_no_json_value
+3 failed, 11 passed in 131.30s (0:02:11)
+=== END M5_flag_off_leaks_a_header_key

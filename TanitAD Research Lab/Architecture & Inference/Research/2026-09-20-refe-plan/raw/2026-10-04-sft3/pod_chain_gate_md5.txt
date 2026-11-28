@@ -1,0 +1,73 @@
+2026-10-04T11:00:17 chain armed
+2026-10-04T14:52:18 SFT-1 finished: ZZEXIT 137
+2026-10-04T15:17:29 preflight PASS
+2026-10-04T15:38:17 MUTATION RED as required
+2026-10-05T00:50:22 RUN EXIT ZZEXIT 0
+===
+{
+ "event": "preflight",
+ "verdict": "PASS",
+ "gates": {
+  "G1_trainable_is_exactly_the_scorer": {
+   "ok": true,
+   "n_trainable": 78,
+   "n_scorer": 78,
+   "extra": [],
+   "missing": []
+  },
+  "G7_heldout_disjoint": {
+   "ok": true,
+   "heldout_sets": 3137,
+   "train_rows_in_heldout_logs": 0
+  },
+  "G3_copies_equal_model_at_step0": {
+   "ok": true,
+   "max_base_vs_A": 0.0,
+   "max_B_vs_A": 0.0
+  },
+  "G4_listnet_identity_and_live": {
+   "ok": true,
+   "bceA": 0.2393426150083542,
+   "lossB_lam0": 0.2393426150083542,
+   "lossB": -0.5680424571037292,
+   "listnet": -0.8073850870132446
+  },
+  "G2_live": {
+   "ok": true,
+   "per_module": {
+    "score_q_mlp": {
+     "A_nonzero": true,
+     "B_nonzero": true
+    },
+    "score_dec": {
+     "A_nonzero": true,
+     "B_nonzero": true
+    },
+    "score_head": {
+     "A_nonzero": true,
+     "B_nonzero": true
+    }
+   },
+   "frozen_params_with_grad": 0,
+   "base_params_with_grad": 0
+  },
+  "G5_ckpt_roundtrip_planner_loader": {
+   "ok": true,
+   "max_abs_reload_vs_saved": 0.0,
+   "max_abs_saved_vs_base": 12.0
+  }
+ },
+ "s_per_microbatch": 6.43,
+ "est_hours_per_epoch": 39.07,
+ "gpu_mem_gb": 5.0,
+ "at": "2026-10-04T15:17:01"
+}
+===
+0ab46127c28436f889b1fd1c1f5f7c4c  /workspace/data/refe_sft3/model_sft_A.pt
+a78c575f3d68c83ed0e8703027e52ca6  /workspace/data/refe_sft3/model_sft_B.pt
+4ae7f5cd0f1745d889290aa9589703d7  /workspace/refe-sft2/run/scorer_finetune.py
+"lr": 5.2000000000000004e-05
+2026-10-04T14:10:32 chain armed
+2026-10-04T16:07:35 chain v1 (pid 158249) stopped by the agent: replaced by v2 (lane catch-up window, PREREG_SFT4 Amendment 3)
+2026-10-04T16:07:35 chain v2 armed (replaces v1: lane catch-up window)
+2026-10-05T00:51:39 SFT-3 finished: ZZEXIT 0

@@ -1,0 +1,37 @@
+
+  MM-E6 P-MACHINERY CONTROL · arm postrain30k_freeze · SCORED 80 / FIT 49 clips · scene rank 96 · device cpu
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+    scene basis rank 96 fit on 49 FIT clips (20s)
+    ⛔ VECTORISATION GATE max|dev| 5.684e-13 PASS
+
+    target                                                  r     shuf   r-shuf       t
+    -----------------------------------------------------------------------------------
+    speed  ⭐POSITIVE CONTROL (DINOv3 banked +0.4081)  +0.1456  -0.0047  +0.1503    2.61
+    omega (yaw rate)                                  +0.1022  -0.0217  +0.1240    2.53
+    z_pca0   (latent content)                         +0.3381  +0.0012  +0.3369    7.07
+    z_pca1   (latent content)                         +0.1822  +0.0064  +0.1759    3.29
+    z_pca2   (latent content)                         +0.3608  +0.0017  +0.3590    7.56
+    z_pca3   (latent content)                         +0.4949  -0.0134  +0.5083   11.10
+    z_pca4   (latent content)                         +0.3030  -0.0262  +0.3293    6.87
+    z_pca5   (latent content)                         +0.3338  +0.0166  +0.3171    6.52
+    z_pca6   (latent content)                         +0.3527  +0.0230  +0.3297    6.75
+    z_pca7   (latent content)                         +0.4107  +0.0012  +0.4095    7.98
+    dz_pca0  ⭐⭐DRIFT FROM SCENE                       +0.3047  -0.0038  +0.3085    7.94
+    dz_pca1  ⭐⭐DRIFT FROM SCENE                       +0.3268  +0.0005  +0.3263    8.15
+    dz_pca2  ⭐⭐DRIFT FROM SCENE                       +0.2871  -0.0214  +0.3084    8.14
+    dz_pca3  ⭐⭐DRIFT FROM SCENE                       +0.1769  +0.0132  +0.1637    4.52
+    dz_pca4  ⭐⭐DRIFT FROM SCENE                       +0.1835  -0.0092  +0.1928    6.34
+    dz_pca5  ⭐⭐DRIFT FROM SCENE                       +0.1864  +0.0103  +0.1761    5.18
+    dz_pca6  ⭐⭐DRIFT FROM SCENE                       +0.1533  -0.0125  +0.1658    5.21
+    dz_pca7  ⭐⭐DRIFT FROM SCENE                       +0.1636  +0.0007  +0.1629    5.60
+    constant (ctrl)                                   +0.0000  +0.0000  +0.0000    0.00
+
+    scene -> z (top-8 PCA) mean +0.3457 · scene -> dz (top-8 PCA) mean +0.2256
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8e7cfa33-c625-47cf-88aa-711db80ac113\scratchpad\mm_e6_pctrl_postrain30k_freeze.json
+RC=0

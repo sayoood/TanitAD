@@ -1,0 +1,19 @@
+Stage 1 goal augmentation -- coverage over the 8 mini scenarios (K up to 4)
+
+scenario type                                ctrl  routes        lateral offsets (m)
+accelerating_at_traffic_light_without_lead   PASS       3                 3.85, 7.32
+changing_lane_to_left                        PASS       2                       4.44
+following_lane_with_lead                     PASS       4           3.42, 3.81, 7.28
+near_multiple_vehicles                       PASS       4           3.54, 3.66, 7.01
+starting_left_turn                           PASS       4           7.42, 3.84, 7.28
+starting_protected_noncross_turn             PASS       1      (no alternative lane)
+starting_unprotected_cross_turn              PASS       2                       3.85
+stopping_at_stop_sign_with_lead              PASS       1      (no alternative lane)
+
+control route_0 == their function: 8/8 exact
+routes per scenario: mean 2.62, min 1, max 4
+scenarios WITH at least one alternative: 6/8
+
+!! A scenario with 1 route has no PARALLEL LANE at the ego's roadblock -- that is a map fact,
+   not a failure. Branch-level alternatives (different roadblock successors) are a separate
+   family and are NOT implemented here; this is the lateral/lane family only.

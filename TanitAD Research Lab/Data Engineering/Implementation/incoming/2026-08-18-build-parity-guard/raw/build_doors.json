@@ -1,0 +1,317 @@
+{
+ "_evidence_class": "MEASURED (ours; this script, over stack/ at HEAD+worktree)",
+ "_rule_write": "an artifact-shaped path (CORPUS_ARTIFACT) flows into a publishing call (WRITE_CALLS), two-hop local dataflow",
+ "_rule_mention": "the module merely NAMES a corpus artifact and writes something",
+ "_known_limitation": "static derivation cannot cross a helper-function boundary: v2_compressed.build hands the <clip>.v2ep.pt path to build_compressed(), which writes it through a parameter. That door is therefore in the MENTION census, not the WRITE population, and is pinned instead by a direct behavioural test (test_v2_compressed_build_refuses_before_any_download).",
+ "oracles": {
+  "parity_train_clips": 2400,
+  "deployed_val_clips": 40,
+  "intersection": 0
+ },
+ "counts": {
+  "mention_census": 34,
+  "write_population": 11,
+  "gated": 6,
+  "unclassified": 0
+ },
+ "known_doors": [
+  "scripts/aug120_pipeline.py",
+  "scripts/rebuild_pai_rolling.py",
+  "scripts/slice_v2_cache.py",
+  "scripts/v2_to_pilot.py",
+  "tanitad/data/epcache.py"
+ ],
+ "modules": {
+  "experiments/pod-rescue-20260802/pod3/workspace/exactfill.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "experiments/pod-rescue-20260802/pod3/workspace/exactfill2.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "experiments/pod-scripts-20260801/exactfill.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/aug120_pipeline.py": {
+   "writes": [
+    [
+     113,
+     "copyfile"
+    ],
+    [
+     119,
+     "copyfile"
+    ]
+   ],
+   "gated": true,
+   "verdict": "GATED",
+   "reason": ""
+  },
+  "scripts/build_obstacle_join.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/emit_situation_labels.py": {
+   "writes": [
+    [
+     94,
+     "dump"
+    ]
+   ],
+   "gated": false,
+   "verdict": "CONSUMER",
+   "reason": "CONSUMER: reads an existing cache dir and writes ONE aggregate .npz of situation labels. No per-clip corpus is produced."
+  },
+  "scripts/epcache_to_pilot.py": {
+   "writes": [
+    [
+     89,
+     "mimwrite"
+    ],
+    [
+     91,
+     "savez"
+    ],
+    [
+     101,
+     "dump"
+    ],
+    [
+     101,
+     "open"
+    ]
+   ],
+   "gated": false,
+   "verdict": "CANNOT_GATE",
+   "reason": "CANNOT_GATE: ids here are positional `ep_%05d`, not PhysicalAI clip ids (parity.py:101 \u2014 'a different uid space'). Every oracle lookup would MISS and report a reassuring zero. The upstream writers (epcache.build_episodes_cached, rebuild_pai_rolling) ARE gated while the clip ids still exist; the script says so at run time."
+  },
+  "scripts/eval_flagship_v4.py": {
+   "writes": [
+    [
+     1153,
+     "write_text"
+    ]
+   ],
+   "gated": false,
+   "verdict": "CONSUMER",
+   "reason": "CONSUMER: evaluator. Its writes are result JSON. The contamination question on this side is \u00a710's (assert_v2_eval_cache), not \u00a710c's."
+  },
+  "scripts/eval_v58f.py": {
+   "writes": [
+    [
+     500,
+     "write_text"
+    ]
+   ],
+   "gated": false,
+   "verdict": "CONSUMER",
+   "reason": "CONSUMER: evaluator, as above."
+  },
+  "scripts/finetune_traj.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/make_parity_clip_digests.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/make_parity_manifest.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/ph0_pilot.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/ph0_sam3.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/ph0_sample_clips.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/pod_ops/exactfill2.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/pod_ops/reconcile_to_pod2.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/rebuild_pai_rolling.py": {
+   "writes": [
+    [
+     217,
+     "save_episode"
+    ],
+    [
+     218,
+     "replace"
+    ]
+   ],
+   "gated": true,
+   "verdict": "GATED",
+   "reason": ""
+  },
+  "scripts/register_v2_sibling.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/run_idm_proof.py": {
+   "writes": [
+    [
+     178,
+     "save"
+    ],
+    [
+     387,
+     "write_text"
+    ]
+   ],
+   "gated": false,
+   "verdict": "CONSUMER",
+   "reason": "CONSUMER: analysis; writes a proof artifact over an existing corpus."
+  },
+  "scripts/slice_v2_cache.py": {
+   "writes": [
+    [
+     179,
+     "replace"
+    ],
+    [
+     215,
+     "dump"
+    ]
+   ],
+   "gated": true,
+   "verdict": "GATED",
+   "reason": ""
+  },
+  "scripts/train_dynamics_encoder.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/train_flagship4b.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/train_flagship_v4.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/train_v58f_unicycle_head.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "scripts/v2_compressed.py": {
+   "writes": [],
+   "gated": true,
+   "verdict": "GATED",
+   "reason": ""
+  },
+  "scripts/v2_to_pilot.py": {
+   "writes": [
+    [
+     215,
+     "dump"
+    ],
+    [
+     215,
+     "open"
+    ]
+   ],
+   "gated": true,
+   "verdict": "GATED",
+   "reason": ""
+  },
+  "scripts/v5_guard.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "tanitad/data/epcache.py": {
+   "writes": [
+    [
+     147,
+     "save_episode"
+    ]
+   ],
+   "gated": true,
+   "verdict": "GATED",
+   "reason": ""
+  },
+  "tanitad/data/parity.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "tanitad/data/physicalai.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "tanitad/data/v2_dataset.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  },
+  "tanitad/lake/view.py": {
+   "writes": [
+    [
+     140,
+     "save_episode"
+    ]
+   ],
+   "gated": false,
+   "verdict": "CANNOT_GATE",
+   "reason": "CANNOT_GATE: lake members key on `episode_id` / `shard_key`; the clip id is not carried. hydrate_cached copies bytes that were ingested elsewhere, and the lake path structurally refuses PhysicalAI anyway (gated-confidential -> PermissionError in assemble_lake_record)."
+  },
+  "tanitad/replay/rr_log.py": {
+   "writes": [],
+   "gated": false,
+   "verdict": "MENTION_ONLY",
+   "reason": ""
+  }
+ }
+}

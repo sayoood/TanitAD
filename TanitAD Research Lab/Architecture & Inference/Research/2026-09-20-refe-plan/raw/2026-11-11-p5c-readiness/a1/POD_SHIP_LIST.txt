@@ -1,0 +1,28 @@
+P5-C pod label run, DUAL (Tc20s + P5-R): files to ship to the pod (flat into $P5CL_SHIP, default /workspace/data/p5c_ship, plus dev_labels/ and p5r_eval/). Every one is sha256-pinned inside p5c_pod_label.sh.
+Source root S = E:/Projects/TanitAD-artifacts/scorer_gym_20261107   (a1 = S/p5c/a1)
+
+ ship name                          source                                                       sha256
+ p5c_pod_label.sh                   a1/p5c_pod_label.sh                                          (the runner; run it from anywhere)
+ p5c_dual_labels.py                 a1/p5c_dual_labels.py                                        07e84b1cfd26d72c4fef7ea5557b07460e39f808a6bbba6a4d0df582ea7bd197
+ p5c_labels.py                      S/p5c/labels/p5c_labels.py (reference; not run)              77724709088044d19e132cde5eb8a6e549665af37a8a79bcfd245f1ad2a8f933
+ p5r_labels.py                      S/p5r/p5r_labels.py                                          84e1cac32510fb277ad7d1a876059152dbded5076b4fd1928f5ade330b6c468d
+ p5r_run.py                         S/p5r/p5r_run.py (imported for Sim + sanity)                 58faf7a76cb1840f4a8ed76ee6eaa8bb1d8c835f20009cb7a2749990cc7feddb
+ lambda_star.json                   S/p5r/raw/lambda_star.json (lam* 3.0)                        83988ddac582a8a1cd37e9e11745e195abe8012bd093a4dfd72acbb608bdd467
+ p5r_eval/eval_r0.jsonl             S/p5r/raw/eval_r0.jsonl (TB-0/TB-1 control, 1,200 rows)      a576bf2a80d6ca7f39217ff58c8e8baa3b179352a6dddbc81ac4aad97679d5fd
+ p5r_eval/eval_r1.jsonl             S/p5r/raw/eval_r1.jsonl (1,200 rows)                         1d2762b19deae138b0ef9906e75d3921ddf43f4c5a949dfb88dc00bfbf8c37b0
+ p5r_eval/verdict.json              S/p5r/raw/verdict.json (P5-R dev-box EVAL values, recorded context for R-TOL-3, not gated)   7ae694a3bb754d8b7ddbd355f0b16928498fefd91cb4d0b71c996d9587a17e9e
+ p5_target_labels.py                TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/p5_target_labels.py   2b31af64d6f6bcff7ffc0a59d524528b48ad8fceb44033e9cc845b201326c8d0  (git blob 294644df)
+ p4_tracker_comp.py                 same tree, eval/p4_tracker_comp.py (p5_target_labels imports it)   193c024b107fd2b73fdb9541f805a1000a1c882660f7cd2684a5bc70335609d5
+ traj_label_table.py                S/p5c/hold/files/TanitAD Research Lab/.../refe/traj_label_table.py (wiring hold copy)   9592b62cc9428d215d6c75cff36987a0b66d6274ba89fd119df9457d2c869646
+ p5c_table_gates.py                 a1/p5c_table_gates.py (with --label p5r; Tc20s mode source-identical to the landed gates module)    d600a83042c3e66087417f69a6c1b5f13cdada29ab4d624ddcf7a47b12c5a633
+ dev_labels/labels_s0of2.jsonl      S/p5c/labels/out/labels_s0of2.jsonl (56 MB; Tc20s TB-0 control)   7f8d58cc967117ef9d66ed98c6c04d7df044cc98cdc6ea889ae43199bccb5bd3
+ dev_labels/labels_s1of2.jsonl      S/p5c/labels/out/labels_s1of2.jsonl (54 MB)                  2dea6e4326ea38feb7ec4ff06c3daaabff5632d700b948ebf3ace8b81083f2a1
+ TB1_control_1018.json              a1/TB1_control_1018.json (= S/p5c/gates/TB1_control_1018.json; content-checked by the gate, n == 1018)
+ repair_rank0.json                  S/p5c/labels/repair_rank0.json (Tc20s repair, for the Tc20s 4.3 policy)
+ repair_rank1.json                  S/p5c/labels/repair_rank1.json
+ (P5-R repair rank0/1 are produced ON THE POD by the runner: p5c_dual_labels.py repair)
+
+Already on the pod (NOT shipped, pinned/checked by the runner):
+ /workspace/data/refe_navtrain/train_grow_cmd_3c_p7/targets_rank{0,1}.jsonl  (sha256 a5690f81..., 8b6ccd1b...)
+ /workspace/data/navtrain_dbs, /workspace/data/nuplan-maps/nuplan-maps-v1.0, /workspace/venv-teacher/bin/python (nuplan, scipy; threadpoolctl is OPTIONAL, MM ruling R-C: without it the labeller requires OPENBLAS/MKL/OMP_NUM_THREADS=1, which the runner exports), /workspace/refe-plan-vdac/{refe,code} (never /workspace/refe-plan-p7)
+Total shipped size ~ 115 MB. Open: the pod's refe/ is not hash-pinned by the runner (only TB-0, bit-identity vs the dev-box build on the 482 logs, guards drift in it).

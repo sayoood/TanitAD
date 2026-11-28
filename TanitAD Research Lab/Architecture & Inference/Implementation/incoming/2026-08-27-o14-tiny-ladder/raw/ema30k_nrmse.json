@@ -1,0 +1,31 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "method": "h=1 head, one step. cos_raw is UNCENTRED; cos_ctr is mean-centred with a 200-draw permutation null. nrmse_meanonly is the CONSTANT-DELTA control and nrmse_zero = 1.0 by construction.",
+ "arms": {
+  "emao14_30k": {
+   "step": 30000,
+   "cos_raw": 0.7525,
+   "cos_centred": 0.7524,
+   "z_centred": 52.6,
+   "mean_fraction_of_prediction": 0.0874,
+   "nrmse": 0.7466,
+   "nrmse_meanonly_control": 0.9972,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "BEATS the mean predictor"
+  },
+  "o14fut30k": {
+   "step": 30000,
+   "cos_raw": 0.6037,
+   "cos_centred": 0.6043,
+   "z_centred": 40.46,
+   "mean_fraction_of_prediction": 0.0944,
+   "nrmse": 0.8288,
+   "nrmse_meanonly_control": 0.998,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "BEATS the mean predictor"
+  }
+ }
+}

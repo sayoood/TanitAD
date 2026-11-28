@@ -1,0 +1,185 @@
+{
+ "argv_sha256": "dabcbfb930fe7d7ceb233a93e84b802cdc2eb887651bac7bf5e6ec044d7615c2",
+ "at": "2026-11-19T16:15:05Z",
+ "body_sha256": "d4402278244d777cd285535a8d4658a23dff119d1211a75f38162d8460c6467c",
+ "checker_sha256": "9da2c92d3c80606b0c6935c5d1c21a9b35aa779b0b1effb4a61bbb05a2d4a790",
+ "checks": {
+  "G-CKPT": {
+   "crash_rc": 1,
+   "final_step": 4,
+   "moved_identity_problems": [],
+   "pass": true,
+   "resume_rc": 0,
+   "roundtrip_bit_equal": true,
+   "step_at_crash_ckpt": 2
+  },
+  "G-CLOCK": {
+   "nav_rb_report_sha256": "00cf93d3c1ca49dd3c1e3625cfaed85ecb8e419f0dacc4dae15f300855617ae7",
+   "nav_report_sha256": "e6877342a629b12dc26481a4dfe29544829b8d1c89b16ae8b9701212a1074dd4",
+   "note": "G-CLOCK-NAV read from the builder report (train + eval PASS, regression arm FAILS); ctx label alignment asserts run inside the trainer's selfcheck; G-CLOCK-RB read from the nav_rb builder report (train + eval PASS, regression arm FAILS)",
+   "pass": true
+  },
+  "G-DVB": {
+   "declared_vs_built": "PASS",
+   "pass": true,
+   "problems": []
+  },
+  "G-EVAL": {
+   "built_levers": {
+    "nav_rb": "on",
+    "nav_rb_feat": "exitdist"
+   },
+   "pass": true,
+   "problems": [],
+   "regression_arm_nav_rb_feat_refused": true,
+   "regression_arm_nav_rb_refused": true,
+   "scope": "strict load through the evaluators' build path, built levers == selfcheck levers, regression arm (cfg drops ctx_heads) refused; the 8-window forward_infer parity is NOT run here"
+  },
+  "G-HYG": {
+   "pass": true,
+   "problems": []
+  },
+  "G-LIVE": {
+   "groups_grad": {
+    "NAVRB": 72.26941394805908,
+    "O": 10346.950379330665,
+    "S": 1821.9911894500256,
+    "T": 978.8733509331942,
+    "adapter": 21195.063982486725,
+    "head_o": 4066.775166928768,
+    "head_s": 841.1097204089165,
+    "wm": 14094.56899932475
+   },
+   "pass": true,
+   "problems": []
+  },
+  "G-SUITE": {
+   "pass": true,
+   "result_sha256": "f4e25e6288ff37ee55737c56216afa3cf70981e7d8ab96380bb8dafc0355d738"
+  },
+  "frozen_argvs_sha256": {
+   "pass": true,
+   "sha256": "346a48ed7b070fffacd22bf280e72c42831126fb906c231a7ac24301e624a424"
+  }
+ },
+ "commit": "134f5da1ee50a3c2fa242bb340a26dd6e4072ade",
+ "data": {
+  "--init-ckpt": {
+   "md5": "c9522e4fdbd1a5a823c626b37d280db8",
+   "path": "/root/strat1/inputs/M2b_s0/ckpt_last.pt",
+   "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "size": 86969109
+  },
+  "--join-train": {
+   "md5": "9ebc7a48cbca45cc634eab2aab5a3960",
+   "path": "/root/strat1/inputs/join_train.npz",
+   "sha256": "978f41bf4f1e4c8b75bdfad31d39ee184b59634feb5da902157d306595ac3124",
+   "size": 34696488
+  },
+  "--lead-train": {
+   "md5": "d4336a4468c41bee7b26d02789886860",
+   "path": "/root/strat1/inputs/data/v9/lead_train4572.npz",
+   "sha256": "25494fd9b490c2e4195ea50de95b02c03fc3bb48ca355c2af053a306d718d77d",
+   "size": 13739581
+  },
+  "--nav-rb-npz": {
+   "md5": "5b74268e8d84cc0680be29b0b1d48eb4",
+   "path": "/root/strat1/inputs/strat1/navtext_nav_rbd.npz",
+   "sha256": "298049df71dc469874dd2429781c9019c4727b917bc3bd2233314542f6bbc82a",
+   "size": 322577
+  },
+  "--nav-text-npz": {
+   "md5": "07736bf7f41126c3285729bf880d6f3b",
+   "path": "/root/strat1/inputs/strat1/navtext_nav.npz",
+   "sha256": "03bd75bc3a3de17928681bedb8e46a48a891304de45d395c49cc876acf6e6160",
+   "size": 1086410
+  },
+  "--p10": {
+   "md5": "47ca897c2e29d157e599d35d6ac5ed2e",
+   "path": "/root/strat1/inputs/p10/p10_prior.pt",
+   "sha256": "14a062a91078266a1b3226af91bf52b23b5238d84fe7e633323d0b0bea2703bf",
+   "size": 74539
+  },
+  "--speed-train": {
+   "md5": "bab41adf5d08aef89ebd4596ed48cead",
+   "path": "/root/strat1/inputs/data/v9/refcv6_speed_max_v8_train.jsonl",
+   "sha256": "9671680d3e3a5e6d97e6d1a35f0371c2183d457412ef47d4c5376d32ecf9fcc1",
+   "size": 880186
+  },
+  "--tracks": {
+   "md5": "189f4e68913c0163912a509203963f8d",
+   "path": "/root/strat1/inputs/native_tracks.pt",
+   "sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+   "size": 16591688
+  },
+  "--v9-train": {
+   "md5": "83e30bd3791f0767707eade5f4671759",
+   "path": "/root/strat1/inputs/data/v9/v9_labels_train.npz",
+   "sha256": "b2efe86452ed935bf07bc0b913aa92ff37fd25362d90f1d7f7424447aeb0c383",
+   "size": 264220433
+  },
+  "bank/PROVENANCE.json": {
+   "md5": "fe72241ff3c1fe5c5f6b1a314c80bc76",
+   "path": "/root/strat1/inputs/dagger_bank/s0/PROVENANCE.json",
+   "sha256": "a0aa57ae78cf8c66134b08d41e4d455b7ea8fc07e8a22e7426c964418656c3de",
+   "size": 2173
+  },
+  "bank/bank.json": {
+   "md5": "2e5d9503db9e40b59de95575775faa46",
+   "path": "/root/strat1/inputs/dagger_bank/s0/bank.json",
+   "sha256": "197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f",
+   "size": 9870
+  },
+  "bank/shard_000of004.npz": {
+   "md5": "8c546d4ae86ce3d9440507faf86b6e9c",
+   "path": "/root/strat1/inputs/dagger_bank/s0/shard_000of004.npz",
+   "sha256": "692e43c4f00c5acaccf6f566e2dcee34aeef7d06bbf38653061bcd89bb5485dc",
+   "size": 165922967
+  },
+  "bank/shard_001of004.npz": {
+   "md5": "50e15a1d5e13643a19daed57906be738",
+   "path": "/root/strat1/inputs/dagger_bank/s0/shard_001of004.npz",
+   "sha256": "b323c95b8b4ae3fd46a5ea563d682625d4d990e94e89691f2115107cc421b5af",
+   "size": 165909983
+  },
+  "bank/shard_002of004.npz": {
+   "md5": "06f100dbffc55d875194b43252bea488",
+   "path": "/root/strat1/inputs/dagger_bank/s0/shard_002of004.npz",
+   "sha256": "9d244c4f661733ae1dfa30cfa40522d579249b6df6e2365c0a00e07cec2e04e1",
+   "size": 165927297
+  },
+  "bank/shard_003of004.npz": {
+   "md5": "6db45a2a658a602c626a482846fddeab",
+   "path": "/root/strat1/inputs/dagger_bank/s0/shard_003of004.npz",
+   "sha256": "edf6fd71192d739cefe9ae688273de8f94a0fd153fd59228f403cf422875ed85",
+   "size": 165918641
+  },
+  "cache/eval/manifest.jsonl": {
+   "md5": "7854dd743206f075864d7204f7fd7430",
+   "path": "/root/data/cache_pod/eval/manifest.jsonl",
+   "sha256": "6f9c324ef3846c9cb694510c9ac4bf5aacb3aabc3121b7b028a864b0c1e4d3dc",
+   "size": 94032
+  },
+  "cache/train/manifest.jsonl": {
+   "md5": "fd38cd9bf6904f9d3cbebdfd23b22ae0",
+   "path": "/root/data/cache_pod/train/manifest.jsonl",
+   "sha256": "d5c17f3a3c42de71c58f6717bba2ca6ef7d22c471b8d42d3b0dded23e3c619d1",
+   "size": 3048934
+  },
+  "eval_grid_windows.json": {
+   "md5": "34ed8ac56365eeff72e42581bde2f5c4",
+   "path": "/root/strat1/n1dw/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json",
+   "sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "size": 21050
+  }
+ },
+ "gsuite_result_sha256": "f4e25e6288ff37ee55737c56216afa3cf70981e7d8ab96380bb8dafc0355d738",
+ "kind": "N1DW4",
+ "nav_rb_report_sha256": "00cf93d3c1ca49dd3c1e3625cfaed85ecb8e419f0dacc4dae15f300855617ae7",
+ "nav_report_sha256": "e6877342a629b12dc26481a4dfe29544829b8d1c89b16ae8b9701212a1074dd4",
+ "schema": "strat1-gate-token-v1",
+ "selfcheck_sha256": "389003b3aa39689f281d2578c6ffde0b420df48da7c6a3c46b060c7ddd8ce614",
+ "trainer_sha256": "89b1c2c5e2189e95f2847dc4e8d854e6a7406914db4318c0557224fa44d72e5d",
+ "tree_manifest_sha256": "4fdb1b32d17abc151d7fb5a680b9e2460cd3cd7f74a827567ea920dc36054040",
+ "written_by": "strat1_check.py mint"
+}

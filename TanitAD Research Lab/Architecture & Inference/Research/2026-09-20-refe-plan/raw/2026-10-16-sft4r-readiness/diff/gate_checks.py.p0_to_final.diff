@@ -1,0 +1,71 @@
+diff --git a/gate_checks.py b/gate_checks.py
+index 3af4f88..df3164f 100644
+--- a/gate_checks.py
++++ b/gate_checks.py
+@@ -1321,15 +1321,65 @@ def check_ckpt(argv: list, work, profile: dict, arm=None, rehearsal=False) -> di
+ 
+ 
+ # ============================================================================================ G-SUITE, G-CLOCK
++# G-SUITE REFUSES TO NEST (2026-10-16).  `REFE_GATE_NESTED` used to be set to "1" and read by nobody; a suite script that ran a command reaching G-SUITE for a profile whose suite CONTAINS that script
++# re-ran itself without end (SFT-4R: test_sft4r_gate.py -> `launch_gate.py run --profile refe_sft4r` -> G-SUITE -> test_sft4r_gate.py ..., ~80 python processes).  The sentinel is now the JSON list of the
++# suite entries running ABOVE this process, outermost first; check_suite spawns nothing when an entry is already on it, or when it is already SUITE_NEST_MAX deep.  Tests: refe/test_suite_nesting.py.
++SUITE_NEST_ENV = "REFE_GATE_NESTED"
++SUITE_NEST_MAX = 2                       # a suite script may run ONE nested suite (a stub / synthetic one); a script inside THAT one may run none
++
++
++def suite_entry_id(e: dict) -> str:
++    """Identity of a G-SUITE entry for the nesting guard: sha256[:16] of the resolved script path + its args (or of a raw argv), then the script's basename."""
++    if "raw" in e:
++        argv, base = [str(x) for x in e["raw"]], "raw"
++    else:
++        argv, base = [os.path.normcase(os.path.realpath(str(HERE / e["script"]))), *[str(x) for x in e.get("args", ())]], os.path.basename(str(e["script"]))
++    return hashlib.sha256("\0".join(argv).encode("utf-8", "replace")).hexdigest()[:16] + ":" + base
++
++
++def suite_nest_stack() -> list:
++    """The suite entries running above this process (outermost first), from the sentinel.  "" = none.  The pre-2026-10-16 value "1" = one level of unknown identity; anything unreadable
++    FAILS CLOSED (it reads as already at the limit), so a damaged sentinel can only refuse, never allow."""
++    raw = os.environ.get(SUITE_NEST_ENV, "")
++    if not raw:
++        return []
++    try:
++        v = json.loads(raw)
++    except ValueError:
++        return ["<unreadable>"] * SUITE_NEST_MAX
++    if isinstance(v, list) and all(isinstance(x, str) for x in v):
++        return v
++    if isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= SUITE_NEST_MAX:
++        return ["<legacy>"] * v
++    return ["<unreadable>"] * SUITE_NEST_MAX
++
++
++def suite_nest_refusals(stack: list, entries: list) -> list:
++    """Why check_suite must spawn NOTHING (empty list = it may)."""
++    out = []
++    if len(stack) >= SUITE_NEST_MAX:
++        out.append(f"G-SUITE refuses to nest: this process is already {len(stack)} suite level(s) deep (limit {SUITE_NEST_MAX}); running above it: {stack}")
++    for e in entries:
++        if suite_entry_id(e) in stack:
++            out.append(f"G-SUITE refuses to nest: entry {e.get('script') or 'raw'} is ALREADY RUNNING above this call, so this suite contains the script that invoked it and would never end "
++                       f"(run the command with --only <checks without G-SUITE>, or give the test a stub suite)")
++    return out
++
++
+ def check_suite(profile: dict, arm=None, rehearsal=False) -> dict:
+     reasons, det = [], {"scripts": []}
+     entries = [dict(e) for e in profile.get("suite", ())]
+     if arm_is("suite_failing_test", arm):
+         entries.append({"raw": [sys.executable, "-c", "import sys; print('ZZTEST_FAIL'); sys.exit(1)"], "token": "ZZTEST_PASS"})
++    stack = suite_nest_stack()
++    refused = suite_nest_refusals(stack, entries)
++    if refused:                                                                      # NOTHING is spawned: a suite that contains its own caller cannot end
++        det["nested"] = {"stack": stack, "refused": refused}
++        return verdict("G-SUITE", refused, det, arm=arm, rehearsal=rehearsal)
+     for e in entries:
+         argv = e["raw"] if "raw" in e else [sys.executable, str(HERE / e["script"]), *e.get("args", [])]
+         token = e["token"]
+-        env = dict(os.environ, PYTHONIOENCODING="utf-8", REFE_GATE_NESTED="1")
++        env = dict(os.environ, PYTHONIOENCODING="utf-8", **{SUITE_NEST_ENV: json.dumps(stack + [suite_entry_id(e)])})
+         env.pop(ARM_ENV, None)
+         t_script = time.perf_counter()
+         r = subprocess.run(argv, cwd=str(HERE), env=env, capture_output=True, text=True, encoding="utf-8", errors="replace")

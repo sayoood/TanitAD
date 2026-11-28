@@ -1,0 +1,701 @@
+{
+ "results": {
+  "T1": {
+   "patch base blobs == today's files": {
+    "ok": true,
+    "bases": {
+     "model.py": true,
+     "train.py": true,
+     "ckpt_io.py": true
+    }
+   },
+   "patches apply + patched files compile": {
+    "ok": true,
+    "changed": [
+     "ckpt_io.py",
+     "model.py",
+     "train.py"
+    ]
+   }
+  },
+  "T2": {
+   "control: the on-policy score loss is live": {
+    "ok": true,
+    "score_per_step": [
+     0.12897,
+     0.12392,
+     0.11377,
+     0.11788
+    ]
+   },
+   "orig vs orig_again: grads/weights/AdamW": {
+    "ok": true,
+    "max_grad_diff": 0.0,
+    "max_state_diff": 0.0,
+    "n_steps": 4,
+    "expect": "exactly 0.0"
+   },
+   "orig vs patched_off: grads/weights/AdamW": {
+    "ok": true,
+    "max_grad_diff": 0.0,
+    "max_state_diff": 0.0,
+    "n_steps": 4,
+    "expect": "exactly 0.0"
+   },
+   "orig vs patched_lognorms: grads/weights/AdamW": {
+    "ok": true,
+    "max_grad_diff": 0.0,
+    "max_state_diff": 0.0,
+    "n_steps": 4,
+    "expect": "exactly 0.0"
+   },
+   "orig vs orig_seed1: grads/weights/AdamW": {
+    "ok": true,
+    "max_grad_diff": 0.377286821603775,
+    "max_state_diff": 0.7368698120117188,
+    "n_steps": 4,
+    "expect": "> 0"
+   },
+   "--log-grad-norms writes norm rows": {
+    "ok": true,
+    "rows": 4,
+    "gn_all": [
+     2.9433,
+     1.8813,
+     1.6317,
+     2.4068
+    ],
+    "clip_coef_traj": [
+     0.3398,
+     0.5315,
+     0.6129,
+     0.4155
+    ]
+   }
+  },
+  "T3": {
+   "ON: traj grads+weights invariant to score x100": {
+    "ok": true,
+    "traj_grad_diff": 0.0,
+    "traj_weight_diff": 0.0,
+    "score_grad_diff": 0.0639963299036026,
+    "expect": "traj 0.0 exactly, score > 0"
+   },
+   "MUTATION flag OFF: traj grads change": {
+    "ok": true,
+    "traj_grad_diff": 0.3462298307567835,
+    "norms_and_traj_clip_factor": {
+     "off_w0.1": [
+      [
+       2.943,
+       0.3398
+      ],
+      [
+       1.881,
+       0.5315
+      ],
+      [
+       1.632,
+       0.6129
+      ],
+      [
+       2.407,
+       0.4155
+      ]
+     ],
+     "off_w10": [
+      [
+       64.08,
+       0.0156
+      ],
+      [
+       61.133,
+       0.0164
+      ],
+      [
+       57.975,
+       0.0172
+      ],
+      [
+       59.755,
+       0.0167
+      ]
+     ]
+    }
+   },
+   "MUTATION score_head in traj group: change": {
+    "ok": true,
+    "traj_grad_diff": 0.33478184416890144
+   },
+   "ON logs both group norms + traj clip factor": {
+    "ok": true,
+    "rows_w10": [
+     [
+      2.873,
+      64.015,
+      0.3481
+     ],
+     [
+      1.779,
+      61.107,
+      0.562
+     ],
+     [
+      1.525,
+      57.955,
+      0.6556
+     ],
+     [
+      2.332,
+      59.709,
+      0.4289
+     ]
+    ]
+   }
+  },
+  "T4": {
+   "ViT-L 4-cam: every trainable tensor in 1 group": {
+    "ok": true,
+    "n_trainable": 276,
+    "n_traj": 198,
+    "n_score": 78,
+    "numel_traj": 14694716,
+    "numel_score": 4296710,
+    "score_modules": [
+     "score_dec",
+     "score_head",
+     "score_q_mlp"
+    ]
+   },
+   "gradient flow == name partition (detached)": {
+    "ok": true,
+    "score_loss_reaches": [
+     "score_dec",
+     "score_head",
+     "score_q_mlp"
+    ],
+    "never_touched": []
+   },
+   "MUTATION context attached: leak + refusal": {
+    "ok": true,
+    "score_loss_hits_traj_group": 14,
+    "e_g": [
+     "backbone.blocks.0.attn.q.A",
+     "backbone.blocks.0.attn.q.B",
+     "backbone.blocks.0.attn.v.A",
+     "backbone.blocks.0.attn.v.B",
+     "backbone.blocks.1.attn.q.A",
+     "backbone.blocks.1.attn.q.B"
+    ],
+    "premise": "REFUSED"
+   }
+  },
+  "T5": {
+   "profiles_literals": {
+    "ok": true,
+    "max_err": 3.552713678800501e-15,
+    "values": {
+     "a5f0_t0.2": 1.9,
+     "a5f0_t1.0": 7.5,
+     "a5f0_t4.0": 10.0,
+     "a2f.5_t2.4": 18.240000000000002,
+     "a2f.5_t2.6": 19.25,
+     "a2f.5_t4.0": 26.25,
+     "inf_f0_all": 0.0,
+     "inf_f.5_t4.0": 20.0
+    }
+   },
+   "profiles_standstill": {
+    "ok": true,
+    "max": 0.0
+   },
+   "retime_real": {
+    "ok": true,
+    "checks": {
+     "line_accel": {
+      "ok": true,
+      "err": 1.7776891070298007e-11
+     },
+     "arc_on_polyline": {
+      "ok": true,
+      "err": 8.881784197001252e-16
+     },
+     "arc_heading": {
+      "ok": true,
+      "err": 6.235012506294879e-13
+     }
+    }
+   },
+   "retime_mutation_NO_ORIGIN": {
+    "ok": true,
+    "must_fail": "line_accel",
+    "err": 0.05999999999655553
+   },
+   "retime_mutation_TIME_INDEX": {
+    "ok": true,
+    "must_fail": "line_accel",
+    "err": 4.5
+   },
+   "retime_mutation_NO_WRAP": {
+    "ok": true,
+    "must_fail": "arc_heading",
+    "err": 0.39311827371730423
+   },
+   "retime_identity": {
+    "ok": true,
+    "err": 6.2548854984356694e-12
+   },
+   "retime_extrapolation": {
+    "ok": true,
+    "err": 6.245670647331281e-12
+   },
+   "retime_zero_path_grad": {
+    "ok": true
+   },
+   "slot_indices_honoured_and_checked": {
+    "ok": true,
+    "explicit": "8,16,19,21,22,34,38,39",
+    "bad_lists_refused": "3/3"
+   },
+   "loss_closest_anchor_literals": {
+    "ok": true,
+    "k_star": [
+     7,
+     0,
+     1
+    ],
+    "want": [
+     7,
+     0,
+     1
+    ],
+    "why": "15 m/s cruise -> (1,0.875); standstill -> first; 10 m/s braking at 5 m/s2 -> (6,0) (hand-computed means 2.41 / 0 / 1.199 m)"
+   },
+   "loss_free_term_is_wta_loss": {
+    "ok": true,
+    "free_winner_in_free": true
+   },
+   "loss_value_literals": {
+    "ok": true,
+    "l_on_anchor": 0.0,
+    "l_positive_plus_1m": 1.0,
+    "l_nonpositive_plus_1m": 0.0
+   }
+  },
+  "T6": {
+   "not installed: forward+loss == today": {
+    "ok": true,
+    "max_diff": 0.0,
+    "expect": "exactly 0.0"
+   },
+   "installed: free slots bit-identical": {
+    "ok": true,
+    "free_equal": true
+   },
+   "installed: reserved never ahead of anchor": {
+    "ok": true,
+    "exceed_max_m": 0.0,
+    "on_raw_polyline_max_m": 4.800047875903416e-07
+   },
+   "installed: no new state": {
+    "ok": true,
+    "keys": true,
+    "trainable": true,
+    "frozen_fingerprint": true
+   },
+   "installed: the scorer sees the anchored fan": {
+    "ok": true,
+    "score_changed": true
+   }
+  },
+  "T7": {
+   "ON: reserved slots within their anchor": {
+    "ok": true,
+    "exceed_max_m": 3.478280330426742e-08,
+    "dev_mean_m": 0.028073898697021517,
+    "euclid_to_straight_anchor_max_m": 1.7121668938249428,
+    "reserved_len_4s": 36.106134404280866,
+    "anchor_len_4s": 36.21990966796875,
+    "raw_reserved_exceed_max_m": 67.58072462347079
+   },
+   "OFF (contrast): the same slots drift": {
+    "ok": true,
+    "exceed_max_m": 73.38513922511963,
+    "reserved_len_4s": 60.079733957943034,
+    "at_init_exceed_max_m": 13.31261755287158,
+    "target_len_4s": 59.25
+   },
+   "MUTATION loss kept, re-timing removed: drift": {
+    "ok": true,
+    "exceed_max_m": 67.58072462347079,
+    "reserved_len_4s": 55.21425593373285
+   },
+   "free slots learn with M4b ON (<= 10 % of init)": {
+    "ok": true,
+    "best_free_wta_init_m": 31.3465975398547,
+    "on_m": 0.680240171632613,
+    "off_m": 0.4961896258057095,
+    "bar_m": 3.13465975398547,
+    "traj_L1_on": [
+     59.652,
+     3.999,
+     1.81,
+     3.644
+    ],
+    "traj_L1_off": [
+     31.005,
+     1.42,
+     0.669,
+     0.53
+    ]
+   },
+   "raw reserved proposals stay bounded (ON)": {
+    "ok": true,
+    "raw_len_4s_max_m": 67.62256167898053,
+    "bar_m": 118.5
+   },
+   "MUTATION loss_through_hook: free stall or raw blow-up": {
+    "ok": true,
+    "best_free_wta_m": 27.04672603146173,
+    "raw_len_4s_max_m": 1332.7908634617559,
+    "exceed_max_m": 5.985857654877691e-06
+   },
+   "MUTATION loss_through_hook_fullgrad: free stall or raw blow-up": {
+    "ok": true,
+    "best_free_wta_m": 7.814912986010313,
+    "raw_len_4s_max_m": 45.768983777741255,
+    "exceed_max_m": 6.672462600221252e-07
+   }
+  },
+  "T8": {
+   "factor 1.0 twin == target BIT-exact (synthetic)": {
+    "ok": true,
+    "twins": 18,
+    "bit_exact": 18,
+    "sources": 18
+   },
+   "factor 1.0 twin == target BIT-exact (real_navtrain)": {
+    "ok": true,
+    "twins": 2000,
+    "bit_exact": 2000,
+    "sources": 2000
+   },
+   "twins == slow_copy (bits), valid rows, rank map": {
+    "ok": true,
+    "twins": 36,
+    "equal_to_slow_copy": 36,
+    "grow_assemble_target_ok": 36,
+    "fields_and_rank_ok": 36,
+    "traj_world_dropped": 24,
+    "rank_map": {
+     "2": {
+      "src_rank": 0,
+      "factor": 0.75
+     },
+     "3": {
+      "src_rank": 0,
+      "factor": 0.5
+     },
+     "4": {
+      "src_rank": 1,
+      "factor": 0.75
+     },
+     "5": {
+      "src_rank": 1,
+      "factor": 0.5
+     }
+    }
+   },
+   "decel-limited 4 m/s2: bounded/on path/not ahead (synthetic)": {
+    "ok": true,
+    "twins": 36,
+    "max_excess_over_bound": 1.9445778320914542e-11,
+    "max_off_path_m": 1.7763568394002505e-15,
+    "max_ahead_m": 1.7763568394002505e-15
+   },
+   "decel-limited 4 m/s2: bounded/on path/not ahead (real_navtrain)": {
+    "ok": true,
+    "twins": 3975,
+    "max_excess_over_bound": 9.43396472052882e-11,
+    "max_off_path_m": 1.7763568394002505e-15,
+    "max_ahead_m": -3.846820463351795e-05
+   },
+   "CONTRAST the pure slow copy breaks that bound": {
+    "ok": true,
+    "twins": 3975,
+    "max_implied_decel": 65.3635349226567
+   },
+   "decel-limited factor 1.0 == source (rounding)": {
+    "ok": true,
+    "max_abs_diff": 7.105427357601002e-15
+   },
+   "second pass appends nothing (append-only)": {
+    "ok": true,
+    "files": 4,
+    "unchanged": true
+   },
+   "tool refusals (rc 4 each)": {
+    "ok": true,
+    "out == bank": 4,
+    "factor 1.5": 4,
+    "twin rank collides w/ genuine rank 1": 4,
+    "twin ranks overlap source ranks": 4,
+    "twin of a twin": 4
+   },
+   "patched loader + --slow-twins: twins load right": {
+    "ok": true,
+    "per_rank": {
+     "0": 12,
+     "1": 6,
+     "2": 12,
+     "3": 12,
+     "4": 6,
+     "5": 6
+    },
+    "group_sizes": [
+     3,
+     6
+    ],
+    "traj_exact": 36,
+    "ego_goal_exact": 36,
+    "images_same": 36,
+    "set_same_as_source": 36,
+    "set_empty": 0,
+    "n": 36,
+    "cov_norm": 64.0
+   },
+   "GUARD patched loader w/o --slow-twins refuses": {
+    "ok": true,
+    "refused": true,
+    "msg": "TargetBank: 36 SLOWED-TARGET TWIN rows (ranks [2, 3, 4, 5]) are in the bank but this run d"
+   },
+   "HAZARD today's loader absorbs twins silently": {
+    "ok": true,
+    "refused": false,
+    "twins_loaded": 36,
+    "twins_with_NO_scorer_set": 36,
+    "note": "today's code would train on them with no flag, and without their scorer labels"
+   }
+  },
+  "T9": {
+   "today's trainer halts at step 2 (rc 7)": {
+    "ok": true,
+    "rc": 7
+   },
+   "patched resume, all OFF == today's resume": {
+    "ok": true,
+    "max_state_diff": 0.0,
+    "expect": "exactly 0.0"
+   },
+   "m4b_undeclared: refused": {
+    "ok": true,
+    "rc": 4,
+    "names": "--slow-slots: 0 -> 8"
+   },
+   "m3_undeclared: refused": {
+    "ok": true,
+    "rc": 4,
+    "names": "--clip-split: False -> True"
+   },
+   "m4b_indices_undeclared: refused": {
+    "ok": true,
+    "rc": 4,
+    "names": "--slow-slot-indices: '' -> '8,16,19,21,22,34,38,39'"
+   },
+   "m4b_declared: resumes + logs the change": {
+    "ok": true,
+    "rc": 0,
+    "declared": [
+     "--slow-slots: 0 -> 8",
+     "--slow-slot-indices: '' -> '8,16,19,21,22,34,38,39'"
+    ],
+    "measures_rows": 4
+   },
+   "m3_declared: resumes + logs the change": {
+    "ok": true,
+    "rc": 0,
+    "declared": [
+     "--clip-split: False -> True"
+    ],
+    "measures_rows": 4
+   },
+   "switched ckpt: load_for_inference installs M4b": {
+    "ok": true,
+    "installed": true,
+    "exceed_max_m": 0.0,
+    "fmt": "refe-full-v1",
+    "reserved": [
+     8,
+     16,
+     19,
+     21,
+     22,
+     34,
+     38,
+     39
+    ]
+   },
+   "HAZARD today's consumer ignores M4b": {
+    "ok": true,
+    "installed": false,
+    "exceed_max_m": 11.259118267777577,
+    "note": "an eval/dump without measures_consumers.patch runs the RAW slots"
+   },
+   "grow: halted run + twin file written into its bank": {
+    "ok": true,
+    "rc": 7,
+    "tool_rc": 0
+   },
+   "HAZARD today's grow trainer absorbs twins": {
+    "ok": true,
+    "bank_events": [
+     [
+      0,
+      {
+       "0": 8
+      }
+     ],
+     [
+      0,
+      {
+       "0": 8
+      }
+     ],
+     [
+      1,
+      {
+       "0": 8,
+       "2": 8
+      }
+     ],
+     [
+      2,
+      {
+       "0": 8,
+       "2": 8
+      }
+     ]
+    ],
+    "note": "no flag, no identity change -- at the next epoch boundary"
+   },
+   "GUARD patched grow w/o --slow-twins refuses": {
+    "ok": true,
+    "rc": 1,
+    "last_step": 3,
+    "msg": "TargetBank: 8 SLOWED-TARGET TWIN rows (ranks [2]) are in the bank but this run d"
+   },
+   "declared: twins join AT the next epoch boundary": {
+    "ok": true,
+    "bank_events": [
+     [
+      0,
+      {
+       "0": 8
+      }
+     ],
+     [
+      0,
+      {
+       "0": 8
+      }
+     ],
+     [
+      1,
+      {
+       "0": 8,
+       "2": 8
+      }
+     ],
+     [
+      2,
+      {
+       "0": 8,
+       "2": 8
+      }
+     ]
+    ]
+   }
+  },
+  "T10": {
+   "wrapped_is_wta_loss_bitwise": {
+    "ok": true
+   },
+   "plain_equals_wrapped_in_branch": {
+    "ok": true,
+    "diff": 0.0
+   },
+   "branch_shift_literals": {
+    "ok": true,
+    "wrapped": 1.1920929798847624e-09,
+    "plain": 0.15707962214946747,
+    "want_plain": 0.15707963,
+    "plain_pushes_toward_principal": true
+   },
+   "seam_guard": {
+    "ok": true,
+    "accepts_2.46": true,
+    "refuses_3.1": true
+   },
+   "seam guard refuses --yaw-loss plain end to end": {
+    "ok": true,
+    "rc": 4
+   },
+   "DEFECT reproduces under today's wrapped loss": {
+    "ok": true,
+    "trapped_steps": [
+     3,
+     7,
+     10,
+     11,
+     15
+    ],
+    "max_frac_beyond_pi": 0.7908854166666667
+   },
+   "plain: no step trapped, every winner step <= 0.3 rad": {
+    "ok": true,
+    "trapped_steps": [],
+    "max_winner_err": 0.16063017677515745,
+    "max_frac_beyond_pi": 0.0
+   },
+   "plain costs no position accuracy (<= +0.2 m)": {
+    "ok": true,
+    "pos_off_m": 0.7620665295435581,
+    "pos_plain_m": 0.7835719014529486
+   },
+   "switch without --declare-change refused": {
+    "ok": true,
+    "rc": 4
+   },
+   "declared mid-run switch frees the trapped steps": {
+    "ok": true,
+    "trapped_if_kept_wrapped": [
+     3,
+     7,
+     10,
+     11,
+     15
+    ],
+    "trapped_after_switch": [],
+    "max_winner_err_after_switch": 0.10129781486466527,
+    "pos_kept_m": 0.3446512862313426,
+    "pos_switched_m": 0.3375338509349891
+   }
+  }
+ },
+ "failed": [],
+ "n_checks": 75,
+ "seconds": 1491.6,
+ "python": "3.11.13",
+ "tested_sha256": {
+  "measures.py": "890f3d95dc73673b9a757edf7883a4438bb347a3ad8664e9c501fb8f78ba4550",
+  "slow_twins.py": "edc3916ce7ccbd4d38e65d440c6a2fd446d936a099fb778a12452380138b54eb",
+  "slow_copies.py": "dff942d3106a145ca0fec15ebdd7648c2fbfa541aae1c29971ccdccaf2250629",
+  "model.py": "79a80a2012aae570481366e4ff4dbd180f9457a901023d21d48e4d11294d58c3",
+  "train.py": "99a7ae549c5b49e70ec8e6bd07e07cf1c9be858e0866819ada35c6e3cbb4ef0c",
+  "ckpt_io.py": "c876e2d3c1defd5ccac6919296a1ba0947c3fd1332ee79af97f5cbcbc2566f05",
+  "measures_hooks.patch": "b6b32cc0f9124ae06d53cf1625df9add88d995b3c7f2b90987fd155894ff340f",
+  "measures_consumers.patch": "b1bf07ed1bf672f0c3329a66a2efa399447dd04a7e032668d21ddfd9ef130eef",
+  "selftest_measures.py": "ffe466f61df338448e89222e11c458c6dcc0fe135d7c866937a765c723e99f04"
+ },
+ "at": "2026-09-27T12:47:10Z"
+}

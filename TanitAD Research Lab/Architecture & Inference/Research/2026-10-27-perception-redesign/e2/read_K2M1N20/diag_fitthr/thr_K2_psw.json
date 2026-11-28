@@ -1,0 +1,107 @@
+{
+ "schema": "tanitad.r9_map_thresholds/1",
+ "planes": {
+  "psw": [
+   128,
+   126,
+   128
+  ]
+ },
+ "bands_m": [
+  [
+   0,
+   10
+  ],
+  [
+   10,
+   40
+  ],
+  [
+   40,
+   100
+  ]
+ ],
+ "rule": "flag = plane_u8 >= level, per plane and per band (r9_e1_eval.MapThresholds); a plane absent here keeps the fixed 128",
+ "criterion": {
+  "name": "one-vs-rest, per plane and per band: the uint8 level that maximises the pooled IoU of {plane >= level} against the plane's GT class(es) over GT-valid cells (gt != 255); first level on ties (refit_perception_thresholds.best_threshold); level 0 is never emitted",
+  "population": "all",
+  "gt_classes": {
+   "psw": [
+    7
+   ]
+  },
+  "valid_cells": "gt != 255"
+ },
+ "provenance": {
+  "arm": "K2",
+  "tool": "stack/scripts/r9_map_fit_thresholds.py",
+  "tool_sha256": "455952178068309296adab9996af150097a509f42d8ada360f66bf8d1db8f514",
+  "fit_split": "TRAIN (FIT dump)",
+  "fit": {
+   "n_clips": 139,
+   "k_per_ep": 8,
+   "clips_sha12_digest": "0a7f50f90e7835a297c52b0170b92cff11ee565d7b015238814c48ad354f60da",
+   "dev_hold_file": "DEV_HOLD_SPLIT.json",
+   "dev_hold_sha256": "ca5af0203320aba4f89e09be81a6bf079d9d4d77708ccb8a3ca2a0ea57e8db0a",
+   "n_eval_clips_checked": 139,
+   "disjoint_from_dev_and_hold": true,
+   "rule": "TRAIN clips; K windows per clip at ts[int((j + 0.5) * len(ts) / K)] of the dataset's sorted starts (run_diag.py train_diag)"
+  },
+  "n_rasters_fitted": 1112,
+  "n_episodes_fitted": 139,
+  "rast_dir_names_sha256": "b1fc5844c8e6af51de7e79b16e533b1ac6f563936f2d6be28a9f74b5a6579b45",
+  "dump_json": {
+   "sha256": "11eefd55a2775b1a92034f8fcc41deffe029f0f90ff853bb9119e833fcc88583",
+   "ckpt_md5": "408202cc61814a8b18c52e756e783dc4",
+   "ckpt_kind": "ema_model_only",
+   "step": 6000,
+   "weights_are_ema": true,
+   "config_md5": "b4de28623f426360837c52590c85fdb9",
+   "order_digest": "031e0b4e85aa25066eb866b25041e2855485730fea93cd236e9110605ae1bc71",
+   "tree_commit": null
+  },
+  "ckpt_md5": "408202cc61814a8b18c52e756e783dc4",
+  "fit_detail": {
+   "psw": [
+    {
+     "band_m": [
+      0,
+      10
+     ],
+     "level": 128,
+     "iou_at_level": 0.47393972287755265,
+     "iou_at_128": 0.47393972287755265,
+     "n_pos": 20208317,
+     "n_neg": 42209952,
+     "flag_rate_at_level": 0.4177950689404732
+    },
+    {
+     "band_m": [
+      10,
+      40
+     ],
+     "level": 126,
+     "iou_at_level": 0.5354450043756965,
+     "iou_at_128": 0.5351813012316072,
+     "n_pos": 63915917,
+     "n_neg": 129859457,
+     "flag_rate_at_level": 0.3849522488858672
+    },
+    {
+     "band_m": [
+      40,
+      100
+     ],
+     "level": 128,
+     "iou_at_level": 0.41744793126460694,
+     "iou_at_128": 0.41744793126460694,
+     "n_pos": 82509565,
+     "n_neg": 186372842,
+     "flag_rate_at_level": 0.43531842155816464
+    }
+   ]
+  },
+  "warnings": [],
+  "caveat": "bound to THIS checkpoint's planes: valid for this model's rasters only; fitted on TRAIN clips (the arm may have trained on them: the FIT operating point is then optimistic, as for the 8-way refits); one seed"
+ }
+}

@@ -1,0 +1,275 @@
+{
+ "tool": "l2b_score.py",
+ "seed": 0,
+ "prereg_sha256": "089d7ab67a9c9f9600d84399e30d8a49e2e48f710bea7dc9e941e4e41382a7a0",
+ "prereg_seal_ok": true,
+ "trace": "F:/refcv9_l2_locus/locus_s0.npz",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+ "estimator": "episode-cluster bootstrap (pair_read_r8.paired_cell -> taniteval.ci), B 2000, seed 0, over EPISODES: 'another draw of episodes' only; NOT another training run, NOT another inference run (seed 1 = replicate, never pooled)",
+ "controls": {
+  "K_G_fields": {
+   "n_windows": 4754,
+   "present_counts": {
+    "fan": 4754,
+    "sel_score": 4754,
+    "sel_score_v3": 4754,
+    "reach_keep": 4754,
+    "ceil_keep": 4754,
+    "emit_keep": 4754,
+    "kind": 4754,
+    "lon6": 4754,
+    "lat3": 4754,
+    "cons_raw": 4754,
+    "hyp_alloc": 4754,
+    "prior_path": 4754,
+    "bank": 4754
+   },
+   "fan_n_seen": [
+    149
+   ],
+   "batch_gt1": 0,
+   "pass": true
+  },
+  "K_B_emitted_equals_fan_at_sel_idx": {
+   "max_abs": 0.0,
+   "pass": true
+  },
+  "K_C_sel_idx_is_argmax_over_e9_eligible": {
+   "share": 1.0,
+   "pass": true,
+   "emitted_eligible_share": 1.0,
+   "mask_present": {
+    "reach_keep": true,
+    "ceil_keep": true,
+    "emit_keep": true
+   }
+  },
+  "K_A_reroll_equals_L1_BASEos": {
+   "n_compared": 4754,
+   "n_bit_equal": 4754,
+   "max_abs": 0.0,
+   "pass": true
+  },
+  "K_D_prior_path_equals_banked_prior8": {
+   "max_abs": 1.52587890625e-05,
+   "pass": true
+  },
+  "K_H_ade_definition_matches_battery": {
+   "max_abs": 1.8220694393278336e-06,
+   "pass": true
+  },
+  "K_F_set_sizes": {
+   "FB": 259,
+   "CT": 259,
+   "DR": 339,
+   "MB": 300,
+   "GT_cruise_compliant": 1856,
+   "FB_literal_s0": 259,
+   "pass": true
+  },
+  "K_I_CT_identity": {
+   "emitted_is_cruise_share": 1.0,
+   "pass": true,
+   "balance": {
+    "v0_mean_FB": 14.909818262667269,
+    "v0_mean_CT": 14.902643674128765,
+    "nav_share_FB": [
+     0.9498069498069498,
+     0.003861003861003861,
+     0.04633204633204633
+    ],
+    "nav_share_CT": [
+     0.9498069498069498,
+     0.003861003861003861,
+     0.04633204633204633
+    ]
+   }
+  },
+  "K_J_emitted_candidate_class_matches": {
+   "share": 1.0,
+   "pass": true
+  },
+  "K_J_gap_nonnegative_when_emitted_is_argmax": {
+   "min_gap_all_sets": 0.0,
+   "pass": true
+  }
+ },
+ "controls_hard_pass": true,
+ "readings": {
+  "tau_good_cruise_m": 2.9786915891884926,
+  "tau_rule": "q90 of the CT windows' emitted staged ADE_6s",
+  "FB": {
+   "n": 259,
+   "EXIST": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 259,
+    "n_episodes": 55
+   },
+   "GOOD": {
+    "mean": 0.9807,
+    "lo": 0.956,
+    "hi": 0.9966,
+    "n_windows": 259,
+    "n_episodes": 55
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.1467,
+    "lo": 0.0983,
+    "hi": 0.1969,
+    "n_windows": 259,
+    "n_episodes": 55
+   },
+   "n_target_cands_median": 38.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.07906465530395508,
+     0.5669088363647461,
+     1.386266422271729
+    ],
+    "n": 259
+   }
+  },
+  "CT": {
+   "n": 259,
+   "EXIST": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 259,
+    "n_episodes": 84
+   },
+   "GOOD": {
+    "mean": 0.973,
+    "lo": 0.9451,
+    "hi": 0.9926,
+    "n_windows": 259,
+    "n_episodes": 84
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.9575,
+    "lo": 0.9246,
+    "hi": 0.9832,
+    "n_windows": 259,
+    "n_episodes": 84
+   },
+   "n_target_cands_median": 47.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "n": 259
+   }
+  },
+  "DR": {
+   "n": 339,
+   "EXIST": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 339,
+    "n_episodes": 65
+   },
+   "GOOD": {
+    "mean": 0.4336,
+    "lo": 0.3459,
+    "hi": 0.5268,
+    "n_windows": 339,
+    "n_episodes": 65
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.0147,
+    "lo": 0.0031,
+    "hi": 0.0286,
+    "n_windows": 339,
+    "n_episodes": 65
+   },
+   "n_target_cands_median": 28.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.23222379684448244,
+     1.381434440612793,
+     4.047074985504151
+    ],
+    "n": 339
+   }
+  },
+  "MB": {
+   "n": 300,
+   "EXIST": {
+    "mean": 0.9933,
+    "lo": 0.9826,
+    "hi": 1.0,
+    "n_windows": 300,
+    "n_episodes": 64
+   },
+   "GOOD": {
+    "mean": 0.97,
+    "lo": 0.942,
+    "hi": 0.9923,
+    "n_windows": 300,
+    "n_episodes": 64
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.0667,
+    "lo": 0.0386,
+    "hi": 0.0987,
+    "n_windows": 300,
+    "n_episodes": 64
+   },
+   "n_target_cands_median": 75.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.2200998663902283,
+     1.0129660367965698,
+     2.6246850728988655
+    ],
+    "n": 298
+   }
+  }
+ },
+ "R1_label": "SELECTION",
+ "R2_label": "SELECTION",
+ "guard_existence_saturated": true,
+ "label": "SELECTION",
+ "label_basis": "R2 (GOOD-cruise existence; the class-level existence is saturated in FB and DR)",
+ "FD": {
+  "now": 0.13954741379310345,
+  "floor_if_every_SELECTION_window_fixed(class existence)": 0.0,
+  "floor_if_every_SELECTION_window_fixed(GOOD existence)": 0.0026939655172413795,
+  "n_GT_cruise_compliant": 1856
+ },
+ "headroom_descriptive": {
+  "ADE6_best_cruise_cand_minus_emitted": {
+   "mean": -1.4658,
+   "lo": -1.8424,
+   "hi": -1.0889,
+   "n_windows": 259,
+   "n_episodes": 55
+  },
+  "ADE6_gt_oracle_cand_minus_emitted": {
+   "mean": -2.7066,
+   "lo": -3.1316,
+   "hi": -2.2727,
+   "n_windows": 259,
+   "n_episodes": 55
+  },
+  "ADE6_emitted_FB_mean": 3.400013249271678,
+  "ADE6_emitted_CT_mean": 1.6120588301092103
+ },
+ "base_pick": {
+  "FB_base_pick_class_shares(decel,cruise,accel)": [
+   0.8532818532818532,
+   0.14671814671814673,
+   0.0
+  ]
+ },
+ "scope": {
+  "windows": "S6 compliant",
+  "uncomputed": "distance-keeping (no lead track) and STRATEGIC (--no-strategic): n = 0"
+ },
+ "wall_s": 8.2
+}

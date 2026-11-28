@@ -1,0 +1,3755 @@
+{
+ "tool": "taniteval/tools/render_refcv7_video.py",
+ "tool_md5": "abca55c91c7408644483554b9f282787",
+ "what": "refcv7-r101-s0 final checkpoint, every eval window of 12 eval139 clips, frame by frame",
+ "tier": "OPEN-LOOP perception + planning on the held-out eval139 clips \u2014 NOT closed-loop driving (T0/T1 are both open loop; EVAL_DOCTRINE.md)",
+ "ceiling_stamp": "the speed ceiling does NOT reach the emitted plan on this launch tree (SPEC_REFCV7 \u00a726.1)",
+ "forward": {
+  "started_utc": "2026-10-03T23:02:09Z",
+  "finished_utc": "2026-10-03T23:28:59Z",
+  "code": {
+   "launch_tree": "/home/nvidia/refcv7_run/fec3a0dccf",
+   "tanitad": "/home/nvidia/refcv7_run/fec3a0dccf/stack/tanitad/__init__.py",
+   "refcv7_loader_md5": "7a01aba36b2882378a0863d90bf6810f",
+   "trainer_md5": "0a6fb0d8615332fe0798570d80886b23",
+   "render_refcv3_video_md5": "18b09ffc02af26846267701187be42e1",
+   "four_families": "/home/nvidia/refcv7_run/fec3a0dccf/taniteval/taniteval/four_families.py"
+  },
+  "ckpt": {
+   "path": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/ckpt.pt",
+   "md5": "d5f104ee54ba6b2861e38030b4f6fcf1",
+   "bytes": 1172814977,
+   "md5_s": 2.9
+  },
+  "config": {
+   "path": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/config.json",
+   "md5": "e6512a01b9c70f0e4a4dac581621984a"
+  },
+  "run_summary": {
+   "done": true,
+   "final_step": 50400,
+   "written_utc": "2026-10-03T18:38:19Z",
+   "gate_token": "/home/nvidia/refcv7_gate_fec3a0dccf/PASS_fec3a0dccfda.json"
+  },
+  "inrun_eval_row": {
+   "path": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0/metrics.jsonl",
+   "row": {
+    "eval_agent_n_pos": 339.0,
+    "eval_agent_n_conf": 0.0,
+    "eval_agent_conf_ratio": 0.0,
+    "eval_box3d_n_pos": 339.0,
+    "eval_box3d_n_conf": 2.0,
+    "eval_box3d_conf_ratio": 0.0059,
+    "eval_map_hires_iou_nocls_0_20": 0.6196753422190202,
+    "eval_map_hires_iou_nocls_20_40": 0.6096098688691282,
+    "eval_map_hires_iou_nocls_40_60": 0.5601182947494975,
+    "eval_map_hires_iou_nocls_60_80": 0.5329288406880479,
+    "eval_map_hires_iou_nocls_80_100": 0.5024348692976713,
+    "eval_map_hires_iou_drivable_0_20": 0.7353165463999982,
+    "eval_map_hires_iou_drivable_20_40": 0.596780063638784,
+    "eval_map_hires_iou_drivable_40_60": 0.5451452032999864,
+    "eval_map_hires_iou_drivable_60_80": 0.5206804984076224,
+    "eval_map_hires_iou_drivable_80_100": 0.5092050903104267,
+    "eval_map_hires_iou_lane_0_20": 0.23715501875981737,
+    "eval_map_hires_iou_lane_20_40": 0.04843289826521805,
+    "eval_map_hires_iou_lane_40_60": 0.009239206371384659,
+    "eval_map_hires_iou_lane_60_80": 0.0,
+    "eval_map_hires_iou_lane_80_100": 0.0,
+    "eval_map_hires_iou_crosswalk_0_20": 0.1238997555012225,
+    "eval_map_hires_iou_crosswalk_20_40": 0.0,
+    "eval_map_hires_iou_crosswalk_40_60": 0.0,
+    "eval_map_hires_iou_crosswalk_60_80": 0.0,
+    "eval_map_hires_iou_crosswalk_80_100": 0.0,
+    "eval_map_hires_iou_arrow_0_20": 0.10353493047411627,
+    "eval_map_hires_iou_arrow_20_40": 0.0,
+    "eval_map_hires_iou_arrow_40_60": 0.0,
+    "eval_map_hires_iou_arrow_60_80": 0.0,
+    "eval_map_hires_iou_arrow_80_100": 0.0,
+    "eval_map_hires_iou_edge_0_20": 0.0008588244209250044,
+    "eval_map_hires_iou_edge_20_40": 0.0,
+    "eval_map_hires_iou_edge_40_60": 0.0,
+    "eval_map_hires_iou_edge_60_80": 0.0,
+    "eval_map_hires_iou_edge_80_100": 0.0,
+    "eval_map_hires_iou_hatched_0_20": 0.0,
+    "eval_map_hires_iou_hatched_20_40": 0.0,
+    "eval_map_hires_iou_hatched_40_60": 0.0,
+    "eval_map_hires_iou_hatched_60_80": 0.0,
+    "eval_map_hires_iou_hatched_80_100": 0.0,
+    "eval_map_hires_iou_sidewalk_0_20": 0.5955887842559503,
+    "eval_map_hires_iou_sidewalk_20_40": 0.5125023843684948,
+    "eval_map_hires_iou_sidewalk_40_60": 0.4411482144295958,
+    "eval_map_hires_iou_sidewalk_60_80": 0.42330589386273293,
+    "eval_map_hires_iou_sidewalk_80_100": 0.40706351258583034,
+    "eval_box3d_prec@gate": 1.0,
+    "eval_box3d_rec@gate": 0.0059,
+    "eval_box3d_ap2m": 0.22867,
+    "eval_agent_prec@gate": null,
+    "eval_agent_rec@gate": 0.0,
+    "eval_agent_ap2m": 0.1341,
+    "eval_box3d_calib_pr_gate": 0.2589,
+    "eval_box3d_calib_prec": 0.2908,
+    "eval_box3d_calib_rec": 0.2908,
+    "eval_box3d_calib_n_pos": 674.0,
+    "eval_box3d_calib_n_windows": 256.0,
+    "eval_agent_calib_pr_gate": 0.23573,
+    "eval_agent_calib_prec": 0.21217,
+    "eval_agent_calib_rec": 0.21217,
+    "eval_agent_calib_n_pos": 674.0,
+    "eval_agent_calib_n_windows": 256.0,
+    "step": 50400
+   },
+   "note": "128 OTHER eval windows (8 batches x 16); calib keys = 256 TRAIN calibration windows (detection_metrics.CALIB_WINDOWS_FILE)"
+  },
+  "detection_display": {
+   "box3d_threshold": 0.2589,
+   "agent_threshold": 0.23573,
+   "source": "metrics.jsonl step 50400 eval_box3d_calib_pr_gate / eval_agent_calib_pr_gate: the P=R operating point (detection_metrics.pr_equal_gate) on 256 TRAIN calibration windows -- not tuned on the rendered clips",
+   "declared_gate": 0.5
+  },
+  "model": {
+   "argv_remap": {
+    "remapped": {
+     "--anchors": {
+      "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+      "local": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+      "source": "kit default",
+      "basename_expected": "refc_anchors_6s_v0cond_alat_117.pt"
+     },
+     "--eval-cache": {
+      "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+      "local": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+      "source": "kit default",
+      "basename_expected": "refcv6-b1-416x1024-eval139"
+     },
+     "--eval-labels": {
+      "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+      "local": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+      "source": "kit default",
+      "basename_expected": "s2_labels_v8_eval.jsonl.gz"
+     },
+     "--speed-max-sidecar-v6-eval": {
+      "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+      "local": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+      "source": "kit default",
+      "basename_expected": "refcv6_speed_max_v8_eval.jsonl"
+     },
+     "--agent-join": {
+      "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+      "local": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+      "source": "kit default",
+      "basename_expected": "b1_train_plus_eval_agents.jsonl.xz"
+     },
+     "--agent-rig-extrinsics": {
+      "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+      "local": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+      "source": "kit default",
+      "basename_expected": "refcv6_train_eval139_extrinsics.json"
+     },
+     "--map-gt-root": {
+      "thor": "/home/nvidia/data/sam3_gt_v3",
+      "local": "/home/nvidia/data/sam3_gt_v3",
+      "source": "kit default",
+      "basename_expected": "sam3_gt_v3"
+     },
+     "--join3d": {
+      "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+      "local": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+      "source": "kit default",
+      "basename_expected": "b1_train_plus_eval_agents_3d.jsonl.xz"
+     },
+     "--vis1-sidecar": {
+      "thor": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+      "local": "/home/nvidia/data/refcv7/vis1_sidecar_refcv6b1_train4369_eval139.npz",
+      "source": "kit default",
+      "basename_expected": "vis1_sidecar_refcv6b1_train4369_eval139.npz"
+     },
+     "--nav-compliance-tau-file": {
+      "thor": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+      "local": "/home/nvidia/data/refcv7/nav_compliance_tau_train.json",
+      "source": "kit default",
+      "basename_expected": "nav_compliance_tau_train.json"
+     },
+     "--map-hires-class-weights": {
+      "thor": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+      "local": "/home/nvidia/data/refcv7/map_hires_class_weights_train_100x30.json",
+      "source": "kit default",
+      "basename_expected": "map_hires_class_weights_train_100x30.json"
+     },
+     "--clip-clock-sidecar": {
+      "thor": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+      "local": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+      "source": "kit default",
+      "basename_expected": "refcv6_clip_clock_sidecar.jsonl"
+     }
+    },
+    "dropped": {
+     "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)"
+    },
+    "train_only_kept_unread": {
+     "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+     "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+     "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+     "--out": "/home/nvidia/refcv7_run/runs/refcv7-r101-s0"
+    },
+    "kit": "/home/nvidia",
+    "overrides_file": null
+   },
+   "departures": [
+    "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+    "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+    "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+   ],
+   "param_breakdown": {
+    "rebuilt": {
+     "core": 90787546,
+     "phi_tac": 2101504,
+     "str_goal_head": 771,
+     "gstr_cond": 66816,
+     "tac_heads": 14364,
+     "tac_latent_proj": 262656,
+     "scorer": 1145,
+     "nav_inject": 50176,
+     "tac_decoder_v6": 2253828,
+     "tac_behaviour_gate_v6": 2574,
+     "total": 100468987
+    },
+    "config_json": {
+     "core": 90787546,
+     "phi_tac": 2101504,
+     "str_goal_head": 771,
+     "gstr_cond": 66816,
+     "tac_heads": 14364,
+     "tac_latent_proj": 262656,
+     "scorer": 1145,
+     "nav_inject": 50176,
+     "tac_decoder_v6": 2253828,
+     "tac_behaviour_gate_v6": 2574,
+     "total": 100468987
+    },
+    "equal": true
+   },
+   "mode": "diffusion",
+   "sampler": "ddim",
+   "decoder_steps": 2,
+   "build_s": 3.9,
+   "map_hires": {
+    "w_map_hires": 1.0,
+    "x_max_m": 100.0,
+    "y_half_m": 30.0,
+    "lift_cell_m": 0.25,
+    "lift_grid_hw": [
+     400,
+     240
+    ],
+    "stride": 8,
+    "heights_m": [
+     0.0,
+     0.5,
+     1.5,
+     2.5
+    ],
+    "d_lift": 64,
+    "d_model": 64,
+    "dilations": [
+     1,
+     2,
+     4,
+     8,
+     16
+    ],
+    "d_up": 32,
+    "norm_groups": 8,
+    "n_classes": 8,
+    "out_hw": [
+     1000,
+     600
+    ],
+    "out_cell_m": 0.1,
+    "band_keys": [
+     "0_20",
+     "20_40",
+     "40_60",
+     "60_80",
+     "80_100"
+    ],
+    "grad_ckpt": true,
+    "class_weights_sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+    "decision_rule": "prior_corrected",
+    "receptive_field_m": 15.75,
+    "near_lift_x_m": 20.0,
+    "near_lift_rows": 200,
+    "near_refine_blocks": 1,
+    "extent": {
+     "x_max_m": 100.0,
+     "y_half_m": 30.0,
+     "fine_shape": [
+      1000,
+      600
+     ],
+     "band_keys": [
+      "0_20",
+      "20_40",
+      "40_60",
+      "60_80",
+      "80_100"
+     ]
+    },
+    "trunk_tap": {
+     "s8_tap": true,
+     "s8_module": "layer2",
+     "s8_dim": 512,
+     "s8_hw": [
+      52,
+      128
+     ],
+     "s8_frame": "newest",
+     "s8_temporal_fusion": null
+    },
+    "bev_source": "map_hires_pool",
+    "planner_crop_m": [
+     60.0,
+     16.0
+    ],
+    "branch_params": {
+     "lift": 131200,
+     "encoder": 406912,
+     "refine": 20936,
+     "near": 65600,
+     "near_refine": 18496,
+     "total": 643144
+    },
+    "lift_valid_mask": true,
+    "lift_bank_n_clips": 4508,
+    "equalize_bottom_rows": 43
+   },
+   "perception": {
+    "w_map": 0.0,
+    "w_box3d": 1.0,
+    "d_bev": 128,
+    "n_queries": 300,
+    "d_model": 256,
+    "bev_tokens_hw": [
+     30,
+     16
+    ],
+    "heights_m": [
+     0.0,
+     0.5,
+     1.5,
+     2.5
+    ],
+    "stride": 16,
+    "use_bev_in_box_head": true,
+    "occ_from_geometry": false,
+    "presence_loss": "focal",
+    "presence_prior": 0.01,
+    "deep_supervision": true,
+    "vis1": true,
+    "query_select": "learned_ref",
+    "bev_encoder": {
+     "d_in": 128,
+     "d_model": 96,
+     "d_out": 96,
+     "dilations": [
+      1,
+      2,
+      4,
+      8
+     ]
+    },
+    "bev_source": "map_hires_pool",
+    "planner_crop_m": [
+     60.0,
+     16.0
+    ],
+    "equalize_bottom_rows": 43,
+    "branch_params": {
+     "lift": 0,
+     "bev_encoder": 0,
+     "map_head": 0,
+     "box_memory": 287744,
+     "box_decoder": 3858199,
+     "bev_pool": 6336,
+     "box_qpos": 131584,
+     "box_refpts": 600,
+     "total": 4284463
+    },
+    "fmap_s16_channels": 1024,
+    "fmap_s16_hw": [
+     26,
+     64
+    ],
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "projection": "cylindrical",
+     "f_ref": 488.92398517830253
+    },
+    "lift_bank_n_clips": 0
+   },
+   "rig_camera": {
+    "source": "extrinsics",
+    "mount_pose": "from-sensor_extrinsics",
+    "mount_pose_scope": "PER-CLIP",
+    "extrinsics_path": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+    "n_clips": 4508,
+    "key": "stable_episode_id(clip_id)",
+    "height_m_min": 1.2031489610671997,
+    "height_m_max": 1.6871625185012817,
+    "height_m_median": 1.3118689060211182,
+    "optical_axis_pitch_rad_min": -0.0755354301422919,
+    "optical_axis_pitch_rad_max": 0.06831051518379166,
+    "frame": {
+     "height": 416,
+     "width": 1024,
+     "f_ref": 488.92398517830253,
+     "projection": "cylindrical"
+    },
+    "image_hw": [
+     416,
+     1024
+    ],
+    "w_project": 0.0,
+    "w_ground": 0.0
+   },
+   "trunk_equalize_as_trained": {
+    "status": "set as trained",
+    "declared_by_pin": 43,
+    "as_trained": 43,
+    "why": "stamped (post-fix record)"
+   },
+   "stamp_checks": {
+    "map_hires.config": {
+     "config_json": {
+      "band_keys": [
+       "0_20",
+       "20_40",
+       "40_60",
+       "60_80",
+       "80_100"
+      ],
+      "class_weights_sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+      "d_lift": 64,
+      "d_model": 64,
+      "d_up": 32,
+      "decision_rule": "prior_corrected",
+      "dilations": [
+       1,
+       2,
+       4,
+       8,
+       16
+      ],
+      "grad_ckpt": true,
+      "heights_m": [
+       0.0,
+       0.5,
+       1.5,
+       2.5
+      ],
+      "lift_cell_m": 0.25,
+      "lift_grid_hw": [
+       400,
+       240
+      ],
+      "n_classes": 8,
+      "near_lift_rows": 200,
+      "near_lift_x_m": 20.0,
+      "near_refine_blocks": 1,
+      "norm_groups": 8,
+      "out_cell_m": 0.1,
+      "out_hw": [
+       1000,
+       600
+      ],
+      "receptive_field_m": 15.75,
+      "stride": 8,
+      "w_map_hires": 1.0,
+      "x_max_m": 100.0,
+      "y_half_m": 30.0
+     },
+     "rebuilt": {
+      "band_keys": [
+       "0_20",
+       "20_40",
+       "40_60",
+       "60_80",
+       "80_100"
+      ],
+      "class_weights_sha256": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+      "d_lift": 64,
+      "d_model": 64,
+      "d_up": 32,
+      "decision_rule": "prior_corrected",
+      "dilations": [
+       1,
+       2,
+       4,
+       8,
+       16
+      ],
+      "grad_ckpt": true,
+      "heights_m": [
+       0.0,
+       0.5,
+       1.5,
+       2.5
+      ],
+      "lift_cell_m": 0.25,
+      "lift_grid_hw": [
+       400,
+       240
+      ],
+      "n_classes": 8,
+      "near_lift_rows": 200,
+      "near_lift_x_m": 20.0,
+      "near_refine_blocks": 1,
+      "norm_groups": 8,
+      "out_cell_m": 0.1,
+      "out_hw": [
+       1000,
+       600
+      ],
+      "receptive_field_m": 15.75,
+      "stride": 8,
+      "w_map_hires": 1.0,
+      "x_max_m": 100.0,
+      "y_half_m": 30.0
+     },
+     "equal": true
+    },
+    "map_hires.trunk_tap": {
+     "config_json": {
+      "s8_dim": 512,
+      "s8_frame": "newest",
+      "s8_hw": [
+       52,
+       128
+      ],
+      "s8_module": "layer2",
+      "s8_tap": true,
+      "s8_temporal_fusion": null
+     },
+     "rebuilt": {
+      "s8_dim": 512,
+      "s8_frame": "newest",
+      "s8_hw": [
+       52,
+       128
+      ],
+      "s8_module": "layer2",
+      "s8_tap": true,
+      "s8_temporal_fusion": null
+     },
+     "equal": true
+    },
+    "map_hires.branch_params": {
+     "config_json": {
+      "encoder": 406912,
+      "lift": 131200,
+      "near": 65600,
+      "near_refine": 18496,
+      "refine": 20936,
+      "total": 643144
+     },
+     "rebuilt": {
+      "encoder": 406912,
+      "lift": 131200,
+      "near": 65600,
+      "near_refine": 18496,
+      "refine": 20936,
+      "total": 643144
+     },
+     "equal": true
+    },
+    "map_hires.bev_source": {
+     "config_json": "map_hires_pool",
+     "rebuilt": "map_hires_pool",
+     "equal": true
+    },
+    "map_hires.planner_crop_m": {
+     "config_json": [
+      60.0,
+      16.0
+     ],
+     "rebuilt": [
+      60.0,
+      16.0
+     ],
+     "equal": true
+    },
+    "map_hires.lift_valid_mask": {
+     "config_json": true,
+     "rebuilt": true,
+     "equal": true
+    },
+    "map_hires.class_weights.sha256": {
+     "config_json": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+     "rebuilt": "d70dec8087ed73ee6d4129b6fc6e0a97a350f826907462b6b251413ede488b67",
+     "equal": true
+    },
+    "map_hires.lift_bank_n_clips": {
+     "config_json": 4508,
+     "rebuilt": 4508,
+     "compared": false
+    },
+    "refcv6_perception.bev_encoder": {
+     "config_json": {
+      "d_in": 128,
+      "d_model": 96,
+      "d_out": 96,
+      "dilations": [
+       1,
+       2,
+       4,
+       8
+      ]
+     },
+     "rebuilt": {
+      "d_in": 128,
+      "d_model": 96,
+      "d_out": 96,
+      "dilations": [
+       1,
+       2,
+       4,
+       8
+      ]
+     },
+     "equal": true
+    },
+    "refcv6_perception.bev_source": {
+     "config_json": "map_hires_pool",
+     "rebuilt": "map_hires_pool",
+     "equal": true
+    },
+    "refcv6_perception.bev_tokens_hw": {
+     "config_json": [
+      30,
+      16
+     ],
+     "rebuilt": [
+      30,
+      16
+     ],
+     "equal": true
+    },
+    "refcv6_perception.branch_params": {
+     "config_json": {
+      "bev_encoder": 0,
+      "bev_pool": 6336,
+      "box_decoder": 3858199,
+      "box_memory": 287744,
+      "box_qpos": 131584,
+      "box_refpts": 600,
+      "lift": 0,
+      "map_head": 0,
+      "total": 4284463
+     },
+     "rebuilt": {
+      "bev_encoder": 0,
+      "bev_pool": 6336,
+      "box_decoder": 3858199,
+      "box_memory": 287744,
+      "box_qpos": 131584,
+      "box_refpts": 600,
+      "lift": 0,
+      "map_head": 0,
+      "total": 4284463
+     },
+     "equal": true
+    },
+    "refcv6_perception.d_bev": {
+     "config_json": 128,
+     "rebuilt": 128,
+     "equal": true
+    },
+    "refcv6_perception.d_model": {
+     "config_json": 256,
+     "rebuilt": 256,
+     "equal": true
+    },
+    "refcv6_perception.deep_supervision": {
+     "config_json": true,
+     "rebuilt": true,
+     "equal": true
+    },
+    "refcv6_perception.equalize_bottom_rows": {
+     "config_json": 43,
+     "rebuilt": 43,
+     "equal": true
+    },
+    "refcv6_perception.fmap_s16_channels": {
+     "config_json": 1024,
+     "rebuilt": 1024,
+     "equal": true
+    },
+    "refcv6_perception.fmap_s16_hw": {
+     "config_json": [
+      26,
+      64
+     ],
+     "rebuilt": [
+      26,
+      64
+     ],
+     "equal": true
+    },
+    "refcv6_perception.frame": {
+     "config_json": {
+      "f_ref": 488.92398517830253,
+      "height": 416,
+      "projection": "cylindrical",
+      "width": 1024
+     },
+     "rebuilt": {
+      "f_ref": 488.92398517830253,
+      "height": 416,
+      "projection": "cylindrical",
+      "width": 1024
+     },
+     "equal": true
+    },
+    "refcv6_perception.heights_m": {
+     "config_json": [
+      0.0,
+      0.5,
+      1.5,
+      2.5
+     ],
+     "rebuilt": [
+      0.0,
+      0.5,
+      1.5,
+      2.5
+     ],
+     "equal": true
+    },
+    "refcv6_perception.n_queries": {
+     "config_json": 300,
+     "rebuilt": 300,
+     "equal": true
+    },
+    "refcv6_perception.occ_from_geometry": {
+     "config_json": false,
+     "rebuilt": false,
+     "equal": true
+    },
+    "refcv6_perception.planner_crop_m": {
+     "config_json": [
+      60.0,
+      16.0
+     ],
+     "rebuilt": [
+      60.0,
+      16.0
+     ],
+     "equal": true
+    },
+    "refcv6_perception.presence_loss": {
+     "config_json": "focal",
+     "rebuilt": "focal",
+     "equal": true
+    },
+    "refcv6_perception.presence_prior": {
+     "config_json": 0.01,
+     "rebuilt": 0.01,
+     "equal": true
+    },
+    "refcv6_perception.query_select": {
+     "config_json": "learned_ref",
+     "rebuilt": "learned_ref",
+     "equal": true
+    },
+    "refcv6_perception.stride": {
+     "config_json": 16,
+     "rebuilt": 16,
+     "equal": true
+    },
+    "refcv6_perception.use_bev_in_box_head": {
+     "config_json": true,
+     "rebuilt": true,
+     "equal": true
+    },
+    "refcv6_perception.vis1": {
+     "config_json": true,
+     "rebuilt": true,
+     "equal": true
+    },
+    "refcv6_perception.w_box3d": {
+     "config_json": 1.0,
+     "rebuilt": 1.0,
+     "equal": true
+    },
+    "refcv6_perception.w_map": {
+     "config_json": 0.0,
+     "rebuilt": 0.0,
+     "equal": true
+    },
+    "seams.nav_compliance_tau_file.sha256": {
+     "config_json": "10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca",
+     "rebuilt": "10ca19db42ed0a49083978a4cb6d0914664d28bc3231ed7058a01d5161e938ca",
+     "equal": true
+    },
+    "seams.nav_compliance_tau_file.tau": {
+     "config_json": 0.18063741505146028,
+     "rebuilt": 0.18063741505146028,
+     "equal": true
+    },
+    "seams.agents.queries": {
+     "config_json": 300,
+     "rebuilt": 300,
+     "equal": true
+    },
+    "seams.trunk_equalize_bottom_rows": {
+     "config_json": 43,
+     "rebuilt": 43,
+     "equal": true
+    },
+    "n_compared": 34
+   },
+   "declared_vs_built": {
+    "mismatches": [],
+    "registry_entries": 221
+   },
+   "state_dict": {
+    "strict": true,
+    "missing": [],
+    "unexpected": [],
+    "n_keys": 1131,
+    "n_map_hires_keys": 54,
+    "step": 50400
+   },
+   "class_weights": [
+    0.14101280272006989,
+    0.20596274733543396,
+    0.93941730260849,
+    1.0740513801574707,
+    2.957174062728882,
+    1.571183204650879,
+    2.152963638305664,
+    0.16493748128414154
+   ]
+  },
+  "equalize_bottom_rows": {
+   "trunk_as_trained": 43,
+   "lift_bank_hires": 43
+  },
+  "dataset": {
+   "n_episodes": 139,
+   "n_windows": 23772,
+   "map_fine": {
+    "root": "/home/nvidia/data/sam3_gt_v3",
+    "n_windows": 23772,
+    "n_clips": 139,
+    "frac_ok": 0.9856133266027259,
+    "frac_ok_upper": 0.9856133266027259,
+    "verdict": "PASS",
+    "states": {
+     "ok": 23430,
+     "no_file": 342,
+     "frame_out_of_range": 0,
+     "inconclusive": 0
+    },
+    "reasons": {
+     "081b986f8888": "FileNotFoundError errno 2",
+     "2aa810802777": "FileNotFoundError errno 2"
+    },
+    "n_stack": 3,
+    "extent": {
+     "x_max_m": 100.0,
+     "y_half_m": 30.0,
+     "fine_shape": [
+      1000,
+      600
+     ],
+     "band_keys": [
+      "0_20",
+      "20_40",
+      "40_60",
+      "60_80",
+      "80_100"
+     ]
+    },
+    "fine_spec": {
+     "x_max_m": 100.0,
+     "y_half_m": 30.0,
+     "cell_m": 0.1,
+     "shape": [
+      1000,
+      600
+     ],
+     "codes": "0-7 class, 255 not seen"
+    }
+   },
+   "agent_join": {
+    "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+    "n_episodes": 139,
+    "n_episodes_joined_stable_id": 139,
+    "n_episodes_joined_legacy_id": 0,
+    "n_ambiguous_legacy_ids_in_join": 0,
+    "id_space": "stable-63bit",
+    "allow_legacy_ids": false,
+    "n_windows": 23772,
+    "n_windows_labelled": 22663,
+    "frac_windows_labelled": 0.9533,
+    "n_windows_labelled_clear": 582,
+    "n_target_boxes_prefilter": 776801,
+    "agent_pad": 397,
+    "reader_max_agents_per_frame": 395,
+    "reader_n_records": 26394,
+    "reader_n_clips": 139,
+    "reader_has_classes": true,
+    "reader_has_occlusion_flags": true,
+    "reader_with_rates": true,
+    "pad_source": "config.json agent_join_stats.train.agent_pad",
+    "load_s": 56.7
+   },
+   "join3d": {
+    "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+    "n_lines": 26394,
+    "n_agents": 905512,
+    "n_clips": 139,
+    "load_s": 66.3
+   },
+   "max_speed_v6": {
+    "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+    "n_rows": 147,
+    "n_valid": 147,
+    "n_over_ceiling": 1,
+    "over_ceiling_frac": 0.006803,
+    "source_md5": "eefc38d1453bd1c73802d44d45affced",
+    "source_labels": "s2_labels_v8_eval.jsonl.gz",
+    "join_key": "sid = stable_episode_id(clip_id)",
+    "ladder_kmh": [
+     30,
+     50,
+     100,
+     120
+    ],
+    "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+    "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+    "channel": "refcv6 4-way one-hot (\u00a75)",
+    "label_md5": "eefc38d1453bd1c73802d44d45affced",
+    "n_windows": 23772,
+    "n_windows_fed": 23772,
+    "window_ceiling_frac": 1.0
+   },
+   "nav": {
+    "n_clips": 139,
+    "follow": 88,
+    "left": 13,
+    "right": 38,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "eefc38d1453bd1c73802d44d45affced",
+    "allow_oracle_nav": true
+   },
+   "labels": {
+    "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+    "md5": "eefc38d1453bd1c73802d44d45affced",
+    "n_records": 147
+   },
+   "label_clock": {
+    "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+    "sidecar": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+    "sidecar_rows": 4483,
+    "n_clips": 139,
+    "n_from_sidecar": 136,
+    "n_pose_dt_grid_start_0": 0,
+    "n_nominal_dt_grid_start_0": 3,
+    "raw_offsets": [
+     2
+    ],
+    "dt_s_median": 0.10066662995966351,
+    "dt_s_min": 0.1,
+    "dt_s_max": 0.10100496421012953,
+    "g3": {
+     "g3": "PASS",
+     "split": "eval",
+     "tol_s": 0.05,
+     "n_clips": 139,
+     "n_reads_checked": 408,
+     "worst_abs_err_s": 0.0,
+     "n_unverified_clips": 3,
+     "tactical_scored_on_clips": 136,
+     "tactical_excluded_clips": 3,
+     "tactical_excluded_sids": [
+      1131054092343061790,
+      6479814750558219472,
+      8549884407071846968
+     ],
+     "tactical_excluded_reason": "no MEASURED label clock (absent from the clip-clock sidecar): their tactical targets cannot be shown within tol_s of the truth",
+     "families_on_all_clips": [
+      "longitudinal",
+      "lateral",
+      "strategic"
+     ],
+     "mode": "per-family: TACTICAL on verified clips only (E2(b))",
+     "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)",
+     "tactical_excluded_sha12": [
+      "081b986f8888",
+      "2aa810802777",
+      "3db625a5f941"
+     ]
+    }
+   },
+   "build_s": 123.5,
+   "label_names": {
+    "tac_lat": [
+     "LANE_KEEP",
+     "LANE_CHANGE_L",
+     "LANE_CHANGE_R",
+     "ABORT_LC",
+     "NUDGE_L",
+     "NUDGE_R",
+     "TURN_L",
+     "TURN_R"
+    ],
+    "tac_lon": [
+     "FOLLOW",
+     "CRUISE",
+     "YIELD_MERGE",
+     "BRAKE_TO",
+     "CREEP",
+     "HOLD",
+     "ADAPT_SPEED_FOR_CURVE",
+     "ACCELERATE"
+    ],
+    "goal": [
+     "FOLLOW_LANE",
+     "TURN_L",
+     "TURN_R",
+     "YIELD_FOR_TURN_L",
+     "YIELD_FOR_TURN_R",
+     "YIELD",
+     "STOP_POINT",
+     "SPEED_BAND",
+     "CORRIDOR_OFFSET",
+     "EVADE_IN_CORRIDOR",
+     "OVERTAKE_VEHICLE",
+     "MERGE",
+     "GAP_TARGET",
+     "REACT_ON_ONCOMING",
+     "TAKE_EXIT_L",
+     "TAKE_EXIT_R",
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "LANE_CHANGE_L",
+     "LANE_CHANGE_R"
+    ]
+   }
+  },
+  "identity_checks": {
+   "map_inter_union_max_abs_diff": 0.0,
+   "det_logit_max_abs_diff": 0.0,
+   "det_xy_max_abs_diff": 0.0,
+   "det_gt_xy_max_abs_diff": 0.0,
+   "traj_vs_fan_max_abs_diff": 0.0,
+   "n_det_packs": 2059,
+   "n_windows_no_agent_label": 0
+  },
+  "compute": {
+   "gpu_forward_s": 793.4,
+   "wall_s": 1609.4,
+   "cuda_max_memory_allocated_gib": 1.426,
+   "device": "NVIDIA Thor"
+  },
+  "extrinsics": {
+   "path": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+   "md5": "3bd70d987d00936c1ac810ffd95facf1"
+  },
+  "departures": [
+   "argv --trunk-compile REMOVED: no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md sec. 10b)",
+   "Thor data paths REMAPPED to the eval kit /home/nvidia for ['--agent-join', '--agent-rig-extrinsics', '--anchors', '--clip-clock-sidecar', '--eval-cache', '--eval-labels', '--join3d', '--map-gt-root', '--map-hires-class-weights', '--nav-compliance-tau-file', '--speed-max-sidecar-v6-eval', '--vis1-sidecar'] (per flag, basename-checked; recorded in argv_remap)",
+   "tactical-goal pos_weight / class mask from config.json tac_goal_stats (the TRAIN split's own constants; train():8483-8497 derives them from the loaded split)"
+  ],
+  "palette": {
+   "class_nocls": 153.3,
+   "class_drivable": 152.9,
+   "class_lane": 165.5,
+   "class_crosswalk": 181.5,
+   "class_arrow": 157.2,
+   "class_edge": 74.8,
+   "class_hatched": 89.2,
+   "class_sidewalk": 116.8,
+   "agent_automobile": 135.3,
+   "agent_heavy_truck": 72.7,
+   "agent_bus": 129.2,
+   "agent_other_vehicle": 184.7,
+   "agent_trailer": 178.2,
+   "agent_person": 187.9,
+   "agent_rider": 95.6,
+   "agent_stroller": 148.8,
+   "agent_animal": 105.3,
+   "agent_protruding_object": 94.4,
+   "fan": 160.6,
+   "orange_vs_amber_L1": 152
+  },
+  "n_windows": 2059,
+  "tool_md5": "189fffcd5a134a199d638ef09aa2f422"
+ },
+ "clip_selection": {
+  "rule": "candidates = eval139 clips whose EVERY eval window has a 10 cm SAM3 GT frame (perception_targets.require_map_coverage, n_ok == n_windows) and a v7 nav token; per nav token (left, right, follow) the pool is split at its median clip-mean measured speed (v0 at each window's NOW) into LOW (<) and HIGH (>=); in each half pick (1) the clip with the most VRU windows (a GT person/rider/stroller within 30 m inside the 120 deg field at NOW), then (2) of the rest the clip with the most lead-vehicle windows (a GT vehicle-class box 0 < x <= 60 m, |y| <= 1.75 m at NOW); ties and an all-zero criterion -> smallest sha12. 12 clips; every eval window of each, in time order. Uses GT/labels only, fixed before any model output is read.",
+  "n_eval_clips": 139,
+  "n_full_coverage": 137,
+  "n_by_nav_full": {
+   "left": 12,
+   "right": 37,
+   "follow": 88
+  },
+  "not_full": [
+   {
+    "sha12": "081b986f8888",
+    "n_windows": 171,
+    "n_map_ok": 0
+   },
+   {
+    "sha12": "2aa810802777",
+    "n_windows": 171,
+    "n_map_ok": 0
+   }
+  ],
+  "token_split": {
+   "left": {
+    "n_pool": 12,
+    "v_mean_median_ms": 7.4948
+   },
+   "right": {
+    "n_pool": 37,
+    "v_mean_median_ms": 7.3712
+   },
+   "follow": {
+    "n_pool": 88,
+    "v_mean_median_ms": 11.8847
+   }
+  },
+  "chosen": [
+   {
+    "sha12": "693335b810c3",
+    "nav": "left",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 5.97,
+    "v_min": 4.3323,
+    "v_max": 6.8244,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 133,
+    "n_lead_win": 11,
+    "slot": "left/low/vru",
+    "why": "nav LEFT, low speed (v_mean < token median 7.5 m/s): most VRU windows (133)"
+   },
+   {
+    "sha12": "a78bf2711918",
+    "nav": "left",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 4.9009,
+    "v_min": 0.0,
+    "v_max": 12.1052,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 76,
+    "n_lead_win": 123,
+    "slot": "left/low/lead",
+    "why": "nav LEFT, low speed (v_mean < token median 7.5 m/s): most LEAD windows (123)"
+   },
+   {
+    "sha12": "f6cfd0a20340",
+    "nav": "left",
+    "n_windows": 177,
+    "n_map_ok": 177,
+    "v_mean": 7.6247,
+    "v_min": 0.5644,
+    "v_max": 10.3248,
+    "n_agent_labelled_win": 177,
+    "n_vru_win": 79,
+    "n_lead_win": 142,
+    "slot": "left/high/vru",
+    "why": "nav LEFT, high speed (v_mean >= token median 7.5 m/s): most VRU windows (79)"
+   },
+   {
+    "sha12": "9855363e1ac1",
+    "nav": "left",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 9.888,
+    "v_min": 0.0,
+    "v_max": 16.1932,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 0,
+    "n_lead_win": 148,
+    "slot": "left/high/lead",
+    "why": "nav LEFT, high speed (v_mean >= token median 7.5 m/s): most LEAD windows (148)"
+   },
+   {
+    "sha12": "0191487845ef",
+    "nav": "right",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 5.3438,
+    "v_min": 0.1606,
+    "v_max": 9.3275,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 171,
+    "n_lead_win": 171,
+    "slot": "right/low/vru",
+    "why": "nav RIGHT, low speed (v_mean < token median 7.4 m/s): most VRU windows (171)"
+   },
+   {
+    "sha12": "9f8bedcfb9de",
+    "nav": "right",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 2.6661,
+    "v_min": 0.0,
+    "v_max": 6.8173,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 171,
+    "n_lead_win": 171,
+    "slot": "right/low/lead",
+    "why": "nav RIGHT, low speed (v_mean < token median 7.4 m/s): most LEAD windows (171)"
+   },
+   {
+    "sha12": "751cdd67811f",
+    "nav": "right",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 8.7331,
+    "v_min": 5.4668,
+    "v_max": 14.8302,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 150,
+    "n_lead_win": 41,
+    "slot": "right/high/vru",
+    "why": "nav RIGHT, high speed (v_mean >= token median 7.4 m/s): most VRU windows (150)"
+   },
+   {
+    "sha12": "49f68312b36e",
+    "nav": "right",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 7.6041,
+    "v_min": 6.606,
+    "v_max": 8.3163,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 39,
+    "n_lead_win": 116,
+    "slot": "right/high/lead",
+    "why": "nav RIGHT, high speed (v_mean >= token median 7.4 m/s): most LEAD windows (116)"
+   },
+   {
+    "sha12": "7f6670448ef6",
+    "nav": "follow",
+    "n_windows": 172,
+    "n_map_ok": 172,
+    "v_mean": 6.5804,
+    "v_min": 5.9613,
+    "v_max": 7.966,
+    "n_agent_labelled_win": 172,
+    "n_vru_win": 172,
+    "n_lead_win": 172,
+    "slot": "follow/low/vru",
+    "why": "nav FOLLOW, low speed (v_mean < token median 11.9 m/s): most VRU windows (172)"
+   },
+   {
+    "sha12": "198bb4517e28",
+    "nav": "follow",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 7.9055,
+    "v_min": 0.0,
+    "v_max": 12.9718,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 84,
+    "n_lead_win": 171,
+    "slot": "follow/low/lead",
+    "why": "nav FOLLOW, low speed (v_mean < token median 11.9 m/s): most LEAD windows (171)"
+   },
+   {
+    "sha12": "e01bd05b8e43",
+    "nav": "follow",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 12.1527,
+    "v_min": 10.893,
+    "v_max": 12.9022,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 104,
+    "n_lead_win": 56,
+    "slot": "follow/high/vru",
+    "why": "nav FOLLOW, high speed (v_mean >= token median 11.9 m/s): most VRU windows (104)"
+   },
+   {
+    "sha12": "37616735658b",
+    "nav": "follow",
+    "n_windows": 171,
+    "n_map_ok": 171,
+    "v_mean": 21.7426,
+    "v_min": 16.3161,
+    "v_max": 25.259,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 0,
+    "n_lead_win": 171,
+    "slot": "follow/high/lead",
+    "why": "nav FOLLOW, high speed (v_mean >= token median 11.9 m/s): most LEAD windows (171)"
+   }
+  ],
+  "selection_s": 7.3,
+  "window": 8
+ },
+ "per_clip": [
+  {
+   "clip_rank": 1,
+   "sha12": "693335b810c3",
+   "nav": "left",
+   "nav_token": "NAV_TURN_L",
+   "slot": "left/low/vru",
+   "why": "nav LEFT, low speed (v_mean < token median 7.5 m/s): most VRU windows (133)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 5.970031994825218,
+    "v_min": 4.332283020019531,
+    "v_max": 6.824403285980225,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 133,
+    "n_lead_win": 11
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.1288,
+    18.2138
+   ],
+   "plan": {
+    "ade_mean_m": 0.6924970760233918,
+    "ade_median_m": 0.4322,
+    "fde6s_mean_m": 2.3027946969696966,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.15801637426900583,
+    "heading_mae_0_2s_deg_mean": 0.37757426900584795,
+    "curv_mae_0_2s_mean": 0.0018588304093567253,
+    "n_windows_plan_exceeds_ceiling": 0
+   },
+   "map_iou_pooled": {
+    "nocls": 0.9006652652647948,
+    "drivable": 0.5896444950671503,
+    "lane": 0.010118373246864867,
+    "crosswalk": 0.02942614394630092,
+    "arrow": null,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.07517085972622377
+   },
+   "map_inter_by_class_band": [
+    [
+     6990946.0,
+     16960791.0,
+     14983572.0,
+     11854829.0,
+     9010768.0
+    ],
+    [
+     1519844.0,
+     1747142.0,
+     1340607.0,
+     1002587.0,
+     668775.0
+    ],
+    [
+     518.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     4454.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     160209.0,
+     42325.0,
+     88.0,
+     0.0,
+     0.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     7900069.0,
+     18525046.0,
+     16735503.0,
+     13227709.0,
+     10008045.0
+    ],
+    [
+     1971508.0,
+     2679756.0,
+     2446331.0,
+     1991538.0,
+     1559580.0
+    ],
+    [
+     13094.0,
+     12646.0,
+     12216.0,
+     8801.0,
+     4437.0
+    ],
+    [
+     24248.0,
+     30740.0,
+     29319.0,
+     29881.0,
+     37174.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     3952.0,
+     4106.0,
+     4568.0,
+     2841.0,
+     99.0
+    ],
+    [
+     179.0,
+     217.0,
+     205.0,
+     214.0,
+     267.0
+    ],
+    [
+     682343.0,
+     746569.0,
+     685375.0,
+     430276.0,
+     150923.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 714,
+    "n_det": 2021,
+    "n_pos_vis1": 931,
+    "recall": 0.7669172932330827,
+    "precision": 0.3532904502721425,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "40/40 = 1.00",
+   "tactical_lon_acc": "36/40 = 0.90",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.5902252197265625,
+    "sel_idx": [
+     67,
+     67
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9979155810317873,
+    "mirror": 0.9979155810317873,
+    "n": 1919
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.363 m, fwd 2.003 m, pitch-down +1.75\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 2,
+   "sha12": "a78bf2711918",
+   "nav": "left",
+   "nav_token": "NAV_TURN_L",
+   "slot": "left/low/lead",
+   "why": "nav LEFT, low speed (v_mean < token median 7.5 m/s): most LEAD windows (123)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 4.900888772409039,
+    "v_min": 0.0,
+    "v_max": 12.105173110961914,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 76,
+    "n_lead_win": 123
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.0792,
+    18.1925
+   ],
+   "plan": {
+    "ade_mean_m": 3.9600754385964914,
+    "ade_median_m": 3.3378,
+    "fde6s_mean_m": 13.573096212121213,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.6742111111111111,
+    "heading_mae_0_2s_deg_mean": 2.5856954198473283,
+    "curv_mae_0_2s_mean": 0.016578702290076335,
+    "n_windows_plan_exceeds_ceiling": 6
+   },
+   "map_iou_pooled": {
+    "nocls": 0.47821683677981774,
+    "drivable": 0.4192599058693616,
+    "lane": 0.012228451465914643,
+    "crosswalk": 0.024468634468300478,
+    "arrow": 0.0002949728203615524,
+    "edge": 8.789895136551022e-06,
+    "hatched": 0.0,
+    "sidewalk": 0.23305406677480509
+   },
+   "map_inter_by_class_band": [
+    [
+     1132708.0,
+     3912484.0,
+     4685117.0,
+     4090515.0,
+     1886724.0
+    ],
+    [
+     3516020.0,
+     5102576.0,
+     1320707.0,
+     170854.0,
+     13478.0
+    ],
+    [
+     7566.0,
+     18.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     57144.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     21.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1605635.0,
+     1988144.0,
+     1332213.0,
+     127776.0,
+     25049.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     2560392.0,
+     8682197.0,
+     11213532.0,
+     7481834.0,
+     2908124.0
+    ],
+    [
+     5624369.0,
+     10728907.0,
+     5746682.0,
+     1537204.0,
+     509280.0
+    ],
+    [
+     184974.0,
+     320295.0,
+     88823.0,
+     20078.0,
+     6023.0
+    ],
+    [
+     362600.0,
+     1756486.0,
+     216312.0,
+     0.0,
+     0.0
+    ],
+    [
+     9324.0,
+     43112.0,
+     16970.0,
+     1660.0,
+     127.0
+    ],
+    [
+     57455.0,
+     89217.0,
+     72912.0,
+     6940.0,
+     1010.0
+    ],
+    [
+     449.0,
+     7682.0,
+     8194.0,
+     0.0,
+     0.0
+    ],
+    [
+     4001273.0,
+     7294256.0,
+     7690386.0,
+     2227695.0,
+     578831.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 194,
+    "n_det": 660,
+    "n_pos_vis1": 914,
+    "recall": 0.212253829321663,
+    "precision": 0.29393939393939394,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "40/40 = 1.00",
+   "tactical_lon_acc": "40/40 = 1.00",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 1.1465330123901367,
+    "sel_idx": [
+     76,
+     76
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9531615925058547,
+    "mirror": 0.7736143637782982,
+    "n": 1281
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.343 m, fwd 2.003 m, pitch-down +1.80\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 3,
+   "sha12": "f6cfd0a20340",
+   "nav": "left",
+   "nav_token": "NAV_TURN_L",
+   "slot": "left/high/vru",
+   "why": "nav LEFT, high speed (v_mean >= token median 7.5 m/s): most VRU windows (79)",
+   "selection": {
+    "n_windows": 177,
+    "v_mean": 7.62470867977304,
+    "v_min": 0.5643581748008728,
+    "v_max": 10.324789047241211,
+    "n_agent_labelled_win": 177,
+    "n_vru_win": 79,
+    "n_lead_win": 142
+   },
+   "n_windows": 177,
+   "t_label_s": [
+    0.7711,
+    18.5136
+   ],
+   "plan": {
+    "ade_mean_m": 3.096885875706215,
+    "ade_median_m": 2.5778,
+    "fde6s_mean_m": 11.074750000000002,
+    "n_fde": 138,
+    "speed_mae_0_2s_mean": 0.4605135593220339,
+    "heading_mae_0_2s_deg_mean": 3.835913142857143,
+    "curv_mae_0_2s_mean": 0.028299529411764706,
+    "n_windows_plan_exceeds_ceiling": 0
+   },
+   "map_iou_pooled": {
+    "nocls": 0.5827694118384629,
+    "drivable": 0.5265433070855424,
+    "lane": 0.0016183637784143755,
+    "crosswalk": 0.0008820935019112026,
+    "arrow": 0.003874388254486134,
+    "edge": 0.00010730534809854923,
+    "hatched": null,
+    "sidewalk": 0.2570760696184819
+   },
+   "map_inter_by_class_band": [
+    [
+     2656556.0,
+     8737934.0,
+     6423148.0,
+     5407504.0,
+     4140931.0
+    ],
+    [
+     2408296.0,
+     2253401.0,
+     1366769.0,
+     927940.0,
+     780654.0
+    ],
+    [
+     348.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     19.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     35.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1609239.0,
+     2917733.0,
+     878986.0,
+     509607.0,
+     407950.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     5040523.0,
+     13661797.0,
+     11274386.0,
+     9619158.0,
+     7362800.0
+    ],
+    [
+     3586550.0,
+     3764669.0,
+     2759294.0,
+     2392736.0,
+     2190813.0
+    ],
+    [
+     60007.0,
+     47692.0,
+     42149.0,
+     37361.0,
+     27823.0
+    ],
+    [
+     1341.0,
+     494.0,
+     523.0,
+     545.0,
+     498.0
+    ],
+    [
+     2186.0,
+     2480.0,
+     238.0,
+     0.0,
+     0.0
+    ],
+    [
+     80612.0,
+     83242.0,
+     65440.0,
+     54577.0,
+     42301.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     4461205.0,
+     7853522.0,
+     5210223.0,
+     4026240.0,
+     3046646.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 497,
+    "n_det": 1586,
+    "n_pos_vis1": 1296,
+    "recall": 0.38348765432098764,
+    "precision": 0.3133669609079445,
+    "n_windows_labelled": 177
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "36/40 = 0.90",
+   "tactical_lon_acc": "0/40 = 0.00",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.5821590423583984,
+    "sel_idx": [
+     58,
+     58
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.998496993987976,
+    "mirror": 0.8867735470941884,
+    "n": 1996
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.297 m, fwd 1.996 m, pitch-down -0.50\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 4,
+   "sha12": "9855363e1ac1",
+   "nav": "left",
+   "nav_token": "NAV_TURN_L",
+   "slot": "left/high/lead",
+   "why": "nav LEFT, high speed (v_mean >= token median 7.5 m/s): most LEAD windows (148)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 9.887976017845958,
+    "v_min": 0.0,
+    "v_max": 16.19317054748535,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 0,
+    "n_lead_win": 148
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.0325,
+    18.1458
+   ],
+   "plan": {
+    "ade_mean_m": 3.6209356725146202,
+    "ade_median_m": 3.5281,
+    "fde6s_mean_m": 15.137721969696969,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.41767192982456136,
+    "heading_mae_0_2s_deg_mean": 0.3980513888888889,
+    "curv_mae_0_2s_mean": 0.001710642857142857,
+    "n_windows_plan_exceeds_ceiling": 0
+   },
+   "map_iou_pooled": {
+    "nocls": 0.2683383630397554,
+    "drivable": 0.4928331404094251,
+    "lane": 0.0590886291629594,
+    "crosswalk": 0.077949941199399,
+    "arrow": 0.03273518129143059,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.5546059991830865
+   },
+   "map_inter_by_class_band": [
+    [
+     897393.0,
+     2840201.0,
+     1111317.0,
+     556653.0,
+     353822.0
+    ],
+    [
+     2513672.0,
+     2413696.0,
+     1475643.0,
+     1125947.0,
+     915522.0
+    ],
+    [
+     21662.0,
+     1781.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     23395.0,
+     3.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     4079.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     3581494.0,
+     7135265.0,
+     5815642.0,
+     4751965.0,
+     3685732.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     2421753.0,
+     7107218.0,
+     4614903.0,
+     3811057.0,
+     3508217.0
+    ],
+    [
+     3949328.0,
+     4878143.0,
+     3177313.0,
+     2700168.0,
+     2429610.0
+    ],
+    [
+     136239.0,
+     92551.0,
+     66864.0,
+     55381.0,
+     45708.0
+    ],
+    [
+     83207.0,
+     60976.0,
+     52447.0,
+     50737.0,
+     52800.0
+    ],
+    [
+     33209.0,
+     22585.0,
+     21534.0,
+     22318.0,
+     24960.0
+    ],
+    [
+     69436.0,
+     69697.0,
+     56263.0,
+     50859.0,
+     43572.0
+    ],
+    [
+     386.0,
+     347.0,
+     289.0,
+     286.0,
+     299.0
+    ],
+    [
+     5866533.0,
+     12070175.0,
+     10076975.0,
+     9073025.0,
+     7936422.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 135,
+    "n_det": 341,
+    "n_pos_vis1": 334,
+    "recall": 0.4041916167664671,
+    "precision": 0.39589442815249265,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 42,
+    "tp": 42
+   },
+   "tactical_lat_acc": "0/40 = 0.00",
+   "tactical_lon_acc": "15/40 = 0.38",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 2.103038787841797,
+    "sel_idx": [
+     85,
+     85
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9989626556016598,
+    "mirror": 0.828838174273859,
+    "n": 1928
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.271 m, fwd 1.802 m, pitch-down -0.16\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 5,
+   "sha12": "0191487845ef",
+   "nav": "right",
+   "nav_token": "NAV_TURN_R",
+   "slot": "right/low/vru",
+   "why": "nav RIGHT, low speed (v_mean < token median 7.4 m/s): most VRU windows (171)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 5.343792247406223,
+    "v_min": 0.16057206690311432,
+    "v_max": 9.327499389648438,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 171,
+    "n_lead_win": 171
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    0.9855,
+    18.0988
+   ],
+   "plan": {
+    "ade_mean_m": 2.3384023391812865,
+    "ade_median_m": 1.8703,
+    "fde6s_mean_m": 7.934713636363637,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.5017807017543859,
+    "heading_mae_0_2s_deg_mean": 0.46336140350877186,
+    "curv_mae_0_2s_mean": 0.0025941520467836258,
+    "n_windows_plan_exceeds_ceiling": 0
+   },
+   "map_iou_pooled": {
+    "nocls": 0.580153201019686,
+    "drivable": 0.4258338206795827,
+    "lane": 0.014273173325365865,
+    "crosswalk": 0.0053397292557781344,
+    "arrow": 0.01933429088865297,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.17812091434969934
+   },
+   "map_inter_by_class_band": [
+    [
+     3821072.0,
+     10966241.0,
+     8891905.0,
+     5596887.0,
+     4394975.0
+    ],
+    [
+     2544504.0,
+     3225323.0,
+     2387842.0,
+     1229903.0,
+     362366.0
+    ],
+    [
+     17744.0,
+     27.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     2302.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     3096.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1329891.0,
+     1696056.0,
+     415321.0,
+     104862.0,
+     29209.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     5279569.0,
+     14427211.0,
+     14949305.0,
+     13087880.0,
+     10294291.0
+    ],
+    [
+     3259320.0,
+     4961370.0,
+     5792898.0,
+     5427540.0,
+     3454982.0
+    ],
+    [
+     112088.0,
+     238000.0,
+     297550.0,
+     376388.0,
+     221037.0
+    ],
+    [
+     61041.0,
+     89420.0,
+     125100.0,
+     118567.0,
+     36980.0
+    ],
+    [
+     22756.0,
+     26071.0,
+     29877.0,
+     35404.0,
+     46022.0
+    ],
+    [
+     26120.0,
+     50469.0,
+     58923.0,
+     71982.0,
+     52001.0
+    ],
+    [
+     309.0,
+     425.0,
+     607.0,
+     594.0,
+     228.0
+    ],
+    [
+     2747556.0,
+     5012495.0,
+     4337048.0,
+     3896217.0,
+     4079223.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 1543,
+    "n_det": 5367,
+    "n_pos_vis1": 3700,
+    "recall": 0.41702702702702704,
+    "precision": 0.28749767095211476,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "0/40 = 0.00",
+   "tactical_lon_acc": "40/40 = 1.00",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 1.3808774948120117,
+    "sel_idx": [
+     76,
+     76
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9693422519509476,
+    "mirror": 0.8885172798216276,
+    "n": 1794
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.348 m, fwd 2.003 m, pitch-down +1.70\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 6,
+   "sha12": "9f8bedcfb9de",
+   "nav": "right",
+   "nav_token": "NAV_TURN_R",
+   "slot": "right/low/lead",
+   "why": "nav RIGHT, low speed (v_mean < token median 7.4 m/s): most LEAD windows (171)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 2.6661219575513178,
+    "v_min": 0.0,
+    "v_max": 6.817263126373291,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 171,
+    "n_lead_win": 171
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    0.9833,
+    18.0684
+   ],
+   "plan": {
+    "ade_mean_m": 1.3645058479532166,
+    "ade_median_m": 1.2022,
+    "fde6s_mean_m": 4.723099242424243,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.28506198830409357,
+    "heading_mae_0_2s_deg_mean": 0.4432962406015037,
+    "curv_mae_0_2s_mean": 0.002697704918032787,
+    "n_windows_plan_exceeds_ceiling": 1
+   },
+   "map_iou_pooled": {
+    "nocls": 0.5393431020358648,
+    "drivable": 0.37857920046050947,
+    "lane": 0.012965564491544334,
+    "crosswalk": 0.005986248412525246,
+    "arrow": 0.0258731314812888,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.18428337176824025
+   },
+   "map_inter_by_class_band": [
+    [
+     2376537.0,
+     8880898.0,
+     6470653.0,
+     7535105.0,
+     3581711.0
+    ],
+    [
+     2823255.0,
+     2826949.0,
+     2096828.0,
+     925642.0,
+     71709.0
+    ],
+    [
+     8251.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     5350.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     2238.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1493783.0,
+     1411057.0,
+     134354.0,
+     85187.0,
+     237.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     4536142.0,
+     14958489.0,
+     16260559.0,
+     13286004.0,
+     4440354.0
+    ],
+    [
+     4287689.0,
+     6267165.0,
+     8238648.0,
+     3456230.0,
+     848164.0
+    ],
+    [
+     142020.0,
+     144784.0,
+     218680.0,
+     111848.0,
+     19046.0
+    ],
+    [
+     123014.0,
+     321744.0,
+     421956.0,
+     27001.0,
+     0.0
+    ],
+    [
+     30811.0,
+     55688.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     39994.0,
+     64129.0,
+     63443.0,
+     17259.0,
+     0.0
+    ],
+    [
+     13.0,
+     41.0,
+     114.0,
+     0.0,
+     0.0
+    ],
+    [
+     3256537.0,
+     6040256.0,
+     4096839.0,
+     3485876.0,
+     75999.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 658,
+    "n_det": 2117,
+    "n_pos_vis1": 1307,
+    "recall": 0.5034429992348891,
+    "precision": 0.3108171941426547,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 59,
+    "tp": 59
+   },
+   "tactical_lat_acc": "40/40 = 1.00",
+   "tactical_lon_acc": "33/40 = 0.82",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.0,
+    "sel_idx": [
+     0,
+     0
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9092284417549168,
+    "mirror": 0.9092284417549168,
+    "n": 1322
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.319 m, fwd 2.029 m, pitch-down +0.69\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 7,
+   "sha12": "751cdd67811f",
+   "nav": "right",
+   "nav_token": "NAV_TURN_R",
+   "slot": "right/high/vru",
+   "why": "nav RIGHT, high speed (v_mean >= token median 7.4 m/s): most VRU windows (150)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 8.733121545691239,
+    "v_min": 5.466752529144287,
+    "v_max": 14.830166816711426,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 150,
+    "n_lead_win": 41
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.0002,
+    18.1136
+   ],
+   "plan": {
+    "ade_mean_m": 1.9369333333333334,
+    "ade_median_m": 1.4671,
+    "fde6s_mean_m": 7.586616666666668,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.30404795321637423,
+    "heading_mae_0_2s_deg_mean": 1.148138596491228,
+    "curv_mae_0_2s_mean": 0.004788538011695907,
+    "n_windows_plan_exceeds_ceiling": 50
+   },
+   "map_iou_pooled": {
+    "nocls": 0.7030444756087018,
+    "drivable": 0.4758927281169955,
+    "lane": 0.01381878582642556,
+    "crosswalk": 0.031248448046988776,
+    "arrow": 0.014748947091339826,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.29334958064739725
+   },
+   "map_inter_by_class_band": [
+    [
+     2805277.0,
+     8162886.0,
+     7572203.0,
+     5231459.0,
+     3592631.0
+    ],
+    [
+     3039728.0,
+     3324350.0,
+     1698321.0,
+     902391.0,
+     608458.0
+    ],
+    [
+     11377.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     23281.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1793.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1420775.0,
+     1856842.0,
+     1005451.0,
+     830162.0,
+     176963.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     3861614.0,
+     11480779.0,
+     11749453.0,
+     7561494.0,
+     4269455.0
+    ],
+    [
+     4321303.0,
+     7344268.0,
+     4940157.0,
+     2548774.0,
+     961897.0
+    ],
+    [
+     148079.0,
+     295081.0,
+     214887.0,
+     121580.0,
+     43962.0
+    ],
+    [
+     256054.0,
+     269635.0,
+     139141.0,
+     79484.0,
+     715.0
+    ],
+    [
+     27064.0,
+     48345.0,
+     22735.0,
+     16397.0,
+     7027.0
+    ],
+    [
+     66649.0,
+     125223.0,
+     82459.0,
+     33848.0,
+     11197.0
+    ],
+    [
+     7828.0,
+     15442.0,
+     12706.0,
+     3464.0,
+     0.0
+    ],
+    [
+     2986278.0,
+     6532971.0,
+     4920899.0,
+     2861841.0,
+     731761.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 365,
+    "n_det": 1134,
+    "n_pos_vis1": 1504,
+    "recall": 0.24268617021276595,
+    "precision": 0.3218694885361552,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "24/40 = 0.60",
+   "tactical_lon_acc": "40/40 = 1.00",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 5.258899688720703,
+    "sel_idx": [
+     58,
+     67
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9994453688297282,
+    "mirror": 0.7265668330560178,
+    "n": 1803
+   },
+   "projector_cross_check_px_max": 5.684341886080802e-14,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.576 m, fwd 2.129 m, pitch-down +0.54\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 8,
+   "sha12": "49f68312b36e",
+   "nav": "right",
+   "nav_token": "NAV_TURN_R",
+   "slot": "right/high/lead",
+   "why": "nav RIGHT, high speed (v_mean >= token median 7.4 m/s): most LEAD windows (116)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 7.60405963763856,
+    "v_min": 6.606044769287109,
+    "v_max": 8.31628704071045,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 39,
+    "n_lead_win": 116
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.0956,
+    18.2092
+   ],
+   "plan": {
+    "ade_mean_m": 0.9877906432748537,
+    "ade_median_m": 0.7141,
+    "fde6s_mean_m": 3.4884749999999998,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.20338538011695906,
+    "heading_mae_0_2s_deg_mean": 0.4069222222222222,
+    "curv_mae_0_2s_mean": 0.0015640935672514619,
+    "n_windows_plan_exceeds_ceiling": 39
+   },
+   "map_iou_pooled": {
+    "nocls": 0.6161391720943276,
+    "drivable": 0.564488614154114,
+    "lane": 0.005565892727125637,
+    "crosswalk": 0.12857507345618555,
+    "arrow": 0.14293695874848683,
+    "edge": 0.0,
+    "hatched": null,
+    "sidewalk": 0.3648419911220766
+   },
+   "map_inter_by_class_band": [
+    [
+     2929177.0,
+     9096610.0,
+     7772854.0,
+     6207833.0,
+     4583603.0
+    ],
+    [
+     2044196.0,
+     2572371.0,
+     2321318.0,
+     2039568.0,
+     1680153.0
+    ],
+    [
+     344.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     15605.0,
+     17.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     4603.0,
+     2.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1931564.0,
+     3515420.0,
+     2612260.0,
+     1833090.0,
+     1447865.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     5051993.0,
+     13192762.0,
+     12864678.0,
+     10672858.0,
+     7865708.0
+    ],
+    [
+     2935823.0,
+     4222064.0,
+     4353642.0,
+     3860910.0,
+     3507669.0
+    ],
+    [
+     28879.0,
+     17118.0,
+     6520.0,
+     4855.0,
+     4433.0
+    ],
+    [
+     37761.0,
+     34683.0,
+     32587.0,
+     16470.0,
+     0.0
+    ],
+    [
+     19533.0,
+     12684.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     46408.0,
+     64458.0,
+     53397.0,
+     39412.0,
+     30346.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     4167524.0,
+     8045267.0,
+     7707962.0,
+     6133924.0,
+     5027817.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 556,
+    "n_det": 1769,
+    "n_pos_vis1": 1609,
+    "recall": 0.34555624611559976,
+    "precision": 0.31430186546071226,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "40/40 = 1.00",
+   "tactical_lon_acc": "0/40 = 0.00",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.28237342834472656,
+    "sel_idx": [
+     58,
+     58
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9974066390041494,
+    "mirror": 0.9662863070539419,
+    "n": 1928
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.320 m, fwd 2.010 m, pitch-down -0.51\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 9,
+   "sha12": "7f6670448ef6",
+   "nav": "follow",
+   "nav_token": "NAV_FOLLOW_ROAD",
+   "slot": "follow/low/vru",
+   "why": "nav FOLLOW, low speed (v_mean < token median 11.9 m/s): most VRU windows (172)",
+   "selection": {
+    "n_windows": 172,
+    "v_mean": 6.580353301624919,
+    "v_min": 5.961287498474121,
+    "v_max": 7.966009616851807,
+    "n_agent_labelled_win": 172,
+    "n_vru_win": 172,
+    "n_lead_win": 172
+   },
+   "n_windows": 172,
+   "t_label_s": [
+    1.0597,
+    18.2449
+   ],
+   "plan": {
+    "ade_mean_m": 1.6233877906976746,
+    "ade_median_m": 1.23555,
+    "fde6s_mean_m": 6.064414285714286,
+    "n_fde": 133,
+    "speed_mae_0_2s_mean": 0.30279011627906977,
+    "heading_mae_0_2s_deg_mean": 0.4329319767441861,
+    "curv_mae_0_2s_mean": 0.0015935465116279073,
+    "n_windows_plan_exceeds_ceiling": 10
+   },
+   "map_iou_pooled": {
+    "nocls": 0.6082546945532525,
+    "drivable": 0.5282293927352172,
+    "lane": 0.07013373395690836,
+    "crosswalk": 0.02599163413870393,
+    "arrow": 0.06469388156729489,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.3666928378132705
+   },
+   "map_inter_by_class_band": [
+    [
+     2540134.0,
+     7990621.0,
+     6084898.0,
+     4081464.0,
+     3058882.0
+    ],
+    [
+     3075226.0,
+     4083471.0,
+     3672692.0,
+     2729537.0,
+     1178329.0
+    ],
+    [
+     56950.0,
+     50.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     70429.0,
+     41.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     9862.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     2183066.0,
+     3703579.0,
+     2044319.0,
+     814096.0,
+     267034.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     3392473.0,
+     10193214.0,
+     9683804.0,
+     8621169.0,
+     7165346.0
+    ],
+    [
+     3954119.0,
+     6529830.0,
+     6888975.0,
+     6079367.0,
+     4450842.0
+    ],
+    [
+     195602.0,
+     215207.0,
+     189130.0,
+     138947.0,
+     73847.0
+    ],
+    [
+     287084.0,
+     594706.0,
+     660150.0,
+     673832.0,
+     495485.0
+    ],
+    [
+     41758.0,
+     44644.0,
+     36790.0,
+     22115.0,
+     7134.0
+    ],
+    [
+     53900.0,
+     92549.0,
+     82551.0,
+     62894.0,
+     38829.0
+    ],
+    [
+     47426.0,
+     101577.0,
+     117361.0,
+     130526.0,
+     120767.0
+    ],
+    [
+     3434717.0,
+     7092785.0,
+     6686922.0,
+     4702557.0,
+     2659703.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 599,
+    "n_det": 2073,
+    "n_pos_vis1": 1785,
+    "recall": 0.3355742296918767,
+    "precision": 0.28895320791123974,
+    "n_windows_labelled": 172
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "6/39 = 0.15",
+   "tactical_lon_acc": "0/39 = 0.00",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.6425933837890625,
+    "sel_idx": [
+     67,
+     67
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 0.9984488107549121,
+    "mirror": 0.7083764219234746,
+    "n": 1934
+   },
+   "projector_cross_check_px_max": 0.0,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.292 m, fwd 1.996 m, pitch-down -0.45\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 10,
+   "sha12": "198bb4517e28",
+   "nav": "follow",
+   "nav_token": "NAV_FOLLOW_ROAD",
+   "slot": "follow/low/lead",
+   "why": "nav FOLLOW, low speed (v_mean < token median 11.9 m/s): most LEAD windows (171)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 7.905533646805244,
+    "v_min": 0.0,
+    "v_max": 12.9718017578125,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 84,
+    "n_lead_win": 171
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.009,
+    18.1224
+   ],
+   "plan": {
+    "ade_mean_m": 1.5024532163742688,
+    "ade_median_m": 0.8615,
+    "fde6s_mean_m": 5.960976515151515,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.24045555555555556,
+    "heading_mae_0_2s_deg_mean": 0.18505073529411767,
+    "curv_mae_0_2s_mean": 0.00099206106870229,
+    "n_windows_plan_exceeds_ceiling": 0
+   },
+   "map_iou_pooled": {
+    "nocls": 0.5530451296680002,
+    "drivable": 0.5907586302048038,
+    "lane": 0.0,
+    "crosswalk": null,
+    "arrow": null,
+    "edge": 0.0,
+    "hatched": null,
+    "sidewalk": 0.31789442890547925
+   },
+   "map_inter_by_class_band": [
+    [
+     2130907.0,
+     7877796.0,
+     4299172.0,
+     3274015.0,
+     2576355.0
+    ],
+    [
+     2987997.0,
+     2880486.0,
+     2183857.0,
+     1671695.0,
+     1194558.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     1797782.0,
+     2175602.0,
+     1133805.0,
+     544161.0,
+     338379.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     4347822.0,
+     12239080.0,
+     7935888.0,
+     6634577.0,
+     5292181.0
+    ],
+    [
+     4302294.0,
+     5148445.0,
+     3820823.0,
+     2907136.0,
+     2303627.0
+    ],
+    [
+     2161.0,
+     1007.0,
+     518.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     59303.0,
+     62641.0,
+     41077.0,
+     26585.0,
+     17433.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     3544294.0,
+     5652029.0,
+     3985982.0,
+     3225311.0,
+     2434265.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 773,
+    "n_det": 2189,
+    "n_pos_vis1": 1344,
+    "recall": 0.5751488095238095,
+    "precision": 0.353129282777524,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 56,
+    "tp": 56
+   },
+   "tactical_lat_acc": "40/40 = 1.00",
+   "tactical_lon_acc": "34/40 = 0.85",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.6698074340820312,
+    "sel_idx": [
+     67,
+     67
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 1.0,
+    "mirror": 1.0,
+    "n": 1928
+   },
+   "projector_cross_check_px_max": 2.842170943040401e-14,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.292 m, fwd 2.025 m, pitch-down +0.51\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 11,
+   "sha12": "e01bd05b8e43",
+   "nav": "follow",
+   "nav_token": "NAV_FOLLOW_ROAD",
+   "slot": "follow/high/vru",
+   "why": "nav FOLLOW, high speed (v_mean >= token median 11.9 m/s): most VRU windows (104)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 12.152735074361166,
+    "v_min": 10.892979621887207,
+    "v_max": 12.902223587036133,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 104,
+    "n_lead_win": 56
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    1.0676,
+    18.1809
+   ],
+   "plan": {
+    "ade_mean_m": 0.8661532163742692,
+    "ade_median_m": 0.799,
+    "fde6s_mean_m": 2.8016931818181816,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.14567426900584796,
+    "heading_mae_0_2s_deg_mean": 0.7084286549707604,
+    "curv_mae_0_2s_mean": 0.0010966081871345028,
+    "n_windows_plan_exceeds_ceiling": 4
+   },
+   "map_iou_pooled": {
+    "nocls": 0.6744962840935912,
+    "drivable": 0.732203047311585,
+    "lane": 0.0699303199861919,
+    "crosswalk": 0.05470738341228563,
+    "arrow": 0.05181290393252273,
+    "edge": 0.0,
+    "hatched": 0.0,
+    "sidewalk": 0.6672325531833418
+   },
+   "map_inter_by_class_band": [
+    [
+     1133286.0,
+     5013907.0,
+     4668949.0,
+     3892930.0,
+     3174424.0
+    ],
+    [
+     3985717.0,
+     4548144.0,
+     4221391.0,
+     3950352.0,
+     3707629.0
+    ],
+    [
+     90476.0,
+     10748.0,
+     470.0,
+     0.0,
+     0.0
+    ],
+    [
+     16243.0,
+     29.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     2365.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     3056078.0,
+     7734493.0,
+     7188345.0,
+     6029600.0,
+     4898509.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     1637338.0,
+     6393851.0,
+     6534087.0,
+     6173883.0,
+     5774695.0
+    ],
+    [
+     4699104.0,
+     6098782.0,
+     6018180.0,
+     5744816.0,
+     5318315.0
+    ],
+    [
+     269493.0,
+     323022.0,
+     316113.0,
+     290233.0,
+     255358.0
+    ],
+    [
+     53031.0,
+     58466.0,
+     59132.0,
+     61335.0,
+     65473.0
+    ],
+    [
+     7794.0,
+     9521.0,
+     9402.0,
+     9296.0,
+     9632.0
+    ],
+    [
+     40715.0,
+     59591.0,
+     55039.0,
+     48077.0,
+     41063.0
+    ],
+    [
+     4431.0,
+     16194.0,
+     16301.0,
+     17014.0,
+     17993.0
+    ],
+    [
+     4010079.0,
+     10365246.0,
+     10585907.0,
+     9747524.0,
+     8615007.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 190,
+    "n_det": 670,
+    "n_pos_vis1": 887,
+    "recall": 0.21420518602029312,
+    "precision": 0.2835820895522388,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "0/40 = 0.00",
+   "tactical_lon_acc": "29/40 = 0.72",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.6177597045898438,
+    "sel_idx": [
+     67,
+     67
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 1.0,
+    "mirror": 0.9464935064935065,
+    "n": 1925
+   },
+   "projector_cross_check_px_max": 2.842170943040401e-14,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.578 m, fwd 2.129 m, pitch-down +1.41\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  },
+  {
+   "clip_rank": 12,
+   "sha12": "37616735658b",
+   "nav": "follow",
+   "nav_token": "NAV_FOLLOW_ROAD",
+   "slot": "follow/high/lead",
+   "why": "nav FOLLOW, high speed (v_mean >= token median 11.9 m/s): most LEAD windows (171)",
+   "selection": {
+    "n_windows": 171,
+    "v_mean": 21.74257575141059,
+    "v_min": 16.316091537475586,
+    "v_max": 25.259037017822266,
+    "n_agent_labelled_win": 171,
+    "n_vru_win": 0,
+    "n_lead_win": 171
+   },
+   "n_windows": 171,
+   "t_label_s": [
+    0.9902,
+    18.1035
+   ],
+   "plan": {
+    "ade_mean_m": 2.298754385964912,
+    "ade_median_m": 1.7717,
+    "fde6s_mean_m": 9.378355303030304,
+    "n_fde": 132,
+    "speed_mae_0_2s_mean": 0.30893918128654974,
+    "heading_mae_0_2s_deg_mean": 0.3035204678362573,
+    "curv_mae_0_2s_mean": 0.0002737426900584795,
+    "n_windows_plan_exceeds_ceiling": 0
+   },
+   "map_iou_pooled": {
+    "nocls": 0.8821657319773463,
+    "drivable": 0.7220914870066257,
+    "lane": 0.03113248391480701,
+    "crosswalk": null,
+    "arrow": 0.0,
+    "edge": 0.0,
+    "hatched": null,
+    "sidewalk": 0.06901154195998584
+   },
+   "map_inter_by_class_band": [
+    [
+     5345230.0,
+     14486001.0,
+     14441316.0,
+     13857209.0,
+     12495646.0
+    ],
+    [
+     3151288.0,
+     3971621.0,
+     3835368.0,
+     3654707.0,
+     3172390.0
+    ],
+    [
+     45051.0,
+     2552.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     141536.0,
+     59588.0,
+     14967.0,
+     4727.0,
+     1255.0
+    ]
+   ],
+   "map_union_by_class_band": [
+    [
+     6246315.0,
+     15659079.0,
+     15827650.0,
+     15703994.0,
+     15286332.0
+    ],
+    [
+     3746574.0,
+     4802587.0,
+     4896544.0,
+     5363347.0,
+     5821309.0
+    ],
+    [
+     259318.0,
+     328177.0,
+     321948.0,
+     313273.0,
+     306330.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     196.0,
+     333.0,
+     356.0,
+     385.0,
+     206.0
+    ],
+    [
+     14004.0,
+     21549.0,
+     22911.0,
+     20919.0,
+     18091.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     629034.0,
+     809785.0,
+     666870.0,
+     580543.0,
+     531679.0
+    ]
+   ],
+   "boxes_box3d_at_display_thr": {
+    "thr": 0.2589,
+    "tp": 155,
+    "n_det": 400,
+    "n_pos_vis1": 878,
+    "recall": 0.1765375854214123,
+    "precision": 0.3875,
+    "n_windows_labelled": 171
+   },
+   "boxes_box3d_at_gate_0p5": {
+    "n_det": 0,
+    "tp": 0
+   },
+   "tactical_lat_acc": "22/40 = 0.55",
+   "tactical_lon_acc": "16/40 = 0.40",
+   "draw_independence": {
+    "seeds": [
+     0,
+     1
+    ],
+    "traj_max_abs_diff_m": 0.5061264038085938,
+    "sel_idx": [
+     67,
+     67
+    ],
+    "map_logits_max_abs_diff": 0.0,
+    "box_presence_max_abs_diff": 0.0
+   },
+   "orientation_control": {
+    "file": 1.0,
+    "mirror": 1.0,
+    "n": 1485
+   },
+   "projector_cross_check_px_max": 2.842170943040401e-14,
+   "rebuilt_rigcamera_vs_model_max_px": 0.0,
+   "camera": {
+    "label": "416x1024 cylindrical f_ref 488.924 \u00b7 cam h 1.286 m, fwd 1.802 m, pitch-down -0.45\u00b0 (MEASURED per-clip)",
+    "codec": "png"
+   },
+   "estimator": "plain means over the clip's windows; IoU pooled sum/sum; no interval (one episode)"
+  }
+ ],
+ "metric_definitions": {
+  "ade_m": "mean L2 over the VALID of the 8 emitted slots (0.5,1,1.5,2,3,4,5,6 s) between out['traj'] and refb_labels.waypoint_targets(pose_last, future_poses_ext, horizons)",
+  "fde_m": "L2 at the 6 s slot (only when valid)",
+  "speed/heading/curvature": "taniteval.four_families._seq_geometry on the first 4 slots (0.5 s grid), plan vs GT, masked as that function masks",
+  "map_iou": "map_head_hires.per_class_signal inter/union under the declared rule prior_corrected on seen & lift-valid cells; per window == the trainer's eval extras (identity-checked)",
+  "boxes": "tanitad.eval.detection_metrics.greedy_rows (greedy 2 m, VIS-1 positives, IGNORE = DontCare) on the trainer's own eval pack _det_pack_box3d",
+  "tactical": "argmax of out['tacv6_lat_logits'/'tacv6_lon_logits'] vs item['lat_v7'/'lon_v7']",
+  "plan_exceeds_ceiling": "refcv6_selection.planned_max_speed(out['traj']) > limit_ms_of_bin(the model's own max_speed_1h_v6 bin)"
+ },
+ "unavailable": {
+  "strategic": "--no-strategic: the strategic level is OFF in this arm; PhysicalAI-AV carries no strategic label (four_families.STRATEGIC_UNAVAILABLE_REASON)",
+  "interval": "no interval: the windows of one clip are one episode"
+ },
+ "video": {
+  "path": "/home/nvidia/refcv7_post/video/out/final/refcv7_final_50400_reel.mp4",
+  "bytes": 155934453,
+  "md5": "9ce0ca03335fa0e4dd4116d8b406e47d",
+  "frames": 2579,
+  "decoded_frames": 2579,
+  "fps": 10,
+  "duration_s": 257.9,
+  "resolution": "1920x1080",
+  "codec": "libx264 yuv420p (PyAV 18.1.0)",
+  "crf": 18,
+  "preset": "slow",
+  "open_card_frames": 100,
+  "title_frames_per_clip": 35,
+  "render_encode_s": 108.3
+ },
+ "preview": {
+  "path": "/home/nvidia/refcv7_post/video/out/final/refcv7_final_50400_preview.mp4",
+  "bytes": 12952054,
+  "md5": "70bdf9f8c5ff8d57415f580d40731ca1",
+  "frames": 2579,
+  "resolution": "1280x720",
+  "target_bitrate_bps": 409461,
+  "limit_bytes": 15000000
+ },
+ "keyframes": [
+  "c01_w0027.png",
+  "c01_w0103.png",
+  "c02_w0027.png",
+  "c02_w0103.png",
+  "c03_w0027.png",
+  "c03_w0107.png",
+  "c04_w0027.png",
+  "c04_w0103.png",
+  "c05_w0027.png",
+  "c05_w0103.png",
+  "c06_w0027.png",
+  "c06_w0103.png",
+  "c07_w0027.png",
+  "c07_w0103.png",
+  "c08_w0027.png",
+  "c08_w0103.png",
+  "c09_w0027.png",
+  "c09_w0104.png",
+  "c10_w0027.png",
+  "c10_w0103.png",
+  "c11_w0027.png",
+  "c11_w0103.png",
+  "c12_w0027.png",
+  "c12_w0103.png",
+  "card_opening.png",
+  "card_title_clip01.png"
+ ],
+ "compute": {
+  "render_wall_s": 236.7,
+  "workers": 8,
+  "forward_gpu_s": 793.4,
+  "forward_wall_s": 1609.4,
+  "cuda_max_memory_allocated_gib": 1.426
+ },
+ "finished_utc": "2026-10-03T23:43:27Z"
+}

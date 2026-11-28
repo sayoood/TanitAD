@@ -1,0 +1,63 @@
+2026-11-23T18:06:43Z chain start readout=causal_g1x (decl token causal_g1x; bank flags: --readout causal_g --acc-gain 1 --path-exec --kappa-max 0.2) arms B0_s2 RH_s2 (tree_cdb 97fe0a56) KI_s2 (tree_ki 4097a89e); the s2 bank by UE_s2.A
+2026-11-23T18:06:43Z validate kit
+kit: 16 files match SHA256_S3.txt
+2026-11-23T18:06:43Z validate shared
+shared: 17 pod files match the pins
+2026-11-23T18:06:43Z validate trees
+/root/rollhist/tree_cdb: 3408 blobs verified
+/root/rollhist/tree_ki: 3425 blobs verified
+2026-11-23T18:06:45Z validate gsuite
+gsuite_result_rh.json: new 97fe0a56 n_regressions 0 new_test_failures 0 missing 0 -> VALID
+gsuite_result_ki.json: new 4097a89e n_regressions 0 new_test_failures 0 missing 0 -> VALID
+2026-11-23T18:06:45Z validate ue2
+UE_s2.A: sha256 6d4345258e07dee15b1c5171268182967189df1cdc13b89b81d26aae71c3f327, 86970901 B
+2026-11-23T18:06:45Z validate inputs
+2026-11-23T18:06:45Z validate argv
+B0_s2: 52 tokens; differs from B0_s0 in [('--seed', '0', '2'), ('--out', '/root/rollhist/runs/B0_s0/train', '/root/rollhist/runs/B0_s2/train'), ('--init-ckpt', '/root/dscale10k/runs/UE_s0/A/ckpt_last.pt', '/root/dscale10k/runs/UE_s2/A/ckpt_last.pt')] and the appended []; argv sha256 41e4b3dd6bc3bd33e94b668db3488d492e3f991aba8bf0ce12b56b106eab4915
+ZZ S3-ARGV SHOW PASS
+RH_s2: 62 tokens; differs from RH_s0 in [('--seed', '0', '2'), ('--out', '/root/rollhist/runs/RH_s0/train', '/root/rollhist/runs/RH_s2/train'), ('--init-ckpt', '/root/dscale10k/runs/UE_s0/A/ckpt_last.pt', '/root/dscale10k/runs/UE_s2/A/ckpt_last.pt'), ('--dagger-bank', '/root/rollhist/bank/s0', '/root/rollhist/bank/s2'), ('--dagger-bank-sha256', 'e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf', '@BANKSHA@'), ('--dagger-seed', '0', '2')] and the appended []; argv sha256 72d6398f748e8e3b18976a349bb75110fb602534fd08548f9bc844f66e054cc6
+ZZ S3-ARGV SHOW PASS
+KI_s2: 64 tokens; differs from RH_s0 in [('--seed', '0', '2'), ('--out', '/root/rollhist/runs/RH_s0/train', '/root/rollhist/runs/KI_s2/train'), ('--init-ckpt', '/root/dscale10k/runs/UE_s0/A/ckpt_last.pt', '/root/dscale10k/runs/UE_s2/A/ckpt_last.pt'), ('--dagger-bank', '/root/rollhist/bank/s0', '/root/rollhist/bank/s2'), ('--dagger-bank-sha256', 'e5e44c0156ebc774e3551a54f589dc4fec19a68dc85c2c9838f7ecc0592662cf', '@BANKSHA@'), ('--dagger-seed', '0', '2')] and the appended ['--dagger-base', 'logged']; argv sha256 d4bdaddfff18575dd0f584456bf4943c8fbdd961c5422d59f8214869f3fab99d
+ZZ S3-ARGV SHOW PASS
+/root/rollhist/kit_s3/U_s2.B.tmpl.json equals the template built from U_s1 (sha256=4eeb5dde5d4d1326bc2e048b3bacc977058b9dda45f45b04dffb722278436fd3)
+ZZ S3-ARGV TEMPLATE PASS
+2026-11-23T18:06:45Z validate gate_inputs
+ZZ S3-INPUTS-PRECHECK OK B0_s2
+ZZ S3-INPUTS-PRECHECK OK RH_s2
+ZZ S3-INPUTS-PRECHECK OK KI_s2
+2026-11-23T18:06:45Z waiting for the GPU queue lock
+2026-11-23T18:06:45Z GPU queue lock held to the end of the chain
+2026-11-23T18:06:45Z LOCK-START epoch=1795457205 utc=2026-11-23T18:06:45Z (return line 4.0 pod-h = 14400 s of lock: epoch 1795471605)
+2026-11-23T18:06:45Z step tree (lock held 0 s)
+/root/rollhist/tree_cdb: 3408 blobs verified
+/root/rollhist/tree_ki: 3425 blobs verified
+2026-11-23T18:06:47Z step disk0 (lock held 2 s)
+2026-11-23T18:06:47Z free disk 46 GB (need 20)
+2026-11-23T18:06:47Z step render_b0 (lock held 2 s)
+2026-11-23T18:06:47Z free disk 46 GB (need 20)
+2026-11-23T18:06:47Z step B0_s2 (lock held 2 s)
+2026-11-23T18:06:47Z arm B0_s2
+18:06:49 selfcheck B0_s2
+18:08:19 train B0_s2
+ZZ ARM B0_s2 DONE ZZ
+2026-11-23T18:21:44Z step bank_s2 (lock held 899 s)
+2026-11-23T18:21:44Z free disk 49 GB (need 30)
+2026-11-23T18:21:44Z bank s2: n_shards 4 parallel, 14512 clips, 985048 windows, ckpt UE_s2.A, flags [--readout causal_g --acc-gain 1 --path-exec --kappa-max 0.2]
+{"generator_ckpt_sha256": "6d4345258e07dee15b1c5171268182967189df1cdc13b89b81d26aae71c3f327", "coverage_fraction": 0.79599674330591, "partial": false, "n_windows": 985048}
+ZZ S3-BANK-CHECK PASS
+2026-11-23T20:19:08Z step render_rhki (lock held 7943 s)
+2026-11-23T20:19:08Z free disk 47 GB (need 20)
+2026-11-23T20:19:08Z step RH_s2 (lock held 7943 s)
+2026-11-23T20:19:08Z arm RH_s2
+20:19:10 selfcheck RH_s2
+20:21:07 train RH_s2
+ZZ ARM RH_s2 DONE ZZ
+2026-11-23T20:36:48Z free disk 46 GB (need 20)
+2026-11-23T20:36:48Z step KI_s2 (lock held 9003 s)
+2026-11-23T20:36:48Z arm KI_s2
+20:36:50 selfcheck KI_s2
+probe: base_source ['logged'] rows_changed.base [0] n_selected_at_p1 [56]
+20:38:43 train KI_s2
+ZZ ARM KI_s2 DONE ZZ
+2026-11-23T20:52:28Z free disk 46 GB at the end; lock held 9943 s; s2 bank kept: 2.0G	/root/rollhist/bank/s2 
+ZZ ROLLHIST-S3 DONE ZZ

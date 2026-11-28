@@ -1,0 +1,1027 @@
+--- a/dagq/box2_ship/v8f_dag_chain_checks.py
++++ b/dagq/box2_ship/v8f_dag_chain_checks.py
+@@ -15,6 +15,16 @@
+         max_rel_transform_err_m both finite and <= 1e-4 (dag_read.py g_kb4 / g_kb5), a MISSING record being a failed control; only with every control passing does COVERAGE decide: the eligible fraction of TRAIN windows >= 0.5 (inclusive) at BOTH seeds, else BLOCKED (no gate, no training). The fraction is recomputed
+         here from n_eligible / n_windows; the bank's own `blocked` flag must agree with it.
+         exit 0 = PASS | 3 = BLOCKED | 2 = REFUSED. Everything it saw is printed as one JSON line `ZZDAG-JUDGE {...}`.
++
++    bank-files DIR [--kind all|small|provenance|manifest|shard_provenance|shard_npz|stage_log] [--expect-shards 4]
++        The file names the chain PUBLISHES to the dev box for the bank in DIR, one per line, derived from DIR/bank.json (n_shards, shards[].file) and DIR/PROVENANCE.json (shard_provenance): the FOUR kinds the dev-box reader
++        (dag_read.py load_bank) needs -- PROVENANCE.json, bank.json, the shard provenance files, the shard .npz files (the only place the bank's clips are named: K-B3.1) -- and bank_stage.log. `small` = all but the npz (what the
++        judge reads). rc 2 + a reason on stderr if the bank cannot be named (unreadable, n_shards != 4, names that are not the generator's).
++    bank-verify DIR [--require-sums] [--expect-shards 4]
++        The PUBLISHED directory, by content: every file present and non-empty, bank.json == PROVENANCE.bank_sha256, every shard npz == bank.json's and its shard provenance's file_sha256; with --require-sums SHA256SUMS.txt must list
++        EXACTLY those files (11 for 4 shards) with the right hashes. One JSON line `ZZDAG-BANKFILES {...}`; rc 0 / 2.
++    bank-plan
++        The planned file names and the ESTIMATED sizes (printed by the chain's --dry-run).
+ """
+ from __future__ import annotations
+ 
+@@ -23,6 +33,7 @@
+ import json
+ import math
+ import os
++import re
+ import sys
+ 
+ SCHEMA = "v8f-dagger-bank-v1"
+@@ -197,9 +208,174 @@
+     return rc, res
+ 
+ 
++# ---------------------------------------------------------------------------------------------------------------- the bank files the chain PUBLISHES to the dev box
++# The dev-box reader (dag_read.py load_bank) needs, per seed, FOUR kinds of file in one directory: PROVENANCE.json (`bank.{s}.report`), bank.json (`bank_file`; its sha256 IS the bank's identity), the shard provenance
++# files, and the shard .npz files (their `header_json` member is the ONLY place the bank's clips are listed by name: K-B3.1). The stage log is published beside them (audit; the reader does not read it).
++# The judge (above) reads only the small files, so the chain pulls those first, judges, and pulls the shard npz ONLY after the judge passed (a REFUSED / BLOCKED bank is never moved).
++BANK_SHARDS = 4                                       # `bankdag` runs `bank --n-shards 4` (mutant 14 of mutate_dag_queue.py pins it)
++BANK_KINDS = ("provenance", "manifest", "shard_provenance", "shard_npz", "stage_log")
++# ESTIMATE basis: the 12-clip smoke bank (smoke_kb45: 804 windows, 1,608 records = 2 ticks per window, ONE shard): shard npz 1,750,642 B, of which header_json 7,774 B; PROVENANCE.json 1,809 B; bank.json 9,079 B; shard provenance 5,722 B.
++SMOKE_BANK = {"windows": 804, "records": 1608, "npz_bytes": 1750642, "npz_header_bytes": 7774, "npz_zip_overhead_bytes": 1476, "provenance_bytes": 1809, "bank_json_bytes": 9079, "shard_prov_bytes": 5722}
++
++
++class BankFilesError(Exception):
++    pass
++
++
++def bank_names(n: int) -> dict:
++    """{kind: [file names]} of a bank of n shards, in the generator's naming (v8f_dagger_bank.py: shard_KKKofNNN.{npz,provenance.json})."""
++    return {"provenance": ["PROVENANCE.json"], "manifest": ["bank.json"],
++            "shard_provenance": [f"shard_{k:03d}of{n:03d}.provenance.json" for k in range(n)],
++            "shard_npz": [f"shard_{k:03d}of{n:03d}.npz" for k in range(n)], "stage_log": ["bank_stage.log"]}
++
++
++def sha256_stream(path) -> str:
++    h = hashlib.sha256()
++    with open(path, "rb") as f:
++        for b in iter(lambda: f.read(1 << 20), b""):
++            h.update(b)
++    return h.hexdigest()
++
++
++def bank_published(d: str, expect_shards=BANK_SHARDS) -> tuple:
++    """(names, man, prov) of the bank in directory ``d``: the file names come from bank.json (n_shards, shards[].file) and PROVENANCE.json (shard_provenance), and must be the generator's canonical ones for that n.
++    Raises BankFilesError with the reason (a bank this function cannot name has nothing to publish)."""
++    try:
++        man, prov = _j(os.path.join(d, "bank.json")), _j(os.path.join(d, "PROVENANCE.json"))
++    except Exception as e:                                                  # noqa: BLE001
++        raise BankFilesError(f"cannot read bank.json / PROVENANCE.json in {d}: {type(e).__name__}: {e}")
++    n = man.get("n_shards") if isinstance(man, dict) else None
++    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
++        raise BankFilesError(f"bank.json n_shards is {n!r}")
++    if expect_shards is not None and n != expect_shards:
++        raise BankFilesError(f"bank.json n_shards is {n}, the queue's bankdag runs {expect_shards}")
++    names = bank_names(n)
++    shards = man.get("shards")
++    if not isinstance(shards, list) or [s.get("file") for s in sorted(shards, key=lambda s: s.get("k", -1))] != names["shard_npz"]:
++        raise BankFilesError(f"bank.json shards name {[s.get('file') for s in shards] if isinstance(shards, list) else shards!r}, not {names['shard_npz']}")
++    if not isinstance(prov, dict) or prov.get("shard_provenance") != names["shard_provenance"]:
++        raise BankFilesError(f"PROVENANCE.json shard_provenance is {prov.get('shard_provenance') if isinstance(prov, dict) else prov!r}, not {names['shard_provenance']}")
++    if prov.get("manifest", "bank.json") != "bank.json":
++        raise BankFilesError(f"PROVENANCE.json names the manifest {prov.get('manifest')!r}, not bank.json")
++    return names, man, prov
++
++
++def bank_flat(names: dict, kinds=BANK_KINDS) -> list:
++    return [n for k in kinds for n in names[k]]
++
++
++def parse_sums(path: str) -> tuple:
++    """(listed {name: sha256}, problem|None) of a sha256sum file: ends with a newline, every line `<64 hex>  <name>`, no name twice."""
++    try:
++        text = open(path, encoding="utf-8", errors="replace", newline="").read()
++    except OSError as e:
++        return {}, f"SHA256SUMS.txt unreadable: {e}"
++    if not text.endswith("\n"):
++        return {}, "SHA256SUMS.txt does not end with a newline (its last line may be partial)"
++    listed = {}
++    for raw in text.splitlines():
++        m = re.match(r"^([0-9a-f]{64}) [ *](.+)$", raw.rstrip("\r"))
++        if not m:
++            return {}, f"SHA256SUMS.txt has a line that is not '<sha256>  <name>': {raw[:80]!r}"
++        if m.group(2).strip() in listed:
++            return {}, f"SHA256SUMS.txt lists {m.group(2).strip()} twice"
++        listed[m.group(2).strip()] = m.group(1)
++    return listed, None
++
++
++def bank_verify(d: str, require_sums: bool = False, expect_shards=BANK_SHARDS) -> dict:
++    """One seed's PUBLISHED bank directory, by content: all four kinds (+ the stage log) present and non-empty; bank.json hashes to PROVENANCE.bank_sha256; every shard npz hashes to bank.json's AND its shard
++    provenance's file_sha256; with ``require_sums`` also SHA256SUMS.txt lists EXACTLY those files (no more, no fewer) with the right hashes. -> {ok, bad, n_files, bytes_by_kind, ...}. Never raises."""
++    r = {"ok": False, "bad": [], "dir": d, "require_sums": bool(require_sums)}
++    try:
++        names, man, prov = bank_published(d, expect_shards)
++    except BankFilesError as e:
++        r["bad"].append(str(e))
++        return r
++    allnames = bank_flat(names)
++    r["n_files"] = len(allnames)
++    r["bytes_by_kind"] = {}
++    for kind in BANK_KINDS:
++        tot = 0
++        for nm in names[kind]:
++            p = os.path.join(d, nm)
++            if not os.path.isfile(p):
++                r["bad"].append(f"{kind}: {nm} is absent")
++            elif os.path.getsize(p) == 0:
++                r["bad"].append(f"{kind}: {nm} is empty")
++            else:
++                tot += os.path.getsize(p)
++        r["bytes_by_kind"][kind] = tot
++    if r["bad"]:
++        return r
++    msha = sha256_stream(os.path.join(d, "bank.json"))
++    r["bank_sha256"] = msha
++    if prov.get("bank_sha256") != msha:
++        r["bad"].append(f"bank.json hashes to {msha[:12]}, not PROVENANCE.bank_sha256 {str(prov.get('bank_sha256'))[:12]}")
++    by_k = {s.get("k"): s for s in man["shards"]}
++    for k, (npz, pn) in enumerate(zip(names["shard_npz"], names["shard_provenance"])):
++        got = sha256_stream(os.path.join(d, npz))
++        if got != by_k[k].get("file_sha256"):
++            r["bad"].append(f"shard npz {npz} hashes to {got[:12]}, not bank.json's {str(by_k[k].get('file_sha256'))[:12]}")
++        try:
++            sp = _j(os.path.join(d, pn))
++        except Exception as e:                                              # noqa: BLE001
++            r["bad"].append(f"shard provenance {pn} does not parse: {type(e).__name__}")
++            continue
++        if not isinstance(sp, dict) or sp.get("file_sha256") != got:
++            r["bad"].append(f"shard provenance {pn} records file_sha256 {str(sp.get('file_sha256') if isinstance(sp, dict) else None)[:12]}, the npz hashes to {got[:12]}")
++    if require_sums:
++        sp_ = os.path.join(d, "SHA256SUMS.txt")
++        if not os.path.isfile(sp_):
++            r["bad"].append("SHA256SUMS.txt is absent")
++        else:
++            listed, why = parse_sums(sp_)
++            if why:
++                r["bad"].append(why)
++            elif sorted(listed) != sorted(allnames):
++                r["bad"].append(f"SHA256SUMS.txt lists {len(listed)} names, expected exactly {len(allnames)} (missing {sorted(set(allnames) - set(listed))}, unexpected {sorted(set(listed) - set(allnames))})")
++            else:
++                for nm in allnames:
++                    h = msha if nm == "bank.json" else sha256_stream(os.path.join(d, nm))
++                    if h != listed[nm]:
++                        r["bad"].append(f"SHA256SUMS.txt lists {listed[nm][:12]} for {nm}, the file hashes to {h[:12]}")
++    r["ok"] = not r["bad"]
++    return r
++
++
++def est_bank_bytes(n_windows: int = 306566, n_shards: int = BANK_SHARDS, clip_name_chars: int = 36, n_clips: int = 4512) -> dict:
++    """ESTIMATED bytes of one seed's published bank: the shard arrays scale linearly with the number of records (2 ticks per window), the per-shard header with its clip names (real clip ids are UUIDs: 36 chars)."""
++    s = SMOKE_BANK
++    per_window = (s["npz_bytes"] - s["npz_header_bytes"] - s["npz_zip_overhead_bytes"]) / s["windows"]
++    arrays = per_window * n_windows
++    header = n_shards * s["npz_header_bytes"] + n_clips * (clip_name_chars + 8)            # constant block per shard + one `"idx": "name",` entry per clip
++    npz = arrays + header + n_shards * s["npz_zip_overhead_bytes"]
++    small = s["provenance_bytes"] + s["bank_json_bytes"] + n_shards * (s["shard_prov_bytes"] + 100) + 4096 + 1024      # + bank_stage.log (a few KB) + SHA256SUMS.txt
++    return {"per_window_bytes": per_window, "npz_total_bytes": int(npz), "npz_each_bytes": int(npz / n_shards), "small_total_bytes": int(small), "seed_total_bytes": int(npz + small)}
++
++
++def bank_plan(n_shards: int = BANK_SHARDS) -> list:
++    names = bank_names(n_shards)
++    est = est_bank_bytes()
++    out = [f"kind {k}: {', '.join(names[k])}" for k in BANK_KINDS]
++    out.append(f"SHA256SUMS.txt: exactly {len(bank_flat(names))} names (PROVENANCE.json 1 + bank.json 1 + shard provenance {n_shards} + shard npz {n_shards} + bank_stage.log 1), written LAST, after every shard npz verified")
++    out.append(f"ESTIMATED size per seed (scaled from the 12-clip smoke, 804 windows -> 306,566): shard npz {est['npz_total_bytes'] / 1e9:.3f} GB ({est['npz_each_bytes'] / 1e6:.0f} MB each x {n_shards}), "
++               f"small files {est['small_total_bytes'] / 1e3:.0f} KB, total {est['seed_total_bytes'] / 1e9:.3f} GB; both seeds {2 * est['seed_total_bytes'] / 1e9:.3f} GB")
++    return out
++
++
+ def main(argv=None) -> int:
+     ap = argparse.ArgumentParser()
+     sub = ap.add_subparsers(dest="mode", required=True)
++    bf = sub.add_parser("bank-files")
++    bf.add_argument("dir")
++    bf.add_argument("--kind", default="all", help="all | small (everything but the shard npz: what the judge reads) | " + " | ".join(BANK_KINDS))
++    bf.add_argument("--expect-shards", type=int, default=BANK_SHARDS)
++    bv = sub.add_parser("bank-verify")
++    bv.add_argument("dir")
++    bv.add_argument("--require-sums", action="store_true")
++    bv.add_argument("--expect-shards", type=int, default=BANK_SHARDS)
++    sub.add_parser("bank-plan")
+     sub.add_parser("argv-sha").add_argument("line_file")
+     q = sub.add_parser("argv-same")
+     q.add_argument("gate_file")
+@@ -214,6 +390,31 @@
+     b.add_argument("--expect-clips", type=int, default=4512)
+     b.add_argument("--expect-windows", type=int, default=306566)
+     a = ap.parse_args(argv)
++    if a.mode == "bank-files":
++        try:
++            names = bank_published(a.dir, a.expect_shards)[0]
++        except BankFilesError as e:
++            print(f"bank-files: {e}", file=sys.stderr)
++            return 2
++        if a.kind == "all":
++            sel = bank_flat(names)
++        elif a.kind == "small":
++            sel = bank_flat(names, [k for k in BANK_KINDS if k != "shard_npz"])
++        elif a.kind in BANK_KINDS:
++            sel = names[a.kind]
++        else:
++            print(f"bank-files: unknown --kind {a.kind!r}", file=sys.stderr)
++            return 2
++        sys.stdout.buffer.write(("\n".join(sel) + "\n").encode("utf-8"))        # LF bytes: a Windows text-mode print ends every line in CR LF, and the chain word-splits this output into file names
++        sys.stdout.flush()
++        return 0
++    if a.mode == "bank-verify":
++        res = bank_verify(a.dir, a.require_sums, a.expect_shards)
++        print("ZZDAG-BANKFILES " + json.dumps(res, sort_keys=True))
++        return 0 if res["ok"] else 2
++    if a.mode == "bank-plan":
++        print("\n".join(bank_plan()))
++        return 0
+     if a.mode == "argv-sha":
+         print(argv_sha256(argv_of(open(a.line_file, encoding="utf-8").read())))
+         return 0
+--- a/dagq/box2_ship/chain_v8f_dag.sh.in
++++ b/dagq/box2_ship/chain_v8f_dag.sh.in
+@@ -7,9 +7,13 @@
+ #      is read AGAIN, byte-identically (sha256), right before the gates.
+ #   1. wait for the predecessor chain that holds box 2 (AFTER_OUT, REQUIRED, no default: ZZV8FMINI-DONE -> go, ZZV8FMINI-STOP -> stop), take BOX2_BUSY atomically, refresh box 2's code from the REMOTE tip (the tip must carry the DAgger lever
+ #      AND the four new queue stages), sha-check the key files, md5-check the v9 releases, assert box 2's two M2b checkpoints (sha256) and argv.json files are the banked runs'
+-#   2. BANK s0, BANK s1 (`bankdag`: four clip-sharded generators + merge, ESTIMATED 1.1-1.5 h per seed); only the small manifests are pulled (bank.json, PROVENANCE.json, the shard provenance files); box 2's bank.json sha256 == the pulled file's
++#   2. BANK s0, BANK s1 (`bankdag`: four clip-sharded generators + merge, ESTIMATED 1.1-1.5 h per seed); the SMALL files are fetched first (bank.json, PROVENANCE.json, bank_stage.log, the 4 shard provenance files: all the judge reads); box 2's bank.json sha256 == the pulled file's
+ #   3. COVERAGE + bank controls (`v8f_dag_chain_checks.py bank-judge`): a failed CONTROL (K-B0, K-B1, K-B2, K-B3, K-B4, K-B5, rollout, TRAIN list, record shape) = REFUSED (K-B4: PROVENANCE.json controls.K-B4.PASS True and all six cases True; K-B5: controls.K-B5.PASS True and both errors <= 1e-4 m, the reader's own rules; a MISSING record = STOP); with every control passing, the eligible fraction of TRAIN windows >= 0.5 at BOTH
+ #      seeds, else outcome BLOCKED and the chain STOPS here: no gate is queued and nothing is trained (ZZDAG-BLOCKED + ZZV8FMINI-STOP BLOCKED)
++#   3b. PUBLISH THE BANKS to the dev box (`publish_bank_one`, only after the judge passed; a REFUSED / BLOCKED bank is never moved), per seed, into $ART/bank_s<S>/: the FOUR kinds the dev-box reader (dag_read.py load_bank) needs -- PROVENANCE.json (bank.{s}.report),
++#      bank.json (bank_file; its sha256 IS the bank's identity), the 4 shard provenance files, and the 4 shard .npz files (their header_json is the only place the bank's clips are listed by name, K-B3.1) -- plus bank_stage.log: 11 files, ESTIMATED ~0.66 GB per seed
++#      (`bank-plan`). The checkpoints' mechanism: each npz is pulled, its sha256 measured on box 2 AND here must agree (and equal bank.json's file_sha256), then `sha256sum ... | tee SHA256SUMS.txt` is written LAST over exactly those 11 names and
++#      re-verified (`bank-verify --require-sums`); a SHA256SUMS.txt of an earlier attempt is removed first and a failed seal removes it. Marker: `bank s<S> pulled to <dir> (...)`.
+ #   4. ALL FOUR GATES FIRST (`gatedag`, the trainer's own in-process gate), each pulled and asserted HERE (gate_dag_assert.py), in the PREREG's order: DAG s0, DAG-0 s0, DAG s1, DAG-0 s1. The bank's sha256 is computed by box 2 from bank.json INSIDE the gate
+ #      stage and goes into the argv; the gate stage PINS the training argv it derived on box 2; the chain pulls the pin and asserts it equals the queue's planned training line (the line this chain computed from the PULLED bank.json's sha256).
+ #      The LAUNCH-GATE TOKEN binds the sha256 of THAT argv, is written by the chain and never by hand, and only after every assertion passes. `traindag` runs the pinned file after a byte-comparison with what it would derive now.
+@@ -103,6 +107,32 @@
+ argvsha() {   # argvsha <line file>: launch_gate.argv_sha256 of the TRAINING argv of a printed line
+   $PY "$(cygpath -m $CHECKS)" argv-sha "$(cygpath -m "$1")"
+ }
++bank_fetch_small() {   # bank_fetch_small <seed>: the SMALL files of the seed's bank (all the judge reads), pulled to $ART/bank_s<seed>; box 2's bank.json sha256 must equal the pulled file's. A SHA256SUMS.txt of an earlier attempt is removed FIRST: the sums are written last, and only over a set that verified.
++  local s=$1 d="$ART/bank_s$1" k f rs ls
++  rm -f "$d/SHA256SUMS.txt"
++  for f in bank.json PROVENANCE.json bank_stage.log; do pull "dagger_bank/s$s/$f" "$d"; done
++  for k in 0 1 2 3; do pull "dagger_bank/s$s/shard_00${k}of004.provenance.json" "$d"; done
++  rs=$(rsha "$R/dagger_bank/s$s/bank.json" SHA256); ls=$(sha256sum "$d/bank.json" | cut -c1-64)
++  [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2's bank.json sha256 '$rs' != the pulled file's '$ls'"
++  BSHA[$s]=$ls
++  echo "$(date '+%m-%d %H:%M') bank s$s: the small files (bank.json, PROVENANCE.json, bank_stage.log, 4 shard provenance) fetched to $d (bank.json sha256 $ls); the shard npz follow only if the controls pass"
++}
++publish_bank_one() {   # publish_bank_one <seed>: AFTER the judge passed. The shard npz of the seed's bank, then SHA256SUMS.txt over ALL the published files -- the mechanism the checkpoints and eval outputs use: pull, sha256 measured on box 2 and here, sha256sum | tee SHA256SUMS.txt written LAST
++  local s=$1 d="$ART/bank_s$1" f rs ls names all v
++  names=$($PY "$(cygpath -m $CHECKS)" bank-files "$(cygpath -m "$d")" --kind shard_npz) || stop "bank s$s: cannot name the shard npz from the pulled bank.json / PROVENANCE.json"
++  names=${names//$'\r'/}                                  # belt and braces: a CR left in a file name would make every pull below fail on a name that does not exist
++  for f in $names; do
++    pull "dagger_bank/s$s/$f" "$d"
++    ls=$(sha256sum "$d/$f" | cut -c1-64); rs=$(rsha "$R/dagger_bank/s$s/$f" SHA256)
++    [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2's $f sha256 '$rs' != the pulled file's '$ls'"
++  done
++  v=$($PY "$(cygpath -m $CHECKS)" bank-verify "$(cygpath -m "$d")") || stop "bank s$s: the pulled files do not verify, nothing was sealed: $(echo "$v" | cut -c1-600)"
++  all=$($PY "$(cygpath -m $CHECKS)" bank-files "$(cygpath -m "$d")" --kind all) || stop "bank s$s: cannot name the files to seal"
++  all=${all//$'\r'/}
++  ( cd "$d" && sha256sum $all | tee SHA256SUMS.txt )
++  v=$($PY "$(cygpath -m $CHECKS)" bank-verify "$(cygpath -m "$d")" --require-sums) || { rm -f "$d/SHA256SUMS.txt"; stop "bank s$s: SHA256SUMS.txt does not verify (removed): $(echo "$v" | cut -c1-600)"; }
++  echo "$(date '+%m-%d %H:%M') bank s$s pulled to $d ($(echo "$v" | sed -n 's/.*"n_files": \([0-9]*\).*/\1/p') files: PROVENANCE.json, bank.json, shard provenance, shard npz, bank_stage.log; sha256 in SHA256SUMS.txt; bank.json sha256 ${BSHA[$s]})"
++}
+ if [ "${1:-}" = "--check-tree" ]; then
+   [ -d "${2:-}" ] || { echo "usage: --check-tree ROOT"; exit 2; }
+   MIRROR=none; if lever_check tree "$2"; then echo "lever check: every one of ${#LEVER[@]} patterns is in $2"; exit 0; fi; echo "lever check: FAILED"; exit 1
+@@ -114,6 +144,22 @@
+   [ $jr = 0 ] || echo "ZZV8FMINI-STOP $([ $jr = 3 ] && echo BLOCKED || echo REFUSED): no gate was queued"
+   exit $jr
+ fi
++if [ "${1:-}" = "--publish-only" ]; then   # OFFLINE: the real bank_fetch_small -> judge -> publish_bank_one on a LOCAL stand-in for box 2 (FAKE/dagger_bank/s0 and s1); pull/rsha/stop are the only things replaced. Refuses the real artifact directory.
++  FAKE=${2:-}
++  [ -d "$FAKE/dagger_bank/s0" ] && [ -d "$FAKE/dagger_bank/s1" ] || { echo "usage: DAG_ART=<scratch dir> $0 --publish-only FAKE_BOX_ROOT   (FAKE_BOX_ROOT/dagger_bank/s0 and s1 stand for box 2's $R/dagger_bank/s<S>)"; exit 2; }
++  [ -n "${DAG_ART:-}" ] || { echo "ZZV8FMINI-STOP --publish-only needs DAG_ART set to a scratch directory (it never writes the real $ART)"; exit 1; }
++  HASHROOT=${FAKE_HASH_ROOT:-$FAKE}                   # box 2's own hash is measured here (a test points it at a tampered copy to show a transfer that corrupts is caught)
++  stop() { echo "ZZV8FMINI-STOP $*"; exit 1; }
++  pull() { mkdir -p "$2"; cp "$FAKE/$1" "$2/" || stop "pull $R/$1"; }
++  rsha() { sha256sum "$HASHROOT/${1#$R/}" 2>/dev/null | cut -c1-64; }
++  declare -a BSHA
++  for s in 0 1; do bank_fetch_small $s; done
++  judge_banks "$ART/bank_s0" "$ART/bank_s1"; jr=$?
++  [ $jr = 0 ] || stop "$([ $jr = 3 ] && echo BLOCKED || echo REFUSED) at the bank stage (judge rc $jr): no shard npz was pulled, no gate was queued"
++  for s in 0 1; do publish_bank_one $s; done
++  echo "ZZDAG-PUBLISH-ONLY-DONE both banks published"
++  exit 0
++fi
+ if [ "${1:-}" = "--dry-run" ]; then
+   QF=${V8F_QUEUE:-}
+   if [ -z "$QF" ]; then
+@@ -131,6 +177,8 @@
+   echo '{"kind": "launch-gate-token", "verdict": "PASS", "binding": {"commit": "<the remote tip, 40 hex>", "argv_sha256": "<launch_gate.argv_sha256 of THE TRAINING ARGV as pinned by box 2>", "data_sha256": "<the gate selfcheck'"'"'s info.train_sha256>"}, ...}'
+   for s in 0 1; do
+     echo "== bank s$s"; echo "-- bankdag $s"; dry_stage "$QF" "" bankdag $s | grep -a 'v8f_dagger_queue_tool.py' || { echo "ZZV8FMINI-STOP the queue prints no bank line for s$s"; exit 1; }
++    echo "-- fetch (all the judge reads), then judge, then PUBLISH into $ART/bank_s$s/ only if the judge passes:"
++    $PY "$(cygpath -m $CHECKS)" bank-plan | sed 's/^/   /' || { echo "ZZV8FMINI-STOP bank-plan failed"; exit 1; }
+   done
+   for run in "${RUNS[@]}"; do
+     set -- $run; arm=$1; s=$2; sh=DAG_DRY_SHA$s; sha=${!sh:-}
+@@ -221,15 +269,9 @@
+   echo "ZZV8FMINI-DONE $(date '+%m-%d %H:%M') tip $T: $1 (boot unchanged $BOOT0)"
+   exit 0
+ }
+-bank_one() {   # bank_one <seed>: the seed's own-state bank on box 2; the SMALL files pulled; box 2's bank.json sha256 must equal the pulled file's
+-  local s=$1 d="$ART/bank_s$1" k f rs ls
+-  queue "bank_s$s" $BANK_POLLS bankdag $s
+-  for f in bank.json PROVENANCE.json bank_stage.log; do pull "dagger_bank/s$s/$f" "$d"; done
+-  for k in 0 1 2 3; do pull "dagger_bank/s$s/shard_00${k}of004.provenance.json" "$d"; done
+-  rs=$(rsha "$R/dagger_bank/s$s/bank.json" SHA256); ls=$(sha256sum "$d/bank.json" | cut -c1-64)
+-  [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2's bank.json sha256 '$rs' != the pulled file's '$ls'"
+-  BSHA[$s]=$ls
+-  echo "$(date '+%m-%d %H:%M') bank s$s pulled to $d (bank.json sha256 $ls)"
++bank_one() {   # bank_one <seed>: the seed's own-state bank on box 2, then its SMALL files (bank_fetch_small); the shard npz are published by publish_bank_one only after the judge passed
++  queue "bank_s$1" $BANK_POLLS bankdag $1
++  bank_fetch_small $1
+ }
+ gate_one() {   # gate_one <arm> <seed>: the run's in-process launch gate on box 2, pulled and asserted HERE, then its launch-gate token (written by this function, never by hand)
+   local arm=$1 s=$2 g gd SC pin xa
+@@ -374,6 +416,8 @@
+   $PY -c "import json,sys;json.dump({'outcome':'BLOCKED' if sys.argv[1]=='3' else 'REFUSED','bank_sha256':{'s0':sys.argv[2],'s1':sys.argv[3]},'orc_read':sys.argv[4]},open(sys.argv[5],'w'),indent=1)" $jr "${BSHA[0]}" "${BSHA[1]}" "$ORC_NAME" "$(cygpath -m $ART/DAG_OUTCOME.json)"
+   stop "$([ $jr = 3 ] && echo BLOCKED || echo REFUSED) at the bank stage (judge rc $jr): no gate was queued, nothing was trained (see $ART/DAG_OUTCOME.json)"
+ fi
++# ---- 3b. only a bank that passed every control and COVERAGE is published to the dev box: the shard npz (the reader's K-B3.1 reads the clip names out of them), then SHA256SUMS.txt over all 11 files, per seed
++for s in 0 1; do publish_bank_one $s; done
+ # ---- 4. the ORC read AGAIN (byte-identical), then ALL FOUR GATES, each asserted and tokened, before ANY training
+ o2=$(sha256sum "$ORC_READ" | cut -c1-64); [ "$o2" = "$ORC_SHA" ] || stop "ORC_READ.json changed while the banks ran ($ORC_SHA -> $o2): re-run the predicate"
+ for run in "${RUNS[@]}"; do set -- $run; gate_one $1 $2; done
+@@ -381,4 +425,4 @@
+ for run in "${RUNS[@]}"; do set -- $run; runone $1 $2; done
+ ckptsha_b "after the last run"
+ echo "$(date '+%m-%d %H:%M') summary: $(for run in "${RUNS[@]}"; do set -- $run; echo -n "$(rn $1 $2)=$(ckget "$(rt $1 $2)_after_evals" | cut -c1-12) "; done)"
+-finish "PREREG_V8F_DAGGER: banks s0/s1 (COVERAGE >= 0.5), DAG (p $PVAL) / DAG-0 x seeds 0 and 1 trained (3,000 steps each), T0-evaluated (standard) and pulled to $ART (sha256 in each SHA256SUMS.txt); the T1-kin rollouts and the reader run on the dev box (NOT here)"
++finish "PREREG_V8F_DAGGER: banks s0/s1 (COVERAGE >= 0.5; PROVENANCE.json, bank.json, shard provenance and shard npz published), DAG (p $PVAL) / DAG-0 x seeds 0 and 1 trained (3,000 steps each), T0-evaluated (standard) and pulled to $ART (sha256 in each SHA256SUMS.txt); the T1-kin rollouts, the fresh-age T0 evals and the reader run on the dev box (NOT here)"
+--- a/dagq/box2_ship/chain_v8f_dag.sh
++++ b/dagq/box2_ship/chain_v8f_dag.sh
+@@ -7,9 +7,13 @@
+ #      is read AGAIN, byte-identically (sha256), right before the gates.
+ #   1. wait for the predecessor chain that holds box 2 (AFTER_OUT, REQUIRED, no default: ZZV8FMINI-DONE -> go, ZZV8FMINI-STOP -> stop), take BOX2_BUSY atomically, refresh box 2's code from the REMOTE tip (the tip must carry the DAgger lever
+ #      AND the four new queue stages), sha-check the key files, md5-check the v9 releases, assert box 2's two M2b checkpoints (sha256) and argv.json files are the banked runs'
+-#   2. BANK s0, BANK s1 (`bankdag`: four clip-sharded generators + merge, ESTIMATED 1.1-1.5 h per seed); only the small manifests are pulled (bank.json, PROVENANCE.json, the shard provenance files); box 2's bank.json sha256 == the pulled file's
++#   2. BANK s0, BANK s1 (`bankdag`: four clip-sharded generators + merge, ESTIMATED 1.1-1.5 h per seed); the SMALL files are fetched first (bank.json, PROVENANCE.json, bank_stage.log, the 4 shard provenance files: all the judge reads); box 2's bank.json sha256 == the pulled file's
+ #   3. COVERAGE + bank controls (`v8f_dag_chain_checks.py bank-judge`): a failed CONTROL (K-B0, K-B1, K-B2, K-B3, K-B4, K-B5, rollout, TRAIN list, record shape) = REFUSED (K-B4: PROVENANCE.json controls.K-B4.PASS True and all six cases True; K-B5: controls.K-B5.PASS True and both errors <= 1e-4 m, the reader's own rules; a MISSING record = STOP); with every control passing, the eligible fraction of TRAIN windows >= 0.5 at BOTH
+ #      seeds, else outcome BLOCKED and the chain STOPS here: no gate is queued and nothing is trained (ZZDAG-BLOCKED + ZZV8FMINI-STOP BLOCKED)
++#   3b. PUBLISH THE BANKS to the dev box (`publish_bank_one`, only after the judge passed; a REFUSED / BLOCKED bank is never moved), per seed, into $ART/bank_s<S>/: the FOUR kinds the dev-box reader (dag_read.py load_bank) needs -- PROVENANCE.json (bank.{s}.report),
++#      bank.json (bank_file; its sha256 IS the bank's identity), the 4 shard provenance files, and the 4 shard .npz files (their header_json is the only place the bank's clips are listed by name, K-B3.1) -- plus bank_stage.log: 11 files, ESTIMATED ~0.66 GB per seed
++#      (`bank-plan`). The checkpoints' mechanism: each npz is pulled, its sha256 measured on box 2 AND here must agree (and equal bank.json's file_sha256), then `sha256sum ... | tee SHA256SUMS.txt` is written LAST over exactly those 11 names and
++#      re-verified (`bank-verify --require-sums`); a SHA256SUMS.txt of an earlier attempt is removed first and a failed seal removes it. Marker: `bank s<S> pulled to <dir> (...)`.
+ #   4. ALL FOUR GATES FIRST (`gatedag`, the trainer's own in-process gate), each pulled and asserted HERE (gate_dag_assert.py), in the PREREG's order: DAG s0, DAG-0 s0, DAG s1, DAG-0 s1. The bank's sha256 is computed by box 2 from bank.json INSIDE the gate
+ #      stage and goes into the argv; the gate stage PINS the training argv it derived on box 2; the chain pulls the pin and asserts it equals the queue's planned training line (the line this chain computed from the PULLED bank.json's sha256).
+ #      The LAUNCH-GATE TOKEN binds the sha256 of THAT argv, is written by the chain and never by hand, and only after every assertion passes. `traindag` runs the pinned file after a byte-comparison with what it would derive now.
+@@ -103,6 +107,32 @@
+ argvsha() {   # argvsha <line file>: launch_gate.argv_sha256 of the TRAINING argv of a printed line
+   $PY "$(cygpath -m $CHECKS)" argv-sha "$(cygpath -m "$1")"
+ }
++bank_fetch_small() {   # bank_fetch_small <seed>: the SMALL files of the seed's bank (all the judge reads), pulled to $ART/bank_s<seed>; box 2's bank.json sha256 must equal the pulled file's. A SHA256SUMS.txt of an earlier attempt is removed FIRST: the sums are written last, and only over a set that verified.
++  local s=$1 d="$ART/bank_s$1" k f rs ls
++  rm -f "$d/SHA256SUMS.txt"
++  for f in bank.json PROVENANCE.json bank_stage.log; do pull "dagger_bank/s$s/$f" "$d"; done
++  for k in 0 1 2 3; do pull "dagger_bank/s$s/shard_00${k}of004.provenance.json" "$d"; done
++  rs=$(rsha "$R/dagger_bank/s$s/bank.json" SHA256); ls=$(sha256sum "$d/bank.json" | cut -c1-64)
++  [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2's bank.json sha256 '$rs' != the pulled file's '$ls'"
++  BSHA[$s]=$ls
++  echo "$(date '+%m-%d %H:%M') bank s$s: the small files (bank.json, PROVENANCE.json, bank_stage.log, 4 shard provenance) fetched to $d (bank.json sha256 $ls); the shard npz follow only if the controls pass"
++}
++publish_bank_one() {   # publish_bank_one <seed>: AFTER the judge passed. The shard npz of the seed's bank, then SHA256SUMS.txt over ALL the published files -- the mechanism the checkpoints and eval outputs use: pull, sha256 measured on box 2 and here, sha256sum | tee SHA256SUMS.txt written LAST
++  local s=$1 d="$ART/bank_s$1" f rs ls names all v
++  names=$($PY "$(cygpath -m $CHECKS)" bank-files "$(cygpath -m "$d")" --kind shard_npz) || stop "bank s$s: cannot name the shard npz from the pulled bank.json / PROVENANCE.json"
++  names=${names//$'\r'/}                                  # belt and braces: a CR left in a file name would make every pull below fail on a name that does not exist
++  for f in $names; do
++    pull "dagger_bank/s$s/$f" "$d"
++    ls=$(sha256sum "$d/$f" | cut -c1-64); rs=$(rsha "$R/dagger_bank/s$s/$f" SHA256)
++    [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2's $f sha256 '$rs' != the pulled file's '$ls'"
++  done
++  v=$($PY "$(cygpath -m $CHECKS)" bank-verify "$(cygpath -m "$d")") || stop "bank s$s: the pulled files do not verify, nothing was sealed: $(echo "$v" | cut -c1-600)"
++  all=$($PY "$(cygpath -m $CHECKS)" bank-files "$(cygpath -m "$d")" --kind all) || stop "bank s$s: cannot name the files to seal"
++  all=${all//$'\r'/}
++  ( cd "$d" && sha256sum $all | tee SHA256SUMS.txt )
++  v=$($PY "$(cygpath -m $CHECKS)" bank-verify "$(cygpath -m "$d")" --require-sums) || { rm -f "$d/SHA256SUMS.txt"; stop "bank s$s: SHA256SUMS.txt does not verify (removed): $(echo "$v" | cut -c1-600)"; }
++  echo "$(date '+%m-%d %H:%M') bank s$s pulled to $d ($(echo "$v" | sed -n 's/.*"n_files": \([0-9]*\).*/\1/p') files: PROVENANCE.json, bank.json, shard provenance, shard npz, bank_stage.log; sha256 in SHA256SUMS.txt; bank.json sha256 ${BSHA[$s]})"
++}
+ if [ "${1:-}" = "--check-tree" ]; then
+   [ -d "${2:-}" ] || { echo "usage: --check-tree ROOT"; exit 2; }
+   MIRROR=none; if lever_check tree "$2"; then echo "lever check: every one of ${#LEVER[@]} patterns is in $2"; exit 0; fi; echo "lever check: FAILED"; exit 1
+@@ -114,6 +144,22 @@
+   [ $jr = 0 ] || echo "ZZV8FMINI-STOP $([ $jr = 3 ] && echo BLOCKED || echo REFUSED): no gate was queued"
+   exit $jr
+ fi
++if [ "${1:-}" = "--publish-only" ]; then   # OFFLINE: the real bank_fetch_small -> judge -> publish_bank_one on a LOCAL stand-in for box 2 (FAKE/dagger_bank/s0 and s1); pull/rsha/stop are the only things replaced. Refuses the real artifact directory.
++  FAKE=${2:-}
++  [ -d "$FAKE/dagger_bank/s0" ] && [ -d "$FAKE/dagger_bank/s1" ] || { echo "usage: DAG_ART=<scratch dir> $0 --publish-only FAKE_BOX_ROOT   (FAKE_BOX_ROOT/dagger_bank/s0 and s1 stand for box 2's $R/dagger_bank/s<S>)"; exit 2; }
++  [ -n "${DAG_ART:-}" ] || { echo "ZZV8FMINI-STOP --publish-only needs DAG_ART set to a scratch directory (it never writes the real $ART)"; exit 1; }
++  HASHROOT=${FAKE_HASH_ROOT:-$FAKE}                   # box 2's own hash is measured here (a test points it at a tampered copy to show a transfer that corrupts is caught)
++  stop() { echo "ZZV8FMINI-STOP $*"; exit 1; }
++  pull() { mkdir -p "$2"; cp "$FAKE/$1" "$2/" || stop "pull $R/$1"; }
++  rsha() { sha256sum "$HASHROOT/${1#$R/}" 2>/dev/null | cut -c1-64; }
++  declare -a BSHA
++  for s in 0 1; do bank_fetch_small $s; done
++  judge_banks "$ART/bank_s0" "$ART/bank_s1"; jr=$?
++  [ $jr = 0 ] || stop "$([ $jr = 3 ] && echo BLOCKED || echo REFUSED) at the bank stage (judge rc $jr): no shard npz was pulled, no gate was queued"
++  for s in 0 1; do publish_bank_one $s; done
++  echo "ZZDAG-PUBLISH-ONLY-DONE both banks published"
++  exit 0
++fi
+ if [ "${1:-}" = "--dry-run" ]; then
+   QF=${V8F_QUEUE:-}
+   if [ -z "$QF" ]; then
+@@ -131,6 +177,8 @@
+   echo '{"kind": "launch-gate-token", "verdict": "PASS", "binding": {"commit": "<the remote tip, 40 hex>", "argv_sha256": "<launch_gate.argv_sha256 of THE TRAINING ARGV as pinned by box 2>", "data_sha256": "<the gate selfcheck'"'"'s info.train_sha256>"}, ...}'
+   for s in 0 1; do
+     echo "== bank s$s"; echo "-- bankdag $s"; dry_stage "$QF" "" bankdag $s | grep -a 'v8f_dagger_queue_tool.py' || { echo "ZZV8FMINI-STOP the queue prints no bank line for s$s"; exit 1; }
++    echo "-- fetch (all the judge reads), then judge, then PUBLISH into $ART/bank_s$s/ only if the judge passes:"
++    $PY "$(cygpath -m $CHECKS)" bank-plan | sed 's/^/   /' || { echo "ZZV8FMINI-STOP bank-plan failed"; exit 1; }
+   done
+   for run in "${RUNS[@]}"; do
+     set -- $run; arm=$1; s=$2; sh=DAG_DRY_SHA$s; sha=${!sh:-}
+@@ -221,15 +269,9 @@
+   echo "ZZV8FMINI-DONE $(date '+%m-%d %H:%M') tip $T: $1 (boot unchanged $BOOT0)"
+   exit 0
+ }
+-bank_one() {   # bank_one <seed>: the seed's own-state bank on box 2; the SMALL files pulled; box 2's bank.json sha256 must equal the pulled file's
+-  local s=$1 d="$ART/bank_s$1" k f rs ls
+-  queue "bank_s$s" $BANK_POLLS bankdag $s
+-  for f in bank.json PROVENANCE.json bank_stage.log; do pull "dagger_bank/s$s/$f" "$d"; done
+-  for k in 0 1 2 3; do pull "dagger_bank/s$s/shard_00${k}of004.provenance.json" "$d"; done
+-  rs=$(rsha "$R/dagger_bank/s$s/bank.json" SHA256); ls=$(sha256sum "$d/bank.json" | cut -c1-64)
+-  [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2's bank.json sha256 '$rs' != the pulled file's '$ls'"
+-  BSHA[$s]=$ls
+-  echo "$(date '+%m-%d %H:%M') bank s$s pulled to $d (bank.json sha256 $ls)"
++bank_one() {   # bank_one <seed>: the seed's own-state bank on box 2, then its SMALL files (bank_fetch_small); the shard npz are published by publish_bank_one only after the judge passed
++  queue "bank_s$1" $BANK_POLLS bankdag $1
++  bank_fetch_small $1
+ }
+ gate_one() {   # gate_one <arm> <seed>: the run's in-process launch gate on box 2, pulled and asserted HERE, then its launch-gate token (written by this function, never by hand)
+   local arm=$1 s=$2 g gd SC pin xa
+@@ -374,6 +416,8 @@
+   $PY -c "import json,sys;json.dump({'outcome':'BLOCKED' if sys.argv[1]=='3' else 'REFUSED','bank_sha256':{'s0':sys.argv[2],'s1':sys.argv[3]},'orc_read':sys.argv[4]},open(sys.argv[5],'w'),indent=1)" $jr "${BSHA[0]}" "${BSHA[1]}" "$ORC_NAME" "$(cygpath -m $ART/DAG_OUTCOME.json)"
+   stop "$([ $jr = 3 ] && echo BLOCKED || echo REFUSED) at the bank stage (judge rc $jr): no gate was queued, nothing was trained (see $ART/DAG_OUTCOME.json)"
+ fi
++# ---- 3b. only a bank that passed every control and COVERAGE is published to the dev box: the shard npz (the reader's K-B3.1 reads the clip names out of them), then SHA256SUMS.txt over all 11 files, per seed
++for s in 0 1; do publish_bank_one $s; done
+ # ---- 4. the ORC read AGAIN (byte-identical), then ALL FOUR GATES, each asserted and tokened, before ANY training
+ o2=$(sha256sum "$ORC_READ" | cut -c1-64); [ "$o2" = "$ORC_SHA" ] || stop "ORC_READ.json changed while the banks ran ($ORC_SHA -> $o2): re-run the predicate"
+ for run in "${RUNS[@]}"; do set -- $run; gate_one $1 $2; done
+@@ -381,4 +425,4 @@
+ for run in "${RUNS[@]}"; do set -- $run; runone $1 $2; done
+ ckptsha_b "after the last run"
+ echo "$(date '+%m-%d %H:%M') summary: $(for run in "${RUNS[@]}"; do set -- $run; echo -n "$(rn $1 $2)=$(ckget "$(rt $1 $2)_after_evals" | cut -c1-12) "; done)"
+-finish "PREREG_V8F_DAGGER: banks s0/s1 (COVERAGE >= 0.5), DAG (p $PVAL) / DAG-0 x seeds 0 and 1 trained (3,000 steps each), T0-evaluated (standard) and pulled to $ART (sha256 in each SHA256SUMS.txt); the T1-kin rollouts and the reader run on the dev box (NOT here)"
++finish "PREREG_V8F_DAGGER: banks s0/s1 (COVERAGE >= 0.5; PROVENANCE.json, bank.json, shard provenance and shard npz published), DAG (p $PVAL) / DAG-0 x seeds 0 and 1 trained (3,000 steps each), T0-evaluated (standard) and pulled to $ART (sha256 in each SHA256SUMS.txt); the T1-kin rollouts, the fresh-age T0 evals and the reader run on the dev box (NOT here)"
+--- a/dagq/selftest_dag_queue.py
++++ b/dagq/selftest_dag_queue.py
+@@ -6,9 +6,11 @@
+   A  the REAL queue .cmd through cmd.exe (V8F_DRYRUN): the argv of every stage: flag values, the pair rule, gate == train, p, ckpt paths, ORC-0 + --dagger-p 0, the other stages unchanged
+   B  the REAL queue .cmd through cmd.exe, NOT dry, with a fake box (stub trainer / eval / bank generator): the bank fan-out, the pin, byte-identity of the argv that runs, refusals
+   C  the chain's two decisions on files: the ORC predicate (both sides) and the bank judge (controls then COVERAGE; both sides, 0.5 inclusive)
+-  D  the chain script itself: --judge-only (BLOCKED stops before any gate), --dry-run, --check-tree (the lever greps; fails on the pre-change tip), the source order of bank -> judge -> gates
++  D  the chain script itself: --judge-only (BLOCKED stops before any gate), --dry-run, --check-tree (the lever greps; fails on the pre-change tip), the source order of bank -> judge -> PUBLISH -> gates
+   E  gate_dag_assert.py on a REAL selfcheck.json written by the real trainer's gate (real_gate_proof.py), + mutated copies
+   F  the shard tool (4 shards, a failing shard, a skip), the guard copy, the banked checkpoint hashes, the additive queue diff
++  G  the bank files the chain PUBLISHES to the dev box (the four kinds the dev-box reader needs + the stage log, 11 names, SHA256SUMS.txt): bank-files / bank-verify / bank-plan, in-process, both sides
++  H  the chain's own publish flow offline (--publish-only: the REAL bank_fetch_small -> judge -> publish_bank_one against a local stand-in for box 2): nothing is moved before the judge passes, every fault stops it and leaves no seal
+ Run:  CUDA_VISIBLE_DEVICES=-1 PYTHONDONTWRITEBYTECODE=1 python selftest_dag_queue.py     (writes selftest_output.txt)
+ """
+ from __future__ import annotations
+@@ -34,6 +36,7 @@
+ import v8f_dag_chain_checks as CK  # noqa: E402
+ 
+ BT = HERE / "bt"
++CHAIN = Path(os.environ["DAGQ_CHAIN"]) if os.environ.get("DAGQ_CHAIN") else HERE / "box2_ship" / "chain_v8f_dag.sh"      # the mutation runner points sections D / G at a MUTATED copy of the chain (its helper scripts beside it)
+ BASH = r"C:\Program Files\Git\bin\bash.exe"
+ SHIP = Path("C:/Users/Admin/box2_ship")
+ LOG = []
+@@ -505,7 +508,7 @@
+ 
+ # ================================================================================================ D. the chain script
+ def bash(args, env=None, timeout=300):
+-    return sh([BASH, posix(HERE / "box2_ship" / "chain_v8f_dag.sh"), *args], env=env, timeout=timeout)
++    return sh([BASH, posix(CHAIN), *args], env=env, timeout=timeout)
+ 
+ 
+ def section_d():
+@@ -538,22 +541,38 @@
+     rc, o = bash([], {"DAG_ORC_READ": harms})
+     check("the REAL entry with ORC = HARMS but no AFTER_OUT: refuses (`ZZV8FMINI-STOP AFTER_OUT is not set`), touches nothing", rc == 1 and "AFTER_OUT is not set" in o and "ORC read HARMS" in o and "p = 0.1" in o, o[-400:])
+     # ---- the source order: bank -> judge -> stop-if-nonzero -> gates -> trains
+-    src = (HERE / "box2_ship" / "chain_v8f_dag.sh").read_text(encoding="utf-8")
++    src = CHAIN.read_text(encoding="utf-8")
+ 
+     def order_ok(s: str) -> bool:
+         i_bank = s.find("for s in 0 1; do bank_one $s; done")
+-        i_judge = s.find('judge_banks "$ART/bank_s0" "$ART/bank_s1"; jr=$?')
++        i_judge = s.rfind('judge_banks "$ART/bank_s0" "$ART/bank_s1"; jr=$?')       # the LAST one: the --publish-only block repeats the line earlier in the file
+         i_stop = s.find("if [ $jr != 0 ]; then", i_judge)
+         i_stop_call = s.find('stop "$([ $jr = 3 ]', i_stop)
++        i_pub = s.rfind("for s in 0 1; do publish_bank_one $s; done")
++        i_orc2 = s.find('o2=$(sha256sum "$ORC_READ"', i_pub)
+         i_gate = s.find('for run in "${RUNS[@]}"; do set -- $run; gate_one $1 $2; done')
+         i_train = s.find('for run in "${RUNS[@]}"; do set -- $run; runone $1 $2; done')
+-        return 0 < i_bank < i_judge < i_stop < i_stop_call < i_gate < i_train and s.find("fi", i_stop_call) < i_gate
+-    check("chain source order: banks -> judge -> `if [ $jr != 0 ]` stop -> ALL gates -> trains (a BLOCKED / REFUSED judge reaches stop before any gate_one or runone)", order_ok(src))
++        return 0 < i_bank < i_judge < i_stop < i_stop_call < i_pub < i_orc2 < i_gate < i_train and s.find("fi", i_stop_call) < i_pub
++    check("chain source order: banks -> judge -> `if [ $jr != 0 ]` stop -> PUBLISH the banks (outside that if) -> ORC re-read -> ALL gates -> trains (a BLOCKED / REFUSED judge reaches stop before any publish, gate_one or runone)", order_ok(src))
+     mut = src.replace('stop "$([ $jr = 3 ] && echo BLOCKED || echo REFUSED) at the bank stage (judge rc $jr): no gate was queued, nothing was trained (see $ART/DAG_OUTCOME.json)"', "true")
+     regress("chain source with the BLOCKED stop deleted: the order check goes RED", mut != src and not order_ok(mut))
+     mut2 = src.replace("if [ $jr != 0 ]; then", "if false; then")
+     regress("chain source with the judge's `if [ $jr != 0 ]` disabled: the order check goes RED", mut2 != src and not order_ok(mut2))
+-    check("chain: bank pulls only the small files (no shard npz), asserts box 2's bank.json sha256 == the pulled one", "shard_00${k}of004.provenance.json" in src and ".npz" not in src.split("bank_one()")[1].split("gate_one()")[0] and 'rsha "$R/dagger_bank/s$s/bank.json"' in src)
++    pub_call = "for s in 0 1; do publish_bank_one $s; done"
++    i_real_pub = src.rfind(pub_call)
++    mut3 = src[:i_real_pub] + "true" + src[i_real_pub + len(pub_call):]
++    regress("chain source with the real flow's publish call deleted (the banks would never reach the dev box): the order check goes RED", mut3 != src and not order_ok(mut3))
++    i_real_judge = src.rfind('judge_banks "$ART/bank_s0" "$ART/bank_s1"; jr=$?')
++    mut4 = mut3[:i_real_judge] + pub_call + "\n" + mut3[i_real_judge:]
++    regress("chain source with the publish call moved BEFORE the judge (a REFUSED / BLOCKED bank would be moved): the order check goes RED", mut4 != src and not order_ok(mut4))
++    def fbody(txt: str, name: str) -> str:
++        m_ = re.search(r"^" + re.escape(name) + r"\(\) \{.*?^\}", txt, flags=re.M | re.S)
++        return m_.group(0) if m_ else ""
++    bo, fs, pb = fbody(src, "bank_one"), fbody(src, "bank_fetch_small"), fbody(src, "publish_bank_one")
++    check("chain: bank_one / bank_fetch_small pull only the SMALL files the judge reads (no shard npz), assert box 2's bank.json sha256 == the pulled one, and remove an earlier attempt's SHA256SUMS.txt first",
++          bool(bo) and bool(fs) and ".npz" not in bo and ".npz" not in fs and "shard_00${k}of004.provenance.json" in fs and 'rsha "$R/dagger_bank/s$s/bank.json"' in fs and 'rm -f "$d/SHA256SUMS.txt"' in fs and "bank_fetch_small $1" in bo, (bo[:60], fs[:60]))
++    check("chain: publish_bank_one names the files with `bank-files`, pulls only `--kind shard_npz`, compares box 2's sha256 with the pulled file's, verifies BEFORE sealing, writes SHA256SUMS.txt with `sha256sum | tee`, re-verifies with --require-sums and removes a failed seal",
++          bool(pb) and "--kind shard_npz" in pb and 'rsha "$R/dagger_bank/s$s/$f" SHA256' in pb and pb.find("bank-verify") < pb.find("sha256sum $all | tee SHA256SUMS.txt") < pb.rfind("--require-sums") and 'rm -f "$d/SHA256SUMS.txt"' in pb and "--kind all" in pb, pb[:80])
+     check("chain: the token is written only after `check` passes; the pin is pulled from box 2 and given to the assertions (--pin-line)", src.index('"$(cygpath -m $ASSERT)" check') < src.index('"$(cygpath -m $ASSERT)" token') and "--pin-line" in src and "dagpin/M2b_s${s}_${arm}.train.argv.txt" in src)
+     check("chain: a busy marker is only removed by a chain that took it (a refused / parked chain never deletes another chain's marker)", "BUSY_TAKEN=0" in src and 'if [ $BUSY_TAKEN = 1 ]; then echo "" > $CUR; rm -f $B/BOX2_BUSY.txt; fi' in src)
+     check("chain: ORC_READ.json is re-read byte-identically (sha256) before the gates", 'o2=$(sha256sum "$ORC_READ"' in src and src.index('o2=$(sha256sum "$ORC_READ"') < src.index('gate_one $1 $2; done'))
+@@ -564,6 +583,9 @@
+           rc == 0 and [m.group(0) for m in re.finditer(r"== M2b_s\d_dag0?", o)] == ["== M2b_s0_dag", "== M2b_s0_dag0", "== M2b_s1_dag", "== M2b_s1_dag0"] and o.count(": SAME") == 4 and "DIFFERENT" not in o and "p = 0.1" in o, o[-400:])
+     shas = re.findall(r"token argv_sha256 \(the training argv\): (\w{64})", o)
+     check("chain --dry-run: four distinct token argv_sha256 values, and the DAG ones carry the dry-run bank sha256 in the line they bind", len(shas) == 4 and len(set(shas)) == 4 and ("a1" * 32) in o and ("b2" * 32) in o, shas)
++    check("chain --dry-run: for BOTH seeds the publish plan names the FOUR kinds explicitly (PROVENANCE.json, bank.json, 4 shard provenance, 4 shard npz) + the stage log, the exact 11-name SHA256SUMS.txt and the ESTIMATED size",
++          o.count("kind provenance: PROVENANCE.json") == 2 and o.count("kind manifest: bank.json") == 2 and o.count("kind shard_provenance: shard_000of004.provenance.json, shard_001of004.provenance.json, shard_002of004.provenance.json, shard_003of004.provenance.json") == 2
++          and o.count("kind shard_npz: shard_000of004.npz, shard_001of004.npz, shard_002of004.npz, shard_003of004.npz") == 2 and o.count("exactly 11 names") == 2 and o.count("ESTIMATED size per seed") == 2, o[-900:])
+     # ---- --check-tree
+     rg = HERE / "rg" / "tree"
+     rc, o = bash(["--check-tree", posix(rg)])
+@@ -818,11 +840,209 @@
+     shutil.rmtree(t, ignore_errors=True)
+ 
+ 
++# ================================================================================================ G. the banks the chain PUBLISHES to the dev box
++def mk_published_bank(d: Path, seed: int, ckpt: str, n_shards=4, frac=0.6, mutate=None, npz_bytes=4096):
++    """mk_bank (what the judge reads) + what the chain PUBLISHES: small stand-in shard npz files whose REAL sha256 is recorded in bank.json AND in each shard provenance, PROVENANCE.json naming its shard provenance files /
++    manifest / bank_sha256 (as the generator's merge writes them), and bank_stage.log. The npz are stand-ins (the chain never opens them; the dev-box reader does)."""
++    d = mk_bank(d, seed, ckpt, frac=frac, n_shards=n_shards, mutate=mutate)
++    man, prov = jload(d / "bank.json"), jload(d / "PROVENANCE.json")
++    for k in range(n_shards):
++        npz = d / f"shard_{k:03d}of{n_shards:03d}.npz"
++        npz.write_bytes((hashlib.sha256(f"stand-in shard npz, seed {seed}, shard {k}".encode()).digest() * (npz_bytes // 32 + 1))[:npz_bytes])
++        h = hashlib.sha256(npz.read_bytes()).hexdigest()
++        man["shards"][k]["file_sha256"] = h
++        sp = jload(d / f"shard_{k:03d}of{n_shards:03d}.provenance.json")
++        sp["file_sha256"] = h
++        jdump(d / f"shard_{k:03d}of{n_shards:03d}.provenance.json", sp)
++    jdump(d / "bank.json", man)
++    prov["shard_provenance"] = [f"shard_{k:03d}of{n_shards:03d}.provenance.json" for k in range(n_shards)]
++    prov["manifest"] = "bank.json"
++    prov["bank_sha256"] = hashlib.sha256((d / "bank.json").read_bytes()).hexdigest()
++    jdump(d / "PROVENANCE.json", prov)
++    (d / "bank_stage.log").write_text("bank stage log (stand-in)\n", encoding="utf-8")
++    return d
++
++
++def write_sums(d: Path, names=None, extra=None, newline=True, bad_hash_for=None):
++    """SHA256SUMS.txt over ``names`` (default: every file the chain publishes), written independently of the chain (hashlib here)."""
++    names = names if names is not None else CK.bank_flat(CK.bank_names(4))
++    lines = [f"{'0' * 64 if n == bad_hash_for else hashlib.sha256((d / n).read_bytes()).hexdigest()}  {n}" for n in names]
++    if extra:
++        lines.append(f"{'0' * 64}  {extra}")
++    (d / "SHA256SUMS.txt").write_bytes(("\n".join(lines) + ("\n" if newline else "")).encode("utf-8"))
++
++
++def flip_bit(p: Path):
++    b = bytearray(p.read_bytes())
++    b[len(b) // 2] ^= 1
++    p.write_bytes(bytes(b))
++
++
++def section_g():
++    say("== G. the banks the chain publishes to the dev box (the four kinds the reader needs, SHA256SUMS.txt, nothing moved before the judge passes)")
++    t = BT / "chaing"
++    if t.exists():
++        shutil.rmtree(t)
++    t.mkdir(parents=True)
++    s0, s1 = L_ck(0), L_ck(1)
++    harms = posix(orc_file(t / "harms.json", "HARMS"))
++    ckpy = [sys.executable, "-I", str(HERE / "box2_ship" / "v8f_dag_chain_checks.py")]
++    # ------------------------------------------------ G1: the checks (in-process, so a mutant of v8f_dag_chain_checks.py is seen)
++    names = CK.bank_names(4)
++    expect = {"provenance": ["PROVENANCE.json"], "manifest": ["bank.json"], "shard_provenance": [f"shard_00{k}of004.provenance.json" for k in range(4)], "shard_npz": [f"shard_00{k}of004.npz" for k in range(4)], "stage_log": ["bank_stage.log"]}
++    check("bank names: the FOUR kinds the reader needs are listed explicitly (PROVENANCE.json, bank.json, 4 shard provenance, 4 shard npz) + the stage log = 11 names", names == expect and len(CK.bank_flat(names)) == 11 and len(set(CK.bank_flat(names))) == 11, names)
++    good = mk_published_bank(t / "good", 0, s0)
++    v = CK.bank_verify(str(good))
++    check("bank-verify on a complete published bank (no SHA256SUMS.txt required): ok, 11 files, every kind non-empty", v["ok"] and v["n_files"] == 11 and all(v["bytes_by_kind"][k] > 0 for k in CK.BANK_KINDS) and v["bank_sha256"] == hashlib.sha256((good / "bank.json").read_bytes()).hexdigest(), v["bad"])
++    v = CK.bank_verify(str(good), require_sums=True)
++    regress("bank-verify --require-sums with NO SHA256SUMS.txt: not ok, says it is absent", (not v["ok"]) and any("SHA256SUMS.txt is absent" in b for b in v["bad"]), v["bad"])
++    write_sums(good)
++    v = CK.bank_verify(str(good), require_sums=True)
++    check("bank-verify --require-sums on a SHA256SUMS.txt written independently (hashlib) over exactly the 11 files: ok", v["ok"], v["bad"])
++
++    def vreg(name, edit, want, **kw):
++        """edit a copy of the good bank, run bank-verify, require NOT ok and the reason to contain ``want``"""
++        c = t / ("c_" + re.sub(r"\W", "", name)[:40])
++        shutil.copytree(good, c)
++        edit(c)
++        v_ = CK.bank_verify(str(c), **kw)
++        regress(f"bank-verify: {name} -> not ok, and the reason names it ({want!r})", (not v_["ok"]) and any(want in b for b in v_["bad"]), v_["bad"][:3])
++        shutil.rmtree(c, ignore_errors=True)
++    vreg("a shard npz that was never pulled (shard 2)", lambda c: (c / "shard_002of004.npz").unlink(), "shard_002of004.npz is absent")
++    vreg("an EMPTY shard npz (shard 1)", lambda c: (c / "shard_001of004.npz").write_bytes(b""), "shard_001of004.npz is empty")
++    vreg("one flipped bit in shard 3's npz (same size)", lambda c: flip_bit(c / "shard_003of004.npz"), "shard npz shard_003of004.npz hashes to")
++    vreg("bank.json edited after PROVENANCE.json named its sha256", lambda c: (c / "bank.json").write_bytes((c / "bank.json").read_bytes() + b" "), "PROVENANCE.bank_sha256")
++    vreg("a shard provenance file missing", lambda c: (c / "shard_002of004.provenance.json").unlink(), "shard_002of004.provenance.json is absent")
++    vreg("a shard provenance that records another file_sha256", lambda c: jdump(c / "shard_001of004.provenance.json", {**jload(c / "shard_001of004.provenance.json"), "file_sha256": "0" * 64}), "records file_sha256")
++    vreg("PROVENANCE.json missing", lambda c: (c / "PROVENANCE.json").unlink(), "cannot read bank.json / PROVENANCE.json")
++    vreg("bank.json missing", lambda c: (c / "bank.json").unlink(), "cannot read bank.json / PROVENANCE.json")
++    vreg("bank_stage.log missing", lambda c: (c / "bank_stage.log").unlink(), "bank_stage.log is absent")
++    vreg("bank.json says 3 shards (the queue runs 4)", lambda c: jdump(c / "bank.json", {**jload(c / "bank.json"), "n_shards": 3}), "the queue's bankdag runs 4")
++    vreg("PROVENANCE.json lists 3 of the 4 shard provenance files", lambda c: jdump(c / "PROVENANCE.json", {**jload(c / "PROVENANCE.json"), "shard_provenance": jload(c / "PROVENANCE.json")["shard_provenance"][:3]}), "shard_provenance is")
++    vreg("bank.json names a shard npz that is not the generator's", lambda c: jdump(c / "bank.json", {**jload(c / "bank.json"), "shards": [{**s_, "file": "other.npz"} if s_["k"] == 2 else s_ for s_ in jload(c / "bank.json")["shards"]]}), "bank.json shards name")
++    # SHA256SUMS.txt faults (each against an otherwise perfect directory)
++    vreg("SHA256SUMS.txt lists 10 names (a shard npz left out)", lambda c: write_sums(c, [n for n in CK.bank_flat(names) if n != "shard_002of004.npz"]), "expected exactly 11", require_sums=True)
++    vreg("SHA256SUMS.txt lists a 12th, unexpected name", lambda c: write_sums(c, extra="gen_shard_0.log"), "unexpected ['gen_shard_0.log']", require_sums=True)
++    vreg("SHA256SUMS.txt carries a wrong hash for one npz", lambda c: write_sums(c, bad_hash_for="shard_001of004.npz"), "lists 000000000000 for shard_001of004.npz", require_sums=True)
++    vreg("SHA256SUMS.txt without a final newline (a partial last line)", lambda c: write_sums(c, newline=False), "does not end with a newline", require_sums=True)
++    vreg("SHA256SUMS.txt lists a name twice", lambda c: (c / "SHA256SUMS.txt").write_bytes((c / "SHA256SUMS.txt").read_bytes() + (c / "SHA256SUMS.txt").read_bytes().splitlines(True)[0]), "twice", require_sums=True)
++    # the CLI: files named from the pulled bank.json, rc 2 on a bank that cannot be named
++    rc, o = sh(ckpy + ["bank-files", posix(good), "--kind", "shard_npz"])
++    check("bank-files --kind shard_npz (CLI): the 4 npz names, one per line", rc == 0 and o.split() == expect["shard_npz"], o)
++    rc, o = sh(ckpy + ["bank-files", posix(good), "--kind", "small"])
++    check("bank-files --kind small (CLI): every file but the npz (7 names: what the judge reads + the log)", rc == 0 and o.split() == expect["provenance"] + expect["manifest"] + expect["shard_provenance"] + expect["stage_log"], o)
++    rc, o = sh(ckpy + ["bank-files", posix(t / "nowhere")])
++    regress("bank-files on a directory with no bank.json: rc 2 and a reason (the chain's `names=$(...) || stop` then stops; an empty list would silently pull nothing)", rc == 2 and "cannot read bank.json" in o, o)
++    rc, o = sh(ckpy + ["bank-verify", posix(good), "--require-sums"])
++    check("bank-verify (CLI) on the sealed good bank: rc 0, one ZZDAG-BANKFILES line with n_files 11", rc == 0 and "ZZDAG-BANKFILES" in o and '"n_files": 11' in o, o[:200])
++    est = CK.est_bank_bytes()
++    check("ESTIMATED size of one seed's published bank (smoke 804 windows -> 306,566 windows; the arithmetic is bank-plan's): 0.62-0.72 GB, almost all of it the shard npz", 0.62e9 <= est["seed_total_bytes"] <= 0.72e9 and est["npz_total_bytes"] > 0.99 * est["seed_total_bytes"], est)
++    rc, o = sh(ckpy + ["bank-plan"])
++    check("bank-plan (CLI) prints the four kinds, `exactly 11 names` and the ESTIMATED size", rc == 0 and "exactly 11 names" in o and "ESTIMATED" in o and "kind shard_npz: shard_000of004.npz" in o, o)
++    shutil.rmtree(t, ignore_errors=True)
++
++
++def section_h():
++    say("== H. the chain's own publish flow, offline (--publish-only: the REAL bank_fetch_small -> judge -> publish_bank_one; only pull / rsha / stop are replaced)")
++    t = BT / "chainh"
++    if t.exists():
++        shutil.rmtree(t)
++    t.mkdir(parents=True)
++    s0, s1 = L_ck(0), L_ck(1)
++    harms = posix(orc_file(t / "harms.json", "HARMS"))
++    names = CK.bank_names(4)
++
++    def world(name, f0=None, f1=None, m0=None, m1=None):
++        w = t / name
++        mk_published_bank(w / "dagger_bank" / "s0", 0, s0, frac=f0 if f0 is not None else 0.62, mutate=m0)
++        mk_published_bank(w / "dagger_bank" / "s1", 1, s1, frac=f1 if f1 is not None else 0.58, mutate=m1)
++        return w
++
++    def run_pub(w, art, env=None):
++        shutil.rmtree(art, ignore_errors=True)
++        return bash(["--publish-only", posix(w)], {"DAG_ART": posix(art), "DAG_ORC_READ": harms, **(env or {})})
++
++    def npz_in(art):
++        return sorted(p.name for s in (0, 1) for p in (art / f"bank_s{s}").glob("*.npz")) if art.exists() else []
++    w = world("w_good")
++    art = t / "art_good"
++    rc, o = run_pub(w, art)
++    sums_ok, why = True, []
++    for s in (0, 1):
++        d = art / f"bank_s{s}"
++        lines = (d / "SHA256SUMS.txt").read_text(encoding="utf-8").splitlines() if (d / "SHA256SUMS.txt").exists() else []
++        listed = {ln[66:]: ln[:64] for ln in lines}
++        if sorted(listed) != sorted(CK.bank_flat(names)) or len(lines) != 11:
++            sums_ok = False
++            why.append(f"s{s}: {len(lines)} lines")
++        for nm, h in listed.items():
++            if not (d / nm).exists() or hashlib.sha256((d / nm).read_bytes()).hexdigest() != h or h != hashlib.sha256((w / "dagger_bank" / f"s{s}" / nm).read_bytes()).hexdigest():
++                sums_ok = False
++                why.append(f"s{s} {nm}")
++    check("chain --publish-only (REAL fetch -> judge -> publish; a stand-in for box 2): rc 0, ZZDAG-JUDGE-PASS, then BOTH seeds publish into bank_s0 / bank_s1: 11 files each, SHA256SUMS.txt = 11 lines whose hashes equal both the pulled files' and the stand-in box's (hashlib, independent of the chain)",
++          rc == 0 and "ZZDAG-JUDGE-PASS" in o and "ZZDAG-PUBLISH-ONLY-DONE" in o and sums_ok and len(npz_in(art)) == 8, (rc, why, o[-500:]))
++    i_pass, i_p0, i_p1 = o.find("ZZDAG-JUDGE-PASS"), o.find("bank s0 pulled to"), o.find("bank s1 pulled to")
++    check("chain --publish-only: the marker is the checkpoints' one (`bank s<S> pulled to <dir> (11 files ...)`), printed for each seed AFTER the judge's PASS and never before; the small-file fetch does not use that marker", 0 < i_pass < i_p0 < i_p1 and "11 files" in o[i_p0:i_p0 + 200] and o.count(" pulled to ") == 2, o[-600:])
++    # nothing is moved before the judge passes
++    wb = world("w_blk", f1=0.49)
++    art = t / "art_blk"
++    rc, o = run_pub(wb, art)
++    regress("chain --publish-only with COVERAGE 0.49 at seed 1 (BLOCKED): stops with `ZZV8FMINI-STOP BLOCKED`, NO shard npz was pulled for either seed, NO SHA256SUMS.txt", rc == 1 and "ZZV8FMINI-STOP BLOCKED" in o and npz_in(art) == [] and not list(art.glob("bank_s*/SHA256SUMS.txt")), (rc, npz_in(art), o[-300:]))
++    wr = world("w_ref", m1=lambda man, prov, provs: prov["controls"].pop("K-B4"))
++    art = t / "art_ref"
++    rc, o = run_pub(wr, art)
++    regress("chain --publish-only with a MISSING K-B4 record at seed 1 (REFUSED): stops with `ZZV8FMINI-STOP REFUSED`, no shard npz for EITHER seed (seed 0 was fine and is still not moved), no SHA256SUMS.txt", rc == 1 and "ZZV8FMINI-STOP REFUSED" in o and npz_in(art) == [] and not list(art.glob("bank_s*/SHA256SUMS.txt")), (rc, npz_in(art), o[-300:]))
++    # faults during the publish itself
++    wm = world("w_miss")
++    (wm / "dagger_bank" / "s1" / "shard_003of004.npz").unlink()
++    art = t / "art_miss"
++    rc, o = run_pub(wm, art)
++    regress("chain --publish-only with shard 3's npz ABSENT on box 2 (seed 1): `ZZV8FMINI-STOP pull ...`, seed 1 gets NO SHA256SUMS.txt (never sealed), seed 0 (complete) is sealed", rc == 1 and "ZZV8FMINI-STOP pull" in o and "shard_003of004.npz" in o and not (art / "bank_s1" / "SHA256SUMS.txt").exists() and (art / "bank_s0" / "SHA256SUMS.txt").exists(), (rc, o[-300:]))
++    wc = world("w_corrupt")
++    flip_bit(wc / "dagger_bank" / "s0" / "shard_001of004.npz")
++    art = t / "art_corrupt"
++    rc, o = run_pub(wc, art)
++    regress("chain --publish-only with a shard npz that does not hash to bank.json's file_sha256 (the generator's record): `nothing was sealed`, NO SHA256SUMS.txt at that seed, rc 1", rc == 1 and "ZZV8FMINI-STOP" in o and "nothing was sealed" in o and "shard_001of004.npz hashes to" in o and not (art / "bank_s0" / "SHA256SUMS.txt").exists(), (rc, o[-400:]))
++    pristine = world("w_pristine")
++    wt = t / "w_transfer"
++    shutil.copytree(pristine, wt)
++    flip_bit(wt / "dagger_bank" / "s0" / "shard_002of004.npz")
++    art = t / "art_transfer"
++    rc, o = run_pub(wt, art, {"FAKE_HASH_ROOT": posix(pristine)})
++    regress("chain --publish-only with a TRANSFER that corrupts (box 2's own sha256 of shard 2 != the pulled file's): `ZZV8FMINI-STOP bank s0: box 2's shard_002of004.npz sha256 ... != the pulled file's`, no SHA256SUMS.txt", rc == 1 and "box 2's shard_002of004.npz sha256" in o and not (art / "bank_s0" / "SHA256SUMS.txt").exists(), (rc, o[-300:]))
++    # a SHA256SUMS.txt of an EARLIER attempt must not survive into a new fetch
++    wst = world("w_stale")
++    (wst / "dagger_bank" / "s0" / "shard_000of004.npz").unlink()
++    art = t / "art_stale"
++    shutil.rmtree(art, ignore_errors=True)
++    (art / "bank_s0").mkdir(parents=True)
++    (art / "bank_s0" / "SHA256SUMS.txt").write_text(f"{'0' * 64}  PROVENANCE.json\n", encoding="utf-8")
++    rc, o = bash(["--publish-only", posix(wst)], {"DAG_ART": posix(art), "DAG_ORC_READ": harms})
++    regress("chain --publish-only over a directory that holds an EARLIER attempt's SHA256SUMS.txt, with an npz missing now: that SHA256SUMS.txt is REMOVED at the start of the fetch (a stale seal can never describe a new, incomplete pull)", rc == 1 and not (art / "bank_s0" / "SHA256SUMS.txt").exists(), (rc, list((art / "bank_s0").glob("*"))[:3], o[-200:]))
++    # a SEAL that comes out short (sha256sum drops a line: a full disk, a killed pipe): the chain's own re-verification must catch it, REMOVE the file and stop. Fault injection without touching the chain:
++    # a bash FUNCTION named sha256sum, defined through BASH_ENV (non-interactive bash sources it; Git bash puts /usr/bin first on PATH, so a PATH wrapper would never be found), drops the named line when the call has more than 3 arguments (the seal).
++    wrap = t / "wrap"
++    wrap.mkdir()
++    (wrap / "env.sh").write_bytes(b'sha256sum() { if [ -n "${FAKE_DROP:-}" ] && [ $# -gt 3 ]; then command sha256sum "$@" | grep -v "[ *]${FAKE_DROP}\\$"; else command sha256sum "$@"; fi; }\n')
++    benv = {"BASH_ENV": posix(wrap / "env.sh")}
++    art = t / "art_short"
++    rc, o = run_pub(w, art, {"FAKE_DROP": "bank_stage.log", **benv})
++    regress("chain --publish-only whose sha256sum drops one line (a SHORT SHA256SUMS.txt): the post-seal `bank-verify --require-sums` catches it, `SHA256SUMS.txt does not verify (removed)`, the short file is REMOVED, rc 1",
++            rc == 1 and "SHA256SUMS.txt does not verify (removed)" in o and "expected exactly 11" in o and not (art / "bank_s0" / "SHA256SUMS.txt").exists(), (rc, o[-400:]))
++    rc, o = run_pub(w, t / "art_wrapctl", benv)
++    check("(control for the wrapper) the same BASH_ENV sha256sum function WITHOUT FAKE_DROP seals both banks normally: the failure above came from the dropped line, not from the wrapper", rc == 0 and "ZZDAG-PUBLISH-ONLY-DONE" in o, o[-200:])
++    rc, o = bash(["--publish-only", posix(w)], {"DAG_ORC_READ": harms})
++    check("chain --publish-only refuses to run without DAG_ART (it never writes the real artifact directory)", rc == 1 and "needs DAG_ART" in o, o[-200:])
++    src = CHAIN.read_text(encoding="utf-8")
++    check("chain: the real flow calls publish_bank_one for both seeds exactly once, AFTER the judge's stop, and nowhere before it", src.count("publish_bank_one $s; done") == 2 and src.rfind("for s in 0 1; do publish_bank_one $s; done") > src.find("if [ $jr != 0 ]; then", src.rfind('judge_banks "$ART/bank_s0"')) > 0, src.count("publish_bank_one"))
++    shutil.rmtree(t, ignore_errors=True)
++
++
+ def main():
+     BT.mkdir(exist_ok=True)
+     t0 = time.time()
+-    only = os.environ.get("DAGQ_SECTIONS", "ABCDEF")                       # the mutation runner runs "AB" against a mutated queue
+-    for fn in [f for f, k in zip((section_a, section_b, section_c, section_d, section_e, section_f), "ABCDEF") if k in only]:
++    only = os.environ.get("DAGQ_SECTIONS", "ABCDEFGH")                       # the mutation runner runs "AB" against a mutated queue
++    for fn in [f for f, k in zip((section_a, section_b, section_c, section_d, section_e, section_f, section_g, section_h), "ABCDEFGH") if k in only]:
+         try:
+             fn()
+         except Exception as e:                                   # noqa: BLE001  a section that crashes is a FAILURE, never a silent skip
+--- a/dagq/mutate_dag_queue.py
++++ b/dagq/mutate_dag_queue.py
+@@ -2,11 +2,18 @@
+ """Mutation proof for the new queue stages: put ONE defect into a COPY of the staged queue, run the selftest's sections A (rendering) and B (the fake box, non-dry) against that copy, and require the selftest to go RED.
+ A mutant that leaves the selftest green is a rule whose test is too weak. The staged queue itself is never edited. Writes mutation_output.txt.
+ 
++Three families, all run against a COPY, never the staged files:
++  MUTANTS          defects in the staged box-2 queue (.cmd)                                  -> the selftest's sections A (rendering) and B (the fake box)
++  BANK_CHK_MUTANTS defects in box2_ship/v8f_dag_chain_checks.py's bank-publication checks     -> section G (bank_published / bank_verify / bank_plan, in-process)
++  CHAIN_MUTANTS    defects in box2_ship/chain_v8f_dag.sh (publish order, markers, seal, sums) -> sections H (the offline --publish-only flow) and D (source order, dry run)
++Each mutant must turn at least one check RED; the control run (no mutation) must read ALL PASS first.
++
+     CUDA_VISIBLE_DEVICES=-1 python mutate_dag_queue.py [--list]
+ """
+ from __future__ import annotations
+ 
+ import os
++import shutil
+ import subprocess
+ import sys
+ import time
+@@ -84,6 +91,60 @@
+      'for k in ("max_pose_now_err_m", "max_rel_transform_err_m"):', 'for k in ("max_pose_now_err_m",):'),
+ ]
+ 
++# ---- mutants of the BANK PUBLICATION checks (same file, bank-files / bank-verify): section G of the selftest must go RED on each
++BANK_CHK_MUTANTS = [
++    ("publish check: a shard npz is not hashed against bank.json's file_sha256",
++     '        if got != by_k[k].get("file_sha256"):', '        if False:'),
++    ("publish check: a shard provenance's file_sha256 is not compared with the npz's hash",
++     '        if not isinstance(sp, dict) or sp.get("file_sha256") != got:', '        if False:'),
++    ("publish check: bank.json is not hashed against PROVENANCE.bank_sha256",
++     '    if prov.get("bank_sha256") != msha:', '    if False:'),
++    ("publish check: SHA256SUMS.txt may list more or fewer names than the 11 (no exact set)",
++     '            elif sorted(listed) != sorted(allnames):', '            elif False:'),
++    ("publish check: the hashes in SHA256SUMS.txt are not compared with the files",
++     '                    if h != listed[nm]:', '                    if False:'),
++    ("publish check: an EMPTY published file is accepted",
++     '            elif os.path.getsize(p) == 0:', '            elif False:'),
++    ("publish check: an ABSENT published file is accepted",
++     '            if not os.path.isfile(p):\n                r["bad"].append(f"{kind}: {nm} is absent")', '            if False:\n                r["bad"].append(f"{kind}: {nm} is absent")'),
++    ("publish check: a bank of another shard count than the queue's four is accepted",
++     '    if expect_shards is not None and n != expect_shards:', '    if False:'),
++    ("publish names: the shard npz are not among the published names (only the small files would be)",
++     '"shard_npz": [f"shard_{k:03d}of{n:03d}.npz" for k in range(n)], "stage_log": ["bank_stage.log"]}', '"shard_npz": [], "stage_log": ["bank_stage.log"]}'),
++    ("publish names: bank.json is not among the published names",
++     '"provenance": ["PROVENANCE.json"], "manifest": ["bank.json"],', '"provenance": ["PROVENANCE.json"], "manifest": [],'),
++    ("publish check: a SHA256SUMS.txt without its final newline is accepted",
++     '    if not text.endswith("\\n"):\n        return {}, "SHA256SUMS.txt does not end', '    if False:\n        return {}, "SHA256SUMS.txt does not end'),
++    ("publish check: a name listed twice in SHA256SUMS.txt is accepted",
++     '        if m.group(2).strip() in listed:', '        if False:'),
++]
++
++# ---- mutants of the CHAIN's publish code (box2_ship/chain_v8f_dag.sh): each is [(old, new), ...] applied to a COPY of the chain (its helper scripts copied beside it) that the selftest then runs (DAGQ_CHAIN)
++CHAIN = HERE / "box2_ship" / "chain_v8f_dag.sh"
++CHAIN_MUTANTS = [
++    ("chain: the shard npz are never pulled by publish_bank_one", "H",
++     [('    pull "dagger_bank/s$s/$f" "$d"\n    ls=$(sha256sum "$d/$f" | cut -c1-64); rs=$(rsha', '    true\n    ls=$(sha256sum "$d/$f" | cut -c1-64); rs=$(rsha')]),
++    ("chain: box 2's own sha256 of a shard npz is not compared with the pulled file's", "H",
++     [('    [ -n "$rs" ] && [ "$rs" = "$ls" ] || stop "bank s$s: box 2\'s $f sha256', '    true || stop "bank s$s: box 2\'s $f sha256')]),
++    ("chain: the files are not verified BEFORE the seal is written", "H",
++     [('v=$($PY "$(cygpath -m $CHECKS)" bank-verify "$(cygpath -m "$d")") || stop "bank s$s: the pulled files do not verify', 'v=$(true) || stop "bank s$s: the pulled files do not verify')]),
++    ("chain: the seal is not re-verified after it is written", "H",
++     [('v=$($PY "$(cygpath -m $CHECKS)" bank-verify "$(cygpath -m "$d")" --require-sums) || {', 'v=$(true) || {')]),
++    ("chain: a seal that fails its re-verification is left on disk", "H",
++     [('|| { rm -f "$d/SHA256SUMS.txt"; stop "bank s$s: SHA256SUMS.txt does not verify (removed)', '|| { stop "bank s$s: SHA256SUMS.txt does not verify (removed)')]),
++    ("chain: an earlier attempt's SHA256SUMS.txt is not removed when the small files are fetched", "H",
++     [('  rm -f "$d/SHA256SUMS.txt"\n  for f in bank.json PROVENANCE.json bank_stage.log; do', '  for f in bank.json PROVENANCE.json bank_stage.log; do')]),
++    ("chain: the small-file fetch also pulls the shard npz (moved before the judge)", "H",
++     [('for k in 0 1 2 3; do pull "dagger_bank/s$s/shard_00${k}of004.provenance.json" "$d"; done', 'for k in 0 1 2 3; do pull "dagger_bank/s$s/shard_00${k}of004.provenance.json" "$d"; pull "dagger_bank/s$s/shard_00${k}of004.npz" "$d"; done')]),
++    ("chain: SHA256SUMS.txt is written over the small files only (the npz left out)", "H",
++     [('bank-files "$(cygpath -m "$d")" --kind all)', 'bank-files "$(cygpath -m "$d")" --kind small)')]),
++    ("chain: the real flow never calls publish_bank_one", "D",
++     [('\nfor s in 0 1; do publish_bank_one $s; done\n# ---- 4.', '\n# ---- 4.')]),
++    ("chain: the real flow publishes BEFORE the judge", "DH",
++     [('\nfor s in 0 1; do publish_bank_one $s; done\n# ---- 4.', '\n# ---- 4.'),
++      ('declare -a BSHA\nfor s in 0 1; do bank_one $s; done\n', 'declare -a BSHA\nfor s in 0 1; do bank_one $s; done\nfor s in 0 1; do publish_bank_one $s; done\n')]),
++]
++
+ 
+ def main() -> int:
+     if "--list" in sys.argv:
+@@ -137,13 +198,64 @@
+             survived.append(name)
+             log.append(f"{i:2d} SURVIVED {name}")
+         print(log[-1], flush=True)
+-    # control: the unmutated queue is green under the same runner
+-    env = {**os.environ, "DAGQ_QUEUE": str(base), "DAGQ_SECTIONS": "ABC", "DAGQ_OUT": str(out_dir / "out_control.txt"), "CUDA_VISIBLE_DEVICES": "-1", "PYTHONDONTWRITEBYTECODE": "1"}
++    n_before = len(MUTANTS) + len(CHK_MUTANTS)
++    for j, (name, old_c, new_c) in enumerate(BANK_CHK_MUTANTS):                      # the bank-publication checks: section G (in-process, so the mutated checks are the ones that run)
++        i = n_before + j
++        if ctext.count(old_c) != 1:
++            log.append(f"{i:2d} ANCHOR-ERROR (occurs {ctext.count(old_c)}x): {name}")
++            bad += 1
++            continue
++        cd = out_dir / f"bchk_m{j}"
++        cd.mkdir(parents=True, exist_ok=True)
++        (cd / "v8f_dag_chain_checks.py").write_text(ctext.replace(old_c, new_c), encoding="utf-8", newline="")
++        outf = out_dir / f"out_bchk{j}.txt"
++        env = {**os.environ, "DAGQ_CHECKS_DIR": str(cd), "DAGQ_SECTIONS": "G", "DAGQ_OUT": str(outf), "CUDA_VISIBLE_DEVICES": "-1", "PYTHONDONTWRITEBYTECODE": "1"}
++        subprocess.run([sys.executable, str(HERE / "selftest_dag_queue.py")], env=env, capture_output=True, text=True, cwd=str(HERE), timeout=1800)
++        o = outf.read_text(encoding="utf-8") if outf.exists() else ""
++        red = [l for l in o.splitlines() if l.startswith(("FAIL", "MISSED"))]
++        if red:
++            killed += 1
++            log.append(f"{i:2d} KILLED   ({len(red)} red) {name}   <- {red[0][:150]}")
++        else:
++            survived.append(name)
++            log.append(f"{i:2d} SURVIVED {name}")
++        print(log[-1], flush=True)
++    chain_text = CHAIN.read_text(encoding="utf-8")
++    n_before += len(BANK_CHK_MUTANTS)
++    for j, (name, sections, pairs) in enumerate(CHAIN_MUTANTS):                      # the chain's publish code: the selftest runs the MUTATED chain (sections H = the offline publish flow, D = the source order)
++        i = n_before + j
++        mutated, anchor_bad = chain_text, [o_ for o_, _ in pairs if chain_text.count(o_) != 1]
++        if anchor_bad:
++            log.append(f"{i:2d} ANCHOR-ERROR (occurs {[chain_text.count(o_) for o_ in anchor_bad]}x): {name}")
++            bad += 1
++            continue
++        for o_, n_ in pairs:
++            mutated = mutated.replace(o_, n_)
++        cd = out_dir / f"chain_m{j}"
++        cd.mkdir(parents=True, exist_ok=True)
++        for helper in ("v8f_dag_chain_checks.py", "gate_dag_assert.py"):
++            shutil.copy(HERE / "box2_ship" / helper, cd / helper)
++        (cd / "chain_v8f_dag.sh").write_text(mutated, encoding="utf-8", newline="")
++        outf = out_dir / f"out_chain{j}.txt"
++        env = {**os.environ, "DAGQ_CHAIN": str(cd / "chain_v8f_dag.sh"), "DAGQ_SECTIONS": sections, "DAGQ_OUT": str(outf), "CUDA_VISIBLE_DEVICES": "-1", "PYTHONDONTWRITEBYTECODE": "1"}
++        subprocess.run([sys.executable, str(HERE / "selftest_dag_queue.py")], env=env, capture_output=True, text=True, cwd=str(HERE), timeout=1800)
++        o = outf.read_text(encoding="utf-8") if outf.exists() else ""
++        red = [l for l in o.splitlines() if l.startswith(("FAIL", "MISSED"))]
++        if red:
++            killed += 1
++            log.append(f"{i:2d} KILLED   ({len(red)} red) {name}   <- {red[0][:150]}")
++        else:
++            survived.append(name)
++            log.append(f"{i:2d} SURVIVED {name}")
++        print(log[-1], flush=True)
++    n_all = len(MUTANTS) + len(CHK_MUTANTS) + len(BANK_CHK_MUTANTS) + len(CHAIN_MUTANTS)
++    # control: the unmutated queue, judge, publication checks and chain are green under the same runner
++    env = {**os.environ, "DAGQ_QUEUE": str(base), "DAGQ_SECTIONS": "ABCDGH", "DAGQ_OUT": str(out_dir / "out_control.txt"), "CUDA_VISIBLE_DEVICES": "-1", "PYTHONDONTWRITEBYTECODE": "1"}
+     subprocess.run([sys.executable, str(HERE / "selftest_dag_queue.py")], env=env, capture_output=True, text=True, cwd=str(HERE), timeout=1800)
+     oc = (out_dir / "out_control.txt").read_text(encoding="utf-8")
+     ctl_green = "RESULT: ALL PASS" in oc
+-    log.append(f"control (unmutated staged queue and judge, sections A, B and C): {'GREEN' if ctl_green else 'RED'}")
+-    summary = f"MUTATION: {killed}/{len(MUTANTS) + len(CHK_MUTANTS)} killed, {len(survived)} survived, {bad} anchor errors; control {'green' if ctl_green else 'RED'}; {time.time() - t0:.0f} s"
++    log.append(f"control (unmutated staged queue, judge, publication checks and chain, sections A, B, C, D, G and H): {'GREEN' if ctl_green else 'RED'}")
++    summary = f"MUTATION: {killed}/{n_all} killed ({len(MUTANTS)} queue + {len(CHK_MUTANTS)} judge + {len(BANK_CHK_MUTANTS)} publication checks + {len(CHAIN_MUTANTS)} chain), {len(survived)} survived, {bad} anchor errors; control {'green' if ctl_green else 'RED'}; {time.time() - t0:.0f} s"
+     log.append(summary)
+     (HERE / "mutation_output.txt").write_text("\n".join(log) + "\n", encoding="utf-8")
+     print(summary)
+--- a/dagq/make_manifest.py
++++ b/dagq/make_manifest.py
+@@ -18,16 +18,16 @@
+     ("queue_additions/stages.txt", "source of the queue's new stage bodies", f"REPO {RAW}/queue_additions/"),
+     ("build_queue.py", "rebuilds the staged queue from the tip + additions (additive check)", f"REPO {RAW}/"),
+     ("tip_v8f_mini_box2_queue.cmd", "the tip's queue (git show 2a78f059), the base of the diff", f"REPO {RAW}/ (reference copy)"),
+-    ("box2_ship/chain_v8f_dag.sh", "the dev-box chain (generated): ORC predicate, banks, K-B0..K-B5 controls + COVERAGE gate, 4 gates, 4 runs, standard T0 eval", "DEV BOX C:/Users/Admin/box2_ship/chain_v8f_dag.sh (NEW; not repo)"),
++    ("box2_ship/chain_v8f_dag.sh", "the dev-box chain (generated): ORC predicate, banks, K-B0..K-B5 controls + COVERAGE gate, BANK PUBLICATION (shard npz + 11-name SHA256SUMS.txt per seed, after the judge), 4 gates, 4 runs, standard T0 eval", "DEV BOX C:/Users/Admin/box2_ship/chain_v8f_dag.sh (NEW; not repo)"),
+     ("box2_ship/chain_v8f_dag.sh.in", "the chain's template (the banked checkpoint hashes are copied in by make_chain.py)", f"REPO {RAW}/ (with make_chain.py)"),
+     ("make_chain.py", "generates chain_v8f_dag.sh / v8f_guard_dag.sh / run_chain_v8f_dag.cmd / wake_v8fdag.sh from the originals", f"REPO {RAW}/"),
+     ("box2_ship/gate_dag_assert.py", "the gate assertions + token writer, run on a pulled selfcheck.json", "DEV BOX C:/Users/Admin/box2_ship/gate_dag_assert.py (NEW)"),
+-    ("box2_ship/v8f_dag_chain_checks.py", "the ORC predicate + bank judge (controls incl. K-B4 / K-B5, COVERAGE) + argv helpers", "DEV BOX C:/Users/Admin/box2_ship/v8f_dag_chain_checks.py (NEW)"),
++    ("box2_ship/v8f_dag_chain_checks.py", "the ORC predicate + bank judge (controls incl. K-B4 / K-B5, COVERAGE) + argv helpers + the bank-publication checks (bank-files / bank-verify / bank-plan)", "DEV BOX C:/Users/Admin/box2_ship/v8f_dag_chain_checks.py (NEW)"),
+     ("box2_ship/v8f_guard_dag.sh", "COPY of v8f_guard.sh that also stops the bank generators", "DEV BOX C:/Users/Admin/box2_ship/v8f_guard_dag.sh (NEW)"),
+     ("box2_ship/run_chain_v8f_dag.cmd", "detached launcher (NOT RUN)", "DEV BOX C:/Users/Admin/box2_ship/run_chain_v8f_dag.cmd (NEW)"),
+     ("box2_ship/wake_v8fdag.sh", "the waker", "DEV BOX C:/Users/Admin/box2_ship/wake_v8fdag.sh (NEW)"),
+     ("dagq_lib.py", "shared helpers: runs the real queue through cmd.exe and parses what it prints", f"REPO {RAW}/"),
+-    ("selftest_dag_queue.py", "THE PROOF: dry-run render, fake-box run, chain decisions, chain script, real selfcheck assertions", f"REPO {RAW}/"),
++    ("selftest_dag_queue.py", "THE PROOF (sections A-H): dry-run render, fake-box run, chain decisions, chain script, real selfcheck assertions, shard tool, bank publication checks, the chain's offline publish flow", f"REPO {RAW}/"),
+     ("selftest_output.txt", "output of the selftest on the final bytes", f"REPO {RAW}/"),
+     ("real_gate_proof.py", "the REAL trainer's --selfcheck-only on the queue's argv tail (CPU, synthetic world)", f"REPO {RAW}/"),
+     ("real_gate_proof.log", "its output", f"REPO {RAW}/"),
+@@ -37,8 +37,9 @@
+     ("kb_shape_probe.py", "the generator's own K-B4 / K-B5 records (di/tree, read-only import) run through the judge's rules", f"REPO {RAW}/"),
+     ("kb_shape_probe.txt", "its output", f"REPO {RAW}/"),
+     ("rg/COPY_PROVENANCE.txt", "when/what rg/tree was copied from di/tree", f"REPO {RAW}/"),
+-    ("mutate_dag_queue.py", "mutation proof of the queue stages", f"REPO {RAW}/"),
+-    ("mutation_output.txt", "its output", f"REPO {RAW}/"),
++    ("mutate_dag_queue.py", "mutation proof: 51 mutants (20 queue stages, 9 bank judge, 12 bank-publication checks, 10 chain)", f"REPO {RAW}/"),
++    ("mutation_output.txt", "its output (51/51 killed)", f"REPO {RAW}/"),
++    ("bankpub.diff", "unified diff of the bank-publication revision (checks, chain, chain template, selftest, mutator, NOTES) against the bytes before it", f"REPO {RAW}/bankpub.diff"),
+     ("chain_dry_run.txt", "chain --dry-run against the staged queue (ORC read HARMS -> p 0.1)", f"REPO {RAW}/"),
+     ("make_manifest.py", "this script", f"REPO {RAW}/"),
+     ("NOTES.md", "what was built, the guarantees, UNVERIFIED, open decisions", f"REPO {RAW}/NOTES.md"),
+--- a/dagq/NOTES.md
++++ b/dagq/NOTES.md
+@@ -1,6 +1,6 @@
+ # NOTES: the box-2 queue stages and chain for PREREG_V8F_DAGGER (BUILT, NOT LAUNCHED)
+ 
+-Built 2026-10-26 (about 19:00-20:15 local), REVISED about 20:00-21:00 for the Master Mind's rulings O1 (no fresh eval), O6 (K-B4 / K-B5 gated), O2 / O4 / O7 (section 7) and re-proved on the final bytes, from the tip `2a78f059cd4dcd29c279467ccca84581123d73b5` of `agent/arch-inf-20260803` (`git ls-remote` still read it at 19:xx) and the integrated DAgger tree `E:/Projects/TanitAD-artifacts/di/tree`.
++Built 2026-10-26 (about 19:00-20:15 local), REVISED about 20:00-21:00 for the Master Mind's rulings O1 (no fresh eval), O6 (K-B4 / K-B5 gated), O2 / O4 / O7 (section 7), and REVISED AGAIN about 21:30-22:45 to PUBLISH THE BANK FILES the reader needs (section 10: the shard npz and a SHA256SUMS.txt per seed; counts in section 5 are from that last revision) and re-proved on the final bytes, from the tip `2a78f059cd4dcd29c279467ccca84581123d73b5` of `agent/arch-inf-20260803` (`git ls-remote` still read it at 19:xx) and the integrated DAgger tree `E:/Projects/TanitAD-artifacts/di/tree`.
+ STAGED in `E:/Projects/TanitAD-artifacts/dagq/`. Nothing committed, pushed, shipped or launched. No contact with box 2. No GPU. `di/` was only read; the python files of `di/tree` were copied (read-only) into `dagq/rg/tree`.
+ Evidence classes: MEASURED (this build, artifact path) / UNVERIFIED. Python `C:/Users/Admin/venvs/tanitad/Scripts/python.exe`, `CUDA_VISIBLE_DEVICES=-1`.
+ 
+@@ -14,7 +14,7 @@
+ | `stage/TanitAD Research Lab/.../code/v8f_mini_box2_queue.cmd` | the tip's queue + 4 stages and 3 helpers, **insertions only** (`queue.diff`: 0 removed lines, 143 added) | repo, replaces the tip's file |
+ | `stage/stack/scripts/v8f_dagger_queue_tool.py` | `bank` (N concurrent `v8f_dagger_bank.py gen --shard K`, skip finished shards, merge, kill the rest on the first failure) and `sha` | repo, NEW |
+ | `box2_ship/chain_v8f_dag.sh` (+ `.in`, `make_chain.py`) | the dev-box chain, the form of `chain_v8f_orc.sh` | `C:/Users/Admin/box2_ship/` (NOT in the repo, like the other chains) |
+-| `box2_ship/gate_dag_assert.py`, `v8f_dag_chain_checks.py` | the gate assertions + token writer; the ORC predicate + bank judge | same dir |
++| `box2_ship/gate_dag_assert.py`, `v8f_dag_chain_checks.py` | the gate assertions + token writer; the ORC predicate + bank judge + the bank-publication checks (`bank-files`, `bank-verify`, `bank-plan`) | same dir |
+ | `box2_ship/v8f_guard_dag.sh`, `run_chain_v8f_dag.cmd`, `wake_v8fdag.sh` | guard copy (also kills the bank generators), detached launcher (NOT RUN), waker | same dir |
+ | `selftest_dag_queue.py`, `dagq_lib.py`, `real_gate_proof.py`, `mutate_dag_queue.py`, `build_queue.py` | the proofs | repo, `raw/2026-10-26-dagger-queue/` |
+ 
+@@ -40,19 +40,20 @@
+ ## 4. The chain, in PREREG section 8's order (`chain_v8f_dag.sh`; header comment has the same list)
+ 0. **ORC predicate, before anything is touched**: `ORC_READ.json` (`DAG_ORC_READ`, default `E:/Projects/TanitAD-artifacts/v8f-orecover-t1/read/ORC_READ.json`), field `OUTCOME.OUTCOME`, `claim_row` H-V8F-ORECOVER-1, every `controls_PASS` true, exactly one matching table row. NO EFFECT -> p 0.3; HARMS -> p 0.1; **ROBUST / PARTIAL -> `ZZV8FMINI-STOP PARKED`**; REFUSED / UNPLACED / failed control / foreign file -> stop. MEASURED on the REAL file: `HARMS 0.1 a50dbba9fee9...` (the sha256 PREREG Amendment 1 records). Re-read byte-identically before the gates.
+ 1. `AFTER_OUT` (REQUIRED, no default; for now `/c/Users/Admin/box2_ship/logs/chain_v8f_orc.out`, which ends with `ZZV8FMINI-DONE`), atomic `BOX2_BUSY`, refresh from the REMOTE tip, tip must carry the lever (18 grep patterns, applied to the tip; the loop-line pattern is anchored on its indentation because the same text is in a comment) and the 8 queue labels, 13 key files sha-checked, v9 md5s.
+-2. `bankdag 0`, `bankdag 1`; only the small files are pulled (`bank.json`, `PROVENANCE.json`, the 4 shard provenance files, the stage log); box 2's `bank.json` sha256 == the pulled file's.
++2. `bankdag 0`, `bankdag 1`; only the SMALL files are fetched for the judge (`bank_fetch_small`: `bank.json`, `PROVENANCE.json`, the 4 shard provenance files, the stage log); box 2's `bank.json` sha256 == the pulled file's. A SHA256SUMS.txt of an earlier attempt is removed at the start of this fetch.
+ 3. **Bank controls then COVERAGE** (`v8f_dag_chain_checks.py bank-judge`): K-B0 (every window checked, 0 mismatches), K-B1 (>= 1 replayed chunk per shard, 0 mismatches), K-B2 (header checkpoint == banked M2b), K-B3 (eval overlap 0), **K-B4** (`PROVENANCE.json controls["K-B4"]["PASS"] is True` AND all six cases `straight, stationary_tie, lateral_cut, heading_cut, end_edge, loop` exactly `True`), **K-B5** (`controls["K-B5"]["PASS"] is True` AND `max_pose_now_err_m`, `max_rel_transform_err_m` finite numbers `<= 1e-4`, inclusive; these are `dag_read.py` `g_kb4` :863 / `g_kb5` :872 / `kb_record`), PREREG-1 rollout, TRAIN list (4,512 clips, 306,566 windows, `540:600`), complete, schema, record shape -> any failure, **including a MISSING K-B4 / K-B5 record (or no `controls` block at all)**, = **REFUSED (rc 2)** and the chain STOPS before any gate. Checked at BOTH seeds. Only then COVERAGE: eligible/TRAIN windows recomputed, **>= 0.5 inclusive at BOTH seeds**, the bank's own `blocked` flag must agree -> else **BLOCKED (rc 3): `ZZDAG-BLOCKED` + `ZZV8FMINI-STOP BLOCKED`, no gate queued, nothing trained**, `DAG_OUTCOME.json` written. Precedence REFUSED > BLOCKED (a failed control invalidates the coverage reading), as the PREREG table orders them.
++3b. **Bank publication** (`publish_bank_one`, per seed, ONLY after the judge's PASS: the stop `if [ $jr != 0 ]` precedes it, and the source-order check pins that nothing is moved before it): the 4 shard npz are pulled (each one's sha256 measured on box 2 AND here must agree, and equal `bank.json`'s `file_sha256`), `bank-verify` (pre-seal), then `sha256sum <11 names> | tee SHA256SUMS.txt` WRITTEN LAST, then `bank-verify --require-sums` (post-seal; a failed seal is REMOVED and the chain STOPs). Marker (the checkpoints' form): `bank s<S> pulled to <dir> (11 files: ...; sha256 in SHA256SUMS.txt; bank.json sha256 ...)`. Section 10 has the four kinds, the sizes (ESTIMATED) and the proof.
+ 4. Four gates FIRST (ORC's design: a gate that fails for the fourth run is found before the first GPU-hour), in the PREREG's order DAG s0, DAG-0 s0, DAG s1, DAG-0 s1, each pulled and asserted by `gate_dag_assert.py`; token written only after every assertion passes.
+ 5. The four runs: `traindag` -> `evaldag` (the one standard T0 eval) -> pull -> run record -> reached control (DAG: `dagger_n/dagger_eligible` in p +- 0.02; DAG-0: exactly 0) -> next run. BOX2_BUSY / DONE / STOP markers and the guard are ORC's.
+ 
+ ## 5. Proofs (MEASURED, on the final bytes; every file is in this directory)
+-* **`selftest_output.txt`: 112/112 checks pass, 125/125 deliberate regressions caught, 0 missed** (67 s; was 100/96 before the O1/O6 changes). A: rendering through the real queue (incl. refusals, 10 unchanged existing stages, the by-name `--ego-perturb-p 0` assertion on all 8 gate and train lines, `evaldagfresh` refused). B: the fake box (one eval only). C: the ORC predicate and the bank judge on both sides, K-B4 / K-B5 gated (26 judge-level K-B4 / K-B5 regressions, each required to fail FOR ITS OWN named control, plus the boundary and extra-key checks). D: the chain script (`--judge-only` BLOCKED / REFUSED / PASS / PARKED, including a missing K-B4 record: rc 2, `ZZDAG-REFUSED`, `ZZV8FMINI-STOP REFUSED`, no gate queued; `--dry-run`, `--check-tree`, source order). E: assertions on a REAL selfcheck.json. F: the shard tool (4 shards; a failing shard terminates the slow one and prevents the merge; resume), the guard diff, the banked hashes, the additive diff.
++* **`selftest_output.txt`: 127/127 checks pass, 153/153 deliberate regressions caught, 0 missed** (90 s; was 112/125 before the bank-publication revision and 100/96 before the O1/O6 changes). The revision adds sections G and H (section 10) and the publish-order checks in D. A: rendering through the real queue (incl. refusals, 10 unchanged existing stages, the by-name `--ego-perturb-p 0` assertion on all 8 gate and train lines, `evaldagfresh` refused). B: the fake box (one eval only). C: the ORC predicate and the bank judge on both sides, K-B4 / K-B5 gated (26 judge-level K-B4 / K-B5 regressions, each required to fail FOR ITS OWN named control, plus the boundary and extra-key checks). D: the chain script (`--judge-only` BLOCKED / REFUSED / PASS / PARKED, including a missing K-B4 record: rc 2, `ZZDAG-REFUSED`, `ZZV8FMINI-STOP REFUSED`, no gate queued; `--dry-run` (now also the per-seed publish plan: the four kinds, the 11 names, the ESTIMATED size), `--check-tree`, source order banks -> judge -> stop -> PUBLISH -> ORC re-read -> gates -> trains, with mutated-source regressions: publish call deleted, publish before the judge). G: the bank-publication checks (section 10). H: the chain's own publish flow offline (`--publish-only`). E: assertions on a REAL selfcheck.json. F: the shard tool (4 shards; a failing shard terminates the slow one and prevents the merge; resume), the guard diff, the banked hashes, the additive diff.
+   * **COVERAGE, both sides**: 0.62/0.58 PASS; exactly 0.5 PASS; 153,282/306,566 BLOCKED; 0.49 at s1 only BLOCKED for the whole chain; both seeds below BLOCKED; flag/fraction disagreement REFUSED; K-B1 mismatch AND coverage < 0.5 -> REFUSED (precedence). Via the chain: `--judge-only` with coverage 0.49 prints `ZZDAG-BLOCKED`, `ZZV8FMINI-STOP BLOCKED`, "no gate was queued", and never `ZZDAG-JUDGE-PASS`; the source-order check (banks -> judge -> `if [ $jr != 0 ]` stop -> all gates -> trains) goes RED if the stop is deleted or disabled.
+   * **ORC predicate**: HARMS -> 0.1, NO EFFECT -> 0.3 run; ROBUST and PARTIAL rc 4 (PARKED); REFUSED, UNPLACED, unknown, a HARMS with one failed control, another PREREG's file, two matching rows, a missing file: rc 2. The REAL entry with a ROBUST file stops with `ZZV8FMINI-STOP PARKED` before the predecessor wait, the busy marker or any box-2 call.
+ * **`kb_shape_probe.txt`: 8/8** (the generator's own K-B4 / K-B5 record builders, imported read-only from `di/tree`, accepted by the judge's rules; key names and types only).
+ * **`real_gate_proof.log` / `rg/out/RESULT.json`: 17/17** (re-run on the final bytes; unchanged by O1/O6: it never runs the judge or an eval). The REAL `v8f_mini_train.py --selfcheck-only` (CPU, synthetic world, `rg/tree` copy) is given the token tail the queue prints (`--init-ckpt ... --dagger-seed`), with only the three PATH values replaced: it ACCEPTS DAG (`dagger_probe` pass, p = 0 control exactly 0.0, levers carry p 0.1 and the declared == built bank sha256, `info.dagger` carries K-B2/K-B3/COVERAGE) and DAG-0 (probe `off`); it REFUSES 8 things the queue must never emit (DAG-0 + bank, + bank hash, + seed 1; DAG without the hash; a one-digit-wrong hash; DAG + `--ego-perturb-p 0.3`; init != the bank's checkpoint; p 0 + bank). The bank there was made by the queue's own tool (2 shards through the real generator + merge).
+ * **`gate_dag_assert.py` is run on that REAL selfcheck.json** (so every key name is the trainer's, not a guess) and passes for DAG and DAG-0; 40 mutations of it, each required to fail FOR ITS REASON (message substring), incl. p = 0 control 1e-9, prior control 1e-12, swapped batch not moving the loss, wrong init / bank / K-B2 / K-B3 / COVERAGE, pin != plan, a second lever, a law flag, a DAG-0 naming the bank; and the B-summary comparison (loss weights, parameter groups, window set, TRAIN list). The token is written only on a pass and binds the sha256 of the PIN.
+-* **`mutation_output.txt`: 29/29 mutants killed** (20 of the queue against sections A and B, 9 of the bank judge against section C), 0 survived, 0 anchor errors, control (unmutated queue and judge) green (663 s). The 9 judge mutants: K-B4 not gated, K-B5 not gated, a missing record tolerated, K-B5 tolerance 1e-3, `<` instead of `<=`, PASS read as truthy, the `loop` case skipped, the cases never examined, only one of the two K-B5 errors checked. One of the mutants (`bankdag` calling `:prepdag` before `:dagname`) is a REAL bug the fake-box run found in my first draft (the eval grid was copied to an empty path); it is fixed and now pinned.
++* **`mutation_output.txt`: 51/51 mutants killed** (20 of the queue against sections A and B, 9 of the bank judge against section C, **12 of the bank-publication checks against section G, 10 of the chain script against sections H and D**), 0 survived, 0 anchor errors, control (unmutated queue, judge, publication checks and chain) green (965 s; was 29/29 in 663 s). The 12 publication-check mutants: a shard npz not hashed against `bank.json`'s `file_sha256`, a shard provenance's `file_sha256` not compared, `bank.json` not hashed against `PROVENANCE.bank_sha256`, no exact 11-name set, the SUMS hashes not compared with the files, an EMPTY and an ABSENT published file accepted, a bank of another shard count accepted, the shard npz or `bank.json` missing from the published names, a SUMS without its final newline, a name listed twice. The 10 chain mutants: the shard npz never pulled, box 2's own sha256 not compared with the pulled file's, no verify BEFORE the seal, no re-verify AFTER it, a failed seal left on disk, an earlier attempt's SUMS not removed at the fetch, the small-file fetch also pulling the npz (moved before the judge), a SUMS over the small files only, publish never called, publish before the judge. The 9 judge mutants: K-B4 not gated, K-B5 not gated, a missing record tolerated, K-B5 tolerance 1e-3, `<` instead of `<=`, PASS read as truthy, the `loop` case skipped, the cases never examined, only one of the two K-B5 errors checked. One of the mutants (`bankdag` calling `:prepdag` before `:dagname`) is a REAL bug the fake-box run found in my first draft (the eval grid was copied to an empty path); it is fixed and now pinned.
+ 
+ ## 6. UNVERIFIED (nothing below was run)
+ * Everything over ssh: the chain's real flow after the ORC predicate (refresh, key-file shas, `queue`/`launch`/`waitrc`, pulls, the guard against box 2). Only `bash -n`, `--dry-run`, `--judge-only`, `--check-tree` and the source-order checks ran. The ORC chain's helpers were copied, not re-proved.
+@@ -60,6 +61,7 @@
+ * **CUDA**: the generators on `--device cuda`, four processes sharing one RTX 4060 8 GB (the dev box failed to start four torch processes: WinError 1455, paging file; box 2 is a different machine with 32 GB), K-B1 bit-exactness under cuBLAS, `--threads 2` x 4 under the 0xFF affinity mask. The 1.1-1.5 h per seed is the DESIGN_NOTES ESTIMATE; the bank is ESTIMATED at ~0.7 GB per seed on D: (the chain refuses under 8 GB free).
+ * The landed tip: the chain's lever greps are proven against `rg/tree` (a copy of the integrated tree + the tool) and shown to FAIL on the pre-change tip and on a trainer with the loop line deleted; they have not been run against a landed commit (none exists).
+ * `real_gate_proof` is a SYNTHETIC world with the real code: it proves acceptance of the argv's flags and the assertions' key names, not the corpus numbers.
++* **The bank publication over scp (section 10)**: the pulls of 4 x ~166 MB npz per seed, their transfer time on the real link, and the sizes themselves are ESTIMATED (a linear scaling of a 12-clip smoke). `--publish-only` replaces only the pull, box-2 sha and stop functions with local copies from a stand-in box; the real `scp` / `ssh` of a shard npz was not run (no contact with box 2). A real bank's file names are checked against the generator's naming (`shard_KKKofNNN.npz`), not seen.
+ * **K-B4 / K-B5 on a real bank**: the judge's rules were checked against the records the generator's OWN functions build (`kb_shape_probe.txt`, di/tree at 20:18), on key names and types only. No real bank was generated, so the real K-B5 errors (whether they are <= 1e-4 on the corpus) and the merged `PROVENANCE.json` layout on disk are not seen. The probe's K-B5 accumulator was empty (it reads PASS false, as the generator's `kb5_pass` makes it); the 8/8 therefore tests the rules, not a passing K-B5.
+ * `rg/tree` is the 19:15 copy: the proofs that use the real trainer / generator (`real_gate_proof.py`, section D's lever greps, section E) ran on it, not on the 19:55 generator and the trainer record change (`train_window_list_sha256`) that `di/tree` has since. Re-run them once the code is landed; nothing in the queue depends on those keys (no CLI flag changed).
+ 
+@@ -78,7 +80,25 @@
+ 1. Land `stage/...` queue + tool (and the DAgger code) on `agent/arch-inf-20260803`; copy `box2_ship/*` (not `.in`) to `C:/Users/Admin/box2_ship/`.
+ 2. `bash C:/Users/Admin/box2_ship/chain_v8f_dag.sh --dry-run` (prints every line and the planned token hashes; needs no box 2).
+ 3. `cmd.exe /c C:\Users\Admin\box2_ship\run_chain_v8f_dag.cmd` (detached via the WMI recipe in memory `devbox-drive-letter-and-detached-jobs`), then `wake_v8fdag.sh`. Markers: `ZZDAG-BLOCKED`, `ZZV8FMINI-STOP`, `ZZV8FMINI-DONE` in `logs/chain_v8f_dag.out`.
+-4. Re-run the proofs after any edit, one at a time (never together: four torch processes exhausted the dev box's paging file once): `real_gate_proof.py` (70 s), then `selftest_dag_queue.py` (80 s), then `mutate_dag_queue.py` (about 15 min; 29 mutants: 20 of the queue, 9 of the bank judge), then `kb_shape_probe.py` (5 s, imports di/tree read-only).
++4. Re-run the proofs after any edit, one at a time (never together: four torch processes exhausted the dev box's paging file once): `real_gate_proof.py` (70 s), then `selftest_dag_queue.py` (80 s), then `mutate_dag_queue.py` (about 16 min; 51 mutants: 20 of the queue, 9 of the bank judge, 12 of the publication checks, 10 of the chain), then `kb_shape_probe.py` (5 s, imports di/tree read-only).
+ 
+ ## 9. Disposable scratch left behind (I tried to delete it; the removal was denied by the safety check, so it is left for the PI)
+ `dagq/rg/work` (105 MB), `dagq/rg/out/neg_*` and `dagq/rg/out/*/_synthetic` (about 400 MB, test worlds), `dagq/bt/*` (mutant queues, outputs), `selftest_run.log`, `mutation_run.log`. On a 1 MiB-cluster exFAT every file costs a cluster. `rg/tree` (379 MB) is a python-only copy of `di/tree` used by section D/E and can be deleted once the DAgger code is landed (section D then needs a checkout instead). `selftest_dag_queue.py` section E needs only `rg/out/{dag_s0,dag0_s0}/{selfcheck,gate_argv}.json`, `rg/out/bank.json`, the shard provenance files and `RESULT.json`.
++
++## 10. Bank publication: the hole, the fix, the sizes (2026-10-26, about 21:30-22:45)
++**The hole.** `dag_read.py` (read-only, `C:/Users/Admin/dagread/`) needs per seed: the bank's `PROVENANCE.json` (`bank.{s}.report`), `bank.json` (`bank_file`; its sha256 IS the bank's identity), the shard provenance files, and the shard `.npz` (their `header_json` member is the ONLY place the bank's clips are named: K-B3.1). The chain pulled only the small files, so on real data the reader would have REFUSED at `load_bank` (reproduced on the reader: `dagt1/selftest_output.txt` SB4).
++**The fix (box-2 chain, `chain_v8f_dag.sh.in`, step 3b).** After the bank judge (K-B0..K-B5 + COVERAGE) PASSED at both seeds, `publish_bank_one <seed>` publishes into `<ART>/bank_s<S>/` (`ART` = `DAG_ART`, default `E:/Projects/TanitAD-artifacts/v8f-dagger`) **four kinds of file, listed explicitly** (`v8f_dag_chain_checks.py bank-files`; `bank-plan` prints them), plus the stage log, with a `SHA256SUMS.txt`:
++
++| kind | names (queue's N = 4) | what needs it |
++|---|---|---|
++| provenance | `PROVENANCE.json` | the manifest's `bank.{s}.report`; K-B* records, coverage |
++| manifest | `bank.json` | `bank_file`; sha256 = the bank's identity (== the trainer gate's `--dagger-bank-sha256`) |
++| shard provenance | `shard_00{0..3}of004.provenance.json` | `load_bank`, `g_bank_files` |
++| shard npz | `shard_00{0..3}of004.npz` | the clip names (`header_json`, K-B3.1) and the shard hashes |
++| (log) | `bank_stage.log` | provenance of the generation |
++
++* **Same mechanism and markers as the checkpoints and eval outputs:** each npz is pulled, its sha256 measured on box 2 AND here must agree (and equal `bank.json`'s `file_sha256`), `sha256sum <11 names> | tee SHA256SUMS.txt` is written LAST (exactly 11 names; run directories stay exactly 8), pre-seal and post-seal `bank-verify`, a failed seal is removed, a stale one is removed at the start of the fetch, marker `bank s<S> pulled to <dir> (11 files: ...; sha256 in SHA256SUMS.txt; bank.json sha256 ...)`.
++* **Nothing is moved before the judge passes** (a BLOCKED or REFUSED bank publishes no npz at either seed): `publish_bank_one` runs after the `if [ $jr != 0 ]` stop; pinned by a source-order check and by `--publish-only` runs on BLOCKED / REFUSED stand-in banks.
++* **ESTIMATED pull size** (scaled linearly in records from the 12-clip, 1-shard, 804-window smoke at `di/tree/.../raw/2026-10-26-dagger-build/smoke_kb45/`, 1,750,642 bytes of npz, to 306,566 windows at 2 ticks per window; the arithmetic is `bank-plan`'s): **shard npz 0.664 GB per seed (166 MB each x 4), small files 39 KB, total 0.664 GB per seed, 1.329 GB for both seeds**. Linear scaling over a 12-clip smoke is an ESTIMATE (fixed per-file overhead is counted as per-record, so it leans high); the selftest only pins that it lands in 0.62-0.72 GB. The dev-box `E:` has room for it; nothing here touches `C:`.
++* **The dev-box side verifies it again** (`dagt1/dagt1_pullcheck.py bank --expect-shards 4`): the 11-name SUMS, every file re-hashed, cross-file contradictions = WRONG, and `bank.json`'s sha256 == the `--dagger-bank-sha256` in `<ART>/M2b_s<S>_dag/gate/pin.txt` (the pinned gate argv this chain already pulls).
++* **Tests (MEASURED, `selftest_output.txt`).** Section G (the checks, in-process): the four kinds listed, complete bank ok, and 19 deliberate regressions each required to be caught FOR ITS NAMED REASON: no SHA256SUMS.txt, shard npz absent / empty / one flipped bit, bank.json edited after PROVENANCE named its sha256, shard provenance absent / another `file_sha256`, PROVENANCE or bank.json or the stage log absent, 3 shards (queue runs 4), PROVENANCE listing 3 of 4 shard provenance, a foreign shard name, SUMS with 10 / 12 names / a wrong hash / no final newline / a name twice, `bank-files` on a directory with no bank.json (rc 2). Section H (the chain's own flow, offline: `chain_v8f_dag.sh --publish-only <fake box root>` runs the REAL `bank_fetch_small`, judge and `publish_bank_one`; only pull / box-2 sha / stop are replaced): both seeds publish 11 files each, SUMS hashes equal an independent `hashlib`; and 7 regressions: BLOCKED and REFUSED (no npz moved at EITHER seed), an npz absent on box 2, an npz that does not hash to `file_sha256`, a transfer that corrupts (box-2 sha != pulled), a stale SUMS from an earlier attempt, and a `sha256sum` that drops a line (the post-seal check removes the short SUMS). `--publish-only` refuses to run without `DAG_ART`.

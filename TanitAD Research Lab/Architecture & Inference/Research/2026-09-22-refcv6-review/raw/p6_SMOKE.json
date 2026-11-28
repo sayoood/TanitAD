@@ -1,0 +1,203 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + the code beside it)",
+ "_line": "v7-B1 (b1_train_plus_eval_agents.jsonl.xz) -- NOT the parity line",
+ "join": "D:/Projects/TanitAD-artifacts/a40-rescue/b1_train_plus_eval_agents.jsonl.xz",
+ "queries": 100,
+ "policy": "agent_slots.match_slots:181-186 drops the FARTHEST by sqrt(cx^2+cy^2); refcv6's box path applies no field filter first (refc_v3_train.py:4372, p1_box_path_filter.json)",
+ "lines": {
+  "n_lines": 3173,
+  "n_lines_over_budget": 252,
+  "frac_over_budget": 0.07942010715411282
+ },
+ "on_over_budget_lines": {
+  "n_infield_boxes_present": 8671,
+  "n_infield_boxes_KEPT_by_nearest_N_of_the_raw_set": 8245,
+  "n_infield_boxes_AVAILABLE_if_filtered_first": 8671,
+  "n_infield_supervision_lost_to_ordering": 426,
+  "frac_of_available_infield_lost": 0.04912928151308961,
+  "n_query_slots_spent": 25200,
+  "n_query_slots_spent_on_BEHIND_EGO_boxes": 13093,
+  "frac_query_slots_behind_ego": 0.5195634920634921
+ },
+ "controls": {
+  "analytic_lines_with_at_least_N_infield": 0,
+  "analytic_avail_equals_N_on_all_of_them": true,
+  "note": "by construction av_if == N whenever the line already carries N in-field boxes; a miss here would be a bug in this probe, not a finding"
+ },
+ "infield_loss_by_class": {
+  "automobile": 278,
+  "person": 97,
+  "bus": 25,
+  "heavy_truck": 22,
+  "rider": 4
+ },
+ "infield_kept_by_class": {
+  "automobile": 3488,
+  "person": 1326,
+  "heavy_truck": 294,
+  "bus": 279,
+  "rider": 242,
+  "trailer": 184,
+  "protruding_object": 1,
+  "train_or_tram_car": 1
+ },
+ "worst_lines_sha12": [
+  {
+   "n_infield_lost": 13,
+   "clip_sha12": "4b3773213797",
+   "frame": 3
+  },
+  {
+   "n_infield_lost": 13,
+   "clip_sha12": "4b3773213797",
+   "frame": 2
+  },
+  {
+   "n_infield_lost": 12,
+   "clip_sha12": "4b3773213797",
+   "frame": 4
+  },
+  {
+   "n_infield_lost": 12,
+   "clip_sha12": "4b3773213797",
+   "frame": 1
+  },
+  {
+   "n_infield_lost": 11,
+   "clip_sha12": "4b3773213797",
+   "frame": 6
+  },
+  {
+   "n_infield_lost": 11,
+   "clip_sha12": "4b3773213797",
+   "frame": 5
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 16
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 13
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 12
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 11
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 10
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 9
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 8
+  },
+  {
+   "n_infield_lost": 10,
+   "clip_sha12": "4b3773213797",
+   "frame": 7
+  },
+  {
+   "n_infield_lost": 9,
+   "clip_sha12": "4b3773213797",
+   "frame": 17
+  }
+ ],
+ "class_weight_scope_check": {
+  "banked_vector_counted_on": "the RAW join (every box)",
+  "raw_counts": {
+   "automobile": 73074,
+   "heavy_truck": 1976,
+   "bus": 1470,
+   "other_vehicle": 468,
+   "trailer": 1000,
+   "person": 13430,
+   "rider": 1511,
+   "stroller": 3,
+   "animal": 0,
+   "protruding_object": 405
+  },
+  "post_filter_counts": {
+   "automobile": 11888,
+   "heavy_truck": 342,
+   "bus": 135,
+   "other_vehicle": 59,
+   "trailer": 340,
+   "person": 849,
+   "rider": 447,
+   "stroller": 0,
+   "animal": 0,
+   "protruding_object": 91
+  },
+  "banked_weights": {
+   "automobile": 0.00319,
+   "heavy_truck": 0.123881,
+   "bus": 0.333845,
+   "other_vehicle": 0.877236,
+   "trailer": 0.242575,
+   "person": 0.012505,
+   "rider": 0.106939,
+   "stroller": 1.879062,
+   "animal": 5.823257,
+   "protruding_object": 0.597511
+  },
+  "reconstructed_from_raw": {
+   "automobile": 0.000102,
+   "heavy_truck": 0.003774,
+   "bus": 0.005073,
+   "other_vehicle": 0.015935,
+   "trailer": 0.007458,
+   "person": 0.000555,
+   "rider": 0.004936,
+   "stroller": 2.485938,
+   "animal": 7.457814,
+   "protruding_object": 0.018414
+  },
+  "if_counted_post_filter": {
+   "automobile": 0.000411,
+   "heavy_truck": 0.0143,
+   "bus": 0.036227,
+   "other_vehicle": 0.082893,
+   "trailer": 0.014384,
+   "person": 0.005761,
+   "rider": 0.010941,
+   "stroller": 4.890669,
+   "animal": 4.890669,
+   "protruding_object": 0.053744
+  },
+  "ratio_post_over_banked": {
+   "automobile": 0.129,
+   "heavy_truck": 0.1154,
+   "bus": 0.1085,
+   "other_vehicle": 0.0945,
+   "trailer": 0.0593,
+   "person": 0.4607,
+   "rider": 0.1023,
+   "stroller": 2.6027,
+   "animal": 0.8399,
+   "protruding_object": 0.0899
+  },
+  "max_ratio_class": [
+   "trailer",
+   0.0593
+  ],
+  "reconstruction_control_max_abs_dev_from_banked": 1.634556806679762,
+  "control_reading": "reconstruction_control ~0 proves this probe reproduces the banked vector's own recipe from the raw counts, so the post-filter column is a like-for-like comparison and not a different normalisation"
+ },
+ "wall_s": 0.3
+}

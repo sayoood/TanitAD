@@ -1,0 +1,3 @@
+@echo off
+rem RECOVER-NEXT dev-box read chain, arm RPT: start through WMI Win32_Process.Create so it survives the caller.  RESUME = launch again (finished rollouts are skipped).  The chain waits (6 h max) for the pulled box-2 runs M2b_s0_recft_RPT and M2b_s1_recft_RPT; start it after pull_rnext.sh.  Writes only here and on C:/Users/Admin/rr_scratch/rnext.
+"C:\Program Files\Git\bin\bash.exe" -lc "RNEXT_ARM=RPT bash /e/Projects/TanitAD-artifacts/dagland/recover_next/read/rnext_read_chain.sh RPT < /dev/null > /e/Projects/TanitAD-artifacts/dagland/recover_next/read/logs/chain_RPT.launch.out 2>&1" < NUL

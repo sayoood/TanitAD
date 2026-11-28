@@ -1,0 +1,74 @@
+{
+ "tool": "n1dh_zpost.py",
+ "card": "PREREG_V8F_N1DH.md sha256 f1df05bc section 4 Z-POST; code of record f2e91e33",
+ "profile": "e141",
+ "tier": "T0 (tick 0 of the T1-kin/hb0.2 rollout, limit causal)",
+ "evidence_class": "SMOKE on eval-141 inputs: machinery only, NOT a D1-HO number",
+ "bars": {
+  "logistic": 0.685,
+  "CEIL": 0.73
+ },
+ "estimator": "taniteval.ci.episode_cluster_bootstrap B 2000 seed 0; 'another draw of EPISODES' only",
+ "max_windows": 96,
+ "mutant": true,
+ "arms": {
+  "SYNTH_s0": {
+   "K-ALIGN": {
+    "n_recorded": 96,
+    "n_dump": 96,
+    "pass_": true,
+    "order": "identical",
+    "max_abs": 0.0
+   },
+   "n_windows": 96,
+   "n_episodes": 96,
+   "route_head_acc_T0": {
+    "point": 0.15625,
+    "lo": 0.0938,
+    "hi": 0.2292
+   },
+   "decoded_plan_acc_T0": {
+    "point": 0.5208333333333334,
+    "lo": 0.4167,
+    "hi": 0.625
+   },
+   "head_minus_decoded": {
+    "status": "OK",
+    "delta": -0.36458333333333337,
+    "lo": -0.5,
+    "hi": -0.2188,
+    "separated": true,
+    "n_windows": 96,
+    "n_episodes": 96
+   },
+   "vs_logistic_0.685": -0.52875,
+   "vs_CEIL_0.73": -0.57375,
+   "argmax_class_counts": {
+    "lane_keep": 1,
+    "turn_left": 95,
+    "turn_right": 0
+   },
+   "gt_class_share": {
+    "lane_keep": 0.6458333333333334,
+    "turn_left": 0.14583333333333334,
+    "turn_right": 0.20833333333333334
+   },
+   "mean_max_posterior": 0.7139326197499676,
+   "K-PERM": {
+    "permuted_label_acc": 0.15625,
+    "chance_expected": 0.15104166666666669,
+    "abs_diff": 0.005208333333333315,
+    "pass": true,
+    "note": "deliberate regression: a head scored against shuffled labels must read the chance level (tolerance 0.03 on n windows)"
+   },
+   "K-CONST": {
+    "majority_share": 0.6458333333333334,
+    "must_read": null,
+    "pass": true
+   },
+   "status": "OK"
+  }
+ },
+ "status": "VALID",
+ "wall_s": 24.5
+}

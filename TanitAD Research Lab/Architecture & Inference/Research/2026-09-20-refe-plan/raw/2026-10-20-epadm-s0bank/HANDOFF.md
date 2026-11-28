@@ -1,0 +1,13 @@
+# HANDOFF EPADM-SEARCHBANK-S0 (2026-10-20 ~02:30). The DRAFT amendment and its simulation are DONE. No job is running.
+
+**State.** `AMENDMENT_S0BANK_DRAFT.md` (Status: DRAFT, NOT SEALED; DQ1-DQ7 in its section 9) is written, with `SIM_DESIGN_S0.md` (sha256 `76f6c33c...`, hashed 01:55:56 before the first rate), `geometry_s0.json` (sha256 `7a2e71e6...`), the sibling simulator `code/epadm_sim_s0.py` and 22 planted-data tests (`code/test_sim_s0.py`, all pass; 12/12 mutation arms caught, `work/mutation.json`). Simulation results: `work/sim/sim_results.json`, tables `work/tables.md` (also pasted in the amendment section 3). Tip pinned `8bec67ad...` (`TIP_SHA.txt`). Staging for the Master Mind to land: `out/` + `out/paths.json` (nothing committed, pushed or `git add`ed; no GPU, pod or lock touched; no label or search output computed).
+
+**Headline.** At the S0 own-fan geometry the gate's committed bars are NOT all met at either data option: DAC power x1.25 @1.05 = 31.6 % (41 logs) / 60.4 % (117 logs) on the real-S0 base X, 7.6 % / 13.8 % on the carve-B clone base C (bar >= 70 %); A1-r1 false refusal 9.9 % / 8.8 % on base C, 2.4 % / 2.1 % on base X (bar upper <= 5 %); A2 (1.05) false refusal met. The DAC miss is structural (R2-CONFIRM T5: power falls with the changed-pick share; a search changes ~26 %). Generator T is degenerate (reported).
+
+**Exact next step (a fresh agent, CPU only, no data), only after the Master Mind answers DQ3:**
+1. N1: write `SIM_DESIGN_N1.md` (A2 on the CHANGED picks only, the SAME three bars, both bases; a false-refusal generator that is not degenerate), hash it BEFORE running, then implement as a sibling of `code/epadm_sim_s0.py` (Base X needs `pickrule/run/prepare/arrays.npz`, sha `L.ARRAYS_SHA256`, to split per-log sums by changed pick). Env: `EP_ADMISSION_DIR=C:/Users/Admin/par18/epadm_search/tipgate`, `EP_ADMISSION_R1_DIR=.../tipr1`, `EPADM_C1_DIR=<epadm-searchbank code dir>`; see `work/chain_common.sh`, `work/finish.sh`. Detach long runs with WMI `CreateFlags 0x08000200`; at most 2 python processes.
+2. Build items B1-B8 of the amendment section 8 are NOT built; B7 (navpipe fixture IDENTICAL) comes first before any GPU spend.
+
+**Blockers (named):** disk (C: 0.4 GB, D: 0, the chain needs >= 9.7 GiB; freeing D: is PI-only); the pod frame read 4.911 GB for 117 logs (PI yes + coordinator approval); the dev-box GPU lock; C1 must read O1 or O2 (ruling DQ2).
+
+**Do not:** edit the frozen gate or `SIM_DESIGN_S0.md` (hashed; write a new revision), re-run with another margin or bar, read any B-REST or navtest label, take the GPU lock, ssh to a pod, commit or push.

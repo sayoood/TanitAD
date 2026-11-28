@@ -1,0 +1,65 @@
+{
+  "artifact_kind": "tanitad.leak_check",
+  "schema": "tanitad.leak_check/1",
+  "generated_utc": "2026-09-04T04:10:00Z",
+  "question": "Is the closed-loop render scene 00040136-e651-4abd-991d-0655ccda9430 inside refcv3's training corpus or its held-out eval set?",
+  "verdict": "NO LEAK",
+  "leak_status": "CLOSED",
+  "evidence_class": "MEASURED (ours)",
+  "why_the_previous_check_proved_nothing": "CLOSED_LOOP_FEASIBILITY_2026-09-03.md §9.2 checked the NuRec scene uuids against alpamayo_clip_ids.txt (4,729) and alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt (201). Neither uuid appeared in EITHER list, so the id namespaces could simply have been different and the absence was uninformative. This check fixes that by carrying its own POSITIVE CONTROL.",
+  "positive_control": {
+    "rule": "An absence check is only informative if the same probe can find a KNOWN present member. Two NuRec scene uuids ARE in refcv3's caches, which proves the NuRec scene-directory namespace and the PhysicalAI/Alpamayo episode-id namespace COINCIDE.",
+    "found_in_train": "470c4ecc-8d6b-46dc-ba60-fd16888c5797",
+    "found_in_eval": "d85682b8-f612-4aa3-90a2-ee2bb86151e6",
+    "control_passes": true,
+    "note": "470c4ecc is a NuRec scene directory that IS in refcv3's training set. It holds no renderable volume.nurec (mp4 only), so it is not usable as a closed-loop scene anyway — but a future panel must not use it."
+  },
+  "probes": [
+    {
+      "probe": 1,
+      "path_binding": "pod directory listing of the v2 episode cache the trainer actually read",
+      "host": "tanitad-refcv3 (69.30.85.211:22001)",
+      "train_dir": "/root/data/train",
+      "eval_dir": "/root/data/eval",
+      "n_train_episodes": 4573,
+      "n_eval_episodes": 142,
+      "n_nurec_scene_dirs_tested": 79,
+      "render_scene_in_train": false,
+      "render_scene_in_eval": false,
+      "hits_train": ["470c4ecc-8d6b-46dc-ba60-fd16888c5797"],
+      "hits_eval": ["d85682b8-f612-4aa3-90a2-ee2bb86151e6"]
+    },
+    {
+      "probe": 2,
+      "path_binding": "the gzipped v7.2 LABEL MANIFEST named in the run's own config.json argv — a different file, a different format, a different producer from probe 1",
+      "host": "tanitad-refcv3",
+      "train_labels": "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+      "eval_labels": "/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz",
+      "n_train_ids": 4572,
+      "n_eval_ids": 147,
+      "render_scene_in_train": false,
+      "render_scene_in_eval": false,
+      "positive_control_cross_pattern": {
+        "470c4ecc-8d6b-46dc-ba60-fd16888c5797": {"train": true, "eval": false},
+        "d85682b8-f612-4aa3-90a2-ee2bb86151e6": {"train": false, "eval": true}
+      }
+    }
+  ],
+  "second_renderable_scene": {
+    "uuid": "7c72937c-c620-4776-9555-d57222c0081f",
+    "in_train": false,
+    "in_eval": false,
+    "note": "also clean; not used in this panel"
+  },
+  "renderable_volume_census": {
+    "n_scene_dirs": 79,
+    "n_with_real_volume_nurec": 2,
+    "sizes_bytes": {
+      "00040136-e651-4abd-991d-0655ccda9430": 639393135,
+      "7c72937c-c620-4776-9555-d57222c0081f/extracted": 603238216
+    },
+    "stub": "7c72937c-c620-4776-9555-d57222c0081f/volume.nurec is a 110-byte stub",
+    "note": "n = 2 renderable scenes is the real ceiling on this capability, not compute."
+  },
+  "consequence": "refcv3 closed-loop and open-loop numbers on scene 00040136 are NOT LEAK-UNVERIFIED. They do not need a LEAK-UNVERIFIED stamp."
+}

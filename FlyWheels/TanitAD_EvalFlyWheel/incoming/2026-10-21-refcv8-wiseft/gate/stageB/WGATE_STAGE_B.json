@@ -1,0 +1,247 @@
+{
+ "id": "R8-WISEFT-GATE stage B",
+ "registered": "f0ae643 (2026-10-21 15:31 Berlin)",
+ "X_star": "G_ARC",
+ "tier": "NavSim v1 open-loop PDM scorer (T1-family), navtest 12,146 tokens; one training seed; diagnostic lever test, never a bar",
+ "gate_tool_output": "stageB\\GATE_THETA05_NAVTEST.json",
+ "controls": {
+  "gate_tool": true,
+  "C1_plan_is_theta05": {
+   "s0": 72.7762,
+   "s1": 72.8987
+  },
+  "C3_prior_theta_run_equals_EMA_run": true,
+  "C2_GARC48852_reproduces_banked": {
+   "s0": 65.5246,
+   "s1": 65.5078
+  },
+  "C2_pass": true,
+  "gw_rebuilt_equals_tool": {
+   "s0": true,
+   "s1": true
+  },
+  "C4_composite_endpoints": true,
+  "all_pass": true
+ },
+ "rule": {
+  "theta05": {
+   "delta": {
+    "s0": -2.1926,
+    "s1": -2.2199
+   },
+   "interval": {
+    "s0": {
+     "lo": -3.1741,
+     "hi": -1.1562,
+     "positive": false,
+     "separated_log_name": true
+    },
+    "s1": {
+     "lo": -3.265,
+     "hi": -1.1292,
+     "positive": false,
+     "separated_log_name": true
+    }
+   },
+   "floor": 0.0273,
+   "all_positive": false,
+   "margin_ok": false,
+   "any_nonpositive": true
+  },
+  "PRIOR": {
+   "delta": {
+    "s0": 11.9223,
+    "s1": 12.0175
+   },
+   "interval": {
+    "s0": {
+     "lo": 10.4575,
+     "hi": 13.4996,
+     "positive": true,
+     "separated_log_name": true
+    },
+    "s1": {
+     "lo": 10.4314,
+     "hi": 13.6636,
+     "positive": true,
+     "separated_log_name": true
+    }
+   },
+   "floor": 0.0952,
+   "all_positive": true,
+   "margin_ok": true,
+   "any_nonpositive": false
+  }
+ },
+ "beside": {
+  "GW_ARC_s0__minus__G_ARC_EMA48852_s0": {
+   "delta_x100": 5.059,
+   "wins": 2226,
+   "ties": 6727,
+   "losses": 3193,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 5.059,
+    "lo": 4.349,
+    "hi": 5.7846,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 4.0698,
+     "hi": 6.0381
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "GW_ARC_s0__minus__STOP": {
+   "delta_x100": 8.7633,
+   "wins": 8239,
+   "ties": 1186,
+   "losses": 2721,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.7633,
+    "lo": 6.7981,
+    "hi": 10.6389,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 6.582,
+     "hi": 10.9488
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "GW_ARC_s0__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": 0.3787,
+   "wins": 2845,
+   "ties": 3510,
+   "losses": 5791,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 0.3787,
+    "lo": -1.1183,
+    "hi": 1.948,
+    "n_clusters": 136,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -1.236,
+     "hi": 2.3182
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "GW_ARC_s1__minus__G_ARC_EMA48852_s1": {
+   "delta_x100": 5.1709,
+   "wins": 2241,
+   "ties": 6727,
+   "losses": 3178,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 5.1709,
+    "lo": 4.5013,
+    "hi": 5.8442,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 4.1686,
+     "hi": 6.0822
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "GW_ARC_s1__minus__STOP": {
+   "delta_x100": 8.8585,
+   "wins": 8239,
+   "ties": 1173,
+   "losses": 2734,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.8585,
+    "lo": 6.9057,
+    "hi": 10.7788,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 6.6265,
+     "hi": 11.1041
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "GW_ARC_s1__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": 0.4739,
+   "wins": 3094,
+   "ties": 3448,
+   "losses": 5604,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 0.4739,
+    "lo": -1.0538,
+    "hi": 2.0736,
+    "n_clusters": 136,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -1.2067,
+     "hi": 2.4148
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  }
+ },
+ "verdict": "FAILED",
+ "GW_ARC_PDMS": {
+  "s0": 70.5835,
+  "s1": 70.6787
+ },
+ "GW_ARC_subs": {
+  "s0": {
+   "NC": 92.6272,
+   "DAC": 85.5426,
+   "TTC": 84.7851,
+   "EP": 64.8056,
+   "C": 99.7695
+  },
+  "s1": {
+   "NC": 92.4296,
+   "DAC": 85.5426,
+   "TTC": 84.7028,
+   "EP": 64.842,
+   "C": 99.753
+  }
+ },
+ "fallback_frac": {
+  "s0": 0.3906,
+  "s1": 0.3881
+ }
+}

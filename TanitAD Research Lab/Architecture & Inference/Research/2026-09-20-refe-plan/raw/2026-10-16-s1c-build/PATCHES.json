@@ -1,0 +1,205 @@
+{
+ "base": "origin/agent/arch-inf-20260803 @ df9871e3de11 (refe/ and eval/ unchanged at afbc83508e7f)",
+ "patches": [
+  {
+   "n": 1,
+   "file": "refe/launch_gate.py",
+   "diff": "PATCH_1_launch_gate.py.diff",
+   "what": "profile refe_aux_s1c: per-budget arm classes, argv recipe, must-name flags, schedule_reach, the S1c suite",
+   "new_file": false,
+   "lines_added": 45,
+   "lines_removed": 11,
+   "sha256_patched": "0b629cc337f094af870da89ff0372dd5f8b238bc577502976ad78035601ad097",
+   "sha256_base": "a967016886f632334d4901c1645fa634b7e7ff476d00705f9f230203a55099e8"
+  },
+  {
+   "n": 2,
+   "file": "refe/gate_checks.py",
+   "diff": "PATCH_2_gate_checks.py.diff",
+   "what": "G-DVB schedule-reach rows (--max-updates must be REACHED by the epoch budget; closes TL-1 for the S1c levers)",
+   "new_file": false,
+   "lines_added": 22,
+   "lines_removed": 0,
+   "sha256_patched": "5659211c05750b7598f93c7f3031f18ee427643332d114cde61bbe2ca7e0c056",
+   "sha256_base": "44d788fc6c8f74e8d5a4801fa3ac4450230b3161acb715865586ec53e7da6961"
+  },
+  {
+   "n": 3,
+   "file": "refe/s1aux_checks.py",
+   "diff": "PATCH_3_s1aux_checks.py.diff",
+   "what": "run-check at the S1c budgets (S1C_BUDGETS: update counts, eval tags, dumps, lr ends at 0 at update N)",
+   "new_file": false,
+   "lines_added": 36,
+   "lines_removed": 9,
+   "sha256_patched": "c802300e0a5ab7fd1e737dca7239a1e94003f064935f64d4ed77cb4b46bf0273",
+   "sha256_base": "7fc9005b866268667d808af668371889e28027584dbe814e3b111cd2e09e6d11"
+  },
+  {
+   "n": 4,
+   "file": "refe/s1aux_pod.sh",
+   "diff": "PATCH_4_s1aux_pod.sh.diff",
+   "what": "S1c arms + per-arm gate profile + CR-stripped navtest pin + lock-only RL-S1 dependency (S1c-only) + small dd (S1c-only)",
+   "new_file": false,
+   "lines_added": 44,
+   "lines_removed": 15,
+   "sha256_patched": "6f2ae4714689dcc57328e14d52542686d1e1f003befd483b96cc6f700d34eeb5",
+   "sha256_base": "1b9344d87bd3a5bdebb70e3dde5831d87a5b7ee724285b8a358a2a50c9daabf7"
+  },
+  {
+   "n": 5,
+   "file": "refe/test_s1c.py",
+   "diff": "PATCH_5_test_s1c.py.diff",
+   "what": "NEW: 224 checks - tables, real gate on the chain's own argv, G-DVB, run-check, chain static, upstream cases, navtest pin, reachability + RED mutants",
+   "new_file": true,
+   "lines_added": 674,
+   "lines_removed": 0,
+   "sha256_patched": "d5eb4fd797a74ce0e8714f637c25a4764a188849033981358e528b40ba1178f6",
+   "sha256_base": null
+  },
+  {
+   "n": 6,
+   "file": "refe/test_s1aux_chain.py",
+   "diff": "PATCH_6_test_s1aux_chain.py.diff",
+   "what": "static checks follow the chain ($PROFILE, ARM_ORDER_S1, arm_profile) + S1c mutants + token_ok per profile",
+   "new_file": false,
+   "lines_added": 42,
+   "lines_removed": 13,
+   "sha256_patched": "c4026524b314c983d080ab7651e9ceed514afbf0d2efeb9a1c71c22681e3ec9f",
+   "sha256_base": "ac419923378b8e0ea4f7625f40931c797fdc6ec9e5f2e5d6a4a16fa3a73a04bc"
+  },
+  {
+   "n": 7,
+   "file": "refe/test_aux_drivable_head.py",
+   "diff": "PATCH_7_test_aux_drivable_head.py.diff",
+   "what": "E10 identifies the navtest list by its CR-stripped sha256 (CRLF checkout and LF ship are the same list)",
+   "new_file": false,
+   "lines_added": 22,
+   "lines_removed": 3,
+   "sha256_patched": "1f5a6e2b4443a832477bccf0f52bf738845dc256863230052a2ed1cf9f452a21",
+   "sha256_base": "7bd52c3b002e593eaf5bd07ae2e844d7d3cfd84c8717b8ec576d773cce3b29e2"
+  },
+  {
+   "n": 8,
+   "file": "eval/aux_s1_readout.py",
+   "diff": "PATCH_8_aux_s1_readout.py.diff",
+   "what": "ARM_RE accepts the S1c head arms; they are never paired with a 400-update N arm",
+   "new_file": false,
+   "lines_added": 8,
+   "lines_removed": 3,
+   "sha256_patched": "333d715b37d24984705d5214432cc69ff88e1a0fb2d0b8f81817c996611d4a84",
+   "sha256_base": "f9994354d06f6401ab859a827f7d1c70e3636bdfb37d3d9abb6ca1bdc1b982be"
+  },
+  {
+   "n": 9,
+   "file": "eval/test_aux_s1_readout.py",
+   "diff": "PATCH_9_test_aux_s1_readout.py.diff",
+   "what": "S1c parse/pairing asserts + 1 RED mutation",
+   "new_file": false,
+   "lines_added": 20,
+   "lines_removed": 2,
+   "sha256_patched": "8cffadc5e7c41046994d38481c63d435e00c1c94b9ed7bac82f3ec415bf363b4",
+   "sha256_base": "d688d3c0987eb14da98ffa1016fd0a5735908dd517ce3394354d65c0ac6163cc"
+  },
+  {
+   "n": 10,
+   "file": "eval/aux_navtest_forward.py",
+   "diff": "PATCH_10_aux_navtest_forward.py.diff",
+   "what": "ARM_RE accepts the S1c head arms",
+   "new_file": false,
+   "lines_added": 2,
+   "lines_removed": 2,
+   "sha256_patched": "65143d86614d4add2749e9c4cc19b10ccc19763e736a5c8957c592234a388223",
+   "sha256_base": "cae0ae5b552ccb2c0005c3094de770e0ff9c4ebe262690690c645fdf75918849"
+  },
+  {
+   "n": 11,
+   "file": "eval/test_aux_navtest_forward.py",
+   "diff": "PATCH_11_test_aux_navtest_forward.py.diff",
+   "what": "S1c names accepted / near-misses refused (the suite needs the D: checkout to run; the changed function was exercised directly)",
+   "new_file": false,
+   "lines_added": 2,
+   "lines_removed": 2,
+   "sha256_patched": "d872772044be51e0b925d23142c475c9070a9e0b03328e0733fb49ccf1e9c558",
+   "sha256_base": "cc559f972bee67d610b5a64f8b249530f7dec4e4c2b75e5c711e2fa489ef1f9c"
+  }
+ ],
+ "apply_proof": [
+  {
+   "diff": "PATCH_1_launch_gate.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_2_gate_checks.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_3_s1aux_checks.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_4_s1aux_pod.sh.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_5_test_s1c.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_6_test_s1aux_chain.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_7_test_aux_drivable_head.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_8_aux_s1_readout.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_9_test_aux_s1_readout.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_10_aux_navtest_forward.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  },
+  {
+   "diff": "PATCH_11_test_aux_navtest_forward.py.diff",
+   "git_apply_check_rc": 0,
+   "git_apply_rc": 0,
+   "result_equals_patched_copy": true,
+   "stderr": ""
+  }
+ ]
+}

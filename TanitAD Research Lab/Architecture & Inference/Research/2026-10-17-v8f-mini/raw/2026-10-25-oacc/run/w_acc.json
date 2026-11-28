@@ -1,0 +1,53 @@
+{
+ "schema": "v8f-oacc-wacc-v1",
+ "prereg": "PREREG_V8F_OACC.md",
+ "rule": "w_acc = 0.5 * L_traj(B_s0) / L_acc(B_s0), both evaluated with B's s0 checkpoint on the training windows of HBLEND's fit set",
+ "frac": 0.5,
+ "L_traj_definition": "w_traj * (ade / 3 + 0.5 * fde / 6): the trainer's own trajectory contribution (R1); mean over the fit windows",
+ "L_acc_definition": "v8f_mini.accel_term at unit weight on the same windows (R2)",
+ "L_ade": 2.1679351329803467,
+ "L_fde": 6.280055522918701,
+ "L_traj": 1.2459830045700073,
+ "L_acc": 0.01451141107827425,
+ "n_windows": 9582,
+ "w_traj": 1.0,
+ "w_acc_raw": 42.93114562909151,
+ "w_acc": 42.9311,
+ "check_w_acc_x_L_acc_over_L_traj": 0.4999994685782217,
+ "alt_readings_not_used": {
+  "L_traj_ade_only": 2.1679351329803467,
+  "w_acc_if_L_traj_were_ade_only": 74.6976,
+  "note": "R1 is declared before any OACC number; the ADE-only reading is shown so the choice is visible, and decides nothing"
+ },
+ "source": {
+  "route": "model: B_s0's checkpoint on the fit windows (forward_infer)",
+  "ckpt": "M2b_s0/ckpt_last.pt",
+  "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+  "fit_clips": "fit_clips.json",
+  "fit_clips_sha256_declared": "458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1",
+  "k": 32,
+  "n_clips": 141,
+  "n_windows": 9582
+ },
+ "banked_crosscheck": {
+  "fit_windows": "fit_windows_M2b_s0.npz",
+  "fit_windows_sha256": "39179937bfef122038c395a0c6477dc56893a33e08b9c8c57cb3f3555e9095b3",
+  "rtol": 0.001,
+  "banked": {
+   "L_ade": 2.1679351329803467,
+   "L_fde": 6.280055522918701,
+   "L_traj": 1.2459830045700073,
+   "L_acc": 0.01451141107827425,
+   "n_windows": 9582
+  },
+  "relative_difference": {
+   "L_ade": 0.0,
+   "L_fde": 0.0,
+   "L_traj": 0.0,
+   "L_acc": 0.0
+  },
+  "max_abs_traj30_diff_m": 0.0,
+  "same_windows": true,
+  "pass": true
+ }
+}

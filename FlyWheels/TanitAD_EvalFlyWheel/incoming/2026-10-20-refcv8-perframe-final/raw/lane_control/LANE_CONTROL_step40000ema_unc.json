@@ -1,0 +1,175 @@
+{
+ "tool": "compare_lane_control.py",
+ "generated": "2026-10-20T07:54:39+0200",
+ "tree": "step40000ema_unc",
+ "lane_pkg": "C:\\Users\\Admin\\refcv8_pf\\lanectl40k\\pkg",
+ "banked_raw": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw",
+ "status": "PASS",
+ "rule": "every numeric/bool leaf and every npz array bit-equal (no tolerance); strings listed, not deciding",
+ "evidence_class": "MEASURED (ours): pf_lane.py on the banked per-clip tree vs the banked per-clip artifacts",
+ "rows": {
+  "clamp_tree": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 4302,
+   "n_string_leaves": 636,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 0,
+   "first_string_diffs": []
+  },
+  "compliant_tree": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 8451,
+   "n_string_leaves": 1771,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 1,
+   "first_string_diffs": [
+    "/inputs/clamp_posthoc: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\clamp_posthoc\\\\trees\\\\step40000ema_unc.json'"
+   ]
+  },
+  "FORWARD_TRAINFIT": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 15323,
+   "n_string_leaves": 223,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 1,
+   "first_string_diffs": [
+    "/frozen_gains: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_trainfit\\\\FROZEN_GAINS_RETIME_train.json'"
+   ]
+  },
+  "FORWARD_DEPLOY8": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 8132,
+   "n_string_leaves": 169,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 3,
+   "first_string_diffs": [
+    "/deploy8/table_file: 'C:\\\\lgs\\\\retime_stage_scratch\\\\stack\\\\tanitad\\\\configs\\\\refcv8_retime_deploy_gains.json' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_deploy\\\\refcv8_retime_deploy_gains_pf.js'",
+    "/deploy8/table_sha256: 'f18359be021dd400f4865cdcb3ca053bb8c0910b54c0611ba09d44da9a97219e' != '463fb5d3fe0b039c164a30527678f5549ccfc958e28883c58a7b9e1e360613cf'",
+    "/frozen_gains: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_trainfit\\\\FROZEN_GAINS_RETIME_train.json'"
+   ]
+  },
+  "FORWARD_DEPLOY": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 13269,
+   "n_string_leaves": 224,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 4,
+   "first_string_diffs": [
+    "/controls/pins/deploy_sha256: '244f313872004745b91a30104244ec9325b1da11bf633b9f31fb532af7075790' != '5d1084505975605bc3dc6f75fa5271c34491a4db48d13b093fdaad2eff9f873c'",
+    "/deploy_gains: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_deploy\\\\FROZEN_GAINS_RETIME_deploy.json'",
+    "/deploy_gains_sha256: '244f313872004745b91a30104244ec9325b1da11bf633b9f31fb532af7075790' != '5d1084505975605bc3dc6f75fa5271c34491a4db48d13b093fdaad2eff9f873c'",
+    "/frozen_gains: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_trainfit\\\\FROZEN_GAINS_RETIME_train.json'"
+   ]
+  },
+  "TAC": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 1960,
+   "n_string_leaves": 26,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 5,
+   "first_string_diffs": [
+    "/banked_sources/FORWARD_DEPLOY: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_deploy\\\\FORWARD_DEPLOY_step40000ema_unc.'",
+    "/banked_sources/FORWARD_DEPLOY8: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_deploy\\\\FORWARD_DEPLOY8_step40000ema_unc'",
+    "/banked_sources/compliant_tree_json: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\compliant_reread\\\\trees\\\\step40000ema_unc.json'",
+    "/gains/deploy_json: 'C:\\\\Users\\\\Admin\\\\qland\\\\hold_r8batt\\\\stage\\\\FlyWheels\\\\TanitAD_EvalFlyWheel\\\\incoming\\\\2026-10-15-' != 'C:\\\\Users\\\\Admin\\\\refcv8_pf\\\\lanectl40k\\\\pkg\\\\raw\\\\retime_deploy\\\\FROZEN_GAINS_RETIME_deploy.json'",
+    "/gains/deploy_sha256: '244f313872004745b91a30104244ec9325b1da11bf633b9f31fb532af7075790' != '5d1084505975605bc3dc6f75fa5271c34491a4db48d13b093fdaad2eff9f873c'"
+   ]
+  },
+  "FROZEN_GAINS_RETIME_deploy": {
+   "status": "PASS",
+   "n_numeric_bool_leaves": 62,
+   "n_string_leaves": 13,
+   "n_numeric_diffs": 0,
+   "n_missing": 0,
+   "n_structural": 0,
+   "first_numeric_diffs": [],
+   "first_missing": [],
+   "first_structural": [],
+   "n_string_diffs": 0,
+   "first_string_diffs": []
+  },
+  "DEPLOY8_POS_s0": {
+   "status": "PASS",
+   "n_arrays": 27,
+   "only_banked": [],
+   "only_lane": [],
+   "arrays_differing": [],
+   "json_string_arrays": {
+    "meta_json": {
+     "status": "PASS",
+     "n_numeric_bool_leaves": 27,
+     "n_string_leaves": 7,
+     "n_numeric_diffs": 0,
+     "n_missing": 0,
+     "n_structural": 0,
+     "first_numeric_diffs": [],
+     "first_missing": [],
+     "first_structural": [],
+     "n_string_diffs": 1,
+     "first_string_diffs": [
+      "/table_sha256: 'f18359be021dd400f4865cdcb3ca053bb8c0910b54c0611ba09d44da9a97219e' != '463fb5d3fe0b039c164a30527678f5549ccfc958e28883c58a7b9e1e360613cf'"
+     ]
+    }
+   }
+  },
+  "DEPLOY8_POS_s1": {
+   "status": "PASS",
+   "n_arrays": 27,
+   "only_banked": [],
+   "only_lane": [],
+   "arrays_differing": [],
+   "json_string_arrays": {
+    "meta_json": {
+     "status": "PASS",
+     "n_numeric_bool_leaves": 27,
+     "n_string_leaves": 7,
+     "n_numeric_diffs": 0,
+     "n_missing": 0,
+     "n_structural": 0,
+     "first_numeric_diffs": [],
+     "first_missing": [],
+     "first_structural": [],
+     "n_string_diffs": 1,
+     "first_string_diffs": [
+      "/table_sha256: 'f18359be021dd400f4865cdcb3ca053bb8c0910b54c0611ba09d44da9a97219e' != '463fb5d3fe0b039c164a30527678f5549ccfc958e28883c58a7b9e1e360613cf'"
+     ]
+    }
+   }
+  },
+  "PRIOR_PARITY_beside": {
+   "note": "BESIDE: the banked PRIOR_PARITY.json may cover other trees; lane file exists = True",
+   "lane_status": null,
+   "banked_status": null
+  }
+ }
+}

@@ -1,0 +1,58 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\Admin\qland\hold_r8batt\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-15-refcv8-milestone-battery\code
+plugins: anyio-4.14.1
+collected 54 items
+
+test_chain_final_r8.py .....................F
+
+================================== FAILURES ===================================
+__________ test_happy_path_order_artifacts_and_the_registered_reads ___________
+
+S = {'sb': WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5806/test_happy_path_order_artifact0/sb')...ndowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5806/test_happy_path_order_artifact0/sb/kit'), ...}
+
+    def test_happy_path_order_artifacts_and_the_registered_reads(S):
+        gains(S)
+        fake_earlier_tree(S, 30000)
+        fake_earlier_tree(S, 5000)
+        write_pull(S)
+        txt = run_chain(S)
+        c = calls(S)
+        for m in ("PULLSEEN", "MD5OK", "SUMMARYOK", "EXTRACTOK", "EMAGATEOK", "XCHECKOK", "EMADONE", "KDDONE", "KDANALYSIS", "RAWDONE", "LANEEND", "TFOK", "COMBODONE", "SUMMARYOK", "INDEXOK", "END"):
+            assert f"ZZCFN{m}ZZ" in txt, (m, txt[-1800:])
+        assert "ema=ok kd=ok raw=ok combo=rc 0" in txt
+        names = [x.split()[0] for x in c]
+        seq = ["extract", "ema_check", "xcheck", "lock_acquire", "run_battery_lock_held", "pair_read", "kdq", "kd_analysis", "g0chain", "wrapfix", "battchain", "combo"]
+        idx = [names.index(n) for n in seq]
+        assert idx == sorted(idx), (seq, idx, names)
+        assert not has(c, "run_battery_LOCK_NOT_HELD") and not has(c, "kdq_LOCK_STILL_HELD") and not S["lock"].exists(), "a battery ran without the lock, the K-draw started while the chain held the lock, or the lock leaked"
+        rb = [x for x in c if x.startswith("run_battery ")][0]
+        assert "ckpt_ema_48852.pt" in rb and "--no-g0" in rb and "--infer-seeds 0,1" in rb and f"--tag {TE}" in rb and "--lock-held" in rb
+        kq = [x for x in c if x.startswith("kdq ")][0]
+        assert "KD_STEP=48852" in kq and "KD_NO_RELEASE=1" in kq and "KD_SEG_MAX=8" in kq, kq                    # the final tree; RELEASE_R7 not rewritten; one lock hold
+        assert [x for x in c if x.startswith("kd_analysis")] == [f"kd_analysis {TE}"] and [x for x in c if x.startswith("combo")] == [f"combo {TE} train"]
+        lines = txt.splitlines()
+    
+        def idx_of(marker, needle):
+            return [i for i, l in enumerate(lines) if f"ZZCFN{marker}ZZ" in l and needle in l]
+        for tree in (TE, TR):
+            cl, co, fw = idx_of("CLAMPOK", tree), idx_of("COMPLOK", tree), idx_of("FWDOK", tree + " ->")
+            assert cl and co and len(fw) == 3 and cl[0] < co[0] < min(fw), (tree, cl, co, fw)
+            assert idx_of("TFOK", tree), tree
+        assert txt.count("ZZCFNHEADDONEZZ") == 2 and txt.count("ZZCFNFWDOKZZ") == 6 and txt.count("ZZCFNCOMPLOKZZ") == 2 and txt.count("ZZCFNTFOKZZ") == 2
+        # the heading's earlier list holds ONLY the trees that exist (30k and 5k here), most recent first, never a 40k/20k/15k/10.5k that is not banked
+        hd = [x for x in c if x.startswith("heading ") and "--label-new EMA-final" in x][0]
+        assert "EMA-30k=" in hd and "EMA-5k=" in hd and "EMA-40k" not in hd and "EMA-20k" not in hd and hd.index("EMA-30k") < hd.index("EMA-5k")
+        assert (S["pkg"] / f"raw/step{STEP}/READ_FINAL.json").exists() and (S["pkg"] / f"raw/step{STEP}/FINAL_INDEX.json").exists()
+        idxj = json.loads((S["pkg"] / f"raw/step{STEP}/FINAL_INDEX.json").read_text(encoding="utf-8"))
+>       assert idxj["weights"]["step_inside_file_per_extractor"] == STEP and idxj["weights"]["extract_ok"] is True and idxj["stages_last_marker"]["CHAIN"].startswith("ZZCFNENDZZ")
+E       AssertionError: assert (48852 == 48852 and True is True and False)
+E        +  where False = <built-in method startswith of str object at 0x0000014E36AAD4F0>('ZZCFNENDZZ')
+E        +    where <built-in method startswith of str object at 0x0000014E36AAD4F0> = 'NO MARKER'.startswith
+
+test_chain_final_r8.py:550: AssertionError
+=========================== short test summary info ===========================
+FAILED test_chain_final_r8.py::test_happy_path_order_artifacts_and_the_registered_reads
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+================== 1 failed, 21 passed in 326.79s (0:05:26) ===================
+ZZPYTESTDONE1ZZ

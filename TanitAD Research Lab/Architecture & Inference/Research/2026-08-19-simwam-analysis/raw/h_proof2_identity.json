@@ -1,0 +1,61 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "hypothesis": "H-PROOF-2",
+ "n_clips": 8,
+ "arms": {
+  "champ30k": {
+   "step": 30000,
+   "by_horizon": {
+    "1": {
+     "pred_norm": 10.89927,
+     "true_norm": 42.55587,
+     "identity_ratio": 0.25612,
+     "reading": "partial",
+     "n": 176
+    },
+    "2": {
+     "pred_norm": 0.00798,
+     "true_norm": 46.19388,
+     "identity_ratio": 0.00017,
+     "reading": "IDENTITY (returns its input)",
+     "n": 176
+    },
+    "4": {
+     "pred_norm": 0.0079,
+     "true_norm": 49.21551,
+     "identity_ratio": 0.00016,
+     "reading": "IDENTITY (returns its input)",
+     "n": 176
+    }
+   }
+  },
+  "fixed": {
+   "step": 2000,
+   "by_horizon": {
+    "1": {
+     "pred_norm": 2.79533,
+     "true_norm": 0.09273,
+     "identity_ratio": 30.14644,
+     "reading": "moves like truth",
+     "n": 176
+    },
+    "2": {
+     "pred_norm": 0.025,
+     "true_norm": 0.12083,
+     "identity_ratio": 0.20688,
+     "reading": "near-identity",
+     "n": 176
+    },
+    "4": {
+     "pred_norm": 0.02533,
+     "true_norm": 0.16449,
+     "identity_ratio": 0.15397,
+     "reading": "near-identity",
+     "n": 176
+    }
+   }
+  }
+ },
+ "verdict": "H-PROOF-2 SUPPORTED \u2014 champ30k's predictor returns its input beyond h=1 while the control moves. The two-term recipe learned the TRIVIAL solution; 'beats HOLD at h=1' is its only non-trivial behaviour."
+}

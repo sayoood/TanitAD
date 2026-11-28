@@ -1,0 +1,9 @@
+[gate] arm unwire_selection_term: CAUGHT -- [unwired core.decoder.navc_gate] G-DVB FAIL: declared_vs_built: 1 mismatch(es): --graft-nav-compliance: declared True but BUILT False (read from selection mechanism `nav_compliance` (built)) -- a sele
+[gate] arm required_on_missing: CAUGHT -- G-DVB FAIL: --speed-ceiling-filter is REQUIRED ON for a refcv7 launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it
+[gate] arm tau_differs: CAUGHT -- G-DVB FAIL: --nav-compliance-tau-rad ['0.27095612257719043'] is not the recorded tau 0.18063741505146028
+[gate] arm tau_file_missing: CAUGHT -- G-DVB FAIL: FIX-4: --nav-tau-record /home/nvidia/gate_lg_0928/out/arms_r7c/__gate_arm_missing_tau__.json does not exist
+[gate] arm drivort_flag: CAUGHT -- G-DVB FAIL: --refcv7 is passed, but it is DrivoR-T's switch (SPEC_DRIVORT.md; SPEC_REFCV7 6.1): it must be OFF for a refcv7 launch (pass none of ['--refcv7', '--drivort'])
+[gate] arm residual_prior_ha0_ext: CAUGHT -- G-DVB FAIL: --residual-prior ['ha0_ext'] is REFUSED for a refcv7 launch (refused values: ['off', 'ha0_ext', 'cv_yawrate']; SPEC_REFCV7 10 (A5): refcv7's prior is ha0_ext_pose; `off` is the refcv6 deco
+[gate] arm residual_prior_cv_yawrate: CAUGHT -- G-DVB FAIL: --residual-prior ['cv_yawrate'] is REFUSED for a refcv7 launch (refused values: ['off', 'ha0_ext', 'cv_yawrate']; SPEC_REFCV7 10 (A5): refcv7's prior is ha0_ext_pose; `off` is the refcv6 d
+[gate] arm map_drivable_only_static: CAUGHT -- G-DVB FAIL: G-MAP: the trainer's eval-row builder omits 70 of the 80 per-class x band 10 cm keys (first: ['map_hires_iou_arrow_0_20', 'map_hires_iou_arrow_20_40', 'map_hires_iou_arrow_40_60', 'map_hir
+[gate] arms: {'CAUGHT': 8} -> /home/nvidia/gate_lg_0928/out/arms_r7c/arms_result.json

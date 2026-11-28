@@ -122,23 +122,41 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
         p_last = item["pose_last"]
-        if self.labels_v2:
-            # v2 curvature-gated 2 s maneuver: a gentle highway curve (large R)
-            # that v1 calls a turn stays lane_keep; tight junction turns still
-            # turn; accel/brake/stop is preserved. classify_maneuver_v2 reads the
-            # whole sub-path arc, so feed pose_last + future_poses[:maneuver_h].
-            item["maneuver_label"] = refb_labels.window_maneuver_labels_v2(
-                p_last[None], item["future_poses"][None],
-                horizon=self.maneuver_h)[0].long()
-        else:                                  # v1 path (byte-identical)
-            p1 = item["future_poses"][self.maneuver_h - 1]
-            item["maneuver_label"] = refb_labels.classify_maneuver(
-                p_last[2], p1[2], p_last[3], p1[3]).long()
+        # v2 curvature-gated 2 s maneuver: a gentle highway curve (large R) that
+        # v1 calls a turn stays lane_keep; tight junction turns still turn;
+        # accel/brake/stop is preserved. classify_maneuver_v2 reads the whole
+        # sub-path arc, so the labeler is fed pose_last + future_poses.
+        # ⛔ The flag->labeler mapping is NOT re-stated here. It lives in
+        # `refb_labels.window_maneuver_labels_for`, which the eval's hierarchy
+        # panel also calls — a SECOND copy of this branch is precisely how the
+        # eval came to score every `--v2` arm against v1 labels.
+        # (Deliberately no eval-package name in this file: a guard pins that
+        # this trainer's source never mentions it, so it cannot drift into its
+        # import graph.)
+        item["maneuver_label"] = refb_labels.window_maneuver_labels_for(
+            p_last[None], item["future_poses"][None], horizon=self.maneuver_h,
+            v2=self.labels_v2)[0].long()
         # v2 lever 1: pose at t-1 (OBSERVED) so the loss can build yr0 = the
         # wrapped yaw delta / dt without touching the future. window >= 2 always.
         e_i, t = self.index[i]
         item["pose_prev"] = torch.as_tensor(
             self.episodes[e_i].poses[t + self.window - 2]).float()
+        # ── FRAME IDENTITY (E-DEC-18) ────────────────────────────────────────
+        # A label-conditioned term (PSG: a shared physical-state head on the
+        # encoded AND predicted trajectories, supervised by our own banked 3D
+        # cuboids) has to join per-frame labels to the window it is scoring, and
+        # the batch carried no way to say WHICH clip and WHICH frame it holds.
+        # `ep_idx` indexes ``self.episodes`` -- whose order is the cache's sorted
+        # ``<clip_id>.v2ep.pt`` order, so a consumer resolves the clip id from the
+        # cache listing rather than from anything stored here. `t_last` is the
+        # LAST OBSERVED frame of the window: the same frame O7/O8/O9 target
+        # (``frames[:, -1]``), so a label term lines up with the external-target
+        # terms by construction instead of by a convention someone has to recall.
+        # ⚠️ Emitted unconditionally as int64 tensors so ``default_collate``
+        # stacks them; nothing reads them unless a term asks, and adding a key
+        # cannot change any existing loss, RNG draw or state_dict.
+        item["ep_idx"] = torch.tensor(e_i, dtype=torch.long)
+        item["t_last"] = torch.tensor(t + self.window - 1, dtype=torch.long)
         return item
 
 

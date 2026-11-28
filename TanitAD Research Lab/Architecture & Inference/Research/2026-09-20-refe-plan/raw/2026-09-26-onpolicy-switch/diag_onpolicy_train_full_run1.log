@@ -1,0 +1,34 @@
+  bank: 6 tuples carved from D:/Projects/TanitAD/data/refe_consistent
+  F-EXACT     new vs staged trainer, 6 steps, 415 tensors: IDENTICAL
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  O-LEARN     120 on-policy log lines; first 'on-policy: sets    2  pick 0.000  random 0.411  best 1.000  skill -0.697  drift 19.01 m  l'
+  O-LEARN     last  'on-policy: sets    2  pick 1.000  random 0.502  best 1.000  skill  1.000  drift 16.35 m  l'
+  O-LEARN     drivable-area AUC on 64 NEW trajectories x 6 scenes: 0.998
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  O-SHUF      120 on-policy log lines; first 'on-policy: sets    2  pick 0.500  random 0.408  best 1.000  skill  0.155  drift 18.54 m  l'
+  O-SHUF      last  'on-policy: sets    2  pick 0.859  random 0.381  best 1.000  skill  0.773  drift 16.32 m  l'
+  O-SHUF      drivable-area AUC on 64 NEW trajectories x 6 scenes: 0.715
+  O-REFUSE    rc 4: refused, naming the change
+  O-PREFLIGHT rc 4: FAILED
+  O-DECLARE   rc 4: declared events 0, on-policy lines 0, no TRAIN_DONE
+  *** --weights none: FROZEN RANDOM TRUNK. An ABLATION, not a reproduction; no number from it may be compared with the paper. ***
+  REFe vits16 31.95 M total / 10.36 M trainable (32.43 %)  device=cpu
+  WTA reach: at most 1 of 64 proposals updated per step (1.6 %)
+  *** SYNTHETIC IMAGES: this run validates the LOOP MECHANICS ONLY.
+  *** Its loss says nothing about driving and must not be quoted as a result.
+  SCORER: ON-POLICY (PI decision 2026-09-26, B) -- the scorer is trained on the student's own proposals scored by the teacher, from C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\optrain\op_O-LEARN; the fixed candidate set is NOT used
+  ON-POLICY scorer bank: 6 complete sets (6 set lines, 0 incomplete, 0 superseded by a newer checkpoint, 0 unparseable lines; NAVSIM drivable area on 6 sets) <- C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\bd7d00af-b98e-42f1-a53c-cb4113059b0f\scratchpad\optrain\op_O-LEARN
+  targets: 6 rows from ['targets_rank0.jsonl', 'targets_rank1.jsonl']  per rank {0: 4, 1: 2}
+  scenes: 4 over 6 tuples  (rows per scene: 1 x 2, 2 x 2)
+  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***
+  bank: 6 tuples in 4 scenes   epoch = one pass over 4 scenes   batch 1   training
+  optimiser: AdamW lr 0.0002 wd 0.01  schedule: cosine -> 0 over 6 steps
+  score-loss normaliser: 64.0000 covered candidates/sample x batch (CONSTANT, so --accum is exactly equivalent to one large batch)
+  gradient accumulation: 2 micro-batches of 1 = effective batch 2  (paper: 256)
+  REFUSING TO RESUME -- the run's identity changed:
+      scorer_sha256: 'c1c1fe1375a2' -> 'e3b0c44298fc'
+
+  results: {'F-EXACT': True, 'O-LEARN': True, 'O-SHUF': False, 'O-REFUSE': True, 'O-PREFLIGHT': False, 'O-DECLARE': False}
+ZZOPTRAIN_FAIL ['O-SHUF', 'O-PREFLIGHT', 'O-DECLARE']

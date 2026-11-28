@@ -1,0 +1,191 @@
+ZZTBGATES_LEGACY_NOT_RUN subset C:/Users/Admin/p5c_gate_scratch/subset_rows.jsonl.gz is absent (deleted under the 2026-11-07 auto-delete rule): the 94 Tc20s checks need the 4,393-row bank subset; the p5r section below includes source-identity checks of every legacy function instead
+== P5-R mode (A1): real fixtures
+  ok   fixture bank: 40 rank-0 + 40 synthetic rank-1 twins
+  ok   eval control: 33 real P5-R EVAL rows
+     TB-0 PASS n=33 value=0.0
+     TB-1 PASS n=33 value=33/33
+     TB-2 PASS n=80 value=0.0
+     TB-3 PASS n=80 value=80/80
+     TB-4 PASS n=80 value=80/80
+     TB-5 PASS n=80 value=80/80
+     TB-6 PASS n=80 value={'rank0': [1.1877507734757378, 1.834875239909105], 'rank1': [1.1877507734757378, 1.834875239909105]}
+     TB-7 PASS n=80 value={'0': 40, '1': 40}
+  ok   P5R REAL TB-0 PASS
+  ok   P5R REAL TB-1 PASS
+  ok   P5R REAL TB-2 PASS
+  ok   P5R REAL TB-3 PASS
+  ok   P5R REAL TB-4 PASS
+  ok   P5R REAL TB-5 PASS
+  ok   P5R REAL TB-7 PASS
+  ok   P5R REAL TB-0: p5r max abs diff vs published EVAL labels exactly 0.0, sim8 identical 33/33, R-TOL-1/2/3 all True, Tc20s warm start 0.0
+  ok   no 1e-6 default remains: the module has no P5R_TOL and no --p5r-tol flag
+  ok   load_verdict_ref reads P5-R's verdict.json (rank 0 R_acc 1.1582, R_hr 1.5638; rank 1 R_acc 1.1475, R_hr 1.3437)
+  ok   P5R REAL TB-1 reproduces 33/33 EVAL labels
+  ok   P5R REAL TB-2 is S3 (max over rows <= 1e-6)
+     P5R REAL TB-6 (40 rows per rank; informative only): {'rank0': (1.1877507734757378, 1.834875239909105, True), 'rank1': (1.1877507734757378, 1.834875239909105, True)}
+  ok   P5R REAL TB-6 computed on p5r rows (n 40 + 40)
+  ok   P5R REAL TB-6 label differs from the Tc20s TB-6 on the same rows (it reads the p5r field)
+== Tc20s mode is unchanged
+  ok   legacy functions are source-identical to the landed gates module
+  ok   legacy gate_tb0 / gate_tb1 / run_all keep tol default 0.0 (the frozen behaviour) and the CLI default is 1e-9
+  ok   legacy constants identical
+  ok   run_all(tol default 0.0) on the same inputs: every gate result identical to the landed module (ignoring the 4 added detail keys)
+  ok   run_all ignores the dual records' p5r_* fields: Tc20s labels identical to the Tc20s-only fixture
+== R-A: Tc20s TB-0 / TB-1 tolerance 1e-9 (unconditional); 0 reproduces the frozen gate
+  ok   Tc20s table 1e-12 off the dev-box build: FAIL at --tc20s-tol 0 (frozen), PASS at the default 1e-9
+  ok   Tc20s mode with tol 1e-9: 1e-12 passes TB-0 and TB-1 (run_all(tc20s_tol=1e-9))
+  ok   ARM Tc20s table 1e-8 off the dev-box build (> 1e-9): TB-0 FAIL
+  ok   ARM Tc20s table 1e-8 off the dev-box build (> 1e-9): ZZTB_FAIL lists TB-0
+  ok   ... and the same 1e-8 passes if the tolerance is explicitly 1e-7
+  ok   ARM R-A: Tc20s sim8 verdict differs on one common row (labels identical): TB-0 FAIL
+  ok   ARM R-A: Tc20s sim8 verdict differs on one common row (labels identical): ZZTB_FAIL lists TB-0
+  ok   R-A sim8 compare counted (n_sim8_compared 1, differs 1)
+  ok   R-A: sim8 only on one side is 'not available': PASS, n_sim8_compared 0
+  ok   ARM R-A: a control-ok row fell back in the table: TB-0 FAIL
+  ok   ARM R-A: a control-ok row fell back in the table: ZZTB_FAIL lists TB-0
+  ok   R-A TB-1: max_abs_diff 1e-12 with 5 rows not bit-identical PASSES at 1e-9 and FAILS at tol 0
+  ok   ARM R-A TB-1: max_abs_diff 1e-8: TB-1 FAIL
+  ok   ARM R-A TB-1: max_abs_diff 1e-8: ZZTB_FAIL lists TB-1
+  ok   ARM R-A TB-1: one control error: TB-1 FAIL
+  ok   ARM R-A TB-1: one control error: ZZTB_FAIL lists TB-1
+  ok   ARM R-A TB-1: only 100 rows controlled: TB-1 FAIL
+  ok   ARM R-A TB-1: only 100 rows controlled: ZZTB_FAIL lists TB-1
+  ok   TB-0 without --eval-control is NOT_RUN and fails the final line
+  ok   TB-0 without the dev-box Tc20s control is NOT_RUN
+== R-B arms: R-TOL-1 / R-TOL-2 / R-TOL-3, per rank (33 real rows)
+  ok   baseline: failed_criteria == []
+  ok   p5r label off by 2e-6 on one EVAL row now PASSES (R-TOL-2's median/p99 bound, not 1e-6)
+  ok   ARM one sim8 verdict flipped in 33 rows (32/33 = 97.0 % < 99.5 %): TB-0 FAIL
+  ok   ARM one sim8 verdict flipped in 33 rows (32/33 = 97.0 % < 99.5 %): ZZTB_FAIL lists TB-0
+  ok   ... named R-TOL-1 (rank 0), and TB-1 fails too
+  ok   one row 2e-2 off: max recorded (2e-2) but p99 over 33 rows is interpolated: R-TOL-2 reads the max only as a record
+  ok   ARM Tc20s warm start 1 ulp off the dev-box build (p5r untouched), tol 0: TB-0 FAIL
+  ok   ARM Tc20s warm start 1 ulp off the dev-box build (p5r untouched), tol 0: ZZTB_FAIL lists TB-0
+  ok   ... but within the R-A 1e-9 default it passes
+  ok   ARM an EVAL row fell back in the table: TB-0 FAIL
+  ok   ARM an EVAL row fell back in the table: ZZTB_FAIL lists TB-0
+  ok   no verdict.json at all: R-TOL-3 still runs on its row-matched reference and PASSES (verdict.json is context only)
+  ok   a verdict.json that disagrees wildly is RECORDED (verdict_json_context) and does not gate
+  ok   ROW-MATCHED reference: these 33 rows have hr ratio 1.99 vs verdict.json's 1.56 (1,200 rows); with identical labels TB-0 and TB-1 still PASS (diff 0 against the same-row reference)
+  ok   with the REAL eval_r0.jsonl records (1,200 control rows, 33 in the bank): reference from the records' learn / raw.learn, equals the recomputed learn exactly, same ratios as the slim fixture
+  ok   ARM eval_n 34 expected, 33 reproduced: TB-1 FAIL
+  ok   ARM eval_n 34 expected, 33 reproduced: ZZTB_FAIL lists TB-1
+  ok   TB-1 without --eval-control is NOT_RUN
+== R-B edge arms on 13x-inflated fixtures (429 EVAL rows): threshold boundaries
+  ok   inflated fixtures: 1040 bank rows, 429 EVAL control rows
+  ok   inflated baseline: TB-0 and TB-1 PASS, failed_criteria []
+  ok   R-TOL-1/3 boundary: 1 sim8 verdict flipped in 429 (99.77 % identical, +0.233 pp <= 0.25) PASSES
+  ok   ARM R-TOL-3: 2 sim8 flips in 429 (+0.466 pp > 0.25 pp): TB-0 FAIL
+  ok   ARM R-TOL-3: 2 sim8 flips in 429 (+0.466 pp > 0.25 pp): ZZTB_FAIL lists TB-0
+  ok   ... named exactly rank0:R-TOL-3 (R-TOL-1 still 99.53 % >= 99.5 %)
+  ok   ARM R-TOL-3: the same sim8 arm fails TB-1: TB-1 FAIL
+  ok   ARM R-TOL-3: the same sim8 arm fails TB-1: ZZTB_FAIL lists TB-1
+  ok   ARM R-TOL-1 only: 6 verdicts differ in 429 with equal fail rates (98.6 % < 99.5 %): TB-0 FAIL
+  ok   ARM R-TOL-1 only: 6 verdicts differ in 429 with equal fail rates (98.6 % < 99.5 %): ZZTB_FAIL lists TB-0
+  ok   ... named exactly rank0:R-TOL-1 (R-TOL-2 and R-TOL-3 pass)
+  ok   R-TOL-2 boundary: 4 of 429 rows 1e-2 off: p99 stays under 5e-3, PASS, and the max (1e-2) is RECORDED, not gated
+  ok   ARM R-TOL-2 p99: 5 of 429 rows 1e-2 off (p99 7.2e-3 > 5e-3): TB-0 FAIL
+  ok   ARM R-TOL-2 p99: 5 of 429 rows 1e-2 off (p99 7.2e-3 > 5e-3): ZZTB_FAIL lists TB-0
+  ok   ... named exactly rank0:R-TOL-2
+  ok   ARM R-TOL-2 p99: the same arm fails TB-1: TB-1 FAIL
+  ok   ARM R-TOL-2 p99: the same arm fails TB-1: ZZTB_FAIL lists TB-1
+  ok   ARM R-TOL-2 median: 215 of 429 rows 2e-3 off (median 2e-3 > 1e-3, p99 <= 5e-3): TB-0 FAIL
+  ok   ARM R-TOL-2 median: 215 of 429 rows 2e-3 off (median 2e-3 > 1e-3, p99 <= 5e-3): ZZTB_FAIL lists TB-0
+  ok   ... named rank0:R-TOL-2
+  ok   a verdict.json 0.02 away no longer gates (context only): the inflated baseline still PASSES
+  ok   ARM R-TOL-3 ratio: every label's yaw gets +-9e-4 alternating noise (row diff 9e-4, inside R-TOL-2): TB-0 FAIL
+  ok   ARM R-TOL-3 ratio: every label's yaw gets +-9e-4 alternating noise (row diff 9e-4, inside R-TOL-2): ZZTB_FAIL lists TB-0
+  ok   ... named R-TOL-3 with R-TOL-2 and R-TOL-1 still true (ratio shift beyond +-0.01)
+  ok   ARM label-induced: every EVAL label gets a 0.4 rad yaw spike: TB-0 FAIL
+  ok   ARM label-induced: every EVAL label gets a 0.4 rad yaw spike: ZZTB_FAIL lists TB-0
+  ok   ... which names R-TOL-2 and R-TOL-3 (the label moved and the decision statistic with it)
+== arms: TB-2 = S3
+  ok   ARM S3 2e-6 on one row: TB-2 FAIL
+  ok   ARM S3 2e-6 on one row: ZZTB_FAIL lists TB-2
+  ok   ARM S3 field missing: TB-2 FAIL
+  ok   ARM S3 field missing: ZZTB_FAIL lists TB-2
+  ok   S3 exactly 1e-6 passes (bar is <=)
+  ok   the Tc20s knot field no longer drives TB-2 in p5r mode (replaced by S3)C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\numpy\lib\function_base.py:4658: RuntimeWarning: invalid value encountered in subtract
+  subtract(b, diff_b_a * (1 - t), out=lerp_interpolation, where=t >= 0.5,
+
+== arms: TB-4 (+S4), TB-5 (+S1/S2/S5)
+  ok   ARM one p5r solver fallback in rank 0 (2.5 % of rank 0 > 1 %): TB-4 FAIL
+  ok   ARM one p5r solver fallback in rank 0 (2.5 % of rank 0 > 1 %): ZZTB_FAIL lists TB-4
+  ok   S4 per-rank detail counts the fallback
+  ok   a fallback row gets label == traj bit for bit and is excluded from TB-6/TB-7
+  ok   a record with no p5r field and no p5r_error is a raw fallback, never a silent pass
+  ok   ARM p5r yaw + 2 pi: TB-5 FAIL
+  ok   ARM p5r yaw + 2 pi: ZZTB_FAIL lists TB-5
+  ok   ARM NaN in a p5r label: TB-5 FAIL
+  ok   ARM NaN in a p5r label: ZZTB_FAIL lists TB-5
+  ok   ARM S5 flag false: TB-5 FAIL
+  ok   ARM S5 flag false: ZZTB_FAIL lists TB-5
+  ok   ARM S1 flag false: TB-5 FAIL
+  ok   ARM S1 flag false: ZZTB_FAIL lists TB-5
+  ok   ARM S2 flag false: TB-5 FAIL
+  ok   ARM S2 flag false: ZZTB_FAIL lists TB-5
+  ok   ARM p5r computed from another traj (sha mismatch): TB-4 FAIL
+  ok   ARM p5r computed from another traj (sha mismatch): ZZTB_FAIL lists TB-4
+== arms: TB-6 (binding), TB-7
+  ok   CLEAN CONTROL (p5r := traj): TB-6 ratio exactly 1.0 on both ranks and PASS
+  ok   CLEAN CONTROL: all of TB-0..TB-7 PASS
+  ok   ARM rank-0 p5r labels jerky: TB-6 FAIL
+  ok   ARM rank-0 p5r labels jerky: ZZTB_FAIL lists TB-6
+  ok   rank-0 TB-6 FAIL is flagged STOP with the P5-T next lever named
+  ok   ARM rank-1 p5r labels jerky: TB-6 FAIL
+  ok   ARM rank-1 p5r labels jerky: ZZTB_FAIL lists TB-6
+  ok   rank-1-only TB-6 FAIL is not a STOP and the policy goes rank0
+  ok   R-D end to end: a rank-1-only TB-6 FAIL gives failing == ['TB-6'] exactly, rank 0 pass / rank 1 fail, decision rank0 (the runner's rank1only condition)
+  ok   R-D end to end: a rank-0 TB-6 FAIL gives failing containing TB-6-rank0-STOP (the trigger token)
+  ok   ARM no rank-1 row has a p5r label: TB-7 FAIL
+  ok   ARM no rank-1 row has a p5r label: ZZTB_FAIL lists TB-7
+  ok   TB-7 n_differs > 0 on both ranks (real)
+== rank policy in p5r mode reads p5r_sim8, never tc20s_sim8
+  ok   repair files WITHOUT p5r_sim8 => UNDECIDED (a Tc20s sim8 never stands in for P5-R's)
+  ok   repair files WITH p5r_sim8 => decided; the estimator is 4.3's (seed 20260927)
+  ok   RK0 on P5-R: p5r worse than raw on rank 0 => STOP, and it ignores a harmless Tc20s column
+== table integration + CLI (p5r)
+  ok   p5r merged files written
+  ok   traj_label_table build rc 0 (P5R)
+  ok   traj_label_table verify rc 0 and covers 80/80 with differs_from_raw == TB-7 total
+  ok   merged p5r source is p5r (not tc20s)
+  ok   CLI --label p5r on the real fixtures: prints LABEL p5r, TB-0..TB-7 lines, and a ZZTB final line
+  ok   CLI: the only possible failures are the TB-6 learnability read on 40 rows (informative), never TB-0/1/2/3/4/5/7
+  ok   meta records label_name P5R and lambda_star 3.0 and the PREREG_P5R sha
+  ok   gates.json carries status/n/value/bar per gate
+  ok   CLI: --tc20s-tol default 1e-9 is in the TB-0 bar, and meta records R_B + tc20s_tol_R_A
+  ok   CLI without --p5r-verdict: TB-0 and TB-1 not in the ZZTB_FAIL line (verdict.json is context only)
+  ok   CLI --tc20s-tol 0 reproduces the frozen bar text (== 0.0 / bit identity) for the warm start
+  ok   CLI without --eval-control: rc 1 and TB-0 TB-1 in the ZZTB_FAIL line
+  ok   CLI --label tc20s on the dual records still runs (Tc20s mode reads only tc20s)
+ZZTBGATES_P5R_PASS 138/138
+== R-C: thread pin without threadpoolctl
+  ok   with threadpoolctl blocked: import works and the mode is env
+  ok   all three env vars == 1: mechanism env
+  ok   each of the three missing is refused
+  ok   each of the three == '2' is refused
+  ok   with threadpoolctl present the env is not required (mechanism threadpoolctl)
+  ok   main() with no BLAS env and no threadpoolctl: rc 2 and ZZDUAL_REFUSE thread_pin naming the three vars
+  ok   the DONE record and the repair record carry thread_pin
+  ok   runner exports all three BLAS vars = 1 and asserts it
+  ok   runner's import probe no longer requires threadpoolctl (try/except ImportError)
+ZZTBGATES_THREADS_PASS 9/9
+== R-D: runner selection block (6b) with fake gate lines
+  ok   section 7 builds a table for class pass AND rank1only, for both labels
+  ok   Tc20s PASS: label tc20s, build tc20s only
+  ok   rank-0 TB-6 FAIL (rank 1 also fails) is the trigger/STOP path: Tc20s class trigger, P5-R PASS => label p5r, p5r table built, no Tc20s table
+  ok   trigger and P5-R rank-0 TB-6 also fails: label p5t, exit 3, no build
+  ok   RK0-STOP alone is the trigger => p5r
+  ok   Tc20s fails TB-0: ZZP5CL_FAIL gates, rc 1
+  ok   Tc20s fails TB-6 AND TB-0: a fault, never rank1only
+  ok   R-D: Tc20s line 'ZZTB_FAIL TB-6' alone, gates.json rank0 PASS / rank1 FAIL / decision rank0: PASSES with policy rank0 => label tc20s and build_table runs for it
+  ok   'ZZTB_FAIL TB-6' but gates.json shows rank 0 FAIL: not rank1only (fault)
+  ok   'ZZTB_FAIL TB-6' but policy UNDECIDED: fault
+  ok   'ZZTB_FAIL TB-6' but policy STOP: fault
+  ok   'ZZTB_FAIL TB-6' but rank 1 actually PASSES in gates.json (inconsistent): fault
+  ok   R-D, P5-R line: trigger and P5-R 'ZZTB_FAIL TB-6' with rank0 PASS / rank1 FAIL / decision rank0: P5-R passes with policy rank0 => label p5r, build p5r
+  ok   P5-R 'ZZTB_FAIL TB-6' but its json shows rank 0 FAIL: not passing => p5t, exit 3
+  ok   both: Tc20s PASS and P5-R rank1only => label tc20s (P5-R is only a contingency), p5r table also built
+  ok   both rank1only: label tc20s, both tables built
+ZZTBGATES_SELECTION_PASS 16/16
+ZZTBGATES_ALL_PASS 163/163 []

@@ -1,0 +1,33 @@
+  built_in_command_mode: ok (13)
+  runner_hop: ok (48)
+  flip_changes_output: ok (81)
+  missing_raises: ok (94)
+  seam_subprocess: ok (110)
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+C:\Users\Admin\dz\DriveZero\DriveRL\nuplan-devkit\nuplan\common\maps\nuplan_map\utils.py:413: RuntimeWarning: invalid value encountered in cast
+  return elements.iloc[np.where(elements[column_label].to_numpy().astype(int) == int(desired_value))]
+  goal_mode_unchanged: ok (156)
+  mutation RED as required: eval/refe_navtest_seam.py [planner.driving_command = cmd
+    planner.goal] -> runner_hop
+      AssertionError: RUNNER DID NOT SET planner.driving_command
+  mutation RED as required: eval/refe_navtest_seam.py [planner.driving_command = cmd
+    planner.goal] -> seam_subprocess
+      RuntimeError: this checkpoint is nav_mode='command': set planner.driving_command (NAVSIM's one-hot) before every infer()
+  mutation RED as required: refe/planner.py [return torch.tensor([NC.onehot(NC.from_driving] -> runner_hop
+      AssertionError: LEFT: the model received [[0. 1. 0. 0.]] but NAVSIM said [1.0, 0.0, 0.0, 0.0]
+  mutation RED as required: refe/planner.py [return torch.tensor([NC.onehot(NC.from_driving] -> flip_changes_output
+      MemoryError
+  mutation RED as required: refe/ckpt_io.py [if nav and nav != c.nav_mode:
+        c.nav_mo] -> built_in_command_mode
+      AssertionError: config_for_checkpoint must return a COPY with the checkpoint's nav_mode
+  mutation RED as required: refe/planner.py [if cmd is None:
+            raise RuntimeError] -> missing_raises
+      TypeError: 'NoneType' object is not iterable
+  mutation RED as required: eval/refe_navtest_seam.py [if cmd is None:                               ] -> missing_raises
+      AssertionError: Amendment 8 path: no driving_command: did not raise RuntimeError
+  mutation RED as required: eval/refe_navtest_seam.py [if v.size != NC.N_COMMANDS or not np.isfinite(] -> missing_raises
+      AssertionError: runner: wrong length: did not raise RuntimeError
+ZZP6PLAN_PASS 172

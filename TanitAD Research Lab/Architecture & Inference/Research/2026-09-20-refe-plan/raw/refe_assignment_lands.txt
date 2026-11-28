@@ -1,0 +1,45 @@
+THE SCORER SUPERVISION LANDS WHERE IT SHOULD -- AND THE FIRST RUN OF THIS TABLE WAS VOID.
+MEASURED 2026-09-20, ViT-S, 400 steps, batch 8, CUDA. Bank: 2,096 rows over 233 frames.
+
+WHAT THE TABLE IS FOR. The banked PDM targets belong to CANDIDATE trajectories; the scorer
+head scores the model's OWN proposals. Each candidate is attached to the nearest proposal, so
+that distance BOUNDS the whole supervision. Its floor is set by the CANDIDATE SET, not by
+model quality: a competent planner will never propose the over-curb path, so that row stays
+far away however well training goes. A single pooled mean reads as permanent failure either
+way, which is why the report is per candidate.
+
+RESULT, with the corrected (log_name, token, step) key
+  candidate     n    mean assign_d
+  teacher      727      3.54 m
+  lat-2        727      3.85 m
+  lat+2        727      3.90 m
+  lat-4        727      4.51 m
+  lat+4        727      4.58 m
+  lon x0.5     727      7.41 m
+  lon x1.5     727      9.74 m
+  stopped      727     14.62 m
+  over-curb    727     16.46 m
+  traj L1 6.1725 -> 0.4634 (92.5 % reduction); scorer coverage 727 / 3,196 = 22.7 %
+
+MONOTONE AND IN THE PREDICTED ORDER: teacher closest, lateral offsets next and ordered by
+their own magnitude, then longitudinal, then the two deliberately-bad arms furthest.
+
+THE FIRST RUN OF THIS TABLE IS VOID, AND ITS ORDERING WAS ALSO MONOTONE
+  keyed by (log_name, step) it read teacher 5.73 / lat 5.91-6.55 / lon 8.27-10.80 /
+  stopped 15.35 / over-curb 17.21 -- the same clean ordering, from a bank that was pooling
+  candidates across DIFFERENT SCENARIOS (see raw/refe_scorer_key_collision.txt). ⛔ A
+  qualitative result being exactly what you predicted is not evidence that it is sound.
+  What refuted it was ARITHMETIC: n = 837 against 605 covered samples. After the fix every
+  candidate reads n = 727 against 727 covered samples -- the identity that must hold.
+
+⚠️ WHAT THIS TABLE STILL CANNOT ANSWER, AND THE FIX SHIPPED WITH IT
+  these are WHOLE-RUN means, accumulated over every step INCLUDING the untrained ones
+  (step 0 read 11.89 m pooled; the last steps read ~5.4 m). So 3.54 m for the teacher blends
+  'the model was bad at the start' with 'the supervision is mis-assigned' -- precisely the two
+  things this report exists to separate. train.py now also accumulates a TRAILING window over
+  the last quarter of the run and prints both columns. Quote the trailing one.
+
+OPEN, named not chased: all three bank passes (offsets 0, 1, 3) abort exactly ONE frame in
+log 2021.05.12.23.36.44_veh-35_01133. Three different frame grids aborting the same count is
+not random -- it suggests a region where the teacher's own path genuinely reads off-road, in
+which case the per-frame control 'the teacher must be clean' is too strict there.

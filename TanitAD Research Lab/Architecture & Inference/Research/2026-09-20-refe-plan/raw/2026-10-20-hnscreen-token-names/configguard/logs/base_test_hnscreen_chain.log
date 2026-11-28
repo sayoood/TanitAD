@@ -1,0 +1,24 @@
+unmutated suite: 13 checks, 0 failing []  (65 s)
+mutation                                                                 caught-by (failing checks)
+the token check is deleted (verify never refuses)                        E_no_trainer_without_a_token
+the token check before the trainer start is deleted                      E_no_trainer_without_a_token
+the GPU lock acquisition is deleted                                      F_lock_discipline, G_foreign_lock_waited_for_never_removed
+the chain REMOVES a foreign lock while it waits                          G_foreign_lock_waited_for_never_removed
+the chain ignores the chain_active marker                                G_foreign_lock_waited_for_never_removed
+a DONE check is skipped (every stage re-runs)                            C_resume_after_interruption, D_resume_by_content_not_presence
+resume trusts presence, not content                                      D_resume_by_content_not_presence
+the read is not given --families-per-set                                 H_families_read_integration_and_rule_e
+the chain holds the lock around the cache driver                         F_lock_discipline
+SY < 0.10 does not stop the chain                                        I_stop_points
+a failed I6 / G15 does not stop the chain                                I_stop_points
+DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (a real t A_stage_order_and_markers
+the mint-stage name guard is deleted (a wrong token_check_names override L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the mint-stage guard ignores the status (a check that is not PASS passes L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the mint-stage guard checks only the G14 / G15 names, not every value (a L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the mint-stage guard always reads the first seed's token (the second see L_a_wrong_token_name_stops_at_the_mint_before_any_pass
+the argv lever check is skipped                                          J_named_parameters_and_levers
+rule E may fire twice                                                    H_families_read_integration_and_rule_e
+a failed gate before the read does not stop it                           I_stop_points
+the trainer is not released-and-archived on a retry (stale scores stay)  C_resume_after_interruption
+ZZTEST_PASS 21  (1 unmutated suite of 13 checks + 20 RED mutations; the shared dev-box lock files untouched: (None, None))
+EXIT_CODE 0 secs=236 free_c_mb=152

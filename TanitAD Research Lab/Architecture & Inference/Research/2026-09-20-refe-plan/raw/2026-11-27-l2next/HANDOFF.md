@@ -1,0 +1,16 @@
+# HANDOFF: L2-NEXT build (SH-MLP + EP-HEAD), 2026-11-27 ~18:10Z. Nothing trained on real data. Nothing committed or pushed.
+
+## State
+- Built (staged, final): trainer flags `--mlp-hidden`, `--select cv5`, EP as a trained row (`--rows 2`); G-DVB entries; six profiles `refe_shmlp_{s0,s1,red}`, `refe_ephead_{s0,s1,red}` (`launch_gate.py` NOT patched); cards `PREREG_EPHEAD.md`, `PREREG_SHMLP.md` FROZEN (`FROZEN.txt`, `*.sha256`, `CODE.sha256`).
+- Tests (synthetic): `test_safehead_next.py --fast` 13/13 PASS (before one 3-line mutation fix, re-verified by the targeted `test_reach ephead` run). SAFE-HEAD output bit-identical to landed `e1eb6bf3` (probe `d33a6eca...`). Mutations RED for the right reason: `sh_reach_row_dropped`, `sh_reach_ep_in_loss`, `sh_mlp_off`, `sh_mlp_nonzero_init` (G-DVB+G-EVAL), `sh_cv_token_folds`.
+- Stage root: `E:/Projects/TanitAD-artifacts/l2next/stage/<PK>/` : `refe/` (3 changed code files, `test_safehead_next.py`, 8 pin-edited tests; full files) and `raw/2026-11-27-l2next/` (cards, hashes, `test_profile_pins.patch`, `code_changes.patch`, this file). Pins: profiles 43 -> 49; `test_rep_gate` unlisted count stays 19; `test_scorerft_profile` SH_NAMES extended.
+
+## RUNNING (detached, WMI PID 64324, started 18:06Z)
+Regression chain `F:/TanitAD_l2next_tmp/cmp_chain.sh` (serial, commit gate >= 6000 MB): patched tree over 58 tests (the 56 + `test_safehead.py` + `test_safehead_next.py` full mode), then the base tree only for tests that fail on patched. Output `E:/Projects/TanitAD-artifacts/l2next/regression/`: `patched.tsv`, `base_failed.tsv`, `COMPARE.tsv` (last line `regressions N new_failures M`), `logs_*`, marker `CHAIN.DONE` or `CHAIN.FAILED`; stdout `F:/TanitAD_l2next_tmp/chain_stdout.log`. Expected: ~40-70 min. Resumable by re-running the same `.cmd` (`F:/TanitAD_l2next_tmp/run_chain.cmd`, WMI CreateFlags 0x08000200).
+Known baseline failures (from the SAFE-HEAD verdict): `test_vdac_stage0_forward.py` fails on base too; `test_hn_content_fp.py` was FAIL on the older base.
+
+## Next steps for the fresh agent (in order)
+1. When `CHAIN.DONE` exists: read `COMPARE.tsv`. 0 regressions and 0 new_failures (besides the known base failures) = done. A REGRESSION or FAIL-new: read its log, fix in `F:/TanitAD_l2next_tmp/sb/patched/refe/`, re-stage with `F:/TanitAD_l2next_tmp/stage.sh`, and file a dated AMENDMENT (code hashes move; the cards stay frozen) before re-running only that test.
+2. Copy `regression/{COMPARE.tsv,patched.tsv,base_failed.tsv}` into `stage/<PK>/raw/2026-11-27-l2next/regression/` and write `REGRESSION_VERDICT.md` there (what ran, deviation: patched-first, base only for failures).
+3. Tell the MM the open build item: `safehead_read.py` generalisation (cards EPHEAD 9.6 / SHMLP 6): heads via `safehead_data.head_logits`, step from `cv_select.json`, profile names, CTRL-REACH/CTRL-RED/CTRL-CV per the cards, M5 EP-correlation row. Mechanics only; freeze under a CODE amendment before any head is trained. Also the DATA-SCALE card (PI decision) is the committed next arm of both.
+4. Delete temp by literal path once the chain is DONE and step 2 is saved: `F:/TanitAD_l2next_tmp/` (contains `src` ~850 MB incl. a raw/ export, `sb`, `tmp`, scripts, logs). Log path and size in the hand-back. Never touch `F:/safehead_cache` or `F:/safehead_tmp` (not ours).

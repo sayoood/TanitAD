@@ -1,0 +1,24 @@
+.F
+================================== FAILURES ===================================
+__________ test_rk_mints_pass_and_binds_the_label_and_the_rh_bank[0] __________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/kinlab/tmp/ptpod/bt_mut_labelnotadmitted/test_rk_mints_pass_and_binds_t0')
+seed = 0
+
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_rk_mints_pass_and_binds_the_label_and_the_rh_bank(tmp_path, seed):
+        r = Rig(tmp_path / f"rk{seed}", seed=seed)
+        toks = rk_toks(r)
+        a, b = NEW.parse_argv(toks), NEW.parse_argv(r.rh_toks)
+        assert sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k)) == ["--dagger-label", "--out"] and a["--dagger-label"] == [LABEL] and len(toks) == len(r.rh_toks) + 2
+>       assert NEW.rh_argv_problems(json.load(open(r.base))["argv"], r.tmpl_toks, toks, f"RK_s{seed}", r.gen) == []
+E       assert ['flag --dagg...ition for RK'] == []
+E         
+E         Left contains one more item: "flag --dagger-label ['kin_v1'] is not in the template and is not an allowed addition for RK"
+E         Use -v to get more diff
+
+test_rk_checker.py:56: AssertionError
+=========================== short test summary info ===========================
+FAILED test_rk_checker.py::test_rk_mints_pass_and_binds_the_label_and_the_rh_bank[0]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 0.29s

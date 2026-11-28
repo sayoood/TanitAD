@@ -1,6 +1,6 @@
 """Supervised predictive NON-CAUSAL Inverse-Dynamics (IDM) head on a FROZEN
 encoder — the cheapest discriminating experiment for the IDM/YouTube line
-(TanitAD Research Hub/Architecture & Inference/IDM_VIDEO_PRETRAIN_DESIGN §5).
+(TanitAD Research Lab/Architecture & Inference/IDM_VIDEO_PRETRAIN_DESIGN §5).
 
 The head is a small bidirectional temporal transformer over a window of encoder
 latents ``z_{t-k..t+k}`` (k=4 → 9 frames) that reads out, at the window CENTER

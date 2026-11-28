@@ -1,0 +1,185 @@
+{
+  "F1": {
+    "ON_train_pairs": [
+      [
+        null,
+        null
+      ]
+    ],
+    "ON_train_t_sample": [
+      1,
+      9
+    ],
+    "ON_eval_pairs": [
+      [
+        10,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "OFF_train_pairs": [
+      [
+        10,
+        9
+      ],
+      [
+        0,
+        -1
+      ]
+    ],
+    "draw_n": 48,
+    "draw_min": 0,
+    "draw_max": 48,
+    "draw_distinct": 30,
+    "mutation_t_max_1_support": [
+      0
+    ],
+    "LIVE": true
+  },
+  "F2": {
+    "ON_pairs": [
+      [
+        10,
+        9
+      ],
+      [
+        0,
+        -1
+      ]
+    ],
+    "OFF_pairs": [
+      [
+        10,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "residual_retained_10_to_9": 0.9475,
+    "residual_retained_10_to_0": 0.2828,
+    "traj_max_abs_delta_on_vs_off": 0.0003719329833984375,
+    "LIVE": true
+  },
+  "F3": {
+    "cascade_built": true,
+    "layer_u0_hat_len": 4,
+    "layer_logits_len": 4,
+    "OFF_has_layer_u0_hat": false,
+    "tele_cascade_stages": 4,
+    "mutation_stage0_head_moves_traj": 0.0,
+    "mutation_lastStage_head_moves_traj": 16.258445739746094,
+    "grad_layer0_attn_from_LAST_stage": null,
+    "grad_layerL_attn_from_LAST_stage": 0.0,
+    "LIVE": false
+  },
+  "F4": {
+    "adaln_built": true,
+    "n_adaln": 2,
+    "zero_init_default": false,
+    "mutation_adaln0_moves_traj": 0.0,
+    "mutation_adalnLast_moves_traj": 0.0,
+    "module_order": [
+      "Mish",
+      "Linear"
+    ],
+    "zeroinit_traj_equals_noflag": true,
+    "LIVE": false
+  },
+  "F5": {
+    "sel_score_differs": 0.09302473068237305,
+    "mutation_control_head_moves_F5_score": 0.5063967704772949,
+    "mutation_control_head_moves_OFF_score": 0.0,
+    "focal_value": 0.14010201,
+    "focal_reference": 0.14010201,
+    "focal_matches_reference": true,
+    "focal_vs_cross_entropy": 2.206767,
+    "LIVE": true
+  },
+  "F6": {
+    "flags_from_args_f6": true,
+    "flags_from_args_default_is_None": true,
+    "pin_source_lines_386_393": "    _rv6_flags = refcv6_flags_from_args(args)\n    cfg.core.decoder.refcv6 = _rv6_flags\n    if _rv6_flags is not None and _rv6_flags.f6_w_u0_zero:\n        # F6 IS `--w-u0 0`, and it carries its own acknowledgement so the\n        # record reads \"refcv6 F6\" rather than \"someone bypassed a guard\".\n        args.w_u0 = 0.0\n        args.ack_ddim_no_u0 = True\n    if args.image_hw:",
+    "LIVE": true
+  },
+  "F7": {
+    "refuses_without_ack": true,
+    "refusal_head": "refcv5 WP-4 / refcv6 F7: `sampler_groups > 1` emits a [B, G*N, ...] fan while THREE call s",
+    "fan_shape": [
+      2,
+      12,
+      4,
+      2
+    ],
+    "logits_shape": [
+      2,
+      12
+    ],
+    "has_sel_anchor_id": true,
+    "sel_anchor_id": [
+      0,
+      0
+    ],
+    "sel_idx": [
+      0,
+      0
+    ],
+    "bank_shape": [
+      2,
+      12,
+      4,
+      2
+    ],
+    "bank_group_major": true,
+    "tile_layout_is_repeat": true,
+    "LIVE": true
+  },
+  "F8": {
+    "refuses_on_control_space": true,
+    "refusal_head": "refcv6 F8 is DD's WAYPOINT-space noise, so it requires `sampler_space='metre'`. ",
+    "traj_differs": 0.013576507568359375,
+    "DD_X_OFF/SPAN": [
+      1.2,
+      56.9
+    ],
+    "DD_Y_OFF/SPAN": [
+      20.0,
+      46.0
+    ],
+    "norm_denorm_roundtrip_max_err": 2.384185791015625e-06,
+    "sqrt_one_minus_abar_at_infer_t": 0.031588,
+    "sigma_x_m": 0.8987,
+    "sigma_y_m": 0.7265,
+    "clamp_lines": [
+      2549
+    ],
+    "sampler_loop_line": 2559,
+    "clamp_is_inside_loop": false,
+    "LIVE": true
+  },
+  "F9": {
+    "accepts_117_v0": true,
+    "rejects_wrong_n": true,
+    "wrong_n_msg": "F9: the vocabulary must stay 117 anchors, got 116. Spec \u00a73 F9 is a no-",
+    "rejects_not_v0": true,
+    "not_v0_msg": "F9: the vocabulary must stay v0-CONDITIONED. A fixed-path bank carries",
+    "forward_enforces": true,
+    "forward_msg": "F9: the vocabulary must stay 117 anchors, got 6. Spec \u00a73 F9 is a no-change item;",
+    "LIVE": true
+  },
+  "VERDICT": {
+    "F1": true,
+    "F2": true,
+    "F3": false,
+    "F4": false,
+    "F5": true,
+    "F6": true,
+    "F7": true,
+    "F8": true,
+    "F9": true
+  }
+}

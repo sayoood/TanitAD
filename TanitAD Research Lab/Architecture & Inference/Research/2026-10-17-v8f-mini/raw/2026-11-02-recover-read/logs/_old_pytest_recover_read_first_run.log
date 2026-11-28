@@ -1,0 +1,149 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: E:\Projects\TanitAD-artifacts\dagland\recover_read
+plugins: anyio-4.14.1
+collecting ... collected 26 items
+
+tests/test_recover_read.py::test_primary_rule_edges PASSED               [  3%]
+tests/test_recover_read.py::test_m1_cell_share_definition PASSED         [  7%]
+tests/test_recover_read.py::test_guards_rule PASSED                      [ 11%]
+tests/test_recover_read.py::test_floor_rule_is_strict_and_per_seed PASSED [ 15%]
+tests/test_recover_read.py::test_label_table_every_row PASSED            [ 19%]
+tests/test_recover_read.py::test_label_inside_floor PASSED               [ 23%]
+tests/test_recover_read.py::test_freeze_reading_rules PASSED             [ 26%]
+tests/test_recover_read.py::test_read_a_block_strategic_paused_and_failing_terms PASSED [ 30%]
+tests/test_recover_read.py::test_composite_rule_counts_and_attribution PASSED [ 34%]
+tests/test_recover_read.py::test_composite_artefact_makes_it_a_rig_artefact PASSED [ 38%]
+tests/test_recover_read.py::test_argv_audit_on_the_box2_argv_files[0] PASSED [ 42%]
+tests/test_recover_read.py::test_argv_audit_on_the_box2_argv_files[1] PASSED [ 46%]
+tests/test_recover_read.py::test_kr3_on_the_gate_evidence_of_R_0 PASSED  [ 50%]
+tests/test_recover_read.py::test_kr1_and_kp1 PASSED                      [ 53%]
+tests/test_recover_read.py::test_run_table_is_the_cards_runs PASSED      [ 57%]
+tests/test_recover_read.py::test_kk2_on_feas2_kbox_ticks_and_is_sensitive PASSED [ 61%]
+tests/test_recover_read.py::test_kat1_R_equals_C0_every_delta_is_exactly_zero PASSED [ 65%]
+tests/test_recover_read.py::test_kat2_logged_history_closes_M1_and_reproduces_H_HISTSWAP_1 PASSED [ 69%]
+tests/test_recover_read.py::test_kat3_composite_path_reproduces_FEAS2_kbox_D2_rows PASSED [ 73%]
+tests/test_recover_read.py::test_extraction_wiring_reproduces_a_banked_array FAILED [ 76%]
+tests/test_recover_read.py::test_mutation_goes_red[floor clause in label] PASSED [ 80%]
+tests/test_recover_read.py::test_mutation_goes_red[floor comparison in floor_rule] PASSED [ 84%]
+tests/test_recover_read.py::test_mutation_goes_red[share bar in primary_rule] PASSED [ 88%]
+tests/test_recover_read.py::test_mutation_goes_red[ARTEFACT clause in freeze_reading] PASSED [ 92%]
+tests/test_recover_read.py::test_mutation_goes_red[ARTEFACT clause in composite_rule] PASSED [ 96%]
+tests/test_recover_read.py::test_mutation_goes_red[ADE6 guard in guards_rule] PASSED [100%]
+
+================================== FAILURES ===================================
+______________ test_extraction_wiring_reproduces_a_banked_array _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-179/test_extraction_wiring_reprodu0')
+
+    @pytest.mark.slow
+    def test_extraction_wiring_reproduces_a_banked_array(tmp_path):
+        """extract() on KAPPA-T1's SREP_DAGOACC_s0 rollout reproduces its banked per-window array bit for bit (proves the extractor command line and its determinism)."""
+        if not os.path.exists("F:/TanitAD-scratch/kappa_t1/out/SREP_DAGOACC_s0/ticks/ticks_SREP_DAGOACC_s0.npz"):
+            pytest.skip("KAPPA-T1 scratch rollout absent")
+        dst = R.extract("SREP_DAGOACC_s0", 0, "F:/TanitAD-scratch/kappa_t1/out", str(tmp_path))
+        a, b = R.read_arrays(dst), R.read_arrays(f"{DL}/kappa_t1/raw/arrays/SREP_DAGOACC_s0.npz")
+>       assert set(a) == set(b) and all(np.array_equal(a[k], b[k], equal_nan=True) for k in a)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_recover_read.py:277: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_recover_read.py:277: in <genexpr>
+    assert set(a) == set(b) and all(np.array_equal(a[k], b[k], equal_nan=True) for k in a)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+a1 = array(['ADE6', 'speed MAE', 'along-track MAE', 'accel MAE', 'DK-VIOL',
+       'DK-HW', 'DK-TG', 'heading MAE', 'yaw-ra...ature MAE (GT>=5.2)', 'TAC-LAT', 'TAC-LON', 'S-POS@30',
+       'S-POS@50', 'S-POS@80', 'M1 crawl share'], dtype='<U26')
+a2 = array(['ADE6', 'speed MAE', 'along-track MAE', 'accel MAE', 'DK-VIOL',
+       'DK-HW', 'DK-TG', 'heading MAE', 'yaw-ra...ature MAE (GT>=5.2)', 'TAC-LAT', 'TAC-LON', 'S-POS@30',
+       'S-POS@50', 'S-POS@80', 'M1 crawl share'], dtype='<U26')
+equal_nan = True
+
+    @array_function_dispatch(_array_equal_dispatcher)
+    def array_equal(a1, a2, equal_nan=False):
+        """
+        True if two arrays have the same shape and elements, False otherwise.
+    
+        Parameters
+        ----------
+        a1, a2 : array_like
+            Input arrays.
+        equal_nan : bool
+            Whether to compare NaN's as equal. If the dtype of a1 and a2 is
+            complex, values will be considered equal if either the real or the
+            imaginary component of a given value is ``nan``.
+    
+        Returns
+        -------
+        b : bool
+            Returns True if the arrays are equal.
+    
+        See Also
+        --------
+        allclose: Returns True if two arrays are element-wise equal within a
+                  tolerance.
+        array_equiv: Returns True if input arrays are shape consistent and all
+                     elements equal.
+    
+        Examples
+        --------
+        >>> import numpy as np
+    
+        >>> np.array_equal([1, 2], [1, 2])
+        True
+    
+        >>> np.array_equal(np.array([1, 2]), np.array([1, 2]))
+        True
+    
+        >>> np.array_equal([1, 2], [1, 2, 3])
+        False
+    
+        >>> np.array_equal([1, 2], [1, 4])
+        False
+    
+        >>> a = np.array([1, np.nan])
+        >>> np.array_equal(a, a)
+        False
+    
+        >>> np.array_equal(a, a, equal_nan=True)
+        True
+    
+        When ``equal_nan`` is True, complex values with nan components are
+        considered equal if either the real *or* the imaginary components are nan.
+    
+        >>> a = np.array([1 + 1j])
+        >>> b = a.copy()
+        >>> a.real = np.nan
+        >>> b.imag = np.nan
+        >>> np.array_equal(a, b, equal_nan=True)
+        True
+        """
+        try:
+            a1, a2 = asarray(a1), asarray(a2)
+        except Exception:
+            return False
+        if a1.shape != a2.shape:
+            return False
+        if not equal_nan:
+            return builtins.bool((asanyarray(a1 == a2)).all())
+    
+        if a1 is a2:
+            # nan will compare equal so an array will compare equal to itself.
+            return True
+    
+        cannot_have_nan = (_dtype_cannot_hold_nan(a1.dtype)
+                           and _dtype_cannot_hold_nan(a2.dtype))
+        if cannot_have_nan:
+            return builtins.bool(asarray(a1 == a2).all())
+    
+        # Fast path for a1 and a2 being all NaN arrays
+>       a1nan = isnan(a1)
+                ^^^^^^^^^
+E       TypeError: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\_core\numeric.py:2548: TypeError
+=========================== short test summary info ===========================
+FAILED tests/test_recover_read.py::test_extraction_wiring_reproduces_a_banked_array
+================== 1 failed, 25 passed in 143.79s (0:02:23) ===================

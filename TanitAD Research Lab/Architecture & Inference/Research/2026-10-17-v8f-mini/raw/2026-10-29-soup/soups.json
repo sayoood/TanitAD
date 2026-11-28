@@ -1,0 +1,28 @@
+{
+ "prereg": "PREREG_V8F_SOUP (DRAFT, 2026-10-28)",
+ "inits": {
+  "0": {"path": "E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/M2b_s0/ckpt_last.pt", "sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8"},
+  "1": {"path": "E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/M2b_s1/ckpt_last.pt", "sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6"}
+ },
+ "members": {
+  "DAGOACC_0": {"path": "E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s0_dagoacc/ckpt_last.pt", "sha256": "67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f", "init_seed": 0, "trainer_seed": 0},
+  "DAGOACC_1": {"path": "E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s1_dagoacc/ckpt_last.pt", "sha256": "90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333", "init_seed": 1, "trainer_seed": 1},
+  "REP_0": {"path": "E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/M2b_s0_dagoaccorcrep/ckpt_last.pt", "sha256": "b03fd6efebec285f747673fa90d093cb9202a649d560ba8f5c016475f1fb4bca", "init_seed": 0, "trainer_seed": 10},
+  "REP_1": {"path": "E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/M2b_s1_dagoaccorcrep/ckpt_last.pt", "sha256": "77853e564f52ff029cfc241042b733d75dba8191a99a7be0fc59778d511aeca2", "init_seed": 1, "trainer_seed": 11},
+  "A_0": {"path": "E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s0_launchintent/ckpt_last.pt", "sha256": "deb8f28b4ea9b2b1571f7ebea00c286922443e1dcc15f14f62e8cbcd7e143776", "init_seed": 0, "trainer_seed": 0},
+  "A_1": {"path": "E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s1_launchintent/ckpt_last.pt", "sha256": "abe0fd24e6f9906bb3545b5b61ad14ae916c606d969c83ef431f484dc7adc556", "init_seed": 1, "trainer_seed": 1},
+  "AREP_0": {"path": "E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s0_launchintentrep/ckpt_last.pt", "sha256": "b86f7d4353b9fbedaa80d8034df7e9c0f9ae16cccd95884bdf358f2c40540f3c", "init_seed": 0, "trainer_seed": 10},
+  "AREP_1": {"path": "E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s1_launchintentrep/ckpt_last.pt", "sha256": "2900ff73cd85571888aee2f3f76a6c46361d52b86ca4a755eee0dc5fd309c81e", "init_seed": 1, "trainer_seed": 11}
+ },
+ "reference": {"0": ["DAGOACC_0", "REP_0", "A_0", "AREP_0"], "1": ["DAGOACC_1", "REP_1", "A_1", "AREP_1"]},
+ "soups": {
+  "SOUP_s0":  {"seed": 0, "members": ["DAGOACC_0", "REP_0"], "donor": "DAGOACC_0", "run_dir": "M2b_s0_soup", "role": "SOUP", "decisive": true},
+  "SOUP_s1":  {"seed": 1, "members": ["DAGOACC_1", "REP_1"], "donor": "DAGOACC_1", "run_dir": "M2b_s1_soup", "role": "SOUP", "decisive": true},
+  "SOUPR_s0": {"seed": 0, "members": ["A_0", "AREP_0"], "donor": "A_0", "run_dir": "M2b_s0_soupr", "role": "SOUPR", "decisive": true},
+  "SOUPR_s1": {"seed": 1, "members": ["A_1", "AREP_1"], "donor": "A_1", "run_dir": "M2b_s1_soupr", "role": "SOUPR", "decisive": true},
+  "SOUP4_s0": {"seed": 0, "members": ["DAGOACC_0", "REP_0", "A_0", "AREP_0"], "donor": "DAGOACC_0", "run_dir": "M2b_s0_soup4", "role": "SOUP4", "decisive": false},
+  "SOUP4_s1": {"seed": 1, "members": ["DAGOACC_1", "REP_1", "A_1", "AREP_1"], "donor": "DAGOACC_1", "run_dir": "M2b_s1_soup4", "role": "SOUP4", "decisive": false},
+  "XINIT_s0": {"seed": 0, "members": ["DAGOACC_0", "DAGOACC_1"], "donor": "DAGOACC_0", "run_dir": "XINIT_s0", "role": "XINIT", "expect": "K-BASIN FAIL"},
+  "XINIT_s1": {"seed": 1, "members": ["DAGOACC_1", "DAGOACC_0"], "donor": "DAGOACC_1", "run_dir": "XINIT_s1", "role": "XINIT", "expect": "K-BASIN FAIL"}
+ }
+}

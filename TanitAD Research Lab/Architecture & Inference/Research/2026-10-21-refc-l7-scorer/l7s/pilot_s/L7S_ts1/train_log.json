@@ -1,0 +1,371 @@
+{
+ "args": {
+  "fan_npz": [
+   "D:/tanitad-archive/l7cap_thor_1022/train139_s0/dump/fan_extras.npz",
+   "D:/tanitad-archive/l7cap_thor_1022/train139_s1/dump/fan_extras.npz"
+  ],
+  "targets_npz": [
+   "C:/Users/Admin/refcv8_pf/l7prep/targets/train139_s0.npz",
+   "C:/Users/Admin/refcv8_pf/l7prep/targets/train139_s1.npz"
+  ],
+  "synthetic": 0,
+  "mode": "S",
+  "scene_cache": "C:/Users/Admin/refcv8_pf/l7s_prep/scene_cache",
+  "seed": 1,
+  "epochs": 30,
+  "batch": 32,
+  "lr": 0.0003,
+  "wd": 0.01,
+  "temperature": 0.5,
+  "val_frac": 0.1,
+  "patience": 3,
+  "early_stop_on": "loss",
+  "max_steps": 0,
+  "out_dir": "C:/Users/Admin/refcv8_pf/l7pilot/L7S_ts1",
+  "i_know_this_is_eval": false,
+  "allow_unknown_provenance": false
+ },
+ "source": {
+  "fan_npz": [
+   "D:/tanitad-archive/l7cap_thor_1022/train139_s0/dump/fan_extras.npz",
+   "D:/tanitad-archive/l7cap_thor_1022/train139_s1/dump/fan_extras.npz"
+  ],
+  "targets_npz": [
+   "C:/Users/Admin/refcv8_pf/l7prep/targets/train139_s0.npz",
+   "C:/Users/Admin/refcv8_pf/l7prep/targets/train139_s1.npz"
+  ],
+  "provenance": [
+   {
+    "fan_npz": "D:/tanitad-archive/l7cap_thor_1022/train139_s0/dump/fan_extras.npz",
+    "kind": "train",
+    "evidence": [
+     "manifest corpus.labels_path: /home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+     "manifest corpus.episodes: /home/nvidia/r8ns/l7cap/a6cache"
+    ]
+   },
+   {
+    "fan_npz": "D:/tanitad-archive/l7cap_thor_1022/train139_s1/dump/fan_extras.npz",
+    "kind": "train",
+    "evidence": [
+     "manifest corpus.labels_path: /home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+     "manifest corpus.episodes: /home/nvidia/r8ns/l7cap/a6cache"
+    ]
+   }
+  ],
+  "inference_seeds": [
+   0,
+   1
+  ],
+  "scene": {
+   "dims": {
+    "bev": 96,
+    "agent": 384
+   },
+   "identical_order": [
+    true,
+    true
+   ],
+   "stores": [
+    {
+     "npz": "D:/tanitad-archive/l7cap_thor_1022/train139_s0/dump/l7cap_scene.npz",
+     "cache": {
+      "bev_tokens": "r7_bev_tokens.973b58f6.447436928.npy",
+      "agent_tokens": "r7_agent_tokens.1b25dbde.1118592128.npy"
+     }
+    },
+    {
+     "npz": "D:/tanitad-archive/l7cap_thor_1022/train139_s1/dump/l7cap_scene.npz",
+     "cache": {
+      "bev_tokens": "r7_bev_tokens.973b58f6.447436928.npy",
+      "agent_tokens": "r7_agent_tokens.1b25dbde.1118592128.npy"
+     }
+    }
+   ]
+  }
+ },
+ "params": 480904,
+ "n_train": 8730,
+ "n_val": 980,
+ "n_train_episodes": 125,
+ "n_val_episodes": 14,
+ "val_rows_sha12": "5af23a842e87",
+ "keep_mean_candidates": 133.856,
+ "epochs": [
+  {
+   "epoch": 0,
+   "steps": 273,
+   "train_loss": {
+    "nc": 0.46067,
+    "ttc": 0.56568,
+    "dac": 0.60638,
+    "comf": 0.18868,
+    "ep": 0.36305,
+    "imit": 4.46729,
+    "reg": 1.0599,
+    "total": 5.43413
+   },
+   "val": {
+    "n": 980,
+    "loss": 5.34107,
+    "pick_cost_m": 2.07419,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.838,
+     "nc": 0.7379,
+     "ttc": 0.6676,
+     "dac": 0.7077
+    }
+   },
+   "train_subset": {
+    "n": 512,
+    "loss": 5.17648,
+    "pick_cost_m": 2.32136,
+    "own_pick_cost_m": 1.39236,
+    "oracle_cost_m": 0.55473,
+    "head_auc": {
+     "comf": 0.8189,
+     "nc": 0.8379,
+     "ttc": 0.7881,
+     "dac": 0.7868
+    }
+   },
+   "epoch_s": 92.21,
+   "s_per_window": 0.010563,
+   "val_scene_shuffled": {
+    "n": 980,
+    "loss": 5.88351,
+    "pick_cost_m": 2.95423,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8273,
+     "nc": 0.6798,
+     "ttc": 0.5987,
+     "dac": 0.6402
+    }
+   }
+  },
+  {
+   "epoch": 1,
+   "steps": 546,
+   "train_loss": {
+    "nc": 0.39528,
+    "ttc": 0.48838,
+    "dac": 0.54237,
+    "comf": 0.16352,
+    "ep": 0.33668,
+    "imit": 4.26888,
+    "reg": 0.87691,
+    "total": 5.09258
+   },
+   "val": {
+    "n": 980,
+    "loss": 5.2414,
+    "pick_cost_m": 2.10585,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8713,
+     "nc": 0.7502,
+     "ttc": 0.7017,
+     "dac": 0.7415
+    }
+   },
+   "train_subset": {
+    "n": 512,
+    "loss": 4.91078,
+    "pick_cost_m": 1.78593,
+    "own_pick_cost_m": 1.39236,
+    "oracle_cost_m": 0.55473,
+    "head_auc": {
+     "comf": 0.8403,
+     "nc": 0.8749,
+     "ttc": 0.852,
+     "dac": 0.8295
+    }
+   },
+   "epoch_s": 92.63,
+   "s_per_window": 0.01061,
+   "val_scene_shuffled": {
+    "n": 980,
+    "loss": 5.89758,
+    "pick_cost_m": 3.11252,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8578,
+     "nc": 0.6656,
+     "ttc": 0.6032,
+     "dac": 0.6409
+    }
+   }
+  },
+  {
+   "epoch": 2,
+   "steps": 819,
+   "train_loss": {
+    "nc": 0.36983,
+    "ttc": 0.45344,
+    "dac": 0.51684,
+    "comf": 0.15277,
+    "ep": 0.32616,
+    "imit": 4.16548,
+    "reg": 0.81786,
+    "total": 4.93822
+   },
+   "val": {
+    "n": 980,
+    "loss": 5.35642,
+    "pick_cost_m": 1.87859,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8572,
+     "nc": 0.7683,
+     "ttc": 0.6969,
+     "dac": 0.7518
+    }
+   },
+   "train_subset": {
+    "n": 512,
+    "loss": 4.77029,
+    "pick_cost_m": 1.41998,
+    "own_pick_cost_m": 1.39236,
+    "oracle_cost_m": 0.55473,
+    "head_auc": {
+     "comf": 0.8477,
+     "nc": 0.8812,
+     "ttc": 0.8668,
+     "dac": 0.8475
+    }
+   },
+   "epoch_s": 93.19,
+   "s_per_window": 0.010675,
+   "val_scene_shuffled": {
+    "n": 980,
+    "loss": 6.19201,
+    "pick_cost_m": 3.20199,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8332,
+     "nc": 0.6474,
+     "ttc": 0.6014,
+     "dac": 0.6454
+    }
+   }
+  },
+  {
+   "epoch": 3,
+   "steps": 1092,
+   "train_loss": {
+    "nc": 0.35105,
+    "ttc": 0.42605,
+    "dac": 0.50149,
+    "comf": 0.14677,
+    "ep": 0.31752,
+    "imit": 4.06526,
+    "reg": 0.76388,
+    "total": 4.79577
+   },
+   "val": {
+    "n": 980,
+    "loss": 5.44748,
+    "pick_cost_m": 2.1009,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.881,
+     "nc": 0.7104,
+     "ttc": 0.6622,
+     "dac": 0.7585
+    }
+   },
+   "train_subset": {
+    "n": 512,
+    "loss": 4.838,
+    "pick_cost_m": 1.71062,
+    "own_pick_cost_m": 1.39236,
+    "oracle_cost_m": 0.55473,
+    "head_auc": {
+     "comf": 0.8665,
+     "nc": 0.8881,
+     "ttc": 0.8844,
+     "dac": 0.8408
+    }
+   },
+   "epoch_s": 93.64,
+   "s_per_window": 0.010726,
+   "val_scene_shuffled": {
+    "n": 980,
+    "loss": 6.13924,
+    "pick_cost_m": 3.18256,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8773,
+     "nc": 0.633,
+     "ttc": 0.5733,
+     "dac": 0.6483
+    }
+   }
+  },
+  {
+   "epoch": 4,
+   "steps": 1365,
+   "train_loss": {
+    "nc": 0.33955,
+    "ttc": 0.40982,
+    "dac": 0.48609,
+    "comf": 0.13944,
+    "ep": 0.31242,
+    "imit": 3.98746,
+    "reg": 0.72898,
+    "total": 4.68942
+   },
+   "val": {
+    "n": 980,
+    "loss": 5.45298,
+    "pick_cost_m": 1.85328,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8847,
+     "nc": 0.7534,
+     "ttc": 0.6809,
+     "dac": 0.7679
+    }
+   },
+   "train_subset": {
+    "n": 512,
+    "loss": 4.55225,
+    "pick_cost_m": 1.23762,
+    "own_pick_cost_m": 1.39236,
+    "oracle_cost_m": 0.55473,
+    "head_auc": {
+     "comf": 0.88,
+     "nc": 0.9027,
+     "ttc": 0.9037,
+     "dac": 0.8557
+    }
+   },
+   "epoch_s": 92.45,
+   "s_per_window": 0.01059,
+   "val_scene_shuffled": {
+    "n": 980,
+    "loss": 6.4459,
+    "pick_cost_m": 3.19832,
+    "own_pick_cost_m": 0.99895,
+    "oracle_cost_m": 0.35874,
+    "head_auc": {
+     "comf": 0.8778,
+     "nc": 0.6442,
+     "ttc": 0.5862,
+     "dac": 0.6552
+    }
+   }
+  }
+ ],
+ "train_wall_s": 464.12
+}

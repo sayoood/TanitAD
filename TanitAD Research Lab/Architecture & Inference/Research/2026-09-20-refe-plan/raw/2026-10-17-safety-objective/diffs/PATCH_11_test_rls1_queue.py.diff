@@ -1,0 +1,249 @@
+--- a/refe/test_rls1_queue.py
++++ b/refe/test_rls1_queue.py
+@@ -6,6 +6,9 @@
+      One sandbox per interleaving: S1 alive; the P2 seed replicate still WAITING (RL-S1 goes first, the replicate waits on it) / already PAST its wait (RL-S1 waits and does NOT hold the lock the
+      replicate re-checks: no deadlock) / passing its wait INSIDE the settle window (RL-S1 yields the lock); a stale marker from an earlier attempt; P6 past / not past its wait; the GPU busy,
+      idle, unanswerable; two chains started at once.  The invariant sampled every 0.25 s: RL-S1 never holds chain.lock while S1 is alive.
++  B4. SAFEOBJ (raw/2026-10-17-safety-objective): the whole arm loop run for "R0d R1d R1o": the profile refe_rls1d, the argv the preflight and the trainer receive (--epo-con g5 ... / --epo-con off), each arm
++     read against its OWN A, the seed-matched second control, R1o's --observe-only monitor AND replay, R1o refused until R0d and R1d both read S = PASS (the real rls1_checks.py safeobj-gate), a K3 kill of
++     R0d / R1d that STOPS the chain, a killed R0d that refuses on a re-run, misspelled arms; and the mutations of each.
+   B3. RL-S1c: the whole arm loop run for "R0c": its profile, the argv the preflight and the trainer receive (--epo-ref armA), the reference the monitor reads against (its OWN arm A, even with
+      C0's dumps on the pod), C0 as the second control (read when there, announced when not), a K3 / K-MON kill that STOPS the chain, a killed R0c that refuses on a re-run, an unknown arm.
+   B2. RL-S1b: the chain's argv for C1 / R0b / R1b equals eval/rls1b_arms.json token for token and the real refe_rls1b gate accepts it; the whole arm loop run for "R0b C1 R1b": order, control
+@@ -330,7 +333,8 @@
+     case " $* " in *" --preflight "*) echo "ZZSFT_PREFLIGHT_PASS"; exit 0 ;; esac
+     mkdir -p "$ad/scores"; echo $$ > "$ad/trainer.pid"
+     for k in A B base; do touch "$ad/scores/scores_update1000_$k.npz"; done; touch "$ad/model_sft_A.pt" "$ad/model_sft_B.pt"
+-    case "${FAKE_TRAINER:-finish}" in
++    tm_var="FAKE_TRAINER_$(basename "$ad")"      # a per-arm override (SAFEOBJ: R0d finishes while R1d is killed)
++    case "${!tm_var:-${FAKE_TRAINER:-finish}}" in
+       finish) sleep 4; echo "ZZSFT_DONE 1000 updates" ;;
+       long) sleep 120 & echo $! > "$ad/trainer.child"; wait ;;
+     esac ;;
+@@ -344,6 +348,7 @@
+   rl_val_eval.py) echo "ZZRLVAL_OK" ;;
+   rls1_checks.py)
+     case "$1" in
++      safeobj-gate) exec "${FAKE_REAL_PY:-python3}" "${FAKE_REAL_RC:-rls1_checks.py}" "$@" ;;          # SAFEOBJ: the REAL gate (rls1_checks.py safeobj-gate) behind the fake python
+       updates-check) echo "ZZRLS1_UPDATES_OK 1000 updates"; exit 0 ;;
+       replay) echo "ZZRLS1_REPLAY_CLEAN $(arg --arm)"; exit 0 ;;
+     esac
+@@ -465,7 +470,8 @@
+     if prepare:
+         prepare(R)
+     e = {**os.environ, "PATH": posix(b) + os.pathsep + os.environ["PATH"], "FAKE_CALLS": posix(d / "calls.log"), "RLS1_SUP_POLL_S": "1", "RLS1_LAUNCH_SETTLE_S": "1", "RLS1_STOP_GRACE_S": "5",
+-         "RLS1_MON_READY_S": "60", "HF_TOKEN": "hf_notarealtoken", "RLS1_ARMS": arms, **(env or {})}
++         "RLS1_MON_READY_S": "60", "HF_TOKEN": "hf_notarealtoken", "RLS1_ARMS": arms,
++         "FAKE_REAL_PY": posix(sys.executable), "FAKE_REAL_RC": posix(HERE / "rls1_checks.py"), **(env or {})}
+     try:
+         r = subprocess.run([BASH, posix(sc)], capture_output=True, text=True, env=e, timeout=timeout)
+         rc, out = r.returncode, r.stdout + r.stderr
+@@ -605,6 +611,200 @@
+ 
+ 
+ # ------------------------------------------------------------------------------------------------------------------------------- C. the checker's memory
++# ------------------------------------------------------------------------------------------------------------------------------- B4. SAFEOBJ: R0d / R1d / R1o (profile refe_rls1d)
++def rls1d_checks(text, tmp, only=None):
++    """The whole arm loop (extracted verbatim) run for the SAFEOBJ arms against the fakes: the profile, the argv the preflight and the trainer receive, the reference the monitor reads against (each
++    arm's OWN A, even with C0's dumps on the pod), the seed-matched second control (read when its dumps are there, announced when not), R1o's observe-only monitor and replay and its S gate (the REAL
++    rls1_checks.py safeobj-gate, called through the fake python), a K3 kill of R0d / R1d that STOPS the chain, a killed R0d that refuses on a re-run, misspelled arms."""
++    n = 0
++    want = lambda k: only is None or k in only                                                              # noqa: E731
++    calls_of = lambda r, script: [ln for ln in r["calls"].splitlines() if ln.startswith(script + " ")]      # noqa: E731
++    CON_ON = "--epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0"
++    sys.path.insert(0, str(PKGROOT / "eval"))
++    import test_safeobj_gate as TG          # SAFEOBJ round 3: the real S gate opens only on a GENUINE reader record, so the fixtures are the REAL producers' arm directories + the REAL reader's record
++
++    def s_files(*pairs):
++        """(arm, "PASS" | "FAIL" | "NOT_READ") -> a copy of the genuine arm directory (the real producers' files, the real reader's safeobj_S.json); (arm, other text) -> that text as the record"""
++        def prep(R):
++            for arm, what in pairs:
++                if what in ("PASS", "FAIL", "NOT_READ"):
++                    shutil.copytree(TG.genuine(what, arm), R / "arms" / arm)
++                else:
++                    (R / "arms" / arm).mkdir(parents=True, exist_ok=True)
++                    (R / "arms" / arm / "safeobj_S.json").write_text(what, encoding="utf-8")
++        return prep
++
++    def with_c0(R):                                                                                         # C0's banked dumps stay on the pod
++        (R / "arms" / "C0" / "scores").mkdir(parents=True)
++        (R / "arms" / "C0" / "scores" / "scores_update1000_A.npz").write_text("c0")
++
++    def operator_read(R):                                                                                   # the operator's step between R1d and R1o (BUILD.md section 4 step 6): the reader has written R0d's and R1d's records
++        with_c0(R)
++        s_files(("R0d", "PASS"), ("R1d", "PASS"))(R)
++    if want("order"):                                                                                       # R0d -> R1d -> R1o, each under refe_rls1d, each read against its OWN arm A
++        # TWO chain runs, because the real S gate leaves no other way (round 3).  Run 1 is the one-list form "R0d R1d R1o" with NO reader step: the chain trains R0d and R1d and R1o's gate REFUSES -- nothing
++        # the chain writes is a reader record.  Run 2 is "R1o" alone after the operator's step (genuine records for R0d and R1d): the gate opens and R1o runs.  (Before round 3 one run passed because the
++        # test pre-seeded hand-written S files, which the reader never wrote and the gate now refuses; BUILD.md section 4 step 7 no longer offers the one-list form for the three arms.)
++        r = armloop_run(text, tmp, "al_so_order", "R0d R1d R1o", prepare=with_c0, timeout=240)
++        assert r["rc"] == 1 and r["done"] == ["R0d", "R1d"] and "REFUSED: R1o runs only if R0d and R1d both read bar S = PASS" in r["log"] and "FileNotFoundError" in r["log"] and "ZZRLS1_DONE" not in r["log"], (r["rc"], r["done"], r["log"][-1500:], r["out"][-500:])
++        assert not any("arms/R1o" in ln for ln in r["calls"].splitlines()) and "R1o" not in r["arms_dirs"] and "ZZRLS1_ARM_DONE R1o" not in r["log"], (r["calls"], r["arms_dirs"])      # refused before anything of R1o's
++        assert re.findall(r"launch_gate\.py run --profile (\S+) --arm-name (\S+)", r["calls"]) == [("refe_rls1d", "R0d"), ("refe_rls1d", "R1d")], r["calls"]
++        ctl = {a: re.search(rf"arm {a}: trainer pid/pgid .*\(control: ([^)]*)\)", r["log"]).group(1) for a in ("R0d", "R1d")}
++        assert all(ctl[a].endswith(f"/arms/{a}/scores") for a in ctl), ctl                                  # NOT .../arms/C0/scores, even for R0d with C0's dumps there
++        trn = [ln for ln in calls_of(r, "scorer_finetune.py") if "--preflight" not in ln]
++        pre = [ln for ln in calls_of(r, "scorer_finetune.py") if "--preflight" in ln]
++        assert len(trn) == 2 and len(pre) == 2, (trn, pre)
++        assert trn[0].endswith(CON_ON) and trn[1].endswith(CON_ON), [t[-90:] for t in trn]                  # the levers reach the TRAINER ...
++        assert CON_ON in pre[0] and CON_ON in pre[1], [p_[-110:] for p_ in pre]                             # ... and the PREFLIGHT
++        mon = [ln for ln in calls_of(r, "rls1_checks.py") if " monitor " in ln]
++        rep = [ln for ln in calls_of(r, "rls1_checks.py") if " replay " in ln]
++        assert len(mon) == 2 and len(rep) == 2, (mon, rep)
++        assert all(re.search(rf"--arm {a} .*--refdir \S+/arms/{a}/scores ", mon[i]) for i, a in enumerate(("R0d", "R1d"))), mon
++        assert "--observe-only" not in mon[0] and "--observe-only" not in mon[1] and "--observe-only" not in rep[0] and "--observe-only" not in rep[1], (mon, rep)       # the constrained arms' K3 is a KILL
++        gate = [ln for ln in calls_of(r, "rls1_checks.py") if " safeobj-gate " in ln]
++        assert len(gate) == 1 and re.search(r"--dirs \S+/arms/R0d \S+/arms/R1d$", gate[0]), gate           # only R1o is gated, on BOTH constrained arms
++        rv = calls_of(r, "rl_val_eval.py")
++        assert len(rv) == 3 and "rlval_vs_C0.json" in rv[1] and "/arms/C0/scores/scores_update1000_A.npz" in rv[1] and all("rlval_vs_C" not in x for x in (rv[0], rv[2])), rv      # R0d: C0 is the second control
++        assert r["log"].count("ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL") == 1 and "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL arm R1d: C1's" in r["log"]
++        assert all(f"arm {a}: kill monitor READY" in r["log"] for a in ("R0d", "R1d")); n += 22
++        r = armloop_run(text, tmp, "al_so_order_r1o", "R1o", prepare=operator_read, timeout=240)            # after the reader: R0d and R1d carry genuine PASS records
++        assert r["rc"] == 0 and r["done"] == ["R1o"] and "ZZRLS1_DONE arms: R1o" in r["log"], (r["rc"], r["done"], r["log"][-1500:], r["out"][-500:])
++        assert re.findall(r"launch_gate\.py run --profile (\S+) --arm-name (\S+)", r["calls"]) == [("refe_rls1d", "R1o")], r["calls"]
++        ctl = re.search(r"arm R1o: trainer pid/pgid .*\(control: ([^)]*)\)", r["log"]).group(1)
++        assert ctl.endswith("/arms/R1o/scores"), ctl
++        trn = [ln for ln in calls_of(r, "scorer_finetune.py") if "--preflight" not in ln]
++        pre = [ln for ln in calls_of(r, "scorer_finetune.py") if "--preflight" in ln]
++        assert len(trn) == 1 and len(pre) == 1 and trn[0].endswith("--epo-con off") and "--epo-con off" in pre[0] and "--seed 1" in pre[0], (trn, pre)
++        mon = [ln for ln in calls_of(r, "rls1_checks.py") if " monitor " in ln]
++        rep = [ln for ln in calls_of(r, "rls1_checks.py") if " replay " in ln]
++        assert len(mon) == 1 and len(rep) == 1 and "--observe-only" in mon[0] and "--observe-only" in rep[0], (mon, rep)              # M9: R1o's K3 monitor is OBSERVE-ONLY
++        gate = [ln for ln in calls_of(r, "rls1_checks.py") if " safeobj-gate " in ln]
++        assert len(gate) == 1 and re.search(r"--dirs \S+/arms/R0d \S+/arms/R1d$", gate[0]) and "ZZRLS1_SAFEOBJ_S_PASS" in (r["R"] / "safeobj_gate_R1o.log").read_text(), gate     # the REAL gate opened on the genuine records
++        rv = calls_of(r, "rl_val_eval.py")
++        assert len(rv) == 1 and "rlval_vs_C" not in rv[0], rv
++        assert r["log"].count("ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL") == 1 and "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL arm R1o: C1's" in r["log"] and "arm R1o: kill monitor READY" in r["log"]; n += 12
++    if want("r1o_needs_S"):                                                                                 # R1o is REFUSED until BOTH constrained arms carry a GENUINE reader record reading S = PASS: nothing is created, nothing runs, the refusal NAMES its reason
++        def stale(R):                                                                                       # a genuine PASS record whose input changed after the read
++            s_files(("R0d", "PASS"), ("R1d", "PASS"))(R)
++            with open(R / "arms" / "R1d" / "kill_replay.json", "ab") as f_:
++                f_.write(b" ")
++
++        def hand(R):                                                                                        # the record R1d should have got from the reader, written by hand
++            s_files(("R0d", "PASS"), ("R1d", "FAIL"))(R)
++            (R / "arms" / "R1d" / "safeobj_S.json").write_text('{"S": "PASS"}', encoding="utf-8")
++
++        def edited(R):                                                                                      # a genuine FAIL record with its S edited to PASS
++            s_files(("R0d", "PASS"), ("R1d", "FAIL"))(R)
++            p_ = R / "arms" / "R1d" / "safeobj_S.json"
++            assert '"S": "FAIL"' in p_.read_text(encoding="utf-8")
++            p_.write_text(p_.read_text(encoding="utf-8").replace('"S": "FAIL"', '"S": "PASS"'), encoding="utf-8")
++        def forged(R):                                                                                      # a forger who re-implements the canonicalisation: tool, stamp and inputs are right, the verdict is a lie
++            s_files(("R0d", "PASS"), ("R1d", "FAIL"))(R)
++            rec_ = TG.jload(R / "arms" / "R1d" / "safeobj_S.json")
++            assert rec_["S"] == "FAIL" and rec_["breaches"]
++            TG.jsave(R / "arms" / "R1d", TG.restamp({**rec_, "S": "PASS", "breaches": []}))
++
++        def late_kill(R):                                                                                   # a genuine PASS read, and a K3 marker appears in the arm directory afterwards
++            s_files(("R0d", "PASS"), ("R1d", "PASS"))(R)
++            (R / "arms" / "R1d" / "KILLED.json").write_text('{"arm": "R1d", "code": "K3", "why": "this marker appeared after the read"}', encoding="utf-8")
++        for nm, prep, why in (("none", None, "FileNotFoundError"), ("one", s_files(("R0d", "PASS")), "FileNotFoundError"), ("fail", s_files(("R0d", "PASS"), ("R1d", "FAIL")), "S='FAIL'"),
++                              ("junk", s_files(("R0d", "PASS"), ("R1d", "{nope")), "JSONDecodeError"), ("hand_written", hand, "tool is"), ("edited", edited, "record_sha256 does not recompute"),
++                              ("stale_input", stale, "changed since the read"), ("forged_verdict", forged, "record is stale or not the reader's output"),
++                              ("kill_marker_after_the_read", late_kill, "record is stale or not the reader's output")):
++            r = armloop_run(text, tmp, f"al_so_noS_{nm}", "R1o", prepare=prep)
++            assert r["rc"] == 1 and "REFUSED: R1o runs only if R0d and R1d both read bar S = PASS" in r["log"] and why in r["log"], (nm, why, r["rc"], r["log"][-800:])
++            assert "scorer_finetune.py" not in r["calls"] and "launch_gate.py" not in r["calls"] and "R1o" not in r["arms_dirs"] and "ZZRLS1_ARM_DONE" not in r["log"], (nm, r["calls"], r["arms_dirs"]); n += 4
++    def stopped_after(r, *later):                                                                           # the KILL-STOP check: after a kill the chain creates NOTHING for the arms behind it
++        """no `arm X:` log line, no gate / trainer call that names X, no S-gate call when R1o is among them (its gate is asked only when R1o is next), no ZZRLS1_DONE, and arms/X ABSENT.  Round 3: the
++        scenarios pre-seed no S files (the real gate would refuse a hand-written one, and a genuine one would be wiped by the chain's own arm start), so anything under arms/X is the chain going on.
++        (Round 2 tolerated a pre-seeded safeobj_S.json there, because prep_all wrote one: its first full-form run failed on `arms_dirs == [C0, R0d]` for that reason, not because the chain went on.
++        Round 2 also lost the word boundaries of the regex below: a word boundary written as backslash-b in a non-raw string of the build script became a BACKSPACE character, so that half of the check matched nothing.)"""
++        for a in later:
++            d = r["R"] / "arms" / a
++            held = sorted(p_.name for p_ in d.iterdir()) if d.exists() else None
++            assert not re.search(rf"arm {a}:", r["log"]) and not re.search(rf"--arm-name {a}\b|--arm {a}\b|arms/{a}/(sft|preflight|monitor|launch_gate)", r["calls"] + r["log"]), ("KILL-STOP: the chain went on to " + a, r["log"][-1500:])
++            assert held is None, ("KILL-STOP: the chain wrote into arms/" + a, held)
++        assert "R1o" not in later or "safeobj-gate" not in r["calls"], ("KILL-STOP: R1o's S gate was asked after the kill", r["calls"][-600:])
++        assert "ZZRLS1_DONE" not in r["log"] and not any(f"ZZRLS1_ARM_DONE {a}" in r["log"] for a in later), ("KILL-STOP: finished arms after the kill", r["log"][-800:])
++
++    if want("r0d_kill"):                                                                                    # a K3 kill of R0d STOPS the chain: no R1d, no R1o; the evidence is banked first
++        r = armloop_run(text, tmp, "al_so_r0d_kill", "R0d R1d R1o", env={"FAKE_TRAINER_R0d": "long", "FAKE_MONITOR_R0d": "kill_rule"}, prepare=with_c0)
++        stopped_after(r, "R1d", "R1o")                                                                      # FIRST: the stop itself (a mutation that removes the stop must go RED HERE, tag KILL-STOP)
++        assert r["arms_dirs"] == ["C0", "R0d"], r["arms_dirs"]                                              # R1d and R1o were never created
++        assert r["rc"] == 1 and r["done"] == [] and "ZZRLS1_ARM_KILLED R0d" in r["log"] and "REFUSED: arm R0d was KILLED" in r["log"] and "Master Mind decides" in r["log"], (r["rc"], r["log"][-1500:])
++        assert (r["R"] / "stage" / "egress_R0d.ok").exists() and "K3" in (r["R"] / "stage" / "arm_R0d_killed").read_text(); n += 7
++    if want("r1d_kill"):                                                                                    # R0d finishes, R1d is K3-killed: the chain stops there, R1o never runs (it would be a control for an unreplicated claim)
++        r = armloop_run(text, tmp, "al_so_r1d_kill", "R0d R1d R1o", env={"FAKE_TRAINER_R1d": "long", "FAKE_MONITOR_R1d": "kill_rule"}, prepare=with_c0)
++        stopped_after(r, "R1o")                                                                             # FIRST (tag KILL-STOP); R1o's S gate was never even asked
++        assert "safeobj-gate" not in r["calls"], r["calls"]
++        assert r["rc"] == 1 and r["done"] == ["R0d"] and "ZZRLS1_ARM_KILLED R1d" in r["log"] and "REFUSED: arm R1d was KILLED" in r["log"], (r["rc"], r["done"], r["log"][-1500:])
++        assert r["arms_dirs"] == ["C0", "R0d", "R1d"] and "ZZRLS1_DONE" not in r["log"], (r["arms_dirs"], r["log"]); n += 6
++    if want("rerun_after_kill"):                                                                            # a re-run of a killed R0d refuses BEFORE any preflight, gate or trainer
++        def killed(R):
++            with_c0(R)
++            (R / "stage" / "arm_R0d_killed").write_text("{\"code\": \"K3\"}")
++            (R / "stage" / "egress_R0d.ok").write_text("x")
++        r = armloop_run(text, tmp, "al_so_r0d_rerun", "R0d", prepare=killed)
++        assert r["rc"] == 1 and "REFUSED: arm R0d was KILLED by a pre-registered rule" in r["log"] and "scorer_finetune.py" not in r["calls"] and "launch_gate.py" not in r["calls"], (r["rc"], r["log"], r["calls"]); n += 2
++    if want("unknown_arm"):                                                                                 # a misspelled arm is refused before anything runs (the arm loop's own per-arm check)
++        for bad in ("R0D", "R1O", "R0d,", "R2d"):
++            r = armloop_run(text, tmp, "al_so_typo", bad)
++            assert r["rc"] == 1 and "REFUSED: unknown arm" in r["log"] and r["calls"] == "", (bad, r["rc"], r["log"], r["calls"]); n += 2
++    if want("unknown_arm_in_list"):                                                                         # a typo BEHIND a valid arm: the chain's PRECHECK (rls1_pod.sh, stage 0) refuses the whole list before any arm runs.
++        # (The arm-loop harness extracts only stage 9, which checks one arm at a time -- "R1d R1x" there runs R1d first and refuses at R1x; that is the loop, not the chain, and the first full-form run
++        #  of this test asserted calls == "" for it. The precheck line is therefore extracted verbatim and run here.)
++        ln = re.findall(r'^for ARM in [^\n]*RLS1_ARMS:-[^\n]*arm_registered "\$ARM"[^\n]*; done$', text, re.M)
++        reg = re.findall(r'^REGISTERED_ARMS="[^"]*"$', text, re.M)
++        assert len(ln) == 1 and len(reg) == 1, (ln, reg)
++        sc = Path(tmp) / "so_precheck.sh"
++        write_sh(sc, "\n".join(["set -u", reg[0], 'refuse() { echo "REFUSED: $*"; exit 1; }', fn_any(text, "arm_registered"), ln[0], "echo PRECHECK_OK", ""]))
++        for arms, ok in (("R0d R1d R1o", True), ("R0d", True), ("R1d R1x", False), ("R0d R1d R2d", False), ("R0d R1o R1O", False), ("R0d,R1d", False)):
++            pr = subprocess.run([BASH, posix(sc)], capture_output=True, text=True, env={**os.environ, "RLS1_ARMS": arms}, timeout=60)
++            assert (pr.returncode == 0 and "PRECHECK_OK" in pr.stdout) == ok and (ok or "REFUSED: unknown arm" in pr.stdout), (arms, pr.returncode, pr.stdout, pr.stderr); n += 2
++    return n
++
++
++def must_fail_with(fn, name, tag):
++    """must_fail, but the RED has to be THE EXPECTED ONE: the failure message carries `tag`.  (`must_fail` accepts any exception, so a scenario that is broken for an unrelated reason turns every mutation
++    of it RED for free: that is what hid the fixture defect in `r0d_kill`, whose `arms_dirs == [C0, R0d]` assertion could never hold.)"""
++    try:
++        fn()
++    except Exception as e:                                                                                    # noqa: BLE001
++        if tag in str(e):
++            return 1
++        raise AssertionError(f"mutation '{name}' went RED for the WRONG reason (no '{tag}' in the failure): {str(e)[:400]}")
++    raise AssertionError(f"mutation '{name}' stayed GREEN")
++
++
++def rls1d_all(text, tmp):
++    """B4 (rls1d_checks) and its MUTATIONS: each property of the SAFEOBJ wiring is broken in a copy of the chain and the scenario that exists for it must go RED."""
++    n = rls1d_checks(text, tmp)
++    sw = lambda a, b: (text.replace(a, b) if text.count(a) == 1 else (_ for _ in ()).throw(AssertionError(f"mutation anchor x{text.count(a)}: {a[:60]}")))  # noqa: E731
++    kill_line = '  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'
++    muts = [
++        ("M9 R1o's K3 monitor loses --observe-only", sw(' --pid "$TPID" ${OBS:-} > "$ARMDIR/monitor.log"', ' --pid "$TPID" > "$ARMDIR/monitor.log"'), {"order"}),
++        ("R1o's replay loses --observe-only", sw(' ${OBS:-} > "$ARMDIR/replay.log"', ' > "$ARMDIR/replay.log"'), {"order"}),
++        ("OBS is set for every arm", sw('  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"', '  OBS="--observe-only"\n  if [ "$ARM" = R1o ]; then\n    :'), {"order"}),
++        ("R1o's S gate is not enforced", sw('|| refuse "R1o runs only if R0d and R1d both read bar S = PASS: $(tail', '|| echo "R1o runs only if R0d and R1d both read bar S = PASS: $(tail'), {"r1o_needs_S"}),
++        ("R0d is read against C0's dumps when they are on the pod", sw('  case "$ARM" in R0d|R1d|R1o) REFDIR="$ARMDIR/scores";; esac', "  :"), {"order"}),
++        ("a killed R0d does not stop the chain", sw(kill_line, '  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'), {"r0d_kill"}),
++        ("a killed R1d does not stop the chain", sw(kill_line, '  [ "$ARM" != R1d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'), {"r1d_kill"}),
++        ("a killed R0d re-trains on a re-run", sw('  [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse', '  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse'), {"rerun_after_kill"}),
++        ("R1o's argv names --epo-con g5", sw('--epo-terms-heldout $TERMS_VA --epo-con off" ;;', '--epo-terms-heldout $TERMS_VA --epo-con g5" ;;'), {"order"}),
++        ("R0d's argv loses --epo-con-lam0", sw(' --epo-con-max 10 --epo-con-lam0 0" ;;\n    R1d)', ' --epo-con-max 10" ;;\n    R1d)'), {"order"}),
++        ("the SAFEOBJ arms are judged under the RL-S1c profile", sw("R0d|R1d|R1o) echo refe_rls1d", "R0d|R1d|R1o) echo refe_rls1c"), {"order"}),
++        ("the missing-second-control announcement is gone", sw('      elif [ "$ARM" = R0d ] || [ "$ARM" = R1d ] || [ "$ARM" = R1o ]; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL',
++                                                              '      elif false; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL'), {"order"}),
++        ("the precheck of the arm list is removed", sw('for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" || refuse "unknown arm \'$ARM\' in RLS1_ARMS (registered: $REGISTERED_ARMS)"; done', ":"), {"unknown_arm_in_list"}),
++        ("the precheck of the arm list judges only the first arm", sw('for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" ||', 'for ARM in $(set -- ${RLS1_ARMS:-C0 R0 C1 R1 R2}; echo "$1"); do arm_registered "$ARM" ||'), {"unknown_arm_in_list"}),
++        ("a misspelled SAFEOBJ arm reaches the preflight", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R2d"'), {"unknown_arm"}),
++    ]
++    for name, mut, only in muts:
++        tag = "KILL-STOP" if only in ({"r0d_kill"}, {"r1d_kill"}) else None                                 # the two "does not stop the chain" mutations must go RED AT the stop check, not at any other assertion
++        n += (must_fail_with(lambda mut=mut, only=only: rls1d_checks(mut, tmp, only), name, tag) if tag else must_fail(lambda mut=mut, only=only: rls1d_checks(mut, tmp, only), name))
++    return n
++
++
+ def synth_scores(path, n, m=8, c=7, dup=False, space="logit"):
+     import numpy as np
+     rng = np.random.default_rng(7)
+@@ -771,6 +971,7 @@
+         for name, mut, only in bmuts:
+             n += must_fail(lambda mut=mut, only=only: rls1b_checks(mut, tmp, only), name)
+         n += rls1c_all(text, tmp)
++        n += rls1d_all(text, tmp)
+         # 2026-10-15: rl_val_eval.load_scores is fixed at the root, so "fall back to the original" is no longer a memory regression; the regression is
+         # the per-row decode of the whole member, re-introduced here inside the light loader (and pinned in the original by test_rl_val_eval.py).
+         n += must_fail(lambda: loader_checks(tmp, module_mutation('        out[k] = {"ckpt": int(ck[i]), "scores": scores[i], "space": sp}',

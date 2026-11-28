@@ -1,0 +1,250 @@
+
+==============================================================================================================
+ARM M2b_s0
+==============================================================================================================
+[verify] slot-pooled RMSE by group (SD): latcons 0.6861, lonspeed 0.4515, stoplead 0.8155
+[verify] present-slot RMSE, window-mean of per-window mean-sq (WC reader definition): 0.5363 (n_windows 2351)
+[verify] cell-pooled RMSE over all present cells: 0.5936 (n_cells 26056)
+
+==============================================================================================================
+M2b_s0 -- 1. error by group and by cell (share of total squared error, SD units)
+==============================================================================================================
+group/cell                 n_present   win%     MSE   RMSE SSEshare           [CI95] R2_vs_mean
+latcons                         6715          0.471  0.686    0.344 [ 0.240, 0.455]
+   lat_theta_deg                2351  98.0%   0.403  0.635    0.103 [ 0.069, 0.145]      0.517
+   turn_t_start_s                476  19.8%   0.654  0.808    0.034 [ 0.018, 0.054]      0.502
+   turn_t_end_s                  476  19.8%   0.543  0.737    0.028 [ 0.019, 0.038]      0.315
+   turn_d_start_m                476  19.8%   0.504  0.710    0.026 [ 0.016, 0.038]      0.522
+   turn_len_m                    476  19.8%   0.396  0.629    0.021 [ 0.011, 0.033]      0.772
+   turn_dyaw_deg                 476  19.8%   0.417  0.646    0.022 [ 0.011, 0.035]      0.554
+   turn_r_arc_m                  476  19.8%   0.407  0.638    0.021 [ 0.012, 0.032]      0.674
+   turn_exit_x_m                 476  19.8%   0.392  0.626    0.020 [ 0.012, 0.031]      0.645
+   turn_exit_y_m                 476  19.8%   0.783  0.885    0.041 [ 0.020, 0.062]      0.475
+   turn_exit_psi_deg             476  19.8%   0.392  0.626    0.020 [ 0.011, 0.033]      0.540
+   lc_t_cross_s                   40   1.7%   1.328  1.152    0.006 [ 0.001, 0.013]     -0.139
+   lc_d_cross_m                   40   1.7%   0.609  0.780    0.003 [ 0.001, 0.005]      0.013
+lonspeed                       14839          0.204  0.452    0.330 [ 0.267, 0.409]
+   lon_v_target_ms              2334  97.3%   0.128  0.358    0.033 [ 0.025, 0.042]      0.875
+   lon_t_reach_s                1045  43.6%   0.838  0.915    0.095 [ 0.072, 0.125]      0.213
+   lon_d_reach_m                1045  43.6%   0.121  0.347    0.014 [ 0.010, 0.018]      0.872
+   lon_t_start_s                1045  43.6%   0.899  0.948    0.102 [ 0.079, 0.131]      0.113
+   v_a_ms                       2351  98.0%   0.041  0.202    0.010 [ 0.008, 0.014]      0.958
+   v_end_ms                     2317  96.6%   0.119  0.345    0.030 [ 0.023, 0.040]      0.885
+   v_lo_ms                      2351  98.0%   0.088  0.296    0.022 [ 0.017, 0.030]      0.914
+   v_hi_ms                      2351  98.0%   0.088  0.296    0.022 [ 0.018, 0.029]      0.910
+stoplead                        4502          0.665  0.815    0.326 [ 0.201, 0.451]
+   stop_x_m                      131   5.5%   0.346  0.588    0.005 [ 0.003, 0.007]      0.691
+   stop_y_m                      131   5.5%   2.014  1.419    0.029 [ 0.011, 0.048]      0.143
+   lead_gap_m                   1060  44.2%   0.512  0.715    0.059 [ 0.042, 0.080]      0.440
+   lead_tg_s                    1060  44.2%   0.699  0.836    0.081 [ 0.032, 0.132]      0.361
+   lead_gap_min_m               1060  44.2%   0.581  0.762    0.067 [ 0.047, 0.092]      0.336
+   lead_tg_min_s                1060  44.2%   0.741  0.861    0.086 [ 0.018, 0.158]      0.266
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: GT lat class (join lat_cls at T tick)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+LANE_KEEP          1907  80.6%    19479  74.8%  0.572    0.695 [ 0.576, 0.795]  0.93 |  0.717  0.730  0.638
+TURN_L               45   1.9%      913   3.5%  0.973    0.094 [ 0.009, 0.232]  2.69 |  0.036  0.036  0.214
+TURN_R              152   6.4%     2839  10.9%  0.539    0.090 [ 0.048, 0.143]  0.82 |  0.121  0.095  0.051
+none                261  11.0%     2825  10.8%  0.626    0.121 [ 0.087, 0.162]  1.11 |  0.126  0.139  0.097
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: GT lon class (join lon_cls at T tick)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+ACCELERATE          465  19.7%     6034  23.2%  0.584    0.224 [ 0.161, 0.298]  0.97 |  0.206  0.338  0.128
+CREEP                47   2.0%      497   1.9%  0.645    0.023 [ 0.007, 0.043]  1.18 |  0.017  0.005  0.046
+DECELERATE          403  17.0%     5503  21.1%  0.618    0.229 [ 0.172, 0.292]  1.08 |  0.248  0.326  0.111
+FOLLOW              436  18.4%     4938  19.0%  0.460    0.114 [ 0.049, 0.212]  0.60 |  0.205  0.063  0.069
+HOLD                 22   0.9%      205   0.8%  1.536    0.053 [ 0.002, 0.126]  6.69 |  0.007  0.002  0.152
+KEEP                736  31.1%     5766  22.1%  0.449    0.127 [ 0.076, 0.191]  0.57 |  0.174  0.070  0.134
+STOP                131   5.5%     2074   8.0%  0.875    0.173 [ 0.088, 0.270]  2.17 |  0.042  0.164  0.320
+none                125   5.3%     1039   4.0%  0.718    0.058 [ 0.009, 0.135]  1.46 |  0.101  0.031  0.040
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: ego speed band at T tick (m/s)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+1-5                 352  14.9%     4152  15.9%  0.632    0.181 [ 0.109, 0.259]  1.13 |  0.056  0.200  0.292
+10-15               627  26.5%     6908  26.5%  0.637    0.306 [ 0.217, 0.407]  1.15 |  0.518  0.215  0.173
+5-10                653  27.6%     8157  31.3%  0.600    0.320 [ 0.228, 0.424]  1.02 |  0.279  0.349  0.334
+<1                  133   5.6%     1500   5.8%  0.645    0.068 [ 0.031, 0.120]  1.18 |  0.025  0.071  0.111
+>=15                600  25.4%     5339  20.5%  0.465    0.126 [ 0.074, 0.195]  0.61 |  0.122  0.165  0.089
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: GT path heading change over next 6 s (|deg|)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+10-30               323  13.7%     3832  14.7%  0.611    0.156 [ 0.115, 0.197]  1.06 |  0.193  0.160  0.112
+3-10                502  21.2%     5072  19.5%  0.520    0.149 [ 0.113, 0.190]  0.77 |  0.119  0.210  0.120
+<3 straight        1207  51.0%    11252  43.2%  0.517    0.328 [ 0.245, 0.420]  0.76 |  0.105  0.449  0.440
+>=30 turn           333  14.1%     5900  22.6%  0.756    0.367 [ 0.259, 0.481]  1.62 |  0.584  0.180  0.328
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: lead agent at T tick
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+lead present       1060  44.8%    13331  51.2%  0.634    0.583 [ 0.448, 0.704]  1.14 |  0.370  0.400  0.992
+no lead            1305  55.2%    12725  48.8%  0.549    0.417 [ 0.296, 0.552]  0.85 |  0.630  0.600  0.008
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: nav token at NOW (argmax of nav[:3])
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+nav0               1970  83.3%    19737  75.7%  0.573    0.705 [ 0.573, 0.818]  0.93 |  0.784  0.747  0.580
+nav1                117   4.9%     1855   7.1%  0.845    0.144 [ 0.039, 0.278]  2.02 |  0.069  0.094  0.274
+nav2                278  11.8%     4464  17.1%  0.556    0.151 [ 0.084, 0.239]  0.88 |  0.147  0.159  0.146
+
+==============================================================================================================
+M2b_s0 -- 2. stratum: turn constraints present (cell 1 finite)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+no turn label      1889  79.9%    17210  66.1%  0.506    0.480 [ 0.361, 0.610]  0.73 |  0.088  0.701  0.671
+turn label          476  20.1%     8846  33.9%  0.734    0.520 [ 0.390, 0.639]  1.53 |  0.912  0.299  0.329
+
+==============================================================================================================
+M2b_s0 -- 3. concentration of the squared error
+==============================================================================================================
+worst    1% of windows by window SSE (  24 windows): carry 0.182 of total SSE, holding 0.016 of the present cells
+worst    5% of windows by window SSE ( 118 windows): carry 0.402 of total SSE, holding 0.078 of the present cells
+worst   10% of windows by window SSE ( 236 windows): carry 0.550 of total SSE, holding 0.153 of the present cells
+worst   25% of windows by window SSE ( 591 windows): carry 0.780 of total SSE, holding 0.347 of the present cells
+worst   50% of windows by window SSE (1182 windows): carry 0.936 of total SSE, holding 0.623 of the present cells
+worst   10% of windows by window MEAN-per-cell sq. error ( 235 windows): carry 0.531 of total SSE, holding 0.135 of the cells
+worst   25% of windows by window MEAN-per-cell sq. error ( 588 windows): carry 0.767 of total SSE, holding 0.319 of the cells
+worst   10% of episodes by episode SSE ( 14 episodes): carry 0.446 of total SSE, holding 0.153 of the cells
+worst   25% of episodes by episode SSE ( 35 episodes): carry 0.680 of total SSE, holding 0.343 of the cells
+worst   10% of episodes by episode MEAN-per-cell sq. error ( 14 episodes): carry 0.443 of total SSE, holding 0.144 of the cells
+worst   25% of episodes by episode MEAN-per-cell sq. error ( 35 episodes): carry 0.671 of total SSE, holding 0.324 of the cells
+   cell lat_theta_deg     : share of total SSE 0.103; worst 10% of its 2351 present windows carry 0.827 of the cell's SSE
+   cell lon_t_start_s     : share of total SSE 0.102; worst 10% of its 1045 present windows carry 0.553 of the cell's SSE
+   cell lon_t_reach_s     : share of total SSE 0.095; worst 10% of its 1045 present windows carry 0.590 of the cell's SSE
+   cell lead_tg_min_s     : share of total SSE 0.086; worst 10% of its 1060 present windows carry 0.935 of the cell's SSE
+   cell lead_tg_s         : share of total SSE 0.081; worst 10% of its 1060 present windows carry 0.950 of the cell's SSE
+   cell lead_gap_min_m    : share of total SSE 0.067; worst 10% of its 1060 present windows carry 0.620 of the cell's SSE
+
+==============================================================================================================
+ARM M2b_s1
+==============================================================================================================
+[verify] slot-pooled RMSE by group (SD): latcons 0.6846, lonspeed 0.4605, stoplead 0.8153
+[verify] present-slot RMSE, window-mean of per-window mean-sq (WC reader definition): 0.5428 (n_windows 2351)
+[verify] cell-pooled RMSE over all present cells: 0.5970 (n_cells 26056)
+
+==============================================================================================================
+M2b_s1 -- 1. error by group and by cell (share of total squared error, SD units)
+==============================================================================================================
+group/cell                 n_present   win%     MSE   RMSE SSEshare           [CI95] R2_vs_mean
+latcons                         6715          0.469  0.685    0.339 [ 0.242, 0.443]
+   lat_theta_deg                2351  98.0%   0.397  0.630    0.101 [ 0.069, 0.136]      0.524
+   turn_t_start_s                476  19.8%   0.632  0.795    0.032 [ 0.017, 0.054]      0.518
+   turn_t_end_s                  476  19.8%   0.557  0.747    0.029 [ 0.020, 0.038]      0.297
+   turn_d_start_m                476  19.8%   0.412  0.642    0.021 [ 0.013, 0.032]      0.609
+   turn_len_m                    476  19.8%   0.365  0.604    0.019 [ 0.009, 0.031]      0.790
+   turn_dyaw_deg                 476  19.8%   0.407  0.638    0.021 [ 0.011, 0.032]      0.565
+   turn_r_arc_m                  476  19.8%   0.476  0.690    0.024 [ 0.014, 0.036]      0.618
+   turn_exit_x_m                 476  19.8%   0.385  0.621    0.020 [ 0.011, 0.030]      0.651
+   turn_exit_y_m                 476  19.8%   0.692  0.832    0.035 [ 0.018, 0.054]      0.536
+   turn_exit_psi_deg             476  19.8%   0.398  0.631    0.020 [ 0.012, 0.030]      0.532
+   lc_t_cross_s                   40   1.7%   2.227  1.492    0.010 [ 0.002, 0.024]     -0.910
+   lc_d_cross_m                   40   1.7%   1.633  1.278    0.007 [ 0.001, 0.019]     -1.647
+lonspeed                       14839          0.212  0.461    0.339 [ 0.278, 0.415]
+   lon_v_target_ms              2334  97.3%   0.140  0.374    0.035 [ 0.028, 0.044]      0.864
+   lon_t_reach_s                1045  43.6%   0.885  0.941    0.100 [ 0.075, 0.128]      0.169
+   lon_d_reach_m                1045  43.6%   0.137  0.370    0.015 [ 0.011, 0.021]      0.855
+   lon_t_start_s                1045  43.6%   0.886  0.941    0.100 [ 0.079, 0.125]      0.126
+   v_a_ms                       2351  98.0%   0.048  0.218    0.012 [ 0.009, 0.016]      0.951
+   v_end_ms                     2317  96.6%   0.133  0.365    0.033 [ 0.026, 0.042]      0.872
+   v_lo_ms                      2351  98.0%   0.088  0.297    0.022 [ 0.017, 0.029]      0.913
+   v_hi_ms                      2351  98.0%   0.085  0.292    0.022 [ 0.017, 0.028]      0.913
+stoplead                        4502          0.665  0.815    0.322 [ 0.205, 0.443]
+   stop_x_m                      131   5.5%   0.721  0.849    0.010 [ 0.004, 0.018]      0.356
+   stop_y_m                      131   5.5%   1.688  1.299    0.024 [ 0.009, 0.040]      0.282
+   lead_gap_m                   1060  44.2%   0.501  0.708    0.057 [ 0.042, 0.075]      0.452
+   lead_tg_s                    1060  44.2%   0.706  0.840    0.081 [ 0.030, 0.134]      0.355
+   lead_gap_min_m               1060  44.2%   0.562  0.750    0.064 [ 0.045, 0.086]      0.358
+   lead_tg_min_s                1060  44.2%   0.757  0.870    0.086 [ 0.019, 0.161]      0.250
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: GT lat class (join lat_cls at T tick)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+LANE_KEEP          1907  80.6%    19479  74.8%  0.574    0.691 [ 0.580, 0.785]  0.92 |  0.687  0.732  0.651
+TURN_L               45   1.9%      913   3.5%  0.906    0.081 [ 0.009, 0.198]  2.30 |  0.029  0.033  0.186
+TURN_R              152   6.4%     2839  10.9%  0.580    0.103 [ 0.054, 0.166]  0.94 |  0.147  0.105  0.055
+none                261  11.0%     2825  10.8%  0.643    0.126 [ 0.091, 0.167]  1.16 |  0.137  0.130  0.109
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: GT lon class (join lon_cls at T tick)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+ACCELERATE          465  19.7%     6034  23.2%  0.571    0.212 [ 0.153, 0.277]  0.91 |  0.206  0.310  0.114
+CREEP                47   2.0%      497   1.9%  0.638    0.022 [ 0.006, 0.040]  1.14 |  0.013  0.009  0.045
+DECELERATE          403  17.0%     5503  21.1%  0.624    0.231 [ 0.172, 0.295]  1.09 |  0.262  0.327  0.097
+FOLLOW              436  18.4%     4938  19.0%  0.476    0.120 [ 0.058, 0.208]  0.63 |  0.194  0.053  0.114
+HOLD                 22   0.9%      205   0.8%  1.606    0.057 [ 0.003, 0.135]  7.23 |  0.008  0.006  0.162
+KEEP                736  31.1%     5766  22.1%  0.429    0.114 [ 0.065, 0.177]  0.52 |  0.168  0.059  0.116
+STOP                131   5.5%     2074   8.0%  0.889    0.176 [ 0.097, 0.264]  2.22 |  0.031  0.200  0.304
+none                125   5.3%     1039   4.0%  0.780    0.068 [ 0.011, 0.151]  1.71 |  0.119  0.036  0.048
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: ego speed band at T tick (m/s)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+1-5                 352  14.9%     4152  15.9%  0.648    0.187 [ 0.111, 0.268]  1.18 |  0.052  0.211  0.306
+10-15               627  26.5%     6908  26.5%  0.636    0.301 [ 0.209, 0.405]  1.13 |  0.532  0.207  0.156
+5-10                653  27.6%     8157  31.3%  0.591    0.307 [ 0.220, 0.405]  0.98 |  0.263  0.350  0.308
+<1                  133   5.6%     1500   5.8%  0.655    0.069 [ 0.030, 0.127]  1.20 |  0.027  0.060  0.124
+>=15                600  25.4%     5339  20.5%  0.485    0.135 [ 0.081, 0.206]  0.66 |  0.126  0.172  0.106
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: GT path heading change over next 6 s (|deg|)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+10-30               323  13.7%     3832  14.7%  0.615    0.156 [ 0.117, 0.197]  1.06 |  0.204  0.163  0.098
+3-10                502  21.2%     5072  19.5%  0.544    0.162 [ 0.123, 0.202]  0.83 |  0.132  0.217  0.135
+<3 straight        1207  51.0%    11252  43.2%  0.527    0.337 [ 0.249, 0.431]  0.78 |  0.123  0.427  0.468
+>=30 turn           333  14.1%     5900  22.6%  0.737    0.345 [ 0.242, 0.452]  1.52 |  0.541  0.193  0.300
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: lead agent at T tick
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+lead present       1060  44.8%    13331  51.2%  0.627    0.564 [ 0.429, 0.685]  1.10 |  0.324  0.401  0.988
+no lead            1305  55.2%    12725  48.8%  0.564    0.436 [ 0.315, 0.571]  0.89 |  0.676  0.599  0.012
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: nav token at NOW (argmax of nav[:3])
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+nav0               1970  83.3%    19737  75.7%  0.578    0.710 [ 0.582, 0.818]  0.94 |  0.789  0.736  0.598
+nav1                117   4.9%     1855   7.1%  0.817    0.133 [ 0.038, 0.255]  1.87 |  0.060  0.098  0.248
+nav2                278  11.8%     4464  17.1%  0.572    0.157 [ 0.086, 0.253]  0.92 |  0.151  0.166  0.154
+
+==============================================================================================================
+M2b_s1 -- 2. stratum: turn constraints present (cell 1 finite)
+==============================================================================================================
+stratum           n_win   win%  n_cells  cell%   RMSE SSEshare           [CI95]  lift |   latc   lons   stpl  (share of EACH GROUP's own SSE)
+no turn label      1889  79.9%    17210  66.1%  0.519    0.500 [ 0.375, 0.629]  0.76 |  0.112  0.702  0.696
+turn label          476  20.1%     8846  33.9%  0.724    0.500 [ 0.371, 0.625]  1.47 |  0.888  0.298  0.304
+
+==============================================================================================================
+M2b_s1 -- 3. concentration of the squared error
+==============================================================================================================
+worst    1% of windows by window SSE (  24 windows): carry 0.178 of total SSE, holding 0.015 of the present cells
+worst    5% of windows by window SSE ( 118 windows): carry 0.403 of total SSE, holding 0.075 of the present cells
+worst   10% of windows by window SSE ( 236 windows): carry 0.551 of total SSE, holding 0.151 of the present cells
+worst   25% of windows by window SSE ( 591 windows): carry 0.782 of total SSE, holding 0.347 of the present cells
+worst   50% of windows by window SSE (1182 windows): carry 0.938 of total SSE, holding 0.630 of the present cells
+worst   10% of windows by window MEAN-per-cell sq. error ( 235 windows): carry 0.531 of total SSE, holding 0.130 of the cells
+worst   25% of windows by window MEAN-per-cell sq. error ( 588 windows): carry 0.767 of total SSE, holding 0.316 of the cells
+worst   10% of episodes by episode SSE ( 14 episodes): carry 0.444 of total SSE, holding 0.146 of the cells
+worst   25% of episodes by episode SSE ( 35 episodes): carry 0.687 of total SSE, holding 0.338 of the cells
+worst   10% of episodes by episode MEAN-per-cell sq. error ( 14 episodes): carry 0.421 of total SSE, holding 0.131 of the cells
+worst   25% of episodes by episode MEAN-per-cell sq. error ( 35 episodes): carry 0.678 of total SSE, holding 0.323 of the cells
+   cell lat_theta_deg     : share of total SSE 0.101; worst 10% of its 2351 present windows carry 0.797 of the cell's SSE
+   cell lon_t_start_s     : share of total SSE 0.100; worst 10% of its 1045 present windows carry 0.562 of the cell's SSE
+   cell lon_t_reach_s     : share of total SSE 0.100; worst 10% of its 1045 present windows carry 0.588 of the cell's SSE
+   cell lead_tg_min_s     : share of total SSE 0.086; worst 10% of its 1060 present windows carry 0.947 of the cell's SSE
+   cell lead_tg_s         : share of total SSE 0.081; worst 10% of its 1060 present windows carry 0.954 of the cell's SSE
+   cell lead_gap_min_m    : share of total SSE 0.064; worst 10% of its 1060 present windows carry 0.587 of the cell's SSE

@@ -1,0 +1,7 @@
+A  record as refcv3_arm WRITES it (defect at rec['refcv3']['_defects'])  -> ok=True   parses, no defects
+B  CONTROL: defect at rec['_defects'] (what the reader looks for)        -> ok=False  carries 1 DEFECT(s): [{'where': 'strategic.nav_compliance', 'type': 'TypeError', 'detail': 'os.path.exists(<dict>) — the historical STRATEGIC hole'}]
+C  CONTROL: genuinely defect-free                                        -> ok=True   parses, no defects
+
+⛔ PROVEN BLIND: a record carrying a real DEFECT passes record_ok(),
+   while the same defect one level up is caught (B) and a clean record passes (C).
+   => the gate CANNOT fire on the defect the writer actually emits.

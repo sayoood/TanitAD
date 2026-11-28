@@ -1,0 +1,25 @@
+--- F:/TanitAD-scratch/rollhist/read/rh_common.py.bk_ki	2026-11-23 10:00:32.562040600 +0100
++++ F:/TanitAD-scratch/rollhist/read/rh_common.py	2026-11-23 10:02:17.998770700 +0100
+@@ -33,7 +33,7 @@
+ # ROLLHIST P03 (card 3.4 PARTIAL row, Amendment 7 DRAFT): the same read for the next arm RHp3 (share p = 0.3 on the SAME bank).  RH_AKIND selects the TREATED arm of every pair: RH (default: the PARTIAL read, unchanged
+ # byte for byte) or RHp3.  With RHp3 the comparator is still the EXISTING B0, the RH dumps are reused (the beside pairs RHp3 minus RH), and only RHp3 is pulled, rolled (ROLL_KINDS) and T0-evaluated.
+ A_KIND = os.environ.get("RH_AKIND", "RH")
+-assert A_KIND in ("RH", "RHp3", "RHK", "RL", "RA", "RK"), A_KIND          # RHK (Amendment 8 DRAFT): the arm trained on a bank generated under readout K; the comparator is still the EXISTING B0, RH dumps are reused beside
++assert A_KIND in ("RH", "RHp3", "RHK", "RL", "RA", "RK", "KI"), A_KIND          # RHK (Amendment 8 DRAFT): the arm trained on a bank generated under readout K; the comparator is still the EXISTING B0, RH dumps are reused beside
+ KINDS = ("RH", "B0") if A_KIND == "RH" else (A_KIND, "B0")
+ ROLL_KINDS = ("RH", "B0") if A_KIND == "RH" else (A_KIND,)          # the kinds the read chain pulls and rolls (B0 and RH dumps are the finished read's)
+ SEEDS = (0, 1)
+@@ -118,11 +118,12 @@
+ for _f in FORM_ORDER:
+     if _f != "R0C10XHb20":
+         PAIRS["BESIDE_RH_minus_B0_" + _f] = (_r(A_KIND, _f), _r("B0", _f))      # reported, no bar  (the name is the PARTIAL read's; its first run is the treated arm A_KIND)
+-if A_KIND in ("RHp3", "RHK", "RL", "RA", "RK"):                                                  # (RHK: the same beside pairs, RHK minus RH, the readout-K bank against the C* bank at the same dose 0.1)  RHp3 minus RH (the dose p = 0.3 against p = 0.1, same bank): beside, no bar, under the convention and the readout C*
++if A_KIND in ("RHp3", "RHK", "RL", "RA", "RK", "KI"):                                                  # (RHK: the same beside pairs, RHK minus RH, the readout-K bank against the C* bank at the same dose 0.1)  RHp3 minus RH (the dose p = 0.3 against p = 0.1, same bank): beside, no bar, under the convention and the readout C*
+     for _f in ("R0Hb20", "R0C10XHb20"):
+         PAIRS["BESIDE_" + A_KIND + "_minus_RH_" + _f] = (_r(A_KIND, _f), _r("RH", _f))
+ if A_KIND == "RK":                                                                         # KINLAB (PREREG_V8F_KINLAB section 3): ATTR = RK minus RL under the readout of record C* (the same bank, dose and init, the speed label against the kinematic label); RL's dumps are reused
+     PAIRS["ATTR_RK_minus_RL_R0C10XHb20"] = (_r("RK", "R0C10XHb20"), _r("RL", "R0C10XHb20"))
++# KI (PREREG_V8F_KINPUT sha256 05e786a8): RK's lever contrast is replaced by nothing at T1: the card's KI - RK pair is a T0 pair (mech_ki.py beside); the RK - RL (ATTR) pair has no KI analogue and is DROPPED.  The beside pairs KI - RH under R0Hb20 / R0C10XHb20 come from the loop above (BESIDE_KI_minus_RH_*; the card's ATTR KI - RH under C* is BESIDE_KI_minus_RH_R0C10XHb20, not duplicated).
+ ARM_FORMS_ALL = tuple(sorted({x for p in PAIRS.values() for x in p}))
+ RUN_KINDS = KINDS + tuple(k for k in sorted({r.split("_", 1)[0] for r in ARM_FORMS_ALL}) if k not in KINDS)      # every kind that has a run in a pair (RHp3 reads also RH's two beside runs); = KINDS for the default read
+ FAMILIES = ("LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC")

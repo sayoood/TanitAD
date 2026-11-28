@@ -1,0 +1,61 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "v6F@v6F_sw_step020000.fp16.pt",
+ "step": 20000,
+ "n_clips": 24,
+ "parity": false,
+ "delta_autocorr": {
+  "lag1_cos_mean": -0.0749,
+  "lag5_cos_mean": 0.0067
+ },
+ "controls": {
+  "hold": 0.0,
+  "mean_delta": -0.000253
+ },
+ "oracle": {
+  "ridge_0.0001": {
+   "em": -0.368376,
+   "ci95": [
+    -1.14335,
+    0.046298
+   ]
+  },
+  "ridge_0.01": {
+   "em": 0.129778,
+   "ci95": [
+    -0.022381,
+    0.234873
+   ]
+  },
+  "ridge_1": {
+   "em": 0.020328,
+   "ci95": [
+    0.005579,
+    0.031749
+   ]
+  },
+  "ridge_100": {
+   "em": -0.000132,
+   "ci95": [
+    -0.000954,
+    0.000339
+   ]
+  },
+  "ridge_10000": {
+   "em": -0.000252,
+   "ci95": [
+    -0.000499,
+    -0.000114
+   ]
+  }
+ },
+ "oracle_best_em": 0.129778,
+ "oracle_best_lambda": 0.01,
+ "oracle_best_ci95": [
+  -0.022381,
+  0.234873
+ ],
+ "materiality_floor": 0.01,
+ "verdict": "NOISE-DOMINATED: the best fitted LINEAR oracle explains only 12.98% of held-out per-tick movement (CI [-0.0224, +0.2349], not materially above HOLD). The per-tick latent increment is essentially unpredictable ON THIS REPRESENTATION, so G2 is unreachable by ANY predictor here and the residual-init story does NOT explain the failure. \u26a0\ufe0f SCOPE: measured on this arm's own latents at this step count -- it does NOT transfer to another model or another training length without being re-measured there."
+}

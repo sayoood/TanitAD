@@ -1,0 +1,72 @@
+files: test_strat1_token test_v8f_cz test_v8f_ego_perturb test_v8f_flat test_v8f_grid test_v8f_hist test_v8f_kindx_s1 test_v8f_lead_head test_v8f_level_head test_v8f_mini test_v8f_mixo test_v8f_oacc test_v8f_otband test_v8f_pgt test_v8f_strat1 test_v8f_strat1_navbuilder test_v8f_t1_speedsub test_v8f_wc test_v8f_window_start
+13:17:40 test_strat1_token rc=0 18 passed in 0.54s
+13:17:47 test_v8f_cz rc=0 3 passed, 3 skipped, 1 warning in 7.56s
+13:18:09 test_v8f_grid rc=0 16 passed, 121 skipped, 1 warning in 28.63s
+13:18:11 test_v8f_flat rc=0 1 failed, 40 passed, 222 skipped, 1 warning in 30.67s
+13:18:13 test_v8f_hist rc=0 20 passed, 114 skipped, 1 warning in 24.37s
+13:18:31 test_v8f_kindx_s1 rc=0 147 failed, 9 passed, 32 skipped, 1 warning in 19.92s
+13:18:43 test_v8f_level_head rc=0 26 passed, 1 skipped, 1 warning in 29.00s
+13:18:59 test_v8f_mini rc=0 28 passed, 1 skipped, 1 warning in 27.18s
+13:19:33 test_v8f_ego_perturb rc=0 80 passed, 2 skipped, 1 warning in 112.61s (0:01:52)
+13:19:37 test_v8f_lead_head rc=0 42 passed, 3 skipped, 1 warning in 85.19s (0:01:25)
+13:19:51 test_v8f_oacc rc=0 2 failed, 37 passed, 94 skipped, 1 warning in 51.28s
+13:19:52 test_v8f_pgt rc=0 7 passed, 22 skipped, 1 warning in 13.35s
+13:19:52 test_v8f_strat1_navbuilder rc=0 4 passed in 0.26s
+13:19:53 test_v8f_mixo rc=0 1 failed, 32 passed, 133 skipped, 1 warning in 68.66s (0:01:08)
+13:19:59 test_v8f_wc rc=0 3 failed, 2 passed, 3 skipped, 1 warning in 4.36s
+13:20:21 test_v8f_otband rc=0 49 passed, 1 warning in 47.13s
+13:20:36 test_v8f_strat1 rc=0 34 passed, 1 warning in 43.17s
+13:21:19 test_v8f_t1_speedsub rc=0 33 passed in 85.62s (0:01:25)
+13:21:30 test_v8f_window_start rc=0 66 passed, 11 skipped, 1 warning in 90.05s (0:01:30)
+{
+ "n_regressions": 87,
+ "now_pass": 86,
+ "not_pass": [
+  "tests.test_v8f_kindx_s1::test_seed_1_builds_the_same_model_and_data_as_seed_0_apart_from_the_seed"
+ ],
+ "n_tests_run": 1462,
+ "n_fail_any": 154,
+ "fail_any": [
+  "tests.test_v8f_flat::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval",
+  "tests.test_v8f_kindx_s1::test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed",
+  "tests.test_v8f_kindx_s1::test_carrier_when_the_s0_candidate_clears_2F_at_s1_too",
+  "tests.test_v8f_kindx_s1::test_chain_pins_agree_with_the_reader_the_manifest_the_prereg_and_the_mixo_chain",
+  "tests.test_v8f_kindx_s1::test_chain_syntax_and_text_have_the_load_bearing_lines_in_the_right_order",
+  "tests.test_v8f_kindx_s1::test_clears_is_inclusive_at_2F_and_needs_the_interval",
+  "tests.test_v8f_kindx_s1::test_controls_at_s0_are_untouched",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[an oracle arm moves a window with no v9 row]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[own differs from the standard eval by 1e-3 m]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the identity oracle gains something]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the sha256 on the record is not the file's]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[trained and after-eval sha256 disagree]",
+  "tests.test_v8f_kindx_s1::test_controls_pass_on_a_consistent_s1_world",
+  "tests.test_v8f_kindx_s1::test_hold_texts_name_their_reason",
+  "tests.test_v8f_kindx_s1::test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_a_lower_bar_turns_the_miss_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_an_argv_check_that_compares_nothing_turns_the_rows_red",
+  "tests.test_v8f_kindx_s1::test_mutation_an_unknown_stop_text_that_proceeds_turns_the_unknown_rows_red",
+  "tests.test_v8f_kindx_s1::test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_ignoring_the_box_level_evidence_turns_the_evidence_check_red",
+  "tests.test_v8f_kindx_s1::test_mutation_letting_the_refresh_job_rc_through_turns_its_rows_red",
+  "tests.test_v8f_kindx_s1::test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_widening_the_run_level_regex_to_any_job_name_turns_the_wrong_chain_rows_red",
+  "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_candidate_misses_2F_at_s1",
+  "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero",
+  "tests.test_v8f_kindx_s1::test_predecessor_done_proceeds_and_no_end_marker_waits",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[00]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[01]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[02]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[03]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[04]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[05]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[06]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[07]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[08]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[09]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[10]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[11]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[12]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[13]"
+ ]
+}
+ZZ RERUN AFFECTED DONE ZZ

@@ -1,0 +1,540 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "cad9cc4a02a7bdfcee6b41c4108ba60fe3b87d128ed3110c6cbc84ffd84bb37c",
+  "commit": "33824420cc5e73471d74d669bd260ff76c00e3f8",
+  "profile": "refe_p5c_c0",
+  "tree_sha256": "945f405c87f5be56ec6be86c88b9168a8a70193d4970cb360a73c74c2fd7b39d"
+ },
+ "check": "G-DVB",
+ "details": {
+  "kinds": {
+   "built": 56,
+   "consumed": 1,
+   "control": 8,
+   "run": 5
+  },
+  "not_observed_reasons": {
+   "accum": "enters the schedule (re-derived in the `steps` row)",
+   "ckpt_every_min": "checkpoint cadence (resume behaviour pinned by G-CKPT)",
+   "ckpt_every_steps": "checkpoint cadence (pinned by G-CKPT)",
+   "epochs": "enters the schedule (the `steps` row)",
+   "grow_scenes": "enters the schedule only under --grow (re-derived in the `steps` row)",
+   "log_every": "logging cadence",
+   "out": "output directory",
+   "resume": "supervised relaunch",
+   "score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here"
+  },
+  "observed_rows": 49,
+  "parser_flags": 70,
+  "passed_flags": [
+   "--backbone",
+   "--targets",
+   "--images",
+   "--calib",
+   "--metric-cache",
+   "--scorer-sees-trunk",
+   "--yaw-wrap",
+   "--nav-mode",
+   "--labeller",
+   "--label-workers",
+   "--label-chunks",
+   "--init-from",
+   "--epochs",
+   "--steps",
+   "--epoch-unit",
+   "--batch",
+   "--accum",
+   "--lr",
+   "--weight-decay",
+   "--amp",
+   "--score-w",
+   "--w-field",
+   "--ego-yaw-table",
+   "--seed",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "--log-every",
+   "--ckpt-every-min",
+   "--out"
+  ],
+  "registry_flags": 70,
+  "rows": [
+   {
+    "built": "vitl16",
+    "declared": "vitl16",
+    "dest": "backbone",
+    "flag": "--backbone",
+    "how": "cfg.backbone",
+    "ok": true
+   },
+   {
+    "built": [
+     1024,
+     24,
+     16
+    ],
+    "declared": [
+     1024,
+     24,
+     16
+    ],
+    "dest": "backbone",
+    "flag": "--backbone",
+    "how": "cfg width/depth/heads == BACKBONES[...]",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/backbones/dinov3-vitl16",
+    "declared": "/workspace/data/backbones/dinov3-vitl16",
+    "dest": "weights",
+    "flag": "--weights",
+    "how": "load_dinov3.load_state(path)",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7",
+    "declared": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7",
+    "dest": "targets",
+    "flag": "--targets",
+    "how": "TargetBank(targets)",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/navtrain_pixels",
+    "declared": "/workspace/data/navtrain_pixels",
+    "dest": "images",
+    "flag": "--images",
+    "how": "TargetBank(images)",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+    "declared": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+    "dest": "calib",
+    "flag": "--calib",
+    "how": "TargetBank(calib=)",
+    "ok": true
+   },
+   {
+    "built": 0.001,
+    "declared": 0.001,
+    "dest": "max_missing_images",
+    "flag": "--max-missing-images",
+    "how": "TargetBank(max_missing_frac=)",
+    "ok": true
+   },
+   {
+    "built": false,
+    "declared": false,
+    "dest": "synthetic",
+    "flag": "--synthetic",
+    "how": "TargetBank(synthetic=)",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "scorer_targets",
+    "flag": "--scorer-targets",
+    "how": "ScorerBank(path)",
+    "ok": true
+   },
+   {
+    "built": "online",
+    "declared": "online",
+    "dest": "labeller",
+    "flag": "--labeller",
+    "how": "an OnlineLabeller is built iff --labeller online",
+    "ok": true
+   },
+   {
+    "built": true,
+    "declared": true,
+    "dest": "labeller",
+    "flag": "--labeller",
+    "how": "TargetBank(online=)",
+    "ok": true
+   },
+   {
+    "built": "pdm",
+    "declared": "pdm",
+    "dest": "label_backend",
+    "flag": "--label-backend",
+    "how": "OnlineLabeller(backend=)",
+    "ok": true
+   },
+   {
+    "built": 13,
+    "declared": 13,
+    "dest": "label_workers",
+    "flag": "--label-workers",
+    "how": "OnlineLabeller(workers=)",
+    "ok": true
+   },
+   {
+    "built": 2,
+    "declared": 2,
+    "dest": "label_chunks",
+    "flag": "--label-chunks",
+    "how": "OnlineLabeller(chunks=)",
+    "ok": true
+   },
+   {
+    "built": 900.0,
+    "declared": 900.0,
+    "dest": "label_timeout_s",
+    "flag": "--label-timeout-s",
+    "how": "OnlineLabeller(timeout_s=)",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "label_python",
+    "flag": "--label-python",
+    "how": "OnlineLabeller(python=)",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/refe_navtrain/metric_cache",
+    "declared": "/workspace/data/refe_navtrain/metric_cache",
+    "dest": "metric_cache",
+    "flag": "--metric-cache",
+    "how": "OnlineLabeller(metric_cache=)",
+    "ok": true
+   },
+   {
+    "built": "command",
+    "declared": "command",
+    "dest": "nav_mode",
+    "flag": "--nav-mode",
+    "how": "cfg.nav_mode",
+    "ok": true
+   },
+   {
+    "built": "command",
+    "declared": "command",
+    "dest": "nav_mode",
+    "flag": "--nav-mode",
+    "how": "which navigation encoder the model BUILT (cmd_embed xor goal_freqs)",
+    "ok": true
+   },
+   {
+    "built": false,
+    "declared": false,
+    "dest": "yaw_wrap",
+    "flag": "--yaw-wrap",
+    "how": "the yaw_wrap kwarg the loss function actually received",
+    "ok": true
+   },
+   {
+    "built": "fixed",
+    "declared": "fixed",
+    "dest": "scorer_mode",
+    "flag": "--scorer-mode",
+    "how": "an OnPolicyBank is built iff onpolicy",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt",
+    "declared": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt",
+    "dest": "init_from",
+    "flag": "--init-from",
+    "how": "warm_start(path)",
+    "ok": true
+   },
+   {
+    "built": false,
+    "declared": false,
+    "dest": "grow",
+    "flag": "--grow",
+    "how": "bank_snapshot() is called iff --grow",
+    "ok": true
+   },
+   {
+    "built": 4,
+    "declared": 4,
+    "dest": "n_cameras",
+    "flag": "--n-cameras",
+    "how": "cfg.n_cameras",
+    "ok": true
+   },
+   {
+    "built": true,
+    "declared": true,
+    "dest": "undistort",
+    "flag": "--no-undistort",
+    "how": "cfg.undistort",
+    "ok": true
+   },
+   {
+    "built": false,
+    "declared": false,
+    "dest": "detach_scorer_context",
+    "flag": "--scorer-sees-trunk",
+    "how": "cfg.detach_scorer_context",
+    "ok": true
+   },
+   {
+    "built": 5e-05,
+    "declared": 5e-05,
+    "dest": "lr",
+    "flag": "--lr",
+    "how": "AdamW lr",
+    "ok": true
+   },
+   {
+    "built": 0.01,
+    "declared": 0.01,
+    "dest": "weight_decay",
+    "flag": "--weight-decay",
+    "how": "AdamW weight_decay",
+    "ok": true
+   },
+   {
+    "built": false,
+    "declared": false,
+    "dest": "fused_adam",
+    "flag": "--fused-adam",
+    "how": "AdamW fused (cuda only)",
+    "ok": true
+   },
+   {
+    "built": true,
+    "declared": true,
+    "dest": "cosine",
+    "flag": "--no-cosine",
+    "how": "a CosineAnnealingLR is built iff cosine",
+    "ok": true
+   },
+   {
+    "built": "SceneEpochSampler",
+    "declared": "SceneEpochSampler",
+    "dest": "epoch_unit",
+    "flag": "--epoch-unit",
+    "how": "sampler class",
+    "ok": true
+   },
+   {
+    "built": 4,
+    "declared": 4,
+    "dest": "batch",
+    "flag": "--batch",
+    "how": "DataLoader batch_size",
+    "ok": true
+   },
+   {
+    "built": 2,
+    "declared": 2,
+    "dest": "workers",
+    "flag": "--workers",
+    "how": "DataLoader num_workers",
+    "ok": true
+   },
+   {
+    "built": 2000,
+    "declared": 2000,
+    "dest": "steps",
+    "flag": "--steps",
+    "how": "steps re-derived as epochs x ceil(epoch_len / (batch x accum))",
+    "ok": true
+   },
+   {
+    "built": 2000,
+    "declared": 2000,
+    "dest": "steps",
+    "flag": "--steps",
+    "how": "cosine T_max spans the whole run",
+    "ok": true
+   },
+   {
+    "built": 0.0,
+    "declared": 0.0,
+    "dest": "cosine",
+    "flag": "--no-cosine",
+    "how": "cosine decays to exactly zero",
+    "ok": true
+   },
+   {
+    "built": 0,
+    "declared": 0,
+    "dest": "seed",
+    "flag": "--seed",
+    "how": "torch.initial_seed()",
+    "ok": true
+   },
+   {
+    "built": true,
+    "declared": true,
+    "dest": "tf32",
+    "flag": "--tf32",
+    "how": "torch.backends.cuda.matmul.allow_tf32",
+    "ok": true
+   },
+   {
+    "built": "cuda",
+    "declared": "cuda",
+    "dest": "cpu",
+    "flag": "--cpu",
+    "how": "device of the model",
+    "ok": true
+   },
+   {
+    "built": true,
+    "declared": true,
+    "dest": "compile",
+    "flag": "--compile",
+    "how": "backbone compiled (cuda only)",
+    "ok": true
+   },
+   {
+    "built": "torch.bfloat16",
+    "declared": "torch.bfloat16",
+    "dest": "amp",
+    "flag": "--amp",
+    "how": "dtype of the backbone's first matmul (amp_probe_module) under autocast",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "field_labels",
+    "flag": "--field-labels",
+    "how": "TargetBank(field_labels=)",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "field_shuffle_seed",
+    "flag": "--field-shuffle-seed",
+    "how": "TargetBank(field_shuffle_seed=)",
+    "ok": true
+   },
+   {
+    "built": false,
+    "declared": false,
+    "dest": "aux_drv",
+    "flag": "--aux-drv",
+    "how": "an AuxDrivable is constructed iff --aux-drv",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "aux_drv_labels",
+    "flag": "--aux-drv-labels",
+    "how": "TargetBank(aux_labels=)",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "aux_drv_shuffle_seed",
+    "flag": "--aux-drv-shuffle-seed",
+    "how": "TargetBank(aux_shuffle_seed=)",
+    "ok": true
+   },
+   {
+    "built": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+    "declared": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+    "dest": "ego_yaw_table",
+    "flag": "--ego-yaw-table",
+    "how": "TargetBank(ego_yaw_table=) at construction #0",
+    "ok": true
+   },
+   {
+    "built": null,
+    "declared": null,
+    "dest": "traj_label_table",
+    "flag": "--traj-label-table",
+    "how": "TargetBank(traj_label_table=) at construction #0",
+    "ok": true
+   },
+   {
+    "built": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe",
+    "declared": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe",
+    "dest": "init_from",
+    "flag": "--init-from",
+    "how": "the base checkpoint file's sha256 against the profile's registered init_from_sha256",
+    "ok": true
+   }
+  ],
+  "stale_registry": [],
+  "unknown_flags": []
+ },
+ "finished_utc": "2026-11-16T18:36:11Z",
+ "inputs_read": {
+  "--calib": {
+   "bytes": 2108538,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p7/p7_reserve/calib/calib_table.json",
+   "sha256": "cfa287b8c76ca3cd657392d56cdfbb23458d0a72c406db50022ffb8cc841138a"
+  },
+  "--ego-yaw-table": {
+   "bytes": 2018782,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_navtrain/ego_yaw_navtrain.json.gz",
+   "sha256": "3a0873cc1302afa45a960235a063d20699608236669eced5d8074fae69215a55"
+  },
+  "--images": {
+   "bytes": 77507226902,
+   "kind": "dir",
+   "listing_sha256": "05231a36178681691eb689d374e6163626ad83fa4eda8a6e2986a0c2ab4a6538",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 372552,
+   "path": "/workspace/data/navtrain_pixels"
+  },
+  "--init-from": {
+   "bytes": 1298292047,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_runs/p7_reserve_head/model_final.pt",
+   "sha256": "2613fc17b9e5d63342c9f42120c5612a6ec7061fda72f83dac46ddd2e70fd3fe"
+  },
+  "--metric-cache": {
+   "bytes": 41047312372,
+   "kind": "dir",
+   "listing_sha256": "79c7ba964ccc3a7a1494112362dc7a9e928c3da033b27de9f15f04086186d100",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 112589,
+   "path": "/workspace/data/refe_navtrain/metric_cache"
+  },
+  "--targets": {
+   "bytes": 519051148,
+   "kind": "dir",
+   "listing_sha256": "804c80a42cb1b9a0d6697c535a9dec3ba8ca72116ceae91a6a4ff696ee7c40fc",
+   "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+   "n_files": 3,
+   "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c_p7"
+  },
+  "gate:egr_json": {
+   "bytes": 715,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_c0/egr/g_egr_result.json",
+   "sha256": "cdd16b9887f27155b13da180aeb61d2ac007ce9d291414df26695155ef6daac9"
+  },
+  "gate:lab_json": {
+   "bytes": 370,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_c0/lab.json",
+   "sha256": "d6bd6bbfb9d4b0f7b9d2fdf39cf44008243270ade5cca76876db0006d5adf81e"
+  },
+  "gate:mem_metrics": {
+   "bytes": 4603,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "/workspace/data/refe_p5c/evidence_c0/mem_metrics.jsonl",
+   "sha256": "cb01f6f8810de3727b563a71493f136d636c5aadfe93a489231b5ca81d7abeac"
+  }
+ },
+ "reasons": [],
+ "rehearsal": false,
+ "status": "PASS"
+}

@@ -1,0 +1,3778 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_HACC_MC.md @ 8d4b936d",
+ "tier": "T1-kin (self-action OPEN loop; never 'closed loop')",
+ "tool_tree": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/tool_81aa3e36",
+ "SMOKE": false,
+ "label": "REAL",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, per seed, arm - P10 and arm - HACC on the same windows. It answers 'another draw of EPISODES'; it is blind to training variance (H-ESTIM-SEED-1) and the two training seeds are the only replicate; no inference seed is varied (this planner is deterministic).",
+ "amendments_applied": {
+  "c1_bar": "ulp32max",
+  "c1_amendment": "A2-2026-10-26",
+  "c4_clause2": "tail0",
+  "c4_amendment": "A1-2026-10-26"
+ },
+ "controls": {
+  "P-1": {
+   "PASS": true,
+   "runs": {
+    "MCH_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCH_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCH_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCH_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    }
+   },
+   "what": "each run is the pre-registered configuration of the right baked checkpoint (guards against a wrong ckpt / wrong flags reading as a result)"
+  },
+  "C-1": {
+   "PASS": true,
+   "bar": "max|d| <= 1 ulp32 of max(|P|, |tau|, |plan|) (AMENDMENT A2-2026-10-26)",
+   "runs": {
+    "MCH_s0_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 1.5147368230827851e-05,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      6507,
+      12
+     ],
+     "plan_along_at_argmax_m": 293.96875,
+     "n_tick_knots_over_bar": 5233,
+     "frac_tick_knots_over_bar": 0.060592376453151776,
+     "max_d_over_ulp32_of_plan": 1.1591265797615051,
+     "max_abs_plan_along_m": 473.8965759277344,
+     "max_d_over_ulp32_of_max_operand": 0.49999965727329254,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 6.103515625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.20022018253803253,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCH_s0_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.7934380543447332e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      1625,
+      12
+     ],
+     "plan_along_at_argmax_m": 75.59456634521484,
+     "n_tick_knots_over_bar": 1560,
+     "frac_tick_knots_over_bar": 0.054189245518966235,
+     "max_d_over_ulp32_of_plan": 1.1591265797615051,
+     "max_abs_plan_along_m": 88.58345031738281,
+     "max_d_over_ulp32_of_max_operand": 0.4999935030937195,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.52587890625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.20022018253803253,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCH_s1_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 4.821689572054311e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      1716,
+      12
+     ],
+     "plan_along_at_argmax_m": 206.87376403808594,
+     "n_tick_knots_over_bar": 5215,
+     "frac_tick_knots_over_bar": 0.060383956278078826,
+     "max_d_over_ulp32_of_plan": 3.7216784954071045,
+     "max_abs_plan_along_m": 206.87376403808594,
+     "max_d_over_ulp32_of_max_operand": 0.49999983608722687,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 3.0517578125e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 2386.0,
+     "const_c_float32": 0.21978281438350677,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCH_s1_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.79748394152557e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      838,
+      10
+     ],
+     "plan_along_at_argmax_m": 74.4885025024414,
+     "n_tick_knots_over_bar": 1589,
+     "frac_tick_knots_over_bar": 0.05519660969848548,
+     "max_d_over_ulp32_of_plan": 3.7216784954071045,
+     "max_abs_plan_along_m": 88.82241821289062,
+     "max_d_over_ulp32_of_max_operand": 0.49997666478157043,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 302.0,
+     "const_c_float32": 0.21978281438350677,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCF_s0_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 6.9873599386482965e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      1528,
+      12
+     ],
+     "plan_along_at_argmax_m": 152.4679412841797,
+     "n_tick_knots_over_bar": 5202,
+     "frac_tick_knots_over_bar": 0.0602334305960817,
+     "max_d_over_ulp32_of_plan": 2.461057424545288,
+     "max_abs_plan_along_m": 291.59033203125,
+     "max_d_over_ulp32_of_max_operand": 0.49998989701271057,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 3.0517578125e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.3070783317089081,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCF_s0_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.810032694673282e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      846,
+      9
+     ],
+     "plan_along_at_argmax_m": 65.74864959716797,
+     "n_tick_knots_over_bar": 1630,
+     "frac_tick_knots_over_bar": 0.056620814228150615,
+     "max_d_over_ulp32_of_plan": 2.461057424545288,
+     "max_abs_plan_along_m": 89.11811065673828,
+     "max_d_over_ulp32_of_max_operand": 0.49997085332870483,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.52587890625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.3070783317089081,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCF_s1_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 3.813459443335887e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      833,
+      12
+     ],
+     "plan_along_at_argmax_m": 68.60456848144531,
+     "n_tick_knots_over_bar": 5027,
+     "frac_tick_knots_over_bar": 0.05820712333842805,
+     "max_d_over_ulp32_of_plan": 1.4872896671295166,
+     "max_abs_plan_along_m": 190.42984008789062,
+     "max_d_over_ulp32_of_max_operand": 0.49999916553497314,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 3.0517578125e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 938.0,
+     "const_c_float32": 0.3468058705329895,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    },
+    "MCF_s1_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.8125081118778326e-06,
+     "bar_m": 1e-06,
+     "PASS": true,
+     "argmax_tick_knot": [
+      1577,
+      11
+     ],
+     "plan_along_at_argmax_m": 67.53112030029297,
+     "n_tick_knots_over_bar": 1599,
+     "frac_tick_knots_over_bar": 0.05554397665694039,
+     "max_d_over_ulp32_of_plan": 1.4872896671295166,
+     "max_abs_plan_along_m": 89.53951263427734,
+     "max_d_over_ulp32_of_max_operand": 0.4999980330467224,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 302.0,
+     "const_c_float32": 0.3468058705329895,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false,
+     "PASS_ulp32max": true
+    }
+   },
+   "deliberate_regression": {
+    "HACC_table_on_MCH_s0_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 1.797342102606308,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      7001,
+      12
+     ],
+     "plan_along_at_argmax_m": 81.0047836303711,
+     "n_tick_knots_over_bar": 80066,
+     "frac_tick_knots_over_bar": 0.9270760965216989,
+     "max_d_over_ulp32_of_plan": 714924880.0,
+     "max_abs_plan_along_m": 473.8965759277344,
+     "max_d_over_ulp32_of_max_operand": 5192788.0,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.7973403930664062,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 714924880.0,
+     "MUST_FAIL": true,
+     "regression_fails_as_it_must": true
+    },
+    "HACC_table_on_MCH_s1_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 2.0058123029812123,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      6219,
+      12
+     ],
+     "plan_along_at_argmax_m": 78.14154815673828,
+     "n_tick_knots_over_bar": 80020,
+     "frac_tick_knots_over_bar": 0.9265434671854014,
+     "max_d_over_ulp32_of_plan": 105608703.5360589,
+     "max_abs_plan_along_m": 206.87376403808594,
+     "max_d_over_ulp32_of_max_operand": 5228043.5,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 2.0058135986328125,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 105608707.0,
+     "MUST_FAIL": true,
+     "regression_fails_as_it_must": true
+    }
+   }
+  },
+  "C-2": {
+   "PASS": true,
+   "bar": "max|MC-H - HACC| executed at m = 10 > 1e-2 m (MC-F, STEEP beside)",
+   "runs": {
+    "MCH_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 59.619472009731524,
+     "gating": true,
+     "PASS": true
+    },
+    "MCF_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 47.86594162079737,
+     "gating": false,
+     "PASS": true
+    },
+    "STEEP_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 58.717042307048075,
+     "gating": false,
+     "PASS": true
+    },
+    "MCH_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 61.356355516022866,
+     "gating": true,
+     "PASS": true
+    },
+    "MCF_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 51.229760175294146,
+     "gating": false,
+     "PASS": true
+    },
+    "STEEP_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 72.33527608278762,
+     "gating": false,
+     "PASS": true
+    }
+   }
+  },
+  "C-3": {
+   "PASS": true,
+   "bar": "exactly 0.0 (<= 1e-9) on MC-H and MC-F ticks (v0, a0, kappa0)",
+   "runs": {
+    "MCH_s0_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s0_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s1_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s1_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s0_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s0_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s1_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s1_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    }
+   },
+   "deliberate_regression": {
+    "MCH_ticks_HACC_table_s0": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 2.683060201729564,
+     "max_abs_a0_mps2": 15.278930206314683,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.24148235923313166,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "MCH_ticks_STEEP_table_s0": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 6.7795395521335,
+     "max_abs_a0_mps2": 37.05374019691561,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.37129459328754777,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "STEEP_own_ticks_STEEP_table_s0": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 7.504090702488426,
+     "max_abs_a0_mps2": 38.629562971051726,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.16426747543953013,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "HACC_TRAIN_known_value_s0": {
+     "n": 1747,
+     "median_ramp_a0_mps2": -0.15876310085314316,
+     "banked": -0.1588,
+     "abs_diff": 3.689914685683915e-05,
+     "bar": 0.002,
+     "PASS": true
+    },
+    "MCH_ticks_HACC_table_s1": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 4.249470076441639,
+     "max_abs_a0_mps2": 11.50791822688924,
+     "max_abs_kappa0_1pm": 0.12667517157565403,
+     "median_a0_mps2": -0.1499666303201197,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "MCH_ticks_STEEP_table_s1": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 9.838510474736374,
+     "max_abs_a0_mps2": 25.27883489584405,
+     "max_abs_kappa0_1pm": 0.5427884527755287,
+     "median_a0_mps2": -0.17734643853108523,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "STEEP_own_ticks_STEEP_table_s1": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 9.91213691716591,
+     "max_abs_a0_mps2": 17.479958226542642,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.11708441148940096,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "HACC_TRAIN_known_value_s1": {
+     "n": 1747,
+     "median_ramp_a0_mps2": -0.0726273800838051,
+     "banked": -0.0726,
+     "abs_diff": 2.7380083805095268e-05,
+     "bar": 0.002,
+     "PASS": true
+    }
+   },
+   "note": "HACC's own EVAL ticks are not in the pre-registered matrix: HACC's regression is its table through the same instrument on the MC-H ticks, plus its TRAIN known value (-0.1588 / -0.0726 +- 2e-3, n = 1,747)"
+  },
+  "C-4": {
+   "PASS": true,
+   "C-4": {
+    "clause1": {
+     "s0": {
+      "c_closed_form": 0.30707832486066766,
+      "c_grid_argmin_201pt": 0.305,
+      "abs_diff": 0.0020783248606676685,
+      "bar": 0.005,
+      "PASS": true
+     },
+     "s1": {
+      "c_closed_form": 0.34680587498548143,
+      "c_grid_argmin_201pt": 0.34500000000000003,
+      "abs_diff": 0.0018058749854814038,
+      "bar": 0.005,
+      "PASS": true
+     }
+    },
+    "clause2": {
+     "s0": {
+      "c": -0.0,
+      "PASS": true,
+      "variant": "tail0 (AMENDMENT A1-2026-10-26): GT := P with the held tail also zeroed",
+      "literal_value_for_the_record": 0.3094034378411479
+     },
+     "s1": {
+      "c": -0.0,
+      "PASS": true,
+      "variant": "tail0 (AMENDMENT A1-2026-10-26): GT := P with the held tail also zeroed",
+      "literal_value_for_the_record": 0.3488629300801739
+     }
+    },
+    "ok": true
+   },
+   "TRAIN_qualification_bar_ade6_le_HACC_plus_F_half": {
+    "s0": true,
+    "s1": true
+   },
+   "tables_reproduce_probe12_and_PREREG_values": true,
+   "source": "BAKE_REPORT_MC.json (built before any eval run)"
+  },
+  "C-5": {
+   "PASS": true,
+   "bar": "T1KIN's C-1(i) <= 1e-9, C-1(ii) <= 1e-4 + unique grid + eid, C-2 floor ADE6 = 2.48699212 +- 1e-5 (m30), plus the m10 P10 loop = the banked HACC dump's floor <= 1e-9 (same windows, batch 32, 8 threads: a same-composition identity)",
+   "runs": {
+    "MCH_s0": {
+     "max_abs_cl_minus_ol_m30_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "MCF_s0": {
+     "max_abs_cl_minus_ol_m30_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "STEEP_s0": {
+     "max_abs_cl_minus_ol_m30_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "MCH_s1": {
+     "max_abs_cl_minus_ol_m30_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "MCF_s1": {
+     "max_abs_cl_minus_ol_m30_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "STEEP_s1": {
+     "max_abs_cl_minus_ol_m30_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    }
+   }
+  },
+  "C-6": {
+   "s0": {
+    "delta": 0.021,
+    "lo": 0.0099,
+    "hi": 0.0351,
+    "separated": true,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "banked": 0.021,
+    "abs_diff": 0.0,
+    "PASS": true
+   },
+   "s1": {
+    "delta": 0.0082,
+    "lo": 0.0026,
+    "hi": 0.0148,
+    "separated": true,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "banked": 0.0082,
+    "abs_diff": 0.0,
+    "PASS": true
+   },
+   "PASS": true,
+   "beside_float64_originals_L2_HACC_minus_P10": {
+    "s0": {
+     "delta": 0.021,
+     "lo": 0.0099,
+     "hi": 0.0351,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135
+    },
+    "s1": {
+     "delta": 0.0082,
+     "lo": 0.0026,
+     "hi": 0.0148,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135
+    }
+   }
+  },
+  "C-6b": {
+   "PASS": true,
+   "what": "M1 / M2 / M1(P10) of HACC reproduce the PREREG's printed 0.0536 / 0.0277, +0.0202 / +0.0072, 0.0137",
+   "runs": {
+    "s0": {
+     "M1": 0.05356095056476456,
+     "M2": 0.020246303286083366,
+     "M1_P10": 0.013674524324522491,
+     "matches_4dp": {
+      "M1": true,
+      "M2": true,
+      "M1_P10": true
+     }
+    },
+    "s1": {
+     "M1": 0.02766066649558236,
+     "M2": 0.007205373095043685,
+     "M1_P10": 0.013674524324522491,
+     "matches_4dp": {
+      "M1": true,
+      "M2": true,
+      "M1_P10": true
+     }
+    }
+   }
+  },
+  "C-7": {
+   "PASS": true,
+   "suite_last_line": "226 passed, 1 skipped, 6 warnings in 580.74s (0:09:40)"
+  }
+ },
+ "controls_failed": [],
+ "controls_all_pass": true,
+ "seconds_controls": 60.65413165092468,
+ "rows": {
+  "seeds": {
+   "s0": {
+    "arms": {
+     "MC-H": {
+      "rows_arm_minus_P10": {
+       "ade2_m": {
+        "delta": -0.0087,
+        "lo": -0.0143,
+        "hi": -0.0012,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": -0.6296,
+        "lo": -0.75,
+        "hi": -0.5171,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": -0.1877,
+        "lo": -0.2541,
+        "hi": -0.1219,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.3529,
+        "lo": -0.4236,
+        "hi": -0.2868,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.3166,
+        "lo": 0.1071,
+        "hi": 0.5463,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -1.3805,
+        "lo": -1.9141,
+        "hi": -0.8613,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 0.9723,
+        "lo": -0.3011,
+        "hi": 2.4264,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.0023,
+        "lo": -0.0021,
+        "hi": 0.0068,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.505,
+        "lo": -0.6363,
+        "hi": -0.378,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": 0.2633,
+        "lo": -0.1772,
+        "hi": 0.7121,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0028,
+        "lo": 0.0004,
+        "hi": 0.0055,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 0.4166,
+        "lo": -0.8621,
+        "hi": 1.6851,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "rows_arm_minus_HACC": {
+       "ade2_m": {
+        "delta": 0.0035,
+        "lo": 0.0016,
+        "hi": 0.0067,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": 0.1383,
+        "lo": 0.0406,
+        "hi": 0.2353,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": 0.1746,
+        "lo": 0.0955,
+        "hi": 0.2543,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": 0.1209,
+        "lo": 0.0287,
+        "hi": 0.2153,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.2993,
+        "lo": 0.1712,
+        "hi": 0.4364,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -0.7481,
+        "lo": -1.0304,
+        "hi": -0.469,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": -1.9128,
+        "lo": -3.1737,
+        "hi": -0.6256,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": -0.0279,
+        "lo": -0.0396,
+        "hi": -0.018,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": 0.0522,
+        "lo": 0.0034,
+        "hi": 0.1011,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": 0.37,
+        "lo": 0.0176,
+        "hi": 0.7789,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": -0.0182,
+        "lo": -0.0312,
+        "hi": -0.0081,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": -1.5615,
+        "lo": -3.0962,
+        "hi": -0.1487,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "M1": 0.018403783407266196,
+      "M2": 0.0014295519895939504,
+      "M1_P10": 0.013674524324522491,
+      "n_arm_crawl_pairs": 1004,
+      "M1_minus_HACC_beside": {
+       "delta": -0.035157167157498365,
+       "lo": -0.05145894906498247,
+       "hi": -0.02137675831861769,
+       "separated": true,
+       "estimator": "episode-cluster bootstrap of the pooled-pair-count ratio difference, B 2000, seed 0 (beside)"
+      },
+      "mean_ade6_m": {
+       "arm": 2.8136542793306663,
+       "P10": 3.443279013457244,
+       "HACC": 2.675308305904701
+      },
+      "beside": {
+       "L2_joint_own_speed_mask_arm_minus_P10": {
+        "delta": 0.0016,
+        "lo": -0.0004,
+        "hi": 0.004,
+        "separated": false,
+        "n_windows": 2085,
+        "n_episodes": 135
+       },
+       "joint_mask_fraction_of_fast_pairs_kept": 0.9789199692048246,
+       "launch_subset": {
+        "n_windows": 327,
+        "n_episodes": 49,
+        "definition": "v0 (ego speed at t0) < 6 m/s and the GT chord speed over the last 0.2 s of the 6 s horizon >= v0 + 1 m/s",
+        "ade6_m_arm_minus_P10": {
+         "delta": -0.0348,
+         "lo": -0.3428,
+         "hi": 0.219,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "ade6_m_arm_minus_HACC": {
+         "delta": -0.0659,
+         "lo": -0.2464,
+         "hi": 0.1268,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_P10": {
+         "delta": 0.0247,
+         "lo": 0.0055,
+         "hi": 0.0438,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_HACC": {
+         "delta": -0.1048,
+         "lo": -0.1847,
+         "hi": -0.0277,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "accel_mae_mps2_arm_minus_P10": {
+         "delta": 0.8522,
+         "lo": -0.2676,
+         "hi": 1.8659,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "accel_mae_mps2_arm_minus_HACC": {
+         "delta": 0.5912,
+         "lo": 0.0402,
+         "hi": 1.1336,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_P10": {
+         "delta": -0.0801,
+         "lo": -0.2413,
+         "hi": 0.0692,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_HACC": {
+         "delta": -0.2877,
+         "lo": -0.5046,
+         "hi": -0.0698,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        }
+       },
+       "families_not_computed": {
+        "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)",
+        "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"
+       },
+       "m30_arm_minus_P10": {
+        "ade2_m": {
+         "delta": -0.0087,
+         "lo": -0.0143,
+         "hi": -0.0012,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "ade6_m": {
+         "delta": -0.4375,
+         "lo": -0.5462,
+         "hi": -0.3399,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "speed_mae_mps": {
+         "delta": -0.0606,
+         "lo": -0.1018,
+         "hi": -0.0146,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "along_mae_m": {
+         "delta": -0.1695,
+         "lo": -0.237,
+         "hi": -0.1029,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "accel_mae_mps2": {
+         "delta": 0.1099,
+         "lo": 0.0836,
+         "hi": 0.1455,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "heading_mae_deg": {
+         "delta": -1.5506,
+         "lo": -1.9101,
+         "hi": -1.2169,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -0.7461,
+         "lo": -0.9901,
+         "hi": -0.5246,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0049,
+         "lo": -0.0089,
+         "hi": -0.0014,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "cross_mae_m": {
+         "delta": -0.3905,
+         "lo": -0.4843,
+         "hi": -0.3024,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "L1_lat_accel_mae_mps2": {
+         "delta": -0.0786,
+         "lo": -0.0956,
+         "hi": -0.0637,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "L2_curvature_mae_fast_1pm": {
+         "delta": 0.001,
+         "lo": -0.0002,
+         "hi": 0.0023,
+         "separated": false,
+         "n_windows": 2106,
+         "n_episodes": 135
+        },
+        "L3_yaw_rate_mae_fast_degps": {
+         "delta": -0.2757,
+         "lo": -0.4122,
+         "hi": -0.1487,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        }
+       }
+      },
+      "R2_reader_vs_tool_analyze_ade6_delta": {
+       "reader": -0.6296,
+       "tool": -0.6296,
+       "abs_diff": 0.0
+      }
+     },
+     "MC-F": {
+      "rows_arm_minus_P10": {
+       "ade2_m": {
+        "delta": -0.003,
+        "lo": -0.0107,
+        "hi": 0.0084,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": -0.7619,
+        "lo": -0.8851,
+        "hi": -0.6458,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": -0.3483,
+        "lo": -0.4187,
+        "hi": -0.2791,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.4863,
+        "lo": -0.5861,
+        "hi": -0.3948,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.3699,
+        "lo": 0.1835,
+        "hi": 0.5531,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -1.1644,
+        "lo": -1.7527,
+        "hi": -0.5818,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 1.2108,
+        "lo": -0.0577,
+        "hi": 2.4959,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.0104,
+        "lo": 0.0049,
+        "hi": 0.0165,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.5379,
+        "lo": -0.6595,
+        "hi": -0.4195,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.1471,
+        "lo": -0.5913,
+        "hi": 0.2761,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0043,
+        "lo": 0.0016,
+        "hi": 0.0076,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 0.2956,
+        "lo": -0.7771,
+        "hi": 1.5204,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "rows_arm_minus_HACC": {
+       "ade2_m": {
+        "delta": 0.0092,
+        "lo": 0.0049,
+        "hi": 0.0165,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": 0.0061,
+        "lo": -0.0615,
+        "hi": 0.074,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": 0.014,
+        "lo": -0.039,
+        "hi": 0.0673,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.0124,
+        "lo": -0.0796,
+        "hi": 0.0533,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.3526,
+        "lo": 0.2646,
+        "hi": 0.4453,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -0.5321,
+        "lo": -0.7631,
+        "hi": -0.3153,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": -1.6743,
+        "lo": -2.7013,
+        "hi": -0.725,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": -0.0198,
+        "lo": -0.0306,
+        "hi": -0.0113,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": 0.0193,
+        "lo": -0.0075,
+        "hi": 0.0465,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.0404,
+        "lo": -0.2374,
+        "hi": 0.1855,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": -0.0167,
+        "lo": -0.0293,
+        "hi": -0.0069,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": -1.6825,
+        "lo": -2.8628,
+        "hi": -0.5854,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "M1": 0.02854052865051142,
+      "M2": 0.0027831349078208893,
+      "M1_P10": 0.013674524324522491,
+      "n_arm_crawl_pairs": 1557,
+      "M1_minus_HACC_beside": {
+       "delta": -0.025020421914253136,
+       "lo": -0.035865098312822655,
+       "hi": -0.015280974143298886,
+       "separated": true,
+       "estimator": "episode-cluster bootstrap of the pooled-pair-count ratio difference, B 2000, seed 0 (beside)"
+      },
+      "mean_ade6_m": {
+       "arm": 2.6814048342239385,
+       "P10": 3.443279013457244,
+       "HACC": 2.675308305904701
+      },
+      "beside": {
+       "L2_joint_own_speed_mask_arm_minus_P10": {
+        "delta": 0.0021,
+        "lo": 0.0001,
+        "hi": 0.0045,
+        "separated": true,
+        "n_windows": 2077,
+        "n_episodes": 135
+       },
+       "joint_mask_fraction_of_fast_pairs_kept": 0.9686365802690912,
+       "launch_subset": {
+        "n_windows": 327,
+        "n_episodes": 49,
+        "definition": "v0 (ego speed at t0) < 6 m/s and the GT chord speed over the last 0.2 s of the 6 s horizon >= v0 + 1 m/s",
+        "ade6_m_arm_minus_P10": {
+         "delta": -0.1558,
+         "lo": -0.4749,
+         "hi": 0.1076,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "ade6_m_arm_minus_HACC": {
+         "delta": -0.1869,
+         "lo": -0.3237,
+         "hi": -0.0452,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_P10": {
+         "delta": 0.0344,
+         "lo": 0.0132,
+         "hi": 0.0556,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_HACC": {
+         "delta": -0.0951,
+         "lo": -0.1739,
+         "hi": -0.022,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "accel_mae_mps2_arm_minus_P10": {
+         "delta": 0.8018,
+         "lo": -0.2151,
+         "hi": 1.6653,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "accel_mae_mps2_arm_minus_HACC": {
+         "delta": 0.5408,
+         "lo": 0.1874,
+         "hi": 0.9252,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_P10": {
+         "delta": -0.0704,
+         "lo": -0.2713,
+         "hi": 0.11,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_HACC": {
+         "delta": -0.2779,
+         "lo": -0.4438,
+         "hi": -0.1159,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        }
+       },
+       "families_not_computed": {
+        "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)",
+        "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"
+       },
+       "m30_arm_minus_P10": {
+        "ade2_m": {
+         "delta": -0.003,
+         "lo": -0.0107,
+         "hi": 0.0084,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "ade6_m": {
+         "delta": -0.4359,
+         "lo": -0.5451,
+         "hi": -0.3377,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "speed_mae_mps": {
+         "delta": -0.0558,
+         "lo": -0.0973,
+         "hi": -0.009,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "along_mae_m": {
+         "delta": -0.1677,
+         "lo": -0.2351,
+         "hi": -0.1006,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "accel_mae_mps2": {
+         "delta": 0.0674,
+         "lo": 0.0418,
+         "hi": 0.1002,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "heading_mae_deg": {
+         "delta": -1.5528,
+         "lo": -1.9127,
+         "hi": -1.2206,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -0.8186,
+         "lo": -1.0588,
+         "hi": -0.6037,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0053,
+         "lo": -0.0089,
+         "hi": -0.002,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "cross_mae_m": {
+         "delta": -0.3905,
+         "lo": -0.4843,
+         "hi": -0.3024,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "L1_lat_accel_mae_mps2": {
+         "delta": -0.0849,
+         "lo": -0.1022,
+         "hi": -0.0697,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "L2_curvature_mae_fast_1pm": {
+         "delta": 0.0009,
+         "lo": -0.0003,
+         "hi": 0.0022,
+         "separated": false,
+         "n_windows": 2106,
+         "n_episodes": 135
+        },
+        "L3_yaw_rate_mae_fast_degps": {
+         "delta": -0.3134,
+         "lo": -0.4546,
+         "hi": -0.1842,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        }
+       }
+      },
+      "R2_reader_vs_tool_analyze_ade6_delta": {
+       "reader": -0.7619,
+       "tool": -0.7619,
+       "abs_diff": 0.0
+      }
+     },
+     "STEEP": {
+      "rows_arm_minus_P10": {
+       "ade2_m": {
+        "delta": -0.0122,
+        "lo": -0.0165,
+        "hi": -0.0071,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": -0.4377,
+        "lo": -0.6451,
+        "hi": -0.2381,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": -0.1301,
+        "lo": -0.3119,
+        "hi": 0.0343,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.1252,
+        "lo": -0.3272,
+        "hi": 0.0746,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.4208,
+        "lo": 0.0389,
+        "hi": 0.8033,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": 2.1678,
+        "lo": 1.0949,
+        "hi": 3.3043,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 16.8586,
+        "lo": 11.3539,
+        "hi": 22.8499,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.1536,
+        "lo": 0.1152,
+        "hi": 0.1944,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.5583,
+        "lo": -0.6742,
+        "hi": -0.4493,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.1705,
+        "lo": -1.5362,
+        "hi": 1.1314,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.1087,
+        "lo": 0.0742,
+        "hi": 0.1474,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 15.5933,
+        "lo": 10.4232,
+        "hi": 21.7316,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       }
+      },
+      "rows_arm_minus_HACC": {
+       "ade2_m": {
+        "delta": 0.0,
+        "lo": -0.0002,
+        "hi": 0.0005,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": 0.3303,
+        "lo": 0.229,
+        "hi": 0.4376,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": 0.2321,
+        "lo": 0.0949,
+        "hi": 0.3652,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": 0.3486,
+        "lo": 0.2401,
+        "hi": 0.4648,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.4036,
+        "lo": -0.0478,
+        "hi": 0.8039,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": 2.8002,
+        "lo": 2.0809,
+        "hi": 3.5278,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 13.9735,
+        "lo": 8.9035,
+        "hi": 19.439,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.1234,
+        "lo": 0.0932,
+        "hi": 0.1558,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.0011,
+        "lo": -0.0368,
+        "hi": 0.0337,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.0637,
+        "lo": -1.407,
+        "hi": 1.1291,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0876,
+        "lo": 0.0608,
+        "hi": 0.118,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 13.6152,
+        "lo": 9.4015,
+        "hi": 18.5681,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       }
+      },
+      "M1": 0.08501905059912754,
+      "M2": 0.09897568981611371,
+      "M1_P10": 0.013674524324522491,
+      "n_arm_crawl_pairs": 4619,
+      "M1_minus_HACC_beside": {
+       "delta": 0.03145810003436298,
+       "lo": 0.020025234069959676,
+       "hi": 0.042599532246366936,
+       "separated": true,
+       "estimator": "episode-cluster bootstrap of the pooled-pair-count ratio difference, B 2000, seed 0 (beside)"
+      },
+      "mean_ade6_m": {
+       "arm": 3.005621445129715,
+       "P10": 3.443279013457244,
+       "HACC": 2.675308305904701
+      },
+      "beside": {
+       "L2_joint_own_speed_mask_arm_minus_P10": {
+        "delta": 0.0169,
+        "lo": 0.0107,
+        "hi": 0.0246,
+        "separated": true,
+        "n_windows": 2049,
+        "n_episodes": 135
+       },
+       "joint_mask_fraction_of_fast_pairs_kept": 0.9103793554087136,
+       "launch_subset": {
+        "n_windows": 327,
+        "n_episodes": 49,
+        "definition": "v0 (ego speed at t0) < 6 m/s and the GT chord speed over the last 0.2 s of the 6 s horizon >= v0 + 1 m/s",
+        "ade6_m_arm_minus_P10": {
+         "delta": 0.4614,
+         "lo": -0.0271,
+         "hi": 0.8866,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "ade6_m_arm_minus_HACC": {
+         "delta": 0.4303,
+         "lo": 0.1965,
+         "hi": 0.6429,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_P10": {
+         "delta": 0.3567,
+         "lo": 0.1791,
+         "hi": 0.5185,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_HACC": {
+         "delta": 0.2272,
+         "lo": 0.1171,
+         "hi": 0.3358,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "accel_mae_mps2_arm_minus_P10": {
+         "delta": -1.5409,
+         "lo": -3.027,
+         "hi": -0.03,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "accel_mae_mps2_arm_minus_HACC": {
+         "delta": -1.8019,
+         "lo": -3.2905,
+         "hi": -0.3057,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_P10": {
+         "delta": 0.711,
+         "lo": 0.24,
+         "hi": 1.1511,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_HACC": {
+         "delta": 0.5035,
+         "lo": 0.2668,
+         "hi": 0.734,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        }
+       },
+       "families_not_computed": {
+        "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)",
+        "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"
+       },
+       "m30_arm_minus_P10": {
+        "ade2_m": {
+         "delta": -0.0122,
+         "lo": -0.0165,
+         "hi": -0.0071,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "ade6_m": {
+         "delta": -0.4386,
+         "lo": -0.5477,
+         "hi": -0.3406,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "speed_mae_mps": {
+         "delta": -0.0534,
+         "lo": -0.0951,
+         "hi": -0.0056,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "along_mae_m": {
+         "delta": -0.1708,
+         "lo": -0.2386,
+         "hi": -0.1041,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "accel_mae_mps2": {
+         "delta": 0.3234,
+         "lo": 0.2718,
+         "hi": 0.391,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "heading_mae_deg": {
+         "delta": -1.544,
+         "lo": -1.9021,
+         "hi": -1.2117,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -0.6436,
+         "lo": -0.9001,
+         "hi": -0.4221,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0053,
+         "lo": -0.0093,
+         "hi": -0.0018,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "cross_mae_m": {
+         "delta": -0.3905,
+         "lo": -0.4843,
+         "hi": -0.3024,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "L1_lat_accel_mae_mps2": {
+         "delta": -0.0656,
+         "lo": -0.0818,
+         "hi": -0.0509,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "L2_curvature_mae_fast_1pm": {
+         "delta": 0.00121,
+         "lo": 1e-05,
+         "hi": 0.00257,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        },
+        "L3_yaw_rate_mae_fast_degps": {
+         "delta": -0.2008,
+         "lo": -0.3407,
+         "hi": -0.0653,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        }
+       }
+      },
+      "R2_reader_vs_tool_analyze_ade6_delta": {
+       "reader": -0.4377,
+       "tool": -0.4377,
+       "abs_diff": 0.0
+      }
+     }
+    }
+   },
+   "s1": {
+    "arms": {
+     "MC-H": {
+      "rows_arm_minus_P10": {
+       "ade2_m": {
+        "delta": -0.0076,
+        "lo": -0.0142,
+        "hi": 0.002,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": -0.5276,
+        "lo": -0.6577,
+        "hi": -0.405,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": -0.1548,
+        "lo": -0.2211,
+        "hi": -0.088,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.3422,
+        "lo": -0.4137,
+        "hi": -0.2795,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.3219,
+        "lo": 0.1288,
+        "hi": 0.5349,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -1.044,
+        "lo": -1.662,
+        "hi": -0.4664,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 0.7836,
+        "lo": -0.6918,
+        "hi": 2.3575,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": -0.0002,
+        "lo": -0.0043,
+        "hi": 0.0037,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.3471,
+        "lo": -0.5007,
+        "hi": -0.1977,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": 0.7778,
+        "lo": 0.1014,
+        "hi": 1.6309,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0013,
+        "lo": -0.0014,
+        "hi": 0.0039,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 0.3161,
+        "lo": -1.0413,
+        "hi": 1.6454,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "rows_arm_minus_HACC": {
+       "ade2_m": {
+        "delta": 0.0031,
+        "lo": 0.0009,
+        "hi": 0.0069,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": 0.206,
+        "lo": 0.1238,
+        "hi": 0.2873,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": 0.2328,
+        "lo": 0.1554,
+        "hi": 0.3191,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": 0.1663,
+        "lo": 0.1011,
+        "hi": 0.2327,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.5236,
+        "lo": 0.3306,
+        "hi": 0.7683,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -0.1188,
+        "lo": -0.3254,
+        "hi": 0.0878,
+        "separated": false,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": -0.4081,
+        "lo": -1.6805,
+        "hi": 0.8369,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": -0.0132,
+        "lo": -0.0202,
+        "hi": -0.0073,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": 0.0873,
+        "lo": 0.0258,
+        "hi": 0.1511,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": 0.8928,
+        "lo": 0.1253,
+        "hi": 1.9147,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": -0.0069,
+        "lo": -0.0126,
+        "hi": -0.0023,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": -0.6926,
+        "lo": -1.6927,
+        "hi": 0.2832,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "M1": 0.015067639403160171,
+      "M2": 0.00020742996410135633,
+      "M1_P10": 0.013674524324522491,
+      "n_arm_crawl_pairs": 822,
+      "M1_minus_HACC_beside": {
+       "delta": -0.01259302709242219,
+       "lo": -0.021005038387171236,
+       "hi": -0.005684760228533784,
+       "separated": true,
+       "estimator": "episode-cluster bootstrap of the pooled-pair-count ratio difference, B 2000, seed 0 (beside)"
+      },
+      "mean_ade6_m": {
+       "arm": 2.9156448055650306,
+       "P10": 3.443279013457244,
+       "HACC": 2.709635998904177
+      },
+      "beside": {
+       "L2_joint_own_speed_mask_arm_minus_P10": {
+        "delta": 0.0013,
+        "lo": -0.0009,
+        "hi": 0.0037,
+        "separated": false,
+        "n_windows": 2090,
+        "n_episodes": 135
+       },
+       "joint_mask_fraction_of_fast_pairs_kept": 0.9817978516699051,
+       "launch_subset": {
+        "n_windows": 327,
+        "n_episodes": 49,
+        "definition": "v0 (ego speed at t0) < 6 m/s and the GT chord speed over the last 0.2 s of the 6 s horizon >= v0 + 1 m/s",
+        "ade6_m_arm_minus_P10": {
+         "delta": 0.0507,
+         "lo": -0.2904,
+         "hi": 0.3422,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "ade6_m_arm_minus_HACC": {
+         "delta": 0.2861,
+         "lo": 0.119,
+         "hi": 0.4523,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_P10": {
+         "delta": 0.0122,
+         "lo": -0.0069,
+         "hi": 0.0325,
+         "separated": false,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_HACC": {
+         "delta": -0.0482,
+         "lo": -0.0903,
+         "hi": -0.0124,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "accel_mae_mps2_arm_minus_P10": {
+         "delta": 0.9781,
+         "lo": -0.0453,
+         "hi": 1.9366,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "accel_mae_mps2_arm_minus_HACC": {
+         "delta": 1.6455,
+         "lo": 0.7054,
+         "hi": 2.6364,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_P10": {
+         "delta": -0.1304,
+         "lo": -0.2775,
+         "hi": -0.0006,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_HACC": {
+         "delta": 0.0118,
+         "lo": -0.1511,
+         "hi": 0.1636,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        }
+       },
+       "families_not_computed": {
+        "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)",
+        "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"
+       },
+       "m30_arm_minus_P10": {
+        "ade2_m": {
+         "delta": -0.0076,
+         "lo": -0.0142,
+         "hi": 0.002,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "ade6_m": {
+         "delta": -0.4501,
+         "lo": -0.5567,
+         "hi": -0.3487,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "speed_mae_mps": {
+         "delta": -0.079,
+         "lo": -0.1132,
+         "hi": -0.0434,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "along_mae_m": {
+         "delta": -0.182,
+         "lo": -0.2372,
+         "hi": -0.1223,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "accel_mae_mps2": {
+         "delta": 0.0789,
+         "lo": 0.0511,
+         "hi": 0.1211,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "heading_mae_deg": {
+         "delta": -1.5762,
+         "lo": -1.9673,
+         "hi": -1.2107,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -0.6203,
+         "lo": -0.839,
+         "hi": -0.4211,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0034,
+         "lo": -0.0066,
+         "hi": -0.0005,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "cross_mae_m": {
+         "delta": -0.3774,
+         "lo": -0.4822,
+         "hi": -0.281,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "L1_lat_accel_mae_mps2": {
+         "delta": -0.0616,
+         "lo": -0.0795,
+         "hi": -0.0452,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "L2_curvature_mae_fast_1pm": {
+         "delta": 0.0014,
+         "lo": -0.0003,
+         "hi": 0.0038,
+         "separated": false,
+         "n_windows": 2106,
+         "n_episodes": 135
+        },
+        "L3_yaw_rate_mae_fast_degps": {
+         "delta": -0.2729,
+         "lo": -0.414,
+         "hi": -0.1459,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        }
+       }
+      },
+      "R2_reader_vs_tool_analyze_ade6_delta": {
+       "reader": -0.5276,
+       "tool": -0.5276,
+       "abs_diff": 0.0
+      }
+     },
+     "MC-F": {
+      "rows_arm_minus_P10": {
+       "ade2_m": {
+        "delta": -0.0017,
+        "lo": -0.0111,
+        "hi": 0.0128,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": -0.7029,
+        "lo": -0.8356,
+        "hi": -0.581,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": -0.3404,
+        "lo": -0.4168,
+        "hi": -0.2706,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.4826,
+        "lo": -0.5748,
+        "hi": -0.3973,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.1712,
+        "lo": -0.012,
+        "hi": 0.3421,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -0.973,
+        "lo": -1.5809,
+        "hi": -0.3963,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 1.0248,
+        "lo": -0.5715,
+        "hi": 2.6264,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.0101,
+        "lo": 0.0046,
+        "hi": 0.0163,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.4301,
+        "lo": -0.5673,
+        "hi": -0.2996,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.2846,
+        "lo": -0.8861,
+        "hi": 0.2657,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0045,
+        "lo": 0.001,
+        "hi": 0.0085,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 0.0548,
+        "lo": -1.1798,
+        "hi": 1.2815,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "rows_arm_minus_HACC": {
+       "ade2_m": {
+        "delta": 0.009,
+        "lo": 0.0037,
+        "hi": 0.0183,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": 0.0307,
+        "lo": -0.0165,
+        "hi": 0.079,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": 0.0473,
+        "lo": 0.0029,
+        "hi": 0.0974,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": 0.0259,
+        "lo": -0.016,
+        "hi": 0.0684,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.373,
+        "lo": 0.2585,
+        "hi": 0.4991,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": -0.0479,
+        "lo": -0.1701,
+        "hi": 0.0785,
+        "separated": false,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": -0.1669,
+        "lo": -0.85,
+        "hi": 0.4935,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": -0.0029,
+        "lo": -0.0071,
+        "hi": 0.0006,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": 0.0043,
+        "lo": -0.0284,
+        "hi": 0.0396,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.1696,
+        "lo": -0.4961,
+        "hi": 0.1305,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": -0.0036,
+        "lo": -0.0092,
+        "hi": 0.001,
+        "separated": false,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": -0.9539,
+        "lo": -1.9041,
+        "hi": -0.1447,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": false,
+        "family": "LATERAL"
+       }
+      },
+      "M1": 0.0193203064853173,
+      "M2": 0.0028996095777390415,
+      "M1_P10": 0.013674524324522491,
+      "n_arm_crawl_pairs": 1054,
+      "M1_minus_HACC_beside": {
+       "delta": -0.008340360010265061,
+       "lo": -0.014402409947238976,
+       "hi": -0.0032499441794393786,
+       "separated": true,
+       "estimator": "episode-cluster bootstrap of the pooled-pair-count ratio difference, B 2000, seed 0 (beside)"
+      },
+      "mean_ade6_m": {
+       "arm": 2.740377107484759,
+       "P10": 3.443279013457244,
+       "HACC": 2.709635998904177
+      },
+      "beside": {
+       "L2_joint_own_speed_mask_arm_minus_P10": {
+        "delta": 0.0024,
+        "lo": 0.0005,
+        "hi": 0.0048,
+        "separated": true,
+        "n_windows": 2086,
+        "n_episodes": 135
+       },
+       "joint_mask_fraction_of_fast_pairs_kept": 0.9774718627415039,
+       "launch_subset": {
+        "n_windows": 327,
+        "n_episodes": 49,
+        "definition": "v0 (ego speed at t0) < 6 m/s and the GT chord speed over the last 0.2 s of the 6 s horizon >= v0 + 1 m/s",
+        "ade6_m_arm_minus_P10": {
+         "delta": -0.2066,
+         "lo": -0.5449,
+         "hi": 0.0791,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "ade6_m_arm_minus_HACC": {
+         "delta": 0.0288,
+         "lo": -0.0679,
+         "hi": 0.1192,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_P10": {
+         "delta": 0.0338,
+         "lo": 0.0079,
+         "hi": 0.0632,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_HACC": {
+         "delta": -0.0266,
+         "lo": -0.0701,
+         "hi": 0.0109,
+         "separated": false,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "accel_mae_mps2_arm_minus_P10": {
+         "delta": -0.5868,
+         "lo": -1.4713,
+         "hi": 0.1853,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "accel_mae_mps2_arm_minus_HACC": {
+         "delta": 0.0805,
+         "lo": -0.398,
+         "hi": 0.5621,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_P10": {
+         "delta": -0.1838,
+         "lo": -0.3788,
+         "hi": -0.0054,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_HACC": {
+         "delta": -0.0417,
+         "lo": -0.151,
+         "hi": 0.0579,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        }
+       },
+       "families_not_computed": {
+        "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)",
+        "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"
+       },
+       "m30_arm_minus_P10": {
+        "ade2_m": {
+         "delta": -0.0017,
+         "lo": -0.0111,
+         "hi": 0.0128,
+         "separated": false,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "ade6_m": {
+         "delta": -0.4482,
+         "lo": -0.5559,
+         "hi": -0.3473,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "speed_mae_mps": {
+         "delta": -0.0759,
+         "lo": -0.1104,
+         "hi": -0.0392,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "along_mae_m": {
+         "delta": -0.1799,
+         "lo": -0.2358,
+         "hi": -0.1186,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "accel_mae_mps2": {
+         "delta": 0.0322,
+         "lo": 0.0087,
+         "hi": 0.0669,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "heading_mae_deg": {
+         "delta": -1.5829,
+         "lo": -1.9765,
+         "hi": -1.216,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -0.7283,
+         "lo": -0.9465,
+         "hi": -0.5382,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0039,
+         "lo": -0.0071,
+         "hi": -0.0012,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "cross_mae_m": {
+         "delta": -0.3774,
+         "lo": -0.4822,
+         "hi": -0.281,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "L1_lat_accel_mae_mps2": {
+         "delta": -0.0695,
+         "lo": -0.0883,
+         "hi": -0.0529,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "L2_curvature_mae_fast_1pm": {
+         "delta": 0.0013,
+         "lo": -0.0004,
+         "hi": 0.0036,
+         "separated": false,
+         "n_windows": 2106,
+         "n_episodes": 135
+        },
+        "L3_yaw_rate_mae_fast_degps": {
+         "delta": -0.3229,
+         "lo": -0.4608,
+         "hi": -0.1996,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        }
+       }
+      },
+      "R2_reader_vs_tool_analyze_ade6_delta": {
+       "reader": -0.7029,
+       "tool": -0.7029,
+       "abs_diff": 0.0
+      }
+     },
+     "STEEP": {
+      "rows_arm_minus_P10": {
+       "ade2_m": {
+        "delta": -0.0107,
+        "lo": -0.0158,
+        "hi": -0.0047,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": -0.6636,
+        "lo": -0.851,
+        "hi": -0.491,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": -0.3375,
+        "lo": -0.5077,
+        "hi": -0.1905,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": -0.3821,
+        "lo": -0.5589,
+        "hi": -0.2207,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": -0.007,
+        "lo": -0.3692,
+        "hi": 0.3103,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": 0.0558,
+        "lo": -0.7,
+        "hi": 0.8566,
+        "separated": false,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 7.2725,
+        "lo": 3.2535,
+        "hi": 11.7898,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.0829,
+        "lo": 0.0532,
+        "hi": 0.1151,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.4926,
+        "lo": -0.6207,
+        "hi": -0.3802,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.8517,
+        "lo": -2.0526,
+        "hi": 0.1812,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0573,
+        "lo": 0.0315,
+        "hi": 0.0888,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 7.571,
+        "lo": 3.9829,
+        "hi": 11.8875,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       }
+      },
+      "rows_arm_minus_HACC": {
+       "ade2_m": {
+        "delta": -0.0,
+        "lo": -0.0002,
+        "hi": 0.0001,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "ade6_m": {
+        "delta": 0.07,
+        "lo": -0.0108,
+        "hi": 0.1473,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "ADE"
+       },
+       "speed_mae_mps": {
+        "delta": 0.0502,
+        "lo": -0.0653,
+        "hi": 0.1549,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "along_mae_m": {
+        "delta": 0.1264,
+        "lo": 0.0434,
+        "hi": 0.2047,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LONGITUDINAL"
+       },
+       "accel_mae_mps2": {
+        "delta": 0.1948,
+        "lo": -0.094,
+        "hi": 0.4424,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LONGITUDINAL"
+       },
+       "heading_mae_deg": {
+        "delta": 0.981,
+        "lo": 0.4566,
+        "hi": 1.5529,
+        "separated": true,
+        "n_windows": 2373,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "yaw_rate_mae_degps": {
+        "delta": 6.0808,
+        "lo": 2.2074,
+        "hi": 10.4126,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "curvature_mae_1pm": {
+        "delta": 0.0699,
+        "lo": 0.0459,
+        "hi": 0.0963,
+        "separated": true,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "cross_mae_m": {
+        "delta": -0.0582,
+        "lo": -0.0974,
+        "hi": -0.0222,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L1_lat_accel_mae_mps2": {
+        "delta": -0.7367,
+        "lo": -1.8025,
+        "hi": 0.1769,
+        "separated": false,
+        "n_windows": 2366,
+        "n_episodes": 141,
+        "separated_worse": false,
+        "family": "LATERAL"
+       },
+       "L2_curvature_mae_fast_1pm": {
+        "delta": 0.0491,
+        "lo": 0.0272,
+        "hi": 0.0776,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       },
+       "L3_yaw_rate_mae_fast_degps": {
+        "delta": 6.5623,
+        "lo": 3.5831,
+        "hi": 10.1599,
+        "separated": true,
+        "n_windows": 2106,
+        "n_episodes": 135,
+        "separated_worse": true,
+        "family": "LATERAL"
+       }
+      },
+      "M1": 0.050412919801798496,
+      "M2": 0.05348496536167187,
+      "M1_P10": 0.013674524324522491,
+      "n_arm_crawl_pairs": 2747,
+      "M1_minus_HACC_beside": {
+       "delta": 0.022752253306216136,
+       "lo": 0.015491916798286997,
+       "hi": 0.030829670547995926,
+       "separated": true,
+       "estimator": "episode-cluster bootstrap of the pooled-pair-count ratio difference, B 2000, seed 0 (beside)"
+      },
+      "mean_ade6_m": {
+       "arm": 2.7796533269858195,
+       "P10": 3.443279013457244,
+       "HACC": 2.709635998904177
+      },
+      "beside": {
+       "L2_joint_own_speed_mask_arm_minus_P10": {
+        "delta": 0.0075,
+        "lo": 0.0034,
+        "hi": 0.0125,
+        "separated": true,
+        "n_windows": 2061,
+        "n_episodes": 135
+       },
+       "joint_mask_fraction_of_fast_pairs_kept": 0.9448889704532942,
+       "launch_subset": {
+        "n_windows": 327,
+        "n_episodes": 49,
+        "definition": "v0 (ego speed at t0) < 6 m/s and the GT chord speed over the last 0.2 s of the 6 s horizon >= v0 + 1 m/s",
+        "ade6_m_arm_minus_P10": {
+         "delta": -0.0635,
+         "lo": -0.4556,
+         "hi": 0.292,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "ade6_m_arm_minus_HACC": {
+         "delta": 0.1719,
+         "lo": -0.0295,
+         "hi": 0.3691,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_P10": {
+         "delta": 0.3191,
+         "lo": 0.1432,
+         "hi": 0.4972,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "L2_curvature_mae_fast_1pm_arm_minus_HACC": {
+         "delta": 0.2588,
+         "lo": 0.1137,
+         "hi": 0.4074,
+         "separated": true,
+         "n_windows": 255,
+         "n_episodes": 45
+        },
+        "accel_mae_mps2_arm_minus_P10": {
+         "delta": -1.8707,
+         "lo": -3.1225,
+         "hi": -0.6118,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "accel_mae_mps2_arm_minus_HACC": {
+         "delta": -1.2034,
+         "lo": -2.29,
+         "hi": -0.1541,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_P10": {
+         "delta": 0.1738,
+         "lo": -0.1703,
+         "hi": 0.5346,
+         "separated": false,
+         "n_windows": 327,
+         "n_episodes": 49
+        },
+        "along_mae_m_arm_minus_HACC": {
+         "delta": 0.3159,
+         "lo": 0.1364,
+         "hi": 0.5034,
+         "separated": true,
+         "n_windows": 327,
+         "n_episodes": 49
+        }
+       },
+       "families_not_computed": {
+        "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)",
+        "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"
+       },
+       "m30_arm_minus_P10": {
+        "ade2_m": {
+         "delta": -0.0107,
+         "lo": -0.0158,
+         "hi": -0.0047,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "ade6_m": {
+         "delta": -0.451,
+         "lo": -0.5579,
+         "hi": -0.3496,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "speed_mae_mps": {
+         "delta": -0.0748,
+         "lo": -0.1105,
+         "hi": -0.0363,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "along_mae_m": {
+         "delta": -0.1831,
+         "lo": -0.2387,
+         "hi": -0.1233,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "accel_mae_mps2": {
+         "delta": 0.2071,
+         "lo": 0.161,
+         "hi": 0.2769,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "heading_mae_deg": {
+         "delta": -1.5602,
+         "lo": -1.951,
+         "hi": -1.1968,
+         "separated": true,
+         "n_windows": 2373,
+         "n_episodes": 141
+        },
+        "yaw_rate_mae_degps": {
+         "delta": -0.4882,
+         "lo": -0.7114,
+         "hi": -0.2795,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "curvature_mae_1pm": {
+         "delta": -0.0026,
+         "lo": -0.0059,
+         "hi": 0.0007,
+         "separated": false,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "cross_mae_m": {
+         "delta": -0.3774,
+         "lo": -0.4822,
+         "hi": -0.281,
+         "separated": true,
+         "n_windows": 2399,
+         "n_episodes": 141
+        },
+        "L1_lat_accel_mae_mps2": {
+         "delta": -0.051,
+         "lo": -0.0688,
+         "hi": -0.0347,
+         "separated": true,
+         "n_windows": 2366,
+         "n_episodes": 141
+        },
+        "L2_curvature_mae_fast_1pm": {
+         "delta": 0.0016,
+         "lo": -0.0001,
+         "hi": 0.004,
+         "separated": false,
+         "n_windows": 2106,
+         "n_episodes": 135
+        },
+        "L3_yaw_rate_mae_fast_degps": {
+         "delta": -0.2132,
+         "lo": -0.3538,
+         "hi": -0.0865,
+         "separated": true,
+         "n_windows": 2106,
+         "n_episodes": 135
+        }
+       }
+      },
+      "R2_reader_vs_tool_analyze_ade6_delta": {
+       "reader": -0.6636,
+       "tool": -0.6636,
+       "abs_diff": 0.0
+      }
+     }
+    }
+   }
+  },
+  "HACC_reference": {
+   "s0": {
+    "M1": 0.05356095056476456,
+    "M2": 0.0202463015969859,
+    "M1_P10": 0.013674524324522491,
+    "joint_mask_L2_HACC_minus_P10": {
+     "delta": 0.0018,
+     "lo": 0.0002,
+     "hi": 0.0036,
+     "separated": true,
+     "n_windows": 2050,
+     "n_episodes": 135
+    },
+    "joint_mask_matches_diagnosis_4dp": true
+   },
+   "s1": {
+    "M1": 0.02766066649558236,
+    "M2": 0.007205373913188921,
+    "M1_P10": 0.013674524324522491,
+    "joint_mask_L2_HACC_minus_P10": {
+     "delta": 0.0015,
+     "lo": -0.0001,
+     "hi": 0.0033,
+     "separated": false,
+     "n_windows": 2068,
+     "n_episodes": 135
+    },
+    "joint_mask_matches_diagnosis_4dp": true
+   }
+  }
+ },
+ "outcome_inputs": {
+  "decisive_arm": "MC-H",
+  "L2_MCH_minus_P10_not_separated_worse": {
+   "0": false,
+   "1": true
+  },
+  "MCH_minus_HACC_ADE6_upper_bound_m": {
+   "0": 0.2353,
+   "1": 0.2873
+  },
+  "KEEP_by_F_half_reading": {
+   "F_half_0.06035": {
+    "0": false,
+    "1": false
+   },
+   "F_half_printed_0.0604": {
+    "0": false,
+    "1": false
+   },
+   "F_half_hlat_0.06037": {
+    "0": false,
+    "1": false
+   }
+  },
+  "M1": {
+   "HACC": {
+    "0": 0.05356095056476456,
+    "1": 0.02766066649558236
+   },
+   "MC-H": {
+    "0": 0.018403783407266196,
+    "1": 0.015067639403160171
+   },
+   "STEEP": {
+    "0": 0.08501905059912754,
+    "1": 0.050412919801798496
+   },
+   "MC-F": {
+    "0": 0.02854052865051142,
+    "1": 0.0193203064853173
+   }
+  },
+  "M1_MCH_lt_HACC": {
+   "0": true,
+   "1": true
+  },
+  "M1_STEEP_gt_HACC": {
+   "0": true,
+   "1": true
+  },
+  "F_half_used": 0.06035
+ },
+ "OUTCOME": {
+  "outcome": "MECHANISM-NOT-ENOUGH",
+  "matching_rows_in_table_order": [
+   "MECHANISM-NOT-ENOUGH"
+  ],
+  "first_match_reported": true,
+  "ambiguity": null,
+  "committed_next": "the box-2 TRAINING lever (O-RECOVER, PREREG section 7)",
+  "KEEP_bar_sensitivity_rows_matched_if_bar_were": {
+   "F_half_0.06035": [],
+   "F_half_printed_0.0604": [],
+   "F_half_hlat_0.06037": []
+  },
+  "note": "MC-F and m = 30 are beside: a MC-F win does not promote MC-F without its own read."
+ }
+}

@@ -1,0 +1,129 @@
+{
+ "self": {
+  "outcome": "ROLLHIST-NO-EFFECT",
+  "P1_families": {
+   "LONGITUDINAL": "NOT-SEPARATED",
+   "LATERAL": "NOT-SEPARATED",
+   "TACTICAL": "NOT-SEPARATED",
+   "STRATEGIC": "NOT-SEPARATED"
+  },
+  "q3_controls": {
+   "q5_same_windows": {
+    "PASS": true,
+    "n_dumps": 24
+   },
+   "q1_window_counts": {
+    "PASS": true,
+    "card": {
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_crit": 1305,
+     "n_bulk": 1094
+    },
+    "read": {
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_crit": 1305,
+     "n_bulk": 1094
+    }
+   },
+   "q2_self_is_zero": {
+    "PASS": true,
+    "max_abs_D": 0.0,
+    "arm": "I10RH_R0C10XHb20"
+   },
+   "q3_swap_is_minus": {
+    "PASS": true,
+    "max_abs_dev": 0.0
+   },
+   "q4_planted_regression": {
+    "PASS": true,
+    "planted_mps": 0.05,
+    "D_read": 0.049999999999999954,
+    "verdict": "WORSE",
+    "name": "COST-LONGITUDINAL"
+   },
+   "ALL_PASS": true
+  },
+  "strat_controls_all_pass": true,
+  "K-SELF": {
+   "cells_checked": 273,
+   "max_abs_D": 0.0,
+   "pass": true
+  }
+ },
+ "plant": {
+  "outcome": "ROLLHIST-HARMS",
+  "P1_families": {
+   "LONGITUDINAL": "MIXED",
+   "LATERAL": "MIXED",
+   "TACTICAL": "WORSE",
+   "STRATEGIC": "NOT-SEPARATED"
+  },
+  "q3_controls": {
+   "q5_same_windows": {
+    "PASS": true,
+    "n_dumps": 24
+   },
+   "q1_window_counts": {
+    "PASS": true,
+    "card": {
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_crit": 1305,
+     "n_bulk": 1094
+    },
+    "read": {
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_crit": 1305,
+     "n_bulk": 1094
+    }
+   },
+   "q2_self_is_zero": {
+    "PASS": true,
+    "max_abs_D": 0.0,
+    "arm": "I10RH_R0C10XHb20"
+   },
+   "q3_swap_is_minus": {
+    "PASS": true,
+    "max_abs_dev": 0.0
+   },
+   "q4_planted_regression": {
+    "PASS": true,
+    "planted_mps": 0.05,
+    "D_read": 0.049999999999999954,
+    "verdict": "WORSE",
+    "name": "COST-LONGITUDINAL"
+   },
+   "ALL_PASS": true
+  },
+  "strat_controls_all_pass": true,
+  "K-PLANT": {
+   "rotation_deg": 3.0,
+   "must_stay_zero": {
+    "LONGITUDINAL:speed_mae_mps": 1.985350886053323e-17,
+    "LATERAL:yaw_rate_mae_degps": 4.821649657853489e-15,
+    "LATERAL:curvature_mae_1pm": 3.7196333970884825e-17
+   },
+   "must_move": {
+    "LATERAL:heading_mae_deg": 1.4882784024427491,
+    "LATERAL:cross_mae_m": 1.2424832481117027,
+    "TACTICAL:ade_tac_m": 1.052070613892966
+   },
+   "P1_family_verdicts": {
+    "LONGITUDINAL": "MIXED",
+    "LATERAL": "MIXED",
+    "TACTICAL": "WORSE",
+    "STRATEGIC": "NOT-SEPARATED"
+   },
+   "P4_must_move": {
+    "LATERAL:heading_mae_deg": 1.4882784024427491,
+    "LATERAL:cross_mae_m": 1.2424832481117027,
+    "TACTICAL:ade_tac_m": 1.052070613892966
+   },
+   "pass": true
+  }
+ },
+ "note": "real dump format, UE_s0.A (c-EXEC tier-of-record rollout, hard-linked 24 times) standing in for every arm; readers: frozen headway_read_r2.py, q3_read_r3.py, rh_strat.py (frozen ADD66 reader), rh_read.py"
+}

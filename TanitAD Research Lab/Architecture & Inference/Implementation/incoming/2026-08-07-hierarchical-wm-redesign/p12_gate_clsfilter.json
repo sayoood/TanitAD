@@ -1,0 +1,884 @@
+{
+ "_estimator_note": "headline numbers are pooled OUT-OF-FOLD R2 / accuracy over the eval grid; the DECISION-grade interval for any registry claim is the episode-cluster bootstrap over the 40 val episodes (taniteval/ci.py) \u2014 run it before publishing",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "collect_wall_s": 280.2,
+ "folds": {
+  "n_folds": 5,
+  "scheme_driving_targets": "episode-disjoint (greedy count-balanced, deterministic)",
+  "scheme_episode_identity": "within-episode temporal blocks (documented deviation \u2014 see p2.episode_identity.fold_scheme)"
+ },
+ "grid": {
+  "episodes": 40,
+  "n_episodes_on_grid": 40,
+  "n_grid_windows": 881,
+  "stride": 8
+ },
+ "lead_label_provenance": {
+  "census_per_k": {
+   "10": {
+    "labelled_no_lead": 557,
+    "lead": 266,
+    "no_label": 58
+   },
+   "15": {
+    "labelled_no_lead": 558,
+    "lead": 267,
+    "no_label": 56
+   },
+   "20": {
+    "labelled_no_lead": 562,
+    "lead": 262,
+    "no_label": 57
+   },
+   "5": {
+    "labelled_no_lead": 552,
+    "lead": 270,
+    "no_label": 59
+   }
+  },
+  "class_filter": {
+   "applied": "per-record (lookup_classes aligned rows)",
+   "vehicle_classes": [
+    "automobile",
+    "heavy_truck",
+    "bus",
+    "other_vehicle",
+    "trailer"
+   ]
+  },
+  "corridor": {
+   "gap_def": "cx - l/2 (lead_state_gate.lead_frame:239)",
+   "lat_max_m": 2.0,
+   "max_gap_m": 80.0
+  },
+  "path": "/workspace/data/p8_join/combined140.jsonl",
+  "source": "I1a/P8 join file (train_p8_occupancy.JoinFileReader)"
+ },
+ "p1": {
+  "gate": {
+   "PASS": true,
+   "n_computable": 3,
+   "per_target": {
+    "curvature": {
+     "cliff_drop_threshold": 0.25,
+     "cliff_ok": true,
+     "computable": true,
+     "gate_k": 10,
+     "n": 881,
+     "pass": true,
+     "r2_enc_at_gate_k": 0.5511977977500598,
+     "r2_pred_at_gate_k": 0.759467049529153,
+     "r2_pred_drops_per_step": [
+      0.083788,
+      -0.031713,
+      0.025004
+     ],
+     "reason": null,
+     "retention_ok": true,
+     "retention_ratio": 1.377848,
+     "retention_threshold": 0.85
+    },
+    "lead_gap": {
+     "cliff_drop_threshold": 0.25,
+     "computable": false,
+     "gate_k": 10,
+     "pass": null,
+     "reason": "R2(enc) <= 0 at the gate horizon \u2014 the encoded-latent probe itself failed; retention is undefined (fix the probe/target before gating the predictor)",
+     "retention_threshold": 0.85
+    },
+    "speed": {
+     "cliff_drop_threshold": 0.25,
+     "cliff_ok": true,
+     "computable": true,
+     "gate_k": 10,
+     "n": 881,
+     "pass": true,
+     "r2_enc_at_gate_k": 0.7441465284540926,
+     "r2_pred_at_gate_k": 0.9934902696471918,
+     "r2_pred_drops_per_step": [
+      0.00077,
+      0.003581,
+      0.008434
+     ],
+     "reason": null,
+     "retention_ok": true,
+     "retention_ratio": 1.335073,
+     "retention_threshold": 0.85
+    },
+    "yaw_rate": {
+     "cliff_drop_threshold": 0.25,
+     "cliff_ok": true,
+     "computable": true,
+     "gate_k": 10,
+     "n": 881,
+     "pass": true,
+     "r2_enc_at_gate_k": 0.7283399295455709,
+     "r2_pred_at_gate_k": 0.8648061216050226,
+     "r2_pred_drops_per_step": [
+      -0.005242,
+      0.054488,
+      0.013318
+     ],
+     "reason": null,
+     "retention_ok": true,
+     "retention_ratio": 1.187366,
+     "retention_threshold": 0.85
+    }
+   },
+   "rule": "per driving target: R2(z_hat, k=10) >= 0.85 x R2(z_enc, k=10); AND R2(z_hat) drop between consecutive evaluated horizons (k grid (5, 10, 15, 20)) < 0.25 (operationalisation of 'error grows smoothly, no cliff')"
+  },
+  "table": {
+   "curvature": {
+    "10": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      10.0,
+      10.0,
+      1.0,
+      0.1,
+      0.1
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.746345887901368,
+      -3.595665959122859,
+      -4.880215772925416,
+      0.6205324406878131,
+      0.4936614619936265
+     ],
+     "per_fold_r2_pred": [
+      0.8890133955092068,
+      -3.711073315391233,
+      -3.870033591131615,
+      0.8420215879532654,
+      0.7906137852042059
+     ],
+     "r2_enc": 0.5511977977500598,
+     "r2_pred": 0.759467049529153
+    },
+    "15": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      10.0,
+      10.0,
+      10.0,
+      1.0,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      1.0,
+      0.01,
+      1.0,
+      0.01,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.6812726290902533,
+      -4.468189152364065,
+      -2.629601988147699,
+      0.7161240250891061,
+      0.43027360619394517
+     ],
+     "per_fold_r2_pred": [
+      0.8970122727200203,
+      -2.8155175593704547,
+      -0.18854713795925027,
+      0.825982350477544,
+      0.7052724225089768
+     ],
+     "r2_enc": 0.5642402037125116,
+     "r2_pred": 0.7911804686012822
+    },
+    "20": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      10.0,
+      10.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.1,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.7185149943424205,
+      -3.4205922203231207,
+      -5.250250817756019,
+      0.6688607455248513,
+      0.4762220590962347
+     ],
+     "per_fold_r2_pred": [
+      0.8879993042517292,
+      -2.143501922557274,
+      -2.2618391062166734,
+      0.795857558448047,
+      0.7449511640361979
+     ],
+     "r2_enc": 0.5490247347878827,
+     "r2_pred": 0.7661765105215128
+    },
+    "5": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      10.0,
+      10.0,
+      10.0,
+      1.0,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.1,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.7331255785102763,
+      -2.8245025401723596,
+      -2.9804539604098887,
+      0.5277850637644912,
+      0.3525633680067968
+     ],
+     "per_fold_r2_pred": [
+      0.9319966028671687,
+      -2.211668824041232,
+      -0.8563177298476967,
+      0.8858687567823824,
+      0.8117351408671285
+     ],
+     "r2_enc": 0.5115132106561009,
+     "r2_pred": 0.8432549112296495
+    }
+   },
+   "lead_gap": {
+    "10": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 266,
+     "per_fold_r2_enc": [
+      -0.38595876968251575,
+      -0.37314758995247854,
+      -9.10801077933459,
+      0.4245448207651962,
+      -2.506321721453676
+     ],
+     "per_fold_r2_pred": [
+      0.46514802206989203,
+      -0.20669293724558147,
+      -7.964768739134479,
+      0.20664728574483404,
+      0.28760395719472476
+     ],
+     "r2_enc": -0.8777942358174335,
+     "r2_pred": 0.09230345003379425
+    },
+    "15": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 267,
+     "per_fold_r2_enc": [
+      0.4246637171636627,
+      -0.19845350744022472,
+      -6.965704693726593,
+      -1.0411989186176331,
+      -3.397405514858341
+     ],
+     "per_fold_r2_pred": [
+      0.5365377221229355,
+      -0.3778925971464622,
+      -35.54580971281944,
+      -0.09344430972772888,
+      -0.7196717744595857
+     ],
+     "r2_enc": -1.1028718614777056,
+     "r2_pred": -1.3552482296901536
+    },
+    "20": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 262,
+     "per_fold_r2_enc": [
+      0.09894426309293403,
+      -1.2716983884279562,
+      -118.16811543947514,
+      -0.32548337335758504,
+      -1.7460013210234249
+     ],
+     "per_fold_r2_pred": [
+      0.5226271751017443,
+      -0.22305577056602655,
+      -30.831848138057712,
+      -0.0884152537836127,
+      -1.4642785707857464
+     ],
+     "r2_enc": -2.9961726255778856,
+     "r2_pred": -0.7745409950205726
+    },
+    "5": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 270,
+     "per_fold_r2_enc": [
+      -0.5428633710379658,
+      -0.017596999866395402,
+      -6.026396732373812,
+      -0.22791394159859935,
+      -3.3548464521926213
+     ],
+     "per_fold_r2_pred": [
+      0.5211686876231407,
+      0.27296448056846023,
+      -15.647218890025933,
+      -0.20032135766224357,
+      -0.792026764861965
+     ],
+     "r2_enc": -1.237336185010672,
+     "r2_pred": -0.6101745100738891
+    }
+   },
+   "speed": {
+    "10": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      10.0,
+      10.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.8058076900958959,
+      0.8461532077843364,
+      0.14924645347410492,
+      0.7162591423830797,
+      0.7393129648075909
+     ],
+     "per_fold_r2_pred": [
+      0.9897521604040728,
+      0.9960144359518296,
+      0.9836728618066773,
+      0.9941342858886206,
+      0.9933536668538735
+     ],
+     "r2_enc": 0.7441465284540926,
+     "r2_pred": 0.9934902696471918
+    },
+    "15": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      1.0,
+      1.0,
+      1.0,
+      10.0,
+      10.0
+     ],
+     "lambda_by_fold_pred": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.6612026057648817,
+      0.7732748298524817,
+      0.2235323944105373,
+      0.6545201188258161,
+      0.7914083706853927
+     ],
+     "per_fold_r2_pred": [
+      0.9837240264651639,
+      0.9928051068946591,
+      0.9443449782896715,
+      0.9918563553896974,
+      0.9957278929820865
+     ],
+     "r2_enc": 0.7184181888910781,
+     "r2_pred": 0.9899089897347991
+    },
+    "20": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      1.0,
+      1.0,
+      1.0,
+      10.0,
+      10.0
+     ],
+     "lambda_by_fold_pred": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.6462418674612346,
+      0.8068588447167471,
+      0.24654574619338288,
+      0.7459493456811839,
+      0.8395371574702422
+     ],
+     "per_fold_r2_pred": [
+      0.9729893075803447,
+      0.9844860367920177,
+      0.8866012590268194,
+      0.9862838921264464,
+      0.9934447596971209
+     ],
+     "r2_enc": 0.7619861318744315,
+     "r2_pred": 0.9814751658023003
+    },
+    "5": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      1.0,
+      1.0,
+      1.0,
+      10.0,
+      10.0
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.5949369728079956,
+      0.7673076757300763,
+      -0.0574653927503157,
+      0.7486176338963357,
+      0.823663851201089
+     ],
+     "per_fold_r2_pred": [
+      0.9947833644207008,
+      0.995127166876584,
+      0.961775094280448,
+      0.9955456219069094,
+      0.9974851071308788
+     ],
+     "r2_enc": 0.7262818643320057,
+     "r2_pred": 0.9942604745214895
+    }
+   },
+   "yaw_rate": {
+    "10": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      1.0,
+      0.01,
+      0.01,
+      0.1,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.906026585269063,
+      0.3987551431433676,
+      0.014720664379641257,
+      0.8227953651383777,
+      0.8232023579669604
+     ],
+     "per_fold_r2_pred": [
+      0.9199375476368105,
+      0.7083102477045402,
+      0.6406496540690505,
+      0.9180105228812153,
+      0.8686250802626975
+     ],
+     "r2_enc": 0.7283399295455709,
+     "r2_pred": 0.8648061216050226
+    },
+    "15": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      0.1,
+      0.01,
+      0.01,
+      0.1,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      1.0,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.7948748932951688,
+      0.23318974737184972,
+      0.37364933464235517,
+      0.8449520877475352,
+      0.9012023190070859
+     ],
+     "per_fold_r2_pred": [
+      0.882768631345932,
+      0.6958293389092647,
+      0.4332627584132015,
+      0.8877597364361107,
+      0.8148534372288767
+     ],
+     "r2_enc": 0.7592607646307215,
+     "r2_pred": 0.8103182683097945
+    },
+    "20": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      0.1,
+      0.01,
+      0.01,
+      1.0,
+      0.1
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.9016200804109338,
+      0.555141821375833,
+      0.33822452227947,
+      0.8293334182777089,
+      0.8769383314629566
+     ],
+     "per_fold_r2_pred": [
+      0.8365877351178187,
+      0.8008315521092114,
+      0.4064257968200664,
+      0.8330662494884163,
+      0.860546038940768
+     ],
+     "r2_enc": 0.7914713829019016,
+     "r2_pred": 0.7970005148983643
+    },
+    "5": {
+     "computable": true,
+     "lambda_by_fold_enc": [
+      1.0,
+      0.01,
+      10.0,
+      1.0,
+      1.0
+     ],
+     "lambda_by_fold_pred": [
+      0.01,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+     ],
+     "n": 881,
+     "per_fold_r2_enc": [
+      0.9165243861167669,
+      0.49839261849458016,
+      0.4616084708417053,
+      0.8345037615966435,
+      0.8579162104267174
+     ],
+     "per_fold_r2_pred": [
+      0.9323476700915491,
+      0.86842348329213,
+      0.45366969216610376,
+      0.9153380606320767,
+      0.888853840835815
+     ],
+     "r2_enc": 0.7991058952628601,
+     "r2_pred": 0.8595636443567694
+    }
+   }
+  }
+ },
+ "p2": {
+  "episode_identity": {
+   "accuracy_enc": {
+    "10": 0.7491486946651532,
+    "15": 0.7661748013620885,
+    "20": 0.7639046538024972,
+    "5": 0.7945516458569807
+   },
+   "accuracy_pred": {
+    "10": 0.6765039727582293,
+    "15": 0.7116912599318955,
+    "20": 0.7003405221339387,
+    "5": 0.8263337116912599
+   },
+   "chance": 0.025,
+   "detail": {
+    "enc": {
+     "10": {
+      "accuracy": 0.7491486946651532,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.605,
+       0.76,
+       0.8695652173913043,
+       0.7875,
+       0.75625
+      ]
+     },
+     "15": {
+      "accuracy": 0.7661748013620885,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.705,
+       0.83,
+       0.7701863354037267,
+       0.825,
+       0.7
+      ]
+     },
+     "20": {
+      "accuracy": 0.7639046538024972,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.685,
+       0.805,
+       0.8571428571428571,
+       0.775,
+       0.70625
+      ]
+     },
+     "5": {
+      "accuracy": 0.7945516458569807,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.72,
+       0.875,
+       0.8012422360248447,
+       0.8375,
+       0.7375
+      ]
+     }
+    },
+    "pred": {
+     "10": {
+      "accuracy": 0.6765039727582293,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.705,
+       0.845,
+       0.7639751552795031,
+       0.39375,
+       0.625
+      ]
+     },
+     "15": {
+      "accuracy": 0.7116912599318955,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.51,
+       0.745,
+       0.8633540372670807,
+       0.8,
+       0.68125
+      ]
+     },
+     "20": {
+      "accuracy": 0.7003405221339387,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.74,
+       0.8,
+       0.8509316770186336,
+       0.7875,
+       0.2875
+      ]
+     },
+     "5": {
+      "accuracy": 0.8263337116912599,
+      "chance": 0.025,
+      "majority_rate": 0.026106696935300794,
+      "n": 881,
+      "n_classes": 40,
+      "per_fold_accuracy": [
+       0.755,
+       0.88,
+       0.8633540372670807,
+       0.9125,
+       0.725
+      ]
+     }
+    }
+   },
+   "fold_scheme": {
+    "deviation_from_episode_disjoint": true,
+    "reason": "episode-disjoint folds are DEGENERATE for the episode-identity target: a held-out episode is an unseen class, accuracy is 0 by construction and the decay gate becomes vacuous (0 < 0). All OTHER targets use episode-disjoint folds (the leakage rule).",
+    "scheme": "within-episode temporal blocks (5 contiguous runs per episode, block j -> fold j; consistent across k)"
+   },
+   "probe": "multinomial logistic (linear softmax, zero-init, full-batch, deterministic)"
+  },
+  "gate": {
+   "PASS": false,
+   "gate": {
+    "acc_k_hi": 0.7003405221339387,
+    "acc_k_lo": 0.8263337116912599,
+    "branch": "decay_test",
+    "chance": 0.025,
+    "computable": true,
+    "falls": true,
+    "k_hi": 20,
+    "k_lo": 5,
+    "pass": false,
+    "ratio": 0.847527,
+    "ratio_max": 0.5,
+    "reason": null,
+    "rule": "episode-ID OOF accuracy from z_hat at k=20 is BELOW its k=5 value AND < 0.5 x its k=5 value; chance = 1/n_episodes reported alongside; acc(k=5) <= 1.1 x chance passes trivially (branch 'at_chance_from_start')"
+   }
+  },
+  "static_appearance_brightness": {
+   "gated": false,
+   "note": "reported, not gated \u2014 the P2 gate is on episode identity",
+   "probe": "ridge (episode-disjoint folds) on mean WINDOW-START frame brightness \u2014 a pure appearance scalar (no extra labels needed)",
+   "r2_enc": {
+    "10": 0.42701095172497305,
+    "15": 0.3928255703719771,
+    "20": 0.44761601509981475,
+    "5": 0.46865267775927943
+   },
+   "r2_pred": {
+    "10": 0.5339713387343783,
+    "15": 0.5476674745588751,
+    "20": 0.37059442388937536,
+    "5": 0.4398756216051345
+   }
+  },
+  "weather_illumination": {
+   "available": false,
+   "reason": "weather/illumination CLASS labels arrive with the VLM labeling pipeline (VLM_STRATEGIC_LABELING.md); n/a today \u2014 reported per the discipline rule, not silently dropped"
+  }
+ },
+ "preregistration": {
+  "note": "gates committed in code before any number was produced; the P2 operationalisation above IS the pre-registration of the doc's 'drops with k'",
+  "p1": "per driving target: R2(z_hat, k=10) >= 0.85 x R2(z_enc, k=10); AND R2(z_hat) drop between consecutive evaluated horizons (k grid (5, 10, 15, 20)) < 0.25 (operationalisation of 'error grows smoothly, no cliff')",
+  "p2": "episode-ID OOF accuracy from z_hat at k=20 is BELOW its k=5 value AND < 0.5 x its k=5 value; chance = 1/n_episodes reported alongside; acc(k=5) <= 1.1 x chance passes trivially (branch 'at_chance_from_start')"
+ },
+ "probe": "P1+P2 latent-state decodability & nuisance non-retention (WM_PHYSICS_PROOF.md P1/P2)",
+ "probe_wall_s": 408.2,
+ "tier": "T0-diagnostic (representation probe \u2014 NEVER a driving-performance number; one row of the WM-physics battery, not a standalone driving eval; no ADE / four-family table is produced here by design)",
+ "trunk_frozen_proof": {
+  "identical": true,
+  "md5_after": "49bb5b81d4b8b59c8a5193c5b26fb60f",
+  "md5_before": "49bb5b81d4b8b59c8a5193c5b26fb60f"
+ },
+ "val_provenance": {
+  "geometry_binding": "{'label': '--v2-val-cache', 'checked_shape': True, 'checked_declaration': True, 'frame': {'height': 176, 'width': 624, 'f_ref': 305.5774907364391, 'projection': 'cylindrical'}, 'pixels_are_not_hashed': 'membership proves WHICH CLIPS, shape proves the RASTER SIZE on disk, the manifest proves what the BUILDER RECORDED. None of the three proves the resampler produced that field.', 'sliced_from': {'parent': {'height': 256, 'width': 640, 'f_ref': 305.5774907364391, 'projection': 'cylindrical'}, 'parent_tag': '256x640f305.5775cyl', 'sub_tag': '176x624f305.5775cyl', 'rows': [40, 216], 'cols': [8, 632], 'note': 'the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT.'}, 'cache_frame_shapes': [[176, 624]], 'registered_geometry': {'height': 256, 'width': 640, 'f_ref': 305.5774907364391, 'projection': 'cylindrical'}}",
+  "val_parity": "{'parity': True, 'checked': True, 'label': '--v2-val-cache', 'cache_dirs': ['/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl'], 'corpus_key': 'physicalai-val-0c5f7dac3b11-w120-256x640cyl', 'uid_kind': 'v2ep_clipid', 'split': 'val', 'uid_source': 'v2 re-cache of physicalai-val-0c5f7dac3b11 at a new geometry', 'skip_hash': 'f09e44db', 'episodes_expected': 600, 'episodes_loaded': 600, 'episode_uid_sha256': '0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e', 'episode_uid_sha256_expected': '0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e', 'derived_from': 'physicalai-val-0c5f7dac3b11', 'geometry': {'frame': {'height': 256, 'width': 640, 'f_ref': 305.5774907364391, 'projection': 'cylindrical'}, 'frame_tag': '256x640f305.5775cyl', 'projection_mode': 'cylindrical', 'codec': 'png', 'quality': None, 'selection_parquet': '/workspace/data/physicalai_phase0/r0/r0_selection.parquet', 'only_clips': '/workspace/wfov/paritysplit/parity_val_clips.txt', 'clips_requested': 600, 'geometry_check': {'requested_hfov_deg': 120.0, 'achieved_hfov_deg': 120.0, 'f_eff': 305.5775, 'observed_frac': 0.9360899822, 'frame_tag': '256x640f305.5775cyl', 'observed_frac_superseded': 1.0, 'observed_frac_basis': \"POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode\", 'observed_frac_note': 'CORRECTED 2026-07-27. The superseded value came from a ONE-CLIP pre-decode probe and is false of this corpus. See corrections[].'}, 'rig_observability': {'A': {'n': 170, 'mean': 0.9999701276, 'min': 0.9993652105, 'max': 1.0}, 'B': {'n': 430, 'mean': 0.910835041, 'min': 0.8947876096, 'max': 0.9190063477}, 'rig_assignment': 'native principal-point row cy, boundary 650.872 (MEASURED: largest gap 193.35 px over 3,000 clips; no clip ambiguous)', 'fully_observed_by_all': False}, 'subframe_observability': {'176x624': {'A': {'n': 170, 'mean': 1.0, 'min': 1.0, 'max': 1.0}, 'B': {'n': 430, 'mean': 1.0, 'min': 1.0, 'max': 1.0}}, '128x576': {'A': {'n': 170, 'mean': 1.0, 'min': 1.0, 'max': 1.0}, 'B': {'n': 430, 'mean': 1.0, 'min': 1.0, 'max': 1.0}}, '_': 'what a CENTRED sub-frame of this cache would deliver. It is a pure pixel slice \u2014 `v2_dataset.build_v2_providers(frame=\u2026)` / `v2_compressed.load_compressed(path, frame=\u2026)`. Nothing needs rebuilding to reach these numbers.'}, 'corrections': [{'date': '2026-07-27', 'field': 'geometry_check.observed_frac', 'old': 1.0, 'new': 0.9360899822, 'old_basis': 'ONE clip. `v2_compressed._assert_geometry_deliverable` probed clips[0] before the first decode; that clip was rig A, which this frame fully observes.', 'new_basis': 600, 'new_basis_note': \"POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode\", 'why': \"the front-wide camera is TWO RIGS whose principal points differ ~211 px vertically; a 120 deg x 45.456 deg request over-runs rig B's sensor, so the rectifier masks ~8.9 % of every rig-B frame. A single-clip probe cannot see that, and nothing hashes pixels \u2014 this declaration is what a consumer checks, and `register_v2_sibling.py` copies it verbatim into parity_manifest.json.\", 'changes_no_pixels': True, 'backup_of_original': '_geometry.json.orig-2026-07-27', 'instrument': 'restamp_geometry_manifest.py (rig-fix-wiring stream)', 'raw': 'restamp_2026-07-27.json'}]}, 'content_check': 'sha256(sorted clip ids) MATCHES the committed manifest entry'}"
+ }
+}

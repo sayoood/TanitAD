@@ -1,0 +1,82 @@
+[gtval] RAM gate passed: 3 consecutive samples >= 5.5 GB (last [8.08, 7.47, 7.16]; waited 60 s)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:\refcv6_eval_kit\data\refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[gtval] trainer C:\Users\Admin\ev6_82c2331\stack\scripts\refc_v3_train.py; window 8; rig camera bank built
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 23772/23772 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[gtval] selection: median 2.65 targets/labelled window over 139 clips; extra 22d47ae7e052 (2.65), 59d98b34ae8b (2.75) [11.9 s]
+[v2] D:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 0 / left 0 / right 5, missing 0 (of 5 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] max_speed_input_v6 (4-way one-hot): 147/147 sidecar rows carry a ceiling, 855/855 windows fed (100.0 %), 1 clips ABOVE the 120 km/h top step (clamped, and on those the fed ceiling is one the ego demonstrably exceeded)
+[v3] agent join: 5/5 episodes (stable-63bit), 855/855 windows labelled (100.0 %), 72687 prefilter target boxes, pad 397
+[clip 1/5] 0191487845ef windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.348 m, fwd 2.003 m, pitch-down +1.70° (MEASURED per-clip)
+[gtval] still D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\stills\still_0191487845ef_w064.png
+[clip 2/5] 9f8bedcfb9de windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.319 m, fwd 2.029 m, pitch-down +0.69° (MEASURED per-clip)
+[gtval] still D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\stills\still_9f8bedcfb9de_w104.png
+[clip 3/5] 34765c024267 windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.606 m, fwd 2.129 m, pitch-down -0.17° (MEASURED per-clip)
+[gtval] still D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\stills\still_34765c024267_w108.png
+[clip 4/5] 22d47ae7e052 windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.296 m, fwd 1.815 m, pitch-down +0.41° (MEASURED per-clip)
+[gtval] still D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\stills\still_22d47ae7e052_w086.png
+[gtval] STILLS_READY ["D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_0191487845ef_w064.png", "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_9f8bedcfb9de_w104.png", "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_34765c024267_w108.png", "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_22d47ae7e052_w086.png"]
+[clip 1/5] 0191487845ef windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.348 m, fwd 2.003 m, pitch-down +1.70° (MEASURED per-clip)
+  w025/171 gt 144 targets 75 (28 s, RAM 7.4 GB)
+  w050/171 gt 150 targets 76 (35 s, RAM 7.4 GB)
+  w075/171 gt 180 targets 83 (42 s, RAM 7.4 GB)
+  w100/171 gt 219 targets 101 (50 s, RAM 7.4 GB)
+  w125/171 gt 288 targets 85 (58 s, RAM 7.2 GB)
+  w150/171 gt 363 targets 66 (67 s, RAM 7.1 GB)
+[clip 2/5] 9f8bedcfb9de windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.319 m, fwd 2.029 m, pitch-down +0.69° (MEASURED per-clip)
+  w025/171 gt 95 targets 24 (77 s, RAM 7.3 GB)
+  w050/171 gt 90 targets 26 (82 s, RAM 7.2 GB)
+  w075/171 gt 73 targets 27 (86 s, RAM 7.1 GB)
+  w100/171 gt 79 targets 30 (89 s, RAM 7.2 GB)
+  w125/171 gt 72 targets 26 (93 s, RAM 7.0 GB)
+  w150/171 gt 93 targets 21 (97 s, RAM 7.2 GB)
+[clip 3/5] 34765c024267 windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.606 m, fwd 2.129 m, pitch-down -0.17° (MEASURED per-clip)
+  w025/171 gt 53 targets 21 (105 s, RAM 7.0 GB)
+  w050/171 gt 85 targets 21 (109 s, RAM 6.8 GB)
+  w075/171 gt 107 targets 9 (113 s, RAM 7.1 GB)
+  w100/171 gt 95 targets 25 (117 s, RAM 7.1 GB)
+  w125/171 gt 67 targets 25 (120 s, RAM 7.0 GB)
+  w150/171 gt 73 targets 26 (124 s, RAM 6.7 GB)
+[clip 4/5] 22d47ae7e052 windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.296 m, fwd 1.815 m, pitch-down +0.41° (MEASURED per-clip)
+  w025/171 gt 17 targets 1 (130 s, RAM 6.6 GB)
+  w050/171 gt 15 targets 2 (133 s, RAM 6.6 GB)
+  w075/171 gt 28 targets 5 (135 s, RAM 6.5 GB)
+  w100/171 gt 36 targets 8 (138 s, RAM 6.3 GB)
+  w125/171 gt 38 targets 1 (140 s, RAM 6.3 GB)
+  w150/171 gt 41 targets 0 (143 s, RAM 6.1 GB)
+[clip 5/5] 59d98b34ae8b windows 171; 416x1024 cylindrical f_ref 488.924 · cam h 1.344 m, fwd 2.026 m, pitch-down +0.61° (MEASURED per-clip)
+  w025/171 gt 11 targets 7 (151 s, RAM 5.9 GB)
+  w050/171 gt 9 targets 5 (153 s, RAM 5.9 GB)
+  w075/171 gt 6 targets 1 (156 s, RAM 6.2 GB)
+  w100/171 gt 9 targets 2 (158 s, RAM 6.4 GB)
+  w125/171 gt 5 targets 2 (160 s, RAM 6.4 GB)
+  w150/171 gt 4 targets 0 (162 s, RAM 6.4 GB)
+==============================================================================
+FILE        D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\refcv6_gt_validation_step38000.mp4
+size        61,264,751 B = 58.43 MiB   [OVER the 30 MiB delivery limit]
+codec       h264 / High pix=yuv420p
+dimensions  1920x1200   (container metadata)
+avg_fps     10.000      duration 98.00 s
+DECODED     980 frames   decode_clean=True
+consistency n/fps = 98.00 s vs container 98.00 s
+==============================================================================
+FILE        D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\refcv6_gt_validation_step38000_compact.mp4
+size        6,848,762 B = 6.53 MiB   [UNDER the 30 MiB delivery limit]
+codec       h264 / High pix=yuv420p
+dimensions  1280x800   (container metadata)
+avg_fps     10.000      duration 98.00 s
+DECODED     980 frames   decode_clean=True
+consistency n/fps = 98.00 s vs container 98.00 s
+==============================================================================
+
+[gtval] DONE D:\Projects\TanitAD\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-26-refcv6-gt-validation\raw\refcv6_gt_validation_step38000.mp4 (61,264,751 B) + compact 6,848,762 B; 980 frames; controls {"filter_mask_mismatch": 0, "n_windows_checked": 855, "proj_max_px": 1.2710574864626038e-13, "n_corners_checked": 264506, "bev_roundtrip_max_px": 3.0742779206298016e-13, "n_bev_boxes_checked": 72687, "self_iou_min": 1.0}; 402.6 s
+EXIT=0
+CHAIN_END

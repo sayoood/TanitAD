@@ -1,0 +1,143 @@
+# MEASURE 5 (label_version 4) -- hooks into EXISTING files, as a patch (never edited in place: the pod's pipeline
+# copies are what run, and other agents import the package). Apply from the package root:
+#     git apply -p1 --check code/measure5_v4_hooks.patch && git apply -p1 code/measure5_v4_hooks.patch
+# Every hook is DEFAULT OFF and byte-identical in behaviour when off:
+#   refe/onpolicy_dump.py  --emit-logits : each props line also carries the scorer's [64][6] logits (the v4 labeller's
+#                                          scorer_top sources); without the flag every line is unchanged
+#   code/op_pipeline.sh    OP_SLOW=1     : the dump gets --emit-logits, the labellers run onpolicy_label_v4.py
+#                                          --slow-copies $OP_SLOW_ARGS under the SAME worker names; OP_SLOW unset = today
+#   code/op_status.py                    : ADDS v4 counters; every existing key is unchanged (tested on real v4 lines)
+# Base blobs (the index at authoring time): onpolicy_dump.py d8b04f1c, op_pipeline.sh 32eed31f, op_status.py eab71534.
+# Applied to pristine copies of those blobs it reproduces the patched files byte-for-byte (verified 2026-09-27).
+diff --git a/code/op_pipeline.sh b/code/op_pipeline.sh
+index 32eed31..0512b88 100644
+--- a/code/op_pipeline.sh
++++ b/code/op_pipeline.sh
+@@ -13,23 +13,36 @@ source /workspace/refe-op/code/op_env.sh
+ ROOT=/workspace/data/refe_navtrain/onpolicy
+ RUN=/workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3
+ W0=${W0:-2}; W1=${W1:-2}
++# ⭐ MEASURE 5 (label_version 4: slowed copies of the set's own proposals) -- OFF unless OP_SLOW=1. ON: the dump also
++# writes the scorer's logits (--emit-logits) and the labellers run refe/onpolicy_label_v4.py --slow-copies $OP_SLOW_ARGS
++# under the SAME worker names, so each resumes its own in-flight chunk. The trainer is NOT touched: it reads the v4
++# sets at its next epoch boundary. Validity: eval/validate_slow_labels_v4.py; effectiveness: eval/PREREG_MEASURE5.md.
++OP_SLOW=${OP_SLOW:-0}; OP_SLOW_ARGS=${OP_SLOW_ARGS:-}
+ MEM_HIGH=${MEM_HIGH:-38654705664}; MEM_LOW=${MEM_LOW:-35433480192}   # 36 / 33 GiB non-reclaimable
+ mkdir -p "$OP_QUEUE" "$OP_OUT" "$ROOT/logs" "$ROOT/pids"
+ say() { echo "$(date -u +%FT%TZ) $*" >> "$ROOT/logs/supervisor.log"; }
+ alive() { [ -f "$1" ] && kill -0 "$(cat "$1")" 2>/dev/null; }
+ # children are started WITHOUT setsid: nohup and nice exec, so $! IS the python's pid
+ start_dump() {
++  local extra=""; [ "$OP_SLOW" = 1 ] && extra="--emit-logits"
++  # shellcheck disable=SC2086
+   nohup nice -n 19 "$OP_PY" "$PKG/refe/onpolicy_dump.py" --run-dir "$RUN" --targets "$OP_BANK" \
+     --images /workspace/data/navtrain_pixels --calib "$OP_BANK/calib_table.json" --queue "$OP_QUEUE" \
+-    --chunk 16 --max-pending 2 >> "$ROOT/logs/dump.log" 2>&1 < /dev/null &
+-  echo $! > "$ROOT/pids/dump.pid"; say "started dump pid $!"
++    --chunk 16 --max-pending 2 $extra >> "$ROOT/logs/dump.log" 2>&1 < /dev/null &
++  echo $! > "$ROOT/pids/dump.pid"; say "started dump pid $! $extra"
+ }
+ start_lab() {
+-  nohup nice -n 19 "$OP_PY" "$PKG/refe/onpolicy_label.py" --queue "$OP_QUEUE" --out "$OP_OUT" \
+-    --rank "$1" --worker "$2" >> "$ROOT/logs/label_r$1_$2.log" 2>&1 < /dev/null &
+-  echo $! > "$ROOT/pids/label_r$1_$2.pid"; say "started label r$1 $2 pid $!"
++  if [ "$OP_SLOW" = 1 ]; then
++    # shellcheck disable=SC2086
++    nohup nice -n 19 "$OP_PY" "$PKG/refe/onpolicy_label_v4.py" --queue "$OP_QUEUE" --out "$OP_OUT" \
++      --rank "$1" --worker "$2" --slow-copies $OP_SLOW_ARGS >> "$ROOT/logs/label_r$1_$2.log" 2>&1 < /dev/null &
++  else
++    nohup nice -n 19 "$OP_PY" "$PKG/refe/onpolicy_label.py" --queue "$OP_QUEUE" --out "$OP_OUT" \
++      --rank "$1" --worker "$2" >> "$ROOT/logs/label_r$1_$2.log" 2>&1 < /dev/null &
++  fi
++  echo $! > "$ROOT/pids/label_r$1_$2.pid"; say "started label r$1 $2 pid $! (measure 5 $([ "$OP_SLOW" = 1 ] && echo "ON $OP_SLOW_ARGS" || echo OFF))"
+ }
+-say "supervisor up (pid $$): W0=$W0 W1=$W1 MEM_HIGH=$MEM_HIGH"
++say "supervisor up (pid $$): W0=$W0 W1=$W1 MEM_HIGH=$MEM_HIGH OP_SLOW=$OP_SLOW OP_SLOW_ARGS=$OP_SLOW_ARGS"
+ held=0
+ while [ ! -f "$ROOT/STOP" ]; do
+   mem=$(awk '$1=="anon"||$1=="shmem"||$1=="kernel" {s+=$2} END {printf "%d", s}' /sys/fs/cgroup/memory.stat)
+diff --git a/code/op_status.py b/code/op_status.py
+index eab7153..778631e 100644
+--- a/code/op_status.py
++++ b/code/op_status.py
+@@ -54,6 +54,21 @@ t3 = [t for r in v3 for t in r["targets"]]
+ nc = [t["navsim_comfort"] for t in t3 if t.get("navsim_comfort") is not None]
+ tc = [(t["teacher_comfort.Comfort.reward"], t["navsim_comfort"]) for t in t3
+       if t.get("teacher_comfort.Comfort.reward") is not None and t.get("navsim_comfort") is not None]
++# label_version 4 (measure 5): sets carrying slowed copies, and the copies' labels beside their own sets' originals
++v4 = [r for (rk, r) in best.values() if rk[1] >= 4]
++v4c = [r for r in v4 if (r.get("slow") or {}).get("carries")]
++cp = [r["targets"][s] for r in v4c for s in r["slow"]["slots"]]
++og = [t for r in v4c for j, t in enumerate(r["targets"]) if j not in set(r["slow"]["slots"])]
++v4_src = {}
++for r in v4c:
++    v4_src[r["slow"].get("sources")] = v4_src.get(r["slow"].get("sources"), 0) + 1
++
++
++def _rate(ts, k, pos=lambda v: v > 0):
++    vals = [t.get(k) for t in ts if t.get(k) is not None]
++    return round(sum(1 for v in vals if pos(v)) / max(len(vals), 1), 4)
++
++
+ ps = subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout
+ switched = any(l.startswith("/workspace/venv-teacher/bin/python train.py") and "--scorer-mode onpolicy" in l
+                for l in ps.splitlines())
+@@ -72,5 +87,12 @@ print(json.dumps({"sets": len(best), "v2": len(v2), "proposals_v2": n,
+                   "teacher_comfort_mean": sum(a for a, _ in tc) / max(len(tc), 1),
+                   "teacher_comfort_values": sorted({round(a, 3) for a, _ in tc})[:8],
+                   "comfort_agree": sum((a >= 0.5) == (b >= 0.5) for a, b in tc) / max(len(tc), 1),
++                  "v4": len(v4), "v4_carrying": len(v4c), "v4_copies": len(cp), "v4_sources": v4_src,
++                  "v4_copy_navsim_dac_viol": _rate(cp, "navsim_dac.violation"),
++                  "v4_orig_navsim_dac_viol": _rate(og, "navsim_dac.violation"),
++                  "v4_copy_teacher_collision": _rate(cp, "collision.NuPlanCollision.info"),
++                  "v4_orig_teacher_collision": _rate(og, "collision.NuPlanCollision.info"),
++                  "v4_copy_navsim_comfortable": _rate(cp, "navsim_comfort", lambda v: v >= 0.5),
++                  "labeller_v4_running": "onpolicy_label_v4.py" in ps, "dump_emits_logits": "--emit-logits" in ps,
+                   "rate_per_h": recent, "switched": switched, "switch_step": sw_step, "switch_at_utc": sw_at,
+                   "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}))
+diff --git a/refe/onpolicy_dump.py b/refe/onpolicy_dump.py
+index d8b04f1..0672c50 100644
+--- a/refe/onpolicy_dump.py
++++ b/refe/onpolicy_dump.py
+@@ -12,7 +12,10 @@ the trainer's numerics (bf16 autocast + TF32, eval mode, no grad).
+ 
+ Writes `<queue>/props_r<rank>_<ckptstep>_<seq>.jsonl`, one line per sample (`kind: onpolicy_props`:
+ key, ckpt_step, the 64 proposals [M][T][3], the banked teacher target, the row's `aug`), atomically
+-(tmp + rename). ⛔ BACKPRESSURE: a rank gets a new chunk only while fewer than --max-pending chunks
++(tmp + rename). With --emit-logits (measure 5, label_version 4) each line also carries `logits`, the scorer's
++[M][6] logits from the same forward, so `onpolicy_label_v4.py` can choose which proposals to slow by the PLANNER'S own
++aggregate -- a label-free choice; without the flag every line is byte-identical to before.
++⛔ BACKPRESSURE: a rank gets a new chunk only while fewer than --max-pending chunks
+ wait for it, so the A40 -- shared with the live trainer -- runs this only as fast as the CPU
+ labellers consume, and every chunk uses the checkpoint current at the time it is dumped.
+ """
+@@ -61,6 +64,8 @@ def main() -> int:
+     ap.add_argument("--seed", type=int, default=20260926)
+     ap.add_argument("--poll-s", type=float, default=30.0)
+     ap.add_argument("--max-chunks", type=int, default=0, help="stop after this many (smoke)")
++    ap.add_argument("--emit-logits", action="store_true",
++                    help="measure 5 (label_version 4): also write the scorer's 64x6 logits per sample")
+     a = ap.parse_args()
+     torch.set_num_threads(1)                      # the pod's CPUs belong to the trainer's loaders
+     torch.backends.cuda.matmul.allow_tf32 = True  # the trainer's --tf32
+@@ -134,14 +139,18 @@ def main() -> int:
+                 with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                     traj, _score = model(img, ego, goal, calib=cal)
+                 traj = traj.float().cpu().numpy()
++                lg = _score.float().cpu().numpy() if a.emit_logits else None       # [B, M, 6] (measure 5)
+                 for j, i in enumerate(idx[b0:b0 + a.batch]):
+                     row = ds.rows[i]
+-                    lines.append(json.dumps({
++                    rec = {
+                         "kind": "onpolicy_props", "log_name": row["log_name"], "token": row["token"],
+                         "step": int(row.get("step", 0)), "rank": r, "ckpt_step": ckpt_step,
+                         "teacher": row["traj"], "aug": row.get("aug"),
+                         "props": [[[round(float(v), 5) for v in p] for p in traj[j, k]]
+-                                  for k in range(traj.shape[1])]}) + "\n")
++                                  for k in range(traj.shape[1])]}
++                    if lg is not None:
++                        rec["logits"] = [[round(float(v), 5) for v in lg[j, k]] for k in range(lg.shape[1])]
++                    lines.append(json.dumps(rec) + "\n")
+                     seen.add((row["log_name"], row["token"], int(row.get("step", 0)), r))
+             out = os.path.join(a.queue, f"props_r{r}_{ckpt_step:06d}_{seq:010d}.jsonl")
+             seq += 1

@@ -1,0 +1,24 @@
+arm           steps n_log |   TRAIN cons Huber, last 10% steps | TRAIN last 25% |  EVAL Huber (pooled cells) EVAL MSE EVAL/TRAIN
+M2b_s0        19164    40 | 0.1264 +- 0.0044 (SE, n=40) pg 0.24 | 0.1255      | 0.1355 [0.1178,0.1548]   0.3523       1.07
+M2b_s1        19164    40 | 0.1230 +- 0.0036 (SE, n=40) pg 0.24 | 0.1236      | 0.1381 [0.1197,0.1572]   0.3564       1.12
+grid8x20_s0   19164    40 | 0.1203 +- 0.0046 (SE, n=40) pg 0.24 | 0.1255      | 0.1396 [0.1209,0.1596]   0.3621       1.16
+hist10_s0     19164    40 | 0.1261 +- 0.0046 (SE, n=40) pg 0.24 | 0.1249      | 0.1379 [0.1199,0.1571]   0.3566       1.09
+pgt_s0        19164    40 | 0.1343 +- 0.0048 (SE, n=40) pg 0.02 | 0.1337      | 0.1473 [0.1285,0.1671]   0.3821       1.10
+wc_s0         19164    40 | 0.1066 +- 0.0038 (SE, n=40) pg 0.24 | 0.1034      | 0.1273 [0.1093,0.1462]   0.3350       1.19
+df50_s0       19164    40 | 0.1209 +- 0.0037 (SE, n=40) pg 0.24 | 0.1216      | 0.1486 [0.1292,0.1700]   0.3890       1.23
+
+TRAIN last-10% cons relative to M2b_s0:  M2b_s1 -2.7%, grid8x20_s0 -4.8%, hist10_s0 -0.2%, pgt_s0 +6.3%, wc_s0 -15.6%, df50_s0 -4.3%
+EVAL Huber relative to M2b_s0:            M2b_s1 +1.9%, grid8x20_s0 +3.1%, hist10_s0 +1.8%, pgt_s0 +8.7%, wc_s0 -6.0%, df50_s0 +9.7%
+(the quoted DSCALE train numbers: df50 0.1209 vs M2b_s0 0.1264, -4.3%; WC: 18-25% lower train Huber at w_cons 8x -- different bins, not re-derived here.)
+
+M2b_s0 train cons Huber by quintile of training (mean +- SE of the logged batches):
+   steps      0-  3832: 0.1513 +- 0.0047 (n=76), p_gt 0.92
+   steps   3832-  7665: 0.1351 +- 0.0031 (n=77), p_gt 0.76
+   steps   7665- 11498: 0.1324 +- 0.0029 (n=76), p_gt 0.60
+   steps  11498- 15331: 0.1301 +- 0.0029 (n=77), p_gt 0.44
+   steps  15331- 19164: 0.1256 +- 0.0030 (n=78), p_gt 0.28
+
+Eval GT in TRAIN standardiser units (mu/sd were estimated on the labelled train rows; eval present cells): mean / sd per cell
+   cells with |mean|>0.25 or |sd-1|>0.3: turn_dyaw_deg (mean -0.27, sd 0.93, n=476); turn_exit_psi_deg (mean -0.27, sd 0.88, n=476); lc_t_cross_s (mean +0.31, sd 1.03, n=40); stop_y_m (mean -0.05, sd 1.53, n=131)
+   all present cells pooled: mean +0.002, RMS 1.009 (train = ~0 / ~1 by construction).
+   the constant (train-mean) predictor's eval RMSE = RMS(GT) = 1.009 SD -> M2b_s0 present-cell RMSE 0.594 explains 65.4% of the eval variance

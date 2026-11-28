@@ -1,0 +1,99 @@
+{
+ "_experiment": "E-ARCH-SMAS-1",
+ "_date": "2026-09-02",
+ "_generated_utc": "2026-09-02T00:02:28.279604+00:00",
+ "_evidence_class": "MEASURED (ours; re-analysis of two banked actdiv reads)",
+ "_tier": "T0-DIAGNOSTIC (inherited from the source reads) -- NOT a driving claim",
+ "_sources": {
+  "k8_control": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-01-mm-e19-k8-attribution\\raw\\MISLABELLED_INSIDE_AS_k60__actdiv_local.json",
+  "k60_and_incumbent": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-08-31-mm-e19-k60-horizon\\raw\\reread-2026-09-02\\actdiv_local.json"
+ },
+ "_source_note": "SRC_K8's internal arm key reads 'k60clip05p30k' and is MISLABELLED; the attribution package settled the identity by checkpoint md5. Read by explicit key, never by name.",
+ "C0_identity_control": {
+  "k8clip05p30k": true,
+  "k60clip05p30k": true,
+  "postrain30k": true
+ },
+ "arms_h1": {
+  "postrain30k": {
+   "action_spread": 0.001394,
+   "scene_spread": 0.234344,
+   "ratio_action_over_scene": 0.005947,
+   "C0_identity_max_abs_diff": 0.0,
+   "C0_passes": true
+  },
+  "k8clip05p30k": {
+   "action_spread": 0.001319,
+   "scene_spread": 0.213915,
+   "ratio_action_over_scene": 0.006165,
+   "C0_identity_max_abs_diff": 0.0,
+   "C0_passes": true
+  },
+  "k60clip05p30k": {
+   "action_spread": 0.001089,
+   "scene_spread": 0.366344,
+   "ratio_action_over_scene": 0.002972,
+   "C0_identity_max_abs_diff": 0.0,
+   "C0_passes": true
+  }
+ },
+ "empirical_action_dead_floor_h2_h4": {
+  "k8clip05p30k": [
+   6e-06,
+   6e-06
+  ],
+  "k60clip05p30k": [
+   7e-06,
+   7e-06
+  ],
+  "postrain30k": [
+   6e-06,
+   6e-06
+  ],
+  "note": "what 'the action does nothing' measures as on this instrument; h1 numbers are read against it"
+ },
+ "one_variable_decomposition_k8control_to_k60": {
+  "action_factor": 0.825625473843821,
+  "scene_factor": 1.712568076104995,
+  "ratio_factor_observed": 0.48207623682076234,
+  "ratio_factor_reconstructed": 0.4820979004359317,
+  "reconstruction_abs_err": 2.166361516936499e-05,
+  "share_of_change_from_action": 0.2626259727317059,
+  "share_of_change_from_scene": 0.737374027268294
+ },
+ "prereg_bar": {
+  "stated_ratio_bar": 10.0,
+  "observed_scene_factor": 1.712568076104995,
+  "effective_ACTION_bar_actually_imposed": 17.12568076104995
+ },
+ "smas": {
+  "scene_reference_arm": "k8clip05p30k",
+  "scene_reference_value": 0.213915,
+  "k8clip05p30k": 0.00616600051422294,
+  "k60clip05p30k": 0.005090807096276558,
+  "factor": 0.8256254738438209
+ },
+ "hypothetical_reads_under_the_RAW_ratio": {
+  "action_factor_0.5_reads_ratio_factor": 0.2919591968204747,
+  "action_factor_1.0_reads_ratio_factor": 0.5839183936409494,
+  "action_factor_1.5_reads_ratio_factor": 0.8758775904614242,
+  "action_factor_2.0_reads_ratio_factor": 1.1678367872818989,
+  "action_factor_3.0_reads_ratio_factor": 1.7517551809228484
+ },
+ "controls": {
+  "no_information_control": {
+   "raw_ratio": 0.0,
+   "smas": 0.0,
+   "required": 0.0,
+   "passes": true
+  },
+  "known_value_synthetic_control": {
+   "injected_action_factor": 2.5,
+   "recovered": 2.5,
+   "injected_scene_factor": 0.4,
+   "recovered_scene": 0.4,
+   "passes": true
+  }
+ },
+ "controls_all_pass": true
+}

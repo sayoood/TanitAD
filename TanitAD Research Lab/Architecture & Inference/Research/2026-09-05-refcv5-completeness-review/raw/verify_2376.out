@@ -1,0 +1,19 @@
+RAW  key=physicalai-train-e438721ae894  episode_count=2376  n_clips=2400  skip_count=24
+V2   key=physicalai-train-e438721ae894-w120-256x640cyl  episode_count=2400  skip_count=0  uid_kind=v2ep_clipid
+CLAUDE.md invariant PARITY_TRAIN_EPISODES = 2376
+
+ARITHMETIC: discovered 3000 - val 600 = 2400 train CLIPS; 24 raw-build failures -> 2376 raw EPISODES
+            the V2 cache built ALL 2400 clips (skip_count 0) -> 2400 v2 EPISODES
+
+ordered==sorted digest: True (so skip index i == sorted position i)
+the 24 RAW-SKIPPED clips (present in the v2 cache, absent from the 2,376 raw epcache):
+    c0af6273-367a-49da-afeb-757800cebd4e
+    c4803512-a429-4908-8b8a-518cfb0ff3f9
+    c50711e4-72ae-466e-9a96-d34cfe8b136b
+    c512cadb-909e-403a-a040-c055f50594ef
+    c5168845-ac4b-46ec-9bf9-732c6c0046a7
+    ... (24 total)
+of those 24, LABELLED by the new parity blob: 24/24
+
+=> refcv5 (v2 cache) trains on 2400 episodes; every raw-epcache arm trained on 2376.
+=> delta = 24 episodes = 1.00 % of the corpus, DISJOINT between the two arms' training sets.

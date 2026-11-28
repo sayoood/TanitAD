@@ -1,0 +1,67 @@
+# REFE_SIM_HZ=10 OMP_NUM_THREADS=1
+# C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe E:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\eval\p4_dac_anatomy.py --teacher-csv E:/Projects/TanitAD/data/refe_navtest/score/refe_p4_teacher_navtest/refe_p4_teacher_navtest.csv --rows-dir E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-teacher-navtest/full --out E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-teacher-navtest/d1_dac_anatomy.json --threads 1
+  [10/109] 27 tokens 6s
+  [20/109] 72 tokens 10s
+  [30/109] 114 tokens 13s
+  [40/109] 214 tokens 28s
+  [50/109] 267 tokens 40s
+  [60/109] 307 tokens 45s
+  [70/109] 380 tokens 49s
+  [80/109] 516 tokens 57s
+  [90/109] 557 tokens 62s
+  [100/109] 662 tokens 77s
+{
+ "what": "D1 (exploratory): anatomy of the registered teacher's NAVSIM drivable-area failures on navtest",
+ "n_dac_fail": 578,
+ "n_nc_only_fail": 69,
+ "n_checked_fail": 578,
+ "n_errors": 0,
+ "classes": {
+  "A_teacher_rollout_leaves_drivable_area": [
+   72,
+   12.46
+  ],
+  "B_0p5s_plan_subsampling": [
+   2,
+   0.35
+  ],
+  "C_navsim_tracker": [
+   504,
+   87.2
+  ]
+ },
+ "fail_by_v0": {
+  "<1": {
+   "C_navsim_tracker": 7,
+   "A_teacher_rollout_leaves_drivable_area": 6
+  },
+  "1-5": {
+   "C_navsim_tracker": 302,
+   "A_teacher_rollout_leaves_drivable_area": 41,
+   "B_0p5s_plan_subsampling": 1
+  },
+  "5-10": {
+   "C_navsim_tracker": 186,
+   "A_teacher_rollout_leaves_drivable_area": 25,
+   "B_0p5s_plan_subsampling": 1
+  },
+  ">=10": {
+   "C_navsim_tracker": 9
+  }
+ },
+ "control_human_sim8_violations": {
+  "fail_set": 0,
+  "pass_set": 0,
+  "n": 778,
+  "must_read": 0
+ },
+ "control_pass_set": {
+  "n": 200,
+  "sim8_violations": 0,
+  "raw20_violations": 0,
+  "agreement_with_harness_pct": 100.0
+ },
+ "agreement_on_fail_set_pct": 100.0,
+ "seconds": 82.9
+}
+ZZD1_DONE

@@ -1,0 +1,67 @@
+10-27 22:41:35 DRY: C: gate: 7112 MB free >= 2048 MB
+10-27 22:41:35 DRY: E: gate: 3507 MB free >= 1500 MB
+10-27 22:41:35 DRY: tree carries the DAgger + w_acc trainer: --dagger-p / --dagger-bank / --dagger-bank-sha256 / --dagger-seed / --w-acc and class DaggerSwap (control --init-ckpt = 1, no-such-flag = 0) in E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a
+10-27 22:41:35 DRY: guards: add_argument --dump-heads = 1, --dump-ticks = 1, causal in LIMIT_MODES = 1, the model is built from the checkpoint's own cfg (V8FMiniConfig(**ck["cfg"])) = 1, the config class declares w_acc = 1  (controls: --replan-steps = 1, no-such-flag = 0, logged = 1, no-such-limit = 0) in E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a
+10-27 22:41:38 DRY: tool --help agrees (--dump-heads, --limit {logged,...,causal,...})
+10-27 22:41:38 DRY: tool identity with the tree that rolled DAG out: IDENTICAL: the tool tree IS the tree that rolled DAG out (E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a), and FLAT's B-2 rollout used it too (dagreread/rollout_lane.sh)
+10-27 22:41:38 DRY: tree vs tip (ADVISORY, does not stop the chain): tree vs tip 9b91b654: 1680 of 1694 .py identical to the tip's blobs, 14 differ, 0 not in the tip   DIFFERS: stack/scripts/launch_gate.py   DIFFERS: stack/scripts/refc_v3_train.py   DIFFERS: stack/scripts/v8f_mini_train.py   DIFFERS: stack/tanitad/refs/refc.py   DIFFERS: stack/tanitad/refs/refc_v3.py   DIFFERS: stack/tanitad/train/declared_vs_built.py   DIFFERS: stack/tanitad/train/refcv8_tr
+10-27 22:41:39 DRY: dagoacc_read static check: DAGOACC-READ-STATIC-OK (pinned reader sources, Read A driver code, DAG's banked reads and argv, the lead block, PREREG_V8F_DAG_OACC section 2 and 4 cells verbatim, AMEND1.md pinned and its rewritten rows verbatim)
+10-27 22:41:39 DRY: inputs OK (grid, join, tracks md5; 141-clip eval cache; PREREG_V8F_DAG_OACC / AMEND1 / DAG_REREAD / C-O3's offline reference = the pinned texts); tool tree digest 6a4b47c8acfa
+10-27 22:41:39 DRY: pins that would be written to E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/PINS.txt:
+    tree=E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a
+    digest=6a4b47c8acfadf07ffc82ab174cccce78aa0404f6a4f89231f331013bbcda3d9
+    file=stack/scripts/v8f_t1_eval.py 61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397
+    file=stack/tanitad/models/v8f_mini.py 8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a
+    file=stack/tanitad/data/v8f_mini_data.py 0e4a8cea438532424addb14d3c28a8f0b34f6c1ca33562384c3e389141f49588
+    file=taniteval/taniteval/floors_kin.py d9c7315df1af2633a0e1069f15c19171c1261a8345ced219074d16c2840e5d1d
+    file=taniteval/taniteval/four_families.py 968393297a6a0914466e92a30bba7eb8f4b745aec758fa9201ee226e153544df
+    file=taniteval/taniteval/ci.py 38db571e368f02dc4c0d9df7b47333ebbb082e43695617ba0dfba881668cd73e
+    file=taniteval/tools/t1_eval.py 1f558f3cfc55b857cb3395b5b85e9f64b20f3fa516c455b3da54676dffe0d16d
+    file=stack/scripts/v8f_mini_train.py 38e0a15773986c202cc64c1f101238462371a107ef06751667216774b17bf1bd
+    file=stack/tanitad/data/v8f_dagger.py b20cc058b17e1029ddb138dc84f434333bf6b0b2746c5b76e996cef17c176bd3
+    reader=dagoacc_read.py b1ba095d98fc353b6ee9fcec74f4545e0a2c3ba35d2546ed6a36127d80dc0cce
+    reader=dag_read.py 1cf56c7c30195ac47718bb07feef11531a6309cb01e0b28a34f926c6a696084c
+    reader=dag2_read.py 1425e8a3895c442b9841f3bcd6fd0893021d583e06485fde171b04bfa73fbc20
+    prereg_oacc=bd722b7a1a9ae419fdd6ebaf437f5657396664670ea4b4f1074420a80e7f169d
+    amend1=44d7e879e5349e5791d1a6ad9ff18559cfd72ea63ce3ef634dcde16e9a33373e
+    reader=t1hd_read.py 3c6d9f790f85511553c607a9d2102a7a425ac7c9a674be69ac23ea3a6cb1e9e2
+    reader=t1k_read.py 5610114d3e09501347ed0ac65e44790eb2954eb5d5b703af089a64e845dbf5e4
+    dag_tool_tree=E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a
+    parity=IDENTICAL: the tool tree IS the tree that rolled DAG out (E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a), and FLAT's B-2 rollout used it too (dagreread/rollout_lane.sh)
+10-27 22:41:40 DRY: the registered T1-kin rollout argv (dagreread/argv/FLAT_s0 / s1, equal to DAG's in every setting flag) present: read, not re-run
+10-27 22:41:41 DRY: DAG's banked outputs present and pinned: DAG_READ.json (ROBUST, sha256 3393fdd5...), both DAG checkpoints, both causal dump sets (done records name the checkpoints): read, not re-run
+10-27 22:41:41 DRY: COMPLETE DAG's iteration-1 bank_s0: bank.json sha256 197a68bb540be5a7... == the sha256 DAG's argv declared
+10-27 22:41:41 DRY: COMPLETE DAG's iteration-1 bank_s1: bank.json sha256 36c7aea964dafe94... == the sha256 DAG's argv declared
+10-27 22:41:41 DRY: C: free 7112 MB (the chain needs >= 2048 MB, at start and before every rollout); threads OMP/MKL 8, CUDA_VISIBLE_DEVICES='-1', max 2 rollout processes (one lane per seed), poll 60 s, max wait 40 h per pull
+10-27 22:41:41 DRY: box-2 watcher: C:/Users/Admin/box2_ship/logs/chain_v8f_dagoacc_r2.out (ZZV8FMINI-STOP lines now: 0; ZZV8FMINI-DONE lines now: 1)
+10-27 22:41:41 DRY: == the two runs in the PREREG's order, and the state of each pull right now
+10-27 22:41:44 DRY:   M2b_s0_dagoacc  COMPLETE 67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f 8 files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done; identity of M2b_s0_dagoacc consistent; C-O1: DAG's argv + -
+10-27 22:41:46 DRY:   M2b_s1_dagoacc  COMPLETE 90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333 8 files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done; identity of M2b_s1_dagoacc consistent; C-O1: DAG's argv + -
+10-27 22:41:46 DRY:   w_acc record  OK 49.6969
+10-27 22:41:46 DRY: == rollouts (lane s0 and lane s1; each starts when ITS pull is complete; ckpt = <ART>/<run>/ckpt_last.pt)
+10-27 22:41:46 DRY:   [lane s0] C:/Users/Admin/venvs/tanitad/Scripts/python.exe E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/stack/scripts/v8f_t1_eval.py run --ckpt E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s0_dagoacc/ckpt_last.pt --tag DAGOACC_s0_m10_causal_heads --tracks E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt --eval-cache E:/Projects/TanitAD-artifacts/sfresh_inputs/cache --eval-grid 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json' --eval-join 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz' --out-dir E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1 --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/ticks --dump-heads --device cpu
+10-27 22:41:46 DRY:   [lane s1] C:/Users/Admin/venvs/tanitad/Scripts/python.exe E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/stack/scripts/v8f_t1_eval.py run --ckpt E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s1_dagoacc/ckpt_last.pt --tag DAGOACC_s1_m10_causal_heads --tracks E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt --eval-cache E:/Projects/TanitAD-artifacts/sfresh_inputs/cache --eval-grid 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json' --eval-join 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz' --out-dir E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1 --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/ticks --dump-heads --device cpu
+10-27 22:41:46 DRY:   each rollout writes E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/t1v8f_<tag>.json, E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/ticks/ticks_<tag>.npz, E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/dump_<tag>/ep*.npz (>= 141), E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/argv/<tag>.argv, then E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/done_<tag>.txt (checkpoint sha256 + tool digest)
+10-27 22:41:46 DRY: == NOT run here: a logged-bucket rollout and a fresh-age T0 eval (they feed only K4, which is not a PREREG_V8F_DAG_OACC control); DAG's banked outputs are READ, not re-run; there is no bank to wait for (DAG's iteration-1 bank is banked)
+10-27 22:41:46 DRY: == after the lanes: box-2 ZZV8FMINI-DONE, every pull re-verified, w_acc record + DAG's two banked banks re-verified
+10-27 22:41:46 DRY: == manifest: C:/Users/Admin/venvs/tanitad/Scripts/python.exe -I E:/Projects/TanitAD-artifacts/dagoacc_t1/dagoacc_t1_manifest.py manifest --art E:/Projects/TanitAD-artifacts/v8f-dagoacc --out E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1 --dag-art E:/Projects/TanitAD-artifacts/v8f-dagger --dag-t1 E:/Projects/TanitAD-artifacts/v8f-dagger-t1 --inputs E:/Projects/TanitAD-artifacts/dagoacc_t1/inputs --runs dagoacc:0,dagoacc:1 --n-dump-min 141 --write E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/runs.json
+    {
+     "runs": [
+      "DAGOACC_s0_m10_causal_heads",
+      "DAGOACC_s1_m10_causal_heads"
+     ],
+     "slots": {
+      "DAGOACC": "DAG-OACC (new)",
+      "control DAG": "banked"
+     },
+     "wacc": {
+      "box": "E:/Projects/TanitAD-artifacts/v8f-dagoacc/wacc/w_acc.json",
+      "txt": "E:/Projects/TanitAD-artifacts/v8f-dagoacc/wacc/w_acc.txt",
+      "offline": "E:/Projects/TanitAD-artifacts/dagoacc_t1/inputs/wacc_offline_DAG_s0.json"
+     }
+    }
+10-27 22:41:46 DRY: == --init-sha: C:/Users/Admin/venvs/tanitad/Scripts/python.exe -I E:/Projects/TanitAD-artifacts/dagoacc_t1/dagoacc_t1_manifest.py initsha --art E:/Projects/TanitAD-artifacts/v8f-dagoacc --runs dagoacc:0,dagoacc:1   (the runs' own summary.json / selfcheck.json levers.init_ckpt.sha256: equal per seed and equal to M2b_s<S>'s checkpoint, 601cb435... / 6104fb15...)
+10-27 22:41:46 DRY: == reader: C:/Users/Admin/venvs/tanitad/Scripts/python.exe -I E:/Projects/TanitAD-artifacts/dagoacc_t1/dagoacc_read.py --manifest E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/runs.json --out E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/read/DAGOACC_READ.json --tool-root E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a --t1hd-read 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-t1hdread/t1hd_read.py' --t1k-read 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-t1kin-hacc/t1k_read.py' --eval-cache E:/Projects/TanitAD-artifacts/sfresh_inputs/cache --tracks E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt --eval-grid 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json' --eval-join 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz' --init-sha '0=<0: M2b_s0 ckpt sha256>' --init-sha '1=<1: M2b_s1 ckpt sha256>' --prereg-oacc E:/Projects/TanitAD-artifacts/dagoacc_t1/inputs/PREREG_V8F_DAG_OACC.md --prereg-reread E:/Projects/TanitAD-artifacts/dagoacc_t1/inputs/PREREG_V8F_DAG_REREAD.md --amend1 E:/Projects/TanitAD-artifacts/dagland/dagoacc_amend1/AMEND1.md --offline-wacc E:/Projects/TanitAD-artifacts/dagoacc_t1/inputs/wacc_offline_DAG_s0.json --dag-read C:/Users/Admin/dagread/dag_read.py --dag2-read E:/Projects/TanitAD-artifacts/dag2t1/dag2_read.py --readers E:/Projects/TanitAD-artifacts/dagreread/reader_src --reada-code E:/Projects/TanitAD-artifacts/dagoacc_t1/readA_code --lead-block E:/Projects/TanitAD-artifacts/dagoacc_t1/inputs/b1_eval_lead_block_k30.npz --dag-t1 E:/Projects/TanitAD-artifacts/v8f-dagger-t1 --dag-art E:/Projects/TanitAD-artifacts/v8f-dagger --dagreread E:/Projects/TanitAD-artifacts/dagreread
+10-27 22:41:46 DRY:    -> E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/read/DAGOACC_READ.json (rc 0 outcome written | 2 REFUSED, nothing written | 3 UNPLACED: defensive, unreachable after Amendment 1, a BUG if seen); reader stdout/stderr -> E:/Projects/TanitAD-artifacts/dagoacc_t1/logs/dagoacc_read.out
+10-27 22:41:46 DRY: == markers in E:/Projects/TanitAD-artifacts/dagoacc_t1/logs/chain.out: ZZDAGOACCT1-DONE <n>/2 rollouts, reader rc <rc> ...  |  ZZDAGOACCT1-STOP <why>.  Nothing was written, launched or waited for.
+ZZDAGOACCT1-DRY-OK

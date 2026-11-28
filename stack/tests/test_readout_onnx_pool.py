@@ -104,7 +104,16 @@ def test_derived_matrices_are_not_in_the_state_dict():
 
 # ------------------------------------------------------------------ 4. it actually exports
 def test_readout_exports_to_onnx_at_the_deployed_geometry():
-    """THE regression this file exists for: 11x39 -> 4x4 must reach an ONNX graph."""
+    """THE regression this file exists for: 11x39 -> 4x4 must reach an ONNX graph.
+
+    ⚠️ `onnx` is an OPTIONAL dependency: it is required on the Thor deployment
+    path and absent from the training/dev images, where this failed as
+    `OnnxExporterError: Module onnx is not installed!` — an ENVIRONMENT gap
+    reported as a code defect, which is how it sat in the standing-red list.
+    Skipping keeps the suite honest on hosts that cannot run it while still
+    FAILING loudly wherever onnx IS installed (the deployment image), which is
+    the only place the regression can actually bite."""
+    pytest.importorskip("onnx")
     th, tw, d_model = 11, 39, 32
     ro = SpatialGridReadout(th * tw, d_model, grid=4, d_readout=8,
                             token_grid=(th, tw)).eval()

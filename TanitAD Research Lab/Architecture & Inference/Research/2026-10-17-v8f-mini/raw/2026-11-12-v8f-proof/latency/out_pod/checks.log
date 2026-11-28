@@ -1,0 +1,70 @@
+work dir /workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557
+PASS baseline check s1  [{"value_p50_ms": 50.093104495317675}]
+PASS baseline check s1a  [{"value_p50_ms": 50.09608001273591}]
+PASS baseline check s2  [{"value_max_abs_diff": 0.0}]
+PASS baseline check s3  [{"value_ratio": 2.008033894496075}]
+PASS baseline check s4  [{"value": [10, 10]}]
+PASS baseline check s5  [{"value": {"p50": 50.5, "p95": 95.05, "mean": 50.5, "n": 100}}]
+PASS sync discipline: one sync per warm-up call and two per timed region
+PASS statistics of one sample
+PASS statistics of no samples refuse
+PASS counter counts two calls
+self-checks: s1=PASS s1a=PASS s2=PASS s3=PASS s4=PASS s5=PASS
+variant eager
+variant fp16
+variant compile
+wrote /workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557/stub_ok/LATENCY_PROXY_STUB.json /workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557/stub_ok/LATENCY_PROXY_STUB.md
+PASS stub flow exits 0  [rc 0]
+PASS stub flow writes the JSON and the MD
+PASS MD first line is the required text
+PASS MD second line is the family line
+PASS JSON carries both lines and the tier
+PASS JSON carries all six checks passed
+PASS JSON eager variant has a, b, c, d sections
+PASS tick section carries counted predictor calls  [{"0": 2, "10": 2}]
+PASS seq total is slower than the batch for K = 4  [seq/batch 3.97]
+PASS fp16 and compile variants are marked NOT RUN with a text on the stub
+PASS MD holds none of the banned words
+self-checks: s1=PASS s1a=PASS s2=PASS s3=PASS s4=PASS s5=PASS
+variant eager
+variant fp16
+variant compile
+REFUSED: output exists, never overwritten: [Errno 17] File exists: '/workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557/stub_ok/LATENCY_PROXY_STUB.json'
+PASS a second write to the same folder is refused (rc 4)  [rc 4]
+self-checks: s1=PASS s1a=PASS s2=PASS s3=PASS s4=PASS s5=FAIL
+ZZ LATENCY CHECKS FAILED, no timing table; wrote /workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557/stub_gate/SELF_CHECKS_FAILED.json
+PASS a failed self-check exits 2  [rc 2]
+PASS a failed self-check writes no timing table
+PASS a failed self-check writes SELF_CHECKS_FAILED.json
+self-checks: s1=PASS s1a=PASS s2=PASS s3=PASS s4=PASS s5=PASS
+variant eager
+variant fp16
+variant compile
+wrote /workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557/stub_mut_first_line/LATENCY_PROXY_STUB.json /workspace/v8proof/runs/latency_proxy/checks/run_20261119_064644_191557/stub_mut_first_line/LATENCY_PROXY_STUB.md
+PASS mutation killed: changed first line is caught by the writer test  [the MD first line differs from the required text]
+PASS mutation killed: M1 time unit off by 1000  [check s1 read RED]
+PASS harness restored after: M1 time unit off by 1000  [check s1]
+PASS mutation killed: M2 timed function never called  [check s1 read RED]
+PASS harness restored after: M2 timed function never called  [check s1]
+PASS mutation killed: M3 no device synchronisation (asynchronous stub)  [check s1a read RED]
+PASS harness restored after: M3 no device synchronisation (asynchronous stub)  [check s1a]
+PASS mutation killed: M4 constant 30 ms added to every sample  [check s1 read RED]
+PASS harness restored after: M4 constant 30 ms added to every sample  [check s1]
+PASS mutation killed: M5 p95 is the maximum  [check s5 read RED]
+PASS harness restored after: M5 p95 is the maximum  [check s5]
+PASS mutation killed: M6 p50 is the mean  [check s5 read RED]
+PASS harness restored after: M6 p50 is the mean  [check s5]
+PASS mutation killed: M7 predictor-call counter does not count  [check s4 read RED]
+PASS harness restored after: M7 predictor-call counter does not count  [check s4]
+PASS mutation killed: M8 counter never reset (counts accumulate across ticks)  [check s4 read RED]
+PASS harness restored after: M8 counter never reset (counts accumulate across ticks)  [check s4]
+PASS mutation killed: M9 rollout ignores the requested horizon (work does not scale)  [check s3 read RED]
+PASS harness restored after: M9 rollout ignores the requested horizon (work does not scale)  [check s3]
+PASS mutation killed: M10 batched rollout drops its last step  [check s2 read RED]
+PASS harness restored after: M10 batched rollout drops its last step  [check s2]
+PASS mutation killed: M11 both rollouts return zeros  [check s2 read RED]
+PASS harness restored after: M11 both rollouts return zeros  [check s2]
+PASS mutation killed: M12 one repeated sample instead of n (sync count)  [check sync_count read RED]
+PASS harness restored after: M12 one repeated sample instead of n (sync count)  [check sync_count]
+mutations listed: 12 harness mutations + 1 writer mutation; killed 13 of 13
+ZZ CHECKS-POD DONE 50 0

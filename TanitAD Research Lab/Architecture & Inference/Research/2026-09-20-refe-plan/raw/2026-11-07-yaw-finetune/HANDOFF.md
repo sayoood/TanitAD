@@ -1,0 +1,25 @@
+# HANDOFF: WP YAW item (1), stream YF2 (written 2026-11-06 ~00:00 Berlin; next agent = a FRESH Sonnet agent, train + evaluate)
+
+Dir: `E:/Projects/TanitAD-artifacts/yawrate_wp/YF2/` (call it `$Y`). Python: `C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe`. Nothing in the repo, PK or `C:/Users/Admin/pxyaw` was edited; nothing staged or committed.
+Frozen design: `$Y/PREREG_YAWFT.md`, sha256 `d28a630fa650a8fe50488dea82f01e1d61a5798347d7f522926b2b8215145b74` (also in `$Y/PREREG_YAWFT.sha256`, which pins the manifest `18acb1d4...`, both yaw tables, `yaw_ft.py`, `proxy_cache_yf2.py`, `build_yaw_ckpt.py`; MM lands the blob BEFORE any trained arm is evaluated). lr_col = 1e-3 (PREREG section 2). Read it first: it holds the gates, the readouts, the ADOPT / NOT PROVEN / REFUTED text, and the lr choice with its reason.
+
+## State
+* **GPU job RUNNING:** u400 scene cache, 4,000 frames, queued behind the shared GPU lock (it HAS the lock since 23:54). Wrapper: cmd PID 4632 -> wrapper PIDs 29388 / 27704. Rate ~1.14 s/frame -> ETA about 01:15-01:20 Berlin (MEASURED: shard 0 00:01:10, shard 1 00:06:18 = 1.20 s/frame under CPU contention from my lr probe, now finished; ep015 rate was 1.14; the real rate is in `cache_u400_4k/manifest.json` `passes`).
+  **Marker (last action of the wrapper):** `$Y/markers/cache_u400_4k_r3.DONE` (rc 0 AND `ZZCACHE_OK` in the child log, i.e. C1 bit-exact) or `.FAILED` (json with the log tail). Child log `$Y/markers/cache_u400_4k_r3.child.log`. The wrapper releases the lock when the build ends.
+  (Two earlier launches, tags `cache_u400_4k` and `_r2`, died in seconds: a WMI launch needs `CreateFlags 0x08000200`; their STARTED files are stale.)
+* If the build is interrupted it is RESUMABLE: rerun `$Y/launch_cache_job.ps1` after bumping the tag inside it (frames already in `frames.jsonl` are skipped).
+* Done and tested on CPU (19/19, `$Y/test_yaw_ft.out`): `yaw_ft.py`, `build_yaw_ckpt.py`, `proxy_cache_yf2.py`, `g2_sign.py`, gates and their RED arms. G2 and G3 are already MEASURED green (see PREREG section 4).
+
+## Next commands (all CPU unless said; set `CUDA_VISIBLE_DEVICES=-1` for anything that is not the GPU job)
+1. **When `.DONE` exists:** `python proxy_cache_yf2.py verify --out $Y/cache_u400_4k` (rc 0). Check in `cache_u400_4k/manifest.json`: `frames == 4000`, `visual_frames == 0`, `frozen_in_proxy_sha256 == 160b61bc8cb0b3a0c4b21e3eac01cfed7c893f63687326c775ce620cf8c7933f`, `passes[-1].C1_decode_vs_forward_max_abs == 0`. Write its sha256 to `$Y/CACHE_PIN.txt`. Then `python g2_sign.py --cache $Y/cache_u400_4k --out $Y/g2_sign_u400.json`.
+2. **Train R1 arms** (CPU, ~15-20 min each by MEASURED 0.28 s/step at accum 1 scaled x8, ESTIMATED; run B s0 and B s1 in parallel only if the CPU is idle). One launch per arm via `launch_detached.ps1 -Tag R1_B_s0 -Cmd "<python> $Y/yaw_ft.py --cache $Y/cache_u400_4k --manifest $Y/manifest_yaw_4k.json --yaw-table-sha256 517c6413 --arm B --rung R1 --seed 0 --lr-col 1e-3 --out $Y/arms/R1_B_s0"` (and `--seed 1`). C is NOT needed in R1 (C == A0 exactly, gate K3); run `--arm C --seed 0` only to re-prove it. The trainer REFUSES when a gate is red (rc 3, `ZZYAWFT_GATE_RED`) and prints `ZZYAWFT_OK` at the end.
+3. **Compose checkpoints** (1.29 GB each on E:, 45 GB free; delete after eval): `python build_yaw_ckpt.py --final $Y/arms/R1_B_s0/final.pt --out $Y/ckpt/R1_B_s0.pt` (K1-K4 gates, `ZZYAWCKPT_OK`). Meta carries `ego_yaw`, `ego_yaw_scale 10.0`, `ego_yaw_slot 4`, `ego_yaw_table_sha256`.
+4. **Evaluate** (GPU, takes the shared lock; use `run_cache_job.py --ok-token <token your eval prints>` to queue behind it): A0 re-run (G6), B s0, B s1 on the 923 A5 tokens through the seam + harness + families6 exactly as RESULT_SFT4 (`E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/`, `EVAL_VENV.md`; ~0.35-0.5 h per arm). Feed omega with YT's shim: `python C:/Users/Admin/pxyaw/refe/ego_yaw.py --table $Y/pinned/ego_yaw_navtest.json.gz -- <eval script> ...` (it reads `ego_yaw_scale` from the checkpoint meta; a non-yaw checkpoint is untouched). Check G7 (slot 4 non-zero on >= 90 % of tokens) and G8.
+5. **Verdict** per PREREG section 6. NOT PROVEN -> R2 then R3 (`--rung R2|R3`; both arms B and C are trained there; no R1b, the probe showed 3 x lr_col worse) in the same session; a verdict is not a finished turn (Rule Zero).
+
+## Known gaps (UNVERIFIED, named)
+* `proxy_cache_yf2.decode_traj`'s COMMAND-mode branch (P6 final) is untested against a real P6 model; `yaw_ft.YawDecoder` raises NotImplementedError for command mode (cache rows carry no one-hot). Goal mode (u400) is bit-exact (C1 = 0 on the CPU smoke and on every GPU frame, else the build aborts).
+* The harness scoring time per arm and the real GPU cache rate are ESTIMATED. YT's `ego_yaw.py` shim was only exercised on its arithmetic and refusals here, not inside the live navtest seam.
+* Eval of A0 under the shim: u400 has no `ego_yaw` meta, so the shim leaves it untouched (A0 = as deployed).
+
+## Manifest of this package: see the end of the YF2 hand-back; every file is in `$Y` only (artifacts dir, not a repo).

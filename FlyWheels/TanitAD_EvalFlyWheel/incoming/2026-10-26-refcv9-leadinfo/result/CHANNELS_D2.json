@@ -1,0 +1,943 @@
+{
+ "prereg": "PREREG_CHANNELS_D2.md",
+ "tier": "DIAGNOSTIC on logged eval139 labels and the planner's own logged outputs; GT channels are UPPER BOUNDS, never inference inputs",
+ "estimator": "IDENTICAL to LEADINFO_D (imported from leadinfo_d.py): 5-fold episode-grouped cross-fit (fold seed 0) of L2 logistic regression (C=1, standardised on the fit fold); score = AUC of the out-of-fold P(decel); CIs = episode-RESAMPLING bootstrap (B=2000, seed 0, OOF predictions fixed, 2.5/97.5). It answers 'another draw of EPISODES'; it is blind to training-run variance (convex models: nil) and to INFERENCE-run variance of the stochastic planner (CURVE reads a sampled plan; see the plan-draw variant).",
+ "deviations": [
+  "D1 plan source: the prereg says 'the planner's own native S6 plan P_os8'. Used E['plan8'] (DEPLOY8_POS S6_plan8 of the banked battery roll -- the roll that produced feature set A's lon logits; its S6 slots equal the battery os arm exactly). The MAPSEL roll's plan8 is a DIFFERENT DRAW of the stochastic planner (median max-diff 0.57 m), so it is reported as an inference-variance variant, not as the channel.",
+  "D2 details the prereg leaves open (fixed in code before any AUC): polyline = origin + 8 rear-axle slots; short segments merged by keeping a point only if >= 0.5 m from the last kept point; kappa_max floored at 1e-3 (R = 1 km) so v_curve <= 44.7 m/s and the derived columns stay finite; the 'curve-limited speed sqrt(2.0 / kappa_max)' uses a_lat = 2.0 m/s^2 as written; heading change = |last merged segment heading - first| (absolute value -- the sign is left/right, not decel-relevant; the SIGNED form is a descriptive variant); dist_to_kmax = total path length when no vertex exceeds the floor.",
+  "D3 corridor on CELL CENTRES: rows 40..399 (x in [4, 40) m, near edge 0.1*row), cols 282..317 (centre y in [-1.75, +1.75]) = 360 x 36 cells; share = class cells / ALL corridor cells (unseen counts as not-class); nearest distance = near edge of the nearest class cell, none -> 40.0 m; XWALK blocks = [xwalk share, xwalk nearest dist, edge share, edge nearest dist] (4 columns).",
+  "D4 coverage rules: CURVE all windows; XWALK-OWN = windows with a MAPSEL raster file; XWALK-GT = windows whose raster carries a `gt` plane. Each channel re-fits A on its own windows (prereg s1).",
+  "D5 estimator note (same as LEADINFO_D D5): episode-RESAMPLING bootstrap of the AUC with OOF predictions fixed; fold assignment is re-drawn (seed 0) on each channel's own episodes, so channel folds differ from LEADINFO_D's."
+ ],
+ "seal": {
+  "prereg_sha256": "35fb8d023eb4a280508fddc4cb85cd582b697bc8e6d777f263c46d1d3b810ce2",
+  "sealed_equal": true,
+  "leadinfo_d_seal": {
+   "prereg_sha256": "8f02a6ddd3c6cf72bc748fdc5aebccee51f27fc54a02c9586259d5cbe3c1670e",
+   "sealed_equal": true
+  }
+ },
+ "class_ids_from_source": {
+  "class_keys": [
+   "nocls",
+   "drivable",
+   "lane",
+   "crosswalk",
+   "arrow",
+   "edge",
+   "hatched",
+   "sidewalk"
+  ],
+  "crosswalk": 3,
+  "edge": 5,
+  "sidewalk": 7,
+  "drivable": 1,
+  "sources": [
+   "stack/tanitad/models/map_head_hires.py:998-999 (CLASS_KEYS, code order 0..7)",
+   "stack/tanitad/data/semantic_map_gt_fine.py:116-117 (N_FINE_CLASSES = 8, NOT_SEEN_CODE = 255)",
+   "refcv9_mapsel/code/mapsel_lib.py:19-21 (CELL_M, H, W, Y_HALF_M; DRV_CODES, EDGE_CODE = 5)",
+   "refcv9_mapsel/code/mapsel_roll.py:33-35 (DRV_CODES, EDGE_CODE, SIDEWALK_CODE)"
+  ]
+ },
+ "synthetic_controls": {
+  "curve": {
+   "all_pass": true,
+   "n": 7,
+   "cases": {
+    "straight_kappa0": {
+     "pass": true,
+     "detail": {
+      "kappa_raw": 0.0,
+      "kappa_max": 0.001,
+      "req_decel": 0.0,
+      "heading_change_abs": 0.0,
+      "dist_to_kmax": 40.0
+     }
+    },
+    "circle_R50_kappa_0.02": {
+     "pass": true,
+     "detail": {
+      "kappa_raw": 0.0200000000000001,
+      "v_curve": 9.999999999999975,
+      "alat_demand": 4.500000000000023,
+      "req_decel": 5.000000000000025
+     }
+    },
+    "circle_heading_change_literal": {
+     "pass": true,
+     "detail": {
+      "heading_change_abs": 1.3744467859455352
+     }
+    },
+    "signed_heading_mirror": {
+     "pass": true,
+     "detail": {
+      "signed": -1.3744467859455347
+     }
+    },
+    "merge_short_segments": {
+     "pass": true,
+     "detail": {
+      "kappa_raw": 0.0200000000000001,
+      "n_pts_after_merge": 6
+     }
+    },
+    "corner_kappa_and_distance": {
+     "pass": true,
+     "detail": {
+      "kappa_raw": 0.1414213562373095,
+      "dist_to_kmax": 20.0
+     }
+    },
+    "no_decel_below_curve_speed": {
+     "pass": true,
+     "detail": {}
+    }
+   }
+  },
+  "xwalk": {
+   "all_pass": true,
+   "n": 17,
+   "cases": {
+    "corridor_cells": {
+     "pass": true,
+     "detail": {
+      "rows": 360,
+      "cols": 36,
+      "R0": 40,
+      "C0": 282,
+      "C1": 318
+     }
+    },
+    "mapping_x20_y0_is_row200_col300": {
+     "pass": true,
+     "detail": {}
+    },
+    "patch_x20_y0_found_at_20": {
+     "pass": true,
+     "detail": {
+      "nearest_dist_m": 20.0,
+      "share": 0.015432098765432098,
+      "patch_cells": 200
+     }
+    },
+    "patch_share_literal": {
+     "pass": true,
+     "detail": {
+      "share": 0.015432098765432098,
+      "expect": 0.015432098765432098
+     }
+    },
+    "other_class_not_found": {
+     "pass": true,
+     "detail": {
+      "edge_share": 0.0,
+      "edge_dist": 40.0
+     }
+    },
+    "x3_inside_4m_zone_excluded": {
+     "pass": true,
+     "detail": {
+      "share": 0.0,
+      "dist": 40.0,
+      "want_found": false
+     }
+    },
+    "x45_beyond_40m": {
+     "pass": true,
+     "detail": {
+      "share": 0.0,
+      "dist": 40.0,
+      "want_found": false
+     }
+    },
+    "y3_outside_corridor": {
+     "pass": true,
+     "detail": {
+      "share": 0.0,
+      "dist": 40.0,
+      "want_found": false
+     }
+    },
+    "y_minus3_outside_corridor": {
+     "pass": true,
+     "detail": {
+      "share": 0.0,
+      "dist": 40.0,
+      "want_found": false
+     }
+    },
+    "y_plus1.7_inside": {
+     "pass": true,
+     "detail": {
+      "share": 0.0015432098765432098,
+      "dist": 20.0,
+      "want_found": true
+     }
+    },
+    "y_minus1.7_inside": {
+     "pass": true,
+     "detail": {
+      "share": 0.0015432098765432098,
+      "dist": 20.0,
+      "want_found": true
+     }
+    },
+    "x39.95_just_inside": {
+     "pass": true,
+     "detail": {
+      "share": 0.0007716049382716049,
+      "dist": 39.900000000000006,
+      "want_found": true
+     }
+    },
+    "x40.5_just_outside": {
+     "pass": true,
+     "detail": {
+      "share": 0.0,
+      "dist": 40.0,
+      "want_found": false
+     }
+    },
+    "nearest_of_two": {
+     "pass": true,
+     "detail": {}
+    },
+    "shift_plus_5m": {
+     "pass": true,
+     "detail": {}
+    },
+    "transposed_patch_not_found": {
+     "pass": true,
+     "detail": {
+      "share": 0.0,
+      "dist": 40.0
+     }
+    },
+    "row_reversed_patch_not_found": {
+     "pass": true,
+     "detail": {}
+    }
+   }
+  }
+ },
+ "population": {
+  "s6_windows": 3668,
+  "union_n": 2495,
+  "gt_decel": 639,
+  "gt_cruise": 1856,
+  "decel_base_rate": 0.2561
+ },
+ "identity_with_leadinfo_d": {
+  "n_windows": 2348,
+  "max_abs_diff_oofA": 0.0,
+  "folds_equal": true,
+  "y_equal": true,
+  "reading": "A's out-of-fold predictions on LEADINFO_D's 2348 windows are reproduced by this script's imported estimator"
+ },
+ "plan_join": {
+  "primary_source": "E['plan8'] = DEPLOY8_POS S6_plan8 of the banked 48,852 per-frame battery (seed 0); its slots [1,3,4,5,6,7] equal the battery 'os' arm exactly (asserted, max diff 0.0); the SAME roll that produced the lon logits of feature set A; join by (clip, ws) asserted through l2_common.load_eval_pf's row checks",
+  "mapsel_trace_join": "F:/refcv9_mapsel/trace_s0.npz plan8, joined on (e_i, ws): all S6 windows found, v0_in == battery v0 exactly",
+  "mapsel_trace_vs_battery_plan8": {
+   "max_abs_diff_m": 35.308,
+   "median_over_windows_of_max_abs_diff_m": 0.575,
+   "frac_windows_differ_gt_1e-4": 0.9831,
+   "reading": "two different DRAWS of the stochastic (ddim) planner at inference seed 0 -- the RNG is consumed differently by a 13-arm battery roll and an os-only roll; the CURVE feature is a function of the draw, so the second draw is an inference-variance replicate (variant below)"
+  }
+ },
+ "curve_features": {
+  "columns": [
+   "kappa_max",
+   "alat_demand",
+   "v_curve",
+   "req_decel",
+   "heading_change_abs",
+   "dist_to_kmax"
+  ],
+  "q05_q50_q95": {
+   "kappa_max": [
+    0.001,
+    0.002,
+    0.048
+   ],
+   "alat_demand": [
+    0.017,
+    0.299,
+    2.519
+   ],
+   "v_curve": [
+    6.426,
+    29.865,
+    44.721
+   ],
+   "req_decel": [
+    0.0,
+    0.0,
+    1.207
+   ],
+   "heading_change_abs": [
+    0.001,
+    0.039,
+    0.902
+   ],
+   "dist_to_kmax": [
+    2.127,
+    24.816,
+    163.444
+   ]
+  },
+  "share_windows_kappa_raw_gt_floor": 0.6725,
+  "share_windows_req_decel_gt_0": 0.0766,
+  "share_windows_req_decel_gt_1ms": 0.0553,
+  "n_pts_after_merge_counts": {
+   "1": 58,
+   "2": 4,
+   "3": 2,
+   "4": 9,
+   "5": 10,
+   "6": 19,
+   "7": 32,
+   "8": 37,
+   "9": 2324
+  }
+ },
+ "real_convention_controls": {
+  "what": "the human GT path (E['g'], 6 points at 1..6 s, ego frame at t0) mapped to raster cells under three conventions; the share of SEEN path cells that are DRIVABLE (codes 1,2,3,4,6) must be high only under the declared one (row = x/0.1, col = (y+30)/0.1). 'lat2' = path points with |y| >= 2 m (where a mirror matters).",
+  "shares": {
+   "own": {
+    "decl": {
+     "all": {
+      "n_path_points_seen": 13780,
+      "drivable_share": 0.937
+     },
+     "lat2": {
+      "n_path_points_seen": 2681,
+      "drivable_share": 0.8702
+     }
+    },
+    "mirror_y": {
+     "all": {
+      "n_path_points_seen": 13780,
+      "drivable_share": 0.8124
+     },
+     "lat2": {
+      "n_path_points_seen": 2681,
+      "drivable_share": 0.304
+     }
+    },
+    "transposed": {
+     "all": {
+      "n_path_points_seen": 11467,
+      "drivable_share": 0.2279
+     },
+     "lat2": {
+      "n_path_points_seen": 1899,
+      "drivable_share": 0.3702
+     }
+    },
+    "rows_reversed": {
+     "all": {
+      "n_path_points_seen": 13780,
+      "drivable_share": 0.6866
+     },
+     "lat2": {
+      "n_path_points_seen": 2681,
+      "drivable_share": 0.4144
+     }
+    }
+   },
+   "gt": {
+    "decl": {
+     "all": {
+      "n_path_points_seen": 13426,
+      "drivable_share": 0.9962
+     },
+     "lat2": {
+      "n_path_points_seen": 2666,
+      "drivable_share": 0.9996
+     }
+    },
+    "mirror_y": {
+     "all": {
+      "n_path_points_seen": 13247,
+      "drivable_share": 0.8405
+     },
+     "lat2": {
+      "n_path_points_seen": 2487,
+      "drivable_share": 0.3048
+     }
+    },
+    "transposed": {
+     "all": {
+      "n_path_points_seen": 10614,
+      "drivable_share": 0.2532
+     },
+     "lat2": {
+      "n_path_points_seen": 1829,
+      "drivable_share": 0.3652
+     }
+    },
+    "rows_reversed": {
+     "all": {
+      "n_path_points_seen": 10400,
+      "drivable_share": 0.7582
+     },
+     "lat2": {
+      "n_path_points_seen": 2140,
+      "drivable_share": 0.443
+     }
+    }
+   }
+  },
+  "assert_gt": {
+   "declared_minus_rows_reversed_all_ge_0.10": true,
+   "declared_all_ge_0.80": true,
+   "declared_minus_mirror_lat2_ge_0.10": true,
+   "declared_minus_transposed_all_ge_0.10": true
+  },
+  "assert_own": {
+   "declared_minus_rows_reversed_all_ge_0.10": true,
+   "declared_all_ge_0.80": true,
+   "declared_minus_mirror_lat2_ge_0.10": true,
+   "declared_minus_transposed_all_ge_0.10": true
+  },
+  "own_vs_gt_crosswalk_in_corridor": {
+   "n_windows_with_both": 2442,
+   "own_any": 0.1077,
+   "gt_any": 0.2199,
+   "agree_share": 0.864,
+   "own_any_given_gt_any": 0.4358,
+   "gt_any_given_own_any": 0.8897,
+   "own_edge_any": 0.0213,
+   "gt_edge_any": 0.3624
+  }
+ },
+ "coverage": {
+  "union_windows": 2495,
+  "CURVE": {
+   "covered": 2495,
+   "rule": "every window has a finite native plan8 (asserted)",
+   "fraction": 1.0,
+   "decel_covered": 639,
+   "cruise_covered": 1856,
+   "uncovered_by_episode_index": {}
+  },
+  "XWALK-OWN": {
+   "covered": 2495,
+   "rule": "a MAPSEL raster file (e, ws) exists in F:/refcv9_mapsel/rast_s0 (the `code` plane is always present)",
+   "fraction": 1.0,
+   "decel_covered": 639,
+   "cruise_covered": 1856,
+   "uncovered_by_episode_index": {}
+  },
+  "XWALK-GT": {
+   "covered": 2442,
+   "rule": "the raster file carries a `gt` plane (clips with no SAM3 GT file have none; unseen cells inside the corridor count as not-crosswalk / not-edge)",
+   "fraction": 0.9788,
+   "decel_covered": 634,
+   "cruise_covered": 1808,
+   "uncovered_by_episode_index": {
+    "92": 27,
+    "136": 26
+   }
+  },
+  "gt_corridor_seen_share_quantiles_q0_q05_q25_q50": [
+   0.911,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ "block_alone_DESCRIPTIVE": {
+  "CURVE": {
+   "auc_v0_only": 0.6022,
+   "auc_v0_plus_block": 0.6545,
+   "ci95_v0_plus_block": [
+    0.5886,
+    0.7252
+   ],
+   "delta_block_minus_v0": {
+    "point": 0.0523,
+    "ci95": [
+     0.0033,
+     0.1004
+    ]
+   }
+  },
+  "XWALK-OWN": {
+   "auc_v0_only": 0.6022,
+   "auc_v0_plus_block": 0.5845,
+   "ci95_v0_plus_block": [
+    0.5151,
+    0.657
+   ],
+   "delta_block_minus_v0": {
+    "point": -0.0178,
+    "ci95": [
+     -0.0321,
+     -0.0066
+    ]
+   }
+  },
+  "XWALK-GT": {
+   "auc_v0_only": 0.6022,
+   "auc_v0_plus_block": 0.5714,
+   "ci95_v0_plus_block": [
+    0.5004,
+    0.6456
+   ],
+   "delta_block_minus_v0": {
+    "point": -0.0308,
+    "ci95": [
+     -0.0529,
+     -0.0098
+    ]
+   }
+  }
+ },
+ "variants_DESCRIPTIVE": {
+  "CURVE_second_planner_draw_MAPSEL_trace_plan8": {
+   "n_windows": 2495,
+   "auc": {
+    "A": 0.716,
+    "B": 0.7205,
+    "C": 0.7143
+   },
+   "delta_B_minus_A": {
+    "point": 0.0046,
+    "ci95": [
+     -0.0166,
+     0.0255
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0016,
+    "ci95": [
+     -0.0056,
+     0.0024
+    ]
+   },
+   "word_if_it_were_the_channel": "ABSENT"
+  },
+  "CURVE_signed_heading_change": {
+   "n_windows": 2495,
+   "auc": {
+    "A": 0.716,
+    "B": 0.7147,
+    "C": 0.7206
+   },
+   "delta_B_minus_A": {
+    "point": -0.0012,
+    "ci95": [
+     -0.0205,
+     0.0187
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": 0.0046,
+    "ci95": [
+     -0.0015,
+     0.0107
+    ]
+   },
+   "word_if_it_were_the_channel": "ABSENT"
+  },
+  "XWALK-OWN_crosswalk_columns_only": {
+   "n_windows": 2495,
+   "auc": {
+    "A": 0.716,
+    "B": 0.712,
+    "C": 0.7155
+   },
+   "delta_B_minus_A": {
+    "point": -0.004,
+    "ci95": [
+     -0.0083,
+     0.0001
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0004,
+    "ci95": [
+     -0.0019,
+     0.0009
+    ]
+   },
+   "word_if_it_were_the_channel": "ABSENT"
+  },
+  "XWALK-GT_crosswalk_columns_only": {
+   "n_windows": 2442,
+   "auc": {
+    "A": 0.7262,
+    "B": 0.7228,
+    "C": 0.726
+   },
+   "delta_B_minus_A": {
+    "point": -0.0034,
+    "ci95": [
+     -0.0074,
+     0.0006
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0002,
+    "ci95": [
+     -0.0021,
+     0.0016
+    ]
+   },
+   "word_if_it_were_the_channel": "ABSENT"
+  },
+  "XWALK-GT_edge_columns_only": {
+   "n_windows": 2442,
+   "auc": {
+    "A": 0.7262,
+    "B": 0.718,
+    "C": 0.7256
+   },
+   "delta_B_minus_A": {
+    "point": -0.0081,
+    "ci95": [
+     -0.0208,
+     0.0056
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0006,
+    "ci95": [
+     -0.0031,
+     0.0019
+    ]
+   },
+   "word_if_it_were_the_channel": "ABSENT"
+  },
+  "XWALK-OWN_on_the_XWALK-GT_windows": {
+   "n_windows": 2442,
+   "auc": {
+    "A": 0.7262,
+    "B": 0.7159,
+    "C": 0.7248
+   },
+   "delta_B_minus_A": {
+    "point": -0.0103,
+    "ci95": [
+     -0.02,
+     -0.0029
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0014,
+    "ci95": [
+     -0.0053,
+     0.002
+    ]
+   },
+   "word_if_it_were_the_channel": "ABSENT"
+  }
+ },
+ "prevalence_DESCRIPTIVE": {
+  "XWALK-OWN_crosswalk_in_corridor_decel_vs_cruise": {
+   "decel": 0.133,
+   "cruise": 0.0959,
+   "overall": 0.1054
+  },
+  "XWALK-OWN_edge_in_corridor_decel_vs_cruise": {
+   "decel": 0.0156,
+   "cruise": 0.0226,
+   "overall": 0.0208
+  },
+  "XWALK-GT_crosswalk_in_corridor_decel_vs_cruise": {
+   "decel": 0.3186,
+   "cruise": 0.1853,
+   "overall": 0.2199
+  },
+  "XWALK-GT_edge_in_corridor_decel_vs_cruise": {
+   "decel": 0.4054,
+   "cruise": 0.3473,
+   "overall": 0.3624
+  },
+  "CURVE_req_decel_gt_0_decel_vs_cruise": {
+   "decel": 0.1424,
+   "cruise": 0.0539
+  }
+ },
+ "channels": {
+  "CURVE": {
+   "channel": "CURVE",
+   "block_columns": [
+    "kappa_max",
+    "alat_demand",
+    "v_curve",
+    "req_decel",
+    "heading_change_abs",
+    "dist_to_kmax"
+   ],
+   "n_windows": 2495,
+   "n_episodes": 136,
+   "n_decel": 639,
+   "n_cruise": 1856,
+   "decel_base_rate": 0.2561,
+   "auc": {
+    "A": {
+     "auc": 0.716,
+     "ci95": [
+      0.6481,
+      0.7811
+     ]
+    },
+    "B": {
+     "auc": 0.7211,
+     "ci95": [
+      0.6511,
+      0.7892
+     ]
+    },
+    "C": {
+     "auc": 0.7148,
+     "ci95": [
+      0.6488,
+      0.7798
+     ]
+    }
+   },
+   "delta_B_minus_A": {
+    "point": 0.0052,
+    "ci95": [
+     -0.0158,
+     0.0255
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0011,
+    "ci95": [
+     -0.0048,
+     0.0027
+    ]
+   },
+   "delta_B_minus_C": {
+    "point": 0.0063,
+    "ci95": [
+     -0.0148,
+     0.0267
+    ]
+   },
+   "clauses": {
+    "1_dAUC_BA_ge_+0.03_and_ci_lo_gt_0": false,
+    "2_shuffled_control_dAUC_point_le_+0.01": true
+   },
+   "word": "ABSENT",
+   "DESCRIPTIVE_nonlinear_probe_hgb": {
+    "auc": {
+     "A": 0.7332,
+     "B": 0.7312,
+     "C": 0.73
+    },
+    "delta_B_minus_A": {
+     "point": -0.0021,
+     "ci95": [
+      -0.0199,
+      0.0155
+     ]
+    },
+    "delta_C_minus_A": {
+     "point": -0.0032,
+     "ci95": [
+      -0.0081,
+      0.0014
+     ]
+    },
+    "config": "one fixed untuned HistGradientBoostingClassifier (leadinfo_d.cross_fit_hgb), same folds; cannot change the word"
+   }
+  },
+  "XWALK-OWN": {
+   "channel": "XWALK-OWN",
+   "block_columns": [
+    "xwalk_share",
+    "xwalk_nearest_dist_m",
+    "edge_share",
+    "edge_nearest_dist_m"
+   ],
+   "n_windows": 2495,
+   "n_episodes": 136,
+   "n_decel": 639,
+   "n_cruise": 1856,
+   "decel_base_rate": 0.2561,
+   "auc": {
+    "A": {
+     "auc": 0.716,
+     "ci95": [
+      0.6481,
+      0.7811
+     ]
+    },
+    "B": {
+     "auc": 0.7052,
+     "ci95": [
+      0.6354,
+      0.7715
+     ]
+    },
+    "C": {
+     "auc": 0.7153,
+     "ci95": [
+      0.6484,
+      0.7794
+     ]
+    }
+   },
+   "delta_B_minus_A": {
+    "point": -0.0107,
+    "ci95": [
+     -0.0206,
+     -0.0028
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0007,
+    "ci95": [
+     -0.0037,
+     0.0021
+    ]
+   },
+   "delta_B_minus_C": {
+    "point": -0.0101,
+    "ci95": [
+     -0.0206,
+     -0.001
+    ]
+   },
+   "clauses": {
+    "1_dAUC_BA_ge_+0.03_and_ci_lo_gt_0": false,
+    "2_shuffled_control_dAUC_point_le_+0.01": true
+   },
+   "word": "ABSENT",
+   "DESCRIPTIVE_nonlinear_probe_hgb": {
+    "auc": {
+     "A": 0.7332,
+     "B": 0.7313,
+     "C": 0.734
+    },
+    "delta_B_minus_A": {
+     "point": -0.002,
+     "ci95": [
+      -0.0059,
+      0.0018
+     ]
+    },
+    "delta_C_minus_A": {
+     "point": 0.0008,
+     "ci95": [
+      -0.0011,
+      0.0025
+     ]
+    },
+    "config": "one fixed untuned HistGradientBoostingClassifier (leadinfo_d.cross_fit_hgb), same folds; cannot change the word"
+   }
+  },
+  "XWALK-GT": {
+   "channel": "XWALK-GT",
+   "block_columns": [
+    "xwalk_share",
+    "xwalk_nearest_dist_m",
+    "edge_share",
+    "edge_nearest_dist_m"
+   ],
+   "n_windows": 2442,
+   "n_episodes": 134,
+   "n_decel": 634,
+   "n_cruise": 1808,
+   "decel_base_rate": 0.2596,
+   "auc": {
+    "A": {
+     "auc": 0.7262,
+     "ci95": [
+      0.6577,
+      0.7873
+     ]
+    },
+    "B": {
+     "auc": 0.7145,
+     "ci95": [
+      0.6445,
+      0.7784
+     ]
+    },
+    "C": {
+     "auc": 0.7253,
+     "ci95": [
+      0.6562,
+      0.7864
+     ]
+    }
+   },
+   "delta_B_minus_A": {
+    "point": -0.0116,
+    "ci95": [
+     -0.0246,
+     0.0024
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0009,
+    "ci95": [
+     -0.0041,
+     0.0021
+    ]
+   },
+   "delta_B_minus_C": {
+    "point": -0.0108,
+    "ci95": [
+     -0.0238,
+     0.0034
+    ]
+   },
+   "clauses": {
+    "1_dAUC_BA_ge_+0.03_and_ci_lo_gt_0": false,
+    "2_shuffled_control_dAUC_point_le_+0.01": true
+   },
+   "word": "ABSENT",
+   "DESCRIPTIVE_nonlinear_probe_hgb": {
+    "auc": {
+     "A": 0.7297,
+     "B": 0.7244,
+     "C": 0.7299
+    },
+    "delta_B_minus_A": {
+     "point": -0.0053,
+     "ci95": [
+      -0.0185,
+      0.0066
+     ]
+    },
+    "delta_C_minus_A": {
+     "point": 0.0002,
+     "ci95": [
+      -0.0026,
+      0.0029
+     ]
+    },
+    "config": "one fixed untuned HistGradientBoostingClassifier (leadinfo_d.cross_fit_hgb), same folds; cannot change the word"
+   }
+  }
+ },
+ "words": {
+  "CURVE": "ABSENT",
+  "XWALK-OWN": "ABSENT",
+  "XWALK-GT": "ABSENT"
+ },
+ "next_per_prereg_s3": [
+  "All ABSENT -> the window-level decel decision is not recoverable from these explicit channels: the refcv9 lever is TRAINING the lon decision (a clean-split lon head with richer supervision), named in PLAN_REFCV9 with this evidence."
+ ],
+ "inputs_sha256": {
+  "prereg_d2": "35fb8d023eb4a280508fddc4cb85cd582b697bc8e6d777f263c46d1d3b810ce2",
+  "prereg_leadinfo_d": "8f02a6ddd3c6cf72bc748fdc5aebccee51f27fc54a02c9586259d5cbe3c1670e",
+  "trace_s0_npz": "e0f6c22b2dc6a7a7fc9471d219367f7ed7e32dd0ac4d589b5d87366ab23e9847",
+  "leadinfo_windows_npz": "3ba7ae9561a9a4807c5db71506c46b78dd39f4164b7de768c94a56caad4001d6",
+  "extras_npz_dump_s0": "d84f17b8b222f5d457c841dfa099f40e1085cb77a27e025563ecaf47283e23d4",
+  "code_channels_d2.py": "7c484226cc539d0c05b5cc0feaac712b0caf7ea830d7a6ee72d58026fdb92392",
+  "code_leadinfo_d.py": "741e9a52198d6d1619465db40ec7979d72ca3388d4cfef831c705fb0fe67ff8d",
+  "rast_dir": "F:\\refcv9_mapsel\\rast_s0",
+  "n_rast_files": 4754
+ },
+ "elapsed_s": 9.6
+}

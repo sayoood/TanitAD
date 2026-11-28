@@ -1,0 +1,141 @@
+{
+ "SMOKE": "stand-in slots (A := DAG2, B := DAG2, REP := DAG2-0): NOT A READ",
+ "controls_failed": {
+  "ARGV:A_s0": "[\"--ego-perturb-p '0', registered 0.3\", \"--dagger-p '0.1', registered 0.0\"]",
+  "K-REACH:A_s0": "['built ego_perturb_p = 0.0, argv names 0.3', 'A perturbed fraction 0/82457 = 0.0000 outside 0.3 +- 0.02']",
+  "ARGV:A_s1": "[\"--ego-perturb-p '0', registered 0.3\", \"--dagger-p '0.1', registered 0.0\"]",
+  "K-REACH:A_s1": "['built ego_perturb_p = 0.0, argv names 0.3', 'A perturbed fraction 0/82166 = 0.0000 outside 0.3 +- 0.02']",
+  "ARGV:B_s0": "[\"--ego-perturb-p '0', registered 0.1\", \"--dagger-p '0.1', registered 0.0\"]",
+  "K-REACH:B_s0": "['built ego_perturb_p = 0.0, argv names 0.1', 'B perturbed fraction 0/82457 = 0.0000 outside 0.1 +- 0.02']",
+  "ARGV:B_s1": "[\"--ego-perturb-p '0', registered 0.1\", \"--dagger-p '0.1', registered 0.0\"]",
+  "K-REACH:B_s1": "['built ego_perturb_p = 0.0, argv names 0.1', 'B perturbed fraction 0/82166 = 0.0000 outside 0.1 +- 0.02']",
+  "SUMMARY:REP_s0": "['summary.json says arm M2b seed 0, expected M2b seed 10']",
+  "ARGV:REP_s0": "[\"--seed '0', registered 10\"]",
+  "SUMMARY:REP_s1": "['summary.json says arm M2b seed 1, expected M2b seed 11']",
+  "ARGV:REP_s1": "[\"--seed '1', registered 11\"]",
+  "K-PAIR:A_s0": "[\"A_s0's argv differs from DAG2-0's + the registered law in ['--dagger-bank', '--dagger-bank-sha256', '--dagger-p', '--dagger-seed', '--ego-perturb-adrop', '--e",
+  "K-PAIR:REP_s0": "[\"REP_s0's argv differs from DAG2-0's with --seed 10 in ['--seed']\"]",
+  "K-PAIR:B_s0": "[\"B_s0's argv differs from DAG2-0's + the registered law at p = 0.1 in ['--dagger-bank', '--dagger-bank-sha256', '--dagger-p', '--dagger-seed', '--ego-perturb-a",
+  "K-PAIR:A_s1": "[\"A_s1's argv differs from DAG2-0's + the registered law in ['--dagger-bank', '--dagger-bank-sha256', '--dagger-p', '--dagger-seed', '--ego-perturb-adrop', '--e",
+  "K-PAIR:REP_s1": "[\"REP_s1's argv differs from DAG2-0's with --seed 11 in ['--seed']\"]",
+  "K-PAIR:B_s1": "[\"B_s1's argv differs from DAG2-0's + the registered law at p = 0.1 in ['--dagger-bank', '--dagger-bank-sha256', '--dagger-p', '--dagger-seed', '--ego-perturb-a"
+ },
+ "controls_n": 258,
+ "decisions": {
+  "A": {
+   "OUTCOME": "REFUSED",
+   "flags": {
+    "controls_pass": false,
+    "guards_held_per_seed": {
+     "s0": {
+      "R-TLAT": true,
+      "R-TLON": true,
+      "R-ADE": true,
+      "R-T0": true,
+      "R-NEW": true
+     },
+     "s1": {
+      "R-TLAT": true,
+      "R-TLON": true,
+      "R-ADE": true,
+      "R-T0": true,
+      "R-NEW": true
+     }
+    },
+    "R-CRAWL": {
+     "s0": false,
+     "s1": false
+    },
+    "R-MOVE": {
+     "s0": false,
+     "s1": false
+    },
+    "R-KEEP": {
+     "s0": true,
+     "s1": true
+    },
+    "R-NOBASE": {
+     "s0": false,
+     "s1": true
+    }
+   }
+  },
+  "B": {
+   "OUTCOME": "REFUSED",
+   "flags": {
+    "controls_pass": false,
+    "guards_held_per_seed": {
+     "s0": {
+      "R-TLAT": true,
+      "R-TLON": true,
+      "R-ADE": true,
+      "R-T0": true,
+      "R-NEW": true
+     },
+     "s1": {
+      "R-TLAT": true,
+      "R-TLON": true,
+      "R-ADE": true,
+      "R-T0": true,
+      "R-NEW": true
+     }
+    },
+    "R-CRAWL": {
+     "s0": false,
+     "s1": false
+    },
+    "R-MOVE": {
+     "s0": false,
+     "s1": false
+    },
+    "R-KEEP": {
+     "s0": true,
+     "s1": true
+    },
+    "R-NOBASE": {
+     "s0": false,
+     "s1": true
+    }
+   }
+  }
+ },
+ "cascade": {
+  "final_arm": "A",
+  "final": "REFUSED",
+  "b_status": "beside: dose-response row, decides nothing, never pooled with A"
+ },
+ "floors_RF_max": 0.0,
+ "bars": {
+  "ADE6": 0.2414,
+  "speed MAE": 0.1592,
+  "along-track MAE": 0.0402,
+  "accel MAE": 0.2646,
+  "DK-VIOL": 0.01,
+  "DK-HW": 0.2616,
+  "DK-TG": 0.0082,
+  "heading MAE": 0.7602,
+  "yaw-rate MAE": 1.107,
+  "curvature MAE": 0.0526,
+  "cross-track MAE": 0.064,
+  "L1 lateral-accel MAE": 0.797,
+  "L2 curvature MAE (GT>=5.2)": 0.0136,
+  "TAC-LAT": 0.0366,
+  "TAC-LON": 0.025,
+  "S-POS@30": 0.3754,
+  "S-POS@50": 0.8897999999999999,
+  "S-POS@80": 2.0164,
+  "M1 crawl share": 0.0096
+ },
+ "RF_file": {
+  "path": "E:\\Projects\\TanitAD-artifacts\\dag_orc_read\\smoke_floors\\RF_REP.json",
+  "sha256": "f02adbb08978b1bc2b31a3266467b5cc118b2412606979ffb1a4bab66e2b4554",
+  "note": "written before any A or B contrast was computed"
+ },
+ "families_keys": [
+  "LONGITUDINAL",
+  "LATERAL",
+  "TACTICAL",
+  "STRATEGIC"
+ ],
+ "wall_s": 729.2
+}

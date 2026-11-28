@@ -1,0 +1,138 @@
+{
+ "label": "CV",
+ "script": "pdm_score_one_stage",
+ "module": "navsim.planning.script.run_pdm_score_one_stage",
+ "overrides": [
+  "train_test_split=navtest",
+  "experiment_name=tanitad_bench_navtest_single_stage_CV",
+  "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "traffic_agents=non_reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/20260927T032007Z-navsim_v2-none-54a002/CV"
+ ],
+ "argv": [
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\navsim\\devkit_side\\navsim_win.py",
+  "--script",
+  "pdm_score_one_stage",
+  "--label",
+  "CV",
+  "--out-dir",
+  "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\navtest_single_stage\\20260927T032007Z-navsim_v2-none-54a002\\raw\\CV",
+  "--patch-loader",
+  "--ram-floor-mb",
+  "9000.0",
+  "--dump-final-scores",
+  "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\navtest_single_stage\\20260927T032007Z-navsim_v2-none-54a002\\raw\\CV\\CV_final_scores_frame.csv",
+  "--dump-preaggregation",
+  "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\navtest_single_stage\\20260927T032007Z-navsim_v2-none-54a002\\raw\\CV\\CV_preaggregation.csv",
+  "--",
+  "train_test_split=navtest",
+  "experiment_name=tanitad_bench_navtest_single_stage_CV",
+  "metric_cache_path=C:/Users/Admin/navsim-crun/exp/metric_cache_navtest_v2",
+  "navsim_log_path=D:/Archive/devbox-C/navsim/data/openscene/navsim_logs/test",
+  "traffic_agents=non_reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/20260927T032007Z-navsim_v2-none-54a002/CV"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\20260927T032007Z-navsim_v2-none-54a002",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/20260927T032007Z-navsim_v2-none-54a002",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score_one_stage.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "f064e9ab9dcb841d",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score_one_stage.pdm_score (observation only)",
+  "navsim.planning.script.run_pdm_score_one_stage.create_scene_aggregators (PRE-AGGREGATION dump)",
+  "navsim.planning.script.run_pdm_score_one_stage.compute_final_scores (dump only)",
+  "navsim.planning.script.run_pdm_score_one_stage.worker_map (W1: pre-aggregation dump)"
+ ],
+ "started_local": "2026-09-27 05:22:16",
+ "status": "ABORTED_RAM_GUARD",
+ "ended_local": "2026-09-27 05:25:05",
+ "resources": {
+  "wall_s": 169.18,
+  "peak_rss_mb": 2226.0,
+  "peak_process_tree_rss_mb": 2226.0,
+  "min_system_available_mb": 5654.1,
+  "n_samples": 81,
+  "n_samples_below_floor": 70,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 9000.0,
+  "abort_policy": "available<9000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.7,
+    9174.1
+   ],
+   [
+    20.3,
+    609.4,
+    8678.7
+   ],
+   [
+    40.5,
+    1266.8,
+    9161.6
+   ],
+   [
+    61.6,
+    2189.5,
+    7470.1
+   ],
+   [
+    84.6,
+    2205.1,
+    7701.1
+   ],
+   [
+    106.3,
+    2204.6,
+    7223.5
+   ],
+   [
+    127.7,
+    2211.6,
+    7096.6
+   ],
+   [
+    148.5,
+    2223.0,
+    6950.7
+   ],
+   [
+    169.2,
+    2225.7,
+    5654.1
+   ]
+  ]
+ },
+ "abort_reason": "system available memory 5654 MB (floor 9000 MB for 60 consecutive samples; hard floor 2000 MB); own RSS 2226 MB; killed 0 child process(es)"
+}

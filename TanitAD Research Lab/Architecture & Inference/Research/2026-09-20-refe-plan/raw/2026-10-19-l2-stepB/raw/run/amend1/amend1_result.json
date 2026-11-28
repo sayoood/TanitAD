@@ -1,0 +1,762 @@
+{
+ "status": "COMPUTED",
+ "section": "AMENDMENT 1: aggregate concordance of the search outputs (reported only)",
+ "reported_only": true,
+ "gated": false,
+ "changes_step_b_verdict": false,
+ "main_prereg_sha256": "c661588c952d1f8bf65474f9d6346cdb243eb8cf5e882101e040a9cd4f03172b",
+ "amendment_sha256": "a2e0c2fed1ebc46e9c85b7064070ada5c4fbf6525552010473b12a4126ca48f5",
+ "estimator": {
+  "kind": "paired log-cluster bootstrap",
+  "unit": "log",
+  "n_logs": 24,
+  "B": 10000,
+  "seed": 20260927,
+  "answers": "paired log-cluster bootstrap: whole LOGS resampled with the SAME draws for every quantity (stepA.boot_indices; B = 10,000, seed 20260927); a difference is the per-resample difference of the two ratios of sums.  It answers 'another draw of LOGS' and nothing else: not another head seed (H-ESTIM-SEED-1), not another search seed (the per-seed values are that spread)."
+ },
+ "units": "ratios in [0, 1]; differences are L2 arm minus P2HEAD",
+ "definitions": {
+  "A3": "arm aggregate vs TRUE PDMS concordance (pairs with |dPDMS| >= 0.05; scorer tie = 0.5)",
+  "A4": "of pairs whose aggregate rises >= 0.02: share whose true PDMS falls by >= Step A's 0.10",
+  "A5": "of the same pairs: share where true NC or DAC goes 1 -> 0"
+ },
+ "seeds": [
+  20260927,
+  20260928,
+  20260929
+ ],
+ "identity": {
+  "structural": {
+   "unmoved_outputs_checked": {
+    "L2s0": 868,
+    "L2s1": 818,
+    "P2HEAD": 882
+   },
+   "p2head_vs_l2_non_ep_columns_bitwise_equal": {
+    "L2s0": true,
+    "L2s1": true
+   }
+  },
+  "model": {
+   "L2s0": {
+    "tokens_checked": 16,
+    "pick_logits_bitwise_equal": true,
+    "max_abs_diff_pick": 0.0,
+    "out_logits_bitwise_equal": true
+   },
+   "L2s1": {
+    "tokens_checked": 16,
+    "pick_logits_bitwise_equal": true,
+    "max_abs_diff_pick": 0.0,
+    "out_logits_bitwise_equal": true
+   },
+   "P2HEAD": {
+    "tokens_checked": 16,
+    "pick_logits_bitwise_equal": true,
+    "max_abs_diff_pick": 0.0,
+    "out_logits_bitwise_equal": true
+   }
+  },
+  "logits_source": "banked",
+  "passed": true
+ },
+ "arms": {
+  "L2s0": {
+   "display": "L2-s0",
+   "head_seed": "s0",
+   "counts": {
+    "n_tokens": 400,
+    "n_seeds": 3,
+    "n_pairs_total": 1200,
+    "n_identical_excluded": 868,
+    "n_dropped_invalid_anchor": 0,
+    "n_pairs": 332,
+    "A3_counted": 12.0,
+    "A3_concordant_weight": 9.0,
+    "A4_rise": 37.0,
+    "A4_rise_and_fall": 0.0,
+    "A5_rise_and_flip": 0.0
+   },
+   "pooled": {
+    "A3": {
+     "point": 0.75,
+     "lo": 0.0,
+     "hi": 1.0,
+     "n_valid_resamples": 9607,
+     "den": 12.0,
+     "num": 9.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 9999,
+     "den": 37.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 9999,
+     "den": 37.0,
+     "num": 0.0
+    }
+   },
+   "per_seed": [
+    {
+     "seed": 20260927,
+     "A3": {
+      "point": 0.75,
+      "lo": 0.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9607,
+      "den": 4.0,
+      "num": 3.0
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993,
+      "den": 12.0,
+      "num": 0.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993,
+      "den": 12.0,
+      "num": 0.0
+     }
+    },
+    {
+     "seed": 20260928,
+     "A3": {
+      "point": 0.75,
+      "lo": 0.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9607,
+      "den": 4.0,
+      "num": 3.0
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9999,
+      "den": 13.0,
+      "num": 0.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9999,
+      "den": 13.0,
+      "num": 0.0
+     }
+    },
+    {
+     "seed": 20260929,
+     "A3": {
+      "point": 0.75,
+      "lo": 0.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9607,
+      "den": 4.0,
+      "num": 3.0
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993,
+      "den": 12.0,
+      "num": 0.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993,
+      "den": 12.0,
+      "num": 0.0
+     }
+    }
+   ],
+   "seed_spread": {
+    "A3": {
+     "points": [
+      0.75,
+      0.75,
+      0.75
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    },
+    "A4": {
+     "points": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    },
+    "A5": {
+     "points": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    }
+   }
+  },
+  "L2s1": {
+   "display": "L2-s1",
+   "head_seed": "s1",
+   "counts": {
+    "n_tokens": 400,
+    "n_seeds": 3,
+    "n_pairs_total": 1200,
+    "n_identical_excluded": 818,
+    "n_dropped_invalid_anchor": 0,
+    "n_pairs": 382,
+    "A3_counted": 16.0,
+    "A3_concordant_weight": 10.0,
+    "A4_rise": 57.0,
+    "A4_rise_and_fall": 3.0,
+    "A5_rise_and_flip": 0.0
+   },
+   "pooled": {
+    "A3": {
+     "point": 0.625,
+     "lo": 0.0,
+     "hi": 1.0,
+     "n_valid_resamples": 9991,
+     "den": 16.0,
+     "num": 10.0
+    },
+    "A4": {
+     "point": 0.05263157894736842,
+     "lo": 0.0,
+     "hi": 0.18294549527127896,
+     "n_valid_resamples": 10000,
+     "den": 57.0,
+     "num": 3.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 57.0,
+     "num": 0.0
+    }
+   },
+   "per_seed": [
+    {
+     "seed": 20260927,
+     "A3": {
+      "point": 0.6666666666666666,
+      "lo": 0.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9961,
+      "den": 6.0,
+      "num": 4.0
+     },
+     "A4": {
+      "point": 0.05263157894736842,
+      "lo": 0.0,
+      "hi": 0.18181818181818182,
+      "n_valid_resamples": 10000,
+      "den": 19.0,
+      "num": 1.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 19.0,
+      "num": 0.0
+     }
+    },
+    {
+     "seed": 20260928,
+     "A3": {
+      "point": 0.75,
+      "lo": 0.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9607,
+      "den": 4.0,
+      "num": 3.0
+     },
+     "A4": {
+      "point": 0.05263157894736842,
+      "lo": 0.0,
+      "hi": 0.18181818181818182,
+      "n_valid_resamples": 10000,
+      "den": 19.0,
+      "num": 1.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 19.0,
+      "num": 0.0
+     }
+    },
+    {
+     "seed": 20260929,
+     "A3": {
+      "point": 0.5,
+      "lo": 0.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9958,
+      "den": 6.0,
+      "num": 3.0
+     },
+     "A4": {
+      "point": 0.05263157894736842,
+      "lo": 0.0,
+      "hi": 0.18181818181818182,
+      "n_valid_resamples": 10000,
+      "den": 19.0,
+      "num": 1.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 19.0,
+      "num": 0.0
+     }
+    }
+   ],
+   "seed_spread": {
+    "A3": {
+     "points": [
+      0.6666666666666666,
+      0.75,
+      0.5
+     ],
+     "n_finite": 3,
+     "range": 0.25
+    },
+    "A4": {
+     "points": [
+      0.05263157894736842,
+      0.05263157894736842,
+      0.05263157894736842
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    },
+    "A5": {
+     "points": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    }
+   }
+  },
+  "P2HEAD": {
+   "display": "P2HEAD",
+   "head_seed": null,
+   "counts": {
+    "n_tokens": 400,
+    "n_seeds": 3,
+    "n_pairs_total": 1200,
+    "n_identical_excluded": 882,
+    "n_dropped_invalid_anchor": 0,
+    "n_pairs": 318,
+    "A3_counted": 14.0,
+    "A3_concordant_weight": 14.0,
+    "A4_rise": 50.0,
+    "A4_rise_and_fall": 0.0,
+    "A5_rise_and_flip": 0.0
+   },
+   "pooled": {
+    "A3": {
+     "point": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n_valid_resamples": 9890,
+     "den": 14.0,
+     "num": 14.0
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 50.0,
+     "num": 0.0
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000,
+     "den": 50.0,
+     "num": 0.0
+    }
+   },
+   "per_seed": [
+    {
+     "seed": 20260927,
+     "A3": {
+      "point": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9890,
+      "den": 5.0,
+      "num": 5.0
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 16.0,
+      "num": 0.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 16.0,
+      "num": 0.0
+     }
+    },
+    {
+     "seed": 20260928,
+     "A3": {
+      "point": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9635,
+      "den": 4.0,
+      "num": 4.0
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 16.0,
+      "num": 0.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 16.0,
+      "num": 0.0
+     }
+    },
+    {
+     "seed": 20260929,
+     "A3": {
+      "point": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "n_valid_resamples": 9890,
+      "den": 5.0,
+      "num": 5.0
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 18.0,
+      "num": 0.0
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000,
+      "den": 18.0,
+      "num": 0.0
+     }
+    }
+   ],
+   "seed_spread": {
+    "A3": {
+     "points": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    },
+    "A4": {
+     "points": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    },
+    "A5": {
+     "points": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "n_finite": 3,
+     "range": 0.0
+    }
+   }
+  }
+ },
+ "differences_L2_minus_P2HEAD": {
+  "L2s0": {
+   "pooled": {
+    "A3": {
+     "point": -0.25,
+     "lo": -1.0,
+     "hi": 0.0,
+     "n_valid_resamples": 9528
+    },
+    "A4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 9999
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 9999
+    }
+   },
+   "per_seed": [
+    {
+     "seed": 20260927,
+     "A3": {
+      "point": -0.25,
+      "lo": -1.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9528
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993
+     }
+    },
+    {
+     "seed": 20260928,
+     "A3": {
+      "point": -0.25,
+      "lo": -1.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9355
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9999
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9999
+     }
+    },
+    {
+     "seed": 20260929,
+     "A3": {
+      "point": -0.25,
+      "lo": -1.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9528
+     },
+     "A4": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9993
+     }
+    }
+   ]
+  },
+  "L2s1": {
+   "pooled": {
+    "A3": {
+     "point": -0.375,
+     "lo": -1.0,
+     "hi": 0.0,
+     "n_valid_resamples": 9882
+    },
+    "A4": {
+     "point": 0.05263157894736842,
+     "lo": 0.0,
+     "hi": 0.18294549527127896,
+     "n_valid_resamples": 10000
+    },
+    "A5": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_valid_resamples": 10000
+    }
+   },
+   "per_seed": [
+    {
+     "seed": 20260927,
+     "A3": {
+      "point": -0.33333333333333337,
+      "lo": -1.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9853
+     },
+     "A4": {
+      "point": 0.05263157894736842,
+      "lo": 0.0,
+      "hi": 0.18181818181818182,
+      "n_valid_resamples": 10000
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000
+     }
+    },
+    {
+     "seed": 20260928,
+     "A3": {
+      "point": -0.25,
+      "lo": -1.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9355
+     },
+     "A4": {
+      "point": 0.05263157894736842,
+      "lo": 0.0,
+      "hi": 0.18181818181818182,
+      "n_valid_resamples": 10000
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000
+     }
+    },
+    {
+     "seed": 20260929,
+     "A3": {
+      "point": -0.5,
+      "lo": -1.0,
+      "hi": 0.0,
+      "n_valid_resamples": 9852
+     },
+     "A4": {
+      "point": 0.05263157894736842,
+      "lo": 0.0,
+      "hi": 0.18181818181818182,
+      "n_valid_resamples": 10000
+     },
+     "A5": {
+      "point": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_valid_resamples": 10000
+     }
+    }
+   ]
+  }
+ },
+ "inputs": {
+  "run_dir": "C:\\Users\\Admin\\par18\\l2stepb\\run",
+  "bundle": {
+   "path": "D:\\Projects\\TanitAD-artifacts\\l2_fresh_stepA\\B_token_disjoint\\bundle\\bundle.npz",
+   "sha256": "580b6cc395aa9074c75eb7a62fe99e8b493abd9ea5671be1a5765d8ae4fd673f",
+   "n_tokens": 400,
+   "n_logs": 24
+  },
+  "search_files": {
+   "L2s0": {
+    "path": "C:\\Users\\Admin\\par18\\l2stepb\\run\\search_L2s0.npz",
+    "sha256": "711d60c6daf6c77e81b98b5332ff4d507e8b53d270368dff1d34d525bfd553f9"
+   },
+   "L2s1": {
+    "path": "C:\\Users\\Admin\\par18\\l2stepb\\run\\search_L2s1.npz",
+    "sha256": "015506523d53a453b135375418c41504058dc840aa97b48b63122a5615271221"
+   },
+   "P2HEAD": {
+    "path": "C:\\Users\\Admin\\par18\\l2stepb\\run\\search_P2HEAD.npz",
+    "sha256": "390ec40b472161e608753cd8faae4ab903793e7820b1d882c13bdd788e9699ec"
+   }
+  },
+  "label_files": {
+   "L2s0": {
+    "path": "C:\\Users\\Admin\\par18\\l2stepb\\run\\labels_L2s0.npz",
+    "sha256": "f6efacafa8a8ca72ab6e9f36b25c223104b13a8ffdfc187e3d5ccdf1f7443c92"
+   },
+   "L2s1": {
+    "path": "C:\\Users\\Admin\\par18\\l2stepb\\run\\labels_L2s1.npz",
+    "sha256": "3ec197ef38fd915356601709f8b338ca6de4e089605d48271866fc783a31d557"
+   },
+   "P2HEAD": {
+    "path": "C:\\Users\\Admin\\par18\\l2stepb\\run\\labels_P2HEAD.npz",
+    "sha256": "f2677f7c19328d96b26e583778e09c42d64e13de7927d8f3a8dcb10cfa6ef71f"
+   }
+  },
+  "heads_sha256": {
+   "L2s0": "bded124e1322b56d9bfd749f73b22c86430ef41f6829856927e5a08831320df4",
+   "L2s1": "86f0b20f6ab0d2c46af6b3ae9874b73cc9d94a8065cf7fc0344acbeadcfd4654",
+   "P2HEAD": null
+  },
+  "carve_sha256": "0629811ff5d05879eb62abc5726005ccc4924f03539423003503a099ba29577c",
+  "ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51",
+  "config_sha256": "299c6e63dd3016100149f88b6ca498529d79f8a5fbcfc6845753c8121d62c441",
+  "l1_code_sha256": {
+   "stepA.py": "05d182c7cf1b9e44665b5f9928a35dfa2dd218e89bf7846bdee8a230456313f8",
+   "tts_cem.py": "9dea96038d18ae0b7f7a5d522939cb50c5424b372a6de4282ab49c02977bbedb",
+   "real_scorer.py": "05c4b4fb771ac924cbbf291b4e019f854411c318dc57e80ae09b02f3312ffbfa",
+   "label_perturbations.py": "9e2caca122d1230ff920a3d4722bbb9591d39426134d03af01684fc130c471e5"
+  },
+  "script_sha256": "516c8c014cca966261998a432cde4b567d60612d9873d767f1d4e94f813fa47a",
+  "chain_done_checked": true
+ },
+ "stamps": "SEEN-SCENE (L1 amendment A1.3); the head is TOKEN-FRESH and LOG-SHARED on carve B (400 tokens disjoint from the 400 the head was fitted on, inside the SAME 24 logs: NOT a fresh-log test); SELECTION tier, label-only (not T1, not navtest); one training seed per head arm (H-ESTIM-SEED-1 open); the interval is 'another draw of LOGS' only; no capability claim",
+ "elapsed_s": 94.85,
+ "generated": "2026-10-19T22:18:03+0200"
+}

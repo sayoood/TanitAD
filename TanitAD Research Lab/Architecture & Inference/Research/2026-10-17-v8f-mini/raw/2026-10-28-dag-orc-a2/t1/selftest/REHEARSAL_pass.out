@@ -1,0 +1,24 @@
+10-28 02:31:30 === dagorct1_chain start (mode real; tree E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a; reader E:/Projects/TanitAD-artifacts/dagorc_rebase/read/dag_orc_read.py; ART C:/Users/Admin/AppData/Local/Temp/dort1_rehearsal_pass/art; OUT C:/Users/Admin/AppData/Local/Temp/dort1_rehearsal_pass/out; box-2 log C:/Users/Admin/AppData/Local/Temp/dort1_rehearsal_pass/box2.out; runs dagoaccorc:0 dagoaccorcrep:0 dagoaccorc:1 dagoaccorcrep:1)
+10-28 02:31:30 C: gate: 6991 MB free >= 2048 MB
+10-28 02:31:30 E: gate: 2496 MB free >= 1500 MB
+10-28 02:31:30 guards: --dump-heads = 1, --dump-ticks = 1, causal = 1, logged = 1, model built from the checkpoint's own cfg = 1, --max-windows = 1, v8f_mini_eval --ages = 1  (controls: --replan-steps = 1, trainer --init-ckpt = 1, no-such-flag = 0/0) in E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a
+10-28 02:31:35 tool --help agrees (v8f_t1_eval: --dump-heads, --limit {logged,...,causal,...}, --max-windows; v8f_mini_eval: --ages, --families)
+10-28 02:31:38 PINS.txt verified (44 pins: tool tree digest 6a4b47c8acfa, the reader 2e5f9f1778e1, its 13 support files, the banked CTRL files, the box-2 chain files whose output is parsed, the argv templates, the lib)
+10-28 02:31:38 tool identity: the digest 6a4b47c8acfa IS the digest of the tree that rolled DAG-OACC out (/e/Projects/TanitAD-artifacts/v8f-dagoacc-t1/PINS.txt)
+10-28 02:31:38 reader --static-check: DAG-ORC-READ-STATIC-OK
+10-28 02:31:39 RC evidence: OK, 2 files carry this reader's sha256 and 0 differences
+10-28 02:31:39 template proof 1: rollout_causal.tmpl rendered with DAG-OACC s0's parameters == its banked rollout argv (32 tokens, byte for byte)
+10-28 02:31:40 template proof 2: rollout_logged.tmpl rendered with DAGGER2's DAG2 s0 parameters == the logged-lane command that RAN (dag2t1/logs/chain.out)
+10-28 02:31:41 template proof 3: t0fresh.tmpl rendered with DAGGER2's DAG2 s0 parameters == the fresh-age T0 command that RAN (dag2t1/logs/chain.out)
+10-28 02:31:41 box-2 log present
+10-28 02:31:41 == sequential: 4 runs x (causal, logged, fresh T0) = 12 steps, one process at a time, OMP/MKL 8 threads; box-2 ZZV8FMINI-STOP lines already in the log: 0
+10-28 02:31:42 launch commit (from M2b_s0_dagoaccorc's token): aeb544683b1c6b70e29f241fe7133d4290a1b4a5  (not the refused r1 commit e7ea20d1; later runs must bind the same)
+10-28 02:31:47   rolloutcode: rollout code (static import closure) of 3 programs: 106 files vs launch aeb544683b1c: 104 identical, 2 differ, 0 absent at launch
+10-28 02:31:47   rolloutcode:   DIFFERS stack/tanitad/refs/refc.py: changed top-level names ['AnchoredDiffusionDecoder']; the harness reaches 37 names of it; TOUCHED ['AnchoredDiffusionDecoder']
+10-28 02:31:47   rolloutcode:   DIFFERS stack/tanitad/refs/refc_v3.py: changed top-level names ['<module-level>', 'RefCV3Config', 'RefCV3Model']; the harness reaches 1 names of it; TOUCHED ['<module-level>']
+10-28 02:31:48   rolloutcode: ROLLOUT-CODE GATE PASS: of the gated files ['stack/tanitad/models/v8f_mini.py', 'stack/tanitad/data/v8f_mini_data.py'] none has a rollout-reachable name that differs at the launch commit
+10-28 02:31:48   K-BUILD early status: changed files [] | hunks 0 | bit_identity_test [] | default_off []
+10-28 02:31:48 M2b_s0_dagoaccorc: the box-2 log shows pulled + run record PASS + K-REACH PASS; the pull is COMPLETE by content: ckpt sha256 f8b925e1835575a4... == the pull line of box2.out == SHA256SUMS.txt (re-hashed from the file) (8 names re-hashed, summary done, identity A s0 (argv / init / bank / w_acc / perturbation / token))
+10-28 02:31:50 start DAGORC_s0_m10_causal_heads (attempt 1; ckpt M2b_s0_dagoaccorc f8b925e18355, limit causal): C:/Users/Admin/venvs/tanitad/Scripts/python.exe E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/stack/scripts/v8f_t1_eval.py run --ckpt C:/Users/Admin/AppData/Local/Temp/dort1_rehearsal_pass/art/M2b_s0_dagoaccorc/ckpt_last.pt --tag DAGORC_s0_m10_causal_heads --tracks E:/Projects/TanitAD-artifacts/sfresh_inputs/inputs/native_tracks.pt --eval-cache E:/Projects/TanitAD-artifacts/sfresh_inputs/cache --eval-grid 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json' --eval-join 'E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz' --out-dir C:/Users/Admin/AppData/Local/Temp/dort1_rehearsal_pass/out --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks C:/Users/Admin/AppData/Local/Temp/dort1_rehearsal_pass/out/ticks --dump-heads --device cpu
+10-28 02:31:54 end DAGORC_s0_m10_causal_heads rc=1 wall=3s
+10-28 02:31:55 STOP: rollout DAGORC_s0_m10_causal_heads failed (rc 1; json NO, ticks NO, dumps 0/141):     magic_number = pickle_module.load(f, **pickle_load_args) _pickle.UnpicklingError: pickle data was truncated 

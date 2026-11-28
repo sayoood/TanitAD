@@ -1,0 +1,103 @@
+files 12 cycle records 1224 stalled (code precondition) 719 q_stall fired 66 excused 653
+
+## ALL arms/modes n_excused_cycles= 653
+ cause-combination counts (L=lead<=10, C=conflict, R=red): {'LCR': 153, 'LR': 112, 'CR': 105, 'R': 90, 'L': 145, 'C': 31, 'LC': 17}
+  LEAD: code says lead<=10m; strict corridor hit                                   343/427 = 80.3%
+  LEAD: strict hit AND not pulling away (vlon<2)                                   335/427 = 78.5%
+  CONFLICT: code says conf; ahead object enters strict corridor <=4s               265/306 = 86.6%
+  CONFLICT: ... <=3s                                                               226/306 = 73.9%
+  CONFLICT: all conflicting objects are BEHIND ego                                 29/306 = 9.5%
+  RED: code says red; red connector is ON ROUTE and in strict corridor             460/460 = 100.0%
+  RED: on route (any overlap)                                                      460/460 = 100.0%
+  sole RED valid                                                                   90/90 = 100.0%
+  sole LEAD valid                                                                  140/145 = 96.6%
+  sole CONFLICT valid                                                              26/31 = 83.9%
+  EXCUSED cycles with >=1 VALID excuse: 643/653 = 98.5%  -> falsely excused (q_stall should have fired): 10
+
+## stop-policy scenes (ego exactly still) n_excused_cycles= 342
+ cause-combination counts (L=lead<=10, C=conflict, R=red): {'LCR': 71, 'LR': 68, 'CR': 35, 'R': 30, 'L': 98, 'C': 29, 'LC': 11}
+  LEAD: code says lead<=10m; strict corridor hit                                   208/248 = 83.9%
+  LEAD: strict hit AND not pulling away (vlon<2)                                   202/248 = 81.5%
+  CONFLICT: code says conf; ahead object enters strict corridor <=4s               125/146 = 85.6%
+  CONFLICT: ... <=3s                                                               104/146 = 71.2%
+  CONFLICT: all conflicting objects are BEHIND ego                                 17/146 = 11.6%
+  RED: code says red; red connector is ON ROUTE and in strict corridor             204/204 = 100.0%
+  RED: on route (any overlap)                                                      204/204 = 100.0%
+  sole RED valid                                                                   30/30 = 100.0%
+  sole LEAD valid                                                                  93/98 = 94.9%
+  sole CONFLICT valid                                                              24/29 = 82.8%
+  EXCUSED cycles with >=1 VALID excuse: 332/342 = 97.1%  -> falsely excused (q_stall should have fired): 10
+
+## 24-arm-set members (pdm_best + sweep0.5) n_excused_cycles= 311
+ cause-combination counts (L=lead<=10, C=conflict, R=red): {'LCR': 82, 'LR': 44, 'CR': 70, 'R': 60, 'L': 47, 'C': 2, 'LC': 6}
+  LEAD: code says lead<=10m; strict corridor hit                                   135/179 = 75.4%
+  LEAD: strict hit AND not pulling away (vlon<2)                                   133/179 = 74.3%
+  CONFLICT: code says conf; ahead object enters strict corridor <=4s               140/160 = 87.5%
+  CONFLICT: ... <=3s                                                               122/160 = 76.2%
+  CONFLICT: all conflicting objects are BEHIND ego                                 12/160 = 7.5%
+  RED: code says red; red connector is ON ROUTE and in strict corridor             256/256 = 100.0%
+  RED: on route (any overlap)                                                      256/256 = 100.0%
+  sole RED valid                                                                   60/60 = 100.0%
+  sole LEAD valid                                                                  47/47 = 100.0%
+  sole CONFLICT valid                                                              2/2 = 100.0%
+  EXCUSED cycles with >=1 VALID excuse: 311/311 = 100.0%  -> falsely excused (q_stall should have fired): 0
+
+## mode log n_excused_cycles= 361
+ cause-combination counts (L=lead<=10, C=conflict, R=red): {'LCR': 75, 'LR': 56, 'CR': 48, 'R': 51, 'L': 98, 'C': 19, 'LC': 14}
+  LEAD: code says lead<=10m; strict corridor hit                                   201/243 = 82.7%
+  LEAD: strict hit AND not pulling away (vlon<2)                                   194/243 = 79.8%
+  CONFLICT: code says conf; ahead object enters strict corridor <=4s               124/156 = 79.5%
+  CONFLICT: ... <=3s                                                               106/156 = 67.9%
+  CONFLICT: all conflicting objects are BEHIND ego                                 23/156 = 14.7%
+  RED: code says red; red connector is ON ROUTE and in strict corridor             230/230 = 100.0%
+  RED: on route (any overlap)                                                      230/230 = 100.0%
+  sole RED valid                                                                   51/51 = 100.0%
+  sole LEAD valid                                                                  94/98 = 95.9%
+  sole CONFLICT valid                                                              14/19 = 73.7%
+  EXCUSED cycles with >=1 VALID excuse: 352/361 = 97.5%  -> falsely excused (q_stall should have fired): 9
+
+## mode idm n_excused_cycles= 292
+ cause-combination counts (L=lead<=10, C=conflict, R=red): {'LCR': 78, 'LR': 56, 'CR': 57, 'R': 39, 'L': 47, 'C': 12, 'LC': 3}
+  LEAD: code says lead<=10m; strict corridor hit                                   142/184 = 77.2%
+  LEAD: strict hit AND not pulling away (vlon<2)                                   141/184 = 76.6%
+  CONFLICT: code says conf; ahead object enters strict corridor <=4s               141/150 = 94.0%
+  CONFLICT: ... <=3s                                                               120/150 = 80.0%
+  CONFLICT: all conflicting objects are BEHIND ego                                 6/150 = 4.0%
+  RED: code says red; red connector is ON ROUTE and in strict corridor             230/230 = 100.0%
+  RED: on route (any overlap)                                                      230/230 = 100.0%
+  sole RED valid                                                                   39/39 = 100.0%
+  sole LEAD valid                                                                  46/47 = 97.9%
+  sole CONFLICT valid                                                              12/12 = 100.0%
+  EXCUSED cycles with >=1 VALID excuse: 291/292 = 99.7%  -> falsely excused (q_stall should have fired): 1
+
+per-state stalled/excused/fired:
+  ('pilot', 0, False, 'X') 40
+  ('pilot', 0, True, 'X') 34
+  ('pilot', 12, False, 'X') 22
+  ('pilot', 12, True, 'X') 34
+  ('pilot', 14, False, 'X') 68
+  ('pilot', 14, True, 'X') 34
+  ('pilot', 15, False, 'X') 13
+  ('pilot', 15, True, 'F') 9
+  ('pilot', 15, True, 'X') 25
+  ('stall', 1, False, 'X') 68
+  ('stall', 1, True, 'X') 34
+  ('stall', 2, False, 'X') 24
+  ('stall', 2, True, 'X') 34
+  ('stall', 4, False, 'X') 4
+  ('stall', 4, True, 'F') 8
+  ('stall', 4, True, 'X') 26
+  ('stall', 8, False, 'X') 5
+  ('stall', 8, True, 'F') 19
+  ('stall', 8, True, 'X') 15
+  ('stall', 14, False, 'X') 2
+  ('stall', 14, True, 'F') 8
+  ('stall', 14, True, 'X') 26
+  ('stall', 16, False, 'X') 11
+  ('stall', 16, True, 'F') 15
+  ('stall', 16, True, 'X') 19
+  ('stall', 18, False, 'X') 20
+  ('stall', 18, True, 'F') 7
+  ('stall', 18, True, 'X') 27
+  ('stall', 19, False, 'X') 34
+  ('stall', 19, True, 'X') 34

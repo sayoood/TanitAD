@@ -1,0 +1,188 @@
+{
+ "tool": "n1dm_kownsplit.py",
+ "card": "PREREG_V8F_N1DM.md section 2.3 (iii) K-OWN-SPLIT; code of record the-N1DM-commit",
+ "profile": "e141",
+ "ckpt": "F:/TanitAD-scratch/n1dc/read_n1dh/eval141/ckpts/N1DH_s1/ckpt_last.pt",
+ "tier": "T0 (training-format forward; a WM diagnostic, not driving performance)",
+ "evidence_class": "MEASURED (ours; checkpoint forward) on the eval-141 probe windows, NOT D1-HO; the D1-HO profile runs where its clip caches are",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap B 2000 seed 0; answers only 'another draw of EPISODES' (never another training run / inference run)",
+ "max_windows": 480,
+ "report_only": true,
+ "controls_run": {
+  "K-ALIGN": {
+   "n_recorded": 480,
+   "n_dump": 480,
+   "pass_": true,
+   "order": "identical",
+   "max_abs": 0.0
+  },
+  "K-LABEL-RUN": {
+   "route_stage_equals_dump_kinematic_label_on_ok_rows": true,
+   "n_ok": 480,
+   "n_rows": 480,
+   "pass": true
+  }
+ },
+ "model_cfg": {
+  "aux_route": "cond",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "detach_upper": true
+ },
+ "n_rows": 480,
+ "n_route_ok": 480,
+ "n_has": 472,
+ "n_pair_rows": 472,
+ "n_episodes_pair": 139,
+ "class_share_route_y_pair_rows": [
+  0.7076271186440678,
+  0.09745762711864407,
+  0.19491525423728814
+ ],
+ "majority_share_pair_rows": 0.7076271186440678,
+ "argmax_class_counts_pair_rows": {
+  "own": [
+   346,
+   45,
+   81
+  ],
+  "gt": [
+   332,
+   41,
+   99
+  ],
+  "tonly": [
+   335,
+   40,
+   97
+  ]
+ },
+ "arms": {
+  "own": {
+   "n_rows": 472,
+   "n_episodes": 139,
+   "acc": 0.8792372881355932,
+   "ci_lo": 0.8442,
+   "ci_hi": 0.9114,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "gt": {
+   "n_rows": 472,
+   "n_episodes": 139,
+   "acc": 0.9173728813559322,
+   "ci_lo": 0.8866,
+   "ci_hi": 0.9455,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "tonly": {
+   "n_rows": 472,
+   "n_episodes": 139,
+   "acc": 0.9110169491525424,
+   "ci_lo": 0.8787,
+   "ci_hi": 0.9379,
+   "estimator": "episode_cluster_bootstrap"
+  }
+ },
+ "gt_minus_own": {
+  "delta": 0.0381,
+  "lo": 0.0085,
+  "hi": 0.0687,
+  "ci95": 0.0301,
+  "p_delta_gt0": 0.9945,
+  "separated": true,
+  "reducer": "mean",
+  "n_windows": 472,
+  "n_episodes": 139,
+  "n_boot": 2000,
+  "estimator": "paired_episode_cluster_bootstrap"
+ },
+ "gt_tcode_only_minus_own": {
+  "delta": 0.0318,
+  "lo": 0.0064,
+  "hi": 0.0573,
+  "ci95": 0.0255,
+  "p_delta_gt0": 0.991,
+  "separated": true,
+  "reducer": "mean",
+  "n_windows": 472,
+  "n_episodes": 139,
+  "n_boot": 2000,
+  "estimator": "paired_episode_cluster_bootstrap"
+ },
+ "max_abs_logit_diff_gt_vs_own": 5.231012344360352,
+ "max_abs_logit_diff_gt_vs_own_on_has_rows": 5.231012344360352,
+ "natural_draw": {
+  "p_gt": 0.2,
+  "note": "the trainer's own draw (seeded generator, one per chunk): rows split by route_own; route_ok rows only; descriptive, not paired (different rows)",
+  "own_code_rows": {
+   "n_rows": 384,
+   "n_episodes": 140,
+   "acc": 0.8776041666666666,
+   "ci_lo": 0.8406,
+   "ci_hi": 0.9132,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "gt_code_rows": {
+   "n_rows": 96,
+   "n_episodes": 76,
+   "acc": 0.9375,
+   "ci_lo": 0.8878,
+   "ci_hi": 0.98,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "share_gt_rows_among_route_ok": 0.2
+ },
+ "controls": {
+  "K-ID": {
+   "max_abs_logit_diff_two_own_runs": 0.0,
+   "paired_delta": 0.0,
+   "pass": true
+  },
+  "K-MASK": {
+   "gt_arm_own_equals_not_has": true,
+   "own_arm_all_true": true,
+   "n_has": 472,
+   "n_rows": 480,
+   "pass": true,
+   "note": "a model whose probe batch has no lab_t.has row would make the GT arm the OWN arm: that reads FAIL here, never a gap of 0"
+  },
+  "K-PERM": {
+   "own": {
+    "permuted_label_acc": 0.5805084745762712,
+    "chance_expected": 0.5614676098822178,
+    "abs_diff": 0.019040864694053417,
+    "tol": 0.06904309634237425,
+    "pass": true
+   },
+   "gt": {
+    "permuted_label_acc": 0.5826271186440678,
+    "chance_expected": 0.5470859666762425,
+    "abs_diff": 0.03554115196782526,
+    "tol": 0.06904309634237425,
+    "pass": true
+   },
+   "pass": true
+  },
+  "K-UNIF": {
+   "argmax_class_counts_own": [
+    472,
+    0,
+    0
+   ],
+   "argmax_class_counts_gt": [
+    472,
+    0,
+    0
+   ],
+   "gap_gt_minus_own": 0.0,
+   "max_abs_logit": 0.0,
+   "pass": true
+  },
+  "K-INFER": {
+   "max_abs_logit_diff_own_arm_vs_forward_infer": 0.0,
+   "pass": true
+  }
+ },
+ "status": "VALID",
+ "wall_s": 87.3
+}

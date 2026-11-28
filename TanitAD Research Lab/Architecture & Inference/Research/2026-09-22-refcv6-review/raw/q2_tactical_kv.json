@@ -1,0 +1,91 @@
+{
+ "arm_ncells_12": {
+  "n_cells_requested": 12,
+  "cross_attn_calls": [
+   {
+    "layer": 0,
+    "n_queries": 38,
+    "K": 112,
+    "d": 64,
+    "k_is_v": true
+   },
+   {
+    "layer": 1,
+    "n_queries": 38,
+    "K": 112,
+    "d": 64,
+    "k_is_v": true
+   }
+  ],
+  "K": 112,
+  "n_queries": 38,
+  "image_token_count_P_operative": 4,
+  "tacv6_n_scene_row0": 112,
+  "sources_declared": [
+   "agent",
+   "bev"
+  ],
+  "d_bev_declared": 16,
+  "forward_signature": [
+   "agent_pad",
+   "agent_tokens",
+   "bev_pad",
+   "bev_tokens",
+   "cond",
+   "self"
+  ]
+ },
+ "arm_ncells_25": {
+  "n_cells_requested": 25,
+  "cross_attn_calls": [
+   {
+    "layer": 0,
+    "n_queries": 38,
+    "K": 125,
+    "d": 64,
+    "k_is_v": true
+   },
+   {
+    "layer": 1,
+    "n_queries": 38,
+    "K": 125,
+    "d": 64,
+    "k_is_v": true
+   }
+  ],
+  "K": 125,
+  "n_queries": 38,
+  "image_token_count_P_operative": 4,
+  "tacv6_n_scene_row0": 125,
+  "sources_declared": [
+   "agent",
+   "bev"
+  ],
+  "d_bev_declared": 16,
+  "forward_signature": [
+   "agent_pad",
+   "agent_tokens",
+   "bev_pad",
+   "bev_tokens",
+   "cond",
+   "self"
+  ]
+ },
+ "derived_n_agent_slots": {
+  "from_12": 100,
+  "from_25": 100,
+  "consistent": true
+ },
+ "K_tracks_bev_count": true,
+ "image_tokens_in_kv": {
+  "P_operative": 4,
+  "K_minus_agent_minus_bev": 0,
+  "verdict": "ABSENT (K is exactly agent+bev and tracks bev exactly)"
+ },
+ "MUTATIONS": {
+  "declare_image_source": "REFUSED: [refcv6-tac] \u26d4 key/value source(s) ['image'] are not the scene embedding. This decoder att",
+  "declare_legal_sources_control": "ACCEPTED (correct)",
+  "forward_has_image_port": false,
+  "pass_image_tokens_kwarg": "TypeError: TacticalBehaviourDecoder.forward() got an unexpected keyword argument 'image_tok"
+ }
+}

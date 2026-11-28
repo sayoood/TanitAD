@@ -1,0 +1,38 @@
+{
+ "epr1_gate.load_verified_module": {
+  "identical_bytes_in_a_second_dir_returns_the_cached_module": true,
+  "its___file___is_still_the_first_dir": true,
+  "tampered_bytes_in_a_second_dir_get_their_own_module": true,
+  "tampered_bytes_are_refused_when_the_verified_sha_is_passed": true,
+  "sibling_files_epr1_py_imports_at_module_level": []
+ },
+ "srttc_c2_gate.load_verified_pair": {
+  "identical_bytes_in_a_second_dir_return_the_cached_pair": true,
+  "tampered_r1_in_a_second_dir_gets_its_own_r1_AND_c2": true,
+  "tampered_c2_in_a_second_dir_gets_its_own_c2_and_the_cached_r1": true,
+  "tampered_r1_refused_when_the_verified_sha_is_passed": true,
+  "tampered_c2_refused_when_the_verified_sha_is_passed": true,
+  "sibling_files_imported_at_module_level": {
+   "srttc_r1_gate.py": [],
+   "srttc_r1.py": [],
+   "srttc_c2.py": [
+    "srttc_r1"
+   ]
+  },
+  "c2_module_name_carries_both_shas": true
+ },
+ "srttc_c2_gate_failed_load_then_second_call": {
+  "exec_verified_module(srttc_r1.py)": {
+   "first_call": "RuntimeError",
+   "second_call": "RAISED RuntimeError"
+  },
+  "load_verified_pair(c2 raises)": {
+   "first_call": "RuntimeError",
+   "second_call": "RAISED RuntimeError"
+  },
+  "_load_frozen_gate(srttc_r1_gate.py raises)": {
+   "first_call": "RuntimeError",
+   "second_call": "RAISED RuntimeError"
+  }
+ }
+}

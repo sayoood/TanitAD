@@ -1,0 +1,32 @@
+mutation                         class        caught-by (failing checks)
+npz_reread_per_row               io           io_npz_one_read_per_column
+pick_is_argmin                   select       X_pdms, X_subscores, X_R_is_pdms_minus_lamD, X_D_at_pick
+lane_factor_dropped              select       select_v1_vs_lane
+lane_factor_always_on            select       select_v1_vs_lane, select_applies_sigmoid, select_weights_5_5_2, select_tie_lowest_index
+sigmoid_skipped                  select       select_applies_sigmoid
+weights_ttc_c_swapped            select       select_weights_5_5_2
+ep_ttc_columns_swapped           lookup       X_subscores, B_subscores, S_subscores, T_subscores
+zero_flag_wrong                  lookup       zero_picks_counted
+skill_denominator_flipped        lookup       skill
+R_taken_at_fan_mean              lookup       X_R_is_pdms_minus_lamD, B_R_is_pdms_minus_lamD, S_R_is_pdms_minus_lamD, T_R_is_pdms_minus_lamD
+D_taken_at_index_0               lookup       X_D_at_pick, B_D_at_pick, S_D_at_pick, T_D_at_pick
+tele_rank_direction              telemetry    tele_X, tele_B, g3_flags, tele_bins_M64_width13
+tele_shorter_flag_flipped        telemetry    tele_X, tele_B
+tele_bin_width_fixed_13          telemetry    tele_X, tele_B, g3_flags
+tele_ratio_inverted              telemetry    tele_X, tele_B, g3_flags, io_cli_telemetry_from_sets
+g3_floor_removed                 bounds       g3_flags, g3_bounds_are_the_reviews
+K4_breach_sign                   bounds       pair_adverse_flags
+delta_sign_flipped               pair         pair_mean_hand_derived, pair_counts, pair_is_PE_boot_by_log, registered_estimator_defaults
+delta_biased                     pair         pair_mean_hand_derived, pair_is_PE_boot_by_log, registered_estimator_defaults, pair_subscore_deltas
+pair_on_arm_sets_only            pair         pair_uses_only_common_sets
+cluster_unit_is_the_set          pair         pair_is_PE_boot_by_log, registered_estimator_defaults
+stale_ckpt_accepted              eligibility  pdm_missing_and_stale_dropped
+terms_stale_accepted             eligibility  terms_missing_and_stale_dropped
+foreign_scene_accepted           eligibility  foreign_scene_refused
+coverage_hardcoded               eligibility  coverage_reported
+require_full_ignored             eligibility  require_full_refuses_a_gap
+swap_check_blind                 selfcheck    swap_check_sees_a_non_swap
+selfpair_check_blind             selfcheck    selfpair_check_sees_a_non_selfpair
+duplicate_scores_silent          io           io_duplicate_scores_refused
+cli_terms_guard_removed          io           io_cli_needs_terms_unless_lam_d_0_named
+ZZTEST_PASS 32  (1 unmutated suite + 30 RED mutations + coverage)

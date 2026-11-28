@@ -1,0 +1,1939 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "small",
+  "--trunk",
+  "timm",
+  "--trunk-name",
+  "resnet101.a1_in1k",
+  "--trunk-mode",
+  "shared",
+  "--trunk-fuse",
+  "concat1x1",
+  "--ego-history",
+  "--no-strategic",
+  "--image-hw",
+  "416",
+  "1024",
+  "--sampler",
+  "ddim",
+  "--f1-random-t",
+  "--f2-dd-step",
+  "--f3-per-layer",
+  "--f4-adaln",
+  "--f5-focal",
+  "--f5-emitting-conf",
+  "--f6-w-u0-zero",
+  "--f9-assert-vocab",
+  "--anchors",
+  "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+  "--anchor-v0-conditioned",
+  "--n-anchors",
+  "117",
+  "--v2-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-train",
+  "--v7-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+  "--nav-from-v7",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--eval-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--speed-max-sidecar-v6-eval",
+  "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+  "--tac-decoder-v6",
+  "--w-tac-v6",
+  "1.0",
+  "--tac-decoder-d-bev",
+  "96",
+  "--graft-behaviour-sel",
+  "--max-speed-input-v6",
+  "--speed-max-sidecar-v6",
+  "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+  "--agents",
+  "head",
+  "--agent-join",
+  "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+  "--agent-rig-camera",
+  "extrinsics",
+  "--agent-rig-extrinsics",
+  "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+  "--agent-cls-weight",
+  "b1",
+  "--w-agent",
+  "1.0",
+  "--w-map",
+  "1.0",
+  "--map-gt-root",
+  "/home/nvidia/data/sam3_corpus",
+  "--w-box3d",
+  "1.0",
+  "--join3d",
+  "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+  "--bev-coupling",
+  "--equalize-bottom-rows",
+  "43",
+  "--opt",
+  "dd",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--u8-batches",
+  "--trunk-chunk-ckpt",
+  "8",
+  "--trunk-frozen-bn",
+  "--trunk-bf16",
+  "--trunk-channels-last",
+  "--trunk-fold-bn",
+  "--trunk-dedup-frames",
+  "--trunk-compile",
+  "--workers",
+  "6",
+  "--conflict-every",
+  "10",
+  "--save-every",
+  "500",
+  "--log-every",
+  "50",
+  "--batch",
+  "16",
+  "--steps",
+  "50400",
+  "--out",
+  "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
+ ],
+ "cudnn_benchmark": false,
+ "trunk_memory_levers": {
+  "chunk_ckpt": 8,
+  "frozen_bn": true,
+  "bn_pinned": 104,
+  "relu_out_of_place": 100,
+  "bf16": true,
+  "channels_last": true,
+  "bn_folded": 104,
+  "dedup_frames": true,
+  "compile_donated_buffer": false,
+  "compile": "inductor"
+ },
+ "data_order": {
+  "scheme": "resumable-epoch-sampler/1",
+  "seed": 0,
+  "resumed_from": null,
+  "legacy_checkpoint": false
+ },
+ "trunk_bn_recalib": null,
+ "effective_weights": {
+  "_what": "argparse default -> later layers -> effective weight, and whether the term therefore builds an autograd graph at all",
+  "_why": "V6LossWeights.for_stage(stage) rewrites the argparse defaults per stage; the effective weight is not the default. MEASURED: 42/138 optimizer tensors took no gradient (5,305,667 params = 52.2 % of a declared trainable budget) because zero-weighted terms are guarded out of the loss.",
+  "_discriminator": "p.grad is None -- never the weight's value",
+  "where": "this arm",
+  "explicit_source": "argv",
+  "acknowledged_discarded": false,
+  "n_terms": 12,
+  "n_builds_graph": 4,
+  "terms": [
+   {
+    "term": "u0 control-space x0 loss (WP-4)",
+    "flag": "--w-u0",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "GT-supervised detection set loss (WP-6)",
+    "flag": "--w-agent",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "WP-D BEV auxiliary loss",
+    "flag": "--w-bev-aux",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "D-TACGOAL 22-token tactical goal SET (multi-label BCE)",
+    "flag": "--w-tac-goal",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-tac-goal needs `--tac-goal-tok-head` (no head => no `tac_goal_logits` in `out`) AND `--v7-labels` (no join => no `tac_goal_y`/`tac_goal_w` target)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "agent projection consistency",
+    "flag": "--agent-w-project",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "agent ground-plane prior",
+    "flag": "--agent-w-ground",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "E15 geometric goal point (GP-2)",
+    "flag": "--goal-point-w",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "no --goal-point-inject: the head that predicts the point is never built",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "refcv6 SAM3 BEV map soft-CE (\u00a72)",
+    "flag": "--w-map",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "refcv6 3-D cuboid set loss (\u00a76)",
+    "flag": "--w-box3d",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "refcv6 \u00a74 tactical behaviour decoder (22-token BCE + lat/lon CE + confidence)",
+    "flag": "--w-tac-v6",
+    "declared": 0.0,
+    "requested": 1.0,
+    "effective": 1.0,
+    "explicit": true,
+    "layer": null,
+    "mask": null,
+    "missing": null,
+    "status": "TRAINS",
+    "builds_graph": true
+   },
+   {
+    "term": "refcv7 WTA proposal decoder (winner-takes-all L1, 64 queries)",
+    "flag": "--w-r7-wta",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-r7-wta needs --refcv7 (no decoder => no `r7_wta`)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   },
+   {
+    "term": "refcv7 disentangled scorer vs the PhysicalAI oracle (7 sub-score BCE: nc dac ttc ep comf spd nav)",
+    "flag": "--w-r7-scorer",
+    "declared": 0.0,
+    "requested": 0.0,
+    "effective": 0.0,
+    "explicit": false,
+    "layer": null,
+    "mask": null,
+    "missing": "--w-r7-scorer needs --refcv7, --agent-join (NC/TTC oracle), the SAM3 map with --w-map > 0 (DAC oracle) and --r7-nav-tau-rad > 0 (nav oracle)",
+    "status": "OFF_BY_DEFAULT",
+    "builds_graph": false
+   }
+  ],
+  "_evidence_class": "MEASURED (ours; this run's own configuration)"
+ },
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 90734473,
+  "phi_tac": 2101504,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1145,
+  "nav_inject": 50176,
+  "tac_decoder_v6": 2253828,
+  "tac_behaviour_gate_v6": 2574,
+  "total": 100893747
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "YIELD",
+   "tac_SIT"
+  ],
+  "situation_output_role": "auxiliary TARGETS of the refcv6 behaviour head; never inputs",
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx only)"
+  ],
+  "selection_inputs": [
+   "anchor confidence (the decoder's own)",
+   "tactical lat/lon posterior -> anchor prior (DETACHED, zero-init 8 -> n_anchors)",
+   "valid-behaviour set over the 17 ADMISSIBLE tokens (DETACHED, zero-init; the 5 situation columns are structurally dead)",
+   "nav compliance (PARAMETER-FREE geometric predicate, one zero-init gate)",
+   "max-speed ceiling (ARGMAX FILTER, no parameters)"
+  ],
+  "required_live_edges": [
+   "frames -> every goal"
+  ],
+  "refused_edges": [
+   "lan -> inference (E12; label-only)",
+   "situation classifier output -> any goal node (PI 2026-08-03, UNCHANGED)",
+   "v0 -> any goal node (E11)",
+   "tac_SIT / TRAFFIC_LIGHT_* / YIELD -> selection (PI 2026-08-03, extended to the refcv6 behaviour gate; the columns are structurally dead and proven so by mutation)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)",
+  "_reads": "`required_live_edges` is not decoration: an arm where the SCENE edge does not fire is ECHOING, and an arm where the EGO edge does not fire is v3 wearing a v4 config. Both are failures and both are measured."
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "anchors": {
+  "path": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+  "shape": [
+   117,
+   8,
+   2
+  ],
+  "sha256_installed": "51f930dc6f3564ff8f21c9070ca97b805d4e82908e42d0ef1f99be9f5a3a66df",
+  "source": "file",
+  "controls_shape": [
+   117,
+   2
+  ],
+  "controls_sha256_installed": "b072f4c052331beb79bef117c7b233f702802b517429cc9157a841294e089664",
+  "v0_conditioned": true,
+  "control_units": "alat",
+  "straight_ahead_control_present": true,
+  "control_units_source": "file",
+  "artifact_schema": "tanitad.anchor_artifact/1",
+  "artifact_declared": {
+   "control_units": "alat",
+   "horizon_s": 6.0,
+   "dt": 0.1,
+   "ref_speed_ms": 10.0,
+   "kappa_cap": 0.12,
+   "alat_v_floor": 4.0
+  },
+  "artifact_provenance": {
+   "builder": "emit_anchors_alat.py",
+   "builder_path": "C:\\Users\\Admin\\tanitad-wt\\_refcv5_anchors\\emit_anchors_alat.py",
+   "builder_sha256": "f19f3a1ce6c434abca5c2cef8fd33537f7c0348ec1a155df54070e94c37d0959",
+   "argv": [],
+   "created_utc": "2026-09-05T21:02:09+00:00",
+   "torch_version": "2.11.0+cu128",
+   "schema": "tanitad.anchor_artifact/1"
+  },
+  "file_sha256": "897099148d1b16eb109ad24516d1a1b9cc7d60d7a3ce71cd3f14beef33c1d63d"
+ },
+ "seams": {
+  "hier": true,
+  "hierarchy": true,
+  "no_strategic": true,
+  "goal_str_loss_applied": false,
+  "route_loss_applied": false,
+  "graft_maneuver": true,
+  "factored_maneuver": true,
+  "graft_prior_center": true,
+  "graft_target_latent": true,
+  "grounded_selector": false,
+  "graft_imagination": false,
+  "bev_aux": null,
+  "tactical_speed_input": false,
+  "lan_enable": false,
+  "graft_lan": false,
+  "goal_str": false,
+  "withheld_bank": "fixed",
+  "withheld_bank_warmup": 0,
+  "withheld_speed_max_ms": 35.0,
+  "agents": {
+   "enable": true,
+   "oracle": false,
+   "oracle_sigma_range_m": 0.0,
+   "oracle_miss_rate": 0.0,
+   "queries": 100,
+   "d_model": 256,
+   "depth": 3,
+   "n_heads": 8,
+   "enforce_band": true,
+   "w_project": 0.0,
+   "w_ground": 0.0,
+   "presence_gate": 0.5,
+   "presence_hard": false,
+   "occ_from_geometry": false,
+   "n_classes": 10,
+   "classes": [
+    "automobile",
+    "heavy_truck",
+    "bus",
+    "other_vehicle",
+    "trailer",
+    "person",
+    "rider",
+    "stroller",
+    "animal",
+    "protruding_object"
+   ],
+   "n_queries_default_upstream": 100
+  },
+  "cross_agent": true,
+  "wp_index": null,
+  "bev_coupling": {
+   "requested": true,
+   "learned_offsets": false,
+   "offset_max_m": 2.0,
+   "built": {
+    "enabled": true,
+    "enable": true,
+    "d_model": 384,
+    "d_bev": 96,
+    "n_points": 8,
+    "learned_offsets": false,
+    "offset_max_m": 2.0,
+    "padding_mode": "zeros",
+    "grid": [
+     120,
+     64
+    ],
+    "provenance": "ddv2-faithful",
+    "released_source": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/raw/ddv2_src/blocks.py:80-108"
+   }
+  },
+  "sampler": "ddim",
+  "sampler_space": "control",
+  "sampler_infer_t": 8,
+  "sampler_steps": 2,
+  "sampler_groups": 1,
+  "control_norm": [
+   4.0,
+   3.0
+  ],
+  "trunk": "timm",
+  "trunk_name": "resnet101.a1_in1k",
+  "trunk_mode": "shared",
+  "trunk_chunk_ckpt": 8,
+  "trunk_frozen_bn": true,
+  "trunk_bf16": true,
+  "trunk_channels_last": true,
+  "trunk_fold_bn": true,
+  "trunk_dedup_frames": true,
+  "trunk_compile": true,
+  "trunk_fuse": "concat1x1",
+  "trunk_fuse_identity": true,
+  "trunk_frames": 3,
+  "trunk_pretrained": true,
+  "trunk_imagenet_norm": true,
+  "trunk_in_channels": 9,
+  "ego_history": {
+   "enable": true,
+   "steps": 8,
+   "channels": 3,
+   "hidden": 64,
+   "out_dim": 32,
+   "kind": "gru",
+   "dt": 0.1,
+   "zero_init_out": false
+  },
+  "opt": "dd",
+  "weight_decay": 0.0001,
+  "encoder_lr_mult": 0.5,
+  "refcv6": {
+   "f1_random_t": true,
+   "f1_t_max": 50,
+   "f2_dd_step": true,
+   "f3_per_layer": true,
+   "f4_adaln": true,
+   "f4_zero_init": false,
+   "f5_emitting_conf": true,
+   "f5_refuse_blind_rank": false,
+   "f5_focal": true,
+   "f6_w_u0_zero": true,
+   "f7_samples_per_anchor": 1,
+   "f7_ack_eval_join": false,
+   "f8_flat_waypoint_noise": false,
+   "f8_clamp_in_ladder": true,
+   "f9_assert_vocab": true,
+   "any_on": true
+  },
+  "feasible_decode": false,
+  "feasible_mu": 0.7,
+  "feasible_entry": false,
+  "feasible_a_max": 4.0,
+  "feasible_kappa_max": 0.2,
+  "feasible_prefix_slots": 4,
+  "w_agent": 1.0,
+  "w_u0": 0.0,
+  "goal_point": null,
+  "tac_goal_tok_head": {
+   "requested": false,
+   "cfg": false,
+   "tac_vocab_version": "v7.0",
+   "built": false
+  },
+  "tac_decoder_v6": {
+   "requested": true,
+   "cfg": true,
+   "w": 1.0,
+   "valid_threshold": 0.5,
+   "graft_behaviour_sel": true,
+   "decoder_cfg": {
+    "d_model": 256,
+    "n_layers": 2,
+    "n_heads": 8,
+    "ff_mult": 4,
+    "dropout": 0.0,
+    "d_agent": 384,
+    "d_bev": 96,
+    "sources": [
+     "agent",
+     "bev"
+    ],
+    "n_queries": 38,
+    "n_goal_tokens": 22,
+    "n_lat": 8,
+    "n_lon": 8,
+    "cond_dims": 10
+   },
+   "sources": [
+    "agent",
+    "bev"
+   ],
+   "bev_tokens_reach_decoder": true,
+   "bev_grad_reaches_trunk": true,
+   "bev_detached": false,
+   "bev_unblocked_by": "PI RULING 2026-09-17 (SPEC_REFCV6_V2.md, items 15/18 CLOSED): the BEV encoder moved INTO the model forward (refc_v3.RefCV3Model._bev_hook -> refc.py's `bev_hook` seam), so a BEV token exists where the scene hook fires. An arm with d_bev 0 is still AGENT-ONLY and must be reported as such.",
+   "built": true,
+   "param_breakdown": {
+    "queries": 9728,
+    "agent_in": 98560,
+    "bev_in": 24832,
+    "source_code": 512,
+    "kv_norm": 512,
+    "layers": 2118144,
+    "out_norm": 512,
+    "heads": 1028,
+    "film_within_layers": 11264,
+    "total": 2253828
+   },
+   "provenance": {
+    "keys_values": [
+     "agent",
+     "bev"
+    ],
+    "refused_keys_values": [
+     "image tokens (behaviours are about the scene, not the pixels; PI 2026-09-16)"
+    ],
+    "condition": [
+     "nav one-hot (4)",
+     "max-speed one-hot (4)",
+     "v0",
+     "a0"
+    ],
+    "outputs_are_targets_only": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW",
+     "YIELD",
+     "tac_SIT"
+    ],
+    "feeds_planner": [
+     "lat/lon posterior -> anchor prior (DETACHED)",
+     "valid behaviour set -> selection (DETACHED)",
+     "speed ceiling -> selection mask (DETACHED)"
+    ]
+   },
+   "loss_weights": {
+    "w_tac_goal_bce": 0.05,
+    "w_tac_goal_validity": 0.04000000000000001,
+    "w_tac_goal_confidence": 0.010000000000000002,
+    "w_tac_lat_ce": 0.025,
+    "w_tac_lon_ce": 0.025,
+    "budget": 0.1,
+    "total": 0.1
+   }
+  },
+  "max_speed_onehot_v6": {
+   "requested": true,
+   "cfg": true,
+   "sidecar": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "provenance": "ego-future (oracle INPUT, ~1.7555 bits)",
+   "built": true
+  },
+  "max_speed_input": {
+   "requested": false,
+   "cfg": false,
+   "mode": "quantized",
+   "d_speed": 32,
+   "meta": null,
+   "required_controls": [
+    "shuffled",
+    "withheld"
+   ],
+   "controls_note": "\u26d4 EVAL OBLIGATION, inseparable from this edge and identical to E13's: a max-speed-conditioned result carries a SHUFFLE control (serve another clip's ceiling) and a WITHHOLD control (valid = 0), or 'the arm improved' cannot be separated from 'the arm gained a parameter'.",
+   "built": false
+  },
+  "agent_rig_camera": {
+   "source": "extrinsics",
+   "mount_pose": "from-sensor_extrinsics",
+   "mount_pose_scope": "PER-CLIP",
+   "extrinsics_path": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+   "n_clips": 4508,
+   "key": "stable_episode_id(clip_id)",
+   "height_m_min": 1.2031489610671997,
+   "height_m_max": 1.6871625185012817,
+   "height_m_median": 1.3118689060211182,
+   "optical_axis_pitch_rad_min": -0.0755354301422919,
+   "optical_axis_pitch_rad_max": 0.06831051518379166,
+   "frame": {
+    "height": 416,
+    "width": 1024,
+    "f_ref": 488.92398517830253,
+    "projection": "cylindrical"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "w_project": 0.0,
+   "w_ground": 0.0,
+   "coverage": {
+    "n": 4369,
+    "n_covered": 4369,
+    "frac": 1.0,
+    "n_missing": 0,
+    "missing_sample": [],
+    "has_default": false,
+    "bank_n_clips": 4508,
+    "allow_partial": false
+   }
+  },
+  "agent_knobs": {
+   "agent_cam_height": 1.5,
+   "agent_cls_weight": "b1",
+   "agent_join": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "agent_join_allow_legacy_ids": false,
+   "agent_join_no_rates": false,
+   "agent_join_verify": "auto",
+   "agent_miss_rate": 0.0,
+   "agent_pad": 0,
+   "agent_presence_hard": false,
+   "agent_queries": 100,
+   "agent_rig_camera": "extrinsics",
+   "agent_rig_extrinsics": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+   "agent_rig_extrinsics_allow_partial": false,
+   "agent_sigma_range": 0.0,
+   "agent_w_ground": 0.0,
+   "agent_w_project": 0.0,
+   "agents": "head",
+   "bev_aux": "off",
+   "bev_aux_detach": false,
+   "bev_aux_dtok": 64,
+   "bev_aux_hidden": 256,
+   "bev_aux_occlusion": "mask",
+   "bev_aux_pos_weight": 30.61,
+   "bev_aux_rmax": 60.0,
+   "bev_aux_rng": 24,
+   "bev_aux_shuffle": false,
+   "w_agent": 1.0,
+   "w_bev_aux": 0.0,
+   "w_box3d": 1.0,
+   "w_map": 1.0,
+   "w_r7_scorer": 0.0,
+   "w_r7_wta": 0.0,
+   "w_tac_goal": 0.0,
+   "w_tac_v6": 1.0,
+   "w_u0": 0.0,
+   "wp_index": "off",
+   "wp_index_const_xy": [
+    10.0,
+    0.0
+   ],
+   "wp_index_detach": false,
+   "wp_index_hidden": 32,
+   "wp_index_mode": "geom",
+   "wp_index_radius_m": 0.0,
+   "wp_index_scale_m": 10.0
+  },
+  "agent_cls_weight": {
+   "source": "agent_cls_weights_b1.json",
+   "corpus_line": "v7-b1-physicalai-b1-w120-256x640cyl",
+   "target_population": "in_field_and_decode_box",
+   "normalisation": "inverse frequency, normalised to MEAN 1 -- scale is absorbed by slot_set_loss's weight-following denominator, so only the RELATIVE emphasis is expressed",
+   "weights": {
+    "automobile": 0.004277,
+    "heavy_truck": 0.214181,
+    "bus": 0.479826,
+    "other_vehicle": 1.531726,
+    "trailer": 0.340342,
+    "person": 0.011534,
+    "rider": 0.097002,
+    "stroller": 1.245446,
+    "animal": 5.553512,
+    "protruding_object": 0.522156
+   },
+   "counts": {
+    "automobile": 3219256,
+    "heavy_truck": 64278,
+    "bus": 28692,
+    "other_vehicle": 8988,
+    "trailer": 40451,
+    "person": 1193623,
+    "rider": 141927,
+    "stroller": 11054,
+    "animal": 2479,
+    "protruding_object": 26366
+   },
+   "imbalance_majority_to_rarest": 1298.6,
+   "digest": "c9dbc340acf7d27e",
+   "out_of_vocabulary": {
+    "train_or_tram_car": 29206,
+    "_handling": "targets_from_join maps these to -1 and slot_set_loss masks ok = ct >= 0, so they are EXCLUDED from the cls term, never relabelled"
+   },
+   "provenance": {
+    "join": "b1_train_plus_eval_agents.jsonl.xz",
+    "n_clips": 4566,
+    "n_frames": 875657,
+    "n_boxes_total": 28958699,
+    "n_boxes_in_vocab": 28929493,
+    "n_boxes_in_vocab_visible": 4737114,
+    "corpus_coverage": "4,566 / 4,719 = 96.76 %, 0 clips outside",
+    "_identity": "these reproduce the census pass exactly; a rebuild that changes them changed the corpus, not the recipe"
+   },
+   "requested": "b1",
+   "mode": "b1",
+   "built": "c9dbc340acf7d27e",
+   "corpus_line_source": "derived-from-join (agrees with the weight key)"
+  },
+  "agent_ground_prior_probe": {
+   "checked": false,
+   "reason": "w_ground == 0 or no camera"
+  }
+ },
+ "withheld_bank": {
+  "mode": "fixed",
+  "warmup_steps": 0,
+  "speed_max_ms": 35.0,
+  "random_pool": null
+ },
+ "selection": {
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.5,
+  "sel_refined": false,
+  "sel_score_emitted": false,
+  "sel_score_emitted_t": -1,
+  "sel_score_emitted_t_source": "operator",
+  "sampler_ranks_the_fan": false,
+  "p14_note": "sampler_ranks_the_fan is False unless BOTH sel_refined and sel_score_emitted are set. False means the emitted fan was ranked by a score computed before any sample was drawn. MEASURED ceiling on the banked fan (n=881/40 ep, paired episode-cluster bootstrap): base 0.4728 -> 0.1914 m ADE (+0.2813, CI [+0.2127,+0.3543]), a >2x-better trajectory in the fan on 41.09 % of windows; xl +0.3075 m, 45.40 %.",
+  "horizon_s": 6.0,
+  "band_ms": 15.0,
+  "note": "horizon_s is DERIVED from max(horizons); the 72.08 % / 77.28 % kill statistics quoted elsewhere are 2 s numbers and do NOT hold here (re-derived 2026-09-04)."
+ },
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "ego": {
+  "ego_state_inject": false,
+  "echo_base": false,
+  "ego_valid_channel": false,
+  "ego_dropout": 0.5,
+  "tactical_speed_input": false,
+  "channels": [
+   "v0"
+  ],
+  "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+  "wheelbase_mode": "const2p9"
+ },
+ "size": "small",
+ "rig_rung": false,
+ "ablate_frames": false,
+ "image_hw": [
+  416,
+  1024
+ ],
+ "tac_vocab_version": "v7.0",
+ "v2_cache": [
+  "/home/nvidia/data/refcv6-b1-416x1024-train"
+ ],
+ "require_parity": false,
+ "v2_parity": {
+  "parity": false,
+  "cache_dirs": [
+   "/home/nvidia/data/refcv6-b1-416x1024-train"
+  ],
+  "corpus_key": null,
+  "label": "v3 v2-cache",
+  "uid_kind": "v2ep_clipid",
+  "checked": false,
+  "clips_present": 4369
+ },
+ "u8_batches": true,
+ "frame_batch_bytes_est": 1717567488,
+ "nav_from_v7": true,
+ "nav_cmd_derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+ "nav_from_v7_stats": {
+  "train": {
+   "n_clips": 4369,
+   "follow": 2752,
+   "left": 779,
+   "right": 838,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "allow_oracle_nav": true
+  },
+  "eval": {
+   "n_clips": 139,
+   "follow": 88,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "allow_oracle_nav": true
+  }
+ },
+ "w_tac_goal": 0.0,
+ "tac_goal_stats": {
+  "negatives": "measured",
+  "cot_absence_negative": null,
+  "n_trainable": 17,
+  "n_total": 22,
+  "trainable": [
+   "FOLLOW_LANE",
+   "TURN_L",
+   "TURN_R",
+   "YIELD_FOR_TURN_L",
+   "YIELD_FOR_TURN_R",
+   "STOP_POINT",
+   "EVADE_IN_CORRIDOR",
+   "OVERTAKE_VEHICLE",
+   "MERGE",
+   "TAKE_EXIT_L",
+   "TAKE_EXIT_R",
+   "TRAFFIC_LIGHT_REACT",
+   "TRAFFIC_LIGHT_REACT_RED",
+   "TRAFFIC_LIGHT_REACT_YELLOW",
+   "TRAFFIC_LIGHT_REACT_GREEN",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R"
+  ],
+  "masked_why": {
+   "YIELD": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "SPEED_BAND": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "CORRIDOR_OFFSET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "GAP_TARGET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+   "REACT_ON_ONCOMING": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable"
+  },
+  "pos_weight": [
+   0.2598511986773216,
+   15.625454545454545,
+   16.652509652509654,
+   50.0,
+   50.0,
+   0.0,
+   12.98165137614679,
+   0.0,
+   0.0,
+   0.08333333333333333,
+   50.0,
+   45.936708860759495,
+   0.0,
+   0.0,
+   17.571428571428573,
+   2.265625,
+   42.27777777777778,
+   1.071808510638298,
+   34.40909090909091,
+   1.1460055096418733,
+   12.608695652173912,
+   18.8
+  ],
+  "census": {
+   "FOLLOW_LANE": {
+    "pos": 3629,
+    "neg": 943,
+    "ignored": 0,
+    "prevalence": 0.7937445319335084,
+    "provenance": [
+     "geometry"
+    ],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "MERGE",
+     "OVERTAKE_VEHICLE",
+     "STOP_POINT",
+     "TURN_L",
+     "TURN_R"
+    ]
+   },
+   "TURN_L": {
+    "pos": 275,
+    "neg": 4297,
+    "ignored": 0,
+    "prevalence": 0.06014873140857393,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_L",
+     "TAKE_EXIT_R",
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "TURN_R": {
+    "pos": 259,
+    "neg": 4313,
+    "ignored": 0,
+    "prevalence": 0.05664916885389326,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE",
+     "LANE_CHANGE_R",
+     "TAKE_EXIT_L",
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD_FOR_TURN_L": {
+    "pos": 21,
+    "neg": 4551,
+    "ignored": 0,
+    "prevalence": 0.004593175853018373,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TURN_R",
+     "YIELD_FOR_TURN_R"
+    ]
+   },
+   "YIELD_FOR_TURN_R": {
+    "pos": 20,
+    "neg": 4552,
+    "ignored": 0,
+    "prevalence": 0.004374453193350831,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TURN_L",
+     "YIELD_FOR_TURN_L"
+    ]
+   },
+   "YIELD": {
+    "pos": 609,
+    "neg": 0,
+    "ignored": 3963,
+    "prevalence": 0.1332020997375328,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "STOP_POINT": {
+    "pos": 327,
+    "neg": 4245,
+    "ignored": 0,
+    "prevalence": 0.07152230971128609,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "SPEED_BAND": {
+    "pos": 4572,
+    "neg": 0,
+    "ignored": 0,
+    "prevalence": 1.0,
+    "provenance": [],
+    "supervised_negative": true,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "CORRIDOR_OFFSET": {
+    "pos": 860,
+    "neg": 0,
+    "ignored": 3712,
+    "prevalence": 0.18810148731408574,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "EVADE_IN_CORRIDOR": {
+    "pos": 240,
+    "neg": 20,
+    "ignored": 4312,
+    "prevalence": 0.05249343832020997,
+    "provenance": [
+     "alpamayo-structured",
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "OVERTAKE_VEHICLE"
+    ]
+   },
+   "OVERTAKE_VEHICLE": {
+    "pos": 20,
+    "neg": 3635,
+    "ignored": 917,
+    "prevalence": 0.004374453193350831,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "EVADE_IN_CORRIDOR",
+     "FOLLOW_LANE"
+    ]
+   },
+   "MERGE": {
+    "pos": 79,
+    "neg": 3629,
+    "ignored": 864,
+    "prevalence": 0.01727909011373578,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "FOLLOW_LANE"
+    ]
+   },
+   "GAP_TARGET": {
+    "pos": 368,
+    "neg": 0,
+    "ignored": 4204,
+    "prevalence": 0.0804899387576553,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "REACT_ON_ONCOMING": {
+    "pos": 333,
+    "neg": 0,
+    "ignored": 4239,
+    "prevalence": 0.07283464566929133,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": []
+   },
+   "TAKE_EXIT_L": {
+    "pos": 21,
+    "neg": 369,
+    "ignored": 4182,
+    "prevalence": 0.004593175853018373,
+    "provenance": [
+     "alpamayo-structured",
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TAKE_EXIT_R",
+     "TURN_R"
+    ]
+   },
+   "TAKE_EXIT_R": {
+    "pos": 128,
+    "neg": 290,
+    "ignored": 4154,
+    "prevalence": 0.02799650043744532,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TAKE_EXIT_L",
+     "TURN_L"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT": {
+    "pos": 18,
+    "neg": 761,
+    "ignored": 3793,
+    "prevalence": 0.003937007874015748,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_RED": {
+    "pos": 376,
+    "neg": 403,
+    "ignored": 3793,
+    "prevalence": 0.08223972003499562,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_YELLOW": {
+    "pos": 22,
+    "neg": 757,
+    "ignored": 3793,
+    "prevalence": 0.004811898512685914,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_GREEN",
+     "TRAFFIC_LIGHT_REACT_RED"
+    ]
+   },
+   "TRAFFIC_LIGHT_REACT_GREEN": {
+    "pos": 363,
+    "neg": 416,
+    "ignored": 3793,
+    "prevalence": 0.07939632545931759,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "TRAFFIC_LIGHT_REACT",
+     "TRAFFIC_LIGHT_REACT_RED",
+     "TRAFFIC_LIGHT_REACT_YELLOW"
+    ]
+   },
+   "LANE_CHANGE_L": {
+    "pos": 23,
+    "neg": 290,
+    "ignored": 4259,
+    "prevalence": 0.005030621172353456,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "LANE_CHANGE_R",
+     "TURN_L"
+    ]
+   },
+   "LANE_CHANGE_R": {
+    "pos": 15,
+    "neg": 282,
+    "ignored": 4275,
+    "prevalence": 0.0032808398950131233,
+    "provenance": [
+     "vlm-cot"
+    ],
+    "supervised_negative": false,
+    "negatives_policy": "measured",
+    "entailed_false_by": [
+     "LANE_CHANGE_L",
+     "TURN_R"
+    ]
+   }
+  },
+  "n_on_pos_weight_cap": 3,
+  "pos_weight_cap": 50.0,
+  "n_under_scoreability_floor": 10,
+  "scoreability_floor_n": 200
+ },
+ "nav_args": false,
+ "nav_args_stats": null,
+ "max_speed_input": false,
+ "max_speed_mode": null,
+ "max_speed_stats": null,
+ "speed_max_derivation": null,
+ "synth_clip_ids_from_labels": null,
+ "v7_labels": {
+  "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+  "md5": "b45377a1f25263b5c0f3d318c126b1ac",
+  "n_records": 4572,
+  "schema_version": "s2-geom-v7",
+  "vocab": "v7",
+  "allow_oracle_nav": true,
+  "cot_absence_negative": null,
+  "divergences": [],
+  "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+ },
+ "agent_join": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+ "agent_join_digest": {
+  "verified": true,
+  "algo": "md5",
+  "scope": "compressed",
+  "filename": "b1_train_plus_eval_agents.jsonl.xz",
+  "digest": "0c31a3a63d7205e9fa50e8ac4204ef46",
+  "hashed_path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+  "declared_by": "combiner (cat train eval), MEASURED on Thor 2026-09-23",
+  "mode": "auto",
+  "sidecar": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz.meta.json"
+ },
+ "agent_join_stats": {
+  "train": {
+   "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "n_episodes": 4369,
+   "n_episodes_joined_stable_id": 4369,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 121,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 746946,
+   "n_windows_labelled": 719739,
+   "frac_windows_labelled": 0.9636,
+   "n_windows_labelled_clear": 16966,
+   "n_target_boxes_prefilter": 23779188,
+   "agent_pad": 397,
+   "reader_max_agents_per_frame": 397,
+   "reader_n_records": 838130,
+   "reader_n_clips": 4369,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true
+  },
+  "eval": {
+   "path": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+   "n_episodes": 139,
+   "n_episodes_joined_stable_id": 139,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 23772,
+   "n_windows_labelled": 22663,
+   "frac_windows_labelled": 0.9533,
+   "n_windows_labelled_clear": 582,
+   "n_target_boxes_prefilter": 776801,
+   "agent_pad": 397,
+   "reader_max_agents_per_frame": 395,
+   "reader_n_records": 26394,
+   "reader_n_clips": 139,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true
+  }
+ },
+ "refcv6_perception": {
+  "w_map": 1.0,
+  "w_box3d": 1.0,
+  "d_bev": 128,
+  "n_queries": 100,
+  "d_model": 256,
+  "bev_tokens_hw": [
+   30,
+   16
+  ],
+  "heights_m": [
+   0.0,
+   0.5,
+   1.5,
+   2.5
+  ],
+  "stride": 16,
+  "use_bev_in_box_head": true,
+  "occ_from_geometry": false,
+  "bev_encoder": {
+   "d_in": 128,
+   "d_model": 96,
+   "d_out": 96,
+   "dilations": [
+    1,
+    2,
+    4,
+    8
+   ]
+  },
+  "equalize_bottom_rows": 43,
+  "branch_params": {
+   "lift": 524544,
+   "bev_encoder": 785280,
+   "map_head": 873,
+   "box_memory": 287744,
+   "box_decoder": 3806999,
+   "total": 5405440
+  },
+  "fmap_s16_channels": 1024,
+  "fmap_s16_hw": [
+   26,
+   64
+  ],
+  "frame": {
+   "height": 416,
+   "width": 1024,
+   "projection": "cylindrical",
+   "f_ref": 488.92398517830253
+  },
+  "map_gt_root": "/home/nvidia/data/sam3_corpus",
+  "join3d": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+  "lift_bank_n_clips": 4508,
+  "bev_map_target": "SAM3 semantic maps (tanitad.sam3_map_gt/2)",
+  "lidar_as_training_target": false,
+  "map_gt_stats": {
+   "train": {
+    "root": "/home/nvidia/data/sam3_corpus",
+    "n_windows": 746946,
+    "n_clips": 4369,
+    "frac_ok": 1.0,
+    "frac_ok_upper": 1.0,
+    "verdict": "PASS",
+    "min_coverage": 0.9,
+    "states": {
+     "ok": 746946,
+     "no_file": 0,
+     "frame_out_of_range": 0,
+     "inconclusive": 0
+    },
+    "reasons": {},
+    "n_stack": 3,
+    "layouts": [
+     "canonical"
+    ]
+   },
+   "eval": {
+    "root": "/home/nvidia/data/sam3_corpus",
+    "n_windows": 23772,
+    "n_clips": 139,
+    "frac_ok": 0.9856133266027259,
+    "frac_ok_upper": 0.9856133266027259,
+    "verdict": "PASS",
+    "min_coverage": 0.9,
+    "states": {
+     "ok": 23430,
+     "no_file": 342,
+     "frame_out_of_range": 0,
+     "inconclusive": 0
+    },
+    "reasons": {
+     "081b986f8888": "FileNotFoundError errno 2",
+     "2aa810802777": "FileNotFoundError errno 2"
+    },
+    "n_stack": 3,
+    "layouts": [
+     "canonical"
+    ]
+   }
+  },
+  "join3d_stats": {
+   "train": {
+    "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+    "n_lines": 838130,
+    "n_agents": 27600074,
+    "n_clips": 4369,
+    "frame_key": "RAW v2ep (= episode index + n_stack - 1)",
+    "n_stack": 3
+   },
+   "eval": {
+    "path": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+    "n_lines": 26394,
+    "n_agents": 905512,
+    "n_clips": 139
+   }
+  }
+ },
+ "refcv6_tactical": {
+  "w_tac_v6": 1.0,
+  "loss_weights": {
+   "w_tac_goal_bce": 0.05,
+   "w_tac_goal_validity": 0.04000000000000001,
+   "w_tac_goal_confidence": 0.010000000000000002,
+   "w_tac_lat_ce": 0.025,
+   "w_tac_lon_ce": 0.025,
+   "budget": 0.1,
+   "total": 0.1
+  },
+  "valid_threshold": 0.5,
+  "graft_behaviour_sel": true,
+  "label_limits": {
+   "negatives": "measured",
+   "cot_absence_negative": null,
+   "n_trainable": 17,
+   "n_total": 22,
+   "trainable": [
+    "FOLLOW_LANE",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R",
+    "STOP_POINT",
+    "EVADE_IN_CORRIDOR",
+    "OVERTAKE_VEHICLE",
+    "MERGE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R"
+   ],
+   "masked_why": {
+    "YIELD": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "SPEED_BAND": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "CORRIDOR_OFFSET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "GAP_TARGET": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable",
+    "REACT_ON_ONCOMING": "no supervised negative \u2014 the logit could only be pushed towards 1; needs an exclusion partner or a probed negative before it is trainable"
+   },
+   "pos_weight": [
+    0.2598511986773216,
+    15.625454545454545,
+    16.652509652509654,
+    50.0,
+    50.0,
+    0.0,
+    12.98165137614679,
+    0.0,
+    0.0,
+    0.08333333333333333,
+    50.0,
+    45.936708860759495,
+    0.0,
+    0.0,
+    17.571428571428573,
+    2.265625,
+    42.27777777777778,
+    1.071808510638298,
+    34.40909090909091,
+    1.1460055096418733,
+    12.608695652173912,
+    18.8
+   ],
+   "census": {
+    "FOLLOW_LANE": {
+     "pos": 3629,
+     "neg": 943,
+     "ignored": 0,
+     "prevalence": 0.7937445319335084,
+     "provenance": [
+      "geometry"
+     ],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "MERGE",
+      "OVERTAKE_VEHICLE",
+      "STOP_POINT",
+      "TURN_L",
+      "TURN_R"
+     ]
+    },
+    "TURN_L": {
+     "pos": 275,
+     "neg": 4297,
+     "ignored": 0,
+     "prevalence": 0.06014873140857393,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE",
+      "LANE_CHANGE_L",
+      "TAKE_EXIT_R",
+      "TURN_R",
+      "YIELD_FOR_TURN_R"
+     ]
+    },
+    "TURN_R": {
+     "pos": 259,
+     "neg": 4313,
+     "ignored": 0,
+     "prevalence": 0.05664916885389326,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE",
+      "LANE_CHANGE_R",
+      "TAKE_EXIT_L",
+      "TURN_L",
+      "YIELD_FOR_TURN_L"
+     ]
+    },
+    "YIELD_FOR_TURN_L": {
+     "pos": 21,
+     "neg": 4551,
+     "ignored": 0,
+     "prevalence": 0.004593175853018373,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TURN_R",
+      "YIELD_FOR_TURN_R"
+     ]
+    },
+    "YIELD_FOR_TURN_R": {
+     "pos": 20,
+     "neg": 4552,
+     "ignored": 0,
+     "prevalence": 0.004374453193350831,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TURN_L",
+      "YIELD_FOR_TURN_L"
+     ]
+    },
+    "YIELD": {
+     "pos": 609,
+     "neg": 0,
+     "ignored": 3963,
+     "prevalence": 0.1332020997375328,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "STOP_POINT": {
+     "pos": 327,
+     "neg": 4245,
+     "ignored": 0,
+     "prevalence": 0.07152230971128609,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE"
+     ]
+    },
+    "SPEED_BAND": {
+     "pos": 4572,
+     "neg": 0,
+     "ignored": 0,
+     "prevalence": 1.0,
+     "provenance": [],
+     "supervised_negative": true,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "CORRIDOR_OFFSET": {
+     "pos": 860,
+     "neg": 0,
+     "ignored": 3712,
+     "prevalence": 0.18810148731408574,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "EVADE_IN_CORRIDOR": {
+     "pos": 240,
+     "neg": 20,
+     "ignored": 4312,
+     "prevalence": 0.05249343832020997,
+     "provenance": [
+      "alpamayo-structured",
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "OVERTAKE_VEHICLE"
+     ]
+    },
+    "OVERTAKE_VEHICLE": {
+     "pos": 20,
+     "neg": 3635,
+     "ignored": 917,
+     "prevalence": 0.004374453193350831,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "EVADE_IN_CORRIDOR",
+      "FOLLOW_LANE"
+     ]
+    },
+    "MERGE": {
+     "pos": 79,
+     "neg": 3629,
+     "ignored": 864,
+     "prevalence": 0.01727909011373578,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "FOLLOW_LANE"
+     ]
+    },
+    "GAP_TARGET": {
+     "pos": 368,
+     "neg": 0,
+     "ignored": 4204,
+     "prevalence": 0.0804899387576553,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "REACT_ON_ONCOMING": {
+     "pos": 333,
+     "neg": 0,
+     "ignored": 4239,
+     "prevalence": 0.07283464566929133,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": []
+    },
+    "TAKE_EXIT_L": {
+     "pos": 21,
+     "neg": 369,
+     "ignored": 4182,
+     "prevalence": 0.004593175853018373,
+     "provenance": [
+      "alpamayo-structured",
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TAKE_EXIT_R",
+      "TURN_R"
+     ]
+    },
+    "TAKE_EXIT_R": {
+     "pos": 128,
+     "neg": 290,
+     "ignored": 4154,
+     "prevalence": 0.02799650043744532,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TAKE_EXIT_L",
+      "TURN_L"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT": {
+     "pos": 18,
+     "neg": 761,
+     "ignored": 3793,
+     "prevalence": 0.003937007874015748,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT_GREEN",
+      "TRAFFIC_LIGHT_REACT_RED",
+      "TRAFFIC_LIGHT_REACT_YELLOW"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT_RED": {
+     "pos": 376,
+     "neg": 403,
+     "ignored": 3793,
+     "prevalence": 0.08223972003499562,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT",
+      "TRAFFIC_LIGHT_REACT_GREEN",
+      "TRAFFIC_LIGHT_REACT_YELLOW"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT_YELLOW": {
+     "pos": 22,
+     "neg": 757,
+     "ignored": 3793,
+     "prevalence": 0.004811898512685914,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT",
+      "TRAFFIC_LIGHT_REACT_GREEN",
+      "TRAFFIC_LIGHT_REACT_RED"
+     ]
+    },
+    "TRAFFIC_LIGHT_REACT_GREEN": {
+     "pos": 363,
+     "neg": 416,
+     "ignored": 3793,
+     "prevalence": 0.07939632545931759,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "TRAFFIC_LIGHT_REACT",
+      "TRAFFIC_LIGHT_REACT_RED",
+      "TRAFFIC_LIGHT_REACT_YELLOW"
+     ]
+    },
+    "LANE_CHANGE_L": {
+     "pos": 23,
+     "neg": 290,
+     "ignored": 4259,
+     "prevalence": 0.005030621172353456,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "LANE_CHANGE_R",
+      "TURN_L"
+     ]
+    },
+    "LANE_CHANGE_R": {
+     "pos": 15,
+     "neg": 282,
+     "ignored": 4275,
+     "prevalence": 0.0032808398950131233,
+     "provenance": [
+      "vlm-cot"
+     ],
+     "supervised_negative": false,
+     "negatives_policy": "measured",
+     "entailed_false_by": [
+      "LANE_CHANGE_L",
+      "TURN_R"
+     ]
+    }
+   },
+   "n_on_pos_weight_cap": 3,
+   "pos_weight_cap": 50.0,
+   "n_under_scoreability_floor": 10,
+   "scoreability_floor_n": 200
+  },
+  "scene_sources_live": [
+   "agent",
+   "bev"
+  ],
+  "scene_sources_blocked": [],
+  "d_bev_built": 96
+ },
+ "refcv6_max_speed": {
+  "train": {
+   "sidecar": "refcv6_speed_max_v8_train.jsonl",
+   "n_rows": 4572,
+   "n_valid": 4572,
+   "n_over_ceiling": 86,
+   "over_ceiling_frac": 0.01881,
+   "source_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "source_labels": "s2_labels_v8_train.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+   "n_windows": 746946,
+   "n_windows_fed": 746946,
+   "window_ceiling_frac": 1.0
+  },
+  "eval": {
+   "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+   "n_rows": 147,
+   "n_valid": 147,
+   "n_over_ceiling": 1,
+   "over_ceiling_frac": 0.006803,
+   "source_md5": "eefc38d1453bd1c73802d44d45affced",
+   "source_labels": "s2_labels_v8_eval.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_windows": 23772,
+   "n_windows_fed": 23772,
+   "window_ceiling_frac": 1.0
+  }
+ },
+ "speed_max_derivation_v6": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+ "conflict_detector": {
+  "enabled": true,
+  "trunk_prefixes": [
+   "core.encoder."
+  ],
+  "include_heads": true,
+  "every": 10,
+  "mode": "probe",
+  "float64": true,
+  "require_controls": true,
+  "max_deferred_steps": 200,
+  "aux_terms": [
+   "box3d",
+   "map",
+   "tac_v6"
+  ]
+ }
+}

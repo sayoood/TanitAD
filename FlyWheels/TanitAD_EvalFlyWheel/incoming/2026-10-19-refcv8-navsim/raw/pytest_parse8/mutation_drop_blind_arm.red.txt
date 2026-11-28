@@ -1,0 +1,86 @@
+F.F.F...............F..F                                                 [100%]
+================================== FAILURES ===================================
+_______________________ test_warmup_s2_epdms_u_literal ________________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6250/test_warmup_s2_epdms_u_literal0')
+
+    def test_warmup_s2_epdms_u_literal(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path))
+>       u = {a: r["S2_EPDMS_u"]["value"] for a, r in out["arms"].items()}
+                ^^^^^^^^^^^^^^^
+E       KeyError: 'S2_EPDMS_u'
+
+tests\test_parse8.py:169: KeyError
+________________ test_seed_floor_literal_and_the_exceeds_flags ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6250/test_seed_floor_literal_and_th0')
+
+    def test_seed_floor_literal_and_the_exceeds_flags(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path))
+        assert out["seed_floor_S2_EPDMS_u"] == approx(0.01)                     # |.425 - .435|
+        assert out["pairs"]["R8_LEGAL__minus__R8_LEGAL_s1"]["S2_EPDMS_u_delta"] == approx(-0.01)
+        ex = {k.split("__minus__")[1]: v["exceeds_seed_floor"] for k, v in out["pairs"].items()
+              if k.startswith("R8_LEGAL__minus__") and "exceeds_seed_floor" in v}
+        # deltas: CV .125, STOP .025, ECHO .075, BLIND .325, PRIOR .225 all > .01 ; NAVOFF |.425-.4255| = .0005 < .01
+>       assert ex == {"CV_official": True, "STOP_zero": True, "ECHO_ha0_ext": True, "R8_BLIND": True, "PRIOR_ha0p": True,
+                      "R8_NAVOFF": False}
+E       AssertionError: assert {'CV_official...': False, ...} == {'CV_official...D': True, ...}
+E         
+E         Omitting 5 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'R8_BLIND': True}
+E         Use -v to get more diff
+
+tests\test_parse8.py:193: AssertionError
+___________________________ test_blind_arm_is_read ____________________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6250/test_blind_arm_is_read0')
+
+    def test_blind_arm_is_read(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path))
+>       assert out["arms"]["R8_BLIND"]["S2_EPDMS_u"]["value"] == approx(0.1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'S2_EPDMS_u'
+
+tests\test_parse8.py:206: KeyError
+________ test_e2e_warmup_synthetic_n3_passes_and_the_blind_panel_is_ok ________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6250/test_e2e_warmup_synthetic_n3_p0')
+
+    def test_e2e_warmup_synthetic_n3_passes_and_the_blind_panel_is_ok(tmp_path):
+        B = _bars()
+        out = P.build_summary(**build_warmup(tmp_path))
+        bar = B.warmup_bar(out, ELIGIBLE, B.DEFAULT_CFG)
+        # margin .425 - max(.3, .4, .35) = .025 ; seed floor .01 -> .025 > .02 PASS ; BLIND .1 - .4 < 0 -> FAILED -> panel OK
+>       assert bar["verdict"] == "PASS" and bar["blind_control_verdict"] == "FAILED" and bar["panel"].startswith("OK")
+E       AssertionError: assert ('UNAVAILABLE ...ntrol absent)' == 'PASS'
+E         
+E         - PASS
+E         + UNAVAILABLE (R8_BLIND control absent))
+
+tests\test_parse8.py:454: AssertionError
+______________ test_e2e_a_blind_arm_that_passes_voids_the_panel _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6250/test_e2e_a_blind_arm_that_pass0')
+
+    def test_e2e_a_blind_arm_that_passes_voids_the_panel(tmp_path):
+        B = _bars()
+        kw = build_warmup(tmp_path)
+        p = os.path.join(kw["scores"], "score_R8_BLIND.csv")                                 # make the deliberate regression BEAT the floors
+        df = pd.read_csv(p)
+        for t in S2_TOK:
+            df.loc[df.token == t, "score"] = 0.9
+        df.to_csv(p, index=False)
+>       assert B.warmup_bar(P.build_summary(**kw), ELIGIBLE, B.DEFAULT_CFG)["verdict"].startswith("VOID")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x0000025B8D5708F0>('VOID')
+E        +    where <built-in method startswith of str object at 0x0000025B8D5708F0> = 'UNAVAILABLE (R8_BLIND control absent)'.startswith
+
+tests\test_parse8.py:479: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_parse8.py::test_warmup_s2_epdms_u_literal - KeyError: 'S2_E...
+FAILED tests/test_parse8.py::test_seed_floor_literal_and_the_exceeds_flags - ...
+FAILED tests/test_parse8.py::test_blind_arm_is_read - KeyError: 'S2_EPDMS_u'
+FAILED tests/test_parse8.py::test_e2e_warmup_synthetic_n3_passes_and_the_blind_panel_is_ok
+FAILED tests/test_parse8.py::test_e2e_a_blind_arm_that_passes_voids_the_panel
+5 failed, 19 passed, 16 deselected in 13.15s

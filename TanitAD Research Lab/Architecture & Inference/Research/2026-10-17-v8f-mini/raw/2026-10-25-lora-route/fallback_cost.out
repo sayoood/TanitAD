@@ -1,0 +1,14 @@
+re-encode, box-2 GPU : train cache 4572 clips x 5.01 s = 6.36 h (4512 trained clips only: 6.28 h); eval-141 x 4.2 s = 0.16 h
+retrain M2b          : 19164 steps / 1.217 steps/s = 4.37 h per seed, x2 seeds = 8.75 h box-2 GPU
+
+Frames must exist: box 2 deleted the 3,972 v2ep (and their mp4) after each verified chunk (ra1_full_box2.py:212-214); only train600-256 (600 clips) is kept there.
+  route A (dev box builds the v2ep, box 2 only encodes = D3 'V3'):
+    dev CPU build 4572 x 8.23 s = 10.5 h; LAN ship 165 GB at 14.64 MB/s = 3.2 h (overlapped in 400-clip chunks; box 2 D: held 85.9 GB free on 10-19, so chunks, delete after verify)
+    box-2 GPU hours = 6.36 encode + 0.16 eval + 8.75 retrain = 15.3 h ; wall ~ 19 h (pipelined build/ship/encode, then the two retrains; training itself is not overlappable with a box that is encoding)
+  route B (box 2 builds and encodes = the RA-1 FULL recipe, mp4s re-shipped first):
+    ship mp4: 0.98 h ; box-2 all-in 4572 x 16.66 s = 21.2 h (D3_SCOPING quotes 20.9 h for 4,512) ; + eval + retrain = 30.1 box-2 h ; wall ~ 31 h
+
+  cheapest discriminating alternative (NOT a fallback; the thing to run first): the identity control on box 2 itself, GPU bf16, the builder's own encode_episode / the arm's B=0 encoder,
+    native256 frames, against cache_full. Cost ~ 2 clips x 101 frames x ~0.05 s of GPU + the 2 v2ep (already on box 2 for the 600) = minutes, not hours.
+    MEASURED precedent: box 2's own verify_cache C5 re-encoded 5 clips on the same device and got 5/5 bit-exact content_md5 (box2_ship/logs/encode_A2s.log), so a same-device,
+    same-batching identity is expected to read ~0, not 3 %.

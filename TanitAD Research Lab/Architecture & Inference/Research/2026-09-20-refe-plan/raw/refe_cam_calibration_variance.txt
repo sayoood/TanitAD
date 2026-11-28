@@ -1,0 +1,63 @@
+DOES CAM_F0's CALIBRATION VARY ACROSS nuPlan LOGS?  -- MEASURED 2026-09-20, GPU-FREE
+Instrument: code/probe_cam_calib.py (this file is its output, verbatim).
+Why it decides something: REFe's pos3d is a LEARNED TABLE of one vector per visual-token
+position. Such a table represents exactly ONE camera geometry. DriveZero's 3D position
+embedding cites PETR [50], whose PE is an MLP over 3D coords derived from K and the
+extrinsics -- which CAN condition on per-log geometry. If the calibration varies, the table
+is information-wrong, not merely over-parameterised.
+
+sweeping 1349 log DBs for channel CAM_F0
+  DBs read OK: 1349   unreadable/no CAM_F0: 0
+  image size(s): {(1920, 1080): 1349}
+
+DISTINCT CAM_F0 INTRINSICS : 2
+   5ce47e8781  n=1304  vehicles=20  fx=1545.000 fy=1545.000 cx=960.000 cy=560.000
+   9233e489d7  n=45    vehicles=1   fx=1528.712 fy=1526.081 cx=970.460 cy=578.414
+
+DISTINCT CAM_F0 EXTRINSIC TRANSLATIONS : 22
+   bf056ef568  n=160   xyz=[]
+   d277b40810  n=151   xyz=[]
+   01b6c35fd8  n=120   xyz=[]
+   b085ad349d  n=92    xyz=[]
+   1e8bcaa170  n=88    xyz=[]
+   331c08d3a8  n=80    xyz=[]
+   4ad78ede35  n=76    xyz=[]
+   cb98f672af  n=75    xyz=['-579259447466205724936633201513086545005251842277376.0000']
+   92d804f241  n=67    xyz=[]
+   ccb7e573c6  n=59    xyz=[]
+   4beec75c1c  n=56    xyz=[]
+   cb8ffe8f86  n=51    xyz=[]
+
+DISTINCT CAM_F0 EXTRINSIC ROTATIONS    : 24
+   59fae3ada0  n=160   quat=[]
+   9d9f6cb7e0  n=151   quat=[]
+   a6bd7316c9  n=120   quat=[]
+   80d95df601  n=92    quat=[]
+   054123f864  n=88    quat=[]
+   a934f5dae3  n=76    quat=['-423420967968661874548697912615084837242655636544889161713703802272959797180495580046368730339195284983160908211969437138366996348280292893632170939289436160.00000']
+
+SPREAD BETWEEN THE TWO INTRINSIC RIGS
+   fx 1545.000 vs 1528.712   delta 16.288 px (1.05 %)
+   cx 960.000 vs 970.460   delta 10.460 px
+   cy 560.000 vs 578.414   delta 18.414 px
+
+DECODE CONTROL -- does the crude float scanner actually read the intrinsic correctly?
+  The discriminating check is an ANALYTIC target: for a nominal rig the principal point
+  cx must equal W/2 = 960.000 exactly. If the scanner were mis-aligned it would read
+  an arbitrary number here.
+   5ce47e8781  cx=960.000  vs W/2=960.000  -> PASS (cx == W/2 exactly)
+   9233e489d7  cx=970.460  vs W/2=960.000  -> off-centre rig (expected for a second calibration)
+
+NOTE ON THE EXTRINSIC VALUES
+  translation/rotation are pickled as BINPUT-compressed floats whose 'G' opcodes this
+  crude scanner does not always recover; the DISTINCT-VALUE COUNTS above are exact
+  (they are sha256 over the raw blobs) while the decoded xyz/quat are not, and are
+  therefore NOT quoted. The load-bearing claim is the COUNT, not the values.
+
+VERDICT
+  CAM_F0 intrinsics : 2 distinct across 1349 logs
+  CAM_F0 extrinsics : 22 distinct translations, 24 distinct rotations
+  => a LEARNED PER-TOKEN POSITION TABLE stores ONE vector per token position and cannot
+     condition on either. A PETR-style MLP over coordinates derived from K and the
+     extrinsics can. This is an INFORMATION argument, not a parameter-count argument.
+=== PROBE COMPLETE ===

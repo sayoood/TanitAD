@@ -1,0 +1,59 @@
+[control] vocab asserted against source: 8 goal + 7 action = 15 tokens, all present in vocab_v7.py (32590 bytes read)
+[read] products/P2-data-pipelines/2026-08-23-label-validation-sample/raw/labels_v7/s2_labels_v7.jsonl -> 801 rows (0 unparseable)
+
+==========================================================================
+HEAD g_str -- n_rows=801  n_with_token=801 (100.00%)  d=8 classes
+==========================================================================
+class                                      n    share
+FOLLOW_ROUTE                             549  68.539%
+TURN_LEFT_FOLLOW_ROUTE                   120  14.981%
+TURN_RIGHT_FOLLOW_ROUTE                  132  16.479%
+STOP_AT_FOLLOW_ROUTE                       0   0.000%
+EXIT_LEFT_FOLLOW_ROUTE                     0   0.000%
+EXIT_RIGHT_FOLLOW_ROUTE                    0   0.000%
+LANE_CHANGE_L_FOLLOW_ROUTE                 0   0.000%
+LANE_CHANGE_R_FOLLOW_ROUTE                 0   0.000%
+--------------------------------------------------------------------------
+POPULATED CLASSES: 3 of 8   UNSEEN: ['STOP_AT_FOLLOW_ROUTE', 'EXIT_LEFT_FOLLOW_ROUTE', 'EXIT_RIGHT_FOLLOW_ROUTE', 'LANE_CHANGE_L_FOLLOW_ROUTE', 'LANE_CHANGE_R_FOLLOW_ROUTE']
+[CONTROL majority-class] constant predictor 'FOLLOW_ROUTE' scores POOLED accuracy 0.6854 -- and MACRO per-class recall exactly 0.1250 (= 1/8), which is the no-information value.
+[CONTROL uniform-random]  macro recall 0.1250 ; pooled acc 0.1250
+[scale] label entropy 1.2125 bits of a possible 3.0000 (log2 8) -- headroom ratio 0.404
+[provenance] {'geometry': 801}
+
+==========================================================================
+HEAD a_str -- n_rows=801  n_with_token=801 (100.00%)  d=7 classes
+==========================================================================
+class                                      n    share
+HOLD_MAIN_ROAD                           459  57.303%
+PREPARE_TURN_L_FOLLOW_ROUTE              120  14.981%
+PREPARE_TURN_R_FOLLOW_ROUTE              132  16.479%
+PREPARE_STOP_FOLLOW_ROUTE                  0   0.000%
+PREPARE_EXIT_FOLLOW_ROUTE                  0   0.000%
+PREPARE_LANE_CHANGE_FOLLOW_ROUTE           0   0.000%
+RESUME_CRUISE_FOLLOW_ROUTE                 0   0.000%
+REDUCE_TO_FOLLOW_ROUTE                    90  11.236%   <-- OFF-VOCABULARY
+--------------------------------------------------------------------------
+POPULATED CLASSES: 3 of 7   UNSEEN: ['PREPARE_STOP_FOLLOW_ROUTE', 'PREPARE_EXIT_FOLLOW_ROUTE', 'PREPARE_LANE_CHANGE_FOLLOW_ROUTE', 'RESUME_CRUISE_FOLLOW_ROUTE']
+[CONTROL majority-class] constant predictor 'HOLD_MAIN_ROAD' scores POOLED accuracy 0.5730 -- and MACRO per-class recall exactly 0.1429 (= 1/7), which is the no-information value.
+[CONTROL uniform-random]  macro recall 0.1429 ; pooled acc 0.1429
+[scale] label entropy 1.6537 bits of a possible 2.8074 (log2 7) -- headroom ratio 0.589
+[provenance] {'geometry': 801}
+
+[CONTROL parser] a_tac.lat present on 801/801 rows (must be > 0)
+
+[LEAK TEST g_str vs nav_command]  n=801
+  nav->token DETERMINISM  0.8302   (1.0000 = exact bijection = ECHO)
+  mutual information      0.6444 bits of H(token)=1.2125  -> 53.1% of the label is already in nav
+  distinct nav values 3 ; distinct tokens 3
+  ==> VERDICT: MAJORITY OF THE LABEL IS IN NAV. Any nav-fed arm needs a nav-ablated control before the number is quotable.
+
+[LEAK TEST a_str vs nav_command]  n=801
+  nav->token DETERMINISM  0.7253   (1.0000 = exact bijection = ECHO)
+  mutual information      0.6563 bits of H(token)=1.6537  -> 39.7% of the label is already in nav
+  distinct nav values 3 ; distinct tokens 4
+  ==> VERDICT: nav does NOT determine the token; a vision head has something real to extract.
+
+[BAND] t0_s histogram: {8.0: 801}
+[BAND] records per clip: {1: 801}
+[BAND] available_s  min 12.3  median 35.0  max 35.0  n=801
+[BAND] one record per clip, valid +/- 2.0 s => 4.0 s of a median 35.0 s usable horizon = 11.43% SUPERVISABLE ; 88.57% carries NO strategic GT

@@ -1,0 +1,18 @@
+wrapper /workspace/v8proof/integ10k/build/v8f_t1_eval_reader_rule_rzgfhqet.py 02a58e655e5c1979
+PASS A1 the flag --closing-table exists and is refused outside form RRe and together with --closing-est
+PASS A2 form RRe loads the table when the flag is given
+PASS A3 the look reads the table at the clip index and the frame of the look
+PASS A4 a missing row or a value that is not finite is short with the closing input 0.0
+PASS A5 the run line and the log columns are those of the parent
+PASS A6 the new header text and this check have none of the banned words -- []
+RUN sk_rr form=RR table=none rc=0
+RUN sk_ident form=RRe table=ident_L25_s0.npz rc=0
+RUN sk_zero form=RRe table=zero_table.npz rc=0
+RUN sk_c2 form=RRe table=const2_table.npz rc=0
+PASS U0A sk_ident against the banked run I10RQ50eL25KF5Hb20_s0 on the subset rows: {"replan": {"rows_subset": 153, "rows_common": 153, "rows_not_in_banked": 0, "c_src_largest_diff": 5.352458381402414e-06, "c_src_bad": 0, "est_ok_mismatch": 0, "full_rows": 114, "present_full_rows": 36, "c_src_nonzero_full": 114, "other_bad_columns": {}, "other_largest": 5.352458380514236e-06}, "mid": {"rows_subset": 153, "rows_common": 153, "rows_not_in_banked": 0, "c_src_largest_diff": 4.909280985732067e-06, "c_src_bad": 0, "est_ok_mismatch": 0, "full_rows": 129, "present_full_rows": 44, "c_src_nonzero_full": 129, "other_bad_columns": {}, "other_largest": 7.626545620809111e-06}, "plans": {"plans_subset": 51, "plans_common": 51, "plan_largest_diff": 7.62939453125e-06}, "tol": 0.001} (bar 1e-03)
+PASS U0B sk_zero equals sk_rr: largest difference 0 (9 files); c_src is 0 on all 153 + 153 rows; new keys {"mid-look log": ["c_est", "est_ok"], "rule log": ["c_est", "est_ok"], "rule-log side file": ["c_est", "est_ok"]} -- []
+PASS U0C sk_c2: {"replan": {"present_full": 48, "present_short": 0, "c_src_2": true, "c_src_0": true, "v_L": true, "c_est": true}, "mid": {"present_full": 52, "present_short": 0, "c_src_2": true, "c_src_0": true, "v_L": true, "c_est": true}}
+PASS U0L run line counts equal the counts recomputed from the logs, file sha256 equals the table file: {"sk_ident": {"lines": 1, "full": 243, "short": 63, "line_ok": true}, "sk_zero": {"lines": 1, "full": 306, "short": 0, "line_ok": true}, "sk_c2": {"lines": 1, "full": 306, "short": 0, "line_ok": true}, "sk_rr_has_no_line": true}
+PASS U0F refusals: RR with --closing-table (rc 1), RRe with both flags (rc 1), RRe with neither (rc 1) stop with REFUSED naming the flags -- REFUSED: --closing-table belongs to form RRe only | REFUSED: --closing-est and --closing-table together (one source of the closing input only) | REFUSED: form RRe needs --closing-est NPZ (an estimator file of closest.py) or --closing-table NPZ
+counts {"u0a_mid_common": 153, "u0a_plans_common": 51, "u0a_replan_common": 153, "zero_files": 9, "zero_mid_rows": 153, "zero_tick_rows": 153}
+ZZ CHECK-SHUFCLOSE PASS checks-failed 0 tick-rows 153 mid-rows 153

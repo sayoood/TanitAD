@@ -1,0 +1,36 @@
+{
+ "_what": "the LATERAL ci_coverage red was a measurement bounded in ANOTHER family with nowhere to be declared",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "diagnosis": {
+  "missing": [],
+  "unavailable": [],
+  "undeclared": [
+   "_along_mae_m_for_context"
+  ],
+  "so": "not a missing interval -- the structural 'a metric added without an interval' detector firing"
+ },
+ "proof_it_is_bounded": {
+  "longitudinal.along_mae_m": {
+   "mean": 9.0068,
+   "lo": 7.1367,
+   "hi": 10.8779,
+   "estimator": "episode_cluster_bootstrap",
+   "n_windows": 42,
+   "n_episodes": 3
+  },
+  "lateral._along_mae_m_for_context": 9.0068,
+  "identical": true
+ },
+ "why_NON_METRIC_KEYS_is_the_wrong_home": "that set is documented as PROVENANCE/DENOMINATORS that must NOT carry an interval; this IS a measurement whose interval lives one block over",
+ "fix": "_CROSS_FAMILY_CONTEXT names the family+component that bounds each entry, and ci_coverage VERIFIES that interval exists; a stale pointer falls through to undeclared",
+ "mutation": {
+  "arm": "repoint _along_mae_m_for_context at a non-existent component",
+  "result": "RED",
+  "file_restored_byte_identical": true
+ },
+ "suite_after": {
+  "test_refcv3_arm.py": "32 passed"
+ },
+ "remaining_tip_reds": 1,
+ "_VERDICT": "3 of 3 examined were defects in the CHECKING LAYER, not the trainer"
+}

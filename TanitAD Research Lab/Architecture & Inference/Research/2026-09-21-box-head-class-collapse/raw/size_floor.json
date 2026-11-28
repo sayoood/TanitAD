@@ -1,0 +1,91 @@
+{
+ "_what": "is the head's SIZE output worse than a zero-parameter floor?",
+ "_evidence_class": "MEASURED (ours), CPU, A8 ckpt_5000",
+ "_non_circular": "match_slots' cost uses centre/cls/presence, NOT size (agent_slots.py:475-477)",
+ "_per_component": "l and w are never pooled — different scales, and pooling hid a dead component once already (4a7166a)",
+ "n_pairs": 1482,
+ "n_episodes": 35,
+ "n_scored_pairs": 848,
+ "n_scored_episodes": 18,
+ "components": {
+  "l": {
+   "fit_global_median_m": 3.901,
+   "MAE": {
+    "O_head": 1.02306,
+    "F_GLOBAL_median": 1.03962,
+    "F_CLSHAT_median_on_head_own_class": 1.03962,
+    "F_CLSGT_median_on_GT_class": 0.39653
+   },
+   "head_minus_floor": {
+    "F_GLOBAL_median": {
+     "gain_floor_minus_head": 0.01656,
+     "CI95": [
+      -0.00335,
+      0.04041
+     ],
+     "head_beats_floor": false,
+     "floor_beats_head": false
+    },
+    "F_CLSHAT_median_on_head_own_class": {
+     "gain_floor_minus_head": 0.01656,
+     "CI95": [
+      -0.00333,
+      0.0417
+     ],
+     "head_beats_floor": false,
+     "floor_beats_head": false
+    },
+    "F_CLSGT_median_on_GT_class": {
+     "gain_floor_minus_head": -0.62653,
+     "CI95": [
+      -0.96953,
+      -0.35212
+     ],
+     "head_beats_floor": false,
+     "floor_beats_head": true
+    }
+   },
+   "reading": "⚠️ indistinguishable from a zero-parameter class-median lookup"
+  },
+  "w": {
+   "fit_global_median_m": 1.7835,
+   "MAE": {
+    "O_head": 0.31953,
+    "F_GLOBAL_median": 0.32174,
+    "F_CLSHAT_median_on_head_own_class": 0.32174,
+    "F_CLSGT_median_on_GT_class": 0.101
+   },
+   "head_minus_floor": {
+    "F_GLOBAL_median": {
+     "gain_floor_minus_head": 0.00221,
+     "CI95": [
+      -0.00206,
+      0.0076
+     ],
+     "head_beats_floor": false,
+     "floor_beats_head": false
+    },
+    "F_CLSHAT_median_on_head_own_class": {
+     "gain_floor_minus_head": 0.00221,
+     "CI95": [
+      -0.00218,
+      0.00766
+     ],
+     "head_beats_floor": false,
+     "floor_beats_head": false
+    },
+    "F_CLSGT_median_on_GT_class": {
+     "gain_floor_minus_head": -0.21853,
+     "CI95": [
+      -0.34484,
+      -0.11932
+     ],
+     "head_beats_floor": false,
+     "floor_beats_head": true
+    }
+   },
+   "reading": "⚠️ indistinguishable from a zero-parameter class-median lookup"
+  }
+ },
+ "_VERDICT": "l: ⚠️ indistinguishable from a zero-parameter class-median lookup\nw: ⚠️ indistinguishable from a zero-parameter class-median lookup"
+}

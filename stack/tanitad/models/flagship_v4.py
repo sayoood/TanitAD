@@ -62,7 +62,10 @@ from tanitad.refs.refc import DecoderConfig
 # masked ``unknown`` sentinel — deliberately NARROWER than the 9-wide lake vocab,
 # because a logit no label can ever train is a dead parameter that invites a
 # shortcut (§6.5): LATMANEUVER keeps 7 kinematic modes, LONMODE 6 (the three
-# lead-referenced modes are unmintable while lead_state is a None stub), DIST 8
+# lead-referenced modes were unmintable when the labels were BUILT — lead_state
+# was a None stub then; the lead state EXISTS since 2026-08-18 (obstacle join +
+# taniteval.lead_source), but the built corpus lacks the modes, so the widths
+# stand until a label rebuild mints them), DIST 8
 # metric bands with a masked ``d_unknown``. The label->index maps live with the v3
 # labels and the trainer (P4); the model only needs the widths.
 N_LAT = 8                       # 7 kinematic LATMANEUVER + unknown sentinel

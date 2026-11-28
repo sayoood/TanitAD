@@ -1,0 +1,84 @@
+--- a/stack/tanitad/refs/refa_v1_plan.py (tip 546f34c9)
++++ b/stack/tanitad/refs/refa_v1_plan.py (R1 fix)
+@@ -122,6 +122,19 @@
+     #: division is ill-conditioned; the constant clip governs there.
+     kamm_v_floor: float = 2.0
+ 
++    # --- the MAX-SPEED CAP (PI directive 2026-09-27, requirement R1: "both of
++    # them should get the max speed, which it must not be exceeded"). ``None`` =
++    # OFF and BIT-IDENTICAL to every arm banked before it. A per-step CONSTRAINT
++    # on the candidate's OWN speed profile (``v0`` integrated through its accel
++    # channel): each step's accel is limited so the speed that step CLOSES at
++    # never exceeds ``v_max``. It binds EVERY candidate -- the CEM population,
++    # the seed pool AND the injected baselines (`_baseline_controls`) -- so the
++    # emitted plan cannot exceed the limit whichever candidate wins.
++    # ⚠️ If ``v0`` already exceeds ``v_max`` the plan brakes at ``-a_max`` until
++    # it is under the limit; that residual is a property of the INPUT state and
++    # the evaluator reports it separately, never hides it.
++    v_max: float | None = None
++
+     # --- the floor -------------------------------------------------------- #
+     inject_baselines: bool = True
+ 
+@@ -139,6 +152,9 @@
+                              "or None to disable the cap")
+         if self.kamm_v_floor <= 0.0:
+             raise ValueError("kamm_v_floor must be > 0 m/s")
++        if self.v_max is not None and not (self.v_max > 0.0):
++            raise ValueError("v_max must be > 0 m/s (a speed limit) or None "
++                             "to disable the cap")
+ 
+ 
+ @dataclass
+@@ -206,6 +222,10 @@
+     """
+     a = controls[..., 0].clamp(-cfg.a_max, cfg.a_max)
+     k = controls[..., 1].clamp(-cfg.kappa_max, cfg.kappa_max)
++    if getattr(cfg, "v_max", None) is not None and v0 is not None:
++        # R1 (PI 2026-09-27): BEFORE the Kamm cap, so the friction circle is
++        # evaluated on the speed profile the plan will actually have.
++        a = _cap_speed(a, float(v0), float(cfg.v_max), cfg.dt, cfg.a_max)
+     if cfg.kamm_mu is not None and v0 is not None:
+         # the speed each step OPENS at: v0 for step 0, then v0 + cumsum(a)*dt
+         v = float(v0) + torch.cumsum(a, dim=-1) * cfg.dt - a * cfg.dt
+@@ -216,6 +236,27 @@
+     return torch.stack([a, k], dim=-1)
+ 
+ 
++def _cap_speed(a: Tensor, v0: float, v_max: float, dt: float,
++               a_max: float) -> Tensor:
++    """Limit each step's accel so the speed that step CLOSES at is <= ``v_max``.
++
++    ``a`` is ``[..., H]``. Sequential by construction (a cap at step t lowers
++    every later speed), so it is a loop over H (<= 30), vectorised over the
++    candidates. A step already under the cap is returned UNCHANGED
++    (``torch.minimum`` with a larger bound is the identity), which is what keeps
++    a non-binding cap bit-identical to no cap. If ``v0 > v_max`` the demanded
++    decel is floored at ``-a_max``: the plan brakes as hard as it may and the
++    residual excess is a property of the input state, reported by the caller.
++    """
++    out = a.clone()
++    v = torch.full(a.shape[:-1], float(v0), dtype=a.dtype, device=a.device)
++    for t in range(a.shape[-1]):
++        lim = ((float(v_max) - v) / float(dt)).clamp(min=-float(a_max))
++        out[..., t] = torch.minimum(out[..., t], lim)
++        v = v + out[..., t] * float(dt)
++    return out
++
++
+ def _baseline_controls(cfg: PlanConfig, v0: float, device,
+                        proposal: Tensor | None) -> dict[str, Tensor]:
+     """The candidates the planner must never lose to.
+@@ -235,6 +276,12 @@
+     dec = z.clone()
+     dec[:, 0] = -min(1.5, cfg.a_max)
+     out["decel_1.5"] = dec
++    if getattr(cfg, "v_max", None) is not None:
++        # R1: the injected baselines never went through `_clip`, so without this
++        # a constant-velocity candidate at v0 > v_max would be a legal winner.
++        # Below the limit this is the identity (zero/negative accel never binds).
++        out = {k: (v if k == "proposal" else _clip(v, cfg, v0))
++               for k, v in out.items()}
+     return out
+ 
+ 

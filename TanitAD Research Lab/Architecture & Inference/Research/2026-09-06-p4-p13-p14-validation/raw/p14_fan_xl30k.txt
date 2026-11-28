@@ -1,0 +1,65 @@
+==============================================================================
+P14 BANKED-FAN VALIDATION -- taniteval/results/fan_refc-xl-30k.pt
+==============================================================================
+n (windows) = 881   d (fan width K) = 256   episodes = 40
+waypoint frames [5, 10, 15, 20] -> times [np.float64(0.5), np.float64(1.0), np.float64(1.5), np.float64(2.0)] s (horizon 2.0 s)
+ckpt = /root/models/refc-xl-30k/ckpt.pt   step = 29999   decoder steps = 2
+
+[CONTROL rank_shipped] argmax(logits) vs dumped sel: n_mismatch = 0 / 881  -> PASS
+[CONTROL rank_oracle] equals per-window fan minimum: PASS (max |d| = 0.000e+00)
+
+------------------------------------------------------------------------------
+FOUR METRIC FAMILIES -- per family, NEVER pooled.  n = 881
+------------------------------------------------------------------------------
+arm                  ADE m   ALONG m   CROSS m    kappaMAE    spdErr  man.rate
+                 (accomp.)    LONGIT   LATERAL     LATERAL    LONGIT   VACUITY
+rank_oracle         0.1640    0.1166    0.0885     1.43080    0.2899    23.50%
+rank_shipped        0.4714    0.4168    0.1310     1.58320    0.7793    23.04%
+rank_shuffled      14.4006   14.2396    0.8640     0.29313   13.3171    52.44%
+rank_constant      12.0153   11.9129    1.0074     2.45670    7.2721    35.87%
+cv_floor            0.8377    0.4401    0.5259     0.02737    0.7874     1.36%
+straight_floor      0.4662    0.0000    0.4662     0.02737    0.1687     0.00%
+STRATEGIC: N/A -- the banked fan carries no route/goal label. n = 0.
+
+------------------------------------------------------------------------------
+BAR P14-B1 -- THE CEILING (paired episode-cluster bootstrap)
+------------------------------------------------------------------------------
+ade        shipped-minus-oracle = +0.3075   95% CI [+0.2397, +0.3778]   separated=True
+along      shipped-minus-oracle = +0.3002   95% CI [+0.2351, +0.3682]   separated=True
+cross      shipped-minus-oracle = +0.0425   95% CI [+0.0236, +0.0645]   separated=True
+kmae       shipped-minus-oracle = +0.1524   95% CI [-0.1679, +0.4739]   separated=False
+speed_err  shipped-minus-oracle = +0.4894   95% CI [+0.3715, +0.6124]   separated=True
+
+BAR: PASS if ADE gap >= 0.05 m AND CI excludes zero.
+MEASURED gap = 0.3075 m ; separated = True  ==>  PASS
+
+------------------------------------------------------------------------------
+BAR P14-B2 -- IS THE DEFECT RANKING, OR FAN QUALITY?
+------------------------------------------------------------------------------
+windows where fan-best beats shipped by >2x: 45.40% (n = 881)
+BAR: PASS if > 25%  ==>  PASS
+  (the fan CONTAINS a >2x-better trajectory this often, and the shipped ranking does not pick it -- that is recoverable by ranking, not by a better fan.)
+
+------------------------------------------------------------------------------
+ARM P14-R -- DELIBERATE REGRESSION (rank_shuffled)
+------------------------------------------------------------------------------
+shuffled-minus-shipped ADE = +13.9292   95% CI [+12.7141, +15.2209]   separated = True
+GATE VALIDITY: the instrument must see a knowingly-broken ranking.
+  ==> VALID -- a broken ranking IS detected, so a PASS above means something
+
+------------------------------------------------------------------------------
+BAR P14-B3 -- VACUITY GATE (manoeuvre rate beside every number)
+------------------------------------------------------------------------------
+  rank_oracle      manoeuvre rate  23.50%
+  rank_shipped     manoeuvre rate  23.04%
+  rank_shuffled    manoeuvre rate  52.44%
+  rank_constant    manoeuvre rate  35.87%
+  cv_floor         manoeuvre rate   1.36%  <-- BELOW 50%% OF SHIPPED (VACUOUS)
+GT manoeuvre rate (|y_terminal| > 1 m): 25.09%
+
+------------------------------------------------------------------------------
+TACTICAL FAMILY -- selection agreement (n = 881, d = 256)
+------------------------------------------------------------------------------
+  shipped picks the fan-best anchor : 31.10%
+  shipped is in the fan-best TOP-5  : 72.19%
+  shuffled picks the fan-best anchor: 0.57%  (no-information reference = 1/K = 0.39%)

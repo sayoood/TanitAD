@@ -1,0 +1,215 @@
+# AMENDMENT SEARCH-DOSE (to PREREG_SEARCH_P2_CONFIRM.md): does the CEM search with the pinned O4 config (M = 256) gain on the SAME B-REST bundle?  (FINAL DRAFT)
+
+Status: **SEALED** 2026-10-20T05:53:59+02:00 (REVISION 1 of AMENDMENT_DOSE.md [sha256 d55ebac6...], the terms text byte-identical to it; the sha256 of this text is in AMENDMENT_DOSE_R1.sha256; code/dose_chain.py REFUSES to run without both and without every pin below)
+<!-- REVISION1-NOTE-BEGIN -->
+## REVISION 1 NOTE (dated 2026-10-20; MM ruling `MM_RULING_C2FINAL.md` point 1, sha256 `70a08e0912165bc031f499742212bb23daf216eb95a9033d3dbe8207215eb17b`)
+**Code revision only. The terms text of this amendment is byte-identical to the sealed `AMENDMENT_DOSE.md` (sha256 `d55ebac686cb4d8ec979872c9ae8111f8f6e14ea31641310d387898d89910679`, kept unedited beside this file).** Exactly three things differ from it: the Status line, this note block, and the pins block (the shas of the four changed code files are re-pinned, `cost_dose.py` is unchanged; `ruling_c2final_sha256` and `amendment_original_sha256` are added). `dose_chain.py::terms_text` removes those three and `check_amendment` refuses unless the rest is equal; `seal_dose.py` asserts the same at the seal; `test_dose.py::test_revision1_terms_text_is_the_originals_byte_for_byte` lists the sections. (This note is not the body's own `## Revision 1 (MM ruling, pre-seal)` section, which folds in `MM_RULING_DOSE.md` and is part of the terms text.)
+
+**The ruling, point 1 (verbatim):** *"'Moved share' has ONE meaning everywhere: `inert.frac_moved`. That is the share of pooled (token, seed) outputs whose ADE vs the pick exceeds 0.5 m, the quantity whose shortfall IS O4_INERT."* It holds for "moved share" in `MM_RULING_DOSE.md` DQ4's table (section 5b of this text), in `MM_RULING_C2_LICENCE.md` section 2 and in every other place this text says "moved share".
+
+**The defect, found before any read.** The sealed `dose_chain.py::licensed()` read `read["moved_share"]`, the mean of the search's `moved` flag, which is any non-zero move. That is a different, looser quantity: a read with `moved_share >= 5 %` and `inert.frac_moved < 5 %` was licensed. No C1 result, no dose result and no navtest label existed when it was found.
+
+**What this revision changes (code only):**
+- `licensed()` reads `inert.frac_moved` through one helper, `frac_moved_of()`; a missing or NaN value is NOT a licence.
+- `analyse_dose` passes the dose read's own `inert` block (the one `spc_analyse.analyse_c1` returns, computed by `tts_cem.inert_verdict`, the function C1's own INERT uses; nothing is re-computed here).
+- `check_c1_done` passes C1's `inert` block from `RESULT_SPC.json` and REFUSES (`C1_NOT_DONE`, naming `inert.frac_moved`) if it is absent.
+- `c2_config` records the quantity it read in `moved_term`. `moved_share` stays in every output, DESCRIPTIVE ONLY, and decides nothing.
+- `check_amendment` checks THIS file (`AMENDMENT_DOSE_R1.md` + `.sha256`) in place of the original, and additionally the original's own sha256 and the terms-text identity.
+
+**Unchanged:** every term of the amendment, the DQ4 table, the outcome rules, the gates, the pinned configs, `MM_RULING_DOSE.md`, C1's sealed files, the cost estimate, and the strategic pause. The sealed C1 files are imported, never edited.
+<!-- REVISION1-NOTE-END -->
+**Sealed BEFORE C1 reads.** At drafting no B-REST token has been searched or labelled: the C1 chain stopped at `ZZSPC_STOP G_GPU_STAGE_FAILED rc=3` (`spc/chain_spc.log`), so no C1 bundle, search or label exists. **No outcome number of this arm exists. Nothing in this file is an outcome.**
+It edits none of: `PREREG_SEARCH_P2_CONFIRM.md` (sealed, sha256 `658ba1576af175a9a345692e284b1515604a6065279b921b2a4ca6dead6529d1`, whose Revision 1 is `MM_RULING_SPC.md`), `PREREG_L2_STEPB.md` (`c661588c...`), `PREREG_L1_SEARCH_ADMISSION.md` (`a76f62d8...`). It is the "own amendment, sealed before its launch" that `MM_RULING_SPC.md` DQ7 requires; **DQ7's committed terms are copied below and may not be loosened here.**
+Evidence classes: MEASURED (ours, artifact named), INHERITED (another package, not re-verified), ESTIMATED, HYPOTHESIS. STRATEGIC is PAUSED (PI ruling 2026-09-19, ITEM 25): printed as PAUSED, never as a pass, never extended to the other three families.
+
+## Revision 1 (MM ruling, pre-seal)
+The Master Mind's ruling on DQ1..DQn, folded in VERBATIM (sha256 of the ruling file: 562db689fb2719253149ec9bc3e40876559f43fbe6365dda9158a469e5872e08). **Where the body and the ruling differ, THE RULING PREVAILS.**
+
+````markdown
+# MM ruling on the SEARCH-DOSE amendment draft (Master Mind, 2026-10-20 ~03:35; C1 has produced no B-REST bundle, search output or label)
+
+**DQ1: (a), run the pinned O4 config as ruled. RATIFIED.**
+- The contrast is named "O4 minus C8", never a dose-response in M.
+- The M-only arm is a named follow-up under its own amendment, and only if the dose reads O1 or O2.
+
+**DQ2: (a). RATIFIED.**
+- Each arm keeps its committed bar.
+- max(C1, dose) is never quoted as an effect size.
+- Every dose line is printed with "SECOND READ OF THE SAME TOKENS".
+- Navtest (C2) is the confirmation for whichever config goes there.
+
+**DQ3: (i) run, (ii) as written, (iii) do not run. RATIFIED.**
+
+**DQ4: (b), plus a MECHANICAL config rule committed now, so that no outcome of either read can shape it.**
+- `H-SEARCH-P2-1` gets exactly ONE navtest look, with ONE config.
+
+| C1 licence (`MM_RULING_C2_LICENCE.md` terms) | dose licence | config sent to C2 |
+|---|---|---|
+| met | not met | **C8** |
+| not met | **O1_CONFIRMED** under this amendment, AND each safety point >= -0.25, AND moved share >= 5 % | **O4** (O2 is NOT enough on this path: it is the second look at the same tokens) |
+| met | met (O1 or O2 + the safety and moved-share terms) | **C8**, unless the paired O4-minus-C8 contrast (per token and seed, the C1 estimator) has its lower CI > 0; then **O4** |
+| not met | not met (or O2 only) | no C2; the committed next arms stand |
+
+- The dose's inference cost (about 2.9x per token, ESTIMATED) goes into C2's amendment, MEASURED on the deployment target or named UNMEASURED, for whichever config is sent.
+
+**DQ5: (b), ADDED, plus one more gate. Both are built, tested and pinned BEFORE the seal:**
+1. **G-SELFREP (self-replication):** a second process re-runs the first 8 B-REST tokens with the O4 config; it must be bit-equal to the merged output. This catches thread-count nondeterminism (`MM_RULING_SPC.md` DQ8).
+2. **G-SUBID (subclass identity):** `dose_chain.py` run with the **C8** config on the first 16 B-REST tokens must reproduce C1's banked search outputs bit for bit. This proves the subclass does not change the search path, which is the only identity the O4 run can inherit from C1's C-ID.
+- Each gate gets a RED arm (a planted difference must make the chain refuse) and enters the mutation check.
+- Cost: about 1.5 + 3 min CPU.
+
+**DQ6: (a). RATIFIED.** Pin the new files in this seal; C1's files stay byte-identical to their pins.
+
+**Not licensed:** unchanged (§11 of the draft). Sealing is the MM's: after the agent's final draft and a re-run of the suite, the mutation check and the seal script.
+
+**Clarification (MM, 2026-10-20 04:12, before the seal, raised by the drafting agent):** `MM_RULING_SPC.md` DQ7's "descriptive and ungated" stands. The O4-minus-C8 contrast decides no OUTCOME of either read. Its only use is the CONFIG CHOICE in row 3 of the DQ4 table, where it is read with C1's estimator (pooled over seeds, paired per token and seed).
+````
+
+
+## 0. Why, and what is NOT being claimed
+- **Why (RULE ZERO).** C1 asks whether the search at M = 64 gains again. If it reads NULL, INERT or a small DIRECTIONAL, "the search is too small" is the cheapest unrun lever: it is CPU only, reuses C1's bundle (the 3.3 GiB GPU forward is not repeated), and DQ7 commits it in advance so that C1's result cannot shape its bar.
+- **What it answers:** does the larger search (M = 256) clear C1's own outcome rules on the same 905 tokens? **It does not answer** "does it generalise to unseen scenes / is it T1" (C2, navtest), "would another training run agree" (H-ESTIM-SEED-1, one training seed) or "would another inference run agree" (3 search seeds only).
+- **It is a SECOND READ OF THE SAME 905 TOKENS and the same 24 logs** (DQ2). Every line it prints says so.
+- **The pinned O4 file moves THREE levers at once** (MEASURED, `l2stepb/raw/stepB_config_O4.json` vs `stepB_config.json`): `m_pop` 64 -> 256, `n_elite` 8 -> 32 (Step B's `validate_config` forces elites = M/8), `widen` 1.0 -> 2.0. Everything else (K = 5, sigma0, clips, profile, seeds) is C1's byte for byte. So the descriptive contrast is **"O4 minus C8"**, never "a dose-response in M" (DQ1).
+- **HYPOTHESIS, not measured here:** the scorer's self-attention spans the candidate set and it was trained on 64-sets (`refe/model.py:699-704`), so scoring a 256-set is outside its training distribution. The final pick is re-scored inside the original 64-fan (`tts_cem.py:64-70`), so the pick's score is in-distribution, but elite SELECTION happens on 256-sets. A NEGATIVE reading is therefore ambiguous between exploitation of the scorer and set-size shift; no instrument here separates them.
+
+## 1. The object and the pins
+| lever | value | source / pin |
+|---|---|---|
+| scorer | P2-s0, `model_final.pt` sha256 `ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51`, **no head substitution** (argv carries no head flag; the output meta must read `head_sha256: null`) | C1 pin `ckpt_sha256` |
+| config | `stepB_config_O4.json` sha256 `1ebd719617e8978a03cea0254edd6f531504c1d070792d066736130ceb929013` = {K 5, **M 256, elites 32, widen 2.0**, sigma0 (0.08126, 0.15), clips u [ln 0.85, ln 1.15], d +-0.3 m, profile ramp}; C8 (C1's) is `299c6e63...` with M 64, elites 8, widen 1.0 | C1 pin `config_o4_sha256` (already inside the C1 seal), this file's constant, the file |
+| search seeds | 20260927 / 20260928 / 20260929 | `tts_cem.SEARCH_SEEDS`, in both configs |
+| tokens | B-REST: 905 tokens / 24 logs, token-list sha256 `3a85cc8124b3dd02297fffa176787b629369a75d82ed52c4440b32aa4cc70c4b` | C1 pin; the data clause rides the sealed launcher (`spc_launch.py:29`, `:47`) |
+| bundle | **C1's, never rebuilt, never copied**: `<C1 work>/B_REST/bundle/bundle.npz` + `ctx.npy`; the dose search meta must record the SAME `bundle_sha256` as C1's merged search file | G-SAMEBUNDLE |
+| code | C1's sealed files **unchanged** (imported from `spc/code`); new: `code/dose_chain.py`, `code/test_dose.py`, `code/mutation_dose.py`, `code/seal_dose.py`, `code/cost_dose.py`, pinned in the block at the end; the ruling `MM_RULING_DOSE.md` is folded in verbatim and pinned (`ruling_sha256`) | section 10 (DQ6, ruled) |
+The search is an inference-time search on CPU (no optimiser, loss or gradient). `launch_gate.py` governs TRAINING launches; the Step B ruling's G-REACH-STEPB stamp, minted on the O4 config and C1's bundle, is the gate that applies.
+
+## 2. Reachability: C1's chain CAN run the O4 search on the B-REST bundle, but only through `dose_chain.py` (MEASURED from source, file:line)
+**Finding.** The search stage is reachable from argv with NO code change: `spc_launch.py search` takes `--config` / `--config-sha256` (Step B's parser) and the O4 sha is already pinned. **The orchestrator is not:** `spc_chain.py` hard-wires C8 in five places, and its `main` has no config flag. An in-place flag would change `spc_chain.py`'s sha256 and VOID the C1 seal (the chain refuses on any pinned-file mismatch), so the smallest safe change is a **new file that imports the sealed chain and overrides only those hops** (DQ6). The default (C1) path is untouched; control tests prove it.
+| hop | where (file:line) | what it does | status |
+|---|---|---|---|
+| config default | `spc_chain.py:45`, `:86` | `CONFIG` = C8; a `Cfg` parameter that `main` (`:445-449`) never exposes | **C8-only** |
+| the pin | `spc_chain.py:159` | `pins["config_sha256"] != sha_lf(c.config)` -> exit 5 | **C8-only**; O4's pin `config_o4_sha256` exists in the seal but nothing reads it |
+| argv | `spc_chain.py:278` | `--config c.config --config-sha256 pins["config_sha256"]` | follows the two above |
+| stamp / meta | `spc_chain.py:293`, `:325` | the gate stamp and the search meta must carry `pins["config_sha256"]` | follows the pin |
+| launcher | `spc_launch.py:39-47` | parses Step B's parser, passes `carve_sha256=READS[read]` | **config-agnostic** |
+| sha check | `stepB.py:328-330` | `sha256_lf(a.config) == a.config_sha256` | config-agnostic |
+| load + rule | `stepB.py:331-332`, `:137-143` | `StepBConfig.from_json`, `validate_config` (K 5, elites = M/8, config == C8 rule at its own M / widen) | O4 is admissible (`test_stepB.py:200`; re-asserted here) |
+| stamp binding | `stepB.py:260` | a stamp for another config sha is refused, so C1's C8 stamp cannot stand in | config-bound |
+| M into the call | `stepB.py:158-164` | `cem_search(..., m=cfg.m_pop, n_elite=cfg.n_elite, widen=cfg.widen)` | reaches it |
+| M in the loop | `tts_cem.py:53`, `:57-58`, `:67` | `rng.standard_normal((m, 2))`, `pop` of m members scored as ONE set, then one fan call per elite | reaches it |
+| G-REACH sees M | `g_reach_stepb.py:190-207` | first population recomputed from (seed, sigma0 x widen, clips, `cfg.m_pop`) and compared bit for bit | config-driven |
+**What `dose_chain.py` overrides** (new lines, all in `code/dose_chain.py`: `check_seal`, `bundle_dir`, `gpu_stage`, `cid_gate`, `mint_gates`, `merged_valid`, `make_cfg`, `subid_gate`, `selfrep_gate`, `c2_config`, `run`): `check_seal` verifies C1's seal with the C8 file, then the O4 file against the seal's `config_o4_sha256` AND the constant, and returns the pins with `config_sha256` replaced by the O4 sha (so `common`, `stamp_ok`, `merged_valid` bind the O4 file with no further override); `make_cfg` defaults `config` to the O4 file; `bundle_dir` is C1's; `gpu_stage` and `cid_gate` REFUSE; `mint_gates` runs the gate on the O4 config only; `merged_valid` adds G-SAMEBUNDLE; `subid_gate` and `selfrep_gate` (ruled, DQ5) replicate the search bit for bit; `c2_config` is the committed DQ4 table as a pure function.
+**Proof it runs end to end on the real caller's argv, tiny synthetic input (no real bundle, no label):** `test_dose.py::test_dose_argv_reaches_the_search_loop_with_m256_and_32_elites` takes the argv `DoseChain.search_args` builds, runs it through the SEALED `spc_launch.cmd_search` and Step B's `run_search_cli`, and observes the sets the loop scored: **exactly 5 x 3 x tokens sets of 256**, and `tokens x (1 + 3 x (1 + 32)) + moved` sets of 64 (the base, the fan and the 32 elite re-scores); the recorded `config_sha256` is `1ebd7196...`. **Control** `test_control_default_c1_argv_reaches_the_search_loop_with_m64_and_8_elites`: C1's own `Chain` + `Cfg` defaults give only sets of 64, `tokens x (1 + 3 x (5 + 1 + 8)) + moved` of them. `test_step_b_gate_passes_on_the_o4_config_with_every_mutation_red` runs Step B's own G-REACH on the O4 file (planted world): PASS, first population bit-exact at M = 256 / widen 2.0, every mutation arm RED. Counts are in `HANDOFF.md`.
+
+## 3. Run order, after `ZZSPC_DONE`
+1. **Trigger (DQ7 of `MM_RULING_SPC.md`, copied; DQ3 of `MM_RULING_DOSE.md` RATIFIES (i) run after a NEGATIVE C1, (ii) the INERT special case as written, (iii) do not run unless C1 reached `ZZSPC_DONE`):** it runs after C1's `ZZSPC_DONE` **whatever C1 reads**, except INERT, whose committed raised-M arm IS this arm (run ONCE; section 5). That includes NEGATIVE: C1's sealed table says "the SEARCH-DOSE arm only if the moved share is < 5 %" for NEGATIVE, but **the ruling prevails over the body** (Revision 1 of the C1 seal) (DQ3). It does NOT run while C1 has not reached `ZZSPC_DONE` (a `ZZSPC_STOP` of C1): it needs C1's bundle, merged search and labels (contrast) and C1's gates.
+2. The MM (or a fresh agent from `HANDOFF.md`) launches it DETACHED (Win32_Process Create, flags `0x08000200`, `cmd /c "... < NUL >> log 2>&1"`): `C:/Users/Admin/venvs/tanitad/Scripts/python.exe code/dose_chain.py --work D:/Projects/TanitAD-artifacts/spc_dose --c1-work D:/Projects/TanitAD-artifacts/spc --dose-pkg <dir holding AMENDMENT_DOSE.md>`. `CUDA_VISIBLE_DEVICES=-1` for every child; 1 process, `--threads 4`; resumable (valid outputs are skipped, invalid ones never accepted).
+3. Markers `ZZDOSE_*` at line start, in this order: START, SEAL_OK, AMEND_SEAL_OK, DATA_OK, C1_DONE `<outcome>`, DISK_OK, BUNDLE_OK, **SUBID_PASS** (G-SUBID, about 3 min), REACH_PASS, SEARCH_DONE, **SELFREP_PASS** (G-SELFREP, about 1.5 min), LABEL_DONE, ANALYSIS_DONE, DONE `<outcome>`, ENDPOINT, CONTRAST, FAMILY x4, **C2CONFIG** `<C8|O4|NONE>` row k, NEXT, STAMPS. `ZZDOSE_STOP <reason>` = a stop (exit 3 gate, 5 seal/data/C1, 6 search, 7 label/RAM/disk, 8 analysis, 9 crash). One-command check: `grep -E "^ZZDOSE_" <log>`.
+4. After `ZZDOSE_DONE`: act on the NAMED next arm in `ZZDOSE_NEXT`; update `GOALS_AND_CLAIMS.md` the same turn from `RESULT_DOSE.json` only.
+
+## 4. Endpoint, estimator, tiers (C1's, nothing new)
+- **Endpoint:** per token n and search seed s, d(n, s) = 100 x [true PDMS(search output) - true PDMS(P2's pick)], the pick's label the BANKED one; the token's value is the mean over the 3 seeds; **PDMS points**.
+- **Estimator:** the paired log-cluster bootstrap, `stepA.ratio_ci` over `stepA.boot_indices` (ratio of sums, WHOLE LOGS resampled), **B = 10,000, seed 20260927**. It answers "would another draw of LOGS say this?" and nothing else: not another training run (H-ESTIM-SEED-1), not another inference run (the 3 per-seed points and their range are reported beside it).
+- **Labels:** `label_stepB.py`, 5 plans per token (identity, 3 seeds, control), the PLANTED IDENTITY enforced; exit 3 = STOP. Tier and stamps: MEASURED, SEEN-SCENE, SELECTION tier, label-only (not T1, not navtest), LOG-SHARED, one training seed, STRATEGIC PAUSED.
+- **Code:** `spc_analyse.analyse_c1` UNCHANGED (itself `analyse_stepB.analyse` unchanged), so the rules below are C1's by construction; this amendment replaces only the NEXT text and adds the contrast.
+
+## 5. Outcomes of the dose read: C1's rules VERBATIM, and the committed NEXT arm of each
+Rules copied from the sealed C1 section 6 (units: PDMS points; "seed range" = max - min of the 3 per-seed points):
+| outcome (read once) | rule (verbatim from C1) | committed next arm (this amendment) |
+|---|---|---|
+| **O1 CONFIRMED** | point >= +0.30 AND lower CI > 0 AND point > seed range AND each safety point (dNC, dDAC, dTTC, dC) >= -0.25 | the config sent to the ONE navtest look (C2) is set mechanically by the committed table (section 5b) from C1's read and this read, and is printed as ZZDOSE_C2CONFIG: O4 if C1's C2 licence is NOT met and this read is O1 with each safety point >= -0.25 and moved share >= 5 %; C8 if C1's licence is met and this read does not license; if both license, C8 unless the paired O4-minus-C8 contrast has its lower CI > 0, then O4. H-SEARCH-P2-1 gets exactly ONE navtest look with ONE config, still behind EP-ADMISSION and C2's own amendment, which carries the per-token search cost of that config (about 2.9x for O4, ESTIMATED) MEASURED on the deployment target or named UNMEASURED. The M-only follow-up arm (DQ1) goes under its own amendment. No navtest token is read. |
+| **O2 DIRECTIONAL** | lower CI > 0 but O1 not met (point < +0.30, or the seed-range term); the four safety points are reported beside it and a safety miss is FLAGGED, not hidden | as O1_CONFIRMED through the table (section 5b), with one difference: O2 is NOT enough to send O4 when C1's C2 licence is not met (that would be the second look at the same tokens), so that path yields no C2 and the committed next arms stand; if C1's licence is met and this read is O2 with each safety point >= -0.25 and moved share >= 5 %, C8 unless the paired O4-minus-C8 contrast has its lower CI > 0, then O4. A safety miss is FLAGGED. The M-only follow-up arm (DQ1) goes under its own amendment, only because this read is O1 or O2. |
+| **TRADE** | the three dPDMS terms clear and a safety family is below -0.25 | the TRADE-restricted arm (Step B sealed text section 3: elites and pick restricted to candidates whose sigma(NC) and sigma(DAC) are >= the pick's inside the same set; no new head) on the O4 config, CPU only, own amendment sealed before launch. |
+| **O3 NULL** | the CI contains 0 | the larger search adds nothing detectable on this footing. If C1 also read O3_NULL / NEGATIVE / O4_INERT: the search is CLOSED for P2's scorer on this footing and the report NAMES the next levers with what unblocks them: the P6 trunk (PI authorisation of trunk compute) and an L2-BRANCH with a TTC-protecting term (own amendment, a launch_gate.py PASS token, the GPU lock). If C1 read O1 / O2 the C2 candidate stays the C8 config (the dose licenses nothing). |
+| **NEGATIVE** | upper CI < 0 | the larger population HURTS: reported plainly (HYPOTHESIS, not measured here: scorer exploitation or the 256-set being outside the 64-set the scorer was trained on). If C1 licensed C2 the candidate stays the C8 config; otherwise the search is CLOSED for P2's scorer on this footing and the report NAMES the next levers with what unblocks them: the P6 trunk (PI authorisation of trunk compute) and an L2-BRANCH with a TTC-protecting term (own amendment, a launch_gate.py PASS token, the GPU lock). |
+| **O4 INERT** | the output differs from the pick by > 0.5 m ADE on < 5 % of the pooled (token, seed) outputs | even M = 256 with widen 2.0 moves the pick on < 5 % of outputs: the search is CLOSED for P2's scorer on this footing and the report NAMES the next levers with what unblocks them: the P6 trunk (PI authorisation of trunk compute) and an L2-BRANCH with a TTC-protecting term (own amendment, a launch_gate.py PASS token, the GPU lock). |
+Outcome order (C1's): O4_INERT -> O1_CONFIRMED -> TRADE -> NEGATIVE -> O2_DIRECTIONAL -> O3_NULL.
+**C1 INERT special case (DQ3):** if C1 read INERT, this arm IS its committed raised-M arm, run ONCE. If it moves the pick and reads O1 / O2 / TRADE, the row above applies and the search is NOT closed (RULE ZERO: a gain is not closed on); any other reading CLOSES the search with the levers named. The code prefixes the NEXT line with "C1 read INERT; this was its committed raised-M arm, run ONCE".
+**The dose contrast (DQ7 of `MM_RULING_SPC.md`, copied; named "O4 minus C8" per DQ1 of `MM_RULING_DOSE.md`, never a dose-response in M):** O4 minus C8, paired per token and seed (the same tokens and the same search-seed ids; the two arms' random draws differ because the population shapes differ, so they are paired by labels, not by noise), in PDMS points, with its paired log-cluster interval; the four sub-score contrasts beside it. It decides NO outcome of this read. **The one place its interval is used is row 3 of the C2 config table below** (DQ4, ruled): the POOLED contrast (the token's value is the mean over the 3 search seeds, the C1 estimator), lower CI > 0; the per-seed contrasts stay descriptive. It moves M x4, elites x4 and widen x2 together.
+
+### 5b. The config sent to the navtest look: MECHANICAL, committed now, so that no outcome of either read can shape it (DQ4 of `MM_RULING_DOSE.md`, table copied verbatim)
+`H-SEARCH-P2-1` gets exactly ONE navtest look, with ONE config. The C1 licence is the `MM_RULING_C2_LICENCE.md` section 2 terms (C1 reads O1_CONFIRMED or O2_DIRECTIONAL, each safety point dNC, dDAC, dTTC, dC >= -0.25, moved share >= 5 %). `code/dose_chain.py::c2_config` computes the row and prints it as `ZZDOSE_C2CONFIG`; a missing or NaN term is never a licence.
+
+| C1 licence (`MM_RULING_C2_LICENCE.md` terms) | dose licence | config sent to C2 |
+|---|---|---|
+| met | not met | **C8** |
+| not met | **O1_CONFIRMED** under this amendment, AND each safety point >= -0.25, AND moved share >= 5 % | **O4** (O2 is NOT enough on this path: it is the second look at the same tokens) |
+| met | met (O1 or O2 + the safety and moved-share terms) | **C8**, unless the paired O4-minus-C8 contrast (per token and seed, the C1 estimator) has its lower CI > 0; then **O4** |
+| not met | not met (or O2 only) | no C2; the committed next arms stand |
+
+The dose's inference cost (about 2.9x per token, ESTIMATED) goes into C2's amendment, MEASURED on the deployment target or named UNMEASURED, for whichever config is sent. The M-only follow-up arm (DQ1) is a named follow-up under its own amendment, and only if the dose reads O1 or O2. Neither read licenses a navtest look by itself: EP-ADMISSION and C2's own sealed amendment still stand.
+
+**Stated expectation, before any data:** none stronger than C1's. If the effect is real at about +0.3 the larger search can raise or lower the point; O1 alone is close to a coin flip at 905 tokens (C1 section 8, ESTIMATED), and a second read of the same tokens has the same noise.
+
+## 6. The four families (never pooled; ADE is not a result; STRATEGIC PAUSED)
+Each read per family with the paired log-cluster interval, on the same tokens, from `analyse_stepB.analyse` unchanged (the dose arm vs P2's pick), and the O4-minus-C8 sub-score contrasts:
+- **LONGITUDINAL:** dEP and dTTC (points); share of speed-ups / slow-downs and dPDMS given each. Distance-keeping / headway: n = 0 (the label-only tier carries no lead-agent headway row beyond TTC).
+- **LATERAL:** dDAC and dDDC (points), mean |offset| of moved outputs, heading deviation, largest yaw-rate deviation (descriptive). Curvature error and cross-track: n = 0 (no closed-loop rollout at the selection tier).
+- **TACTICAL:** share of outputs whose command class (a bearing-rule proxy, HYPOTHESIS) differs from the pick's. Manoeuvre-decision quality: n = 0.
+- **STRATEGIC: PAUSED** (PI ruling 2026-09-19, ITEM 25). Not a pass.
+- **Inference stays vision-only:** the search reads the same token and P2's own scorer; the privileged PDM labels are the endpoint's instrument, never an input to the search.
+
+## 7. Cost (ESTIMATED from MEASURED M = 64 rates; `raw/cost_dose.json`, `code/cost_dose.py`; 0 GPU)
+**How.** Time = number of scorer calls x cost per call. Per (token, seed) the search makes K = 5 population calls of M members, one call on the original 64-fan, and `n_elite` calls on the 64-fan with the pick replaced (`tts_cem.py:64-70`), plus one more when the output moved; plus one base fan call per token. **Check against the banked carve-B P2HEAD search (MEASURED, `l2stepb/run/search_P2HEAD.npz`, 400 tokens x 3 seeds, 4 threads, 3.951 s per token):** a not-moved seed (14 calls) costs 0.0858 s per call, a moved seed (15 calls) 0.0860 s per call, and a moved seed costs 0.0894 s more than a not-moved one = one call. The call-count model therefore fits to within 1 %.
+**Cost of a 256-call relative to a 64-call (ESTIMATED, UNMEASURED):** the decoder is 4 CrossBlocks (dim 256, 8 heads, ctx 7680 x 256); the K/V projection of the context is paid once per call whatever M is (76 % of a 64-call's 5.28e9 MACs), the rest scales with M. FLOP model: a 256-call = **1.73x** a 64-call (bounds: 1.0x if the fixed part dominated, 4.0x if linear in M). Implied 117 GFLOP/s at 4 threads, a plausible rate, so the model is not contradicted.
+| item | CPU (1 process, 4 threads) |
+|---|---|
+| search, 905 tokens x 3 seeds | **2.9 h central** (11.4 s per token = **2.89x** C1's 3.95; bounds 2.6 h to 3.6 h). **79 % of it is the 32 elite re-scores on the 64-fan, not the 256-member populations.** Shared-box outliers: Step B's worst P2HEAD shard rate scales to 4.1 h; the worst shard of any arm to 11.7 h |
+| G-SUBID: the first 16 tokens with the C8 config (16 x 3.95 s plus the model load; DQ5, ruled) | about 3 min |
+| G-REACH-STEPB on the O4 file (one real token; its log carries the FIRST measured M = 256 timing) | about 3 min |
+| labels (5 plans per token; M-independent, spc `raw/cost.json`) | 17-27 min (1 thread) |
+| G-SELFREP: the first 8 tokens with the O4 config in a second process (8 x 11.4 s) | about 1.5 min |
+| analysis (B = 10,000, incl. the contrast) | about 3 min |
+| **total** | **about 3.4 h central (3.2-4.3 h bounds), 0 GPU** |
+Two search processes would halve the search wall time, but the inherited chain runs one and time is not binding, so it is not used. The GPU lock is never taken.
+
+## 8. Peak disk (ESTIMATED from the C1 sizes; the arm writes small files only)
+New writes under the dose work dir: shards about 49 KB per 20 tokens x 3 seeds (46 shards, about 2.2 MB), one merged search file about 2.2 MB, labels about 0.3 MB, the gate stamp and its dir under 0.1 MB, `RESULT_DOSE.json` under 0.1 MB, logs under 2 MB: **about 7 MB, bound 15 MB**. It adds NO bundle (C1's 3.4 GB stays where C1 built it, read only through a memmap, about 3.7 MiB per token read). The dose gate stops with `DISK_LOW` below 0.25 GiB free on the work volume. **BLOCKER (not a DQ):** at drafting D: has 0 bytes free (`shutil.disk_usage`), and C1's own `DISK_OK` gate needs 12 GiB and its bundles 3.4 GB. Freeing D: is the PI's call (D: is exFAT with 1 MiB clusters; deletes there are PI-only); neither C1 nor this arm can write until it is done.
+
+## 9. Gates (each has a RED arm in `code/test_dose.py` that must make the chain refuse; `code/mutation_dose.py` mutates each new guard line)
+| gate | what it asserts | RED arm |
+|---|---|---|
+| **G-SEAL-C1** | C1's seal intact, byte for byte (inherited `check_seal`, with the C8 file): every pinned C1 file, ckpt, head, raw pins | C1's own 115-test suite (unchanged) + `test_c1s_sealed_code_is_byte_identical_to_its_pins` |
+| **G-O4PIN** | the O4 file == the seal's `config_o4_sha256` == the constant `O4_SHA256` | the chain pointed at the C8 file; a one-byte-tampered O4 (`m_pop` 256 -> 255) |
+| **G-SEAL-DOSE** | this text equals its `.sha256`, first Status line SEALED, pins: C1 prereg sha, O4 sha, C8 sha, every `code:` file (and `dose_chain.py` pinned) | sha mismatch, DRAFT status, wrong O4 pin, wrong C1 sha, wrong code pin, `dose_chain.py` unpinned, missing file |
+| **G-DATA** | inherited: B-REST list recomputed == `raw/b_rest.json` == the pin; 905 / 24; Step A / carve B lists hash to their pins | C1's data RED arms (unchanged) |
+| **G-C1DONE** | C1's stages (SEAL, DATA, GPU_STAGE, REACH, CID, SEARCH, LABEL) done; `RESULT_SPC.json` has a known outcome; C1's merged search is valid under C1's OWN C8 pin; C1's labels valid; the bundle on disk is the bundle C1 searched; dose work dir != C1 work dir | missing state; a missing stage; an unknown outcome; C1's merged file under the O4 pin; a different bundle sha; dose work == C1 work |
+| **G-BUNDLE** | inherited `bundle_valid`: token list and ctx.json hash to the pinned read; ctx.npy bytes match ctx.json | tampered ctx |
+| **G-CPU** | the dose never builds a bundle and has no C-ID: `gpu_stage` and `cid_gate` raise | both raise, no child started |
+| **G-REACH-O4** | Step B's gate (a)-(f) + 8 mutation arms on the O4 file and C1's bundle; the stamp binds ckpt, config, bundle and code | rc 0 without a stamp; rc != 0; Step B's own mutation arms; C1's C8 stamp is refused by the config binding (`stepB.py:260`) |
+| **G-NOHEAD / G-DATA-CLAUSE / G-SAMEBUNDLE** | inherited `merged_valid` under the O4 sha (arm P2HEAD, head null, ckpt, config = O4, data clause = B-REST) plus: the search meta records C1's `bundle_sha256` | a C8 file; a head; a wrong data clause; another bundle sha |
+| **G-LABEL** | inherited: the planted identity at the labeller and its control; tokens aligned and finite; RAM >= 8 GiB | C1's label RED arms (unchanged) |
+| **G-SUBID** (DQ5.2, ruled) | THIS subclass run with the **C8** config on the first 16 B-REST tokens (C1's own C8 gate stamp, the same argv builder) reproduces C1's banked merged search outputs BIT FOR BIT (every per-token search array and the seeds, by raw bytes; key sets equal; non-vacuous: the reference moved its mean). It proves the subclass does not change the search path, the only identity the O4 run can inherit from C1's C-ID. Runs before the O4 gate | one flipped bit in each of the 13 compared arrays, the seeds, a dropped or extra key, rc != 0, no shard, a wrong config / bundle / range / head in the meta, a vacuous reference, no C1 C8 stamp (`test_replicate_gates_red_arms_*`, `test_subid_refuses_without_c1s_c8_stamp`) |
+| **G-SELFREP** (DQ5.1, ruled) | a second process re-runs the first 8 B-REST tokens with the O4 config into a fresh dir; bit-equal to the merged output (thread-count nondeterminism, `MM_RULING_SPC.md` DQ8). Runs after the search | the same RED arms |
+| **G-ORDER** | the analysis refuses unless every dose stage (incl. SUBID_PASS and SELFREP_PASS) is in `chain_state.json` | `test_g_order_analysis_refused_unless_every_dose_stage_is_done` |
+| **C-ID** | **NOT RUN for the dose** (no banked O4 search exists). Substitutes, all gates above: C1's `CID_PASS` is required (G-C1DONE); G-SUBID (the subclass reproduces C1's C8 search bit for bit); G-REACH-O4 (first M = 256 population bit-exact on the real bundle); G-SELFREP (O4 is reproducible across processes); the planted identity at the labeller | - |
+The contrast and the NEXT text are checked in `test_contrast_is_o4_minus_c8_with_the_right_sign_and_size` (known offset +2.0 points, sign flips with the arguments) and `test_analyse_dose_is_c1s_classifier_with_the_dose_next_arm`; `test_draft_quotes_the_code_next_arms_verbatim` fails if this table and `DOSE_NEXT` ever diverge, `test_the_draft_carries_the_rulings_dq4_table_verbatim` fails if section 5b and the ruling's table do, and `test_c2_config_every_row_of_the_committed_table` / `..._cross_product_matches_the_ruling_table` cover every row of 5b (incl. the O2-only dose path, which yields no C2); `test_run_analysis_writes_and_prints_the_c2_config` shows the row reaches the chain's own output.
+
+## 10. RULED (MM_RULING_DOSE.md): DQ1..DQ6, folded in
+The Master Mind's ruling (2026-10-20 ~03:55) is folded in verbatim by the seal tool and PREVAILS over this body. Its answers and where they land:
+- **DQ1 (a), RATIFIED.** The pinned O4 config runs as ruled; the contrast is named "O4 minus C8", never a dose-response in M; the M-only arm (M 256, elites 32, widen 1.0) is a named follow-up under its own amendment, only if the dose reads O1 or O2. (Sections 0, 5, 5b.)
+- **DQ2 (a), RATIFIED.** Each arm keeps its committed bar; max(C1, dose) is never quoted as an effect size; every dose line is printed with "SECOND READ OF THE SAME TOKENS" (the code's `STAMPS`); navtest (C2) is the confirmation for whichever config goes there.
+- **DQ3 (i) run, (ii) as written, (iii) do not run, RATIFIED.** Section 3 item 1 and the INERT special case of section 5.
+- **DQ4 (b), plus a MECHANICAL config rule, RATIFIED.** Section 5b, `c2_config`, `ZZDOSE_C2CONFIG`. Read-through by the drafting agent: the contrast that enters row 3 is the pooled one (the C1 estimator); DQ7 of the earlier ruling called the contrast "descriptive and ungated", which still holds for every OUTCOME of this read: only the choice between C8 and O4 for the one navtest look uses its lower CI, and only when both reads license.
+- **DQ5 (b), ADDED, plus one more gate, RATIFIED.** G-SELFREP and G-SUBID (section 9), built, tested and pinned before the seal. Cost about 1.5 + 3 min CPU (section 7).
+- **DQ6 (a), RATIFIED.** `code/dose_chain.py`, `test_dose.py`, `mutation_dose.py`, `seal_dose.py` and `cost_dose.py` are pinned in this seal together with `ruling_sha256`; C1's files stay byte-identical to their pins; after the seal NO pinned file may change (the chain refuses).
+
+## 11. Not licensed
+No navtest look, no capability claim, no registry row beyond the read's own. A dose O1 / O2 admits nothing; it sends a config to C2 only through the table of section 5b, and C2 still needs EP-ADMISSION and its own sealed amendment. EP-ADMISSION is separate and frozen. The PI's ruling on the strategic pause is untouched: STRATEGIC stays PAUSED.
+
+<!-- PINS-BEGIN -->
+```
+c1_prereg_sha256 658ba1576af175a9a345692e284b1515604a6065279b921b2a4ca6dead6529d1
+config_o4_sha256 1ebd719617e8978a03cea0254edd6f531504c1d070792d066736130ceb929013
+config_c8_sha256 299c6e63dd3016100149f88b6ca498529d79f8a5fbcfc6845753c8121d62c441
+ruling_sha256 562db689fb2719253149ec9bc3e40876559f43fbe6365dda9158a469e5872e08
+ruling_c2final_sha256 70a08e0912165bc031f499742212bb23daf216eb95a9033d3dbe8207215eb17b
+amendment_original_sha256 d55ebac686cb4d8ec979872c9ae8111f8f6e14ea31641310d387898d89910679
+code:dose_chain.py b41ccab5a24fa67c4d07c3aa4dce1b60175c97ad9787f513e91491193dccc217
+code:test_dose.py b83c653bc4c89f794c1822f67efa8b164f1bfa14d8361d678155bc3f29c25478
+code:mutation_dose.py a2872a29836c2fc8fd048dcfd83376bcfc3e4cc18307640cc75c9f30f3d0fec4
+code:seal_dose.py 34b9e17a2aeaa433e258ee86ee2bc3e60286616ad61c837f3a2981580471a874
+code:cost_dose.py 20b279a5467a6a8b90236118840372d5ef0d3a0e7bddd66d0cbace8f753d835a
+```
+<!-- PINS-END -->

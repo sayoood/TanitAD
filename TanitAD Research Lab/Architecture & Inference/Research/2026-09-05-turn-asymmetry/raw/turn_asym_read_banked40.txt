@@ -1,0 +1,60 @@
+====================================================================================================
+PANEL: n = 40 windows / 8 episodes | GT lane_keep 21, turn_left 11 (6 eps), turn_right 8 (5 eps)
+POWER TARGETS (SPEC section 1): n >= 27 per direction, >= 5 clusters, granularity 1/n <= 0.0375
+  turn_left   n=11  **MISSED** clusters=6  MET        1/n=0.0909 **TOO COARSE**
+  turn_right  n=8   **MISSED** clusters=5  MET        1/n=0.1250 **TOO COARSE**
+
+====================================================================================================
+1. PER-DIRECTION TURN RECALL, episode-cluster bootstrap
+====================================================================================================
+  arm            | recall LEFT  [95% CI]      | recall RIGHT [95% CI]      | R - L  [95% CI]  sep?
+  wk15           | 0.0000 [0.0000, 0.0000] | 0.5000 [0.2222, 0.8333] | +0.5000 [+0.2000, +0.8333] YES
+  ccos_argmax    | 0.3636 [0.0000, 0.6000] | 0.7500 [0.5556, 1.0000] | +0.3864 [-0.0278, +0.8571] no 
+  ccos_seed1     | 0.3636 [0.0000, 0.6000] | 0.7500 [0.5556, 1.0000] | +0.3864 [-0.0278, +0.8571] no 
+  wk151          | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | +0.0000 [+0.0000, +0.0000] no 
+  cos_wk         | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | +0.0000 [+0.0000, +0.0000] no 
+  ha0_ext        | 0.7273 [0.5000, 1.0000] | 0.7500 [0.4286, 1.0000] | +0.0227 [-0.5000, +0.3750] no  (FLOOR, no planner)
+  ha             | 0.6364 [0.4000, 1.0000] | 0.7500 [0.4286, 1.0000] | +0.1136 [-0.4286, +0.5000] no  (FLOOR, no planner)
+  ol             | 0.7273 [0.5000, 1.0000] | 1.0000 [1.0000, 1.0000] | +0.2727 [+0.0000, +0.5000] no  (FLOOR, no planner)
+  CONTROL (must read exactly +0.0000): an arm's LEFT recall against itself = +0.0000
+
+====================================================================================================
+1b. ⭐ WITHIN-EPISODE CONTRAST (SPEC 3.13) — the PRIMARY attribution statistic
+====================================================================================================
+  episodes carrying BOTH GT directions: [0, 2, 7]  (3 left + 4 right windows inside them)
+  wk15           within-episode (R - L) = +0.8333 [+0.5000, +1.0000] SEPARATED over 3 episodes
+  ccos_argmax    within-episode (R - L) = +1.0000 [+1.0000, +1.0000] SEPARATED over 3 episodes
+  ccos_seed1     within-episode (R - L) = +1.0000 [+1.0000, +1.0000] SEPARATED over 3 episodes
+  wk151          within-episode (R - L) = +0.0000 [+0.0000, +0.0000] not sep over 3 episodes
+  cos_wk         within-episode (R - L) = +0.0000 [+0.0000, +0.0000] not sep over 3 episodes
+  ha0_ext        within-episode (R - L) = -0.3333 [-1.0000, +0.0000] not sep over 3 episodes (FLOOR)
+  ol             within-episode (R - L) = +0.0000 [+0.0000, +0.0000] not sep over 3 episodes (FLOOR)
+  CONTROL, a stratum against ITSELF (must be exactly +0.0000): +0.0000 [+0.0000, +0.0000]
+
+====================================================================================================
+2. GOAL-CONDITIONED CURVATURE RETENTION (SPEC section 1.1)
+====================================================================================================
+  decoded goal: TURN_L n=9 (2 eps), TURN_R n=13 (4 eps)
+  arm            | retain|goal=TURN_L         | retain|goal=TURN_R         | R - L  [95% CI]  sep?
+  wk15           | 0.0000 [0.0000, 0.0000] | 0.6923 [0.4000, 1.0000] | +0.6923 [+0.4000, +1.0000] YES
+  ccos_argmax    | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] | +0.0000 [+0.0000, +0.0000] no 
+  ccos_seed1     | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] | +0.0000 [+0.0000, +0.0000] no 
+  wk151          | 0.0000 [0.0000, 0.0000] | 0.0769 [0.0000, 0.2000] | +0.0769 [+0.0000, +0.2500] no 
+  cos_wk         | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | +0.0000 [+0.0000, +0.0000] no 
+  CONTROL: the SIGN is correct on every retained plan -- 54/54 retained plans curve the way their goal asked
+
+====================================================================================================
+3. THE PANEL'S OWN INFERENCE-SEED FLOOR (paired, same windows)
+====================================================================================================
+  pair ccos_argmax vs ccos_seed1:
+    turn_left   recall 0.3636 -> 0.3636   delta +0.0000 [+0.0000, +0.0000] separated=False
+    turn_right  recall 0.7500 -> 0.7500   delta +0.0000 [+0.0000, +0.0000] separated=False
+    retain goal TURN_L 1.0000 -> 1.0000   delta +0.0000 [+0.0000, +0.0000] separated=False
+    retain goal TURN_R 1.0000 -> 1.0000   delta +0.0000 [+0.0000, +0.0000] separated=False
+    CONTROL, pooled TAC_traj_lat_correct (the banked floor is 0.0750): delta -0.0750 [-0.1750, +0.0000]
+    CONTROL, an arm against ITSELF (must be exactly +0.0000): +0.0000 [+0.0000, +0.0000]
+
+====================================================================================================
+4. THE VERDICT, against SPEC section 1's three conditions
+====================================================================================================
+  INCONCLUSIVE -- fewer than two seeds of the same arm

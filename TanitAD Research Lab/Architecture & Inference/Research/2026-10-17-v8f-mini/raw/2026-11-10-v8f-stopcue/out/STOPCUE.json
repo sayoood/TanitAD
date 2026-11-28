@@ -1,0 +1,119 @@
+{
+ "tool": "stopcue_read.py",
+ "card": "theory/stopcue/PREREAD_V8F_STOPCUE.md",
+ "tier": "T1-kin first tick, eval-141; a decision-head diagnostic, never driving performance",
+ "estimator": "taniteval.ci.stat_cluster_bootstrap, B=2000, seed 0, by episode; another draw of episodes only",
+ "bars": {
+  "present_auc": 0.85,
+  "present_lo": 0.8,
+  "absent_auc": 0.7
+ },
+ "self_test": {
+  "perfect": 1.0,
+  "constant": 0.5,
+  "inverted": 0.0
+ },
+ "arms": {
+  "PARITY_DAGOACC_s0": {
+   "npz": "stopdec_PARITY_DAGOACC_s0.npz",
+   "npz_sha256": "048727207201f7cf85f9f9c759f4a38abd29793011d56196c470010e8becf4d4",
+   "n_has": 2365,
+   "n_pos": 131,
+   "n_neg": 2234,
+   "n_regime_stop": 137,
+   "n_regime_stop_or_decel": 624,
+   "prevalence": 0.055391120507399576,
+   "stats": {
+    "auroc_goal_stop": {
+     "point": 0.8357172633895317,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.7835015645571266,
+     "hi": 0.8863726501271441
+    },
+    "auroc_lon_stop_vs_regime_stop": {
+     "point": 0.8358483271960057,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.7680369875857425,
+     "hi": 0.8968556221269192
+    },
+    "auroc_lon_slow_vs_regime_stop_or_decel": {
+     "point": 0.7132929056392583,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.6546977863852569,
+     "hi": 0.7708894526143356
+    },
+    "ap_goal_stop": {
+     "point": 0.2949608554363085,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.16058247324635538,
+     "hi": 0.4319233721709532
+    }
+   },
+   "recall_at_fpr_0p05_eval_chosen": 0.32061068702290074,
+   "threshold_at_fpr_0p05": 0.1420740842819212,
+   "class": "PARTIAL"
+  },
+  "PARITY_DAGOACC_s1": {
+   "npz": "stopdec_PARITY_DAGOACC_s1.npz",
+   "npz_sha256": "3db98159f425a6a3396d9c0b3911e534c9f3354d888a2a66b3ef484de5981a46",
+   "n_has": 2365,
+   "n_pos": 131,
+   "n_neg": 2234,
+   "n_regime_stop": 137,
+   "n_regime_stop_or_decel": 624,
+   "prevalence": 0.055391120507399576,
+   "stats": {
+    "auroc_goal_stop": {
+     "point": 0.8572683100179734,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.8085654577613077,
+     "hi": 0.9033549392053092
+    },
+    "auroc_lon_stop_vs_regime_stop": {
+     "point": 0.8094163204864433,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.7384956911494008,
+     "hi": 0.8762934116338417
+    },
+    "auroc_lon_slow_vs_regime_stop_or_decel": {
+     "point": 0.7104559713692397,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.6495719708848605,
+     "hi": 0.769236597469875
+    },
+    "ap_goal_stop": {
+     "point": 0.29816796199024487,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap_stat",
+     "lo": 0.16613907230302252,
+     "hi": 0.44835377920213193
+    }
+   },
+   "recall_at_fpr_0p05_eval_chosen": 0.32061068702290074,
+   "threshold_at_fpr_0p05": 0.2136365093290804,
+   "class": "CUE-PRESENT"
+  }
+ },
+ "verdict": {
+  "outcome": "SEEDS-DISAGREE",
+  "per_seed": {
+   "PARITY_DAGOACC_s0": "PARTIAL",
+   "PARITY_DAGOACC_s1": "CUE-PRESENT"
+  }
+ }
+}

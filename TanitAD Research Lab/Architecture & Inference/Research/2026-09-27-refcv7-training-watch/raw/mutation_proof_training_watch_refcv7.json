@@ -1,0 +1,311 @@
+{
+ "source_tree": "C:/Users/Admin/w7tree_03e6ed9",
+ "scratch": "C:\\Users\\Admin\\w7mut_11484",
+ "python": "3.13.5",
+ "control": {
+  "rc": 0,
+  "passed": 45,
+  "failed": 0,
+  "failed_tests": [],
+  "s": 3.9,
+  "tail": [
+   "45 passed in 3.51s"
+  ]
+ },
+ "mutations": [
+  {
+   "id": "M1",
+   "reintroduces": "a key ABSENT from the row is drawn as 0",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 40,
+   "failed": 5,
+   "failed_tests": [
+    "test_ONE_missing_map_key_renders_UNAVAILABLE_and_raises_the_alarm",
+    "test_RED_the_gate_form_on_a_drivable_only_log_FAILS_the_gates_reading",
+    "test_a_key_missing_from_EVERY_row_leaves_no_literal_on_the_page",
+    "test_a_refcv6_shaped_log_renders_its_shared_keys_and_the_refcv7_sections_UNAVAILABLE",
+    "test_absent_P0_keys_are_UNAVAILABLE_and_an_alarm"
+   ],
+   "s": 13.1,
+   "tail": [
+    "5 failed, 40 passed in 12.75s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M2",
+   "reintroduces": "an UNDEFINED (null) IoU is drawn as 0",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_beyond_60_m_is_VALUES_ONLY"
+   ],
+   "s": 3.9,
+   "tail": [
+    "1 failed, 44 passed in 3.51s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M3",
+   "reintroduces": "a 20-60 m reading at or below 0.05 is RED (the informative amber promoted past the registered rule)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 43,
+   "failed": 2,
+   "failed_tests": [
+    "test_20_60_m_at_or_below_0p05_is_AMBER_informative_and_not_red",
+    "test_ANY_class_at_0_20_is_RED_while_20_60_m_is_AMBER_only"
+   ],
+   "s": 3.8,
+   "tail": [
+    "2 failed, 43 passed in 3.48s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M4",
+   "reintroduces": "the registered start step dropped (a step-4,500 dip alarms)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_the_registered_rule_starts_at_step_5000"
+   ],
+   "s": 3.6,
+   "tail": [
+    "1 failed, 44 passed in 3.23s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M5",
+   "reintroduces": "only the LATEST eval is barred (the LOGGING_SPEC 5.3 latch lost)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_an_EARLIER_breach_stays_latched_and_shows_first_red"
+   ],
+   "s": 3.8,
+   "tail": [
+    "1 failed, 44 passed in 3.45s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M6",
+   "reintroduces": "a missing key prints its literal name (the gate's text check is fooled)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 41,
+   "failed": 4,
+   "failed_tests": [
+    "test_ONE_missing_map_key_renders_UNAVAILABLE_and_raises_the_alarm",
+    "test_RED_the_gate_form_on_a_drivable_only_log_FAILS_the_gates_reading",
+    "test_a_key_missing_from_EVERY_row_leaves_no_literal_on_the_page",
+    "test_a_refcv6_shaped_log_renders_its_shared_keys_and_the_refcv7_sections_UNAVAILABLE"
+   ],
+   "s": 15.4,
+   "tail": [
+    "4 failed, 41 passed in 14.98s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M7",
+   "reintroduces": "the A10 band widened to admit refcv6's 3.40",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 43,
+   "failed": 2,
+   "failed_tests": [
+    "test_a_box_ratio_of_3p4_raises_the_A10_alarm",
+    "test_a_ratio_that_does_not_reproduce_from_the_counts_is_flagged"
+   ],
+   "s": 3.8,
+   "tail": [
+    "2 failed, 43 passed in 3.43s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M8",
+   "reintroduces": "the ratio cross-check against the pooled counts removed",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_a_ratio_that_does_not_reproduce_from_the_counts_is_flagged"
+   ],
+   "s": 3.8,
+   "tail": [
+    "1 failed, 44 passed in 3.43s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M9",
+   "reintroduces": "a declared ga_* key ABSENT from the row is not an alarm",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_a_declared_ga_mh_refine_that_is_ABSENT_raises_the_alarm"
+   ],
+   "s": 3.9,
+   "tail": [
+    "1 failed, 44 passed in 3.53s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M10",
+   "reintroduces": "a declared ga_* key at EXACTLY 0 is not an alarm",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_a_declared_ga_mh_refine_that_is_exactly_ZERO_raises_the_alarm"
+   ],
+   "s": 3.9,
+   "tail": [
+    "1 failed, 44 passed in 3.50s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M12",
+   "reintroduces": "the IoU-from-counts cross-check reads agreement when it checked nothing",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_a_refcv6_shaped_log_renders_its_shared_keys_and_the_refcv7_sections_UNAVAILABLE"
+   ],
+   "s": 4.0,
+   "tail": [
+    "1 failed, 44 passed in 3.59s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M13",
+   "reintroduces": "a class with labelled cells and ZERO pull is not an alarm (LOGGING_SPEC_MAP10 5.2)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_a_class_with_cells_and_NO_pull_raises_the_signal_alarm"
+   ],
+   "s": 3.9,
+   "tail": [
+    "1 failed, 44 passed in 3.49s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M14",
+   "reintroduces": "the box ratio alarm armed from the first eval (the warm-up ruling dropped)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_the_box_ratio_is_WARMING_UP_before_step_5000_and_armed_after"
+   ],
+   "s": 4.0,
+   "tail": [
+    "1 failed, 44 passed in 3.64s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M15",
+   "reintroduces": "beyond 60 m coloured like 0-60 m (the values-only ruling dropped)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_beyond_60_m_is_VALUES_ONLY"
+   ],
+   "s": 3.7,
+   "tail": [
+    "1 failed, 44 passed in 3.29s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M16",
+   "reintroduces": "a ground-truth condition added to the registered 0-20 m rule (the literal rule narrowed)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_the_registered_rule_reads_the_IoU_as_logged_with_no_ground_truth_condition"
+   ],
+   "s": 3.8,
+   "tail": [
+    "1 failed, 44 passed in 3.40s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M17",
+   "reintroduces": "the trainer's ratio flag held against the ARMED state (a false disagreement while warming up)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 44,
+   "failed": 1,
+   "failed_tests": [
+    "test_the_box_ratio_is_WARMING_UP_before_step_5000_and_armed_after"
+   ],
+   "s": 3.9,
+   "tail": [
+    "1 failed, 44 passed in 3.52s"
+   ],
+   "verdict": "CAUGHT"
+  },
+  {
+   "id": "M11",
+   "reintroduces": "the NavSim count guard disabled (a partial split is shown)",
+   "anchor_hits": 1,
+   "rc": 1,
+   "passed": 42,
+   "failed": 3,
+   "failed_tests": [
+    "test_a_PARTIAL_full_split_navtest_is_REFUSED_not_shown",
+    "test_a_WRONG_arm_id_is_refused_by_the_count_guard_never_read_as_a_number",
+    "test_navhard_and_warmup_with_the_wrong_stage_counts_are_REFUSED"
+   ],
+   "s": 4.0,
+   "tail": [
+    "3 failed, 42 passed in 3.64s"
+   ],
+   "verdict": "CAUGHT"
+  }
+ ],
+ "control_after": {
+  "rc": 0,
+  "passed": 45,
+  "failed": 0,
+  "failed_tests": [],
+  "s": 4.1,
+  "tail": [
+   "45 passed in 3.64s"
+  ]
+ },
+ "verdict": "PASS"
+}

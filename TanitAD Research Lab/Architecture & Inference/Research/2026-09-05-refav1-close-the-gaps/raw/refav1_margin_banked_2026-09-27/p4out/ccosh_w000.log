@@ -1,0 +1,35 @@
+[preflight] 11 analysis imports OK  (this probe exists because a 3.0 h rollout once died in analyze())
+[refav1-labels] v7.2 join: labels 8/8 eps (0 missing), 168/535 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 8/8 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[model] C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt step=21109 params=0 a_dim=2 target_space=frozen vocab=v7.0 config<-C:/Users/Admin/refav1_eval_slice/ckpt_ep3/config.json
+[loader] 535 windows over 8 episodes (W=4, K_loader=30, grid 0.2 s); labels=ON nav=ON
+[cost] metric=ccosh weights={'W_JERK': 0.0, 'W_KAPPA': 0.0, 'W_VEND': 64.2971504241507} (CLI override); COST_METRICS=('cos', 'chord', 'ccos', 'ccosh') from C:\Users\Admin\tanitad-wt\stack\tanitad\refs\refa_v1.py
+[goal-rule] lat_logit_bias=None -> plain argmax (the legacy path, bit-identical to pre-2026-09-05 arms)
+[goal-vocab] goal_kappa_turn=None -> shipped GOAL_KAPPA_TURN=0.08 (bit-identical to pre-2026-09-05 arms)
+[grid] K=10 (2.0 s) K_wm=30 stride=16 windows=40 arms=['cl', 'ha', 'ha0', 'ha0_ext', 'ol'] plan={samples 300, iters 30, elites 30, seed 0} nav_shuffle=23/40 changed
+[seed-pool] seed_kappa_ladder=None -> the SHIPPED pool (proposal modes + the decoded goal's canonical controls), bit-identical to every arm banked before 2026-09-05
+[cost] first plan() took 62.47 s -> ESTIMATED 0.69 h for 40 windows x 1 planning arms (plan only; forward()/IO extra)
+  [1/8] 7e5dc4ad4e52 5 windows 334s
+  [2/8] c45d6a86ff06 5 windows 608s
+  [3/8] 081b986f8888 5 windows 882s
+  [4/8] 4b5c891e90e6 5 windows 1129s
+  [5/8] d32340bd0ad0 5 windows 1402s
+  [6/8] b0d17a91f120 5 windows 1673s
+  [7/8] 2aa810802777 5 windows 1943s
+  [8/8] 570b47ad7408 5 windows 2214s
+REFAV1_DUMP_DONE
+[trivial-profile] 40 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n=  40 straight=0.2750 const_speed=0.7750 CONSTANT-VELOCITY=0.2750  identical_to: ha=1/40, ha0=11/40, ha0_ext=1/40
+  ha             n=  40 straight=0.0500 const_speed=0.0250 CONSTANT-VELOCITY=0.0250  identical_to: cl=1/40, ha0=1/40, ha0_ext=4/40
+  ha0            n=  40 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl=11/40, ha=1/40, ha0_ext=1/40
+  ha0_ext        n=  40 straight=0.0500 const_speed=0.0250 CONSTANT-VELOCITY=0.0250  identical_to: cl=1/40, ha=4/40, ha0=1/40
+  ol             n=  40 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[out] C:/Users/Admin/refav1_margin/p4out/rec_ccosh_w000.json
+  cl             tier=T1  ADE=1.3272 [0.775, 1.9915]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha             tier=T1  ADE=0.8888 [0.6026, 1.1928]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha0            tier=T1  ADE=0.9251 [0.7024, 1.1783]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ha0_ext        tier=T1  ADE=0.8772 [0.6195, 1.1437]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  ol             tier=T0  ADE=0.8052 [0.5787, 1.0577]  families_unavailable=['strategic']  distance_keeping=REFUSED n=None headway=None time_gap=None min_ttc=None
+  distance_keeping: REFUSED — no lead block passed (--lead-block); the banked B1 EVAL block is C:\Users\Admin\tanitad-wt\TanitAD Research Lab\Benchmarks & Evals\Research\2026-09-02-b1-eval-l
+  planner[cl] baseline_won_frac=0.075 sources={'cem': 0.925, 'baseline:hold_v0': 0.075} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.1, 'BRAKE_TO': 0.1, 'ADAPT_SPEED_FOR_CURVE': 0.725, 'ACCELERATE': 0.075}
+  strategic nav_valid_frac=1.0 n_labeled=8

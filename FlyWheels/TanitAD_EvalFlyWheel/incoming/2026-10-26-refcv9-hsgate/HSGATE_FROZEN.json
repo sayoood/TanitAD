@@ -1,0 +1,252 @@
+{
+ "arms": {
+  "F": "FACTORED_DEPLOY8 (Amendment 5: compose(RT, P_os8, P_ss8) then the registered per-frame RETIME_DEPLOY8 table)",
+  "H": "H2CN_DEPLOY8 (Amendment 4: the registered H2cn stage f293b7bd...6f32, 8 slots, running max)"
+ },
+ "b": -0.17352759367397147,
+ "code_sha256": {
+  "hsgate_common.py": "298d80eadc783f21e71538b19a69cd552e765409fe740e3c34c8c21afa5b105a",
+  "hsgate_fit.py": "60c2e399d7a42c1e2e25c11fb4329cc328ee4c99dece279d15bc20ad84673ad5"
+ },
+ "cv_fold_seed": 1,
+ "cv_table": [
+  {
+   "criterion_mean_staged_ADE_S6_heldout": 2.397845192398019,
+   "heldout_F_rate": 0.14523576325731075,
+   "heldout_accuracy_vs_label": 0.5398069119910452,
+   "lambda": 0.001,
+   "max_abs_grad_over_folds": 9.789750009752502e-09,
+   "n_iter_over_folds": [
+    39,
+    68,
+    45,
+    32,
+    50
+   ],
+   "per_fold": [
+    2.2596992609528073,
+    2.6119995038346495,
+    2.0349224312912315,
+    2.3671323587631994,
+    2.699061966154499
+   ]
+  },
+  {
+   "criterion_mean_staged_ADE_S6_heldout": 2.3940560641697832,
+   "heldout_F_rate": 0.13320274240940255,
+   "heldout_accuracy_vs_label": 0.5420456135441444,
+   "lambda": 0.01,
+   "max_abs_grad_over_folds": 1.0321424029639727e-08,
+   "n_iter_over_folds": [
+    35,
+    52,
+    39,
+    44,
+    33
+   ],
+   "per_fold": [
+    2.247944602725766,
+    2.6208350876394837,
+    2.034027507300968,
+    2.3589550861865183,
+    2.691936494616851
+   ]
+  },
+  {
+   "criterion_mean_staged_ADE_S6_heldout": 2.378496818553181,
+   "heldout_F_rate": 0.10032181334825802,
+   "heldout_accuracy_vs_label": 0.5472226108856864,
+   "lambda": 0.1,
+   "max_abs_grad_over_folds": 1.8975748775247603e-08,
+   "n_iter_over_folds": [
+    19,
+    22,
+    19,
+    18,
+    23
+   ],
+   "per_fold": [
+    2.2422285436437583,
+    2.5816416596653573,
+    2.024963984103969,
+    2.3428075253398806,
+    2.6853164656730732
+   ]
+  },
+  {
+   "criterion_mean_staged_ADE_S6_heldout": 2.3854161730913064,
+   "heldout_F_rate": 0.016230586259969218,
+   "heldout_accuracy_vs_label": 0.547362529732755,
+   "lambda": 1.0,
+   "max_abs_grad_over_folds": 2.1809477297046742e-08,
+   "n_iter_over_folds": [
+    17,
+    12,
+    14,
+    12,
+    12
+   ],
+   "per_fold": [
+    2.2288754229593364,
+    2.571456708814729,
+    2.0338847617916627,
+    2.3820311354826775,
+    2.697038924100136
+   ]
+  },
+  {
+   "criterion_mean_staged_ADE_S6_heldout": 2.3860266844206297,
+   "heldout_F_rate": 0.0,
+   "heldout_accuracy_vs_label": 0.5431649643206939,
+   "lambda": 10.0,
+   "max_abs_grad_over_folds": 1.3162182488021812e-08,
+   "n_iter_over_folds": [
+    10,
+    9,
+    10,
+    9,
+    10
+   ],
+   "per_fold": [
+    2.235099535994736,
+    2.575959007828324,
+    2.0183307888712188,
+    2.383072643018734,
+    2.7028459404366507
+   ]
+  },
+  {
+   "criterion_mean_staged_ADE_S6_heldout": 2.3860266844206297,
+   "heldout_F_rate": 0.0,
+   "heldout_accuracy_vs_label": 0.5431649643206939,
+   "lambda": 100.0,
+   "max_abs_grad_over_folds": 1.960844847256893e-08,
+   "n_iter_over_folds": [
+    7,
+    9,
+    9,
+    9,
+    9
+   ],
+   "per_fold": [
+    2.235099535994736,
+    2.575959007828324,
+    2.0183307888712188,
+    2.383072643018734,
+    2.7028459404366507
+   ]
+  }
+ ],
+ "decision": "g = 1[sigmoid(w . x_std + b) >= 0.5]  (computed as 1[1/(1+exp(-(w . x_std + b))) >= 0.5] in float64)",
+ "features": {
+  "d": "(arcF - arcH) / max(arcH, 1.0), arc* = along_track_localise.arc(P[:, S6 slots])[:, -1] (cumulative polyline length from the origin through the 6 staged S6 positions, float64), P_F = the FACTORED_DEPLOY8 construction, P_H = the H2CN_DEPLOY8 construction (OOF H2cn on FIT rows)",
+  "d_times_v0": "d * v0 / 10",
+  "n": 15,
+  "names": [
+   "p_FOLLOW",
+   "p_CRUISE",
+   "p_BRAKE_TO",
+   "p_CREEP",
+   "p_HOLD",
+   "p_ACCELERATE",
+   "onehot_argmax_FOLLOW",
+   "onehot_argmax_CRUISE",
+   "onehot_argmax_BRAKE_TO",
+   "onehot_argmax_CREEP",
+   "onehot_argmax_HOLD",
+   "onehot_argmax_ACCELERATE",
+   "v0_over_10",
+   "d_rel_arc_S6_last",
+   "d_times_v0_over_10"
+  ],
+  "onehot": "one-hot of argmax over the same 6 LON6 logits (numpy argmax: first maximum on ties)",
+  "p": "softmax over l2_common.lon6(extras['nav_true.tacv6_lon_logits'][row]) in float64, max-subtracted (h2cnl_freeze.lon6_softmax)",
+  "row": "the extras row of the SAME native forward, joined on (clip index, ws)",
+  "standardise": "x_std = (x - mu) / sd, mu = mean over FIT rows, sd = std over FIT rows + 1e-9 (l1_fit_score._std)",
+  "v0": "extras['v0'][row] (float32 widened exactly to float64) / 10"
+ },
+ "fit": {
+  "label_base_rate": 0.456835035679306,
+  "loss": 0.6857791108711911,
+  "max_abs_grad": 9.533105001799727e-09,
+  "n_episodes": 297,
+  "n_iter": 18,
+  "n_rows": 7147
+ },
+ "inputs_sha256": {
+  "deploy_table": "3319b003fecc83577430f07dad762bce0a9a0b8594e9748e9a61bc4d264136b7",
+  "fresh_bank": "c07c7849c7ba897aea29ee0068d970ae5d511a13f88f4113f25c033a3fa20755",
+  "fresh_extras": "ccdb1f32fa938ec8c13df4879ed7ecfa305651959157d88a1d017730e3c4cafc",
+  "fresh_labels": "fea3c1401089e9f9ee60126a68ee75fb748251cde8e14e774b482d7e592e32d7",
+  "fresh_trace": "1aa4f6a33f365d9edd4c8d258f9f53b8ca2e42124256608d5985e0061f128134",
+  "h2cn_stage": "f293b7bdc06aaeec19a10fd8cac9af993c4116401034a9d4ff9c28649e256f32",
+  "registered_pf_table": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80"
+ },
+ "label": "y = 1[ADE_S6(P_F) < ADE_S6(P_H)] vs the human future G; P_H with OUT-OF-FOLD H2cn (folds_of(eid, 0)); battery ADE (refav1_arm 'ade_m')",
+ "lambda": 0.1,
+ "lambda_grid": [
+  0.001,
+  0.01,
+  0.1,
+  1.0,
+  10.0,
+  100.0
+ ],
+ "lambda_selection": "argmin criterion; exact ties -> the larger lambda",
+ "mu": [
+  0.26375689525519647,
+  0.279723130269608,
+  0.18366001231264897,
+  0.01677261147447382,
+  0.016934683257079284,
+  0.23915266743099337,
+  0.3004057646564992,
+  0.31719602630474325,
+  0.13236322932699035,
+  0.003637890023786204,
+  0.013991884706870015,
+  0.23240520498111095,
+  1.145873810380642,
+  0.1819471507889446,
+  -0.0058903025002293346
+ ],
+ "objective": "mean_i BCEwithLogits(w . x_std_i + b, y_i) + 0.5 * lambda * ||w||^2 (b unpenalised); float64; torch.optim.LBFGS(lr=1, max_iter=5000, history_size=50, tolerance_grad=1e-12, tolerance_change=1e-15, line_search_fn='strong_wolfe'), w = 0, b = 0 init, torch.manual_seed(0)",
+ "oof_fold_seed": 0,
+ "prereg_sha256": "2331e1f3887079500736ca4a243ebfabaae544fc9d768b981d043cdd99c26cf1",
+ "schema": "tanitad.refcv9_hsgate.gate/1",
+ "sd": [
+  0.31858480619243384,
+  0.2542722709248697,
+  0.2157402214276686,
+  0.04846111896196652,
+  0.07140569320501779,
+  0.24963421901065966,
+  0.45843444693274754,
+  0.46538447345395656,
+  0.33888523946448795,
+  0.06020511523425749,
+  0.11745685209529295,
+  0.42236598646615553,
+  0.8352301308002433,
+  1.1093510403039928,
+  0.09291942616353055
+ ],
+ "use": "x = hsgate_common.features(L2, HL, AL, extras lon logits, extras v0, P_F S6 positions, P_H S6 positions); g = hsgate_common.gate_decide(gate, x); emitted positions = FACTORED_DEPLOY8's where g else H2CN_DEPLOY8's",
+ "w": [
+  0.005817082850314878,
+  -0.05975950673306624,
+  0.0551618116608441,
+  -0.015754693518061542,
+  0.02665876163320866,
+  0.0012066956822165103,
+  -0.009075536019827265,
+  0.016731872626931675,
+  0.004356847598443924,
+  -0.02059136408838377,
+  0.060227457455181876,
+  -0.025894861810133073,
+  -0.056141621029007785,
+  -0.05494603944139852,
+  -0.008514190960389917
+ ]
+}

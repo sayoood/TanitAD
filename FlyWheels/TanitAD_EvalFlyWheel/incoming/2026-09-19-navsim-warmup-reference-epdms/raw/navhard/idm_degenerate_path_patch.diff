@@ -1,0 +1,17 @@
+--- a/navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py
++++ b/navsim/planning/simulation/observation/navsim_idm/navsim_idm_agent_manager.py
+@@ -81,7 +81,13 @@
+                 intersecting_agents = self.agent_occupancy.intersects(
+                     agent_path.buffer((agent.width / 2), cap_style=CAP_STYLE.flat)
+                 )
+-                assert intersecting_agents.contains(agent_token), "Agent's baseline does not intersect the agent itself"
++                # E1 2026-09-20: a fully consumed baseline gives a ZERO-LENGTH path_to_go, whose
++                # flat-cap buffer is an EMPTY polygon (shapely 2.0.7, MEASURED), so the agent can
++                # never intersect its own path and this assert fires. Such an agent has nothing
++                # ahead of it: fall through to the devkit's own free-road branch below
++                # (intersecting_agents.size == 0, so the `> 1` test is already False).
++                assert agent_path.length == 0.0 or intersecting_agents.contains(agent_token), \
++                    "Agent's baseline does not intersect the agent itself"
+ 
+                 # Checking if there are agents intersecting THIS agent's baseline.
+                 # Hence, we are checking for at least 2 intersecting agents.

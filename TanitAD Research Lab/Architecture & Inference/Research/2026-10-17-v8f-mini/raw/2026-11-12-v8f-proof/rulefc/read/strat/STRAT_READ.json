@@ -1,0 +1,422 @@
+{
+ "controls": {
+  "s4": {
+   "pass": true,
+   "checks": [
+    {
+     "name": "line: labels at the first logged steps reaching 30/50/80 m",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+     "ok": true
+    },
+    {
+     "name": "circle R=100: label positions equal the analytic ones to the step",
+     "ok": true
+    },
+    {
+     "name": "short track: 30 and 50 valid, 80 invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: known pose and label -> analytic world position and heading",
+     "ok": true
+    },
+    {
+     "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+     "ok": true
+    }
+   ],
+   "all_checks_hold": true,
+   "planted_fault_fails": true,
+   "planted_fault_checks_failed": [
+    "line: labels at the first logged steps reaching 30/50/80 m",
+    "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+    "circle R=100: label positions equal the analytic ones to the step",
+    "short track: 30 and 50 valid, 80 invalid"
+   ],
+   "planted_fault_2_checks_failed": [
+    "join label: known pose and label -> analytic world position and heading",
+    "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+   ]
+  },
+  "s1": {
+   "max_dxy_m": 6.996529623393144e-05,
+   "max_dpsi_rad": 4.6634952610702385e-07,
+   "per_file": {
+    "H_RLcE1_s0": [
+     6.719544171573943e-05,
+     4.544854164123535e-07
+    ],
+    "H_RLcE1_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RLcE1_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ],
+    "H_RLcFC_s0": [
+     6.719544171573943e-05,
+     4.544854164123535e-07
+    ],
+    "H_RLcFC_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RLcFC_s2": [
+     5.6137358129149106e-05,
+     4.6634952610702385e-07
+    ],
+    "H_RLcE1FC_s0": [
+     6.719544171573943e-05,
+     4.544854164123535e-07
+    ],
+    "H_RLcE1FC_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RLcE1FC_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ],
+    "H_RLcK_s0": [
+     6.719544171573943e-05,
+     4.544854164123535e-07
+    ],
+    "H_RLcK_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RLcK_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ]
+   },
+   "pass": true
+  },
+  "s2": {
+   "max_first_tick_anchor_dist_m": 0.0,
+   "n_rows_anchor_not_t0": 0,
+   "files": [
+    "H_RLcE1_s0",
+    "H_RLcE1_s1",
+    "H_RLcE1_s2",
+    "H_RLcFC_s0",
+    "H_RLcFC_s1",
+    "H_RLcFC_s2",
+    "H_RLcE1FC_s0",
+    "H_RLcE1FC_s1",
+    "H_RLcE1FC_s2",
+    "H_RLcK_s0",
+    "H_RLcK_s1",
+    "H_RLcK_s2"
+   ],
+   "pass": true
+  },
+  "s6": {
+   "per_file": {
+    "H_RLcE1_s0": true,
+    "H_RLcE1_s1": true,
+    "H_RLcE1_s2": true,
+    "H_RLcFC_s0": true,
+    "H_RLcFC_s1": true,
+    "H_RLcFC_s2": true,
+    "H_RLcE1FC_s0": true,
+    "H_RLcE1FC_s1": true,
+    "H_RLcE1FC_s2": true,
+    "H_RLcK_s0": true,
+    "H_RLcK_s1": true,
+    "H_RLcK_s2": true
+   },
+   "pass": true
+  },
+  "s9": {
+   "pass": true,
+   "n_files": 12,
+   "missing": []
+  },
+  "s3": {
+   "pass": true,
+   "computable": true,
+   "windows": 2399,
+   "max_abs_diff_pos_m": 5.161236021899995e-14,
+   "max_abs_diff_head_deg": 2.842170943040401e-14,
+   "same_rows_invalid": true,
+   "n_valid_per_arc": [
+    2322,
+    2319,
+    2294
+   ],
+   "known_value_from": "F:\\TanitAD-scratch\\v8proof\\rhacc10k/tree\\taniteval\\taniteval\\v8f_consistency.py",
+   "note": "Amendment 1 of the card; differences only"
+  },
+  "episode_map": {
+   "all_windows_mapped": true,
+   "n_episodes": 141,
+   "n_windows": 2399
+  },
+  "s5": {
+   "pass": true,
+   "largest_difference": 0.0,
+   "n_comparisons": 36,
+   "note": "first-tick cells equal across the runs of one model that start from the logged state (pre-rolled runs excluded); n_comparisons 0 means no group had two such runs (not judged)"
+  }
+ },
+ "inputs": {
+  "H_RLcE1_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcE1_s0\\ticks\\ticks_H_RLcE1_s0_m10_causal_heads.npz",
+   "sha256": "42af6e6cd5ccc94d132689ffb22f731cf9e4640eaeb57646c29662ada969f1e8"
+  },
+  "H_RLcE1_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcE1_s1\\ticks\\ticks_H_RLcE1_s1_m10_causal_heads.npz",
+   "sha256": "4d10e3978785a3736211dad5230440aeff2ca8eec8058529da52d03f4372726f"
+  },
+  "H_RLcE1_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcE1_s2\\ticks\\ticks_H_RLcE1_s2_m10_causal_heads.npz",
+   "sha256": "f9d20670d7210ef0338f994229343751ec491a690ddba96fd8fb1ea344510242"
+  },
+  "H_RLcFC_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcFC_s0\\ticks\\ticks_H_RLcFC_s0_m10_causal_heads.npz",
+   "sha256": "bda83759def6309eccddacfc23c319dc558d65cc3214925ff358dce03b306ea1"
+  },
+  "H_RLcFC_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcFC_s1\\ticks\\ticks_H_RLcFC_s1_m10_causal_heads.npz",
+   "sha256": "c0faa180d0531f25ea406c74dc58f3c98b1354f507c5d30563a9f7e219080198"
+  },
+  "H_RLcFC_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcFC_s2\\ticks\\ticks_H_RLcFC_s2_m10_causal_heads.npz",
+   "sha256": "bc0e3ece60047a6b13035b2d2a32e07d22d435c9363c988acaa95e7476f867fe"
+  },
+  "H_RLcE1FC_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcE1FC_s0\\ticks\\ticks_H_RLcE1FC_s0_m10_causal_heads.npz",
+   "sha256": "364c000cc3acfeb64dcf63598435abed076f7bd09904490ca0d75f68a9c7cca5"
+  },
+  "H_RLcE1FC_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcE1FC_s1\\ticks\\ticks_H_RLcE1FC_s1_m10_causal_heads.npz",
+   "sha256": "6ae1c079186826d0966e4699eb162dbf64601da7e42739afd5df2cb067c7c29c"
+  },
+  "H_RLcE1FC_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcE1FC_s2\\ticks\\ticks_H_RLcE1FC_s2_m10_causal_heads.npz",
+   "sha256": "130d201f3d634a54ab28cbcc4f39542ef471143975dd16f6e27efdc039ffabff"
+  },
+  "H_RLcK_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcK_s0\\ticks\\ticks_H_RLcK_s0_m10_causal_heads.npz",
+   "sha256": "3066bbd0ed3148ac5fdf458d87d1ec65a03e584b69ddd05a1a57b98e736ad86a"
+  },
+  "H_RLcK_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcK_s1\\ticks\\ticks_H_RLcK_s1_m10_causal_heads.npz",
+   "sha256": "ff74bbe063d3e42a81fbe115b6a87f3a68998338701cedb87ca153dd3239cfe6"
+  },
+  "H_RLcK_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/pull\\H_RLcK_s2\\ticks\\ticks_H_RLcK_s2_m10_causal_heads.npz",
+   "sha256": "3422828446e1ef819a6acf8cb5b1607c20970c695d4a43c3439866bf97d92b42"
+  }
+ },
+ "stage_A_pass": true,
+ "runs": [
+  "H_RLcE1",
+  "H_RLcFC",
+  "H_RLcE1FC",
+  "H_RLcK"
+ ],
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "windows": null,
+ "pairs": {
+  "E1": {
+   "pos_30_50_80m_third_tick": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.0011300156646315584,
+     "lo": -0.0075320792700765,
+     "hi": 0.005531029333994257,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2312,
+      2313,
+      2313
+     ],
+     "per_seed": [
+      -0.0054283805593242735,
+      -0.001134849321138746,
+      0.0031713245359869806
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.000814445183251899,
+     "lo": -0.008757999553517078,
+     "hi": 0.011264699580247114,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2300,
+      2301,
+      2301
+     ],
+     "per_seed": [
+      -0.005685237803427642,
+      5.7900302896357116e-05,
+      0.008067848329301899
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.0028686151521324465,
+     "lo": -0.011430983475787389,
+     "hi": 0.018737806221213984,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2275,
+      2275,
+      2275
+     ],
+     "per_seed": [
+      -0.006355748417415654,
+      0.003111005118603687,
+      0.011850588755209312
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "FC": {
+   "pos_30_50_80m_third_tick": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.001931593524318494,
+     "lo": -0.014777404698770142,
+     "hi": 0.013387949251795067,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2312,
+      2313,
+      2313
+     ],
+     "per_seed": [
+      -0.008841473603052099,
+      -0.0026016051487506332,
+      0.005645310768523547
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.0010879369826111427,
+     "lo": -0.019048154153448592,
+     "hi": 0.029699474997400124,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2300,
+      2300,
+      2300
+     ],
+     "per_seed": [
+      -0.006379918318592538,
+      -0.004727277511007293,
+      0.014371006777433259
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.011905312674285712,
+     "lo": -0.017730926387101383,
+     "hi": 0.057364966641199854,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2275,
+      2275,
+      2275
+     ],
+     "per_seed": [
+      -0.003018223614200916,
+      0.014475484381559597,
+      0.024258677255498448
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  },
+  "E1FC": {
+   "pos_30_50_80m_third_tick": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.000765125207228218,
+     "lo": -0.015571414726309216,
+     "hi": 0.016934292435759807,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2312,
+      2313,
+      2313
+     ],
+     "per_seed": [
+      -0.004558776379855555,
+      -0.005104138117181708,
+      0.007365898732173785
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": 0.0023036091910057146,
+     "lo": -0.023843065875720316,
+     "hi": 0.03738290193234223,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2300,
+      2300,
+      2300
+     ],
+     "per_seed": [
+      -0.002650583042798039,
+      -0.006426902512573125,
+      0.01598831312838831
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": 0.022467657930326502,
+     "lo": -0.01791348574943722,
+     "hi": 0.0863692724994869,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2275,
+      2275,
+      2275
+     ],
+     "per_seed": [
+      0.008466501479053461,
+      0.02178576643240891,
+      0.037150705879517125
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  }
+ },
+ "stage_B_pass": true,
+ "ALL_PASS": true
+}

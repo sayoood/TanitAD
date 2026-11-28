@@ -1,0 +1,113 @@
+{
+ "schema": "tanitad.bev_head_sizing/1",
+ "trunk_deployed_params": 108257502,
+ "wpd_aux_head_params": 182616,
+ "ceiling_params": 300000000,
+ "feature_map": {
+  "feat": 704,
+  "gh": 8,
+  "gw": 20,
+  "why": "refcv5 ResNet stride 32 on --image-hw 256 640"
+ },
+ "candidates": {
+  "A_liftsplat_polar24x20": {
+   "params": 190258,
+   "params_M": 0.1903,
+   "pct_of_trunk": 0.176,
+   "x_wpd_aux_head": 1.0,
+   "total_with_trunk": 108447760,
+   "headroom_to_ceiling": 191552240,
+   "breakdown": {
+    "lift": 78960,
+    "bev_enc": 111168,
+    "out": 130,
+    "_bare_parameters": 0
+   }
+  },
+  "A_liftsplat_cart120x64_wide": {
+   "params": 726978,
+   "params_M": 0.727,
+   "pct_of_trunk": 0.672,
+   "x_wpd_aux_head": 4.0,
+   "total_with_trunk": 108984480,
+   "headroom_to_ceiling": 191015520,
+   "breakdown": {
+    "lift": 135360,
+    "bev_enc": 591360,
+    "out": 258,
+    "_bare_parameters": 0
+   }
+  },
+  "B_xattn_polar24x20_d256_L4": {
+   "params": 4517634,
+   "params_M": 4.5176,
+   "pct_of_trunk": 4.173,
+   "x_wpd_aux_head": 24.7,
+   "total_with_trunk": 112775136,
+   "headroom_to_ceiling": 187224864,
+   "breakdown": {
+    "kv_proj": 180480,
+    "layers": 4213760,
+    "out": 514,
+    "_bare_parameters": 122880
+   }
+  },
+  "B_xattn_cart120x64_d256_L4": {
+   "params": 6360834,
+   "params_M": 6.3608,
+   "pct_of_trunk": 5.876,
+   "x_wpd_aux_head": 34.8,
+   "total_with_trunk": 114618336,
+   "headroom_to_ceiling": 185381664,
+   "breakdown": {
+    "kv_proj": 180480,
+    "layers": 4213760,
+    "out": 514,
+    "_bare_parameters": 1966080
+   }
+  },
+  "B_xattn_cart128x128_d256_L6": {
+   "params": 10695938,
+   "params_M": 10.6959,
+   "pct_of_trunk": 9.88,
+   "x_wpd_aux_head": 58.6,
+   "total_with_trunk": 118953440,
+   "headroom_to_ceiling": 181046560,
+   "breakdown": {
+    "kv_proj": 180480,
+    "layers": 6320640,
+    "out": 514,
+    "_bare_parameters": 4194304
+   }
+  },
+  "B_xattn_polar48x40_d192_L3": {
+   "params": 2284802,
+   "params_M": 2.2848,
+   "pct_of_trunk": 2.111,
+   "x_wpd_aux_head": 12.5,
+   "total_with_trunk": 110542304,
+   "headroom_to_ceiling": 189457696,
+   "breakdown": {
+    "kv_proj": 135360,
+    "layers": 1780416,
+    "out": 386,
+    "_bare_parameters": 368640
+   }
+  }
+ },
+ "forward_probe": {
+  "input_shape": [
+   2,
+   704,
+   8,
+   20
+  ],
+  "lift_output_shape": [
+   2,
+   112,
+   8,
+   20
+  ],
+  "note": "the splat index is precomputed geometry (0 learned params) and is where the CYLINDRICAL ray model and the rig extrinsics enter"
+ }
+}

@@ -1,0 +1,14 @@
+RLVb_s0 n 534 with history 534 | c2b trainer units: logit 1.431e-06 gap 1.526e-07 closing 1.192e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 8.3883 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', 'w
+RLVb_s1 n 534 with history 534 | c2b trainer units: logit 1.192e-06 gap 2.289e-07 closing 1.490e-07 -> PASS | same ckpt True same states True
+   c1 0.0 | c2a True roll 0.000e+00 head 1.431e-06 | c4 zero model 0.0 real model 16.1146 | facts ok {'wm_acc_scale': True, 'scale_actions_acc': True, 'lead_head': True, 'rollout': True, 'act_embed': True, 'roll_pairs': True} | cfg {'wm_state': 'grid', 'wm_l1_residual': 'on', 'wm_l1_roll_k': '10', '
+[06:10:39Z] read RLVb rc 0 : ZZ IMAG DONE RLVb controls PASS names {'H1': 'IMAG-HEAD-FLAT', 'H2': 'IMAG-DEAF', 'H2_overshoot_seeds': []}
+[06:10:48Z] pair RLVb minus RLFT rc 0 : ["RL-RESPONDS-BETTER"]
+[06:10:54Z] pair RLVb minus RLAm rc 0 : "nothing is named for the pair"
+[06:10:58Z] pair RLVb minus RLA3 rc 0 : "nothing is named for the pair"
+== RLVb (level, weight 0.01): NAME LEVEL-TERM-LOSES-RESPONSE-0.01
+   controls PASS {"c1": true, "c2": true, "c4": true, "c3": true, "c5": true}
+   slope 2.0 s: pooled -0.4032 interval [-0.5492, -0.2681] per base [-0.3582, -0.4483] | IMAG-DEAF | slope 1.0 s per base [-0.7186, -0.707]
+   rollout MAE m: arm [5.6912, 5.7799] RLFT [5.4751, 5.4917] ratio [1.0395, 1.0525] (bar 1.15) | H1 minus RLFT -0.0101 [-0.0627, 0.0583] | keeps the level True {"ratio_at_most_1.15_per_base": [true, true], "H1_difference_not_below_0": true}
+   pair against RLAm: names nothing is named for the pair, distance from 1 minus RLAm 1.2142 [1.0815, 1.3634] | pair against RLFT names ['RL-RESPONDS-BETTER'] | beside RLA3 MAE [9.3617, 6.8752]
+ZZ EARLY-READ RLVb DONE 06:11:00Z

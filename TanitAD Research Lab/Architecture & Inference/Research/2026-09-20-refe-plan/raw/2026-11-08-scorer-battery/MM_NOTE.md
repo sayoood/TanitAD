@@ -1,0 +1,3 @@
+# Master Mind note on the battery hand-back (2026-11-08)
+
+The hand-back and `RESULT_u400.md` say column 2 of the REFe proposals is not heading (median 1.14 rad off the chord direction). **That does not reproduce on the C3 table.** MEASURED by `heading_probe.py` on `table.npz` `proposals` (1,058 x 64 x 8 x 3), moving steps only (at least 1 m per 0.5 s step): median |col2 - chord| 0.018 to 0.029 rad per step for all proposals, 0.019 to 0.032 for the picked proposal, correlation 0.9906. Column 2 IS heading. The battery's choice of chord headings on both sides is harmless, but the claim must not be quoted.

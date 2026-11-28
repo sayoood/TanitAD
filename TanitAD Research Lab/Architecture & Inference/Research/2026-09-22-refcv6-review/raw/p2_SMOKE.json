@@ -1,0 +1,170 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + the code beside it)",
+ "_line": "v7-B1 (b1_train_plus_eval_agents.jsonl.xz) -- NOT the parity line",
+ "join": "D:/Projects/TanitAD-artifacts/a40-rescue/b1_train_plus_eval_agents.jsonl.xz",
+ "join_bytes": 327041136,
+ "cuts_read_from_code": {
+  "fov_half_deg": 59.99999999999999,
+  "fov_src": "refc_agents.FOV_HALF_ANGLE_RAD",
+  "x_max_m": 60.0,
+  "y_half_m": 16.0,
+  "box_src": "bev_raster.GRID_DEFAULT (== SlotDecodeRanges defaults)",
+  "pad": 100
+ },
+ "totals": {
+  "n_lines": 2000,
+  "n_clips": 11,
+  "n_agents": 71972,
+  "n_infield": 28017,
+  "frac_infield": 0.38927638526093483,
+  "n_in_decode_box": 11625,
+  "frac_in_decode_box": 0.16152114711276608,
+  "n_infield_and_box": 10726,
+  "frac_infield_and_box": 0.14903017840271215,
+  "n_behind_ego_cx_lt_0": 36911,
+  "frac_behind_ego": 0.5128522203078976,
+  "n_out_of_vocabulary": 0,
+  "frac_out_of_vocabulary": 0.0
+ },
+ "join_occ_flag": {
+  "n_occ_0": 28017,
+  "n_occ_1": 43955,
+  "n_occ_missing": 0,
+  "agrees_with_computed_fov": 71972,
+  "disagrees_with_computed_fov": 0,
+  "frac_agree": 1.0
+ },
+ "agent_pad_truncation": {
+  "pad": 100,
+  "n_lines_over_pad": 251,
+  "n_boxes_truncated": 2623,
+  "frac_lines_over_pad": 0.1255,
+  "frac_boxes_truncated": 0.036444728505529926,
+  "note": "PRE-filter truncation: refc_v3_train.py:2707 keeps the NEAREST pad of the RAW join row, before any visibility cut"
+ },
+ "by_class": {
+  "automobile": {
+   "n": 55837,
+   "n_infield": 22868,
+   "n_infield_box": 8887,
+   "frac_infield": 0.40954922363307483,
+   "frac_infield_box": 0.15915969697512403,
+   "in_vocabulary": true
+  },
+  "person": {
+   "n": 10733,
+   "n_infield": 3194,
+   "n_infield_box": 701,
+   "frac_infield": 0.2975868815801733,
+   "frac_infield_box": 0.06531258734743316,
+   "in_vocabulary": true
+  },
+  "heavy_truck": {
+   "n": 1678,
+   "n_infield": 485,
+   "n_infield_box": 323,
+   "frac_infield": 0.28903456495828367,
+   "frac_infield_box": 0.19249106078665076,
+   "in_vocabulary": true
+  },
+  "rider": {
+   "n": 1260,
+   "n_infield": 349,
+   "n_infield_box": 309,
+   "frac_infield": 0.276984126984127,
+   "frac_infield_box": 0.24523809523809523,
+   "in_vocabulary": true
+  },
+  "bus": {
+   "n": 1160,
+   "n_infield": 554,
+   "n_infield_box": 117,
+   "frac_infield": 0.47758620689655173,
+   "frac_infield_box": 0.10086206896551723,
+   "in_vocabulary": true
+  },
+  "trailer": {
+   "n": 606,
+   "n_infield": 385,
+   "n_infield_box": 306,
+   "frac_infield": 0.6353135313531353,
+   "frac_infield_box": 0.504950495049505,
+   "in_vocabulary": true
+  },
+  "other_vehicle": {
+   "n": 454,
+   "n_infield": 150,
+   "n_infield_box": 59,
+   "frac_infield": 0.3303964757709251,
+   "frac_infield_box": 0.1299559471365639,
+   "in_vocabulary": true
+  },
+  "protruding_object": {
+   "n": 241,
+   "n_infield": 32,
+   "n_infield_box": 24,
+   "frac_infield": 0.13278008298755187,
+   "frac_infield_box": 0.0995850622406639,
+   "in_vocabulary": true
+  },
+  "stroller": {
+   "n": 3,
+   "n_infield": 0,
+   "n_infield_box": 0,
+   "frac_infield": 0.0,
+   "frac_infield_box": 0.0,
+   "in_vocabulary": true
+  }
+ },
+ "by_range": {
+  "20-40 m": {
+   "n": 14082,
+   "n_infield": 5769,
+   "frac_infield": 0.4096719216020452
+  },
+  "40-60 m": {
+   "n": 16877,
+   "n_infield": 6614,
+   "frac_infield": 0.39189429400959885
+  },
+  "80-120 m": {
+   "n": 14326,
+   "n_infield": 5590,
+   "frac_infield": 0.39019963702359345
+  },
+  "0-20 m": {
+   "n": 9229,
+   "n_infield": 3043,
+   "frac_infield": 0.329721529959909
+  },
+  "60-80 m": {
+   "n": 13263,
+   "n_infield": 5627,
+   "frac_infield": 0.42426298725778483
+  },
+  "120-inf m": {
+   "n": 4195,
+   "n_infield": 1374,
+   "frac_infield": 0.32753277711561385
+  }
+ },
+ "per_clip_keep_fraction": {
+  "n_clips": 11,
+  "min": 0.0,
+  "p10": 0.07108087502199284,
+  "p50": 0.13986139861398614,
+  "p90": 0.3432708688245315,
+  "max": 0.3447309417040359,
+  "std": 0.1084691073468731,
+  "corr_with_clip_n_lines": 0.48632490482377994,
+  "corr_with_agents_per_frame": -0.15999621963340757
+ },
+ "imbalance_in_vocabulary": {
+  "n_classes": 9,
+  "max": 55837,
+  "min": 3,
+  "ratio": 18612.333333333332,
+  "n_boxes_in_vocabulary": 71972
+ },
+ "wall_s": 4.8
+}

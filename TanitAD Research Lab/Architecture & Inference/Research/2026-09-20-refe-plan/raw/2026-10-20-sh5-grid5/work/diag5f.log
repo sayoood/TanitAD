@@ -1,0 +1,58 @@
+ZZDIAG 2 runs; N 1444 T 816 fold-0 sets 322
+ZZGPULOCKED
+  cycle 1/3 shard 1/2: 709 tokens loaded in 88 s
+ZZGPURELEASED yes
+Traceback (most recent call last):
+  File "C:\Users\Admin\par18\sh5diag\code\diag_pre5.py", line 44, in <module>
+    sys.exit(D3.main())
+             ^^^^^^^^^
+  File "C:\Users/Admin/par18/sh5diag/code\diag_pre3.py", line 248, in main
+    rc = GL.run_locked_inprocess(body, max_wait=x.max_wait, min_avail_gb=x.min_avail_gb, owner="sh5_diag", job="sh5-creach-diag3")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users/Admin/par18/sh5/code\sh5_gpulock.py", line 162, in run_locked_inprocess
+    return fn()
+           ^^^^
+  File "C:\Users/Admin/par18/sh5diag/code\diag_pre3.py", line 225, in body
+    tr.train(ckpt_fn=ck)
+  File "C:\Users/Admin/par18/sh5/code\sh5_train_eval.py", line 353, in train
+    self._train_step(ln, toks, ctx_pos, shard_ctx)
+  File "C:\Users/Admin/par18/sh5diag/code\diag_pre.py", line 87, in _train_step
+    return super()._train_step(ln, toks, ctx_pos, shard_ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users/Admin/par18/sh5/code\sh5_train_eval.py", line 313, in _train_step
+    logit, reg = ln.model(pts, kv, s2t)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users/Admin/par18/sh5/code\sh5_branch.py", line 109, in forward
+    h = lay(h, K[set_to_tok], V[set_to_tok])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users/Admin/par18/sh5diag/code\diag_attn5.py", line 45, in forward
+    q, Kq = self.qk(h, K)
+            ^^^^^^^^^^^^^
+  File "C:\Users/Admin/par18/sh5diag/code\diag_attn5.py", line 32, in qk
+    q = self.q(self.ln_q(h)).view(S, Q, H, dh).transpose(1, 2).float()
+               ^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\modules\normalization.py", line 217, in forward
+    return F.layer_norm(
+           ^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\driverl-eval\Lib\site-packages\torch\nn\functional.py", line 2910, in layer_norm
+    return torch.layer_norm(
+           ^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.58 GiB is free. Of the allocated memory 3.33 GiB is allocated by PyTorch, and 4.54 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

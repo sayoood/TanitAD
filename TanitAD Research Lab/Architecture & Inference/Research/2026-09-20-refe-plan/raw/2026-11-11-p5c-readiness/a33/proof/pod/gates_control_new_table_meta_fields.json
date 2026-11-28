@@ -1,0 +1,41 @@
+{
+ "label_name": "P5R",
+ "schema": "traj-label-table-v1",
+ "interp": "cubic",
+ "iters": 3,
+ "n_rows": 2400,
+ "n_raw_fallback": 0,
+ "n_raw_fallback_per_rank": {
+  "0": 0,
+  "1": 0
+ },
+ "n_differs_per_rank": {
+  "0": 1200,
+  "1": 1200
+ },
+ "rank_policy": "UNDECIDED",
+ "code_blob_sha1": {},
+ "bank_files_sha256": {
+  "targets_rank0.jsonl": "1c07ec0425776898e7e89536d579dad1a3fd9b02356c71c2b9007073dcd2c25c",
+  "targets_rank1.jsonl": "1b2ecef2017169baddd343a82e14882c359dafc061c107f2a63e2a4c355283fc"
+ },
+ "build_host": "a5ca46727f02",
+ "table_sha256": "UNKNOWN until traj_label_table.py build; the pod runner appends it (P5C_LABEL_TABLE_SHA256)",
+ "note": "traj_label_table.py build records only label_name/require_coverage/bank_rows/covered/partial; these extra fields live in this file until that module takes a --meta-json",
+ "p5r": {
+  "lambda_star": 3.0,
+  "k_max": 10,
+  "warm_start": "Tc20s (iterate20, cubic, ITERS 3)",
+  "R_B": {
+   "R-TOL-1_min_frac_sim8_identical": 0.995,
+   "R-TOL-2_median_max": 0.001,
+   "R-TOL-2_p99_max": 0.005,
+   "R-TOL-3_ratio_abs": 0.01,
+   "R-TOL-3_sim8_pp": 0.25
+  },
+  "tc20s_tol_R_A": 1e-09,
+  "prereg": "PREREG_P5R.md sha256 cfd23e0651d66e497238a0708c717ba00acbcb2189295efcfb15dad657922a42",
+  "tb0_tol_R_A": 1e-08
+ },
+ "tc20s_ranks_judged_R_A": "all"
+}

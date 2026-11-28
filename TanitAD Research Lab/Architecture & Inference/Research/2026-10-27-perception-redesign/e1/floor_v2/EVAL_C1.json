@@ -1,0 +1,376 @@
+{
+ "schema": "r9e1-eval-v1",
+ "tier": "T0 (label level)",
+ "packs": "/home/nvidia/r8ns/r9e1/read_v2/dump_C1/perc_det.pkl",
+ "windows_file": "/home/nvidia/r8ns/r9dump/DEV_HOLD_SPLIT.json",
+ "split": "dev",
+ "n_windows": 2308,
+ "n_clips": 70,
+ "gate": {
+  "source": "--gates-json",
+  "sha256": "f4cb9a94f1dc3208599438e6748d19dfd12a0261dd7e476a8934b7ae53b94611",
+  "value": 0.26599645614624023
+ },
+ "definitions": {
+  "ap": "tanitad.eval.detection_metrics greedy 2 m / 1 m rows, pooled AP, head output (NO post-hoc NMS) unless a column says NMS",
+  "dx_0_40": "|x_pred - x_gt| of 2 m greedy TPs whose GT is 0-40 m ahead",
+  "tp_class_acc": "class of the 2 m greedy TPs (all slots)",
+  "boxes_per_object": "PERC8 census_one at the gate, 2 m, no NMS"
+ },
+ "estimator": "episode-cluster bootstrap over clips, B=2000 seed=0 (answers another draw of EPISODES, not another TRAINING run)",
+ "boxes": {
+  "n_pos": {
+   "point": 7410.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 5862.925,
+   "hi": 9026.599999999997
+  },
+  "ap1m_all": {
+   "point": 0.20756139786563085,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.17667769472953057,
+   "hi": 0.24023355534193422
+  },
+  "ap1m_0_20": {
+   "point": 0.37367408659231444,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.3239086359877081,
+   "hi": 0.4221387707327613
+  },
+  "ap1m_20_40": {
+   "point": 0.11741805675655403,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.10040999460128171,
+   "hi": 0.1342675539631073
+  },
+  "ap1m_40_60": {
+   "point": 0.02994753267905602,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.02266352628715839,
+   "hi": 0.03894035297895898
+  },
+  "ap1m_20_60": {
+   "point": 0.08538900636471723,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.0722511444501676,
+   "hi": 0.09866910033705918
+  },
+  "ap2m_all": {
+   "point": 0.3307230844047769,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.29439419977709635,
+   "hi": 0.366956718760695
+  },
+  "ap2m_0_20": {
+   "point": 0.5378477033637183,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.4931635556854016,
+   "hi": 0.5781697230731925
+  },
+  "ap2m_20_40": {
+   "point": 0.2305555209900431,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.20369838780095378,
+   "hi": 0.25673996687017664
+  },
+  "ap2m_40_60": {
+   "point": 0.09172930738102872,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.0727151446777119,
+   "hi": 0.11166192320711864
+  },
+  "ap2m_20_60": {
+   "point": 0.1799703546663427,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.15834306747804874,
+   "hi": 0.20128824589161423
+  },
+  "dx_0_40_mean": {
+   "point": 0.7839447370164125,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.7616042751692408,
+   "hi": 0.8073692624645297
+  },
+  "dx_0_40_median": {
+   "point": 0.7173690795898438,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.68873291015625,
+   "hi": 0.7493033409118652
+  },
+  "tp_class_acc": {
+   "point": 0.8366984993178718,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.8067802088118787,
+   "hi": 0.8643272134119032
+  },
+  "prec_gate_noNMS": {
+   "point": 0.36876476309573436,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.3511837052472487,
+   "hi": 0.38608195975270343
+  },
+  "rec_gate_noNMS": {
+   "point": 0.3581646423751687,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.3079534922435136,
+   "hi": 0.41037836364036245
+  },
+  "boxes_per_object_noNMS": {
+   "point": 2.0736881280238184,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1.9791274803637866,
+   "hi": 2.163452294872515
+  },
+  "frac_objects_ge2_noNMS": {
+   "point": 0.663565314477112,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 0.6284251298101714,
+   "hi": 0.6928702583812846
+  },
+  "boxes_per_object_noNMS_0_20": {
+   "point": 2.1874032008260196,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 2.0700601366785842,
+   "hi": 2.300477963924853
+  },
+  "n_det_noNMS_0_20": {
+   "point": 1937.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1406.95,
+   "hi": 2518.2249999999985
+  },
+  "boxes_per_object_noNMS_20_40": {
+   "point": 1.8085106382978724,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1.6799540229885057,
+   "hi": 1.9227271141427014
+  },
+  "n_det_noNMS_20_40": {
+   "point": 705.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 504.95,
+   "hi": 926.0749999999996
+  },
+  "boxes_per_object_noNMS_40_60": {
+   "point": 1.3333333333333333,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 1.0,
+   "hi": 1.6263736263736264
+  },
+  "n_det_noNMS_40_60": {
+   "point": 45.0,
+   "n_episodes": 70,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap_stat",
+   "lo": 14.0,
+   "hi": 89.0
+  }
+ },
+ "nearfield": {
+  "table": {
+   "0-5": {
+    "flag_rate": 0.08358793862567246,
+    "precision_exact": 0.19992407702857784,
+    "precision_within_0p5m": 0.2878407786827889,
+    "recall": 0.38006917423259834,
+    "gt_class_of_flags": [
+     0.056345690934027484,
+     0.6862229546281524,
+     0.027271041509222715,
+     0.013485949002155233,
+     0.0022042152993534303,
+     0.01441311892966104,
+     0.00013295266884988944,
+     0.19992407702857784
+    ],
+    "n_flags": 571632.0,
+    "n_seen": 6838690.0
+   },
+   "5-10": {
+    "flag_rate": 0.03220173804699037,
+    "precision_exact": 0.7170621549294522,
+    "precision_within_0p5m": 0.8233060981356188,
+    "recall": 0.530879027931821,
+    "gt_class_of_flags": [
+     0.10929345555091263,
+     0.14577202450278723,
+     0.0014136223405674048,
+     0.0003200654356001671,
+     0.0,
+     0.02607199694159695,
+     6.668029908336816e-05,
+     0.7170621549294522
+    ],
+    "n_flags": 224954.0,
+    "n_seen": 6985772.0
+   },
+   "10-20": {
+    "flag_rate": 0.0517788034921998,
+    "precision_exact": 0.7286944912425697,
+    "precision_within_0p5m": 0.8310927819093727,
+    "recall": 0.6200878292715627,
+    "gt_class_of_flags": [
+     0.1322176414574111,
+     0.11042253754714557,
+     0.0024213710875577183,
+     0.0003192561194211375,
+     0.00018519619048672047,
+     0.025731213988669864,
+     8.292366738211364e-06,
+     0.7286944912425697
+    ],
+    "n_flags": 723557.0,
+    "n_seen": 13974000.0
+   },
+   "20-40": {
+    "flag_rate": 0.07767320556257465,
+    "precision_exact": 0.7447701666000858,
+    "precision_within_0p5m": 0.8266336351665261,
+    "recall": 0.5246728076975694,
+    "gt_class_of_flags": [
+     0.12106571899921582,
+     0.11459859144510039,
+     0.006205427818959267,
+     0.0018388336514418453,
+     9.2473404648823e-07,
+     0.011477798985011911,
+     4.253776613845858e-05,
+     0.7447701666000858
+    ],
+    "n_flags": 2162784.0,
+    "n_seen": 27844660.0
+   }
+  },
+  "n_files": 2329,
+  "n_episodes": 68,
+  "edge_plane": "all",
+  "lift_valid": null,
+  "n_unobs_checked": 0,
+  "definition": {
+   "nf_prec_*": "SIDEWALK only: flag psw >= 128, GT class 7, GT-seen cells (MAPSEL nearfield_prec.py, the historical figure)",
+   "nf_swedge_prec_*": "UNION: flag (psw >= 128) | (pedge >= 128) [sidewalk alone when the raster has no edge plane], GT {5 edge, 7 sidewalk}, GT-seen cells (includes the camera blind zone)",
+   "nf_swedge_prec_lv_*": "as nf_swedge_prec_* AND lift-valid cells only (the --lift-valid mask); every nf_swedge_* key is absent without a mask",
+   "*_5_20": "the 5-10 and 10-20 m bands pooled by counts"
+  },
+  "ci": {
+   "nf_prec_0_5": {
+    "point": 0.19992407702857784,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.1457696235149988,
+    "hi": 0.2644485682942728
+   },
+   "nf_prec05_0_5": {
+    "point": 0.2878407786827889,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.2162146336649745,
+    "hi": 0.36724684337267427
+   },
+   "nf_prec_5_10": {
+    "point": 0.7170621549294522,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.6155796002041394,
+    "hi": 0.801324432010595
+   },
+   "nf_prec05_5_10": {
+    "point": 0.8233060981356188,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.736375011057417,
+    "hi": 0.8940987058226891
+   },
+   "nf_prec_10_20": {
+    "point": 0.7286944912425697,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.614034696155532,
+    "hi": 0.8151749871120806
+   },
+   "nf_prec05_10_20": {
+    "point": 0.8310927819093727,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.7217343574577082,
+    "hi": 0.9089684519761168
+   },
+   "nf_prec_20_40": {
+    "point": 0.7447701666000858,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.6584754130856412,
+    "hi": 0.816815628863151
+   },
+   "nf_prec05_20_40": {
+    "point": 0.8266336351665261,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.7529660244137272,
+    "hi": 0.883180243643131
+   },
+   "nf_prec_0_10": {
+    "point": 0.3459626455900556,
+    "n_episodes": 68,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap_stat",
+    "lo": 0.26098653103559805,
+    "hi": 0.4338066876222104
+   }
+  }
+ }
+}

@@ -1,0 +1,288 @@
+{
+ "_evidence_class": "MEASURED (ours; pooling-ratio ladder on a frozen banked checkpoint \u2014 a T0 world-model diagnostic, never driving performance)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "experiment": "E-R1-0 (POOLING_BOTTLENECK_R1R2.md \u00a77.1)",
+ "arm_label": "PART2 rung3_h1 (trained ckpt latent, cells probe)",
+ "run_stamp": "refa-dinov2-4b@29999/rung3_h1 (windows: v6F-SW-30k@11250)",
+ "step": 11250,
+ "cache": "C:/Users/Admin/tanitad-caches/encloc-20260818/part2/cells_rung3_h1.pt",
+ "token_grid": [
+  16,
+  16
+ ],
+ "d_model": 768,
+ "rp_dim": 2048,
+ "rp_block_units": 32,
+ "rp_seed_base": 20260818,
+ "proj_seeds": [
+  0
+ ],
+ "ridge_seed": 0,
+ "ridge_intercept_col": -1,
+ "ridge_intercept_gate": {
+  "alpha": 1000000000.0,
+  "y_mean": 4.834342,
+  "penalised_pred": 0.0,
+  "unpenalised_pred": 4.834342
+ },
+ "legacy_penalised_intercept": false,
+ "solve_source": "pc6_linear_readout.ridge_fit (imported, not re-implemented)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap",
+ "forbidden": "overlapping_holdout_se",
+ "n_boot": 2000,
+ "alphas": [
+  0.1,
+  1.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0,
+  1000000.0,
+  10000000.0
+ ],
+ "sd_ratio_floor": 0.1,
+ "oracle": null,
+ "oracle_amp_rel": 1.0,
+ "oracle_token_sd": null,
+ "oracle_targets": [
+  "ego_v0",
+  "lead_gap",
+  "lead_closing",
+  "ego_yawrate"
+ ],
+ "pc_local_tokens": [
+  [
+   6,
+   18
+  ],
+  [
+   6,
+   19
+  ],
+  [
+   7,
+   18
+  ],
+  [
+   7,
+   19
+  ]
+ ],
+ "pc_2obj_tokens": [
+  [
+   4,
+   10
+  ],
+  [
+   7,
+   19
+  ]
+ ],
+ "pc_2obj_cell_geometry": {
+  "p40": {
+   "skipped": "PC-2OBJ tokens outside this 16x16 grid"
+  },
+  "p10": {
+   "skipped": "PC-2OBJ tokens outside this 16x16 grid"
+  },
+  "p4": {
+   "skipped": "PC-2OBJ tokens outside this 16x16 grid"
+  },
+  "p1": {
+   "skipped": "PC-2OBJ tokens outside this 16x16 grid"
+  },
+  "s16": {
+   "skipped": "PC-2OBJ tokens outside this 16x16 grid"
+  }
+ },
+ "randomise_features_seed": null,
+ "proxy_v0": false,
+ "n_train_windows_all": 1302,
+ "n_eval_windows_all": 1507,
+ "parity": "SELECTS NOTHING \u2014 banked window set read verbatim; cache meta parity={'parity': False, 'cache_dirs': ['C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-Tanit",
+ "device": "cuda",
+ "arms": {
+  "cells": {
+   "pool_kernel": [
+    0,
+    0
+   ],
+   "tokens_averaged_per_unit": 0,
+   "n_units": 16,
+   "n_raw_features": 2048,
+   "n_fit_features": 2049,
+   "projected": false,
+   "targets": {
+    "ego_v0": {
+     "unit": "m/s",
+     "rung": "EGO (anchor)",
+     "n_train": 1302,
+     "n_eval": 1507,
+     "n_eval_clusters": 70,
+     "gt_mean": 5.9729,
+     "gt_sd": 5.5768,
+     "r2_ceiling_mean": 0.6742,
+     "r2_ceiling_sd": 0.0,
+     "r2_ceiling_min": 0.6742,
+     "r2_ceiling_max": 0.6742,
+     "K1_delta_mean": -1.617,
+     "K1_delta_range": 0.0,
+     "n_seeds": 1,
+     "per_seed": {
+      "0": {
+       "alpha_chosen": 1000.0,
+       "alpha_inner_mae": {
+        "0.1": 3.683881,
+        "1": 3.652485,
+        "10": 3.523665,
+        "100": 2.987786,
+        "1000": 2.631216,
+        "10000": 2.684854,
+        "100000": 3.452278,
+        "1e+06": 4.303576,
+        "1e+07": 4.480857
+       },
+       "alpha_at_grid_edge": false,
+       "err": 2.478,
+       "err_lo": 2.1528,
+       "err_hi": 2.8221,
+       "c_const_value": 4.5377,
+       "c_const_err": 4.0949,
+       "c_epmean_err": 1.9922,
+       "R2": 0.6666,
+       "K1_delta": -1.617,
+       "K1_lo": -2.4516,
+       "K1_hi": -0.8288,
+       "K1_separated": true,
+       "K1_PASSES": true,
+       "K5_delta": 0.4858,
+       "K5_PASSES": false,
+       "corr": 0.8211,
+       "corr_within_ep": 0.662,
+       "r2_ceiling": 0.6742,
+       "pred_sd": 4.9475,
+       "gt_sd": 5.5768,
+       "pred_sd_over_gt_sd": 0.8872,
+       "K1_DEGENERATE": false
+      }
+     }
+    },
+    "lead_gap": {
+     "unit": "m",
+     "rung": "OBJECT",
+     "n_train": 1120,
+     "n_eval": 1362,
+     "n_eval_clusters": 70,
+     "gt_mean": 15.5309,
+     "gt_sd": 6.1722,
+     "r2_ceiling_mean": 0.4762,
+     "r2_ceiling_sd": 0.0,
+     "r2_ceiling_min": 0.4762,
+     "r2_ceiling_max": 0.4762,
+     "K1_delta_mean": -1.6488,
+     "K1_delta_range": 0.0,
+     "n_seeds": 1,
+     "per_seed": {
+      "0": {
+       "alpha_chosen": 100.0,
+       "alpha_inner_mae": {
+        "0.1": 3.932676,
+        "1": 3.842078,
+        "10": 3.510597,
+        "100": 3.221738,
+        "1000": 3.424133,
+        "10000": 3.504768,
+        "100000": 4.014479,
+        "1e+06": 4.794211,
+        "1e+07": 4.967216
+       },
+       "alpha_at_grid_edge": false,
+       "err": 3.4703,
+       "err_lo": 2.9754,
+       "err_hi": 4.0608,
+       "c_const_value": 15.0114,
+       "c_const_err": 5.1191,
+       "c_epmean_err": 3.1838,
+       "R2": 0.436,
+       "K1_delta": -1.6488,
+       "K1_lo": -2.2545,
+       "K1_hi": -1.0865,
+       "K1_separated": true,
+       "K1_PASSES": true,
+       "K5_delta": 0.2865,
+       "K5_PASSES": false,
+       "corr": 0.69,
+       "corr_within_ep": 0.6516,
+       "r2_ceiling": 0.4762,
+       "pred_sd": 5.2878,
+       "gt_sd": 6.1722,
+       "pred_sd_over_gt_sd": 0.8567,
+       "K1_DEGENERATE": false,
+       "corr_partial_v0": 0.4539,
+       "r2_ceiling_partial_v0": 0.206
+      }
+     }
+    },
+    "lead_closing": {
+     "unit": "m/s",
+     "rung": "OBJECT-DYNAMICS",
+     "n_train": 1120,
+     "n_eval": 1362,
+     "n_eval_clusters": 70,
+     "gt_mean": 0.149,
+     "gt_sd": 1.7555,
+     "r2_ceiling_mean": 0.0555,
+     "r2_ceiling_sd": 0.0,
+     "r2_ceiling_min": 0.0555,
+     "r2_ceiling_max": 0.0555,
+     "K1_delta_mean": 0.0449,
+     "K1_delta_range": 0.0,
+     "n_seeds": 1,
+     "per_seed": {
+      "0": {
+       "alpha_chosen": 100000.0,
+       "alpha_inner_mae": {
+        "0.1": 2.7582,
+        "1": 2.667415,
+        "10": 2.373133,
+        "100": 1.87392,
+        "1000": 1.303233,
+        "10000": 0.988061,
+        "100000": 0.911196,
+        "1e+06": 0.949853,
+        "1e+07": 0.956227
+       },
+       "alpha_at_grid_edge": false,
+       "err": 1.1594,
+       "err_lo": 1.0151,
+       "err_hi": 1.3313,
+       "c_const_value": 0.0842,
+       "c_const_err": 1.1145,
+       "c_epmean_err": 0.9915,
+       "R2": 0.0288,
+       "K1_delta": 0.0449,
+       "K1_lo": -0.0011,
+       "K1_hi": 0.0897,
+       "K1_separated": false,
+       "K1_PASSES": false,
+       "K5_delta": 0.1679,
+       "K5_PASSES": false,
+       "corr": 0.2356,
+       "corr_within_ep": 0.172,
+       "r2_ceiling": 0.0555,
+       "pred_sd": 0.2302,
+       "gt_sd": 1.7555,
+       "pred_sd_over_gt_sd": 0.1311,
+       "K1_DEGENERATE": false,
+       "corr_partial_v0": 0.2361,
+       "r2_ceiling_partial_v0": 0.0557
+      }
+     }
+    }
+   },
+   "wall_s": 4.2
+  }
+ },
+ "wall_s": 4.7
+}

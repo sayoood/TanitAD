@@ -1,0 +1,15 @@
+.......F.                                                                [100%]
+================================== FAILURES ===================================
+_______ test_the_constant_is_the_builders_loop_and_the_identity_drivers _______
+
+    def test_the_constant_is_the_builders_loop_and_the_identity_drivers():
+        ship = (REPO / "stack" / "scripts" / "dinov3_fp8_encode_ship.py").read_text(encoding="utf-8")
+        assert re.search(r"for j in range\(0, frames\.shape\[0\], 8\)", ship), "the builder's encode loop moved: re-derive BUILDER_BATCH"
+>       drv = next(REPO.glob("TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_lora_identity_dev.py"))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+tests\test_v8f_lora_shape.py:67: StopIteration
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_lora_shape.py::test_the_constant_is_the_builders_loop_and_the_identity_drivers
+1 failed, 8 passed in 2.39s

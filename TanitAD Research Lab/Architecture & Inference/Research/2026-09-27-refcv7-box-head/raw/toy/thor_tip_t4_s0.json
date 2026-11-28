@@ -1,0 +1,290 @@
+{
+ "tree": "/home/nvidia/bx_1600/tree_tip",
+ "has_A17": false,
+ "const_lr": false,
+ "steps": 1200,
+ "platform": {
+  "machine": "aarch64",
+  "torch": "2.13.0+cu130",
+  "threads": 4,
+  "blas": [
+   "- Build settings: BLAS_INFO=nvpl, BUILD_TYPE=Release, COMMIT_SHA=cf30153c4c131c8164ee7798e5022d810682e2cb, CUDA_FLAGS= -DLIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS -Xfatbin -compress-all -DONNX_NAMESPACE=onnx_torch -gencode arch=compute_80,code=sm_80 -gencode arch=compute_90,code=sm_90 -gencode arch=compute_100,code=sm_100 -gencode arch=compute_110,code=sm_110 -gencode arch=compute_120,code=sm_120 -Xcudafe --diag_suppress=cc_clobber_ignored,--diag_suppress=field_without_dll_interface,--diag_suppress=base_class_has_different_dll_interface,--diag_suppress=dll_interface_conflict_none_assumed,--diag_suppress=dll_interface_conflict_dllexport_assumed,--diag_suppress=bad_friend_decl --expt-relaxed-constexpr --expt-extended-lambda -Xfatbin -compress-all --threads 2 -compress-mode=size -Wno-deprecated-gpu-targets --expt-extended-lambda -DCUB_WRAPPED_NAMESPACE=at_cuda_detail -DDISABLE_CUSPARSE_DEPRECATED -DCUDA_HAS_FP16=1 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -DC10_NODEPRECATED, CUDA_VERSION=13.0, CUDNN_VERSION=9.20.0, CXX_COMPILER=/opt/rh/gcc-toolset-13/root/usr/bin/c++, CXX_FLAGS= -ffunction-sections -fdata-sections -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DHAS_CUPTI -DUSE_FBGEMM -DUSE_MSLK -DUSE_PYTORCH_QNNPACK -DAT_BUILD_ARM_VEC256_WITH_SLEEF -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -DC10_NODEPRECATED -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=range-loop-construct -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-unknown-pragmas -Wno-unused-parameter -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wsuggest-override -Wno-psabi -Wno-error=old-style-cast -faligned-new -Wno-maybe-uninitialized -fno-omit-frame-pointer -fno-math-errno -fno-trapping-math -Werror=format -Wno-dangling-reference -Wno-error=dangling-reference -Wno-stringop-overflow, LAPACK_INFO=nvpl, TORCH_VERSION=2.13.0, USE_CUDA=1, USE_CUDNN=ON, USE_CUSPARSELT=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_GLOO=ON, USE_MKLDNN=1, USE_MPI=OFF, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON, USE_ROCM=OFF, USE_ROCM_KERNEL_ASSERT=OFF, USE_XCCL=OFF, USE_XPU=OFF,"
+  ]
+ },
+ "runs": [
+  {
+   "seed": 0,
+   "arm": "main",
+   "verdict": "FAIL",
+   "rows": [
+    {
+     "step": 0,
+     "ap2m": 0.0,
+     "prec": NaN,
+     "rec": 0.0,
+     "n_conf": 0.0,
+     "centre_p50_m": 23.962855339050293,
+     "presence": 1.3737150430679321
+    },
+    {
+     "step": 100,
+     "ap2m": 0.006652336860670194,
+     "prec": 0.07692307692307693,
+     "rec": 0.0625,
+     "n_conf": 39.0,
+     "centre_p50_m": 6.986608505249023,
+     "presence": 0.03740495443344116,
+     "loss_mean_since_last": 54.35660057067871
+    },
+    {
+     "step": 200,
+     "ap2m": 0.024190972508661937,
+     "prec": 0.14583333333333334,
+     "rec": 0.14583333333333334,
+     "n_conf": 48.0,
+     "centre_p50_m": 6.0896124839782715,
+     "presence": 0.0038806647062301636,
+     "loss_mean_since_last": 20.161435232162475
+    },
+    {
+     "step": 300,
+     "ap2m": 0.022572051217884553,
+     "prec": 0.14583333333333334,
+     "rec": 0.14583333333333334,
+     "n_conf": 48.0,
+     "centre_p50_m": 4.758162498474121,
+     "presence": 0.0017950491746887565,
+     "loss_mean_since_last": 13.423213715553283
+    },
+    {
+     "step": 400,
+     "ap2m": 0.08675185076087018,
+     "prec": 0.2708333333333333,
+     "rec": 0.2708333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.656453490257263,
+     "presence": 0.0011374069144949317,
+     "loss_mean_since_last": 10.416154499053954
+    },
+    {
+     "step": 500,
+     "ap2m": 0.22929494806863077,
+     "prec": 0.4791666666666667,
+     "rec": 0.4791666666666667,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.197897434234619,
+     "presence": 0.0008209645748138428,
+     "loss_mean_since_last": 8.345374512672425
+    },
+    {
+     "step": 600,
+     "ap2m": 0.7263340587615797,
+     "prec": 0.7916666666666666,
+     "rec": 0.7916666666666666,
+     "n_conf": 48.0,
+     "centre_p50_m": 1.3913817405700684,
+     "presence": 0.0005838436190970242,
+     "loss_mean_since_last": 6.335536758899689
+    },
+    {
+     "step": 700,
+     "ap2m": 0.12007269479814824,
+     "prec": 0.3958333333333333,
+     "rec": 0.3958333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.289129376411438,
+     "presence": 0.0005023488774895668,
+     "loss_mean_since_last": 6.885989196300507
+    },
+    {
+     "step": 800,
+     "ap2m": 0.5008667565950125,
+     "prec": 0.6875,
+     "rec": 0.6875,
+     "n_conf": 48.0,
+     "centre_p50_m": 1.652882993221283,
+     "presence": 0.0004093516618013382,
+     "loss_mean_since_last": 6.264174554347992
+    },
+    {
+     "step": 900,
+     "ap2m": 1.0,
+     "prec": 1.0,
+     "rec": 1.0,
+     "n_conf": 48.0,
+     "centre_p50_m": 0.6663119792938232,
+     "presence": 0.00035557631053961813,
+     "loss_mean_since_last": 4.5634052944183345
+    },
+    {
+     "step": 1000,
+     "ap2m": 0.23885481896834054,
+     "prec": 0.4791666666666667,
+     "rec": 0.4791666666666667,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.1370959281921387,
+     "presence": 0.00029175783856771886,
+     "loss_mean_since_last": 4.0144417643547055
+    },
+    {
+     "step": 1100,
+     "ap2m": 0.11825963581752068,
+     "prec": 0.375,
+     "rec": 0.375,
+     "n_conf": 48.0,
+     "centre_p50_m": 2.4395699501037598,
+     "presence": 0.00029331495170481503,
+     "loss_mean_since_last": 6.561731126308441
+    },
+    {
+     "step": 1200,
+     "ap2m": 1.0,
+     "prec": 1.0,
+     "rec": 1.0,
+     "n_conf": 48.0,
+     "centre_p50_m": 0.7095261812210083,
+     "presence": 0.0002513171930331737,
+     "loss_mean_since_last": 4.609569222927093
+    }
+   ],
+   "wall_s": 29.8
+  },
+  {
+   "seed": 0,
+   "arm": "memory_zeros",
+   "verdict": "failed as required",
+   "rows": [
+    {
+     "step": 0,
+     "ap2m": 0.0,
+     "prec": NaN,
+     "rec": 0.0,
+     "n_conf": 0.0,
+     "centre_p50_m": 21.414362907409668,
+     "presence": 1.4054255485534668
+    },
+    {
+     "step": 100,
+     "ap2m": 0.0,
+     "prec": 0.0,
+     "rec": 0.0,
+     "n_conf": 48.0,
+     "centre_p50_m": 8.08942985534668,
+     "presence": 0.03132372722029686,
+     "loss_mean_since_last": 63.35681167602539
+    },
+    {
+     "step": 200,
+     "ap2m": 0.005208333333333333,
+     "prec": 0.020833333333333332,
+     "rec": 0.020833333333333332,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.875103235244751,
+     "presence": 0.004227412398904562,
+     "loss_mean_since_last": 43.03515142440796
+    },
+    {
+     "step": 300,
+     "ap2m": 0.0032996894409937885,
+     "prec": 0.041666666666666664,
+     "rec": 0.041666666666666664,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.502133846282959,
+     "presence": 0.0017773680156096816,
+     "loss_mean_since_last": 40.34787422180176
+    },
+    {
+     "step": 400,
+     "ap2m": 0.014194921083742635,
+     "prec": 0.125,
+     "rec": 0.125,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.23645806312561,
+     "presence": 0.0012744510313495994,
+     "loss_mean_since_last": 41.458991508483884
+    },
+    {
+     "step": 500,
+     "ap2m": 0.006810897435897436,
+     "prec": 0.041666666666666664,
+     "rec": 0.041666666666666664,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.37237811088562,
+     "presence": 0.0008567050681449473,
+     "loss_mean_since_last": 40.44958814620972
+    },
+    {
+     "step": 600,
+     "ap2m": 0.007011798697370385,
+     "prec": 0.08333333333333333,
+     "rec": 0.08333333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.901731491088867,
+     "presence": 0.0006068125367164612,
+     "loss_mean_since_last": 39.97428977966309
+    },
+    {
+     "step": 700,
+     "ap2m": 0.006094248044045205,
+     "prec": 0.0625,
+     "rec": 0.0625,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.060377597808838,
+     "presence": 0.0004886956885457039,
+     "loss_mean_since_last": 39.90487745285034
+    },
+    {
+     "step": 800,
+     "ap2m": 0.0098144861392833,
+     "prec": 0.0625,
+     "rec": 0.0625,
+     "n_conf": 48.0,
+     "centre_p50_m": 8.0926353931427,
+     "presence": 0.0003901486343238503,
+     "loss_mean_since_last": 39.29087131500244
+    },
+    {
+     "step": 900,
+     "ap2m": 0.01136072863947317,
+     "prec": 0.10416666666666667,
+     "rec": 0.10416666666666667,
+     "n_conf": 48.0,
+     "centre_p50_m": 8.681017875671387,
+     "presence": 0.00034794327802956104,
+     "loss_mean_since_last": 39.996429691314695
+    },
+    {
+     "step": 1000,
+     "ap2m": 0.0007183908045977011,
+     "prec": 0.020833333333333332,
+     "rec": 0.020833333333333332,
+     "n_conf": 48.0,
+     "centre_p50_m": 6.669058799743652,
+     "presence": 0.0003278669901192188,
+     "loss_mean_since_last": 39.794120941162106
+    },
+    {
+     "step": 1100,
+     "ap2m": 0.02635327635327635,
+     "prec": 0.0625,
+     "rec": 0.0625,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.8717942237854,
+     "presence": 0.0003231879381928593,
+     "loss_mean_since_last": 40.061148223876955
+    },
+    {
+     "step": 1200,
+     "ap2m": 0.012532678679457263,
+     "prec": 0.08333333333333333,
+     "rec": 0.08333333333333333,
+     "n_conf": 48.0,
+     "centre_p50_m": 7.490664958953857,
+     "presence": 0.0002964849991258234,
+     "loss_mean_since_last": 39.54890508651734
+    }
+   ],
+   "wall_s": 30.7
+  }
+ ]
+}

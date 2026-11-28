@@ -1,0 +1,125 @@
+# box-head audit (2026-09-26/27) -- landing list for the Master Mind (single committer).
+# Nothing here is staged or committed by this agent. Paths are repo-relative. Clip ids appear nowhere (sha12 only;
+# a raw-UUID and LiDAR-clip-prefix scan of every .json/.log/.md/.py/.txt here reads 0 hits).
+# Every file below exists on the D: working tree; the raw/ and code/ files ALSO exist on Thor under /home/nvidia/bha_2325/.
+# ⚠️ raw/dumps/ = 31 per-slot .pt chunks + 4 records (~25 MB binary): land, or keep on D: only, at the Master Mind's discretion.
+# ⚠️ code/patch_draw_cuboid/ is a PATCH to taniteval/tools/{render_refcv6_map_video,render_refcv6_gt_validation}.py -- the
+#    working-tree map-video tool is ALREADY byte-identical to it (someone copied it at 01:13:40); the working-tree GT-val
+#    tool (md5 394ea228...) is my patch plus further edits. Decide which version lands; do not land both copies blindly.
+# NOT for landing: none (no __pycache__ was written).
+
+## 2026-09-27 batch 1: box-head audit -- overlay verdict (correct), GT visibility (VIS-1), presence measured (AUROC/gates/FP causes), trajectory, refcv7 fix + checks, G-BOX-OVERFIT prereg, drawing patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/RESULT.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/bha_analyze.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/bha_dump.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/gbo_select.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/glive_arms.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/gt_zcensus.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/gt_zcensus_gtval.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/ov_audit.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/ov_p2p5.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/ov_probe.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/patch_draw_cuboid/draw_cuboid_clipped.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/patch_draw_cuboid/render_refcv6_gt_validation.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/patch_draw_cuboid/render_refcv6_map_video.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/patch_draw_cuboid/test_draw_cuboid_clipped.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/refcv6_loader.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/tp_visibility.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/traj.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_panel.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_rules.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/code/vis_zbuf.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/LOGGING_SPEC_BOX.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/PREREG_G_BOX_OVERFIT.md
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/analyze_clipgrid.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/analyze_inrun.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/analyze_train.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/glive_arms.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/gt_zcensus.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/gt_zcensus_gtval.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/tp_vis_clipgrid.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/tp_vis_train.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/analysis/traj.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk000.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk001.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk002.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk003.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk004.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk005.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk006.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk007.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk008.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk009.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk010.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk011.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk012.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk013.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk014.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk015.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk016.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_chunk017.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/clipgrid_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/inrun_chunk000.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/inrun_chunk001.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/inrun_chunk002.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/inrun_chunk003.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/inrun_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/smoke_chunk000.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/smoke_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk000.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk001.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk002.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk003.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk004.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk005.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk006.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_chunk007.pt
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/dumps/train_record.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/analyze_clipgrid.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/analyze_inrun.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/analyze_train.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/chain.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/clipgrid.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/glive_arms.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/gt_zcensus.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/inrun.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/ov_audit.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/ov_p2.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/ov_p5.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/smoke.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/tp_vis_clipgrid.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/tp_vis_train.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/train.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/vis_clipgrid.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/vis_gtval.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/vis_inrun.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/vis_lidar.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/vis_panel.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/logs/vis_train.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_73495082f98b_f003.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_73495082f98b_f033.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_73495082f98b_f063.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_73495082f98b_f093.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_73495082f98b_f124.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_73495082f98b_f154.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_audit_73495082f98b.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_boxes_73495082f98b.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_p2_73495082f98b.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/overlay_audit/ov_p5_73495082f98b.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/gbo_frameset.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_0191487845ef_w064.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_34765c024267_w108.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_9f8bedcfb9de_w104.png
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_clipgrid.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_clipgrid_boxes.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_gtval.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_gtval_boxes.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_inrun.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_inrun_boxes.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_lidar.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_lidar_boxes.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_panels.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_rules.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_train.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/raw/visibility/vis_train_boxes.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-box-head-audit/LANDING_READY.txt

@@ -1,0 +1,39 @@
+== verification log, 2026-10-26T07:50:07+0100 ==
+-- pytest test_make_mapft_argv.py (literal budget cases, STOPs, mutants, smoke reader, CLI round trips)
+.............................                                            [100%]
+29 passed in 0.68s
+-- mapft_kfrozen.py self-test
+OK  good_all_three_modules: expected PASS, read PASS {'ema': {'_map_hires.refine': 1, '_map_hires.near': 1, '_map_hires.near_refine': 1}}
+OK  MUT_nothing_changed: expected FAIL, read FAIL {'ema': {'_map_hires.refine': 0, '_map_hires.near': 0, '_map_hires.near_refine': 0}}
+OK  MUT_only_two_modules: expected FAIL, read FAIL {'ema': {'_map_hires.refine': 1, '_map_hires.near': 1, '_map_hires.near_refine': 0}}
+OK  MUT_trunk_weight_changed: expected FAIL, read FAIL {'ema': {'_map_hires.refine': 1, '_map_hires.near': 1, '_map_hires.near_refine': 1}}
+OK  MUT_bn_stat_changed: expected FAIL, read FAIL {'ema': {'_map_hires.refine': 1, '_map_hires.near': 1, '_map_hires.near_refine': 1}}
+OK  MUT_bn_counter_changed: expected FAIL, read FAIL {'ema': {'_map_hires.refine': 1, '_map_hires.near': 1, '_map_hires.near_refine': 1}}
+ZZMAPFT-KFROZEN-SELFTEST-OKZZ
+-- mapft_kplanid.py self-test
+OK  identical traces -> PASS: expected 'PASS', read 'PASS'
+OK  MUT one bit of plan8 -> FAIL: expected 'FAIL', read 'FAIL'
+OK     ... and it names window 2: expected [2], read [2]
+OK  MUT sel changed -> FAIL: expected 'FAIL', read 'FAIL'
+OK  MUT fan changed by 1e-7 -> FAIL: expected 'FAIL', read 'FAIL'
+OK  sel_score differs, primary equal -> PASS with it listed BESIDE: expected ('PASS', ['sel_score']), read ('PASS', ['sel_score'])
+OK  sel_base is NOT in the sealed three: differs -> PASS, listed BESIDE: expected ('PASS', ['sel_base']), read ('PASS', ['sel_base'])
+OK  the primary set is exactly the sealed three: expected ('plan8', 'fan', 'sel'), read ('plan8', 'fan', 'sel')
+OK  +0.0 vs -0.0 are NOT bit-equal -> FAIL: expected 'FAIL', read 'FAIL'
+OK  same NaN in both -> PASS (bytes, not ==): expected 'PASS', read 'PASS'
+OK  MUT window list differs -> INVALID (not FAIL): expected 'INVALID', read 'INVALID'
+OK  MUT partial trace -> INVALID: expected 'INVALID', read 'INVALID'
+OK  MUT missing array -> INVALID: expected 'INVALID', read 'INVALID'
+OK  controls on synthetic base: expected {'C1_self_compare_all_equal': True, 'C2_one_bit_mutation_detected': True}, read {'C1_self_compare_all_equal': True, 'C2_one_bit_mutation_detected': True}
+ZZMAPFT-KPLANID-SELFTEST-OKZZ
+-- mapft_dryrun_check.py summary (parse + refusals on the 70211d6 export)
+OK   C1 control: unbroken FULL argv [trainer pin_args] expect=accepted  got=accepted  steps=5440 warmup=200 ema=0.99816 eval_every=1360
+SUMMARY: 26/26 checks as expected
+ZZMAPFT-DRYCHECK-PASSZZ
+-- bash -n
+OK mapft_devbox_post.sh
+OK mapft_gsuite.sh
+OK mapft_postrun.sh
+OK mapft_prelaunch.sh
+OK mapft_ship.sh
+OK mapft_thor_run.sh

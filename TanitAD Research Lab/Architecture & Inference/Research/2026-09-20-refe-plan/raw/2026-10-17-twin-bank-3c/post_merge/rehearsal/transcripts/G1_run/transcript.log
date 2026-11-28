@@ -1,0 +1,42 @@
+ZZPM START 2026-10-17T16:03:55Z from=a to=d dry=0 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/G1_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM a OK merge rc 0 (judged from artifacts, input+output re-hashed): kept=23 (K1=17 K2=4 K3=2) dropped=51 K1_share_eval=0.3696 all=0.3333 shares[K1=0.3696,K2=0.2857,K3=0.2222] out_sha=fd4ff8ea389f2135
+ZZPM_INFO a expected keep shares K1/K2/K3 = 0.37/0.29/0.22 (mini bank, PREREG_3C); yield guard: K1 < 0.20 STOPs
+ZZPM_INFO b gpu: state=idle n=0 procs=-
+ZZPM_INFO b launched (c'2) detached on the pod: 12 shards, CPU, <=300 twins/rank; polling every 2s
+ZZPM_INFO b (c'2) K1[n=17/17,ratio=1.0,dv=0.0,judged=True,pass=True] K2[n=4/4,ratio=1.0,dv=0.0,judged=False,pass=None] K3[n=2/2,ratio=1.0,dv=0.0,judged=False,pass=None]
+ZZPM b OK (c'2) PASS: per judged rank median path ratio >= 0.95 and median end-speed change >= -0.3 m/s
+ZZPM_INFO c gpu: state=idle n=0 procs=-
+ZZPM_INFO c launched (c'3) detached on the pod: verify for ranks [1 2 3] in parallel (--limit 1000), then the hold check; polling every 2s
+ZZPM_INFO c c3 k=1 state=judged a=True b=True c_reported=False n_checked=17 n_requested=17 n_error=0 digest_differs=1.0 spec_ok=1.0 harness_control=1.0 c_traj_closer=0.41 n_div_ge_0_5=15
+ZZPM_INFO c c3 k=2 state=judged a=True b=True c_reported=False n_checked=17 n_requested=17 n_error=0 digest_differs=1.0 spec_ok=1.0 harness_control=1.0 c_traj_closer=0.41 n_div_ge_0_5=15
+ZZPM_INFO c c3 k=3 state=judged a=True b=True c_reported=False n_checked=17 n_requested=17 n_error=0 digest_differs=1.0 spec_ok=1.0 harness_control=1.0 c_traj_closer=0.41 n_div_ge_0_5=15
+ZZPM_INFO c c3hold state=ok detail=lane_rank_rows=23_route_hold_step0=23
+ZZPM c OK (c'3) PASS: D7 (a),(b) hold for ranks [1 2 3]; (c) reported only; ZZTWIN_HOLD_OK lane_rank_rows=23_route_hold_step0=23
+ZZPM c ZZTWIN_HOLD_OK lane_rank_rows=23_route_hold_step0=23
+ZZPM_INFO d plan: state=plan_ok rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=-
+ZZPM_INFO d launched the parts placement (mode=auto, 23 files, 3956 bytes if copied; ~0 bytes if hard-linked)
+ZZPM_INFO d apply: rows=23 distinct=23 to_place=23 present_same_inode=0 present_identical=0 missing_src=0 missing_logged=0 conflict=0 bytes_to_place=3956 first_bad=- state=ok linked=23 copied=0 errors=0 err_first=- dst_missing_after=0 mode=link logged_parts_in_dst=224 twin_parts_in_dst=23 extras_in_dst=0 wall_s=0.0
+ZZPM_INFO d P6's D7 acceptance K=1: ZZD7_DISTINCT_OK k=1 sampled=17 differ=17 frac=1.0
+ZZPM_INFO d P6's D7 acceptance K=2: ZZD7_DISTINCT_OK k=2 sampled=4 differ=4 frac=1.0
+ZZPM_INFO d P6's D7 acceptance K=3: ZZD7_DISTINCT_OK k=3 sampled=2 differ=2 frac=1.0
+ZZPM d OK kept twins' parts placed (23 distinct, mode=auto, present=23, 0 missing, 0 conflicts) and P6's D7 acceptance passes for ranks [1 2 3]
+ZZPM DONE result=OK through=d exit=0 dry=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/G1_run
+ZZPM START 2026-10-17T16:04:10Z from=e to=f dry=0 probe=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/G1_run
+ZZPM 0 OK pod reachable; frozen 3-C code == MANIFEST.json; pod paths present
+ZZPM_INFO facts: kept=23 K1=17 K2=4 K3=2 out_sha=fd4ff8ea389f2135
+ZZPM_INFO e p6tree: state=ok commit=1111111111111111111111111111111111111111 tree_sha256=2222222222222222 p6_pod_md5=38bdf475a631 cbank_knob=1 cbank_commands_guard=1 r43_expandable_segments=1 stop_after_launch_gate=1 build_has_pdm_route_rank=0
+ZZPM_INFO e WAITING for a free pod (0 min so far, cap 0.05 h): gpu_busy(n=1)
+ZZPM_INFO e WAITING for a free pod (0 min so far, cap 0.05 h): gpu_busy(n=1)
+ZZPM_INFO e WAITING for a free pod (0 min so far, cap 0.05 h): gpu_busy(n=1)
+ZZPM_INFO e WAITING for a free pod (0 min so far, cap 0.05 h): gpu_busy(n=1)
+ZZPM_INFO e WAITING for a free pod (0 min so far, cap 0.05 h): gpu_busy(n=1)
+ZZPM_INFO e pod is FREE (no GPU compute process, no other chain lock, no rls1_pod.sh)
+ZZPM_INFO e launching the gate dry run: P6_STOP_AFTER=launch_gate P6_D7_FALLBACK=0 P6_CBANK=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c P6_OVERLAP=0 P6_DD_GB=16 (chain.log offset 0); polling every 2s
+ZZPM e OK P6 launch-gate DRY RUN PASS: token PASS_mock0001.json commit=111111111111 argv_sha=aaaaaaaaaaaaaaaa tree_sha=bbbbbbbbbbbbbbbb --targets=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c (23 kept twins, 23 twin parts in the cache, 0 written during the run); chain stopped BEFORE train.py
+ZZPM_INFO f pod is FREE (no GPU compute process, no other chain lock, no rls1_pod.sh)
+ZZPM_INFO f LAUNCHING P6's real run (no P6_STOP_AFTER; P6_CBANK=/tmp/p6mock/workspace/data/refe_navtrain/train_grow_cmd_3c P6_D7_FALLBACK=0 P6_OVERLAP=0 P6_DD_GB=16; chain.log offset 8, metrics lines before: 0)
+ZZPM_INFO f 'train.py preflight OK' seen; waiting up to 12s for the first step line
+ZZPM f OK P6 LAUNCHED and training started: first step line step=0 traj_L1=12.487878799438477; chain alive=1
+ZZPM P6_TRAINING step=0 traj_L1=12.487878799438477 chain_alive=1 -- watch: /tmp/p6mock/workspace/data/refe_p6/chain.log, /tmp/p6mock/workspace/data/refe_runs/p6_paper_faithful/metrics.jsonl, the private HF repo (P6_POD_RUNBOOK section 4)
+ZZPM DONE result=OK through=f exit=0 dry=0 logs=/c/Users/Admin/bank3c/raw/2026-10-17-twin-bank-3c/post_merge/rehearsal/transcripts/G1_run

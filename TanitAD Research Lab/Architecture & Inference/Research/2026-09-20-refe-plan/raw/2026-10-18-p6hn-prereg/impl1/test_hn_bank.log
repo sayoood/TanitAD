@@ -1,0 +1,51 @@
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+mutation                                                               caught-by (failing checks)
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+normal sign flipped (right-normal)                                     G_side_left_positive, G_normal_yaw_vs_tangent, L_bank_roundtrip_deterministic_and_counted
+ZZHNBANK_SY share 1.0000 ci 1.0000 1.0000 sparse False
+STATIONARY rule dropped                                                G_stationary_rule, L_bank_roundtrip_deterministic_and_counted, L_cli_yield_report_and_partition_refusal
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+path length not started from the origin                                G_stationary_rule, G_path_starts_at_origin
+label_version 4                                                        L_label_version_5, L_cli_yield_report_and_partition_refusal, L_bank_refused_on_partition_label_fan_bytes_missing_key_ckpt
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+a copied labeller body                                                 L_label_log_by_reference
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+label row drops the yaw                                                L_I1_label_identity_live
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+NC = 0.5 counted as a hard negative                                    L_hard_negative_rule_truth_table
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+anchor PDMS > 0 condition dropped                                      L_hard_negative_rule_truth_table
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+loader skips the partition / label / fan check                         L_cli_yield_report_and_partition_refusal, L_bank_refused_on_partition_label_fan_bytes_missing_key_ckpt
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+loader skips the sha256 check                                          L_bank_refused_on_partition_label_fan_bytes_missing_key_ckpt
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+a missing key is served as an empty row                                L_bank_refused_on_partition_label_fan_bytes_missing_key_ckpt
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+labeller's label_version echo unchecked                                L_labeller_echo_label_version_checked
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+SY threshold <= instead of <                                           L_SY_share_estimator_and_threshold_boundary
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+a map identifier planted in the builder                                G_no_map_api_in_builder
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+the term is deleted                                                    T_grad_table_nonzero_and_exact_zero_controls, T_weight_1_over_BK6_and_duplicate_row_identity_without_self_attention
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+weight 1/(B*6) instead of 1/(B*K*6)                                    T_weight_1_over_BK6_and_duplicate_row_identity_without_self_attention
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+pad rows unmasked in the loss                                          T_empty_bank_exact_zero_loss_and_grads, T_weight_1_over_BK6_and_duplicate_row_identity_without_self_attention
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+pad rows not sanitised before the call                                 T_pad_perturbation_identity_bit_for_bit_with_nan_inf_junk
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+pad targets not sanitised                                              T_pad_perturbation_identity_bit_for_bit_with_nan_inf_junk
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+attention mask dropped (everything sees everything)                    T_masked_logits_equal_per_layer_oracle_depth3, T_masked_logits_equal_real_65_candidate_call_at_depth1, T_attention_mask_shape
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+fan rows see the hn rows                                               T_masked_logits_equal_per_layer_oracle_depth3, T_attention_mask_shape
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+hn rows see each other                                                 T_masked_logits_equal_per_layer_oracle_depth3, T_masked_logits_equal_real_65_candidate_call_at_depth1, T_attention_mask_shape
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+hn rows get a lane target (7 components)                               T_grad_table_nonzero_and_exact_zero_controls, T_weight_1_over_BK6_and_duplicate_row_identity_without_self_attention, T_runs_under_bf16_autocast_float32_loss
+ZZHNBANK_SY share 0.7500 ci 0.7500 0.7500 sparse False
+the second call replaced by a plain append of hn to the fan set        T_masked_logits_equal_per_layer_oracle_depth3, T_masked_logits_equal_real_65_candidate_call_at_depth1
+ZZTEST_PASS 25  (1 unmutated suite + 24 RED mutations)

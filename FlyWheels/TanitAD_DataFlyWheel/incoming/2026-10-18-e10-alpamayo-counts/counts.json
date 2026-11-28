@@ -1,0 +1,2759 @@
+{
+ "_what": "BACKLOG E10 -- Alpamayo-augmentation counts re-derived from primary bytes",
+ "_date": "2026-10-18",
+ "_script": "count_alpamayo.py",
+ "_python": "3.11.13",
+ "_pyarrow": "25.0.1",
+ "_assertions_failed": [],
+ "paper_base_blob": "c9c56706f938fbe0bb9da3d5f2ef3bfd057fa162",
+ "registry_base_blob": "8a0ece41f9fbd75a579c4edbe980465a85740129",
+ "artifacts": {
+  "road_class": {
+   "path": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json",
+   "bytes": 192521,
+   "sha256": "31e3b3c726596814c046c5d6c812cee2662169d1a6c8a23a212a3436a126f278",
+   "git_blob_id": "935959c818f802eaadecd42768e94206fa9101e8"
+  },
+  "alpa_ids": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/alpamayo_clip_ids.txt",
+   "bytes": 174973,
+   "sha256": "5f775c5f9a34c0d2320985214d51767bc7edb883b60d2e123033717a2bc6ea04",
+   "git_blob_id": "2258753341a543c893d04f86081e79a5251ff4a0"
+  },
+  "excl": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt",
+   "bytes": 7437,
+   "sha256": "94878eb438a0a05959eeb9058a067f79cb6438da48456f8e5994f320cdeb0c2d",
+   "git_blob_id": "dab38341471e61687f1e90a53b1a506bda67525b"
+  },
+  "parity_ls": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/parity_ls.txt",
+   "bytes": 108061,
+   "sha256": "ba3836ab0b9cab1a787f4925ac95ad73a0128d9a8331f67a78e4bcd0afa4816d",
+   "git_blob_id": "f9d56a6c11958231e1d427a5e89cc2b267712c4b"
+  },
+  "oracle": {
+   "path": "stack/tanitad/data/parity_train_clip_digests.json",
+   "bytes": 168949,
+   "sha256": "a26850df7eb47685c18dc770c787872cc0e24bb1bdb8feb543859ff0929a8a89",
+   "git_blob_id": "8eac035df3b29ff71bbaf60d0f37ae132db0804d"
+  },
+  "s2idx": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-s2-v1-labels/review/labels_v2/clip_index.json",
+   "bytes": 281448,
+   "sha256": "7c298893e17846758a76b5b68a7c21224457bba29332558b3a11e14d22d39b99",
+   "git_blob_id": "7bce763065c5a54f0fa7a93a45e22e2b9746ad11"
+  },
+  "a120_cov": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/aug120_coverage.json",
+   "bytes": 25780,
+   "sha256": "6ee4620dd140ab0f6c8b43dd3b388e186e2eabec1b7d00a3b18ad8216978c630",
+   "git_blob_id": "5bdf189c2eced0e1e738526133351bbed0c2d216"
+  },
+  "a120_sum": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/fused_aug120_summary.json",
+   "bytes": 181,
+   "sha256": "3b1d40843ac694ce6cc2ac9d8918cc2600bd453808bce2f87ead0601826770ae",
+   "git_blob_id": "2658597857df87d0582691302e6a820a52c78081"
+  },
+  "a120_acct": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/fused_aug120_batch_accounting.json",
+   "bytes": 5200,
+   "sha256": "2b200bb9741f4bc0203bd67b87490f81c1bbad9196569a0ee9b6ecba3d088b48",
+   "git_blob_id": "6b600bcc38300b0bbcca6f8128caee42b838a1f4"
+  },
+  "a120_src": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/raw/fused_aug120_label_sources.json",
+   "bytes": 18910,
+   "sha256": "5d4a3732a2ecfc53bbea3cbaaa278a5016837c7d0065e9a38504b5e77f7b2cd9",
+   "git_blob_id": "d457bf03b8b281d244745bfc7bf3a89c5819e398"
+  },
+  "v72_train": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_train.jsonl.gz",
+   "bytes": 1999886,
+   "sha256": "1f557d1cc4c061ef747cac6171a689447047ec368b52b90af26cb81debdd489e",
+   "git_blob_id": "d643acd0329d683cea3805751dede8860b41b7dd"
+  },
+  "v72_eval": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_eval.jsonl.gz",
+   "bytes": 65787,
+   "sha256": "78d908f0104b1468528bbb4f0b395ded0d3efc6ff6b57883636086abbba4695b",
+   "git_blob_id": "f587ec609893a96a4b9d7b2c9df198aa348aa928"
+  },
+  "val40": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-18-thor-stranded-rescue/rescued_beyond_a11/leadwork/val40_lead_index.json",
+   "bytes": 16267,
+   "sha256": "09fb8d1c360a61cbdf21152404a93d01df92b453c27aaab09d9c9b558d4f6eb8",
+   "git_blob_id": "6cc4b4b3a5ee67228ec89e4a69e2d9aeab3aca9d"
+  },
+  "val40_anon": {
+   "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_index_ANON.json",
+   "bytes": 14680,
+   "sha256": "caaf48db379b228181f8221754e782987211e941d9555ceeebae8cd1761bdf45",
+   "git_blob_id": "20e069d29151514a8f76087723d58c431ac1546c"
+  },
+  "paper": {
+   "path": "Paper/TANITAD_PAPER.md",
+   "bytes": 537935,
+   "sha256": "9c69ee058ef1e9b87294f13752887814b48c5182512bc2132d76d09850198beb",
+   "git_blob_id": "c9c56706f938fbe0bb9da3d5f2ef3bfd057fa162"
+  },
+  "registry": {
+   "path": "Project Steering/MODEL_REGISTRY.md",
+   "bytes": 582189,
+   "sha256": "ae00891473e6cdc1d1956e81ba564989663021e9001430bc315e3429a1a8b5b8",
+   "git_blob_id": "8a0ece41f9fbd75a579c4edbe980465a85740129"
+  },
+  "records": {
+   "path": "(non-repo) records.parquet",
+   "bytes": 25970018,
+   "sha256": "ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2",
+   "git_blob_id": null
+  },
+  "manifest": {
+   "path": "(non-repo) selection_manifest.json",
+   "bytes": 340800,
+   "sha256": "7d9f4a7950cfaec1d6600eae0dd61e1f623f38d53352b2e51e2fdc0645cf7bc3",
+   "git_blob_id": null
+  },
+  "dc": {
+   "path": "(non-repo) data_collection.parquet",
+   "bytes": 11339400,
+   "sha256": "9624750cadabf8028264cc1404e75e81777654be9def06b00e35c9f834b173d5",
+   "git_blob_id": null
+  }
+ },
+ "counts": [
+  {
+   "id": "PUB1",
+   "label": "clips in published corpus (data_collection.parquet rows)",
+   "value": 306152,
+   "layer": "PUBLISHED",
+   "artifacts": [
+    "dc"
+   ],
+   "how": "pq.read_table(dc).num_rows",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "PUB2",
+   "label": "distinct clip_id in data_collection.parquet",
+   "value": 306152,
+   "layer": "PUBLISHED",
+   "artifacts": [
+    "dc"
+   ],
+   "how": "len(set(clip_id))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A01",
+   "label": "A2 rows",
+   "value": 23644,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "pq.read_table(records).num_rows",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A02",
+   "label": "A2 distinct clip_id",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "len(set(clip_id))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A03",
+   "label": "A2 columns",
+   "value": 12,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "table.num_columns",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A04.trajectory",
+   "label": "A2 rows, task=trajectory",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(task=='trajectory')",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A04.meta_action",
+   "label": "A2 rows, task=meta_action",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(task=='meta_action')",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A04.auto_labeling",
+   "label": "A2 rows, task=auto_labeling",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(task=='auto_labeling')",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A04.vqa",
+   "label": "A2 rows, task=vqa",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(task=='vqa')",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A04.grounding_via_vqa",
+   "label": "A2 rows, task=grounding_via_vqa",
+   "value": 4728,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(task=='grounding_via_vqa')",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A05.5rows",
+   "label": "A2 clips carrying 5 task rows",
+   "value": 4728,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "Counter(Counter(clip_id).values())[5]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A05.4rows",
+   "label": "A2 clips carrying 4 task rows",
+   "value": 1,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "Counter(Counter(clip_id).values())[4]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A05.short_task",
+   "label": "task missing on the short clip(s)",
+   "value": {
+    "grounding_via_vqa": 1
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "tasks absent for clips with <5 rows",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A06",
+   "label": "A2 rows with non-null error",
+   "value": 0,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "num_rows - column('error').null_count (column is null-typed)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A07.model_id",
+   "label": "A2 rows per distinct model_id",
+   "value": {
+    "nvidia/Alpamayo2-Super": 23644
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "Counter(column('model_id'))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A07.quantisation",
+   "label": "A2 rows per distinct quantisation",
+   "value": {
+    "NF4-backbone-4bit-UNVALIDATED": 23644
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "Counter(column('quantisation'))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A07.seed",
+   "label": "A2 rows per distinct seed",
+   "value": {
+    "42": 23644
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "Counter(column('seed'))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A07.t0_us",
+   "label": "A2 rows per distinct t0_us",
+   "value": {
+    "5100000": 23644
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "Counter(column('t0_us'))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A08.entries",
+   "label": "selection manifest entries",
+   "value": 4800,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "manifest"
+   ],
+   "how": "len(json list)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A08.unique",
+   "label": "selection manifest distinct clip_id",
+   "value": 4800,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "manifest"
+   ],
+   "how": "len(set(clip_id))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A08.t0",
+   "label": "manifest distinct t0_us",
+   "value": [
+    5100000
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "manifest"
+   ],
+   "how": "sorted(set(t0_us))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A08.rows",
+   "label": "selected clips x 5 tasks",
+   "value": 24000,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "manifest"
+   ],
+   "how": "5 * len(set(clip_id))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A09.in_manifest",
+   "label": "delivered clips that are in the manifest",
+   "value": 4719,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "len(a2 & manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A09.zero_row",
+   "label": "selected clips that produced ZERO rows",
+   "value": 81,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "len(manifest - a2)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A09.zero_row_rows",
+   "label": "rows those clips would have carried",
+   "value": 405,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "5 * len(manifest - a2)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A09.off_manifest",
+   "label": "delivered clips NEVER in the manifest",
+   "value": 10,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "len(a2 - manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A09.off_manifest_rows",
+   "label": "rows carried by the off-manifest clips",
+   "value": 50,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "sum(rows per clip in a2 - manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A09.short_deficit",
+   "label": "rows missing from partially-delivered clips",
+   "value": 1,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(5 - rows) over clips with <5 rows",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A10.closure",
+   "label": "closure: selected rows - zero-row + off-manifest - short = delivered rows",
+   "value": 23644,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "24,000 - 405 + 50 - 1",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A11.missing_rows",
+   "label": "rows missing vs selected x 5",
+   "value": 356,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "24,000 - num_rows",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A11.missing_pct",
+   "label": "missing rows as % of selected rows",
+   "value": 1.4833,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "100*356/24000",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A12.clip_pct",
+   "label": "delivered clips / selected clips (%)",
+   "value": 98.5208,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "100*4729/4800",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": "numerator includes the off-manifest clips; in-manifest delivered / selected is 98.3125 %"
+  },
+  {
+   "id": "A12.row_pct",
+   "label": "delivered rows / selected rows (%)",
+   "value": 98.5167,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "100*23644/24000",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A13.card_understatement",
+   "label": "missing rows (measured) / missing rows the card admits ('one')",
+   "value": 356.0,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records",
+    "manifest"
+   ],
+   "how": "356 / 1",
+   "evidence": "MEASURED numerator / INHERITED denominator",
+   "date": "2026-10-18",
+   "note": "card text 'One task row of 24,000 missing (23,999)' is registry §11.1 INHERITED; not re-fetched here"
+  },
+  {
+   "id": "A14.labelled_total",
+   "label": "road-class labelled clips (aug_road_class.json)",
+   "value": 3592,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class"
+   ],
+   "how": "len(classes)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.delivered.urban",
+   "label": "delivered clips, road class urban",
+   "value": 1884,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in delivered)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.delivered.intersection_rich",
+   "label": "delivered clips, road class intersection_rich",
+   "value": 1241,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in delivered)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.delivered.highway",
+   "label": "delivered clips, road class highway",
+   "value": 384,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in delivered)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.delivered.unstructured",
+   "label": "delivered clips, road class unstructured",
+   "value": 83,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in delivered)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.delivered.unlabelled",
+   "label": "delivered clips, road class unlabelled",
+   "value": 1137,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in delivered)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.manifest.urban",
+   "label": "manifest clips, road class urban",
+   "value": 1884,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "manifest"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.manifest.intersection_rich",
+   "label": "manifest clips, road class intersection_rich",
+   "value": 1241,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "manifest"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.manifest.highway",
+   "label": "manifest clips, road class highway",
+   "value": 384,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "manifest"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.manifest.unstructured",
+   "label": "manifest clips, road class unstructured",
+   "value": 83,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "manifest"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.manifest.unlabelled",
+   "label": "manifest clips, road class unlabelled",
+   "value": 1208,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "manifest"
+   ],
+   "how": "Counter(classes.get(clip,'unlabelled') for clip in manifest)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.zero_row_unlabelled",
+   "label": "zero-row clips that are unlabelled",
+   "value": 81,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records",
+    "manifest"
+   ],
+   "how": "count((manifest - a2) not in classes)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.off_manifest_unlabelled",
+   "label": "off-manifest clips that are unlabelled",
+   "value": 10,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records",
+    "manifest"
+   ],
+   "how": "count((a2 - manifest) not in classes)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A14.labelled_complete",
+   "label": "delivered road-class-labelled clips carrying all 5 task rows / delivered labelled clips",
+   "value": [
+    3592,
+    3592
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "road_class",
+    "records"
+   ],
+   "how": "[count(rows==5), len] over delivered clips present in classes",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A15.wall_hours",
+   "label": "sum(wall_s) in hours",
+   "value": 78.36,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(wall_s)/3600",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A15.s_per_clip",
+   "label": "sum(wall_s) / distinct clips (s)",
+   "value": 59.65,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "sum(wall_s)/4729",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A16.var_a",
+   "label": "trajectory rows with pred_xyz (variant A)",
+   "value": 4474,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "'pred_xyz' in json(raw_json) and 'pred_xyz_shape' not in",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A16.var_b",
+   "label": "trajectory rows with pred_xyz_shape (variant B)",
+   "value": 255,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "'pred_xyz_shape' in json(raw_json) and 'pred_xyz' not in",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A16.both_or_neither",
+   "label": "trajectory rows with both / neither variant",
+   "value": [
+    0,
+    0
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "[both, neither]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A16.ade_vs_gt_m",
+   "label": "trajectory rows with ade_vs_gt_m",
+   "value": 4474,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "count(ade_vs_gt_m is not None)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A16.min_ade_m",
+   "label": "trajectory rows with min_ade_m",
+   "value": 255,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "count(min_ade_m is not None)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A17.cot_nonempty",
+   "label": "meta_action rows with non-empty cot[0]",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "count(json(raw_json)['cot'][0] != '')",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A17.cot_distinct",
+   "label": "distinct meta_action cot strings",
+   "value": 1103,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "len(set(cot[0]))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A17.answer_eq_cot",
+   "label": "meta_action rows where answer[0] == cot[0]",
+   "value": 4729,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "count(answer[0]==cot[0])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "PUB3",
+   "label": "A2 delivered clips found in data_collection.parquet",
+   "value": 4729,
+   "layer": "PUBLISHED",
+   "artifacts": [
+    "dc",
+    "records"
+   ],
+   "how": "len(a2 & dc)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "PUB4",
+   "label": "A2 clips / published clips (%)",
+   "value": 1.5447,
+   "layer": "PUBLISHED",
+   "artifacts": [
+    "dc",
+    "records"
+   ],
+   "how": "100*4729/306152",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "PUB5",
+   "label": "published clips x 20 s, in hours",
+   "value": 1700.8,
+   "layer": "PUBLISHED",
+   "artifacts": [
+    "dc"
+   ],
+   "how": "306152*20/3600",
+   "evidence": "ESTIMATED (20 s/clip assumed, not read from the file)",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "A18.est_hours",
+   "label": "A2 clips x 20 s, in hours",
+   "value": 26.3,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "records"
+   ],
+   "how": "4729*20/3600",
+   "evidence": "ESTIMATED (20 s/clip assumed)",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B01.ids_lines",
+   "label": "alpamayo_clip_ids.txt lines (distinct)",
+   "value": [
+    4729,
+    4729
+   ],
+   "layer": "EPISODE",
+   "artifacts": [
+    "alpa_ids"
+   ],
+   "how": "[len(lines), len(set(lines))]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B01.ids_eq_parquet",
+   "label": "alpamayo_clip_ids.txt == parquet clip set",
+   "value": true,
+   "layer": "EPISODE",
+   "artifacts": [
+    "alpa_ids",
+    "records"
+   ],
+   "how": "set(lines) == set(clip_id)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B02.parity_clips",
+   "label": "parity-train cache listing: distinct *.v2ep.pt clip ids",
+   "value": 2400,
+   "layer": "EPISODE",
+   "artifacts": [
+    "parity_ls"
+   ],
+   "how": "len({name[:-8] for name in lines if name.endswith('.v2ep.pt')})",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": "the committed corpus is 2,376 EPISODES after a 24-clip corrupt skip-set (parity.py:80-81); this listing and the digest oracle both enumerate 2,400 clip ids"
+  },
+  {
+   "id": "B02.listing_reproduces_oracle",
+   "label": "sha256(sorted ids joined by LF) == oracle clip_id_sha256_sorted",
+   "value": true,
+   "layer": "EPISODE",
+   "artifacts": [
+    "parity_ls",
+    "oracle"
+   ],
+   "how": "sha256('\\n'.join(sorted(ids)))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B02.oracle_n",
+   "label": "oracle n_clips / digests",
+   "value": [
+    2400,
+    2400
+   ],
+   "layer": "EPISODE",
+   "artifacts": [
+    "oracle"
+   ],
+   "how": "[n_clips, len(clip_id_digests)]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B03.overlap_listing",
+   "label": "A2 clips inside the parity-train clip set (id listing)",
+   "value": 201,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "parity_ls"
+   ],
+   "how": "len(a2 & parity_listing)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B03.overlap_oracle",
+   "label": "same, by the committed sha256 oracle",
+   "value": 201,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "oracle"
+   ],
+   "how": "count(sha256(clip) in oracle)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B03.excl_list",
+   "label": "banked exclusion list: lines / distinct",
+   "value": [
+    201,
+    201
+   ],
+   "layer": "EPISODE",
+   "artifacts": [
+    "excl"
+   ],
+   "how": "[len, len(set)]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B03.excl_eq_overlap",
+   "label": "exclusion list == derived overlap (set equality)",
+   "value": true,
+   "layer": "EPISODE",
+   "artifacts": [
+    "excl",
+    "parity_ls",
+    "oracle",
+    "records"
+   ],
+   "how": "set(excl) == listing_overlap == oracle_overlap",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B04.catalogue_pct",
+   "label": "overlap / ALL A2 clips (%) -- the paper's 4.3 %",
+   "value": 4.2504,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "parity_ls"
+   ],
+   "how": "100*201/4729",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B05.s2_clips",
+   "label": "S2 clip index: clips / by label_split",
+   "value": {
+    "total": 801,
+    "aug120": 201,
+    "w120val": 600
+   },
+   "layer": "EPISODE",
+   "artifacts": [
+    "s2idx"
+   ],
+   "how": "len(clips), Counter(label_split)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B05.a2_with_w120",
+   "label": "A2 clips that have a w120 cache (A2 ∩ S2 clip index)",
+   "value": 257,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "s2idx"
+   ],
+   "how": "len(a2 & set(clip_index.clips))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": "'has w120 video' is read from the S2 clip index (which enumerates the built w120 set), not from the video files, which are pod/Thor-side"
+  },
+  {
+   "id": "B05.a2_w120_by_split",
+   "label": "…of which per label_split",
+   "value": {
+    "aug120": 201,
+    "w120val": 56
+   },
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "s2idx"
+   ],
+   "how": "len(a2 & split) per split",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B05.no_w120",
+   "label": "A2 clips with NO w120 cache",
+   "value": 4472,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "s2idx"
+   ],
+   "how": "4729 - 257",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B05.no_w120_pct",
+   "label": "…as % of A2",
+   "value": 94.5654,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "s2idx"
+   ],
+   "how": "100*4472/4729",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B06.buildable_overlap",
+   "label": "buildable A2 clips inside parity train",
+   "value": 201,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "s2idx",
+    "oracle"
+   ],
+   "how": "count(sha256(clip) in oracle for clip in a2 & s2idx)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B06.buildable_pct",
+   "label": "buildable contamination (%) -- the registry §12.4 'quote 78.21 %'",
+   "value": 78.2101,
+   "layer": "EPISODE",
+   "artifacts": [
+    "records",
+    "s2idx",
+    "oracle"
+   ],
+   "how": "100*201/257",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B07.aug120_in_parity",
+   "label": "S2 split aug120: clips inside parity train / clips",
+   "value": [
+    201,
+    201
+   ],
+   "layer": "EPISODE",
+   "artifacts": [
+    "s2idx",
+    "oracle"
+   ],
+   "how": "count(sha256(clip) in oracle) / len(split)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B07.w120val_in_parity",
+   "label": "S2 split w120val: clips inside parity train / clips",
+   "value": [
+    0,
+    600
+   ],
+   "layer": "EPISODE",
+   "artifacts": [
+    "s2idx",
+    "oracle"
+   ],
+   "how": "count(sha256(clip) in oracle) / len(split)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "B08.val40",
+   "label": "canonical val episodes / inside A2 records / sha8 cross-check agreements / in parity train",
+   "value": [
+    40,
+    6,
+    "40/40",
+    0
+   ],
+   "layer": "EPISODE",
+   "artifacts": [
+    "val40",
+    "val40_anon",
+    "records",
+    "oracle"
+   ],
+   "how": "[len(val40), len(val40 & a2), sha8 agreements, in-oracle count]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C01.cov",
+   "label": "aug120 coverage lists (todo / v2_union / s3_union / no_v2 / no_s3 / no_ego / b184)",
+   "value": {
+    "todo": 201,
+    "v2_union_ids": 201,
+    "s3_union_ids": 86,
+    "no_v2": 0,
+    "no_s3": 115,
+    "no_ego": 0,
+    "b184": 8
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_cov"
+   ],
+   "how": "len(list) per key",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C02.sets_equal",
+   "label": "aug120 todo == v2_union == S2 aug120 split == banked exclusion list",
+   "value": true,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_cov",
+    "s2idx",
+    "excl"
+   ],
+   "how": "set equality of four id sets",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C03.sam3",
+   "label": "label_sources.json: clips / with a SAM3 source / without",
+   "value": [
+    201,
+    86,
+    115
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_src"
+   ],
+   "how": "[len(sources), count(sam3 truthy), count(sam3 null)]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C04.acct",
+   "label": "batch accounting summed over 25 batches",
+   "value": {
+    "clips_attributed_here": 201,
+    "with_alpamayo": 201,
+    "sam3_absent": 115,
+    "sam3_attributed_here": 86,
+    "corroborated": 88,
+    "conflicts": 10
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_acct"
+   ],
+   "how": "sum(batch[k]) per key",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C05.summary",
+   "label": "fused_aug120_summary.json",
+   "value": {
+    "corroborated": 88,
+    "conflicts": 10,
+    "with_alpamayo": 201,
+    "sam3_missing": 115,
+    "n_fused": 201,
+    "n_v2": 201,
+    "n_sam3": 86,
+    "missing_sam3_reason": "AUG120_SAM3_STAGE_GAP"
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_sum"
+   ],
+   "how": "json.load",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C06.sam3_pct",
+   "label": "SAM3 coverage % / gap %",
+   "value": [
+    42.79,
+    57.21
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_src"
+   ],
+   "how": "100*86/201, 100*115/201",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C07.gap_ratio",
+   "label": "true SAM3 gap / the '8 clips' first recorded (cov['b184'])",
+   "value": 14.375,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_src",
+    "a120_cov"
+   ],
+   "how": "115 / len(b184)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C08.a2_join_rows",
+   "label": "A2 parquet rows for the 201 aug120 clips / per task",
+   "value": [
+    1005,
+    {
+     "trajectory": 201,
+     "meta_action": 201,
+     "auto_labeling": 201,
+     "vqa": 201,
+     "grounding_via_vqa": 201
+    }
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_cov",
+    "records"
+   ],
+   "how": "count(rows with clip in aug120) / Counter(task)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "C09.a2_join_clips",
+   "label": "aug120 clips present in the A2 parquet",
+   "value": 201,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "a120_cov",
+    "records"
+   ],
+   "how": "len(aug120 & a2)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D01.train",
+   "label": "v7.2 train: records / distinct clip_id",
+   "value": [
+    4572,
+    4572
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "[len(records), len(set(clip_id))]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D01.eval",
+   "label": "v7.2 eval: records / distinct clip_id",
+   "value": [
+    147,
+    147
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_eval"
+   ],
+   "how": "[len(records), len(set(clip_id))]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D01.release",
+   "label": "v7.2 train+eval: distinct release",
+   "value": {
+    "v7.2": 4719
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "v72_eval"
+   ],
+   "how": "Counter(record['release'])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D01.schema_version",
+   "label": "v7.2 train+eval: distinct schema_version",
+   "value": {
+    "s2-geom-v7": 4719
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "v72_eval"
+   ],
+   "how": "Counter(record['schema_version'])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D01.vocab",
+   "label": "v7.2 train+eval: distinct vocab",
+   "value": {
+    "v7": 4719
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "v72_eval"
+   ],
+   "how": "Counter(record['vocab'])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D02.train_in_a2",
+   "label": "v7.2 train clips present in A2 parquet",
+   "value": 4572,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "records"
+   ],
+   "how": "len(train & a2)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D02.eval_in_a2",
+   "label": "v7.2 eval clips present in A2 parquet",
+   "value": 147,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_eval",
+    "records"
+   ],
+   "how": "len(eval & a2)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D02.train_cap_eval",
+   "label": "v7.2 train ∩ eval",
+   "value": 0,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "v72_eval"
+   ],
+   "how": "len(train & eval)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D02.union_vs_a2_in_manifest",
+   "label": "v7.2 (train ∪ eval) / A2 ∩ manifest / equal?",
+   "value": [
+    4719,
+    4719,
+    true
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "v72_eval",
+    "records",
+    "manifest"
+   ],
+   "how": "[len(train|eval), len(a2&manifest), equal]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D02.train_in_parity",
+   "label": "v7.2 train clips inside parity train (oracle)",
+   "value": 190,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "oracle"
+   ],
+   "how": "count(sha256(clip) in oracle)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D02.parity_overlap_breakdown",
+   "label": "the 201 A2 clips inside parity train, split by where they sit: [total, in v7.2 train, in v7.2 eval, off-manifest, in none of the three]",
+   "value": [
+    201,
+    190,
+    11,
+    0,
+    0
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "v72_eval",
+    "parity_ls",
+    "records",
+    "manifest"
+   ],
+   "how": "[|overlap|, |overlap&train|, |overlap&eval|, |overlap&(a2-manifest)|, remainder]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D03.train_TL",
+   "label": "v7.2 train: traffic-light tactical goals",
+   "value": {
+    "records": 4572,
+    "goal_counts": {
+     "TRAFFIC_LIGHT_REACT_RED": 376,
+     "TRAFFIC_LIGHT_REACT_GREEN": 363,
+     "TRAFFIC_LIGHT_REACT_YELLOW": 22,
+     "TRAFFIC_LIGHT_REACT": 18
+    },
+    "provenance": {
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "vlm-cot": 376
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "vlm-cot": 363
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "vlm-cot": 22
+     },
+     "TRAFFIC_LIGHT_REACT": {
+      "vlm-cot": 18
+     }
+    },
+    "state_object_kind": {
+     "TRAFFIC_LIGHT_REACT_RED|red|traffic_light": 376,
+     "TRAFFIC_LIGHT_REACT_GREEN|green|traffic_light": 363,
+     "TRAFFIC_LIGHT_REACT_YELLOW|yellow|traffic_light": 22,
+     "TRAFFIC_LIGHT_REACT|unknown|traffic_light": 18
+    },
+    "records_with_any_TL_goal": 779,
+    "records_with_a_coloured_TL_goal": 761,
+    "records_with_only_the_colourless_TL_goal": 18,
+    "sum_of_goal_counts": 779
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "per record: [k for k in record['g_tac']['goals'] if k.startswith('TRAFFIC_LIGHT_REACT')]",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D03.eval_TL",
+   "label": "v7.2 eval: traffic-light tactical goals",
+   "value": {
+    "records": 147,
+    "goal_counts": {
+     "TRAFFIC_LIGHT_REACT_GREEN": 15,
+     "TRAFFIC_LIGHT_REACT_YELLOW": 3,
+     "TRAFFIC_LIGHT_REACT_RED": 8
+    },
+    "provenance": {
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "vlm-cot": 15
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "vlm-cot": 3
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "vlm-cot": 8
+     }
+    },
+    "state_object_kind": {
+     "TRAFFIC_LIGHT_REACT_GREEN|green|traffic_light": 15,
+     "TRAFFIC_LIGHT_REACT_YELLOW|yellow|traffic_light": 3,
+     "TRAFFIC_LIGHT_REACT_RED|red|traffic_light": 8
+    },
+    "records_with_any_TL_goal": 26,
+    "records_with_a_coloured_TL_goal": 26,
+    "records_with_only_the_colourless_TL_goal": 0,
+    "sum_of_goal_counts": 26
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_eval"
+   ],
+   "how": "same expression over the eval file",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D04.goal_provenance",
+   "label": "v7.2 train: g_tac.goals entries by provenance",
+   "value": {
+    "vlm-cot": 3472,
+    "geometry": 3629,
+    "null": 5474,
+    "alpamayo-structured": 3
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "Counter(goal['provenance'] for all goals)",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D04.records_with_vlm_cot_goal",
+   "label": "v7.2 train: records with >=1 provenance=='vlm-cot' goal",
+   "value": 2708,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "count(any(goal.provenance=='vlm-cot'))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D05.cot_source.cot",
+   "label": "v7.2 train: records with non-empty cot_source.cot",
+   "value": 4572,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "count(bool(record['cot_source']['cot']))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D05.cot_source.chain_of_causation",
+   "label": "v7.2 train: records with non-empty cot_source.chain_of_causation",
+   "value": 4572,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "count(bool(record['cot_source']['chain_of_causation']))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D05.cot_source.meta_action",
+   "label": "v7.2 train: records with non-empty cot_source.meta_action",
+   "value": 4572,
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "count(bool(record['cot_source']['meta_action']))",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D06.cot_eq_a2.train",
+   "label": "v7.2 train: records whose cot_source.cot is byte-equal to the A2 meta_action cot / records",
+   "value": [
+    4572,
+    4572
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "records"
+   ],
+   "how": "count(record.cot_source.cot == A2[clip].meta_action.cot[0])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D06.coc_eq_a2.train",
+   "label": "v7.2 train: records whose cot_source.chain_of_causation is byte-equal to the A2 auto_labeling chain_of_causation / records",
+   "value": [
+    4572,
+    4572
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train",
+    "records"
+   ],
+   "how": "count(record.cot_source.chain_of_causation == json(A2[clip].auto_labeling.cot[0])['chain_of_causation'])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D06.cot_eq_a2.eval",
+   "label": "v7.2 eval: records whose cot_source.cot is byte-equal to the A2 meta_action cot / records",
+   "value": [
+    147,
+    147
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_eval",
+    "records"
+   ],
+   "how": "count(record.cot_source.cot == A2[clip].meta_action.cot[0])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D06.coc_eq_a2.eval",
+   "label": "v7.2 eval: records whose cot_source.chain_of_causation is byte-equal to the A2 auto_labeling chain_of_causation / records",
+   "value": [
+    147,
+    147
+   ],
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_eval",
+    "records"
+   ],
+   "how": "count(record.cot_source.chain_of_causation == json(A2[clip].auto_labeling.cot[0])['chain_of_causation'])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  },
+  {
+   "id": "D05.scene_provenance",
+   "label": "v7.2 train: scene.provenance values",
+   "value": {
+    "alpamayo-grounding-box": 4572
+   },
+   "layer": "AUGMENTED",
+   "artifacts": [
+    "v72_train"
+   ],
+   "how": "Counter(record['scene']['provenance'])",
+   "evidence": "MEASURED",
+   "date": "2026-10-18",
+   "note": ""
+  }
+ ],
+ "paper_claims": [
+  {
+   "claim": "PC01 A2 delivered clips",
+   "count": "A02",
+   "paper_lines": [
+    198,
+    2518,
+    3068,
+    3886,
+    3891,
+    3894,
+    6488,
+    6599
+   ],
+   "forms": [
+    "4,729"
+   ],
+   "claimed": 4729,
+   "derived": 4729,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "198": true,
+    "2518": true,
+    "3068": true,
+    "3886": true,
+    "3891": true,
+    "3894": true,
+    "6488": true,
+    "6599": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC02 A2 delivered rows",
+   "count": "A01",
+   "paper_lines": [
+    2518,
+    6488
+   ],
+   "forms": [
+    "23,644"
+   ],
+   "claimed": 23644,
+   "derived": 23644,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2518": true,
+    "6488": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC03 rows per task (x4)",
+   "count": "A04.trajectory",
+   "paper_lines": [
+    2519
+   ],
+   "forms": [
+    "4,729"
+   ],
+   "claimed": 4729,
+   "derived": 4729,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2519": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC04 grounding_via_vqa rows",
+   "count": "A04.grounding_via_vqa",
+   "paper_lines": [
+    2520
+   ],
+   "forms": [
+    "4,728"
+   ],
+   "claimed": 4728,
+   "derived": 4728,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2520": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC05 missing rows",
+   "count": "A11.missing_rows",
+   "paper_lines": [
+    2526
+   ],
+   "forms": [
+    "356"
+   ],
+   "claimed": 356,
+   "derived": 356,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2526": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC06 missing rows %",
+   "count": "A11.missing_pct",
+   "paper_lines": [
+    2526
+   ],
+   "forms": [
+    "1.48"
+   ],
+   "claimed": 1.48,
+   "derived": 1.4833,
+   "kind": "round2",
+   "note": "",
+   "line_has_form": {
+    "2526": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC07 zero-row clips",
+   "count": "A09.zero_row",
+   "paper_lines": [
+    2526
+   ],
+   "forms": [
+    "81"
+   ],
+   "claimed": 81,
+   "derived": 81,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2526": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC08 zero-row rows (-405)",
+   "count": "A09.zero_row_rows",
+   "paper_lines": [
+    2526
+   ],
+   "forms": [
+    "405"
+   ],
+   "claimed": 405,
+   "derived": 405,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2526": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC09 off-manifest clips",
+   "count": "A09.off_manifest",
+   "paper_lines": [
+    2526
+   ],
+   "forms": [
+    "10"
+   ],
+   "claimed": 10,
+   "derived": 10,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2526": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC10 off-manifest rows (+50)",
+   "count": "A09.off_manifest_rows",
+   "paper_lines": [
+    2527
+   ],
+   "forms": [
+    "50"
+   ],
+   "claimed": 50,
+   "derived": 50,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2527": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC11 short-clip deficit (-1)",
+   "count": "A09.short_deficit",
+   "paper_lines": [
+    2527
+   ],
+   "forms": [
+    "one"
+   ],
+   "claimed": 1,
+   "derived": 1,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2527": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC12 urban",
+   "count": "A14.delivered.urban",
+   "paper_lines": [
+    2528
+   ],
+   "forms": [
+    "1,884"
+   ],
+   "claimed": 1884,
+   "derived": 1884,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2528": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC13 intersection_rich",
+   "count": "A14.delivered.intersection_rich",
+   "paper_lines": [
+    2528
+   ],
+   "forms": [
+    "1,241"
+   ],
+   "claimed": 1241,
+   "derived": 1241,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2528": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC14 highway",
+   "count": "A14.delivered.highway",
+   "paper_lines": [
+    2528
+   ],
+   "forms": [
+    "384"
+   ],
+   "claimed": 384,
+   "derived": 384,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2528": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC15 unstructured",
+   "count": "A14.delivered.unstructured",
+   "paper_lines": [
+    2529
+   ],
+   "forms": [
+    "83"
+   ],
+   "claimed": 83,
+   "derived": 83,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2529": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC16 aug120 fused clips",
+   "count": "C04.acct",
+   "paper_lines": [
+    2535
+   ],
+   "forms": [
+    "201/201"
+   ],
+   "claimed": 201,
+   "derived": 201,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2535": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC17 Alpamayo layer on 201/201",
+   "count": "C04.acct",
+   "paper_lines": [
+    2536
+   ],
+   "forms": [
+    "201/201"
+   ],
+   "claimed": 201,
+   "derived": 201,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2536": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC18 SAM3 covered",
+   "count": "C03.sam3",
+   "paper_lines": [
+    2536
+   ],
+   "forms": [
+    "86/201"
+   ],
+   "claimed": 86,
+   "derived": 86,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2536": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC19 SAM3 coverage %",
+   "count": "C06.sam3_pct",
+   "paper_lines": [
+    2536
+   ],
+   "forms": [
+    "42.8"
+   ],
+   "claimed": 42.8,
+   "derived": 42.79,
+   "kind": "round1",
+   "note": "",
+   "line_has_form": {
+    "2536": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC20 SAM3 gap clips",
+   "count": "C03.sam3",
+   "paper_lines": [
+    2536
+   ],
+   "forms": [
+    "115"
+   ],
+   "claimed": 115,
+   "derived": 115,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2536": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC21 gap first recorded as 8 clips",
+   "count": "C01.cov",
+   "paper_lines": [
+    2538
+   ],
+   "forms": [
+    "8 clips"
+   ],
+   "claimed": 8,
+   "derived": 8,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "2538": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC22 gap ratio 14.4x",
+   "count": "C07.gap_ratio",
+   "paper_lines": [
+    2538
+   ],
+   "forms": [
+    "14.4"
+   ],
+   "claimed": 14.4,
+   "derived": 14.375,
+   "kind": "round1",
+   "note": "",
+   "line_has_form": {
+    "2538": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC23 SAM3 gap % (changelog)",
+   "count": "C06.sam3_pct",
+   "paper_lines": [
+    6489
+   ],
+   "forms": [
+    "57.2"
+   ],
+   "claimed": 57.2,
+   "derived": 57.21,
+   "kind": "round1",
+   "note": "",
+   "line_has_form": {
+    "6489": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC24 A2 clips inside parity train",
+   "count": "B03.overlap_listing",
+   "paper_lines": [
+    198,
+    3068,
+    3072,
+    3894,
+    3923,
+    6599
+   ],
+   "forms": [
+    "201"
+   ],
+   "claimed": 201,
+   "derived": 201,
+   "kind": "eq",
+   "note": "",
+   "line_has_form": {
+    "198": true,
+    "3068": true,
+    "3072": true,
+    "3894": true,
+    "3923": true,
+    "6599": true
+   },
+   "status": "MATCH"
+  },
+  {
+   "claim": "PC25 '4.3 % contaminated' (any eval split built on the augmentation)",
+   "count": "B06.buildable_pct",
+   "paper_lines": [
+    199,
+    3073,
+    3924,
+    6600
+   ],
+   "forms": [
+    "4.3"
+   ],
+   "claimed": 4.3,
+   "derived": 78.2101,
+   "kind": "CONFLICT_DENOM",
+   "note": "4.3 % = 201/4,729 (B04, catalogue denominator) -- reproduces arithmetically, but the registry §12.4 (C113) and this recount show a split can only contain BUILT clips: 201/257",
+   "line_has_form": {
+    "199": true,
+    "3073": true,
+    "3924": true,
+    "6600": true
+   },
+   "status": "ARITHMETIC-MATCH-DENOMINATOR-CONFLICT"
+  },
+  {
+   "claim": "PC26 the card's 4,800 / 23,999 (retracted by the paper)",
+   "count": "A08.entries",
+   "paper_lines": [
+    2523,
+    3887,
+    3892,
+    6488
+   ],
+   "forms": [
+    "4,800"
+   ],
+   "claimed": 4800,
+   "derived": 4800,
+   "kind": "eq",
+   "note": "4,800 is the SELECTION MANIFEST size (measured), not the delivered clip count; the paper uses it correctly as 'the card's number'",
+   "line_has_form": {
+    "2523": true,
+    "3887": true,
+    "3892": true,
+    "6488": true
+   },
+   "status": "MATCH"
+  }
+ ],
+ "number_locator": {
+  "4729": {
+   "forms": [
+    "4 729",
+    "4,729",
+    "4 729",
+    "4 729",
+    "4 729",
+    "4729"
+   ],
+   "paper_lines": [
+    198,
+    2518,
+    2519,
+    3068,
+    3886,
+    3891,
+    3894,
+    6488,
+    6599
+   ],
+   "registry_lines": [
+    4200,
+    4210,
+    4211,
+    4216,
+    4227,
+    4228,
+    4229,
+    4230,
+    4265,
+    4277,
+    4280,
+    4288,
+    4306,
+    4346
+   ]
+  },
+  "23644": {
+   "forms": [
+    "23 644",
+    "23,644",
+    "23 644",
+    "23 644",
+    "23 644",
+    "23644"
+   ],
+   "paper_lines": [
+    2518,
+    6488
+   ],
+   "registry_lines": [
+    4200,
+    4211,
+    4214,
+    4216,
+    4218,
+    4232,
+    4242,
+    4266,
+    4277,
+    4338,
+    4339,
+    4340,
+    4418
+   ]
+  },
+  "4728": {
+   "forms": [
+    "4 728",
+    "4,728",
+    "4 728",
+    "4 728",
+    "4 728",
+    "4728"
+   ],
+   "paper_lines": [
+    2520
+   ],
+   "registry_lines": [
+    4231,
+    4276
+   ]
+  },
+  "4800": {
+   "forms": [
+    "4 800",
+    "4,800",
+    "4 800",
+    "4 800",
+    "4 800",
+    "4800"
+   ],
+   "paper_lines": [
+    2523,
+    3887,
+    3892,
+    6488
+   ],
+   "registry_lines": [
+    4211,
+    4259,
+    4265,
+    4267,
+    4273,
+    4288,
+    4305,
+    4405,
+    4418
+   ]
+  },
+  "23999": {
+   "forms": [
+    "23 999",
+    "23,999",
+    "23 999",
+    "23 999",
+    "23 999",
+    "23999"
+   ],
+   "paper_lines": [
+    2523,
+    6489
+   ],
+   "registry_lines": [
+    4259,
+    4260,
+    4266,
+    4406,
+    4407,
+    4418
+   ]
+  },
+  "356": {
+   "forms": [
+    "356"
+   ],
+   "paper_lines": [
+    2525,
+    2526
+   ],
+   "registry_lines": [
+    4182,
+    4257
+   ]
+  },
+  "4472": {
+   "forms": [
+    "4 472",
+    "4,472",
+    "4 472",
+    "4 472",
+    "4 472",
+    "4472"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    4476,
+    4477,
+    4486,
+    4576,
+    4671,
+    4689
+   ]
+  },
+  "3592": {
+   "forms": [
+    "3 592",
+    "3,592",
+    "3 592",
+    "3 592",
+    "3 592",
+    "3592"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    4285,
+    4309,
+    4409
+   ]
+  },
+  "1884": {
+   "forms": [
+    "1 884",
+    "1,884",
+    "1 884",
+    "1 884",
+    "1 884",
+    "1884"
+   ],
+   "paper_lines": [
+    2528
+   ],
+   "registry_lines": [
+    4290,
+    4305
+   ]
+  },
+  "1241": {
+   "forms": [
+    "1 241",
+    "1,241",
+    "1 241",
+    "1 241",
+    "1 241",
+    "1241"
+   ],
+   "paper_lines": [
+    2528
+   ],
+   "registry_lines": [
+    4291,
+    4306
+   ]
+  },
+  "306152": {
+   "forms": [
+    "306 152",
+    "306,152",
+    "306 152",
+    "306 152",
+    "306 152",
+    "306152"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    4209,
+    4210
+   ]
+  },
+  "4572": {
+   "forms": [
+    "4 572",
+    "4,572",
+    "4 572",
+    "4 572",
+    "4 572",
+    "4572"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    2092,
+    2714,
+    2718,
+    2901,
+    3297,
+    3298,
+    3390,
+    5512
+   ]
+  },
+  "779": {
+   "forms": [
+    "779"
+   ],
+   "paper_lines": [],
+   "registry_lines": []
+  },
+  "201": {
+   "forms": [
+    "201"
+   ],
+   "paper_lines": [
+    198,
+    2535,
+    2536,
+    3068,
+    3072,
+    3894,
+    3923,
+    6599
+   ],
+   "registry_lines": [
+    4449,
+    4460,
+    4475,
+    4510,
+    4515,
+    4516,
+    4520,
+    4527,
+    4528,
+    4529,
+    4530,
+    4540,
+    4544,
+    4570
+   ]
+  },
+  "257": {
+   "forms": [
+    "257"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    4474,
+    4475,
+    4477,
+    4653
+   ]
+  },
+  "78.21": {
+   "forms": [
+    "78.21"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    4652,
+    4654
+   ]
+  },
+  "4.3 %": {
+   "forms": [
+    "4.3 %"
+   ],
+   "paper_lines": [
+    199,
+    3073,
+    3924,
+    5906,
+    6600
+   ],
+   "registry_lines": [
+    4652
+   ]
+  },
+  "98.52": {
+   "forms": [
+    "98.52"
+   ],
+   "paper_lines": [],
+   "registry_lines": [
+    4211
+   ]
+  },
+  "1.48": {
+   "forms": [
+    "1.48"
+   ],
+   "paper_lines": [
+    2526
+   ],
+   "registry_lines": [
+    4299
+   ]
+  },
+  "42.8": {
+   "forms": [
+    "42.8"
+   ],
+   "paper_lines": [
+    2536
+   ],
+   "registry_lines": [
+    4530
+   ]
+  },
+  "57.2": {
+   "forms": [
+    "57.2"
+   ],
+   "paper_lines": [
+    6489
+   ],
+   "registry_lines": [
+    4500,
+    4530,
+    4544,
+    5263
+   ]
+  },
+  "14.4": {
+   "forms": [
+    "14.4"
+   ],
+   "paper_lines": [
+    2538
+   ],
+   "registry_lines": [
+    4545,
+    4549
+   ]
+  }
+ }
+}

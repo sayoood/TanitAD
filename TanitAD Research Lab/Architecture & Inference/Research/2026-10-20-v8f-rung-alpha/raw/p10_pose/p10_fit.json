@@ -1,0 +1,56 @@
+{
+ "variant": "pose",
+ "units": "pose_kappa",
+ "manifest": "C:/Users/Admin/s1_floors_scratch/train4572_v2manifest.pt",
+ "manifest_md5": "77dafb50af0aedd1b940cf12c12518ef",
+ "n_manifest_clips": 4572,
+ "fit_clips": 4572,
+ "stride": 8,
+ "seed": 0,
+ "n_fit_rows": 41139,
+ "t_first": 3,
+ "grid_dt_s": 0.2,
+ "knots": 30,
+ "best": [
+  0,
+  0.0001,
+  59
+ ],
+ "fit_seconds": 129.7,
+ "features": "kin_features((v0, a0 = ONE-frame backward diff, kappa0 = clip(omega0 / max(v0, 2.0), +-0.3))) -- the past POSE TRACK only (ha0_ext_pose's own derivation); no steer, no action channel",
+ "base": "kd_x_pose = retime(damp50(ha0, ha0_ext_pose), ha0_ext_pose), 30 x 0.2 s, kappa integrated as a curvature",
+ "disjoint_from_eval": {
+  "eval139": {
+   "n_fit": 4572,
+   "n_eval": 139,
+   "overlap": 0,
+   "sid_overlap": 0
+  },
+  "eval141": {
+   "n_fit": 4572,
+   "n_eval": 141,
+   "overlap": 0,
+   "sid_overlap": 0
+  }
+ },
+ "train_eval_overlap": 0,
+ "eval141": {
+  "n": 2399,
+  "ade6_p10pose_m": 2.4870722191846752,
+  "fde6_p10pose_m": 7.676804675412266,
+  "ade2_first10knots_m": 0.216166263059487,
+  "kd_x_pose_ade6_m": 2.944372737572671,
+  "ha0_ext_pose_ade6_m": 2.851897124167284,
+  "acts": {
+   "mean_abs_a_mps2": 0.487319478654964,
+   "zero_accel_frac": 0.0014373805177444626,
+   "zero_tol_mps2": 0.001,
+   "n_windows": 2399,
+   "n_steps": 29
+  },
+  "banked_steer_p10_ade6_m": 2.5743599929068472,
+  "note": "the steer P10 (v8F-mini, 600 clips) read 2.5744 m on this eval141 grid"
+ },
+ "seconds": 140.2,
+ "artifact_sha256": "e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d"
+}

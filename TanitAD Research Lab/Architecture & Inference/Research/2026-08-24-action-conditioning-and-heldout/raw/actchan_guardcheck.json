@@ -1,0 +1,134 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "action_layout": "[steer, accel, v0/10] (flagship_v15.py:101)",
+ "method": "identical windows and rollout; only the action tensor differs. d_out normalised by the predictor's OWN delta (the C137 correction), never by an arm property.",
+ "arms": {
+  "o11p30k": {
+   "step": 7500,
+   "n_windows": 444,
+   "nrmse_1_vs_no_change": 1.2498,
+   "conditions": {
+    "[qual] nrmse_1": {
+     "d_in": 0.0,
+     "d_out": 1.2498,
+     "d_out_median": 1.012,
+     "reading": "input barely changed - UNINFORMATIVE"
+    },
+    "shuffle_sa": {
+     "d_in": 2.3215,
+     "d_out": 0.1719,
+     "d_out_median": 0.0475,
+     "reading": "weakly conditioned"
+    },
+    "shuffle_v": {
+     "d_in": 0.3322,
+     "d_out": 0.4256,
+     "d_out_median": 0.1056,
+     "reading": "CONDITIONED on this channel"
+    },
+    "shuffle_all": {
+     "d_in": 2.505,
+     "d_out": 0.5103,
+     "d_out_median": 0.1773,
+     "reading": "CONDITIONED on this channel"
+    },
+    "zero_sa": {
+     "d_in": 0.7614,
+     "d_out": 0.1524,
+     "d_out_median": 0.0517,
+     "reading": "weakly conditioned"
+    },
+    "zero_v": {
+     "d_in": 0.4293,
+     "d_out": 1.6446,
+     "d_out_median": 0.4946,
+     "reading": "CONDITIONED on this channel"
+    },
+    "negate_sa": {
+     "d_in": 1.5227,
+     "d_out": 0.2588,
+     "d_out_median": 0.1108,
+     "reading": "CONDITIONED on this channel"
+    },
+    "scale100_sa": {
+     "d_in": 75.374,
+     "d_out": 3.9579,
+     "d_out_median": 2.9523,
+     "reading": "CONDITIONED on this channel"
+    },
+    "[ctrl] latent +10% noise": {
+     "d_in": 0.1,
+     "d_out": 0.4246,
+     "d_out_median": 0.3286,
+     "reading": "POSITIVE CONTROL - predictor is alive"
+    }
+   },
+   "action_pathway_ratio": 1.202,
+   "verdict": "DEGENERATE - high action response bought with a WORSE prediction (nrmse_1 1.250 > 1.10, the no-change floor)"
+  },
+  "rdw8p30k": {
+   "step": 30000,
+   "n_windows": 444,
+   "nrmse_1_vs_no_change": 0.8258,
+   "conditions": {
+    "[qual] nrmse_1": {
+     "d_in": 0.0,
+     "d_out": 0.8258,
+     "d_out_median": 0.7997,
+     "reading": "input barely changed - UNINFORMATIVE"
+    },
+    "shuffle_sa": {
+     "d_in": 2.3215,
+     "d_out": 0.0062,
+     "d_out_median": 0.0035,
+     "reading": "INSENSITIVE to this channel"
+    },
+    "shuffle_v": {
+     "d_in": 0.3322,
+     "d_out": 0.0118,
+     "d_out_median": 0.0036,
+     "reading": "INSENSITIVE to this channel"
+    },
+    "shuffle_all": {
+     "d_in": 2.505,
+     "d_out": 0.015,
+     "d_out_median": 0.0077,
+     "reading": "INSENSITIVE to this channel"
+    },
+    "zero_sa": {
+     "d_in": 0.7614,
+     "d_out": 0.0058,
+     "d_out_median": 0.0033,
+     "reading": "INSENSITIVE to this channel"
+    },
+    "zero_v": {
+     "d_in": 0.4293,
+     "d_out": 0.062,
+     "d_out_median": 0.031,
+     "reading": "weakly conditioned"
+    },
+    "negate_sa": {
+     "d_in": 1.5227,
+     "d_out": 0.0114,
+     "d_out_median": 0.0066,
+     "reading": "INSENSITIVE to this channel"
+    },
+    "scale100_sa": {
+     "d_in": 75.374,
+     "d_out": 0.5084,
+     "d_out_median": 0.5661,
+     "reading": "CONDITIONED on this channel"
+    },
+    "[ctrl] latent +10% noise": {
+     "d_in": 0.1,
+     "d_out": 0.1767,
+     "d_out_median": 0.1576,
+     "reading": "POSITIVE CONTROL - predictor is alive"
+    }
+   },
+   "action_pathway_ratio": 0.085,
+   "verdict": "REFUTED    - < 20%"
+  }
+ }
+}

@@ -1,0 +1,35 @@
+tree_ruletrain copied from tree_leadsup
+pins: all 14 sha256 equal
+base G_s0 ckpt sha256 40481794b113835f747eb2c2263a0ff2a2689d1de55ce9c627ae77c8ccec31b1
+base G_s1 ckpt sha256 9ee4b8394501c9a6c84c2c48d05158340cb3e12c876bc82fad68eaf49800d3bb
+chain tools: gate_token2.py e1f6b8287674a0b631492211a741b675e1a0ad6e88eeb5129304e4e06f9a469b -> gate_token3.py da983d358136b94b53e1e9cb96022d6d156b0c5b648f4944cd856d8b8ef6ddaa; chain_arms.sh fba26899abaac579f0fd56bca7e3d9bcc0b5d3d034b2dfa8be18dbf34033577a -> chain_arms_ft.sh 5c6a5efba58297eac6e52eb6678db51175ff7dd655a155d02de844b582a79cb9
+13c13
+< EXPECT = {"HIER": ("full", 19164, 0.0), "FLAT": ("cut", 19164, 0.0), "DAG": ("full", 3000, 0.1), "FLATDAG": ("cut", 3000, 0.1)}
+---
+> EXPECT = {"HIERFT": ("full", 2000, 0.0), "HIER": ("full", 19164, 0.0), "FLAT": ("cut", 19164, 0.0), "DAG": ("full", 3000, 0.1), "FLATDAG": ("cut", 3000, 0.1)}
+74a75,76
+>     if a.kind == "HIERFT" and (lv.get("init_ckpt") or {}).get("applied") is not True:
+>         bad.append("init_ckpt not applied")
+== arms_ruletrain_a.txt 9e46de6573d7bc6fc8e4dab807e75d79b9e3f5c2daabd65009dc36fcbd359cad
+8
+GFT_s0|HIERFT|0|540:600|--wm-state grid --wm-cell-dim 16 --init-ckpt /workspace/v8proof/runs/spatial/G_s0/ckpt_last.pt --steps 2000 --lr 1e-4 --warmup 100
+GRT_s0|HIERFT|0|540:600|--wm-state grid --wm-cell-dim 16 --init-ckpt /workspace/v8proof/runs/spatial/G_s0/ckpt_last.pt --steps 2000 --lr 1e-4 --warmup 100 --rule-relabel on
+GFT_s1|HIERFT|1|540:600|--wm-state grid --wm-cell-dim 16 --init-ckpt /workspace/v8proof/runs/spatial/G_s1/ckpt_last.pt --steps 2000 --lr 1e-4 --warmup 100
+GRT_s1|HIERFT|1|540:600|--wm-state grid --wm-cell-dim 16 --init-ckpt /workspace/v8proof/runs/spatial/G_s1/ckpt_last.pt --steps 2000 --lr 1e-4 --warmup 100 --rule-relabel on
+GFTb_s0|HIERFT|100|540:600|--wm-state grid --wm-cell-dim 16 --init-ckpt /workspace/v8proof/runs/spatial/G_s0/ckpt_last.pt --steps 2000 --lr 1e-4 --warmup 100
+GFTb_s1|HIERFT|101|540:600|--wm-state grid --wm-cell-dim 16 --init-ckpt /workspace/v8proof/runs/spatial/G_s1/ckpt_last.pt --steps 2000 --lr 1e-4 --warmup 100
+memory.max 49999998976 ; anon 9486823424
+NVIDIA A40, 2788 MiB, 46 %
+trainers running: 1
+dry gate GRT_s0 rc 0
+[2026-11-15T07:10:40Z] dry gate GRT_s0 start
+ZZ DRY GRT_s0 PASS (2026-11-15T07:11:49Z): selfcheck and every expectation string of the arms file
+dry gate GFT_s0 rc 0
+[2026-11-15T07:11:49Z] dry gate GFT_s0 start
+ZZ DRY GFT_s0 PASS (2026-11-15T07:12:27Z): selfcheck and every expectation string of the arms file
+token written /workspace/v8proof/chains/ruletrain_dry_token_ft.json 7f504fa4a35c1293
+token kind HIERFT rc 0 (must be 0)
+REFUSED: steps_total 2000 != 19164
+token kind HIER rc 1 (must be 1)
+SELFCHECK GRT_s0 dvb PASS live True steps_total 2000 init_ckpt {"path": "/workspace/v8proof/runs/spatial/G_s0/ckpt_last.pt", "sha256": "40481794b113835f747eb2c2263a0ff2a2689d1de55ce9c627ae77c8ccec31b1", "applied": true, "skipped": null, "n_tensors": 276, "n_misma rule_relabel on n 17 changed 4 detail {"mode": "on", "labels_sha256": "fd8cf9625cbcc5f8b1ec1a2cdacf419f3a111e5b18e057bf70e7d8b945c58552", "n_rows": 461518, "n_pres": 177799, "n_gap": 123416, "n_clos": 116490, "dist_rule_sha256": "40b5dd9173aeaf8c7d7a7d4bfbb52484a8f30b9a8480d3356f8fa0aee65746dc", "floor_lifts": false, "m": 10, "constants probe {"rule_relabel": "on", "n_relabel": 17, "n_changed": 4, "n_rows": 64, "ade_logged": 1.733438491821289, "ade_relabelled": 1.683915138244629, "total_logged": 15.171354293823242, "total_relabelled": 15.142232894897461, "ade_diff": 0.049523353576660156, "grad_diff": 10.791337013244629, "control
+SELFCHECK GFT_s0 dvb PASS live True steps_total 2000 init_ckpt {"path": "/workspace/v8proof/runs/spatial/G_s0/ckpt_last.pt", "sha256": "40481794b113835f747eb2c2263a0ff2a2689d1de55ce9c627ae77c8ccec31b1", "applied": true, "skipped": null, "n_tensors": 276, "n_misma rule_relabel None n None changed None detail null probe null

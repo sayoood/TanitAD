@@ -1,0 +1,136 @@
+{
+ "what": "the decode ledger, all arms, PRIMARY bank",
+ "prereg": {
+  "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-04-budget-composition/PREREG_BUDGET_COMPOSITION.md",
+  "blob_at_write_time": "5fef562bbfbdc6e3357da9992ca7e2ff27b4a5b0",
+  "staged_blob": "<not staged>",
+  "worktree_blob": "5fef562bbfbdc6e3357da9992ca7e2ff27b4a5b0"
+ },
+ "generated_utc": "2026-08-04T07:55:01Z",
+ "arms": {
+  "refc-base-30k": {
+   "bank_tag": "PRIMARY",
+   "N_max": 128,
+   "N_suff": 46,
+   "unit_note": "DECODES are decoder forward passes over candidates. REFINE-EVALS are closed-form geometric transforms of an ALREADY-DECODED (4,2) array (scale and/or rotate). They are NOT the same currency and this ledger never converts between them.",
+   "latency_note": "LATENCY IS NOT THE WIN. INHERITED (fan-width, MEASURED on Thor): 2.78x fewer decodes is worth 6.5 % end-to-end on XL / 3.3 % on base, because the decoder is only 28.2 % of the frame and is fixed-cost dominated. This ledger is BUDGET REALLOCATION, not speed.",
+   "rows": [
+    {
+     "arm": "A0_full (incumbent)",
+     "n_decodes": 128,
+     "n_refine_evals": 0,
+     "n_trajectories_scored": 128,
+     "total_vs_incumbent_decodes": "128 / 128"
+    },
+    {
+     "arm": "A1_band (B alone)",
+     "n_decodes": 46,
+     "n_refine_evals": 0,
+     "n_trajectories_scored": 46,
+     "total_vs_incumbent_decodes": "46 / 128"
+    },
+    {
+     "arm": "A2_band_plus_L (COMPOSED)",
+     "n_decodes": 46,
+     "n_refine_evals": 5,
+     "n_trajectories_scored": 46,
+     "n_offfan_points_needing_a_score": 4,
+     "total_vs_incumbent_decodes": "46 / 128"
+    },
+    {
+     "arm": "A5_band_plus_LA (COMPOSED, full HAD grid)",
+     "n_decodes": 46,
+     "n_refine_evals": 25,
+     "n_trajectories_scored": 46,
+     "n_offfan_points_needing_a_score": 24,
+     "total_vs_incumbent_decodes": "46 / 128"
+    },
+    {
+     "arm": "A3_full_plus_L (A alone)",
+     "n_decodes": 128,
+     "n_refine_evals": 5,
+     "n_trajectories_scored": 128,
+     "total_vs_incumbent_decodes": "128 / 128"
+    }
+   ],
+   "variable_width_mean_decodes": 36.03,
+   "variable_width_max_decodes": 51,
+   "freed_decodes_fixed_Nsuff": 82,
+   "freed_decodes_variable": 91.97,
+   "refine_cost_in_freed_decodes_pct": 6.098,
+   "⭐ CURRENCY MISMATCH (prereg outcome O-E)": {
+    "shipped_score_shape": [
+     881,
+     128
+    ],
+    "shipped_score_is_anchor_indexed": true,
+    "consequence": "the shipped selector emits ONE logit PER ANCHOR. It is a function of the anchor index, not of a trajectory, so it CANNOT score a point that is not in the fan. Freed DECODES therefore cannot be spent on the off-fan operator without a TRAJECTORY-CONDITIONED scorer, which no amount of freed decode budget provides."
+   }
+  },
+  "refc-small-30k": {
+   "bank_tag": "PRIMARY",
+   "N_max": 64,
+   "N_suff": 23,
+   "unit_note": "DECODES are decoder forward passes over candidates. REFINE-EVALS are closed-form geometric transforms of an ALREADY-DECODED (4,2) array (scale and/or rotate). They are NOT the same currency and this ledger never converts between them.",
+   "latency_note": "LATENCY IS NOT THE WIN. INHERITED (fan-width, MEASURED on Thor): 2.78x fewer decodes is worth 6.5 % end-to-end on XL / 3.3 % on base, because the decoder is only 28.2 % of the frame and is fixed-cost dominated. This ledger is BUDGET REALLOCATION, not speed.",
+   "rows": [
+    {
+     "arm": "A0_full (incumbent)",
+     "n_decodes": 64,
+     "n_refine_evals": 0,
+     "n_trajectories_scored": 64,
+     "total_vs_incumbent_decodes": "64 / 64"
+    },
+    {
+     "arm": "A1_band (B alone)",
+     "n_decodes": 23,
+     "n_refine_evals": 0,
+     "n_trajectories_scored": 23,
+     "total_vs_incumbent_decodes": "23 / 64"
+    },
+    {
+     "arm": "A2_band_plus_L (COMPOSED)",
+     "n_decodes": 23,
+     "n_refine_evals": 5,
+     "n_trajectories_scored": 23,
+     "n_offfan_points_needing_a_score": 4,
+     "total_vs_incumbent_decodes": "23 / 64"
+    },
+    {
+     "arm": "A5_band_plus_LA (COMPOSED, full HAD grid)",
+     "n_decodes": 23,
+     "n_refine_evals": 25,
+     "n_trajectories_scored": 23,
+     "n_offfan_points_needing_a_score": 24,
+     "total_vs_incumbent_decodes": "23 / 64"
+    },
+    {
+     "arm": "A3_full_plus_L (A alone)",
+     "n_decodes": 64,
+     "n_refine_evals": 5,
+     "n_trajectories_scored": 64,
+     "total_vs_incumbent_decodes": "64 / 64"
+    }
+   ],
+   "variable_width_mean_decodes": 17.28,
+   "variable_width_max_decodes": 25,
+   "freed_decodes_fixed_Nsuff": 41,
+   "freed_decodes_variable": 46.72,
+   "refine_cost_in_freed_decodes_pct": 12.195,
+   "⭐ CURRENCY MISMATCH (prereg outcome O-E)": {
+    "shipped_score_shape": [
+     881,
+     64
+    ],
+    "shipped_score_is_anchor_indexed": true,
+    "consequence": "the shipped selector emits ONE logit PER ANCHOR. It is a function of the anchor index, not of a trajectory, so it CANNOT score a point that is not in the fan. Freed DECODES therefore cannot be spent on the off-fan operator without a TRAJECTORY-CONDITIONED scorer, which no amount of freed decode budget provides."
+   }
+  }
+ },
+ "cross_bank_stability": {
+  "refc-base-30k": {
+   "A3_full_plus_L": 0.3137675851200838,
+   "A0_full": 0.4727721293481244
+  }
+ }
+}

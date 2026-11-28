@@ -1,0 +1,90 @@
+--- ../block2/block2.sh	2026-11-17 15:20:04.674597800 +0100
++++ block3_files/block3.sh	2026-11-17 21:13:18.600351000 +0100
+@@ -1,22 +1,19 @@
+ #!/bin/bash
+-# block2.sh -- PREREG_V8F_DSCALE10K block 2 (pod, LoRA pod): the second seed, B_s1 then U_s1, each stage A -> DAgger bank (4 shards, one chain step, then merge) -> stage B (card 2.3 rows 5 and 6, section 5).
+-# Built from block1.sh: the same gate_wait (STOP file, >= 60 GB free on /root, idle GPU < 3,500 MiB), the same runner (`chk_arm.sh run` -> `dscale10k_check.py run`, which REFUSES rc 2 without a token that binds the exact
+-# commit, argv, data files, tree, trainer, checker and merge tool), the same per-stage summary and post-training gates, the same in-chain stage-B mint. DIFFERENCES from block1.sh:
+-#   * pre-flight runs block2_prep.sh (CPU dry records, init record, the two reach probes under this chain's lock, evidence, the stage-A tokens of B_s1 and U_s1) when a token is missing: no GPU job of the
+-#     card's gate is needed beyond the two reach probes, and no token is hand-written.
+-#   * after every stage the banker (dscale_banker.py) runs at once (a failure is logged and the chain goes on: its deletions stay deferred); at start it banks anything still pending from block 1.
+-#   * the sweep covers every arm of blocks 1 and 2 that has ARM_DONE and a bank_ok marker equal to its stage-B checkpoint (chainlib.py sweep), and the R release once R_s0.A is banked.
+-# Ends with `ZZ DSCALE10K BLOCK2 DONE ZZ` or `ZZ DSCALE10K BLOCK2 FAIL ZZ <why>`. A file /root/dscale10k/chains/STOP ends it between steps.
+-#   launch (the MM): nohup setsid flock /root/gpu_queue.lock bash /root/dscale10k/block2.sh < /dev/null > /root/dscale10k/block2.log 2>&1 &
+-# Dry run: DS_FAKE=1 DS_ROOT=<fake root> (dryrun_block2.sh): leaf operations are replaced, the control flow is this file.
++# block3.sh -- PREREG_V8F_DSCALE10K block 3 (pod, LoRA pod): H-DATA-SCALE-1's compute arms, UE_s0 (union set) then BL_s0 (B set), STAGE A ONLY, both at 4 x S_U = 61,568 steps (card 2.3 rows 7 and 8, section 5).
++# Forked from block2.sh. Changed: the arms (do_arm ... no: no DAgger bank, no stage B), STEPS_A (61,568, asserted against 4 x S_U of dry/U_s0.A.dry.json), the sentinels, the prep (block3_prep.sh) and the runner (chk_arm3.sh, which
++# imports the MM-ruled checker at $D/block3/study: C-STEPS reads BL_s0's target from the union dry record). Kept: gate_wait (STOP file, >= 60 GB free, idle GPU), the token-refusing runner, the stage-A summary and post-training zero-grad gates,
++# the banker after every stage, the sweep.
++# Ends with `ZZ DSCALE10K BLOCK3 DONE ZZ` or `ZZ DSCALE10K BLOCK3 FAIL ZZ <why>`. A file /root/dscale10k/chains/STOP ends it between steps.
++#   launch (the MM): nohup setsid bash /root/dscale10k/block3/queue_block3.sh < /dev/null > /root/dscale10k/block3.log 2>&1 &     (queue_block3.sh waits for C0REP, then takes /root/gpu_queue.lock)
++# Dry run: DS_FAKE=1 DS_ROOT=<fake root> (dryrun_block3.sh).
+ set -u
+ D=${DS_ROOT:-/root/dscale10k}; PY=${DS_PY:-/root/venv/bin/python}; LIB="$PY $D/chainlib.py"; export DS_ROOT=$D
+ MINFREE=${DS_MIN_FREE_GB:-60}
+ TREE=$D/tree
+-STEPS_A=19164; STEPS_B=3000
++STEPS_A=61568; STEPS_B=3000; B3=${DS_B3:-$D/block3}
+ mkdir -p $D/chains $D/runs $D/gate/tokens $D/bank_ready $D/bank_ok
+ say() { echo "$(date -u +%T) $*"; }
+-fail() { echo "ZZ DSCALE10K BLOCK2 FAIL ZZ $1"; exit 1; }
++fail() { echo "ZZ DSCALE10K BLOCK3 FAIL ZZ $1"; exit 1; }
+ [ -n "${DS_FAKE:-}" ] && LEAF=$D/fake_leaf.sh
+ 
+ gpu_idle() { if [ -n "${DS_FAKE:-}" ]; then return 0; fi; u=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1 | tr -d ' '); [ "${u:-99999}" -lt 3500 ]; }
+@@ -31,10 +28,10 @@
+ }
+ leaf() {        # leaf KIND ARM STAGE : the operations a dry run replaces
+   case $1 in
+-    run)       if [ -n "${DS_FAKE:-}" ]; then bash $LEAF run $2 $3; else DS_ROOT=$D bash $D/chk_arm.sh run $2 $3; fi;;
+-    mint)      if [ -n "${DS_FAKE:-}" ]; then bash $LEAF mint $2 $3; else DS_ROOT=$D bash $D/chk_arm.sh mint $2 $3; fi;;
++    run)       if [ -n "${DS_FAKE:-}" ]; then bash $LEAF run $2 $3; else DS_ROOT=$D bash $B3/chk_arm3.sh run $2 $3; fi;;
++    mint)      if [ -n "${DS_FAKE:-}" ]; then bash $LEAF mint $2 $3; else DS_ROOT=$D bash $B3/chk_arm3.sh mint $2 $3; fi;;
+     bank)      if [ -n "${DS_FAKE:-}" ]; then bash $LEAF bank $2 $3; else bash $D/bank4.sh "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}"; fi;;
+-    prep)      if [ -n "${DS_FAKE:-}" ]; then bash $LEAF prep $2 $3; else DS_ROOT=$D bash $D/block2_prep.sh; fi;;
++    prep)      if [ -n "${DS_FAKE:-}" ]; then bash $LEAF prep $2 $3; else DS_ROOT=$D bash $B3/block3_prep.sh; fi;;
+     selfcheck) if [ -n "${DS_FAKE:-}" ]; then bash $LEAF selfcheck $2 $3; else $PY $D/gate/sb_selfcheck.py $D/runs/$2/argv_B.json $D/runs/$2/B_selfcheck $D/runs/$2/B_selfcheck.result.json; fi;;
+   esac
+ }
+@@ -107,27 +104,31 @@
+   sweep_all
+ }
+ # ---- pre-flight
+-say "block 2 start (free $(free_gb) GB, root $D)"
+-for f in chainlib.py bank4.sh chk_arm.sh dscale_banker.py block2_prep.sh; do [ -s $D/$f ] || [ -n "${DS_FAKE:-}" ] || fail "missing $D/$f"; done
++say "block 3 start (free $(free_gb) GB, root $D)"
++for f in chainlib.py dscale_banker.py block3/chk_arm3.sh block3/block3_prep.sh block3/study/dscale10k_check.py; do [ -s $D/$f ] || [ -n "${DS_FAKE:-}" ] || fail "missing $D/$f"; done
++[ -n "${DS_FAKE:-}" ] || $PY - $D <<'E' || fail "S_U check: 4 x S_U of dry/U_s0.A.dry.json is not $STEPS_A"
++import json, sys
++assert 4 * json.load(open(sys.argv[1] + "/dry/U_s0.A.dry.json"))["S_U"] == 61568
++E
+ bank_now
+ sweep_all                                   # block 1's banked bank shards / selfcheck scratch go now (chainlib sweep: only what bank_ok covers; logged)
+-for a in B_s1 U_s1; do
++for a in UE_s0 BL_s0; do
+   [ -e $D/runs/$a/ARM_DONE ] && continue
+   [ -e $D/runs/$a/A/ARM_A_DONE ] || [ -s $D/gate/tokens/$a.A/gate_token.json ] || NEEDPREP=1
+ done
+ if [ -n "${NEEDPREP:-}" ]; then
+-  gate_wait "block 2 prep"
+-  leaf prep - - > $D/gate/block2_prep.out 2>&1 || fail "block 2 prep: $(tail -n 1 $D/gate/block2_prep.out | cut -c1-300)"
+-  tail -n 1 $D/gate/block2_prep.out | grep -q "ZZ BLOCK2-PREP DONE ZZ" || fail "block 2 prep did not end DONE: $(tail -n 1 $D/gate/block2_prep.out | cut -c1-300)"
++  gate_wait "block 3 prep"
++  leaf prep - - > $D/gate/block3_prep.out 2>&1 || fail "block 3 prep: $(tail -n 1 $D/gate/block3_prep.out | cut -c1-300)"
++  tail -n 1 $D/gate/block3_prep.out | grep -q "ZZ BLOCK3-PREP DONE ZZ" || fail "block 3 prep did not end DONE: $(tail -n 1 $D/gate/block3_prep.out | cut -c1-300)"
+ fi
+-for a in B_s1 U_s1; do
++for a in UE_s0 BL_s0; do
+   [ -e $D/runs/$a/ARM_DONE ] && continue
+   [ -e $D/runs/$a/A/ARM_A_DONE ] || [ -s $D/gate/tokens/$a.A/gate_token.json ] || fail "no stage-A gate token for $a ($D/gate/tokens/$a.A/gate_token.json) after the prep"
+ done
+ # ---- the arms
+-do_arm B_s1 yes
+-do_arm U_s1 yes
++do_arm UE_s0 no
++do_arm BL_s0 no
+ sweep_all
+ bank_now
+ echo "banking pending (no bank_ok marker): $(for f in $D/bank_ready/*.txt; do t=$(basename $f .txt); [ -e $D/bank_ok/$t.sha256 ] || echo -n "$t "; done)"
+-echo "ZZ DSCALE10K BLOCK2 DONE ZZ"
++echo "ZZ DSCALE10K BLOCK3 DONE ZZ"

@@ -1,0 +1,155 @@
+{
+ "stage": "S-T",
+ "pass": null,
+ "verdict": "INCONCLUSIVE",
+ "required": [
+  "TACTICAL_family",
+  "sel_gap"
+ ],
+ "reported_only": [
+  "P7",
+  "LATERAL_family",
+  "LONGITUDINAL_family",
+  "STRATEGIC_family",
+  "X2_seam"
+ ],
+ "criteria": {
+  "sel_gap": "<= 0.5x the fan oracle at T1 tier",
+  "X2_seam": "no CONFIRMED seam row at the 2 s band edge (boundary 20) on the emitted winner: the paired episode-cluster CI on the seam-vs-within-band excess must NOT lie wholly above the materiality floor (1x the within-band step) under BOTH the global and the local null. A null counts only when it is WELL-POWERED (MDE@80% <= the floor, >= 8 episode clusters); otherwise the probe returns INCONCLUSIVE, which is not a pass. VERIFY, NEVER REPAIR",
+  "TACTICAL_family": "confusion improves on E4.1-derived strata",
+  "four_families_horizons": "every family reported at BOTH 0-2 s AND 0-6 s (HIERARCHY_VOCABULARY \u00a74b: 'four families + oracle/selected reported at BOTH 0-2 s and 0-6 s'). A family that cannot be computed is declared per family with the reason and the n \u2014 never silently dropped (PI 2026-08-02, binding)",
+  "P7_rho": ">= 0.3 with CI excluding 0, per stratum"
+ },
+ "owners": {
+  "TACTICAL_family": "taniteval/tools/eval_four_families.py",
+  "LATERAL_family": "taniteval/tools/eval_four_families.py",
+  "LONGITUDINAL_family": "taniteval/tools/eval_four_families.py",
+  "STRATEGIC_family": "taniteval/tools/eval_four_families.py",
+  "sel_gap": "tanitad.models.tactical.sel_gap_tac",
+  "P7": "scripts/w7_roll_rerank.py",
+  "X2_seam": "taniteval/tools/seam_probe.py (taniteval.seam; PAIRED bootstrap from taniteval/ci.py only)"
+ },
+ "probes": {
+  "TACTICAL_family": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "taniteval/tools/eval_four_families.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "sel_gap": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "tanitad.models.tactical.sel_gap_tac",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "P7": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "scripts/w7_roll_rerank.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "LATERAL_family": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "taniteval/tools/eval_four_families.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "LONGITUDINAL_family": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "taniteval/tools/eval_four_families.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "STRATEGIC_family": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "taniteval/tools/eval_four_families.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "X2_seam": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "taniteval/tools/seam_probe.py (taniteval.seam; PAIRED bootstrap from taniteval/ci.py only)",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)"
+  },
+  "X3_isolation": {
+   "pass": true,
+   "status": "run",
+   "owner": "V6Stack.assert_isolation",
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0
+   },
+   "violations": {}
+  },
+  "O6_spectrum": {
+   "pass": null,
+   "status": "reported",
+   "owner": "tanitad.models.v6.spectrum_report",
+   "n": 64,
+   "d": 64,
+   "top_k": 8,
+   "participation_ratio": 31.69073109723912,
+   "effective_rank": 51.36476133510486,
+   "top_k_share": 0.37953453252885166,
+   "rank_ceiling": 63,
+   "effective_rank_frac": 0.8153136719857914,
+   "rank_admissible": false,
+   "ceiling_note": "a centred covariance from n=64 rows has rank <= 63; effective_rank is bounded by that, NOT by d=64",
+   "verdict": {
+    "criterion": "O6_rank_retention v2 (SIGREG_GATE_POWER.md)",
+    "effective_rank": 51.36476133510486,
+    "rank_ceiling": 63,
+    "effective_rank_frac": 0.8153136719857914,
+    "retention_threshold": 0.8,
+    "absolute_floor": 64.0,
+    "ceiling_min": 1024,
+    "pass": null,
+    "status": "INCONCLUSIVE",
+    "reason": "rank_ceiling 63 < 1024: a centred covariance from n=64 rows cannot resolve rank. Pool more steps (SpectrumAccumulator) before asking this question."
+   },
+   "reason": "rank RETENTION needs a series AND an admissible rank ceiling; see SIGREG_GATE_POWER.md \u2014 at n=48 the reading is bounded by 47 and the >= 0.8x criterion fires on noise 9-38 % of the time"
+  }
+ },
+ "missing_required": [],
+ "inconclusive_required": [
+  "TACTICAL_family",
+  "sel_gap"
+ ],
+ "failed_required": [],
+ "next_stage": "S-S",
+ "revalidates": null,
+ "bound_outcomes": {
+  "PASS": "S-T propagates upward; the next stage may launch",
+  "FAIL": "the next stage MUST NOT launch (X5). Diagnose at THIS layer; a failed stage never propagates upward.",
+  "INCONCLUSIVE": "treated as NOT-PASS. Run the missing probes, or override with --allow-inconclusive-gate AND --gate-off-reason (the reason is recorded)."
+ },
+ "tier": "gate assembled from frozen-battery probes (T0/T1 per probe)",
+ "_evidence_class": "MEASURED (ours) for probes present; probes listed in missing_required were NOT RUN",
+ "param_report": {
+  "total": 8705513,
+  "budget": 300000000,
+  "within_budget": true,
+  "headroom": 291294487,
+  "per_group": {
+   "encoder": 37504,
+   "readout": 264,
+   "predictor_op": 166531,
+   "layer_tac": 3448141,
+   "layer_str": 3329521,
+   "planner": 135320,
+   "aux": 1588232,
+   "interp": 0
+  },
+  "trainable": 3583461,
+  "arm": "shared-encoder+adapters",
+  "d_op": 128,
+  "d_tac": 32,
+  "d_str": 16,
+  "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths",
+  "_evidence_class": "MEASURED (ours; count at instantiation)"
+ },
+ "_dry_run": true,
+ "_read": "SMOKE ARTIFACT. Written by --dry-run over SYNTHETIC tensors: no corpus, no frozen-battery probe, no eval. It exists so a chain's advance logic can be EXECUTED end-to-end on CPU. No number here is quotable and it licenses no real launch."
+}

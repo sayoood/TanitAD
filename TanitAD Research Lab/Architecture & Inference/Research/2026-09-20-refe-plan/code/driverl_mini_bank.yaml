@@ -1,0 +1,57 @@
+# REFe target-bank filter for the nuPlan MINI split.
+#
+# WHY THIS EXISTS. Stage 0 used `one_of_each_scenario_type`, which takes AT MOST ONE scenario per
+# type. Raising DRIVERL_EVAL_LIMIT_TOTAL_SCENARIOS from 8 to 64 therefore produced 10 scenarios, not
+# 64 -- a FILTER ceiling, not a data ceiling. MEASURED by scanning all 64 mini DBs: the split holds
+# 67 distinct scenario types and 892,204 tagged scenarios.
+#
+# WHY THESE 14 TYPES. They are exactly the `scenario_types` of THEIR `driverl_val14` filter, so the
+# bank's type distribution matches the benchmark REFe will eventually be scored on. MEASURED: all
+# 14 are present in mini, with 135,741 tagged instances between them:
+#   high_magnitude_speed 39,329 · traversing_pickup_dropoff 39,330 · stationary_in_traffic 42,400
+#   low_magnitude_speed 8,344 · near_multiple_vehicles 2,860 · behind_long_vehicle 781
+#   starting_right_turn 604 · starting_left_turn 600 · high_lateral_acceleration 600
+#   starting_straight_traffic_light_intersection_traversal 340 · waiting_for_pedestrian_to_cross 316
+#   stopping_with_lead 159 · following_lane_with_lead 56 · changing_lane 22
+#
+# ⚠️ `changing_lane` has only 22 instances and `following_lane_with_lead` 56, so a
+# num_scenarios_per_type above ~20 yields a bank that is IMBALANCED by construction: the common
+# types saturate the cap while the rare ones contribute everything they have. State the realised
+# per-type counts with any result rather than assuming the cap was met.
+#
+# ⛔ shuffle MUST stay false: the augmented rank-k rollouts are paired to rank-0 by (token, step),
+# and a shuffled selection would break that pairing silently.
+_target_: nuplan.planning.scenario_builder.scenario_filter.ScenarioFilter
+_convert_: "all"
+
+scenario_types:
+  - starting_left_turn
+  - starting_right_turn
+  - starting_straight_traffic_light_intersection_traversal
+  - stopping_with_lead
+  - high_lateral_acceleration
+  - high_magnitude_speed
+  - low_magnitude_speed
+  - traversing_pickup_dropoff
+  - waiting_for_pedestrian_to_cross
+  - behind_long_vehicle
+  - stationary_in_traffic
+  - near_multiple_vehicles
+  - changing_lane
+  - following_lane_with_lead
+
+scenario_tokens: null      # select BY TYPE, unlike driverl_val14 which pins 1,118 explicit tokens
+log_names: null
+map_names: null
+
+num_scenarios_per_type: 20 # the real lever; 20 x 14 types => up to 280 scenarios
+limit_total_scenarios: null
+timestamp_threshold_s: 15
+ego_displacement_minimum_m: null
+ego_start_speed_threshold: null
+ego_stop_speed_threshold: null
+speed_noise_tolerance: null
+
+expand_scenarios: false
+remove_invalid_goals: true
+shuffle: false

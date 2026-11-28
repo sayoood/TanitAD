@@ -1,0 +1,59 @@
+============================================================================================
+selftest_n_anchors.py - the bank size is RESOLVED, and an unresolvable one REFUSES by name
+  every expectation below is a LITERAL in the case table (117 / 0.008547 / the field names)
+============================================================================================
+[A] the arm-tool resolver, in isolation
+  FAIL  A1 four agreeing witnesses -> exactly 117, tensor primary
+        the TENSOR must be primary, got 'rebuilt config (DEFECT)'
+  FAIL  A2 nothing anywhere -> REFUSAL naming all four fields
+        expected a REFUSAL (SystemExit); the call RETURNED
+  FAIL  A3 tensor 117 vs argv 128 -> REFUSAL naming both
+        expected a REFUSAL (SystemExit); the call RETURNED
+  FAIL  A4 rebuilt-config default 128 vs witness 117 -> REFUSAL naming --n-anchors
+        expected a REFUSAL (SystemExit); the call RETURNED
+  FAIL  A5 the string "117" is NOT a bank size
+        expected a REFUSAL (SystemExit); the call RETURNED
+  FAIL  A6 a 20-anchor smoke bank resolves to 20
+        
+[B] end to end on the REAL refcv4b checkpoint (CPU, 0 GPU)
+  FAIL  B1 real config + real ckpt -> 117 from the TENSOR
+        
+  FAIL  B2 --n-anchors stripped -> names n_anchors, NOT param_breakdown
+        [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+  param_breakdown: config.json {'core': 104879584, 'phi_tac': 1757440, 'str_goal_head': 771, 'gstr_cond': 66816, 'tac_heads': 14364, 'tac_latent_proj': 262656, 'scorer': 1145, 'ego_inject': 25536, 'nav_inject': 50176, 'total': 107058488} vs rebuilt {'core': 104879650, 'phi_tac': 17
+  FAIL  B3 --n-anchors + param_breakdown stripped -> names n_anchors, NOT a shape error
+        [refcv3_arm] ⛔ the rebuilt model and the weights DISAGREE ON SHAPE — config.json/argv describe a different build than the checkpoint. Refusing; fix the config, never the weights.
+Error(s) in loading state_dict for RefCV3Model:
+	size mismatch for core.decoder.anchors: copying a param with shape torch.Size([117, 8, 2]) from checkpoint, the shape in current model is torch.Size([128, 8, 2]).
+	size mis
+  FAIL  B4 a config whose /anchors/shape LIES -> REFUSAL
+        expected a REFUSAL (SystemExit); the call RETURNED
+[C] the compare-tool resolver
+  PASS  C1 manifest+config+ckpt -> 117, chance exactly 0.008547
+  PASS  C2 nothing anywhere -> REFUSAL naming every field
+  PASS  C3 manifest+config stripped, ckpt present -> 117 from the tensor
+  PASS  C4 manifest 128 vs config 117 -> REFUSAL naming both
+  PASS  C5 the LIVE refcv5-v2 config ALONE -> 117 from /anchors/shape[0]
+[D] the NESTED lever reads
+  PASS  D1 live refcv5-v2 levers read from /selection, /seams, /anchors
+  PASS  D2 refcv4b's absent levers are a CORROBORATED absence
+  PASS  D3 a config contradicting its own argv -> REFUSAL
+  PASS  D4 sampler stochasticity: ddim -> True, refcv4b -> False
+  PASS  D5 /seams/sampler contradicting argv -> REFUSAL
+============================================================================================
+20 cases, 10 FAILED
+  - A1 four agreeing witnesses -> exactly 117, tensor primary: the TENSOR must be primary, got 'rebuilt config (DEFECT)'
+  - A2 nothing anywhere -> REFUSAL naming all four fields: expected a REFUSAL (SystemExit); the call RETURNED
+  - A3 tensor 117 vs argv 128 -> REFUSAL naming both: expected a REFUSAL (SystemExit); the call RETURNED
+  - A4 rebuilt-config default 128 vs witness 117 -> REFUSAL naming --n-anchors: expected a REFUSAL (SystemExit); the call RETURNED
+  - A5 the string "117" is NOT a bank size: expected a REFUSAL (SystemExit); the call RETURNED
+  - A6 a 20-anchor smoke bank resolves to 20: 
+  - B1 real config + real ckpt -> 117 from the TENSOR: 
+  - B2 --n-anchors stripped -> names n_anchors, NOT param_breakdown: [refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt model — refusing rather than guessing which describes the weights:
+  param_breakdown: config.json {'core': 104879584, 'phi_tac': 1757440, 'str_goal_head': 771, 'gstr_cond': 66816, 'tac_heads': 14364, 'tac_latent_proj': 262656, 'scorer': 1145, 'ego_inject': 25536, 'nav_inject': 50176, 'total': 107058488} vs rebuilt {'core': 104879650, 'phi_tac': 17
+  - B3 --n-anchors + param_breakdown stripped -> names n_anchors, NOT a shape error: [refcv3_arm] ⛔ the rebuilt model and the weights DISAGREE ON SHAPE — config.json/argv describe a different build than the checkpoint. Refusing; fix the config, never the weights.
+Error(s) in loading state_dict for RefCV3Model:
+	size mismatch for core.decoder.anchors: copying a param with shape torch.Size([117, 8, 2]) from checkpoint, the shape in current model is torch.Size([128, 8, 2]).
+	size mis
+  - B4 a config whose /anchors/shape LIES -> REFUSAL: expected a REFUSAL (SystemExit); the call RETURNED
+============================================================================================

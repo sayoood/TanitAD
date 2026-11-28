@@ -1,0 +1,40 @@
+{
+ "_what": "mutation proof that test_conflict_readings_are_logged.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\scripts\\refc_v3_train.py": "6d2e48f4d4602ed6755d6d5f63a3b10d",
+  "stack\\tests\\test_conflict_readings_are_logged.py": "08d9c239ec50d129e2777a6d72a49b22"
+ },
+ "arms": [
+  {
+   "arm": "M1_own_row_branch_removed",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_reading_is_logged_even_off_the_log_cadence"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "M2_own_row_under_the_wrong_step",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_reading_is_logged_even_off_the_log_cadence"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 2,
+ "arms_total": 2,
+ "_VERDICT": "MUTATION-PROVEN -- 2/2 arms RED; restored; final run green."
+}

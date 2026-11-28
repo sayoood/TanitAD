@@ -1,0 +1,196 @@
+--- ship_r8_sub_verdict.py	2026-10-26 05:11:37.781508300 +0100
++++ ship_r8_4c_verdict.py	2026-10-26 06:32:26.005730800 +0100
+@@ -1,4 +1,11 @@
+-"""ship_r8_sub_verdict.py -- SHIP-R8 clauses (1)-(7) + (1b) applied MECHANICALLY to the Amendment-4 / Amendment-5 arm.  Pure json in, json + md out.
++"""ship_r8_4c_verdict.py -- SHIP-R8 AMENDMENT 4c: a COPY of ship_r8_sub_verdict.py (left untouched: it is pinned by MANIFEST_4B) with the arm H2CNL_DEPLOY8
++added (diff: ship_r8_4c_verdict.DIFF.txt).  Clause (1) for H2CNL_DEPLOY8 = Amendment 4's clause-1 function (UNEDITED, run on the --h2cnl forward) AND the 4c
++seal re-hashed now == the forward's record AND the H2cn-L stage file's sha256 now == REGISTERED_H2CNL_STAGE.sha256 == the forward's record AND K_REG_H2CNL
++(registration precedes the first eval-side output) AND K_FREEZE_H2CNL (the freeze controls: K-H2CN-REPRO, K-FIT, K-RELOAD, K-DETERM, K-DISJ, K-JOIN, K-MUT)
++AND K_JOIN_EVAL.  The mutation arm H2CNL_MUT8 is read BESIDE with the same clause-1 form against REGISTERED_H2CNL_MUT_STAGE.sha256.  An --h2cnl forward is
++never read into out/ship_r8 or out_4b/ship_r8.
++
++ship_r8_sub_verdict.py -- SHIP-R8 clauses (1)-(7) + (1b) applied MECHANICALLY to the Amendment-4 / Amendment-5 arm.  Pure json in, json + md out.
+ NEW file (EvalFlyWheel 2026-10-26).  Clauses (1b, A4 form) and (2)-(7) are the REGISTERED verdict's own functions -- ship_r8_verdict_pf.py and its pinned base
+ copy _ship_r8_verdict_base.py (sha256 re-checked at import by ship_r8_verdict_pf.load_base) -- imported, never edited, with the arm name swapped
+ (B.ARM, the clause_e `arm` argument).  Clause (1) is REPLACED as each amendment writes it:
+@@ -45,6 +52,33 @@
+                           "fresh-clip disjoint; H2CN_PERSURFACE and RETIME_DEPLOY8 identities) AND the Amendment 4b seal == its file (re-hashed now) AND K-CAP-ID, K-CAP-COMPLY, K-CAP-MONO"),
+             "FACTORED_DEPLOY8": ("(1) [AMENDMENT 5] the registered table's sha256 checks (unchanged) AND the identity controls (P_ss := P_os == OSONLY bit for bit; "
+                                  "RETIME_DEPLOY8 == registered) AND both input traces' sha256 + final + 4,754 windows + hook counters")}
++CL1_TEXT["H2CNL_DEPLOY8"] = ("(1) [AMENDMENT 4c] everything Amendment 4's clause 1 states (H2cn stage sha256 == registered; registration precedes the first eval-side "
++                             "output; fresh-clip disjoint; H2CN_PERSURFACE and RETIME_DEPLOY8 identities) AND the Amendment 4c seal == its file (re-hashed now) AND the "
++                             "H2cn-L stage sha256 == REGISTERED_H2CNL_STAGE.sha256 (re-hashed now) and its registration precedes the first eval-side output AND the "
++                             "freeze controls (K-H2CN-REPRO, K-JOIN, K-FIT, K-RELOAD, K-DETERM, K-DISJ, K-MUT) AND K-JOIN on the eval rows")
++CL1_TEXT["H2CNL_MUT8"] = CL1_TEXT["H2CNL_DEPLOY8"].replace("H2cn-L stage sha256 == REGISTERED_H2CNL_STAGE", "H2cn-L MUTATION stage sha256 == REGISTERED_H2CNL_MUT_STAGE")
++DEVIATIONS_4C = [
++    "P1-1 mutation construction (not specified by the amendment): the 6 LON6-softmax columns of the FIT rows are permuted by a seeded (seed 0) cross-episode "
++    "derangement (h2cnl_freeze.cross_episode_derangement): a bijection, every row receives a DIFFERENT episode's columns, column marginals preserved exactly",
++    "P1-2 K-FIT for the L / MUT stages has no earlier PASSED fit to equal (Amendment 4 compared against H2CN_RESULT.json): replaced by literals -- n_fresh == the "
++    "registered fit's, n_params == 68100 / 68358 (H2cn's + 6 x 128), wd in the grid, 1 <= epochs <= 200",
++    "P1-3 K-H2CN-REPRO for the mutation stage is shown by base-array digest equality (X[:, :10], Z, H, eid == the arrays whose 6-column-dropped fit reproduced "
++    "the registered H2cn stage bit-for-bit), not by a third identical refit",
++    "P1-4 h2cnl_freeze.py carries a DEV-ONLY --smoke-dir mode (3 epochs, outputs outside the package); used once, outputs only in the agent scratch dir",
++    "P1-5 README_SHIP_R8_SUB.md and ship_r8_sub_common.py were NOT edited (both pinned by MANIFEST_4B)",
++    "P1-6 h2cnl_freeze.DIFF.txt is large because of the new controls; the fit change itself is one call (fit_surface: X := concat[X, softmax(lon6)])",
++    "P2-7 the forward / verdict / reproduction are COPIES (ship_r8_4c_forward.py, ship_r8_4c_verdict.py, read_4c.py; diffs beside) because the originals are "
++    "pinned by MANIFEST_4B; ship_r8_sub_tac.py is used unchanged",
++    "P2-8 the eval-side K-JOIN adds two cross-checks beyond the amendment (extras v0 == ctx v0; extras nav_true.traj == plan8 bit for bit) and a mutation "
++    "(join on the NEXT window) that must read RED by those cross-checks alone",
++    "P2-9 RT.forward's transient work dir lives on F:/refcv9_4c_scratch (C: nearly full) and is removed at the end; every output is under out_4c/",
++    "P2-10 read_4c.py normalises backslashes BEFORE the out/ token (read_4b did it last) and skips the npz meta_json `tool` field (the producer is the 4c copy)",
++    "P2-11 the mutation stage H2CNL_MUT8 is fed the TRUE eval-side LON6 softmax (only its FIT rows were deranged)",
++    "P2-12 L1 / L2 'both inference seeds' is read as a conjunction (seed 0 AND seed 1)",
++    "P2-13 bars_4c.py's verdict WORDING was edited after its first run: the first BARS_4C.json read 'VOID ... fix the instrument', which misnamed an "
++    "ATTRIBUTION-control failure (K-MUT-L1) as an instrument failure; the edit only separates the two cases and names the amendment's branches -- every "
++    "cell, bar flag and control is the same mechanical computation (the first file was overwritten)",
++]
+ CL1B_A5 = "(1b) [AMENDMENT 5] FEED PARITY: the os-only rolls use the per-frame feed (perframe_full), asserted from the rolls' own manifests; not shown -> INCOMPLETE"
+ 
+ 
+@@ -197,6 +231,56 @@
+             "K-CAP-ID, K-CAP-COMPLY, K-CAP-MONO all true", "evidence": ev}
+ 
+ 
++def clause1_4c(fd, rid, arm: str = "H2CNL_DEPLOY8") -> dict:
++    """AMENDMENT 4c clause 1 (see the module docstring).  Amendment 4's own conjunction is NOT edited; its status/reason are carried into this one."""
++    import h2cnl_freeze as HL
++    base = clause1_a4(fd, rid)
++    ctl = (fd or {}).get("controls") or {}
++    bad, unk = [], []
++    if base["status"] == "FAIL":
++        bad.append("Amendment 4 clause-1 conjunction: " + base["reason"])
++    elif base["status"] != "PASS":
++        unk.append("Amendment 4 clause-1 conjunction: " + base["reason"])
++    now = HL.check_amendment_4c_seal()                                   # SystemExit if the sealed text is not the file (never a silent pass)
++    rec = ((fd or {}).get("amendments") or {}).get("4c") or {}
++    mut = arm == "H2CNL_MUT8"
++    regf = C.WORK / ("REGISTERED_H2CNL_MUT_STAGE.sha256" if mut else "REGISTERED_H2CNL_STAGE.sha256")
++    ptf = HL.MUT_PT if mut else HL.STAGE_L_PT
++    reg_tok = C.read_seal(regf)
++    sha_now = C.sha256_file(ptf) if ptf.exists() else ""
++    frec = (fd or {}).get("h2cnl_mut_stage" if mut else "h2cnl_stage") or {}
++    ev = dict(base["evidence"])
++    ev.update(amendment_4c_seal_now=now, amendment_4c_seal_forward_record=rec, forward_is_h2cnl_run=(fd or {}).get("h2cnl"),
++              h2cnl_stage_sha256_now=sha_now, h2cnl_registered_sha256=reg_tok, h2cnl_forward_stage_record=frec)
++    if fd is None:
++        unk.append("the forward file is absent")
++    elif (fd or {}).get("h2cnl") is not True:
++        bad.append("the forward is not an --h2cnl run")
++    if not rec:
++        unk.append("the forward carries no Amendment 4c seal record")
++    elif rec.get("sha256") != now["sha256"]:
++        bad.append("the Amendment 4c file hashed now != the sha256 the forward recorded")
++    if len(reg_tok) != 64 or len(sha_now) != 64:
++        unk.append(f"the registered {arm} stage sha256 or the stage file is not readable as 64 hex")
++    elif not (sha_now == reg_tok == frec.get("sha256") == frec.get("registered")):
++        bad.append(f"the {arm} stage file / forward record / registration disagree on the sha256")
++    kreg = "K_REG_H2CNL_MUT" if mut else "K_REG_H2CNL"
++    for nm, key in ((f"{kreg} (registration precedes the first eval-side output)", kreg), ("K_FREEZE_H2CNL (freeze controls ALL_PASS, stage sha256s match)", "K_FREEZE_H2CNL"),
++                    ("K_JOIN_EVAL (every eval row joins exactly one extras row of the same forward; mutation RED)", "K_JOIN_EVAL")):
++        v = ctl.get(key)
++        ev[key] = v
++        if v is False:
++            bad.append(nm + " is false")
++        elif v is not True:
++            unk.append(nm + " not shown")
++    ev["K_REG_H2CNL_detail"] = (ctl.get("K_REG_H2CNL_detail") or {}).get(arm)
++    ev["K_FREEZE_H2CNL_detail"] = ctl.get("K_FREEZE_H2CNL_detail")
++    st = _status(bad, unk)
++    return {"id": 1, "text": CL1_TEXT[arm], "status": st, "reason": "; ".join(bad + unk) if (bad or unk) else
++            f"Amendment 4's clause-1 conjunction holds on the --h2cnl forward; the Amendment 4c seal == its file (re-hashed now) and == the forward's record; "
++            f"the {arm} stage sha256 == registered (re-hashed now); {kreg}, K_FREEZE_H2CNL, K_JOIN_EVAL all true", "evidence": ev}
++
++
+ def clause1b_a4(reg_ship) -> dict:
+     ri = registered_inputs(reg_ship)
+     par = {s: load(ri[f"parity_s{s}"]["path"]) for s in ("0", "1")}
+@@ -317,13 +401,15 @@
+         L.append(f"* windows changed by the 4b clamp per (surface, seed): {v['beside']['clamp_touched_windows']}")
+     if v.get("next_step"):
+         L += ["", f"NEXT (committed in the amendment): {v['next_step']}"]
++    if v.get("disclosed_deviations"):
++        L += ["", "## disclosed deviations (accepted by the Master Mind 2026-10-26 for P1-1..P1-6)", ""] + [f"* {d}" for d in v["disclosed_deviations"]]
+     L += ["", f"inputs sha256: {json.dumps(v['inputs_sha256'])}", ""]
+     return "\n".join(L)
+ 
+ 
+ def main() -> int:
+     ap = argparse.ArgumentParser()
+-    ap.add_argument("--arm", choices=("H2CN_DEPLOY8", "H2CN_CAP8", "FACTORED_DEPLOY8"))
++    ap.add_argument("--arm", choices=("H2CN_DEPLOY8", "H2CN_CAP8", "FACTORED_DEPLOY8", "H2CNL_DEPLOY8"))
+     ap.add_argument("--identity-only", action="store_true")
+     ap.add_argument("--forward", required=True)
+     ap.add_argument("--arms-dir", required=True)
+@@ -355,18 +441,23 @@
+     if not a.arm:
+         ap.error("--arm is required unless --identity-only")
+     arm = a.arm
+-    amend = {"H2CN_DEPLOY8": "4", "H2CN_CAP8": "4b", "FACTORED_DEPLOY8": "5"}[arm]
+-    h2 = amend in ("4", "4b")
++    amend = {"H2CN_DEPLOY8": "4", "H2CN_CAP8": "4b", "FACTORED_DEPLOY8": "5", "H2CNL_DEPLOY8": "4c"}[arm]
++    h2 = amend in ("4", "4b", "4c")
+     if fd is not None and fd.get("mode") != ("h2cn" if h2 else "factored"):
+         raise SystemExit(f"[sub-verdict] the forward file is mode {fd.get('mode')!r}, the arm {arm} needs Amendment {amend}'s forward")
+     if amend == "4b":
+         C.check_amendment_4b_seal()                                       # refuses before anything is read
++    if amend == "4c":
++        import h2cnl_freeze as HL
++        HL.check_amendment_4c_seal()                                      # refuses before anything is read
++    if fd is not None and fd.get("h2cnl") and od.resolve() in ((C.WORK / "out" / "ship_r8").resolve(), (C.WORK / "out_4b" / "ship_r8").resolve()):
++        raise SystemExit("[sub-verdict] REFUSING: an --h2cnl forward must be read into a NEW --out-dir (the landed out/ship_r8 and out_4b/ship_r8 files are never overwritten)")
+     if fd is not None and fd.get("cap8") and od.resolve() == (C.WORK / "out" / "ship_r8").resolve():
+         raise SystemExit("[sub-verdict] REFUSING: a --cap8 forward must be read into a SEPARATE --out-dir (the landed out/ship_r8 files are never overwritten)")
+     tac = load(ad / arm / f"TAC_{TREE}.json")
+     pr, pp = load(ri["pr"]["path"]), load(ri["pp"]["path"])
+     pins = load(a.trace_pins) if a.trace_pins else None
+-    c1 = clause1_4b(fd, rid) if amend == "4b" else (clause1_a4(fd, rid) if amend == "4" else clause1_a5(fd, rid, reg_ship, pins))
++    c1 = clause1_4b(fd, rid) if amend == "4b" else (clause1_a4(fd, rid) if amend == "4" else (clause1_4c(fd, rid, arm) if amend == "4c" else clause1_a5(fd, rid, reg_ship, pins)))
+     c1b = clause1b_a4(reg_ship) if h2 else clause1b_a5(fd)
+     c25 = clauses_on(arm, fd, tac)
+     c6, c7 = B.clause6(pr), B.clause7(pp)
+@@ -377,7 +468,7 @@
+     clauses = [c1, c1b] + c25 + [c6, c7]
+     ov = overall(clauses)
+     beside_arms = {"4": ("H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"), "4b": ("H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"),
+-                   "5": ("OSONLY_DEPLOY8", "RETIME_DEPLOY8")}[amend]
++                   "5": ("OSONLY_DEPLOY8", "RETIME_DEPLOY8"), "4c": ("H2CN_DEPLOY8", "H2CNL_MUT8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8")}[amend]
+     bes = {"arms": {}}
+     for b_arm in beside_arms:
+         cs = clauses_on(b_arm, fd, load(ad / b_arm / f"TAC_{TREE}.json"))
+@@ -387,6 +478,10 @@
+     bes["compliance_row"] = (fd or {}).get("compliance_row")
+     if h2:
+         bes["running_max_changed_windows"] = {k: v.get("running_max_changed_windows_H2CN_DEPLOY8") for k, v in ((fd or {}).get("per_window_extra") or {}).items()}
++    if amend == "4c":
++        bes["arms"]["H2CNL_MUT8"]["clauses"]["1"] = {k: v for k, v in clause1_4c(fd, rid, "H2CNL_MUT8").items() if k in ("status", "reason")}
++        bes["h2cnl_per_window"] = {k: {kk: vv for kk, vv in (v.get("h2cnl") or {}).items() if kk not in ("join", "join_mutation_next_window")}
++                                   for k, v in ((fd or {}).get("per_window_extra") or {}).items()}
+     if amend == "4b":
+         bes["clamp_touched_windows"] = {k: {kk: (v.get("cap8") or {}).get(kk) for kk in ("n_changed_by_clamp", "share_changed_by_clamp", "n_changed_by_clamp_compliant",
+                                                                                          "share_changed_by_clamp_compliant", "n_windows", "n_compliant", "n_nonfinite_lim")}
+@@ -414,11 +509,15 @@
+                        "the Master Mind's recommendation is H2CN_CAP8. NavSim only with a separate go.",
+                "FAIL": "FAIL -> clause(s) " + ", ".join(fails) + " named; H2CN_DEPLOY8 stands as Amendment 4 registered it, with its compliance row put to the PI.",
+                "INCOMPLETE": "INCOMPLETE -> a clause could not be shown (see the reasons); H2CN_DEPLOY8 stands as Amendment 4 registered it."}.get(ov)
++    elif amend == "4c":
++        fails = [str(c["id"]) for c in clauses if c["status"] == "FAIL"]
++        nxt = ("this verdict is bar L3 of Amendment 4c (SHIP-R8 OVERALL " + ov + (": clause(s) " + ", ".join(fails) + " named" if fails else "") +
++               "); the committed next step reads L1 + L2 + L3 together -> BARS_4C.json (bars_4c.py)")
+     else:
+         nxt = {"PASS": "PASS -> the factored decode is a refcv8 deliverable candidate; build the in-model implementation (two planner passes on one trunk forward) "
+                        "and its bit-equal control before anything ships; NavSim only with a separate go.",
+                "FAIL": "FAIL -> the failing clause names the lever; the decode stays a refcv9 design input (H-R9-SSGUARD-1)."}.get(ov)
+-    v = {"tool": "ship_r8_sub_verdict.py", "generated": time.strftime("%FT%T%z"), "tree": TREE, "arm": arm, "amendment": amend, "overall": ov, "clauses": clauses,
++    v = {"tool": "ship_r8_4c_verdict.py", "generated": time.strftime("%FT%T%z"), "tree": TREE, "arm": arm, "amendment": amend, "overall": ov, "clauses": clauses,
+          "per_clause": {str(c["id"]): c["status"] for c in clauses}, "beside": bes, "next_step": nxt, "amendments": seals,
+          "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+          "estimator": "paired episode-cluster bootstrap B 2000, bootstrap seed 0 (pair_read_r8.paired_cell -> taniteval.ci), over EPISODES with the models FIXED: "
+@@ -427,6 +526,8 @@
+          "inputs": {"forward": a.forward, "tac_arm": str(ad / arm / f"TAC_{TREE}.json"), "tac_retime_record": str(ad / "RETIME_DEPLOY8" / f"TAC_RECORD_{TREE}.json"),
+                     "trace_pins": a.trace_pins, **{("tac_registered_RETIME_DEPLOY8" if k == "tac" else k): r["path"] for k, r in ri.items()}},
+          "script_sha256": SCRIPT_SHA}
++    if amend == "4c":
++        v["disclosed_deviations"] = DEVIATIONS_4C
+     v["inputs_sha256"] = {k: (C.sha256_file(p) if p and Path(p).exists() else None) for k, p in v["inputs"].items()}
+     jp = od / f"SHIP_R8_{arm}.json"
+     jp.write_text(json.dumps(v, indent=1, default=str) + "\n", encoding="utf-8")

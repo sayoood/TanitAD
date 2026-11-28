@@ -1,0 +1,17 @@
+      1 [main] bash (14144) child_copy: cygheap read copy failed, 0x800000000..0x80000A4F0, done 0, windows pid 14144, Win32 error 299
+   8558 [main] bash 1017 child_copy: dll data read copy failed, 0x210248000..0x210261CB0, done 0, windows pid 14144, Win32 error 299
+  28248 [main] bash 1017 C:\Program Files\Git\usr\bin\bash.EXE: *** fatal error in forked process - couldn't create signal pipe, Win32 error 5
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Temp\r0c_orig\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_rls1_queue.py", line 691, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\AppData\Local\Temp\r0c_orig\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_rls1_queue.py", line 651, in main
+    n += kmon_scenarios(text, tmp)
+         ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Temp\r0c_orig\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_rls1_queue.py", line 417, in kmon_scenarios
+    assert "kill monitor READY" in r["log"] and "trainer rc 0, watcher rc 0, monitor rc 0" in r["log"], r["log"]; n += 3
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2026-10-15T05:25:59 arm R0: trainer pid/pgid 12790, watcher 12818, monitor 12820 (control: C:/Users/Admin/AppData/Local/Temp/tmp7zyiyjuw/k_finish_ok/w/data/rls1/arms/R0/scores)
+2026-10-15T05:26:11 arm R0: trainer rc 0, watcher rc 0, monitor rc 0
+
+RC=1

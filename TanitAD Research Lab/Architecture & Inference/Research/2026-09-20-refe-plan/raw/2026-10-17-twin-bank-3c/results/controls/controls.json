@@ -1,0 +1,90 @@
+{
+ "prereg_sha256": "e8365f34fd5f11a23a1b5e0fceda14dc14426277ae09db3e5335526c1bd6cde3",
+ "I1": {
+  "n_probe": 74,
+  "n_mine": 74,
+  "keys_only_in_probe": [],
+  "keys_only_in_mine": [],
+  "n_compared": 74,
+  "n_with_f": 69,
+  "f_mismatch": [],
+  "d_twin_mismatch": [],
+  "commit_mismatch": [],
+  "v0_mismatch": [],
+  "hold_misses_mismatch": [],
+  "error_mismatch": [],
+  "pass": true,
+  "commit_set_size_probe": 23,
+  "commit_set_size_mine": 23
+ },
+ "I2": {
+  "n_kept": 23,
+  "n_rr": 74,
+  "kept_not_in_rr": [],
+  "traj_mismatch": [],
+  "traj_world_mismatch": [],
+  "goal_mismatch": [],
+  "row_mismatch": [],
+  "probe_committed_but_not_kept": [],
+  "pass": true,
+  "merged_rows_equal_shard_rows": true
+ },
+ "I3": {
+  "lines_in": 224,
+  "lines_out": 173,
+  "non_lane_rows": 150,
+  "verdict": "ok",
+  "pass": true,
+  "mutation_arms": {
+   "flip_byte_in_non_lane_row": {
+    "rejected": true,
+    "why": "non-lane-rank rows are not byte-identical / in order"
+   },
+   "delete_non_lane_row": {
+    "rejected": true,
+    "why": "non-lane-rank rows are not byte-identical / in order; line count 172 != input 224 - dropped 51"
+   },
+   "swap_two_non_lane_rows": {
+    "rejected": true,
+    "why": "non-lane-rank rows are not byte-identical / in order"
+   },
+   "reinsert_dropped_twin": {
+    "rejected": true,
+    "why": "line count 174 != input 224 - dropped 51; a dropped twin is present in the output; kept twins are not exactly the input's non-dropped twins in input order"
+   }
+  },
+  "mutations_all_rejected": true
+ },
+ "I4": {
+  "n_held": 74,
+  "n_legacy": 74,
+  "commit_set_held": 23,
+  "commit_set_legacy": 10,
+  "symmetric_difference": 13,
+  "only_held": 13,
+  "only_legacy": 0,
+  "n_twins_f_differs": 51,
+  "legacy_hold_misses_none": true,
+  "pass": true
+ },
+ "selftest_mutation_arms": {
+  "I1_f_value_off_by_0.001_rejected": true,
+  "I1_commit_flipped_rejected": true,
+  "I1_missing_twin_rejected": true,
+  "I2_traj_float_perturbed_rejected": true,
+  "I2_goal_perturbed_rejected": true,
+  "I2_divergence_perturbed_rejected": true,
+  "I2_kept_row_missing_rejected": true,
+  "all_rejected": true
+ },
+ "all_pass": true,
+ "verdict": "I1-I4 PASS",
+ "inputs": {
+  "bank_i3_sha256": "94e0280d74ba40c4618e9d8694cf651cc289bf7c821a77fc6876ee45c09c113d",
+  "merged_sha256": "fd4ff8ea389f2135358c024cd2281ba467ac789e0ce9f28839983ffbf463c164",
+  "held_audit_n": 74,
+  "legacy_audit_n": 74,
+  "probe_dedup_n": 74,
+  "rr_h6_n": 74
+ }
+}

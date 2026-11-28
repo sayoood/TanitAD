@@ -1,0 +1,83 @@
+...............................FF................F.............          [100%]
+================================== FAILURES ===================================
+_______________________ test_r8_nav_row_is_exactly_zero _______________________
+
+    def test_r8_nav_row_is_exactly_zero():
+        row = B.r8_nav_row()
+        assert tuple(row.shape) == (1, 6) and row.dtype == torch.float32
+>       assert torch.equal(row, torch.zeros(1, 6, dtype=torch.float32))
+E       assert False
+E        +  where False = <built-in method equal of type object at 0x00007FFCECE98DE0>(tensor([[0.5878, 1.2238, 1.0000, 1.0000, 1.3863, 1.0000]]), tensor([[0., 0., 0., 0., 0., 0.]]))
+E        +    where <built-in method equal of type object at 0x00007FFCECE98DE0> = torch.equal
+E        +    and   tensor([[0., 0., 0., 0., 0., 0.]]) = <built-in method zeros of type object at 0x00007FFCECE98DE0>(1, 6, dtype=torch.float32)
+E        +      where <built-in method zeros of type object at 0x00007FFCECE98DE0> = torch.zeros
+E        +      and   torch.float32 = torch.float32
+
+tests\test_inputs8.py:194: AssertionError
+_______ test_unknown_row_equals_the_dropout_path_even_with_nonzero_args _______
+
+    def test_unknown_row_equals_the_dropout_path_even_with_nonzero_args():
+        """``refcv8_train.r8_before_forward`` (:560-567): ``known &= ~(gen.rand((b,)) < p)`` then ``scale_nav(nav, known)``.  Replayed with
+        p = 1.0 (every row dropped) on a row whose v9 args are NON-zero: the output is the bridge's row, bit for bit."""
+        from tanitad.train import refcv8_train as tr
+        src = _src(R8TRAIN)
+        assert 'fwd["r8_nav"] = scale_nav(nav, known)' in src and "known &= ~(gen.rand((b,), dev) <" in src
+        assert "known = torch.zeros_like(known)" in src
+        g = torch.Generator().manual_seed(0)
+        raw = torch.tensor([[40.0, 120.0, 90.0, 1.0, 150.0]])
+        known = torch.ones(1, dtype=torch.bool)
+        known &= ~(torch.rand((1,), generator=g) < 1.0)
+        assert not bool(known.any())
+>       assert torch.equal(tr.scale_nav(raw, known), B.r8_nav_row())
+E       AssertionError: assert False
+E        +  where False = <built-in method equal of type object at 0x00007FFCECE98DE0>(tensor([[0., 0., 0., 0., 0., 0.]]), tensor([[0.5878, 1.2238, 1.0000, 1.0000, 1.3863, 1.0000]]))
+E        +    where <built-in method equal of type object at 0x00007FFCECE98DE0> = torch.equal
+E        +    and   tensor([[0., 0., 0., 0., 0., 0.]]) = <function scale_nav at 0x00000221397696C0>(tensor([[ 40., 120.,  90.,   1., 150.]]), tensor([False]))
+E        +      where <function scale_nav at 0x00000221397696C0> = <module 'tanitad.train.refcv8_train' from 'C:\\lgs/Lfb47a58376/stack\\tanitad\\train\\refcv8_train.py'>.scale_nav
+E        +    and   tensor([[0.5878, 1.2238, 1.0000, 1.0000, 1.3863, 1.0000]]) = <function r8_nav_row at 0x0000022139228720>()
+E        +      where <function r8_nav_row at 0x0000022139228720> = B.r8_nav_row
+
+tests\test_inputs8.py:209: AssertionError
+_______________ test_forward_kwargs8_emits_exactly_the_contract _______________
+
+    def test_forward_kwargs8_emits_exactly_the_contract():
+        g = torch.zeros(4, 400, 240, 2)
+        v = torch.ones(4, 400, 240, dtype=torch.bool)
+        nav = B.nav_input8(B.declare8(_const_accel(cmd=(1, 0, 0, 0)), "R8_LEGAL"), "R8_LEGAL")
+        kw = B.forward_kwargs8(None, nav, 9.5, B.speed_input8(None, "R8_LEGAL"), g, v, 2, "cpu")
+        assert tuple(kw) == B.FORWARD_KWARGS
+        assert int(kw["nav_cmd"][0]) == 1 and float(kw["v0"][0]) == pytest.approx(9.5)
+        assert kw["lan"] is None and kw["ego_state"] is None and kw["nav_args"] is None and kw["agent_gt"] is None
+        assert float(kw["v_max_ms"][0]) == 0.0 and float(kw["v_max_valid"][0]) == 0.0
+        assert tuple(kw["perception_grid"].shape) == (1, 4, 400, 240, 2)
+>       assert torch.equal(kw["r8_nav"], torch.zeros(1, 6)) and kw["r8_nav"].dtype == torch.float32
+E       assert (False)
+E        +  where False = <built-in method equal of type object at 0x00007FFCECE98DE0>(tensor([[0.5878, 1.2238, 1.0000, 1.0000, 1.3863, 1.0000]]), tensor([[0., 0., 0., 0., 0., 0.]]))
+E        +    where <built-in method equal of type object at 0x00007FFCECE98DE0> = torch.equal
+E        +    and   tensor([[0., 0., 0., 0., 0., 0.]]) = <built-in method zeros of type object at 0x00007FFCECE98DE0>(1, 6)
+E        +      where <built-in method zeros of type object at 0x00007FFCECE98DE0> = torch.zeros
+
+tests\test_inputs8.py:378: AssertionError
+============================== warnings summary ===============================
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:62: DeprecationWarning: numpy.core.numeric is deprecated and has been renamed to numpy._core.numeric. The numpy._core namespace contains private NumPy internals and its use is discouraged, as NumPy internals can change without warning in any release. In practice, most real-world usage of numpy.core is to access functionality in the public NumPy API. If that is the case, use the public NumPy API. If not, you are using NumPy internals. If you would still like to access an internal attribute, use numpy._core.numeric._frombuffer.
+    return super().find_class(mod, name)
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:137: RuntimeWarning: overflow encountered in cast
+    return np.stack(grids).astype(np.float32), src, M
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:146: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+    im = torch.from_numpy(np.asarray(Image.open(p).convert("RGB"))).permute(
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:151: RuntimeWarning: invalid value encountered in cast
+    s = s[0].permute(1, 2, 0).clamp(0, 255).numpy().astype(np.uint8)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_inputs8.py::test_r8_nav_row_is_exactly_zero - assert False
+FAILED tests/test_inputs8.py::test_unknown_row_equals_the_dropout_path_even_with_nonzero_args
+FAILED tests/test_inputs8.py::test_forward_kwargs8_emits_exactly_the_contract
+3 failed, 60 passed, 4 warnings in 14.14s

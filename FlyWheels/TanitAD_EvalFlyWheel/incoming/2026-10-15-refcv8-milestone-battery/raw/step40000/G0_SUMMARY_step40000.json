@@ -1,0 +1,129 @@
+{
+ "artifact": "E:\\refcv8_eval_kit\\battery\\step40000\\g0.partial.json",
+ "finished": false,
+ "partial_only": true,
+ "tool": "g0_refcv7.py",
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_40000.pt",
+ "ckpt_md5": "156d2632b166046cd7cf4b86fc962425",
+ "config_md5": "4ce2c77230dc4e802e78b39ce05af916",
+ "step": 40000,
+ "n_seeds": 0,
+ "seeds": "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23",
+ "started": "2026-10-19T22:50:32",
+ "finished_at": null,
+ "wall_s": null,
+ "gpu": "NVIDIA GeForce RTX 4060",
+ "torch": "2.11.0+cu128",
+ "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+ "cuda_max_memory_allocated_gib": null,
+ "state_dict": {
+  "strict": true,
+  "missing": 0,
+  "unexpected": 0,
+  "n_keys": 1165,
+  "step": 40000
+ },
+ "param_breakdown_equal": true,
+ "n_eval_windows": 23772,
+ "n_eval_episodes": 139,
+ "perm_sha256": "99adbc7ed285236adc1098cf5eb9dbccfb04a2ce3307fb977a292dc4dfbf6975",
+ "GATE_VERDICT": null,
+ "gate_amendment": null,
+ "gate_registration": null,
+ "verdicts_by_rule": {
+  "as_registered": null,
+  "A2": null,
+  "A5": null,
+  "A6": null,
+  "A7": null
+ },
+ "reasons_gate_first40": [],
+ "n_reasons_gate": 0,
+ "reasons_as_registered_first10": [],
+ "n_terms": null,
+ "by_class_counts": null,
+ "medians": null,
+ "mutation_detection": {},
+ "M1_detected": null,
+ "blind_spots_named": null,
+ "wrapper_clause": null,
+ "requires_grad_control": {
+  "n_terms": 471,
+  "n_differ": 42,
+  "max_rel_all": 2.7693987198628126e-05
+ },
+ "a7_keys": [],
+ "seed_group_report": null,
+ "pose_sync_patch": {
+  "enabled": true,
+  "stats": {
+   "sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+   "sidecar_rows": 4711,
+   "sidecar_meta": {
+    "builder": "scripts/build_pose_sync_sidecar.py",
+    "clock_sidecar": "refcv8_clip_clock_sidecar.jsonl",
+    "delta_ms": {
+     "max": 35.426,
+     "mean": 16.500600099077147,
+     "min": 0.0,
+     "p95": 31.388
+    },
+    "inputs_md5": {
+     "eval139_v2manifest.pt": "3443323229279a18253691ff36ebffd3",
+     "train4572_v2manifest.pt": "77dafb50af0aedd1b940cf12c12518ef"
+    },
+    "k1_self_test": {
+     "analytic_maxabs_us": 0.3333333339558542,
+     "delta0_us": 0.0,
+     "delta_max_ms": 33.16582914572954,
+     "dt_s": 0.10050251256281406,
+     "n_target": 200,
+     "ok": true
+    },
+    "k4_checked": 4653,
+    "k4_worst_abs_dt_s": 6.2185311899831675e-09,
+    "n_rows": 4711,
+    "n_rows_written": 4711,
+    "n_total_clips": 4711,
+    "rule": "delta_us[k] = t_image[k] - t_pose[k]; t_pose = linspace(t_first, t_last, int(span*10))[k]; t_image = first camera frame >= t_pose (v2_compressed.py:119-121). Indexed by RAW grid row k (provider row r = k - (n_stack - 1)).",
+    "schema": "tanitad.pose_sync/1",
+    "skipped": {
+     "grid_rows_mismatch": 0,
+     "k4_dt_mismatch": 0,
+     "no_camera_ts": 0,
+     "sid_mismatch": 0
+    }
+   },
+   "sign": 1.0,
+   "n_clips": 139,
+   "n_covered": 139,
+   "n_uncovered_read_unshifted": 0,
+   "rule": "window re-sampled at t_pose + delta[NOW raw row]; rows, label clock and (sid,k) joins unchanged",
+   "fields_shifted": [
+    "pose_last",
+    "future_poses",
+    "future_poses_ext",
+    "pose_hist",
+    "goal_tac",
+    "actions",
+    "future_actions"
+   ]
+  },
+  "remap_overrides": {
+   "--agent-rig-extrinsics": "E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json",
+   "--clip-clock-sidecar": "E:/refcv8_eval_kit/data/refcv8_clip_clock_sidecar_ts33.jsonl",
+   "--vis1-sidecar": "E:/refcv8_eval_kit/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz",
+   "--nav-compliance-tau-file": "E:/refcv8_eval_kit/data/refcv8/nav_compliance_tau_train4572.json",
+   "--r8-v9-labels-eval": "E:/refcv8_eval_kit/data/refcv8_v9labels/release/v9_labels_eval139.npz",
+   "--pose-sync-sidecar": "E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl",
+   "--join-defect-masks": "C:/lgs/Lfb47a58376/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+  },
+  "loader_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\eval\\refcv7_loader.py",
+  "loader_KIT": "E:\\refcv6_eval_kit",
+  "launch_tree": "C:\\lgs\\Lfb47a58376",
+  "wrapper_status": "raised OutOfMemoryError: CUDA out of memory. Tried to allocate 312.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.25 GiB is free. Of the allocated memory 3.18 GiB is allocated by PyTorch, and 641.49 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_AL"
+ },
+ "headline_terms": {},
+ "terms_not_ok_by_class_first15": {},
+ "n_terms_not_ok_by_class": {}
+}

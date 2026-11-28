@@ -1,0 +1,13 @@
+# Note N1 to PREREG_V8F_PROOF_ADD84 (TABCLOSE10K): build details of the part B tables, fixed before the table tool runs on data
+
+Written after the table tool was built on synthetic data (`tabclose/make_tab_tables.py` c8be231c48b1ec4e) and before it has run on the pod; no table of card ADD84 exists, no rollout of card ADD84 has run, cards ADD82 and ADD83 are not read. The card text is not changed; this note says how four of its sentences are built.
+
+1. "The frames where L100 has a value" (section 3). Read from the code of the rule (`distrule/v8f_t1_eval_rule.py` lines 92 to 112, `v8f_t1_eval_rule_mix.py` lines 81 to 83, wrapper lines 863 to 864): form RRc feeds the label closing speed at the clip and frame of every look, whether or not the reader reads a lead there; the label closing speed is the least-squares slope of the label gap over the trailing run when the label reads a lead and the run has at least 3 frames, and exactly 0.0 otherwise. The frames with a value are therefore the frames where the label reads a lead and the trailing run has at least 3 frames; a slope of exactly 0.0 on such a frame is a value. On the other frames the table has no value and the table path feeds 0.0, as form RRc does. Control a0 is judged as the card writes it (all looks, per seed and log); the share over the looks with a lead read present is printed beside it.
+
+2. "e independent standard normal per frame" (section 3). One standard normal is drawn per row of the table in row order (all rows of the 141 clips) from the generator the card names; the values on the frames with a value are used. So that the planted quality is exact and control a1 does not rest on the luck of a draw, the noise on the frames with a value is then made exactly mean 0, for W50, W70, W90 and S70 exactly uncorrelated with the label value (its least-squares projection on a constant and the label is subtracted), and scaled to a standard deviation of exactly 1. For W00 it is made mean 0 and unit standard deviation only; its r against the label is what the draw gives and control a1 bounds it.
+
+3. Arm S70. The autoregression runs along all frames of a clip in frame order (first frame of a clip = the draw, coefficient 0.9, innovation scaled by the square root of 1 - 0.81), is then taken on the frames with a value and treated as in item 2. The lag-1 autocorrelation of control a1 is computed over pairs of consecutive frames of one clip that both have a value.
+
+4. m and s are the mean and the standard deviation (divisor n) of the label value over the frames with a value.
+
+What the note does not change: the arms, the levels of r, the generator seeds, the runs, the pairs, the names, the verdicts, and the bounds of controls a0 to a4.

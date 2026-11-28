@@ -1,0 +1,59 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "hypothesis": "H-RANK-22",
+ "parity": false,
+ "parity_note": "NON-PARITY 130-clip arms at 2k steps; read the SHAPE across matched arms",
+ "arms": {
+  "lewm": {
+   "o1_path": "none (w=0)",
+   "participation_heldout24": 4.426,
+   "n_heldout": 1440,
+   "participation_val": 3.42,
+   "n_val": 1440,
+   "divergence_over_movement": {
+    "x100": 0.0001,
+    "rand": 0.0,
+    "v0": 0.0
+   }
+  },
+  "lewm_o1": {
+   "o1_path": "JOINT",
+   "participation_heldout24": 2.94,
+   "n_heldout": 1440,
+   "participation_val": 2.589,
+   "n_val": 1440,
+   "divergence_over_movement": {
+    "x100": 516.5728,
+    "rand": 0.1607,
+    "v0": 388.5004
+   }
+  },
+  "lewm_o1_detach": {
+   "o1_path": "PREDICTOR only",
+   "participation_heldout24": 3.4,
+   "n_heldout": 1440,
+   "participation_val": 3.48,
+   "n_val": 1440,
+   "divergence_over_movement": {
+    "x100": 6.5323,
+    "rand": 0.0147,
+    "v0": 2.679
+   }
+  },
+  "fixed": {
+   "o1_path": "JOINT (6-term)",
+   "participation_heldout24": 2.94,
+   "n_heldout": 1440,
+   "participation_val": 2.609,
+   "n_val": 1440,
+   "divergence_over_movement": {
+    "x100": 474.9075,
+    "rand": 0.4099,
+    "v0": 1159.7718
+   }
+  }
+ },
+ "verdict": "H-RANK-22 PARTIALLY SUPPORTED \u2014 and the two held-out sets DISAGREE, so neither half is clean. Confining O1 to the predictor restores action-sensitivity from EXACTLY ZERO to 6.53x true per-tick movement while VAL participation is 3.48 against the collapse-free baseline's 3.42 (ratio 1.018 \u2014 no val-side rank cost, the first arm ever with BOTH). But on held24 participation falls 4.43 -> 3.40 (ratio 0.768), so the no-cost claim does NOT replicate across held-out sets. AND the restored divergence is WEAK: 6.53 against joint-O1's 517 \u2014 79x less. \u21d2 the gradient path is A lever on the coupling, not THE mechanism; the strong-action-conditioning-without-collapse arm does not exist yet.",
+ "_verdict_note": "\u26d4 THE AUTOMATED VERDICT IN THE FIRST RUN WAS COMPUTED ON `participation_heldout24` AND IS SUPERSEDED. The binding rule is VAL-SIDE OR NOTHING (C133); the two held-out sets rank the arms differently, which is itself the finding."
+}

@@ -1,0 +1,162 @@
+....F.F.......................FFFFFFF.F.F.F..F...........                [100%]
+================================== FAILURES ===================================
+__ test_two_constant_arms_read_an_exact_difference_with_zero_width_interval ___
+
+    def test_two_constant_arms_read_an_exact_difference_with_zero_width_interval():
+        r = ev({"R8_LEGAL": 0.6, "STOP": 0.35})
+        iv = r["pairs"]["R8_LEGAL__minus__STOP"]["interval"]
+>       assert r["pairs"]["R8_LEGAL__minus__STOP"]["delta_x100"] == 25.0
+E       assert -25.0 == 25.0
+
+tests\test_navsim_bars8.py:106: AssertionError
+____ test_an_arm_missing_tokens_is_refused_for_pairing_not_silently_joined ____
+
+    def test_an_arm_missing_tokens_is_refused_for_pairing_not_silently_joined():
+        info = mk_info()
+        full = mk_arm(0.6, info.index)
+        short = mk_arm(0.5, info.index[:60])
+        r = B.evaluate_navtest({"R8_LEGAL": full, "STOP": short}, info, ELIGIBLE, {**B.DEFAULT_CFG, **CFG})
+>       assert "STOP" in r["refused_pairing"] and "STOP" not in r["arms"]
+E       AssertionError: assert ('STOP' in {})
+
+tests\test_navsim_bars8.py:127: AssertionError
+___________________ test_seed_floor_flag_in_strata_literal ____________________
+
+    def test_seed_floor_flag_in_strata_literal():
+        # LEGAL 0.60 everywhere; s1 0.50 on the 16 Singapore tokens only -> global floor 2.5, Singapore floor 10.0, US floor 0.0
+        info = mk_info()
+        sg = np.array([m == SG for m in info["map_name"]])
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": np.where(sg, 0.5, 0.6), "STOP": np.where(sg, 0.59, 0.5)}, info=info, cfg={"strata_pairs": True})
+>       assert r["inference_seed_floor"]["x100"] == 2.5
+E       assert 5.25 == 2.5
+
+tests\test_navsim_bars8.py:172: AssertionError
+_________________________ test_n1_and_n4_pass_literal _________________________
+
+    def test_n1_and_n4_pass_literal():
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.60, "STOP": 0.50, B.R7_ARM: 0.55})
+        n1, n4 = r["bars"]["BAR-R8-N1"], r["bars"]["BAR-R8-N4"]
+>       assert n1["verdict"] == "PASS" and n1["arithmetic"]["R8_LEGAL"]["margin_x100"] == 10.0 and n1["seed_floor_x100"] == 0.0
+E       AssertionError: assert ('FAILED' == 'PASS'
+E         
+E         - PASS
+E         + FAILED)
+
+tests\test_navsim_bars8.py:188: AssertionError
+____________________ test_n1_inside_2x_floor_is_not_proven ____________________
+
+    def test_n1_inside_2x_floor_is_not_proven():
+        # LEGAL .60 / s1 .54 -> floor 6.0 ; margin 10.0 <= 2 x 6.0 = 12.0 -> NOT PROVEN even though the interval is separated
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.54, "STOP": 0.50})
+        n1 = r["bars"]["BAR-R8-N1"]
+>       assert n1["seed_floor_x100"] == 6.0 and n1["verdict"].startswith("NOT PROVEN")
+E       assert (4.0 == 6.0)
+
+tests\test_navsim_bars8.py:196: AssertionError
+_____________________ test_n4_inside_floor_is_not_proven ______________________
+
+    def test_n4_inside_floor_is_not_proven():
+        # LEGAL .60 / s1 .585 -> floor 1.5 ; R7 .575 : seed-0 margin 2.5 clears the floor, seed-1 margin 1.0 does not
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.585, "STOP": 0.40, B.R7_ARM: 0.575})
+        n4 = r["bars"]["BAR-R8-N4"]
+>       assert n4["per_arm_verdict"]["R8_LEGAL"] == "PASS" and n4["per_arm_verdict"]["R8_LEGAL_s1"].startswith("NOT PROVEN")
+E       AssertionError: assert ('FAILED' == 'PASS'
+E         
+E         - PASS
+E         + FAILED)
+
+tests\test_navsim_bars8.py:204: AssertionError
+__________________ test_n1_fails_when_the_arm_is_below_stop ___________________
+
+    def test_n1_fails_when_the_arm_is_below_stop():
+        r = ev({"R8_LEGAL": 0.40, "R8_LEGAL_s1": 0.40, "STOP": 0.50})
+>       assert r["bars"]["BAR-R8-N1"]["verdict"] == "FAILED"
+E       AssertionError: assert 'NOT PROVEN (...seed1=FAILED)' == 'FAILED'
+E         
+E         - FAILED
+E         + NOT PROVEN (inference seeds disagree: seed0=NOT PROVEN, seed1=FAILED)
+
+tests\test_navsim_bars8.py:210: AssertionError
+_________ test_n1_fails_when_the_margin_is_positive_but_not_separated _________
+
+    def test_n1_fails_when_the_margin_is_positive_but_not_separated():
+        # per-log deltas alternate +0.30 / -0.20 over 16 logs: mean +0.05, sd 0.25 -> the log-cluster interval straddles 0
+        info = mk_info()
+        even = np.array([(i // 4) % 2 == 0 for i in range(64)])
+        r = ev({"R8_LEGAL": np.where(even, 0.8, 0.3), "R8_LEGAL_s1": np.where(even, 0.8, 0.3), "STOP": 0.5}, info=info)
+        p = r["pairs"]["R8_LEGAL__minus__STOP"]
+>       assert p["delta_x100"] == 5.0 and p["interval"]["positive"] is False
+E       assert (-5.0 == 5.0)
+
+tests\test_navsim_bars8.py:219: AssertionError
+_____________________ test_n1_needs_the_floor_arm_to_pass _____________________
+
+    def test_n1_needs_the_floor_arm_to_pass():
+        r = ev({"R8_LEGAL": 0.60, "STOP": 0.50})
+>       assert r["bars"]["BAR-R8-N1"]["verdict"].startswith("NOT PROVEN (inference-seed floor not measured")
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x00000253F0CF02A0>('NOT PROVEN (inference-seed floor not measured')
+E        +    where <built-in method startswith of str object at 0x00000253F0CF02A0> = 'FAILED'.startswith
+
+tests\test_navsim_bars8.py:225: AssertionError
+_________________ test_validation_only_run_carries_no_verdict _________________
+
+    def test_validation_only_run_carries_no_verdict():
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": 0.6, "STOP": 0.5, B.R7_ARM: 0.55}, meta={"label": "VALIDATION ONLY (x)", "step": 40000, "weights": "ema"})
+        for k in ("BAR-R8-N1", "BAR-R8-N4"):
+            assert r["bars"][k]["verdict"] == "NOT_EVALUATED -- VALIDATION ONLY"
+>       assert r["bars"]["BAR-R8-N1"]["verdict_if_eligible_ARITHMETIC_ONLY"] == "PASS"           # arithmetic is shown, labelled as such
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'FAILED' == 'PASS'
+E         
+E         - PASS
+E         + FAILED
+
+tests\test_navsim_bars8.py:239: AssertionError
+__________ test_swapped_arm_labels_would_flip_the_n1_verdict_literal __________
+
+    def test_swapped_arm_labels_would_flip_the_n1_verdict_literal():
+        # the literal that the mutation arm 'swap_arm_labels' must break: LEGAL .60 beats STOP .50 -> PASS, never FAILED
+        r = ev({"R8_LEGAL": 0.60, "R8_LEGAL_s1": 0.60, "STOP": 0.50})
+>       assert r["bars"]["BAR-R8-N1"]["arithmetic"]["R8_LEGAL"]["PDMS_x100"] == 60.0
+E       assert 50.0 == 60.0
+
+tests\test_navsim_bars8.py:254: AssertionError
+___________ test_rt_bar_when_ship_passed_and_the_table_is_per_frame ___________
+
+    def test_rt_bar_when_ship_passed_and_the_table_is_per_frame():
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": 0.6, "STOP": 0.5, B.R7_ARM: 0.55, "R8_RT": 0.7},
+               meta={**ELIGIBLE, "rt_table_sha256": GOOD_SHA}, cfg={"ship_r8_passed": True})
+>       assert r["bars"]["R8_RT"]["BAR-R8-N1[R8_RT]"]["verdict"] == "PASS"
+E       AssertionError: assert 'NOT PROVEN (...e-seed floor)' == 'PASS'
+E         
+E         - PASS
+E         + NOT PROVEN (margin inside 2x the inference-seed floor)
+
+tests\test_navsim_bars8.py:274: AssertionError
+________________________ test_priv_never_carries_a_bar ________________________
+
+    def test_priv_never_carries_a_bar():
+        r = ev({"R8_LEGAL": 0.6, "R8_LEGAL_s1": 0.6, "STOP": 0.5, "R8_PRIV": 0.8}, cfg={"ship_r8_passed": True})
+        pv = r["bars"]["R8_PRIV"]
+        assert pv["verdict"].startswith("NO_BAR") and not [k for k in pv if k.startswith("BAR-")]
+>       assert pv["PRIV_minus_LEGAL"]["delta_x100"] == 20.0                                       # reported as PRIV - LEGAL with a paired CI
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 30.0 == 20.0
+
+tests\test_navsim_bars8.py:288: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_navsim_bars8.py::test_two_constant_arms_read_an_exact_difference_with_zero_width_interval
+FAILED tests/test_navsim_bars8.py::test_an_arm_missing_tokens_is_refused_for_pairing_not_silently_joined
+FAILED tests/test_navsim_bars8.py::test_seed_floor_flag_in_strata_literal - a...
+FAILED tests/test_navsim_bars8.py::test_n1_and_n4_pass_literal - AssertionErr...
+FAILED tests/test_navsim_bars8.py::test_n1_inside_2x_floor_is_not_proven - as...
+FAILED tests/test_navsim_bars8.py::test_n4_inside_floor_is_not_proven - Asser...
+FAILED tests/test_navsim_bars8.py::test_n1_fails_when_the_arm_is_below_stop
+FAILED tests/test_navsim_bars8.py::test_n1_fails_when_the_margin_is_positive_but_not_separated
+FAILED tests/test_navsim_bars8.py::test_n1_needs_the_floor_arm_to_pass - Asse...
+FAILED tests/test_navsim_bars8.py::test_validation_only_run_carries_no_verdict
+FAILED tests/test_navsim_bars8.py::test_swapped_arm_labels_would_flip_the_n1_verdict_literal
+FAILED tests/test_navsim_bars8.py::test_rt_bar_when_ship_passed_and_the_table_is_per_frame
+FAILED tests/test_navsim_bars8.py::test_priv_never_carries_a_bar - assert 30....
+13 failed, 44 passed, 2 deselected in 26.37s

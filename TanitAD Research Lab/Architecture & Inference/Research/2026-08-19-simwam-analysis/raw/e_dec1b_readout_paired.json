@@ -1,0 +1,97 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "champ30k",
+ "step": 30000,
+ "n_episodes": 12,
+ "B": 120,
+ "estimator": "PAIRED episode-cluster bootstrap of the R2 DIFFERENCE",
+ "targets": {
+  "speed": {
+   "enc-z_op": {
+    "delta_r2": 0.0118,
+    "ci95": [
+     -1.6569,
+     1.3295
+    ],
+    "ci_excludes_zero": false
+   },
+   "enc-pix": {
+    "delta_r2": 0.0124,
+    "ci95": [
+     -1.9427,
+     2.0918
+    ],
+    "ci_excludes_zero": false
+   },
+   "z_op-pix": {
+    "delta_r2": 0.0006,
+    "ci95": [
+     -0.7365,
+     1.1948
+    ],
+    "ci_excludes_zero": false
+   },
+   "enc-dino": {
+    "delta_r2": -0.3703,
+    "ci95": [
+     -2.7656,
+     0.2229
+    ],
+    "ci_excludes_zero": false
+   },
+   "enc-enc": {
+    "delta_r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_excludes_zero": false
+   }
+  },
+  "d_ego": {
+   "enc-z_op": {
+    "delta_r2": -0.1419,
+    "ci95": [
+     -2.7758,
+     0.8223
+    ],
+    "ci_excludes_zero": false
+   },
+   "enc-pix": {
+    "delta_r2": -0.2241,
+    "ci95": [
+     -2.903,
+     0.7236
+    ],
+    "ci_excludes_zero": false
+   },
+   "z_op-pix": {
+    "delta_r2": -0.0822,
+    "ci95": [
+     -1.344,
+     0.9109
+    ],
+    "ci_excludes_zero": false
+   },
+   "enc-dino": {
+    "delta_r2": -0.5562,
+    "ci95": [
+     -4.445,
+     0.1819
+    ],
+    "ci_excludes_zero": false
+   },
+   "enc-enc": {
+    "delta_r2": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "ci_excludes_zero": false
+   }
+  }
+ },
+ "pairing_control_violations": [],
+ "verdict": "readout destroys signal on NO target; encoder beats raw pixels on NO target. The readout is exonerated at this n. And the encoder does NOT beat raw pixels \u21d2 the OBJECTIVE is the defect."
+}

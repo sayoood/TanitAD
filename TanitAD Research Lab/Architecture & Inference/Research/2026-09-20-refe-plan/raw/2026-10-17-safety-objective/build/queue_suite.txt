@@ -1,0 +1,141 @@
+# ------------------------------------------------------------------------------------------------------------------------------- B4. SAFEOBJ: R0d / R1d / R1o (profile refe_rls1d)
+def rls1d_checks(text, tmp, only=None):
+    """The whole arm loop (extracted verbatim) run for the SAFEOBJ arms against the fakes: the profile, the argv the preflight and the trainer receive, the reference the monitor reads against (each
+    arm's OWN A, even with C0's dumps on the pod), the seed-matched second control (read when its dumps are there, announced when not), R1o's observe-only monitor and replay and its S gate (the REAL
+    rls1_checks.py safeobj-gate, called through the fake python), a K3 kill of R0d / R1d that STOPS the chain, a killed R0d that refuses on a re-run, misspelled arms."""
+    n = 0
+    want = lambda k: only is None or k in only                                                              # noqa: E731
+    calls_of = lambda r, script: [ln for ln in r["calls"].splitlines() if ln.startswith(script + " ")]      # noqa: E731
+    CON_ON = "--epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0"
+    PASS = '{"S": "PASS"}'
+
+    def s_files(*pairs):
+        def prep(R):
+            for arm, content in pairs:
+                (R / "arms" / arm).mkdir(parents=True, exist_ok=True)
+                (R / "arms" / arm / "safeobj_S.json").write_text(content, encoding="utf-8")
+        return prep
+
+    def with_c0(R):                                                                                         # C0's banked dumps stay on the pod
+        (R / "arms" / "C0" / "scores").mkdir(parents=True)
+        (R / "arms" / "C0" / "scores" / "scores_update1000_A.npz").write_text("c0")
+
+    def prep_all(R):
+        with_c0(R)
+        s_files(("R0d", PASS), ("R1d", PASS))(R)
+    if want("order"):                                                                                       # R0d -> R1d -> R1o, each under refe_rls1d, each read against its OWN arm A
+        r = armloop_run(text, tmp, "al_so_order", "R0d R1d R1o", prepare=prep_all, timeout=240)
+        assert r["rc"] == 0 and r["done"] == ["R0d", "R1d", "R1o"] and "ZZRLS1_DONE arms: R0d R1d R1o" in r["log"], (r["rc"], r["done"], r["log"][-1500:], r["out"][-500:])
+        assert re.findall(r"launch_gate\.py run --profile (\S+) --arm-name (\S+)", r["calls"]) == [("refe_rls1d", "R0d"), ("refe_rls1d", "R1d"), ("refe_rls1d", "R1o")], r["calls"]
+        ctl = {a: re.search(rf"arm {a}: trainer pid/pgid .*\(control: ([^)]*)\)", r["log"]).group(1) for a in ("R0d", "R1d", "R1o")}
+        assert all(ctl[a].endswith(f"/arms/{a}/scores") for a in ctl), ctl                                  # NOT .../arms/C0/scores, even for R0d with C0's dumps there
+        trn = [ln for ln in calls_of(r, "scorer_finetune.py") if "--preflight" not in ln]
+        pre = [ln for ln in calls_of(r, "scorer_finetune.py") if "--preflight" in ln]
+        assert len(trn) == 3 and len(pre) == 3, (trn, pre)
+        assert trn[0].endswith(CON_ON) and trn[1].endswith(CON_ON) and trn[2].endswith("--epo-con off"), [t[-90:] for t in trn]             # the levers reach the TRAINER ...
+        assert CON_ON in pre[0] and CON_ON in pre[1] and "--epo-con off" in pre[2] and "--seed 1" in pre[2], [p_[-110:] for p_ in pre]      # ... and the PREFLIGHT
+        mon = [ln for ln in calls_of(r, "rls1_checks.py") if " monitor " in ln]
+        rep = [ln for ln in calls_of(r, "rls1_checks.py") if " replay " in ln]
+        assert len(mon) == 3 and len(rep) == 3, (mon, rep)
+        assert all(re.search(rf"--arm {a} .*--refdir \S+/arms/{a}/scores ", mon[i]) for i, a in enumerate(("R0d", "R1d", "R1o"))), mon
+        assert "--observe-only" not in mon[0] and "--observe-only" not in mon[1] and "--observe-only" in mon[2], mon                       # M9: R1o's K3 monitor is OBSERVE-ONLY, the constrained arms' are not
+        assert "--observe-only" not in rep[0] and "--observe-only" not in rep[1] and "--observe-only" in rep[2], rep
+        gate = [ln for ln in calls_of(r, "rls1_checks.py") if " safeobj-gate " in ln]
+        assert len(gate) == 1 and re.search(r"--dirs \S+/arms/R0d \S+/arms/R1d$", gate[0]), gate                                           # only R1o is gated, on BOTH constrained arms
+        rv = calls_of(r, "rl_val_eval.py")
+        assert len(rv) == 4 and "rlval_vs_C0.json" in rv[1] and "/arms/C0/scores/scores_update1000_A.npz" in rv[1] and all("rlval_vs_C" not in x for x in (rv[0], rv[2], rv[3])), rv      # R0d: C0 is the second control
+        assert r["log"].count("ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL") == 2 and "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL arm R1d: C1's" in r["log"] and "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL arm R1o: C1's" in r["log"]
+        assert all(f"arm {a}: kill monitor READY" in r["log"] for a in ("R0d", "R1d", "R1o")); n += 30
+    if want("r1o_needs_S"):                                                                                 # R1o is REFUSED until BOTH constrained arms read S = PASS: nothing is created, nothing runs
+        for nm, prep in (("none", None), ("one", s_files(("R0d", PASS))), ("fail", s_files(("R0d", PASS), ("R1d", '{"S": "FAIL"}'))), ("junk", s_files(("R0d", PASS), ("R1d", "{nope")))):
+            r = armloop_run(text, tmp, f"al_so_noS_{nm}", "R1o", prepare=prep)
+            assert r["rc"] == 1 and "REFUSED: R1o runs only if R0d and R1d both read bar S = PASS" in r["log"], (nm, r["rc"], r["log"][-800:])
+            assert "scorer_finetune.py" not in r["calls"] and "launch_gate.py" not in r["calls"] and "R1o" not in r["arms_dirs"] and "ZZRLS1_ARM_DONE" not in r["log"], (nm, r["calls"], r["arms_dirs"]); n += 3
+    def stopped_after(r, *later):                                                                           # the KILL-STOP check: after a kill the chain creates NOTHING for the arms behind it
+        """no `arm X:` log line, no gate / trainer / S-gate call that names X, no ZZRLS1_DONE, and arms/X absent or holding only the fixture's own safeobj_S.json (prep_all pre-seeds R1d's, so
+        `arms_dirs` can never equal [C0, R0d]: the first full-form run of this test failed there for that reason, not because the chain went on)"""
+        for a in later:
+            d = r["R"] / "arms" / a
+            held = sorted(p_.name for p_ in d.iterdir()) if d.exists() else None
+            assert not re.search(rf"arm {a}:", r["log"]) and not re.search(rf"--arm-name {a}|--arm {a}|arms/{a}/(sft|preflight|monitor|launch_gate)", r["calls"] + r["log"]), ("KILL-STOP: the chain went on to " + a, r["log"][-1500:])
+            assert held in (None, ["safeobj_S.json"]), ("KILL-STOP: the chain wrote into arms/" + a, held)
+        assert "ZZRLS1_DONE" not in r["log"] and not any(f"ZZRLS1_ARM_DONE {a}" in r["log"] for a in later), ("KILL-STOP: finished arms after the kill", r["log"][-800:])
+
+    if want("r0d_kill"):                                                                                    # a K3 kill of R0d STOPS the chain: no R1d, no R1o; the evidence is banked first
+        r = armloop_run(text, tmp, "al_so_r0d_kill", "R0d R1d R1o", env={"FAKE_TRAINER_R0d": "long", "FAKE_MONITOR_R0d": "kill_rule"}, prepare=prep_all)
+        stopped_after(r, "R1d", "R1o")                                                                      # FIRST: the stop itself (a mutation that removes the stop must go RED HERE, tag KILL-STOP)
+        assert r["arms_dirs"] == ["C0", "R0d", "R1d"] and sorted(p_.name for p_ in (r["R"] / "arms" / "R1d").iterdir()) == ["safeobj_S.json"], r["arms_dirs"]     # R1d is the fixture's S file, nothing else
+        assert r["rc"] == 1 and r["done"] == [] and "ZZRLS1_ARM_KILLED R0d" in r["log"] and "REFUSED: arm R0d was KILLED" in r["log"] and "Master Mind decides" in r["log"], (r["rc"], r["log"][-1500:])
+        assert (r["R"] / "stage" / "egress_R0d.ok").exists() and "K3" in (r["R"] / "stage" / "arm_R0d_killed").read_text(); n += 7
+    if want("r1d_kill"):                                                                                    # R0d finishes, R1d is K3-killed: the chain stops there, R1o never runs (it would be a control for an unreplicated claim)
+        r = armloop_run(text, tmp, "al_so_r1d_kill", "R0d R1d R1o", env={"FAKE_TRAINER_R1d": "long", "FAKE_MONITOR_R1d": "kill_rule"}, prepare=prep_all)
+        stopped_after(r, "R1o")                                                                             # FIRST (tag KILL-STOP); R1o's S gate was never even asked
+        assert "safeobj-gate" not in r["calls"], r["calls"]
+        assert r["rc"] == 1 and r["done"] == ["R0d"] and "ZZRLS1_ARM_KILLED R1d" in r["log"] and "REFUSED: arm R1d was KILLED" in r["log"], (r["rc"], r["done"], r["log"][-1500:])
+        assert r["arms_dirs"] == ["C0", "R0d", "R1d"] and "ZZRLS1_DONE" not in r["log"], (r["arms_dirs"], r["log"]); n += 6
+    if want("rerun_after_kill"):                                                                            # a re-run of a killed R0d refuses BEFORE any preflight, gate or trainer
+        def killed(R):
+            prep_all(R)
+            (R / "stage" / "arm_R0d_killed").write_text("{\"code\": \"K3\"}")
+            (R / "stage" / "egress_R0d.ok").write_text("x")
+        r = armloop_run(text, tmp, "al_so_r0d_rerun", "R0d", prepare=killed)
+        assert r["rc"] == 1 and "REFUSED: arm R0d was KILLED by a pre-registered rule" in r["log"] and "scorer_finetune.py" not in r["calls"] and "launch_gate.py" not in r["calls"], (r["rc"], r["log"], r["calls"]); n += 2
+    if want("unknown_arm"):                                                                                 # a misspelled arm is refused before anything runs (the arm loop's own per-arm check)
+        for bad in ("R0D", "R1O", "R0d,", "R2d"):
+            r = armloop_run(text, tmp, "al_so_typo", bad)
+            assert r["rc"] == 1 and "REFUSED: unknown arm" in r["log"] and r["calls"] == "", (bad, r["rc"], r["log"], r["calls"]); n += 2
+    if want("unknown_arm_in_list"):                                                                         # a typo BEHIND a valid arm: the chain's PRECHECK (rls1_pod.sh, stage 0) refuses the whole list before any arm runs.
+        # (The arm-loop harness extracts only stage 9, which checks one arm at a time -- "R1d R1x" there runs R1d first and refuses at R1x; that is the loop, not the chain, and the first full-form run
+        #  of this test asserted calls == "" for it. The precheck line is therefore extracted verbatim and run here.)
+        ln = re.findall(r'^for ARM in [^\n]*RLS1_ARMS:-[^\n]*arm_registered "\$ARM"[^\n]*; done$', text, re.M)
+        reg = re.findall(r'^REGISTERED_ARMS="[^"]*"$', text, re.M)
+        assert len(ln) == 1 and len(reg) == 1, (ln, reg)
+        sc = Path(tmp) / "so_precheck.sh"
+        write_sh(sc, "\n".join(["set -u", reg[0], 'refuse() { echo "REFUSED: $*"; exit 1; }', fn_any(text, "arm_registered"), ln[0], "echo PRECHECK_OK", ""]))
+        for arms, ok in (("R0d R1d R1o", True), ("R0d", True), ("R1d R1x", False), ("R0d R1d R2d", False), ("R0d R1o R1O", False), ("R0d,R1d", False)):
+            pr = subprocess.run([BASH, posix(sc)], capture_output=True, text=True, env={**os.environ, "RLS1_ARMS": arms}, timeout=60)
+            assert (pr.returncode == 0 and "PRECHECK_OK" in pr.stdout) == ok and (ok or "REFUSED: unknown arm" in pr.stdout), (arms, pr.returncode, pr.stdout, pr.stderr); n += 2
+    return n
+
+
+def must_fail_with(fn, name, tag):
+    """must_fail, but the RED has to be THE EXPECTED ONE: the failure message carries `tag`.  (`must_fail` accepts any exception, so a scenario that is broken for an unrelated reason turns every mutation
+    of it RED for free: that is what hid the fixture defect in `r0d_kill`, whose `arms_dirs == [C0, R0d]` assertion could never hold.)"""
+    try:
+        fn()
+    except Exception as e:                                                                                    # noqa: BLE001
+        if tag in str(e):
+            return 1
+        raise AssertionError(f"mutation '{name}' went RED for the WRONG reason (no '{tag}' in the failure): {str(e)[:400]}")
+    raise AssertionError(f"mutation '{name}' stayed GREEN")
+
+
+def rls1d_all(text, tmp):
+    """B4 (rls1d_checks) and its MUTATIONS: each property of the SAFEOBJ wiring is broken in a copy of the chain and the scenario that exists for it must go RED."""
+    n = rls1d_checks(text, tmp)
+    sw = lambda a, b: (text.replace(a, b) if text.count(a) == 1 else (_ for _ in ()).throw(AssertionError(f"mutation anchor x{text.count(a)}: {a[:60]}")))  # noqa: E731
+    kill_line = '  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'
+    muts = [
+        ("M9 R1o's K3 monitor loses --observe-only", sw(' --pid "$TPID" ${OBS:-} > "$ARMDIR/monitor.log"', ' --pid "$TPID" > "$ARMDIR/monitor.log"'), {"order"}),
+        ("R1o's replay loses --observe-only", sw(' ${OBS:-} > "$ARMDIR/replay.log"', ' > "$ARMDIR/replay.log"'), {"order"}),
+        ("OBS is set for every arm", sw('  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"', '  OBS="--observe-only"\n  if [ "$ARM" = R1o ]; then\n    :'), {"order"}),
+        ("R1o's S gate is not enforced", sw('|| refuse "R1o runs only if R0d and R1d both read bar S = PASS: $(tail', '|| echo "R1o runs only if R0d and R1d both read bar S = PASS: $(tail'), {"r1o_needs_S"}),
+        ("R0d is read against C0's dumps when they are on the pod", sw('  case "$ARM" in R0d|R1d|R1o) REFDIR="$ARMDIR/scores";; esac', "  :"), {"order"}),
+        ("a killed R0d does not stop the chain", sw(kill_line, '  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'), {"r0d_kill"}),
+        ("a killed R1d does not stop the chain", sw(kill_line, '  [ "$ARM" != R1d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED ($(cat'), {"r1d_kill"}),
+        ("a killed R0d re-trains on a re-run", sw('  [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse', '  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && stage_done "egress_$ARM" && refuse'), {"rerun_after_kill"}),
+        ("R1o's argv names --epo-con g5", sw('--epo-terms-heldout $TERMS_VA --epo-con off" ;;', '--epo-terms-heldout $TERMS_VA --epo-con g5" ;;'), {"order"}),
+        ("R0d's argv loses --epo-con-lam0", sw(' --epo-con-max 10 --epo-con-lam0 0" ;;\n    R1d)', ' --epo-con-max 10" ;;\n    R1d)'), {"order"}),
+        ("the SAFEOBJ arms are judged under the RL-S1c profile", sw("R0d|R1d|R1o) echo refe_rls1d", "R0d|R1d|R1o) echo refe_rls1c"), {"order"}),
+        ("the missing-second-control announcement is gone", sw('      elif [ "$ARM" = R0d ] || [ "$ARM" = R1d ] || [ "$ARM" = R1o ]; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL',
+                                                              '      elif false; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL'), {"order"}),
+        ("the precheck of the arm list is removed", sw('for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" || refuse "unknown arm \'$ARM\' in RLS1_ARMS (registered: $REGISTERED_ARMS)"; done', ":"), {"unknown_arm_in_list"}),
+        ("the precheck of the arm list judges only the first arm", sw('for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" ||', 'for ARM in $(set -- ${RLS1_ARMS:-C0 R0 C1 R1 R2}; echo "$1"); do arm_registered "$ARM" ||'), {"unknown_arm_in_list"}),
+        ("a misspelled SAFEOBJ arm reaches the preflight", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R2d"'), {"unknown_arm"}),
+    ]
+    for name, mut, only in muts:
+        tag = "KILL-STOP" if only in ({"r0d_kill"}, {"r1d_kill"}) else None                                 # the two "does not stop the chain" mutations must go RED AT the stop check, not at any other assertion
+        n += (must_fail_with(lambda mut=mut, only=only: rls1d_checks(mut, tmp, only), name, tag) if tag else must_fail(lambda mut=mut, only=only: rls1d_checks(mut, tmp, only), name))
+    return n
+
+

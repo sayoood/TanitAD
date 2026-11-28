@@ -1,0 +1,118 @@
+{
+ "_what": "mutation proof that the --trunk-compile tests can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tests\\test_trunk_compile.py": "192f7d71e91c36b23eff330d230b468c",
+  "stack\\tanitad\\models\\timm_trunk.py": "1384ff2ee165a4300428a1bf63f9bb09",
+  "stack\\tanitad\\refs\\refc.py": "af4af8869832a36293c8902f7ebb3f0b",
+  "stack\\scripts\\refc_v3_train.py": "0502d33e5a08b32b765b0a719edd786c"
+ },
+ "arms": [
+  {
+   "arm": "C1_STAMPED_but_NOT_APPLIED",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_COMPILED_callable_is_what_runs"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C2_wrapper_registered_as_a_submodule",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_state_dict_keys_are_UNCHANGED_and_load_both_ways"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C3_backend_knob_ignored",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_compiled_trunk_is_the_same_function_and_the_same_GRADIENTS",
+    "test_the_COMPILED_callable_is_what_runs",
+    "test_composes_with_chunk_bf16_nhwc_fold_and_dedup",
+    "test_compile_turns_off_DONATED_BUFFERS_because_the_trainer_backprops_twice"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C4_backend_never_recorded",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_compiled_trunk_is_the_same_function_and_the_same_GRADIENTS",
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses_refc"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C5_trainer_does_not_pin_the_flag",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses_refc"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C6_build_encoder_drops_the_flag",
+   "file": "stack\\tanitad\\refs\\refc.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses_refc"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C7_stamp_is_a_constant",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses_refc"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C8_refc_refusal_ignores_compile",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_trainer_flag_reaches_the_BUILT_trunk_is_stamped_and_refuses_refc"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C9_donated_buffer_switch_removed",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_compile_turns_off_DONATED_BUFFERS_because_the_trainer_backprops_twice"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 9,
+ "arms_total": 9,
+ "_VERDICT": "MUTATION-PROVEN -- all 9/9 arms RED, including the compile stamped but not applied and the wrapper registered as a submodule; all files restored byte-identical and the final clean run is green."
+}

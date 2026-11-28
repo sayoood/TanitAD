@@ -1,0 +1,77 @@
+navtrain named logs 1191 with a trainval DB 248 known tokens in them 19810
+read 248 12s
+{
+ "n_candidates_total": 130190,
+ "n_known_total": 19810,
+ "hits_total": 19307,
+ "recall_micro": 0.9746087834427057,
+ "precision_micro": 0.14829864044857516,
+ "miss_reasons": {
+  "off the 2 Hz grid (cadence)": 503
+ },
+ "n_logs_with_a_miss": 7,
+ "edges_of_known_tokens": {
+  "k_min_known": 3,
+  "k_max_gap_known": 10,
+  "n_known_at_k3": 29,
+  "n_known_at_kM11": 37
+ },
+ "phase_offset_mod10_of_first_frame": {
+  "0": 61,
+  "1": 142,
+  "2": 45
+ },
+ "known_by_position_from_start_(k=3..9)": {
+  "3": 29,
+  "4": 33,
+  "5": 31,
+  "6": 34,
+  "7": 37,
+  "8": 34,
+  "9": 37
+ },
+ "known_by_gap_from_end_(10..16)": {
+  "10": 37,
+  "11": 35,
+  "12": 41,
+  "13": 42,
+  "14": 46,
+  "15": 45,
+  "16": 40
+ },
+ "known_by_position_in_UNDROPPED_grid_(0..7)": {
+  "0": 0,
+  "1": 0,
+  "2": 0,
+  "3": 0,
+  "4": 29,
+  "5": 33,
+  "6": 31,
+  "7": 34
+ }
+}
+recall per log {'n': 248, 'min': np.float64(0.0), 'p5': np.float64(1.0), 'p25': np.float64(1.0), 'median': np.float64(1.0), 'p75': np.float64(1.0), 'p95': np.float64(1.0), 'max': np.float64(1.0), 'mean': 0.9717741935483871, 'n_eq_1': 241, 'n_eq_0': 7}
+precision per log {'n': 248, 'min': np.float64(0.0), 'p5': np.float64(0.012240740740740753), 'p25': np.float64(0.09270110957004161), 'median': np.float64(0.14979212618416668), 'p75': np.float64(0.20535078347578348), 'p95': np.float64(0.3109341117597998), 'max': np.float64(0.5774647887323944), 'mean': 0.1566905788330733, 'n_eq_1': 0, 'n_eq_0': 7}
+cand per log {'n': 248, 'min': np.float64(106.0), 'p5': np.float64(116.0), 'p25': np.float64(191.0), 'median': np.float64(318.5), 'p75': np.float64(565.0), 'p95': np.float64(1775.7999999999997), 'max': np.float64(4119.0), 'mean': 524.9596774193549, 'n_eq_1': 248, 'n_eq_0': 0}
+cadence_phase_plus1 {'recall_micro': 0.0, 'precision_micro': 0.0, 'n_candidates_total': 130185, 'recall_per_log_median': 0.0, 'recall_per_log_max': 0.0, 'n_logs_recall_ge_0.5': 0}
+cadence_phase_minus1 {'recall_micro': 0.0, 'precision_micro': 0.0, 'n_candidates_total': 130182, 'recall_per_log_median': 0.0, 'recall_per_log_max': 0.0, 'n_logs_recall_ge_0.5': 0}
+cadence_phase_plus5_(half_a_frame) {'recall_micro': 0.0, 'precision_micro': 0.0, 'n_candidates_total': 130172, 'recall_per_log_median': 0.0, 'recall_per_log_max': 0.0, 'n_logs_recall_ge_0.5': 0}
+cadence_phase_fixed0_(ignore_camera_pairing) {'recall_micro': 0.2746, 'precision_micro': 0.0418, 'n_candidates_total': 130193, 'recall_per_log_median': 0.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 54}
+cadence_stride_9 {'recall_micro': 0.1101, 'precision_micro': 0.015, 'n_candidates_total': 145101, 'recall_per_log_median': 0.1107, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 2}
+cadence_stride_11 {'recall_micro': 0.09, 'precision_micro': 0.0151, 'n_candidates_total': 118125, 'recall_per_log_median': 0.087, 'recall_per_log_max': 0.3333, 'n_logs_recall_ge_0.5': 0}
+cadence_stride_20 {'recall_micro': 0.4749, 'precision_micro': 0.1483, 'n_candidates_total': 63416, 'recall_per_log_median': 0.4886, 'recall_per_log_max': 0.6, 'n_logs_recall_ge_0.5': 98}
+cadence_stride_5 {'recall_micro': 0.9746, 'precision_micro': 0.0732, 'n_candidates_total': 263714, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241}
+phase_from_CAM_F0_only(the first version) {'recall_micro': 0.8352, 'precision_micro': 0.1271, 'n_candidates_total': 130190, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 209}
+phase_from_CAM_L0_only {'recall_micro': 0.9743, 'precision_micro': 0.1482, 'n_candidates_total': 130190, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 240}
+first_grid_frame_NOT_dropped(drop_first=0) {'recall_micro': 0.9746, 'precision_micro': 0.148, 'n_candidates_total': 130438, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241}
+pairing_tolerance_40ms(every_lidar_pc_pairs) {'recall_micro': 0.3168, 'precision_micro': 0.0482, 'n_candidates_total': 130191, 'recall_per_log_median': 0.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 63}
+pairing_tolerance_5ms(no_lidar_pc_pairs) {'recall_micro': 0.0006, 'precision_micro': 0.0034, 'n_candidates_total': 3206, 'recall_per_log_median': 0.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 2}
+window_history_3 {'recall_micro': 0.9746, 'precision_micro': 0.148, 'n_candidates_total': 130438, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': 248, 'shift_per_log': 1.0}
+window_history_5 {'recall_micro': 0.9731, 'precision_micro': 0.1484, 'n_candidates_total': 129942, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': -248, 'shift_per_log': -1.0}
+window_history_6 {'recall_micro': 0.9715, 'precision_micro': 0.1484, 'n_candidates_total': 129694, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': -496, 'shift_per_log': -2.0}
+window_future_9 {'recall_micro': 0.9746, 'precision_micro': 0.148, 'n_candidates_total': 130426, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': 236, 'shift_per_log': 0.9516}
+window_future_11 {'recall_micro': 0.9727, 'precision_micro': 0.1483, 'n_candidates_total': 129954, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': -236, 'shift_per_log': -0.9516}
+window_future_8 {'recall_micro': 0.9746, 'precision_micro': 0.1478, 'n_candidates_total': 130662, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': 472, 'shift_per_log': 1.9032}
+window_brief_2s_history_4s_future(5,8) {'recall_micro': 0.9731, 'precision_micro': 0.1478, 'n_candidates_total': 130414, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': 224, 'shift_per_log': 0.9032}
+window_history_8(4s)_future_10 {'recall_micro': 0.9682, 'precision_micro': 0.1485, 'n_candidates_total': 129198, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': -992, 'shift_per_log': -4.0}
+route_filter_off {'recall_micro': 0.9746, 'precision_micro': 0.1481, 'n_candidates_total': 130359, 'recall_per_log_median': 1.0, 'recall_per_log_max': 1.0, 'n_logs_recall_ge_0.5': 241, 'shift_vs_frozen': 169}

@@ -1,0 +1,141 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file + C:\\Users\\Admin\\wpd-probe\\raw\\boot_rep_cart.json)",
+ "tier": "NOT APPLICABLE - frozen-feature representation probe, no trajectory",
+ "geom": "cart",
+ "n_boot": 2000,
+ "n_episodes": 30,
+ "n_test_rows": 2974,
+ "n_cells_per_row": 7014,
+ "n_scored_cells": 20859636,
+ "n_pos": 335982,
+ "base_rate": 0.01610680071310928,
+ "d_raw_per_row": 112640,
+ "d_head_input_per_cell": 149,
+ "prereg_literals_from_PANEL_RESULT_5b": {
+  "lever_gap_committed": 0.00173,
+  "a3_floor_must_be_below": 0.00058,
+  "f5_underpowered_if_floor_above": 0.00539,
+  "denominator_rule": "max(f_same, f_seed)",
+  "provenance": "PANEL_RESULT.md 5b, quoted verbatim (PRIMARY geometry)"
+ },
+ "point_ap": {
+  "tok_D0": 0.05617350540161823,
+  "tok_D0b": 0.056458235746336724,
+  "tok_D0c": 0.050833338928907304,
+  "tok_D1": 0.057852722016745246,
+  "tok_D2": 0.058568733090174054
+ },
+ "floors": {
+  "f_same_D0b_minus_D0": 0.00028473034471849373,
+  "f_seed_D0c_minus_D0": 0.005340166472710926,
+  "floor_used": 0.005340166472710926,
+  "which": "f_seed (D0c, seed 1)",
+  "floor_as_pct_of_D0_ap": 9.506557289830605
+ },
+ "lever_gap_this_panel": 0.001679216615127016,
+ "three_x_floor": 0.01602049941813278,
+ "instrument_floor": {
+  "within_invocation_identical_file": {
+   "ap_tok_D0": 0.05694087667786343,
+   "ap_tok_D0dup": 0.05593179708142338,
+   "floor": 0.0010090795964400531,
+   "true_value": 0.0,
+   "ci": [
+    -0.003161,
+    0.002413
+   ],
+   "separated": false
+  },
+  "across_invocations_bit_identical_features": {
+   "ap_panel": 0.05475674516093027,
+   "ap_replicate": 0.05617350540161823,
+   "floor": 0.0014167602406879587,
+   "bank_is_bit_deterministic": true,
+   "bank_differing_cells": 0,
+   "replicate_is_distinct": true
+  },
+  "max_instrument_floor": 0.0014167602406879587,
+  "exceeds_a3_required_floor_bar": true,
+  "times_the_a3_bar": 2.4426900701516527,
+  "_reading": "A3 required the replicate floor to be BELOW 0.00058. The measurement chain cannot reproduce ITSELF to better than 0.001417 on inputs that differ in NOTHING, which is 2.44x that bar. A3 was therefore UNMEASURABLE on this rig before any replicate arm was trained -- and an unmeasurable criterion is reported as UNDERPOWERED, never as a negative."
+ },
+ "a3_unmeasurable_on_this_rig": true,
+ "a3_own_bar": "FAIL",
+ "a3_bar_shortfall_x": 9.260404287938023,
+ "spread_D0_to_D2_same_panel": 0.0023952276885558232,
+ "spread_replicates_same_panel": 0.00562489681742942,
+ "replicate_spread_over_lever_spread_x": 2.348376667614798,
+ "f5_by_literal_threshold": false,
+ "f5_by_same_panel_spread": true,
+ "f5_readings_agree": false,
+ "a3_verdict": "F5 UNDERPOWERED",
+ "a3_why": "A3's OWN BAR: the committed lever gap 0.00173 must be >= 3x the replicate floor. 3 x 0.00534 = 0.01602, which the lever gap misses by 9.3x => A3's bar FAILS. F4-vs-F5 LABEL, both readings of 5b reported: (a) LITERAL floor 0.00534 vs 0.00539 -> F5=False; (b) SAME-PANEL floor 0.00534 vs this panel's D0->D2 spread 0.00240 -> F5=True. AGREE=False. The structural statement, which does not hinge on either threshold: three arms differing in NOTHING BUT A SEED span 0.00562 AP, while D0/D1/D2 span 0.00240 -- a ratio of 2.35x. An unmeasurable criterion is reported as UNDERPOWERED, never as a negative. \u26d4 AND THE DECIDING GROUND, which depends on NEITHER threshold: the chain cannot reproduce ITSELF to better than 0.001417 AP on inputs that differ in NOTHING, while A3 required a floor below 0.00058 -- 2.44x the bar. A3 was UNMEASURABLE on this rig before any replicate was trained.",
+ "controls_all_pass": true,
+ "controls": {
+  "constant_score_ap": 0.016106800713,
+  "base_rate": 0.016106800713,
+  "constant_equals_base_rate_exactly": true,
+  "allzero_ap": 0.016106800713,
+  "allone_ap": 0.016106800713,
+  "perfect_ranker_ap": 1.0,
+  "note": "checked for EQUALITY against the base rate derived from INTEGER COUNTS 335982/20859636 -- the anti-R-2026-09-07-ap-ties guard; the panel REFUSES to run if it fails"
+ },
+ "paired_intervals": {
+  "tok_D1_minus_tok_D0": {
+   "delta": 0.001679,
+   "lo": -0.006931,
+   "hi": 0.010159,
+   "separated": false,
+   "why": "A3 the lever vs aux-off (bar: >= 3x replicate floor)"
+  },
+  "tok_D1_minus_tok_D2": {
+   "delta": -0.000716,
+   "lo": -0.007977,
+   "hi": 0.00573,
+   "separated": false,
+   "why": "A4 information vs shuffled target (bar: >= 3x floor)"
+  },
+  "tok_D2_minus_tok_D0": {
+   "delta": 0.002395,
+   "lo": -0.001508,
+   "hi": 0.00744,
+   "separated": false,
+   "why": "CONTEXT: the ZERO-INFORMATION target vs aux-off"
+  },
+  "tok_D0b_minus_tok_D0": {
+   "delta": 0.000285,
+   "lo": -0.005833,
+   "hi": 0.007617,
+   "separated": false,
+   "why": "A3 FLOOR f_same: D0 flags, D0 SEED, zero levers moved"
+  },
+  "tok_D0c_minus_tok_D0": {
+   "delta": -0.00534,
+   "lo": -0.010384,
+   "hi": 0.000722,
+   "separated": false,
+   "why": "A3 FLOOR f_seed: D0 flags, seed 1 (prereg section 4)"
+  },
+  "tok_D0c_minus_tok_D0b": {
+   "delta": -0.005625,
+   "lo": -0.011948,
+   "hi": 0.001589,
+   "separated": false,
+   "why": "A3 CONTEXT: replicate vs replicate"
+  },
+  "tok_D1_minus_tok_D0b": {
+   "delta": 0.001394,
+   "lo": -0.005448,
+   "hi": 0.008197,
+   "separated": false,
+   "why": "A3 CONTEXT: the lever vs the same-seed replicate"
+  },
+  "tok_D2_minus_tok_D0b": {
+   "delta": 0.00211,
+   "lo": -0.003928,
+   "hi": 0.008276,
+   "separated": false,
+   "why": "A3 CONTEXT: shuffled target vs the replicate"
+  }
+ }
+}

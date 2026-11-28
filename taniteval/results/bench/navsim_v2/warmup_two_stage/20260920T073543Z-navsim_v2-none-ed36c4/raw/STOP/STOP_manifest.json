@@ -1,0 +1,172 @@
+{
+ "label": "STOP",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=warmup_two_stage",
+  "experiment_name=tanitad_bench_warmup_two_stage_STOP",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "synthetic_sensor_path=C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs",
+  "synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/synthetic_scene_pickles",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T073543Z-navsim_v2-none-ed36c4/raw/seams/STOP.npz",
+  "+agent.call_log=D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T073543Z-navsim_v2-none-ed36c4/raw/STOP/STOP.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/20260920T073543Z-navsim_v2-none-ed36c4/STOP"
+ ],
+ "argv": [
+  "D:\\Projects\\TanitAD\\taniteval\\taniteval\\bench\\navsim\\devkit_side\\navsim_win.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "STOP",
+  "--out-dir",
+  "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP",
+  "--patch-loader",
+  "--ram-floor-mb",
+  "3000.0",
+  "--dump-final-scores",
+  "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP\\STOP_final_scores_frame.csv",
+  "--dump-preaggregation",
+  "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP\\STOP_preaggregation.csv",
+  "--",
+  "train_test_split=warmup_two_stage",
+  "experiment_name=tanitad_bench_warmup_two_stage_STOP",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "synthetic_sensor_path=C:/Users/Admin/navsim/data/openscene/warmup_two_stage/sensor_blobs",
+  "synthetic_scenes_path=C:/Users/Admin/navsim-crun/data/openscene/warmup_two_stage/synthetic_scene_pickles",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "agent._target_=tanitad_seam_agent.TanitADSeamAgent",
+  "+agent.seam_file=D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T073543Z-navsim_v2-none-ed36c4/raw/seams/STOP.npz",
+  "+agent.call_log=D:/Projects/TanitAD/taniteval/results/bench/navsim_v2/warmup_two_stage/20260920T073543Z-navsim_v2-none-ed36c4/raw/STOP/STOP.calls.jsonl",
+  "output_dir=C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/20260920T073543Z-navsim_v2-none-ed36c4/STOP"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "C:\\Users\\Admin\\navsim-crun\\exp\\tanitad_bench\\runs\\20260920T073543Z-navsim_v2-none-ed36c4",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim-crun/exp/tanitad_bench/runs/20260920T073543Z-navsim_v2-none-ed36c4",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": null,
+ "nuplan_devkit_sha": null,
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "f064e9ab9dcb841d",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)",
+  "navsim.planning.script.run_pdm_score.create_scene_aggregators (PRE-AGGREGATION dump)",
+  "navsim.planning.script.run_pdm_score.compute_final_scores (dump only)",
+  "navsim.planning.script.run_pdm_score.worker_map (W1: pre-aggregation dump)"
+ ],
+ "started_local": "2026-09-20 09:38:06",
+ "status": "OK",
+ "ended_local": "2026-09-20 09:40:30",
+ "resources": {
+  "wall_s": 144.27,
+  "peak_rss_mb": 507.6,
+  "peak_process_tree_rss_mb": 507.6,
+  "min_system_available_mb": 13141.1,
+  "n_samples": 72,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 3 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    22.4,
+    14327.3
+   ],
+   [
+    20.2,
+    493.8,
+    13688.8
+   ],
+   [
+    40.4,
+    498.2,
+    13608.3
+   ],
+   [
+    60.7,
+    500.1,
+    13612.3
+   ],
+   [
+    80.8,
+    500.7,
+    13808.9
+   ],
+   [
+    101.1,
+    502.6,
+    13761.1
+   ],
+   [
+    121.3,
+    503.8,
+    13715.0
+   ],
+   [
+    141.6,
+    507.6,
+    13682.9
+   ]
+  ]
+ },
+ "preaggregation_dump": {
+  "path": "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP\\STOP_preaggregation.csv",
+  "pickle": "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP\\STOP_preaggregation.pkl",
+  "n_rows": 220,
+  "columns": [
+   "no_at_fault_collisions",
+   "drivable_area_compliance",
+   "driving_direction_compliance",
+   "traffic_light_compliance",
+   "ego_progress",
+   "time_to_collision_within_bound",
+   "lane_keeping",
+   "history_comfort",
+   "multiplicative_metrics_prod",
+   "weighted_metrics",
+   "weighted_metrics_array",
+   "pdm_score",
+   "valid",
+   "log_name",
+   "frame_type",
+   "start_time",
+   "endpoint_x",
+   "endpoint_y",
+   "start_point_x",
+   "start_point_y",
+   "ego_simulated_states",
+   "token"
+  ]
+ },
+ "pre_aggregation_dump": {
+  "path": "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP\\STOP_final_scores_frame_PRE_AGGREGATION.csv",
+  "rows": 220
+ },
+ "final_scores_dump": "D:\\Projects\\TanitAD\\taniteval\\results\\bench\\navsim_v2\\warmup_two_stage\\20260920T073543Z-navsim_v2-none-ed36c4\\raw\\STOP\\STOP_final_scores_frame.csv"
+}

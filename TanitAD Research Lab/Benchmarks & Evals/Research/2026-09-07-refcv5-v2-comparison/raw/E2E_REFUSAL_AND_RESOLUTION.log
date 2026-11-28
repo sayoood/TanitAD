@@ -1,0 +1,15 @@
+== E2E-1: dump manifest WITHOUT model.n_anchors, no --new-config, no --new-ckpt ==
+   EXPECTED (written before running): a REFUSAL naming all five witness fields, exit 1.
+[compare] {"status": "PAIRING OK", "n_windows": 4823, "n_episodes": 141, "checked": ["eid", "ws", "shape"]}
+[compare] ⛔ n_anchors IS UNRESOLVABLE — every witness is absent: checkpoint:model['core.decoder.anchors'].shape[0], dump/manifest.json:model.n_anchors, config.json:anchors.shape[0], config.json:anchors.controls_shape[0], argv:--n-anchors. The anchor chance level is 1/n_anchors and there is NO default: a hardcoded 1/128 was banked into several sidecars while the live bank was 117, which is the defect this refusal exists to prevent. Pass --new-ckpt, or supply a config/manifest that declares the bank. (checkpoint read: no checkpoint given)
+OBSERVED EXIT=1
+
+== E2E-2: the SAME stripped dump, plus --new-ckpt ==
+   EXPECTED (written before running): resolves 117 from the TENSOR, chance 1/117 = 0.008547, exit 0.
+[compare] {"status": "PAIRING OK", "n_windows": 4823, "n_episodes": 141, "checked": ["eid", "ws", "shape"]}
+       anchor_selection       acc 0.5275 [0.4861, 0.5712]  chance 1/117 = 0.008547  lift 61.72x  n 4823
+           bank size from checkpoint:model['core.decoder.anchors'].shape[0] | distinct 51 of 117, modal None ( -- ), entropy_ratio  --   ⛔ selection_profile REFUSED: the manifest declares no `model.n_anchors`, so the selection
+           ⚠️ the arm JSON published NO chance (its dump manifest declared no `model.n_anchors`), so the chance printed here comes from checkpoint:model['core.de
+       anchor_selection       acc 0.5275 [0.4883, 0.5664]  chance 1/117 = 0.008547  lift 61.72x  n 4823
+           bank size from dump/manifest.json:model.n_anchors | distinct 51 of 117, modal 67 (0.489), entropy_ratio 0.452
+OBSERVED EXIT=0

@@ -1,0 +1,49 @@
+LANDING_READY_WPC -- refcv8 WP-C perception fixes (Architecture & Inference, 2026-10-04)
+Hand-over: NOTHING staged or committed by this agent (no git add / commit / push). The Master Mind lands these paths BY PATH.
+Prefix every `code/fix/...` path with: TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-fixes/
+BASE = tip 50efa52. Delivered text files are LF (= the tip blobs' EOL); `git archive` output on this box is CRLF - do not diff against a worktree.
+Landing path of each file = the path after `code/fix/`. MODIFIED files carry the tip blob they were built from; take them whole.
+NOT TOUCHED (WP-B owns): stack/scripts/refc_v3_train.py, the refc_v3 model/decoder modules, stack/tanitad/train/declared_vs_built.py. See INTEGRATION_WPC.md.
+
+kind      eol  tip_blob     new_blob     md5                                bytes    path  --  what
+MODIFIED  LF   6faaf5091d6c 1ba57c277b5c 0a3008fa4f8608059cbe8e07c7e44406     99972 stack/scripts/train_p8_occupancy.py  --  fix 3 + 4: JoinFileReader(.., defect_masks=None) - OPT-IN ego-row strip + track-id-switch rate mask; default read bit-identical (golden digest)
+MODIFIED  LF   175b5e1724f4 143a2f471695 f0f552155d63a32b4c25abe6c722418c     29229 stack/tanitad/eval/detection_metrics.py  --  fix 5: window_packs(.., with_zh_range=False) - OPT-IN pair_zh_range / pair_h_err; default pack byte-identical (golden digest)
+NEW       LF   -            d076d222fb4a 4178d9f4b96e611def986e72b8ab0b5c     13893 stack/tanitad/eval/detection_nms.py  --  F4b: centre-distance NMS + TRAIN fit + census keys eval_<head>_nms_* (read-only; planner never imports it)
+NEW       LF   -            b167c74f80f0 73325834f6ec4c814a001855f2ef2ed0      7943 stack/tanitad/eval/detection_zh.py  --  fix 5: z/h error by range, beyond-30-m bins low-trust, near-field headline
+NEW       LF   -            40febbf1f092 ff6651508685e988937e127fedb29076     10603 stack/tanitad/data/join_label_hygiene.py  --  fix 3 + 4: JoinDefectMasks (sha12-keyed frame lists + the two read-time operations)
+NEW       LF   -            a30aa09d99c1 1e21e85c589a1270d9b2c46a623bac01     12736 stack/scripts/mine_join_label_defects.py  --  fix 3 + 4: mines the lists from a 3-D join; --check-d3 asserts D3's aggregates EXACTLY
+NEW       LF   -            92195ba194dd 522a3f588e35fd89d9a0140f3a1b0d49     13474 stack/scripts/refit_perception_thresholds.py  --  item 2: TRAIN re-fit of F1 / F4 / F4b for any checkpoint; every output re-read by the stack's loader
+NEW       LF   -            054a9fc3d919 fa76f8ac9503bcafbbec3b2aba466aaf      3933 stack/tanitad/configs/refcv7_det_nms_train.json  --  F4b shipped config (refcv7-r101-s0 @ 50,400): box3d 2.5 m / 0.2145, agent 3.0 m / 0.1809 (full-precision gates + TRAIN grid)
+NEW       LF   -            c17abd71e517 3a5b480799ebeaaaf734897171bd8ee5    150311 stack/tanitad/configs/refcv8_join_label_defects.json  --  fix 3 + 4 shipped lists: 693 ego frames / 18 clips; 6,227 track-jump events (pose-glitch frames excluded)
+NEW       LF   -            1b1ab2e88ae5 b11624eec0cc766113845b568af3f1ab      1688 stack/tanitad/configs/refcv8_box_zh_range_trust.json  --  fix 5 shipped trust table (D3 base_face_by_range; near field derived = 30 m)
+NEW       LF   -            975c2563f2ed f26242e1c8009f8d9352a566e9252581     22940 stack/tests/test_refcv8_det_nms.py  --  F4b unit tests (25)
+NEW       LF   -            3cf000f32219 85a20fa40bcc991edbbda08e4cb77f65      6593 stack/tests/test_refcv8_det_nms_acceptance_full.py  --  F4b full-set acceptance against the banked route packs (6; skipped without D:/refcv7_route_bin; TRAIN fit needs REFCV8_FULL_FIT=1)
+NEW       LF   -            3439aafcc25a ff77034952fdd9811784fa3adebef22c     11338 stack/tests/test_refcv8_det_zh_range.py  --  fix 5 tests (12)
+NEW       LF   -            cc869d638eaf 10991b1409ae5c79ee2ff3cbbabf0a34     16627 stack/tests/test_refcv8_join_label_hygiene.py  --  fix 3 + 4 tests (16)
+NEW       LF   -            950fe31e0c84 5206c42233673ceeca48c4ee63a1fcaf     16200 stack/tests/test_refcv8_refit_perception_thresholds.py  --  item 2 tests (17; 3 full-set skipped without the banked TRAIN outputs)
+NEW       LF   -            8d92b05d505c 37081d2c804e17c636377c1ceef0abd7     10804 stack/tests/test_refcv8_eval_map_mask.py  --  fix 6 tests (10)
+NEW       bin  -            5cbee7131b6d 60d37e0fb37c820ce3fce0f3c597587c    911377 stack/tests/fixtures/refcv8_perception_fixes/refcv8_box_packs_train_every9th.npz  --  fixture: every 9th TRAIN pack (120 windows x 2 heads), ids removed
+NEW       bin  -            75c6c15b25cc 4962a16d2e680b0971cf3ac82ac4bfa8     68668 stack/tests/fixtures/refcv8_perception_fixes/refcv8_map_hist_train_pooled.npz  --  fixture: the TRAIN score histogram [8,2,4000] + class weights
+
+PACKAGE-LOCAL (land with the package, not into stack/): INTEGRATION_WPC.md, LANDING_READY_WPC.txt, raw/*.json (evidence), code/*.py (drivers, mutation campaign, acceptance scripts)
+NOT FOR GIT: the working extractions C:/Users/Admin/r8_wpc, r8_wpc_tip, r8_wpc_mut; the evidence bins D:/refcv7_diag_bin, D:/refcv7_route_bin, D:/refcv6_eval_kit; the 409 MB join; scratch copies of the TIP reader / detection_metrics.
+THOR-ONLY: INTEGRATION_WPC.md I4 step 1 (the TRAIN-DIAG forward pass of the refcv8 checkpoint through run_diag.py) needs the Thor GPU; every other step here is CPU.
+
+PACKAGE-LOCAL FILES (md5, bytes, path under the package dir; raw/MD5SUMS.txt carries the same table)
+62e6b54cb79836929b5c44a38a6b42e5     11209  INTEGRATION_WPC.md
+f8ac5d8b08d515bbebe964a50ab69ab6      5241  code/acceptance_join_masks.py
+3078ba877c220d9b16b5a0374bbfdf13      7780  code/assemble_wpc_package.py
+4b427462e4ca668b7d5276ca99fcaf95      3649  code/bank_fixtures.py
+e80655c1479f06cd15026c2b2724b64b      1288  code/import_audit.py
+002f3016954c83d8b1eb0c2f7056cb39     12306  code/mutation_campaign_wpc.py
+25e1a1d33c29ceb24f7eb530d2046bc7       693  code/peak_rss.py
+d393744a1b535d44bcdd6514c4389a0f      6436  code/verify_f1_f4_f4b.py
+4720a6487e9b2f290b51eccb8ae2bedf       882  raw/clean_overlay_on_pristine_tip_110_passed.log
+33356e88d01bc23b461f109129e949ad      5123  raw/f1_f4_f4b_reproduction.json
+725425569a174518ac723cd5d3560b88       550  raw/import_audit.txt
+7ae5fb9021233d0ef02adaa7529f3ab3       657  raw/join_masks_acceptance.json
+4b82deef8bf5285fba491b6300d72d55       698  raw/mine_rerun_peak_rss.log
+64d697a36371c38066589b6781ae3dfe      8535  raw/mutation_campaign.json
+e4527c4b7ae0def6e526d7ee9534fde5      3453  raw/mutation_campaign_run1.log
+4d38431ca26685e6b089001badf18ee9      8537  raw/mutation_campaign_run1_T4_survived.json
+025ab9c29222989613a10cc79f3e019f      1593  raw/regression_tip_vs_edited.txt

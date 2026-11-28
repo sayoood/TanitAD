@@ -1,0 +1,1402 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD82",
+ "control_before": {
+  "selftest:read_negconst10k.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.1,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: True (50 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_cr_ay1nlhz5 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_cr_vzdabbnl"
+   ]
+  },
+  "selftest:check_negconst.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: True (18 of 18)"
+   ]
+  },
+  "selftest:make_negconst_files.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.9,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ NEGCONSTFILES-SELFTEST rc 0 (temporary folder F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_nf_dog0l80s)"
+   ]
+  },
+  "wiring:read_negconst10k.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.7,
+   "tail": [
+    "..                                                                       [100%]",
+    "2 passed, 10 deselected in 0.22s"
+   ]
+  },
+  "queue:make_negconst_queue.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.4,
+   "tail": [
+    "....                                                                     [100%]",
+    "4 passed, 8 deselected in 0.79s"
+   ]
+  },
+  "podcheck:make_pod_check_negconst.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.3,
+   "tail": [
+    ".                                                                        [100%]",
+    "1 passed, 11 deselected in 0.67s"
+   ]
+  },
+  "podread:make_podread_negconst.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.2,
+   "tail": [
+    ".                                                                        [100%]",
+    "1 passed, 11 deselected in 0.62s"
+   ]
+  }
+ },
+ "mutations": {
+  "c01_value_sign_flipped": {
+   "rc": 1,
+   "failed": [
+    "clean synthetic logs: every check passes (11 checks)                                                ",
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec",
+    "the constants of the card: closing -2.0 m/s (the cautious sign), a full history from frame index 4 o"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (10 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "the check reads +2.0 instead of -2.0",
+   "red": true
+  },
+  "c02_sign_check_adds_the_wrong_sign": {
+   "rc": 1,
+   "failed": [
+    "clean synthetic logs: every check passes (11 checks)                                                ",
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec",
+    "planted +2.0 (the wrong sign) in c_src and c_est with v_L = v_l + 2.0: K1a, K1b and the sign check K"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (11 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1e computes v_l minus the value",
+   "red": true
+  },
+  "c03_sign_check_without_equality": {
+   "rc": 1,
+   "failed": [
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec"
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (17 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1e does not compare v_L with max(0, v_l - 2.0)",
+   "red": true
+  },
+  "c04_sign_check_without_positive_rows": {
+   "rc": 1,
+   "failed": [
+    "a log in which every lead speed is 0 has no row to test the sign on: K1e fails (no row is not a pass"
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (17 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1e passes a log without any row with v_l above zero",
+   "red": true
+  },
+  "c05_sign_check_not_run": {
+   "rc": 1,
+   "failed": [
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec",
+    "planted +2.0 (the wrong sign) in c_src and c_est with v_L = v_l + 2.0: K1a, K1b and the sign check K",
+    "planted v_L above v_l on a full look of the mid-look log: K1d and the sign check K1e fail ['K1d id-l"
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (14 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1e is not part of the checks",
+   "red": true
+  },
+  "c06_closing_tolerance": {
+   "rc": 1,
+   "failed": [
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec"
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (17 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1a accepts -1.9",
+   "red": true
+  },
+  "c07_sign_check_on_short_rows": {
+   "rc": 1,
+   "failed": [
+    "clean synthetic logs: every check passes (11 checks)                                                ",
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec",
+    "planted +2.0 (the wrong sign) in c_src and c_est with v_L = v_l + 2.0: K1a, K1b and the sign check K"
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (11 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1e looks at the looks without a full history too",
+   "red": true
+  },
+  "c08_c_est_tolerance": {
+   "rc": 1,
+   "failed": [
+    "planted c_est -2.0001 on one est_ok row: K1b fails []                                               "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (17 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1b accepts -2.0001 and more",
+   "red": true
+  },
+  "c09_full_from_changed": {
+   "rc": 1,
+   "failed": [
+    "the constants of the card: closing -2.0 m/s (the cautious sign), a full history from frame index 4 o",
+    "a short look at frame 4 fails K1c, short looks at frames 0 to 3 are allowed                         "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (16 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "the full history is taken from frame 5",
+   "red": true
+  },
+  "c10_sha_unchecked": {
+   "rc": 1,
+   "failed": [
+    "run line: another file hash, a non-zero pre-roll count and a missing line each fail                 "
+   ],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (17 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "L1 does not compare the file hash",
+   "red": true
+  },
+  "c11_late_short_allowed": {
+   "rc": 1,
+   "failed": [
+    "planted short look at frame 7 in the mid-look log: K1c fails []                                     ",
+    "a short look at frame 4 fails K1c, short looks at frames 0 to 3 are allowed                         "
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (16 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1c allows a short look at frame 7",
+   "red": true
+  },
+  "c12_vL_formula_wrong_sign": {
+   "rc": 1,
+   "failed": [
+    "clean synthetic logs: every check passes (11 checks)                                                ",
+    "planted -1.9 in the closing column of the replan log (v_L consistent with it): K1a and the sign chec",
+    "planted +2.0 (the wrong sign) in c_src and c_est with v_L = v_l + 2.0: K1a, K1b and the sign check K"
+   ],
+   "seconds": 0.2,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: False (11 of 18)"
+   ],
+   "tool": "check_negconst.py",
+   "suite": "selftest",
+   "what": "K1d expects v_l minus the closing",
+   "red": true
+  },
+  "f01_value_sign_flipped": {
+   "rc": 1,
+   "failed": [
+    "FAIL the values of the card: -1.0, -2.0 and -4.0 m/s for M10, M20, M40, history one frame, five fram"
+   ],
+   "seconds": 2.6,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ NEGCONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\f01_value_sign_flipped\\tmp_nf_y6_zko5m)"
+   ],
+   "tool": "make_negconst_files.py",
+   "suite": "selftest",
+   "what": "M20 is written as +2.0",
+   "red": true
+  },
+  "f02_need_frames_changed": {
+   "rc": 1,
+   "failed": [
+    "FAIL the values of the card: -1.0, -2.0 and -4.0 m/s for M10, M20, M40, history one frame, five fram",
+    "FAIL three files, rc 0, PASS line"
+   ],
+   "seconds": 1.9,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ NEGCONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\f02_need_frames_changed\\tmp_nf_xe_ms0iz)"
+   ],
+   "tool": "make_negconst_files.py",
+   "suite": "selftest",
+   "what": "k0 asks six frames",
+   "red": true
+  },
+  "f03_existing_out_dir_accepted": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 0.6,
+   "tail": [
+    "  File \"<frozen os>\", line 228, in makedirs",
+    "FileExistsError: [WinError 183] Eine Datei kann nicht erstellt werden, wenn sie bereits vorhanden ist: 'F:\\\\TanitAD-scratch\\\\v8proof\\\\negconst\\\\tmp_mut\\\\nc2\\\\f03_existing_out_dir_accepted\\\\tmp_nf_qf95dfwn\\\\a'"
+   ],
+   "tool": "make_negconst_files.py",
+   "suite": "selftest",
+   "what": "an existing output folder is not refused",
+   "red": true
+  },
+  "f04_k0_tolerance": {
+   "rc": 1,
+   "failed": [
+    "FAIL planted value off by 1e-9 is seen (k0 asks for exactly the value)"
+   ],
+   "seconds": 2.2,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ NEGCONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\f04_k0_tolerance\\tmp_nf_t_d8u2d8)"
+   ],
+   "tool": "make_negconst_files.py",
+   "suite": "selftest",
+   "what": "k0 accepts a value 0.5 off",
+   "red": true
+  },
+  "f05_magnitude_written": {
+   "rc": 1,
+   "failed": [
+    "FAIL three files, rc 0, PASS line"
+   ],
+   "seconds": 2.1,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ NEGCONSTFILES-SELFTEST rc 1 (temporary folder F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\f05_magnitude_written\\tmp_nf_r9vfn_l_)"
+   ],
+   "tool": "make_negconst_files.py",
+   "suite": "selftest",
+   "what": "every file holds the magnitude of its value",
+   "red": true
+  },
+  "r01_cval_sign": {
+   "rc": 1,
+   "failed": [
+    "the values and pre-rolls of the card: -1.0, -2.0, -4.0 m/s (and +1.0, +2.0, +4.0 of card ADD80); AGE"
+   ],
+   "seconds": 0.7,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r01_cval_sign\\tmp_cr_7u1n79tf F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r01_cval_sign\\tmp_cr_mdv9dtsx"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the value of M20 is +2.0",
+   "red": true
+  },
+  "r02_k4_strict": {
+   "rc": 1,
+   "failed": [
+    "k4 passes when the pooled contact level at -1 is not higher than at +1 and at -4 not higher than at "
+   ],
+   "seconds": 0.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r02_k4_strict\\tmp_cr_ks9orenv F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r02_k4_strict\\tmp_cr_m22tq0y2"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k4 needs strictly lower",
+   "red": true
+  },
+  "r03_k4_direction": {
+   "rc": 1,
+   "failed": [
+    "k4 passes when the pooled contact level at -1 is not higher than at +1 and at -4 not higher than at ",
+    "k4 pools the two seeds by their mean: a seed that differs in sign does not decide alone             "
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (48 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r03_k4_direction\\tmp_cr_r0cs71af F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r03_k4_direction\\tmp_cr_4cc4lccu"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k4 asks for higher at the cautious sign",
+   "red": true
+  },
+  "r04_k4_one_pair": {
+   "rc": 1,
+   "failed": [
+    "k4 fails when -1 m/s is higher than +1 m/s (the sign), when -4 m/s is higher than +4 m/s, on a missi"
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r04_k4_one_pair\\tmp_cr_cs7_wlc1 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r04_k4_one_pair\\tmp_cr_pdq_im74"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k4 compares only -1 with +1",
+   "red": true
+  },
+  "r05_k4_first_seed_only": {
+   "rc": 1,
+   "failed": [
+    "k4 pools the two seeds by their mean: a seed that differs in sign does not decide alone             "
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r05_k4_first_seed_only\\tmp_cr_8zbx4d1r F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r05_k4_first_seed_only\\tmp_cr_v2o6f17v"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k4 reads the first seed of the cautious value",
+   "red": true
+  },
+  "r06_k4_last_pair_decides": {
+   "rc": 1,
+   "failed": [
+    "k4 fails when -1 m/s is higher than +1 m/s (the sign), when -4 m/s is higher than +4 m/s, on a missi",
+    "k4 pools the two seeds by their mean: a seed that differs in sign does not decide alone             "
+   ],
+   "seconds": 0.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (48 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r06_k4_last_pair_decides\\tmp_cr_jzx79jhv F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r06_k4_last_pair_decides\\tmp_cr_m93s9x24"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k4 is decided by the last pair only",
+   "red": true
+  },
+  "r07_k4_missing_level_good": {
+   "rc": 1,
+   "failed": [
+    "k4 fails when -1 m/s is higher than +1 m/s (the sign), when -4 m/s is higher than +4 m/s, on a missi"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r07_k4_missing_level_good\\tmp_cr_w424qi3s F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r07_k4_missing_level_good\\tmp_cr_g4izzqbe"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k4 passes on a missing level",
+   "red": true
+  },
+  "r08_k3_card_unchecked": {
+   "rc": 1,
+   "failed": [
+    "k3 on the result file of card ADD79: equal levels pass; 1e-6 off, a run missing, controls_all_pass F",
+    "k3 on the result file of card ADD80: equal levels pass; 1e-6 off, a run missing, controls_all_pass F",
+    "k3 reads each file against its own runs: the levels of the E runs do not pass against the file of th"
+   ],
+   "seconds": 1.2,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (47 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r08_k3_card_unchecked\\tmp_cr_9_62bybg F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r08_k3_card_unchecked\\tmp_cr_5sal_bzq"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k3 accepts the file of another card",
+   "red": true
+  },
+  "r09_k3_all_pass_unchecked": {
+   "rc": 1,
+   "failed": [
+    "k3 on the result file of card ADD79: equal levels pass; 1e-6 off, a run missing, controls_all_pass F",
+    "k3 on the result file of card ADD80: equal levels pass; 1e-6 off, a run missing, controls_all_pass F"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (48 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r09_k3_all_pass_unchecked\\tmp_cr_2z4hqz1v F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r09_k3_all_pass_unchecked\\tmp_cr_r8akytyx"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k3 accepts a file whose controls did not all pass",
+   "red": true
+  },
+  "r10_k3_tolerance": {
+   "rc": 1,
+   "failed": [
+    "k3 on the result file of card ADD79: equal levels pass; 1e-6 off, a run missing, controls_all_pass F",
+    "k3 on the result file of card ADD80: equal levels pass; 1e-6 off, a run missing, controls_all_pass F"
+   ],
+   "seconds": 1.6,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (48 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r10_k3_tolerance\\tmp_cr_fobh2400 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r10_k3_tolerance\\tmp_cr_3cegifyf"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "k3 accepts levels that are 0.5 off",
+   "red": true
+  },
+  "r11_c_json_card_unchecked": {
+   "rc": 1,
+   "failed": [
+    "estclose / constclose files: absent path, unreadable, another card, not all-pass are not admitted; a"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r11_c_json_card_unchecked\\tmp_cr_3c7frexr F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r11_c_json_card_unchecked\\tmp_cr_2j47f0hw"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "a file of another card is admitted as the result of card ADD80",
+   "red": true
+  },
+  "r12_c_json_all_pass": {
+   "rc": 1,
+   "failed": [
+    "estclose / constclose files: absent path, unreadable, another card, not all-pass are not admitted; a"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r12_c_json_all_pass\\tmp_cr_9mjeqil7 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r12_c_json_all_pass\\tmp_cr_53yfd0l5"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "a read of card ADD80 with a failed control is admitted",
+   "red": true
+  },
+  "r13_dose_order": {
+   "rc": 1,
+   "failed": [
+    "dose table: seven rows in the order -4, -2, -1, 0 (RR), +1, +2, +4 with C, U, F per seed and pooled "
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r13_dose_order\\tmp_cr_uoohdkf4 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r13_dose_order\\tmp_cr_zimkt85h"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the dose rows are not in the order of the card",
+   "red": true
+  },
+  "r14_dose_pooled_sum": {
+   "rc": 1,
+   "failed": [
+    "dose table: seven rows in the order -4, -2, -1, 0 (RR), +1, +2, +4 with C, U, F per seed and pooled "
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r14_dose_pooled_sum\\tmp_cr_5bpdpoua F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r14_dose_pooled_sum\\tmp_cr_003eltkp"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the pooled dose level is a sum",
+   "red": true
+  },
+  "r15_dose_printed_after_failed_control": {
+   "rc": 1,
+   "failed": [
+    "dose table is printed only with all controls passed and only for a qualified setting, and names noth"
+   ],
+   "seconds": 0.7,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r15_dose_printed_after_failed_control\\tmp_cr_ua1n29po F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r15_dose_printed_after_failed_control\\tmp_cr_ip2lbzr5"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the dose table is printed although a control failed",
+   "red": true
+  },
+  "r16_not_beyond_name": {
+   "rc": 1,
+   "failed": [
+    "E: NOT-SEPARATED on both measures counts as a match: NOT-BEYOND-A-CAUTIOUS-CONSTANT for both estimat",
+    "E: one matching value is enough: NOT-BEYOND for N10 and BEYOND for L25                              ",
+    "E: an unavailable word and no match writes no name and says why; an unavailable word beside a match "
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (47 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r16_not_beyond_name\\tmp_cr_cxyoxdf0 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r16_not_beyond_name\\tmp_cr_bucwkspw"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the NOT-BEYOND name lost the word cautious",
+   "red": true
+  },
+  "r17_beyond_name": {
+   "rc": 1,
+   "failed": [
+    "E: no value matches (C HIGHER at two values, F HIGHER at one): BEYOND-A-CAUTIOUS-CONSTANT           ",
+    "E: one matching value is enough: NOT-BEYOND for N10 and BEYOND for L25                              "
+   ],
+   "seconds": 1.2,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (48 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r17_beyond_name\\tmp_cr_4ci6p38f F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r17_beyond_name\\tmp_cr_1dqsex22"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the BEYOND name lost the word cautious",
+   "red": true
+  },
+  "r18_prefix": {
+   "rc": 1,
+   "failed": [
+    "verdict M20 SUPPORTED (AGE C LOWER, FRESH C not HIGHER, MIXED is not WORSE), M10 and M40 NOT-SUPPORT",
+    "verdict NOT-SUPPORTED for each of the six failing conditions: ['AGE C not LOWER', 'AGE U HIGHER', 'A",
+    "verdict: all three SUPPORTED names three and no one-of-three mark                                   "
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (44 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r18_prefix\\tmp_cr_zqmzz47n F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r18_prefix\\tmp_cr_iwam2bw8"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the names carry the prefix of card ADD80",
+   "red": true
+  },
+  "r19_forms_without_old_runs": {
+   "rc": 1,
+   "failed": [
+    "forms of the card: the new values, the runs of card ADD80 and (admitted) of ADD79 and the banked for"
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r19_forms_without_old_runs\\tmp_cr_lrtzv9mv F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r19_forms_without_old_runs\\tmp_cr_0jpo7hxm"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the runs of card ADD80 are not read",
+   "red": true
+  },
+  "r20_run_table_without_old_runs": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 1.0,
+   "tail": [
+    "           ~~~~^^^",
+    "KeyError: 'RRe_C10'"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the run table has no runs of card ADD80",
+   "red": true
+  },
+  "r21_form_of_without_old_runs": {
+   "rc": 1,
+   "failed": [],
+   "seconds": 0.8,
+   "tail": [
+    "                                                                                                                                                                                              ~~~~~~~^^^^^^^^^^^",
+    "KeyError: 'RRe_C20'"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the runs of card ADD80 have no form",
+   "red": true
+  },
+  "r22_dose_sign": {
+   "rc": 1,
+   "failed": [
+    "dose table: seven rows in the order -4, -2, -1, 0 (RR), +1, +2, +4 with C, U, F per seed and pooled "
+   ],
+   "seconds": 1.3,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r22_dose_sign\\tmp_cr_swo9g7uu F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r22_dose_sign\\tmp_cr_ppwmnyh_"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the dose table lists -1 m/s as +1 m/s",
+   "red": true
+  },
+  "r23_run_names": {
+   "rc": 1,
+   "failed": [
+    "run names of the card: AGE and FRESH, M10 M20 M40 (and N10 L25 when admitted), the banked forms of r"
+   ],
+   "seconds": 1.7,
+   "tail": [
+    "                                                                                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^",
+    "KeyError: 'RQ50eM10KF5P30Hb20'"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the run names are wrong",
+   "red": true
+  },
+  "r24_pair_order": {
+   "rc": 1,
+   "failed": [
+    "names: pair table of the card (A minus B) with and without the estimators                           "
+   ],
+   "seconds": 1.7,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: False (49 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r24_pair_order\\tmp_cr_utet9jb2 F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_mut\\nc2\\r24_pair_order\\tmp_cr_6hzx6qpr"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "selftest",
+   "what": "the pair is RR minus RRe",
+   "red": true
+  },
+  "w01_k4_not_called": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('ctl[\"k4_\" + st] = ctl_...",
+    "1 failed, 1 passed, 10 deselected in 0.31s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "k4 is never run",
+   "red": true
+  },
+  "w02_k3_constclose_not_called": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('ctl[\"k3_constclose_\" +...",
+    "1 failed, 1 passed, 10 deselected in 0.39s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "k3 of card ADD80 is never run",
+   "red": true
+  },
+  "w03_k3_estclose_not_called": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('ctl[\"k3_constclose_\" +...",
+    "1 failed, 1 passed, 10 deselected in 0.32s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "k3 of card ADD79 is never run",
+   "red": true
+  },
+  "w04_admission_control_dropped": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('controls[\"k3_estclose_...",
+    "1 failed, 1 passed, 10 deselected in 0.32s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "a missing result file of card ADD80 is not a failed control",
+   "red": true
+  },
+  "w05_constclose_json_optional": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.7,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('ap.add_argument(\"--est...",
+    "1 failed, 1 passed, 10 deselected in 0.29s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "the result file of card ADD80 is optional",
+   "red": true
+  },
+  "w06_dose_not_in_part": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert '\"dose\": (dose_table(G[\"...",
+    "1 failed, 1 passed, 10 deselected in 0.37s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "the dose table is not carried into the result",
+   "red": true
+  },
+  "w07_settings_without_estimators": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('SET = settings(True)' ...",
+    "1 failed, 1 passed, 10 deselected in 0.32s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "the runs of card ADD79 are read only when admitted",
+   "red": true
+  },
+  "w08_dose_not_rendered": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('render_dose(res)' in '...",
+    "1 failed, 1 passed, 10 deselected in 0.33s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "the dose table is never printed",
+   "red": true
+  },
+  "w09_cj_not_passed": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.8,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('SET = settings(True)' ...",
+    "1 failed, 1 passed, 10 deselected in 0.28s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "the result of card ADD80 is not handed to the setting",
+   "red": true
+  },
+  "w10_names_without_estimators": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_reader_wiring"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_negconst.py::test_reader_wiring - assert ('render_dose(res)' in '...",
+    "1 failed, 1 passed, 10 deselected in 0.41s"
+   ],
+   "tool": "read_negconst10k.py",
+   "suite": "wiring",
+   "what": "the E verdicts depend on the admission instead of failing a control",
+   "red": true
+  },
+  "q01_order_swapped": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 1.9,
+   "tail": [
+    "FAILED test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed, 8 deselected in 1.36s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "AGE M20 runs before AGE M10",
+   "red": true
+  },
+  "q02_wrapper_hash_wrong": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_text_markers_names_and_checks"
+   ],
+   "seconds": 2.0,
+   "tail": [
+    "FAILED test_negconst.py::test_queue_text_markers_names_and_checks - assert ('...",
+    "1 failed, 3 passed, 8 deselected in 1.46s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the queue admits another wrapper hash",
+   "red": true
+  },
+  "q03_file_of_m20_for_all": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 1.7,
+   "tail": [
+    "FAILED test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed, 8 deselected in 1.07s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "every rollout reads the file of -2.0 m/s",
+   "red": true
+  },
+  "q04_reader_seed_wrong": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 4.3,
+   "tail": [
+    "FAILED test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed, 8 deselected in 3.72s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "reader seed 0 for both model seeds",
+   "red": true
+  },
+  "q05_rule_every_ten": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 7.5,
+   "tail": [
+    "FAILED test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed, 8 deselected in 6.87s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the rule every 10 steps",
+   "red": true
+  },
+  "q06_done_marker_changed": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_text_markers_names_and_checks"
+   ],
+   "seconds": 1.8,
+   "tail": [
+    "FAILED test_negconst.py::test_queue_text_markers_names_and_checks - assert ('...",
+    "1 failed, 3 passed, 8 deselected in 1.29s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the done marker has another name",
+   "red": true
+  },
+  "q07_age_preroll_dropped": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 1.3,
+   "tail": [
+    "FAILED test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "1 failed, 3 passed, 8 deselected in 0.74s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "AGE without the pre-roll",
+   "red": true
+  },
+  "q08_check_marker_of_parent": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_syntax_and_refusals",
+    "test_negconst.py::test_queue_text_markers_names_and_checks",
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "test_negconst.py::test_log_markers_in_dry"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "ERROR test_negconst.py::test_log_markers_in_dry - AssertionError: Traceback (...",
+    "8 deselected, 4 errors in 0.41s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the queue asks the pass line of the check of card ADD80",
+   "red": true
+  },
+  "q09_const_hash_not_checked": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_text_markers_names_and_checks"
+   ],
+   "seconds": 1.9,
+   "tail": [
+    "FAILED test_negconst.py::test_queue_text_markers_names_and_checks - assert ('...",
+    "1 failed, 3 passed, 8 deselected in 1.34s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the queue does not bind the check to the constant file",
+   "red": true
+  },
+  "q10_check_tag_changed": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_syntax_and_refusals",
+    "test_negconst.py::test_queue_text_markers_names_and_checks",
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "test_negconst.py::test_log_markers_in_dry"
+   ],
+   "seconds": 1.2,
+   "tail": [
+    "ERROR test_negconst.py::test_log_markers_in_dry - AssertionError: Traceback (...",
+    "8 deselected, 4 errors in 0.55s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the check tag is ck1",
+   "red": true
+  },
+  "q11_estimator_dir_of_card_80": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_text_markers_names_and_checks",
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files"
+   ],
+   "seconds": 1.8,
+   "tail": [
+    "FAILED test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "2 failed, 2 passed, 8 deselected in 1.23s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the queue reads the constant files of card ADD80",
+   "red": true
+  },
+  "q12_parent_hash_unchecked": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_syntax_and_refusals",
+    "test_negconst.py::test_queue_text_markers_names_and_checks",
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "test_negconst.py::test_log_markers_in_dry"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "ERROR test_negconst.py::test_log_markers_in_dry - AssertionError: REFUSED: th...",
+    "8 deselected, 4 errors in 0.39s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "another parent queue is accepted",
+   "red": true
+  },
+  "q13_start_marker": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_text_markers_names_and_checks"
+   ],
+   "seconds": 2.1,
+   "tail": [
+    "FAILED test_negconst.py::test_queue_text_markers_names_and_checks - assert ('...",
+    "1 failed, 3 passed, 8 deselected in 1.54s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the start marker has another name",
+   "red": true
+  },
+  "q14_value_list": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_text_markers_names_and_checks"
+   ],
+   "seconds": 1.4,
+   "tail": [
+    "FAILED test_negconst.py::test_queue_text_markers_names_and_checks - assert ('...",
+    "1 failed, 3 passed, 8 deselected in 0.90s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "the constant files checked are M10, M20, M20",
+   "red": true
+  },
+  "q15_banked_estimator_run_dropped": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_queue_syntax_and_refusals",
+    "test_negconst.py::test_queue_text_markers_names_and_checks",
+    "test_negconst.py::test_twelve_rollouts_in_order_with_the_right_files",
+    "test_negconst.py::test_log_markers_in_dry"
+   ],
+   "seconds": 1.3,
+   "tail": [
+    "ERROR test_negconst.py::test_log_markers_in_dry - AssertionError: Traceback (...",
+    "8 deselected, 4 errors in 0.69s"
+   ],
+   "tool": "make_negconst_queue.py",
+   "suite": "queue",
+   "what": "a banked run of card ADD79 is not required (the generator's own count guard also fires)",
+   "red": true
+  },
+  "p01_tag_default": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 1.2,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('TAG=${TAG:-nk1}' in...",
+    "1 failed, 11 deselected in 0.64s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the check tag default is ck1",
+   "red": true
+  },
+  "p02_values": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('check_negconst.py' ...",
+    "1 failed, 11 deselected in 0.38s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the constant files are named N10, N20, N40",
+   "red": true
+  },
+  "p03_estimator_dir": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 0.9,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('CD=${CONSTDIR:-$V/c...",
+    "1 failed, 11 deselected in 0.34s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the check reads the constant files of card ADD80",
+   "red": true
+  },
+  "p04_done_marker": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 1.3,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('CD=${CONSTDIR:-$V/c...",
+    "1 failed, 11 deselected in 0.53s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the done marker has another name",
+   "red": true
+  },
+  "p05_zz_prefix": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 1.4,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('check_negconst.py' ...",
+    "1 failed, 11 deselected in 0.79s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the last line has another prefix",
+   "red": true
+  },
+  "p06_check_script_name": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('CD=${CONSTDIR:-$V/c...",
+    "1 failed, 11 deselected in 0.41s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the check script name has a trailing blank",
+   "red": true
+  },
+  "p07_work_dir": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_check_script"
+   ],
+   "seconds": 1.2,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_check_script - assert ('CD=${CONSTDIR:-$V/c...",
+    "1 failed, 11 deselected in 0.58s"
+   ],
+   "tool": "make_pod_check_negconst.py",
+   "suite": "podcheck",
+   "what": "the check writes into another folder",
+   "red": true
+  },
+  "d01_add80_admission_dropped": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.3,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('stop \"ADD...",
+    "1 failed, 11 deselected in 0.67s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "a read of card ADD80 that is not admitted does not stop the pod read",
+   "red": true
+  },
+  "d02_old_runs_not_required": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.0,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('$ERUNS $O...",
+    "1 failed, 11 deselected in 0.43s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "the runs of card ADD80 are not required in the pull folder",
+   "red": true
+  },
+  "d03_constj_not_required": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.6,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('--constcl...",
+    "1 failed, 11 deselected in 0.98s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "the result file of card ADD80 is not a required argument",
+   "red": true
+  },
+  "d04_eargs_without_constclose": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.3,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('EARGS=\"--...",
+    "1 failed, 11 deselected in 0.59s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "the reader gets no result file of card ADD80",
+   "red": true
+  },
+  "d05_chain_without_cj": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.4,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('--estclos...",
+    "1 failed, 11 deselected in 0.89s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "the chain does not pass the result file of card ADD80",
+   "red": true
+  },
+  "d06_chain_const_dir": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.4,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('--estclos...",
+    "1 failed, 11 deselected in 0.78s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "the chain reads the constant files of card ADD80",
+   "red": true
+  },
+  "d07_chain_links": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.1,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - AssertionError: wr...",
+    "1 failed, 11 deselected in 0.53s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "the chain links the runs of card ADD80",
+   "red": true
+  },
+  "d08_const_glob": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.1,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('read_negc...",
+    "1 failed, 11 deselected in 0.53s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "only one constant file is hashed",
+   "red": true
+  },
+  "d09_estruns": {
+   "rc": 1,
+   "failed": [
+    "test_negconst.py::test_pod_read_and_chain_scripts"
+   ],
+   "seconds": 1.2,
+   "tail": [
+    "FAILED test_negconst.py::test_pod_read_and_chain_scripts - assert ('$ERUNS $O...",
+    "1 failed, 11 deselected in 0.65s"
+   ],
+   "tool": "make_podread_negconst.py",
+   "suite": "podread",
+   "what": "a run of card ADD79 is not required",
+   "red": true
+  }
+ },
+ "control_after": {
+  "selftest:read_negconst10k.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.0,
+   "tail": [
+    "   text of the tool holds none of the banned words                                                                      True",
+    "ZZ SELFTEST-NEGCONST10K ok: True (50 of 50) temporary folders F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_cr_phioii2w F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_cr_d4o76y9y"
+   ]
+  },
+  "selftest:check_negconst.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.3,
+   "tail": [
+    "   text of the check holds none of the banned words                                                               True",
+    "ZZ SELFTEST-CHECK-NEGCONST ok: True (18 of 18)"
+   ]
+  },
+  "selftest:make_negconst_files.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 2.8,
+   "tail": [
+    "PASS planted input-dependent file is seen",
+    "ZZ NEGCONSTFILES-SELFTEST rc 0 (temporary folder F:\\TanitAD-scratch\\v8proof\\negconst\\tmp_nf_fit7vjme)"
+   ]
+  },
+  "wiring:read_negconst10k.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 0.9,
+   "tail": [
+    "..                                                                       [100%]",
+    "2 passed, 10 deselected in 0.28s"
+   ]
+  },
+  "queue:make_negconst_queue.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.3,
+   "tail": [
+    "....                                                                     [100%]",
+    "4 passed, 8 deselected in 0.74s"
+   ]
+  },
+  "podcheck:make_pod_check_negconst.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.0,
+   "tail": [
+    ".                                                                        [100%]",
+    "1 passed, 11 deselected in 0.44s"
+   ]
+  },
+  "podread:make_podread_negconst.py": {
+   "rc": 0,
+   "failed": [],
+   "seconds": 1.0,
+   "tail": [
+    ".                                                                        [100%]",
+    "1 passed, 11 deselected in 0.45s"
+   ]
+  }
+ },
+ "counts": {
+  "red": 82,
+  "total": 82,
+  "control_before_green": true,
+  "control_after_green": true
+ }
+}

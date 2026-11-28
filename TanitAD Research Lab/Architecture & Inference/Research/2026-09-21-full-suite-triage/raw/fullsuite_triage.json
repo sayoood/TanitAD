@@ -1,0 +1,58 @@
+{
+ "_what": "the FULL stack suite has been RED at the tip -- 5 failures, none of them caused by this session",
+ "_evidence_class": "MEASURED (ours), CPU, full run",
+ "_totals": {
+  "failed": 5,
+  "passed": 8606,
+  "skipped": 55,
+  "xfailed": 2,
+  "wall_s": 1069.56
+ },
+ "_why_it_went_unnoticed": "every run this session (and, by the shape of it, for some time) was a FILTERED slice; a green slice is a claim about the slice",
+ "_harness_trap": {
+  "_what": "the task notification reported EXIT CODE 0 for a run that failed 5 tests",
+  "_cause": "the command was  so the reported status was the ECHO's, not pytest's",
+  "_rule": "never read a status through a chain or a pipe -- assert on the ARTIFACT (here, the summary line in the output file)"
+ },
+ "failures": [
+  {
+   "test": "test_runbook_commands.py::test_every_runbook_launch_line_passes_the_trainers_own_preflight",
+   "defect": "the RUNBOOK tells an operator to run a v6F launch line the trainer PREFLIGHT REFUSES: --nav-cond missing (PI directive 2026-08-30, mandatory for every arm trained from then on) and --horizons 1 2 4 declaring heads [2,4] that NO loss consumes",
+   "mine": false,
+   "note": "v6F is RETIRED by the PI (go straight to v7F), so the runbook carries a retired arm AND a pre-directive config"
+  },
+  {
+   "test": "test_speed_max_derivation_stamp.py::test_the_guard_is_WIRED_into_the_config_write_not_merely_defined",
+   "defect": "the stamp guard runs AFTER config.json is written (byte offset 425435 > 190431) -- a guard that cannot prevent the write it guards",
+   "mine": false
+  },
+  {
+   "test": "test_text_encoding_is_explicit.py::test_subprocess_text_mode_always_names_its_encoding",
+   "defect": "p_runner.py:260 and :296 ran text-mode subprocess without encoding=",
+   "mine": false,
+   "status": "FIXED in this commit"
+  },
+  {
+   "test": "test_v6_effective_weights.py::test_REFC_WEIGHT_GATES_covers_every_weight_flag_the_parser_accepts",
+   "defect": "three refcv7 scorer sub-weights ungated: r7_w_comf, r7_w_ep, r7_w_ttc",
+   "mine": false,
+   "note": "SAME FAMILY as the --w-r7-wta provenance gap closed in 38a8ddd -- the refcv7 landing left several guards uncovered"
+  },
+  {
+   "test": "test_refcv3_arm.py::test_every_family_is_present_or_refused_with_a_reason",
+   "defect": "the four-families guard",
+   "mine": false
+  }
+ ],
+ "fixed_here": {
+  "file": "stack/scripts/p_runner.py",
+  "sites": 2,
+  "why_it_mattered": "count_a7_procs decodes POWERSHELL output and its except-branch returns 1 = BUSY by design (assume busy, never assume free). A cp1252 UnicodeDecodeError would therefore reach that fail-safe for a DECODING reason and hold A7 paused on a stray character. The fail-safe is correct; arriving there by decode error is not.",
+  "verified": {
+   "test_text_encoding_is_explicit": "3 passed (was RED)",
+   "boxstat()": "returns 1605 10",
+   "count_a7_procs()": "returns 0 -- readable, and independently consistent with A7 being paused"
+  }
+ },
+ "_VERDICT": "5 red at the tip, 1 fixed here, 4 enumerated with their defects named and left for their own landings -- none caused by this session"
+}

@@ -1,0 +1,89 @@
+--- l2b_locus_roll.py
++++ l2c_locus_roll_fresh.py
+@@ -1,4 +1,11 @@
+-"""l2b_locus_roll.py -- refcv9 L2-B (PREREG_L2B.md): the brake-LOCUS roll of the shipped refcv8 EMA-48,852 at PER-FRAME nav.  ONE inference-seed os-only NATIVE roll
++"""l2c_locus_roll_fresh.py -- refcv9 SELCOR (PREREG_SELCOR.md): the L2-B LOCUS roll (l2b_locus_roll.py, unchanged logic) on the L1C FRESH-CLIP kit.
++
++DERIVED from refcv9_l2/code/l2b_locus_roll.py; the only differences (diff: l2c_locus_roll_fresh.DIFF.txt) are the L1C input swap, copied from
++refcv9_l1c/code/l1c_ztac_roll.py: `--kit` sets R8_EVAL_KIT before r8_repoint is imported, `--remap` replaces the eval remap (three values re-pointed:
++extrinsics union, clock sidecar, v9 release), `--v9-md5` is written to args.r8_v9_eval_md5; and the seal file is PREREG_SELCOR.md.
++
++ORIGINAL DOCSTRING FOLLOWS.
++l2b_locus_roll.py -- refcv9 L2-B (PREREG_L2B.md): the brake-LOCUS roll of the shipped refcv8 EMA-48,852 at PER-FRAME nav.  ONE inference-seed os-only NATIVE roll
+ (no hook, no force, no calibrator) that BANKS, for EVERY window, the whole refined candidate fan and the per-candidate selection scores:
+ 
+     fan [N=149, 8, 2] float32   (out["anchor_traj"], the 117 base anchors refined + 32 allocated)       sel_score / sel_score_v3 [N]
+@@ -28,12 +35,11 @@
+ 
+ HERE = Path(__file__).resolve().parent
+ ROOT = HERE.parent
+-PREREG, SEAL = ROOT / "PREREG_L2B.md", ROOT / "PREREG_L2B.sha256"
++PREREG, SEAL = ROOT / "PREREG_SELCOR.md", ROOT / "PREREG_SELCOR.sha256"
+ PF_CODE = Path(os.environ.get("L2_PF_CODE", "C:/Users/Admin/qland/hold_r8pf/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/"
+                                             "2026-10-20-refcv8-perframe-final/code"))
+ R8_CODE = Path(os.environ.get("L2_R8_CODE", "C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/"
+                                             "2026-10-15-refcv8-milestone-battery/code"))
+-EVAL_REMAP = HERE / "refcv8_eval_remap_devbox_l2.json"
+ 
+ try:
+     sys.stdout.reconfigure(encoding="utf-8")
+@@ -51,6 +57,9 @@
+     i = sys.argv.index("--")
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--trace-out", required=True)
++    ap.add_argument("--kit", required=True)
++    ap.add_argument("--remap", required=True)
++    ap.add_argument("--v9-md5", required=True)
+     ap.add_argument("--save-every", type=int, default=1000)
+     ap.add_argument("--require-seal", action="store_true")
+     a = ap.parse_args(sys.argv[1:i])
+@@ -61,22 +70,38 @@
+ 
+ 
+ A, CHILD = parse()
++os.environ["R8_EVAL_KIT"] = str(A.kit)                 # BEFORE r8_repoint is imported (it reads EVAL_KIT at import)
++EVAL_REMAP = Path(A.remap)
+ SEAL_SHA = None
+ if SEAL.exists() and PREREG.exists():
+     want, got = SEAL.read_text(encoding="utf-8").split()[0].strip(), sha256_file(PREREG)
+     SEAL_SHA = got if (len(want) == 64 and got == want) else None
+ if A.require_seal and SEAL_SHA is None:
+-    raise SystemExit("[l2b] PREREG_L2B.md is missing / does not match its seal: refusing a scored roll")
++    raise SystemExit("[l2b] PREREG_SELCOR.md is missing / does not match its seal: refusing a scored roll")
+ 
+ sys.path.insert(0, str(R8_CODE))
+ import r8_repoint  # noqa: E402
+-REMAP_REC = {"devbox_file_replaced": str(r8_repoint.REMAP_OVERRIDES), "launch_tree": str(r8_repoint.LAUNCH_TREE), "file": str(EVAL_REMAP), "sha256": sha256_file(EVAL_REMAP)}
++REMAP_REC = {"kit": str(A.kit), "v9_md5_set_to": str(A.v9_md5), "devbox_file_replaced": str(r8_repoint.REMAP_OVERRIDES), "launch_tree": str(r8_repoint.LAUNCH_TREE), "file": str(EVAL_REMAP), "sha256": sha256_file(EVAL_REMAP)}
+ r8_repoint.REMAP_OVERRIDES = EVAL_REMAP
+ sys.argv = [str(PF_CODE / "roll_seed_r8_pf.py")] + CHILD
+ sys.path.insert(0, str(PF_CODE))
+ import roll_seed_r8_pf as PF  # noqa: E402  (READ-ONLY, UNCHANGED)
+ RR = PF.RR
+ RUNNER = PF.main
++import tanitad.eval.refcv7_loader as _LL  # noqa: E402
++_orig_bed = _LL.build_eval_dataset
++
++
++def _bed(model, cfg, args, config, **kw):             # the loader checks the v9 npz against the md5 in the ARGV (eval139's); set the fresh release's
++    if os.path.basename(str(getattr(args, "r8_v9_labels_eval", ""))) == os.path.basename(
++            str(json.load(open(EVAL_REMAP, encoding="utf-8"))["--r8-v9-labels-eval"])):
++        args.r8_v9_eval_md5 = str(A.v9_md5)
++    return _orig_bed(model, cfg, args, config, **kw)
++
++
++_bed._r8_patched = True
++_bed._r8_orig = getattr(_orig_bed, "_r8_orig", _orig_bed)
++_LL.build_eval_dataset = _bed
+ 
+ import torch  # noqa: E402
+ 
+@@ -171,7 +196,7 @@
+         arr = _stack(recs, name, fill, dt)
+         if arr is not None:
+             out[name] = arr
+-    meta = {"tool": "l2b_locus_roll.py", "prereg_sha256": SEAL_SHA, "script_sha256": sha256_file(__file__), "child_argv": CHILD, "remap": REMAP_REC,
++    meta = {"tool": "l2c_locus_roll_fresh.py", "prereg_sha256": SEAL_SHA, "script_sha256": sha256_file(__file__), "child_argv": CHILD, "remap": REMAP_REC,
+             "window_W": ST["W"], "final": bool(final), "n_windows": len(recs), "present_counts": ST["present"],
+             "counters": {k: (sorted(v) if isinstance(v, set) else v) for k, v in ST["c"].items()}, "wall_s": round(time.time() - ST["t0"], 1),
+             "saved": time.strftime("%FT%T%z"), **(extra or {})}

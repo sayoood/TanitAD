@@ -1,0 +1,22 @@
+C:\Users\Admin\hn34\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\scorer_finetune.py:1994: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())
+mutation                               part caught-by (failing checks)
+sf_dose_ignored_by_the_loss            SF   P_pinned_main.epo_term, S_dose_reaches_B, S_zero_dose_B_equals_A
+sf_epo_loss_drops_lam                  SF   P_pinned_epo_loss, D_quarter_dose_exact, D_ramp_midpoint_exact, S_dose_reaches_B
+sf_dose_reaches_control                SF   P_pinned_main.train_losses, S_quarter_moves_B, S_control_untouched_by_dose
+sf_data_event_lam_not_built_value      SF   S_data_event_lam_0_25
+sf_parser_default_moved                SF   P_parser_default_lam_1
+rr_reward_edited                       SF   P_reward_is_R0s
+lg_rls1b_lam_registered_1              G    G_clean_R0b, G_clean_R1b, G_R0b_lam_omitted, G_R0b_lam_1
+lg_profile_registry_ignored            G    G_clean_R0b, G_clean_R1b, G_R0b_lam_omitted, G_R0b_lam_1
+lg_profile_seeds_ignored               G    G_clean_R0b, G_clean_R1b, G_R0b_lam_omitted, G_R0b_lam_1
+lg_profile_arms_ignored                G    G_clean_R0b, G_clean_R1b, G_R1b_seed_0, G_R0b_seed_1
+lg_unregistered_class_accepted         G    G_R2_class_needs_PI
+lg_R2b_PI_refusal_removed              G    G_cli_R2b_is_PI_decision
+lg_rls1b_seeds_swapped                 G    G_clean_R0b, G_clean_R1b, G_R1b_seed_0, G_R0b_seed_1
+lg_rls1_registry_moved                 G    G_refe_rls1_unchanged
+lg_cli_arm_table_ignored               G    G_cli_R0_not_rls1b_arm
+lg_suite_without_s1b                   G    G_suite_has_s1b
+gc_dvb_does_not_observe_lam            G    G_dvb_pass_built_0_25, G_dvb_fail_built_1_0
+ZZTEST_PASS 18  (1 unmutated suite + 17 RED mutations)

@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\cli.py", line 201, in run_benchmark_cmd
+    fn(ctx)
+    ~~^^^^^
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\navsim\__init__.py", line 12, in run_benchmark
+    return _run(ctx)
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\navsim\benchmark.py", line 334, in run_benchmark
+    rep = FR.check_and_adopt(arm=name, src_run=Path(src_for), run=run, prof=prof, split_yaml=y,
+                             devkit_sha=dk["sha"], patches=P.devkit_patches(), preflight=pre,
+                             export_sha256=exp_rec.get("sha256"), new_seam=seams.get(name),
+                             log=ctx.log, kind="model")
+  File "D:\Projects\TanitAD\taniteval\taniteval\bench\navsim\floor_reuse.py", line 154, in check_and_adopt
+    raise FloorReuseRefused(f"--reuse-floors REFUSED for {arm}: " + " | ".join(bad))
+taniteval.bench.navsim.floor_reuse.FloorReuseRefused: --reuse-floors REFUSED for A1: A1 seam differs from the source run's (tokens or poses) — the arm itself changed

@@ -1,0 +1,148 @@
+{
+  "Q6_channels": {
+    "resnet34.a1_in1k": {
+      "feature_info_channels": {
+        "16": 256,
+        "32": 512
+      },
+      "FORWARD_s16_shape": [
+        1,
+        256,
+        26,
+        64
+      ],
+      "FORWARD_s32_shape": [
+        1,
+        512,
+        13,
+        32
+      ],
+      "forward_agrees_with_feature_info": true,
+      "TrunkSpec_perception": {
+        "stride": 16,
+        "channels": 256,
+        "hw": [
+          26,
+          64
+        ],
+        "n_tokens": 1664
+      },
+      "TrunkSpec_planner": {
+        "stride": 32,
+        "channels": 512,
+        "hw": [
+          13,
+          32
+        ],
+        "n_tokens": 416
+      },
+      "spec_agrees_with_forward": true,
+      "source": "timm:resnet34.a1_in1k"
+    },
+    "resnet101.a1_in1k": {
+      "feature_info_channels": {
+        "16": 1024,
+        "32": 2048
+      },
+      "FORWARD_s16_shape": [
+        1,
+        1024,
+        26,
+        64
+      ],
+      "FORWARD_s32_shape": [
+        1,
+        2048,
+        13,
+        32
+      ],
+      "forward_agrees_with_feature_info": true,
+      "TrunkSpec_perception": {
+        "stride": 16,
+        "channels": 1024,
+        "hw": [
+          26,
+          64
+        ],
+        "n_tokens": 1664
+      },
+      "TrunkSpec_planner": {
+        "stride": 32,
+        "channels": 2048,
+        "hw": [
+          13,
+          32
+        ],
+        "n_tokens": 416
+      },
+      "spec_agrees_with_forward": true,
+      "source": "timm:resnet101.a1_in1k"
+    }
+  },
+  "Q6_vs_SPEC_10_2": {
+    "resnet101_spec_1024_2048": true,
+    "resnet34_spec_256_512": true
+  },
+  "Q5a_shared_weights": {
+    "stem_forward_calls_per_trunk_forward": 1,
+    "stem_input_channels_seen": [
+      3
+    ],
+    "stem_input_batch_seen": [
+      6
+    ],
+    "note": "ONE call whose batch is B*K == 6 for B=2, K=3: the K passes are folded into the batch, through ONE set of weights, and the stem input is 3 channels \u2014 NOT a 9-channel stem.",
+    "n_distinct_stem_weight_tensors": 1,
+    "fuse16_is_after_trunk": "TemporalFuse",
+    "fuse32_is_after_trunk": "TemporalFuse",
+    "fuse_kind": "concat1x1"
+  },
+  "Q5b_identity_init_makes_history_removable": {
+    "s16_max_abs_diff_vs_single_frame": 26.076677322387695,
+    "s32_max_abs_diff_vs_single_frame": 7.155421257019043,
+    "BIT_IDENTICAL_s16": false,
+    "zeroing_OLDEST_frame_moves_s16_by": 33.08660888671875,
+    "CONTROL_zeroing_NEWEST_frame_moves_s16_by": 33.08660888671875
+  },
+  "Q5c_inflate_arm": {
+    "inflate_stem_in_channels": 9,
+    "default_mode_in_TimmTrunkConfig": "shared",
+    "shared_stem_in_channels": 3,
+    "repeated_frame_max_abs_diff_vs_3ch": 0.000286102294921875
+  },
+  "Q5d_model_level_future_guard": {
+    "baseline_bit_identical": true,
+    "baseline_max_abs_diff": 0.0,
+    "MUTATED_bit_identical": true,
+    "MUTATED_max_abs_diff": 0.0,
+    "GUARD_GOES_RED_ON_THE_REAL_WIRING": false,
+    "CONTROL_past_ego_moves_the_plan_by": 0.042522430419921875
+  },
+  "Q5e_backward_differences_ANALYTIC": {
+    "shape": [
+      1,
+      4,
+      3
+    ],
+    "speed": [
+      0.0,
+      1.0,
+      3.0,
+      6.0
+    ],
+    "accel": [
+      0.0,
+      10.0,
+      20.0,
+      30.0
+    ],
+    "accel_expected_backward": [
+      0.0,
+      10.0,
+      20.0,
+      30.0
+    ],
+    "accel_would_be_if_CENTRED_at_last_past": 35.0,
+    "future_value_99_absent": true
+  }
+}

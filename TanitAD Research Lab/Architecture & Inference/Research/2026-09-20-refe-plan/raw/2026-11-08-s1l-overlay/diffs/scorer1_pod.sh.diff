@@ -1,0 +1,43 @@
+--- a/refe/scorer1_pod.sh
++++ b/refe/scorer1_pod.sh
+@@ -18,18 +18,21 @@
+   C0) SEED=0 ;;
+   C0r) SEED=1 ;;
+   S1) SEED=0 ;;
+-  *) echo "unknown ARM=$ARM (C0 | C0r | S1)" >&2; exit 2 ;;
++  S1L) SEED=0 ;;      # AMENDMENT_2/3: C0 + L_pair over NC,DAC,TTC,lane (own launch-gate profile refe_scorer1l, own lambda_p)
++  *) echo "unknown ARM=$ARM (C0 | C0r | S1 | S1L)" >&2; exit 2 ;;
+ esac
+ LARM=$(echo "$ARM" | tr 'A-Z' 'a-z')
+ OUT=$ROOT/$LARM
+ COMMON="--ckpt $ROOT/base/model_sft4_B_u400.pt --targets $DATA/refe_navtrain/train_grow --images $DATA/navtrain_pixels --calib $DATA/refe_navtrain/train_grow/calib_table.json --onpolicy $DATA/refe_navtrain/onpolicy/sets --heldout $DATA/refe_heldout/sets --heldout-logs $DATA/refe_heldout/heldout_logs.txt --workers 3 --lr 1e-4 --b-mode expreward --lam 1.0 --tau-s 0.1 --lane-head --lane-weight 1.0 --teacher-lane-train $D/train_teacher_lane --teacher-lane-heldout $D/heldout_teacher_lane --lane-labels-heldout $D/heldout_lane --pdm-labels-heldout $D/heldout_pdm --pdm-labels-train $D/train_pdm --require-pdm --navtest-logs $ROOT/navtest_ids/navtest_logs.json --navtest-tokens $ROOT/navtest_ids/navtest_tokens.txt.gz --max-updates 400 --eval-every 200 --seed $SEED"
+ PAIR=""
+-if [ "$ARM" = "S1" ]; then
+-  PAIR="--pair-heads NC,DAC,TTC --pair-dv 0.15"
+-  if [ -f "$ROOT/calibrate/pair_weight.json" ]; then
++HEADS=NC,DAC,TTC; CAL=$ROOT/calibrate
++[ "$ARM" = "S1L" ] && { HEADS=NC,DAC,TTC,lane; CAL=$ROOT/calibrate_s1l; }
++if [ "$ARM" = "S1" ] || [ "$ARM" = "S1L" ]; then
++  PAIR="--pair-heads $HEADS --pair-dv 0.15"
++  if [ -f "$CAL/pair_weight.json" ]; then
+     PW=""
+     for _py in python3 python; do      # the first interpreter that runs (a Windows sandbox may have a python3 stub); the pod has python3
+-      PW=$($_py -c 'import json,sys; v=json.load(open(sys.argv[1]))["pair_w"]; print(repr(float(v)))' "$ROOT/calibrate/pair_weight.json" 2> /dev/null) && [ -n "$PW" ] && break
++      PW=$($_py -c 'import json,sys; v=json.load(open(sys.argv[1]))["pair_w"]; print(repr(float(v)))' "$CAL/pair_weight.json" 2> /dev/null) && [ -n "$PW" ] && break
+     done
+     [ -n "$PW" ] && PAIR="$PAIR --pair-w $PW"
+   fi
+@@ -39,11 +42,11 @@
+ source $WS/teacher_env.sh
+ PY="$DRIVERL_EVAL_PYTHON"
+ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+-mkdir -p $OUT $ROOT/calibrate
++mkdir -p $OUT $CAL
+ export OMP_NUM_THREADS=4 PYTHONUNBUFFERED=1
+ rc=2
+ case "${MODE:-}" in
+-  calibrate) "$PY" scorer_finetune.py $COMMON --pair-heads NC,DAC,TTC --pair-dv 0.15 --pair-calibrate --out $ROOT/calibrate > $ROOT/calibrate/calibrate.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $ROOT/calibrate/calibrate.log ;;
++  calibrate) "$PY" scorer_finetune.py $COMMON --pair-heads $HEADS --pair-dv 0.15 --pair-calibrate --out $CAL > $CAL/calibrate.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $CAL/calibrate.log ;;
+   preflight) "$PY" scorer_finetune.py $ARGS --preflight > $OUT/preflight.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/preflight.log ;;
+   mutate_nobalance) REFE_PAIR_MUTATE_NOBALANCE=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_nobalance > $OUT/mutate_nobalance.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_nobalance.log ;;
+   mutate_droploss) REFE_PAIR_MUTATE_DROP_LOSS=1 "$PY" scorer_finetune.py $ARGS --preflight --out $OUT/mutate_droploss > $OUT/mutate_droploss.log 2>&1; rc=$?; echo "ZZEXIT $rc" >> $OUT/mutate_droploss.log ;;

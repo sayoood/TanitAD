@@ -1,0 +1,16 @@
+# PREREG_V8F_N1DM, Amendment 1: pod staging repairs and the launch order (FROZEN by the MM at 2026-11-21T17:01:50Z, before any N1DM arm trains, any G-SUITE result or any number)
+
+Card `PREREG_V8F_N1DM.md` (sha256 958d143d) stands. Code of record stays **573ad839**. This amendment moves no lever, argv, cell, bar, floor, estimator, tier or outcome. It records two repairs of staging inputs found while staging on the pod, one launch-order fact, and the PI's run go.
+
+## 1. The PI's run go
+PI, first-hand, 2026-11-21 ~16:55Z, answer to "Run RHK now (about 4.3 pod-h), then N1DM (about 2.0 pod-h)?": **"Run both"**. Recorded on the pod as `/root/strat1/n1dm/n1dm_go.token` (a PI-go record that `n1dm_launch.sh` asks for, NOT a launch-gate token). The card's cost rule stands: a projection above 2.4 pod-h or a third arm goes back to the PI.
+
+## 2. Two staging-input repairs (both failed closed; nothing ran on them)
+1. **`n1dm_tree.sha256` listed `*tree/stack/...` paths.** Windows `sha256sum` writes a `*` before the path, so the finisher's `sed 's# tree/# *#'` never matched. `n1dm_stage.sh` checks the list from inside the tree, so it would have refused. Repaired by `sed 's# \*tree/# *#'` (the original kept as `n1dm_tree.sha256.bk1`); every one of the 14 hashes was then checked against `git cat-file blob 573ad839:<path>` and the tar's content: 14 of 14 equal.
+2. **The delta tar was refused on the pod:** it carried the Windows owner ids, and `tar` as root exited non-zero on "Cannot change ownership", so the stage script stopped at "unpack delta". Rebuilt as `git -c core.autocrlf=false archive --format=tar 573ad839 -- <the 14 paths>` (root-owned entries, the commit's exact blobs; the original kept as `n1dm_delta.tar.bk1`); its 14 files equal `n1dm_tree.sha256`. The half-staged pod folder (`/root/strat1/n1dm/tree`, 454 MB, a copy of the N1DH tree) was deleted and staging re-run: **`ZZ N1DM STAGE OK ZZ`**, tree 3,444 of 3,444 blobs equal `all_blobs.txt` (= the 573ad839 tree + the eval-141 grid, checked against `git ls-tree` on the dev box), delta 14 of 14 OK, hb wrapper 74fd8445 and kclip.py 8e78e69e OK.
+
+## 3. The dry mint cannot precede G-SUITE (a fact of the source, not a change)
+`strat1_check.py mint` binds the G-SUITE result file of THIS commit (`binding()` calls `suite_problems(suite_path, commit)`, `stack/scripts/strat1_check.py:944-951` at 573ad839), and that file is written by the chain's own G-SUITE step. So `dry_mint_n1dm.sh` has nothing to bind before the chain runs. **The chain's own mint at the arm step is the pre-training check:** a refusal there stops the chain before any training step (G-SUITE's done-marker is kept, so a relaunch skips it). The MM reads `runs/N1DM_s0/gate/checks.json` in full the first time it is written.
+
+## 4. Launch order
+`/root/strat1/n1dm/n1dm_after_rhk.sh` (started 2026-11-21T17:01:04Z) waits for the ROLLHIST-K chain's final `ZZ ROLLHIST-K ...` line (DONE or FAIL), then runs `n1dm_launch.sh` (marker watcher, then the chain, which takes `/root/gpu_queue.lock` and holds it to its end). Until then it keeps `/root/N1DW_READY` set, so the other session's next slice skips; it removes the marker only if it exits without a launch. Cap 15 h.

@@ -1,0 +1,9 @@
+# test_p7_ship_list.py against the UNFIXED p7_ship_list.py (pre_selfpin_fix): must go RED on the 3 new non-control checks
+  FAIL: files made after the derive (the list, its trace sidecar, SHIP_MANIFEST.json) are not pinned (['SHIP_MANIFEST.json', 'refe/p7_ship_list.json', 'refe/p7_ship_list.json.trace.json'])
+  FAIL: check is OK on the package the list was derived in, the list inside it (a fixed point) (ZZP7SHIP_BAD missing=0 differs=1 stale_scripts=0 first=['refe/p7_ship_list.json'] (ship the listed f)
+  FAIL: check is OK after SHIP_MANIFEST.json is regenerated at ship time (ZZP7SHIP_BAD missing=0 differs=2 stale_scripts=0 first=['SHIP_MANIFEST.json', 'refe/p7_ship_list.jso)
+ZZP7SHIP_TEST_FAIL 3 failing, 22 passing
+rc=1
+# and against the FIXED tool:
+ZZP7SHIP_TEST_PASS 25
+rc=0

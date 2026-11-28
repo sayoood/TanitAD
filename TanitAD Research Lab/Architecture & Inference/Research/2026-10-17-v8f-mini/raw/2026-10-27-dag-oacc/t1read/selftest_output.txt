@@ -1,0 +1,288 @@
+PASS L0 F, 2F, F/2, B, tolerance are the PREREG's
+PASS L1 the real pinned PREREG: section 2 + 4 cells verbatim, no problem
+PASS L1b PREREG text with the PRIMARY-ACC bar changed (< 0 -> <= 0) -> a problem is reported
+PASS L1b PREREG text with the KEEP bound changed -> a problem is reported
+PASS L1b PREREG text with an outcome condition changed -> a problem is reported
+PASS L1b PREREG text with two outcome rows swapped -> a problem is reported
+PASS L1b PREREG text with a section-2 row dropped -> a problem is reported
+PASS L1b PREREG text with the order sentence changed -> a problem is reported
+PASS L1b PREREG text with control C-O3 dropped -> a problem is reported
+PASS L1b PREREG text with the C-O3 tolerance changed -> a problem is reported
+PASS L1b PREREG text with an extra outcome row appended -> a problem is reported
+PASS L1c the pin check passes the pinned file and refuses another file
+PASS L1d AMEND1.md is the pinned file (raw sha256) and still contains, verbatim, every condition and the committed next the reader codes
+PASS L1d the AMEND1 pin is AMEND1's: the PREREG file does not satisfy it
+PASS L1d re-wrapping AMEND1's lines is tolerated by the text check (emphasis, backticks and wrapping are markup)
+PASS L1d AMEND1 text with DOMINANT's crawl clause narrowed (L2 and M1 -> L2 only) -> a problem is reported
+PASS L1d AMEND1 text with DOMINANT's crawl clause dropped -> a problem is reported
+PASS L1d AMEND1 text with LONGITUDINAL FIXED loses `not DOMINANT` -> a problem is reported
+PASS L1d AMEND1 text with LONGITUDINAL FIXED's old lateral / crawl clause is back -> a problem is reported
+PASS L1d AMEND1 text with the committed next names DAG2-OACC again -> a problem is reported
+PASS L1d AMEND1 text with the committed next's first sentence changed -> a problem is reported
+PASS L1d AMEND1 text with the committed next's `Otherwise` clause dropped -> a problem is reported
+PASS L1e own_pin_problems: with the real AMEND1.md every pin is clean (PREREG cells, AMEND1 pin and text, offline reference, DAG's banked argv)
+PASS L1e a harmless extra newline in AMEND1.md (the text check is satisfied) is REFUSED by the sha256 pin alone
+PASS L1e an AMEND1.md whose DOMINANT clause was narrowed is refused on BOTH the pin and the text
+PASS L1e a missing AMEND1.md is refused
+PASS L1e --amend1 defaults to the E: copy and can be overridden
+PASS L1f the table in force differs from the PREREG's printed table in exactly DOMINANT and LONGITUDINAL FIXED; the six names and their order are the PREREG's
+PASS L1f DOMINANT's committed next is the PREREG's, unchanged
+PASS L1f amend1_problems reports a coded row Amendment 1 does not rewrite when it differs from the PREREG's printed row (NOT FIXED edited), and a reordered table
+PASS L2 primary_acc: separated and delta < 0 passes
+PASS L2 primary_acc: delta exactly 0 does not pass (strict)
+PASS L2 primary_acc: negative but not separated does not pass (a point is not a CI)
+PASS L2 primary_acc: separated-worse does not pass
+PASS L3 keep_ok: upper bound exactly +F/2 passes (inclusive)
+PASS L3 keep_ok: upper bound just above +F/2 fails
+PASS L3 keep_ok: reads the UPPER bound, not the point
+PASS L3 keep_ok: a missing, NaN or non-numeric bound fails
+PASS L4 sep_worse: error row, positive separated is worse; negative separated is not
+PASS L4 sep_worse: agreement row (TAC), NEGATIVE separated is worse
+PASS L4 sep_worse: an unseparated row is never worse
+PASS L4 sep_better is the mirror
+PASS L5 lon_status: a clean table is clear
+PASS L5 lon_status: speed MAE separated-worse -> not clear, named
+PASS L5 lon_status: along-track MAE separated-worse -> not clear, named
+PASS L5 lon_status: accel MAE separated-worse -> not clear, named
+PASS L5 lon_status: DK-VIOL separated-worse -> not clear, named
+PASS L5 lon_status: DK-HW separated-worse -> not clear, named
+PASS L5 lon_status: DK-TG separated-worse -> not clear, named
+PASS L5 lon_status: accel MAE separated-better is clear (the lever's own move)
+PASS L5 lon_status: a NOT COMPUTED longitudinal row is not clear and is listed (never silently passing)
+PASS L5 lon_status: a MISSING longitudinal row is not clear
+PASS L5 lon_status: lateral / tactical / crawl rows worse do not affect LON-CLEAR
+PASS L5 LON_ROWS are the six LONGITUDINAL rows of Read A
+PASS L6 latcrawl_worse: clean -> none
+PASS L6 latcrawl_worse: the six lateral rows are each caught
+PASS L6 latcrawl_worse: the crawl share M1 is caught
+PASS L6 latcrawl_worse: a TACTICAL or longitudinal row worse is NOT a lateral / crawl row
+PASS L7 d_flags: the clean table gives D1, D2, D3
+PASS L7 d_flags: D1 exactly -2F and separated holds (inclusive)
+PASS L7 d_flags: D1 just above -2F fails
+PASS L7 d_flags: D1 needs the interval to separate
+PASS L7 d_flags: D2 fails on a separated-worse table row (L2 is a table row)
+PASS L7 d_flags: D2 does NOT count the crawl share M1 (build_report.verdict)
+PASS L7 d_flags: a NOT COMPUTED row fails D2
+PASS L7 d_flags: a TACTICAL agreement row negative-separated fails D2
+PASS L7 d_flags: a family with no separated-better row fails D3 (all four families are needed)
+PASS L7 d_flags: one STRATEGIC row separated-better still gives D3
+PASS L7 crawl_rows_fail: M1 or L2 separated-worse at one seed fails the crawl rows; clean passes
+PASS L8 DOMINANT: both seeds pass everything
+PASS L8 REFUSED precedes everything
+PASS L8 NO EFFECT: PRIMARY-ACC fails at seed 1 only
+PASS L8 NO EFFECT: PRIMARY-ACC fails at seed 0 only
+PASS L8 NO EFFECT precedes COSTS POSITION (PA fails at one seed, KEEP at the other)
+PASS L8 COSTS POSITION: KEEP fails at seed 0 only
+PASS L8 COSTS POSITION: KEEP fails at seed 1 only
+PASS L8 COSTS POSITION precedes DOMINANT
+PASS L8 DOMINANT needs D1 at both seeds: D1 short at seed 0 only reads LONGITUDINAL FIXED
+PASS L8 DOMINANT needs D1 at both seeds: D1 short at seed 1 only reads LONGITUDINAL FIXED
+PASS L8 DOMINANT needs D2 at both seeds: D2 short at seed 0 only reads LONGITUDINAL FIXED
+PASS L8 DOMINANT needs D2 at both seeds: D2 short at seed 1 only reads LONGITUDINAL FIXED
+PASS L8 DOMINANT needs D3 at both seeds: D3 short at seed 0 only reads LONGITUDINAL FIXED
+PASS L8 DOMINANT needs D3 at both seeds: D3 short at seed 1 only reads LONGITUDINAL FIXED
+PASS L8 gap reason D1 short (nothing else wrong, the 3 cells of the enumeration) reads LONGITUDINAL FIXED, not UNPLACED
+PASS L8 gap reason D3 short (nothing else wrong) reads LONGITUDINAL FIXED
+PASS L8 gap reason a TACTICAL / STRATEGIC row separated-worse (D2 short, LON-CLEAR holds, no lateral / crawl row worse) reads LONGITUDINAL FIXED
+PASS L8 all three gap reasons at once (D1 short + D3 short + a TACTICAL / STRATEGIC row worse) read LONGITUDINAL FIXED
+PASS L8 LONGITUDINAL FIXED: LON-CLEAR at both, a lateral / crawl row worse at both seeds
+PASS L8 LONGITUDINAL FIXED: a lateral / crawl row worse at ONE seed (the dropped clause (a) no longer matters)
+PASS L8 LONGITUDINAL FIXED needs LON-CLEAR at BOTH seeds -> a longitudinal row worse at one seed is NOT FIXED
+PASS L8 NOT FIXED: a longitudinal row worse at seed 0 only
+PASS L8 NOT FIXED: a longitudinal row worse at seed 1 only
+PASS L8 NOT FIXED: D1 short and a longitudinal row worse is NOT FIXED, not LONGITUDINAL FIXED (LON-CLEAR is required)
+PASS L8 crawl open: D1-D3 hold at both seeds and M1 is separated-worse at both -> LONGITUDINAL FIXED (it was DOMINANT before the amendment)
+PASS L8 crawl open at seed 0 only -> LONGITUDINAL FIXED
+PASS L8 crawl open at seed 1 only -> LONGITUDINAL FIXED
+PASS L8 M1 not worse at either seed and D1-D3 hold -> DOMINANT (the crawl clause passes)
+PASS L8 crawl open is flagged (crawl_open, the clause list names `crawl` at the seed, the block is reported as "D1–D3 held, crawl open")
+PASS L8 a clean DOMINANT is not crawl open and fails no clause
+PASS L8 D1 short AND M1 worse: not `crawl open` (D1-D3 did not hold); the clauses named per seed are D1 + crawl at seed 0, nothing at seed 1
+PASS L8 the failed clauses are named per seed: seed 0 D1 + D3, seed 1 D2 + crawl
+PASS L8 crawl open needs PRIMARY-ACC and KEEP: with PRIMARY-ACC failing the cell is NO EFFECT and not `crawl open`
+PASS L8 a LONGITUDINAL FIXED block that is not crawl-open reports which clauses failed at which seed
+PASS L8 L2 separated-worse is a LATERAL row inside D2: D2 short, so the cell reads LONGITUDINAL FIXED and the clause is named D2 (the crawl clause adds M1)
+PASS L8 sweep of 36864 consistent flag combinations: decide() never returns UNPLACED (the defensive branch is unreachable) and exactly one row matches each
+PASS L8 a DOMINANT cell matches exactly the DOMINANT row, a crawl-open cell exactly LONGITUDINAL FIXED (the `not DOMINANT` is in the row, not left to the order)
+PASS L8 decide refuses a call without m1_worse (DOMINANT's crawl clause reads it; it is never silently False)
+PASS L8 decide refuses an m1_worse that lacks a seed
+PASS L8 decide_unamended is the PRE-amendment logic: a D1-short cell is UNPLACED, a TACTICAL / STRATEGIC-worse cell is UNPLACED, D3 short is UNPLACED
+PASS L8 decide_unamended: D1-D3 held with the crawl share worse is DOMINANT (M1 outside D2), and a lateral / crawl row worse at ONE seed is LONGITUDINAL FIXED (reading (a), at >= 1 seed)
+PASS L8 decide_unamended agrees with the amended outcome on every row Amendment 1 did not touch (REFUSED, NO EFFECT, COSTS POSITION, NOT FIXED, a clean DOMINANT)
+PASS L8 matching rows are returned in table order
+PASS L8 several matching rows come back in table order, the first wins
+PASS L8 decide refuses a call without both seeds
+PASS L8 outcome_block: DOMINANT carries the AMENDED condition (the crawl clause) and the PREREG's committed next
+PASS L8 outcome_block: LONGITUDINAL FIXED carries the AMENDED condition and the NEW committed next (DAG-OACC is the base; DAG-ORC for crawl rows; the failing family's lever otherwise), and not the DAG2-OACC route
+PASS L8 NOT FIXED's committed next is the HACC re-fit
+PASS L8 an UNPLACED block (the defensive branch) carries no outcome text, only the note that it is a BUG
+PASS L8 outcome_from: no control failed and clean flags -> DOMINANT, with the unamended outcome beside (equal here); the old ambiguity block is gone
+PASS L8 outcome_from: a failed control reaches decide() -> REFUSED (the controls are not dropped on the way)
+PASS L8 outcome_from: the seed flags and the controls both reach decide() (PA fails at seed 1 -> NO EFFECT)
+PASS L8c compose: the crawl share M1 separated-worse at seed 0 only sets m1w {0: True, 1: False}; PRIMARY-ACC and KEEP come from the DAG-OACC - DAG rows; every compose control passes
+PASS L8c compose: PRIMARY-ACC (accel MAE) and KEEP (ADE6) are read from their OWN rows (seed 0: accel worse, ADE6 hi 0.3 -> PA False, KEEP False; seed 1 passes)
+PASS L8c compose: a NOT COMPUTED longitudinal row fails LON-ROWS-COMPUTED at that seed only
+PASS L8c compose: a NOT COMPUTED PRIMARY-ACC row fails LON-ROWS-COMPUTED (it never counts as passing)
+PASS L8c compose: this reader's D1 / D2 / D3 disagreeing with build_report.verdict fails READA-VERDICT-LINK at both seeds
+PASS L8 outcome_rc: 0 placed outcomes, 2 REFUSED, 3 UNPLACED
+PASS L8 outcome_from: a D1-short cell (the PREREG gap) -> the AMENDED word LONGITUDINAL FIXED is the outcome; the unamended word UNPLACED is only beside, flagged as differing, and exits rc 0
+PASS L8 outcome_from: a D1-D3-held cell with the crawl share worse -> the AMENDED word LONGITUDINAL FIXED is the outcome; the unamended word DOMINANT is only beside, flagged as differing, and exits rc 0
+PASS L8 outcome_from: the amended outcome block carries the per-seed clause list and crawl_open
+PASS L9 enumerate_cells: 524,288 cells, decide() == the independent AMENDED table on every cell, decide_unamended() == the independent unamended table, every row reached, 0 unplaced, exactly one row per non-REFUSED cell (rc 0)
+PASS L10 one_lever: DAG's banked argv + --w-acc W (only --out differing) is clean at both seeds
+PASS L10 one_lever: --w-acc anywhere in the argv (not only last) is the same lever
+PASS L10 one_lever: no --w-acc is reported
+PASS L10 one_lever: --w-acc twice is reported
+PASS L10 one_lever: a --w-acc value other than the stage's W is reported
+PASS L10 one_lever: a non-numeric / zero / negative / missing --w-acc value is reported
+PASS L10 one_lever: a second lever (an extra flag) is reported
+PASS L10 one_lever: a changed shared flag value (--lr) is reported
+PASS L10 one_lever: a DROPPED flag (--dagger-p) is reported
+PASS L10 one_lever: a changed bank sha256 is reported
+PASS L10 one_lever: a reference that already names --w-acc is reported
+PASS L10 bank_problems: DAG's iteration-1 bank at both seeds is clean
+PASS L10 bank_problems: the other seed's bank sha256, another bank directory, or none is reported
+PASS L10 bank_problems: the RIGHT bank directory with another sha256 is reported ON THE SHA256 (independent of the one-lever comparison)
+PASS L11 wacc_problems (r2 form): the REAL gate record of M2b_s0_dagoacc passes at W = 49.6969 (a trained start: residual_zero_init False, read_o_grad_diff > 0)
+PASS L11 a built w_acc other than the argv's is reported
+PASS L11 an acc term of exactly 0 in G-LIVE is reported
+PASS L11 an acc term absent from G-LIVE is reported
+PASS L11 an infinite acc term is reported
+PASS L11 O's head gradient 0 is reported
+PASS L11 live.head_o_grad_step0 0 is reported
+PASS L11 the probe itself not passing is reported
+PASS L11 the term not entering the total at the declared weight is reported
+PASS L11 r2 form: residual_zero_init False and read_o_grad_diff 0 is reported (a trained head MUST pass the term's gradient to read_o)
+PASS L11 r2 form: residual_zero_init True and read_o_grad_diff exactly 0.0 is the identity and passes
+PASS L11 r2 form: residual_zero_init True and read_o_grad_diff 864.79 is reported (the first attempt's STOP)
+PASS L11 r2 form: residual_zero_init neither True nor False is reported (not decidable)
+PASS L11 the registered control control_repeat_total_diff must read EXACTLY 0.0
+PASS L11 the registered control control_repeat_grad_diff must read EXACTLY 0.0
+PASS L11 the registered control control_prior_grad_diff must read EXACTLY 0.0
+PASS L11 the registered control control_wm_grad_diff must read EXACTLY 0.0
+PASS L11 live.missing_terms non-empty is reported
+PASS L11 AST: this reader's wacc_problems IS box2_ship/gate_oaf_assert_r2.py's wacc_problems (code, docstring aside)
+PASS L11 AST: this reader's finite() IS r2's finite()
+PASS L11 the r2 asserter is the pinned file
+PASS L12 runrec_wacc_problems: summary and selfcheck both carry the built w_acc = W -> clean
+PASS L12 a run record without a built w_acc is reported
+PASS L12 a run record with another built w_acc is reported
+PASS L13 wacc_c03: the REAL box-2 w_acc record (49.6969) equals the offline reference within 1e-4 relative, on DAG_s0's checkpoint and the banked fit plans
+PASS L13 0.99e-4 relative (rounded to 6 figures) passes the tolerance clause; 1.5e-4 is reported
+PASS L13 OACC's M2b value 42.9311 (the disclosed alternative) is REFUSED
+PASS L13 a w_acc.txt that disagrees with the json is reported
+PASS L13 a box value fitted on another checkpoint than DAG_s0's is reported
+PASS L13 other fit windows (box or offline) are reported
+PASS L13 another window count is reported
+PASS L13 a w_acc that is not the raw value rounded to 6 figures is reported
+PASS L13 an offline reference that is not the pinned file is reported
+PASS L13 non-finite values are reported
+PASS L13 round6: 6 significant figures (OACC R3)
+PASS L14 rollout_argv_problems: differing only in --ckpt/--tag/--out-dir/--dump-ticks is clean
+PASS L14 a changed --limit is reported
+PASS L14 a changed --scene is reported
+PASS L14 a different token count is reported
+PASS L15 rows_diff: equal rows -> no difference, max 0.0; a metadata label is skipped
+PASS L15 rows_diff: a 1e-6 difference is reported
+PASS L15 rows_diff: a flipped separated flag is reported
+PASS L15 rows_diff: a different n is reported
+PASS L15 rows_diff: a row on one side only is reported
+PASS L16 families_diff: oacc - dag leaf by leaf, strings and booleans skipped, one-sided leaves listed
+PASS L16 guards_beside: R-T0 point == F/2 holds (inclusive); just above fails
+PASS L17 family_of routes controls to C-O1..C-O4
+PASS L18 READ_A_ROWS (family, label, direction) equal build_report.SPEC (PREREG_V8F_DAG_REREAD section 2)
+PASS L19 d_flags on the banked DAG - P10 table s0 reproduces the banked D1 / D2 / D3 and the separated-worse rows
+PASS L19 lon_status on the banked DAG - P10 table s0 names the banked separated-worse longitudinal rows
+PASS L19 latcrawl_worse on the banked DAG - P10 table s0 names the banked lateral / crawl rows
+PASS L19 d_flags on the banked DAG - P10 table s1 reproduces the banked D1 / D2 / D3 and the separated-worse rows
+PASS L19 lon_status on the banked DAG - P10 table s1 names the banked separated-worse longitudinal rows
+PASS L19 latcrawl_worse on the banked DAG - P10 table s1 names the banked lateral / crawl rows
+PASS L20 seed_flags_of composes the rows into the seed's flags
+PASS L20 seed_flags_of: KEEP from the upper bound, lateral worse -> D2 False and LATCRAWL_WORSE True
+PASS P1 a synthetic complete DAG-OACC s0 pull (DAG's argv + --w-acc 49.6969) is COMPLETE
+PASS P1 the same at seed 1
+PASS P1 the sums are the 8 names, no oracle eval
+PASS P2 a SHA256SUMS.txt younger than 3 s is INCOMPLETE (may still be filling)
+PASS P3 7 of the 8 names listed -> INCOMPLETE
+PASS P3 the 9-name FLAT-DAG form (a tacorc name) -> INCOMPLETE (not the exact set)
+PASS P4 a listed file absent -> INCOMPLETE
+PASS P5 a file whose sha256 differs from the sums -> INCOMPLETE
+PASS P6 summary.json done false -> INCOMPLETE
+PASS P7 a box-2 fresh-age eval in the sums -> WRONG (never waited for)
+PASS P8 argv --dagger-p 0 (a DAG-0 run) -> WRONG
+PASS P9 a dagger flag dropped (--dagger-seed) -> WRONG
+PASS P10 the FLAT-DAG bank (dagger_bank_flat) -> WRONG
+PASS P10 an iteration-2 bank (dagger_bank2) -> WRONG
+PASS P11 a bank sha256 other than DAG's iteration-1 one (C-O1) -> WRONG
+PASS P11 summary.json built dagger_bank_sha256 other than DAG's -> WRONG
+PASS P12 init-ckpt = DAG_s0 (iteration 2 style) -> WRONG
+PASS P12 init-ckpt = FLAT_s0 -> WRONG
+PASS P13 summary.json levers.init_ckpt.sha256 not M2b_s0's -> WRONG
+PASS P14 --out naming another run -> WRONG
+PASS P15 argv --seed 0 in a seed-1 directory -> WRONG
+PASS P15 summary.json seed 1 in a seed-0 directory -> WRONG
+PASS P16 NO --w-acc in the argv (a DAG run in a dagoacc directory) -> WRONG (C-O1)
+PASS P16 --w-acc twice -> WRONG
+PASS P16 --w-acc other than the w_acc stage's value (OACC's M2b 42.9311) -> WRONG
+PASS P16 a second lever (--w-tac 1.0) beside --w-acc -> WRONG (C-O1 one lever)
+PASS P16 a changed shared flag (--lr 2e-4) -> WRONG (C-O1 one lever)
+PASS P17 control: a checkpoint that is not DAG_s0's is COMPLETE
+PASS P17 the pulled checkpoint IS DAG_s0's checkpoint (nothing was fine-tuned with the lever) -> WRONG
+PASS P18 the w_acc stage record not pulled -> INCOMPLETE
+PASS P18 a run pulled before the w_acc stage record -> INCOMPLETE (the lever's value is unknown)
+PASS P19 w_acc.json and w_acc.txt that disagree -> WRONG
+PASS P20 an unknown arm or an absent directory -> INCOMPLETE
+PASS P21 DAG's banked argv missing -> INCOMPLETE (C-O1 has no control)
+PASS P22a identity_problems: a faithful DAG-OACC record gives only the 'DAG argv withheld' note (every identity clause passes)
+PASS P22a identity_problems: --dagger-p 0 is reported by its own clause ('--dagger-p')
+PASS P22a identity_problems: a wrong bank directory is reported by its own clause ('ITERATION-1 bank')
+PASS P22a identity_problems: a wrong bank sha256 in the argv is reported by its own clause ('the bank sha256 is identical')
+PASS P22a identity_problems: --seed of the other seed is reported by its own clause ('argv --seed')
+PASS P22a identity_problems: summary.json of another seed is reported by its own clause ('summary.json says arm')
+PASS P22a identity_problems: init = DAG_s0 is reported by its own clause ('--init-ckpt')
+PASS P22a identity_problems: --out of another run is reported by its own clause ('does not end in')
+PASS P22a identity_problems: a dropped dagger flag is reported by its own clause ('does not name')
+PASS P22a identity_problems: summary.json built another bank sha256 is reported by its own clause ('summary.json built dagger_bank_sha256')
+PASS P22a identity_problems: summary.json init sha256 not M2b_s0's is reported by its own clause ('levers.init_ckpt.sha256')
+PASS P24b a bank.json forged consistently (SUMS and PROVENANCE moved with it) is still WRONG: it no longer hashes to the sha256 DAG's argv declared
+PASS P22 wacc_status: OK with the value on a consistent record
+PASS P22 wacc_status: a non-positive w_acc is WRONG; absent files are INCOMPLETE
+PASS P23 the REAL w_acc stage record is OK, value 49.6969
+PASS P24 DAG's REAL iteration-1 banks s0 and s1 are COMPLETE (bank.json sha256 == the sha256 DAG's argv declared)
+PASS P24 a bank.json that no longer hashes to DAG's declared sha256 is WRONG
+PASS P24 a missing bank is INCOMPLETE
+PASS P25 one_lever_problems: the pull check and the reader (which must not trust the pull check) agree on the verdict for nine argv variants, and they are not all the same verdict
+PASS C1 baseline dry-run ends ZZDAGOACCT1-DRY-OK, rc 0
+PASS C2 two rollout commands: DAG-OACC s0 (lane s0), DAG-OACC s1 (lane s1), tags never DAG_s..
+PASS C3 every rollout is --limit causal --dump-heads --dump-ticks, m=10, deadreckon, logged scene, periodic, on CPU, on the pulled checkpoint
+PASS C4 no logged-bucket rollout and no fresh-T0 command is planned
+PASS C1b the scenarios run on a SYNTHETIC pull directory: both pulls INCOMPLETE and the w_acc record OK, so no DAG-OACC checkpoint or eval file is opened or hashed
+PASS C5 the pulls and the w_acc record are reported by name
+PASS C6 the reader command carries the OACC PREREG, the offline reference and the M2b init slots, and writes only under v8f-dagoacc-t1
+PASS C6b the reader command carries --amend1 with the pinned AMEND1.md (the E: copy), the dry run pins it in PINS.txt, and says UNPLACED is unreachable
+PASS C7 the dry run says the box-2 DONE gate and the w_acc / banked-bank re-verification come after the lanes
+PASS C7 DAG's banks and banked outputs are verified in the dry run, and no bank wait exists
+PASS C8 the default box-2 watcher is the box-2 chain's own log chain_v8f_dagoacc_r2.out (read-only)
+PASS C9 C: gate: 2047 MB free STOPs (rc 1, ZZDAGOACCT1-STOP)
+PASS C9 C: gate: exactly 2048 MB passes
+PASS C10 E: gate: 1499 MB free STOPs
+PASS C10 E: gate: exactly 1500 MB passes
+PASS C11 a tampered PREREG (one number changed) STOPs on its pin
+PASS C11 a tampered offline w_acc reference (C-O3's input) STOPs on the CHAIN's own pin (not only later in the reader)
+PASS C11 a tampered AMEND1.md (one clause changed) STOPs on the chain's own pin
+PASS C11 a missing AMEND1.md STOPs (input missing)
+PASS C11 a tampered PREREG_V8F_DAG_REREAD (Read A's rows and C1-C4) STOPs on the chain's own pin
+PASS C12 a missing tool tree STOPs
+PASS C14 control: a four-file tree whose tool builds from ck[cfg] and whose config declares w_acc passes both guards (and stops later, at --help, for lack of imports)
+PASS C14 a tool that does NOT build the model from the checkpoint's cfg STOPs on that guard
+PASS C15 a config class that declares no w_acc (a DAG-OACC checkpoint's cfg would not load) STOPs on that guard
+PASS C13 bash -n dagoacc_t1_chain.sh (the real-run branch is at least syntactically valid)
+PASS H1 the rehearsal on banked data runs to the end, rc 0, no traceback
+PASS H2 every rehearsal control passes: 17 PASS, 0 FAIL (SPEC-LABELS, C4, C3, C2, RC-DAG (C1), LON-ROWS-COMPUTED, READA-VERDICT-LINK, T0-CKPT, R-T0-GRID, per seed)
+PASS H3 the output is labelled REHEARSAL and NOT a DAG-OACC result
+PASS H4 the rehearsal's outcome, Read-A tables, beside rows, T0 rows and controls equal the pinned characterisation (sha256)
+PASS H4b the Read-A tables, T0 rows and controls are byte-identical to the PRE-amendment rehearsal (Amendment 1 moved no row, no bar and no control)
+PASS H5 the stand-in reads NO EFFECT (DAG-0 against DAG: PRIMARY-ACC cannot pass for a run without the lever)
+PASS H5b the rehearsal's outcome block carries the Amendment 1 fields: outcome_unamended (descriptive), crawl_open, the per-seed DOMINANT clause list; no `ambiguity` block
+PASS H6 R-T0 and the four-family T0 leaves are computed for both seeds, and R-T0's guard is evaluated
+SELFTEST: 287/287 checks as expected (187 s)

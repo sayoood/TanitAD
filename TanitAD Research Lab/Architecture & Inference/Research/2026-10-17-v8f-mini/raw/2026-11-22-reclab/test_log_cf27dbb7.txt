@@ -1,0 +1,281 @@
+tanitad from F:\TanitAD-scratch\reclab\tree_cf27\stack\tanitad\__init__.py
+........................................................................ [ 30%]
+.................................................................F.F.F.. [ 60%]
+.......ss.F....................F.F...................................... [ 91%]
+.....................                                                    [100%]
+================================== FAILURES ===================================
+_ test_a_real_run_gives_the_loss_the_swapped_batch_and_the_counts_are_the_controls _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002876F4ABE00>
+tmp_path = WindowsPath('F:/TanitAD-scratch/reclab/tmp/pt_cf27/test_a_real_run_gives_the_loss0')
+spy = [{'p10f': tensor([[[ 3.5124e+00, -5.3735e-01, -7.6913e-03,  ..., -2.7015e-02,
+          -9.4885e-02,  4.1329e-03],
+   ...e+00,  1.2978e+00, -6.6342e-03,  1.4504e+01,  4.9426e+00,
+         -2.5265e-02, -9.6220e-02, -8.6099e-03]]), ...}, ...]
+
+    def test_a_real_run_gives_the_loss_the_swapped_batch_and_the_counts_are_the_controls(pack, tmp_path, spy):
+        steps = 4
+        assert TR.main(_run(tmp_path / "p0", ["--steps", str(steps), "--init-ckpt", str(pack.ck), "--dagger-p", "0"])) == 0
+        c0 = spy[-steps:]
+        spy.clear()
+        assert TR.main(_run(tmp_path / "p1", ["--steps", str(steps), *DAG(pack, 1.0, 4)])) == 0
+        c1 = spy[-steps:]
+        s1 = _summary(tmp_path / "p1")
+        assert len(c0) == len(c1) == steps
+        bank = DG.DaggerBank.load(pack.bank, clip_names=pack.J["clip"])
+        n_changed = 0
+        for x0, x1 in zip(c0, c1):
+            for k in ("gt", "s_h", "limit", "has", "feats", "pose_now", "a_t", "a_s", "t", "ci", "act", "frame_ok"):
+                assert torch.equal(x0[k], x1[k]), f"{k}: the same window stream, the human's targets, the scene, the ages, the anchor and the WM record untouched"
+>           el, _ = bank.candidates(x0["ci"].numpy(), x0["t"].numpy())
+                                    ^^^^^^^^^^^^^^^^
+E           TypeError: can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.
+
+stack\tests\test_v8f_dagger_train.py:850: TypeError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 6.364 total 49.447 p_gt 1.00
+[2/4] ade 4.268 total 46.439 p_gt 0.80
+[3/4] ade 4.870 total 43.006 p_gt 0.60
+[4/4] ade 8.499 total 48.171 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.0379106998443604}
+[1/4] ade 12.569 total 48.095 p_gt 1.00
+[2/4] ade 9.483 total 48.110 p_gt 0.80
+[3/4] ade 9.993 total 53.289 p_gt 0.60
+[4/4] ade 14.756 total 53.958 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.5495173931121826}
+_________________ test_the_swap_is_what_changes_the_training __________________
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002876F4ABE00>
+tmp_path = WindowsPath('F:/TanitAD-scratch/reclab/tmp/pt_cf27/test_the_swap_is_what_changes_0')
+
+    def test_the_swap_is_what_changes_the_training(pack, tmp_path):
+        """DAG vs DAG-0 on the same argv otherwise: the loss trace differs (the lever has an effect on training) and DAG-0 equals a run with the flag absent."""
+        common = ["--steps", "4", "--init-ckpt", str(pack.ck)]
+        assert TR.main(_run(tmp_path / "a", [*common])) == 0
+        assert TR.main(_run(tmp_path / "b", [*common, "--dagger-p", "0"])) == 0
+        assert TR.main(_run(tmp_path / "c", ["--steps", "4", *DAG(pack, 1.0, 4)])) == 0
+        num = lambda o: [{k: v for k, v in r.items() if k != "sec" and not k.startswith(("ego_perturb", "dagger"))} for r in _log(o)]     # noqa: E731
+>       assert num(tmp_path / "a") == num(tmp_path / "b"), "DAG-0 (--dagger-p 0 named) IS the run without the flag, bit for bit"
+E       AssertionError: DAG-0 (--dagger-p 0 named) IS the run without the flag, bit for bit
+E       assert [{'step': 1, ....000165, ...}] == [{'step': 1, ....000165, ...}]
+E         
+E         At index 1 diff: {'step': 2, 'epoch': 0, 'p_gt': 0.8, 'lr': 0.0003, 'grad_norm': 53.59691619873047, 'ckpt': 0.6799208521842957, 'goal': 0.710972011089325, 'lat': 1.750927209854126, 'lon': 2.011965274810791, 'cons': 0.20770731568336487, 'ade': 4.267802715301514, 'fde': 11.579405784606934, 'acc': 0.14299482107162476, 'pen_SPEED': 3.858508586883545, 'pens_SPEED': 4.089364051818848, 'pen_STOP': 0.0, 'pens_STOP': 50.99501037597656, 'pen_TURN': 3.498411178588867, 'pens_TURN': 0.0, 'pen_LEAD': 0.0, 'pens_LEAD': 0.0, 'wm': 232.25643920898438, 'total': 46.438941955566406, 'viol_...
+E         
+E         ...Full output truncated (2 lines hidden), use '-vv' to show
+
+stack\tests\test_v8f_dagger_train.py:890: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 6.364 total 49.447 p_gt 1.00
+[2/4] ade 4.268 total 46.439 p_gt 0.80
+[3/4] ade 4.870 total 43.006 p_gt 0.60
+[4/4] ade 8.499 total 48.171 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.8350279331207275}
+[1/4] ade 6.364 total 49.447 p_gt 1.00
+[2/4] ade 4.268 total 46.439 p_gt 0.80
+[3/4] ade 4.870 total 43.006 p_gt 0.60
+[4/4] ade 8.499 total 48.171 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.9495398998260498}
+[1/4] ade 12.569 total 48.095 p_gt 1.00
+[2/4] ade 9.483 total 48.110 p_gt 0.80
+[3/4] ade 9.993 total 53.288 p_gt 0.60
+[4/4] ade 14.756 total 53.958 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.9703326225280762}
+_ test_a_resumed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting __
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002876F4ABE00>
+tmp_path = WindowsPath('F:/TanitAD-scratch/reclab/tmp/pt_cf27/test_a_resumed_run_draws_what_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002878A0F2DD0>
+
+    def test_a_resumed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting(pack, tmp_path, monkeypatch):
+        common = [*COMMON, "--steps", "4", "--ckpt-every", "1", *DAG(pack, 0.6, 9)]
+        assert TR.main(["--out", str(tmp_path / "full"), *common]) == 0
+        monkeypatch.setenv("V8F_TRAIN_CRASH_AT", "2")
+        with pytest.raises(RuntimeError, match="V8F_TRAIN_CRASH_AT"):
+            TR.main(["--out", str(tmp_path / "res"), *common])
+        monkeypatch.delenv("V8F_TRAIN_CRASH_AT")
+        assert TR.main(["--out", str(tmp_path / "res"), *common]) == 0
+        a = torch.load(tmp_path / "full" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+        b = torch.load(tmp_path / "res" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+>       assert all(torch.equal(a["model"][k], b["model"][k]) for k in a["model"]), "the final weights are those of the uninterrupted run"
+E       AssertionError: the final weights are those of the uninterrupted run
+E       assert False
+E        +  where False = all(<generator object test_a_resumed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting.<locals>.<genexpr> at 0x0000028789FEBB50>)
+
+stack\tests\test_v8f_dagger_train.py:914: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 10.236 total 50.365 p_gt 1.00
+[2/4] ade 7.705 total 47.019 p_gt 0.80
+[3/4] ade 6.312 total 45.136 p_gt 0.60
+[4/4] ade 13.536 total 53.132 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 4.34426212310791}
+[1/4] ade 10.236 total 50.365 p_gt 1.00
+[2/4] ade 7.705 total 47.019 p_gt 0.80
+[resume] step 2 epoch 0 batch 2
+[3/4] ade 6.312 total 45.136 p_gt 0.60
+[4/4] ade 13.536 total 53.132 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 2.3296995162963867}
+___________ test_flag_off_reproduces_the_unmodified_tip_bit_for_bit ___________
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002878A1B9310>
+tmp_path = WindowsPath('F:/TanitAD-scratch/reclab/tmp/pt_cf27/test_flag_off_reproduces_the_u0')
+
+    def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
+        """K-BUILD: the golden was written by the unmodified tip (66b6c80e) for (a) a DAG-OACC-style argv, (b) an ORC-style argv and (c) plain M2b -- 4 CPU steps each on the trainer's synthetic world. With the flag
+        absent this tree must give the same log (every loss, every logged key), the same final weights and optimiser state, the same counters, and the same SET of keys in summary.json and in the checkpoint."""
+        got = {}
+        for name in ("dag", "orc", "m2b"):
+            assert TR.main(_run(tmp_path / name, argv_family(pack, name))) == 0
+            got[name] = digest(tmp_path / name)
+        got["_fixture"] = {"bank_content_sha256": bank_identity(pack), "torch": torch.__version__}
+        if WRITE_GOLDEN:
+            GOLDEN.write_text(json.dumps(got, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+            pytest.skip("golden written from the unmodified tip")
+        want = json.loads(GOLDEN.read_text(encoding="utf-8"))
+>       assert want["_fixture"]["bank_content_sha256"] == bank_identity(pack), "the fixture bank is the golden's bank, record for record (the DATA generator and the trainer's synthetic world are unchanged)"
+E       AssertionError: the fixture bank is the golden's bank, record for record (the DATA generator and the trainer's synthetic world are unchanged)
+E       assert ['6ca96814ac7...2dfc9481a0ee'] == ['169ce5f5e5e...dacc78c771eb']
+E         
+E         At index 0 diff: '6ca96814ac74b4e0cc0d5591eef99137779add13e00f887154bc2dfc9481a0ee' != '169ce5f5e5e42fdcf4c3abbc5974422104ebecc577941af7bc87dacc78c771eb'
+E         Use -v to get more diff
+
+stack\tests\test_v8f_ego_dagger_compose.py:108: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.109 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 0.709540605545044}
+[200/342 windows] 5s
+[342/342 windows] 9s
+wrote F:\TanitAD-scratch\reclab\tmp\pt_cf27\dagt1\bank\shard_000of001.npz  records 684  coverage 0.6433  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote F:\TanitAD-scratch\reclab\tmp\pt_cf27\dagt1\bank\bank.json  bank sha256 9dcd4fe1803b51e6f5f47d1032266a8f53963eab805684f505793ae9aeca230c  records 684  coverage 0.6433  K-B4 True  K-B5 True
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 8.428 total 58.795 p_gt 0.20
+[2/4] ade 6.468 total 55.515 p_gt 0.20
+[3/4] ade 5.821 total 53.133 p_gt 0.20
+[4/4] ade 11.245 total 61.677 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.9125945568084717}
+[1/4] ade 6.931 total 49.429 p_gt 0.20
+[2/4] ade 4.776 total 46.392 p_gt 0.20
+[3/4] ade 5.875 total 44.373 p_gt 0.20
+[4/4] ade 9.288 total 49.406 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.8673090934753418}
+[1/4] ade 7.258 total 80.931 p_gt 1.00
+[2/4] ade 4.967 total 70.108 p_gt 0.80
+[3/4] ade 5.664 total 73.446 p_gt 0.60
+[4/4] ade 9.301 total 82.381 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.877119779586792}
+_ test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002878A1B9310>
+tmp_path = WindowsPath('F:/TanitAD-scratch/reclab/tmp/pt_cf27/test_a_real_composed_run_feeds0')
+spy = [{'p10f': tensor([[[ 3.5124e+00, -5.3735e-01, -7.6913e-03,  ..., -2.7015e-02,
+          -9.4885e-02,  4.1329e-03],
+   ...e+00,  1.2978e+00, -6.6342e-03,  1.4504e+01,  4.9426e+00,
+         -2.5265e-02, -9.6220e-02, -8.6099e-03]]), ...}, ...]
+stage_calls = [{'step': 0, 'in': {'feats': tensor([[[[-0.0254, -1.2500, -0.3125,  ..., -0.6875, -0.6875, -1.2500],
+          [-1.250...alse,  True,  True,  True, False,  True,  True,  True,  True,
+        False, False, False,  True, False, False]), ...}]
+
+    def test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts(pack, tmp_path, spy, stage_calls):
+        steps = 6
+        assert TR.main(_run(tmp_path / "ref", ["--steps", str(steps), "--init-ckpt", str(pack.ck)])) == 0               # the same data order with both levers off: the LOGGED batches
+        c0 = spy[-steps:]
+        spy.clear()
+        assert TR.main(_run(tmp_path / "c", ["--steps", str(steps), *COMPOSED(pack, 0.5, 0.5)])) == 0
+        c1 = spy[-steps:]
+        assert len(stage_calls) == steps == len(c1)
+        s, log = _summary(tmp_path / "c"), _log(tmp_path / "c")
+        ch_sw = ch_pe = 0
+        for i, call in enumerate(stage_calls):
+            out, sw, pe = call["out"], call["sw"], call["pe"]
+            assert call["overlap"] == 0 and not bool((sw & pe).any())
+            for k in ("p10f", "base", "kin3", "p10_t", "pose", "pose_t", "pose_s", "nav"):
+>               assert bool(_same(c1[i][k], out[k]).all()), f"step {i}: the LOSS received the composed batch's {k}"
+                            ^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_ego_dagger_compose.py:370: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+x = tensor([[[ 7.0666e-01,  5.4276e-01,  3.0000e-01,  ...,  2.1200e-01,
+           1.4981e-01,  1.6283e-01],
+         [ 8....     [ 4.0598e+00, -2.3322e+00, -3.9789e-02,  ..., -1.6153e-01,
+          -6.5578e-01,  9.2797e-02]]], device='cuda:0')
+y = tensor([[[ 7.0666e-01,  5.4276e-01,  3.0000e-01,  ...,  2.1200e-01,
+           1.4981e-01,  1.6283e-01],
+         [ 8....2.0999e-02],
+         [ 4.0598e+00, -2.3322e+00, -3.9789e-02,  ..., -1.6153e-01,
+          -6.5578e-01,  9.2797e-02]]])
+
+    def _same(x, y):
+        """[B] bool: row equal (NaN == NaN)."""
+>       same = ((x == y) | (torch.isnan(x) & torch.isnan(y))) if x.is_floating_point() else (x == y)
+                 ^^^^^^
+E       RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
+
+stack\tests\test_v8f_ego_dagger_compose.py:142: RuntimeError
+---------------------------- Captured stdout call -----------------------------
+[1/6] ade 6.364 total 49.447 p_gt 1.00
+[2/6] ade 4.267 total 46.438 p_gt 0.87
+[3/6] ade 4.871 total 43.007 p_gt 0.73
+[4/6] ade 8.499 total 48.170 p_gt 0.60
+[5/6] ade 5.224 total 42.524 p_gt 0.47
+[6/6] ade 5.802 total 40.753 p_gt 0.33
+DONE {"steps": 6, "arm": "M2b", "seed": 5, "seconds": 1.26511812210083}
+[1/6] ade 10.735 total 49.875 p_gt 1.00
+[2/6] ade 6.971 total 45.432 p_gt 0.87
+[3/6] ade 8.803 total 44.284 p_gt 0.73
+[4/6] ade 12.102 total 51.426 p_gt 0.60
+[5/6] ade 12.339 total 52.368 p_gt 0.47
+[6/6] ade 12.926 total 50.928 p_gt 0.33
+DONE {"steps": 6, "arm": "M2b", "seed": 5, "seconds": 1.2359843254089355}
+_ test_a_resumed_composed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting _
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002878A1B9310>
+tmp_path = WindowsPath('F:/TanitAD-scratch/reclab/tmp/pt_cf27/test_a_resumed_composed_run_dr0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002876EAC4750>
+
+    def test_a_resumed_composed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting(pack, tmp_path, monkeypatch):
+        common = [*COMMON, "--steps", "4", "--ckpt-every", "1", *COMPOSED(pack, 0.5, 0.5)]
+        assert TR.main(["--out", str(tmp_path / "full"), *common]) == 0
+        monkeypatch.setenv("V8F_TRAIN_CRASH_AT", "2")
+        with pytest.raises(RuntimeError, match="V8F_TRAIN_CRASH_AT"):
+            TR.main(["--out", str(tmp_path / "res"), *common])
+        monkeypatch.delenv("V8F_TRAIN_CRASH_AT")
+        assert TR.main(["--out", str(tmp_path / "res"), *common]) == 0
+        a = torch.load(tmp_path / "full" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+        b = torch.load(tmp_path / "res" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+>       assert all(torch.equal(a["model"][k], b["model"][k]) for k in a["model"]), "the final weights are those of the uninterrupted run"
+E       AssertionError: the final weights are those of the uninterrupted run
+E       assert False
+E        +  where False = all(<generator object test_a_resumed_composed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting.<locals>.<genexpr> at 0x0000028724115120>)
+
+stack\tests\test_v8f_ego_dagger_compose.py:420: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 10.735 total 49.875 p_gt 1.00
+[2/4] ade 6.971 total 45.432 p_gt 0.80
+[3/4] ade 8.803 total 44.283 p_gt 0.60
+[4/4] ade 12.103 total 51.413 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 4.057092666625977}
+[1/4] ade 10.735 total 49.875 p_gt 1.00
+[2/4] ade 6.971 total 45.432 p_gt 0.80
+[resume] step 2 epoch 0 batch 2
+[3/4] ade 8.803 total 44.283 p_gt 0.60
+[4/4] ade 12.106 total 51.425 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 2.1284101009368896}
+============================== warnings summary ===============================
+tests/test_v8f_dagger_train.py::test_a_flag_without_an_entry_is_refused[dagger_p]
+  F:\TanitAD-scratch\reclab\tree_cf27\stack\scripts\v8f_mini_train.py:3689: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_dagger_train.py::test_a_real_run_gives_the_loss_the_swapped_batch_and_the_counts_are_the_controls
+FAILED stack\tests\test_v8f_dagger_train.py::test_the_swap_is_what_changes_the_training
+FAILED stack\tests\test_v8f_dagger_train.py::test_a_resumed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_resumed_composed_run_draws_what_an_uninterrupted_run_drew_and_keeps_counting
+6 failed, 229 passed, 2 skipped, 1 warning in 538.91s (0:08:58)
+RC 1
+2.6G	/f/TanitAD-scratch/reclab/tmp/pt_cf27
+DONE

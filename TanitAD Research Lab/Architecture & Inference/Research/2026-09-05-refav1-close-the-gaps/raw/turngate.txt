@@ -1,0 +1,20 @@
+====================================================================================================
+CAN THE PLANNER PASS THE TURN GATE AT ALL? v1 gate |dyaw| > 0.15 rad; v2 |kappa| >= 0.01667
+====================================================================================================
+  TURN_L-goal windows: n=9   v0 mean 2.851 m/s
+
+  arm             med |dyaw|     pass v1     med |k|     pass v2
+  --------------------------------------------------------------
+  ccos_argmax         0.2241        6/9       0.08000        9/9  
+  wk15                0.0028        0/9       0.00876        0/9  
+  wk151               0.0015        0/9       0.00383        0/9  
+  kamm07              0.1700        5/9       0.08000        9/9  
+
+  ⛔ THE THRESHOLD CURVATURE THE v1 GATE DEMANDS, per window (kappa_min = 0.15/(v0*T)):
+     T = 2.0 s;  v0 p25/med/p75 = 0.71 / 1.40 / 4.82 m/s
+     kappa_min p25/med/p75 = 0.0156 / 0.0536 / 0.1053 1/m  (= radius 64 / 19 / 9 m)
+     windows where kappa_min EXCEEDS the shipped command 0.08: 3/9
+     windows where kappa_min EXCEEDS the CORRECTED command 0.02: 6/9
+
+  ⛔ CONTROL -- the GROUND TRUTH must pass the v1 gate on these windows:
+     GT median |dyaw| = 0.0431 rad; passes v1 on 3/9

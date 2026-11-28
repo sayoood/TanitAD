@@ -1,0 +1,1767 @@
+tanitad from C:\Users\Admin\bxh_tree_a17\stack\tanitad\__init__.py
+............................................................s.sss....... [  2%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+....s.......................................ss.......................... [ 10%]
+........................................................................ [ 13%]
+........................................................................ [ 15%]
+.........ssF............................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 23%]
+.....................s......s...s....................................... [ 26%]
+........................................................................ [ 28%]
+...................................EEE.EEEEEEEEEE..EE.EEEE.............. [ 31%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 39%]
+........s............................................................... [ 42%]
+........................................................................ [ 44%]
+................s....................................................... [ 47%]
+....................................................F................... [ 50%]
+............................FF.......................................... [ 52%]
+..............................F.FF...................................... [ 55%]
+.................................ss..................................... [ 57%]
+........................................................................ [ 60%]
+..............................
+
+| # | guard | mutation applied | result |
+|---|---|---|---|
+| 1 | `AnchoredDiffusionDecoder.__init__ (patched)` | graft_nav_compliance on with nav_compliance_tau_rad left at 0.0 | ValueError RAISED (the tolerance is DERIVED per corpus and must be stated) |
+| 2 | `AnchoredDiffusionDecoder.forward` | BOTH the image-only lat3 prior and the tactical 8-wide posterior passed to one decode | ValueError RAISED ('the 8-wide pair REPLACES the 3-wide one') |
+| 3 | `RefCModel.forward (patched)` | a scene_hook supplied while the forward built neither agent nor BEV tokens | ValueError RAISED (the decoder would attend to nothing) |
+| 4 | `RefCModel.forward scene_hook (patched)` | run on the FLAT (hierarchy=False) branch, where hierarchy_hook cannot go | the hook IS called and the agent tokens reach it — the call site is after both branches merge |
+| 5 | `RefCV3Model.__init__` | E16's continuous 8-step channel AND refcv6's 4-way one-hot both on | ValueError RAISED (two ceilings, two stamps, one condition) |
+| 6 | `RefCV3Model.__init__` | tac_decoder_v6 on a FLAT (hier=False) build | ValueError RAISED (it would build and never be called) |
+| 7 | `RefCV3Model.__init__` | tac_decoder_v6 under the kin3 vocabulary | ValueError RAISED (22 logits that could never be supervised) |
+| 8 | `RefCV3Model.__init__` | tac_decoder_v6 with agents OFF and d_bev = 0 | ValueError RAISED (it would attend to nothing) |
+| 9 | `RefCV3Model.__init__` | tac_goal_tok_head AND tac_decoder_v6 both on | ValueError RAISED (a confound, not an ablation) |
+| 10 | `RefCV3Model.forward` | a decoder built d_bev > 0 with NO perception branch attached | ValueError RAISED (it would run agent-only while the record said 'agent and map') |
+| 11 | `RefCV3Model.forward (ego_poses)` | ego_poses passed to a build with no ego-history encoder | ValueError RAISED (it would be silently dropped and read as +ego-history) |
+| 12 | `RefCV3Model.forward (ego_poses)` | ego_poses[:, n_past:] corrupted by +1e4 (a blatant FUTURE read) | the emitted plan is BIT-IDENTICAL — the future index cannot enter |
+| 13 | `RefCV3Model.forward (ego_poses)` | two ego histories 15 m/s apart passed through the WRAPPER on identical frames | the emitted plan differs, and `core._ego_window` stays None — the value went through the signature, not the one-shot workaround |
+| 14 | `SpeedCeilingFilter` | a row whose every candidate exceeds the ceiling | the whole fan is kept and `speed_rows_empty` counts it — the only structural reason obedience can fall below 1.0 |
+| 15 | `TacticalBehaviourDecoder.forward` | BEV tokens of the OTHER backbone's width (resnet34 256 vs resnet101 1024) fed to a declared build | SceneInputRefused RAISED naming both widths |
+| 16 | `TacticalBehaviourDecoder.forward` | a [B, C, X, Y] BEV feature map passed where flat tokens are expected | SceneInputRefused RAISED (pointing at `bev_feats_to_tokens`) |
+| 17 | `TacticalBehaviourDecoder.forward` | a scene tensor passed to a build with that port switched off | SceneInputRefused RAISED (both directions) |
+| 18 | `TacticalBehaviourDecoder.forward` | called with agent_tokens=None AND bev_tokens=None | SceneInputRefused RAISED (would emit the unconditional prior) |
+| 19 | `TacticalLossWeights.assert_within_budget` | weights raised to 0.15 (over the 0.10 budget) | ValueError RAISED |
+| 20 | `_QueryFiLM zero-init` | FiLM projections re-initialised to N(0, 0.5) after the equality check | the two conditions now DIFFER -> the equality test can fail |
+| 21 | `acceptance_panel` | one of the three instruments omitted | overall = INCOMPLETE (a 2-of-3 panel must not read as a pass) |
+| 22 | `assert_scene_only` | 'image' added to the key/value source list | SceneInputRefused RAISED |
+| 23 | `assert_situation_columns_dead` | BehaviourSelectionGate.forward replaced by one that SKIPS the admissibility mask | SituationInputRefused RAISED ('PI 2026-08-03 VIOLATED') |
+| 24 | `assert_situation_columns_dead` | the gate's forward replaced by a constant-zero function | SituationInputRefused RAISED (the positive control catches a dead layer passing the refused-column check vacuously) |
+| 25 | `assert_situation_tokens_are_targets_only` | 'TRAFFIC_LIGHT_REACT_RED probability' added to selection_inputs | SituationInputRefused RAISED |
+| 26 | `assert_situation_tokens_are_targets_only` | 'tac_SIT one-hot' added to inference_inputs_of_goals | SituationInputRefused RAISED |
+| 27 | `assert_situation_tokens_are_targets_only` | the `selection_inputs` key deleted from the declaration | SituationInputRefused RAISED (an absent key is not a pass) |
+| 28 | `assert_speed_max_stamp_v6` | E16's 8-step stamp supplied under the 4-way key | SpeedMaxStampError RAISED (no ladder declared) |
+| 29 | `assert_speed_max_stamp_v6` | channel OFF but config carries the stamp (the MIRROR case) | SpeedMaxStampError RAISED |
+| 30 | `assert_speed_max_stamp_v6` | channel ON, stamp absent from config | SpeedMaxStampError RAISED |
+| 31 | `assert_speed_max_stamp_v6` | each of the 7 required tokens deleted from the stamp, one at a time | SpeedMaxStampError RAISED on every one |
+| 32 | `bev_feats_to_tokens` | a [B, P, C] token sequence passed as a grid | SceneInputRefused RAISED |
+| 33 | `build_condition` | a SOFT (0.25 each) distribution smuggled into the nav / max-speed slots | ValueError RAISED (a richer input than the PI authorised) |
+| 34 | `planned_max_speed` | the waypoint grid mis-declared as 1 tick apart instead of 5 | the reported speed is 5x (50.0 vs 10.0) — why the dt is DERIVED |
+| 35 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=False, f4_adaln=True) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 36 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=True, f4_adaln=False) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 37 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=True, f4_adaln=True) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 38 | `speed_max_bin` | fed NaN (would silently bin to 0 = 30 km/h) | ValueError RAISED |
+| 39 | `tactical_behaviour_losses` | all three weights set to 0.0 (the guarded-term failure mode) | p.grad is a ZEROS tensor on every parameter, never None |
+| 40 | `tactical_behaviour_losses (CE)` | a batch entirely OUTSIDE the ±2 s band; torch's mean-reduction on the same input is NaN | finite 0.0 with n_supervised = 0 reported beside it |
+| 41 | `tflip_verdict` | a block whose MEAN (0.62) clears the 0.50 bar but whose CI lower bound (0.31) does not | FAIL — the verdict reads the lower bound |
+| 42 | `the refcv6 selection seams` | each zero-init gate forced open in turn (navc_gate 5.0, tac8 weights N(0,1), behaviour gate N(0,5)), scored on the CONTINUOUS ranked score and on the argmax | all three move `sel_score`; navc_gate moves traj=False, tac8_lat_to_anchor moves traj=True, behaviour_gate moves traj=True — gated, not dead, and every gate restores bit-identically |
+.......................................... [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+.........................s.............................................. [ 73%]
+.ss..................................................................... [ 76%]
+.........s.............................................................. [ 79%]
+......................................................F................. [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+.........FFFFF......F..F.....F.......................................... [ 89%]
+..............s......................................................... [ 92%]
+..............................................s......................... [ 94%]
+....................s.............s..................................... [ 97%]
+......................................................................   [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_constant_only_control_reads_its_known_value_exactly __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+---------------------------- Captured stdout setup ----------------------------
+[suite] taniteval/tools/openloop_suite.py
+[suite] regime: OPEN LOOP (PI ruling 2026-09-02) — every arm
+[v3] nav_from_v7: follow 1 / left 1 / right 1, missing 0 (of 3 clips; md5=ffe781e088cd05a47b01f1d31c6263c0)
+[model] C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4066\openloop_suite_e2e0\fx\run\ckpt.pt step=11 arm=hier anchors=20 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=4 decoder=diffusion/2 config<-config.json[refcv3_arm_model_cfg] (explicit RefCV3Config)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[roll] 42 windows / 3 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'os_navshuf', 'os_navzero', 'oracle_sel'] · fed conditionings=['nav_true', 'nav_shuffled'] + a SEPARATE nav_cmd=None forward (nav_zero) · nav_shuffle changed 25/42
+[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected reads False), and the CORE collapses to one_hot(0)='follow' (refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and nav_known_channel is False (refc.py:594) — so this arm is a LOWER BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: refc.py:2042-2045 raises when the gate is off.
+[cost] first forward (2 fed row(s) + 1 nav-null call, 3 rows total) took 0.06 s -> ESTIMATED 0.00 h for 42 windows (forward only; IO/analysis extra)
+  [1/3] clip-aaaaaaa 14 windows 1s
+  [2/3] clip-bbbbbbb 14 windows 3s
+  [3/3] clip-ccccccc 14 windows 4s
+[dump] 42 windows over 3 episodes (0 skipped: none)
+[provenance] SYNTHETIC_FIXTURE - ckpt=SMOKE corpus=SMOKE step=11 eps=3 windows=42 anchors=20  [UNVERIFIED-ON-A-REAL-CHECKPOINT]
+REFCV3_DUMP_DONE
+[suite] checkpoint step VERIFIED BY CONTENT: 11 == --expect-step
+[trivial-profile] 42 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os_navshuf=17/42
+  ha             n=  42 straight=0.0000 const_speed=0.0714 CONSTANT-VELOCITY=0.0000
+  ha0            n=  42 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n=  42 straight=0.0000 const_speed=0.0714 CONSTANT-VELOCITY=0.0000
+  os_navshuf     n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: os=17/42
+  os_navzero     n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  oracle_sel     n=  42 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+  ⚠️ cross-call arms ['os_navzero']: produced by a SEPARATE forward (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of ~6e-7 m sits under them — `identical_to` at 1e-09 m cannot resolve them and must not be read as nav evidence. A REAL nav difference measured ~4.7e4x that.
+[selection-profile] 42 windows over 20 anchors — the model's OWN choice, before any family row
+  n_distinct=   1  modal=#2 (1.0000)  entropy=0.0000/2.9957 nats (ratio 0.0000)  agrees_with_oracle=0.0
+  ⛔ VOID-RISK: the selection is a CONSTANT on 100.00% of windows — the arm is 'always anchor #2, refined'. Read every family row below as a property of that one anchor, NEVER as scene understanding. The trivial profile CANNOT see this.
+[suite] record acquired: ROLLED OUT by taniteval/tools/refcv3_arm.py::run_dump
+[suite] artifact assembled: 42 windows / 3 episodes, headline arm `os`
+_ ERROR at setup of test_a_failing_control_is_a_harness_verdict_not_a_model_one _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_neither_rendering_uses_the_superseded_regime_phrase __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+______ ERROR at setup of test_stale_loop_labels_are_reported_not_edited _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_______ ERROR at setup of test_criteria_checker_reports_zero_violations _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_forbidden_estimator_is_never_a_decision_grade_interval _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+______ ERROR at setup of test_all_four_families_present_and_never_pooled ______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_strategic_is_in_the_headline_even_with_no_paired_block _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_ade_and_the_longitudinal_lateral_split_are_both_reported _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_refused_criteria_carry_a_reason_and_are_named_as_gaps _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+______ ERROR at setup of test_every_arm_carries_tier_and_evidence_class _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_the_two_nav_controls_are_both_present_and_distinguished _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+___ ERROR at setup of test_random_init_loses_to_the_constant_velocity_floor ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+__ ERROR at setup of test_provenance_records_which_tree_produced_the_numbers __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_arm_json_roundtrip_is_the_contract_with_another_stream _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+__ ERROR at setup of test_checkpoint_is_verified_by_content_not_by_filename ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_____ ERROR at setup of test_non_parity_is_stated_not_left_to_be_assumed ______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_ ERROR at setup of test_the_deployment_margin_has_equal_billing_with_the_oracle_one _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+________ ERROR at setup of test_html_is_a_complete_standalone_document ________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x00000295253548A0>, _basetemp=WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def suite(tmp_path_factory):
+        root = tmp_path_factory.mktemp("openloop_suite_e2e")
+        eps, lp, ck = arm_t._fixture(root / "fx")
+        out = root / "out"
+>       rc = os_mod.main([
+            "--ckpt", str(ck), "--episodes", str(eps), "--labels", str(lp),
+            "--nav-source", "v72", "--grid", "2s", "--device", "cpu",
+            "--action-units", "steer", "--with-oracle-sel",
+            "--window-stride", "1", "--lru", "4",
+            "--dump-dir", str(root / "dump"),
+            "--n-boot", "120", "--seed", "0",
+            "--out-dir", str(out), "--tag", "TEST",
+            "--registry", str(_REPO / "products" / "P7-TanitEval"
+                              / "CRITERIA_REGISTRY.json"),
+            "--corpus", "SYNTHETIC fixture",
+            "--parity-key", "NON-PARITY — synthetic fixture",
+            "--parity-status", "NON-PARITY — synthetic fixture, no v2_parity block",
+            "--expect-step", "11",
+            "--train-eval-disjoint", "N/A — synthetic fixture",
+            "--tiers", "os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0",
+            "--strict",
+        ])
+
+stack\tests\test_openloop_suite.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\tools\openloop_suite.py:2340: in main
+    crit = run_criteria_check(art, a.registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:1337: in run_criteria_check
+    cc = _criteria_checker()
+         ^^^^^^^^^^^^^^^^^^^
+taniteval\tools\openloop_suite.py:313: in _criteria_checker
+    return _load_by_path("criteria_check_for_suite",
+taniteval\tools\openloop_suite.py:302: in _load_by_path
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x00000295CF2A79B0>
+path = 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\tools\\criteria_check.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+================================== FAILURES ===================================
+__________ test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists ___________
+
+    def test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists():
+        """⛔ EVAL_DOCTRINE: T1 is the primary tier for any capability claim. The banked gate
+        numbers are T0 (the 4060 was saturated), and nothing may quote them as driving
+        performance until the T1 leg runs."""
+        d = os.path.join(REPO, "Project Steering", "Decisions", "2026-09-05-mm-decisions.md")
+>       with io.open(d, encoding="utf-8") as fh:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\Project Steering\\Decisions\\2026-09-05-mm-decisions.md'
+
+stack\tests\test_kingate_contract.py:106: FileNotFoundError
+______________ test_all_flags_off_is_BIT_IDENTICAL_on_64_windows ______________
+
+    def test_all_flags_off_is_BIT_IDENTICAL_on_64_windows():
+        """⛔ CONTROL THAT MUST READ A KNOWN VALUE, and the premise of every other
+        test here. With ``refcv6=None`` the decoder must construct nothing new and
+        emit, for 64 windows, EXACTLY what the pre-refcv6 file emits — same
+        state_dict keys, same tensors, bit for bit."""
+>       old = _pre_refcv6_module()
+              ^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refcv6_diffusion.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_refcv6_diffusion.py:118: in _pre_refcv6_module
+    src = _git_blob(_BASELINE_REV)
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+rev = 'cbadba5844a2db70a968172ab0b0bbe3a0140af0'
+
+    def _git_blob(rev: str) -> bytes:
+        """``git show <rev>:refc.py`` -> bytes, or ABORT.
+    
+        ⛔ Never returns an empty bytestring as if it were content: an empty result
+        from this mount is indistinguishable from a failed query, and a bit-identity
+        test whose baseline is empty would fail for the wrong reason (or, with a
+        lenient comparison, pass). Only a POSITIVE read is admissible.
+        """
+        p = subprocess.run(["git", "show", f"{rev}:{_REL}"], cwd=_ROOT,
+                           capture_output=True)
+        if p.returncode != 0 or not p.stdout:
+            err = (p.stderr or b"").decode("utf-8", errors="replace").strip()
+>           raise AssertionError(
+                f"INVALID: could not read `{rev}:{_REL}` (rc={p.returncode}, "
+                f"{len(p.stdout or b'')} bytes). This test's baseline must be a "
+                f"POSITIVE read; it is not skipped, because a missing baseline "
+                f"means the bit-identity claim was NOT checked. git said: {err}")
+E           AssertionError: INVALID: could not read `cbadba5844a2db70a968172ab0b0bbe3a0140af0:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git
+
+stack\tests\test_refcv6_diffusion.py:79: AssertionError
+__________ test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6 __________
+
+    def test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6():
+        """⛔⛔ THE GUARD ON THE GUARD. ``_pre_refcv6_module`` materialised its
+        baseline from ``HEAD``, whose blob IS the worktree file — so the test
+        compared ``refc.py`` against itself while carrying 83 'refcv6' mentions on
+        both sides. Literals, with a same-breath control that must read a KNOWN
+        value in both blobs."""
+        if not shutil.which("git"):                            # pragma: no cover
+            pytest.skip("git is not on PATH")
+>       base = _git_blob(_BASELINE_REV)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refcv6_diffusion.py:1102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+rev = 'cbadba5844a2db70a968172ab0b0bbe3a0140af0'
+
+    def _git_blob(rev: str) -> bytes:
+        """``git show <rev>:refc.py`` -> bytes, or ABORT.
+    
+        ⛔ Never returns an empty bytestring as if it were content: an empty result
+        from this mount is indistinguishable from a failed query, and a bit-identity
+        test whose baseline is empty would fail for the wrong reason (or, with a
+        lenient comparison, pass). Only a POSITIVE read is admissible.
+        """
+        p = subprocess.run(["git", "show", f"{rev}:{_REL}"], cwd=_ROOT,
+                           capture_output=True)
+        if p.returncode != 0 or not p.stdout:
+            err = (p.stderr or b"").decode("utf-8", errors="replace").strip()
+>           raise AssertionError(
+                f"INVALID: could not read `{rev}:{_REL}` (rc={p.returncode}, "
+                f"{len(p.stdout or b'')} bytes). This test's baseline must be a "
+                f"POSITIVE read; it is not skipped, because a missing baseline "
+                f"means the bit-identity claim was NOT checked. git said: {err}")
+E           AssertionError: INVALID: could not read `cbadba5844a2db70a968172ab0b0bbe3a0140af0:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git
+
+stack\tests\test_refcv6_diffusion.py:79: AssertionError
+________ test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED _________
+
+    def test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED():
+        """⛔ THE DELIBERATE REGRESSION, re-introducing the EXACT historical
+        defect: point the baseline back at ``HEAD``. The guard must ABORT as
+        INVALID rather than quietly comparing the file with itself."""
+        import test_refcv6_diffusion as me
+        old = me._BASELINE_REV
+        try:
+            me._BASELINE_REV = "HEAD"
+>           with pytest.raises(AssertionError, match="INVALID baseline"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Regex pattern did not match.
+E             Expected regex: 'INVALID baseline'
+E             Actual message: "INVALID: could not read `HEAD:stack/tanitad/refs/refc.py` (rc=128, 0 bytes). This test's baseline must be a POSITIVE read; it is not skipped, because a missing baseline means the bit-identity claim was NOT checked. git said: fatal: not a git repository (or any of the parent directories): .git"
+
+stack\tests\test_refcv6_diffusion.py:1127: AssertionError
+_________ test_no_owned_file_carries_a_session_id_or_scratchpad_path __________
+
+    def test_no_owned_file_carries_a_session_id_or_scratchpad_path():
+        """⛔ THE GUARD. Markdown prose may name a worktree; executable code may name
+        an absolute path only as an env-var default."""
+        offenders = []
+>       for rel, path in _files():
+                         ^^^^^^^^
+
+stack\tests\test_refcv6_no_session_paths.py:200: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _files():
+        out = [(rel, REPO / rel) for rel in OWNED]
+        missing = [rel for rel, p in out if not p.is_file()]
+>       assert not missing, f"OWNED lists files that do not exist: {missing}"
+E       AssertionError: OWNED lists files that do not exist: ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-16-refcv6-perception/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/config_diff.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/grad_reach_bev.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/geometry_408.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/metrics.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/launch_excerpt.txt', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/mutation_proof.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bitid_config_diff.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/grad_reach_bev.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/geometry_408.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid_check.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/grad_reach.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/label_facts.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/redact.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/refusals.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/grad_reach.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/label_facts.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/refusals.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_train.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_eval.jsonl']
+E       assert not ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py'...anitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', ...]
+
+stack\tests\test_refcv6_no_session_paths.py:170: AssertionError
+_____________ test_MUT_the_guard_would_fire_on_a_real_owned_file ______________
+
+    def test_MUT_the_guard_would_fire_on_a_real_owned_file():
+        """MUTATION: inject the blocking string into a copy of a real owned file and
+        show the same scan the test uses reports it. A scanner proven only on
+        string literals has never been shown to read a file."""
+>       rel, path = _files()[0]
+                    ^^^^^^^^
+
+stack\tests\test_refcv6_no_session_paths.py:249: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def _files():
+        out = [(rel, REPO / rel) for rel in OWNED]
+        missing = [rel for rel, p in out if not p.is_file()]
+>       assert not missing, f"OWNED lists files that do not exist: {missing}"
+E       AssertionError: OWNED lists files that do not exist: ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-16-refcv6-perception/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/config_diff.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/grad_reach_bev.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/geometry_408.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/metrics.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/live_run/launch_excerpt.txt', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/mutation_proof.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/bitid_config_diff.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/grad_reach_bev.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-bev-tactical/raw/geometry_408.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/RESULT.md', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/bitid_check.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/grad_reach.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/label_facts.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/live.sh', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/mutation_proof.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/redact.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/code/refusals.py', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/bit_identity.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/grad_reach.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/label_facts.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/refusals.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/live_run/config.json', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_train.jsonl', 'TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_eval.jsonl']
+E       assert not ['integration/refc_wiring.patch', 'integration/APPLY_NOTE.md', 'integration/mkpatch.py', 'integration/verify_patch.py'...anitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/code/worked_example.py', ...]
+
+stack\tests\test_refcv6_no_session_paths.py:170: AssertionError
+______________ test_verify_patch_takes_its_paths_from_arguments _______________
+
+    def test_verify_patch_takes_its_paths_from_arguments():
+        """The specific fix: ``integration/verify_patch.py`` must derive the repo
+        root from its own location and accept overrides, with no embedded session
+        path."""
+>       src = (REPO / "integration" / "verify_patch.py").read_text(encoding="utf-8")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_refcv6_no_session_paths.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/bxh_tree_a17/integration/verify_patch.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\bxh_tree_a17\\integration\\verify_patch.py'
+
+..\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+______________ test_E4_the_resolution_is_banked_with_its_reasons ______________
+
+    def test_E4_the_resolution_is_banked_with_its_reasons():
+        """The fix is only as good as the record of WHY it went this way."""
+        doc = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
+               / "Implementation" / "incoming" / "2026-08-17-e4-selector-resolution"
+               / "E4_SELECTOR_RESOLUTION.md")
+>       assert doc.exists(), doc
+E       AssertionError: WindowsPath('C:/Users/Admin/bxh_tree_a17/TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-e4-selector-resolution/E4_SELECTOR_RESOLUTION.md')
+E       assert False
+E        +  where False = exists()
+E        +    where exists = WindowsPath('C:/Users/Admin/bxh_tree_a17/TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-17-e4-selector-resolution/E4_SELECTOR_RESOLUTION.md').exists
+
+stack\tests\test_v6_st_launch_fixes.py:497: AssertionError
+_____________________ test_stop_and_cv_are_added_by_rule ______________________
+
+    def test_stop_and_cv_are_added_by_rule():
+>       from taniteval.bench.navsim.benchmark import resolve_arms
+
+taniteval\tests\test_bench_suite_contract.py:82: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+__________________ test_echo_is_added_only_with_a_checkpoint __________________
+
+    def test_echo_is_added_only_with_a_checkpoint():
+>       from taniteval.bench.navsim.benchmark import resolve_arms
+
+taniteval\tests\test_bench_suite_contract.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+_______________ test_model_arm_without_a_checkpoint_is_refused ________________
+
+    def test_model_arm_without_a_checkpoint_is_refused():
+>       from taniteval.bench.navsim.benchmark import resolve_arms
+
+taniteval\tests\test_bench_suite_contract.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+________________ test_human_arm_is_refused_on_two_stage_splits ________________
+
+    def test_human_arm_is_refused_on_two_stage_splits():
+>       from taniteval.bench.navsim.benchmark import resolve_arms
+
+taniteval\tests\test_bench_suite_contract.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+_________________________ test_unknown_arm_is_refused _________________________
+
+    def test_unknown_arm_is_refused():
+>       from taniteval.bench.navsim.benchmark import resolve_arms
+
+taniteval\tests\test_bench_suite_contract.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+______________________ test_unsupported_split_is_refused ______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066/test_unsupported_split_is_refu0')
+
+    def test_unsupported_split_is_refused(tmp_path):
+        from taniteval.bench import cli
+        rc = cli.main(["navsim_v2", "--ckpt", "none", "--split", "navtest", "--results-root", str(tmp_path),
+                       "--no-report"])
+>       assert rc == 2
+E       assert 1 == 2
+
+taniteval\tests\test_bench_suite_contract.py:168: AssertionError
+---------------------------- Captured stdout call -----------------------------
+16:15:18 [bench] run 20260927T141517Z-navsim_v2-none-4af0d8 -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4066\test_unsupported_split_is_refu0\navsim_v2\navtest\20260927T141517Z-navsim_v2-none-4af0d8
+16:15:18 ⛔ FAILED: ModuleNotFoundError: No module named 'criteria_check'
+16:15:18 [bench] report: SKIPPED
+16:15:18 [bench] FAILED in 0.5 s -> C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-4066\test_unsupported_split_is_refu0\navsim_v2\navtest\20260927T141517Z-navsim_v2-none-4af0d8
+BENCH_RUN_DIR=C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066/test_unsupported_split_is_refu0/navsim_v2/navtest/20260927T141517Z-navsim_v2-none-4af0d8
+BENCH_STATUS=FAILED
+BENCH_RETRYABLE=0
+____________ test_standin_rows_are_counted_from_the_seam_artifact _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-4066/test_standin_rows_are_counted_0')
+
+    def test_standin_rows_are_counted_from_the_seam_artifact(tmp_path):
+        """W-25: the refusal keys on the ARTIFACT (the seam's own `source` column), not on a producer's
+        report — any arm whose stage 1 was answered by the devkit CV stand-in loses its official
+        two-stage headline."""
+        import numpy as np
+>       from taniteval.bench.navsim.benchmark import _seam_standin_rows
+
+taniteval\tests\test_bench_suite_contract.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+________________ test_ckpt_none_never_consults_the_device_gate ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000296BF46DE10>
+
+    def test_ckpt_none_never_consults_the_device_gate(monkeypatch):
+        """Floors and reference agents are the devkit's own CPU scorer — not our-model inference — so a
+        floors-only run must not be blocked by a training process."""
+        from taniteval.bench import gpu_gap as G
+        monkeypatch.setattr(G, "device_policy", lambda *a, **k: (_ for _ in ()).throw(AssertionError("gate called")))
+>       from taniteval.bench.navsim.benchmark import resolve_arms
+
+taniteval\tests\test_bench_suite_contract.py:311: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+taniteval\taniteval\bench\navsim\benchmark.py:24: in <module>
+    from . import artifacts as ART
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    """TanitEval artifact per arm + the four BLOCKING NavSim gates — PROMOTED from E1
+    ``code/build_artifacts.py`` (``short_row``, ``build_win``, ``navsim_gates``, ``gate_mutations``:
+    VERBATIM, AST-pinned) and E2 ``code/build_artifacts.py`` (``_set``, ``_get``: VERBATIM,
+    AST-pinned; the ``NO_GT`` refusal text). E1's gate evaluator is the one used (E2's
+    ``navsim_gate_selfcheck`` reads the same four registry gates and is not duplicated).
+    
+    Uses ``taniteval/adapters/navsim.py`` UNMODIFIED (owner W2), imported by file path under a
+    private name (``navsim`` is also the DEVKIT's package name). Gaps the adapter does not fill are
+    added HERE and listed in ``_w1_adapter_gaps`` (E1's G1–G6), never by editing the adapter.
+    ⛔ ``tools/criteria_check.py`` (registry v2.9.0) does not evaluate ``benchmarks.navsim`` (E1/E2,
+    MEASURED) — so the gates are evaluated here too (E1's evaluator + its RED mutations) until W2 lands
+    the checker's own evaluation.
+    """
+    from __future__ import annotations
+    
+    import copy
+    import importlib.util
+    import json
+    import re
+    import sys
+    from pathlib import Path
+    
+    import numpy as np
+    
+    from ..contract import REPO
+    
+    
+    def _load_by_path(name: str, path: Path):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    
+    
+    ad = _load_by_path("taniteval_bench_navsim_adapter", REPO / "taniteval" / "adapters" / "navsim.py")
+    if str(REPO / "tools") not in sys.path:
+        sys.path.insert(0, str(REPO / "tools"))
+>   import criteria_check as cc  # noqa: E402  tools/criteria_check.py (import only; W2 owns it)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'criteria_check'
+
+taniteval\taniteval\bench\navsim\artifacts.py:39: ModuleNotFoundError
+============================== warnings summary ===============================
+tests/test_map_head_hires.py::test_loss_edge_cases_and_the_weight_denominator
+  C:\Users\Admin\bxh_tree_a17\stack\tests\test_map_head_hires.py:274: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(r["loss"]) == 0.0 and r["n_cells"] == 0
+
+tests/test_trunk_compile.py: 14 warnings
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\jit\_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] stack\tests\test_b1_agent_join_3d.py:383: TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-17-b1-agent-join-3d/RESULT.md not present in this worktree
+SKIPPED [1] stack\tests\test_b1_agent_join_3d.py:424: set TANITAD_JOIN3D to the banked 3-D join
+SKIPPED [1] stack\tests\test_b1_agent_join_3d.py:433: set TANITAD_JOIN2D to the banked 2-D join
+SKIPPED [1] stack\tests\test_b1_agent_join_3d.py:447: set TANITAD_JOIN3D to the banked 3-D join
+SKIPPED [1] stack\tests\test_cot_negative_policy.py:445: blob or sidecar not on this box
+SKIPPED [2] stack\tests\test_ddv2_il.py:45: check_arm_l1_for_test not in this (sparse) checkout
+SKIPPED [1] stack\tests\test_kingate_contract.py:64: the T1 gate hook is not written yet
+SKIPPED [1] stack\tests\test_kingate_contract.py:85: the T1 gate hook is not written yet
+SKIPPED [1] stack\tests\test_map_hires_overfit.py:75: the audit's gmo_spec.json is not in this checkout
+SKIPPED [1] stack\tests\test_map_hires_overfit.py:284: the A12 spec is not in this checkout
+SKIPPED [1] stack\tests\test_map_hires_overfit.py:373: the A15 spec is not in this checkout
+SKIPPED [1] stack\tests\test_refc_v3_agent_provenance.py:818: neither banked sidecar was readable (mount)
+SKIPPED [1] stack\tests\test_refcv3_ablations.py:189: prereg unreachable (FileNotFoundError); the bijection pin above still ran: C:\Users\Admin\bxh_tree_a17\Project Steering\PREREG_REFCV4B_HIERARCHY_EVAL.md
+SKIPPED [1] stack\tests\test_refcv6_perception_realdata.py:513: set $TANITAD_AGENT_JOIN3D to the b1eval 3-D join
+SKIPPED [1] stack\tests\test_refcv6_perception_realdata.py:589: set $TANITAD_AGENT_JOIN3D to the b1eval 3-D join
+SKIPPED [1] stack\tests\test_trainer_imports_without_refcv7.py:59: this tree's refc_v3.py itself requires the refcv7 modules
+SKIPPED [1] stack\tests\test_v6_agent_slots.py:264: git could not produce a pre-change revision of v6.py
+SKIPPED [1] stack\tests\test_v6_agent_slots.py:292: git could not produce a pre-change revision of v6.py
+SKIPPED [1] stack\tests\test_v6_factored_goal.py:212: git could not produce a pre-change revision of v6.py
+SKIPPED [1] taniteval\tests\test_bench_suite_internal_t1.py:109: NO_TREE: E9's banked refcv3_arm record is not on this machine
+SKIPPED [1] taniteval\tests\test_refcv6_perception_rebuild.py:129: branch build needs a full model; contract covered above
+SKIPPED [2] stack\tests\test_refcv7_vis1.py:45: NO_TREE: this checkout carries no Research Lab tree (the recorded digests are still pinned)
+16 failed, 2675 passed, 24 skipped, 15 warnings, 19 errors in 1185.62s (0:19:45)
+EXIT 1

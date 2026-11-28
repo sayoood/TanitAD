@@ -1,0 +1,176 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "base",
+  "--v2-cache",
+  "/root/data/train",
+  "--v7-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "--eval-cache",
+  "/root/data/eval",
+  "--eval-labels",
+  "/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--image-hw",
+  "256",
+  "640",
+  "--steps",
+  "40284",
+  "--batch",
+  "20",
+  "--workers",
+  "6",
+  "--prefetch-factor",
+  "1",
+  "--v2-lru",
+  "24",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--log-every",
+  "50",
+  "--save-every",
+  "500",
+  "--nav-from-v7",
+  "--u8-batches",
+  "--out",
+  "/workspace/experiments/refcv3-b1-v72-30k"
+ ],
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 104879522,
+  "phi_tac": 1757440,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 14364,
+  "tac_latent_proj": 262656,
+  "scorer": 1156,
+  "nav_inject": 50176,
+  "total": 107032901
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx only)"
+  ],
+  "refused_edges": [
+   "v0 -> any goal node (E11)",
+   "lan -> inference (E12; label-only)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)"
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "image_hw": [
+  256,
+  640
+ ],
+ "tac_vocab_version": "v7.0",
+ "v2_cache": [
+  "/root/data/train"
+ ],
+ "require_parity": false,
+ "v2_parity": {
+  "parity": false,
+  "cache_dirs": [
+   "/root/data/train"
+  ],
+  "corpus_key": null,
+  "label": "v3 v2-cache",
+  "uid_kind": "v2ep_clipid",
+  "checked": false,
+  "clips_present": 4572
+ },
+ "u8_batches": true,
+ "frame_batch_bytes_est": 825753600,
+ "nav_from_v7": true,
+ "nav_cmd_derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+ "nav_from_v7_stats": {
+  "train": {
+   "n_clips": 4572,
+   "follow": 2897,
+   "left": 811,
+   "right": 864,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "allow_oracle_nav": true
+  },
+  "eval": {
+   "n_clips": 141,
+   "follow": 90,
+   "left": 13,
+   "right": 38,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "aa12c948f062181c3297265b51526ec5",
+   "allow_oracle_nav": true
+  }
+ },
+ "v7_labels": {
+  "path": "/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz",
+  "md5": "0ff902130ce76886b8a925eceed9e3a5",
+  "n_records": 4572,
+  "schema_version": "s2-geom-v7",
+  "vocab": "v7",
+  "allow_oracle_nav": true,
+  "divergences": [],
+  "_read": "md5 is the identity \u2014 six copies of this blob exist under three roots and their md5s differ."
+ }
+}

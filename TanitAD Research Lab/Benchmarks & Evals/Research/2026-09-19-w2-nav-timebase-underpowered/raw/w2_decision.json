@@ -1,0 +1,51 @@
+{
+ "_what": "W2 DECIDED: the nav join is NOT broken. The tool's message was the defect.",
+ "_evidence_class": "MEASURED (ours; the SAME dump path at two sizes)",
+ "_NOT_A_CAPABILITY_CLAIM": "a ONE-STEP model; the instrument's behaviour is the result.",
+ "the_10_episode_read": {
+  "status": "BROKEN",
+  "hypotheses": {
+   "relative": {
+    "n": 0
+   },
+   "absolute": {
+    "n": 1,
+    "match": 0
+   }
+  },
+  "message": "the label time base could not be reproduced ... the join is broken"
+ },
+ "the_35_episode_read": {
+  "status": "OK",
+  "chosen": "relative",
+  "hypotheses": {
+   "relative": {
+    "n": 5,
+    "match": 5,
+    "frac": 1.0
+   },
+   "absolute": {
+    "n": 8,
+    "match": 0,
+    "frac": 0.0
+   }
+  },
+  "n_clips_tested": 12
+ },
+ "verdict": "THE JOIN WAS NEVER BROKEN. `relative` reproduces the label dyaw on 5 of 5 testable clips (frac 1.0) and `absolute` on 0 of 8. The 10-episode sample simply had no testable clip.",
+ "the_defect_found": {
+  "where": "taniteval/taniteval/nav_compliance.py::time_base_control",
+  "code": "fr, fa = res[\"relative\"][\"frac\"] or 0.0, res[\"absolute\"][\"frac\"] or 0.0",
+  "why": "`frac` is None when a hypothesis had NO testable clip, and `None or 0.0` is 0.0 -- so 'could not test' and 'disagreed everywhere' became the SAME number and the caller emitted 'the join is broken'.",
+  "fix": "a distinct UNDERPOWERED status below MIN_CLIPS_FOR_TIME_BASE = 4, with its own sentence naming both n. 'Broken' sends an operator to hunt a join bug; 'underpowered' sends them to run more episodes -- different jobs."
+ },
+ "why_nav_compliance_itself_is_still_unpowered": {
+  "n_windows": 999,
+  "n_episodes": 35,
+  "n_nav_valid": 0,
+  "n_true_left": 0,
+  "n_true_right": 0,
+  "cause": "the SMOKE CHECKPOINT was trained WITHOUT `--nav-cond` (verified in its own config.json argv: nav_from_v7 False, nav_args False), so no window carries a valid nav token. This is a property of MY checkpoint, not of the tool, the join or the corpus.",
+  "consequence": "nav_compliance needs a NAV-CONDITIONED arm -- which every real refcv6 arm will be, since the PI made nav mandatory for every arm trained from now on."
+ }
+}

@@ -1,0 +1,366 @@
+[refav1-labels] v7.2 join: labels 20/20 eps (0 missing), 420/1339 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 20/20 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[cost-repair] model=C:/Users/Admin/refav1_eval_slice/ckpt/ckpt.pt step=1000 plan_level=tactical H=10 kappa_max=0.2 W_KAPPA=0.05 W_JERK=0.02
+[grid] 21 constant candidates, a == 0 exactly, kappa in +-0.2
+[pop] 140 windows / 20 episodes stride=10 device=cuda
+  ep000 01be5919-6e61-45ba-a193-5f447efb4b51 (125.3s, 7 windows)
+  ep001 060531e1-9935-482e-8c25-2abf37bdc41b (133.9s, 14 windows)
+  ep002 0fa2b231-435e-4700-9138-30f333dc5d6e (142.7s, 21 windows)
+  ep003 10804db8-d070-444e-a1f1-89c1871588d5 (150.6s, 28 windows)
+  ep004 11e40da1-3d9e-4ee6-8406-8db2eed4a594 (157.6s, 35 windows)
+  ep005 126b3a97-0879-4ff3-9f4a-ea846f8a70ef (165.1s, 42 windows)
+  ep006 13c95b6a-5d18-4267-8943-1ddb8fe85008 (172.2s, 49 windows)
+  ep007 14157960-84db-4f4e-84f1-a4664086c6f8 (179.5s, 56 windows)
+  ep008 142a3a72-6cd4-4056-bb66-c9098f54b7fa (186.7s, 63 windows)
+  ep009 14bc9fcf-c048-42c3-b35d-0fc13b8ddc04 (193.8s, 70 windows)
+  ep010 16d89725-2f31-4a12-9244-658d2b83994c (201.0s, 77 windows)
+  ep011 17775e74-2d89-4c4f-9347-c58cea5585cb (208.6s, 84 windows)
+  ep012 18b72291-84f4-45e0-a736-908fc303020e (215.6s, 91 windows)
+  ep013 1bd040a8-1828-4f1f-933e-20fd53c45641 (223.2s, 98 windows)
+  ep014 1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f (230.3s, 105 windows)
+  ep015 204b15b4-bd0a-4155-b01e-572c55197d0e (237.9s, 112 windows)
+  ep016 2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8 (245.1s, 119 windows)
+  ep017 24fee8a5-9ccc-4610-b27b-560f08fd46c8 (252.7s, 126 windows)
+  ep018 2602baaa-4364-4c50-8fb5-a27254c77cb3 (259.5s, 133 windows)
+  ep019 262b900f-2cff-4ddf-a95e-2aaa5eaff9bc (267.4s, 140 windows)
+{
+ "populations": {
+  "all": {
+   "label": "every scored window",
+   "n_windows": 140,
+   "n_episodes": 20,
+   "n_distinct_tokens": 2,
+   "tokens": [
+    "LANE_KEEP x ADAPT_SPEED_FOR_CURVE",
+    "LANE_KEEP x CRUISE"
+   ],
+   "episodes": [
+    "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "060531e1-9935-482e-8c25-2abf37bdc41b",
+    "0fa2b231-435e-4700-9138-30f333dc5d6e",
+    "10804db8-d070-444e-a1f1-89c1871588d5",
+    "11e40da1-3d9e-4ee6-8406-8db2eed4a594",
+    "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+    "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+    "14157960-84db-4f4e-84f1-a4664086c6f8",
+    "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+    "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+    "16d89725-2f31-4a12-9244-658d2b83994c",
+    "17775e74-2d89-4c4f-9347-c58cea5585cb",
+    "18b72291-84f4-45e0-a736-908fc303020e",
+    "1bd040a8-1828-4f1f-933e-20fd53c45641",
+    "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+    "204b15b4-bd0a-4155-b01e-572c55197d0e",
+    "2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8",
+    "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+    "2602baaa-4364-4c50-8fb5-a27254c77cb3",
+    "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc"
+   ]
+  },
+  "curved_goal": {
+   "label": "the DECODER asked for curvature (goal_kappa_max > 0)",
+   "n_windows": 0,
+   "n_episodes": 0,
+   "n_distinct_tokens": 0,
+   "tokens": [],
+   "episodes": []
+  },
+  "gt_turn_ge_5deg": {
+   "label": "the CAR actually turns \u2014 a DIFFERENT denominator, never mixed with the curved-goal stratum",
+   "n_windows": 27,
+   "n_episodes": 10,
+   "n_distinct_tokens": 2,
+   "tokens": [
+    "LANE_KEEP x ADAPT_SPEED_FOR_CURVE",
+    "LANE_KEEP x CRUISE"
+   ],
+   "episodes": [
+    "01be5919-6e61-45ba-a193-5f447efb4b51",
+    "10804db8-d070-444e-a1f1-89c1871588d5",
+    "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+    "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+    "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+    "18b72291-84f4-45e0-a736-908fc303020e",
+    "1bd040a8-1828-4f1f-933e-20fd53c45641",
+    "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+    "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+    "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc"
+   ]
+  }
+ },
+ "controls": {
+  "X0_zero_model": {
+   "cos": {
+    "goal_ptp_max": 0.0,
+    "penalty_recovery_max_abs": 0.0,
+    "penalty_recovery_max_f64_ulps": 0.0,
+    "n_argmin_at_kappa_0": 140,
+    "n": 140,
+    "pass": true
+   },
+   "chord": {
+    "goal_ptp_max": 0.0,
+    "penalty_recovery_max_abs": 2.168404344971009e-19,
+    "penalty_recovery_max_f64_ulps": 0.5,
+    "n_argmin_at_kappa_0": 140,
+    "n": 140,
+    "pass": true
+   }
+  },
+  "X0_note": "the predictor is fed the ZERO action for every candidate, so it cannot see kappa: the goal term MUST be flat (peak-to-peak EXACTLY 0.0 \u2014 asserted, not toleranced) and total(k)-total(0) MUST recover W_KAPPA*k^2. This isolates the penalty exactly. \u26a0\ufe0f the recovery residue is quoted in float64 ULPs of the total, because the residue is a property of THIS analysis's subtraction and its absolute size therefore scales with the metric's magnitude: `cos` reads 0.0 and `chord` reads ~1 ULP for the SAME exact arithmetic.",
+  "X1_constant_cost": {
+   "c_total_max_abs": 0.0,
+   "argmin_index": 0,
+   "pass": true,
+   "note": "goal term dropped and every weight 0 -> c_total == 0 everywhere; the argmin is the FIRST index, a deterministic tie, so the argmin machinery cannot manufacture structure"
+  },
+  "X3_deliberate_regression": {
+   "n_distinct_cos": {
+    "n": 140,
+    "median": 3.0,
+    "mean": 2.9571428571428573,
+    "min": 1.0,
+    "max": 4.0,
+    "p25": 3.0,
+    "p75": 3.0
+   },
+   "n_distinct_sqrt_of_1mcos_f32": {
+    "n": 140,
+    "median": 3.0,
+    "mean": 2.3785714285714286,
+    "min": 1.0,
+    "max": 4.0,
+    "p25": 2.0,
+    "p75": 3.0
+   },
+   "n_distinct_chord": {
+    "n": 140,
+    "median": 21.0,
+    "mean": 21.0,
+    "min": 21.0,
+    "max": 21.0,
+    "p25": 21.0,
+    "p75": 21.0
+   },
+   "n_windows_where_sqrt_beats_cos": 0,
+   "pass": true,
+   "note": "sqrt(2*(1-cos)) in f32 is the SAME ALGEBRA as the chord and must recover NOTHING; if it 
+--- cell cos__A__full
+{
+ "n_windows": 140,
+ "n_distinct_f32": {
+  "n": 140,
+  "median": 3.0,
+  "mean": 2.9571428571428573,
+  "min": 1.0,
+  "max": 4.0,
+  "p25": 3.0,
+  "p75": 3.0
+ },
+ "q_realised_f32": {
+  "n": 138,
+  "median": 5.960464477539063e-08,
+  "mean": 7.342601167982903e-08,
+  "min": 5.960464477539063e-08,
+  "max": 1.1920928955078125e-07,
+  "p25": 5.960464477539063e-08,
+  "p75": 5.960464477539063e-08
+ },
+ "goal_ptp_along_kappa_f32": {
+  "n": 140,
+  "median": 1.1920928955078125e-07,
+  "mean": 1.5369483402797155e-07,
+  "min": 0.0,
+  "max": 2.384185791015625e-07,
+  "p25": 1.1920928955078125e-07,
+  "p75": 1.7881393432617188e-07
+ },
+ "goal_ptp_along_kappa_f64": {
+  "n": 140,
+  "median": 1.6265855329322676e-10,
+  "mean": 5.679964982479342e-10,
+  "min": 7.46431805254133e-11,
+  "max": 1.679458572212411e-08,
+  "p25": 1.0254119775510162e-10,
+  "p75": 2.0611318207741647e-10
+ },
+ "steps_f32_ptp_over_realised_quantum": {
+  "n": 140,
+  "median": 2.0,
+  "mean": 2.2714285714285714,
+  "min": 0.0,
+  "max": 4.0,
+  "p25": 2.0,
+  "p75": 3.0
+ },
+ "steps_true_f64ptp_over_f32ulp": {
+  "n": 140,
+  "median": 0.0027289576828479767,
+  "mean": 0.009529399938349213,
+  "min": 0.0012523047626018524,
+  "max": 0.2817663922905922,
+  "p25": 0.001720355823636055,
+  "p75": 0.003458005376160145
+ },
+ "n_goal_argmin_at_kappa_0": 0
+}
+--- weights cos__A__full
+{
+ "n_windows": 0,
+ "n_episodes": 0,
+ "n_distinct_tokens": 0,
+ "goal_advantage_f64": null,
+ "n_goal_advantage_positive": 0,
+ "n_turn_total_cost_wins_at_shipped_w": 0,
+ "w_kappa_tip_scale_both_weights": null,
+ "w_kappa_commensurable_ptp_over_kmax2": null,
+ "w_kappa_only_holding_w_jerk": null,
+ "n_tipping_weight_is_a_deletion": 0,
+ "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+}
+--- cell chord__A__full
+{
+ "n_windows": 140,
+ "n_distinct_f32": {
+  "n": 140,
+  "median": 21.0,
+  "mean": 21.0,
+  "min": 21.0,
+  "max": 21.0,
+  "p25": 21.0,
+  "p75": 21.0
+ },
+ "q_realised_f32": {
+  "n": 140,
+  "median": 1.782655090210028e-08,
+  "mean": 9.624011292024599e-08,
+  "min": 6.493792170658708e-10,
+  "max": 1.4680263120681047e-06,
+  "p25": 1.6568407090744586e-08,
+  "p75": 1.878893840512319e-08
+ },
+ "goal_ptp_along_kappa_f32": {
+  "n": 140,
+  "median": 1.7971499801205937e-05,
+  "mean": 1.798332285553832e-05,
+  "min": 1.220391186507186e-05,
+  "max": 3.384397132322192e-05,
+  "p25": 1.4255258975026663e-05,
+  "p75": 2.0255813524272526e-05
+ },
+ "goal_ptp_along_kappa_f64": {
+  "n": 140,
+  "median": 1.8022005096172387e-05,
+  "mean": 1.7995766823451162e-05,
+  "min": 1.2205131296374144e-05,
+  "max": 3.3843991533539554e-05,
+  "p25": 1.4293797868782352e-05,
+  "p75": 2.0275850744994273e-05
+ },
+ "steps_f32_ptp_over_realised_quantum": {
+  "n": 140,
+  "median": 1022.1208444747949,
+  "mean": 1161.1777220700974,
+  "min": 22.764412878412404,
+  "max": 20386.550420168067,
+  "p25": 815.3496538285247,
+  "p75": 1118.2503810073297
+ },
+ "steps_true_f64ptp_over_f32ulp": {
+  "n": 140,
+  "median": 22309002.679424822,
+  "mean": 22601901.587949097,
+  "min": 581435.3472106131,
+  "max": 34420707.71836344,
+  "p25": 19820310.569594435,
+  "p75": 28173655.109163757
+ },
+ "n_goal_argmin_at_kappa_0": 129
+}
+--- weights chord__A__full
+{
+ "n_windows": 0,
+ "n_episodes": 0,
+ "n_distinct_tokens": 0,
+ "goal_advantage_f64": null,
+ "n_goal_advantage_positive": 0,
+ "n_turn_total_cost_wins_at_shipped_w": 0,
+ "w_kappa_tip_scale_both_weights": null,
+ "w_kappa_commensurable_ptp_over_kmax2": null,
+ "w_kappa_only_holding_w_jerk": null,
+ "n_tipping_weight_is_a_deletion": 0,
+ "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+}
+--- cell chord__B__plan
+{
+ "n_windows": 140,
+ "n_distinct_f32": {
+  "n": 140,
+  "median": 21.0,
+  "mean": 21.0,
+  "min": 21.0,
+  "max": 21.0,
+  "p25": 21.0,
+  "p75": 21.0
+ },
+ "q_realised_f32": {
+  "n": 140,
+  "median": 1.3760018191533163e-07,
+  "mean": 2.17333185251586e-07,
+  "min": 2.1464074961841106e-10,
+  "max": 2.618777216412127e-06,
+  "p25": 8.65893525769934e-08,
+  "p75": 1.479862703490653e-07
+ },
+ "goal_ptp_along_kappa_f32": {
+  "n": 140,
+  "median": 5.3744230172014795e-05,
+  "mean": 5.3527159668322256e-05,
+  "min": 3.182767250109464e-05,
+  "max": 8.901627734303474e-05,
+  "p25": 4.5205488277133554e-05,
+  "p75": 5.953234722255729e-05
+ },
+ "goal_ptp_along_kappa_f64": {
+  "n": 140,
+  "median": 5.3744840462844285e-05,
+  "mean": 5.3540503580477616e-05,
+  "min": 3.18281676404166e-05,
+  "max": 8.901602346902265e-05,
+  "p25": 4.5221936914809766e-05,
+  "p75": 5.953266386046131e-05
+ },
+ "steps_f32_ptp_over_realised_quantum": {
+  "n": 140,
+  "median": 396.8517000997387,
+  "mean": 3461.355202509559,
+  "min": 33.83961247159107,
+  "max": 281778.71186440677,
+  "p25": 362.2957793477999,
+  "p75": 625.6853195907213
+ },
+ "steps_true_f64ptp_over_f32ulp": {
+  "n": 140,
+  "median": 26725824.99524299,
+  "mean": 25177750.323618956,
+  "min": 987840.7317778189,
+  "max": 34125857.71001507,
+  "p25": 22735767.95357036,
+  "p75": 31347196.281586908
+ },
+ "n_goal_argmin_at_kappa_0": 129
+}
+--- weights chord__B__plan
+{
+ "n_windows": 0,
+ "n_episodes": 0,
+ "n_distinct_tokens": 0,
+ "goal_advantage_f64": null,
+ "n_goal_advantage_positive": 0,
+ "n_turn_total_cost_wins_at_shipped_w": 0,
+ "w_kappa_tip_scale_both_weights": null,
+ "w_kappa_commensurable_ptp_over_kmax2": null,
+ "w_kappa_only_holding_w_jerk": null,
+ "n_tipping_weight_is_a_deletion": 0,
+ "deletion_rule": "w is a DELETION iff w*kappa_max^2 < the metric's own realised float32 quantum: the whole penalty over the whole box is then smaller than one representable step of the term it trades against"
+}
+wrote C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/costrepair/cost_repair_incumbent.json

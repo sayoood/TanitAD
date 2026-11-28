@@ -1,0 +1,17 @@
+[2026-10-18T08:33:14+0200] p2ho_driver start tag=smoke pid=54144 workers=1 device=cpu
+[2026-10-18T08:33:14+0200] STATUS {"tag": "smoke", "pid": 54144, "workers": 1, "device": "cpu", "started": "2026-10-18T08:33:14+0200", "resumed_at": "2026-10-18T08:33:14+0200", "result": null, "guard": null}
+[2026-10-18T08:33:14+0200] STATUS {"stage": "preflight"}
+[2026-10-18T08:33:48+0200] STATUS {"preflight_disjointness": {"heldout_set": true, "navtest_disjoint": true, "p2_training_bank_disjoint": true, "checkpoint": true}, "preflight_ckpt_sha256": "ea31db2296210b6a35dbf32ad95f1813edfa259ab330002b3ca7564aac727e51", "ckpt_stat": [1288484600, 1791898168000000000]}
+[2026-10-18T08:33:48+0200] STATUS {"coverage": {"n_sets_banked": null, "n_tokens_banked": null, "n_logs_banked": null, "n_tokens_in_plan": 3, "n_logs_in_plan": 1, "n_tokens_blocked": null, "blocked_reasons": null, "n_logs_with_db": null, "n_tokens_with_db": null, "plan": "../smoke/smoke_plan.json", "plan_sha256": "3524123d0c2ac6a2ab
+[2026-10-18T08:33:48+0200] STATUS {"stage": "fidelity"}
+[2026-10-18T08:35:24+0200] STATUS {"fidelity_A": true, "fidelity_B": {"navtest_log": "2021.05.25.14.16.10_veh-35_00083_00485", "n_tokens": 3, "n_plans": 192, "table_sha256_expected": "33441082b7044c951e3cef5fb898cac50797039aed93560b2712e3ff4c34906e", "pdms_exact_within_1e-4_pct": 100.0, "pdms_mean_abs_diff": 1.6960884343364055e-05, 
+[2026-10-18T08:35:24+0200] STATUS {"n_units": 1, "n_tokens_planned": 3}
+[2026-10-18T08:35:24+0200] STATUS {"stage": "dgdump"}
+[2026-10-18T08:37:07+0200] STATUS {"dgdump": {"PASS": true, "n": 2, "proposals_max_abs_m": 0.0008296966552734375, "logits_max_abs": 0.0017437934875488281, "pick_equal": true}}
+[2026-10-18T08:37:07+0200] STATUS {"stage": "dump", "state": "unit 5e94df6bda 2021.08.31.12.21.30_veh-40_00661_00762: dumping 3 tokens (attempt 1)"}
+[2026-10-18T08:38:56+0200] STATUS {"stage": "dump", "state": "unit 5e94df6bda: dump rc=0", "last_dump_seconds": 109}
+[2026-10-18T08:38:56+0200] STATUS {"stage": "gate", "gate_5e94df6bda": {"PASS": true, "n_rows": 3, "all_tokens_present": true, "finite": true, "features_finite": true}}
+[2026-10-18T08:39:39+0200] STATUS {"progress": {"chunks_dumped": 1, "chunks_scored": 1, "score_fail": 0}}
+[2026-10-18T08:39:39+0200] STATUS {"stage": "table", "table_gates": {"n_tokens": 3, "n_columns": 64, "G3_all_valid": true, "G3_finite": true, "G4a_pick_from_logits_f64_equal": 3, "G4a_pick_from_logits_f32_equal": 3, "G4b_pdms_formula_max_abs_diff": 0.0, "G4b_ddc_in_product_control_max_abs_diff": 0.0, "G4c_pick_valid_cells": true, "P
+[2026-10-18T08:39:39+0200] STATUS {"result": "P2HO_DONE"}
+[2026-10-18T08:39:39+0200] P2HO_DONE

@@ -1,0 +1,14 @@
+        f = M["hwm_oracle"]["full6s"]
+>       assert np.all(f["s_false"] == 1.0) and np.all(M["hold"]["full6s"]["s_false"] == 0.0) and np.all(M["hold"]["full6s"]["_s_false_l"] == 1.0)
+E       assert (np.False_)
+E        +  where np.False_ = <function all at 0x0000028468166470>(array([nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan,\n       nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan,\n       nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan,\n       nan]) == 1.0)
+E        +    where <function all at 0x0000028468166470> = np.all
+
+test_hwm_plan.py:1069: AssertionError
+=========================== short test summary info ===========================
+FAILED test_hwm_plan.py::test_k_strategic_cells_through_metrics_of_hold_zero_and_oracle_turn
+FAILED test_hwm_plan.py::test_k_strategic_mirrored_side_flips_the_cell - asse...
+FAILED test_hwm_plan.py::test_k_strategic_threshold_zero_mutation_makes_hold_adhere
+FAILED test_hwm_plan.py::test_k_strategic_report_rows_block_and_not_computed_entries
+FAILED test_hwm_plan.py::test_k_strategic_false_turn_is_read_against_the_logged_path
+5 failed, 12 passed, 40 deselected in 2.79s

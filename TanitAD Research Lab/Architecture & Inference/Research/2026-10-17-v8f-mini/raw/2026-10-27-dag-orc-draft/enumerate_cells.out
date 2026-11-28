@@ -1,0 +1,64 @@
+cells enumerated: 524,288 (controls 1 bit x 5 guards x 2 seeds x R-CRAWL / R-MOVE / R-KEEP / R-NOBASE x 2 seeds)
+cells per outcome row (each cell matches exactly one row):
+  REFUSED                   262,144
+  HARMS                     261,888
+  FIXED / ADOPTED                 1
+  FIXED / NOT ADOPTED            15
+  PARTIAL / ADOPTED               3
+  PARTIAL / NOT ADOPTED          45
+  PARTIAL / ONE SEED            128
+  NO EFFECT                      64
+guarded cells (controls pass, every guard held): 256 = 16 (R-CRAWL, R-MOVE) x 16 (R-KEEP, R-NOBASE)
+projection of the guarded cells on (R-CRAWL s0, s1, R-MOVE s0, s1), adoption ignored: {'FIXED': 1, 'PARTIAL': 11, 'NO EFFECT': 4}
+PREREG_V8F_DAGGER2 Amendment 1 on the same 16 cells:                                  {'FIXED': 1, 'PARTIAL': 11, 'NO EFFECT': 4}
+cells that differ from DAGGER2 A1: []
+adopting rows reachable only with R-MOVE at both seeds: checked on every cell
+dose cascade: 128 (A row, B trained, B row) combinations, all with a next; final reader:
+  A FIXED / ADOPTED            16
+  A FIXED / NOT ADOPTED        16
+  A HARMS                       8
+  A NO EFFECT                  16
+  A PARTIAL / ADOPTED          16
+  A PARTIAL / NOT ADOPTED      16
+  A PARTIAL / ONE SEED         16
+  A REFUSED                    16
+  B FIXED / ADOPTED             1
+  B FIXED / NOT ADOPTED         1
+  B HARMS                       1
+  B NO EFFECT                   1
+  B PARTIAL / ADOPTED           1
+  B PARTIAL / NOT ADOPTED       1
+  B PARTIAL / ONE SEED          1
+  B REFUSED                     1
+NEXT-CRAWL (nav probe x DAG-OACC crawl read):
+  nav_moves=True  oacc=moved  -> ROUTE-EXTENT
+  nav_moves=True  oacc=not    -> ROUTE-EXTENT
+  nav_moves=True  oacc=unread -> ROUTE-EXTENT
+  nav_moves=False oacc=moved  -> COMPOSE
+  nav_moves=False oacc=not    -> LAUNCH-INTENT
+  nav_moves=False oacc=unread -> LAUNCH-INTENT
+launch routing (N0 read before A's gate x N0 nav moves; nav moves is moot when N0 is unread):
+  n0_read=True  nav_moves=True  -> HOLD
+  n0_read=True  nav_moves=False -> LAUNCH as written; NEXT-CRAWL starts from its LAUNCH-INTENT / COMPOSE branch (N0 already read)
+  n0_read=False nav_moves=True  -> LAUNCH as written; N0 runs inside NEXT-CRAWL if an outcome row sends it there
+  n0_read=False nav_moves=False -> LAUNCH as written; N0 runs inside NEXT-CRAWL if an outcome row sends it there
+committed next, arm A:
+  REFUSED                  fix the failing control and re-read; no outcome row is reported
+  HARMS                    A is not adopted; read B (p 0.1) under this same table (train B first if the PI dropped it from the queue)
+  FIXED / ADOPTED          adopt A as the base; Read A re-run on A (DOMINANT there is the dominance claim); then A + DAG-OACC's lever if DAG-OACC is adopted
+  FIXED / NOT ADOPTED      the lever is attributed but A cannot replace DAG: DAG-ORC-SWAP (DAG2's argv + this perturbation, control DAG2) under its own PREREG
+  PARTIAL / ADOPTED        adopt A as the base; the crawl rows that still fail R-CRAWL go to NEXT-CRAWL on A's states
+  PARTIAL / NOT ADOPTED    the lever is attributed but A cannot replace DAG: DAG-ORC-SWAP under its own PREREG
+  PARTIAL / ONE SEED       not adopted and never called an effect; NEXT-CRAWL on DAG states
+  NO EFFECT                the own-state channel is eliminated for the crawl (DAgger iteration 2 and the perturbation); NEXT-CRAWL on DAG states
+committed next, arm B (read only when A is HARMS):
+  REFUSED                  fix the failing control and re-read; no outcome row is reported
+  HARMS                    B is not adopted; the perturbation cannot be dosed under the guards (0.3 and 0.1 both HARMS); NEXT-CRAWL on DAG states
+  FIXED / ADOPTED          adopt B as the base; Read A re-run on B (DOMINANT there is the dominance claim); then B + DAG-OACC's lever if DAG-OACC is adopted
+  FIXED / NOT ADOPTED      the lever is attributed but B cannot replace DAG: DAG-ORC-SWAP (DAG2's argv + this perturbation, control DAG2) under its own PREREG
+  PARTIAL / ADOPTED        adopt B as the base; the crawl rows that still fail R-CRAWL go to NEXT-CRAWL on B's states
+  PARTIAL / NOT ADOPTED    the lever is attributed but B cannot replace DAG: DAG-ORC-SWAP under its own PREREG
+  PARTIAL / ONE SEED       not adopted and never called an effect; NEXT-CRAWL on DAG states
+  NO EFFECT                the own-state channel is eliminated for the crawl (DAgger iteration 2 and the perturbation); NEXT-CRAWL on DAG states
+bar / clear / fire predicate checks: 11
+FAILS: none

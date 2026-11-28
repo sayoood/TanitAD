@@ -1,0 +1,11 @@
+--- ../b2/rh_selfcheck.py	2026-11-20 18:46:03.831835200 +0100
++++ rh_selfcheck.py	2026-11-21 01:00:24.134656800 +0100
+@@ -11,7 +11,7 @@
+ import sys
+ import traceback
+ 
+-TREE = os.environ.get("RH_TREE", "/root/rollhist/tree")   # ROLLHIST: the new tree (the DSCALE10K original pins /root/dscale10k/tree)
++TREE = os.environ.get("RH_TREE", "/root/rollhist/tree_cdb")   # ROLLHIST: the new tree (the DSCALE10K original pins /root/dscale10k/tree)
+ for p in (TREE + "/stack", TREE + "/stack/scripts", TREE):
+     if p not in sys.path:
+         sys.path.insert(0, p)

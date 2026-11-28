@@ -1,0 +1,28 @@
+# O-RECOVER build notes (tip c96f3b69; tree: E:/Projects/TanitAD-artifacts/orecover_build/tree_new; nothing committed or staged)
+
+## What is perturbed, and how each tensor is rebuilt (`v8f_mini_data.py`: `EgoPerturb` :593, `apply` :669, applying line :700, `_nav_masks` :713, `_rebuilt` :722)
+Law: eligible = NOW is a real kinematic row AND logged `kin3[:,0] < vmax`; selected = eligible AND U < p; ONE draw per sample (s~U(vscale), d~U(0,adrop), n~N(0,yaw std deg/s)) from a private generator seeded by (seed, step).
+Per real history frame (cache step >= 1, `frame_ok`): v'=s v, a'=a-d, omega'=s omega+n (same path at lower speed), kappa'=`_pose_kappa0(omega',v')`.
+REBUILT from that one state (`EGO_PERTURB_REBUILT`): `p10f`, `kin3`+`p10_t`, `base`, `pose` history, `pose_t`, `pose_s`, and now `nav`.
+`nav` (your fix 1): `nav'[k,3] = clip(nav[NOW,3] + s (nav[k,3] - nav[NOW,3]), 0, 3)` on history frames that are real rows AND whose token (argmax nav[:,:3]) and nav[:,4] equal NOW's; other real frames are left as logged and COUNTED (`ego_perturb_nav_kept`: `last`, per log interval, run totals, checkpoint). nav[:,:3] and nav[:,4] are never touched. Moved KEPT -> REBUILT; the partition guard (every key `forward_infer` reads is in REBUILT or KEPT) stays complete.
+KEPT on purpose: scene, `limit(_ok)`, `a_t`, `a_s`, `pose_now` (anchor), every target/label (same objects). `act` stays TRUE: the WM transition record, never read by `forward_infer`, reaches `T["wm"]` only (probe control: WM grad diff exactly 0.0). a'=a-d is not clamped at v'=0 (PREREG law has no clamp); steer kin-mode is REFUSED (needs yaw).
+
+## Trainer wiring (`v8f_mini_train.py`)
+Flags (all default off): `--ego-perturb-p/-vscale LO HI/-vmax/-adrop/-yawrate-std/-seed`; `--init-ckpt PATH` (default ""). argv -> `make_ego_perturb` :288 -> `declared_vs_built(.., ego, lr_at)` (`bad_ego_perturb` :294, `bad_init_ckpt` :315, `bad_schedule` :384, FLAG_CHECKS) -> `ego_perturb_probe` :765 (called :1204: G-LIVE on a perturbed batch, gradient difference > 0, controls exactly 0.0) -> `b = ego.apply(b, step)` :1269.
+`--init-ckpt`: `load_init_ckpt` :342 hashes the file, REFUSES an architecture-config mismatch (`INIT_CKPT_MATCH`; hmax 16 vs 18 passes a strict load, the config clause refuses it), loads `ck["model"]` strict, reads every tensor back; fresh optimiser, step 0; an existing ckpt_last.pt in OUT resumes (record: applied False, skipped "resume").
+`--warmup` (your fix 2): the loop's schedule is now one object, `LRSchedule` :368, built BEFORE the gate (`lr_at` :1174); `bad_schedule` reads warmup and peak lr back from it AND its behaviour (step 0 = lr/warmup, step warmup-1 = lr). A schedule that ignores `--warmup`, or none built with a non-default warmup, is REFUSED (tests + 2 mutants). `LRSchedule.__call__` equals the old closure bit for bit (test). Recorded as `levers["lr_schedule"]`.
+Recorded: `levers["ego_perturb"]`, `levers["init_ckpt"]` (path + sha256) in selfcheck.json/summary.json; `ego_perturb`, `init_ckpt`, `ego_totals` in the checkpoint.
+Control counts: train_log.jsonl per interval `ego_perturb_n/_eligible/_rows/_nav_kept`; summary.json run totals `ego_perturb_n`, `_eligible`, `_rows`, `_nav_kept` (carried through resume). p=0 -> n exactly 0, nav_kept 0; p=1 -> n == eligible; `nav_kept` equals an independent recomputation from the batches the loss received at p=0 (test).
+
+## launch_gate.py: NOT changed, and why
+`grep v8f_mini_train stack/scripts/launch_gate*.py` = 0 hits: launch_gate.py is the refcv8/v8f (big trainer) gate; v8f-mini gates itself (`FLAG_CHECKS` + `declared_vs_built` + probes, run by `--selfcheck-only` in the box-2 queue's `gate*` stages), so the G-DVB entries live in v8f_mini_train.py.
+`--steps` and `--p-gt-start/-end` ARE real levers (help text "smoke" notwithstanding): `steps_total` in selfcheck = the budget; p_gt is compared to the BUILT cfg (a lie is refused, tested); lr from the optimiser. `--warmup` had no read-back before; it has one now. The planned argv (`--init-ckpt .. --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p {0.3|0}`) passes `--selfcheck-only` (test).
+
+## Default-identity proof
+Saved pre-change trainer + data module (`.ref`, == tip blobs, cmp) vs this tree, same argv (synthetic, M2b, 3 steps): every logged number and every final weight bit-identical, re-run after the nav and schedule changes; positive control p=1 differs. Default `apply` returns the SAME batch, draws nothing. Only additions to default logs: the `ego_perturb_*` keys.
+
+## Results (CPU only)
+test_v8f_ego_perturb.py: 79 passed (out/pytest_ego_perturb.out). Mutation (`raw/2026-10-26-orecover/mutate_orecover.py`, out/mutation.out): 20/20 RED, files restored byte-identical. New mutants all RED: nav rebuild dropped, nav token test dropped, nav_kept not accumulated, schedule built with warmup ignored, schedule not read back.
+Existing suites: failures IDENTICAL to the pristine tip (same env): test_v8f_mini 1 (needs raw/eval_grid_windows.json, absent from the export), test_v8f_mixo 3 (queue stages), test_v8f_mini_full* 4, launch_gate* 2 (git env). Baselines in out/pytest_BASELINE_tip_*.
+MIXO anchors: `mutate_mixo.py --check` output is byte-identical to the tip's (out/mixo_anchor_check_BASELINE_tip.out): 3 anchors already broken AT THE TIP (v8f_mini.py CODE_UNIT_OF; make_config `code_mix=a.code_mix)`; the `raise SystemExit(.. declared-vs-built: {e})` anchor found 3x). My edit adds none.
+Landing: diffs in out/*.diff are vs the c96f3b69 blobs (LF). Put the two `.ref` files + mutate_orecover.py under `raw/2026-10-26-orecover/` (the identity test skips without them). Export with `git -c core.autocrlf=false archive` (default archive gives CRLF here).

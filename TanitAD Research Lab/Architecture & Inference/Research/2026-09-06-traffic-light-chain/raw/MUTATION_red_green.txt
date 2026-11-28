@@ -1,0 +1,48 @@
+==========================================================================
+RED<->GREEN MUTATION TEST -- v7.2 tactical labels
+==========================================================================
+source blob: C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/blobs/s2_labels_v7.2_train.jsonl.gz
+n_records  : 4572
+records carrying a TRAFFIC_LIGHT_* tactical goal: 779
+
+TARGET  mutation: flipped RED<->GREEN on 739 goal entries
+CONTROL mutation: changed a_tac.lon on 779 records (same record set)
+
+MUTATION LANDED? (positive assertion on the mutated JSON)
+   RED  count  base= 376 target= 363   (must swap)
+   GREEN count base= 363 target= 376   (must swap)
+   a_tac.lon=ACCELERATE base= 998 control=1451   (must rise)
+
+--------------------------------------------------------------------------
+RESULT -- what moved in the SUPERVISED fields
+   (V7Label.tac_lat / tac_lon / str_action / str_goal / tac_anchor)
+--------------------------------------------------------------------------
+  TARGET  (red<->green flip) : 0 / 4572 records changed
+  CONTROL (a_tac.lon change) : 779 / 4572 records changed
+
+  [audit-only channel, for reference]
+  TARGET  audit goal_flags   : 739 / 4572 records changed
+  CONTROL audit goal_flags   : 0 / 4572 records changed
+
+--------------------------------------------------------------------------
+VERDICT
+--------------------------------------------------------------------------
+  The control moved 779 records; the target moved 0.
+  => The rig is LIVE and the red<->green flip is INVISIBLE to every
+     field the trainer consumes as supervision.
+  => The GT traffic-light colour DOES NOT REACH TRAINING.
+
+--------------------------------------------------------------------------
+WHY: the four supervised heads and their class counts
+--------------------------------------------------------------------------
+  tac_lat       8 classes
+  tac_lon       8 classes
+  str_action    7 classes
+  str_goal      8 classes
+  TACTICAL_GOAL_TOKENS_V7 has 22 tokens and is NOT among HEADS.
+  traffic-light tokens in that unsupervised tuple: ['TRAFFIC_LIGHT_REACT', 'TRAFFIC_LIGHT_REACT_RED', 'TRAFFIC_LIGHT_REACT_YELLOW', 'TRAFFIC_LIGHT_REACT_GREEN']
+
+  V7Label dataclass fields (all the loader exposes):
+    ['clip_id', 'tac_lat', 'tac_lon', 'str_action', 'str_goal', 'tac_anchor', 'bands', 't0_s', 'horizon', 'audit', '_oracle']
+  -> no field carries g_tac.goals; it is routed to `audit`, which the
+     module docstring declares 'audit-only, NEVER a training input'.

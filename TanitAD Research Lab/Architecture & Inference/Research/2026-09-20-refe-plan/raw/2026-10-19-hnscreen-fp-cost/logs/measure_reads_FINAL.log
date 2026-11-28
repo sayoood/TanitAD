@@ -1,0 +1,18 @@
+RAMGATE_OK free 3.08 GB after 15 s
+{
+ "today_reads": 200,
+ "today_full_passes": 20.0,
+ "anchored_reads": 40,
+ "anchored_full_passes": 4.0,
+ "ruling_and_hnfp2_say": 17,
+ "note": "17 = the ruling's count (one verify per seed); the source and this measurement give 20: per seed run_checks 2 + finalize 2 + mint verify 1 + start verify 1 = 6, x3 = 18, + seal 1 + fill 1"
+}
+content_1seed rc 0 gate [('run', 40), ('verify', 10), ('verify', 10)] total 80 = 8.0 passes
+default_1seed rc 0 gate [('anchor', 10), ('run', 0), ('verify', 0), ('verify', 0), ('end-verify', 10)] total 40 = 4.0 passes
+content_2seed rc 0 gate [('run', 40), ('verify', 10), ('run', 40), ('verify', 10), ('verify', 10), ('verify', 10)] total 140 = 14.0 passes
+default_2seed rc 0 gate [('anchor', 10), ('run', 0), ('verify', 0), ('run', 0), ('verify', 0), ('verify', 0), ('verify', 0), ('end-verify', 10)] total 40 = 4.0 passes
+content_3seed rc 0 gate [('run', 40), ('verify', 10), ('run', 40), ('verify', 10), ('run', 40), ('verify', 10), ('verify', 10), ('verify', 10), ('verify', 10)] total 200 = 20.0 passes
+default_3seed rc 0 gate [('anchor', 10), ('run', 0), ('verify', 0), ('run', 0), ('verify', 0), ('run', 0), ('verify', 0), ('verify', 0), ('verify', 0), ('verify', 0), ('end-verify', 10)] total 40 = 4.0 passes
+seal {'reads': 10, 'full_passes': 1.0, 'files': 10} fill {'reads_of_the_cache': 10, 'full_passes': 1.0, 'reads_of_the_bank': 0}
+ZZMEASURE_DONE
+EXIT_CODE 0 

@@ -1,0 +1,1080 @@
+{
+ "LAYER": "L3 augmented label release (one record per CLIP)",
+ "vocab_module": "D:\\Projects\\TanitAD\\stack\\tanitad\\models\\vocab_v7.py",
+ "vocab_tokens": [
+  "FOLLOW_LANE",
+  "TURN_L",
+  "TURN_R",
+  "YIELD_FOR_TURN_L",
+  "YIELD_FOR_TURN_R",
+  "YIELD",
+  "STOP_POINT",
+  "SPEED_BAND",
+  "CORRIDOR_OFFSET",
+  "EVADE_IN_CORRIDOR",
+  "OVERTAKE_VEHICLE",
+  "MERGE",
+  "GAP_TARGET",
+  "REACT_ON_ONCOMING",
+  "TAKE_EXIT_L",
+  "TAKE_EXIT_R",
+  "TRAFFIC_LIGHT_REACT",
+  "TRAFFIC_LIGHT_REACT_RED",
+  "TRAFFIC_LIGHT_REACT_YELLOW",
+  "TRAFFIC_LIGHT_REACT_GREEN",
+  "LANE_CHANGE_L",
+  "LANE_CHANGE_R"
+ ],
+ "n_vocab_tokens": 22,
+ "n_lat_actions": 8,
+ "n_lon_actions": 8,
+ "GOAL_MIN_N_FOR_METRIC": 200,
+ "packs": {
+  "v7.2_train": {
+   "exists": true,
+   "path": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-04-v72-label-release\\raw\\s2_labels_v7.2_train.jsonl.gz",
+   "md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "manifest": {
+    "schema_version": "s2-geom-v7",
+    "vocab_version": null,
+    "md5": "0ff902130ce76886b8a925eceed9e3a5",
+    "n_records": 4572,
+    "split": null,
+    "source": null
+   },
+   "n_records": 4572,
+   "n_tokens_in_vocab": 22,
+   "n_trainable": 17,
+   "trainable": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "STOP_POINT",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "n_masked": 5,
+   "masked": [
+    "CORRIDOR_OFFSET",
+    "GAP_TARGET",
+    "REACT_ON_ONCOMING",
+    "SPEED_BAND",
+    "YIELD"
+   ],
+   "floor": 200,
+   "n_under_floor": 10,
+   "under_floor": [
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "n_trainable_AND_scoreable": 7,
+   "trainable_AND_scoreable": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "STOP_POINT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TURN_L",
+    "TURN_R"
+   ],
+   "per_token": {
+    "FOLLOW_LANE": {
+     "pos": 3629,
+     "neg": 943,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "TURN_L": {
+     "pos": 275,
+     "neg": 4297,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "TURN_R": {
+     "pos": 259,
+     "neg": 4313,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "YIELD_FOR_TURN_L": {
+     "pos": 21,
+     "neg": 4551,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD_FOR_TURN_R": {
+     "pos": 20,
+     "neg": 4552,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD": {
+     "pos": 609,
+     "neg": 0,
+     "ignored": 3963,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "STOP_POINT": {
+     "pos": 327,
+     "neg": 4245,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "SPEED_BAND": {
+     "pos": 4572,
+     "neg": 0,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": false
+    },
+    "CORRIDOR_OFFSET": {
+     "pos": 860,
+     "neg": 0,
+     "ignored": 3712,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "EVADE_IN_CORRIDOR": {
+     "pos": 240,
+     "neg": 20,
+     "ignored": 4312,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": false
+    },
+    "OVERTAKE_VEHICLE": {
+     "pos": 20,
+     "neg": 3635,
+     "ignored": 917,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "MERGE": {
+     "pos": 79,
+     "neg": 3629,
+     "ignored": 864,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "GAP_TARGET": {
+     "pos": 368,
+     "neg": 0,
+     "ignored": 4204,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "REACT_ON_ONCOMING": {
+     "pos": 333,
+     "neg": 0,
+     "ignored": 4239,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "TAKE_EXIT_L": {
+     "pos": 21,
+     "neg": 369,
+     "ignored": 4182,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TAKE_EXIT_R": {
+     "pos": 128,
+     "neg": 290,
+     "ignored": 4154,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT": {
+     "pos": 18,
+     "neg": 761,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_RED": {
+     "pos": 376,
+     "neg": 403,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": false
+    },
+    "TRAFFIC_LIGHT_REACT_YELLOW": {
+     "pos": 22,
+     "neg": 757,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_GREEN": {
+     "pos": 363,
+     "neg": 416,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": false
+    },
+    "LANE_CHANGE_L": {
+     "pos": 23,
+     "neg": 290,
+     "ignored": 4259,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "LANE_CHANGE_R": {
+     "pos": 15,
+     "neg": 282,
+     "ignored": 4275,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    }
+   },
+   "UNDERPOWERED_constant_matches_census": true,
+   "TACTICAL_GOAL_UNDERPOWERED_constant": [
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ]
+  },
+  "v7.2_eval": {
+   "exists": true,
+   "path": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-04-v72-label-release\\raw\\s2_labels_v7.2_eval.jsonl.gz",
+   "md5": "aa12c948f062181c3297265b51526ec5",
+   "manifest": {
+    "schema_version": "s2-geom-v7",
+    "vocab_version": null,
+    "md5": "aa12c948f062181c3297265b51526ec5",
+    "n_records": 147,
+    "split": null,
+    "source": null
+   },
+   "n_records": 147,
+   "n_tokens_in_vocab": 22,
+   "n_trainable": 13,
+   "trainable": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "STOP_POINT",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L"
+   ],
+   "n_masked": 9,
+   "masked": [
+    "CORRIDOR_OFFSET",
+    "GAP_TARGET",
+    "LANE_CHANGE_L",
+    "REACT_ON_ONCOMING",
+    "SPEED_BAND",
+    "TAKE_EXIT_L",
+    "TRAFFIC_LIGHT_REACT",
+    "YIELD",
+    "YIELD_FOR_TURN_R"
+   ],
+   "floor": 200,
+   "n_under_floor": 22,
+   "under_floor": [
+    "CORRIDOR_OFFSET",
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "GAP_TARGET",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "REACT_ON_ONCOMING",
+    "SPEED_BAND",
+    "STOP_POINT",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TURN_L",
+    "TURN_R",
+    "YIELD",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "n_trainable_AND_scoreable": 0,
+   "trainable_AND_scoreable": [],
+   "per_token": {
+    "FOLLOW_LANE": {
+     "pos": 119,
+     "neg": 28,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TURN_L": {
+     "pos": 5,
+     "neg": 142,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TURN_R": {
+     "pos": 8,
+     "neg": 139,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD_FOR_TURN_L": {
+     "pos": 2,
+     "neg": 145,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD_FOR_TURN_R": {
+     "pos": 0,
+     "neg": 147,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": true
+    },
+    "YIELD": {
+     "pos": 17,
+     "neg": 0,
+     "ignored": 130,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "STOP_POINT": {
+     "pos": 9,
+     "neg": 138,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "SPEED_BAND": {
+     "pos": 147,
+     "neg": 0,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": true
+    },
+    "CORRIDOR_OFFSET": {
+     "pos": 25,
+     "neg": 0,
+     "ignored": 122,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "EVADE_IN_CORRIDOR": {
+     "pos": 6,
+     "neg": 1,
+     "ignored": 140,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "OVERTAKE_VEHICLE": {
+     "pos": 1,
+     "neg": 119,
+     "ignored": 27,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "MERGE": {
+     "pos": 5,
+     "neg": 119,
+     "ignored": 23,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "GAP_TARGET": {
+     "pos": 14,
+     "neg": 0,
+     "ignored": 133,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "REACT_ON_ONCOMING": {
+     "pos": 11,
+     "neg": 0,
+     "ignored": 136,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "TAKE_EXIT_L": {
+     "pos": 0,
+     "neg": 13,
+     "ignored": 134,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "TAKE_EXIT_R": {
+     "pos": 5,
+     "neg": 5,
+     "ignored": 137,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT": {
+     "pos": 0,
+     "neg": 26,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_RED": {
+     "pos": 8,
+     "neg": 18,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_YELLOW": {
+     "pos": 3,
+     "neg": 23,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_GREEN": {
+     "pos": 15,
+     "neg": 11,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "LANE_CHANGE_L": {
+     "pos": 0,
+     "neg": 147,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": true
+    },
+    "LANE_CHANGE_R": {
+     "pos": 1,
+     "neg": 8,
+     "ignored": 138,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    }
+   },
+   "UNDERPOWERED_constant_matches_census": false,
+   "TACTICAL_GOAL_UNDERPOWERED_constant": [
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ]
+  },
+  "v8.0_train": {
+   "exists": true,
+   "path": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+   "md5": "fa89ea55dfce68403eb30300e57852ab",
+   "manifest": {
+    "schema_version": "s2-geom-v7",
+    "vocab_version": null,
+    "md5": "fa89ea55dfce68403eb30300e57852ab",
+    "n_records": 4572,
+    "split": null,
+    "source": null
+   },
+   "n_records": 4572,
+   "n_tokens_in_vocab": 22,
+   "n_trainable": 17,
+   "trainable": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "STOP_POINT",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "n_masked": 5,
+   "masked": [
+    "CORRIDOR_OFFSET",
+    "GAP_TARGET",
+    "REACT_ON_ONCOMING",
+    "SPEED_BAND",
+    "YIELD"
+   ],
+   "floor": 200,
+   "n_under_floor": 10,
+   "under_floor": [
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "n_trainable_AND_scoreable": 7,
+   "trainable_AND_scoreable": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "STOP_POINT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TURN_L",
+    "TURN_R"
+   ],
+   "per_token": {
+    "FOLLOW_LANE": {
+     "pos": 3629,
+     "neg": 943,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "TURN_L": {
+     "pos": 275,
+     "neg": 4297,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "TURN_R": {
+     "pos": 259,
+     "neg": 4313,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "YIELD_FOR_TURN_L": {
+     "pos": 21,
+     "neg": 4551,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD_FOR_TURN_R": {
+     "pos": 20,
+     "neg": 4552,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD": {
+     "pos": 609,
+     "neg": 0,
+     "ignored": 3963,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "STOP_POINT": {
+     "pos": 327,
+     "neg": 4245,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": false
+    },
+    "SPEED_BAND": {
+     "pos": 4572,
+     "neg": 0,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": false
+    },
+    "CORRIDOR_OFFSET": {
+     "pos": 860,
+     "neg": 0,
+     "ignored": 3712,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "EVADE_IN_CORRIDOR": {
+     "pos": 240,
+     "neg": 20,
+     "ignored": 4312,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": false
+    },
+    "OVERTAKE_VEHICLE": {
+     "pos": 20,
+     "neg": 3635,
+     "ignored": 917,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "MERGE": {
+     "pos": 79,
+     "neg": 3629,
+     "ignored": 864,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "GAP_TARGET": {
+     "pos": 368,
+     "neg": 0,
+     "ignored": 4204,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "REACT_ON_ONCOMING": {
+     "pos": 333,
+     "neg": 0,
+     "ignored": 4239,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": false
+    },
+    "TAKE_EXIT_L": {
+     "pos": 21,
+     "neg": 369,
+     "ignored": 4182,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TAKE_EXIT_R": {
+     "pos": 128,
+     "neg": 290,
+     "ignored": 4154,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT": {
+     "pos": 18,
+     "neg": 761,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_RED": {
+     "pos": 376,
+     "neg": 403,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": false
+    },
+    "TRAFFIC_LIGHT_REACT_YELLOW": {
+     "pos": 22,
+     "neg": 757,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_GREEN": {
+     "pos": 363,
+     "neg": 416,
+     "ignored": 3793,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": false
+    },
+    "LANE_CHANGE_L": {
+     "pos": 23,
+     "neg": 290,
+     "ignored": 4259,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "LANE_CHANGE_R": {
+     "pos": 15,
+     "neg": 282,
+     "ignored": 4275,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    }
+   },
+   "UNDERPOWERED_constant_matches_census": true,
+   "TACTICAL_GOAL_UNDERPOWERED_constant": [
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ]
+  },
+  "v8.0_eval": {
+   "exists": true,
+   "path": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_eval.jsonl.gz",
+   "md5": "38a6239903478c078702d12b518b4bac",
+   "manifest": {
+    "schema_version": "s2-geom-v7",
+    "vocab_version": null,
+    "md5": "38a6239903478c078702d12b518b4bac",
+    "n_records": 147,
+    "split": null,
+    "source": null
+   },
+   "n_records": 147,
+   "n_tokens_in_vocab": 22,
+   "n_trainable": 13,
+   "trainable": [
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "STOP_POINT",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TURN_L",
+    "TURN_R",
+    "YIELD_FOR_TURN_L"
+   ],
+   "n_masked": 9,
+   "masked": [
+    "CORRIDOR_OFFSET",
+    "GAP_TARGET",
+    "LANE_CHANGE_L",
+    "REACT_ON_ONCOMING",
+    "SPEED_BAND",
+    "TAKE_EXIT_L",
+    "TRAFFIC_LIGHT_REACT",
+    "YIELD",
+    "YIELD_FOR_TURN_R"
+   ],
+   "floor": 200,
+   "n_under_floor": 22,
+   "under_floor": [
+    "CORRIDOR_OFFSET",
+    "EVADE_IN_CORRIDOR",
+    "FOLLOW_LANE",
+    "GAP_TARGET",
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "REACT_ON_ONCOMING",
+    "SPEED_BAND",
+    "STOP_POINT",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_GREEN",
+    "TRAFFIC_LIGHT_REACT_RED",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "TURN_L",
+    "TURN_R",
+    "YIELD",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ],
+   "n_trainable_AND_scoreable": 0,
+   "trainable_AND_scoreable": [],
+   "per_token": {
+    "FOLLOW_LANE": {
+     "pos": 119,
+     "neg": 28,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TURN_L": {
+     "pos": 5,
+     "neg": 142,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TURN_R": {
+     "pos": 8,
+     "neg": 139,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD_FOR_TURN_L": {
+     "pos": 2,
+     "neg": 145,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "YIELD_FOR_TURN_R": {
+     "pos": 0,
+     "neg": 147,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": true
+    },
+    "YIELD": {
+     "pos": 17,
+     "neg": 0,
+     "ignored": 130,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "STOP_POINT": {
+     "pos": 9,
+     "neg": 138,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": true,
+     "under_floor": true
+    },
+    "SPEED_BAND": {
+     "pos": 147,
+     "neg": 0,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": true
+    },
+    "CORRIDOR_OFFSET": {
+     "pos": 25,
+     "neg": 0,
+     "ignored": 122,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "EVADE_IN_CORRIDOR": {
+     "pos": 6,
+     "neg": 1,
+     "ignored": 140,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "OVERTAKE_VEHICLE": {
+     "pos": 1,
+     "neg": 119,
+     "ignored": 27,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "MERGE": {
+     "pos": 5,
+     "neg": 119,
+     "ignored": 23,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "GAP_TARGET": {
+     "pos": 14,
+     "neg": 0,
+     "ignored": 133,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "REACT_ON_ONCOMING": {
+     "pos": 11,
+     "neg": 0,
+     "ignored": 136,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "TAKE_EXIT_L": {
+     "pos": 0,
+     "neg": 13,
+     "ignored": 134,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "TAKE_EXIT_R": {
+     "pos": 5,
+     "neg": 5,
+     "ignored": 137,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT": {
+     "pos": 0,
+     "neg": 26,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": false,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_RED": {
+     "pos": 8,
+     "neg": 18,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_YELLOW": {
+     "pos": 3,
+     "neg": 23,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "TRAFFIC_LIGHT_REACT_GREEN": {
+     "pos": 15,
+     "neg": 11,
+     "ignored": 121,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    },
+    "LANE_CHANGE_L": {
+     "pos": 0,
+     "neg": 147,
+     "ignored": 0,
+     "supervised_negative": true,
+     "trainable": false,
+     "under_floor": true
+    },
+    "LANE_CHANGE_R": {
+     "pos": 1,
+     "neg": 8,
+     "ignored": 138,
+     "supervised_negative": false,
+     "trainable": true,
+     "under_floor": true
+    }
+   },
+   "UNDERPOWERED_constant_matches_census": false,
+   "TACTICAL_GOAL_UNDERPOWERED_constant": [
+    "LANE_CHANGE_L",
+    "LANE_CHANGE_R",
+    "MERGE",
+    "OVERTAKE_VEHICLE",
+    "TAKE_EXIT_L",
+    "TAKE_EXIT_R",
+    "TRAFFIC_LIGHT_REACT",
+    "TRAFFIC_LIGHT_REACT_YELLOW",
+    "YIELD_FOR_TURN_L",
+    "YIELD_FOR_TURN_R"
+   ]
+  },
+  "v8.1_train_AS_SPEC_CITES": {
+   "exists": false,
+   "path": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-01-v8-tacsit-release\\raw\\s2_labels_v8.1_train.jsonl.gz",
+   "parent_exists": false,
+   "siblings": null
+  }
+ }
+}

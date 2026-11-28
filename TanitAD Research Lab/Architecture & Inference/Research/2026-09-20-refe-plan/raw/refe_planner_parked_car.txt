@@ -1,0 +1,41 @@
+THE PLANNER WOULD HAVE SILENTLY SCORED A PARKED CAR. FIXED AND PINNED 2026-09-20.
+
+THE DEFECT (found by the paper-conformance review, confirmed from source):
+  REFePlanner declared requires_scenario = False, so it never received the only object that
+  carries a log_name. PlannerInitialization holds only [route_roadblock_ids, mission_goal,
+  map_api]; mission_goal is a StateSE2 of [x, y, heading]. Neither has a log_name, and
+  _log_hint was a class attribute that was NEVER ASSIGNED. The camera lookup could therefore
+  never resolve and compute_planner_trajectory returned _hold(ego) on EVERY step.
+
+WHY A HOLD IS THE WORST FAILURE MODE HERE, and why the fix is two changes not one:
+  a crash is visible; a hold is a LEGAL TRAJECTORY. The benchmark scores it, the number reads
+  as a weak policy rather than a broken one, and nothing in the log says the planner never saw
+  an image. ⇒ resolving the name is only half the fix. REFUSING after N consecutive holds is
+  what converts the silent failure into a loud one.
+
+THE FIX
+  requires_scenario  False -> True, so the runner hands over the scenario
+  initialize()       reads scenario.log_name and RECORDS where the hint came from
+  __init__           accepts scenario= (requires_scenario passes it to the constructor)
+  _image_for         the two dead lookups are removed -- they always fell through, and
+                     leaving them in kept implying the name arrives from the initialization
+  hold path          raises after max_consec_holds (20) with a message that says this is NOT
+                     a driving failure
+
+MUTATION TEST -- refe/diag_planner_holds.py, no GPU and no data:
+Does the planner still silently drive a parked car?
+
+  arm 2: hint '2021.05.12.23.36.44_veh-35_01133_01535' from 'scenario.log_name'
+  arm 1: hint None from 'NONE -- the frame lookup cannot resolve'
+  arm 1: would refuse after 20 consecutive holds
+
+  [PASS] 2 scenario with a log_name is recorded
+  [PASS] 1 no scenario raises within max_consec_holds
+  [PASS] 3 CONTROL: one hold does NOT raise
+  [PASS] 4 CONTROL: requires_scenario is True
+
+PLANNER_HOLDS_GUARDED
+
+⭐ Arms 2-4 are the reason this is a test and not a rubber stamp: an arm-1-only check would
+  pass on a planner that raises unconditionally, which would be a different bug with the same
+  green light.

@@ -1,0 +1,35 @@
+== 1. parameter accounting ==
+  REFe total       316,924,994  (316.92 M)
+  REFe trainable    11,879,490  (11.88 M)  = 3.75 %
+  DriveZero pub.   338,460,000  (338.46 M) / 18.58 M = 5.49 %   [ViT-L, 4 cameras -- NOT a target]
+  per group (total / trainable):
+    backbone.frozen        305,045,504 /          0
+    dec                      3,160,320 /  3,160,320
+    score_dec                3,160,320 /  3,160,320
+    backbone.lora            3,145,728 /  3,145,728
+    pos3d                    1,966,080 /  1,966,080
+    scene_proj                 262,400 /    262,400
+    traj_head                   81,212 /     81,212
+    ego_enc                     69,120 /     69,120
+    registers                   16,384 /     16,384
+    queries                     16,384 /     16,384
+    score_head                   1,542 /      1,542
+
+== 2. LoRA is identity at init (B zeroed) ==
+  max |with_lora - without_lora| = 0.000e+00   PASS
+
+== 3. trainable tensors, asserted BY NAME ==
+  trainable tensors: 219   backbone ones: 96 (all LoRA A/B)
+  backbone tensors trainable that are NOT LoRA: 0   PASS
+  expected LoRA tensors = 2 proj x 2 mats x 24 blocks = 96   got 96   PASS
+
+== 4-6. forward/backward on cuda ==
+  traj  (2, 64, 20, 3)   expect (2, 64, 20, 3)
+  score (2, 64, 6)  expect (2, 64, 6)
+  WTA winner index per sample: [9, 28]
+  traj_head grad present: True
+  scorer detached (score-only loss leaves queries grad-free): PASS
+  deliberate-regression arm (scorer re-attached) goes RED: PASS
+  peak CUDA memory: 9.42 GB at batch 2
+
+VALIDATE_OK

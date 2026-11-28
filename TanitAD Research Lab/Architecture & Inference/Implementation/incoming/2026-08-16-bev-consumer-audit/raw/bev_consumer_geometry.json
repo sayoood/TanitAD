@@ -1,0 +1,604 @@
+{
+ "_what": "per-CONSUMER camera-field exposure of tanitad.data.bev_raster \u2014 the audit the P8 v6 port deferred",
+ "_evidence_class": "MEASURED (ours; pure geometry \u2014 no corpus, no checkpoint, no GPU)",
+ "_generated_by": "code/bev_consumer_census.py",
+ "frames": {
+  "v6f_256x640_cyl120": {
+   "h": 256,
+   "w": 640,
+   "hfov_deg": 120.0,
+   "half_angle_deg": 60.0,
+   "projection": "cylindrical",
+   "f_ref": 305.577491
+  },
+  "v5f_subframe_176x624": {
+   "h": 176,
+   "w": 624,
+   "hfov_deg": 117.0,
+   "half_angle_deg": 58.5,
+   "projection": "cylindrical",
+   "f_ref": 305.577491
+  },
+  "legacy_256x256_pinhole": {
+   "h": 256,
+   "w": 256,
+   "hfov_deg": 51.393999,
+   "half_angle_deg": 25.697,
+   "projection": "pinhole",
+   "f_ref": 266.0
+  }
+ },
+ "whole_grid": {
+  "v6f_256x640_cyl120": {
+   "bev_grid": {
+    "x_fwd_m": 60.0,
+    "y_half_m": 16.0,
+    "cell_m": 0.5,
+    "shape": [
+     120,
+     64
+    ],
+    "row0_is": "ego origin (NEAREST)"
+   },
+   "camera_field": {
+    "half_angle_deg": 60.0,
+    "hfov_deg": 120.0,
+    "projection": "cylindrical"
+   },
+   "in_fov_cells": 7090,
+   "out_of_fov_cells": 590,
+   "total_cells": 7680,
+   "in_fov_frac": 0.923177,
+   "out_of_fov_frac": 0.076823,
+   "first_fully_visible_row": 18,
+   "first_fully_visible_row_x_m": 9.25,
+   "out_of_fov_max_x_m": 8.75,
+   "_bound": "HORIZONTAL field only \u2014 a necessary, not sufficient, visibility condition (see fov_mask)",
+   "_evidence_class": "MEASURED (ours; pure geometry, no corpus needed)",
+   "readout_columns": {
+    "exact": true,
+    "n_cols": 4,
+    "token_w": null,
+    "per_column": {
+     "0": {
+      "cells": 593,
+      "frac_of_grid": 0.077214,
+      "x_min_m": 0.25,
+      "x_max_m": 27.25
+     },
+     "1": {
+      "cells": 2952,
+      "frac_of_grid": 0.384375,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "2": {
+      "cells": 2952,
+      "frac_of_grid": 0.384375,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "3": {
+      "cells": 593,
+      "frac_of_grid": 0.077214,
+      "x_min_m": 0.25,
+      "x_max_m": 27.25
+     }
+    },
+    "far_half_columns": [
+     1,
+     2
+    ],
+    "_read": "a readout COLUMN is an image-column block; under cylindrical that is an equal-azimuth wedge"
+   }
+  },
+  "v5f_subframe_176x624": {
+   "bev_grid": {
+    "x_fwd_m": 60.0,
+    "y_half_m": 16.0,
+    "cell_m": 0.5,
+    "shape": [
+     120,
+     64
+    ],
+    "row0_is": "ego origin (NEAREST)"
+   },
+   "camera_field": {
+    "half_angle_deg": 58.5,
+    "hfov_deg": 117.0,
+    "projection": "cylindrical"
+   },
+   "in_fov_cells": 7054,
+   "out_of_fov_cells": 626,
+   "total_cells": 7680,
+   "in_fov_frac": 0.91849,
+   "out_of_fov_frac": 0.08151,
+   "first_fully_visible_row": 19,
+   "first_fully_visible_row_x_m": 9.75,
+   "out_of_fov_max_x_m": 9.25,
+   "_bound": "HORIZONTAL field only \u2014 a necessary, not sufficient, visibility condition (see fov_mask)",
+   "_evidence_class": "MEASURED (ours; pure geometry, no corpus needed)",
+   "readout_columns": {
+    "exact": true,
+    "n_cols": 4,
+    "token_w": null,
+    "per_column": {
+     "0": {
+      "cells": 601,
+      "frac_of_grid": 0.078255,
+      "x_min_m": 0.25,
+      "x_max_m": 27.75
+     },
+     "1": {
+      "cells": 2926,
+      "frac_of_grid": 0.38099,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "2": {
+      "cells": 2926,
+      "frac_of_grid": 0.38099,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "3": {
+      "cells": 601,
+      "frac_of_grid": 0.078255,
+      "x_min_m": 0.25,
+      "x_max_m": 27.75
+     }
+    },
+    "far_half_columns": [
+     1,
+     2
+    ],
+    "_read": "a readout COLUMN is an image-column block; under cylindrical that is an equal-azimuth wedge"
+   }
+  },
+  "legacy_256x256_pinhole": {
+   "bev_grid": {
+    "x_fwd_m": 60.0,
+    "y_half_m": 16.0,
+    "cell_m": 0.5,
+    "shape": [
+     120,
+     64
+    ],
+    "row0_is": "ego origin (NEAREST)"
+   },
+   "camera_field": {
+    "half_angle_deg": 25.697,
+    "hfov_deg": 51.393999,
+    "projection": "pinhole"
+   },
+   "in_fov_cells": 5554,
+   "out_of_fov_cells": 2126,
+   "total_cells": 7680,
+   "in_fov_frac": 0.723177,
+   "out_of_fov_frac": 0.276823,
+   "first_fully_visible_row": 65,
+   "first_fully_visible_row_x_m": 32.75,
+   "out_of_fov_max_x_m": 32.25,
+   "_bound": "HORIZONTAL field only \u2014 a necessary, not sufficient, visibility condition (see fov_mask)",
+   "_evidence_class": "MEASURED (ours; pure geometry, no corpus needed)",
+   "readout_columns": {
+    "exact": true,
+    "n_cols": 4,
+    "token_w": null,
+    "per_column": {
+     "0": {
+      "cells": 1044,
+      "frac_of_grid": 0.135937,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "1": {
+      "cells": 1733,
+      "frac_of_grid": 0.225651,
+      "x_min_m": 1.25,
+      "x_max_m": 59.75
+     },
+     "2": {
+      "cells": 1733,
+      "frac_of_grid": 0.225651,
+      "x_min_m": 1.25,
+      "x_max_m": 59.75
+     },
+     "3": {
+      "cells": 1044,
+      "frac_of_grid": 0.135937,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     }
+    },
+    "far_half_columns": [
+     -1,
+     0,
+     1,
+     2,
+     3
+    ],
+    "_read": "a readout COLUMN is an image-column block; under cylindrical that is an equal-azimuth wedge"
+   }
+  }
+ },
+ "lf0_bev_lead": {
+  "_scored_set": "the ego corridor only \u2014 NOT the whole grid; lf0_bev_lead.read_lead_range walks rows >= min_row inside corridor_cols(width)",
+  "_defaults": {
+   "min_row": 2,
+   "tau": 0.7,
+   "headline_corridor_m": 1.5,
+   "corridors_m": [
+    1.0,
+    1.5,
+    2.0
+   ]
+  },
+  "_run_frame": "v5f_subframe_176x624 \u2014 RECOVERED from scripts/lf0_chain.sh:93-94 (--frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical --v2-subframe 176x624)",
+  "arms": {
+   "v6f_256x640_cyl120": {
+    "_half_angle_deg": 60.0,
+    "_hfov_deg": 120.0,
+    "_projection": "cylindrical",
+    "widths": {
+     "1.0": {
+      "n_cols": 4,
+      "col_idx": [
+       30,
+       31,
+       32,
+       33
+      ],
+      "max_abs_y_m": 0.75,
+      "first_row_fully_in_fov": 1,
+      "first_row_fully_in_fov_x_m": 0.75,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 480,
+        "out_of_fov_cells": 2,
+        "out_of_fov_frac": 0.004167,
+        "out_of_fov_max_x_m": 0.25,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 472,
+        "out_of_fov_cells": 0,
+        "out_of_fov_frac": 0.0,
+        "out_of_fov_max_x_m": null,
+        "read_can_change": false
+       }
+      }
+     },
+     "1.5": {
+      "n_cols": 6,
+      "col_idx": [
+       29,
+       30,
+       31,
+       32,
+       33,
+       34
+      ],
+      "max_abs_y_m": 1.25,
+      "first_row_fully_in_fov": 1,
+      "first_row_fully_in_fov_x_m": 0.75,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 720,
+        "out_of_fov_cells": 4,
+        "out_of_fov_frac": 0.005556,
+        "out_of_fov_max_x_m": 0.25,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 708,
+        "out_of_fov_cells": 0,
+        "out_of_fov_frac": 0.0,
+        "out_of_fov_max_x_m": null,
+        "read_can_change": false
+       }
+      }
+     },
+     "2.0": {
+      "n_cols": 8,
+      "col_idx": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35
+      ],
+      "max_abs_y_m": 1.75,
+      "first_row_fully_in_fov": 2,
+      "first_row_fully_in_fov_x_m": 1.25,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 960,
+        "out_of_fov_cells": 8,
+        "out_of_fov_frac": 0.008333,
+        "out_of_fov_max_x_m": 0.75,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 944,
+        "out_of_fov_cells": 0,
+        "out_of_fov_frac": 0.0,
+        "out_of_fov_max_x_m": null,
+        "read_can_change": false
+       }
+      }
+     }
+    }
+   },
+   "v5f_subframe_176x624": {
+    "_half_angle_deg": 58.5,
+    "_hfov_deg": 117.0,
+    "_projection": "cylindrical",
+    "widths": {
+     "1.0": {
+      "n_cols": 4,
+      "col_idx": [
+       30,
+       31,
+       32,
+       33
+      ],
+      "max_abs_y_m": 0.75,
+      "first_row_fully_in_fov": 1,
+      "first_row_fully_in_fov_x_m": 0.75,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 480,
+        "out_of_fov_cells": 2,
+        "out_of_fov_frac": 0.004167,
+        "out_of_fov_max_x_m": 0.25,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 472,
+        "out_of_fov_cells": 0,
+        "out_of_fov_frac": 0.0,
+        "out_of_fov_max_x_m": null,
+        "read_can_change": false
+       }
+      }
+     },
+     "1.5": {
+      "n_cols": 6,
+      "col_idx": [
+       29,
+       30,
+       31,
+       32,
+       33,
+       34
+      ],
+      "max_abs_y_m": 1.25,
+      "first_row_fully_in_fov": 2,
+      "first_row_fully_in_fov_x_m": 1.25,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 720,
+        "out_of_fov_cells": 6,
+        "out_of_fov_frac": 0.008333,
+        "out_of_fov_max_x_m": 0.75,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 708,
+        "out_of_fov_cells": 0,
+        "out_of_fov_frac": 0.0,
+        "out_of_fov_max_x_m": null,
+        "read_can_change": false
+       }
+      }
+     },
+     "2.0": {
+      "n_cols": 8,
+      "col_idx": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35
+      ],
+      "max_abs_y_m": 1.75,
+      "first_row_fully_in_fov": 2,
+      "first_row_fully_in_fov_x_m": 1.25,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 960,
+        "out_of_fov_cells": 10,
+        "out_of_fov_frac": 0.010417,
+        "out_of_fov_max_x_m": 0.75,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 944,
+        "out_of_fov_cells": 0,
+        "out_of_fov_frac": 0.0,
+        "out_of_fov_max_x_m": null,
+        "read_can_change": false
+       }
+      }
+     }
+    }
+   },
+   "legacy_256x256_pinhole": {
+    "_half_angle_deg": 25.697,
+    "_hfov_deg": 51.393999,
+    "_projection": "pinhole",
+    "widths": {
+     "1.0": {
+      "n_cols": 4,
+      "col_idx": [
+       30,
+       31,
+       32,
+       33
+      ],
+      "max_abs_y_m": 0.75,
+      "first_row_fully_in_fov": 3,
+      "first_row_fully_in_fov_x_m": 1.75,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 480,
+        "out_of_fov_cells": 8,
+        "out_of_fov_frac": 0.016667,
+        "out_of_fov_max_x_m": 1.25,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 472,
+        "out_of_fov_cells": 2,
+        "out_of_fov_frac": 0.004237,
+        "out_of_fov_max_x_m": 1.25,
+        "read_can_change": true
+       }
+      }
+     },
+     "1.5": {
+      "n_cols": 6,
+      "col_idx": [
+       29,
+       30,
+       31,
+       32,
+       33,
+       34
+      ],
+      "max_abs_y_m": 1.25,
+      "first_row_fully_in_fov": 5,
+      "first_row_fully_in_fov_x_m": 2.75,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 720,
+        "out_of_fov_cells": 18,
+        "out_of_fov_frac": 0.025,
+        "out_of_fov_max_x_m": 2.25,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 708,
+        "out_of_fov_cells": 8,
+        "out_of_fov_frac": 0.011299,
+        "out_of_fov_max_x_m": 2.25,
+        "read_can_change": true
+       }
+      }
+     },
+     "2.0": {
+      "n_cols": 8,
+      "col_idx": [
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35
+      ],
+      "max_abs_y_m": 1.75,
+      "first_row_fully_in_fov": 7,
+      "first_row_fully_in_fov_x_m": 3.75,
+      "per_min_row": {
+       "0": {
+        "scanned_cells": 960,
+        "out_of_fov_cells": 32,
+        "out_of_fov_frac": 0.033333,
+        "out_of_fov_max_x_m": 3.25,
+        "read_can_change": true
+       },
+       "2": {
+        "scanned_cells": 944,
+        "out_of_fov_cells": 18,
+        "out_of_fov_frac": 0.019068,
+        "out_of_fov_max_x_m": 3.25,
+        "read_can_change": true
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "p8_bev_reel": {
+  "_scored_set": "the WHOLE grid \u2014 every cell is rendered and the caption IoU is unmasked",
+  "_run_frame": "v5f_subframe_176x624 \u2014 the docstring's own invocation (p8_bev_reel.py:24-25) and the run it visualises (p8-occupancy-c, p8c_chain.sh)",
+  "arms": {
+   "v6f_256x640_cyl120": {
+    "cells_drawn_per_pane": 7680,
+    "cells_drawn_outside_field": 590,
+    "frac_of_pane_outside_field": 0.076823,
+    "panes_affected": [
+     "decode(z_hat) \u2014 the WM's belief",
+     "belief \u2229 truth overlay"
+    ],
+    "caption_iou_cell_set": "ALL cells (unmasked) \u2014 p8_bev_reel.py:240-242",
+    "_note": "the GT pane is unaffected as a LABEL (the join's cuboids are real wherever they are), but the BELIEF pane draws decoder output on cells no camera in the rig can observe, and the captioned IoU scores them",
+    "_render_aspect": {
+     "grid_m": [
+      60.0,
+      32.0
+     ],
+     "pane_px": [
+      320,
+      null
+     ],
+     "_note": "compose_frame resizes [nx, ny] to (pane_w, PANE_H) with Image.NEAREST, so the BEV pane is NOT metric-square: at width=1280 the pane is ~417x320 px for a 32 m x 60 m grid = 13.0 px/m across vs 5.3 px/m forward, a 2.44x horizontal stretch"
+    }
+   },
+   "v5f_subframe_176x624": {
+    "cells_drawn_per_pane": 7680,
+    "cells_drawn_outside_field": 626,
+    "frac_of_pane_outside_field": 0.08151,
+    "panes_affected": [
+     "decode(z_hat) \u2014 the WM's belief",
+     "belief \u2229 truth overlay"
+    ],
+    "caption_iou_cell_set": "ALL cells (unmasked) \u2014 p8_bev_reel.py:240-242",
+    "_note": "the GT pane is unaffected as a LABEL (the join's cuboids are real wherever they are), but the BELIEF pane draws decoder output on cells no camera in the rig can observe, and the captioned IoU scores them",
+    "_render_aspect": {
+     "grid_m": [
+      60.0,
+      32.0
+     ],
+     "pane_px": [
+      320,
+      null
+     ],
+     "_note": "compose_frame resizes [nx, ny] to (pane_w, PANE_H) with Image.NEAREST, so the BEV pane is NOT metric-square: at width=1280 the pane is ~417x320 px for a 32 m x 60 m grid = 13.0 px/m across vs 5.3 px/m forward, a 2.44x horizontal stretch"
+    }
+   },
+   "legacy_256x256_pinhole": {
+    "cells_drawn_per_pane": 7680,
+    "cells_drawn_outside_field": 2126,
+    "frac_of_pane_outside_field": 0.276823,
+    "panes_affected": [
+     "decode(z_hat) \u2014 the WM's belief",
+     "belief \u2229 truth overlay"
+    ],
+    "caption_iou_cell_set": "ALL cells (unmasked) \u2014 p8_bev_reel.py:240-242",
+    "_note": "the GT pane is unaffected as a LABEL (the join's cuboids are real wherever they are), but the BELIEF pane draws decoder output on cells no camera in the rig can observe, and the captioned IoU scores them",
+    "_render_aspect": {
+     "grid_m": [
+      60.0,
+      32.0
+     ],
+     "pane_px": [
+      320,
+      null
+     ],
+     "_note": "compose_frame resizes [nx, ny] to (pane_w, PANE_H) with Image.NEAREST, so the BEV pane is NOT metric-square: at width=1280 the pane is ~417x320 px for a 32 m x 60 m grid = 13.0 px/m across vs 5.3 px/m forward, a 2.44x horizontal stretch"
+    }
+   }
+  }
+ }
+}

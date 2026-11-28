@@ -1,0 +1,22 @@
+{
+ "_evidence_class": "MEASURED (ours; synthetic batch, untrained stack)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "o5": {
+  "predictor (all)": 0.723035991191864,
+  "FiLM (action seam)": 7.2022587119136e-05,
+  "act_emb": 0.0,
+  "blocks (state path)": 0.001802343176677823
+ },
+ "o11": {
+  "predictor (all)": 3.556995216058567e-05,
+  "FiLM (action seam)": 3.556970114004798e-05,
+  "act_emb": 0.0,
+  "blocks (state path)": 1.0351253187934617e-09
+ },
+ "o5_loss": 0.8375412821769714,
+ "o11_loss": 1.3862943649291992,
+ "o11_share_at_action_seam": 0.3306,
+ "state_path_over_seam_gradient_ratio": 25.0,
+ "shared_path_cancels": false,
+ "verdict": "w=1.0 is a FAIR weight \u2014 O11 is a substantial fraction of the gradient at the action seam, so a flat o11_excess is INFORMATIVE"
+}

@@ -1,0 +1,46 @@
+{
+ "_what": "is the class signal present NONLINEARLY in box_dec's per-slot features?",
+ "_evidence_class": "MEASURED (ours), CPU, cached features, A8 ckpt_5000",
+ "_why_it_matters": "the head's `cls` is a LINEAR map of these features (agent_slots.py:368), so a linear negative cannot be fixed by re-weighting; only a wider function class or better features can",
+ "n_pairs": 2731,
+ "d_pca": 40,
+ "n_fit": 1240,
+ "n_scored": 1491,
+ "n_classes_scored": 9,
+ "hidden": 64,
+ "weight_decay": 0.0001,
+ "balanced_accuracy": {
+  "NONLINEAR_probe": 0.09758,
+  "LABEL_SHUFFLED_control": 0.15056,
+  "CONSTANT_control_1_over_K": 0.11111,
+  "LINEAR_balanced_probe_from_cls_probe": 0.07087,
+  "THE_HEAD_ITSELF": 0.11111
+ },
+ "probe_minus_shuffled_CI95": [
+  -0.10303,
+  -0.01025
+ ],
+ "per_class_recall": {
+  "automobile": 0.7266,
+  "heavy_truck": 0.0,
+  "bus": 0.0,
+  "trailer": 0.0,
+  "person": 0.1516,
+  "rider": 0.0,
+  "stroller": 0.0,
+  "animal": 0.0,
+  "protruding_object": 0.0
+ },
+ "support_scored": {
+  "automobile": 1141,
+  "heavy_truck": 19,
+  "bus": 3,
+  "trailer": 12,
+  "person": 244,
+  "rider": 57,
+  "stroller": 2,
+  "animal": 4,
+  "protruding_object": 9
+ },
+ "_VERDICT": "⛔ THE FEATURES DO NOT CARRY CLASS — a nonlinear probe with class-balanced weights fails the constant control too, on features the head reads directly. ⇒ NO head change of any shape recovers class; the lever is UPSTREAM (slot queries, slot memory, or the trunk). ⚠️ Bounded by this probe's own capacity and n, both printed."
+}

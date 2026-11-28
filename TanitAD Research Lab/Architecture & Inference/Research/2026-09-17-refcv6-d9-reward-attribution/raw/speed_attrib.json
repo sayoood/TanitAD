@@ -1,0 +1,42 @@
+{
+ "_what": "D9 attribution part 2: signed speed bias of the T1 plans vs the human",
+ "_tier": "T1 (self-action open loop)",
+ "_evidence_class": "MEASURED (ours)",
+ "_estimator": "paired_episode_cluster_bootstrap, n_boot 2000, seed 0, by episode",
+ "_n": {
+  "windows": 1402,
+  "episodes": 41
+ },
+ "human_mean_speed_mps": 11.502632768962076,
+ "arms": {
+  "base": {
+   "mean_speed_mps": 11.547935903064811,
+   "signed_bias_vs_human_mps": 0.04530313410273585,
+   "abs_err_mps": 0.2510632000000617
+  },
+  "rl-s0": {
+   "mean_speed_mps": 11.512632520362525,
+   "signed_bias_vs_human_mps": 0.009999751400449532,
+   "abs_err_mps": 0.3322904555567252
+  },
+  "rl-s1": {
+   "mean_speed_mps": 11.919723797560666,
+   "signed_bias_vs_human_mps": 0.41709102859858965,
+   "abs_err_mps": 0.5336852609056831
+  }
+ },
+ "paired_vs_base": {
+  "rl-s0": {
+   "delta": -0.0353,
+   "lo": -0.0925,
+   "hi": 0.0249,
+   "separated": false
+  },
+  "rl-s1": {
+   "delta": 0.3718,
+   "lo": 0.2708,
+   "hi": 0.4777,
+   "separated": true
+  }
+ }
+}

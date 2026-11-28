@@ -1,0 +1,450 @@
+{
+ "tool": "bank_battery_r8.py",
+ "tag": "step48852",
+ "written": "2026-10-21T08:09:18+0200",
+ "chain_status": "pass unc complete (corrected-clock pass pending)",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames; FINAL checkpoint, step 48,852 of 48,852, raw weights",
+ "stamps": [
+  "single training seed; training-seed floor at full scale unmeasured",
+  "the pre-registered bar verdict (final checkpoint)",
+  "numbers are PROVISIONAL unless G0 is PASS as coded or under the registered amendments (A7 + W-R8-1 [+ W-R8-2]): read passes.<pass>.paired_read.g0.G0_amended (SPEC_REFCV8 section 5)"
+ ],
+ "passes": {
+  "unc": {
+   "status": "COMPLETE",
+   "started": "2026-10-21T05:40:21",
+   "finished": "2026-10-21T08:08:51",
+   "tag": "step48852_unc",
+   "ckpt_md5": "ba49eab9411e21b1376ae52dde802036",
+   "step": 48852,
+   "S2": {
+    "n_clips": 139,
+    "n_windows": 4754,
+    "source": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump"
+   },
+   "SMOKE_RESTRICTED_S2": null,
+   "G0_NONBLOCKING": {
+    "G0_as_coded": "FAIL",
+    "reasons": [
+     "wrapper clause FAIL: ['merge defect: cascade wrapper 1.064e-01 > bar 2.913e-02', 'merge defect: law wrapper 3.559e-03 > bar 2.039e-03', 'merge defect: loss wrapper 8.019e-03 > bar 8.252e-04', 'merge defect: r8_sat wrapper 4.558e-02 > bar 3.662e-02', 'merge defect: traj wrapper 1.448e-01 > bar 2.777e-02']"
+    ],
+    "stamp": "G0 did NOT pass as coded; the battery proceeded by explicit request (EARLY READ). SPEC_REFCV8 section 5: no refcv8 battery number counts unless its G0 passes -- every number in this run is PROVISIONAL and is not bar evidence."
+   },
+   "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+   "r8": {
+    "pose_sync_policy": "OFF (R8_NO_POSE_SYNC): the standalone, refcv7-comparable clock",
+    "g0_nonblocking": true,
+    "no_baselines": false,
+    "smoke_cpu": false,
+    "wall_s": 8910.4
+   },
+   "child_rewrites": [
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    },
+    {
+     "from": "C:\\lgs\\Lfb47a58376\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-28-refcv7-standard-tests\\battery\\code\\roll_seed_r7.py",
+     "to": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\code\\roll_seed_r8.py",
+     "smoke_cpu": false,
+     "os_only_all": false
+    }
+   ],
+   "baselines_dropped": {},
+   "baselines_used": {
+    "b_refcv4b": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv4b_devbox_dump",
+    "b_refcv5v2_s0": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2_dump",
+    "b_refcv5v2_s1": "D:\\Projects\\TanitAD-artifacts\\refcv5cmp\\out\\refcv5-v2-seed1_dump",
+    "b_refcv7_50400_s0": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s0",
+    "b_refcv7_50400_s1": "D:/refcv7_eval_kit/battery/step50400_a6text/dump_s1"
+   },
+   "baselines_missing": [
+    "b_refcv6_38k_s0",
+    "b_refcv6_38k_s1"
+   ],
+   "rolls": {
+    "s0": {
+     "arm_set": "full (SPEC \u00a73.2)",
+     "wall_s": 6451.3,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 3.037,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 355720,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    },
+    "s1": {
+     "arm_set": "os + model-free controls (SPEC A3)",
+     "wall_s": 1922.2,
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "skipped": 0,
+     "cuda_max_memory_allocated_gib": 1.222,
+     "device": "cuda",
+     "frame_memo": {
+      "hits": 0,
+      "misses": 47540
+     },
+     "window_restriction": {
+      "n_requested": 4754,
+      "n_index_before": 23772,
+      "n_index_after": 4754,
+      "source": "banked baseline grid (clip, ws), kit clips"
+     }
+    }
+   },
+   "pairing": {
+    "s0": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    },
+    "s1": {
+     "b_refcv4b": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv5v2_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s0": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     },
+     "b_refcv7_50400_s1": {
+      "clips_missing": 0,
+      "ws_equal_clips": 139,
+      "g_bit_equal_windows": 4754,
+      "g_max_abs_diff": 0.0,
+      "model_free_bit_equal": {
+       "ha": 4754,
+       "ha0": 4754,
+       "ha0_ext": 4754
+      },
+      "model_free_max_abs_diff": {
+       "ha": 0.0,
+       "ha0": 0.0,
+       "ha0_ext": 0.0
+      },
+      "n_windows_paired": 4754
+     }
+    }
+   },
+   "void_gates_3_4": {
+    "s0": {
+     "pass": true,
+     "failures": []
+    },
+    "s1": {
+     "pass": true,
+     "failures": []
+    }
+   },
+   "inference_seed_replicate": {
+    "max_abs_path_diff_m": 4.7015193700790405,
+    "floor_m": 0.0019,
+    "ade": {
+     "delta": -0.0019,
+     "lo": -0.0057,
+     "hi": 0.0019,
+     "ci95": 0.0038,
+     "p_delta_gt0": 0.1705,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 4754,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_dropped_nonfinite": 0
+    }
+   },
+   "bars_r7_form_informative": [
+    [
+     "BAR-R7-1",
+     "FAILED"
+    ],
+    [
+     "BAR-R7-2",
+     "PENDING (the refcv6@38k S2 rolls run LAST in the milestone chain; SPEC A4)"
+    ],
+    [
+     "BAR-R7-3",
+     "PASS (single training seed; training-seed floor unmeasured)"
+    ]
+   ],
+   "strategic": {
+    "status": "NOT APPLICABLE",
+    "n": 0,
+    "reason": "the strategic layer is OFF (--no-strategic); its route loss is gated off in training, so the route head is untrained"
+   },
+   "paired_read": {
+    "file": "PAIRED_READ_step48852_unc.json",
+    "clock": "standalone",
+    "g0": {
+     "G0": "FAIL",
+     "amendment": "A7",
+     "M1_detected": true,
+     "ckpt_md5": "ba49eab9411e21b1376ae52dde802036",
+     "G0_amended": "PASS",
+     "amendments": [
+      "A7",
+      "W-R8-1"
+     ],
+     "amended_why": "wrapper clause PASS under the fixed probe (max rel 3.702133517108737e-06)",
+     "wrapfix_json": "C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery/raw/step48852/wrapper_clause_r8fix_gpu.json",
+     "fp64_json": null,
+     "provisional": false,
+     "stamp": ""
+    },
+    "bars": {
+     "BAR-R8-E1": "FAILED",
+     "BAR-R8-E3": "PASS (single training seed; training-seed floor unmeasured)",
+     "BAR-R8-NR": {
+      "verdict": null,
+      "per_family": {
+       "ADE": "FAIL: S2:ade_m, S6:ade_m",
+       "LONGITUDINAL": "FAIL: S2:LON_speed_mae_mps, S2:LON_along_abs_final_m",
+       "LATERAL": "FAIL: S2:LAT_heading_mae_deg, S2:LAT_curvature_mae_1pm_valid, S2:LAT_yaw_rate_mae_radps_valid"
+      }
+     }
+    },
+    "inference_floor_ade": {
+     "S2": 0.0019494593143463135,
+     "S6": 0.01534891128540039
+    },
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0,
+     "reason": "the strategic layer is OFF (--no-strategic in the run's argv; PI ruling R5): its route loss is gated off in training, the route head is untrained and is not scored. Route-level decisions are measured inside LATERAL / TACTICAL, not relabelled strategic."
+    },
+    "controls_all_bit_identical": {
+     "S2_s0": true,
+     "S2_s1": true
+    },
+    "windows_check": {
+     "S2_s0": true,
+     "S2_s1": true,
+     "S6_s0": true,
+     "S6_s1": true
+    }
+   }
+  },
+  "corr": {
+   "status": "NOT RUN",
+   "work_dir": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852_corr"
+  }
+ },
+ "banked": {
+  "unc": {
+   "banked": [
+    "acceptance_s0.json",
+    "acceptance_s1.json",
+    "analysis_s0.json",
+    "analysis_s1.json",
+    "analysis_s6_s0.json",
+    "analysis_s6_s1.json",
+    "battery_summary.json",
+    "criteria_s0.json",
+    "criteria_s0.log",
+    "criteria_s1.json",
+    "criteria_s1.log",
+    "cross_paired_s0.json",
+    "cross_paired_s1.json",
+    "cross_paired_s6_s0.json",
+    "cross_paired_s6_s1.json",
+    "gate_roll_s0.json",
+    "gate_roll_s1.json",
+    "inference_seed_replicate.json",
+    "PAIRED_READ_step48852_unc.json",
+    "PAIRED_READ_step48852_unc.md",
+    "roll_s0.json",
+    "roll_s0.log",
+    "roll_s1.json",
+    "roll_s1.log",
+    "tactical_v6_s0.json",
+    "tactical_v6_s1.json",
+    "void_gates_s0.json",
+    "void_gates_s1.json"
+   ],
+   "left_on_E": []
+  }
+ },
+ "g0_gate": {
+  "g0_json": "E:/refcv8_eval_kit/battery/step48852/g0.json",
+  "require_pass": false,
+  "G0": "FAIL",
+  "amendment": "A7",
+  "M1_detected": true,
+  "ckpt_md5_in_g0": "ba49eab9411e21b1376ae52dde802036",
+  "result": "ok:FAIL"
+ },
+ "timings_raw": [
+  "1792553951 2026-10-21T05:39:11 armed",
+  "1792553951 2026-10-21T05:39:11 g0 chain ended",
+  "1792554014 2026-10-21T05:40:14 lock acquired",
+  "1792554014 2026-10-21T05:40:14 pass unc start",
+  "1792562931 2026-10-21T08:08:51 pass unc battery end",
+  "1792562958 2026-10-21T08:09:18 pass unc paired read end"
+ ],
+ "chain_log_tail": [
+  "ZZR8BATTSTARTZZ 2026-10-21T05:39:11+0200 pid 2041175 step 48852",
+  "ZZR8BATTG0ENDEDZZ 2026-10-21T05:39:11+0200 ended:CHAINEND:2038164",
+  "ZZR8BATTGATEOKZZ 2026-10-21T05:39:12+0200 ok:FAIL",
+  "{\"met\": true, \"min_gb\": 6.0, \"waited_s\": 60.9, \"last\": {\"t\": \"2026-10-21T05:40:13+0200\", \"free_commit_gb\": 33.05, \"commit_limit_gb\": 67.72, \"free_phys_gb\": 12.77}}",
+  "{\"ok\": true, \"waited_s\": 0.6, \"polls\": 1, \"gate\": {\"ok\": true, \"gpu_used_mib\": 501, \"python_compute\": [], \"self_pids_excluded\": [57388, 2041175], \"free_ram_gb\": 12.76, \"rule\": \"used<4300 MiB, no other python compute, free RAM>=8.0 GB\", \"t\": \"2026-10-21T05:40:14\", \"probe_ok\": true}, \"probe_failures\": 0, \"last_probe_error\": null, \"lock\": {\"job\": \"refcv8-battery-step48852\", \"pid\": 2041175, \"win_pid_of_locker\": 57388, \"host\": \"FREEDOM2035\", \"acquired\": \"2026-10-21T05:40:14+0200\"}}",
+  "{\"created\": false, \"why\": \"a marker of another chain exists\", \"marker\": {\"chain\": \"refcv8-battery-step48852ema\", \"pid\": \"1999216\", \"started\": \"2026-10-20T21:19:49+0200\"}}",
+  "ZZR8BATTLOCKEDZZ 2026-10-21T05:40:14+0200 ",
+  "ZZR8BATTPASSDONEZZ 2026-10-21T08:08:52+0200 unc (battery)",
+  "ZZR8BATTPAIREDZZ 2026-10-21T08:09:18+0200 unc"
+ ]
+}

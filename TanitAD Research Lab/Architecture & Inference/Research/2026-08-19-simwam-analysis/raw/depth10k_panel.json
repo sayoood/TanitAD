@@ -1,0 +1,450 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms_missing": [],
+ "arms": {
+  "o5k4": {
+   "participation_val": 3.477,
+   "participation_heldout24": 4.871,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1234,
+     "z": 6.61,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0011,
+     "z": 0.46,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0009,
+     "z": 0.31,
+     "n": 108
+    }
+   }
+  },
+  "splitfrz": {
+   "participation_val": 2.285,
+   "participation_heldout24": 2.167,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1872,
+     "z": 7.99,
+     "n": 108
+    },
+    "2": {
+     "cos": -0.0042,
+     "z": -2.93,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.001,
+     "z": 0.31,
+     "n": 108
+    }
+   }
+  },
+  "splitfrz10k": {
+   "participation_val": 2.675,
+   "participation_heldout24": 2.471,
+   "step": 10000,
+   "predictor": {
+    "1": {
+     "cos": 0.0007,
+     "z": 0.4,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0016,
+     "z": 0.74,
+     "n": 108
+    },
+    "4": {
+     "cos": -0.0007,
+     "z": -0.28,
+     "n": 108
+    }
+   }
+  },
+  "rdw8": {
+   "participation_val": 3.796,
+   "participation_heldout24": 3.617,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0541,
+     "z": 4.26,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0014,
+     "z": 0.72,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0014,
+     "z": 0.8,
+     "n": 108
+    }
+   }
+  },
+  "rdw8b8": {
+   "participation_val": 3.993,
+   "participation_heldout24": 5.256,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0933,
+     "z": 5.49,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0006,
+     "z": 0.23,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0009,
+     "z": 0.45,
+     "n": 108
+    }
+   }
+  }
+ },
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op o5k4": {
+     "r2": 0.3062,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1906,
+     "t_vs_pixel_floor": 3.06,
+     "n_favouring_vs_pixel_floor": 11,
+     "beats_raw_input": true
+    },
+    "z_op splitfrz": {
+     "r2": 0.2465,
+     "delta_vs_base": -0.0597,
+     "t": -1.46,
+     "n_favouring": 2,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1309,
+     "t_vs_pixel_floor": 2.39,
+     "n_favouring_vs_pixel_floor": 11,
+     "beats_raw_input": true
+    },
+    "z_op splitfrz10k": {
+     "r2": 0.2594,
+     "delta_vs_base": -0.0468,
+     "t": -0.98,
+     "n_favouring": 3,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1438,
+     "t_vs_pixel_floor": 2.48,
+     "n_favouring_vs_pixel_floor": 11,
+     "beats_raw_input": true
+    },
+    "z_op rdw8": {
+     "r2": 0.283,
+     "delta_vs_base": -0.0232,
+     "t": -0.64,
+     "n_favouring": 4,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1673,
+     "t_vs_pixel_floor": 2.37,
+     "n_favouring_vs_pixel_floor": 10,
+     "beats_raw_input": true
+    },
+    "z_op rdw8b8": {
+     "r2": 0.1396,
+     "delta_vs_base": -0.1666,
+     "t": -4.36,
+     "n_favouring": 2,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.024,
+     "t_vs_pixel_floor": 0.3,
+     "n_favouring_vs_pixel_floor": 4,
+     "beats_raw_input": false
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_base": -0.1906,
+     "t": -3.06,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.3062,
+     "t": -5.88,
+     "n_favouring": 1,
+     "n": 12,
+     "delta_vs_pixel_floor": -0.1156,
+     "t_vs_pixel_floor": -1.81,
+     "n_favouring_vs_pixel_floor": 2,
+     "beats_raw_input": false
+    }
+   },
+   "d_ego": {
+    "z_op o5k4": {
+     "r2": 0.2157,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.2938,
+     "t_vs_pixel_floor": 3.28,
+     "n_favouring_vs_pixel_floor": 11,
+     "beats_raw_input": true
+    },
+    "z_op splitfrz": {
+     "r2": 0.2878,
+     "delta_vs_base": 0.0721,
+     "t": 1.07,
+     "n_favouring": 5,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.3659,
+     "t_vs_pixel_floor": 3.63,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "z_op splitfrz10k": {
+     "r2": 0.2939,
+     "delta_vs_base": 0.0781,
+     "t": 1.19,
+     "n_favouring": 5,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.3719,
+     "t_vs_pixel_floor": 3.7,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "z_op rdw8": {
+     "r2": 0.3601,
+     "delta_vs_base": 0.1444,
+     "t": 2.77,
+     "n_favouring": 11,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.4382,
+     "t_vs_pixel_floor": 5.26,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "z_op rdw8b8": {
+     "r2": 0.1655,
+     "delta_vs_base": -0.0502,
+     "t": -0.83,
+     "n_favouring": 3,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.2435,
+     "t_vs_pixel_floor": 2.14,
+     "n_favouring_vs_pixel_floor": 11,
+     "beats_raw_input": true
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_base": -0.2938,
+     "t": -3.28,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.2157,
+     "t": -3.02,
+     "n_favouring": 2,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.0781,
+     "t_vs_pixel_floor": 0.72,
+     "n_favouring_vs_pixel_floor": 5,
+     "beats_raw_input": false
+    }
+   }
+  },
+  "ENV (in-sample)": {
+   "lead_gap_m": {
+    "z_op o5k4": {
+     "r2": -0.3495,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.356,
+     "t_vs_pixel_floor": -7.36,
+     "n_favouring_vs_pixel_floor": 2,
+     "beats_raw_input": false
+    },
+    "z_op splitfrz": {
+     "r2": -0.0172,
+     "delta_vs_base": 0.3324,
+     "t": 8.43,
+     "n_favouring": 23,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.0236,
+     "t_vs_pixel_floor": -1.83,
+     "n_favouring_vs_pixel_floor": 8,
+     "beats_raw_input": false
+    },
+    "z_op splitfrz10k": {
+     "r2": -0.0123,
+     "delta_vs_base": 0.3372,
+     "t": 8.44,
+     "n_favouring": 23,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.0187,
+     "t_vs_pixel_floor": -1.58,
+     "n_favouring_vs_pixel_floor": 8,
+     "beats_raw_input": false
+    },
+    "z_op rdw8": {
+     "r2": -0.329,
+     "delta_vs_base": 0.0205,
+     "t": 0.76,
+     "n_favouring": 20,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.3354,
+     "t_vs_pixel_floor": -5.71,
+     "n_favouring_vs_pixel_floor": 7,
+     "beats_raw_input": false
+    },
+    "z_op rdw8b8": {
+     "r2": -0.3844,
+     "delta_vs_base": -0.0349,
+     "t": -0.64,
+     "n_favouring": 10,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.3908,
+     "t_vs_pixel_floor": -4.29,
+     "n_favouring_vs_pixel_floor": 10,
+     "beats_raw_input": false
+    },
+    "pixel (floor)": {
+     "r2": 0.0064,
+     "delta_vs_base": 0.356,
+     "t": 7.36,
+     "n_favouring": 22,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.3495,
+     "t": 7.25,
+     "n_favouring": 22,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.0064,
+     "t_vs_pixel_floor": -16.75,
+     "n_favouring_vs_pixel_floor": 0,
+     "beats_raw_input": false
+    }
+   },
+   "n_agents": {
+    "z_op o5k4": {
+     "r2": -0.4434,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.2277,
+     "t_vs_pixel_floor": -3.1,
+     "n_favouring_vs_pixel_floor": 2,
+     "beats_raw_input": false
+    },
+    "z_op splitfrz": {
+     "r2": 0.4035,
+     "delta_vs_base": 0.8469,
+     "t": 10.55,
+     "n_favouring": 24,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.6191,
+     "t_vs_pixel_floor": 36.27,
+     "n_favouring_vs_pixel_floor": 24,
+     "beats_raw_input": true
+    },
+    "z_op splitfrz10k": {
+     "r2": 0.4156,
+     "delta_vs_base": 0.859,
+     "t": 10.65,
+     "n_favouring": 24,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.6313,
+     "t_vs_pixel_floor": 36.67,
+     "n_favouring_vs_pixel_floor": 24,
+     "beats_raw_input": true
+    },
+    "z_op rdw8": {
+     "r2": -1.0407,
+     "delta_vs_base": -0.5973,
+     "t": -6.93,
+     "n_favouring": 1,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.825,
+     "t_vs_pixel_floor": -8.11,
+     "n_favouring_vs_pixel_floor": 0,
+     "beats_raw_input": false
+    },
+    "z_op rdw8b8": {
+     "r2": -0.1099,
+     "delta_vs_base": 0.3335,
+     "t": 2.75,
+     "n_favouring": 22,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.1058,
+     "t_vs_pixel_floor": 1.15,
+     "n_favouring_vs_pixel_floor": 22,
+     "beats_raw_input": false
+    },
+    "pixel (floor)": {
+     "r2": -0.2156,
+     "delta_vs_base": 0.2277,
+     "t": 3.1,
+     "n_favouring": 22,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.4434,
+     "t": 5.45,
+     "n_favouring": 24,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.2156,
+     "t_vs_pixel_floor": 9.21,
+     "n_favouring_vs_pixel_floor": 22,
+     "beats_raw_input": true
+    }
+   }
+  }
+ },
+ "kill_gate": {
+  "splitfrz": {
+   "REJECTED_by_kill_gate": true,
+   "reason": "rank fell on BOTH held-out sets",
+   "h2_head_trained": false,
+   "predicts_beyond_h1": null
+  },
+  "splitfrz10k": {
+   "REJECTED_by_kill_gate": true,
+   "reason": "rank fell on BOTH held-out sets",
+   "h2_head_trained": false,
+   "predicts_beyond_h1": null
+  },
+  "rdw8": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "h2_head_trained": false,
+   "predicts_beyond_h1": null
+  },
+  "rdw8b8": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "h2_head_trained": false,
+   "predicts_beyond_h1": null
+  }
+ },
+ "verdict": "splitfrz: REJECTED \u2014 rank fell on BOTH held-out sets \u00b7 h>=2 NOT MEASURABLE HERE (untrained heads, C139); splitfrz10k: REJECTED \u2014 rank fell on BOTH held-out sets \u00b7 h>=2 NOT MEASURABLE HERE (untrained heads, C139); rdw8: passes gate \u00b7 h>=2 NOT MEASURABLE HERE (untrained heads, C139); rdw8b8: passes gate \u00b7 h>=2 NOT MEASURABLE HERE (untrained heads, C139)"
+}

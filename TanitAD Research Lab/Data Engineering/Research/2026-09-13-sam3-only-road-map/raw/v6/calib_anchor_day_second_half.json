@@ -1,0 +1,133 @@
+{
+ "mode": "anchor",
+ "chain": [
+  "CAM_CR",
+  "CAM_RR",
+  "CAM_RL",
+  "CAM_RT",
+  "CAM_CL"
+ ],
+ "override": {
+  "CAM_CR": {
+   "yaw_deg": 0.5,
+   "pitch_deg": -0.5,
+   "roll_deg": -0.5,
+   "dz_m": 0.1
+  },
+  "CAM_RR": {
+   "yaw_deg": 1.5,
+   "pitch_deg": 0.0,
+   "roll_deg": 0.0,
+   "dz_m": 0.1
+  }
+ },
+ "self_near_m": 7.0,
+ "reference_cameras": [
+  "CAM_FW"
+ ],
+ "near_m": 12.0,
+ "frames": 48,
+ "cameras": {
+  "CAM_CR": {
+   "correction": {
+    "yaw_deg": 0.5,
+    "pitch_deg": -0.5,
+    "roll_deg": -0.5,
+    "dz_m": 0.1
+   },
+   "joined_reference": true,
+   "ncc_fit": {
+    "identity": 0.414,
+    "corrected": 0.495
+   },
+   "ncc_held_out": {
+    "identity": 0.419,
+    "corrected": 0.513
+   },
+   "cells_fit": 160470,
+   "cells_held_out": 158718,
+   "verdict": "apply"
+  },
+  "CAM_RR": {
+   "correction": {
+    "yaw_deg": 1.5,
+    "pitch_deg": 0.0,
+    "roll_deg": 0.0,
+    "dz_m": 0.1
+   },
+   "joined_reference": true,
+   "ncc_fit": {
+    "identity": 0.354,
+    "corrected": 0.476
+   },
+   "ncc_held_out": {
+    "identity": 0.386,
+    "corrected": 0.512
+   },
+   "cells_fit": 344242,
+   "cells_held_out": 342674,
+   "verdict": "apply"
+  },
+  "CAM_RL": {
+   "correction": {
+    "yaw_deg": -1.0,
+    "pitch_deg": -1.0,
+    "roll_deg": -1.0,
+    "dz_m": -0.1
+   },
+   "joined_reference": false,
+   "ncc_fit": {
+    "identity": -0.0,
+    "corrected": 0.0
+   },
+   "ncc_held_out": {
+    "identity": 0.0,
+    "corrected": 0.0
+   },
+   "cells_fit": 181737,
+   "cells_held_out": 183950,
+   "verdict": "keep identity (needs held-out AND fit gain > 0.02 and held-out NCC >= 0.3)"
+  },
+  "CAM_RT": {
+   "correction": {
+    "yaw_deg": -0.5,
+    "pitch_deg": -1.0,
+    "roll_deg": 1.0,
+    "dz_m": 0.1
+   },
+   "joined_reference": false,
+   "ncc_fit": {
+    "identity": -0.001,
+    "corrected": 0.245
+   },
+   "ncc_held_out": {
+    "identity": -0.001,
+    "corrected": 0.038
+   },
+   "cells_fit": 106577,
+   "cells_held_out": 105133,
+   "verdict": "keep identity (needs held-out AND fit gain > 0.02 and held-out NCC >= 0.3)"
+  },
+  "CAM_CL": {
+   "correction": {
+    "yaw_deg": -1.0,
+    "pitch_deg": -1.0,
+    "roll_deg": -1.0,
+    "dz_m": -0.1
+   },
+   "joined_reference": false,
+   "ncc_fit": {
+    "identity": 0.0,
+    "corrected": 0.0
+   },
+   "ncc_held_out": {
+    "identity": -0.001,
+    "corrected": -0.0
+   },
+   "cells_fit": 152742,
+   "cells_held_out": 150357,
+   "verdict": "keep identity (needs held-out AND fit gain > 0.02 and held-out NCC >= 0.3)"
+  }
+ },
+ "seconds": 49.6
+}

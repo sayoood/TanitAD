@@ -1,0 +1,263 @@
+{
+ "_label": "EXPLORATORY -- eval-path discriminator for the E-6 fan shift; same 200 tokens",
+ "question": "Does TODAY's forward path reproduce the STORED E-6 tables of earlier snapshots bit-for-bit? If yes, the path that produced them is unchanged and the fan shift is in the weights.",
+ "script": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\eval_path_replay.py",
+ "script_sha256": "8961292d988a2538ad68d13495e7d2374db7e7329de97a595e5d134dd6b8c0ac",
+ "tokens": "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw/A1_sub200_tokens.json",
+ "snapshots": {
+  "012": {
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch012.pt",
+   "ckpt_sha256": "5c2335b7a77cd51bc903454a60cc2e2f4cc20ea871d22e35b730a9be725e50b7",
+   "table": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep012/table.npz",
+   "table_sha256": "cfd543bc4a163d61ef25dcb7766bc3f27b6d140534d25084cea561e5c155d142",
+   "dump": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep012/path_replay_dump.npz",
+   "dump_sha256": "e3adec1babbbd6c28fa2f68ca6e907291a2c54cece30d9d7cd5a4e7c604b4334",
+   "table_rule": "v2_shape",
+   "planner_rule": "v2_shape",
+   "per_sample_calib": true,
+   "ckpt_format": "refe-partial-v1",
+   "rows": 200,
+   "n_table": 200,
+   "stopped": null,
+   "token_order_identical": true,
+   "proposals_max_abs_diff_m": 0.0,
+   "proposals_tokens_bit_identical": 200,
+   "logits_max_abs_diff": 0.0,
+   "logits_tokens_bit_identical": 200,
+   "pick_reproduced": "200/200",
+   "per_slot_median_path_m_max_abs_diff": 0.0,
+   "gpu_seconds": 1530.2,
+   "cuda_max_memory_allocated_gb": 1.727,
+   "env": {
+    "REFE_SIM_HZ": "10",
+    "NUPLAN_MAPS_ROOT": "D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0",
+    "REFE_BACKBONE_ROOT": "D:/Projects/TanitAD/data/backbones"
+   },
+   "verdict": "IDENTICAL -- today's path reproduces the stored table bit-for-bit"
+  },
+  "013": {
+   "ckpt": "D:/Projects/TanitAD/data/refe_runs_eval/snap_epoch013.pt",
+   "ckpt_sha256": "25d24afca060b658e4e4a929e1a7d69a21de1468e5bd6a39513ba64136847ce8",
+   "table": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep013/table.npz",
+   "table_sha256": "417a82dbd560343decdd4eea337cdc03e53b2dff8b951f474ec84b88209d4bf6",
+   "dump": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep013/path_replay_dump.npz",
+   "dump_sha256": "b72a58803244b4c25dd42d2e31cf024b654d2ec80b4faf24f08b696278d5b6b4",
+   "table_rule": "v2_shape",
+   "planner_rule": "v2_shape",
+   "per_sample_calib": true,
+   "ckpt_format": "refe-partial-v1",
+   "rows": 200,
+   "n_table": 200,
+   "stopped": null,
+   "token_order_identical": true,
+   "proposals_max_abs_diff_m": 0.0,
+   "proposals_tokens_bit_identical": 200,
+   "logits_max_abs_diff": 0.0,
+   "logits_tokens_bit_identical": 200,
+   "pick_reproduced": "200/200",
+   "per_slot_median_path_m_max_abs_diff": 0.0,
+   "gpu_seconds": 1072.1,
+   "cuda_max_memory_allocated_gb": 1.727,
+   "env": {
+    "REFE_SIM_HZ": "10",
+    "NUPLAN_MAPS_ROOT": "D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0",
+    "REFE_BACKBONE_ROOT": "D:/Projects/TanitAD/data/backbones"
+   },
+   "verdict": "IDENTICAL -- today's path reproduces the stored table bit-for-bit"
+  }
+ },
+ "inputs_only_from": {
+  "015": {
+   "dump": "D:/Projects/TanitAD/data/refe_navtest/proptable/sub200_ep015/slow_copies/gpu_dump.npz",
+   "dump_sha256": "1a3d83e52ff46f4769e594d4f7ad51db7a32a803f23ba884b90a284f2d975930"
+  }
+ },
+ "non_image_inputs_across_snapshots": {
+  "012_vs_013": {
+   "tokens_compared": 200,
+   "ego_vec_max_abs_diff": 0.0,
+   "goal_max_abs_diff": 0.0,
+   "calib_max_abs_diff": 0.0,
+   "ego_vec_tokens_bit_identical": 200
+  },
+  "012_vs_015": {
+   "tokens_compared": 200,
+   "ego_vec_max_abs_diff": 0.0,
+   "goal_max_abs_diff": 0.0,
+   "calib_max_abs_diff": 0.0,
+   "ego_vec_tokens_bit_identical": 200
+  }
+ },
+ "ego_vector_examples": {
+  "fields": {
+   "ego": [
+    "vx",
+    "vy",
+    "ax",
+    "ay",
+    "yaw_rate",
+    "tire_steering_angle",
+    "speed"
+   ],
+   "goal": "2 goal points x (x, y), ego frame, m"
+  },
+  "tokens": [
+   {
+    "token": "014369205e025f0c",
+    "ep012": {
+     "ego": [
+      5.699702,
+      -0.140133,
+      -0.072288,
+      0.212542,
+      0.0,
+      0.0,
+      5.701425
+     ],
+     "goal": [
+      34.1815,
+      1.4924,
+      68.3412,
+      3.3203
+     ]
+    },
+    "ep013": {
+     "ego": [
+      5.699702,
+      -0.140133,
+      -0.072288,
+      0.212542,
+      0.0,
+      0.0,
+      5.701425
+     ],
+     "goal": [
+      34.1815,
+      1.4924,
+      68.3412,
+      3.3203
+     ]
+    },
+    "ep015": {
+     "ego": [
+      5.699702,
+      -0.140133,
+      -0.072288,
+      0.212542,
+      0.0,
+      0.0,
+      5.701425
+     ],
+     "goal": [
+      34.1815,
+      1.4924,
+      68.3412,
+      3.3203
+     ]
+    }
+   },
+   {
+    "token": "026e7b1e0e335625",
+    "ep012": {
+     "ego": [
+      5.61345,
+      -0.088625,
+      -0.746531,
+      -0.063418,
+      0.0,
+      0.0,
+      5.61415
+     ],
+     "goal": [
+      24.6818,
+      -15.1564,
+      14.0384,
+      -47.0632
+     ]
+    },
+    "ep013": {
+     "ego": [
+      5.61345,
+      -0.088625,
+      -0.746531,
+      -0.063418,
+      0.0,
+      0.0,
+      5.61415
+     ],
+     "goal": [
+      24.6818,
+      -15.1564,
+      14.0384,
+      -47.0632
+     ]
+    },
+    "ep015": {
+     "ego": [
+      5.61345,
+      -0.088625,
+      -0.746531,
+      -0.063418,
+      0.0,
+      0.0,
+      5.61415
+     ],
+     "goal": [
+      24.6818,
+      -15.1564,
+      14.0384,
+      -47.0632
+     ]
+    }
+   }
+  ]
+ },
+ "ego_fields_summary_over_tokens": {
+  "vx": {
+   "n_nonzero": 200,
+   "min": 0.0028,
+   "max": 14.2955
+  },
+  "vy": {
+   "n_nonzero": 200,
+   "min": -0.3111,
+   "max": 0.273
+  },
+  "ax": {
+   "n_nonzero": 200,
+   "min": -1.6922,
+   "max": 2.079
+  },
+  "ay": {
+   "n_nonzero": 200,
+   "min": -2.0263,
+   "max": 3.0829
+  },
+  "yaw_rate": {
+   "n_nonzero": 0,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "tire_steering_angle": {
+   "n_nonzero": 0,
+   "min": 0.0,
+   "max": 0.0
+  },
+  "speed": {
+   "n_nonzero": 200,
+   "min": 0.0035,
+   "max": 14.2981
+  }
+ },
+ "ego_fields_summary_note": "fields that are exactly 0.0 on every token carry no information at inference; compare with the training bank before reading anything into it",
+ "fan_shift_per_slot_median_path_m": {
+  "012_to_013": {
+   "mean": 4.329,
+   "min": 2.761,
+   "max": 5.306,
+   "slots_longer_than_3m": 63,
+   "slots_shorter_than_minus_3m": 0
+  }
+ },
+ "verdict": "EVAL PATH UNCHANGED for every replayed snapshot: the fan shift is in the WEIGHTS"
+}

@@ -1,0 +1,292 @@
+{
+ "meta": {
+  "what_this_is": "cross-agreement of tactical_goals.derive (A) vs g_tac_geom (B) on an IDENTICAL poses[T,4] contract and band. Analytic trajectories -- detects disagreement, does NOT settle thresholds on the real corpus.",
+  "hz": 10.0,
+  "key": 10,
+  "n_samples": 100,
+  "band_s_A": [
+   2.0,
+   6.0
+  ],
+  "band_s_B": [
+   2.0,
+   6.0
+  ]
+ },
+ "S1_vocabulary": {
+  "A_lat_tokens": [
+   "ANCHOR_GOAL",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "LAT_UNCONSTRAINED"
+  ],
+  "A_lon_tokens": [
+   "ADAPT_SPEED_FOR_CURVE",
+   "GAP_TARGET",
+   "LON_UNCONSTRAINED",
+   "SPEED_BAND",
+   "STOP_POINT",
+   "TRAFFIC_LIGHT_REACT",
+   "WAIT_FOR_ONCOMING",
+   "YIELD_AT"
+  ],
+  "B_refuses": [
+   "ANCHOR_GOAL",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR",
+   "GAP_TARGET",
+   "SPEED_BAND",
+   "TRAFFIC_LIGHT_REACT",
+   "WAIT_FOR_ONCOMING",
+   "YIELD_AT"
+  ],
+  "B_emittable_default_arm": [
+   "ABSTAIN",
+   "LAT_UNCONSTRAINED",
+   "LON_UNCONSTRAINED",
+   "STOP_POINT"
+  ],
+  "A_lat_refused_by_B": [
+   "ANCHOR_GOAL",
+   "CORRIDOR_OFFSET",
+   "EVADE_IN_CORRIDOR"
+  ],
+  "A_lon_refused_by_B": [
+   "GAP_TARGET",
+   "SPEED_BAND",
+   "TRAFFIC_LIGHT_REACT",
+   "WAIT_FOR_ONCOMING",
+   "YIELD_AT"
+  ],
+  "A_lat_survivors": [
+   "LAT_UNCONSTRAINED"
+  ],
+  "A_lon_survivors": [
+   "ADAPT_SPEED_FOR_CURVE",
+   "LON_UNCONSTRAINED",
+   "STOP_POINT"
+  ]
+ },
+ "S2_behaviour": {
+  "K1_straight_cruise": {
+   "expect": "no STOP_POINT from either producer",
+   "is_control": true,
+   "A": {
+    "lat": "ANCHOR_GOAL",
+    "lon": "SPEED_BAND",
+    "lat_reason": "geometry(goal-point)",
+    "lon_reason": "geometry(held-speed)",
+    "lat_args": {
+     "goal_x_m": 60.0,
+     "goal_y_m": 0.0,
+     "t_reach_s": 6.0
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "LON_UNCONSTRAINED",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": false,
+   "B_stop": false
+  },
+  "K2_decel_to_stop": {
+   "expect": "STOP_POINT from any producer that claims the token",
+   "is_control": true,
+   "A": {
+    "lat": "ANCHOR_GOAL",
+    "lon": "STOP_POINT",
+    "lat_reason": "geometry(goal-point)",
+    "lon_reason": "geometry(stop)",
+    "lat_args": {
+     "goal_x_m": 16.4,
+     "goal_y_m": 0.0,
+     "t_reach_s": 6.0
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "STOP_POINT",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {
+     "arg0": 16.34,
+     "at_arc_m": 16.34
+    }
+   },
+   "lon_match": true,
+   "A_stop": true,
+   "B_stop": true
+  },
+  "K3_creep": {
+   "expect": "degenerate; recorded, NOT scored",
+   "is_control": true,
+   "A": {
+    "lat": "LAT_UNCONSTRAINED",
+    "lon": "STOP_POINT",
+    "lat_reason": "abstain(ego near-stationary over the band)",
+    "lon_reason": "geometry(stop)",
+    "lat_args": {
+     "goal_dist_m": 1.8
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "ABSTAIN",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": true,
+   "B_stop": false
+  },
+  "S1_left_arc": {
+   "expect": "a sustained left turn",
+   "is_control": false,
+   "A": {
+    "lat": "CORRIDOR_OFFSET",
+    "lon": "SPEED_BAND",
+    "lat_reason": "geometry(corridor)",
+    "lon_reason": "geometry(held-speed)",
+    "lat_args": {
+     "lat_offset_m": 21.65,
+     "arc_m": 46.2
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "LON_UNCONSTRAINED",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": false,
+   "B_stop": false
+  },
+  "S2_sharp_junction_turn": {
+   "expect": "junction-scale turn",
+   "is_control": false,
+   "A": {
+    "lat": "ANCHOR_GOAL",
+    "lon": "SPEED_BAND",
+    "lat_reason": "geometry(goal-point)",
+    "lon_reason": "geometry(held-speed)",
+    "lat_args": {
+     "goal_x_m": 2.64,
+     "goal_y_m": 24.65,
+     "t_reach_s": 6.0
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "LON_UNCONSTRAINED",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": false,
+   "B_stop": false
+  },
+  "S3_lane_change": {
+   "expect": "lateral offset then heading recovery",
+   "is_control": false,
+   "A": {
+    "lat": "ANCHOR_GOAL",
+    "lon": "SPEED_BAND",
+    "lat_reason": "geometry(goal-point)",
+    "lon_reason": "geometry(held-speed)",
+    "lat_args": {
+     "goal_x_m": 59.0,
+     "goal_y_m": 6.64,
+     "t_reach_s": 6.0
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "LON_UNCONSTRAINED",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": false,
+   "B_stop": false
+  },
+  "S4_evade_return": {
+   "expect": "in-corridor nudge",
+   "is_control": false,
+   "A": {
+    "lat": "CORRIDOR_OFFSET",
+    "lon": "SPEED_BAND",
+    "lat_reason": "geometry(corridor)",
+    "lon_reason": "geometry(held-speed)",
+    "lat_args": {
+     "lat_offset_m": 1.28,
+     "arc_m": 59.9
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "LON_UNCONSTRAINED",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": false,
+   "B_stop": false
+  },
+  "S5_stop_and_go": {
+   "expect": "brief hold then proceed",
+   "is_control": false,
+   "A": {
+    "lat": "ANCHOR_GOAL",
+    "lon": "STOP_POINT",
+    "lat_reason": "geometry(goal-point)",
+    "lon_reason": "geometry(stop)",
+    "lat_args": {
+     "goal_x_m": 16.38,
+     "goal_y_m": 0.0,
+     "t_reach_s": 6.0
+    },
+    "truncated": false
+   },
+   "B": {
+    "lat": "ABSTAIN",
+    "lon": "ABSTAIN",
+    "lat_reason": "REFUTED 2026-08-22 on real poses (see module docstring): a single-arc ego-geometric corridor reference is inadmissible a",
+    "lon_args": {}
+   },
+   "lon_match": false,
+   "A_stop": true,
+   "B_stop": false
+  }
+ },
+ "controls": {
+  "K1_no_stop": {
+   "A_emitted_stop": false,
+   "B_emitted_stop": false,
+   "pass": true,
+   "note": "a constant-speed straight run has no stop; either TRUE is a defect"
+  },
+  "K2_clear_stop": {
+   "A_emitted_stop": true,
+   "B_emitted_stop": true,
+   "pass": true,
+   "note": "a clean decel-to-zero has a stop; either FALSE is a defect"
+  },
+  "K3_degenerate_recorded_not_scored": false
+ },
+ "agreement": {
+  "lon_axis_scored_n": 7,
+  "lon_axis_agree_n": 1,
+  "lon_axis_agree_frac": 0.1429,
+  "lat_axis": "UNDEFINED -- B abstains on LAT by design (default arm), so there is no LAT comparison to make. This is a DECLARED refusal, not a missing value."
+ }
+}

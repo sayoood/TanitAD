@@ -1,0 +1,171 @@
+================================================================================
+ARM: emao14_30k  ckpt: /home/nvidia/v7tiny/emao14_30k/ckpt.pt
+  n_episodes: 40  n_windows: 6924  mode: rollout+analyze  corpus_key: physicalai-val-0c5f7dac3b11-w120-256x640
+  arm_keys: ['cl', 'ha']
+  ARMS PRESENT: ['cl', 'ha']
+  metric                             cl     ha(hold)      cl-ha
+  ade_dense_m                   14.0688      13.8793     0.1895
+  fde_last_m                    26.2969      26.1307     0.1662
+  LAT_cross_mae_m                1.3105        1.124     0.1865
+  LAT_heading_mae_deg           94.6312      95.1269    -0.4957
+  LON_speed_mae_mps             10.7028      10.9002    -0.1974
+  LON_along_mae_m               13.9025      13.7333     0.1692
+  ECHO / HOLDV0 / VERDICT FIELDS:
+    /arms/cl/four_families/_anti_echo_rule                     Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.
+    /arms/cl/four_families/_anti_echo_summary                  holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.2113) · shuffle=UNAVAILABLE
+    /arms/cl/four_families/longitudinal/anti_echo              {"status": "OK", "block": "taniteval.v0_antiecho", "version": "1.0.0", "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto {"status": "OK", "verdict": "CLEAN", "verdict_reason": "echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establ
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto of the 2381 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto -0.2113
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.2113
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto -0.0363
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.9952
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.2
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.99
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.999
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto CLEAN
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel {"status": "OK", "verdict": "LOSES_TO_HOLDV0", "verdict_reason": "\u26d4 the arm is WORSE than hold-v0 on speed_mae_mps by 10.2192 m/s [7.4371, 13.1021], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.", "admissible": false, "
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel LOSES_TO_HOLDV0
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel ⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 10.2192 m/s [7.4371, 13.1021], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.
+    /arms/ha/four_families/_anti_echo_rule                     Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.
+    /arms/ha/four_families/_anti_echo_summary                  holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.2113) · shuffle=UNAVAILABLE
+    /arms/ha/four_families/longitudinal/anti_echo              {"status": "OK", "block": "taniteval.v0_antiecho", "version": "1.0.0", "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto {"status": "OK", "verdict": "CLEAN", "verdict_reason": "echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establ
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto of the 2381 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto -0.2113
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.2113
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto -0.0878
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.9952
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.2
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.99
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.999
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto CLEAN
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel {"status": "OK", "verdict": "LOSES_TO_HOLDV0", "verdict_reason": "\u26d4 the arm is WORSE than hold-v0 on speed_mae_mps by 10.4167 m/s [7.5806, 13.3338], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.", "admissible": false, "
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel LOSES_TO_HOLDV0
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel ⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 10.4167 m/s [7.5806, 13.3338], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.
+================================================================================
+ARM: emao14_30k_tauramp  ckpt: /home/nvidia/v7tiny/emao14_30k_tauramp/ckpt.pt
+  n_episodes: 40  n_windows: 6924  mode: rollout+analyze  corpus_key: physicalai-val-0c5f7dac3b11-w120-256x640
+  arm_keys: ['cl', 'ha']
+  ARMS PRESENT: ['cl', 'ha']
+  metric                             cl     ha(hold)      cl-ha
+  ade_dense_m                   13.8645      13.8057     0.0588
+  fde_last_m                    26.0758       25.951     0.1248
+  LAT_cross_mae_m                1.0722       1.1704    -0.0982
+  LAT_heading_mae_deg           94.1846      92.0627     2.1219
+  LON_speed_mae_mps             10.8934       10.755     0.1384
+  LON_along_mae_m               13.7387      13.6572     0.0815
+  ECHO / HOLDV0 / VERDICT FIELDS:
+    /arms/cl/four_families/_anti_echo_rule                     Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.
+    /arms/cl/four_families/_anti_echo_summary                  holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.2113) · shuffle=UNAVAILABLE
+    /arms/cl/four_families/longitudinal/anti_echo              {"status": "OK", "block": "taniteval.v0_antiecho", "version": "1.0.0", "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto {"status": "OK", "verdict": "CLEAN", "verdict_reason": "echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establ
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto of the 2381 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto -0.2113
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.2113
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto -0.0443
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.9952
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.2
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.99
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.999
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto CLEAN
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel {"status": "OK", "verdict": "LOSES_TO_HOLDV0", "verdict_reason": "\u26d4 the arm is WORSE than hold-v0 on speed_mae_mps by 10.4098 m/s [7.6189, 13.2948], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.", "admissible": false, "
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel LOSES_TO_HOLDV0
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel ⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 10.4098 m/s [7.6189, 13.2948], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.
+    /arms/ha/four_families/_anti_echo_rule                     Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.
+    /arms/ha/four_families/_anti_echo_summary                  holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.2113) · shuffle=UNAVAILABLE
+    /arms/ha/four_families/longitudinal/anti_echo              {"status": "OK", "block": "taniteval.v0_antiecho", "version": "1.0.0", "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto {"status": "OK", "verdict": "CLEAN", "verdict_reason": "echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establ
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto of the 2381 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto -0.2113
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.2113
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.024
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.9952
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.2
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.99
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.999
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto CLEAN
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel {"status": "OK", "verdict": "LOSES_TO_HOLDV0", "verdict_reason": "\u26d4 the arm is WORSE than hold-v0 on speed_mae_mps by 10.2715 m/s [7.4865, 13.1589], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.", "admissible": false, "
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel LOSES_TO_HOLDV0
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel ⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 10.2715 m/s [7.4865, 13.1589], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.
+================================================================================
+ARM: o14fut30k  ckpt: /home/nvidia/v7tiny/o14fut30k/ckpt.pt
+  n_episodes: 40  n_windows: 6924  mode: rollout+analyze  corpus_key: physicalai-val-0c5f7dac3b11-w120-256x640
+  arm_keys: ['cl', 'ha']
+  ARMS PRESENT: ['cl', 'ha']
+  metric                             cl     ha(hold)      cl-ha
+  ade_dense_m                   14.2926       14.116     0.1766
+  fde_last_m                    26.6901      26.4422     0.2479
+  LAT_cross_mae_m                1.4609       1.4262     0.0347
+  LAT_heading_mae_deg           99.4073      96.3868     3.0205
+  LON_speed_mae_mps             10.5069      10.4943     0.0126
+  LON_along_mae_m               14.0701      13.9012     0.1689
+  ECHO / HOLDV0 / VERDICT FIELDS:
+    /arms/cl/four_families/_anti_echo_rule                     Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.
+    /arms/cl/four_families/_anti_echo_summary                  holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.2113) · shuffle=UNAVAILABLE
+    /arms/cl/four_families/longitudinal/anti_echo              {"status": "OK", "block": "taniteval.v0_antiecho", "version": "1.0.0", "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto {"status": "OK", "verdict": "CLEAN", "verdict_reason": "echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establ
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto of the 2381 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto -0.2113
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.2113
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto -0.1367
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.9952
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.2
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.99
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto 0.999
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto CLEAN
+    /arms/cl/four_families/longitudinal/anti_echo/copy_detecto echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel {"status": "OK", "verdict": "LOSES_TO_HOLDV0", "verdict_reason": "\u26d4 the arm is WORSE than hold-v0 on speed_mae_mps by 10.0233 m/s [7.3038, 12.8584], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.", "admissible": false, "
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel LOSES_TO_HOLDV0
+    /arms/cl/four_families/longitudinal/anti_echo/holdv0_basel ⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 10.0233 m/s [7.3038, 12.8584], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.
+    /arms/ha/four_families/_anti_echo_rule                     Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. ⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.
+    /arms/ha/four_families/_anti_echo_summary                  holdv0=LOSES_TO_HOLDV0 · copy_detector=CLEAN (echo_index 0.0000 vs GT 0.2113) · shuffle=UNAVAILABLE
+    /arms/ha/four_families/longitudinal/anti_echo              {"status": "OK", "block": "taniteval.v0_antiecho", "version": "1.0.0", "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto {"status": "OK", "verdict": "CLEAN", "verdict_reason": "echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establ
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto of the 2381 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.0
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto -0.2113
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.2113
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto -0.0888
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.9952
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.1
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.2
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.99
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto 0.999
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto CLEAN
+    /arms/ha/four_families/longitudinal/anti_echo/copy_detecto echo_index_excess -0.2113 < 0.2: the arm is not measurably flatter than the human on these windows. ⚠️ CLEAN here is NOT an admissibility verdict — that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel {"status": "OK", "verdict": "LOSES_TO_HOLDV0", "verdict_reason": "\u26d4 the arm is WORSE than hold-v0 on speed_mae_mps by 10.0107 m/s [7.3147, 12.8452], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.", "admissible": false, "
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel LOSES_TO_HOLDV0
+    /arms/ha/four_families/longitudinal/anti_echo/holdv0_basel ⛔ the arm is WORSE than hold-v0 on speed_mae_mps by 10.0107 m/s [7.3147, 12.8452], separated AGAINST it. A 0-parameter copy of the arm's own input outperforms the arm. No longitudinal claim is admissible.

@@ -1,0 +1,56 @@
+{
+ "item": "eval",
+ "pass": true,
+ "problems": [],
+ "record": {
+  "B": {
+   "ckpt": "/root/dscale10k/pilot/pB/ckpt_last.pt",
+   "strict_load_ok": true,
+   "cfg_equal_built": true,
+   "n_params": 7214495,
+   "n_state_mismatch_after_load": 0,
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "grid_sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "obd_ctl_grid_sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "windows_len_check": 2399
+  },
+  "U": {
+   "ckpt": "/root/dscale10k/pilot/pU/ckpt_last.pt",
+   "strict_load_ok": true,
+   "cfg_equal_built": true,
+   "n_params": 7214495,
+   "n_state_mismatch_after_load": 0,
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "grid_sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "obd_ctl_grid_sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "windows_len_check": 2399
+  }
+ },
+ "regression": [
+  {
+   "arm": "eval_cfg_differs",
+   "red": true,
+   "problems": [
+    "the eval loader's cfg differs from the trainer's built cfg"
+   ]
+  },
+  {
+   "arm": "eval_grid_one_window_dropped",
+   "red": true,
+   "problems": [
+    "eval grid reads 2398 windows / 141 episodes, expected 2399 / 141",
+    "the eval grid bytes differ from the grid recorded in the OBD-CTL bank of record"
+   ]
+  },
+  {
+   "arm": "state_dict_missing_one_key",
+   "red": true,
+   "problems": [
+    "strict load refused a state dict with a missing key"
+   ]
+  }
+ ],
+ "at": "2026-11-16T22:14:21Z"
+}

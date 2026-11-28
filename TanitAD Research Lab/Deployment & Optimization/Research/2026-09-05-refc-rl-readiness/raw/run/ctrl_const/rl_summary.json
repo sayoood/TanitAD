@@ -1,0 +1,102 @@
+{
+ "done": true,
+ "run": "refcv3-40284-rlmin-ctrl_const",
+ "method": "grpo",
+ "steps": 200,
+ "counters": {
+  "steps": 200,
+  "windows_scored": 400,
+  "samples_scored": 204800,
+  "reward_evals": 200,
+  "advantage_evals": 200,
+  "optimizer_steps": 200,
+  "components_fired": {
+   "collision": 41,
+   "comfort": 200,
+   "feasibility": 200,
+   "headway": 96,
+   "progress": 200
+  }
+ },
+ "freeze_report": {
+  "total_params": 107032901,
+  "trainable_params": 9206032,
+  "frozen_params": 97826869,
+  "trainable_fraction": 0.08601123499399498,
+  "n_trainable_tensors": 71,
+  "trainable_names_head": [
+   "core.decoder.feat_proj.weight",
+   "core.decoder.feat_proj.bias",
+   "core.decoder.traj_proj.weight",
+   "core.decoder.traj_proj.bias",
+   "core.decoder.cond_proj.weight",
+   "core.decoder.cond_proj.bias",
+   "core.decoder.time_embed.weight",
+   "core.decoder.layers.0.norm_q.weight",
+   "core.decoder.layers.0.norm_q.bias",
+   "core.decoder.layers.0.cross.in_proj_weight",
+   "core.decoder.layers.0.cross.in_proj_bias",
+   "core.decoder.layers.0.cross.out_proj.weight"
+  ],
+  "trainable_prefixes": [
+   "core.decoder"
+  ],
+  "forbidden_prefixes": [
+   "scorer",
+   "conf_head",
+   "phi_tac",
+   "str_goal_head",
+   "gstr_embed",
+   "gstr_film",
+   "tac_goal_head",
+   "tac_latent_proj",
+   "nav_inject",
+   "core.encoder",
+   "core.strategic",
+   "core.aux",
+   "core.route",
+   "core.maneuver"
+  ],
+  "exclude_prefixes": [
+   "core.decoder.conf_head",
+   "core.decoder.lat_to_anchor",
+   "core.decoder.lon_to_anchor",
+   "core.decoder.maneuver_to_anchor",
+   "core.decoder.route_to_anchor",
+   "core.decoder.cons_gate",
+   "core.decoder.goal_gate",
+   "core.decoder.goal_dist_gate",
+   "core.decoder.lan_gate"
+  ],
+  "excluded_names": [
+   "core.decoder.conf_head.weight",
+   "core.decoder.conf_head.bias",
+   "core.decoder.lat_to_anchor.weight",
+   "core.decoder.lon_to_anchor.weight"
+  ],
+  "freeze_trunk": true
+ },
+ "train_mode_forward": false,
+ "reward_audit": {
+  "verdict": "clean",
+  "flagged": false,
+  "inconclusive": false,
+  "dead_components": [],
+  "reason": "no degenerate policy in the panel beats the sane reference (this is necessary, NOT sufficient \u2014 the panel is fixed and finite, so it bounds the claim)",
+  "reference": 0.0,
+  "scores": {
+   "bullet_straight": 0.0,
+   "frozen": 0.0,
+   "teleport": 0.0,
+   "spinner": 0.0,
+   "shaky": 0.0
+  }
+ },
+ "final_loss": -1.8633285760879517,
+ "veto_rate_mean": 0.0896826171875,
+ "frac_above_bar_mean": null,
+ "use_gt_bar": false,
+ "noise_mode": "two_scalar",
+ "_tier": "T0 training-side; capability claims are T1 only",
+ "_evidence_class": "MEASURED (ours)"
+}

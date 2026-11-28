@@ -1,0 +1,102 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box CPU, GPU hidden)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_spec": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-p2-probe-leak-audit/SPEC.md",
+ "_generated_local": "2026-09-05 23:34:47",
+ "torch": "2.11.0+cu128",
+ "cuda_available": false,
+ "cuda_visible_devices": "-1",
+ "subcommand": "drift (R3)",
+ "corpus": "C:\\Users\\Admin\\tanitad-caches\\mm-e19-assets-20260901\\sp2\\cache\\physicalai-val130-heldout",
+ "K": 4,
+ "band": [
+  0,
+  8
+ ],
+ "helpers": {
+  "rangeprobe_rff": "3f3c4962bb9169198748ca96dc9494ae",
+  "panel_kfold": "53443ddc12fdc028fae249f255054b78"
+ },
+ "targets": {
+  "true": "dz = z_{t+K} - z_t (latentmotion.py:159)",
+  "endpoint_shuffled": "dz' = z_{pi(t)+K} - z_t, pi a within-clip permutation of the FUTURE endpoint only (start kept) \u2014 the class-(ii) arithmetic control",
+  "time_shuffled": "the banked control: rows of the projected target permuted within clip (latentmotion.py:272)"
+ },
+ "arms": {
+  "postrain30k_freeze": {
+   "per_direction": {
+    "0": {
+     "var_share": 0.1138,
+     "r_true": 0.4106,
+     "r_endpoint_shuffled": 0.4157,
+     "r_time_shuffled": 0.0087
+    },
+    "1": {
+     "var_share": 0.0804,
+     "r_true": 0.4662,
+     "r_endpoint_shuffled": 0.5588,
+     "r_time_shuffled": 0.0193
+    },
+    "2": {
+     "var_share": 0.071,
+     "r_true": 0.4462,
+     "r_endpoint_shuffled": 0.4772,
+     "r_time_shuffled": -0.0194
+    },
+    "3": {
+     "var_share": 0.0634,
+     "r_true": 0.3593,
+     "r_endpoint_shuffled": 0.3898,
+     "r_time_shuffled": -0.0057
+    },
+    "4": {
+     "var_share": 0.0492,
+     "r_true": 0.3666,
+     "r_endpoint_shuffled": 0.3824,
+     "r_time_shuffled": -0.005
+    },
+    "5": {
+     "var_share": 0.0433,
+     "r_true": 0.3479,
+     "r_endpoint_shuffled": 0.4551,
+     "r_time_shuffled": 0.0129
+    },
+    "6": {
+     "var_share": 0.0409,
+     "r_true": 0.4093,
+     "r_endpoint_shuffled": 0.5063,
+     "r_time_shuffled": -0.0014
+    },
+    "7": {
+     "var_share": 0.035,
+     "r_true": 0.3191,
+     "r_endpoint_shuffled": 0.4042,
+     "r_time_shuffled": -0.0057
+    }
+   },
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\v7tiny_postrain30k_freeze\\ckpt.pt",
+   "md5": "5f5e5c92cd8fb3dc92f7b38580149689",
+   "step": 30000,
+   "n_clips": 80,
+   "n_rows": 7680,
+   "drift_r_true_minus_timeshuf": 0.3902,
+   "t_true_vs_timeshuf_banked_form": 32.28,
+   "arithmetic_control_r_endpoint_shuffled": 0.4487,
+   "arithmetic_control_t_vs_timeshuf": 42.94,
+   "share_of_drift_that_is_arithmetic": 1.1488,
+   "t_true_vs_endpoint_shuffled": -4.72,
+   "banked_reference": {
+    "rdw8p30k_k4_band0_8": {
+     "r": 0.6718,
+     "t": 134.84
+    },
+    "postrain30k_k4_band0_8_reread_2026-09-02": {
+     "r": 0.6674,
+     "t": 146.85
+    }
+   }
+  }
+ },
+ "_tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "_seconds": 2613.0
+}

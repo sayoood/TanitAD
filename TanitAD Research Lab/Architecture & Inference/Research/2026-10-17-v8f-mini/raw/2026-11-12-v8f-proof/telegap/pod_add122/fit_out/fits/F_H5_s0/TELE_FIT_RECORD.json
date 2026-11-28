@@ -1,0 +1,98 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD122",
+ "tool": "tele_fit.py",
+ "tier": "T0",
+ "arm": "F",
+ "head": "H5",
+ "seed": 0,
+ "permute_labels": false,
+ "n_win": 4,
+ "n_tok": 260,
+ "windows": [
+  "W32",
+  "W16",
+  "T8",
+  "T4"
+ ],
+ "n_samples": {
+  "fit": {
+   "total": 28483,
+   "kept": 28336,
+   "dropped": 147
+  },
+  "sel": {
+   "total": 2810,
+   "kept": 2796,
+   "dropped": 14
+  }
+ },
+ "crop_fit_path": "/workspace/v8proof/cropread/kit/fit/crop_fit.py",
+ "crop_fit_sha256": "61bf2f4e8e7ec61f16ddc7e50e5f010749d0750bb05721c26e3fdaeeb7b3c13d",
+ "crop_dump_sha256": "b892ef27f3c3ae51efc9e89144b4641eca7b580ba176138dfd0fb9636a30097b",
+ "module_values_changed": [
+  {
+   "name": "N_WIN",
+   "before": "2",
+   "after": "4"
+  },
+  {
+   "name": "N_TOK",
+   "before": "130",
+   "after": "260"
+  },
+  {
+   "name": "ARMS",
+   "before": [
+    "D",
+    "B"
+   ],
+   "after": [
+    "D",
+    "B",
+    "F"
+   ]
+  },
+  {
+   "name": "TokenStore",
+   "before": "TokenStore",
+   "after": "arm_values.<locals>._Store"
+  },
+  {
+   "name": "build_samples",
+   "before": "build_samples",
+   "after": "make_wrapped_builder.<locals>.build_samples"
+  }
+ ],
+ "module_values_restored": true,
+ "wide_tok_dir": "/workspace/v8proof/cropread/enc_out/tok/D",
+ "tele_tok_dir": "/workspace/v8proof/telegap/enc_out/tok_T",
+ "match_dir": "/workspace/v8proof/telegap/enc_out/match",
+ "out_root": "/workspace/v8proof/telegap/fit_out",
+ "argv": [
+  "/workspace/v8proof/telegap/kit_fit/tele_fit.py",
+  "--arm",
+  "F",
+  "--head",
+  "H5",
+  "--seed",
+  "0",
+  "--wide-tok-dir",
+  "/workspace/v8proof/cropread/enc_out/tok/D",
+  "--tele-tok-dir",
+  "/workspace/v8proof/telegap/enc_out/tok_T",
+  "--match-dir",
+  "/workspace/v8proof/telegap/enc_out/match",
+  "--out-root",
+  "/workspace/v8proof/telegap/fit_out",
+  "--kit-fit",
+  "/workspace/v8proof/cropread/kit/fit",
+  "--device",
+  "cuda",
+  "--lists-dir",
+  "/workspace/v8proof/cropread/run1/lists",
+  "--join-train",
+  "/workspace/v8proof/data/inputs/join_train.npz"
+ ],
+ "seconds": 1303.6958367824554,
+ "finished_utc": "2026-11-22T23:37:47Z"
+}

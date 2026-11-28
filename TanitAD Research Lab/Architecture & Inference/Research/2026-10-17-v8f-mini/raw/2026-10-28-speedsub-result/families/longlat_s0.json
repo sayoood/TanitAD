@@ -1,0 +1,619 @@
+{
+ "schema": "speedsub-longlat-v1",
+ "prefix": "speedsub",
+ "arm": "ego",
+ "seed": 0,
+ "contrast": "A - B, lower is better on every row",
+ "tier": "T1-class open loop (own held outputs; no recorded future action); gt arm = T0 ceiling only",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0, on episodes (141); answers 'another draw of EPISODES' only (H-ESTIM-SEED-1)",
+ "row_sources": {
+  "t1k_read.py": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-t1kin-hacc/t1k_read.py",
+   "rev": "e7ea20d1",
+   "sha256": "5610114d3e09501347ed0ac65e44790eb2954eb5d5b703af089a64e845dbf5e4"
+  },
+  "t1klc_read.py": {
+   "path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-t1-latcond/t1klc_read.py",
+   "rev": "e7ea20d1",
+   "sha256": "9a5623e5f737677e6fe0cf6df41c3588b11282423e27008830a7914253f7a7ca"
+  }
+ },
+ "taniteval_four_families_sha256": "968393297a6a0914466e92a30bba7eb8f4b745aec758fa9201ee226e153544df",
+ "context_sha256": {
+  "eval_grid_windows.json": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+  "eval141_kin.npz": "be57e283c3f037abd60d49814e84b05124a9667586894dfc6d1c3ecd191ba203",
+  "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"
+ },
+ "n_windows": 2399,
+ "contrasts": {
+  "ego-own": {
+   "ade2_m": {
+    "family": "ADE",
+    "label": "ADE2",
+    "delta": 0.008,
+    "lo": -0.0033,
+    "hi": 0.0181,
+    "separated": false,
+    "mean_a": 0.2894121435413159,
+    "mean_b": 0.28137125279577396,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "ade6_m": {
+    "family": "ADE",
+    "label": "ADE6",
+    "delta": -0.129,
+    "lo": -0.2107,
+    "hi": -0.0548,
+    "separated": true,
+    "mean_a": 2.068692213739878,
+    "mean_b": 2.1976613820167783,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "speed_mae_mps": {
+    "family": "LONGITUDINAL",
+    "label": "speed MAE",
+    "delta": -0.0662,
+    "lo": -0.1122,
+    "hi": -0.0245,
+    "separated": true,
+    "mean_a": 0.9839943096994868,
+    "mean_b": 1.0501688377901712,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "along_mae_m": {
+    "family": "LONGITUDINAL",
+    "label": "along-track MAE",
+    "delta": -0.1403,
+    "lo": -0.2266,
+    "hi": -0.0641,
+    "separated": true,
+    "mean_a": 1.6822680884717065,
+    "mean_b": 1.8225371597643056,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "accel_mae_mps2": {
+    "family": "LONGITUDINAL",
+    "label": "accel MAE",
+    "delta": -0.0497,
+    "lo": -0.0866,
+    "hi": -0.0194,
+    "separated": true,
+    "mean_a": 1.0402895645206567,
+    "mean_b": 1.090016091243817,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "heading_mae_deg": {
+    "family": "LATERAL",
+    "label": "heading MAE",
+    "delta": -0.1515,
+    "lo": -0.29,
+    "hi": -0.0303,
+    "separated": true,
+    "mean_a": 4.63961348159095,
+    "mean_b": 4.79108757131632,
+    "n_windows": 2350,
+    "n_episodes": 141
+   },
+   "yaw_rate_mae_degps": {
+    "family": "LATERAL",
+    "label": "yaw-rate MAE",
+    "delta": -0.2434,
+    "lo": -0.6091,
+    "hi": 0.0725,
+    "separated": false,
+    "mean_a": 8.433332023666528,
+    "mean_b": 8.676743075171725,
+    "n_windows": 2328,
+    "n_episodes": 141
+   },
+   "curvature_mae_1pm": {
+    "family": "LATERAL",
+    "label": "curvature MAE",
+    "delta": -0.0041,
+    "lo": -0.0107,
+    "hi": 0.0018,
+    "separated": false,
+    "mean_a": 0.08246926242107097,
+    "mean_b": 0.08654731302712905,
+    "n_windows": 2328,
+    "n_episodes": 141
+   },
+   "cross_mae_m": {
+    "family": "LATERAL",
+    "label": "cross-track MAE",
+    "delta": 0.002,
+    "lo": -0.0112,
+    "hi": 0.0143,
+    "separated": false,
+    "mean_a": 0.7818685994968174,
+    "mean_b": 0.7798719445281069,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "L1_lat_accel_mae_mps2": {
+    "family": "LATERAL",
+    "label": "L1 lateral-accel MAE",
+    "delta": -0.0096,
+    "lo": -0.0165,
+    "hi": -0.0028,
+    "separated": true,
+    "mean_a": 0.7237558189540785,
+    "mean_b": 0.7333653768241526,
+    "n_windows": 2328,
+    "n_episodes": 141
+   },
+   "L2_curvature_mae_fast_1pm": {
+    "family": "LATERAL",
+    "label": "L2 curvature MAE (GT >= 5.2 m/s)",
+    "delta": -0.0107,
+    "lo": -0.0319,
+    "hi": 0.0003,
+    "separated": false,
+    "mean_a": 0.029054162524509375,
+    "mean_b": 0.03974513235895725,
+    "n_windows": 2096,
+    "n_episodes": 135
+   },
+   "L3_yaw_rate_mae_fast_degps": {
+    "family": "LATERAL",
+    "label": "L3 yaw-rate MAE (GT >= 5.2 m/s)",
+    "delta": -0.5435,
+    "lo": -1.4547,
+    "hi": -0.0667,
+    "separated": true,
+    "mean_a": 5.4847773440302445,
+    "mean_b": 6.02830013553002,
+    "n_windows": 2096,
+    "n_episodes": 135
+   }
+  },
+  "gt-own": {
+   "ade2_m": {
+    "family": "ADE",
+    "label": "ADE2",
+    "delta": -0.0109,
+    "lo": -0.0235,
+    "hi": 0.0011,
+    "separated": false,
+    "mean_a": 0.27043404484228695,
+    "mean_b": 0.28137125279577396,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "ade6_m": {
+    "family": "ADE",
+    "label": "ADE6",
+    "delta": -0.7164,
+    "lo": -0.8182,
+    "hi": -0.6234,
+    "separated": true,
+    "mean_a": 1.4812946783701129,
+    "mean_b": 2.1976613820167783,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "speed_mae_mps": {
+    "family": "LONGITUDINAL",
+    "label": "speed MAE",
+    "delta": -0.3544,
+    "lo": -0.4059,
+    "hi": -0.3064,
+    "separated": true,
+    "mean_a": 0.69576686519565,
+    "mean_b": 1.0501688377901712,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "along_mae_m": {
+    "family": "LONGITUDINAL",
+    "label": "along-track MAE",
+    "delta": -0.7644,
+    "lo": -0.8685,
+    "hi": -0.6692,
+    "separated": true,
+    "mean_a": 1.0581501431437104,
+    "mean_b": 1.8225371597643056,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "accel_mae_mps2": {
+    "family": "LONGITUDINAL",
+    "label": "accel MAE",
+    "delta": -0.0536,
+    "lo": -0.097,
+    "hi": -0.014,
+    "separated": true,
+    "mean_a": 1.036376210942546,
+    "mean_b": 1.090016091243817,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "heading_mae_deg": {
+    "family": "LATERAL",
+    "label": "heading MAE",
+    "delta": 0.0808,
+    "lo": -0.1576,
+    "hi": 0.3139,
+    "separated": false,
+    "mean_a": 4.867830256320649,
+    "mean_b": 4.787037764305335,
+    "n_windows": 2349,
+    "n_episodes": 141
+   },
+   "yaw_rate_mae_degps": {
+    "family": "LATERAL",
+    "label": "yaw-rate MAE",
+    "delta": 0.057,
+    "lo": -0.4042,
+    "hi": 0.4881,
+    "separated": false,
+    "mean_a": 8.731942278329182,
+    "mean_b": 8.67493619948661,
+    "n_windows": 2329,
+    "n_episodes": 141
+   },
+   "curvature_mae_1pm": {
+    "family": "LATERAL",
+    "label": "curvature MAE",
+    "delta": 0.0005,
+    "lo": -0.0122,
+    "hi": 0.0122,
+    "separated": false,
+    "mean_a": 0.08706194468111364,
+    "mean_b": 0.08656158407600432,
+    "n_windows": 2329,
+    "n_episodes": 141
+   },
+   "cross_mae_m": {
+    "family": "LATERAL",
+    "label": "cross-track MAE",
+    "delta": -0.0378,
+    "lo": -0.0601,
+    "hi": -0.0183,
+    "separated": true,
+    "mean_a": 0.7420884350618289,
+    "mean_b": 0.7798719445281069,
+    "n_windows": 2399,
+    "n_episodes": 141
+   },
+   "L1_lat_accel_mae_mps2": {
+    "family": "LATERAL",
+    "label": "L1 lateral-accel MAE",
+    "delta": -0.0044,
+    "lo": -0.012,
+    "hi": 0.0027,
+    "separated": false,
+    "mean_a": 0.7286409666225144,
+    "mean_b": 0.7330846814733148,
+    "n_windows": 2329,
+    "n_episodes": 141
+   },
+   "L2_curvature_mae_fast_1pm": {
+    "family": "LATERAL",
+    "label": "L2 curvature MAE (GT >= 5.2 m/s)",
+    "delta": -0.0158,
+    "lo": -0.0381,
+    "hi": -0.0042,
+    "separated": true,
+    "mean_a": 0.024142222714642052,
+    "mean_b": 0.039964504790899524,
+    "n_windows": 2097,
+    "n_episodes": 135
+   },
+   "L3_yaw_rate_mae_fast_degps": {
+    "family": "LATERAL",
+    "label": "L3 yaw-rate MAE (GT >= 5.2 m/s)",
+    "delta": -0.7495,
+    "lo": -1.6944,
+    "hi": -0.2279,
+    "separated": true,
+    "mean_a": 5.291009126184653,
+    "mean_b": 6.040522033181402,
+    "n_windows": 2097,
+    "n_episodes": 135
+   }
+  }
+ },
+ "controls": {
+  "LL-1_identity": {
+   "ok": true,
+   "n_rows": 12,
+   "not_zero": []
+  },
+  "LL-2_ade6_equals_READ_json": {
+   "ok": true,
+   "modes": {
+    "ego": {
+     "mine": [
+      -0.129,
+      -0.2107,
+      -0.0548
+     ],
+     "READ.json": [
+      -0.129,
+      -0.2107,
+      -0.0548
+     ],
+     "ok": true
+    },
+    "egoshuf": {
+     "mine": [
+      6.7181,
+      5.6709,
+      7.8141
+     ],
+     "READ.json": [
+      6.7181,
+      5.6709,
+      7.8141
+     ],
+     "ok": true
+    },
+    "gt": {
+     "mine": [
+      -0.7164,
+      -0.8182,
+      -0.6234
+     ],
+     "READ.json": [
+      -0.7164,
+      -0.8182,
+      -0.6234
+     ],
+     "ok": true
+    }
+   }
+  },
+  "LL-3_reproduces_dump_family_values": {
+   "ok": true,
+   "n_checked": 28,
+   "max_abs_dev": 4.9856856289665075e-05,
+   "checks": [
+    {
+     "mode": "own",
+     "row": "speed_mae_mps",
+     "mine": 1.0501688377901712,
+     "dump": 1.0502,
+     "abs_dev": 3.1162209828794474e-05,
+     "ok": true
+    },
+    {
+     "mode": "own",
+     "row": "along_mae_m",
+     "mine": 1.8225371597643056,
+     "dump": 1.8225,
+     "abs_dev": 3.715976430562762e-05,
+     "ok": true
+    },
+    {
+     "mode": "own",
+     "row": "accel_mae_mps2",
+     "mine": 1.090016091243817,
+     "dump": 1.09,
+     "abs_dev": 1.6091243816962475e-05,
+     "ok": true
+    },
+    {
+     "mode": "own",
+     "row": "cross_mae_m",
+     "mine": 0.7798719445281069,
+     "dump": 0.7799,
+     "abs_dev": 2.8055471893106976e-05,
+     "ok": true
+    },
+    {
+     "mode": "own",
+     "row": "heading_mae_deg (pooled)",
+     "mine": 3.984349597817727,
+     "dump": 3.9843,
+     "abs_dev": 4.9597817726620974e-05,
+     "ok": true
+    },
+    {
+     "mode": "own",
+     "row": "yaw_rate_mae_degps (pooled)",
+     "mine": 6.686798688097301,
+     "dump": 6.6868,
+     "abs_dev": 1.3119026984753646e-06,
+     "ok": true
+    },
+    {
+     "mode": "own",
+     "row": "curvature_mae_1pm (pooled)",
+     "mine": 0.04894228151945384,
+     "dump": 0.048942,
+     "abs_dev": 2.8151945383886323e-07,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "speed_mae_mps",
+     "mine": 0.9839943096994868,
+     "dump": 0.984,
+     "abs_dev": 5.690300513228053e-06,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "along_mae_m",
+     "mine": 1.6822680884717065,
+     "dump": 1.6823,
+     "abs_dev": 3.19115282934046e-05,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "accel_mae_mps2",
+     "mine": 1.0402895645206567,
+     "dump": 1.0403,
+     "abs_dev": 1.0435479343318121e-05,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "cross_mae_m",
+     "mine": 0.7818685994968174,
+     "dump": 0.7819,
+     "abs_dev": 3.140050318262144e-05,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "heading_mae_deg (pooled)",
+     "mine": 3.869667762239114,
+     "dump": 3.8697,
+     "abs_dev": 3.22377608861224e-05,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "yaw_rate_mae_degps (pooled)",
+     "mine": 6.255708546866934,
+     "dump": 6.2557,
+     "abs_dev": 8.546866934189268e-06,
+     "ok": true
+    },
+    {
+     "mode": "ego",
+     "row": "curvature_mae_1pm (pooled)",
+     "mine": 0.041111298848083254,
+     "dump": 0.041111,
+     "abs_dev": 2.9884808325220114e-07,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "speed_mae_mps",
+     "mine": 0.69576686519565,
+     "dump": 0.6958,
+     "abs_dev": 3.313480434996574e-05,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "along_mae_m",
+     "mine": 1.0581501431437104,
+     "dump": 1.0582,
+     "abs_dev": 4.9856856289665075e-05,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "accel_mae_mps2",
+     "mine": 1.036376210942546,
+     "dump": 1.0364,
+     "abs_dev": 2.3789057453926787e-05,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "cross_mae_m",
+     "mine": 0.7420884350618289,
+     "dump": 0.7421,
+     "abs_dev": 1.1564938171115813e-05,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "heading_mae_deg (pooled)",
+     "mine": 3.915455077196218,
+     "dump": 3.9155,
+     "abs_dev": 4.492280378221025e-05,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "yaw_rate_mae_degps (pooled)",
+     "mine": 6.754883677002863,
+     "dump": 6.7549,
+     "abs_dev": 1.6322997137052653e-05,
+     "ok": true
+    },
+    {
+     "mode": "gt",
+     "row": "curvature_mae_1pm (pooled)",
+     "mine": 0.050995180639786857,
+     "dump": 0.050995,
+     "abs_dev": 1.806397868578391e-07,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "speed_mae_mps",
+     "mine": 3.9186794806838736,
+     "dump": 3.9187,
+     "abs_dev": 2.0519316126232923e-05,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "along_mae_m",
+     "mine": 8.60753293824977,
+     "dump": 8.6075,
+     "abs_dev": 3.293824977035342e-05,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "accel_mae_mps2",
+     "mine": 2.296268957681629,
+     "dump": 2.2963,
+     "abs_dev": 3.104231837092186e-05,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "cross_mae_m",
+     "mine": 1.1162399164236552,
+     "dump": 1.1162,
+     "abs_dev": 3.991642365508419e-05,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "heading_mae_deg (pooled)",
+     "mine": 9.915990464472276,
+     "dump": 9.916,
+     "abs_dev": 9.535527723869563e-06,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "yaw_rate_mae_degps (pooled)",
+     "mine": 15.06166543656362,
+     "dump": 15.0617,
+     "abs_dev": 3.45634363796421e-05,
+     "ok": true
+    },
+    {
+     "mode": "egoshuf",
+     "row": "curvature_mae_1pm (pooled)",
+     "mine": 0.13075870838436537,
+     "dump": 0.130759,
+     "abs_dev": 2.9161563461221895e-07,
+     "ok": true
+    }
+   ]
+  }
+ },
+ "unavailable": {
+  "distance_keeping": {
+   "status": "UNAVAILABLE",
+   "n": 0,
+   "reason": "no lead-agent track supplied \u2014 pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass."
+  },
+  "anti_echo": {
+   "status": "UNAVAILABLE",
+   "n": 0,
+   "n_windows_available": 2399,
+   "reason": "no ego speed at t0 in the window dict. Tried, in order: v0; speed; lead.speeds (each must be a finite [n=2399] array). \u26d4 v0 is NOT imputed from gt/pred \u2014 the first GT step is a FUTURE displacement and deriving v0 from it would make the anti-echo controls unfalsifiable. Supply win['v0'] (rollout.collect already publishes win['speed']). Not supplying it is a WORK ITEM, not a pass."
+  },
+  "same_in_all_dumps_of_this_seed": true
+ },
+ "controls_ok": true
+}

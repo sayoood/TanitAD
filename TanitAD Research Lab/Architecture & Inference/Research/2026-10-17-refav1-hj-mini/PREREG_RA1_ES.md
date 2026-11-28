@@ -1,0 +1,278 @@
+# PREREG_RA1_ES — does a shorter training budget fix RA-1's memorisation, and with it the A1x instrument?
+
+**Written 2026-10-18, AFTER the compliant RA-1 verdict and BEFORE any sweep run.** This is a new, exploratory follow-up
+to `Project Steering/PREREG_HJ_STAGE0.md` (H-HJ-K-1). It does not amend that file, and it moves none of its bars.
+
+## What the compliant RA-1 verdict said (MEASURED, T1-class open loop, eval-141, 2,399 windows / 141 episodes)
+
+Source: box 2 `D:\tanitad\runs\ra1_yaw\verdict.json` (pulled to `box2_ship/logs/ra1_verdict_yaw.json`). Estimator: paired
+episode-cluster bootstrap, B = 2000 (answers EPISODE variance only).
+
+* **A1x gate: INSTRUMENT BROKEN.** The time-shuffled-target control BEATS A1: A1x − A1 = −0.1268 [−0.2281, −0.0276].
+  PREREG_HJ_STAGE0 binds: *"A1x not losing to A1 ⇒ the instrument is broken; nothing else is read until it is fixed."*
+  So K, SENS and COST from that run are **not read**. The numbers below are reported, not used.
+* K (not read): R0 − P10-yaw-540 = +0.53 / +0.51 at seeds 0 / 1, both separated; A1 − P10 = +0.95 / +0.80.
+* **Diagnosis: memorisation.** R0's training-batch ADE@6s falls from 2.093 at step 500 to 0.226 at step 6,000, while its
+  eval-141 ADE@6s is 3.09 and the frozen prior P10 scores 2.5627. On the withheld train holdout (60 clips) R0 − P10 =
+  +0.3971 [+0.1806, +0.6519]. A readout that is a residual on P10 and ends up worse than P10 has learned clip-specific
+  structure that does not transfer.
+
+## The hypothesis (H-RA1-ES-1)
+
+Memorisation by the trajectory readout dominates every arm's K. If so, it also explains the broken instrument: when
+every arm's error is mostly readout overfit, A1 vs A1x measures overfit, not world-model content. A shorter budget
+should then (a) bring R0 to or below P10 and (b) restore A1x losing to A1.
+
+Why a budget sweep and not intermediate checkpoints: the trainer keeps only `latest.pt` (overwritten every 500 steps),
+and its cosine schedule depends on `--steps`. So each budget is a full run, with the schedule compressed to it.
+Training constants other than `--steps` are unchanged. ⚠️ That includes `--warmup 200`, so at S = 250 the warmup is
+80 % of the run and the cosine phase is 50 steps. This is disclosed, not corrected: changing the warmup per budget would
+be a second lever moved at once.
+
+## Design
+
+* **ES-1 (selection):** R0 at seeds 0 and 1, `--steps` S ∈ {250, 500, 1000, 2000}. The banked S = 6000 runs join the set.
+* **S\*:** the S with the lowest seed-mean holdout delta (R0 − P10, ADE@6s, the 60-clip Amendment-1 holdout). Ties
+  (|Δ| < 0.01 m) go to the shorter S. **eval-141 is never used to select S\*.**
+* **ES-1 stop rule:** if no S has a seed-mean holdout delta below 0, ES-2 is NOT run. At budgets this short the residual
+  readout sits near P10 by construction (its output layer starts at std 1e-3), so an A1x-vs-A1 comparison there could not
+  discriminate anything.
+* **ES-2 (instrument, then K):** at S\*, A1 at cell b0.08g50 (the holdout-selected cell) at seeds 0 and 1, plus A1x
+  b0.08g50 at seed 0. The budget is taken from R0's S\* for all three; this is disclosed, not tuned per arm.
+* **Runner:** `ra1_box2_queue.cmd es "<S list>"` and `es2 <S*> 0.08 50`, box 2, SAFE MODE, runs in
+  `D:\tanitad\runs\ra1_yaw_es\st<S>\`. The command lines are the queue's own `:run` block, unchanged.
+* **Verdict:** `code/ra1_es_verdict.py` reads the per-run `eval.json` files and applies the rules below.
+
+## Readings, committed before any data
+
+Read in this order. A later reading is not made if an earlier one stops.
+
+1. **ES-1 NULL.** No S has seed-mean holdout delta < 0. ⇒ No training budget lets the frozen pooled readout beat P10 at 540
+   clips. Memorisation is real, but stopping early does not turn it into skill. **Next lever:** the data scale that
+   PREREG_HJ_STAGE0 already plans ("600 TRAIN clips first, then all 4,572"). Its blocker is named with its encode cost.
+2. **ES-2 INSTRUMENT.** At S\*: A1x − A1 on eval-141 ADE@6s > 0, separated.
+   * If not ⇒ the instrument is still broken, and K is not read. Memorisation alone does not explain A1x. **Next lever:**
+     find out what A1x's shuffled target leaves intact, starting with whether the world-model gradient changes the latent
+     the readout reads at all.
+   * If yes ⇒ the instrument is restored, and memorisation was what broke it.
+3. **K at S\*** (only if 2 passes). This is PREREG_HJ_STAGE0's K bar, unchanged: `best(R0, A1) − P10` ADE@6s < 0, separated
+   at both seeds, |Δ| > 2× the training-seed floor |A1_s0 − A1_s1|. A2 is not in this sweep, so K is read on {R0, A1}
+   and says so.
+   * **PASS** ⇒ early stopping is the lever. Next: A2 and SENS (with A0) at S\*, under PREREG_HJ_STAGE0's other bars.
+   * **FAIL** ⇒ the pre-registered K-FAIL branch applies as written. SENS is unread here, so the LoRA branch is not
+     taken on this evidence. The data-scale lever from reading 1 is next.
+
+## Variance named
+
+* **Episodes:** the paired bootstrap above.
+* **Training seed:** seeds 0 and 1 for R0 and A1; the floor |s0 − s1| is reported per budget.
+* **Inference seed:** none. The readout is deterministic (no sampling planner), so there is no inference floor.
+
+## What this sweep does not do
+
+* It does not re-read the 6,000-step K, SENS or COST. The binding A1x rule voids them until the instrument passes.
+* It does not touch the vision-only, goal-input or yaw-rate rulings. Action channel 1 stays the measured yaw rate.
+* It runs nothing on Thor or the A40.
+
+## Addendum A — ES-3 attribution (written 2026-10-18 04:40, AFTER ES-2, BEFORE any ES-3 data)
+
+**What ES-2 measured** (`es_final.json`; eval-141, paired episode-cluster bootstrap B = 2000):
+
+* At S\* = 250 the A1x gate still FAILS: A1x − A1 = −0.0011 [−0.0046, +0.0026], not separated. Reading 2 binds, so
+  **K is not read.**
+* Reported, not read: A1 − P10 = −0.0517 [−0.0792, −0.0234] and −0.0480 [−0.0764, −0.0201], separated at both seeds.
+  The seed floor is 0.0038 m. R0 − P10 at the same budget is +0.0144 / +0.0020, not separated.
+
+**What A1x leaves intact** (source, `ra1_hjepa.py` `forward_batch`):
+
+* A1x permutes the latent sequence `z1` in time before `stack.loss`. Both the prediction loss and the IDM loss therefore
+  see shuffled frame order while the actions stay in order, so the IDM cannot fit: `idm_term/L1` is 14.42 at step 6,000
+  against A1's 0.5862.
+* Two things survive the shuffle:
+  * **SIGReg**, which is a marginal over frames and so invariant to their order;
+  * the fact that a world-model gradient reaches the adapter at all.
+* R0 has neither. ⇒ **HYPOTHESIS H-RA1-ES-2:** the gain over P10 at 250 steps comes from the world-model losses acting
+  as a **latent regulariser on the adapter**, not from temporal prediction and not from the IDM.
+
+**ES-3 design.** A0 (SIGReg β 0.08 + prediction, γ = 0, no IDM) at seeds 0 and 1, `--steps 250`, everything else
+unchanged. Runner: `ra1_box2_queue.cmd es3 250 0.08`, which also runs the queue's verdict over R0, A0, A1 and A1x at 250.
+The comparisons are paired over the same 2,399 eval-141 windows.
+
+**Readings, committed now:**
+
+1. **A0 − P10 < 0, separated at both seeds, AND A1 − A0 not separated at either seed** ⇒ neither the IDM nor temporal
+   order is needed for the gain. ⇒ **H-RA1-ES-2 supported:** a world-model loss is acting as a regulariser.
+   **Next:** isolate SIGReg itself (R0 plus SIGReg on `z1`, a new one-lever arm that needs its own launch-gate entry).
+2. **A0 − P10 not separated, AND A1 − A0 < 0 separated at both seeds** ⇒ the IDM term carries the gain. A1x would then
+   keep it through its gradient into the adapter despite being unable to fit. **Next:** an IDM-only arm (no prediction
+   loss).
+3. **Anything else** (mixed seeds, or A0 between the two) ⇒ reported as UNRESOLVED, with both deltas and the seed floor.
+   **Next:** the replicate (seed 2) of the discordant arm before any attribution.
+
+⚠️ None of these readings reopens K. The A1x gate binds until an arm built to test temporal content loses to its own
+shuffled control. The ridge probe (`PREREG_RA1_RIDGE.md`) runs in the same job, after ES-3, on CPU.
+
+## Addendum A — result (2026-10-18 04:45; `raw/ra1_es/es3_attribution.json`, `code/es3_attribution.py`)
+
+**READING 2.** A0 − P10 = −0.0249 [−0.0557, +0.0060] and −0.0247 [−0.0573, +0.0079], not separated. A1 − A0 =
+−0.0268 [−0.0508, −0.0044] and −0.0233 [−0.0480, −0.0004], separated at both seeds. Seed floors: A0 0.0003, A1 0.0038.
+A1x − A0 = −0.0279 [−0.0504, −0.0063], separated. ⇒ **The IDM term carries the gain, and its gradient helps even when the
+IDM cannot fit (A1x).** The pre-registered next arm (IDM-only, no prediction loss) needs new code: the stack has no
+prediction weight (`hjepa.py` `loss`), and an unbuilt predictor would trip the parameter audit. It is scoped as its own job.
+
+## Addendum B — A1's own budget (written 2026-10-18 04:47, BEFORE any ES-4 data)
+
+ES-2 ran A1 at R0's S\*, not at A1's own. **ES-4:** `es2 500 0.08 50` and `es2 1000 0.08 50`: A1 b0.08g50 at seeds 0 and 1
+plus A1x at seed 0, per budget. R0 at those budgets is already banked from ES-1.
+* **Selection:** the budget with the lowest seed-mean A1 HOLDOUT ADE@6s among {250, 500, 1000}. Ties within 0.01 m go
+  to the shorter budget.
+* **Reported at that budget, NOT read as K (the A1x gate binds):** A1 − P10 on eval-141 at both seeds, A1x − A1, and the
+  seed floor.
+* **Purpose:** the configuration that carries forward. It goes into the instrument redesign (a control that removes the
+  TRUE action information, which A1x's shuffle does not) and into data scale.
+* **Committed:**
+  * if A1's holdout keeps improving to 1,000, a 2,000-step arm is next;
+  * if it is best at 250, the IDM gain is also a short-training effect, and that is reported as such.
+
+## Addendum C — weight decay at the budget where the gate passes (written 2026-10-18, BEFORE any ES-5 data)
+
+**Why.** ES-4 found the two effects crossing:
+* at 1,000 steps the A1x gate PASSES (A1x − A1 = +0.0461 [+0.0033, +0.0969]), but A1 − P10 is +0.0089 / +0.0172,
+  not separated;
+* at 250 steps A1 beats P10, but the gate fails.
+
+The readout memorises. So the lever is a regulariser applied at 1,000 steps, the budget where the instrument works.
+
+**The lever: AdamW weight decay (`--wd`, an existing trainer flag; default 1e-3).**
+* Decoupled decay shrinks every weight by `lr · wd` per step. At lr 3e-4, the default 1e-3 shrinks by about 3e-4 in total
+  over 1,000 steps, which is negligible. ⇒ Arms **wd 0.3** and **wd 3.0**. After the cosine factor (about 0.55 on
+  average) the cumulative shrink is roughly 5 % and 40 %, a modest and a strong setting.
+* `--wd` is applied to every parameter group (adapter, readout and every stack level). ⚠️ That is ONE lever on all
+  groups, not a readout-only penalty; disclosed.
+* **Launch gate:** a new G-DVB entry, `weight_decay`, reads the decay back from every BUILT optimizer group. It ships
+  with a deliberate-regression test: an optimizer that ignores `--wd` must make the gate FAIL.
+
+**ES-5 design.**
+* `ra1_box2_queue.cmd es5 1000 0.08 50 <wd>` for wd ∈ {0.3, 3.0}: A1 b0.08g50 at seeds 0 and 1, plus A1x at seed 0, at
+  the same wd. Runs go to `ra1_yaw_es\st1000_wd<wd>\`, followed by the queue's verdict.
+* The banked wd 1e-3 runs at 1,000 steps (ES-4) are the third point.
+
+**Selection:** the wd with the lowest seed-mean A1 HOLDOUT ADE@6s among {1e-3, 0.3, 3.0}. Ties within 0.01 m go to the
+SMALLER wd. eval-141 never selects.
+
+**Readings, at the selected wd, in this order:**
+1. **Gate.** A1x − A1 on eval-141 > 0, separated. If not ⇒ K is not read, and the reading is "regularisation trades the
+   instrument away".
+2. **K** (only if 1 passes). PREREG_HJ_STAGE0's bar: A1 − P10 < 0, separated at both seeds, |Δ| > 2× |A1_s0 − A1_s1|.
+   It is read on A1. R0 at this wd is not run; the banked R0 at 1,000 steps is reported beside it.
+   * **PASS** ⇒ the frozen-DINOv3 H-JEPA beats P10 with its instrument intact. Next: A2, then SENS with A0, at the same
+     wd and budget.
+   * **FAIL** ⇒ wd alone does not decouple the two effects. Next: readout dropout, or a smaller readout, with the same
+     gate-then-K order. After that, data scale.
+3. Either way, the four metric families are reported for the selected arm, with STRATEGIC PAUSED.
+
+## Addendum D — A1a: does A1's gain need the TRUE action information? (written 2026-10-18 11:10, AFTER ES-5, BEFORE any A1a data)
+
+⚠️ **This addendum does NOT reopen H-HJ-K-1.** The pre-registered A1x gate keeps K unread, and nothing below changes that.
+A1a is a control for the MECHANISM ES-3 found, not a replacement for A1x. Whether K may ever be read under a replacement
+control is **the PI's call**, and this addendum does not make it.
+
+**What is measured so far** (`raw/ra1_es/es3_attribution.json`, `es4_budget.json`, `es5_wd.json`; eval-141, paired
+episode-cluster bootstrap B = 2000):
+
+* Every regime in which A1 beats P10 (250 steps; 1,000 steps + wd 3.0) is one in which A1x matches it.
+* A1 − A0 at 250 steps is −0.0268 [−0.0508, −0.0044] / −0.0233 [−0.0480, −0.0004], separated at both seeds: the IDM term
+  carries the gain.
+* A1x keeps it. In the banked train logs its IDM fits almost as well as A1's at 250 steps (unweighted `idm/L1`, last log
+  row: A1 0.5315, A1x 0.6148, A0's untrained head 1.0448).
+
+**Why A1x cannot test this.** A1x permutes the FRAMES of each window in time, but every frame still belongs to the window
+whose actions the IDM is asked for. A window's kinematic level (speed, yaw-rate magnitude) is visible in any of its
+frames, so the IDM can still learn it. ⇒ Two explanations fit every number above:
+
+* **H-RA1-ES-3a (ego-motion supervision):** the IDM makes the adapter latent `z1` encode the window's OWN kinematics. That
+  needs the TRUE pairing of a window's frames with its own actions.
+* **H-RA1-ES-3b (gradient regularisation):** the IDM gradient helps the adapter whatever its target, for example as a
+  regulariser of `z1`. That does not need the true pairing.
+
+**The arm: A1a = A1 with its action sequences PERMUTED ACROSS WINDOWS before the world-model loss.**
+* In `ra1_hjepa.py` `forward_batch`, window i's standardised action sequence `a_seq[i]` (T1 − 1 = 18 steps × 3 channels)
+  is replaced by window σ(i)'s.
+* σ is a derangement of the batch (no window keeps its own actions): one random B-cycle drawn from the step's seeded
+  generator, so it is a pure function of (seed, step), like A1x's permutation. Its non-identity fraction is exactly 1.0.
+* The latents `z1` stay in true time order. The readout path is untouched: the trajectory loss uses no action.
+* Both the predictor (action-conditioned) and the IDM (target) receive the permuted actions, exactly as A1x's shuffle
+  reaches both.
+* What survives: SIGReg, a world-model gradient into the adapter, the batch's action marginal, and the temporal structure
+  of a real action sequence. What is removed: the pairing of a window's frames with its own actions.
+* ⚠️ **Disclosed leak.** `sample_batch` draws clips uniformly with replacement (64 from 540), so σ(i) can come from the
+  same clip as i, and its actions can then overlap i's own. The expected rate is about 1/540 ≈ 0.19 % of windows. The
+  exact rate is recomputed from (seed, step) and reported.
+* Launch gate: `validate_config` requires `--gamma` (> 0) as for every IDM arm. G-DVB gets a `shuffle_act` row read back
+  from the built model. G-LIVE asserts, on a real batch, that the permutation is non-identity in every window, that the
+  actions the world-model loss receives differ from the window's own in more than half of the windows, and that every
+  other arm has no action permutation.
+
+**Settings (fixed now; nothing is selected after the data):**
+
+| setting | flags | paired against (banked) |
+|---|---|---|
+| S1 | `--steps 250`, wd 1e-3 (S\*, ES-2) | `raw/ra1_es/st250/A1_b0.08g50_s0` |
+| S2 | `--steps 1000 --wd 3.0` (ES-5's holdout pick) | `raw/ra1_es/st1000_wd3.0/A1_b0.08g50_s0` |
+
+* Both settings use A1a b0.08g50 at **seed 0**. Every other constant is the queue's `:run` block, unchanged.
+* Runner: `ra1_box2_queue.cmd a1a S BETA GAMMA [WD]` on box 2 (SAFE MODE, one job at a time). The runs go into the SAME
+  root as the A1 they pair with.
+
+**Metric and estimator.** eval-141 ADE@6s (T1-class open-loop trajectory), A1a − A1, with the paired episode-cluster
+bootstrap (B = 2000, seed 0) over the same 2,399 windows (asserted). It answers EPISODE variance only.
+
+**Manipulation check (read FIRST; it must read its known direction).** A1a's unweighted `idm/L1` at the last log row must be
+ABOVE A1's at the same setting: A1 is 0.5315 at S1 and 0.3056 at S2. With the true pairing removed, the IDM can fit
+nothing but the batch marginal (A0's untrained head reads 1.0448 at S1).
+* If A1a's `idm/L1` is ≤ A1's at either setting ⇒ the permutation has NOT removed the information the IDM uses.
+  ⇒ **INSTRUMENT FAIL**, and neither reading below is made.
+
+**Committed readings (binding):**
+
+1. **A1a − A1 > 0, separated, at BOTH S1 and S2** ⇒ **the gain needs the TRUE action information.** That is ego-motion
+   supervision of the visual latent (H-RA1-ES-3a supported).
+   * **Next lever:** make that supervision explicit and cheap, for example an IDM-only arm, or the same IDM term on R0.
+     Each gets its own pre-registration.
+2. **Otherwise** ⇒ **the gain is a gradient-regularisation artifact** (H-RA1-ES-3b). The IDM gradient helps without the
+   true pairing.
+   * **Next lever:** isolate the regulariser, for example weight noise or a random-target auxiliary loss of the same
+     magnitude on R0. That needs its own pre-registration.
+
+**Qualifiers, committed now.** They are reported, and they do not change which reading is made.
+
+* **One seed.** A1a runs at seed 0 only, so a separated CI here answers "would another draw of EPISODES say this?" and
+  NOT "would another training run?" (`H-ESTIM-SEED-1`). Each |Δ| is reported against A1's banked training-seed floor at
+  that setting: |A1_s0 − A1_s1| = 0.0038 at S1 and 0.0147 at S2.
+  * If reading 1 is made but |Δ| ≤ 2× the floor at either setting, it is reported as **"within 2× A1's seed floor at
+    <setting>: needs A1a seed 1 before it is quoted as a lever effect."**
+* **Mixed outcome.** If exactly one setting is separated with A1a − A1 > 0, reading 2 is reported as **"mixed: separated
+  at <setting> only"**, and A1a seed 1 at the other setting is named as the cheapest next experiment.
+* **No inference variance.** The readout is deterministic, so there is no inference floor.
+
+**Reported, NOT read:**
+* A1a − P10 at S1 and S2;
+* A1a − A1x (banked, seed 0);
+* A1a − A0 at S1 (banked A0 b0.08, seed 0);
+* A1a − R0 (banked R0 seed 0: `st250` for S1, the unregularised `st1000` for S2);
+* holdout ADE@6s;
+* the four metric families for A1a at S2, from its `eval.json`, with STRATEGIC PAUSED (PI 2026-09-19).
+
+**Scoring:** `code/a1a_permute.py`, written in the style of `code/es5_wd.py`, reads the banked A1 / A1x / A0 / R0
+`perwindow.npz` from `raw/ra1_es/` and the pulled A1a `perwindow.npz`. Output: `raw/ra1_es/a1a_permute.json`.
+
+## Addendum D — result (2026-10-18 11:40; `raw/ra1_es/a1a_permute.json`, `code/a1a_permute.py`)
+
+* **Manipulation check: PASSES.** A1a's `idm/L1` is 1.0543 at S1 and 1.0532 at S2, against A1's 0.5315 and 0.3056.
+* **READING 1.** A1a − A1 = **+0.0360 [+0.0128, +0.0609]** at S1 and **+0.1315 [+0.0668, +0.1955]** at S2, separated at
+  both, at 9.5× and 8.9× A1's seed floor (0.0038, 0.0147). ⇒ The gain needs the TRUE action information: ego-motion
+  supervision of the visual latent.
+* Neither qualifier fires. Same-clip donors are 0.1437 % / 0.1500 %.
+* One seed (seed 0). H-HJ-K-1 is NOT reopened.
+* ⚠️ **Label note.** "H-RA1-ES-3a / 3b" above name the two explanations only. They are not sub-claims of the register's
+  `H-RA1-ES-3` (weight decay). The register files this test as **`H-RA1-ES-4`**.

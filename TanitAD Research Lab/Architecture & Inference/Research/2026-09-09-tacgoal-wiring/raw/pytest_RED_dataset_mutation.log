@@ -1,0 +1,64 @@
+...........FFF                                                           [100%]
+================================== FAILURES ===================================
+________ test_the_dataset_emits_the_goal_target_when_the_channel_is_ON ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001CF6FFA1F30>
+
+    def test_the_dataset_emits_the_goal_target_when_the_channel_is_ON(monkeypatch):
+        """⭐ The real ``__getitem__`` path -- the one the gradient probes bypass."""
+        tr = _trainer()
+        ds, first, v7l, torch = _labelled_ds(tr, monkeypatch, enabled=True)
+        item = ds[first[0]]
+>       assert "tac_goal_y" in item and "tac_goal_w" in item, (
+            "the loader did NOT emit the goal-set target with the channel on -- "
+            "`--w-tac-goal` would refuse at loss time on the real corpus")
+E       AssertionError: the loader did NOT emit the goal-set target with the channel on -- `--w-tac-goal` would refuse at loss time on the real corpus
+E       assert ('tac_goal_y' in {'frames': tensor([[[[0.0863, 0.1294, 0.3059,  ..., 0.6510, 0.7725, 0.4353],\n          [0.5176, 0.6157, 0.8078,  ..., ...0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.]]), ...})
+
+tests\test_tac_goal_trainer_flag.py:514: AssertionError
+_________ test_a_clip_with_NO_record_still_gets_both_keys_all_ignored _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001CF02ECE9F0>
+
+    def test_a_clip_with_NO_record_still_gets_both_keys_all_ignored(monkeypatch):
+        """⛔ NEVER A MISSING KEY. Episode 9001 has no v7.2 record; it must still
+        carry both tensors, with every cell explicitly ignored."""
+        tr = _trainer()
+        ds, first, _v7l, _torch = _labelled_ds(tr, monkeypatch, enabled=True)
+        item = ds[first[1]]
+>       assert "tac_goal_y" in item and "tac_goal_w" in item, (
+            "a clip with no v7.2 record dropped the key entirely -- the batch "
+            "would be ragged and the loss-time refusal would fire at random")
+E       AssertionError: a clip with no v7.2 record dropped the key entirely -- the batch would be ragged and the loss-time refusal would fire at random
+E       assert ('tac_goal_y' in {'frames': tensor([[[[0.2353, 0.3216, 0.6745,  ..., 0.8078, 0.9686, 0.1294],\n          [0.2510, 0.1882, 0.7725,  ..., ...0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.],\n        [0., 0.]]), ...})
+
+tests\test_tac_goal_trainer_flag.py:539: AssertionError
+_____________ test_the_negatives_policy_is_READ_and_not_hardcoded _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001CF02DFF020>
+
+    def test_the_negatives_policy_is_READ_and_not_hardcoded(monkeypatch):
+        """⭐ THE DISCRIMINATING CONTROL for `--tac-goal-negatives`.
+    
+        A knob that is parsed and stamped but never reaches the derivation is the
+        `--wp-index` defect (3 of 6 knobs inert). Under ``all`` the CoT-only
+        traffic-light cell MUST become supervised; under ``measured`` it must not.
+        If both read the same, the knob is inert.
+        """
+        tr = _trainer()
+        ds_m, first, v7l, _t = _labelled_ds(tr, monkeypatch, enabled=True,
+                                            negatives="measured")
+        ds_a, first_a, _v, _t2 = _labelled_ds(tr, monkeypatch, enabled=True,
+                                              negatives="all")
+        ix = {t: i for i, t in enumerate(v7l.TAC_GOAL_TOKENS)}
+        j = ix["TRAFFIC_LIGHT_REACT_RED"]
+>       w_measured = float(ds_m[first[0]]["tac_goal_w"][j])
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'tac_goal_w'
+
+tests\test_tac_goal_trainer_flag.py:563: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_tac_goal_trainer_flag.py::test_the_dataset_emits_the_goal_target_when_the_channel_is_ON
+FAILED tests/test_tac_goal_trainer_flag.py::test_a_clip_with_NO_record_still_gets_both_keys_all_ignored
+FAILED tests/test_tac_goal_trainer_flag.py::test_the_negatives_policy_is_READ_and_not_hardcoded
+3 failed, 11 passed in 2.86s

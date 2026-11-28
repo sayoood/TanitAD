@@ -1,0 +1,239 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT",
+ "k": 4,
+ "readable": "joint MINUS action = what the latent adds to the action",
+ "arms": {
+  "rdw8p30k": {
+   "step": 30000,
+   "n_clips": 20,
+   "n_rows": 1800,
+   "d_z": 2048,
+   "targets": {
+    "IDENTITY accel_t": {
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "t": 0.0
+     },
+     "action_t": {
+      "r": 0.9555,
+      "shuffled": 0.0217,
+      "t": 23.74
+     },
+     "z_t": {
+      "r": 0.1714,
+      "shuffled": 0.0159,
+      "t": 3.1
+     },
+     "joint_raw": {
+      "r": 0.9073,
+      "shuffled": 0.0194,
+      "t": 29.41
+     },
+     "joint_pca32": {
+      "r": 0.9619,
+      "shuffled": 0.0141,
+      "t": 26.42
+     },
+     "latent_adds_raw": {
+      "delta": -0.0482,
+      "t": -1.28
+     },
+     "latent_adds_pca32": {
+      "delta": 0.0065,
+      "t": 0.22
+     }
+    },
+    "dv_4tick": {
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "t": 0.0
+     },
+     "action_t": {
+      "r": 0.3445,
+      "shuffled": 0.0201,
+      "t": 2.52
+     },
+     "z_t": {
+      "r": 0.0087,
+      "shuffled": 0.0261,
+      "t": -0.3
+     },
+     "joint_raw": {
+      "r": 0.2714,
+      "shuffled": 0.0024,
+      "t": 3.16
+     },
+     "joint_pca32": {
+      "r": 0.338,
+      "shuffled": -0.0144,
+      "t": 3.84
+     },
+     "latent_adds_raw": {
+      "delta": -0.073,
+      "t": -0.87
+     },
+     "latent_adds_pca32": {
+      "delta": -0.0065,
+      "t": -0.06
+     }
+    },
+    "dyaw_4tick": {
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "t": 0.0
+     },
+     "action_t": {
+      "r": 0.549,
+      "shuffled": 0.0053,
+      "t": 4.91
+     },
+     "z_t": {
+      "r": 0.1181,
+      "shuffled": -0.0145,
+      "t": 2.74
+     },
+     "joint_raw": {
+      "r": 0.3748,
+      "shuffled": -0.0151,
+      "t": 4.12
+     },
+     "joint_pca32": {
+      "r": 0.5337,
+      "shuffled": -0.0006,
+      "t": 5.46
+     },
+     "latent_adds_raw": {
+      "delta": -0.1742,
+      "t": -1.18
+     },
+     "latent_adds_pca32": {
+      "delta": -0.0153,
+      "t": -0.12
+     }
+    }
+   },
+   "identity_control_r": 0.9555,
+   "verdict": "ACTION ECHO RISK - the latent adds NOTHING (or hurts). An O13 head on (z, action) would learn to read the action and ignore the latent. REDESIGN before spending GPU."
+  },
+  "splitp30k": {
+   "step": 30000,
+   "n_clips": 20,
+   "n_rows": 1800,
+   "d_z": 2048,
+   "targets": {
+    "IDENTITY accel_t": {
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "t": 0.0
+     },
+     "action_t": {
+      "r": 0.9555,
+      "shuffled": 0.0217,
+      "t": 23.74
+     },
+     "z_t": {
+      "r": 0.0863,
+      "shuffled": -0.0001,
+      "t": 1.12
+     },
+     "joint_raw": {
+      "r": 0.3949,
+      "shuffled": 0.0106,
+      "t": 4.31
+     },
+     "joint_pca32": {
+      "r": 0.9294,
+      "shuffled": 0.0056,
+      "t": 21.75
+     },
+     "latent_adds_raw": {
+      "delta": -0.5605,
+      "t": -6.44
+     },
+     "latent_adds_pca32": {
+      "delta": -0.0261,
+      "t": -0.79
+     }
+    },
+    "dv_4tick": {
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "t": 0.0
+     },
+     "action_t": {
+      "r": 0.3445,
+      "shuffled": 0.0201,
+      "t": 2.52
+     },
+     "z_t": {
+      "r": 0.1554,
+      "shuffled": -0.0163,
+      "t": 2.1
+     },
+     "joint_raw": {
+      "r": 0.1051,
+      "shuffled": -0.0185,
+      "t": 1.37
+     },
+     "joint_pca32": {
+      "r": 0.3985,
+      "shuffled": -0.0154,
+      "t": 3.8
+     },
+     "latent_adds_raw": {
+      "delta": -0.2394,
+      "t": -1.65
+     },
+     "latent_adds_pca32": {
+      "delta": 0.0541,
+      "t": 0.45
+     }
+    },
+    "dyaw_4tick": {
+     "constant (control)": {
+      "r": 0.0,
+      "shuffled": 0.0,
+      "t": 0.0
+     },
+     "action_t": {
+      "r": 0.549,
+      "shuffled": 0.0053,
+      "t": 4.91
+     },
+     "z_t": {
+      "r": 0.1571,
+      "shuffled": -0.011,
+      "t": 1.73
+     },
+     "joint_raw": {
+      "r": -0.0518,
+      "shuffled": 0.0616,
+      "t": -1.2
+     },
+     "joint_pca32": {
+      "r": 0.4785,
+      "shuffled": -0.0214,
+      "t": 4.89
+     },
+     "latent_adds_raw": {
+      "delta": -0.6008,
+      "t": -4.54
+     },
+     "latent_adds_pca32": {
+      "delta": -0.0705,
+      "t": -0.46
+     }
+    }
+   },
+   "identity_control_r": 0.9555,
+   "verdict": "UNCLASSIFIED - latent adds t +0.45, between 0 and 2. Not separable at this n; state it, do not round it to a claim."
+  }
+ }
+}

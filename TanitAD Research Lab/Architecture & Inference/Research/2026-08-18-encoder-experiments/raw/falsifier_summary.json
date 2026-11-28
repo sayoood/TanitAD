@@ -1,0 +1,467 @@
+{
+ "_evidence_class": "MEASURED (ours; identical harness, identical rows, identical deployed pool AvgPool2d((4,10)))",
+ "eval_tier": "T0-DIAGNOSTIC — a frozen-latent linear readout. NEVER driving performance (EVAL_DOCTRINE.md).",
+ "estimator": "episode-cluster bootstrap (taniteval/ci.py); ⛔ NEVER overlapping_holdout_se",
+ "pool": "the DEPLOYED AvgPool2d((4,10)) only — E-R1-0 settled the pooling axis (C104), so the other rungs buy nothing here",
+ "read_me_first": "⚠️ `dino1f` is width-matched to ours (768) and is the CONCATENATION control: read `lead_gap` there (STATIC geometry, one frame suffices). `ego_v0`/`lead_closing` are MOTION quantities that NO one-frame arm can read, so a drop there is uninformative.",
+ "arms": {
+  "dino1f": {
+   "label": "C-1FRAME DINOv2-B/14 one sub-frame",
+   "d_model": 768,
+   "n_raw_features": 12288,
+   "n_fit_features": 2049,
+   "rp_dim": 2048,
+   "proj_seeds": [
+    0,
+    1,
+    2
+   ],
+   "intercept_col": -1,
+   "legacy_penalised_intercept": false,
+   "n_train": 1120,
+   "n_eval": 1362,
+   "n_eval_clusters": 70,
+   "targets": {
+    "ego_v0": {
+     "r2_mean": 0.70593,
+     "r2_min": 0.688,
+     "r2_max": 0.7208,
+     "r2_seed_spread": 0.0328,
+     "n_seeds": 3,
+     "K1_PASSES_n": 3,
+     "gt_sd": 5.5768,
+     "pred_sd_over_gt_sd": [
+      0.7346,
+      0.7164,
+      0.7277
+     ]
+    },
+    "lead_gap": {
+     "r2_mean": 0.42743,
+     "r2_min": 0.4111,
+     "r2_max": 0.44,
+     "r2_seed_spread": 0.0289,
+     "n_seeds": 3,
+     "K1_PASSES_n": 3,
+     "gt_sd": 6.1722,
+     "pred_sd_over_gt_sd": [
+      0.7549,
+      0.5803,
+      0.7661
+     ]
+    },
+    "lead_closing": {
+     "r2_mean": 0.01707,
+     "r2_min": 0.0148,
+     "r2_max": 0.0188,
+     "r2_seed_spread": 0.004,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 1.7555,
+     "pred_sd_over_gt_sd": [
+      0.084,
+      0.0853,
+      0.0868
+     ]
+    }
+   }
+  },
+  "dinorand": {
+   "label": "C-DINORAND untrained DINOv2 arch",
+   "d_model": 2304,
+   "n_raw_features": 36864,
+   "n_fit_features": 2049,
+   "rp_dim": 2048,
+   "proj_seeds": [
+    0,
+    1,
+    2
+   ],
+   "intercept_col": -1,
+   "legacy_penalised_intercept": false,
+   "n_train": 1120,
+   "n_eval": 1362,
+   "n_eval_clusters": 70,
+   "targets": {
+    "ego_v0": {
+     "r2_mean": 0.0266,
+     "r2_min": 0.0174,
+     "r2_max": 0.0419,
+     "r2_seed_spread": 0.0245,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 5.5768,
+     "pred_sd_over_gt_sd": [
+      0.8139,
+      0.0066,
+      0.0066
+     ]
+    },
+    "lead_gap": {
+     "r2_mean": 0.01843,
+     "r2_min": 0.0118,
+     "r2_max": 0.0308,
+     "r2_seed_spread": 0.019,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 6.1722,
+     "pred_sd_over_gt_sd": [
+      0.0755,
+      0.0787,
+      0.6547
+     ]
+    },
+    "lead_closing": {
+     "r2_mean": 0.00037,
+     "r2_min": 0.0003,
+     "r2_max": 0.0005,
+     "r2_seed_spread": 0.0002,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 1.7555,
+     "pred_sd_over_gt_sd": [
+      0.0043,
+      0.0043,
+      0.0043
+     ]
+    }
+   }
+  },
+  "ours": {
+   "label": "v6F-SW-30k@11250 OURS (repro baseline)",
+   "d_model": 768,
+   "n_raw_features": 12288,
+   "n_fit_features": 2049,
+   "rp_dim": 2048,
+   "proj_seeds": [
+    0,
+    1,
+    2
+   ],
+   "intercept_col": -1,
+   "legacy_penalised_intercept": false,
+   "n_train": 1120,
+   "n_eval": 1362,
+   "n_eval_clusters": 70,
+   "targets": {
+    "ego_v0": {
+     "r2_mean": 0.05207,
+     "r2_min": 0.0516,
+     "r2_max": 0.0527,
+     "r2_seed_spread": 0.0011,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 5.5768,
+     "pred_sd_over_gt_sd": [
+      0.0148,
+      0.0151,
+      0.0141
+     ]
+    },
+    "lead_gap": {
+     "r2_mean": 0.0049,
+     "r2_min": 0.0049,
+     "r2_max": 0.0049,
+     "r2_seed_spread": 0.0,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 6.1722,
+     "pred_sd_over_gt_sd": [
+      0.022,
+      0.0222,
+      0.0216
+     ]
+    },
+    "lead_closing": {
+     "r2_mean": 0.0,
+     "r2_min": 0.0,
+     "r2_max": 0.0,
+     "r2_seed_spread": 0.0,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 1.7555,
+     "pred_sd_over_gt_sd": [
+      0.0078,
+      0.0076,
+      0.0077
+     ]
+    }
+   }
+  },
+  "randenc_s0": {
+   "label": "C-RANDENC our ViT5Encoder RANDOM INIT seed 0",
+   "d_model": 768,
+   "n_raw_features": 12288,
+   "n_fit_features": 2049,
+   "rp_dim": 2048,
+   "proj_seeds": [
+    0,
+    1,
+    2
+   ],
+   "intercept_col": -1,
+   "legacy_penalised_intercept": false,
+   "n_train": 1120,
+   "n_eval": 1362,
+   "n_eval_clusters": 70,
+   "targets": {
+    "ego_v0": {
+     "r2_mean": 0.2011,
+     "r2_min": 0.1953,
+     "r2_max": 0.2052,
+     "r2_seed_spread": 0.0099,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 5.5768,
+     "pred_sd_over_gt_sd": [
+      0.8937,
+      0.8928,
+      0.9014
+     ]
+    },
+    "lead_gap": {
+     "r2_mean": 0.01597,
+     "r2_min": 0.014,
+     "r2_max": 0.0177,
+     "r2_seed_spread": 0.0037,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 6.1722,
+     "pred_sd_over_gt_sd": [
+      0.8971,
+      0.9243,
+      0.9068
+     ]
+    },
+    "lead_closing": {
+     "r2_mean": 0.0,
+     "r2_min": 0.0,
+     "r2_max": 0.0,
+     "r2_seed_spread": 0.0,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 1.7555,
+     "pred_sd_over_gt_sd": [
+      0.0058,
+      0.0059,
+      0.006
+     ]
+    }
+   }
+  },
+  "randenc_s1": {
+   "label": "C-RANDENC our ViT5Encoder RANDOM INIT seed 1",
+   "d_model": 768,
+   "n_raw_features": 12288,
+   "n_fit_features": 2049,
+   "rp_dim": 2048,
+   "proj_seeds": [
+    0,
+    1,
+    2
+   ],
+   "intercept_col": -1,
+   "legacy_penalised_intercept": false,
+   "n_train": 1120,
+   "n_eval": 1362,
+   "n_eval_clusters": 70,
+   "targets": {
+    "ego_v0": {
+     "r2_mean": 0.1736,
+     "r2_min": 0.1583,
+     "r2_max": 0.1917,
+     "r2_seed_spread": 0.0334,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 5.5768,
+     "pred_sd_over_gt_sd": [
+      0.6977,
+      0.8446,
+      0.6961
+     ]
+    },
+    "lead_gap": {
+     "r2_mean": 0.01667,
+     "r2_min": 0.0145,
+     "r2_max": 0.0188,
+     "r2_seed_spread": 0.0043,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 6.1722,
+     "pred_sd_over_gt_sd": [
+      0.8887,
+      0.8657,
+      0.8854
+     ]
+    },
+    "lead_closing": {
+     "r2_mean": 0.0,
+     "r2_min": 0.0,
+     "r2_max": 0.0,
+     "r2_seed_spread": 0.0,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 1.7555,
+     "pred_sd_over_gt_sd": [
+      0.0058,
+      0.0058,
+      0.0057
+     ]
+    }
+   }
+  },
+  "randenc_s2": {
+   "label": "C-RANDENC our ViT5Encoder RANDOM INIT seed 2",
+   "d_model": 768,
+   "n_raw_features": 12288,
+   "n_fit_features": 2049,
+   "rp_dim": 2048,
+   "proj_seeds": [
+    0,
+    1,
+    2
+   ],
+   "intercept_col": -1,
+   "legacy_penalised_intercept": false,
+   "n_train": 1120,
+   "n_eval": 1362,
+   "n_eval_clusters": 70,
+   "targets": {
+    "ego_v0": {
+     "r2_mean": 0.19357,
+     "r2_min": 0.1889,
+     "r2_max": 0.1984,
+     "r2_seed_spread": 0.0095,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 5.5768,
+     "pred_sd_over_gt_sd": [
+      0.8488,
+      0.8746,
+      0.8921
+     ]
+    },
+    "lead_gap": {
+     "r2_mean": 0.0203,
+     "r2_min": 0.0195,
+     "r2_max": 0.0214,
+     "r2_seed_spread": 0.0019,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 6.1722,
+     "pred_sd_over_gt_sd": [
+      0.8781,
+      0.87,
+      0.9022
+     ]
+    },
+    "lead_closing": {
+     "r2_mean": 0.0,
+     "r2_min": 0.0,
+     "r2_max": 0.0,
+     "r2_seed_spread": 0.0,
+     "n_seeds": 3,
+     "K1_PASSES_n": 0,
+     "gt_sd": 1.7555,
+     "pred_sd_over_gt_sd": [
+      0.0062,
+      0.0061,
+      0.006
+     ]
+    }
+   }
+  }
+ },
+ "table": [
+  {
+   "arm": "ours",
+   "label": "v6F-SW-30k@11250 OURS (repro baseline)",
+   "token_width": 768,
+   "n_raw_features": 12288,
+   "ego_v0_r2": 0.05207,
+   "ego_v0_spread": 0.0011,
+   "ego_v0_x_vs_ours": 1.0,
+   "lead_gap_r2": 0.0049,
+   "lead_gap_spread": 0.0,
+   "lead_gap_x_vs_ours": 1.0,
+   "lead_closing_r2": 0.0,
+   "lead_closing_spread": 0.0,
+   "lead_closing_x_vs_ours": null
+  },
+  {
+   "arm": "dino1f",
+   "label": "C-1FRAME DINOv2-B/14 one sub-frame",
+   "token_width": 768,
+   "n_raw_features": 12288,
+   "ego_v0_r2": 0.70593,
+   "ego_v0_spread": 0.0328,
+   "ego_v0_x_vs_ours": 13.56,
+   "lead_gap_r2": 0.42743,
+   "lead_gap_spread": 0.0289,
+   "lead_gap_x_vs_ours": 87.23,
+   "lead_closing_r2": 0.01707,
+   "lead_closing_spread": 0.004,
+   "lead_closing_x_vs_ours": null
+  },
+  {
+   "arm": "dinorand",
+   "label": "C-DINORAND untrained DINOv2 arch",
+   "token_width": 2304,
+   "n_raw_features": 36864,
+   "ego_v0_r2": 0.0266,
+   "ego_v0_spread": 0.0245,
+   "ego_v0_x_vs_ours": 0.51,
+   "lead_gap_r2": 0.01843,
+   "lead_gap_spread": 0.019,
+   "lead_gap_x_vs_ours": 3.76,
+   "lead_closing_r2": 0.00037,
+   "lead_closing_spread": 0.0002,
+   "lead_closing_x_vs_ours": null
+  },
+  {
+   "arm": "randenc_s0",
+   "label": "C-RANDENC our ViT5Encoder RANDOM INIT seed 0",
+   "token_width": 768,
+   "n_raw_features": 12288,
+   "ego_v0_r2": 0.2011,
+   "ego_v0_spread": 0.0099,
+   "ego_v0_x_vs_ours": 3.86,
+   "lead_gap_r2": 0.01597,
+   "lead_gap_spread": 0.0037,
+   "lead_gap_x_vs_ours": 3.26,
+   "lead_closing_r2": 0.0,
+   "lead_closing_spread": 0.0,
+   "lead_closing_x_vs_ours": null
+  },
+  {
+   "arm": "randenc_s1",
+   "label": "C-RANDENC our ViT5Encoder RANDOM INIT seed 1",
+   "token_width": 768,
+   "n_raw_features": 12288,
+   "ego_v0_r2": 0.1736,
+   "ego_v0_spread": 0.0334,
+   "ego_v0_x_vs_ours": 3.33,
+   "lead_gap_r2": 0.01667,
+   "lead_gap_spread": 0.0043,
+   "lead_gap_x_vs_ours": 3.4,
+   "lead_closing_r2": 0.0,
+   "lead_closing_spread": 0.0,
+   "lead_closing_x_vs_ours": null
+  },
+  {
+   "arm": "randenc_s2",
+   "label": "C-RANDENC our ViT5Encoder RANDOM INIT seed 2",
+   "token_width": 768,
+   "n_raw_features": 12288,
+   "ego_v0_r2": 0.19357,
+   "ego_v0_spread": 0.0095,
+   "ego_v0_x_vs_ours": 3.72,
+   "lead_gap_r2": 0.0203,
+   "lead_gap_spread": 0.0019,
+   "lead_gap_x_vs_ours": 4.14,
+   "lead_closing_r2": 0.0,
+   "lead_closing_spread": 0.0,
+   "lead_closing_x_vs_ours": null
+  }
+ ]
+}

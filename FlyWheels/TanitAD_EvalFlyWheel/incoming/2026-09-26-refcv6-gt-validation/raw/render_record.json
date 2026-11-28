@@ -1,0 +1,311 @@
+{
+ "tool": "D:\\Projects\\TanitAD\\taniteval\\tools\\render_refcv6_gt_validation.py",
+ "started": "2026-09-27T01:31:33",
+ "argv": [
+  "--out-dir",
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-refcv6-gt-validation/raw",
+  "--agent-join-subset",
+  "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+  "--join3d-subset",
+  "C:/Users/Admin/qland/work/gtval/eval_agents_3d.jsonl",
+  "--extract-record",
+  "C:/Users/Admin/qland/work/gtval/extract_record_2d.json;C:/Users/Admin/qland/work/gtval/extract_record_3d.json",
+  "--start-ram-gb",
+  "5.5"
+ ],
+ "model_forward": "NONE -- no network is built, loaded or run",
+ "controls": {
+  "filter_mask_mismatch": 0,
+  "n_windows_checked": 855,
+  "proj_max_px": 1.2710574864626038e-13,
+  "n_corners_checked": 264506,
+  "bev_roundtrip_max_px": 3.0742779206298016e-13,
+  "n_bev_boxes_checked": 72687,
+  "self_iou_min": 1.0
+ },
+ "departures": [
+  {
+   "what": "the joins are eval-only LINE SUBSETS of the kit's train+eval files (every kept line byte-identical, selected by the line's own clip_id against the eval cache's clip set); a full xz parse did not finish in 7 min under contention",
+   "files": {
+    "agent_join": {
+     "config_file": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+     "used_subset": "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+     "subset_bytes": 97839483
+    },
+    "join3d": {
+     "config_file": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+     "used_subset": "C:/Users/Admin/qland/work/gtval/eval_agents_3d.jsonl",
+     "subset_bytes": 117697053
+    }
+   },
+   "extract_records": [
+    {
+     "n_eval_clips": 139,
+     "2d": {
+      "source": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+      "source_bytes": 327041136,
+      "source_md5": "0c31a3a63d7205e9fa50e8ac4204ef46",
+      "subset": "C:\\Users\\Admin\\qland\\work\\gtval\\eval_agents.jsonl",
+      "subset_bytes": 97839483,
+      "n_lines_in": 875657,
+      "n_lines_kept": 26394,
+      "n_clips_kept": 139,
+      "n_lines_3_fixed": 600,
+      "wall_s": 394.8
+     },
+     "known_value_control": {
+      "2d_records_3_fixed": {
+       "measured": 600,
+       "expected": 600,
+       "pass": true
+      }
+     },
+     "pass": true
+    },
+    {
+     "n_eval_clips": 139,
+     "3d": {
+      "source": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+      "source_bytes": 409336004,
+      "source_md5": "401c9c3119a50632dafc35c595d9e051",
+      "subset": "C:\\Users\\Admin\\qland\\work\\gtval\\eval_agents_3d.jsonl",
+      "subset_bytes": 117697053,
+      "n_lines_in": 875657,
+      "n_lines_kept": 26394,
+      "n_clips_kept": 139,
+      "n_lines_3_fixed": 600,
+      "wall_s": 528.8,
+      "n_agents_3_fixed": 78336
+     },
+     "known_value_control": {
+      "3d_lines_3_fixed": {
+       "measured": 600,
+       "expected": 600,
+       "pass": true
+      },
+      "3d_agents_3_fixed": {
+       "measured": 78336,
+       "expected": 78336,
+       "pass": true
+      }
+     },
+     "pass": true
+    }
+   ]
+  }
+ ],
+ "tanitad_file": "C:\\Users\\Admin\\ev6_82c2331\\stack\\tanitad\\__init__.py",
+ "config": {
+  "path": "D:/refcv6_eval_kit/ckpt_final/config.json",
+  "md5": "a3193a4685ce0d07a6ae6b89fdc994a8",
+  "window": 8,
+  "argv_remap": {
+   "remapped": {
+    "--anchors": {
+     "thor": "/home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt",
+     "local": "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt"
+    },
+    "--eval-cache": {
+     "thor": "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6-b1-416x1024-eval139"
+    },
+    "--eval-labels": {
+     "thor": "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+     "local": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz"
+    },
+    "--speed-max-sidecar-v6-eval": {
+     "thor": "/home/nvidia/data/refcv6_speed_max_v8_eval.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_speed_max_v8_eval.jsonl"
+    },
+    "--agent-join": {
+     "thor": "/home/nvidia/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz"
+    },
+    "--agent-rig-extrinsics": {
+     "thor": "/home/nvidia/data/refcv6_train_eval139_extrinsics.json",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json"
+    },
+    "--map-gt-root": {
+     "thor": "/home/nvidia/data/sam3_corpus",
+     "local": "D:\\refcv6_eval_kit\\data\\sam3_gt_eval_thor137"
+    },
+    "--join3d": {
+     "thor": "/home/nvidia/data/join3d/b1_train_plus_eval_agents_3d.jsonl.xz",
+     "local": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz"
+    },
+    "--clip-clock-sidecar": {
+     "thor": "/home/nvidia/data/refcv6_clip_clock_sidecar.jsonl",
+     "local": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl"
+    }
+   },
+   "dropped": {
+    "--trunk-compile": "no Triton on Windows; torch.compile wraps the backbone CALL only -- module tree and state_dict identical (LAUNCH_READINESS_FIXES.md \u00a710b)"
+   },
+   "train_only_kept_unread": {
+    "--v2-cache": "/home/nvidia/data/refcv6-b1-416x1024-train",
+    "--v7-labels": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+    "--speed-max-sidecar-v6": "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+    "--out": "/home/nvidia/refcv6_run/runs/refcv6-r101-s0"
+   }
+  }
+ },
+ "rig_camera": {
+  "source": "refc_v3_train._build_rig_camera(cfg, args) -- the model's own per-clip camera bank, built from the run's config, no weights",
+  "stamp": "{'source': 'extrinsics', 'mount_pose': 'from-sensor_extrinsics', 'mount_pose_scope': 'PER-CLIP', 'extrinsics_path': 'D:\\\\refcv6_eval_kit\\\\data\\\\refcv6_train_eval139_extrinsics.json', 'n_clips': 4508, 'key': 'stable_episode_id(clip_id)', 'height_m_min': 1.2031489610671997, 'height_m_max': 1.6871625185012817, 'height_m_median': 1.3118689060211182, 'optical_axis_pitch_rad_min': -0.0755354301422919, '"
+ },
+ "dataset": {
+  "label_clock": {
+   "rule": "t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (tanitad/data/clip_clock.py; A16 2026-09-26)",
+   "sidecar": "D:\\refcv6_eval_kit\\data\\refcv6_clip_clock_sidecar.jsonl",
+   "sidecar_rows": 4483,
+   "n_clips": 5,
+   "n_from_sidecar": 5,
+   "n_pose_dt_grid_start_0": 0,
+   "n_nominal_dt_grid_start_0": 0,
+   "raw_offsets": [
+    2
+   ],
+   "dt_s_median": 0.10066585490731451,
+   "dt_s_min": 0.10050067456324396,
+   "dt_s_max": 0.10066662534542875
+  },
+  "label_clock_g3": {
+   "status": "pre-FIX tree: V3Dataset has no assert_label_clock_true (G3); TACTICAL on all clips"
+  },
+  "labels": {
+   "path": "D:\\refcv6_eval_kit\\data\\v8labels\\labels\\s2_labels_v8_eval.jsonl.gz",
+   "md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_records": 147
+  },
+  "nav": {
+   "n_clips": 5,
+   "follow": 0,
+   "left": 0,
+   "right": 5,
+   "missing": 0,
+   "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+   "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "allow_oracle_nav": true
+  },
+  "max_speed_v6": {
+   "sidecar": "refcv6_speed_max_v8_eval.jsonl",
+   "n_rows": 147,
+   "n_valid": 147,
+   "n_over_ceiling": 1,
+   "over_ceiling_frac": 0.006803,
+   "source_md5": "eefc38d1453bd1c73802d44d45affced",
+   "source_labels": "s2_labels_v8_eval.jsonl.gz",
+   "join_key": "sid = stable_episode_id(clip_id)",
+   "ladder_kmh": [
+    30,
+    50,
+    100,
+    120
+   ],
+   "quantized_by": "tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder (model side, ONCE); this reader ships the RAW v_hi_ms and only CHECKS the sidecar's own bin",
+   "_derivation": "refcv6 4-way one-hot set-speed, CONTAINING-WINDOW quantization over {30, 50, 100, 120} km/h: (0,30]->30, (30,50]->50, (50,100]->100, (100,120]->120, and > 120 CLAMPS to 120 (counted and reported). Source field v7.2/v8 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]); the PI authorised the future-ego derivation explicitly on 2026-09-16 provided the value lands in the containing window. It models a max SET speed - a limiter the driver sets - so the realised speed sits INSIDE the window and never above it. INPUT, never a training signal: no loss reaches this channel in refcv6.",
+   "channel": "refcv6 4-way one-hot (\u00a75)",
+   "label_md5": "eefc38d1453bd1c73802d44d45affced",
+   "n_windows": 855,
+   "n_windows_fed": 855,
+   "window_ceiling_frac": 1.0
+  },
+  "agent_join": {
+   "path": "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+   "n_episodes": 5,
+   "n_episodes_joined_stable_id": 5,
+   "n_episodes_joined_legacy_id": 0,
+   "n_ambiguous_legacy_ids_in_join": 0,
+   "id_space": "stable-63bit",
+   "allow_legacy_ids": false,
+   "n_windows": 855,
+   "n_windows_labelled": 855,
+   "frac_windows_labelled": 1.0,
+   "n_windows_labelled_clear": 0,
+   "n_target_boxes_prefilter": 72687,
+   "agent_pad": 397,
+   "reader_max_agents_per_frame": 395,
+   "reader_n_records": 1000,
+   "reader_n_clips": 5,
+   "reader_has_classes": true,
+   "reader_has_occlusion_flags": true,
+   "reader_with_rates": true,
+   "pad_source": "config.json agent_join_stats.train.agent_pad",
+   "load_s": 1.5
+  },
+  "join3d": {
+   "path": "C:\\Users\\Admin\\qland\\work\\gtval\\eval_agents_3d.jsonl",
+   "n_lines": 1000,
+   "n_agents": 85939,
+   "n_clips": 5,
+   "load_s": 1.7
+  },
+  "n_episodes": 5,
+  "n_windows": 855
+ },
+ "provenance": {
+  "published_source": "PhysicalAI-AV labels/obstacle.offline cuboids (rig frame; the B1 eval mirror obstacle_offline_b1eval)",
+  "join_2d": {
+   "file": "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+   "bytes": 97839483,
+   "built_by": "stack/scripts/build_b1_agent_join.py (join_clip_raw :347; per-track nearest sample world_agents_at + planar SE(2) ego_frame_agents :409-410)",
+   "read_by": "stack/scripts/train_p8_occupancy.py JoinFileReader (:240; lookup :465, lookup_classes :472, lookup_track_ids :481)"
+  },
+  "join_3d": {
+   "file": "C:/Users/Admin/qland/work/gtval/eval_agents_3d.jsonl",
+   "bytes": 117697053,
+   "built_by": "stack/scripts/build_b1_agent_join_3d.py (center_z / size_z re-attached BY TRACK ID; agent_cuboid_gt.py module docstring)",
+   "read_by": "stack/tanitad/data/agent_cuboid_gt.py AgentJoin3D (:298), zh_for_frame (:411), base_from_centre (:430)"
+  },
+  "per_window_gt": "stack/scripts/refc_v3_train.py:2764-2864 V3Dataset._agent_item (raw rows, NO visibility filter; agent_slots.targets_from_join :1014-1077)",
+  "trainer_target_filter": "stack/tanitad/refs/refc_agents.py:410-433 visible_target_filter -> filter_targets_to_visible :336-406; decode box agent_slots.py:526-539 SlotDecodeRanges (x 60 m, |y| 16 m); applied in box3d_set_loss (box3d_head.py:376-411) and agent_losses (refc_agents.py:849-852)",
+  "pad": {
+   "agent_pad": 397,
+   "source": "config.json agent_join_stats.train.agent_pad"
+  },
+  "tree": "C:/Users/Admin/ev6_82c2331",
+  "join_subsets": {
+   "agent_join": {
+    "config_file": "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+    "used_subset": "C:/Users/Admin/qland/work/gtval/eval_agents.jsonl",
+    "subset_bytes": 97839483
+   },
+   "join3d": {
+    "config_file": "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+    "used_subset": "C:/Users/Admin/qland/work/gtval/eval_agents_3d.jsonl",
+    "subset_bytes": 117697053
+   }
+  }
+ },
+ "stills": [
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_0191487845ef_w064.png",
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_9f8bedcfb9de_w104.png",
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_34765c024267_w108.png",
+  "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\stills\\still_22d47ae7e052_w086.png"
+ ],
+ "video": {
+  "frames": 980,
+  "fps": 10,
+  "duration_s": 98.0,
+  "full": {
+   "path": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\refcv6_gt_validation_step38000.mp4",
+   "bytes": 61881657,
+   "crf": 20,
+   "scale": null
+  },
+  "compact": {
+   "path": "D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\refcv6_gt_validation_step38000_compact.mp4",
+   "bytes": 6930078,
+   "crf": 34,
+   "scale": 1280
+  },
+  "compact_under_limit": true,
+  "verify_mp4": {
+   "exit": 0,
+   "stdout_tail": "==============================================================================\nFILE        D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\refcv6_gt_validation_step38000.mp4\nsize        61,881,657 B = 59.01 MiB   [OVER the 30 MiB delivery limit]\ncodec       h264 / High pix=yuv420p\ndimensions  1920x1200   (container metadata)\navg_fps     10.000      duration 98.00 s\nDECODED     980 frames   decode_clean=True\nconsistency n/fps = 98.00 s vs container 98.00 s\n==============================================================================\nFILE        D:\\Projects\\TanitAD\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-09-26-refcv6-gt-validation\\raw\\refcv6_gt_validation_step38000_compact.mp4\nsize        6,930,078 B = 6.61 MiB   [UNDER the 30 MiB delivery limit]\ncodec       h264 / High pix=yuv420p\ndimensions  1280x800   (container metadata)\navg_fps     10.000      duration 98.00 s\nDECODED     980 frames   decode_clean=True\nconsistency n/fps = 98.00 s vs container 98.00 s\n==============================================================================\n"
+  }
+ },
+ "wall_s": 494.4,
+ "finished": "2026-09-27T01:38:46"
+}

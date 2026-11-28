@@ -1,0 +1,60 @@
+CMD: C:/Users/Admin/venvs/tanitad/Scripts/python.exe C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\code\run_bridge6.py --split warmup_two_stage --arms R6_A1,R6_A1_s1,R6_BLIND,R6_NAVOFF,R6_VMAXOFF,R6_A1NT --inputs C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\..\..\2026-09-19-navsim-refcv4b-bridge\raw\navsim_agent_inputs.json --speed C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\speed_limits_warmup_two_stage.json --road-plane C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\inputs\road_plane_navhard_warmup_logs.json --ckpt D:/refcv6_eval_kit/ckpt\ckpt_30000.pt --config D:/refcv6_eval_kit/ckpt/config.json --ckpt-md5 0c5c67b3ecf28495d54348e3436371bf --device cpu --precision auto --threads 8 --out C:\Users\Admin\ev6\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-23-refcv6-standard-tests\navsim\raw\milestones\step30000\bridge_warmup --exact-dedup --bank2 C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/warmup_two_stage
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from D:/refcv6_eval_kit/navsim_aux/refcv6_train_eval139_extrinsics.json (4508 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[bridge6] step=30000 steps=2 precision=fp32 device=cpu load 16.0s md5=0c5c67b3ecf28495d54348e3436371bf
+  [R6_A1] 25/220 (25 new) 4.73 s/scene
+  [R6_A1] 50/220 (50 new) 4.58 s/scene
+  [R6_A1] 75/220 (75 new) 4.63 s/scene
+  [R6_A1] 100/220 (100 new) 4.74 s/scene
+  [R6_A1] 125/220 (125 new) 4.76 s/scene
+  [R6_A1] 150/220 (150 new) 4.48 s/scene
+  [R6_A1] 175/220 (175 new) 4.17 s/scene
+  [R6_A1] 200/220 (200 new) 3.84 s/scene
+[bridge6] R6_A1: 204 refcv6 rows, 16 stand-ins, missing 0, 776.0 s
+  [R6_A1_s1] 25/220 (25 new) 3.10 s/scene
+  [R6_A1_s1] 50/220 (50 new) 3.37 s/scene
+  [R6_A1_s1] 75/220 (75 new) 3.23 s/scene
+  [R6_A1_s1] 100/220 (100 new) 3.04 s/scene
+  [R6_A1_s1] 125/220 (125 new) 2.89 s/scene
+  [R6_A1_s1] 150/220 (150 new) 2.74 s/scene
+  [R6_A1_s1] 175/220 (175 new) 2.59 s/scene
+  [R6_A1_s1] 200/220 (200 new) 2.49 s/scene
+[bridge6] R6_A1_s1: 204 refcv6 rows, 16 stand-ins, missing 0, 504.7 s
+  [R6_BLIND] 25/220 (25 new) 1.83 s/scene
+  [R6_BLIND] 50/220 (50 new) 1.84 s/scene
+  [R6_BLIND] 75/220 (75 new) 1.82 s/scene
+  [R6_BLIND] 100/220 (100 new) 1.77 s/scene
+  [R6_BLIND] 125/220 (125 new) 1.91 s/scene
+  [R6_BLIND] 150/220 (150 new) 2.07 s/scene
+  [R6_BLIND] 175/220 (175 new) 2.18 s/scene
+  [R6_BLIND] 200/220 (200 new) 2.26 s/scene
+[bridge6] R6_BLIND: 220 refcv6 rows, 0 stand-ins, missing 0, 507.4 s
+  [R6_NAVOFF] 25/220 (25 new) 2.87 s/scene
+  [R6_NAVOFF] 50/220 (50 new) 2.91 s/scene
+  [R6_NAVOFF] 75/220 (75 new) 2.91 s/scene
+  [R6_NAVOFF] 100/220 (100 new) 2.89 s/scene
+  [R6_NAVOFF] 125/220 (125 new) 2.88 s/scene
+  [R6_NAVOFF] 150/220 (150 new) 2.91 s/scene
+  [R6_NAVOFF] 175/220 (175 new) 2.84 s/scene
+  [R6_NAVOFF] 200/220 (200 new) 2.69 s/scene
+[bridge6] R6_NAVOFF: 204 refcv6 rows, 16 stand-ins, missing 0, 544.2 s
+  [R6_VMAXOFF] 25/220 (25 new) 1.63 s/scene
+  [R6_VMAXOFF] 50/220 (50 new) 1.56 s/scene
+  [R6_VMAXOFF] 75/220 (75 new) 1.53 s/scene
+  [R6_VMAXOFF] 100/220 (100 new) 1.55 s/scene
+  [R6_VMAXOFF] 125/220 (125 new) 1.58 s/scene
+  [R6_VMAXOFF] 150/220 (150 new) 1.60 s/scene
+  [R6_VMAXOFF] 175/220 (175 new) 1.63 s/scene
+  [R6_VMAXOFF] 200/220 (200 new) 1.62 s/scene
+[bridge6] R6_VMAXOFF: 204 refcv6 rows, 16 stand-ins, missing 0, 331.3 s
+  [R6_A1NT] 25/220 (25 new) 2.68 s/scene
+  [R6_A1NT] 50/220 (50 new) 2.84 s/scene
+  [R6_A1NT] 75/220 (75 new) 3.00 s/scene
+  [R6_A1NT] 100/220 (100 new) 3.02 s/scene
+  [R6_A1NT] 125/220 (125 new) 3.02 s/scene
+  [R6_A1NT] 150/220 (150 new) 3.00 s/scene
+  [R6_A1NT] 175/220 (175 new) 3.07 s/scene
+  [R6_A1NT] 200/220 (200 new) 3.13 s/scene
+[bridge6] R6_A1NT: 204 refcv6 rows, 16 stand-ins, missing 0, 642.1 s

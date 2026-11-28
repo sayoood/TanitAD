@@ -1,0 +1,121 @@
+{
+ "tool": "stack/scripts/build_v8_speed_max_labels.py",
+ "block_schema": "speed_max_input/1",
+ "splits": {
+  "train": {
+   "src": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-04-v72-label-release\\raw\\s2_labels_v7.2_train.jsonl.gz",
+   "src_md5": "0ff902130ce76886b8a925eceed9e3a5",
+   "dst": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_train.jsonl.gz",
+   "dst_md5": "fa89ea55dfce68403eb30300e57852ab",
+   "release": "v8.0",
+   "schema_version_UNCHANGED": "s2-geom-v7",
+   "vocab_UNCHANGED": "v7",
+   "n_records": 4572,
+   "n_with_block": 4572,
+   "coverage": 1.0,
+   "control_clip_id_present": 4572,
+   "control_g_tac_present": 4572,
+   "n_null_ceiling": 0,
+   "n_over_ceiling": 28,
+   "n_under_floor": 1649,
+   "ceiling_bucket_hist_kmh": {
+    "20": 809,
+    "30": 932,
+    "50": 1593,
+    "70": 620,
+    "80": 165,
+    "100": 229,
+    "120": 138,
+    "130": 86
+   },
+   "floor_bucket_hist_kmh": {
+    "20": 2451,
+    "30": 1134,
+    "50": 465,
+    "70": 141,
+    "80": 194,
+    "100": 117,
+    "120": 47,
+    "130": 23
+   },
+   "ladder_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    100,
+    120,
+    130
+   ],
+   "ladder_ms": [
+    "5.555555555555555",
+    "8.333333333333334",
+    "13.88888888888889",
+    "19.444444444444443",
+    "22.22222222222222",
+    "27.77777777777778",
+    "33.333333333333336",
+    "36.11111111111111"
+   ],
+   "derivation": "v7.2 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]; floor from .v_lo_ms; allow_oracle_nav=True). INPUT standing in for a speed-limit service, never a training signal."
+  },
+  "eval": {
+   "src": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-04-v72-label-release\\raw\\s2_labels_v7.2_eval.jsonl.gz",
+   "src_md5": "aa12c948f062181c3297265b51526ec5",
+   "dst": "TanitAD Research Lab\\Data Engineering\\Implementation\\incoming\\2026-09-10-v8-speed-max-label-release\\raw\\s2_labels_v8.0_eval.jsonl.gz",
+   "dst_md5": "38a6239903478c078702d12b518b4bac",
+   "release": "v8.0",
+   "schema_version_UNCHANGED": "s2-geom-v7",
+   "vocab_UNCHANGED": "v7",
+   "n_records": 147,
+   "n_with_block": 147,
+   "coverage": 1.0,
+   "control_clip_id_present": 147,
+   "control_g_tac_present": 147,
+   "n_null_ceiling": 0,
+   "n_over_ceiling": 0,
+   "n_under_floor": 50,
+   "ceiling_bucket_hist_kmh": {
+    "20": 23,
+    "30": 26,
+    "50": 52,
+    "70": 25,
+    "80": 5,
+    "100": 9,
+    "120": 6,
+    "130": 1
+   },
+   "floor_bucket_hist_kmh": {
+    "20": 71,
+    "30": 39,
+    "50": 19,
+    "70": 6,
+    "80": 6,
+    "100": 5,
+    "120": 1
+   },
+   "ladder_kmh": [
+    20,
+    30,
+    50,
+    70,
+    80,
+    100,
+    120,
+    130
+   ],
+   "ladder_ms": [
+    "5.555555555555555",
+    "8.333333333333334",
+    "13.88888888888889",
+    "19.444444444444443",
+    "22.22222222222222",
+    "27.77777777777778",
+    "33.333333333333336",
+    "36.11111111111111"
+   ],
+   "derivation": "v7.2 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max of the ego's OWN REALISED speed over [t0+2 s, +6 s]; floor from .v_lo_ms; allow_oracle_nav=True). INPUT standing in for a speed-limit service, never a training signal."
+  }
+ }
+}

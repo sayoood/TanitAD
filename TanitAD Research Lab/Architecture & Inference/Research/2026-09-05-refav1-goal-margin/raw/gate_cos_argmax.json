@@ -1,0 +1,79 @@
+{
+ "dump": "C:/Users/Admin/refav1_margin/p4out/dump_cos_argmax",
+ "arm": "cos_argmax",
+ "n_windows_total": 40,
+ "n_windows_scored": 31,
+ "kappa_turn_threshold": 0.04,
+ "exec_nonzero_eps": 0.001,
+ "gt_source": "computed from the dump's own `g` (no join)",
+ "panel_note": "episodes selected for real-turn DENSITY; these are CONDITIONAL rates on a turn-rich panel, NOT corpus marginals",
+ "GT_TURN_windows": {
+  "name": "GT TURN (|kappa|>thr)",
+  "n": 11,
+  "UNDERPOWERED_n_lt_10": false,
+  "frac_executed_nonzero_curvature": 0.9090909090909091,
+  "kappa_absmax_mean": 0.12126479297876358,
+  "kappa_absmax_p50": 0.11897953599691391,
+  "kappa_absmax_max": 0.20000000298023224,
+  "n_exactly_zero": 1,
+  "decode_curv_frac": 0.7272727272727273,
+  "plan_source_hist": {
+   "0": 10,
+   "2": 1
+  },
+  "frac_executed_nonzero_AND_correct_direction": 0.45454545454545453
+ },
+ "GT_STRAIGHT_windows": {
+  "name": "GT STRAIGHT",
+  "n": 20,
+  "UNDERPOWERED_n_lt_10": false,
+  "frac_executed_nonzero_curvature": 0.9,
+  "kappa_absmax_mean": 0.13682928681373596,
+  "kappa_absmax_p50": 0.15229085087776184,
+  "kappa_absmax_max": 0.20000000298023224,
+  "n_exactly_zero": 2,
+  "decode_curv_frac": 0.3,
+  "plan_source_hist": {
+   "0": 18,
+   "2": 1,
+   "3": 1
+  }
+ },
+ "decoded_lat_hist": {
+  "LANE_KEEP": 17,
+  "TURN_L": 6,
+  "TURN_R": 8
+ },
+ "controls": {
+  "CONTROL_ha0_ext_curvature_MUST_BE_NONZERO": {
+   "frac_nonzero": 1.0,
+   "absmax": 0.6030507683753967,
+   "n": 40,
+   "passes": true,
+   "note": "the NON-planner integrator banked in the SAME npz. If this reads zero the curvature column is dead and every zero above is a READ ERROR, not a measurement."
+  },
+  "low_speed_excluded": {
+   "n_excluded": 9,
+   "n_kept": 31,
+   "min_v0": 1.0,
+   "passes": true
+  },
+  "CONTROL_bank_join_agrees_after_name_remap": {
+   "n_matched": 40,
+   "n_windows": 40,
+   "max_abs_diff": 0.0,
+   "remap_is_injective": true,
+   "passes": true,
+   "note": "\u26d4 the arm's clip_index is SUBSET-relative (0..7 here) while the bank's is 0..140; a raw (clip_index, ws) join would silently hit the WRONG episodes"
+  },
+  "CONTROL_reproduces_banked_decode_prediction": {
+   "predicted": 0.8235294117647058,
+   "measured": 0.7272727272727273,
+   "n_turn": 11,
+   "UNDERPOWERED_not_evaluated": false,
+   "passes": true
+  }
+ },
+ "controls_failed": [],
+ "verdict": "GATE OPEN: executed curvature non-zero on 0.9091 of GT-turn windows"
+}

@@ -1,0 +1,176 @@
+{
+ "tool": "strat1_ctx_read.py",
+ "tier": "T0 (per-frame perception output at the window's NOW frame)",
+ "evidence_class": "MEASURED (ours; T0 evals, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0 (F:\\TanitAD-scratch\\strat1\\read/tree/taniteval/taniteval/ci.py); 'another draw of EPISODES' only",
+ "smoke": false,
+ "inputs_sha256": {
+  "strat_labels_table.npz": "8055a321df6db1725ea17abde2999d48bcb68d43f1a480a69ed42dd0cf184eff",
+  "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a",
+  "strat_platform_by_clip.npz": "b18705db6a2665e324a4ce4d1e7364c57305c15a34a770a5a6274ef1e2d148ee"
+ },
+ "baselines_from_table": {
+  "country": {
+   "constant_class": 24,
+   "constant_acc_steps": 0.0920525613098166,
+   "n_steps": 14231,
+   "report_basis_acc": 0.0920525613098166
+  },
+  "weather": {
+   "constant_class": 0,
+   "constant_acc_steps": 0.8703128386677264,
+   "n_steps": 13841,
+   "report_basis_acc": 0.8703128386677264
+  },
+  "surface": {
+   "constant_class": 0,
+   "constant_acc_steps": 0.7853127196064652,
+   "n_steps": 14230,
+   "report_basis_acc": 0.7853127196064652
+  },
+  "illumination": {
+   "constant_class": 1,
+   "constant_acc_steps": 0.6048888571224359,
+   "n_steps": 13991,
+   "report_basis_acc": 0.5946876537137236
+  },
+  "period_of_day": {
+   "constant_class": 4,
+   "constant_acc_steps": 0.241304195067107,
+   "n_steps": 14231,
+   "report_basis_acc": 0.241304195067107
+  },
+  "twilight": {
+   "n_steps": 240,
+   "n_clips": 5
+  }
+ },
+ "labels_report": {
+  "country": 0.092,
+  "weather": 0.8703128386677264,
+  "surface": 0.785,
+  "illumination": 0.595,
+  "period_of_day": 0.241
+ },
+ "rig_map": {
+  "0": 24,
+  "1": 9
+ },
+ "illumination_twilight": {
+  "status": "n/a (excluded)",
+  "n_steps": 240,
+  "n_clips": 5,
+  "note": "the card text says 1 clip; the table has this many clips with at least one twilight step"
+ },
+ "not_in_arm": {
+  "C0": "no output",
+  "N1": "no output"
+ },
+ "problems": [],
+ "arms": {},
+ "controls": {
+  "K2": {
+   "country": {
+    "read": 0.0921217173822426,
+    "must_read": 0.0921217173822426,
+    "pass": true
+   },
+   "weather": {
+    "read": 0.8824538824538825,
+    "must_read": 0.8824538824538825,
+    "pass": true
+   },
+   "surface": {
+    "read": 0.7969987494789496,
+    "must_read": 0.7969987494789496,
+    "pass": true
+   },
+   "illumination": {
+    "read": 0.6061890631623569,
+    "must_read": 0.6061890631623569,
+    "pass": true
+   },
+   "period_of_day": {
+    "read": 0.2409337223843268,
+    "must_read": 0.2409337223843268,
+    "pass": true
+   }
+  },
+  "K3": {
+   "country": {
+    "read": 1.0,
+    "detects": true,
+    "pass": true
+   },
+   "weather": {
+    "read": 1.0,
+    "detects": true,
+    "pass": true
+   },
+   "surface": {
+    "read": 1.0,
+    "detects": true,
+    "pass": true
+   },
+   "illumination": {
+    "read": 1.0,
+    "detects": true,
+    "pass": true
+   },
+   "period_of_day": {
+    "read": 1.0,
+    "detects": true,
+    "pass": true
+   }
+  },
+  "K5": {
+   "country": {
+    "detects": false,
+    "pass": true
+   },
+   "weather": {
+    "detects": false,
+    "pass": true
+   },
+   "surface": {
+    "detects": false,
+    "pass": true
+   },
+   "illumination": {
+    "detects": false,
+    "pass": true
+   },
+   "period_of_day": {
+    "detects": false,
+    "pass": true
+   }
+  },
+  "K6": {
+   "read": 0.0779491454772822,
+   "must_read": 0.0779491454772822,
+   "detects_beyond_rig": false,
+   "pass": true
+  }
+ },
+ "outcome": {
+  "country": "NOT-YET",
+  "weather": "NOT-YET",
+  "surface": "NOT-YET",
+  "illumination": "NOT-YET",
+  "period_of_day": "NOT-YET"
+ },
+ "next_step": null,
+ "fog_unscored": {
+  "ruling": "PI 2026-11-17 'Drop fog for now' (fog label 2/10 in the blind PI audit)",
+  "eval_steps_fog": 390,
+  "eval_clips_with_fog_steps": 15,
+  "scored_classes": [
+   "clear",
+   "rain",
+   "snow"
+  ],
+  "fog_logit": "masked to -inf before the argmax",
+  "weather_constant_check": "no-fog constant recomputed from the table (no LABELS_REPORT value exists without fog)",
+  "weather_report_basis_acc_nofog": 0.8703128386677264
+ }
+}

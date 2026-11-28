@@ -1,0 +1,10 @@
+P1 RED: the three-lead-token audit always passes | tests -k 'argv_audit_is_exact' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 15.65s
+P2 RED: marker sha not compared | tests -k 'marker_sha_that_differs' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 8.08s
+P3 RED: cfg aux_cond not checked | tests -k 'wiring_the_checkpoint' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 7.93s
+P4 RED: token wiring tolerates e_level / missing e_aux keys | tests -k 'without_the_lead_head' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 9.33s
+P5 RED: recover_n not required | tests -k 'recovery_evidence' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 8.24s
+P6 RED: the base-checkpoint record is not compared | tests -k 'banked_arrays_came' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 8.65s
+P7 RED: the gate token's commit is not compared | tests -k 'gate_token_bound' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 7.71s
+P8 RED: an absent checkpoint exits 8 instead of 5 | tests -k 'absent_checkpoint or missing_marker' | clean rc 0, mutated rc 1 | 1 failed, 20 deselected in 6.88s
+P9 RED: a CLR base with the lead head is tolerated | tests -k 'clr_checkpoint_that_has_the_lead_head' | clean rc 0, mutated rc 1 | 1 failed, 21 deselected in 6.41s
+P10 RED: the frozen file's W_LEAD is not validated | tests -k 'missing_or_bad_frozen_file' | clean rc 0, mutated rc 1 | 1 failed, 4 passed, 16 deselected in 17.91s

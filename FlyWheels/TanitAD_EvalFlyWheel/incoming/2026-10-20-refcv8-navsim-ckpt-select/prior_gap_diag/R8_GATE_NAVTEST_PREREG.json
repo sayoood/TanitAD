@@ -1,0 +1,20 @@
+{
+  "id": "R8-GATE-NAVTEST",
+  "filed": "2026-10-21 ~10:15 Europe/Berlin, before any refcv8 navtest score exists",
+  "status": "PRE-REGISTERED diagnostic lever test; never a bar",
+  "arms": {
+    "G_CMD": "PRIOR_ha0p where NavSim driving_command == 1 (straight), else R8_RT (seed 1: R8_RT_s1)",
+    "G_ARC": "PRIOR_ha0p where |ln(arc4(R8_RT)/max(arc4(PRIOR_ha0p),0.05))| > 0.1368, else R8_RT (seed 1: R8_RT_s1, same threshold)"
+  },
+  "arc4": "cumulative chord length through the origin to pose index 7 (4.0 s) of the 8-pose NavSim plan (prior_gap_diag.py arc_len, IDX4=7)",
+  "threshold_derivation": {
+    "source": "navtrain selection seams run/navtrain_sel/ema48852/bridge/seam_{R8_RT,R8_RT_s1,PRIOR_ha0p}.npz, 2,089 tokens",
+    "modal_cv_fallback_fraction": 0.60,
+    "s0_quantile_at_0.40": 0.13684, "s1_quantile_at_0.40": 0.13107,
+    "fixed_threshold": 0.1368, "ratio_band_kept_for_RT": [0.8721, 1.1466]
+  },
+  "scoring": "exact per-token selection of the scored R8_RT / PRIOR_ha0p rows (the PDM scorer scores tokens independently)",
+  "criterion": "WORKS iff G - PRIOR_ha0p > 0 with the paired log-cluster bootstrap B 2000 interval excluding 0 at log_name AND nuplan_drive, at both inference seeds, and margin > 2x |d_s0 - d_s1|; FAILED if point <= 0 at either seed; else NOT PROVEN",
+  "beside": ["G - R8_RT", "city stratum", "command stratum", "NC/DAC/TTC/EP/C"],
+  "navtrain_posthoc_reference": {"G_CMD_minus_PRIOR": [3.13, 0.48, 5.71], "G_ARC_minus_PRIOR": [4.84, 2.60, 7.69]}
+}

@@ -1,0 +1,139 @@
+F.F.FF.F...............F...........F...F                                 [100%]
+================================== FAILURES ===================================
+______________________ test_matching_rh_and_b0_mint_pass ______________________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000002578F580C20>
+
+    def test_matching_rh_and_b0_mint_pass(rig):
+        pr, gd = rig.mint("RH")
+>       assert pr == [], pr
+E       AssertionError: ['check C-RH-BANKGEN did not pass: {"pass": false, "problems": ["the bank\'s generator record reads readout \'pinned\'...nk.json\'s", "shard 3: its provenance generator record differs from bank.json\'s"], "readout_token": "causal_g1x", "k']
+E       assert ['check C-RH-...sal_g1x", "k'] == []
+E         
+E         Left contains one more item: 'check C-RH-BANKGEN did not pass: {"pass": false, "problems": ["the bank\'s generator record reads readout \'pinned\',...ank.json\'s", "shard 3: its provenance generator record differs from bank.json\'s"], "readout_token": "causal_g1x", "k'
+E         Use -v to get more diff
+
+test_dscale10k_check_rh.py:245: AssertionError
+_______________ test_causal_g1_refused_pair_check_needs_a_flag ________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b7grid/gatefix/tmp/bt_old/test_causal_g1_refused_pair_ch0')
+
+    def test_causal_g1_refused_pair_check_needs_a_flag(tmp_path):
+        r = Rig(tmp_path / "g1", gen="causal_g1")
+        pr, _ = r.mint("RH", token="causal_g1")
+        assert pr and "hard-codes" in "\n".join(pr) and "committed-code change" in "\n".join(pr), pr
+        assert refused_by(pr, "C-RH-PAIR")
+        # ... and the rest of the checks read clean: the pair check is the ONLY thing refusing (nothing is patched in process)
+>       assert not [x for x in pr if "check C-RH-PAIR" not in x], pr
+E       AssertionError: ['check C-RH-PAIR did not pass: {"pass": false, "problems": ["readout \'causal_g1\': stack/scripts/rollhist_pair_check...k.json\'s", "shard 3: its provenance generator record differs from bank.json\'s"], "readout_token": "causal_g1", "kap']
+E       assert not ['check C-RH-BANKGEN did not pass: {"pass": false, "problems": ["the bank\'s generator record reads readout \'pinned\'...k.json\'s", "shard 3: its provenance generator record differs from bank.json\'s"], "readout_token": "causal_g1", "kap']
+
+test_dscale10k_check_rh.py:290: AssertionError
+___________ test_bank_in_the_merge_shape_passes_the_generator_check ___________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000002578F6910F0>
+
+    def test_bank_in_the_merge_shape_passes_the_generator_check(rig):
+        rig.make_bank("causal_g1x")
+        man = json.load(open(os.path.join(rig.bank_dir, "bank.json"), encoding="utf-8"))
+        assert "generator" not in man and man["common"]["generator"] == GEN["causal_g1x"]        # the fixture IS the merge's shape (v8f_dagger_bank.py:329/411)
+>       assert not NEW.rh_bank_generator_problems(rig.bank_dir, rig.bank_sha, "causal_g1x")
+E       assert not ["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record re...enance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"]
+E        +  where ["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record re...enance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"] = <function rh_bank_generator_problems at 0x000002578FA8F240>('F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_bank_in_the_merge_shape_p0\\w0\\bank\\s0', '3acb822b05bd177bd24bab9b1cf709ed3c4d5c3babad8198f18f88b8a48af614', 'causal_g1x')
+E        +    where <function rh_bank_generator_problems at 0x000002578FA8F240> = NEW.rh_bank_generator_problems
+E        +    and   'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_bank_in_the_merge_shape_p0\\w0\\bank\\s0' = <test_dscale10k_check_rh.Rig object at 0x000002578F6910F0>.bank_dir
+E        +    and   '3acb822b05bd177bd24bab9b1cf709ed3c4d5c3babad8198f18f88b8a48af614' = <test_dscale10k_check_rh.Rig object at 0x000002578F6910F0>.bank_sha
+
+test_dscale10k_check_rh.py:310: AssertionError
+__________ test_toplevel_generator_that_differs_from_common_refused ___________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000002578F701A30>
+
+    def test_toplevel_generator_that_differs_from_common_refused(rig):
+        rig.make_bank("causal_g1x", toplevel={"readout": "pinned"})
+        p = NEW.rh_bank_generator_problems(rig.bank_dir, rig.bank_sha, "causal_g1x")
+>       assert p and any("top-level generator" in x for x in p), p
+E       AssertionError: ["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record re...enance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"]
+E       assert (["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record re...enance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"] and False)
+E        +  where False = any(<generator object test_toplevel_generator_that_differs_from_common_refused.<locals>.<genexpr> at 0x00000257BEC07B90>)
+
+test_dscale10k_check_rh.py:318: AssertionError
+_______________________ test_bank_sha_mismatch_refused ________________________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x00000257BEB39370>
+
+    def test_bank_sha_mismatch_refused(rig):
+        rh = rig.setf(rig.rh_toks, "--dagger-bank-sha256", "0" * 64)
+        pr, _ = rig.mint("RH", rh_toks=rh)
+        assert pr, "an argv whose --dagger-bank-sha256 is not the sha256 of bank.json must not mint"
+        txt = "\n".join(pr)
+        assert "--dagger-bank-sha256" in txt or "bank.json sha256" in txt
+        # and the RH-side check itself reads it (function level)
+>       assert NEW.rh_bank_generator_problems(rig.bank_dir, "0" * 64, "causal_g1x") and not NEW.rh_bank_generator_problems(rig.bank_dir, rig.bank_sha, "causal_g1x")
+E       assert (['bank.json sha256 3acb822b05bd != --dagger-bank-sha256 000000000000', "the bank's generator record reads readout 'pin...e generator record differs from bank.json's", "shard 2: its provenance generator record differs from bank.json's", ...] and not ["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record re...enance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"])
+E        +  where ['bank.json sha256 3acb822b05bd != --dagger-bank-sha256 000000000000', "the bank's generator record reads readout 'pin...e generator record differs from bank.json's", "shard 2: its provenance generator record differs from bank.json's", ...] = <function rh_bank_generator_problems at 0x000002578FA8F240>('F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_bank_sha_mismatch_refused0\\w0\\bank\\s0', ('0' * 64), 'causal_g1x')
+E        +    where <function rh_bank_generator_problems at 0x000002578FA8F240> = NEW.rh_bank_generator_problems
+E        +    and   'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_bank_sha_mismatch_refused0\\w0\\bank\\s0' = <test_dscale10k_check_rh.Rig object at 0x00000257BEB39370>.bank_dir
+E        +  and   ["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record re...enance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"] = <function rh_bank_generator_problems at 0x000002578FA8F240>('F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_bank_sha_mismatch_refused0\\w0\\bank\\s0', '3acb822b05bd177bd24bab9b1cf709ed3c4d5c3babad8198f18f88b8a48af614', 'causal_g1x')
+E        +    where <function rh_bank_generator_problems at 0x000002578FA8F240> = NEW.rh_bank_generator_problems
+E        +    and   'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_bank_sha_mismatch_refused0\\w0\\bank\\s0' = <test_dscale10k_check_rh.Rig object at 0x00000257BEB39370>.bank_dir
+E        +    and   '3acb822b05bd177bd24bab9b1cf709ed3c4d5c3babad8198f18f88b8a48af614' = <test_dscale10k_check_rh.Rig object at 0x00000257BEB39370>.bank_sha
+
+test_dscale10k_check_rh.py:334: AssertionError
+______ test_the_unchanged_rh_argv_is_not_refused_by_the_fifth_flag_rule _______
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000002578F646D50>
+
+    def test_the_unchanged_rh_argv_is_not_refused_by_the_fifth_flag_rule(rig):
+>       assert rig.mint("RH")[0] == []
+E       assert ['check C-RH-...sal_g1x", "k'] == []
+E         
+E         Left contains one more item: 'check C-RH-BANKGEN did not pass: {"pass": false, "problems": ["the bank\'s generator record reads readout \'pinned\',...ank.json\'s", "shard 3: its provenance generator record differs from bank.json\'s"], "readout_token": "causal_g1x", "k'
+E         Use -v to get more diff
+
+test_dscale10k_check_rh.py:385: AssertionError
+___________________________ test_seed_1_pair_mints ____________________________
+
+tmp_path = WindowsPath('F:/TanitAD-scratch/rollhist/build/b7grid/gatefix/tmp/bt_old/test_seed_1_pair_mints0')
+
+    def test_seed_1_pair_mints(tmp_path):
+        r = Rig(tmp_path / "s1", seed=1)
+>       assert r.mint("RH")[0] == [] and r.mint("B0")[0] == []
+E       assert (['check C-RH-...sal_g1x", "k'] == []
+E         
+E         Left contains one more item: 'check C-RH-BANKGEN did not pass: {"pass": false, "problems": ["the bank\'s generator record reads readout \'pinned\',...ank.json\'s", "shard 3: its provenance generator record differs from bank.json\'s"], "readout_token": "causal_g1x", "k'
+E         Use -v to get more diff)
+
+test_dscale10k_check_rh.py:475: AssertionError
+_________ test_cli_mint_then_run_starts_the_trainer_only_on_the_token _________
+
+rig = <test_dscale10k_check_rh.Rig object at 0x000002578F647650>
+capsys = <_pytest.capture.CaptureFixture object at 0x000002578F580C20>
+
+    def test_cli_mint_then_run_starts_the_trainer_only_on_the_token(rig, capsys):
+        rig.patch_heavy(NEW)
+        open(os.path.join(rig.root, "stack", "scripts", "v8f_mini_train.py"), "w").write("import sys, os\nopen(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'STARTED'), 'w').write(' '.join(sys.argv[1:4]))\n")
+        rp, bp = rig.argv_file("RH_cli", rig.rh_toks), rig.argv_file("B0_cli", rig.b0_toks)
+        gate = os.path.join(rig.tmp, "gate", "RH_cli")
+        started = os.path.join(rig.root, "stack", "scripts", "STARTED")
+>       assert NEW.main(_cli(rig, "mint", "RH_s0", rp, bp, gate, "causal_g1x", rig.sc_rh)) == 0
+E       AssertionError: assert 1 == 0
+E        +  where 1 = <function main at 0x000002578FA8FB00>(['mint', '--arm', 'RH_s0', '--stage', 'B', '--argv', ...])
+E        +    where <function main at 0x000002578FA8FB00> = NEW.main
+E        +    and   ['mint', '--arm', 'RH_s0', '--stage', 'B', '--argv', ...] = _cli(<test_dscale10k_check_rh.Rig object at 0x000002578F647650>, 'mint', 'RH_s0', 'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_cli_mint_then_run_starts_0\\w0\\RH_cli.argv.json', 'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_cli_mint_then_run_starts_0\\w0\\B0_cli.argv.json', 'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_cli_mint_then_run_starts_0\\w0\\gate\\RH_cli', 'causal_g1x', 'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_cli_mint_then_run_starts_0\\w0\\selfcheck_rh.json')
+E        +      where 'F:\\TanitAD-scratch\\rollhist\\build\\b7grid\\gatefix\\tmp\\bt_old\\test_cli_mint_then_run_starts_0\\w0\\selfcheck_rh.json' = <test_dscale10k_check_rh.Rig object at 0x000002578F647650>.sc_rh
+
+test_dscale10k_check_rh.py:522: AssertionError
+---------------------------- Captured stdout call -----------------------------
+REFUSED: check C-RH-BANKGEN did not pass: {"pass": false, "problems": ["the bank's generator record reads readout 'pinned', the argv declares 'causal_g1x'", "the bank's generator record reads kappa 'none', the argv declares '0.2'", "shard 0: its provenance generator record differs from bank.json's", "shard 1: its provenance generator record differs from bank.json's", "shard 2: its provenance generator record differs from bank.json's", "shard 3: its provenance generator record differs from bank.json's"], "readout_token": "causal_g1x", "k
+=========================== short test summary info ===========================
+FAILED test_dscale10k_check_rh.py::test_matching_rh_and_b0_mint_pass - Assert...
+FAILED test_dscale10k_check_rh.py::test_causal_g1_refused_pair_check_needs_a_flag
+FAILED test_dscale10k_check_rh.py::test_bank_in_the_merge_shape_passes_the_generator_check
+FAILED test_dscale10k_check_rh.py::test_toplevel_generator_that_differs_from_common_refused
+FAILED test_dscale10k_check_rh.py::test_bank_sha_mismatch_refused - assert ([...
+FAILED test_dscale10k_check_rh.py::test_the_unchanged_rh_argv_is_not_refused_by_the_fifth_flag_rule
+FAILED test_dscale10k_check_rh.py::test_seed_1_pair_mints - assert (['check C...
+FAILED test_dscale10k_check_rh.py::test_cli_mint_then_run_starts_the_trainer_only_on_the_token
+8 failed, 32 passed in 98.52s (0:01:38)
+rc 1

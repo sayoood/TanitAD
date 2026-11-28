@@ -1,0 +1,38 @@
+{
+ "_what": "clean-tree run + mutation proof of the refcv6 Training Watch health verdicts",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "tip": "d8bd5d4b55b2f112e497f37783eeae621235ab0f",
+ "clean_tree": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms": [
+  {
+   "arm": "W1_unplanned_pinned_to_zero",
+   "went_RED": true,
+   "caught_by": [
+    "test_an_UNPLANNED_relaunch_is_reported_as_a_death"
+   ]
+  },
+  {
+   "arm": "W2_readings_always_ok",
+   "went_RED": true,
+   "caught_by": [
+    "test_conflict_readings_that_STOPPED_are_reported_missing"
+   ]
+  },
+  {
+   "arm": "W3_chip_ignores_the_trainer_pid",
+   "went_RED": true,
+   "caught_by": [
+    "test_a_dead_trainer_is_reported_NOT_RUNNING"
+   ]
+  }
+ ],
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "_VERDICT": "MUTATION-PROVEN -- 3/3 arms RED; restored; final run green."
+}

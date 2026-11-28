@@ -1,0 +1,18 @@
+[    10s] measured 64/128  (3s)
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\wsp_edit_d\read1_d.py", line 195, in <module>
+    sys.exit({"control": cmd_control, "train": cmd_train, "combine": cmd_combine, "eval": cmd_eval}[a.cmd](a))
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\theory\wsp_edit_d\read1_d.py", line 77, in cmd_control
+    ck = torch.load(W.CKPT_C0[s], map_location="cpu", weights_only=False)
+  File "E:\Projects/TanitAD-artifacts/dagland/motion_c/theory/wsp_edit_d\wsp_measure.py", line 37, in <lambda>
+    torch.load = lambda *aa, **kk: _load(*aa, **{**kk, "mmap": True, "weights_only": True})      # ClipStore.get reads one tensor of a 20 MB clip: mmap
+                                   ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\serialization.py", line 1578, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+	(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+	(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+	WeightsUnpickler error: Unsupported global: GLOBAL numpy._core.multiarray._reconstruct was not an allowed global by default. Please use `torch.serialization.add_safe_globals([numpy._core.multiarray._reconstruct])` or the `torch.serialization.safe_globals([numpy._core.multiarray._reconstruct])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.

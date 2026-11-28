@@ -1,0 +1,57 @@
+== control NEW (tb0-tol 1e-8, ranks all): new gates_control_new/gates.json vs run 3 gates/control/gates.json
+   TB-0  new=PASS     run3=PASS     DIFFERS
+   TB-1  new=PASS     run3=PASS     IDENTICAL
+   TB-2  new=PASS     run3=PASS     IDENTICAL
+   TB-3  new=PASS     run3=PASS     IDENTICAL
+   TB-4  new=PASS     run3=PASS     IDENTICAL
+   TB-5  new=PASS     run3=PASS     IDENTICAL
+   TB-6  new=PASS     run3=PASS     IDENTICAL
+   TB-7  new=PASS     run3=PASS     IDENTICAL
+   rank_policy IDENTICAL | failing new: [] run3: [] | label_records 2400 2400
+   TB-0 NEW: status PASS | tc20s part PASS value 1.4901395672950457e-09 n 2400 tol 1e-08 | bar: D Tc20s warm start == dev-box Tc20s build within 1e-08 (R-A)
+== control DEFAULT-ARGS (tol 1e-9, ranks 0) -> must reproduce run 3: new gates_control_old/gates.json vs run 3 gates/control/gates.json
+   TB-0  new=PASS     run3=PASS     IDENTICAL
+   TB-1  new=PASS     run3=PASS     IDENTICAL
+   TB-2  new=PASS     run3=PASS     IDENTICAL
+   TB-3  new=PASS     run3=PASS     IDENTICAL
+   TB-4  new=PASS     run3=PASS     IDENTICAL
+   TB-5  new=PASS     run3=PASS     IDENTICAL
+   TB-6  new=PASS     run3=PASS     IDENTICAL
+   TB-7  new=PASS     run3=PASS     IDENTICAL
+   rank_policy IDENTICAL | failing new: [] run3: [] | label_records 2400 2400
+   defaults identical to run 3 (every gate + rank_policy + failing): True
+== main NEW (fallback + allow-list): new gates_main_new/gates.json vs run 3 gates/main/gates.json
+   TB-0  new=NOT_RUN  run3=NOT_RUN  IDENTICAL
+   TB-1  new=NOT_RUN  run3=NOT_RUN  IDENTICAL
+   TB-2  new=PASS     run3=PASS     DIFFERS
+   TB-3  new=PASS     run3=PASS     IDENTICAL
+   TB-4  new=PASS     run3=PASS     IDENTICAL
+   TB-5  new=PASS     run3=FAIL     DIFFERS
+   TB-6  new=PASS     run3=PASS     IDENTICAL
+   TB-7  new=PASS     run3=PASS     IDENTICAL
+   rank_policy IDENTICAL | failing new: ['TB-0', 'TB-1'] run3: ['TB-0', 'TB-1', 'TB-5'] | label_records 150603 150603
+   TB-5 NEW: status PASS value 150603/150603 n 150603 | detail.label_fallback: {"n": 1, "cap": 1, "reasons": ["tb5_s2_tc20s"], "violations": [], "rows": [{"token": "d06ff3cbd9025da7", "rank": 0, "label_max_abs_dyaw_vs_traj": 0.5498322625075645}], "note": "P5-R S1/S2/S5 are not read for these rows; finiteness and |dyaw vs traj| < pi are checked on the NEW label by the base check above"}
+   TB-5 run3: status FAIL value 150602/150603 | S1_S2_S5_not_true {'S1': 0, 'S2': 1, 'S5': 0}
+   TB-2 leaf differences new vs run3: 1 [["/detail/label_fallback_rows_judged_by_tc20s_knot_dev", {"n": 1, "bar": 1e-09, "n_over_bar": 0, "max_knot_dev": 2.7755575615628914e-17}, "<absent>"]]
+   TB-6 leaf differences new vs run3: 0 []
+   TB-7 leaf differences new vs run3: 0 []
+   TB-4 leaf differences new vs run3: 0 []
+== main DEFAULT-ARGS (no fallback, original rekeyed labels) -> must reproduce run 3: new gates_main_old/gates.json vs run 3 gates/main/gates.json
+   TB-0  new=NOT_RUN  run3=NOT_RUN  IDENTICAL
+   TB-1  new=NOT_RUN  run3=NOT_RUN  IDENTICAL
+   TB-2  new=PASS     run3=PASS     IDENTICAL
+   TB-3  new=PASS     run3=PASS     IDENTICAL
+   TB-4  new=PASS     run3=PASS     IDENTICAL
+   TB-5  new=FAIL     run3=FAIL     IDENTICAL
+   TB-6  new=PASS     run3=PASS     IDENTICAL
+   TB-7  new=PASS     run3=PASS     IDENTICAL
+   rank_policy IDENTICAL | failing new: ['TB-0', 'TB-1', 'TB-5'] run3: ['TB-0', 'TB-1', 'TB-5'] | label_records 150603 150603
+   main defaults identical to run 3 (all 8 gates): True | rank_policy identical: True
+   meta keys new-only: ['p5r_label_fallback'] | meta(old-args) vs run3 differing leaves: ['/code_blob_sha1/p5c_rj5_path.py', '/code_blob_sha1/p5c_table_gates.py']
+   meta p5r_label_fallback: {"n": 1, "cap": 1, "reasons": ["tb5_s2_tc20s"], "rows": [{"token": "d06ff3cbd9025da7", "rank": 0, "label_max_abs_dyaw_vs_traj": 0.5498322625075645}], "allow": [["d06ff3cbd9025da7", "926ffc6698300e477c7d38e78dd13c0277ffdfb4d59bb91c233f475cd3ff5f91"]], "note": "A3.3: these rows carry their own Tc20s label; disclosed per row in the provenance sidecar (fallback_reason)"}
+   merged_labels_rank0only: rows 150603 150603 | rows that differ new vs run3: 1 [('d06ff3cbd9025da7', 0, 'p5r')]
+   merged (defaults) written: True | identical to run 3: True
+== TB-0r NEW (tol 1e-8): PASS | tc20s status PASS max 2.547964894628052e-09 n 16133 | p5r ok True | coverage_ok True
+== TB-0r DEFAULT (tol 1e-9): FAIL max 2.547964894628052e-09 | run 3: FAIL max 2.547964894628052e-09
+   defaults identical to run 3 apart from bar/gates-module sha: True
+   NEW vs run 3 differing leaves: ['/status', '/tc20s/status', '/tc20s/tol']

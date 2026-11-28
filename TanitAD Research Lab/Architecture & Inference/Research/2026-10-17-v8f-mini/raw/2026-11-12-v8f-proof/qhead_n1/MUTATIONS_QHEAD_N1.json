@@ -1,0 +1,134 @@
+{
+ "note": "PREREG_V8F_PROOF_ADD42_N1",
+ "mutations": [
+  {
+   "name": "m1_check_rows_added_to_the_selection",
+   "file": "qhead_fit_n1.py",
+   "old": "sel_idx, sel_y = R[\"hist_idx\"][m_sel], R[\"y\"][m_sel]",
+   "new": "sel_idx, sel_y = R[\"hist_idx\"][m_sel | m_chk], R[\"y\"][m_sel | m_chk]",
+   "applied": true,
+   "tests": [
+    "test_qhead_fit_n1.py::test_check_rows_enter_no_gradient_no_selection_not_the_shift"
+   ],
+   "red": true,
+   "failed": [
+    "test_qhead_fit_n1.py::test_check_rows_enter_no_gradient_no_selection_not_the_shift"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m2_selection_takes_the_last_step",
+   "file": "qhead_fit_n1.py",
+   "old": "if best_val is None or val < best_val:",
+   "new": "if True:",
+   "applied": true,
+   "tests": [
+    "test_qhead_fit_n1.py::test_selection_keeps_the_minimum_of_the_select_curve",
+    "test_qhead_fit_n1.py::test_memorising_fit_rows_selects_an_earlier_step_than_the_last"
+   ],
+   "red": true,
+   "failed": [
+    "test_qhead_fit_n1.py::test_selection_keeps_the_minimum_of_the_select_curve",
+    "test_qhead_fit_n1.py::test_memorising_fit_rows_selects_an_earlier_step_than_the_last"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m3_shift_uses_quantile_020",
+   "file": "qhead_fit_n1.py",
+   "old": "SHIFT_Q = 0.80",
+   "new": "SHIFT_Q = 0.20",
+   "applied": true,
+   "tests": [
+    "test_qhead_fit_n1.py::test_shift_gives_020_on_select_rows_within_one_over_n",
+    "test_qhead_fit_n1.py::test_shift_is_020_on_select_rows_in_the_saved_head"
+   ],
+   "red": true,
+   "failed": [
+    "test_qhead_fit_n1.py::test_shift_gives_020_on_select_rows_within_one_over_n",
+    "test_qhead_fit_n1.py::test_shift_is_020_on_select_rows_in_the_saved_head"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m4_shift_computed_but_not_written",
+   "file": "qhead_fit_n1.py",
+   "old": "    fold_shift(head, c)\n",
+   "new": "    pass\n",
+   "applied": true,
+   "tests": [
+    "test_qhead_fit_n1.py::test_saved_head_reproduces_q_head_minus_c",
+    "test_qhead_fit_n1.py::test_main_end_to_end_record_fields_and_head_file"
+   ],
+   "red": true,
+   "failed": [
+    "test_qhead_fit_n1.py::test_saved_head_reproduces_q_head_minus_c",
+    "test_qhead_fit_n1.py::test_main_end_to_end_record_fields_and_head_file"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m5_h5_read_from_the_select_coverage",
+   "file": "qhead_names_n1.py",
+   "old": "cc = f.get(\"coverage_check\") or {}",
+   "new": "cc = f.get(\"coverage_select\") or {}",
+   "applied": true,
+   "tests": [
+    "test_h3_names_n1.py::test_h5_reads_the_check_coverage_not_the_select_coverage",
+    "test_h3_names_n1.py::test_failed_control_withholds_names_and_differences[h5select]"
+   ],
+   "red": true,
+   "failed": [
+    "test_h3_names_n1.py::test_h5_reads_the_check_coverage_not_the_select_coverage",
+    "test_h3_names_n1.py::test_failed_control_withholds_names_and_differences[h5select]"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m6_h3_planted_difference_check_removed",
+   "file": "qhead_h3_n1.py",
+   "old": "counts = bool(planted_fails)",
+   "new": "counts = True",
+   "applied": true,
+   "tests": [
+    "test_h3_names_n1.py::test_h3_planted_difference_is_caught_else_part_b_does_not_count"
+   ],
+   "red": true,
+   "failed": [
+    "test_h3_names_n1.py::test_h3_planted_difference_is_caught_else_part_b_does_not_count"
+   ],
+   "rc": 1
+  },
+  {
+   "name": "m7_names_given_although_a_control_failed",
+   "file": "qhead_names_n1.py",
+   "old": "    allp = all(v[\"PASS\"] for v in C.values())\n",
+   "new": "    allp = True\n",
+   "applied": true,
+   "tests": [
+    "test_h3_names_n1.py::test_failed_control_withholds_names_and_differences[h1]",
+    "test_h3_names_n1.py::test_failed_control_withholds_names_and_differences[h8check]"
+   ],
+   "red": true,
+   "failed": [
+    "test_h3_names_n1.py::test_failed_control_withholds_names_and_differences[h1]",
+    "test_h3_names_n1.py::test_failed_control_withholds_names_and_differences[h8check]"
+   ],
+   "rc": 1
+  }
+ ],
+ "written_utc": "2026-11-19T03:57:50Z",
+ "control_before": {
+  "rc": 0,
+  "green": true,
+  "summary": "39 passed in 45.89s"
+ },
+ "control_after": {
+  "rc": 0,
+  "green": true,
+  "summary": "39 passed in 24.92s"
+ },
+ "n_mutations": 7,
+ "n_red": 7,
+ "all_ok": true
+}

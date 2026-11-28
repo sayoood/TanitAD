@@ -1,0 +1,315 @@
+{
+ "_evidence_class": "MEASURED (ours; counts/grads/shapes AT INSTANTIATION)",
+ "eval_tier": "N/A - a build measurement, not an eval",
+ "torch": "2.11.0+cu128",
+ "cuda_available": true,
+ "device_used": "cuda",
+ "device_name": "NVIDIA GeForce RTX 4060",
+ "STAGE_GROUPS_S_W": [
+  "encoder",
+  "readout",
+  "predictor_op",
+  "aux"
+ ],
+ "invariant_default_build": {
+  "params": 87893449,
+  "state_dict_keys": 405,
+  "expect_params": 87893449,
+  "expect_keys": 405,
+  "params_ok": true,
+  "keys_ok": true,
+  "_why": "load_resume is hard strict=True; a default-build change kills the live v6F S-W resume (v6.py:3069,:3174)",
+  "secs": 0.35
+ },
+ "ckpt": {
+  "path": "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/sp2/ck/v6F_sw_step011250.fp16.pt",
+  "step": 11250,
+  "stage": "S-W",
+  "run": "v6-staged-S-W",
+  "recorded_param_report_total": 336542025,
+  "state_dict_n_tensors": 573
+ },
+ "incumbent": {
+  "total": 336542025,
+  "per_group": {
+   "encoder": 87284736,
+   "readout": 98432,
+   "predictor_op": 189960707,
+   "layer_tac": 29317165,
+   "layer_str": 27442849,
+   "planner": 788344,
+   "aux": 1649792,
+   "interp": 0
+  },
+  "encoder_class": "ViT5Encoder",
+  "n_tokens": 640,
+  "grid_shape": [
+   16,
+   40
+  ],
+  "d_model": 768,
+  "d_op": 2048,
+  "n_trainable_under_S_W": 278993667,
+  "freeze_audit": {},
+  "matches_recorded": true
+ },
+ "variants": {
+  "E-XENC-1_frozen": {
+   "trainable_backbone_flag": false,
+   "total": 337608009,
+   "per_group": {
+    "encoder": 88350720,
+    "readout": 98432,
+    "predictor_op": 189960707,
+    "layer_tac": 29317165,
+    "layer_str": 27442849,
+    "planner": 788344,
+    "aux": 1649792,
+    "interp": 0
+   },
+   "external_repo": "facebook/dinov2-base",
+   "external_hidden": 768,
+   "external_patch": 14,
+   "external_input_hw": [
+    224,
+    560
+   ],
+   "external_grid": [
+    16,
+    40
+   ],
+   "sub_frames": 3,
+   "backbone_params": 86580480,
+   "adapter_params": 1770240,
+   "backbone_requires_grad_at_construction": false,
+   "n_trainable_after_apply_stage_freeze": 280059651,
+   "backbone_requires_grad_after_freeze": true,
+   "n_trainable_if_backbone_refrozen": 193479171,
+   "freeze_audit": {},
+   "group_counts": {
+    "encoder": {
+     "total": 88350720,
+     "trainable": 1770240,
+     "frozen": 86580480
+    },
+    "readout": {
+     "total": 98432,
+     "trainable": 98432,
+     "frozen": 0
+    },
+    "layer_str": {
+     "total": 27442849,
+     "trainable": 0,
+     "frozen": 27442849
+    },
+    "layer_tac": {
+     "total": 29317165,
+     "trainable": 0,
+     "frozen": 29317165
+    },
+    "predictor_op": {
+     "total": 189960707,
+     "trainable": 189960707,
+     "frozen": 0
+    },
+    "planner": {
+     "total": 788344,
+     "trainable": 0,
+     "frozen": 788344
+    },
+    "aux": {
+     "total": 1649792,
+     "trainable": 1649792,
+     "frozen": 0
+    }
+   }
+  },
+  "E-XENC-1F_trainable": {
+   "trainable_backbone_flag": true,
+   "total": 337608009,
+   "per_group": {
+    "encoder": 88350720,
+    "readout": 98432,
+    "predictor_op": 189960707,
+    "layer_tac": 29317165,
+    "layer_str": 27442849,
+    "planner": 788344,
+    "aux": 1649792,
+    "interp": 0
+   },
+   "external_repo": "facebook/dinov2-base",
+   "external_hidden": 768,
+   "external_patch": 14,
+   "external_input_hw": [
+    224,
+    560
+   ],
+   "external_grid": [
+    16,
+    40
+   ],
+   "sub_frames": 3,
+   "backbone_params": 86580480,
+   "adapter_params": 1770240,
+   "backbone_requires_grad_at_construction": true,
+   "n_trainable_after_apply_stage_freeze": 280059651,
+   "backbone_requires_grad_after_freeze": true,
+   "n_trainable_if_backbone_refrozen": 193479171,
+   "freeze_audit": {},
+   "group_counts": {
+    "encoder": {
+     "total": 88350720,
+     "trainable": 88350720,
+     "frozen": 0
+    },
+    "readout": {
+     "total": 98432,
+     "trainable": 98432,
+     "frozen": 0
+    },
+    "layer_str": {
+     "total": 27442849,
+     "trainable": 0,
+     "frozen": 27442849
+    },
+    "layer_tac": {
+     "total": 29317165,
+     "trainable": 0,
+     "frozen": 29317165
+    },
+    "predictor_op": {
+     "total": 189960707,
+     "trainable": 189960707,
+     "frozen": 0
+    },
+    "planner": {
+     "total": 788344,
+     "trainable": 0,
+     "frozen": 788344
+    },
+    "aux": {
+     "total": 1649792,
+     "trainable": 1649792,
+     "frozen": 0
+    }
+   }
+  }
+ },
+ "deltas_vs_incumbent": {
+  "E-XENC-1_frozen": {
+   "d_total": 1065984,
+   "d_total_pct": 0.3167,
+   "d_trainable_under_S_W": 1065984,
+   "d_trainable_pct": 0.3821
+  },
+  "E-XENC-1F_trainable": {
+   "d_total": 1065984,
+   "d_total_pct": 0.3167,
+   "d_trainable_under_S_W": 1065984,
+   "d_trainable_pct": 0.3821
+  }
+ },
+ "grad_reach": {
+  "E-XENC-1_frozen": {
+   "z_op_shape": [
+    1,
+    2048
+   ],
+   "tokens_shape": [
+    1,
+    640,
+    768
+   ],
+   "z_op_matches_d_op": true,
+   "n_backbone_tensors": 223,
+   "n_backbone_tensors_with_grad": 0,
+   "n_backbone_tensors_with_NONZERO_grad": 0,
+   "numel_backbone_receiving_grad": 0,
+   "backbone_grad_l2": 0.0,
+   "adapter_grad_l2": 4.434864044189453,
+   "peak_mem_GiB_forward": 1.3073,
+   "peak_mem_GiB_fwd_plus_bwd": 1.3073,
+   "fwd_bwd_secs_batch1": 0.259,
+   "_probe": "torch.cuda.max_memory_allocated ONLY - the one admissible device-memory probe (CLAUDE.md)"
+  },
+  "E-XENC-1F_trainable": {
+   "z_op_shape": [
+    1,
+    2048
+   ],
+   "tokens_shape": [
+    1,
+    640,
+    768
+   ],
+   "z_op_matches_d_op": true,
+   "n_backbone_tensors": 223,
+   "n_backbone_tensors_with_grad": 222,
+   "n_backbone_tensors_with_NONZERO_grad": 222,
+   "numel_backbone_receiving_grad": 86579712,
+   "backbone_grad_l2": 37.000492095947266,
+   "adapter_grad_l2": 4.522580146789551,
+   "peak_mem_GiB_forward": 2.5034,
+   "peak_mem_GiB_fwd_plus_bwd": 2.5191,
+   "fwd_bwd_secs_batch1": 0.283,
+   "_probe": "torch.cuda.max_memory_allocated ONLY - the one admissible device-memory probe (CLAUDE.md)"
+  }
+ },
+ "warmstart_into_our_vit5": {
+  "_question": "can DINOv2-base weights initialise OUR ViT5Encoder instead of being bolted on as a foreign backbone?",
+  "dino_n_tensors": 223,
+  "dino_numel": 86580480,
+  "ours_n_tensors": 149,
+  "ours_numel": 87284736,
+  "n_names_in_common": 0,
+  "n_names_in_common_with_matching_shape": 0,
+  "ours_numel_with_ANY_shape_compatible_dino_tensor": 63785472,
+  "ours_numel_with_NO_shape_compatible_dino_tensor": 23499264,
+  "patch_embed_ours": [
+   768,
+   9,
+   16,
+   16
+  ],
+  "patch_embed_dino": [
+   768,
+   3,
+   14,
+   14
+  ],
+  "our_keys_sample": [
+   "blocks.0.attn.k_norm.weight",
+   "blocks.0.attn.proj.weight",
+   "blocks.0.attn.q_norm.weight",
+   "blocks.0.attn.qkv.weight",
+   "blocks.0.ls1",
+   "blocks.0.ls2",
+   "blocks.0.mlp.0.bias",
+   "blocks.0.mlp.0.weight",
+   "blocks.0.mlp.2.bias",
+   "blocks.0.mlp.2.weight",
+   "blocks.0.norm1.weight",
+   "blocks.0.norm2.weight"
+  ],
+  "dino_keys_sample": [
+   "embeddings.cls_token",
+   "embeddings.mask_token",
+   "embeddings.patch_embeddings.projection.bias",
+   "embeddings.patch_embeddings.projection.weight",
+   "embeddings.position_embeddings",
+   "encoder.layer.0.attention.attention.key.bias",
+   "encoder.layer.0.attention.attention.key.weight",
+   "encoder.layer.0.attention.attention.query.bias",
+   "encoder.layer.0.attention.attention.query.weight",
+   "encoder.layer.0.attention.attention.value.bias",
+   "encoder.layer.0.attention.attention.value.weight",
+   "encoder.layer.0.attention.output.dense.bias"
+  ],
+  "our_norm_type": "RMSNorm (weight only, no bias, no re-centering)",
+  "dino_norm_type": "LayerNorm (weight + bias, re-centering)",
+  "our_qkv_bias": false,
+  "dino_qkv_bias": true,
+  "our_has_qk_norm": true,
+  "dino_has_qk_norm": false
+ }
+}

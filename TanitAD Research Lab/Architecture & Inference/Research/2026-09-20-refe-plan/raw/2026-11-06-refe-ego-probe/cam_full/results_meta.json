@@ -1,0 +1,129 @@
+{
+ "tool": "refe_ego_probe/1",
+ "tier": "T0",
+ "ckpt": "E:/Projects/TanitAD/data/refe_runs_eval/sft4_peek/model_sft4_B_u400.pt",
+ "ckpt_sha256": "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d",
+ "n_tokens": 154,
+ "n_logs": 51,
+ "arms": [
+  "A0",
+  "A0r",
+  "AX0",
+  "AXP",
+  "AXM",
+  "DEAD",
+  "GREY",
+  "SWAP",
+  "F0ONLY",
+  "NOF0"
+ ],
+ "device": "cuda",
+ "rule": "navsim_v1_lane",
+ "goal_fix": "pdm_route",
+ "repair_last_heading": true,
+ "nav_mode": "goal",
+ "C1_determinism": {
+  "n": 39,
+  "n_tokens_total": 154,
+  "traj_bit_identical": 39,
+  "logit_bit_identical": 39,
+  "pick_equal": 39,
+  "trunk_bit_identical": 39,
+  "max_abs_traj_m": 0.0,
+  "max_abs_logit": 0.0,
+  "PASS": true
+ },
+ "C2_identity_vs_table": {
+  "n": 154,
+  "logit_bit_identical": 154,
+  "pick_equal": 154,
+  "max_abs_logit": 0.0,
+  "max_abs_props8_m": 0.0,
+  "PASS_strict": true,
+  "PASS_fallback": true
+ },
+ "C3_reachability": {
+  "A0": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "A0r": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "AX0": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "AXP": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "AXM": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "DEAD": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "GREY": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "SWAP": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "F0ONLY": {
+   "n_ok": 154,
+   "n": 154
+  },
+  "NOF0": {
+   "n_ok": 154,
+   "n": 154
+  }
+ },
+ "C3_failures_first10": [],
+ "C4_memo": {
+  "hits": 616,
+  "misses": 617,
+  "bypasses": 39,
+  "grey_hits": 153,
+  "grey_fresh_checks": 6,
+  "grey_fresh_checks_bit_identical": 6
+ },
+ "C5_ego_slots_real": {
+  "frac_yaw_rate_nonzero": 0.0,
+  "frac_steer_nonzero": 0.0,
+  "ax_pcts_1_50_99": [
+   -0.2866496062278748,
+   0.012385976035147905,
+   0.29198923349380496
+  ],
+  "ay_pcts_1_50_99": [
+   -0.8832259470224381,
+   0.07717125490307808,
+   2.574465851783752
+  ]
+ },
+ "timing": {
+  "loop_s": 976.6,
+  "wall_s": 1109.1,
+  "s_per_token": 6.342,
+  "mean_infer_s_per_arm": {
+   "A0": 1.3687585514861267,
+   "A0r": 1.2380672522953577,
+   "AX0": 0.022322270777318385,
+   "AXP": 0.021311259888983393,
+   "AXM": 0.020323711556273622,
+   "DEAD": 0.019874713637612083,
+   "GREY": 0.07044905501526671,
+   "SWAP": 1.1475243692274217,
+   "F0ONLY": 1.1464714260844442,
+   "NOF0": 1.145575863974435
+  }
+ },
+ "gt_valid_share": 1.0,
+ "controls_pass": true
+}

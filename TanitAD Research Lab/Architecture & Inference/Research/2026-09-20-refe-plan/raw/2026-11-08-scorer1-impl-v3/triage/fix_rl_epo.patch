@@ -1,0 +1,28 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py
+@@ -279,7 +279,7 @@
+ 
+ 
+ def a_ns(b_mode: str, lane: bool, **kw):
+-    d = dict(b_mode=b_mode, lane_head=lane, lane_weight=0.7, tau_t=0.1, tau_s=0.1, lam=0.3, epo=False)
++    d = dict(b_mode=b_mode, lane_head=lane, lane_weight=0.7, tau_t=0.1, tau_s=0.1, lam=0.3, epo=False, pair_w=0.0)
+     d.update(kw)
+     return types.SimpleNamespace(**d)
+ 
+@@ -858,13 +858,15 @@
+             v = n.value.left if isinstance(n, ast.Assign) and isinstance(n.value, ast.BinOp) else getattr(n, "value", None)          # SAFEOBJ: `bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)`
+             if isinstance(n, ast.Assign) and getattr(v, "func", None) is not None and getattr(v.func, "id", "") == "epo_refusals":
+                 nxt = C.main.body[i + 1]
++                if isinstance(nxt, ast.Assign) and ast.unparse(nxt).startswith("bad_cli = bad_cli + pair_refusals("):          # SCORER1 (v2): one more refusal source, appended before the same `if bad_cli ...: return 4`
++                    nxt = C.main.body[i + 2]
+                 return isinstance(nxt, ast.If) and any(isinstance(m, ast.Return) and getattr(m.value, "value", None) == 4 for m in ast.walk(nxt))
+         return False
+     t("p2/hop_main_refuses_on_epo_refusals", hop_refusals)
+ 
+     def hop_train_loop():
+         for n in ast.walk(C.main):
+-            if isinstance(n, ast.For) and ast.unparse(n.iter) == "dl":
++            if isinstance(n, ast.For) and ast.unparse(n.iter) == "dl" and ast.unparse(n.target) == "batch":          # SCORER1 (v2): `for batch_c in dl` (the --pair-calibrate pass) is a second loop over dl
+                 segs = [C.seg(s) for s in n.body]
+                 return (ast_eq(segs[0], "batch, rows = split_rows(batch, a.epo)") and ast_eq(segs[1], "_s0, sA, sB, tg = fwd(batch)")
+                         and ast_eq(segs[2], "lA, lB, ln, ep_t = train_losses(_s0, sA, sB, tg, rows, upd)")
